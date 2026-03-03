@@ -340,8 +340,10 @@ Recette :
     <!-- ===== ONGLET URL ===== -->
     <div id="tab-url" class="tab-panel">
       <p style="font-size: 0.88rem; color: #7a6a55; margin-bottom: 0.8rem">
-        Colle l'URL d'une page de recette. Le générateur tente d'abord le format
-        structuré (JSON-LD), puis analyse le texte brut de la page.
+        Colle l'URL d'une page de recette. Si un parseur spécialisé existe pour
+        le site (ex. veganpratique.com) il sera utilisé, sinon le générateur
+        tente d'abord le format structuré (JSON-LD) puis analyse le texte brut
+        de la page.
       </p>
       <div
         style="
@@ -967,6 +969,238 @@ Recette :
         return parse(text);
       }
 
+      // =========================================================================
+      // Parcheurs spécifiques à certains domaines
+      // =========================================================================
+
+      function parseVeganPratique(doc) {
+        // Exemple de parser dédié pour veganpratique.com ; il peut pré-nettoyer
+        // certaines balises ou chercher des sélecteurs particuliers.
+        const clone = doc.cloneNode(true);
+        // suppression de bannières ou menus spécifiques
+        clone.querySelectorAll(".newsletter-popup, .ad-banner").forEach((e) =>
+          e.remove()
+        );
+        // on pourrait isoler une portion de la page si nécessaire,
+        // par exemple :
+        const main = clone.querySelector("article.recipe") || clone.body;
+        // htmlToData acceptera le Document/Element cloné
+        return htmlToData(clone);
+      }
+
+      function parseMarciatack(doc) {
+        // Parser pour marciatack.fr - utilise le plugin WP Recipe Maker
+        const data = {
+          titre: "",
+          portions: "",
+          preparation: "",
+          cuisson: "",
+          ingredients: [],
+          accompagnement: "",
+          materiel: [],
+          note: "",
+          etapes: [],
+        };
+
+        // Récupérer le titre
+        const titleEl = doc.querySelector(".wprm-recipe-name, h1.entry-title");
+        if (titleEl) {
+          data.titre = titleEl.textContent.trim();
+        }
+
+        // Récupérer les portions
+        const servingsEl = doc.querySelector(".wprm-recipe-servings");
+        if (servingsEl) {
+          data.portions = servingsEl.textContent.trim();
+        }
+
+        // Récupérer les temps de préparation et cuisson
+        const prepEl = doc.querySelector(".wprm-recipe-prep_time-minutes, [class*='prep_time-minutes']");
+        if (prepEl) {
+          data.preparation = prepEl.textContent.trim() + " min";
+        }
+
+        const cookEl = doc.querySelector(".wprm-recipe-cook_time-minutes, [class*='cook_time-minutes']");
+        if (cookEl) {
+          data.cuisson = cookEl.textContent.trim() + " min";
+        }
+
+        // Récupérer les ingrédients
+        const ingredientsContainer = doc.querySelector(".wprm-recipe-ingredients-container");
+        if (ingredientsContainer) {
+          const ingredientItems = ingredientsContainer.querySelectorAll(".wprm-recipe-ingredient");
+          ingredientItems.forEach((item) => {
+            const amount = item.querySelector(".wprm-recipe-ingredient-amount");
+            const name = item.querySelector(".wprm-recipe-ingredient-name");
+            
+            let ingredient = "";
+            if (amount) ingredient += amount.textContent.trim() + " ";
+            if (name) ingredient += name.textContent.trim();
+            
+            if (ingredient.trim()) {
+              data.ingredients.push(ingredient.trim());
+            }
+          });
+        }
+
+        // Récupérer les étapes
+        const instructionsContainer = doc.querySelector(".wprm-recipe-instructions-container");
+        if (instructionsContainer) {
+          const steps = instructionsContainer.querySelectorAll(".wprm-recipe-instruction");
+          steps.forEach((step) => {
+            const text = step.querySelector(".wprm-recipe-instruction-text");
+            if (text) {
+              data.etapes.push(text.textContent.trim());
+            }
+          });
+        }
+
+        // Récupérer le matériel si disponible
+        const equipmentContainer = doc.querySelector(".wprm-recipe-equipment-container");
+        if (equipmentContainer) {
+          const equipmentItems = equipmentContainer.querySelectorAll(".wprm-recipe-equipment-name");
+          equipmentItems.forEach((item) => {
+            data.materiel.push(item.textContent.trim());
+          });
+        }
+
+        // Récupérer les notes si disponibles
+        const notesContainer = doc.querySelector(".wprm-recipe-notes-container");
+        if (notesContainer) {
+          data.note = notesContainer.textContent.trim();
+        }
+
+        return data;
+      }
+
+      function parseBarilla(doc) {
+        // Parser pour barilla.com
+        const data = {
+          titre: "",
+          portions: "",
+          preparation: "",
+          cuisson: "",
+          ingredients: [],
+          accompagnement: [],
+          materiel: [],
+          note: "",
+          etapes: [],
+        };
+
+        // Récupérer le titre
+        const titleEl = doc.querySelector(".recipeDetailHeader");
+        if (titleEl) {
+          data.titre = titleEl.textContent.trim();
+        }
+
+        // Récupérer les portions
+        const servingsEl = doc.querySelector(".serves");
+        if (servingsEl) {
+          // Extrait "6" de "Servir 6"
+          const match = servingsEl.textContent.match(/\d+/);
+          if (match) {
+            data.portions = match[0];
+          }
+        }
+
+        // Récupérer les temps
+        const overviewEl = doc.querySelector(".recipeDetailOverview");
+        if (overviewEl) {
+          const timeText = overviewEl.textContent;
+          // Cherche les durées ISO dans les données ou le JSON-LD
+          const jsonLdScript = doc.querySelector('script[type="application/ld+json"]#recipeschema');
+          if (jsonLdScript) {
+            try {
+              const jsonLd = JSON.parse(jsonLdScript.textContent);
+              if (jsonLd.prepTime) {
+                data.preparation = parseDuration(jsonLd.prepTime);
+              }
+              if (jsonLd.cookTime) {
+                data.cuisson = parseDuration(jsonLd.cookTime);
+              }
+            } catch (e) {
+              // Ignorer les erreurs de parsing JSON
+            }
+          }
+        }
+
+        // Récupérer les ingrédients depuis la table
+        const ingredientTable = doc.querySelector(".ingredients table");
+        if (ingredientTable) {
+          const rows = ingredientTable.querySelectorAll("tr");
+          let currentCategory = null;
+          rows.forEach((row) => {
+            const cells = row.querySelectorAll("td");
+            if (cells.length >= 2) {
+              const quantity = cells[0].textContent.trim();
+              const name = cells[1].textContent.trim();
+              
+              // Si la première colonne est vide et la deuxième contient ":", c'est une catégorie
+              if (!quantity && name.includes(":")) {
+                currentCategory = name.replace(":", "").trim().toLowerCase();
+                data.ingredients.push(`[${currentCategory}]`);
+              } else if (name) {
+                const ing = quantity ? `${quantity} ${name}` : name;
+                data.ingredients.push(ing);
+              }
+            }
+          });
+        }
+
+        // Récupérer les étapes
+        const methodSteps = doc.querySelectorAll(".methodStep");
+        methodSteps.forEach((step) => {
+          const textEl = step.querySelector("p");
+          if (textEl) {
+            data.etapes.push(textEl.textContent.trim());
+          }
+        });
+
+        // Récupérer la note si elle existe
+        const noteEl = doc.querySelector(".recipeDisclaimer p");
+        if (noteEl) {
+          data.note = noteEl.textContent.trim();
+        }
+
+        return data;
+      }
+
+      const urlParsers = [
+        {
+          // la regex peut contenir un nom de domaine, ou plusieurs
+          regex: /(?:www\.)?veganpratique\.com/i,
+          parser: parseVeganPratique,
+          name: "parser veganpratique",
+        },
+        {
+          regex: /(?:www\.)?marciatack\.fr/i,
+          parser: parseMarciatack,
+          name: "parser MarciatacK",
+        },
+        {
+          regex: /(?:www\.)?barilla\.com/i,
+          parser: parseBarilla,
+          name: "parser Barilla",
+        },
+        // ajouter d'autres objets {regex, parser, name} si besoin
+      ];
+
+      function getParserForUrl(url) {
+        let fallback = {parser: htmlToData, name: "analyse texte générique"};
+        try {
+          const u = new URL(url);
+          const host = u.host;
+          for (const entry of urlParsers) {
+            if (entry.regex.test(host)) {
+              return {parser: entry.parser, name: entry.name || entry.parser.name};
+            }
+          }
+        } catch (e) {
+          // url invalide, on ignore
+        }
+        return fallback;
+      }
+
       // ===== URL : FETCH & DISPLAY =====
 
       async function fetchRecetteUrl() {
@@ -1022,8 +1256,10 @@ Recette :
           data = jsonLdToData(jsonLd);
           source = "JSON-LD structuré";
         } else {
-          data = htmlToData(doc);
-          source = "analyse texte";
+          // choisir un parseur dédié au besoin en fonction de l'URL
+          const {parser, name} = getParserForUrl(urlObj.href);
+          data = parser(doc);
+          source = name;
         }
 
         btn.disabled = false;
