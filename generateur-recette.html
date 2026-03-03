@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Générateur de recette</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f5f0e8;
+        color: #333;
+        padding: 1rem;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+        color: #5a3e28;
+      }
+      h2 {
+        font-size: 1rem;
+        margin-bottom: 0.4rem;
+        color: #5a3e28;
+      }
+
+      .section {
+        margin-bottom: 1.2rem;
+      }
+
+      textarea {
+        width: 100%;
+        height: 420px;
+        font-family: monospace;
+        font-size: 0.85rem;
+        padding: 0.8rem;
+        border: 1px solid #c9b99a;
+        border-radius: 8px;
+        background: #fffdf8;
+        resize: vertical;
+      }
+
+      button {
+        background: #c0622a;
+        color: white;
+        border: none;
+        padding: 0.7rem 1.4rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        cursor: pointer;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+      button:hover {
+        background: #a34e1f;
+      }
+      button.secondary {
+        background: #7a6a55;
+      }
+      button.secondary:hover {
+        background: #5e5040;
+      }
+
+      #output-box {
+        display: none;
+        margin-top: 1.2rem;
+      }
+      #output {
+        white-space: pre-wrap;
+        font-family: monospace;
+        font-size: 0.85rem;
+        background: #fffdf8;
+        border: 1px solid #c9b99a;
+        border-radius: 8px;
+        padding: 1rem;
+        line-height: 1.6;
+      }
+      .error {
+        color: #b00;
+        background: #fff0f0;
+        border: 1px solid #f5c0c0;
+        border-radius: 8px;
+        padding: 0.8rem;
+        margin-top: 0.8rem;
+      }
+
+      .hint {
+        font-size: 0.78rem;
+        color: #888;
+        margin-top: 0.3rem;
+      }
+
+      details {
+        margin-bottom: 1rem;
+      }
+      summary {
+        cursor: pointer;
+        color: #c0622a;
+        font-weight: bold;
+        font-size: 0.9rem;
+        padding: 0.3rem 0;
+      }
+      .format-example {
+        background: #fffdf8;
+        border: 1px solid #c9b99a;
+        border-radius: 8px;
+        padding: 0.8rem;
+        font-family: monospace;
+        font-size: 0.78rem;
+        white-space: pre;
+        overflow-x: auto;
+        margin-top: 0.5rem;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 0.4rem;
+        margin-bottom: 1.2rem;
+        border-bottom: 2px solid #c9b99a;
+        padding-bottom: 0;
+      }
+      .tab-btn {
+        background: none;
+        border: none;
+        border-radius: 8px 8px 0 0;
+        color: #7a6a55;
+        font-size: 0.95rem;
+        font-weight: bold;
+        padding: 0.5rem 1.2rem 0.4rem;
+        cursor: pointer;
+        margin: 0;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: background 0.15s;
+      }
+      .tab-btn:hover {
+        background: #e8dfd0;
+        color: #5a3e28;
+      }
+      .tab-btn.active {
+        background: #f5f0e8;
+        color: #c0622a;
+        border-color: #c0622a;
+      }
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+
+      .file-drop {
+        border: 2px dashed #c9b99a;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        color: #7a6a55;
+        font-size: 0.9rem;
+        cursor: pointer;
+        background: #fffdf8;
+        transition: background 0.15s, border-color 0.15s;
+        margin-bottom: 0.8rem;
+      }
+      .file-drop:hover,
+      .file-drop.drag-over {
+        background: #f0e8d8;
+        border-color: #c0622a;
+        color: #5a3e28;
+      }
+      #batch-info {
+        font-size: 0.82rem;
+        color: #7a6a55;
+        margin-bottom: 0.8rem;
+        min-height: 1.2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🍽️ Générateur de recette</h1>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('single')">
+        Une recette
+      </button>
+      <button class="tab-btn" onclick="switchTab('batch')">
+        Batch (fichier complet)
+      </button>
+      <button class="tab-btn" onclick="switchTab('url')">Depuis une URL</button>
+    </div>
+
+    <!-- ===== ONGLET UNIQUE ===== -->
+    <div id="tab-single" class="tab-panel active">
+      <details>
+        <summary>📖 Format d'entrée (cliquer pour voir)</summary>
+        <div class="format-example">
+          Nom de la recette Ingrédients pour 2 personnes : – 100g de truc – 1
+          œuf – sel, poivre Matériel : - Une grande casserole - Une poêle
+          Recette : – Faire bouillir l'eau… – Couper les légumes… – Servir !
+        </div>
+        <p class="hint">
+          • Le <b>titre</b> est simplement la première ligne.<br />
+          • Le nombre de portions est extrait de la ligne
+          <b>Ingrédients pour X personne(s)</b>.<br />
+          • <b>Matériel</b> est optionnel. Les marqueurs <code>–</code>,
+          <code>-</code> et les tabulations sont acceptés.<br />
+          • Format avec clés explicites aussi accepté : <code>Titre:</code>,
+          <code>Portions:</code>, <code>Preparation:</code>,
+          <code>Cuisson:</code>, <code>Note:</code>,
+          <code>Accompagnement:</code>.
+        </p>
+      </details>
+
+      <div class="section">
+        <h2>Recette à formater</h2>
+        <textarea
+          id="input"
+          placeholder="Pâtes à la carbonara végétarienne
+
+Ingrédients pour 1 personne :
+–	100g de pâtes
+–	sel, poivre
+
+Matériel :
+-	Une grande casserole
+-	Une passoire
+
+Recette :
+–	Faire bouillir l'eau salée.
+–	Cuire les pâtes.
+–	Servir !"
+        ></textarea>
+      </div>
+
+      <button onclick="generer()">✨ Générer</button>
+      <button class="secondary" onclick="effacer()">🗑 Effacer</button>
+
+      <div id="error-box"></div>
+
+      <div id="output-box">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.6rem;
+            flex-wrap: wrap;
+          "
+        >
+          <h2 style="margin: 0">Résultat</h2>
+          <button
+            onclick="copier()"
+            style="font-size: 0.85rem; padding: 0.4rem 0.9rem"
+          >
+            📋 Copier
+          </button>
+        </div>
+        <div id="output"></div>
+      </div>
+    </div>
+
+    <!-- ===== ONGLET BATCH ===== -->
+    <div id="tab-batch" class="tab-panel">
+      <p style="font-size: 0.88rem; color: #7a6a55; margin-bottom: 0.8rem">
+        Dépose un fichier contenant plusieurs recettes (format
+        <em>recettes-global</em>). Chaque bloc séparé par une ligne blanche /
+        espace est traité comme une recette. La table des matières est ignorée
+        automatiquement.
+      </p>
+
+      <div
+        class="file-drop"
+        id="file-drop"
+        role="button"
+        tabindex="0"
+        onclick="document.getElementById('file-input').click()"
+        onkeydown="if(event.key==='Enter'||event.key===' ')document.getElementById('file-input').click()"
+      >
+        📂 Cliquer pour choisir un fichier, ou déposer ici
+      </div>
+      <input
+        type="file"
+        id="file-input"
+        accept=".txt,.md,"
+        style="display: none"
+        onchange="chargerFichier(this)"
+      />
+
+      <div id="batch-info"></div>
+
+      <button onclick="genererBatch()">✨ Générer tout</button>
+      <button class="secondary" onclick="effacerBatch()">🗑 Effacer</button>
+
+      <div id="batch-error-box"></div>
+
+      <div id="batch-output-box" style="display: none; margin-top: 1.2rem">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.6rem;
+            flex-wrap: wrap;
+          "
+        >
+          <h2 style="margin: 0">
+            Résultat (<span id="batch-count">0</span> recettes)
+          </h2>
+          <button
+            onclick="copierBatch()"
+            style="font-size: 0.85rem; padding: 0.4rem 0.9rem"
+          >
+            📋 Copier tout
+          </button>
+        </div>
+        <div
+          id="batch-output"
+          style="
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.85rem;
+            background: #fffdf8;
+            border: 1px solid #c9b99a;
+            border-radius: 8px;
+            padding: 1rem;
+            line-height: 1.6;
+          "
+        ></div>
+      </div>
+    </div>
+
+    <!-- ===== ONGLET URL ===== -->
+    <div id="tab-url" class="tab-panel">
+      <p style="font-size: 0.88rem; color: #7a6a55; margin-bottom: 0.8rem">
+        Colle l'URL d'une page de recette. Le générateur tente d'abord le format
+        structuré (JSON-LD), puis analyse le texte brut de la page.
+      </p>
+      <div
+        style="
+          display: flex;
+          gap: 0.5rem;
+          margin-bottom: 0.8rem;
+          flex-wrap: wrap;
+        "
+      >
+        <input
+          id="url-input"
+          type="url"
+          placeholder="https://example.com/recette/…"
+          style="
+            flex: 1;
+            min-width: 200px;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #c9b99a;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: #fffdf8;
+          "
+          onkeydown="if(event.key==='Enter')fetchRecetteUrl()"
+        />
+        <button onclick="fetchRecetteUrl()" id="url-btn">🔍 Récupérer</button>
+        <button class="secondary" onclick="effacerUrl()">🗑 Effacer</button>
+      </div>
+      <div
+        id="url-status"
+        style="
+          font-size: 0.82rem;
+          color: #7a6a55;
+          margin-bottom: 0.8rem;
+          min-height: 1.2rem;
+        "
+      ></div>
+      <div id="url-error-box"></div>
+      <div id="url-output-box" style="display: none; margin-top: 1.2rem">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.6rem;
+            flex-wrap: wrap;
+          "
+        >
+          <h2 style="margin: 0">Résultat</h2>
+          <button
+            onclick="copierUrl()"
+            style="font-size: 0.85rem; padding: 0.4rem 0.9rem"
+          >
+            📋 Copier
+          </button>
+        </div>
+        <div
+          id="url-output"
+          style="
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.85rem;
+            background: #fffdf8;
+            border: 1px solid #c9b99a;
+            border-radius: 8px;
+            padding: 1rem;
+            line-height: 1.6;
+          "
+        ></div>
+      </div>
+    </div>
+
+    <script>
+      const CHIFFRES_EMOJI = [
+        "1️⃣",
+        "2️⃣",
+        "3️⃣",
+        "4️⃣",
+        "5️⃣",
+        "6️⃣",
+        "7️⃣",
+        "8️⃣",
+        "9️⃣",
+        "🔟",
+      ];
+
+      function numeroEmoji(n) {
+        if (n >= 1 && n <= 10) return CHIFFRES_EMOJI[n - 1];
+        return n + ".";
+      }
+
+      // Normalise une clé (insensible casse + accents simplifiés)
+      function normalise(s) {
+        return s
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim();
+      }
+
+      function parse(texte) {
+        const lignes = texte.split("\n");
+        const data = {
+          titre: "",
+          portions: "",
+          preparation: "",
+          cuisson: "",
+          ingredients: [],
+          accompagnement: [],
+          materiel: [],
+          note: "",
+          etapes: [],
+        };
+
+        let section = null;
+        let titreDetecte = false;
+
+        const clesConnues = {
+          titre: "titre",
+          portions: "portions",
+          preparation: "preparation",
+          cuisson: "cuisson",
+          ingredients: "ingredients",
+          accompagnement: "accompagnement",
+          materiel: "materiel",
+          note: "note",
+          etapes: "etapes",
+          // variantes
+          étapes: "etapes",
+          étape: "etapes",
+          recette: "etapes",
+          ingrédients: "ingredients",
+          ingrédient: "ingredients",
+          matériel: "materiel",
+        };
+
+        // Enlève le marqueur de liste (–, -, •, *, tab) en début de ligne
+        function stripMarqueur(l) {
+          return l
+            .replace(/^[\t ]*[\u2013\-•*][\t ]*/, "")
+            .replace(/^\d+\.\s+/, "")
+            .trim();
+        }
+
+        // Vrai si la ligne est un élément de liste
+        function estListe(l) {
+          return /^[\t ]*[\u2013\-•*][\t ]/.test(l);
+        }
+
+        for (let ligne of lignes) {
+          if (ligne.trim() === "") continue;
+
+          const ligneNorm = normalise(ligne.trim());
+
+          // Détection "Ingrédients pour X personne(s) [:]" (avec ou sans colon)
+          const matchIngPour = ligneNorm.match(/^ingredients?\s+pour\s+(\d+)/);
+          if (matchIngPour) {
+            if (!data.portions) data.portions = matchIngPour[1];
+            section = "ingredients";
+            continue;
+          }
+
+          // Clé: valeur (champ inline) – seulement si pas un élément de liste
+          const matchInline =
+            !estListe(ligne) && ligne.match(/^([^:\n]+):\s*(.+)$/);
+          const matchSectionVide =
+            !estListe(ligne) && ligne.match(/^([^:\n]+):\s*$/);
+
+          if (matchInline) {
+            const cle = normalise(matchInline[1]);
+            const val = matchInline[2].trim();
+            if (clesConnues[cle]) {
+              section = clesConnues[cle];
+              const s = section;
+              if (s === "titre") {
+                data.titre = val;
+                titreDetecte = true;
+              } else if (s === "portions") data.portions = val;
+              else if (s === "preparation") data.preparation = val;
+              else if (s === "cuisson") data.cuisson = val;
+              else if (s === "note") data.note = val;
+              else {
+                if (Array.isArray(data[s])) data[s].push(val);
+              }
+            } else {
+              if (section && Array.isArray(data[section])) {
+                data[section].push(ligne.trim());
+              }
+            }
+            continue;
+          }
+
+          if (matchSectionVide) {
+            const cle = normalise(matchSectionVide[1]);
+            if (clesConnues[cle]) {
+              section = clesConnues[cle];
+            }
+            continue;
+          }
+
+          // Ligne de liste ou texte dans section active
+          if (section) {
+            const contenu = stripMarqueur(ligne);
+            if (Array.isArray(data[section])) {
+              if (contenu) data[section].push(contenu);
+            } else if (section === "note") {
+              data.note += (data.note ? " " : "") + contenu;
+            }
+          } else if (!titreDetecte) {
+            // Première ligne non vide sans section = titre
+            data.titre = ligne.trim();
+            titreDetecte = true;
+          }
+        }
+
+        return data;
+      }
+
+      function formater(data) {
+        const titre = (data.titre || "Recette sans titre").toUpperCase();
+        let out = `🍽️ ${titre}\n\n`;
+
+        out += `📋 Informations\n\n`;
+        out += `⏱ Temps de préparation : ${data.preparation || ""}\n\n`;
+        out += `🔥 Temps de cuisson : ${data.cuisson || ""}\n\n`;
+        out += `👥 Nombre de portions : ${data.portions || ""}\n\n`;
+
+        out += `🛒 Ingrédients\n\n`;
+        for (const ing of data.ingredients) {
+          out += `- ${ing}\n`;
+        }
+        out += "\n";
+
+        if (data.materiel && data.materiel.length) {
+          out += `🔧 Matériel\n\n`;
+          for (const m of data.materiel) {
+            out += `- ${m}\n`;
+          }
+          out += "\n";
+        }
+
+        out += `🥗 Option / Sauce / Accompagnement\n\n`;
+        for (const a of data.accompagnement) {
+          out += `- ${a}\n`;
+        }
+        out += "\n";
+
+        if (data.note) {
+          out += `💡 Note\n\n`;
+          out += `${data.note}\n\n`;
+        }
+
+        out += `👩‍🍳 Préparation\n`;
+        if (data.etapes.length) {
+          out += "\n";
+          data.etapes.forEach((etape, i) => {
+            out += `${numeroEmoji(i + 1)} ${etape}\n\n`;
+          });
+        }
+
+        return out.trimEnd();
+      }
+
+      function generer() {
+        const input = document.getElementById("input").value;
+        const errorBox = document.getElementById("error-box");
+        const outputBox = document.getElementById("output-box");
+        const outputEl = document.getElementById("output");
+
+        errorBox.innerHTML = "";
+        outputBox.style.display = "none";
+
+        if (!input.trim()) {
+          errorBox.innerHTML = '<div class="error">⚠️ Rien à formater.</div>';
+          return;
+        }
+
+        const data = parse(input);
+        const resultat = formater(data);
+        outputEl.textContent = resultat;
+        outputBox.style.display = "block";
+        outputBox.scrollIntoView({ behavior: "smooth" });
+      }
+
+      function effacer() {
+        document.getElementById("input").value = "";
+        document.getElementById("error-box").innerHTML = "";
+        document.getElementById("output-box").style.display = "none";
+      }
+
+      function copier() {
+        const texte = document.getElementById("output").textContent;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(texte).then(() => alert("Copié !"));
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = texte;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          alert("Copié !");
+        }
+      }
+
+      // ===== ONGLETS =====
+      function switchTab(nom) {
+        document
+          .querySelectorAll(".tab-panel")
+          .forEach((p) => p.classList.remove("active"));
+        document.querySelectorAll(".tab-btn").forEach((b) => {
+          const oc = b.getAttribute("onclick") || "";
+          b.classList.toggle("active", oc.includes("'" + nom + "'"));
+        });
+        document.getElementById("tab-" + nom).classList.add("active");
+      }
+
+      // ===== DRAG & DROP =====
+      (function () {
+        const drop = document.getElementById("file-drop");
+        drop.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          drop.classList.add("drag-over");
+        });
+        drop.addEventListener("dragleave", () =>
+          drop.classList.remove("drag-over")
+        );
+        drop.addEventListener("drop", (e) => {
+          e.preventDefault();
+          drop.classList.remove("drag-over");
+          const file = e.dataTransfer.files[0];
+          if (file) lireFichier(file);
+        });
+      })();
+
+      let batchTexte = "";
+
+      function chargerFichier(input) {
+        if (input.files[0]) lireFichier(input.files[0]);
+      }
+
+      function lireFichier(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          batchTexte = e.target.result;
+          const blocs = splitBatch(batchTexte);
+          document.getElementById(
+            "batch-info"
+          ).textContent = `✅ "${file.name}" chargé — ${blocs.length} recette(s) détectée(s)`;
+          document.getElementById("file-drop").textContent = `📄 ${file.name}`;
+        };
+        reader.readAsText(file, "UTF-8");
+      }
+
+      // ===== SPLIT BATCH =====
+      function splitBatch(texte) {
+        // Séparateurs : ligne contenant uniquement des espaces/nbsp/caractères blancs spéciaux
+        const SEP = /^[\s\u00a0\u200b\ufeff]+$/;
+        const lignes = texte.split("\n");
+        const blocs = [];
+        let courant = [];
+
+        for (const l of lignes) {
+          if (SEP.test(l) || l.trim() === "") {
+            if (courant.length) {
+              blocs.push(courant.join("\n"));
+              courant = [];
+            }
+          } else {
+            courant.push(l);
+          }
+        }
+        if (courant.length) blocs.push(courant.join("\n"));
+
+        // Filtrer la table des matières : bloc sans marqueurs de liste ni "Ingrédients" ni "Recette"
+        return blocs.filter((bloc) => {
+          const n = normalise(bloc);
+          const aListe = /^[\t ]*[\u2013\-•*][\t ]/m.test(bloc);
+          const aSection = /ingredients?|recette|etapes?|mat.riel/i.test(n);
+          // Un bloc de TOC a des tabulations + chiffres en fin de ligne, pas de marqueurs liste
+          const estTOC = !aListe && !aSection && /\t\d+\s*$/.test(bloc);
+          return !estTOC;
+        });
+      }
+
+      // ===== GENERER BATCH =====
+      function genererBatch() {
+        const errorBox = document.getElementById("batch-error-box");
+        const outputBox = document.getElementById("batch-output-box");
+        const outputEl = document.getElementById("batch-output");
+        errorBox.innerHTML = "";
+        outputBox.style.display = "none";
+
+        if (!batchTexte.trim()) {
+          errorBox.innerHTML =
+            '<div class="error">⚠️ Aucun fichier chargé.</div>';
+          return;
+        }
+
+        const blocs = splitBatch(batchTexte);
+        if (!blocs.length) {
+          errorBox.innerHTML =
+            '<div class="error">⚠️ Aucune recette détectée.</div>';
+          return;
+        }
+
+        const SEPARATEUR_RECETTE = "\n\n" + "─".repeat(54) + "\n\n";
+        const resultats = blocs.map((bloc) => formater(parse(bloc)));
+        outputEl.textContent = resultats.join(SEPARATEUR_RECETTE);
+        document.getElementById("batch-count").textContent = resultats.length;
+        outputBox.style.display = "block";
+        outputBox.scrollIntoView({ behavior: "smooth" });
+      }
+
+      function effacerBatch() {
+        batchTexte = "";
+        document.getElementById("file-input").value = "";
+        document.getElementById("file-drop").textContent =
+          "📂 Cliquer pour choisir un fichier, ou déposer ici";
+        document.getElementById("batch-info").textContent = "";
+        document.getElementById("batch-error-box").innerHTML = "";
+        document.getElementById("batch-output-box").style.display = "none";
+      }
+
+      function copierBatch() {
+        const texte = document.getElementById("batch-output").textContent;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(texte).then(() => alert("Copié !"));
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = texte;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          alert("Copié !");
+        }
+      }
+
+      // ===== URL : HELPERS =====
+
+      function parseDuration(iso) {
+        if (!iso) return "";
+        const m = iso.match(/PT?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/i);
+        if (!m) return iso;
+        const h = parseInt(m[1] || 0),
+          min = parseInt(m[2] || 0);
+        if (h && min) return `${h}h${min.toString().padStart(2, "0")}`;
+        if (h) return `${h}h`;
+        if (min) return `${min} min`;
+        return iso;
+      }
+
+      function findRecipeJsonLd(doc) {
+        for (const s of doc.querySelectorAll(
+          'script[type="application/ld+json"]'
+        )) {
+          try {
+            const obj = JSON.parse(s.textContent);
+            const candidates = Array.isArray(obj)
+              ? obj
+              : obj["@graph"] || [obj];
+            for (const c of candidates) {
+              if (
+                c["@type"] === "Recipe" ||
+                (Array.isArray(c["@type"]) && c["@type"].includes("Recipe"))
+              )
+                return c;
+            }
+          } catch (e) {
+            /* skip */
+          }
+        }
+        return null;
+      }
+
+      function jsonLdToData(r) {
+        const data = {
+          titre: r.name || "",
+          portions: Array.isArray(r.recipeYield)
+            ? r.recipeYield[0]
+            : r.recipeYield || "",
+          preparation: parseDuration(r.prepTime),
+          cuisson: parseDuration(r.cookTime),
+          ingredients: [],
+          accompagnement: [],
+          materiel: [],
+          note: r.description || "",
+          etapes: [],
+        };
+        if (Array.isArray(r.recipeIngredient)) {
+          data.ingredients = r.recipeIngredient
+            .map((s) => s.trim())
+            .filter(Boolean);
+        }
+        const instr = r.recipeInstructions || [];
+        for (const step of instr) {
+          const txt = typeof step === "string" ? step : step.text || "";
+          if (txt.trim()) data.etapes.push(txt.trim());
+        }
+        return data;
+      }
+
+      // Extraction texte brut → data via notre parseur standard
+      function htmlToData(doc) {
+        // Nettoyer le DOM : supprimer nav, header, footer, aside, scripts, styles
+        const clone = doc.cloneNode(true);
+        for (const tag of [
+          "nav",
+          "header",
+          "footer",
+          "aside",
+          "script",
+          "style",
+          "noscript",
+          "iframe",
+          "figure",
+          "picture",
+          "img",
+        ]) {
+          clone.querySelectorAll(tag).forEach((el) => el.remove());
+        }
+        // Chercher le contenu principal
+        const main =
+          clone.querySelector(
+            "main,[role=main],[class*=recipe],[class*=recette],[id*=recipe],[id*=recette],article"
+          ) || clone.body;
+        // Reconstruire un texte propre ligne par ligne
+        const lines = [];
+        function walk(node) {
+          if (node.nodeType === Node.TEXT_NODE) {
+            const t = node.textContent.trim();
+            if (t) lines.push(t);
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            const tag = node.tagName.toLowerCase();
+            const isBlock =
+              /^(p|div|h[1-6]|li|br|tr|td|th|section|article|header|footer|blockquote|pre|ul|ol)$/.test(
+                tag
+              );
+            if (isBlock && lines.length && lines[lines.length - 1] !== "")
+              lines.push("");
+            node.childNodes.forEach(walk);
+            if (isBlock && lines.length && lines[lines.length - 1] !== "")
+              lines.push("");
+          }
+        }
+        walk(main);
+        // Dédoublonner les lignes vides consécutives
+        const text = lines
+          .filter((l, i) => l !== "" || lines[i - 1] !== "")
+          .join("\n");
+        return parse(text);
+      }
+
+      // ===== URL : FETCH & DISPLAY =====
+
+      async function fetchRecetteUrl() {
+        const urlRaw = document.getElementById("url-input").value.trim();
+        const statusEl = document.getElementById("url-status");
+        const errorEl = document.getElementById("url-error-box");
+        const outBox = document.getElementById("url-output-box");
+        const outEl = document.getElementById("url-output");
+        const btn = document.getElementById("url-btn");
+
+        errorEl.innerHTML = "";
+        outBox.style.display = "none";
+        statusEl.textContent = "";
+
+        if (!urlRaw) {
+          errorEl.innerHTML =
+            '<div class="error">⚠️ Colle une URL d\'abord.</div>';
+          return;
+        }
+        let urlObj;
+        try {
+          urlObj = new URL(urlRaw);
+        } catch {
+          errorEl.innerHTML = '<div class="error">⚠️ URL invalide.</div>';
+          return;
+        }
+
+        btn.disabled = true;
+        statusEl.textContent = "⏳ Récupération en cours…";
+
+        const proxy =
+          "https://api.allorigins.win/get?url=" +
+          encodeURIComponent(urlObj.href);
+        let html;
+        try {
+          const resp = await fetch(proxy);
+          if (!resp.ok) throw new Error("HTTP " + resp.status);
+          const json = await resp.json();
+          html = json.contents;
+          if (!html) throw new Error("Réponse vide");
+        } catch (e) {
+          btn.disabled = false;
+          statusEl.textContent = "";
+          errorEl.innerHTML = `<div class="error">⚠️ Impossible de récupérer la page : ${e.message}</div>`;
+          return;
+        }
+
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        let data, source;
+
+        const jsonLd = findRecipeJsonLd(doc);
+        if (jsonLd) {
+          data = jsonLdToData(jsonLd);
+          source = "JSON-LD structuré";
+        } else {
+          data = htmlToData(doc);
+          source = "analyse texte";
+        }
+
+        btn.disabled = false;
+        statusEl.textContent = `✅ Extrait via ${source}`;
+
+        const resultat = formater(data);
+        outEl.textContent = resultat;
+        outBox.style.display = "block";
+        outBox.scrollIntoView({ behavior: "smooth" });
+      }
+
+      function effacerUrl() {
+        document.getElementById("url-input").value = "";
+        document.getElementById("url-status").textContent = "";
+        document.getElementById("url-error-box").innerHTML = "";
+        document.getElementById("url-output-box").style.display = "none";
+        document.getElementById("url-btn").disabled = false;
+      }
+
+      function copierUrl() {
+        const texte = document.getElementById("url-output").textContent;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(texte).then(() => alert("Copié !"));
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = texte;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          alert("Copié !");
+        }
+      }
+    </script>
+  </body>
+</html>
