@@ -26,6 +26,17 @@ export const skullDamage = 10;           // dégâts infligés par crâne lors d
 // ennemi courant
 export let enemy = { name:"Gobelin", hp:50, maxHp:50, attack:10, resistances:{} };
 
+// si le joueur meurt, on restaure ses PV et réinitialise le combat
+export function restartCombat(){
+    player.hp = player.maxHp;
+    player.combatPoints = 0;
+    enemy.hp = enemy.maxHp;
+    log("🎮 Combat réinitialisé, vous êtes en pleine santé.");
+    updateStats();
+    saveUpdate();
+}
+
+
 // bibliothèque des sorts
 export const allSpells = [
     {id:"fireball", name:"Boule de Feu", color:"red", cost:10, dmg:25, minLevel:1},
@@ -50,7 +61,7 @@ export const allSpells = [
 if(localStorage.getItem('player')) player = JSON.parse(localStorage.getItem('player'));
 
 // interface minimale
-export function updateStats(){4
+export function updateStats(){
     const playerDiv=document.getElementById('player-stats');
     playerDiv.innerHTML = `
         <div class="stat"><strong>HP:</strong>
@@ -96,7 +107,7 @@ export function saveUpdate(){
 // -------------------------------------
 // Combat
 export function attackEnemy(){
-    if(player.hp<=0){ log("Vous êtes mort !"); return; }
+    if(player.hp<=0){ log("Vous êtes mort !"); restartCombat(); return; }
     if(player.combatPoints < combatCost){ log(`Il faut ${combatCost} points de combat pour attaquer.`); return; }
     player.combatPoints -= combatCost;
     const dmg=Math.floor(Math.random()*player.attack)+5;
@@ -143,6 +154,11 @@ export function enemyTurn(){
     if(choice>0.5) dmg+=player.level*2;
     player.hp-=dmg;
     log(`💀 ${enemy.name} attaque ! ${dmg} dégâts.`);
+    if(player.hp<=0){
+        log("💀 Vous êtes mort ! Recommencement du combat.");
+        restartCombat();
+        return;
+    }
     updateStats();
     saveUpdate();
     currentTurn = 'player';
@@ -212,5 +228,16 @@ export function newEnemy(){
     colors.forEach(c=>res[c]=Math.min(0.3,Math.random()*0.1*player.level));
     enemy={name:"Orc",hp:Math.floor(baseHp),maxHp:Math.floor(baseHp),attack:atk,resistances:res};
     log(`🔹 Un nouvel ennemi: ${enemy.name}`);
-    currentTurn = 'player';
+    // déterminer au hasard qui commence
+    decideFirstTurn();
+}
+
+// choisit aléatoirement le premier tour et le lance si c'est l'ennemi
+export function decideFirstTurn(){
+    const starter = Math.random() < 0.5 ? 'player' : 'enemy';
+    currentTurn = starter;
+    log(`🔄 Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'}`);
+    if(starter === 'enemy'){
+        enemyTurn();
+    }
 }

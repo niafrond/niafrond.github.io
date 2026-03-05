@@ -1,4 +1,4 @@
-import { player, saveUpdate, log } from "./game.js";
+import { player, saveUpdate, log, skullDamage } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 
 // grille et sélection
