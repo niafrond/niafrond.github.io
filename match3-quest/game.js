@@ -16,6 +16,9 @@ export let player = {
     bonusTurn: false
 };
 
+// tour actuel
+export let currentTurn = 'player';
+
 // règles de combat
 export const combatCost = 5;             // points nécessaires pour une attaque normale
 export const skullDamage = 10;           // dégâts infligés par crâne lors d'un match
@@ -64,8 +67,7 @@ export function updateStats(){4
         </div>
         <div class="stat"><strong>Niv:</strong> ${player.level}</div>
         <div class="stat"><strong>CP:</strong> ${player.combatPoints}</div>
-        <div class="stat"><strong>Bonus:</strong> ${player.bonusTurn ? 'oui' : 'non'}</div>
-        <div class="attributes">
+        <div class="stat"><strong>Bonus:</strong> ${player.bonusTurn ? 'oui' : 'non'}</div>        <div class=\"stat\"><strong>Tour:</strong> ${currentTurn === 'player' ? 'Joueur' : 'Ennemi'}</div>        <div class="attributes">
             STR ${player.attributes.strength}, AGI ${player.attributes.agility}, INT ${player.attributes.intelligence}, STA ${player.attributes.stamina}, MOR ${player.attributes.morale}
         </div>`;
 
@@ -135,6 +137,7 @@ export function castSpell(spellId){
 
 export function enemyTurn(){
     if(enemy.hp<=0){ handleEnemyDefeated(); return; }
+    currentTurn = 'enemy';
     let choice=Math.random();
     let dmg=Math.floor(Math.random()*enemy.attack)+5;
     if(choice>0.5) dmg+=player.level*2;
@@ -142,6 +145,7 @@ export function enemyTurn(){
     log(`💀 ${enemy.name} attaque ! ${dmg} dégâts.`);
     updateStats();
     saveUpdate();
+    currentTurn = 'player';
 }
 
 // -------------------------------------
@@ -208,4 +212,5 @@ export function newEnemy(){
     colors.forEach(c=>res[c]=Math.min(0.3,Math.random()*0.1*player.level));
     enemy={name:"Orc",hp:Math.floor(baseHp),maxHp:Math.floor(baseHp),attack:atk,resistances:res};
     log(`🔹 Un nouvel ennemi: ${enemy.name}`);
+    currentTurn = 'player';
 }
