@@ -1,6 +1,7 @@
 // logique globale du joueur, ennemis, combat et interface
 
 import { colors } from "./constants.js";
+import { generateRandomEnemy } from "./enemies.js";
 
 // joueur
 export let player = {
@@ -24,7 +25,7 @@ export const combatCost = 5;             // points nécessaires pour une attaque
 export const skullDamage = 10;           // dégâts infligés par crâne lors d'un match
 
 // ennemi courant (combatPoints pour attaquer)
-export let enemy = { name:"Gobelin", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0 };
+export let enemy = { name:"Gobelin", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0 }, spells:[] };
 
 // si le joueur meurt, on restaure ses PV et réinitialise le combat
 export function restartCombat(){
@@ -120,8 +121,8 @@ export function saveUpdate(){
 // -------------------------------------
 // Combat
 export function attackEnemy(){
-    if(player.hp<=0){ log("Vous êtes mort !"); restartCombat(); return; }
     if(player.combatPoints < combatCost){ log(`Il faut ${combatCost} points de combat pour attaquer.`); return; }
+    if(player.hp<=0){ log("Vous êtes mort !"); restartCombat(); return; }
     player.combatPoints -= combatCost;
     const dmg=Math.floor(Math.random()*player.attack)+5;
     enemy.hp-=dmg;
@@ -166,15 +167,36 @@ export function enemyTurn(){
     updateStats();
     // delay to make enemy action visible
     setTimeout(()=>{
-        // ensure enemy has enough CP
-        if(enemy.combatPoints < combatCost) enemy.combatPoints = combatCost;
-        enemy.combatPoints -= combatCost;
+        // choose to cast spell or attack
+        let action = 'attack';
+        let useableSpells = enemy.spells.filter(s => enemy.mana[s.color] >= s.cost);
+        if(useableSpells.length > 0 && Math.random() > 0.4){
+            // 60% chance to cast spell if available
+            action = 'spell';
+        }
 
-        let choice=Math.random();
-        let dmg=Math.floor(Math.random()*enemy.attack)+5;
-        if(choice>0.5) dmg+=player.level*2;
-        player.hp-=dmg;
-        log(`💀 ${enemy.name} attaque ! ${dmg} dégâts.`);
+        if(action === 'spell'){
+            const spell = useableSpells[Math.floor(Math.random() * useableSpells.length)];
+            enemy.mana[spell.color] -= spell.cost;
+            if(spell.dmg){
+                let dmg = spell.dmg * (1 - (player.resistances && player.resistances[spell.color] || 0));
+                player.hp -= dmg;
+                log(`🔥 ${enemy.name} lance ${spell.name} ! ${dmg} dégâts.`);
+            }
+            if(spell.heal){
+                enemy.hp = Math.min(enemy.maxHp, enemy.hp + spell.heal);
+                log(`💚 ${enemy.name} utilise ${spell.name} et soigne ${spell.heal} HP.`);
+            }
+        } else {
+            // normal attack
+            if(enemy.combatPoints < combatCost) enemy.combatPoints = combatCost;
+            enemy.combatPoints -= combatCost;
+            let dmg=Math.floor(Math.random()*enemy.attack)+5;
+            if(Math.random()>0.5) dmg+=player.level*2;
+            player.hp-=dmg;
+            log(`💀 ${enemy.name} attaque ! ${dmg} dégâts.`);
+        }
+
         if(player.hp<=0){
             log("💀 Vous êtes mort ! Recommencement du combat.");
             restartCombat();
@@ -244,12 +266,11 @@ export function createSpellButtons(){
 // -------------------------------------
 // ennemis
 export function newEnemy(){
-    const baseHp=40+player.level*10;
-    const atk=5+player.level*4;
-    const res={};
-    colors.forEach(c=>res[c]=Math.min(0.3,Math.random()*0.1*player.level));
-    enemy={name:"Orc",hp:Math.floor(baseHp),maxHp:Math.floor(baseHp),attack:atk,resistances:res,combatPoints:0};
+    enemy = generateRandomEnemy(player.level, allSpells);
     log(`🔹 Un nouvel ennemi: ${enemy.name}`);
+    if(enemy.spells.length > 0){
+        log(`✨ L'ennemi dispose de sorts : ${enemy.spells.map(s => s.name).join(", ")}`);
+    }
     // déterminer au hasard qui commence
     decideFirstTurn();
 }

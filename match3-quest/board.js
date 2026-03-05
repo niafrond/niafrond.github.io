@@ -1,4 +1,4 @@
-import { player, saveUpdate, log, skullDamage } from "./game.js";
+import { player, enemy, currentTurn, saveUpdate, log, skullDamage } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 
 // grille et sélection
@@ -79,14 +79,18 @@ export function checkMatches(){
     function handleRun(indices, info){
         // info: {type,color?,len,makeJoker?}
         combos=true;
+        // Determine which player gets the rewards
+        const currentPlayer = currentTurn === 'player' ? player : enemy;
         // apply effects
         if(info.type==='color'){
-            player.mana[info.color]=Math.min(player.maxMana, player.mana[info.color]+5);
-            if(info.len>=4){ player.bonusTurn=true; log('🎁 Match de 4 : tour bonus gagné'); }
+            currentPlayer.mana[info.color]=Math.min(currentPlayer === player ? player.maxMana : 50, currentPlayer.mana[info.color]+5);
+            if(info.len>=4){ 
+                log('🎁 Match de 4 : tour bonus gagné');
+            }
             if(info.len>=5){ info.makeJoker=true; }
         } else if(info.type==='combat'){
-            player.combatPoints += info.len;
-            log(`⚔️ +${info.len} points de combat`);
+            currentPlayer.combatPoints += info.len;
+            log(`⚔️ +${info.len} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
         } else if(info.type==='skull'){
             const dmg = info.len * skullDamage;
             player.hp -= dmg;
@@ -170,7 +174,7 @@ export function checkMatches(){
     renderBoard();
     if(combos){
         saveUpdate();
-        setTimeout(checkMatches,350);
+        setTimeout(checkMatches,500);
     }
 }
 
@@ -245,7 +249,8 @@ export function highlightCombo(indices, info){
         
         setTimeout(()=>{
             // Faire descendre les tuiles et ajouter de nouvelles en haut
-            const affectedCols = dropTiles(indices.filter(i=>board[i]===null));
+            const nullIndices = indices.filter(i=>board[i]===null);
+            const affectedCols = dropTiles(nullIndices);
             renderBoard();
             
             // Ajouter l'animation de descente seulement sur les colonnes affectées
@@ -255,6 +260,8 @@ export function highlightCombo(indices, info){
                     tiles[idx].classList.add('fall');
                 }
             }
+            
+            // Les jokers ne descendent pas, donc pas d'animation pour eux
             
             // Enlever la classe fall après l'animation
             setTimeout(()=>{
