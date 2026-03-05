@@ -17,7 +17,7 @@ body {
                                                         }
                                                         #board {
                                                             display: grid;
-                                                                grid-template-columns: repeat(6, 50px);
+                                                                grid-template-columns: repeat(8, 50px);
                                                                     grid-gap: 5px;
                                                                         margin: 15px auto;
                                                                         }
@@ -38,6 +38,9 @@ body {
                                                                                                                     .tile.blue { background: #3498db; }
                                                                                                                     .tile.green { background: #2ecc71; }
                                                                                                                     .tile.yellow { background: #f1c40f; }
+                                                                                                                    .tile.skull { background: #8e44ad; }
+                                                                                                                    .tile.combat { background: #95a5a6; }
+                                                                                                                    .tile.joker { background: #f39c12; color: #000; }
                                                                                                                     .tile.match { transform: scale(1.2); }
                                                                                                                     button { padding: 8px 12px; margin: 3px; border-radius: 5px; }
                                                                                                                     button.disabled { opacity: 0.5; cursor: not-allowed; }
@@ -56,6 +59,9 @@ body {
 #player-stats, #enemy-stats {
     margin: 8px 0;
     text-align: left;
+    background: #f7f7f7;
+    padding: 6px 8px;
+    border-radius: 6px;
 }
 .stat {
     display: flex;
