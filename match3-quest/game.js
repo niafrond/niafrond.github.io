@@ -42,11 +42,33 @@ if(localStorage.getItem('player')) player = JSON.parse(localStorage.getItem('pla
 
 // interface minimale
 export function updateStats(){
-    document.getElementById('player-stats').innerHTML=
-        `Joueur: HP ${player.hp}/${player.maxHp} - Mana R:${player.mana.red} B:${player.mana.blue} G:${player.mana.green} Y:${player.mana.yellow} - Niveau ${player.level}
-        <br>Attrs: STR ${player.attributes.strength}, AGI ${player.attributes.agility}, INT ${player.attributes.intelligence}, STA ${player.attributes.stamina}, MOR ${player.attributes.morale}`;
-    document.getElementById('enemy-stats').innerHTML=
-        `Ennemi: ${enemy.name}, HP ${enemy.hp}/${enemy.maxHp}, Attaque ${enemy.attack}`;
+    const playerDiv=document.getElementById('player-stats');
+    playerDiv.innerHTML = `
+        <div class="stat"><strong>HP:</strong>
+            <progress value="${player.hp}" max="${player.maxHp}"></progress>
+            ${player.hp}/${player.maxHp}
+        </div>
+        <div class="stat"><strong>Mana:</strong>
+            <div class="mana-dots">
+                <span class="mana-dot mana-red" title="${player.mana.red}"></span>${player.mana.red}
+                <span class="mana-dot mana-blue" title="${player.mana.blue}"></span>${player.mana.blue}
+                <span class="mana-dot mana-green" title="${player.mana.green}"></span>${player.mana.green}
+                <span class="mana-dot mana-yellow" title="${player.mana.yellow}"></span>${player.mana.yellow}
+            </div>
+        </div>
+        <div class="stat"><strong>Niv:</strong> ${player.level}</div>
+        <div class="attributes">
+            STR ${player.attributes.strength}, AGI ${player.attributes.agility}, INT ${player.attributes.intelligence}, STA ${player.attributes.stamina}, MOR ${player.attributes.morale}
+        </div>`;
+
+    const enemyDiv=document.getElementById('enemy-stats');
+    enemyDiv.innerHTML = `
+        <div class="stat"><strong>${enemy.name}</strong></div>
+        <div class="stat"><strong>HP:</strong>
+            <progress class="enemy-bar" value="${enemy.hp}" max="${enemy.maxHp}"></progress>
+            ${enemy.hp}/${enemy.maxHp}
+        </div>
+        <div class="stat"><strong>Atk:</strong> ${enemy.attack}</div>`;
 }
 
 export function log(text){

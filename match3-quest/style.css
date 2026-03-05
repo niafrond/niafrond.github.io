@@ -51,4 +51,58 @@ body {
                                                                                                                                                 border-radius: 8px;
                                                                                                                                                     background: #fafafa;
                                                                                                                                                     }
+
+/* stats améliorées */
+#player-stats, #enemy-stats {
+    margin: 8px 0;
+    text-align: left;
+}
+.stat {
+    display: flex;
+    align-items: center;
+    margin: 4px 0;
+}
+.stat strong {
+    width: 50px;
+}
+progress {
+    width: 120px;
+    margin: 0 6px;
+    height: 12px;
+    vertical-align: middle;
+    -webkit-appearance: none;
+    appearance: none;
+}
+progress::-webkit-progress-bar {
+    background: #eee;
+    border-radius: 6px;
+}
+progress::-webkit-progress-value {
+    background: #2ecc71;
+    border-radius: 6px;
+}
+.progress.enemy-bar::-webkit-progress-value,
+progress.enemy-bar::-webkit-progress-value {
+    background: #e74c3c;
+}
+.mana-dots {
+    display: inline-flex;
+    align-items: center;
+}
+.mana-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 4px;
+    border: 1px solid #888;
+}
+.mana-red { background: #e74c3c; }
+.mana-blue { background: #3498db; }
+.mana-green { background: #2ecc71; }
+.mana-yellow { background: #f1c40f; }
+.attributes {
+    font-size: 0.9em;
+    line-height: 1.3em;
+}
 }
