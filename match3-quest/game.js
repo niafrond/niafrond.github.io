@@ -11,8 +11,14 @@ export let player = {
     attack: 15,
     level: 1,
     attributes: { strength:0, agility:0, intelligence:0, stamina:0, morale:0 },
-    spells: []
+    spells: [],
+    combatPoints: 0,
+    bonusTurn: false
 };
+
+// règles de combat
+export const combatCost = 5;             // points nécessaires pour une attaque normale
+export const skullDamage = 10;           // dégâts infligés par crâne lors d'un match
 
 // ennemi courant
 export let enemy = { name:"Gobelin", hp:50, maxHp:50, attack:10, resistances:{} };
@@ -41,7 +47,7 @@ export const allSpells = [
 if(localStorage.getItem('player')) player = JSON.parse(localStorage.getItem('player'));
 
 // interface minimale
-export function updateStats(){
+export function updateStats(){4
     const playerDiv=document.getElementById('player-stats');
     playerDiv.innerHTML = `
         <div class="stat"><strong>HP:</strong>
@@ -57,6 +63,8 @@ export function updateStats(){
             </div>
         </div>
         <div class="stat"><strong>Niv:</strong> ${player.level}</div>
+        <div class="stat"><strong>CP:</strong> ${player.combatPoints}</div>
+        <div class="stat"><strong>Bonus:</strong> ${player.bonusTurn ? 'oui' : 'non'}</div>
         <div class="attributes">
             STR ${player.attributes.strength}, AGI ${player.attributes.agility}, INT ${player.attributes.intelligence}, STA ${player.attributes.stamina}, MOR ${player.attributes.morale}
         </div>`;
@@ -87,9 +95,17 @@ export function saveUpdate(){
 // Combat
 export function attackEnemy(){
     if(player.hp<=0){ log("Vous êtes mort !"); return; }
+    if(player.combatPoints < combatCost){ log(`Il faut ${combatCost} points de combat pour attaquer.`); return; }
+    player.combatPoints -= combatCost;
     const dmg=Math.floor(Math.random()*player.attack)+5;
     enemy.hp-=dmg;
     log(`⚔️ Vous infligez ${dmg} dégâts.`);
+    if(player.bonusTurn){
+        player.bonusTurn = false;
+        log("🎯 Tour bonus utilisé : pas d'attaque ennemie.");
+        saveUpdate();
+        return;
+    }
     enemyTurn();
 }
 
@@ -107,6 +123,12 @@ export function castSpell(spellId){
     if(spell.heal){
         player.hp=Math.min(player.maxHp,player.hp+spell.heal);
         log(`💚 ${spell.name} soigne ${spell.heal} HP.`);
+    }
+    if(player.bonusTurn){
+        player.bonusTurn = false;
+        log("🎯 Tour bonus utilisé : pas d'attaque ennemie.");
+        saveUpdate();
+        return;
     }
     enemyTurn();
 }

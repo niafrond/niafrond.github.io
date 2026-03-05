@@ -19,15 +19,21 @@ export function hasMatches(){
 }
 
 export function generateBoard(){
+    // la grille peut contenir aussi quelques tuiles spéciales
+    const specialProb = 0.08; // ~8% de tuiles spéciales
     do{
         board=[];
         const boardDiv=document.getElementById('board');
         boardDiv.innerHTML="";
         for(let i=0;i<boardSize*boardSize;i++){
-            const color=colors[Math.floor(Math.random()*colors.length)];
-            board.push(color);
+            let tileType;
+            const r=Math.random();
+            if(r < specialProb/2) tileType='skull';
+            else if(r < specialProb) tileType='combat';
+            else tileType=colors[Math.floor(Math.random()*colors.length)];
+            board.push(tileType);
             const tile=document.createElement('div');
-            tile.className=`tile ${color}`;
+            tile.className=`tile ${tileType}`;
             tile.dataset.index=i;
             tile.onclick=()=>selectTile(i);
             boardDiv.appendChild(tile);
@@ -57,30 +63,110 @@ export function swapTiles(i,j){
 export function renderBoard(){
     const tiles=document.getElementById('board').children;
     for(let i=0;i<board.length;i++){
-        tiles[i].className=`tile ${board[i]}`;
+        const t=board[i];
+        tiles[i].className=`tile ${t}`;
+        tiles[i].textContent = '';
+        if(t==='skull') tiles[i].textContent='💀';
+        else if(t==='combat') tiles[i].textContent='⚔️';
+        else if(t==='joker') tiles[i].textContent='?';
     }
 }
 
 export function checkMatches(){
     let combos=false;
+    const processed = new Set();
+    
+    function handleRun(indices, info){
+        // info: {type,color?,len,makeJoker?}
+        combos=true;
+        // apply effects
+        if(info.type==='color'){
+            player.mana[info.color]=Math.min(player.maxMana, player.mana[info.color]+5);
+            if(info.len>=4){ player.bonusTurn=true; log('🎁 Match de 4 : tour bonus gagné'); }
+            if(info.len>=5){ info.makeJoker=true; }
+        } else if(info.type==='combat'){
+            player.combatPoints += info.len;
+            log(`⚔️ +${info.len} points de combat`);
+        } else if(info.type==='skull'){
+            const dmg = info.len * skullDamage;
+            player.hp -= dmg;
+            log(`💀 Match ${info.len} crânes : -${dmg} HP`);
+        }
+        highlightCombo(indices, info);
+    }
+
+    // scan horizontal
     for(let i=0;i<boardSize;i++){
-        for(let j=0;j<boardSize;j++){
+        let j=0;
+        while(j<boardSize){
             const idx=i*boardSize+j;
-            const color=board[idx];
-            // horizontal
-            if(j<=boardSize-3 && board[idx+1]===color && board[idx+2]===color){
-                combos=true;
-                player.mana[color]=Math.min(player.maxMana, player.mana[color]+5);
-                highlightCombo([idx, idx+1, idx+2]);
+            const t=board[idx];
+            if(t==='joker'){ j++; continue; }
+            let run=[idx];
+            let type=t;
+            if(colors.includes(t) || t==='joker') type='color';
+            let color = colors.includes(t)?t:null;
+            let k=j+1;
+            while(k<boardSize){
+                const idx2=i*boardSize+k;
+                const t2=board[idx2];
+                if(type==='color'){
+                    if(t2===color || t2==='joker'){
+                        run.push(idx2);
+                        if(!color && colors.includes(t2)) color=t2;
+                        k++;
+                        continue;
+                    }
+                } else {
+                    if(t2===type){ run.push(idx2); k++; continue; }
+                }
+                break;
             }
-            // vertical
-            if(i<=boardSize-3 && board[idx+boardSize]===color && board[idx+2*boardSize]===color){
-                combos=true;
-                player.mana[color]=Math.min(player.maxMana, player.mana[color]+5);
-                highlightCombo([idx, idx+boardSize, idx+2*boardSize]);
+            if(run.length>=3){
+                const info={type:type,len:run.length,color:color};
+                handleRun(run, info);
+                if(info.makeJoker){ board[run[0]]='joker'; }
             }
+            j += Math.max(run.length,1);
         }
     }
+
+    // scan vertical
+    for(let j=0;j<boardSize;j++){
+        let i=0;
+        while(i<boardSize){
+            const idx=i*boardSize+j;
+            const t=board[idx];
+            if(t==='joker'){ i++; continue; }
+            let run=[idx];
+            let type=t;
+            if(colors.includes(t) || t==='joker') type='color';
+            let color = colors.includes(t)?t:null;
+            let k=i+1;
+            while(k<boardSize){
+                const idx2=k*boardSize+j;
+                const t2=board[idx2];
+                if(type==='color'){
+                    if(t2===color || t2==='joker'){
+                        run.push(idx2);
+                        if(!color && colors.includes(t2)) color=t2;
+                        k++;
+                        continue;
+                    }
+                } else {
+                    if(t2===type){ run.push(idx2); k++; continue; }
+                }
+                break;
+            }
+            if(run.length>=3){
+                const info={type:type,len:run.length,color:color};
+                handleRun(run, info);
+                if(info.makeJoker){ board[run[0]]='joker'; }
+            }
+            i += Math.max(run.length,1);
+        }
+    }
+
     renderBoard();
     if(combos){
         saveUpdate();
@@ -88,13 +174,34 @@ export function checkMatches(){
     }
 }
 
-export function highlightCombo(indices){
+export function highlightCombo(indices, info){
     const tiles=document.getElementById('board').children;
     indices.forEach(i=>tiles[i].classList.add('match'));
-    log(`✨ Combo ${board[indices[0]]}! +5 mana`);
+    // message personnalisé
+    if(info){
+        if(info.type==='color'){
+            log(`✨ Combo ${info.color} x${info.len}` + (info.len>=4?" (bonus)":""));
+        } else if(info.type==='combat'){
+            log(`⚔️ Combo points de combat x${info.len}`);
+        } else if(info.type==='skull'){
+            log(`💀 Combo crânes x${info.len}`);
+        }
+    } else {
+        log(`✨ Combo ${board[indices[0]]}!`);
+    }
     setTimeout(()=>{
         indices.forEach(i=>tiles[i].classList.remove('match'));
-        indices.forEach(i=>board[i]=colors[Math.floor(Math.random()*colors.length)]);
+        indices.forEach(i=>{
+            if(info && info.makeJoker && i===indices[0]){
+                board[i]='joker';
+            } else {
+                // remplacer par tuile aléatoire (pas joker)
+                const r=Math.random();
+                if(r < 0.08/2) board[i]='skull';
+                else if(r < 0.08) board[i]='combat';
+                else board[i]=colors[Math.floor(Math.random()*colors.length)];
+            }
+        });
         renderBoard();
     },300);
 }
