@@ -23,14 +23,15 @@ export let currentTurn = 'player';
 export const combatCost = 5;             // points nécessaires pour une attaque normale
 export const skullDamage = 10;           // dégâts infligés par crâne lors d'un match
 
-// ennemi courant
-export let enemy = { name:"Gobelin", hp:50, maxHp:50, attack:10, resistances:{} };
+// ennemi courant (combatPoints pour attaquer)
+export let enemy = { name:"Gobelin", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0 };
 
 // si le joueur meurt, on restaure ses PV et réinitialise le combat
 export function restartCombat(){
     player.hp = player.maxHp;
     player.combatPoints = 0;
     enemy.hp = enemy.maxHp;
+    enemy.combatPoints = 0;
     log("🎮 Combat réinitialisé, vous êtes en pleine santé.");
     updateStats();
     saveUpdate();
@@ -62,6 +63,13 @@ if(localStorage.getItem('player')) player = JSON.parse(localStorage.getItem('pla
 
 // interface minimale
 export function updateStats(){
+    // truncate log to only the latest message
+    const logDiv=document.getElementById('log');
+    if(logDiv){
+        const lines = logDiv.innerHTML.split('<br>').filter(l=>l.trim()!=='');
+        logDiv.innerHTML = lines.slice(-1).join('<br>');
+    }
+
     const playerDiv=document.getElementById('player-stats');
     playerDiv.innerHTML = `
         <div class="stat"><strong>HP:</strong>
@@ -78,7 +86,9 @@ export function updateStats(){
         </div>
         <div class="stat"><strong>Niv:</strong> ${player.level}</div>
         <div class="stat"><strong>CP:</strong> ${player.combatPoints}</div>
-        <div class="stat"><strong>Bonus:</strong> ${player.bonusTurn ? 'oui' : 'non'}</div>        <div class=\"stat\"><strong>Tour:</strong> ${currentTurn === 'player' ? 'Joueur' : 'Ennemi'}</div>        <div class="attributes">
+        <div class="stat"><strong>Bonus:</strong> ${player.bonusTurn ? 'oui' : 'non'}</div>
+        <div class="stat"><strong>Tour:</strong> ${currentTurn === 'player' ? 'Joueur' : 'Ennemi'}</div>
+        <div class="attributes">
             STR ${player.attributes.strength}, AGI ${player.attributes.agility}, INT ${player.attributes.intelligence}, STA ${player.attributes.stamina}, MOR ${player.attributes.morale}
         </div>`;
 
@@ -89,13 +99,16 @@ export function updateStats(){
             <progress class="enemy-bar" value="${enemy.hp}" max="${enemy.maxHp}"></progress>
             ${enemy.hp}/${enemy.maxHp}
         </div>
-        <div class="stat"><strong>Atk:</strong> ${enemy.attack}</div>`;
+        <div class="stat"><strong>Atk:</strong> ${enemy.attack}</div>
+        <div class="stat"><strong>CP:</strong> ${enemy.combatPoints}</div>`;
 }
 
 export function log(text){
     const logDiv=document.getElementById('log');
-    logDiv.innerHTML+=text+"<br>";
-    logDiv.scrollTop=logDiv.scrollHeight;
+    if(logDiv){
+        logDiv.innerHTML = text + "<br>";
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
 }
 
 export function saveUpdate(){
@@ -149,19 +162,28 @@ export function castSpell(spellId){
 export function enemyTurn(){
     if(enemy.hp<=0){ handleEnemyDefeated(); return; }
     currentTurn = 'enemy';
-    let choice=Math.random();
-    let dmg=Math.floor(Math.random()*enemy.attack)+5;
-    if(choice>0.5) dmg+=player.level*2;
-    player.hp-=dmg;
-    log(`💀 ${enemy.name} attaque ! ${dmg} dégâts.`);
-    if(player.hp<=0){
-        log("💀 Vous êtes mort ! Recommencement du combat.");
-        restartCombat();
-        return;
-    }
+    // show turn change before action
     updateStats();
-    saveUpdate();
-    currentTurn = 'player';
+    // delay to make enemy action visible
+    setTimeout(()=>{
+        // ensure enemy has enough CP
+        if(enemy.combatPoints < combatCost) enemy.combatPoints = combatCost;
+        enemy.combatPoints -= combatCost;
+
+        let choice=Math.random();
+        let dmg=Math.floor(Math.random()*enemy.attack)+5;
+        if(choice>0.5) dmg+=player.level*2;
+        player.hp-=dmg;
+        log(`💀 ${enemy.name} attaque ! ${dmg} dégâts.`);
+        if(player.hp<=0){
+            log("💀 Vous êtes mort ! Recommencement du combat.");
+            restartCombat();
+            return;
+        }
+        updateStats();
+        saveUpdate();
+        currentTurn = 'player';
+    }, 500);
 }
 
 // -------------------------------------
@@ -226,7 +248,7 @@ export function newEnemy(){
     const atk=5+player.level*4;
     const res={};
     colors.forEach(c=>res[c]=Math.min(0.3,Math.random()*0.1*player.level));
-    enemy={name:"Orc",hp:Math.floor(baseHp),maxHp:Math.floor(baseHp),attack:atk,resistances:res};
+    enemy={name:"Orc",hp:Math.floor(baseHp),maxHp:Math.floor(baseHp),attack:atk,resistances:res,combatPoints:0};
     log(`🔹 Un nouvel ennemi: ${enemy.name}`);
     // déterminer au hasard qui commence
     decideFirstTurn();
