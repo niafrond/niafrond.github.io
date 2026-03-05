@@ -1,0 +1,54 @@
+body {
+        font-family: sans-serif;
+            background: #f0f0f0;
+                display: flex;
+                    justify-content: center;
+                        align-items: center;
+                            min-height: 100vh;
+                            }
+                            .game-container {
+                                background: #fff;
+                                    padding: 20px;
+                                        border-radius: 15px;
+                                            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                                                width: 95%;
+                                                    max-width: 450px;
+                                                        text-align: center;
+                                                        }
+                                                        #board {
+                                                            display: grid;
+                                                                grid-template-columns: repeat(6, 50px);
+                                                                    grid-gap: 5px;
+                                                                        margin: 15px auto;
+                                                                        }
+                                                                        .tile {
+                                                                            width: 50px;
+                                                                                height: 50px;
+                                                                                    border-radius: 5px;
+                                                                                        display: flex;
+                                                                                            justify-content: center;
+                                                                                                align-items: center;
+                                                                                                    color: #fff;
+                                                                                                        font-weight: bold;
+                                                                                                            font-size: 18px;
+                                                                                                                cursor: pointer;
+                                                                                                                    transition: transform 0.2s;
+                                                                                                                    }
+                                                                                                                    .tile.red { background: #e74c3c; }
+                                                                                                                    .tile.blue { background: #3498db; }
+                                                                                                                    .tile.green { background: #2ecc71; }
+                                                                                                                    .tile.yellow { background: #f1c40f; }
+                                                                                                                    .tile.match { transform: scale(1.2); }
+                                                                                                                    button { padding: 8px 12px; margin: 3px; border-radius: 5px; }
+                                                                                                                    button.disabled { opacity: 0.5; cursor: not-allowed; }
+                                                                                                                    #log {
+                                                                                                                        margin-top: 15px;
+                                                                                                                            height: 180px;
+                                                                                                                                overflow-y: auto;
+                                                                                                                                    text-align: left;
+                                                                                                                                        border: 1px solid #ccc;
+                                                                                                                                            padding: 10px;
+                                                                                                                                                border-radius: 8px;
+                                                                                                                                                    background: #fafafa;
+                                                                                                                                                    }
+}
