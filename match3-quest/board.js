@@ -174,6 +174,44 @@ export function checkMatches(){
     }
 }
 
+// Fonction pour faire descendre les tuiles et créer des nouvelles en haut
+function dropTiles(removedIndices){
+    const removed = new Set(removedIndices);
+    const affectedCols = new Set();
+    
+    // Identifier les colonnes affectées
+    removedIndices.forEach(idx => {
+        affectedCols.add(idx % boardSize);
+    });
+    
+    // Pour chaque colonne affectée, faire descendre les tuiles
+    for(let col of affectedCols){
+        let column = [];
+        for(let row=0; row<boardSize; row++){
+            const idx = row * boardSize + col;
+            if(!removed.has(idx)){
+                column.push(board[idx]);
+            }
+        }
+        // Ajouter des nouvelles tuiles en haut
+        while(column.length < boardSize){
+            const r = Math.random();
+            let newTile;
+            if(r < 0.08/2) newTile = 'skull';
+            else if(r < 0.08) newTile = 'combat';
+            else newTile = colors[Math.floor(Math.random()*colors.length)];
+            column.unshift(newTile);
+        }
+        // Remettre la colonne dans le board
+        for(let row=0; row<boardSize; row++){
+            const idx = row * boardSize + col;
+            board[idx] = column[row];
+        }
+    }
+    
+    return affectedCols;
+}
+
 export function highlightCombo(indices, info){
     const tiles=document.getElementById('board').children;
     indices.forEach(i=>tiles[i].classList.add('match'));
@@ -190,18 +228,43 @@ export function highlightCombo(indices, info){
         log(`✨ Combo ${board[indices[0]]}!`);
     }
     setTimeout(()=>{
-        indices.forEach(i=>tiles[i].classList.remove('match'));
+        // Effet de disparition (vide)
+        indices.forEach(i=>{
+            tiles[i].classList.remove('match');
+            tiles[i].classList.add('disappear');
+        });
+        
+        // Traiter les jokers spéciaux avant suppression
         indices.forEach(i=>{
             if(info && info.makeJoker && i===indices[0]){
                 board[i]='joker';
             } else {
-                // remplacer par tuile aléatoire (pas joker)
-                const r=Math.random();
-                if(r < 0.08/2) board[i]='skull';
-                else if(r < 0.08) board[i]='combat';
-                else board[i]=colors[Math.floor(Math.random()*colors.length)];
+                board[i]=null; // Marquer comme supprimé
             }
         });
-        renderBoard();
+        
+        setTimeout(()=>{
+            // Faire descendre les tuiles et ajouter de nouvelles en haut
+            const affectedCols = dropTiles(indices.filter(i=>board[i]===null));
+            renderBoard();
+            
+            // Ajouter l'animation de descente seulement sur les colonnes affectées
+            for(let col of affectedCols){
+                for(let row=0; row<boardSize; row++){
+                    const idx = row * boardSize + col;
+                    tiles[idx].classList.add('fall');
+                }
+            }
+            
+            // Enlever la classe fall après l'animation
+            setTimeout(()=>{
+                for(let col of affectedCols){
+                    for(let row=0; row<boardSize; row++){
+                        const idx = row * boardSize + col;
+                        tiles[idx].classList.remove('fall');
+                    }
+                }
+            }, 350);
+        }, 150);
     },300);
 }

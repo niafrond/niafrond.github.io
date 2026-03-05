@@ -44,6 +44,37 @@ body {
 .tile > * {
     position: absolute;
 }
+
+/* Animations pour les matchs */
+@keyframes disappear {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+}
+
+@keyframes fall {
+    0% {
+        opacity: 0;
+        transform: translateY(-100px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tile.disappear {
+    animation: disappear 0.3s ease-out forwards;
+}
+
+.tile.fall {
+    animation: fall 0.35s ease-in;
+}
                                                                         
                                                                                                                     .tile.red { background: #e74c3c; }
                                                                                                                     .tile.blue { background: #3498db; }
