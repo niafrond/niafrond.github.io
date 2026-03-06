@@ -253,17 +253,20 @@ export function highlightCombo(indices, info){
             const affectedCols = dropTiles(nullIndices);
             renderBoard();
             
-            // Ajouter l'animation de descente seulement sur les colonnes affectées
+            // Ajouter l'animation de descente tuile par tuile avec délai échelonné
             for(let col of affectedCols){
                 for(let row=0; row<boardSize; row++){
                     const idx = row * boardSize + col;
-                    tiles[idx].classList.add('fall');
+                    const tile = tiles[idx];
+                    // délai progressif : 50ms par rangée
+                    const delay = row * 50;
+                    setTimeout(()=>{
+                        tile.classList.add('fall');
+                    }, delay);
                 }
             }
             
-            // Les jokers ne descendent pas, donc pas d'animation pour eux
-            
-            // Enlever la classe fall après l'animation
+            // Enlever la classe fall après les animations
             setTimeout(()=>{
                 for(let col of affectedCols){
                     for(let row=0; row<boardSize; row++){
@@ -271,7 +274,7 @@ export function highlightCombo(indices, info){
                         tiles[idx].classList.remove('fall');
                     }
                 }
-            }, 350);
+            }, 700 + (boardSize * 50));
         }, 150);
     },300);
 }

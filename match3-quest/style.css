@@ -17,18 +17,17 @@ body {
                                                         }
                                                         #board {
     display: grid;
-    /* use fractional columns so they shrink on small screens */
     grid-template-columns: repeat(8, 1fr);
     grid-gap: 5px;
     margin: 15px auto;
     max-width: 95vw;
+    width: fit-content;
 }
 
-/* make tiles square and scale with container */
+/* make tiles square - same size, responsive */
 .tile {
     width: 100%;
-    padding-bottom: 100%; /* aspect ratio 1:1 */
-    position: relative;
+    aspect-ratio: 1;
     border-radius: 5px;
     display: flex;
     justify-content: center;
@@ -73,7 +72,7 @@ body {
 }
 
 .tile.fall {
-    animation: fall 0.35s ease-in;
+    animation: fall 0.55s ease-in forwards;
 }
                                                                         
                                                                                                                     .tile.red { background: #e74c3c; }
