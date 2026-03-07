@@ -891,6 +891,42 @@ Recette :
         return parse(text);
       }
 
+      async function fetchHtmlWithProxy(url) {
+        const proxies = [
+          {
+            kind: "raw",
+            build: (u) =>
+              "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
+          },
+          {
+            kind: "json",
+            build: (u) =>
+              "https://api.allorigins.win/get?url=" + encodeURIComponent(u),
+          },
+        ];
+
+        let lastError = null;
+        for (const p of proxies) {
+          try {
+            const resp = await fetch(p.build(url));
+            if (!resp.ok) throw new Error("HTTP " + resp.status);
+            if (p.kind === "raw") {
+              const html = await resp.text();
+              if (!html) throw new Error("Réponse vide");
+              return html;
+            }
+            const json = await resp.json();
+            const html = json && json.contents;
+            if (!html) throw new Error("Réponse vide");
+            return html;
+          } catch (e) {
+            lastError = e;
+          }
+        }
+
+        throw lastError || new Error("Impossible de récupérer la page");
+      }
+
       // ===== URL : FETCH & DISPLAY =====
 
       async function fetchRecetteUrl() {
@@ -921,16 +957,9 @@ Recette :
         btn.disabled = true;
         statusEl.textContent = "⏳ Récupération en cours…";
 
-        const proxy =
-          "https://api.allorigins.win/get?url=" +
-          encodeURIComponent(urlObj.href);
         let html;
         try {
-          const resp = await fetch(proxy);
-          if (!resp.ok) throw new Error("HTTP " + resp.status);
-          const json = await resp.json();
-          html = json.contents;
-          if (!html) throw new Error("Réponse vide");
+          html = await fetchHtmlWithProxy(urlObj.href);
         } catch (e) {
           btn.disabled = false;
           statusEl.textContent = "";

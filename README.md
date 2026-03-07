@@ -1,19 +1,26 @@
 # niafrond.github.io
 
-Ce dépôt contient un petit générateur de recettes (HTML/JS) utilisé
-pour formater des textes ou extraire des recettes depuis des pages web.
+Ce dépôt contient plusieurs mini-apps web en HTML/CSS/JavaScript.
 
-## Extraction depuis une URL
+## Apps disponibles
 
-Dans l'onglet « Depuis une URL », le script récupère la page et tente :
+### 1) Générateur de recette (version 1)
+- Fichier : [generateur-recette.html](generateur-recette.html)
+- Outil de formatage/extraction de recettes.
+- Inclut une extraction depuis URL (JSON-LD de type Recipe + parseur générique).
 
-1. d'extraire un objet structuré JSON‑LD de type `Recipe` (la méthode `findRecipeJsonLd`).
-2. si rien n'est trouvé, d'appliquer un parseur de texte générique.
+### 2) Générateur de recette (version 2)
+- Fichier : [generateur-recette2.html](generateur-recette2.html)
+- Variante plus récente/étendue du générateur de recette.
 
-Pour certains sites on peut définir des parseurs spécialisés. Le tableau
-`urlParsers` en JavaScript associe une expression régulière de nom de domaine
-à une fonction qui prend le document HTML et renvoie l'objet recette. Un
-exemple pour `veganpratique.com` est déjà compris.
+### 3) Switch Enfants (PWA)
+- App : [lavevaisselle/index.html](lavevaisselle/index.html)
+- Mini app mobile-first avec historique local, capture photo et service worker.
 
-Cela remplace l'approche précédente où le seul parseur client était celui
-pour VeganPratique et il fallait renommer les URL pour les faire fonctionner.
+### 4) Match3 Quest
+- App : [match3-quest/index.html](match3-quest/index.html)
+- Jeu match-3 RPG (combat, classes, sorts, armes, IA ennemie, progression).
+
+## Notes
+- Les données de jeu et préférences sont sauvegardées en local (localStorage).
+- Certaines apps sont prévues pour être ouvertes directement dans le navigateur.
