@@ -3,12 +3,12 @@
 import { colors } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { allWeapons, getAvailableWeapons, getWeaponById } from "./weapons.js";
-import { enemyMakeMove, enemyMakeRandomMove, setGameStarted } from "./board.js";
+import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer } from "./board.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
 import { getRandomItem, getRarityEmoji, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
 import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
-export { updateShopTab };
+export { updateShopTab, buyWeapon, buyItem };
 
 const BASE_MANA_CAP = 50;
 const EMPTY_MANA_POOL = { red:0, blue:0, green:0, yellow:0, purple:0 };
@@ -113,6 +113,25 @@ export function canEntityCastSpell(entity, spell){
     return true;
 }
 
+export function getEnemyAttackDamageCap(enemyEntity = enemy){
+    const hpReference = Math.max(1, Math.floor(enemyEntity?.maxHp || enemyEntity?.hp || 1));
+    return Math.max(1, Math.floor(hpReference / 4));
+}
+
+export function clampEnemyAttackDamage(rawDamage, enemyEntity = enemy){
+    const normalizedDamage = Math.max(0, Math.floor(rawDamage || 0));
+    return Math.min(normalizedDamage, getEnemyAttackDamageCap(enemyEntity));
+}
+
+export function applyDamage(target, damage){
+    if(!target) return 0;
+    const normalizedDamage = Math.max(0, Math.floor(damage || 0));
+    const currentHp = Math.max(0, Math.floor(target.hp || 0));
+    const nextHp = Math.max(0, currentHp - normalizedDamage);
+    target.hp = nextHp;
+    return currentHp - nextHp;
+}
+
 function getMissingManaColor(entity, spell){
     if(!entity || !entity.mana || !spell) return null;
 
@@ -153,7 +172,10 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
         if(!isPlayerCaster && target.damageReduction > 0) {
             dmg = Math.max(1, Math.floor(dmg * (1 - target.damageReduction)));
         }
-        target.hp -= dmg;
+        if(!isPlayerCaster) {
+            dmg = clampEnemyAttackDamage(dmg, caster);
+        }
+        applyDamage(target, dmg);
 
         if(isPlayerCaster) {
             showCombatAnimation({ icon: '🔥', title: spell.name, damage: `-${Math.floor(dmg)} dégâts`, target: `→ ${target.name}` }, true);
@@ -203,7 +225,8 @@ export let player = {
     class: null,  // classe du joueur (sorcerer, assassin, templar, barbarian)
     statusEffects: {},  // effets de statut actifs (poison, stun, buffs, etc.)
     defense: 0,  // défense du joueur
-    inventory: [],  // inventaire - 1 objet max
+    inventory: [],  // inventaire des objets possédés
+    activeInventoryIndex: null,  // index de l'objet actuellement actif
     tempAttack: 0,  // bonus d'attaque temporaire
     tempDefense: 0,  // bonus de défense temporaire
     hasRevive: false,  // possède un effet de résurrection
@@ -227,6 +250,9 @@ const combatRewards = {
     weapons: [],
     gold: 0
 };
+
+const PLAYER_DEATH_DELAY_MS = 900;
+let pendingPlayerDeathTimeout = null;
 
 function resetCombatRewards(){
     combatRewards.xpGained = 0;
@@ -318,6 +344,68 @@ function showCombatResultScreen(isVictory){
     screen.classList.add('active');
 }
 
+function finalizeCombatEndUI(isVictory){
+    showCombatResultScreen(isVictory);
+
+    const statsContainer = document.querySelector('.stats-container');
+    if(statsContainer) {
+        statsContainer.style.display = 'none';
+    }
+
+    const boardEl = document.getElementById('board');
+    if(boardEl) {
+        boardEl.style.display = 'none';
+    }
+
+    const spellsContainer = document.getElementById('spells-container');
+    if(spellsContainer) {
+        spellsContainer.style.display = 'none';
+    }
+
+    const abandonBtn = document.getElementById('abandon-combat-btn');
+    if(abandonBtn) {
+        abandonBtn.style.display = 'none';
+    }
+
+    const newCombatBtn = document.getElementById('new-combat-btn');
+    if(newCombatBtn) {
+        newCombatBtn.style.display = 'block';
+    }
+
+    const tabs = document.querySelector('.tabs');
+    if(tabs) {
+        tabs.style.display = 'flex';
+    }
+
+    if(isVictory) {
+        log(`⚔️ Cliquez sur "Nouveau Combat" pour continuer ou modifiez vos sorts/armes.`);
+    } else {
+        log("⚔️ Cliquez sur \"Nouveau Combat\" pour recommencer.");
+    }
+}
+
+function showEndCombatAnimation(isVictory, options = {}){
+    const {
+        requireClick = true,
+        continueText = 'Cliquez pour continuer'
+    } = options;
+
+    const data = isVictory
+        ? { icon: '🏆', title: 'Victoire', damage: 'Combat termine !', target: 'Cliquez pour continuer' }
+        : { icon: '💀', title: 'Defaite', damage: 'Combat termine !', target: 'Cliquez pour continuer' };
+
+    if(!requireClick){
+        data.target = 'Retour a l ecran de resultat...';
+    }
+
+    showCombatAnimation(data, isVictory, {
+        requireClick,
+        continueText,
+        autoHideMs: 650,
+        onContinue: () => finalizeCombatEndUI(isVictory)
+    });
+}
+
 // règles de combat
 export const combatCost = 5;             // points nécessaires pour une attaque normale
 export const skullDamage = 1;           // dégâts infligés par crâne lors d'un match
@@ -327,6 +415,11 @@ export let enemy = { name:"Gobelin", hp:50, maxHp:50, attack:10, resistances:{},
 
 // si le joueur meurt, on restaure ses PV et réinitialise le combat
 export function restartCombat(){
+    if(pendingPlayerDeathTimeout) {
+        clearTimeout(pendingPlayerDeathTimeout);
+        pendingPlayerDeathTimeout = null;
+    }
+
     player.hp = player.maxHp;
     player.combatPoints = 0;
     player.bonusTurn = false;
@@ -364,6 +457,10 @@ export function restartCombat(){
 
 // Gérer la mort du joueur
 export function handlePlayerDeath(){
+    if(gameState.combatState === 'finished') {
+        return;
+    }
+
     // Vérifier si le joueur a un effet de résurrection
     if(player.hasRevive && player.revivePercent > 0) {
         const reviveHp = Math.floor(player.maxHp * player.revivePercent);
@@ -390,38 +487,18 @@ export function handlePlayerDeath(){
             showAttributeMenu();
         }
     }
-    saveUpdate();
-
     log("💀 Vous êtes mort ! Le combat est terminé.");
     
     // Marquer le combat comme terminé
     gameState.combatState = 'finished';
-    showCombatResultScreen(false);
-    
-    // Cacher les éléments de combat
-    document.querySelector('.stats-container').style.display = 'none';
-    document.getElementById('board').style.display = 'none';
-    document.getElementById('spells-container').style.display = 'none';
-    
-    // Cacher le bouton "Abandonner"
-    const abandonBtn = document.getElementById('abandon-combat-btn');
-    if(abandonBtn) {
-        abandonBtn.style.display = 'none';
-    }
-    
-    // Afficher le bouton "Nouveau Combat"
-    const newCombatBtn = document.getElementById('new-combat-btn');
-    if(newCombatBtn) {
-        newCombatBtn.style.display = 'block';
-    }
-    
-    // Réafficher les onglets
-    const tabs = document.querySelector('.tabs');
-    if(tabs) {
-        tabs.style.display = 'flex';
-    }
-    
-    log("⚔️ Cliquez sur \"Nouveau Combat\" pour recommencer.");
+    updateStats();
+    saveUpdate();
+
+    // Laisse le coup fatal visible avant l'écran de défaite.
+    pendingPlayerDeathTimeout = setTimeout(() => {
+        pendingPlayerDeathTimeout = null;
+        showEndCombatAnimation(false, { requireClick: false });
+    }, PLAYER_DEATH_DELAY_MS);
 }
 
 // démarre un nouveau combat
@@ -475,32 +552,7 @@ export function abandonCombat(){
     
     // Marquer le combat comme terminé
     gameState.combatState = 'finished';
-    showCombatResultScreen(false);
-    
-    // Cacher les éléments de combat
-    document.querySelector('.stats-container').style.display = 'none';
-    document.getElementById('board').style.display = 'none';
-    document.getElementById('spells-container').style.display = 'none';
-    
-    // Cacher le bouton "Abandonner"
-    const abandonBtn = document.getElementById('abandon-combat-btn');
-    if(abandonBtn) {
-        abandonBtn.style.display = 'none';
-    }
-    
-    // Afficher le bouton "Nouveau Combat"
-    const newCombatBtn = document.getElementById('new-combat-btn');
-    if(newCombatBtn) {
-        newCombatBtn.style.display = 'block';
-    }
-    
-    // Réafficher les onglets
-    const tabs = document.querySelector('.tabs');
-    if(tabs) {
-        tabs.style.display = 'flex';
-    }
-    
-    log(`⚔️ Cliquez sur "Nouveau Combat" pour recommencer ou modifiez vos sorts/armes.`);
+    showEndCombatAnimation(false);
 }
 
 
@@ -569,6 +621,7 @@ export function loadGameData() {
             player.statusEffects = loaded.statusEffects ?? player.statusEffects;
             player.defense = loaded.defense ?? player.defense;
             player.inventory = loaded.inventory ?? player.inventory;
+            player.activeInventoryIndex = loaded.activeInventoryIndex ?? player.activeInventoryIndex;
             player.tempAttack = loaded.tempAttack ?? player.tempAttack;
             player.tempDefense = loaded.tempDefense ?? player.tempDefense;
             player.hasRevive = loaded.hasRevive ?? player.hasRevive;
@@ -588,10 +641,28 @@ export function loadGameData() {
     initializeXP(player);
 }
 
+function normalizeActiveInventoryIndex() {
+    if(!Array.isArray(player.inventory) || player.inventory.length === 0) {
+        player.activeInventoryIndex = null;
+        return;
+    }
+
+    if(!Number.isInteger(player.activeInventoryIndex) || player.activeInventoryIndex < 0 || player.activeInventoryIndex >= player.inventory.length) {
+        player.activeInventoryIndex = 0;
+    }
+}
+
+function getActiveInventoryItem() {
+    normalizeActiveInventoryIndex();
+    if(player.activeInventoryIndex === null) return null;
+    return player.inventory[player.activeInventoryIndex] || null;
+}
+
 // Chargement de la sauvegarde au démarrage
 loadGameData();
 // Appliquer les effets des artefacts
 applyArtifactEffects(player);
+normalizeActiveInventoryIndex();
 clampManaToCaps(player);
 
 // interface minimale
@@ -974,19 +1045,31 @@ export function updatePlayerStatsTab(){
 
 // Construit et affiche une animation d'attaque ou de sort à partir de paramètres structurés.
 // Paramètres : { icon, title, damage?, heal?, source?, target? }
-export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true) {
+export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true, options = {}) {
     let html = `<div class="attack-icon">${icon}</div><div class="attack-title">${String(title).toUpperCase()}</div>`;
     if (damage !== null) html += `<div class="attack-damage">${damage}</div>`;
     if (heal   !== null) html += `<div class="attack-heal">${heal}</div>`;
     if (source !== null) html += `<div class="attack-source">${source}</div>`;
     if (target !== null) html += `<div class="attack-target">${target}</div>`;
-    showAttackAnimation(html, isPlayerAttack);
+    showAttackAnimation(html, isPlayerAttack, options);
 }
 
 // Mécanisme DOM bas niveau pour afficher un overlay d'animation sur la grille
-export function showAttackAnimation(text, isPlayerAttack = true) {
+export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
+    const {
+        requireClick = false,
+        continueText = 'Cliquez pour continuer',
+        onContinue = null,
+        autoHideMs = 1000
+    } = options;
+
     const boardDiv = document.getElementById('board');
-    if(!boardDiv) return;
+    if(!boardDiv) {
+        if(typeof onContinue === 'function') {
+            onContinue();
+        }
+        return;
+    }
     
     // Créer l'overlay qui cache la grille
     const overlay = document.createElement('div');
@@ -1003,19 +1086,48 @@ export function showAttackAnimation(text, isPlayerAttack = true) {
     } else {
         overlay.classList.add('enemy-attack');
     }
-    
-    overlay.appendChild(attackDiv);
-    boardDiv.appendChild(overlay);
-    
-    // Supprimer après 3 secondes minimum
-    setTimeout(() => {
+
+    const finishOverlay = () => {
+        if(!overlay.parentNode) return;
         overlay.classList.add('fade-out');
         setTimeout(() => {
             if(overlay.parentNode) {
                 overlay.parentNode.removeChild(overlay);
             }
+            if(typeof onContinue === 'function') {
+                onContinue();
+            }
         }, 500);
-    }, 1000);
+    };
+
+    if(requireClick) {
+        overlay.classList.add('requires-click');
+        const continueHint = document.createElement('div');
+        continueHint.className = 'attack-continue';
+        continueHint.textContent = continueText;
+        attackDiv.appendChild(continueHint);
+
+        overlay.setAttribute('role', 'button');
+        overlay.setAttribute('aria-label', continueText);
+        overlay.tabIndex = 0;
+        overlay.addEventListener('click', finishOverlay);
+        overlay.addEventListener('keydown', (event) => {
+            if(event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                finishOverlay();
+            }
+        });
+    }
+    
+    overlay.appendChild(attackDiv);
+    boardDiv.appendChild(overlay);
+
+    if(!requireClick) {
+        // Supprimer automatiquement après un court délai.
+        setTimeout(() => {
+            finishOverlay();
+        }, autoHideMs);
+    }
 }
 
 // -------------------------------------
@@ -1049,7 +1161,7 @@ export function useWeapon(){
     // Défense de l'ennemi
     dmg = Math.max(1, dmg - (enemy.defense || 0));
 
-    enemy.hp -= dmg;
+    applyDamage(enemy, dmg);
 
     // Vol de vie
     if(player.lifesteal > 0) {
@@ -1168,7 +1280,8 @@ export function enemyTurn(){
             if(player.damageReduction > 0) {
                 dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
             }
-            player.hp -= dmg;
+            dmg = clampEnemyAttackDamage(dmg, enemy);
+            applyDamage(player, dmg);
             const icon = getWeaponIcon(enemy.weapon.type);
             showCombatAnimation({ icon, title: enemy.weapon.name, damage: `-${dmg} dégâts`, source: enemy.name, target: '→ Vous' }, false);
             log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.`);
@@ -1225,11 +1338,12 @@ export function finishEnemyTurn(){
                 log(`⏱️ L'effet du Déferlement Arcanique se dissipe.`);
             }
         }
-        // Tour suivant : joueur
+        // Tour suivant : joueur (définir le tour avant saveUpdate pour que les boutons dépendants du tour soient corrects)
+        currentTurn = 'player';
         updateStats();
         saveUpdate();
-        currentTurn = 'player';
         updateStats(); // Pour mettre à jour le liseré
+        restartSuggestionTimer();
     }
 }
 
@@ -1255,17 +1369,14 @@ export function handleEnemyDefeated(){
 
     // Drop de l'objet de l'ennemi (si il en avait un)
     if(enemy.inventoryItem) {
-        if(player.inventory.length < 1) {
-            player.inventory.push({...enemy.inventoryItem, applied: false});
-            combatRewards.items.push(enemy.inventoryItem.name);
-            const rarityEmoji = getRarityEmoji(enemy.inventoryItem.rarity);
-            log(`${rarityEmoji} ${enemy.name} portait : ${enemy.inventoryItem.name} !`);
-            if(enemy.inventoryItem.type === 'artifact') {
-                applyArtifactEffects(player);
-                log(`✨ ${enemy.inventoryItem.description}`);
-            }
-        } else {
-            log(`🎒 ${enemy.name} portait ${enemy.inventoryItem.name} mais votre inventaire est plein.`);
+        player.inventory.push({...enemy.inventoryItem, applied: false});
+        normalizeActiveInventoryIndex();
+        combatRewards.items.push(enemy.inventoryItem.name);
+        const rarityEmoji = getRarityEmoji(enemy.inventoryItem.rarity);
+        log(`${rarityEmoji} ${enemy.name} portait : ${enemy.inventoryItem.name} !`);
+        if(enemy.inventoryItem.type === 'artifact') {
+            applyArtifactEffects(player);
+            log(`✨ ${enemy.inventoryItem.description}`);
         }
     }
 
@@ -1281,19 +1392,15 @@ export function handleEnemyDefeated(){
             // chance d'obtenir un objet (1 - weaponChance)
             const droppedItem = getRandomItem(player.level);
             if(droppedItem) {
-                if(player.inventory.length < 1) {
-                    player.inventory.push({...droppedItem, applied: false});
-                    combatRewards.items.push(droppedItem.name);
-                    const rarityEmoji = getRarityEmoji(droppedItem.rarity);
-                    log(`${rarityEmoji} Vous obtenez : ${droppedItem.name} !`);
-                    // Appliquer immédiatement les effets des artefacts
-                    if(droppedItem.type === "artifact") {
-                        applyArtifactEffects(player);
-                        log(`✨ ${droppedItem.description}`);
-                    }
-                } else {
-                    const rarityEmoji = getRarityEmoji(droppedItem.rarity);
-                    log(`${rarityEmoji} ${droppedItem.name} trouvé, mais votre inventaire est plein (jetez votre objet actuel dans l'onglet Inventaire).`);
+                player.inventory.push({...droppedItem, applied: false});
+                normalizeActiveInventoryIndex();
+                combatRewards.items.push(droppedItem.name);
+                const rarityEmoji = getRarityEmoji(droppedItem.rarity);
+                log(`${rarityEmoji} Vous obtenez : ${droppedItem.name} !`);
+                // Appliquer immédiatement les effets des artefacts
+                if(droppedItem.type === "artifact") {
+                    applyArtifactEffects(player);
+                    log(`✨ ${droppedItem.description}`);
                 }
             }
         } else {
@@ -1342,32 +1449,7 @@ export function handleEnemyDefeated(){
     
     // Marquer le combat comme terminé
     gameState.combatState = 'finished';
-    showCombatResultScreen(true);
-    
-    // Cacher les éléments de combat
-    document.querySelector('.stats-container').style.display = 'none';
-    document.getElementById('board').style.display = 'none';
-    document.getElementById('spells-container').style.display = 'none';
-    
-    // Cacher le bouton "Abandonner"
-    const abandonBtn = document.getElementById('abandon-combat-btn');
-    if(abandonBtn) {
-        abandonBtn.style.display = 'none';
-    }
-    
-    // Afficher le bouton "Nouveau Combat"
-    const newCombatBtn = document.getElementById('new-combat-btn');
-    if(newCombatBtn) {
-        newCombatBtn.style.display = 'block';
-    }
-    
-    // Réafficher les onglets
-    const tabs = document.querySelector('.tabs');
-    if(tabs) {
-        tabs.style.display = 'flex';
-    }
-    
-    log(`⚔️ Cliquez sur "Nouveau Combat" pour continuer ou modifiez vos sorts/armes.`);
+    showEndCombatAnimation(true);
 }
 
 export function grantComboMasteryRewards(xpAmount = 25){
@@ -1976,6 +2058,7 @@ export function updateWeaponsTab(){
 export function updateInventoryTab(){
     const inventoryList = document.getElementById('inventory-list');
     if(!inventoryList) return;
+    normalizeActiveInventoryIndex();
 
     inventoryList.innerHTML = '';
 
@@ -1989,40 +2072,45 @@ export function updateInventoryTab(){
         return;
     }
 
-    const item = player.inventory[0];
-    const rarityEmoji = getRarityEmoji(item.rarity);
-    const rarityColor = getRarityColor(item.rarity);
+    player.inventory.forEach((item, index) => {
+        const isActive = index === player.activeInventoryIndex;
+        const rarityEmoji = getRarityEmoji(item.rarity);
+        const rarityColor = getRarityColor(item.rarity);
 
-    const div = document.createElement('div');
-    div.className = `item-card ${item.type === 'consumable' ? 'consumable-item' : 'artifact-item'}`;
-    div.style.borderLeft = `4px solid ${rarityColor}`;
-    const paInfo = item.type === 'consumable' ? ` <span style="color:#888;font-size:0.85em;">(${item.actionPoints || 2} ⚔️)</span>` : '';
-    div.innerHTML = `
-        <div class="item-header">
-            <span class="item-name">${rarityEmoji} ${item.name}${paInfo}</span>
-            <div class="item-actions">
-                ${item.type === 'artifact' ? `<span class="artifact-badge">⚡ Actif</span>` : ''}
-                <button class="item-discard-btn" onclick="window.discardInventoryItem()">🗑️ Jeter</button>
+        const div = document.createElement('div');
+        div.className = `item-card ${item.type === 'consumable' ? 'consumable-item' : 'artifact-item'}`;
+        div.style.borderLeft = `4px solid ${rarityColor}`;
+        const paInfo = item.type === 'consumable' ? ` <span style="color:#888;font-size:0.85em;">(${item.actionPoints || 2} ⚔️)</span>` : '';
+        const lockDuringCombat = gameState.combatState === 'active' ? 'disabled' : '';
+        div.innerHTML = `
+            <div class="item-header">
+                <span class="item-name">${rarityEmoji} ${item.name}${paInfo}</span>
+                <div class="item-actions">
+                    ${isActive ? '<span class="artifact-badge">✅ Actif</span>' : `<button class="item-discard-btn" ${lockDuringCombat} onclick="window.setActiveInventoryItem(${index})">🎯 Activer</button>`}
+                    <button class="item-discard-btn" onclick="window.discardInventoryItem(${index})">🗑️ Jeter</button>
+                </div>
             </div>
-        </div>
-        <div class="item-description">${item.description}</div>
-    `;
-    inventoryList.appendChild(div);
+            <div class="item-description">${item.description}</div>
+        `;
+        inventoryList.appendChild(div);
+    });
 }
 
 export function updateItemButton(){
     const container = document.getElementById('item-button');
     if(!container) return;
     container.innerHTML = '';
+    normalizeActiveInventoryIndex();
 
     if(!player.inventory || player.inventory.length === 0) return;
 
-    const item = player.inventory[0];
+    const item = getActiveInventoryItem();
+    if(!item) return;
 
     if(item.type === 'artifact'){
         const div = document.createElement('div');
         div.style.cssText = 'padding:8px 12px;background:#e8f0fe;border:1px solid #3498db;border-radius:6px;font-size:0.85em;color:#2471a3;margin-top:4px;';
-        div.innerHTML = `⚡ ${item.name} (passif)`;
+        div.innerHTML = `⚡ ${item.name} (actif, passif)`;
         container.appendChild(div);
         return;
     }
@@ -2037,16 +2125,44 @@ export function updateItemButton(){
         btn.classList.add('disabled');
         btn.onclick = null;
     } else {
-        btn.onclick = () => useInventoryItem(item.id, 0);
+        btn.onclick = () => useInventoryItem(item.id, player.activeInventoryIndex);
     }
     container.appendChild(btn);
+}
+
+export function setActiveInventoryItem(index){
+    if(gameState.combatState === 'active'){
+        log('⚠️ Vous ne pouvez pas changer d\'objet actif pendant le combat !');
+        return;
+    }
+    if(!Array.isArray(player.inventory) || player.inventory.length === 0) return;
+    if(!Number.isInteger(index) || index < 0 || index >= player.inventory.length) return;
+    if(player.activeInventoryIndex === index) return;
+
+    player.activeInventoryIndex = index;
+    const item = player.inventory[index];
+    log(`🎯 Objet actif : ${item.name}.`);
+    updateInventoryTab();
+    updateItemButton();
+    saveUpdate();
 }
 
 export function useInventoryItem(itemId, index){
     if(gameState.combatState !== 'active'){ log("⚠️ Aucun combat en cours."); return; }
     if(currentTurn !== 'player'){ log("⚠️ Ce n'est pas votre tour."); return; }
 
-    const item = player.inventory.find(it => it.id === itemId);
+    normalizeActiveInventoryIndex();
+    const resolvedIndex = Number.isInteger(index) ? index : player.activeInventoryIndex;
+    if(!Number.isInteger(resolvedIndex) || resolvedIndex < 0 || resolvedIndex >= player.inventory.length) {
+        log("⚠️ Aucun objet actif sélectionné.");
+        return;
+    }
+
+    const item = player.inventory[resolvedIndex];
+    if(item.id !== itemId){
+        log("⚠️ L'objet actif a changé, réessayez.");
+        return;
+    }
     if(!item){ log("Objet introuvable."); return; }
 
     const pa = item.actionPoints || 2;
@@ -2056,10 +2172,11 @@ export function useInventoryItem(itemId, index){
     }
 
     player.combatPoints -= pa;
-    const result = useItem(itemId, player, enemy);
+    const result = useItem(itemId, player, enemy, resolvedIndex);
     if(result.success){
         logActiveAction(`utilise l'objet ${item.name} (cout ${pa} PA)`);
         log(result.message);
+        normalizeActiveInventoryIndex();
         updateInventoryTab();
         updateItemButton();
         saveUpdate();
@@ -2070,10 +2187,16 @@ export function useInventoryItem(itemId, index){
     }
 }
 
-export function discardInventoryItem(){
+export function discardInventoryItem(index){
     if(!player.inventory || player.inventory.length === 0) return;
-    const item = player.inventory[0];
-    player.inventory.splice(0, 1);
+    let targetIndex = Number.isInteger(index) ? index : player.activeInventoryIndex;
+    if(!Number.isInteger(targetIndex) || targetIndex < 0 || targetIndex >= player.inventory.length) {
+        targetIndex = 0;
+    }
+
+    const item = player.inventory[targetIndex];
+    player.inventory.splice(targetIndex, 1);
+    normalizeActiveInventoryIndex();
     log(`🗑️ Vous avez jeté ${item.name}.`);
     updateInventoryTab();
     updateItemButton();
@@ -2087,5 +2210,6 @@ window.equipWeapon = equipWeapon;
 window.unequipWeapon = unequipWeapon;
 window.useInventoryItem = useInventoryItem;
 window.discardInventoryItem = discardInventoryItem;
+window.setActiveInventoryItem = setActiveInventoryItem;
 window.buyWeapon = buyWeapon;
 window.buyItem = buyItem;

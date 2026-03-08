@@ -1,6 +1,6 @@
 // Gestion des effets spéciaux des sorts de classe
 
-import { player, enemy, log, saveUpdate, showCombatAnimation, finishPlayerTurn } from "./game.js";
+import { player, enemy, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage } from "./game.js";
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from "./board.js";
 import { colors, boardSize } from "./constants.js";
 
@@ -70,7 +70,7 @@ function applyMageStrike(spell) {
     const blueMana = player.mana.blue;
     const bonusDmg = Math.floor(blueMana / 3);
     const totalDmg = spell.baseDmg + bonusDmg;
-    enemy.hp -= totalDmg;
+    applyDamage(enemy, totalDmg);
     showCombatAnimation({ icon: '🔥', title: 'FRAPPE DU MAGE', damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🔥 Frappe du Mage inflige ${totalDmg} dégâts (${spell.baseDmg} base + ${bonusDmg} bonus)`);
     return true;
@@ -131,7 +131,7 @@ function applyFlameBolts(spell) {
     const projectiles = Math.floor(yellowMana / 5);
     const totalDmg = projectiles * 5;
     if(projectiles > 0) {
-        enemy.hp -= totalDmg;
+        applyDamage(enemy, totalDmg);
         player.mana.yellow = 0;
         showCombatAnimation({ icon: '⚡', title: 'PROJECTILES DE FLAMME', damage: `${projectiles} × 5 = ${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
         log(`⚡ Projectiles de Flamme tire ${projectiles} projectiles pour ${totalDmg} dégâts !`);
@@ -212,7 +212,7 @@ function applyFireballArea(spell) {
         }
     }
     
-    enemy.hp -= spell.dmg;
+    applyDamage(enemy, spell.dmg);
     renderBoard();
     showCombatAnimation({ icon: '🔥', title: 'BOULE DE FEU', damage: `-${spell.dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🔥 Boule de Feu détruit une zone 3×3 et inflige ${spell.dmg} dégâts !`);
@@ -221,7 +221,7 @@ function applyFireballArea(spell) {
 
 // ASSASSIN SPELLS
 function applySneakAttack(spell) {
-    enemy.hp -= spell.dmg;
+    applyDamage(enemy, spell.dmg);
     player.bonusTurn = true;
     showCombatAnimation({ icon: '🗡️', title: 'ATTAQUE SOURNOISE', damage: `-${spell.dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🗡️ Attaque Sournoise inflige ${spell.dmg} dégâts sans terminer le tour !`);
@@ -237,7 +237,7 @@ function applySwiftStrike(spell) {
         }
     }
     const dmg = count;
-    enemy.hp -= dmg;
+    applyDamage(enemy, dmg);
     renderBoard();
     showCombatAnimation({ icon: '⚡', title: 'FRAPPE RAPIDE', damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`⚡ Frappe Rapide convertit ${count} gemmes jaunes et inflige ${dmg} dégâts !`);
@@ -268,7 +268,7 @@ function applyShadowStrike(spell) {
         }
     }
     const dmg = count * 2;
-    enemy.hp -= dmg;
+    applyDamage(enemy, dmg);
     renderBoard();
     showCombatAnimation({ icon: '🌑', title: "FRAPPE DE L'OMBRE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🌑 Frappe de l'Ombre détruit ${count} gemmes violettes et inflige ${dmg} dégâts !`);
@@ -296,7 +296,7 @@ function applyShieldBash(spell) {
     const defense = player.defense || 0;
     const bonusDmg = Math.floor(defense / 5);
     const totalDmg = spell.baseDmg + bonusDmg;
-    enemy.hp -= totalDmg;
+    applyDamage(enemy, totalDmg);
     // Retirer les statuts négatifs
     delete player.statusEffects.poisoned;
     delete player.statusEffects.stunned;
@@ -354,7 +354,7 @@ function applyCleave(spell) {
         }
     }
     const dmg = count;
-    enemy.hp -= dmg;
+    applyDamage(enemy, dmg);
     renderBoard();
     showCombatAnimation({ icon: '🪓', title: 'ENTAILLE', damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🪓 Entaille détruit ${count} gemmes jaunes et inflige ${dmg} dégâts !`);
@@ -369,7 +369,7 @@ function applyThrowAxe(spell) {
         }
     }
     const totalDmg = spell.baseDmg + skullCount;
-    enemy.hp -= totalDmg;
+    applyDamage(enemy, totalDmg);
     showCombatAnimation({ icon: '🪓', title: 'LANCER DE HACHE', damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🪓 Lancer de Hache inflige ${totalDmg} dégâts (${spell.baseDmg} + ${skullCount} crânes) !`);
     return true;

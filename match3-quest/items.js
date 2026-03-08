@@ -129,8 +129,14 @@ export function getRarityColor(rarity) {
 }
 
 // Utiliser un objet de l'inventaire
-export function useItem(itemId, player, enemy) {
-    const itemIndex = player.inventory.findIndex(item => item.id === itemId);
+export function useItem(itemId, player, enemy, preferredIndex = null) {
+    const isPreferredIndexValid = Number.isInteger(preferredIndex)
+        && preferredIndex >= 0
+        && preferredIndex < player.inventory.length
+        && player.inventory[preferredIndex]?.id === itemId;
+    const itemIndex = isPreferredIndexValid
+        ? preferredIndex
+        : player.inventory.findIndex(item => item.id === itemId);
     if(itemIndex === -1) return {success: false, message: "Objet introuvable"};
     
     const item = player.inventory[itemIndex];

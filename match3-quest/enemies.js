@@ -111,7 +111,8 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
     const baseAtk = 5 + enemyLevel * 4;
 
     const hp = Math.floor(baseHp * (stats.hpMult || 1));
-    const atk = Math.floor(baseAtk * (stats.atkMult || 1));
+    const maxAttackFromHp = Math.max(1, Math.floor(hp / 4));
+    const atk = Math.min(Math.floor(baseAtk * (stats.atkMult || 1)), maxAttackFromHp);
 
     let enemyWeapon = null;
     if(template.hasWeapon !== false){

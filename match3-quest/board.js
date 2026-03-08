@@ -1,4 +1,4 @@
-import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, addManaForColor, logActiveAction } from "./game.js";
+import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, addManaForColor, logActiveAction, clampEnemyAttackDamage, applyDamage } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 import {
     hasMatches as hasMatchesOnBoard,
@@ -24,6 +24,33 @@ let pendingSwap = null;
 let tileClickInterceptor = null;
 let tileHighlightPredicate = null;
 let boardDropProbabilities = null;
+let pendingComboAnimations = 0;
+let boardSettledCallbacks = [];
+
+const SKULL_ATTACK_BONUS_DIVISOR = 10;
+const SKULL_ATTACK_BONUS_CAP = 6;
+
+function onBoardSettled(callback){
+    if(typeof callback !== 'function') return;
+    if(pendingComboAnimations <= 0){
+        callback();
+        return;
+    }
+    boardSettledCallbacks.push(callback);
+}
+
+function beginComboAnimation(){
+    pendingComboAnimations++;
+}
+
+function endComboAnimation(){
+    pendingComboAnimations = Math.max(0, pendingComboAnimations - 1);
+    if(pendingComboAnimations > 0) return;
+
+    const callbacks = boardSettledCallbacks;
+    boardSettledCallbacks = [];
+    callbacks.forEach(cb => cb());
+}
 
 export function setGameStarted(started){
     gameStarted = started;
@@ -275,6 +302,7 @@ export function swapTiles(i,j){
 }
 
 export function renderBoard(skipCleanup = false){
+    startSuggestionTimer();
     const boardDiv=document.getElementById('board');
     if(!boardDiv){
         console.error('Board element not found in renderBoard!');
@@ -309,6 +337,13 @@ export function checkForMatchesOnly(){
 }
 
 export function checkMatches(){
+    if(pendingComboAnimations > 0){
+        onBoardSettled(() => {
+            setTimeout(checkMatches, 0);
+        });
+        return;
+    }
+
     // Ne traiter les matchs que si le jeu a vraiment commencé
     if(!gameStarted){
         renderBoard(); // Seulement redessiner sans traiter les matchs
@@ -363,14 +398,21 @@ export function checkMatches(){
         } else if(info.type==='skull'){
             const attacker = currentTurn === 'player' ? player : enemy;
             const opponent = currentTurn === 'player' ? enemy : player;
-            const attackBonus = Math.floor((attacker.attack || 0) / 5);
+            // Diminution des pics de degats des cranes a haut niveau.
+            const attackBonus = Math.min(
+                SKULL_ATTACK_BONUS_CAP,
+                Math.floor((attacker.attack || 0) / SKULL_ATTACK_BONUS_DIVISOR)
+            );
             const rawDmg = info.len * (skullDamage + attackBonus);
             const defReduction = Math.floor((opponent.defense || 0) / 2);
             let dmg = Math.max(1, rawDmg - defReduction);
             if(opponent === player && player.damageReduction > 0) {
                 dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
             }
-            opponent.hp -= dmg;
+            if(attacker === enemy) {
+                dmg = clampEnemyAttackDamage(dmg, enemy);
+            }
+            applyDamage(opponent, dmg);
             log(`💀 Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}`);
             // Bonus de tour pour 4+ crânes
             if(info.len>=4){ 
@@ -457,8 +499,10 @@ export function checkMatches(){
             pendingSwap.resolvedAtLeastOneMatch = true;
         }
         saveUpdate();
-        // Le délai doit être suffisant pour toutes les animations
-        setTimeout(checkMatches, 1500); // Augmenté pour tenir compte du clignotement (800ms) + disparition + chute
+        // Attendre la fin reelle des animations de chute avant de relancer la detection.
+        onBoardSettled(() => {
+            setTimeout(checkMatches, 0);
+        });
     }
 }
 
@@ -564,6 +608,7 @@ function animateGravityGlide(tiles, movedTileOffsets){
 }
 
 export function highlightCombo(indices, info){
+    beginComboAnimation();
     const tiles=document.getElementById('board').children;
     indices.forEach(i=>tiles[i].classList.add('match'));
     // message personnalisé
@@ -642,6 +687,7 @@ export function highlightCombo(indices, info){
                         tiles[idx].classList.remove('fall');
                     }
                 }
+                endComboAnimation();
             }, 700 + (boardSize * 50));
         }, 150);
         }, 800); // Durée du clignotement (2 cycles de 0.4s)
@@ -650,16 +696,21 @@ export function highlightCombo(indices, info){
 
 // Fonctions pour gérer la suggestion de match
 function startSuggestionTimer(){
-    // Ne démarrer le timer que si c'est le tour du joueur
-    if(currentTurn !== 'player') return;
-    
     // Arrêter l'ancien timer s'il existe
     clearSuggestionTimer();
+
+    // Ne démarrer le timer que si c'est le tour du joueur et qu'aucune tuile n'est sélectionnée
+    if(currentTurn !== 'player' || selected !== null) return;
     
     // Démarrer un nouveau timer
     suggestionTimer = setTimeout(() => {
         showMatchSuggestion();
     }, 3000); // 3 secondes
+}
+
+export function restartSuggestionTimer(){
+    clearSuggestion();
+    startSuggestionTimer();
 }
 
 function clearSuggestionTimer(){

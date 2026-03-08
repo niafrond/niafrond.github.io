@@ -45,11 +45,6 @@ export function buyItem(itemId) {
     const item = allItems.find(i => i.id === itemId);
     if (!item) return;
 
-    if (player.inventory && player.inventory.length > 0) {
-        log('⚠️ Votre inventaire est plein ! Jetez votre objet actuel d\'abord.');
-        return;
-    }
-
     const price = getItemPrice(item);
     if (player.gold < price) {
         log(`⚠️ Pas assez d'or ! Coût: ${price} 💰, vous avez: ${player.gold} 💰`);
@@ -120,16 +115,12 @@ export function updateShopTab() {
     shopContent.appendChild(weaponsSection);
 
     // === Section Objets ===
-    const inventoryFull = player.inventory && player.inventory.length > 0;
     const shopItems = allItems
         .filter(i => i.minLevel <= player.level + 2)
         .sort((a, b) => a.minLevel - b.minLevel);
 
     const itemsSection = document.createElement('div');
     itemsSection.innerHTML = '<h3 class="shop-section-title">🎒 Objets</h3>';
-    if (inventoryFull) {
-        itemsSection.innerHTML += '<p class="shop-empty">Inventaire plein — jetez votre objet actuel pour en acheter un.</p>';
-    }
 
     shopItems.forEach(item => {
         const price = getItemPrice(item);
@@ -150,9 +141,9 @@ export function updateShopTab() {
             <div class="shop-weapon-right">
                 <span class="shop-price-tag">${price} 💰</span>
                 <button class="weapon-action"
-                    ${inventoryFull || !canAfford ? 'disabled' : ''}
+                    ${!canAfford ? 'disabled' : ''}
                     onclick="window.buyItem('${item.id}')">
-                    ${inventoryFull ? '🔒 Plein' : canAfford ? '🛒 Acheter' : '❌ Insuff.'}
+                    ${canAfford ? '🛒 Acheter' : '❌ Insuff.'}
                 </button>
             </div>
         `;
