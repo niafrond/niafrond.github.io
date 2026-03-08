@@ -202,7 +202,8 @@ export let player = {
     tempDefense: 0,  // bonus de défense temporaire
     hasRevive: false,  // possède un effet de résurrection
     revivePercent: 0,  // pourcentage de HP à la résurrection
-    unspentLevelPoints: 0 // points d'attribut a depenser apres les gains de niveaux
+    unspentLevelPoints: 0, // points d'attribut a depenser apres les gains de niveaux
+    gold: 0  // pièces d'or accumulées
 };
 
 // tour actuel
@@ -217,7 +218,8 @@ const combatRewards = {
     xpGained: 0,
     xpApplied: false,
     items: [],
-    weapons: []
+    weapons: [],
+    gold: 0
 };
 
 function resetCombatRewards(){
@@ -225,6 +227,7 @@ function resetCombatRewards(){
     combatRewards.xpApplied = false;
     combatRewards.items = [];
     combatRewards.weapons = [];
+    combatRewards.gold = 0;
 }
 
 function queueCombatXP(xpAmount){
@@ -296,9 +299,14 @@ function showCombatResultScreen(isVictory){
         ? combatRewards.weapons.map(name => `<li>Arme: ${name}</li>`).join('')
         : '<li>Arme: Aucune</li>';
 
+    const goldLine = combatRewards.gold > 0
+        ? `<li>💰 Or: +${combatRewards.gold} pièce${combatRewards.gold > 1 ? 's' : ''}</li>`
+        : '';
+
     summary.innerHTML = `
         <div class="battle-result-xp">XP gagnee: ${combatRewards.xpGained}</div>
         <ul class="battle-result-loot">
+            ${goldLine}
             ${itemLines}
             ${weaponLines}
         </ul>
@@ -558,6 +566,7 @@ export function loadGameData() {
             player.hasRevive = loaded.hasRevive ?? player.hasRevive;
             player.revivePercent = loaded.revivePercent ?? player.revivePercent;
             player.unspentLevelPoints = loaded.unspentLevelPoints ?? player.unspentLevelPoints;
+            player.gold = loaded.gold ?? player.gold;
             clampManaToCaps(player);
             console.log('💾 Données du joueur chargées depuis le localStorage');
             if (player.class) {
@@ -809,6 +818,7 @@ export function saveUpdate(){
     createSpellButtons();
     createWeaponButton();
     updatePlayerStatsTab();
+    updateShopTab();
 }
 
 // Fonction pour effacer la sauvegarde
@@ -1148,6 +1158,15 @@ export function handleEnemyDefeated(){
     queueCombatXP(xpGain);
     log(`⭐ Vous gagnez ${xpGain} XP !`);
 
+    // Pièces d'or : base liée au niveau de l'ennemi + part aléatoire
+    const enemyLvl = enemy.level || player.level || 1;
+    const goldBase = enemyLvl * 3;
+    const goldBonus = Math.floor(Math.random() * (enemyLvl * 2 + 5)) + 1;
+    const goldEarned = goldBase + goldBonus;
+    player.gold = (player.gold || 0) + goldEarned;
+    combatRewards.gold = goldEarned;
+    log(`💰 Vous ramassez ${goldEarned} pièce${goldEarned > 1 ? 's' : ''} d'or !`);
+
     // Drop de l'objet de l'ennemi (si il en avait un)
     if(enemy.inventoryItem) {
         if(player.inventory.length < 1) {
@@ -1205,7 +1224,11 @@ export function handleEnemyDefeated(){
                     const icon = getWeaponIcon(randomWeapon.type);
                     log(`${icon} Vous obtenez : ${randomWeapon.name} !`);
                 } else {
-                    log(`💰 Vous obtenez quelques pièces d'or (arme déjà possédée).`);
+                    // Arme déjà possédée : convertir en or
+                    const bonusGold = Math.floor(randomWeapon.minLevel * 2 + 5);
+                    player.gold = (player.gold || 0) + bonusGold;
+                    combatRewards.gold += bonusGold;
+                    log(`💰 Arme déjà possédée, convertie en ${bonusGold} pièce${bonusGold > 1 ? 's' : ''} d'or.`);
                 }
             }
         }
@@ -1848,9 +1871,93 @@ export function updateWeaponsTab(){
     updateInventoryTab();
 }
 
-// -------------------------------------
-// -------------------------------------
-// Inventaire (slot unique)
+// =====================================
+// Boutique
+// =====================================
+
+function getWeaponPrice(weapon) {
+    return Math.floor(weapon.minLevel * 15 + weapon.damage * 2);
+}
+
+export function buyWeapon(weaponId) {
+    if (gameState.combatState === 'active') {
+        log('⚠️ La boutique est inaccessible pendant le combat !');
+        return;
+    }
+    const weapon = allWeapons.find(w => w.id === weaponId);
+    if (!weapon) return;
+
+    if (player.weapons.some(w => w.id === weaponId)) {
+        log('⚠️ Vous possédez déjà cette arme.');
+        return;
+    }
+
+    const price = getWeaponPrice(weapon);
+    if (player.gold < price) {
+        log(`⚠️ Pas assez d'or ! Coût: ${price} 💰, vous avez: ${player.gold} 💰`);
+        return;
+    }
+
+    player.gold -= price;
+    player.weapons.push(weapon);
+    updateAvailableWeapons();
+    saveUpdate();
+    log(`🛒 ${weapon.name} achetée pour ${price} pièces d'or !`);
+}
+
+export function updateShopTab() {
+    const shopContent = document.getElementById('shop-content');
+    const shopGold = document.getElementById('shop-gold');
+    if (!shopContent) return;
+    if (shopGold) shopGold.textContent = player.gold;
+
+    const minLvl = Math.max(1, player.level - 2);
+    const maxLvl = player.level + 4;
+    const damageThreshold = player.level * 4;
+    const shopWeapons = allWeapons
+        .filter(w => {
+            if (w.minLevel < minLvl || w.minLevel > maxLvl) return false;
+            // Exclure si le niveau ET les dégâts sont trop inférieurs au niveau du joueur
+            if (w.minLevel < player.level && w.damage < damageThreshold) return false;
+            return true;
+        })
+        .sort((a, b) => a.minLevel - b.minLevel);
+
+    shopContent.innerHTML = '';
+
+    if (shopWeapons.length === 0) {
+        shopContent.innerHTML = '<p>Aucune arme disponible pour votre niveau.</p>';
+        return;
+    }
+
+    shopWeapons.forEach(weapon => {
+        const price = getWeaponPrice(weapon);
+        const isOwned = player.weapons.some(w => w.id === weapon.id);
+        const canAfford = player.gold >= price;
+        const icon = getWeaponIcon(weapon.type);
+
+        const div = document.createElement('div');
+        div.className = 'weapon-item shop-weapon' + (isOwned ? ' shop-weapon-owned' : '');
+        div.innerHTML = `
+            <span class="weapon-icon">${icon}</span>
+            <div class="weapon-details">
+                <span class="weapon-name">${weapon.name}</span>
+                <span class="weapon-stats">${weapon.damage} 💀 • ${weapon.actionPoints} ⚔️ • Niv. ${weapon.minLevel}</span>
+                <span class="weapon-description">${weapon.description}</span>
+            </div>
+            <div class="shop-weapon-right">
+                <span class="shop-price-tag">${price} 💰</span>
+                <button class="weapon-action"
+                    ${isOwned || !canAfford ? 'disabled' : ''}
+                    onclick="window.buyWeapon('${weapon.id}')">
+                    ${isOwned ? '✅ Obtenue' : canAfford ? '🛒 Acheter' : '❌ Insuff.'}
+                </button>
+            </div>
+        `;
+        shopContent.appendChild(div);
+    });
+}
+
 export function updateInventoryTab(){
     const inventoryList = document.getElementById('inventory-list');
     if(!inventoryList) return;
@@ -1923,3 +2030,4 @@ window.equipWeapon = equipWeapon;
 window.unequipWeapon = unequipWeapon;
 window.useInventoryItem = useInventoryItem;
 window.discardInventoryItem = discardInventoryItem;
+window.buyWeapon = buyWeapon;

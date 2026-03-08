@@ -117,6 +117,7 @@
         <button class="tab-btn active" onclick="switchTab('combat')">⚔️ Combat</button>
         <button class="tab-btn" onclick="switchTab('weapons')">🎒 Inventaire</button>
         <button class="tab-btn" onclick="switchTab('spells')">✨ Sorts</button>
+        <button class="tab-btn" onclick="switchTab('boutique')">🛒 Boutique</button>
         <button class="tab-btn" onclick="switchTab('stats')">📊 Stats</button>
     </div>
     
@@ -169,6 +170,16 @@
         <div id="inventory-list"></div>
     </div>
     
+    <!-- Onglet Boutique -->
+    <div id="tab-boutique" class="tab-panel">
+        <div class="shop-header">
+            <h2>🛒 Boutique</h2>
+            <div class="shop-gold-display">💰 Or disponible : <strong id="shop-gold">0</strong></div>
+        </div>
+        <p class="shop-subtitle">Armes disponibles selon votre niveau actuel.</p>
+        <div id="shop-content"></div>
+    </div>
+
     <!-- Onglet Stats -->
     <div id="tab-stats" class="tab-panel">
         <h2>Statistiques</h2>
@@ -189,9 +200,12 @@
         // Importer gameState depuis game.js
         import('./game.js').then(module => {
             // Empêcher l'accès aux onglets Armes et Sorts pendant le combat
-            if(module.gameState.combatState === 'active' && (tabName === 'weapons' || tabName === 'spells')) {
-                module.log('⚠️ Vous ne pouvez pas modifier vos armes et sorts pendant le combat !');
+            if(module.gameState.combatState === 'active' && (tabName === 'weapons' || tabName === 'spells' || tabName === 'boutique')) {
+                module.log('⚠️ Vous ne pouvez pas accéder à cet onglet pendant le combat !');
                 return;
+            }
+            if(tabName === 'boutique') {
+                module.updateShopTab();
             }
             
             document.querySelectorAll('.tab-panel').forEach(panel => {
@@ -207,7 +221,7 @@
     window.switchTab = switchTab;
 </script>
 <script type="module">
-    import { equipSpell, unequipSpell, equipWeapon, unequipWeapon, abandonCombat, useInventoryItem, discardInventoryItem } from './game.js';
+    import { equipSpell, unequipSpell, equipWeapon, unequipWeapon, abandonCombat, useInventoryItem, discardInventoryItem, buyWeapon } from './game.js';
     window.equipSpell = equipSpell;
     window.unequipSpell = unequipSpell;
     window.equipWeapon = equipWeapon;
@@ -215,6 +229,7 @@
     window.abandonCombat = abandonCombat;
     window.useInventoryItem = useInventoryItem;
     window.discardInventoryItem = discardInventoryItem;
+    window.buyWeapon = buyWeapon;
     
     // Attacher le listener au bouton Abandonner
     document.getElementById('abandon-combat-btn')?.addEventListener('click', () => {
