@@ -1026,3 +1026,103 @@ progress.enemy-bar::-webkit-progress-value {
     font-style: italic;
     margin-top: 5px;
 }
+
+/* Modale de montée de niveau */
+.levelup-content {
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.levelup-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.levelup-header h2 {
+    color: #27ae60;
+    margin: 0;
+    font-size: 1.8em;
+}
+
+.levelup-subtitle {
+    color: #7f8c8d;
+    font-size: 0.95em;
+    margin: 8px 0 0 0;
+}
+
+.attributes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.attribute-card {
+    background: linear-gradient(135deg, #f8f9fa, #fff);
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.attribute-card:hover {
+    border-color: #3498db;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(52, 152, 219, 0.2);
+}
+
+.attr-icon {
+    font-size: 2.5em;
+    margin-bottom: 8px;
+}
+
+.attr-name {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.attr-description {
+    text-align: left;
+    font-size: 0.85em;
+    color: #555;
+}
+
+.attr-description p {
+    margin: 8px 0;
+}
+
+.attr-description ul {
+    margin: 5px 0 10px 20px;
+    padding: 0;
+}
+
+.attr-description li {
+    margin: 3px 0;
+    color: #666;
+}
+
+.attr-classes {
+    font-size: 0.85em;
+    color: #9b59b6;
+    font-weight: 500;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #ecf0f1;
+}
+
+@media (max-width: 768px) {
+    .attributes-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .levelup-content {
+        max-width: 95vw;
+    }
+}

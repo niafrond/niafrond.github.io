@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Niafrond Apps</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+        }
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .app-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+        }
+        .app-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+        }
+        .app-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+        .app-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+        .app-description {
+            color: #718096;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        .app-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 12px;
+            align-self: flex-start;
+        }
+        .app-badge.pwa {
+            background: #48bb78;
+        }
+        .app-badge.game {
+            background: #ed8936;
+        }
+        footer {
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+            margin-top: 40px;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+            .apps-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌟 Niafrond Apps</h1>
+        <p class="subtitle">Collection de mini-applications web</p>
+        
+        <div class="apps-grid">
+            <!-- Match3 Quest -->
+            <a href="match3-quest/index.html" class="app-card">
+                <div class="app-icon">🎮</div>
+                <div class="app-title">Match3 Quest</div>
+                <div class="app-description">
+                    Jeu match-3 RPG avec système de classes, sorts, armes et IA ennemie. 
+                    Combattez, progressez et débloquez de nouvelles capacités !
+                </div>
+                <span class="app-badge game">Jeu RPG</span>
+            </a>
+
+            <!-- Switch Enfants -->
+            <a href="lavevaisselle/index.html" class="app-card">
+                <div class="app-icon">📱</div>
+                <div class="app-title">Switch Enfants</div>
+                <div class="app-description">
+                    App mobile pour gérer les tours de vaisselle avec historique local, 
+                    capture photo et fonctionnement hors-ligne.
+                </div>
+                <span class="app-badge pwa">PWA</span>
+            </a>
+
+            <!-- Générateur Recette v1 -->
+            <a href="generateur-recette.html" class="app-card">
+                <div class="app-icon">📝</div>
+                <div class="app-title">Générateur de Recette</div>
+                <div class="app-description">
+                    Outil de formatage et extraction de recettes depuis du texte ou des URLs. 
+                    Supporte JSON-LD et parseurs personnalisés.
+                </div>
+                <span class="app-badge">Utilitaire</span>
+            </a>
+
+            <!-- Générateur Recette v2 -->
+            <a href="generateur-recette2.html" class="app-card">
+                <div class="app-icon">📋</div>
+                <div class="app-title">Générateur Recette v2</div>
+                <div class="app-description">
+                    Version améliorée du générateur avec fonctionnalités étendues 
+                    et interface optimisée.
+                </div>
+                <span class="app-badge">Utilitaire</span>
+            </a>
+        </div>
+
+        <footer>
+            <p>💾 Les données sont sauvegardées localement (localStorage)</p>
+            <p>Made with ❤️</p>
+        </footer>
+    </div>
+</body>
+</html>

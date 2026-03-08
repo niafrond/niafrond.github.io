@@ -326,7 +326,7 @@ export function updateStats(){
                     <span class="mana-dot mana-purple" title="${player.mana.purple}"></span>${player.mana.purple}
                 </div>
             </div>
-            <div class="stat"><strong>CP:</strong> ${player.combatPoints}</div>`;
+            <div class="stat"><strong>⚔️:</strong> ${player.combatPoints}</div>`;
         
         // Ajouter/retirer classe pour liseré selon le tour actuel
         playerDiv.classList.toggle('active-turn', currentTurn === 'player');
@@ -362,7 +362,7 @@ export function updateStats(){
             </div>
         </div>
         <div class="stat"><strong>Atk:</strong> ${enemy.attack}</div>
-        <div class="stat"><strong>CP:</strong> ${enemy.combatPoints}</div>`;
+        <div class="stat"><strong>⚔️:</strong> ${enemy.combatPoints}</div>`;
     
     updateEnemySpells();
 }
@@ -904,17 +904,52 @@ export function handleEnemyDefeated(){
 }
 
 export function showAttributeMenu(){
-    const choices=["strength","agility","intelligence","stamina","morale"];
-    let choice=prompt(
-        "Attribuez 1 point d'attribut:\n1. Strength\n2. Agility\n3. Intelligence\n4. Stamina\n5. Morale",
-        "1"
-    );
-    let idx=parseInt(choice)-1;
-    if(idx<0||idx>=choices.length){ log("Choix invalide."); return; }
-    let attr=choices[idx];
+    // Afficher la modale de montée de niveau
+    const modal = document.getElementById('levelup-modal');
+    const newLevelSpan = document.getElementById('new-level');
+    
+    if(!modal || !newLevelSpan) {
+        console.error('Modale de montée de niveau introuvable');
+        return;
+    }
+    
+    newLevelSpan.textContent = player.level;
+    modal.style.display = 'flex';
+    
+    // Attacher les événements aux cartes d'attributs
+    const attributeCards = modal.querySelectorAll('.attribute-card');
+    
+    // Supprimer les anciens listeners
+    attributeCards.forEach(card => {
+        const newCard = card.cloneNode(true);
+        card.parentNode.replaceChild(newCard, card);
+    });
+    
+    // Ajouter les nouveaux listeners
+    const freshCards = modal.querySelectorAll('.attribute-card');
+    freshCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const attr = card.dataset.attr;
+            if(attr) {
+                selectAttribute(attr);
+                modal.style.display = 'none';
+            }
+        });
+    });
+}
+
+function selectAttribute(attr) {
+    const attrNames = {
+        'strength': 'Battle',
+        'agility': 'Defense',
+        'intelligence': 'Cunning',
+        'stamina': 'Stamina',
+        'morale': 'Morale'
+    };
+    
     player.attributes[attr]++;
     applyAttributeBonus(attr);
-    log(`📈 +1 ${attr}`);
+    log(`📈 +1 ${attrNames[attr]}`);
     saveUpdate();
 }
 

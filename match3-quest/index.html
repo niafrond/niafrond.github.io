@@ -17,6 +17,88 @@
     </div>
 </div>
 
+<!-- Modal de montée de niveau -->
+<div id="levelup-modal" class="modal">
+    <div class="modal-content levelup-content">
+        <div class="levelup-header">
+            <h2>🎉 Niveau <span id="new-level"></span> atteint !</h2>
+            <p class="levelup-subtitle">Choisissez un attribut à améliorer</p>
+        </div>
+        
+        <div class="attributes-grid">
+            <div class="attribute-card" data-attr="strength">
+                <div class="attr-icon">⚔️</div>
+                <div class="attr-name">Battle</div>
+                <div class="attr-description">
+                    <p><strong>Augmente les dégâts physiques</strong></p>
+                    <ul>
+                        <li>+2 dégâts par point</li>
+                        <li>Améliore les crânes et armes</li>
+                        <li>Sorts basés sur l'attaque</li>
+                    </ul>
+                    <p class="attr-classes">🪓 Barbarian • 🗡️ Assassin</p>
+                </div>
+            </div>
+            
+            <div class="attribute-card" data-attr="agility">
+                <div class="attr-icon">🛡️</div>
+                <div class="attr-name">Defense</div>
+                <div class="attr-description">
+                    <p><strong>Réduit les dégâts reçus</strong></p>
+                    <ul>
+                        <li>+2 défense par point</li>
+                        <li>Réduit les dégâts physiques</li>
+                        <li>Améliore sorts défensifs</li>
+                    </ul>
+                    <p class="attr-classes">🛡️ Templar • Tanks</p>
+                </div>
+            </div>
+            
+            <div class="attribute-card" data-attr="intelligence">
+                <div class="attr-icon">🧠</div>
+                <div class="attr-name">Cunning</div>
+                <div class="attr-description">
+                    <p><strong>Effets spéciaux et critiques</strong></p>
+                    <ul>
+                        <li>+10 HP max et +5 mana</li>
+                        <li>Chance d'effets d'armes</li>
+                        <li>Coups critiques</li>
+                    </ul>
+                    <p class="attr-classes">🗡️ Assassin • Critiques</p>
+                </div>
+            </div>
+            
+            <div class="attribute-card" data-attr="stamina">
+                <div class="attr-icon">💪</div>
+                <div class="attr-name">Stamina</div>
+                <div class="attr-description">
+                    <p><strong>Augmente la survie</strong></p>
+                    <ul>
+                        <li>+15 HP max par point</li>
+                        <li>Résistance accrue</li>
+                        <li>Combat prolongé</li>
+                    </ul>
+                    <p class="attr-classes">Toutes classes</p>
+                </div>
+            </div>
+            
+            <div class="attribute-card" data-attr="morale">
+                <div class="attr-icon">🔮</div>
+                <div class="attr-name">Morale</div>
+                <div class="attr-description">
+                    <p><strong>Résiste aux effets négatifs</strong></p>
+                    <ul>
+                        <li>+3 attaque par point</li>
+                        <li>Réduit poison, confusion</li>
+                        <li>Prolonge buffs</li>
+                    </ul>
+                    <p class="attr-classes">🛡️ Templar • 🪓 Barbarian</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="game-container">    
     
     <!-- Onglet Combat -->
