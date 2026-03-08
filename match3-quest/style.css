@@ -983,6 +983,19 @@ progress.enemy-bar::-webkit-progress-value {
     opacity: 0.55;
     background: #f0f0f0;
 }
+.shop-section-title {
+    margin: 12px 0 6px 0;
+    font-size: 0.95em;
+    color: #555;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 4px;
+}
+.shop-empty {
+    font-size: 0.85em;
+    color: #999;
+    font-style: italic;
+    margin: 4px 0 8px 0;
+}
 
 /* Modal pour la sélection de classe */
 .modal {

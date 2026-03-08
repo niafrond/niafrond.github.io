@@ -37,6 +37,39 @@ export const allItems = [
      description:"Augmente mana max de 20 (permanent)", effect:{permMaxMana:20}},
     {id:"dragonHeart", name:"Cœur de Dragon", type:"artifact", minLevel:17, rarity:"legendary",
      description:"Augmente HP max de 50 et attaque de 10 (permanent)", effect:{permMaxHp:50, permAttack:10}},
+
+     {id:"ringOfPrecision", name:"Anneau de Précision", type:"artifact", minLevel:9, rarity:"rare",
+ description:"Augmente les chances de critique de 5% (permanent)", effect:{permCritChance:5}},
+
+{id:"bootsOfSwiftness", name:"Bottes de Célérité", type:"artifact", minLevel:11, rarity:"rare",
+ description:"Commence chaque combat avec +1 point d'action", effect:{permStartActionPoints:1}},
+
+{id:"orbOfWisdom", name:"Orbe de Sagesse", type:"artifact", minLevel:12, rarity:"rare",
+ description:"Augmente mana max de 10 (permanent)", effect:{permMaxMana:10}},
+ {id:"timeWarpPotion", name:"Potion de Distorsion Temporelle", type:"consumable", minLevel:11, rarity:"rare", actionPoints:2,
+ description:"Jouez immédiatement un tour supplémentaire", effect:{extraTurn:1}},
+
+{id:"vampiricPotion", name:"Potion Vampirique", type:"consumable", minLevel:10, rarity:"rare", actionPoints:2,
+ description:"Vous récupérez 30% des dégâts infligés en HP pour ce combat", effect:{lifesteal:0.3}},
+
+{id:"arcaneSurgePotion", name:"Potion de Déferlement Arcanique", type:"consumable", minLevel:12, rarity:"rare", actionPoints:3,
+ description:"Double le mana gagné pendant 3 tours", effect:{manaMultiplier:2, duration:3}},
+ {id:"berserkPotion", name:"Potion de Berserk", type:"consumable", minLevel:6, rarity:"uncommon", actionPoints:2,
+ description:"Augmente attaque de 20 mais réduit défense de 10 pour ce combat", effect:{tempAttack:20, tempDefense:-10}},
+
+{id:"clarityPotion", name:"Potion de Clarté", type:"consumable", minLevel:5, rarity:"uncommon", actionPoints:1,
+ description:"Restaure 40 mana d'une couleur aléatoire", effect:{randomMana:40}},
+
+{id:"stoneSkinPotion", name:"Potion de Peau de Pierre", type:"consumable", minLevel:7, rarity:"uncommon", actionPoints:2,
+ description:"Réduit les dégâts subis de 20% pendant ce combat", effect:{damageReduction:0.2}},
+ {id:"focusPotion", name:"Potion de Concentration", type:"consumable", minLevel:2, rarity:"common", actionPoints:1,
+ description:"Augmente les chances de critique de 10% pour ce combat", effect:{critChance:10}},
+
+{id:"swiftPotion", name:"Potion de Rapidité", type:"consumable", minLevel:2, rarity:"common", actionPoints:1,
+ description:"Accorde 1 point d'action supplémentaire ce tour", effect:{gainActionPoints:1}},
+
+{id:"regenPotion", name:"Potion de Régénération", type:"consumable", minLevel:3, rarity:"common", actionPoints:2,
+ description:"Restaure 10 HP par tour pendant 3 tours", effect:{regen:10, duration:3}},
 ];
 
 // Chances de drop selon la rareté

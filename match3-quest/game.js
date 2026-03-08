@@ -7,6 +7,7 @@ import { enemyMakeMove, setGameStarted } from "./board.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
 import { getRandomItem, getRarityEmoji, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
 import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
+import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
 
 const BASE_MANA_CAP = 50;
 const EMPTY_MANA_POOL = { red:0, blue:0, green:0, yellow:0, purple:0 };
@@ -1909,91 +1910,8 @@ export function updateWeaponsTab(){
 }
 
 // =====================================
-// Boutique
+// (Boutique déplacée dans shop.js)
 // =====================================
-
-function getWeaponPrice(weapon) {
-    return Math.floor(weapon.minLevel * 15 + weapon.damage * 2);
-}
-
-export function buyWeapon(weaponId) {
-    if (gameState.combatState === 'active') {
-        log('⚠️ La boutique est inaccessible pendant le combat !');
-        return;
-    }
-    const weapon = allWeapons.find(w => w.id === weaponId);
-    if (!weapon) return;
-
-    if (player.weapons.some(w => w.id === weaponId)) {
-        log('⚠️ Vous possédez déjà cette arme.');
-        return;
-    }
-
-    const price = getWeaponPrice(weapon);
-    if (player.gold < price) {
-        log(`⚠️ Pas assez d'or ! Coût: ${price} 💰, vous avez: ${player.gold} 💰`);
-        return;
-    }
-
-    player.gold -= price;
-    player.weapons.push(weapon);
-    updateAvailableWeapons();
-    saveUpdate();
-    log(`🛒 ${weapon.name} achetée pour ${price} pièces d'or !`);
-}
-
-export function updateShopTab() {
-    const shopContent = document.getElementById('shop-content');
-    const shopGold = document.getElementById('shop-gold');
-    if (!shopContent) return;
-    if (shopGold) shopGold.textContent = player.gold;
-
-    const minLvl = Math.max(1, player.level - 2);
-    const maxLvl = player.level + 4;
-    const damageThreshold = player.level * 4;
-    const shopWeapons = allWeapons
-        .filter(w => {
-            if (w.minLevel < minLvl || w.minLevel > maxLvl) return false;
-            // Exclure si le niveau ET les dégâts sont trop inférieurs au niveau du joueur
-            if (w.minLevel < player.level && w.damage < damageThreshold) return false;
-            return true;
-        })
-        .sort((a, b) => a.minLevel - b.minLevel);
-
-    shopContent.innerHTML = '';
-
-    if (shopWeapons.length === 0) {
-        shopContent.innerHTML = '<p>Aucune arme disponible pour votre niveau.</p>';
-        return;
-    }
-
-    shopWeapons.forEach(weapon => {
-        const price = getWeaponPrice(weapon);
-        const isOwned = player.weapons.some(w => w.id === weapon.id);
-        const canAfford = player.gold >= price;
-        const icon = getWeaponIcon(weapon.type);
-
-        const div = document.createElement('div');
-        div.className = 'weapon-item shop-weapon' + (isOwned ? ' shop-weapon-owned' : '');
-        div.innerHTML = `
-            <span class="weapon-icon">${icon}</span>
-            <div class="weapon-details">
-                <span class="weapon-name">${weapon.name}</span>
-                <span class="weapon-stats">${weapon.damage} 💀 • ${weapon.actionPoints} ⚔️ • Niv. ${weapon.minLevel}</span>
-                <span class="weapon-description">${weapon.description}</span>
-            </div>
-            <div class="shop-weapon-right">
-                <span class="shop-price-tag">${price} 💰</span>
-                <button class="weapon-action"
-                    ${isOwned || !canAfford ? 'disabled' : ''}
-                    onclick="window.buyWeapon('${weapon.id}')">
-                    ${isOwned ? '✅ Obtenue' : canAfford ? '🛒 Acheter' : '❌ Insuff.'}
-                </button>
-            </div>
-        `;
-        shopContent.appendChild(div);
-    });
-}
 
 export function updateInventoryTab(){
     const inventoryList = document.getElementById('inventory-list');
@@ -2110,3 +2028,4 @@ window.unequipWeapon = unequipWeapon;
 window.useInventoryItem = useInventoryItem;
 window.discardInventoryItem = discardInventoryItem;
 window.buyWeapon = buyWeapon;
+window.buyItem = buyItem;
