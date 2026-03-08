@@ -77,17 +77,17 @@ function applyMageStrike(spell) {
 }
 
 function applyWildMana(spell) {
-    const hasColorTile = board.some(tile => colors.includes(tile));
-    if(!hasColorTile){
-        log(`⚠️ Aucune gemme de couleur à transformer`);
+    const hasAnyTile = board.some(tile => tile && tile !== 'joker');
+    if(!hasAnyTile){
+        log(`⚠️ Aucune gemme à transformer`);
         return false;
     }
 
     setBoardTargetingMode({
-        highlightPredicate: (_index, tile) => colors.includes(tile),
+        highlightPredicate: (_index, tile) => tile && tile !== 'joker',
         onTileClick: (index, tile) => {
-            if(!colors.includes(tile)){
-                log(`⚠️ Choisissez une gemme de couleur pour Mana Sauvage.`);
+            if(!tile || tile === 'joker'){
+                log(`⚠️ Choisissez une gemme pour Mana Sauvage.`);
                 return true;
             }
 
@@ -101,7 +101,7 @@ function applyWildMana(spell) {
         }
     });
 
-    log(`✨ Mana Sauvage: choisissez une gemme de couleur à transformer en joker.`);
+    log(`✨ Mana Sauvage: choisissez n'importe quelle gemme à transformer en joker.`);
     return false;
 }
 

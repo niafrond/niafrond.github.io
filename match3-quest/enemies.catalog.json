@@ -14,7 +14,8 @@
       "preferClassSpells": true,
       "targetSpellCount": 5
     },
-    "resistanceProfile": { "blue": 0.35, "red": 0.05, "green": 0.12, "yellow": 0.12, "purple": 0.18 }
+    "resistanceProfile": { "blue": 0.35, "red": 0.05, "green": 0.12, "yellow": 0.12, "purple": 0.18 },
+    "dropProfile": { "goldMult": 3.5, "dropChance": 0.75, "weaponChance": 0.30 }
   },
   {
     "id": "ember_dragon",
@@ -31,7 +32,8 @@
       "preferClassSpells": true,
       "targetSpellCount": 5
     },
-    "resistanceProfile": { "blue": 0.08, "red": 0.33, "green": 0.08, "yellow": 0.2, "purple": 0.12 }
+    "resistanceProfile": { "blue": 0.08, "red": 0.33, "green": 0.08, "yellow": 0.2, "purple": 0.12 },
+    "dropProfile": { "goldMult": 3.0, "dropChance": 0.75, "weaponChance": 0.35 }
   },
   {
     "id": "void_vampire",
@@ -48,7 +50,8 @@
       "preferClassSpells": true,
       "targetSpellCount": 4
     },
-    "resistanceProfile": { "blue": 0.15, "red": 0.1, "green": 0.2, "yellow": 0.1, "purple": 0.3 }
+    "resistanceProfile": { "blue": 0.15, "red": 0.1, "green": 0.2, "yellow": 0.1, "purple": 0.3 },
+    "dropProfile": { "goldMult": 2.0, "dropChance": 0.65, "weaponChance": 0.20 }
   },
   {
     "id": "storm_wyrm",
@@ -65,7 +68,8 @@
       "preferClassSpells": false,
       "targetSpellCount": 4
     },
-    "resistanceProfile": { "blue": 0.2, "red": 0.1, "green": 0.08, "yellow": 0.3, "purple": 0.12 }
+    "resistanceProfile": { "blue": 0.2, "red": 0.1, "green": 0.08, "yellow": 0.3, "purple": 0.12 },
+    "dropProfile": { "goldMult": 3.2, "dropChance": 0.70, "weaponChance": 0.35 }
   },
   {
     "id": "orc_warmaster",
@@ -82,7 +86,8 @@
       "preferClassSpells": true,
       "targetSpellCount": 3
     },
-    "resistanceProfile": { "blue": 0.08, "red": 0.2, "green": 0.15, "yellow": 0.1, "purple": 0.08 }
+    "resistanceProfile": { "blue": 0.08, "red": 0.2, "green": 0.15, "yellow": 0.1, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.1, "dropChance": 0.55, "weaponChance": 0.50 }
   },
   {
     "id": "temple_warden",
@@ -99,7 +104,8 @@
       "preferClassSpells": true,
       "targetSpellCount": 4
     },
-    "resistanceProfile": { "blue": 0.1, "red": 0.12, "green": 0.3, "yellow": 0.15, "purple": 0.12 }
+    "resistanceProfile": { "blue": 0.1, "red": 0.12, "green": 0.3, "yellow": 0.15, "purple": 0.12 },
+    "dropProfile": { "goldMult": 0.5, "dropChance": 0.45, "weaponChance": 0.45 }
   },
   {
     "id": "crypt_lich",
@@ -116,7 +122,8 @@
       "preferClassSpells": true,
       "targetSpellCount": 5
     },
-    "resistanceProfile": { "blue": 0.2, "red": 0.1, "green": 0.1, "yellow": 0.1, "purple": 0.32 }
+    "resistanceProfile": { "blue": 0.2, "red": 0.1, "green": 0.1, "yellow": 0.1, "purple": 0.32 },
+    "dropProfile": { "goldMult": 1.8, "dropChance": 0.70, "weaponChance": 0.10 }
   },
   {
     "id": "goblin_saboteur",
@@ -133,6 +140,295 @@
       "preferClassSpells": true,
       "targetSpellCount": 3
     },
-    "resistanceProfile": { "blue": 0.08, "red": 0.08, "green": 0.12, "yellow": 0.2, "purple": 0.2 }
+    "resistanceProfile": { "blue": 0.08, "red": 0.08, "green": 0.12, "yellow": 0.2, "purple": 0.2 },
+    "dropProfile": { "goldMult": 1.3, "dropChance": 0.65, "weaponChance": 0.35 }
+  },
+   {
+    "id": "sand_colossus",
+    "name": "Colosse des Dunes",
+    "race": "Elementaire",
+    "emoji": "🏜️",
+    "title": "Titan du Desert",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2.4, "atkMult": 1.35, "defMult": 1.8 },
+    "levelBias": 3,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "green"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "blue": 0.05, "red": 0.18, "green": 0.25, "yellow": 0.35, "purple": 0.1 },
+    "dropProfile": { "goldMult": 0.4, "dropChance": 0.40, "weaponChance": 0.25 }
+  },
+  {
+    "id": "shadow_assassin",
+    "name": "Assassin de l'Ombre",
+    "race": "Humain",
+    "emoji": "🥷",
+    "title": "Lame Silencieuse",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.0, "atkMult": 1.55, "defMult": 0.95 },
+    "levelBias": 2,
+    "spellProfile": {
+      "preferredColors": ["purple", "purple", "green"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.12, "red": 0.1, "green": 0.2, "yellow": 0.08, "purple": 0.28 },
+    "dropProfile": { "goldMult": 1.4, "dropChance": 0.60, "weaponChance": 0.45 }
+  },
+  {
+    "id": "forest_guardian",
+    "name": "Gardien Sylvestre",
+    "race": "Esprit",
+    "emoji": "🌲",
+    "title": "Protecteur Ancien",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.7, "atkMult": 1.1, "defMult": 1.6 },
+    "levelBias": 2,
+    "spellProfile": {
+      "preferredColors": ["green", "green", "yellow"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.1, "red": 0.08, "green": 0.35, "yellow": 0.15, "purple": 0.1 },
+    "dropProfile": { "goldMult": 0.3, "dropChance": 0.55, "weaponChance": 0.10 }
+  },
+  {
+    "id": "arcane_scholar",
+    "name": "Erudit Arcanique",
+    "race": "Humain",
+    "emoji": "📜",
+    "title": "Savant du Mana",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 0.9, "atkMult": 1.3, "defMult": 1.0 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["blue", "purple", "blue"],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "blue": 0.25, "red": 0.05, "green": 0.08, "yellow": 0.1, "purple": 0.2 },
+    "dropProfile": { "goldMult": 1.2, "dropChance": 0.70, "weaponChance": 0.10 }
+  },
+  {
+    "id": "lava_behemoth",
+    "name": "Behemoth de Lave",
+    "race": "Elementaire",
+    "emoji": "🌋",
+    "title": "Coeur Magmatique",
+    "playerClass": "barbarian",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 2.3, "atkMult": 1.6, "defMult": 1.4 },
+    "levelBias": 3,
+    "spellProfile": {
+      "preferredColors": ["red", "red", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.05, "red": 0.4, "green": 0.05, "yellow": 0.18, "purple": 0.1 },
+    "dropProfile": { "goldMult": 0.5, "dropChance": 0.40, "weaponChance": 0.20 }
+  },
+  {
+    "id": "moon_priestess",
+    "name": "Pretresse Lunaire",
+    "race": "Elfe",
+    "emoji": "🌙",
+    "title": "Voix de la Nuit",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.3, "atkMult": 1.1, "defMult": 1.35 },
+    "levelBias": 2,
+    "spellProfile": {
+      "preferredColors": ["purple", "blue", "green"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.2, "red": 0.08, "green": 0.15, "yellow": 0.1, "purple": 0.25 },
+    "dropProfile": { "goldMult": 1.5, "dropChance": 0.65, "weaponChance": 0.20 }
+  },
+  {
+    "id": "iron_gladiator",
+    "name": "Gladiateur d'Acier",
+    "race": "Humain",
+    "emoji": "⚔️",
+    "title": "Champion de l'Arene",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.6, "atkMult": 1.45, "defMult": 1.25 },
+    "levelBias": 1,
+    "spellProfile": {
+      "preferredColors": ["red", "yellow", "green"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "blue": 0.1, "red": 0.18, "green": 0.1, "yellow": 0.15, "purple": 0.08 },
+    "dropProfile": { "goldMult": 1.6, "dropChance": 0.65, "weaponChance": 0.55 }
+  },
+  {
+    "id": "plague_doctor",
+    "name": "Medecin de la Peste",
+    "race": "Humain",
+    "emoji": "🧪",
+    "title": "Apotre des Miasmes",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.05, "atkMult": 1.25, "defMult": 1.05 },
+    "levelBias": 2,
+    "spellProfile": {
+      "preferredColors": ["green", "purple", "green"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.12, "red": 0.1, "green": 0.3, "yellow": 0.08, "purple": 0.22 },
+    "dropProfile": { "goldMult": 1.0, "dropChance": 0.80, "weaponChance": 0.05 }
+  },
+  {
+    "id": "storm_knight",
+    "name": "Chevalier de l'Orage",
+    "race": "Humain",
+    "emoji": "🌩️",
+    "title": "Lance de Tonnerre",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.55, "atkMult": 1.35, "defMult": 1.4 },
+    "levelBias": 2,
+    "spellProfile": {
+      "preferredColors": ["yellow", "blue", "yellow"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.22, "red": 0.08, "green": 0.1, "yellow": 0.28, "purple": 0.1 },
+    "dropProfile": { "goldMult": 1.4, "dropChance": 0.60, "weaponChance": 0.50 }
+  },
+  {
+    "id": "fungal_horror",
+    "name": "Horreur Mycelienne",
+    "race": "Monstre",
+    "emoji": "🍄",
+    "title": "Esprit Parasite",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.6, "atkMult": 1.2, "defMult": 1.3 },
+    "levelBias": 2,
+    "spellProfile": {
+      "preferredColors": ["green", "purple", "green"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.08, "red": 0.08, "green": 0.4, "yellow": 0.1, "purple": 0.2 },
+    "dropProfile": { "goldMult": 0.3, "dropChance": 0.45, "weaponChance": 0.05 }
+  },
+  {
+    "id": "ice_witch",
+    "name": "Sorciere du Givre",
+    "race": "Humain",
+    "emoji": "❄️",
+    "title": "Dame du Gel",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.1, "atkMult": 1.35, "defMult": 1.1 },
+    "levelBias": 2,
+    "spellProfile": {
+      "preferredColors": ["blue", "blue", "purple"],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "blue": 0.32, "red": 0.05, "green": 0.08, "yellow": 0.1, "purple": 0.18 },
+    "dropProfile": { "goldMult": 1.1, "dropChance": 0.65, "weaponChance": 0.10 }
+  },
+  {
+    "id": "bone_reaver",
+    "name": "Faucheur d'Os",
+    "race": "Mort-vivant",
+    "emoji": "🦴",
+    "title": "Moissonneur Macabre",
+    "playerClass": "assassin",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.25, "atkMult": 1.5, "defMult": 1.05 },
+    "levelBias": 2,
+    "spellProfile": {
+      "preferredColors": ["purple", "red", "green"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.1, "red": 0.12, "green": 0.15, "yellow": 0.08, "purple": 0.3 },
+    "dropProfile": { "goldMult": 0.7, "dropChance": 0.55, "weaponChance": 0.45 }
+  },
+  {
+    "id": "sun_paladin",
+    "name": "Paladin du Soleil",
+    "race": "Humain",
+    "emoji": "☀️",
+    "title": "Flamme Sacree",
+    "playerClass": "templar",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 1.6, "atkMult": 1.3, "defMult": 1.5 },
+    "levelBias": 2,
+    "spellProfile": {
+      "preferredColors": ["yellow", "yellow", "green"],
+      "preferClassSpells": true,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.1, "red": 0.15, "green": 0.2, "yellow": 0.32, "purple": 0.1 },
+    "dropProfile": { "goldMult": 1.5, "dropChance": 0.65, "weaponChance": 0.40 }
+  },
+  {
+    "id": "deep_sea_serpent",
+    "name": "Serpent Abyssal",
+    "race": "Dragon",
+    "emoji": "🌊",
+    "title": "Terreur des Profondeurs",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.9, "atkMult": 1.45, "defMult": 1.3 },
+    "levelBias": 3,
+    "spellProfile": {
+      "preferredColors": ["blue", "green", "blue"],
+      "preferClassSpells": false,
+      "targetSpellCount": 4
+    },
+    "resistanceProfile": { "blue": 0.35, "red": 0.05, "green": 0.2, "yellow": 0.08, "purple": 0.12 },
+    "dropProfile": { "goldMult": 2.8, "dropChance": 0.70, "weaponChance": 0.25 }
+  },
+  {
+    "id": "crystal_sage",
+    "name": "Sage de Cristal",
+    "race": "Elementaire",
+    "emoji": "💎",
+    "title": "Oracle Scintillant",
+    "playerClass": "sorcerer",
+    "hasWeapon": false,
+    "statsModifiers": { "hpMult": 1.2, "atkMult": 1.25, "defMult": 1.3 },
+    "levelBias": 2,
+    "spellProfile": {
+      "preferredColors": ["blue", "purple", "yellow"],
+      "preferClassSpells": true,
+      "targetSpellCount": 5
+    },
+    "resistanceProfile": { "blue": 0.28, "red": 0.08, "green": 0.1, "yellow": 0.18, "purple": 0.22 },
+    "dropProfile": { "goldMult": 1.8, "dropChance": 0.70, "weaponChance": 0.15 }
+  },
+  {
+    "id": "war_troll",
+    "name": "Troll de Guerre",
+    "race": "Troll",
+    "emoji": "🪓",
+    "title": "Broyeur de Boucliers",
+    "playerClass": "barbarian",
+    "hasWeapon": true,
+    "statsModifiers": { "hpMult": 2.0, "atkMult": 1.55, "defMult": 1.2 },
+    "levelBias": 2,
+    "spellProfile": {
+      "preferredColors": ["red", "green", "yellow"],
+      "preferClassSpells": false,
+      "targetSpellCount": 3
+    },
+    "resistanceProfile": { "blue": 0.1, "red": 0.2, "green": 0.22, "yellow": 0.12, "purple": 0.08 },
+    "dropProfile": { "goldMult": 0.8, "dropChance": 0.50, "weaponChance": 0.55 }
   }
 ]

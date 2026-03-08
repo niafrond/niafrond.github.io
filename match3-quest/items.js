@@ -3,25 +3,25 @@
 // Bibliothèque de tous les objets disponibles
 export const allItems = [
     // Potions (niveau 1+)
-    {id:"healthPotion", name:"Potion de Soin", type:"consumable", minLevel:1, rarity:"common", 
+    {id:"healthPotion", name:"Potion de Soin", type:"consumable", minLevel:1, rarity:"common", actionPoints:1,
      description:"Restaure 30 HP", effect:{heal:30}},
-    {id:"manaPotion", name:"Potion de Mana", type:"consumable", minLevel:1, rarity:"common",
+    {id:"manaPotion", name:"Potion de Mana", type:"consumable", minLevel:1, rarity:"common", actionPoints:1,
      description:"Restaure 15 mana de chaque couleur", effect:{mana:15}},
-    {id:"strengthPotion", name:"Potion de Force", type:"consumable", minLevel:3, rarity:"uncommon",
+    {id:"strengthPotion", name:"Potion de Force", type:"consumable", minLevel:3, rarity:"uncommon", actionPoints:2,
      description:"Augmente l'attaque de 10 pour ce combat", effect:{tempAttack:10}},
     
     // Potions avancées (niveau 5+)
-    {id:"greaterHealthPotion", name:"Grande Potion de Soin", type:"consumable", minLevel:5, rarity:"uncommon",
+    {id:"greaterHealthPotion", name:"Grande Potion de Soin", type:"consumable", minLevel:5, rarity:"uncommon", actionPoints:2,
      description:"Restaure 60 HP", effect:{heal:60}},
-    {id:"greaterManaPotion", name:"Grande Potion de Mana", type:"consumable", minLevel:5, rarity:"uncommon",
+    {id:"greaterManaPotion", name:"Grande Potion de Mana", type:"consumable", minLevel:5, rarity:"uncommon", actionPoints:2,
      description:"Restaure 25 mana de chaque couleur", effect:{mana:25}},
-    {id:"defensePotion", name:"Potion de Défense", type:"consumable", minLevel:6, rarity:"uncommon",
+    {id:"defensePotion", name:"Potion de Défense", type:"consumable", minLevel:6, rarity:"uncommon", actionPoints:2,
      description:"Augmente la défense de 15 pour ce combat", effect:{tempDefense:15}},
     
     // Potions rares (niveau 10+)
-    {id:"elixirOfPower", name:"Élixir de Puissance", type:"consumable", minLevel:10, rarity:"rare",
+    {id:"elixirOfPower", name:"Élixir de Puissance", type:"consumable", minLevel:10, rarity:"rare", actionPoints:3,
      description:"Augmente attaque et défense de 15 pour ce combat", effect:{tempAttack:15, tempDefense:15}},
-    {id:"phoenixFeather", name:"Plume de Phénix", type:"consumable", minLevel:12, rarity:"rare",
+    {id:"phoenixFeather", name:"Plume de Phénix", type:"consumable", minLevel:12, rarity:"rare", actionPoints:1,
      description:"Ressuscite avec 50% HP si vous mourrez (1 utilisation)", effect:{revive:0.5}},
     
     // Artefacts permanents (niveau 8+)

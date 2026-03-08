@@ -424,6 +424,8 @@ progress.enemy-bar::-webkit-progress-value {
     font-size: 0.85em;
     color: #666;
     cursor: help;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .enemy-spell-item.enemy-attack-item {
@@ -433,10 +435,16 @@ progress.enemy-bar::-webkit-progress-value {
 .enemy-spell-item .spell-name {
     font-weight: bold;
     color: #e74c3c;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .enemy-spell-item .spell-cost {
     font-size: 0.8em;
     color: #888;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .battle-result-screen {
@@ -888,6 +896,10 @@ progress.enemy-bar::-webkit-progress-value {
     font-weight: bold;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     text-align: left;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .weapon-btn:hover {
     background: linear-gradient(135deg, #d35400, #c0392b);

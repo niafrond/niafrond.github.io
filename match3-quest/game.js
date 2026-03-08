@@ -292,12 +292,10 @@ function showCombatResultScreen(isVictory){
     title.textContent = isVictory ? 'Victoire' : 'Defaite';
     subtitle.textContent = isVictory ? 'Combat termine avec succes.' : 'Vous avez ete vaincu.';
 
-    const itemLines = combatRewards.items.length > 0
-        ? combatRewards.items.map(name => `<li>Objet: ${name}</li>`).join('')
-        : '<li>Objet: Aucun</li>';
-    const weaponLines = combatRewards.weapons.length > 0
-        ? combatRewards.weapons.map(name => `<li>Arme: ${name}</li>`).join('')
-        : '<li>Arme: Aucune</li>';
+    const allLoot = [...combatRewards.weapons, ...combatRewards.items];
+    const lootLines = allLoot.length > 0
+        ? allLoot.map(name => `<li>${name}</li>`).join('')
+        : '<li>Aucun butin</li>';
 
     const goldLine = combatRewards.gold > 0
         ? `<li>💰 Or: +${combatRewards.gold} pièce${combatRewards.gold > 1 ? 's' : ''}</li>`
@@ -307,8 +305,7 @@ function showCombatResultScreen(isVictory){
         <div class="battle-result-xp">XP gagnee: ${combatRewards.xpGained}</div>
         <ul class="battle-result-loot">
             ${goldLine}
-            ${itemLines}
-            ${weaponLines}
+            ${lootLines}
         </ul>
     `;
 
@@ -590,27 +587,44 @@ clampManaToCaps(player);
 
 // --- Animation compteur (tick 1 par 1) ---
 const _activeCounters = {};
-function _animateCounter(id, from, to) {
+/**
+ * Anime simultanément un compteur texte (id) et sa progress bar associée,
+ * en incrémentant/décrémentant de 1 à chaque tick jusqu'à la valeur cible.
+ * @param {string} id      - id du span texte
+ * @param {number} from    - valeur de départ
+ * @param {number} to      - valeur cible
+ * @param {HTMLElement|null} progressEl - élément <progress> à synchroniser (optionnel)
+ */
+function _animateHpBar(id, from, to, progressEl = null) {
     if (_activeCounters[id]) {
         clearInterval(_activeCounters[id]);
         delete _activeCounters[id];
     }
-    const el = document.getElementById(id);
-    if (!el || isNaN(from) || from === to) return;
-    el.textContent = from;
+    if (isNaN(from) || from === to) return;
     let current = from;
     const step = to > from ? 1 : -1;
     const delta = Math.abs(to - from);
     const intervalMs = Math.max(50, Math.min(150, Math.round(1500 / delta)));
+
+    function applyValue(val) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+        if (progressEl) progressEl.value = val;
+    }
+
+    applyValue(current);
     _activeCounters[id] = setInterval(() => {
         current += step;
-        const elNow = document.getElementById(id);
-        if (elNow) elNow.textContent = current;
+        applyValue(current);
         if (current === to) {
             clearInterval(_activeCounters[id]);
             delete _activeCounters[id];
         }
     }, intervalMs);
+}
+
+function _animateCounter(id, from, to) {
+    _animateHpBar(id, from, to, null);
 }
 
 export function updateStats(){
@@ -634,6 +648,9 @@ export function updateStats(){
     // Cibles (valeurs actuelles des entités)
     const targetPlayerHp = Math.floor(player.hp);
     const targetEnemyHp  = Math.floor(enemy.hp);
+    // Valeurs initiales pour les progress bars (snap si disponible, sinon target)
+    const initPlayerHp = isNaN(snapPlayerHp) ? targetPlayerHp : snapPlayerHp;
+    const initEnemyHp  = isNaN(snapEnemyHp)  ? targetEnemyHp  : snapEnemyHp;
     const targetPlayerMana = { red: player.mana.red, blue: player.mana.blue, green: player.mana.green, yellow: player.mana.yellow, purple: player.mana.purple };
     const targetEnemyMana  = { red: enemy.mana.red,  blue: enemy.mana.blue,  green: enemy.mana.green,  yellow: enemy.mana.yellow,  purple: enemy.mana.purple  };
 
@@ -649,7 +666,7 @@ export function updateStats(){
             <div class="stat"><span class="enemy-combat-name" title="${emoji} ${player.name || 'Aventurier'}">${emoji} ${(player.name || 'Aventurier').split(' ')[0]}</span><span style="color: #888;"> ${player.level}</span></div>
             <div class="stat">
                 <div class="hp-bar-container">
-                    <progress value="${targetPlayerHp}" max="${player.maxHp}"></progress>
+                    <progress value="${initPlayerHp}" max="${player.maxHp}"></progress>
                     <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}</span>
                 </div>
             </div>
@@ -666,7 +683,8 @@ export function updateStats(){
             <div class="stat"><strong>⚔️:</strong> ${player.combatPoints}</div>`;
         
         // Animer les compteurs si les valeurs ont changé
-        _animateCounter('player-hp-current', snapPlayerHp, targetPlayerHp);
+        const playerProgressEl = playerDiv.querySelector('.hp-bar-container progress');
+        _animateHpBar('player-hp-current', initPlayerHp, targetPlayerHp, playerProgressEl);
         for (const c of ['red','blue','green','yellow','purple']) {
             _animateCounter(`player-mana-${c}`, snapPlayerMana[c], targetPlayerMana[c]);
         }
@@ -691,7 +709,7 @@ export function updateStats(){
         <div class="stat"><span class="enemy-combat-name" title="${enemyClassEmoji} ${enemy.name}">${enemyClassEmoji} ${enemy.name.split(' ')[0]}</span>${levelIndicator}</div>
         <div class="stat">
             <div class="hp-bar-container">
-                <progress class="enemy-bar" value="${targetEnemyHp}" max="${enemy.maxHp}"></progress>
+                <progress class="enemy-bar" value="${initEnemyHp}" max="${enemy.maxHp}"></progress>
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
@@ -711,7 +729,8 @@ export function updateStats(){
     }
 
     // Animer les compteurs ennemi
-    _animateCounter('enemy-hp-current', snapEnemyHp, targetEnemyHp);
+    const enemyProgressEl = enemyDiv.querySelector('.hp-bar-container progress');
+    _animateHpBar('enemy-hp-current', initEnemyHp, targetEnemyHp, enemyProgressEl);
     for (const c of ['red','blue','green','yellow','purple']) {
         _animateCounter(`enemy-mana-${c}`, snapEnemyMana[c], targetEnemyMana[c]);
     }
@@ -720,6 +739,17 @@ export function updateStats(){
 }
 
 export function updateEnemySpells(){
+    // Afficher l'arme ennemie (au-dessus des sorts, comme le joueur)
+    const weaponContainer = document.getElementById('enemy-weapon-button');
+    if (weaponContainer) {
+        if (enemy.weapon) {
+            const icon = getWeaponIcon(enemy.weapon.type);
+            weaponContainer.innerHTML = `<div class="weapon-btn disabled" style="cursor:default;">${icon} ${enemy.weapon.name} <span class="weapon-cost">${enemy.weapon.actionPoints} ⚔️</span> - ${enemy.weapon.damage} 💀</div>`;
+        } else {
+            weaponContainer.innerHTML = '';
+        }
+    }
+
     const container = document.getElementById('enemy-spell-list');
     if(!container) return;
     container.innerHTML = '';
@@ -1158,9 +1188,10 @@ export function handleEnemyDefeated(){
     queueCombatXP(xpGain);
     log(`⭐ Vous gagnez ${xpGain} XP !`);
 
-    // Pièces d'or : base liée au niveau de l'ennemi + part aléatoire
+    // Pièces d'or : base liée au niveau de l'ennemi + part aléatoire + multiplicateur du profil de l'ennemi
     const enemyLvl = enemy.level || player.level || 1;
-    const goldBase = enemyLvl * 3;
+    const goldMult = enemy.dropProfile?.goldMult ?? 1.0;
+    const goldBase = Math.round(enemyLvl * 3 * goldMult);
     const goldBonus = Math.floor(Math.random() * (enemyLvl * 2 + 5)) + 1;
     const goldEarned = goldBase + goldBonus;
     player.gold = (player.gold || 0) + goldEarned;
@@ -1183,14 +1214,16 @@ export function handleEnemyDefeated(){
         }
     }
 
-    // 40% de chance de ne rien obtenir
+    // Chance de drop selon le profil de l'ennemi (défaut : 60%)
+    const baseDropChance = enemy.dropProfile?.dropChance ?? 0.6;
     const dropChance = Math.random();
-    if(dropChance > 0.4) {
-        // Obtenir un objet ou une arme aléatoire
+    if(dropChance < baseDropChance) {
+        // Répartition arme/objet selon le profil de l'ennemi (défaut : 30% arme)
+        const weaponChance = enemy.dropProfile?.weaponChance ?? 0.3;
         const itemOrWeapon = Math.random();
         
-        if(itemOrWeapon < 0.7) {
-            // 70% de chance d'obtenir un objet
+        if(itemOrWeapon >= weaponChance) {
+            // chance d'obtenir un objet (1 - weaponChance)
             const droppedItem = getRandomItem(player.level);
             if(droppedItem) {
                 if(player.inventory.length < 1) {
@@ -1209,7 +1242,7 @@ export function handleEnemyDefeated(){
                 }
             }
         } else {
-            // 30% de chance d'obtenir une arme
+            // chance d'obtenir une arme (weaponChance)
             const availableWeapons = getAvailableWeapons(player.level + 2).filter(
                 w => w.minLevel >= Math.max(1, player.level - 3)
             );
@@ -1721,19 +1754,22 @@ export function decideFirstTurn(){
     if(playerAgility > enemyAgility){
         starter = 'player';
         log(`⚡ Vous êtes plus agile ! Vous commencez en premier.`);
+        showCombatAnimation({ icon: '⚡', title: 'Vous commencez !', source: `Agilité : ${playerAgility} > ${enemyAgility}`, target: '→ À vous de jouer !' }, true);
     } else if(enemyAgility > playerAgility){
         starter = 'enemy';
         log(`⚡ ${enemy.name} est plus agile ! Il commence en premier.`);
+        showCombatAnimation({ icon: '⚡', title: `${enemy.name} commence !`, source: `Agilité : ${enemyAgility} > ${playerAgility}`, target: '→ Ennemi joue en premier' }, false);
     } else {
         // En cas d'égalité, le joueur commence
         starter = 'player';
         log(`⚖️ Égalité d'agilité, vous commencez !`);
+        showCombatAnimation({ icon: '⚖️', title: 'Égalité !', source: `Agilité : ${playerAgility} = ${enemyAgility}`, target: '→ À vous de jouer !' }, true);
     }
     
     currentTurn = starter;
     log(`🔄 Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'}`);
     if(starter === 'enemy'){
-        enemyTurn();
+        setTimeout(() => enemyTurn(), 1500);
     }
 }
 
@@ -1869,6 +1905,7 @@ export function updateWeaponsTab(){
     });
 
     updateInventoryTab();
+    updateItemButton();
 }
 
 // =====================================
@@ -1977,19 +2014,16 @@ export function updateInventoryTab(){
     const item = player.inventory[0];
     const rarityEmoji = getRarityEmoji(item.rarity);
     const rarityColor = getRarityColor(item.rarity);
-    const canUse = gameState.combatState === 'active' && item.type === 'consumable';
 
     const div = document.createElement('div');
     div.className = `item-card ${item.type === 'consumable' ? 'consumable-item' : 'artifact-item'}`;
     div.style.borderLeft = `4px solid ${rarityColor}`;
+    const paInfo = item.type === 'consumable' ? ` <span style="color:#888;font-size:0.85em;">(${item.actionPoints || 2} ⚔️)</span>` : '';
     div.innerHTML = `
         <div class="item-header">
-            <span class="item-name">${rarityEmoji} ${item.name}</span>
+            <span class="item-name">${rarityEmoji} ${item.name}${paInfo}</span>
             <div class="item-actions">
-                ${item.type === 'consumable'
-                    ? `<button class="item-use-btn" ${canUse ? '' : 'disabled'} onclick="window.useInventoryItem('${item.id}', 0)">${canUse ? '✅ Utiliser' : '❌ Hors combat'}</button>`
-                    : `<span class="artifact-badge">⚡ Actif</span>`
-                }
+                ${item.type === 'artifact' ? `<span class="artifact-badge">⚡ Actif</span>` : ''}
                 <button class="item-discard-btn" onclick="window.discardInventoryItem()">🗑️ Jeter</button>
             </div>
         </div>
@@ -1998,18 +2032,62 @@ export function updateInventoryTab(){
     inventoryList.appendChild(div);
 }
 
-export function useInventoryItem(itemId, index){
-    if(gameState.combatState !== 'active'){
-        log('⚠️ Vous ne pouvez utiliser des objets qu\'en combat !');
+export function updateItemButton(){
+    const container = document.getElementById('item-button');
+    if(!container) return;
+    container.innerHTML = '';
+
+    if(!player.inventory || player.inventory.length === 0) return;
+
+    const item = player.inventory[0];
+
+    if(item.type === 'artifact'){
+        const div = document.createElement('div');
+        div.style.cssText = 'padding:8px 12px;background:#e8f0fe;border:1px solid #3498db;border-radius:6px;font-size:0.85em;color:#2471a3;margin-top:4px;';
+        div.innerHTML = `⚡ ${item.name} (passif)`;
+        container.appendChild(div);
         return;
     }
-    
+
+    const pa = item.actionPoints || 2;
+    const canUse = gameState.combatState === 'active' && currentTurn === 'player' && player.combatPoints >= pa;
+
+    const btn = document.createElement('button');
+    btn.className = 'weapon-btn';
+    btn.innerHTML = `🎒 ${item.name} <span class="weapon-cost">${pa} ⚔️</span>`;
+    if(!canUse){
+        btn.classList.add('disabled');
+        btn.onclick = null;
+    } else {
+        btn.onclick = () => useInventoryItem(item.id, 0);
+    }
+    container.appendChild(btn);
+}
+
+export function useInventoryItem(itemId, index){
+    if(gameState.combatState !== 'active'){ log("⚠️ Aucun combat en cours."); return; }
+    if(currentTurn !== 'player'){ log("⚠️ Ce n'est pas votre tour."); return; }
+
+    const item = player.inventory.find(it => it.id === itemId);
+    if(!item){ log("Objet introuvable."); return; }
+
+    const pa = item.actionPoints || 2;
+    if(player.combatPoints < pa){
+        log(`Il faut ${pa} points d'action pour utiliser ${item.name}.`);
+        return;
+    }
+
+    player.combatPoints -= pa;
     const result = useItem(itemId, player, enemy);
     if(result.success){
+        logActiveAction(`utilise l'objet ${item.name} (cout ${pa} PA)`);
         log(result.message);
         updateInventoryTab();
+        updateItemButton();
         saveUpdate();
+        finishPlayerTurn();
     } else {
+        player.combatPoints += pa;
         log(`⚠️ ${result.message}`);
     }
 }
@@ -2020,6 +2098,7 @@ export function discardInventoryItem(){
     player.inventory.splice(0, 1);
     log(`🗑️ Vous avez jeté ${item.name}.`);
     updateInventoryTab();
+    updateItemButton();
     saveUpdate();
 }
 
