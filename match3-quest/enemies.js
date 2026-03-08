@@ -163,16 +163,18 @@ export function generateRandomEnemy(playerLevel, _allSpells, allWeaponsArg = all
 export function generateEnemyChoices(playerLevel, count = 4, allWeaponsArg = allWeapons){
     const catalog = [...loadEnemyCatalogSync()];
     const choices = [];
+    const normalMaxLevel = playerLevel + 1;
 
     while(catalog.length > 0 && choices.length < count){
         const template = catalog.splice(Math.floor(Math.random() * catalog.length), 1)[0];
-        const randomDelta = [-1, 0, 1, 2, 3][Math.floor(Math.random() * 5)];
-        const level = Math.max(1, playerLevel + (template.levelBias || 0) + randomDelta);
+        const randomDelta = [-1, 0, 1][Math.floor(Math.random() * 3)];
+        const rawLevel = playerLevel + (template.levelBias || 0) + randomDelta;
+        const level = clamp(Math.max(1, rawLevel), 1, normalMaxLevel);
         choices.push(buildEnemyFromTemplate(template, level, allWeaponsArg));
     }
 
-    // 40% de chance d'avoir un adversaire dangereux à +6 niveaux
-    if(choices.length > 0 && Math.random() < 0.4){
+    // Cas rare: un adversaire dangereux peut dépasser largement le niveau du joueur
+    if(choices.length > 0 && Math.random() < 0.08){
         const idx = Math.floor(Math.random() * choices.length);
         const boostedLevel = playerLevel + 6;
         const template = loadEnemyCatalogSync().find(t => t.id === choices[idx].templateId);
