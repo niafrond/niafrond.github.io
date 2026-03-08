@@ -199,8 +199,10 @@ export function swapTiles(i,j){
             // Redémarrer le minuteur après un mauvais mouvement
             startSuggestionTimer();
         } else {
-            log("⚠️ L'ennemi n'a créé aucun match. Son mouvement est annulé.");
-            finishEnemyTurn();
+            log("⚠️ L'ennemi n'a créé aucun match. Mouvement annulé, il rejoue.");
+            setTimeout(() => {
+                if(currentTurn === 'enemy') enemyMakeMove();
+            }, 700);
         }
         return;
     }
@@ -677,6 +679,21 @@ function showMatchSuggestion(){
         });
         
         log(`💡 Conseil : essayez d'échanger ces deux tuiles !`);
+        return;
+    }
+
+    // Fallback: garder un conseil même si aucun match direct n'est détecté
+    const randomMove = findRandomMove();
+    if(randomMove){
+        suggestedMoveIndices = [randomMove.from, randomMove.to];
+
+        const boardDiv = document.getElementById('board');
+        const tiles = boardDiv.children;
+        suggestedMoveIndices.forEach(idx => {
+            tiles[idx].classList.add('suggested');
+        });
+
+        log(`💡 Conseil : tentez cet échange pour débloquer le plateau.`);
     }
 }
 
@@ -765,22 +782,12 @@ export function enemyMakeMove(){
             });
         }, 800);
     } else {
-        // Aucun match possible, vérifier s'il y a des mouvements valides
-        const randomMove = findRandomMove();
-        if(randomMove){
-            log('🎲 L\'ennemi fait un mouvement aléatoire...');
-            setTimeout(() => {
-                animateEnemySwap(randomMove.from, randomMove.to, () => {
-                    swapTiles(randomMove.from, randomMove.to);
-                });
-            }, 800);
-        } else {
-            // Aucun mouvement possible du tout : régénérer
-            regenerateBoard();
-            setTimeout(() => {
-                finishEnemyTurn();
-            }, 1000);
-        }
+        // Aucun swap valide : régénérer le plateau puis laisser l'ennemi rejouer
+        log('🔄 Aucun swap valide pour l\'ennemi, plateau régénéré.');
+        regenerateBoard();
+        setTimeout(() => {
+            if(currentTurn === 'enemy') enemyMakeMove();
+        }, 1000);
     }
 }
 
