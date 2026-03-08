@@ -115,7 +115,8 @@ export function useItem(itemId, player, enemy) {
     }
     if(item.effect.mana) {
         Object.keys(player.mana).forEach(color => {
-            player.mana[color] = Math.min(player.maxMana, player.mana[color] + item.effect.mana);
+            const manaCap = player.manaCaps?.[color] ?? player.maxMana;
+            player.mana[color] = Math.min(manaCap, player.mana[color] + item.effect.mana);
         });
         message += `✨ Vous gagnez ${item.effect.mana} mana de chaque couleur. `;
     }

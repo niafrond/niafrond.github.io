@@ -4,6 +4,10 @@ import { player, enemy, log, saveUpdate, showAttackAnimation } from "./game.js";
 import { board, renderBoard } from "./board.js";
 import { colors, boardSize } from "./constants.js";
 
+function getManaCap(color) {
+    return player.manaCaps?.[color] ?? player.maxMana;
+}
+
 // Applique l'effet d'un sort de classe
 export function applyClassSpellEffect(spell) {
     switch(spell.effect) {
@@ -102,7 +106,7 @@ function applyDarkChannels(spell) {
         }
     }
     if(count > 0) {
-        player.mana[targetColor] = Math.min(player.maxMana, player.mana[targetColor] + count * 3);
+        player.mana[targetColor] = Math.min(getManaCap(targetColor), player.mana[targetColor] + count * 3);
         renderBoard();
         log(`🌀 Canaux Sombres détruit ${count} gemmes ${targetColor} et donne ${count * 3} mana !`);
         return true;
@@ -173,7 +177,7 @@ function applyChasm(spell) {
     // Appliquer le mana gagné
     Object.keys(manaGained).forEach(color => {
         if(manaGained[color] > 0) {
-            player.mana[color] = Math.min(player.maxMana, player.mana[color] + manaGained[color]);
+            player.mana[color] = Math.min(getManaCap(color), player.mana[color] + manaGained[color]);
         }
     });
     
@@ -351,7 +355,7 @@ function applyThrowAxe(spell) {
 }
 
 function applyBloodlust(spell) {
-    player.mana.red = Math.min(player.maxMana, player.mana.red + spell.manaGain);
+    player.mana.red = Math.min(getManaCap('red'), player.mana.red + spell.manaGain);
     log(`💉 Soif de Sang donne +${spell.manaGain} mana rouge !`);
     return true;
 }

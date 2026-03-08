@@ -1,4 +1,4 @@
-import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showAttackAnimation, grantComboMasteryRewards, grantManaGeneratedXP } from "./game.js";
+import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showAttackAnimation, grantComboMasteryRewards, grantManaGeneratedXP, addManaForColor, logActiveAction } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 
 // grille et sélection
@@ -13,6 +13,7 @@ let suggestedMoveIndices = null;
 let gameStarted = false;
 let turnDistinctMatches = 0;
 let comboMasteryTriggered = false;
+let pendingSwap = null;
 
 export function setGameStarted(started){
     gameStarted = started;
@@ -183,6 +184,8 @@ export function swapTiles(i,j){
 
     turnDistinctMatches = 0;
     comboMasteryTriggered = false;
+
+    logActiveAction(`echange les tuiles ${i} <-> ${j}`);
     
     // Effectuer le swap
     [board[i],board[j]]=[board[j],board[i]];
@@ -191,6 +194,7 @@ export function swapTiles(i,j){
     const hasMatch = Boolean(checkMatchAtPosition(i) || checkMatchAtPosition(j));
     
     if(!hasMatch) {
+        pendingSwap = null;
         // Aucun match créé : annuler le swap (mais garder le tour)
         [board[i],board[j]]=[board[j],board[i]];
         renderBoard();
@@ -206,6 +210,13 @@ export function swapTiles(i,j){
         }
         return;
     }
+
+    pendingSwap = {
+        i,
+        j,
+        turn: currentTurn,
+        resolvedAtLeastOneMatch: false
+    };
     
     // Il y a un match : continuer normalement
     renderBoard();
@@ -323,24 +334,10 @@ export function checkMatches(){
         // apply effects
         if(info.type==='color'){
             // Gain de mana : 1 par tuile du match (3=>3, 4=>4, 5=>5...)
-            let manaGain = info.len;
-            
-            // Vérifier les aptitudes du joueur pour bonus de mana
-            if(currentPlayer === player && player.abilities){
-                if(info.color === 'red' && player.abilities.includes('fireMastery')) manaGain += 2;
-                if(info.color === 'blue' && player.abilities.includes('iceMastery')) manaGain += 2;
-                if(info.color === 'green' && player.abilities.includes('natureMastery')) manaGain += 2;
-                if(info.color === 'yellow' && player.abilities.includes('stormMastery')) manaGain += 2;
-                if(info.color === 'purple' && player.abilities.includes('shadowMastery')) manaGain += 2;
-            }
-            
-            const manaBefore = currentPlayer.mana[info.color];
-            const manaCap = currentPlayer === player ? player.maxMana : 50;
-            const manaAfter = Math.min(manaCap, manaBefore + manaGain);
-            currentPlayer.mana[info.color] = manaAfter;
+            const manaResult = addManaForColor(currentPlayer, info.color, info.len);
 
             if(currentPlayer === player){
-                const generatedMana = Math.max(0, manaAfter - manaBefore);
+                const generatedMana = manaResult.gained;
                 if(generatedMana > 0){
                     grantManaGeneratedXP(generatedMana);
                     log(`⭐ +${generatedMana} XP (mana généré)`);
@@ -498,6 +495,29 @@ export function checkMatches(){
     }
 
     if(!combos){
+        if(pendingSwap && !pendingSwap.resolvedAtLeastOneMatch){
+            const { i, j, turn } = pendingSwap;
+            pendingSwap = null;
+
+            // Sécurité: si aucun combo réel n'a été résolu, on annule le swap et le même acteur rejoue.
+            [board[i],board[j]]=[board[j],board[i]];
+            turnDistinctMatches = 0;
+            comboMasteryTriggered = false;
+            renderBoard();
+
+            if(turn === 'enemy' && currentTurn === 'enemy'){
+                log("⚠️ Aucun match validé pour l'ennemi. Mouvement annulé, il rejoue.");
+                setTimeout(() => {
+                    if(currentTurn === 'enemy') enemyMakeMove();
+                }, 700);
+            } else if(turn === 'player' && currentTurn === 'player'){
+                log("⚠️ Aucun match validé ! Mouvement annulé, à vous de rejouer.");
+                startSuggestionTimer();
+            }
+            return;
+        }
+
+        pendingSwap = null;
         turnDistinctMatches = 0;
         comboMasteryTriggered = false;
         renderBoard(); // Seulement si pas de combos pour nettoyer les classes 'match'
@@ -510,6 +530,9 @@ export function checkMatches(){
             finishPlayerTurn();
         }
     } else {
+        if(pendingSwap){
+            pendingSwap.resolvedAtLeastOneMatch = true;
+        }
         saveUpdate();
         // Le délai doit être suffisant pour toutes les animations
         setTimeout(checkMatches, 1500); // Augmenté pour tenir compte du clignotement (800ms) + disparition + chute
@@ -520,6 +543,8 @@ export function checkMatches(){
 function dropTiles(removedIndices){
     const removed = new Set(removedIndices);
     const affectedCols = new Set();
+    const movedTileOffsets = new Map();
+    const newTilesPerCol = new Map();
     
     // Identifier les colonnes affectées
     removedIndices.forEach(idx => {
@@ -528,25 +553,91 @@ function dropTiles(removedIndices){
     
     // Pour chaque colonne affectée, faire descendre les tuiles
     for(let col of affectedCols){
-        let column = [];
-        for(let row=0; row<boardSize; row++){
-            const idx = row * boardSize + col;
-            if(!removed.has(idx) && board[idx] !== undefined && board[idx] !== null){
-                column.push(board[idx]);
+        let writeRow = boardSize - 1;
+
+        // Compacte vers le bas et garde la trace des tuiles qui glissent.
+        for(let row = boardSize - 1; row >= 0; row--){
+            const sourceIdx = row * boardSize + col;
+            if(removed.has(sourceIdx)){
+                continue;
             }
+
+            const tile = board[sourceIdx];
+            if(tile === undefined || tile === null){
+                continue;
+            }
+
+            const destIdx = writeRow * boardSize + col;
+            board[destIdx] = tile;
+
+            if(writeRow !== row){
+                movedTileOffsets.set(destIdx, writeRow - row);
+            }
+
+            writeRow--;
         }
-        // Ajouter des nouvelles tuiles en haut
-        while(column.length < boardSize){
-            column.unshift(generateRandomTile());
-        }
-        // Remettre la colonne dans le board
-        for(let row=0; row<boardSize; row++){
-            const idx = row * boardSize + col;
-            board[idx] = column[row];
+
+        const numNewTiles = writeRow + 1;
+        newTilesPerCol.set(col, numNewTiles);
+
+        // Ajouter des nouvelles tuiles en haut.
+        while(writeRow >= 0){
+            const idx = writeRow * boardSize + col;
+            board[idx] = generateRandomTile();
+            writeRow--;
         }
     }
     
-    return affectedCols;
+    return {
+        affectedCols,
+        movedTileOffsets,
+        newTilesPerCol
+    };
+}
+
+function animateGravityGlide(tiles, movedTileOffsets){
+    if(!movedTileOffsets || movedTileOffsets.size === 0){
+        return;
+    }
+
+    const rowStep = (() => {
+        const first = tiles[0];
+        const secondRow = tiles[boardSize];
+        if(first && secondRow){
+            const a = first.getBoundingClientRect();
+            const b = secondRow.getBoundingClientRect();
+            const step = b.top - a.top;
+            if(step > 0) return step;
+        }
+        return 58;
+    })();
+
+    movedTileOffsets.forEach((deltaRows, destIdx) => {
+        const tile = tiles[destIdx];
+        if(!tile) return;
+
+        const offsetY = deltaRows * rowStep;
+        tile.style.transition = 'none';
+        tile.style.transform = `translateY(-${offsetY}px)`;
+    });
+
+    requestAnimationFrame(() => {
+        movedTileOffsets.forEach((_, destIdx) => {
+            const tile = tiles[destIdx];
+            if(!tile) return;
+            tile.style.transition = 'transform 0.26s ease-out';
+            tile.style.transform = 'translateY(0)';
+        });
+    });
+
+    setTimeout(() => {
+        movedTileOffsets.forEach((_, destIdx) => {
+            const tile = tiles[destIdx];
+            if(!tile) return;
+            tile.style.transition = '';
+            tile.style.transform = '';
+        });
+    }, 300);
 }
 
 export function highlightCombo(indices, info){
@@ -591,15 +682,11 @@ export function highlightCombo(indices, info){
             // Faire descendre les tuiles et ajouter de nouvelles en haut
             const nullIndices = indices.filter(i=>board[i]===null);
             
-            // Compter les tuiles supprimées par colonne pour savoir combien de nouvelles tuiles
-            const newTilesPerCol = new Map();
-            nullIndices.forEach(idx => {
-                const col = idx % boardSize;
-                newTilesPerCol.set(col, (newTilesPerCol.get(col) || 0) + 1);
-            });
-            
-            const affectedCols = dropTiles(nullIndices);
+            const gravityResult = dropTiles(nullIndices);
+            const affectedCols = gravityResult.affectedCols;
+            const newTilesPerCol = gravityResult.newTilesPerCol;
             renderBoard(true); // Préserver les classes d'animation
+            animateGravityGlide(tiles, gravityResult.movedTileOffsets);
             
             // Nettoyer la classe disappear des tuiles qui ont été déplacées
             for(let col of affectedCols){
@@ -732,28 +819,40 @@ function animateEnemySwap(from, to, onComplete){
     const deltaX = toRect.left - fromRect.left;
     const deltaY = toRect.top - fromRect.top;
 
-    // Effet léger pour que le joueur suive bien le mouvement
-    fromTile.style.transition = 'transform 0.32s ease, box-shadow 0.32s ease';
-    toTile.style.transition = 'transform 0.32s ease, box-shadow 0.32s ease';
-    fromTile.style.zIndex = '25';
-    toTile.style.zIndex = '25';
-    fromTile.style.boxShadow = '0 0 12px rgba(231, 76, 60, 0.85)';
-    toTile.style.boxShadow = '0 0 12px rgba(231, 76, 60, 0.85)';
+    // Anime des copies visuelles pour eviter l'effet de double swap lors du rerender.
+    function createGhost(sourceTile, rect){
+        const ghost = sourceTile.cloneNode(true);
+        ghost.style.position = 'fixed';
+        ghost.style.left = `${rect.left}px`;
+        ghost.style.top = `${rect.top}px`;
+        ghost.style.width = `${rect.width}px`;
+        ghost.style.height = `${rect.height}px`;
+        ghost.style.margin = '0';
+        ghost.style.zIndex = '40';
+        ghost.style.pointerEvents = 'none';
+        ghost.style.transition = 'transform 0.32s ease, box-shadow 0.32s ease';
+        ghost.style.boxShadow = '0 0 12px rgba(231, 76, 60, 0.85)';
+        return ghost;
+    }
+
+    const fromGhost = createGhost(fromTile, fromRect);
+    const toGhost = createGhost(toTile, toRect);
+
+    fromTile.style.visibility = 'hidden';
+    toTile.style.visibility = 'hidden';
+    document.body.appendChild(fromGhost);
+    document.body.appendChild(toGhost);
 
     requestAnimationFrame(() => {
-        fromTile.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-        toTile.style.transform = `translate(${-deltaX}px, ${-deltaY}px)`;
+        fromGhost.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+        toGhost.style.transform = `translate(${-deltaX}px, ${-deltaY}px)`;
     });
 
     setTimeout(() => {
-        fromTile.style.transition = '';
-        toTile.style.transition = '';
-        fromTile.style.transform = '';
-        toTile.style.transform = '';
-        fromTile.style.zIndex = '';
-        toTile.style.zIndex = '';
-        fromTile.style.boxShadow = '';
-        toTile.style.boxShadow = '';
+        fromGhost.remove();
+        toGhost.remove();
+        fromTile.style.visibility = '';
+        toTile.style.visibility = '';
         onComplete();
     }, 340);
 }
@@ -837,87 +936,121 @@ function findPossibleMatches(){
 function checkMatchAtPosition(idx){
     const row = Math.floor(idx / boardSize);
     const col = idx % boardSize;
-    const t = board[idx];
-    
-    if(!t) return null;
-    
-    let type = t;
-    if(colors.includes(t) || t === 'joker') type = 'color';
-    let matchColor = colors.includes(t) ? t : null;
-    
-    // Vérifier horizontalement
-    let hCount = 1;
-    // Compter à gauche
-    for(let c = col - 1; c >= 0; c--){
-        const testIdx = row * boardSize + c;
-        const testT = board[testIdx];
-        if(type === 'color'){
-            if(testT === 'joker' || (matchColor && testT === matchColor) || (!matchColor && colors.includes(testT))){
-                hCount++;
-                if(!matchColor && colors.includes(testT)) matchColor = testT;
+    if(!board[idx]) return null;
+
+    function analyzeWindow(indices){
+        const tiles = indices.map(i => board[i]);
+        if(tiles.some(t => !t)) return null;
+
+        const nonJokers = tiles.filter(t => t !== 'joker');
+        if(nonJokers.length === 0) return null; // ignorer joker+joker+joker
+
+        const hasColor = tiles.some(t => colors.includes(t));
+        if(hasColor){
+            if(nonJokers.some(t => !colors.includes(t))) return null;
+            const nonJokerColors = nonJokers.filter(t => colors.includes(t));
+            if(nonJokerColors.length === 0) return null;
+            const color = nonJokerColors[0];
+            if(nonJokerColors.every(t => t === color)){
+                return { type: 'color', color };
             }
-            else break;
-        } else {
-            if(testT === t || testT === 'joker' || t === 'joker') hCount++;
-            else break;
+            return null;
+        }
+
+        const specialType = nonJokers[0];
+        if(nonJokers.every(t => t === specialType)){
+            return { type: specialType };
+        }
+        return null;
+    }
+
+    function getRunLengthHorizontal(targetType, targetColor){
+        let count = 1;
+
+        for(let c = col - 1; c >= 0; c--){
+            const t = board[row * boardSize + c];
+            const ok = targetType === 'color'
+                ? (t === 'joker' || t === targetColor)
+                : (t === 'joker' || t === targetType);
+            if(!ok) break;
+            count++;
+        }
+
+        for(let c = col + 1; c < boardSize; c++){
+            const t = board[row * boardSize + c];
+            const ok = targetType === 'color'
+                ? (t === 'joker' || t === targetColor)
+                : (t === 'joker' || t === targetType);
+            if(!ok) break;
+            count++;
+        }
+
+        return count;
+    }
+
+    function getRunLengthVertical(targetType, targetColor){
+        let count = 1;
+
+        for(let r = row - 1; r >= 0; r--){
+            const t = board[r * boardSize + col];
+            const ok = targetType === 'color'
+                ? (t === 'joker' || t === targetColor)
+                : (t === 'joker' || t === targetType);
+            if(!ok) break;
+            count++;
+        }
+
+        for(let r = row + 1; r < boardSize; r++){
+            const t = board[r * boardSize + col];
+            const ok = targetType === 'color'
+                ? (t === 'joker' || t === targetColor)
+                : (t === 'joker' || t === targetType);
+            if(!ok) break;
+            count++;
+        }
+
+        return count;
+    }
+
+    let bestMatch = null;
+
+    // Fenêtres horizontales de 3 contenant idx
+    const hStart = Math.max(0, col - 2);
+    const hEnd = Math.min(col, boardSize - 3);
+    for(let start = hStart; start <= hEnd; start++){
+        const window = [
+            row * boardSize + start,
+            row * boardSize + start + 1,
+            row * boardSize + start + 2
+        ];
+        const result = analyzeWindow(window);
+        if(!result) continue;
+
+        const length = getRunLengthHorizontal(result.type, result.color);
+        if(length >= 3 && (!bestMatch || length > bestMatch.length)){
+            bestMatch = { length, type: result.type };
         }
     }
-    // Compter à droite
-    for(let c = col + 1; c < boardSize; c++){
-        const testIdx = row * boardSize + c;
-        const testT = board[testIdx];
-        if(type === 'color'){
-            if(testT === 'joker' || (matchColor && testT === matchColor) || (!matchColor && colors.includes(testT))){
-                hCount++;
-                if(!matchColor && colors.includes(testT)) matchColor = testT;
-            }
-            else break;
-        } else {
-            if(testT === t || testT === 'joker' || t === 'joker') hCount++;
-            else break;
+
+    // Fenêtres verticales de 3 contenant idx
+    const vStart = Math.max(0, row - 2);
+    const vEnd = Math.min(row, boardSize - 3);
+    for(let start = vStart; start <= vEnd; start++){
+        const window = [
+            start * boardSize + col,
+            (start + 1) * boardSize + col,
+            (start + 2) * boardSize + col
+        ];
+        const result = analyzeWindow(window);
+        if(!result) continue;
+
+        const length = getRunLengthVertical(result.type, result.color);
+        if(length >= 3 && (!bestMatch || length > bestMatch.length)){
+            bestMatch = { length, type: result.type };
         }
     }
-    
-    if(hCount >= 3) return { length: hCount, type: type };
-    
-    // Réinitialiser la couleur pour la vérification verticale
-    matchColor = colors.includes(t) ? t : null;
-    
-    // Vérifier verticalement
-    let vCount = 1;
-    // Compter en haut
-    for(let r = row - 1; r >= 0; r--){
-        const testIdx = r * boardSize + col;
-        const testT = board[testIdx];
-        if(type === 'color'){
-            if(testT === 'joker' || (matchColor && testT === matchColor) || (!matchColor && colors.includes(testT))){
-                vCount++;
-                if(!matchColor && colors.includes(testT)) matchColor = testT;
-            }
-            else break;
-        } else {
-            if(testT === t || testT === 'joker' || t === 'joker') vCount++;
-            else break;
-        }
-    }
-    // Compter en bas
-    for(let r = row + 1; r < boardSize; r++){
-        const testIdx = r * boardSize + col;
-        const testT = board[testIdx];
-        if(type === 'color'){
-            if(testT === 'joker' || (matchColor && testT === matchColor) || (!matchColor && colors.includes(testT))){
-                vCount++;
-                if(!matchColor && colors.includes(testT)) matchColor = testT;
-            }
-            else break;
-        } else {
-            if(testT === t || testT === 'joker' || t === 'joker') vCount++;
-            else break;
-        }
-    }
-    
-    if(vCount >= 3) return { length: vCount, type: type };
-    
+
+    if(bestMatch) return bestMatch;
     return null;
 }
 

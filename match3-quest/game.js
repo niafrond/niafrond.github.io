@@ -8,13 +8,88 @@ import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDiffi
 import { getRandomItem, getRarityEmoji, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
 import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 
+const BASE_MANA_CAP = 50;
+const EMPTY_MANA_POOL = { red:0, blue:0, green:0, yellow:0, purple:0 };
+
+// Règles paramétrables: une aptitude influence uniquement la couleur de mana associée.
+export const ATTRIBUTE_MANA_RULES = {
+    strength: { color: "red", bonuses: { initial: 1, gain: 1, max: 2 } },
+    agility: { color: "yellow", bonuses: { initial: 1, gain: 1, max: 2 } },
+    stamina: { color: "green", bonuses: { initial: 1, gain: 1, max: 2 } },
+    intelligence: { color: "blue", bonuses: { initial: 1, gain: 1, max: 2 } },
+    morale: { color: "purple", bonuses: { initial: 1, gain: 1, max: 2 } }
+};
+
+export function getPrimaryAttributeEffect(entity, attribute){
+    return Math.max(0, Math.floor(entity?.attributes?.[attribute] || 0));
+}
+
+function getAssociatedAttributeByColor(color){
+    return Object.keys(ATTRIBUTE_MANA_RULES).find(attr => ATTRIBUTE_MANA_RULES[attr].color === color);
+}
+
+export function getAttributeManaBonus(entity, color, bonusType){
+    const attribute = getAssociatedAttributeByColor(color);
+    if(!attribute) return 0;
+    const fixedBonus = ATTRIBUTE_MANA_RULES[attribute]?.bonuses?.[bonusType] || 0;
+    if(fixedBonus <= 0) return 0;
+    return getPrimaryAttributeEffect(entity, attribute) * fixedBonus;
+}
+
+export function getManaCapForColor(entity, color){
+    const baseCap = Math.max(0, Math.floor(entity?.maxMana ?? BASE_MANA_CAP));
+    return baseCap + getAttributeManaBonus(entity, color, "max");
+}
+
+export function recalculateManaCaps(entity){
+    if(!entity || !entity.mana) return;
+    const manaCaps = {};
+    Object.keys(entity.mana).forEach(color => {
+        manaCaps[color] = getManaCapForColor(entity, color);
+    });
+    entity.manaCaps = manaCaps;
+}
+
+function clampManaToCaps(entity){
+    if(!entity || !entity.mana) return;
+    recalculateManaCaps(entity);
+    Object.keys(entity.mana).forEach(color => {
+        entity.mana[color] = Math.min(entity.manaCaps[color], Math.max(0, Math.floor(entity.mana[color] || 0)));
+    });
+}
+
+export function addManaForColor(entity, color, baseGain, options = {}){
+    if(!entity || !entity.mana || !Object.prototype.hasOwnProperty.call(entity.mana, color)) {
+        return { before: 0, after: 0, totalGain: 0, gainBonus: 0, cap: 0, gained: 0 };
+    }
+
+    const before = Math.max(0, Math.floor(entity.mana[color] || 0));
+    const applyGainBonus = options.applyGainBonus !== false;
+    const gainBonus = applyGainBonus ? getAttributeManaBonus(entity, color, "gain") : 0;
+    const totalGain = Math.max(0, Math.floor((baseGain || 0) + gainBonus));
+    const cap = getManaCapForColor(entity, color);
+    const after = Math.min(cap, before + totalGain);
+    entity.mana[color] = after;
+    recalculateManaCaps(entity);
+
+    return {
+        before,
+        after,
+        totalGain,
+        gainBonus,
+        cap,
+        gained: Math.max(0, after - before)
+    };
+}
+
 // joueur
 export let player = {
     name: "Aventurier",
     hp: 100,
     maxHp: 100,
-    mana: { red:0, blue:0, green:0, yellow:0, purple:0 },
-    maxMana: 50,
+    mana: { ...EMPTY_MANA_POOL },
+    maxMana: BASE_MANA_CAP,
+    manaCaps: { red:BASE_MANA_CAP, blue:BASE_MANA_CAP, green:BASE_MANA_CAP, yellow:BASE_MANA_CAP, purple:BASE_MANA_CAP },
     attack: 15,
     level: 1,
     xp: 0,
@@ -36,7 +111,8 @@ export let player = {
     tempAttack: 0,  // bonus d'attaque temporaire
     tempDefense: 0,  // bonus de défense temporaire
     hasRevive: false,  // possède un effet de résurrection
-    revivePercent: 0  // pourcentage de HP à la résurrection
+    revivePercent: 0,  // pourcentage de HP à la résurrection
+    unspentLevelPoints: 0 // points d'attribut a depenser apres les gains de niveaux
 };
 
 // tour actuel
@@ -49,14 +125,61 @@ export const gameState = {
 
 const combatRewards = {
     xpGained: 0,
+    xpApplied: false,
     items: [],
     weapons: []
 };
 
 function resetCombatRewards(){
     combatRewards.xpGained = 0;
+    combatRewards.xpApplied = false;
     combatRewards.items = [];
     combatRewards.weapons = [];
+}
+
+function queueCombatXP(xpAmount){
+    const safeXP = Math.max(0, Math.floor(xpAmount || 0));
+    if(safeXP <= 0) return 0;
+    combatRewards.xpGained += safeXP;
+    return safeXP;
+}
+
+function applyCombatXPAtEnd(){
+    if(combatRewards.xpApplied) {
+        return {
+            xpApplied: 0,
+            leveledUp: false,
+            levelsGained: 0
+        };
+    }
+
+    const pendingXP = Math.max(0, Math.floor(combatRewards.xpGained || 0));
+    combatRewards.xpApplied = true;
+
+    if(pendingXP <= 0) {
+        return {
+            xpApplied: 0,
+            leveledUp: false,
+            levelsGained: 0
+        };
+    }
+
+    const levelUpResult = addXP(player, pendingXP);
+    if(levelUpResult.leveledUp) {
+        const levelsGained = Math.max(1, levelUpResult.levelsGained || 1);
+        player.unspentLevelPoints = Math.max(0, player.unspentLevelPoints || 0) + levelsGained;
+
+        const healAmount = levelsGained * 20;
+        if(healAmount > 0) {
+            player.hp = Math.min(player.maxHp, player.hp + healAmount);
+        }
+    }
+
+    return {
+        xpApplied: pendingXP,
+        leveledUp: levelUpResult.leveledUp,
+        levelsGained: levelUpResult.levelsGained
+    };
 }
 
 function hideCombatResultScreen(){
@@ -110,8 +233,8 @@ export function restartCombat(){
     enemy.combatPoints = 0;
     enemy.bonusTurn = false;
     // Réinitialiser le mana à 0
-    player.mana = { red:0, blue:0, green:0, yellow:0, purple:0 };
-    enemy.mana = { red:0, blue:0, green:0, yellow:0, purple:0 };
+    player.mana = { ...EMPTY_MANA_POOL };
+    enemy.mana = { ...EMPTY_MANA_POOL };
     // Réinitialiser les bonus temporaires
     if(player.tempAttack) {
         player.attack -= player.tempAttack;
@@ -147,6 +270,22 @@ export function handlePlayerDeath(){
         return;
     }
     
+    const xpResult = applyCombatXPAtEnd();
+    if(xpResult.xpApplied > 0) {
+        log(`⭐ ${xpResult.xpApplied} XP appliquee(s) a la fin du combat.`);
+        if(xpResult.leveledUp) {
+            log(`🎉 Niveau ${player.level} atteint en fin de combat.`);
+            if(xpResult.levelsGained > 1) {
+                log(`✨ Vous avez gagne ${xpResult.levelsGained} niveaux d'un coup !`);
+            }
+            updateAvailableSpells();
+            updateAvailableWeapons();
+            updateInventoryTab();
+            showAttributeMenu();
+        }
+    }
+    saveUpdate();
+
     log("💀 Vous êtes mort ! Le combat est terminé.");
     
     // Marquer le combat comme terminé
@@ -210,6 +349,22 @@ export function abandonCombat(){
         return;
     }
     
+    const xpResult = applyCombatXPAtEnd();
+    if(xpResult.xpApplied > 0) {
+        log(`⭐ ${xpResult.xpApplied} XP appliquee(s) a la fin du combat.`);
+        if(xpResult.leveledUp) {
+            log(`🎉 Niveau ${player.level} atteint en fin de combat.`);
+            if(xpResult.levelsGained > 1) {
+                log(`✨ Vous avez gagne ${xpResult.levelsGained} niveaux d'un coup !`);
+            }
+            updateAvailableSpells();
+            updateAvailableWeapons();
+            updateInventoryTab();
+            showAttributeMenu();
+        }
+    }
+    saveUpdate();
+
     log("🏳️ Vous avez abandonné le combat...");
     
     // Marquer le combat comme terminé
@@ -288,13 +443,13 @@ export function loadGameData() {
             player.name = loaded.name ?? player.name;
             player.hp = loaded.hp ?? player.hp;
             player.maxHp = loaded.maxHp ?? player.maxHp;
-            player.mana = loaded.mana ?? player.mana;
+            player.mana = { ...player.mana, ...(loaded.mana || {}) };
             player.maxMana = loaded.maxMana ?? player.maxMana;
             player.attack = loaded.attack ?? player.attack;
             player.level = loaded.level ?? player.level;
             player.xp = loaded.xp ?? player.xp;
             player.xpToNextLevel = loaded.xpToNextLevel ?? player.xpToNextLevel;
-            player.attributes = loaded.attributes ?? player.attributes;
+            player.attributes = { ...player.attributes, ...(loaded.attributes || {}) };
             player.spells = loaded.spells ?? player.spells;
             player.activeSpells = loaded.activeSpells ?? player.activeSpells;
             player.availableSpells = loaded.availableSpells ?? player.availableSpells;
@@ -312,6 +467,8 @@ export function loadGameData() {
             player.tempDefense = loaded.tempDefense ?? player.tempDefense;
             player.hasRevive = loaded.hasRevive ?? player.hasRevive;
             player.revivePercent = loaded.revivePercent ?? player.revivePercent;
+            player.unspentLevelPoints = loaded.unspentLevelPoints ?? player.unspentLevelPoints;
+            clampManaToCaps(player);
             console.log('💾 Données du joueur chargées depuis le localStorage');
             if (player.class) {
                 console.log(`✨ Classe chargée: ${player.class}`);
@@ -328,6 +485,7 @@ export function loadGameData() {
 loadGameData();
 // Appliquer les effets des artefacts
 applyArtifactEffects(player);
+clampManaToCaps(player);
 
 // interface minimale
 export function updateStats(){
@@ -348,10 +506,6 @@ export function updateStats(){
     playerClassEmoji.then(emoji => {
         const nameDisplay = `<div class="stat">${emoji}${player.name || 'Aventurier'}</div>`;
         
-        // Calculer la progression XP
-        const xpProgress = getXPProgress(player);
-        const xpRemaining = getXPToNextLevel(player);
-        
         playerDiv.innerHTML = `
             ${nameDisplay}
             <div class="stat">
@@ -361,10 +515,7 @@ export function updateStats(){
                 </div>
             </div>
             <div class="stat">
-                <div class="xp-bar-container" title="XP: ${player.xp}/${player.xpToNextLevel} (${xpRemaining} restants)">
-                    <progress class="xp-bar" value="${xpProgress}" max="100"></progress>
-                    <span class="xp-text">Niv.${player.level} - ${xpProgress}%</span>
-                </div>
+                <strong>Atk:</strong> ${player.attack} <strong>Def:</strong> ${player.defense || 0}
             </div>
             <div class="stat">
                 <div class="mana-dots">
@@ -410,7 +561,7 @@ export function updateStats(){
                 <span class="mana-dot mana-purple" title="${enemy.mana.purple}"></span>${enemy.mana.purple}
             </div>
         </div>
-        <div class="stat"><strong>Atk:</strong> ${enemy.attack}</div>
+        <div class="stat"><strong>⚔️ Atk:</strong> ${enemy.attack} <strong>🛡️ Def:</strong> ${enemy.defense || 0}</div>
         <div class="stat"><strong>⚔️:</strong> ${enemy.combatPoints}</div>`;
     
     updateEnemySpells();
@@ -477,6 +628,13 @@ export function log(text){
     }
 }
 
+export function logActiveAction(actionText){
+    const actor = currentTurn === 'player'
+        ? `joueur (${player.name || 'Aventurier'})`
+        : `ennemi (${enemy.name || 'Ennemi'})`;
+    console.log(`🎯 Action active - ${actor}: ${actionText}`);
+}
+
 // ========================================
 // GESTION DE LA DIFFICULTÉ DE L'IA
 // ========================================
@@ -494,6 +652,7 @@ export function getCurrentAIDifficulty() {
 // ========================================
 
 export function saveUpdate(){
+    clampManaToCaps(player);
     try {
         localStorage.setItem('player', JSON.stringify(player));
         console.log('💾 Données du joueur sauvegardées');
@@ -565,27 +724,27 @@ export function updatePlayerStatsTab(){
             <div class="stat-line">
                 <span class="stat-label">💪 Force (Strength):</span>
                 <span class="stat-value">${player.attributes.strength}</span>
-                <span class="stat-effect">+${player.attributes.strength * 2} Attaque</span>
+                <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'strength')} Attaque</span>
             </div>
             <div class="stat-line">
                 <span class="stat-label">🏃 Agilité (Agility):</span>
                 <span class="stat-value">${player.attributes.agility}</span>
-                <span class="stat-effect">+${player.attributes.agility * 2} Défense</span>
+                <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'agility')} Défense</span>
             </div>
             <div class="stat-line">
                 <span class="stat-label">🧠 Intelligence:</span>
                 <span class="stat-value">${player.attributes.intelligence}</span>
-                <span class="stat-effect">+${player.attributes.intelligence * 10} HP max, +${player.attributes.intelligence * 5} mana</span>
+                <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'intelligence')} Puissance magique</span>
             </div>
             <div class="stat-line">
                 <span class="stat-label">❤️ Endurance (Stamina):</span>
                 <span class="stat-value">${player.attributes.stamina}</span>
-                <span class="stat-effect">+${player.attributes.stamina * 15} HP max</span>
+                <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'stamina')} HP max</span>
             </div>
             <div class="stat-line">
                 <span class="stat-label">🎯 Moral (Morale):</span>
                 <span class="stat-value">${player.attributes.morale}</span>
-                <span class="stat-effect">+${player.attributes.morale * 3} Attaque</span>
+                <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'morale')} Attaque morale</span>
             </div>
         </div>
         
@@ -606,6 +765,10 @@ export function updatePlayerStatsTab(){
             <div class="stat-line">
                 <span class="stat-label">✨ Mana Maximum:</span>
                 <span class="stat-value">${player.maxMana}</span>
+            </div>
+            <div class="stat-line">
+                <span class="stat-label">🔴🟡🟢🔵🟣 Caps mana:</span>
+                <span class="stat-value">${player.manaCaps?.red ?? player.maxMana}/${player.manaCaps?.yellow ?? player.maxMana}/${player.manaCaps?.green ?? player.maxMana}/${player.manaCaps?.blue ?? player.maxMana}/${player.manaCaps?.purple ?? player.maxMana}</span>
             </div>
         </div>
         
@@ -682,6 +845,8 @@ export function useWeapon(){
         'staff': '🪄'
     };
     const icon = weaponIcons[weapon.type] || '⚔️';
+
+    logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
     
     showAttackAnimation(`<div class="attack-icon">${icon}</div><div class="attack-title">${weapon.name.toUpperCase()}</div><div class="attack-damage">-${dmg} dégâts</div><div class="attack-target">→ ${enemy.name}</div>`, true);
     log(`${icon} Vous utilisez ${weapon.name} et infligez ${dmg} dégâts.`);
@@ -717,6 +882,7 @@ export function castSpell(spellId){
     
     // Gérer les sorts avec effet spécial
     if(spell.effect) {
+        logActiveAction(`lance le sort ${spell.name} (effet special)`);
         // Import dynamique pour éviter les dépendances circulaires
         import('./classSpellEffects.js').then(module => {
             if(module.applyClassSpellEffect(spell)) {
@@ -730,16 +896,19 @@ export function castSpell(spellId){
     }
     
     // Sorts standards (dégâts ou soins)
+    logActiveAction(`lance le sort ${spell.name}`);
+    const intelligenceBonus = getPrimaryAttributeEffect(player, "intelligence");
     if(spell.dmg){
-        let dmg=Math.floor(spell.dmg*(1-(enemy.resistances[spell.color]||0)));
+        let dmg=Math.floor((spell.dmg + intelligenceBonus) * (1-(enemy.resistances[spell.color]||0)));
         enemy.hp-=dmg;
         showAttackAnimation(`<div class="attack-icon">🔥</div><div class="attack-title">${spell.name.toUpperCase()}</div><div class="attack-damage">-${Math.floor(dmg)} dégâts</div><div class="attack-target">→ ${enemy.name}</div>`, true);
         log(`🔥 ${spell.name} inflige ${dmg} dégâts.`);
     }
     if(spell.heal){
-        player.hp=Math.min(player.maxHp,player.hp+spell.heal);
-        showAttackAnimation(`<div class="attack-icon">💚</div><div class="attack-title">${spell.name.toUpperCase()}</div><div class="attack-heal">+${spell.heal} HP</div><div class="attack-target">→ Vous</div>`, true);
-        log(`💚 ${spell.name} soigne ${spell.heal} HP.`);
+        const healAmount = spell.heal + intelligenceBonus;
+        player.hp=Math.min(player.maxHp,player.hp+healAmount);
+        showAttackAnimation(`<div class="attack-icon">💚</div><div class="attack-title">${spell.name.toUpperCase()}</div><div class="attack-heal">+${healAmount} HP</div><div class="attack-target">→ Vous</div>`, true);
+        log(`💚 ${spell.name} soigne ${healAmount} HP.`);
     }
     
     updateStats();
@@ -785,6 +954,7 @@ export function enemyTurn(){
         // Exécuter l'action choisie par l'IA
         if(decision.action === 'spell'){
             const spell = decision.data.spell;
+            logActiveAction(`lance le sort ${spell.name}`);
             
             // Consommer le mana du sort (gérer coût simple et multiple)
             if(typeof spell.cost === 'number') {
@@ -796,21 +966,25 @@ export function enemyTurn(){
             }
             
             if(spell.dmg){
-                let dmg = Math.floor(spell.dmg * (1 - (player.resistances && player.resistances[spell.color] || 0)));
+                const enemyIntelligenceBonus = getPrimaryAttributeEffect(enemy, "intelligence");
+                let dmg = Math.floor((spell.dmg + enemyIntelligenceBonus) * (1 - (player.resistances && player.resistances[spell.color] || 0)));
                 player.hp -= dmg;
                 showAttackAnimation(`<div class="attack-icon">🔥</div><div class="attack-title">${spell.name.toUpperCase()}</div><div class="attack-damage">-${Math.floor(dmg)} dégâts</div><div class="attack-source">${enemy.name}</div><div class="attack-target">→ Vous</div>`, false);
                 log(`🔥 ${enemy.name} lance ${spell.name} ! ${dmg} dégâts.`);
             }
             if(spell.heal){
-                enemy.hp = Math.min(enemy.maxHp, enemy.hp + spell.heal);
-                showAttackAnimation(`<div class="attack-icon">💚</div><div class="attack-title">${spell.name.toUpperCase()}</div><div class="attack-heal">+${spell.heal} HP</div><div class="attack-source">${enemy.name}</div>`, false);
-                log(`💚 ${enemy.name} utilise ${spell.name} et soigne ${spell.heal} HP.`);
+                const enemyIntelligenceBonus = getPrimaryAttributeEffect(enemy, "intelligence");
+                const healAmount = spell.heal + enemyIntelligenceBonus;
+                enemy.hp = Math.min(enemy.maxHp, enemy.hp + healAmount);
+                showAttackAnimation(`<div class="attack-icon">💚</div><div class="attack-title">${spell.name.toUpperCase()}</div><div class="attack-heal">+${healAmount} HP</div><div class="attack-source">${enemy.name}</div>`, false);
+                log(`💚 ${enemy.name} utilise ${spell.name} et soigne ${healAmount} HP.`);
             }
             
             // Vérifier l'état après l'action
             finishEnemyTurn();
             
         } else if(decision.action === 'weapon'){
+            logActiveAction(`utilise l'arme ${enemy.weapon.name}`);
             enemy.combatPoints -= enemy.weapon.actionPoints;
             let dmg = enemy.weapon.damage;
             player.hp -= dmg;
@@ -831,6 +1005,7 @@ export function enemyTurn(){
             
         } else {
             // L'ennemi joue sur le plateau
+            logActiveAction('joue sur le plateau');
             enemyMakeMove();
             
             // Pas besoin d'appeler finishEnemyTurn ici car checkMatches le fera
@@ -870,12 +1045,10 @@ export function finishEnemyTurn(){
 export function handleEnemyDefeated(){
     log(`🏆 ${enemy.name} est vaincu !`);
     
-    // Calculer et donner l'XP
+    // Calculer et mettre en attente l'XP (application en fin de combat)
     const xpGain = calculateXPGain(enemy.level || player.level, player.level);
-    combatRewards.xpGained += xpGain;
+    queueCombatXP(xpGain);
     log(`⭐ Vous gagnez ${xpGain} XP !`);
-    
-    const levelUpResult = addXP(player, xpGain);
     
     // 40% de chance de ne rien obtenir
     const dropChance = Math.random();
@@ -930,12 +1103,12 @@ export function handleEnemyDefeated(){
         log(`💨 L'ennemi ne laisse rien derrière lui...`);
     }
     
-    // Gestion de la montée de niveau
-    if(levelUpResult.leveledUp) {
-        player.hp = Math.min(player.maxHp, player.hp + 20);
-        log(`🎉 Niveau ${player.level} atteint ! HP restauré.`);
-        if(levelUpResult.levelsGained > 1) {
-            log(`✨ Vous avez gagné ${levelUpResult.levelsGained} niveaux d'un coup !`);
+    const xpResult = applyCombatXPAtEnd();
+    if(xpResult.leveledUp) {
+        const healAmount = Math.max(0, (xpResult.levelsGained || 0) * 20);
+        log(`🎉 Niveau ${player.level} atteint ! +${healAmount} HP de recuperation.`);
+        if(xpResult.levelsGained > 1) {
+            log(`✨ Vous avez gagné ${xpResult.levelsGained} niveaux d'un coup !`);
         }
         updateAvailableSpells();
         updateAvailableWeapons();
@@ -944,6 +1117,7 @@ export function handleEnemyDefeated(){
     } else {
         log(`📊 Progression: ${player.xp}/${player.xpToNextLevel} XP`);
     }
+    saveUpdate();
     
     // Marquer le combat comme terminé
     gameState.combatState = 'finished';
@@ -976,14 +1150,7 @@ export function handleEnemyDefeated(){
 }
 
 export function grantComboMasteryRewards(xpAmount = 25){
-    combatRewards.xpGained += xpAmount;
-    const levelUpResult = addXP(player, xpAmount);
-    if(levelUpResult.leveledUp){
-        log(`🎉 Combo magistral: niveau ${player.level} atteint !`);
-        updateAvailableSpells();
-        updateAvailableWeapons();
-    }
-    saveUpdate();
+    queueCombatXP(xpAmount);
     return xpAmount;
 }
 
@@ -991,27 +1158,22 @@ export function grantManaGeneratedXP(manaAmount){
     const safeMana = Math.max(0, Math.floor(manaAmount || 0));
     if(safeMana <= 0) return { xpGained: 0, leveledUp: false, levelsGained: 0 };
 
-    combatRewards.xpGained += safeMana;
-    const levelUpResult = addXP(player, safeMana);
-    if(levelUpResult.leveledUp){
-        log(`✨ Votre maîtrise du mana vous fait atteindre le niveau ${player.level} !`);
-        updateAvailableSpells();
-        updateAvailableWeapons();
-    } else if(player.level >= 100) {
-        log('🏁 Niveau maximum atteint (100).');
-    }
+    queueCombatXP(safeMana);
 
     return {
         xpGained: safeMana,
-        leveledUp: levelUpResult.leveledUp,
-        levelsGained: levelUpResult.levelsGained
+        leveledUp: false,
+        levelsGained: 0
     };
 }
 
 export function showAttributeMenu(){
+    if((player.unspentLevelPoints || 0) <= 0) return;
+
     // Afficher la modale de montée de niveau
     const modal = document.getElementById('levelup-modal');
     const newLevelSpan = document.getElementById('new-level');
+    const subtitle = modal ? modal.querySelector('.levelup-subtitle') : null;
     
     if(!modal || !newLevelSpan) {
         console.error('Modale de montée de niveau introuvable');
@@ -1019,6 +1181,12 @@ export function showAttributeMenu(){
     }
     
     newLevelSpan.textContent = player.level;
+    if(subtitle) {
+        const remainingPoints = player.unspentLevelPoints || 0;
+        subtitle.textContent = remainingPoints > 1
+            ? `Choisissez un attribut a ameliorer (${remainingPoints} points restants)`
+            : 'Choisissez un attribut a ameliorer';
+    }
     modal.style.display = 'flex';
     
     // Attacher les événements aux cartes d'attributs
@@ -1037,7 +1205,11 @@ export function showAttributeMenu(){
             const attr = card.dataset.attr;
             if(attr) {
                 selectAttribute(attr);
-                modal.style.display = 'none';
+                if((player.unspentLevelPoints || 0) <= 0) {
+                    modal.style.display = 'none';
+                } else {
+                    showAttributeMenu();
+                }
             }
         });
     });
@@ -1052,7 +1224,10 @@ function selectAttribute(attr) {
         'morale': 'Morale'
     };
     
+    if((player.unspentLevelPoints || 0) <= 0) return;
+
     player.attributes[attr]++;
+    player.unspentLevelPoints = Math.max(0, (player.unspentLevelPoints || 0) - 1);
     applyAttributeBonus(attr);
     log(`📈 +1 ${attrNames[attr]}`);
     saveUpdate();
@@ -1060,12 +1235,24 @@ function selectAttribute(attr) {
 
 export function applyAttributeBonus(attr){
     switch(attr){
-        case "strength": player.attack+=2; break;
-        case "agility": player.defense=(player.defense||0)+2; break;
-        case "intelligence": player.maxHp+=10; Object.keys(player.mana).forEach(c=>player.mana[c]+=5); break;
-        case "stamina": player.maxHp+=15; break;
-        case "morale": player.attack+=3; break;
+        case "strength":
+            player.attack += 1;
+            break;
+        case "agility":
+            player.defense = (player.defense || 0) + 1;
+            break;
+        case "intelligence":
+            // L'effet principal reste linéaire (v) sur la puissance magique.
+            break;
+        case "stamina":
+            player.maxHp += 1;
+            player.hp = Math.min(player.maxHp, player.hp + 1);
+            break;
+        case "morale":
+            player.attack += 1;
+            break;
     }
+    clampManaToCaps(player);
 }
 
 // -------------------------------------
@@ -1159,11 +1346,11 @@ function getSpellTooltipHtml(spell) {
     if(spell.effect) {
         effectText = spell.description || 'Effet spécial';
     } else if(spell.dmg && spell.heal) {
-        effectText = `Inflige ${spell.dmg} dégâts et soigne ${spell.heal} HP`;
+        effectText = `Inflige ${spell.dmg} 💀 et soigne ${spell.heal} ❤️`;
     } else if(spell.dmg) {
-        effectText = `Inflige ${spell.dmg} dégâts`;
+        effectText = `Inflige ${spell.dmg} 💀`;
     } else if(spell.heal) {
-        effectText = `Soigne ${spell.heal} HP`;
+        effectText = `Soigne ${spell.heal} ❤️`;
     }
 
     return `<div class="spell-tooltip-line">🧠 ${effectText}</div>`;
@@ -1220,8 +1407,8 @@ export function updateSpellsTab(){
         player.activeSpells.forEach(sp => {
             const div = document.createElement('div');
             div.className = 'spell-item active-spell';
-            const damageText = sp.dmg ? ` • ${sp.dmg} dmg` : '';
-            const healText = sp.heal ? ` • ${sp.heal} HP` : '';
+            const damageText = sp.dmg ? ` • ${sp.dmg} 💀` : '';
+            const healText = sp.heal ? ` • ${sp.heal} ❤️` : '';
             const effectText = sp.effect ? ` • ${sp.description}` : '';
             
             // Gérer l'affichage du coût
@@ -1255,8 +1442,8 @@ export function updateSpellsTab(){
             const div = document.createElement('div');
             div.className = 'spell-item available-spell';
             const canEquip = player.activeSpells.length < 4;
-            const damageText = sp.dmg ? ` • ${sp.dmg} dmg` : '';
-            const healText = sp.heal ? ` • ${sp.heal} HP` : '';
+            const damageText = sp.dmg ? ` • ${sp.dmg} 💀` : '';
+            const healText = sp.heal ? ` • ${sp.heal} ❤️` : '';
             const effectText = sp.effect ? ` • ${sp.description}` : '';
             
             // Gérer l'affichage du coût
@@ -1313,8 +1500,23 @@ export function unequipSpell(spellId){
 // Applique les aptitudes de début de combat pour le joueur et l'ennemi
 export function applyStartingAbilities(){
     // Réinitialiser le mana à 0
-    player.mana = { red:0, blue:0, green:0, yellow:0, purple:0 };
-    enemy.mana = { red:0, blue:0, green:0, yellow:0, purple:0 };
+    player.mana = { ...EMPTY_MANA_POOL };
+    enemy.mana = { ...EMPTY_MANA_POOL };
+
+    // Bonus de départ liés aux aptitudes (une couleur par aptitude).
+    Object.keys(player.mana).forEach(color => {
+        const initialBonus = getAttributeManaBonus(player, color, "initial");
+        if(initialBonus > 0) {
+            addManaForColor(player, color, initialBonus, { applyGainBonus: false });
+        }
+    });
+
+    Object.keys(enemy.mana).forEach(color => {
+        const initialBonus = getAttributeManaBonus(enemy, color, "initial");
+        if(initialBonus > 0) {
+            addManaForColor(enemy, color, initialBonus, { applyGainBonus: false });
+        }
+    });
     
     // Appliquer les aptitudes du joueur
     if(player.abilities && player.abilities.length > 0){
@@ -1322,7 +1524,7 @@ export function applyStartingAbilities(){
             const ability = allAbilities.find(a => a.id === abilityId);
             if(ability && ability.startMana){
                 Object.keys(ability.startMana).forEach(color => {
-                    player.mana[color] += ability.startMana[color];
+                    addManaForColor(player, color, ability.startMana[color], { applyGainBonus: false });
                 });
                 log(`✨ Aptitude: ${ability.name} activée`);
             }
@@ -1335,11 +1537,13 @@ export function applyStartingAbilities(){
             const ability = allAbilities.find(a => a.id === abilityId);
             if(ability && ability.startMana){
                 Object.keys(ability.startMana).forEach(color => {
-                    enemy.mana[color] += ability.startMana[color];
+                    addManaForColor(enemy, color, ability.startMana[color], { applyGainBonus: false });
                 });
             }
         });
     }
+
+    clampManaToCaps(player);
 }
 
 // ennemis
@@ -1473,7 +1677,7 @@ export function createWeaponButton(){
     };
     const icon = weaponIcons[weapon.type] || '⚔️';
     
-    btn.innerHTML = `${icon} ${weapon.name} <span class="weapon-cost">${weapon.actionPoints} PA</span> - ${weapon.damage} dmg`;
+    btn.innerHTML = `${icon} ${weapon.name} <span class="weapon-cost">${weapon.actionPoints} ⚔️</span> - ${weapon.damage} 💀`;
     if(player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints) {
         btn.classList.add('disabled');
         btn.onclick = null; // Désactiver le clic
@@ -1512,7 +1716,7 @@ export function updateWeaponsTab(){
             <span class="weapon-icon">${icon}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${weapon.name}</span>
-                <span class="weapon-stats">${weapon.damage} dégâts • ${weapon.actionPoints} PA • Niv. ${weapon.minLevel}</span>
+                <span class="weapon-stats">${weapon.damage} 💀 • ${weapon.actionPoints} ⚔️ • Niv. ${weapon.minLevel}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
             <button class="weapon-action" onclick="window.unequipWeapon()">❌ Retirer</button>
@@ -1545,7 +1749,7 @@ export function updateWeaponsTab(){
             <span class="weapon-icon">${icon}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${weapon.name}</span>
-                <span class="weapon-stats">${weapon.damage} dégâts • ${weapon.actionPoints} PA • Niv. ${weapon.minLevel}</span>
+                <span class="weapon-stats">${weapon.damage} 💀 • ${weapon.actionPoints} ⚔️ • Niv. ${weapon.minLevel}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
             <button class="weapon-action" ${isEquipped ? 'disabled' : ''} onclick="window.equipWeapon('${weapon.id}')">${isEquipped ? '✅ Équipée' : '📦 Équiper'}</button>
