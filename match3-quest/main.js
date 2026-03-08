@@ -100,7 +100,7 @@ function init() {
 
             enemies.forEach(enemyChoice => {
                 const card = document.createElement('div');
-                card.className = `enemy-card${enemyChoice.isOverleveledChoice ? ' danger' : ''}`;
+                card.className = `enemy-card${enemyChoice.isOverleveledChoice ? ' danger' : ''}${enemyChoice.isEasyChoice ? ' easy' : ''}`;
                 const xpGain = calculateXPGain(enemyChoice.level || player.level, player.level);
 
                 card.innerHTML = `
@@ -108,6 +108,7 @@ function init() {
                     <div class="enemy-meta">Niveau ${enemyChoice.level} • HP ${enemyChoice.maxHp} • Atk ${enemyChoice.attack}</div>
                     <div class="enemy-xp">XP estimée: ${xpGain}</div>
                     ${enemyChoice.isOverleveledChoice ? '<div class="enemy-warning">⚠️ Ennemi trop fort (+6 niveaux)</div>' : ''}
+                    ${enemyChoice.isEasyChoice ? '<div class="enemy-easy">⬇️ Ennemi affaibli (facile)</div>' : ''}
                 `;
 
                 card.onclick = () => {

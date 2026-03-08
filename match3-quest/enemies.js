@@ -195,6 +195,13 @@ export function generateEnemyChoices(playerLevel, count = 4, allWeaponsArg = all
         choices[idx] = boosted;
     }
 
+    // Ennemi facile garanti : niveau réduit de 2 (minimum 1)
+    const easyTemplate = pickRandom(loadEnemyCatalogSync());
+    const easyLevel = Math.max(1, playerLevel - 2);
+    const easyEnemy = buildEnemyFromTemplate(easyTemplate, easyLevel, allWeaponsArg);
+    easyEnemy.isEasyChoice = true;
+    choices.push(easyEnemy);
+
     return choices;
 }
 

@@ -3,11 +3,12 @@
 import { colors } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { allWeapons, getAvailableWeapons, getWeaponById } from "./weapons.js";
-import { enemyMakeMove, setGameStarted } from "./board.js";
+import { enemyMakeMove, enemyMakeRandomMove, setGameStarted } from "./board.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
 import { getRandomItem, getRarityEmoji, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
 import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
+export { updateShopTab };
 
 const BASE_MANA_CAP = 50;
 const EMPTY_MANA_POOL = { red:0, blue:0, green:0, yellow:0, purple:0 };
@@ -75,7 +76,8 @@ export function addManaForColor(entity, color, baseGain, options = {}){
     const before = Math.max(0, Math.floor(entity.mana[color] || 0));
     const applyGainBonus = options.applyGainBonus !== false;
     const gainBonus = applyGainBonus ? getAttributeManaBonus(entity, color, "gain") : 0;
-    const totalGain = Math.max(0, Math.floor((baseGain || 0) + gainBonus));
+    const manaMultAmt = (entity === player && entity.manaMultiplier && entity.manaMultiplier.turnsLeft > 0 && applyGainBonus) ? entity.manaMultiplier.mult : 1;
+    const totalGain = Math.max(0, Math.floor(((baseGain || 0) + gainBonus) * manaMultAmt));
     const cap = getManaCapForColor(entity, color);
     const after = Math.min(cap, before + totalGain);
     entity.mana[color] = after;
@@ -147,7 +149,10 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
 
     if(spell.dmg){
         const targetResistance = target.resistances?.[spell.color] || 0;
-        const dmg = Math.floor((spell.dmg + intelligenceBonus) * (1 - targetResistance));
+        let dmg = Math.floor((spell.dmg + intelligenceBonus) * (1 - targetResistance));
+        if(!isPlayerCaster && target.damageReduction > 0) {
+            dmg = Math.max(1, Math.floor(dmg * (1 - target.damageReduction)));
+        }
         target.hp -= dmg;
 
         if(isPlayerCaster) {
@@ -342,6 +347,11 @@ export function restartCombat(){
     }
     player.hasRevive = false;
     player.revivePercent = 0;
+    player.regenEffect = null;
+    player.lifesteal = 0;
+    player.manaMultiplier = null;
+    player.damageReduction = 0;
+    player.tempCritChance = 0;
     // Réinitialiser le statut du jeu
     setGameStarted(false);
     // Appliquer les aptitudes de début de combat
@@ -725,10 +735,6 @@ export function updateStats(){
             </div>
         </div>
         <div class="stat"><strong>⚔️:</strong> ${enemy.combatPoints}</div>`;
-    if(enemy.inventoryItem) {
-        enemyDiv.innerHTML += `<div class="stat" style="font-size:0.85em; color:#888;">🎒 Objet: ${enemy.inventoryItem.name}</div>`;
-    }
-
     // Animer les compteurs ennemi
     const enemyProgressEl = enemyDiv.querySelector('.hp-bar-container progress');
     _animateHpBar('enemy-hp-current', initEnemyHp, targetEnemyHp, enemyProgressEl);
@@ -743,12 +749,15 @@ export function updateEnemySpells(){
     // Afficher l'arme ennemie (au-dessus des sorts, comme le joueur)
     const weaponContainer = document.getElementById('enemy-weapon-button');
     if (weaponContainer) {
+        let weaponHtml = '';
         if (enemy.weapon) {
             const icon = getWeaponIcon(enemy.weapon.type);
-            weaponContainer.innerHTML = `<div class="weapon-btn disabled" style="cursor:default;">${icon} ${enemy.weapon.name} <span class="weapon-cost">${enemy.weapon.actionPoints} ⚔️</span> - ${enemy.weapon.damage} 💀</div>`;
-        } else {
-            weaponContainer.innerHTML = '';
+            weaponHtml += `<div class="weapon-btn disabled" style="cursor:default;">${icon} ${enemy.weapon.name} <span class="weapon-cost">${enemy.weapon.actionPoints} ⚔️</span> - ${enemy.weapon.damage} 💀</div>`;
         }
+        if (enemy.inventoryItem) {
+            weaponHtml += `<div class="weapon-btn disabled" style="cursor:default; opacity:0.8;">🎒 ${enemy.inventoryItem.name}</div>`;
+        }
+        weaponContainer.innerHTML = weaponHtml;
     }
 
     const container = document.getElementById('enemy-spell-list');
@@ -1027,15 +1036,35 @@ export function useWeapon(){
     }
     
     player.combatPoints -= weapon.actionPoints;
-    const dmg = weapon.damage;
+    let dmg = weapon.damage + (player.attack || 0);
+
+    // Critique
+    const totalCritChance = (player.critChance || 0) + (player.tempCritChance || 0);
+    let isCrit = false;
+    if(totalCritChance > 0 && Math.random() * 100 < totalCritChance) {
+        dmg = Math.floor(dmg * 1.5);
+        isCrit = true;
+    }
+
+    // Défense de l'ennemi
+    dmg = Math.max(1, dmg - (enemy.defense || 0));
+
     enemy.hp -= dmg;
-    
+
+    // Vol de vie
+    if(player.lifesteal > 0) {
+        const heal = Math.floor(dmg * player.lifesteal);
+        player.hp = Math.min(player.maxHp, player.hp + heal);
+        log(`🩸 Vol de vie : +${heal} HP.`);
+    }
+
     const icon = getWeaponIcon(weapon.type);
 
     logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
-    
-    showCombatAnimation({ icon, title: weapon.name, damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
-    log(`${icon} Vous utilisez ${weapon.name} et infligez ${dmg} dégâts.`);
+
+    const critSuffix = isCrit ? ' 💥 CRITIQUE !' : '';
+    showCombatAnimation({ icon, title: weapon.name, damage: `-${dmg} dégâts${critSuffix}`, target: `→ ${enemy.name}` }, true);
+    log(`${icon} Vous utilisez ${weapon.name} et infligez ${dmg} dégâts.${isCrit ? ' 💥 Coup critique !' : ''}`);
     
     finishPlayerTurn();
 }
@@ -1133,7 +1162,12 @@ export function enemyTurn(){
         } else if(decision.action === 'weapon'){
             logActiveAction(`utilise l'arme ${enemy.weapon.name}`);
             enemy.combatPoints -= enemy.weapon.actionPoints;
-            let dmg = enemy.weapon.damage;
+            let dmg = enemy.weapon.damage + (enemy.attack || 0);
+            // Défense du joueur
+            dmg = Math.max(1, dmg - (player.defense || 0));
+            if(player.damageReduction > 0) {
+                dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
+            }
             player.hp -= dmg;
             const icon = getWeaponIcon(enemy.weapon.type);
             showCombatAnimation({ icon, title: enemy.weapon.name, damage: `-${dmg} dégâts`, source: enemy.name, target: '→ Vous' }, false);
@@ -1144,9 +1178,12 @@ export function enemyTurn(){
             
         } else {
             // L'ennemi joue sur le plateau
-            logActiveAction('joue sur le plateau');
-            enemyMakeMove();
-            
+            logActiveAction(`joue sur le plateau${decision.isStupid ? ' (mouvement hasardeux)' : ''}`);
+            if(decision.randomBoardMove) {
+                enemyMakeRandomMove();
+            } else {
+                enemyMakeMove();
+            }
             // Pas besoin d'appeler finishEnemyTurn ici car checkMatches le fera
             // après avoir traité tous les combos
         }
@@ -1171,6 +1208,23 @@ export function finishEnemyTurn(){
             enemyTurn();
         }, 1000);
     } else {
+        // Tick des effets de durée du joueur
+        if(player.regenEffect && player.regenEffect.turnsLeft > 0) {
+            player.hp = Math.min(player.maxHp, player.hp + player.regenEffect.hp);
+            log(`💊 Régénération : +${player.regenEffect.hp} HP.`);
+            player.regenEffect.turnsLeft--;
+            if(player.regenEffect.turnsLeft <= 0) {
+                player.regenEffect = null;
+                log(`⏱️ L'effet de régénération se dissipe.`);
+            }
+        }
+        if(player.manaMultiplier && player.manaMultiplier.turnsLeft > 0) {
+            player.manaMultiplier.turnsLeft--;
+            if(player.manaMultiplier.turnsLeft <= 0) {
+                player.manaMultiplier = null;
+                log(`⏱️ L'effet du Déferlement Arcanique se dissipe.`);
+            }
+        }
         // Tour suivant : joueur
         updateStats();
         saveUpdate();
@@ -1711,6 +1765,12 @@ export function applyStartingAbilities(){
     }
 
     clampManaToCaps(player);
+
+    // Appliquer les points d'action de départ (ex: Bottes de Célérité)
+    if(player.startActionPoints > 0) {
+        player.combatPoints = (player.combatPoints || 0) + player.startActionPoints;
+        log(`👟 Bottes de Célérité : +${player.startActionPoints} point(s) d'action au début du combat.`);
+    }
 }
 
 // ennemis

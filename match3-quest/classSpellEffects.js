@@ -1,7 +1,7 @@
 // Gestion des effets spéciaux des sorts de classe
 
 import { player, enemy, log, saveUpdate, showCombatAnimation, finishPlayerTurn } from "./game.js";
-import { board, renderBoard, setBoardTargetingMode } from "./board.js";
+import { board, renderBoard, setBoardTargetingMode, checkMatches } from "./board.js";
 import { colors, boardSize } from "./constants.js";
 
 function getManaCap(color) {
@@ -93,10 +93,10 @@ function applyWildMana(spell) {
 
             board[index] = 'joker';
             setBoardTargetingMode(null);
-            renderBoard();
+            showCombatAnimation({ icon: '⭐', title: 'MANA SAUVAGE', damage: 'Joker créé !', target: '→ Plateau' }, true);
             log(`✨ Mana Sauvage transforme la gemme choisie en joker !`);
             saveUpdate();
-            finishPlayerTurn();
+            checkMatches();
             return true;
         }
     });
@@ -118,6 +118,7 @@ function applyDarkChannels(spell) {
     if(count > 0) {
         player.mana[targetColor] = Math.min(getManaCap(targetColor), player.mana[targetColor] + count * 3);
         renderBoard();
+        showCombatAnimation({ icon: '🌀', title: 'CANAUX SOMBRES', damage: `${count} gemmes détruites`, target: `+${count * 3} mana ${targetColor}` }, true);
         log(`🌀 Canaux Sombres détruit ${count} gemmes ${targetColor} et donne ${count * 3} mana !`);
         return true;
     }
@@ -144,6 +145,7 @@ function applyFlameblade(spell) {
     const redMana = player.mana.red;
     player.statusEffects.flameblade = redMana;
     player.mana.red = 0;
+    showCombatAnimation({ icon: '🔥', title: 'LAME DE FEU', damage: `+${redMana} dégâts bonus`, target: '→ Arme enchantée' }, true);
     log(`🔥 Lame de Feu enchante votre arme avec ${redMana} points de dégâts bonus !`);
     return true;
 }
@@ -161,6 +163,7 @@ function applyFingerOfDeath(spell) {
         board[randomIndex] = 'skull';
     }
     renderBoard();
+    showCombatAnimation({ icon: '💀', title: 'DOIGT DE MORT', damage: `${count} crânes créés`, target: '→ Plateau' }, true);
     log(`💀 Doigt de Mort crée ${count} crânes !`);
     return true;
 }
@@ -192,6 +195,7 @@ function applyChasm(spell) {
     });
     
     renderBoard();
+    showCombatAnimation({ icon: '🌋', title: 'ABÎME', damage: 'Zone 5×5 détruite', target: '→ Plateau + mana' }, true);
     log(`🌋 Abîme détruit une zone massive et donne du mana !`);
     return true;
 }
@@ -242,6 +246,7 @@ function applySwiftStrike(spell) {
 
 function applyConfuse(spell) {
     enemy.statusEffects.confused = spell.duration;
+    showCombatAnimation({ icon: '😵', title: 'CONFUSION', damage: '−mana/combo', target: `→ ${enemy.name} (${spell.duration} tours)` }, true);
     log(`😵 Confusion : l'ennemi ne gagne que 1 mana par combinaison pendant ${spell.duration} tours !`);
     return true;
 }
@@ -249,6 +254,7 @@ function applyConfuse(spell) {
 function applyPoison(spell) {
     enemy.statusEffects.poisoned = spell.duration;
     enemy.statusEffects.poisonDamage = spell.poisonDmg;
+    showCombatAnimation({ icon: '☠️', title: 'LAME EMPOISONNÉE', damage: `${spell.poisonDmg} dégâts/tour`, target: `→ ${enemy.name} (${spell.duration} tours)` }, true);
     log(`☠️ Lame Empoisonnée applique un poison de ${spell.poisonDmg} dégâts/tour pendant ${spell.duration} tours !`);
     return true;
 }
@@ -281,6 +287,7 @@ function applyDefensiveWall(spell) {
     const defenseGain = count * 5;
     player.defense = (player.defense || 0) + defenseGain;
     renderBoard();
+    showCombatAnimation({ icon: '🛡️', title: 'MUR DÉFENSIF', heal: `+${defenseGain} défense`, target: '→ Vous' }, true);
     log(`🛡️ Mur Défensif détruit ${count} gemmes violettes et donne +${defenseGain} défense !`);
     return true;
 }
@@ -303,6 +310,7 @@ function applyIntimidate(spell) {
     const stolen = Math.min(spell.cpSteal, enemy.combatPoints);
     enemy.combatPoints -= stolen;
     player.combatPoints += stolen;
+    showCombatAnimation({ icon: '😠', title: 'INTIMIDATION', damage: `-${stolen} PA`, target: `→ ${enemy.name}` }, true);
     log(`😠 Intimidation vole ${stolen} points de combat à l'ennemi !`);
     return true;
 }
@@ -312,6 +320,7 @@ function applyRush(spell) {
     const extraTurns = Math.floor(yellowMana / 7);
     const totalTurns = 2 + extraTurns;
     enemy.statusEffects.stunned = totalTurns;
+    showCombatAnimation({ icon: '💨', title: 'CHARGE', damage: `Étourdi ${totalTurns} tours`, target: `→ ${enemy.name}` }, true);
     log(`💨 Charge étourdit l'ennemi pour ${totalTurns} tours !`);
     return true;
 }
@@ -320,6 +329,7 @@ function applyBarrier(spell) {
     player.statusEffects.barrier = spell.duration;
     player.statusEffects.barrierDefense = spell.defenseBonus;
     player.defense = (player.defense || 0) + spell.defenseBonus;
+    showCombatAnimation({ icon: '🛡️', title: 'BARRIÈRE', heal: `+${spell.defenseBonus} défense`, target: `→ Vous (${spell.duration} tours)` }, true);
     log(`🛡️ Barrière augmente la défense de ${spell.defenseBonus} pendant ${spell.duration} tours !`);
     return true;
 }
@@ -330,6 +340,7 @@ function applyEnrage(spell) {
     player.statusEffects.enragedBonus = spell.atkBonus;
     player.attack += spell.atkBonus;
     player.bonusTurn = true;
+    showCombatAnimation({ icon: '😡', title: 'RAGE', damage: `+${spell.atkBonus} attaque`, target: `→ Vous (${spell.duration} tours)` }, true);
     log(`😡 Rage augmente l'attaque de ${spell.atkBonus} pendant ${spell.duration} tours !`);
     return true;
 }
@@ -366,6 +377,7 @@ function applyThrowAxe(spell) {
 
 function applyBloodlust(spell) {
     player.mana.red = Math.min(getManaCap('red'), player.mana.red + spell.manaGain);
+    showCombatAnimation({ icon: '💉', title: 'SOIF DE SANG', heal: `+${spell.manaGain} mana rouge`, target: '→ Vous' }, true);
     log(`💉 Soif de Sang donne +${spell.manaGain} mana rouge !`);
     return true;
 }
@@ -379,12 +391,14 @@ function applyBerserkerRage(spell) {
         }
     }
     renderBoard();
+    showCombatAnimation({ icon: '😈', title: 'RAGE BERSERKER', damage: `${count} rouges → crânes`, target: '→ Plateau' }, true);
     log(`😈 Rage Berserker transforme ${count} gemmes rouges en crânes !`);
     return true;
 }
 
 function applyRevenant(spell) {
     player.statusEffects.revenant = true;
+    showCombatAnimation({ icon: '👻', title: 'REVENANT', damage: 'PA doublés', target: '→ Vous' }, true);
     log(`👻 Revenant : Les points de combat sont maintenant doublés !`);
     return true;
 }

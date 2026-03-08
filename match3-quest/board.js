@@ -361,8 +361,15 @@ export function checkMatches(){
             }
             if(info.len>=5){ info.makeJoker=true; }
         } else if(info.type==='skull'){
-            const dmg = info.len * skullDamage;
+            const attacker = currentTurn === 'player' ? player : enemy;
             const opponent = currentTurn === 'player' ? enemy : player;
+            const attackBonus = Math.floor((attacker.attack || 0) / 5);
+            const rawDmg = info.len * (skullDamage + attackBonus);
+            const defReduction = Math.floor((opponent.defense || 0) / 2);
+            let dmg = Math.max(1, rawDmg - defReduction);
+            if(opponent === player && player.damageReduction > 0) {
+                dmg = Math.max(1, Math.floor(dmg * (1 - player.damageReduction)));
+            }
             opponent.hp -= dmg;
             log(`💀 Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}`);
             // Bonus de tour pour 4+ crânes
@@ -785,20 +792,15 @@ function animateEnemySwap(from, to, onComplete){
 
 // Fonction pour que l'ennemi fasse un mouvement sur le plateau
 export function enemyMakeMove(){
-    // Arrêter la suggestion si le joueur change de tour
     clearSuggestionTimer();
     clearSuggestion();
     log('🤖 L\'ennemi réfléchit...');
     
-    // Trouver tous les mouvements possibles qui créent des matches
     const possibleMoves = getSortedPossibleMoves();
     
     if(possibleMoves.length > 0){
         const move = possibleMoves[0];
-        
         log(`🎯 L'ennemi échange les tuiles...`);
-        
-        // Effectuer le mouvement
         setTimeout(() => {
             animateEnemySwap(move.from, move.to, () => {
                 swapTiles(move.from, move.to);
@@ -807,5 +809,24 @@ export function enemyMakeMove(){
     } else {
         handleNoPossibleMoveForCurrentTurn();
     }
+}
+
+// Mouvement aléatoire (ennemi stupide) : choisit un swap valide au hasard
+export function enemyMakeRandomMove(){
+    clearSuggestionTimer();
+    clearSuggestion();
+    log('🤖 L\'ennemi hésite...');
+
+    const possibleMoves = getSortedPossibleMoves();
+    if(possibleMoves.length === 0){ handleNoPossibleMoveForCurrentTurn(); return; }
+
+    // Prendre un mouvement aléatoire parmi tous les valides (pas forcément le meilleur)
+    const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    log(`🎲 L'ennemi fait un move aléatoire...`);
+    setTimeout(() => {
+        animateEnemySwap(move.from, move.to, () => {
+            swapTiles(move.from, move.to);
+        });
+    }, 800);
 }
 

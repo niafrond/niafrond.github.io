@@ -1128,6 +1128,27 @@ progress.enemy-bar::-webkit-progress-value {
     color: #b02323;
     font-weight: bold;
 }
+
+.enemy-card.easy {
+    border-color: #27ae60;
+    background: #f0fff5;
+}
+
+.enemy-card.easy:hover {
+    border-color: #1e8449;
+    box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2);
+}
+
+.enemy-card.easy .enemy-xp {
+    color: #1a6632;
+}
+
+.enemy-card .enemy-easy {
+    margin-top: 6px;
+    font-size: 0.8em;
+    color: #1e8449;
+    font-weight: bold;
+}
 .modal-actions {
     display: flex;
     justify-content: center;

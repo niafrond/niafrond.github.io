@@ -23,6 +23,8 @@ export const aiDifficulty = {
         strategicThinking: false,       // Ne calcule pas les meilleurs coups
         healThreshold: 0.3,             // Se soigne si HP < 30%
         aggressiveThreshold: 0.7,       // Devient agressif si joueur HP < 70%
+        stupidityChance: 0.60,          // 60% de chance de faire un coup stupide
+        randomBoardMove: true,          // Joue un swap aléatoire sur le plateau
     },
     normal: {
         name: "Normal",
@@ -34,6 +36,8 @@ export const aiDifficulty = {
         strategicThinking: true,
         healThreshold: 0.4,
         aggressiveThreshold: 0.6,
+        stupidityChance: 0.25,
+        randomBoardMove: false,
     },
     hard: {
         name: "Difficile",
@@ -45,6 +49,8 @@ export const aiDifficulty = {
         strategicThinking: true,
         healThreshold: 0.5,
         aggressiveThreshold: 0.5,
+        stupidityChance: 0.05,
+        randomBoardMove: false,
     },
     expert: {
         name: "Expert",
@@ -56,6 +62,8 @@ export const aiDifficulty = {
         strategicThinking: true,
         healThreshold: 0.6,
         aggressiveThreshold: 0.4,
+        stupidityChance: 0.00,
+        randomBoardMove: false,
     }
 };
 
@@ -365,8 +373,13 @@ export function makeDecision() {
 
     // Choisir la meilleure option en tenant compte des probabilités
     let chosenOption;
-    
-    if (difficulty.strategicThinking) {
+    let isStupid = false;
+
+    // Coup stupide : l'IA ignore la meilleure option et choisit au hasard
+    if (difficulty.stupidityChance > 0 && Math.random() < difficulty.stupidityChance) {
+        isStupid = true;
+        chosenOption = options[Math.floor(Math.random() * options.length)];
+    } else if (difficulty.strategicThinking) {
         // Mode stratégique: choisir la meilleure option avec un facteur de probabilité
         options.sort((a, b) => b.score - a.score);
         
@@ -408,7 +421,9 @@ export function makeDecision() {
         action: chosenOption.type,
         data: chosenOption.data,
         thinkingTime: thinkingTime,
-        reason: chosenOption.data.reason || "action tactique"
+        reason: chosenOption.data.reason || "action tactique",
+        isStupid,
+        randomBoardMove: isStupid && difficulty.randomBoardMove
     };
 }
 

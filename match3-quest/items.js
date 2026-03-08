@@ -168,7 +168,42 @@ export function useItem(itemId, player, enemy) {
         player.revivePercent = item.effect.revive;
         message += `🔥 Vous serez ressuscité si vous mourrez ! `;
     }
-    
+    if(item.effect.gainActionPoints) {
+        player.combatPoints = (player.combatPoints || 0) + item.effect.gainActionPoints;
+        message += `⚔️ Vous gagnez ${item.effect.gainActionPoints} point(s) d'action. `;
+    }
+    if(item.effect.extraTurn) {
+        player.bonusTurn = true;
+        message += `⏩ Vous jouez un tour supplémentaire ! `;
+    }
+    if(item.effect.randomMana !== undefined) {
+        const manaColors = Object.keys(player.mana);
+        const chosenColor = manaColors[Math.floor(Math.random() * manaColors.length)];
+        const manaCap = player.manaCaps?.[chosenColor] ?? player.maxMana;
+        player.mana[chosenColor] = Math.min(manaCap, player.mana[chosenColor] + item.effect.randomMana);
+        message += `✨ Vous gagnez ${item.effect.randomMana} mana ${chosenColor}. `;
+    }
+    if(item.effect.regen) {
+        player.regenEffect = { hp: item.effect.regen, turnsLeft: item.effect.duration || 3 };
+        message += `💊 Régénération de ${item.effect.regen} HP/tour pendant ${item.effect.duration || 3} tours. `;
+    }
+    if(item.effect.lifesteal) {
+        player.lifesteal = (player.lifesteal || 0) + item.effect.lifesteal;
+        message += `🩸 Vol de vie ${Math.round(item.effect.lifesteal * 100)}% activé pour ce combat. `;
+    }
+    if(item.effect.manaMultiplier) {
+        player.manaMultiplier = { mult: item.effect.manaMultiplier, turnsLeft: item.effect.duration || 3 };
+        message += `✨ Gain de mana ×${item.effect.manaMultiplier} pendant ${item.effect.duration || 3} tours. `;
+    }
+    if(item.effect.damageReduction) {
+        player.damageReduction = (player.damageReduction || 0) + item.effect.damageReduction;
+        message += `🛡️ Réduction des dégâts subis de ${Math.round(item.effect.damageReduction * 100)}% pour ce combat. `;
+    }
+    if(item.effect.critChance) {
+        player.tempCritChance = (player.tempCritChance || 0) + item.effect.critChance;
+        message += `🎯 Chances de critique +${item.effect.critChance}% pour ce combat. `;
+    }
+
     // Retirer l'objet consommable de l'inventaire
     if(item.type === "consumable") {
         player.inventory.splice(itemIndex, 1);
@@ -195,6 +230,12 @@ export function applyArtifactEffects(player) {
             }
             if(item.effect.permMaxMana) {
                 player.maxMana += item.effect.permMaxMana;
+            }
+            if(item.effect.permCritChance) {
+                player.critChance = (player.critChance || 0) + item.effect.permCritChance;
+            }
+            if(item.effect.permStartActionPoints) {
+                player.startActionPoints = (player.startActionPoints || 0) + item.effect.permStartActionPoints;
             }
             item.applied = true;
         }
