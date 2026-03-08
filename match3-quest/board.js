@@ -622,11 +622,6 @@ function showMatchSuggestion(){
         });
         
         log(`💡 Conseil : essayez d'échanger ces deux tuiles !`);
-        
-        // Enlever la suggestion après 8 secondes (ou au prochain mouvement)
-        setTimeout(() => {
-            clearSuggestion();
-        }, 8000);
     }
 }
 
