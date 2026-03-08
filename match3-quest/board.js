@@ -29,6 +29,13 @@ let boardSettledCallbacks = [];
 
 const SKULL_ATTACK_BONUS_DIVISOR = 10;
 const SKULL_ATTACK_BONUS_CAP = 6;
+const MIN_INITIAL_POSSIBLE_MOVES = 8;
+const MAX_BOARD_GENERATION_ATTEMPTS = 120;
+
+const BOARD_DROP_PROFILES = {
+    starter: { skullProb: 0.10, combatProb: 0.015 },
+    advanced: { skullProb: 0.16, combatProb: 0.04 }
+};
 
 function onBoardSettled(callback){
     if(typeof callback !== 'function') return;
@@ -84,10 +91,7 @@ function refreshTargetingHighlights(){
 
 function computeSpecialTileProbabilities(){
     const hasWeaponsOrSpells = player.availableWeapons.length > 0 || player.availableSpells.length > 0;
-    if(!hasWeaponsOrSpells) {
-        return { skullProb: 0.15, combatProb: 0.02 };
-    }
-    return { skullProb: 0.25, combatProb: 0.07 };
+    return hasWeaponsOrSpells ? BOARD_DROP_PROFILES.advanced : BOARD_DROP_PROFILES.starter;
 }
 
 function refreshBoardDropProbabilities(){
@@ -97,7 +101,25 @@ function refreshBoardDropProbabilities(){
 function generateNewBoard(){
     // On fige les probabilites de drop pour tout le plateau courant.
     refreshBoardDropProbabilities();
-    // la grille peut contenir aussi quelques tuiles spéciales
+
+    // Génère un plateau sans match initial, avec un nombre suffisant de coups possibles.
+    let attempts = 0;
+    while(attempts < MAX_BOARD_GENERATION_ATTEMPTS){
+        board=[];
+        for(let i=0;i<boardSize*boardSize;i++){
+            board.push(generateRandomTile());
+        }
+
+        attempts++;
+        if(hasMatchesOnBoard(board)) continue;
+
+        const possibleMoves = findPossibleMatches(board).length;
+        if(possibleMoves >= MIN_INITIAL_POSSIBLE_MOVES) {
+            return;
+        }
+    }
+
+    // Fallback de sécurité pour éviter une boucle infinie sur des configs extrêmes.
     do{
         board=[];
         for(let i=0;i<boardSize*boardSize;i++){
@@ -361,7 +383,9 @@ export function checkMatches(){
         // apply effects
         if(info.type==='color'){
             // Gain de mana : 1 par tuile du match (3=>3, 4=>4, 5=>5...)
-            const manaResult = addManaForColor(currentPlayer, info.color, info.len);
+            const enemyIsConfused = currentPlayer === enemy && (enemy.statusEffects?.confused || 0) > 0;
+            const manaBaseGain = enemyIsConfused ? 1 : info.len;
+            const manaResult = addManaForColor(currentPlayer, info.color, manaBaseGain);
 
             if(currentPlayer === player){
                 const generatedMana = manaResult.gained;

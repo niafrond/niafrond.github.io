@@ -125,10 +125,77 @@ export function clampEnemyAttackDamage(rawDamage, enemyEntity = enemy){
 
 export function applyDamage(target, damage){
     if(!target) return 0;
-    const normalizedDamage = Math.max(0, Math.floor(damage || 0));
+    let normalizedDamage = Math.max(0, Math.floor(damage || 0));
+
+    // Bouclier mana: certains sorts redirigent les dégâts subis vers une réserve de mana.
+    if(target === player && normalizedDamage > 0) {
+        const manaShield = player.statusEffects?.manaShield;
+        const shieldColor = manaShield?.color;
+        const shieldTurns = Math.max(0, Math.floor(manaShield?.turns || 0));
+        if(shieldColor && shieldTurns > 0) {
+            const availableMana = Math.max(0, Math.floor(player.mana?.[shieldColor] || 0));
+            const absorbed = Math.min(availableMana, normalizedDamage);
+            if(absorbed > 0) {
+                player.mana[shieldColor] = availableMana - absorbed;
+                normalizedDamage -= absorbed;
+                log(`🛡️ Bouclier de mana (${shieldColor}) absorbe ${absorbed} dégâts.`);
+            }
+
+            if(player.mana[shieldColor] <= 0) {
+                delete player.statusEffects.manaShield;
+                log(`⏱️ Le bouclier de mana se dissipe.`);
+            }
+        }
+    }
+
     const currentHp = Math.max(0, Math.floor(target.hp || 0));
     const nextHp = Math.max(0, currentHp - normalizedDamage);
     target.hp = nextHp;
+
+    if(target === player && normalizedDamage > 0 && enemy.hp > 0) {
+        const reflectTurns = Math.max(0, Math.floor(player.statusEffects?.reflectDamage || 0));
+        const reflectPercent = Math.max(0, Math.floor(player.statusEffects?.reflectDamagePercent || 0));
+        if(reflectTurns > 0 && reflectPercent > 0) {
+            const reflected = Math.max(0, Math.floor((normalizedDamage * reflectPercent) / 100));
+            if(reflected > 0) {
+                const enemyHpBefore = enemy.hp;
+                const enemyHpAfter = Math.max(0, enemyHpBefore - reflected);
+                enemy.hp = enemyHpAfter;
+                log(`🪞 Bouclier Miroir renvoie ${enemyHpBefore - enemyHpAfter} dégâts à ${enemy.name}.`);
+            }
+        }
+
+        const counterTurns = Math.max(0, Math.floor(player.statusEffects?.counterOnBlock || 0));
+        const counterDmg = Math.max(0, Math.floor(player.statusEffects?.counterOnBlockDmg || 0));
+        if(counterTurns > 0 && counterDmg > 0 && (player.defense || 0) > 0) {
+            const enemyHpBefore = enemy.hp;
+            const enemyHpAfter = Math.max(0, enemyHpBefore - counterDmg);
+            enemy.hp = enemyHpAfter;
+            log(`⚔️ Contre-attaque inflige ${enemyHpBefore - enemyHpAfter} dégâts à ${enemy.name}.`);
+        }
+    }
+
+    if(target === enemy && normalizedDamage > 0) {
+        const drainTurns = Math.max(0, Math.floor(player.statusEffects?.drainOnHit || 0));
+        const drainAmount = Math.max(0, Math.floor(player.statusEffects?.drainOnHitAmount || 0));
+        if(drainTurns > 0 && drainAmount > 0) {
+            const manaColors = ['red', 'blue', 'green', 'yellow', 'purple'];
+            let remaining = drainAmount;
+            for(const color of manaColors) {
+                if(remaining <= 0) break;
+                const available = Math.max(0, Math.floor(enemy.mana[color] || 0));
+                if(available <= 0) continue;
+                const steal = Math.min(available, remaining);
+                enemy.mana[color] -= steal;
+                remaining -= steal;
+            }
+            const drained = drainAmount - remaining;
+            if(drained > 0) {
+                log(`🎵 Lames Chantantes draine ${drained} mana ennemi.`);
+            }
+        }
+    }
+
     return currentHp - nextHp;
 }
 
@@ -252,6 +319,8 @@ const combatRewards = {
 };
 
 const PLAYER_DEATH_DELAY_MS = 900;
+const LEVEL_UP_MAX_HP_GAIN = 5;
+const LEVEL_UP_HEAL_GAIN = 20;
 let pendingPlayerDeathTimeout = null;
 
 function resetCombatRewards(){
@@ -274,7 +343,9 @@ function applyCombatXPAtEnd(){
         return {
             xpApplied: 0,
             leveledUp: false,
-            levelsGained: 0
+            levelsGained: 0,
+            maxHpGained: 0,
+            hpRecovered: 0
         };
     }
 
@@ -285,25 +356,40 @@ function applyCombatXPAtEnd(){
         return {
             xpApplied: 0,
             leveledUp: false,
-            levelsGained: 0
+            levelsGained: 0,
+            maxHpGained: 0,
+            hpRecovered: 0
         };
     }
 
     const levelUpResult = addXP(player, pendingXP);
+    let maxHpGained = 0;
+    let hpRecovered = 0;
+
     if(levelUpResult.leveledUp) {
         const levelsGained = Math.max(1, levelUpResult.levelsGained || 1);
         player.unspentLevelPoints = Math.max(0, player.unspentLevelPoints || 0) + levelsGained;
 
-        const healAmount = levelsGained * 20;
-        if(healAmount > 0) {
-            player.hp = Math.min(player.maxHp, player.hp + healAmount);
+        maxHpGained = levelsGained * LEVEL_UP_MAX_HP_GAIN;
+        if(maxHpGained > 0) {
+            player.maxHp += maxHpGained;
+        }
+
+        const beforeHeal = player.hp;
+        const healAmount = levelsGained * LEVEL_UP_HEAL_GAIN;
+        if(healAmount > 0 || maxHpGained > 0) {
+            // Le gain de HP max est aussi applique aux HP actuels pour eviter une perte relative.
+            player.hp = Math.min(player.maxHp, player.hp + healAmount + maxHpGained);
+            hpRecovered = Math.max(0, player.hp - beforeHeal);
         }
     }
 
     return {
         xpApplied: pendingXP,
         leveledUp: levelUpResult.leveledUp,
-        levelsGained: levelUpResult.levelsGained
+        levelsGained: levelUpResult.levelsGained,
+        maxHpGained,
+        hpRecovered
     };
 }
 
@@ -387,7 +473,7 @@ function finalizeCombatEndUI(isVictory){
 function showEndCombatAnimation(isVictory, options = {}){
     const {
         requireClick = true,
-        continueText = 'Cliquez pour continuer'
+        continueText = ''
     } = options;
 
     const data = isVictory
@@ -478,6 +564,9 @@ export function handlePlayerDeath(){
         log(`⭐ ${xpResult.xpApplied} XP appliquee(s) a la fin du combat.`);
         if(xpResult.leveledUp) {
             log(`🎉 Niveau ${player.level} atteint en fin de combat.`);
+            if(xpResult.maxHpGained > 0) {
+                log(`❤️ +${xpResult.maxHpGained} HP max, +${xpResult.hpRecovered} HP recuperes.`);
+            }
             if(xpResult.levelsGained > 1) {
                 log(`✨ Vous avez gagne ${xpResult.levelsGained} niveaux d'un coup !`);
             }
@@ -537,6 +626,9 @@ export function abandonCombat(){
         log(`⭐ ${xpResult.xpApplied} XP appliquee(s) a la fin du combat.`);
         if(xpResult.leveledUp) {
             log(`🎉 Niveau ${player.level} atteint en fin de combat.`);
+            if(xpResult.maxHpGained > 0) {
+                log(`❤️ +${xpResult.maxHpGained} HP max, +${xpResult.hpRecovered} HP recuperes.`);
+            }
             if(xpResult.levelsGained > 1) {
                 log(`✨ Vous avez gagne ${xpResult.levelsGained} niveaux d'un coup !`);
             }
@@ -788,7 +880,7 @@ export function updateStats(){
         `<span style="color: #888;"> ${enemy.level}</span>`;
     
     enemyDiv.innerHTML = `
-        <div class="stat"><span class="enemy-combat-name" title="${enemyClassEmoji} ${enemy.name}">${enemyClassEmoji} ${enemy.name.split(' ')[0]}</span>${levelIndicator}</div>
+        <div class="stat"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${enemy.name.split(' ')[0]}</span>${levelIndicator}</div>
         <div class="stat">
             <div class="hp-bar-container">
                 <progress class="enemy-bar" value="${initEnemyHp}" max="${enemy.maxHp}"></progress>
@@ -811,6 +903,21 @@ export function updateStats(){
     _animateHpBar('enemy-hp-current', initEnemyHp, targetEnemyHp, enemyProgressEl);
     for (const c of ['red','blue','green','yellow','purple']) {
         _animateCounter(`enemy-mana-${c}`, snapEnemyMana[c], targetEnemyMana[c]);
+    }
+
+    const enemyNameEl = enemyDiv.querySelector('.enemy-combat-name');
+    if(enemyNameEl) {
+        const fullName = enemyNameEl.dataset.fullName || enemy.name;
+        const showName = () => showEnemyNameTooltip(enemyNameEl, fullName);
+        const hideName = () => hideEnemyNameTooltip();
+
+        enemyNameEl.addEventListener('mouseenter', showName);
+        enemyNameEl.addEventListener('mouseleave', hideName);
+        enemyNameEl.addEventListener('focus', showName);
+        enemyNameEl.addEventListener('blur', hideName);
+        enemyNameEl.addEventListener('touchstart', showName, { passive: true });
+        enemyNameEl.addEventListener('touchend', hideName);
+        enemyNameEl.addEventListener('touchcancel', hideName);
     }
     
     updateEnemySpells();
@@ -1150,6 +1257,13 @@ export function useWeapon(){
     player.combatPoints -= weapon.actionPoints;
     let dmg = weapon.damage + (player.attack || 0);
 
+    if((player.statusEffects?.flameblade || 0) > 0) {
+        const flameBonus = Math.max(0, Math.floor(player.statusEffects.flameblade));
+        dmg += flameBonus;
+        delete player.statusEffects.flameblade;
+        log(`🔥 Lame de Feu ajoute ${flameBonus} dégâts au coup d'arme.`);
+    }
+
     // Critique
     const totalCritChance = (player.critChance || 0) + (player.tempCritChance || 0);
     let isCrit = false;
@@ -1239,6 +1353,34 @@ export function finishPlayerTurn(){
 
 export function enemyTurn(){
     if(enemy.hp<=0){ handleEnemyDefeated(); return; }
+
+    if((enemy.statusEffects?.poisoned || 0) > 0) {
+        const poisonDmg = Math.max(1, Math.floor(enemy.statusEffects.poisonDamage || 1));
+        applyDamage(enemy, poisonDmg);
+        enemy.statusEffects.poisoned--;
+        log(`☠️ Poison: ${enemy.name} subit ${poisonDmg} dégâts.`);
+        if(enemy.statusEffects.poisoned <= 0) {
+            delete enemy.statusEffects.poisoned;
+            delete enemy.statusEffects.poisonDamage;
+            log(`⏱️ Le poison sur ${enemy.name} se dissipe.`);
+        }
+        if(enemy.hp <= 0) {
+            handleEnemyDefeated();
+            return;
+        }
+    }
+
+    if((enemy.statusEffects?.stunned || 0) > 0) {
+        enemy.statusEffects.stunned--;
+        log(`💫 ${enemy.name} est étourdi et perd son tour.`);
+        currentTurn = 'enemy';
+        updateStats();
+        setTimeout(() => {
+            finishEnemyTurn();
+        }, 500);
+        return;
+    }
+
     currentTurn = 'enemy';
     // show turn change before action
     updateStats();
@@ -1274,7 +1416,9 @@ export function enemyTurn(){
         } else if(decision.action === 'weapon'){
             logActiveAction(`utilise l'arme ${enemy.weapon.name}`);
             enemy.combatPoints -= enemy.weapon.actionPoints;
-            let dmg = enemy.weapon.damage + (enemy.attack || 0);
+            const weakenedAmount = Math.max(0, Math.floor(enemy.statusEffects?.weakenedAmount || 0));
+            const effectiveAttack = Math.max(0, (enemy.attack || 0) - weakenedAmount);
+            let dmg = enemy.weapon.damage + effectiveAttack;
             // Défense du joueur
             dmg = Math.max(1, dmg - (player.defense || 0));
             if(player.damageReduction > 0) {
@@ -1321,6 +1465,29 @@ export function finishEnemyTurn(){
             enemyTurn();
         }, 1000);
     } else {
+        if((enemy.statusEffects?.confused || 0) > 0) {
+            enemy.statusEffects.confused--;
+            if(enemy.statusEffects.confused <= 0) {
+                delete enemy.statusEffects.confused;
+                log(`⏱️ La confusion de ${enemy.name} se dissipe.`);
+            }
+        }
+        if((enemy.statusEffects?.weakened || 0) > 0) {
+            enemy.statusEffects.weakened--;
+            if(enemy.statusEffects.weakened <= 0) {
+                delete enemy.statusEffects.weakened;
+                delete enemy.statusEffects.weakenedAmount;
+                log(`⏱️ L'affaiblissement de ${enemy.name} prend fin.`);
+            }
+        }
+        if((enemy.statusEffects?.itemBlocked || 0) > 0) {
+            enemy.statusEffects.itemBlocked--;
+            if(enemy.statusEffects.itemBlocked <= 0) {
+                delete enemy.statusEffects.itemBlocked;
+                log(`⏱️ Le blocage d'objets de ${enemy.name} se dissipe.`);
+            }
+        }
+
         // Tick des effets de durée du joueur
         if(player.regenEffect && player.regenEffect.turnsLeft > 0) {
             player.hp = Math.min(player.maxHp, player.hp + player.regenEffect.hp);
@@ -1336,6 +1503,84 @@ export function finishEnemyTurn(){
             if(player.manaMultiplier.turnsLeft <= 0) {
                 player.manaMultiplier = null;
                 log(`⏱️ L'effet du Déferlement Arcanique se dissipe.`);
+            }
+        }
+        if((player.statusEffects?.barrier || 0) > 0) {
+            player.statusEffects.barrier--;
+            if(player.statusEffects.barrier <= 0) {
+                const bonus = Math.max(0, Math.floor(player.statusEffects.barrierDefense || 0));
+                player.defense = Math.max(0, (player.defense || 0) - bonus);
+                delete player.statusEffects.barrier;
+                delete player.statusEffects.barrierDefense;
+                log(`⏱️ Barrière se dissipe (-${bonus} défense).`);
+            }
+        }
+        if((player.statusEffects?.stoneskin || 0) > 0) {
+            player.statusEffects.stoneskin--;
+            if(player.statusEffects.stoneskin <= 0) {
+                const bonus = Math.max(0, Math.floor(player.statusEffects.stoneskinDefense || 0));
+                player.defense = Math.max(0, (player.defense || 0) - bonus);
+                delete player.statusEffects.stoneskin;
+                delete player.statusEffects.stoneskinDefense;
+                log(`⏱️ Peau de Pierre se dissipe (-${bonus} défense).`);
+            }
+        }
+        if((player.statusEffects?.enraged || 0) > 0) {
+            player.statusEffects.enraged--;
+            if(player.statusEffects.enraged <= 0) {
+                const bonus = Math.max(0, Math.floor(player.statusEffects.enragedBonus || 0));
+                player.attack = Math.max(0, (player.attack || 0) - bonus);
+                delete player.statusEffects.enraged;
+                delete player.statusEffects.enragedBonus;
+                log(`⏱️ Rage se dissipe (-${bonus} attaque).`);
+            }
+        }
+        if((player.statusEffects?.strength || 0) > 0) {
+            player.statusEffects.strength--;
+            if(player.statusEffects.strength <= 0) {
+                const bonus = Math.max(0, Math.floor(player.statusEffects.strengthBonus || 0));
+                player.attack = Math.max(0, (player.attack || 0) - bonus);
+                delete player.statusEffects.strength;
+                delete player.statusEffects.strengthBonus;
+                log(`⏱️ Force se dissipe (-${bonus} attaque).`);
+            }
+        }
+        if((player.statusEffects?.reflectDamage || 0) > 0) {
+            player.statusEffects.reflectDamage--;
+            if(player.statusEffects.reflectDamage <= 0) {
+                delete player.statusEffects.reflectDamage;
+                delete player.statusEffects.reflectDamagePercent;
+                log(`⏱️ Bouclier Miroir se dissipe.`);
+            }
+        }
+        if((player.statusEffects?.counterOnBlock || 0) > 0) {
+            player.statusEffects.counterOnBlock--;
+            if(player.statusEffects.counterOnBlock <= 0) {
+                delete player.statusEffects.counterOnBlock;
+                delete player.statusEffects.counterOnBlockDmg;
+                log(`⏱️ Contre-Attaque se dissipe.`);
+            }
+        }
+        if((player.statusEffects?.immunityEffects || 0) > 0) {
+            player.statusEffects.immunityEffects--;
+            if(player.statusEffects.immunityEffects <= 0) {
+                delete player.statusEffects.immunityEffects;
+                log(`⏱️ L'immunité aux effets négatifs se dissipe.`);
+            }
+        }
+        if((player.statusEffects?.drainOnHit || 0) > 0) {
+            player.statusEffects.drainOnHit--;
+            if(player.statusEffects.drainOnHit <= 0) {
+                delete player.statusEffects.drainOnHit;
+                delete player.statusEffects.drainOnHitAmount;
+                log(`⏱️ L'effet Lames Chantantes se dissipe.`);
+            }
+        }
+        if((player.statusEffects?.manaShield?.turns || 0) > 0) {
+            player.statusEffects.manaShield.turns--;
+            if(player.statusEffects.manaShield.turns <= 0) {
+                delete player.statusEffects.manaShield;
+                log(`⏱️ Le bouclier de mana se dissipe.`);
             }
         }
         // Tour suivant : joueur (définir le tour avant saveUpdate pour que les boutons dépendants du tour soient corrects)
@@ -1433,8 +1678,7 @@ export function handleEnemyDefeated(){
     
     const xpResult = applyCombatXPAtEnd();
     if(xpResult.leveledUp) {
-        const healAmount = Math.max(0, (xpResult.levelsGained || 0) * 20);
-        log(`🎉 Niveau ${player.level} atteint ! +${healAmount} HP de recuperation.`);
+        log(`🎉 Niveau ${player.level} atteint ! +${xpResult.maxHpGained} HP max, +${xpResult.hpRecovered} HP de recuperation.`);
         if(xpResult.levelsGained > 1) {
             log(`✨ Vous avez gagné ${xpResult.levelsGained} niveaux d'un coup !`);
         }
@@ -1691,6 +1935,43 @@ function showSpellTooltip(button, spell) {
 
 function hideSpellTooltip() {
     const tooltip = document.getElementById('spell-detail-tooltip');
+    if(tooltip){
+        tooltip.classList.remove('visible');
+    }
+}
+
+function ensureEnemyNameTooltip() {
+    let tooltip = document.getElementById('enemy-name-tooltip');
+    if(!tooltip){
+        tooltip = document.createElement('div');
+        tooltip.id = 'enemy-name-tooltip';
+        tooltip.className = 'enemy-name-tooltip';
+        document.body.appendChild(tooltip);
+    }
+    return tooltip;
+}
+
+function showEnemyNameTooltip(targetEl, fullName) {
+    if(!targetEl || !fullName) return;
+    const tooltip = ensureEnemyNameTooltip();
+    tooltip.textContent = fullName;
+    tooltip.classList.add('visible');
+
+    const rect = targetEl.getBoundingClientRect();
+    const tooltipWidth = 220;
+    const margin = 10;
+    const left = Math.min(
+        window.innerWidth - tooltipWidth - margin,
+        Math.max(margin, rect.left + (rect.width / 2) - (tooltipWidth / 2))
+    );
+    const top = Math.max(margin, rect.top - 40);
+
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+}
+
+function hideEnemyNameTooltip() {
+    const tooltip = document.getElementById('enemy-name-tooltip');
     if(tooltip){
         tooltip.classList.remove('visible');
     }

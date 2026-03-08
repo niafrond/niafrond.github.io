@@ -203,7 +203,7 @@
 </div>
 <script>
     // Gestion des onglets
-    function switchTab(tabName) {
+    function switchTab(tabName, clickEvent) {
         // Importer gameState depuis game.js
         import('./game.js').then(module => {
             // Empêcher l'accès aux onglets Armes et Sorts pendant le combat
@@ -222,7 +222,8 @@
                 btn.classList.remove('active');
             });
             document.getElementById('tab-' + tabName).classList.add('active');
-            event.target.classList.add('active');
+            const activeButton = clickEvent?.target || document.querySelector(`.tab-btn[onclick*="switchTab('${tabName}')"]`);
+            activeButton?.classList.add('active');
         });
     }
     window.switchTab = switchTab;
