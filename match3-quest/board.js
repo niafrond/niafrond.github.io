@@ -156,8 +156,12 @@ export function selectTile(index){
         return; 
     }
     // n'accepte que les tuiles adjacentes (haut/bas/gauche/droite)
-    const adj=[selected-1,selected+1,selected-boardSize,selected+boardSize];
-    if(!adj.includes(index)){
+    const selectedRow = Math.floor(selected / boardSize);
+    const selectedCol = selected % boardSize;
+    const indexRow = Math.floor(index / boardSize);
+    const indexCol = index % boardSize;
+    const isAdjacent = Math.abs(selectedRow - indexRow) + Math.abs(selectedCol - indexCol) === 1;
+    if(!isAdjacent){
         log("⚠️ Échange non valide (doit être adjacent)");
         tiles[selected].classList.remove('selected');
         selected=null;
@@ -183,8 +187,8 @@ export function swapTiles(i,j){
     // Effectuer le swap
     [board[i],board[j]]=[board[j],board[i]];
     
-    // Vérifier s'il y a un match après le swap
-    const hasMatch = checkForMatchesOnly();
+    // Vérifier si le swap crée un match autour des deux tuiles échangées
+    const hasMatch = Boolean(checkMatchAtPosition(i) || checkMatchAtPosition(j));
     
     if(!hasMatch) {
         // Aucun match créé : annuler le swap (mais garder le tour)
