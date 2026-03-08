@@ -2,6 +2,7 @@
 
 import { allWeapons } from "./weapons.js";
 import { getSpellsByClass, getAllSpells } from "./spells.js";
+import { getRandomItem } from "./items.js";
 
 let enemyCatalog = [];
 
@@ -74,7 +75,8 @@ function buildSpellLoadout(template, enemyLevel){
     const genericSpells = getAllSpells().filter(sp => !sp.class && sp.minLevel <= enemyLevel);
 
     const preferredColors = template.spellProfile?.preferredColors || [];
-    const targetSpellCount = Math.max(2, template.spellProfile?.targetSpellCount || 3);
+    const maxSpells = Math.floor(enemyLevel / 5) + 1;
+    const targetSpellCount = Math.ceil(Math.random() * maxSpells);
     const preferClassSpells = template.spellProfile?.preferClassSpells !== false;
 
     const preferredGeneric = genericSpells.filter(sp => preferredColors.includes(sp.color));
@@ -125,6 +127,15 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
     if(Math.random() < 0.15) enemyAbilities.push('natureAffinity');
     if(Math.random() < 0.15) enemyAbilities.push('stormAffinity');
 
+    // 25% de chance d'avoir un objet dans l'inventaire
+    let enemyInventoryItem = null;
+    if(Math.random() < 0.25) {
+        try {
+            const item = getRandomItem(enemyLevel);
+            if(item) enemyInventoryItem = {...item, applied: false};
+        } catch(e) {}
+    }
+
     return {
         templateId: template.id,
         race: template.race,
@@ -142,7 +153,8 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
         weapon: enemyWeapon,
         level: enemyLevel,
         abilities: enemyAbilities,
-        isOverleveledChoice: false
+        isOverleveledChoice: false,
+        inventoryItem: enemyInventoryItem
     };
 }
 

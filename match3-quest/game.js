@@ -10,6 +10,14 @@ import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel }
 
 const BASE_MANA_CAP = 50;
 const EMPTY_MANA_POOL = { red:0, blue:0, green:0, yellow:0, purple:0 };
+const WEAPON_ICONS = {
+    sword: '⚔️',
+    axe: '🪓',
+    dagger: '🗡️',
+    mace: '🔨',
+    bow: '🏹',
+    staff: '🪄'
+};
 
 // Règles paramétrables: une aptitude influence uniquement la couleur de mana associée.
 export const ATTRIBUTE_MANA_RULES = {
@@ -82,6 +90,88 @@ export function addManaForColor(entity, color, baseGain, options = {}){
     };
 }
 
+export function getWeaponIcon(weaponType){
+    return WEAPON_ICONS[weaponType] || '⚔️';
+}
+
+export function canEntityCastSpell(entity, spell){
+    if(!entity || !entity.mana || !spell) return false;
+
+    if(typeof spell.cost === 'number') {
+        return (entity.mana[spell.color] || 0) >= spell.cost;
+    }
+
+    if(spell.cost && typeof spell.cost === 'object') {
+        return Object.entries(spell.cost).every(([color, amount]) =>
+            (entity.mana[color] || 0) >= amount
+        );
+    }
+
+    return true;
+}
+
+function getMissingManaColor(entity, spell){
+    if(!entity || !entity.mana || !spell) return null;
+
+    if(typeof spell.cost === 'number') {
+        return (entity.mana[spell.color] || 0) >= spell.cost ? null : spell.color;
+    }
+
+    if(spell.cost && typeof spell.cost === 'object') {
+        for(const [color, amount] of Object.entries(spell.cost)) {
+            if((entity.mana[color] || 0) < amount) return color;
+        }
+    }
+
+    return null;
+}
+
+export function consumeSpellMana(entity, spell){
+    if(!entity || !entity.mana || !spell) return;
+
+    if(typeof spell.cost === 'number') {
+        entity.mana[spell.color] = Math.max(0, (entity.mana[spell.color] || 0) - spell.cost);
+        return;
+    }
+
+    if(spell.cost && typeof spell.cost === 'object') {
+        for(const [color, amount] of Object.entries(spell.cost)) {
+            entity.mana[color] = Math.max(0, (entity.mana[color] || 0) - amount);
+        }
+    }
+}
+
+function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
+    const intelligenceBonus = getPrimaryAttributeEffect(caster, "intelligence");
+
+    if(spell.dmg){
+        const targetResistance = target.resistances?.[spell.color] || 0;
+        const dmg = Math.floor((spell.dmg + intelligenceBonus) * (1 - targetResistance));
+        target.hp -= dmg;
+
+        if(isPlayerCaster) {
+            showCombatAnimation({ icon: '🔥', title: spell.name, damage: `-${Math.floor(dmg)} dégâts`, target: `→ ${target.name}` }, true);
+            log(`🔥 ${spell.name} inflige ${dmg} dégâts.`);
+        } else {
+            showCombatAnimation({ icon: '🔥', title: spell.name, damage: `-${Math.floor(dmg)} dégâts`, source: caster.name, target: '→ Vous' }, false);
+            log(`🔥 ${caster.name} lance ${spell.name} ! ${dmg} dégâts.`);
+        }
+    }
+
+    if(spell.heal){
+        const healAmount = spell.heal + intelligenceBonus;
+        caster.hp = Math.min(caster.maxHp, caster.hp + healAmount);
+
+        if(isPlayerCaster) {
+            showCombatAnimation({ icon: '💚', title: spell.name, heal: `+${healAmount} HP`, target: '→ Vous' }, true);
+            log(`💚 ${spell.name} soigne ${healAmount} HP.`);
+        } else {
+            showCombatAnimation({ icon: '💚', title: spell.name, heal: `+${healAmount} HP`, source: caster.name }, false);
+            log(`💚 ${caster.name} utilise ${spell.name} et soigne ${healAmount} HP.`);
+        }
+    }
+}
+
 // joueur
 export let player = {
     name: "Aventurier",
@@ -107,7 +197,7 @@ export let player = {
     class: null,  // classe du joueur (sorcerer, assassin, templar, barbarian)
     statusEffects: {},  // effets de statut actifs (poison, stun, buffs, etc.)
     defense: 0,  // défense du joueur
-    inventory: [],  // inventaire d'objets
+    inventory: [],  // inventaire - 1 objet max
     tempAttack: 0,  // bonus d'attaque temporaire
     tempDefense: 0,  // bonus de défense temporaire
     hasRevive: false,  // possède un effet de résurrection
@@ -222,7 +312,7 @@ export const combatCost = 5;             // points nécessaires pour une attaque
 export const skullDamage = 1;           // dégâts infligés par crâne lors d'un match
 
 // ennemi courant (combatPoints pour attaquer)
-export let enemy = { name:"Gobelin", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: false };
+export let enemy = { name:"Gobelin", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: false, inventoryItem: null };
 
 // si le joueur meurt, on restaure ses PV et réinitialise le combat
 export function restartCombat(){
@@ -488,6 +578,32 @@ applyArtifactEffects(player);
 clampManaToCaps(player);
 
 // interface minimale
+
+// --- Animation compteur (tick 1 par 1) ---
+const _activeCounters = {};
+function _animateCounter(id, from, to) {
+    if (_activeCounters[id]) {
+        clearInterval(_activeCounters[id]);
+        delete _activeCounters[id];
+    }
+    const el = document.getElementById(id);
+    if (!el || isNaN(from) || from === to) return;
+    el.textContent = from;
+    let current = from;
+    const step = to > from ? 1 : -1;
+    const delta = Math.abs(to - from);
+    const intervalMs = Math.max(50, Math.min(150, Math.round(1500 / delta)));
+    _activeCounters[id] = setInterval(() => {
+        current += step;
+        const elNow = document.getElementById(id);
+        if (elNow) elNow.textContent = current;
+        if (current === to) {
+            clearInterval(_activeCounters[id]);
+            delete _activeCounters[id];
+        }
+    }, intervalMs);
+}
+
 export function updateStats(){
     // truncate log to only the latest message
     const logDiv=document.getElementById('log');
@@ -495,6 +611,22 @@ export function updateStats(){
         const lines = logDiv.innerHTML.split('<br>').filter(l=>l.trim()!=='');
         logDiv.innerHTML = lines.slice(-1).join('<br>');
     }
+
+    // Snapshot des valeurs affichées AVANT le rebuild du DOM
+    const snapPlayerHp = parseInt(document.getElementById('player-hp-current')?.textContent, 10);
+    const snapEnemyHp  = parseInt(document.getElementById('enemy-hp-current')?.textContent,  10);
+    const snapPlayerMana = {};
+    const snapEnemyMana  = {};
+    for (const c of ['red','blue','green','yellow','purple']) {
+        snapPlayerMana[c] = parseInt(document.getElementById(`player-mana-${c}`)?.textContent, 10);
+        snapEnemyMana[c]  = parseInt(document.getElementById(`enemy-mana-${c}`)?.textContent,  10);
+    }
+
+    // Cibles (valeurs actuelles des entités)
+    const targetPlayerHp = Math.floor(player.hp);
+    const targetEnemyHp  = Math.floor(enemy.hp);
+    const targetPlayerMana = { red: player.mana.red, blue: player.mana.blue, green: player.mana.green, yellow: player.mana.yellow, purple: player.mana.purple };
+    const targetEnemyMana  = { red: enemy.mana.red,  blue: enemy.mana.blue,  green: enemy.mana.green,  yellow: enemy.mana.yellow,  purple: enemy.mana.purple  };
 
     const playerDiv=document.getElementById('player-stats');
     // Affichage de la classe si définie
@@ -504,30 +636,32 @@ export function updateStats(){
     })() : Promise.resolve('');
     
     playerClassEmoji.then(emoji => {
-        const nameDisplay = `<div class="stat">${emoji}${player.name || 'Aventurier'}</div>`;
-        
         playerDiv.innerHTML = `
-            ${nameDisplay}
+            <div class="stat"><span class="enemy-combat-name" title="${emoji} ${player.name || 'Aventurier'}">${emoji} ${(player.name || 'Aventurier').split(' ')[0]}</span><span style="color: #888;"> ${player.level}</span></div>
             <div class="stat">
                 <div class="hp-bar-container">
-                    <progress value="${Math.floor(player.hp)}" max="${player.maxHp}"></progress>
-                    <span class="hp-text">${Math.floor(player.hp)}/${player.maxHp}</span>
+                    <progress value="${targetPlayerHp}" max="${player.maxHp}"></progress>
+                    <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}</span>
                 </div>
             </div>
-            <div class="stat">
-                <strong>Atk:</strong> ${player.attack} <strong>Def:</strong> ${player.defense || 0}
-            </div>
+            <div class="stat"><strong>Atk:</strong> ${player.attack} <strong>Def:</strong> ${player.defense || 0}</div>
             <div class="stat">
                 <div class="mana-dots">
-                    <span class="mana-dot mana-red" title="${player.mana.red}"></span>${player.mana.red}
-                    <span class="mana-dot mana-blue" title="${player.mana.blue}"></span>${player.mana.blue}
-                    <span class="mana-dot mana-green" title="${player.mana.green}"></span>${player.mana.green}
-                    <span class="mana-dot mana-yellow" title="${player.mana.yellow}"></span>${player.mana.yellow}
-                    <span class="mana-dot mana-purple" title="${player.mana.purple}"></span>${player.mana.purple}
+                    <span class="mana-dot mana-red" title="${targetPlayerMana.red}"></span><span id="player-mana-red">${targetPlayerMana.red}</span>
+                    <span class="mana-dot mana-blue" title="${targetPlayerMana.blue}"></span><span id="player-mana-blue">${targetPlayerMana.blue}</span>
+                    <span class="mana-dot mana-green" title="${targetPlayerMana.green}"></span><span id="player-mana-green">${targetPlayerMana.green}</span>
+                    <span class="mana-dot mana-yellow" title="${targetPlayerMana.yellow}"></span><span id="player-mana-yellow">${targetPlayerMana.yellow}</span>
+                    <span class="mana-dot mana-purple" title="${targetPlayerMana.purple}"></span><span id="player-mana-purple">${targetPlayerMana.purple}</span>
                 </div>
             </div>
             <div class="stat"><strong>⚔️:</strong> ${player.combatPoints}</div>`;
         
+        // Animer les compteurs si les valeurs ont changé
+        _animateCounter('player-hp-current', snapPlayerHp, targetPlayerHp);
+        for (const c of ['red','blue','green','yellow','purple']) {
+            _animateCounter(`player-mana-${c}`, snapPlayerMana[c], targetPlayerMana[c]);
+        }
+
         // Ajouter/retirer classe pour liseré selon le tour actuel
         playerDiv.classList.toggle('active-turn', currentTurn === 'player');
     });
@@ -545,24 +679,33 @@ export function updateStats(){
         `<span style="color: #888;"> ${enemy.level}</span>`;
     
     enemyDiv.innerHTML = `
-        <div class="stat">${enemyClassEmoji} ${enemy.name}${levelIndicator}</div>
+        <div class="stat"><span class="enemy-combat-name" title="${enemyClassEmoji} ${enemy.name}">${enemyClassEmoji} ${enemy.name.split(' ')[0]}</span>${levelIndicator}</div>
         <div class="stat">
             <div class="hp-bar-container">
-                <progress class="enemy-bar" value="${Math.floor(enemy.hp)}" max="${enemy.maxHp}"></progress>
-                <span class="hp-text">${Math.floor(enemy.hp)}/${enemy.maxHp}</span>
+                <progress class="enemy-bar" value="${targetEnemyHp}" max="${enemy.maxHp}"></progress>
+                <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
+        <div class="stat"><strong>Atk:</strong> ${enemy.attack} <strong>Def:</strong> ${enemy.defense || 0}</div>
         <div class="stat">
             <div class="mana-dots">
-                <span class="mana-dot mana-red" title="${enemy.mana.red}"></span>${enemy.mana.red}
-                <span class="mana-dot mana-blue" title="${enemy.mana.blue}"></span>${enemy.mana.blue}
-                <span class="mana-dot mana-green" title="${enemy.mana.green}"></span>${enemy.mana.green}
-                <span class="mana-dot mana-yellow" title="${enemy.mana.yellow}"></span>${enemy.mana.yellow}
-                <span class="mana-dot mana-purple" title="${enemy.mana.purple}"></span>${enemy.mana.purple}
+                <span class="mana-dot mana-red" title="${targetEnemyMana.red}"></span><span id="enemy-mana-red">${targetEnemyMana.red}</span>
+                <span class="mana-dot mana-blue" title="${targetEnemyMana.blue}"></span><span id="enemy-mana-blue">${targetEnemyMana.blue}</span>
+                <span class="mana-dot mana-green" title="${targetEnemyMana.green}"></span><span id="enemy-mana-green">${targetEnemyMana.green}</span>
+                <span class="mana-dot mana-yellow" title="${targetEnemyMana.yellow}"></span><span id="enemy-mana-yellow">${targetEnemyMana.yellow}</span>
+                <span class="mana-dot mana-purple" title="${targetEnemyMana.purple}"></span><span id="enemy-mana-purple">${targetEnemyMana.purple}</span>
             </div>
         </div>
-        <div class="stat"><strong>⚔️ Atk:</strong> ${enemy.attack} <strong>🛡️ Def:</strong> ${enemy.defense || 0}</div>
         <div class="stat"><strong>⚔️:</strong> ${enemy.combatPoints}</div>`;
+    if(enemy.inventoryItem) {
+        enemyDiv.innerHTML += `<div class="stat" style="font-size:0.85em; color:#888;">🎒 Objet: ${enemy.inventoryItem.name}</div>`;
+    }
+
+    // Animer les compteurs ennemi
+    _animateCounter('enemy-hp-current', snapEnemyHp, targetEnemyHp);
+    for (const c of ['red','blue','green','yellow','purple']) {
+        _animateCounter(`enemy-mana-${c}`, snapEnemyMana[c], targetEnemyMana[c]);
+    }
     
     updateEnemySpells();
 }
@@ -779,7 +922,18 @@ export function updatePlayerStatsTab(){
     });
 }
 
-// Fonction pour afficher une animation d'attaque qui recouvre la grille
+// Construit et affiche une animation d'attaque ou de sort à partir de paramètres structurés.
+// Paramètres : { icon, title, damage?, heal?, source?, target? }
+export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true) {
+    let html = `<div class="attack-icon">${icon}</div><div class="attack-title">${String(title).toUpperCase()}</div>`;
+    if (damage !== null) html += `<div class="attack-damage">${damage}</div>`;
+    if (heal   !== null) html += `<div class="attack-heal">${heal}</div>`;
+    if (source !== null) html += `<div class="attack-source">${source}</div>`;
+    if (target !== null) html += `<div class="attack-target">${target}</div>`;
+    showAttackAnimation(html, isPlayerAttack);
+}
+
+// Mécanisme DOM bas niveau pour afficher un overlay d'animation sur la grille
 export function showAttackAnimation(text, isPlayerAttack = true) {
     const boardDiv = document.getElementById('board');
     if(!boardDiv) return;
@@ -835,20 +989,11 @@ export function useWeapon(){
     const dmg = weapon.damage;
     enemy.hp -= dmg;
     
-    // Icône selon le type d'arme
-    const weaponIcons = {
-        'sword': '⚔️',
-        'axe': '🪓',
-        'dagger': '🗡️',
-        'mace': '🔨',
-        'bow': '🏹',
-        'staff': '🪄'
-    };
-    const icon = weaponIcons[weapon.type] || '⚔️';
+    const icon = getWeaponIcon(weapon.type);
 
     logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
     
-    showAttackAnimation(`<div class="attack-icon">${icon}</div><div class="attack-title">${weapon.name.toUpperCase()}</div><div class="attack-damage">-${dmg} dégâts</div><div class="attack-target">→ ${enemy.name}</div>`, true);
+    showCombatAnimation({ icon, title: weapon.name, damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`${icon} Vous utilisez ${weapon.name} et infligez ${dmg} dégâts.`);
     
     finishPlayerTurn();
@@ -861,24 +1006,12 @@ export function castSpell(spellId){
     if(!spell){ log("Sort indisponible !"); return; }
     if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
     
-    // Vérifier le coût du sort (peut être un nombre ou un objet avec plusieurs couleurs)
-    if(typeof spell.cost === 'number') {
-        // Sort simple avec un seul coût de couleur
-        if(player.mana[spell.color]<spell.cost){ log("Pas assez de mana !"); return; }
-        player.mana[spell.color]-=spell.cost;
-    } else if(typeof spell.cost === 'object') {
-        // Sort de classe avec plusieurs coûts de mana
-        for(const color in spell.cost) {
-            if(!player.mana[color] || player.mana[color] < spell.cost[color]) {
-                log(`Pas assez de mana ${color} !`);
-                return;
-            }
-        }
-        // Déduire tous les coûts
-        for(const color in spell.cost) {
-            player.mana[color] -= spell.cost[color];
-        }
+    if(!canEntityCastSpell(player, spell)){
+        const missingColor = getMissingManaColor(player, spell);
+        log(missingColor ? `Pas assez de mana ${missingColor} !` : "Pas assez de mana !");
+        return;
     }
+    consumeSpellMana(player, spell);
     
     // Gérer les sorts avec effet spécial
     if(spell.effect) {
@@ -897,19 +1030,7 @@ export function castSpell(spellId){
     
     // Sorts standards (dégâts ou soins)
     logActiveAction(`lance le sort ${spell.name}`);
-    const intelligenceBonus = getPrimaryAttributeEffect(player, "intelligence");
-    if(spell.dmg){
-        let dmg=Math.floor((spell.dmg + intelligenceBonus) * (1-(enemy.resistances[spell.color]||0)));
-        enemy.hp-=dmg;
-        showAttackAnimation(`<div class="attack-icon">🔥</div><div class="attack-title">${spell.name.toUpperCase()}</div><div class="attack-damage">-${Math.floor(dmg)} dégâts</div><div class="attack-target">→ ${enemy.name}</div>`, true);
-        log(`🔥 ${spell.name} inflige ${dmg} dégâts.`);
-    }
-    if(spell.heal){
-        const healAmount = spell.heal + intelligenceBonus;
-        player.hp=Math.min(player.maxHp,player.hp+healAmount);
-        showAttackAnimation(`<div class="attack-icon">💚</div><div class="attack-title">${spell.name.toUpperCase()}</div><div class="attack-heal">+${healAmount} HP</div><div class="attack-target">→ Vous</div>`, true);
-        log(`💚 ${spell.name} soigne ${healAmount} HP.`);
-    }
+    applyStandardSpellEffects(player, enemy, spell, true);
     
     updateStats();
     saveUpdate();
@@ -955,30 +1076,15 @@ export function enemyTurn(){
         if(decision.action === 'spell'){
             const spell = decision.data.spell;
             logActiveAction(`lance le sort ${spell.name}`);
-            
-            // Consommer le mana du sort (gérer coût simple et multiple)
-            if(typeof spell.cost === 'number') {
-                enemy.mana[spell.color] -= spell.cost;
-            } else if(typeof spell.cost === 'object') {
-                for(const color in spell.cost) {
-                    enemy.mana[color] -= spell.cost[color];
-                }
+
+            if(!canEntityCastSpell(enemy, spell)) {
+                log(`⚠️ ${enemy.name} n'a plus assez de mana pour ${spell.name}.`);
+                finishEnemyTurn();
+                return;
             }
-            
-            if(spell.dmg){
-                const enemyIntelligenceBonus = getPrimaryAttributeEffect(enemy, "intelligence");
-                let dmg = Math.floor((spell.dmg + enemyIntelligenceBonus) * (1 - (player.resistances && player.resistances[spell.color] || 0)));
-                player.hp -= dmg;
-                showAttackAnimation(`<div class="attack-icon">🔥</div><div class="attack-title">${spell.name.toUpperCase()}</div><div class="attack-damage">-${Math.floor(dmg)} dégâts</div><div class="attack-source">${enemy.name}</div><div class="attack-target">→ Vous</div>`, false);
-                log(`🔥 ${enemy.name} lance ${spell.name} ! ${dmg} dégâts.`);
-            }
-            if(spell.heal){
-                const enemyIntelligenceBonus = getPrimaryAttributeEffect(enemy, "intelligence");
-                const healAmount = spell.heal + enemyIntelligenceBonus;
-                enemy.hp = Math.min(enemy.maxHp, enemy.hp + healAmount);
-                showAttackAnimation(`<div class="attack-icon">💚</div><div class="attack-title">${spell.name.toUpperCase()}</div><div class="attack-heal">+${healAmount} HP</div><div class="attack-source">${enemy.name}</div>`, false);
-                log(`💚 ${enemy.name} utilise ${spell.name} et soigne ${healAmount} HP.`);
-            }
+
+            consumeSpellMana(enemy, spell);
+            applyStandardSpellEffects(enemy, player, spell, false);
             
             // Vérifier l'état après l'action
             finishEnemyTurn();
@@ -988,16 +1094,8 @@ export function enemyTurn(){
             enemy.combatPoints -= enemy.weapon.actionPoints;
             let dmg = enemy.weapon.damage;
             player.hp -= dmg;
-            const weaponIcons = {
-                'sword': '⚔️',
-                'axe': '🪓',
-                'dagger': '🗡️',
-                'mace': '🔨',
-                'bow': '🏹',
-                'staff': '🪄'
-            };
-            const icon = weaponIcons[enemy.weapon.type] || '⚔️';
-            showAttackAnimation(`<div class="attack-icon">${icon}</div><div class="attack-title">${enemy.weapon.name.toUpperCase()}</div><div class="attack-damage">-${dmg} dégâts</div><div class="attack-source">${enemy.name}</div><div class="attack-target">→ Vous</div>`, false);
+            const icon = getWeaponIcon(enemy.weapon.type);
+            showCombatAnimation({ icon, title: enemy.weapon.name, damage: `-${dmg} dégâts`, source: enemy.name, target: '→ Vous' }, false);
             log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.`);
             
             // Vérifier l'état après l'action
@@ -1049,7 +1147,23 @@ export function handleEnemyDefeated(){
     const xpGain = calculateXPGain(enemy.level || player.level, player.level);
     queueCombatXP(xpGain);
     log(`⭐ Vous gagnez ${xpGain} XP !`);
-    
+
+    // Drop de l'objet de l'ennemi (si il en avait un)
+    if(enemy.inventoryItem) {
+        if(player.inventory.length < 1) {
+            player.inventory.push({...enemy.inventoryItem, applied: false});
+            combatRewards.items.push(enemy.inventoryItem.name);
+            const rarityEmoji = getRarityEmoji(enemy.inventoryItem.rarity);
+            log(`${rarityEmoji} ${enemy.name} portait : ${enemy.inventoryItem.name} !`);
+            if(enemy.inventoryItem.type === 'artifact') {
+                applyArtifactEffects(player);
+                log(`✨ ${enemy.inventoryItem.description}`);
+            }
+        } else {
+            log(`🎒 ${enemy.name} portait ${enemy.inventoryItem.name} mais votre inventaire est plein.`);
+        }
+    }
+
     // 40% de chance de ne rien obtenir
     const dropChance = Math.random();
     if(dropChance > 0.4) {
@@ -1060,15 +1174,19 @@ export function handleEnemyDefeated(){
             // 70% de chance d'obtenir un objet
             const droppedItem = getRandomItem(player.level);
             if(droppedItem) {
-                player.inventory.push({...droppedItem, applied: false});
-                combatRewards.items.push(droppedItem.name);
-                const rarityEmoji = getRarityEmoji(droppedItem.rarity);
-                log(`${rarityEmoji} Vous obtenez : ${droppedItem.name} !`);
-                
-                // Appliquer immédiatement les effets des artefacts
-                if(droppedItem.type === "artifact") {
-                    applyArtifactEffects(player);
-                    log(`✨ ${droppedItem.description}`);
+                if(player.inventory.length < 1) {
+                    player.inventory.push({...droppedItem, applied: false});
+                    combatRewards.items.push(droppedItem.name);
+                    const rarityEmoji = getRarityEmoji(droppedItem.rarity);
+                    log(`${rarityEmoji} Vous obtenez : ${droppedItem.name} !`);
+                    // Appliquer immédiatement les effets des artefacts
+                    if(droppedItem.type === "artifact") {
+                        applyArtifactEffects(player);
+                        log(`✨ ${droppedItem.description}`);
+                    }
+                } else {
+                    const rarityEmoji = getRarityEmoji(droppedItem.rarity);
+                    log(`${rarityEmoji} ${droppedItem.name} trouvé, mais votre inventaire est plein (jetez votre objet actuel dans l'onglet Inventaire).`);
                 }
             }
         } else {
@@ -1084,15 +1202,7 @@ export function handleEnemyDefeated(){
                     combatRewards.weapons.push(randomWeapon.name);
                     // Mettre à jour la liste des armes disponibles du joueur
                     updateAvailableWeapons();
-                    const weaponIcons = {
-                        'sword': '⚔️',
-                        'axe': '🪓',
-                        'dagger': '🗡️',
-                        'mace': '🔨',
-                        'bow': '🏹',
-                        'staff': '🪄'
-                    };
-                    const icon = weaponIcons[randomWeapon.type] || '⚔️';
+                    const icon = getWeaponIcon(randomWeapon.type);
                     log(`${icon} Vous obtenez : ${randomWeapon.name} !`);
                 } else {
                     log(`💰 Vous obtenez quelques pièces d'or (arme déjà possédée).`);
@@ -1568,6 +1678,9 @@ export function newEnemy(selectedEnemy = null){
     } else {
         log(`🔮 L'ennemi n'a pas d'arme (utilise uniquement la magie)`);
     }
+    if(enemy.inventoryItem){
+        log(`🎒 ${enemy.name} porte : ${enemy.inventoryItem.name}`);
+    }
     if(enemy.spells.length > 0){
         log(`✨ L'ennemi dispose de sorts : ${enemy.spells.map(s => s.name).join(", ")}`);
     }
@@ -1666,16 +1779,7 @@ export function createWeaponButton(){
     const btn = document.createElement('button');
     btn.className = 'weapon-btn';
     
-    // Icône selon le type d'arme
-    const weaponIcons = {
-        'sword': '⚔️',
-        'axe': '🪓',
-        'dagger': '🗡️',
-        'mace': '🔨',
-        'bow': '🏹',
-        'staff': '🪄'
-    };
-    const icon = weaponIcons[weapon.type] || '⚔️';
+    const icon = getWeaponIcon(weapon.type);
     
     btn.innerHTML = `${icon} ${weapon.name} <span class="weapon-cost">${weapon.actionPoints} ⚔️</span> - ${weapon.damage} 💀`;
     if(player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints) {
@@ -1701,15 +1805,7 @@ export function updateWeaponsTab(){
         equippedDiv.innerHTML += '<p><em>Aucune arme équipée</em></p>';
     } else {
         const weapon = player.equippedWeapon;
-        const weaponIcons = {
-            'sword': '⚔️',
-            'axe': '🪓',
-            'dagger': '🗡️',
-            'mace': '🔨',
-            'bow': '🏹',
-            'staff': '🪄'
-        };
-        const icon = weaponIcons[weapon.type] || '⚔️';
+        const icon = getWeaponIcon(weapon.type);
         const div = document.createElement('div');
         div.className = 'weapon-item equipped-weapon';
         div.innerHTML = `
@@ -1731,15 +1827,7 @@ export function updateWeaponsTab(){
         return;
     }
     player.availableWeapons.forEach(weapon => {
-        const weaponIcons = {
-            'sword': '⚔️',
-            'axe': '🪓',
-            'dagger': '🗡️',
-            'mace': '🔨',
-            'bow': '🏹',
-            'staff': '🪄'
-        };
-        const icon = weaponIcons[weapon.type] || '⚔️';
+        const icon = getWeaponIcon(weapon.type);
         const div = document.createElement('div');
         div.className = 'weapon-item available-weapon';
         const isEquipped = player.equippedWeapon && player.equippedWeapon.id === weapon.id;
@@ -1756,68 +1844,51 @@ export function updateWeaponsTab(){
         `;
         availableList.appendChild(div);
     });
+
+    updateInventoryTab();
 }
 
 // -------------------------------------
 // -------------------------------------
-// Inventaire
+// Inventaire (slot unique)
 export function updateInventoryTab(){
     const inventoryList = document.getElementById('inventory-list');
     if(!inventoryList) return;
-    
-    inventoryList.innerHTML = '<h3>Inventaire</h3>';
-    
+
+    inventoryList.innerHTML = '';
+
     if(!player.inventory || player.inventory.length === 0){
-        inventoryList.innerHTML += '<p><em>Votre inventaire est vide</em></p>';
+        inventoryList.innerHTML = `
+            <div class="inventory-slot inventory-slot-empty">
+                <span class="slot-icon">📦</span>
+                <span class="slot-label"><em>Aucun objet</em></span>
+            </div>
+        `;
         return;
     }
-    
-    // Grouper les objets par type
-    const consumables = player.inventory.filter(item => item.type === 'consumable');
-    const artifacts = player.inventory.filter(item => item.type === 'artifact');
-    
-    // Afficher les consommables
-    if(consumables.length > 0) {
-        inventoryList.innerHTML += '<h4 style="margin-top: 15px;">🧪 Consommables</h4>';
-        consumables.forEach((item, index) => {
-            const rarityEmoji = getRarityEmoji(item.rarity);
-            const rarityColor = getRarityColor(item.rarity);
-            const div = document.createElement('div');
-            div.className = 'item-card consumable-item';
-            div.style.borderLeft = `4px solid ${rarityColor}`;
-            
-            const canUse = gameState.combatState === 'active';
-            
-            div.innerHTML = `
-                <div class="item-header">
-                    <span class="item-name">${rarityEmoji} ${item.name}</span>
-                    <button class="item-use-btn" ${canUse ? '' : 'disabled'} onclick="window.useInventoryItem('${item.id}', ${index})">${canUse ? '✅ Utiliser' : '❌ Hors combat'}</button>
-                </div>
-                <div class="item-description">${item.description}</div>
-            `;
-            inventoryList.appendChild(div);
-        });
-    }
-    
-    // Afficher les artefacts
-    if(artifacts.length > 0) {
-        inventoryList.innerHTML += '<h4 style="margin-top: 15px;">✨ Artefacts (Effets permanents)</h4>';
-        artifacts.forEach(item => {
-            const rarityEmoji = getRarityEmoji(item.rarity);
-            const rarityColor = getRarityColor(item.rarity);
-            const div = document.createElement('div');
-            div.className = 'item-card artifact-item';
-            div.style.borderLeft = `4px solid ${rarityColor}`;
-            div.innerHTML = `
-                <div class="item-header">
-                    <span class="item-name">${rarityEmoji} ${item.name}</span>
-                    <span class="artifact-badge">⚡ Actif</span>
-                </div>
-                <div class="item-description">${item.description}</div>
-            `;
-            inventoryList.appendChild(div);
-        });
-    }
+
+    const item = player.inventory[0];
+    const rarityEmoji = getRarityEmoji(item.rarity);
+    const rarityColor = getRarityColor(item.rarity);
+    const canUse = gameState.combatState === 'active' && item.type === 'consumable';
+
+    const div = document.createElement('div');
+    div.className = `item-card ${item.type === 'consumable' ? 'consumable-item' : 'artifact-item'}`;
+    div.style.borderLeft = `4px solid ${rarityColor}`;
+    div.innerHTML = `
+        <div class="item-header">
+            <span class="item-name">${rarityEmoji} ${item.name}</span>
+            <div class="item-actions">
+                ${item.type === 'consumable'
+                    ? `<button class="item-use-btn" ${canUse ? '' : 'disabled'} onclick="window.useInventoryItem('${item.id}', 0)">${canUse ? '✅ Utiliser' : '❌ Hors combat'}</button>`
+                    : `<span class="artifact-badge">⚡ Actif</span>`
+                }
+                <button class="item-discard-btn" onclick="window.discardInventoryItem()">🗑️ Jeter</button>
+            </div>
+        </div>
+        <div class="item-description">${item.description}</div>
+    `;
+    inventoryList.appendChild(div);
 }
 
 export function useInventoryItem(itemId, index){
@@ -1836,9 +1907,19 @@ export function useInventoryItem(itemId, index){
     }
 }
 
+export function discardInventoryItem(){
+    if(!player.inventory || player.inventory.length === 0) return;
+    const item = player.inventory[0];
+    player.inventory.splice(0, 1);
+    log(`🗑️ Vous avez jeté ${item.name}.`);
+    updateInventoryTab();
+    saveUpdate();
+}
+
 // Exports pour les fonctions accessibles globalement
 window.equipSpell = equipSpell;
 window.unequipSpell = unequipSpell;
 window.equipWeapon = equipWeapon;
 window.unequipWeapon = unequipWeapon;
 window.useInventoryItem = useInventoryItem;
+window.discardInventoryItem = discardInventoryItem;

@@ -1,7 +1,7 @@
 // Gestion des effets spéciaux des sorts de classe
 
-import { player, enemy, log, saveUpdate, showAttackAnimation } from "./game.js";
-import { board, renderBoard } from "./board.js";
+import { player, enemy, log, saveUpdate, showCombatAnimation, finishPlayerTurn } from "./game.js";
+import { board, renderBoard, setBoardTargetingMode } from "./board.js";
 import { colors, boardSize } from "./constants.js";
 
 function getManaCap(color) {
@@ -71,27 +71,37 @@ function applyMageStrike(spell) {
     const bonusDmg = Math.floor(blueMana / 3);
     const totalDmg = spell.baseDmg + bonusDmg;
     enemy.hp -= totalDmg;
-    showAttackAnimation(`<div class="attack-icon">🔥</div><div class="attack-title">FRAPPE DU MAGE</div><div class="attack-damage">-${totalDmg} dégâts</div><div class="attack-target">→ ${enemy.name}</div>`, true);
+    showCombatAnimation({ icon: '🔥', title: 'FRAPPE DU MAGE', damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🔥 Frappe du Mage inflige ${totalDmg} dégâts (${spell.baseDmg} base + ${bonusDmg} bonus)`);
     return true;
 }
 
 function applyWildMana(spell) {
-    // Trouver une gemme de couleur aléatoire et la transformer en joker
-    const colorTiles = [];
-    for(let i = 0; i < board.length; i++) {
-        if(colors.includes(board[i])) {
-            colorTiles.push(i);
+    const hasColorTile = board.some(tile => colors.includes(tile));
+    if(!hasColorTile){
+        log(`⚠️ Aucune gemme de couleur à transformer`);
+        return false;
+    }
+
+    setBoardTargetingMode({
+        highlightPredicate: (_index, tile) => colors.includes(tile),
+        onTileClick: (index, tile) => {
+            if(!colors.includes(tile)){
+                log(`⚠️ Choisissez une gemme de couleur pour Mana Sauvage.`);
+                return true;
+            }
+
+            board[index] = 'joker';
+            setBoardTargetingMode(null);
+            renderBoard();
+            log(`✨ Mana Sauvage transforme la gemme choisie en joker !`);
+            saveUpdate();
+            finishPlayerTurn();
+            return true;
         }
-    }
-    if(colorTiles.length > 0) {
-        const randomIndex = colorTiles[Math.floor(Math.random() * colorTiles.length)];
-        board[randomIndex] = 'joker';
-        renderBoard();
-        log(`✨ Mana Sauvage transforme une gemme en joker !`);
-        return true;
-    }
-    log(`⚠️ Aucune gemme de couleur à transformer`);
+    });
+
+    log(`✨ Mana Sauvage: choisissez une gemme de couleur à transformer en joker.`);
     return false;
 }
 
@@ -122,7 +132,7 @@ function applyFlameBolts(spell) {
     if(projectiles > 0) {
         enemy.hp -= totalDmg;
         player.mana.yellow = 0;
-        showAttackAnimation(`<div class="attack-icon">⚡</div><div class="attack-title">PROJECTILES DE FLAMME</div><div class="attack-damage">${projectiles} × 5 = ${totalDmg} dégâts</div><div class="attack-target">→ ${enemy.name}</div>`, true);
+        showCombatAnimation({ icon: '⚡', title: 'PROJECTILES DE FLAMME', damage: `${projectiles} × 5 = ${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
         log(`⚡ Projectiles de Flamme tire ${projectiles} projectiles pour ${totalDmg} dégâts !`);
         return true;
     }
@@ -200,7 +210,7 @@ function applyFireballArea(spell) {
     
     enemy.hp -= spell.dmg;
     renderBoard();
-    showAttackAnimation(`<div class="attack-icon">🔥</div><div class="attack-title">BOULE DE FEU</div><div class="attack-damage">-${spell.dmg} dégâts</div><div class="attack-target">→ ${enemy.name}</div>`, true);
+    showCombatAnimation({ icon: '🔥', title: 'BOULE DE FEU', damage: `-${spell.dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🔥 Boule de Feu détruit une zone 3×3 et inflige ${spell.dmg} dégâts !`);
     return true;
 }
@@ -209,7 +219,7 @@ function applyFireballArea(spell) {
 function applySneakAttack(spell) {
     enemy.hp -= spell.dmg;
     player.bonusTurn = true;
-    showAttackAnimation(`<div class="attack-icon">🗡️</div><div class="attack-title">ATTAQUE SOURNOISE</div><div class="attack-damage">-${spell.dmg} dégâts</div><div class="attack-target">→ ${enemy.name}</div>`, true);
+    showCombatAnimation({ icon: '🗡️', title: 'ATTAQUE SOURNOISE', damage: `-${spell.dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🗡️ Attaque Sournoise inflige ${spell.dmg} dégâts sans terminer le tour !`);
     return true;
 }
@@ -225,7 +235,7 @@ function applySwiftStrike(spell) {
     const dmg = count;
     enemy.hp -= dmg;
     renderBoard();
-    showAttackAnimation(`<div class="attack-icon">⚡</div><div class="attack-title">FRAPPE RAPIDE</div><div class="attack-damage">-${dmg} dégâts</div><div class="attack-target">→ ${enemy.name}</div>`, true);
+    showCombatAnimation({ icon: '⚡', title: 'FRAPPE RAPIDE', damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`⚡ Frappe Rapide convertit ${count} gemmes jaunes et inflige ${dmg} dégâts !`);
     return true;
 }
@@ -254,7 +264,7 @@ function applyShadowStrike(spell) {
     const dmg = count * 2;
     enemy.hp -= dmg;
     renderBoard();
-    showAttackAnimation(`<div class="attack-icon">🌑</div><div class="attack-title">FRAPPE DE L'OMBRE</div><div class="attack-damage">-${dmg} dégâts</div><div class="attack-target">→ ${enemy.name}</div>`, true);
+    showCombatAnimation({ icon: '🌑', title: "FRAPPE DE L'OMBRE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🌑 Frappe de l'Ombre détruit ${count} gemmes violettes et inflige ${dmg} dégâts !`);
     return true;
 }
@@ -284,7 +294,7 @@ function applyShieldBash(spell) {
     delete player.statusEffects.poisoned;
     delete player.statusEffects.stunned;
     delete player.statusEffects.weakened;
-    showAttackAnimation(`<div class="attack-icon">🛡️</div><div class="attack-title">COUP DE BOUCLIER</div><div class="attack-damage">-${totalDmg} dégâts</div><div class="attack-target">→ ${enemy.name}</div>`, true);
+    showCombatAnimation({ icon: '🛡️', title: 'COUP DE BOUCLIER', damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🛡️ Coup de Bouclier inflige ${totalDmg} dégâts et retire les statuts négatifs !`);
     return true;
 }
@@ -335,7 +345,7 @@ function applyCleave(spell) {
     const dmg = count;
     enemy.hp -= dmg;
     renderBoard();
-    showAttackAnimation(`<div class="attack-icon">🪓</div><div class="attack-title">ENTAILLE</div><div class="attack-damage">-${dmg} dégâts</div><div class="attack-target">→ ${enemy.name}</div>`, true);
+    showCombatAnimation({ icon: '🪓', title: 'ENTAILLE', damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🪓 Entaille détruit ${count} gemmes jaunes et inflige ${dmg} dégâts !`);
     return true;
 }
@@ -349,7 +359,7 @@ function applyThrowAxe(spell) {
     }
     const totalDmg = spell.baseDmg + skullCount;
     enemy.hp -= totalDmg;
-    showAttackAnimation(`<div class="attack-icon">🪓</div><div class="attack-title">LANCER DE HACHE</div><div class="attack-damage">-${totalDmg} dégâts</div><div class="attack-target">→ ${enemy.name}</div>`, true);
+    showCombatAnimation({ icon: '🪓', title: 'LANCER DE HACHE', damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🪓 Lancer de Hache inflige ${totalDmg} dégâts (${spell.baseDmg} + ${skullCount} crânes) !`);
     return true;
 }

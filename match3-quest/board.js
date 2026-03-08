@@ -1,5 +1,12 @@
-import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showAttackAnimation, grantComboMasteryRewards, grantManaGeneratedXP, addManaForColor, logActiveAction } from "./game.js";
+import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, addManaForColor, logActiveAction } from "./game.js";
 import { colors, boardSize } from "./constants.js";
+import {
+    hasMatches as hasMatchesOnBoard,
+    checkForMatchesOnly as checkForMatchesOnlyOnBoard,
+    checkMatchAtPosition,
+    findPossibleMatches,
+    collectMatches
+} from "./matchMechanics.js";
 
 // grille et sélection
 export let board = [];
@@ -14,35 +21,41 @@ let gameStarted = false;
 let turnDistinctMatches = 0;
 let comboMasteryTriggered = false;
 let pendingSwap = null;
+let tileClickInterceptor = null;
+let tileHighlightPredicate = null;
+let boardDropProbabilities = null;
 
 export function setGameStarted(started){
     gameStarted = started;
 }
 
-// utilitaire utilisé lors de la génération pour éviter combos initiaux
-export function hasMatches(){
-    for(let i=0;i<boardSize;i++){
-        for(let j=0;j<boardSize;j++){
-            const idx=i*boardSize+j;
-            const color=board[idx];
-            if(j<=boardSize-3 && board[idx+1]===color && board[idx+2]===color) return true;
-            if(i<=boardSize-3 && board[idx+boardSize]===color && board[idx+2*boardSize]===color) return true;
+export function setBoardTargetingMode(config = null){
+    if(!config){
+        tileClickInterceptor = null;
+        tileHighlightPredicate = null;
+        refreshTargetingHighlights();
+        return;
+    }
+
+    tileClickInterceptor = typeof config.onTileClick === 'function' ? config.onTileClick : null;
+    tileHighlightPredicate = typeof config.highlightPredicate === 'function' ? config.highlightPredicate : null;
+    refreshTargetingHighlights();
+}
+
+function refreshTargetingHighlights(){
+    const boardDiv = document.getElementById('board');
+    if(!boardDiv) return;
+    const tiles = boardDiv.children;
+
+    for(let i = 0; i < tiles.length; i++){
+        tiles[i].classList.remove('targetable');
+        if(tileHighlightPredicate && tileHighlightPredicate(i, board[i])){
+            tiles[i].classList.add('targetable');
         }
     }
-    return false;
 }
 
-function generateNewBoard(){
-    // la grille peut contenir aussi quelques tuiles spéciales
-    do{
-        board=[];
-        for(let i=0;i<boardSize*boardSize;i++){
-            board.push(generateRandomTile());
-        }
-    }while(hasMatches());
-}
-
-function getSpecialTileProbabilities(){
+function computeSpecialTileProbabilities(){
     const hasWeaponsOrSpells = player.availableWeapons.length > 0 || player.availableSpells.length > 0;
     if(!hasWeaponsOrSpells) {
         return { skullProb: 0.15, combatProb: 0.02 };
@@ -50,8 +63,28 @@ function getSpecialTileProbabilities(){
     return { skullProb: 0.25, combatProb: 0.07 };
 }
 
+function refreshBoardDropProbabilities(){
+    boardDropProbabilities = computeSpecialTileProbabilities();
+}
+
+function generateNewBoard(){
+    // On fige les probabilites de drop pour tout le plateau courant.
+    refreshBoardDropProbabilities();
+    // la grille peut contenir aussi quelques tuiles spéciales
+    do{
+        board=[];
+        for(let i=0;i<boardSize*boardSize;i++){
+            board.push(generateRandomTile());
+        }
+    }while(hasMatchesOnBoard(board));
+}
+
 function generateRandomTile(){
-    const { skullProb, combatProb } = getSpecialTileProbabilities();
+    if(!boardDropProbabilities){
+        refreshBoardDropProbabilities();
+    }
+
+    const { skullProb, combatProb } = boardDropProbabilities;
     const r = Math.random();
     if(r < skullProb) return 'skull';
     if(r < skullProb + combatProb) return 'combat';
@@ -111,33 +144,51 @@ export function regenerateBoard(){
     log("🔄 Plateau régénéré (aucune combinaison possible) !");
     const boardDiv = document.getElementById('board');
     const tiles = boardDiv.children;
-    
-    // Animation de disparition
-    for(let i = 0; i < tiles.length; i++){
-        tiles[i].style.opacity = '0';
-        tiles[i].style.transform = 'scale(0.5)';
-    }
-    
-    // Régénérer le plateau après animation
+
+    // Animation via showCombatAnimation (overlay sur le plateau)
+    showCombatAnimation({ icon: '🚫', title: 'Aucun coup possible !', target: 'Le plateau est régénéré...' }, true);
+
+    // Disparition des tuiles après que l'overlay soit visible (~900ms)
     setTimeout(() => {
-        generateNewBoard();
         for(let i = 0; i < tiles.length; i++){
-            tiles[i].style.opacity = '1';
-            tiles[i].style.transform = 'scale(1)';
-            tiles[i].className = `tile ${board[i]}`;
-            if(board[i] === 'skull') tiles[i].textContent = '💀';
-            else if(board[i] === 'combat') tiles[i].textContent = '⚔️';
-            else if(board[i] === 'joker') tiles[i].textContent = '★';
-            else tiles[i].textContent = '';
+            tiles[i].style.opacity = '0';
+            tiles[i].style.transform = 'scale(0.5)';
         }
-        renderBoard();
-    }, 400);
+
+        // Régénérer le plateau après animation
+        setTimeout(() => {
+            generateNewBoard();
+            for(let i = 0; i < tiles.length; i++){
+                tiles[i].style.opacity = '1';
+                tiles[i].style.transform = 'scale(1)';
+                tiles[i].className = `tile ${board[i]}`;
+                if(board[i] === 'skull') tiles[i].textContent = '💀';
+                else if(board[i] === 'combat') tiles[i].textContent = '⚔️';
+                else if(board[i] === 'joker') tiles[i].textContent = '★';
+                else tiles[i].textContent = '';
+            }
+            renderBoard();
+        }, 400);
+    }, 900);
 }
 
 export function selectTile(index){
+    if(tileClickInterceptor){
+        const consumed = tileClickInterceptor(index, board[index]);
+        if(consumed !== false){
+            return;
+        }
+    }
+
     // Empêcher le joueur de jouer si ce n'est pas son tour
     if(currentTurn !== 'player'){
         log('⚠️ Ce n\'est pas votre tour !');
+        return;
+    }
+
+    // Regle commune joueur/ennemi: plateau bloque => regeneration puis meme acteur rejoue.
+    if(getSortedPossibleMoves().length === 0){
+        handleNoPossibleMoveForCurrentTurn();
         return;
     }
     
@@ -191,7 +242,7 @@ export function swapTiles(i,j){
     [board[i],board[j]]=[board[j],board[i]];
     
     // Vérifier si le swap crée un match autour des deux tuiles échangées
-    const hasMatch = Boolean(checkMatchAtPosition(i) || checkMatchAtPosition(j));
+    const hasMatch = Boolean(checkMatchAtPosition(board, i) || checkMatchAtPosition(board, j));
     
     if(!hasMatch) {
         pendingSwap = null;
@@ -249,71 +300,12 @@ export function renderBoard(skipCleanup = false){
         else if(t==='combat') tiles[i].textContent='⚔️';
         else if(t==='joker') tiles[i].textContent='★';
     }
+    refreshTargetingHighlights();
 }
 
 // Vérifie uniquement si des matchs existent (sans les traiter)
 export function checkForMatchesOnly(){
-    // scan horizontal
-    for(let i=0;i<boardSize;i++){
-        for(let j=0;j<boardSize-2;j++){
-            const idx=i*boardSize+j;
-            const t=board[idx];
-            const t1=board[idx+1];
-            const t2=board[idx+2];
-            
-            // Ignorer si toutes sont des jokers
-            if(t==='joker' && t1==='joker' && t2==='joker') continue;
-            
-            // Match avec jokers pour couleurs
-            if(colors.includes(t) || colors.includes(t1) || colors.includes(t2)){
-                // Extraire la couleur (ignorer les jokers)
-                const nonJokers = [t, t1, t2].filter(tile => tile !== 'joker' && colors.includes(tile));
-                if(nonJokers.length === 0) continue; // Que des jokers
-                const matchColor = nonJokers[0];
-                // Vérifier que toutes les tuiles non-joker ont la même couleur
-                if(nonJokers.every(tile => tile === matchColor)) return true;
-            }
-            // Match avec jokers pour types spéciaux (skull, combat)
-            else if((t === t1 || t === 'joker' || t1 === 'joker') && 
-                    (t1 === t2 || t1 === 'joker' || t2 === 'joker') && 
-                    (t === t2 || t === 'joker' || t2 === 'joker')){
-                const nonJokers = [t, t1, t2].filter(tile => tile !== 'joker');
-                if(nonJokers.length > 0 && nonJokers.every(tile => tile === nonJokers[0])) return true;
-            }
-        }
-    }
-    
-    // scan vertical
-    for(let j=0;j<boardSize;j++){
-        for(let i=0;i<boardSize-2;i++){
-            const idx=i*boardSize+j;
-            const t=board[idx];
-            const t1=board[(i+1)*boardSize+j];
-            const t2=board[(i+2)*boardSize+j];
-            
-            // Ignorer si toutes sont des jokers
-            if(t==='joker' && t1==='joker' && t2==='joker') continue;
-            
-            // Match avec jokers pour couleurs
-            if(colors.includes(t) || colors.includes(t1) || colors.includes(t2)){
-                // Extraire la couleur (ignorer les jokers)
-                const nonJokers = [t, t1, t2].filter(tile => tile !== 'joker' && colors.includes(tile));
-                if(nonJokers.length === 0) continue; // Que des jokers
-                const matchColor = nonJokers[0];
-                // Vérifier que toutes les tuiles non-joker ont la même couleur
-                if(nonJokers.every(tile => tile === matchColor)) return true;
-            }
-            // Match avec jokers pour types spéciaux (skull, combat)
-            else if((t === t1 || t === 'joker' || t1 === 'joker') && 
-                    (t1 === t2 || t1 === 'joker' || t2 === 'joker') && 
-                    (t === t2 || t === 'joker' || t2 === 'joker')){
-                const nonJokers = [t, t1, t2].filter(tile => tile !== 'joker');
-                if(nonJokers.length > 0 && nonJokers.every(tile => tile === nonJokers[0])) return true;
-            }
-        }
-    }
-    
-    return false;
+    return checkForMatchesOnlyOnBoard(board);
 }
 
 export function checkMatches(){
@@ -348,8 +340,8 @@ export function checkMatches(){
                 log(`🎁 Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 // Afficher une animation de tour bonus
                 const isPlayer = currentTurn === 'player';
-                showAttackAnimation(
-                    `<div class="attack-icon">🎁</div><div class="attack-title">TOUR BONUS !</div><div class="attack-damage">Match de ${info.len} tuiles</div><div class="attack-target">${isPlayer ? 'Vous rejouez !' : 'L\'ennemi rejoue !'}</div>`,
+                showCombatAnimation(
+                    { icon: '🎁', title: 'TOUR BONUS !', damage: `Match de ${info.len} tuiles`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
                     isPlayer
                 );
             }
@@ -362,8 +354,8 @@ export function checkMatches(){
                 currentPlayer.bonusTurn = true;
                 log(`🎁 Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 const isPlayer = currentTurn === 'player';
-                showAttackAnimation(
-                    `<div class="attack-icon">🎁</div><div class="attack-title">TOUR BONUS !</div><div class="attack-damage">Match de ${info.len} épées</div><div class="attack-target">${isPlayer ? 'Vous rejouez !' : 'L\'ennemi rejoue !'}</div>`,
+                showCombatAnimation(
+                    { icon: '🎁', title: 'TOUR BONUS !', damage: `Match de ${info.len} épées`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
                     isPlayer
                 );
             }
@@ -378,8 +370,8 @@ export function checkMatches(){
                 currentPlayer.bonusTurn = true;
                 log(`🎁 Match de ${info.len} crânes : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 const isPlayer = currentTurn === 'player';
-                showAttackAnimation(
-                    `<div class="attack-icon">🎁</div><div class="attack-title">TOUR BONUS !</div><div class="attack-damage">Match de ${info.len} crânes</div><div class="attack-target">${isPlayer ? 'Vous rejouez !' : 'L\'ennemi rejoue !'}</div>`,
+                showCombatAnimation(
+                    { icon: '🎁', title: 'TOUR BONUS !', damage: `Match de ${info.len} crânes`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
                     isPlayer
                 );
             }
@@ -400,8 +392,8 @@ export function checkMatches(){
                 board[random.index] = 'joker';
             }
 
-            showAttackAnimation(
-                `<div class="attack-icon">🌟</div><div class="attack-title">COMBO MAGISTRAL</div><div class="attack-damage">${turnDistinctMatches} matchs différents</div><div class="attack-target">+${comboXp} XP, Joker créé, vous rejouez !</div>`,
+            showCombatAnimation(
+                { icon: '🌟', title: 'COMBO MAGISTRAL', damage: `${turnDistinctMatches} matchs différents`, target: `+${comboXp} XP, Joker créé, vous rejouez !` },
                 true
             );
             log(`🌟 Combo magistral : +${comboXp} XP, création d'un Joker et tour bonus !`);
@@ -410,87 +402,11 @@ export function checkMatches(){
         highlightCombo(indices, info);
     }
 
-    // scan horizontal
-    for(let i=0;i<boardSize;i++){
-        let j=0;
-        while(j<boardSize){
-            const idx=i*boardSize+j;
-            const t=board[idx];
-            let run=[idx];
-            let type=t;
-            if(colors.includes(t) || t==='joker') type='color';
-            let color = colors.includes(t)?t:null;
-            let k=j+1;
-            while(k<boardSize){
-                const idx2=i*boardSize+k;
-                const t2=board[idx2];
-                if(type==='color'){
-                    // Joker = wildcard, mais une fois une couleur trouvée,
-                    // on ne doit accepter que cette couleur (ou joker).
-                    if(t2==='joker' || (color && t2===color) || (!color && colors.includes(t2))){
-                        run.push(idx2);
-                        if(!color && colors.includes(t2)) color=t2;
-                        k++;
-                        continue;
-                    }
-                } else {
-                    if(t2===type || t2==='joker' || t==='joker'){ 
-                        run.push(idx2); 
-                        if(t==='joker' && t2!=='joker') type=t2;
-                        k++; 
-                        continue; 
-                    }
-                }
-                break;
-            }
-            if(run.length>=3){
-                const info={type:type,len:run.length,color:color};
-                handleRun(run, info);
-                if(info.makeJoker){ board[run[0]]='joker'; }
-            }
-            j += Math.max(run.length,1);
-        }
-    }
-
-    // scan vertical
-    for(let j=0;j<boardSize;j++){
-        let i=0;
-        while(i<boardSize){
-            const idx=i*boardSize+j;
-            const t=board[idx];
-            let run=[idx];
-            let type=t;
-            if(colors.includes(t) || t==='joker') type='color';
-            let color = colors.includes(t)?t:null;
-            let k=i+1;
-            while(k<boardSize){
-                const idx2=k*boardSize+j;
-                const t2=board[idx2];
-                if(type==='color'){
-                    // Joker = wildcard, mais une fois une couleur trouvée,
-                    // on ne doit accepter que cette couleur (ou joker).
-                    if(t2==='joker' || (color && t2===color) || (!color && colors.includes(t2))){
-                        run.push(idx2);
-                        if(!color && colors.includes(t2)) color=t2;
-                        k++;
-                        continue;
-                    }
-                } else {
-                    if(t2===type || t2==='joker' || t==='joker'){ 
-                        run.push(idx2); 
-                        if(t==='joker' && t2!=='joker') type=t2;
-                        k++; 
-                        continue; 
-                    }
-                }
-                break;
-            }
-            if(run.length>=3){
-                const info={type:type,len:run.length,color:color};
-                handleRun(run, info);
-                if(info.makeJoker){ board[run[0]]='joker'; }
-            }
-            i += Math.max(run.length,1);
+    const matches = collectMatches(board);
+    for(const match of matches){
+        handleRun(match.indices, match.info);
+        if(match.info.makeJoker){
+            board[match.indices[0]] = 'joker';
         }
     }
 
@@ -736,7 +652,7 @@ function startSuggestionTimer(){
     // Démarrer un nouveau timer
     suggestionTimer = setTimeout(() => {
         showMatchSuggestion();
-    }, 5000); // 5 secondes
+    }, 3000); // 3 secondes
 }
 
 function clearSuggestionTimer(){
@@ -746,13 +662,35 @@ function clearSuggestionTimer(){
     }
 }
 
+function getSortedPossibleMoves(){
+    const possibleMoves = findPossibleMatches(board);
+    possibleMoves.sort((a, b) => b.matchLength - a.matchLength);
+    return possibleMoves;
+}
+
+function handleNoPossibleMoveForCurrentTurn(){
+    const actor = currentTurn === 'player' ? 'joueur' : 'ennemi';
+    log(`🔄 Aucun coup possible pour le ${actor}, plateau régénéré.`);
+
+    selected = null;
+    regenerateBoard();
+
+    // regenerateBoard prend ~1300ms avec la nouvelle animation (900ms notice + 400ms disparition)
+    const retryDelay = currentTurn === 'enemy' ? 1800 : 1400;
+    setTimeout(() => {
+        if(currentTurn === 'enemy'){
+            enemyMakeMove();
+        } else if(currentTurn === 'player'){
+            startSuggestionTimer();
+        }
+    }, retryDelay);
+}
+
 function showMatchSuggestion(){
     // Trouver un match potentiel
-    const possibleMoves = findPossibleMatches();
+    const possibleMoves = getSortedPossibleMoves();
     
     if(possibleMoves.length > 0){
-        // Choisir un bon match (privilégier les combos les plus longs)
-        possibleMoves.sort((a, b) => b.matchLength - a.matchLength);
         const suggestedMove = possibleMoves[0];
         
         suggestedMoveIndices = [suggestedMove.from, suggestedMove.to];
@@ -769,19 +707,7 @@ function showMatchSuggestion(){
         return;
     }
 
-    // Fallback: garder un conseil même si aucun match direct n'est détecté
-    const randomMove = findRandomMove();
-    if(randomMove){
-        suggestedMoveIndices = [randomMove.from, randomMove.to];
-
-        const boardDiv = document.getElementById('board');
-        const tiles = boardDiv.children;
-        suggestedMoveIndices.forEach(idx => {
-            tiles[idx].classList.add('suggested');
-        });
-
-        log(`💡 Conseil : tentez cet échange pour débloquer le plateau.`);
-    }
+    handleNoPossibleMoveForCurrentTurn();
 }
 
 function clearSuggestion(){
@@ -865,11 +791,9 @@ export function enemyMakeMove(){
     log('🤖 L\'ennemi réfléchit...');
     
     // Trouver tous les mouvements possibles qui créent des matches
-    const possibleMoves = findPossibleMatches();
+    const possibleMoves = getSortedPossibleMoves();
     
     if(possibleMoves.length > 0){
-        // Choisir un mouvement (privilégier les combos les plus longs)
-        possibleMoves.sort((a, b) => b.matchLength - a.matchLength);
         const move = possibleMoves[0];
         
         log(`🎯 L'ennemi échange les tuiles...`);
@@ -881,198 +805,7 @@ export function enemyMakeMove(){
             });
         }, 800);
     } else {
-        // Aucun swap valide : régénérer le plateau puis laisser l'ennemi rejouer
-        log('🔄 Aucun swap valide pour l\'ennemi, plateau régénéré.');
-        regenerateBoard();
-        setTimeout(() => {
-            if(currentTurn === 'enemy') enemyMakeMove();
-        }, 1000);
+        handleNoPossibleMoveForCurrentTurn();
     }
 }
 
-// Trouve tous les mouvements possibles qui créent des matches
-function findPossibleMatches(){
-    const moves = [];
-    
-    for(let i = 0; i < boardSize * boardSize; i++){
-        // Essayer d'échanger avec les tuiles adjacentes
-        const adjacents = [
-            i - 1, // gauche
-            i + 1, // droite
-            i - boardSize, // haut
-            i + boardSize // bas
-        ];
-        
-        for(const j of adjacents){
-            // Vérifier que le mouvement est valide
-            if(j < 0 || j >= boardSize * boardSize) continue;
-            if(i % boardSize === 0 && j === i - 1) continue; // bord gauche
-            if((i + 1) % boardSize === 0 && j === i + 1) continue; // bord droit
-            
-            // Simuler l'échange
-            [board[i], board[j]] = [board[j], board[i]];
-            
-            // Vérifier s'il y a un match
-            const matchInfo = checkMatchAtPosition(i) || checkMatchAtPosition(j);
-            
-            // Annuler l'échange
-            [board[i], board[j]] = [board[j], board[i]];
-            
-            if(matchInfo){
-                moves.push({
-                    from: i,
-                    to: j,
-                    matchLength: matchInfo.length,
-                    matchType: matchInfo.type
-                });
-            }
-        }
-    }
-    
-    return moves;
-}
-
-// Vérifie s'il y a un match à une position donnée
-function checkMatchAtPosition(idx){
-    const row = Math.floor(idx / boardSize);
-    const col = idx % boardSize;
-    if(!board[idx]) return null;
-
-    function analyzeWindow(indices){
-        const tiles = indices.map(i => board[i]);
-        if(tiles.some(t => !t)) return null;
-
-        const nonJokers = tiles.filter(t => t !== 'joker');
-        if(nonJokers.length === 0) return null; // ignorer joker+joker+joker
-
-        const hasColor = tiles.some(t => colors.includes(t));
-        if(hasColor){
-            if(nonJokers.some(t => !colors.includes(t))) return null;
-            const nonJokerColors = nonJokers.filter(t => colors.includes(t));
-            if(nonJokerColors.length === 0) return null;
-            const color = nonJokerColors[0];
-            if(nonJokerColors.every(t => t === color)){
-                return { type: 'color', color };
-            }
-            return null;
-        }
-
-        const specialType = nonJokers[0];
-        if(nonJokers.every(t => t === specialType)){
-            return { type: specialType };
-        }
-        return null;
-    }
-
-    function getRunLengthHorizontal(targetType, targetColor){
-        let count = 1;
-
-        for(let c = col - 1; c >= 0; c--){
-            const t = board[row * boardSize + c];
-            const ok = targetType === 'color'
-                ? (t === 'joker' || t === targetColor)
-                : (t === 'joker' || t === targetType);
-            if(!ok) break;
-            count++;
-        }
-
-        for(let c = col + 1; c < boardSize; c++){
-            const t = board[row * boardSize + c];
-            const ok = targetType === 'color'
-                ? (t === 'joker' || t === targetColor)
-                : (t === 'joker' || t === targetType);
-            if(!ok) break;
-            count++;
-        }
-
-        return count;
-    }
-
-    function getRunLengthVertical(targetType, targetColor){
-        let count = 1;
-
-        for(let r = row - 1; r >= 0; r--){
-            const t = board[r * boardSize + col];
-            const ok = targetType === 'color'
-                ? (t === 'joker' || t === targetColor)
-                : (t === 'joker' || t === targetType);
-            if(!ok) break;
-            count++;
-        }
-
-        for(let r = row + 1; r < boardSize; r++){
-            const t = board[r * boardSize + col];
-            const ok = targetType === 'color'
-                ? (t === 'joker' || t === targetColor)
-                : (t === 'joker' || t === targetType);
-            if(!ok) break;
-            count++;
-        }
-
-        return count;
-    }
-
-    let bestMatch = null;
-
-    // Fenêtres horizontales de 3 contenant idx
-    const hStart = Math.max(0, col - 2);
-    const hEnd = Math.min(col, boardSize - 3);
-    for(let start = hStart; start <= hEnd; start++){
-        const window = [
-            row * boardSize + start,
-            row * boardSize + start + 1,
-            row * boardSize + start + 2
-        ];
-        const result = analyzeWindow(window);
-        if(!result) continue;
-
-        const length = getRunLengthHorizontal(result.type, result.color);
-        if(length >= 3 && (!bestMatch || length > bestMatch.length)){
-            bestMatch = { length, type: result.type };
-        }
-    }
-
-    // Fenêtres verticales de 3 contenant idx
-    const vStart = Math.max(0, row - 2);
-    const vEnd = Math.min(row, boardSize - 3);
-    for(let start = vStart; start <= vEnd; start++){
-        const window = [
-            start * boardSize + col,
-            (start + 1) * boardSize + col,
-            (start + 2) * boardSize + col
-        ];
-        const result = analyzeWindow(window);
-        if(!result) continue;
-
-        const length = getRunLengthVertical(result.type, result.color);
-        if(length >= 3 && (!bestMatch || length > bestMatch.length)){
-            bestMatch = { length, type: result.type };
-        }
-    }
-
-    if(bestMatch) return bestMatch;
-    return null;
-}
-
-// Trouve un mouvement aléatoire valide
-function findRandomMove(){
-    const validMoves = [];
-    
-    for(let i = 0; i < boardSize * boardSize; i++){
-        const adjacents = [i - 1, i + 1, i - boardSize, i + boardSize];
-        
-        for(const j of adjacents){
-            if(j < 0 || j >= boardSize * boardSize) continue;
-            if(i % boardSize === 0 && j === i - 1) continue;
-            if((i + 1) % boardSize === 0 && j === i + 1) continue;
-            
-            validMoves.push({ from: i, to: j });
-        }
-    }
-    
-    if(validMoves.length > 0){
-        return validMoves[Math.floor(Math.random() * validMoves.length)];
-    }
-    
-    return null;
-}

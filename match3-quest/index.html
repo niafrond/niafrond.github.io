@@ -112,6 +112,13 @@
 </div>
 
 <div class="game-container">    
+    <!-- Onglets -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('combat')">⚔️ Combat</button>
+        <button class="tab-btn" onclick="switchTab('weapons')">🎒 Inventaire</button>
+        <button class="tab-btn" onclick="switchTab('spells')">✨ Sorts</button>
+        <button class="tab-btn" onclick="switchTab('stats')">📊 Stats</button>
+    </div>
     
     <!-- Onglet Combat -->
     <div id="tab-combat" class="tab-panel active">
@@ -134,7 +141,7 @@
 
         <div id="battle-result-screen" class="battle-result-screen" aria-live="polite">
             <div class="battle-result-card">
-                <h2 id="battle-result-title">Victoire</h2>
+                <h2 id="battle-result-title"></h2>
                 <p id="battle-result-subtitle"></p>
                 <div id="battle-result-summary"></div>
             </div>
@@ -150,13 +157,16 @@
         <div id="available-spells-list"></div>
     </div>
     
-    <!-- Onglet Armes -->
+    <!-- Onglet Inventaire (armes + objet) -->
     <div id="tab-weapons" class="tab-panel">
-        <h2>Gestion des armes</h2>
+        <h2>Inventaire</h2>
+        <h3>Armes</h3>
         <p>Équipez une arme pour l'utiliser en combat. Chaque arme a des dégâts et un coût en points d'action différents.</p>
         <div id="equipped-weapon"></div>
         <h3>Armes disponibles</h3>
         <div id="available-weapons-list"></div>
+        <h3 style="margin-top: 20px;">Objet</h3>
+        <div id="inventory-list"></div>
     </div>
     
     <!-- Onglet Stats -->
@@ -170,14 +180,6 @@
     <div id="combat-controls" style="text-align: center; margin: 10px 0;">
         <button id="new-combat-btn"  style="margin-left: 10px;">⚔️ Nouveau Combat</button>
         <button id="abandon-combat-btn" style="margin-left: 10px; background-color: #d32f2f;">🏳️ Abandonner</button>
-    </div>
-    
-    <!-- Onglets -->
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('combat')">⚔️ Combat</button>
-        <button class="tab-btn" onclick="switchTab('weapons')">🗡️ Armes</button>
-        <button class="tab-btn" onclick="switchTab('spells')">✨ Sorts</button>
-        <button class="tab-btn" onclick="switchTab('stats')">📊 Stats</button>
     </div>
     
 </div>
@@ -205,12 +207,14 @@
     window.switchTab = switchTab;
 </script>
 <script type="module">
-    import { equipSpell, unequipSpell, equipWeapon, unequipWeapon, abandonCombat } from './game.js';
+    import { equipSpell, unequipSpell, equipWeapon, unequipWeapon, abandonCombat, useInventoryItem, discardInventoryItem } from './game.js';
     window.equipSpell = equipSpell;
     window.unequipSpell = unequipSpell;
     window.equipWeapon = equipWeapon;
     window.unequipWeapon = unequipWeapon;
     window.abandonCombat = abandonCombat;
+    window.useInventoryItem = useInventoryItem;
+    window.discardInventoryItem = discardInventoryItem;
     
     // Attacher le listener au bouton Abandonner
     document.getElementById('abandon-combat-btn')?.addEventListener('click', () => {

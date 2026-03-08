@@ -1,24 +1,15 @@
 // Bibliothèque d'intelligence artificielle pour les ennemis
 // Gère les décisions stratégiques et le comportement des ennemis en combat
 
-import { player, enemy } from "./game.js";
+import { player, enemy, canEntityCastSpell } from "./game.js";
 
 // ========================================
 // CONFIGURATION DES NIVEAUX D'IA
 // ========================================
 
-// Fonction helper pour vérifier si l'ennemi a assez de mana pour un sort
+// Fonction helper mutualisee (joueur/ennemi) importee depuis game.js.
 function canAffordSpell(spell) {
-    if (typeof spell.cost === 'number') {
-        // Sort générique avec coût simple (couleur unique)
-        return enemy.mana[spell.color] >= spell.cost;
-    } else if (typeof spell.cost === 'object') {
-        // Sort de classe avec coûts multiples
-        return Object.entries(spell.cost).every(([color, amount]) => 
-            enemy.mana[color] >= amount
-        );
-    }
-    return false;
+    return canEntityCastSpell(enemy, spell);
 }
 
 export const aiDifficulty = {
