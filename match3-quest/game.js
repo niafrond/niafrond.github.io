@@ -346,8 +346,7 @@ export function updateStats(){
     })() : Promise.resolve('');
     
     playerClassEmoji.then(emoji => {
-        const classDisplay = emoji ? `<div class="stat"><strong>${emoji}</strong></div>` : '';
-        const nameDisplay = `<div class="stat"><strong>${player.name || 'Aventurier'}</strong></div>`;
+        const nameDisplay = `<div class="stat">${emoji}${player.name || 'Aventurier'}</div>`;
         
         // Calculer la progression XP
         const xpProgress = getXPProgress(player);
@@ -355,7 +354,6 @@ export function updateStats(){
         
         playerDiv.innerHTML = `
             ${nameDisplay}
-            ${classDisplay}
             <div class="stat">
                 <div class="hp-bar-container">
                     <progress value="${Math.floor(player.hp)}" max="${player.maxHp}"></progress>
