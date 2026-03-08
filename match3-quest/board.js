@@ -1,4 +1,4 @@
-import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showAttackAnimation, grantComboMasteryRewards } from "./game.js";
+import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showAttackAnimation, grantComboMasteryRewards, grantManaGeneratedXP } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 
 // grille et sélection
@@ -328,7 +328,18 @@ export function checkMatches(){
                 if(info.color === 'purple' && player.abilities.includes('shadowMastery')) manaGain += 2;
             }
             
-            currentPlayer.mana[info.color]=Math.min(currentPlayer === player ? player.maxMana : 50, currentPlayer.mana[info.color]+manaGain);
+            const manaBefore = currentPlayer.mana[info.color];
+            const manaCap = currentPlayer === player ? player.maxMana : 50;
+            const manaAfter = Math.min(manaCap, manaBefore + manaGain);
+            currentPlayer.mana[info.color] = manaAfter;
+
+            if(currentPlayer === player){
+                const generatedMana = Math.max(0, manaAfter - manaBefore);
+                if(generatedMana > 0){
+                    grantManaGeneratedXP(generatedMana);
+                    log(`⭐ +${generatedMana} XP (mana généré)`);
+                }
+            }
             if(info.len>=4){ 
                 currentPlayer.bonusTurn = true;
                 log(`🎁 Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);

@@ -2,6 +2,8 @@ import { generateBoard, renderBoard } from "./board.js";
 import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab } from "./game.js";
 import { getAllClasses, playerClasses } from "./classes.js";
 import { getRandomPlayerName } from "./playerNames.js";
+import { generateEnemyChoices } from "./enemies.js";
+import { calculateXPGain } from "./experience.js";
 
 // initialisation de la partie
 console.log('Main.js loaded');
@@ -78,27 +80,71 @@ function init() {
     const boardElement = document.getElementById('board');
     console.log('Board element:', boardElement);
     
+    const showEnemySelection = () => {
+        const modal = document.getElementById('enemy-modal');
+        const container = document.getElementById('enemy-selection');
+        const rerollBtn = document.getElementById('reroll-enemies-btn');
+        if(!modal || !container || !rerollBtn) {
+            // fallback sans modal
+            startNewCombat();
+            generateBoard();
+            renderBoard();
+            updateStats();
+            return;
+        }
+
+        const renderChoices = () => {
+            const enemies = generateEnemyChoices(player.level, 4);
+            const grid = document.createElement('div');
+            grid.className = 'enemy-grid';
+
+            enemies.forEach(enemyChoice => {
+                const card = document.createElement('div');
+                card.className = `enemy-card${enemyChoice.isOverleveledChoice ? ' danger' : ''}`;
+                const xpGain = calculateXPGain(enemyChoice.level || player.level, player.level);
+
+                card.innerHTML = `
+                    <div class="enemy-name">${enemyChoice.raceEmoji} ${enemyChoice.name}</div>
+                    <div class="enemy-meta">Niveau ${enemyChoice.level} • HP ${enemyChoice.maxHp} • Atk ${enemyChoice.attack}</div>
+                    <div class="enemy-xp">XP estimée: ${xpGain}</div>
+                    ${enemyChoice.isOverleveledChoice ? '<div class="enemy-warning">⚠️ Ennemi trop fort (+6 niveaux)</div>' : ''}
+                `;
+
+                card.onclick = () => {
+                    modal.classList.remove('active');
+
+                    // Basculer vers l'onglet combat
+                    document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+                    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                    document.getElementById('tab-combat').classList.add('active');
+                    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+
+                    // Afficher les éléments de combat
+                    document.querySelector('.stats-container').style.display = 'flex';
+                    document.getElementById('board').style.display = 'grid';
+                    document.getElementById('spells-container').style.display = 'flex';
+
+                    startNewCombat(enemyChoice);
+                    generateBoard();
+                    renderBoard();
+                    updateStats();
+                };
+
+                grid.appendChild(card);
+            });
+
+            container.innerHTML = '';
+            container.appendChild(grid);
+        };
+
+        rerollBtn.onclick = () => renderChoices();
+        renderChoices();
+        modal.classList.add('active');
+    };
+
     // Gestionnaire du bouton "Nouveau Combat"
     document.getElementById('new-combat-btn').addEventListener('click',()=>{
-        // Basculer vers l'onglet combat
-        document.querySelectorAll('.tab-panel').forEach(panel => {
-            panel.classList.remove('active');
-        });
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        document.getElementById('tab-combat').classList.add('active');
-        document.querySelectorAll('.tab-btn')[0].classList.add('active'); // Premier bouton = Combat
-        
-        // Afficher les éléments de combat
-        document.querySelector('.stats-container').style.display = 'flex';
-        document.getElementById('board').style.display = 'grid';
-        document.getElementById('spells-container').style.display = 'flex';
-        
-        startNewCombat();
-        generateBoard();
-        renderBoard();
-        updateStats();
+        showEnemySelection();
     });
 
     // Ne pas créer d'ennemi ni de board au démarrage

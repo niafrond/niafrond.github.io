@@ -180,7 +180,7 @@ export function handlePlayerDeath(){
 }
 
 // démarre un nouveau combat
-export function startNewCombat(){
+export function startNewCombat(selectedEnemy = null){
     gameState.combatState = 'active';
     resetCombatRewards();
     hideCombatResultScreen();
@@ -201,7 +201,7 @@ export function startNewCombat(){
     }
     // Restaurer les PV et préparer le combat
     restartCombat();
-    newEnemy();
+    newEnemy(selectedEnemy);
 }
 
 // Abandonner le combat en cours
@@ -989,6 +989,27 @@ export function grantComboMasteryRewards(xpAmount = 25){
     return xpAmount;
 }
 
+export function grantManaGeneratedXP(manaAmount){
+    const safeMana = Math.max(0, Math.floor(manaAmount || 0));
+    if(safeMana <= 0) return { xpGained: 0, leveledUp: false, levelsGained: 0 };
+
+    combatRewards.xpGained += safeMana;
+    const levelUpResult = addXP(player, safeMana);
+    if(levelUpResult.leveledUp){
+        log(`✨ Votre maîtrise du mana vous fait atteindre le niveau ${player.level} !`);
+        updateAvailableSpells();
+        updateAvailableWeapons();
+    } else if(player.level >= 100) {
+        log('🏁 Niveau maximum atteint (100).');
+    }
+
+    return {
+        xpGained: safeMana,
+        leveledUp: levelUpResult.leveledUp,
+        levelsGained: levelUpResult.levelsGained
+    };
+}
+
 export function showAttributeMenu(){
     // Afficher la modale de montée de niveau
     const modal = document.getElementById('levelup-modal');
@@ -1324,8 +1345,8 @@ export function applyStartingAbilities(){
 }
 
 // ennemis
-export function newEnemy(){
-    enemy = generateRandomEnemy(player.level, allSpells, allWeapons);
+export function newEnemy(selectedEnemy = null){
+    enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, allSpells, allWeapons);
     
     // Ajuster automatiquement la difficulté de l'IA selon le niveau de l'ennemi
     setAIDifficultyByLevel(enemy.level, player.level);

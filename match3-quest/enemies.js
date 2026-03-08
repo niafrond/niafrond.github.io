@@ -1,337 +1,188 @@
-// Système d'ennemis avec différentes races et classes
+// Système d'ennemis piloté par un catalogue JSON
 
 import { allWeapons } from "./weapons.js";
 import { getSpellsByClass, getAllSpells } from "./spells.js";
 
-// ========================================
-// RACES ET CLASSES D'ENNEMIS
-// ========================================
+let enemyCatalog = [];
 
-export const enemyRaces = {
-    gobelin: {
-        name: "Gobelin",
-        emoji: "👹",
-        classes: {
-            assassin: {
-                playerClass: 'assassin',
-                name: "Voleur",
-                statsModifiers: { hpMult: 0.8, atkMult: 1.1, defMult: 0.9 },
-                hasWeapon: true
-            },
-            assassin2: {
-                playerClass: 'assassin',
-                name: "Éclaireur",
-                statsModifiers: { hpMult: 0.85, atkMult: 1.05, defMult: 1.0 },
-                hasWeapon: true
-            },
-            sorcerer: {
-                playerClass: 'sorcerer',
-                name: "Chaman",
-                statsModifiers: { hpMult: 1.0, atkMult: 0.8, defMult: 1.1 },
-                hasWeapon: false
+function loadEnemyCatalogSync(){
+    if(enemyCatalog.length > 0) return enemyCatalog;
+
+    try {
+        const req = new XMLHttpRequest();
+        req.open('GET', './enemies.catalog.json', false);
+        req.send(null);
+        if(req.status >= 200 && req.status < 300){
+            const parsed = JSON.parse(req.responseText);
+            if(Array.isArray(parsed)){
+                enemyCatalog = parsed;
             }
         }
-    },
-
-    orc: {
-        name: "Orc",
-        emoji: "👹",
-        classes: {
-            barbarian: {
-                playerClass: 'barbarian',
-                name: "Guerrier",
-                statsModifiers: { hpMult: 1.2, atkMult: 1.3, defMult: 1.0 },
-                hasWeapon: true
-            },
-            barbarian2: {
-                playerClass: 'barbarian',
-                name: "Berserker",
-                statsModifiers: { hpMult: 1.15, atkMult: 1.4, defMult: 0.8 },
-                hasWeapon: true
-            },
-            templar: {
-                playerClass: 'templar',
-                name: "Chaman",
-                statsModifiers: { hpMult: 1.1, atkMult: 0.9, defMult: 1.1 },
-                hasWeapon: false
-            }
-        }
-    },
-
-    troll: {
-        name: "Troll",
-        emoji: "👺",
-        classes: {
-            barbarian: {
-                playerClass: 'barbarian',
-                name: "Brute",
-                statsModifiers: { hpMult: 1.4, atkMult: 1.2, defMult: 0.9 },
-                hasWeapon: true
-            },
-            templar: {
-                playerClass: 'templar',
-                name: "Régénérateur",
-                statsModifiers: { hpMult: 1.5, atkMult: 0.9, defMult: 1.2 },
-                hasWeapon: false
-            },
-            sorcerer: {
-                playerClass: 'sorcerer',
-                name: "Mage",
-                statsModifiers: { hpMult: 1.1, atkMult: 0.7, defMult: 1.3 },
-                hasWeapon: false
-            }
-        }
-    },
-
-    vampire: {
-        name: "Vampire",
-        emoji: "🧛",
-        classes: {
-            sorcerer: {
-                playerClass: 'sorcerer',
-                name: "Aristocrate",
-                statsModifiers: { hpMult: 1.2, atkMult: 1.2, defMult: 1.1 },
-                hasWeapon: false
-            },
-            assassin: {
-                playerClass: 'assassin',
-                name: "Lame de Nuit",
-                statsModifiers: { hpMult: 1.0, atkMult: 1.35, defMult: 1.0 },
-                hasWeapon: true
-            },
-            sorcerer2: {
-                playerClass: 'sorcerer',
-                name: "Mage du Sang",
-                statsModifiers: { hpMult: 1.15, atkMult: 1.1, defMult: 1.1 },
-                hasWeapon: false
-            }
-        }
-    },
-
-    dragon: {
-        name: "Dragon",
-        emoji: "🐉",
-        classes: {
-            sorcerer: {
-                playerClass: 'sorcerer',
-                name: "Jeune",
-                statsModifiers: { hpMult: 2.0, atkMult: 1.8, defMult: 1.2 },
-                hasWeapon: false
-            },
-            sorcerer2: {
-                playerClass: 'sorcerer',
-                name: "Glacé",
-                statsModifiers: { hpMult: 1.9, atkMult: 1.7, defMult: 1.3 },
-                hasWeapon: false
-            },
-            sorcerer3: {
-                playerClass: 'sorcerer',
-                name: "Ancien",
-                statsModifiers: { hpMult: 2.5, atkMult: 2.0, defMult: 1.5 },
-                hasWeapon: false
-            }
-        }
-    },
-
-    skeleton: {
-        name: "Squelette",
-        emoji: "💀",
-        classes: {
-            assassin: {
-                playerClass: 'assassin',
-                name: "Archer",
-                statsModifiers: { hpMult: 0.9, atkMult: 1.15, defMult: 0.8 },
-                hasWeapon: true
-            },
-            sorcerer: {
-                playerClass: 'sorcerer',
-                name: "Mage",
-                statsModifiers: { hpMult: 0.85, atkMult: 0.7, defMult: 0.9 },
-                hasWeapon: false
-            },
-            templar: {
-                playerClass: 'templar',
-                name: "Chevalier",
-                statsModifiers: { hpMult: 1.2, atkMult: 1.1, defMult: 1.3 },
-                hasWeapon: true
-            }
-        }
-    },
-
-    demon: {
-        name: "Démon",
-        emoji: "👿",
-        classes: {
-            barbarian: {
-                playerClass: 'barbarian',
-                name: "Chevalier Infernal",
-                statsModifiers: { hpMult: 1.3, atkMult: 1.4, defMult: 1.2 },
-                hasWeapon: true
-            },
-            sorcerer: {
-                playerClass: 'sorcerer',
-                name: "Sorcier",
-                statsModifiers: { hpMult: 1.1, atkMult: 1.0, defMult: 1.1 },
-                hasWeapon: false
-            },
-            templar: {
-                playerClass: 'templar',
-                name: "Serviteur",
-                statsModifiers: { hpMult: 0.95, atkMult: 1.1, defMult: 1.0 },
-                hasWeapon: true
-            }
-        }
+    } catch (error) {
+        console.error('Impossible de charger enemies.catalog.json', error);
     }
-};
 
-// ========================================
-// SÉLECTION ALÉATOIRE D'ENNEMI
-// ========================================
-
-export function generateRandomEnemy(playerLevel, allSpells, allWeapons) {
-    // Sélectionner une race aléatoire
-    const races = Object.values(enemyRaces);
-    const race = races[Math.floor(Math.random() * races.length)];
-    
-    // Sélectionner une classe aléatoire de cette race
-    const classKeys = Object.keys(race.classes);
-    const classKey = classKeys[Math.floor(Math.random() * classKeys.length)];
-    const enemyClass = race.classes[classKey];
-    
-    // Déterminer le niveau de l'ennemi (égal ou supérieur au joueur)
-    // 50% de chance d'avoir le même niveau
-    // 30% de chance d'avoir +1 niveau
-    // 15% de chance d'avoir +2 niveaux
-    // 5% de chance d'avoir +3 niveaux
-    const rand = Math.random();
-    let enemyLevel = playerLevel;
-    if (rand < 0.05) {
-        enemyLevel = playerLevel + 3;
-    } else if (rand < 0.20) {
-        enemyLevel = playerLevel + 2;
-    } else if (rand < 0.50) {
-        enemyLevel = playerLevel + 1;
+    if(enemyCatalog.length === 0){
+        enemyCatalog = [
+            {
+                id: 'fallback_enemy',
+                name: 'Cultiste',
+                race: 'Humain',
+                emoji: '🧙',
+                title: 'Arcaniste',
+                playerClass: 'sorcerer',
+                hasWeapon: false,
+                statsModifiers: { hpMult: 1.0, atkMult: 1.0, defMult: 1.0 },
+                levelBias: 0,
+                spellProfile: { preferredColors: ['blue'], preferClassSpells: true, targetSpellCount: 3 },
+                resistanceProfile: { red: 0.1, blue: 0.2, green: 0.1, yellow: 0.1, purple: 0.1 }
+            }
+        ];
     }
-    
-    return createEnemy(race, enemyClass, enemyLevel, allSpells, allWeapons);
+
+    return enemyCatalog;
 }
 
-export function createEnemy(race, enemyClass, enemyLevel, allSpells, allWeapons) {
-    // Calcul des stats de base (basé sur le niveau de l'ennemi)
+function clamp(num, min, max){
+    return Math.max(min, Math.min(max, num));
+}
+
+function pickRandom(arr){
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function uniqueById(spells){
+    const map = new Map();
+    spells.forEach(sp => map.set(sp.id, sp));
+    return Array.from(map.values());
+}
+
+function buildResistances(template, level){
+    const defaults = { red: 0.08, blue: 0.08, green: 0.08, yellow: 0.08, purple: 0.08 };
+    const profile = template.resistanceProfile || {};
+    return {
+        red: clamp(profile.red ?? defaults.red + (level * 0.002), 0, 0.5),
+        blue: clamp(profile.blue ?? defaults.blue + (level * 0.002), 0, 0.5),
+        green: clamp(profile.green ?? defaults.green + (level * 0.002), 0, 0.5),
+        yellow: clamp(profile.yellow ?? defaults.yellow + (level * 0.002), 0, 0.5),
+        purple: clamp(profile.purple ?? defaults.purple + (level * 0.002), 0, 0.5)
+    };
+}
+
+function buildSpellLoadout(template, enemyLevel){
+    const classSpells = getSpellsByClass(template.playerClass, enemyLevel);
+    const genericSpells = getAllSpells().filter(sp => !sp.class && sp.minLevel <= enemyLevel);
+
+    const preferredColors = template.spellProfile?.preferredColors || [];
+    const targetSpellCount = Math.max(2, template.spellProfile?.targetSpellCount || 3);
+    const preferClassSpells = template.spellProfile?.preferClassSpells !== false;
+
+    const preferredGeneric = genericSpells.filter(sp => preferredColors.includes(sp.color));
+    const otherGeneric = genericSpells.filter(sp => !preferredColors.includes(sp.color));
+
+    const selected = [];
+
+    const takeFrom = (source, maxToTake) => {
+        const pool = [...source];
+        while(pool.length > 0 && selected.length < maxToTake){
+            const spell = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+            selected.push(spell);
+        }
+    };
+
+    if(preferClassSpells){
+        takeFrom(classSpells, targetSpellCount - 1);
+    }
+    takeFrom(preferredGeneric, targetSpellCount);
+    if(!preferClassSpells){
+        takeFrom(classSpells, targetSpellCount);
+    }
+    takeFrom(otherGeneric, targetSpellCount);
+
+    const unique = uniqueById(selected);
+    return unique.slice(0, targetSpellCount);
+}
+
+function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons){
+    const stats = template.statsModifiers || { hpMult: 1, atkMult: 1, defMult: 1 };
     const baseHp = 40 + enemyLevel * 10;
     const baseAtk = 5 + enemyLevel * 4;
-    
-    // Appliquer les modificateurs de classe
-    const hp = Math.floor(baseHp * enemyClass.statsModifiers.hpMult);
-    const atk = Math.floor(baseAtk * enemyClass.statsModifiers.atkMult);
-    
-    // Générer les résistances
-    const colors = ["red", "blue", "green", "yellow"];
-    const resistances = {};
-    colors.forEach(c => {
-        resistances[c] = Math.min(0.3, Math.random() * 0.1 * enemyLevel);
-    });
-    
-    // Sélectionner une arme en fonction du niveau et de la classe
+
+    const hp = Math.floor(baseHp * (stats.hpMult || 1));
+    const atk = Math.floor(baseAtk * (stats.atkMult || 1));
+
     let enemyWeapon = null;
-    if(enemyClass.hasWeapon !== false) {
-        // Par défaut, la classe a une arme (hasWeapon = true ou undefined)
-        const availableWeapons = allWeapons.filter(w => w.minLevel <= enemyLevel);
-        if(availableWeapons.length > 0) {
-            enemyWeapon = availableWeapons[Math.floor(Math.random() * availableWeapons.length)];
+    if(template.hasWeapon !== false){
+        const availableWeapons = allWeaponsArg.filter(w => w.minLevel <= enemyLevel);
+        if(availableWeapons.length > 0){
+            enemyWeapon = pickRandom(availableWeapons);
         }
     }
-    
-    // Obtenir les sorts de classe disponibles pour le niveau de l'ennemi
-    // Utilise le même système que le joueur via getSpellsByClass
-    const playerClass = enemyClass.playerClass;
-    const classSpells = getSpellsByClass(playerClass, enemyLevel);
-    
-    // Également inclure les sorts génériques (ceux disponibles par couleur)
-    const genericSpells = getAllSpells().filter(sp => 
-        enemyLevel >= sp.minLevel && 
-        !sp.class // Sorts qui n'ont pas de classe = sorts génériques
-    );
-    
-    // Combiner les sorts de classe et génériques
-    const availableSpells = [...classSpells, ...genericSpells];
-    const selectedSpells = [];
-    
-    // Calculer le nombre de sorts souhaités : au minimum 2, augmente avec le niveau
-    // Niveau 1-4: 2-3 sorts, Niveau 5-9: 3-4 sorts, Niveau 10+: 4+ sorts
-    const minSpells = 2;
-    const targetSpellCount = Math.max(minSpells, 2 + Math.floor(enemyLevel / 3));
-    
-    // Prioriser les sorts de classe (70% de chance)
-    while(selectedSpells.length < targetSpellCount && availableSpells.length > 0) {
-        const useClassSpell = Math.random() < 0.7 && classSpells.length > 0;
-        const sourceSpells = useClassSpell ? classSpells : availableSpells;
-        
-        // Filtrer les sorts déjà sélectionnés
-        const remainingSpells = sourceSpells.filter(s => 
-            !selectedSpells.find(ss => ss.id === s.id)
-        );
-        
-        if(remainingSpells.length === 0) {
-            // Si plus de sorts dans cette source, essayer l'autre
-            const alternateSpells = availableSpells.filter(s => 
-                !selectedSpells.find(ss => ss.id === s.id)
-            );
-            if(alternateSpells.length === 0) break;
-            selectedSpells.push(alternateSpells[Math.floor(Math.random() * alternateSpells.length)]);
-        } else {
-            selectedSpells.push(remainingSpells[Math.floor(Math.random() * remainingSpells.length)]);
-        }
-    }
-    
-    // Garantir au moins 1 sort de classe si possible
-    if(selectedSpells.length > 0 && !selectedSpells.some(s => s.class === playerClass) && classSpells.length > 0) {
-        // Remplacer un sort aléatoire par un sort de classe
-        selectedSpells[Math.floor(Math.random() * selectedSpells.length)] = 
-            classSpells[Math.floor(Math.random() * classSpells.length)];
-    }
-    
-    // Initialiser le mana de l'ennemi à 0 (sera ajouté par les aptitudes si besoin)
-    const enemyMana = { 
-        red: 0, 
-        blue: 0, 
-        green: 0, 
-        yellow: 0,
-        purple: 0
-    };
-    
-    // Donner aléatoirement des aptitudes à l'ennemi (20% de chance par aptitude)
+
     const enemyAbilities = [];
-    if(Math.random() < 0.2) enemyAbilities.push('fireAffinity');
-    if(Math.random() < 0.2) enemyAbilities.push('iceAffinity');
-    if(Math.random() < 0.2) enemyAbilities.push('natureAffinity');
-    if(Math.random() < 0.2) enemyAbilities.push('stormAffinity');
-    
-    // Créer l'objet ennemi
-    const enemy = {
-        race: race.name,
-        raceEmoji: race.emoji,
-        class: enemyClass.name,
-        playerClass: enemyClass.playerClass, // Classe du joueur (sorcerer, assassin, etc.)
-        name: `${race.name} ${enemyClass.name}`,
+    if(Math.random() < 0.15) enemyAbilities.push('fireAffinity');
+    if(Math.random() < 0.15) enemyAbilities.push('iceAffinity');
+    if(Math.random() < 0.15) enemyAbilities.push('natureAffinity');
+    if(Math.random() < 0.15) enemyAbilities.push('stormAffinity');
+
+    return {
+        templateId: template.id,
+        race: template.race,
+        raceEmoji: template.emoji,
+        class: template.title,
+        playerClass: template.playerClass,
+        name: `${template.name} ${template.title}`,
         hp: hp,
         maxHp: hp,
         attack: atk,
-        resistances: resistances,
+        resistances: buildResistances(template, enemyLevel),
         combatPoints: 0,
-        mana: enemyMana,
-        spells: selectedSpells,
+        mana: { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 },
+        spells: buildSpellLoadout(template, enemyLevel),
         weapon: enemyWeapon,
         level: enemyLevel,
-        abilities: enemyAbilities
+        abilities: enemyAbilities,
+        isOverleveledChoice: false
     };
-    
-    return enemy;
 }
 
-// ========================================
-// DESCRIPTIONS POUR L'AFFICHAGE
-// ========================================
+export function generateRandomEnemy(playerLevel, _allSpells, allWeaponsArg = allWeapons){
+    const catalog = loadEnemyCatalogSync();
+    const template = pickRandom(catalog);
+
+    const rand = Math.random();
+    let delta = 0;
+    if(rand < 0.10) delta = 3;
+    else if(rand < 0.25) delta = 2;
+    else if(rand < 0.55) delta = 1;
+
+    const enemyLevel = Math.max(1, playerLevel + (template.levelBias || 0) + delta);
+    return buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg);
+}
+
+export function generateEnemyChoices(playerLevel, count = 4, allWeaponsArg = allWeapons){
+    const catalog = [...loadEnemyCatalogSync()];
+    const choices = [];
+
+    while(catalog.length > 0 && choices.length < count){
+        const template = catalog.splice(Math.floor(Math.random() * catalog.length), 1)[0];
+        const randomDelta = [-1, 0, 1, 2, 3][Math.floor(Math.random() * 5)];
+        const level = Math.max(1, playerLevel + (template.levelBias || 0) + randomDelta);
+        choices.push(buildEnemyFromTemplate(template, level, allWeaponsArg));
+    }
+
+    // 40% de chance d'avoir un adversaire dangereux à +6 niveaux
+    if(choices.length > 0 && Math.random() < 0.4){
+        const idx = Math.floor(Math.random() * choices.length);
+        const boostedLevel = playerLevel + 6;
+        const template = loadEnemyCatalogSync().find(t => t.id === choices[idx].templateId);
+        const boosted = buildEnemyFromTemplate(template, boostedLevel, allWeaponsArg);
+        boosted.isOverleveledChoice = true;
+        choices[idx] = boosted;
+    }
+
+    return choices;
+}
 
 export function getEnemyDescription(enemy) {
     return `${enemy.raceEmoji} ${enemy.name}`;

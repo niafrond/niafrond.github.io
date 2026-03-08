@@ -1,5 +1,9 @@
 // Système d'expérience et de progression du joueur
 
+export const MAX_LEVEL = 100;
+const XP_BASE_PER_LEVEL = 120;
+const XP_GROWTH_FACTOR = 1.12;
+
 /**
  * Calcule l'XP nécessaire pour atteindre un niveau donné
  * Formule: XP = baseXP * level^exponant
@@ -7,9 +11,12 @@
  * @returns {number} - L'XP total nécessaire pour ce niveau
  */
 export function getXPRequiredForLevel(level) {
-    const baseXP = 100;
-    const exponant = 1.5;
-    return Math.floor(baseXP * Math.pow(level, exponant));
+    const clampedLevel = Math.max(1, Math.min(level, MAX_LEVEL));
+    if(clampedLevel <= 1) return 0;
+
+    const steps = clampedLevel - 1;
+    const totalXP = XP_BASE_PER_LEVEL * ((Math.pow(XP_GROWTH_FACTOR, steps) - 1) / (XP_GROWTH_FACTOR - 1));
+    return Math.floor(totalXP);
 }
 
 /**
@@ -45,21 +52,38 @@ export function calculateXPGain(enemyLevel, playerLevel) {
  */
 export function addXP(player, xpGain) {
     if (!player.xp) player.xp = 0;
-    if (!player.xpToNextLevel) player.xpToNextLevel = getXPRequiredForLevel(player.level + 1);
+    player.level = Math.max(1, Math.min(player.level || 1, MAX_LEVEL));
+    if (!player.xpToNextLevel) {
+        player.xpToNextLevel = player.level >= MAX_LEVEL ? getXPRequiredForLevel(MAX_LEVEL) : getXPRequiredForLevel(player.level + 1);
+    }
+
+    if(player.level >= MAX_LEVEL){
+        const capXP = getXPRequiredForLevel(MAX_LEVEL);
+        player.xp = Math.min(player.xp, capXP);
+        player.xpToNextLevel = capXP;
+        return {
+            leveledUp: false,
+            newLevel: MAX_LEVEL,
+            levelsGained: 0
+        };
+    }
     
     player.xp += xpGain;
     
     let leveledUp = false;
     let levelsGained = 0;
-    const startLevel = player.level;
-    
     // Vérifier si le joueur monte de niveau (peut monter de plusieurs niveaux d'un coup)
-    while (player.xp >= player.xpToNextLevel) {
+    while (player.level < MAX_LEVEL && player.xp >= player.xpToNextLevel) {
         player.level++;
         levelsGained++;
         leveledUp = true;
         
         // Calculer l'XP nécessaire pour le prochain niveau
+        if(player.level >= MAX_LEVEL){
+            player.xpToNextLevel = getXPRequiredForLevel(MAX_LEVEL);
+            player.xp = Math.min(player.xp, player.xpToNextLevel);
+            break;
+        }
         player.xpToNextLevel = getXPRequiredForLevel(player.level + 1);
     }
     
@@ -76,12 +100,13 @@ export function addXP(player, xpGain) {
  * @returns {number} - Pourcentage entre 0 et 100
  */
 export function getXPProgress(player) {
-    if (!player.xp || !player.xpToNextLevel) return 0;
+    if(player.level >= MAX_LEVEL) return 100;
+    if (!player.xpToNextLevel) return 0;
     
     const previousLevelXP = player.level > 1 ? getXPRequiredForLevel(player.level) : 0;
     const currentXP = player.xp - previousLevelXP;
     const xpForThisLevel = player.xpToNextLevel - previousLevelXP;
-    
+    if(xpForThisLevel <= 0) return 100;
     return Math.min(100, Math.floor((currentXP / xpForThisLevel) * 100));
 }
 
@@ -91,7 +116,8 @@ export function getXPProgress(player) {
  * @returns {number} - XP restants
  */
 export function getXPToNextLevel(player) {
-    if (!player.xp || !player.xpToNextLevel) return getXPRequiredForLevel(2);
+    if(player.level >= MAX_LEVEL) return 0;
+    if (!player.xpToNextLevel) return getXPRequiredForLevel(2);
     return Math.max(0, player.xpToNextLevel - player.xp);
 }
 
@@ -101,5 +127,10 @@ export function getXPToNextLevel(player) {
  */
 export function initializeXP(player) {
     if (!player.xp) player.xp = 0;
-    if (!player.xpToNextLevel) player.xpToNextLevel = getXPRequiredForLevel(player.level + 1);
+    player.level = Math.max(1, Math.min(player.level || 1, MAX_LEVEL));
+    const currentLevelThreshold = getXPRequiredForLevel(player.level);
+    if(player.xp < currentLevelThreshold) {
+        player.xp = currentLevelThreshold;
+    }
+    player.xpToNextLevel = player.level >= MAX_LEVEL ? getXPRequiredForLevel(MAX_LEVEL) : getXPRequiredForLevel(player.level + 1);
 }
