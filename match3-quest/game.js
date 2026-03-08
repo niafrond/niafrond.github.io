@@ -47,6 +47,53 @@ export const gameState = {
     combatState: 'ready' // 'ready' (avant combat), 'active' (en cours), 'finished' (terminé)
 };
 
+const combatRewards = {
+    xpGained: 0,
+    items: [],
+    weapons: []
+};
+
+function resetCombatRewards(){
+    combatRewards.xpGained = 0;
+    combatRewards.items = [];
+    combatRewards.weapons = [];
+}
+
+function hideCombatResultScreen(){
+    const screen = document.getElementById('battle-result-screen');
+    if(screen){
+        screen.classList.remove('active');
+    }
+}
+
+function showCombatResultScreen(isVictory){
+    const screen = document.getElementById('battle-result-screen');
+    const title = document.getElementById('battle-result-title');
+    const subtitle = document.getElementById('battle-result-subtitle');
+    const summary = document.getElementById('battle-result-summary');
+    if(!screen || !title || !subtitle || !summary) return;
+
+    title.textContent = isVictory ? 'Victoire' : 'Defaite';
+    subtitle.textContent = isVictory ? 'Combat termine avec succes.' : 'Vous avez ete vaincu.';
+
+    const itemLines = combatRewards.items.length > 0
+        ? combatRewards.items.map(name => `<li>Objet: ${name}</li>`).join('')
+        : '<li>Objet: Aucun</li>';
+    const weaponLines = combatRewards.weapons.length > 0
+        ? combatRewards.weapons.map(name => `<li>Arme: ${name}</li>`).join('')
+        : '<li>Arme: Aucune</li>';
+
+    summary.innerHTML = `
+        <div class="battle-result-xp">XP gagnee: ${combatRewards.xpGained}</div>
+        <ul class="battle-result-loot">
+            ${itemLines}
+            ${weaponLines}
+        </ul>
+    `;
+
+    screen.classList.add('active');
+}
+
 // règles de combat
 export const combatCost = 5;             // points nécessaires pour une attaque normale
 export const skullDamage = 1;           // dégâts infligés par crâne lors d'un match
@@ -104,6 +151,7 @@ export function handlePlayerDeath(){
     
     // Marquer le combat comme terminé
     gameState.combatState = 'finished';
+    showCombatResultScreen(false);
     
     // Cacher les éléments de combat
     document.querySelector('.stats-container').style.display = 'none';
@@ -134,6 +182,8 @@ export function handlePlayerDeath(){
 // démarre un nouveau combat
 export function startNewCombat(){
     gameState.combatState = 'active';
+    resetCombatRewards();
+    hideCombatResultScreen();
     // Cacher le bouton "Nouveau Combat"
     const newCombatBtn = document.getElementById('new-combat-btn');
     if(newCombatBtn) {
@@ -164,6 +214,7 @@ export function abandonCombat(){
     
     // Marquer le combat comme terminé
     gameState.combatState = 'finished';
+    showCombatResultScreen(false);
     
     // Cacher les éléments de combat
     document.querySelector('.stats-container').style.display = 'none';
@@ -397,10 +448,25 @@ export function updateEnemySpells(){
         
         const damageText = sp.dmg ? ` • ${sp.dmg} dmg` : '';
         const healText = sp.heal ? ` • ${sp.heal} HP` : '';
+        const effectText = sp.description || (sp.effect ? 'Effet special' : (sp.dmg ? `Inflige ${sp.dmg} degats` : (sp.heal ? `Soigne ${sp.heal} HP` : 'Aucun effet')));
         div.innerHTML = `
             <div class="spell-name">${spellClassIndicator} ${sp.name}</div>
             <div class="spell-cost">${costDisplay}${damageText}${healText}</div>
         `;
+        div.title = effectText;
+
+        const showDetails = () => showSpellTooltip(div, sp);
+        const hideDetails = () => hideSpellTooltip();
+        div.addEventListener('mouseenter', showDetails);
+        div.addEventListener('mouseleave', hideDetails);
+        div.addEventListener('mousedown', showDetails);
+        div.addEventListener('mouseup', hideDetails);
+        div.addEventListener('touchstart', showDetails, { passive: true });
+        div.addEventListener('touchend', hideDetails);
+        div.addEventListener('touchcancel', hideDetails);
+        div.addEventListener('focus', showDetails);
+        div.addEventListener('blur', hideDetails);
+
         container.appendChild(div);
     });
 }
@@ -590,6 +656,8 @@ export function showAttackAnimation(text, isPlayerAttack = true) {
 // -------------------------------------
 // Combat avec arme
 export function useWeapon(){
+    if(gameState.combatState !== 'active'){ log("⚠️ Aucun combat en cours."); return; }
+    if(currentTurn !== 'player'){ log("⚠️ Seul le joueur actif peut utiliser une attaque."); return; }
     if(!player.equippedWeapon){ log("Aucune arme équipée !"); return; }
     const weapon = player.equippedWeapon;
     if(player.combatPoints < weapon.actionPoints){ 
@@ -624,6 +692,8 @@ export function useWeapon(){
 }
 
 export function castSpell(spellId){
+    if(gameState.combatState !== 'active'){ log("⚠️ Aucun combat en cours."); return; }
+    if(currentTurn !== 'player'){ log("⚠️ Seul le joueur actif peut lancer un sort."); return; }
     const spell=player.activeSpells.find(s=>s.id===spellId);
     if(!spell){ log("Sort indisponible !"); return; }
     if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
@@ -804,6 +874,7 @@ export function handleEnemyDefeated(){
     
     // Calculer et donner l'XP
     const xpGain = calculateXPGain(enemy.level || player.level, player.level);
+    combatRewards.xpGained += xpGain;
     log(`⭐ Vous gagnez ${xpGain} XP !`);
     
     const levelUpResult = addXP(player, xpGain);
@@ -819,6 +890,7 @@ export function handleEnemyDefeated(){
             const droppedItem = getRandomItem(player.level);
             if(droppedItem) {
                 player.inventory.push({...droppedItem, applied: false});
+                combatRewards.items.push(droppedItem.name);
                 const rarityEmoji = getRarityEmoji(droppedItem.rarity);
                 log(`${rarityEmoji} Vous obtenez : ${droppedItem.name} !`);
                 
@@ -838,6 +910,7 @@ export function handleEnemyDefeated(){
                 // Vérifier si le joueur possède déjà cette arme
                 if(!player.weapons.some(w => w.id === randomWeapon.id)) {
                     player.weapons.push(randomWeapon);
+                    combatRewards.weapons.push(randomWeapon.name);
                     // Mettre à jour la liste des armes disponibles du joueur
                     updateAvailableWeapons();
                     const weaponIcons = {
@@ -876,6 +949,7 @@ export function handleEnemyDefeated(){
     
     // Marquer le combat comme terminé
     gameState.combatState = 'finished';
+    showCombatResultScreen(true);
     
     // Cacher les éléments de combat
     document.querySelector('.stats-container').style.display = 'none';
@@ -901,6 +975,18 @@ export function handleEnemyDefeated(){
     }
     
     log(`⚔️ Cliquez sur "Nouveau Combat" pour continuer ou modifiez vos sorts/armes.`);
+}
+
+export function grantComboMasteryRewards(xpAmount = 25){
+    combatRewards.xpGained += xpAmount;
+    const levelUpResult = addXP(player, xpAmount);
+    if(levelUpResult.leveledUp){
+        log(`🎉 Combo magistral: niveau ${player.level} atteint !`);
+        updateAvailableSpells();
+        updateAvailableWeapons();
+    }
+    saveUpdate();
+    return xpAmount;
 }
 
 export function showAttributeMenu(){

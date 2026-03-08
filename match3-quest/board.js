@@ -1,4 +1,4 @@
-import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showAttackAnimation } from "./game.js";
+import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showAttackAnimation, grantComboMasteryRewards } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 
 // grille et sélection
@@ -11,6 +11,8 @@ let suggestedMoveIndices = null;
 
 // Track si le jeu a vraiment commencé (un joueur a joué)
 let gameStarted = false;
+let turnDistinctMatches = 0;
+let comboMasteryTriggered = false;
 
 export function setGameStarted(started){
     gameStarted = started;
@@ -31,32 +33,58 @@ export function hasMatches(){
 
 function generateNewBoard(){
     // la grille peut contenir aussi quelques tuiles spéciales
-    // Vérifier si le joueur a des armes ou des sorts
-    const hasWeaponsOrSpells = player.availableWeapons.length > 0 || player.availableSpells.length > 0;
-    
-    // Si pas d'armes ni de sorts : plus de crânes, moins d'épées
-    let skullProb, combatProb;
-    if(!hasWeaponsOrSpells) {
-        // 15% crânes, 2% épées
-        skullProb = 0.15;
-        combatProb = 0.02;
-    } else {
-        // 10% crânes, 7% épées (normal)
-        skullProb = 0.25;
-        combatProb = 0.07;
-    }
-    
     do{
         board=[];
         for(let i=0;i<boardSize*boardSize;i++){
-            let tileType;
-            const r=Math.random();
-            if(r < skullProb) tileType='skull';
-            else if(r < skullProb + combatProb) tileType='combat';
-            else tileType=colors[Math.floor(Math.random()*colors.length)];
-            board.push(tileType);
+            board.push(generateRandomTile());
         }
     }while(hasMatches());
+}
+
+function getSpecialTileProbabilities(){
+    const hasWeaponsOrSpells = player.availableWeapons.length > 0 || player.availableSpells.length > 0;
+    if(!hasWeaponsOrSpells) {
+        return { skullProb: 0.15, combatProb: 0.02 };
+    }
+    return { skullProb: 0.25, combatProb: 0.07 };
+}
+
+function generateRandomTile(){
+    const { skullProb, combatProb } = getSpecialTileProbabilities();
+    const r = Math.random();
+    if(r < skullProb) return 'skull';
+    if(r < skullProb + combatProb) return 'combat';
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+function fillColumnByGravity(col){
+    const kept = [];
+    for(let row = boardSize - 1; row >= 0; row--){
+        const idx = row * boardSize + col;
+        const tile = board[idx];
+        if(tile !== null && tile !== undefined){
+            kept.push(tile);
+        }
+    }
+
+    let writeRow = boardSize - 1;
+    for(const tile of kept){
+        const writeIdx = writeRow * boardSize + col;
+        board[writeIdx] = tile;
+        writeRow--;
+    }
+
+    while(writeRow >= 0){
+        const writeIdx = writeRow * boardSize + col;
+        board[writeIdx] = generateRandomTile();
+        writeRow--;
+    }
+}
+
+function normalizeBoardHoles(){
+    for(let col = 0; col < boardSize; col++){
+        fillColumnByGravity(col);
+    }
 }
 
 export function generateBoard(){
@@ -148,6 +176,9 @@ export function swapTiles(i,j){
     if(currentTurn === 'player'){
         gameStarted = true;
     }
+
+    turnDistinctMatches = 0;
+    comboMasteryTriggered = false;
     
     // Effectuer le swap
     [board[i],board[j]]=[board[j],board[i]];
@@ -159,9 +190,14 @@ export function swapTiles(i,j){
         // Aucun match créé : annuler le swap (mais garder le tour)
         [board[i],board[j]]=[board[j],board[i]];
         renderBoard();
-        log("⚠️ Aucun match créé ! Essayez un autre mouvement.");
-        // Redémarrer le minuteur après un mauvais mouvement
-        startSuggestionTimer();
+        if(currentTurn === 'player'){
+            log("⚠️ Aucun match créé ! Mouvement annulé, à vous de rejouer.");
+            // Redémarrer le minuteur après un mauvais mouvement
+            startSuggestionTimer();
+        } else {
+            log("⚠️ L'ennemi n'a créé aucun match. Son mouvement est annulé.");
+            finishEnemyTurn();
+        }
         return;
     }
     
@@ -176,17 +212,11 @@ export function renderBoard(skipCleanup = false){
         console.error('Board element not found in renderBoard!');
         return;
     }
+    normalizeBoardHoles();
     const tiles=boardDiv.children;
     for(let i=0;i<board.length;i++){
         let t=board[i];
-        // Si la tuile est null ou undefined, générer une nouvelle tuile
-        if(!t){
-            const r = Math.random();
-            if(r < 0.08/2) t = 'skull';
-            else if(r < 0.08) t = 'combat';
-            else t = colors[Math.floor(Math.random()*colors.length)];
-            board[i] = t;
-        }
+        if(!t) continue;
         if(!skipCleanup){
             tiles[i].className=`tile ${t}`;
         } else {
@@ -281,6 +311,7 @@ export function checkMatches(){
     function handleRun(indices, info){
         // info: {type,color?,len,makeJoker?}
         combos=true;
+        turnDistinctMatches++;
         // Determine which player gets the rewards
         const currentPlayer = currentTurn === 'player' ? player : enemy;
         // apply effects
@@ -340,6 +371,28 @@ export function checkMatches(){
             }
             if(info.len>=5){ info.makeJoker=true; }
         }
+
+        if(currentTurn === 'player' && turnDistinctMatches > 5 && !comboMasteryTriggered){
+            comboMasteryTriggered = true;
+            currentPlayer.bonusTurn = true;
+            const comboXp = grantComboMasteryRewards();
+
+            const candidates = board
+                .map((tile, index) => ({ tile, index }))
+                .filter(entry => entry.tile && entry.tile !== 'joker');
+
+            if(candidates.length > 0){
+                const random = candidates[Math.floor(Math.random() * candidates.length)];
+                board[random.index] = 'joker';
+            }
+
+            showAttackAnimation(
+                `<div class="attack-icon">🌟</div><div class="attack-title">COMBO MAGISTRAL</div><div class="attack-damage">${turnDistinctMatches} matchs différents</div><div class="attack-target">+${comboXp} XP, Joker créé, vous rejouez !</div>`,
+                true
+            );
+            log(`🌟 Combo magistral : +${comboXp} XP, création d'un Joker et tour bonus !`);
+        }
+
         highlightCombo(indices, info);
     }
 
@@ -428,6 +481,8 @@ export function checkMatches(){
     }
 
     if(!combos){
+        turnDistinctMatches = 0;
+        comboMasteryTriggered = false;
         renderBoard(); // Seulement si pas de combos pour nettoyer les classes 'match'
         // Si c'est le tour de l'ennemi et qu'il n'y a pas de combos, terminer son tour
         if(currentTurn === 'enemy'){
@@ -459,28 +514,13 @@ function dropTiles(removedIndices){
         let column = [];
         for(let row=0; row<boardSize; row++){
             const idx = row * boardSize + col;
-            if(!removed.has(idx)){
+            if(!removed.has(idx) && board[idx] !== undefined && board[idx] !== null){
                 column.push(board[idx]);
             }
         }
         // Ajouter des nouvelles tuiles en haut
         while(column.length < boardSize){
-            const r = Math.random();
-            let newTile;
-            // Vérifier si le joueur a des armes ou des sorts
-            const hasWeaponsOrSpells = player.availableWeapons.length > 0 || player.availableSpells.length > 0;
-            if(!hasWeaponsOrSpells) {
-                // Si pas d'armes ni de sorts : 6% crânes, 2% épées
-                if(r < 0.06) newTile = 'skull';
-                else if(r < 0.08) newTile = 'combat';
-                else newTile = colors[Math.floor(Math.random()*colors.length)];
-            } else {
-                // Normal : 4% crânes, 4% épées
-                if(r < 0.04) newTile = 'skull';
-                else if(r < 0.08) newTile = 'combat';
-                else newTile = colors[Math.floor(Math.random()*colors.length)];
-            }
-            column.unshift(newTile);
+            column.unshift(generateRandomTile());
         }
         // Remettre la colonne dans le board
         for(let row=0; row<boardSize; row++){
