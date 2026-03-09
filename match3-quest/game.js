@@ -8,6 +8,7 @@ import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDiffi
 import { getRandomItem, getRarityEmoji, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
 import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
+import { playSfx } from "./sound.js";
 export { updateShopTab, buyWeapon, buyItem };
 
 const BASE_MANA_CAP = 50;
@@ -245,9 +246,11 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
         applyDamage(target, dmg);
 
         if(isPlayerCaster) {
+            playSfx('spellHit', { isPlayer: true });
             showCombatAnimation({ icon: '🔥', title: spell.name, damage: `-${Math.floor(dmg)} dégâts`, target: `→ ${target.name}` }, true);
             log(`🔥 ${spell.name} inflige ${dmg} dégâts.`);
         } else {
+            playSfx('spellHit', { isPlayer: false });
             showCombatAnimation({ icon: '🔥', title: spell.name, damage: `-${Math.floor(dmg)} dégâts`, source: caster.name, target: '→ Vous' }, false);
             log(`🔥 ${caster.name} lance ${spell.name} ! ${dmg} dégâts.`);
         }
@@ -256,6 +259,7 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
     if(spell.heal){
         const healAmount = spell.heal + intelligenceBonus;
         caster.hp = Math.min(caster.maxHp, caster.hp + healAmount);
+        playSfx('heal', { isPlayer: isPlayerCaster });
 
         if(isPlayerCaster) {
             showCombatAnimation({ icon: '💚', title: spell.name, heal: `+${healAmount} HP`, target: '→ Vous' }, true);
@@ -577,6 +581,7 @@ export function handlePlayerDeath(){
         }
     }
     log("💀 Vous êtes mort ! Le combat est terminé.");
+    playSfx('defeat');
     
     // Marquer le combat comme terminé
     gameState.combatState = 'finished';
@@ -592,6 +597,7 @@ export function handlePlayerDeath(){
 
 // démarre un nouveau combat
 export function startNewCombat(selectedEnemy = null){
+    playSfx('uiClick');
     gameState.combatState = 'active';
     resetCombatRewards();
     hideCombatResultScreen();
@@ -641,6 +647,7 @@ export function abandonCombat(){
     saveUpdate();
 
     log("🏳️ Vous avez abandonné le combat...");
+    playSfx('defeat');
     
     // Marquer le combat comme terminé
     gameState.combatState = 'finished';
@@ -1276,6 +1283,7 @@ export function useWeapon(){
     dmg = Math.max(1, dmg - (enemy.defense || 0));
 
     applyDamage(enemy, dmg);
+    playSfx('weaponHit', { isPlayer: true });
 
     // Vol de vie
     if(player.lifesteal > 0) {
@@ -1308,6 +1316,7 @@ export function castSpell(spellId){
         return;
     }
     consumeSpellMana(player, spell);
+    playSfx('spellCast', { isPlayer: true });
     
     // Gérer les sorts avec effet spécial
     if(spell.effect) {
@@ -1426,6 +1435,7 @@ export function enemyTurn(){
             }
             dmg = clampEnemyAttackDamage(dmg, enemy);
             applyDamage(player, dmg);
+            playSfx('weaponHit', { isPlayer: false });
             const icon = getWeaponIcon(enemy.weapon.type);
             showCombatAnimation({ icon, title: enemy.weapon.name, damage: `-${dmg} dégâts`, source: enemy.name, target: '→ Vous' }, false);
             log(`${icon} ${enemy.name} utilise ${enemy.weapon.name} ! ${dmg} dégâts.`);
@@ -1596,6 +1606,7 @@ export function finishEnemyTurn(){
 // progression
 export function handleEnemyDefeated(){
     log(`🏆 ${enemy.name} est vaincu !`);
+    playSfx('victory');
     
     // Calculer et mettre en attente l'XP (application en fin de combat)
     const xpGain = calculateXPGain(enemy.level || player.level, player.level);

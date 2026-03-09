@@ -7,6 +7,7 @@ import {
     findPossibleMatches,
     collectMatches
 } from "./matchMechanics.js";
+import { playSfx } from "./sound.js";
 
 // grille et sélection
 export let board = [];
@@ -264,6 +265,7 @@ export function selectTile(index){
     const isAdjacent = Math.abs(selectedRow - indexRow) + Math.abs(selectedCol - indexCol) === 1;
     if(!isAdjacent){
         log("⚠️ Échange non valide (doit être adjacent)");
+        playSfx('invalid');
         tiles[selected].classList.remove('selected');
         selected=null;
         return;
@@ -289,12 +291,14 @@ export function swapTiles(i,j){
     
     // Effectuer le swap
     [board[i],board[j]]=[board[j],board[i]];
+    playSfx('swap');
     
     // Vérifier si le swap crée un match autour des deux tuiles échangées
     const hasMatch = Boolean(checkMatchAtPosition(board, i) || checkMatchAtPosition(board, j));
     
     if(!hasMatch) {
         pendingSwap = null;
+        playSfx('invalid');
         // Aucun match créé : annuler le swap (mais garder le tour)
         [board[i],board[j]]=[board[j],board[i]];
         renderBoard();
@@ -396,6 +400,7 @@ export function checkMatches(){
             }
             if(info.len>=4){ 
                 currentPlayer.bonusTurn = true;
+                playSfx('turnBonus');
                 log(`🎁 Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 // Afficher une animation de tour bonus
                 const isPlayer = currentTurn === 'player';
@@ -411,6 +416,7 @@ export function checkMatches(){
             // Bonus de tour pour 4+ épées
             if(info.len>=4){ 
                 currentPlayer.bonusTurn = true;
+                playSfx('turnBonus');
                 log(`🎁 Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 const isPlayer = currentTurn === 'player';
                 showCombatAnimation(
@@ -441,6 +447,7 @@ export function checkMatches(){
             // Bonus de tour pour 4+ crânes
             if(info.len>=4){ 
                 currentPlayer.bonusTurn = true;
+                playSfx('turnBonus');
                 log(`🎁 Match de ${info.len} crânes : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 const isPlayer = currentTurn === 'player';
                 showCombatAnimation(
@@ -451,9 +458,12 @@ export function checkMatches(){
             if(info.len>=5){ info.makeJoker=true; }
         }
 
+        playSfx('match', { matchType: info.type, length: info.len, isPlayer: currentTurn === 'player' });
+
         if(currentTurn === 'player' && turnDistinctMatches > 5 && !comboMasteryTriggered){
             comboMasteryTriggered = true;
             currentPlayer.bonusTurn = true;
+            playSfx('turnBonus');
             const comboXp = grantComboMasteryRewards();
 
             const candidates = board

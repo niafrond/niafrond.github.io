@@ -4,6 +4,7 @@ import { getAllClasses, playerClasses } from "./classes.js";
 import { getRandomPlayerName } from "./playerNames.js";
 import { generateEnemyChoices } from "./enemies.js";
 import { calculateXPGain } from "./experience.js";
+import { initializeAudioUI, playSfx } from "./sound.js";
 
 // initialisation de la partie
 console.log('Main.js loaded');
@@ -81,6 +82,7 @@ function init() {
     console.log('Board element:', boardElement);
     
     const showEnemySelection = () => {
+        playSfx('uiClick');
         const modal = document.getElementById('enemy-modal');
         const container = document.getElementById('enemy-selection');
         const rerollBtn = document.getElementById('reroll-enemies-btn');
@@ -147,6 +149,9 @@ function init() {
     document.getElementById('new-combat-btn').addEventListener('click',()=>{
         showEnemySelection();
     });
+
+    const soundToggleButton = document.getElementById('sound-toggle-btn');
+    initializeAudioUI(soundToggleButton);
 
     // Ne pas créer d'ennemi ni de board au démarrage
     // Juste initialiser les sorts et armes disponibles

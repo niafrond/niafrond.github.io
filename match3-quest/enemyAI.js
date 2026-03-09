@@ -17,53 +17,53 @@ export const aiDifficulty = {
         name: "Facile",
         thinkingTimeMin: 300,
         thinkingTimeMax: 500,
-        spellUseProbability: 0.25,      // 25% de chance d'utiliser un sort
-        weaponUseProbability: 0.25,     // 25% de chance d'utiliser une arme
-        boardMoveProbability: 0.50,     // 50% de chance de jouer sur le plateau
+        spellUseProbability: 0.20,      // 20% de chance d'utiliser un sort
+        weaponUseProbability: 0.20,     // 20% de chance d'utiliser une arme
+        boardMoveProbability: 0.60,     // 60% de chance de jouer sur le plateau
         strategicThinking: false,       // Ne calcule pas les meilleurs coups
         healThreshold: 0.3,             // Se soigne si HP < 30%
         aggressiveThreshold: 0.7,       // Devient agressif si joueur HP < 70%
-        stupidityChance: 0.60,          // 60% de chance de faire un coup stupide
+        stupidityChance: 0.80,          // 80% de chance de faire un coup stupide
         randomBoardMove: true,          // Joue un swap aléatoire sur le plateau
     },
     normal: {
         name: "Normal",
         thinkingTimeMin: 300,
         thinkingTimeMax: 500,
-        spellUseProbability: 0.35,
-        weaponUseProbability: 0.35,
-        boardMoveProbability: 0.30,
+        spellUseProbability: 0.25,
+        weaponUseProbability: 0.25,
+        boardMoveProbability: 0.50,
         strategicThinking: true,
         healThreshold: 0.4,
         aggressiveThreshold: 0.6,
-        stupidityChance: 0.25,
-        randomBoardMove: false,
+        stupidityChance: 0.55,
+        randomBoardMove: true,
     },
     hard: {
         name: "Difficile",
         thinkingTimeMin: 300,
         thinkingTimeMax: 500,
-        spellUseProbability: 0.45,
-        weaponUseProbability: 0.35,
-        boardMoveProbability: 0.20,
+        spellUseProbability: 0.30,
+        weaponUseProbability: 0.25,
+        boardMoveProbability: 0.45,
         strategicThinking: true,
         healThreshold: 0.5,
         aggressiveThreshold: 0.5,
-        stupidityChance: 0.05,
-        randomBoardMove: false,
+        stupidityChance: 0.35,
+        randomBoardMove: true,
     },
     expert: {
         name: "Expert",
         thinkingTimeMin: 300,
         thinkingTimeMax: 500,
-        spellUseProbability: 0.50,
-        weaponUseProbability: 0.35,
-        boardMoveProbability: 0.15,
+        spellUseProbability: 0.35,
+        weaponUseProbability: 0.25,
+        boardMoveProbability: 0.40,
         strategicThinking: true,
         healThreshold: 0.6,
         aggressiveThreshold: 0.4,
-        stupidityChance: 0.00,
-        randomBoardMove: false,
+        stupidityChance: 0.20,
+        randomBoardMove: true,
     }
 };
 
@@ -101,11 +101,12 @@ export function setAIDifficultyByLevel(enemyLevel, playerLevel) {
         baseDifficulty = 'expert';
     }
     
-    // Augmenter la difficulté si l'ennemi a un niveau supérieur au joueur
+    // Augmenter plus doucement la difficulté meme si l'ennemi depasse le joueur.
+    // Objectif: conserver une IA imparfaite et plus permissive.
     if (levelDifference >= 3) {
-        baseDifficulty = 'expert';
+        baseDifficulty = baseDifficulty === 'easy' ? 'normal' : 'hard';
     } else if (levelDifference >= 2) {
-        baseDifficulty = baseDifficulty === 'easy' ? 'hard' : 'expert';
+        baseDifficulty = baseDifficulty === 'easy' ? 'normal' : 'hard';
     } else if (levelDifference >= 1) {
         if (baseDifficulty === 'easy') baseDifficulty = 'normal';
         else if (baseDifficulty === 'normal') baseDifficulty = 'hard';
@@ -424,7 +425,9 @@ export function makeDecision() {
         thinkingTime: thinkingTime,
         reason: chosenOption.data.reason || "action tactique",
         isStupid,
-        randomBoardMove: isStupid && difficulty.randomBoardMove
+        // Un coup stupide sur le plateau doit etre reellement aleatoire,
+        // meme pour les difficultes qui restent strategiques.
+        randomBoardMove: chosenOption.type === 'board' && (isStupid || difficulty.randomBoardMove)
     };
 }
 
