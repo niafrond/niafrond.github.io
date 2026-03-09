@@ -257,86 +257,119 @@ export function findRandomMove(board){
 // Collecte toutes les sequences de match (horizontales + verticales).
 export function collectMatches(board){
     const matches = [];
+    const seen = new Set();
 
-    // scan horizontal
-    for(let i = 0; i < boardSize; i++){
-        let j = 0;
-        while(j < boardSize){
-            const idx = i * boardSize + j;
-            const t = board[idx];
-            let run = [idx];
-            let type = t;
-            if(colors.includes(t) || t === 'joker') type = 'color';
-            let color = colors.includes(t) ? t : null;
-            let k = j + 1;
-            while(k < boardSize){
-                const idx2 = i * boardSize + k;
-                const t2 = board[idx2];
-                if(type === 'color'){
-                    if(t2 === 'joker' || (color && t2 === color) || (!color && colors.includes(t2))){
-                        run.push(idx2);
-                        if(!color && colors.includes(t2)) color = t2;
-                        k++;
-                        continue;
-                    }
-                } else {
-                    if(t2 === type || t2 === 'joker' || t === 'joker'){
-                        run.push(idx2);
-                        if(t === 'joker' && t2 !== 'joker') type = t2;
-                        k++;
-                        continue;
-                    }
-                }
-                break;
+    function analyzeWindow(indices){
+        const tiles = indices.map(index => board[index]);
+        if(tiles.some(tile => !tile)) return null;
+
+        const nonJokers = tiles.filter(tile => tile !== 'joker');
+        if(nonJokers.length === 0) return null;
+
+        const hasColor = tiles.some(tile => colors.includes(tile));
+        if(hasColor){
+            if(nonJokers.some(tile => !colors.includes(tile))) return null;
+            const nonJokerColors = nonJokers.filter(tile => colors.includes(tile));
+            if(nonJokerColors.length === 0) return null;
+            const color = nonJokerColors[0];
+            if(nonJokerColors.every(tile => tile === color)){
+                return { type: 'color', color };
             }
-            if(run.length >= 3){
-                matches.push({
-                    indices: run,
-                    info: { type, len: run.length, color }
-                });
+            return null;
+        }
+
+        const specialType = nonJokers[0];
+        if(nonJokers.every(tile => tile === specialType)){
+            return { type: specialType };
+        }
+        return null;
+    }
+
+    function matchesTarget(tile, target){
+        if(target.type === 'color'){
+            return tile === 'joker' || tile === target.color;
+        }
+        return tile === 'joker' || tile === target.type;
+    }
+
+    function pushMatch(indices, target){
+        if(indices.length < 3) return;
+        const key = `${indices.join(',')}|${target.type}|${target.color || ''}`;
+        if(seen.has(key)) return;
+        seen.add(key);
+        matches.push({
+            indices,
+            info: {
+                type: target.type,
+                len: indices.length,
+                color: target.color || null
             }
-            j += Math.max(run.length, 1);
+        });
+    }
+
+    // scan horizontal via windows of 3 then expand to full contiguous run
+    for(let row = 0; row < boardSize; row++){
+        for(let start = 0; start <= boardSize - 3; start++){
+            const window = [
+                row * boardSize + start,
+                row * boardSize + start + 1,
+                row * boardSize + start + 2
+            ];
+            const target = analyzeWindow(window);
+            if(!target) continue;
+
+            let left = start;
+            while(left > 0){
+                const idx = row * boardSize + (left - 1);
+                if(!matchesTarget(board[idx], target)) break;
+                left--;
+            }
+
+            let right = start + 2;
+            while(right < boardSize - 1){
+                const idx = row * boardSize + (right + 1);
+                if(!matchesTarget(board[idx], target)) break;
+                right++;
+            }
+
+            const run = [];
+            for(let col = left; col <= right; col++){
+                run.push(row * boardSize + col);
+            }
+            pushMatch(run, target);
         }
     }
 
-    // scan vertical
-    for(let j = 0; j < boardSize; j++){
-        let i = 0;
-        while(i < boardSize){
-            const idx = i * boardSize + j;
-            const t = board[idx];
-            let run = [idx];
-            let type = t;
-            if(colors.includes(t) || t === 'joker') type = 'color';
-            let color = colors.includes(t) ? t : null;
-            let k = i + 1;
-            while(k < boardSize){
-                const idx2 = k * boardSize + j;
-                const t2 = board[idx2];
-                if(type === 'color'){
-                    if(t2 === 'joker' || (color && t2 === color) || (!color && colors.includes(t2))){
-                        run.push(idx2);
-                        if(!color && colors.includes(t2)) color = t2;
-                        k++;
-                        continue;
-                    }
-                } else {
-                    if(t2 === type || t2 === 'joker' || t === 'joker'){
-                        run.push(idx2);
-                        if(t === 'joker' && t2 !== 'joker') type = t2;
-                        k++;
-                        continue;
-                    }
-                }
-                break;
+    // scan vertical via windows of 3 then expand to full contiguous run
+    for(let col = 0; col < boardSize; col++){
+        for(let start = 0; start <= boardSize - 3; start++){
+            const window = [
+                start * boardSize + col,
+                (start + 1) * boardSize + col,
+                (start + 2) * boardSize + col
+            ];
+            const target = analyzeWindow(window);
+            if(!target) continue;
+
+            let top = start;
+            while(top > 0){
+                const idx = (top - 1) * boardSize + col;
+                if(!matchesTarget(board[idx], target)) break;
+                top--;
             }
-            if(run.length >= 3){
-                matches.push({
-                    indices: run,
-                    info: { type, len: run.length, color }
-                });
+
+            let bottom = start + 2;
+            while(bottom < boardSize - 1){
+                const idx = (bottom + 1) * boardSize + col;
+                if(!matchesTarget(board[idx], target)) break;
+                bottom++;
             }
-            i += Math.max(run.length, 1);
+
+            const run = [];
+            for(let row = top; row <= bottom; row++){
+                run.push(row * boardSize + col);
+            }
+            pushMatch(run, target);
         }
     }
 

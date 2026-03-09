@@ -8,7 +8,7 @@ import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDiffi
 import { getRandomItem, getRarityEmoji, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
 import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
-import { playSfx } from "./sound.js";
+import { playSfx, setCombatMusicEnabled } from "./sound.js";
 export { updateShopTab, buyWeapon, buyItem };
 
 const BASE_MANA_CAP = 50;
@@ -581,6 +581,7 @@ export function handlePlayerDeath(){
         }
     }
     log("💀 Vous êtes mort ! Le combat est terminé.");
+    setCombatMusicEnabled(false);
     playSfx('defeat');
     
     // Marquer le combat comme terminé
@@ -598,6 +599,7 @@ export function handlePlayerDeath(){
 // démarre un nouveau combat
 export function startNewCombat(selectedEnemy = null){
     playSfx('uiClick');
+    setCombatMusicEnabled(true);
     gameState.combatState = 'active';
     resetCombatRewards();
     hideCombatResultScreen();
@@ -647,6 +649,7 @@ export function abandonCombat(){
     saveUpdate();
 
     log("🏳️ Vous avez abandonné le combat...");
+    setCombatMusicEnabled(false);
     playSfx('defeat');
     
     // Marquer le combat comme terminé
@@ -1606,6 +1609,7 @@ export function finishEnemyTurn(){
 // progression
 export function handleEnemyDefeated(){
     log(`🏆 ${enemy.name} est vaincu !`);
+    setCombatMusicEnabled(false);
     playSfx('victory');
     
     // Calculer et mettre en attente l'XP (application en fin de combat)

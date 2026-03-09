@@ -10,11 +10,9 @@ body {
 }
 .game-container {
     background: #fff;
-    padding: 20px;
     border-radius: 15px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    width: 95%;
-    max-width: 600px;
+    width: 100%;
     text-align: center;
 }
 #board {
@@ -23,7 +21,7 @@ body {
     grid-gap: 6px;
     margin: 15px auto;
     max-width: 500px;
-    width: 100%;
+    width: 95%;
     background: #e0e0e0;
     padding: 8px;
     border-radius: 8px;
@@ -347,6 +345,9 @@ progress.enemy-bar::-webkit-progress-value {
     line-height: 1.3em;
 }
 
+#enemy-spells {
+    width:40%;
+}
 /* Colonnes de sorts */
 #spells-container {
     display: flex;
@@ -359,6 +360,7 @@ progress.enemy-bar::-webkit-progress-value {
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 8px;
+    max-width: 50%;
 }
 .spells-column h4 {
     margin: 0 0 8px 0;

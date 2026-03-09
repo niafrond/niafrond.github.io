@@ -4,7 +4,7 @@ import { getAllClasses, playerClasses } from "./classes.js";
 import { getRandomPlayerName } from "./playerNames.js";
 import { generateEnemyChoices } from "./enemies.js";
 import { calculateXPGain } from "./experience.js";
-import { initializeAudioUI, playSfx } from "./sound.js";
+import { initializeAudioUI, playSfx, primeAudioFromGesture } from "./sound.js";
 
 // initialisation de la partie
 console.log('Main.js loaded');
@@ -147,6 +147,7 @@ function init() {
 
     // Gestionnaire du bouton "Nouveau Combat"
     document.getElementById('new-combat-btn').addEventListener('click',()=>{
+        primeAudioFromGesture();
         showEnemySelection();
     });
 
