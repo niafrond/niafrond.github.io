@@ -1,10 +1,13 @@
+import { createCheatModeSection } from "./cheatMode.js";
+
 const AUDIO_SETTINGS_KEY = 'match3quest.audio.settings';
 
 const defaultSettings = {
     muted: false,
     mutedMusic: false,
     mutedSfx: false,
-    volume: 0.6
+    volume: 0.6,
+    cheatMode: false
 };
 
 let settings = { ...defaultSettings };
@@ -46,6 +49,8 @@ function loadSettings() {
         if(Number.isFinite(parsedVolume) && parsedVolume > 0 && parsedVolume <= 1) {
             settings.volume = parsedVolume;
         }
+
+        settings.cheatMode = Boolean(parsed?.cheatMode);
     } catch {
         settings = { ...defaultSettings };
     }
@@ -152,6 +157,8 @@ function openMuteModeChooser(button) {
     panel.style.padding = '18px';
     panel.style.color = '#f3f5f8';
     panel.style.fontFamily = 'system-ui, -apple-system, Segoe UI, sans-serif';
+    panel.style.maxHeight = '88vh';
+    panel.style.overflowY = 'auto';
 
     const title = document.createElement('h3');
     title.textContent = 'Mode audio';
@@ -163,6 +170,18 @@ function openMuteModeChooser(button) {
     subtitle.style.margin = '0 0 14px';
     subtitle.style.opacity = '0.85';
     subtitle.style.fontSize = '0.92rem';
+
+    const sectionAudio = document.createElement('div');
+    sectionAudio.style.marginBottom = '14px';
+
+    const sectionAudioTitle = document.createElement('div');
+    sectionAudioTitle.textContent = 'Audio';
+    sectionAudioTitle.style.fontSize = '0.8rem';
+    sectionAudioTitle.style.letterSpacing = '.08em';
+    sectionAudioTitle.style.opacity = '0.75';
+    sectionAudioTitle.style.textTransform = 'uppercase';
+    sectionAudioTitle.style.marginBottom = '8px';
+    sectionAudio.appendChild(sectionAudioTitle);
 
     const options = [
         { mode: 'music', label: 'Couper la musique', hint: 'Garde les effets audio' },
@@ -211,6 +230,16 @@ function openMuteModeChooser(button) {
         buttonWrap.appendChild(optionBtn);
     });
 
+    sectionAudio.appendChild(buttonWrap);
+
+    const sectionCheat = createCheatModeSection({
+        isEnabled: () => Boolean(settings.cheatMode),
+        setEnabled: (enabled) => {
+            settings.cheatMode = Boolean(enabled);
+            saveSettings();
+        }
+    });
+
     const footer = document.createElement('div');
     footer.style.display = 'flex';
     footer.style.justifyContent = 'flex-end';
@@ -230,7 +259,8 @@ function openMuteModeChooser(button) {
 
     panel.appendChild(title);
     panel.appendChild(subtitle);
-    panel.appendChild(buttonWrap);
+    panel.appendChild(sectionAudio);
+    panel.appendChild(sectionCheat);
     panel.appendChild(footer);
     overlay.appendChild(panel);
 

@@ -1378,6 +1378,65 @@ export function castSpell(spellId){
     finishPlayerTurn();
 }
 
+// API de test: permet de simuler n'importe quel sort sans contraintes de niveau/mana.
+export async function castSpellForCheat(spellId, options = {}){
+    const consumeTurn = options.consumeTurn === true;
+    if(gameState.combatState !== 'active'){
+        log("⚠️ Cheat: aucun combat en cours.");
+        return false;
+    }
+
+    let spell = player.activeSpells.find(s => s.id === spellId)
+        || player.availableSpells.find(s => s.id === spellId)
+        || allSpells.find(s => s.id === spellId);
+
+    if(!spell){
+        try {
+            const classesModule = await import('./classes.js');
+            spell = classesModule.allClassSpells.find(s => s.id === spellId) || null;
+        } catch {
+            spell = null;
+        }
+    }
+
+    if(!spell){
+        log("⚠️ Cheat: sort introuvable.");
+        return false;
+    }
+
+    playSfx('spellCast', { isPlayer: true });
+    logActiveAction(`simule le sort ${spell.name} (cheat)`);
+
+    if(spell.effect){
+        try {
+            const module = await import('./classSpellEffects.js');
+            const applied = module.applyClassSpellEffect(spell);
+            if(!applied){
+                saveUpdate();
+                return false;
+            }
+            saveUpdate();
+            if(consumeTurn){
+                finishPlayerTurn();
+            } else {
+                updateStats();
+            }
+            return true;
+        } catch {
+            log("⚠️ Cheat: impossible d'appliquer ce sort de classe.");
+            return false;
+        }
+    }
+
+    applyStandardSpellEffects(player, enemy, spell, true);
+    updateStats();
+    saveUpdate();
+    if(consumeTurn){
+        finishPlayerTurn();
+    }
+    return true;
+}
+
 export function finishPlayerTurn(){
     // Vérifier si le joueur est mort
     if(player.hp<=0){

@@ -1,4 +1,9 @@
 import { colors, boardSize } from "./constants.js";
+import {
+    isJokerTile,
+    analyzeMatchWindowWithJoker,
+    tileMatchesTargetWithJoker
+} from "./joker.js";
 
 // Utilitaire de generation: detecte si la grille contient deja un match.
 export function hasMatches(board){
@@ -15,31 +20,16 @@ export function hasMatches(board){
 
 // Verifie uniquement si des matches existent (sans les traiter).
 export function checkForMatchesOnly(board){
+    function hasMatchInWindow(indices){
+        const target = analyzeMatchWindowWithJoker(indices.map(index => board[index]), colors);
+        return Boolean(target);
+    }
+
     // scan horizontal
     for(let i = 0; i < boardSize; i++){
         for(let j = 0; j < boardSize - 2; j++){
             const idx = i * boardSize + j;
-            const t = board[idx];
-            const t1 = board[idx + 1];
-            const t2 = board[idx + 2];
-
-            // Ignorer si toutes sont des jokers
-            if(t === 'joker' && t1 === 'joker' && t2 === 'joker') continue;
-
-            // Match avec jokers pour couleurs
-            if(colors.includes(t) || colors.includes(t1) || colors.includes(t2)){
-                const nonJokers = [t, t1, t2].filter(tile => tile !== 'joker' && colors.includes(tile));
-                if(nonJokers.length === 0) continue;
-                const matchColor = nonJokers[0];
-                if(nonJokers.every(tile => tile === matchColor)) return true;
-            }
-            // Match avec jokers pour types speciaux (skull, combat)
-            else if((t === t1 || t === 'joker' || t1 === 'joker') &&
-                    (t1 === t2 || t1 === 'joker' || t2 === 'joker') &&
-                    (t === t2 || t === 'joker' || t2 === 'joker')){
-                const nonJokers = [t, t1, t2].filter(tile => tile !== 'joker');
-                if(nonJokers.length > 0 && nonJokers.every(tile => tile === nonJokers[0])) return true;
-            }
+            if(hasMatchInWindow([idx, idx + 1, idx + 2])) return true;
         }
     }
 
@@ -47,27 +37,7 @@ export function checkForMatchesOnly(board){
     for(let j = 0; j < boardSize; j++){
         for(let i = 0; i < boardSize - 2; i++){
             const idx = i * boardSize + j;
-            const t = board[idx];
-            const t1 = board[(i + 1) * boardSize + j];
-            const t2 = board[(i + 2) * boardSize + j];
-
-            // Ignorer si toutes sont des jokers
-            if(t === 'joker' && t1 === 'joker' && t2 === 'joker') continue;
-
-            // Match avec jokers pour couleurs
-            if(colors.includes(t) || colors.includes(t1) || colors.includes(t2)){
-                const nonJokers = [t, t1, t2].filter(tile => tile !== 'joker' && colors.includes(tile));
-                if(nonJokers.length === 0) continue;
-                const matchColor = nonJokers[0];
-                if(nonJokers.every(tile => tile === matchColor)) return true;
-            }
-            // Match avec jokers pour types speciaux (skull, combat)
-            else if((t === t1 || t === 'joker' || t1 === 'joker') &&
-                    (t1 === t2 || t1 === 'joker' || t2 === 'joker') &&
-                    (t === t2 || t === 'joker' || t2 === 'joker')){
-                const nonJokers = [t, t1, t2].filter(tile => tile !== 'joker');
-                if(nonJokers.length > 0 && nonJokers.every(tile => tile === nonJokers[0])) return true;
-            }
+            if(hasMatchInWindow([idx, (i + 1) * boardSize + j, (i + 2) * boardSize + j])) return true;
         }
     }
 
@@ -81,29 +51,7 @@ export function checkMatchAtPosition(board, idx){
     if(!board[idx]) return null;
 
     function analyzeWindow(indices){
-        const tiles = indices.map(i => board[i]);
-        if(tiles.some(t => !t)) return null;
-
-        const nonJokers = tiles.filter(t => t !== 'joker');
-        if(nonJokers.length === 0) return null;
-
-        const hasColor = tiles.some(t => colors.includes(t));
-        if(hasColor){
-            if(nonJokers.some(t => !colors.includes(t))) return null;
-            const nonJokerColors = nonJokers.filter(t => colors.includes(t));
-            if(nonJokerColors.length === 0) return null;
-            const color = nonJokerColors[0];
-            if(nonJokerColors.every(t => t === color)){
-                return { type: 'color', color };
-            }
-            return null;
-        }
-
-        const specialType = nonJokers[0];
-        if(nonJokers.every(t => t === specialType)){
-            return { type: specialType };
-        }
-        return null;
+        return analyzeMatchWindowWithJoker(indices.map(i => board[i]), colors);
     }
 
     function getRunLengthHorizontal(targetType, targetColor){
@@ -112,8 +60,8 @@ export function checkMatchAtPosition(board, idx){
         for(let c = col - 1; c >= 0; c--){
             const t = board[row * boardSize + c];
             const ok = targetType === 'color'
-                ? (t === 'joker' || t === targetColor)
-                : (t === 'joker' || t === targetType);
+                ? (isJokerTile(t) || t === targetColor)
+                : (isJokerTile(t) || t === targetType);
             if(!ok) break;
             count++;
         }
@@ -121,8 +69,8 @@ export function checkMatchAtPosition(board, idx){
         for(let c = col + 1; c < boardSize; c++){
             const t = board[row * boardSize + c];
             const ok = targetType === 'color'
-                ? (t === 'joker' || t === targetColor)
-                : (t === 'joker' || t === targetType);
+                ? (isJokerTile(t) || t === targetColor)
+                : (isJokerTile(t) || t === targetType);
             if(!ok) break;
             count++;
         }
@@ -136,8 +84,8 @@ export function checkMatchAtPosition(board, idx){
         for(let r = row - 1; r >= 0; r--){
             const t = board[r * boardSize + col];
             const ok = targetType === 'color'
-                ? (t === 'joker' || t === targetColor)
-                : (t === 'joker' || t === targetType);
+                ? (isJokerTile(t) || t === targetColor)
+                : (isJokerTile(t) || t === targetType);
             if(!ok) break;
             count++;
         }
@@ -145,8 +93,8 @@ export function checkMatchAtPosition(board, idx){
         for(let r = row + 1; r < boardSize; r++){
             const t = board[r * boardSize + col];
             const ok = targetType === 'color'
-                ? (t === 'joker' || t === targetColor)
-                : (t === 'joker' || t === targetType);
+                ? (isJokerTile(t) || t === targetColor)
+                : (isJokerTile(t) || t === targetType);
             if(!ok) break;
             count++;
         }
@@ -260,36 +208,11 @@ export function collectMatches(board){
     const seen = new Set();
 
     function analyzeWindow(indices){
-        const tiles = indices.map(index => board[index]);
-        if(tiles.some(tile => !tile)) return null;
-
-        const nonJokers = tiles.filter(tile => tile !== 'joker');
-        if(nonJokers.length === 0) return null;
-
-        const hasColor = tiles.some(tile => colors.includes(tile));
-        if(hasColor){
-            if(nonJokers.some(tile => !colors.includes(tile))) return null;
-            const nonJokerColors = nonJokers.filter(tile => colors.includes(tile));
-            if(nonJokerColors.length === 0) return null;
-            const color = nonJokerColors[0];
-            if(nonJokerColors.every(tile => tile === color)){
-                return { type: 'color', color };
-            }
-            return null;
-        }
-
-        const specialType = nonJokers[0];
-        if(nonJokers.every(tile => tile === specialType)){
-            return { type: specialType };
-        }
-        return null;
+        return analyzeMatchWindowWithJoker(indices.map(index => board[index]), colors);
     }
 
     function matchesTarget(tile, target){
-        if(target.type === 'color'){
-            return tile === 'joker' || tile === target.color;
-        }
-        return tile === 'joker' || tile === target.type;
+        return tileMatchesTargetWithJoker(tile, target);
     }
 
     function pushMatch(indices, target){

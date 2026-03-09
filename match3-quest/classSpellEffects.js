@@ -3,6 +3,7 @@
 import { player, enemy, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage } from "./game.js";
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from "./board.js";
 import { colors, boardSize } from "./constants.js";
+import { JOKER_TILE, isJokerTile, isTransformableToJoker } from "./joker.js";
 
 function getManaCap(color) {
     return player.manaCaps?.[color] ?? player.maxMana;
@@ -115,21 +116,21 @@ function applyMageStrike(spell) {
 }
 
 function applyWildMana(spell) {
-    const hasAnyTile = board.some(tile => tile && tile !== 'joker');
+    const hasAnyTile = board.some(tile => isTransformableToJoker(tile));
     if(!hasAnyTile){
         log(`⚠️ Aucune gemme à transformer`);
         return false;
     }
 
     setBoardTargetingMode({
-        highlightPredicate: (_index, tile) => tile && tile !== 'joker',
+        highlightPredicate: (_index, tile) => isTransformableToJoker(tile),
         onTileClick: (index, tile) => {
-            if(!tile || tile === 'joker'){
+            if(!isTransformableToJoker(tile)){
                 log(`⚠️ Choisissez une gemme pour Mana Sauvage.`);
                 return true;
             }
 
-            board[index] = 'joker';
+            board[index] = JOKER_TILE;
             setBoardTargetingMode(null);
             showCombatAnimation({ icon: '⭐', title: 'MANA SAUVAGE', damage: 'Joker créé !', target: '→ Plateau' }, true);
             log(`✨ Mana Sauvage transforme la gemme choisie en joker !`);
@@ -460,7 +461,7 @@ function applyShieldBash(spell) {
 function applyFocus(spell) {
     const candidates = board
         .map((tile, index) => ({ tile, index }))
-        .filter(entry => entry.tile && entry.tile !== 'joker' && entry.tile !== 'combat');
+        .filter(entry => entry.tile && !isJokerTile(entry.tile) && entry.tile !== 'combat');
 
     if(candidates.length <= 0) {
         log(`⚠️ Aucune gemme valide à transformer en Action Gem.`);

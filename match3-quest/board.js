@@ -8,6 +8,14 @@ import {
     collectMatches
 } from "./matchMechanics.js";
 import { playSfx } from "./sound.js";
+import {
+    JOKER_TILE,
+    JOKER_SYMBOL,
+    isJokerTile,
+    shouldCreateJokerFromMatchLength,
+    pickRandomNonJokerIndex,
+    rollTileWithJoker
+} from "./joker.js";
 
 // grille et sélection
 export let board = [];
@@ -134,13 +142,7 @@ function generateRandomTile(options = {}){
         refreshBoardDropProbabilities();
     }
 
-    const { skullProb, combatProb, jokerProb } = boardDropProbabilities;
-    const allowJoker = options.allowJoker !== false;
-    const r = Math.random();
-    if(r < skullProb) return 'skull';
-    if(r < skullProb + combatProb) return 'combat';
-    if(allowJoker && r < skullProb + combatProb + jokerProb) return 'joker';
-    return colors[Math.floor(Math.random() * colors.length)];
+    return rollTileWithJoker(boardDropProbabilities, colors, options);
 }
 
 function fillColumnByGravity(col){
@@ -216,7 +218,7 @@ export function regenerateBoard(){
                 tiles[i].className = `tile ${board[i]}`;
                 if(board[i] === 'skull') tiles[i].textContent = '💀';
                 else if(board[i] === 'combat') tiles[i].textContent = '⚔️';
-                else if(board[i] === 'joker') tiles[i].textContent = '★';
+                else if(isJokerTile(board[i])) tiles[i].textContent = JOKER_SYMBOL;
                 else tiles[i].textContent = '';
             }
             renderBoard();
@@ -360,7 +362,7 @@ export function renderBoard(skipCleanup = false){
         tiles[i].textContent = '';
         if(t==='skull') tiles[i].textContent='💀';
         else if(t==='combat') tiles[i].textContent='⚔️';
-        else if(t==='joker') tiles[i].textContent='★';
+        else if(isJokerTile(t)) tiles[i].textContent = JOKER_SYMBOL;
     }
     refreshTargetingHighlights();
 }
@@ -417,7 +419,7 @@ export function checkMatches(){
                     isPlayer
                 );
             }
-            if(info.len>=5){ info.makeJoker=true; }
+            if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
         } else if(info.type==='combat'){
             currentPlayer.combatPoints += info.len;
             log(`⚔️ +${info.len} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
@@ -432,7 +434,7 @@ export function checkMatches(){
                     isPlayer
                 );
             }
-            if(info.len>=5){ info.makeJoker=true; }
+            if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
         } else if(info.type==='skull'){
             const attacker = currentTurn === 'player' ? player : enemy;
             const opponent = currentTurn === 'player' ? enemy : player;
@@ -463,7 +465,7 @@ export function checkMatches(){
                     isPlayer
                 );
             }
-            if(info.len>=5){ info.makeJoker=true; }
+            if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
         }
 
         playSfx('match', { matchType: info.type, length: info.len, isPlayer: currentTurn === 'player' });
@@ -474,13 +476,9 @@ export function checkMatches(){
             playSfx('turnBonus');
             const comboXp = grantComboMasteryRewards();
 
-            const candidates = board
-                .map((tile, index) => ({ tile, index }))
-                .filter(entry => entry.tile && entry.tile !== 'joker');
-
-            if(candidates.length > 0){
-                const random = candidates[Math.floor(Math.random() * candidates.length)];
-                board[random.index] = 'joker';
+            const randomIndex = pickRandomNonJokerIndex(board);
+            if(randomIndex !== null){
+                board[randomIndex] = JOKER_TILE;
             }
 
             showCombatAnimation(
@@ -497,7 +495,7 @@ export function checkMatches(){
     for(const match of matches){
         handleRun(match.indices, match.info);
         if(match.info.makeJoker){
-            board[match.indices[0]] = 'joker';
+            board[match.indices[0]] = JOKER_TILE;
         }
     }
 
@@ -693,7 +691,7 @@ export function highlightCombo(indices, info){
             // Traiter les jokers spéciaux avant suppression
             indices.forEach(i=>{
                 if(info && info.makeJoker && i===indices[0]){
-                    board[i]='joker';
+                    board[i] = JOKER_TILE;
                 } else {
                     board[i]=null; // Marquer comme supprimé
                 }
