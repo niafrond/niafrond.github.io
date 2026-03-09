@@ -360,18 +360,15 @@ progress.enemy-bar::-webkit-progress-value {
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 8px;
-    max-width: 50%;
 }
 .spells-column h4 {
     margin: 0 0 8px 0;
     font-size: 0.9em;
     text-align: center;
-    color: #555;
 }
 #attack-btn {
     width: 100%;
     text-align: left;
-    font-size: 0.85em;
     padding: 6px 8px;
     margin-bottom: 4px;
     background: #95a5a6;
@@ -383,20 +380,48 @@ progress.enemy-bar::-webkit-progress-value {
     flex-direction: column;
     gap: 4px;
 }
-#spell-buttons button {
+#spell-buttons .spell-btn {
     width: 100%;
     text-align: left;
     font-size: 0.85em;
     padding: 6px 8px;
+    border: 1px solid #7f8c8d;
+    border-radius: 4px;
+    cursor: pointer;
+    background: #95a5a6;
 }
-#spell-buttons button.disabled {
+#spell-buttons .spell-btn.disabled {
     opacity: 0.5;
     cursor: not-allowed;
     background: #95a5a6;
     border-color: #7f8c8d;
 }
-#spell-buttons button.disabled:hover {
+#spell-buttons .spell-btn.disabled:hover {
     transform: none;
+}
+
+#spell-buttons .enemy-spell-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.35);
+}
+
+#weapon-button .enemy-spell-item,
+#item-button .enemy-spell-item {
+    cursor: pointer;
+}
+
+#weapon-button .enemy-spell-item.disabled,
+#item-button .enemy-spell-item.disabled {
+    opacity: 0.5;
+    filter: grayscale(0.35);
+    cursor: not-allowed;
+}
+
+#enemy-weapon-button .enemy-spell-item.disabled {
+    opacity: 0.5;
+    filter: grayscale(0.35);
+    cursor: default;
 }
 
 .spell-detail-tooltip {
@@ -488,12 +513,20 @@ progress.enemy-bar::-webkit-progress-value {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.spell-cost {
+    font-size: 0.8em;
+}
 .enemy-spell-item .spell-cost {
     font-size: 0.8em;
     color: #888;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+#enemy-spell-list .enemy-spell-item.disabled {
+    opacity: 0.5;
+    filter: grayscale(0.35);
 }
 
 .battle-result-screen {
@@ -634,29 +667,34 @@ progress.enemy-bar::-webkit-progress-value {
     font-size: 1em;
 }
 .spell-item {
-    background: #f7f7f7;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 8px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px 8px;
     margin: 6px 0;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 8px;
+    color: #666;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 .spell-item.active-spell {
-    background: #e8f5e9;
-    border-color: #2ecc71;
+    background: #fff;
+    border-color: #ccc;
 }
-.spell-name {
+.spell-content {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+.spell-item .spell-name {
     font-weight: bold;
-    flex: 1;
-    min-width: 120px;
-}
-.spell-info {
-    font-size: 0.85em;
-    color: #666;
-    flex: 1;
+    color: #e74c3c;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .spell-detail {
     font-size: 0.85em;
@@ -664,20 +702,26 @@ progress.enemy-bar::-webkit-progress-value {
     width: 100%;
 }
 .spell-action {
-    padding: 4px 10px;
+    display: inline;
+    padding: 0;
     font-size: 0.85em;
-    border: none;
-    border-radius: 4px;
     cursor: pointer;
-    background: #3498db;
-    color: white;
+    background: transparent;
+    color: #2980b9;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    user-select: none;
 }
 .spell-action:hover {
-    background: #2980b9;
+    color: #1f5f8c;
 }
-.spell-action:disabled {
+.spell-action.disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    text-decoration: none;
+}
+.spell-action.disabled:hover {
+    color: #2980b9;
 }
 
 /* Stats */

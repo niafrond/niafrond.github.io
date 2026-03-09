@@ -601,6 +601,7 @@ export function startNewCombat(selectedEnemy = null){
     playSfx('uiClick');
     setCombatMusicEnabled(true);
     gameState.combatState = 'active';
+    ensureCombatUsableActiveItem();
     resetCombatRewards();
     hideCombatResultScreen();
     // Cacher le bouton "Nouveau Combat"
@@ -758,6 +759,23 @@ function getActiveInventoryItem() {
     normalizeActiveInventoryIndex();
     if(player.activeInventoryIndex === null) return null;
     return player.inventory[player.activeInventoryIndex] || null;
+}
+
+function ensureCombatUsableActiveItem() {
+    normalizeActiveInventoryIndex();
+    if(!Array.isArray(player.inventory) || player.inventory.length === 0) return;
+
+    const activeItem = getActiveInventoryItem();
+    if(activeItem?.type === 'consumable') return;
+
+    const consumableIndex = player.inventory.findIndex(item => item?.type === 'consumable');
+    if(consumableIndex >= 0) {
+        player.activeInventoryIndex = consumableIndex;
+        const combatItem = player.inventory[consumableIndex];
+        if(combatItem?.name) {
+            log(`🎒 Objet actif pour le combat : ${combatItem.name}.`);
+        }
+    }
 }
 
 // Chargement de la sauvegarde au démarrage
@@ -940,10 +958,20 @@ export function updateEnemySpells(){
         let weaponHtml = '';
         if (enemy.weapon) {
             const icon = getWeaponIcon(enemy.weapon.type);
-            weaponHtml += `<div class="weapon-btn disabled" style="cursor:default;">${icon} ${enemy.weapon.name} <span class="weapon-cost">${enemy.weapon.actionPoints} ⚔️</span> - ${enemy.weapon.damage} 💀</div>`;
+            weaponHtml += `
+                <div class="enemy-spell-item disabled">
+                    <div class="spell-name">${icon} ${enemy.weapon.name}</div>
+                    <div class="spell-cost">${enemy.weapon.actionPoints} ⚔️ - ${enemy.weapon.damage} 💀</div>
+                </div>
+            `;
         }
         if (enemy.inventoryItem) {
-            weaponHtml += `<div class="weapon-btn disabled" style="cursor:default; opacity:0.8;">🎒 ${enemy.inventoryItem.name}</div>`;
+            weaponHtml += `
+                <div class="enemy-spell-item disabled">
+                    <div class="spell-name">🎒 ${enemy.inventoryItem.name}</div>
+                    <div class="spell-cost">Objet ennemi</div>
+                </div>
+            `;
         }
         weaponContainer.innerHTML = weaponHtml;
     }
@@ -960,6 +988,10 @@ export function updateEnemySpells(){
     enemy.spells.forEach(sp => {
         const div = document.createElement('div');
         div.className = 'enemy-spell-item';
+        const hasEnoughMana = canEntityCastSpell(enemy, sp);
+        if(!hasEnoughMana) {
+            div.classList.add('disabled');
+        }
         
         // Déterminer si c'est un sort de classe et obtenir son emoji
         const classEmojis = { 'sorcerer': '🧙', 'assassin': '🗡️', 'templar': '🛡️', 'barbarian': '🪓' };
@@ -1860,7 +1892,9 @@ export function createSpellButtons(){
     hideSpellTooltip();
     container.innerHTML="";
     player.activeSpells.forEach(sp=>{
-        const btn=document.createElement('button');
+        const btn=document.createElement('div');
+        btn.className = 'enemy-spell-item';
+        btn.tabIndex = 0;
         const damageText = sp.dmg ? ` - ${sp.dmg} dmg` : '';
         const healText = sp.heal ? ` - ${sp.heal} HP` : '';
         
@@ -1878,12 +1912,21 @@ export function createSpellButtons(){
             hasEnoughMana = Object.keys(sp.cost).every(color => player.mana[color] >= sp.cost[color]);
         }
         
-        btn.innerHTML=`${sp.name}${costHTML}${damageText}${healText}`;
+        btn.innerHTML = `
+            <div class="spell-name">${sp.name}</div>
+            <div class="spell-cost">${costHTML}${damageText}${healText}</div>
+        `;
         if(player.level<sp.minLevel || !hasEnoughMana) {
             btn.classList.add('disabled');
-            btn.onclick = null; // Désactiver le clic
+            btn.tabIndex = -1;
         } else {
             btn.onclick=()=>castSpell(sp.id);
+            btn.onkeydown=(event)=>{
+                if(event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    castSpell(sp.id);
+                }
+            };
         }
 
         const showDetails = () => showSpellTooltip(btn, sp);
@@ -2021,9 +2064,11 @@ export function updateSpellsTab(){
             }
             
             div.innerHTML = `
-                <span class="spell-name">${sp.name}</span>
-                <span class="spell-info">${costHTML}${damageText}${healText}${effectText}</span>
-                <button class="spell-action" onclick="window.unequipSpell('${sp.id}')">❌ Retirer</button>
+                <div class="spell-content">
+                    <div class="spell-name">${sp.name}</div>
+                    <div class="spell-cost">${costHTML}${damageText}${healText}${effectText}</div>
+                </div>
+                <div class="spell-action" tabindex="0" onclick="window.unequipSpell('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.unequipSpell('${sp.id}');}">❌ Retirer</div>
             `;
             activeList.appendChild(div);
         });
@@ -2056,9 +2101,11 @@ export function updateSpellsTab(){
             }
             
             div.innerHTML = `
-                <span class="spell-name">${sp.name}</span>
-                <span class="spell-info">${costHTML}${damageText}${healText}${effectText}</span>
-                <button class="spell-action" ${canEquip ? '' : 'disabled'} onclick="window.equipSpell('${sp.id}')">✅ Équiper</button>
+                <div class="spell-content">
+                    <div class="spell-name">${sp.name}</div>
+                    <div class="spell-cost">${costHTML}${damageText}${healText}${effectText}</div>
+                </div>
+                <div class="spell-action ${canEquip ? '' : 'disabled'}" tabindex="${canEquip ? '0' : '-1'}" aria-disabled="${canEquip ? 'false' : 'true'}" ${canEquip ? `onclick="window.equipSpell('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.equipSpell('${sp.id}');}"` : ''}>✅ Équiper</div>
             `;
             availableList.appendChild(div);
         });
@@ -2267,24 +2314,40 @@ export function createWeaponButton(){
         if(!player.availableWeapons || player.availableWeapons.length === 0) {
             container.innerHTML = '';
         } else {
-            container.innerHTML = '<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; font-size: 0.85em; color: #856404;"><strong>⚠️ Aucune arme équipée</strong><br>Allez dans l\'onglet Armes pour en équiper une.</div>';
+            container.innerHTML = `
+                <div class="enemy-spell-item disabled">
+                    <div class="spell-name">⚠️ Aucune arme equipee</div>
+                    <div class="spell-cost">Allez dans l'onglet Armes pour en equiper une.</div>
+                </div>
+            `;
         }
         updateWeaponsTab();
         return;
     }
     
     const weapon = player.equippedWeapon;
-    const btn = document.createElement('button');
-    btn.className = 'weapon-btn';
+    const btn = document.createElement('div');
+    btn.className = 'enemy-spell-item';
+    btn.tabIndex = 0;
     
     const icon = getWeaponIcon(weapon.type);
     
-    btn.innerHTML = `${icon} ${weapon.name} <span class="weapon-cost">${weapon.actionPoints} ⚔️</span> - ${weapon.damage} 💀`;
+    btn.innerHTML = `
+        <div class="spell-name">${icon} ${weapon.name}</div>
+        <div class="spell-cost">${weapon.actionPoints} ⚔️ - ${weapon.damage} 💀</div>
+    `;
     if(player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints) {
         btn.classList.add('disabled');
-        btn.onclick = null; // Désactiver le clic
+        btn.tabIndex = -1;
+        btn.onclick = null;
     } else {
         btn.onclick = () => useWeapon();
+        btn.onkeydown = (event) => {
+            if(event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                useWeapon();
+            }
+        };
     }
     container.appendChild(btn);
     
@@ -2322,6 +2385,8 @@ export function updateWeaponsTab(){
     availableList.innerHTML = '';
     if(!player.availableWeapons || player.availableWeapons.length === 0){
         availableList.innerHTML = '<div style="padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; margin-top: 15px;"><strong>💡 Aucune arme en votre possession</strong><br>Les armes peuvent être obtenues en gagnant des combats !</div>';
+        updateInventoryTab();
+        updateItemButton();
         return;
     }
     player.availableWeapons.forEach(weapon => {
@@ -2405,8 +2470,11 @@ export function updateItemButton(){
 
     if(item.type === 'artifact'){
         const div = document.createElement('div');
-        div.style.cssText = 'padding:8px 12px;background:#e8f0fe;border:1px solid #3498db;border-radius:6px;font-size:0.85em;color:#2471a3;margin-top:4px;';
-        div.innerHTML = `⚡ ${item.name} (actif, passif)`;
+        div.className = 'enemy-spell-item disabled';
+        div.innerHTML = `
+            <div class="spell-name">⚡ ${item.name}</div>
+            <div class="spell-cost">Actif (passif)</div>
+        `;
         container.appendChild(div);
         return;
     }
@@ -2414,14 +2482,25 @@ export function updateItemButton(){
     const pa = item.actionPoints || 2;
     const canUse = gameState.combatState === 'active' && currentTurn === 'player' && player.combatPoints >= pa;
 
-    const btn = document.createElement('button');
-    btn.className = 'weapon-btn';
-    btn.innerHTML = `🎒 ${item.name} <span class="weapon-cost">${pa} ⚔️</span>`;
+    const btn = document.createElement('div');
+    btn.className = 'enemy-spell-item';
+    btn.tabIndex = 0;
+    btn.innerHTML = `
+        <div class="spell-name">🎒 ${item.name}</div>
+        <div class="spell-cost">${pa} ⚔️</div>
+    `;
     if(!canUse){
         btn.classList.add('disabled');
+        btn.tabIndex = -1;
         btn.onclick = null;
     } else {
         btn.onclick = () => useInventoryItem(item.id, player.activeInventoryIndex);
+        btn.onkeydown = (event) => {
+            if(event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                useInventoryItem(item.id, player.activeInventoryIndex);
+            }
+        };
     }
     container.appendChild(btn);
 }

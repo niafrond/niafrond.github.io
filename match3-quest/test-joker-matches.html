@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tests Joker Match3</title>
+    <style>
+        body {
+            font-family: Consolas, 'Courier New', monospace;
+            background: #10131a;
+            color: #e8edf7;
+            margin: 0;
+            padding: 16px;
+        }
+        .ok { color: #55d187; }
+        .ko { color: #ff6b6b; }
+        pre {
+            background: #0b0e14;
+            border: 1px solid #263044;
+            border-radius: 8px;
+            padding: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tests cibles: jokers</h1>
+    <pre id="out">Execution...</pre>
+
+    <script type="module">
+        import { boardSize } from './constants.js';
+        import { collectMatches, checkForMatchesOnly, checkMatchAtPosition } from './matchMechanics.js';
+
+        const out = document.getElementById('out');
+        const PALETTE = ['red', 'blue', 'green', 'yellow', 'purple'];
+
+        function createBoard(){
+            const board = new Array(boardSize * boardSize);
+            for(let row = 0; row < boardSize; row++){
+                for(let col = 0; col < boardSize; col++){
+                    board[row * boardSize + col] = PALETTE[(row * 2 + col) % PALETTE.length];
+                }
+            }
+            return board;
+        }
+
+        function setHorizontal(board, row, startCol, tiles){
+            for(let i = 0; i < tiles.length; i++){
+                board[row * boardSize + startCol + i] = tiles[i];
+            }
+        }
+
+        function setVertical(board, col, startRow, tiles){
+            for(let i = 0; i < tiles.length; i++){
+                board[(startRow + i) * boardSize + col] = tiles[i];
+            }
+        }
+
+        function hasExactRun(matches, indices, type, color = null){
+            return matches.some(match => {
+                if(match.info.type !== type) return false;
+                if((match.info.color || null) !== color) return false;
+                if(match.indices.length !== indices.length) return false;
+                return indices.every((idx, i) => match.indices[i] === idx);
+            });
+        }
+
+        function assert(condition, message){
+            if(!condition) throw new Error(message);
+        }
+
+        function test_case_joker_blue_blue(){
+            const board = createBoard();
+            setHorizontal(board, 0, 0, ['joker', 'blue', 'blue']);
+            const matches = collectMatches(board);
+            assert(hasExactRun(matches, [0, 1, 2], 'color', 'blue'), 'joker,blue,blue non detecte');
+            assert(checkForMatchesOnly(board) === true, 'checkForMatchesOnly devrait etre true');
+            const atJoker = checkMatchAtPosition(board, 0);
+            assert(atJoker && atJoker.type === 'color' && atJoker.length >= 3, 'checkMatchAtPosition sur joker echoue');
+        }
+
+        function test_case_blue_joker_blue(){
+            const board = createBoard();
+            setHorizontal(board, 1, 1, ['blue', 'joker', 'blue']);
+            const matches = collectMatches(board);
+            const base = 1 * boardSize + 1;
+            assert(hasExactRun(matches, [base, base + 1, base + 2], 'color', 'blue'), 'blue,joker,blue non detecte');
+        }
+
+        function test_case_blue_blue_joker(){
+            const board = createBoard();
+            setHorizontal(board, 2, 2, ['blue', 'blue', 'joker']);
+            const matches = collectMatches(board);
+            const base = 2 * boardSize + 2;
+            assert(hasExactRun(matches, [base, base + 1, base + 2], 'color', 'blue'), 'blue,blue,joker non detecte');
+        }
+
+        function test_case_overlap_red_joker_blue_blue(){
+            const board = createBoard();
+            setHorizontal(board, 3, 0, ['red', 'joker', 'blue', 'blue']);
+            const matches = collectMatches(board);
+            const base = 3 * boardSize;
+            assert(hasExactRun(matches, [base + 1, base + 2, base + 3], 'color', 'blue'), 'red,joker,blue,blue non detecte');
+        }
+
+        function test_case_vertical_joker_blue_blue(){
+            const board = createBoard();
+            setVertical(board, 0, 0, ['joker', 'blue', 'blue']);
+            const matches = collectMatches(board);
+            assert(hasExactRun(matches, [0, boardSize, boardSize * 2], 'color', 'blue'), 'vertical joker,blue,blue non detecte');
+        }
+
+        function test_case_no_false_positive(){
+            const board = createBoard();
+            setHorizontal(board, 4, 3, ['joker', 'blue', 'red']);
+            const matches = collectMatches(board);
+            const base = 4 * boardSize + 3;
+            assert(!hasExactRun(matches, [base, base + 1, base + 2], 'color', 'blue'), 'faux positif joker,blue,red');
+        }
+
+        const tests = [
+            test_case_joker_blue_blue,
+            test_case_blue_joker_blue,
+            test_case_blue_blue_joker,
+            test_case_overlap_red_joker_blue_blue,
+            test_case_vertical_joker_blue_blue,
+            test_case_no_false_positive
+        ];
+
+        const lines = [];
+        let passed = 0;
+
+        for(const fn of tests){
+            try {
+                fn();
+                passed++;
+                lines.push(`PASS ${fn.name}`);
+            } catch (err) {
+                lines.push(`FAIL ${fn.name}: ${err.message}`);
+            }
+        }
+
+        const allOk = passed === tests.length;
+        out.className = allOk ? 'ok' : 'ko';
+        out.textContent = `${allOk ? 'PASS' : 'FAIL'} ${passed}/${tests.length}\n\n${lines.join('\n')}`;
+        console.log(out.textContent);
+    </script>
+</body>
+</html>

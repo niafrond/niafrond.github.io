@@ -166,9 +166,9 @@ function openMuteModeChooser(button) {
 
     const options = [
         { mode: 'music', label: 'Couper la musique', hint: 'Garde les effets audio' },
-        { mode: 'sfx', label: 'Couper les effets', hint: 'Garde la loop d ambiance' },
+        { mode: 'sfx', label: 'Couper les effets', hint: 'Garde la musique' },
         { mode: 'all', label: 'Couper les deux', hint: 'Silence total' },
-        { mode: 'none', label: 'Tout activer', hint: 'Loop + effets audio' }
+        { mode: 'none', label: 'Tout activer', hint: 'Musique + effets audio' }
     ];
 
     const currentMode = getMuteMode();
