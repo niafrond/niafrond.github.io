@@ -34,8 +34,8 @@ const MIN_INITIAL_POSSIBLE_MOVES = 8;
 const MAX_BOARD_GENERATION_ATTEMPTS = 120;
 
 const BOARD_DROP_PROFILES = {
-    starter: { skullProb: 0.10, combatProb: 0.015 },
-    advanced: { skullProb: 0.16, combatProb: 0.04 }
+    starter: { skullProb: 0.10, combatProb: 0.015, jokerProb: 0.0025 },
+    advanced: { skullProb: 0.16, combatProb: 0.04, jokerProb: 0.0035 }
 };
 
 function onBoardSettled(callback){
@@ -108,7 +108,7 @@ function generateNewBoard(){
     while(attempts < MAX_BOARD_GENERATION_ATTEMPTS){
         board=[];
         for(let i=0;i<boardSize*boardSize;i++){
-            board.push(generateRandomTile());
+            board.push(generateRandomTile({ allowJoker: false }));
         }
 
         attempts++;
@@ -124,20 +124,22 @@ function generateNewBoard(){
     do{
         board=[];
         for(let i=0;i<boardSize*boardSize;i++){
-            board.push(generateRandomTile());
+            board.push(generateRandomTile({ allowJoker: false }));
         }
     }while(hasMatchesOnBoard(board));
 }
 
-function generateRandomTile(){
+function generateRandomTile(options = {}){
     if(!boardDropProbabilities){
         refreshBoardDropProbabilities();
     }
 
-    const { skullProb, combatProb } = boardDropProbabilities;
+    const { skullProb, combatProb, jokerProb } = boardDropProbabilities;
+    const allowJoker = options.allowJoker !== false;
     const r = Math.random();
     if(r < skullProb) return 'skull';
     if(r < skullProb + combatProb) return 'combat';
+    if(allowJoker && r < skullProb + combatProb + jokerProb) return 'joker';
     return colors[Math.floor(Math.random() * colors.length)];
 }
 
@@ -293,8 +295,14 @@ export function swapTiles(i,j){
     [board[i],board[j]]=[board[j],board[i]];
     playSfx('swap');
     
-    // Vérifier si le swap crée un match autour des deux tuiles échangées
-    const hasMatch = Boolean(checkMatchAtPosition(board, i) || checkMatchAtPosition(board, j));
+    // Vérifier si le swap crée un match autour des deux tuiles échangées.
+    // Fallback global utile pour certains cas joker où le match existe
+    // mais n'est pas directement détecté autour de i/j.
+    const hasMatch = Boolean(
+        checkMatchAtPosition(board, i) ||
+        checkMatchAtPosition(board, j) ||
+        collectMatches(board).length > 0
+    );
     
     if(!hasMatch) {
         pendingSwap = null;
@@ -541,16 +549,27 @@ export function checkMatches(){
 }
 
 // Fonction pour faire descendre les tuiles et créer des nouvelles en haut
-function dropTiles(removedIndices){
+function dropTiles(removedIndices = []){
     const removed = new Set(removedIndices);
     const affectedCols = new Set();
     const movedTileOffsets = new Map();
     const newTilesPerCol = new Map();
-    
-    // Identifier les colonnes affectées
-    removedIndices.forEach(idx => {
-        affectedCols.add(idx % boardSize);
-    });
+
+    // Identifier toutes les colonnes contenant des zones vides pour appliquer
+    // la gravité avant tout remplissage aléatoire.
+    for(let col = 0; col < boardSize; col++){
+        let hasHole = false;
+        for(let row = 0; row < boardSize; row++){
+            const idx = row * boardSize + col;
+            if(removed.has(idx) || board[idx] === null || board[idx] === undefined){
+                hasHole = true;
+                break;
+            }
+        }
+        if(hasHole){
+            affectedCols.add(col);
+        }
+    }
     
     // Pour chaque colonne affectée, faire descendre les tuiles
     for(let col of affectedCols){
@@ -682,9 +701,7 @@ export function highlightCombo(indices, info){
             
             setTimeout(()=>{
             // Faire descendre les tuiles et ajouter de nouvelles en haut
-            const nullIndices = indices.filter(i=>board[i]===null);
-            
-            const gravityResult = dropTiles(nullIndices);
+            const gravityResult = dropTiles();
             const affectedCols = gravityResult.affectedCols;
             const newTilesPerCol = gravityResult.newTilesPerCol;
             renderBoard(true); // Préserver les classes d'animation
