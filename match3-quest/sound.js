@@ -20,14 +20,220 @@ let ambientNextNoteTime = 0;
 let ambientStepIndex = 0;
 let combatMusicEnabled = false;
 let audioPrimed = false;
+let combatMusicFamily = 'default';
 
 const AMBIENT_MEASURE = 2.4;
 const AMBIENT_SCHEDULE_AHEAD = 1.4;
-const AMBIENT_ROOTS = [146.83, 174.61, 130.81, 164.81];
-const AMBIENT_CHORD_RATIOS = [1, 1.2, 1.5];
-const AMBIENT_ARP_RATIOS = [1, 1.125, 1.333, 1.5, 1.8];
+const AMBIENT_PROFILE_DEFAULT = {
+    roots: [146.83, 174.61, 130.81, 164.81],
+    chordRatios: [1, 1.2, 1.5],
+    arpRatios: [1, 1.125, 1.333, 1.5, 1.8],
+    measure: AMBIENT_MEASURE,
+    scheduleAhead: AMBIENT_SCHEDULE_AHEAD,
+    leadWave: 'sine',
+    harmonyWave: 'triangle',
+    arpWave: 'triangle',
+    accentWave: 'sine',
+    gainMultiplier: 0.70
+};
+
+// Profils de musique de combat par famille d'ennemis (race).
+const AMBIENT_PROFILES_BY_FAMILY = {
+    default: AMBIENT_PROFILE_DEFAULT,
+    dragon: {
+        roots: [98, 146.83, 130.81, 164.81],
+        chordRatios: [1, 1.25, 1.5],
+        arpRatios: [1, 1.125, 1.333, 1.5, 1.875],
+        measure: 2.1,
+        scheduleAhead: 1.4,
+        leadWave: 'sawtooth',
+        harmonyWave: 'triangle',
+        arpWave: 'triangle',
+        accentWave: 'square',
+        gainMultiplier: 0.78
+    },
+    vampire: {
+        roots: [110, 130.81, 155.56, 103.83],
+        chordRatios: [1, 1.2, 1.6],
+        arpRatios: [1, 1.067, 1.25, 1.5, 1.6],
+        measure: 2.6,
+        scheduleAhead: 1.6,
+        leadWave: 'triangle',
+        harmonyWave: 'sine',
+        arpWave: 'triangle',
+        accentWave: 'sine',
+        gainMultiplier: 0.66
+    },
+    orc: {
+        roots: [98, 123.47, 92.5, 110],
+        chordRatios: [1, 1.125, 1.5],
+        arpRatios: [1, 1.2, 1.333, 1.5, 1.8],
+        measure: 2.0,
+        scheduleAhead: 1.3,
+        leadWave: 'square',
+        harmonyWave: 'sawtooth',
+        arpWave: 'square',
+        accentWave: 'square',
+        gainMultiplier: 0.74
+    },
+    construct: {
+        roots: [130.81, 138.59, 146.83, 155.56],
+        chordRatios: [1, 1.189, 1.498],
+        arpRatios: [1, 1.122, 1.259, 1.414, 1.587],
+        measure: 2.3,
+        scheduleAhead: 1.4,
+        leadWave: 'triangle',
+        harmonyWave: 'triangle',
+        arpWave: 'sine',
+        accentWave: 'triangle',
+        gainMultiplier: 0.62
+    },
+    undead: {
+        roots: [82.41, 98, 92.5, 87.31],
+        chordRatios: [1, 1.2, 1.4],
+        arpRatios: [1, 1.125, 1.25, 1.5, 1.75],
+        measure: 2.7,
+        scheduleAhead: 1.7,
+        leadWave: 'sawtooth',
+        harmonyWave: 'triangle',
+        arpWave: 'triangle',
+        accentWave: 'sawtooth',
+        gainMultiplier: 0.72
+    },
+    goblin: {
+        roots: [164.81, 174.61, 196, 146.83],
+        chordRatios: [1, 1.2, 1.333],
+        arpRatios: [1, 1.125, 1.25, 1.5, 2],
+        measure: 1.9,
+        scheduleAhead: 1.2,
+        leadWave: 'square',
+        harmonyWave: 'triangle',
+        arpWave: 'square',
+        accentWave: 'triangle',
+        gainMultiplier: 0.68
+    },
+    elemental: {
+        roots: [174.61, 220, 164.81, 196],
+        chordRatios: [1, 1.25, 1.6],
+        arpRatios: [1, 1.125, 1.333, 1.5, 1.875],
+        measure: 2.2,
+        scheduleAhead: 1.4,
+        leadWave: 'sine',
+        harmonyWave: 'triangle',
+        arpWave: 'triangle',
+        accentWave: 'sine',
+        gainMultiplier: 0.75
+    },
+    human: {
+        roots: [146.83, 164.81, 130.81, 196],
+        chordRatios: [1, 1.25, 1.5],
+        arpRatios: [1, 1.2, 1.333, 1.5, 1.8],
+        measure: 2.35,
+        scheduleAhead: 1.4,
+        leadWave: 'sine',
+        harmonyWave: 'triangle',
+        arpWave: 'triangle',
+        accentWave: 'sine',
+        gainMultiplier: 0.70
+    },
+    spirit: {
+        roots: [196, 220, 174.61, 246.94],
+        chordRatios: [1, 1.2, 1.6],
+        arpRatios: [1, 1.125, 1.333, 1.5, 2],
+        measure: 2.8,
+        scheduleAhead: 1.8,
+        leadWave: 'sine',
+        harmonyWave: 'triangle',
+        arpWave: 'sine',
+        accentWave: 'triangle',
+        gainMultiplier: 0.64
+    },
+    elf: {
+        roots: [174.61, 196, 220, 164.81],
+        chordRatios: [1, 1.25, 1.5],
+        arpRatios: [1, 1.125, 1.333, 1.5, 1.875],
+        measure: 2.5,
+        scheduleAhead: 1.6,
+        leadWave: 'triangle',
+        harmonyWave: 'sine',
+        arpWave: 'triangle',
+        accentWave: 'sine',
+        gainMultiplier: 0.66
+    },
+    monster: {
+        roots: [87.31, 103.83, 92.5, 77.78],
+        chordRatios: [1, 1.2, 1.45],
+        arpRatios: [1, 1.125, 1.25, 1.4, 1.6],
+        measure: 2.15,
+        scheduleAhead: 1.4,
+        leadWave: 'sawtooth',
+        harmonyWave: 'square',
+        arpWave: 'sawtooth',
+        accentWave: 'square',
+        gainMultiplier: 0.76
+    },
+    troll: {
+        roots: [92.5, 110, 82.41, 98],
+        chordRatios: [1, 1.125, 1.4],
+        arpRatios: [1, 1.2, 1.333, 1.5, 1.7],
+        measure: 1.95,
+        scheduleAhead: 1.3,
+        leadWave: 'square',
+        harmonyWave: 'sawtooth',
+        arpWave: 'square',
+        accentWave: 'square',
+        gainMultiplier: 0.80
+    }
+};
+
+const AMBIENT_RACE_ALIASES = {
+    dragon: 'dragon',
+    vampire: 'vampire',
+    orc: 'orc',
+    construct: 'construct',
+    'mort-vivant': 'undead',
+    'mort vivant': 'undead',
+    mortvivant: 'undead',
+    gobelin: 'goblin',
+    goblin: 'goblin',
+    elementaire: 'elemental',
+    elemental: 'elemental',
+    humain: 'human',
+    human: 'human',
+    esprit: 'spirit',
+    spirit: 'spirit',
+    elfe: 'elf',
+    elf: 'elf',
+    monstre: 'monster',
+    monster: 'monster',
+    troll: 'troll'
+};
 const LONG_PRESS_MS = 550;
 const DEV_MODE_CLICK_TARGET = 6;
+
+function normalizeCombatFamilyName(value) {
+    if(typeof value !== 'string') return '';
+
+    return value
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[_]+/g, ' ')
+        .replace(/[^\w\s-]/g, '')
+        .trim();
+}
+
+function resolveCombatMusicFamily(value) {
+    const normalized = normalizeCombatFamilyName(value);
+    if(!normalized) return 'default';
+
+    const mapped = AMBIENT_RACE_ALIASES[normalized] || normalized;
+    return AMBIENT_PROFILES_BY_FAMILY[mapped] ? mapped : 'default';
+}
+
+function getCurrentAmbientProfile() {
+    return AMBIENT_PROFILES_BY_FAMILY[combatMusicFamily] || AMBIENT_PROFILE_DEFAULT;
+}
 
 function loadSettings() {
     try {
@@ -389,43 +595,66 @@ function ensureAmbientNodes(ctx) {
 }
 
 function getAmbientTargetGain() {
-    return clampVolume(settings.volume * 0.70);
+    const profile = getCurrentAmbientProfile();
+    const familyGain = Number.isFinite(profile?.gainMultiplier) ? profile.gainMultiplier : 0.70;
+    return clampVolume(settings.volume * familyGain);
 }
 
 function scheduleAmbientChunk(ctx) {
-    while(ambientNextNoteTime < ctx.currentTime + AMBIENT_SCHEDULE_AHEAD) {
-        const root = AMBIENT_ROOTS[ambientStepIndex % AMBIENT_ROOTS.length];
+    const profile = getCurrentAmbientProfile();
+    const roots = Array.isArray(profile?.roots) && profile.roots.length > 0
+        ? profile.roots
+        : AMBIENT_PROFILE_DEFAULT.roots;
+    const chordRatios = Array.isArray(profile?.chordRatios) && profile.chordRatios.length > 0
+        ? profile.chordRatios
+        : AMBIENT_PROFILE_DEFAULT.chordRatios;
+    const arpRatios = Array.isArray(profile?.arpRatios) && profile.arpRatios.length > 0
+        ? profile.arpRatios
+        : AMBIENT_PROFILE_DEFAULT.arpRatios;
+    const measure = Number.isFinite(profile?.measure) && profile.measure > 0
+        ? profile.measure
+        : AMBIENT_MEASURE;
+    const scheduleAhead = Number.isFinite(profile?.scheduleAhead) && profile.scheduleAhead > 0
+        ? profile.scheduleAhead
+        : AMBIENT_SCHEDULE_AHEAD;
+    const leadWave = profile?.leadWave || 'sine';
+    const harmonyWave = profile?.harmonyWave || 'triangle';
+    const arpWave = profile?.arpWave || 'triangle';
+    const accentWave = profile?.accentWave || 'sine';
 
-        AMBIENT_CHORD_RATIOS.forEach((ratio, idx) => {
+    while(ambientNextNoteTime < ctx.currentTime + scheduleAhead) {
+        const root = roots[ambientStepIndex % roots.length];
+
+        chordRatios.forEach((ratio, idx) => {
             ambientVoice(
                 ctx,
                 root * ratio,
                 ambientNextNoteTime + idx * 0.02,
-                AMBIENT_MEASURE * 0.95,
+                measure * 0.95,
                 0.028 + idx * 0.008,
-                idx === 0 ? 'sine' : 'triangle'
+                idx === 0 ? leadWave : harmonyWave
             );
         });
 
-        const arpStart = ambientNextNoteTime + 0.18;
+        const arpStart = ambientNextNoteTime + (measure * 0.075);
         for(let i = 0; i < 4; i++) {
-            const ratio = AMBIENT_ARP_RATIOS[(ambientStepIndex + i) % AMBIENT_ARP_RATIOS.length];
+            const ratio = arpRatios[(ambientStepIndex + i) % arpRatios.length];
             ambientVoice(
                 ctx,
                 root * ratio * 2,
-                arpStart + i * 0.32,
-                0.38,
+                arpStart + i * (measure * 0.133),
+                measure * 0.158,
                 0.02,
-                'triangle'
+                arpWave
             );
         }
 
         if(ambientStepIndex % 3 === 2) {
-            ambientVoice(ctx, root * 3, ambientNextNoteTime + 1.35, 0.55, 0.018, 'sine');
+            ambientVoice(ctx, root * 3, ambientNextNoteTime + (measure * 0.5625), measure * 0.23, 0.018, accentWave);
         }
 
         ambientStepIndex += 1;
-        ambientNextNoteTime += AMBIENT_MEASURE;
+        ambientNextNoteTime += measure;
     }
 }
 
@@ -487,6 +716,18 @@ function syncAmbientState() {
         return;
     }
     startAmbientLoop();
+}
+
+export function setCombatMusicFamily(family) {
+    const resolvedFamily = resolveCombatMusicFamily(family);
+    if(combatMusicFamily === resolvedFamily) return;
+
+    combatMusicFamily = resolvedFamily;
+
+    if(ambientRunning) {
+        stopAmbientLoop();
+        startAmbientLoop();
+    }
 }
 
 export function setCombatMusicEnabled(enabled) {

@@ -8,7 +8,7 @@ import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDiffi
 import { getRandomItem, getRarityEmoji, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
 import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
-import { playSfx, setCombatMusicEnabled } from "./sound.js";
+import { playSfx, setCombatMusicEnabled, setCombatMusicFamily } from "./sound.js";
 import { allSpells as spellsCatalog, getSpellsByLevel } from "./spells.js";
 export { updateShopTab, buyWeapon, buyItem };
 
@@ -608,7 +608,6 @@ export function handlePlayerDeath(){
 // démarre un nouveau combat
 export function startNewCombat(selectedEnemy = null){
     playSfx('uiClick');
-    setCombatMusicEnabled(true);
     gameState.combatState = 'active';
     ensureCombatUsableActiveItem();
     resetCombatRewards();
@@ -2276,6 +2275,9 @@ export function applyStartingAbilities(){
 // ennemis
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
+
+    setCombatMusicFamily(enemy.race);
+    setCombatMusicEnabled(true);
     
     // Ajuster automatiquement la difficulté de l'IA selon le niveau de l'ennemi
     setAIDifficultyByLevel(enemy.level, player.level);
