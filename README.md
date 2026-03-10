@@ -21,6 +21,33 @@ Ce dépôt contient plusieurs mini-apps web en HTML/CSS/JavaScript.
 - App : [match3-quest/index.html](match3-quest/index.html)
 - Jeu match-3 RPG (combat, classes, sorts, armes, IA ennemie, progression).
 
+## Liste des fonctionnalités
+
+### Générateur de recette (v1 et v2)
+- Import de recette depuis URL avec extraction JSON-LD (type Recipe).
+- Fallback d'extraction générique quand les métadonnées sont incomplètes.
+- Nettoyage, formatage et normalisation du contenu (ingrédients, étapes, structure).
+- Deux versions d'interface (v1/v2) pour des workflows différents.
+
+### Switch Enfants (PWA)
+- Application mobile-first pensée pour un usage rapide sur smartphone.
+- Historique local des événements/actions dans le navigateur.
+- Capture photo intégrée au flux d'utilisation.
+- Fonctionnement hors ligne grâce au service worker.
+- Manifest PWA pour installation possible sur écran d'accueil.
+
+### Match3 Quest
+- Combat RPG basé sur une mécanique de match-3.
+- Système de classes (Sorcier, Assassin, Templier, Barbare).
+- Progression du personnage : expérience, montée de niveau, évolution des stats.
+- Gestion de ressources de combat : points de vie, mana, points de combat.
+- Système de sorts (classe + sorts génériques) et effets de statut.
+- Équipement : armes, objets et logique de boutique.
+- Ennemis variés avec catalogue dédié et comportements spécifiques.
+- IA ennemie avec niveaux de difficulté, scoring d'actions et personnalités.
+- Sauvegarde automatique de la progression via localStorage.
+- Outils de test inclus dans le dossier du jeu (pages/scripts de vérification).
+
 ## Notes
 - Les données de jeu et préférences sont sauvegardées en local (localStorage).
 - Certaines apps sont prévues pour être ouvertes directement dans le navigateur.

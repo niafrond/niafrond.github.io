@@ -2021,6 +2021,33 @@ export function applyAttributeBonus(attr){
 
 // -------------------------------------
 // sorts
+function getUnlockedSpellCap(level) {
+    const safeLevel = Math.max(1, Math.floor(level || 1));
+    return Math.max(0, safeLevel - 1);
+}
+
+function buildUnlockedSpellsList(spells, level) {
+    const unlockCap = getUnlockedSpellCap(level);
+    if(unlockCap <= 0) return [];
+
+    const uniqueById = [];
+    const seenIds = new Set();
+    for(const spell of spells || []) {
+        if(!spell || !spell.id || seenIds.has(spell.id)) continue;
+        seenIds.add(spell.id);
+        uniqueById.push(spell);
+    }
+
+    uniqueById.sort((a, b) => {
+        const levelA = Math.max(1, Math.floor(a?.minLevel || 1));
+        const levelB = Math.max(1, Math.floor(b?.minLevel || 1));
+        if(levelA !== levelB) return levelA - levelB;
+        return String(a.id).localeCompare(String(b.id));
+    });
+
+    return uniqueById.slice(0, unlockCap);
+}
+
 export function updateAvailableSpells(){
     // Si le joueur a une classe, inclure les sorts de classe
     let allAvailableSpells = [...getSpellsByLevel(player.level)];
@@ -2029,11 +2056,11 @@ export function updateAvailableSpells(){
         import('./classes.js').then(module => {
             const classSpells = module.getClassSpells(player.class, player.level);
             allAvailableSpells = [...allAvailableSpells, ...classSpells];
-            player.availableSpells = allAvailableSpells;
+            player.availableSpells = buildUnlockedSpellsList(allAvailableSpells, player.level);
             updateActiveSpells();
         });
     } else {
-        player.availableSpells = allAvailableSpells;
+        player.availableSpells = buildUnlockedSpellsList(allAvailableSpells, player.level);
         updateActiveSpells();
     }
 }

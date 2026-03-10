@@ -1,8 +1,8 @@
 // Système d'expérience et de progression du joueur
 
 export const MAX_LEVEL = 100;
-const XP_BASE_PER_LEVEL = 120;
-const XP_GROWTH_FACTOR = 1.12;
+const XP_BASE_PER_LEVEL = 2000;
+const XP_GROWTH_FACTOR = 1.18;
 
 /**
  * Calcule l'XP nécessaire pour atteindre un niveau donné
