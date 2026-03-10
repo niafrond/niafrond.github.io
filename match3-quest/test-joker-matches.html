@@ -29,7 +29,7 @@
 
     <script type="module">
         import { boardSize } from './constants.js';
-        import { collectMatches, checkForMatchesOnly, checkMatchAtPosition } from './matchMechanics.js';
+        import { collectMatches, checkForMatchesOnly, checkMatchAtPosition, getColorMatchManaBaseGain } from './matchMechanics.js';
 
         const out = document.getElementById('out');
         const PALETTE = ['red', 'blue', 'green', 'yellow', 'purple'];
@@ -60,9 +60,18 @@
             return matches.some(match => {
                 if(match.info.type !== type) return false;
                 if((match.info.color || null) !== color) return false;
-                if(match.indices.length !== indices.length) return false;
-                return indices.every((idx, i) => match.indices[i] === idx);
+                if(match.indices.length < indices.length) return false;
+                return indices.every(idx => match.indices.includes(idx));
             });
+        }
+
+        function findExactRun(matches, indices, type, color = null){
+            return matches.find(match => {
+                if(match.info.type !== type) return false;
+                if((match.info.color || null) !== color) return false;
+                if(match.indices.length < indices.length) return false;
+                return indices.every(idx => match.indices.includes(idx));
+            }) || null;
         }
 
         function assert(condition, message){
@@ -74,6 +83,9 @@
             setHorizontal(board, 0, 0, ['joker', 'blue', 'blue']);
             const matches = collectMatches(board);
             assert(hasExactRun(matches, [0, 1, 2], 'color', 'blue'), 'joker,blue,blue non detecte');
+            const match = findExactRun(matches, [0, 1, 2], 'color', 'blue');
+            assert(match && match.info.jokerCount === 1, 'joker,blue,blue devrait compter 1 joker');
+            assert(getColorMatchManaBaseGain(match.info) === 5, 'joker,blue,blue devrait valoir 5 mana');
             assert(checkForMatchesOnly(board) === true, 'checkForMatchesOnly devrait etre true');
             const atJoker = checkMatchAtPosition(board, 0);
             assert(atJoker && atJoker.type === 'color' && atJoker.length >= 3, 'checkMatchAtPosition sur joker echoue');
@@ -118,13 +130,25 @@
             assert(!hasExactRun(matches, [base, base + 1, base + 2], 'color', 'blue'), 'faux positif joker,blue,red');
         }
 
+        function test_case_double_joker_bonus(){
+            const board = createBoard();
+            setHorizontal(board, 5, 0, ['joker', 'blue', 'joker']);
+            const matches = collectMatches(board);
+            const base = 5 * boardSize;
+            const match = findExactRun(matches, [base, base + 1, base + 2], 'color', 'blue');
+            assert(match, 'joker,blue,joker non detecte');
+            assert(match.info.jokerCount === 2, 'joker,blue,joker devrait compter 2 jokers');
+            assert(getColorMatchManaBaseGain(match.info) === 7, 'joker,blue,joker devrait valoir 7 mana');
+        }
+
         const tests = [
             test_case_joker_blue_blue,
             test_case_blue_joker_blue,
             test_case_blue_blue_joker,
             test_case_overlap_red_joker_blue_blue,
             test_case_vertical_joker_blue_blue,
-            test_case_no_false_positive
+            test_case_no_false_positive,
+            test_case_double_joker_bonus
         ];
 
         const lines = [];

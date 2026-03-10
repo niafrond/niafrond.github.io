@@ -5,7 +5,8 @@ import {
     checkForMatchesOnly as checkForMatchesOnlyOnBoard,
     checkMatchAtPosition,
     findPossibleMatches,
-    collectMatches
+    collectMatches,
+    getColorMatchManaBaseGain
 } from "./matchMechanics.js";
 import { playSfx } from "./sound.js";
 import {
@@ -472,7 +473,7 @@ export function checkMatches(forceFullBoard = false){
         if(info.type==='color'){
             // Gain de mana : 1 par tuile du match (3=>3, 4=>4, 5=>5...)
             const enemyIsConfused = currentPlayer === enemy && (enemy.statusEffects?.confused || 0) > 0;
-            const manaBaseGain = enemyIsConfused ? 1 : info.len;
+            const manaBaseGain = enemyIsConfused ? 1 : getColorMatchManaBaseGain(info);
             const manaResult = addManaForColor(currentPlayer, info.color, manaBaseGain);
 
             if(currentPlayer === player){

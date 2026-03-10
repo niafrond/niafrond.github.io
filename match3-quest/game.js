@@ -22,6 +22,14 @@ const WEAPON_ICONS = {
     bow: '🏹',
     staff: '🪄'
 };
+const MANA_COLOR_ORDER = ['red', 'blue', 'green', 'yellow', 'purple'];
+const MANA_COLOR_META = {
+    red: { emoji: '🔴', name: 'Rouge' },
+    blue: { emoji: '🔵', name: 'Bleu' },
+    green: { emoji: '🟢', name: 'Vert' },
+    yellow: { emoji: '🟡', name: 'Jaune' },
+    purple: { emoji: '🟣', name: 'Violet' }
+};
 
 // Règles paramétrables: une aptitude influence uniquement la couleur de mana associée.
 export const ATTRIBUTE_MANA_RULES = {
@@ -1021,7 +1029,7 @@ export function updateStats(){
     const enemyNameEl = enemyDiv.querySelector('.enemy-combat-name');
     if(enemyNameEl) {
         const fullName = enemyNameEl.dataset.fullName || enemy.name;
-        const showName = () => showEnemyNameTooltip(enemyNameEl, fullName);
+        const showName = () => showEnemyNameTooltip(enemyNameEl, fullName, enemy);
         const hideName = () => hideEnemyNameTooltip();
 
         enemyNameEl.addEventListener('mouseenter', showName);
@@ -2262,20 +2270,59 @@ function ensureEnemyNameTooltip() {
     return tooltip;
 }
 
-function showEnemyNameTooltip(targetEl, fullName) {
+function getEnemyResistanceInsights(enemyEntity) {
+    const resistances = enemyEntity?.resistances || {};
+    const entries = MANA_COLOR_ORDER
+        .filter(color => Number.isFinite(Number(resistances[color])))
+        .map(color => ({
+            color,
+            value: Math.max(0, Number(resistances[color]))
+        }));
+
+    if(entries.length === 0) {
+        return { weakest: null, strongest: null };
+    }
+
+    const sorted = [...entries].sort((a, b) => a.value - b.value);
+    return {
+        weakest: sorted[0] || null,
+        strongest: sorted[sorted.length - 1] || null
+    };
+}
+
+function getEnemyNameTooltipHtml(fullName, enemyEntity) {
+    const { weakest, strongest } = getEnemyResistanceInsights(enemyEntity);
+    const lines = [`<div class="enemy-tooltip-title">${fullName}</div>`];
+
+    if(strongest) {
+        const strongMeta = MANA_COLOR_META[strongest.color];
+        const strongPercent = Math.round(strongest.value * 100);
+        lines.push(`<div class="enemy-tooltip-row enemy-tooltip-strong">💪 Force : ${strongMeta.emoji} ${strongMeta.name} (${strongPercent}% res.)</div>`);
+    }
+
+    if(weakest) {
+        const weakMeta = MANA_COLOR_META[weakest.color];
+        const weakPercent = Math.round(weakest.value * 100);
+        lines.push(`<div class="enemy-tooltip-row enemy-tooltip-weak">🎯 Faiblesse : ${weakMeta.emoji} ${weakMeta.name} (${weakPercent}% res.)</div>`);
+    }
+
+    return lines.join('');
+}
+
+function showEnemyNameTooltip(targetEl, fullName, enemyEntity = enemy) {
     if(!targetEl || !fullName) return;
     const tooltip = ensureEnemyNameTooltip();
-    tooltip.textContent = fullName;
+    tooltip.innerHTML = getEnemyNameTooltipHtml(fullName, enemyEntity);
     tooltip.classList.add('visible');
 
     const rect = targetEl.getBoundingClientRect();
-    const tooltipWidth = 220;
+    const tooltipWidth = 250;
     const margin = 10;
     const left = Math.min(
         window.innerWidth - tooltipWidth - margin,
         Math.max(margin, rect.left + (rect.width / 2) - (tooltipWidth / 2))
     );
-    const top = Math.max(margin, rect.top - 40);
+    const top = Math.max(margin, rect.top - 72);
 
     tooltip.style.left = `${left}px`;
     tooltip.style.top = `${top}px`;

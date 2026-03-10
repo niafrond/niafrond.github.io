@@ -202,6 +202,16 @@ export function findRandomMove(board){
     return null;
 }
 
+export const JOKER_MANA_MULTIPLIER = 3;
+
+export function getColorMatchManaBaseGain(info){
+    if(!info || info.type !== 'color') return 0;
+
+    const baseLen = Math.max(0, Math.floor(info.len || 0));
+    const jokerCount = Math.max(0, Math.floor(info.jokerCount || 0));
+    return baseLen + (jokerCount * (JOKER_MANA_MULTIPLIER - 1));
+}
+
 // Collecte toutes les sequences de match (horizontales + verticales).
 export function collectMatches(board){
     const matches = [];
@@ -220,12 +230,16 @@ export function collectMatches(board){
         const key = `${indices.join(',')}|${target.type}|${target.color || ''}`;
         if(seen.has(key)) return;
         seen.add(key);
+        const jokerCount = indices.reduce((count, index) => {
+            return count + (isJokerTile(board[index]) ? 1 : 0);
+        }, 0);
         matches.push({
             indices,
             info: {
                 type: target.type,
                 len: indices.length,
-                color: target.color || null
+                color: target.color || null,
+                jokerCount
             }
         });
     }

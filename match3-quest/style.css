@@ -589,7 +589,7 @@ progress.enemy-bar::-webkit-progress-value {
 .enemy-name-tooltip {
     position: fixed;
     z-index: 3000;
-    width: 220px;
+    width: 250px;
     max-width: calc(100vw - 20px);
     background: rgba(20, 20, 28, 0.96);
     color: #f5f6fa;
@@ -597,7 +597,7 @@ progress.enemy-bar::-webkit-progress-value {
     border-radius: 8px;
     padding: 8px 10px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-    text-align: center;
+    text-align: left;
     font-size: 0.82em;
     line-height: 1.3;
     opacity: 0;
@@ -609,6 +609,25 @@ progress.enemy-bar::-webkit-progress-value {
 .enemy-name-tooltip.visible {
     opacity: 1;
     transform: translateY(0);
+}
+
+.enemy-tooltip-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #ffffff;
+    text-align: center;
+}
+
+.enemy-tooltip-row {
+    margin: 2px 0;
+}
+
+.enemy-tooltip-strong {
+    color: #ffd27a;
+}
+
+.enemy-tooltip-weak {
+    color: #9be8a5;
 }
 
 #enemy-spell-list {
