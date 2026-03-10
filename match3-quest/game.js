@@ -2402,8 +2402,8 @@ export function newEnemy(selectedEnemy = null){
     setCombatMusicFamily(enemy.race);
     setCombatMusicEnabled(true);
     
-    // Ajuster automatiquement la difficulté de l'IA selon le niveau de l'ennemi
-    setAIDifficultyByLevel(enemy.level, player.level);
+    // Ajuster automatiquement la difficulté de l'IA selon le niveau et le profil de l'ennemi
+    setAIDifficultyByLevel(enemy.level, player.level, enemy);
     
     // Afficher le niveau de l'ennemi dans les logs
     if (enemy.level > player.level) {

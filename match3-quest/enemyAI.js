@@ -86,7 +86,45 @@ export function getAIDifficulty() {
 }
 
 // Déterminer automatiquement la difficulté en fonction du niveau de l'ennemi
-export function setAIDifficultyByLevel(enemyLevel, playerLevel) {
+export function setAIDifficultyByLevel(enemyLevel, playerLevel, enemyProfile = null) {
+    // Cas special: ennemi affaibli volontairement tres peu intelligent.
+    if (enemyProfile?.isEasyChoice) {
+        currentDifficulty = {
+            ...aiDifficulty.easy,
+            name: "Affaibli",
+            spellUseProbability: 0.08,
+            weaponUseProbability: 0.07,
+            boardMoveProbability: 0.85,
+            strategicThinking: false,
+            stupidityChance: 0.97,
+            randomBoardMove: true,
+            thinkingTimeMin: 450,
+            thinkingTimeMax: 850
+        };
+        console.log(`🤖 Difficulté de l'IA définie sur: ${currentDifficulty.name}`);
+        console.log(`🎯 Ennemi affaibli détecté: IA volontairement très stupide (niveau ${enemyLevel}).`);
+        return 'easy';
+    }
+
+    // Cas special: ennemi rare hors niveau volontairement tres intelligent.
+    if (enemyProfile?.isOverleveledChoice) {
+        currentDifficulty = {
+            ...aiDifficulty.expert,
+            name: "Hors niveau",
+            spellUseProbability: 0.45,
+            weaponUseProbability: 0.35,
+            boardMoveProbability: 0.20,
+            strategicThinking: true,
+            stupidityChance: 0.02,
+            randomBoardMove: false,
+            thinkingTimeMin: 180,
+            thinkingTimeMax: 320
+        };
+        console.log(`🤖 Difficulté de l'IA définie sur: ${currentDifficulty.name}`);
+        console.log(`🎯 Ennemi hors niveau détecté: IA très intelligente (niveau ${enemyLevel}).`);
+        return 'expert';
+    }
+
     const levelDifference = enemyLevel - playerLevel;
     
     // Ajuster la difficulté de base selon le niveau de l'ennemi
