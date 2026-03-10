@@ -7,7 +7,8 @@ const defaultSettings = {
     mutedMusic: false,
     mutedSfx: false,
     volume: 0.6,
-    cheatMode: false
+    cheatMode: false,
+    developerMode: false
 };
 
 let settings = { ...defaultSettings };
@@ -26,6 +27,7 @@ const AMBIENT_ROOTS = [146.83, 174.61, 130.81, 164.81];
 const AMBIENT_CHORD_RATIOS = [1, 1.2, 1.5];
 const AMBIENT_ARP_RATIOS = [1, 1.125, 1.333, 1.5, 1.8];
 const LONG_PRESS_MS = 550;
+const DEV_MODE_CLICK_TARGET = 6;
 
 function loadSettings() {
     try {
@@ -50,7 +52,11 @@ function loadSettings() {
             settings.volume = parsedVolume;
         }
 
+        settings.developerMode = Boolean(parsed?.developerMode);
         settings.cheatMode = Boolean(parsed?.cheatMode);
+        if(!settings.developerMode) {
+            settings.cheatMode = false;
+        }
     } catch {
         settings = { ...defaultSettings };
     }
@@ -160,16 +166,41 @@ function openMuteModeChooser(button) {
     panel.style.maxHeight = '88vh';
     panel.style.overflowY = 'auto';
 
+    let devModeClickCount = 0;
+
     const title = document.createElement('h3');
-    title.textContent = 'Mode audio';
     title.style.margin = '0 0 8px';
     title.style.fontSize = '1.05rem';
+
+    const titleEmoji = document.createElement('span');
+    titleEmoji.textContent = '🔊';
+    titleEmoji.style.cursor = 'pointer';
+    titleEmoji.style.userSelect = 'none';
+    titleEmoji.style.marginRight = '6px';
+
+    const titleText = document.createElement('span');
+    titleText.textContent = 'Mode audio';
+
+    title.appendChild(titleEmoji);
+    title.appendChild(titleText);
 
     const subtitle = document.createElement('p');
     subtitle.textContent = 'Choisis ce que tu veux couper pendant le combat.';
     subtitle.style.margin = '0 0 14px';
     subtitle.style.opacity = '0.85';
     subtitle.style.fontSize = '0.92rem';
+
+    const refreshSubtitle = () => {
+        if(settings.developerMode) {
+            subtitle.textContent = 'Choisis ce que tu veux couper pendant le combat.';
+            return;
+        }
+
+        const remaining = Math.max(0, DEV_MODE_CLICK_TARGET - devModeClickCount);
+        subtitle.textContent = remaining > 0
+            ? `Choisis ce que tu veux couper pendant le combat. (Mode developpeur: ${devModeClickCount}/${DEV_MODE_CLICK_TARGET})`
+            : 'Choisis ce que tu veux couper pendant le combat.';
+    };
 
     const sectionAudio = document.createElement('div');
     sectionAudio.style.marginBottom = '14px';
@@ -233,11 +264,39 @@ function openMuteModeChooser(button) {
     sectionAudio.appendChild(buttonWrap);
 
     const sectionCheat = createCheatModeSection({
-        isEnabled: () => Boolean(settings.cheatMode),
+        isEnabled: () => Boolean(settings.cheatMode) && Boolean(settings.developerMode),
         setEnabled: (enabled) => {
+            if(!settings.developerMode) return;
             settings.cheatMode = Boolean(enabled);
             saveSettings();
+        },
+        onCheatApplied: () => {
+            closeModal();
         }
+    });
+
+    const cheatSectionWrap = document.createElement('div');
+
+    const renderCheatSection = () => {
+        cheatSectionWrap.innerHTML = '';
+        if(settings.developerMode) {
+            cheatSectionWrap.appendChild(sectionCheat);
+        }
+    };
+
+    titleEmoji.addEventListener('click', () => {
+        if(settings.developerMode) return;
+
+        devModeClickCount = Math.min(DEV_MODE_CLICK_TARGET, devModeClickCount + 1);
+        if(devModeClickCount >= DEV_MODE_CLICK_TARGET) {
+            settings.developerMode = true;
+            saveSettings();
+            renderCheatSection();
+            subtitle.textContent = 'Choisis ce que tu veux couper pendant le combat. Mode developpeur active.';
+            return;
+        }
+
+        refreshSubtitle();
     });
 
     const footer = document.createElement('div');
@@ -260,7 +319,7 @@ function openMuteModeChooser(button) {
     panel.appendChild(title);
     panel.appendChild(subtitle);
     panel.appendChild(sectionAudio);
-    panel.appendChild(sectionCheat);
+    panel.appendChild(cheatSectionWrap);
     panel.appendChild(footer);
     overlay.appendChild(panel);
 
@@ -272,6 +331,8 @@ function openMuteModeChooser(button) {
 
     document.body.appendChild(overlay);
     document.addEventListener('keydown', onKeyDown);
+    refreshSubtitle();
+    renderCheatSection();
 }
 
 function tone(ctx, frequency, startAt, duration, gainValue, type = 'sine') {

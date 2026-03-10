@@ -1,71 +1,91 @@
-function createCheatButton(label) {
+function createCheatButton(label, extraClass = '') {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.textContent = label;
-    btn.style.background = 'rgba(255, 255, 255, 0.08)';
-    btn.style.border = '1px solid rgba(255, 255, 255, 0.16)';
-    btn.style.borderRadius = '8px';
-    btn.style.color = '#f3f5f8';
-    btn.style.padding = '8px 10px';
-    btn.style.cursor = 'pointer';
-    btn.style.textAlign = 'left';
+    btn.className = `cheat-btn ${extraClass}`.trim();
     return btn;
 }
 
-export function createCheatModeSection({ isEnabled, setEnabled }) {
+function styleSelectForReadability(selectEl) {
+    selectEl.classList.add('cheat-select');
+}
+
+function styleOptionForReadability(optionEl) {
+    optionEl.classList.add('cheat-option');
+}
+
+export function createCheatModeSection({ isEnabled, setEnabled, onCheatApplied }) {
+    const notifyCheatApplied = typeof onCheatApplied === 'function' ? onCheatApplied : () => {};
+    const spellById = new Map();
+
+    function formatSpellCost(spell) {
+        if(!spell) return 'Cout: -';
+        if(typeof spell.cost === 'number') {
+            return `Cout: ${spell.cost} ${spell.color || 'mana'}`;
+        }
+        if(spell.cost && typeof spell.cost === 'object') {
+            const parts = Object.entries(spell.cost).map(([color, value]) => `${value} ${color}`);
+            return `Cout: ${parts.join(' + ')}`;
+        }
+        return 'Cout: -';
+    }
+
+    function buildSpellInfoText(spell) {
+        if(!spell) {
+            return 'Survole un sort pour voir son effet.';
+        }
+
+        const statLine = [];
+        if(typeof spell.dmg === 'number') statLine.push(`Degats: ${spell.dmg}`);
+        if(typeof spell.heal === 'number') statLine.push(`Soin: ${spell.heal}`);
+        if(spell.effect) statLine.push(`Effet: ${spell.effect}`);
+
+        const lines = [
+            `${spell.name || spell.id}`,
+            formatSpellCost(spell),
+            statLine.join(' | ') || 'Effet special',
+            spell.description || 'Aucune description disponible.'
+        ];
+
+        return lines.join('\n');
+    }
+
     const sectionCheat = document.createElement('div');
-    sectionCheat.style.marginTop = '10px';
-    sectionCheat.style.paddingTop = '12px';
-    sectionCheat.style.borderTop = '1px solid rgba(255, 255, 255, 0.12)';
+    sectionCheat.className = 'cheat-section';
 
     const sectionCheatTitle = document.createElement('div');
     sectionCheatTitle.textContent = 'Cheat Code';
-    sectionCheatTitle.style.fontSize = '0.8rem';
-    sectionCheatTitle.style.letterSpacing = '.08em';
-    sectionCheatTitle.style.opacity = '0.75';
-    sectionCheatTitle.style.textTransform = 'uppercase';
-    sectionCheatTitle.style.marginBottom = '8px';
+    sectionCheatTitle.className = 'cheat-title';
 
     const cheatHint = document.createElement('p');
     cheatHint.textContent = 'Mode test in-game: lancer un sort, attaque de test, changer une tuile.';
-    cheatHint.style.margin = '0 0 10px';
-    cheatHint.style.opacity = '0.82';
-    cheatHint.style.fontSize = '0.88rem';
+    cheatHint.className = 'cheat-hint';
 
     const cheatToggleBtn = document.createElement('button');
     cheatToggleBtn.type = 'button';
-    cheatToggleBtn.style.textAlign = 'left';
-    cheatToggleBtn.style.borderRadius = '10px';
-    cheatToggleBtn.style.padding = '10px 12px';
-    cheatToggleBtn.style.color = '#f3f5f8';
-    cheatToggleBtn.style.cursor = 'pointer';
+    cheatToggleBtn.className = 'cheat-toggle-btn';
 
     const cheatControlsWrap = document.createElement('div');
-    cheatControlsWrap.style.marginTop = '10px';
-    cheatControlsWrap.style.display = isEnabled() ? 'grid' : 'none';
-    cheatControlsWrap.style.gap = '8px';
+    cheatControlsWrap.className = 'cheat-controls-wrap';
 
     function refreshCheatToggleLabel() {
         const enabled = isEnabled();
         cheatToggleBtn.innerHTML = enabled
-            ? '<strong>Cheat mode: ACTIVE</strong><br><span style="opacity:.78;font-size:.85rem">Clique pour desactiver</span>'
-            : '<strong>Cheat mode: DESACTIVE</strong><br><span style="opacity:.78;font-size:.85rem">Clique pour activer</span>';
-        cheatToggleBtn.style.background = enabled ? 'rgba(16, 185, 129, 0.22)' : 'rgba(255, 255, 255, 0.08)';
-        cheatToggleBtn.style.border = enabled ? '1px solid rgba(16, 185, 129, 0.75)' : '1px solid rgba(255, 255, 255, 0.12)';
-        cheatControlsWrap.style.display = enabled ? 'grid' : 'none';
+            ? '<strong>Cheat mode: ACTIVE</strong><br><span class="cheat-toggle-sub">Clique pour desactiver</span>'
+            : '<strong>Cheat mode: DESACTIVE</strong><br><span class="cheat-toggle-sub">Clique pour activer</span>';
+        cheatToggleBtn.classList.toggle('cheat-toggle-btn-active', enabled);
+        cheatControlsWrap.classList.toggle('cheat-controls-visible', enabled);
     }
 
     const castWrap = document.createElement('div');
-    castWrap.style.display = 'grid';
-    castWrap.style.gridTemplateColumns = '1fr auto';
-    castWrap.style.gap = '6px';
+    castWrap.className = 'cheat-cast-wrap';
+
+    const spellInfo = document.createElement('div');
+    spellInfo.className = 'cheat-spell-info';
+    spellInfo.textContent = 'Survole un sort pour voir son effet.';
 
     const spellSelect = document.createElement('select');
-    spellSelect.style.background = 'rgba(255, 255, 255, 0.08)';
-    spellSelect.style.border = '1px solid rgba(255, 255, 255, 0.16)';
-    spellSelect.style.borderRadius = '8px';
-    spellSelect.style.color = '#f3f5f8';
-    spellSelect.style.padding = '8px';
+    styleSelectForReadability(spellSelect);
 
     const castBtn = createCheatButton('Lancer le sort');
 
@@ -73,9 +93,10 @@ export function createCheatModeSection({ isEnabled, setEnabled }) {
         try {
             const game = await import('./game.js');
             const classesModule = await import('./classes.js');
+            const spellsModule = await import('./spells.js');
             const activeSpells = Array.isArray(game.player?.activeSpells) ? game.player.activeSpells : [];
             const availableSpells = Array.isArray(game.player?.availableSpells) ? game.player.availableSpells : [];
-            const baseSpells = Array.isArray(game.allSpells) ? game.allSpells : [];
+            const baseSpells = Array.isArray(spellsModule.allSpells) ? spellsModule.allSpells : [];
             const classSpells = Array.isArray(classesModule.allClassSpells) ? classesModule.allClassSpells : [];
 
             const uniqueById = new Map();
@@ -87,31 +108,67 @@ export function createCheatModeSection({ isEnabled, setEnabled }) {
 
             const spells = [...uniqueById.values()].sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
             spellSelect.innerHTML = '';
+            spellById.clear();
 
             if(spells.length === 0) {
                 const opt = document.createElement('option');
                 opt.value = '';
                 opt.textContent = 'Aucun sort actif';
+                styleOptionForReadability(opt);
                 spellSelect.appendChild(opt);
+                spellInfo.textContent = 'Aucun sort disponible.';
                 return;
             }
 
             spells.forEach((spell) => {
+                spellById.set(spell.id, spell);
                 const opt = document.createElement('option');
                 opt.value = spell.id;
-                const levelLabel = Number.isFinite(spell.minLevel) ? `Nv${spell.minLevel}` : 'Nv?';
-                const classLabel = spell.class ? ` | ${spell.class}` : '';
-                opt.textContent = `${spell.name || spell.id} (${spell.id}) - ${levelLabel}${classLabel}`;
+                opt.textContent = `${spell.name || spell.id}`;
+                opt.title = spell.description || buildSpellInfoText(spell);
+                styleOptionForReadability(opt);
                 spellSelect.appendChild(opt);
             });
+
+            const firstSpell = spellById.get(spellSelect.value) || spells[0] || null;
+            if(firstSpell && !spellSelect.value) {
+                spellSelect.value = firstSpell.id;
+            }
+            spellInfo.textContent = buildSpellInfoText(firstSpell);
         } catch {
             spellSelect.innerHTML = '';
             const opt = document.createElement('option');
             opt.value = '';
             opt.textContent = 'Erreur chargement sorts';
+            styleOptionForReadability(opt);
             spellSelect.appendChild(opt);
+            spellInfo.textContent = 'Impossible de charger les details des sorts.';
         }
     }
+
+    function refreshSpellInfo() {
+        const spell = spellById.get(spellSelect.value) || null;
+        spellInfo.textContent = buildSpellInfoText(spell);
+    }
+
+    spellSelect.addEventListener('mouseenter', () => {
+        refreshSpellInfo();
+        spellInfo.classList.add('cheat-spell-info-visible');
+    });
+    spellSelect.addEventListener('mouseleave', () => {
+        spellInfo.classList.remove('cheat-spell-info-visible');
+    });
+    spellSelect.addEventListener('focus', () => {
+        refreshSpellInfo();
+        spellInfo.classList.add('cheat-spell-info-visible');
+    });
+    spellSelect.addEventListener('blur', () => {
+        spellInfo.classList.remove('cheat-spell-info-visible');
+    });
+    spellSelect.addEventListener('change', () => {
+        refreshSpellInfo();
+        spellInfo.classList.add('cheat-spell-info-visible');
+    });
 
     castBtn.addEventListener('click', async () => {
         if(!isEnabled()) return;
@@ -127,6 +184,15 @@ export function createCheatModeSection({ isEnabled, setEnabled }) {
             if(typeof game.castSpellForCheat !== 'function') {
                 game.log('⚠️ Cheat: simulateur de sort indisponible.');
                 return;
+            }
+
+            notifyCheatApplied();
+            await new Promise((resolve) => {
+                setTimeout(resolve, 1000);
+            });
+
+            if(typeof game.forcePlayerTurnForCheat === 'function') {
+                game.forcePlayerTurnForCheat();
             }
 
             await game.castSpellForCheat(spellId, { consumeTurn: false });
@@ -145,47 +211,40 @@ export function createCheatModeSection({ isEnabled, setEnabled }) {
                 game.log('⚠️ Cheat: equipez une arme avant l\'attaque de test.');
                 return;
             }
+            if(typeof game.forcePlayerTurnForCheat === 'function') {
+                game.forcePlayerTurnForCheat();
+            }
             game.player.combatPoints = Math.max(game.player.combatPoints || 0, game.player.equippedWeapon.actionPoints || 0);
             game.updateStats();
             game.saveUpdate();
             game.useWeapon();
+            notifyCheatApplied();
         } catch {
             // no-op
         }
     });
 
     const tileWrap = document.createElement('div');
-    tileWrap.style.display = 'grid';
-    tileWrap.style.gridTemplateColumns = '1fr 1fr 1fr auto';
-    tileWrap.style.gap = '6px';
+    tileWrap.className = 'cheat-tile-wrap';
 
     const tileIndexInput = document.createElement('input');
     tileIndexInput.type = 'number';
     tileIndexInput.min = '0';
     tileIndexInput.placeholder = 'Index';
-    tileIndexInput.style.background = 'rgba(255, 255, 255, 0.08)';
-    tileIndexInput.style.border = '1px solid rgba(255, 255, 255, 0.16)';
-    tileIndexInput.style.borderRadius = '8px';
-    tileIndexInput.style.color = '#f3f5f8';
-    tileIndexInput.style.padding = '8px';
+    tileIndexInput.className = 'cheat-input cheat-index-input';
 
     const tileColorSelect = document.createElement('select');
-    tileColorSelect.style.background = 'rgba(255, 255, 255, 0.08)';
-    tileColorSelect.style.border = '1px solid rgba(255, 255, 255, 0.16)';
-    tileColorSelect.style.borderRadius = '8px';
-    tileColorSelect.style.color = '#f3f5f8';
-    tileColorSelect.style.padding = '8px';
+    styleSelectForReadability(tileColorSelect);
 
     ['red', 'blue', 'green', 'yellow', 'purple', 'skull', 'combat', 'joker'].forEach((tileType) => {
         const opt = document.createElement('option');
         opt.value = tileType;
         opt.textContent = tileType;
+        styleOptionForReadability(opt);
         tileColorSelect.appendChild(opt);
     });
 
-    const applyTileBtn = createCheatButton('Appliquer');
-    applyTileBtn.style.margin = '0';
-    applyTileBtn.style.height = '100%';
+    const applyTileBtn = createCheatButton('Appliquer', 'cheat-apply-btn');
     applyTileBtn.addEventListener('click', async () => {
         if(!isEnabled()) return;
 
@@ -203,6 +262,7 @@ export function createCheatModeSection({ isEnabled, setEnabled }) {
             boardModule.renderBoard();
             game.log(`🧪 Cheat: tuile ${idx} -> ${tileColorSelect.value}`);
             game.saveUpdate();
+            notifyCheatApplied();
         } catch {
             // no-op
         }
@@ -214,12 +274,16 @@ export function createCheatModeSection({ isEnabled, setEnabled }) {
 
         try {
             const game = await import('./game.js');
+            if(typeof game.forcePlayerTurnForCheat === 'function') {
+                game.forcePlayerTurnForCheat();
+            }
             ['red', 'blue', 'green', 'yellow', 'purple'].forEach((color) => {
                 game.player.mana[color] = Math.max(0, (game.player.mana[color] || 0) + 25);
             });
             game.updateStats();
             game.saveUpdate();
             game.log('🧪 Cheat: +25 mana sur toutes les couleurs.');
+            notifyCheatApplied();
         } catch {
             // no-op
         }
@@ -230,18 +294,16 @@ export function createCheatModeSection({ isEnabled, setEnabled }) {
 
     const cheatLegend1 = document.createElement('div');
     cheatLegend1.textContent = 'Sort actif';
-    cheatLegend1.style.fontSize = '0.78rem';
-    cheatLegend1.style.opacity = '0.72';
+    cheatLegend1.className = 'cheat-legend';
 
     const cheatLegend2 = document.createElement('div');
     cheatLegend2.textContent = 'Modifier une tuile';
-    cheatLegend2.style.fontSize = '0.78rem';
-    cheatLegend2.style.opacity = '0.72';
+    cheatLegend2.className = 'cheat-legend';
 
     tileWrap.appendChild(tileIndexInput);
     tileWrap.appendChild(tileColorSelect);
     const spacer = document.createElement('div');
-    spacer.style.display = 'none';
+    spacer.className = 'cheat-spacer';
     tileWrap.appendChild(spacer);
     tileWrap.appendChild(applyTileBtn);
 
@@ -261,6 +323,7 @@ export function createCheatModeSection({ isEnabled, setEnabled }) {
     cheatControlsWrap.appendChild(refillManaBtn);
     cheatControlsWrap.appendChild(cheatLegend1);
     cheatControlsWrap.appendChild(castWrap);
+    cheatControlsWrap.appendChild(spellInfo);
     cheatControlsWrap.appendChild(attackBtn);
     cheatControlsWrap.appendChild(cheatLegend2);
     cheatControlsWrap.appendChild(tileWrap);

@@ -135,7 +135,7 @@ function applyWildMana(spell) {
             showCombatAnimation({ icon: '⭐', title: 'MANA SAUVAGE', damage: 'Joker créé !', target: '→ Plateau' }, true);
             log(`✨ Mana Sauvage transforme la gemme choisie en joker !`);
             saveUpdate();
-            checkMatches();
+            checkMatches(true);
             return true;
         }
     });
@@ -152,23 +152,78 @@ function applyShadowCurse(spell) {
 }
 
 function applyDarkChannels(spell) {
-    // Choisir une couleur aléatoire et détruire toutes les gemmes de cette couleur
-    const targetColor = colors[Math.floor(Math.random() * colors.length)];
-    let count = 0;
-    for(let i = 0; i < board.length; i++) {
-        if(board[i] === targetColor) {
-            count++;
-            board[i] = null;
+    const hasColorTile = board.some(tile => colors.includes(tile));
+    if(!hasColorTile){
+        log(`⚠️ Aucune gemme de couleur à cibler.`);
+        return false;
+    }
+
+    setBoardTargetingMode({
+        highlightPredicate: (_index, tile) => colors.includes(tile),
+        onTileClick: (_index, tile) => {
+            if(!colors.includes(tile)) {
+                log(`⚠️ Choisissez une gemme de couleur pour Canaux Sombres.`);
+                return true;
+            }
+
+            const targetColor = tile;
+            setBoardTargetingMode(null);
+            const rowsToDestroy = [];
+            let count = 0;
+
+            for(let row = 0; row < boardSize; row++) {
+                const rowIndices = [];
+                for(let col = 0; col < boardSize; col++) {
+                    const idx = row * boardSize + col;
+                    if(board[idx] === targetColor) {
+                        rowIndices.push(idx);
+                    }
+                }
+                if(rowIndices.length > 0) {
+                    rowsToDestroy.push(rowIndices);
+                    count += rowIndices.length;
+                }
+            }
+
+            if(count <= 0) {
+                log(`⚠️ Aucune gemme de couleur ${targetColor} trouvée`);
+                return true;
+            }
+
+            const boardDiv = document.getElementById('board');
+            const tiles = boardDiv ? boardDiv.children : null;
+            const rowDelayMs = 110;
+
+            const destroyRow = (rowIndex) => {
+                if(rowIndex >= rowsToDestroy.length) {
+                    player.mana[targetColor] = Math.min(getManaCap(targetColor), player.mana[targetColor] + count * 3);
+                    // renderBoard applique la gravite (descente) puis genere les nouvelles tuiles.
+                    renderBoard();
+                    showCombatAnimation({ icon: '🌀', title: 'CANAUX SOMBRES', damage: `${count} gemmes détruites`, target: `+${count * 3} mana ${targetColor}` }, true);
+                    log(`🌀 Canaux Sombres détruit ${count} gemmes ${targetColor} ligne par ligne et donne ${count * 3} mana !`);
+                    saveUpdate();
+                    checkMatches(true);
+                    return;
+                }
+
+                const indices = rowsToDestroy[rowIndex];
+                indices.forEach(idx => {
+                    board[idx] = null;
+                    if(tiles && tiles[idx]) {
+                        tiles[idx].className = 'tile';
+                        tiles[idx].textContent = '';
+                    }
+                });
+
+                setTimeout(() => destroyRow(rowIndex + 1), rowDelayMs);
+            };
+
+            destroyRow(0);
+            return true;
         }
-    }
-    if(count > 0) {
-        player.mana[targetColor] = Math.min(getManaCap(targetColor), player.mana[targetColor] + count * 3);
-        renderBoard();
-        showCombatAnimation({ icon: '🌀', title: 'CANAUX SOMBRES', damage: `${count} gemmes détruites`, target: `+${count * 3} mana ${targetColor}` }, true);
-        log(`🌀 Canaux Sombres détruit ${count} gemmes ${targetColor} et donne ${count * 3} mana !`);
-        return true;
-    }
-    log(`⚠️ Aucune gemme de couleur ${targetColor} trouvée`);
+    });
+
+    log(`🌀 Canaux Sombres: choisissez une couleur en cliquant une gemme.`);
     return false;
 }
 
@@ -223,72 +278,114 @@ function applyHandOfIce(spell) {
 }
 
 function applyFingerOfDeath(spell) {
-    const colorTiles = [];
-    for(let i = 0; i < board.length; i++) {
-        if(colors.includes(board[i])) {
-            colorTiles.push(i);
+    const available = board.filter(tile => colors.includes(tile)).length;
+    const maxTargets = Math.min(3, available);
+    if(maxTargets <= 0) {
+        log(`⚠️ Aucune gemme de couleur à transformer en crâne.`);
+        return false;
+    }
+
+    let created = 0;
+    setBoardTargetingMode({
+        highlightPredicate: (_index, tile) => colors.includes(tile),
+        onTileClick: (index, tile) => {
+            if(!colors.includes(tile)) {
+                log(`⚠️ Choisissez une gemme de couleur pour Doigt de Mort.`);
+                return true;
+            }
+
+            board[index] = 'skull';
+            created++;
+            renderBoard();
+
+            if(created < maxTargets) {
+                log(`💀 Doigt de Mort: choisissez encore ${maxTargets - created} cible(s).`);
+                return true;
+            }
+
+            setBoardTargetingMode(null);
+            showCombatAnimation({ icon: '💀', title: 'DOIGT DE MORT', damage: `${created} crânes créés`, target: '→ Plateau' }, true);
+            log(`💀 Doigt de Mort crée ${created} crânes !`);
+            saveUpdate();
+            checkMatches(true);
+            return true;
         }
-    }
-    const count = Math.min(3, colorTiles.length);
-    for(let i = 0; i < count; i++) {
-        const randomIndex = colorTiles.splice(Math.floor(Math.random() * colorTiles.length), 1)[0];
-        board[randomIndex] = 'skull';
-    }
-    renderBoard();
-    showCombatAnimation({ icon: '💀', title: 'DOIGT DE MORT', damage: `${count} crânes créés`, target: '→ Plateau' }, true);
-    log(`💀 Doigt de Mort crée ${count} crânes !`);
-    return true;
+    });
+
+    log(`💀 Doigt de Mort: choisissez ${maxTargets} gemme(s) à transformer en crâne.`);
+    return false;
 }
 
 function applyChasm(spell) {
-    // Détruire une zone 5x5 centrale du plateau
-    const centerRow = Math.floor(boardSize / 2);
-    const centerCol = Math.floor(boardSize / 2);
-    let manaGained = {red:0, blue:0, green:0, yellow:0, purple:0};
-    
-    for(let row = centerRow - 2; row <= centerRow + 2; row++) {
-        for(let col = centerCol - 2; col <= centerCol + 2; col++) {
-            if(row >= 0 && row < boardSize && col >= 0 && col < boardSize) {
-                const idx = row * boardSize + col;
-                const tile = board[idx];
-                if(colors.includes(tile)) {
-                    manaGained[tile] = (manaGained[tile] || 0) + 2;
+    setBoardTargetingMode({
+        highlightPredicate: () => true,
+        onTileClick: (index) => {
+            const centerRow = Math.floor(index / boardSize);
+            const centerCol = index % boardSize;
+            const manaGained = { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 };
+
+            for(let row = centerRow - 2; row <= centerRow + 2; row++) {
+                for(let col = centerCol - 2; col <= centerCol + 2; col++) {
+                    if(row >= 0 && row < boardSize && col >= 0 && col < boardSize) {
+                        const idx = row * boardSize + col;
+                        const tile = board[idx];
+                        if(colors.includes(tile)) {
+                            manaGained[tile] = (manaGained[tile] || 0) + 2;
+                        }
+                        board[idx] = null;
+                    }
                 }
-                board[idx] = null;
             }
-        }
-    }
-    
-    // Appliquer le mana gagné
-    Object.keys(manaGained).forEach(color => {
-        if(manaGained[color] > 0) {
-            player.mana[color] = Math.min(getManaCap(color), player.mana[color] + manaGained[color]);
+
+            Object.keys(manaGained).forEach(color => {
+                if(manaGained[color] > 0) {
+                    player.mana[color] = Math.min(getManaCap(color), player.mana[color] + manaGained[color]);
+                }
+            });
+
+            setBoardTargetingMode(null);
+            renderBoard();
+            showCombatAnimation({ icon: '🌋', title: 'ABÎME', damage: 'Zone 5×5 détruite', target: '→ Plateau + mana' }, true);
+            log(`🌋 Abîme détruit une zone 5×5 choisie et donne du mana !`);
+            saveUpdate();
+            checkMatches(true);
+            return true;
         }
     });
-    
-    renderBoard();
-    showCombatAnimation({ icon: '🌋', title: 'ABÎME', damage: 'Zone 5×5 détruite', target: '→ Plateau + mana' }, true);
-    log(`🌋 Abîme détruit une zone massive et donne du mana !`);
-    return true;
+
+    log(`🌋 Abîme: choisissez le centre de la zone à détruire.`);
+    return false;
 }
 
 function applyFireballArea(spell) {
-    // Détruire une zone 3x3 aléatoire
-    const row = Math.floor(Math.random() * (boardSize - 2));
-    const col = Math.floor(Math.random() * (boardSize - 2));
-    
-    for(let r = row; r < row + 3; r++) {
-        for(let c = col; c < col + 3; c++) {
-            const idx = r * boardSize + c;
-            board[idx] = null;
+    setBoardTargetingMode({
+        highlightPredicate: () => true,
+        onTileClick: (index) => {
+            const centerRow = Math.floor(index / boardSize);
+            const centerCol = index % boardSize;
+
+            for(let r = centerRow - 1; r <= centerRow + 1; r++) {
+                for(let c = centerCol - 1; c <= centerCol + 1; c++) {
+                    if(r >= 0 && r < boardSize && c >= 0 && c < boardSize) {
+                        const idx = r * boardSize + c;
+                        board[idx] = null;
+                    }
+                }
+            }
+
+            setBoardTargetingMode(null);
+            applyDamage(enemy, spell.dmg);
+            renderBoard();
+            showCombatAnimation({ icon: '🔥', title: 'BOULE DE FEU', damage: `-${spell.dmg} dégâts`, target: `→ ${enemy.name}` }, true);
+            log(`🔥 Boule de Feu détruit une zone 3×3 choisie et inflige ${spell.dmg} dégâts !`);
+            saveUpdate();
+            checkMatches(true);
+            return true;
         }
-    }
-    
-    applyDamage(enemy, spell.dmg);
-    renderBoard();
-    showCombatAnimation({ icon: '🔥', title: 'BOULE DE FEU', damage: `-${spell.dmg} dégâts`, target: `→ ${enemy.name}` }, true);
-    log(`🔥 Boule de Feu détruit une zone 3×3 et inflige ${spell.dmg} dégâts !`);
-    return true;
+    });
+
+    log(`🔥 Boule de Feu: choisissez le centre de la zone à détruire.`);
+    return false;
 }
 
 function applyStoneskin(spell) {
@@ -459,21 +556,33 @@ function applyShieldBash(spell) {
 }
 
 function applyFocus(spell) {
-    const candidates = board
-        .map((tile, index) => ({ tile, index }))
-        .filter(entry => entry.tile && !isJokerTile(entry.tile) && entry.tile !== 'combat');
-
-    if(candidates.length <= 0) {
+    const hasCandidate = board.some(tile => tile && !isJokerTile(tile) && tile !== 'combat');
+    if(!hasCandidate) {
         log(`⚠️ Aucune gemme valide à transformer en Action Gem.`);
         return false;
     }
 
-    const picked = candidates[Math.floor(Math.random() * candidates.length)];
-    board[picked.index] = 'combat';
-    renderBoard();
-    showCombatAnimation({ icon: '⚔️', title: 'CONCENTRATION', damage: 'Action Gem créée', target: '→ Plateau' }, true);
-    log(`⚔️ Concentration transforme une gemme en Action Gem.`);
-    return true;
+    setBoardTargetingMode({
+        highlightPredicate: (_index, tile) => tile && !isJokerTile(tile) && tile !== 'combat',
+        onTileClick: (index, tile) => {
+            if(!tile || isJokerTile(tile) || tile === 'combat') {
+                log(`⚠️ Choisissez une gemme valide pour Concentration.`);
+                return true;
+            }
+
+            board[index] = 'combat';
+            setBoardTargetingMode(null);
+            renderBoard();
+            showCombatAnimation({ icon: '⚔️', title: 'CONCENTRATION', damage: 'Action Gem créée', target: '→ Plateau' }, true);
+            log(`⚔️ Concentration transforme la gemme choisie en Action Gem.`);
+            saveUpdate();
+            checkMatches(true);
+            return true;
+        }
+    });
+
+    log(`⚔️ Concentration: choisissez une gemme à transformer en Action Gem.`);
+    return false;
 }
 
 function applyIntimidate(spell) {

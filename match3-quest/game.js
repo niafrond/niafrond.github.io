@@ -9,6 +9,7 @@ import { getRandomItem, getRarityEmoji, getRarityColor, useItem, applyArtifactEf
 import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
 import { playSfx, setCombatMusicEnabled } from "./sound.js";
+import { allSpells as spellsCatalog, getSpellsByLevel } from "./spells.js";
 export { updateShopTab, buyWeapon, buyItem };
 
 const BASE_MANA_CAP = 50;
@@ -194,6 +195,14 @@ export function applyDamage(target, damage){
             if(drained > 0) {
                 log(`🎵 Lames Chantantes draine ${drained} mana ennemi.`);
             }
+        }
+    }
+
+    if(gameState.combatState === 'active') {
+        if(player.hp <= 0) {
+            handlePlayerDeath();
+        } else if(enemy.hp <= 0) {
+            handleEnemyDefeated();
         }
     }
 
@@ -674,25 +683,8 @@ export const allAbilities = [
     {id:"shadowMastery", name:"Maîtrise de l'Ombre", description:"+2 mana violet par match (5 au lieu de 3)"}
 ];
 
-// bibliothèque des sorts
-export const allSpells = [
-    {id:"fireball", name:"Boule de Feu", color:"red", cost:10, dmg:25, minLevel:2},
-    {id:"ice", name:"Glace", color:"blue", cost:12, dmg:30, minLevel:2},
-    {id:"heal", name:"Soin", color:"green", cost:8, heal:20, minLevel:2},
-    {id:"bolt", name:"Éclair", color:"yellow", cost:15, dmg:35, minLevel:2},
-    {id:"flameStrike", name:"Frappe de Flammes", color:"red", cost:20, dmg:50, minLevel:5},
-    {id:"frostNova", name:"Nova de Glace", color:"blue", cost:22, dmg:55, minLevel:5},
-    {id:"greatHeal", name:"Grand Soin", color:"green", cost:18, heal:45, minLevel:5},
-    {id:"thunderBolt", name:"Foudre", color:"yellow", cost:25, dmg:60, minLevel:5},
-    {id:"inferno", name:"Inferno", color:"red", cost:35, dmg:80, minLevel:10},
-    {id:"blizzard", name:"Blizzard", color:"blue", cost:38, dmg:85, minLevel:10},
-    {id:"revitalize", name:"Revitalisation", color:"green", cost:30, heal:75, minLevel:10},
-    {id:"lightningStorm", name:"Tempête de Foudre", color:"yellow", cost:40, dmg:90, minLevel:10},
-    {id:"meteor", name:"Météore", color:"red", cost:50, dmg:120, minLevel:15},
-    {id:"iceAge", name:"Ère de Glace", color:"blue", cost:55, dmg:125, minLevel:15},
-    {id:"miracle", name:"Miracle", color:"green", cost:45, heal:110, minLevel:15},
-    {id:"stormOfGods", name:"Tempête Divine", color:"yellow", cost:60, dmg:140, minLevel:15}
-];
+// bibliothèque des sorts (source: spells.json via spells.js)
+export const allSpells = spellsCatalog;
 
 // Fonction de chargement de la sauvegarde
 export function loadGameData() {
@@ -1388,7 +1380,7 @@ export async function castSpellForCheat(spellId, options = {}){
 
     let spell = player.activeSpells.find(s => s.id === spellId)
         || player.availableSpells.find(s => s.id === spellId)
-        || allSpells.find(s => s.id === spellId);
+        || spellsCatalog.find(s => s.id === spellId);
 
     if(!spell){
         try {
@@ -1437,7 +1429,19 @@ export async function castSpellForCheat(spellId, options = {}){
     return true;
 }
 
+export function forcePlayerTurnForCheat(){
+    if(currentTurn !== 'player') {
+        currentTurn = 'player';
+        updateStats();
+        saveUpdate();
+    }
+}
+
 export function finishPlayerTurn(){
+    if(gameState.combatState !== 'active'){
+        return;
+    }
+
     // Vérifier si le joueur est mort
     if(player.hp<=0){
         handlePlayerDeath();
@@ -1455,6 +1459,10 @@ export function finishPlayerTurn(){
 }
 
 export function enemyTurn(){
+    if(gameState.combatState !== 'active'){
+        return;
+    }
+
     if(enemy.hp<=0){ handleEnemyDefeated(); return; }
 
     if((enemy.statusEffects?.poisoned || 0) > 0) {
@@ -1499,6 +1507,10 @@ export function enemyTurn(){
     
     // Attendre le temps de réflexion avant d'agir
     setTimeout(()=>{
+        if(gameState.combatState !== 'active'){
+            return;
+        }
+
         // Exécuter l'action choisie par l'IA
         if(decision.action === 'spell'){
             const spell = decision.data.spell;
@@ -1553,6 +1565,10 @@ export function enemyTurn(){
 
 // Fonction pour terminer le tour de l'ennemi
 export function finishEnemyTurn(){
+    if(gameState.combatState !== 'active'){
+        return;
+    }
+
     if(player.hp<=0){
         handlePlayerDeath();
         return;
@@ -1912,7 +1928,7 @@ export function applyAttributeBonus(attr){
 // sorts
 export function updateAvailableSpells(){
     // Si le joueur a une classe, inclure les sorts de classe
-    let allAvailableSpells = [...allSpells.filter(sp=>player.level>=sp.minLevel)];
+    let allAvailableSpells = [...getSpellsByLevel(player.level)];
     
     if(player.class) {
         import('./classes.js').then(module => {
@@ -2259,7 +2275,7 @@ export function applyStartingAbilities(){
 
 // ennemis
 export function newEnemy(selectedEnemy = null){
-    enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, allSpells, allWeapons);
+    enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
     
     // Ajuster automatiquement la difficulté de l'IA selon le niveau de l'ennemi
     setAIDifficultyByLevel(enemy.level, player.level);

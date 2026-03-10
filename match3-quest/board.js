@@ -372,16 +372,16 @@ export function checkForMatchesOnly(){
     return checkForMatchesOnlyOnBoard(board);
 }
 
-export function checkMatches(){
+export function checkMatches(forceFullBoard = false){
     if(pendingComboAnimations > 0){
         onBoardSettled(() => {
-            setTimeout(checkMatches, 0);
+            setTimeout(() => checkMatches(forceFullBoard), 0);
         });
         return;
     }
 
     // Ne traiter les matchs que si le jeu a vraiment commencé
-    if(!gameStarted){
+    if(!gameStarted && !forceFullBoard){
         renderBoard(); // Seulement redessiner sans traiter les matchs
         return;
     }
@@ -541,7 +541,7 @@ export function checkMatches(){
         saveUpdate();
         // Attendre la fin reelle des animations de chute avant de relancer la detection.
         onBoardSettled(() => {
-            setTimeout(checkMatches, 0);
+            setTimeout(() => checkMatches(forceFullBoard), 0);
         });
     }
 }

@@ -418,6 +418,132 @@ progress.enemy-bar::-webkit-progress-value {
     cursor: not-allowed;
 }
 
+/* Cheat mode UI */
+.cheat-section {
+    margin-top: 10px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.cheat-title {
+    font-size: 0.8rem;
+    letter-spacing: .08em;
+    opacity: 0.75;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.cheat-hint {
+    margin: 0 0 10px;
+    opacity: 0.82;
+    font-size: 0.88rem;
+}
+
+.cheat-toggle-btn {
+    width: 100%;
+    text-align: left;
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: #f3f5f8;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.cheat-toggle-btn-active {
+    background: rgba(16, 185, 129, 0.22);
+    border: 1px solid rgba(16, 185, 129, 0.75);
+}
+
+.cheat-toggle-sub {
+    opacity: 0.78;
+    font-size: 0.85rem;
+}
+
+.cheat-controls-wrap {
+    margin-top: 10px;
+    display: none;
+    gap: 8px;
+}
+
+.cheat-controls-visible {
+    display: grid;
+}
+
+.cheat-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    color: #f3f5f8;
+    padding: 8px 10px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.cheat-select {
+    background: #f8fafc;
+    border: 1px solid rgba(15, 23, 42, 0.35);
+    border-radius: 8px;
+    color: #0f172a;
+    padding: 8px;
+}
+
+.cheat-option {
+    color: #0f172a;
+    background-color: #ffffff;
+}
+
+.cheat-cast-wrap {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px;
+}
+
+.cheat-spell-info {
+    display: none;
+    white-space: pre-line;
+    text-align: left;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.06);
+    color: #f3f5f8;
+}
+
+.cheat-spell-info-visible {
+    display: block;
+}
+
+.cheat-tile-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 6px;
+}
+
+.cheat-input {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    color: #f3f5f8;
+    padding: 8px;
+}
+
+.cheat-apply-btn {
+    margin: 0;
+    height: 100%;
+}
+
+.cheat-legend {
+    font-size: 0.78rem;
+    opacity: 0.72;
+}
+
+.cheat-spacer {
+    display: none;
+}
+
 #enemy-weapon-button .enemy-spell-item.disabled {
     opacity: 0.5;
     filter: grayscale(0.35);

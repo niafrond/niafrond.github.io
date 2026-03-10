@@ -1,0 +1,1354 @@
+{
+  "allSpells": [
+    {
+      "id": "fireball",
+      "name": "Boule de Feu",
+      "color": "red",
+      "type": "damage",
+      "cost": 10,
+      "dmg": 25,
+      "minLevel": 1,
+      "description": "Lance une boule de feu qui inflige 25 dégâts"
+    },
+    {
+      "id": "flameStrike",
+      "name": "Frappe de Flammes",
+      "color": "red",
+      "type": "damage",
+      "cost": 20,
+      "dmg": 50,
+      "minLevel": 5,
+      "description": "Une frappe enflammée qui inflige 50 dégâts"
+    },
+    {
+      "id": "inferno",
+      "name": "Inferno",
+      "color": "red",
+      "type": "damage",
+      "cost": 35,
+      "dmg": 80,
+      "minLevel": 10,
+      "description": "Un brasier infernal qui inflige 80 dégâts"
+    },
+    {
+      "id": "meteor",
+      "name": "Météore",
+      "color": "red",
+      "type": "damage",
+      "cost": 50,
+      "dmg": 120,
+      "minLevel": 15,
+      "description": "Invoque un météore dévastateur qui inflige 120 dégâts"
+    },
+    {
+      "id": "ice",
+      "name": "Glace",
+      "color": "blue",
+      "type": "damage",
+      "cost": 12,
+      "dmg": 30,
+      "minLevel": 1,
+      "description": "Projette des éclats de glace qui infligent 30 dégâts"
+    },
+    {
+      "id": "frostNova",
+      "name": "Nova de Glace",
+      "color": "blue",
+      "type": "damage",
+      "cost": 22,
+      "dmg": 55,
+      "minLevel": 5,
+      "description": "Une explosion glaciale qui inflige 55 dégâts"
+    },
+    {
+      "id": "blizzard",
+      "name": "Blizzard",
+      "color": "blue",
+      "type": "damage",
+      "cost": 38,
+      "dmg": 85,
+      "minLevel": 10,
+      "description": "Déchaîne une tempête de glace qui inflige 85 dégâts"
+    },
+    {
+      "id": "iceAge",
+      "name": "Ère de Glace",
+      "color": "blue",
+      "type": "damage",
+      "cost": 55,
+      "dmg": 125,
+      "minLevel": 15,
+      "description": "Gèle tout sur son passage pour 125 dégâts"
+    },
+    {
+      "id": "heal",
+      "name": "Soin",
+      "color": "green",
+      "type": "heal",
+      "cost": 8,
+      "heal": 20,
+      "minLevel": 1,
+      "description": "Restaure 20 points de vie"
+    },
+    {
+      "id": "greatHeal",
+      "name": "Grand Soin",
+      "color": "green",
+      "type": "heal",
+      "cost": 18,
+      "heal": 45,
+      "minLevel": 5,
+      "description": "Restaure 45 points de vie"
+    },
+    {
+      "id": "revitalize",
+      "name": "Revitalisation",
+      "color": "green",
+      "type": "heal",
+      "cost": 30,
+      "heal": 75,
+      "minLevel": 10,
+      "description": "Revitalise le corps et restaure 75 points de vie"
+    },
+    {
+      "id": "miracle",
+      "name": "Miracle",
+      "color": "green",
+      "type": "heal",
+      "cost": 45,
+      "heal": 110,
+      "minLevel": 15,
+      "description": "Un miracle divin qui restaure 110 points de vie"
+    },
+    {
+      "id": "bolt",
+      "name": "Éclair",
+      "color": "yellow",
+      "type": "damage",
+      "cost": 15,
+      "dmg": 35,
+      "minLevel": 1,
+      "description": "Projette un éclair qui inflige 35 dégâts"
+    },
+    {
+      "id": "thunderBolt",
+      "name": "Foudre",
+      "color": "yellow",
+      "type": "damage",
+      "cost": 25,
+      "dmg": 60,
+      "minLevel": 5,
+      "description": "Un coup de foudre puissant qui inflige 60 dégâts"
+    },
+    {
+      "id": "lightningStorm",
+      "name": "Tempête de Foudre",
+      "color": "yellow",
+      "type": "damage",
+      "cost": 40,
+      "dmg": 90,
+      "minLevel": 10,
+      "description": "Une tempête électrique qui inflige 90 dégâts"
+    },
+    {
+      "id": "stormOfGods",
+      "name": "Tempête Divine",
+      "color": "yellow",
+      "type": "damage",
+      "cost": 60,
+      "dmg": 140,
+      "minLevel": 15,
+      "description": "La colère des dieux qui inflige 140 dégâts"
+    }
+  ],
+  "sorcererSpells": [
+    {
+      "id": "mageStrike",
+      "name": "Frappe du Mage",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "red": 3,
+        "blue": 5
+      },
+      "minLevel": 1,
+      "effect": "scaleWithBlue",
+      "baseDmg": 5,
+      "description": "Inflige 5 dégâts +1 pour chaque 3 mana bleu possédés"
+    },
+    {
+      "id": "wildMana",
+      "name": "Mana Sauvage",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "blue": 5,
+        "green": 5
+      },
+      "minLevel": 3,
+      "effect": "createJoker",
+      "description": "Transforme une gemme en wildcard x2 ou augmente le multiplicateur d'une wildcard (+2, max x7)"
+    },
+    {
+      "id": "shadowCurse",
+      "name": "Malédiction d'Ombre",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "purple": 4
+      },
+      "minLevel": 4,
+      "effect": "preventItems",
+      "duration": 3,
+      "description": "Empêche l'ennemi d'utiliser des objets pendant 3 tours"
+    },
+    {
+      "id": "darkChannels",
+      "name": "Canaux Sombres",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "purple": 6
+      },
+      "minLevel": 5,
+      "effect": "destroyColor",
+      "description": "Choisir une couleur → toutes les gemmes de cette couleur sont détruites et donnent leur mana"
+    },
+    {
+      "id": "flameBolts",
+      "name": "Projectiles de Flamme",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "red": 5
+      },
+      "minLevel": 5,
+      "effect": "yellowBolts",
+      "description": "Tire 1 projectile de 5 dégâts pour chaque 5 mana jaune, puis vide le mana jaune"
+    },
+    {
+      "id": "iceShield",
+      "name": "Bouclier de Glace",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "blue": 8
+      },
+      "minLevel": 6,
+      "effect": "damageToMana",
+      "description": "Les dégâts sont appliqués au mana bleu au lieu des PV"
+    },
+    {
+      "id": "flameblade",
+      "name": "Lame de Feu",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "red": 6
+      },
+      "minLevel": 6,
+      "effect": "enchantWeapon",
+      "description": "Ajoute tout le mana rouge au prochain coup d'arme, puis vide le mana rouge"
+    },
+    {
+      "id": "weakness",
+      "name": "Faiblesse",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "purple": 5
+      },
+      "minLevel": 5,
+      "effect": "reduceEnemyAtk",
+      "reduction": 5,
+      "duration": 4,
+      "description": "Réduit la puissance offensive de l'ennemi de 5 pendant 4 tours"
+    },
+    {
+      "id": "handOfIce",
+      "name": "Main de Glace",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "blue": 7
+      },
+      "minLevel": 6,
+      "effect": "freezeEnemy",
+      "duration": 2,
+      "description": "Gel ou ralentissement de l'ennemi pendant 2 tours"
+    },
+    {
+      "id": "fingerOfDeath",
+      "name": "Doigt de Mort",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "purple": 8
+      },
+      "minLevel": 7,
+      "effect": "createSkull",
+      "description": "Transforme une gemme en skull +5 (attaque forte)"
+    },
+    {
+      "id": "chasm",
+      "name": "Abîme",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "red": 10,
+        "blue": 10
+      },
+      "minLevel": 8,
+      "effect": "destroyArea",
+      "description": "Détruit une zone du plateau et donne le mana correspondant"
+    },
+    {
+      "id": "stoneskin",
+      "name": "Peau de Pierre",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "green": 8
+      },
+      "minLevel": 7,
+      "effect": "increaseDefense",
+      "defenseBonus": 15,
+      "duration": 4,
+      "description": "Augmente la défense de 15 pendant 4 tours"
+    },
+    {
+      "id": "strength",
+      "name": "Force",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "red": 6
+      },
+      "minLevel": 5,
+      "effect": "increasePhysical",
+      "atkBonus": 8,
+      "duration": 4,
+      "description": "Augmente temporairement les dégâts physiques de 8 pendant 4 tours"
+    },
+    {
+      "id": "fireball",
+      "name": "Boule de Feu",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "red": 8
+      },
+      "minLevel": 8,
+      "effect": "fireballArea",
+      "dmg": 15,
+      "description": "Détruit une zone 3×3 de gemmes et inflige 15 dégâts"
+    },
+    {
+      "id": "mirrorShield",
+      "name": "Bouclier Miroir",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "blue": 10
+      },
+      "minLevel": 9,
+      "effect": "reflectDamage",
+      "reflectPercent": 30,
+      "duration": 5,
+      "description": "Renvoie 30% des dégâts subis pendant 5 tours"
+    },
+    {
+      "id": "manaSiphon",
+      "name": "Siphon de Mana",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "purple": 7
+      },
+      "minLevel": 8,
+      "effect": "drainMana",
+      "manaSteal": 10,
+      "description": "Absorbe 10 mana ennemi (toutes couleurs)"
+    },
+    {
+      "id": "manaBlast",
+      "name": "Explosion de Mana",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "red": 15,
+        "blue": 15,
+        "green": 15,
+        "yellow": 15
+      },
+      "minLevel": 15,
+      "dmg": 150,
+      "description": "Grosse attaque consommant beaucoup de mana"
+    }
+  ],
+  "assassinSpells": [
+    {
+      "id": "sneakAttack",
+      "name": "Attaque Sournoise",
+      "class": "assassin",
+      "emoji": "🗡️",
+      "cost": {
+        "blue": 5
+      },
+      "minLevel": 1,
+      "dmg": 3,
+      "effect": "noEndTurn",
+      "description": "3 dégâts et ne termine pas le tour"
+    },
+    {
+      "id": "swiftStrike",
+      "name": "Frappe Rapide",
+      "class": "assassin",
+      "emoji": "🗡️",
+      "cost": {
+        "yellow": 8,
+        "red": 4
+      },
+      "minLevel": 3,
+      "effect": "yellowToPurple",
+      "description": "Transforme toutes les gemmes jaunes en violettes et inflige 1 dégât par gemme convertie"
+    },
+    {
+      "id": "confuse",
+      "name": "Confusion",
+      "class": "assassin",
+      "emoji": "🗡️",
+      "cost": {
+        "blue": 5,
+        "green": 6
+      },
+      "minLevel": 5,
+      "effect": "reduceManaGain",
+      "duration": 4,
+      "description": "L'ennemi ne gagne que 1 mana par combinaison pendant 4 tours"
+    },
+    {
+      "id": "stealth",
+      "name": "Furtivité",
+      "class": "assassin",
+      "emoji": "🗡️",
+      "cost": {
+        "purple": 6
+      },
+      "minLevel": 6,
+      "effect": "damageToManaPurple",
+      "description": "Les dégâts sont appliqués au mana violet au lieu de la vie"
+    },
+    {
+      "id": "poisonBlade",
+      "name": "Lame Empoisonnée",
+      "class": "assassin",
+      "emoji": "🗡️",
+      "cost": {
+        "green": 6
+      },
+      "minLevel": 7,
+      "effect": "applyPoison",
+      "poisonDmg": 3,
+      "duration": 5,
+      "description": "Applique un poison infligeant 3 dégâts par tour pendant 5 tours"
+    },
+    {
+      "id": "shadowStrike",
+      "name": "Frappe de l'Ombre",
+      "class": "assassin",
+      "emoji": "🗡️",
+      "cost": {
+        "red": 4,
+        "purple": 8
+      },
+      "minLevel": 10,
+      "effect": "destroyPurple",
+      "description": "Détruit toutes les gemmes violettes et inflige 2 dégâts par gemme détruite"
+    },
+    {
+      "id": "dualShot",
+      "name": "Double Tir",
+      "class": "assassin",
+      "emoji": "🗡️",
+      "cost": {
+        "red": 16,
+        "blue": 16,
+        "green": 16,
+        "yellow": 16
+      },
+      "minLevel": 15,
+      "effect": "dualWeaponAttack",
+      "description": "Inflige des dégâts égaux à l'attaque combinée des deux armes"
+    }
+  ],
+  "templarSpells": [
+    {
+      "id": "defensiveWall",
+      "name": "Mur Défensif",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "green": 3,
+        "purple": 4
+      },
+      "minLevel": 1,
+      "effect": "purpleToDefense",
+      "description": "Détruit toutes les gemmes violettes → +5 défense par gemme"
+    },
+    {
+      "id": "shieldBash",
+      "name": "Coup de Bouclier",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "red": 7
+      },
+      "minLevel": 3,
+      "effect": "defenseAttack",
+      "baseDmg": 1,
+      "description": "1 dégât +1 par 5 points de défense. Retire les statuts négatifs"
+    },
+    {
+      "id": "focus",
+      "name": "Concentration",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "blue": 3,
+        "yellow": 3
+      },
+      "minLevel": 4,
+      "effect": "createActionGem",
+      "description": "Transforme une gemme en Action Gem"
+    },
+    {
+      "id": "intimidate",
+      "name": "Intimidation",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "purple": 3
+      },
+      "minLevel": 5,
+      "effect": "stealCP",
+      "cpSteal": 5,
+      "description": "Vole 5 Action Points à l'ennemi"
+    },
+    {
+      "id": "rush",
+      "name": "Charge",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "yellow": 7,
+        "green": 3
+      },
+      "minLevel": 7,
+      "effect": "stunEnemy",
+      "description": "L'ennemi perd 2 tours +1 par 7 mana jaune"
+    },
+    {
+      "id": "counterAttack",
+      "name": "Contre-Attaque",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "red": 8
+      },
+      "minLevel": 8,
+      "effect": "counterOnBlock",
+      "counterDmg": 5,
+      "duration": 4,
+      "description": "Inflige 5 dégâts lorsque tu bloques pendant 4 tours"
+    },
+    {
+      "id": "reinforce",
+      "name": "Renforcement",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "green": 7
+      },
+      "minLevel": 9,
+      "effect": "destroyActionGemHeal",
+      "healPerGem": 10,
+      "description": "Détruit les Action Gems et soigne de 10 PV par gemme"
+    },
+    {
+      "id": "barrier",
+      "name": "Barrière",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "green": 10
+      },
+      "minLevel": 10,
+      "effect": "massiveDefense",
+      "defenseBonus": 20,
+      "duration": 3,
+      "description": "Augmente fortement la défense de 20 pendant 3 tours"
+    },
+    {
+      "id": "divinePower",
+      "name": "Puissance Divine",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "yellow": 6
+      },
+      "minLevel": 10,
+      "effect": "defenseToMana",
+      "description": "Génère du mana selon la défense (1 mana jaune par 5 défense)"
+    },
+    {
+      "id": "holdTheLine",
+      "name": "Tenir la Ligne",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "green": 12
+      },
+      "minLevel": 12,
+      "effect": "immunityEffects",
+      "duration": 3,
+      "description": "Immunité à plusieurs effets négatifs pendant 3 tours"
+    },
+    {
+      "id": "heavensWrath",
+      "name": "Colère Céleste",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "yellow": 15
+      },
+      "minLevel": 14,
+      "effect": "explodeActionGems",
+      "dmgPerGem": 8,
+      "description": "Explosion de toutes les Action Gems infligeant 8 dégâts par gemme"
+    }
+  ],
+  "barbarianSpells": [
+    {
+      "id": "enrage",
+      "name": "Rage",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "green": 2,
+        "red": 6
+      },
+      "minLevel": 1,
+      "effect": "damageBoost",
+      "atkBonus": 10,
+      "duration": 3,
+      "description": "Augmente les dégâts de 10 pendant 3 tours et ne termine pas le tour"
+    },
+    {
+      "id": "cleave",
+      "name": "Entaille",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "red": 9,
+        "yellow": 6
+      },
+      "minLevel": 3,
+      "effect": "yellowDamage",
+      "description": "Inflige 1 dégât par gemme jaune, puis détruit les jaunes"
+    },
+    {
+      "id": "throwAxe",
+      "name": "Lancer de Hache",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "green": 6,
+        "red": 8
+      },
+      "minLevel": 5,
+      "effect": "skullBonus",
+      "baseDmg": 4,
+      "description": "4 dégâts +1 par skull présent"
+    },
+    {
+      "id": "bloodlust",
+      "name": "Soif de Sang",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "green": 5,
+        "yellow": 5,
+        "blue": 5
+      },
+      "minLevel": 5,
+      "effect": "giveRedMana",
+      "manaGain": 12,
+      "description": "Donne +12 mana rouge"
+    },
+    {
+      "id": "summonTempest",
+      "name": "Invoquer la Tempête",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "red": 8,
+        "yellow": 5,
+        "blue": 5
+      },
+      "minLevel": 8,
+      "effect": "destroyColumns",
+      "columns": 2,
+      "description": "Détruit 2 colonnes aléatoires"
+    },
+    {
+      "id": "berserkerRage",
+      "name": "Rage Berserker",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "green": 5,
+        "red": 8
+      },
+      "minLevel": 10,
+      "effect": "redToSkulls",
+      "description": "Transforme les gemmes rouges en skulls"
+    },
+    {
+      "id": "singingBlades",
+      "name": "Lames Chantantes",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "red": 8,
+        "yellow": 6
+      },
+      "minLevel": 11,
+      "effect": "drainOnHit",
+      "manaDrain": 3,
+      "duration": 5,
+      "description": "Réduit le mana ennemi de 3 quand tu infliges des dégâts pendant 5 tours"
+    },
+    {
+      "id": "deathbringer",
+      "name": "Porte-Mort",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "green": 8,
+        "red": 16,
+        "yellow": 8,
+        "blue": 8
+      },
+      "minLevel": 14,
+      "effect": "redToSkullsHalf",
+      "description": "Crée des skulls = ½ du mana rouge possédé"
+    },
+    {
+      "id": "revenant",
+      "name": "Revenant",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "green": 10,
+        "red": 25,
+        "yellow": 20
+      },
+      "minLevel": 15,
+      "effect": "doubleBattle",
+      "description": "Double la stat Battle pour le combat"
+    }
+  ],
+  "allClassSpells": [
+    {
+      "id": "mageStrike",
+      "name": "Frappe du Mage",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "red": 3,
+        "blue": 5
+      },
+      "minLevel": 1,
+      "effect": "scaleWithBlue",
+      "baseDmg": 5,
+      "description": "Inflige 5 dégâts +1 pour chaque 3 mana bleu possédés"
+    },
+    {
+      "id": "wildMana",
+      "name": "Mana Sauvage",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "blue": 5,
+        "green": 5
+      },
+      "minLevel": 3,
+      "effect": "createJoker",
+      "description": "Transforme une gemme en wildcard x2 ou augmente le multiplicateur d'une wildcard (+2, max x7)"
+    },
+    {
+      "id": "shadowCurse",
+      "name": "Malédiction d'Ombre",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "purple": 4
+      },
+      "minLevel": 4,
+      "effect": "preventItems",
+      "duration": 3,
+      "description": "Empêche l'ennemi d'utiliser des objets pendant 3 tours"
+    },
+    {
+      "id": "darkChannels",
+      "name": "Canaux Sombres",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "purple": 6
+      },
+      "minLevel": 5,
+      "effect": "destroyColor",
+      "description": "Choisir une couleur → toutes les gemmes de cette couleur sont détruites et donnent leur mana"
+    },
+    {
+      "id": "flameBolts",
+      "name": "Projectiles de Flamme",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "red": 5
+      },
+      "minLevel": 5,
+      "effect": "yellowBolts",
+      "description": "Tire 1 projectile de 5 dégâts pour chaque 5 mana jaune, puis vide le mana jaune"
+    },
+    {
+      "id": "iceShield",
+      "name": "Bouclier de Glace",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "blue": 8
+      },
+      "minLevel": 6,
+      "effect": "damageToMana",
+      "description": "Les dégâts sont appliqués au mana bleu au lieu des PV"
+    },
+    {
+      "id": "flameblade",
+      "name": "Lame de Feu",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "red": 6
+      },
+      "minLevel": 6,
+      "effect": "enchantWeapon",
+      "description": "Ajoute tout le mana rouge au prochain coup d'arme, puis vide le mana rouge"
+    },
+    {
+      "id": "weakness",
+      "name": "Faiblesse",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "purple": 5
+      },
+      "minLevel": 5,
+      "effect": "reduceEnemyAtk",
+      "reduction": 5,
+      "duration": 4,
+      "description": "Réduit la puissance offensive de l'ennemi de 5 pendant 4 tours"
+    },
+    {
+      "id": "handOfIce",
+      "name": "Main de Glace",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "blue": 7
+      },
+      "minLevel": 6,
+      "effect": "freezeEnemy",
+      "duration": 2,
+      "description": "Gel ou ralentissement de l'ennemi pendant 2 tours"
+    },
+    {
+      "id": "fingerOfDeath",
+      "name": "Doigt de Mort",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "purple": 8
+      },
+      "minLevel": 7,
+      "effect": "createSkull",
+      "description": "Transforme une gemme en skull +5 (attaque forte)"
+    },
+    {
+      "id": "chasm",
+      "name": "Abîme",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "red": 10,
+        "blue": 10
+      },
+      "minLevel": 8,
+      "effect": "destroyArea",
+      "description": "Détruit une zone du plateau et donne le mana correspondant"
+    },
+    {
+      "id": "stoneskin",
+      "name": "Peau de Pierre",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "green": 8
+      },
+      "minLevel": 7,
+      "effect": "increaseDefense",
+      "defenseBonus": 15,
+      "duration": 4,
+      "description": "Augmente la défense de 15 pendant 4 tours"
+    },
+    {
+      "id": "strength",
+      "name": "Force",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "red": 6
+      },
+      "minLevel": 5,
+      "effect": "increasePhysical",
+      "atkBonus": 8,
+      "duration": 4,
+      "description": "Augmente temporairement les dégâts physiques de 8 pendant 4 tours"
+    },
+    {
+      "id": "fireball",
+      "name": "Boule de Feu",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "red": 8
+      },
+      "minLevel": 8,
+      "effect": "fireballArea",
+      "dmg": 15,
+      "description": "Détruit une zone 3×3 de gemmes et inflige 15 dégâts"
+    },
+    {
+      "id": "mirrorShield",
+      "name": "Bouclier Miroir",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "blue": 10
+      },
+      "minLevel": 9,
+      "effect": "reflectDamage",
+      "reflectPercent": 30,
+      "duration": 5,
+      "description": "Renvoie 30% des dégâts subis pendant 5 tours"
+    },
+    {
+      "id": "manaSiphon",
+      "name": "Siphon de Mana",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "purple": 7
+      },
+      "minLevel": 8,
+      "effect": "drainMana",
+      "manaSteal": 10,
+      "description": "Absorbe 10 mana ennemi (toutes couleurs)"
+    },
+    {
+      "id": "manaBlast",
+      "name": "Explosion de Mana",
+      "class": "sorcerer",
+      "emoji": "🧙",
+      "cost": {
+        "red": 15,
+        "blue": 15,
+        "green": 15,
+        "yellow": 15
+      },
+      "minLevel": 15,
+      "dmg": 150,
+      "description": "Grosse attaque consommant beaucoup de mana"
+    },
+    {
+      "id": "sneakAttack",
+      "name": "Attaque Sournoise",
+      "class": "assassin",
+      "emoji": "🗡️",
+      "cost": {
+        "blue": 5
+      },
+      "minLevel": 1,
+      "dmg": 3,
+      "effect": "noEndTurn",
+      "description": "3 dégâts et ne termine pas le tour"
+    },
+    {
+      "id": "swiftStrike",
+      "name": "Frappe Rapide",
+      "class": "assassin",
+      "emoji": "🗡️",
+      "cost": {
+        "yellow": 8,
+        "red": 4
+      },
+      "minLevel": 3,
+      "effect": "yellowToPurple",
+      "description": "Transforme toutes les gemmes jaunes en violettes et inflige 1 dégât par gemme convertie"
+    },
+    {
+      "id": "confuse",
+      "name": "Confusion",
+      "class": "assassin",
+      "emoji": "🗡️",
+      "cost": {
+        "blue": 5,
+        "green": 6
+      },
+      "minLevel": 5,
+      "effect": "reduceManaGain",
+      "duration": 4,
+      "description": "L'ennemi ne gagne que 1 mana par combinaison pendant 4 tours"
+    },
+    {
+      "id": "stealth",
+      "name": "Furtivité",
+      "class": "assassin",
+      "emoji": "🗡️",
+      "cost": {
+        "purple": 6
+      },
+      "minLevel": 6,
+      "effect": "damageToManaPurple",
+      "description": "Les dégâts sont appliqués au mana violet au lieu de la vie"
+    },
+    {
+      "id": "poisonBlade",
+      "name": "Lame Empoisonnée",
+      "class": "assassin",
+      "emoji": "🗡️",
+      "cost": {
+        "green": 6
+      },
+      "minLevel": 7,
+      "effect": "applyPoison",
+      "poisonDmg": 3,
+      "duration": 5,
+      "description": "Applique un poison infligeant 3 dégâts par tour pendant 5 tours"
+    },
+    {
+      "id": "shadowStrike",
+      "name": "Frappe de l'Ombre",
+      "class": "assassin",
+      "emoji": "🗡️",
+      "cost": {
+        "red": 4,
+        "purple": 8
+      },
+      "minLevel": 10,
+      "effect": "destroyPurple",
+      "description": "Détruit toutes les gemmes violettes et inflige 2 dégâts par gemme détruite"
+    },
+    {
+      "id": "dualShot",
+      "name": "Double Tir",
+      "class": "assassin",
+      "emoji": "🗡️",
+      "cost": {
+        "red": 16,
+        "blue": 16,
+        "green": 16,
+        "yellow": 16
+      },
+      "minLevel": 15,
+      "effect": "dualWeaponAttack",
+      "description": "Inflige des dégâts égaux à l'attaque combinée des deux armes"
+    },
+    {
+      "id": "defensiveWall",
+      "name": "Mur Défensif",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "green": 3,
+        "purple": 4
+      },
+      "minLevel": 1,
+      "effect": "purpleToDefense",
+      "description": "Détruit toutes les gemmes violettes → +5 défense par gemme"
+    },
+    {
+      "id": "shieldBash",
+      "name": "Coup de Bouclier",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "red": 7
+      },
+      "minLevel": 3,
+      "effect": "defenseAttack",
+      "baseDmg": 1,
+      "description": "1 dégât +1 par 5 points de défense. Retire les statuts négatifs"
+    },
+    {
+      "id": "focus",
+      "name": "Concentration",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "blue": 3,
+        "yellow": 3
+      },
+      "minLevel": 4,
+      "effect": "createActionGem",
+      "description": "Transforme une gemme en Action Gem"
+    },
+    {
+      "id": "intimidate",
+      "name": "Intimidation",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "purple": 3
+      },
+      "minLevel": 5,
+      "effect": "stealCP",
+      "cpSteal": 5,
+      "description": "Vole 5 Action Points à l'ennemi"
+    },
+    {
+      "id": "rush",
+      "name": "Charge",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "yellow": 7,
+        "green": 3
+      },
+      "minLevel": 7,
+      "effect": "stunEnemy",
+      "description": "L'ennemi perd 2 tours +1 par 7 mana jaune"
+    },
+    {
+      "id": "counterAttack",
+      "name": "Contre-Attaque",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "red": 8
+      },
+      "minLevel": 8,
+      "effect": "counterOnBlock",
+      "counterDmg": 5,
+      "duration": 4,
+      "description": "Inflige 5 dégâts lorsque tu bloques pendant 4 tours"
+    },
+    {
+      "id": "reinforce",
+      "name": "Renforcement",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "green": 7
+      },
+      "minLevel": 9,
+      "effect": "destroyActionGemHeal",
+      "healPerGem": 10,
+      "description": "Détruit les Action Gems et soigne de 10 PV par gemme"
+    },
+    {
+      "id": "barrier",
+      "name": "Barrière",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "green": 10
+      },
+      "minLevel": 10,
+      "effect": "massiveDefense",
+      "defenseBonus": 20,
+      "duration": 3,
+      "description": "Augmente fortement la défense de 20 pendant 3 tours"
+    },
+    {
+      "id": "divinePower",
+      "name": "Puissance Divine",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "yellow": 6
+      },
+      "minLevel": 10,
+      "effect": "defenseToMana",
+      "description": "Génère du mana selon la défense (1 mana jaune par 5 défense)"
+    },
+    {
+      "id": "holdTheLine",
+      "name": "Tenir la Ligne",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "green": 12
+      },
+      "minLevel": 12,
+      "effect": "immunityEffects",
+      "duration": 3,
+      "description": "Immunité à plusieurs effets négatifs pendant 3 tours"
+    },
+    {
+      "id": "heavensWrath",
+      "name": "Colère Céleste",
+      "class": "templar",
+      "emoji": "🛡️",
+      "cost": {
+        "yellow": 15
+      },
+      "minLevel": 14,
+      "effect": "explodeActionGems",
+      "dmgPerGem": 8,
+      "description": "Explosion de toutes les Action Gems infligeant 8 dégâts par gemme"
+    },
+    {
+      "id": "enrage",
+      "name": "Rage",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "green": 2,
+        "red": 6
+      },
+      "minLevel": 1,
+      "effect": "damageBoost",
+      "atkBonus": 10,
+      "duration": 3,
+      "description": "Augmente les dégâts de 10 pendant 3 tours et ne termine pas le tour"
+    },
+    {
+      "id": "cleave",
+      "name": "Entaille",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "red": 9,
+        "yellow": 6
+      },
+      "minLevel": 3,
+      "effect": "yellowDamage",
+      "description": "Inflige 1 dégât par gemme jaune, puis détruit les jaunes"
+    },
+    {
+      "id": "throwAxe",
+      "name": "Lancer de Hache",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "green": 6,
+        "red": 8
+      },
+      "minLevel": 5,
+      "effect": "skullBonus",
+      "baseDmg": 4,
+      "description": "4 dégâts +1 par skull présent"
+    },
+    {
+      "id": "bloodlust",
+      "name": "Soif de Sang",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "green": 5,
+        "yellow": 5,
+        "blue": 5
+      },
+      "minLevel": 5,
+      "effect": "giveRedMana",
+      "manaGain": 12,
+      "description": "Donne +12 mana rouge"
+    },
+    {
+      "id": "summonTempest",
+      "name": "Invoquer la Tempête",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "red": 8,
+        "yellow": 5,
+        "blue": 5
+      },
+      "minLevel": 8,
+      "effect": "destroyColumns",
+      "columns": 2,
+      "description": "Détruit 2 colonnes aléatoires"
+    },
+    {
+      "id": "berserkerRage",
+      "name": "Rage Berserker",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "green": 5,
+        "red": 8
+      },
+      "minLevel": 10,
+      "effect": "redToSkulls",
+      "description": "Transforme les gemmes rouges en skulls"
+    },
+    {
+      "id": "singingBlades",
+      "name": "Lames Chantantes",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "red": 8,
+        "yellow": 6
+      },
+      "minLevel": 11,
+      "effect": "drainOnHit",
+      "manaDrain": 3,
+      "duration": 5,
+      "description": "Réduit le mana ennemi de 3 quand tu infliges des dégâts pendant 5 tours"
+    },
+    {
+      "id": "deathbringer",
+      "name": "Porte-Mort",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "green": 8,
+        "red": 16,
+        "yellow": 8,
+        "blue": 8
+      },
+      "minLevel": 14,
+      "effect": "redToSkullsHalf",
+      "description": "Crée des skulls = ½ du mana rouge possédé"
+    },
+    {
+      "id": "revenant",
+      "name": "Revenant",
+      "class": "barbarian",
+      "emoji": "🪓",
+      "cost": {
+        "green": 10,
+        "red": 25,
+        "yellow": 20
+      },
+      "minLevel": 15,
+      "effect": "doubleBattle",
+      "description": "Double la stat Battle pour le combat"
+    }
+  ]
+}
