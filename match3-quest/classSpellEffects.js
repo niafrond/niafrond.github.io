@@ -1,12 +1,36 @@
 // Gestion des effets spéciaux des sorts de classe
 
-import { player, enemy, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, addBonusTurn } from "./game.js";
+import { player, enemy, currentTurn, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, addBonusTurn, addManaForColor } from "./game.js";
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from "./board.js";
 import { colors, boardSize } from "./constants.js";
 import { JOKER_TILE, isJokerTile, isTransformableToJoker } from "./joker.js";
 
 function getManaCap(color) {
     return player.manaCaps?.[color] ?? player.maxMana;
+}
+
+function getCurrentCaster() {
+    return currentTurn === 'enemy' ? enemy : player;
+}
+
+function collectDestroyedColorTilesMana(caster, destroyedTiles = []) {
+    if(!caster || !caster.mana) return { total: 0, byColor: {} };
+
+    const byColor = { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 };
+    destroyedTiles.forEach(tile => {
+        if(colors.includes(tile)) {
+            byColor[tile] = (byColor[tile] || 0) + 1;
+        }
+    });
+
+    let total = 0;
+    Object.entries(byColor).forEach(([color, amount]) => {
+        if(amount <= 0) return;
+        const manaResult = addManaForColor(caster, color, amount, { applyGainBonus: false });
+        total += manaResult.gained;
+    });
+
+    return { total, byColor };
 }
 
 // Applique l'effet d'un sort de classe
@@ -152,6 +176,7 @@ function applyShadowCurse(spell) {
 }
 
 function applyDarkChannels(spell) {
+    const caster = getCurrentCaster();
     const hasColorTile = board.some(tile => colors.includes(tile));
     if(!hasColorTile){
         log(`⚠️ Aucune gemme de couleur à cibler.`);
@@ -196,11 +221,12 @@ function applyDarkChannels(spell) {
 
             const destroyRow = (rowIndex) => {
                 if(rowIndex >= rowsToDestroy.length) {
-                    player.mana[targetColor] = Math.min(getManaCap(targetColor), player.mana[targetColor] + count * 3);
+                    const destroyedTiles = Array.from({ length: count }, () => targetColor);
+                    const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
                     // renderBoard applique la gravite (descente) puis genere les nouvelles tuiles.
                     renderBoard();
-                    showCombatAnimation({ icon: '🌀', title: 'CANAUX SOMBRES', damage: `${count} gemmes détruites`, target: `+${count * 3} mana ${targetColor}` }, true);
-                    log(`🌀 Canaux Sombres détruit ${count} gemmes ${targetColor} ligne par ligne et donne ${count * 3} mana !`);
+                    showCombatAnimation({ icon: '🌀', title: 'CANAUX SOMBRES', damage: `${count} gemmes détruites`, target: `+${manaCollected.total} mana récupéré` }, true);
+                    log(`🌀 Canaux Sombres détruit ${count} gemmes ${targetColor} et ${caster.name} récupère ${manaCollected.total} mana.`);
                     saveUpdate();
                     checkMatches(true);
                     return;
@@ -317,36 +343,31 @@ function applyFingerOfDeath(spell) {
 }
 
 function applyChasm(spell) {
+    const caster = getCurrentCaster();
     setBoardTargetingMode({
         highlightPredicate: () => true,
         onTileClick: (index) => {
             const centerRow = Math.floor(index / boardSize);
             const centerCol = index % boardSize;
-            const manaGained = { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 };
+            const destroyedTiles = [];
 
             for(let row = centerRow - 2; row <= centerRow + 2; row++) {
                 for(let col = centerCol - 2; col <= centerCol + 2; col++) {
                     if(row >= 0 && row < boardSize && col >= 0 && col < boardSize) {
                         const idx = row * boardSize + col;
                         const tile = board[idx];
-                        if(colors.includes(tile)) {
-                            manaGained[tile] = (manaGained[tile] || 0) + 2;
-                        }
+                        destroyedTiles.push(tile);
                         board[idx] = null;
                     }
                 }
             }
 
-            Object.keys(manaGained).forEach(color => {
-                if(manaGained[color] > 0) {
-                    player.mana[color] = Math.min(getManaCap(color), player.mana[color] + manaGained[color]);
-                }
-            });
+            const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
 
             setBoardTargetingMode(null);
             renderBoard();
-            showCombatAnimation({ icon: '🌋', title: 'ABÎME', damage: 'Zone 5×5 détruite', target: '→ Plateau + mana' }, true);
-            log(`🌋 Abîme détruit une zone 5×5 choisie et donne du mana !`);
+            showCombatAnimation({ icon: '🌋', title: 'ABÎME', damage: 'Zone 5×5 détruite', target: `+${manaCollected.total} mana récupéré` }, true);
+            log(`🌋 Abîme détruit une zone 5×5 et ${caster.name} récupère ${manaCollected.total} mana.`);
             saveUpdate();
             checkMatches(true);
             return true;
@@ -358,26 +379,31 @@ function applyChasm(spell) {
 }
 
 function applyFireballArea(spell) {
+    const caster = getCurrentCaster();
     setBoardTargetingMode({
         highlightPredicate: () => true,
         onTileClick: (index) => {
             const centerRow = Math.floor(index / boardSize);
             const centerCol = index % boardSize;
+            const destroyedTiles = [];
 
             for(let r = centerRow - 1; r <= centerRow + 1; r++) {
                 for(let c = centerCol - 1; c <= centerCol + 1; c++) {
                     if(r >= 0 && r < boardSize && c >= 0 && c < boardSize) {
                         const idx = r * boardSize + c;
+                        destroyedTiles.push(board[idx]);
                         board[idx] = null;
                     }
                 }
             }
 
+            const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
+
             setBoardTargetingMode(null);
             applyDamage(enemy, spell.dmg, { sourceSpell: spell });
             renderBoard();
-            showCombatAnimation({ icon: '🔥', title: 'BOULE DE FEU', damage: `-${spell.dmg} dégâts`, target: `→ ${enemy.name}` }, true);
-            log(`🔥 Boule de Feu détruit une zone 3×3 choisie et inflige ${spell.dmg} dégâts !`);
+            showCombatAnimation({ icon: '🔥', title: 'BOULE DE FEU', damage: `-${spell.dmg} dégâts`, target: `+${manaCollected.total} mana récupéré` }, true);
+            log(`🔥 Boule de Feu détruit une zone 3×3, inflige ${spell.dmg} dégâts et fait récupérer ${manaCollected.total} mana à ${caster.name}.`);
             saveUpdate();
             checkMatches(true);
             return true;
@@ -494,18 +520,22 @@ function applyPoison(spell) {
 }
 
 function applyShadowStrike(spell) {
+    const caster = getCurrentCaster();
     let count = 0;
+    const destroyedTiles = [];
     for(let i = 0; i < board.length; i++) {
         if(board[i] === 'purple') {
             count++;
+            destroyedTiles.push(board[i]);
             board[i] = null;
         }
     }
+    const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
     const dmg = count * 2;
     applyDamage(enemy, dmg, { sourceSpell: spell });
     renderBoard();
     showCombatAnimation({ icon: '🌑', title: "FRAPPE DE L'OMBRE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
-    log(`🌑 Frappe de l'Ombre détruit ${count} gemmes violettes et inflige ${dmg} dégâts !`);
+    log(`🌑 Frappe de l'Ombre détruit ${count} gemmes violettes, inflige ${dmg} dégâts et fait récupérer ${manaCollected.total} mana à ${caster.name}.`);
     return true;
 }
 
@@ -526,18 +556,22 @@ function applyDualShot(spell) {
 
 // TEMPLAR SPELLS
 function applyDefensiveWall(spell) {
+    const caster = getCurrentCaster();
     let count = 0;
+    const destroyedTiles = [];
     for(let i = 0; i < board.length; i++) {
         if(board[i] === 'purple') {
             count++;
+            destroyedTiles.push(board[i]);
             board[i] = null;
         }
     }
+    const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
     const defenseGain = count * 5;
     player.defense = (player.defense || 0) + defenseGain;
     renderBoard();
     showCombatAnimation({ icon: '🛡️', title: 'MUR DÉFENSIF', heal: `+${defenseGain} défense`, target: '→ Vous' }, true);
-    log(`🛡️ Mur Défensif détruit ${count} gemmes violettes et donne +${defenseGain} défense !`);
+    log(`🛡️ Mur Défensif détruit ${count} gemmes violettes: +${defenseGain} défense et +${manaCollected.total} mana pour ${caster.name}.`);
     return true;
 }
 
@@ -702,18 +736,22 @@ function applyEnrage(spell) {
 }
 
 function applyCleave(spell) {
+    const caster = getCurrentCaster();
     let count = 0;
+    const destroyedTiles = [];
     for(let i = 0; i < board.length; i++) {
         if(board[i] === 'yellow') {
             count++;
+            destroyedTiles.push(board[i]);
             board[i] = null;
         }
     }
+    const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
     const dmg = count;
     applyDamage(enemy, dmg, { sourceSpell: spell });
     renderBoard();
     showCombatAnimation({ icon: '🪓', title: 'ENTAILLE', damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
-    log(`🪓 Entaille détruit ${count} gemmes jaunes et inflige ${dmg} dégâts !`);
+    log(`🪓 Entaille détruit ${count} gemmes jaunes, inflige ${dmg} dégâts et récupère ${manaCollected.total} mana pour ${caster.name}.`);
     return true;
 }
 
@@ -739,9 +777,11 @@ function applyBloodlust(spell) {
 }
 
 function applySummonTempest(spell) {
+    const caster = getCurrentCaster();
     const colsToDestroy = Math.max(1, Math.min(boardSize, Math.floor(spell.columns || 1)));
     const availableCols = Array.from({ length: boardSize }, (_, i) => i);
     const pickedCols = [];
+    const destroyedTiles = [];
 
     for(let i = 0; i < colsToDestroy && availableCols.length > 0; i++) {
         const randomIndex = Math.floor(Math.random() * availableCols.length);
@@ -750,13 +790,16 @@ function applySummonTempest(spell) {
 
     pickedCols.forEach(col => {
         for(let row = 0; row < boardSize; row++) {
+            destroyedTiles.push(board[row * boardSize + col]);
             board[row * boardSize + col] = null;
         }
     });
 
+    const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
+
     renderBoard();
-    showCombatAnimation({ icon: '🌩️', title: 'INVOQUER LA TEMPÊTE', damage: `${pickedCols.length} colonnes détruites`, target: '→ Plateau' }, true);
-    log(`🌩️ Invoquer la Tempête détruit ${pickedCols.length} colonne(s).`);
+    showCombatAnimation({ icon: '🌩️', title: 'INVOQUER LA TEMPÊTE', damage: `${pickedCols.length} colonnes détruites`, target: `+${manaCollected.total} mana récupéré` }, true);
+    log(`🌩️ Invoquer la Tempête détruit ${pickedCols.length} colonne(s) et ${caster.name} récupère ${manaCollected.total} mana.`);
     return true;
 }
 
