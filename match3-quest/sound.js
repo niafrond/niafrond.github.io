@@ -729,6 +729,11 @@ function initializeAudioVisibilityGuard() {
     document.addEventListener('visibilitychange', syncFromVisibility);
     window.addEventListener('focus', syncFromVisibility);
     window.addEventListener('blur', syncFromVisibility);
+    // Mobile/PWA lifecycle events (iOS Safari, Android Chrome)
+    window.addEventListener('pageshow', syncFromVisibility);
+    window.addEventListener('pagehide', syncFromVisibility);
+    document.addEventListener('freeze', syncFromVisibility);
+    document.addEventListener('resume', syncFromVisibility);
 }
 
 function syncAmbientState() {
