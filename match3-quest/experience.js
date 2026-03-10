@@ -21,27 +21,45 @@ export function getXPRequiredForLevel(level) {
 
 /**
  * Calcule l'XP donnée par un ennemi vaincu
- * Prend en compte le niveau de l'ennemi et du joueur
- * @param {number} enemyLevel - Le niveau de l'ennemi vaincu
+ * Prend en compte la vie, le niveau, l'attaque et la defense de l'ennemi.
+ * L'XP rendue est toujours un multiple entier des HP max de l'ennemi.
+ * @param {object|number} enemyData - Objet ennemi (ou niveau pour retro-compatibilite)
  * @param {number} playerLevel - Le niveau actuel du joueur
  * @returns {number} - L'XP gagnée
  */
-export function calculateXPGain(enemyLevel, playerLevel) {
-    const baseXP = 50;
-    const levelDiff = enemyLevel - playerLevel;
-    
-    // Bonus/malus selon la différence de niveau
-    let multiplier = 1.0;
-    if (levelDiff > 0) {
-        // Ennemi plus fort: bonus de 20% par niveau de différence
-        multiplier = 1.0 + (levelDiff * 0.2);
-    } else if (levelDiff < 0) {
-        // Ennemi plus faible: malus de 10% par niveau de différence (minimum 50%)
-        multiplier = Math.max(0.5, 1.0 + (levelDiff * 0.1));
-    }
-    
-    const xpGain = Math.floor(baseXP * enemyLevel * multiplier);
-    return Math.max(10, xpGain); // Minimum 10 XP
+export function calculateXPGain(enemyData, playerLevel) {
+    const enemyLevel = Math.max(1, Math.floor(
+        typeof enemyData === 'number'
+            ? enemyData
+            : (enemyData?.level || playerLevel || 1)
+    ));
+    const enemyMaxHp = Math.max(1, Math.floor(
+        typeof enemyData === 'number'
+            ? (40 + enemyLevel * 10)
+            : (enemyData?.maxHp || enemyData?.hp || (40 + enemyLevel * 10))
+    ));
+    const enemyAttack = Math.max(0, Math.floor(
+        typeof enemyData === 'number'
+            ? (5 + enemyLevel * 4)
+            : (enemyData?.attack || 0)
+    ));
+    const enemyDefense = Math.max(0, Math.floor(
+        typeof enemyData === 'number'
+            ? Math.floor(enemyLevel * 1.5)
+            : (enemyData?.defense || 0)
+    ));
+
+    const levelDiff = enemyLevel - Math.max(1, Math.floor(playerLevel || 1));
+    const statScore = enemyLevel + enemyAttack + enemyDefense;
+
+    // Multiplicateur entier pour garantir une XP multiple des HP max de l'ennemi.
+    const baseMultiplier = Math.max(1, Math.floor(statScore / 12));
+    const levelAdjustment = levelDiff > 0
+        ? levelDiff
+        : Math.ceil(levelDiff / 2);
+    const finalMultiplier = Math.max(1, baseMultiplier + levelAdjustment);
+
+    return enemyMaxHp * finalMultiplier;
 }
 
 /**

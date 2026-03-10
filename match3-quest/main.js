@@ -96,18 +96,18 @@ function init() {
         }
 
         const renderChoices = () => {
-            const enemies = generateEnemyChoices(player.level, 4);
+            const enemies = generateEnemyChoices(player.level, 4, undefined, player.maxHp);
             const grid = document.createElement('div');
             grid.className = 'enemy-grid';
 
             enemies.forEach(enemyChoice => {
                 const card = document.createElement('div');
                 card.className = `enemy-card${enemyChoice.isOverleveledChoice ? ' danger' : ''}${enemyChoice.isEasyChoice ? ' easy' : ''}`;
-                const xpGain = calculateXPGain(enemyChoice.level || player.level, player.level);
+                const xpGain = calculateXPGain(enemyChoice, player.level);
 
                 card.innerHTML = `
                     <div class="enemy-name">${enemyChoice.raceEmoji} ${enemyChoice.name}</div>
-                    <div class="enemy-meta">Niveau ${enemyChoice.level} • HP ${enemyChoice.maxHp} • Atk ${enemyChoice.attack}</div>
+                    <div class="enemy-meta">Niveau ${enemyChoice.level} • HP ${enemyChoice.maxHp} • Atk ${enemyChoice.attack} • Def ${enemyChoice.defense || 0}</div>
                     <div class="enemy-xp">XP estimée: ${xpGain}</div>
                     ${enemyChoice.isOverleveledChoice ? '<div class="enemy-warning">⚠️ Ennemi trop fort (+6 niveaux)</div>' : ''}
                     ${enemyChoice.isEasyChoice ? '<div class="enemy-easy">⬇️ Ennemi affaibli (facile)</div>' : ''}

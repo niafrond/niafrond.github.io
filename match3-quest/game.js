@@ -1815,7 +1815,7 @@ export function handleEnemyDefeated(){
     playSfx('victory');
     
     // Calculer et mettre en attente l'XP (application en fin de combat)
-    const xpGain = calculateXPGain(enemy.level || player.level, player.level);
+    const xpGain = calculateXPGain(enemy, player.level);
     queueCombatXP(xpGain);
     log(`⭐ Vous gagnez ${xpGain} XP !`);
 

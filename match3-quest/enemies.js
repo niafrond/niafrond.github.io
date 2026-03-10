@@ -129,10 +129,12 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
     const stats = template.statsModifiers || { hpMult: 1, atkMult: 1, defMult: 1 };
     const baseHp = 40 + enemyLevel * 10;
     const baseAtk = 5 + enemyLevel * 4;
+    const baseDef = 2 + enemyLevel * 2;
 
     const hp = Math.floor(baseHp * (stats.hpMult || 1));
     const maxAttackFromHp = Math.max(1, Math.floor(hp / 4));
     const atk = Math.min(Math.floor(baseAtk * (stats.atkMult || 1)), maxAttackFromHp);
+    const def = Math.max(0, Math.floor(baseDef * (stats.defMult || 1)));
 
     let enemyWeapon = null;
     if(template.hasWeapon !== false){
@@ -170,6 +172,7 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
         hp: hp,
         maxHp: hp,
         attack: atk,
+        defense: def,
         resistances: buildResistances(template, enemyLevel),
         combatPoints: 0,
         mana: { red: 0, blue: 0, green: 0, yellow: 0, purple: 0 },
@@ -198,7 +201,7 @@ export function generateRandomEnemy(playerLevel, _allSpells, allWeaponsArg = all
     return buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg);
 }
 
-export function generateEnemyChoices(playerLevel, count = 4, allWeaponsArg = allWeapons){
+export function generateEnemyChoices(playerLevel, count = 4, allWeaponsArg = allWeapons, playerMaxHp = null){
     const catalog = [...loadEnemyCatalogSync()];
     const choices = [];
     const normalMaxLevel = playerLevel + 1;
@@ -225,6 +228,18 @@ export function generateEnemyChoices(playerLevel, count = 4, allWeaponsArg = all
     const easyTemplate = pickRandom(loadEnemyCatalogSync());
     const easyLevel = Math.max(1, playerLevel - 2);
     const easyEnemy = buildEnemyFromTemplate(easyTemplate, easyLevel, allWeaponsArg);
+
+    // Un ennemi "affaibli" doit avoir moins de vie que le joueur.
+    const safePlayerMaxHp = Math.max(1, Math.floor(playerMaxHp || 0));
+    if(safePlayerMaxHp > 1) {
+        const maxAllowedHp = safePlayerMaxHp - 1;
+        if(easyEnemy.maxHp >= safePlayerMaxHp) {
+            easyEnemy.maxHp = Math.max(1, maxAllowedHp);
+            easyEnemy.hp = easyEnemy.maxHp;
+            easyEnemy.attack = Math.min(easyEnemy.attack, Math.max(1, Math.floor(easyEnemy.maxHp / 4)));
+        }
+    }
+
     easyEnemy.isEasyChoice = true;
     choices.push(easyEnemy);
 
