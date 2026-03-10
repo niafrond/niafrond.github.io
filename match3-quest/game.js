@@ -2527,17 +2527,7 @@ export function applyStartingAbilities(){
 
 // ennemis
 function shouldUseEpicCombatMusic(enemyEntity) {
-    if(!enemyEntity) return false;
-
-    const levelGap = (enemyEntity.level || 0) - (player.level || 0);
-    const hpRatio = (enemyEntity.maxHp || enemyEntity.hp || 1) / Math.max(1, player.maxHp || player.hp || 1);
-    const attackRatio = (enemyEntity.attack || 1) / Math.max(1, player.attack || 1);
-
-    return Boolean(enemyEntity.isBoss)
-        || Boolean(enemyEntity.isOverleveledChoice)
-        || levelGap >= 2
-        || hpRatio >= 1.35
-        || attackRatio >= 1.3;
+    return Boolean(enemyEntity?.isBoss);
 }
 
 export function newEnemy(selectedEnemy = null){

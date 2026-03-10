@@ -97,8 +97,7 @@ function resolveCombatMusicMood(value) {
 }
 
 function getEffectiveCombatMood() {
-    if(combatMusicMood === 'epic') return 'epic';
-    return AMBIENT_MOOD_BY_FAMILY[combatMusicFamily] || 'sweet';
+    return combatMusicMood === 'epic' ? 'epic' : 'sweet';
 }
 
 function loadSettings() {
