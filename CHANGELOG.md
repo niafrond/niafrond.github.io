@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/niafrond/niafrond.github.io/compare/v1.0.0...v1.0.1) (2026-03-10)
+
+### Bug Fixes
+
+* Corriger la condition pour éviter l'exécution par le bot GitHub dans le workflow de release ([ab8022c](https://github.com/niafrond/niafrond.github.io/commit/ab8022c34f35668e99d1b25e06b304f7a227c30e))
+
 ## 1.0.0 (2026-03-10)
 
 ### Features
