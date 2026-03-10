@@ -17,11 +17,11 @@ body {
 }
 #board {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(8, var(--tile-size));
     grid-gap: 6px;
     margin: 15px auto;
-    max-width: 500px;
-    width: 95%;
+    max-width: min(100%, 980px);
+    width: fit-content;
     background: #e0e0e0;
     padding: 8px;
     border-radius: 8px;
@@ -33,9 +33,8 @@ body {
 
 /* make tiles square - same size, responsive */
 .tile {
-    width: 100%;
+    width: var(--tile-size);
     height: var(--tile-size);
-    aspect-ratio: 1;
     min-height: 16px;
     border-radius: 6px;
     display: flex;
@@ -355,6 +354,8 @@ progress.enemy-bar::-webkit-progress-value {
 /* Colonnes de sorts */
 #spells-container {
     display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
     gap: 10px;
     margin: 10px 0;
 }
@@ -369,6 +370,30 @@ progress.enemy-bar::-webkit-progress-value {
     margin: 0 0 8px 0;
     font-size: 0.9em;
     text-align: center;
+}
+
+@media (max-height: 860px) {
+    #board {
+        margin: 8px auto;
+        padding: 6px;
+        grid-gap: 4px;
+    }
+
+    #spells-container {
+        margin: 6px 0;
+        gap: 6px;
+    }
+
+    .spells-column {
+        padding: 6px;
+    }
+
+    #spell-buttons .spell-btn,
+    .enemy-spell-item,
+    .weapon-btn {
+        font-size: 0.8em;
+        padding: 5px 6px;
+    }
 }
 #attack-btn {
     width: 100%;
@@ -762,6 +787,17 @@ progress.enemy-bar::-webkit-progress-value {
     position: fixed;
     bottom: max(10px, env(safe-area-inset-bottom));
     left: max(12px, env(safe-area-inset-left));
+    z-index: 1000;
+    margin: 0;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+}
+
+#dark-mode-toggle-btn {
+    background-color: #263238;
+    color: #fff;
+    position: fixed;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    left: max(62px, calc(env(safe-area-inset-left) + 62px));
     z-index: 1000;
     margin: 0;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
@@ -1664,4 +1700,93 @@ progress.enemy-bar::-webkit-progress-value {
     .levelup-content {
         max-width: 95vw;
     }
+}
+
+body.dark-mode {
+    background: #0f1318;
+    color: #e5ebf2;
+}
+
+body.dark-mode .game-container {
+    background: #151b22;
+    box-shadow: 0 7px 20px rgba(0, 0, 0, 0.45);
+}
+
+body.dark-mode .tabs,
+body.dark-mode .shop-header {
+    background: #151b22;
+    border-color: #2a3441;
+}
+
+body.dark-mode .tab-btn {
+    color: #d6dde7;
+}
+
+body.dark-mode .tab-btn:hover {
+    background: #222a34;
+}
+
+body.dark-mode .tab-btn.active {
+    border-bottom-color: #5fb0ff;
+}
+
+body.dark-mode #player-stats,
+body.dark-mode #enemy-stats,
+body.dark-mode .spells-column,
+body.dark-mode .stats-section,
+body.dark-mode .weapon-item,
+body.dark-mode .item-card,
+body.dark-mode .spell-item,
+body.dark-mode .enemy-spell-item,
+body.dark-mode .modal-content,
+body.dark-mode .class-card,
+body.dark-mode .enemy-card,
+body.dark-mode .attribute-card,
+body.dark-mode .inventory-slot-empty {
+    background: #1d2530;
+    border-color: #2f3d4d;
+    color: #dbe4ef;
+}
+
+body.dark-mode #board {
+    background: #283341;
+}
+
+body.dark-mode .spell-detail,
+body.dark-mode .weapon-description,
+body.dark-mode .weapon-stats,
+body.dark-mode .item-description,
+body.dark-mode .shop-subtitle,
+body.dark-mode .class-description,
+body.dark-mode .enemy-card .enemy-meta,
+body.dark-mode .stat-effect {
+    color: #a9b7c8;
+}
+
+body.dark-mode .weapon-name,
+body.dark-mode .item-name,
+body.dark-mode .class-name,
+body.dark-mode .enemy-card .enemy-name,
+body.dark-mode .attr-name,
+body.dark-mode .stats-section h3,
+body.dark-mode .modal-content h2 {
+    color: #ecf3fb;
+}
+
+body.dark-mode .shop-gold-display {
+    background: #2d2a1e;
+    border-color: #8c7a30;
+    color: #f3dd8b;
+}
+
+body.dark-mode .item-card.consumable-item,
+body.dark-mode .item-card.artifact-item,
+body.dark-mode .enemy-spell-item.enemy-attack-item,
+body.dark-mode .weapon-item.equipped-weapon,
+body.dark-mode .spell-item.active-spell {
+    background: #253242;
+}
+
+body.dark-mode .modal {
+    background: rgba(0, 0, 0, 0.78);
 }

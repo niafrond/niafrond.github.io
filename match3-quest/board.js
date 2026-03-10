@@ -37,6 +37,7 @@ let boardDropProbabilities = null;
 let pendingComboAnimations = 0;
 let boardSettledCallbacks = [];
 let boardResizeListenersAttached = false;
+let boardResizeObserver = null;
 
 const SKULL_ATTACK_BONUS_DIVISOR = 10;
 const SKULL_ATTACK_BONUS_CAP = 6;
@@ -51,19 +52,69 @@ const BOARD_DROP_PROFILES = {
 const SKULL_PROB_INVERSE_NUMERATOR = 0.40;
 const SKULL_PROB_MIN = 0.08;
 const SKULL_PROB_MAX = 0.20;
+
+function getOuterBlockSize(element){
+    if(!element) return 0;
+    if(element.offsetParent === null) return 0;
+
+    const rect = element.getBoundingClientRect();
+    const styles = window.getComputedStyle(element);
+    const marginTop = parseFloat(styles.marginTop || '0') || 0;
+    const marginBottom = parseFloat(styles.marginBottom || '0') || 0;
+    return rect.height + marginTop + marginBottom;
+}
+
+function getMaxTileSizeFromViewport(boardDiv){
+    const top = Math.max(0, boardDiv.getBoundingClientRect().top);
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    if(viewportHeight <= 0) return Infinity;
+
+    const spellsContainer = document.getElementById('spells-container');
+    const battleResultScreen = document.getElementById('battle-result-screen');
+    const spellsHeight = getOuterBlockSize(spellsContainer);
+    const resultHeight = getOuterBlockSize(battleResultScreen);
+    const bottomSafety = 8;
+
+    const availableBoardHeight = viewportHeight - top - spellsHeight - resultHeight - bottomSafety;
+    if(availableBoardHeight <= 0) return 1;
+
+    const styles = window.getComputedStyle(boardDiv);
+    const paddingTop = parseFloat(styles.paddingTop || '0') || 0;
+    const paddingBottom = parseFloat(styles.paddingBottom || '0') || 0;
+    const marginBottom = parseFloat(styles.marginBottom || '0') || 0;
+    const gap = parseFloat(styles.rowGap || styles.gap || '0') || 0;
+    const usableHeight = availableBoardHeight - paddingTop - paddingBottom - marginBottom - (gap * (boardSize - 1));
+    if(usableHeight <= 0) return 1;
+
+    return Math.floor(usableHeight / boardSize);
+}
+
 function syncBoardTileSize(){
     if(typeof window === 'undefined') return;
     const boardDiv = document.getElementById('board');
     if(!boardDiv) return;
+    if(boardDiv.offsetParent === null) return;
+
+    const parentWidth = boardDiv.parentElement?.clientWidth || 0;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    const widthBudget = Math.min(
+        parentWidth > 0 ? parentWidth : Number.POSITIVE_INFINITY,
+        viewportWidth > 0 ? (viewportWidth - 24) : Number.POSITIVE_INFINITY,
+        980
+    );
+
+    if(!Number.isFinite(widthBudget) || widthBudget <= 0) return;
 
     const styles = window.getComputedStyle(boardDiv);
     const paddingLeft = parseFloat(styles.paddingLeft || '0') || 0;
     const paddingRight = parseFloat(styles.paddingRight || '0') || 0;
     const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
-    const usableWidth = boardDiv.clientWidth - paddingLeft - paddingRight - (gap * (boardSize - 1));
+    const usableWidth = widthBudget - paddingLeft - paddingRight - (gap * (boardSize - 1));
     if(usableWidth <= 0) return;
 
-    const tileSize = Math.max(16, Math.floor(usableWidth / boardSize));
+    const tileSizeFromWidth = Math.floor(usableWidth / boardSize);
+    const tileSizeFromHeight = getMaxTileSizeFromViewport(boardDiv);
+    const tileSize = Math.max(10, Math.min(tileSizeFromWidth, tileSizeFromHeight));
     boardDiv.style.setProperty('--tile-size', `${tileSize}px`);
 }
 
@@ -79,6 +130,26 @@ function ensureBoardResizeListeners(){
 
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
+
+    if(typeof window.ResizeObserver === 'function'){
+        boardResizeObserver = new window.ResizeObserver(() => {
+            schedule(syncBoardTileSize);
+        });
+
+        const observedElements = [
+            document.querySelector('.stats-container'),
+            document.getElementById('spells-container'),
+            document.getElementById('battle-result-screen'),
+            document.querySelector('.tabs')
+        ];
+
+        observedElements.forEach((element) => {
+            if(element){
+                boardResizeObserver.observe(element);
+            }
+        });
+    }
+
     boardResizeListenersAttached = true;
 }
 

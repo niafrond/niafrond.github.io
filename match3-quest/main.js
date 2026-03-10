@@ -9,6 +9,41 @@ import { initializeAudioUI, playSfx, primeAudioFromGesture } from "./sound.js";
 // initialisation de la partie
 console.log('Main.js loaded');
 
+const THEME_STORAGE_KEY = 'match3Theme';
+
+function setThemeMode(isDarkMode, toggleButton){
+    document.body.classList.toggle('dark-mode', isDarkMode);
+    if(toggleButton){
+        toggleButton.textContent = isDarkMode ? '☀️' : '🌙';
+        toggleButton.setAttribute('aria-pressed', isDarkMode ? 'true' : 'false');
+        toggleButton.title = isDarkMode ? 'Désactiver le mode sombre' : 'Activer le mode sombre';
+    }
+
+    try {
+        localStorage.setItem(THEME_STORAGE_KEY, isDarkMode ? 'dark' : 'light');
+    } catch(_) {
+        // localStorage can be unavailable in some contexts
+    }
+
+    window.dispatchEvent(new Event('resize'));
+}
+
+function initializeThemeUI(toggleButton){
+    if(!toggleButton) return;
+
+    let isDarkMode = false;
+    try {
+        isDarkMode = localStorage.getItem(THEME_STORAGE_KEY) === 'dark';
+    } catch(_) {
+        isDarkMode = false;
+    }
+
+    setThemeMode(isDarkMode, toggleButton);
+    toggleButton.addEventListener('click', () => {
+        setThemeMode(!document.body.classList.contains('dark-mode'), toggleButton);
+    });
+}
+
 function getBossTierForLevel(level) {
     const safeLevel = Math.max(1, Math.floor(level || 1));
     if(safeLevel < 5 || safeLevel % 5 !== 0) return null;
@@ -185,6 +220,9 @@ function init() {
 
     const soundToggleButton = document.getElementById('sound-toggle-btn');
     initializeAudioUI(soundToggleButton);
+
+    const darkModeToggleButton = document.getElementById('dark-mode-toggle-btn');
+    initializeThemeUI(darkModeToggleButton);
 
     // Ne pas créer d'ennemi ni de board au démarrage
     // Juste initialiser les sorts et armes disponibles

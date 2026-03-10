@@ -22,6 +22,7 @@ let audioPrimed = false;
 let combatMusicFamily = 'default';
 let combatMusicMood = 'sweet';
 let audioVisibilityGuardInitialized = false;
+let ambientPausedByFocusLoss = false;
 
 const AMBIENT_TRACKS_BY_MOOD = {
     sweet: ['./mp3/sweet.mp3', './mp3/sweet2.mp3'],
@@ -516,7 +517,13 @@ function startAmbientLoop() {
 
     const mood = getEffectiveCombatMood();
 
-    if(activeAmbientAudio && !activeAmbientAudio.paused && activeAmbientAudio.dataset?.combatMood === mood) {
+    if(activeAmbientAudio && activeAmbientAudio.dataset?.combatMood === mood) {
+        if(activeAmbientAudio.paused) {
+            const playPromise = activeAmbientAudio.play();
+            if(playPromise?.catch) {
+                playPromise.catch(() => {});
+            }
+        }
         fadeAudioVolume(activeAmbientAudio, getAmbientTargetVolume(), 360);
         return;
     }
@@ -548,6 +555,15 @@ function startAmbientLoop() {
     fadeAudioVolume(nextTrack, getAmbientTargetVolume(), 520);
 }
 
+function pauseAmbientLoop() {
+    clearAmbientFadeTimer();
+
+    if(!activeAmbientAudio) return;
+
+    activeAmbientAudio.pause();
+    ambientPausedByFocusLoss = true;
+}
+
 function stopAmbientLoop() {
     clearAmbientFadeTimer();
 
@@ -558,6 +574,7 @@ function stopAmbientLoop() {
     trackToStop.pause();
     trackToStop.currentTime = 0;
     activeAmbientAudio = null;
+    ambientPausedByFocusLoss = false;
 }
 
 function isGameInForeground() {
@@ -586,10 +603,26 @@ function initializeAudioVisibilityGuard() {
 }
 
 function syncAmbientState() {
-    if(isMusicMuted() || !combatMusicEnabled || !isGameInForeground()) {
+    if(isMusicMuted() || !combatMusicEnabled) {
         stopAmbientLoop();
         return;
     }
+
+    if(!isGameInForeground()) {
+        pauseAmbientLoop();
+        return;
+    }
+
+    if(ambientPausedByFocusLoss && activeAmbientAudio) {
+        const playPromise = activeAmbientAudio.play();
+        if(playPromise?.catch) {
+            playPromise.catch(() => {});
+        }
+        fadeAudioVolume(activeAmbientAudio, getAmbientTargetVolume(), 280);
+        ambientPausedByFocusLoss = false;
+        return;
+    }
+
     startAmbientLoop();
 }
 
