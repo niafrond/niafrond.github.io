@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/niafrond/niafrond.github.io/compare/v1.0.3...v1.1.0) (2026-03-10)
+
+### Features
+
+* Implement boss enemy mechanics and enhance player tracking for defeated bosses ([01e9589](https://github.com/niafrond/niafrond.github.io/commit/01e9589b3df1ddacd06de10c83c078c7f87f4483))
+
 ## [1.0.3](https://github.com/niafrond/niafrond.github.io/compare/v1.0.2...v1.0.3) (2026-03-10)
 
 ### Bug Fixes
