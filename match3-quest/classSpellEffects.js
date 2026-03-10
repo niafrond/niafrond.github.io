@@ -1,6 +1,6 @@
 // Gestion des effets spéciaux des sorts de classe
 
-import { player, enemy, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage } from "./game.js";
+import { player, enemy, log, saveUpdate, showCombatAnimation, finishPlayerTurn, applyDamage, addBonusTurn } from "./game.js";
 import { board, renderBoard, setBoardTargetingMode, checkMatches } from "./board.js";
 import { colors, boardSize } from "./constants.js";
 import { JOKER_TILE, isJokerTile, isTransformableToJoker } from "./joker.js";
@@ -448,7 +448,7 @@ function applyManaSiphon(spell) {
 // ASSASSIN SPELLS
 function applySneakAttack(spell) {
     applyDamage(enemy, spell.dmg);
-    player.bonusTurn = true;
+    addBonusTurn(player);
     showCombatAnimation({ icon: '🗡️', title: 'ATTAQUE SOURNOISE', damage: `-${spell.dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🗡️ Attaque Sournoise inflige ${spell.dmg} dégâts sans terminer le tour !`);
     return true;
@@ -695,7 +695,7 @@ function applyEnrage(spell) {
     player.statusEffects.enraged = spell.duration;
     player.statusEffects.enragedBonus = spell.atkBonus;
     player.attack += spell.atkBonus;
-    player.bonusTurn = true;
+    addBonusTurn(player);
     showCombatAnimation({ icon: '😡', title: 'RAGE', damage: `+${spell.atkBonus} attaque`, target: `→ Vous (${spell.duration} tours)` }, true);
     log(`😡 Rage augmente l'attaque de ${spell.atkBonus} pendant ${spell.duration} tours !`);
     return true;

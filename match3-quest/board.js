@@ -1,4 +1,4 @@
-import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, addManaForColor, logActiveAction, clampEnemyAttackDamage, applyDamage } from "./game.js";
+import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, addManaForColor, logActiveAction, clampEnemyAttackDamage, applyDamage, addBonusTurn } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 import {
     hasMatches as hasMatchesOnBoard,
@@ -409,7 +409,7 @@ export function checkMatches(forceFullBoard = false){
                 }
             }
             if(info.len>=4){ 
-                currentPlayer.bonusTurn = true;
+                addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
                 log(`🎁 Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 // Afficher une animation de tour bonus
@@ -425,7 +425,7 @@ export function checkMatches(forceFullBoard = false){
             log(`⚔️ +${info.len} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
             // Bonus de tour pour 4+ épées
             if(info.len>=4){ 
-                currentPlayer.bonusTurn = true;
+                addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
                 log(`🎁 Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 const isPlayer = currentTurn === 'player';
@@ -456,7 +456,7 @@ export function checkMatches(forceFullBoard = false){
             log(`💀 Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}`);
             // Bonus de tour pour 4+ crânes
             if(info.len>=4){ 
-                currentPlayer.bonusTurn = true;
+                addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
                 log(`🎁 Match de ${info.len} crânes : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 const isPlayer = currentTurn === 'player';
@@ -472,7 +472,7 @@ export function checkMatches(forceFullBoard = false){
 
         if(currentTurn === 'player' && turnDistinctMatches > 5 && !comboMasteryTriggered){
             comboMasteryTriggered = true;
-            currentPlayer.bonusTurn = true;
+            addBonusTurn(currentPlayer);
             playSfx('turnBonus');
             const comboXp = grantComboMasteryRewards();
 

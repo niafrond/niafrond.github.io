@@ -115,6 +115,24 @@ export function canEntityCastSpell(entity, spell){
     return true;
 }
 
+function normalizeBonusTurnValue(value){
+    if(value === true) return 1;
+    if(value === false || value === null || value === undefined) return 0;
+
+    const numericValue = Number(value);
+    if(!Number.isFinite(numericValue)) return 0;
+    return Math.max(0, Math.floor(numericValue));
+}
+
+export function addBonusTurn(entity, amount = 1){
+    if(!entity) return 0;
+
+    const currentTurns = normalizeBonusTurnValue(entity.bonusTurn);
+    const turnsToAdd = Math.max(0, Math.floor(Number(amount) || 0));
+    entity.bonusTurn = currentTurns + turnsToAdd;
+    return entity.bonusTurn;
+}
+
 export function getEnemyAttackDamageCap(enemyEntity = enemy){
     const hpReference = Math.max(1, Math.floor(enemyEntity?.maxHp || enemyEntity?.hp || 1));
     return Math.max(1, Math.floor(hpReference / 4));
@@ -300,7 +318,7 @@ export let player = {
     equippedWeapon: null,  // arme équipée
     availableWeapons: [],  // armes débloquées
     combatPoints: 0,
-    bonusTurn: false,
+    bonusTurn: 0,
     abilities: [],  // aptitudes acquises
     class: null,  // classe du joueur (sorcerer, assassin, templar, barbarian)
     statusEffects: {},  // effets de statut actifs (poison, stun, buffs, etc.)
@@ -510,7 +528,7 @@ export const combatCost = 5;             // points nécessaires pour une attaque
 export const skullDamage = 1;           // dégâts infligés par crâne lors d'un match
 
 // ennemi courant (combatPoints pour attaquer)
-export let enemy = { name:"Gobelin", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: false, inventoryItem: null };
+export let enemy = { name:"Gobelin", hp:50, maxHp:50, attack:10, resistances:{}, combatPoints:0, mana: { red:0, blue:0, green:0, yellow:0, purple:0 }, spells:[], weapon: null, abilities: [], statusEffects: {}, bonusTurn: 0, inventoryItem: null };
 
 // si le joueur meurt, on restaure ses PV et réinitialise le combat
 export function restartCombat(){
@@ -521,10 +539,10 @@ export function restartCombat(){
 
     player.hp = player.maxHp;
     player.combatPoints = 0;
-    player.bonusTurn = false;
+    player.bonusTurn = 0;
     enemy.hp = enemy.maxHp;
     enemy.combatPoints = 0;
-    enemy.bonusTurn = false;
+    enemy.bonusTurn = 0;
     // Réinitialiser le mana à 0
     player.mana = { ...EMPTY_MANA_POOL };
     enemy.mana = { ...EMPTY_MANA_POOL };
@@ -709,7 +727,7 @@ export function loadGameData() {
             player.equippedWeapon = loaded.equippedWeapon ?? null;
             player.availableWeapons = loaded.availableWeapons ?? player.availableWeapons;
             player.combatPoints = loaded.combatPoints ?? player.combatPoints;
-            player.bonusTurn = loaded.bonusTurn ?? player.bonusTurn;
+            player.bonusTurn = normalizeBonusTurnValue(loaded.bonusTurn ?? player.bonusTurn);
             player.abilities = loaded.abilities ?? player.abilities;
             player.class = loaded.class ?? player.class;
             player.statusEffects = loaded.statusEffects ?? player.statusEffects;
@@ -1448,9 +1466,10 @@ export function finishPlayerTurn(){
     }
     
     // Vérifier si le joueur a un tour bonus
-    if(player.bonusTurn){
-        player.bonusTurn = false;
-        log("🎯 Tour bonus utilisé : pas d'attaque ennemie.");
+    if(normalizeBonusTurnValue(player.bonusTurn) > 0){
+        player.bonusTurn = normalizeBonusTurnValue(player.bonusTurn) - 1;
+        const remaining = normalizeBonusTurnValue(player.bonusTurn);
+        log(`🎯 Tour bonus utilisé : pas d'attaque ennemie.${remaining > 0 ? ` (${remaining} restant${remaining > 1 ? 's' : ''})` : ''}`);
         saveUpdate();
         return;
     }
@@ -1574,9 +1593,10 @@ export function finishEnemyTurn(){
     }
     
     // Vérifier si l'ennemi a un tour bonus
-    if(enemy.bonusTurn){
-        enemy.bonusTurn = false;
-        log("🎯 L'ennemi a un tour bonus et rejoue !");
+    if(normalizeBonusTurnValue(enemy.bonusTurn) > 0){
+        enemy.bonusTurn = normalizeBonusTurnValue(enemy.bonusTurn) - 1;
+        const remaining = normalizeBonusTurnValue(enemy.bonusTurn);
+        log(`🎯 L'ennemi a un tour bonus et rejoue !${remaining > 0 ? ` (${remaining} restant${remaining > 1 ? 's' : ''})` : ''}`);
         updateStats();
         saveUpdate();
         // L'ennemi rejoue immédiatement

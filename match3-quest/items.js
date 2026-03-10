@@ -179,8 +179,10 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
         message += `⚔️ Vous gagnez ${item.effect.gainActionPoints} point(s) d'action. `;
     }
     if(item.effect.extraTurn) {
-        player.bonusTurn = true;
-        message += `⏩ Vous jouez un tour supplémentaire ! `;
+        const extraTurns = Math.max(1, Math.floor(item.effect.extraTurn));
+        const currentBonusTurns = Math.max(0, Math.floor(Number(player.bonusTurn) || 0));
+        player.bonusTurn = currentBonusTurns + extraTurns;
+        message += `⏩ Vous gagnez ${extraTurns} tour${extraTurns > 1 ? 's' : ''} supplémentaire${extraTurns > 1 ? 's' : ''} ! `;
     }
     if(item.effect.randomMana !== undefined) {
         const manaColors = Object.keys(player.mana);
