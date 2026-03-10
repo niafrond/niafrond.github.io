@@ -36,6 +36,7 @@ let tileHighlightPredicate = null;
 let boardDropProbabilities = null;
 let pendingComboAnimations = 0;
 let boardSettledCallbacks = [];
+let boardResizeListenersAttached = false;
 
 const SKULL_ATTACK_BONUS_DIVISOR = 10;
 const SKULL_ATTACK_BONUS_CAP = 6;
@@ -50,6 +51,36 @@ const BOARD_DROP_PROFILES = {
 const SKULL_PROB_INVERSE_NUMERATOR = 0.40;
 const SKULL_PROB_MIN = 0.08;
 const SKULL_PROB_MAX = 0.20;
+function syncBoardTileSize(){
+    if(typeof window === 'undefined') return;
+    const boardDiv = document.getElementById('board');
+    if(!boardDiv) return;
+
+    const styles = window.getComputedStyle(boardDiv);
+    const paddingLeft = parseFloat(styles.paddingLeft || '0') || 0;
+    const paddingRight = parseFloat(styles.paddingRight || '0') || 0;
+    const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
+    const usableWidth = boardDiv.clientWidth - paddingLeft - paddingRight - (gap * (boardSize - 1));
+    if(usableWidth <= 0) return;
+
+    const tileSize = Math.max(16, Math.floor(usableWidth / boardSize));
+    boardDiv.style.setProperty('--tile-size', `${tileSize}px`);
+}
+
+function ensureBoardResizeListeners(){
+    if(boardResizeListenersAttached || typeof window === 'undefined') return;
+    const schedule = typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (callback) => setTimeout(callback, 0);
+
+    const handleResize = () => {
+        schedule(syncBoardTileSize);
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    boardResizeListenersAttached = true;
+}
 
 function onBoardSettled(callback){
     if(typeof callback !== 'function') return;
@@ -265,6 +296,8 @@ export function generateBoard(){
         tile.onclick=()=>selectTile(i);
         boardDiv.appendChild(tile);
     }
+    ensureBoardResizeListeners();
+    syncBoardTileSize();
     renderBoard();
 }
 
@@ -419,6 +452,7 @@ export function renderBoard(skipCleanup = false){
         console.error('Board element not found in renderBoard!');
         return;
     }
+    syncBoardTileSize();
     normalizeBoardHoles();
     const tiles=boardDiv.children;
     for(let i=0;i<board.length;i++){
