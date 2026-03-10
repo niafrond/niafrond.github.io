@@ -1,3 +1,9 @@
+## [1.0.3](https://github.com/niafrond/niafrond.github.io/compare/v1.0.2...v1.0.3) (2026-03-10)
+
+### Bug Fixes
+
+* Corriger le déclenchement du workflow pour ne s'exécuter que sur la branche principale ([18ba7fa](https://github.com/niafrond/niafrond.github.io/commit/18ba7fa6689282b52ea496ec23e9857a8f7cef25))
+
 ## [1.0.2](https://github.com/niafrond/niafrond.github.io/compare/v1.0.1...v1.0.2) (2026-03-10)
 
 ### Bug Fixes
