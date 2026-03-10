@@ -119,6 +119,74 @@ function refreshBoardDropProbabilities(){
     boardDropProbabilities = computeSpecialTileProbabilities();
 }
 
+function createsImmediateMatchAt(index, tile){
+    const row = Math.floor(index / boardSize);
+    const col = index % boardSize;
+
+    if(col >= 2){
+        const left1 = index - 1;
+        const left2 = index - 2;
+        if(board[left1] === tile && board[left2] === tile){
+            return true;
+        }
+    }
+
+    if(row >= 2){
+        const up1 = index - boardSize;
+        const up2 = index - boardSize * 2;
+        if(board[up1] === tile && board[up2] === tile){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function pickWeightedTileForInitialBoard(index){
+    const probabilities = boardDropProbabilities || computeSpecialTileProbabilities();
+    const skullProb = Math.max(0, probabilities.skullProb || 0);
+    const combatProb = Math.max(0, probabilities.combatProb || 0);
+    const colorPoolProb = Math.max(0, 1 - skullProb - combatProb);
+    const colorProb = colorPoolProb / colors.length;
+
+    const candidates = [];
+    if(!createsImmediateMatchAt(index, 'skull') && skullProb > 0){
+        candidates.push({ tile: 'skull', weight: skullProb });
+    }
+    if(!createsImmediateMatchAt(index, 'combat') && combatProb > 0){
+        candidates.push({ tile: 'combat', weight: combatProb });
+    }
+
+    for(const color of colors){
+        if(createsImmediateMatchAt(index, color)) continue;
+        if(colorProb > 0){
+            candidates.push({ tile: color, weight: colorProb });
+        }
+    }
+
+    const totalWeight = candidates.reduce((sum, candidate) => sum + candidate.weight, 0);
+    if(totalWeight <= 0){
+        return colors.find(color => !createsImmediateMatchAt(index, color)) || colors[0];
+    }
+
+    let roll = Math.random() * totalWeight;
+    for(const candidate of candidates){
+        roll -= candidate.weight;
+        if(roll <= 0){
+            return candidate.tile;
+        }
+    }
+
+    return candidates[candidates.length - 1].tile;
+}
+
+function generateInitialBoardWithoutMatches(){
+    board = [];
+    for(let i = 0; i < boardSize * boardSize; i++){
+        board[i] = pickWeightedTileForInitialBoard(i);
+    }
+}
+
 function generateNewBoard(){
     // On fige les probabilites de drop pour tout le plateau courant.
     refreshBoardDropProbabilities();
@@ -126,10 +194,7 @@ function generateNewBoard(){
     // Génère un plateau sans match initial, avec un nombre suffisant de coups possibles.
     let attempts = 0;
     while(attempts < MAX_BOARD_GENERATION_ATTEMPTS){
-        board=[];
-        for(let i=0;i<boardSize*boardSize;i++){
-            board.push(generateRandomTile({ allowJoker: false }));
-        }
+        generateInitialBoardWithoutMatches();
 
         attempts++;
         if(hasMatchesOnBoard(board)) continue;
@@ -142,10 +207,7 @@ function generateNewBoard(){
 
     // Fallback de sécurité pour éviter une boucle infinie sur des configs extrêmes.
     do{
-        board=[];
-        for(let i=0;i<boardSize*boardSize;i++){
-            board.push(generateRandomTile({ allowJoker: false }));
-        }
+        generateInitialBoardWithoutMatches();
     }while(hasMatchesOnBoard(board));
 }
 
