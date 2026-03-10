@@ -2,12 +2,39 @@ import { generateBoard, renderBoard } from "./board.js";
 import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab } from "./game.js";
 import { getAllClasses, playerClasses } from "./classes.js";
 import { getRandomPlayerName } from "./playerNames.js";
-import { generateEnemyChoices } from "./enemies.js";
+import { createBossEnemyForTier, generateEnemyChoices } from "./enemies.js";
 import { calculateXPGain } from "./experience.js";
 import { initializeAudioUI, playSfx, primeAudioFromGesture } from "./sound.js";
 
 // initialisation de la partie
 console.log('Main.js loaded');
+
+function getBossTierForLevel(level) {
+    const safeLevel = Math.max(1, Math.floor(level || 1));
+    if(safeLevel < 5 || safeLevel % 5 !== 0) return null;
+    return safeLevel;
+}
+
+function ensurePendingBossForSelection() {
+    if(player.pendingBoss?.enemy) {
+        return player.pendingBoss.enemy;
+    }
+
+    const tier = getBossTierForLevel(player.level);
+    if(!tier) return null;
+
+    const defeatedTiers = Array.isArray(player.defeatedBossTiers) ? player.defeatedBossTiers : [];
+    if(defeatedTiers.includes(tier)) return null;
+
+    const bossEnemy = createBossEnemyForTier(tier);
+    player.pendingBoss = {
+        tier,
+        enemy: bossEnemy
+    };
+    saveUpdate();
+    log(`👑 Un boss vous attend au palier ${tier} ! Il restera proposé jusqu'à sa défaite.`);
+    return bossEnemy;
+}
 
 // Afficher le modal de sélection de classe au démarrage si pas de classe
 function showClassSelection() {
@@ -97,18 +124,23 @@ function init() {
 
         const renderChoices = () => {
             const enemies = generateEnemyChoices(player.level, 4, undefined, player.maxHp);
+            const pendingBoss = ensurePendingBossForSelection();
+            if(pendingBoss) {
+                enemies.unshift({ ...pendingBoss });
+            }
             const grid = document.createElement('div');
             grid.className = 'enemy-grid';
 
             enemies.forEach(enemyChoice => {
                 const card = document.createElement('div');
-                card.className = `enemy-card${enemyChoice.isOverleveledChoice ? ' danger' : ''}${enemyChoice.isEasyChoice ? ' easy' : ''}`;
+                card.className = `enemy-card${enemyChoice.isOverleveledChoice ? ' danger' : ''}${enemyChoice.isEasyChoice ? ' easy' : ''}${enemyChoice.isBoss ? ' boss' : ''}`;
                 const xpGain = calculateXPGain(enemyChoice, player.level);
 
                 card.innerHTML = `
                     <div class="enemy-name">${enemyChoice.raceEmoji} ${enemyChoice.name}</div>
                     <div class="enemy-meta">Niveau ${enemyChoice.level} • HP ${enemyChoice.maxHp} • Atk ${enemyChoice.attack} • Def ${enemyChoice.defense || 0}</div>
                     <div class="enemy-xp">XP estimée: ${xpGain}</div>
+                    ${enemyChoice.isBoss ? `<div class="enemy-warning">👑 Boss de palier ${enemyChoice.bossTier}</div>` : ''}
                     ${enemyChoice.isOverleveledChoice ? '<div class="enemy-warning">⚠️ Ennemi trop fort (+6 niveaux)</div>' : ''}
                     ${enemyChoice.isEasyChoice ? '<div class="enemy-easy">⬇️ Ennemi affaibli (facile)</div>' : ''}
                 `;

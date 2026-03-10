@@ -414,7 +414,9 @@ export let player = {
     hasRevive: false,  // possède un effet de résurrection
     revivePercent: 0,  // pourcentage de HP à la résurrection
     unspentLevelPoints: 0, // points d'attribut a depenser apres les gains de niveaux
-    gold: 0  // pièces d'or accumulées
+    gold: 0,  // pièces d'or accumulées
+    defeatedBossTiers: [], // paliers de boss déjà nettoyés (5, 10, 15, ...)
+    pendingBoss: null // boss imposé tant qu'il n'est pas vaincu
 };
 
 // tour actuel
@@ -824,6 +826,15 @@ export function loadGameData() {
             player.revivePercent = loaded.revivePercent ?? player.revivePercent;
             player.unspentLevelPoints = loaded.unspentLevelPoints ?? player.unspentLevelPoints;
             player.gold = loaded.gold ?? player.gold;
+            player.defeatedBossTiers = Array.isArray(loaded.defeatedBossTiers)
+                ? loaded.defeatedBossTiers
+                    .map(tier => Math.max(5, Math.floor(Number(tier) || 0)))
+                    .filter((tier, idx, arr) => tier > 0 && arr.indexOf(tier) === idx)
+                    .sort((a, b) => a - b)
+                : [];
+            player.pendingBoss = loaded.pendingBoss && loaded.pendingBoss.enemy
+                ? loaded.pendingBoss
+                : null;
             clampManaToCaps(player);
             console.log('💾 Données du joueur chargées depuis le localStorage');
             if (player.class) {
@@ -1929,6 +1940,22 @@ export function handleEnemyDefeated(){
     } else {
         log(`📊 Progression: ${player.xp}/${player.xpToNextLevel} XP`);
     }
+
+    if(enemy.isBoss) {
+        const bossTier = Math.max(5, Math.floor(enemy.bossTier || enemy.level || 5));
+        if(!Array.isArray(player.defeatedBossTiers)) {
+            player.defeatedBossTiers = [];
+        }
+        if(!player.defeatedBossTiers.includes(bossTier)) {
+            player.defeatedBossTiers.push(bossTier);
+            player.defeatedBossTiers.sort((a, b) => a - b);
+        }
+        if(player.pendingBoss && player.pendingBoss.tier === bossTier) {
+            player.pendingBoss = null;
+        }
+        log(`👑 Boss du palier ${bossTier} vaincu !`);
+    }
+
     saveUpdate();
     
     // Marquer le combat comme terminé
@@ -2506,7 +2533,8 @@ function shouldUseEpicCombatMusic(enemyEntity) {
     const hpRatio = (enemyEntity.maxHp || enemyEntity.hp || 1) / Math.max(1, player.maxHp || player.hp || 1);
     const attackRatio = (enemyEntity.attack || 1) / Math.max(1, player.attack || 1);
 
-    return Boolean(enemyEntity.isOverleveledChoice)
+    return Boolean(enemyEntity.isBoss)
+        || Boolean(enemyEntity.isOverleveledChoice)
         || levelGap >= 2
         || hpRatio >= 1.35
         || attackRatio >= 1.3;

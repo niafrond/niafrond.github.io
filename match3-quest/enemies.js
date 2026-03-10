@@ -52,6 +52,11 @@ function pickRandom(arr){
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function toNumberOrDefault(value, defaultValue){
+    const n = Number(value);
+    return Number.isFinite(n) ? n : defaultValue;
+}
+
 function uniqueById(spells){
     const map = new Map();
     spells.forEach(sp => map.set(sp.id, sp));
@@ -125,6 +130,30 @@ function buildSpellLoadout(template, enemyLevel){
     return unique.slice(0, targetSpellCount);
 }
 
+function scoreTemplateForBoss(template){
+    const stats = template?.statsModifiers || {};
+    const hpMult = toNumberOrDefault(stats.hpMult, 1);
+    const atkMult = toNumberOrDefault(stats.atkMult, 1);
+    const defMult = toNumberOrDefault(stats.defMult, 1);
+    const levelBias = toNumberOrDefault(template?.levelBias, 0);
+    return (hpMult * 1.8) + (atkMult * 1.4) + (defMult * 1.2) + levelBias;
+}
+
+function pickBossTemplate(preferredTemplateId = null){
+    const catalog = loadEnemyCatalogSync();
+    if(catalog.length === 0) return null;
+
+    if(preferredTemplateId) {
+        const forced = catalog.find(t => t.id === preferredTemplateId);
+        if(forced) return forced;
+    }
+
+    const scored = [...catalog].sort((a, b) => scoreTemplateForBoss(b) - scoreTemplateForBoss(a));
+    const topSliceSize = Math.max(1, Math.ceil(scored.length * 0.35));
+    const topPool = scored.slice(0, topSliceSize);
+    return pickRandom(topPool);
+}
+
 function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons){
     const stats = template.statsModifiers || { hpMult: 1, atkMult: 1, defMult: 1 };
     const baseHp = 40 + enemyLevel * 10;
@@ -183,8 +212,36 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
         preferredColor,
         weakColor,
         isOverleveledChoice: false,
-        inventoryItem: enemyInventoryItem
+        inventoryItem: enemyInventoryItem,
+        dropProfile: template.dropProfile ? { ...template.dropProfile } : null,
+        isBoss: false,
+        bossTier: null
     };
+}
+
+export function createBossEnemyForTier(tierLevel, allWeaponsArg = allWeapons, preferredTemplateId = null){
+    const safeTier = Math.max(5, Math.floor(tierLevel || 5));
+    const template = pickBossTemplate(preferredTemplateId) || pickRandom(loadEnemyCatalogSync());
+    const bossLevel = safeTier + 2;
+    const boss = buildEnemyFromTemplate(template, bossLevel, allWeaponsArg);
+
+    boss.isBoss = true;
+    boss.bossTier = safeTier;
+    boss.name = `Boss ${boss.name}`;
+    boss.maxHp = Math.max(1, Math.floor(boss.maxHp * 1.75));
+    boss.hp = boss.maxHp;
+    boss.attack = Math.max(1, Math.floor(boss.attack * 1.35));
+    boss.defense = Math.max(0, Math.floor(boss.defense * 1.25));
+    boss.isOverleveledChoice = true;
+
+    boss.dropProfile = {
+        ...(boss.dropProfile || {}),
+        goldMult: Math.max(2.2, toNumberOrDefault(template?.dropProfile?.goldMult, 1) * 1.5),
+        dropChance: Math.max(0.8, toNumberOrDefault(template?.dropProfile?.dropChance, 0.6)),
+        weaponChance: Math.max(0.35, toNumberOrDefault(template?.dropProfile?.weaponChance, 0.3))
+    };
+
+    return boss;
 }
 
 export function generateRandomEnemy(playerLevel, _allSpells, allWeaponsArg = allWeapons){
