@@ -143,9 +143,85 @@ export function clampEnemyAttackDamage(rawDamage, enemyEntity = enemy){
     return Math.min(normalizedDamage, getEnemyAttackDamageCap(enemyEntity));
 }
 
-export function applyDamage(target, damage){
+function getPrimarySpellColor(spell){
+    if(!spell || typeof spell !== 'object') return null;
+
+    if(Array.isArray(spell.colors) && spell.colors.length > 0) {
+        return spell.colors[0];
+    }
+    if(Array.isArray(spell.couleurs) && spell.couleurs.length > 0) {
+        return spell.couleurs[0];
+    }
+    if(typeof spell.color === 'string' && spell.color.trim().length > 0) {
+        return spell.color;
+    }
+    if(spell.cost && typeof spell.cost === 'object') {
+        const keys = Object.keys(spell.cost);
+        return keys.length > 0 ? keys[0] : null;
+    }
+
+    return null;
+}
+
+function applyEnemyColorAffinityModifier(target, damage, sourceColor){
+    if(target !== enemy) {
+        return {
+            modifiedDamage: damage,
+            affinityType: null,
+            delta: 0
+        };
+    }
+
+    const color = typeof sourceColor === 'string' ? sourceColor.toLowerCase() : null;
+    const preferredColor = typeof target.preferredColor === 'string' ? target.preferredColor.toLowerCase() : null;
+    const weakColor = typeof target.weakColor === 'string' ? target.weakColor.toLowerCase() : null;
+    const levelDelta = Math.max(0, Math.floor(target.level || 0));
+
+    if(!color || levelDelta <= 0) {
+        return {
+            modifiedDamage: damage,
+            affinityType: null,
+            delta: 0
+        };
+    }
+
+    if(preferredColor && color === preferredColor) {
+        const reduced = Math.max(0, damage - levelDelta);
+        return {
+            modifiedDamage: reduced,
+            affinityType: 'force',
+            delta: damage - reduced
+        };
+    }
+
+    if(weakColor && color === weakColor) {
+        return {
+            modifiedDamage: damage + levelDelta,
+            affinityType: 'faiblesse',
+            delta: levelDelta
+        };
+    }
+
+    return {
+        modifiedDamage: damage,
+        affinityType: null,
+        delta: 0
+    };
+}
+
+export function applyDamage(target, damage, options = {}){
     if(!target) return 0;
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
+
+    const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell);
+    const affinityResult = applyEnemyColorAffinityModifier(target, normalizedDamage, sourceColor);
+    normalizedDamage = affinityResult.modifiedDamage;
+
+    if(affinityResult.affinityType === 'force' && affinityResult.delta > 0) {
+        log(`🛡️ ${target.name} résiste (${target.preferredColor}) : -${affinityResult.delta} dégâts (niveau ${target.level}).`);
+    } else if(affinityResult.affinityType === 'faiblesse' && affinityResult.delta > 0) {
+        log(`💥 ${target.name} est faible à ${sourceColor} : +${affinityResult.delta} dégâts (niveau ${target.level}).`);
+    }
 
     // Bouclier mana: certains sorts redirigent les dégâts subis vers une réserve de mana.
     if(target === player && normalizedDamage > 0) {
@@ -270,7 +346,7 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
         if(!isPlayerCaster) {
             dmg = clampEnemyAttackDamage(dmg, caster);
         }
-        applyDamage(target, dmg);
+        applyDamage(target, dmg, { sourceSpell: spell });
 
         if(isPlayerCaster) {
             playSfx('spellHit', { isPlayer: true });

@@ -109,7 +109,7 @@ function applyMageStrike(spell) {
     const blueMana = player.mana.blue;
     const bonusDmg = Math.floor(blueMana / 3);
     const totalDmg = spell.baseDmg + bonusDmg;
-    applyDamage(enemy, totalDmg);
+    applyDamage(enemy, totalDmg, { sourceSpell: spell });
     showCombatAnimation({ icon: '🔥', title: 'FRAPPE DU MAGE', damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🔥 Frappe du Mage inflige ${totalDmg} dégâts (${spell.baseDmg} base + ${bonusDmg} bonus)`);
     return true;
@@ -232,7 +232,7 @@ function applyFlameBolts(spell) {
     const projectiles = Math.floor(yellowMana / 5);
     const totalDmg = projectiles * 5;
     if(projectiles > 0) {
-        applyDamage(enemy, totalDmg);
+        applyDamage(enemy, totalDmg, { sourceSpell: spell });
         player.mana.yellow = 0;
         showCombatAnimation({ icon: '⚡', title: 'PROJECTILES DE FLAMME', damage: `${projectiles} × 5 = ${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
         log(`⚡ Projectiles de Flamme tire ${projectiles} projectiles pour ${totalDmg} dégâts !`);
@@ -374,7 +374,7 @@ function applyFireballArea(spell) {
             }
 
             setBoardTargetingMode(null);
-            applyDamage(enemy, spell.dmg);
+            applyDamage(enemy, spell.dmg, { sourceSpell: spell });
             renderBoard();
             showCombatAnimation({ icon: '🔥', title: 'BOULE DE FEU', damage: `-${spell.dmg} dégâts`, target: `→ ${enemy.name}` }, true);
             log(`🔥 Boule de Feu détruit une zone 3×3 choisie et inflige ${spell.dmg} dégâts !`);
@@ -447,7 +447,7 @@ function applyManaSiphon(spell) {
 
 // ASSASSIN SPELLS
 function applySneakAttack(spell) {
-    applyDamage(enemy, spell.dmg);
+    applyDamage(enemy, spell.dmg, { sourceSpell: spell });
     addBonusTurn(player);
     showCombatAnimation({ icon: '🗡️', title: 'ATTAQUE SOURNOISE', damage: `-${spell.dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🗡️ Attaque Sournoise inflige ${spell.dmg} dégâts sans terminer le tour !`);
@@ -463,7 +463,7 @@ function applySwiftStrike(spell) {
         }
     }
     const dmg = count;
-    applyDamage(enemy, dmg);
+    applyDamage(enemy, dmg, { sourceSpell: spell });
     renderBoard();
     showCombatAnimation({ icon: '⚡', title: 'FRAPPE RAPIDE', damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`⚡ Frappe Rapide convertit ${count} gemmes jaunes et inflige ${dmg} dégâts !`);
@@ -502,7 +502,7 @@ function applyShadowStrike(spell) {
         }
     }
     const dmg = count * 2;
-    applyDamage(enemy, dmg);
+    applyDamage(enemy, dmg, { sourceSpell: spell });
     renderBoard();
     showCombatAnimation({ icon: '🌑', title: "FRAPPE DE L'OMBRE", damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🌑 Frappe de l'Ombre détruit ${count} gemmes violettes et inflige ${dmg} dégâts !`);
@@ -518,7 +518,7 @@ function applyDualShot(spell) {
 
     const sorted = [...weapons].sort((a, b) => (b.damage || 0) - (a.damage || 0));
     const totalDmg = Math.max(1, Math.floor((sorted[0].damage || 0) + (sorted[1].damage || 0) + (player.attack || 0)));
-    applyDamage(enemy, totalDmg);
+    applyDamage(enemy, totalDmg, { sourceSpell: spell });
     showCombatAnimation({ icon: '🎯', title: 'DOUBLE TIR', damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🎯 Double Tir inflige ${totalDmg} dégâts (2 meilleures armes + attaque).`);
     return true;
@@ -545,7 +545,7 @@ function applyShieldBash(spell) {
     const defense = player.defense || 0;
     const bonusDmg = Math.floor(defense / 5);
     const totalDmg = spell.baseDmg + bonusDmg;
-    applyDamage(enemy, totalDmg);
+    applyDamage(enemy, totalDmg, { sourceSpell: spell });
     // Retirer les statuts négatifs
     delete player.statusEffects.poisoned;
     delete player.statusEffects.stunned;
@@ -683,7 +683,7 @@ function applyHeavensWrath(spell) {
         return false;
     }
 
-    applyDamage(enemy, totalDmg);
+    applyDamage(enemy, totalDmg, { sourceSpell: spell });
     renderBoard();
     showCombatAnimation({ icon: '⚡', title: 'COLÈRE CÉLESTE', damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`⚡ Colère Céleste fait exploser ${count} Action Gem(s) pour ${totalDmg} dégâts.`);
@@ -710,7 +710,7 @@ function applyCleave(spell) {
         }
     }
     const dmg = count;
-    applyDamage(enemy, dmg);
+    applyDamage(enemy, dmg, { sourceSpell: spell });
     renderBoard();
     showCombatAnimation({ icon: '🪓', title: 'ENTAILLE', damage: `-${dmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🪓 Entaille détruit ${count} gemmes jaunes et inflige ${dmg} dégâts !`);
@@ -725,7 +725,7 @@ function applyThrowAxe(spell) {
         }
     }
     const totalDmg = spell.baseDmg + skullCount;
-    applyDamage(enemy, totalDmg);
+    applyDamage(enemy, totalDmg, { sourceSpell: spell });
     showCombatAnimation({ icon: '🪓', title: 'LANCER DE HACHE', damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
     log(`🪓 Lancer de Hache inflige ${totalDmg} dégâts (${spell.baseDmg} + ${skullCount} crânes) !`);
     return true;

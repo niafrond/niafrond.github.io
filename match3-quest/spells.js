@@ -41,11 +41,66 @@ function loadSpellsCatalogSync(){
 
 const spellCatalog = loadSpellsCatalogSync();
 
-export const allSpells = Array.isArray(spellCatalog.allSpells) ? spellCatalog.allSpells : [];
-export const sorcererSpells = Array.isArray(spellCatalog.sorcererSpells) ? spellCatalog.sorcererSpells : [];
-export const assassinSpells = Array.isArray(spellCatalog.assassinSpells) ? spellCatalog.assassinSpells : [];
-export const templarSpells = Array.isArray(spellCatalog.templarSpells) ? spellCatalog.templarSpells : [];
-export const barbarianSpells = Array.isArray(spellCatalog.barbarianSpells) ? spellCatalog.barbarianSpells : [];
+function uniqueColors(colors){
+    const seen = new Set();
+    const normalized = [];
+    (colors || []).forEach(color => {
+        if(typeof color !== 'string') return;
+        const value = color.trim().toLowerCase();
+        if(!value || seen.has(value)) return;
+        seen.add(value);
+        normalized.push(value);
+    });
+    return normalized;
+}
+
+function deriveSpellColors(spell){
+    if(!spell || typeof spell !== 'object') return [];
+
+    if(Array.isArray(spell.colors) && spell.colors.length > 0) {
+        return uniqueColors(spell.colors);
+    }
+
+    if(Array.isArray(spell.couleurs) && spell.couleurs.length > 0) {
+        return uniqueColors(spell.couleurs);
+    }
+
+    if(typeof spell.color === 'string' && spell.color.trim().length > 0) {
+        return uniqueColors([spell.color]);
+    }
+
+    if(spell.cost && typeof spell.cost === 'object') {
+        return uniqueColors(Object.keys(spell.cost));
+    }
+
+    return [];
+}
+
+function normalizeSpellColorAttributes(spell){
+    const colors = deriveSpellColors(spell);
+    return {
+        ...spell,
+        colors,
+        couleurs: [...colors],
+        color: spell.color || colors[0] || null
+    };
+}
+
+export const allSpells = Array.isArray(spellCatalog.allSpells)
+    ? spellCatalog.allSpells.map(normalizeSpellColorAttributes)
+    : [];
+export const sorcererSpells = Array.isArray(spellCatalog.sorcererSpells)
+    ? spellCatalog.sorcererSpells.map(normalizeSpellColorAttributes)
+    : [];
+export const assassinSpells = Array.isArray(spellCatalog.assassinSpells)
+    ? spellCatalog.assassinSpells.map(normalizeSpellColorAttributes)
+    : [];
+export const templarSpells = Array.isArray(spellCatalog.templarSpells)
+    ? spellCatalog.templarSpells.map(normalizeSpellColorAttributes)
+    : [];
+export const barbarianSpells = Array.isArray(spellCatalog.barbarianSpells)
+    ? spellCatalog.barbarianSpells.map(normalizeSpellColorAttributes)
+    : [];
 
 export const allClassSpells = Array.isArray(spellCatalog.allClassSpells)
     ? spellCatalog.allClassSpells

@@ -58,6 +58,26 @@ function uniqueById(spells){
     return Array.from(map.values());
 }
 
+const COLOR_WEAKNESS_MAP = {
+    red: 'blue',
+    blue: 'red',
+    green: 'purple',
+    purple: 'green',
+    yellow: 'blue'
+};
+
+function resolvePreferredColor(template){
+    const profileColors = template?.spellProfile?.preferredColors;
+    if(Array.isArray(profileColors) && profileColors.length > 0) {
+        return String(profileColors[0]).toLowerCase();
+    }
+    return 'red';
+}
+
+function resolveWeakColor(preferredColor){
+    return COLOR_WEAKNESS_MAP[preferredColor] || null;
+}
+
 function buildResistances(template, level){
     const defaults = { red: 0.08, blue: 0.08, green: 0.08, yellow: 0.08, purple: 0.08 };
     const profile = template.resistanceProfile || {};
@@ -137,6 +157,9 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
         } catch(e) {}
     }
 
+    const preferredColor = resolvePreferredColor(template);
+    const weakColor = resolveWeakColor(preferredColor);
+
     return {
         templateId: template.id,
         race: template.race,
@@ -154,6 +177,8 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
         weapon: enemyWeapon,
         level: enemyLevel,
         abilities: enemyAbilities,
+        preferredColor,
+        weakColor,
         isOverleveledChoice: false,
         inventoryItem: enemyInventoryItem
     };
