@@ -8,7 +8,7 @@ import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDiffi
 import { getRandomItem, getRarityEmoji, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
 import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
-import { playSfx, setCombatMusicEnabled, setCombatMusicFamily } from "./sound.js";
+import { playSfx, setCombatMusicEnabled, setCombatMusicFamily, setCombatMusicMood } from "./sound.js";
 import { allSpells as spellsCatalog, getSpellsByLevel } from "./spells.js";
 export { updateShopTab, buyWeapon, buyItem };
 
@@ -2499,10 +2499,24 @@ export function applyStartingAbilities(){
 }
 
 // ennemis
+function shouldUseEpicCombatMusic(enemyEntity) {
+    if(!enemyEntity) return false;
+
+    const levelGap = (enemyEntity.level || 0) - (player.level || 0);
+    const hpRatio = (enemyEntity.maxHp || enemyEntity.hp || 1) / Math.max(1, player.maxHp || player.hp || 1);
+    const attackRatio = (enemyEntity.attack || 1) / Math.max(1, player.attack || 1);
+
+    return Boolean(enemyEntity.isOverleveledChoice)
+        || levelGap >= 2
+        || hpRatio >= 1.35
+        || attackRatio >= 1.3;
+}
+
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
 
     setCombatMusicFamily(enemy.race);
+    setCombatMusicMood(shouldUseEpicCombatMusic(enemy) ? 'epic' : 'sweet');
     setCombatMusicEnabled(true);
     
     // Ajuster automatiquement la difficulté de l'IA selon le niveau et le profil de l'ennemi

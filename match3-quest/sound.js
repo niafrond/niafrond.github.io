@@ -14,178 +14,34 @@ const defaultSettings = {
 
 let settings = { ...defaultSettings };
 let audioContext = null;
-let ambientMasterGain = null;
-let ambientSchedulerId = null;
-let ambientRunning = false;
-let ambientNextNoteTime = 0;
-let ambientStepIndex = 0;
+let ambientAudioByMood = null;
+let activeAmbientAudio = null;
+let ambientFadeTimerId = null;
 let combatMusicEnabled = false;
 let audioPrimed = false;
 let combatMusicFamily = 'default';
+let combatMusicMood = 'sweet';
 let audioVisibilityGuardInitialized = false;
 
-const AMBIENT_MEASURE = 2.4;
-const AMBIENT_SCHEDULE_AHEAD = 1.4;
-const AMBIENT_PROFILE_DEFAULT = {
-    roots: [146.83, 174.61, 130.81, 164.81],
-    chordRatios: [1, 1.2, 1.5],
-    arpRatios: [1, 1.125, 1.333, 1.5, 1.8],
-    measure: AMBIENT_MEASURE,
-    scheduleAhead: AMBIENT_SCHEDULE_AHEAD,
-    leadWave: 'sine',
-    harmonyWave: 'triangle',
-    arpWave: 'triangle',
-    accentWave: 'sine',
-    gainMultiplier: 0.70
+const AMBIENT_TRACKS_BY_MOOD = {
+    sweet: ['./mp3/sweet.mp3', './mp3/sweet2.mp3'],
+    epic: ['./mp3/epic.mp3', './mp3/epic2.mp3']
 };
 
-// Profils de musique de combat par famille d'ennemis (race).
-const AMBIENT_PROFILES_BY_FAMILY = {
-    default: AMBIENT_PROFILE_DEFAULT,
-    dragon: {
-        roots: [98, 146.83, 130.81, 164.81],
-        chordRatios: [1, 1.25, 1.5],
-        arpRatios: [1, 1.125, 1.333, 1.5, 1.875],
-        measure: 2.1,
-        scheduleAhead: 1.4,
-        leadWave: 'sawtooth',
-        harmonyWave: 'triangle',
-        arpWave: 'triangle',
-        accentWave: 'square',
-        gainMultiplier: 0.78
-    },
-    vampire: {
-        roots: [110, 130.81, 155.56, 103.83],
-        chordRatios: [1, 1.2, 1.6],
-        arpRatios: [1, 1.067, 1.25, 1.5, 1.6],
-        measure: 2.6,
-        scheduleAhead: 1.6,
-        leadWave: 'triangle',
-        harmonyWave: 'sine',
-        arpWave: 'triangle',
-        accentWave: 'sine',
-        gainMultiplier: 0.66
-    },
-    orc: {
-        roots: [98, 123.47, 92.5, 110],
-        chordRatios: [1, 1.125, 1.5],
-        arpRatios: [1, 1.2, 1.333, 1.5, 1.8],
-        measure: 2.0,
-        scheduleAhead: 1.3,
-        leadWave: 'square',
-        harmonyWave: 'sawtooth',
-        arpWave: 'square',
-        accentWave: 'square',
-        gainMultiplier: 0.74
-    },
-    construct: {
-        roots: [130.81, 138.59, 146.83, 155.56],
-        chordRatios: [1, 1.189, 1.498],
-        arpRatios: [1, 1.122, 1.259, 1.414, 1.587],
-        measure: 2.3,
-        scheduleAhead: 1.4,
-        leadWave: 'triangle',
-        harmonyWave: 'triangle',
-        arpWave: 'sine',
-        accentWave: 'triangle',
-        gainMultiplier: 0.62
-    },
-    undead: {
-        roots: [82.41, 98, 92.5, 87.31],
-        chordRatios: [1, 1.2, 1.4],
-        arpRatios: [1, 1.125, 1.25, 1.5, 1.75],
-        measure: 2.7,
-        scheduleAhead: 1.7,
-        leadWave: 'sawtooth',
-        harmonyWave: 'triangle',
-        arpWave: 'triangle',
-        accentWave: 'sawtooth',
-        gainMultiplier: 0.72
-    },
-    goblin: {
-        roots: [164.81, 174.61, 196, 146.83],
-        chordRatios: [1, 1.2, 1.333],
-        arpRatios: [1, 1.125, 1.25, 1.5, 2],
-        measure: 1.9,
-        scheduleAhead: 1.2,
-        leadWave: 'square',
-        harmonyWave: 'triangle',
-        arpWave: 'square',
-        accentWave: 'triangle',
-        gainMultiplier: 0.68
-    },
-    elemental: {
-        roots: [174.61, 220, 164.81, 196],
-        chordRatios: [1, 1.25, 1.6],
-        arpRatios: [1, 1.125, 1.333, 1.5, 1.875],
-        measure: 2.2,
-        scheduleAhead: 1.4,
-        leadWave: 'sine',
-        harmonyWave: 'triangle',
-        arpWave: 'triangle',
-        accentWave: 'sine',
-        gainMultiplier: 0.75
-    },
-    human: {
-        roots: [146.83, 164.81, 130.81, 196],
-        chordRatios: [1, 1.25, 1.5],
-        arpRatios: [1, 1.2, 1.333, 1.5, 1.8],
-        measure: 2.35,
-        scheduleAhead: 1.4,
-        leadWave: 'sine',
-        harmonyWave: 'triangle',
-        arpWave: 'triangle',
-        accentWave: 'sine',
-        gainMultiplier: 0.70
-    },
-    spirit: {
-        roots: [196, 220, 174.61, 246.94],
-        chordRatios: [1, 1.2, 1.6],
-        arpRatios: [1, 1.125, 1.333, 1.5, 2],
-        measure: 2.8,
-        scheduleAhead: 1.8,
-        leadWave: 'sine',
-        harmonyWave: 'triangle',
-        arpWave: 'sine',
-        accentWave: 'triangle',
-        gainMultiplier: 0.64
-    },
-    elf: {
-        roots: [174.61, 196, 220, 164.81],
-        chordRatios: [1, 1.25, 1.5],
-        arpRatios: [1, 1.125, 1.333, 1.5, 1.875],
-        measure: 2.5,
-        scheduleAhead: 1.6,
-        leadWave: 'triangle',
-        harmonyWave: 'sine',
-        arpWave: 'triangle',
-        accentWave: 'sine',
-        gainMultiplier: 0.66
-    },
-    monster: {
-        roots: [87.31, 103.83, 92.5, 77.78],
-        chordRatios: [1, 1.2, 1.45],
-        arpRatios: [1, 1.125, 1.25, 1.4, 1.6],
-        measure: 2.15,
-        scheduleAhead: 1.4,
-        leadWave: 'sawtooth',
-        harmonyWave: 'square',
-        arpWave: 'sawtooth',
-        accentWave: 'square',
-        gainMultiplier: 0.76
-    },
-    troll: {
-        roots: [92.5, 110, 82.41, 98],
-        chordRatios: [1, 1.125, 1.4],
-        arpRatios: [1, 1.2, 1.333, 1.5, 1.7],
-        measure: 1.95,
-        scheduleAhead: 1.3,
-        leadWave: 'square',
-        harmonyWave: 'sawtooth',
-        arpWave: 'square',
-        accentWave: 'square',
-        gainMultiplier: 0.80
-    }
+const AMBIENT_VOLUME_BY_MOOD = {
+    sweet: 0.52,
+    epic: 0.66
+};
+
+const AMBIENT_MOOD_BY_FAMILY = {
+    default: 'sweet',
+    dragon: 'epic',
+    elemental: 'epic',
+    monster: 'epic',
+    troll: 'epic',
+    construct: 'epic',
+    undead: 'epic',
+    vampire: 'epic'
 };
 
 const AMBIENT_RACE_ALIASES = {
@@ -230,11 +86,18 @@ function resolveCombatMusicFamily(value) {
     if(!normalized) return 'default';
 
     const mapped = AMBIENT_RACE_ALIASES[normalized] || normalized;
-    return AMBIENT_PROFILES_BY_FAMILY[mapped] ? mapped : 'default';
+    return Object.prototype.hasOwnProperty.call(AMBIENT_MOOD_BY_FAMILY, mapped) ? mapped : 'default';
 }
 
-function getCurrentAmbientProfile() {
-    return AMBIENT_PROFILES_BY_FAMILY[combatMusicFamily] || AMBIENT_PROFILE_DEFAULT;
+function resolveCombatMusicMood(value) {
+    if(typeof value !== 'string') return 'sweet';
+    const normalized = value.toLowerCase().trim();
+    return normalized === 'epic' ? 'epic' : 'sweet';
+}
+
+function getEffectiveCombatMood() {
+    if(combatMusicMood === 'epic') return 'epic';
+    return AMBIENT_MOOD_BY_FAMILY[combatMusicFamily] || 'sweet';
 }
 
 function loadSettings() {
@@ -570,154 +433,131 @@ function tone(ctx, frequency, startAt, duration, gainValue, type = 'sine') {
     osc.stop(startAt + duration + 0.04);
 }
 
-function ambientVoice(ctx, frequency, startAt, duration, gainValue, type = 'triangle') {
-    const osc = ctx.createOscillator();
-    const filter = ctx.createBiquadFilter();
-    const gain = ctx.createGain();
+function ensureAmbientAudioPool() {
+    if(typeof Audio === 'undefined') return null;
+    if(ambientAudioByMood) return ambientAudioByMood;
 
-    osc.type = type;
-    osc.frequency.setValueAtTime(Math.max(40, frequency), startAt);
-    osc.detune.setValueAtTime((Math.random() - 0.5) * 8, startAt);
-
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(1200 + Math.random() * 900, startAt);
-    filter.Q.setValueAtTime(0.9, startAt);
-
-    const attack = Math.min(0.7, duration * 0.4);
-    const releaseStart = Math.max(startAt + attack, startAt + duration - 0.8);
-    gain.gain.setValueAtTime(0.0001, startAt);
-    gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, gainValue), startAt + attack);
-    gain.gain.exponentialRampToValueAtTime(0.0001, releaseStart + 0.7);
-
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(ambientMasterGain || ctx.destination);
-
-    osc.start(startAt);
-    osc.stop(startAt + duration + 0.8);
-}
-
-function ensureAmbientNodes(ctx) {
-    if(ambientMasterGain) return;
-    ambientMasterGain = ctx.createGain();
-    ambientMasterGain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    ambientMasterGain.connect(ctx.destination);
-}
-
-function getAmbientTargetGain() {
-    const profile = getCurrentAmbientProfile();
-    const familyGain = Number.isFinite(profile?.gainMultiplier) ? profile.gainMultiplier : 0.70;
-    return clampVolume(settings.volume * familyGain);
-}
-
-function scheduleAmbientChunk(ctx) {
-    const profile = getCurrentAmbientProfile();
-    const roots = Array.isArray(profile?.roots) && profile.roots.length > 0
-        ? profile.roots
-        : AMBIENT_PROFILE_DEFAULT.roots;
-    const chordRatios = Array.isArray(profile?.chordRatios) && profile.chordRatios.length > 0
-        ? profile.chordRatios
-        : AMBIENT_PROFILE_DEFAULT.chordRatios;
-    const arpRatios = Array.isArray(profile?.arpRatios) && profile.arpRatios.length > 0
-        ? profile.arpRatios
-        : AMBIENT_PROFILE_DEFAULT.arpRatios;
-    const measure = Number.isFinite(profile?.measure) && profile.measure > 0
-        ? profile.measure
-        : AMBIENT_MEASURE;
-    const scheduleAhead = Number.isFinite(profile?.scheduleAhead) && profile.scheduleAhead > 0
-        ? profile.scheduleAhead
-        : AMBIENT_SCHEDULE_AHEAD;
-    const leadWave = profile?.leadWave || 'sine';
-    const harmonyWave = profile?.harmonyWave || 'triangle';
-    const arpWave = profile?.arpWave || 'triangle';
-    const accentWave = profile?.accentWave || 'sine';
-
-    while(ambientNextNoteTime < ctx.currentTime + scheduleAhead) {
-        const root = roots[ambientStepIndex % roots.length];
-
-        chordRatios.forEach((ratio, idx) => {
-            ambientVoice(
-                ctx,
-                root * ratio,
-                ambientNextNoteTime + idx * 0.02,
-                measure * 0.95,
-                0.028 + idx * 0.008,
-                idx === 0 ? leadWave : harmonyWave
-            );
+    ambientAudioByMood = {};
+    Object.entries(AMBIENT_TRACKS_BY_MOOD).forEach(([mood, tracks]) => {
+        ambientAudioByMood[mood] = tracks.map((src) => {
+            const audio = new Audio(src);
+            audio.preload = 'auto';
+            audio.loop = true;
+            audio.volume = 0;
+            audio.dataset.combatMood = mood;
+            return audio;
         });
+    });
 
-        const arpStart = ambientNextNoteTime + (measure * 0.075);
-        for(let i = 0; i < 4; i++) {
-            const ratio = arpRatios[(ambientStepIndex + i) % arpRatios.length];
-            ambientVoice(
-                ctx,
-                root * ratio * 2,
-                arpStart + i * (measure * 0.133),
-                measure * 0.158,
-                0.02,
-                arpWave
-            );
-        }
+    return ambientAudioByMood;
+}
 
-        if(ambientStepIndex % 3 === 2) {
-            ambientVoice(ctx, root * 3, ambientNextNoteTime + (measure * 0.5625), measure * 0.23, 0.018, accentWave);
-        }
+function getAmbientTargetVolume() {
+    const mood = getEffectiveCombatMood();
+    const moodMultiplier = AMBIENT_VOLUME_BY_MOOD[mood] ?? 0.52;
+    return clampVolume(settings.volume * moodMultiplier);
+}
 
-        ambientStepIndex += 1;
-        ambientNextNoteTime += measure;
+function clearAmbientFadeTimer() {
+    if(ambientFadeTimerId !== null) {
+        window.clearInterval(ambientFadeTimerId);
+        ambientFadeTimerId = null;
     }
 }
 
-function startAmbientLoop() {
-    if(isMusicMuted() || !combatMusicEnabled) return;
+function fadeAudioVolume(audio, target, durationMs = 420) {
+    if(!audio) return;
 
-    const ctx = getAudioContext({ allowCreate: false });
-    if(!ctx) return;
+    clearAmbientFadeTimer();
 
-    if(ctx.state === 'suspended') {
-        ctx.resume().then(() => {
-            if(!isMusicMuted() && combatMusicEnabled) {
-                startAmbientLoop();
-            }
-        }).catch(() => {});
+    const start = Number.isFinite(audio.volume) ? audio.volume : 0;
+    const end = clampVolume(target);
+    const duration = Math.max(1, Number(durationMs) || 1);
+    const startedAt = Date.now();
+
+    if(Math.abs(start - end) < 0.01) {
+        audio.volume = end;
         return;
     }
 
-    ensureAmbientNodes(ctx);
+    ambientFadeTimerId = window.setInterval(() => {
+        const elapsed = Date.now() - startedAt;
+        const ratio = Math.min(1, elapsed / duration);
+        audio.volume = clampVolume(start + ((end - start) * ratio));
 
-    const now = ctx.currentTime;
-    ambientMasterGain.gain.cancelScheduledValues(now);
-    ambientMasterGain.gain.setValueAtTime(Math.max(0.0001, ambientMasterGain.gain.value), now);
-    ambientMasterGain.gain.exponentialRampToValueAtTime(Math.max(0.0001, getAmbientTargetGain()), now + 1.1);
+        if(ratio >= 1) {
+            clearAmbientFadeTimer();
+        }
+    }, 30);
+}
 
-    if(ambientRunning) return;
+function pickAmbientTrack(mood) {
+    const pool = ensureAmbientAudioPool();
+    const tracks = pool?.[mood];
+    if(!Array.isArray(tracks) || tracks.length === 0) return null;
 
-    ambientRunning = true;
-    ambientStepIndex = 0;
-    ambientNextNoteTime = now + 0.08;
-    scheduleAmbientChunk(ctx);
+    let nextTrack = tracks[Math.floor(Math.random() * tracks.length)];
+    if(
+        tracks.length > 1 &&
+        activeAmbientAudio &&
+        tracks.includes(activeAmbientAudio)
+    ) {
+        const currentIndex = tracks.indexOf(activeAmbientAudio);
+        const offset = 1 + Math.floor(Math.random() * (tracks.length - 1));
+        nextTrack = tracks[(currentIndex + offset) % tracks.length];
+    }
 
-    ambientSchedulerId = window.setInterval(() => {
-        if(!audioContext || audioContext.state !== 'running' || isMusicMuted()) return;
-        scheduleAmbientChunk(audioContext);
-    }, 650);
+    return nextTrack;
+}
+
+function startAmbientLoop() {
+    if(isMusicMuted() || !combatMusicEnabled || !audioPrimed) return;
+    if(!isGameInForeground()) return;
+
+    const mood = getEffectiveCombatMood();
+
+    if(activeAmbientAudio && !activeAmbientAudio.paused && activeAmbientAudio.dataset?.combatMood === mood) {
+        fadeAudioVolume(activeAmbientAudio, getAmbientTargetVolume(), 360);
+        return;
+    }
+
+    const previousTrack = activeAmbientAudio;
+    const nextTrack = pickAmbientTrack(mood);
+    if(!nextTrack) return;
+
+    activeAmbientAudio = nextTrack;
+    nextTrack.loop = true;
+    nextTrack.currentTime = 0;
+    nextTrack.volume = 0;
+
+    const playPromise = nextTrack.play();
+    if(playPromise?.catch) {
+        playPromise.catch(() => {
+            if(activeAmbientAudio === nextTrack) {
+                activeAmbientAudio = null;
+            }
+        });
+    }
+
+    if(previousTrack && previousTrack !== nextTrack) {
+        previousTrack.pause();
+        previousTrack.currentTime = 0;
+        previousTrack.volume = 0;
+    }
+
+    fadeAudioVolume(nextTrack, getAmbientTargetVolume(), 520);
 }
 
 function stopAmbientLoop() {
-    const ctx = audioContext;
+    clearAmbientFadeTimer();
 
-    if(ambientSchedulerId !== null) {
-        window.clearInterval(ambientSchedulerId);
-        ambientSchedulerId = null;
-    }
+    if(!activeAmbientAudio) return;
 
-    ambientRunning = false;
-
-    if(!ctx || !ambientMasterGain) return;
-    const now = ctx.currentTime;
-    ambientMasterGain.gain.cancelScheduledValues(now);
-    ambientMasterGain.gain.setValueAtTime(Math.max(0.0001, ambientMasterGain.gain.value), now);
-    ambientMasterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+    const trackToStop = activeAmbientAudio;
+    trackToStop.volume = 0;
+    trackToStop.pause();
+    trackToStop.currentTime = 0;
+    activeAmbientAudio = null;
 }
 
 function isGameInForeground() {
@@ -755,14 +595,14 @@ function syncAmbientState() {
 
 export function setCombatMusicFamily(family) {
     const resolvedFamily = resolveCombatMusicFamily(family);
-    if(combatMusicFamily === resolvedFamily) return;
-
     combatMusicFamily = resolvedFamily;
+    syncAmbientState();
+}
 
-    if(ambientRunning) {
-        stopAmbientLoop();
-        startAmbientLoop();
-    }
+export function setCombatMusicMood(mood) {
+    const resolvedMood = resolveCombatMusicMood(mood);
+    combatMusicMood = resolvedMood;
+    syncAmbientState();
 }
 
 export function setCombatMusicEnabled(enabled) {
@@ -773,6 +613,7 @@ export function setCombatMusicEnabled(enabled) {
 export function primeAudioFromGesture() {
     audioPrimed = true;
     resumeAudioContext({ allowCreate: true });
+    ensureAmbientAudioPool();
     syncAmbientState();
 }
 
