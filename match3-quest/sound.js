@@ -1,4 +1,5 @@
 import { createCheatModeSection } from "./cheatMode.js";
+import { getMatch3Version } from "./version.js";
 
 const AUDIO_SETTINGS_KEY = 'match3quest.audio.settings';
 
@@ -397,6 +398,13 @@ function openMuteModeChooser(button) {
     subtitle.style.opacity = '0.85';
     subtitle.style.fontSize = '0.92rem';
 
+    const versionBadge = document.createElement('div');
+    versionBadge.textContent = `Match3 v${getMatch3Version()}`;
+    versionBadge.style.margin = '0 0 12px';
+    versionBadge.style.opacity = '0.72';
+    versionBadge.style.fontSize = '0.78rem';
+    versionBadge.style.letterSpacing = '.05em';
+
     const refreshSubtitle = () => {
         if(settings.developerMode) {
             subtitle.textContent = 'Choisis ce que tu veux couper pendant le combat.';
@@ -525,6 +533,7 @@ function openMuteModeChooser(button) {
 
     panel.appendChild(title);
     panel.appendChild(subtitle);
+    panel.appendChild(versionBadge);
     panel.appendChild(sectionAudio);
     panel.appendChild(cheatSectionWrap);
     panel.appendChild(footer);
@@ -817,7 +826,7 @@ export function updateAudioToggleButton(button) {
 
     button.textContent = icon;
     button.setAttribute('aria-pressed', mode === 'all' ? 'true' : 'false');
-    button.title = title;
+    button.title = `${title} • v${getMatch3Version()}`;
 }
 
 export function initializeAudioUI(button) {
