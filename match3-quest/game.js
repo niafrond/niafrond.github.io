@@ -1052,13 +1052,28 @@ export function updateEnemySpells(){
         }
         if (enemy.inventoryItem) {
             weaponHtml += `
-                <div class="enemy-spell-item disabled">
+                <div class="enemy-spell-item disabled enemy-item-card" tabindex="0">
                     <div class="spell-name">🎒 ${enemy.inventoryItem.name}</div>
                     <div class="spell-cost">Objet ennemi</div>
                 </div>
             `;
         }
         weaponContainer.innerHTML = weaponHtml;
+
+        const enemyItemCard = weaponContainer.querySelector('.enemy-item-card');
+        if(enemyItemCard && enemy.inventoryItem) {
+            const showDetails = () => showItemTooltip(enemyItemCard, enemy.inventoryItem, { isEnemyItem: true });
+            const hideDetails = () => hideSpellTooltip();
+            enemyItemCard.addEventListener('mouseenter', showDetails);
+            enemyItemCard.addEventListener('mouseleave', hideDetails);
+            enemyItemCard.addEventListener('mousedown', showDetails);
+            enemyItemCard.addEventListener('mouseup', hideDetails);
+            enemyItemCard.addEventListener('touchstart', showDetails, { passive: true });
+            enemyItemCard.addEventListener('touchend', hideDetails);
+            enemyItemCard.addEventListener('touchcancel', hideDetails);
+            enemyItemCard.addEventListener('focus', showDetails);
+            enemyItemCard.addEventListener('blur', hideDetails);
+        }
     }
 
     const container = document.getElementById('enemy-spell-list');
@@ -2158,6 +2173,28 @@ function getSpellTooltipHtml(spell) {
     return `<div class="spell-tooltip-line">🧠 ${effectText}</div>`;
 }
 
+function getItemTooltipHtml(item, options = {}) {
+    if(!item) return '<div class="spell-tooltip-line">📦 Objet inconnu</div>';
+
+    const isEnemyItem = options.isEnemyItem === true;
+    const ownerLabel = isEnemyItem ? 'ennemi' : 'allié';
+    const typeLabel = item.type === 'artifact'
+        ? 'Artefact passif'
+        : (item.type === 'consumable' ? 'Consommable' : 'Objet');
+    const actionPoints = item.type === 'consumable' ? (item.actionPoints || 2) : null;
+
+    let html = `<div class="spell-tooltip-title">📦 ${item.name || 'Objet'}</div>`;
+    html += `<div class="spell-tooltip-line">👥 Objet ${ownerLabel}</div>`;
+    html += `<div class="spell-tooltip-line">🏷️ Type: ${typeLabel}</div>`;
+    if(actionPoints !== null) {
+        html += `<div class="spell-tooltip-line">⚔️ Coût: ${actionPoints} PA</div>`;
+    }
+    if(item.description) {
+        html += `<div class="spell-tooltip-line">🧠 ${item.description}</div>`;
+    }
+    return html;
+}
+
 function ensureSpellTooltip() {
     let tooltip = document.getElementById('spell-detail-tooltip');
     if(!tooltip){
@@ -2173,6 +2210,25 @@ function showSpellTooltip(button, spell) {
     if(!button || !spell) return;
     const tooltip = ensureSpellTooltip();
     tooltip.innerHTML = getSpellTooltipHtml(spell);
+    tooltip.classList.add('visible');
+
+    const rect = button.getBoundingClientRect();
+    const tooltipWidth = 260;
+    const margin = 10;
+    const left = Math.min(
+        window.innerWidth - tooltipWidth - margin,
+        Math.max(margin, rect.left + (rect.width / 2) - (tooltipWidth / 2))
+    );
+    const top = Math.max(margin, rect.top - 120);
+
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+}
+
+function showItemTooltip(button, item, options = {}) {
+    if(!button || !item) return;
+    const tooltip = ensureSpellTooltip();
+    tooltip.innerHTML = getItemTooltipHtml(item, options);
     tooltip.classList.add('visible');
 
     const rect = button.getBoundingClientRect();
@@ -2671,10 +2727,22 @@ export function updateItemButton(){
     if(item.type === 'artifact'){
         const div = document.createElement('div');
         div.className = 'enemy-spell-item disabled';
+        div.tabIndex = 0;
         div.innerHTML = `
             <div class="spell-name">⚡ ${item.name}</div>
             <div class="spell-cost">Actif (passif)</div>
         `;
+        const showDetails = () => showItemTooltip(div, item, { isEnemyItem: false });
+        const hideDetails = () => hideSpellTooltip();
+        div.addEventListener('mouseenter', showDetails);
+        div.addEventListener('mouseleave', hideDetails);
+        div.addEventListener('mousedown', showDetails);
+        div.addEventListener('mouseup', hideDetails);
+        div.addEventListener('touchstart', showDetails, { passive: true });
+        div.addEventListener('touchend', hideDetails);
+        div.addEventListener('touchcancel', hideDetails);
+        div.addEventListener('focus', showDetails);
+        div.addEventListener('blur', hideDetails);
         container.appendChild(div);
         return;
     }
@@ -2689,6 +2757,18 @@ export function updateItemButton(){
         <div class="spell-name">🎒 ${item.name}</div>
         <div class="spell-cost">${pa} ⚔️</div>
     `;
+    const showDetails = () => showItemTooltip(btn, item, { isEnemyItem: false });
+    const hideDetails = () => hideSpellTooltip();
+    btn.addEventListener('mouseenter', showDetails);
+    btn.addEventListener('mouseleave', hideDetails);
+    btn.addEventListener('mousedown', showDetails);
+    btn.addEventListener('mouseup', hideDetails);
+    btn.addEventListener('touchstart', showDetails, { passive: true });
+    btn.addEventListener('touchend', hideDetails);
+    btn.addEventListener('touchcancel', hideDetails);
+    btn.addEventListener('focus', showDetails);
+    btn.addEventListener('blur', hideDetails);
+
     if(!canUse){
         btn.classList.add('disabled');
         btn.tabIndex = -1;
