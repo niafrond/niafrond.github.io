@@ -1,3 +1,9 @@
+## [1.2.0](https://github.com/niafrond/niafrond.github.io/compare/v1.1.0...v1.2.0) (2026-03-10)
+
+### Features
+
+* Add dark mode toggle and implement responsive board resizing ([678092e](https://github.com/niafrond/niafrond.github.io/commit/678092ecaa4d75976b6312c4153319a29384da43))
+
 ## [1.1.0](https://github.com/niafrond/niafrond.github.io/compare/v1.0.3...v1.1.0) (2026-03-10)
 
 ### Features
