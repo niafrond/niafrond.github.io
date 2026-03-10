@@ -737,8 +737,8 @@ progress.enemy-bar::-webkit-progress-value {
     background-color: #455a64;
     color: white;
     position: fixed;
-    top: max(10px, env(safe-area-inset-top));
-    right: max(12px, env(safe-area-inset-right));
+    bottom: max(10px, env(safe-area-inset-bottom));
+    left: max(12px, env(safe-area-inset-left));
     z-index: 1000;
     margin: 0;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
