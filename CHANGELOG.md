@@ -1,3 +1,9 @@
+## [1.0.2](https://github.com/niafrond/niafrond.github.io/compare/v1.0.1...v1.0.2) (2026-03-10)
+
+### Bug Fixes
+
+* Mettre à jour la condition d'exécution du job de release pour éviter les déclenchements indésirables ([f379e43](https://github.com/niafrond/niafrond.github.io/commit/f379e43509f4af3afeecd92fb75c0f0c8758fd76))
+
 ## [1.0.1](https://github.com/niafrond/niafrond.github.io/compare/v1.0.0...v1.0.1) (2026-03-10)
 
 ### Bug Fixes
