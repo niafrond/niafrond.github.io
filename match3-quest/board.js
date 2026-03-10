@@ -46,6 +46,10 @@ const BOARD_DROP_PROFILES = {
     advanced: { skullProb: 0.16, combatProb: 0.04, jokerProb: 0.0035 }
 };
 
+const SKULL_PROB_INVERSE_NUMERATOR = 0.40;
+const SKULL_PROB_MIN = 0.08;
+const SKULL_PROB_MAX = 0.20;
+
 function onBoardSettled(callback){
     if(typeof callback !== 'function') return;
     if(pendingComboAnimations <= 0){
@@ -100,7 +104,15 @@ function refreshTargetingHighlights(){
 
 function computeSpecialTileProbabilities(){
     const hasWeaponsOrSpells = player.availableWeapons.length > 0 || player.availableSpells.length > 0;
-    return hasWeaponsOrSpells ? BOARD_DROP_PROFILES.advanced : BOARD_DROP_PROFILES.starter;
+    const baseProfile = hasWeaponsOrSpells ? BOARD_DROP_PROFILES.advanced : BOARD_DROP_PROFILES.starter;
+    const spellCount = Math.max(0, player.availableSpells.length || 0);
+    const inverseSkullProb = SKULL_PROB_INVERSE_NUMERATOR / (spellCount + 2);
+    const skullProb = Math.min(SKULL_PROB_MAX, Math.max(SKULL_PROB_MIN, inverseSkullProb));
+
+    return {
+        ...baseProfile,
+        skullProb
+    };
 }
 
 function refreshBoardDropProbabilities(){
