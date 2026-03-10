@@ -21,6 +21,7 @@ let ambientStepIndex = 0;
 let combatMusicEnabled = false;
 let audioPrimed = false;
 let combatMusicFamily = 'default';
+let audioVisibilityGuardInitialized = false;
 
 const AMBIENT_MEASURE = 2.4;
 const AMBIENT_SCHEDULE_AHEAD = 1.4;
@@ -710,8 +711,28 @@ function stopAmbientLoop() {
     ambientMasterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
 }
 
+function isGameInForeground() {
+    if(typeof document === 'undefined') return true;
+    if(document.hidden) return false;
+    if(typeof document.hasFocus === 'function') {
+        return document.hasFocus();
+    }
+    return true;
+}
+
+function initializeAudioVisibilityGuard() {
+    if(audioVisibilityGuardInitialized) return;
+    if(typeof window === 'undefined' || typeof document === 'undefined') return;
+
+    audioVisibilityGuardInitialized = true;
+    const syncFromVisibility = () => syncAmbientState();
+    document.addEventListener('visibilitychange', syncFromVisibility);
+    window.addEventListener('focus', syncFromVisibility);
+    window.addEventListener('blur', syncFromVisibility);
+}
+
 function syncAmbientState() {
-    if(isMusicMuted() || !combatMusicEnabled) {
+    if(isMusicMuted() || !combatMusicEnabled || !isGameInForeground()) {
         stopAmbientLoop();
         return;
     }
@@ -795,6 +816,7 @@ export function updateAudioToggleButton(button) {
 }
 
 export function initializeAudioUI(button) {
+    initializeAudioVisibilityGuard();
     loadSettings();
     updateAudioToggleButton(button);
 
