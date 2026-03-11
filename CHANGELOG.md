@@ -1,3 +1,10 @@
+## [1.5.0](https://github.com/niafrond/niafrond.github.io/compare/v1.4.0...v1.5.0) (2026-03-11)
+
+### Features
+
+* Implement custom battle music for enemies and add audio volume control ([3e2e393](https://github.com/niafrond/niafrond.github.io/commit/3e2e3932f98628c18774917aff7afc376182e63b))
+* Remove old WAV tracks and replace with new MP3 tracks in match3-quest ([6c9bc03](https://github.com/niafrond/niafrond.github.io/commit/6c9bc039149377814a704850636dec54aa9126fa))
+
 ## [1.4.0](https://github.com/niafrond/niafrond.github.io/compare/v1.3.0...v1.4.0) (2026-03-11)
 
 ### Features
