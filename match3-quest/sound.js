@@ -69,7 +69,6 @@ const AMBIENT_RACE_ALIASES = {
     monster: 'monster',
     troll: 'troll'
 };
-const LONG_PRESS_MS = 550;
 const DEV_MODE_CLICK_TARGET = 6;
 
 function normalizeCombatFamilyName(value) {
@@ -817,12 +816,12 @@ export function updateAudioToggleButton(button) {
     const mode = getMuteMode();
     const icon = mode === 'all' ? '🔇' : mode === 'music' ? '🎵' : mode === 'sfx' ? '🔕' : '🔊';
     const title = mode === 'all'
-        ? 'Tout coupe (clic: tout activer, maintien: options audio)'
+        ? 'Tout coupe (clic: ouvrir les options audio)'
         : mode === 'music'
-            ? 'Musique coupee (maintien: options audio)'
+            ? 'Musique coupee (clic: ouvrir les options audio)'
             : mode === 'sfx'
-                ? 'Effets coupes (maintien: options audio)'
-                : 'Son actif (clic: tout couper, maintien: options audio)';
+                ? 'Effets coupes (clic: ouvrir les options audio)'
+                : 'Son actif (clic: ouvrir les options audio)';
 
     button.textContent = icon;
     button.setAttribute('aria-pressed', mode === 'all' ? 'true' : 'false');
@@ -835,42 +834,10 @@ export function initializeAudioUI(button) {
     updateAudioToggleButton(button);
 
     if(button) {
-        let pressTimer = null;
-        let longPressTriggered = false;
-
-        const clearPressTimer = () => {
-            if(pressTimer !== null) {
-                window.clearTimeout(pressTimer);
-                pressTimer = null;
-            }
-        };
-
-        button.addEventListener('pointerdown', (event) => {
-            if(event.button !== 0) return;
-            longPressTriggered = false;
-            clearPressTimer();
-            pressTimer = window.setTimeout(() => {
-                longPressTriggered = true;
-                primeAudioFromGesture();
-                openMuteModeChooser(button);
-            }, LONG_PRESS_MS);
-        });
-
-        button.addEventListener('pointerup', clearPressTimer);
-        button.addEventListener('pointercancel', clearPressTimer);
-        button.addEventListener('pointerleave', clearPressTimer);
-
         button.addEventListener('click', () => {
-            if(longPressTriggered) {
-                longPressTriggered = false;
-                return;
-            }
             primeAudioFromGesture();
-            const muted = toggleMuted();
-            updateAudioToggleButton(button);
-            if(!muted) {
-                playSfx('toggleOn');
-            }
+            playSfx('uiClick');
+            openMuteModeChooser(button);
         });
     }
 }
