@@ -8,6 +8,8 @@ const defaultSettings = {
     mutedMusic: false,
     mutedSfx: false,
     volume: 0.6,
+    musicVolume: 0.6,
+    sfxVolume: 0.6,
     cheatMode: false,
     developerMode: false
 };
@@ -100,6 +102,14 @@ function getEffectiveCombatMood() {
     return combatMusicMood === 'epic' ? 'epic' : 'sweet';
 }
 
+function isStoredVolume(value) {
+    return Number.isFinite(value) && value >= 0 && value <= 1;
+}
+
+function syncLegacyVolumeSetting() {
+    settings.volume = clampVolume((settings.musicVolume + settings.sfxVolume) / 2);
+}
+
 function loadSettings() {
     try {
         const raw = localStorage.getItem(AUDIO_SETTINGS_KEY);
@@ -119,9 +129,13 @@ function loadSettings() {
         }
 
         const parsedVolume = Number(parsed?.volume);
-        if(Number.isFinite(parsedVolume) && parsedVolume > 0 && parsedVolume <= 1) {
-            settings.volume = parsedVolume;
-        }
+        const legacyVolume = isStoredVolume(parsedVolume) ? parsedVolume : defaultSettings.volume;
+        const parsedMusicVolume = Number(parsed?.musicVolume);
+        const parsedSfxVolume = Number(parsed?.sfxVolume);
+
+        settings.musicVolume = isStoredVolume(parsedMusicVolume) ? parsedMusicVolume : legacyVolume;
+        settings.sfxVolume = isStoredVolume(parsedSfxVolume) ? parsedSfxVolume : legacyVolume;
+        syncLegacyVolumeSetting();
 
         settings.developerMode = Boolean(parsed?.developerMode);
         settings.cheatMode = Boolean(parsed?.cheatMode);
@@ -135,6 +149,7 @@ function loadSettings() {
 
 function saveSettings() {
     try {
+        syncLegacyVolumeSetting();
         localStorage.setItem(AUDIO_SETTINGS_KEY, JSON.stringify(settings));
     } catch {
         // Ignore storage errors (private mode or quota).
@@ -162,8 +177,26 @@ function resumeAudioContext(options = {}) {
     }
 }
 
-function clampVolume(v) {
-    return Math.max(0, Math.min(1, Number.isFinite(v) ? v : defaultSettings.volume));
+function clampVolume(v, fallback = defaultSettings.volume) {
+    return Math.max(0, Math.min(1, Number.isFinite(v) ? v : fallback));
+}
+
+function getMusicVolume() {
+    return clampVolume(settings.musicVolume, defaultSettings.musicVolume);
+}
+
+function getSfxVolume() {
+    return clampVolume(settings.sfxVolume, defaultSettings.sfxVolume);
+}
+
+function setMusicVolume(volume) {
+    settings.musicVolume = clampVolume(volume, defaultSettings.musicVolume);
+    syncLegacyVolumeSetting();
+}
+
+function setSfxVolume(volume) {
+    settings.sfxVolume = clampVolume(volume, defaultSettings.sfxVolume);
+    syncLegacyVolumeSetting();
 }
 
 function isMusicMuted() {
@@ -250,13 +283,13 @@ function openMuteModeChooser(button) {
     titleEmoji.style.marginRight = '6px';
 
     const titleText = document.createElement('span');
-    titleText.textContent = 'Mode audio';
+    titleText.textContent = 'Audio';
 
     title.appendChild(titleEmoji);
     title.appendChild(titleText);
 
     const subtitle = document.createElement('p');
-    subtitle.textContent = 'Choisis ce que tu veux couper pendant le combat.';
+    subtitle.textContent = 'Choisis ce que tu veux couper et ajuste les volumes.';
     subtitle.style.margin = '0 0 14px';
     subtitle.style.opacity = '0.85';
     subtitle.style.fontSize = '0.92rem';
@@ -270,14 +303,14 @@ function openMuteModeChooser(button) {
 
     const refreshSubtitle = () => {
         if(settings.developerMode) {
-            subtitle.textContent = 'Choisis ce que tu veux couper pendant le combat.';
+            subtitle.textContent = 'Choisis ce que tu veux couper et ajuste les volumes.';
             return;
         }
 
         const remaining = Math.max(0, DEV_MODE_CLICK_TARGET - devModeClickCount);
         subtitle.textContent = remaining > 0
-            ? `Choisis ce que tu veux couper pendant le combat. (Mode developpeur: ${devModeClickCount}/${DEV_MODE_CLICK_TARGET})`
-            : 'Choisis ce que tu veux couper pendant le combat.';
+            ? `Choisis ce que tu veux couper et ajuste les volumes. (Mode developpeur: ${devModeClickCount}/${DEV_MODE_CLICK_TARGET})`
+            : 'Choisis ce que tu veux couper et ajuste les volumes.';
     };
 
     const sectionAudio = document.createElement('div');
@@ -303,6 +336,74 @@ function openMuteModeChooser(button) {
     const buttonWrap = document.createElement('div');
     buttonWrap.style.display = 'grid';
     buttonWrap.style.gap = '8px';
+
+    const volumeControls = document.createElement('div');
+    volumeControls.style.display = 'grid';
+    volumeControls.style.gap = '10px';
+    volumeControls.style.marginTop = '12px';
+
+    const createVolumeControl = ({ label, hint, initialValue, onInput, onChange }) => {
+        const wrap = document.createElement('label');
+        wrap.style.display = 'grid';
+        wrap.style.gap = '6px';
+        wrap.style.padding = '10px 12px';
+        wrap.style.background = 'rgba(255, 255, 255, 0.06)';
+        wrap.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+        wrap.style.borderRadius = '10px';
+
+        const header = document.createElement('div');
+        header.style.display = 'flex';
+        header.style.alignItems = 'center';
+        header.style.justifyContent = 'space-between';
+        header.style.gap = '12px';
+
+        const titleWrap = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = label;
+        titleWrap.appendChild(title);
+
+        const hintText = document.createElement('div');
+        hintText.textContent = hint;
+        hintText.style.opacity = '0.72';
+        hintText.style.fontSize = '0.82rem';
+        hintText.style.marginTop = '2px';
+        titleWrap.appendChild(hintText);
+
+        const valueLabel = document.createElement('span');
+        valueLabel.style.fontVariantNumeric = 'tabular-nums';
+        valueLabel.style.opacity = '0.88';
+        valueLabel.style.fontSize = '0.9rem';
+
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = '0';
+        slider.max = '100';
+        slider.step = '1';
+        slider.value = String(Math.round(clampVolume(initialValue) * 100));
+        slider.style.width = '100%';
+        slider.style.cursor = 'pointer';
+        slider.style.accentColor = '#93c5fd';
+
+        const refreshValue = () => {
+            valueLabel.textContent = `${slider.value}%`;
+        };
+
+        slider.addEventListener('input', () => {
+            refreshValue();
+            onInput(Number(slider.value) / 100);
+        });
+
+        slider.addEventListener('change', () => {
+            onChange?.();
+        });
+
+        refreshValue();
+        header.appendChild(titleWrap);
+        header.appendChild(valueLabel);
+        wrap.appendChild(header);
+        wrap.appendChild(slider);
+        return wrap;
+    };
 
     const closeModal = () => {
         overlay.remove();
@@ -341,6 +442,32 @@ function openMuteModeChooser(button) {
 
     sectionAudio.appendChild(buttonWrap);
 
+    volumeControls.appendChild(createVolumeControl({
+        label: 'Musique',
+        hint: 'Volume de l\'ambiance de combat',
+        initialValue: getMusicVolume(),
+        onInput: (value) => {
+            setMusicVolume(value);
+            saveSettings();
+            syncAmbientState();
+        }
+    }));
+
+    volumeControls.appendChild(createVolumeControl({
+        label: 'Effets',
+        hint: 'Volume des clics, matchs et attaques',
+        initialValue: getSfxVolume(),
+        onInput: (value) => {
+            setSfxVolume(value);
+            saveSettings();
+        },
+        onChange: () => {
+            playSfx('uiClick');
+        }
+    }));
+
+    sectionAudio.appendChild(volumeControls);
+
     const sectionCheat = createCheatModeSection({
         isEnabled: () => Boolean(settings.cheatMode) && Boolean(settings.developerMode),
         setEnabled: (enabled) => {
@@ -370,7 +497,7 @@ function openMuteModeChooser(button) {
             settings.developerMode = true;
             saveSettings();
             renderCheatSection();
-            subtitle.textContent = 'Choisis ce que tu veux couper pendant le combat. Mode developpeur active.';
+            subtitle.textContent = 'Choisis ce que tu veux couper et ajuste les volumes. Mode developpeur active.';
             return;
         }
 
@@ -455,7 +582,7 @@ function ensureAmbientAudioPool() {
 function getAmbientTargetVolume() {
     const mood = getEffectiveCombatMood();
     const moodMultiplier = AMBIENT_VOLUME_BY_MOOD[mood] ?? 0.52;
-    return clampVolume(settings.volume * moodMultiplier);
+    return clampVolume(getMusicVolume() * moodMultiplier, defaultSettings.musicVolume);
 }
 
 function clearAmbientFadeTimer() {
@@ -659,7 +786,7 @@ function playPattern(pattern, options = {}) {
     }
 
     const baseTime = ctx.currentTime + 0.01;
-    const baseGain = clampVolume((options.gain ?? 1) * settings.volume * 0.12);
+    const baseGain = clampVolume((options.gain ?? 1) * getSfxVolume() * 0.12, defaultSettings.sfxVolume);
 
     pattern.forEach((step) => {
         const [delay, frequency, duration, relGain = 1, wave = 'sine'] = step;
@@ -690,12 +817,12 @@ export function updateAudioToggleButton(button) {
     const mode = getMuteMode();
     const icon = mode === 'all' ? '🔇' : mode === 'music' ? '🎵' : mode === 'sfx' ? '🔕' : '🔊';
     const title = mode === 'all'
-        ? 'Tout coupe (clic: tout activer, maintien: choisir mode)'
+        ? 'Tout coupe (clic: tout activer, maintien: options audio)'
         : mode === 'music'
-            ? 'Musique coupee (maintien: choisir mode)'
+            ? 'Musique coupee (maintien: options audio)'
             : mode === 'sfx'
-                ? 'Effets coupes (maintien: choisir mode)'
-                : 'Son actif (clic: tout couper, maintien: choisir mode)';
+                ? 'Effets coupes (maintien: options audio)'
+                : 'Son actif (clic: tout couper, maintien: options audio)';
 
     button.textContent = icon;
     button.setAttribute('aria-pressed', mode === 'all' ? 'true' : 'false');
