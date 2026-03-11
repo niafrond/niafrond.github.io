@@ -1,3 +1,9 @@
+## [1.4.0](https://github.com/niafrond/niafrond.github.io/compare/v1.3.0...v1.4.0) (2026-03-11)
+
+### Features
+
+* Add custom battle music for enemies and implement music playback controls ([09b0df4](https://github.com/niafrond/niafrond.github.io/commit/09b0df4b84afb8c507e65253dbc5b38b7db1bd1b))
+
 ## [1.3.0](https://github.com/niafrond/niafrond.github.io/compare/v1.2.0...v1.3.0) (2026-03-11)
 
 ### Features
