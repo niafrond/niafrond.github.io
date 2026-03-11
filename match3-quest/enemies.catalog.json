@@ -3,7 +3,7 @@
     "id": "frost_dragon",
     "name": "Dragon Glace",
     "race": "Dragon",
-    "battleMusic": "wav/musicgen-01-dragon-1773189823000.wav",
+
     "emoji": "🐉",
     "title": "Seigneur du Blizzard",
     "playerClass": "sorcerer",
@@ -41,7 +41,7 @@
     "id": "void_vampire",
     "name": "Vampire du Vide",
     "race": "Vampire",
-    "battleMusic": "wav/musicgen-02-vampire-1773190243144.wav",
+
     "emoji": "🧛",
     "title": "Sanguiniste Nocturne",
     "playerClass": "assassin",
@@ -79,7 +79,7 @@
     "id": "orc_warmaster",
     "name": "Orc Chef de Guerre",
     "race": "Orc",
-    "battleMusic": "wav/musicgen-04-orc-1773191057064.wav",
+
     "emoji": "👹",
     "title": "Hache Totem",
     "playerClass": "barbarian",
@@ -98,7 +98,7 @@
     "id": "temple_warden",
     "name": "Gardien du Temple",
     "race": "Construct",
-    "battleMusic": "wav/musicgen-06-construct-1773191866650.wav",
+
     "emoji": "🛡️",
     "title": "Bastion Sacre",
     "playerClass": "templar",
@@ -117,7 +117,7 @@
     "id": "crypt_lich",
     "name": "Liche des Cryptes",
     "race": "Mort-vivant",
-    "battleMusic": "wav/musicgen-03-mort-vivant-1773190645899.wav",
+
     "emoji": "☠️",
     "title": "Archimage Funebre",
     "playerClass": "sorcerer",
@@ -136,7 +136,7 @@
     "id": "goblin_saboteur",
     "name": "Gobelin Saboteur",
     "race": "Gobelin",
-    "battleMusic": "wav/musicgen-05-gobelin-1773191466006.wav",
+
     "emoji": "🗡️",
     "title": "Maitre des Pieges",
     "playerClass": "assassin",
@@ -155,7 +155,7 @@
     "id": "sand_colossus",
     "name": "Colosse des Dunes",
     "race": "Elementaire",
-    "battleMusic": "wav/musicgen-07-elementaire-1773192268491.wav",
+
     "emoji": "🏜️",
     "title": "Titan du Desert",
     "playerClass": "barbarian",
@@ -174,7 +174,7 @@
     "id": "shadow_assassin",
     "name": "Assassin de l'Ombre",
     "race": "Humain",
-    "battleMusic": "wav/musicgen-11-humain-1773193878854.wav",
+
     "emoji": "🥷",
     "title": "Lame Silencieuse",
     "playerClass": "assassin",
@@ -193,7 +193,7 @@
     "id": "forest_guardian",
     "name": "Gardien Sylvestre",
     "race": "Esprit",
-    "battleMusic": "wav/musicgen-08-esprit-nature-1773192671504.wav",
+
     "emoji": "🌲",
     "title": "Protecteur Ancien",
     "playerClass": "templar",
@@ -250,7 +250,7 @@
     "id": "moon_priestess",
     "name": "Pretresse Lunaire",
     "race": "Elfe",
-    "battleMusic": "wav/musicgen-09-elfe-1773193071402.wav",
+
     "emoji": "🌙",
     "title": "Voix de la Nuit",
     "playerClass": "templar",
@@ -326,7 +326,7 @@
     "id": "fungal_horror",
     "name": "Horreur Mycelienne",
     "race": "Monstre",
-    "battleMusic": "wav/musicgen-12-monstre-1773194280333.wav",
+
     "emoji": "🍄",
     "title": "Esprit Parasite",
     "playerClass": "sorcerer",
@@ -440,7 +440,7 @@
     "id": "war_troll",
     "name": "Troll de Guerre",
     "race": "Troll",
-    "battleMusic": "wav/musicgen-10-troll-1773193476509.wav",
+
     "emoji": "🪓",
     "title": "Broyeur de Boucliers",
     "playerClass": "barbarian",

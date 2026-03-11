@@ -1,27 +1,62 @@
-// --- Musique de combat personnalisée par ennemi ---
-let activeBattleMusicAudio = null;
+// Applique un facteur de volume spécial pour les .wav
+function applyWavVolume(audio, volume) {
+    if (audio && audio.src && audio.src.endsWith('.wav')) {
+        return clampVolume(volume * 0.5);
+    }
+    return clampVolume(volume);
+}
+
+// Pour gérer la pause/reprise de l'ambiance lors de la musique de combat
+let ambientWasPlayingBeforeBattle = false;
 
 export function playEnemyBattleMusic(enemy) {
-    // Arrêter la musique précédente
-    if (activeBattleMusicAudio) {
-        activeBattleMusicAudio.pause();
-        activeBattleMusicAudio.currentTime = 0;
-        activeBattleMusicAudio = null;
+    // Arrêter la musique précédente (ambiance ou combat)
+    if (activeAmbientAudio) {
+        activeAmbientAudio.pause();
+        activeAmbientAudio.currentTime = 0;
+        activeAmbientAudio = null;
     }
-    if (!enemy || !enemy.battleMusic || isMusicMuted()) return;
-    const src = enemy.battleMusic.startsWith('wav/') ? './' + enemy.battleMusic : enemy.battleMusic;
+    if (!enemy || isMusicMuted()) return;
+
+    // Recherche d'une musique .wav dont le nom contient la race (normalisée)
+    let src = null;
+    const race = (enemy.race || '').toLowerCase().normalize('NFD').replace(/[\u0000-\u036f]/g, '');
+    if (race) {
+        // Charge la liste depuis wav-tracks.json (synchrone, déjà chargée ou via fetch)
+        let wavs = window.WAV_TRACKS_LIST;
+        if (!wavs) {
+            try {
+                const req = new XMLHttpRequest();
+                req.open('GET', './match3-quest/wav-tracks.json', false); // synchrone
+                req.send(null);
+                if (req.status === 200) {
+                    wavs = JSON.parse(req.responseText);
+                }
+            } catch {}
+        }
+        if (Array.isArray(wavs)) {
+            src = wavs.find(f => f.normalize('NFD').replace(/[\u0000-\u036f]/g, '').toLowerCase().includes(race));
+            if (src) src = './wav/' + src;
+        }
+    }
+    // Si pas de musique de race trouvée, fallback sur sweet.mp3 ou sweet2.mp3
+    if (!src) {
+        const sweetTracks = AMBIENT_TRACKS_BY_MOOD.sweet;
+        src = sweetTracks[Math.floor(Math.random() * sweetTracks.length)];
+    }
     const audio = new Audio(src);
     audio.loop = true;
-    audio.volume = clampVolume(settings.volume);
+    audio.volume = applyWavVolume(audio, settings.volume);
     audio.play().catch(() => {});
-    activeBattleMusicAudio = audio;
+    activeAmbientAudio = audio;
 }
 
 export function stopEnemyBattleMusic() {
-    if (activeBattleMusicAudio) {
-        activeBattleMusicAudio.pause();
-        activeBattleMusicAudio.currentTime = 0;
-        activeBattleMusicAudio = null;
+    stopAmbientLoop();
+    // Relancer l'ambiance si elle était active avant le combat
+    if (ambientWasPlayingBeforeBattle) {
+        ambientWasPlayingBeforeBattle = false;
+        startAmbientLoop();
     }
 }
 import { createCheatModeSection } from "./cheatMode.js";
@@ -591,11 +626,20 @@ function ensureAmbientAudioPool() {
 
     ambientAudioByMood = {};
     Object.entries(AMBIENT_TRACKS_BY_MOOD).forEach(([mood, tracks]) => {
-        ambientAudioByMood[mood] = tracks.map((src) => {
+        // Si un wav est présent, on ne garde que le wav, sinon on garde les mp3
+        let filteredTracks = tracks;
+        const wavTrack = tracks.find(src => src.endsWith('.wav'));
+        if (wavTrack) {
+            filteredTracks = [wavTrack];
+        } else {
+            filteredTracks = tracks.filter(src => src.endsWith('.mp3'));
+        }
+        ambientAudioByMood[mood] = filteredTracks.map((src) => {
             const audio = new Audio(src);
             audio.preload = 'auto';
             audio.loop = true;
-            audio.volume = 0;
+            // Applique volume 0.5 si .wav
+            audio.volume = src.endsWith('.wav') ? 0 : 0;
             audio.dataset.combatMood = mood;
             return audio;
         });
@@ -623,7 +667,7 @@ function fadeAudioVolume(audio, target, durationMs = 420) {
     clearAmbientFadeTimer();
 
     const start = Number.isFinite(audio.volume) ? audio.volume : 0;
-    const end = clampVolume(target);
+    const end = applyWavVolume(audio, target);
     const duration = Math.max(1, Number(durationMs) || 1);
     const startedAt = Date.now();
 
