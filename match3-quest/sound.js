@@ -1,3 +1,29 @@
+// --- Musique de combat personnalisée par ennemi ---
+let activeBattleMusicAudio = null;
+
+export function playEnemyBattleMusic(enemy) {
+    // Arrêter la musique précédente
+    if (activeBattleMusicAudio) {
+        activeBattleMusicAudio.pause();
+        activeBattleMusicAudio.currentTime = 0;
+        activeBattleMusicAudio = null;
+    }
+    if (!enemy || !enemy.battleMusic || isMusicMuted()) return;
+    const src = enemy.battleMusic.startsWith('wav/') ? './' + enemy.battleMusic : enemy.battleMusic;
+    const audio = new Audio(src);
+    audio.loop = true;
+    audio.volume = clampVolume(settings.volume);
+    audio.play().catch(() => {});
+    activeBattleMusicAudio = audio;
+}
+
+export function stopEnemyBattleMusic() {
+    if (activeBattleMusicAudio) {
+        activeBattleMusicAudio.pause();
+        activeBattleMusicAudio.currentTime = 0;
+        activeBattleMusicAudio = null;
+    }
+}
 import { createCheatModeSection } from "./cheatMode.js";
 import { getMatch3Version } from "./version.js";
 

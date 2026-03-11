@@ -696,6 +696,8 @@ export function handlePlayerDeath(){
     log("💀 Vous êtes mort ! Le combat est terminé.");
     setCombatMusicEnabled(false);
     playSfx('defeat');
+    // Stopper la musique personnalisée
+    import('./sound.js').then(mod => { mod.stopEnemyBattleMusic(); });
     
     // Marquer le combat comme terminé
     gameState.combatState = 'finished';
@@ -734,6 +736,16 @@ export function startNewCombat(selectedEnemy = null){
     // Restaurer les PV et préparer le combat
     restartCombat();
     newEnemy(selectedEnemy);
+    // Jouer la musique personnalisée de l'ennemi
+    try {
+        const currentEnemy = typeof enemy !== 'undefined' ? enemy : null;
+        if(currentEnemy && currentEnemy.battleMusic) {
+            // Import dynamique pour éviter les cycles
+            import('./sound.js').then(mod => {
+                mod.playEnemyBattleMusic(currentEnemy);
+            });
+        }
+    } catch(e) { /* ignore */ }
 }
 
 // Abandonner le combat en cours
@@ -764,6 +776,8 @@ export function abandonCombat(){
     log("🏳️ Vous avez abandonné le combat...");
     setCombatMusicEnabled(false);
     playSfx('defeat');
+    // Stopper la musique personnalisée
+    import('./sound.js').then(mod => { mod.stopEnemyBattleMusic(); });
     
     // Marquer le combat comme terminé
     gameState.combatState = 'finished';

@@ -215,7 +215,8 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
         inventoryItem: enemyInventoryItem,
         dropProfile: template.dropProfile ? { ...template.dropProfile } : null,
         isBoss: false,
-        bossTier: null
+        bossTier: null,
+        battleMusic: template.battleMusic || null
     };
 }
 
