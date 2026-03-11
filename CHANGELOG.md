@@ -1,3 +1,9 @@
+## [1.3.0](https://github.com/niafrond/niafrond.github.io/compare/v1.2.0...v1.3.0) (2026-03-11)
+
+### Features
+
+* Ajouter des contrôles de volume pour la musique et les effets sonores ([2bebf49](https://github.com/niafrond/niafrond.github.io/commit/2bebf49d4895ae08ad82bd28fac69d98da7bef3c))
+
 ## [1.2.0](https://github.com/niafrond/niafrond.github.io/compare/v1.1.0...v1.2.0) (2026-03-10)
 
 ### Features
