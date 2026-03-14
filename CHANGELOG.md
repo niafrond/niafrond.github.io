@@ -1,3 +1,9 @@
+## [1.6.0](https://github.com/niafrond/niafrond.github.io/compare/v1.5.0...v1.6.0) (2026-03-14)
+
+### Features
+
+* Implement tutorial system with guided steps and UI elements ([d2dfffe](https://github.com/niafrond/niafrond.github.io/commit/d2dfffea24f29cebe65d4754e40e5f39478261da))
+
 ## [1.5.0](https://github.com/niafrond/niafrond.github.io/compare/v1.4.0...v1.5.0) (2026-03-11)
 
 ### Features
