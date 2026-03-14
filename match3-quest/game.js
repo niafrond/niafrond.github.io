@@ -2,6 +2,7 @@
 
 import { colors } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
+import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
 import { allWeapons, getAvailableWeapons, getWeaponById } from "./weapons.js";
 import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer } from "./board.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
@@ -1474,6 +1475,11 @@ export function useWeapon(){
 export function castSpell(spellId){
     if(gameState.combatState !== 'active'){ log("⚠️ Aucun combat en cours."); return; }
     if(currentTurn !== 'player'){ log("⚠️ Seul le joueur actif peut lancer un sort."); return; }
+    // Blocage tutoriel : interdire les sorts avant l'étape 4
+    if(isTutorialActive() && getTutorialStep() < 4){
+        log("🪄 Générez d'abord du mana avec des matchs de tuiles colorées !");
+        return;
+    }
     const spell=player.activeSpells.find(s=>s.id===spellId);
     if(!spell){ log("Sort indisponible !"); return; }
     if(player.level<spell.minLevel){ log(`Nécessite niveau ${spell.minLevel}`); return; }
@@ -1493,6 +1499,7 @@ export function castSpell(spellId){
         import('./classSpellEffects.js').then(module => {
             if(module.applyClassSpellEffect(spell)) {
                 saveUpdate();
+                tutorialCallbacks.onSpellCast?.();
                 finishPlayerTurn();
             } else {
                 saveUpdate();
@@ -1507,7 +1514,10 @@ export function castSpell(spellId){
     
     updateStats();
     saveUpdate();
-    
+
+    // Notifier le tutoriel qu'un sort a été lancé
+    tutorialCallbacks.onSpellCast?.();
+
     finishPlayerTurn();
 }
 
@@ -1974,6 +1984,10 @@ export function handleEnemyDefeated(){
     
     // Marquer le combat comme terminé
     gameState.combatState = 'finished';
+
+    // Notifier le tutoriel que l'ennemi est vaincu
+    tutorialCallbacks.onEnemyDefeated?.();
+
     showEndCombatAnimation(true);
 }
 

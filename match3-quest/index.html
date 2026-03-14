@@ -8,6 +8,35 @@
 <link rel="manifest" href="manifest.json">
 </head>
 <body>
+<!-- Modal de proposition du tutoriel -->
+<div id="tutorial-proposal-modal" class="modal">
+    <div class="modal-content" style="max-width:420px;">
+        <h2>📚 Tutoriel</h2>
+        <p>Voulez-vous faire le tutoriel ?</p>
+        <p style="font-size:0.9rem;color:#666;">Il vous guidera pas à pas à travers les mécaniques du jeu : déplacements, matchs de crânes, génération de mana et sorts.</p>
+        <div class="modal-actions">
+            <button class="primary" id="tutorial-proposal-yes">✅ Oui, lancer le tutoriel</button>
+            <button class="secondary" id="tutorial-proposal-no">❌ Non, je connais déjà</button>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay tutoriel (flottant, bas-droite) -->
+<div id="tutorial-overlay" class="tutorial-overlay hidden">
+    <div class="tutorial-card">
+        <div class="tutorial-step-badge">Étape <span id="tutorial-step-current">1</span>/<span id="tutorial-step-total">5</span></div>
+        <div class="tutorial-icon-display" id="tutorial-icon">🎮</div>
+        <h3 id="tutorial-title">Bienvenue</h3>
+        <p id="tutorial-desc">Suivez les instructions.</p>
+        <div class="tutorial-actions">
+            <button id="tutorial-quit-btn">🚪 Quitter le tutoriel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Bandeau de retour d'information tutoriel -->
+<div id="tutorial-feedback" class="tutorial-feedback hidden"></div>
+
 <!-- Modal de sélection de classe -->
 <div id="class-modal" class="modal">
     <div class="modal-content">
@@ -189,6 +218,9 @@
     <!-- Onglet Stats -->
     <div id="tab-stats" class="tab-panel">
         <h2>Statistiques</h2>
+        <div style="text-align:center; margin-bottom:14px;">
+            <button id="tutorial-start-btn" title="Lancer le tutoriel pour apprendre les mécaniques du jeu">📚 Lancer le tutoriel</button>
+        </div>
         <div id="stats-content"></div>
     </div>
     

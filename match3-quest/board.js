@@ -1,5 +1,6 @@
 import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, addManaForColor, logActiveAction, clampEnemyAttackDamage, applyDamage, addBonusTurn } from "./game.js";
 import { colors, boardSize } from "./constants.js";
+import { tutorialCallbacks } from "./tutorial.js";
 import {
     hasMatches as hasMatchesOnBoard,
     checkForMatchesOnly as checkForMatchesOnlyOnBoard,
@@ -510,7 +511,10 @@ export function swapTiles(i,j){
         turn: currentTurn,
         resolvedAtLeastOneMatch: false
     };
-    
+
+    // Notifier le tutoriel qu'un échange valide a eu lieu
+    tutorialCallbacks.onTileSwap?.(i, j, true);
+
     // Il y a un match : continuer normalement
     renderBoard();
     checkMatches();
@@ -587,6 +591,8 @@ export function checkMatches(forceFullBoard = false){
                     grantManaGeneratedXP(generatedMana);
                     log(`⭐ +${generatedMana} XP (mana généré)`);
                 }
+                // Notifier le tutoriel d'un match de couleur du joueur
+                tutorialCallbacks.onMatch?.('color', info.color, info.len);
             }
             if(info.len>=4){ 
                 addBonusTurn(currentPlayer);
@@ -616,6 +622,8 @@ export function checkMatches(forceFullBoard = false){
             }
             if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
         } else if(info.type==='skull'){
+            // Notifier le tutoriel d'un match de crânes du joueur
+            if(currentTurn === 'player') tutorialCallbacks.onMatch?.('skull', null, info.len);
             const attacker = currentTurn === 'player' ? player : enemy;
             const opponent = currentTurn === 'player' ? enemy : player;
             // Diminution des pics de degats des cranes a haut niveau.
@@ -1072,6 +1080,12 @@ function animateEnemySwap(from, to, onComplete){
 
 // Fonction pour que l'ennemi fasse un mouvement sur le plateau
 export function enemyMakeMove(){
+    // En mode tutoriel, l'ennemi utilise toujours un mouvement aléatoire (IA stupide)
+    if(tutorialCallbacks.useDumbAI) {
+        enemyMakeRandomMove();
+        return;
+    }
+
     clearSuggestionTimer();
     clearSuggestion();
     log('🤖 L\'ennemi réfléchit...');

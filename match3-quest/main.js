@@ -5,6 +5,7 @@ import { getRandomPlayerName } from "./playerNames.js";
 import { createBossEnemyForTier, generateEnemyChoices } from "./enemies.js";
 import { calculateXPGain } from "./experience.js";
 import { initializeAudioUI, playSfx, primeAudioFromGesture } from "./sound.js";
+import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 
 // initialisation de la partie
 console.log('Main.js loaded');
@@ -127,7 +128,32 @@ function showClassSelection() {
         log(`✨ ${player.name}, vous êtes maintenant ${classData.emoji} ${classData.name} !`);
         updateAvailableSpells();
         saveUpdate();
-        modal.classList.remove('active');
+
+        if(!hasTutorialBeenCompleted()) {
+            // Proposer le tutoriel en ligne dans la même modal
+            container.innerHTML = `
+                <div style="text-align:center; padding: 16px 0 8px;">
+                    <div style="font-size:3rem; margin-bottom:10px;">📚</div>
+                    <h3 style="margin:0 0 8px;">Voulez-vous lancer le tutoriel ?</h3>
+                    <p style="color:#666; font-size:0.88rem; margin:0 0 20px;">
+                        Il vous guidera pas à pas : déplacer des tuiles, faire des matchs de crânes,<br>générer du mana et lancer un sort.
+                    </p>
+                    <div class="modal-actions">
+                        <button class="primary" id="tutorial-inline-yes">✅ Oui, lancer le tutoriel</button>
+                        <button class="secondary" id="tutorial-inline-no">❌ Non merci</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('tutorial-inline-yes').onclick = () => {
+                modal.classList.remove('active');
+                startTutorial();
+            };
+            document.getElementById('tutorial-inline-no').onclick = () => {
+                modal.classList.remove('active');
+            };
+        } else {
+            modal.classList.remove('active');
+        }
     };
     
     document.getElementById('skip-class').onclick = () => {
@@ -223,6 +249,12 @@ function init() {
 
     const darkModeToggleButton = document.getElementById('dark-mode-toggle-btn');
     initializeThemeUI(darkModeToggleButton);
+
+    // Initialiser l'UI du tutoriel
+    initTutorialUI();
+
+    // Rendre startTutorial accessible globalement (pour bouton HTML inline)
+    window.startTutorial = startTutorial;
 
     // Ne pas créer d'ennemi ni de board au démarrage
     // Juste initialiser les sorts et armes disponibles
