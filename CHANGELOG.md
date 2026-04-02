@@ -1,3 +1,9 @@
+## [1.18.0](https://github.com/niafrond/niafrond.github.io/compare/v1.17.0...v1.18.0) (2026-04-02)
+
+### Features
+
+* simplifier la récupération de la version du test à l'aveugle en utilisant la version du match3 ([03aa678](https://github.com/niafrond/niafrond.github.io/commit/03aa6784015f76dcd5e0944926564e635c80c1cc))
+
 ## [1.17.0](https://github.com/niafrond/niafrond.github.io/compare/v1.16.0...v1.17.0) (2026-04-02)
 
 ### Features
