@@ -1,3 +1,9 @@
+## [1.7.0](https://github.com/niafrond/niafrond.github.io/compare/v1.6.0...v1.7.0) (2026-04-02)
+
+### Features
+
+* add UI and YouTube audio handling for Blind Test game ([420746a](https://github.com/niafrond/niafrond.github.io/commit/420746ab1cb61da71c159b7684864ca6e9e00486))
+
 ## [1.6.0](https://github.com/niafrond/niafrond.github.io/compare/v1.5.0...v1.6.0) (2026-03-14)
 
 ### Features
