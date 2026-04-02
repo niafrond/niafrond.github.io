@@ -1,3 +1,9 @@
+## [1.14.0](https://github.com/niafrond/niafrond.github.io/compare/v1.13.0...v1.14.0) (2026-04-02)
+
+### Features
+
+* ajouter des fonctions pour décoder des littéraux JSON et extraire des données JSON ([0c27f25](https://github.com/niafrond/niafrond.github.io/commit/0c27f252550786972e877dd0864b1a8a91be1113))
+
 ## [1.13.0](https://github.com/niafrond/niafrond.github.io/compare/v1.12.0...v1.13.0) (2026-04-02)
 
 ### Features
