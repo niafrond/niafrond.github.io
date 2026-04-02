@@ -57,6 +57,25 @@ export const MODE_LABELS = {
   [MODE.FOUR_CHOICES]: '4 choix',
 };
 
+export const ANSWER_FORMAT = {
+  ARTIST_THEN_TITLE: 'ARTIST_THEN_TITLE',
+  BOTH_TOGETHER: 'BOTH_TOGETHER',
+  EITHER_ONE: 'EITHER_ONE',
+};
+
+export const ANSWER_FORMAT_LABELS = {
+  [ANSWER_FORMAT.ARTIST_THEN_TITLE]: 'Artiste puis titre',
+  [ANSWER_FORMAT.BOTH_TOGETHER]: 'Artiste et titre ensemble',
+  [ANSWER_FORMAT.EITHER_ONE]: 'Artiste ou titre',
+};
+
+export const ANSWER_PROMPTS = {
+  artist: { label: '🎤 Donnez l\'artiste', placeholder: 'Artiste…' },
+  title: { label: '🎵 Donnez le titre', placeholder: 'Titre…' },
+  both: { label: '🎶 Donnez l\'artiste et le titre', placeholder: 'Artiste — Titre…' },
+  either: { label: '🎵 Donnez l\'artiste ou le titre', placeholder: 'Artiste ou titre…' },
+};
+
 // ─── Joker types ───────────────────────────────────────────────────────────────
 export const JOKER = {
   STEAL: 'STEAL',   // 🎯 Vole 5 pts à une cible

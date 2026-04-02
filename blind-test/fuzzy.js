@@ -102,6 +102,33 @@ export function validateAnswer(guess, song) {
   return fuzzyMatch(guess, song.title) || fuzzyMatch(guess, song.artist);
 }
 
+export function validateBothAnswer(guess, song) {
+  if (!guess || !song?.title || !song?.artist) return false;
+
+  const raw = String(guess).trim();
+  const titleArtist = `${song.title} ${song.artist}`;
+  const artistTitle = `${song.artist} ${song.title}`;
+  if (fuzzyMatch(raw, titleArtist) || fuzzyMatch(raw, artistTitle)) return true;
+
+  const normalizedGuess = normalize(raw);
+  const normalizedTitle = normalize(song.title);
+  const normalizedArtist = normalize(song.artist);
+  if (!normalizedGuess || !normalizedTitle || !normalizedArtist) return false;
+
+  if (normalizedGuess.includes(normalizedTitle) && normalizedGuess.includes(normalizedArtist)) {
+    return true;
+  }
+
+  const parts = raw
+    .split(/\s(?:-|–|—|\/|,|;|\||par|by)\s|\n+/i)
+    .map(part => part.trim())
+    .filter(Boolean);
+
+  const hasTitle = parts.some(part => fuzzyMatch(part, song.title));
+  const hasArtist = parts.some(part => fuzzyMatch(part, song.artist));
+  return hasTitle && hasArtist;
+}
+
 /** Vérifie uniquement l'artiste */
 export function validateArtist(guess, song) {
   return fuzzyMatch(guess, song.artist);

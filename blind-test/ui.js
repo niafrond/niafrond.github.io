@@ -5,7 +5,7 @@
  * Elles n'ont pas de side-effects réseau.
  */
 
-import { PHASE, MODE, JOKER, JOKER_LABELS, JOKER_DESCRIPTIONS, MODE_LABELS } from './constants.js';
+import { PHASE, MODE, JOKER, JOKER_LABELS, JOKER_DESCRIPTIONS, MODE_LABELS, ANSWER_FORMAT, ANSWER_FORMAT_LABELS, ANSWER_PROMPTS } from './constants.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -215,11 +215,10 @@ export function renderGamePhase(phase, data, isHost) {
         show('phase-answering');
         // Indiquer ce que le joueur doit répondre
         const step = data.answerStep ?? 'artist';
-        setText('answer-step-label',
-          step === 'artist' ? '🎤 Donnez l’artiste' : '🎵 Donnez le titre'
-        );
+        const prompt = ANSWER_PROMPTS[step] ?? ANSWER_PROMPTS.artist;
+        setText('answer-step-label', prompt.label);
         const inp = el('answer-input');
-        if (inp) inp.placeholder = step === 'artist' ? 'Artiste…' : 'Titre…';
+        if (inp) inp.placeholder = prompt.placeholder;
       }
       break;
     }
@@ -228,13 +227,21 @@ export function renderGamePhase(phase, data, isHost) {
       show('phase-answer-result');
       const r = data.lastResult;
       if (r?.partial) {
-        setText('answer-result-text', '✅ Artiste correct ! (+5 pts)');
+        const points = r?.points > 0 ? ` (+${r.points} pts)` : '';
+        setText('answer-result-text', `✅ Artiste correct !${points}`);
         setText('answer-result-answer', `À vous le titre…`);
       } else if (r?.correct) {
-        setText('answer-result-text', '✅ Titre correct ! (+5 pts)');
+        const points = r?.points > 0 ? ` (+${r.points} pts)` : '';
+        const successLabel = r?.step === 'title'
+          ? '✅ Titre correct !'
+          : r?.answerFormat === ANSWER_FORMAT.EITHER_ONE
+            ? '✅ Bonne réponse !'
+            : '✅ Réponse complète correcte !';
+        setText('answer-result-text', `${successLabel}${points}`);
         setText('answer-result-answer', r?.answer ?? '');
       } else {
-        setText('answer-result-text', '❌ Mauvaise réponse');
+        const malus = r?.points < 0 ? ` (${r.points} pts)` : '';
+        setText('answer-result-text', `❌ Mauvaise réponse${malus}`);
         setText('answer-result-answer', r?.answer ?? '');
       }
       break;
@@ -401,6 +408,25 @@ export function renderModeSelector(selectedMode, onChange) {
   container.querySelectorAll('input[name="game-mode"]').forEach(input => {
     input.addEventListener('change', () => {
       container.querySelectorAll('.mode-option').forEach(l => l.classList.remove('selected'));
+      input.parentElement.classList.add('selected');
+      onChange(input.value);
+    });
+  });
+}
+
+export function renderAnswerFormatSelector(selectedFormat, onChange) {
+  const container = el('answer-format-selector');
+  if (!container) return;
+  container.innerHTML = Object.entries(ANSWER_FORMAT_LABELS).map(([format, label]) => `
+    <label class="mode-option ${selectedFormat === format ? 'selected' : ''}">
+      <input type="radio" name="answer-format" value="${format}" ${selectedFormat === format ? 'checked' : ''}>
+      ${label}
+    </label>
+  `).join('');
+
+  container.querySelectorAll('input[name="answer-format"]').forEach(input => {
+    input.addEventListener('change', () => {
+      container.querySelectorAll('.mode-option').forEach(label => label.classList.remove('selected'));
       input.parentElement.classList.add('selected');
       onChange(input.value);
     });

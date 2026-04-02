@@ -35,6 +35,23 @@ html, body {
 }
 [data-screen][hidden] { display: none !important; }
 
+.blind-test-home-button {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 950;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
+@media (max-width: 640px) {
+  .blind-test-home-button {
+    top: 12px;
+    left: 12px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+}
+
 .screen-center {
   display: flex;
   flex-direction: column;
@@ -183,6 +200,11 @@ html, body {
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 8px;
+}
+#answer-format-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .mode-option {
   background: var(--bg);

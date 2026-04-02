@@ -11,8 +11,8 @@
  *  - Met à jour l'UI via les callbacks fournis à GameEngine
  */
 
-import { MSG, PHASE, MODE, SCORE, TIMER, JOKER, GAME_SONGS } from './constants.js';
-import { validateArtist, validateTitle, validateAnswer } from './fuzzy.js';
+import { MSG, PHASE, MODE, SCORE, TIMER, JOKER, GAME_SONGS, ANSWER_FORMAT } from './constants.js';
+import { validateArtist, validateTitle, validateAnswer, validateBothAnswer } from './fuzzy.js';
 import { shufflePlaylist, generateFourChoices } from './playlist.js';
 import { applyJoker, computeCorrectScore, computeWrongScore, initialJokers } from './joker.js';
 
@@ -40,6 +40,7 @@ export class GameEngine {
       eliminatedChoices: [], // Choix grisés dans le round courant
       waitingForJoker: null,// { type, fromId } — en attente de cible
       answerStep: 'artist', // 'étape en cours : 'artist' ou 'title'
+      answerFormat: ANSWER_FORMAT.ARTIST_THEN_TITLE,
       playbackError: null,  // Message d'erreur audio affiché à l'hôte
     };
 
@@ -105,6 +106,7 @@ export class GameEngine {
   restoreFromSnapshot(snap) {
     const hostPlayer = this.state.players.find(p => p.id === '__host__');
     this.state.mode          = snap.mode          ?? this.state.mode;
+    this.state.answerFormat  = snap.answerFormat  ?? this.state.answerFormat;
     this.state.playlist      = snap.playlist      ?? this.state.playlist;
     this.state.shuffled      = snap.shuffled      ?? this.state.shuffled;
     // client.currentRound est 1-indexé (incrémenté à chaque PLAY_SONG),
@@ -118,7 +120,7 @@ export class GameEngine {
       this.state.players.unshift(hostPlayer);
     }
     this.state.buzzQueue  = [];
-    this.state.answerStep = 'artist';
+    this.state.answerStep = this._getInitialAnswerStep();
     // Atterrir sur ROUND_END : état sûr, l'hôte appuie sur "Suivant" pour reprendre
     this.state.phase = PHASE.ROUND_END;
     this._broadcastPlayerList();
@@ -157,16 +159,17 @@ export class GameEngine {
 
   // ─── Démarrage ───────────────────────────────────────────────────────────
 
-  startGame(mode, playlist, { pipedInstances = [], invidiousInstances = [], preferredAudioSource = null } = {}) {
+  startGame(mode, playlist, { pipedInstances = [], invidiousInstances = [], preferredAudioSource = null, answerFormat = ANSWER_FORMAT.ARTIST_THEN_TITLE } = {}) {
     this._instanceCaches = { pipedInstances, invidiousInstances, preferredAudioSource };
     this.state.mode = mode;
+    this.state.answerFormat = answerFormat;
     this.state.playlist = playlist;
     this.state.shuffled = shufflePlaylist(playlist).slice(0, GAME_SONGS);
     this.state.currentRound = -1;
     this.state.players.forEach(p => { p.score = 0; p.jokers = initialJokers(); p.blockedUntilRound = -1; p.doubleActive = false; });
 
     this.peer.broadcast({
-      type: MSG.GAME_START, mode, playlist,
+      type: MSG.GAME_START, mode, playlist, answerFormat,
       shuffled: this.state.shuffled,
       ...(pipedInstances.length     && { pipedInstances }),
       ...(invidiousInstances.length && { invidiousInstances }),
@@ -181,7 +184,7 @@ export class GameEngine {
     this._clearTimers();
     this.state.currentRound++;
     this.state.buzzQueue = [];
-    this.state.answerStep = 'artist';
+    this.state.answerStep = this._getInitialAnswerStep();
     this.state.playbackError = null;
     this._artistScoredPlayer = null;
 
@@ -324,13 +327,43 @@ export class GameEngine {
       this.state.buzzQueue.shift();
       if (this.state.buzzQueue.length > 0) {
         this.peer.broadcast({ type: MSG.BUZZ_QUEUE, queue: [...this.state.buzzQueue] });
-        this.state.answerStep = 'artist';
+        this.state.answerStep = this._getInitialAnswerStep();
         this._startAnswerTimer();
       } else {
-        this.state.answerStep = 'artist';
+        this.state.answerStep = this._getInitialAnswerStep();
         this._skipRound();
       }
     }, TIMER.ANSWER_DURATION);
+  }
+
+  _getInitialAnswerStep() {
+    switch (this.state.answerFormat) {
+      case ANSWER_FORMAT.BOTH_TOGETHER:
+        return 'both';
+      case ANSWER_FORMAT.EITHER_ONE:
+        return 'either';
+      default:
+        return 'artist';
+    }
+  }
+
+  _finishAnswerResult(song, result, { endRound = false, resumeAfterWrong = false } = {}) {
+    this.state.phase = PHASE.ANSWER_RESULT;
+    this.state._lastResult = result;
+    this.onStateChange({ ...this.state });
+
+    setTimeout(() => {
+      if (resumeAfterWrong) {
+        this._resumeAfterWrong();
+        return;
+      }
+      if (endRound) {
+        this.peer.broadcast({ type: MSG.ROUND_END, videoId: song.videoId, title: song.title, artist: song.artist });
+        this.state.phase = PHASE.ROUND_END;
+        this.onStateChange({ ...this.state });
+        this._afterRoundEnd();
+      }
+    }, 1500);
   }
 
   handleAnswer(peerId, text) {
@@ -340,13 +373,57 @@ export class GameEngine {
     const song   = this.state.currentSong;
     const player = this.state.players.find(p => p.id === peerId);
 
+    if (this.state.answerStep === 'both' || this.state.answerStep === 'either') {
+      const step = this.state.answerStep;
+      const correct = step === 'both'
+        ? validateBothAnswer(text, song)
+        : validateAnswer(text, song);
+      let points = 0;
+
+      if (correct && player) {
+        points = computeCorrectScore(player, SCORE.CORRECT, this.state.currentRound);
+        player.score += points;
+      } else if (player && this.state.mode === MODE.CLASSIC_MALUS) {
+        points = computeWrongScore(player, SCORE.WRONG_MALUS, this.state.currentRound);
+        player.score = Math.max(0, player.score + points);
+      }
+
+      const scores = this._getScores();
+      this.peer.broadcast({
+        type: MSG.ANSWER_RESULT,
+        playerId: peerId,
+        correct,
+        partial: false,
+        step,
+        answerFormat: this.state.answerFormat,
+        points,
+        answer: text,
+        expected: { title: song.title, artist: song.artist },
+        scores,
+      });
+      this.state.answerStep = this._getInitialAnswerStep();
+      this._finishAnswerResult(song, {
+        correct,
+        partial: false,
+        step,
+        answerFormat: this.state.answerFormat,
+        points,
+        answer: text,
+        playerId: peerId,
+      }, {
+        endRound: correct,
+        resumeAfterWrong: !correct,
+      });
+      return;
+    }
+
     // ── Étape 1 : l'artiste ───────────────────────────────────────────
     if (this.state.answerStep === 'artist') {
       const correctArtist = validateArtist(text, song);
 
       if (correctArtist && player) {
-        const gain = computeCorrectScore(player, SCORE.ARTIST, this.state.currentRound);
-        player.score += gain;
+        const points = computeCorrectScore(player, SCORE.ARTIST, this.state.currentRound);
+        player.score += points;
         this._artistScoredPlayer = peerId;
         const scores = this._getScores();
         this.peer.broadcast({
@@ -354,12 +431,15 @@ export class GameEngine {
           playerId: peerId,
           correct: true,
           partial: true,          // artiste correct, attend le titre
+          step: 'artist',
+          answerFormat: this.state.answerFormat,
+          points,
           answer: text,
           expected: { artist: song.artist },
           scores,
         });
         this.state.phase = PHASE.ANSWER_RESULT;
-        this.state._lastResult = { correct: true, partial: true, answer: text, playerId: peerId };
+        this.state._lastResult = { correct: true, partial: true, step: 'artist', answerFormat: this.state.answerFormat, points, answer: text, playerId: peerId };
         this.onStateChange({ ...this.state });
 
         // Passer à l'étape titre après 1,5 s d'affichage
@@ -369,9 +449,10 @@ export class GameEngine {
         }, 1500);
       } else {
         // Artiste incorrect : appliquer malus éventuel, reprendre la musique
+        let points = 0;
         if (player && this.state.mode === MODE.CLASSIC_MALUS) {
-          const malus = computeWrongScore(player, SCORE.WRONG_MALUS, this.state.currentRound);
-          player.score = Math.max(0, player.score + malus);
+          points = computeWrongScore(player, SCORE.WRONG_MALUS, this.state.currentRound);
+          player.score = Math.max(0, player.score + points);
         }
         const scores = this._getScores();
         this.peer.broadcast({
@@ -379,12 +460,15 @@ export class GameEngine {
           playerId: peerId,
           correct: false,
           partial: false,
+          step: 'artist',
+          answerFormat: this.state.answerFormat,
+          points,
           answer: text,
           expected: null,
           scores,
         });
         this.state.phase = PHASE.ANSWER_RESULT;
-        this.state._lastResult = { correct: false, partial: false, answer: text, playerId: peerId };
+        this.state._lastResult = { correct: false, partial: false, step: 'artist', answerFormat: this.state.answerFormat, points, answer: text, playerId: peerId };
         this.onStateChange({ ...this.state });
         // Mauvaise réponse artiste : reprendre la chanson
         setTimeout(() => this._resumeAfterWrong(), 1500);
@@ -394,10 +478,11 @@ export class GameEngine {
 
     // ── Étape 2 : le titre ──────────────────────────────────────────────
     const correctTitle = validateTitle(text, song);
+    let points = 0;
 
     if (correctTitle && player) {
-      const gain = computeCorrectScore(player, SCORE.TITLE, this.state.currentRound);
-      player.score += gain;
+      points = computeCorrectScore(player, SCORE.TITLE, this.state.currentRound);
+      player.score += points;
     }
 
     this._artistScoredPlayer = null;
@@ -408,22 +493,23 @@ export class GameEngine {
       playerId: peerId,
       correct: correctTitle,
       partial: false,
+      step: 'title',
+      answerFormat: this.state.answerFormat,
+      points,
       answer: text,
       expected: { title: song.title, artist: song.artist },
       scores,
     });
-    this.state.phase = PHASE.ANSWER_RESULT;
-    this.state._lastResult = { correct: correctTitle, partial: false, answer: text, playerId: peerId };
-    this.state.answerStep = 'artist';
-    this.onStateChange({ ...this.state });
-
-    // Titre correct ou incorrect : round terminé (points artiste déjà attribués)
-    setTimeout(() => {
-      this.peer.broadcast({ type: MSG.ROUND_END, videoId: song.videoId, title: song.title, artist: song.artist });
-      this.state.phase = PHASE.ROUND_END;
-      this.onStateChange({ ...this.state });
-      this._afterRoundEnd();
-    }, 1500);
+    this.state.answerStep = this._getInitialAnswerStep();
+    this._finishAnswerResult(song, {
+      correct: correctTitle,
+      partial: false,
+      step: 'title',
+      answerFormat: this.state.answerFormat,
+      points,
+      answer: text,
+      playerId: peerId,
+    }, { endRound: true });
   }
 
   // ─── Mode 4 choix ─────────────────────────────────────────────────────────
@@ -507,7 +593,7 @@ export class GameEngine {
     const elapsed = this._playSongStartedAt ? (Date.now() - this._playSongStartedAt) : 0;
     const remaining = Math.max(0, TIMER.PLAY_DURATION - elapsed);
     this.state.buzzQueue = [];
-    this.state.answerStep = 'artist';
+    this.state.answerStep = this._getInitialAnswerStep();
     this._artistScoredPlayer = null;
     this.state.phase = PHASE.PLAYING;
     // Reprend la musique là où elle était
@@ -586,6 +672,7 @@ export class GameEngine {
     this.peer.sendTo(peerId, {
       type: MSG.GAME_START,
       mode: this.state.mode,
+      answerFormat: this.state.answerFormat,
       playlist: this.state.playlist,
       ...(pipedInstances.length     && { pipedInstances }),
       ...(invidiousInstances.length && { invidiousInstances }),
@@ -613,6 +700,9 @@ export class GameEngine {
       if (phase === PHASE.BUZZED || phase === PHASE.ANSWERING) {
         this.peer.sendTo(peerId, { type: MSG.STOP_MUSIC });
         this.peer.sendTo(peerId, { type: MSG.BUZZ_QUEUE, queue: [...this.state.buzzQueue] });
+        if (phase === PHASE.ANSWERING) {
+          this.peer.sendTo(peerId, { type: MSG.ANSWER_STEP, step: this.state.answerStep, playerId: this.state.buzzQueue[0] });
+        }
       }
     } else if (phase === PHASE.ANSWER_RESULT || phase === PHASE.ROUND_END) {
       this.peer.sendTo(peerId, {

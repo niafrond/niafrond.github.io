@@ -5,6 +5,8 @@
  * Song : { id, videoId, title, artist, year: number|null, genre: string|null, alternatives: [] }
  */
 
+import { fuzzyMatch, normalize } from './fuzzy.js';
+
 const STORAGE_KEY = 'blind-test-playlist';
 const SAVED_KEY   = 'blind-test-saved-playlists';
 
@@ -158,6 +160,44 @@ function extractContinuationToken(data) {
   return tokens.find(t => typeof t === 'string' && t.length > 40) || null;
 }
 
+function extractAssignedJson(html, markers) {
+  for (const marker of markers) {
+    const markerIndex = html.indexOf(marker);
+    if (markerIndex === -1) continue;
+
+    const objectStart = html.indexOf('{', markerIndex + marker.length);
+    if (objectStart === -1) continue;
+
+    let depth = 0;
+    let inString = false;
+    let escaping = false;
+
+    for (let i = objectStart; i < html.length; i++) {
+      const ch = html[i];
+      if (inString) {
+        if (escaping) escaping = false;
+        else if (ch === '\\') escaping = true;
+        else if (ch === '"') inString = false;
+        continue;
+      }
+      if (ch === '"') {
+        inString = true;
+        continue;
+      }
+      if (ch === '{') {
+        depth++;
+        continue;
+      }
+      if (ch === '}') {
+        depth--;
+        if (depth === 0) return html.slice(objectStart, i + 1);
+      }
+    }
+  }
+
+  return null;
+}
+
 /**
  * Importe les vidéos d'une playlist YouTube.
  * Étape 1 : scrape la page HTML de la playlist via corsproxy pour lire ytInitialData.
@@ -178,16 +218,15 @@ export async function fetchYouTubePlaylist(playlistUrl, onProgress) {
 
   const html = await pageResp.text();
 
-  const marker = 'var ytInitialData = ';
-  const start = html.indexOf(marker);
-  if (start === -1) throw new Error('Format de page YouTube inattendu — playlist peut-être privée');
-  const jsonStart = start + marker.length;
-  // YouTube escapes </ in JSON, so ;</script> marks the end safely
-  const jsonEnd = html.indexOf(';</script>', jsonStart);
-  if (jsonEnd === -1) throw new Error('Impossible de parser ytInitialData');
+  const rawJson = extractAssignedJson(html, [
+    'var ytInitialData = ',
+    'window["ytInitialData"] = ',
+    'ytInitialData = ',
+  ]);
+  if (!rawJson) throw new Error('Impossible de parser ytInitialData');
 
   let data;
-  try { data = JSON.parse(html.substring(jsonStart, jsonEnd)); }
+  try { data = JSON.parse(rawJson); }
   catch { throw new Error('Erreur de parsing ytInitialData'); }
 
   const songs = [];
@@ -365,6 +404,62 @@ export async function fetchArtistAlternatives(artist, excludeTitle) {
   }
 }
 
+function cleanItunesSearchText(text) {
+  return String(text || '')
+    .replace(/\s*[\[(][^\])\n]*[\])\n]/g, '')
+    .replace(/\s*[-–|]\s*(Official|Audio|Lyrics?|Video|HD|HQ|4K|Live|Karaoke|Cover|Clip).*/i, '')
+    .replace(/\s+(feat\.?|ft\.?)\s+.+$/i, '')
+    .trim();
+}
+
+function splitYouTubeTitle(rawTitle) {
+  const cleaned = cleanItunesSearchText(rawTitle);
+  const separators = [' - ', ' – ', ' — ', ' | ', ': '];
+  for (const separator of separators) {
+    const parts = cleaned.split(separator);
+    if (parts.length >= 2) {
+      return {
+        artist: parts[0].trim(),
+        title: parts.slice(1).join(separator).trim(),
+      };
+    }
+  }
+  return { artist: '', title: cleaned };
+}
+
+function isItunesCandidateMatchingVideo(hit, youtubeTitle, expectedArtist = '') {
+  if (!hit?.trackName || !youtubeTitle) return false;
+
+  const normalizedVideoTitle = normalize(youtubeTitle);
+  const normalizedTrackName = normalize(hit.trackName);
+  const normalizedArtistName = normalize(hit.artistName || '');
+  const normalizedExpectedArtist = normalize(expectedArtist || '');
+
+  const titleMatches = fuzzyMatch(hit.trackName, youtubeTitle)
+    || fuzzyMatch(youtubeTitle, hit.trackName)
+    || normalizedVideoTitle.includes(normalizedTrackName);
+  if (!titleMatches) return false;
+
+  if (!normalizedExpectedArtist) return true;
+  return fuzzyMatch(hit.artistName, expectedArtist)
+    || normalizedVideoTitle.includes(normalizedArtistName)
+    || normalizedArtistName.includes(normalizedExpectedArtist)
+    || normalizedExpectedArtist.includes(normalizedArtistName);
+}
+
+function pickBestItunesResult(results, youtubeTitle, expectedArtist = '') {
+  const normalizedExpectedArtist = normalize(expectedArtist || '');
+  const candidates = (results || []).filter(hit => isItunesCandidateMatchingVideo(hit, youtubeTitle, expectedArtist));
+  if (!candidates.length) return null;
+  if (!normalizedExpectedArtist) return candidates[0];
+
+  return candidates.sort((a, b) => {
+    const aExact = normalize(a.artistName || '') === normalizedExpectedArtist ? 1 : 0;
+    const bExact = normalize(b.artistName || '') === normalizedExpectedArtist ? 1 : 0;
+    return bExact - aExact;
+  })[0];
+}
+
 /**
  * Cherche les métadonnées canoniques d'une chanson via l'API iTunes Search.
  * Retourne { title, artist } si un résultat est trouvé, null sinon.
@@ -373,15 +468,12 @@ export async function fetchArtistAlternatives(artist, excludeTitle) {
  * @returns {Promise<{title: string, artist: string}|null>}
  */
 export async function lookupSongMetadata(title, artist) {
-  // Supprime les suffixes parasites courants dans les titres YouTube
-  const cleanTitle = title
-    .replace(/\s*[\[(][^\])\n]*[\])\n]/g, '')
-    .replace(/\s*[-–|]\s*(Official|Audio|Lyrics?|Video|HD|HQ|4K|Live|Karaoke|Cover|Clip).*/i, '')
-    .trim();
+  const parsed = splitYouTubeTitle(title);
+  const cleanTitle = cleanItunesSearchText(parsed.title || title);
   // Supprime "VEVO", "- Topic", etc. dans l'artiste
-  const cleanArtist = (artist && artist !== '?')
-    ? artist.replace(/\s*(VEVO|-\s*Topic|Official)$/i, '').trim()
-    : '';
+  const cleanArtist = (artist && artist !== '?'
+    ? artist
+    : parsed.artist).replace(/\s*(VEVO|-\s*Topic|Official)$/i, '').trim();
 
   const term = cleanArtist ? `${cleanArtist} ${cleanTitle}` : cleanTitle;
   if (!term) return null;
@@ -406,12 +498,26 @@ export async function lookupSongMetadata(title, artist) {
   }
 
   try {
-    const url = `${ITUNES_SEARCH}?term=${encodeURIComponent(term)}&entity=song&limit=25&country=FR`;
-    const resp = await itunesFetch(url);
-    if (!resp.ok) { _cacheSet(cacheKey, null); return null; }
-    const data = await resp.json();
-    const hit = data.results?.[0];
-    if (!hit) { _cacheSet(cacheKey, null); return null; }
+    const searchTerms = [
+      cleanArtist ? `${cleanArtist} ${cleanTitle}` : '',
+      cleanTitle,
+      cleanArtist ? `${cleanTitle} ${cleanArtist}` : '',
+      cleanItunesSearchText(title),
+    ].filter(Boolean).filter((value, index, arr) => arr.indexOf(value) === index);
+
+    let hit = null;
+    let data = null;
+    for (const searchTerm of searchTerms) {
+      const url = `${ITUNES_SEARCH}?term=${encodeURIComponent(searchTerm)}&entity=song&limit=25&country=FR`;
+      const resp = await itunesFetch(url);
+      if (!resp?.ok) continue;
+      data = await resp.json();
+      hit = pickBestItunesResult(data.results, cleanTitle, cleanArtist);
+      if (hit) break;
+    }
+
+    if (!hit || !data) { _cacheSet(cacheKey, null); return null; }
+
     const year = hit.releaseDate ? parseInt(hit.releaseDate.slice(0, 4), 10) : null;
     const result = {
       title: hit.trackName,
@@ -467,7 +573,10 @@ export async function enrichWithMusicMetadata(songs, onProgress) {
         const vidCached = getVideoCache(s.videoId);
         if (vidCached) return { fromVideoCache: true, ...vidCached };
 
-        const meta = await lookupSongMetadata(s.title, s.artist).catch(() => null);
+        let meta = await lookupSongMetadata(s.title, s.artist).catch(() => null);
+        if (meta && !isItunesCandidateMatchingVideo({ trackName: meta.title, artistName: meta.artist }, s.title, s.artist)) {
+          meta = await lookupSongMetadata(s.title, null).catch(() => null);
+        }
         const resolvedTitle = meta ? meta.title : s.title;
         const resolvedArtist = meta ? meta.artist : s.artist;
         const alternatives = await fetchArtistAlternatives(resolvedArtist, resolvedTitle).catch(() => []);

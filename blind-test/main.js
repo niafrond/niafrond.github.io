@@ -10,11 +10,11 @@
 import { BlindTestPeer } from './peer.js';
 import { YouTubePlayer, probeEndpoints, quickCheckCachedEndpoint, getInstanceCaches, getPreferredAudioSource, setInstanceCaches } from './youtube.js';
 import { GameEngine } from './game.js';
-import { MSG, PHASE, MODE, TIMER } from './constants.js';
+import { MSG, PHASE, MODE, TIMER, ANSWER_FORMAT, ANSWER_PROMPTS } from './constants.js';
 import {
   showOnly, show, hide, renderShareLink, renderLobbyPlayers,
   renderScoreboard, renderJokers, renderGamePhase, renderPlaylist,
-  renderModeSelector, renderFinalResults, flashBuzz,
+  renderModeSelector, renderAnswerFormatSelector, renderFinalResults, flashBuzz,
   startTimerBar, stopTimerBar, highlightCorrectChoice,
 } from './ui.js';
 import {
@@ -38,6 +38,7 @@ const client = {
   players: [],
   currentRound: 0,
   mode: MODE.CLASSIC,
+  answerFormat: ANSWER_FORMAT.ARTIST_THEN_TITLE,
   phase: PHASE.LOBBY,
   choices: [],
   canBuzz: false,
@@ -50,6 +51,7 @@ const client = {
 // État host
 let engine = null;
 let hostMode = MODE.CLASSIC;
+let hostAnswerFormat = ANSWER_FORMAT.ARTIST_THEN_TITLE;
 let _activePlaylist = []; // playlist filtrée passée au moteur de jeu
 
 // État relay (quand ce client est hôte temporaire)
@@ -403,6 +405,7 @@ async function initHostUI() {
 
   // Sélecteur de mode
   renderModeSelector(hostMode, (mode) => { hostMode = mode; });
+  renderAnswerFormatSelector(hostAnswerFormat, (format) => { hostAnswerFormat = format; });
 
 
   // Bouton "Créer la partie"
@@ -473,6 +476,7 @@ async function initHostUI() {
         pipedInstances: piped,
         invidiousInstances: invidious,
         preferredAudioSource: getPreferredAudioSource(),
+        answerFormat: hostAnswerFormat,
       });
     });
 
@@ -607,8 +611,9 @@ function onHostStateChange(state) {
         const step = state.answerStep ?? 'artist';
         const label = document.getElementById('answer-step-label');
         const inp = document.getElementById('answer-input');
-        if (label) label.textContent = step === 'artist' ? "🎤 Donnez l'artiste" : '🎵 Donnez le titre';
-        if (inp) { inp.placeholder = step === 'artist' ? 'Artiste…' : 'Titre…'; inp.focus(); }
+        const prompt = ANSWER_PROMPTS[step] ?? ANSWER_PROMPTS.artist;
+        if (label) label.textContent = prompt.label;
+        if (inp) { inp.placeholder = prompt.placeholder; inp.focus(); }
       }
     }
     if (isHostTurn) startTimerBar(TIMER.ANSWER_DURATION, 'timer-bar-client-answer');
@@ -698,6 +703,7 @@ function initClientUI() {
       peer.sendToHost({
         type: MSG.STATE_SNAPSHOT,
         mode: client.mode,
+        answerFormat: client.answerFormat,
         playlist: client._gameCache.playlist,
         shuffled: client._gameCache.shuffled,
         currentRound: client.currentRound,
@@ -772,6 +778,7 @@ function handleClientMessage(data) {
 
     case MSG.GAME_START: {
       client.mode = data.mode;
+      client.answerFormat = data.answerFormat ?? ANSWER_FORMAT.ARTIST_THEN_TITLE;
       client._gameCache = { playlist: data.playlist ?? [], shuffled: data.shuffled ?? [] };
       if (data.pipedInstances?.length || data.invidiousInstances?.length || data.preferredAudioSource) {
         setInstanceCaches(data.pipedInstances ?? [], data.invidiousInstances ?? [], data.preferredAudioSource ?? null);
@@ -805,7 +812,11 @@ function handleClientMessage(data) {
       client.canBuzz = client.mode !== MODE.FOUR_CHOICES;
       client.choices = data.choices ?? [];
       client.currentRound++;
-      handleClientMessage._step = 'artist'; // réinitialiser l'étape
+      handleClientMessage._step = client.answerFormat === ANSWER_FORMAT.BOTH_TOGETHER
+        ? 'both'
+        : client.answerFormat === ANSWER_FORMAT.EITHER_ONE
+          ? 'either'
+          : 'artist';
       // Mettre à jour currentSong dès maintenant (utile pour le snapshot si le host se déconnecte)
       client.currentSong = client._gameCache.shuffled[client.currentRound - 1] ?? client.currentSong;
 
@@ -847,8 +858,9 @@ function handleClientMessage(data) {
         const step = handleClientMessage._step;
         const label = document.getElementById('answer-step-label');
         const inp = document.getElementById('answer-input');
-        if (label) label.textContent = step === 'artist' ? "🎤 Donnez l'artiste" : '🎵 Donnez le titre';
-        if (inp) inp.placeholder = step === 'artist' ? 'Artiste…' : 'Titre…';
+        const prompt = ANSWER_PROMPTS[step] ?? ANSWER_PROMPTS.artist;
+        if (label) label.textContent = prompt.label;
+        if (inp) inp.placeholder = prompt.placeholder;
         inp?.focus();
         startTimerBar(TIMER.ANSWER_DURATION, 'timer-bar-client-answer');
       }
@@ -858,9 +870,10 @@ function handleClientMessage(data) {
         const step = handleClientMessage._step;
         if (data.playerId !== client.myId) {
           const buzzerName = client.players.find(p => p.id === data.playerId)?.name ?? '?';
-          stepLabel.textContent = step === 'artist'
-            ? `🎤 ${buzzerName} donne l’artiste…`
-            : `🎵 ${buzzerName} donne le titre…`;
+          if (step === 'artist') stepLabel.textContent = `🎤 ${buzzerName} donne l’artiste…`;
+          else if (step === 'title') stepLabel.textContent = `🎵 ${buzzerName} donne le titre…`;
+          else if (step === 'both') stepLabel.textContent = `🎶 ${buzzerName} donne l’artiste et le titre…`;
+          else stepLabel.textContent = `🎵 ${buzzerName} donne l’artiste ou le titre…`;
         }
       }
       break;
@@ -869,7 +882,11 @@ function handleClientMessage(data) {
     case MSG.RESUME_MUSIC: {
       client.phase = PHASE.PLAYING;
       client.canBuzz = client.mode !== MODE.FOUR_CHOICES;
-      handleClientMessage._step = 'artist'; // la mauvaise réponse a eu lieu, on repart de zéro
+      handleClientMessage._step = client.answerFormat === ANSWER_FORMAT.BOTH_TOGETHER
+        ? 'both'
+        : client.answerFormat === ANSWER_FORMAT.EITHER_ONE
+          ? 'either'
+          : 'artist';
       yt.play();
       renderGamePhase(PHASE.PLAYING, {
         mode: client.mode,
@@ -896,12 +913,17 @@ function handleClientMessage(data) {
 
       // Si c'est mon tour de répondre
       if (data.queue[0] === client.myId) {
-        handleClientMessage._step = 'artist'; // nouvelle prise de parole : on repart de zéro
+        handleClientMessage._step = client.answerFormat === ANSWER_FORMAT.BOTH_TOGETHER
+          ? 'both'
+          : client.answerFormat === ANSWER_FORMAT.EITHER_ONE
+            ? 'either'
+            : 'artist';
         show('phase-answering');
         const label = document.getElementById('answer-step-label');
         const inp = document.getElementById('answer-input');
-        if (label) label.textContent = "🎤 Donnez l'artiste";
-        if (inp) { inp.placeholder = 'Artiste…'; inp.focus(); }
+        const prompt = ANSWER_PROMPTS[handleClientMessage._step] ?? ANSWER_PROMPTS.artist;
+        if (label) label.textContent = prompt.label;
+        if (inp) { inp.placeholder = prompt.placeholder; inp.focus(); }
         startTimerBar(TIMER.ANSWER_DURATION, 'timer-bar-client');
       }
       break;
@@ -1044,6 +1066,7 @@ function _startRelayMode() {
   _relayEngine.autoAdvance = true;
   _relayEngine.restoreFromSnapshot({
     mode: client.mode,
+    answerFormat: client.answerFormat,
     playlist: client._gameCache.playlist,
     shuffled: client._gameCache.shuffled,
     currentRound: client.currentRound,
@@ -1067,6 +1090,7 @@ function _startRelayMode() {
       const snap = {
         type: MSG.STATE_SNAPSHOT,
         mode: client.mode,
+        answerFormat: client.answerFormat,
         playlist: client._gameCache.playlist,
         shuffled: client._gameCache.shuffled,
         currentRound: client.currentRound,
