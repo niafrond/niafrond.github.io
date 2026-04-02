@@ -1,3 +1,9 @@
+## [1.17.0](https://github.com/niafrond/niafrond.github.io/compare/v1.16.0...v1.17.0) (2026-04-02)
+
+### Features
+
+* refactor la gestion des versions en utilisant une fonction formatSemver pour le formatage des versions ([20e3382](https://github.com/niafrond/niafrond.github.io/commit/20e3382b1cfe47f1045c8579ff00b58645a1b5ac))
+
 ## [1.16.0](https://github.com/niafrond/niafrond.github.io/compare/v1.15.0...v1.16.0) (2026-04-02)
 
 ### Features
