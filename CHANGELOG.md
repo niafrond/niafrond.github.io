@@ -1,3 +1,10 @@
+## [1.8.0](https://github.com/niafrond/niafrond.github.io/compare/v1.7.0...v1.8.0) (2026-04-02)
+
+### Features
+
+* add timer seconds display and update logic for joker window phase ([c0fc148](https://github.com/niafrond/niafrond.github.io/commit/c0fc1481d09534cdea8d2ab20bdd6d93e57b57ee))
+* implement joker window phase with UI and game logic updates ([69e504d](https://github.com/niafrond/niafrond.github.io/commit/69e504d182781641454809ca52d6d25d3ee202b9))
+
 ## [1.7.0](https://github.com/niafrond/niafrond.github.io/compare/v1.6.0...v1.7.0) (2026-04-02)
 
 ### Features
