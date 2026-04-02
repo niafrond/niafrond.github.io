@@ -1,3 +1,5 @@
+import { formatSemver } from '../match3-quest/version.js';
+
 export const BLIND_TEST_SEMVER = {
   major: 1,
   minor: 0,
@@ -6,7 +8,5 @@ export const BLIND_TEST_SEMVER = {
 };
 
 export function getBlindTestVersion() {
-  const { major, minor, patch, prerelease } = BLIND_TEST_SEMVER;
-  const base = `${major}.${minor}.${patch}`;
-  return prerelease ? `${base}-${prerelease}` : base;
+  return formatSemver(BLIND_TEST_SEMVER);
 }
