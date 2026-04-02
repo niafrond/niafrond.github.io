@@ -1,3 +1,9 @@
+## [1.10.0](https://github.com/niafrond/niafrond.github.io/compare/v1.9.0...v1.10.0) (2026-04-02)
+
+### Features
+
+* améliorer la gestion des instances Piped et Invidious avec une logique de priorisation ([4f2dffb](https://github.com/niafrond/niafrond.github.io/commit/4f2dffba907e4d25c2722f9fe9c77d0b24ce7530))
+
 ## [1.9.0](https://github.com/niafrond/niafrond.github.io/compare/v1.8.0...v1.9.0) (2026-04-02)
 
 ### Features
