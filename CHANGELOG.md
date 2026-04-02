@@ -1,3 +1,9 @@
+## [1.9.0](https://github.com/niafrond/niafrond.github.io/compare/v1.8.0...v1.9.0) (2026-04-02)
+
+### Features
+
+* réduire la fenêtre joker à 5 secondes et gérer les erreurs de lecture audio ([ec96aa8](https://github.com/niafrond/niafrond.github.io/commit/ec96aa81b119158d0b1e82999c29de7621d9d338))
+
 ## [1.8.0](https://github.com/niafrond/niafrond.github.io/compare/v1.7.0...v1.8.0) (2026-04-02)
 
 ### Features
