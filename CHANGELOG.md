@@ -1,3 +1,9 @@
+## [1.16.0](https://github.com/niafrond/niafrond.github.io/compare/v1.15.0...v1.16.0) (2026-04-02)
+
+### Features
+
+* améliorer l'extraction des littéraux JSON en ajoutant des fonctions pour gérer les valeurs immédiates et les objets JSON ([730cdf2](https://github.com/niafrond/niafrond.github.io/commit/730cdf2760ca5666f563c5434b84d4149e6719d9))
+
 ## [1.15.0](https://github.com/niafrond/niafrond.github.io/compare/v1.14.0...v1.15.0) (2026-04-02)
 
 ### Features
