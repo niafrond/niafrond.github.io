@@ -1,3 +1,9 @@
+## [1.11.0](https://github.com/niafrond/niafrond.github.io/compare/v1.10.0...v1.11.0) (2026-04-02)
+
+### Features
+
+* ajouter la gestion de la source audio préférée et améliorer la gestion des erreurs de lecture ([6e6f7cd](https://github.com/niafrond/niafrond.github.io/commit/6e6f7cdd29d9b10c00f35e4c3b8661bafd0b204c))
+
 ## [1.10.0](https://github.com/niafrond/niafrond.github.io/compare/v1.9.0...v1.10.0) (2026-04-02)
 
 ### Features
