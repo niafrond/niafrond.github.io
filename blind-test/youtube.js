@@ -28,8 +28,16 @@ const LS_COBALT_OK = 'blindtest_cobalt_ok';
 let _cachedPipedBest = localStorage.getItem(LS_PIPED) ?? null;
 let _cachedInvidiousBest = localStorage.getItem(LS_INVIDIOUS) ?? null;
 
-async function getPipedInstances() {
-  if (_pipedInstancesCache) return _pipedInstancesCache;
+function _prioritizeCachedInstance(instances, cachedBest) {
+  if (!cachedBest) return instances;
+  const idx = instances.indexOf(cachedBest);
+  if (idx > 0) instances.splice(idx, 1);
+  if (idx !== 0) instances.unshift(cachedBest);
+  return instances;
+}
+
+async function getPipedInstances(forceRefresh = false) {
+  if (!forceRefresh && _pipedInstancesCache) return _pipedInstancesCache;
   const resp = await fetch(PIPED_WIKI, { signal: AbortSignal.timeout(8000) });
   if (!resp.ok) throw new Error(`Impossible de charger la liste Piped (HTTP ${resp.status})`);
   const body = await resp.text();
@@ -45,11 +53,7 @@ async function getPipedInstances() {
     }
   }
   // Mettre l'instance mémorisée en tête pour la prioriser lors de la lecture
-  if (_cachedPipedBest) {
-    const idx = instances.indexOf(_cachedPipedBest);
-    if (idx > 0) instances.splice(idx, 1);
-    if (idx !== 0) instances.unshift(_cachedPipedBest);
-  }
+  _prioritizeCachedInstance(instances, _cachedPipedBest);
   _pipedInstancesCache = instances.length ? instances : null;
   if (!instances.length) throw new Error('Aucune instance Piped trouvée dans le wiki');
   return instances;
@@ -71,8 +75,8 @@ const INVIDIOUS_FALLBACK = [
 // Cache de la liste des instances Invidious
 let _invidiousInstancesCache = null;
 
-async function getInvidiousInstances() {
-  if (_invidiousInstancesCache) return _invidiousInstancesCache;
+async function getInvidiousInstances(forceRefresh = false) {
+  if (!forceRefresh && _invidiousInstancesCache) return _invidiousInstancesCache;
   const resp = await fetch(INVIDIOUS_API, { signal: AbortSignal.timeout(8000) });
   if (!resp.ok) throw new Error(`API Invidious inaccessible (HTTP ${resp.status})`);
   const data = await resp.json();
@@ -82,11 +86,7 @@ async function getInvidiousInstances() {
     .map(([, info]) => info.uri.replace(/\/$/, ''));
   if (!instances.length) throw new Error('Aucune instance Invidious disponible');
   // Mettre l'instance mémorisée en tête
-  if (_cachedInvidiousBest) {
-    const idx = instances.indexOf(_cachedInvidiousBest);
-    if (idx > 0) instances.splice(idx, 1);
-    if (idx !== 0) instances.unshift(_cachedInvidiousBest);
-  }
+  _prioritizeCachedInstance(instances, _cachedInvidiousBest);
   _invidiousInstancesCache = instances;
   return instances;
 }
@@ -123,21 +123,39 @@ async function _fetchViaPipedInstance(instance, videoId) {
   return streams[0].url;
 }
 
+async function _tryPipedInstancePool(instances, videoId, attempted) {
+  const pool = instances.filter((instance) => !attempted.has(instance));
+  if (!pool.length) return null;
+  pool.forEach((instance) => attempted.add(instance));
+  return Promise.any(pool.map((instance) => _fetchViaPipedInstance(instance, videoId)));
+}
+
 /**
  * Si l'hôte a suggéré une meilleure instance, on la teste seule en premier.
  * Si elle échoue, fallback sur Promise.any des instances restantes.
  */
 async function fetchViaPiped(videoId) {
+  const attempted = new Set();
   const instances = await getPipedInstances();
   if (_cachedPipedBest && instances.includes(_cachedPipedBest)) {
+    attempted.add(_cachedPipedBest);
     try {
       return await _fetchViaPipedInstance(_cachedPipedBest, videoId);
     } catch { /* fallback */ }
   }
-  const rest = instances.filter(i => i !== _cachedPipedBest);
-  if (!rest.length) throw new Error('Piped: toutes les instances ont échoué');
-  return Promise.any(rest.map(i => _fetchViaPipedInstance(i, videoId)))
-    .catch(() => { throw new Error('Piped: toutes les instances ont échoué'); });
+
+  try {
+    const localResult = await _tryPipedInstancePool(instances, videoId, attempted);
+    if (localResult) return localResult;
+  } catch { /* refresh global list below */ }
+
+  try {
+    const refreshedInstances = await getPipedInstances(true);
+    const refreshedResult = await _tryPipedInstancePool(refreshedInstances, videoId, attempted);
+    if (refreshedResult) return refreshedResult;
+  } catch { /* final error below */ }
+
+  throw new Error('Piped: toutes les instances ont échoué');
 }
 
 function _probeInvidiousInstance(instance, videoId) {
@@ -151,21 +169,39 @@ function _probeInvidiousInstance(instance, videoId) {
   });
 }
 
+async function _tryInvidiousInstancePool(instances, videoId, attempted) {
+  const pool = instances.filter((instance) => !attempted.has(instance));
+  if (!pool.length) return null;
+  pool.forEach((instance) => attempted.add(instance));
+  return Promise.any(pool.map((instance) => _probeInvidiousInstance(instance, videoId)));
+}
+
 /**
  * Si l'hôte a suggéré une meilleure instance, on la sonde seule en premier.
  * Si elle échoue, fallback sur Promise.any des instances restantes.
  */
 async function fetchViaInvidious(audio, videoId) {
+  const attempted = new Set();
   const instances = await getInvidiousInstances().catch(() => INVIDIOUS_FALLBACK);
   if (_cachedInvidiousBest && instances.includes(_cachedInvidiousBest)) {
+    attempted.add(_cachedInvidiousBest);
     try {
       return await _probeInvidiousInstance(_cachedInvidiousBest, videoId);
     } catch { /* fallback */ }
   }
-  const rest = instances.filter(i => i !== _cachedInvidiousBest);
-  if (!rest.length) throw new Error('Invidious: toutes les instances ont échoué');
-  return Promise.any(rest.map(i => _probeInvidiousInstance(i, videoId)))
-    .catch(() => { throw new Error('Invidious: toutes les instances ont échoué'); });
+
+  try {
+    const localResult = await _tryInvidiousInstancePool(instances, videoId, attempted);
+    if (localResult) return localResult;
+  } catch { /* refresh global list below */ }
+
+  try {
+    const refreshedInstances = await getInvidiousInstances(true).catch(() => INVIDIOUS_FALLBACK);
+    const refreshedResult = await _tryInvidiousInstancePool(refreshedInstances, videoId, attempted);
+    if (refreshedResult) return refreshedResult;
+  } catch { /* final error below */ }
+
+  throw new Error('Invidious: toutes les instances ont échoué');
 }
 
 
