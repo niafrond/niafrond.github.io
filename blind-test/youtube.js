@@ -366,12 +366,15 @@ export class YouTubePlayer extends EventTarget {
       audio.play().catch(() => {});
     };
 
+    const reasons = [];
+
     // ── Tentative 1 : cobalt.tools ──────────────────────────────────────────
     try {
       const url = await fetchViaCobalt(videoId);
       applyAndPlay(url);
       return;
     } catch (e) {
+      reasons.push(`cobalt: ${e?.message || 'échec'}`);
       console.warn('[Audio] cobalt.tools échoué :', e.message);
     }
 
@@ -384,6 +387,7 @@ export class YouTubePlayer extends EventTarget {
       applyAndPlay(url);
       return;
     } catch (e) {
+      reasons.push(`Piped: ${e?.message || 'échec'}`);
       console.warn('[Audio] Piped échoué :', e.message);
     }
 
@@ -398,12 +402,20 @@ export class YouTubePlayer extends EventTarget {
       audio.play().catch(() => {});
       return;
     } catch (e) {
+      reasons.push(`Invidious: ${e?.message || 'échec'}`);
       console.warn('[Audio] Invidious échoué :', e.message);
     }
 
     // Toutes les sources ont échoué
     console.error('[Audio] Aucune source disponible pour', videoId);
-    this.dispatchEvent(new CustomEvent('error', { detail: { code: -1 } }));
+    this.dispatchEvent(new CustomEvent('error', {
+      detail: {
+        code: -1,
+        reason: reasons.length
+          ? `Échec lecture (${reasons.join(' | ')})`
+          : 'Échec lecture (aucune source audio disponible)',
+      },
+    }));
   }
 
   pause() { this._audio?.pause(); }

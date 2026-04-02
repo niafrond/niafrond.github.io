@@ -40,6 +40,7 @@ export class GameEngine {
       eliminatedChoices: [], // Choix grisés dans le round courant
       waitingForJoker: null,// { type, fromId } — en attente de cible
       answerStep: 'artist', // 'étape en cours : 'artist' ou 'title'
+      playbackError: null,  // Message d'erreur audio affiché à l'hôte
     };
 
     this._playTimer = null;
@@ -59,9 +60,11 @@ export class GameEngine {
     this._artistScoredPlayer = null;
 
     // Si une vidéo est indisponible à l'embarquement, on passe au round suivant
-    this.yt.addEventListener('error', () => {
+    this.yt.addEventListener('error', (evt) => {
       if (this.state.phase === PHASE.PLAYING || this.state.phase === PHASE.COUNTDOWN) {
-        console.warn('[Game] Vidéo indisponible, passage au round suivant');
+        const reason = evt?.detail?.reason || 'Lecture audio impossible sur cette chanson';
+        this.state.playbackError = reason;
+        console.warn('[Game] Erreur audio, passage au round suivant :', reason);
         this._skipRound();
       }
     });
@@ -178,6 +181,7 @@ export class GameEngine {
     this.state.currentRound++;
     this.state.buzzQueue = [];
     this.state.answerStep = 'artist';
+    this.state.playbackError = null;
     this._artistScoredPlayer = null;
 
     if (this.state.currentRound >= this.state.shuffled.length) {
@@ -187,7 +191,7 @@ export class GameEngine {
 
     this.state.currentSong = this.state.shuffled[this.state.currentRound];
 
-    // Fenêtre joker : 10s pour décider avant que la chanson commence
+    // Fenêtre joker : 5s pour décider avant que la chanson commence
     this.state.phase = PHASE.JOKER_WINDOW;
     let windowCount = TIMER.JOKER_WINDOW;
     this.state.jokerWindowRemaining = windowCount;
@@ -233,6 +237,7 @@ export class GameEngine {
   _playSong() {
     const song = this.state.currentSong;
     this.state.phase = PHASE.PLAYING;
+    this.state.playbackError = null;
 
     // L'host joue localement
     this.yt.load(song.videoId, 0);

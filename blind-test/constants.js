@@ -92,7 +92,7 @@ export const TIMER = {
   ROUND_END_DELAY: 3000, // 3s d'affichage de la réponse avant round suivant
   SYNC_OFFSET: 600,      // Décalage estimé de latence pour sync YouTube (ms)
   COUNTDOWN: 3,          // 3-2-1 avant lecture
-  JOKER_WINDOW: 10,      // Secondes pour décider d'un joker avant la chanson
+  JOKER_WINDOW: 5,       // Secondes pour décider d'un joker avant la chanson
 };
 
 export const MIN_PLAYLIST_FOR_FOUR_CHOICES = 4;
