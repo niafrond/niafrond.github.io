@@ -11,6 +11,7 @@ import { BlindTestPeer } from './peer.js';
 import { YouTubePlayer, probeEndpoints, quickCheckCachedEndpoint, getInstanceCaches, getPreferredAudioSource, setInstanceCaches } from './youtube.js';
 import { GameEngine } from './game.js';
 import { MSG, PHASE, MODE, TIMER, ANSWER_FORMAT, ANSWER_PROMPTS } from './constants.js';
+import { getBlindTestVersion } from './version.js';
 import {
   showOnly, show, hide, renderShareLink, renderLobbyPlayers,
   renderScoreboard, renderJokers, renderGamePhase, renderPlaylist,
@@ -69,6 +70,9 @@ const IS_HOST = !hostPeerId || !!localStorage.getItem(`blindtest_am_host_${hostP
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
+  const versionEl = document.getElementById('blind-test-version');
+  if (versionEl) versionEl.textContent = `v${getBlindTestVersion()}`;
+
   // Remove unused screens to eliminate duplicate ID conflicts
   // (host and client share some IDs like 'scoreboard', 'phase-playing', etc.)
   if (IS_HOST) {
