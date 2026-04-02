@@ -1,3 +1,9 @@
+## [1.13.0](https://github.com/niafrond/niafrond.github.io/compare/v1.12.0...v1.13.0) (2026-04-02)
+
+### Features
+
+* ajouter l'affichage de la version du blind test et le style associé ([0b90902](https://github.com/niafrond/niafrond.github.io/commit/0b9090222dc6f789018b7f98c11e3ca6df438a0a))
+
 ## [1.12.0](https://github.com/niafrond/niafrond.github.io/compare/v1.11.0...v1.12.0) (2026-04-02)
 
 ### Features
