@@ -241,6 +241,43 @@ function extractJsonParseLiteral(html, startIndex) {
   return null;
 }
 
+function compactPreview(text, maxLength = 140) {
+  return (text || '').replace(/\s+/g, ' ').trim().slice(0, maxLength);
+}
+
+function describeYtInitialDataIssue(html, markers) {
+  for (const marker of markers) {
+    const markerIndex = html.indexOf(marker);
+    if (markerIndex === -1) continue;
+
+    const jsonParseIndex = html.indexOf('JSON.parse(', markerIndex + marker.length);
+    const objectStart = html.indexOf('{', markerIndex + marker.length);
+    const nextScriptClose = html.indexOf('</script>', markerIndex);
+    const inSameScript = (index) => index !== -1 && (nextScriptClose === -1 || index < nextScriptClose);
+    const preview = compactPreview(html.slice(markerIndex, markerIndex + 180));
+
+    if (inSameScript(jsonParseIndex)) {
+      return `marqueur trouvé (${marker.trim()}) avec JSON.parse, mais la chaîne n'a pas pu être extraite. Extrait: ${preview}`;
+    }
+    if (inSameScript(objectStart)) {
+      return `marqueur trouvé (${marker.trim()}) avec un objet JSON, mais l'objet semble incomplet. Extrait: ${preview}`;
+    }
+    return `marqueur trouvé (${marker.trim()}), mais aucun JSON exploitable juste après. Extrait: ${preview}`;
+  }
+
+  const looseIndex = html.indexOf('ytInitialData');
+  if (looseIndex !== -1) {
+    return `référence à ytInitialData détectée sans affectation reconnue. Extrait: ${compactPreview(html.slice(looseIndex, looseIndex + 180))}`;
+  }
+
+  const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+  if (titleMatch?.[1]) {
+    return `aucun marqueur ytInitialData trouvé. Titre reçu: ${compactPreview(titleMatch[1], 100)}`;
+  }
+
+  return 'aucun marqueur ytInitialData trouvé dans la réponse HTML';
+}
+
 function extractAssignedJson(html, markers) {
   for (const marker of markers) {
     const markerIndex = html.indexOf(marker);
@@ -302,19 +339,25 @@ export async function fetchYouTubePlaylist(playlistUrl, onProgress) {
 
   const html = await pageResp.text();
 
-  const rawJson = extractAssignedJson(html, [
+  const ytInitialDataMarkers = [
     'var ytInitialData = ',
     'var ytInitialData=',
     'window["ytInitialData"] = ',
     'window["ytInitialData"]=',
     'ytInitialData = ',
     'ytInitialData=',
-  ]);
-  if (!rawJson) throw new Error('Impossible de parser ytInitialData');
+  ];
+  const rawJson = extractAssignedJson(html, ytInitialDataMarkers);
+  if (!rawJson) {
+    throw new Error(`Impossible de parser ytInitialData: ${describeYtInitialDataIssue(html, ytInitialDataMarkers)}`);
+  }
 
   let data;
   try { data = JSON.parse(rawJson); }
-  catch { throw new Error('Erreur de parsing ytInitialData'); }
+  catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`Erreur de parsing ytInitialData: ${reason}. Extrait JSON: ${compactPreview(rawJson, 180)}`);
+  }
 
   const songs = [];
   extractVideosFromData(data, songs);
