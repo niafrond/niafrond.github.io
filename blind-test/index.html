@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blind Test 🎵</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7c3aed">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : HOME (point d'entrée, redirection auto dans main.js)
+     Affiché brièvement pendant le chargement
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-home" data-screen="screen-home" class="screen-center" hidden>
+  <h1 class="app-title">🎵 Blind Test</h1>
+  <p class="app-subtitle">Chargement…</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : HOST SETUP
+     L'hôte configure la playlist et le mode de jeu
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-host-setup" data-screen="screen-host-setup" hidden>
+  <div style="max-width:760px; margin:0 auto; padding:24px 20px 60px;">
+
+    <h1 class="app-title" style="font-size:2rem; margin-bottom:4px;">🎵 Blind Test</h1>
+    <p class="app-subtitle mb-16">Configurez votre partie</p>
+
+    <!-- Mode de jeu -->
+    <div class="card mb-16">
+      <div class="card-title">🎮 Mode de jeu</div>
+      <div id="mode-selector"></div>
+    </div>
+
+    <!-- Playlists sauvegardées -->
+    <div class="card mb-16">
+      <div class="card-title">💾 Playlists sauvegardées</div>
+      <div id="saved-playlists-list"></div>
+      <div style="margin-top:10px;">
+        <button id="btn-save-playlist" class="btn btn-sm" style="background:var(--surface-2,#374151);color:var(--text);">💾 Sauvegarder la liste courante…</button>
+      </div>
+    </div>
+
+    <!-- Playlist -->
+    <div class="card mb-16">
+      <div class="card-title">🎶 Playlist YouTube <span id="playlist-count" style="color:var(--text-muted);font-weight:400;font-size:0.85rem;"></span></div>
+
+      <!-- Import depuis une playlist YouTube -->
+      <div style="margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border);">
+        <div class="form-group" style="margin-bottom:8px;">
+          <label for="yt-playlist-url">Importer une playlist YouTube</label>
+          <div class="form-row" style="flex-wrap:nowrap; gap:8px;">
+            <input id="yt-playlist-url" class="input" type="url"
+              placeholder="https://www.youtube.com/playlist?list=PL…">
+            <button id="btn-import-playlist" type="button" class="btn btn-primary" style="white-space:nowrap;">
+              📥 Importer
+            </button>
+          </div>
+        </div>
+        <p id="import-playlist-status" style="font-size:0.83rem; min-height:18px; color:var(--text-muted);"></p>
+      </div>
+
+      <!-- Formulaire ajout -->
+      <form id="add-song-form">
+        <div class="form-group">
+          <label for="song-url">URL YouTube</label>
+          <div class="form-row" style="flex-wrap:nowrap; gap:8px;">
+            <input id="song-url" class="input" type="url" placeholder="https://www.youtube.com/watch?v=…" required>
+            <button type="submit" class="btn btn-success" style="white-space:nowrap;">+ Ajouter</button>
+          </div>
+          <p id="add-song-status" style="font-size:0.83rem; min-height:18px; margin-top:4px; color:var(--text-muted);"></p>
+        </div>
+        <p id="add-song-error" class="error-text"></p>
+      </form>
+
+      <!-- Liste -->
+      <ul id="playlist-list" class="mt-16"></ul>
+
+      <!-- Export / Import JSON -->
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+        <button id="btn-export-playlist" class="btn btn-sm" style="background:var(--surface-2,#374151);color:var(--text);">📤 Exporter JSON</button>
+        <label class="btn btn-sm" style="background:var(--surface-2,#374151);color:var(--text);cursor:pointer;">
+          📥 Importer JSON
+          <input id="import-json-file" type="file" accept=".json" hidden>
+        </label>
+        <p id="import-json-status" style="font-size:0.82rem;color:var(--text-muted);margin:0;flex:1 1 100%;"></p>
+      </div>
+
+      <!-- Filtre par ère -->
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+        <span style="font-size:0.85rem;color:var(--text-muted);margin-right:6px;">Filtrer par ère :</span>
+        <div id="era-filter-bar" style="display:inline-flex;flex-wrap:wrap;gap:4px;"></div>
+        <p id="era-filter-info" style="font-size:0.82rem;color:var(--text-muted);margin:4px 0 0;min-height:16px;"></p>
+      </div>
+
+      <div style="text-align:right; margin-top:8px;">
+        <button id="btn-clear-playlist" class="btn btn-danger btn-sm">🗑️ Vider la liste</button>
+      </div>
+    </div>
+
+    <!-- Créer la partie -->
+    <div style="text-align:center; margin-top:24px;">
+      <p id="probe-status-setup" style="font-size:0.82rem; color:var(--text-muted); margin-bottom:10px;">🔄 Test des endpoints audio en cours…</p>
+      <button id="btn-create-game" class="btn btn-primary btn-lg">
+        🚀 Créer la partie
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : LOBBY HOST
+     L'hôte attend que tous les joueurs rejoignent
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-lobby-host" data-screen="screen-lobby-host" hidden>
+  <div class="lobby-layout">
+
+    <!-- Gauche : partage -->
+    <div>
+      <h2 style="margin-bottom:20px;">🔗 Invitez les joueurs</h2>
+
+      <div class="card mb-16">
+        <div class="card-title">Lien à partager</div>
+        <input id="share-link" class="input" type="text" readonly onclick="this.select(); document.execCommand('copy'); this.blur();" title="Cliquer pour copier">
+        <p class="text-muted mt-8" style="font-size:0.8rem;">Cliquer pour copier · Les joueurs ouvrent ce lien sur leur appareil</p>
+        <img id="share-qr" src="" alt="QR Code" style="margin-top:16px; border-radius:8px;">
+      </div>
+
+    </div>
+
+    <!-- Droite : joueurs -->
+    <div>
+      <!-- Diagnostic audio -->
+      <div class="card mb-16" id="probe-card">
+        <div class="card-title" style="font-size:0.85rem; margin-bottom:6px;">🔍 Diagnostic audio</div>
+        <div id="probe-status" style="font-size:0.82rem; color:var(--text-muted);">En attente…</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">👥 Joueurs connectés</div>
+        <ul id="lobby-players-list"></ul>
+        <div class="mt-16">
+          <button id="btn-start-game" class="btn btn-primary w-full" disabled>
+            ▶ Démarrer la partie
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : JOIN (client, avant connexion)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-join" data-screen="screen-join" class="screen-center" hidden>
+  <h1 class="app-title">🎵 Blind Test</h1>
+  <p class="app-subtitle">Vous avez été invité à une partie !</p>
+
+  <div class="card">
+    <div class="form-group">
+      <label for="player-name-input">Votre prénom</label>
+      <input id="player-name-input" class="input" type="text" placeholder="Ex: Marie" maxlength="24" autofocus>
+    </div>
+    <button id="btn-join" class="btn btn-primary w-full mt-8">Rejoindre la partie 🎮</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : LOBBY PLAYER (client, attend le démarrage)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-lobby-player" data-screen="screen-lobby-player" class="screen-center" hidden>
+  <h1 class="app-title">🎵 Blind Test</h1>
+  <p class="app-subtitle" id="lobby-player-status">En attente du démarrage…</p>
+
+  <div class="card" style="max-width:400px; width:100%;">
+    <div class="card-title">👥 Joueurs dans la partie</div>
+    <ul id="lobby-players-list"></ul>
+    <div class="mt-16">
+      <button id="btn-ready" class="btn btn-success w-full">✋ Je suis prêt</button>
+    </div>
+  </div>
+
+  <!-- YouTube client (caché, pour sync audio) -->
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : GAME HOST — interface identique aux joueurs
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-game-host" data-screen="screen-game-host" hidden>
+  <div class="client-game-layout">
+
+    <!-- Compteur de manches -->
+    <div id="game-round-counter" hidden style="text-align:center;font-size:0.85rem;color:var(--text-muted);padding:4px 0 2px;"></div>
+
+    <!-- Timer principal -->
+    <div class="timer-track"><div id="timer-bar-client" class="timer-fill" style="width:0%"></div></div>
+
+    <!-- Phases -->
+    <div class="phase-panel" id="phase-countdown" hidden>
+      <p style="color:var(--text-muted); margin-bottom:8px;">La chanson commence dans…</p>
+      <div class="countdown-number" id="countdown-number">3</div>
+    </div>
+
+    <div class="phase-panel" id="phase-playing" hidden>
+      <p class="playing-label">🎵 Écoutez et buzzez !</p>
+      <button id="btn-buzz" disabled>🔔 BUZZ !</button>
+      <div id="four-choices-grid"></div>
+    </div>
+
+    <div class="phase-panel" id="phase-buzzed" hidden>
+      <p class="buzzer-label" id="buzzer-name">🔔 Buzz !</p>
+      <p id="buzz-queue-list" style="font-size:0.85rem; color:var(--text-muted); margin-top:6px;"></p>
+    </div>
+
+    <div class="phase-panel" id="phase-answering" hidden>
+      <p style="color:var(--text-muted); margin-bottom:12px;">⌨️ En attente de la réponse…</p>
+      <div class="timer-track mb-16"><div id="timer-bar-client-answer" class="timer-fill" style="width:100%"></div></div>
+      <form id="answer-form" hidden>
+        <p id="answer-step-label" style="margin-bottom:12px; font-weight:600;">🎤 Donnez l’artiste</p>
+        <div class="answer-form-inner">
+          <input id="answer-input" class="input" type="text" placeholder="Artiste…" autocomplete="off" autofocus>
+          <button type="submit" class="btn btn-success">Valider</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="phase-panel" id="phase-answer-result" hidden>
+      <p class="result-text" id="answer-result-text"></p>
+      <p class="result-answer" id="answer-result-answer"></p>
+    </div>
+
+    <div class="phase-panel" id="phase-round-end" hidden>
+      <div class="round-end-song">
+        <img id="round-end-thumb" src="" alt="Pochette">
+        <p id="round-end-title"></p>
+        <p id="round-end-artist"></p>
+      </div>
+      <button id="btn-next-round" class="btn btn-primary" style="margin-top:16px;">Suivant →</button>
+    </div>
+
+    <!-- Scores -->
+    <div class="card">
+      <div class="scoreboard-title">🏆 Scores</div>
+      <div id="scoreboard"></div>
+    </div>
+
+    <!-- Jokers -->
+    <div class="card">
+      <div class="card-title">🃏 Vos jokers</div>
+      <div id="joker-buttons"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : GAME CLIENT
+     Vue joueur pendant la partie
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-game-client" data-screen="screen-game-client" hidden>
+  <div class="client-game-layout">
+
+    <!-- Timer -->
+    <div class="timer-track"><div id="timer-bar-client" class="timer-fill" style="width:0%"></div></div>
+
+    <!-- Compteur de manches (partagé avec screen-game-host via JS, dupliqué ici pour client) -->
+    <div id="game-round-counter" hidden style="text-align:center;font-size:0.85rem;color:var(--text-muted);padding:4px 0 2px;"></div>
+
+    <!-- Phases -->
+    <div class="phase-panel" id="phase-countdown" hidden>
+      <p style="color:var(--text-muted); margin-bottom:8px;">La chanson commence dans…</p>
+      <div class="countdown-number" id="countdown-number">3</div>
+    </div>
+
+    <div class="phase-panel" id="phase-playing" hidden>
+      <p class="playing-label">🎵 Écoutez et buzzez !</p>
+
+      <!-- Buzz button (modes classique) -->
+      <button id="btn-buzz" disabled>🔔 BUZZ !</button>
+
+      <!-- 4 choices grid (mode 4 choix) -->
+      <div id="four-choices-grid"></div>
+    </div>
+
+    <div class="phase-panel" id="phase-buzzed" hidden>
+      <p class="buzzer-label" id="buzzer-name">🔔 Buzz !</p>
+      <p id="buzz-queue-list" style="font-size:0.85rem; color:var(--text-muted); margin-top:6px;"></p>
+    </div>
+
+    <div class="phase-panel" id="phase-answering" hidden>
+      <p id="answer-step-label" style="margin-bottom:12px; font-weight:600;">🎤 Donnez l’artiste</p>
+      <div class="timer-track mb-16"><div id="timer-bar-client-answer" class="timer-fill" style="width:100%"></div></div>
+      <form id="answer-form">
+        <div class="answer-form-inner">
+          <input id="answer-input" class="input" type="text" placeholder="Artiste…" autocomplete="off" autofocus>
+          <button type="submit" class="btn btn-success">Valider</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="phase-panel" id="phase-answer-result" hidden>
+      <p class="result-text" id="answer-result-text"></p>
+      <p class="result-answer" id="answer-result-answer"></p>
+    </div>
+
+    <div class="phase-panel" id="phase-round-end" hidden>
+      <div class="round-end-song">
+        <img id="round-end-thumb" src="" alt="Pochette">
+        <p id="round-end-title"></p>
+        <p id="round-end-artist"></p>
+      </div>
+    </div>
+
+    <!-- Scores -->
+    <div class="card">
+      <div class="scoreboard-title">🏆 Scores</div>
+      <div id="scoreboard"></div>
+    </div>
+
+    <!-- Jokers -->
+    <div class="card">
+      <div class="card-title">🃏 Vos jokers</div>
+      <div id="joker-buttons"></div>
+    </div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : RESULTS
+     Podium final
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-results" data-screen="screen-results" class="screen-center" hidden>
+  <h1 class="app-title">🏆 Résultats</h1>
+  <div id="final-results"></div>
+  <div style="display:flex; gap:12px; margin-top:24px; flex-wrap:wrap; justify-content:center;">
+    <a href="." class="btn btn-primary">🔄 Nouvelle partie</a>
+    <a href="../" class="btn btn-secondary">← Accueil</a>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : HOST GONE (le host s'est déconnecté)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-host-gone" data-screen="screen-host-gone" class="screen-center" hidden>
+  <h2 style="font-size:2rem;">😢 Partie terminée</h2>
+  <p class="app-subtitle">L'hôte s'est déconnecté.</p>
+  <a href="../" class="btn btn-primary mt-16">← Retour à l'accueil</a>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     COMPOSANTS GLOBAUX (présents dans tous les écrans)
+     ══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- Notification joker -->
+<div id="joker-notification" aria-live="polite"></div>
+
+<!-- Overlay reconnexion hôte (client uniquement, affiché dynamiquement) -->
+<div id="overlay-reconnecting" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.78); z-index:1000; align-items:center; justify-content:center; flex-direction:column; gap:14px; text-align:center; padding:24px;">
+  <div style="font-size:2.5rem;">🔄</div>
+  <p style="font-size:1.2rem; font-weight:600; color:#fff;">Reconnexion de l'hôte…</p>
+  <p style="font-size:0.9rem; color:rgba(255,255,255,.65);">La partie sera restaurée automatiquement.</p>
+</div>
+
+<!-- Overlay iTunes loader -->
+<div id="overlay-itunes" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:1100; align-items:center; justify-content:center; flex-direction:column; gap:16px; text-align:center; padding:24px;">
+  <div style="width:48px;height:48px;border:5px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;"></div>
+  <p id="overlay-itunes-msg" style="font-size:1.05rem;font-weight:600;color:#fff;margin:0;">🎵 Correction iTunes…</p>
+  <p style="font-size:0.82rem;color:rgba(255,255,255,.6);margin:0;">Merci de patienter</p>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<!-- YouTube client : div permanent hors écrans (évite les conflits d'ID) -->
+<div id="yt-player-client" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true"></div>
+
+<!-- Module ES6 principal -->
+<script type="module" src="main.js"></script>
+</body>
+</html>

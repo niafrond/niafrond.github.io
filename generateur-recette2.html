@@ -434,6 +434,19 @@ Recette :
         return n + ".";
       }
 
+      function detecterSaison(texte) {
+        const saisons = [
+          { re: /\bprintemps\b/i, label: 'Printemps' },
+          { re: /\b[eé]t[eé]\b/i, label: 'Été' },
+          { re: /\bautomne\b/i, label: 'Automne' },
+          { re: /\bhiver\b/i, label: 'Hiver' },
+        ];
+        for (const { re, label } of saisons) {
+          if (re.test(texte)) return label;
+        }
+        return "";
+      }
+
       // Normalise une clé (insensible casse + accents simplifiés)
       function normalise(s) {
         return s
@@ -454,6 +467,7 @@ Recette :
           accompagnement: [],
           materiel: [],
           note: "",
+          saison: "",
           etapes: [],
         };
 
@@ -477,6 +491,7 @@ Recette :
           ingrédients: "ingredients",
           ingrédient: "ingredients",
           matériel: "materiel",
+          saison: "saison",
         };
 
         // Mots-clés reconnus comme en-têtes de section SANS deux-points
@@ -577,6 +592,7 @@ Recette :
               else if (s === "preparation") data.preparation = val;
               else if (s === "cuisson") data.cuisson = val;
               else if (s === "note") data.note = val;
+              else if (s === "saison") data.saison = val;
               else {
                 if (Array.isArray(data[s])) data[s].push(val);
               }
@@ -625,17 +641,77 @@ Recette :
           }
         }
 
+        if (!data.saison && data.titre) {
+          data.saison = detecterSaison(data.titre);
+        }
         return data;
+      }
+
+      const UNICODE_FRACTIONS = {
+        '½': 1/2, '⅓': 1/3, '⅔': 2/3, '¼': 1/4, '¾': 3/4,
+        '⅕': 1/5, '⅖': 2/5, '⅗': 3/5, '⅘': 4/5,
+        '⅙': 1/6, '⅚': 5/6, '⅛': 1/8, '⅜': 3/8, '⅝': 5/8, '⅞': 7/8,
+      };
+      const FRAC_SYMBOLS = [
+        [1/8, '⅛'], [1/6, '⅙'], [1/5, '⅕'], [1/4, '¼'], [1/3, '⅓'],
+        [3/8, '⅜'], [2/5, '⅖'], [1/2, '½'], [3/5, '⅗'], [5/8, '⅝'],
+        [2/3, '⅔'], [3/4, '¾'], [4/5, '⅘'], [5/6, '⅚'], [7/8, '⅞'],
+      ];
+
+      function formatQuantite(n) {
+        if (n <= 0) return String(n);
+        const EPS = 0.02;
+        const arrondi = Math.round(n);
+        if (Math.abs(n - arrondi) < EPS) return String(arrondi);
+        for (const [val, sym] of FRAC_SYMBOLS) {
+          if (Math.abs(n - val) < EPS) return sym;
+        }
+        const intPart = Math.floor(n);
+        const fracPart = n - intPart;
+        if (intPart >= 1) {
+          for (const [val, sym] of FRAC_SYMBOLS) {
+            if (Math.abs(fracPart - val) < EPS) return intPart + sym;
+          }
+        }
+        return String(Math.round(n * 10) / 10);
+      }
+
+      function diviserIngredient(ingredient, diviseur) {
+        if (diviseur <= 1) return ingredient;
+        if (/^\[.+\]$/.test(ingredient)) return ingredient;
+        return ingredient.replace(
+          /[½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]|\d+(?:[,.]\d+)?(?:\s*\/\s*\d+)?/,
+          (match) => {
+            let val = UNICODE_FRACTIONS[match.trim()];
+            if (val === undefined) {
+              if (match.includes('/')) {
+                const [num, den] = match.split('/').map(s => parseFloat(s.trim()));
+                val = num / den;
+              } else {
+                val = parseFloat(match.replace(',', '.'));
+              }
+            }
+            if (isNaN(val) || val <= 0) return match;
+            return formatQuantite(val / diviseur);
+          }
+        );
       }
 
       function formater(data) {
         const titre = (data.titre || "Recette sans titre").toUpperCase();
         let out = `🍽️ ${titre}\n\n`;
 
+        // Ramener les quantités à 1 personne
+        const portionsMatch = String(data.portions || "1").match(/\d+(?:[.,]\d+)?/);
+        const portionsNum = portionsMatch ? parseFloat(portionsMatch[0].replace(',', '.')) : 1;
+
         out += `📋 Informations\n\n`;
         out += `⏱ Temps de préparation : ${data.preparation || ""}\n\n`;
         out += `🔥 Temps de cuisson : ${data.cuisson || ""}\n\n`;
-        out += `👥 Nombre de portions : ${data.portions || ""}\n\n`;
+        out += `👥 Nombre de portions : 1\n\n`;
+        if (data.saison) {
+          out += `🌿 Saison : ${data.saison}\n\n`;
+        }
 
         out += `🛒 Ingrédients\n\n`;
         for (const ing of data.ingredients) {
@@ -643,7 +719,7 @@ Recette :
           if (/^\[.+\]$/.test(ing)) {
             out += `\n${ing.slice(1, -1)} :\n`;
           } else {
-            out += `- ${ing}\n`;
+            out += `- ${diviserIngredient(ing, portionsNum)}\n`;
           }
         }
         out += "\n";
@@ -892,6 +968,7 @@ Recette :
       }
 
       function jsonLdToData(r) {
+        const kwText = Array.isArray(r.keywords) ? r.keywords.join(' ') : String(r.keywords || '');
         const data = {
           titre: r.name || "",
           portions: Array.isArray(r.recipeYield)
@@ -903,6 +980,7 @@ Recette :
           accompagnement: [],
           materiel: [],
           note: r.description || "",
+          saison: detecterSaison(kwText + ' ' + (r.name || '')),
           etapes: [],
         };
         if (Array.isArray(r.recipeIngredient)) {
@@ -966,7 +1044,18 @@ Recette :
         const text = lines
           .filter((l, i) => l !== "" || lines[i - 1] !== "")
           .join("\n");
-        return parse(text);
+        const data = parse(text);
+        if (!data.saison) {
+          const saisonEl = clone.querySelector(
+            '[class*=saison],[class*=season],[id*=saison],[id*=season],[class*=seasonal]'
+          );
+          if (saisonEl) data.saison = detecterSaison(saisonEl.textContent);
+        }
+        if (!data.saison) {
+          const m = text.match(/saison\s*[:\-]?\s*(printemps|[eé]t[eé]|automne|hiver)/i);
+          if (m) data.saison = detecterSaison(m[1]);
+        }
+        return data;
       }
 
       // =========================================================================

@@ -1,0 +1,17 @@
+{
+  "name": "Blind Test Multijoueur",
+  "short_name": "Blind Test",
+  "description": "Blind test musical multijoueur avec YouTube, buzzer et jokers",
+  "start_url": "/blind-test/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
