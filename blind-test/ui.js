@@ -282,17 +282,24 @@ export function highlightCorrectChoice(correctText) {
 
 let _timerInterval = null;
 let _timerBar = null;
+let _timerLabel = null;
 
 export function startTimerBar(durationMs, barId, startPct = 100) {
   stopTimerBar();
   _timerBar = el(barId);
   if (!_timerBar) return;
+  // Cherche un label frère portant l'id barId + '-seconds'
+  _timerLabel = el(barId + '-seconds');
+  const startMs = (startPct / 100) * durationMs;
   const start = Date.now();
   _timerBar.style.width = startPct + '%';
+  if (_timerLabel) _timerLabel.textContent = Math.ceil(startMs / 1000) + 's';
   _timerInterval = setInterval(() => {
     const elapsed = Date.now() - start;
+    const remaining = Math.max(0, startMs - elapsed);
     const pct = Math.max(0, startPct * (1 - elapsed / durationMs));
     _timerBar.style.width = pct + '%';
+    if (_timerLabel) _timerLabel.textContent = Math.ceil(remaining / 1000) + 's';
     if (pct <= 0) stopTimerBar();
   }, 50);
 }
@@ -301,6 +308,8 @@ export function stopTimerBar() {
   clearInterval(_timerInterval);
   _timerInterval = null;
   if (_timerBar) _timerBar.style.width = '0%';
+  if (_timerLabel) _timerLabel.textContent = '';
+  _timerLabel = null;
 }
 
 // ─── Buzz flash ───────────────────────────────────────────────────────────────

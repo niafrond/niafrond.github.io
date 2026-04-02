@@ -341,6 +341,17 @@ html, body {
   border-radius: 99px;
   transition: width 0.05s linear;
 }
+.timer-seconds-row {
+  text-align: right;
+  min-height: 1.2em;
+  margin-top: 2px;
+}
+.timer-seconds {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
 
 /* ─── Phase panels ────────────────────────────────────────────────────────── */
 .phase-panel {

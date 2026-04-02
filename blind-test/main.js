@@ -558,7 +558,7 @@ function onHostStateChange(state) {
   if (hostPlayer) {
     renderJokers(hostPlayer, state.players, state.currentRound, (type, targetId) => {
       engine?.handleJokerUse('__host__', type, targetId);
-    });
+    }, phase === PHASE.JOKER_WINDOW);
   }
 
   renderGamePhase(phase, {
@@ -571,6 +571,7 @@ function onHostStateChange(state) {
     answerStep: state.answerStep,
     currentRound: state.currentRound,
     totalRounds: state.shuffled?.length ?? null,
+    jokerWindowRemaining: state.jokerWindowRemaining ?? 0,
     onChoiceClick: (choice) => {
       engine?.handleFourChoiceAnswer('__host__', choice);
       document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
@@ -761,7 +762,7 @@ function handleClientMessage(data) {
       renderLobbyPlayers(data.players);
       renderScoreboard(data.players);
       const me = data.players.find(p => p.id === client.myId);
-      if (me) renderJokers(me, data.players, client.currentRound, onJokerClick);
+      if (me) renderJokers(me, data.players, client.currentRound, onJokerClick, client.phase === PHASE.JOKER_WINDOW);
       break;
     }
 
@@ -775,10 +776,21 @@ function handleClientMessage(data) {
       break;
     }
 
+    case MSG.JOKER_WINDOW: {
+      client.phase = PHASE.JOKER_WINDOW;
+      showOnly('screen-game-client');
+      renderGamePhase(PHASE.JOKER_WINDOW, { jokerWindowRemaining: data.remainingS }, false);
+      const meJw = client.players.find(p => p.id === client.myId);
+      if (meJw) renderJokers(meJw, client.players, client.currentRound, onJokerClick, true);
+      break;
+    }
+
     case 'COUNTDOWN': {
       client.phase = PHASE.COUNTDOWN;
       showOnly('screen-game-client');
       renderGamePhase(PHASE.COUNTDOWN, { countdown: data.count }, false);
+      const me2 = client.players.find(p => p.id === client.myId);
+      if (me2) renderJokers(me2, client.players, client.currentRound, onJokerClick, false);
       break;
     }
 
@@ -931,7 +943,7 @@ function handleClientMessage(data) {
       }
 
       const me = client.players.find(p => p.id === client.myId);
-      if (me) renderJokers(me, client.players, client.currentRound, onJokerClick);
+      if (me) renderJokers(me, client.players, client.currentRound, onJokerClick, false);
       break;
     }
 
@@ -945,7 +957,7 @@ function handleClientMessage(data) {
       }
       renderScoreboard(client.players);
       const me = client.players.find(p => p.id === client.myId);
-      if (me) renderJokers(me, client.players, client.currentRound, onJokerClick);
+      if (me) renderJokers(me, client.players, client.currentRound, onJokerClick, client.phase === PHASE.JOKER_WINDOW);
       showJokerNotification(data);
       break;
     }
