@@ -1,3 +1,9 @@
+## [1.12.0](https://github.com/niafrond/niafrond.github.io/compare/v1.11.0...v1.12.0) (2026-04-02)
+
+### Features
+
+* ajouter la gestion des formats de réponse et améliorer la validation des réponses ([e6c5c8a](https://github.com/niafrond/niafrond.github.io/commit/e6c5c8af3a5ee86996a9a35eced912bbf67e2454))
+
 ## [1.11.0](https://github.com/niafrond/niafrond.github.io/compare/v1.10.0...v1.11.0) (2026-04-02)
 
 ### Features
