@@ -252,6 +252,37 @@ function extractJsonParseLiteral(html, startIndex, endIndex = html.length) {
   return null;
 }
 
+function extractQuotedJsonLiteral(html, startIndex, endIndex = html.length) {
+  const valueStart = findImmediateValueStart(html, startIndex, endIndex);
+  if (valueStart === -1) return null;
+
+  const quote = html[valueStart];
+  if (quote !== "'" && quote !== '"') return null;
+
+  let literal = '';
+  let escaping = false;
+  for (let i = valueStart + 1; i < endIndex; i++) {
+    const ch = html[i];
+    if (escaping) {
+      literal += '\\' + ch;
+      escaping = false;
+      continue;
+    }
+    if (ch === '\\') {
+      escaping = true;
+      continue;
+    }
+    if (ch === quote) {
+      const decoded = decodeJsStringLiteral(literal);
+      const trimmed = decoded.trim();
+      return trimmed.startsWith('{') || trimmed.startsWith('[') ? trimmed : null;
+    }
+    literal += ch;
+  }
+
+  return null;
+}
+
 function extractJsonObjectLiteral(html, startIndex, endIndex = html.length) {
   const objectStart = findImmediateValueStart(html, startIndex, endIndex);
   if (objectStart === -1 || html[objectStart] !== '{') return null;
@@ -301,6 +332,9 @@ function describeYtInitialDataIssue(html, markers) {
     if (valueStart !== -1 && html.startsWith('JSON.parse(', valueStart)) {
       return `marqueur trouvé (${marker.trim()}) avec JSON.parse, mais la chaîne n'a pas pu être extraite. Extrait: ${preview}`;
     }
+    if (valueStart !== -1 && (html[valueStart] === "'" || html[valueStart] === '"')) {
+      return `marqueur trouvé (${marker.trim()}) avec une chaîne JavaScript encodée, mais son contenu JSON n'a pas pu être décodé. Extrait: ${preview}`;
+    }
     if (valueStart !== -1 && html[valueStart] === '{') {
       return `marqueur trouvé (${marker.trim()}) avec un objet JSON, mais l'objet semble incomplet. Extrait: ${preview}`;
     }
@@ -330,6 +364,9 @@ function extractAssignedJson(html, markers) {
 
     const jsonParseLiteral = extractJsonParseLiteral(html, markerIndex + marker.length, scriptEnd);
     if (jsonParseLiteral) return jsonParseLiteral;
+
+    const quotedJsonLiteral = extractQuotedJsonLiteral(html, markerIndex + marker.length, scriptEnd);
+    if (quotedJsonLiteral) return quotedJsonLiteral;
 
     const objectLiteral = extractJsonObjectLiteral(html, markerIndex + marker.length, scriptEnd);
     if (objectLiteral) return objectLiteral;
