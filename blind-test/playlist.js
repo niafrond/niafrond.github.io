@@ -390,8 +390,23 @@ export async function lookupSongMetadata(title, artist) {
   const cached = _cacheGet(cacheKey);
   if (cached !== undefined) return cached; // null signifie "pas de résultat", c'est valide
 
+  // Vérifie le cache artiste avant tout appel réseau
+  if (cleanArtist) {
+    const artistKey = `artist-songs:${cleanArtist.toLowerCase()}`;
+    const artistSongs = _cacheGet(artistKey);
+    if (artistSongs) {
+      const normalizedTitle = cleanTitle.toLowerCase();
+      const match = artistSongs.find(s => s.title.toLowerCase() === normalizedTitle) ?? null;
+      if (match) {
+        _cacheSet(cacheKey, match);
+        return match;
+      }
+      // L'artiste est connu mais ce titre n'y figure pas → appel spécifique ci-dessous
+    }
+  }
+
   try {
-    const url = `${ITUNES_SEARCH}?term=${encodeURIComponent(term)}&entity=song&limit=3&country=FR`;
+    const url = `${ITUNES_SEARCH}?term=${encodeURIComponent(term)}&entity=song&limit=25&country=FR`;
     const resp = await itunesFetch(url);
     if (!resp.ok) { _cacheSet(cacheKey, null); return null; }
     const data = await resp.json();
@@ -405,6 +420,27 @@ export async function lookupSongMetadata(title, artist) {
       genre: hit.primaryGenreName ?? null,
     };
     _cacheSet(cacheKey, result);
+
+    // Alimente le cache artiste avec tous les résultats retournés
+    if (cleanArtist) {
+      const artistKey = `artist-songs:${cleanArtist.toLowerCase()}`;
+      const existing = _cacheGet(artistKey) || [];
+      const titleSet = new Set(existing.map(s => s.title.toLowerCase()));
+      for (const r of (data.results || [])) {
+        if (!r.trackName || !r.artistName) continue;
+        if (titleSet.has(r.trackName.toLowerCase())) continue;
+        const y = r.releaseDate ? parseInt(r.releaseDate.slice(0, 4), 10) : null;
+        existing.push({
+          title: r.trackName,
+          artist: r.artistName,
+          year: Number.isFinite(y) ? y : null,
+          genre: r.primaryGenreName ?? null,
+        });
+        titleSet.add(r.trackName.toLowerCase());
+      }
+      _cacheSet(artistKey, existing);
+    }
+
     return result;
   } catch {
     return null;

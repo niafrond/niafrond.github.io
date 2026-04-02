@@ -6,6 +6,7 @@ export const MSG = {
   BUZZ: 'BUZZ',
   ANSWER: 'ANSWER',       // { text }
   JOKER_USE: 'JOKER_USE', // { type, targetId }
+  JOKER_WINDOW: 'JOKER_WINDOW', // { remainingS } — fenêtre joker avant la chanson
 
   // Host → All (broadcast)
   PLAYER_LIST: 'PLAYER_LIST',     // { players[] }
@@ -33,6 +34,7 @@ export const MSG = {
 // ─── Game phases ───────────────────────────────────────────────────────────────
 export const PHASE = {
   LOBBY: 'LOBBY',
+  JOKER_WINDOW: 'JOKER_WINDOW',
   COUNTDOWN: 'COUNTDOWN',
   PLAYING: 'PLAYING',
   BUZZED: 'BUZZED',
@@ -90,6 +92,7 @@ export const TIMER = {
   ROUND_END_DELAY: 3000, // 3s d'affichage de la réponse avant round suivant
   SYNC_OFFSET: 600,      // Décalage estimé de latence pour sync YouTube (ms)
   COUNTDOWN: 3,          // 3-2-1 avant lecture
+  JOKER_WINDOW: 10,      // Secondes pour décider d'un joker avant la chanson
 };
 
 export const MIN_PLAYLIST_FOR_FOUR_CHOICES = 4;

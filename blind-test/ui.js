@@ -83,7 +83,7 @@ export function renderScoreboard(players) {
 
 // ─── Jokers (vue joueur) ──────────────────────────────────────────────────────
 
-export function renderJokers(player, allPlayers, currentRound, onJokerClick) {
+export function renderJokers(player, allPlayers, currentRound, onJokerClick, windowOpen = false) {
   const container = el('joker-buttons');
   if (!container) return;
 
@@ -91,7 +91,7 @@ export function renderJokers(player, allPlayers, currentRound, onJokerClick) {
 
   container.innerHTML = Object.values(JOKER).map(type => {
     const count = player.jokers[type] ?? 0;
-    const disabled = count === 0 || blocked;
+    const disabled = count === 0 || blocked || !windowOpen;
     return `
       <button
         class="joker-btn ${disabled ? 'disabled' : ''}"
@@ -105,7 +105,7 @@ export function renderJokers(player, allPlayers, currentRound, onJokerClick) {
     `;
   }).join('');
 
-  if (!blocked) {
+  if (!blocked && windowOpen) {
     container.querySelectorAll('.joker-btn:not([disabled])').forEach(btn => {
       btn.addEventListener('click', () => {
         const type = btn.dataset.joker;
@@ -159,6 +159,7 @@ function showJokerTargetPicker(targets, onSelect) {
 // ─── Phase de jeu ─────────────────────────────────────────────────────────────
 
 export function renderGamePhase(phase, data, isHost) {
+  hide('phase-joker-window');
   hide('phase-countdown');
   hide('phase-playing');
   hide('phase-buzzed');
@@ -183,6 +184,11 @@ export function renderGamePhase(phase, data, isHost) {
   }
 
   switch (phase) {
+    case PHASE.JOKER_WINDOW:
+      show('phase-joker-window');
+      setText('joker-window-countdown', data.jokerWindowRemaining ?? '');
+      break;
+
     case PHASE.COUNTDOWN:
       show('phase-countdown');
       setText('countdown-number', data.countdown ?? '');

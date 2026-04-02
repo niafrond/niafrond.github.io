@@ -45,6 +45,7 @@ export class GameEngine {
     this._playTimer = null;
     this._answerTimer = null;
     this._roundEndTimer = null;
+    this._jokerWindowInterval = null;
     this._playSongStartedAt = null; // timestamp Date.now() quand la chanson démarre réellement
 
     // En mode relay : avance automatiquement au round suivant sans clic "Suivant"
@@ -185,6 +186,28 @@ export class GameEngine {
     }
 
     this.state.currentSong = this.state.shuffled[this.state.currentRound];
+
+    // Fenêtre joker : 10s pour décider avant que la chanson commence
+    this.state.phase = PHASE.JOKER_WINDOW;
+    let windowCount = TIMER.JOKER_WINDOW;
+    this.state.jokerWindowRemaining = windowCount;
+    this.onStateChange({ ...this.state });
+    this.peer.broadcast({ type: MSG.JOKER_WINDOW, remainingS: windowCount });
+
+    this._jokerWindowInterval = setInterval(() => {
+      windowCount--;
+      this.state.jokerWindowRemaining = windowCount;
+      this.onStateChange({ ...this.state });
+      this.peer.broadcast({ type: MSG.JOKER_WINDOW, remainingS: windowCount });
+      if (windowCount <= 0) {
+        clearInterval(this._jokerWindowInterval);
+        this._jokerWindowInterval = null;
+        this._startCountdown();
+      }
+    }, 1000);
+  }
+
+  _startCountdown() {
     this.state.phase = PHASE.COUNTDOWN;
 
     if (this.state.mode === MODE.FOUR_CHOICES) {
@@ -192,7 +215,6 @@ export class GameEngine {
       this.state.eliminatedChoices = [];
     }
 
-    // Décompte 3-2-1 côté host, puis diffuse PLAY_SONG
     let count = TIMER.COUNTDOWN;
     this.onStateChange({ ...this.state, countdown: count });
     this.peer.broadcast({ type: 'COUNTDOWN', count });
@@ -447,6 +469,7 @@ export class GameEngine {
   // ─── Jokers ───────────────────────────────────────────────────────────────
 
   handleJokerUse(fromId, jokerType, targetId) {
+    if (this.state.phase !== PHASE.JOKER_WINDOW) return;
     const result = applyJoker(this.state, fromId, jokerType, targetId);
     if (!result.valid) return;
 
@@ -555,7 +578,12 @@ export class GameEngine {
     });
     const phase = this.state.phase;
     const song  = this.state.currentSong;
-    if (phase === PHASE.PLAYING || phase === PHASE.BUZZED || phase === PHASE.ANSWERING) {
+    if (phase === PHASE.JOKER_WINDOW) {
+      this.peer.sendTo(peerId, {
+        type: MSG.JOKER_WINDOW,
+        remainingS: this.state.jokerWindowRemaining ?? 0,
+      });
+    } else if (phase === PHASE.PLAYING || phase === PHASE.BUZZED || phase === PHASE.ANSWERING) {
       // Envoyer la chanson à la position actuelle de lecture
       const currentTime = this.yt.getCurrentTime();
       const elapsed = this._playSongStartedAt ? (Date.now() - this._playSongStartedAt) : 0;
@@ -590,5 +618,6 @@ export class GameEngine {
     if (which === 'all' || which === 'play') { clearTimeout(this._playTimer); this._playTimer = null; }
     if (which === 'all' || which === 'answer') { clearTimeout(this._answerTimer); this._answerTimer = null; }
     if (which === 'all' || which === 'round') { clearTimeout(this._roundEndTimer); this._roundEndTimer = null; }
+    if (which === 'all' || which === 'jokerWindow') { clearInterval(this._jokerWindowInterval); this._jokerWindowInterval = null; }
   }
 }
