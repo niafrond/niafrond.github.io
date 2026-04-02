@@ -1,3 +1,9 @@
+## [1.15.0](https://github.com/niafrond/niafrond.github.io/compare/v1.14.0...v1.15.0) (2026-04-02)
+
+### Features
+
+* améliorer la gestion des erreurs lors de l'extraction de ytInitialData et ajouter des fonctions utilitaires pour le prétraitement des chaînes ([95f2345](https://github.com/niafrond/niafrond.github.io/commit/95f2345f77dcf5ae0cc55fc49981ef672608c952))
+
 ## [1.14.0](https://github.com/niafrond/niafrond.github.io/compare/v1.13.0...v1.14.0) (2026-04-02)
 
 ### Features
