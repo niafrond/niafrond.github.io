@@ -1,3 +1,9 @@
+## [1.19.0](https://github.com/niafrond/niafrond.github.io/compare/v1.18.0...v1.19.0) (2026-04-02)
+
+### Features
+
+* remplacer la récupération de la version du test à l'aveugle par celle du match3 et ajouter des fonctions pour extraire des littéraux JSON ([2882513](https://github.com/niafrond/niafrond.github.io/commit/288251384b2522d96ceb71113fd457a14b8c2850))
+
 ## [1.18.0](https://github.com/niafrond/niafrond.github.io/compare/v1.17.0...v1.18.0) (2026-04-02)
 
 ### Features
