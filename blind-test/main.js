@@ -8,7 +8,7 @@
  */
 
 import { BlindTestPeer } from './peer.js';
-import { YouTubePlayer, probeEndpoints, quickCheckCachedEndpoint, getInstanceCaches, setInstanceCaches } from './youtube.js';
+import { YouTubePlayer, probeEndpoints, quickCheckCachedEndpoint, getInstanceCaches, getPreferredAudioSource, setInstanceCaches } from './youtube.js';
 import { GameEngine } from './game.js';
 import { MSG, PHASE, MODE, TIMER } from './constants.js';
 import {
@@ -469,7 +469,11 @@ async function initHostUI() {
     // Bouton démarrer
     document.getElementById('btn-start-game')?.addEventListener('click', () => {
       const { piped, invidious } = getInstanceCaches();
-      engine.startGame(hostMode, _activePlaylist, { pipedInstances: piped, invidiousInstances: invidious });
+      engine.startGame(hostMode, _activePlaylist, {
+        pipedInstances: piped,
+        invidiousInstances: invidious,
+        preferredAudioSource: getPreferredAudioSource(),
+      });
     });
 
     // Bouton Suivant (phase ROUND_END)
@@ -769,8 +773,8 @@ function handleClientMessage(data) {
     case MSG.GAME_START: {
       client.mode = data.mode;
       client._gameCache = { playlist: data.playlist ?? [], shuffled: data.shuffled ?? [] };
-      if (data.pipedInstances?.length || data.invidiousInstances?.length) {
-        setInstanceCaches(data.pipedInstances, data.invidiousInstances);
+      if (data.pipedInstances?.length || data.invidiousInstances?.length || data.preferredAudioSource) {
+        setInstanceCaches(data.pipedInstances ?? [], data.invidiousInstances ?? [], data.preferredAudioSource ?? null);
       }
       showOnly('screen-game-client');
       break;
@@ -778,6 +782,7 @@ function handleClientMessage(data) {
 
     case MSG.JOKER_WINDOW: {
       client.phase = PHASE.JOKER_WINDOW;
+      if (data.videoId) yt?.prefetch(data.videoId).catch(() => {});
       showOnly('screen-game-client');
       renderGamePhase(PHASE.JOKER_WINDOW, { jokerWindowRemaining: data.remainingS }, false);
       const meJw = client.players.find(p => p.id === client.myId);
@@ -787,6 +792,7 @@ function handleClientMessage(data) {
 
     case 'COUNTDOWN': {
       client.phase = PHASE.COUNTDOWN;
+      if (data.videoId) yt?.prefetch(data.videoId).catch(() => {});
       showOnly('screen-game-client');
       renderGamePhase(PHASE.COUNTDOWN, { countdown: data.count }, false);
       const me2 = client.players.find(p => p.id === client.myId);
@@ -966,7 +972,10 @@ function handleClientMessage(data) {
       client.phase = PHASE.ROUND_END;
       stopTimerBar();
       client.currentSong = { videoId: data.videoId, title: data.title, artist: data.artist };
-      renderGamePhase(PHASE.ROUND_END, { currentSong: client.currentSong }, false);
+      renderGamePhase(PHASE.ROUND_END, {
+        currentSong: client.currentSong,
+        playbackError: data.playbackError ?? null,
+      }, false);
       break;
     }
 

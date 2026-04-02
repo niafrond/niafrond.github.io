@@ -157,8 +157,8 @@ export class GameEngine {
 
   // ─── Démarrage ───────────────────────────────────────────────────────────
 
-  startGame(mode, playlist, { pipedInstances = [], invidiousInstances = [] } = {}) {
-    this._instanceCaches = { pipedInstances, invidiousInstances };
+  startGame(mode, playlist, { pipedInstances = [], invidiousInstances = [], preferredAudioSource = null } = {}) {
+    this._instanceCaches = { pipedInstances, invidiousInstances, preferredAudioSource };
     this.state.mode = mode;
     this.state.playlist = playlist;
     this.state.shuffled = shufflePlaylist(playlist).slice(0, GAME_SONGS);
@@ -170,6 +170,7 @@ export class GameEngine {
       shuffled: this.state.shuffled,
       ...(pipedInstances.length     && { pipedInstances }),
       ...(invidiousInstances.length && { invidiousInstances }),
+      ...(preferredAudioSource && { preferredAudioSource }),
     });
     this._nextRound();
   }
@@ -195,14 +196,15 @@ export class GameEngine {
     this.state.phase = PHASE.JOKER_WINDOW;
     let windowCount = TIMER.JOKER_WINDOW;
     this.state.jokerWindowRemaining = windowCount;
+    this.yt.prefetch(this.state.currentSong.videoId).catch(() => {});
     this.onStateChange({ ...this.state });
-    this.peer.broadcast({ type: MSG.JOKER_WINDOW, remainingS: windowCount });
+    this.peer.broadcast({ type: MSG.JOKER_WINDOW, remainingS: windowCount, videoId: this.state.currentSong.videoId });
 
     this._jokerWindowInterval = setInterval(() => {
       windowCount--;
       this.state.jokerWindowRemaining = windowCount;
       this.onStateChange({ ...this.state });
-      this.peer.broadcast({ type: MSG.JOKER_WINDOW, remainingS: windowCount });
+      this.peer.broadcast({ type: MSG.JOKER_WINDOW, remainingS: windowCount, videoId: this.state.currentSong.videoId });
       if (windowCount <= 0) {
         clearInterval(this._jokerWindowInterval);
         this._jokerWindowInterval = null;
@@ -220,13 +222,14 @@ export class GameEngine {
     }
 
     let count = TIMER.COUNTDOWN;
+    this.yt.prefetch(this.state.currentSong.videoId).catch(() => {});
     this.onStateChange({ ...this.state, countdown: count });
-    this.peer.broadcast({ type: 'COUNTDOWN', count });
+    this.peer.broadcast({ type: 'COUNTDOWN', count, videoId: this.state.currentSong.videoId });
 
     const tick = setInterval(() => {
       count--;
       this.onStateChange({ ...this.state, countdown: count });
-      this.peer.broadcast({ type: 'COUNTDOWN', count });
+      this.peer.broadcast({ type: 'COUNTDOWN', count, videoId: this.state.currentSong.videoId });
       if (count <= 0) {
         clearInterval(tick);
         this._playSong();
@@ -267,7 +270,13 @@ export class GameEngine {
     this._stopMusic();
     this.state.phase = PHASE.ROUND_END;
     const song = this.state.currentSong;
-    this.peer.broadcast({ type: MSG.ROUND_END, videoId: song.videoId, title: song.title, artist: song.artist });
+    this.peer.broadcast({
+      type: MSG.ROUND_END,
+      videoId: song.videoId,
+      title: song.title,
+      artist: song.artist,
+      ...(this.state.playbackError && { playbackError: this.state.playbackError }),
+    });
     this.onStateChange({ ...this.state });
     this._afterRoundEnd();
   }
@@ -573,13 +582,14 @@ export class GameEngine {
 
   /** Synchronise l'état complet de la partie vers un joueur spécifique (reconnexion / arrivée tardive) */
   _sendGameStateTo(peerId) {
-    const { pipedInstances = [], invidiousInstances = [] } = this._instanceCaches;
+    const { pipedInstances = [], invidiousInstances = [], preferredAudioSource = null } = this._instanceCaches;
     this.peer.sendTo(peerId, {
       type: MSG.GAME_START,
       mode: this.state.mode,
       playlist: this.state.playlist,
       ...(pipedInstances.length     && { pipedInstances }),
       ...(invidiousInstances.length && { invidiousInstances }),
+      ...(preferredAudioSource && { preferredAudioSource }),
     });
     const phase = this.state.phase;
     const song  = this.state.currentSong;
@@ -605,7 +615,13 @@ export class GameEngine {
         this.peer.sendTo(peerId, { type: MSG.BUZZ_QUEUE, queue: [...this.state.buzzQueue] });
       }
     } else if (phase === PHASE.ANSWER_RESULT || phase === PHASE.ROUND_END) {
-      this.peer.sendTo(peerId, { type: MSG.ROUND_END, videoId: song.videoId, title: song.title, artist: song.artist });
+      this.peer.sendTo(peerId, {
+        type: MSG.ROUND_END,
+        videoId: song.videoId,
+        title: song.title,
+        artist: song.artist,
+        ...(this.state.playbackError && { playbackError: this.state.playbackError }),
+      });
     }
   }
 

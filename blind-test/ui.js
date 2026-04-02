@@ -249,8 +249,8 @@ export function renderGamePhase(phase, data, isHost) {
         const thumb = el('round-end-thumb');
         if (thumb) thumb.src = `https://img.youtube.com/vi/${data.currentSong.videoId}/mqdefault.jpg`;
       }
-      if (isHost) {
-        const errEl = el('host-playback-error');
+      {
+        const errEl = el('round-end-playback-error');
         if (errEl) {
           if (data.playbackError) {
             errEl.hidden = false;

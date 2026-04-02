@@ -25,8 +25,41 @@ let _pipedInstancesCache = null;
 const LS_PIPED = 'blindtest_piped_best';
 const LS_INVIDIOUS = 'blindtest_invidious_best';
 const LS_COBALT_OK = 'blindtest_cobalt_ok';
+const LS_AUDIO_SOURCE = 'blindtest_audio_source';
 let _cachedPipedBest = localStorage.getItem(LS_PIPED) ?? null;
 let _cachedInvidiousBest = localStorage.getItem(LS_INVIDIOUS) ?? null;
+let _preferredAudioSource = localStorage.getItem(LS_AUDIO_SOURCE) ?? null;
+
+function _setPreferredAudioSource(source) {
+  _preferredAudioSource = source ?? null;
+  if (_preferredAudioSource) {
+    localStorage.setItem(LS_AUDIO_SOURCE, _preferredAudioSource);
+  } else {
+    localStorage.removeItem(LS_AUDIO_SOURCE);
+  }
+}
+
+function _invalidatePreferredSource(source) {
+  if (source === 'cobalt') {
+    _cobaltAvailable = false;
+    localStorage.setItem(LS_COBALT_OK, 'false');
+    _setPreferredAudioSource(null);
+    return;
+  }
+
+  if (source === 'piped') {
+    _cachedPipedBest = null;
+    localStorage.removeItem(LS_PIPED);
+    _setPreferredAudioSource(null);
+    return;
+  }
+
+  if (source === 'invidious') {
+    _cachedInvidiousBest = null;
+    localStorage.removeItem(LS_INVIDIOUS);
+    _setPreferredAudioSource(null);
+  }
+}
 
 function _prioritizeCachedInstance(instances, cachedBest) {
   if (!cachedBest) return instances;
@@ -204,6 +237,67 @@ async function fetchViaInvidious(audio, videoId) {
   throw new Error('Invidious: toutes les instances ont échoué');
 }
 
+function _formatPlaybackError(videoId, reason, suggestedSource = _preferredAudioSource) {
+  const hint = suggestedSource ? ` | suggestion: ${suggestedSource}` : '';
+  return `${reason} | videoId: ${videoId}${hint}`;
+}
+
+async function resolveAudioSource(videoId, reasons = null) {
+  if (_preferredAudioSource === 'piped') {
+    const suggestedSource = _preferredAudioSource;
+    try {
+      return await fetchViaPiped(videoId);
+    } catch (e) {
+      reasons?.push(`Piped: ${e?.message || 'échec'}`);
+      console.warn('[Audio] Piped échoué :', e?.message);
+      _invalidatePreferredSource(suggestedSource);
+      throw new Error(_formatPlaybackError(videoId, `Échec lecture (${reasons.join(' | ')}) | cache invalide`, suggestedSource));
+    }
+  }
+
+  if (_preferredAudioSource === 'invidious') {
+    const suggestedSource = _preferredAudioSource;
+    try {
+      return await fetchViaInvidious(null, videoId);
+    } catch (e) {
+      reasons?.push(`Invidious: ${e?.message || 'échec'}`);
+      console.warn('[Audio] Invidious échoué :', e?.message);
+      _invalidatePreferredSource(suggestedSource);
+      throw new Error(_formatPlaybackError(videoId, `Échec lecture (${reasons.join(' | ')}) | cache invalide`, suggestedSource));
+    }
+  }
+
+  try {
+    return await fetchViaCobalt(videoId);
+  } catch (e) {
+    reasons?.push(`cobalt: ${e?.message || 'échec'}`);
+    console.warn('[Audio] cobalt.tools échoué :', e?.message);
+  }
+
+  try {
+    return await fetchViaPiped(videoId);
+  } catch (e) {
+    reasons?.push(`Piped: ${e?.message || 'échec'}`);
+    console.warn('[Audio] Piped échoué :', e?.message);
+  }
+
+  try {
+    return await fetchViaInvidious(null, videoId);
+  } catch (e) {
+    reasons?.push(`Invidious: ${e?.message || 'échec'}`);
+    console.warn('[Audio] Invidious échoué :', e?.message);
+  }
+
+  throw new Error(
+    _formatPlaybackError(
+      videoId,
+      reasons?.length
+        ? `Échec lecture (${reasons.join(' | ')})`
+        : 'Échec lecture (aucune source audio disponible)'
+    )
+  );
+}
+
 
 /**
  * Teste cobalt.tools, toutes les instances Piped et toutes les instances Invidious
@@ -217,6 +311,7 @@ export async function probeEndpoints(testVideoId = 'dQw4w9WgXcQ', onProgress = (
   _cobaltAvailable = true;
   _pipedInstancesCache = null;
   _invidiousInstancesCache = null;
+  _setPreferredAudioSource(null);
 
   // ── 3 branches lancées simultanément ────────────────────────────────────
 
@@ -279,12 +374,21 @@ export async function probeEndpoints(testVideoId = 'dQw4w9WgXcQ', onProgress = (
   }
   localStorage.setItem(LS_COBALT_OK, cobaltOk ? 'true' : 'false');
 
+  if (cobaltOk) {
+    _setPreferredAudioSource('cobalt');
+  } else if (piped.working.length) {
+    _setPreferredAudioSource('piped');
+  } else if (invidious.working.length) {
+    _setPreferredAudioSource('invidious');
+  }
+
   return {
     cobalt: cobaltOk,
     pipedWorking: piped.working.length,
     pipedTotal: piped.total,
     invidiousWorking: invidious.working.length,
     invidiousTotal: invidious.total,
+    source: _preferredAudioSource,
   };
 }
 
@@ -323,6 +427,7 @@ export async function quickCheckCachedEndpoint(testVideoId = 'dQw4w9WgXcQ') {
     const winner = await Promise.any(checks);
     // Mettre à jour l'état interne selon ce qui a fonctionné
     _cobaltAvailable = winner.source === 'cobalt';
+    _setPreferredAudioSource(winner.source);
     if (winner.source === 'piped') {
       _pipedInstancesCache = [winner.instance];
       _cachedPipedBest = winner.instance;
@@ -341,6 +446,7 @@ export async function quickCheckCachedEndpoint(testVideoId = 'dQw4w9WgXcQ') {
       _quick: true,
     };
   } catch {
+    _setPreferredAudioSource(null);
     return null; // Aucun endpoint cached ne répond → relancer probeEndpoints
   }
 }
@@ -350,11 +456,12 @@ export function getInstanceCaches() {
   return {
     piped: _pipedInstancesCache ?? [],
     invidious: _invidiousInstancesCache ?? [],
+    preferredSource: _preferredAudioSource,
   };
 }
 
 /** Injecte des listes d'instances (côté client, reçues de l'hôte). */
-export function setInstanceCaches(piped, invidious) {
+export function setInstanceCaches(piped, invidious, preferredSource = null) {
   if (piped?.length) {
     _pipedInstancesCache = piped;
     _cachedPipedBest = piped[0];
@@ -365,6 +472,11 @@ export function setInstanceCaches(piped, invidious) {
     _cachedInvidiousBest = invidious[0];
     localStorage.setItem(LS_INVIDIOUS, invidious[0]);
   }
+  _setPreferredAudioSource(preferredSource);
+}
+
+export function getPreferredAudioSource() {
+  return _preferredAudioSource;
 }
 
 export class YouTubePlayer extends EventTarget {
@@ -373,6 +485,8 @@ export class YouTubePlayer extends EventTarget {
     this._audio = null;
     this._ready = false;
     this._currentVideoId = null;
+    this._prefetchedSource = null;
+    this._prefetchJob = null;
   }
 
   init() {
@@ -386,6 +500,63 @@ export class YouTubePlayer extends EventTarget {
     this._ready = true;
     this.dispatchEvent(new CustomEvent('ready'));
     return Promise.resolve();
+  }
+
+  prefetch(videoId) {
+    if (!videoId) return Promise.resolve(null);
+    if (this._prefetchedSource?.videoId === videoId) {
+      return Promise.resolve(this._prefetchedSource.url);
+    }
+    if (this._prefetchJob?.videoId === videoId) {
+      return this._prefetchJob.promise;
+    }
+
+    const job = {
+      videoId,
+      promise: null,
+    };
+
+    job.promise = resolveAudioSource(videoId)
+      .then((url) => {
+        this._prefetchedSource = { videoId, url };
+        return url;
+      })
+      .catch((error) => {
+        if (this._prefetchedSource?.videoId === videoId) {
+          this._prefetchedSource = null;
+        }
+        throw error;
+      })
+      .finally(() => {
+        if (this._prefetchJob === job) {
+          this._prefetchJob = null;
+        }
+      });
+
+    this._prefetchJob = job;
+    return job.promise;
+  }
+
+  async _consumePrefetchedSource(videoId) {
+    if (this._prefetchedSource?.videoId === videoId) {
+      const { url } = this._prefetchedSource;
+      this._prefetchedSource = null;
+      return url;
+    }
+
+    if (this._prefetchJob?.videoId === videoId) {
+      try {
+        const url = await this._prefetchJob.promise;
+        if (this._prefetchedSource?.videoId === videoId) {
+          this._prefetchedSource = null;
+        }
+        return url;
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
   }
 
   async load(videoId, seekTo = 0) {
@@ -403,55 +574,31 @@ export class YouTubePlayer extends EventTarget {
     };
 
     const reasons = [];
-
-    // ── Tentative 1 : cobalt.tools ──────────────────────────────────────────
     try {
-      const url = await fetchViaCobalt(videoId);
-      applyAndPlay(url);
-      return;
-    } catch (e) {
-      reasons.push(`cobalt: ${e?.message || 'échec'}`);
-      console.warn('[Audio] cobalt.tools échoué :', e.message);
-    }
+      const prefetchedUrl = await this._consumePrefetchedSource(videoId);
+      if (prefetchedUrl) {
+        if (this._currentVideoId !== videoId) return;
+        applyAndPlay(prefetchedUrl);
+        return;
+      }
 
-    if (this._currentVideoId !== videoId) return;
-
-    // ── Tentative 2 : instances Piped (parallèle) ────────────────────────────
-    try {
-      const url = await fetchViaPiped(videoId);
+      const url = await resolveAudioSource(videoId, reasons);
       if (this._currentVideoId !== videoId) return;
       applyAndPlay(url);
       return;
     } catch (e) {
-      reasons.push(`Piped: ${e?.message || 'échec'}`);
-      console.warn('[Audio] Piped échoué :', e.message);
+      console.error('[Audio] Aucune source disponible pour', videoId);
+      this.dispatchEvent(new CustomEvent('error', {
+        detail: {
+          code: -1,
+          videoId,
+          source: _preferredAudioSource,
+          reason: e?.message || (reasons.length
+            ? _formatPlaybackError(videoId, `Échec lecture (${reasons.join(' | ')})`)
+            : _formatPlaybackError(videoId, 'Échec lecture (aucune source audio disponible)')),
+        },
+      }));
     }
-
-    if (this._currentVideoId !== videoId) return;
-
-    // ── Tentative 3 : instances Invidious (parallèle) ────────────────────────
-    try {
-      const url = await fetchViaInvidious(audio, videoId);
-      if (this._currentVideoId !== videoId) return;
-      audio.src = url;
-      if (seekTo > 0) audio.currentTime = seekTo;
-      audio.play().catch(() => {});
-      return;
-    } catch (e) {
-      reasons.push(`Invidious: ${e?.message || 'échec'}`);
-      console.warn('[Audio] Invidious échoué :', e.message);
-    }
-
-    // Toutes les sources ont échoué
-    console.error('[Audio] Aucune source disponible pour', videoId);
-    this.dispatchEvent(new CustomEvent('error', {
-      detail: {
-        code: -1,
-        reason: reasons.length
-          ? `Échec lecture (${reasons.join(' | ')})`
-          : 'Échec lecture (aucune source audio disponible)',
-      },
-    }));
   }
 
   pause() { this._audio?.pause(); }
@@ -473,6 +620,8 @@ export class YouTubePlayer extends EventTarget {
       this._audio.src = '';
       this._audio = null;
     }
+    this._prefetchedSource = null;
+    this._prefetchJob = null;
     this._ready = false;
   }
 }
