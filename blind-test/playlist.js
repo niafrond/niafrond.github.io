@@ -160,10 +160,94 @@ function extractContinuationToken(data) {
   return tokens.find(t => typeof t === 'string' && t.length > 40) || null;
 }
 
+function decodeJsStringLiteral(source) {
+  let result = '';
+  for (let i = 0; i < source.length; i++) {
+    const ch = source[i];
+    if (ch !== '\\') {
+      result += ch;
+      continue;
+    }
+
+    const next = source[++i];
+    if (next === undefined) break;
+    switch (next) {
+      case '\\': result += '\\'; break;
+      case "'": result += "'"; break;
+      case '"': result += '"'; break;
+      case 'n': result += '\n'; break;
+      case 'r': result += '\r'; break;
+      case 't': result += '\t'; break;
+      case 'b': result += '\b'; break;
+      case 'f': result += '\f'; break;
+      case 'v': result += '\v'; break;
+      case '0': result += '\0'; break;
+      case 'x': {
+        const hex = source.slice(i + 1, i + 3);
+        if (/^[0-9a-fA-F]{2}$/.test(hex)) {
+          result += String.fromCharCode(parseInt(hex, 16));
+          i += 2;
+        } else {
+          result += 'x';
+        }
+        break;
+      }
+      case 'u': {
+        const hex = source.slice(i + 1, i + 5);
+        if (/^[0-9a-fA-F]{4}$/.test(hex)) {
+          result += String.fromCharCode(parseInt(hex, 16));
+          i += 4;
+        } else {
+          result += 'u';
+        }
+        break;
+      }
+      default:
+        result += next;
+        break;
+    }
+  }
+  return result;
+}
+
+function extractJsonParseLiteral(html, startIndex) {
+  const parseIndex = html.indexOf('JSON.parse(', startIndex);
+  if (parseIndex === -1) return null;
+
+  let i = parseIndex + 'JSON.parse('.length;
+  while (i < html.length && /\s/.test(html[i])) i++;
+
+  const quote = html[i];
+  if (quote !== "'" && quote !== '"') return null;
+
+  i++;
+  let literal = '';
+  let escaping = false;
+  for (; i < html.length; i++) {
+    const ch = html[i];
+    if (escaping) {
+      literal += '\\' + ch;
+      escaping = false;
+      continue;
+    }
+    if (ch === '\\') {
+      escaping = true;
+      continue;
+    }
+    if (ch === quote) return decodeJsStringLiteral(literal);
+    literal += ch;
+  }
+
+  return null;
+}
+
 function extractAssignedJson(html, markers) {
   for (const marker of markers) {
     const markerIndex = html.indexOf(marker);
     if (markerIndex === -1) continue;
+
+    const jsonParseLiteral = extractJsonParseLiteral(html, markerIndex + marker.length);
+    if (jsonParseLiteral) return jsonParseLiteral;
 
     const objectStart = html.indexOf('{', markerIndex + marker.length);
     if (objectStart === -1) continue;
@@ -220,8 +304,11 @@ export async function fetchYouTubePlaylist(playlistUrl, onProgress) {
 
   const rawJson = extractAssignedJson(html, [
     'var ytInitialData = ',
+    'var ytInitialData=',
     'window["ytInitialData"] = ',
+    'window["ytInitialData"]=',
     'ytInitialData = ',
+    'ytInitialData=',
   ]);
   if (!rawJson) throw new Error('Impossible de parser ytInitialData');
 
