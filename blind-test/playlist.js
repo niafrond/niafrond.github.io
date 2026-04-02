@@ -210,12 +210,23 @@ function decodeJsStringLiteral(source) {
   return result;
 }
 
-function extractJsonParseLiteral(html, startIndex) {
-  const parseIndex = html.indexOf('JSON.parse(', startIndex);
-  if (parseIndex === -1) return null;
+function findScriptEnd(html, startIndex) {
+  const scriptEnd = html.indexOf('</script>', startIndex);
+  return scriptEnd === -1 ? html.length : scriptEnd;
+}
+
+function findImmediateValueStart(html, startIndex, endIndex) {
+  let i = startIndex;
+  while (i < endIndex && /\s/.test(html[i])) i++;
+  return i < endIndex ? i : -1;
+}
+
+function extractJsonParseLiteral(html, startIndex, endIndex = html.length) {
+  const parseIndex = findImmediateValueStart(html, startIndex, endIndex);
+  if (parseIndex === -1 || !html.startsWith('JSON.parse(', parseIndex)) return null;
 
   let i = parseIndex + 'JSON.parse('.length;
-  while (i < html.length && /\s/.test(html[i])) i++;
+  while (i < endIndex && /\s/.test(html[i])) i++;
 
   const quote = html[i];
   if (quote !== "'" && quote !== '"') return null;
@@ -223,7 +234,7 @@ function extractJsonParseLiteral(html, startIndex) {
   i++;
   let literal = '';
   let escaping = false;
-  for (; i < html.length; i++) {
+  for (; i < endIndex; i++) {
     const ch = html[i];
     if (escaping) {
       literal += '\\' + ch;
@@ -241,6 +252,39 @@ function extractJsonParseLiteral(html, startIndex) {
   return null;
 }
 
+function extractJsonObjectLiteral(html, startIndex, endIndex = html.length) {
+  const objectStart = findImmediateValueStart(html, startIndex, endIndex);
+  if (objectStart === -1 || html[objectStart] !== '{') return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaping = false;
+
+  for (let i = objectStart; i < endIndex; i++) {
+    const ch = html[i];
+    if (inString) {
+      if (escaping) escaping = false;
+      else if (ch === '\\') escaping = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === '{') {
+      depth++;
+      continue;
+    }
+    if (ch === '}') {
+      depth--;
+      if (depth === 0) return html.slice(objectStart, i + 1);
+    }
+  }
+
+  return null;
+}
+
 function compactPreview(text, maxLength = 140) {
   return (text || '').replace(/\s+/g, ' ').trim().slice(0, maxLength);
 }
@@ -250,19 +294,18 @@ function describeYtInitialDataIssue(html, markers) {
     const markerIndex = html.indexOf(marker);
     if (markerIndex === -1) continue;
 
-    const jsonParseIndex = html.indexOf('JSON.parse(', markerIndex + marker.length);
-    const objectStart = html.indexOf('{', markerIndex + marker.length);
-    const nextScriptClose = html.indexOf('</script>', markerIndex);
-    const inSameScript = (index) => index !== -1 && (nextScriptClose === -1 || index < nextScriptClose);
+    const scriptEnd = findScriptEnd(html, markerIndex);
+    const valueStart = findImmediateValueStart(html, markerIndex + marker.length, scriptEnd);
     const preview = compactPreview(html.slice(markerIndex, markerIndex + 180));
 
-    if (inSameScript(jsonParseIndex)) {
+    if (valueStart !== -1 && html.startsWith('JSON.parse(', valueStart)) {
       return `marqueur trouvé (${marker.trim()}) avec JSON.parse, mais la chaîne n'a pas pu être extraite. Extrait: ${preview}`;
     }
-    if (inSameScript(objectStart)) {
+    if (valueStart !== -1 && html[valueStart] === '{') {
       return `marqueur trouvé (${marker.trim()}) avec un objet JSON, mais l'objet semble incomplet. Extrait: ${preview}`;
     }
-    return `marqueur trouvé (${marker.trim()}), mais aucun JSON exploitable juste après. Extrait: ${preview}`;
+    const tokenPreview = valueStart === -1 ? 'fin de script' : compactPreview(html.slice(valueStart, valueStart + 60), 60);
+    return `marqueur trouvé (${marker.trim()}), mais la valeur suivante n'est pas un JSON exploitable. Début détecté: ${tokenPreview}`;
   }
 
   const looseIndex = html.indexOf('ytInitialData');
@@ -283,37 +326,13 @@ function extractAssignedJson(html, markers) {
     const markerIndex = html.indexOf(marker);
     if (markerIndex === -1) continue;
 
-    const jsonParseLiteral = extractJsonParseLiteral(html, markerIndex + marker.length);
+    const scriptEnd = findScriptEnd(html, markerIndex);
+
+    const jsonParseLiteral = extractJsonParseLiteral(html, markerIndex + marker.length, scriptEnd);
     if (jsonParseLiteral) return jsonParseLiteral;
 
-    const objectStart = html.indexOf('{', markerIndex + marker.length);
-    if (objectStart === -1) continue;
-
-    let depth = 0;
-    let inString = false;
-    let escaping = false;
-
-    for (let i = objectStart; i < html.length; i++) {
-      const ch = html[i];
-      if (inString) {
-        if (escaping) escaping = false;
-        else if (ch === '\\') escaping = true;
-        else if (ch === '"') inString = false;
-        continue;
-      }
-      if (ch === '"') {
-        inString = true;
-        continue;
-      }
-      if (ch === '{') {
-        depth++;
-        continue;
-      }
-      if (ch === '}') {
-        depth--;
-        if (depth === 0) return html.slice(objectStart, i + 1);
-      }
-    }
+    const objectLiteral = extractJsonObjectLiteral(html, markerIndex + marker.length, scriptEnd);
+    if (objectLiteral) return objectLiteral;
   }
 
   return null;
