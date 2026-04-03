@@ -1,3 +1,9 @@
+## [1.20.0](https://github.com/niafrond/niafrond.github.io/compare/v1.19.0...v1.20.0) (2026-04-03)
+
+### Features
+
+* refactor la gestion des littéraux JSON pour supporter les chaînes concaténées ([a659697](https://github.com/niafrond/niafrond.github.io/commit/a659697228cb480e8f71364869c71547e5d759a0))
+
 ## [1.19.0](https://github.com/niafrond/niafrond.github.io/compare/v1.18.0...v1.19.0) (2026-04-02)
 
 ### Features
