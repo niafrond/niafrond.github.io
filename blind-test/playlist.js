@@ -221,47 +221,13 @@ function findImmediateValueStart(html, startIndex, endIndex) {
   return i < endIndex ? i : -1;
 }
 
-function extractJsonParseLiteral(html, startIndex, endIndex = html.length) {
-  const parseIndex = findImmediateValueStart(html, startIndex, endIndex);
-  if (parseIndex === -1 || !html.startsWith('JSON.parse(', parseIndex)) return null;
-
-  let i = parseIndex + 'JSON.parse('.length;
-  while (i < endIndex && /\s/.test(html[i])) i++;
-
-  const quote = html[i];
-  if (quote !== "'" && quote !== '"') return null;
-
-  i++;
-  let literal = '';
-  let escaping = false;
-  for (; i < endIndex; i++) {
-    const ch = html[i];
-    if (escaping) {
-      literal += '\\' + ch;
-      escaping = false;
-      continue;
-    }
-    if (ch === '\\') {
-      escaping = true;
-      continue;
-    }
-    if (ch === quote) return decodeJsStringLiteral(literal);
-    literal += ch;
-  }
-
-  return null;
-}
-
-function extractQuotedJsonLiteral(html, startIndex, endIndex = html.length) {
-  const valueStart = findImmediateValueStart(html, startIndex, endIndex);
-  if (valueStart === -1) return null;
-
-  const quote = html[valueStart];
+function readQuotedLiteral(html, startIndex, endIndex = html.length) {
+  const quote = html[startIndex];
   if (quote !== "'" && quote !== '"') return null;
 
   let literal = '';
   let escaping = false;
-  for (let i = valueStart + 1; i < endIndex; i++) {
+  for (let i = startIndex + 1; i < endIndex; i++) {
     const ch = html[i];
     if (escaping) {
       literal += '\\' + ch;
@@ -273,14 +239,47 @@ function extractQuotedJsonLiteral(html, startIndex, endIndex = html.length) {
       continue;
     }
     if (ch === quote) {
-      const decoded = decodeJsStringLiteral(literal);
-      const trimmed = decoded.trim();
-      return trimmed.startsWith('{') || trimmed.startsWith('[') ? trimmed : null;
+      return { literal, endIndex: i + 1 };
     }
     literal += ch;
   }
 
   return null;
+}
+
+function extractConcatenatedStringLiteral(html, startIndex, endIndex = html.length) {
+  let cursor = findImmediateValueStart(html, startIndex, endIndex);
+  if (cursor === -1) return null;
+
+  let combined = '';
+  let partCount = 0;
+  while (cursor < endIndex) {
+    const part = readQuotedLiteral(html, cursor, endIndex);
+    if (!part) break;
+
+    combined += decodeJsStringLiteral(part.literal);
+    partCount++;
+    cursor = findImmediateValueStart(html, part.endIndex, endIndex);
+    if (cursor === -1 || html[cursor] !== '+') break;
+    cursor = findImmediateValueStart(html, cursor + 1, endIndex);
+    if (cursor === -1) break;
+  }
+
+  if (!partCount) return null;
+  const trimmed = combined.trim();
+  return trimmed.startsWith('{') || trimmed.startsWith('[') ? trimmed : null;
+}
+
+function extractJsonParseLiteral(html, startIndex, endIndex = html.length) {
+  const parseIndex = findImmediateValueStart(html, startIndex, endIndex);
+  if (parseIndex === -1 || !html.startsWith('JSON.parse(', parseIndex)) return null;
+
+  let i = parseIndex + 'JSON.parse('.length;
+  return extractConcatenatedStringLiteral(html, i, endIndex);
+}
+
+function extractQuotedJsonLiteral(html, startIndex, endIndex = html.length) {
+  return extractConcatenatedStringLiteral(html, startIndex, endIndex);
 }
 
 function extractJsonObjectLiteral(html, startIndex, endIndex = html.length) {
@@ -333,7 +332,7 @@ function describeYtInitialDataIssue(html, markers) {
       return `marqueur trouvé (${marker.trim()}) avec JSON.parse, mais la chaîne n'a pas pu être extraite. Extrait: ${preview}`;
     }
     if (valueStart !== -1 && (html[valueStart] === "'" || html[valueStart] === '"')) {
-      return `marqueur trouvé (${marker.trim()}) avec une chaîne JavaScript encodée, mais son contenu JSON n'a pas pu être décodé. Extrait: ${preview}`;
+      return `marqueur trouvé (${marker.trim()}) avec une chaîne JavaScript encodée, potentiellement concaténée, mais son contenu JSON n'a pas pu être décodé. Extrait: ${preview}`;
     }
     if (valueStart !== -1 && html[valueStart] === '{') {
       return `marqueur trouvé (${marker.trim()}) avec un objet JSON, mais l'objet semble incomplet. Extrait: ${preview}`;
