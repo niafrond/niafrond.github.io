@@ -1,3 +1,10 @@
+## [1.26.0](https://github.com/niafrond/niafrond.github.io/compare/v1.25.0...v1.26.0) (2026-04-05)
+
+### Features
+
+* afficher la version actuelle du site dans l'en-tête de l'application ([18b39e1](https://github.com/niafrond/niafrond.github.io/commit/18b39e14b5a7ed5d737fab4f8e72d00e7fb40d7d))
+* ajouter l'importation directe des suggestions Randopitons en fiches hors ligne ([478e436](https://github.com/niafrond/niafrond.github.io/commit/478e436bc38bd1e4c77bd3411f2db38ef0623f3d))
+
 ## [1.25.0](https://github.com/niafrond/niafrond.github.io/compare/v1.24.0...v1.25.0) (2026-04-05)
 
 ### Features
