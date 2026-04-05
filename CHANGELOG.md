@@ -1,3 +1,9 @@
+## [1.27.0](https://github.com/niafrond/niafrond.github.io/compare/v1.26.0...v1.27.0) (2026-04-05)
+
+### Features
+
+* améliorer la gestion du service worker avec un rechargement automatique et des stratégies de mise en cache ([ec7b3ed](https://github.com/niafrond/niafrond.github.io/commit/ec7b3ed92c69fcd33f6cccc66d896ad248bd900f))
+
 ## [1.26.0](https://github.com/niafrond/niafrond.github.io/compare/v1.25.0...v1.26.0) (2026-04-05)
 
 ### Features
