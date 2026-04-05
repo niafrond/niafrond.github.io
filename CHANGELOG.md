@@ -1,3 +1,9 @@
+## [1.25.0](https://github.com/niafrond/niafrond.github.io/compare/v1.24.0...v1.25.0) (2026-04-05)
+
+### Features
+
+* ajouter des suggestions de recherche Randopitons et un bouton pour ouvrir les résultats source ([d91db40](https://github.com/niafrond/niafrond.github.io/commit/d91db402e4b893d0dafd535c62a00c32ef85dd01))
+
 ## [1.24.0](https://github.com/niafrond/niafrond.github.io/compare/v1.23.0...v1.24.0) (2026-04-05)
 
 ### Features
