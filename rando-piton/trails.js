@@ -1,7 +1,11 @@
 // Gestion de l'index des randonnées et import depuis Randopitons
 
 function rebuildTrailIndex() {
-  state.trails = [...state.baseTrails, ...state.customTrails]
+  const customIds = new Set(state.customTrails.map((t) => t.id))
+  state.trails = [
+    ...state.baseTrails.filter((t) => !customIds.has(t.id)),
+    ...state.customTrails
+  ]
 }
 
 function upsertCustomTrail(trail) {
