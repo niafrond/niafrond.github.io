@@ -32,6 +32,7 @@ const elements = {
   searchInput: document.getElementById("searchInput"),
   difficultyFilter: document.getElementById("difficultyFilter"),
   viewFilter: document.getElementById("viewFilter"),
+  showOfflineBtn: document.getElementById("showOfflineBtn"),
   clearKeywordsBtn: document.getElementById("clearKeywordsBtn"),
   keywordChips: document.getElementById("keywordChips"),
   searchFab: document.getElementById("searchFab"),
@@ -75,7 +76,7 @@ function bindEvents() {
 
   elements.viewFilter.addEventListener("change", (event) => {
     state.filters.view = event.target.value
-    renderTrailList()
+    render()
   })
 
   window.addEventListener("online", updateNetworkBadge)
@@ -84,8 +85,20 @@ function bindEvents() {
   elements.clearKeywordsBtn.addEventListener("click", () => {
     state.searchDraft = ""
     state.filters.query = ""
+    state.filters.view = "all"
     elements.searchInput.value = ""
+    elements.viewFilter.value = "all"
     render()
+  })
+
+  elements.showOfflineBtn.addEventListener("click", () => {
+    state.searchDraft = ""
+    state.filters.query = ""
+    state.filters.view = "offline"
+    elements.searchInput.value = ""
+    elements.viewFilter.value = "offline"
+    render()
+    setSearchOverlayOpen(false)
   })
 
   elements.searchFab.addEventListener("click", () => {
@@ -124,10 +137,18 @@ function render() {
 }
 
 function renderActiveSearchSummary() {
-  const hasSearch = Boolean(state.filters.query)
-  elements.activeSearchSummary.hidden = !hasSearch
-  elements.activeSearchText.textContent = hasSearch ? state.filters.query : ""
-  elements.searchFab.textContent = hasSearch ? `Recherche: ${state.filters.query}` : "Recherche"
+  const parts = []
+  if (state.filters.query) {
+    parts.push(state.filters.query)
+  }
+  if (state.filters.view === "offline") {
+    parts.push("fiches hors ligne")
+  }
+
+  const summary = parts.join(" • ")
+  elements.activeSearchSummary.hidden = !summary
+  elements.activeSearchText.textContent = summary
+  elements.searchFab.textContent = summary ? `Recherche: ${summary}` : "Recherche"
 }
 
 function renderCounters() {
@@ -396,13 +417,26 @@ function renderDetails() {
     toggleSetValue(state.offline, trail.id)
     storeSet(STORAGE_KEYS.offline, state.offline)
 
-    if (state.offline.has(trail.id)) {
-      await cacheOfflineSelection(trail.id)
-    } else {
-      await removeOfflineSelection(trail.id)
+    if (state.filters.view === "offline" && !state.offline.has(trail.id)) {
+      const remainingOffline = state.trails.filter((item) => state.offline.has(item.id))
+      if (!remainingOffline.some((item) => item.id === state.selectedId)) {
+        state.selectedId = remainingOffline[0]?.id || null
+      }
     }
 
     render()
+
+    try {
+      if (state.offline.has(trail.id)) {
+        await cacheOfflineSelection(trail.id)
+      } else {
+        await removeOfflineSelection(trail.id)
+      }
+    } catch {
+      toggleSetValue(state.offline, trail.id)
+      storeSet(STORAGE_KEYS.offline, state.offline)
+      render()
+    }
   })
 
   elements.detailsPanel.querySelector('[data-action="import-trace"]').addEventListener("click", async () => {
