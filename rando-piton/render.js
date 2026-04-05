@@ -7,16 +7,13 @@ const elements = {
   detailsPanel: document.getElementById("detailsPanel"),
   activeSearchSummary: document.getElementById("activeSearchSummary"),
   activeSearchText: document.getElementById("activeSearchText"),
-  searchForm: document.getElementById("searchForm"),
-  searchInput: document.getElementById("searchInput"),
-  remoteSearchStatus: document.getElementById("remoteSearchStatus"),
-  remoteSuggestions: document.getElementById("remoteSuggestions"),
+  urlImportForm: document.getElementById("urlImportForm"),
+  urlInput: document.getElementById("urlInput"),
+  urlImportStatus: document.getElementById("urlImportStatus"),
   difficultyFilter: document.getElementById("difficultyFilter"),
   viewFilter: document.getElementById("viewFilter"),
-  searchSourceBtn: document.getElementById("searchSourceBtn"),
   showOfflineBtn: document.getElementById("showOfflineBtn"),
-  clearKeywordsBtn: document.getElementById("clearKeywordsBtn"),
-  keywordChips: document.getElementById("keywordChips"),
+  clearFiltersBtn: document.getElementById("clearFiltersBtn"),
   searchFab: document.getElementById("searchFab"),
   searchOverlay: document.getElementById("searchOverlay"),
   searchBackdrop: document.getElementById("searchBackdrop"),
@@ -46,15 +43,8 @@ function updateVersionBadge() {
 
 // ─── Filtres ─────────────────────────────────────────────────────────────────
 
-function hasActiveFilters() {
-  return Boolean(state.filters.query)
-    || state.filters.view !== "all"
-    || state.filters.difficulty !== "all"
-}
-
 function getFilteredTrails() {
   return state.trails.filter((trail) => {
-    const matchesQuery = matchesTrailQuery(trail)
     const matchesDifficulty = state.filters.difficulty === "all"
       || trail.difficulty === state.filters.difficulty
 
@@ -63,38 +53,8 @@ function getFilteredTrails() {
       || (state.filters.view === "offline" && state.offline.has(trail.id))
       || (state.filters.view === "with-trace" && Boolean(state.traces[trail.id]))
 
-    return matchesQuery && matchesDifficulty && matchesView
+    return matchesDifficulty && matchesView
   })
-}
-
-function matchesTrailQuery(trail) {
-  if (!state.filters.query) return true
-
-  const terms = state.filters.query
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .split(/\s+/)
-    .filter(Boolean)
-
-  if (!terms.length) return true
-
-  const raw = [
-    trail.title,
-    trail.area,
-    trail.regionGroup || "",
-    trail.type || "",
-    ...(trail.keywords || []),
-    ...(trail.highlights || []),
-    ...(trail.publicItinerary || [])
-  ].join(" ")
-
-  const keywordIndex = raw
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-
-  return terms.every((term) => keywordIndex.includes(term))
 }
 
 // ─── Render principal ────────────────────────────────────────────────────────
@@ -102,8 +62,6 @@ function matchesTrailQuery(trail) {
 function render() {
   renderCounters()
   renderActiveSearchSummary()
-  renderKeywordChips()
-  renderRemoteSuggestions()
   renderTrailList()
   renderDetails()
 }
@@ -117,108 +75,14 @@ function renderCounters() {
 
 function renderActiveSearchSummary() {
   const parts = []
-  if (state.filters.query) parts.push(state.filters.query)
   if (state.filters.view === "offline") parts.push("fiches hors ligne")
+  if (state.filters.view === "favorites") parts.push("favoris")
+  if (state.filters.view === "with-trace") parts.push("avec trace")
 
   const summary = parts.join(" • ")
   elements.activeSearchSummary.hidden = !summary
   elements.activeSearchText.textContent = summary
-  elements.searchFab.textContent = summary ? `Recherche : ${summary}` : "Recherche"
-}
-
-function renderKeywordChips() {
-  const keywords = getPopularKeywords()
-  elements.keywordChips.innerHTML = ""
-
-  for (const keyword of keywords) {
-    const chip = document.createElement("button")
-    chip.type = "button"
-    chip.className = "keyword-chip"
-    chip.textContent = keyword
-
-    if (state.searchDraft.toLowerCase().split(/\s+/).includes(keyword)) {
-      chip.classList.add("is-active")
-    }
-
-    chip.addEventListener("click", () => {
-      const activeTerms = state.searchDraft.toLowerCase().split(/\s+/).filter(Boolean)
-      const nextTerms = activeTerms.includes(keyword)
-        ? activeTerms.filter((term) => term !== keyword)
-        : [...activeTerms, keyword]
-
-      state.searchDraft = nextTerms.join(" ")
-      elements.searchInput.value = state.searchDraft
-      applySearch(state.searchDraft)
-    })
-
-    elements.keywordChips.appendChild(chip)
-  }
-}
-
-function renderRemoteSuggestions() {
-  elements.remoteSearchStatus.textContent = state.remoteSuggestionsStatus
-  elements.remoteSuggestions.innerHTML = ""
-  if (!state.remoteSuggestions.length) return
-
-  for (const suggestion of state.remoteSuggestions) {
-    const row = document.createElement("div")
-    row.className = "remote-suggestion"
-
-    const content = document.createElement("div")
-    content.className = "remote-suggestion__content"
-
-    const title = document.createElement("span")
-    title.className = "remote-suggestion__title"
-    title.textContent = suggestion.value
-
-    const meta = document.createElement("span")
-    meta.className = "remote-suggestion__meta"
-    meta.textContent = suggestion.data?.region || "Randopitons"
-
-    content.append(title, meta)
-
-    const actions = document.createElement("div")
-    actions.className = "remote-suggestion__actions"
-
-    const openButton = document.createElement("button")
-    openButton.type = "button"
-    openButton.className = "remote-suggestion__button"
-    openButton.textContent = "Ouvrir"
-    openButton.addEventListener("click", () => {
-      openRandopitonsUrl(suggestion.data?.url)
-    })
-
-    const fillButton = document.createElement("button")
-    fillButton.type = "button"
-    fillButton.className = "remote-suggestion__button"
-    fillButton.textContent = "Filtrer ici"
-    fillButton.addEventListener("click", () => {
-      state.searchDraft = suggestion.value
-      elements.searchInput.value = suggestion.value
-      applySearch(suggestion.value)
-    })
-
-    const offlineButton = document.createElement("button")
-    offlineButton.type = "button"
-    offlineButton.className = "remote-suggestion__button"
-    offlineButton.textContent = "Ajouter hors ligne"
-    offlineButton.addEventListener("click", async () => {
-      offlineButton.disabled = true
-      offlineButton.textContent = "Import..."
-      try {
-        await importRemoteSuggestionAsOffline(suggestion)
-      } catch {
-        window.alert("Impossible d'importer cette fiche Randopitons pour le moment.")
-      } finally {
-        offlineButton.disabled = false
-        offlineButton.textContent = "Ajouter hors ligne"
-      }
-    })
-
-    actions.append(openButton, fillButton, offlineButton)
-    row.append(content, actions)
-    elements.remoteSuggestions.appendChild(row)
-  }
+  elements.searchFab.textContent = "Ajouter"
 }
 
 // ─── Liste des randonnées ────────────────────────────────────────────────────
@@ -226,10 +90,10 @@ function renderRemoteSuggestions() {
 function renderTrailList() {
   elements.trailList.innerHTML = ""
 
-  if (!hasActiveFilters()) {
+  if (!state.trails.length) {
     const hint = document.createElement("div")
     hint.className = "empty-list"
-    hint.textContent = "Utilisez la recherche pour trouver une randonnée."
+    hint.textContent = "Ajoutez une randonnée via son lien Randopitons."
     elements.trailList.appendChild(hint)
     return
   }
@@ -237,42 +101,12 @@ function renderTrailList() {
   const trails = getFilteredTrails()
 
   if (!trails.length) {
-    const hasQuery = Boolean(state.filters.query)
-
-    // Déclencher la recherche live si filtre texte et pas encore lancée pour cette query
-    if (hasQuery && state.filters.view === "all" && state.liveResultsQuery !== state.filters.query) {
-      void searchLiveIfNeeded(state.filters.query)
-    }
-
-    // Afficher les résultats live s'il y en a
-    if (state.liveResults.length) {
-      renderLiveResultsSection(state.liveResults)
-      return
-    }
-
-    // Afficher un statut pendant la recherche en cours
-    if (state.liveResultsStatus && hasQuery) {
-      const status = document.createElement("div")
-      status.className = "empty-list empty-list--live-status"
-      status.textContent = state.liveResultsStatus
-      elements.trailList.appendChild(status)
-      if (!trails.find((trail) => trail.id === state.selectedId)) renderDetails()
-      return
-    }
-
     const empty = document.createElement("div")
     empty.className = "empty-list"
     empty.textContent = "Aucune randonnée ne correspond aux filtres courants."
     elements.trailList.appendChild(empty)
     if (!trails.find((trail) => trail.id === state.selectedId)) renderDetails()
     return
-  }
-
-  // On a des résultats locaux : réinitialiser les live results
-  if (state.liveResults.length && state.liveResultsQuery !== state.filters.query) {
-    state.liveResults = []
-    state.liveResultsQuery = ""
-    state.liveResultsStatus = ""
   }
 
   if (!trails.some((trail) => trail.id === state.selectedId)) {
@@ -342,73 +176,13 @@ function renderTrailList() {
   renderDetails()
 }
 
-// ─── Section résultats Randopitons en live ────────────────────────────────────
-
-function renderLiveResultsSection(liveTrails) {
-  const header = document.createElement("div")
-  header.className = "live-results-header"
-  header.textContent = state.liveResultsStatus || `${liveTrails.length} résultat(s) Randopitons`
-  elements.trailList.appendChild(header)
-
-  for (const trail of liveTrails) {
-    const fragment = elements.cardTemplate.content.cloneNode(true)
-    const article = fragment.querySelector(".trail-card")
-    const button = fragment.querySelector(".trail-card__button")
-    const titleEl = fragment.querySelector("h2")
-    const difficulty = fragment.querySelector(".pill--difficulty")
-    const meta = fragment.querySelector(".trail-card__meta")
-    const summary = fragment.querySelector(".trail-card__summary")
-    const favoritePill = fragment.querySelector(".pill--favorite")
-    const offlinePill = fragment.querySelector(".pill--offline")
-    const tracePill = fragment.querySelector(".pill--trace")
-
-    titleEl.textContent = trail.title
-    difficulty.textContent = trail.area
-    meta.textContent = trail.area
-    summary.textContent = trail.summary
-    favoritePill.hidden = true
-    offlinePill.hidden = true
-    tracePill.hidden = true
-    article.classList.add("trail-card--live")
-
-    button.addEventListener("click", () => {
-      // Sélectionner ou importer selon si on l'a déjà dans le catalogue
-      const existing = state.trails.find(
-        (t) => getRandopitonsRouteKey(t.sourceUrl) === getRandopitonsRouteKey(trail.sourceUrl)
-      )
-      if (existing) {
-        state.selectedId = existing.id
-        localStorage.setItem(STORAGE_KEYS.selected, state.selectedId)
-        state.liveResults = []
-        state.liveResultsQuery = ""
-        state.liveResultsStatus = ""
-        state.filters.query = ""
-        elements.searchInput.value = ""
-        renderTrailList()
-        renderDetails()
-      } else {
-        // Ouvrir la fiche source sur Randopitons
-        openRandopitonsUrl(trail.sourceUrl)
-      }
-    })
-
-    article.dataset.id = trail.id
-    elements.trailList.appendChild(fragment)
-  }
-}
-
 // ─── Fiche détail ────────────────────────────────────────────────────────────
 
 function renderDetails() {
-  if (!hasActiveFilters()) {
-    elements.detailsPanel.innerHTML = '<div class="details__empty"><p>Sélectionnez une randonnée pour afficher sa fiche.</p></div>'
-    return
-  }
-
   const trail = state.trails.find((item) => item.id === state.selectedId)
 
   if (!trail) {
-    elements.detailsPanel.innerHTML = '<div class="details__empty"><p>Aucune fiche à afficher.</p></div>'
+    elements.detailsPanel.innerHTML = '<div class="details__empty"><p>Ajoutez une randonnée via son lien Randopitons pour afficher sa fiche.</p></div>'
     return
   }
 
@@ -669,36 +443,10 @@ function setSearchOverlayOpen(isOpen) {
   elements.searchFab.setAttribute("aria-expanded", String(isOpen))
 
   if (isOpen) {
-    state.searchDraft = state.filters.query
-    elements.searchInput.value = state.searchDraft
-    state.remoteSuggestions = []
-    state.remoteSuggestionsStatus = "Appuyez sur Entrée ou Rechercher"
-    renderRemoteSuggestions()
-    elements.searchInput.focus()
-    elements.searchInput.select()
+    state.urlImportStatus = ""
+    elements.urlImportStatus.textContent = ""
+    elements.urlInput.focus()
   }
-}
-
-function applySearch(rawQuery) {
-  state.filters.query = rawQuery.trim().toLowerCase()
-  state.searchDraft = rawQuery.trim().toLowerCase()
-  state.trailListExpanded = false
-  render()
-}
-
-function openRandopitonsSearch(rawQuery) {
-  const query = rawQuery.trim()
-  const searchUrl = query
-    ? `${RANDOPITONS_BASE_URL}/recherche?q=${encodeURIComponent(query)}`
-    : `${RANDOPITONS_BASE_URL}/recherche`
-  window.open(searchUrl, "_blank", "noopener,noreferrer")
-}
-
-function openRandopitonsUrl(relativeOrAbsoluteUrl) {
-  const url = relativeOrAbsoluteUrl
-    ? new URL(relativeOrAbsoluteUrl, RANDOPITONS_BASE_URL).toString()
-    : `${RANDOPITONS_BASE_URL}/recherche`
-  window.open(url, "_blank", "noopener,noreferrer")
 }
 
 // ─── Utilitaire ───────────────────────────────────────────────────────────────

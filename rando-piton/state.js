@@ -54,17 +54,9 @@ const state = {
   isSearchOpen: false,
   trailListExpanded: false,
   itineraryMode: "text",
-  searchDraft: "",
-  remoteSuggestions: [],
-  remoteSuggestionsStatus: "Saisissez au moins 2 lettres",
-  remoteSearchRequestId: 0,
-  liveSearchRequestId: 0,
+  urlImportStatus: "",
   appVersion: VERSION_FALLBACK,
-  liveResults: [],
-  liveResultsQuery: "",
-  liveResultsStatus: "",
   filters: {
-    query: "",
     difficulty: "all",
     view: "all"
   },
