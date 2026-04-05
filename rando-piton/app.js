@@ -2,7 +2,8 @@ const STORAGE_KEYS = {
   favorites: "rando-piton:favorites",
   offline: "rando-piton:offline",
   selected: "rando-piton:selected",
-  traces: "rando-piton:traces"
+  traces: "rando-piton:traces",
+  customTrails: "rando-piton:custom-trails"
 }
 
 const USER_CACHE_NAME = "rando-piton-user-offline-v1"
@@ -10,7 +11,9 @@ const RANDOPITONS_BASE_URL = "https://randopitons.re"
 const RANDOPITONS_SUGGESTIONS_PROXY = "https://api.allorigins.win/raw?url="
 
 const state = {
-  trails: window.RANDO_PITON_DATA || [],
+  baseTrails: window.RANDO_PITON_DATA || [],
+  customTrails: readStoredList(STORAGE_KEYS.customTrails),
+  trails: [],
   favorites: new Set(readStoredList(STORAGE_KEYS.favorites)),
   offline: new Set(readStoredList(STORAGE_KEYS.offline)),
   traces: readStoredMap(STORAGE_KEYS.traces),
@@ -58,6 +61,7 @@ const elements = {
 initialize()
 
 function initialize() {
+  rebuildTrailIndex()
   bindEvents()
   ensureInitialSelection()
   updateNetworkBadge()
@@ -196,10 +200,32 @@ function renderRemoteSuggestions() {
       applySearch(suggestion.value)
     })
 
-    actions.append(openButton, fillButton)
+    const offlineButton = document.createElement("button")
+    offlineButton.type = "button"
+    offlineButton.className = "remote-suggestion__button"
+    offlineButton.textContent = "Ajouter hors ligne"
+    offlineButton.addEventListener("click", async () => {
+      offlineButton.disabled = true
+      offlineButton.textContent = "Import..."
+
+      try {
+        await importRemoteSuggestionAsOffline(suggestion)
+      } catch {
+        window.alert("Impossible d'importer cette fiche Randopitons pour le moment.")
+      } finally {
+        offlineButton.disabled = false
+        offlineButton.textContent = "Ajouter hors ligne"
+      }
+    })
+
+    actions.append(openButton, fillButton, offlineButton)
     row.append(content, actions)
     elements.remoteSuggestions.appendChild(row)
   }
+}
+
+function rebuildTrailIndex() {
+  state.trails = [...state.baseTrails, ...state.customTrails]
 }
 
 function renderActiveSearchSummary() {
@@ -373,6 +399,141 @@ async function fetchRandopitonsSuggestions(query) {
 
   const payload = await response.json()
   return Array.isArray(payload.suggestions) ? payload.suggestions : []
+}
+
+async function importRemoteSuggestionAsOffline(suggestion) {
+  const relativeUrl = suggestion?.data?.url
+  if (!relativeUrl) {
+    throw new Error("Suggestion invalide")
+  }
+
+  const sourceUrl = new URL(relativeUrl, RANDOPITONS_BASE_URL).toString()
+  const routeKey = getRandopitonsRouteKey(sourceUrl)
+  let trail = state.trails.find((item) => getRandopitonsRouteKey(item.sourceUrl) === routeKey)
+
+  if (!trail) {
+    trail = await fetchRemoteTrailDetails(suggestion)
+    upsertCustomTrail(trail)
+  }
+
+  state.selectedId = trail.id
+  localStorage.setItem(STORAGE_KEYS.selected, state.selectedId)
+  state.offline.add(trail.id)
+  storeSet(STORAGE_KEYS.offline, state.offline)
+  render()
+  await cacheOfflineSelection(trail.id)
+}
+
+function upsertCustomTrail(trail) {
+  const routeKey = getRandopitonsRouteKey(trail.sourceUrl)
+  const existingIndex = state.customTrails.findIndex((item) => (
+    item.id === trail.id || getRandopitonsRouteKey(item.sourceUrl) === routeKey
+  ))
+
+  if (existingIndex >= 0) {
+    state.customTrails[existingIndex] = trail
+  } else {
+    state.customTrails.unshift(trail)
+  }
+
+  localStorage.setItem(STORAGE_KEYS.customTrails, JSON.stringify(state.customTrails))
+  rebuildTrailIndex()
+}
+
+async function fetchRemoteTrailDetails(suggestion) {
+  const relativeUrl = suggestion.data.url
+  const sourceUrl = new URL(relativeUrl, RANDOPITONS_BASE_URL).toString()
+  const proxyUrl = `https://r.jina.ai/http://${sourceUrl}`
+  const response = await fetch(proxyUrl)
+
+  if (!response.ok) {
+    throw new Error("Proxy distant indisponible")
+  }
+
+  const markdown = await response.text()
+  return buildTrailFromRemoteMarkdown(suggestion, sourceUrl, markdown)
+}
+
+function buildTrailFromRemoteMarkdown(suggestion, sourceUrl, markdown) {
+  const title = extractRemoteTitle(markdown, suggestion.value)
+  const proseLines = extractRemoteProse(markdown)
+  const itinerary = proseLines.slice(0, 3)
+  const summary = proseLines[0] || `${title} importée depuis Randopitons.`
+  const keywords = buildRemoteKeywords(title, suggestion.data?.region, proseLines)
+  const routeId = suggestion.data?.url?.split("/").pop() || slugify(title)
+
+  return {
+    id: `remote-${routeId}`,
+    title,
+    sourceUrl,
+    area: suggestion.data?.region || "Randopitons",
+    difficulty: "À préciser",
+    duration: "À préciser",
+    distance: "À préciser",
+    elevation: "À préciser",
+    summary,
+    keywords,
+    highlights: keywords.slice(0, 3),
+    access: proseLines[1] || "Consulter la fiche source Randopitons pour les détails d'accès.",
+    offlineChecklist: ["Eau", "Téléphone chargé", "Vérifier météo et accès"],
+    vibe: proseLines[2] || "Fiche importée depuis Randopitons",
+    publicItinerary: itinerary.length ? itinerary : [summary]
+  }
+}
+
+function extractRemoteTitle(markdown, fallbackTitle) {
+  const titleLine = markdown.match(/^Title:\s*(.+)$/m)?.[1]?.trim()
+  if (titleLine) {
+    return titleLine
+  }
+
+  const headingLine = markdown.match(/^#\s+(.+?)\s+—\s+Randopitons$/m)?.[1]?.trim()
+  return headingLine || fallbackTitle
+}
+
+function extractRemoteProse(markdown) {
+  return markdown
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 120)
+    .filter((line) => !line.startsWith("#"))
+    .filter((line) => !line.startsWith("*"))
+    .filter((line) => !line.startsWith("["))
+    .filter((line) => !line.startsWith("!"))
+    .filter((line) => !line.startsWith("Title:"))
+    .slice(0, 5)
+}
+
+function buildRemoteKeywords(title, region, proseLines) {
+  const text = [title, region || "", ...proseLines.slice(0, 2)].join(" ")
+  const words = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter((word) => word.length >= 4)
+
+  return [...new Set(words)].slice(0, 8)
+}
+
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
+function getRandopitonsRouteKey(url) {
+  if (!url) {
+    return ""
+  }
+
+  const pathname = new URL(url, RANDOPITONS_BASE_URL).pathname
+  const match = pathname.match(/\/randonnee\/(\d+)/)
+  return match ? match[1] : pathname
 }
 
 function getPopularKeywords() {
