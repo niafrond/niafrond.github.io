@@ -54,6 +54,7 @@ const state = {
   traces: readStoredMap(STORAGE_KEYS.traces),
   selectedId: localStorage.getItem(STORAGE_KEYS.selected) || null,
   isSearchOpen: false,
+  trailListExpanded: false,
   itineraryMode: "text",
   searchDraft: "",
   remoteSuggestions: [],

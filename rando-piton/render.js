@@ -279,7 +279,11 @@ function renderTrailList() {
     state.selectedId = trails[0].id
   }
 
+  const isCollapsed = Boolean(state.selectedId) && !state.trailListExpanded
+
   for (const trail of trails) {
+    if (isCollapsed && trail.id !== state.selectedId) continue
+
     const fragment = elements.cardTemplate.content.cloneNode(true)
     const article = fragment.querySelector(".trail-card")
     const button = fragment.querySelector(".trail-card__button")
@@ -303,6 +307,7 @@ function renderTrailList() {
 
     button.addEventListener("click", () => {
       state.selectedId = trail.id
+      state.trailListExpanded = false
       localStorage.setItem(STORAGE_KEYS.selected, state.selectedId)
       renderTrailList()
       renderDetails()
@@ -310,6 +315,28 @@ function renderTrailList() {
 
     article.dataset.id = trail.id
     elements.trailList.appendChild(fragment)
+  }
+
+  if (isCollapsed && trails.length > 1) {
+    const expandBtn = document.createElement("button")
+    expandBtn.type = "button"
+    expandBtn.className = "trail-list__toggle"
+    expandBtn.textContent = `Voir les ${trails.length} résultats`
+    expandBtn.addEventListener("click", () => {
+      state.trailListExpanded = true
+      renderTrailList()
+    })
+    elements.trailList.appendChild(expandBtn)
+  } else if (!isCollapsed && state.selectedId && trails.length > 1) {
+    const collapseBtn = document.createElement("button")
+    collapseBtn.type = "button"
+    collapseBtn.className = "trail-list__toggle trail-list__toggle--collapse"
+    collapseBtn.textContent = "Réduire la liste"
+    collapseBtn.addEventListener("click", () => {
+      state.trailListExpanded = false
+      renderTrailList()
+    })
+    elements.trailList.appendChild(collapseBtn)
   }
 
   renderDetails()
@@ -655,6 +682,7 @@ function setSearchOverlayOpen(isOpen) {
 function applySearch(rawQuery) {
   state.filters.query = rawQuery.trim().toLowerCase()
   state.searchDraft = rawQuery.trim().toLowerCase()
+  state.trailListExpanded = false
   render()
 }
 
