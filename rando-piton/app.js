@@ -850,7 +850,21 @@ async function registerServiceWorker() {
   }
 
   try {
-    await navigator.serviceWorker.register("sw.js")
+    let hasRefreshedForNewWorker = false
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (hasRefreshedForNewWorker) {
+        return
+      }
+
+      hasRefreshedForNewWorker = true
+      window.location.reload()
+    })
+
+    const registration = await navigator.serviceWorker.register("sw.js", {
+      updateViaCache: "none"
+    })
+
+    await registration.update()
   } catch {
     elements.networkBadge.textContent = "SW indisponible"
   }
