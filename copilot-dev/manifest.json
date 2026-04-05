@@ -1,0 +1,12 @@
+{
+  "name": "Copilot Dev — Prompt to Repo",
+  "short_name": "CopilotDev",
+  "description": "Envoyez des prompts Copilot et appliquez le code généré directement sur votre repo GitHub.",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#071420",
+  "theme_color": "#0f172a",
+  "lang": "fr",
+  "icons": []
+}
