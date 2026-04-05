@@ -17,7 +17,11 @@ Ce dépôt contient plusieurs mini-apps web en HTML/CSS/JavaScript.
 - App : [lavevaisselle/index.html](lavevaisselle/index.html)
 - Mini app mobile-first avec historique local, capture photo et service worker.
 
-### 4) Match3 Quest
+### 4) Rando Piton (PWA)
+- App : [rando-piton/index.html](rando-piton/index.html)
+- Catalogue mobile-first de randonnées à La Réunion avec favoris, filtres et fiches hors ligne.
+
+### 5) Match3 Quest
 - App : [match3-quest/index.html](match3-quest/index.html)
 - Jeu match-3 RPG (combat, classes, sorts, armes, IA ennemie, progression).
 
@@ -35,6 +39,15 @@ Ce dépôt contient plusieurs mini-apps web en HTML/CSS/JavaScript.
 - Capture photo intégrée au flux d'utilisation.
 - Fonctionnement hors ligne grâce au service worker.
 - Manifest PWA pour installation possible sur écran d'accueil.
+
+### Rando Piton (PWA)
+- Catalogue local de randonnées consultable sans backend.
+- Recherche en texte libre ou par mots-clés, filtres par difficulté et vues dédiées pour favoris / hors ligne.
+- Sauvegarde locale des randonnées favorites.
+- Sauvegarde des fiches pour consultation hors ligne via service worker et Cache API.
+- Flux prévu pour les traces Randopitons : connexion sur le site source, téléchargement manuel du GPX/KML, puis import local dans l'app pour usage hors ligne.
+- Les fiches affichent aussi un itinéraire public lisible sans connexion, distinct du téléchargement de trace protégé.
+- Interface mobile-first prévue pour installation comme application.
 
 ### Match3 Quest
 - Combat RPG basé sur une mécanique de match-3.

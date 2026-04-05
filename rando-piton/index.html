@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Rando Piton</title>
+  <meta name="description" content="Catalogue mobile-first de randonnées à La Réunion avec favoris et fiches hors ligne.">
+  <meta name="theme-color" content="#17322c">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div class="hero__content">
+        <p class="eyebrow">PWA rando</p>
+        <h1>Rando Piton</h1>
+        <p class="hero__text">Une app inspirée de l'esprit de Randopiton pour préparer ses sorties, garder ses parcours favoris et emporter des fiches consultables hors ligne.</p>
+        <div class="hero__meta">
+          <div>
+            <strong id="countAll">0</strong>
+            <span>randos</span>
+          </div>
+          <div>
+            <strong id="countFavorites">0</strong>
+            <span>favoris</span>
+          </div>
+          <div>
+            <strong id="countOffline">0</strong>
+            <span>hors ligne</span>
+          </div>
+          <div>
+            <strong id="countTraces">0</strong>
+            <span>traces importées</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero__status">
+        <span id="networkBadge" class="network-badge">Vérification réseau</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar card">
+        <label class="search-field" for="searchInput">
+          <span>Recherche</span>
+          <input id="searchInput" type="search" placeholder="Un ou plusieurs mots-clés...">
+        </label>
+
+        <div class="filter-row">
+          <label>
+            <span>Mode recherche</span>
+            <select id="searchModeFilter">
+              <option value="keywords">Mots-clés</option>
+              <option value="text">Texte libre</option>
+            </select>
+          </label>
+          <label>
+            <span>Difficulté</span>
+            <select id="difficultyFilter">
+              <option value="all">Toutes</option>
+              <option value="Facile">Facile</option>
+              <option value="Intermédiaire">Intermédiaire</option>
+              <option value="Soutenue">Soutenue</option>
+            </select>
+          </label>
+          <label>
+            <span>Vue</span>
+            <select id="viewFilter">
+              <option value="all">Catalogue</option>
+              <option value="favorites">Favoris</option>
+              <option value="offline">Hors ligne</option>
+              <option value="with-trace">Avec trace</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="keyword-picker">
+          <div class="keyword-picker__header">
+            <span>Mots-clés rapides</span>
+            <button id="clearKeywordsBtn" type="button" class="keyword-picker__clear">Effacer</button>
+          </div>
+          <div id="keywordChips" class="keyword-chips" aria-live="polite"></div>
+        </div>
+
+        <div id="trailList" class="trail-list" aria-live="polite"></div>
+      </aside>
+
+      <section class="details card" id="detailsPanel" aria-live="polite">
+        <div class="details__empty">
+          <p>Sélectionnez une randonnée pour afficher sa fiche.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <template id="trailCardTemplate">
+    <article class="trail-card">
+      <button class="trail-card__button" type="button">
+        <div class="trail-card__top">
+          <h2></h2>
+          <span class="pill pill--difficulty"></span>
+        </div>
+        <p class="trail-card__meta"></p>
+        <p class="trail-card__summary"></p>
+        <div class="trail-card__footer">
+          <span class="pill pill--favorite">Favori</span>
+          <span class="pill pill--offline">Hors ligne</span>
+          <span class="pill pill--trace">Trace importée</span>
+        </div>
+      </button>
+    </article>
+  </template>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
