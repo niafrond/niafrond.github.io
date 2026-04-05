@@ -1,3 +1,9 @@
+## [1.23.0](https://github.com/niafrond/niafrond.github.io/compare/v1.22.0...v1.23.0) (2026-04-05)
+
+### Features
+
+* améliorer le formulaire de recherche avec validation et actions dédiées ([126fe85](https://github.com/niafrond/niafrond.github.io/commit/126fe855d55d055fc87982afa7ed6d4736891b0f))
+
 ## [1.22.0](https://github.com/niafrond/niafrond.github.io/compare/v1.21.0...v1.22.0) (2026-04-05)
 
 ### Features
