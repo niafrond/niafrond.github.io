@@ -25,7 +25,12 @@ async function fetchRemoteTrailDetails(suggestion) {
   const relativeUrl = suggestion.data.url
   const sourceUrl = new URL(relativeUrl, RANDOPITONS_BASE_URL).toString()
   const proxyUrl = `${RANDOPITONS_SUGGESTIONS_PROXY}${encodeURIComponent(sourceUrl)}`
-  const response = await fetch(proxyUrl)
+  let response
+  try {
+    response = await fetch(proxyUrl)
+  } catch {
+    throw new Error("Impossible de récupérer la fiche (vérifiez votre connexion)")
+  }
 
   if (!response.ok) throw new Error("Proxy distant indisponible")
 
