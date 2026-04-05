@@ -15,6 +15,7 @@ const state = {
   selectedId: localStorage.getItem(STORAGE_KEYS.selected) || null,
   isSearchOpen: false,
   itineraryMode: "text",
+  searchDraft: "",
   filters: {
     query: "",
     difficulty: "all",
@@ -27,6 +28,7 @@ const elements = {
   detailsPanel: document.getElementById("detailsPanel"),
   activeSearchSummary: document.getElementById("activeSearchSummary"),
   activeSearchText: document.getElementById("activeSearchText"),
+  searchForm: document.getElementById("searchForm"),
   searchInput: document.getElementById("searchInput"),
   difficultyFilter: document.getElementById("difficultyFilter"),
   viewFilter: document.getElementById("viewFilter"),
@@ -56,8 +58,14 @@ function initialize() {
 
 function bindEvents() {
   elements.searchInput.addEventListener("input", (event) => {
-    state.filters.query = event.target.value.trim().toLowerCase()
-    render()
+    state.searchDraft = event.target.value
+    renderKeywordChips()
+  })
+
+  elements.searchForm.addEventListener("submit", (event) => {
+    event.preventDefault()
+    applySearch(state.searchDraft)
+    setSearchOverlayOpen(false)
   })
 
   elements.difficultyFilter.addEventListener("change", (event) => {
@@ -74,6 +82,7 @@ function bindEvents() {
   window.addEventListener("offline", updateNetworkBadge)
 
   elements.clearKeywordsBtn.addEventListener("click", () => {
+    state.searchDraft = ""
     state.filters.query = ""
     elements.searchInput.value = ""
     render()
@@ -174,19 +183,19 @@ function renderKeywordChips() {
     chip.className = "keyword-chip"
     chip.textContent = keyword
 
-    if (state.filters.query.split(/\s+/).includes(keyword)) {
+    if (state.searchDraft.toLowerCase().split(/\s+/).includes(keyword)) {
       chip.classList.add("is-active")
     }
 
     chip.addEventListener("click", () => {
-      const activeTerms = state.filters.query.split(/\s+/).filter(Boolean)
+      const activeTerms = state.searchDraft.toLowerCase().split(/\s+/).filter(Boolean)
       const nextTerms = activeTerms.includes(keyword)
         ? activeTerms.filter((term) => term !== keyword)
         : [...activeTerms, keyword]
 
-      state.filters.query = nextTerms.join(" ")
-      elements.searchInput.value = state.filters.query
-      render()
+      state.searchDraft = nextTerms.join(" ")
+      elements.searchInput.value = state.searchDraft
+      applySearch(state.searchDraft)
     })
 
     elements.keywordChips.appendChild(chip)
@@ -199,9 +208,17 @@ function setSearchOverlayOpen(isOpen) {
   elements.searchFab.setAttribute("aria-expanded", String(isOpen))
 
   if (isOpen) {
+    state.searchDraft = state.filters.query
+    elements.searchInput.value = state.searchDraft
     elements.searchInput.focus()
     elements.searchInput.select()
   }
+}
+
+function applySearch(rawQuery) {
+  state.filters.query = rawQuery.trim().toLowerCase()
+  state.searchDraft = rawQuery.trim().toLowerCase()
+  render()
 }
 
 function getPopularKeywords() {

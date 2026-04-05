@@ -195,6 +195,17 @@ select {
   border: 1px solid rgba(23, 50, 44, 0.08);
 }
 
+.search-form {
+  display: grid;
+  gap: 14px;
+}
+
+.search-form__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .keyword-picker__header {
   display: flex;
   align-items: center;
@@ -203,14 +214,6 @@ select {
   margin-bottom: 12px;
   color: var(--muted);
   font-size: 0.9rem;
-}
-
-.keyword-picker__clear {
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--secondary);
-  cursor: pointer;
 }
 
 .keyword-chips {

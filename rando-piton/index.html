@@ -94,18 +94,24 @@
         <button id="closeSearchBtn" type="button" class="search-sheet__close" aria-label="Fermer la recherche">Fermer</button>
       </div>
 
-      <label class="search-field" for="searchInput">
-        <span>Mot-clé</span>
-        <input id="searchInput" type="search" placeholder="Rechercher une randonnée, point d'intérêt, ...">
-      </label>
+      <form id="searchForm" class="search-form" role="search">
+        <label class="search-field" for="searchInput">
+          <span>Mot-clé</span>
+          <input id="searchInput" type="search" placeholder="Rechercher une randonnée, point d'intérêt, ...">
+        </label>
 
-      <div class="keyword-picker">
-        <div class="keyword-picker__header">
-          <span>Mots-clés rapides</span>
-          <button id="clearKeywordsBtn" type="button" class="keyword-picker__clear">Effacer</button>
+        <div class="search-form__actions">
+          <button type="submit" class="action">Rechercher</button>
+          <button id="clearKeywordsBtn" type="button" class="action action--secondary">Effacer</button>
         </div>
-        <div id="keywordChips" class="keyword-chips" aria-live="polite"></div>
-      </div>
+
+        <div class="keyword-picker">
+          <div class="keyword-picker__header">
+            <span>Mots-clés rapides</span>
+          </div>
+          <div id="keywordChips" class="keyword-chips" aria-live="polite"></div>
+        </div>
+      </form>
     </section>
   </div>
 

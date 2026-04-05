@@ -42,7 +42,7 @@ Ce dépôt contient plusieurs mini-apps web en HTML/CSS/JavaScript.
 
 ### Rando Piton (PWA)
 - Catalogue local de randonnées consultable sans backend.
-- Bouton de recherche flottant ouvrant un panneau au besoin, avec recherche par mot-clé dans l'esprit de Randopitons.
+- Bouton de recherche flottant ouvrant un panneau au besoin, avec formulaire par mot-clé et validation explicite dans l'esprit de Randopitons.
 - Filtres par difficulté et vues dédiées pour favoris / hors ligne.
 - Sauvegarde locale des randonnées favorites.
 - Sauvegarde des fiches pour consultation hors ligne via service worker et Cache API.
