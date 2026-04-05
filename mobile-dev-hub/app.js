@@ -1,4 +1,5 @@
 const storageKey = "mobile-dev-hub-settings";
+const CORS_PROXY = "https://corsproxy.io/?url=";
 
 const els = {
   owner: document.getElementById("owner"),
@@ -295,7 +296,7 @@ async function startGitHubDeviceFlow(openCopilotAfter = false) {
   els.deviceFlowStatus.textContent = "Initialisation…";
 
   try {
-    const codeRes = await fetch("https://github.com/login/device/code", {
+    const codeRes = await fetch(CORS_PROXY + encodeURIComponent("https://github.com/login/device/code"), {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ client_id: clientId, scope: "repo read:user" }).toString(),
@@ -367,7 +368,7 @@ async function pollForToken(clientId, deviceCode, intervalMs, deadline, signal) 
   while (Date.now() < deadline) {
     await sleep(intervalMs, signal);
 
-    const res = await fetch("https://github.com/login/oauth/access_token", {
+    const res = await fetch(CORS_PROXY + encodeURIComponent("https://github.com/login/oauth/access_token"), {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
