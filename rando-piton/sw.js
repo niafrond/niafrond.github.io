@@ -6,7 +6,6 @@ const APP_ASSETS = [
   "./index.html",
   "./style.css",
   "./app.js",
-  "./data.js",
   "./manifest.json",
   "./icon.svg"
 ]
@@ -38,6 +37,11 @@ self.addEventListener("fetch", (event) => {
   const isSameOrigin = requestUrl.origin === self.location.origin
   const isNavigationRequest = event.request.mode === "navigate"
   const isAppShellRequest = isSameOrigin && APP_ASSETS.some((asset) => requestUrl.pathname.endsWith(asset.replace(/^\.\//, "/")) || requestUrl.pathname === "/rando-piton/" || requestUrl.pathname.endsWith("/rando-piton"))
+
+  if (!isSameOrigin) {
+    event.respondWith(networkOnly(event.request))
+    return
+  }
 
   if (isNavigationRequest || isAppShellRequest) {
     event.respondWith(networkFirst(event.request, "./index.html"))
@@ -80,4 +84,8 @@ async function cacheFirst(request) {
   }
 
   return response
+}
+
+async function networkOnly(request) {
+  return fetch(request, { cache: "no-store" })
 }
