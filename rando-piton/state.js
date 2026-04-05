@@ -58,6 +58,7 @@ const state = {
   remoteSuggestions: [],
   remoteSuggestionsStatus: "Saisissez au moins 2 lettres",
   remoteSearchRequestId: 0,
+  liveSearchRequestId: 0,
   appVersion: VERSION_FALLBACK,
   liveResults: [],
   liveResultsQuery: "",

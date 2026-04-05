@@ -66,8 +66,7 @@ async function refreshRemoteSuggestions(rawQuery) {
 async function fetchRemoteTrailDetails(suggestion) {
   const relativeUrl = suggestion.data.url
   const sourceUrl = new URL(relativeUrl, RANDOPITONS_BASE_URL).toString()
-  const source = new URL(sourceUrl)
-  const proxyUrl = `https://r.jina.ai/http://${source.host}${source.pathname}${source.search}`
+  const proxyUrl = `https://r.jina.ai/${sourceUrl}`
   const response = await fetch(proxyUrl)
 
   if (!response.ok) throw new Error("Proxy distant indisponible")
@@ -93,7 +92,7 @@ async function searchLiveIfNeeded(query) {
   if (query.length < 2) return
   if (state.liveResultsQuery === query) return
 
-  const requestId = ++state.remoteSearchRequestId
+  const requestId = ++state.liveSearchRequestId
   state.liveResultsQuery = query
   state.liveResultsStatus = "Recherche sur Randopitons..."
   state.liveResults = []
@@ -101,7 +100,7 @@ async function searchLiveIfNeeded(query) {
 
   try {
     const suggestions = await fetchRandopitonsSuggestions(query)
-    if (requestId !== state.remoteSearchRequestId) return
+    if (requestId !== state.liveSearchRequestId) return
 
     state.liveResults = suggestions.slice(0, 12).map((s) => ({
       id: `live-${s.data?.url?.split("/").pop() || slugify(s.value)}`,
@@ -128,7 +127,7 @@ async function searchLiveIfNeeded(query) {
       : "Aucun résultat sur Randopitons"
     renderTrailList()
   } catch {
-    if (requestId !== state.remoteSearchRequestId) return
+    if (requestId !== state.liveSearchRequestId) return
     state.liveResults = []
     state.liveResultsStatus = "Recherche Randopitons indisponible"
     renderTrailList()
