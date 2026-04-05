@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Rando Piton</title>
-  <meta name="description" content="Catalogue mobile-first de randonnées à La Réunion avec favoris et fiches hors ligne.">
+  <meta name="description" content="Recherche mobile-first de randonnées via Randopitons avec favoris et fiches hors ligne stockées localement.">
   <meta name="theme-color" content="#17322c">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
@@ -61,7 +61,7 @@
           <label>
             <span>Vue</span>
             <select id="viewFilter">
-              <option value="all">Catalogue</option>
+              <option value="all">Recherche API</option>
               <option value="favorites">Favoris</option>
               <option value="offline">Hors ligne</option>
               <option value="with-trace">Avec trace</option>
@@ -108,7 +108,7 @@
           <button id="clearKeywordsBtn" type="button" class="action action--secondary">Effacer</button>
         </div>
 
-        <p class="search-form__hint">La recherche Randopitons s'ouvre en direct sur le site source. Le mode hors ligne de cette app sauvegarde ensuite la fiche locale consultée ici.</p>
+        <p class="search-form__hint">La recherche utilise les appels API Randopitons. En mode hors ligne, seules les fiches déjà stockées dans le localStorage restent disponibles.</p>
 
         <div class="remote-search">
           <div class="keyword-picker__header">

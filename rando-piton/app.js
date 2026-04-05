@@ -9,7 +9,6 @@ function initialize() {
   updateVersionBadge()
   render()
   void loadAppVersion()
-  void loadCatalogue()
   registerServiceWorker()
 }
 

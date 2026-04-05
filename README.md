@@ -19,7 +19,7 @@ Ce dépôt contient plusieurs mini-apps web en HTML/CSS/JavaScript.
 
 ### 4) Rando Piton (PWA)
 - App : [rando-piton/index.html](rando-piton/index.html)
-- Catalogue mobile-first de randonnées à La Réunion avec favoris, filtres et fiches hors ligne.
+- Recherche mobile-first de randonnées à La Réunion via appels API Randopitons, avec favoris, filtres et fiches hors ligne.
 
 ### 5) Match3 Quest
 - App : [match3-quest/index.html](match3-quest/index.html)
@@ -45,14 +45,14 @@ Ce dépôt contient plusieurs mini-apps web en HTML/CSS/JavaScript.
 - Manifest PWA pour installation possible sur écran d'accueil.
 
 ### Rando Piton (PWA)
-- Catalogue local de randonnées consultable sans backend.
+- Recherche en ligne via appels API Randopitons (pas de catalogue JSON bundlé).
 - Bouton de recherche flottant ouvrant un panneau au besoin, avec formulaire par mot-clé et validation explicite dans l'esprit de Randopitons.
 - Suggestions de recherche Randopitons chargées via proxy CORS depuis le panneau de recherche, avec ouverture directe des résultats source.
 - Import direct d'une suggestion Randopitons en fiche locale puis ajout immédiat au mode hors ligne.
 - Affichage de la version actuelle du site directement dans l'en-tête de l'application.
 - Filtres par difficulté et vues dédiées pour favoris / hors ligne.
 - Sauvegarde locale des randonnées favorites.
-- Sauvegarde des fiches pour consultation hors ligne via service worker et Cache API.
+- Sauvegarde locale (localStorage + cache) des fiches pour consultation hors ligne après import préalable.
 - Flux prévu pour les traces Randopitons : connexion sur le site source, téléchargement manuel du GPX/KML, puis import local dans l'app pour usage hors ligne.
 - Les fiches affichent aussi un itinéraire public lisible sans connexion, distinct du téléchargement de trace protégé.
 - Interface mobile-first prévue pour installation comme application.

@@ -34,14 +34,12 @@ function toggleSetValue(set, value) {
 
 function initializeBaseTrails() {
   const stored = localStorage.getItem(STORAGE_KEYS.baseTrails)
-  if (!stored) {
-    localStorage.setItem(STORAGE_KEYS.baseTrails, JSON.stringify(DEFAULT_BASE_TRAILS))
-    return [...DEFAULT_BASE_TRAILS]
-  }
+  if (!stored) return []
   try {
-    return JSON.parse(stored)
+    const parsed = JSON.parse(stored)
+    return Array.isArray(parsed) ? parsed : []
   } catch {
-    return [...DEFAULT_BASE_TRAILS]
+    return []
   }
 }
 
@@ -61,7 +59,6 @@ const state = {
   remoteSuggestionsStatus: "Saisissez au moins 2 lettres",
   remoteSearchRequestId: 0,
   appVersion: VERSION_FALLBACK,
-  catalogueLoaded: false,
   liveResults: [],
   liveResultsQuery: "",
   liveResultsStatus: "",

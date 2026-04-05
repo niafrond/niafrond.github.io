@@ -76,31 +76,8 @@ async function fetchRemoteTrailDetails(suggestion) {
   return buildTrailFromRemoteMarkdown(suggestion, sourceUrl, markdown)
 }
 
-// ─── Chargement du catalogue complet (catalogue.json bundlé) ────────────────
-// Charge les 907 fiches Randopitons en une seule requête fetch.
-// Les fiches hors Réunion (isReunion: false) sont exclues.
-// La session est démarrée avec les DEFAULT_BASE_TRAILS (3 fiches) ; le catalogue
-// remplace dès qu'il est disponible, sans besoin de localStorage intermédiaire.
-
-async function loadCatalogue() {
-  try {
-    const response = await fetch("catalogue.json", { cache: "force-cache" })
-    if (!response.ok) throw new Error("Catalogue indisponible")
-    const data = await response.json()
-    const trails = (Array.isArray(data.trails) ? data.trails : [])
-      .filter((t) => t.isReunion !== false)
-      .map(normalizeCatalogueEntry)
-
-    if (!trails.length) return
-
-    state.baseTrails = trails
-    state.catalogueLoaded = true
-    rebuildTrailIndex()
-    render()
-  } catch {
-    // Garder les fiches de secours DEFAULT_BASE_TRAILS déjà en place
-  }
-}
+// Pas de catalogue JSON local: les résultats en ligne proviennent des appels API
+// Randopitons, et le mode hors ligne s'appuie sur les fiches déjà stockées localement.
 
 // ─── Recherche live Randopitons si aucun résultat local ──────────────────────
 // Appelé par renderTrailList quand getFilteredTrails() retourne 0 avec une query.
@@ -108,7 +85,7 @@ async function loadCatalogue() {
 
 async function searchLiveIfNeeded(query) {
   if (!navigator.onLine) {
-    state.liveResultsStatus = "Hors ligne — recherche Randopitons indisponible"
+    state.liveResultsStatus = "Hors ligne — seules les fiches déjà stockées localement sont disponibles"
     renderTrailList()
     return
   }
