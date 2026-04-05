@@ -1,3 +1,9 @@
+## [1.35.0](https://github.com/niafrond/niafrond.github.io/compare/v1.34.1...v1.35.0) (2026-04-05)
+
+### Features
+
+* Copilot Dev — mobile PWA to send prompts and apply generated code to a GitHub repo ([#10](https://github.com/niafrond/niafrond.github.io/issues/10)) ([a3b6569](https://github.com/niafrond/niafrond.github.io/commit/a3b6569477ee23bd8307c3c45ba156e316cbc345))
+
 ## [1.34.1](https://github.com/niafrond/niafrond.github.io/compare/v1.34.0...v1.34.1) (2026-04-05)
 
 ### Bug Fixes
