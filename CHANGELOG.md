@@ -1,3 +1,9 @@
+## [1.31.0](https://github.com/niafrond/niafrond.github.io/compare/v1.30.0...v1.31.0) (2026-04-05)
+
+### Features
+
+* **rando-piton:** ajouter des fonctionnalités d'expansion et de réduction à la liste des sentiers ([4d7da8b](https://github.com/niafrond/niafrond.github.io/commit/4d7da8b3fb2029d53a1bf463d96775d7382edd4d))
+
 ## [1.30.0](https://github.com/niafrond/niafrond.github.io/compare/v1.29.0...v1.30.0) (2026-04-05)
 
 ### Features
