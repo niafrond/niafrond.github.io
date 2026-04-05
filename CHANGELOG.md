@@ -1,3 +1,9 @@
+## [1.29.0](https://github.com/niafrond/niafrond.github.io/compare/v1.28.0...v1.29.0) (2026-04-05)
+
+### Features
+
+* **rando-piton:** catalogue.json 907 fiches + recherche live + robots.txt ([af32820](https://github.com/niafrond/niafrond.github.io/commit/af328209398ef3dcfe2654d88d81e05f0637e69e))
+
 ## [1.28.0](https://github.com/niafrond/niafrond.github.io/compare/v1.27.0...v1.28.0) (2026-04-05)
 
 ### Features
