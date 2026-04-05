@@ -1,3 +1,9 @@
+## [1.21.0](https://github.com/niafrond/niafrond.github.io/compare/v1.20.0...v1.21.0) (2026-04-05)
+
+### Features
+
+* add initial implementation of Rando Piton PWA with hiking trails data ([f33feae](https://github.com/niafrond/niafrond.github.io/commit/f33feaea3101df6d687bf5e3c789ac7733ad41a1))
+
 ## [1.20.0](https://github.com/niafrond/niafrond.github.io/compare/v1.19.0...v1.20.0) (2026-04-03)
 
 ### Features
