@@ -1,3 +1,9 @@
+## [1.34.1](https://github.com/niafrond/niafrond.github.io/compare/v1.34.0...v1.34.1) (2026-04-05)
+
+### Bug Fixes
+
+* correct GPX URL format to include /trace/ segment ([#9](https://github.com/niafrond/niafrond.github.io/issues/9)) ([2c36da5](https://github.com/niafrond/niafrond.github.io/commit/2c36da5b91235fa91de967a9a20df1ddbeb3f43e))
+
 ## [1.34.0](https://github.com/niafrond/niafrond.github.io/compare/v1.33.4...v1.34.0) (2026-04-05)
 
 ### Features
