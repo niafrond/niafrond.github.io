@@ -42,19 +42,12 @@
 
     <main class="layout">
       <aside class="sidebar card">
-        <label class="search-field" for="searchInput">
-          <span>Recherche</span>
-          <input id="searchInput" type="search" placeholder="Un ou plusieurs mots-clés...">
-        </label>
+        <div id="activeSearchSummary" class="active-search-summary" hidden>
+          <span class="active-search-summary__label">Recherche active</span>
+          <strong id="activeSearchText"></strong>
+        </div>
 
-        <div class="filter-row">
-          <label>
-            <span>Mode recherche</span>
-            <select id="searchModeFilter">
-              <option value="keywords">Mots-clés</option>
-              <option value="text">Texte libre</option>
-            </select>
-          </label>
+        <div class="filter-row filter-row--compact">
           <label>
             <span>Difficulté</span>
             <select id="difficultyFilter">
@@ -75,14 +68,6 @@
           </label>
         </div>
 
-        <div class="keyword-picker">
-          <div class="keyword-picker__header">
-            <span>Mots-clés rapides</span>
-            <button id="clearKeywordsBtn" type="button" class="keyword-picker__clear">Effacer</button>
-          </div>
-          <div id="keywordChips" class="keyword-chips" aria-live="polite"></div>
-        </div>
-
         <div id="trailList" class="trail-list" aria-live="polite"></div>
       </aside>
 
@@ -92,6 +77,36 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <button id="searchFab" type="button" class="search-fab" aria-haspopup="dialog" aria-controls="searchOverlay" aria-expanded="false">
+    Recherche
+  </button>
+
+  <div id="searchOverlay" class="search-overlay" hidden>
+    <div id="searchBackdrop" class="search-overlay__backdrop"></div>
+    <section class="search-sheet card" role="dialog" aria-modal="true" aria-labelledby="searchSheetTitle">
+      <div class="search-sheet__header">
+        <div>
+          <p class="eyebrow">Recherche</p>
+          <h2 id="searchSheetTitle">Trouver une randonnée</h2>
+        </div>
+        <button id="closeSearchBtn" type="button" class="search-sheet__close" aria-label="Fermer la recherche">Fermer</button>
+      </div>
+
+      <label class="search-field" for="searchInput">
+        <span>Mot-clé</span>
+        <input id="searchInput" type="search" placeholder="Rechercher une randonnée, point d'intérêt, ...">
+      </label>
+
+      <div class="keyword-picker">
+        <div class="keyword-picker__header">
+          <span>Mots-clés rapides</span>
+          <button id="clearKeywordsBtn" type="button" class="keyword-picker__clear">Effacer</button>
+        </div>
+        <div id="keywordChips" class="keyword-chips" aria-live="polite"></div>
+      </div>
+    </section>
   </div>
 
   <template id="trailCardTemplate">

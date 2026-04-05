@@ -13,9 +13,10 @@ const state = {
   offline: new Set(readStoredList(STORAGE_KEYS.offline)),
   traces: readStoredMap(STORAGE_KEYS.traces),
   selectedId: localStorage.getItem(STORAGE_KEYS.selected) || null,
+  isSearchOpen: false,
+  itineraryMode: "text",
   filters: {
     query: "",
-    searchMode: "keywords",
     difficulty: "all",
     view: "all"
   }
@@ -24,12 +25,17 @@ const state = {
 const elements = {
   trailList: document.getElementById("trailList"),
   detailsPanel: document.getElementById("detailsPanel"),
+  activeSearchSummary: document.getElementById("activeSearchSummary"),
+  activeSearchText: document.getElementById("activeSearchText"),
   searchInput: document.getElementById("searchInput"),
-  searchModeFilter: document.getElementById("searchModeFilter"),
   difficultyFilter: document.getElementById("difficultyFilter"),
   viewFilter: document.getElementById("viewFilter"),
   clearKeywordsBtn: document.getElementById("clearKeywordsBtn"),
   keywordChips: document.getElementById("keywordChips"),
+  searchFab: document.getElementById("searchFab"),
+  searchOverlay: document.getElementById("searchOverlay"),
+  searchBackdrop: document.getElementById("searchBackdrop"),
+  closeSearchBtn: document.getElementById("closeSearchBtn"),
   cardTemplate: document.getElementById("trailCardTemplate"),
   countAll: document.getElementById("countAll"),
   countFavorites: document.getElementById("countFavorites"),
@@ -51,17 +57,7 @@ function initialize() {
 function bindEvents() {
   elements.searchInput.addEventListener("input", (event) => {
     state.filters.query = event.target.value.trim().toLowerCase()
-    renderTrailList()
-    renderKeywordChips()
-  })
-
-  elements.searchModeFilter.addEventListener("change", (event) => {
-    state.filters.searchMode = event.target.value
-    elements.searchInput.placeholder = state.filters.searchMode === "keywords"
-      ? "Un ou plusieurs mots-clés..."
-      : "Nom, secteur, ambiance, itinéraire..."
-    renderTrailList()
-    renderKeywordChips()
+    render()
   })
 
   elements.difficultyFilter.addEventListener("change", (event) => {
@@ -80,8 +76,25 @@ function bindEvents() {
   elements.clearKeywordsBtn.addEventListener("click", () => {
     state.filters.query = ""
     elements.searchInput.value = ""
-    renderTrailList()
-    renderKeywordChips()
+    render()
+  })
+
+  elements.searchFab.addEventListener("click", () => {
+    setSearchOverlayOpen(true)
+  })
+
+  elements.searchBackdrop.addEventListener("click", () => {
+    setSearchOverlayOpen(false)
+  })
+
+  elements.closeSearchBtn.addEventListener("click", () => {
+    setSearchOverlayOpen(false)
+  })
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.isSearchOpen) {
+      setSearchOverlayOpen(false)
+    }
   })
 }
 
@@ -95,9 +108,17 @@ function ensureInitialSelection() {
 
 function render() {
   renderCounters()
+  renderActiveSearchSummary()
   renderKeywordChips()
   renderTrailList()
   renderDetails()
+}
+
+function renderActiveSearchSummary() {
+  const hasSearch = Boolean(state.filters.query)
+  elements.activeSearchSummary.hidden = !hasSearch
+  elements.activeSearchText.textContent = hasSearch ? state.filters.query : ""
+  elements.searchFab.textContent = hasSearch ? `Recherche: ${state.filters.query}` : "Recherche"
 }
 
 function renderCounters() {
@@ -133,24 +154,14 @@ function matchesTrailQuery(trail) {
   }
 
   const keywordIndex = [
-    ...(trail.keywords || []),
-    ...(trail.highlights || []),
-    ...(trail.publicItinerary || [])
-  ].join(" ").toLowerCase()
-
-  const freeTextIndex = [
     trail.title,
     trail.area,
-    trail.summary,
-    trail.vibe,
-    trail.access,
     ...(trail.keywords || []),
     ...(trail.highlights || []),
     ...(trail.publicItinerary || [])
   ].join(" ").toLowerCase()
 
-  const haystack = state.filters.searchMode === "keywords" ? keywordIndex : freeTextIndex
-  return terms.every((term) => haystack.includes(term))
+  return terms.every((term) => keywordIndex.includes(term))
 }
 
 function renderKeywordChips() {
@@ -173,16 +184,23 @@ function renderKeywordChips() {
         ? activeTerms.filter((term) => term !== keyword)
         : [...activeTerms, keyword]
 
-      state.filters.searchMode = "keywords"
-      elements.searchModeFilter.value = "keywords"
       state.filters.query = nextTerms.join(" ")
       elements.searchInput.value = state.filters.query
-      elements.searchInput.placeholder = "Un ou plusieurs mots-clés..."
-      renderTrailList()
-      renderKeywordChips()
+      render()
     })
 
     elements.keywordChips.appendChild(chip)
+  }
+}
+
+function setSearchOverlayOpen(isOpen) {
+  state.isSearchOpen = isOpen
+  elements.searchOverlay.hidden = !isOpen
+  elements.searchFab.setAttribute("aria-expanded", String(isOpen))
+
+  if (isOpen) {
+    elements.searchInput.focus()
+    elements.searchInput.select()
   }
 }
 
@@ -270,10 +288,11 @@ function renderDetails() {
   const isFavorite = state.favorites.has(trail.id)
   const isOffline = state.offline.has(trail.id)
   const traceInfo = state.traces[trail.id] || null
+  const itineraryMode = traceInfo && state.itineraryMode === "map" ? "map" : "text"
 
   elements.detailsPanel.innerHTML = `
-    <div class="details__hero">
-      <div class="detail-tags">
+    <div class="details__hero details__hero--compact">
+      <div class="detail-tags detail-tags--compact">
         <li>${trail.area}</li>
         <li>${trail.difficulty}</li>
         <li>${isOffline ? "Fiche hors ligne" : "Fiche non sauvegardée"}</li>
@@ -281,7 +300,7 @@ function renderDetails() {
       </div>
       <h2>${trail.title}</h2>
       <p class="detail-lead">${trail.summary}</p>
-      <div class="detail-actions">
+      <div class="detail-actions detail-actions--compact">
         <button type="button" class="action" data-action="favorite">
           ${isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
         </button>
@@ -293,39 +312,58 @@ function renderDetails() {
         <button type="button" class="action action--secondary" data-action="download-trace" ${traceInfo ? "" : "disabled"}>Télécharger la trace locale</button>
         <button type="button" class="action action--secondary" data-action="remove-trace" ${traceInfo ? "" : "disabled"}>Supprimer la trace</button>
       </div>
-      <div class="source-note">
-        <strong>Connexion requise sur Randopitons</strong>
-        <p>La page source affiche explicitement qu'il faut être connecté pour télécharger les traces. Cette app ne peut pas réutiliser automatiquement cette session distante. Le flux prévu est donc: ouvrir la fiche Randopitons, se connecter, télécharger le GPX/KML, puis l'importer ici pour l'avoir hors ligne.</p>
+      <div class="compact-metrics">
+        <div class="metric"><strong>${trail.duration}</strong><span>durée</span></div>
+        <div class="metric"><strong>${trail.distance}</strong><span>distance</span></div>
+        <div class="metric"><strong>${trail.elevation}</strong><span>dénivelé</span></div>
       </div>
     </div>
-    <div class="detail-grid">
-      <section class="panel">
-        <h3>Repères</h3>
-        <div class="detail-metrics">
-          <div class="metric"><strong>${trail.duration}</strong><span>durée</span></div>
-          <div class="metric"><strong>${trail.distance}</strong><span>distance</span></div>
-          <div class="metric"><strong>${trail.elevation}</strong><span>dénivelé</span></div>
+    <section class="panel panel--itinerary">
+      <div class="panel__header panel__header--split">
+        <div>
+          <h3>Itinéraire</h3>
+          <p class="panel__hint">Affichage prioritaire du parcours en texte ou en carte.</p>
         </div>
-        <h3>Ambiance</h3>
+        <div class="itinerary-switch" role="tablist" aria-label="Mode d'affichage de l'itinéraire">
+          <button type="button" class="itinerary-switch__button ${itineraryMode === "text" ? "is-active" : ""}" data-action="itinerary-text" aria-pressed="${itineraryMode === "text"}">Texte</button>
+          <button type="button" class="itinerary-switch__button ${itineraryMode === "map" ? "is-active" : ""}" data-action="itinerary-map" aria-pressed="${itineraryMode === "map"}" ${traceInfo ? "" : "disabled"}>Carte</button>
+        </div>
+      </div>
+      <div class="itinerary-stage ${itineraryMode === "map" ? "is-map" : "is-text"}">
+        <div class="itinerary-stage__text" ${itineraryMode === "text" ? "" : "hidden"}>
+          <ul class="itinerary-steps">${renderItinerary(trail)}</ul>
+        </div>
+        <div class="itinerary-stage__map" ${itineraryMode === "map" ? "" : "hidden"}>
+          <div class="trace-map trace-map--priority" data-trace-map>
+            <div class="trace-map__empty">Importez un GPX, KML ou GeoJSON pour afficher la trace ici.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <div class="detail-grid detail-grid--secondary">
+      <section class="panel panel--compact">
+        <h3>Repères</h3>
         <p>${trail.vibe}</p>
-        <h3>Temps forts</h3>
-        <ul class="detail-tags">${trail.highlights.map((item) => `<li>${item}</li>`).join("")}</ul>
-        <h3>Mots-clés</h3>
-        <div class="detail-keywords">${(trail.keywords || []).map((keyword) => `<span>${keyword}</span>`).join("")}</div>
-        <h3>Itinéraire public</h3>
-        <ul class="itinerary-steps">${renderItinerary(trail)}</ul>
+        <div class="detail-tags detail-tags--compact-list">${trail.highlights.map((item) => `<li>${item}</li>`).join("")}</div>
       </section>
-      <section class="panel">
+      <section class="panel panel--compact">
         <h3>Accès</h3>
         <p class="detail-access">${trail.access}</p>
-        <h3>Checklist hors ligne</h3>
-        <ul class="checklist">${trail.offlineChecklist.map((item) => `<li>${item}</li>`).join("")}</ul>
         <div class="trace-status">
           <p>${formatTraceStatus(traceInfo)}</p>
         </div>
-        <h3>Carte de la trace</h3>
-        <div class="trace-map" data-trace-map>
-          <div class="trace-map__empty">Importez un GPX, KML ou GeoJSON pour afficher la trace ici.</div>
+      </section>
+      <section class="panel panel--compact">
+        <h3>Mots-clés</h3>
+        <div class="detail-keywords">${(trail.keywords || []).map((keyword) => `<span>${keyword}</span>`).join("")}</div>
+        <h3>Checklist</h3>
+        <ul class="checklist">${trail.offlineChecklist.map((item) => `<li>${item}</li>`).join("")}</ul>
+      </section>
+      <section class="panel panel--compact">
+        <h3>Source</h3>
+        <div class="source-note source-note--compact">
+          <strong>Connexion requise sur Randopitons</strong>
+          <p>La trace protégée reste liée à la connexion sur le site source. Ici, l'itinéraire public reste lisible sans connexion et la trace importée peut être vue sur carte.</p>
         </div>
       </section>
     </div>
@@ -373,7 +411,23 @@ function renderDetails() {
     render()
   })
 
-  void renderTraceMapForTrail(trail.id)
+  elements.detailsPanel.querySelector('[data-action="itinerary-text"]').addEventListener("click", () => {
+    state.itineraryMode = "text"
+    renderDetails()
+  })
+
+  elements.detailsPanel.querySelector('[data-action="itinerary-map"]').addEventListener("click", () => {
+    if (!traceInfo) {
+      return
+    }
+
+    state.itineraryMode = "map"
+    renderDetails()
+  })
+
+  if (itineraryMode === "map") {
+    void renderTraceMapForTrail(trail.id)
+  }
 }
 
 function readStoredList(key) {
