@@ -1,3 +1,9 @@
+## [1.28.0](https://github.com/niafrond/niafrond.github.io/compare/v1.27.0...v1.28.0) (2026-04-05)
+
+### Features
+
+* ajouter des sentiers de randonnée par défaut et supprimer le fichier de données ([e4b5105](https://github.com/niafrond/niafrond.github.io/commit/e4b5105850d3da479af511eab1a6954739466f55))
+
 ## [1.27.0](https://github.com/niafrond/niafrond.github.io/compare/v1.26.0...v1.27.0) (2026-04-05)
 
 ### Features
