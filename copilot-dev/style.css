@@ -491,6 +491,20 @@ select {
   to { transform: rotate(360deg); }
 }
 
+/* ─── Code block (no external highlight.js) ─────────────────────────────────── */
+
+.file-card-body pre {
+  background: #0d1117;
+}
+
+.file-card-body pre code {
+  display: block;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  color: #c9d1d9;
+  white-space: pre;
+  overflow-x: auto;
+}
+
 /* ─── Review screen ─────────────────────────────────────────── */
 
 .review-files {

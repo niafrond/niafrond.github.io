@@ -236,7 +236,7 @@ async function startDeviceFlow() {
     els.deviceFlowStatus.textContent = "En attente de votre autorisation…";
 
     const deadline = Date.now() + (expires_in || 900) * 1000;
-    const pollMs = Math.max((interval || 5), 5) * 1000;
+    const pollMs = (interval || 5) * 1000;
     const token = await pollForToken(clientId, device_code, pollMs, deadline, abort.signal);
 
     applyToken(token);
