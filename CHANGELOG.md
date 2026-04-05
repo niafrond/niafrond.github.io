@@ -1,3 +1,9 @@
+## [1.35.1](https://github.com/niafrond/niafrond.github.io/compare/v1.35.0...v1.35.1) (2026-04-05)
+
+### Bug Fixes
+
+* catch network fetch error and show user-friendly message in rando-piton ([#11](https://github.com/niafrond/niafrond.github.io/issues/11)) ([2bb0a1d](https://github.com/niafrond/niafrond.github.io/commit/2bb0a1da855b67c85023e8d11d4119c9e1a8f3c7))
+
 ## [1.35.0](https://github.com/niafrond/niafrond.github.io/compare/v1.34.1...v1.35.0) (2026-04-05)
 
 ### Features
