@@ -94,6 +94,6 @@ async function downloadGpxForTrail(trail) {
   }
 
   // Format d'URL GPX observé sur randopitons.re pour les membres connectés
-  const gpxUrl = `${RANDOPITONS_BASE_URL}/randonnee/${trailId}/gpx`
+  const gpxUrl = `${RANDOPITONS_BASE_URL}/randonnee/${trailId}/trace/gpx`
   return fetchGpxBlob(gpxUrl)
 }
