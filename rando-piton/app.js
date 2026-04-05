@@ -51,8 +51,10 @@ function bindEvents() {
     state.searchDraft = ""
     state.filters.query = ""
     state.filters.view = "all"
+    state.filters.difficulty = "all"
     elements.searchInput.value = ""
     elements.viewFilter.value = "all"
+    elements.difficultyFilter.value = "all"
     render()
   })
 

@@ -46,6 +46,12 @@ function updateVersionBadge() {
 
 // ─── Filtres ─────────────────────────────────────────────────────────────────
 
+function hasActiveFilters() {
+  return Boolean(state.filters.query)
+    || state.filters.view !== "all"
+    || state.filters.difficulty !== "all"
+}
+
 function getFilteredTrails() {
   return state.trails.filter((trail) => {
     const matchesQuery = matchesTrailQuery(trail)
@@ -218,8 +224,17 @@ function renderRemoteSuggestions() {
 // ─── Liste des randonnées ────────────────────────────────────────────────────
 
 function renderTrailList() {
-  const trails = getFilteredTrails()
   elements.trailList.innerHTML = ""
+
+  if (!hasActiveFilters()) {
+    const hint = document.createElement("div")
+    hint.className = "empty-list"
+    hint.textContent = "Utilisez la recherche pour trouver une randonnée."
+    elements.trailList.appendChild(hint)
+    return
+  }
+
+  const trails = getFilteredTrails()
 
   if (!trails.length) {
     const hasQuery = Boolean(state.filters.query)
@@ -358,6 +373,11 @@ function renderLiveResultsSection(liveTrails) {
 // ─── Fiche détail ────────────────────────────────────────────────────────────
 
 function renderDetails() {
+  if (!hasActiveFilters()) {
+    elements.detailsPanel.innerHTML = '<div class="details__empty"><p>Sélectionnez une randonnée pour afficher sa fiche.</p></div>'
+    return
+  }
+
   const trail = state.trails.find((item) => item.id === state.selectedId)
 
   if (!trail) {
