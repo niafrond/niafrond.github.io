@@ -102,8 +102,19 @@
 
         <div class="search-form__actions">
           <button type="submit" class="action">Rechercher</button>
+          <button id="searchSourceBtn" type="button" class="action action--ghost">Chercher sur Randopitons</button>
           <button id="showOfflineBtn" type="button" class="action action--secondary">Fiches hors ligne</button>
           <button id="clearKeywordsBtn" type="button" class="action action--secondary">Effacer</button>
+        </div>
+
+        <p class="search-form__hint">La recherche Randopitons s'ouvre en direct sur le site source. Le mode hors ligne de cette app sauvegarde ensuite la fiche locale consultée ici.</p>
+
+        <div class="remote-search">
+          <div class="keyword-picker__header">
+            <span>Suggestions Randopitons</span>
+            <span id="remoteSearchStatus" class="remote-search__status">Saisissez au moins 2 lettres</span>
+          </div>
+          <div id="remoteSuggestions" class="remote-suggestions" aria-live="polite"></div>
         </div>
 
         <div class="keyword-picker">

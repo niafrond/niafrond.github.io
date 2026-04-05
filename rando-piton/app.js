@@ -6,6 +6,8 @@ const STORAGE_KEYS = {
 }
 
 const USER_CACHE_NAME = "rando-piton-user-offline-v1"
+const RANDOPITONS_BASE_URL = "https://randopitons.re"
+const RANDOPITONS_SUGGESTIONS_PROXY = "https://api.allorigins.win/raw?url="
 
 const state = {
   trails: window.RANDO_PITON_DATA || [],
@@ -16,6 +18,9 @@ const state = {
   isSearchOpen: false,
   itineraryMode: "text",
   searchDraft: "",
+  remoteSuggestions: [],
+  remoteSuggestionsStatus: "Saisissez au moins 2 lettres",
+  remoteSearchRequestId: 0,
   filters: {
     query: "",
     difficulty: "all",
@@ -30,8 +35,11 @@ const elements = {
   activeSearchText: document.getElementById("activeSearchText"),
   searchForm: document.getElementById("searchForm"),
   searchInput: document.getElementById("searchInput"),
+  remoteSearchStatus: document.getElementById("remoteSearchStatus"),
+  remoteSuggestions: document.getElementById("remoteSuggestions"),
   difficultyFilter: document.getElementById("difficultyFilter"),
   viewFilter: document.getElementById("viewFilter"),
+  searchSourceBtn: document.getElementById("searchSourceBtn"),
   showOfflineBtn: document.getElementById("showOfflineBtn"),
   clearKeywordsBtn: document.getElementById("clearKeywordsBtn"),
   keywordChips: document.getElementById("keywordChips"),
@@ -61,6 +69,7 @@ function bindEvents() {
   elements.searchInput.addEventListener("input", (event) => {
     state.searchDraft = event.target.value
     renderKeywordChips()
+    void refreshRemoteSuggestions(event.target.value)
   })
 
   elements.searchForm.addEventListener("submit", (event) => {
@@ -101,6 +110,10 @@ function bindEvents() {
     setSearchOverlayOpen(false)
   })
 
+  elements.searchSourceBtn.addEventListener("click", () => {
+    openRandopitonsSearch(state.searchDraft || state.filters.query)
+  })
+
   elements.searchFab.addEventListener("click", () => {
     setSearchOverlayOpen(true)
   })
@@ -132,8 +145,61 @@ function render() {
   renderCounters()
   renderActiveSearchSummary()
   renderKeywordChips()
+  renderRemoteSuggestions()
   renderTrailList()
   renderDetails()
+}
+
+function renderRemoteSuggestions() {
+  elements.remoteSearchStatus.textContent = state.remoteSuggestionsStatus
+  elements.remoteSuggestions.innerHTML = ""
+
+  if (!state.remoteSuggestions.length) {
+    return
+  }
+
+  for (const suggestion of state.remoteSuggestions) {
+    const row = document.createElement("div")
+    row.className = "remote-suggestion"
+
+    const content = document.createElement("div")
+    content.className = "remote-suggestion__content"
+
+    const title = document.createElement("span")
+    title.className = "remote-suggestion__title"
+    title.textContent = suggestion.value
+
+    const meta = document.createElement("span")
+    meta.className = "remote-suggestion__meta"
+    meta.textContent = suggestion.data?.region || "Randopitons"
+
+    content.append(title, meta)
+
+    const actions = document.createElement("div")
+    actions.className = "remote-suggestion__actions"
+
+    const openButton = document.createElement("button")
+    openButton.type = "button"
+    openButton.className = "remote-suggestion__button"
+    openButton.textContent = "Ouvrir"
+    openButton.addEventListener("click", () => {
+      openRandopitonsUrl(suggestion.data?.url)
+    })
+
+    const fillButton = document.createElement("button")
+    fillButton.type = "button"
+    fillButton.className = "remote-suggestion__button"
+    fillButton.textContent = "Filtrer ici"
+    fillButton.addEventListener("click", () => {
+      state.searchDraft = suggestion.value
+      elements.searchInput.value = suggestion.value
+      applySearch(suggestion.value)
+    })
+
+    actions.append(openButton, fillButton)
+    row.append(content, actions)
+    elements.remoteSuggestions.appendChild(row)
+  }
 }
 
 function renderActiveSearchSummary() {
@@ -231,6 +297,7 @@ function setSearchOverlayOpen(isOpen) {
   if (isOpen) {
     state.searchDraft = state.filters.query
     elements.searchInput.value = state.searchDraft
+    void refreshRemoteSuggestions(state.searchDraft)
     elements.searchInput.focus()
     elements.searchInput.select()
   }
@@ -240,6 +307,72 @@ function applySearch(rawQuery) {
   state.filters.query = rawQuery.trim().toLowerCase()
   state.searchDraft = rawQuery.trim().toLowerCase()
   render()
+}
+
+function openRandopitonsSearch(rawQuery) {
+  const query = rawQuery.trim()
+  const searchUrl = query
+    ? `${RANDOPITONS_BASE_URL}/recherche?q=${encodeURIComponent(query)}`
+    : `${RANDOPITONS_BASE_URL}/recherche`
+
+  window.open(searchUrl, "_blank", "noopener,noreferrer")
+}
+
+function openRandopitonsUrl(relativeOrAbsoluteUrl) {
+  const url = relativeOrAbsoluteUrl
+    ? new URL(relativeOrAbsoluteUrl, RANDOPITONS_BASE_URL).toString()
+    : `${RANDOPITONS_BASE_URL}/recherche`
+
+  window.open(url, "_blank", "noopener,noreferrer")
+}
+
+async function refreshRemoteSuggestions(rawQuery) {
+  const query = rawQuery.trim()
+  const requestId = ++state.remoteSearchRequestId
+
+  if (query.length < 2) {
+    state.remoteSuggestions = []
+    state.remoteSuggestionsStatus = "Saisissez au moins 2 lettres"
+    renderRemoteSuggestions()
+    return
+  }
+
+  state.remoteSuggestionsStatus = "Recherche Randopitons..."
+  renderRemoteSuggestions()
+
+  try {
+    const suggestions = await fetchRandopitonsSuggestions(query)
+    if (requestId !== state.remoteSearchRequestId) {
+      return
+    }
+
+    state.remoteSuggestions = suggestions.slice(0, 8)
+    state.remoteSuggestionsStatus = state.remoteSuggestions.length
+      ? `${state.remoteSuggestions.length} suggestion${state.remoteSuggestions.length > 1 ? "s" : ""}`
+      : "Aucune suggestion distante"
+    renderRemoteSuggestions()
+  } catch {
+    if (requestId !== state.remoteSearchRequestId) {
+      return
+    }
+
+    state.remoteSuggestions = []
+    state.remoteSuggestionsStatus = "Proxy indisponible"
+    renderRemoteSuggestions()
+  }
+}
+
+async function fetchRandopitonsSuggestions(query) {
+  const targetUrl = `${RANDOPITONS_BASE_URL}/recherche/suggestions?query=${encodeURIComponent(query)}`
+  const proxyUrl = `${RANDOPITONS_SUGGESTIONS_PROXY}${encodeURIComponent(targetUrl)}`
+  const response = await fetch(proxyUrl)
+
+  if (!response.ok) {
+    throw new Error("Erreur proxy")
+  }
+
+  const payload = await response.json()
+  return Array.isArray(payload.suggestions) ? payload.suggestions : []
 }
 
 function getPopularKeywords() {
