@@ -1,3 +1,9 @@
+## [1.33.1](https://github.com/niafrond/niafrond.github.io/compare/v1.33.0...v1.33.1) (2026-04-05)
+
+### Bug Fixes
+
+* **rando-piton:** corriger les appels API (Jina HTTPS et compteur séparé) ([#3](https://github.com/niafrond/niafrond.github.io/issues/3)) ([7a4c7df](https://github.com/niafrond/niafrond.github.io/commit/7a4c7df1264c2dda803148443fb8380c6e1e1763))
+
 ## [1.33.0](https://github.com/niafrond/niafrond.github.io/compare/v1.32.1...v1.33.0) (2026-04-05)
 
 ### Features
