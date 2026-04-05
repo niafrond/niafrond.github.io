@@ -26,6 +26,7 @@ const els = {
   deviceFlowBanner: document.getElementById("device-flow-banner"),
   deviceFlowUrl: document.getElementById("device-flow-url"),
   deviceFlowCode: document.getElementById("device-flow-code"),
+  deviceFlowCopy: document.getElementById("device-flow-copy"),
   deviceFlowStatus: document.getElementById("device-flow-status"),
   deviceFlowCancel: document.getElementById("device-flow-cancel"),
 };
@@ -223,6 +224,20 @@ function bindEvents() {
   });
 
   els.deviceFlowCancel.addEventListener("click", cancelDeviceFlow);
+
+  const deviceFlowCopyLabel = els.deviceFlowCopy.textContent;
+  els.deviceFlowCopy.addEventListener("click", async () => {
+    const code = els.deviceFlowCode.textContent.trim();
+    if (!code || code === "…") return;
+    try {
+      await navigator.clipboard.writeText(code);
+      els.deviceFlowStatus.textContent = "";
+      els.deviceFlowCopy.textContent = "Copié ✅";
+      setTimeout(() => { els.deviceFlowCopy.textContent = deviceFlowCopyLabel; }, 2000);
+    } catch {
+      els.deviceFlowStatus.textContent = "Impossible de copier automatiquement.";
+    }
+  });
 
   els.openCopilot.addEventListener("click", () => {
     window.open("https://github.com/copilot", "_blank", "noopener,noreferrer");
