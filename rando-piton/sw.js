@@ -1,10 +1,17 @@
 const CACHE_PREFIX = "rando-piton-"
-const CACHE_NAME = `${CACHE_PREFIX}shell-v2`
+const CACHE_NAME = `${CACHE_PREFIX}shell-v3`
 
 const APP_ASSETS = [
   "./",
   "./index.html",
   "./style.css",
+  "./constants.js",
+  "./state.js",
+  "./auth.js",
+  "./api.js",
+  "./trails.js",
+  "./trace.js",
+  "./render.js",
   "./app.js",
   "./manifest.json",
   "./icon.svg"

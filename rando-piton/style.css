@@ -832,4 +832,43 @@ select {
     right: 14px;
     bottom: 14px;
   }
+}}
+
+/* --- Auth section --- */
+.auth-section {
+  margin-top: 8px;
+}
+
+.auth-section__note {
+  margin-bottom: 10px;
+  font-size: 0.9em;
+  color: var(--text-muted, #5a6b60);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-email-input {
+  padding: 8px 12px;
+  border: 1px solid rgba(23, 50, 44, 0.2);
+  border-radius: 8px;
+  font-size: 0.9em;
+  background: white;
+  color: var(--primary);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.auth-email-input:focus {
+  outline: 2px solid var(--accent, #c96f3b);
+  border-color: transparent;
+}
+
+.auth-form__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
