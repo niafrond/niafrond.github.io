@@ -45,11 +45,21 @@ async function importRemoteSuggestionAsOffline(suggestion) {
   await cacheOfflineSelection(trail.id)
 }
 
-// ─── Construction d'une fiche depuis le markdown Jina ────────────────────────
+// ─── Construction d'une fiche depuis le HTML brut ────────────────────────────
 
-function buildTrailFromRemoteMarkdown(suggestion, sourceUrl, markdown) {
-  const title = extractRemoteTitle(markdown, suggestion.value)
-  const proseLines = extractRemoteProse(markdown)
+function buildTrailFromRemoteHTML(suggestion, sourceUrl, html) {
+  const doc = new DOMParser().parseFromString(html, "text/html")
+
+  const h1Text = doc.querySelector("h1")?.textContent?.trim() || ""
+  const titleTag = (doc.querySelector("title")?.textContent?.trim() || "")
+    .replace(/\s*[—–-]\s*Randopitons.*$/i, "").trim()
+  const title = h1Text || titleTag || suggestion.value
+
+  const proseLines = Array.from(doc.querySelectorAll("p"))
+    .map((el) => el.textContent.trim())
+    .filter((line) => line.length > 80)
+    .slice(0, 5)
+
   const itinerary = proseLines.slice(0, 3)
   const summary = proseLines[0] || `${title} importée depuis Randopitons.`
   const keywords = buildRemoteKeywords(title, suggestion.data?.region, proseLines)
@@ -72,27 +82,6 @@ function buildTrailFromRemoteMarkdown(suggestion, sourceUrl, markdown) {
     vibe: proseLines[2] || "Fiche importée depuis Randopitons",
     publicItinerary: itinerary.length ? itinerary : [summary]
   }
-}
-
-function extractRemoteTitle(markdown, fallbackTitle) {
-  const titleLine = markdown.match(/^Title:\s*(.+)$/m)?.[1]?.trim()
-  if (titleLine) return titleLine
-
-  const headingLine = markdown.match(/^#\s+(.+?)\s+—\s+Randopitons$/m)?.[1]?.trim()
-  return headingLine || fallbackTitle
-}
-
-function extractRemoteProse(markdown) {
-  return markdown
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 120)
-    .filter((line) => !line.startsWith("#"))
-    .filter((line) => !line.startsWith("*"))
-    .filter((line) => !line.startsWith("["))
-    .filter((line) => !line.startsWith("!"))
-    .filter((line) => !line.startsWith("Title:"))
-    .slice(0, 5)
 }
 
 function buildRemoteKeywords(title, region, proseLines) {

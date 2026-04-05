@@ -61,18 +61,18 @@ async function refreshRemoteSuggestions(rawQuery) {
   }
 }
 
-// ─── Détail d'une fiche distante via Jina reader ─────────────────────────────
+// ─── Détail d'une fiche distante via proxy allorigins ────────────────────────
 
 async function fetchRemoteTrailDetails(suggestion) {
   const relativeUrl = suggestion.data.url
   const sourceUrl = new URL(relativeUrl, RANDOPITONS_BASE_URL).toString()
-  const proxyUrl = `https://r.jina.ai/${sourceUrl}`
+  const proxyUrl = `${RANDOPITONS_SUGGESTIONS_PROXY}${encodeURIComponent(sourceUrl)}`
   const response = await fetch(proxyUrl)
 
   if (!response.ok) throw new Error("Proxy distant indisponible")
 
-  const markdown = await response.text()
-  return buildTrailFromRemoteMarkdown(suggestion, sourceUrl, markdown)
+  const html = await response.text()
+  return buildTrailFromRemoteHTML(suggestion, sourceUrl, html)
 }
 
 // Pas de catalogue JSON local: les résultats en ligne proviennent des appels API
