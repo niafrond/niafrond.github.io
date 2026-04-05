@@ -1,3 +1,9 @@
+## [1.32.0](https://github.com/niafrond/niafrond.github.io/compare/v1.31.0...v1.32.0) (2026-04-05)
+
+### Features
+
+* **mobile-dev-hub:** ajouter une application pour piloter GitHub avec Copilot et optimiser l'interface mobile ([d43f400](https://github.com/niafrond/niafrond.github.io/commit/d43f40069c81b3a514be5ad25e5eaceb55c83ea0))
+
 ## [1.31.0](https://github.com/niafrond/niafrond.github.io/compare/v1.30.0...v1.31.0) (2026-04-05)
 
 ### Features
