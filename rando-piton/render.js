@@ -182,7 +182,7 @@ function renderDetails() {
   const trail = state.trails.find((item) => item.id === state.selectedId)
 
   if (!trail) {
-    elements.detailsPanel.innerHTML = '<div class="details__empty"><p>Sélectionnez une randonnée pour afficher sa fiche.</p></div>'
+    elements.detailsPanel.innerHTML = '<div class="details__empty"><p>Ajoutez une randonnée via son lien Randopitons pour afficher sa fiche.</p></div>'
     return
   }
 

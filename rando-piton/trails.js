@@ -24,6 +24,15 @@ function upsertCustomTrail(trail) {
   rebuildTrailIndex()
 }
 
+async function selectAndSaveOffline(trail) {
+  state.selectedId = trail.id
+  localStorage.setItem(STORAGE_KEYS.selected, state.selectedId)
+  state.offline.add(trail.id)
+  storeSet(STORAGE_KEYS.offline, state.offline)
+  render()
+  await cacheOfflineSelection(trail.id)
+}
+
 async function importRemoteSuggestionAsOffline(suggestion) {
   const relativeUrl = suggestion?.data?.url
   if (!relativeUrl) throw new Error("Suggestion invalide")
@@ -37,12 +46,7 @@ async function importRemoteSuggestionAsOffline(suggestion) {
     upsertCustomTrail(trail)
   }
 
-  state.selectedId = trail.id
-  localStorage.setItem(STORAGE_KEYS.selected, state.selectedId)
-  state.offline.add(trail.id)
-  storeSet(STORAGE_KEYS.offline, state.offline)
-  render()
-  await cacheOfflineSelection(trail.id)
+  await selectAndSaveOffline(trail)
 }
 
 async function importTrailFromUrl(rawUrl) {
@@ -58,12 +62,7 @@ async function importTrailFromUrl(rawUrl) {
   }
 
   upsertCustomTrail(trail)
-  state.selectedId = trail.id
-  localStorage.setItem(STORAGE_KEYS.selected, state.selectedId)
-  state.offline.add(trail.id)
-  storeSet(STORAGE_KEYS.offline, state.offline)
-  render()
-  await cacheOfflineSelection(trail.id)
+  await selectAndSaveOffline(trail)
 }
 
 // ─── Construction d'une fiche depuis le HTML brut ────────────────────────────
