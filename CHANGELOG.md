@@ -1,3 +1,9 @@
+## [1.34.0](https://github.com/niafrond/niafrond.github.io/compare/v1.33.4...v1.34.0) (2026-04-05)
+
+### Features
+
+* remove useless GitHub/Copilot auth buttons and dead device flow code ([#8](https://github.com/niafrond/niafrond.github.io/issues/8)) ([73b5204](https://github.com/niafrond/niafrond.github.io/commit/73b5204600e0af83eb673e57ea014b74e109f420))
+
 ## [1.33.4](https://github.com/niafrond/niafrond.github.io/compare/v1.33.3...v1.33.4) (2026-04-05)
 
 ### Bug Fixes
