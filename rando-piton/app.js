@@ -9,6 +9,7 @@ function initialize() {
   updateVersionBadge()
   render()
   void loadAppVersion()
+  void restoreOfflineTrailsFromCache()
   registerServiceWorker()
 }
 
@@ -108,12 +109,44 @@ async function registerServiceWorker() {
   }
 }
 
+async function restoreOfflineTrailsFromCache() {
+  if (!("caches" in window)) return
+
+  const missingIds = [...state.offline].filter(
+    (id) => !state.trails.some((trail) => trail.id === id)
+  )
+  if (!missingIds.length) return
+
+  const cache = await caches.open(USER_CACHE_NAME)
+  let restored = false
+
+  for (const trailId of missingIds) {
+    const response = await cache.match(new Request(`offline-trail:${trailId}`))
+    if (!response) continue
+    try {
+      const trail = await response.json()
+      if (trail && trail.id) {
+        upsertCustomTrail(trail)
+        restored = true
+      }
+    } catch {
+      // ignore corrupted cache entries
+    }
+  }
+
+  if (restored) render()
+}
+
 async function cacheOfflineSelection(trailId) {
   if (!("caches" in window)) return
 
   const cache = await caches.open(USER_CACHE_NAME)
   const payload = state.trails.find((trail) => trail.id === trailId)
   if (!payload) return
+
+  if (!state.customTrails.some((t) => t.id === trailId)) {
+    upsertCustomTrail(payload)
+  }
 
   await cache.put(
     new Request(`offline-trail:${trailId}`),
