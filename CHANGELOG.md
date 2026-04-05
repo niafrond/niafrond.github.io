@@ -1,3 +1,9 @@
+## [1.33.0](https://github.com/niafrond/niafrond.github.io/compare/v1.32.1...v1.33.0) (2026-04-05)
+
+### Features
+
+* **mobile-dev-hub:** add GitHub OAuth Device Flow auth buttons ([#2](https://github.com/niafrond/niafrond.github.io/issues/2)) ([f092846](https://github.com/niafrond/niafrond.github.io/commit/f0928469cb5dc8afeb40b6039aa168fe4108bd08))
+
 ## [1.32.1](https://github.com/niafrond/niafrond.github.io/compare/v1.32.0...v1.32.1) (2026-04-05)
 
 ### Bug Fixes
