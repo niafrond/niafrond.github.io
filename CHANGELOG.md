@@ -1,3 +1,9 @@
+## [1.22.0](https://github.com/niafrond/niafrond.github.io/compare/v1.21.0...v1.22.0) (2026-04-05)
+
+### Features
+
+* ajouter une recherche flottante et un panneau de recherche pour Rando Piton ([783d5bc](https://github.com/niafrond/niafrond.github.io/commit/783d5bc9eec7d3658ae907be8daa315684162f9b))
+
 ## [1.21.0](https://github.com/niafrond/niafrond.github.io/compare/v1.20.0...v1.21.0) (2026-04-05)
 
 ### Features
