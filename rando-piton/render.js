@@ -64,16 +64,29 @@ function getFilteredTrails() {
 function matchesTrailQuery(trail) {
   if (!state.filters.query) return true
 
-  const terms = state.filters.query.split(/\s+/).filter(Boolean)
+  const terms = state.filters.query
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .split(/\s+/)
+    .filter(Boolean)
+
   if (!terms.length) return true
 
-  const keywordIndex = [
+  const raw = [
     trail.title,
     trail.area,
+    trail.regionGroup || "",
+    trail.type || "",
     ...(trail.keywords || []),
     ...(trail.highlights || []),
     ...(trail.publicItinerary || [])
-  ].join(" ").toLowerCase()
+  ].join(" ")
+
+  const keywordIndex = raw
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
 
   return terms.every((term) => keywordIndex.includes(term))
 }
@@ -209,12 +222,42 @@ function renderTrailList() {
   elements.trailList.innerHTML = ""
 
   if (!trails.length) {
+    const hasQuery = Boolean(state.filters.query)
+
+    // Déclencher la recherche live si filtre texte et pas encore lancée pour cette query
+    if (hasQuery && state.filters.view === "all" && state.liveResultsQuery !== state.filters.query) {
+      void searchLiveIfNeeded(state.filters.query)
+    }
+
+    // Afficher les résultats live s'il y en a
+    if (state.liveResults.length) {
+      renderLiveResultsSection(state.liveResults)
+      return
+    }
+
+    // Afficher un statut pendant la recherche en cours
+    if (state.liveResultsStatus && hasQuery) {
+      const status = document.createElement("div")
+      status.className = "empty-list empty-list--live-status"
+      status.textContent = state.liveResultsStatus
+      elements.trailList.appendChild(status)
+      if (!trails.find((trail) => trail.id === state.selectedId)) renderDetails()
+      return
+    }
+
     const empty = document.createElement("div")
     empty.className = "empty-list"
     empty.textContent = "Aucune randonnée ne correspond aux filtres courants."
     elements.trailList.appendChild(empty)
     if (!trails.find((trail) => trail.id === state.selectedId)) renderDetails()
     return
+  }
+
+  // On a des résultats locaux : réinitialiser les live results
+  if (state.liveResults.length && state.liveResultsQuery !== state.filters.query) {
+    state.liveResults = []
+    state.liveResultsQuery = ""
+    state.liveResultsStatus = ""
   }
 
   if (!trails.some((trail) => trail.id === state.selectedId)) {
@@ -255,6 +298,61 @@ function renderTrailList() {
   }
 
   renderDetails()
+}
+
+// ─── Section résultats Randopitons en live ────────────────────────────────────
+
+function renderLiveResultsSection(liveTrails) {
+  const header = document.createElement("div")
+  header.className = "live-results-header"
+  header.textContent = state.liveResultsStatus || `${liveTrails.length} résultat(s) Randopitons`
+  elements.trailList.appendChild(header)
+
+  for (const trail of liveTrails) {
+    const fragment = elements.cardTemplate.content.cloneNode(true)
+    const article = fragment.querySelector(".trail-card")
+    const button = fragment.querySelector(".trail-card__button")
+    const titleEl = fragment.querySelector("h2")
+    const difficulty = fragment.querySelector(".pill--difficulty")
+    const meta = fragment.querySelector(".trail-card__meta")
+    const summary = fragment.querySelector(".trail-card__summary")
+    const favoritePill = fragment.querySelector(".pill--favorite")
+    const offlinePill = fragment.querySelector(".pill--offline")
+    const tracePill = fragment.querySelector(".pill--trace")
+
+    titleEl.textContent = trail.title
+    difficulty.textContent = trail.area
+    meta.textContent = trail.area
+    summary.textContent = trail.summary
+    favoritePill.hidden = true
+    offlinePill.hidden = true
+    tracePill.hidden = true
+    article.classList.add("trail-card--live")
+
+    button.addEventListener("click", () => {
+      // Sélectionner ou importer selon si on l'a déjà dans le catalogue
+      const existing = state.trails.find(
+        (t) => getRandopitonsRouteKey(t.sourceUrl) === getRandopitonsRouteKey(trail.sourceUrl)
+      )
+      if (existing) {
+        state.selectedId = existing.id
+        localStorage.setItem(STORAGE_KEYS.selected, state.selectedId)
+        state.liveResults = []
+        state.liveResultsQuery = ""
+        state.liveResultsStatus = ""
+        state.filters.query = ""
+        elements.searchInput.value = ""
+        renderTrailList()
+        renderDetails()
+      } else {
+        // Ouvrir la fiche source sur Randopitons
+        openRandopitonsUrl(trail.sourceUrl)
+      }
+    })
+
+    article.dataset.id = trail.id
+    elements.trailList.appendChild(fragment)
+  }
 }
 
 // ─── Fiche détail ────────────────────────────────────────────────────────────

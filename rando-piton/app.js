@@ -9,7 +9,7 @@ function initialize() {
   updateVersionBadge()
   render()
   void loadAppVersion()
-  void refreshBaseTrailsIfNeeded()
+  void loadCatalogue()
   registerServiceWorker()
 }
 

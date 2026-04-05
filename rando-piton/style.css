@@ -872,3 +872,26 @@ select {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* --- Live results Randopitons --- */
+.live-results-header {
+  padding: 8px 12px;
+  font-size: 0.78em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent, #c96f3b);
+  background: rgba(201, 111, 59, 0.07);
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.trail-card--live {
+  opacity: 0.85;
+  border-left: 3px solid rgba(201, 111, 59, 0.4);
+}
+
+.empty-list--live-status {
+  font-style: italic;
+  color: var(--text-muted, #5a6b60);
+}

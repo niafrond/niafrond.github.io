@@ -76,78 +76,84 @@ async function fetchRemoteTrailDetails(suggestion) {
   return buildTrailFromRemoteMarkdown(suggestion, sourceUrl, markdown)
 }
 
-// ─── Actualisation périodique des fiches de base ─────────────────────────────
-// Interroge plusieurs termes représentatifs pour constituer une liste de base
-// vivante. Le résultat est mis en cache localStorage pour BASE_TRAILS_CACHE_TTL_MS.
+// ─── Chargement du catalogue complet (catalogue.json bundlé) ────────────────
+// Charge les 907 fiches Randopitons en une seule requête fetch.
+// Les fiches hors Réunion (isReunion: false) sont exclues.
+// La session est démarrée avec les DEFAULT_BASE_TRAILS (3 fiches) ; le catalogue
+// remplace dès qu'il est disponible, sans besoin de localStorage intermédiaire.
 
-const BASE_QUERIES = [
-  "piton", "cirque", "cascade", "mafate", "cilaos", "salazie",
-  "rempart", "grand bassin", "belouve", "maido"
-]
-
-async function fetchRandopitonsBaseTrails() {
-  const seen = new Set()
-  const results = []
-
-  for (const query of BASE_QUERIES) {
-    try {
-      const suggestions = await fetchRandopitonsSuggestions(query)
-      for (const s of suggestions) {
-        const routeKey = getRandopitonsRouteKey(new URL(s.data?.url || "", RANDOPITONS_BASE_URL).toString())
-        if (routeKey && !seen.has(routeKey)) {
-          seen.add(routeKey)
-          results.push({
-            id: `remote-${s.data?.url?.split("/").pop() || slugify(s.value)}`,
-            title: s.value,
-            sourceUrl: new URL(s.data?.url || "", RANDOPITONS_BASE_URL).toString(),
-            area: s.data?.region || "Randopitons",
-            difficulty: "À préciser",
-            duration: "À préciser",
-            distance: "À préciser",
-            elevation: "À préciser",
-            summary: `${s.value} — ${s.data?.region || "Réunion"}`,
-            keywords: buildRemoteKeywords(s.value, s.data?.region, []),
-            highlights: [],
-            access: "Ouvrir la fiche Randopitons pour les détails d'accès.",
-            offlineChecklist: ["Eau", "Téléphone chargé", "Vérifier météo"],
-            vibe: "Fiche Randopitons",
-            publicItinerary: [`Fiche importée en temps réel depuis Randopitons — ${s.value}.`]
-          })
-        }
-      }
-    } catch {
-      // Continuer si une requête échoue
-    }
-  }
-
-  return results
-}
-
-async function refreshBaseTrailsIfNeeded() {
-  if (!navigator.onLine) return
-
-  const tsStr = localStorage.getItem(STORAGE_KEYS.baseTrailsTimestamp)
-  const ts = tsStr ? Number(tsStr) : 0
-  if (Date.now() - ts < BASE_TRAILS_CACHE_TTL_MS) return
-
+async function loadCatalogue() {
   try {
-    const fetched = await fetchRandopitonsBaseTrails()
-    if (!fetched.length) return
+    const response = await fetch("catalogue.json", { cache: "force-cache" })
+    if (!response.ok) throw new Error("Catalogue indisponible")
+    const data = await response.json()
+    const trails = (Array.isArray(data.trails) ? data.trails : [])
+      .filter((t) => t.isReunion !== false)
+      .map(normalizeCatalogueEntry)
 
-    // Fusionner avec les fiches par défaut pour conserver les descriptions enrichies
-    const defaultIds = new Set(DEFAULT_BASE_TRAILS.map((t) => getRandopitonsRouteKey(t.sourceUrl)))
-    const newTrails = [
-      ...DEFAULT_BASE_TRAILS,
-      ...fetched.filter((t) => !defaultIds.has(getRandopitonsRouteKey(t.sourceUrl)))
-    ]
+    if (!trails.length) return
 
-    localStorage.setItem(STORAGE_KEYS.baseTrails, JSON.stringify(newTrails))
-    localStorage.setItem(STORAGE_KEYS.baseTrailsTimestamp, String(Date.now()))
-
-    state.baseTrails = newTrails
+    state.baseTrails = trails
+    state.catalogueLoaded = true
     rebuildTrailIndex()
     render()
   } catch {
-    // Silencieux — les fiches de secours restent actives
+    // Garder les fiches de secours DEFAULT_BASE_TRAILS déjà en place
+  }
+}
+
+// ─── Recherche live Randopitons si aucun résultat local ──────────────────────
+// Appelé par renderTrailList quand getFilteredTrails() retourne 0 avec une query.
+// Interroge l'API suggestions via le proxy allorigins et peuple state.liveResults.
+
+async function searchLiveIfNeeded(query) {
+  if (!navigator.onLine) {
+    state.liveResultsStatus = "Hors ligne — recherche Randopitons indisponible"
+    renderTrailList()
+    return
+  }
+
+  if (query.length < 2) return
+  if (state.liveResultsQuery === query) return
+
+  const requestId = ++state.remoteSearchRequestId
+  state.liveResultsQuery = query
+  state.liveResultsStatus = "Recherche sur Randopitons..."
+  state.liveResults = []
+  renderTrailList()
+
+  try {
+    const suggestions = await fetchRandopitonsSuggestions(query)
+    if (requestId !== state.remoteSearchRequestId) return
+
+    state.liveResults = suggestions.slice(0, 12).map((s) => ({
+      id: `live-${s.data?.url?.split("/").pop() || slugify(s.value)}`,
+      title: s.value,
+      sourceUrl: new URL(s.data?.url || "", RANDOPITONS_BASE_URL).toString(),
+      area: s.data?.region || "Randopitons",
+      regionGroup: s.data?.region || "",
+      difficulty: "À préciser",
+      duration: "À préciser",
+      distance: "À préciser",
+      elevation: "À préciser",
+      summary: `${s.value} — ${s.data?.region || "Réunion"}`,
+      keywords: buildRemoteKeywords(s.value, s.data?.region, []),
+      highlights: [],
+      access: "Voir la fiche complète sur Randopitons.",
+      offlineChecklist: ["Eau", "Téléphone chargé", "Vérifier météo"],
+      vibe: "Résultat de recherche Randopitons",
+      publicItinerary: [`Résultat de recherche Randopitons pour «\u00a0${query}\u00a0».`],
+      isLiveResult: true
+    }))
+
+    state.liveResultsStatus = state.liveResults.length
+      ? `${state.liveResults.length} résultat${state.liveResults.length > 1 ? "s" : ""} sur Randopitons`
+      : "Aucun résultat sur Randopitons"
+    renderTrailList()
+  } catch {
+    if (requestId !== state.remoteSearchRequestId) return
+    state.liveResults = []
+    state.liveResultsStatus = "Recherche Randopitons indisponible"
+    renderTrailList()
   }
 }

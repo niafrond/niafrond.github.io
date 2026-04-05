@@ -5,7 +5,8 @@ const STORAGE_KEYS = {
   traces: "rando-piton:traces",
   customTrails: "rando-piton:custom-trails",
   baseTrails: "rando-piton:base-trails",
-  baseTrailsTimestamp: "rando-piton:base-trails-ts"
+  baseTrailsTimestamp: "rando-piton:base-trails-ts",
+  catalogueTimestamp: "rando-piton:catalogue-ts"
 }
 
 const USER_CACHE_NAME = "rando-piton-user-offline-v1"
@@ -13,6 +14,7 @@ const RANDOPITONS_BASE_URL = "https://randopitons.re"
 const RANDOPITONS_SUGGESTIONS_PROXY = "https://api.allorigins.win/raw?url="
 const VERSION_FALLBACK = "1.24.1"
 const BASE_TRAILS_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+const CATALOGUE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 // Quelques fiches de secours si le réseau est indisponible au premier lancement
 const DEFAULT_BASE_TRAILS = [
