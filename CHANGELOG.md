@@ -1,3 +1,9 @@
+## [1.33.4](https://github.com/niafrond/niafrond.github.io/compare/v1.33.3...v1.33.4) (2026-04-05)
+
+### Bug Fixes
+
+* route GitHub Device Flow requests through corsproxy.io to fix CORS ([#6](https://github.com/niafrond/niafrond.github.io/issues/6)) ([c6854c5](https://github.com/niafrond/niafrond.github.io/commit/c6854c534176abf21505ca488ce14c74220c12b0))
+
 ## [1.33.3](https://github.com/niafrond/niafrond.github.io/compare/v1.33.2...v1.33.3) (2026-04-05)
 
 ### Bug Fixes
