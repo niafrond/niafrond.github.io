@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
 const USER_CACHE_NAME = "rando-piton-user-offline-v1"
 const RANDOPITONS_BASE_URL = "https://randopitons.re"
 const RANDOPITONS_SUGGESTIONS_PROXY = "https://api.allorigins.win/raw?url="
+const VERSION_FALLBACK = "1.24.0"
 
 const state = {
   baseTrails: window.RANDO_PITON_DATA || [],
@@ -24,6 +25,7 @@ const state = {
   remoteSuggestions: [],
   remoteSuggestionsStatus: "Saisissez au moins 2 lettres",
   remoteSearchRequestId: 0,
+  appVersion: VERSION_FALLBACK,
   filters: {
     query: "",
     difficulty: "all",
@@ -55,7 +57,8 @@ const elements = {
   countFavorites: document.getElementById("countFavorites"),
   countOffline: document.getElementById("countOffline"),
   countTraces: document.getElementById("countTraces"),
-  networkBadge: document.getElementById("networkBadge")
+  networkBadge: document.getElementById("networkBadge"),
+  versionBadge: document.getElementById("versionBadge")
 }
 
 initialize()
@@ -65,7 +68,9 @@ function initialize() {
   bindEvents()
   ensureInitialSelection()
   updateNetworkBadge()
+  updateVersionBadge()
   render()
+  void loadAppVersion()
   registerServiceWorker()
 }
 
@@ -248,6 +253,31 @@ function renderCounters() {
   elements.countFavorites.textContent = String(state.favorites.size)
   elements.countOffline.textContent = String(state.offline.size)
   elements.countTraces.textContent = String(Object.keys(state.traces).length)
+}
+
+function updateVersionBadge() {
+  elements.versionBadge.textContent = `Version ${state.appVersion}`
+}
+
+async function loadAppVersion() {
+  try {
+    const response = await fetch("../CHANGELOG.md", { cache: "no-cache" })
+    if (!response.ok) {
+      throw new Error("Changelog indisponible")
+    }
+
+    const changelog = await response.text()
+    const match = changelog.match(/^## \[(\d+\.\d+\.\d+(?:-[^\]]+)?)\]/m)
+    if (!match) {
+      throw new Error("Version introuvable")
+    }
+
+    state.appVersion = match[1]
+    updateVersionBadge()
+  } catch {
+    state.appVersion = VERSION_FALLBACK
+    updateVersionBadge()
+  }
 }
 
 function getFilteredTrails() {

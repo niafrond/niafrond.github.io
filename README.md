@@ -45,6 +45,7 @@ Ce dépôt contient plusieurs mini-apps web en HTML/CSS/JavaScript.
 - Bouton de recherche flottant ouvrant un panneau au besoin, avec formulaire par mot-clé et validation explicite dans l'esprit de Randopitons.
 - Suggestions de recherche Randopitons chargées via proxy CORS depuis le panneau de recherche, avec ouverture directe des résultats source.
 - Import direct d'une suggestion Randopitons en fiche locale puis ajout immédiat au mode hors ligne.
+- Affichage de la version actuelle du site directement dans l'en-tête de l'application.
 - Filtres par difficulté et vues dédiées pour favoris / hors ligne.
 - Sauvegarde locale des randonnées favorites.
 - Sauvegarde des fiches pour consultation hors ligne via service worker et Cache API.
