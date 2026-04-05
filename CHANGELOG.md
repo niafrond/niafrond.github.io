@@ -1,3 +1,9 @@
+## [1.32.1](https://github.com/niafrond/niafrond.github.io/compare/v1.32.0...v1.32.1) (2026-04-05)
+
+### Bug Fixes
+
+* **rando-piton:** restaurer les fiches hors ligne depuis le cache SW au démarrage ([#1](https://github.com/niafrond/niafrond.github.io/issues/1)) ([0c0bc44](https://github.com/niafrond/niafrond.github.io/commit/0c0bc44a1c76722e81e22796f8ad9276cd4076ad))
+
 ## [1.32.0](https://github.com/niafrond/niafrond.github.io/compare/v1.31.0...v1.32.0) (2026-04-05)
 
 ### Features
