@@ -1,3 +1,9 @@
+## [1.33.2](https://github.com/niafrond/niafrond.github.io/compare/v1.33.1...v1.33.2) (2026-04-05)
+
+### Bug Fixes
+
+* make GitHub device flow code visible and copyable ([#4](https://github.com/niafrond/niafrond.github.io/issues/4)) ([1721043](https://github.com/niafrond/niafrond.github.io/commit/1721043dcbdc9311873e5cc572ec5f3f7d89b606))
+
 ## [1.33.1](https://github.com/niafrond/niafrond.github.io/compare/v1.33.0...v1.33.1) (2026-04-05)
 
 ### Bug Fixes
