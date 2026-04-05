@@ -1,3 +1,9 @@
+## [1.30.0](https://github.com/niafrond/niafrond.github.io/compare/v1.29.0...v1.30.0) (2026-04-05)
+
+### Features
+
+* **filtres:** ajouter un filtre de difficulté et gérer l'affichage des messages vides ([32b7ea1](https://github.com/niafrond/niafrond.github.io/commit/32b7ea1455e78443c644d639d795905064f0824a))
+
 ## [1.29.0](https://github.com/niafrond/niafrond.github.io/compare/v1.28.0...v1.29.0) (2026-04-05)
 
 ### Features
