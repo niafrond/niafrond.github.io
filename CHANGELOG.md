@@ -1,3 +1,9 @@
+## [1.24.0](https://github.com/niafrond/niafrond.github.io/compare/v1.23.0...v1.24.0) (2026-04-05)
+
+### Features
+
+* ajouter un bouton pour afficher les fiches hors ligne dans le formulaire de recherche ([403ad64](https://github.com/niafrond/niafrond.github.io/commit/403ad64e9948d3822d4eefff84c6903248fce391))
+
 ## [1.23.0](https://github.com/niafrond/niafrond.github.io/compare/v1.22.0...v1.23.0) (2026-04-05)
 
 ### Features
