@@ -25,6 +25,10 @@ Ce dépôt contient plusieurs mini-apps web en HTML/CSS/JavaScript.
 - App : [match3-quest/index.html](match3-quest/index.html)
 - Jeu match-3 RPG (combat, classes, sorts, armes, IA ennemie, progression).
 
+### 6) Mobile Dev Hub (GitHub + Copilot)
+- App : [mobile-dev-hub/index.html](mobile-dev-hub/index.html)
+- Interface mobile-first pour piloter un repo GitHub (issues/PR/commit) avec une zone de prompts Copilot.
+
 ## Liste des fonctionnalités
 
 ### Générateur de recette (v1 et v2)
@@ -64,6 +68,13 @@ Ce dépôt contient plusieurs mini-apps web en HTML/CSS/JavaScript.
 - IA ennemie avec niveaux de difficulté, scoring d'actions et personnalités.
 - Sauvegarde automatique de la progression via localStorage.
 - Outils de test inclus dans le dossier du jeu (pages/scripts de vérification).
+
+### Mobile Dev Hub (GitHub + Copilot)
+- Layout mobile en deux zones fixes : panneau GitHub en haut, panneau chat/prompt Copilot en bas.
+- Dashboard GitHub via API REST (repo, PR ouvertes, issues, branche par défaut, dernier commit).
+- Ouverture rapide vers GitHub repo, github.dev et page GitHub Copilot.
+- Journal local de prompts et copie rapide vers presse-papiers pour coller dans Copilot.
+- Stockage local des paramètres owner/repo/token pour reprendre rapidement le travail sur mobile.
 
 ## Notes
 - Les données de jeu et préférences sont sauvegardées en local (localStorage).

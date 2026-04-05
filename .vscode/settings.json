@@ -1,0 +1,52 @@
+{
+  // 🎨 Theme & readability
+  "workbench.colorTheme": "GitHub Dark",
+  "editor.fontSize": 16,
+  "editor.lineHeight": 24,
+  "terminal.integrated.fontSize": 14,
+
+  // 📱 Small screen optimization
+  "editor.wordWrap": "on",
+  "editor.minimap.enabled": false,
+  "breadcrumbs.enabled": false,
+  "editor.scrollBeyondLastLine": false,
+
+  // 🧩 Layout
+  "workbench.activityBar.location": "top",
+  "workbench.panel.defaultLocation": "bottom",
+
+  // 🤖 Copilot
+  "github.copilot.enable": {
+    "*": true
+  },
+  "github.copilot.inlineSuggest.enable": true,
+
+  // 💡 Suggestions & UX
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": true
+  },
+  "editor.suggestOnTriggerCharacters": true,
+  "editor.tabSize": 2,
+  "editor.renderWhitespace": "none",
+
+  // ⚡ Clean startup
+  "workbench.startupEditor": "none",
+
+  // 📂 Simplified explorer
+  "explorer.compactFolders": true,
+
+  // 🔀 Tabs
+  "workbench.editor.showTabs": "multiple",
+  "workbench.editor.wrapTabs": true,
+
+  // 🔎 Git
+  "git.enabled": true,
+  "git.autofetch": true,
+
+  // 🧘 Improved zen mode
+  "zenMode.hideActivityBar": false,
+  "zenMode.hideStatusBar": true,
+  "zenMode.fullScreen": false
+}

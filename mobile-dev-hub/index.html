@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>Mobile Dev Hub - GitHub + Copilot</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell" aria-label="Mobile Dev Hub">
+    <section class="panel panel-git" aria-labelledby="git-title">
+      <header class="panel-head">
+        <h1 id="git-title">GitHub Control Deck</h1>
+        <p>Top panel: suivi GitHub uniquement.</p>
+      </header>
+
+      <form id="repo-form" class="repo-form" autocomplete="off">
+        <label>
+          Owner
+          <input id="owner" name="owner" type="text" placeholder="niafrond" required>
+        </label>
+        <label>
+          Repo
+          <input id="repo" name="repo" type="text" placeholder="niafrond.github.io" required>
+        </label>
+        <label>
+          GitHub token (optionnel)
+          <input id="token" name="token" type="password" placeholder="ghp_...">
+        </label>
+        <div class="row-actions">
+          <button type="submit" class="btn btn-primary">Charger</button>
+          <button type="button" id="save-creds" class="btn btn-ghost">Memoriser</button>
+          <button type="button" id="open-repo" class="btn btn-ghost">Ouvrir Repo</button>
+        </div>
+      </form>
+
+      <div class="kpi-grid" id="kpi-grid" aria-live="polite">
+        <article class="kpi-card"><h2>Issues</h2><p id="kpi-issues">-</p></article>
+        <article class="kpi-card"><h2>PR ouvertes</h2><p id="kpi-prs">-</p></article>
+        <article class="kpi-card"><h2>Branch par defaut</h2><p id="kpi-branch">-</p></article>
+        <article class="kpi-card"><h2>Dernier commit</h2><p id="kpi-commit">-</p></article>
+      </div>
+
+      <div class="list-grid">
+        <section>
+          <h3>Pull Requests</h3>
+          <ul id="pr-list" class="data-list"></ul>
+        </section>
+        <section>
+          <h3>Issues</h3>
+          <ul id="issue-list" class="data-list"></ul>
+        </section>
+      </div>
+    </section>
+
+    <div class="split-handle" aria-hidden="true"></div>
+
+    <section class="panel panel-chat" aria-labelledby="chat-title">
+      <header class="panel-head">
+        <h2 id="chat-title">Copilot Chat Dock</h2>
+        <p>Bottom panel: flux de prompt centre sur GitHub Copilot.</p>
+      </header>
+
+      <div class="chat-actions">
+        <button id="open-copilot" class="btn btn-primary" type="button">Ouvrir GitHub Copilot</button>
+        <button id="open-github-dev" class="btn btn-ghost" type="button">Ouvrir github.dev</button>
+      </div>
+
+      <label class="prompt-box">
+        Prompt Copilot
+        <textarea id="prompt" rows="5" placeholder="Ex: Refactor la fonction parseBoard() et ajoute des tests unitaires."></textarea>
+      </label>
+
+      <div class="row-actions">
+        <button id="copy-prompt" class="btn btn-primary" type="button">Copier le prompt</button>
+        <button id="add-note" class="btn btn-ghost" type="button">Ajouter au journal</button>
+        <button id="clear-log" class="btn btn-ghost" type="button">Vider</button>
+      </div>
+
+      <ul id="chat-log" class="chat-log" aria-live="polite"></ul>
+    </section>
+  </main>
+
+  <script src="app.js" defer></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>
