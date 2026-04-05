@@ -1,3 +1,9 @@
+## [1.33.3](https://github.com/niafrond/niafrond.github.io/compare/v1.33.2...v1.33.3) (2026-04-05)
+
+### Bug Fixes
+
+* replace Jina.ai with allorigins proxy and fix GitHub Device Flow CORS ([#5](https://github.com/niafrond/niafrond.github.io/issues/5)) ([2b30829](https://github.com/niafrond/niafrond.github.io/commit/2b308290ad7a6e4111bfa82d04899e725a31e721))
+
 ## [1.33.2](https://github.com/niafrond/niafrond.github.io/compare/v1.33.1...v1.33.2) (2026-04-05)
 
 ### Bug Fixes
