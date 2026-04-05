@@ -19,48 +19,6 @@ async function loadAppVersion() {
 
 // ─── Suggestions de recherche ────────────────────────────────────────────────
 
-async function fetchRandopitonsSuggestions(query) {
-  const targetUrl = `${RANDOPITONS_BASE_URL}/recherche/suggestions?query=${encodeURIComponent(query)}`
-  const proxyUrl = `${RANDOPITONS_SUGGESTIONS_PROXY}${encodeURIComponent(targetUrl)}`
-  const response = await fetch(proxyUrl)
-
-  if (!response.ok) throw new Error("Erreur proxy")
-
-  const payload = await response.json()
-  return Array.isArray(payload.suggestions) ? payload.suggestions : []
-}
-
-async function refreshRemoteSuggestions(rawQuery) {
-  const query = rawQuery.trim()
-  const requestId = ++state.remoteSearchRequestId
-
-  if (query.length < 2) {
-    state.remoteSuggestions = []
-    state.remoteSuggestionsStatus = "Saisissez au moins 2 lettres"
-    renderRemoteSuggestions()
-    return
-  }
-
-  state.remoteSuggestionsStatus = "Recherche Randopitons..."
-  renderRemoteSuggestions()
-
-  try {
-    const suggestions = await fetchRandopitonsSuggestions(query)
-    if (requestId !== state.remoteSearchRequestId) return
-
-    state.remoteSuggestions = suggestions.slice(0, 8)
-    state.remoteSuggestionsStatus = state.remoteSuggestions.length
-      ? `${state.remoteSuggestions.length} suggestion${state.remoteSuggestions.length > 1 ? "s" : ""}`
-      : "Aucune suggestion distante"
-    renderRemoteSuggestions()
-  } catch {
-    if (requestId !== state.remoteSearchRequestId) return
-    state.remoteSuggestions = []
-    state.remoteSuggestionsStatus = "Proxy indisponible"
-    renderRemoteSuggestions()
-  }
-}
-
 // ─── Détail d'une fiche distante via proxy allorigins ────────────────────────
 
 async function fetchRemoteTrailDetails(suggestion) {
@@ -75,61 +33,27 @@ async function fetchRemoteTrailDetails(suggestion) {
   return buildTrailFromRemoteHTML(suggestion, sourceUrl, html)
 }
 
-// Pas de catalogue JSON local: les résultats en ligne proviennent des appels API
+// Pas de catalogue JSON local: les fiches proviennent de l'import via URL
 // Randopitons, et le mode hors ligne s'appuie sur les fiches déjà stockées localement.
 
-// ─── Recherche live Randopitons si aucun résultat local ──────────────────────
-// Appelé par renderTrailList quand getFilteredTrails() retourne 0 avec une query.
-// Interroge l'API suggestions via le proxy allorigins et peuple state.liveResults.
+// ─── Import direct depuis une URL Randopitons ─────────────────────────────────
 
-async function searchLiveIfNeeded(query) {
-  if (!navigator.onLine) {
-    state.liveResultsStatus = "Hors ligne — seules les fiches déjà stockées localement sont disponibles"
-    renderTrailList()
-    return
-  }
-
-  if (query.length < 2) return
-  if (state.liveResultsQuery === query) return
-
-  const requestId = ++state.liveSearchRequestId
-  state.liveResultsQuery = query
-  state.liveResultsStatus = "Recherche sur Randopitons..."
-  state.liveResults = []
-  renderTrailList()
-
+async function fetchTrailFromUrl(rawUrl) {
+  let url
   try {
-    const suggestions = await fetchRandopitonsSuggestions(query)
-    if (requestId !== state.liveSearchRequestId) return
-
-    state.liveResults = suggestions.slice(0, 12).map((s) => ({
-      id: `live-${s.data?.url?.split("/").pop() || slugify(s.value)}`,
-      title: s.value,
-      sourceUrl: new URL(s.data?.url || "", RANDOPITONS_BASE_URL).toString(),
-      area: s.data?.region || "Randopitons",
-      regionGroup: s.data?.region || "",
-      difficulty: "À préciser",
-      duration: "À préciser",
-      distance: "À préciser",
-      elevation: "À préciser",
-      summary: `${s.value} — ${s.data?.region || "Réunion"}`,
-      keywords: buildRemoteKeywords(s.value, s.data?.region, []),
-      highlights: [],
-      access: "Voir la fiche complète sur Randopitons.",
-      offlineChecklist: ["Eau", "Téléphone chargé", "Vérifier météo"],
-      vibe: "Résultat de recherche Randopitons",
-      publicItinerary: [`Résultat de recherche Randopitons pour «\u00a0${query}\u00a0».`],
-      isLiveResult: true
-    }))
-
-    state.liveResultsStatus = state.liveResults.length
-      ? `${state.liveResults.length} résultat${state.liveResults.length > 1 ? "s" : ""} sur Randopitons`
-      : "Aucun résultat sur Randopitons"
-    renderTrailList()
+    url = new URL(rawUrl)
   } catch {
-    if (requestId !== state.liveSearchRequestId) return
-    state.liveResults = []
-    state.liveResultsStatus = "Recherche Randopitons indisponible"
-    renderTrailList()
+    throw new Error("URL invalide")
   }
+
+  if (!url.hostname.includes("randopitons.re")) {
+    throw new Error("Veuillez saisir un lien randopitons.re")
+  }
+
+  const relativeUrl = url.pathname + url.search
+  const mockSuggestion = {
+    value: "",
+    data: { url: relativeUrl, region: "" }
+  }
+  return fetchRemoteTrailDetails(mockSuggestion)
 }

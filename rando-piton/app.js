@@ -19,19 +19,27 @@ function ensureInitialSelection() {
 }
 
 function bindEvents() {
-  elements.searchInput.addEventListener("input", (event) => {
-    state.searchDraft = event.target.value
-    renderKeywordChips()
-    state.remoteSuggestions = []
-    state.remoteSuggestionsStatus = "Appuyez sur Entree ou Rechercher"
-    renderRemoteSuggestions()
-  })
-
-  elements.searchForm.addEventListener("submit", (event) => {
+  elements.urlImportForm.addEventListener("submit", async (event) => {
     event.preventDefault()
-    void refreshRemoteSuggestions(state.searchDraft)
-    applySearch(state.searchDraft)
-    setSearchOverlayOpen(false)
+    const rawUrl = elements.urlInput.value.trim()
+    if (!rawUrl) return
+
+    const submitBtn = elements.urlImportForm.querySelector('[type="submit"]')
+    submitBtn.disabled = true
+    submitBtn.textContent = "Import…"
+    elements.urlImportStatus.textContent = "Récupération de la fiche en cours…"
+
+    try {
+      await importTrailFromUrl(rawUrl)
+      elements.urlInput.value = ""
+      elements.urlImportStatus.textContent = "Fiche importée et sauvegardée hors ligne."
+      setSearchOverlayOpen(false)
+    } catch (error) {
+      elements.urlImportStatus.textContent = error.message || "Impossible d'importer cette fiche."
+    } finally {
+      submitBtn.disabled = false
+      submitBtn.textContent = "Importer"
+    }
   })
 
   elements.difficultyFilter.addEventListener("change", (event) => {
@@ -47,29 +55,19 @@ function bindEvents() {
   window.addEventListener("online", updateNetworkBadge)
   window.addEventListener("offline", updateNetworkBadge)
 
-  elements.clearKeywordsBtn.addEventListener("click", () => {
-    state.searchDraft = ""
-    state.filters.query = ""
+  elements.clearFiltersBtn.addEventListener("click", () => {
     state.filters.view = "all"
     state.filters.difficulty = "all"
-    elements.searchInput.value = ""
     elements.viewFilter.value = "all"
     elements.difficultyFilter.value = "all"
     render()
   })
 
   elements.showOfflineBtn.addEventListener("click", () => {
-    state.searchDraft = ""
-    state.filters.query = ""
     state.filters.view = "offline"
-    elements.searchInput.value = ""
     elements.viewFilter.value = "offline"
     render()
     setSearchOverlayOpen(false)
-  })
-
-  elements.searchSourceBtn.addEventListener("click", () => {
-    openRandopitonsSearch(state.searchDraft || state.filters.query)
   })
 
   elements.searchFab.addEventListener("click", () => {

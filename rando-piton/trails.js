@@ -45,6 +45,27 @@ async function importRemoteSuggestionAsOffline(suggestion) {
   await cacheOfflineSelection(trail.id)
 }
 
+async function importTrailFromUrl(rawUrl) {
+  const trail = await fetchTrailFromUrl(rawUrl)
+  const routeKey = getRandopitonsRouteKey(trail.sourceUrl)
+  const existing = state.trails.find((item) => getRandopitonsRouteKey(item.sourceUrl) === routeKey)
+
+  if (existing) {
+    state.selectedId = existing.id
+    localStorage.setItem(STORAGE_KEYS.selected, state.selectedId)
+    render()
+    return
+  }
+
+  upsertCustomTrail(trail)
+  state.selectedId = trail.id
+  localStorage.setItem(STORAGE_KEYS.selected, state.selectedId)
+  state.offline.add(trail.id)
+  storeSet(STORAGE_KEYS.offline, state.offline)
+  render()
+  await cacheOfflineSelection(trail.id)
+}
+
 // ─── Construction d'une fiche depuis le HTML brut ────────────────────────────
 
 function buildTrailFromRemoteHTML(suggestion, sourceUrl, html) {
@@ -117,17 +138,3 @@ function getRandopitonsRouteKey(url) {
   }
 }
 
-function getPopularKeywords() {
-  const counts = new Map()
-
-  for (const trail of state.trails) {
-    for (const keyword of trail.keywords || []) {
-      counts.set(keyword, (counts.get(keyword) || 0) + 1)
-    }
-  }
-
-  return [...counts.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], "fr"))
-    .slice(0, 14)
-    .map(([keyword]) => keyword)
-}
