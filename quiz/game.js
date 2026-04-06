@@ -14,6 +14,13 @@ import { validateAnswer, proximityScore } from './fuzzy.js';
 /** Distance de Levenshtein maximale pour considérer une réponse comme "presque correcte" */
 const NEAR_MISS_THRESHOLD = 1;
 
+/** Calcule le bonus de rapidité (0 à SCORE.SPEED_BONUS_MAX) selon le temps restant */
+function calcSpeedBonus(elapsedMs, totalMs) {
+  if (totalMs <= 0) return 0;
+  const ratio = Math.max(0, 1 - elapsedMs / totalMs);
+  return Math.round(SCORE.SPEED_BONUS_MAX * ratio);
+}
+
 export class GameEngine {
   /**
    * @param {import('./peer.js').QuizPeer} peer
@@ -31,11 +38,12 @@ export class GameEngine {
       currentIndex: -1,  // Index de la question en cours
       buzzQueue: [],     // [peerId, ...] ordre d'arrivée des buzzes
       eliminatedPlayers: [], // Joueurs ayant mal répondu en QCM (question courante)
-      lastResult: null,  // { correct, playerId, answer, points, nearMiss }
+      lastResult: null,  // { correct, playerId, answer, points, speedBonus, nearMiss }
       config: {
         questionCount: 10,
         answerTime: 15,
         showAnswerToHost: false,
+        applyMalus: false,
         mode: MODE.CLASSIC,
       },
     };
@@ -44,6 +52,7 @@ export class GameEngine {
     this._buzzTimer = null;
     this._answerTimer = null;
     this._autoNextTimer = null;
+    this._answerStartTime = null; // Horodatage du début de la phase de réponse
 
     // Auto-advance entre questions
     this.autoAdvance = false;
@@ -188,6 +197,7 @@ export class GameEngine {
     }
     this._clearTimer('buzz');
     this.state.phase = PHASE.ANSWERING;
+    this._answerStartTime = Date.now();
     this.peer.broadcast({ type: MSG.BUZZ_QUEUE, queue: [...this.state.buzzQueue] });
     this.onStateChange({ ...this.state });
 
@@ -206,6 +216,7 @@ export class GameEngine {
 
   _startQCMAnswering() {
     this.state.phase = PHASE.ANSWERING;
+    this._answerStartTime = Date.now();
     this.onStateChange({ ...this.state });
 
     this._buzzTimer = setTimeout(() => {
@@ -246,16 +257,22 @@ export class GameEngine {
     const correct = validateAnswer(text, q.correctAnswer);
     const player = this.state.players.find(p => p.id === peerId);
     let points = 0;
+    let speedBonus = 0;
 
     if (correct) {
-      points = SCORE.CORRECT;
+      const elapsed = this._answerStartTime != null ? Date.now() - this._answerStartTime : this._getAnswerDuration();
+      speedBonus = calcSpeedBonus(elapsed, this._getAnswerDuration());
+      points = SCORE.CORRECT + speedBonus;
+      if (player) player.score += points;
+    } else if (this.state.config.applyMalus) {
+      points = SCORE.WRONG_MALUS;
       if (player) player.score += points;
     }
 
     const nearMiss = !correct && proximityScore(text, q.correctAnswer) === NEAR_MISS_THRESHOLD;
     const scores = this._getScores();
 
-    const result = { correct, playerId: peerId, answer: text, points, nearMiss, scores };
+    const result = { correct, playerId: peerId, answer: text, points, speedBonus, nearMiss, scores };
     this.state.lastResult = result;
     this.peer.broadcast({ type: MSG.ANSWER_RESULT, ...result });
 
@@ -285,21 +302,29 @@ export class GameEngine {
     const correct = choice === q.correctAnswer;
     const player = this.state.players.find(p => p.id === peerId);
     let points = 0;
+    let speedBonus = 0;
 
     if (correct) {
       this._clearTimer('buzz');
-      points = SCORE.CORRECT;
+      const elapsed = this._answerStartTime != null ? Date.now() - this._answerStartTime : TIMER.QCM_DURATION;
+      speedBonus = calcSpeedBonus(elapsed, TIMER.QCM_DURATION);
+      points = SCORE.CORRECT + speedBonus;
       if (player) player.score += points;
 
       const scores = this._getScores();
-      const result = { correct: true, playerId: peerId, answer: choice, points, nearMiss: false, scores };
+      const result = { correct: true, playerId: peerId, answer: choice, points, speedBonus, nearMiss: false, scores };
       this.state.lastResult = result;
       this.peer.broadcast({ type: MSG.ANSWER_RESULT, ...result });
       this._showAnswerResult(() => this._endQuestion(false));
     } else {
       this.state.eliminatedPlayers.push(peerId);
+      let malusPoints = 0;
+      if (this.state.config.applyMalus && player) {
+        malusPoints = SCORE.WRONG_MALUS;
+        player.score += malusPoints;
+      }
       const scores = this._getScores();
-      this.peer.broadcast({ type: MSG.WRONG_CHOICE, playerId: peerId, choice, scores });
+      this.peer.broadcast({ type: MSG.WRONG_CHOICE, playerId: peerId, choice, points: malusPoints, scores });
       this.onStateChange({ ...this.state });
       this._checkAllQcmEliminated();
     }

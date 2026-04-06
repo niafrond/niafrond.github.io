@@ -108,6 +108,13 @@ export function renderSetupForm(defaults, onChange) {
     showAns.checked = defaults.showAnswerToHost ?? false;
     showAns.addEventListener('change', () => onChange({ showAnswerToHost: showAns.checked }));
   }
+
+  // Checkbox "Mode malus"
+  const malusCheck = el('apply-malus');
+  if (malusCheck) {
+    malusCheck.checked = defaults.applyMalus ?? false;
+    malusCheck.addEventListener('change', () => onChange({ applyMalus: malusCheck.checked }));
+  }
 }
 
 // ─── Lien de partage ──────────────────────────────────────────────────────────
@@ -258,14 +265,18 @@ export function renderGamePhase(phase, data, isHost) {
       const resultAnswer = el('result-answer');
       if (resultText) {
         if (r?.correct) {
-          const pts = r.points > 0 ? ` (+${r.points} pts)` : '';
+          const speedBonus = r.speedBonus ?? 0;
+          const bonusStr = speedBonus > 0 ? ` ⚡+${speedBonus}` : '';
+          const pts = r.points > 0 ? ` (+${r.points} pts${bonusStr})` : '';
           const scorer = data.players?.find(p => p.id === r.playerId);
           const scorerName = scorer ? escapeHtml(scorer.name) : '';
           resultText.innerHTML = `<span class="result-correct">✅ Correct !${pts}</span>${scorerName ? `<br><span class="result-scorer">${scorerName}</span>` : ''}`;
         } else if (r?.nearMiss) {
-          resultText.innerHTML = `<span class="result-near">🤏 Presque !</span>`;
+          const malusStr = r.points < 0 ? ` (${r.points} pts)` : '';
+          resultText.innerHTML = `<span class="result-near">🤏 Presque !${malusStr}</span>`;
         } else {
-          resultText.innerHTML = `<span class="result-wrong">❌ Mauvaise réponse</span>`;
+          const malusStr = r?.points < 0 ? ` (${r.points} pts)` : '';
+          resultText.innerHTML = `<span class="result-wrong">❌ Mauvaise réponse${malusStr}</span>`;
         }
       }
       if (resultAnswer) {

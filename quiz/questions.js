@@ -48,6 +48,7 @@ export async function fetchQuestions({ count = 10, category = '', difficulty = '
   if (category) params.append('categories', category);
   if (difficulty) params.append('difficulty', difficulty);
 
+  let apiQuestions = [];
   try {
     const res = await fetch(`${TRIVIA_API_BASE}?${params}`, { signal: AbortSignal.timeout(8000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -55,11 +56,18 @@ export async function fetchQuestions({ count = 10, category = '', difficulty = '
     if (!Array.isArray(data) || data.length < Math.min(count, MIN_QUESTIONS_THRESHOLD)) {
       throw new Error('Trop peu de questions reçues');
     }
-    return data.map(normalizeApiQuestion);
+    apiQuestions = data.map(normalizeApiQuestion);
   } catch (err) {
     console.warn('[Quiz] API indisponible, utilisation des questions intégrées :', err.message);
-    return getBundledQuestions(count, category, difficulty);
   }
+
+  if (apiQuestions.length >= count) return apiQuestions;
+
+  // Compléter avec des questions intégrées si l'API a renvoyé trop peu
+  const needed = count - apiQuestions.length;
+  const apiIds = new Set(apiQuestions.map(q => q.id));
+  const bundled = getBundledQuestions(needed, category, difficulty).filter(q => !apiIds.has(q.id));
+  return [...apiQuestions, ...bundled].slice(0, count);
 }
 
 /** Renvoie des questions depuis le jeu intégré */
@@ -67,7 +75,15 @@ function getBundledQuestions(count, category, difficulty) {
   let pool = BUNDLED_QUESTIONS;
   if (category) pool = pool.filter(q => q.category === category);
   if (difficulty) pool = pool.filter(q => q.difficulty === difficulty);
-  if (pool.length === 0) pool = BUNDLED_QUESTIONS;
+
+  // Si le filtre combiné donne trop peu, relâcher progressivement
+  if (pool.length < Math.min(count, MIN_QUESTIONS_THRESHOLD)) {
+    // Garder la catégorie, ignorer la difficulté
+    if (category) pool = BUNDLED_QUESTIONS.filter(q => q.category === category);
+    // Si encore trop peu, ignorer les deux filtres
+    if (pool.length < MIN_QUESTIONS_THRESHOLD) pool = BUNDLED_QUESTIONS;
+  }
+
   return shuffle(pool)
     .slice(0, count)
     .map(q => ({ ...q, choices: shuffle([q.correctAnswer, ...q.incorrectAnswers]) }));
@@ -384,4 +400,90 @@ const BUNDLED_QUESTIONS = [
   { id: 'sc05', category: 'society_and_culture', difficulty: 'easy',
     text: 'Quel est le symbole chimique du fer ?',
     correctAnswer: 'Fe', incorrectAnswers: ['Fe2', 'Ir', 'F'] },
+
+  // ── Questions difficiles supplémentaires ─────────────────────────────────
+  { id: 'hrd01', category: 'history', difficulty: 'hard',
+    text: 'Quel édit de 1598 accordait la liberté de culte aux protestants en France ?',
+    correctAnswer: 'L\'édit de Nantes', incorrectAnswers: ['L\'édit de Fontainebleau', 'L\'édit de Villers-Cotterêts', 'L\'édit de Moulins'] },
+  { id: 'hrd02', category: 'history', difficulty: 'hard',
+    text: 'En quelle année a eu lieu la célèbre bataille de Marignan, victoire de François Ier ?',
+    correctAnswer: '1515', incorrectAnswers: ['1512', '1519', '1525'] },
+  { id: 'hrd03', category: 'history', difficulty: 'hard',
+    text: 'Quel est le nom du premier code de lois écrit, promulgué en Mésopotamie vers 1750 av. J.-C. ?',
+    correctAnswer: 'Le Code de Hammurabi', incorrectAnswers: ['Le Code d\'Ur-Nammu', 'Les Lois de Manu', 'Le Code de Lipit-Ishtar'] },
+  { id: 'hrd04', category: 'history', difficulty: 'hard',
+    text: 'Lors de quelle bataille Alexandre le Grand a-t-il définitivement vaincu Darius III en 331 av. J.-C. ?',
+    correctAnswer: 'Gaugamèles', incorrectAnswers: ['Issos', 'Granique', 'Hydaspe'] },
+  { id: 'hrd05', category: 'history', difficulty: 'hard',
+    text: 'En quelle année l\'Empire romain d\'Occident a-t-il officiellement pris fin ?',
+    correctAnswer: '476', incorrectAnswers: ['410', '455', '493'] },
+  { id: 'hrd06', category: 'history', difficulty: 'hard',
+    text: 'Quel tsar russe a fondé la ville de Saint-Pétersbourg en 1703 ?',
+    correctAnswer: 'Pierre le Grand', incorrectAnswers: ['Catherine II', 'Ivan le Terrible', 'Alexandre Ier'] },
+  { id: 'hrd07', category: 'history', difficulty: 'hard',
+    text: 'Quel est le nom du dernier empereur aztèque, capturé par Hernán Cortés en 1521 ?',
+    correctAnswer: 'Cuauhtémoc', incorrectAnswers: ['Moctezuma II', 'Cuitláhuac', 'Axayácatl'] },
+  { id: 'hrd08', category: 'history', difficulty: 'hard',
+    text: 'Quel pays a lancé le premier satellite artificiel de l\'histoire, Spoutnik 1, en 1957 ?',
+    correctAnswer: 'L\'URSS', incorrectAnswers: ['Les États-Unis', 'La Chine', 'Le Royaume-Uni'] },
+  { id: 'hrd09', category: 'geography', difficulty: 'hard',
+    text: 'Quelle est la plus longue frontière terrestre entre deux pays au monde ?',
+    correctAnswer: 'Canada – États-Unis', incorrectAnswers: ['Russie – Kazakhstan', 'Chine – Mongolie', 'Brésil – Pérou'] },
+  { id: 'hrd10', category: 'geography', difficulty: 'hard',
+    text: 'Quel pays possède le plus grand nombre d\'îles au monde ?',
+    correctAnswer: 'Suède', incorrectAnswers: ['Indonésie', 'Philippines', 'Norvège'] },
+  { id: 'hrd11', category: 'geography', difficulty: 'hard',
+    text: 'Dans quel pays se trouve le lac Titicaca, le plus haut lac navigable du monde ?',
+    correctAnswer: 'À la frontière du Pérou et de la Bolivie', incorrectAnswers: ['Équateur', 'Chili', 'Argentine'] },
+  { id: 'hrd12', category: 'geography', difficulty: 'hard',
+    text: 'Quelle est la capitale actuelle du Kazakhstan (renommée en 2019) ?',
+    correctAnswer: 'Nur-Sultan (Astana)', incorrectAnswers: ['Almaty', 'Chymkent', 'Aktobe'] },
+  { id: 'hrd13', category: 'science', difficulty: 'hard',
+    text: 'Combien d\'électrons peut contenir au maximum la couche électronique M d\'un atome ?',
+    correctAnswer: '18', incorrectAnswers: ['8', '32', '2'] },
+  { id: 'hrd14', category: 'science', difficulty: 'hard',
+    text: 'Quel élément chimique possède le point de fusion le plus élevé ?',
+    correctAnswer: 'Le tungstène', incorrectAnswers: ['Le platine', 'L\'osmium', 'Le carbone'] },
+  { id: 'hrd15', category: 'science', difficulty: 'hard',
+    text: 'Quelle loi décrit la relation entre pression et volume d\'un gaz parfait à température constante ?',
+    correctAnswer: 'La loi de Boyle-Mariotte', incorrectAnswers: ['La loi de Charles', 'La loi de Gay-Lussac', 'La loi d\'Avogadro'] },
+  { id: 'hrd16', category: 'science', difficulty: 'hard',
+    text: 'Quel est le nom de la particule médiatrice de la force électromagnétique ?',
+    correctAnswer: 'Le photon', incorrectAnswers: ['Le gluon', 'Le boson W', 'Le graviton'] },
+  { id: 'hrd17', category: 'science', difficulty: 'hard',
+    text: 'Quelle structure de l\'ADN a été décrite pour la première fois par Watson et Crick en 1953 ?',
+    correctAnswer: 'La double hélice', incorrectAnswers: ['La triple hélice', 'La structure en feuillet', 'Le tétramère'] },
+  { id: 'hrd18', category: 'film_and_tv', difficulty: 'hard',
+    text: 'Quel film de Michelangelo Antonioni a remporté la Palme d\'Or à Cannes en 1960 ?',
+    correctAnswer: 'L\'Avventura', incorrectAnswers: ['La Dolce Vita', 'Blow-Up', '8½'] },
+  { id: 'hrd19', category: 'film_and_tv', difficulty: 'hard',
+    text: 'Quel cinéaste japonais a réalisé "Les Sept Samouraïs" (1954) ?',
+    correctAnswer: 'Akira Kurosawa', incorrectAnswers: ['Yasujirō Ozu', 'Kenji Mizoguchi', 'Nagisa Ōshima'] },
+  { id: 'hrd20', category: 'sport_and_leisure', difficulty: 'hard',
+    text: 'Quel pays a remporté la première Coupe du Monde de football en 1930 ?',
+    correctAnswer: 'Uruguay', incorrectAnswers: ['Argentine', 'Brésil', 'Italie'] },
+  { id: 'hrd21', category: 'sport_and_leisure', difficulty: 'hard',
+    text: 'Combien de Ballons d\'Or Lionel Messi avait-il remportés à fin 2024 ?',
+    correctAnswer: '8', incorrectAnswers: ['7', '6', '9'] },
+  { id: 'hrd22', category: 'music', difficulty: 'hard',
+    text: 'Quel compositeur romantique polonais est surnommé "le poète du piano" ?',
+    correctAnswer: 'Frédéric Chopin', incorrectAnswers: ['Franz Liszt', 'Robert Schumann', 'Claude Debussy'] },
+  { id: 'hrd23', category: 'music', difficulty: 'hard',
+    text: 'Quel est le vrai nom de Lady Gaga ?',
+    correctAnswer: 'Stefani Germanotta', incorrectAnswers: ['Alicia Moore', 'Robyn Fenty', 'Belcalis Almánzar'] },
+  { id: 'hrd24', category: 'arts_and_literature', difficulty: 'hard',
+    text: 'Qui a écrit le roman "Ulysse" (1922), chef-d\'œuvre du modernisme ?',
+    correctAnswer: 'James Joyce', incorrectAnswers: ['Virginia Woolf', 'William Faulkner', 'T.S. Eliot'] },
+  { id: 'hrd25', category: 'arts_and_literature', difficulty: 'hard',
+    text: 'Quel architecte espagnol a conçu la Sagrada Família à Barcelone ?',
+    correctAnswer: 'Antoni Gaudí', incorrectAnswers: ['Santiago Calatrava', 'Rafael Moneo', 'Ricardo Bofill'] },
+  { id: 'hrd26', category: 'general_knowledge', difficulty: 'hard',
+    text: 'Quel est le symbole chimique du tungstène (wolfram) ?',
+    correctAnswer: 'W', incorrectAnswers: ['Tu', 'Wf', 'Tn'] },
+  { id: 'hrd27', category: 'food_and_drink', difficulty: 'hard',
+    text: 'Quelle technique culinaire consiste à cuire des aliments sous vide dans un bain d\'eau à température précise ?',
+    correctAnswer: 'La cuisson sous vide (sous-vide)', incorrectAnswers: ['Le confit', 'La cuisson basse température au four', 'Le bain-marie'] },
+  { id: 'hrd28', category: 'society_and_culture', difficulty: 'hard',
+    text: 'Quel philosophe grec a fondé l\'Académie, la première grande institution philosophique occidentale ?',
+    correctAnswer: 'Platon', incorrectAnswers: ['Socrate', 'Aristote', 'Épicure'] },
 ];
