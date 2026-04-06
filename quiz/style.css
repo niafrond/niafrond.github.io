@@ -266,9 +266,6 @@ html, body {
 .player-item.ready .player-status { color: var(--success); }
 .player-name { font-weight: 600; flex: 1; }
 
-#ready-section { }
-#host-start-section { }
-
 /* ─── Game layout ─────────────────────────────────────────────────────────── */
 .game-layout {
   display: grid;
@@ -577,6 +574,9 @@ body.buzz-flash::after {
   border-radius: var(--radius-sm);
   border: 2px solid var(--border);
 }
+
+/* ─── Role visibility ─────────────────────────────────────────────────────── */
+.host-only[hidden], .client-only[hidden] { display: none !important; }
 
 /* ─── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 520px) {

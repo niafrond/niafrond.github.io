@@ -17,6 +17,9 @@ import { MSG } from './constants.js';
 
 const PEERJS_CDN = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js';
 
+/** Nombre maximum de tentatives de reconnexion (~5 minutes avec un délai de 2s) */
+const MAX_RECONNECT_ATTEMPTS = 150;
+
 function loadPeerJS() {
   return new Promise((resolve, reject) => {
     if (window.Peer) { resolve(); return; }
@@ -163,7 +166,7 @@ export class QuizPeer extends EventTarget {
   }
 
   _tryReconnect(hostPeerId) {
-    if (this._reconnectAttempts >= 150) {
+    if (this._reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
       this._reconnecting = false;
       this.dispatchEvent(new CustomEvent('player-leave', { detail: { peerId: hostPeerId } }));
       return;

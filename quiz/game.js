@@ -11,6 +11,9 @@
 import { MSG, PHASE, MODE, SCORE, TIMER } from './constants.js';
 import { validateAnswer, proximityScore } from './fuzzy.js';
 
+/** Distance de Levenshtein maximale pour considérer une réponse comme "presque correcte" */
+const NEAR_MISS_THRESHOLD = 1;
+
 export class GameEngine {
   /**
    * @param {import('./peer.js').QuizPeer} peer
@@ -249,7 +252,7 @@ export class GameEngine {
       if (player) player.score += points;
     }
 
-    const nearMiss = !correct && proximityScore(text, q.correctAnswer) === 1;
+    const nearMiss = !correct && proximityScore(text, q.correctAnswer) === NEAR_MISS_THRESHOLD;
     const scores = this._getScores();
 
     const result = { correct, playerId: peerId, answer: text, points, nearMiss, scores };

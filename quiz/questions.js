@@ -10,6 +10,9 @@
 
 const TRIVIA_API_BASE = 'https://the-trivia-api.com/v2/questions';
 
+/** Nombre minimum de questions valides attendues en réponse de l'API */
+const MIN_QUESTIONS_THRESHOLD = 3;
+
 /** Mélange un tableau */
 function shuffle(arr) {
   const a = [...arr];
@@ -49,7 +52,7 @@ export async function fetchQuestions({ count = 10, category = '', difficulty = '
     const res = await fetch(`${TRIVIA_API_BASE}?${params}`, { signal: AbortSignal.timeout(8000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    if (!Array.isArray(data) || data.length < Math.min(count, 3)) {
+    if (!Array.isArray(data) || data.length < Math.min(count, MIN_QUESTIONS_THRESHOLD)) {
       throw new Error('Trop peu de questions reçues');
     }
     return data.map(normalizeApiQuestion);

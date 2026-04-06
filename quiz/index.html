@@ -110,13 +110,13 @@
         <div class="card-title">👥 Joueurs connectés</div>
         <ul id="lobby-players-list"></ul>
         <!-- Bouton Prêt (clients uniquement) -->
-        <div id="ready-section" style="margin-top:14px;">
+        <div id="ready-section" class="client-only" style="margin-top:14px;">
           <button id="btn-ready" class="btn btn-success w-full">✅ Je suis prêt !</button>
         </div>
       </div>
 
       <!-- Démarrer (hôte uniquement) -->
-      <div id="host-start-section">
+      <div id="host-start-section" class="host-only">
         <button id="btn-start-game" class="btn btn-primary btn-lg w-full">
           ▶️ Démarrer la partie
         </button>
@@ -166,7 +166,7 @@
           <span id="timer-fill-seconds" class="timer-seconds"></span>
         </div>
         <!-- Contrôles hôte -->
-        <div class="host-controls" id="host-controls">
+        <div class="host-controls host-only" id="host-controls">
           <button id="btn-skip-question" class="btn btn-secondary btn-sm" title="Passer la question">⏭️ Passer</button>
         </div>
       </div>
@@ -235,7 +235,7 @@
   <div class="card" style="max-width:440px; width:100%;">
     <div id="final-results"></div>
   </div>
-  <button id="btn-play-again" class="btn btn-primary btn-lg mt-16" style="display:none;">
+  <button id="btn-play-again" class="btn btn-primary btn-lg mt-16 host-only">
     🔄 Rejouer
   </button>
   <a href="../" class="btn btn-secondary mt-8">🏠 Accueil</a>

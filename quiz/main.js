@@ -55,9 +55,19 @@ const hostConfig = {
 const params = new URLSearchParams(location.search);
 const hostParam = params.get('host');
 
+// Configurer la visibilité des éléments spécifiques à chaque rôle
+function applyRoleVisibility(isHost) {
+  const hostOnly = document.querySelectorAll('.host-only');
+  const clientOnly = document.querySelectorAll('.client-only');
+  hostOnly.forEach(el => { el.hidden = !isHost; });
+  clientOnly.forEach(el => { el.hidden = isHost; });
+}
+
 if (hostParam) {
+  applyRoleVisibility(false);
   initClient(hostParam);
 } else {
+  applyRoleVisibility(true);
   initHost();
 }
 
@@ -115,7 +125,8 @@ async function startHostSession(hostName) {
 
     // Bouton "Démarrer"
     const btnStart = document.getElementById('btn-start-game');
-    if (btnStart) {
+    if (btnStart && !btnStart.dataset.bound) {
+      btnStart.dataset.bound = '1';
       btnStart.addEventListener('click', () => startGame(engine, peer));
     }
   });
@@ -327,13 +338,20 @@ function setupPlayAgainButton(engine, peer) {
   const btn = document.getElementById('btn-play-again');
   if (btn) {
     btn.onclick = () => {
-      showOnly('screen-setup');
+      showOnly('screen-lobby');
       // Réinitialiser les scores
       engine.state.players.forEach(p => { p.score = 0; p.ready = false; });
       engine.state.phase = PHASE.LOBBY;
       const host = engine.state.players.find(p => p.id === '__host__');
       if (host) host.ready = true;
       engine._broadcastPlayerList();
+      renderLobbyPlayers(engine.state.players, true, (id) => {
+        peer.kick(id);
+        engine.removePlayer(id);
+      });
+      // Réactiver le bouton "Démarrer"
+      const btnStart = document.getElementById('btn-start-game');
+      if (btnStart) { btnStart.disabled = false; btnStart.textContent = '▶️ Démarrer la partie'; }
     };
   }
 }
