@@ -1,3 +1,9 @@
+## [1.36.0](https://github.com/niafrond/niafrond.github.io/compare/v1.35.1...v1.36.0) (2026-04-06)
+
+### Features
+
+* Quiz Multijoueur P2P avec questions en français ([#12](https://github.com/niafrond/niafrond.github.io/issues/12)) ([d9dc7b2](https://github.com/niafrond/niafrond.github.io/commit/d9dc7b2827d1fab5e62862a02c72c77fed83fde3))
+
 ## [1.35.1](https://github.com/niafrond/niafrond.github.io/compare/v1.35.0...v1.35.1) (2026-04-05)
 
 ### Bug Fixes
