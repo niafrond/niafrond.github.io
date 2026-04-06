@@ -48,6 +48,7 @@ const hostConfig = {
   questionCount: 10,
   answerTime: 15,
   showAnswerToHost: false,
+  applyMalus: false,
 };
 
 // ─── Initialisation ───────────────────────────────────────────────────────────
@@ -523,7 +524,8 @@ function handleClientMessage(data, peer, local, playerName) {
       if (data.playerId === peer.peerId) {
         local.selfEliminated = true;
         disableChoice(data.choice);
-        showToast('❌ Mauvaise réponse !', 'warn');
+        const malusStr = data.points < 0 ? ` (${data.points} pts)` : '';
+        showToast(`❌ Mauvaise réponse !${malusStr}`, 'warn');
       } else {
         disableChoice(data.choice);
       }

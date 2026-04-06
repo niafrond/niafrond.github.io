@@ -53,6 +53,7 @@ export const MODE_DESCRIPTIONS = {
 export const SCORE = {
   CORRECT: 10,
   WRONG_MALUS: -3,
+  SPEED_BONUS_MAX: 5, // Bonus maximum de rapidité (réponse instantanée)
 };
 
 // ─── Timers (ms) ──────────────────────────────────────────────────────────────
