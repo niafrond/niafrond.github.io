@@ -1,3 +1,9 @@
+## [1.37.0](https://github.com/niafrond/niafrond.github.io/compare/v1.36.0...v1.37.0) (2026-04-06)
+
+### Features
+
+* **quiz:** hide next-question btn for clients, reconnect via localStorage, wrong-answer overlay ([#14](https://github.com/niafrond/niafrond.github.io/issues/14)) ([1ace0c8](https://github.com/niafrond/niafrond.github.io/commit/1ace0c8da45ac848011a20d319ed84c540f5d6c0))
+
 ## [1.36.0](https://github.com/niafrond/niafrond.github.io/compare/v1.35.1...v1.36.0) (2026-04-06)
 
 ### Features
