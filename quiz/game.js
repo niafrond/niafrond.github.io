@@ -260,7 +260,7 @@ export class GameEngine {
     let speedBonus = 0;
 
     if (correct) {
-      const elapsed = Date.now() - (this._answerStartTime ?? Date.now());
+      const elapsed = this._answerStartTime != null ? Date.now() - this._answerStartTime : this._getAnswerDuration();
       speedBonus = calcSpeedBonus(elapsed, this._getAnswerDuration());
       points = SCORE.CORRECT + speedBonus;
       if (player) player.score += points;
@@ -306,7 +306,7 @@ export class GameEngine {
 
     if (correct) {
       this._clearTimer('buzz');
-      const elapsed = Date.now() - (this._answerStartTime ?? Date.now());
+      const elapsed = this._answerStartTime != null ? Date.now() - this._answerStartTime : TIMER.QCM_DURATION;
       speedBonus = calcSpeedBonus(elapsed, TIMER.QCM_DURATION);
       points = SCORE.CORRECT + speedBonus;
       if (player) player.score += points;
