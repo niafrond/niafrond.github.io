@@ -279,8 +279,46 @@ html, body {
 @media (max-width: 768px) {
   .game-layout { grid-template-columns: 1fr; }
 }
-.game-main { display: flex; flex-direction: column; gap: 14px; }
+.game-main { display: flex; flex-direction: column; gap: 14px; position: relative; }
 .game-sidebar { display: flex; flex-direction: column; gap: 14px; }
+
+/* ─── Wrong answer overlay ────────────────────────────────────────────────── */
+.wrong-answer-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  backdrop-filter: blur(2px);
+  animation: overlayIn 0.25s ease;
+}
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.wrong-answer-overlay-inner {
+  background: var(--surface);
+  border: 2px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 28px 36px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(239,68,68,0.35);
+}
+.wrong-answer-overlay-icon { font-size: 2.8rem; margin: 0 0 8px; }
+.wrong-answer-overlay-text {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--danger);
+  margin: 0 0 6px;
+}
+.wrong-answer-overlay-sub {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0;
+}
 
 /* ─── Question header ─────────────────────────────────────────────────────── */
 .question-header { padding: 14px 18px; }
