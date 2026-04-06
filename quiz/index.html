@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz 🧠</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0891b2">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : HOME (chargement)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-home" data-screen="screen-home" class="screen-center" hidden>
+  <h1 class="app-title">🧠 Quiz</h1>
+  <p class="app-subtitle">Chargement…</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : SETUP (configuration hôte)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-setup" data-screen="screen-setup" hidden>
+  <div class="page-wrapper">
+    <a href="../" class="btn btn-secondary btn-sm home-btn">← Accueil</a>
+
+    <h1 class="app-title" style="font-size:2rem; margin-bottom:4px;">🧠 Quiz Multijoueur</h1>
+    <p class="app-subtitle mb-16">Configurez votre partie</p>
+
+    <!-- Pseudo hôte -->
+    <div class="card mb-16">
+      <div class="card-title">👤 Votre pseudo</div>
+      <input id="host-name" class="input" type="text" placeholder="Votre nom…" maxlength="24" autocomplete="off">
+    </div>
+
+    <!-- Mode de jeu -->
+    <div class="card mb-16">
+      <div class="card-title">🎮 Mode de jeu</div>
+      <div id="mode-selector"></div>
+    </div>
+
+    <!-- Catégorie -->
+    <div class="card mb-16">
+      <div class="card-title">📂 Catégorie</div>
+      <div class="form-group" style="margin:0;">
+        <select id="category-select" class="input"></select>
+      </div>
+    </div>
+
+    <!-- Difficulté + questions -->
+    <div class="card mb-16">
+      <div class="card-title">⚙️ Options</div>
+      <div class="form-row">
+        <div class="form-group" style="flex:1;">
+          <label for="difficulty-select">Difficulté</label>
+          <select id="difficulty-select" class="input"></select>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label for="question-count-select">Nombre de questions</label>
+          <select id="question-count-select" class="input"></select>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label for="answer-time-select">Timer réponse</label>
+          <select id="answer-time-select" class="input"></select>
+        </div>
+      </div>
+      <label class="checkbox-label mt-8">
+        <input type="checkbox" id="show-answer-host">
+        Voir la réponse (hôte uniquement)
+      </label>
+    </div>
+
+    <button id="btn-start-host" class="btn btn-primary btn-lg w-full">
+      🚀 Héberger la partie
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : JOIN (saisie pseudo client)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-join" data-screen="screen-join" class="screen-center" hidden>
+  <h1 class="app-title">🧠 Quiz</h1>
+  <p class="app-subtitle">Entrez votre pseudo pour rejoindre</p>
+  <div class="card" style="max-width:360px; width:100%;">
+    <div class="form-group">
+      <label for="player-name">Pseudo</label>
+      <input id="player-name" class="input" type="text" placeholder="Votre nom…" maxlength="24" autocomplete="off" autofocus>
+    </div>
+    <button id="btn-join" class="btn btn-primary w-full mt-8">
+      🎮 Rejoindre
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : LOBBY
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-lobby" data-screen="screen-lobby" hidden>
+  <div class="lobby-layout">
+
+    <!-- Colonne principale -->
+    <div>
+      <h1 class="app-title" style="font-size:1.8rem; margin-bottom:4px;">🧠 Quiz Multijoueur</h1>
+      <p class="app-subtitle mb-16">Salon d'attente</p>
+
+      <!-- Joueurs -->
+      <div class="card mb-16">
+        <div class="card-title">👥 Joueurs connectés</div>
+        <ul id="lobby-players-list"></ul>
+        <!-- Bouton Prêt (clients uniquement) -->
+        <div id="ready-section" style="margin-top:14px;">
+          <button id="btn-ready" class="btn btn-success w-full">✅ Je suis prêt !</button>
+        </div>
+      </div>
+
+      <!-- Démarrer (hôte uniquement) -->
+      <div id="host-start-section">
+        <button id="btn-start-game" class="btn btn-primary btn-lg w-full">
+          ▶️ Démarrer la partie
+        </button>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:8px; text-align:center;">
+          Vous pouvez démarrer seul pour tester.
+        </p>
+      </div>
+    </div>
+
+    <!-- Colonne partage -->
+    <div>
+      <div class="card mb-16" id="share-card">
+        <div class="card-title">🔗 Inviter des joueurs</div>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;">
+          Partagez ce lien ou ce QR code :
+        </p>
+        <input id="share-link" class="input" type="text" readonly onclick="this.select()">
+        <button id="btn-copy-link" class="btn btn-secondary w-full mt-8">📋 Copier</button>
+        <img id="share-qr" src="" alt="QR Code" style="display:block;margin:12px auto 0;width:160px;height:160px;border-radius:8px;" loading="lazy">
+      </div>
+      <p id="loading-status" style="color:var(--text-muted);font-size:0.9rem;text-align:center;"></p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : GAME
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-game" data-screen="screen-game" hidden>
+  <div class="game-layout">
+
+    <!-- Colonne principale -->
+    <div class="game-main">
+
+      <!-- En-tête question -->
+      <div class="card question-header">
+        <div class="question-meta-row">
+          <span id="question-counter" class="question-counter" hidden></span>
+          <span id="question-meta" class="question-meta" hidden></span>
+        </div>
+        <!-- Timer bar -->
+        <div class="timer-track mt-8">
+          <div id="timer-fill" class="timer-fill" style="width:100%;"></div>
+        </div>
+        <div class="timer-seconds-row">
+          <span id="timer-fill-seconds" class="timer-seconds"></span>
+        </div>
+        <!-- Contrôles hôte -->
+        <div class="host-controls" id="host-controls">
+          <button id="btn-skip-question" class="btn btn-secondary btn-sm" title="Passer la question">⏭️ Passer</button>
+        </div>
+      </div>
+
+      <!-- Phase : question affichée (preview + buzzing + answering) -->
+      <div id="phase-question-preview" class="card phase-panel" hidden>
+        <p id="question-text" class="question-text"></p>
+        <p id="host-answer-hint" class="host-answer-hint" hidden></p>
+      </div>
+
+      <!-- Phase : buzzer -->
+      <div id="phase-buzzing" class="card phase-panel" hidden>
+        <div id="buzz-queue" class="buzz-queue" hidden></div>
+        <button id="btn-buzz" class="btn-buzz" disabled>🔔 BUZZER</button>
+      </div>
+
+      <!-- Phase : réponse (texte ou choix) -->
+      <div id="phase-answering" class="card phase-panel" hidden>
+        <!-- Mode classique/speed : saisie texte -->
+        <form id="answer-form" class="answer-form" autocomplete="off">
+          <div class="answer-form-inner">
+            <input id="answer-input" class="input" type="text"
+              placeholder="Votre réponse…" autocomplete="off" autocorrect="off"
+              spellcheck="false" disabled>
+            <button type="submit" class="btn btn-success">Valider</button>
+          </div>
+        </form>
+        <!-- Mode QCM : grille de choix -->
+        <div id="choices-grid" class="choices-grid"></div>
+      </div>
+
+      <!-- Phase : résultat intermédiaire -->
+      <div id="phase-answer-result" class="card phase-panel" hidden>
+        <p id="result-text" class="result-text"></p>
+        <p id="result-answer" class="result-answer"></p>
+      </div>
+
+      <!-- Phase : fin de question (révélation) -->
+      <div id="phase-question-end" class="card phase-panel" hidden>
+        <p id="skipped-badge" class="skipped-badge" hidden>⏭️ Question passée</p>
+        <p class="correct-answer-label">✅ Bonne réponse :</p>
+        <p id="correct-answer-reveal" class="correct-answer-reveal"></p>
+        <button id="btn-next-question" class="btn btn-primary btn-lg mt-16" hidden>
+          ▶️ Question suivante
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Colonne scores -->
+    <div class="game-sidebar">
+      <div class="card">
+        <div class="card-title">🏆 Scores</div>
+        <div id="scoreboard"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCREEN : GAME OVER
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-game-over" data-screen="screen-game-over" class="screen-center" hidden>
+  <h1 class="app-title">🏆 Résultats</h1>
+  <div class="card" style="max-width:440px; width:100%;">
+    <div id="final-results"></div>
+  </div>
+  <button id="btn-play-again" class="btn btn-primary btn-lg mt-16" style="display:none;">
+    🔄 Rejouer
+  </button>
+  <a href="../" class="btn btn-secondary mt-8">🏠 Accueil</a>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
