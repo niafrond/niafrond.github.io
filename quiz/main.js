@@ -56,6 +56,33 @@ const hostConfig = {
 const params = new URLSearchParams(location.search);
 const hostParam = params.get('host');
 
+// ─── LocalStorage session ─────────────────────────────────────────────────────
+const STORAGE_KEY = 'quiz_session';
+
+function saveSession(hostPeerId, playerName) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ hostPeerId, playerName })); } catch (_) {}
+}
+
+function loadSession() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null'); } catch (_) { return null; }
+}
+
+function clearSession() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+}
+
+// ─── Overlay mauvaise réponse ─────────────────────────────────────────────────
+
+function showWrongAnswerOverlay() {
+  const overlay = document.getElementById('wrong-answer-overlay');
+  if (overlay) overlay.hidden = false;
+}
+
+function hideWrongAnswerOverlay() {
+  const overlay = document.getElementById('wrong-answer-overlay');
+  if (overlay) overlay.hidden = true;
+}
+
 // Configurer la visibilité des éléments spécifiques à chaque rôle
 function applyRoleVisibility(isHost) {
   const hostOnly = document.querySelectorAll('.host-only');
@@ -364,6 +391,17 @@ function setupPlayAgainButton(engine, peer) {
 async function initClient(hostPeerId) {
   clientState.isHost = false;
   clientState.hostPeerId = hostPeerId;
+
+  // Vérifier si une session est en cours pour cet hôte
+  const savedSession = loadSession();
+  if (savedSession && savedSession.hostPeerId === hostPeerId && savedSession.playerName) {
+    clientState.myName = savedSession.playerName;
+    showOnly('screen-lobby');
+    setLoadingStatus('Reconnexion en cours…');
+    await startClientSession(hostPeerId, savedSession.playerName);
+    return;
+  }
+
   showOnly('screen-join');
 
   const btnJoin = document.getElementById('btn-join');
@@ -407,6 +445,9 @@ async function startClientSession(hostPeerId, playerName) {
     clientState.myId = peer.peerId;
     peer.sendToHost({ type: MSG.JOIN, name: playerName });
     showOnly('screen-lobby');
+    setLoadingStatus('');
+    // Sauvegarder la session pour une éventuelle reconnexion
+    saveSession(hostPeerId, playerName);
   });
 
   peer.addEventListener('host-reconnecting', () => {
@@ -438,6 +479,7 @@ function handleClientMessage(data, peer, local, playerName) {
   switch (data.type) {
     case MSG.KICKED:
       showToast('Vous avez été exclu de la partie', 'error');
+      clearSession();
       showOnly('screen-join');
       break;
 
@@ -475,6 +517,7 @@ function handleClientMessage(data, peer, local, playerName) {
       clientState.lastResult = null;
       clientState.phase = PHASE.QUESTION_PREVIEW;
 
+      hideWrongAnswerOverlay();
       showOnly('screen-game');
       renderScoreboard(clientState.players);
       renderGamePhase(PHASE.QUESTION_PREVIEW, buildClientRenderData(local), false);
@@ -526,6 +569,7 @@ function handleClientMessage(data, peer, local, playerName) {
         disableChoice(data.choice);
         const malusStr = data.points < 0 ? ` (${data.points} pts)` : '';
         showToast(`❌ Mauvaise réponse !${malusStr}`, 'warn');
+        showWrongAnswerOverlay();
       } else {
         disableChoice(data.choice);
       }
@@ -551,10 +595,15 @@ function handleClientMessage(data, peer, local, playerName) {
       if (data.correct && data.playerId === peer.peerId) {
         flashBuzz();
       }
+      // En mode classique/speed, si le joueur courant a répondu faux, griser l'écran
+      if (data.correct === false && data.playerId === peer.peerId) {
+        showWrongAnswerOverlay();
+      }
       break;
 
     case MSG.QUESTION_END:
       stopTimerBar();
+      hideWrongAnswerOverlay();
       local.correctAnswer = data.correctAnswer;
       if (local.currentQuestion) local.currentQuestion.correctAnswer = data.correctAnswer;
       clientState.currentQuestion = local.currentQuestion;
@@ -568,6 +617,8 @@ function handleClientMessage(data, peer, local, playerName) {
 
     case MSG.GAME_OVER:
       stopTimerBar();
+      hideWrongAnswerOverlay();
+      clearSession();
       clientState.finalScores = data.finalScores ?? [];
       showOnly('screen-game-over');
       renderFinalResults(clientState.finalScores);

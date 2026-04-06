@@ -213,9 +213,18 @@
         <p id="skipped-badge" class="skipped-badge" hidden>⏭️ Question passée</p>
         <p class="correct-answer-label">✅ Bonne réponse :</p>
         <p id="correct-answer-reveal" class="correct-answer-reveal"></p>
-        <button id="btn-next-question" class="btn btn-primary btn-lg mt-16" hidden>
+        <button id="btn-next-question" class="btn btn-primary btn-lg mt-16 host-only" hidden>
           ▶️ Question suivante
         </button>
+      </div>
+
+      <!-- Overlay mauvaise réponse -->
+      <div id="wrong-answer-overlay" class="wrong-answer-overlay" hidden>
+        <div class="wrong-answer-overlay-inner">
+          <p class="wrong-answer-overlay-icon">❌</p>
+          <p class="wrong-answer-overlay-text">Mauvaise réponse</p>
+          <p class="wrong-answer-overlay-sub">En attente de la bonne réponse…</p>
+        </div>
       </div>
 
     </div>
