@@ -467,6 +467,7 @@ export class GameEngine {
     switch (data.type) {
       case MSG.JOIN:
         this.addPlayer(from, data.name ?? 'Anonyme');
+        this.markReady(from);
         break;
       case MSG.READY:
         this.markReady(from);

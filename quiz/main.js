@@ -644,11 +644,11 @@ function handleClientMessage(data, peer, local, playerName) {
         clientState.phase = PHASE.ANSWERING;
         startTimerBar(dur, 'timer-fill', 100, playTick);
         renderGamePhase(PHASE.ANSWERING, buildClientRenderData(local, { canBuzz: false }), false);
-        if (isCurrent) {
+        if (isCurrent && !local.config?.hostIsReader) {
           // C'est mon tour de répondre
           setupClientAnswerForm(peer, local);
         } else {
-          // Quelqu'un d'autre répond
+          // Quelqu'un d'autre répond, ou mode hôte lecteur (réponse à l'oral)
           const inp = document.getElementById('answer-input');
           if (inp) { inp.disabled = true; inp.value = ''; }
         }
@@ -740,6 +740,7 @@ function buildClientRenderData(local, extra = {}) {
     mode: local.mode,
     canBuzz: extra.canBuzz ?? false,
     showAnswerToHost: false,
+    hostIsReader: local.config?.hostIsReader ?? false,
     onChoiceClick: extra.onChoiceClick,
   };
 }

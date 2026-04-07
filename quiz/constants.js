@@ -86,6 +86,7 @@ export const CATEGORY_LABELS = {
   history: '🏛️ Histoire',
   music: '🎵 Musique',
   reunion: '🏝️ Île de la Réunion',
+  children: '👶 Enfants (8-12 ans)',
   science: '🔬 Sciences',
   society_and_culture: '👥 Société & Culture',
   sport_and_leisure: '⚽ Sport & Loisirs',

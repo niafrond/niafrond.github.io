@@ -298,14 +298,19 @@ export function renderGamePhase(phase, data, isHost) {
         }
 
         if (isHostReader) {
-          // Hôte lecteur : boutons Correct / Incorrect à la place du champ texte
+          // Hôte lecteur : cacher le champ texte pour tous les joueurs
           hide('answer-form');
-          show('phase-answering');
-          show('host-judge-buttons');
-          const judgeNameEl = el('judge-player-name');
-          if (judgeNameEl && data.buzzQueue?.length) {
-            const currentPlayer = data.players?.find(p => p.id === data.buzzQueue[0]);
-            judgeNameEl.textContent = currentPlayer ? `🎙️ ${currentPlayer.name} répond à l'oral…` : '';
+          if (isHost) {
+            // Seul l'hôte voit les boutons Correct / Incorrect pour juger à l'oral
+            show('phase-answering');
+            show('host-judge-buttons');
+            const judgeNameEl = el('judge-player-name');
+            if (judgeNameEl && data.buzzQueue?.length) {
+              const currentPlayer = data.players?.find(p => p.id === data.buzzQueue[0]);
+              judgeNameEl.textContent = currentPlayer ? `🎙️ ${currentPlayer.name} répond à l'oral…` : '';
+            }
+          } else {
+            hide('host-judge-buttons');
           }
         } else {
           hide('host-judge-buttons');
