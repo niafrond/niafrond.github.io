@@ -138,6 +138,13 @@ export function renderSetupForm(defaults, onChange) {
     malusCheck.checked = defaults.applyMalus ?? false;
     malusCheck.addEventListener('change', () => onChange({ applyMalus: malusCheck.checked }));
   }
+
+  // Checkbox "Mode hôte lecteur"
+  const hostReaderCheck = el('host-is-reader');
+  if (hostReaderCheck) {
+    hostReaderCheck.checked = defaults.hostIsReader ?? false;
+    hostReaderCheck.addEventListener('change', () => onChange({ hostIsReader: hostReaderCheck.checked }));
+  }
 }
 
 // ─── Lien de partage ──────────────────────────────────────────────────────────
@@ -185,8 +192,9 @@ export function renderLobbyPlayers(players, isHost, onKick) {
 
 // ─── Scoreboard ───────────────────────────────────────────────────────────────
 
-export function renderScoreboard(players) {
-  const sorted = [...players].sort((a, b) => b.score - a.score);
+export function renderScoreboard(players, hostIsReader = false) {
+  const filtered = hostIsReader ? players.filter(p => p.id !== '__host__') : players;
+  const sorted = [...filtered].sort((a, b) => b.score - a.score);
   const board = el('scoreboard');
   if (!board) return;
 
@@ -240,7 +248,15 @@ export function renderGamePhase(phase, data, isHost) {
       renderQuestion(q, data);
       {
         const buzzBtn = el('btn-buzz');
-        if (buzzBtn) buzzBtn.disabled = !data.canBuzz;
+        if (buzzBtn) {
+          // En mode hôte lecteur, le bouton buzz est caché
+          if (data.hostIsReader) {
+            buzzBtn.hidden = true;
+          } else {
+            buzzBtn.hidden = false;
+            buzzBtn.disabled = !data.canBuzz;
+          }
+        }
       }
       break;
 
@@ -248,23 +264,22 @@ export function renderGamePhase(phase, data, isHost) {
       show('phase-question-preview');
       if (data.mode === MODE.QCM) {
         hide('answer-form');
+        hide('host-judge-buttons');
         show('phase-answering');
-        renderChoices(q?.choices ?? [], data.onChoiceClick, data.eliminatedPlayers ?? []);
+        if (data.hostIsReader) {
+          // Hôte lecteur en QCM : afficher les choix et révéler immédiatement la bonne réponse
+          renderChoices(q?.choices ?? [], null, []);
+          if (q?.correctAnswer) {
+            highlightChoices(q.correctAnswer, null);
+          }
+        } else {
+          renderChoices(q?.choices ?? [], data.onChoiceClick, data.eliminatedPlayers ?? []);
+        }
       } else {
-        show('answer-form');
-        const isCurrent = data.buzzQueue?.[0] === data.myId;
+        const isHostReader = data.hostIsReader;
         show('phase-buzzing');
         const buzzBtn = el('btn-buzz');
         if (buzzBtn) buzzBtn.disabled = true;
-
-        if (isCurrent) {
-          show('phase-answering');
-          const inp = el('answer-input');
-          if (inp) {
-            inp.disabled = false;
-            inp.focus();
-          }
-        }
 
         // Afficher la file d'attente
         const queueEl = el('buzz-queue');
@@ -280,6 +295,30 @@ export function renderGamePhase(phase, data, isHost) {
             : '';
           queueEl.innerHTML = firstHtml + (waitHtml ? `<br>${waitHtml}` : '');
           queueEl.hidden = false;
+        }
+
+        if (isHostReader) {
+          // Hôte lecteur : boutons Correct / Incorrect à la place du champ texte
+          hide('answer-form');
+          show('phase-answering');
+          show('host-judge-buttons');
+          const judgeNameEl = el('judge-player-name');
+          if (judgeNameEl && data.buzzQueue?.length) {
+            const currentPlayer = data.players?.find(p => p.id === data.buzzQueue[0]);
+            judgeNameEl.textContent = currentPlayer ? `🎙️ ${currentPlayer.name} répond à l'oral…` : '';
+          }
+        } else {
+          hide('host-judge-buttons');
+          show('answer-form');
+          const isCurrent = data.buzzQueue?.[0] === data.myId;
+          if (isCurrent) {
+            show('phase-answering');
+            const inp = el('answer-input');
+            if (inp) {
+              inp.disabled = false;
+              inp.focus();
+            }
+          }
         }
       }
       break;
@@ -337,10 +376,10 @@ export function renderGamePhase(phase, data, isHost) {
 function renderQuestion(q, data) {
   if (!q) return;
   setText('question-text', q.text);
-  // Afficher la bonne réponse à l'hôte si option activée
+  // Afficher la bonne réponse à l'hôte si option activée ou mode hôte lecteur
   const hostAnswer = el('host-answer-hint');
   if (hostAnswer) {
-    if (data.showAnswerToHost) {
+    if (data.showAnswerToHost || data.hostIsReader) {
       hostAnswer.textContent = `🔑 ${q.correctAnswer}`;
       hostAnswer.hidden = false;
     } else {

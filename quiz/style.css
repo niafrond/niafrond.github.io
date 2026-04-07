@@ -526,6 +526,31 @@ body.buzz-flash::after {
 }
 .answer-form-inner .input { flex: 1; }
 
+/* Boutons de jugement (mode hôte lecteur) */
+.host-judge-buttons {
+  margin-top: 16px;
+  text-align: center;
+}
+.host-judge-buttons[hidden] { display: none !important; }
+.judge-player-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent2);
+  margin-bottom: 14px;
+}
+.judge-buttons-row {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.judge-buttons-row .btn {
+  flex: 1;
+  min-width: 140px;
+  max-width: 220px;
+  font-size: 1.1rem;
+}
+
 /* Choices grid (QCM) */
 .choices-grid {
   display: grid;
