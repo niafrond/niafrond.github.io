@@ -319,6 +319,7 @@ html, body {
   color: var(--text-muted);
   margin: 0;
 }
+.wrong-answer-overlay[hidden] { display: none !important; }
 
 /* ─── Question header ─────────────────────────────────────────────────────── */
 .question-header { padding: 14px 18px; }
