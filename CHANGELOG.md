@@ -1,3 +1,9 @@
+## [1.38.0](https://github.com/niafrond/niafrond.github.io/compare/v1.37.0...v1.38.0) (2026-04-07)
+
+### Features
+
+* **quiz:** add synthetic sounds via Web Audio API ([#15](https://github.com/niafrond/niafrond.github.io/issues/15)) ([a5c76e9](https://github.com/niafrond/niafrond.github.io/commit/a5c76e9e5ea305ef9f02dad486d8a73d614970bb))
+
 ## [1.37.0](https://github.com/niafrond/niafrond.github.io/compare/v1.36.0...v1.37.0) (2026-04-06)
 
 ### Features
