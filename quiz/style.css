@@ -233,7 +233,49 @@ html, body {
 }
 .mode-option.selected .mode-desc { color: var(--accent2); opacity: 0.8; }
 
-/* ─── Lobby ───────────────────────────────────────────────────────────────── */
+/* ─── Chip picker (multi-sélection catégorie / difficulté) ───────────────── */
+.chip-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip-btn {
+  background: var(--bg);
+  border: 2px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.chip-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.chip-btn.chip-active {
+  background: rgba(8,145,178,0.2);
+  border-color: var(--accent);
+  color: var(--accent2);
+  font-weight: 600;
+}
+.chip-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.chip-hint-inline {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+
 .lobby-layout {
   display: grid;
   grid-template-columns: 1fr 300px;
