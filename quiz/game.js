@@ -45,6 +45,7 @@ export class GameEngine {
         showAnswerToHost: false,
         applyMalus: false,
         mode: MODE.CLASSIC,
+        hostIsReader: false,
       },
     };
 
@@ -232,6 +233,8 @@ export class GameEngine {
     if (this.state.phase !== PHASE.BUZZING && this.state.phase !== PHASE.ANSWERING) return;
     if (this.state.phase === PHASE.ANSWERING && this.state.mode !== MODE.CLASSIC && this.state.mode !== MODE.SPEED) return;
     if (this.state.buzzQueue.includes(peerId)) return;
+    // En mode hôte lecteur, l'hôte ne peut pas buzzer
+    if (this.state.config.hostIsReader && peerId === '__host__') return;
 
     this.state.buzzQueue.push(peerId);
 
@@ -291,12 +294,62 @@ export class GameEngine {
     }
   }
 
+  // ─── Jugement hôte lecteur (mode oral, CLASSIC / SPEED) ────────────────────
+
+  /**
+   * Appelé par l'hôte en mode lecteur pour juger si la réponse orale est correcte.
+   * @param {boolean} isCorrect
+   */
+  hostJudgeAnswer(isCorrect) {
+    if (this.state.phase !== PHASE.ANSWERING) return;
+    if (this.state.mode === MODE.QCM) return;
+
+    this._clearTimer('answer');
+    const peerId = this.state.buzzQueue[0];
+    if (!peerId) return;
+
+    const q = this.currentQuestion;
+    const player = this.state.players.find(p => p.id === peerId);
+    let points = 0;
+    let speedBonus = 0;
+
+    if (isCorrect) {
+      const elapsed = this._answerStartTime != null ? Date.now() - this._answerStartTime : this._getAnswerDuration();
+      speedBonus = calcSpeedBonus(elapsed, this._getAnswerDuration());
+      points = SCORE.CORRECT + speedBonus;
+      if (player) player.score += points;
+    } else if (this.state.config.applyMalus) {
+      points = SCORE.WRONG_MALUS;
+      if (player) player.score += points;
+    }
+
+    const scores = this._getScores();
+    const result = { correct: isCorrect, playerId: peerId, answer: null, points, speedBonus, nearMiss: false, scores };
+    this.state.lastResult = result;
+    this.peer.broadcast({ type: MSG.ANSWER_RESULT, ...result });
+
+    if (isCorrect) {
+      this._showAnswerResult(() => this._endQuestion(false));
+    } else {
+      this._showAnswerResult(() => {
+        this.state.buzzQueue.shift();
+        if (this.state.buzzQueue.length > 0) {
+          this._startAnswering();
+        } else {
+          this._skipQuestion();
+        }
+      });
+    }
+  }
+
   // ─── Choix QCM ────────────────────────────────────────────────────────────
 
   handleChoice(peerId, choice) {
     if (this.state.phase !== PHASE.ANSWERING) return;
     if (this.state.mode !== MODE.QCM) return;
     if (this.state.eliminatedPlayers.includes(peerId)) return;
+    // En mode hôte lecteur, l'hôte ne peut pas voter
+    if (this.state.config.hostIsReader && peerId === '__host__') return;
 
     const q = this.currentQuestion;
     const correct = choice === q.correctAnswer;
@@ -331,7 +384,12 @@ export class GameEngine {
   }
 
   _checkAllQcmEliminated() {
-    const activePlayers = this.state.players.filter(p => !this.state.eliminatedPlayers.includes(p.id));
+    const activePlayers = this.state.players.filter(p => {
+      if (this.state.eliminatedPlayers.includes(p.id)) return false;
+      // En mode hôte lecteur, l'hôte ne compte pas comme joueur actif
+      if (this.state.config.hostIsReader && p.id === '__host__') return false;
+      return true;
+    });
     if (activePlayers.length === 0) {
       this._clearTimer('buzz');
       this._skipQuestion();
@@ -391,7 +449,12 @@ export class GameEngine {
   _endGame() {
     this._clearAllTimers();
     this.state.phase = PHASE.GAME_OVER;
-    const finalScores = [...this.state.players]
+    let players = [...this.state.players];
+    // En mode hôte lecteur, l'hôte n'apparaît pas dans les résultats
+    if (this.state.config.hostIsReader) {
+      players = players.filter(p => p.id !== '__host__');
+    }
+    const finalScores = players
       .sort((a, b) => b.score - a.score)
       .map(({ id, name, score }) => ({ id, name, score }));
     this.peer.broadcast({ type: MSG.GAME_OVER, finalScores });

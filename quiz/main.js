@@ -72,6 +72,7 @@ const clientState = {
   mode: MODE.CLASSIC,
   config: {},
   showAnswerToHost: false,
+  hostIsReader: false,
 };
 
 // ─── Config de partie (hôte) ──────────────────────────────────────────────────
@@ -84,6 +85,7 @@ const hostConfig = {
   answerTime: 15,
   showAnswerToHost: false,
   applyMalus: false,
+  hostIsReader: false,
 };
 
 // ─── Initialisation ───────────────────────────────────────────────────────────
@@ -236,6 +238,7 @@ async function startGame(engine, peer) {
   }
 
   clientState.showAnswerToHost = hostConfig.showAnswerToHost;
+  clientState.hostIsReader = hostConfig.hostIsReader;
   engine.startGame(questions, { ...hostConfig });
 }
 
@@ -267,7 +270,7 @@ function handleHostStateChange(state, engine, peer) {
 
     case PHASE.QUESTION_PREVIEW:
       showOnly('screen-game');
-      renderScoreboard(state.players);
+      renderScoreboard(state.players, clientState.hostIsReader);
       renderGamePhase(state.phase, buildRenderData(state, engine), true);
       stopTimerBar();
       playQuestionStart();
@@ -275,16 +278,18 @@ function handleHostStateChange(state, engine, peer) {
 
     case PHASE.BUZZING:
       showOnly('screen-game');
-      renderScoreboard(state.players);
+      renderScoreboard(state.players, clientState.hostIsReader);
       renderGamePhase(state.phase, buildRenderData(state, engine), true);
       startTimerBar(TIMER.BUZZ_DURATION, 'timer-fill', 100);
-      // Buzzer hôte
-      setupHostBuzzButton(engine);
+      // Buzzer hôte (désactivé en mode hôte lecteur)
+      if (!clientState.hostIsReader) {
+        setupHostBuzzButton(engine);
+      }
       break;
 
     case PHASE.ANSWERING:
       showOnly('screen-game');
-      renderScoreboard(state.players);
+      renderScoreboard(state.players, clientState.hostIsReader);
       // Détecter les nouvelles éliminations QCM côté hôte et notifier
       if (state.mode === MODE.QCM) {
         const newElim = state.eliminatedPlayers.filter(id => !prevEliminatedPlayers.includes(id));
@@ -301,7 +306,7 @@ function handleHostStateChange(state, engine, peer) {
       }
       {
         const data = buildRenderData(state, engine);
-        if (state.mode === MODE.QCM) {
+        if (state.mode === MODE.QCM && !clientState.hostIsReader) {
           data.onChoiceClick = (choice) => {
             engine.handleChoice('__host__', choice);
           };
@@ -309,15 +314,20 @@ function handleHostStateChange(state, engine, peer) {
         }
         renderGamePhase(state.phase, data, true);
       }
-      if (state.mode !== MODE.QCM) {
-        // Réponse texte hôte
+      if (clientState.hostIsReader) {
+        // Mode hôte lecteur : boutons Correct / Incorrect pour juger à l'oral
+        if (state.mode !== MODE.QCM) {
+          setupHostJudgeButtons(engine);
+        }
+      } else if (state.mode !== MODE.QCM) {
+        // Réponse texte hôte classique
         setupHostAnswerForm(engine, state);
       }
       break;
 
     case PHASE.ANSWER_RESULT:
       showOnly('screen-game');
-      renderScoreboard(state.players);
+      renderScoreboard(state.players, clientState.hostIsReader);
       stopTimerBar();
       renderGamePhase(state.phase, buildRenderData(state, engine), true);
       // Sons de résultat
@@ -337,7 +347,7 @@ function handleHostStateChange(state, engine, peer) {
 
     case PHASE.QUESTION_END:
       showOnly('screen-game');
-      renderScoreboard(state.players);
+      renderScoreboard(state.players, clientState.hostIsReader);
       stopTimerBar();
       renderGamePhase(state.phase, buildRenderData(state, engine), true);
       setupNextButton(engine);
@@ -345,7 +355,7 @@ function handleHostStateChange(state, engine, peer) {
       break;
 
     case PHASE.GAME_OVER: {
-      const finalScores = [...state.players].sort((a, b) => b.score - a.score);
+      const finalScores = state.finalScores ?? [...state.players].sort((a, b) => b.score - a.score);
       clientState.finalScores = finalScores;
       showOnly('screen-game-over');
       renderFinalResults(finalScores);
@@ -369,6 +379,7 @@ function buildRenderData(state, engine) {
     mode: state.mode,
     canBuzz: !state.buzzQueue.includes('__host__'),
     showAnswerToHost: clientState.showAnswerToHost,
+    hostIsReader: clientState.hostIsReader,
   };
 }
 
@@ -406,6 +417,25 @@ function setupHostAnswerForm(engine, state) {
     engine.handleAnswer('__host__', text);
     inp.value = '';
     inp.disabled = true;
+  };
+}
+
+function setupHostJudgeButtons(engine) {
+  const btnCorrect = document.getElementById('btn-judge-correct');
+  const btnWrong = document.getElementById('btn-judge-wrong');
+  if (!btnCorrect || !btnWrong) return;
+
+  btnCorrect.onclick = () => {
+    stopTimerBar();
+    btnCorrect.disabled = true;
+    btnWrong.disabled = true;
+    engine.hostJudgeAnswer(true);
+  };
+  btnWrong.onclick = () => {
+    stopTimerBar();
+    btnCorrect.disabled = true;
+    btnWrong.disabled = true;
+    engine.hostJudgeAnswer(false);
   };
 }
 

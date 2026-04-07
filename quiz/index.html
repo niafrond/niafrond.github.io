@@ -72,6 +72,10 @@
         <input type="checkbox" id="apply-malus">
         Mode malus (−3 pts pour les mauvaises réponses)
       </label>
+      <label class="checkbox-label mt-8">
+        <input type="checkbox" id="host-is-reader">
+        Mode hôte lecteur (l'hôte lit les questions et juge les réponses, sans jouer)
+      </label>
     </div>
 
     <button id="btn-start-host" class="btn btn-primary btn-lg w-full">
@@ -203,6 +207,14 @@
         </form>
         <!-- Mode QCM : grille de choix -->
         <div id="choices-grid" class="choices-grid"></div>
+        <!-- Boutons de jugement hôte lecteur (mode oral) -->
+        <div id="host-judge-buttons" class="host-judge-buttons" hidden>
+          <p id="judge-player-name" class="judge-player-name"></p>
+          <div class="judge-buttons-row">
+            <button id="btn-judge-correct" class="btn btn-success btn-lg">✅ Correct</button>
+            <button id="btn-judge-wrong" class="btn btn-danger btn-lg">❌ Incorrect</button>
+          </div>
+        </div>
       </div>
 
       <!-- Phase : résultat intermédiaire -->
