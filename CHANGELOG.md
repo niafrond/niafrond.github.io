@@ -1,3 +1,9 @@
+## [1.39.0](https://github.com/niafrond/niafrond.github.io/compare/v1.38.1...v1.39.0) (2026-04-07)
+
+### Features
+
+* retire bouton Valider en mode QCM et ajoute option mute sons ([#17](https://github.com/niafrond/niafrond.github.io/issues/17)) ([ec95cb5](https://github.com/niafrond/niafrond.github.io/commit/ec95cb5d8f73f42dc7e991745499076b19628090))
+
 ## [1.38.1](https://github.com/niafrond/niafrond.github.io/compare/v1.38.0...v1.38.1) (2026-04-07)
 
 ### Bug Fixes
