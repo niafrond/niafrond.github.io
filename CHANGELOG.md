@@ -1,3 +1,9 @@
+## [1.40.0](https://github.com/niafrond/niafrond.github.io/compare/v1.39.0...v1.40.0) (2026-04-07)
+
+### Features
+
+* quiz wrong-player notification, category badges, Île de la Réunion ([#18](https://github.com/niafrond/niafrond.github.io/issues/18)) ([1109de7](https://github.com/niafrond/niafrond.github.io/commit/1109de730514ea11d8424f34648143d19ad80c8e))
+
 ## [1.39.0](https://github.com/niafrond/niafrond.github.io/compare/v1.38.1...v1.39.0) (2026-04-07)
 
 ### Features
