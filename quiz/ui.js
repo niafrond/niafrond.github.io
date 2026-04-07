@@ -4,6 +4,30 @@
 
 import { PHASE, MODE, MODE_LABELS, MODE_DESCRIPTIONS, CATEGORY_LABELS, DIFFICULTY_LABELS, QUESTION_COUNTS, ANSWER_TIMES } from './constants.js';
 
+// ─── Chip multi-picker ───────────────────────────────────────────────────────
+
+/**
+ * Rend un sélecteur multi-choix sous forme de chips cliquables.
+ * @param {HTMLElement} container
+ * @param {Record<string,string>} labelsObj  — valeur → libellé
+ * @param {string[]} initialSelected
+ * @param {function(string[]): void} onChange
+ */
+function renderChipPicker(container, labelsObj, initialSelected, onChange) {
+  const entries = Object.entries(labelsObj).filter(([v]) => v !== '');
+  container.innerHTML = entries.map(([val, label]) =>
+    `<button type="button" class="chip-btn${initialSelected.includes(val) ? ' chip-active' : ''}" data-value="${escapeHtml(val)}">${label}</button>`
+  ).join('');
+
+  container.querySelectorAll('.chip-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('chip-active');
+      const selected = [...container.querySelectorAll('.chip-btn.chip-active')].map(b => b.dataset.value);
+      onChange(selected);
+    });
+  });
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 export function show(id) {
@@ -66,22 +90,21 @@ export function renderSetupForm(defaults, onChange) {
     });
   }
 
-  // Catégorie
-  const catSelect = el('category-select');
-  if (catSelect) {
-    catSelect.innerHTML = Object.entries(CATEGORY_LABELS).map(([val, label]) =>
-      `<option value="${val}" ${defaults.category === val ? 'selected' : ''}>${label}</option>`
-    ).join('');
-    catSelect.addEventListener('change', () => onChange({ category: catSelect.value }));
+  // Catégorie (chip multi-picker)
+  const catPicker = el('category-picker');
+  if (catPicker) {
+    renderChipPicker(catPicker, CATEGORY_LABELS, defaults.categories ?? [], (selected) => {
+      onChange({ categories: selected });
+    });
   }
 
-  // Difficulté
-  const diffSelect = el('difficulty-select');
-  if (diffSelect) {
-    diffSelect.innerHTML = Object.entries(DIFFICULTY_LABELS).map(([val, label]) =>
-      `<option value="${val}" ${defaults.difficulty === val ? 'selected' : ''}>${label}</option>`
-    ).join('');
-    diffSelect.addEventListener('change', () => onChange({ difficulty: diffSelect.value }));
+  // Difficulté (chip multi-picker)
+  const diffPicker = el('difficulty-picker');
+  if (diffPicker) {
+    const diffOptions = Object.fromEntries(Object.entries(DIFFICULTY_LABELS).filter(([v]) => v !== ''));
+    renderChipPicker(diffPicker, diffOptions, defaults.difficulties ?? [], (selected) => {
+      onChange({ difficulties: selected });
+    });
   }
 
   // Nombre de questions

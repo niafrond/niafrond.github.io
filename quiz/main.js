@@ -77,8 +77,8 @@ const clientState = {
 
 const hostConfig = {
   mode: MODE.CLASSIC,
-  category: '',
-  difficulty: '',
+  categories: [],
+  difficulties: [],
   questionCount: 10,
   answerTime: 15,
   showAnswerToHost: false,
@@ -225,8 +225,8 @@ async function startGame(engine, peer) {
   try {
     questions = await fetchQuestions({
       count: hostConfig.questionCount,
-      category: hostConfig.category,
-      difficulty: hostConfig.difficulty,
+      categories: hostConfig.categories,
+      difficulties: hostConfig.difficulties,
     });
   } catch (err) {
     showToast('Impossible de charger les questions', 'error');

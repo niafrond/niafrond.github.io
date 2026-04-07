@@ -43,19 +43,18 @@
     <!-- Catégorie -->
     <div class="card mb-16">
       <div class="card-title">📂 Catégorie</div>
-      <div class="form-group" style="margin:0;">
-        <select id="category-select" class="input"></select>
-      </div>
+      <p class="chip-hint">Aucune sélection = toutes les catégories</p>
+      <div id="category-picker" class="chip-picker"></div>
     </div>
 
     <!-- Difficulté + questions -->
     <div class="card mb-16">
       <div class="card-title">⚙️ Options</div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Difficulté <span class="chip-hint-inline">(aucune = toutes)</span></label>
+        <div id="difficulty-picker" class="chip-picker mt-8"></div>
+      </div>
       <div class="form-row">
-        <div class="form-group" style="flex:1;">
-          <label for="difficulty-select">Difficulté</label>
-          <select id="difficulty-select" class="input"></select>
-        </div>
         <div class="form-group" style="flex:1;">
           <label for="question-count-select">Nombre de questions</label>
           <select id="question-count-select" class="input"></select>

@@ -40,13 +40,13 @@ function normalizeApiQuestion(q) {
  * Récupère des questions depuis The Trivia API avec langue française.
  * Bascule sur les questions intégrées en cas d'échec.
  *
- * @param {{ count?: number, category?: string, difficulty?: string }} opts
+ * @param {{ count?: number, categories?: string[], difficulties?: string[] }} opts
  * @returns {Promise<Array>}
  */
-export async function fetchQuestions({ count = 10, category = '', difficulty = '' } = {}) {
+export async function fetchQuestions({ count = 10, categories = [], difficulties = [] } = {}) {
   const params = new URLSearchParams({ limit: String(count), language: 'fr' });
-  if (category) params.append('categories', category);
-  if (difficulty) params.append('difficulty', difficulty);
+  if (categories.length > 0) params.append('categories', categories.join(','));
+  if (difficulties.length === 1) params.append('difficulty', difficulties[0]);
 
   let apiQuestions = [];
   try {
@@ -57,6 +57,10 @@ export async function fetchQuestions({ count = 10, category = '', difficulty = '
       throw new Error('Trop peu de questions reçues');
     }
     apiQuestions = data.map(normalizeApiQuestion);
+    // Post-filter by difficulties when multiple are selected (API only accepts one)
+    if (difficulties.length > 1) {
+      apiQuestions = apiQuestions.filter(q => difficulties.includes(q.difficulty));
+    }
   } catch (err) {
     console.warn('[Quiz] API indisponible, utilisation des questions intégrées :', err.message);
   }
@@ -66,20 +70,20 @@ export async function fetchQuestions({ count = 10, category = '', difficulty = '
   // Compléter avec des questions intégrées si l'API a renvoyé trop peu
   const needed = count - apiQuestions.length;
   const apiIds = new Set(apiQuestions.map(q => q.id));
-  const bundled = getBundledQuestions(needed, category, difficulty).filter(q => !apiIds.has(q.id));
+  const bundled = getBundledQuestions(needed, categories, difficulties).filter(q => !apiIds.has(q.id));
   return [...apiQuestions, ...bundled].slice(0, count);
 }
 
 /** Renvoie des questions depuis le jeu intégré */
-function getBundledQuestions(count, category, difficulty) {
+function getBundledQuestions(count, categories, difficulties) {
   let pool = BUNDLED_QUESTIONS;
-  if (category) pool = pool.filter(q => q.category === category);
-  if (difficulty) pool = pool.filter(q => q.difficulty === difficulty);
+  if (categories.length > 0) pool = pool.filter(q => categories.includes(q.category));
+  if (difficulties.length > 0) pool = pool.filter(q => difficulties.includes(q.difficulty));
 
   // Si le filtre combiné donne trop peu, relâcher progressivement
   if (pool.length < Math.min(count, MIN_QUESTIONS_THRESHOLD)) {
-    // Garder la catégorie, ignorer la difficulté
-    if (category) pool = BUNDLED_QUESTIONS.filter(q => q.category === category);
+    // Garder les catégories, ignorer la difficulté
+    if (categories.length > 0) pool = BUNDLED_QUESTIONS.filter(q => categories.includes(q.category));
     // Si encore trop peu, ignorer les deux filtres
     if (pool.length < MIN_QUESTIONS_THRESHOLD) pool = BUNDLED_QUESTIONS;
   }
