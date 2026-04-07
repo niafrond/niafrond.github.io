@@ -3,7 +3,8 @@
  *
  * State machine :
  *  LOBBY → QUESTION_PREVIEW → BUZZING → ANSWERING → ANSWER_RESULT
- *       → QUESTION_END → QUESTION_PREVIEW (suivant) → … → GAME_OVER
+ *       → [BUZZING (temps restant + joueurs éligibles)] → QUESTION_END
+ *       → QUESTION_PREVIEW (suivant) → … → GAME_OVER
  *
  * En mode QCM : QUESTION_PREVIEW → ANSWERING (pas de BUZZING)
  */
@@ -37,6 +38,8 @@ export class GameEngine {
       questions: [],     // Questions normalisées
       currentIndex: -1,  // Index de la question en cours
       buzzQueue: [],     // [peerId, ...] ordre d'arrivée des buzzes
+      buzzDeadline: null, // Timestamp absolu de fin de la fenêtre de buzz
+      wrongAnswers: [],  // Joueurs ayant répondu faux en mode buzzer (question courante)
       eliminatedPlayers: [], // Joueurs ayant mal répondu en QCM (question courante)
       lastResult: null,  // { correct, playerId, answer, points, speedBonus, nearMiss }
       config: {
@@ -143,6 +146,8 @@ export class GameEngine {
     this._clearAllTimers();
     this.state.currentIndex++;
     this.state.buzzQueue = [];
+    this.state.buzzDeadline = null;
+    this.state.wrongAnswers = [];
     this.state.eliminatedPlayers = [];
     this.state.lastResult = null;
 
@@ -180,6 +185,7 @@ export class GameEngine {
   }
 
   _startBuzzing() {
+    this.state.buzzDeadline = Date.now() + TIMER.BUZZ_DURATION;
     this.state.phase = PHASE.BUZZING;
     this.onStateChange({ ...this.state });
 
@@ -233,6 +239,7 @@ export class GameEngine {
     if (this.state.phase !== PHASE.BUZZING && this.state.phase !== PHASE.ANSWERING) return;
     if (this.state.phase === PHASE.ANSWERING && this.state.mode !== MODE.CLASSIC && this.state.mode !== MODE.SPEED) return;
     if (this.state.buzzQueue.includes(peerId)) return;
+    if (this.state.wrongAnswers.includes(peerId)) return;
     // En mode hôte lecteur, l'hôte ne peut pas buzzer
     if (this.state.config.hostIsReader && peerId === '__host__') return;
 
@@ -282,13 +289,14 @@ export class GameEngine {
     if (correct) {
       this._showAnswerResult(() => this._endQuestion(false));
     } else {
-      // Mauvaise réponse : afficher brièvement, puis passer au suivant dans la queue
+      // Mauvaise réponse : enregistrer le joueur, afficher brièvement, puis continuer
+      this.state.wrongAnswers.push(peerId);
       this._showAnswerResult(() => {
         this.state.buzzQueue.shift();
         if (this.state.buzzQueue.length > 0) {
           this._startAnswering();
         } else {
-          this._skipQuestion();
+          this._resumeBuzzing();
         }
       });
     }
@@ -331,12 +339,13 @@ export class GameEngine {
     if (isCorrect) {
       this._showAnswerResult(() => this._endQuestion(false));
     } else {
+      this.state.wrongAnswers.push(peerId);
       this._showAnswerResult(() => {
         this.state.buzzQueue.shift();
         if (this.state.buzzQueue.length > 0) {
           this._startAnswering();
         } else {
-          this._skipQuestion();
+          this._resumeBuzzing();
         }
       });
     }
@@ -394,6 +403,35 @@ export class GameEngine {
       this._clearTimer('buzz');
       this._skipQuestion();
     }
+  }
+
+  // ─── Retour en phase buzzer après mauvaise réponse ───────────────────────
+
+  _resumeBuzzing() {
+    const remaining = this.state.buzzDeadline ? this.state.buzzDeadline - Date.now() : 0;
+
+    // Joueurs encore éligibles (n'ont pas encore répondu faux)
+    const eligiblePlayers = this.state.players.filter(p => {
+      if (this.state.wrongAnswers.includes(p.id)) return false;
+      if (this.state.config.hostIsReader && p.id === '__host__') return false;
+      return true;
+    });
+
+    if (remaining <= 500 || eligiblePlayers.length === 0) {
+      this._skipQuestion();
+      return;
+    }
+
+    this.state.phase = PHASE.BUZZING;
+    this.state.buzzQueue = [];
+    this.peer.broadcast({ type: MSG.BUZZ_RESUME, remainingMs: Math.floor(remaining) });
+    this.onStateChange({ ...this.state });
+
+    this._buzzTimer = setTimeout(() => {
+      if (this.state.phase === PHASE.BUZZING) {
+        this._skipQuestion();
+      }
+    }, remaining);
   }
 
   // ─── Affichage temporaire du résultat ────────────────────────────────────
@@ -467,6 +505,7 @@ export class GameEngine {
     switch (data.type) {
       case MSG.JOIN:
         this.addPlayer(from, data.name ?? 'Anonyme');
+        this.markReady(from);
         break;
       case MSG.READY:
         this.markReady(from);
