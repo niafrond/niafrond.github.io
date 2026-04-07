@@ -1,3 +1,9 @@
+## [1.42.0](https://github.com/niafrond/niafrond.github.io/compare/v1.41.0...v1.42.0) (2026-04-07)
+
+### Features
+
+* **quiz:** add host reader mode — host reads questions, judges oral answers, doesn't play ([#20](https://github.com/niafrond/niafrond.github.io/issues/20)) ([d0814ad](https://github.com/niafrond/niafrond.github.io/commit/d0814ad69580979b99fafd84c81752a7fe9b0233))
+
 ## [1.41.0](https://github.com/niafrond/niafrond.github.io/compare/v1.40.0...v1.41.0) (2026-04-07)
 
 ### Features
