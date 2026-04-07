@@ -1,3 +1,9 @@
+## [1.41.0](https://github.com/niafrond/niafrond.github.io/compare/v1.40.0...v1.41.0) (2026-04-07)
+
+### Features
+
+* **quiz:** multi-select chip pickers for categories and difficulties ([#19](https://github.com/niafrond/niafrond.github.io/issues/19)) ([df49f92](https://github.com/niafrond/niafrond.github.io/commit/df49f928704a3228a4de122748dc40f464c4e52c))
+
 ## [1.40.0](https://github.com/niafrond/niafrond.github.io/compare/v1.39.0...v1.40.0) (2026-04-07)
 
 ### Features
