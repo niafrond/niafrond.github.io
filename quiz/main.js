@@ -280,7 +280,11 @@ function handleHostStateChange(state, engine, peer) {
       showOnly('screen-game');
       renderScoreboard(state.players, clientState.hostIsReader);
       renderGamePhase(state.phase, buildRenderData(state, engine), true);
-      startTimerBar(TIMER.BUZZ_DURATION, 'timer-fill', 100);
+      {
+        const buzzRemaining = state.buzzDeadline ? Math.max(0, state.buzzDeadline - Date.now()) : TIMER.BUZZ_DURATION;
+        const buzzStartPct = Math.round((buzzRemaining / TIMER.BUZZ_DURATION) * 100);
+        startTimerBar(TIMER.BUZZ_DURATION, 'timer-fill', buzzStartPct);
+      }
       // Buzzer hôte (désactivé en mode hôte lecteur)
       if (!clientState.hostIsReader) {
         setupHostBuzzButton(engine);
@@ -525,6 +529,7 @@ async function startClientSession(hostPeerId, playerName) {
     currentQuestion: null,
     choices: null,
     selfEliminated: false,
+    hasBuzzedWrong: false, // a déjà répondu faux au buzzer sur cette question
     buzzQueue: [],
     mode: MODE.CLASSIC,
     answerTime: 15,
@@ -598,6 +603,7 @@ function handleClientMessage(data, peer, local, playerName) {
         difficulty: data.difficulty,
       };
       local.selfEliminated = false;
+      local.hasBuzzedWrong = false;
       local.correctAnswer = null;
       local.buzzQueue = [];
       clientState.currentIndex = data.index ?? 0;
@@ -697,7 +703,26 @@ function handleClientMessage(data, peer, local, playerName) {
       }
       // En mode classique/speed, si le joueur courant a répondu faux, griser l'écran
       if (data.correct === false && data.playerId === peer.peerId) {
+        local.hasBuzzedWrong = true;
         showWrongAnswerOverlay();
+      }
+      break;
+
+    case MSG.BUZZ_RESUME:
+      // Retour en phase buzzer après mauvaise réponse — les autres joueurs peuvent buzzer
+      hideWrongAnswerOverlay();
+      {
+        const remainingMs = data.remainingMs ?? TIMER.BUZZ_DURATION;
+        const startPct = Math.round((remainingMs / TIMER.BUZZ_DURATION) * 100);
+        local.buzzQueue = [];
+        clientState.buzzQueue = [];
+        clientState.phase = PHASE.BUZZING;
+        stopTimerBar();
+        startTimerBar(TIMER.BUZZ_DURATION, 'timer-fill', startPct);
+        renderGamePhase(PHASE.BUZZING, buildClientRenderData(local, { canBuzz: !local.hasBuzzedWrong }), false);
+        if (!local.hasBuzzedWrong) {
+          setupClientBuzzButton(peer, local);
+        }
       }
       break;
 

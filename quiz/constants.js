@@ -14,6 +14,7 @@ export const MSG = {
   BUZZ_QUEUE: 'BUZZ_QUEUE',       // { queue: [peerId,...] }
   WRONG_CHOICE: 'WRONG_CHOICE',   // { playerId, choice }
   ANSWER_RESULT: 'ANSWER_RESULT', // { correct, playerId, answer, scores, points }
+  BUZZ_RESUME: 'BUZZ_RESUME',     // { remainingMs } — retour en phase buzzer après mauvaise réponse
   QUESTION_END: 'QUESTION_END',   // { correctAnswer, skipped }
   GAME_OVER: 'GAME_OVER',         // { finalScores[] }
   KICKED: 'KICKED',
