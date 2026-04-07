@@ -358,8 +358,9 @@ export function disableChoice(choice) {
 let _timerInterval = null;
 let _timerBar = null;
 let _timerLabel = null;
+let _timerLastSecond = null;
 
-export function startTimerBar(durationMs, barId, startPct = 100) {
+export function startTimerBar(durationMs, barId, startPct = 100, onTickSecond = null) {
   stopTimerBar();
   _timerBar = el(barId);
   if (!_timerBar) return;
@@ -367,14 +368,21 @@ export function startTimerBar(durationMs, barId, startPct = 100) {
   const startMs = (startPct / 100) * durationMs;
   const start = Date.now();
   _timerBar.style.width = startPct + '%';
-  if (_timerLabel) _timerLabel.textContent = Math.ceil(startMs / 1000) + 's';
+  const initSec = Math.ceil(startMs / 1000);
+  if (_timerLabel) _timerLabel.textContent = initSec + 's';
+  _timerLastSecond = initSec;
 
   _timerInterval = setInterval(() => {
     const elapsed = Date.now() - start;
     const remaining = Math.max(0, startMs - elapsed);
     const pct = Math.max(0, startPct * (1 - elapsed / durationMs));
     _timerBar.style.width = pct + '%';
-    if (_timerLabel) _timerLabel.textContent = Math.ceil(remaining / 1000) + 's';
+    const sec = Math.ceil(remaining / 1000);
+    if (_timerLabel) _timerLabel.textContent = sec + 's';
+    if (onTickSecond && sec !== _timerLastSecond && sec <= 3 && sec > 0) {
+      onTickSecond(sec);
+    }
+    _timerLastSecond = sec;
     if (pct <= 0) stopTimerBar();
   }, 50);
 }
@@ -385,6 +393,7 @@ export function stopTimerBar() {
   if (_timerBar) _timerBar.style.width = '0%';
   if (_timerLabel) _timerLabel.textContent = '';
   _timerLabel = null;
+  _timerLastSecond = null;
 }
 
 // ─── Flash buzz ───────────────────────────────────────────────────────────────
