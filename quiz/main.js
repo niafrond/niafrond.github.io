@@ -355,7 +355,11 @@ function handleHostStateChange(state, engine, peer) {
       break;
 
     case PHASE.GAME_OVER: {
-      const finalScores = state.finalScores ?? [...state.players].sort((a, b) => b.score - a.score);
+      let finalScores = state.finalScores ?? [...state.players].sort((a, b) => b.score - a.score);
+      // En mode hôte lecteur, s'assurer que l'hôte n'apparaît pas (sécurité si finalScores vient du fallback)
+      if (clientState.hostIsReader) {
+        finalScores = finalScores.filter(p => p.id !== '__host__');
+      }
       clientState.finalScores = finalScores;
       showOnly('screen-game-over');
       renderFinalResults(finalScores);
