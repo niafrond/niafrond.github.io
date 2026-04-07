@@ -37,6 +37,12 @@ function normalizeApiQuestion(q) {
 }
 
 /**
+ * Catégories disponibles uniquement dans les questions intégrées (pas via l'API).
+ * Pour ces catégories, l'appel API est ignoré.
+ */
+const LOCAL_ONLY_CATEGORIES = ['reunion'];
+
+/**
  * Récupère des questions depuis The Trivia API avec langue française.
  * Bascule sur les questions intégrées en cas d'échec.
  *
@@ -49,16 +55,18 @@ export async function fetchQuestions({ count = 10, category = '', difficulty = '
   if (difficulty) params.append('difficulty', difficulty);
 
   let apiQuestions = [];
-  try {
-    const res = await fetch(`${TRIVIA_API_BASE}?${params}`, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (!Array.isArray(data) || data.length < Math.min(count, MIN_QUESTIONS_THRESHOLD)) {
-      throw new Error('Trop peu de questions reçues');
+  if (!LOCAL_ONLY_CATEGORIES.includes(category)) {
+    try {
+      const res = await fetch(`${TRIVIA_API_BASE}?${params}`, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length < Math.min(count, MIN_QUESTIONS_THRESHOLD)) {
+        throw new Error('Trop peu de questions reçues');
+      }
+      apiQuestions = data.map(normalizeApiQuestion);
+    } catch (err) {
+      console.warn('[Quiz] API indisponible, utilisation des questions intégrées :', err.message);
     }
-    apiQuestions = data.map(normalizeApiQuestion);
-  } catch (err) {
-    console.warn('[Quiz] API indisponible, utilisation des questions intégrées :', err.message);
   }
 
   if (apiQuestions.length >= count) return apiQuestions;
@@ -486,4 +494,66 @@ const BUNDLED_QUESTIONS = [
   { id: 'hrd28', category: 'society_and_culture', difficulty: 'hard',
     text: 'Quel philosophe grec a fondé l\'Académie, la première grande institution philosophique occidentale ?',
     correctAnswer: 'Platon', incorrectAnswers: ['Socrate', 'Aristote', 'Épicure'] },
+
+  // ── Île de la Réunion ─────────────────────────────────────────────────────
+  { id: 're01', category: 'reunion', difficulty: 'easy',
+    text: 'Quelle est la capitale de l\'île de La Réunion ?',
+    correctAnswer: 'Saint-Denis', incorrectAnswers: ['Saint-Pierre', 'Saint-Paul', 'Le Port'] },
+  { id: 're02', category: 'reunion', difficulty: 'easy',
+    text: 'Dans quel océan se trouve l\'île de La Réunion ?',
+    correctAnswer: 'L\'océan Indien', incorrectAnswers: ['L\'océan Atlantique', 'L\'océan Pacifique', 'La mer Méditerranée'] },
+  { id: 're03', category: 'reunion', difficulty: 'easy',
+    text: 'Quel est le nom du volcan actif de La Réunion ?',
+    correctAnswer: 'Le Piton de la Fournaise', incorrectAnswers: ['Le Piton des Neiges', 'Le Maïdo', 'Le Grand Bénare'] },
+  { id: 're04', category: 'reunion', difficulty: 'easy',
+    text: 'Quel est le point culminant de l\'île de La Réunion ?',
+    correctAnswer: 'Le Piton des Neiges', incorrectAnswers: ['Le Piton de la Fournaise', 'Le Maïdo', 'Le Grand Bénare'] },
+  { id: 're05', category: 'reunion', difficulty: 'easy',
+    text: 'Quel est le numéro de département de La Réunion ?',
+    correctAnswer: '974', incorrectAnswers: ['971', '972', '976'] },
+  { id: 're06', category: 'reunion', difficulty: 'easy',
+    text: 'Quelle monnaie est utilisée à La Réunion ?',
+    correctAnswer: 'L\'euro', incorrectAnswers: ['Le franc CFA', 'Le franc réunionnais', 'Le dollar'] },
+  { id: 're07', category: 'reunion', difficulty: 'easy',
+    text: 'En quelle année La Réunion est-elle devenue un département français ?',
+    correctAnswer: '1946', incorrectAnswers: ['1848', '1963', '1974'] },
+  { id: 're08', category: 'reunion', difficulty: 'easy',
+    text: 'Quel plat réunionnais consiste en une sauce tomate épicée avec des saucisses ?',
+    correctAnswer: 'Le rougail saucisse', incorrectAnswers: ['Le carry poulet', 'Le boucané', 'Le vindaye'] },
+  { id: 're09', category: 'reunion', difficulty: 'easy',
+    text: 'Quelle épice locale donne une couleur jaune aux plats réunionnais ?',
+    correctAnswer: 'Le curcuma (safran péi)', incorrectAnswers: ['Le gingembre', 'La cannelle', 'Le cumin'] },
+  { id: 're10', category: 'reunion', difficulty: 'medium',
+    text: 'Comment s\'appelle le plat traditionnel réunionnais à base de riz et de sauce mijotée ?',
+    correctAnswer: 'Le carry', incorrectAnswers: ['Le colombo', 'Le boucané', 'Le rougail'] },
+  { id: 're11', category: 'reunion', difficulty: 'medium',
+    text: 'Quels sont les trois cirques de La Réunion ?',
+    correctAnswer: 'Cilaos, Mafate et Salazie', incorrectAnswers: ['Cilaos, Bras-Panon et Salazie', 'Mafate, Salazie et Saint-Denis', 'Cilaos, Mafate et Piton'] },
+  { id: 're12', category: 'reunion', difficulty: 'medium',
+    text: 'Quel est le nom de l\'aéroport international principal de La Réunion ?',
+    correctAnswer: 'Roland Garros', incorrectAnswers: ['Pierrefonds', 'Saint-Denis Sud', 'La Rivière des Galets'] },
+  { id: 're13', category: 'reunion', difficulty: 'medium',
+    text: 'Quel oiseau rapace endémique est le symbole de La Réunion ?',
+    correctAnswer: 'Le Papangue', incorrectAnswers: ['Le Paille-en-queue', 'Le Tuit-tuit', 'Le Cardinal'] },
+  { id: 're14', category: 'reunion', difficulty: 'medium',
+    text: 'Quel site de La Réunion est classé au Patrimoine mondial de l\'UNESCO depuis 2010 ?',
+    correctAnswer: 'Les Pitons, cirques et remparts', incorrectAnswers: ['Le lagon de Saint-Gilles', 'Le Grand Bénare', 'La forêt de Bébour'] },
+  { id: 're15', category: 'reunion', difficulty: 'medium',
+    text: 'Quel est le principal produit agricole exporté par La Réunion ?',
+    correctAnswer: 'La canne à sucre', incorrectAnswers: ['La vanille', 'L\'ananas', 'Le café'] },
+  { id: 're16', category: 'reunion', difficulty: 'medium',
+    text: 'Comment appelle-t-on le point de vue panoramique culminant à 2 205 m d\'altitude sur le cirque de Mafate ?',
+    correctAnswer: 'Le Maïdo', incorrectAnswers: ['Le Belvédère', 'La Roche Écrite', 'Le Grand Bénare'] },
+  { id: 're17', category: 'reunion', difficulty: 'medium',
+    text: 'En quelle année l\'esclavage a-t-il été aboli à La Réunion ?',
+    correctAnswer: '1848', incorrectAnswers: ['1794', '1835', '1862'] },
+  { id: 're18', category: 'reunion', difficulty: 'hard',
+    text: 'Sous quel nom a-t-on appelé l\'île de La Réunion lors de sa première colonisation française au XVIIe siècle ?',
+    correctAnswer: 'Île Bourbon', incorrectAnswers: ['Île de France', 'Île Mascareignes', 'Île Dauphine'] },
+  { id: 're19', category: 'reunion', difficulty: 'hard',
+    text: 'Quel est le nom du sentier de grande randonnée qui traverse l\'intégralité de l\'île de La Réunion du nord au sud ?',
+    correctAnswer: 'GR R2', incorrectAnswers: ['GR R1', 'GR 20', 'GR R3'] },
+  { id: 're20', category: 'reunion', difficulty: 'hard',
+    text: 'Quel peuple a été massivement importé comme main-d\'œuvre à La Réunion après l\'abolition de l\'esclavage ?',
+    correctAnswer: 'Les engagés indiens', incorrectAnswers: ['Les engagés chinois', 'Les engagés malgaches', 'Les engagés vietnamiens'] },
 ];
