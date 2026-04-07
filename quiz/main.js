@@ -26,11 +26,27 @@ import {
 document.addEventListener('DOMContentLoaded', () => {
   const btnMute = document.getElementById('btn-mute');
   if (btnMute) {
+    // Restaurer la préférence mute depuis localStorage
+    const savedMute = localStorage.getItem('quiz_muted') === 'true';
+    if (savedMute) {
+      setMuted(true);
+      btnMute.textContent = '🔇 Son';
+      btnMute.title = 'Rétablir le son';
+      btnMute.setAttribute('aria-label', 'Rétablir le son');
+      btnMute.setAttribute('aria-pressed', 'true');
+    } else {
+      btnMute.setAttribute('aria-label', 'Couper le son');
+      btnMute.setAttribute('aria-pressed', 'false');
+    }
+
     btnMute.addEventListener('click', () => {
       const muted = !getMuted();
       setMuted(muted);
+      try { localStorage.setItem('quiz_muted', muted); } catch (_) {}
       btnMute.textContent = muted ? '🔇 Son' : '🔊 Son';
       btnMute.title = muted ? 'Rétablir le son' : 'Couper le son';
+      btnMute.setAttribute('aria-label', muted ? 'Rétablir le son' : 'Couper le son');
+      btnMute.setAttribute('aria-pressed', String(muted));
     });
   }
 });
