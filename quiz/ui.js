@@ -199,7 +199,9 @@ export function renderGamePhase(phase, data, isHost) {
   if (metaEl && q) {
     const cat = CATEGORY_LABELS[q.category] ?? q.category ?? '';
     const diff = DIFFICULTY_LABELS[q.difficulty] ?? q.difficulty ?? '';
-    metaEl.textContent = [cat, diff].filter(Boolean).join(' · ');
+    const catHtml = cat ? `<span class="category-badge">${escapeHtml(cat)}</span>` : '';
+    const diffHtml = diff ? `<span class="diff-badge">${escapeHtml(diff)}</span>` : '';
+    metaEl.innerHTML = [catHtml, diffHtml].filter(Boolean).join('');
     metaEl.hidden = false;
   }
 
@@ -275,10 +277,14 @@ export function renderGamePhase(phase, data, isHost) {
           resultText.innerHTML = `<span class="result-correct">✅ Correct !${pts}</span>${scorerName ? `<br><span class="result-scorer">${scorerName}</span>` : ''}`;
         } else if (r?.nearMiss) {
           const malusStr = r.points < 0 ? ` (${r.points} pts)` : '';
-          resultText.innerHTML = `<span class="result-near">🤏 Presque !${malusStr}</span>`;
+          const nearPlayer = data.players?.find(p => p.id === r?.playerId);
+          const nearName = nearPlayer ? escapeHtml(nearPlayer.name) : '';
+          resultText.innerHTML = `<span class="result-near">🤏 Presque !${malusStr}</span>${nearName ? `<br><span class="result-scorer">${nearName} était proche…</span>` : ''}`;
         } else {
           const malusStr = r?.points < 0 ? ` (${r.points} pts)` : '';
-          resultText.innerHTML = `<span class="result-wrong">❌ Mauvaise réponse${malusStr}</span>`;
+          const wrongPlayer = data.players?.find(p => p.id === r?.playerId);
+          const wrongName = wrongPlayer ? escapeHtml(wrongPlayer.name) : '';
+          resultText.innerHTML = `<span class="result-wrong">❌ Mauvaise réponse${malusStr}</span>${wrongName ? `<br><span class="result-scorer">${wrongName} s'est trompé</span>` : ''}`;
         }
       }
       if (resultAnswer) {
@@ -432,6 +438,20 @@ export function showToast(message, type = 'info') {
   toast.textContent = message;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3500);
+}
+
+// ─── Notification joueur erroné (QCM) ────────────────────────────────────────
+
+export function showWrongPlayerNotification(playerName) {
+  const existing = document.getElementById('wrong-player-notif');
+  if (existing) existing.remove();
+
+  const notif = document.createElement('div');
+  notif.id = 'wrong-player-notif';
+  notif.className = 'wrong-player-notif';
+  notif.textContent = `❌ ${playerName} s'est trompé !`;
+  document.body.appendChild(notif);
+  setTimeout(() => notif.remove(), 2500);
 }
 
 // ─── Status de chargement ─────────────────────────────────────────────────────

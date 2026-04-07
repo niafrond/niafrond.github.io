@@ -15,6 +15,7 @@ import {
   renderLobbyPlayers, renderScoreboard, renderGamePhase,
   renderFinalResults, startTimerBar, stopTimerBar,
   flashBuzz, showToast, setLoadingStatus, highlightChoices, disableChoice,
+  showWrongPlayerNotification,
 } from './ui.js';
 import {
   playBuzz, playCorrect, playWrong, playNearMiss,
@@ -239,6 +240,9 @@ async function startGame(engine, peer) {
 }
 
 function handleHostStateChange(state, engine, peer) {
+  // Snapshot avant mise à jour pour détecter les nouvelles éliminations QCM
+  const prevEliminatedPlayers = clientState.eliminatedPlayers ? [...clientState.eliminatedPlayers] : [];
+
   clientState.players = state.players;
   clientState.phase = state.phase;
   clientState.mode = state.mode;
@@ -281,6 +285,14 @@ function handleHostStateChange(state, engine, peer) {
     case PHASE.ANSWERING:
       showOnly('screen-game');
       renderScoreboard(state.players);
+      // Détecter les nouvelles éliminations QCM côté hôte et notifier
+      if (state.mode === MODE.QCM) {
+        const newElim = state.eliminatedPlayers.filter(id => !prevEliminatedPlayers.includes(id));
+        newElim.forEach(id => {
+          const p = state.players.find(pl => pl.id === id);
+          if (p && p.id !== '__host__') showWrongPlayerNotification(p.name);
+        });
+      }
       {
         const dur = state.mode === MODE.QCM ? TIMER.QCM_DURATION
           : state.mode === MODE.SPEED ? TIMER.SPEED_ANSWER
@@ -619,6 +631,8 @@ function handleClientMessage(data, peer, local, playerName) {
         playWrong();
       } else {
         disableChoice(data.choice);
+        const wrongPlayer = clientState.players.find(p => p.id === data.playerId);
+        if (wrongPlayer) showWrongPlayerNotification(wrongPlayer.name);
       }
       if (data.scores) {
         applyScores(data.scores);
