@@ -16,6 +16,10 @@ import {
   renderFinalResults, startTimerBar, stopTimerBar,
   flashBuzz, showToast, setLoadingStatus, highlightChoices, disableChoice,
 } from './ui.js';
+import {
+  playBuzz, playCorrect, playWrong, playNearMiss,
+  playQuestionStart, playGameOver, playTick,
+} from './sound.js';
 
 // ─── État global client (partagé host et client) ──────────────────────────────
 
@@ -232,6 +236,7 @@ function handleHostStateChange(state, engine, peer) {
       renderScoreboard(state.players);
       renderGamePhase(state.phase, buildRenderData(state, engine), true);
       stopTimerBar();
+      playQuestionStart();
       break;
 
     case PHASE.BUZZING:
@@ -250,7 +255,7 @@ function handleHostStateChange(state, engine, peer) {
         const dur = state.mode === MODE.QCM ? TIMER.QCM_DURATION
           : state.mode === MODE.SPEED ? TIMER.SPEED_ANSWER
           : (state.config.answerTime ?? 15) * 1000;
-        startTimerBar(dur, 'timer-fill', 100);
+        startTimerBar(dur, 'timer-fill', 100, playTick);
       }
       {
         const data = buildRenderData(state, engine);
@@ -273,6 +278,14 @@ function handleHostStateChange(state, engine, peer) {
       renderScoreboard(state.players);
       stopTimerBar();
       renderGamePhase(state.phase, buildRenderData(state, engine), true);
+      // Sons de résultat
+      if (state.lastResult?.correct) {
+        playCorrect();
+      } else if (state.lastResult?.nearMiss) {
+        playNearMiss();
+      } else if (state.lastResult?.playerId) {
+        playWrong();
+      }
       // Surligner les choix en QCM
       if (state.mode === MODE.QCM && q) {
         const wrong = state.lastResult?.correct === false ? state.lastResult?.answer : null;
@@ -295,6 +308,7 @@ function handleHostStateChange(state, engine, peer) {
       showOnly('screen-game-over');
       renderFinalResults(finalScores);
       setupPlayAgainButton(engine, peer);
+      playGameOver();
       break;
     }
   }
@@ -324,6 +338,7 @@ function setupHostBuzzButton(engine) {
     if (engine.state.phase === PHASE.BUZZING) {
       engine.handleBuzz('__host__');
       flashBuzz();
+      playBuzz();
       btn.disabled = true;
     }
   };
@@ -522,11 +537,12 @@ function handleClientMessage(data, peer, local, playerName) {
       renderScoreboard(clientState.players);
       renderGamePhase(PHASE.QUESTION_PREVIEW, buildClientRenderData(local), false);
       stopTimerBar();
+      playQuestionStart();
       // Après 3s (même timing que l'hôte), activer le buzzer / les choix
       setTimeout(() => {
         if (local.mode === MODE.QCM) {
           clientState.phase = PHASE.ANSWERING;
-          startTimerBar(TIMER.QCM_DURATION, 'timer-fill', 100);
+          startTimerBar(TIMER.QCM_DURATION, 'timer-fill', 100, playTick);
           renderGamePhase(PHASE.ANSWERING, buildClientRenderData(local, {
             onChoiceClick: (choice) => {
               if (local.selfEliminated) return;
@@ -550,7 +566,7 @@ function handleClientMessage(data, peer, local, playerName) {
         const isCurrent = local.buzzQueue[0] === peer.peerId;
         const dur = local.mode === MODE.SPEED ? TIMER.SPEED_ANSWER : local.answerTime * 1000;
         clientState.phase = PHASE.ANSWERING;
-        startTimerBar(dur, 'timer-fill', 100);
+        startTimerBar(dur, 'timer-fill', 100, playTick);
         renderGamePhase(PHASE.ANSWERING, buildClientRenderData(local, { canBuzz: false }), false);
         if (isCurrent) {
           // C'est mon tour de répondre
@@ -570,6 +586,7 @@ function handleClientMessage(data, peer, local, playerName) {
         const malusStr = data.points < 0 ? ` (${data.points} pts)` : '';
         showToast(`❌ Mauvaise réponse !${malusStr}`, 'warn');
         showWrongAnswerOverlay();
+        playWrong();
       } else {
         disableChoice(data.choice);
       }
@@ -592,8 +609,13 @@ function handleClientMessage(data, peer, local, playerName) {
         const wrong = data.correct === false ? data.answer : null;
         highlightChoices(data.correct ? data.answer : null, wrong);
       }
-      if (data.correct && data.playerId === peer.peerId) {
-        flashBuzz();
+      if (data.correct) {
+        if (data.playerId === peer.peerId) flashBuzz();
+        playCorrect();
+      } else if (data.nearMiss) {
+        playNearMiss();
+      } else if (data.playerId) {
+        playWrong();
       }
       // En mode classique/speed, si le joueur courant a répondu faux, griser l'écran
       if (data.correct === false && data.playerId === peer.peerId) {
@@ -622,6 +644,7 @@ function handleClientMessage(data, peer, local, playerName) {
       clientState.finalScores = data.finalScores ?? [];
       showOnly('screen-game-over');
       renderFinalResults(clientState.finalScores);
+      playGameOver();
       break;
   }
 }
@@ -663,6 +686,7 @@ function setupClientBuzzButton(peer, local) {
     peer.sendToHost({ type: MSG.BUZZ, ts: Date.now() });
     btn.disabled = true;
     flashBuzz();
+    playBuzz();
   };
 }
 
