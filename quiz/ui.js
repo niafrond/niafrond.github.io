@@ -7,7 +7,7 @@ import { PHASE, MODE, MODE_LABELS, MODE_DESCRIPTIONS, CATEGORY_LABELS, DIFFICULT
 // ─── Chip multi-picker ───────────────────────────────────────────────────────
 
 /**
- * Rend un sélecteur multi-choix sous forme de chips cliquables.
+ * Rendre un sélecteur multi-choix sous forme de chips cliquables.
  * @param {HTMLElement} container
  * @param {Record<string,string>} labelsObj  — valeur → libellé
  * @param {string[]} initialSelected
