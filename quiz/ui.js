@@ -222,9 +222,11 @@ export function renderGamePhase(phase, data, isHost) {
     case PHASE.ANSWERING:
       show('phase-question-preview');
       if (data.mode === MODE.QCM) {
+        hide('answer-form');
         show('phase-answering');
         renderChoices(q?.choices ?? [], data.onChoiceClick, data.eliminatedPlayers ?? []);
       } else {
+        show('answer-form');
         const isCurrent = data.buzzQueue?.[0] === data.myId;
         show('phase-buzzing');
         const buzzBtn = el('btn-buzz');

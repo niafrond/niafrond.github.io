@@ -7,6 +7,10 @@
  */
 
 let _ctx = null;
+let _muted = false;
+
+export function setMuted(val) { _muted = val; }
+export function getMuted() { return _muted; }
 
 function getCtx() {
   if (!_ctx) {
@@ -43,6 +47,7 @@ function playNote(freq, type, startTime, duration, gain = 0.4) {
 
 /** Son de buzzer — onde carrée grave descendante */
 export function playBuzz() {
+  if (_muted) return;
   try {
     const ctx = getCtx();
     const now = ctx.currentTime;
@@ -67,6 +72,7 @@ export function playBuzz() {
 
 /** Son de bonne réponse — arpège ascendant joyeux */
 export function playCorrect() {
+  if (_muted) return;
   try {
     const ctx = getCtx();
     const now = ctx.currentTime;
@@ -79,6 +85,7 @@ export function playCorrect() {
 
 /** Son de mauvaise réponse — deux tonalités descendantes */
 export function playWrong() {
+  if (_muted) return;
   try {
     const ctx = getCtx();
     const now = ctx.currentTime;
@@ -89,6 +96,7 @@ export function playWrong() {
 
 /** Son "presque" (near miss) — note moyenne légèrement descendante */
 export function playNearMiss() {
+  if (_muted) return;
   try {
     const ctx = getCtx();
     const now = ctx.currentTime;
@@ -99,6 +107,7 @@ export function playNearMiss() {
 
 /** Son de nouvelle question — ding clair */
 export function playQuestionStart() {
+  if (_muted) return;
   try {
     const ctx = getCtx();
     const now = ctx.currentTime;
@@ -109,6 +118,7 @@ export function playQuestionStart() {
 
 /** Son de fin de partie — fanfare courte */
 export function playGameOver() {
+  if (_muted) return;
   try {
     const ctx = getCtx();
     const now = ctx.currentTime;
@@ -131,6 +141,7 @@ export function playGameOver() {
 
 /** Son de compte à rebours (dernier 3 secondes) — tick sec */
 export function playTick() {
+  if (_muted) return;
   try {
     const ctx = getCtx();
     const now = ctx.currentTime;

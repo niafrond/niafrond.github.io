@@ -18,8 +18,22 @@ import {
 } from './ui.js';
 import {
   playBuzz, playCorrect, playWrong, playNearMiss,
-  playQuestionStart, playGameOver, playTick,
+  playQuestionStart, playGameOver, playTick, setMuted, getMuted,
 } from './sound.js';
+
+// ─── Bouton mute (persistant) ─────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btnMute = document.getElementById('btn-mute');
+  if (btnMute) {
+    btnMute.addEventListener('click', () => {
+      const muted = !getMuted();
+      setMuted(muted);
+      btnMute.textContent = muted ? '🔇 Son' : '🔊 Son';
+      btnMute.title = muted ? 'Rétablir le son' : 'Couper le son';
+    });
+  }
+});
 
 // ─── État global client (partagé host et client) ──────────────────────────────
 
