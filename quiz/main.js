@@ -404,8 +404,10 @@ function handleHostStateChange(state, engine, peer) {
         finalScores = finalScores.filter(p => p.id !== '__host__');
       }
       clientState.finalScores = finalScores;
+      saveToLeaderboard(finalScores);
       showOnly('screen-game-over');
       renderFinalResults(finalScores);
+      renderLeaderboard(loadLeaderboard(), 'leaderboard-gameover-list', 'leaderboard-gameover-card');
       setupPlayAgainButton(engine, peer);
       playGameOver();
       break;
@@ -538,12 +540,18 @@ async function initClient(hostPeerId) {
 
   showOnly('screen-join');
 
+  // Pré-remplir le nom depuis localStorage
+  const savedPlayerName = localStorage.getItem(PLAYER_NAME_KEY);
+  const playerNameInput = document.getElementById('player-name');
+  if (savedPlayerName && playerNameInput && !playerNameInput.value) playerNameInput.value = savedPlayerName;
+
   const btnJoin = document.getElementById('btn-join');
   if (btnJoin) {
     btnJoin.addEventListener('click', async () => {
       const nameInput = document.getElementById('player-name');
       const name = nameInput?.value?.trim();
       if (!name) { showToast('Entrez votre pseudo', 'warn'); return; }
+      try { localStorage.setItem(PLAYER_NAME_KEY, name); } catch (_) {}
       clientState.myName = name;
       btnJoin.disabled = true;
       btnJoin.textContent = '⏳ Connexion…';
