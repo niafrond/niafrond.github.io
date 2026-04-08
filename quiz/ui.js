@@ -145,6 +145,24 @@ export function renderSetupForm(defaults, onChange) {
     hostReaderCheck.checked = defaults.hostIsReader ?? false;
     hostReaderCheck.addEventListener('change', () => onChange({ hostIsReader: hostReaderCheck.checked }));
   }
+
+  // Bouton "Thèmes aléatoires"
+  if (catPicker) {
+    const randomBtn = document.createElement('button');
+    randomBtn.type = 'button';
+    randomBtn.className = 'btn btn-secondary btn-sm random-themes-btn';
+    randomBtn.innerHTML = '🎲 Thèmes aléatoires';
+    randomBtn.addEventListener('click', () => {
+      const keys = Object.keys(CATEGORY_LABELS).filter(k => k !== '');
+      const count = 2 + Math.floor(Math.random() * 2); // 2 ou 3 catégories
+      const picked = [...keys].sort(() => Math.random() - 0.5).slice(0, count);
+      catPicker.querySelectorAll('.chip-btn').forEach(btn => {
+        btn.classList.toggle('chip-active', picked.includes(btn.dataset.value));
+      });
+      onChange({ categories: picked });
+    });
+    catPicker.after(randomBtn);
+  }
 }
 
 // ─── Lien de partage ──────────────────────────────────────────────────────────
@@ -525,4 +543,28 @@ export function showWrongPlayerNotification(playerName) {
 
 export function setLoadingStatus(message) {
   setText('loading-status', message);
+}
+
+// ─── Classement local (localStorage) ─────────────────────────────────────────
+
+export function renderLeaderboard(entries, listId, cardId) {
+  const card = cardId ? el(cardId) : null;
+  const container = el(listId);
+  if (!container) return;
+
+  if (!entries || entries.length === 0) {
+    if (card) card.hidden = true;
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;text-align:center;padding:8px 0;">Aucun score enregistré</p>';
+    return;
+  }
+
+  if (card) card.hidden = false;
+  container.innerHTML = entries.slice(0, 10).map((e, i) => `
+    <div class="leaderboard-row">
+      <span class="lb-rank">${['🥇', '🥈', '🥉'][i] ?? `${i + 1}.`}</span>
+      <span class="lb-name">${escapeHtml(e.name)}</span>
+      <span class="lb-score">${e.score} pts</span>
+      <span class="lb-date">${escapeHtml(e.date ?? '')}</span>
+    </div>
+  `).join('');
 }

@@ -15,7 +15,7 @@ import {
   renderLobbyPlayers, renderScoreboard, renderGamePhase,
   renderFinalResults, startTimerBar, stopTimerBar,
   flashBuzz, showToast, setLoadingStatus, highlightChoices, disableChoice,
-  showWrongPlayerNotification,
+  showWrongPlayerNotification, renderLeaderboard,
 } from './ui.js';
 import {
   playBuzz, playCorrect, playWrong, playNearMiss,
@@ -95,6 +95,8 @@ const hostParam = params.get('host');
 
 // ─── LocalStorage session ─────────────────────────────────────────────────────
 const STORAGE_KEY = 'quiz_session';
+const PLAYER_NAME_KEY = 'quiz_player_name';
+const LEADERBOARD_KEY = 'quiz_leaderboard';
 
 function saveSession(hostPeerId, playerName) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ hostPeerId, playerName })); } catch (_) {}
@@ -106,6 +108,24 @@ function loadSession() {
 
 function clearSession() {
   try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+}
+
+// ─── Leaderboard localStorage ─────────────────────────────────────────────────
+
+function loadLeaderboard() {
+  try { return JSON.parse(localStorage.getItem(LEADERBOARD_KEY) ?? '[]'); } catch (_) { return []; }
+}
+
+function saveToLeaderboard(scores) {
+  try {
+    const entries = loadLeaderboard();
+    const date = new Date().toLocaleDateString('fr-FR');
+    scores.forEach(({ name, score }) => {
+      if (name && score > 0) entries.push({ name, score, date });
+    });
+    entries.sort((a, b) => b.score - a.score);
+    localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(entries.slice(0, 20)));
+  } catch (_) {}
 }
 
 // ─── Overlay mauvaise réponse ─────────────────────────────────────────────────
@@ -146,12 +166,31 @@ async function initHost() {
   // Formulaire de configuration
   renderSetupForm(hostConfig, (changes) => Object.assign(hostConfig, changes));
 
+  // Pré-remplir le nom depuis localStorage
+  const savedName = localStorage.getItem(PLAYER_NAME_KEY);
+  const hostNameInput = document.getElementById('host-name');
+  if (savedName && hostNameInput && !hostNameInput.value) hostNameInput.value = savedName;
+
+  // Afficher le classement local
+  const leaderboard = loadLeaderboard();
+  renderLeaderboard(leaderboard, 'leaderboard-setup-list', 'leaderboard-setup-card');
+
+  // Bouton effacer classement
+  const btnClear = document.getElementById('btn-clear-leaderboard');
+  if (btnClear) {
+    btnClear.addEventListener('click', () => {
+      try { localStorage.removeItem(LEADERBOARD_KEY); } catch (_) {}
+      renderLeaderboard([], 'leaderboard-setup-list', 'leaderboard-setup-card');
+    });
+  }
+
   const btnHost = document.getElementById('btn-start-host');
   if (btnHost) {
     btnHost.addEventListener('click', async () => {
       const nameInput = document.getElementById('host-name');
       const name = nameInput?.value?.trim() || 'Hôte';
       if (!name) { showToast('Entrez votre pseudo', 'warn'); return; }
+      try { localStorage.setItem(PLAYER_NAME_KEY, name); } catch (_) {}
       clientState.myName = name;
       btnHost.disabled = true;
       btnHost.textContent = '⏳ Connexion…';

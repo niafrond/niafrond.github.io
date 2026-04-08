@@ -72,15 +72,27 @@
         <input type="checkbox" id="apply-malus">
         Mode malus (−3 pts pour les mauvaises réponses)
       </label>
-      <label class="checkbox-label mt-8">
-        <input type="checkbox" id="host-is-reader">
-        Mode hôte lecteur (l'hôte lit les questions et juge les réponses, sans jouer)
-      </label>
+      <div class="host-reader-option mt-8">
+        <label class="checkbox-label">
+          <input type="checkbox" id="host-is-reader">
+          <span>
+            <strong>🎙️ Mode hôte lecteur</strong>
+            <span class="host-reader-desc">L'hôte lit les questions à l'oral et juge les réponses des joueurs. Les joueurs répondent oralement sans saisir de texte.</span>
+          </span>
+        </label>
+      </div>
     </div>
 
     <button id="btn-start-host" class="btn btn-primary btn-lg w-full">
       🚀 Héberger la partie
     </button>
+
+    <!-- Classement local -->
+    <div class="card mt-16" id="leaderboard-setup-card" hidden>
+      <div class="card-title">📊 Classement local</div>
+      <div id="leaderboard-setup-list"></div>
+      <button id="btn-clear-leaderboard" class="btn btn-secondary btn-sm mt-8">🗑️ Effacer</button>
+    </div>
   </div>
 </div>
 
@@ -267,6 +279,12 @@
     🔄 Rejouer
   </button>
   <a href="../" class="btn btn-secondary mt-8">🏠 Accueil</a>
+
+  <!-- Classement local -->
+  <div id="leaderboard-gameover-card" class="card mt-16" style="max-width:440px; width:100%;" hidden>
+    <div class="card-title">📊 Classement local</div>
+    <div id="leaderboard-gameover-list"></div>
+  </div>
 </div>
 
 <script type="module" src="main.js"></script>
