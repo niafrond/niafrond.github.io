@@ -1,10 +1,13 @@
 /**
  * party-game.js — Moteur du mode Party Quiz
  *
- * 3 mini-jeux enchaînés (ordre configurable) :
+ * 6 mini-jeux disponibles (ordre aléatoire) :
  *  STREAK   — 4 à la suite : réponses QCM simultanées, points selon la série max
  *  DUEL     — Interrogatoire : 1 joueur choisit une question, tous les autres répondent en QCM
  *  SPEED_TF — Vrai ou Faux rapide : vote simultané 7 s, bonus / malus
+ *  RACE     — Course classique : simultané QCM, bonus selon l'ordre d'arrivée
+ *  BLITZ    — QCM ultra-rapide : 5 secondes par question, bonne = +5, erreur = -2
+ *  CAROUSEL — Carrousel : tour à tour, seul le joueur désigné peut répondre
  */
 
 import { MSG } from './constants.js';
@@ -15,18 +18,30 @@ export const PARTY_MINI = {
   STREAK:   'STREAK',
   DUEL:     'DUEL',
   SPEED_TF: 'SPEED_TF',
+  RACE:     'RACE',
+  BLITZ:    'BLITZ',
+  CAROUSEL: 'CAROUSEL',
 };
+
+/** Tous les mini-jeux disponibles (pour le mode tout aléatoire) */
+export const ALL_PARTY_MINIS = Object.values(PARTY_MINI);
 
 export const PARTY_MINI_LABELS = {
   [PARTY_MINI.STREAK]:   '🔥 4 à la suite',
   [PARTY_MINI.DUEL]:     '🎯 Interrogatoire',
   [PARTY_MINI.SPEED_TF]: '⚡ Vrai ou Faux',
+  [PARTY_MINI.RACE]:     '🏁 Course classique',
+  [PARTY_MINI.BLITZ]:    '💨 Blitz QCM',
+  [PARTY_MINI.CAROUSEL]: '🎠 Carrousel',
 };
 
 export const PARTY_MINI_ICONS = {
   [PARTY_MINI.STREAK]:   '🔥',
   [PARTY_MINI.DUEL]:     '🎯',
   [PARTY_MINI.SPEED_TF]: '⚡',
+  [PARTY_MINI.RACE]:     '🏁',
+  [PARTY_MINI.BLITZ]:    '💨',
+  [PARTY_MINI.CAROUSEL]: '🎠',
 };
 
 export const PARTY_MINI_RULES = {
@@ -49,6 +64,23 @@ export const PARTY_MINI_RULES = {
     '· Bonne réponse → +3 pts\n' +
     '· Mauvaise réponse → -2 pts\n' +
     '· Pas de vote → 0 pt',
+  [PARTY_MINI.RACE]:
+    '5 questions QCM — tous les joueurs votent en même temps.\n' +
+    'La vitesse compte : les premiers à répondre correctement gagnent plus de points !\n\n' +
+    '· 1er correct → +10 pts  · 2e correct → +6 pts\n' +
+    '· 3e correct → +3 pts    · Mauvaise réponse → -2 pts',
+  [PARTY_MINI.BLITZ]:
+    '5 questions QCM ultra-rapides — seulement 5 secondes pour répondre !\n' +
+    'Tout le monde répond en même temps.\n\n' +
+    '· Bonne réponse → +5 pts\n' +
+    '· Mauvaise réponse → -2 pts\n' +
+    '· Pas de réponse → 0 pt',
+  [PARTY_MINI.CAROUSEL]:
+    '5 questions à tour de rôle — un seul joueur répond à chaque question.\n' +
+    'Les autres joueurs ne peuvent pas intervenir !\n\n' +
+    '· Bonne réponse → +10 pts pour le joueur désigné\n' +
+    '· Mauvaise réponse → -3 pts pour le joueur désigné\n' +
+    '· Chaque joueur a exactement 12 secondes',
 };
 
 // ─── Messages ─────────────────────────────────────────────────────────────────
@@ -65,6 +97,12 @@ export const PARTY_MSG = {
   PARTY_DUEL_RESULT:       'PARTY_DUEL_RESULT',
   PARTY_TF_QUESTION:       'PARTY_TF_QUESTION',
   PARTY_TF_REVEAL:         'PARTY_TF_REVEAL',
+  PARTY_RACE_QUESTION:     'PARTY_RACE_QUESTION',
+  PARTY_RACE_REVEAL:       'PARTY_RACE_REVEAL',
+  PARTY_BLITZ_QUESTION:    'PARTY_BLITZ_QUESTION',
+  PARTY_BLITZ_REVEAL:      'PARTY_BLITZ_REVEAL',
+  PARTY_CAROUSEL_ASSIGN:   'PARTY_CAROUSEL_ASSIGN',
+  PARTY_CAROUSEL_REVEAL:   'PARTY_CAROUSEL_REVEAL',
   // Host → interrogateur seulement (privé)
   PARTY_DUEL_PICK_OPTIONS: 'PARTY_DUEL_PICK_OPTIONS',
   // Client → Host
@@ -72,23 +110,33 @@ export const PARTY_MSG = {
   PARTY_DUEL_PICK:         'PARTY_DUEL_PICK',
   PARTY_DUEL_CHOICE:       'PARTY_DUEL_CHOICE',
   PARTY_TF_VOTE:           'PARTY_TF_VOTE',
+  PARTY_RACE_CHOICE:       'PARTY_RACE_CHOICE',
+  PARTY_BLITZ_CHOICE:      'PARTY_BLITZ_CHOICE',
+  PARTY_CAROUSEL_CHOICE:   'PARTY_CAROUSEL_CHOICE',
 };
 
 // ─── Phases internes ──────────────────────────────────────────────────────────
 
 export const PARTY_PHASE = {
-  MINI_INTRO:      'PARTY_MINI_INTRO',
-  STREAK_QUESTION: 'PARTY_STREAK_QUESTION',
-  STREAK_REVEAL:   'PARTY_STREAK_REVEAL',
-  MINI_END:        'PARTY_MINI_END',
-  DUEL_ASSIGN:     'PARTY_DUEL_ASSIGN',
-  DUEL_PICKING:    'PARTY_DUEL_PICKING',
-  DUEL_QUESTION:   'PARTY_DUEL_QUESTION',
-  DUEL_RESULT:     'PARTY_DUEL_RESULT',
-  TF_QUESTION:     'PARTY_TF_QUESTION',
-  TF_VOTING:       'PARTY_TF_VOTING',
-  TF_REVEAL:       'PARTY_TF_REVEAL',
-  GAME_OVER:       'PARTY_GAME_OVER',
+  MINI_INTRO:         'PARTY_MINI_INTRO',
+  STREAK_QUESTION:    'PARTY_STREAK_QUESTION',
+  STREAK_REVEAL:      'PARTY_STREAK_REVEAL',
+  MINI_END:           'PARTY_MINI_END',
+  DUEL_ASSIGN:        'PARTY_DUEL_ASSIGN',
+  DUEL_PICKING:       'PARTY_DUEL_PICKING',
+  DUEL_QUESTION:      'PARTY_DUEL_QUESTION',
+  DUEL_RESULT:        'PARTY_DUEL_RESULT',
+  TF_QUESTION:        'PARTY_TF_QUESTION',
+  TF_VOTING:          'PARTY_TF_VOTING',
+  TF_REVEAL:          'PARTY_TF_REVEAL',
+  RACE_QUESTION:      'PARTY_RACE_QUESTION',
+  RACE_REVEAL:        'PARTY_RACE_REVEAL',
+  BLITZ_QUESTION:     'PARTY_BLITZ_QUESTION',
+  BLITZ_REVEAL:       'PARTY_BLITZ_REVEAL',
+  CAROUSEL_ASSIGN:    'PARTY_CAROUSEL_ASSIGN',
+  CAROUSEL_QUESTION:  'PARTY_CAROUSEL_QUESTION',
+  CAROUSEL_REVEAL:    'PARTY_CAROUSEL_REVEAL',
+  GAME_OVER:          'PARTY_GAME_OVER',
 };
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -96,19 +144,26 @@ export const PARTY_PHASE = {
 const MINI_Q_COUNT     = 5;   // 5 questions par mini-jeu
 const DUEL_ROUNDS      = 5;   // 5 duels × 2 options = 10 questions duel
 
-const STREAK_ANSWER_MS = 15000;
-const STREAK_REVEAL_MS = 3500;
-const DUEL_ASSIGN_MS   = 3000;
-const DUEL_PICK_MS     = 20000;
-const DUEL_ANSWER_MS   = 15000;
-const DUEL_RESULT_MS   = 4500;
-const TF_PREVIEW_MS    = 3000;
-const TF_VOTE_MS       = 7000;
-const TF_REVEAL_MS     = 3500;
-const MINI_END_MS      = 6000;
+const STREAK_ANSWER_MS  = 15000;
+const STREAK_REVEAL_MS  = 3500;
+const DUEL_ASSIGN_MS    = 3000;
+const DUEL_PICK_MS      = 20000;
+const DUEL_ANSWER_MS    = 15000;
+const DUEL_RESULT_MS    = 4500;
+const TF_PREVIEW_MS     = 3000;
+const TF_VOTE_MS        = 7000;
+const TF_REVEAL_MS      = 3500;
+const RACE_ANSWER_MS    = 15000;
+const RACE_REVEAL_MS    = 3500;
+const BLITZ_ANSWER_MS   = 5000;
+const BLITZ_REVEAL_MS   = 3000;
+const CAROUSEL_PREP_MS  = 2500;
+const CAROUSEL_ANS_MS   = 12000;
+const CAROUSEL_REV_MS   = 3000;
+const MINI_END_MS       = 6000;
 
-/** Nombre total de questions à pré-charger pour une partie Party */
-export const PARTY_QUESTIONS_NEEDED = MINI_Q_COUNT + DUEL_ROUNDS * 2 + MINI_Q_COUNT; // 20
+/** Nombre total de questions à pré-charger (6 mini-jeux × 5 questions, + 10 pour le duel) */
+export const PARTY_QUESTIONS_NEEDED = MINI_Q_COUNT * 5 + DUEL_ROUNDS * 2; // 35
 
 // ─── Scoring helpers ──────────────────────────────────────────────────────────
 
@@ -170,6 +225,28 @@ export class PartyGameEngine {
       tfVotes: {},         // { playerId: 'V' | 'F' }
       tfResult: null,
 
+      // ── RACE ─────────────────────────────────────────────────────────────
+      raceQuestions: [],
+      raceIndex: -1,
+      raceCurrentQuestion: null,
+      raceAnswers: {},     // { playerId: { choice, ts } }
+      raceReveal: null,
+
+      // ── BLITZ ─────────────────────────────────────────────────────────────
+      blitzQuestions: [],
+      blitzIndex: -1,
+      blitzCurrentQuestion: null,
+      blitzAnswers: {},    // { playerId: choice }
+      blitzReveal: null,
+
+      // ── CAROUSEL ──────────────────────────────────────────────────────────
+      carouselQuestions: [],
+      carouselIndex: -1,
+      carouselCurrentQuestion: null,
+      carouselActivePlayer: null,
+      carouselAnswer: null,
+      carouselReveal: null,
+
       // ── Shared ──────────────────────────────────────────────────────────
       lastMiniScores: null,
       finalScores: null,
@@ -225,10 +302,15 @@ export class PartyGameEngine {
     this._clearTimer();
     this.state.config = config;
 
-    const chosenMinis = config.partyMinis?.length
-      ? config.partyMinis
-      : [PARTY_MINI.STREAK, PARTY_MINI.DUEL, PARTY_MINI.SPEED_TF];
-    this.state.miniSequence = config.partyRandom ? shuffle(chosenMinis) : [...chosenMinis];
+    // Par défaut : sélectionner 3 mini-jeux aléatoirement parmi tous les disponibles
+    let chosenMinis;
+    if (config.partyMinis?.length) {
+      chosenMinis = config.partyMinis;
+    } else {
+      // Mode tout aléatoire : choisir 3 mini-jeux parmi les 6 disponibles
+      chosenMinis = shuffle(ALL_PARTY_MINIS).slice(0, 3);
+    }
+    this.state.miniSequence = config.partyRandom !== false ? shuffle(chosenMinis) : [...chosenMinis];
 
     this.state.players.forEach(p => { p.score = 0; p.ready = false; });
     const host = this.state.players.find(p => p.id === '__host__');
@@ -237,11 +319,17 @@ export class PartyGameEngine {
     this.state.streaks = {};
     this.state.players.forEach(p => { this.state.streaks[p.id] = { current: 0, max: 0 }; });
 
-    // Distribuer les questions entre les mini-jeux
+    // Distribuer les questions entre les mini-jeux (pool partagé shufflé)
     const qs = shuffle(allQuestions);
-    this.state.streakQuestions = qs.slice(0, MINI_Q_COUNT);
-    this.state.duelQuestions   = qs.slice(MINI_Q_COUNT, MINI_Q_COUNT + DUEL_ROUNDS * 2);
-    this.state.tfQuestions     = qs.slice(MINI_Q_COUNT + DUEL_ROUNDS * 2, MINI_Q_COUNT + DUEL_ROUNDS * 2 + MINI_Q_COUNT);
+    let qi = 0;
+    const take = (n) => { const s = qs.slice(qi, qi + n); qi += n; return s; };
+
+    this.state.streakQuestions   = take(MINI_Q_COUNT);
+    this.state.duelQuestions     = take(DUEL_ROUNDS * 2);
+    this.state.tfQuestions       = take(MINI_Q_COUNT);
+    this.state.raceQuestions     = take(MINI_Q_COUNT);
+    this.state.blitzQuestions    = take(MINI_Q_COUNT);
+    this.state.carouselQuestions = take(MINI_Q_COUNT);
 
     this.peer.broadcast({ type: MSG.GAME_START, mode: 'PARTY', config: { ...config, mode: 'PARTY' } });
 
@@ -283,9 +371,12 @@ export class PartyGameEngine {
     if (this.state.phase !== PARTY_PHASE.MINI_INTRO) return;
     this.peer.broadcast({ type: PARTY_MSG.PARTY_MINI_READY, mini: this.state.currentMini });
     switch (this.state.currentMini) {
-      case PARTY_MINI.STREAK:   this._startStreak(); break;
-      case PARTY_MINI.DUEL:     this._startDuel();   break;
-      case PARTY_MINI.SPEED_TF: this._startTF();     break;
+      case PARTY_MINI.STREAK:   this._startStreak();   break;
+      case PARTY_MINI.DUEL:     this._startDuel();     break;
+      case PARTY_MINI.SPEED_TF: this._startTF();       break;
+      case PARTY_MINI.RACE:     this._startRace();     break;
+      case PARTY_MINI.BLITZ:    this._startBlitz();    break;
+      case PARTY_MINI.CAROUSEL: this._startCarousel(); break;
     }
   }
 
@@ -656,6 +747,273 @@ export class PartyGameEngine {
     this._setTimer(TF_REVEAL_MS, () => this._tfNext());
   }
 
+  // ─── RACE (Course classique) ──────────────────────────────────────────────
+
+  _startRace() {
+    this.state.raceIndex = -1;
+    this._raceNext();
+  }
+
+  _raceNext() {
+    this._clearTimer();
+    this.state.raceIndex++;
+    this.state.raceAnswers = {};
+    this.state.raceReveal = null;
+
+    if (this.state.raceIndex >= this.state.raceQuestions.length) { this._endMini({}); return; }
+
+    const q = this.state.raceQuestions[this.state.raceIndex];
+    this.state.raceCurrentQuestion = q;
+    this.state.phase = PARTY_PHASE.RACE_QUESTION;
+
+    this.peer.broadcast({
+      type: PARTY_MSG.PARTY_RACE_QUESTION,
+      text: q.text,
+      choices: q.choices ?? [],
+      category: q.category,
+      difficulty: q.difficulty,
+      index: this.state.raceIndex,
+      total: this.state.raceQuestions.length,
+    });
+    this.onStateChange({ ...this.state });
+
+    this._setTimer(RACE_ANSWER_MS, () => {
+      if (this.state.phase === PARTY_PHASE.RACE_QUESTION) this._raceReveal();
+    });
+  }
+
+  handleRaceChoice(peerId, choice) {
+    if (this.state.phase !== PARTY_PHASE.RACE_QUESTION) return;
+    if (this.state.raceAnswers[peerId] !== undefined) return;
+    this.state.raceAnswers[peerId] = { choice, ts: Date.now() };
+    this.onStateChange({ ...this.state });
+
+    // Dès que tous les joueurs ont répondu → révéler
+    const active = this.state.players.filter(p => p.id !== '__host__');
+    if (active.every(p => this.state.raceAnswers[p.id] !== undefined)) {
+      this._clearTimer();
+      this._raceReveal();
+    }
+  }
+
+  _raceReveal() {
+    this._clearTimer();
+    const q = this.state.raceCurrentQuestion;
+    const answers = { ...this.state.raceAnswers };
+
+    // Trier les joueurs ayant répondu correctement par timestamp
+    const correct = Object.entries(answers)
+      .filter(([, a]) => a.choice === q.correctAnswer)
+      .sort((a, b) => a[1].ts - b[1].ts);
+
+    const RACE_POINTS = [10, 6, 3, 1];
+    const results = {};
+    this.state.players.forEach(p => {
+      if (p.id === '__host__') return;
+      const ans = answers[p.id];
+      if (!ans) { results[p.id] = { choice: null, correct: false, pts: 0 }; return; }
+      const isCorrect = ans.choice === q.correctAnswer;
+      if (isCorrect) {
+        const rank = correct.findIndex(([pid]) => pid === p.id);
+        const pts = RACE_POINTS[rank] ?? 1;
+        p.score += pts;
+        results[p.id] = { choice: ans.choice, correct: true, pts, rank: rank + 1 };
+      } else {
+        p.score -= 2;
+        results[p.id] = { choice: ans.choice, correct: false, pts: -2 };
+      }
+    });
+
+    this.state.raceReveal = { correctAnswer: q.correctAnswer, results };
+    this.state.phase = PARTY_PHASE.RACE_REVEAL;
+
+    this.peer.broadcast({
+      type: PARTY_MSG.PARTY_RACE_REVEAL,
+      correctAnswer: q.correctAnswer,
+      results,
+      scores: this._getScores(),
+    });
+    this.onStateChange({ ...this.state });
+    this._setTimer(RACE_REVEAL_MS, () => this._raceNext());
+  }
+
+  // ─── BLITZ (QCM ultra-rapide) ─────────────────────────────────────────────
+
+  _startBlitz() {
+    this.state.blitzIndex = -1;
+    this._blitzNext();
+  }
+
+  _blitzNext() {
+    this._clearTimer();
+    this.state.blitzIndex++;
+    this.state.blitzAnswers = {};
+    this.state.blitzReveal = null;
+
+    if (this.state.blitzIndex >= this.state.blitzQuestions.length) { this._endMini({}); return; }
+
+    const q = this.state.blitzQuestions[this.state.blitzIndex];
+    this.state.blitzCurrentQuestion = q;
+    this.state.phase = PARTY_PHASE.BLITZ_QUESTION;
+
+    this.peer.broadcast({
+      type: PARTY_MSG.PARTY_BLITZ_QUESTION,
+      text: q.text,
+      choices: q.choices ?? [],
+      category: q.category,
+      difficulty: q.difficulty,
+      index: this.state.blitzIndex,
+      total: this.state.blitzQuestions.length,
+      timerMs: BLITZ_ANSWER_MS,
+    });
+    this.onStateChange({ ...this.state });
+
+    this._setTimer(BLITZ_ANSWER_MS, () => {
+      if (this.state.phase === PARTY_PHASE.BLITZ_QUESTION) this._blitzReveal();
+    });
+  }
+
+  handleBlitzChoice(peerId, choice) {
+    if (this.state.phase !== PARTY_PHASE.BLITZ_QUESTION) return;
+    if (this.state.blitzAnswers[peerId] !== undefined) return;
+    this.state.blitzAnswers[peerId] = choice;
+    this.onStateChange({ ...this.state });
+
+    const active = this.state.players.filter(p => p.id !== '__host__');
+    if (active.every(p => this.state.blitzAnswers[p.id] !== undefined)) {
+      this._clearTimer();
+      this._blitzReveal();
+    }
+  }
+
+  _blitzReveal() {
+    this._clearTimer();
+    const q = this.state.blitzCurrentQuestion;
+    const answers = { ...this.state.blitzAnswers };
+    const results = {};
+
+    this.state.players.forEach(p => {
+      if (p.id === '__host__') return;
+      const choice = answers[p.id];
+      if (!choice) { results[p.id] = { choice: null, correct: false, pts: 0 }; return; }
+      const isCorrect = choice === q.correctAnswer;
+      const pts = isCorrect ? 5 : -2;
+      p.score += pts;
+      results[p.id] = { choice, correct: isCorrect, pts };
+    });
+
+    this.state.blitzReveal = { correctAnswer: q.correctAnswer, results };
+    this.state.phase = PARTY_PHASE.BLITZ_REVEAL;
+
+    this.peer.broadcast({
+      type: PARTY_MSG.PARTY_BLITZ_REVEAL,
+      correctAnswer: q.correctAnswer,
+      results,
+      scores: this._getScores(),
+    });
+    this.onStateChange({ ...this.state });
+    this._setTimer(BLITZ_REVEAL_MS, () => this._blitzNext());
+  }
+
+  // ─── CAROUSEL (Carrousel tour à tour) ────────────────────────────────────
+
+  _startCarousel() {
+    this.state.carouselIndex = -1;
+    this.state._carouselPlayerOffset = 0;
+    this._carouselNext();
+  }
+
+  _carouselNext() {
+    this._clearTimer();
+    this.state.carouselIndex++;
+    this.state.carouselAnswer = null;
+    this.state.carouselReveal = null;
+
+    if (this.state.carouselIndex >= this.state.carouselQuestions.length) { this._endMini({}); return; }
+
+    const q = this.state.carouselQuestions[this.state.carouselIndex];
+    this.state.carouselCurrentQuestion = q;
+
+    // Désigner le joueur actif en rotation
+    const activePlayers = this.state.players.filter(p => p.id !== '__host__');
+    const offset = this.state._carouselPlayerOffset ?? 0;
+    const player = activePlayers[offset % activePlayers.length];
+    this.state.carouselActivePlayer = player?.id ?? null;
+    this.state._carouselPlayerOffset = (offset + 1);
+
+    this.state.phase = PARTY_PHASE.CAROUSEL_ASSIGN;
+
+    this.peer.broadcast({
+      type: PARTY_MSG.PARTY_CAROUSEL_ASSIGN,
+      activePlayer: this.state.carouselActivePlayer,
+      index: this.state.carouselIndex,
+      total: this.state.carouselQuestions.length,
+    });
+    this.onStateChange({ ...this.state });
+
+    // Courte pause puis affichage de la question
+    this._setTimer(CAROUSEL_PREP_MS, () => {
+      this.state.phase = PARTY_PHASE.CAROUSEL_QUESTION;
+      this.peer.broadcast({
+        type: PARTY_MSG.PARTY_CAROUSEL_ASSIGN,
+        activePlayer: this.state.carouselActivePlayer,
+        text: q.text,
+        choices: q.choices ?? [],
+        category: q.category,
+        difficulty: q.difficulty,
+        index: this.state.carouselIndex,
+        total: this.state.carouselQuestions.length,
+        showQuestion: true,
+      });
+      this.onStateChange({ ...this.state });
+
+      this._setTimer(CAROUSEL_ANS_MS, () => {
+        if (this.state.phase === PARTY_PHASE.CAROUSEL_QUESTION) {
+          this._carouselReveal(null);
+        }
+      });
+    });
+  }
+
+  handleCarouselChoice(peerId, choice) {
+    if (this.state.phase !== PARTY_PHASE.CAROUSEL_QUESTION) return;
+    if (peerId !== this.state.carouselActivePlayer) return;
+    if (this.state.carouselAnswer !== null) return;
+    this.state.carouselAnswer = choice;
+    this._clearTimer();
+    this._carouselReveal(choice);
+  }
+
+  _carouselReveal(choice) {
+    this._clearTimer();
+    const q = this.state.carouselCurrentQuestion;
+    const player = this.state.players.find(p => p.id === this.state.carouselActivePlayer);
+    const isCorrect = choice !== null && choice === q.correctAnswer;
+    const pts = isCorrect ? 10 : (choice !== null ? -3 : 0);
+    if (player) player.score += pts;
+
+    this.state.carouselReveal = {
+      correctAnswer: q.correctAnswer,
+      activePlayer: this.state.carouselActivePlayer,
+      choice,
+      correct: isCorrect,
+      pts,
+    };
+    this.state.phase = PARTY_PHASE.CAROUSEL_REVEAL;
+
+    this.peer.broadcast({
+      type: PARTY_MSG.PARTY_CAROUSEL_REVEAL,
+      correctAnswer: q.correctAnswer,
+      activePlayer: this.state.carouselActivePlayer,
+      choice,
+      correct: isCorrect,
+      pts,
+      scores: this._getScores(),
+    });
+    this.onStateChange({ ...this.state });
+    this._setTimer(CAROUSEL_REV_MS, () => this._carouselNext());
+  }
+
   // ─── Fin de partie ────────────────────────────────────────────────────────
 
   _endGame() {
@@ -675,10 +1033,13 @@ export class PartyGameEngine {
     switch (data.type) {
       case MSG.JOIN:  this.addPlayer(from, data.name ?? 'Anonyme'); this.markReady(from); break;
       case MSG.READY: this.markReady(from); break;
-      case PARTY_MSG.PARTY_STREAK_CHOICE: this.handleStreakChoice(from, data.choice); break;
-      case PARTY_MSG.PARTY_DUEL_PICK:     this.handleDuelPick(from, data.questionId); break;
-      case PARTY_MSG.PARTY_DUEL_CHOICE:   this.handleDuelChoice(from, data.choice); break;
-      case PARTY_MSG.PARTY_TF_VOTE:       this.handleTFVote(from, data.vote); break;
+      case PARTY_MSG.PARTY_STREAK_CHOICE:   this.handleStreakChoice(from, data.choice);   break;
+      case PARTY_MSG.PARTY_DUEL_PICK:       this.handleDuelPick(from, data.questionId);   break;
+      case PARTY_MSG.PARTY_DUEL_CHOICE:     this.handleDuelChoice(from, data.choice);     break;
+      case PARTY_MSG.PARTY_TF_VOTE:         this.handleTFVote(from, data.vote);           break;
+      case PARTY_MSG.PARTY_RACE_CHOICE:     this.handleRaceChoice(from, data.choice);     break;
+      case PARTY_MSG.PARTY_BLITZ_CHOICE:    this.handleBlitzChoice(from, data.choice);    break;
+      case PARTY_MSG.PARTY_CAROUSEL_CHOICE: this.handleCarouselChoice(from, data.choice); break;
     }
   }
 
@@ -686,10 +1047,13 @@ export class PartyGameEngine {
 
   hostSkip() {
     switch (this.state.phase) {
-      case PARTY_PHASE.STREAK_QUESTION: this._clearTimer(); this._streakReveal();  break;
-      case PARTY_PHASE.DUEL_PICKING:    this._clearTimer(); this._duelAutoPick();  break;
-      case PARTY_PHASE.DUEL_QUESTION:   this._clearTimer(); this._duelReveal();    break;
-      case PARTY_PHASE.TF_VOTING:       this._clearTimer(); this._tfReveal();      break;
+      case PARTY_PHASE.STREAK_QUESTION:  this._clearTimer(); this._streakReveal();   break;
+      case PARTY_PHASE.DUEL_PICKING:     this._clearTimer(); this._duelAutoPick();   break;
+      case PARTY_PHASE.DUEL_QUESTION:    this._clearTimer(); this._duelReveal();     break;
+      case PARTY_PHASE.TF_VOTING:        this._clearTimer(); this._tfReveal();       break;
+      case PARTY_PHASE.RACE_QUESTION:    this._clearTimer(); this._raceReveal();     break;
+      case PARTY_PHASE.BLITZ_QUESTION:   this._clearTimer(); this._blitzReveal();    break;
+      case PARTY_PHASE.CAROUSEL_QUESTION: this._clearTimer(); this._carouselReveal(this.state.carouselAnswer); break;
     }
   }
 }

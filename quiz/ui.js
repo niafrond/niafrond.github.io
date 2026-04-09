@@ -2,7 +2,7 @@
  * ui.js — Rendu DOM / mise à jour de l'interface Quiz
  */
 
-import { PHASE, MODE, MODE_LABELS, MODE_DESCRIPTIONS, CATEGORY_LABELS, DIFFICULTY_LABELS, QUESTION_COUNTS, ANSWER_TIMES } from './constants.js';
+import { PHASE, MODE, MODE_LABELS, MODE_DESCRIPTIONS, CATEGORY_LABELS, DIFFICULTY_LABELS, QUESTION_COUNTS, ANSWER_TIMES, POWER, POWER_LABELS, POWER_DESCRIPTIONS, POWER_COOLDOWN } from './constants.js';
 import { PARTY_MINI, PARTY_MINI_LABELS } from './party-game.js';
 
 // ─── Chip multi-picker ───────────────────────────────────────────────────────
@@ -154,6 +154,43 @@ export function renderSetupForm(defaults, onChange) {
     hostReaderCheck.addEventListener('change', () => onChange({ hostIsReader: hostReaderCheck.checked }));
   }
 
+  // ── Fonctionnalités spéciales ──────────────────────────────────────────────
+  const comboStreakCheck = el('combo-streak');
+  if (comboStreakCheck) {
+    comboStreakCheck.checked = defaults.comboStreak ?? false;
+    comboStreakCheck.addEventListener('change', () => onChange({ comboStreak: comboStreakCheck.checked }));
+  }
+
+  const doubleOrNothingCheck = el('double-or-nothing');
+  if (doubleOrNothingCheck) {
+    doubleOrNothingCheck.checked = defaults.doubleOrNothing ?? false;
+    doubleOrNothingCheck.addEventListener('change', () => onChange({ doubleOrNothing: doubleOrNothingCheck.checked }));
+  }
+
+  const secretBetCheck = el('secret-bet');
+  if (secretBetCheck) {
+    secretBetCheck.checked = defaults.secretBet ?? false;
+    secretBetCheck.addEventListener('change', () => onChange({ secretBet: secretBetCheck.checked }));
+  }
+
+  const hiddenTargetCheck = el('hidden-target');
+  if (hiddenTargetCheck) {
+    hiddenTargetCheck.checked = defaults.hiddenTarget ?? false;
+    hiddenTargetCheck.addEventListener('change', () => onChange({ hiddenTarget: hiddenTargetCheck.checked }));
+  }
+
+  const powersCheck = el('powers-enabled');
+  if (powersCheck) {
+    powersCheck.checked = defaults.powers ?? false;
+    powersCheck.addEventListener('change', () => onChange({ powers: powersCheck.checked }));
+  }
+
+  const draftCatsCheck = el('draft-categories');
+  if (draftCatsCheck) {
+    draftCatsCheck.checked = defaults.draftCategories ?? false;
+    draftCatsCheck.addEventListener('change', () => onChange({ draftCategories: draftCatsCheck.checked }));
+  }
+
   // Bouton "Thèmes aléatoires"
   if (catPicker) {
     const randomBtn = document.createElement('button');
@@ -229,13 +266,19 @@ export function renderScoreboard(players, hostIsReader = false) {
   const board = el('scoreboard');
   if (!board) return;
 
-  board.innerHTML = sorted.map((p, i) => `
-    <div class="score-row rank-${i + 1}">
-      <span class="score-rank">${['🥇', '🥈', '🥉'][i] ?? (i + 1) + '.'}</span>
-      <span class="score-name">${escapeHtml(p.name)}</span>
-      <span class="score-pts">${p.score} pts</span>
-    </div>
-  `).join('');
+  board.innerHTML = sorted.map((p, i) => {
+    const streakBadge = (p.streak ?? 0) >= 3
+      ? `<span class="streak-badge" title="${p.streak} bonnes réponses consécutives !">🔥${p.streak}</span>`
+      : '';
+    return `
+      <div class="score-row rank-${i + 1}">
+        <span class="score-rank">${['🥇', '🥈', '🥉'][i] ?? (i + 1) + '.'}</span>
+        <span class="score-name">${escapeHtml(p.name)}</span>
+        ${streakBadge}
+        <span class="score-pts">${p.score} pts</span>
+      </div>
+    `;
+  }).join('');
 }
 
 // ─── Phase de jeu ─────────────────────────────────────────────────────────────
@@ -515,6 +558,12 @@ export function renderLobbyConfigPreview(config) {
     + row('Timer réponse', `${answerTime}s`);
   if (applyMalus) html += row('Malus', '−3 pts / erreur');
   if (hostIsReader) html += row('Mode hôte', '🎙️ Lecteur');
+  if (config.comboStreak) html += row('Combo streak', '🔥 Activé');
+  if (config.doubleOrNothing) html += row('Double ou rien', '💸 Activé');
+  if (config.secretBet) html += row('Pari secret', '🎲 Activé');
+  if (config.hiddenTarget) html += row('Cible cachée', '🎯 Activé');
+  if (config.powers) html += row('Pouvoirs', '⚡ Activé');
+  if (config.draftCategories) html += row('Draft catégories', '📋 Activé');
 
   container.innerHTML = html;
 }
@@ -650,19 +699,27 @@ export function renderLeaderboard(entries, listId, cardId) {
  * Lit les options party depuis le formulaire de configuration et retourne l'objet de config.
  */
 export function readPartyOptions() {
-  const streakBox = el('party-mini-streak');
-  const duelBox   = el('party-mini-duel');
-  const tfBox     = el('party-mini-tf');
-  const randBox   = el('party-random');
+  const streakBox   = el('party-mini-streak');
+  const duelBox     = el('party-mini-duel');
+  const tfBox       = el('party-mini-tf');
+  const raceBox     = el('party-mini-race');
+  const blitzBox    = el('party-mini-blitz');
+  const carouselBox = el('party-mini-carousel');
+  const randBox     = el('party-random');
 
   const minis = [];
   if (streakBox?.checked)   minis.push(PARTY_MINI.STREAK);
   if (duelBox?.checked)     minis.push(PARTY_MINI.DUEL);
   if (tfBox?.checked)       minis.push(PARTY_MINI.SPEED_TF);
+  if (raceBox?.checked)     minis.push(PARTY_MINI.RACE);
+  if (blitzBox?.checked)    minis.push(PARTY_MINI.BLITZ);
+  if (carouselBox?.checked) minis.push(PARTY_MINI.CAROUSEL);
 
+  // Si aucun sélectionné ou si mode "tout aléatoire" : retourner null pour utiliser le défaut aléatoire
+  const allRandom = randBox?.checked ?? false;
   return {
-    partyMinis:  minis.length ? minis : [PARTY_MINI.STREAK, PARTY_MINI.DUEL, PARTY_MINI.SPEED_TF],
-    partyRandom: randBox?.checked ?? false,
+    partyMinis:  minis.length ? minis : null,
+    partyRandom: allRandom,
   };
 }
 
@@ -714,6 +771,7 @@ function hideAllPartyPanels() {
     'phase-party-duel-assign', 'phase-party-duel-pick',
     'phase-party-duel-question', 'phase-party-duel-result',
     'phase-party-tf', 'phase-party-tf-result',
+    'phase-party-race', 'phase-party-blitz', 'phase-party-carousel',
     'phase-party-mini-end',
   ];
   ids.forEach(id => { const e = el(id); if (e) e.hidden = true; });
@@ -1056,3 +1114,470 @@ export function renderPartyMiniEnd(data, players) {
   }).join('');
 }
 
+// ─── RACE UI ──────────────────────────────────────────────────────────────────
+
+/**
+ * Affiche la question RACE (course classique).
+ * @param {{ text, choices, index, total, answers, correctAnswer? }} data
+ * @param {boolean} isHost
+ * @param {function(string)|null} onChoice
+ */
+export function renderPartyRaceQuestion(data, isHost, onChoice) {
+  showPartyPanel('phase-party-race');
+  const panel = el('phase-party-race');
+  if (!panel) return;
+
+  const answeredCount = Object.keys(data.answers ?? {}).length;
+
+  panel.innerHTML = `
+    <div class="party-question-counter">🏁 Course — Question ${data.index + 1} / ${data.total}</div>
+    <div class="party-question-text">${escapeHtml(data.text)}</div>
+    ${data.correctAnswer
+      ? `<p class="party-correct-answer">✅ Réponse : <strong>${escapeHtml(data.correctAnswer)}</strong></p>`
+      : ''
+    }
+    <div id="party-race-choices" class="party-choices-grid"></div>
+    <p class="party-race-info">${answeredCount} joueur${answeredCount !== 1 ? 's' : ''} ont répondu</p>
+  `;
+  renderPartyChoiceGrid('party-race-choices', data.choices ?? [], isHost ? null : onChoice, !!data.correctAnswer);
+}
+
+export function renderPartyRaceReveal(data, players) {
+  showPartyPanel('phase-party-race');
+  const panel = el('phase-party-race');
+  if (!panel) return;
+
+  const results = data.results ?? {};
+  const sorted = Object.entries(results)
+    .map(([pid, r]) => ({ pid, ...r, name: players.find(p => p.id === pid)?.name ?? pid }))
+    .sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999));
+
+  const rows = sorted.map(r => {
+    const sign = r.pts > 0 ? '+' : '';
+    const cls = r.correct ? 'race-correct' : 'race-wrong';
+    return `<div class="party-race-result-row ${cls}">
+      <span>${escapeHtml(r.name)}</span>
+      <span>${r.correct ? `🏁 ${r.rank}${r.rank === 1 ? 'er' : 'e'}` : '❌'}</span>
+      <span class="race-pts">${sign}${r.pts} pts</span>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="party-question-counter">🏁 Course — Résultats</div>
+    <p class="party-correct-answer">✅ Réponse : <strong>${escapeHtml(data.correctAnswer ?? '')}</strong></p>
+    <div class="party-race-results">${rows}</div>
+  `;
+}
+
+// ─── BLITZ UI ─────────────────────────────────────────────────────────────────
+
+/**
+ * Affiche la question BLITZ (QCM ultra-rapide).
+ */
+export function renderPartyBlitzQuestion(data, isHost, onChoice) {
+  showPartyPanel('phase-party-blitz');
+  const panel = el('phase-party-blitz');
+  if (!panel) return;
+
+  const answeredCount = Object.keys(data.answers ?? {}).length;
+
+  panel.innerHTML = `
+    <div class="party-question-counter">💨 Blitz — Question ${data.index + 1} / ${data.total}</div>
+    <div class="party-blitz-timer-hint">⚡ 5 secondes !</div>
+    <div class="party-question-text">${escapeHtml(data.text)}</div>
+    ${data.correctAnswer
+      ? `<p class="party-correct-answer">✅ Réponse : <strong>${escapeHtml(data.correctAnswer)}</strong></p>`
+      : ''
+    }
+    <div id="party-blitz-choices" class="party-choices-grid"></div>
+    <p class="party-blitz-info">${answeredCount} joueur${answeredCount !== 1 ? 's' : ''} ont répondu</p>
+  `;
+  renderPartyChoiceGrid('party-blitz-choices', data.choices ?? [], isHost ? null : onChoice, !!data.correctAnswer);
+}
+
+export function renderPartyBlitzReveal(data, players) {
+  showPartyPanel('phase-party-blitz');
+  const panel = el('phase-party-blitz');
+  if (!panel) return;
+
+  const results = data.results ?? {};
+  const rows = Object.entries(results)
+    .map(([pid, r]) => ({ pid, ...r, name: players.find(p => p.id === pid)?.name ?? pid }))
+    .sort((a, b) => b.pts - a.pts)
+    .map(r => {
+      const sign = r.pts > 0 ? '+' : '';
+      return `<div class="party-race-result-row ${r.correct ? 'race-correct' : 'race-wrong'}">
+        <span>${escapeHtml(r.name)}</span>
+        <span>${r.correct ? '✅' : (r.choice ? '❌' : '—')}</span>
+        <span class="race-pts">${sign}${r.pts} pts</span>
+      </div>`;
+    }).join('');
+
+  panel.innerHTML = `
+    <div class="party-question-counter">💨 Blitz — Résultats</div>
+    <p class="party-correct-answer">✅ Réponse : <strong>${escapeHtml(data.correctAnswer ?? '')}</strong></p>
+    <div class="party-race-results">${rows}</div>
+  `;
+}
+
+// ─── CAROUSEL UI ──────────────────────────────────────────────────────────────
+
+/**
+ * Affiche la phase CAROUSEL (tour à tour).
+ * @param {{ activePlayer, activePlayerName, text, choices, showQuestion, index, total, correctAnswer? }} data
+ * @param {string} myId
+ * @param {boolean} isHost
+ * @param {function(string)|null} onChoice
+ */
+export function renderPartyCarouselQuestion(data, myId, isHost, onChoice) {
+  showPartyPanel('phase-party-carousel');
+  const panel = el('phase-party-carousel');
+  if (!panel) return;
+
+  const isMyTurn = data.activePlayer === myId;
+
+  if (!data.showQuestion) {
+    panel.innerHTML = `
+      <div class="party-question-counter">🎠 Carrousel — Question ${(data.index ?? 0) + 1} / ${data.total}</div>
+      <div class="party-carousel-assign">
+        <div class="carousel-player-spot">${isMyTurn ? '🎯 C\'est votre tour !' : `⏳ Au tour de <strong>${escapeHtml(data.activePlayerName)}</strong>`}</div>
+        <p class="carousel-hint">Préparez-vous…</p>
+      </div>
+    `;
+    return;
+  }
+
+  panel.innerHTML = `
+    <div class="party-question-counter">🎠 Carrousel — Question ${(data.index ?? 0) + 1} / ${data.total}</div>
+    <div class="carousel-active-indicator">${isMyTurn ? '🎯 À vous de jouer !' : `👁️ ${escapeHtml(data.activePlayerName)} répond…`}</div>
+    <div class="party-question-text">${escapeHtml(data.text)}</div>
+    ${data.correctAnswer
+      ? `<p class="party-correct-answer">✅ Réponse : <strong>${escapeHtml(data.correctAnswer)}</strong></p>`
+      : ''
+    }
+    <div id="party-carousel-choices" class="party-choices-grid"></div>
+  `;
+
+  const canClick = (isMyTurn || isHost) && !data.correctAnswer;
+  renderPartyChoiceGrid('party-carousel-choices', data.choices ?? [], canClick ? onChoice : null, !canClick || !!data.correctAnswer);
+
+  if (!isMyTurn && !isHost) {
+    const grid = el('party-carousel-choices');
+    if (grid) grid.querySelectorAll('.choice-btn').forEach(b => { b.disabled = true; });
+  }
+}
+
+export function renderPartyCarouselReveal(data, players) {
+  showPartyPanel('phase-party-carousel');
+  const panel = el('phase-party-carousel');
+  if (!panel) return;
+
+  const activeName = players.find(p => p.id === data.activePlayer)?.name ?? '';
+  const sign = data.pts > 0 ? '+' : '';
+
+  panel.innerHTML = `
+    <div class="party-question-counter">🎠 Carrousel — Résultat</div>
+    <div class="carousel-active-indicator">👤 ${escapeHtml(activeName)}</div>
+    <p class="party-correct-answer">✅ Réponse : <strong>${escapeHtml(data.correctAnswer ?? '')}</strong></p>
+    <div class="party-carousel-result ${data.correct ? 'race-correct' : (data.choice ? 'race-wrong' : '')}">
+      ${data.choice ? escapeHtml(data.choice) : '— (pas de réponse)'}
+      <span class="race-pts"> ${sign}${data.pts} pts</span>
+    </div>
+  `;
+}
+
+// ─── Phase betting (pari secret) ──────────────────────────────────────────────
+
+/**
+ * Affiche le panneau de pari secret pour le joueur.
+ * @param {{ myScore: number, betCount: number, total: number, deadline: number }} data
+ * @param {Function} onBet — appelé avec le montant du pari
+ */
+export function renderBettingPhase(data, onBet) {
+  const panel = el('phase-betting');
+  if (!panel) return;
+
+  const remaining = Math.max(0, Math.round((data.deadline - Date.now()) / 1000));
+  const hasBet = data.myBet != null;
+
+  panel.innerHTML = `
+    <div class="betting-header">
+      <span class="betting-icon">🎲</span>
+      <span class="betting-title">Pari secret</span>
+    </div>
+    <p class="betting-desc">Misez des points avant que la question ne soit jouée !</p>
+    <p class="betting-count">${data.betCount} / ${data.total} joueur${data.total > 1 ? 's' : ''} ont parié</p>
+    ${hasBet
+      ? `<p class="betting-placed">✅ Votre pari : <strong>${data.myBet} pts</strong></p>`
+      : `<div class="betting-form">
+          <input id="bet-input" class="input bet-input" type="number" min="0" max="${data.myScore}"
+            placeholder="0 – ${data.myScore} pts" value="0">
+          <button id="btn-place-bet" class="btn btn-primary">💸 Parier</button>
+        </div>`
+    }
+  `;
+
+  if (!hasBet && onBet) {
+    const btn = panel.querySelector('#btn-place-bet');
+    const inp = panel.querySelector('#bet-input');
+    if (btn && inp) {
+      btn.addEventListener('click', () => {
+        const amount = Math.max(0, Math.min(parseInt(inp.value ?? '0', 10) || 0, data.myScore));
+        onBet(amount);
+      });
+    }
+  }
+}
+
+// ─── Phase draft ───────────────────────────────────────────────────────────────
+
+/**
+ * Affiche le panneau de draft des catégories.
+ * @param {{ picks, currentPicker, categories, round, totalRounds, myId, players }} data
+ * @param {Function} onPick — appelé avec la catégorie choisie
+ */
+export function renderDraftPhase(data, onPick) {
+  const panel = el('phase-draft');
+  if (!panel) return;
+
+  const isMyTurn = data.currentPicker === data.myId;
+  const currentPlayerName = data.players?.find(p => p.id === data.currentPicker)?.name ?? '…';
+
+  const picksList = Object.entries(data.picks ?? {}).map(([pid, cats]) => {
+    const pname = data.players?.find(p => p.id === pid)?.name ?? pid;
+    const catLabels = cats.map(c => CATEGORY_LABELS[c] ?? c).join(', ') || '—';
+    return `<div class="draft-pick-row">
+      <span class="draft-picker-name">${escapeHtml(pname)}</span>
+      <span class="draft-picks-cats">${escapeHtml(catLabels)}</span>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="draft-header">
+      <span class="draft-icon">📋</span>
+      <span class="draft-title">Draft de catégories</span>
+    </div>
+    <p class="draft-turn">${isMyTurn
+      ? '🎯 C\'est votre tour de choisir !'
+      : `⏳ ${escapeHtml(currentPlayerName)} choisit…`
+    }</p>
+    ${picksList ? `<div class="draft-picks-list">${picksList}</div>` : ''}
+    ${isMyTurn && data.categories?.length > 0
+      ? `<div class="draft-cats-grid">${
+          data.categories.map(c => `
+            <button class="draft-cat-btn chip-btn" data-cat="${escapeHtml(c)}">
+              ${escapeHtml(CATEGORY_LABELS[c] ?? c)}
+            </button>
+          `).join('')
+        }</div>`
+      : ''
+    }
+  `;
+
+  if (isMyTurn && onPick) {
+    panel.querySelectorAll('.draft-cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => onPick(btn.dataset.cat));
+    });
+  }
+}
+
+// ─── Panneau "Double ou rien" ─────────────────────────────────────────────────
+
+/**
+ * Affiche (ou cache) le bouton "Double ou rien" pendant la phase de réponse.
+ * @param {{ canDouble: boolean, alreadyDoubled: boolean, myScore: number }} data
+ * @param {Function} onDoubleDown
+ */
+export function renderDoubleOrNothingButton(data, onDoubleDown) {
+  const btn = el('btn-double-down');
+  if (!btn) return;
+
+  if (!data.canDouble || data.myScore <= 0) {
+    btn.hidden = true;
+    return;
+  }
+  btn.hidden = false;
+  btn.disabled = data.alreadyDoubled;
+  btn.textContent = data.alreadyDoubled ? '💸 Double ou rien (activé !)' : '💸 Double ou rien ?';
+  btn.className = `btn ${data.alreadyDoubled ? 'btn-warning' : 'btn-danger'} btn-sm`;
+
+  if (!data.alreadyDoubled && onDoubleDown) {
+    btn.onclick = () => onDoubleDown();
+  }
+}
+
+// ─── Sélecteur de cible cachée ────────────────────────────────────────────────
+
+/**
+ * Affiche le sélecteur de cible cachée.
+ * @param {{ players, myId, selectedTarget: string|null }} data
+ * @param {Function} onTarget
+ */
+export function renderTargetSelector(data, onTarget) {
+  const container = el('target-selector');
+  if (!container) return;
+
+  const others = (data.players ?? []).filter(p => p.id !== data.myId && p.id !== '__host__');
+  if (others.length === 0) { container.hidden = true; return; }
+
+  container.hidden = false;
+  container.innerHTML = `
+    <div class="target-title">🎯 Choisir une cible secrète</div>
+    <div class="target-players">
+      ${others.map(p => `
+        <button class="target-btn ${data.selectedTarget === p.id ? 'target-selected' : ''}"
+          data-target="${escapeHtml(p.id)}">
+          ${escapeHtml(p.name)}
+        </button>
+      `).join('')}
+    </div>
+    ${data.selectedTarget
+      ? `<p class="target-chosen">✅ Cible choisie</p>`
+      : `<p class="target-hint">Si vous gagnez plus que votre cible : +5 pts bonus !</p>`
+    }
+  `;
+
+  if (onTarget) {
+    container.querySelectorAll('.target-btn').forEach(btn => {
+      btn.addEventListener('click', () => onTarget(btn.dataset.target));
+    });
+  }
+}
+
+// ─── Panneau des pouvoirs ─────────────────────────────────────────────────────
+
+/**
+ * Affiche les boutons de pouvoir dans la sidebar.
+ * @param {{ myId, players, currentIndex, powerCooldowns, powers }} data
+ * @param {Function} onUsePower
+ */
+export function renderPowers(data, onUsePower) {
+  const container = el('powers-panel');
+  if (!container) return;
+
+  const cooldowns = data.powerCooldowns ?? {};
+  const powersHtml = Object.values(POWER).map(power => {
+    const lastUsed = cooldowns[power] ?? -(POWER_COOLDOWN + 1);
+    const remaining = POWER_COOLDOWN - (data.currentIndex - lastUsed);
+    const onCooldown = remaining > 0;
+    return `
+      <div class="power-item">
+        <button class="btn power-btn ${onCooldown ? 'power-cooldown' : 'btn-secondary btn-sm'}"
+          data-power="${escapeHtml(power)}"
+          ${onCooldown ? 'disabled' : ''}
+          title="${escapeHtml(POWER_DESCRIPTIONS[power])}">
+          ${POWER_LABELS[power]}
+          ${onCooldown ? `<span class="power-cd">(${remaining}q)</span>` : ''}
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="card-title">⚡ Pouvoirs</div>
+    <div class="powers-list">${powersHtml}</div>
+  `;
+
+  container.querySelectorAll('.power-btn:not([disabled])').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!onUsePower) return;
+      const power = btn.dataset.power;
+      // Ouvrir le sélecteur de cible pour ce pouvoir
+      showPowerTargetPicker(data, power, onUsePower);
+    });
+  });
+}
+
+function showPowerTargetPicker(data, power, onUsePower) {
+  // Supprimer un éventuel picker existant
+  document.getElementById('power-target-picker')?.remove();
+
+  const others = (data.players ?? []).filter(p => p.id !== data.myId);
+  if (others.length === 0) return;
+
+  const picker = document.createElement('div');
+  picker.id = 'power-target-picker';
+  picker.className = 'power-target-picker';
+  picker.innerHTML = `
+    <div class="power-picker-title">${POWER_LABELS[power]} — Choisir la cible</div>
+    <div class="power-picker-list">
+      ${others.map(p => `
+        <button class="btn btn-secondary btn-sm power-target-btn" data-target="${escapeHtml(p.id)}">
+          ${escapeHtml(p.name)}
+        </button>
+      `).join('')}
+    </div>
+    <button class="btn btn-sm power-picker-cancel">✕ Annuler</button>
+  `;
+
+  picker.querySelector('.power-picker-cancel').addEventListener('click', () => picker.remove());
+  picker.querySelectorAll('.power-target-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      onUsePower(power, btn.dataset.target);
+      picker.remove();
+    });
+  });
+
+  document.body.appendChild(picker);
+}
+
+// ─── Notification d'effet de pouvoir ──────────────────────────────────────────
+
+export function showPowerEffectNotification(power, byName, targetName) {
+  const existing = document.getElementById('power-effect-notif');
+  if (existing) existing.remove();
+
+  const notif = document.createElement('div');
+  notif.id = 'power-effect-notif';
+  notif.className = 'power-effect-notif';
+  notif.textContent = `⚡ ${escapeHtml(byName)} utilise ${POWER_LABELS[power]} sur ${escapeHtml(targetName)} !`;
+  document.body.appendChild(notif);
+  setTimeout(() => notif.remove(), 3000);
+}
+
+// ─── Révélation des paris / cibles en fin de question ─────────────────────────
+
+/**
+ * Affiche les paris révélés et les bonus de cible dans la phase QUESTION_END.
+ * @param {{ betReveal, targetsReveal, players }} data
+ */
+export function renderQuestionEndExtras(data) {
+  const betContainer = el('bet-reveal');
+  if (betContainer) {
+    if (data.betReveal && Object.keys(data.betReveal).length > 0) {
+      const rows = Object.entries(data.betReveal).map(([pid, amount]) => {
+        const name = data.players?.find(p => p.id === pid)?.name ?? pid;
+        return `<div class="bet-reveal-row">
+          <span>${escapeHtml(name)}</span>
+          <span class="bet-reveal-amount">${amount} pts pariés</span>
+        </div>`;
+      }).join('');
+      betContainer.innerHTML = `<div class="bet-reveal-title">🎲 Paris révélés</div>${rows}`;
+      betContainer.hidden = false;
+    } else {
+      betContainer.hidden = true;
+    }
+  }
+
+  const targetsContainer = el('targets-reveal');
+  if (targetsContainer) {
+    if (data.targetsReveal && Object.keys(data.targetsReveal.targets ?? {}).length > 0) {
+      const { targets, bonuses } = data.targetsReveal;
+      const rows = Object.entries(targets).map(([pid, tid]) => {
+        const pname = data.players?.find(p => p.id === pid)?.name ?? pid;
+        const tname = data.players?.find(p => p.id === tid)?.name ?? tid;
+        const bonus = bonuses?.[pid];
+        return `<div class="target-reveal-row">
+          <span>${escapeHtml(pname)}</span>
+          <span class="target-reveal-arrow">→</span>
+          <span>${escapeHtml(tname)}</span>
+          ${bonus ? `<span class="target-reveal-bonus">+${bonus} pts 🎯</span>` : ''}
+        </div>`;
+      }).join('');
+      targetsContainer.innerHTML = `<div class="targets-reveal-title">🎯 Cibles révélées</div>${rows}`;
+      targetsContainer.hidden = false;
+    } else {
+      targetsContainer.hidden = true;
+    }
+  }
+}
