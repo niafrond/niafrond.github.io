@@ -330,17 +330,17 @@ async function startGame(ref, peer) {
   if (hostConfig.draftCategories) {
     const availableCats = Object.keys(CATEGORY_LABELS).filter(k => k !== '');
     showToast('Phase de draft — choisissez vos catégories !', 'info');
-    engine.startDraft(availableCats, async (pickedCategories) => {
+    ref.engine.startDraft(availableCats, async (pickedCategories) => {
       const categories = pickedCategories.length > 0 ? pickedCategories : hostConfig.categories;
-      await _fetchAndStartGame(engine, peer, { ...hostConfig, categories }, btnStart);
+      await _fetchAndStartGame(ref, peer, { ...hostConfig, categories }, btnStart);
     });
     return;
   }
 
-  await _fetchAndStartGame(engine, peer, hostConfig, btnStart);
+  await _fetchAndStartGame(ref, peer, hostConfig, btnStart);
 }
 
-async function _fetchAndStartGame(engine, peer, config, btnStart) {
+async function _fetchAndStartGame(ref, peer, config, btnStart) {
   showToast('Récupération des questions…', 'info');
   const isParty = config.mode === MODE.PARTY;
   const count = isParty ? PARTY_QUESTIONS_NEEDED : config.questionCount;
@@ -380,7 +380,7 @@ async function _fetchAndStartGame(engine, peer, config, btnStart) {
 
   clientState.showAnswerToHost = config.showAnswerToHost;
   clientState.hostIsReader = config.hostIsReader;
-  engine.startGame(questions, { ...config });
+  ref.engine.startGame(questions, { ...config });
 }
 
 function handleHostStateChange(state, engine, peer) {

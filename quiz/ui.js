@@ -1305,7 +1305,7 @@ export function renderBettingPhase(data, onBet) {
       <span class="betting-icon">🎲</span>
       <span class="betting-title">Pari secret</span>
     </div>
-    <p class="betting-desc">Misez des points avant de voir la question jouer !</p>
+    <p class="betting-desc">Misez des points avant que la question ne soit jouée !</p>
     <p class="betting-count">${data.betCount} / ${data.total} joueur${data.total > 1 ? 's' : ''} ont parié</p>
     ${hasBet
       ? `<p class="betting-placed">✅ Votre pari : <strong>${data.myBet} pts</strong></p>`
