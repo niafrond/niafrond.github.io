@@ -403,6 +403,9 @@ export class PartyGameEngine {
   // ─── DUEL ─────────────────────────────────────────────────────────────────
 
   _startDuel() {
+    // Vérifier le nombre de joueurs avant de commencer
+    const nonHost = this.state.players.filter(p => p.id !== '__host__');
+    if (nonHost.length < 2) { this._endMini({}); return; }
     this.state.duelIndex = -1;
     this._duelNextRound();
   }
@@ -578,10 +581,12 @@ export class PartyGameEngine {
     if (isTrue) {
       displayAnswer = q.correctAnswer;
     } else {
-      const other = this.state.tfQuestions.find((oq, i) => i !== this.state.tfIndex);
+      // Choisir la bonne réponse d'une autre question au hasard comme leurre
+      const others = this.state.tfQuestions.filter((_, i) => i !== this.state.tfIndex);
+      const other = others.length ? others[Math.floor(Math.random() * others.length)] : null;
       displayAnswer = other?.correctAnswer
         ?? q.choices?.find(c => c !== q.correctAnswer)
-        ?? '???';
+        ?? 'Réponse indisponible';
     }
 
     this.state.tfStatement = `"${displayAnswer}" est la bonne réponse à : ${q.text}`;

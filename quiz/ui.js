@@ -676,6 +676,7 @@ function renderPartyChoiceGrid(containerId, choices, onChoiceClick, disabledAll 
       btn.addEventListener('click', () => {
         grid.querySelectorAll('.choice-btn').forEach(b => { b.disabled = true; });
         btn.classList.add('choice-selected');
+        // Récupérer la valeur originale depuis l'attribut data-choice (déjà HTML-escapé)
         onChoiceClick(btn.dataset.choice);
       });
     });

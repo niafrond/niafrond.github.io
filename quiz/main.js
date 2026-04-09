@@ -120,7 +120,9 @@ function saveAskedQuestions(ids) {
     // Garder max 300 pour éviter de saturer le localStorage
     const arr = [...prev].slice(-300);
     localStorage.setItem(PARTY_ASKED_KEY, JSON.stringify(arr));
-  } catch (_) {}
+  } catch (err) {
+    console.warn('[Party] Impossible de sauvegarder les questions posées :', err?.message);
+  }
 }
 
 /** Trie les questions pour mettre les non-posées en premier. */
