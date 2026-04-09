@@ -640,6 +640,26 @@ body.buzz-flash::after {
   color: var(--success);
   line-height: 1.3;
 }
+.question-trivia {
+  font-size: 0.88rem;
+  color: var(--accent2);
+  font-style: italic;
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: rgba(8,145,178,0.1);
+  border: 1px solid rgba(8,145,178,0.3);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  line-height: 1.5;
+}
+.host-trivia-hint {
+  font-size: 0.82rem;
+  color: var(--accent2);
+  margin-top: 8px;
+  font-style: italic;
+  text-align: left;
+  opacity: 0.85;
+}
 
 /* ─── Scoreboard ──────────────────────────────────────────────────────────── */
 .score-row {
@@ -770,6 +790,27 @@ body.buzz-flash::after {
   font-size: 0.82rem;
   color: var(--text-muted);
   line-height: 1.4;
+}
+
+/* ─── Config preview (lobby client) ──────────────────────────────────────── */
+.config-preview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.config-preview-row:last-child { border-bottom: none; }
+.config-preview-label {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.config-preview-value {
+  font-weight: 600;
+  color: var(--text);
+  text-align: right;
 }
 
 /* ─── Classement local (leaderboard) ─────────────────────────────────────── */

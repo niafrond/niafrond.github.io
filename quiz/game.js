@@ -451,6 +451,7 @@ export class GameEngine {
     this.peer.broadcast({
       type: MSG.QUESTION_END,
       correctAnswer: q.correctAnswer,
+      trivia: q.trivia ?? null,
       skipped,
       scores: this._getScores(),
     });

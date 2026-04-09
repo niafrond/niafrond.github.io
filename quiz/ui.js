@@ -393,6 +393,16 @@ export function renderGamePhase(phase, data, isHost) {
       }
       const skipBadge = el('skipped-badge');
       if (skipBadge) skipBadge.hidden = !data.lastResult?.skipped;
+      // Trivia (anecdote) affiché à tous quand la réponse est révélée
+      const triviaEl = el('question-trivia');
+      if (triviaEl) {
+        if (q2?.trivia) {
+          triviaEl.textContent = `💡 ${q2.trivia}`;
+          triviaEl.hidden = false;
+        } else {
+          triviaEl.hidden = true;
+        }
+      }
       // Bouton "Suivant" visible uniquement pour l'hôte
       const nextBtn = el('btn-next-question');
       if (nextBtn) nextBtn.hidden = !isHost;
@@ -412,6 +422,16 @@ function renderQuestion(q, data) {
       hostAnswer.hidden = false;
     } else {
       hostAnswer.hidden = true;
+    }
+  }
+  // Afficher le trivia à l'hôte en mode hôte lecteur (visible dès la question)
+  const triviaHint = el('host-trivia-hint');
+  if (triviaHint) {
+    if ((data.showAnswerToHost || data.hostIsReader) && q?.trivia) {
+      triviaHint.textContent = `💡 ${q.trivia}`;
+      triviaHint.hidden = false;
+    } else {
+      triviaHint.hidden = true;
     }
   }
 }
@@ -449,6 +469,46 @@ export function disableChoice(choice) {
       btn.classList.add('choice-eliminated');
     }
   });
+}
+
+// ─── Config preview (client lobby) ───────────────────────────────────────────
+
+/**
+ * Affiche le résumé de la configuration de la partie côté client dans le lobby.
+ * @param {object} config — hostConfig reçu via MSG.LOBBY_CONFIG
+ */
+export function renderLobbyConfigPreview(config) {
+  const container = el('lobby-config-preview');
+  if (!container) return;
+
+  const mode = config.mode ?? 'CLASSIC';
+  const categories = config.categories ?? [];
+  const difficulties = config.difficulties ?? [];
+  const questionCount = config.questionCount ?? 10;
+  const answerTime = config.answerTime ?? 15;
+  const applyMalus = config.applyMalus ?? false;
+  const hostIsReader = config.hostIsReader ?? false;
+
+  const modeLabel = MODE_LABELS[mode] ?? mode;
+  const catLabel = categories.length > 0
+    ? categories.map(c => CATEGORY_LABELS[c] ?? c).join(', ')
+    : 'Toutes';
+  const diffLabel = difficulties.length > 0
+    ? difficulties.map(d => DIFFICULTY_LABELS[d] ?? d).join(', ')
+    : 'Toutes';
+
+  const row = (label, value) =>
+    `<div class="config-preview-row"><span class="config-preview-label">${label}</span><span class="config-preview-value">${escapeHtml(String(value))}</span></div>`;
+
+  let html = row('Mode', modeLabel)
+    + row('Catégories', catLabel)
+    + row('Difficulté', diffLabel)
+    + row('Questions', questionCount)
+    + row('Timer réponse', `${answerTime}s`);
+  if (applyMalus) html += row('Malus', '−3 pts / erreur');
+  if (hostIsReader) html += row('Mode hôte', '🎙️ Lecteur');
+
+  container.innerHTML = html;
 }
 
 // ─── Timer visuel ─────────────────────────────────────────────────────────────
