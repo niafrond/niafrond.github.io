@@ -154,8 +154,13 @@ export function renderSetupForm(defaults, onChange) {
     randomBtn.innerHTML = '🎲 Thèmes aléatoires';
     randomBtn.addEventListener('click', () => {
       const keys = Object.keys(CATEGORY_LABELS).filter(k => k !== '');
+      // Fisher-Yates shuffle
+      for (let i = keys.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [keys[i], keys[j]] = [keys[j], keys[i]];
+      }
       const count = 2 + Math.floor(Math.random() * 2); // 2 ou 3 catégories
-      const picked = [...keys].sort(() => Math.random() - 0.5).slice(0, count);
+      const picked = keys.slice(0, count);
       catPicker.querySelectorAll('.chip-btn').forEach(btn => {
         btn.classList.toggle('chip-active', picked.includes(btn.dataset.value));
       });

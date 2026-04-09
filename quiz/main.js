@@ -629,7 +629,7 @@ function handleClientMessage(data, peer, local, playerName) {
     case MSG.PLAYER_LIST:
       clientState.players = data.players ?? [];
       renderLobbyPlayers(clientState.players, false, null);
-      renderScoreboard(clientState.players);
+      renderScoreboard(clientState.players, local.config?.hostIsReader ?? false);
       // Bouton "Prêt"
       setupReadyButton(peer);
       break;
@@ -663,7 +663,7 @@ function handleClientMessage(data, peer, local, playerName) {
 
       hideWrongAnswerOverlay();
       showOnly('screen-game');
-      renderScoreboard(clientState.players);
+      renderScoreboard(clientState.players, local.config?.hostIsReader ?? false);
       renderGamePhase(PHASE.QUESTION_PREVIEW, buildClientRenderData(local), false);
       stopTimerBar();
       playQuestionStart();
@@ -723,7 +723,7 @@ function handleClientMessage(data, peer, local, playerName) {
       }
       if (data.scores) {
         applyScores(data.scores);
-        renderScoreboard(clientState.players);
+        renderScoreboard(clientState.players, local.config?.hostIsReader ?? false);
       }
       break;
 
@@ -734,7 +734,7 @@ function handleClientMessage(data, peer, local, playerName) {
       renderGamePhase(PHASE.ANSWER_RESULT, buildClientRenderData(local), false);
       if (data.scores) {
         applyScores(data.scores);
-        renderScoreboard(clientState.players);
+        renderScoreboard(clientState.players, local.config?.hostIsReader ?? false);
       }
       if (local.mode === MODE.QCM && local.currentQuestion?.choices) {
         const wrong = data.correct === false ? data.answer : null;
@@ -782,7 +782,7 @@ function handleClientMessage(data, peer, local, playerName) {
       clientState.phase = PHASE.QUESTION_END;
       if (data.scores) {
         applyScores(data.scores);
-        renderScoreboard(clientState.players);
+        renderScoreboard(clientState.players, local.config?.hostIsReader ?? false);
       }
       renderGamePhase(PHASE.QUESTION_END, buildClientRenderData(local, { skipped: data.skipped }), false);
       break;
@@ -792,8 +792,10 @@ function handleClientMessage(data, peer, local, playerName) {
       hideWrongAnswerOverlay();
       clearSession();
       clientState.finalScores = data.finalScores ?? [];
+      saveToLeaderboard(clientState.finalScores);
       showOnly('screen-game-over');
       renderFinalResults(clientState.finalScores);
+      renderLeaderboard(loadLeaderboard(), 'leaderboard-gameover-list', 'leaderboard-gameover-card');
       playGameOver();
       break;
   }
