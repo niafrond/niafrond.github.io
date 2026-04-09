@@ -38,18 +38,21 @@ export const MODE = {
   CLASSIC: 'CLASSIC', // Buzzer + réponse texte, tolérance aux fautes
   QCM: 'QCM',         // 4 choix, 1er clic correct = points
   SPEED: 'SPEED',     // Buzzer + réponse rapide, timer court
+  PARTY: 'PARTY',     // 3 mini-jeux enchaînés (Série, Interrogatoire, Vrai/Faux)
 };
 
 export const MODE_LABELS = {
   [MODE.CLASSIC]: '🎯 Classique',
   [MODE.QCM]: '📋 QCM',
   [MODE.SPEED]: '⚡ Speed',
+  [MODE.PARTY]: '🎉 Party',
 };
 
 export const MODE_DESCRIPTIONS = {
   [MODE.CLASSIC]: 'Buzzer + réponse texte, tolérance aux fautes',
   [MODE.QCM]: '4 choix, 1er clic correct remporte les points',
   [MODE.SPEED]: 'Buzzer + réponse rapide, timer court (8s)',
+  [MODE.PARTY]: '3 mini-jeux : Série, Interrogatoire, Vrai/Faux — réponses QCM',
 };
 
 // ─── Scoring ───────────────────────────────────────────────────────────────────

@@ -125,6 +125,31 @@
             </label>
           </div>
         </div>
+
+        <!-- Options Party (visibles uniquement si mode PARTY sélectionné) -->
+        <div id="party-options-card" class="card mb-16" hidden>
+          <div class="card-title">🎉 Mini-jeux Party</div>
+          <p class="chip-hint">Choisissez les mini-jeux à inclure (au moins un)</p>
+          <div class="party-mini-checks">
+            <label class="checkbox-label">
+              <input type="checkbox" id="party-mini-streak" checked>
+              <span>🔥 <strong>4 à la suite</strong> — QCM simultané, points selon votre meilleure série</span>
+            </label>
+            <label class="checkbox-label mt-8">
+              <input type="checkbox" id="party-mini-duel" checked>
+              <span>🎯 <strong>Interrogatoire</strong> — 1 joueur choisit, tous les autres répondent en QCM</span>
+            </label>
+            <label class="checkbox-label mt-8">
+              <input type="checkbox" id="party-mini-tf" checked>
+              <span>⚡ <strong>Vrai ou Faux</strong> — vote rapide 7 s, bonus/malus</span>
+            </label>
+          </div>
+          <label class="checkbox-label mt-8">
+            <input type="checkbox" id="party-random">
+            🎲 Ordre aléatoire des mini-jeux
+          </label>
+        </div>
+
       </div>
 
       <!-- Joueurs -->
@@ -266,6 +291,86 @@
         </div>
       </div>
 
+      <!-- ══ PARTY : overlay de transition mini-jeu (plein écran) ══════════ -->
+      <div id="party-mini-overlay" class="party-mini-overlay" hidden>
+        <div class="party-mini-overlay-inner">
+          <p id="party-overlay-progress" class="party-overlay-progress"></p>
+          <div id="party-overlay-icon" class="party-overlay-icon"></div>
+          <div id="party-overlay-name" class="party-overlay-name"></div>
+          <pre id="party-overlay-rules" class="party-overlay-rules"></pre>
+          <button id="btn-party-start-mini" class="btn btn-primary btn-lg party-start-btn host-only" hidden>
+            ▶️ Commencer !
+          </button>
+          <p class="party-waiting-label client-only">⏳ En attente de l'hôte…</p>
+        </div>
+      </div>
+
+      <!-- ══ PARTY : STREAK — question QCM ═════════════════════════════════ -->
+      <div id="phase-party-streak" class="card phase-panel" hidden>
+        <p id="party-streak-counter" class="question-counter mb-8"></p>
+        <p id="party-streak-text" class="question-text"></p>
+        <p id="party-streak-host-answer" class="host-answer-hint" hidden></p>
+        <div id="party-streak-choices" class="choices-grid mt-12"></div>
+      </div>
+
+      <!-- ══ PARTY : STREAK — révélation ═══════════════════════════════════ -->
+      <div id="phase-party-streak-reveal" class="card phase-panel" hidden>
+        <p class="correct-answer-label">✅ Bonne réponse :</p>
+        <p id="party-streak-reveal-answer" class="correct-answer-reveal mb-12"></p>
+        <div id="party-streak-results" class="party-streak-results"></div>
+      </div>
+
+      <!-- ══ PARTY : DUEL — annonce de l'interrogateur ═════════════════════ -->
+      <div id="phase-party-duel-assign" class="card phase-panel party-duel-card" hidden>
+        <div class="party-duel-badge">⚔️ Duel Interrogatoire</div>
+        <p id="party-duel-assign-text" class="party-duel-assign-text"></p>
+        <p class="party-duel-assign-sub">Il choisit sa question en secret…</p>
+      </div>
+
+      <!-- ══ PARTY : DUEL — choix de l'interrogateur (privé) ═══════════════ -->
+      <div id="phase-party-duel-pick" class="card phase-panel" hidden>
+        <p class="party-pick-title">🎯 Choisissez une question à poser aux autres :</p>
+        <div id="party-duel-pick-options" class="party-pick-options"></div>
+      </div>
+
+      <!-- ══ PARTY : DUEL — question posée à tous les autres ═══════════════ -->
+      <div id="phase-party-duel-question" class="card phase-panel" hidden>
+        <p id="party-duel-asker-label" class="party-duel-asker-label"></p>
+        <p id="party-duel-question-text" class="question-text mt-8"></p>
+        <p id="party-duel-host-answer" class="host-answer-hint" hidden></p>
+        <div id="party-duel-choices" class="choices-grid mt-12"></div>
+        <p id="party-duel-watching" class="party-watching-label" hidden></p>
+      </div>
+
+      <!-- ══ PARTY : DUEL — résultat ════════════════════════════════════════ -->
+      <div id="phase-party-duel-result" class="card phase-panel" hidden>
+        <div id="party-duel-result-content" class="party-duel-result-content"></div>
+      </div>
+
+      <!-- ══ PARTY : SPEED TF — énoncé + vote ══════════════════════════════ -->
+      <div id="phase-party-tf" class="card phase-panel" hidden>
+        <p id="party-tf-counter" class="question-counter mb-8"></p>
+        <p id="party-tf-statement" class="party-tf-statement"></p>
+        <p id="party-tf-host-hint" class="host-answer-hint" hidden></p>
+        <div id="party-tf-buttons" class="party-tf-buttons" hidden>
+          <button id="btn-tf-vrai" class="btn-tf btn-tf-vrai" type="button">✅ VRAI</button>
+          <button id="btn-tf-faux" class="btn-tf btn-tf-faux" type="button">❌ FAUX</button>
+        </div>
+        <p id="party-tf-voted" class="party-tf-voted" hidden></p>
+      </div>
+
+      <!-- ══ PARTY : SPEED TF — résultat ═══════════════════════════════════ -->
+      <div id="phase-party-tf-result" class="card phase-panel" hidden>
+        <p id="party-tf-reveal-answer" class="party-tf-reveal-answer"></p>
+        <div id="party-tf-reveal-votes" class="party-tf-reveal-votes"></div>
+      </div>
+
+      <!-- ══ PARTY : fin de mini-jeu ════════════════════════════════════════ -->
+      <div id="phase-party-mini-end" class="card phase-panel" hidden>
+        <p id="party-mini-end-title" class="party-mini-end-title"></p>
+        <div id="party-mini-end-scores" class="party-mini-end-scores"></div>
+      </div>
+
     </div>
 
     <!-- Colonne scores -->
@@ -273,6 +378,11 @@
       <div class="card">
         <div class="card-title">🏆 Scores</div>
         <div id="scoreboard"></div>
+      </div>
+      <!-- Tableau des séries (visible pendant le mini STREAK) -->
+      <div id="streak-board" class="card" hidden>
+        <div class="card-title">🔥 Séries</div>
+        <div id="streak-list"></div>
       </div>
     </div>
 

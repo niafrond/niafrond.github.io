@@ -833,3 +833,413 @@ body.buzz-flash::after {
 .random-themes-btn {
   margin-top: 10px;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/* ═══ MODE PARTY ════════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* Checkboxes options party dans le formulaire de configuration */
+.party-mini-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Overlay de transition entre mini-jeux ─────────────────────────────────── */
+.party-mini-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(8,145,178,0.97) 0%, rgba(3,105,161,0.98) 100%);
+  backdrop-filter: blur(6px);
+  animation: partyOverlayIn 0.45s cubic-bezier(0.34,1.20,0.64,1);
+}
+.party-mini-overlay[hidden] { display: none !important; }
+
+@keyframes partyOverlayIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.party-mini-overlay-inner {
+  text-align: center;
+  padding: 32px 28px;
+  max-width: 560px;
+  width: 100%;
+}
+
+.party-overlay-progress {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.65);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 16px;
+}
+
+.party-overlay-icon {
+  font-size: 5rem;
+  line-height: 1;
+  margin-bottom: 12px;
+  animation: partyIconBounce 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.15s both;
+}
+
+@keyframes partyIconBounce {
+  from { transform: scale(0.4) translateY(-20px); opacity: 0; }
+  to   { transform: scale(1) translateY(0);        opacity: 1; }
+}
+
+.party-overlay-name {
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.01em;
+  margin-bottom: 20px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.25);
+}
+
+.party-overlay-rules {
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.88);
+  text-align: left;
+  background: rgba(0,0,0,0.18);
+  border-radius: var(--radius-sm);
+  padding: 16px 18px;
+  margin: 0 0 24px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.party-start-btn {
+  font-size: 1.1rem;
+  padding: 14px 36px;
+  background: #fff;
+  color: var(--accent);
+  border: none;
+  font-weight: 800;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.party-start-btn:hover { transform: scale(1.04); box-shadow: 0 6px 28px rgba(0,0,0,0.3); }
+
+.party-waiting-label {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.7);
+  margin: 0;
+}
+
+/* ── STREAK ────────────────────────────────────────────────────────────────── */
+.party-streak-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.party-streak-result-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+}
+.party-streak-result-row.streak-correct {
+  border-color: var(--success);
+  background: rgba(16,185,129,0.1);
+}
+.party-streak-result-row.streak-wrong {
+  border-color: var(--danger);
+  background: rgba(239,68,68,0.08);
+}
+.streak-result-icon { font-size: 1.2rem; flex-shrink: 0; }
+.streak-result-name { flex: 1; font-weight: 600; font-size: 0.9rem; }
+.streak-result-answer { font-size: 0.85rem; color: var(--text-muted); font-style: italic; }
+.streak-result-streak {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--warning);
+  white-space: nowrap;
+}
+
+/* Tableau des séries (sidebar) */
+.streak-board-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  margin-bottom: 5px;
+  font-size: 0.88rem;
+}
+.streak-board-name { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.streak-board-current { color: var(--warning); font-weight: 700; }
+.streak-board-max { color: var(--text-muted); font-size: 0.78rem; }
+
+/* ── DUEL ──────────────────────────────────────────────────────────────────── */
+.party-duel-card {
+  background: linear-gradient(135deg, rgba(8,145,178,0.08), rgba(56,189,248,0.05));
+  border: 2px solid var(--accent);
+}
+
+.party-duel-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+  padding: 6px 18px;
+  border-radius: 99px;
+  margin-bottom: 16px;
+  letter-spacing: 0.02em;
+}
+
+.party-duel-assign-text {
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+.party-duel-assign-sub {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin: 0;
+}
+
+.party-pick-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent2);
+  margin-bottom: 14px;
+}
+
+.party-pick-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.party-pick-btn {
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.4;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+.party-pick-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: rgba(8,145,178,0.15);
+  transform: translateY(-2px);
+}
+.party-pick-btn .pick-answer-hint {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--warning);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.party-duel-asker-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent2);
+  margin-bottom: 4px;
+}
+
+.party-watching-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  margin-top: 12px;
+}
+
+/* Résultat duel */
+.party-duel-result-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.party-duel-result-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+}
+.party-duel-result-row.duel-correct {
+  border-color: var(--success);
+  background: rgba(16,185,129,0.1);
+}
+.party-duel-result-row.duel-wrong {
+  border-color: var(--danger);
+  background: rgba(239,68,68,0.08);
+}
+.party-duel-result-row.duel-interrogateur {
+  border-color: var(--accent);
+  background: rgba(8,145,178,0.08);
+}
+.duel-result-icon  { font-size: 1.2rem; flex-shrink: 0; }
+.duel-result-name  { flex: 1; font-weight: 600; font-size: 0.9rem; }
+.duel-result-pts   { font-weight: 800; font-size: 0.95rem; white-space: nowrap; }
+.duel-result-pts.pts-pos { color: var(--success); }
+.duel-result-pts.pts-neg { color: var(--danger); }
+
+.party-duel-correct-answer {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* ── SPEED TF ──────────────────────────────────────────────────────────────── */
+.party-tf-statement {
+  font-size: clamp(1rem, 3vw, 1.4rem);
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--text);
+  text-align: center;
+  padding: 8px 0 16px;
+}
+
+.party-tf-buttons {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.btn-tf {
+  flex: 1;
+  min-width: 130px;
+  max-width: 200px;
+  padding: 18px 12px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s, opacity 0.15s;
+  letter-spacing: 0.03em;
+}
+.btn-tf:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+.btn-tf:active:not(:disabled) { transform: translateY(0); }
+.btn-tf:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-tf-vrai {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(16,185,129,0.35);
+}
+.btn-tf-faux {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(239,68,68,0.35);
+}
+.btn-tf.tf-selected {
+  opacity: 1;
+  box-shadow: 0 0 0 3px #fff, 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.party-tf-voted {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* TF résultat */
+.party-tf-reveal-answer {
+  font-size: 1.3rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.party-tf-reveal-votes {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.party-tf-vote-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  font-size: 0.9rem;
+}
+.party-tf-vote-row.tf-vote-correct {
+  border-color: var(--success);
+  background: rgba(16,185,129,0.1);
+}
+.party-tf-vote-row.tf-vote-wrong {
+  border-color: var(--danger);
+  background: rgba(239,68,68,0.08);
+}
+.party-tf-vote-row.tf-vote-none {
+  opacity: 0.55;
+}
+.tf-vote-icon { font-size: 1.1rem; flex-shrink: 0; }
+.tf-vote-name { flex: 1; font-weight: 600; }
+.tf-vote-label { font-size: 0.82rem; color: var(--text-muted); }
+.tf-vote-pts { font-weight: 700; white-space: nowrap; }
+.tf-vote-pts.pts-pos { color: var(--success); }
+.tf-vote-pts.pts-neg { color: var(--danger); }
+
+/* ── Fin de mini-jeu ───────────────────────────────────────────────────────── */
+.party-mini-end-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.party-mini-end-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.party-mini-end-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+}
+.party-mini-end-row.end-winner {
+  border-color: #f59e0b;
+  background: rgba(245,158,11,0.1);
+}
+.party-mini-end-rank { font-size: 1.2rem; flex-shrink: 0; min-width: 28px; }
+.party-mini-end-name { flex: 1; font-weight: 600; font-size: 0.9rem; }
+.party-mini-end-pts  { font-weight: 800; font-size: 1rem; color: var(--accent2); white-space: nowrap; }
+
