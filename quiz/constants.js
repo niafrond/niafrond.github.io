@@ -17,6 +17,7 @@ export const MSG = {
   BUZZ_RESUME: 'BUZZ_RESUME',     // { remainingMs } — retour en phase buzzer après mauvaise réponse
   QUESTION_END: 'QUESTION_END',   // { correctAnswer, skipped }
   GAME_OVER: 'GAME_OVER',         // { finalScores[] }
+  LOBBY_RESET: 'LOBBY_RESET',     // {} — rejouer : retour au lobby pour tous les clients
   KICKED: 'KICKED',
 };
 

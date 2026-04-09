@@ -15,7 +15,7 @@ import {
   renderLobbyPlayers, renderScoreboard, renderGamePhase,
   renderFinalResults, startTimerBar, stopTimerBar,
   flashBuzz, showToast, setLoadingStatus, highlightChoices, disableChoice,
-  showWrongPlayerNotification,
+  showWrongPlayerNotification, renderLeaderboard,
 } from './ui.js';
 import {
   playBuzz, playCorrect, playWrong, playNearMiss,
@@ -95,6 +95,8 @@ const hostParam = params.get('host');
 
 // ─── LocalStorage session ─────────────────────────────────────────────────────
 const STORAGE_KEY = 'quiz_session';
+const PLAYER_NAME_KEY = 'quiz_player_name';
+const LEADERBOARD_KEY = 'quiz_leaderboard';
 
 function saveSession(hostPeerId, playerName) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ hostPeerId, playerName })); } catch (_) {}
@@ -106,6 +108,24 @@ function loadSession() {
 
 function clearSession() {
   try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+}
+
+// ─── Leaderboard localStorage ─────────────────────────────────────────────────
+
+function loadLeaderboard() {
+  try { return JSON.parse(localStorage.getItem(LEADERBOARD_KEY) ?? '[]'); } catch (_) { return []; }
+}
+
+function saveToLeaderboard(scores) {
+  try {
+    const entries = loadLeaderboard();
+    const date = new Date().toLocaleDateString('fr-FR');
+    scores.forEach(({ name, score }) => {
+      if (name && score > 0) entries.push({ name, score, date });
+    });
+    entries.sort((a, b) => b.score - a.score);
+    localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(entries.slice(0, 20)));
+  } catch (_) {}
 }
 
 // ─── Overlay mauvaise réponse ─────────────────────────────────────────────────
@@ -146,12 +166,31 @@ async function initHost() {
   // Formulaire de configuration
   renderSetupForm(hostConfig, (changes) => Object.assign(hostConfig, changes));
 
+  // Pré-remplir le nom depuis localStorage
+  const savedName = localStorage.getItem(PLAYER_NAME_KEY);
+  const hostNameInput = document.getElementById('host-name');
+  if (savedName && hostNameInput && !hostNameInput.value) hostNameInput.value = savedName;
+
+  // Afficher le classement local
+  const leaderboard = loadLeaderboard();
+  renderLeaderboard(leaderboard, 'leaderboard-setup-list', 'leaderboard-setup-card');
+
+  // Bouton effacer classement
+  const btnClear = document.getElementById('btn-clear-leaderboard');
+  if (btnClear) {
+    btnClear.addEventListener('click', () => {
+      try { localStorage.removeItem(LEADERBOARD_KEY); } catch (_) {}
+      renderLeaderboard([], 'leaderboard-setup-list', 'leaderboard-setup-card');
+    });
+  }
+
   const btnHost = document.getElementById('btn-start-host');
   if (btnHost) {
     btnHost.addEventListener('click', async () => {
       const nameInput = document.getElementById('host-name');
       const name = nameInput?.value?.trim() || 'Hôte';
       if (!name) { showToast('Entrez votre pseudo', 'warn'); return; }
+      try { localStorage.setItem(PLAYER_NAME_KEY, name); } catch (_) {}
       clientState.myName = name;
       btnHost.disabled = true;
       btnHost.textContent = '⏳ Connexion…';
@@ -365,8 +404,10 @@ function handleHostStateChange(state, engine, peer) {
         finalScores = finalScores.filter(p => p.id !== '__host__');
       }
       clientState.finalScores = finalScores;
+      saveToLeaderboard(finalScores);
       showOnly('screen-game-over');
       renderFinalResults(finalScores);
+      renderLeaderboard(loadLeaderboard(), 'leaderboard-gameover-list', 'leaderboard-gameover-card');
       setupPlayAgainButton(engine, peer);
       playGameOver();
       break;
@@ -461,20 +502,68 @@ function setupPlayAgainButton(engine, peer) {
   const btn = document.getElementById('btn-play-again');
   if (btn) {
     btn.onclick = () => {
-      showOnly('screen-lobby');
-      // Réinitialiser les scores
-      engine.state.players.forEach(p => { p.score = 0; p.ready = false; });
-      engine.state.phase = PHASE.LOBBY;
-      const host = engine.state.players.find(p => p.id === '__host__');
-      if (host) host.ready = true;
-      engine._broadcastPlayerList();
-      renderLobbyPlayers(engine.state.players, true, (id) => {
-        peer.kick(id);
-        engine.removePlayer(id);
-      });
-      // Réactiver le bouton "Démarrer"
-      const btnStart = document.getElementById('btn-start-game');
-      if (btnStart) { btnStart.disabled = false; btnStart.textContent = '▶️ Démarrer la partie'; }
+      // Prévenir les clients du retour au lobby avant de changer d'écran
+      peer.broadcast({ type: MSG.LOBBY_RESET });
+
+      // Retourner à l'écran de configuration pour permettre de changer les critères,
+      // tout en conservant le même peer ID (les clients gardent leur lien de connexion).
+      showOnly('screen-setup');
+
+      // Afficher le classement local mis à jour
+      renderLeaderboard(loadLeaderboard(), 'leaderboard-setup-list', 'leaderboard-setup-card');
+
+      // Pré-remplir le nom hôte
+      const hostNameInput = document.getElementById('host-name');
+      if (hostNameInput) hostNameInput.value = clientState.myName || '';
+
+      // Re-render le formulaire de configuration avec les critères précédents
+      renderSetupForm(hostConfig, (changes) => Object.assign(hostConfig, changes));
+
+      // Re-binder le bouton "Héberger" pour réutiliser le peer existant
+      const btnHost = document.getElementById('btn-start-host');
+      if (btnHost) {
+        btnHost.disabled = false;
+        btnHost.textContent = '🔄 Relancer la partie';
+        // Remplacer le listener précédent via onclick
+        btnHost.onclick = () => {
+          const nameInput = document.getElementById('host-name');
+          const name = nameInput?.value?.trim() || clientState.myName || 'Hôte';
+          try { localStorage.setItem(PLAYER_NAME_KEY, name); } catch (_) {}
+          clientState.myName = name;
+
+          // Récupérer les joueurs connectés depuis l'ancien moteur et remettre à zéro
+          const prevPlayers = engine.state.players.map(p => ({
+            id: p.id,
+            name: p.id === '__host__' ? name : p.name,
+          }));
+
+          // Créer un nouveau moteur avec le peer existant
+          const newEngine = new GameEngine(peer, (state) => {
+            handleHostStateChange(state, newEngine, peer);
+          });
+
+          // Ré-inscrire les joueurs (scores remis à 0, hôte marqué prêt)
+          prevPlayers.forEach(p => newEngine.addPlayer(p.id, p.name));
+          const hostPlayer = newEngine.state.players.find(p => p.id === '__host__');
+          if (hostPlayer) hostPlayer.ready = true;
+
+          showOnly('screen-lobby');
+          renderLobbyPlayers(newEngine.state.players, true, (id) => {
+            peer.kick(id);
+            newEngine.removePlayer(id);
+          });
+          newEngine._broadcastPlayerList();
+
+          // Bouton "Démarrer" — charge les questions au clic (comme le flux normal)
+          const btnStart = document.getElementById('btn-start-game');
+          if (btnStart) {
+            btnStart.disabled = false;
+            btnStart.textContent = '▶️ Démarrer la partie';
+            delete btnStart.dataset.bound;
+            btnStart.onclick = () => startGame(newEngine, peer);
+          }
+        };
+      }
     };
   }
 }
@@ -499,12 +588,18 @@ async function initClient(hostPeerId) {
 
   showOnly('screen-join');
 
+  // Pré-remplir le nom depuis localStorage
+  const savedPlayerName = localStorage.getItem(PLAYER_NAME_KEY);
+  const playerNameInput = document.getElementById('player-name');
+  if (savedPlayerName && playerNameInput && !playerNameInput.value) playerNameInput.value = savedPlayerName;
+
   const btnJoin = document.getElementById('btn-join');
   if (btnJoin) {
     btnJoin.addEventListener('click', async () => {
       const nameInput = document.getElementById('player-name');
       const name = nameInput?.value?.trim();
       if (!name) { showToast('Entrez votre pseudo', 'warn'); return; }
+      try { localStorage.setItem(PLAYER_NAME_KEY, name); } catch (_) {}
       clientState.myName = name;
       btnJoin.disabled = true;
       btnJoin.textContent = '⏳ Connexion…';
@@ -582,7 +677,7 @@ function handleClientMessage(data, peer, local, playerName) {
     case MSG.PLAYER_LIST:
       clientState.players = data.players ?? [];
       renderLobbyPlayers(clientState.players, false, null);
-      renderScoreboard(clientState.players);
+      renderScoreboard(clientState.players, local.config?.hostIsReader ?? false);
       // Bouton "Prêt"
       setupReadyButton(peer);
       break;
@@ -616,7 +711,7 @@ function handleClientMessage(data, peer, local, playerName) {
 
       hideWrongAnswerOverlay();
       showOnly('screen-game');
-      renderScoreboard(clientState.players);
+      renderScoreboard(clientState.players, local.config?.hostIsReader ?? false);
       renderGamePhase(PHASE.QUESTION_PREVIEW, buildClientRenderData(local), false);
       stopTimerBar();
       playQuestionStart();
@@ -676,7 +771,7 @@ function handleClientMessage(data, peer, local, playerName) {
       }
       if (data.scores) {
         applyScores(data.scores);
-        renderScoreboard(clientState.players);
+        renderScoreboard(clientState.players, local.config?.hostIsReader ?? false);
       }
       break;
 
@@ -687,7 +782,7 @@ function handleClientMessage(data, peer, local, playerName) {
       renderGamePhase(PHASE.ANSWER_RESULT, buildClientRenderData(local), false);
       if (data.scores) {
         applyScores(data.scores);
-        renderScoreboard(clientState.players);
+        renderScoreboard(clientState.players, local.config?.hostIsReader ?? false);
       }
       if (local.mode === MODE.QCM && local.currentQuestion?.choices) {
         const wrong = data.correct === false ? data.answer : null;
@@ -735,7 +830,7 @@ function handleClientMessage(data, peer, local, playerName) {
       clientState.phase = PHASE.QUESTION_END;
       if (data.scores) {
         applyScores(data.scores);
-        renderScoreboard(clientState.players);
+        renderScoreboard(clientState.players, local.config?.hostIsReader ?? false);
       }
       renderGamePhase(PHASE.QUESTION_END, buildClientRenderData(local, { skipped: data.skipped }), false);
       break;
@@ -745,9 +840,32 @@ function handleClientMessage(data, peer, local, playerName) {
       hideWrongAnswerOverlay();
       clearSession();
       clientState.finalScores = data.finalScores ?? [];
+      saveToLeaderboard(clientState.finalScores);
       showOnly('screen-game-over');
       renderFinalResults(clientState.finalScores);
+      renderLeaderboard(loadLeaderboard(), 'leaderboard-gameover-list', 'leaderboard-gameover-card');
       playGameOver();
+      break;
+
+    case MSG.LOBBY_RESET:
+      stopTimerBar();
+      hideWrongAnswerOverlay();
+      clientState.phase = PHASE.LOBBY;
+      local.currentQuestion = null;
+      local.hasBuzzedWrong = false;
+      local.selfEliminated = false;
+      local.correctAnswer = null;
+      local.buzzQueue = [];
+      // Réinitialiser l'état du bouton "Prêt" pour la prochaine partie
+      {
+        const readyBtn = document.getElementById('btn-ready');
+        if (readyBtn) {
+          readyBtn.disabled = false;
+          readyBtn.textContent = '✅ Je suis prêt !';
+          delete readyBtn.dataset.bound;
+        }
+      }
+      showOnly('screen-lobby');
       break;
   }
 }
