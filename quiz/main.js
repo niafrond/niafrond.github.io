@@ -16,7 +16,7 @@ import {
   renderLobbyPlayers, renderScoreboard, renderGamePhase,
   renderFinalResults, startTimerBar, stopTimerBar,
   flashBuzz, showToast, setLoadingStatus, highlightChoices, disableChoice,
-  showWrongPlayerNotification, renderLeaderboard,
+  showWrongPlayerNotification, renderLeaderboard, renderLobbyConfigPreview,
   readPartyOptions,
   renderPartyOverlay, hidePartyOverlay,
   renderPartyStreakQuestion, renderPartyStreakReveal, renderStreakBoard,
@@ -198,9 +198,6 @@ if (hostParam) {
 async function initHost() {
   showOnly('screen-setup');
 
-  // Formulaire de configuration
-  renderSetupForm(hostConfig, (changes) => Object.assign(hostConfig, changes));
-
   // Pré-remplir le nom depuis localStorage
   const savedName = localStorage.getItem(PLAYER_NAME_KEY);
   const hostNameInput = document.getElementById('host-name');
@@ -251,6 +248,9 @@ async function startHostSession(hostName) {
     renderShareLink(e.detail.peerId);
     setLoadingStatus('');
 
+    // Formulaire de configuration dans le lobby
+    setupLobbyConfig(peer);
+
     // Créer le moteur de jeu (GameEngine pour le lobby)
     ref.engine = new GameEngine(peer, (state) => {
       handleHostStateChange(state, ref.engine, peer);
@@ -272,8 +272,9 @@ async function startHostSession(hostName) {
     }
   });
 
-  peer.addEventListener('player-join', (e) => {
-    // Un client se connecte : il enverra MSG.JOIN
+  peer.addEventListener('player-join', () => {
+    // Diffuser la config actuelle à tous les joueurs connectés quand quelqu'un rejoint
+    peer.broadcast({ type: MSG.LOBBY_CONFIG, config: { ...hostConfig } });
   });
 
   peer.addEventListener('player-leave', (e) => {
@@ -289,6 +290,17 @@ async function startHostSession(hostName) {
   });
 
   await peer.startHost();
+}
+
+/**
+ * Initialise le formulaire de configuration dans le lobby (côté hôte).
+ * Diffuse la config en temps réel à tous les joueurs connectés.
+ */
+function setupLobbyConfig(peer) {
+  renderSetupForm(hostConfig, (changes) => {
+    Object.assign(hostConfig, changes);
+    peer.broadcast({ type: MSG.LOBBY_CONFIG, config: { ...hostConfig } });
+  });
 }
 
 async function startGame(ref, peer) {
@@ -718,68 +730,45 @@ function setupPlayAgainButton(ref, peer) {
   const btn = document.getElementById('btn-play-again');
   if (btn) {
     btn.onclick = () => {
-      // Prévenir les clients du retour au lobby avant de changer d'écran
+      // Prévenir les clients du retour au lobby
       peer.broadcast({ type: MSG.LOBBY_RESET });
 
-      // Retourner à l'écran de configuration pour permettre de changer les critères,
-      // tout en conservant le même peer ID (les clients gardent leur lien de connexion).
-      showOnly('screen-setup');
+      // Récupérer les joueurs connectés depuis l'ancien moteur
+      const prevPlayers = (ref.engine?.state?.players ?? []).map(p => ({
+        id: p.id,
+        name: p.id === '__host__' ? clientState.myName || 'Hôte' : p.name,
+      }));
 
-      // Afficher le classement local mis à jour
-      renderLeaderboard(loadLeaderboard(), 'leaderboard-setup-list', 'leaderboard-setup-card');
+      // Créer un nouveau moteur avec le peer existant
+      const newEngine = new GameEngine(peer, (state) => {
+        handleHostStateChange(state, newEngine, peer);
+      });
+      ref.engine = newEngine;
 
-      // Pré-remplir le nom hôte
-      const hostNameInput = document.getElementById('host-name');
-      if (hostNameInput) hostNameInput.value = clientState.myName || '';
+      // Ré-inscrire les joueurs (scores remis à 0, hôte marqué prêt)
+      prevPlayers.forEach(p => newEngine.addPlayer(p.id, p.name));
+      const hostPlayer = newEngine.state.players.find(p => p.id === '__host__');
+      if (hostPlayer) hostPlayer.ready = true;
 
-      // Re-render le formulaire de configuration avec les critères précédents
-      renderSetupForm(hostConfig, (changes) => Object.assign(hostConfig, changes));
+      showOnly('screen-lobby');
+      renderLobbyPlayers(newEngine.state.players, true, (id) => {
+        peer.kick(id);
+        newEngine.removePlayer(id);
+      });
 
-      // Re-binder le bouton "Héberger" pour réutiliser le peer existant
-      const btnHost = document.getElementById('btn-start-host');
-      if (btnHost) {
-        btnHost.disabled = false;
-        btnHost.textContent = '🔄 Relancer la partie';
-        // Remplacer le listener précédent via onclick
-        btnHost.onclick = () => {
-          const nameInput = document.getElementById('host-name');
-          const name = nameInput?.value?.trim() || clientState.myName || 'Hôte';
-          try { localStorage.setItem(PLAYER_NAME_KEY, name); } catch (_) {}
-          clientState.myName = name;
+      // Re-render le formulaire de configuration dans le lobby
+      setupLobbyConfig(peer);
+      // Diffuser la config actuelle aux clients déjà connectés
+      peer.broadcast({ type: MSG.LOBBY_CONFIG, config: { ...hostConfig } });
+      newEngine._broadcastPlayerList();
 
-          // Récupérer les joueurs connectés depuis l'ancien moteur et remettre à zéro
-          const prevPlayers = (ref.engine?.state?.players ?? []).map(p => ({
-            id: p.id,
-            name: p.id === '__host__' ? name : p.name,
-          }));
-
-          // Créer un nouveau moteur avec le peer existant
-          const newEngine = new GameEngine(peer, (state) => {
-            handleHostStateChange(state, newEngine, peer);
-          });
-          ref.engine = newEngine;
-
-          // Ré-inscrire les joueurs (scores remis à 0, hôte marqué prêt)
-          prevPlayers.forEach(p => newEngine.addPlayer(p.id, p.name));
-          const hostPlayer = newEngine.state.players.find(p => p.id === '__host__');
-          if (hostPlayer) hostPlayer.ready = true;
-
-          showOnly('screen-lobby');
-          renderLobbyPlayers(newEngine.state.players, true, (id) => {
-            peer.kick(id);
-            newEngine.removePlayer(id);
-          });
-          newEngine._broadcastPlayerList();
-
-          // Bouton "Démarrer" — charge les questions au clic (comme le flux normal)
-          const btnStart = document.getElementById('btn-start-game');
-          if (btnStart) {
-            btnStart.disabled = false;
-            btnStart.textContent = '▶️ Démarrer la partie';
-            delete btnStart.dataset.bound;
-            btnStart.onclick = () => startGame(ref, peer);
-          }
-        };
+      // Bouton "Démarrer"
+      const btnStart = document.getElementById('btn-start-game');
+      if (btnStart) {
+        btnStart.disabled = false;
+        btnStart.textContent = '▶️ Démarrer la partie';
+        delete btnStart.dataset.bound;
+        btnStart.onclick = () => startGame(ref, peer);
       }
     };
   }
@@ -1042,7 +1031,10 @@ function handleClientMessage(data, peer, local, playerName) {
       stopTimerBar();
       hideWrongAnswerOverlay();
       local.correctAnswer = data.correctAnswer;
-      if (local.currentQuestion) local.currentQuestion.correctAnswer = data.correctAnswer;
+      if (local.currentQuestion) {
+        local.currentQuestion.correctAnswer = data.correctAnswer;
+        local.currentQuestion.trivia = data.trivia ?? null;
+      }
       clientState.currentQuestion = local.currentQuestion;
       clientState.phase = PHASE.QUESTION_END;
       if (data.scores) {
@@ -1210,6 +1202,11 @@ function handleClientMessage(data, peer, local, playerName) {
       renderPartyMiniEnd(data, clientState.players);
       // Cacher le streak board
       { const board = document.getElementById('streak-board'); if (board) board.hidden = true; }
+      break;
+
+    case MSG.LOBBY_CONFIG:
+      local.config = { ...local.config, ...data.config };
+      renderLobbyConfigPreview(data.config);
       break;
   }
 }

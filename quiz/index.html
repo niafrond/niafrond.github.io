@@ -26,85 +26,12 @@
     <a href="../" class="btn btn-secondary btn-sm home-btn">← Accueil</a>
 
     <h1 class="app-title" style="font-size:2rem; margin-bottom:4px;">🧠 Quiz Multijoueur</h1>
-    <p class="app-subtitle mb-16">Configurez votre partie</p>
+    <p class="app-subtitle mb-16">Créer une partie</p>
 
     <!-- Pseudo hôte -->
     <div class="card mb-16">
       <div class="card-title">👤 Votre pseudo</div>
       <input id="host-name" class="input" type="text" placeholder="Votre nom…" maxlength="24" autocomplete="off">
-    </div>
-
-    <!-- Mode de jeu -->
-    <div class="card mb-16">
-      <div class="card-title">🎮 Mode de jeu</div>
-      <div id="mode-selector"></div>
-    </div>
-
-    <!-- Catégorie -->
-    <div class="card mb-16">
-      <div class="card-title">📂 Catégorie</div>
-      <p class="chip-hint">Aucune sélection = toutes les catégories</p>
-      <div id="category-picker" class="chip-picker"></div>
-    </div>
-
-    <!-- Difficulté + questions -->
-    <div class="card mb-16">
-      <div class="card-title">⚙️ Options</div>
-      <div class="form-group" style="margin-bottom:14px;">
-        <label>Difficulté <span class="chip-hint-inline">(aucune = toutes)</span></label>
-        <div id="difficulty-picker" class="chip-picker mt-8"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group" style="flex:1;">
-          <label for="question-count-select">Nombre de questions</label>
-          <select id="question-count-select" class="input"></select>
-        </div>
-        <div class="form-group" style="flex:1;">
-          <label for="answer-time-select">Timer réponse</label>
-          <select id="answer-time-select" class="input"></select>
-        </div>
-      </div>
-      <label class="checkbox-label mt-8">
-        <input type="checkbox" id="show-answer-host">
-        Voir la réponse (hôte uniquement)
-      </label>
-      <label class="checkbox-label mt-8">
-        <input type="checkbox" id="apply-malus">
-        Mode malus (−3 pts pour les mauvaises réponses)
-      </label>
-      <div class="host-reader-option mt-8">
-        <label class="checkbox-label">
-          <input type="checkbox" id="host-is-reader">
-          <span>
-            <strong>🎙️ Mode hôte lecteur</strong>
-            <span class="host-reader-desc">L'hôte lit les questions à l'oral et juge les réponses des joueurs. Les joueurs répondent oralement sans saisir de texte.</span>
-          </span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Options Party (visibles uniquement si mode PARTY sélectionné) -->
-    <div id="party-options-card" class="card mb-16" hidden>
-      <div class="card-title">🎉 Mini-jeux Party</div>
-      <p class="chip-hint">Choisissez les mini-jeux à inclure (au moins un)</p>
-      <div class="party-mini-checks">
-        <label class="checkbox-label">
-          <input type="checkbox" id="party-mini-streak" checked>
-          <span>🔥 <strong>4 à la suite</strong> — QCM simultané, points selon votre meilleure série</span>
-        </label>
-        <label class="checkbox-label mt-8">
-          <input type="checkbox" id="party-mini-duel" checked>
-          <span>🎯 <strong>Interrogatoire</strong> — 1 joueur choisit, tous les autres répondent en QCM</span>
-        </label>
-        <label class="checkbox-label mt-8">
-          <input type="checkbox" id="party-mini-tf" checked>
-          <span>⚡ <strong>Vrai ou Faux</strong> — vote rapide 7 s, bonus/malus</span>
-        </label>
-      </div>
-      <label class="checkbox-label mt-8">
-        <input type="checkbox" id="party-random">
-        🎲 Ordre aléatoire des mini-jeux
-      </label>
     </div>
 
     <button id="btn-start-host" class="btn btn-primary btn-lg w-full">
@@ -148,6 +75,83 @@
       <h1 class="app-title" style="font-size:1.8rem; margin-bottom:4px;">🧠 Quiz Multijoueur</h1>
       <p class="app-subtitle mb-16">Salon d'attente</p>
 
+      <!-- Configuration (hôte uniquement) -->
+      <div class="host-only">
+        <!-- Mode de jeu -->
+        <div class="card mb-16">
+          <div class="card-title">🎮 Mode de jeu</div>
+          <div id="mode-selector"></div>
+        </div>
+
+        <!-- Catégorie -->
+        <div class="card mb-16">
+          <div class="card-title">📂 Catégorie</div>
+          <p class="chip-hint">Aucune sélection = toutes les catégories</p>
+          <div id="category-picker" class="chip-picker"></div>
+        </div>
+
+        <!-- Difficulté + questions -->
+        <div class="card mb-16">
+          <div class="card-title">⚙️ Options</div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label>Difficulté <span class="chip-hint-inline">(aucune = toutes)</span></label>
+            <div id="difficulty-picker" class="chip-picker mt-8"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label for="question-count-select">Nombre de questions</label>
+              <select id="question-count-select" class="input"></select>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label for="answer-time-select">Timer réponse</label>
+              <select id="answer-time-select" class="input"></select>
+            </div>
+          </div>
+          <label class="checkbox-label mt-8">
+            <input type="checkbox" id="show-answer-host">
+            Voir la réponse (hôte uniquement)
+          </label>
+          <label class="checkbox-label mt-8">
+            <input type="checkbox" id="apply-malus">
+            Mode malus (−3 pts pour les mauvaises réponses)
+          </label>
+          <div class="host-reader-option mt-8">
+            <label class="checkbox-label">
+              <input type="checkbox" id="host-is-reader">
+              <span>
+                <strong>🎙️ Mode hôte lecteur</strong>
+                <span class="host-reader-desc">L'hôte lit les questions à l'oral et juge les réponses des joueurs. Les joueurs répondent oralement sans saisir de texte.</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Options Party (visibles uniquement si mode PARTY sélectionné) -->
+        <div id="party-options-card" class="card mb-16" hidden>
+          <div class="card-title">🎉 Mini-jeux Party</div>
+          <p class="chip-hint">Choisissez les mini-jeux à inclure (au moins un)</p>
+          <div class="party-mini-checks">
+            <label class="checkbox-label">
+              <input type="checkbox" id="party-mini-streak" checked>
+              <span>🔥 <strong>4 à la suite</strong> — QCM simultané, points selon votre meilleure série</span>
+            </label>
+            <label class="checkbox-label mt-8">
+              <input type="checkbox" id="party-mini-duel" checked>
+              <span>🎯 <strong>Interrogatoire</strong> — 1 joueur choisit, tous les autres répondent en QCM</span>
+            </label>
+            <label class="checkbox-label mt-8">
+              <input type="checkbox" id="party-mini-tf" checked>
+              <span>⚡ <strong>Vrai ou Faux</strong> — vote rapide 7 s, bonus/malus</span>
+            </label>
+          </div>
+          <label class="checkbox-label mt-8">
+            <input type="checkbox" id="party-random">
+            🎲 Ordre aléatoire des mini-jeux
+          </label>
+        </div>
+
+      </div>
+
       <!-- Joueurs -->
       <div class="card mb-16">
         <div class="card-title">👥 Joueurs connectés</div>
@@ -169,9 +173,9 @@
       </div>
     </div>
 
-    <!-- Colonne partage -->
+    <!-- Colonne partage / aperçu config -->
     <div>
-      <div class="card mb-16" id="share-card">
+      <div class="card mb-16 host-only" id="share-card">
         <div class="card-title">🔗 Inviter des joueurs</div>
         <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;">
           Partagez ce lien ou ce QR code :
@@ -179,6 +183,13 @@
         <input id="share-link" class="input" type="text" readonly onclick="this.select()">
         <button id="btn-copy-link" class="btn btn-secondary w-full mt-8">📋 Copier</button>
         <img id="share-qr" src="" alt="QR Code" style="display:block;margin:12px auto 0;width:160px;height:160px;border-radius:8px;" loading="lazy">
+      </div>
+      <!-- Aperçu de la configuration (clients uniquement) -->
+      <div class="card mb-16 client-only" id="lobby-config-preview-card">
+        <div class="card-title">⚙️ Configuration de la partie</div>
+        <div id="lobby-config-preview">
+          <p style="color:var(--text-muted);font-size:0.9rem;">En attente des paramètres…</p>
+        </div>
       </div>
       <p id="loading-status" style="color:var(--text-muted);font-size:0.9rem;text-align:center;"></p>
     </div>
@@ -222,6 +233,7 @@
       <div id="phase-question-preview" class="card phase-panel" hidden>
         <p id="question-text" class="question-text"></p>
         <p id="host-answer-hint" class="host-answer-hint" hidden></p>
+        <p id="host-trivia-hint" class="host-trivia-hint" hidden></p>
       </div>
 
       <!-- Phase : buzzer -->
@@ -264,6 +276,7 @@
         <p id="skipped-badge" class="skipped-badge" hidden>⏭️ Question passée</p>
         <p class="correct-answer-label">✅ Bonne réponse :</p>
         <p id="correct-answer-reveal" class="correct-answer-reveal"></p>
+        <p id="question-trivia" class="question-trivia" hidden></p>
         <button id="btn-next-question" class="btn btn-primary btn-lg mt-16 host-only" hidden>
           ▶️ Question suivante
         </button>

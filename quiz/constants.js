@@ -18,6 +18,7 @@ export const MSG = {
   QUESTION_END: 'QUESTION_END',   // { correctAnswer, skipped }
   GAME_OVER: 'GAME_OVER',         // { finalScores[] }
   LOBBY_RESET: 'LOBBY_RESET',     // {} — rejouer : retour au lobby pour tous les clients
+  LOBBY_CONFIG: 'LOBBY_CONFIG',   // { config } — hôte diffuse la config en temps réel (lobby)
   KICKED: 'KICKED',
 };
 
