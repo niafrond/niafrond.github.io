@@ -1,3 +1,9 @@
+## [1.45.0](https://github.com/niafrond/niafrond.github.io/compare/v1.44.0...v1.45.0) (2026-04-09)
+
+### Features
+
+* **quiz:** rebase on main + extend Party mode to all 6 game modes with random selection ([#25](https://github.com/niafrond/niafrond.github.io/issues/25)) ([f2372e1](https://github.com/niafrond/niafrond.github.io/commit/f2372e10f15ccb2bc50db151cc43289bafffac6d))
+
 ## [1.44.0](https://github.com/niafrond/niafrond.github.io/compare/v1.43.0...v1.44.0) (2026-04-09)
 
 ### Features
