@@ -3,6 +3,7 @@
  */
 
 import { PHASE, MODE, MODE_LABELS, MODE_DESCRIPTIONS, CATEGORY_LABELS, DIFFICULTY_LABELS, QUESTION_COUNTS, ANSWER_TIMES } from './constants.js';
+import { PARTY_MINI, PARTY_MINI_LABELS } from './party-game.js';
 
 // ─── Chip multi-picker ───────────────────────────────────────────────────────
 
@@ -86,8 +87,15 @@ export function renderSetupForm(defaults, onChange) {
         modeContainer.querySelectorAll('.mode-option').forEach(l => l.classList.remove('selected'));
         input.parentElement.classList.add('selected');
         onChange({ mode: input.value });
+        // Afficher/masquer les options party
+        const partyCard = el('party-options-card');
+        if (partyCard) partyCard.hidden = input.value !== MODE.PARTY;
       });
     });
+
+    // Afficher la carte party si le mode actuel est PARTY
+    const partyCard = el('party-options-card');
+    if (partyCard) partyCard.hidden = defaults.mode !== MODE.PARTY;
   }
 
   // Catégorie (chip multi-picker)
@@ -573,3 +581,417 @@ export function renderLeaderboard(entries, listId, cardId) {
     </div>
   `).join('');
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ═══ PARTY mode UI ═══════════════════════════════════════════════════════════
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Lit les options party depuis le formulaire de configuration et retourne l'objet de config.
+ */
+export function readPartyOptions() {
+  const streakBox = el('party-mini-streak');
+  const duelBox   = el('party-mini-duel');
+  const tfBox     = el('party-mini-tf');
+  const randBox   = el('party-random');
+
+  const minis = [];
+  if (streakBox?.checked)   minis.push(PARTY_MINI.STREAK);
+  if (duelBox?.checked)     minis.push(PARTY_MINI.DUEL);
+  if (tfBox?.checked)       minis.push(PARTY_MINI.SPEED_TF);
+
+  return {
+    partyMinis:  minis.length ? minis : [PARTY_MINI.STREAK, PARTY_MINI.DUEL, PARTY_MINI.SPEED_TF],
+    partyRandom: randBox?.checked ?? false,
+  };
+}
+
+/**
+ * Affiche ou masque l'overlay de transition entre mini-jeux.
+ * @param {{ mini:string, miniIndex:number, totalMinis:number, label:string, icon:string, rules:string }|null} data
+ *   Passer null pour masquer l'overlay.
+ * @param {boolean} isHost
+ * @param {function(): void} [onStart]  callback lié au bouton "Commencer !" (hôte)
+ */
+export function renderPartyOverlay(data, isHost, onStart) {
+  const overlay = el('party-mini-overlay');
+  if (!overlay) return;
+
+  if (!data) {
+    overlay.hidden = true;
+    return;
+  }
+
+  setText('party-overlay-progress',
+    `Mini-jeu ${data.miniIndex + 1} / ${data.totalMinis}`);
+  const iconEl = el('party-overlay-icon');
+  if (iconEl) iconEl.textContent = data.icon ?? '🎮';
+  setText('party-overlay-name', data.label ?? data.mini);
+  setText('party-overlay-rules', data.rules ?? '');
+
+  const btnStart = el('btn-party-start-mini');
+  if (btnStart) {
+    btnStart.hidden = !isHost;
+    btnStart.disabled = false;
+    btnStart.textContent = '▶️ Commencer !';
+    if (isHost && onStart) btnStart.onclick = onStart;
+  }
+
+  overlay.hidden = false;
+}
+
+/** Cache l'overlay de transition */
+export function hidePartyOverlay() {
+  const overlay = el('party-mini-overlay');
+  if (overlay) overlay.hidden = true;
+}
+
+// ─── Helpers internes party ────────────────────────────────────────────────────
+
+function hideAllPartyPanels() {
+  const ids = [
+    'phase-party-streak', 'phase-party-streak-reveal',
+    'phase-party-duel-assign', 'phase-party-duel-pick',
+    'phase-party-duel-question', 'phase-party-duel-result',
+    'phase-party-tf', 'phase-party-tf-result',
+    'phase-party-mini-end',
+  ];
+  ids.forEach(id => { const e = el(id); if (e) e.hidden = true; });
+}
+
+function showPartyPanel(id) {
+  hideAllPartyPanels();
+  const e = el(id);
+  if (e) e.hidden = false;
+}
+
+function renderPartyChoiceGrid(containerId, choices, onChoiceClick, disabledAll = false) {
+  const grid = el(containerId);
+  if (!grid) return;
+  grid.innerHTML = choices.map(c =>
+    `<button class="choice-btn party-choice-btn" data-choice="${escapeHtml(c)}"${disabledAll ? ' disabled' : ''}>${escapeHtml(c)}</button>`
+  ).join('');
+  if (onChoiceClick && !disabledAll) {
+    grid.querySelectorAll('.choice-btn:not([disabled])').forEach(btn => {
+      btn.addEventListener('click', () => {
+        grid.querySelectorAll('.choice-btn').forEach(b => { b.disabled = true; });
+        btn.classList.add('choice-selected');
+        onChoiceClick(btn.dataset.choice);
+      });
+    });
+  }
+}
+
+function highlightPartyChoiceGrid(containerId, correctAnswer) {
+  const grid = el(containerId);
+  if (!grid) return;
+  grid.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.disabled = true;
+    if (btn.dataset.choice === correctAnswer) btn.classList.add('choice-correct');
+    else if (btn.classList.contains('choice-selected')) btn.classList.add('choice-wrong');
+  });
+}
+
+// ─── STREAK ───────────────────────────────────────────────────────────────────
+
+/**
+ * Affiche la question STREAK avec grille de choix.
+ * @param {{ text:string, choices:string[], index:number, total:number, correctAnswer?:string }} data
+ * @param {boolean} isHost
+ * @param {function(string): void} [onChoice]
+ */
+export function renderPartyStreakQuestion(data, isHost, onChoice) {
+  showPartyPanel('phase-party-streak');
+  setText('party-streak-counter', `Question ${data.index + 1} / ${data.total}`);
+  setText('party-streak-text', data.text ?? '');
+  const hint = el('party-streak-host-answer');
+  if (hint) {
+    hint.hidden = !isHost || !data.correctAnswer;
+    if (isHost && data.correctAnswer) hint.textContent = `🔑 ${data.correctAnswer}`;
+  }
+  renderPartyChoiceGrid('party-streak-choices', data.choices ?? [], isHost ? null : onChoice, isHost);
+  // Show/hide streak board
+  const board = el('streak-board');
+  if (board) board.hidden = false;
+}
+
+/**
+ * Affiche le résultat de la question STREAK.
+ * @param {{ correctAnswer:string, results:object, streaks:object }} data
+ * @param {string[]} playerIds  — liste des joueurs dans l'ordre
+ * @param {Map<string,string>} playerNames
+ */
+export function renderPartyStreakReveal(data, players) {
+  showPartyPanel('phase-party-streak-reveal');
+  highlightPartyChoiceGrid('party-streak-choices', data.correctAnswer);
+  setText('party-streak-reveal-answer', data.correctAnswer ?? '');
+
+  const container = el('party-streak-results');
+  if (container) {
+    container.innerHTML = players
+      .filter(p => p.id !== '__host__')
+      .map(p => {
+        const r = data.results[p.id] ?? { correct: false, choice: null };
+        const streak = data.streaks[p.id] ?? { current: 0, max: 0 };
+        const cls = r.correct ? 'streak-correct' : 'streak-wrong';
+        const icon = r.correct ? '✅' : '❌';
+        const streakTxt = streak.current > 0
+          ? `🔥×${streak.current}`
+          : (streak.max > 0 ? `max ${streak.max}` : '');
+        return `<div class="party-streak-result-row ${cls}">
+          <span class="streak-result-icon">${icon}</span>
+          <span class="streak-result-name">${escapeHtml(p.name)}</span>
+          <span class="streak-result-answer">${escapeHtml(r.choice ?? '(sans réponse)')}</span>
+          ${streakTxt ? `<span class="streak-result-streak">${streakTxt}</span>` : ''}
+        </div>`;
+      }).join('');
+  }
+  // Mettre à jour le tableau des séries
+  renderStreakBoard(data.streaks, players);
+}
+
+/**
+ * Met à jour le tableau des séries dans la sidebar.
+ */
+export function renderStreakBoard(streaks, players) {
+  const board = el('streak-board');
+  const list  = el('streak-list');
+  if (!board || !list) return;
+  board.hidden = false;
+  list.innerHTML = players
+    .filter(p => p.id !== '__host__')
+    .map(p => {
+      const s = streaks[p.id] ?? { current: 0, max: 0 };
+      return `<div class="streak-board-row">
+        <span class="streak-board-name">${escapeHtml(p.name)}</span>
+        <span class="streak-board-current">${s.current > 0 ? `🔥×${s.current}` : '·'}</span>
+        <span class="streak-board-max">max ${s.max}</span>
+      </div>`;
+    }).join('');
+}
+
+// ─── DUEL ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Affiche l'annonce du duel (qui interroge).
+ */
+export function renderPartyDuelAssign(data) {
+  showPartyPanel('phase-party-duel-assign');
+  const board = el('streak-board');
+  if (board) board.hidden = true;
+  setText('party-duel-assign-text',
+    `${data.interrogateurName} est l'Interrogateur (Duel ${data.duelIndex + 1}/${data.totalDuels})`);
+}
+
+/**
+ * Affiche les options de choix privées pour l'interrogateur (hôte ou client).
+ * @param {{ options: Array<{id,text,correctAnswer}> }} data
+ * @param {function(string): void} onPick
+ */
+export function renderPartyDuelPick(data, onPick) {
+  showPartyPanel('phase-party-duel-pick');
+  const container = el('party-duel-pick-options');
+  if (!container) return;
+  container.innerHTML = data.options.map(q => `
+    <button class="party-pick-btn" data-qid="${escapeHtml(q.id)}">
+      ${escapeHtml(q.text)}
+      <span class="pick-answer-hint">🔑 ${escapeHtml(q.correctAnswer)}</span>
+    </button>
+  `).join('');
+  container.querySelectorAll('.party-pick-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      container.querySelectorAll('.party-pick-btn').forEach(b => { b.disabled = true; });
+      onPick(btn.dataset.qid);
+    });
+  });
+}
+
+/**
+ * Affiche la question duel pour tous les joueurs (sauf interrogateur).
+ */
+export function renderPartyDuelQuestion(data, myId, isHost, onChoice) {
+  showPartyPanel('phase-party-duel-question');
+  const isInterrogateur = myId === data.interrogateurId;
+
+  setText('party-duel-asker-label',
+    `🎯 ${data.interrogateurName} pose la question (Duel ${data.duelIndex + 1}/${data.totalDuels}) :`);
+  setText('party-duel-question-text', data.questionText ?? '');
+
+  const hint = el('party-duel-host-answer');
+  if (hint) {
+    hint.hidden = !(isHost && data.correctAnswer);
+    if (isHost && data.correctAnswer) hint.textContent = `🔑 ${data.correctAnswer}`;
+  }
+
+  const watching = el('party-duel-watching');
+  if (watching) {
+    watching.hidden = !isInterrogateur;
+    watching.textContent = isInterrogateur
+      ? '👀 Vous observez les réponses des autres…' : '';
+  }
+
+  renderPartyChoiceGrid(
+    'party-duel-choices',
+    data.choices ?? [],
+    isInterrogateur || isHost ? null : onChoice,
+    isInterrogateur || isHost
+  );
+}
+
+/**
+ * Affiche le résultat d'un round duel.
+ */
+export function renderPartyDuelResult(data, players) {
+  showPartyPanel('phase-party-duel-result');
+  const container = el('party-duel-result-content');
+  if (!container) return;
+
+  const rows = players
+    .filter(p => p.id !== '__host__')
+    .map(p => {
+      if (p.id === data.interrogateurId) {
+        const pts = data.ptsInterrogateur ?? 0;
+        const ptsCls = pts >= 0 ? 'pts-pos' : 'pts-neg';
+        const ptsStr = pts >= 0 ? `+${pts}` : `${pts}`;
+        return `<div class="party-duel-result-row duel-interrogateur">
+          <span class="duel-result-icon">🎯</span>
+          <span class="duel-result-name">${escapeHtml(p.name)} <em style="font-weight:400;font-size:0.8rem;">(interrogateur)</em></span>
+          <span class="duel-result-pts ${ptsCls}">${ptsStr} pts</span>
+        </div>`;
+      }
+      const r = data.results[p.id] ?? { correct: false, choice: null };
+      const cls = r.correct ? 'duel-correct' : 'duel-wrong';
+      const icon = r.correct ? '✅' : '❌';
+      const pts = r.correct ? '+5' : '-2';
+      const ptsCls = r.correct ? 'pts-pos' : 'pts-neg';
+      return `<div class="party-duel-result-row ${cls}">
+        <span class="duel-result-icon">${icon}</span>
+        <span class="duel-result-name">${escapeHtml(p.name)}</span>
+        <span class="duel-result-pts ${ptsCls}">${pts} pts</span>
+      </div>`;
+    }).join('');
+
+  const correctLine = `<p class="party-duel-correct-answer">✅ Bonne réponse : <strong>${escapeHtml(data.correctAnswer ?? '')}</strong></p>`;
+  container.innerHTML = rows + correctLine;
+}
+
+// ─── SPEED TF ─────────────────────────────────────────────────────────────────
+
+/**
+ * Affiche l'énoncé Vrai/Faux.
+ * @param {boolean} votingOpen  — true = boutons actifs
+ */
+export function renderPartyTFQuestion(data, isHost, myVote, onVote, votingOpen) {
+  showPartyPanel('phase-party-tf');
+  setText('party-tf-counter', `Question ${(data.tfIndex ?? 0) + 1} / ${data.totalTF ?? 5}`);
+  setText('party-tf-statement', data.statement ?? '');
+
+  const hint = el('party-tf-host-hint');
+  if (hint) {
+    hint.hidden = !isHost;
+    if (isHost) hint.textContent = isHost && data.correctVote
+      ? `🔑 Réponse : ${data.correctVote === 'V' ? 'VRAI ✅' : 'FAUX ❌'}`
+      : '';
+  }
+
+  const buttons = el('party-tf-buttons');
+  if (buttons) buttons.hidden = !votingOpen;
+
+  const voted = el('party-tf-voted');
+  if (voted) {
+    voted.hidden = !myVote || !votingOpen;
+    voted.textContent = myVote
+      ? `Vous avez voté : ${myVote === 'V' ? '✅ VRAI' : '❌ FAUX'}`
+      : '';
+  }
+
+  if (votingOpen && onVote && !myVote && !isHost) {
+    const btnVrai = el('btn-tf-vrai');
+    const btnFaux = el('btn-tf-faux');
+    if (btnVrai) { btnVrai.disabled = false; btnVrai.classList.remove('tf-selected'); btnVrai.onclick = () => { onVote('V'); }; }
+    if (btnFaux) { btnFaux.disabled = false; btnFaux.classList.remove('tf-selected'); btnFaux.onclick = () => { onVote('F'); }; }
+  } else {
+    const btnVrai = el('btn-tf-vrai');
+    const btnFaux = el('btn-tf-faux');
+    if (btnVrai) btnVrai.disabled = true;
+    if (btnFaux) btnFaux.disabled = true;
+  }
+}
+
+/**
+ * Affiche le résultat Vrai/Faux.
+ */
+export function renderPartyTFReveal(data, players) {
+  showPartyPanel('phase-party-tf-result');
+  const correct = data.correctVote;
+  setText('party-tf-reveal-answer',
+    `${correct === 'V' ? '✅ VRAI' : '❌ FAUX'} — ${data.tfStatement ?? ''}`);
+
+  const container = el('party-tf-reveal-votes');
+  if (!container) return;
+  container.innerHTML = players
+    .filter(p => p.id !== '__host__')
+    .map(p => {
+      const vote = data.votes[p.id];
+      if (!vote) {
+        return `<div class="party-tf-vote-row tf-vote-none">
+          <span class="tf-vote-icon">⏱️</span>
+          <span class="tf-vote-name">${escapeHtml(p.name)}</span>
+          <span class="tf-vote-label">Pas de vote</span>
+          <span class="tf-vote-pts" style="color:var(--text-muted)">0 pt</span>
+        </div>`;
+      }
+      const isCorrect = vote === correct;
+      const cls = isCorrect ? 'tf-vote-correct' : 'tf-vote-wrong';
+      const icon = vote === 'V' ? '✅' : '❌';
+      const pts = isCorrect ? '+3' : '-2';
+      const ptsCls = isCorrect ? 'pts-pos' : 'pts-neg';
+      return `<div class="party-tf-vote-row ${cls}">
+        <span class="tf-vote-icon">${icon}</span>
+        <span class="tf-vote-name">${escapeHtml(p.name)}</span>
+        <span class="tf-vote-label">${vote === 'V' ? 'VRAI' : 'FAUX'}</span>
+        <span class="tf-vote-pts ${ptsCls}">${pts} pts</span>
+      </div>`;
+    }).join('');
+}
+
+// ─── Fin de mini-jeu ──────────────────────────────────────────────────────────
+
+/**
+ * Affiche le récap de fin de mini-jeu.
+ * @param {{ mini:string, miniScores:object, scores:object }} data
+ * @param {Array<{id,name,score}>} players
+ */
+export function renderPartyMiniEnd(data, players) {
+  showPartyPanel('phase-party-mini-end');
+  const board = el('streak-board');
+  if (board) board.hidden = true;
+
+  setText('party-mini-end-title',
+    `${PARTY_MINI_LABELS[data.mini] ?? data.mini} — Résultats`);
+
+  const container = el('party-mini-end-scores');
+  if (!container) return;
+
+  // Trier par score total
+  const sorted = [...players]
+    .filter(p => p.id !== '__host__')
+    .map(p => ({
+      ...p,
+      miniPts: data.miniScores?.[p.id] ?? null,
+      total: data.scores?.[p.id] ?? p.score,
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  container.innerHTML = sorted.map((p, i) => {
+    const medal = ['🥇', '🥈', '🥉'][i] ?? `${i + 1}.`;
+    const isWinner = i === 0;
+    const miniStr = p.miniPts !== null ? ` (+${p.miniPts} pts ce mini)` : '';
+    return `<div class="party-mini-end-row${isWinner ? ' end-winner' : ''}">
+      <span class="party-mini-end-rank">${medal}</span>
+      <span class="party-mini-end-name">${escapeHtml(p.name)}</span>
+      <span class="party-mini-end-pts">${p.total} pts${miniStr}</span>
+    </div>`;
+  }).join('');
+}
+
