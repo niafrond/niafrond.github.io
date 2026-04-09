@@ -502,20 +502,68 @@ function setupPlayAgainButton(engine, peer) {
   const btn = document.getElementById('btn-play-again');
   if (btn) {
     btn.onclick = () => {
-      showOnly('screen-lobby');
-      // Réinitialiser les scores
-      engine.state.players.forEach(p => { p.score = 0; p.ready = false; });
-      engine.state.phase = PHASE.LOBBY;
-      const host = engine.state.players.find(p => p.id === '__host__');
-      if (host) host.ready = true;
-      engine._broadcastPlayerList();
-      renderLobbyPlayers(engine.state.players, true, (id) => {
-        peer.kick(id);
-        engine.removePlayer(id);
-      });
-      // Réactiver le bouton "Démarrer"
-      const btnStart = document.getElementById('btn-start-game');
-      if (btnStart) { btnStart.disabled = false; btnStart.textContent = '▶️ Démarrer la partie'; }
+      // Prévenir les clients du retour au lobby avant de changer d'écran
+      peer.broadcast({ type: MSG.LOBBY_RESET });
+
+      // Retourner à l'écran de configuration pour permettre de changer les critères,
+      // tout en conservant le même peer ID (les clients gardent leur lien de connexion).
+      showOnly('screen-setup');
+
+      // Afficher le classement local mis à jour
+      renderLeaderboard(loadLeaderboard(), 'leaderboard-setup-list', 'leaderboard-setup-card');
+
+      // Pré-remplir le nom hôte
+      const hostNameInput = document.getElementById('host-name');
+      if (hostNameInput) hostNameInput.value = clientState.myName || '';
+
+      // Re-render le formulaire de configuration avec les critères précédents
+      renderSetupForm(hostConfig, (changes) => Object.assign(hostConfig, changes));
+
+      // Re-binder le bouton "Héberger" pour réutiliser le peer existant
+      const btnHost = document.getElementById('btn-start-host');
+      if (btnHost) {
+        btnHost.disabled = false;
+        btnHost.textContent = '🔄 Relancer la partie';
+        // Remplacer le listener précédent via onclick
+        btnHost.onclick = () => {
+          const nameInput = document.getElementById('host-name');
+          const name = nameInput?.value?.trim() || clientState.myName || 'Hôte';
+          try { localStorage.setItem(PLAYER_NAME_KEY, name); } catch (_) {}
+          clientState.myName = name;
+
+          // Récupérer les joueurs connectés depuis l'ancien moteur et remettre à zéro
+          const prevPlayers = engine.state.players.map(p => ({
+            id: p.id,
+            name: p.id === '__host__' ? name : p.name,
+          }));
+
+          // Créer un nouveau moteur avec le peer existant
+          const newEngine = new GameEngine(peer, (state) => {
+            handleHostStateChange(state, newEngine, peer);
+          });
+
+          // Ré-inscrire les joueurs (scores remis à 0, hôte marqué prêt)
+          prevPlayers.forEach(p => newEngine.addPlayer(p.id, p.name));
+          const hostPlayer = newEngine.state.players.find(p => p.id === '__host__');
+          if (hostPlayer) hostPlayer.ready = true;
+
+          showOnly('screen-lobby');
+          renderLobbyPlayers(newEngine.state.players, true, (id) => {
+            peer.kick(id);
+            newEngine.removePlayer(id);
+          });
+          newEngine._broadcastPlayerList();
+
+          // Bouton "Démarrer" — charge les questions au clic (comme le flux normal)
+          const btnStart = document.getElementById('btn-start-game');
+          if (btnStart) {
+            btnStart.disabled = false;
+            btnStart.textContent = '▶️ Démarrer la partie';
+            delete btnStart.dataset.bound;
+            btnStart.onclick = () => startGame(newEngine, peer);
+          }
+        };
+      }
     };
   }
 }
@@ -797,6 +845,27 @@ function handleClientMessage(data, peer, local, playerName) {
       renderFinalResults(clientState.finalScores);
       renderLeaderboard(loadLeaderboard(), 'leaderboard-gameover-list', 'leaderboard-gameover-card');
       playGameOver();
+      break;
+
+    case MSG.LOBBY_RESET:
+      stopTimerBar();
+      hideWrongAnswerOverlay();
+      clientState.phase = PHASE.LOBBY;
+      local.currentQuestion = null;
+      local.hasBuzzedWrong = false;
+      local.selfEliminated = false;
+      local.correctAnswer = null;
+      local.buzzQueue = [];
+      // Réinitialiser l'état du bouton "Prêt" pour la prochaine partie
+      {
+        const readyBtn = document.getElementById('btn-ready');
+        if (readyBtn) {
+          readyBtn.disabled = false;
+          readyBtn.textContent = '✅ Je suis prêt !';
+          delete readyBtn.dataset.bound;
+        }
+      }
+      showOnly('screen-lobby');
       break;
   }
 }
