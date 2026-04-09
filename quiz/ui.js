@@ -427,7 +427,7 @@ function renderQuestion(q, data) {
   // Afficher le trivia à l'hôte en mode hôte lecteur (visible dès la question)
   const triviaHint = el('host-trivia-hint');
   if (triviaHint) {
-    if ((data.showAnswerToHost || data.hostIsReader) && q.trivia) {
+    if ((data.showAnswerToHost || data.hostIsReader) && q?.trivia) {
       triviaHint.textContent = `💡 ${q.trivia}`;
       triviaHint.hidden = false;
     } else {

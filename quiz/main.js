@@ -236,7 +236,7 @@ async function startHostSession(hostName) {
   });
 
   peer.addEventListener('player-join', () => {
-    // Diffuser la config actuelle aux joueurs qui rejoignent
+    // Diffuser la config actuelle à tous les joueurs connectés quand quelqu'un rejoint
     peer.broadcast({ type: MSG.LOBBY_CONFIG, config: { ...hostConfig } });
   });
 
