@@ -1,3 +1,9 @@
+## [1.43.0](https://github.com/niafrond/niafrond.github.io/compare/v1.42.0...v1.43.0) (2026-04-09)
+
+### Features
+
+* **quiz:** replay keeps peer ID, allows changing game criteria ([#22](https://github.com/niafrond/niafrond.github.io/issues/22)) ([ebd0a66](https://github.com/niafrond/niafrond.github.io/commit/ebd0a662cb5aff368a14b7a409a5493f7ec8bdbd))
+
 ## [1.42.0](https://github.com/niafrond/niafrond.github.io/compare/v1.41.0...v1.42.0) (2026-04-07)
 
 ### Features
