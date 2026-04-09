@@ -8,9 +8,9 @@
 
 import { QuizPeer } from './peer.js';
 import { GameEngine } from './game.js';
-import { PartyGameEngine, PARTY_MSG, PARTY_PHASE, PARTY_QUESTIONS_NEEDED, PARTY_MINI_LABELS, PARTY_MINI_ICONS, PARTY_MINI_RULES } from './party-game.js';
+import { PartyGameEngine, PARTY_MSG, PARTY_PHASE, PARTY_QUESTIONS_NEEDED, PARTY_MINI_LABELS, PARTY_MINI_ICONS, PARTY_MINI_RULES, ALL_PARTY_MINIS } from './party-game.js';
 import { fetchQuestions } from './questions.js';
-import { MSG, PHASE, MODE, TIMER } from './constants.js';
+import { MSG, PHASE, MODE, TIMER, CATEGORY_LABELS } from './constants.js';
 import {
   showOnly, show, hide, renderSetupForm, renderShareLink,
   renderLobbyPlayers, renderScoreboard, renderGamePhase,
@@ -22,7 +22,12 @@ import {
   renderPartyStreakQuestion, renderPartyStreakReveal, renderStreakBoard,
   renderPartyDuelAssign, renderPartyDuelPick, renderPartyDuelQuestion, renderPartyDuelResult,
   renderPartyTFQuestion, renderPartyTFReveal,
+  renderPartyRaceQuestion, renderPartyRaceReveal,
+  renderPartyBlitzQuestion, renderPartyBlitzReveal,
+  renderPartyCarouselQuestion, renderPartyCarouselReveal,
   renderPartyMiniEnd,
+  renderBettingPhase, renderDraftPhase, renderDoubleOrNothingButton,
+  renderTargetSelector, renderPowers, showPowerEffectNotification, renderQuestionEndExtras,
 } from './ui.js';
 import {
   playBuzz, playCorrect, playWrong, playNearMiss,
@@ -80,6 +85,11 @@ const clientState = {
   config: {},
   showAnswerToHost: false,
   hostIsReader: false,
+  // Nouvelles fonctionnalités
+  doubleDownActive: false, // double ou rien activé par le joueur local
+  myBet: null,             // pari secret du joueur local
+  myTarget: null,          // cible cachée du joueur local
+  betDeadline: null,       // deadline du pari secret
 };
 
 // ─── Config de partie (hôte) ──────────────────────────────────────────────────
@@ -93,6 +103,12 @@ const hostConfig = {
   showAnswerToHost: false,
   applyMalus: false,
   hostIsReader: false,
+  comboStreak: false,
+  doubleOrNothing: false,
+  secretBet: false,
+  hiddenTarget: false,
+  powers: false,
+  draftCategories: false,
 };
 
 // ─── Initialisation ───────────────────────────────────────────────────────────
@@ -310,17 +326,31 @@ async function startGame(ref, peer) {
     btnStart.textContent = '⏳ Chargement des questions…';
   }
 
-  showToast('Récupération des questions…', 'info');
+  // ── Draft de catégories ─────────────────────────────────────────────────
+  if (hostConfig.draftCategories) {
+    const availableCats = Object.keys(CATEGORY_LABELS).filter(k => k !== '');
+    showToast('Phase de draft — choisissez vos catégories !', 'info');
+    engine.startDraft(availableCats, async (pickedCategories) => {
+      const categories = pickedCategories.length > 0 ? pickedCategories : hostConfig.categories;
+      await _fetchAndStartGame(engine, peer, { ...hostConfig, categories }, btnStart);
+    });
+    return;
+  }
 
-  const isParty = hostConfig.mode === MODE.PARTY;
-  const count = isParty ? PARTY_QUESTIONS_NEEDED : hostConfig.questionCount;
+  await _fetchAndStartGame(engine, peer, hostConfig, btnStart);
+}
+
+async function _fetchAndStartGame(engine, peer, config, btnStart) {
+  showToast('Récupération des questions…', 'info');
+  const isParty = config.mode === MODE.PARTY;
+  const count = isParty ? PARTY_QUESTIONS_NEEDED : config.questionCount;
 
   let questions;
   try {
     questions = await fetchQuestions({
       count,
-      categories: hostConfig.categories,
-      difficulties: hostConfig.difficulties,
+      categories: config.categories,
+      difficulties: config.difficulties,
     });
   } catch (err) {
     showToast('Impossible de charger les questions', 'error');
@@ -329,15 +359,12 @@ async function startGame(ref, peer) {
   }
 
   if (isParty) {
-    // Lire les options party depuis le formulaire
     const partyOpts = readPartyOptions();
-    Object.assign(hostConfig, partyOpts);
+    Object.assign(config, partyOpts);
 
-    // Prioriser les questions non encore posées, mémoriser les IDs utilisés
     questions = prioritizeUnasked(questions);
     saveAskedQuestions(questions.map(q => q.id).filter(Boolean));
 
-    // Créer le PartyGameEngine et remplacer le moteur courant dans le ref
     const prevPlayers = ref.engine?.state?.players ?? [];
     const partyEngine = new PartyGameEngine(peer, (state) => {
       handlePartyHostStateChange(state, partyEngine, peer);
@@ -347,13 +374,13 @@ async function startGame(ref, peer) {
 
     clientState.showAnswerToHost = true;
     clientState.hostIsReader = false;
-    partyEngine.startGame(questions, { ...hostConfig });
+    partyEngine.startGame(questions, { ...config });
     return;
   }
 
-  clientState.showAnswerToHost = hostConfig.showAnswerToHost;
-  clientState.hostIsReader = hostConfig.hostIsReader;
-  ref.engine.startGame(questions, { ...hostConfig });
+  clientState.showAnswerToHost = config.showAnswerToHost;
+  clientState.hostIsReader = config.hostIsReader;
+  engine.startGame(questions, { ...config });
 }
 
 function handleHostStateChange(state, engine, peer) {
@@ -634,6 +661,87 @@ function handlePartyHostStateChange(state, engine, peer) {
       if (state.tfResult) {
         renderPartyTFReveal(state.tfResult, state.players);
       }
+      break;
+
+    case PARTY_PHASE.RACE_QUESTION:
+      hidePartyOverlay();
+      renderPartyRaceQuestion(
+        {
+          text:     state.raceCurrentQuestion?.text ?? '',
+          choices:  state.raceCurrentQuestion?.choices ?? [],
+          category: state.raceCurrentQuestion?.category,
+          index:    state.raceIndex,
+          total:    state.raceQuestions.length,
+          answers:  state.raceAnswers,
+          correctAnswer: state.raceCurrentQuestion?.correctAnswer,
+        },
+        true, null
+      );
+      startTimerBar(15000, 'timer-fill', 100, playTick);
+      {
+        const btnSkip = document.getElementById('btn-skip-question');
+        if (btnSkip) btnSkip.onclick = () => engine.hostSkip();
+      }
+      break;
+
+    case PARTY_PHASE.RACE_REVEAL:
+      stopTimerBar();
+      if (state.raceReveal) renderPartyRaceReveal(state.raceReveal, state.players);
+      break;
+
+    case PARTY_PHASE.BLITZ_QUESTION:
+      hidePartyOverlay();
+      renderPartyBlitzQuestion(
+        {
+          text:     state.blitzCurrentQuestion?.text ?? '',
+          choices:  state.blitzCurrentQuestion?.choices ?? [],
+          category: state.blitzCurrentQuestion?.category,
+          index:    state.blitzIndex,
+          total:    state.blitzQuestions.length,
+          answers:  state.blitzAnswers,
+          correctAnswer: state.blitzCurrentQuestion?.correctAnswer,
+        },
+        true, null
+      );
+      startTimerBar(5000, 'timer-fill', 100, playTick);
+      {
+        const btnSkip = document.getElementById('btn-skip-question');
+        if (btnSkip) btnSkip.onclick = () => engine.hostSkip();
+      }
+      break;
+
+    case PARTY_PHASE.BLITZ_REVEAL:
+      stopTimerBar();
+      if (state.blitzReveal) renderPartyBlitzReveal(state.blitzReveal, state.players);
+      break;
+
+    case PARTY_PHASE.CAROUSEL_ASSIGN:
+    case PARTY_PHASE.CAROUSEL_QUESTION:
+      hidePartyOverlay();
+      renderPartyCarouselQuestion(
+        {
+          activePlayer: state.carouselActivePlayer,
+          activePlayerName: state.players.find(p => p.id === state.carouselActivePlayer)?.name ?? '',
+          text:     state.carouselCurrentQuestion?.text ?? '',
+          choices:  state.carouselCurrentQuestion?.choices ?? [],
+          category: state.carouselCurrentQuestion?.category,
+          index:    state.carouselIndex,
+          total:    state.carouselQuestions.length,
+          showQuestion: state.phase === PARTY_PHASE.CAROUSEL_QUESTION,
+          correctAnswer: state.carouselCurrentQuestion?.correctAnswer,
+        },
+        '__host__', true, null
+      );
+      if (state.phase === PARTY_PHASE.CAROUSEL_QUESTION) {
+        startTimerBar(12000, 'timer-fill', 100, playTick);
+        const btnSkip = document.getElementById('btn-skip-question');
+        if (btnSkip) btnSkip.onclick = () => engine.hostSkip();
+      }
+      break;
+
+    case PARTY_PHASE.CAROUSEL_REVEAL:
+      stopTimerBar();
+      if (state.carouselReveal) renderPartyCarouselReveal(state.carouselReveal, state.players);
       break;
 
     case PARTY_PHASE.MINI_END:
@@ -1194,6 +1302,87 @@ function handleClientMessage(data, peer, local, playerName) {
       stopTimerBar();
       if (data.scores) { applyScores(data.scores); renderScoreboard(clientState.players, false); }
       renderPartyTFReveal(data, clientState.players);
+      break;
+
+    case PARTY_MSG.PARTY_RACE_QUESTION:
+      if (!local.party) local.party = {};
+      local.party.raceAnswered = false;
+      stopTimerBar();
+      renderPartyRaceQuestion(
+        { text: data.text, choices: data.choices ?? [], index: data.index, total: data.total, answers: {}, category: data.category },
+        false,
+        (choice) => {
+          if (local.party?.raceAnswered) return;
+          local.party.raceAnswered = true;
+          peer.sendToHost({ type: PARTY_MSG.PARTY_RACE_CHOICE, choice });
+        }
+      );
+      startTimerBar(15000, 'timer-fill', 100, playTick);
+      break;
+
+    case PARTY_MSG.PARTY_RACE_REVEAL:
+      stopTimerBar();
+      if (data.scores) { applyScores(data.scores); renderScoreboard(clientState.players, false); }
+      renderPartyRaceReveal(data, clientState.players);
+      break;
+
+    case PARTY_MSG.PARTY_BLITZ_QUESTION:
+      if (!local.party) local.party = {};
+      local.party.blitzAnswered = false;
+      stopTimerBar();
+      renderPartyBlitzQuestion(
+        { text: data.text, choices: data.choices ?? [], index: data.index, total: data.total, answers: {}, category: data.category },
+        false,
+        (choice) => {
+          if (local.party?.blitzAnswered) return;
+          local.party.blitzAnswered = true;
+          peer.sendToHost({ type: PARTY_MSG.PARTY_BLITZ_CHOICE, choice });
+        }
+      );
+      startTimerBar(data.timerMs ?? 5000, 'timer-fill', 100, playTick);
+      break;
+
+    case PARTY_MSG.PARTY_BLITZ_REVEAL:
+      stopTimerBar();
+      if (data.scores) { applyScores(data.scores); renderScoreboard(clientState.players, false); }
+      renderPartyBlitzReveal(data, clientState.players);
+      break;
+
+    case PARTY_MSG.PARTY_CAROUSEL_ASSIGN: {
+      if (!local.party) local.party = {};
+      local.party.carouselAnswered = false;
+      const isMyTurn = data.activePlayer === peer.peerId;
+      const activeName = clientState.players.find(p => p.id === data.activePlayer)?.name ?? '';
+      renderPartyCarouselQuestion(
+        {
+          activePlayer:     data.activePlayer,
+          activePlayerName: activeName,
+          text:             data.text ?? '',
+          choices:          data.choices ?? [],
+          category:         data.category,
+          index:            data.index,
+          total:            data.total,
+          showQuestion:     data.showQuestion ?? false,
+          correctAnswer:    null,
+        },
+        peer.peerId,
+        false,
+        isMyTurn && data.showQuestion
+          ? (choice) => {
+              if (local.party?.carouselAnswered) return;
+              local.party.carouselAnswered = true;
+              peer.sendToHost({ type: PARTY_MSG.PARTY_CAROUSEL_CHOICE, choice });
+            }
+          : null
+      );
+      if (data.showQuestion && isMyTurn) startTimerBar(12000, 'timer-fill', 100, playTick);
+      break;
+    }
+
+    case PARTY_MSG.PARTY_CAROUSEL_REVEAL:
+      stopTimerBar();
+      if (data.scores) { applyScores(data.scores); renderScoreboard(clientState.players, false); }
+      renderPartyCarouselReveal(data, clientState.players);
       break;
 
     case PARTY_MSG.PARTY_MINI_END:

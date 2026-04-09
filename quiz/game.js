@@ -2,14 +2,20 @@
  * game.js — Moteur de jeu Quiz (côté HOST uniquement)
  *
  * State machine :
- *  LOBBY → QUESTION_PREVIEW → BUZZING → ANSWERING → ANSWER_RESULT
- *       → [BUZZING (temps restant + joueurs éligibles)] → QUESTION_END
- *       → QUESTION_PREVIEW (suivant) → … → GAME_OVER
+ *  LOBBY → [DRAFT] → QUESTION_PREVIEW → [BETTING] → BUZZING → ANSWERING
+ *       → ANSWER_RESULT → QUESTION_END → QUESTION_PREVIEW (suivant) → … → GAME_OVER
  *
- * En mode QCM : QUESTION_PREVIEW → ANSWERING (pas de BUZZING)
+ * Fonctionnalités spéciales :
+ *  - Mode Ping-Pong : tour à tour sans buzzer
+ *  - Combo Streak   : multiplicateur sur les bonnes réponses consécutives
+ *  - Double ou rien : parier son score avant de répondre
+ *  - Pari secret    : miser des points avant chaque question
+ *  - Cible cachée   : choisir secrètement un adversaire à battre
+ *  - Pouvoirs       : ralentir / cacher / doubler un joueur (avec cooldown)
+ *  - Draft catégories : chaque joueur choisit ses thèmes en début de partie
  */
 
-import { MSG, PHASE, MODE, SCORE, TIMER } from './constants.js';
+import { MSG, PHASE, MODE, SCORE, TIMER, STREAK, POWER, POWER_COOLDOWN } from './constants.js';
 import { validateAnswer, proximityScore } from './fuzzy.js';
 
 /** Distance de Levenshtein maximale pour considérer une réponse comme "presque correcte" */
@@ -20,6 +26,13 @@ function calcSpeedBonus(elapsedMs, totalMs) {
   if (totalMs <= 0) return 0;
   const ratio = Math.max(0, 1 - elapsedMs / totalMs);
   return Math.round(SCORE.SPEED_BONUS_MAX * ratio);
+}
+
+/** Retourne le multiplicateur de streak pour un nombre de bonnes réponses consécutives */
+function streakMultiplier(streak) {
+  if (streak >= STREAK.THRESHOLD_2) return STREAK.MULTIPLIER_2;
+  if (streak >= STREAK.THRESHOLD_1) return STREAK.MULTIPLIER_1;
+  return 1;
 }
 
 export class GameEngine {
@@ -34,7 +47,7 @@ export class GameEngine {
     this.state = {
       phase: PHASE.LOBBY,
       mode: MODE.CLASSIC,
-      players: [],       // { id, name, score, ready }
+      players: [],       // { id, name, score, ready, streak, powers, powerEffects }
       questions: [],     // Questions normalisées
       currentIndex: -1,  // Index de la question en cours
       buzzQueue: [],     // [peerId, ...] ordre d'arrivée des buzzes
@@ -49,16 +62,37 @@ export class GameEngine {
         applyMalus: false,
         mode: MODE.CLASSIC,
         hostIsReader: false,
+        comboStreak: false,
+        doubleOrNothing: false,
+        secretBet: false,
+        hiddenTarget: false,
+        powers: false,
+        draftCategories: false,
       },
+      // ── Fonctionnalités spéciales ─────────────────────────────────────────
+      bets: {},              // { [playerId]: amount } — paris secrets (non diffusés)
+      betDeadline: null,
+      doubleDownPlayers: [], // joueurs ayant activé "double ou rien" cette question
+      targets: {},           // { [playerId]: targetId } — cibles cachées (non diffusées)
+      roundPoints: {},       // { [playerId]: points earned this question }
+      pingpongOrderOffset: 0, // rotation du premier joueur en ping-pong
+      // ── Draft ────────────────────────────────────────────────────────────
+      draftPicks: {},             // { [playerId]: category[] }
+      draftCurrentPickerIndex: 0,
+      draftCategories: [],        // catégories encore disponibles pour le draft
+      draftRound: 0,
+      draftTotalRounds: 1,
+      _draftCallback: null,
     };
 
     this._previewTimer = null;
     this._buzzTimer = null;
     this._answerTimer = null;
     this._autoNextTimer = null;
-    this._answerStartTime = null; // Horodatage du début de la phase de réponse
+    this._betTimer = null;
+    this._draftTimer = null;
+    this._answerStartTime = null;
 
-    // Auto-advance entre questions
     this.autoAdvance = false;
   }
 
@@ -68,16 +102,28 @@ export class GameEngine {
     return this.state.questions[this.state.currentIndex] ?? null;
   }
 
-  _getAnswerDuration() {
+  _getAnswerDuration(peerId = null) {
     const base = (this.state.config.answerTime ?? 15) * 1000;
+    let dur;
     if (this.state.mode === MODE.SPEED) {
-      return Math.min(base, TIMER.SPEED_ANSWER);
+      dur = Math.min(base, TIMER.SPEED_ANSWER);
+    } else {
+      dur = base;
     }
-    return base;
+    // Pouvoir SLOW : divise le timer par 2 pour ce joueur
+    if (peerId && this._getPowerEffect(peerId, POWER.SLOW)) {
+      dur = Math.round(dur / 2);
+    }
+    return dur;
   }
 
   _getScores() {
     return Object.fromEntries(this.state.players.map(p => [p.id, p.score]));
+  }
+
+  _getPowerEffect(peerId, power) {
+    const player = this.state.players.find(p => p.id === peerId);
+    return !!(player?.powerEffects?.[power]);
   }
 
   // ─── Gestion des joueurs (LOBBY) ─────────────────────────────────────────
@@ -89,12 +135,15 @@ export class GameEngine {
       this._broadcastPlayerList();
       return;
     }
-    const inGame = this.state.phase !== PHASE.LOBBY;
+    const inGame = this.state.phase !== PHASE.LOBBY && this.state.phase !== PHASE.DRAFT;
     this.state.players.push({
       id: peerId,
       name,
       score: 0,
       ready: peerId === '__host__' || inGame,
+      streak: 0,
+      powers: {},      // { [POWER]: lastUsedQuestionIndex }
+      powerEffects: {}, // { [POWER]: boolean } effets actifs cette question
     });
     this._broadcastPlayerList();
   }
@@ -105,7 +154,6 @@ export class GameEngine {
     this.state.eliminatedPlayers = this.state.eliminatedPlayers.filter(id => id !== peerId);
     this._broadcastPlayerList();
 
-    // En QCM : si tous les joueurs restants ont répondu faux, fin de la question
     if (this.state.phase === PHASE.ANSWERING && this.state.mode === MODE.QCM) {
       this._checkAllQcmEliminated();
     }
@@ -118,9 +166,114 @@ export class GameEngine {
   }
 
   _broadcastPlayerList() {
-    const players = this.state.players.map(({ id, name, score, ready }) => ({ id, name, score, ready }));
+    const players = this.state.players.map(({ id, name, score, ready, streak, powers }) => ({
+      id, name, score, ready, streak,
+      powerCooldowns: powers, // cooldowns exposés aux clients
+    }));
     this.peer.broadcast({ type: MSG.PLAYER_LIST, players });
     this.onStateChange({ ...this.state });
+  }
+
+  // ─── Draft de catégories ─────────────────────────────────────────────────
+
+  /**
+   * Démarre la phase de draft des catégories.
+   * @param {string[]} availableCategories — clés de catégorie disponibles
+   * @param {Function} onComplete — appelé avec les catégories choisies quand le draft est fini
+   */
+  startDraft(availableCategories, onComplete) {
+    this._clearAllTimers();
+    const players = this._getDraftPlayers();
+    if (players.length === 0 || availableCategories.length === 0) {
+      onComplete([]);
+      return;
+    }
+
+    this.state.phase = PHASE.DRAFT;
+    this.state.draftPicks = {};
+    this.state.draftCurrentPickerIndex = 0;
+    this.state.draftCategories = [...availableCategories];
+    this.state.draftRound = 1;
+    this.state.draftTotalRounds = 1;
+    this.state._draftCallback = onComplete;
+
+    players.forEach(p => { this.state.draftPicks[p.id] = []; });
+
+    this._broadcastDraftState();
+    this.onStateChange({ ...this.state });
+    this._startDraftPickTimer();
+  }
+
+  _getDraftPlayers() {
+    return this.state.players.filter(p =>
+      !(this.state.config.hostIsReader && p.id === '__host__')
+    );
+  }
+
+  _broadcastDraftState() {
+    const players = this._getDraftPlayers();
+    const currentPicker = players[this.state.draftCurrentPickerIndex]?.id ?? null;
+    this.peer.broadcast({
+      type: MSG.DRAFT_STATE,
+      picks: { ...this.state.draftPicks },
+      currentPicker,
+      categories: [...this.state.draftCategories],
+      round: this.state.draftRound,
+      totalRounds: this.state.draftTotalRounds,
+    });
+  }
+
+  _startDraftPickTimer() {
+    this._clearTimer('draft');
+    this._draftTimer = setTimeout(() => {
+      const players = this._getDraftPlayers();
+      const peerId = players[this.state.draftCurrentPickerIndex]?.id;
+      if (peerId && this.state.draftCategories.length > 0) {
+        this.handleDraftPick(peerId, this.state.draftCategories[0]);
+      } else {
+        this._finishDraft();
+      }
+    }, TIMER.DRAFT_PICK_DURATION);
+  }
+
+  handleDraftPick(peerId, category) {
+    if (this.state.phase !== PHASE.DRAFT) return;
+    const players = this._getDraftPlayers();
+    const currentPicker = players[this.state.draftCurrentPickerIndex];
+    if (!currentPicker || currentPicker.id !== peerId) return;
+    if (!this.state.draftCategories.includes(category)) return;
+
+    this._clearTimer('draft');
+
+    if (!this.state.draftPicks[peerId]) this.state.draftPicks[peerId] = [];
+    this.state.draftPicks[peerId].push(category);
+    this.state.draftCategories = this.state.draftCategories.filter(c => c !== category);
+
+    this.state.draftCurrentPickerIndex++;
+    if (this.state.draftCurrentPickerIndex >= players.length) {
+      if (this.state.draftRound >= this.state.draftTotalRounds) {
+        this._finishDraft();
+        return;
+      }
+      this.state.draftRound++;
+      this.state.draftCurrentPickerIndex = 0;
+    }
+
+    this._broadcastDraftState();
+    this.onStateChange({ ...this.state });
+    this._startDraftPickTimer();
+  }
+
+  _finishDraft() {
+    this._clearTimer('draft');
+    const chosen = [...new Set(Object.values(this.state.draftPicks).flat())];
+    this.state.phase = PHASE.LOBBY;
+    this.onStateChange({ ...this.state });
+    if (this.state._draftCallback) {
+      const cb = this.state._draftCallback;
+      this.state._draftCallback = null;
+      cb(chosen);
+    }
   }
 
   // ─── Démarrage ───────────────────────────────────────────────────────────
@@ -131,8 +284,14 @@ export class GameEngine {
     this.state.config = { ...this.state.config, ...config };
     this.state.questions = questions;
     this.state.currentIndex = -1;
-    this.state.players.forEach(p => { p.score = 0; p.ready = false; });
-    // L'hôte est toujours prêt
+    this.state.pingpongOrderOffset = 0;
+    this.state.players.forEach(p => {
+      p.score = 0;
+      p.ready = false;
+      p.streak = 0;
+      p.powers = {};
+      p.powerEffects = {};
+    });
     const host = this.state.players.find(p => p.id === '__host__');
     if (host) host.ready = true;
 
@@ -150,6 +309,13 @@ export class GameEngine {
     this.state.wrongAnswers = [];
     this.state.eliminatedPlayers = [];
     this.state.lastResult = null;
+    this.state.bets = {};
+    this.state.betDeadline = null;
+    this.state.doubleDownPlayers = [];
+    this.state.targets = {};
+    this.state.roundPoints = {};
+    // Réinitialiser les effets de pouvoir
+    this.state.players.forEach(p => { p.powerEffects = {}; });
 
     if (this.state.currentIndex >= this.state.questions.length) {
       this._endGame();
@@ -164,7 +330,6 @@ export class GameEngine {
     this.state.phase = PHASE.QUESTION_PREVIEW;
     this.onStateChange({ ...this.state });
 
-    // Envoyer la question sans la réponse correcte
     this.peer.broadcast({
       type: MSG.SHOW_QUESTION,
       index: this.state.currentIndex,
@@ -176,13 +341,116 @@ export class GameEngine {
     });
 
     this._previewTimer = setTimeout(() => {
-      if (this.state.mode === MODE.QCM) {
+      if (this.state.config.secretBet) {
+        this._startBetting();
+      } else if (this.state.mode === MODE.QCM) {
         this._startQCMAnswering();
+      } else if (this.state.mode === MODE.PINGPONG) {
+        this._startPingPong();
       } else {
         this._startBuzzing();
       }
     }, TIMER.QUESTION_PREVIEW);
   }
+
+  // ─── Pari secret ─────────────────────────────────────────────────────────
+
+  _startBetting() {
+    this.state.phase = PHASE.BETTING;
+    this.state.betDeadline = Date.now() + TIMER.BETTING_DURATION;
+    this.state.bets = {};
+
+    const eligible = this._getEligibleBettors();
+    this.peer.broadcast({
+      type: MSG.BET_STATE,
+      betCount: 0,
+      total: eligible.length,
+      deadline: this.state.betDeadline,
+    });
+    this.onStateChange({ ...this.state });
+
+    this._betTimer = setTimeout(() => this._endBetting(), TIMER.BETTING_DURATION);
+  }
+
+  _getEligibleBettors() {
+    return this.state.players.filter(p =>
+      !(this.state.config.hostIsReader && p.id === '__host__')
+    );
+  }
+
+  handleBet(peerId, amount) {
+    if (this.state.phase !== PHASE.BETTING) return;
+    if (this.state.config.hostIsReader && peerId === '__host__') return;
+    const player = this.state.players.find(p => p.id === peerId);
+    if (!player) return;
+
+    const bet = Math.max(0, Math.min(Math.floor(amount), player.score));
+    this.state.bets[peerId] = bet;
+
+    const eligible = this._getEligibleBettors();
+    const betCount = eligible.filter(p => this.state.bets[p.id] != null).length;
+    this.peer.broadcast({ type: MSG.BET_STATE, betCount, total: eligible.length });
+    this.onStateChange({ ...this.state });
+
+    if (betCount >= eligible.length) {
+      this._clearTimer('bet');
+      this._endBetting();
+    }
+  }
+
+  _endBetting() {
+    this._clearTimer('bet');
+    if (this.state.mode === MODE.QCM) {
+      this._startQCMAnswering();
+    } else if (this.state.mode === MODE.PINGPONG) {
+      this._startPingPong();
+    } else {
+      this._startBuzzing();
+    }
+  }
+
+  // ─── Mode Ping-Pong ───────────────────────────────────────────────────────
+
+  _startPingPong() {
+    const players = this.state.players.filter(p =>
+      !(this.state.config.hostIsReader && p.id === '__host__')
+    );
+    if (players.length === 0) { this._skipQuestion(); return; }
+
+    // Rotation du premier joueur à chaque question
+    const startIdx = this.state.pingpongOrderOffset % players.length;
+    const ordered = [...players.slice(startIdx), ...players.slice(0, startIdx)];
+    this.state.buzzQueue = ordered.map(p => p.id);
+    this.state.pingpongOrderOffset++;
+
+    this.state.phase = PHASE.ANSWERING;
+    this._answerStartTime = Date.now();
+    this.peer.broadcast({ type: MSG.BUZZ_QUEUE, queue: [...this.state.buzzQueue] });
+    this.onStateChange({ ...this.state });
+
+    this._setPingPongTimer();
+  }
+
+  _setPingPongTimer() {
+    this._clearTimer('answer');
+    const currentPlayer = this.state.buzzQueue[0];
+    const dur = this._getAnswerDuration(currentPlayer);
+    this._answerTimer = setTimeout(() => {
+      if (this.state.phase === PHASE.ANSWERING) {
+        this.state.buzzQueue.shift();
+        if (this.state.buzzQueue.length > 0) {
+          this._answerStartTime = Date.now();
+          this.peer.broadcast({ type: MSG.BUZZ_QUEUE, queue: [...this.state.buzzQueue] });
+          this.onStateChange({ ...this.state });
+          this._setPingPongTimer();
+        } else {
+          this._skipQuestion();
+        }
+      }
+    }, dur);
+  }
+
+  // ─── Buzzing ─────────────────────────────────────────────────────────────
 
   _startBuzzing() {
     this.state.buzzDeadline = Date.now() + TIMER.BUZZ_DURATION;
@@ -208,9 +476,9 @@ export class GameEngine {
     this.peer.broadcast({ type: MSG.BUZZ_QUEUE, queue: [...this.state.buzzQueue] });
     this.onStateChange({ ...this.state });
 
+    const dur = this._getAnswerDuration(currentPlayer);
     this._answerTimer = setTimeout(() => {
       if (this.state.phase === PHASE.ANSWERING) {
-        // Timeout : passer au buzzeur suivant
         this.state.buzzQueue.shift();
         if (this.state.buzzQueue.length > 0) {
           this._startAnswering();
@@ -218,7 +486,7 @@ export class GameEngine {
           this._skipQuestion();
         }
       }
-    }, this._getAnswerDuration());
+    }, dur);
   }
 
   _startQCMAnswering() {
@@ -240,22 +508,127 @@ export class GameEngine {
     if (this.state.phase === PHASE.ANSWERING && this.state.mode !== MODE.CLASSIC && this.state.mode !== MODE.SPEED) return;
     if (this.state.buzzQueue.includes(peerId)) return;
     if (this.state.wrongAnswers.includes(peerId)) return;
-    // En mode hôte lecteur, l'hôte ne peut pas buzzer
     if (this.state.config.hostIsReader && peerId === '__host__') return;
 
     this.state.buzzQueue.push(peerId);
 
     if (this.state.phase === PHASE.BUZZING) {
-      // Premier buzz : passer en ANSWERING
       this._startAnswering();
     } else {
-      // Buzz dans la file d'attente : notifier
       this.peer.broadcast({ type: MSG.BUZZ_QUEUE, queue: [...this.state.buzzQueue] });
       this.onStateChange({ ...this.state });
     }
   }
 
-  // ─── Réponse texte (CLASSIC / SPEED) ────────────────────────────────────
+  // ─── Double ou rien ───────────────────────────────────────────────────────
+
+  handleDoubleDown(peerId) {
+    if (this.state.phase !== PHASE.ANSWERING) return;
+    if (this.state.mode === MODE.QCM) return;
+    if (this.state.buzzQueue[0] !== peerId) return;
+    if (this.state.doubleDownPlayers.includes(peerId)) return;
+    if (!this.state.config.doubleOrNothing) return;
+
+    const player = this.state.players.find(p => p.id === peerId);
+    if (!player || player.score <= 0) return;
+
+    this.state.doubleDownPlayers.push(peerId);
+    this.peer.broadcast({ type: MSG.DOUBLE_DOWN_DECLARED, playerId: peerId });
+    this.onStateChange({ ...this.state });
+  }
+
+  // ─── Cible cachée ─────────────────────────────────────────────────────────
+
+  handleTarget(peerId, targetId) {
+    if (
+      this.state.phase !== PHASE.QUESTION_PREVIEW &&
+      this.state.phase !== PHASE.BETTING &&
+      this.state.phase !== PHASE.BUZZING &&
+      this.state.phase !== PHASE.ANSWERING
+    ) return;
+    if (!this.state.config.hiddenTarget) return;
+    if (!this.state.players.find(p => p.id === targetId)) return;
+    if (targetId === peerId) return;
+    this.state.targets[peerId] = targetId;
+    // Pas de broadcast — secret !
+  }
+
+  // ─── Pouvoirs ─────────────────────────────────────────────────────────────
+
+  handlePower(peerId, power, targetId) {
+    if (!this.state.config.powers) return;
+    if (!Object.values(POWER).includes(power)) return;
+    const player = this.state.players.find(p => p.id === peerId);
+    const target = this.state.players.find(p => p.id === targetId);
+    if (!player || !target || targetId === peerId) return;
+
+    const lastUsed = player.powers[power] ?? -(POWER_COOLDOWN + 1);
+    if (this.state.currentIndex - lastUsed < POWER_COOLDOWN) return;
+
+    if (!target.powerEffects) target.powerEffects = {};
+    target.powerEffects[power] = true;
+    player.powers[power] = this.state.currentIndex;
+
+    this.peer.broadcast({
+      type: MSG.POWER_EFFECT,
+      power,
+      byId: peerId,
+      targetId,
+      cooldownUntil: this.state.currentIndex + POWER_COOLDOWN,
+    });
+    this._broadcastPlayerList();
+  }
+
+  // ─── Calcul des points (helper) ───────────────────────────────────────────
+
+  _calcPoints(peerId, isCorrect, elapsed, baseDuration) {
+    const player = this.state.players.find(p => p.id === peerId);
+    const isDoubleDown = this.state.doubleDownPlayers.includes(peerId);
+    const isDoublePowered = this._getPowerEffect(peerId, POWER.DOUBLE);
+    let points = 0;
+    let speedBonus = 0;
+
+    if (isCorrect) {
+      speedBonus = calcSpeedBonus(elapsed, baseDuration);
+      const mult = this.state.config.comboStreak ? streakMultiplier(player?.streak ?? 0) : 1;
+      points = Math.round((SCORE.CORRECT + speedBonus) * mult);
+
+      if (isDoubleDown && player && player.score > 0) {
+        points = player.score; // Doubler le score actuel
+      } else if (isDoublePowered) {
+        points *= 2;
+      }
+
+      if (player) {
+        const bet = this.state.bets[peerId] ?? 0;
+        player.score += points + bet;
+        if (this.state.config.comboStreak) player.streak = (player.streak ?? 0) + 1;
+      }
+      this.state.roundPoints[peerId] = (this.state.roundPoints[peerId] ?? 0) + Math.max(0, points);
+    } else {
+      if (isDoubleDown && player && player.score > 0) {
+        points = -player.score;
+        player.score = 0;
+      } else if (this.state.config.applyMalus) {
+        let malus = SCORE.WRONG_MALUS;
+        if (isDoublePowered) malus *= 2;
+        points = malus;
+        if (player) player.score = Math.max(0, player.score + malus);
+      }
+
+      const bet = this.state.bets[peerId] ?? 0;
+      if (bet > 0 && player) {
+        player.score = Math.max(0, player.score - bet);
+        points -= bet;
+      }
+
+      if (this.state.config.comboStreak && player) player.streak = 0;
+    }
+
+    return { points, speedBonus };
+  }
+
+  // ─── Réponse texte (CLASSIC / SPEED / PINGPONG) ───────────────────────────
 
   handleAnswer(peerId, text) {
     if (this.state.phase !== PHASE.ANSWERING) return;
@@ -265,35 +638,47 @@ export class GameEngine {
     this._clearTimer('answer');
     const q = this.currentQuestion;
     const correct = validateAnswer(text, q.correctAnswer);
-    const player = this.state.players.find(p => p.id === peerId);
-    let points = 0;
-    let speedBonus = 0;
+    const elapsed = this._answerStartTime != null
+      ? Date.now() - this._answerStartTime
+      : this._getAnswerDuration(peerId);
+    const baseDur = this._getAnswerDuration(peerId);
 
-    if (correct) {
-      const elapsed = this._answerStartTime != null ? Date.now() - this._answerStartTime : this._getAnswerDuration();
-      speedBonus = calcSpeedBonus(elapsed, this._getAnswerDuration());
-      points = SCORE.CORRECT + speedBonus;
-      if (player) player.score += points;
-    } else if (this.state.config.applyMalus) {
-      points = SCORE.WRONG_MALUS;
-      if (player) player.score += points;
-    }
-
+    const { points, speedBonus } = this._calcPoints(peerId, correct, elapsed, baseDur);
+    const isHidden = this._getPowerEffect(peerId, POWER.HIDE);
     const nearMiss = !correct && proximityScore(text, q.correctAnswer) === NEAR_MISS_THRESHOLD;
     const scores = this._getScores();
+    const player = this.state.players.find(p => p.id === peerId);
 
-    const result = { correct, playerId: peerId, answer: text, points, speedBonus, nearMiss, scores };
+    const result = {
+      correct,
+      playerId: peerId,
+      answer: isHidden ? null : text,
+      answerHidden: isHidden,
+      points,
+      speedBonus,
+      nearMiss,
+      scores,
+      streak: correct && this.state.config.comboStreak ? (player?.streak ?? 0) : 0,
+    };
     this.state.lastResult = result;
     this.peer.broadcast({ type: MSG.ANSWER_RESULT, ...result });
 
     if (correct) {
       this._showAnswerResult(() => this._endQuestion(false));
     } else {
-      // Mauvaise réponse : enregistrer le joueur, afficher brièvement, puis continuer
       this.state.wrongAnswers.push(peerId);
       this._showAnswerResult(() => {
         this.state.buzzQueue.shift();
-        if (this.state.buzzQueue.length > 0) {
+        if (this.state.mode === MODE.PINGPONG) {
+          if (this.state.buzzQueue.length > 0) {
+            this._answerStartTime = Date.now();
+            this.peer.broadcast({ type: MSG.BUZZ_QUEUE, queue: [...this.state.buzzQueue] });
+            this.onStateChange({ ...this.state });
+            this._setPingPongTimer();
+          } else {
+            this._skipQuestion();
+          }
+        } else if (this.state.buzzQueue.length > 0) {
           this._startAnswering();
         } else {
           this._resumeBuzzing();
@@ -302,12 +687,8 @@ export class GameEngine {
     }
   }
 
-  // ─── Jugement hôte lecteur (mode oral, CLASSIC / SPEED) ────────────────────
+  // ─── Jugement hôte lecteur (mode oral) ────────────────────────────────────
 
-  /**
-   * Appelé par l'hôte en mode lecteur pour juger si la réponse orale est correcte.
-   * @param {boolean} isCorrect
-   */
   hostJudgeAnswer(isCorrect) {
     if (this.state.phase !== PHASE.ANSWERING) return;
     if (this.state.mode === MODE.QCM) return;
@@ -316,23 +697,24 @@ export class GameEngine {
     const peerId = this.state.buzzQueue[0];
     if (!peerId) return;
 
-    const q = this.currentQuestion;
-    const player = this.state.players.find(p => p.id === peerId);
-    let points = 0;
-    let speedBonus = 0;
+    const elapsed = this._answerStartTime != null
+      ? Date.now() - this._answerStartTime
+      : this._getAnswerDuration(peerId);
 
-    if (isCorrect) {
-      const elapsed = this._answerStartTime != null ? Date.now() - this._answerStartTime : this._getAnswerDuration();
-      speedBonus = calcSpeedBonus(elapsed, this._getAnswerDuration());
-      points = SCORE.CORRECT + speedBonus;
-      if (player) player.score += points;
-    } else if (this.state.config.applyMalus) {
-      points = SCORE.WRONG_MALUS;
-      if (player) player.score += points;
-    }
-
+    const { points, speedBonus } = this._calcPoints(peerId, isCorrect, elapsed, this._getAnswerDuration(peerId));
     const scores = this._getScores();
-    const result = { correct: isCorrect, playerId: peerId, answer: null, points, speedBonus, nearMiss: false, scores };
+    const player = this.state.players.find(p => p.id === peerId);
+
+    const result = {
+      correct: isCorrect,
+      playerId: peerId,
+      answer: null,
+      points,
+      speedBonus,
+      nearMiss: false,
+      scores,
+      streak: isCorrect && this.state.config.comboStreak ? (player?.streak ?? 0) : 0,
+    };
     this.state.lastResult = result;
     this.peer.broadcast({ type: MSG.ANSWER_RESULT, ...result });
 
@@ -342,7 +724,16 @@ export class GameEngine {
       this.state.wrongAnswers.push(peerId);
       this._showAnswerResult(() => {
         this.state.buzzQueue.shift();
-        if (this.state.buzzQueue.length > 0) {
+        if (this.state.mode === MODE.PINGPONG) {
+          if (this.state.buzzQueue.length > 0) {
+            this._answerStartTime = Date.now();
+            this.peer.broadcast({ type: MSG.BUZZ_QUEUE, queue: [...this.state.buzzQueue] });
+            this.onStateChange({ ...this.state });
+            this._setPingPongTimer();
+          } else {
+            this._skipQuestion();
+          }
+        } else if (this.state.buzzQueue.length > 0) {
           this._startAnswering();
         } else {
           this._resumeBuzzing();
@@ -357,12 +748,12 @@ export class GameEngine {
     if (this.state.phase !== PHASE.ANSWERING) return;
     if (this.state.mode !== MODE.QCM) return;
     if (this.state.eliminatedPlayers.includes(peerId)) return;
-    // En mode hôte lecteur, l'hôte ne peut pas voter
     if (this.state.config.hostIsReader && peerId === '__host__') return;
 
     const q = this.currentQuestion;
     const correct = choice === q.correctAnswer;
     const player = this.state.players.find(p => p.id === peerId);
+    const isDoublePowered = this._getPowerEffect(peerId, POWER.DOUBLE);
     let points = 0;
     let speedBonus = 0;
 
@@ -370,11 +761,28 @@ export class GameEngine {
       this._clearTimer('buzz');
       const elapsed = this._answerStartTime != null ? Date.now() - this._answerStartTime : TIMER.QCM_DURATION;
       speedBonus = calcSpeedBonus(elapsed, TIMER.QCM_DURATION);
-      points = SCORE.CORRECT + speedBonus;
-      if (player) player.score += points;
+      const mult = this.state.config.comboStreak ? streakMultiplier(player?.streak ?? 0) : 1;
+      points = Math.round((SCORE.CORRECT + speedBonus) * mult);
+      if (isDoublePowered) points *= 2;
+
+      if (player) {
+        const bet = this.state.bets[peerId] ?? 0;
+        player.score += points + bet;
+        if (this.state.config.comboStreak) player.streak = (player.streak ?? 0) + 1;
+      }
+      this.state.roundPoints[peerId] = (this.state.roundPoints[peerId] ?? 0) + Math.max(0, points);
 
       const scores = this._getScores();
-      const result = { correct: true, playerId: peerId, answer: choice, points, speedBonus, nearMiss: false, scores };
+      const result = {
+        correct: true,
+        playerId: peerId,
+        answer: choice,
+        points,
+        speedBonus,
+        nearMiss: false,
+        scores,
+        streak: this.state.config.comboStreak ? (player?.streak ?? 0) : 0,
+      };
       this.state.lastResult = result;
       this.peer.broadcast({ type: MSG.ANSWER_RESULT, ...result });
       this._showAnswerResult(() => this._endQuestion(false));
@@ -382,9 +790,16 @@ export class GameEngine {
       this.state.eliminatedPlayers.push(peerId);
       let malusPoints = 0;
       if (this.state.config.applyMalus && player) {
-        malusPoints = SCORE.WRONG_MALUS;
-        player.score += malusPoints;
+        malusPoints = isDoublePowered ? SCORE.WRONG_MALUS * 2 : SCORE.WRONG_MALUS;
+        player.score = Math.max(0, player.score + malusPoints);
       }
+      const bet = this.state.bets[peerId] ?? 0;
+      if (bet > 0 && player) {
+        player.score = Math.max(0, player.score - bet);
+        malusPoints -= bet;
+      }
+      if (this.state.config.comboStreak && player) player.streak = 0;
+
       const scores = this._getScores();
       this.peer.broadcast({ type: MSG.WRONG_CHOICE, playerId: peerId, choice, points: malusPoints, scores });
       this.onStateChange({ ...this.state });
@@ -395,7 +810,6 @@ export class GameEngine {
   _checkAllQcmEliminated() {
     const activePlayers = this.state.players.filter(p => {
       if (this.state.eliminatedPlayers.includes(p.id)) return false;
-      // En mode hôte lecteur, l'hôte ne compte pas comme joueur actif
       if (this.state.config.hostIsReader && p.id === '__host__') return false;
       return true;
     });
@@ -410,7 +824,6 @@ export class GameEngine {
   _resumeBuzzing() {
     const remaining = this.state.buzzDeadline ? this.state.buzzDeadline - Date.now() : 0;
 
-    // Joueurs encore éligibles (n'ont pas encore répondu faux)
     const eligiblePlayers = this.state.players.filter(p => {
       if (this.state.wrongAnswers.includes(p.id)) return false;
       if (this.state.config.hostIsReader && p.id === '__host__') return false;
@@ -447,13 +860,33 @@ export class GameEngine {
   _endQuestion(skipped) {
     this._clearAllTimers();
     const q = this.currentQuestion;
+
+    // ─ Cible cachée : calculer les bonus ─────────────────────────────────
+    const targetBonuses = {};
+    if (this.state.config.hiddenTarget) {
+      for (const [playerId, targetId] of Object.entries(this.state.targets)) {
+        const myPoints = this.state.roundPoints[playerId] ?? 0;
+        const theirPoints = this.state.roundPoints[targetId] ?? 0;
+        if (myPoints > theirPoints && myPoints > 0) {
+          const player = this.state.players.find(p => p.id === playerId);
+          if (player) player.score += SCORE.TARGET_BONUS;
+          targetBonuses[playerId] = SCORE.TARGET_BONUS;
+        }
+      }
+    }
+
     this.state.phase = PHASE.QUESTION_END;
+
     this.peer.broadcast({
       type: MSG.QUESTION_END,
       correctAnswer: q.correctAnswer,
       trivia: q.trivia ?? null,
       skipped,
       scores: this._getScores(),
+      betReveal: Object.keys(this.state.bets).length > 0 ? { ...this.state.bets } : null,
+      targetsReveal: Object.keys(this.state.targets).length > 0
+        ? { targets: { ...this.state.targets }, bonuses: targetBonuses }
+        : null,
     });
     this.onStateChange({ ...this.state });
 
@@ -489,7 +922,6 @@ export class GameEngine {
     this._clearAllTimers();
     this.state.phase = PHASE.GAME_OVER;
     let players = [...this.state.players];
-    // En mode hôte lecteur, l'hôte n'apparaît pas dans les résultats
     if (this.state.config.hostIsReader) {
       players = players.filter(p => p.id !== '__host__');
     }
@@ -520,16 +952,33 @@ export class GameEngine {
       case MSG.CHOICE:
         this.handleChoice(from, data.text ?? '');
         break;
+      case MSG.BET:
+        this.handleBet(from, data.amount ?? 0);
+        break;
+      case MSG.DOUBLE_DOWN:
+        this.handleDoubleDown(from);
+        break;
+      case MSG.TARGET:
+        this.handleTarget(from, data.targetId ?? '');
+        break;
+      case MSG.USE_POWER:
+        this.handlePower(from, data.power, data.targetId ?? '');
+        break;
+      case MSG.DRAFT_PICK:
+        this.handleDraftPick(from, data.category ?? '');
+        break;
     }
   }
 
   // ─── Timers ───────────────────────────────────────────────────────────────
 
   _clearTimer(name) {
-    if (name === 'preview' && this._previewTimer) { clearTimeout(this._previewTimer); this._previewTimer = null; }
-    if (name === 'buzz'    && this._buzzTimer)    { clearTimeout(this._buzzTimer);    this._buzzTimer    = null; }
-    if (name === 'answer'  && this._answerTimer)  { clearTimeout(this._answerTimer);  this._answerTimer  = null; }
-    if (name === 'auto'    && this._autoNextTimer) { clearTimeout(this._autoNextTimer); this._autoNextTimer = null; }
+    if (name === 'preview' && this._previewTimer)  { clearTimeout(this._previewTimer);  this._previewTimer  = null; }
+    if (name === 'buzz'    && this._buzzTimer)      { clearTimeout(this._buzzTimer);      this._buzzTimer     = null; }
+    if (name === 'answer'  && this._answerTimer)    { clearTimeout(this._answerTimer);    this._answerTimer   = null; }
+    if (name === 'auto'    && this._autoNextTimer)  { clearTimeout(this._autoNextTimer);  this._autoNextTimer = null; }
+    if (name === 'bet'     && this._betTimer)       { clearTimeout(this._betTimer);       this._betTimer      = null; }
+    if (name === 'draft'   && this._draftTimer)     { clearTimeout(this._draftTimer);     this._draftTimer    = null; }
   }
 
   _clearAllTimers() {
@@ -537,5 +986,7 @@ export class GameEngine {
     this._clearTimer('buzz');
     this._clearTimer('answer');
     this._clearTimer('auto');
+    this._clearTimer('bet');
+    this._clearTimer('draft');
   }
 }

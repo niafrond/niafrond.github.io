@@ -129,24 +129,36 @@
         <!-- Options Party (visibles uniquement si mode PARTY sélectionné) -->
         <div id="party-options-card" class="card mb-16" hidden>
           <div class="card-title">🎉 Mini-jeux Party</div>
-          <p class="chip-hint">Choisissez les mini-jeux à inclure (au moins un)</p>
+          <p class="chip-hint">Choisissez les mini-jeux à inclure (laissez vide pour tout aléatoire)</p>
           <div class="party-mini-checks">
             <label class="checkbox-label">
-              <input type="checkbox" id="party-mini-streak" checked>
+              <input type="checkbox" id="party-mini-streak">
               <span>🔥 <strong>4 à la suite</strong> — QCM simultané, points selon votre meilleure série</span>
             </label>
             <label class="checkbox-label mt-8">
-              <input type="checkbox" id="party-mini-duel" checked>
+              <input type="checkbox" id="party-mini-duel">
               <span>🎯 <strong>Interrogatoire</strong> — 1 joueur choisit, tous les autres répondent en QCM</span>
             </label>
             <label class="checkbox-label mt-8">
-              <input type="checkbox" id="party-mini-tf" checked>
+              <input type="checkbox" id="party-mini-tf">
               <span>⚡ <strong>Vrai ou Faux</strong> — vote rapide 7 s, bonus/malus</span>
+            </label>
+            <label class="checkbox-label mt-8">
+              <input type="checkbox" id="party-mini-race">
+              <span>🏁 <strong>Course classique</strong> — 1er à répondre correctement gagne plus de points</span>
+            </label>
+            <label class="checkbox-label mt-8">
+              <input type="checkbox" id="party-mini-blitz">
+              <span>💨 <strong>Blitz QCM</strong> — 5 secondes par question, ultra-rapide !</span>
+            </label>
+            <label class="checkbox-label mt-8">
+              <input type="checkbox" id="party-mini-carousel">
+              <span>🎠 <strong>Carrousel</strong> — chaque joueur répond à son tour, seul sous les projecteurs</span>
             </label>
           </div>
           <label class="checkbox-label mt-8">
-            <input type="checkbox" id="party-random">
-            🎲 Ordre aléatoire des mini-jeux
+            <input type="checkbox" id="party-random" checked>
+            🎲 Ordre aléatoire des mini-jeux (recommandé)
           </label>
         </div>
 
@@ -370,6 +382,15 @@
         <p id="party-mini-end-title" class="party-mini-end-title"></p>
         <div id="party-mini-end-scores" class="party-mini-end-scores"></div>
       </div>
+
+      <!-- ══ PARTY : RACE (Course classique) ═══════════════════════════════ -->
+      <div id="phase-party-race" class="card phase-panel" hidden></div>
+
+      <!-- ══ PARTY : BLITZ (QCM ultra-rapide) ══════════════════════════════ -->
+      <div id="phase-party-blitz" class="card phase-panel" hidden></div>
+
+      <!-- ══ PARTY : CAROUSEL (Carrousel tour à tour) ══════════════════════ -->
+      <div id="phase-party-carousel" class="card phase-panel" hidden></div>
 
     </div>
 
