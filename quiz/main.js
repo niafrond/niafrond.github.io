@@ -345,7 +345,7 @@ async function startGame(ref, peer) {
     prevPlayers.forEach(p => partyEngine.addPlayer(p.id, p.name));
     ref.engine = partyEngine;
 
-    clientState.showAnswerToHost = true;
+    clientState.showAnswerToHost = false;
     clientState.hostIsReader = false;
     partyEngine.startGame(questions, { ...hostConfig });
     return;
@@ -535,16 +535,19 @@ function handlePartyHostStateChange(state, engine, peer) {
 
     case PARTY_PHASE.STREAK_QUESTION:
       hidePartyOverlay();
-      renderPartyStreakQuestion(
-        {
-          text:          state.streakCurrentQuestion?.text ?? '',
-          choices:       state.streakCurrentQuestion?.choices ?? [],
-          index:         state.streakIndex,
-          total:         state.streakQuestions.length,
-          correctAnswer: state.streakCurrentQuestion?.correctAnswer,
-        },
-        true, null
-      );
+      {
+        const answered = state.streakAnswers['__host__'] !== undefined;
+        renderPartyStreakQuestion(
+          {
+            text:    state.streakCurrentQuestion?.text ?? '',
+            choices: state.streakCurrentQuestion?.choices ?? [],
+            index:   state.streakIndex,
+            total:   state.streakQuestions.length,
+          },
+          true,
+          answered ? null : (choice) => engine.handleStreakChoice('__host__', choice)
+        );
+      }
       renderStreakBoard(state.streaks, state.players);
       startTimerBar(15000, 'timer-fill', 100, playTick);
       {
@@ -581,18 +584,22 @@ function handlePartyHostStateChange(state, engine, peer) {
       break;
 
     case PARTY_PHASE.DUEL_QUESTION:
-      renderPartyDuelQuestion(
-        {
-          questionText:     state.duelCurrentQuestion?.text ?? '',
-          choices:          state.duelCurrentQuestion?.choices ?? [],
-          correctAnswer:    state.duelCurrentQuestion?.correctAnswer,
-          interrogateurId:  state.duelInterrogateur,
-          interrogateurName: state.players.find(p => p.id === state.duelInterrogateur)?.name ?? '',
-          duelIndex:  state.duelIndex,
-          totalDuels: 5,
-        },
-        '__host__', true, null
-      );
+      {
+        const isInterrogateur = state.duelInterrogateur === '__host__';
+        const answered = state.duelAnswers['__host__'] !== undefined;
+        renderPartyDuelQuestion(
+          {
+            questionText:      state.duelCurrentQuestion?.text ?? '',
+            choices:           state.duelCurrentQuestion?.choices ?? [],
+            interrogateurId:   state.duelInterrogateur,
+            interrogateurName: state.players.find(p => p.id === state.duelInterrogateur)?.name ?? '',
+            duelIndex:  state.duelIndex,
+            totalDuels: 5,
+          },
+          '__host__', true,
+          (!isInterrogateur && !answered) ? (choice) => engine.handleDuelChoice('__host__', choice) : null
+        );
+      }
       startTimerBar(15000, 'timer-fill', 100, playTick);
       {
         const btnSkip = document.getElementById('btn-skip-question');
@@ -610,17 +617,18 @@ function handlePartyHostStateChange(state, engine, peer) {
     case PARTY_PHASE.TF_QUESTION:
       hidePartyOverlay();
       renderPartyTFQuestion(
-        { statement: state.tfStatement, tfIndex: state.tfIndex, totalTF: state.tfQuestions.length,
-          correctVote: state.tfCorrectVote },
+        { statement: state.tfStatement, tfIndex: state.tfIndex, totalTF: state.tfQuestions.length },
         true, null, null, false
       );
       break;
 
-    case PARTY_PHASE.TF_VOTING:
+    case PARTY_PHASE.TF_VOTING: {
+      const myVote = state.tfVotes['__host__'] ?? null;
       renderPartyTFQuestion(
-        { statement: state.tfStatement, tfIndex: state.tfIndex, totalTF: state.tfQuestions.length,
-          correctVote: state.tfCorrectVote },
-        true, null, null, true
+        { statement: state.tfStatement, tfIndex: state.tfIndex, totalTF: state.tfQuestions.length },
+        true, myVote,
+        myVote === null ? (vote) => engine.handleTFVote('__host__', vote) : null,
+        true
       );
       startTimerBar(7000, 'timer-fill', 100, playTick);
       {
@@ -628,6 +636,7 @@ function handlePartyHostStateChange(state, engine, peer) {
         if (btnSkip) btnSkip.onclick = () => engine.hostSkip();
       }
       break;
+    }
 
     case PARTY_PHASE.TF_REVEAL:
       stopTimerBar();
@@ -647,7 +656,7 @@ function handlePartyHostStateChange(state, engine, peer) {
 
     case PARTY_PHASE.GAME_OVER: {
       const finalScores = state.finalScores
-        ?? [...state.players].filter(p => p.id !== '__host__').sort((a, b) => b.score - a.score);
+        ?? [...state.players].sort((a, b) => b.score - a.score);
       clientState.finalScores = finalScores;
       saveToLeaderboard(finalScores);
       showOnly('screen-game-over');

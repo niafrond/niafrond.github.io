@@ -770,7 +770,7 @@ export function renderPartyStreakQuestion(data, isHost, onChoice) {
     hint.hidden = !isHost || !data.correctAnswer;
     if (isHost && data.correctAnswer) hint.textContent = `🔑 ${data.correctAnswer}`;
   }
-  renderPartyChoiceGrid('party-streak-choices', data.choices ?? [], isHost ? null : onChoice, isHost);
+  renderPartyChoiceGrid('party-streak-choices', data.choices ?? [], onChoice ?? null, onChoice == null);
   // Show/hide streak board
   const board = el('streak-board');
   if (board) board.hidden = false;
@@ -790,7 +790,6 @@ export function renderPartyStreakReveal(data, players) {
   const container = el('party-streak-results');
   if (container) {
     container.innerHTML = players
-      .filter(p => p.id !== '__host__')
       .map(p => {
         const r = data.results[p.id] ?? { correct: false, choice: null };
         const streak = data.streaks[p.id] ?? { current: 0, max: 0 };
@@ -820,7 +819,6 @@ export function renderStreakBoard(streaks, players) {
   if (!board || !list) return;
   board.hidden = false;
   list.innerHTML = players
-    .filter(p => p.id !== '__host__')
     .map(p => {
       const s = streaks[p.id] ?? { current: 0, max: 0 };
       return `<div class="streak-board-row">
@@ -894,8 +892,8 @@ export function renderPartyDuelQuestion(data, myId, isHost, onChoice) {
   renderPartyChoiceGrid(
     'party-duel-choices',
     data.choices ?? [],
-    isInterrogateur || isHost ? null : onChoice,
-    isInterrogateur || isHost
+    isInterrogateur ? null : onChoice,
+    isInterrogateur
   );
 }
 
@@ -908,7 +906,6 @@ export function renderPartyDuelResult(data, players) {
   if (!container) return;
 
   const rows = players
-    .filter(p => p.id !== '__host__')
     .map(p => {
       if (p.id === data.interrogateurId) {
         const pts = data.ptsInterrogateur ?? 0;
@@ -949,10 +946,8 @@ export function renderPartyTFQuestion(data, isHost, myVote, onVote, votingOpen) 
 
   const hint = el('party-tf-host-hint');
   if (hint) {
-    hint.hidden = !isHost;
-    if (isHost) hint.textContent = isHost && data.correctVote
-      ? `🔑 Réponse : ${data.correctVote === 'V' ? 'VRAI ✅' : 'FAUX ❌'}`
-      : '';
+    hint.hidden = !(isHost && data.correctVote);
+    if (isHost && data.correctVote) hint.textContent = `🔑 Réponse : ${data.correctVote === 'V' ? 'VRAI ✅' : 'FAUX ❌'}`;
   }
 
   const buttons = el('party-tf-buttons');
@@ -966,7 +961,7 @@ export function renderPartyTFQuestion(data, isHost, myVote, onVote, votingOpen) 
       : '';
   }
 
-  if (votingOpen && onVote && !myVote && !isHost) {
+  if (votingOpen && onVote && !myVote) {
     const btnVrai = el('btn-tf-vrai');
     const btnFaux = el('btn-tf-faux');
     if (btnVrai) { btnVrai.disabled = false; btnVrai.classList.remove('tf-selected'); btnVrai.onclick = () => { onVote('V'); }; }
@@ -991,7 +986,6 @@ export function renderPartyTFReveal(data, players) {
   const container = el('party-tf-reveal-votes');
   if (!container) return;
   container.innerHTML = players
-    .filter(p => p.id !== '__host__')
     .map(p => {
       const vote = data.votes[p.id];
       if (!vote) {
@@ -1036,7 +1030,6 @@ export function renderPartyMiniEnd(data, players) {
 
   // Trier par score total
   const sorted = [...players]
-    .filter(p => p.id !== '__host__')
     .map(p => ({
       ...p,
       miniPts: data.miniScores?.[p.id] ?? null,

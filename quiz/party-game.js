@@ -349,7 +349,7 @@ export class PartyGameEngine {
     this.state.streakAnswers[peerId] = choice;
     this.onStateChange({ ...this.state });
 
-    const active = this.state.players.filter(p => p.id !== '__host__');
+    const active = this.state.players;
     if (active.every(p => this.state.streakAnswers[p.id] !== undefined)) {
       this._clearTimer();
       this._streakReveal();
@@ -362,7 +362,6 @@ export class PartyGameEngine {
     const results = {};
 
     this.state.players.forEach(p => {
-      if (p.id === '__host__') return;
       const choice = this.state.streakAnswers[p.id];
       const correct = choice === q.correctAnswer;
       results[p.id] = { choice: choice ?? null, correct };
@@ -392,7 +391,6 @@ export class PartyGameEngine {
   _streakFinish() {
     const miniScores = {};
     this.state.players.forEach(p => {
-      if (p.id === '__host__') return;
       const pts = streakPoints((this.state.streaks[p.id] ?? { max: 0 }).max);
       p.score += pts;
       miniScores[p.id] = pts;
@@ -403,9 +401,7 @@ export class PartyGameEngine {
   // ─── DUEL ─────────────────────────────────────────────────────────────────
 
   _startDuel() {
-    // Vérifier le nombre de joueurs avant de commencer
-    const nonHost = this.state.players.filter(p => p.id !== '__host__');
-    if (nonHost.length < 2) { this._endMini({}); return; }
+    if (this.state.players.length < 2) { this._endMini({}); return; }
     this.state.duelIndex = -1;
     this._duelNextRound();
   }
@@ -421,11 +417,10 @@ export class PartyGameEngine {
 
     if (this.state.duelIndex >= DUEL_ROUNDS) { this._endMini({}); return; }
 
-    const nonHost = this.state.players.filter(p => p.id !== '__host__');
-    if (nonHost.length < 2) { this._endMini({}); return; }
+    if (this.state.players.length < 2) { this._endMini({}); return; }
 
-    // Rotation de l'interrogateur
-    this.state.duelInterrogateur = nonHost[this.state.duelIndex % nonHost.length].id;
+    // Rotation de l'interrogateur parmi tous les joueurs
+    this.state.duelInterrogateur = this.state.players[this.state.duelIndex % this.state.players.length].id;
 
     const start = this.state.duelIndex * 2;
     this.state.duelPickOptions = this.state.duelQuestions.slice(start, start + 2).filter(Boolean);
@@ -487,7 +482,6 @@ export class PartyGameEngine {
       choices: q.choices ?? [],
       category: q.category,
       difficulty: q.difficulty,
-      correctAnswer: q.correctAnswer,  // hôte (admin) voit toujours la réponse
       interrogateurId: this.state.duelInterrogateur,
       interrogateurName,
       duelIndex: this.state.duelIndex,
@@ -508,7 +502,7 @@ export class PartyGameEngine {
     this.onStateChange({ ...this.state });
 
     const answerable = this.state.players.filter(
-      p => p.id !== '__host__' && p.id !== this.state.duelInterrogateur
+      p => p.id !== this.state.duelInterrogateur
     );
     if (answerable.every(p => this.state.duelAnswers[p.id] !== undefined)) {
       this._clearTimer();
@@ -524,7 +518,7 @@ export class PartyGameEngine {
     let wrongCount = 0;
 
     this.state.players.forEach(p => {
-      if (p.id === '__host__' || p.id === this.state.duelInterrogateur) return;
+      if (p.id === this.state.duelInterrogateur) return;
       const choice = this.state.duelAnswers[p.id];
       const correct = choice === q.correctAnswer;
       results[p.id] = { choice: choice ?? null, correct };
@@ -618,7 +612,7 @@ export class PartyGameEngine {
     this.state.tfVotes[peerId] = vote;
     this.onStateChange({ ...this.state });
 
-    const active = this.state.players.filter(p => p.id !== '__host__');
+    const active = this.state.players;
     if (active.every(p => this.state.tfVotes[p.id] !== undefined)) {
       this._clearTimer();
       this._tfReveal();
@@ -631,7 +625,6 @@ export class PartyGameEngine {
     const votes = { ...this.state.tfVotes };
 
     this.state.players.forEach(p => {
-      if (p.id === '__host__') return;
       const vote = votes[p.id];
       if (!vote) return;
       if (vote === correctVote) p.score += 3;
