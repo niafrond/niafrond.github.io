@@ -1,3 +1,9 @@
+## [1.46.0](https://github.com/niafrond/niafrond.github.io/compare/v1.45.0...v1.46.0) (2026-04-09)
+
+### Features
+
+* host is a player in party mode, hide answers from non-reader host ([#26](https://github.com/niafrond/niafrond.github.io/issues/26)) ([b1e5183](https://github.com/niafrond/niafrond.github.io/commit/b1e5183d6c473c5ccc0fa6b22520d5f77e5f0211))
+
 ## [1.45.0](https://github.com/niafrond/niafrond.github.io/compare/v1.44.0...v1.45.0) (2026-04-09)
 
 ### Features
