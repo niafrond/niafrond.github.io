@@ -1,3 +1,9 @@
+## [1.44.0](https://github.com/niafrond/niafrond.github.io/compare/v1.43.0...v1.44.0) (2026-04-09)
+
+### Features
+
+* **quiz:** add Party mode with 3 QCM mini-games, animated transitions, and question deduplication ([#24](https://github.com/niafrond/niafrond.github.io/issues/24)) ([1aef047](https://github.com/niafrond/niafrond.github.io/commit/1aef0472e9dd4947065dfe66478f161fa0f6b1ec))
+
 ## [1.43.0](https://github.com/niafrond/niafrond.github.io/compare/v1.42.0...v1.43.0) (2026-04-09)
 
 ### Features
