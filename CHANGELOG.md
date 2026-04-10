@@ -1,3 +1,15 @@
+## [1.49.2](https://github.com/niafrond/niafrond.github.io/compare/v1.49.1...v1.49.2) (2026-04-10)
+
+### Bug Fixes
+
+* remove undefined openBtn reference in QR scanner ([#37](https://github.com/niafrond/niafrond.github.io/issues/37)) ([d64aaed](https://github.com/niafrond/niafrond.github.io/commit/d64aaed6ba000c46f192a7de1a508db7f164b86f))
+
+## [1.49.1](https://github.com/niafrond/niafrond.github.io/compare/v1.49.0...v1.49.1) (2026-04-10)
+
+### Bug Fixes
+
+* mark all returning players ready on replay; add referrerpolicy on photo img ([#35](https://github.com/niafrond/niafrond.github.io/issues/35)) ([7754527](https://github.com/niafrond/niafrond.github.io/commit/7754527a021efe098668696fcf71e1ca3bda89b1))
+
 ## [1.49.0](https://github.com/niafrond/niafrond.github.io/compare/v1.48.0...v1.49.0) (2026-04-10)
 
 ### Features

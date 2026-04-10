@@ -769,10 +769,9 @@ function setupPlayAgainButton(ref, peer) {
       });
       ref.engine = newEngine;
 
-      // Ré-inscrire les joueurs (scores remis à 0, hôte marqué prêt)
+      // Ré-inscrire les joueurs (scores remis à 0, tous marqués prêts car déjà dans la session)
       prevPlayers.forEach(p => newEngine.addPlayer(p.id, p.name));
-      const hostPlayer = newEngine.state.players.find(p => p.id === '__host__');
-      if (hostPlayer) hostPlayer.ready = true;
+      newEngine.state.players.forEach(p => { p.ready = true; });
 
       showOnly('screen-lobby');
       renderLobbyPlayers(newEngine.state.players, true, (id) => {
