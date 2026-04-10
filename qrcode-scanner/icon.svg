@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="20" fill="#0f172a"/>
+  <!-- top-left finder -->
+  <rect x="10" y="10" width="30" height="30" rx="4" fill="none" stroke="#22d3ee" stroke-width="5"/>
+  <rect x="18" y="18" width="14" height="14" rx="2" fill="#22d3ee"/>
+  <!-- top-right finder -->
+  <rect x="60" y="10" width="30" height="30" rx="4" fill="none" stroke="#22d3ee" stroke-width="5"/>
+  <rect x="68" y="18" width="14" height="14" rx="2" fill="#22d3ee"/>
+  <!-- bottom-left finder -->
+  <rect x="10" y="60" width="30" height="30" rx="4" fill="none" stroke="#22d3ee" stroke-width="5"/>
+  <rect x="18" y="68" width="14" height="14" rx="2" fill="#22d3ee"/>
+  <!-- data dots -->
+  <rect x="60" y="60" width="6" height="6" rx="1" fill="#22d3ee"/>
+  <rect x="70" y="60" width="6" height="6" rx="1" fill="#22d3ee"/>
+  <rect x="84" y="60" width="6" height="6" rx="1" fill="#22d3ee"/>
+  <rect x="60" y="70" width="6" height="6" rx="1" fill="#22d3ee"/>
+  <rect x="78" y="70" width="6" height="6" rx="1" fill="#22d3ee"/>
+  <rect x="60" y="84" width="6" height="6" rx="1" fill="#22d3ee"/>
+  <rect x="70" y="84" width="6" height="6" rx="1" fill="#22d3ee"/>
+  <rect x="84" y="78" width="6" height="6" rx="1" fill="#22d3ee"/>
+</svg>
