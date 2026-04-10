@@ -438,17 +438,21 @@ export class GameEngine {
     const dur = this._getAnswerDuration(currentPlayer);
     this._answerTimer = setTimeout(() => {
       if (this.state.phase === PHASE.ANSWERING) {
-        this.state.buzzQueue.shift();
-        if (this.state.buzzQueue.length > 0) {
-          this._answerStartTime = Date.now();
-          this.peer.broadcast({ type: MSG.BUZZ_QUEUE, queue: [...this.state.buzzQueue] });
-          this.onStateChange({ ...this.state });
-          this._setPingPongTimer();
-        } else {
-          this._skipQuestion();
-        }
+        this._advancePingPongTurn();
       }
     }, dur);
+  }
+
+  _advancePingPongTurn() {
+    this.state.buzzQueue.shift();
+    if (this.state.buzzQueue.length > 0) {
+      this._answerStartTime = Date.now();
+      this.peer.broadcast({ type: MSG.BUZZ_QUEUE, queue: [...this.state.buzzQueue] });
+      this.onStateChange({ ...this.state });
+      this._setPingPongTimer();
+    } else {
+      this._skipQuestion();
+    }
   }
 
   // ─── Buzzing ─────────────────────────────────────────────────────────────
@@ -770,7 +774,7 @@ export class GameEngine {
       this.peer.broadcast({ type: MSG.ANSWER_RESULT, ...result });
       this._showAnswerResult(() => this._endQuestion(false));
     } else if (this.state.mode === MODE.PINGPONG) {
-      // Mauvaise réponse en ping-pong : passer au joueur suivant
+      // Mauvaise réponse en Ping-Pong : passer au joueur suivant
       this._clearTimer('answer');
       let malusPoints = 0;
       if (this.state.config.applyMalus && player) {
@@ -788,17 +792,7 @@ export class GameEngine {
       this.peer.broadcast({ type: MSG.WRONG_CHOICE, playerId: peerId, choice, points: malusPoints, scores });
       this.onStateChange({ ...this.state });
 
-      this._answerTimer = setTimeout(() => {
-        this.state.buzzQueue.shift();
-        if (this.state.buzzQueue.length > 0) {
-          this._answerStartTime = Date.now();
-          this.peer.broadcast({ type: MSG.BUZZ_QUEUE, queue: [...this.state.buzzQueue] });
-          this.onStateChange({ ...this.state });
-          this._setPingPongTimer();
-        } else {
-          this._skipQuestion();
-        }
-      }, TIMER.RESULT_DISPLAY);
+      this._answerTimer = setTimeout(() => this._advancePingPongTurn(), TIMER.RESULT_DISPLAY);
     } else {
       // QCM : mauvaise réponse, éliminer le joueur
       this.state.eliminatedPlayers.push(peerId);
