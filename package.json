@@ -20,6 +20,7 @@
     "conventional-changelog-conventionalcommits": "^9.3.0",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
+    "jsqr": "^1.4.0",
     "semantic-release": "^24.2.3",
     "serve": "^14.2.6"
   }
