@@ -1,3 +1,9 @@
+## [1.49.3](https://github.com/niafrond/niafrond.github.io/compare/v1.49.2...v1.49.3) (2026-04-10)
+
+### Bug Fixes
+
+* replace Wikimedia thumbnail URLs with Special:FilePath redirect URLs ([#38](https://github.com/niafrond/niafrond.github.io/issues/38)) ([ddb1719](https://github.com/niafrond/niafrond.github.io/commit/ddb17193e192dcb13d573a1360d23b8d7ddc9f31))
+
 ## [1.49.2](https://github.com/niafrond/niafrond.github.io/compare/v1.49.1...v1.49.2) (2026-04-10)
 
 ### Bug Fixes
