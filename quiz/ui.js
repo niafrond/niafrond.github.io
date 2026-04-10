@@ -335,18 +335,35 @@ export function renderGamePhase(phase, data, isHost) {
 
     case PHASE.ANSWERING:
       show('phase-question-preview');
-      if (data.mode === MODE.QCM) {
+      if (data.mode === MODE.QCM || data.mode === MODE.PINGPONG) {
         hide('answer-form');
         hide('host-judge-buttons');
         show('phase-answering');
         if (data.hostIsReader) {
-          // Hôte lecteur en QCM : afficher les choix et révéler immédiatement la bonne réponse
+          // Hôte lecteur en QCM/Ping-Pong : afficher les choix et révéler immédiatement la bonne réponse
           renderChoices(q?.choices ?? [], null, []);
           if (q?.correctAnswer) {
             highlightChoices(q.correctAnswer, null);
           }
         } else {
           renderChoices(q?.choices ?? [], data.onChoiceClick, data.eliminatedPlayers ?? []);
+        }
+        // En mode Ping-Pong, afficher qui doit répondre
+        if (data.mode === MODE.PINGPONG) {
+          const queueEl = el('buzz-queue');
+          if (queueEl && data.buzzQueue?.length) {
+            const names = data.buzzQueue
+              .map(id => data.players?.find(p => p.id === id)?.name)
+              .filter(Boolean);
+            const first = names[0] ?? '';
+            const waiting = names.slice(1);
+            const firstHtml = `<strong>🏓 ${escapeHtml(first)}</strong> répond…`;
+            const waitHtml = waiting.length
+              ? `<span class="buzz-waiting">En attente : ${waiting.map(n => escapeHtml(n)).join(', ')}</span>`
+              : '';
+            queueEl.innerHTML = firstHtml + (waitHtml ? `<br>${waitHtml}` : '');
+            queueEl.hidden = false;
+          }
         }
       } else {
         const isHostReader = data.hostIsReader;

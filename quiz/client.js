@@ -201,6 +201,8 @@ function handleClientMessage(data, peer, local, playerName) {
               local.selfEliminated = true; // optimisme : on attend la confirmation
             },
           }), false);
+        } else if (local.mode === MODE.PINGPONG) {
+          // Attendre le BUZZ_QUEUE pour savoir quel joueur répond en premier
         } else {
           clientState.phase = PHASE.BUZZING;
           startTimerBar(TIMER.BUZZ_DURATION, 'timer-fill', 100);
@@ -218,14 +220,26 @@ function handleClientMessage(data, peer, local, playerName) {
         const dur = local.mode === MODE.SPEED ? TIMER.SPEED_ANSWER : local.answerTime * 1000;
         clientState.phase = PHASE.ANSWERING;
         startTimerBar(dur, 'timer-fill', 100, playTick);
-        renderGamePhase(PHASE.ANSWERING, buildClientRenderData(local, { canBuzz: false }), false);
-        if (isCurrent && !local.config?.hostIsReader) {
-          // C'est mon tour de répondre
-          setupClientAnswerForm(peer, local);
+        if (local.mode === MODE.PINGPONG) {
+          local.selfEliminated = false;
+          renderGamePhase(PHASE.ANSWERING, buildClientRenderData(local, {
+            canBuzz: false,
+            onChoiceClick: (isCurrent && !local.config?.hostIsReader) ? (choice) => {
+              if (local.selfEliminated) return;
+              peer.sendToHost({ type: MSG.CHOICE, text: choice });
+              local.selfEliminated = true;
+            } : null,
+          }), false);
         } else {
-          // Quelqu'un d'autre répond, ou mode hôte lecteur (réponse à l'oral)
-          const inp = document.getElementById('answer-input');
-          if (inp) { inp.disabled = true; inp.value = ''; }
+          renderGamePhase(PHASE.ANSWERING, buildClientRenderData(local, { canBuzz: false }), false);
+          if (isCurrent && !local.config?.hostIsReader) {
+            // C'est mon tour de répondre
+            setupClientAnswerForm(peer, local);
+          } else {
+            // Quelqu'un d'autre répond, ou mode hôte lecteur (réponse à l'oral)
+            const inp = document.getElementById('answer-input');
+            if (inp) { inp.disabled = true; inp.value = ''; }
+          }
         }
       }
       break;
@@ -258,7 +272,7 @@ function handleClientMessage(data, peer, local, playerName) {
         applyScores(data.scores);
         renderScoreboard(clientState.players, local.config?.hostIsReader ?? false);
       }
-      if (local.mode === MODE.QCM && local.currentQuestion?.choices) {
+      if ((local.mode === MODE.QCM || local.mode === MODE.PINGPONG) && local.currentQuestion?.choices) {
         const wrong = data.correct === false ? data.answer : null;
         highlightChoices(data.correct ? data.answer : null, wrong);
       }
