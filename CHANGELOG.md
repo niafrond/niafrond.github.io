@@ -1,3 +1,9 @@
+## [1.47.0](https://github.com/niafrond/niafrond.github.io/compare/v1.46.0...v1.47.0) (2026-04-10)
+
+### Features
+
+* **quiz:** ajoute 52 questions photo (monuments/animaux mondiaux + Réunion) ([#28](https://github.com/niafrond/niafrond.github.io/issues/28)) ([2112951](https://github.com/niafrond/niafrond.github.io/commit/21129517bb6fe1ac44ce568531cdfee7a1dec2da))
+
 ## [1.46.0](https://github.com/niafrond/niafrond.github.io/compare/v1.45.0...v1.46.0) (2026-04-09)
 
 ### Features
