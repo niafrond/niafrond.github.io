@@ -1,3 +1,9 @@
+## [1.53.0](https://github.com/niafrond/niafrond.github.io/compare/v1.52.0...v1.53.0) (2026-04-10)
+
+### Features
+
+* make party rules block fill full page height in party mode ([#46](https://github.com/niafrond/niafrond.github.io/issues/46)) ([071b659](https://github.com/niafrond/niafrond.github.io/commit/071b6598abbfad9b1f1b206ef7f89fddd65c5356))
+
 ## [1.52.0](https://github.com/niafrond/niafrond.github.io/compare/v1.51.0...v1.52.0) (2026-04-10)
 
 ### Features
