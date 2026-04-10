@@ -1,3 +1,9 @@
+## [1.53.3](https://github.com/niafrond/niafrond.github.io/compare/v1.53.2...v1.53.3) (2026-04-10)
+
+### Bug Fixes
+
+* make Race, Blitz, Carousel respect _activePlayers() (host as player bug) ([#49](https://github.com/niafrond/niafrond.github.io/issues/49)) ([e269cc1](https://github.com/niafrond/niafrond.github.io/commit/e269cc1a22c57fa897756c5938338ff293d6a158))
+
 ## [1.53.2](https://github.com/niafrond/niafrond.github.io/compare/v1.53.1...v1.53.2) (2026-04-10)
 
 ### Performance Improvements
