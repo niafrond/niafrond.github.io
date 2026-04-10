@@ -506,3 +506,14 @@
   font-weight: 700;
   margin: 0 4px;
 }
+
+.party-questions-count-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.party-questions-count-input {
+  width: 70px;
+}

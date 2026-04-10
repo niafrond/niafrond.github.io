@@ -4,7 +4,7 @@
 
 import { QuizPeer } from './peer.js';
 import { GameEngine } from './game.js';
-import { PartyGameEngine, PARTY_MSG, PARTY_PHASE, PARTY_QUESTIONS_NEEDED, PARTY_MINI_LABELS, PARTY_MINI_ICONS, PARTY_MINI_RULES } from './party-game.js';
+import { PartyGameEngine, PARTY_MSG, PARTY_PHASE, calcPartyQuestionsNeeded, getPartyMiniRules, PARTY_MINI_LABELS, PARTY_MINI_ICONS } from './party-game.js';
 import { fetchQuestions } from './questions.js';
 import { MSG, PHASE, MODE, TIMER, CATEGORY_LABELS } from './constants.js';
 import {
@@ -213,7 +213,13 @@ async function startGame(ref, peer) {
 async function _fetchAndStartGame(ref, peer, config, btnStart) {
   showToast('Récupération des questions…', 'info');
   const isParty = config.mode === MODE.PARTY;
-  const count = isParty ? PARTY_QUESTIONS_NEEDED : config.questionCount;
+
+  if (isParty) {
+    const partyOpts = readPartyOptions();
+    Object.assign(config, partyOpts);
+  }
+
+  const count = isParty ? calcPartyQuestionsNeeded(config.questionsPerMini) : config.questionCount;
 
   let questions;
   try {
@@ -229,9 +235,6 @@ async function _fetchAndStartGame(ref, peer, config, btnStart) {
   }
 
   if (isParty) {
-    const partyOpts = readPartyOptions();
-    Object.assign(config, partyOpts);
-
     questions = prioritizeUnasked(questions);
     saveAskedQuestions(questions.map(q => q.id).filter(Boolean));
 
@@ -440,7 +443,7 @@ function handlePartyHostStateChange(state, engine, peer) {
           totalMinis: state.miniSequence.length,
           label:      PARTY_MINI_LABELS[state.currentMini],
           icon:       PARTY_MINI_ICONS[state.currentMini],
-          rules:      PARTY_MINI_RULES[state.currentMini],
+          rules:      getPartyMiniRules(state.config?.questionsPerMini)[state.currentMini],
         },
         true, // isHost
         () => engine.hostStartMini()
