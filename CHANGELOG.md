@@ -1,3 +1,9 @@
+## [1.53.2](https://github.com/niafrond/niafrond.github.io/compare/v1.53.1...v1.53.2) (2026-04-10)
+
+### Performance Improvements
+
+* **qr:** fix scanner performance on low-end phones ([#48](https://github.com/niafrond/niafrond.github.io/issues/48)) ([ec9b54f](https://github.com/niafrond/niafrond.github.io/commit/ec9b54f698fbc1df9fb27cad281e1482ef90e411))
+
 ## [1.53.1](https://github.com/niafrond/niafrond.github.io/compare/v1.53.0...v1.53.1) (2026-04-10)
 
 ### Bug Fixes
