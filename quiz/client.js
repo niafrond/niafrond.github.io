@@ -3,7 +3,7 @@
  */
 
 import { QuizPeer } from './peer.js';
-import { PARTY_MSG, PARTY_MINI_LABELS, PARTY_MINI_ICONS, PARTY_MINI_RULES } from './party-game.js';
+import { PARTY_MSG, PARTY_MINI_LABELS, PARTY_MINI_ICONS, getPartyMiniRules } from './party-game.js';
 import { MSG, PHASE, MODE, TIMER } from './constants.js';
 import {
   showOnly, renderLobbyPlayers, renderScoreboard, renderGamePhase,
@@ -375,7 +375,7 @@ function handleClientMessage(data, peer, local, playerName) {
         { mini: data.mini, miniIndex: data.miniIndex, totalMinis: data.totalMinis,
           label: PARTY_MINI_LABELS[data.mini] ?? data.label,
           icon:  PARTY_MINI_ICONS[data.mini]  ?? data.icon,
-          rules: PARTY_MINI_RULES[data.mini]  ?? data.rules },
+          rules: data.rules ?? getPartyMiniRules()[data.mini] },
         false, null
       );
       break;
