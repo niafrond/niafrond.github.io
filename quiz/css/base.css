@@ -1,0 +1,60 @@
+/* ─── Variables & reset ────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f172a;
+  --bg-translucent: rgba(15, 23, 42, 0.92);
+  --surface: #1e293b;
+  --surface2: #0e2340;
+  --accent: #0891b2;
+  --accent2: #38bdf8;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --border: rgba(255,255,255,0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* ─── Screens ─────────────────────────────────────────────────────────────── */
+[data-screen] { min-height: 100vh; padding: 20px; }
+[data-screen][hidden] { display: none !important; }
+
+.screen-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 20px;
+  text-align: center;
+  padding: 24px;
+}
+
+/* ─── Layout helpers ─────────────────────────────────────────────────────── */
+.page-wrapper {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 0 60px;
+}
+
+.mb-16 { margin-bottom: 16px; }
+.mt-8  { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.w-full { width: 100%; }
+
+/* ─── Role visibility ─────────────────────────────────────────────────────── */
+.host-only[hidden], .client-only[hidden] { display: none !important; }
