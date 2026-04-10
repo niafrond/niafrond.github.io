@@ -135,6 +135,12 @@ export class GameEngine {
       this._broadcastPlayerList();
       return;
     }
+    // Supprimer l'ancien doublon si un joueur avec le même nom est déjà enregistré
+    // (cas de reconnexion avec un nouveau peer ID après reprise de session)
+    const duplicateIndex = this.state.players.findIndex(p => p.name === name);
+    if (duplicateIndex !== -1) {
+      this.state.players.splice(duplicateIndex, 1);
+    }
     const inGame = this.state.phase !== PHASE.LOBBY && this.state.phase !== PHASE.DRAFT;
     this.state.players.push({
       id: peerId,
