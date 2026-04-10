@@ -167,7 +167,9 @@ async function startHostSession(hostName, savedPeerId = null, isRetry = false) {
     if (!isRetry && e.detail.err?.type === 'unavailable-id') {
       clearHostSession();
       peer.destroy();
-      startHostSession(hostName, null, true);
+      startHostSession(hostName, null, true).catch((err) => {
+        showToast('Erreur réseau : ' + err?.message, 'error');
+      });
       return;
     }
     showToast('Erreur réseau : ' + e.detail.err?.message, 'error');
