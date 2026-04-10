@@ -16,6 +16,7 @@ export const MSG = {
   PLAYER_LIST: 'PLAYER_LIST',           // { players[] }
   GAME_START: 'GAME_START',             // { mode, config }
   SHOW_QUESTION: 'SHOW_QUESTION',       // { index, text, choices?, category, difficulty, total }
+  SHOW_CHOICES: 'SHOW_CHOICES',         // { choices[] } — envoyé en privé au buzzeur (BUZZ_QCM)
   BUZZ_QUEUE: 'BUZZ_QUEUE',             // { queue: [peerId,...] }
   WRONG_CHOICE: 'WRONG_CHOICE',         // { playerId, choice }
   ANSWER_RESULT: 'ANSWER_RESULT',       // { correct, playerId, answer, scores, points }
@@ -46,11 +47,12 @@ export const PHASE = {
 
 // ─── Game modes ────────────────────────────────────────────────────────────────
 export const MODE = {
-  CLASSIC: 'CLASSIC',   // Buzzer + réponse texte, tolérance aux fautes
-  QCM: 'QCM',           // 4 choix, 1er clic correct = points
-  SPEED: 'SPEED',       // Buzzer + réponse rapide, timer court
-  PINGPONG: 'PINGPONG', // Tour à tour sans buzzer — jusqu'à l'erreur fatale
-  PARTY: 'PARTY',       // Mini-jeux enchaînés avec tous les modes (aléatoire)
+  CLASSIC: 'CLASSIC',     // Buzzer + réponse texte, tolérance aux fautes
+  QCM: 'QCM',             // 4 choix, 1er clic correct = points
+  SPEED: 'SPEED',         // Buzzer + réponse rapide, timer court
+  PINGPONG: 'PINGPONG',   // Tour à tour sans buzzer — jusqu'à l'erreur fatale
+  PARTY: 'PARTY',         // Mini-jeux enchaînés avec tous les modes (aléatoire)
+  BUZZ_QCM: 'BUZZ_QCM',  // Buzzer pour voir les choix en privé — erreur = malus + éliminé
 };
 
 export const MODE_LABELS = {
@@ -59,6 +61,7 @@ export const MODE_LABELS = {
   [MODE.SPEED]: '⚡ Speed',
   [MODE.PINGPONG]: '🏓 Ping-Pong',
   [MODE.PARTY]: '🎉 Party',
+  [MODE.BUZZ_QCM]: '🔔 Buzz QCM',
 };
 
 export const MODE_DESCRIPTIONS = {
@@ -67,6 +70,7 @@ export const MODE_DESCRIPTIONS = {
   [MODE.SPEED]: 'Buzzer + réponse rapide, timer court (8s)',
   [MODE.PINGPONG]: 'Tour à tour sans buzzer — jusqu\'à ce que quelqu\'un se trompe',
   [MODE.PARTY]: 'Mini-jeux enchaînés avec tous les modes (aléatoire)',
+  [MODE.BUZZ_QCM]: 'Buzzez pour voir les choix en privé — erreur = malus et éliminé de la question',
 };
 
 // ─── Scoring ───────────────────────────────────────────────────────────────────
