@@ -1,3 +1,9 @@
+## [1.50.0](https://github.com/niafrond/niafrond.github.io/compare/v1.49.4...v1.50.0) (2026-04-10)
+
+### Features
+
+* **quiz:** verify photo reachability before proposing photo questions ([#41](https://github.com/niafrond/niafrond.github.io/issues/41)) ([c0c0a6a](https://github.com/niafrond/niafrond.github.io/commit/c0c0a6a756f03681b81ed03fe673bbc970f4a22a))
+
 ## [1.49.4](https://github.com/niafrond/niafrond.github.io/compare/v1.49.3...v1.49.4) (2026-04-10)
 
 ### Bug Fixes
