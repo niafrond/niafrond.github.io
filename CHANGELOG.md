@@ -1,3 +1,9 @@
+## [1.53.1](https://github.com/niafrond/niafrond.github.io/compare/v1.53.0...v1.53.1) (2026-04-10)
+
+### Bug Fixes
+
+* make party mini-game overlay fixed to cover full viewport on mobile ([#47](https://github.com/niafrond/niafrond.github.io/issues/47)) ([5dff079](https://github.com/niafrond/niafrond.github.io/commit/5dff079ab6a8c058f1928e6925e09125d855e0a0))
+
 ## [1.53.0](https://github.com/niafrond/niafrond.github.io/compare/v1.52.0...v1.53.0) (2026-04-10)
 
 ### Features
