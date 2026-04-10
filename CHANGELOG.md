@@ -1,3 +1,9 @@
+## [1.55.0](https://github.com/niafrond/niafrond.github.io/compare/v1.54.0...v1.55.0) (2026-04-10)
+
+### Features
+
+* gray out game modes that require more players than currently present ([#50](https://github.com/niafrond/niafrond.github.io/issues/50)) ([73d96fb](https://github.com/niafrond/niafrond.github.io/commit/73d96fb32826d183e4b721896ef5d730f1cf0924))
+
 ## [1.54.0](https://github.com/niafrond/niafrond.github.io/compare/v1.53.3...v1.54.0) (2026-04-10)
 
 ### Features
