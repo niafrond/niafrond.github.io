@@ -1,3 +1,9 @@
+## [1.52.0](https://github.com/niafrond/niafrond.github.io/compare/v1.51.0...v1.52.0) (2026-04-10)
+
+### Features
+
+* **quiz:** add QuizzAPI v2 as secondary French question source ([#43](https://github.com/niafrond/niafrond.github.io/issues/43)) ([19664bc](https://github.com/niafrond/niafrond.github.io/commit/19664bc4f7662ac39a839efa54b287471e5cbf51))
+
 ## [1.51.0](https://github.com/niafrond/niafrond.github.io/compare/v1.50.0...v1.51.0) (2026-04-10)
 
 ### Features
