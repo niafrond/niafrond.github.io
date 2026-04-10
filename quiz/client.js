@@ -167,6 +167,7 @@ function handleClientMessage(data, peer, local, playerName) {
       local.currentQuestion = {
         text: data.text,
         choices: data.choices ?? [],
+        imageUrl: data.imageUrl ?? null,
         category: data.category,
         difficulty: data.difficulty,
       };

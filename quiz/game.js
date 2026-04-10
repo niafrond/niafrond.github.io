@@ -335,6 +335,7 @@ export class GameEngine {
       index: this.state.currentIndex,
       text: q.text,
       choices: this.state.mode === MODE.QCM ? q.choices : undefined,
+      imageUrl: q.imageUrl ?? null,
       category: q.category,
       difficulty: q.difficulty,
       total: this.state.questions.length,
