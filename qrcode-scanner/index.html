@@ -370,7 +370,7 @@ function showError(err) {
 }
 
 // ── live scan loop (jsQR demo style) ──────────────────────
-const SCAN_INTERVAL_MS = 100  // ~10 fps for analysis – easy on low-end CPUs
+const SCAN_INTERVAL_MS = 100  // ~10 fps for analysis - easy on low-end CPUs
 const MAX_SCAN_DIM = 640      // downscale to this width/height max for jsQR
 let lastScanTime = 0
 
@@ -386,8 +386,10 @@ function tick(now) {
     const w = Math.round(vw * scale)
     const h = Math.round(vh * scale)
 
-    if (canvas.width !== w)  canvas.width  = w
-    if (canvas.height !== h) canvas.height = h
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width  = w
+      canvas.height = h
+    }
     ctx.drawImage(video, 0, 0, w, h)
 
     const imageData = ctx.getImageData(0, 0, w, h)
