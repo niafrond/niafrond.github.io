@@ -1,3 +1,9 @@
+## [1.55.1](https://github.com/niafrond/niafrond.github.io/compare/v1.55.0...v1.55.1) (2026-04-10)
+
+### Bug Fixes
+
+* supprimer le doublon de joueur lors d'une reconnexion avec un nouveau peer ID ([#52](https://github.com/niafrond/niafrond.github.io/issues/52)) ([a9e7389](https://github.com/niafrond/niafrond.github.io/commit/a9e73893f935873939b4a71e91b534b9408bd8ad))
+
 ## [1.55.0](https://github.com/niafrond/niafrond.github.io/compare/v1.54.0...v1.55.0) (2026-04-10)
 
 ### Features
