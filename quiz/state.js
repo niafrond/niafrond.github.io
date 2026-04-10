@@ -42,6 +42,10 @@ export const STORAGE_KEY      = 'quiz_session';
 export const PLAYER_NAME_KEY  = 'quiz_player_name';
 export const LEADERBOARD_KEY  = 'quiz_leaderboard';
 export const PARTY_ASKED_KEY  = 'party_asked_questions';
+export const HOST_SESSION_KEY = 'quiz_host_session';
+
+/** Durée de vie d'une session hôte : 1 heure */
+export const HOST_SESSION_TTL = 60 * 60 * 1000;
 
 // ─── Session (reconnexion) ───────────────────────────────────────────────────
 
@@ -55,6 +59,37 @@ export function loadSession() {
 
 export function clearSession() {
   try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+}
+
+// ─── Session hôte (persistance de l'ID de pair sur 1 heure) ─────────────────
+
+/** Sauvegarde le peer ID de l'hôte avec l'horodatage courant. */
+export function saveHostSession(peerId) {
+  try { localStorage.setItem(HOST_SESSION_KEY, JSON.stringify({ peerId, savedAt: Date.now() })); } catch (_) {}
+}
+
+/**
+ * Charge le peer ID hôte s'il est encore valide (< HOST_SESSION_TTL).
+ * Purge automatiquement l'entrée si elle est expirée.
+ * @returns {string|null} peerId ou null
+ */
+export function loadHostSession() {
+  try {
+    const data = JSON.parse(localStorage.getItem(HOST_SESSION_KEY) ?? 'null');
+    if (!data) return null;
+    if (Date.now() - data.savedAt > HOST_SESSION_TTL) {
+      clearHostSession();
+      return null;
+    }
+    return data.peerId;
+  } catch (_) {
+    return null;
+  }
+}
+
+/** Supprime la session hôte stockée. */
+export function clearHostSession() {
+  try { localStorage.removeItem(HOST_SESSION_KEY); } catch (_) {}
 }
 
 // ─── Classement localStorage ─────────────────────────────────────────────────

@@ -9,7 +9,8 @@ import {
   saveSession, loadSession, clearSession,
   loadLeaderboard, saveToLeaderboard,
   loadAskedQuestions, saveAskedQuestions, prioritizeUnasked,
-  STORAGE_KEY, LEADERBOARD_KEY, PARTY_ASKED_KEY,
+  saveHostSession, loadHostSession, clearHostSession,
+  STORAGE_KEY, LEADERBOARD_KEY, PARTY_ASKED_KEY, HOST_SESSION_KEY, HOST_SESSION_TTL,
 } from '../../state.js';
 
 beforeEach(() => {
@@ -159,5 +160,47 @@ describe('askedQuestions (loadAskedQuestions / saveAskedQuestions / prioritizeUn
       // la question sans id n'a pas été posée — mais elle a pas d'id donc traitée comme "asked"
       expect(result).toHaveLength(2);
     });
+  });
+});
+
+// ─── Session hôte ─────────────────────────────────────────────────────────────
+
+describe('hostSession (saveHostSession / loadHostSession / clearHostSession)', () => {
+  test('renvoie null si aucune session hôte sauvegardée', () => {
+    expect(loadHostSession()).toBeNull();
+  });
+
+  test('sauvegarde et recharge le peer ID hôte', () => {
+    saveHostSession('peer-abc');
+    expect(loadHostSession()).toBe('peer-abc');
+  });
+
+  test('efface la session hôte', () => {
+    saveHostSession('peer-abc');
+    clearHostSession();
+    expect(loadHostSession()).toBeNull();
+  });
+
+  test('utilise la clé HOST_SESSION_KEY', () => {
+    saveHostSession('peer-xyz');
+    expect(localStorage.getItem(HOST_SESSION_KEY)).not.toBeNull();
+  });
+
+  test('retourne null et purge si la session est expirée', () => {
+    const expired = JSON.stringify({ peerId: 'old-peer', savedAt: Date.now() - HOST_SESSION_TTL - 1 });
+    localStorage.setItem(HOST_SESSION_KEY, expired);
+    expect(loadHostSession()).toBeNull();
+    expect(localStorage.getItem(HOST_SESSION_KEY)).toBeNull();
+  });
+
+  test('retourne le peerId si la session est encore valide (< 1 heure)', () => {
+    const fresh = JSON.stringify({ peerId: 'fresh-peer', savedAt: Date.now() - 30 * 60 * 1000 });
+    localStorage.setItem(HOST_SESSION_KEY, fresh);
+    expect(loadHostSession()).toBe('fresh-peer');
+  });
+
+  test('retourne null si les données sont corrompues', () => {
+    localStorage.setItem(HOST_SESSION_KEY, 'not-json');
+    expect(loadHostSession()).toBeNull();
   });
 });
