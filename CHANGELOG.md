@@ -1,3 +1,9 @@
+## [1.49.0](https://github.com/niafrond/niafrond.github.io/compare/v1.48.0...v1.49.0) (2026-04-10)
+
+### Features
+
+* add offline QR code scanner PWA ([#34](https://github.com/niafrond/niafrond.github.io/issues/34)) ([b2d708e](https://github.com/niafrond/niafrond.github.io/commit/b2d708ea88d2aa412472938e92ad643aa9b6db73))
+
 ## [1.48.0](https://github.com/niafrond/niafrond.github.io/compare/v1.47.1...v1.48.0) (2026-04-10)
 
 ### Features
