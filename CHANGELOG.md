@@ -1,3 +1,9 @@
+## [1.49.1](https://github.com/niafrond/niafrond.github.io/compare/v1.49.0...v1.49.1) (2026-04-10)
+
+### Bug Fixes
+
+* mark all returning players ready on replay; add referrerpolicy on photo img ([#35](https://github.com/niafrond/niafrond.github.io/issues/35)) ([7754527](https://github.com/niafrond/niafrond.github.io/commit/7754527a021efe098668696fcf71e1ca3bda89b1))
+
 ## [1.49.0](https://github.com/niafrond/niafrond.github.io/compare/v1.48.0...v1.49.0) (2026-04-10)
 
 ### Features
