@@ -1,3 +1,9 @@
+## [1.49.4](https://github.com/niafrond/niafrond.github.io/compare/v1.49.3...v1.49.4) (2026-04-10)
+
+### Bug Fixes
+
+* QR scanner - ajout logs et scan sur capture (non temps réel) ([#40](https://github.com/niafrond/niafrond.github.io/issues/40)) ([95d2074](https://github.com/niafrond/niafrond.github.io/commit/95d20746fcf3c0f100cb494cdac5d44a6039e0e3))
+
 ## [1.49.3](https://github.com/niafrond/niafrond.github.io/compare/v1.49.2...v1.49.3) (2026-04-10)
 
 ### Bug Fixes
