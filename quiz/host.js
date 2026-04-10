@@ -295,27 +295,30 @@ function handleHostStateChange(state, engine, peer) {
         });
       }
       {
-        const dur = state.mode === MODE.QCM ? TIMER.QCM_DURATION
+        const dur = (state.mode === MODE.QCM || state.mode === MODE.PINGPONG) ? TIMER.QCM_DURATION
           : state.mode === MODE.SPEED ? TIMER.SPEED_ANSWER
           : (state.config.answerTime ?? 15) * 1000;
         startTimerBar(dur, 'timer-fill', 100, playTick);
       }
       {
         const data = buildRenderData(state, engine);
-        if (state.mode === MODE.QCM && !clientState.hostIsReader) {
-          data.onChoiceClick = (choice) => {
-            engine.handleChoice('__host__', choice);
-          };
+        if ((state.mode === MODE.QCM || state.mode === MODE.PINGPONG) && !clientState.hostIsReader) {
+          const isHostTurn = state.mode === MODE.PINGPONG ? state.buzzQueue[0] === '__host__' : true;
+          if (isHostTurn) {
+            data.onChoiceClick = (choice) => {
+              engine.handleChoice('__host__', choice);
+            };
+          }
           data.eliminatedPlayers = state.eliminatedPlayers;
         }
         renderGamePhase(state.phase, data, true);
       }
       if (clientState.hostIsReader) {
         // Mode hôte lecteur : boutons Correct / Incorrect pour juger à l'oral
-        if (state.mode !== MODE.QCM) {
+        if (state.mode !== MODE.QCM && state.mode !== MODE.PINGPONG) {
           setupHostJudgeButtons(engine);
         }
-      } else if (state.mode !== MODE.QCM) {
+      } else if (state.mode !== MODE.QCM && state.mode !== MODE.PINGPONG) {
         // Réponse texte hôte classique
         setupHostAnswerForm(engine, state);
       }
@@ -334,8 +337,8 @@ function handleHostStateChange(state, engine, peer) {
       } else if (state.lastResult?.playerId) {
         playWrong();
       }
-      // Surligner les choix en QCM
-      if (state.mode === MODE.QCM && q) {
+      // Surligner les choix en QCM / Ping-Pong
+      if ((state.mode === MODE.QCM || state.mode === MODE.PINGPONG) && q) {
         const wrong = state.lastResult?.correct === false ? state.lastResult?.answer : null;
         highlightChoices(q.correctAnswer, wrong);
       }
