@@ -2,10 +2,15 @@
   "name": "niafrond-github-io",
   "private": true,
   "description": "Release automation for static apps",
+  "type": "module",
   "scripts": {
-    "release": "semantic-release"
+    "release": "semantic-release",
+    "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run test:e2e"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.1",
     "@semantic-release/exec": "^7.1.0",
@@ -13,6 +18,9 @@
     "@semantic-release/github": "^11.0.6",
     "@semantic-release/release-notes-generator": "^14.1.0",
     "conventional-changelog-conventionalcommits": "^9.3.0",
-    "semantic-release": "^24.2.3"
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
+    "semantic-release": "^24.2.3",
+    "serve": "^14.2.6"
   }
 }
