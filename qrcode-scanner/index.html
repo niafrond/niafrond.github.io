@@ -338,8 +338,8 @@ async function startCamera() {
     stream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode,
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
+        width: { ideal: 640 },
+        height: { ideal: 480 }
       },
       audio: false
     })
@@ -370,14 +370,24 @@ function showError(err) {
 }
 
 // ── live scan loop (jsQR demo style) ──────────────────────
-function tick() {
+const SCAN_INTERVAL_MS = 100  // ~10 fps for analysis – easy on low-end CPUs
+const MAX_SCAN_DIM = 640      // downscale to this width/height max for jsQR
+let lastScanTime = 0
+
+function tick(now) {
   if (!scanning) return
 
-  if (video.readyState === video.HAVE_ENOUGH_DATA) {
-    const w = video.videoWidth
-    const h = video.videoHeight
-    canvas.width  = w
-    canvas.height = h
+  if (video.readyState === video.HAVE_ENOUGH_DATA && (now - lastScanTime) >= SCAN_INTERVAL_MS) {
+    lastScanTime = now
+
+    const vw = video.videoWidth
+    const vh = video.videoHeight
+    const scale = Math.min(1, MAX_SCAN_DIM / Math.max(vw, vh))
+    const w = Math.round(vw * scale)
+    const h = Math.round(vh * scale)
+
+    if (canvas.width !== w)  canvas.width  = w
+    if (canvas.height !== h) canvas.height = h
     ctx.drawImage(video, 0, 0, w, h)
 
     const imageData = ctx.getImageData(0, 0, w, h)
@@ -391,7 +401,7 @@ function tick() {
       cancelAnimationFrame(rafId)
       rafId = null
 
-      // Draw detected box
+      // Draw detected box (location is in canvas/downscaled coordinates)
       const scaleX = video.offsetWidth  / w
       const scaleY = video.offsetHeight / h
       const pts = code.location
@@ -414,7 +424,6 @@ function tick() {
 
   rafId = requestAnimationFrame(tick)
 }
-
 // ── result banner ──────────────────────────────────────────
 function showResult(value) {
   resultBanner.classList.add('show')
