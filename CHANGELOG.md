@@ -1,3 +1,9 @@
+## [1.54.0](https://github.com/niafrond/niafrond.github.io/compare/v1.53.3...v1.54.0) (2026-04-10)
+
+### Features
+
+* **quiz:** choix du nombre de questions par mini-jeu en mode party ([#51](https://github.com/niafrond/niafrond.github.io/issues/51)) ([313478d](https://github.com/niafrond/niafrond.github.io/commit/313478d134f978a868c02e35b9029241be4758c6))
+
 ## [1.53.3](https://github.com/niafrond/niafrond.github.io/compare/v1.53.2...v1.53.3) (2026-04-10)
 
 ### Bug Fixes
