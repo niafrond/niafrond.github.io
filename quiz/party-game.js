@@ -399,7 +399,7 @@ export class PartyGameEngine {
 
   _startStreak() {
     this.state.streakIndex = -1;
-    this.state.players.forEach(p => { this.state.streaks[p.id] = { current: 0, max: 0 }; });
+    this._activePlayers().forEach(p => { this.state.streaks[p.id] = { current: 0, max: 0 }; });
     this._streakNext();
   }
 
@@ -440,7 +440,7 @@ export class PartyGameEngine {
     this.state.streakAnswers[peerId] = choice;
     this.onStateChange({ ...this.state });
 
-    const active = this.state.players;
+    const active = this._activePlayers();
     if (active.every(p => this.state.streakAnswers[p.id] !== undefined)) {
       this._clearTimer();
       this._streakReveal();
@@ -452,7 +452,7 @@ export class PartyGameEngine {
     const q = this.state.streakCurrentQuestion;
     const results = {};
 
-    this.state.players.forEach(p => {
+    this._activePlayers().forEach(p => {
       const choice = this.state.streakAnswers[p.id];
       const correct = choice === q.correctAnswer;
       results[p.id] = { choice: choice ?? null, correct };
@@ -481,7 +481,7 @@ export class PartyGameEngine {
 
   _streakFinish() {
     const miniScores = {};
-    this.state.players.forEach(p => {
+    this._activePlayers().forEach(p => {
       const pts = streakPoints((this.state.streaks[p.id] ?? { max: 0 }).max);
       p.score += pts;
       miniScores[p.id] = pts;
@@ -510,8 +510,9 @@ export class PartyGameEngine {
 
     if (this.state.players.length < 2) { this._endMini({}); return; }
 
-    // Rotation de l'interrogateur parmi tous les joueurs
-    this.state.duelInterrogateur = this.state.players[this.state.duelIndex % this.state.players.length].id;
+    // Rotation de l'interrogateur parmi tous les joueurs actifs
+    const activePlayers = this._activePlayers();
+    this.state.duelInterrogateur = activePlayers[this.state.duelIndex % activePlayers.length].id;
 
     const start = this.state.duelIndex * 2;
     this.state.duelPickOptions = this.state.duelQuestions.slice(start, start + 2).filter(Boolean);
@@ -588,11 +589,12 @@ export class PartyGameEngine {
   handleDuelChoice(peerId, choice) {
     if (this.state.phase !== PARTY_PHASE.DUEL_QUESTION) return;
     if (peerId === this.state.duelInterrogateur) return; // l'interrogateur ne répond pas
+    if (this.state.config.hostIsReader && peerId === '__host__') return;
     if (this.state.duelAnswers[peerId] !== undefined) return;
     this.state.duelAnswers[peerId] = choice;
     this.onStateChange({ ...this.state });
 
-    const answerable = this.state.players.filter(
+    const answerable = this._activePlayers().filter(
       p => p.id !== this.state.duelInterrogateur
     );
     if (answerable.every(p => this.state.duelAnswers[p.id] !== undefined)) {
@@ -608,7 +610,7 @@ export class PartyGameEngine {
     let correctCount = 0;
     let wrongCount = 0;
 
-    this.state.players.forEach(p => {
+    this._activePlayers().forEach(p => {
       if (p.id === this.state.duelInterrogateur) return;
       const choice = this.state.duelAnswers[p.id];
       const correct = choice === q.correctAnswer;
@@ -698,12 +700,13 @@ export class PartyGameEngine {
 
   handleTFVote(peerId, vote) {
     if (this.state.phase !== PARTY_PHASE.TF_VOTING) return;
+    if (this.state.config.hostIsReader && peerId === '__host__') return;
     if (!['V', 'F'].includes(vote)) return;
     if (this.state.tfVotes[peerId] !== undefined) return;
     this.state.tfVotes[peerId] = vote;
     this.onStateChange({ ...this.state });
 
-    const active = this.state.players;
+    const active = this._activePlayers();
     if (active.every(p => this.state.tfVotes[p.id] !== undefined)) {
       this._clearTimer();
       this._tfReveal();
@@ -1037,6 +1040,13 @@ export class PartyGameEngine {
   }
 
   // ─── Contrôles hôte ───────────────────────────────────────────────────────
+
+  /** Joueurs actifs = tous sauf l'hôte lecteur s'il n'est pas joueur */
+  _activePlayers() {
+    return this.state.players.filter(p =>
+      !(this.state.config.hostIsReader && p.id === '__host__')
+    );
+  }
 
   hostSkip() {
     switch (this.state.phase) {
