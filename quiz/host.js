@@ -57,6 +57,9 @@ const hostConfig = {
 // Référence au conteneur d'engine (partagée entre hôte et helper)
 let _currentRef = null;
 
+// Phase party précédente (pour détecter les transitions et éviter les toasts en double)
+let _partyPhase = null;
+
 // ─── Initialisation hôte ─────────────────────────────────────────────────────
 
 export async function initHost() {
@@ -293,6 +296,10 @@ function handleHostStateChange(state, engine, peer) {
           const p = state.players.find(pl => pl.id === id);
           if (p && p.id !== '__host__') showWrongPlayerNotification(p.name);
         });
+        if (newElim.includes('__host__')) {
+          showToast('❌ Mauvaise réponse !', 'warn');
+          playWrong();
+        }
       }
       {
         const dur = state.mode === MODE.QCM ? TIMER.QCM_DURATION
@@ -390,6 +397,10 @@ function buildRenderData(state, engine) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function handlePartyHostStateChange(state, engine, peer) {
+  const prevPartyPhase = _partyPhase;
+  _partyPhase = state.phase;
+  const phaseChanged = prevPartyPhase !== state.phase;
+
   clientState.players = state.players;
   renderScoreboard(state.players, false);
 
@@ -439,6 +450,13 @@ function handlePartyHostStateChange(state, engine, peer) {
       stopTimerBar();
       if (state.streakReveal) {
         renderPartyStreakReveal(state.streakReveal, state.players);
+        if (phaseChanged && !state.config.hostIsReader) {
+          const hostResult = state.streakReveal.results?.['__host__'];
+          if (hostResult?.correct === false && hostResult?.choice !== null) {
+            showToast('❌ Mauvaise réponse !', 'warn');
+            playWrong();
+          }
+        }
       }
       break;
 
@@ -490,6 +508,13 @@ function handlePartyHostStateChange(state, engine, peer) {
       stopTimerBar();
       if (state.duelResult) {
         renderPartyDuelResult(state.duelResult, state.players);
+        if (phaseChanged && !state.config.hostIsReader && state.duelResult.interrogateurId !== '__host__') {
+          const hostResult = state.duelResult.results?.['__host__'];
+          if (hostResult?.correct === false && hostResult?.choice !== null) {
+            showToast('❌ Mauvaise réponse !', 'warn');
+            playWrong();
+          }
+        }
       }
       break;
 
@@ -521,6 +546,13 @@ function handlePartyHostStateChange(state, engine, peer) {
       stopTimerBar();
       if (state.tfResult) {
         renderPartyTFReveal(state.tfResult, state.players);
+        if (phaseChanged && !state.config.hostIsReader) {
+          const hostVote = state.tfResult.votes?.['__host__'];
+          if (hostVote && hostVote !== state.tfResult.correctVote) {
+            showToast('❌ Mauvaise réponse !', 'warn');
+            playWrong();
+          }
+        }
       }
       break;
 
@@ -534,7 +566,7 @@ function handlePartyHostStateChange(state, engine, peer) {
           index:    state.raceIndex,
           total:    state.raceQuestions.length,
           answers:  state.raceAnswers,
-          correctAnswer: state.raceCurrentQuestion?.correctAnswer,
+          correctAnswer: state.config.hostIsReader ? state.raceCurrentQuestion?.correctAnswer : null,
         },
         true, null
       );
@@ -560,7 +592,7 @@ function handlePartyHostStateChange(state, engine, peer) {
           index:    state.blitzIndex,
           total:    state.blitzQuestions.length,
           answers:  state.blitzAnswers,
-          correctAnswer: state.blitzCurrentQuestion?.correctAnswer,
+          correctAnswer: state.config.hostIsReader ? state.blitzCurrentQuestion?.correctAnswer : null,
         },
         true, null
       );
@@ -589,7 +621,7 @@ function handlePartyHostStateChange(state, engine, peer) {
           index:    state.carouselIndex,
           total:    state.carouselQuestions.length,
           showQuestion: state.phase === PARTY_PHASE.CAROUSEL_QUESTION,
-          correctAnswer: state.carouselCurrentQuestion?.correctAnswer,
+          correctAnswer: state.config.hostIsReader ? state.carouselCurrentQuestion?.correctAnswer : null,
         },
         '__host__', true, null
       );
