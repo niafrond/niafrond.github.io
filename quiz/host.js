@@ -33,6 +33,7 @@ import {
   clientState, PLAYER_NAME_KEY, LEADERBOARD_KEY,
   loadLeaderboard, saveToLeaderboard,
   loadAskedQuestions, saveAskedQuestions, prioritizeUnasked,
+  saveHostSession, loadHostSession, clearHostSession,
 } from './state.js';
 
 // ─── Config de partie (hôte) ──────────────────────────────────────────────────
@@ -93,12 +94,18 @@ export async function initHost() {
       clientState.myName = name;
       btnHost.disabled = true;
       btnHost.textContent = '⏳ Connexion…';
-      await startHostSession(name);
+      await startHostSession(name, loadHostSession());
     });
   }
 }
 
-async function startHostSession(hostName) {
+/**
+ * Démarre une session hôte PeerJS.
+ * @param {string} hostName  - Nom de l'hôte
+ * @param {string|null} savedPeerId - Peer ID sauvegardé (tentative de réutilisation), ou null
+ * @param {boolean} [isRetry=false]  - true si on réessaie après un ID indisponible
+ */
+async function startHostSession(hostName, savedPeerId = null, isRetry = false) {
   const peer = new QuizPeer();
   // Conteneur muable pour permettre l'échange d'engine (normal ↔ party)
   const ref = { engine: null };
@@ -108,6 +115,9 @@ async function startHostSession(hostName) {
   setLoadingStatus('Connexion au serveur de signalisation…');
 
   peer.addEventListener('ready', (e) => {
+    // Persiste l'ID de session hôte pour permettre la reconnexion dans l'heure
+    saveHostSession(e.detail.peerId);
+
     clientState.myId = '__host__';
     clientState.isHost = true;
     clientState.hostPeerId = e.detail.peerId;
@@ -153,10 +163,17 @@ async function startHostSession(hostName) {
   });
 
   peer.addEventListener('error', (e) => {
+    // Si l'ID sauvegardé est désormais indisponible, purger et relancer sans ID
+    if (!isRetry && e.detail.err?.type === 'unavailable-id') {
+      clearHostSession();
+      peer.destroy();
+      startHostSession(hostName, null, true);
+      return;
+    }
     showToast('Erreur réseau : ' + e.detail.err?.message, 'error');
   });
 
-  await peer.startHost();
+  await peer.startHost(savedPeerId || undefined);
 }
 
 /**
