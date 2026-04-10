@@ -15,6 +15,64 @@ const TRIVIA_API_BASE = 'https://the-trivia-api.com/v2/questions';
 /** Nombre minimum de questions valides attendues en réponse de l'API */
 const MIN_QUESTIONS_THRESHOLD = 3;
 
+/**
+ * Vérifie si une URL d'image est accessible dans le navigateur (timeout 5 s).
+ * Utilise un élément Image pour éviter les restrictions CORS.
+ * En dehors d'un navigateur (tests Node.js), résout toujours à true.
+ *
+ * @param {string} url
+ * @returns {Promise<boolean>}
+ */
+function isImageReachable(url) {
+  if (typeof Image === 'undefined') return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(false), 5000);
+    const img = new Image();
+    img.onload  = () => { clearTimeout(timer); resolve(true); };
+    img.onerror = () => { clearTimeout(timer); resolve(false); };
+    img.src = url;
+  });
+}
+
+/**
+ * Parcourt les questions contenant une imageUrl et remplace celles dont
+ * l'image est inaccessible par une question bundlée photo valide.
+ * Les vérifications sont faites en parallèle pour minimiser le délai.
+ *
+ * @param {Array} questions — liste de questions normalisées
+ * @returns {Promise<Array>}
+ */
+async function filterReachablePhotoQuestions(questions) {
+  const photoIndices = questions.map((q, i) => q.imageUrl ? i : -1).filter(i => i >= 0);
+  if (photoIndices.length === 0) return questions;
+
+  // Vérifier toutes les images sélectionnées en parallèle
+  const reachability = await Promise.all(photoIndices.map(i => isImageReachable(questions[i].imageUrl)));
+  const unreachableIndices = photoIndices.filter((_, j) => !reachability[j]);
+  if (unreachableIndices.length === 0) return questions;
+
+  console.warn(`[Quiz] ${unreachableIndices.length} photo(s) inaccessible(s), remplacement en cours…`);
+
+  // Construire un pool de remplacement depuis les questions bundlées non encore sélectionnées
+  const usedIds = new Set(questions.map(q => q.id));
+  const pool = shuffle(BUNDLED_QUESTIONS.filter(q => q.imageUrl && !usedIds.has(q.id)));
+
+  if (pool.length === 0) return questions;
+
+  // Vérifier toutes les photos du pool en parallèle pour trouver des remplaçants valides
+  const poolReachability = await Promise.all(pool.map(q => isImageReachable(q.imageUrl)));
+  const reachablePool = pool.filter((_, i) => poolReachability[i]);
+
+  const result = [...questions];
+  let repl = 0;
+  for (const idx of unreachableIndices) {
+    if (repl >= reachablePool.length) break;
+    const candidate = reachablePool[repl++];
+    result[idx] = { ...candidate, choices: shuffle([candidate.correctAnswer, ...candidate.incorrectAnswers]) };
+  }
+  return result;
+}
+
 /** Mélange un tableau */
 function shuffle(arr) {
   const a = [...arr];
@@ -78,13 +136,13 @@ export async function fetchQuestions({ count = 10, categories = [], difficulties
     }
   }
 
-  if (apiQuestions.length >= count) return apiQuestions;
+  if (apiQuestions.length >= count) return filterReachablePhotoQuestions(apiQuestions);
 
   // Compléter avec des questions intégrées si l'API a renvoyé trop peu
   const needed = count - apiQuestions.length;
   const apiIds = new Set(apiQuestions.map(q => q.id));
   const bundled = getBundledQuestions(needed, categories, difficulties).filter(q => !apiIds.has(q.id));
-  return [...apiQuestions, ...bundled].slice(0, count);
+  return filterReachablePhotoQuestions([...apiQuestions, ...bundled].slice(0, count));
 }
 
 /** Renvoie des questions depuis le jeu intégré */

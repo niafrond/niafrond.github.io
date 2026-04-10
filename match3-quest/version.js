@@ -1,7 +1,7 @@
 export const MATCH3_SEMVER = {
     major: 1,
-    minor: 49,
-    patch: 4,
+    minor: 50,
+    patch: 0,
     prerelease: ''
 };
 
