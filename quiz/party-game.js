@@ -785,7 +785,7 @@ export class PartyGameEngine {
     this.onStateChange({ ...this.state });
 
     // Dès que tous les joueurs ont répondu → révéler
-    const active = this.state.players.filter(p => p.id !== '__host__');
+    const active = this._activePlayers();
     if (active.every(p => this.state.raceAnswers[p.id] !== undefined)) {
       this._clearTimer();
       this._raceReveal();
@@ -804,8 +804,7 @@ export class PartyGameEngine {
 
     const RACE_POINTS = [10, 6, 3, 1];
     const results = {};
-    this.state.players.forEach(p => {
-      if (p.id === '__host__') return;
+    this._activePlayers().forEach(p => {
       const ans = answers[p.id];
       if (!ans) { results[p.id] = { choice: null, correct: false, pts: 0 }; return; }
       const isCorrect = ans.choice === q.correctAnswer;
@@ -875,7 +874,7 @@ export class PartyGameEngine {
     this.state.blitzAnswers[peerId] = choice;
     this.onStateChange({ ...this.state });
 
-    const active = this.state.players.filter(p => p.id !== '__host__');
+    const active = this._activePlayers();
     if (active.every(p => this.state.blitzAnswers[p.id] !== undefined)) {
       this._clearTimer();
       this._blitzReveal();
@@ -888,8 +887,7 @@ export class PartyGameEngine {
     const answers = { ...this.state.blitzAnswers };
     const results = {};
 
-    this.state.players.forEach(p => {
-      if (p.id === '__host__') return;
+    this._activePlayers().forEach(p => {
       const choice = answers[p.id];
       if (!choice) { results[p.id] = { choice: null, correct: false, pts: 0 }; return; }
       const isCorrect = choice === q.correctAnswer;
@@ -931,7 +929,7 @@ export class PartyGameEngine {
     this.state.carouselCurrentQuestion = q;
 
     // Désigner le joueur actif en rotation
-    const activePlayers = this.state.players.filter(p => p.id !== '__host__');
+    const activePlayers = this._activePlayers();
     const offset = this.state._carouselPlayerOffset ?? 0;
     const player = activePlayers[offset % activePlayers.length];
     this.state.carouselActivePlayer = player?.id ?? null;
