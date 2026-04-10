@@ -306,6 +306,7 @@ canvas { display: none; }
     <div id="result-hint">Appuyez pour reprendre le scan</div>
   </div>
   <div class="result-actions">
+    <button class="action-btn" id="openResultBtn" style="display:none">Ouvrir</button>
     <button class="action-btn" id="copyResultBtn">Copier</button>
   </div>
 </div>
@@ -346,6 +347,7 @@ const detectedBox  = document.getElementById('detected-box')
 const resultBanner = document.getElementById('result-banner')
 const resultText   = document.getElementById('result-text')
 const copyResultBtn= document.getElementById('copyResultBtn')
+const openResultBtn= document.getElementById('openResultBtn')
 const errorScreen  = document.getElementById('error-screen')
 const errorMsg     = document.getElementById('error-msg')
 const retryBtn     = document.getElementById('retryBtn')
@@ -473,19 +475,10 @@ function tick() {
 
 // ── result banner ──────────────────────────────────────────
 function showResult(value) {
-  const isUrl = isURL(value)
-
-  if (isUrl) {
-    if (confirm('Ouvrir ce lien ?\n\n' + value)) {
-      window.open(value, '_blank', 'noopener,noreferrer')
-    }
-    resumeScan()
-    return
-  }
-
   resultBanner.classList.add('show')
   resultText.textContent = value
   lastScannedValue = value
+  openResultBtn.style.display = isURL(value) ? '' : 'none'
 }
 
 function resumeScan() {
@@ -551,6 +544,13 @@ resultBanner.addEventListener('click', resumeScan)
 copyResultBtn.addEventListener('click', e => {
   e.stopPropagation()
   copyText(lastScannedValue)
+})
+
+// Open button: open URL and resume scan
+openResultBtn.addEventListener('click', e => {
+  e.stopPropagation()
+  window.open(lastScannedValue, '_blank', 'noopener,noreferrer')
+  resumeScan()
 })
 
 // ── init ───────────────────────────────────────────────────
