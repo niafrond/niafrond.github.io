@@ -43,7 +43,7 @@ function normalizeApiQuestion(q) {
  * Catégories disponibles uniquement dans les questions intégrées (pas via l'API).
  * Pour ces catégories, l'appel API est ignoré.
  */
-const LOCAL_ONLY_CATEGORIES = ['reunion', 'children'];
+const LOCAL_ONLY_CATEGORIES = ['reunion', 'children', 'photo'];
 
 /**
  * Récupère des questions depuis The Trivia API avec langue française.

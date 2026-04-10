@@ -464,6 +464,19 @@ export function renderGamePhase(phase, data, isHost) {
 function renderQuestion(q, data) {
   if (!q) return;
   setText('question-text', q.text);
+  // Image (questions photo)
+  const imgEl = el('question-image');
+  if (imgEl) {
+    if (q.imageUrl) {
+      imgEl.src = q.imageUrl;
+      imgEl.alt = q.text;
+      imgEl.hidden = false;
+      imgEl.onerror = () => { imgEl.hidden = true; };
+    } else {
+      imgEl.src = '';
+      imgEl.hidden = true;
+    }
+  }
   // Afficher la bonne réponse à l'hôte si option activée ou mode hôte lecteur
   const hostAnswer = el('host-answer-hint');
   if (hostAnswer) {
