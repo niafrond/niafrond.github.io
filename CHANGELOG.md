@@ -1,3 +1,9 @@
+## [1.48.0](https://github.com/niafrond/niafrond.github.io/compare/v1.47.1...v1.48.0) (2026-04-10)
+
+### Features
+
+* **quiz:** mode Ping-Pong passe aux choix QCM ([#30](https://github.com/niafrond/niafrond.github.io/issues/30)) ([23ecb01](https://github.com/niafrond/niafrond.github.io/commit/23ecb014d1e93b0b8170253bda28c8a87c9e0735))
+
 ## [1.47.1](https://github.com/niafrond/niafrond.github.io/compare/v1.47.0...v1.47.1) (2026-04-10)
 
 ### Bug Fixes
