@@ -1,3 +1,9 @@
+## [1.51.0](https://github.com/niafrond/niafrond.github.io/compare/v1.50.0...v1.51.0) (2026-04-10)
+
+### Features
+
+* **quiz:** persist host peer ID for 1-hour session reuse ([#44](https://github.com/niafrond/niafrond.github.io/issues/44)) ([931a7bb](https://github.com/niafrond/niafrond.github.io/commit/931a7bbaefe7429aa70406837aa955eade654eda))
+
 ## [1.50.0](https://github.com/niafrond/niafrond.github.io/compare/v1.49.4...v1.50.0) (2026-04-10)
 
 ### Features
