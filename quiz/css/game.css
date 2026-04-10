@@ -1,18 +1,20 @@
 /* ─── Game layout ─────────────────────────────────────────────────────────── */
 .game-layout {
-  display: grid;
-  grid-template-columns: 1fr 260px;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
-  max-width: 1000px;
+  max-width: 760px;
   margin: 0 auto;
   padding: 0 0 40px;
-  min-height: 100vh;
-}
-@media (max-width: 768px) {
-  .game-layout { grid-template-columns: 1fr; }
 }
 .game-main { display: flex; flex-direction: column; gap: 14px; position: relative; }
-.game-sidebar { display: flex; flex-direction: column; gap: 14px; }
+.game-sidebar {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.game-sidebar > * { flex: 1; min-width: 200px; }
 
 /* ─── Wrong answer overlay ────────────────────────────────────────────────── */
 .wrong-answer-overlay {
