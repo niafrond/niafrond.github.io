@@ -94,6 +94,12 @@ function normalizeQuizzApiQuestion(q) {
  *
  * @param {{ count?: number, categories?: string[], difficulties?: string[] }} opts
  * @returns {Promise<Array>}
+ *
+ * Notes:
+ * - La catégorie n'est envoyée en filtre que si une seule catégorie est demandée
+ *   (l'API n'accepte qu'un slug à la fois).
+ * - La difficulté n'est envoyée en filtre que si une seule difficulté est demandée;
+ *   plusieurs difficultés sont filtrées côté client après réception.
  */
 async function fetchFromQuizzApi({ count = 10, categories = [], difficulties = [] } = {}) {
   const params = new URLSearchParams({ limit: String(count) });
@@ -117,7 +123,7 @@ async function fetchFromQuizzApi({ count = 10, categories = [], difficulties = [
   const res = await fetch(`${QUIZZ_API_BASE}?${params}`, { signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
-  if (!Array.isArray(data.quizzes) || data.quizzes.length < MIN_QUESTIONS_THRESHOLD) {
+  if (!Array.isArray(data.quizzes) || data.quizzes.length < Math.min(count, MIN_QUESTIONS_THRESHOLD)) {
     throw new Error('Trop peu de questions reçues');
   }
   let questions = data.quizzes.map(normalizeQuizzApiQuestion);
