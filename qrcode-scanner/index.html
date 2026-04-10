@@ -237,6 +237,72 @@ header h1 {
 #toast.show { transform: translateX(-50%) translateY(0); }
 
 canvas { display: none; }
+
+/* ── capture button ── */
+#captureBtn {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 12px 16px 0;
+  padding: 12px;
+  background: var(--accent);
+  color: #0f172a;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#captureBtn:active { background: var(--accent2); }
+
+/* ── captured image preview ── */
+#captured-wrap {
+  display: none;
+  position: relative;
+  margin: 12px 16px 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 2px solid var(--surface2);
+}
+#captured-wrap.show { display: block; }
+#capturedImg {
+  width: 100%;
+  display: block;
+  border-radius: calc(var(--radius) - 2px);
+}
+
+/* ── log section ── */
+#log-section {
+  margin: 12px 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--surface2);
+  overflow: hidden;
+}
+#log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--surface2);
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+#log-header span { color: var(--muted); font-size: 0.75rem; font-weight: 400; }
+#log-body {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 8px 12px;
+  font-family: monospace;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+#log-body .log-ok  { color: var(--success); }
+#log-body .log-err { color: var(--danger); }
+#log-body .log-info { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -260,11 +326,22 @@ canvas { display: none; }
   <div id="status-bar">Initialisation…</div>
 </div>
 
+<button id="captureBtn">📸 Scanner ce QR code</button>
+
+<div id="captured-wrap">
+  <img id="capturedImg" alt="Image capturée">
+</div>
+
 <div id="result-banner">
   <div id="result-text"></div>
   <div class="result-actions">
     <button class="action-btn" id="copyResultBtn">Copier</button>
   </div>
+</div>
+
+<div id="log-section">
+  <div id="log-header">🪵 Logs de scan <span id="log-count">0 entrée(s)</span></div>
+  <div id="log-body"></div>
 </div>
 
 <div id="error-screen">
@@ -284,11 +361,6 @@ if ('serviceWorker' in navigator) {
 // ── state ──────────────────────────────────────────────────
 let stream = null
 let facingMode = localStorage.getItem('qrscanner-facing') || 'environment'
-let scanning = true
-let lastCode = null
-let lastCodeTime = 0
-const COOLDOWN = 2000  // ms before same code triggers again
-let animFrame = null
 
 // ── elements ───────────────────────────────────────────────
 const video        = document.getElementById('video')
@@ -304,11 +376,35 @@ const errorMsg     = document.getElementById('error-msg')
 const retryBtn     = document.getElementById('retryBtn')
 const flipBtn      = document.getElementById('flipBtn')
 const toast        = document.getElementById('toast')
+const captureBtn   = document.getElementById('captureBtn')
+const capturedWrap = document.getElementById('captured-wrap')
+const capturedImg  = document.getElementById('capturedImg')
+const logBody      = document.getElementById('log-body')
+const logCount     = document.getElementById('log-count')
+const logHeader    = document.getElementById('log-header')
+
+// ── logging ────────────────────────────────────────────────
+let logEntries = 0
+function addLog(msg, type = '') {
+  logEntries++
+  const line = document.createElement('div')
+  if (type) line.className = 'log-' + type
+  const ts = new Date().toLocaleTimeString('fr-FR', { hour12: false })
+  line.textContent = `[${ts}] ${msg}`
+  logBody.appendChild(line)
+  logBody.scrollTop = logBody.scrollHeight
+  logCount.textContent = `${logEntries} entrée(s)`
+}
+
+logHeader.addEventListener('click', () => {
+  logBody.style.display = logBody.style.display === 'none' ? '' : 'none'
+})
 
 // ── camera ─────────────────────────────────────────────────
 async function startCamera() {
   errorScreen.classList.remove('show')
   statusBar.textContent = 'Démarrage caméra…'
+  addLog(`Démarrage caméra (facingMode=${facingMode})`, 'info')
 
   if (stream) {
     stream.getTracks().forEach(t => t.stop())
@@ -326,17 +422,17 @@ async function startCamera() {
     })
     video.srcObject = stream
     await video.play()
-    statusBar.textContent = 'Pointez un QR code'
-    scanning = true
-    scan()
+    const track = stream.getVideoTracks()[0]
+    const settings = track.getSettings()
+    addLog(`Caméra OK — ${settings.width}x${settings.height} (${track.label})`, 'ok')
+    statusBar.textContent = 'Pointez un QR code et appuyez sur Scanner'
   } catch (err) {
+    addLog(`Erreur caméra: ${err.name} — ${err.message}`, 'err')
     showError(err)
   }
 }
 
 function showError(err) {
-  if (animFrame) cancelAnimationFrame(animFrame)
-  scanning = false
   let msg = 'Impossible d\'accéder à la caméra.'
   if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
     msg = 'Accès à la caméra refusé.\nVeuillez autoriser la caméra dans les paramètres du navigateur et réessayer.'
@@ -352,64 +448,76 @@ function showError(err) {
   statusBar.textContent = 'Erreur caméra'
 }
 
-// ── QR scanning loop ───────────────────────────────────────
-function scan() {
-  if (!scanning) return
-  if (video.readyState === video.HAVE_ENOUGH_DATA) {
-    canvas.width  = video.videoWidth
-    canvas.height = video.videoHeight
-    ctx.drawImage(video, 0, 0)
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-    const code = jsQR(imageData.data, imageData.width, imageData.height, {
-      inversionAttempts: 'dontInvert'
+// ── capture & scan on click ────────────────────────────────
+function captureAndScan() {
+  addLog('--- Nouvelle tentative de scan ---', 'info')
+
+  if (!stream) {
+    addLog('Aucun flux caméra actif', 'err')
+    statusBar.textContent = '⚠️ Caméra non démarrée'
+    return
+  }
+
+  if (video.readyState < video.HAVE_ENOUGH_DATA) {
+    addLog(`Vidéo pas encore prête (readyState=${video.readyState})`, 'err')
+    statusBar.textContent = '⏳ Vidéo pas encore prête'
+    return
+  }
+
+  // Capture current frame
+  const w = video.videoWidth
+  const h = video.videoHeight
+  canvas.width  = w
+  canvas.height = h
+  ctx.drawImage(video, 0, 0, w, h)
+  addLog(`Image capturée: ${w}x${h} px`)
+
+  // Show frozen image preview
+  capturedImg.src = canvas.toDataURL('image/jpeg', 0.9)
+  capturedWrap.classList.add('show')
+
+  // Extract image data
+  const imageData = ctx.getImageData(0, 0, w, h)
+  addLog(`ImageData: ${imageData.data.length} octets (${imageData.width}x${imageData.height})`)
+
+  // Run jsQR with all inversion modes for better detection
+  statusBar.textContent = 'Analyse en cours…'
+
+  const attempts = ['dontInvert', 'onlyInvert', 'attemptBoth']
+  let code = null
+  for (const inv of attempts) {
+    const result = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: inv
     })
-    if (code) {
-      onCodeFound(code)
-    } else {
-      detectedBox.style.display = 'none'
-    }
+    addLog(`jsQR (${inv}): ${result ? `✅ trouvé → "${result.data}"` : '❌ rien trouvé'}`, result ? 'ok' : '')
+    if (result && !code) code = result
   }
-  animFrame = requestAnimationFrame(scan)
-}
 
-function onCodeFound(code) {
-  const now = Date.now()
-  const isNew = code.data !== lastCode || (now - lastCodeTime) > COOLDOWN
+  if (code) {
+    detectedBox.style.display = 'block'
+    const scaleX = video.offsetWidth  / w
+    const scaleY = video.offsetHeight / h
+    const pts = code.location
+    const xs = [pts.topLeftCorner.x, pts.topRightCorner.x, pts.bottomRightCorner.x, pts.bottomLeftCorner.x]
+    const ys = [pts.topLeftCorner.y, pts.topRightCorner.y, pts.bottomRightCorner.y, pts.bottomLeftCorner.y]
+    detectedBox.style.left   = (Math.min(...xs) * scaleX) + 'px'
+    detectedBox.style.top    = (Math.min(...ys) * scaleY) + 'px'
+    detectedBox.style.width  = ((Math.max(...xs) - Math.min(...xs)) * scaleX) + 'px'
+    detectedBox.style.height = ((Math.max(...ys) - Math.min(...ys)) * scaleY) + 'px'
 
-  // Draw highlight box on video overlay
-  const vw = video.offsetWidth
-  const vh = video.offsetHeight
-  const scaleX = vw / canvas.width
-  const scaleY = vh / canvas.height
-  const pts = code.location
-  const xs = [pts.topLeftCorner.x, pts.topRightCorner.x, pts.bottomRightCorner.x, pts.bottomLeftCorner.x]
-  const ys = [pts.topLeftCorner.y, pts.topRightCorner.y, pts.bottomRightCorner.y, pts.bottomLeftCorner.y]
-  const x1 = Math.min(...xs) * scaleX
-  const y1 = Math.min(...ys) * scaleY
-  const x2 = Math.max(...xs) * scaleX
-  const y2 = Math.max(...ys) * scaleY
-
-  detectedBox.style.display = 'block'
-  detectedBox.style.left   = x1 + 'px'
-  detectedBox.style.top    = y1 + 'px'
-  detectedBox.style.width  = (x2 - x1) + 'px'
-  detectedBox.style.height = (y2 - y1) + 'px'
-
-  if (isNew) {
-    lastCode = code.data
-    lastCodeTime = now
-    showResult(code.data)
     statusBar.textContent = '✅ QR détecté !'
-    vibrate()
+    if ('vibrate' in navigator) navigator.vibrate(60)
+    showResult(code.data)
+  } else {
+    detectedBox.style.display = 'none'
+    statusBar.textContent = '❌ Aucun QR trouvé — réessayez'
+    addLog('Aucun QR code trouvé dans cette image', 'err')
   }
-}
-
-function vibrate() {
-  if ('vibrate' in navigator) navigator.vibrate(60)
 }
 
 // ── result banner ──────────────────────────────────────────
 function showResult(value) {
+  addLog(`Résultat: ${value}`, 'ok')
   const isUrl = isURL(value)
 
   if (isUrl) {
@@ -461,9 +569,14 @@ function showToast(msg) {
 }
 
 // ── events ─────────────────────────────────────────────────
+captureBtn.addEventListener('click', captureAndScan)
+
 flipBtn.addEventListener('click', () => {
   facingMode = facingMode === 'environment' ? 'user' : 'environment'
   localStorage.setItem('qrscanner-facing', facingMode)
+  capturedWrap.classList.remove('show')
+  resultBanner.classList.remove('show')
+  detectedBox.style.display = 'none'
   startCamera()
 })
 
