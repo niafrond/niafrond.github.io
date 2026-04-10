@@ -123,6 +123,13 @@
                 <span class="host-reader-desc">L'hôte lit les questions à l'oral et juge les réponses des joueurs. Les joueurs répondent oralement sans saisir de texte.</span>
               </span>
             </label>
+            <label class="checkbox-label mt-8" style="margin-left:1.5rem;">
+              <input type="checkbox" id="host-is-animateur">
+              <span>
+                <strong>🎬 Mode animateur</strong>
+                <span class="host-reader-desc">Variante du mode lecteur : la bonne réponse n'est pas révélée automatiquement — l'hôte choisit le moment de la dévoiler.</span>
+              </span>
+            </label>
           </div>
         </div>
 
@@ -291,9 +298,12 @@
       <!-- Phase : fin de question (révélation) -->
       <div id="phase-question-end" class="card phase-panel" hidden>
         <p id="skipped-badge" class="skipped-badge" hidden>⏭️ Question passée</p>
-        <p class="correct-answer-label">✅ Bonne réponse :</p>
+        <p id="correct-answer-label" class="correct-answer-label">✅ Bonne réponse :</p>
         <p id="correct-answer-reveal" class="correct-answer-reveal"></p>
         <p id="question-trivia" class="question-trivia" hidden></p>
+        <button id="btn-reveal-answer" class="btn btn-warning btn-lg mt-16 host-only" hidden>
+          👁️ Révéler la réponse
+        </button>
         <button id="btn-next-question" class="btn btn-primary btn-lg mt-16 host-only" hidden>
           ▶️ Question suivante
         </button>

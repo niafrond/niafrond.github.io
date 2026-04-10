@@ -150,7 +150,31 @@ export function renderSetupForm(defaults, onChange) {
   const hostReaderCheck = el('host-is-reader');
   if (hostReaderCheck) {
     hostReaderCheck.checked = defaults.hostIsReader ?? false;
-    hostReaderCheck.addEventListener('change', () => onChange({ hostIsReader: hostReaderCheck.checked }));
+    hostReaderCheck.addEventListener('change', () => {
+      onChange({ hostIsReader: hostReaderCheck.checked });
+      // Si on décoche "lecteur", décocher aussi "animateur"
+      if (!hostReaderCheck.checked) {
+        const animCheck = el('host-is-animateur');
+        if (animCheck) {
+          animCheck.checked = false;
+          onChange({ hostIsAnimateur: false });
+        }
+      }
+    });
+  }
+
+  // Checkbox "Mode animateur" (implique hostIsReader)
+  const hostAnimateurCheck = el('host-is-animateur');
+  if (hostAnimateurCheck) {
+    hostAnimateurCheck.checked = defaults.hostIsAnimateur ?? false;
+    hostAnimateurCheck.addEventListener('change', () => {
+      onChange({ hostIsAnimateur: hostAnimateurCheck.checked });
+      // Mode animateur implique hôte lecteur
+      if (hostAnimateurCheck.checked && hostReaderCheck) {
+        hostReaderCheck.checked = true;
+        onChange({ hostIsReader: true });
+      }
+    });
   }
 
   // ── Fonctionnalités spéciales ──────────────────────────────────────────────
@@ -499,22 +523,31 @@ export function renderGamePhase(phase, data, isHost) {
       show('phase-question-preview');
       show('phase-question-end');
       const q2 = data.currentQuestion;
+      const isAnimateur = data.hostIsAnimateur ?? false;
+      const answerRevealed = data.answerRevealed ?? true; // par défaut, réponse visible
+      const showAnswer = !isAnimateur || answerRevealed;
       const answerReveal = el('correct-answer-reveal');
       if (answerReveal && q2) {
-        answerReveal.textContent = q2.correctAnswer;
+        answerReveal.textContent = showAnswer ? (q2.correctAnswer ?? '') : '';
+        answerReveal.hidden = !showAnswer;
       }
+      const correctAnswerLabel = el('correct-answer-label');
+      if (correctAnswerLabel) correctAnswerLabel.hidden = !showAnswer;
       const skipBadge = el('skipped-badge');
       if (skipBadge) skipBadge.hidden = !data.lastResult?.skipped;
       // Trivia (anecdote) affiché à tous quand la réponse est révélée
       const triviaEl = el('question-trivia');
       if (triviaEl) {
-        if (q2?.trivia) {
+        if (showAnswer && q2?.trivia) {
           triviaEl.textContent = `💡 ${q2.trivia}`;
           triviaEl.hidden = false;
         } else {
           triviaEl.hidden = true;
         }
       }
+      // Bouton "Révéler la réponse" — hôte animateur uniquement, avant révélation
+      const revealBtn = el('btn-reveal-answer');
+      if (revealBtn) revealBtn.hidden = !isHost || !isAnimateur || answerRevealed;
       // Bouton "Suivant" visible uniquement pour l'hôte
       const nextBtn = el('btn-next-question');
       if (nextBtn) nextBtn.hidden = !isHost;
@@ -631,7 +664,8 @@ export function renderLobbyConfigPreview(config) {
     + row('Questions', questionCount)
     + row('Timer réponse', `${answerTime}s`);
   if (applyMalus) html += row('Malus', '−3 pts / erreur');
-  if (hostIsReader) html += row('Mode hôte', '🎙️ Lecteur');
+  if (config.hostIsAnimateur) html += row('Mode hôte', '🎬 Animateur');
+  else if (hostIsReader) html += row('Mode hôte', '🎙️ Lecteur');
   if (config.comboStreak) html += row('Combo streak', '🔥 Activé');
   if (config.doubleOrNothing) html += row('Double ou rien', '💸 Activé');
   if (config.secretBet) html += row('Pari secret', '🎲 Activé');
