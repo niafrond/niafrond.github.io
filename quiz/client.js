@@ -405,6 +405,13 @@ function handleClientMessage(data, peer, local, playerName) {
       stopTimerBar();
       renderPartyStreakReveal(data, clientState.players);
       renderStreakBoard(data.streaks ?? {}, clientState.players);
+      {
+        const myResult = data.results?.[peer.peerId];
+        if (myResult?.correct === false && myResult?.choice !== null) {
+          showToast('❌ Mauvaise réponse !', 'warn');
+          playWrong();
+        }
+      }
       break;
 
     case PARTY_MSG.PARTY_DUEL_ASSIGN:
@@ -443,6 +450,15 @@ function handleClientMessage(data, peer, local, playerName) {
       stopTimerBar();
       if (data.scores) { applyScores(data.scores); renderScoreboard(clientState.players, false); }
       renderPartyDuelResult(data, clientState.players);
+      {
+        if (data.interrogateurId !== peer.peerId) {
+          const myResult = data.results?.[peer.peerId];
+          if (myResult?.correct === false && myResult?.choice !== null) {
+            showToast('❌ Mauvaise réponse !', 'warn');
+            playWrong();
+          }
+        }
+      }
       break;
 
     case PARTY_MSG.PARTY_TF_QUESTION:
@@ -476,6 +492,13 @@ function handleClientMessage(data, peer, local, playerName) {
       stopTimerBar();
       if (data.scores) { applyScores(data.scores); renderScoreboard(clientState.players, false); }
       renderPartyTFReveal(data, clientState.players);
+      {
+        const myVote = data.votes?.[peer.peerId];
+        if (myVote && myVote !== data.correctVote) {
+          showToast('❌ Mauvaise réponse !', 'warn');
+          playWrong();
+        }
+      }
       break;
 
     case PARTY_MSG.PARTY_RACE_QUESTION:
@@ -498,6 +521,13 @@ function handleClientMessage(data, peer, local, playerName) {
       stopTimerBar();
       if (data.scores) { applyScores(data.scores); renderScoreboard(clientState.players, false); }
       renderPartyRaceReveal(data, clientState.players);
+      {
+        const myResult = data.results?.[peer.peerId];
+        if (myResult?.correct === false && myResult?.choice !== null) {
+          showToast('❌ Mauvaise réponse !', 'warn');
+          playWrong();
+        }
+      }
       break;
 
     case PARTY_MSG.PARTY_BLITZ_QUESTION:
@@ -520,6 +550,13 @@ function handleClientMessage(data, peer, local, playerName) {
       stopTimerBar();
       if (data.scores) { applyScores(data.scores); renderScoreboard(clientState.players, false); }
       renderPartyBlitzReveal(data, clientState.players);
+      {
+        const myResult = data.results?.[peer.peerId];
+        if (myResult?.correct === false && myResult?.choice !== null) {
+          showToast('❌ Mauvaise réponse !', 'warn');
+          playWrong();
+        }
+      }
       break;
 
     case PARTY_MSG.PARTY_CAROUSEL_ASSIGN: {
@@ -557,6 +594,12 @@ function handleClientMessage(data, peer, local, playerName) {
       stopTimerBar();
       if (data.scores) { applyScores(data.scores); renderScoreboard(clientState.players, false); }
       renderPartyCarouselReveal(data, clientState.players);
+      {
+        if (data.activePlayer === peer.peerId && !data.correct && data.choice !== null) {
+          showToast('❌ Mauvaise réponse !', 'warn');
+          playWrong();
+        }
+      }
       break;
 
     case PARTY_MSG.PARTY_MINI_END:

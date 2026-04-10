@@ -57,6 +57,9 @@ const hostConfig = {
 // Référence au conteneur d'engine (partagée entre hôte et helper)
 let _currentRef = null;
 
+// Phase party précédente (pour détecter les transitions et éviter les toasts en double)
+let _partyPhase = null;
+
 // ─── Initialisation hôte ─────────────────────────────────────────────────────
 
 export async function initHost() {
@@ -222,6 +225,7 @@ async function _fetchAndStartGame(ref, peer, config, btnStart) {
 
     clientState.showAnswerToHost = false;
     clientState.hostIsReader = false;
+    _partyPhase = null;
     partyEngine.startGame(questions, { ...config });
     return;
   }
@@ -293,6 +297,10 @@ function handleHostStateChange(state, engine, peer) {
           const p = state.players.find(pl => pl.id === id);
           if (p && p.id !== '__host__') showWrongPlayerNotification(p.name);
         });
+        if (newElim.includes('__host__')) {
+          showToast('❌ Mauvaise réponse !', 'warn');
+          playWrong();
+        }
       }
       {
         const dur = (state.mode === MODE.QCM || state.mode === MODE.PINGPONG) ? TIMER.QCM_DURATION
@@ -393,6 +401,11 @@ function buildRenderData(state, engine) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function handlePartyHostStateChange(state, engine, peer) {
+  const prevPartyPhase = _partyPhase;
+  _partyPhase = state.phase;
+  const phaseChanged = prevPartyPhase !== state.phase;
+  const isHostReader = state.config.hostIsReader ?? false;
+
   clientState.players = state.players;
   renderScoreboard(state.players, false);
 
@@ -425,9 +438,10 @@ function handlePartyHostStateChange(state, engine, peer) {
             choices: state.streakCurrentQuestion?.choices ?? [],
             index:   state.streakIndex,
             total:   state.streakQuestions.length,
+            correctAnswer: isHostReader ? state.streakCurrentQuestion?.correctAnswer : undefined,
           },
           true,
-          answered ? null : (choice) => engine.handleStreakChoice('__host__', choice)
+          (!isHostReader && !answered) ? (choice) => engine.handleStreakChoice('__host__', choice) : null
         );
       }
       renderStreakBoard(state.streaks, state.players);
@@ -442,6 +456,13 @@ function handlePartyHostStateChange(state, engine, peer) {
       stopTimerBar();
       if (state.streakReveal) {
         renderPartyStreakReveal(state.streakReveal, state.players);
+        if (phaseChanged && !isHostReader) {
+          const hostResult = state.streakReveal.results?.['__host__'];
+          if (hostResult?.correct === false && hostResult?.choice !== null) {
+            showToast('❌ Mauvaise réponse !', 'warn');
+            playWrong();
+          }
+        }
       }
       break;
 
@@ -477,9 +498,10 @@ function handlePartyHostStateChange(state, engine, peer) {
             interrogateurName: state.players.find(p => p.id === state.duelInterrogateur)?.name ?? '',
             duelIndex:  state.duelIndex,
             totalDuels: 5,
+            correctAnswer: isHostReader ? state.duelCurrentQuestion?.correctAnswer : undefined,
           },
           '__host__', true,
-          (!isInterrogateur && !answered) ? (choice) => engine.handleDuelChoice('__host__', choice) : null
+          (!isInterrogateur && !answered && !isHostReader) ? (choice) => engine.handleDuelChoice('__host__', choice) : null
         );
       }
       startTimerBar(15000, 'timer-fill', 100, playTick);
@@ -493,26 +515,45 @@ function handlePartyHostStateChange(state, engine, peer) {
       stopTimerBar();
       if (state.duelResult) {
         renderPartyDuelResult(state.duelResult, state.players);
+        if (phaseChanged && !isHostReader && state.duelResult.interrogateurId !== '__host__') {
+          const hostResult = state.duelResult.results?.['__host__'];
+          if (hostResult?.correct === false && hostResult?.choice !== null) {
+            showToast('❌ Mauvaise réponse !', 'warn');
+            playWrong();
+          }
+        }
       }
       break;
 
     case PARTY_PHASE.TF_QUESTION:
       hidePartyOverlay();
       renderPartyTFQuestion(
-        { statement: state.tfStatement, tfIndex: state.tfIndex, totalTF: state.tfQuestions.length },
+        {
+          statement: state.tfStatement,
+          tfIndex: state.tfIndex,
+          totalTF: state.tfQuestions.length,
+          correctVote: isHostReader ? state.tfCorrectVote : undefined,
+        },
         true, null, null, false
       );
       break;
 
     case PARTY_PHASE.TF_VOTING: {
-      const myVote = state.tfVotes['__host__'] ?? null;
+      const myVote = isHostReader ? null : (state.tfVotes['__host__'] ?? null);
       renderPartyTFQuestion(
-        { statement: state.tfStatement, tfIndex: state.tfIndex, totalTF: state.tfQuestions.length },
+        {
+          statement: state.tfStatement,
+          tfIndex: state.tfIndex,
+          totalTF: state.tfQuestions.length,
+          correctVote: isHostReader ? state.tfCorrectVote : undefined,
+        },
         true, myVote,
-        myVote === null ? (vote) => engine.handleTFVote('__host__', vote) : null,
-        true
+        (!isHostReader && myVote === null) ? (vote) => engine.handleTFVote('__host__', vote) : null,
+        !isHostReader
       );
-      startTimerBar(7000, 'timer-fill', 100, playTick);
+      if (!isHostReader) {
+        startTimerBar(7000, 'timer-fill', 100, playTick);
+      }
       {
         const btnSkip = document.getElementById('btn-skip-question');
         if (btnSkip) btnSkip.onclick = () => engine.hostSkip();
@@ -524,6 +565,13 @@ function handlePartyHostStateChange(state, engine, peer) {
       stopTimerBar();
       if (state.tfResult) {
         renderPartyTFReveal(state.tfResult, state.players);
+        if (phaseChanged && !isHostReader) {
+          const hostVote = state.tfResult.votes?.['__host__'];
+          if (hostVote && hostVote !== state.tfResult.correctVote) {
+            showToast('❌ Mauvaise réponse !', 'warn');
+            playWrong();
+          }
+        }
       }
       break;
 
@@ -537,7 +585,7 @@ function handlePartyHostStateChange(state, engine, peer) {
           index:    state.raceIndex,
           total:    state.raceQuestions.length,
           answers:  state.raceAnswers,
-          correctAnswer: state.raceCurrentQuestion?.correctAnswer,
+          correctAnswer: isHostReader ? state.raceCurrentQuestion?.correctAnswer : null,
         },
         true, null
       );
@@ -563,7 +611,7 @@ function handlePartyHostStateChange(state, engine, peer) {
           index:    state.blitzIndex,
           total:    state.blitzQuestions.length,
           answers:  state.blitzAnswers,
-          correctAnswer: state.blitzCurrentQuestion?.correctAnswer,
+          correctAnswer: isHostReader ? state.blitzCurrentQuestion?.correctAnswer : null,
         },
         true, null
       );
@@ -592,7 +640,7 @@ function handlePartyHostStateChange(state, engine, peer) {
           index:    state.carouselIndex,
           total:    state.carouselQuestions.length,
           showQuestion: state.phase === PARTY_PHASE.CAROUSEL_QUESTION,
-          correctAnswer: state.carouselCurrentQuestion?.correctAnswer,
+          correctAnswer: isHostReader ? state.carouselCurrentQuestion?.correctAnswer : null,
         },
         '__host__', true, null
       );
