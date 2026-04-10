@@ -2,7 +2,7 @@
  * ui.js — Rendu DOM / mise à jour de l'interface Quiz
  */
 
-import { PHASE, MODE, MODE_LABELS, MODE_DESCRIPTIONS, CATEGORY_LABELS, DIFFICULTY_LABELS, QUESTION_COUNTS, ANSWER_TIMES } from './constants.js';
+import { PHASE, MODE, MODE_LABELS, MODE_DESCRIPTIONS, MODE_MIN_PLAYERS, CATEGORY_LABELS, DIFFICULTY_LABELS, QUESTION_COUNTS, ANSWER_TIMES } from './constants.js';
 
 // ─── Chip multi-picker ───────────────────────────────────────────────────────
 
@@ -211,6 +211,51 @@ export function renderSetupForm(defaults, onChange) {
       onChange({ categories: picked });
     });
     catPicker.after(randomBtn);
+  }
+}
+
+// ─── Disponibilité des modes selon le nombre de joueurs ───────────────────────
+
+/**
+ * Grise les modes qui nécessitent plus de joueurs que présents.
+ * Si le mode actuellement sélectionné devient indisponible, bascule sur CLASSIC
+ * et appelle onForceChange avec la nouvelle valeur.
+ * @param {number} playerCount
+ * @param {function(string): void} [onForceChange]
+ */
+export function updateModeAvailability(playerCount, onForceChange) {
+  const modeContainer = el('mode-selector');
+  if (!modeContainer) return;
+
+  let selectedModeDisabled = false;
+
+  modeContainer.querySelectorAll('.mode-option').forEach(label => {
+    const input = label.querySelector('input[type="radio"]');
+    if (!input) return;
+    const mode = input.value;
+    const minPlayers = MODE_MIN_PLAYERS[mode] ?? 1;
+    const tooFew = playerCount < minPlayers;
+
+    label.classList.toggle('mode-disabled', tooFew);
+    input.disabled = tooFew;
+
+    if (tooFew) {
+      label.dataset.minPlayers = minPlayers;
+      if (input.checked) selectedModeDisabled = true;
+    } else {
+      delete label.dataset.minPlayers;
+    }
+  });
+
+  // Si le mode sélectionné vient d'être désactivé, basculer sur CLASSIC
+  if (selectedModeDisabled && onForceChange) {
+    const classicInput = modeContainer.querySelector(`input[value="${MODE.CLASSIC}"]`);
+    if (classicInput) {
+      classicInput.checked = true;
+      modeContainer.querySelectorAll('.mode-option').forEach(l => l.classList.remove('selected'));
+      classicInput.parentElement.classList.add('selected');
+    }
+    onForceChange(MODE.CLASSIC);
   }
 }
 
