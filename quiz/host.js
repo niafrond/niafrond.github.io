@@ -12,7 +12,7 @@ import {
   renderLobbyPlayers, renderScoreboard, renderGamePhase,
   renderFinalResults, startTimerBar, stopTimerBar,
   flashBuzz, showToast, setLoadingStatus, highlightChoices,
-  showWrongPlayerNotification, renderLeaderboard,
+  showWrongPlayerNotification, renderLeaderboard, updateModeAvailability,
 } from './ui.js';
 import {
   readPartyOptions,
@@ -283,6 +283,10 @@ function handleHostStateChange(state, engine, peer) {
       renderLobbyPlayers(state.players, true, (id) => {
         peer.kick(id);
         engine.removePlayer(id);
+      });
+      updateModeAvailability(state.players.length, (newMode) => {
+        hostConfig.mode = newMode;
+        peer.broadcast({ type: MSG.LOBBY_CONFIG, config: { ...hostConfig } });
       });
       break;
 

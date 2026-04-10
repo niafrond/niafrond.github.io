@@ -147,3 +147,12 @@ export const CATEGORY_LABELS = {
 
 export const QUESTION_COUNTS = [5, 10, 15, 20];
 export const ANSWER_TIMES = [10, 15, 20, 30]; // secondes
+
+// ─── Minimum players per mode ─────────────────────────────────────────────────
+export const MODE_MIN_PLAYERS = {
+  [MODE.CLASSIC]:  1,
+  [MODE.QCM]:      1,
+  [MODE.SPEED]:    1,
+  [MODE.PINGPONG]: 2,
+  [MODE.PARTY]:    2,
+};
