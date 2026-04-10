@@ -1,3 +1,9 @@
+## [1.47.1](https://github.com/niafrond/niafrond.github.io/compare/v1.47.0...v1.47.1) (2026-04-10)
+
+### Bug Fixes
+
+* use Wikimedia URLs for quiz photo questions instead of missing local files ([#29](https://github.com/niafrond/niafrond.github.io/issues/29)) ([ecd8a33](https://github.com/niafrond/niafrond.github.io/commit/ecd8a33fd3804ff82112bf5946accd2e1026b9ee))
+
 ## [1.47.0](https://github.com/niafrond/niafrond.github.io/compare/v1.46.0...v1.47.0) (2026-04-10)
 
 ### Features
