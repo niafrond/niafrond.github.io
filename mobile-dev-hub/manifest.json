@@ -1,9 +1,0 @@
-{
-  "name": "Mobile Dev Hub - GitHub + Copilot",
-  "short_name": "DevHub",
-  "start_url": "./",
-  "display": "standalone",
-  "background_color": "#071420",
-  "theme_color": "#0f172a",
-  "icons": []
-}
