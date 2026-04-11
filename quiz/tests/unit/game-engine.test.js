@@ -250,7 +250,152 @@ describe('Mode QCM', () => {
   });
 });
 
-// ─── Fin de partie ────────────────────────────────────────────────────────────
+// ─── Mode BUZZ_QCM ────────────────────────────────────────────────────────────
+
+describe('Mode BUZZ_QCM', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  test('passe en BUZZING après QUESTION_PREVIEW', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.startGame([Q1], { mode: MODE.BUZZ_QCM });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+    expect(engine.state.phase).toBe(PHASE.BUZZING);
+  });
+
+  test('handleBuzz en BUZZING passe en ANSWERING et envoie les choix en privé', () => {
+    const { engine, peer } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.startGame([Q1], { mode: MODE.BUZZ_QCM });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+
+    engine.handleBuzz('p1');
+    expect(engine.state.phase).toBe(PHASE.ANSWERING);
+    expect(engine.state.buzzQcmCurrentBuzzer).toBe('p1');
+    // Les choix sont envoyés en privé au joueur buzzeur
+    const sendToCalls = peer.sendTo.mock.calls;
+    expect(sendToCalls.some(c => c[0] === 'p1' && c[1].type === 'SHOW_CHOICES')).toBe(true);
+  });
+
+  test('handleChoice correcte donne des points et passe en QUESTION_END', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.startGame([Q1], { mode: MODE.BUZZ_QCM });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+    engine.handleBuzz('p1');
+
+    engine.handleChoice('p1', 'Paris');
+    expect(engine.state.players[0].score).toBeGreaterThan(0);
+    expect(engine.state.phase).toBe(PHASE.ANSWER_RESULT);
+
+    jest.advanceTimersByTime(TIMER.RESULT_DISPLAY + 100);
+    expect(engine.state.phase).toBe(PHASE.QUESTION_END);
+  });
+
+  test('handleChoice incorrecte sans malus ajoute le joueur aux wrongAnswers et reprend le buzz', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.addPlayer('p2', 'Bob');
+    engine.startGame([Q1], { mode: MODE.BUZZ_QCM, applyMalus: false });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+    engine.handleBuzz('p1');
+
+    engine.handleChoice('p1', 'Lyon'); // mauvaise réponse
+    expect(engine.state.phase).toBe(PHASE.ANSWER_RESULT);
+    expect(engine.state.wrongAnswers).toContain('p1');
+    expect(engine.state.players[0].score).toBe(0); // pas de malus
+
+    // Après RESULT_DISPLAY, reprendre le buzz
+    jest.advanceTimersByTime(TIMER.RESULT_DISPLAY + 100);
+    expect(engine.state.phase).toBe(PHASE.BUZZING);
+  });
+
+  test('handleChoice incorrecte avec malus déduit des points', () => {
+    const { engine } = makeEngine();
+    engine.autoAdvance = true;
+    engine.addPlayer('p1', 'Alice');
+    engine.addPlayer('p2', 'Bob');
+    engine.startGame([Q1, Q2], { mode: MODE.BUZZ_QCM, applyMalus: true });
+
+    // Q1 : bonne réponse → score positif
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+    engine.handleBuzz('p1');
+    engine.handleChoice('p1', 'Paris');
+    const scoreAfterQ1 = engine.state.players.find(p => p.id === 'p1').score;
+    expect(scoreAfterQ1).toBeGreaterThan(0);
+
+    // Avancer à Q2
+    jest.advanceTimersByTime(TIMER.RESULT_DISPLAY + TIMER.QUESTION_END_DELAY + TIMER.QUESTION_PREVIEW + 100);
+
+    // Q2 : mauvaise réponse → malus
+    engine.handleBuzz('p1');
+    engine.handleChoice('p1', 'Munich'); // mauvaise réponse
+    jest.advanceTimersByTime(TIMER.RESULT_DISPLAY + 100);
+
+    const scoreAfterWrong = engine.state.players.find(p => p.id === 'p1').score;
+    expect(scoreAfterWrong).toBeLessThan(scoreAfterQ1);
+  });
+
+  test('timeout : le buzzeur est ajouté aux wrongAnswers et le buzz reprend', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.addPlayer('p2', 'Bob');
+    engine.startGame([Q1], { mode: MODE.BUZZ_QCM, answerTime: 15 });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+    engine.handleBuzz('p1');
+    expect(engine.state.phase).toBe(PHASE.ANSWERING);
+
+    // Laisser le timer expirer
+    jest.advanceTimersByTime(15000 + 100);
+    expect(engine.state.wrongAnswers).toContain('p1');
+    // Après RESULT_DISPLAY, reprendre le buzz
+    jest.advanceTimersByTime(TIMER.RESULT_DISPLAY + 100);
+    expect(engine.state.phase).toBe(PHASE.BUZZING);
+  });
+
+  test('tous les joueurs répondent faux → question skippée', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.startGame([Q1], { mode: MODE.BUZZ_QCM });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+    engine.handleBuzz('p1');
+
+    engine.handleChoice('p1', 'Lyon'); // mauvaise réponse, seul joueur
+    jest.advanceTimersByTime(TIMER.RESULT_DISPLAY + 100);
+    // Pas assez de temps de buzz restant ou plus de joueurs éligibles → skip
+    expect(engine.state.phase).toBe(PHASE.QUESTION_END);
+  });
+
+  test('handleAnswer est ignoré en mode BUZZ_QCM', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.startGame([Q1], { mode: MODE.BUZZ_QCM });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+    engine.handleBuzz('p1');
+    expect(engine.state.phase).toBe(PHASE.ANSWERING);
+
+    engine.handleAnswer('p1', 'Paris'); // doit être ignoré
+    expect(engine.state.phase).toBe(PHASE.ANSWERING);
+    expect(engine.state.players[0].score).toBe(0);
+  });
+
+  test('buzzQcmCurrentBuzzer réinitialisé à chaque nouvelle question', () => {
+    const { engine } = makeEngine();
+    engine.autoAdvance = true;
+    engine.addPlayer('p1', 'Alice');
+    engine.startGame([Q1, Q2], { mode: MODE.BUZZ_QCM });
+
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+    engine.handleBuzz('p1');
+    expect(engine.state.buzzQcmCurrentBuzzer).toBe('p1');
+
+    engine.handleChoice('p1', 'Paris'); // correct
+    jest.advanceTimersByTime(TIMER.RESULT_DISPLAY + TIMER.QUESTION_END_DELAY + 100);
+    // Nouvelle question : buzzQcmCurrentBuzzer doit être null
+    expect(engine.state.buzzQcmCurrentBuzzer).toBeNull();
+  });
+});
 
 describe('Fin de partie', () => {
   beforeEach(() => jest.useFakeTimers());

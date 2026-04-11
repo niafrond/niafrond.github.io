@@ -675,7 +675,7 @@ export class GameEngine {
 
   handleAnswer(peerId, text) {
     if (this.state.phase !== PHASE.ANSWERING) return;
-    if (this.state.mode === MODE.QCM || this.state.mode === MODE.PINGPONG) return;
+    if (this.state.mode === MODE.QCM || this.state.mode === MODE.PINGPONG || this.state.mode === MODE.BUZZ_QCM) return;
     if (this.state.buzzQueue[0] !== peerId) return;
 
     this._clearTimer('answer');
@@ -723,7 +723,7 @@ export class GameEngine {
 
   hostJudgeAnswer(isCorrect) {
     if (this.state.phase !== PHASE.ANSWERING) return;
-    if (this.state.mode === MODE.QCM || this.state.mode === MODE.PINGPONG) return;
+    if (this.state.mode === MODE.QCM || this.state.mode === MODE.PINGPONG || this.state.mode === MODE.BUZZ_QCM) return;
 
     this._clearTimer('answer');
     const peerId = this.state.buzzQueue[0];
