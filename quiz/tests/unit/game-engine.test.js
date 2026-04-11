@@ -70,6 +70,18 @@ describe('Gestion des joueurs', () => {
     expect(engine.state.players[0].name).toBe('Alice2');
   });
 
+  test('addPlayer supprime le doublon par nom lors d\'une reconnexion avec un nouveau peer ID', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.addPlayer('p2', 'Bob');
+    // Alice se reconnecte avec un nouveau peer ID
+    engine.addPlayer('p1-new', 'Alice');
+    expect(engine.state.players).toHaveLength(2);
+    expect(engine.state.players.find(p => p.id === 'p1')).toBeUndefined();
+    expect(engine.state.players.find(p => p.id === 'p1-new')).toBeDefined();
+    expect(engine.state.players.find(p => p.id === 'p1-new').name).toBe('Alice');
+  });
+
   test('removePlayer supprime le joueur', () => {
     const { engine } = makeEngine();
     engine.addPlayer('p1', 'Alice');

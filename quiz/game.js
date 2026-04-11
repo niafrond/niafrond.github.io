@@ -68,6 +68,7 @@ export class GameEngine {
         hiddenTarget: false,
         powers: false,
         draftCategories: false,
+        hostIsAnimateur: false,
       },
       // ── Fonctionnalités spéciales ─────────────────────────────────────────
       bets: {},              // { [playerId]: amount } — paris secrets (non diffusés)
@@ -77,6 +78,7 @@ export class GameEngine {
       roundPoints: {},       // { [playerId]: points earned this question }
       pingpongOrderOffset: 0, // rotation du premier joueur en ping-pong
       buzzQcmCurrentBuzzer: null, // ID du buzzeur actuel en mode BUZZ_QCM (null = personne)
+      answerRevealedForCurrentQuestion: false, // mode animateur : réponse révélée manuellement
       // ── Draft ────────────────────────────────────────────────────────────
       draftPicks: {},             // { [playerId]: category[] }
       draftCurrentPickerIndex: 0,
@@ -135,6 +137,12 @@ export class GameEngine {
       existing.name = name;
       this._broadcastPlayerList();
       return;
+    }
+    // Supprimer l'ancien doublon si un joueur avec le même nom est déjà enregistré
+    // (cas de reconnexion avec un nouveau peer ID après reprise de session)
+    const duplicateIndex = this.state.players.findIndex(p => p.name === name);
+    if (duplicateIndex !== -1) {
+      this.state.players.splice(duplicateIndex, 1);
     }
     const inGame = this.state.phase !== PHASE.LOBBY && this.state.phase !== PHASE.DRAFT;
     this.state.players.push({
@@ -316,6 +324,7 @@ export class GameEngine {
     this.state.targets = {};
     this.state.roundPoints = {};
     this.state.buzzQcmCurrentBuzzer = null;
+    this.state.answerRevealedForCurrentQuestion = false;
     // Réinitialiser les effets de pouvoir
     this.state.players.forEach(p => { p.powerEffects = {}; });
 
@@ -940,6 +949,7 @@ export class GameEngine {
   _endQuestion(skipped) {
     this._clearAllTimers();
     const q = this.currentQuestion;
+    const isAnimateur = this.state.config.hostIsAnimateur;
 
     // ─ Cible cachée : calculer les bonus ─────────────────────────────────
     const targetBonuses = {};
@@ -956,11 +966,13 @@ export class GameEngine {
     }
 
     this.state.phase = PHASE.QUESTION_END;
+    this.state.answerRevealedForCurrentQuestion = false;
 
     this.peer.broadcast({
       type: MSG.QUESTION_END,
-      correctAnswer: q.correctAnswer,
-      trivia: q.trivia ?? null,
+      // En mode animateur, la réponse est cachée jusqu'à révélation manuelle
+      correctAnswer: isAnimateur ? null : q.correctAnswer,
+      trivia: isAnimateur ? null : (q.trivia ?? null),
       skipped,
       scores: this._getScores(),
       betReveal: Object.keys(this.state.bets).length > 0 ? { ...this.state.bets } : null,
@@ -973,6 +985,22 @@ export class GameEngine {
     if (this.autoAdvance) {
       this._autoNextTimer = setTimeout(() => this.hostNext(), TIMER.QUESTION_END_DELAY);
     }
+  }
+
+  /** Appelé par l'hôte animateur pour révéler la bonne réponse à tous les joueurs */
+  hostRevealAnswer() {
+    if (this.state.phase !== PHASE.QUESTION_END) return;
+    if (!this.state.config.hostIsAnimateur) return;
+    if (this.state.answerRevealedForCurrentQuestion) return;
+    const q = this.currentQuestion;
+    if (!q) return;
+    this.state.answerRevealedForCurrentQuestion = true;
+    this.peer.broadcast({
+      type: MSG.REVEAL_ANSWER,
+      correctAnswer: q.correctAnswer,
+      trivia: q.trivia ?? null,
+    });
+    this.onStateChange({ ...this.state });
   }
 
   _skipQuestion() {

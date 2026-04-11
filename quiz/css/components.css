@@ -54,6 +54,7 @@
 .btn-primary   { background: var(--accent); color: #fff; }
 .btn-success   { background: var(--success); color: #fff; }
 .btn-danger    { background: var(--danger); color: #fff; }
+.btn-warning   { background: var(--warning); color: #fff; }
 .btn-secondary {
   background: transparent;
   color: var(--text-muted);
@@ -174,6 +175,17 @@
   color: var(--accent2);
 }
 .mode-option.selected .mode-desc { color: var(--accent2); opacity: 0.8; }
+.mode-option.mode-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.mode-option.mode-disabled::after {
+  content: attr(data-min-players) ' joueurs min.';
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
 
 /* ─── Chip picker (multi-sélection catégorie / difficulté) ───────────────── */
 .chip-picker {

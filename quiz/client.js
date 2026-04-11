@@ -3,7 +3,7 @@
  */
 
 import { QuizPeer } from './peer.js';
-import { PARTY_MSG, PARTY_MINI_LABELS, PARTY_MINI_ICONS, PARTY_MINI_RULES } from './party-game.js';
+import { PARTY_MSG, PARTY_MINI_LABELS, PARTY_MINI_ICONS, getPartyMiniRules } from './party-game.js';
 import { MSG, PHASE, MODE, TIMER } from './constants.js';
 import {
   showOnly, renderLobbyPlayers, renderScoreboard, renderGamePhase,
@@ -355,6 +355,18 @@ function handleClientMessage(data, peer, local, playerName) {
       renderGamePhase(PHASE.QUESTION_END, buildClientRenderData(local, { skipped: data.skipped }), false);
       break;
 
+    case MSG.REVEAL_ANSWER:
+      // Mode animateur : l'hôte révèle la réponse manuellement
+      if (local.currentQuestion) {
+        local.currentQuestion.correctAnswer = data.correctAnswer;
+        local.currentQuestion.trivia = data.trivia ?? null;
+      }
+      clientState.currentQuestion = local.currentQuestion;
+      if (clientState.phase === PHASE.QUESTION_END) {
+        renderGamePhase(PHASE.QUESTION_END, buildClientRenderData(local), false);
+      }
+      break;
+
     case MSG.GAME_OVER:
       stopTimerBar();
       hideWrongAnswerOverlay();
@@ -404,7 +416,7 @@ function handleClientMessage(data, peer, local, playerName) {
         { mini: data.mini, miniIndex: data.miniIndex, totalMinis: data.totalMinis,
           label: PARTY_MINI_LABELS[data.mini] ?? data.label,
           icon:  PARTY_MINI_ICONS[data.mini]  ?? data.icon,
-          rules: PARTY_MINI_RULES[data.mini]  ?? data.rules },
+          rules: data.rules ?? getPartyMiniRules()[data.mini] },
         false, null
       );
       break;
@@ -660,6 +672,9 @@ function buildClientRenderData(local, extra = {}) {
     canBuzz: extra.canBuzz ?? false,
     showAnswerToHost: false,
     hostIsReader: local.config?.hostIsReader ?? false,
+    hostIsAnimateur: local.config?.hostIsAnimateur ?? false,
+    // La réponse est révélée si correctAnswer est renseignée (null = encore cachée)
+    answerRevealed: local.currentQuestion?.correctAnswer != null,
     onChoiceClick: extra.onChoiceClick,
   };
 }

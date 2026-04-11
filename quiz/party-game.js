@@ -44,44 +44,46 @@ export const PARTY_MINI_ICONS = {
   [PARTY_MINI.CAROUSEL]: '🎠',
 };
 
-export const PARTY_MINI_RULES = {
-  [PARTY_MINI.STREAK]:
-    '5 questions QCM pour tous les joueurs.\n' +
-    'Chaque bonne réponse prolonge votre série. Une erreur remet le compteur à zéro.\n\n' +
-    'Score final selon votre meilleure série :\n' +
-    '· 1 de suite = 1 pt  · 2 de suite = 2 pts\n' +
-    '· 3 de suite = 3 pts  · 4 ou plus = 8 pts 🔥',
-  [PARTY_MINI.DUEL]:
-    '5 rounds. À chaque round, un Interrogateur est désigné.\n' +
-    'Il choisit (en secret) une question parmi 2 options, puis la pose à tous les autres.\n\n' +
-    'Résultat par joueur :\n' +
-    '· Bonne réponse → +5 pts pour le joueur, -2 pts pour l\'interrogateur\n' +
-    '· Mauvaise réponse → -2 pts pour le joueur, +3 pts pour l\'interrogateur\n\n' +
-    'Choisissez bien : une question trop facile peut vous coûter cher !',
-  [PARTY_MINI.SPEED_TF]:
-    '5 affirmations à juger : "X est la réponse à Y" — VRAI ou FAUX ?\n' +
-    'Vous avez 7 secondes pour voter !\n\n' +
-    '· Bonne réponse → +3 pts\n' +
-    '· Mauvaise réponse → -2 pts\n' +
-    '· Pas de vote → 0 pt',
-  [PARTY_MINI.RACE]:
-    '5 questions QCM — tous les joueurs votent en même temps.\n' +
-    'La vitesse compte : les premiers à répondre correctement gagnent plus de points !\n\n' +
-    '· 1er correct → +10 pts  · 2e correct → +6 pts\n' +
-    '· 3e correct → +3 pts    · Mauvaise réponse → -2 pts',
-  [PARTY_MINI.BLITZ]:
-    '5 questions QCM ultra-rapides — seulement 5 secondes pour répondre !\n' +
-    'Tout le monde répond en même temps.\n\n' +
-    '· Bonne réponse → +5 pts\n' +
-    '· Mauvaise réponse → -2 pts\n' +
-    '· Pas de réponse → 0 pt',
-  [PARTY_MINI.CAROUSEL]:
-    '5 questions à tour de rôle — un seul joueur répond à chaque question.\n' +
-    'Les autres joueurs ne peuvent pas intervenir !\n\n' +
-    '· Bonne réponse → +10 pts pour le joueur désigné\n' +
-    '· Mauvaise réponse → -3 pts pour le joueur désigné\n' +
-    '· Chaque joueur a exactement 12 secondes',
-};
+export function getPartyMiniRules(n = MINI_Q_COUNT) {
+  return {
+    [PARTY_MINI.STREAK]:
+      `${n} questions QCM pour tous les joueurs.\n` +
+      'Chaque bonne réponse prolonge votre série. Une erreur remet le compteur à zéro.\n\n' +
+      'Score final selon votre meilleure série :\n' +
+      '· 1 de suite = 1 pt  · 2 de suite = 2 pts\n' +
+      '· 3 de suite = 3 pts  · 4 ou plus = 8 pts 🔥',
+    [PARTY_MINI.DUEL]:
+      `${n} rounds. À chaque round, un Interrogateur est désigné.\n` +
+      'Il choisit (en secret) une question parmi 2 options, puis la pose à tous les autres.\n\n' +
+      'Résultat par joueur :\n' +
+      '· Bonne réponse → +5 pts pour le joueur, -2 pts pour l\'interrogateur\n' +
+      '· Mauvaise réponse → -2 pts pour le joueur, +3 pts pour l\'interrogateur\n\n' +
+      'Choisissez bien : une question trop facile peut vous coûter cher !',
+    [PARTY_MINI.SPEED_TF]:
+      `${n} affirmations à juger : "X est la réponse à Y" — VRAI ou FAUX ?\n` +
+      'Vous avez 7 secondes pour voter !\n\n' +
+      '· Bonne réponse → +3 pts\n' +
+      '· Mauvaise réponse → -2 pts\n' +
+      '· Pas de vote → 0 pt',
+    [PARTY_MINI.RACE]:
+      `${n} questions QCM — tous les joueurs votent en même temps.\n` +
+      'La vitesse compte : les premiers à répondre correctement gagnent plus de points !\n\n' +
+      '· 1er correct → +10 pts  · 2e correct → +6 pts\n' +
+      '· 3e correct → +3 pts    · Mauvaise réponse → -2 pts',
+    [PARTY_MINI.BLITZ]:
+      `${n} questions QCM ultra-rapides — seulement 5 secondes pour répondre !\n` +
+      'Tout le monde répond en même temps.\n\n' +
+      '· Bonne réponse → +5 pts\n' +
+      '· Mauvaise réponse → -2 pts\n' +
+      '· Pas de réponse → 0 pt',
+    [PARTY_MINI.CAROUSEL]:
+      `${n} questions à tour de rôle — un seul joueur répond à chaque question.\n` +
+      'Les autres joueurs ne peuvent pas intervenir !\n\n' +
+      '· Bonne réponse → +10 pts pour le joueur désigné\n' +
+      '· Mauvaise réponse → -3 pts pour le joueur désigné\n' +
+      '· Chaque joueur a exactement 12 secondes',
+  };
+}
 
 // ─── Messages ─────────────────────────────────────────────────────────────────
 
@@ -162,8 +164,11 @@ const CAROUSEL_ANS_MS   = 12000;
 const CAROUSEL_REV_MS   = 3000;
 const MINI_END_MS       = 6000;
 
-/** Nombre total de questions à pré-charger (6 mini-jeux × 5 questions, + 10 pour le duel) */
-export const PARTY_QUESTIONS_NEEDED = MINI_Q_COUNT * 5 + DUEL_ROUNDS * 2; // 35
+/** Nombre total de questions à pré-charger selon le nombre de questions par mini-jeu */
+export function calcPartyQuestionsNeeded(n = MINI_Q_COUNT) {
+  // 5 mini-jeux × n questions + 1 duel × n rounds × 2 options
+  return n * 5 + n * 2;
+}
 
 // ─── Scoring helpers ──────────────────────────────────────────────────────────
 
@@ -320,16 +325,18 @@ export class PartyGameEngine {
     this.state.players.forEach(p => { this.state.streaks[p.id] = { current: 0, max: 0 }; });
 
     // Distribuer les questions entre les mini-jeux (pool partagé shufflé)
+    const miniQCount = config.questionsPerMini ?? MINI_Q_COUNT;
+    const duelRounds = miniQCount;
     const qs = shuffle(allQuestions);
     let qi = 0;
     const take = (n) => { const s = qs.slice(qi, qi + n); qi += n; return s; };
 
-    this.state.streakQuestions   = take(MINI_Q_COUNT);
-    this.state.duelQuestions     = take(DUEL_ROUNDS * 2);
-    this.state.tfQuestions       = take(MINI_Q_COUNT);
-    this.state.raceQuestions     = take(MINI_Q_COUNT);
-    this.state.blitzQuestions    = take(MINI_Q_COUNT);
-    this.state.carouselQuestions = take(MINI_Q_COUNT);
+    this.state.streakQuestions   = take(miniQCount);
+    this.state.duelQuestions     = take(duelRounds * 2);
+    this.state.tfQuestions       = take(miniQCount);
+    this.state.raceQuestions     = take(miniQCount);
+    this.state.blitzQuestions    = take(miniQCount);
+    this.state.carouselQuestions = take(miniQCount);
 
     this.peer.broadcast({ type: MSG.GAME_START, mode: 'PARTY', config: { ...config, mode: 'PARTY' } });
 
@@ -359,7 +366,7 @@ export class PartyGameEngine {
       totalMinis: this.state.miniSequence.length,
       label: PARTY_MINI_LABELS[this.state.currentMini],
       icon: PARTY_MINI_ICONS[this.state.currentMini],
-      rules: PARTY_MINI_RULES[this.state.currentMini],
+      rules: getPartyMiniRules(this.state.config.questionsPerMini ?? MINI_Q_COUNT)[this.state.currentMini],
       scores: this._getScores(),
     });
     this.onStateChange({ ...this.state });
@@ -506,7 +513,7 @@ export class PartyGameEngine {
     this.state.duelPickOptions = [];
     this.state.duelInterrogateur = null;
 
-    if (this.state.duelIndex >= DUEL_ROUNDS) { this._endMini({}); return; }
+    if (this.state.duelIndex >= (this.state.config.questionsPerMini ?? DUEL_ROUNDS)) { this._endMini({}); return; }
 
     if (this.state.players.length < 2) { this._endMini({}); return; }
 
@@ -526,7 +533,7 @@ export class PartyGameEngine {
       interrogateurId: this.state.duelInterrogateur,
       interrogateurName,
       duelIndex: this.state.duelIndex,
-      totalDuels: DUEL_ROUNDS,
+      totalDuels: this.state.config.questionsPerMini ?? DUEL_ROUNDS,
     });
     this.onStateChange({ ...this.state });
 
@@ -577,7 +584,7 @@ export class PartyGameEngine {
       interrogateurId: this.state.duelInterrogateur,
       interrogateurName,
       duelIndex: this.state.duelIndex,
-      totalDuels: DUEL_ROUNDS,
+      totalDuels: this.state.config.questionsPerMini ?? DUEL_ROUNDS,
     });
     this.onStateChange({ ...this.state });
 
@@ -785,7 +792,7 @@ export class PartyGameEngine {
     this.onStateChange({ ...this.state });
 
     // Dès que tous les joueurs ont répondu → révéler
-    const active = this.state.players.filter(p => p.id !== '__host__');
+    const active = this._activePlayers();
     if (active.every(p => this.state.raceAnswers[p.id] !== undefined)) {
       this._clearTimer();
       this._raceReveal();
@@ -804,8 +811,7 @@ export class PartyGameEngine {
 
     const RACE_POINTS = [10, 6, 3, 1];
     const results = {};
-    this.state.players.forEach(p => {
-      if (p.id === '__host__') return;
+    this._activePlayers().forEach(p => {
       const ans = answers[p.id];
       if (!ans) { results[p.id] = { choice: null, correct: false, pts: 0 }; return; }
       const isCorrect = ans.choice === q.correctAnswer;
@@ -875,7 +881,7 @@ export class PartyGameEngine {
     this.state.blitzAnswers[peerId] = choice;
     this.onStateChange({ ...this.state });
 
-    const active = this.state.players.filter(p => p.id !== '__host__');
+    const active = this._activePlayers();
     if (active.every(p => this.state.blitzAnswers[p.id] !== undefined)) {
       this._clearTimer();
       this._blitzReveal();
@@ -888,8 +894,7 @@ export class PartyGameEngine {
     const answers = { ...this.state.blitzAnswers };
     const results = {};
 
-    this.state.players.forEach(p => {
-      if (p.id === '__host__') return;
+    this._activePlayers().forEach(p => {
       const choice = answers[p.id];
       if (!choice) { results[p.id] = { choice: null, correct: false, pts: 0 }; return; }
       const isCorrect = choice === q.correctAnswer;
@@ -931,7 +936,7 @@ export class PartyGameEngine {
     this.state.carouselCurrentQuestion = q;
 
     // Désigner le joueur actif en rotation
-    const activePlayers = this.state.players.filter(p => p.id !== '__host__');
+    const activePlayers = this._activePlayers();
     const offset = this.state._carouselPlayerOffset ?? 0;
     const player = activePlayers[offset % activePlayers.length];
     this.state.carouselActivePlayer = player?.id ?? null;

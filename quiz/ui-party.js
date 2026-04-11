@@ -17,6 +17,7 @@ export function readPartyOptions() {
   const blitzBox    = el('party-mini-blitz');
   const carouselBox = el('party-mini-carousel');
   const randBox     = el('party-random');
+  const qCountInput = el('party-questions-count');
 
   const minis = [];
   if (streakBox?.checked)   minis.push(PARTY_MINI.STREAK);
@@ -28,9 +29,11 @@ export function readPartyOptions() {
 
   // Si aucun sélectionné ou si mode "tout aléatoire" : retourner null pour utiliser le défaut aléatoire
   const allRandom = randBox?.checked ?? false;
+  const questionsPerMini = Math.max(1, Math.min(15, parseInt(qCountInput?.value ?? '5', 10) || 5));
   return {
-    partyMinis:  minis.length ? minis : null,
-    partyRandom: allRandom,
+    partyMinis:      minis.length ? minis : null,
+    partyRandom:     allRandom,
+    questionsPerMini,
   };
 }
 

@@ -1,3 +1,39 @@
+## [1.56.0](https://github.com/niafrond/niafrond.github.io/compare/v1.55.1...v1.56.0) (2026-04-11)
+
+### Features
+
+* **quiz:** mode animateur — révélation manuelle de la réponse par l'hôte ([#53](https://github.com/niafrond/niafrond.github.io/issues/53)) ([f5d5478](https://github.com/niafrond/niafrond.github.io/commit/f5d547840559b23a48946ff882e9a4558b6ba7ec))
+
+## [1.55.1](https://github.com/niafrond/niafrond.github.io/compare/v1.55.0...v1.55.1) (2026-04-10)
+
+### Bug Fixes
+
+* supprimer le doublon de joueur lors d'une reconnexion avec un nouveau peer ID ([#52](https://github.com/niafrond/niafrond.github.io/issues/52)) ([a9e7389](https://github.com/niafrond/niafrond.github.io/commit/a9e73893f935873939b4a71e91b534b9408bd8ad))
+
+## [1.55.0](https://github.com/niafrond/niafrond.github.io/compare/v1.54.0...v1.55.0) (2026-04-10)
+
+### Features
+
+* gray out game modes that require more players than currently present ([#50](https://github.com/niafrond/niafrond.github.io/issues/50)) ([73d96fb](https://github.com/niafrond/niafrond.github.io/commit/73d96fb32826d183e4b721896ef5d730f1cf0924))
+
+## [1.54.0](https://github.com/niafrond/niafrond.github.io/compare/v1.53.3...v1.54.0) (2026-04-10)
+
+### Features
+
+* **quiz:** choix du nombre de questions par mini-jeu en mode party ([#51](https://github.com/niafrond/niafrond.github.io/issues/51)) ([313478d](https://github.com/niafrond/niafrond.github.io/commit/313478d134f978a868c02e35b9029241be4758c6))
+
+## [1.53.3](https://github.com/niafrond/niafrond.github.io/compare/v1.53.2...v1.53.3) (2026-04-10)
+
+### Bug Fixes
+
+* make Race, Blitz, Carousel respect _activePlayers() (host as player bug) ([#49](https://github.com/niafrond/niafrond.github.io/issues/49)) ([e269cc1](https://github.com/niafrond/niafrond.github.io/commit/e269cc1a22c57fa897756c5938338ff293d6a158))
+
+## [1.53.2](https://github.com/niafrond/niafrond.github.io/compare/v1.53.1...v1.53.2) (2026-04-10)
+
+### Performance Improvements
+
+* **qr:** fix scanner performance on low-end phones ([#48](https://github.com/niafrond/niafrond.github.io/issues/48)) ([ec9b54f](https://github.com/niafrond/niafrond.github.io/commit/ec9b54f698fbc1df9fb27cad281e1482ef90e411))
+
 ## [1.53.1](https://github.com/niafrond/niafrond.github.io/compare/v1.53.0...v1.53.1) (2026-04-10)
 
 ### Bug Fixes

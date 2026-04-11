@@ -4,7 +4,7 @@
 
 import { QuizPeer } from './peer.js';
 import { GameEngine } from './game.js';
-import { PartyGameEngine, PARTY_MSG, PARTY_PHASE, PARTY_QUESTIONS_NEEDED, PARTY_MINI_LABELS, PARTY_MINI_ICONS, PARTY_MINI_RULES } from './party-game.js';
+import { PartyGameEngine, PARTY_MSG, PARTY_PHASE, calcPartyQuestionsNeeded, getPartyMiniRules, PARTY_MINI_LABELS, PARTY_MINI_ICONS } from './party-game.js';
 import { fetchQuestions } from './questions.js';
 import { MSG, PHASE, MODE, TIMER, CATEGORY_LABELS } from './constants.js';
 import {
@@ -12,7 +12,7 @@ import {
   renderLobbyPlayers, renderScoreboard, renderGamePhase,
   renderFinalResults, startTimerBar, stopTimerBar,
   flashBuzz, showToast, setLoadingStatus, highlightChoices,
-  showWrongPlayerNotification, renderLeaderboard,
+  showWrongPlayerNotification, renderLeaderboard, updateModeAvailability,
 } from './ui.js';
 import {
   readPartyOptions,
@@ -53,6 +53,7 @@ const hostConfig = {
   hiddenTarget: false,
   powers: false,
   draftCategories: false,
+  hostIsAnimateur: false,
 };
 
 // Référence au conteneur d'engine (partagée entre hôte et helper)
@@ -105,6 +106,13 @@ export async function initHost() {
  * @param {string|null} savedPeerId - Peer ID sauvegardé (tentative de réutilisation), ou null
  * @param {boolean} [isRetry=false]  - true si on réessaie après un ID indisponible
  */
+function generateSessionId() {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let id = '';
+  for (let i = 0; i < 10; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id;
+}
+
 async function startHostSession(hostName, savedPeerId = null, isRetry = false) {
   const peer = new QuizPeer();
   // Conteneur muable pour permettre l'échange d'engine (normal ↔ party)
@@ -175,7 +183,7 @@ async function startHostSession(hostName, savedPeerId = null, isRetry = false) {
     showToast('Erreur réseau : ' + e.detail.err?.message, 'error');
   });
 
-  await peer.startHost(savedPeerId || undefined);
+  await peer.startHost(savedPeerId || generateSessionId());
 }
 
 /**
@@ -213,7 +221,13 @@ async function startGame(ref, peer) {
 async function _fetchAndStartGame(ref, peer, config, btnStart) {
   showToast('Récupération des questions…', 'info');
   const isParty = config.mode === MODE.PARTY;
-  const count = isParty ? PARTY_QUESTIONS_NEEDED : config.questionCount;
+
+  if (isParty) {
+    const partyOpts = readPartyOptions();
+    Object.assign(config, partyOpts);
+  }
+
+  const count = isParty ? calcPartyQuestionsNeeded(config.questionsPerMini) : config.questionCount;
 
   let questions;
   try {
@@ -229,9 +243,6 @@ async function _fetchAndStartGame(ref, peer, config, btnStart) {
   }
 
   if (isParty) {
-    const partyOpts = readPartyOptions();
-    Object.assign(config, partyOpts);
-
     questions = prioritizeUnasked(questions);
     saveAskedQuestions(questions.map(q => q.id).filter(Boolean));
 
@@ -244,13 +255,15 @@ async function _fetchAndStartGame(ref, peer, config, btnStart) {
 
     clientState.showAnswerToHost = false;
     clientState.hostIsReader = false;
+    clientState.hostIsAnimateur = false;
     _partyPhase = null;
     partyEngine.startGame(questions, { ...config });
     return;
   }
 
   clientState.showAnswerToHost = config.showAnswerToHost;
-  clientState.hostIsReader = config.hostIsReader;
+  clientState.hostIsReader = config.hostIsReader || config.hostIsAnimateur;
+  clientState.hostIsAnimateur = config.hostIsAnimateur ?? false;
   ref.engine.startGame(questions, { ...config });
 }
 
@@ -280,6 +293,10 @@ function handleHostStateChange(state, engine, peer) {
       renderLobbyPlayers(state.players, true, (id) => {
         peer.kick(id);
         engine.removePlayer(id);
+      });
+      updateModeAvailability(state.players.length, (newMode) => {
+        hostConfig.mode = newMode;
+        peer.broadcast({ type: MSG.LOBBY_CONFIG, config: { ...hostConfig } });
       });
       break;
 
@@ -383,6 +400,9 @@ function handleHostStateChange(state, engine, peer) {
       renderScoreboard(state.players, clientState.hostIsReader);
       stopTimerBar();
       renderGamePhase(state.phase, buildRenderData(state, engine), true);
+      if (clientState.hostIsAnimateur && !state.answerRevealedForCurrentQuestion) {
+        setupRevealButton(engine);
+      }
       setupNextButton(engine);
       setupSkipButton(engine);
       break;
@@ -419,6 +439,8 @@ function buildRenderData(state, engine) {
     canBuzz: !state.buzzQueue.includes('__host__'),
     showAnswerToHost: clientState.showAnswerToHost,
     hostIsReader: clientState.hostIsReader,
+    hostIsAnimateur: clientState.hostIsAnimateur,
+    answerRevealed: state.answerRevealedForCurrentQuestion ?? false,
   };
 }
 
@@ -447,7 +469,7 @@ function handlePartyHostStateChange(state, engine, peer) {
           totalMinis: state.miniSequence.length,
           label:      PARTY_MINI_LABELS[state.currentMini],
           icon:       PARTY_MINI_ICONS[state.currentMini],
-          rules:      PARTY_MINI_RULES[state.currentMini],
+          rules:      getPartyMiniRules(state.config?.questionsPerMini)[state.currentMini],
         },
         true, // isHost
         () => engine.hostStartMini()
@@ -769,6 +791,11 @@ function setupHostJudgeButtons(engine) {
 function setupNextButton(engine) {
   const btn = document.getElementById('btn-next-question');
   if (btn) btn.onclick = () => engine.hostNext();
+}
+
+function setupRevealButton(engine) {
+  const btn = document.getElementById('btn-reveal-answer');
+  if (btn) btn.onclick = () => engine.hostRevealAnswer();
 }
 
 function setupSkipButton(engine) {

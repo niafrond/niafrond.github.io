@@ -2,7 +2,7 @@
  * ui.js — Rendu DOM / mise à jour de l'interface Quiz
  */
 
-import { PHASE, MODE, MODE_LABELS, MODE_DESCRIPTIONS, CATEGORY_LABELS, DIFFICULTY_LABELS, QUESTION_COUNTS, ANSWER_TIMES } from './constants.js';
+import { PHASE, MODE, MODE_LABELS, MODE_DESCRIPTIONS, MODE_MIN_PLAYERS, CATEGORY_LABELS, DIFFICULTY_LABELS, QUESTION_COUNTS, ANSWER_TIMES } from './constants.js';
 
 // ─── Chip multi-picker ───────────────────────────────────────────────────────
 
@@ -150,7 +150,31 @@ export function renderSetupForm(defaults, onChange) {
   const hostReaderCheck = el('host-is-reader');
   if (hostReaderCheck) {
     hostReaderCheck.checked = defaults.hostIsReader ?? false;
-    hostReaderCheck.addEventListener('change', () => onChange({ hostIsReader: hostReaderCheck.checked }));
+    hostReaderCheck.addEventListener('change', () => {
+      onChange({ hostIsReader: hostReaderCheck.checked });
+      // Si on décoche "lecteur", décocher aussi "animateur"
+      if (!hostReaderCheck.checked) {
+        const animCheck = el('host-is-animateur');
+        if (animCheck) {
+          animCheck.checked = false;
+          onChange({ hostIsAnimateur: false });
+        }
+      }
+    });
+  }
+
+  // Checkbox "Mode animateur" (implique hostIsReader)
+  const hostAnimateurCheck = el('host-is-animateur');
+  if (hostAnimateurCheck) {
+    hostAnimateurCheck.checked = defaults.hostIsAnimateur ?? false;
+    hostAnimateurCheck.addEventListener('change', () => {
+      onChange({ hostIsAnimateur: hostAnimateurCheck.checked });
+      // Mode animateur implique hôte lecteur
+      if (hostAnimateurCheck.checked && hostReaderCheck) {
+        hostReaderCheck.checked = true;
+        onChange({ hostIsReader: true });
+      }
+    });
   }
 
   // ── Fonctionnalités spéciales ──────────────────────────────────────────────
@@ -211,6 +235,51 @@ export function renderSetupForm(defaults, onChange) {
       onChange({ categories: picked });
     });
     catPicker.after(randomBtn);
+  }
+}
+
+// ─── Disponibilité des modes selon le nombre de joueurs ───────────────────────
+
+/**
+ * Grise les modes qui nécessitent plus de joueurs que présents.
+ * Si le mode actuellement sélectionné devient indisponible, bascule sur CLASSIC
+ * et appelle onForceChange avec la nouvelle valeur.
+ * @param {number} playerCount
+ * @param {function(string): void} [onForceChange]
+ */
+export function updateModeAvailability(playerCount, onForceChange) {
+  const modeContainer = el('mode-selector');
+  if (!modeContainer) return;
+
+  let selectedModeDisabled = false;
+
+  modeContainer.querySelectorAll('.mode-option').forEach(label => {
+    const input = label.querySelector('input[type="radio"]');
+    if (!input) return;
+    const mode = input.value;
+    const minPlayers = MODE_MIN_PLAYERS[mode] ?? 1;
+    const tooFew = playerCount < minPlayers;
+
+    label.classList.toggle('mode-disabled', tooFew);
+    input.disabled = tooFew;
+
+    if (tooFew) {
+      label.dataset.minPlayers = minPlayers;
+      if (input.checked) selectedModeDisabled = true;
+    } else {
+      delete label.dataset.minPlayers;
+    }
+  });
+
+  // Si le mode sélectionné vient d'être désactivé, basculer sur CLASSIC
+  if (selectedModeDisabled && onForceChange) {
+    const classicInput = modeContainer.querySelector(`input[value="${MODE.CLASSIC}"]`);
+    if (classicInput) {
+      classicInput.checked = true;
+      modeContainer.querySelectorAll('.mode-option').forEach(l => l.classList.remove('selected'));
+      classicInput.parentElement.classList.add('selected');
+    }
+    onForceChange(MODE.CLASSIC);
   }
 }
 
@@ -462,22 +531,31 @@ export function renderGamePhase(phase, data, isHost) {
       show('phase-question-preview');
       show('phase-question-end');
       const q2 = data.currentQuestion;
+      const isAnimateur = data.hostIsAnimateur ?? false;
+      const answerRevealed = data.answerRevealed ?? true; // par défaut, réponse visible
+      const showAnswer = !isAnimateur || answerRevealed;
       const answerReveal = el('correct-answer-reveal');
       if (answerReveal && q2) {
-        answerReveal.textContent = q2.correctAnswer;
+        answerReveal.textContent = showAnswer ? (q2.correctAnswer ?? '') : '';
+        answerReveal.hidden = !showAnswer;
       }
+      const correctAnswerLabel = el('correct-answer-label');
+      if (correctAnswerLabel) correctAnswerLabel.hidden = !showAnswer;
       const skipBadge = el('skipped-badge');
       if (skipBadge) skipBadge.hidden = !data.lastResult?.skipped;
       // Trivia (anecdote) affiché à tous quand la réponse est révélée
       const triviaEl = el('question-trivia');
       if (triviaEl) {
-        if (q2?.trivia) {
+        if (showAnswer && q2?.trivia) {
           triviaEl.textContent = `💡 ${q2.trivia}`;
           triviaEl.hidden = false;
         } else {
           triviaEl.hidden = true;
         }
       }
+      // Bouton "Révéler la réponse" — hôte animateur uniquement, avant révélation
+      const revealBtn = el('btn-reveal-answer');
+      if (revealBtn) revealBtn.hidden = !isHost || !isAnimateur || answerRevealed;
       // Bouton "Suivant" visible uniquement pour l'hôte
       const nextBtn = el('btn-next-question');
       if (nextBtn) nextBtn.hidden = !isHost;
@@ -594,7 +672,8 @@ export function renderLobbyConfigPreview(config) {
     + row('Questions', questionCount)
     + row('Timer réponse', `${answerTime}s`);
   if (applyMalus) html += row('Malus', '−3 pts / erreur');
-  if (hostIsReader) html += row('Mode hôte', '🎙️ Lecteur');
+  if (config.hostIsAnimateur) html += row('Mode hôte', '🎬 Animateur');
+  else if (hostIsReader) html += row('Mode hôte', '🎙️ Lecteur');
   if (config.comboStreak) html += row('Combo streak', '🔥 Activé');
   if (config.doubleOrNothing) html += row('Double ou rien', '💸 Activé');
   if (config.secretBet) html += row('Pari secret', '🎲 Activé');

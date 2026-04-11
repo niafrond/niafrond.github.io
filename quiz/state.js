@@ -34,6 +34,7 @@ export const clientState = {
   myBet: null,             // pari secret du joueur local
   myTarget: null,          // cible cachée du joueur local
   betDeadline: null,       // deadline du pari secret
+  hostIsAnimateur: false,  // mode animateur (révélation manuelle de la réponse)
 };
 
 // ─── Clés localStorage ───────────────────────────────────────────────────────
