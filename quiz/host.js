@@ -4,9 +4,9 @@
 
 import { QuizPeer } from './peer.js';
 import { GameEngine } from './game.js';
-import { PartyGameEngine, PARTY_MSG, PARTY_PHASE, calcPartyQuestionsNeeded, getPartyMiniRules, PARTY_MINI_LABELS, PARTY_MINI_ICONS } from './party-game.js';
+import { PartyGameEngine, PARTY_MSG, PARTY_PHASE, calcPartyQuestionsNeeded, calcSingleMiniQuestionsNeeded, getPartyMiniRules, PARTY_MINI_LABELS, PARTY_MINI_ICONS } from './party-game.js';
 import { fetchQuestions } from './questions.js';
-import { MSG, PHASE, MODE, TIMER, CATEGORY_LABELS } from './constants.js';
+import { MSG, PHASE, MODE, TIMER, CATEGORY_LABELS, PARTY_MINI_MODES } from './constants.js';
 import {
   showOnly, renderSetupForm, renderShareLink,
   renderLobbyPlayers, renderScoreboard, renderGamePhase,
@@ -221,13 +221,22 @@ async function startGame(ref, peer) {
 async function _fetchAndStartGame(ref, peer, config, btnStart) {
   showToast('Récupération des questions…', 'info');
   const isParty = config.mode === MODE.PARTY;
+  const isSoloMini = PARTY_MINI_MODES.includes(config.mode);
 
   if (isParty) {
     const partyOpts = readPartyOptions();
     Object.assign(config, partyOpts);
+  } else if (isSoloMini) {
+    config.partyMinis = [config.mode];
+    config.questionsPerMini = config.questionCount;
+    config.partyRandom = false;
   }
 
-  const count = isParty ? calcPartyQuestionsNeeded(config.questionsPerMini) : config.questionCount;
+  const count = isParty
+    ? calcPartyQuestionsNeeded(config.questionsPerMini)
+    : isSoloMini
+      ? calcSingleMiniQuestionsNeeded(config.mode, config.questionsPerMini)
+      : config.questionCount;
 
   let questions;
   try {
@@ -242,7 +251,7 @@ async function _fetchAndStartGame(ref, peer, config, btnStart) {
     return;
   }
 
-  if (isParty) {
+  if (isParty || isSoloMini) {
     questions = prioritizeUnasked(questions);
     saveAskedQuestions(questions.map(q => q.id).filter(Boolean));
 

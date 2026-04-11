@@ -1,3 +1,9 @@
+## [1.57.0](https://github.com/niafrond/niafrond.github.io/compare/v1.56.0...v1.57.0) (2026-04-11)
+
+### Features
+
+* add party mini-games as standalone classic game modes ([#56](https://github.com/niafrond/niafrond.github.io/issues/56)) ([5e2aef1](https://github.com/niafrond/niafrond.github.io/commit/5e2aef12f8787b7091363779f92278853b281a28))
+
 ## [1.56.0](https://github.com/niafrond/niafrond.github.io/compare/v1.55.1...v1.56.0) (2026-04-11)
 
 ### Features
