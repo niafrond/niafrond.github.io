@@ -53,6 +53,7 @@ const hostConfig = {
   hiddenTarget: false,
   powers: false,
   draftCategories: false,
+  hostIsAnimateur: false,
 };
 
 // Référence au conteneur d'engine (partagée entre hôte et helper)
@@ -254,13 +255,15 @@ async function _fetchAndStartGame(ref, peer, config, btnStart) {
 
     clientState.showAnswerToHost = false;
     clientState.hostIsReader = false;
+    clientState.hostIsAnimateur = false;
     _partyPhase = null;
     partyEngine.startGame(questions, { ...config });
     return;
   }
 
   clientState.showAnswerToHost = config.showAnswerToHost;
-  clientState.hostIsReader = config.hostIsReader;
+  clientState.hostIsReader = config.hostIsReader || config.hostIsAnimateur;
+  clientState.hostIsAnimateur = config.hostIsAnimateur ?? false;
   ref.engine.startGame(questions, { ...config });
 }
 
@@ -390,6 +393,9 @@ function handleHostStateChange(state, engine, peer) {
       renderScoreboard(state.players, clientState.hostIsReader);
       stopTimerBar();
       renderGamePhase(state.phase, buildRenderData(state, engine), true);
+      if (clientState.hostIsAnimateur && !state.answerRevealedForCurrentQuestion) {
+        setupRevealButton(engine);
+      }
       setupNextButton(engine);
       setupSkipButton(engine);
       break;
@@ -426,6 +432,8 @@ function buildRenderData(state, engine) {
     canBuzz: !state.buzzQueue.includes('__host__'),
     showAnswerToHost: clientState.showAnswerToHost,
     hostIsReader: clientState.hostIsReader,
+    hostIsAnimateur: clientState.hostIsAnimateur,
+    answerRevealed: state.answerRevealedForCurrentQuestion ?? false,
   };
 }
 
@@ -776,6 +784,11 @@ function setupHostJudgeButtons(engine) {
 function setupNextButton(engine) {
   const btn = document.getElementById('btn-next-question');
   if (btn) btn.onclick = () => engine.hostNext();
+}
+
+function setupRevealButton(engine) {
+  const btn = document.getElementById('btn-reveal-answer');
+  if (btn) btn.onclick = () => engine.hostRevealAnswer();
 }
 
 function setupSkipButton(engine) {

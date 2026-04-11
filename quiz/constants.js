@@ -29,6 +29,7 @@ export const MSG = {
   POWER_EFFECT: 'POWER_EFFECT',         // { power, byId, targetId }
   DRAFT_STATE: 'DRAFT_STATE',           // { picks, currentPicker, categories, round, totalRounds }
   DOUBLE_DOWN_DECLARED: 'DOUBLE_DOWN_DECLARED', // { playerId } — annonce visible de tous
+  REVEAL_ANSWER: 'REVEAL_ANSWER',               // { correctAnswer, trivia } — animateur révèle la réponse
 };
 
 // ─── Game phases ───────────────────────────────────────────────────────────────

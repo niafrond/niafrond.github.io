@@ -326,6 +326,18 @@ function handleClientMessage(data, peer, local, playerName) {
       renderGamePhase(PHASE.QUESTION_END, buildClientRenderData(local, { skipped: data.skipped }), false);
       break;
 
+    case MSG.REVEAL_ANSWER:
+      // Mode animateur : l'hôte révèle la réponse manuellement
+      if (local.currentQuestion) {
+        local.currentQuestion.correctAnswer = data.correctAnswer;
+        local.currentQuestion.trivia = data.trivia ?? null;
+      }
+      clientState.currentQuestion = local.currentQuestion;
+      if (clientState.phase === PHASE.QUESTION_END) {
+        renderGamePhase(PHASE.QUESTION_END, buildClientRenderData(local), false);
+      }
+      break;
+
     case MSG.GAME_OVER:
       stopTimerBar();
       hideWrongAnswerOverlay();
@@ -631,6 +643,9 @@ function buildClientRenderData(local, extra = {}) {
     canBuzz: extra.canBuzz ?? false,
     showAnswerToHost: false,
     hostIsReader: local.config?.hostIsReader ?? false,
+    hostIsAnimateur: local.config?.hostIsAnimateur ?? false,
+    // La réponse est révélée si correctAnswer est renseignée (null = encore cachée)
+    answerRevealed: local.currentQuestion?.correctAnswer != null,
     onChoiceClick: extra.onChoiceClick,
   };
 }
