@@ -35,6 +35,7 @@ export const clientState = {
   myTarget: null,          // cible cachée du joueur local
   betDeadline: null,       // deadline du pari secret
   hostIsAnimateur: false,  // mode animateur (révélation manuelle de la réponse)
+  questionSkipped: false,  // la question courante a été passée
 };
 
 // ─── Clés localStorage ───────────────────────────────────────────────────────

@@ -182,6 +182,7 @@ function handleClientMessage(data, peer, local, playerName) {
       clientState.eliminatedPlayers = [];
       clientState.lastResult = null;
       clientState.phase = PHASE.QUESTION_PREVIEW;
+      clientState.questionSkipped = false;
 
       hideWrongAnswerOverlay();
       showOnly('screen-game');
@@ -348,11 +349,12 @@ function handleClientMessage(data, peer, local, playerName) {
       }
       clientState.currentQuestion = local.currentQuestion;
       clientState.phase = PHASE.QUESTION_END;
+      clientState.questionSkipped = data.skipped ?? false;
       if (data.scores) {
         applyScores(data.scores);
         renderScoreboard(clientState.players, local.config?.hostIsReader ?? false);
       }
-      renderGamePhase(PHASE.QUESTION_END, buildClientRenderData(local, { skipped: data.skipped }), false);
+      renderGamePhase(PHASE.QUESTION_END, buildClientRenderData(local, { skipped: clientState.questionSkipped }), false);
       break;
 
     case MSG.REVEAL_ANSWER:
@@ -363,7 +365,7 @@ function handleClientMessage(data, peer, local, playerName) {
       }
       clientState.currentQuestion = local.currentQuestion;
       if (clientState.phase === PHASE.QUESTION_END) {
-        renderGamePhase(PHASE.QUESTION_END, buildClientRenderData(local), false);
+        renderGamePhase(PHASE.QUESTION_END, buildClientRenderData(local, { skipped: clientState.questionSkipped }), false);
       }
       break;
 
