@@ -170,6 +170,12 @@ export function calcPartyQuestionsNeeded(n = MINI_Q_COUNT) {
   return n * 5 + n * 2;
 }
 
+/** Nombre de questions à pré-charger pour un seul mini-jeu en mode solo */
+export function calcSingleMiniQuestionsNeeded(mini, n = MINI_Q_COUNT) {
+  // Le duel nécessite 2 questions par round (les options de choix)
+  return mini === PARTY_MINI.DUEL ? n * 2 : n;
+}
+
 // ─── Scoring helpers ──────────────────────────────────────────────────────────
 
 function streakPoints(max) {
@@ -330,13 +336,14 @@ export class PartyGameEngine {
     const qs = shuffle(allQuestions);
     let qi = 0;
     const take = (n) => { const s = qs.slice(qi, qi + n); qi += n; return s; };
+    const takeFor = (mini) => this.state.miniSequence.includes(mini);
 
-    this.state.streakQuestions   = take(miniQCount);
-    this.state.duelQuestions     = take(duelRounds * 2);
-    this.state.tfQuestions       = take(miniQCount);
-    this.state.raceQuestions     = take(miniQCount);
-    this.state.blitzQuestions    = take(miniQCount);
-    this.state.carouselQuestions = take(miniQCount);
+    this.state.streakQuestions   = takeFor(PARTY_MINI.STREAK)   ? take(miniQCount) : [];
+    this.state.duelQuestions     = takeFor(PARTY_MINI.DUEL)     ? take(duelRounds * 2) : [];
+    this.state.tfQuestions       = takeFor(PARTY_MINI.SPEED_TF) ? take(miniQCount) : [];
+    this.state.raceQuestions     = takeFor(PARTY_MINI.RACE)     ? take(miniQCount) : [];
+    this.state.blitzQuestions    = takeFor(PARTY_MINI.BLITZ)    ? take(miniQCount) : [];
+    this.state.carouselQuestions = takeFor(PARTY_MINI.CAROUSEL) ? take(miniQCount) : [];
 
     this.peer.broadcast({ type: MSG.GAME_START, mode: 'PARTY', config: { ...config, mode: 'PARTY' } });
 

@@ -47,27 +47,51 @@ export const PHASE = {
 
 // ─── Game modes ────────────────────────────────────────────────────────────────
 export const MODE = {
-  CLASSIC: 'CLASSIC',   // Buzzer + réponse texte, tolérance aux fautes
-  QCM: 'QCM',           // 4 choix, 1er clic correct = points
-  SPEED: 'SPEED',       // Buzzer + réponse rapide, timer court
-  PINGPONG: 'PINGPONG', // Tour à tour sans buzzer — jusqu'à l'erreur fatale
-  PARTY: 'PARTY',       // Mini-jeux enchaînés avec tous les modes (aléatoire)
+  CLASSIC:  'CLASSIC',   // Buzzer + réponse texte, tolérance aux fautes
+  QCM:      'QCM',       // 4 choix, 1er clic correct = points
+  SPEED:    'SPEED',     // Buzzer + réponse rapide, timer court
+  PINGPONG: 'PINGPONG',  // Tour à tour sans buzzer — jusqu'à l'erreur fatale
+  PARTY:    'PARTY',     // Mini-jeux enchaînés avec tous les modes (aléatoire)
+  // Mini-jeux party jouables en solo (mêmes valeurs que PARTY_MINI dans party-game.js)
+  STREAK:   'STREAK',    // QCM simultané, points selon la meilleure série
+  DUEL:     'DUEL',      // Interrogatoire : 1 joueur choisit, les autres répondent
+  SPEED_TF: 'SPEED_TF',  // Vrai ou Faux rapide, 7 secondes
+  RACE:     'RACE',      // Course QCM, les premiers gagnent plus de points
+  BLITZ:    'BLITZ',     // QCM ultra-rapide, 5 secondes par question
+  CAROUSEL: 'CAROUSEL',  // Tour à tour, seul le joueur désigné répond
 };
 
+/** Liste des modes correspondant aux mini-jeux party jouables en solo */
+export const PARTY_MINI_MODES = [
+  MODE.STREAK, MODE.DUEL, MODE.SPEED_TF, MODE.RACE, MODE.BLITZ, MODE.CAROUSEL,
+];
+
 export const MODE_LABELS = {
-  [MODE.CLASSIC]: '🎯 Classique',
-  [MODE.QCM]: '📋 QCM',
-  [MODE.SPEED]: '⚡ Speed',
+  [MODE.CLASSIC]:  '🎯 Classique',
+  [MODE.QCM]:      '📋 QCM',
+  [MODE.SPEED]:    '⚡ Speed',
   [MODE.PINGPONG]: '🏓 Ping-Pong',
-  [MODE.PARTY]: '🎉 Party',
+  [MODE.PARTY]:    '🎉 Party',
+  [MODE.STREAK]:   '🔥 Streak',
+  [MODE.DUEL]:     '🎯 Interrogatoire',
+  [MODE.SPEED_TF]: '⚡ Vrai ou Faux',
+  [MODE.RACE]:     '🏁 Course',
+  [MODE.BLITZ]:    '💨 Blitz QCM',
+  [MODE.CAROUSEL]: '🎠 Carrousel',
 };
 
 export const MODE_DESCRIPTIONS = {
-  [MODE.CLASSIC]: 'Buzzer + réponse texte, tolérance aux fautes',
-  [MODE.QCM]: '4 choix, 1er clic correct remporte les points',
-  [MODE.SPEED]: 'Buzzer + réponse rapide, timer court (8s)',
+  [MODE.CLASSIC]:  'Buzzer + réponse texte, tolérance aux fautes',
+  [MODE.QCM]:      '4 choix, 1er clic correct remporte les points',
+  [MODE.SPEED]:    'Buzzer + réponse rapide, timer court (8s)',
   [MODE.PINGPONG]: 'Tour à tour sans buzzer — jusqu\'à ce que quelqu\'un se trompe',
-  [MODE.PARTY]: 'Mini-jeux enchaînés avec tous les modes (aléatoire)',
+  [MODE.PARTY]:    'Mini-jeux enchaînés avec tous les modes (aléatoire)',
+  [MODE.STREAK]:   'QCM simultané, points selon votre meilleure série consécutive',
+  [MODE.DUEL]:     '1 joueur choisit la question, les autres répondent en QCM',
+  [MODE.SPEED_TF]: 'Vote Vrai/Faux en 7 secondes, bonus/malus',
+  [MODE.RACE]:     'QCM simultané, les premiers à répondre gagnent plus de points',
+  [MODE.BLITZ]:    'QCM ultra-rapide, seulement 5 secondes par question',
+  [MODE.CAROUSEL]: 'Tour à tour, seul le joueur désigné répond à chaque question',
 };
 
 // ─── Scoring ───────────────────────────────────────────────────────────────────
@@ -156,4 +180,10 @@ export const MODE_MIN_PLAYERS = {
   [MODE.SPEED]:    1,
   [MODE.PINGPONG]: 2,
   [MODE.PARTY]:    2,
+  [MODE.STREAK]:   1,
+  [MODE.DUEL]:     2,
+  [MODE.SPEED_TF]: 1,
+  [MODE.RACE]:     1,
+  [MODE.BLITZ]:    1,
+  [MODE.CAROUSEL]: 1,
 };

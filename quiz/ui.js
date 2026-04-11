@@ -2,7 +2,7 @@
  * ui.js — Rendu DOM / mise à jour de l'interface Quiz
  */
 
-import { PHASE, MODE, MODE_LABELS, MODE_DESCRIPTIONS, MODE_MIN_PLAYERS, CATEGORY_LABELS, DIFFICULTY_LABELS, QUESTION_COUNTS, ANSWER_TIMES } from './constants.js';
+import { PHASE, MODE, MODE_LABELS, MODE_DESCRIPTIONS, MODE_MIN_PLAYERS, PARTY_MINI_MODES, CATEGORY_LABELS, DIFFICULTY_LABELS, QUESTION_COUNTS, ANSWER_TIMES } from './constants.js';
 
 // ─── Chip multi-picker ───────────────────────────────────────────────────────
 
@@ -73,13 +73,22 @@ export function renderSetupForm(defaults, onChange) {
   // Mode de jeu
   const modeContainer = el('mode-selector');
   if (modeContainer) {
-    modeContainer.innerHTML = Object.entries(MODE_LABELS).map(([mode, label]) => `
+    let html = '';
+    let separatorAdded = false;
+    for (const [mode, label] of Object.entries(MODE_LABELS)) {
+      if (!separatorAdded && PARTY_MINI_MODES.includes(mode)) {
+        html += `<div class="mode-section-header" role="separator">— Mini-jeux Party (solo) —</div>`;
+        separatorAdded = true;
+      }
+      html += `
       <label class="mode-option ${defaults.mode === mode ? 'selected' : ''}">
         <input type="radio" name="game-mode" value="${mode}" ${defaults.mode === mode ? 'checked' : ''}>
         <span class="mode-label">${label}</span>
         <span class="mode-desc">${MODE_DESCRIPTIONS[mode]}</span>
       </label>
-    `).join('');
+    `;
+    }
+    modeContainer.innerHTML = html;
 
     modeContainer.querySelectorAll('input[name="game-mode"]').forEach(input => {
       input.addEventListener('change', () => {

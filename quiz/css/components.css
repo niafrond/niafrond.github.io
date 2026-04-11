@@ -148,6 +148,15 @@
   flex-wrap: wrap;
   gap: 10px;
 }
+.mode-section-header {
+  width: 100%;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  padding: 4px 0 2px;
+  border-top: 1px solid var(--border);
+  margin-top: 2px;
+}
 .mode-option {
   background: var(--bg);
   border: 2px solid var(--border);
