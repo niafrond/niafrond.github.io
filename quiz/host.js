@@ -105,6 +105,13 @@ export async function initHost() {
  * @param {string|null} savedPeerId - Peer ID sauvegardé (tentative de réutilisation), ou null
  * @param {boolean} [isRetry=false]  - true si on réessaie après un ID indisponible
  */
+function generateSessionId() {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let id = '';
+  for (let i = 0; i < 10; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id;
+}
+
 async function startHostSession(hostName, savedPeerId = null, isRetry = false) {
   const peer = new QuizPeer();
   // Conteneur muable pour permettre l'échange d'engine (normal ↔ party)
@@ -175,7 +182,7 @@ async function startHostSession(hostName, savedPeerId = null, isRetry = false) {
     showToast('Erreur réseau : ' + e.detail.err?.message, 'error');
   });
 
-  await peer.startHost(savedPeerId || undefined);
+  await peer.startHost(savedPeerId || generateSessionId());
 }
 
 /**

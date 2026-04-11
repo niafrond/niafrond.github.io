@@ -29,6 +29,13 @@ import {
 
 // ─── État local (client + host) ───────────────────────────────────────────────
 
+function generateSessionId() {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let id = '';
+  for (let i = 0; i < 10; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  return id;
+}
+
 const peer = new BlindTestPeer();
 let yt = null; // YouTubePlayer, créé après init DOM
 
@@ -428,7 +435,7 @@ async function initHostUI() {
     document.getElementById('btn-create-game').textContent = 'Connexion…';
     _activePlaylist = activePlaylist;
 
-    await peer.startHost();
+    await peer.startHost(generateSessionId());
   });
 
   // Reconnexion automatique si l'hôte revient sur son URL (?host=PEERID déjà connu)
