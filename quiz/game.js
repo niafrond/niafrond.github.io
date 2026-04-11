@@ -1005,7 +1005,7 @@ export class GameEngine {
 
   _skipQuestion() {
     this._clearAllTimers();
-    const result = { correct: false, playerId: null, answer: null, points: 0, nearMiss: false, scores: this._getScores() };
+    const result = { correct: false, playerId: null, answer: null, points: 0, nearMiss: false, skipped: true, scores: this._getScores() };
     this.state.lastResult = result;
     this._endQuestion(true);
   }
@@ -1020,8 +1020,13 @@ export class GameEngine {
   /** Appelé par l'hôte pour passer la question en cours */
   hostSkip() {
     this._clearAllTimers();
-    if (this.state.phase === PHASE.QUESTION_END || this.state.phase === PHASE.LOBBY || this.state.phase === PHASE.GAME_OVER) return;
+    if (this.state.phase === PHASE.QUESTION_END || this.state.phase === PHASE.LOBBY ||
+        this.state.phase === PHASE.GAME_OVER || this.state.phase === PHASE.ANSWER_RESULT) return;
     this._skipQuestion();
+    // En mode animateur, révéler immédiatement la réponse et le trivia
+    if (this.state.config.hostIsAnimateur) {
+      this.hostRevealAnswer();
+    }
   }
 
   // ─── Fin de partie ────────────────────────────────────────────────────────

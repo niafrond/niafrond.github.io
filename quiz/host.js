@@ -315,6 +315,7 @@ function handleHostStateChange(state, engine, peer) {
       renderGamePhase(state.phase, buildRenderData(state, engine), true);
       stopTimerBar();
       playQuestionStart();
+      setupSkipButton(engine);
       break;
 
     case PHASE.BUZZING:
@@ -330,6 +331,7 @@ function handleHostStateChange(state, engine, peer) {
       if (!clientState.hostIsReader) {
         setupHostBuzzButton(engine);
       }
+      setupSkipButton(engine);
       break;
 
     case PHASE.ANSWERING:
@@ -381,6 +383,7 @@ function handleHostStateChange(state, engine, peer) {
         // Réponse texte hôte classique
         setupHostAnswerForm(engine, state);
       }
+      setupSkipButton(engine);
       break;
 
     case PHASE.ANSWER_RESULT:
