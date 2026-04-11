@@ -155,34 +155,13 @@ export function renderSetupForm(defaults, onChange) {
     malusCheck.addEventListener('change', () => onChange({ applyMalus: malusCheck.checked }));
   }
 
-  // Checkbox "Mode hôte lecteur"
-  const hostReaderCheck = el('host-is-reader');
-  if (hostReaderCheck) {
-    hostReaderCheck.checked = defaults.hostIsReader ?? false;
-    hostReaderCheck.addEventListener('change', () => {
-      onChange({ hostIsReader: hostReaderCheck.checked });
-      // Si on décoche "lecteur", décocher aussi "animateur"
-      if (!hostReaderCheck.checked) {
-        const animCheck = el('host-is-animateur');
-        if (animCheck) {
-          animCheck.checked = false;
-          onChange({ hostIsAnimateur: false });
-        }
-      }
-    });
-  }
-
   // Checkbox "Mode animateur" (implique hostIsReader)
   const hostAnimateurCheck = el('host-is-animateur');
   if (hostAnimateurCheck) {
-    hostAnimateurCheck.checked = defaults.hostIsAnimateur ?? false;
+    hostAnimateurCheck.checked = !!(defaults.hostIsAnimateur || defaults.hostIsReader);
     hostAnimateurCheck.addEventListener('change', () => {
-      onChange({ hostIsAnimateur: hostAnimateurCheck.checked });
-      // Mode animateur implique hôte lecteur
-      if (hostAnimateurCheck.checked && hostReaderCheck) {
-        hostReaderCheck.checked = true;
-        onChange({ hostIsReader: true });
-      }
+      const checked = hostAnimateurCheck.checked;
+      onChange({ hostIsAnimateur: checked, hostIsReader: checked });
     });
   }
 
@@ -681,8 +660,7 @@ export function renderLobbyConfigPreview(config) {
     + row('Questions', questionCount)
     + row('Timer réponse', `${answerTime}s`);
   if (applyMalus) html += row('Malus', '−3 pts / erreur');
-  if (config.hostIsAnimateur) html += row('Mode hôte', '🎬 Animateur');
-  else if (hostIsReader) html += row('Mode hôte', '🎙️ Lecteur');
+  if (config.hostIsAnimateur || config.hostIsReader) html += row('Mode hôte', '🎬 Animateur');
   if (config.comboStreak) html += row('Combo streak', '🔥 Activé');
   if (config.doubleOrNothing) html += row('Double ou rien', '💸 Activé');
   if (config.secretBet) html += row('Pari secret', '🎲 Activé');
