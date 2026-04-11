@@ -77,6 +77,7 @@ export class GameEngine {
       targets: {},           // { [playerId]: targetId } — cibles cachées (non diffusées)
       roundPoints: {},       // { [playerId]: points earned this question }
       pingpongOrderOffset: 0, // rotation du premier joueur en ping-pong
+      buzzQcmCurrentBuzzer: null, // ID du buzzeur actuel en mode BUZZ_QCM (null = personne)
       answerRevealedForCurrentQuestion: false, // mode animateur : réponse révélée manuellement
       // ── Draft ────────────────────────────────────────────────────────────
       draftPicks: {},             // { [playerId]: category[] }
@@ -322,6 +323,7 @@ export class GameEngine {
     this.state.doubleDownPlayers = [];
     this.state.targets = {};
     this.state.roundPoints = {};
+    this.state.buzzQcmCurrentBuzzer = null;
     this.state.answerRevealedForCurrentQuestion = false;
     // Réinitialiser les effets de pouvoir
     this.state.players.forEach(p => { p.powerEffects = {}; });
@@ -488,16 +490,52 @@ export class GameEngine {
     this.state.phase = PHASE.ANSWERING;
     this._answerStartTime = Date.now();
     this.peer.broadcast({ type: MSG.BUZZ_QUEUE, queue: [...this.state.buzzQueue] });
+
+    // Mode BUZZ_QCM : envoyer les choix en privé au buzzeur
+    if (this.state.mode === MODE.BUZZ_QCM) {
+      this.state.buzzQcmCurrentBuzzer = currentPlayer;
+      const q = this.currentQuestion;
+      if (currentPlayer !== '__host__') {
+        // Envoi privé au client buzzeur
+        this.peer.sendTo(currentPlayer, { type: MSG.SHOW_CHOICES, choices: q.choices ?? [] });
+      }
+      // Si c'est l'hôte, les choix sont exposés via onStateChange (buzzQcmCurrentBuzzer === '__host__')
+    }
+
     this.onStateChange({ ...this.state });
 
     const dur = this._getAnswerDuration(currentPlayer);
     this._answerTimer = setTimeout(() => {
       if (this.state.phase === PHASE.ANSWERING) {
-        this.state.buzzQueue.shift();
-        if (this.state.buzzQueue.length > 0) {
-          this._startAnswering();
+        if (this.state.mode === MODE.BUZZ_QCM) {
+          // Le buzzeur n'a pas répondu à temps : l'éliminer et reprendre le buzz
+          const timedOutPlayer = this.state.buzzQueue[0];
+          if (timedOutPlayer && !this.state.wrongAnswers.includes(timedOutPlayer)) {
+            this.state.wrongAnswers.push(timedOutPlayer);
+          }
+          const scores = this._getScores();
+          const result = {
+            correct: false,
+            playerId: timedOutPlayer,
+            answer: null,
+            points: 0,
+            speedBonus: 0,
+            nearMiss: false,
+            scores,
+          };
+          this.state.lastResult = result;
+          this.peer.broadcast({ type: MSG.ANSWER_RESULT, ...result });
+          this._showAnswerResult(() => {
+            this.state.buzzQueue.shift();
+            this._resumeBuzzing();
+          });
         } else {
-          this._skipQuestion();
+          this.state.buzzQueue.shift();
+          if (this.state.buzzQueue.length > 0) {
+            this._startAnswering();
+          } else {
+            this._skipQuestion();
+          }
         }
       }
     }, dur);
@@ -646,7 +684,7 @@ export class GameEngine {
 
   handleAnswer(peerId, text) {
     if (this.state.phase !== PHASE.ANSWERING) return;
-    if (this.state.mode === MODE.QCM || this.state.mode === MODE.PINGPONG) return;
+    if (this.state.mode === MODE.QCM || this.state.mode === MODE.PINGPONG || this.state.mode === MODE.BUZZ_QCM) return;
     if (this.state.buzzQueue[0] !== peerId) return;
 
     this._clearTimer('answer');
@@ -694,7 +732,7 @@ export class GameEngine {
 
   hostJudgeAnswer(isCorrect) {
     if (this.state.phase !== PHASE.ANSWERING) return;
-    if (this.state.mode === MODE.QCM || this.state.mode === MODE.PINGPONG) return;
+    if (this.state.mode === MODE.QCM || this.state.mode === MODE.PINGPONG || this.state.mode === MODE.BUZZ_QCM) return;
 
     this._clearTimer('answer');
     const peerId = this.state.buzzQueue[0];
@@ -736,13 +774,14 @@ export class GameEngine {
     }
   }
 
-  // ─── Choix QCM / Ping-Pong ───────────────────────────────────────────────
+  // ─── Choix QCM / Ping-Pong / BUZZ_QCM ──────────────────────────────────────
 
   handleChoice(peerId, choice) {
     if (this.state.phase !== PHASE.ANSWERING) return;
-    if (this.state.mode !== MODE.QCM && this.state.mode !== MODE.PINGPONG) return;
+    if (this.state.mode !== MODE.QCM && this.state.mode !== MODE.PINGPONG && this.state.mode !== MODE.BUZZ_QCM) return;
     if (this.state.mode === MODE.QCM && this.state.eliminatedPlayers.includes(peerId)) return;
     if (this.state.mode === MODE.PINGPONG && this.state.buzzQueue[0] !== peerId) return;
+    if (this.state.mode === MODE.BUZZ_QCM && this.state.buzzQueue[0] !== peerId) return;
     if (this.state.config.hostIsReader && peerId === '__host__') return;
 
     const q = this.currentQuestion;
@@ -782,6 +821,39 @@ export class GameEngine {
       this.state.lastResult = result;
       this.peer.broadcast({ type: MSG.ANSWER_RESULT, ...result });
       this._showAnswerResult(() => this._endQuestion(false));
+    } else if (this.state.mode === MODE.BUZZ_QCM) {
+      // BUZZ_QCM : mauvaise réponse → malus, éliminé de la question, reprendre le buzz
+      this._clearTimer('answer');
+      let malusPoints = 0;
+      if (this.state.config.applyMalus && player) {
+        malusPoints = isDoublePowered ? SCORE.WRONG_MALUS * 2 : SCORE.WRONG_MALUS;
+        player.score = Math.max(0, player.score + malusPoints);
+      }
+      const bet = this.state.bets[peerId] ?? 0;
+      if (bet > 0 && player) {
+        player.score = Math.max(0, player.score - bet);
+        malusPoints -= bet;
+      }
+      if (this.state.config.comboStreak && player) player.streak = 0;
+
+      this.state.wrongAnswers.push(peerId);
+
+      const scores = this._getScores();
+      const result = {
+        correct: false,
+        playerId: peerId,
+        answer: choice,
+        points: malusPoints,
+        speedBonus: 0,
+        nearMiss: false,
+        scores,
+      };
+      this.state.lastResult = result;
+      this.peer.broadcast({ type: MSG.ANSWER_RESULT, ...result });
+      this._showAnswerResult(() => {
+        this.state.buzzQueue.shift();
+        this._resumeBuzzing();
+      });
     } else if (this.state.mode === MODE.PINGPONG) {
       // Mauvaise réponse en Ping-Pong : passer au joueur suivant
       this._clearTimer('answer');

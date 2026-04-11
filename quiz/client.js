@@ -230,6 +230,9 @@ function handleClientMessage(data, peer, local, playerName) {
               local.selfEliminated = true;
             } : null,
           }), false);
+        } else if (local.mode === MODE.BUZZ_QCM) {
+          // BUZZ_QCM : afficher qui répond, mais PAS de choix (ils viendront via SHOW_CHOICES)
+          renderGamePhase(PHASE.ANSWERING, buildClientRenderData(local, { canBuzz: false }), false);
         } else {
           renderGamePhase(PHASE.ANSWERING, buildClientRenderData(local, { canBuzz: false }), false);
           if (isCurrent && !local.config?.hostIsReader) {
@@ -241,6 +244,29 @@ function handleClientMessage(data, peer, local, playerName) {
             if (inp) { inp.disabled = true; inp.value = ''; }
           }
         }
+      }
+      break;
+
+    case MSG.SHOW_CHOICES:
+      // Reçu en privé par le buzzeur en mode BUZZ_QCM : afficher les choix
+      if (local.mode === MODE.BUZZ_QCM) {
+        const choices = data.choices ?? [];
+        if (local.currentQuestion) {
+          local.currentQuestion.choices = choices;
+        }
+        local.selfEliminated = false;
+        // Redémarrer le timer pour synchroniser avec la réception des choix
+        const dur = local.answerTime * 1000;
+        stopTimerBar();
+        startTimerBar(dur, 'timer-fill', 100, playTick);
+        clientState.phase = PHASE.ANSWERING;
+        renderGamePhase(PHASE.ANSWERING, buildClientRenderData(local, {
+          onChoiceClick: (choice) => {
+            if (local.selfEliminated) return;
+            peer.sendToHost({ type: MSG.CHOICE, text: choice });
+            local.selfEliminated = true;
+          },
+        }), false);
       }
       break;
 
@@ -272,7 +298,7 @@ function handleClientMessage(data, peer, local, playerName) {
         applyScores(data.scores);
         renderScoreboard(clientState.players, local.config?.hostIsReader ?? false);
       }
-      if ((local.mode === MODE.QCM || local.mode === MODE.PINGPONG) && local.currentQuestion?.choices) {
+      if ((local.mode === MODE.QCM || local.mode === MODE.PINGPONG || local.mode === MODE.BUZZ_QCM) && local.currentQuestion?.choices) {
         const wrong = data.correct === false ? data.answer : null;
         highlightChoices(data.correct ? data.answer : null, wrong);
       }
@@ -284,7 +310,7 @@ function handleClientMessage(data, peer, local, playerName) {
       } else if (data.playerId) {
         playWrong();
       }
-      // En mode classique/speed, si le joueur courant a répondu faux, griser l'écran
+      // En mode classique/speed/BUZZ_QCM, si le joueur courant a répondu faux, griser l'écran
       if (data.correct === false && data.playerId === peer.peerId) {
         local.hasBuzzedWrong = true;
         showWrongAnswerOverlay();
@@ -293,7 +319,10 @@ function handleClientMessage(data, peer, local, playerName) {
 
     case MSG.BUZZ_RESUME:
       // Retour en phase buzzer après mauvaise réponse — les autres joueurs peuvent buzzer
-      hideWrongAnswerOverlay();
+      // En BUZZ_QCM, le joueur ayant déjà répondu faux garde l'overlay (il attend la fin de la question)
+      if (!(local.mode === MODE.BUZZ_QCM && local.hasBuzzedWrong)) {
+        hideWrongAnswerOverlay();
+      }
       {
         const remainingMs = data.remainingMs ?? TIMER.BUZZ_DURATION;
         const startPct = Math.round((remainingMs / TIMER.BUZZ_DURATION) * 100);

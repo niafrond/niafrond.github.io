@@ -443,6 +443,14 @@ export function renderGamePhase(phase, data, isHost) {
             queueEl.hidden = false;
           }
         }
+      } else if (data.mode === MODE.BUZZ_QCM && data.onChoiceClick) {
+        // BUZZ_QCM : ce joueur a buzzé et reçoit ses choix en privé
+        hide('answer-form');
+        hide('host-judge-buttons');
+        show('phase-answering');
+        renderChoices(q?.choices ?? [], data.onChoiceClick, data.eliminatedPlayers ?? []);
+        const queueEl = el('buzz-queue');
+        if (queueEl) queueEl.hidden = true;
       } else {
         const isHostReader = data.hostIsReader;
         show('phase-buzzing');

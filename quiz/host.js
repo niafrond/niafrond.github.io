@@ -363,15 +363,21 @@ function handleHostStateChange(state, engine, peer) {
             };
           }
           data.eliminatedPlayers = state.eliminatedPlayers;
+        } else if (state.mode === MODE.BUZZ_QCM && !clientState.hostIsReader && state.buzzQcmCurrentBuzzer === '__host__') {
+          // L'hôte a buzzé en mode BUZZ_QCM : lui montrer les choix directement
+          data.onChoiceClick = (choice) => {
+            engine.handleChoice('__host__', choice);
+          };
+          data.eliminatedPlayers = [];
         }
         renderGamePhase(state.phase, data, true);
       }
       if (clientState.hostIsReader) {
         // Mode hôte lecteur : boutons Correct / Incorrect pour juger à l'oral
-        if (state.mode !== MODE.QCM && state.mode !== MODE.PINGPONG) {
+        if (state.mode !== MODE.QCM && state.mode !== MODE.PINGPONG && state.mode !== MODE.BUZZ_QCM) {
           setupHostJudgeButtons(engine);
         }
-      } else if (state.mode !== MODE.QCM && state.mode !== MODE.PINGPONG) {
+      } else if (state.mode !== MODE.QCM && state.mode !== MODE.PINGPONG && state.mode !== MODE.BUZZ_QCM) {
         // Réponse texte hôte classique
         setupHostAnswerForm(engine, state);
       }
@@ -390,8 +396,9 @@ function handleHostStateChange(state, engine, peer) {
       } else if (state.lastResult?.playerId) {
         playWrong();
       }
-      // Surligner les choix en QCM / Ping-Pong
-      if ((state.mode === MODE.QCM || state.mode === MODE.PINGPONG) && q) {
+      // Surligner les choix en QCM / Ping-Pong / BUZZ_QCM (quand l'hôte était le buzzeur)
+      if ((state.mode === MODE.QCM || state.mode === MODE.PINGPONG ||
+           (state.mode === MODE.BUZZ_QCM && state.buzzQcmCurrentBuzzer === '__host__')) && q) {
         const wrong = state.lastResult?.correct === false ? state.lastResult?.answer : null;
         highlightChoices(q.correctAnswer, wrong);
       }

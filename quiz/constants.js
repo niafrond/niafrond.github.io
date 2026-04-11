@@ -16,6 +16,7 @@ export const MSG = {
   PLAYER_LIST: 'PLAYER_LIST',           // { players[] }
   GAME_START: 'GAME_START',             // { mode, config }
   SHOW_QUESTION: 'SHOW_QUESTION',       // { index, text, choices?, category, difficulty, total }
+  SHOW_CHOICES: 'SHOW_CHOICES',         // { choices[] } — envoyé en privé au buzzeur (BUZZ_QCM)
   BUZZ_QUEUE: 'BUZZ_QUEUE',             // { queue: [peerId,...] }
   WRONG_CHOICE: 'WRONG_CHOICE',         // { playerId, choice }
   ANSWER_RESULT: 'ANSWER_RESULT',       // { correct, playerId, answer, scores, points }
@@ -52,6 +53,7 @@ export const MODE = {
   SPEED:    'SPEED',     // Buzzer + réponse rapide, timer court
   PINGPONG: 'PINGPONG',  // Tour à tour sans buzzer — jusqu'à l'erreur fatale
   PARTY:    'PARTY',     // Mini-jeux enchaînés avec tous les modes (aléatoire)
+  BUZZ_QCM: 'BUZZ_QCM', // Buzzer pour voir les choix en privé — erreur = malus + éliminé
   // Mini-jeux party jouables en solo (mêmes valeurs que PARTY_MINI dans party-game.js)
   STREAK:   'STREAK',    // QCM simultané, points selon la meilleure série
   DUEL:     'DUEL',      // Interrogatoire : 1 joueur choisit, les autres répondent
@@ -72,6 +74,7 @@ export const MODE_LABELS = {
   [MODE.SPEED]:    '⚡ Speed',
   [MODE.PINGPONG]: '🏓 Ping-Pong',
   [MODE.PARTY]:    '🎉 Party',
+  [MODE.BUZZ_QCM]: '🔔 Buzz QCM',
   [MODE.STREAK]:   '🔥 Streak',
   [MODE.DUEL]:     '🎯 Interrogatoire',
   [MODE.SPEED_TF]: '⚡ Vrai ou Faux',
@@ -86,6 +89,7 @@ export const MODE_DESCRIPTIONS = {
   [MODE.SPEED]:    'Buzzer + réponse rapide, timer court (8s)',
   [MODE.PINGPONG]: 'Tour à tour sans buzzer — jusqu\'à ce que quelqu\'un se trompe',
   [MODE.PARTY]:    'Mini-jeux enchaînés avec tous les modes (aléatoire)',
+  [MODE.BUZZ_QCM]: 'Buzzez pour voir les choix en privé — erreur = malus et éliminé de la question',
   [MODE.STREAK]:   'QCM simultané, points selon votre meilleure série consécutive',
   [MODE.DUEL]:     '1 joueur choisit la question, les autres répondent en QCM',
   [MODE.SPEED_TF]: 'Vote Vrai/Faux en 7 secondes, bonus/malus',
@@ -180,6 +184,7 @@ export const MODE_MIN_PLAYERS = {
   [MODE.SPEED]:    1,
   [MODE.PINGPONG]: 2,
   [MODE.PARTY]:    2,
+  [MODE.BUZZ_QCM]: 1,
   [MODE.STREAK]:   1,
   [MODE.DUEL]:     2,
   [MODE.SPEED_TF]: 1,
