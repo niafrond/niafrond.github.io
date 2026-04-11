@@ -1,3 +1,9 @@
+## [1.58.0](https://github.com/niafrond/niafrond.github.io/compare/v1.57.0...v1.58.0) (2026-04-11)
+
+### Features
+
+* **quiz:** add Buzz QCM game mode ([#55](https://github.com/niafrond/niafrond.github.io/issues/55)) ([3b866df](https://github.com/niafrond/niafrond.github.io/commit/3b866df218ae06267b964664d1a59924482b410d))
+
 ## [1.57.0](https://github.com/niafrond/niafrond.github.io/compare/v1.56.0...v1.57.0) (2026-04-11)
 
 ### Features
