@@ -1,3 +1,9 @@
+## [1.56.0](https://github.com/niafrond/niafrond.github.io/compare/v1.55.1...v1.56.0) (2026-04-11)
+
+### Features
+
+* **quiz:** mode animateur — révélation manuelle de la réponse par l'hôte ([#53](https://github.com/niafrond/niafrond.github.io/issues/53)) ([f5d5478](https://github.com/niafrond/niafrond.github.io/commit/f5d547840559b23a48946ff882e9a4558b6ba7ec))
+
 ## [1.55.1](https://github.com/niafrond/niafrond.github.io/compare/v1.55.0...v1.55.1) (2026-04-10)
 
 ### Bug Fixes
