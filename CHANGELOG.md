@@ -1,3 +1,9 @@
+## [1.59.0](https://github.com/niafrond/niafrond.github.io/compare/v1.58.0...v1.59.0) (2026-04-11)
+
+### Features
+
+* fusionne les modes hôtes lecteur et animateur ([#57](https://github.com/niafrond/niafrond.github.io/issues/57)) ([766ad1a](https://github.com/niafrond/niafrond.github.io/commit/766ad1ac77dc58e5f90d0ac2c637d84da315f1be))
+
 ## [1.58.0](https://github.com/niafrond/niafrond.github.io/compare/v1.57.0...v1.58.0) (2026-04-11)
 
 ### Features
