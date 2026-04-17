@@ -16,6 +16,7 @@ import {
 const TURN_DURATION              = 30;   // secondes par tour
 const TIMER_CIRCLE_RADIUS        = 46;   // rayon du cercle SVG du timer
 const MIN_PLAYERS                = 4;
+const CARD_COUNT                 = 40;   // nombre de cartes par partie
 const WORD_CARD_HORIZONTAL_PAD   = 48;   // padding horizontal de .word-card (24px × 2)
 const WORD_FONT_MIN              = 16;   // px — taille minimale du mot
 const WORD_FONT_MAX              = 200;  // px — taille maximale du mot
@@ -282,7 +283,7 @@ function startRound(roundNum) {
   state.currentRound = roundNum;
   // Manche 1 : mélange complet ; manches 2 et 3 : mêmes cartes remélangées
   if (roundNum === 1) {
-    state.allWords  = getShuffledWords();
+    state.allWords  = getShuffledWords().slice(0, CARD_COUNT);
   }
   state.roundWords   = shuffle([...state.allWords]);
   state.currentTeamIdx = 0;
