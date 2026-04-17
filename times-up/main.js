@@ -568,6 +568,14 @@ function showGameOver() {
 // ─── ÉDITEUR DE MOTS ──────────────────────────────────────────────────────────
 let editableWords = [];
 
+/** Filtre et normalise un tableau brut en entrées {word, category} valides. */
+function filterValidWords(arr) {
+  return arr
+    .filter(w => w && typeof w.word === 'string' && w.word.trim() &&
+                 typeof w.category === 'string' && w.category.trim())
+    .map(w => ({ word: w.word.trim(), category: w.category.trim() }));
+}
+
 function openWordsEditor() {
   editableWords = loadWords();
   renderWordsList();
@@ -659,10 +667,7 @@ function importWords(file) {
     try {
       const parsed = JSON.parse(e.target.result);
       if (!Array.isArray(parsed)) throw new Error('Format invalide');
-      const valid = parsed.filter(
-        w => w && typeof w.word === 'string' && w.word.trim() &&
-             typeof w.category === 'string' && w.category.trim()
-      ).map(w => ({ word: w.word.trim(), category: w.category.trim() }));
+      const valid = filterValidWords(parsed);
       if (valid.length === 0) throw new Error('Aucun mot valide trouvé');
       editableWords = valid;
       saveWords(editableWords);

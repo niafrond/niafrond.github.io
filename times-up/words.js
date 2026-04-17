@@ -104,7 +104,13 @@ export function loadWords() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) {
+        const valid = parsed.filter(
+          w => w && typeof w.word === 'string' && w.word.trim() &&
+               typeof w.category === 'string' && w.category.trim()
+        ).map(w => ({ word: w.word.trim(), category: w.category.trim() }));
+        if (valid.length > 0) return valid;
+      }
     }
   } catch (_) { /* ignore */ }
   return [...DEFAULT_WORDS];
