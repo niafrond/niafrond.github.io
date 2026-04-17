@@ -558,3 +558,112 @@ html, body {
   #teams-container { grid-template-columns: 1fr; }
   #word-card-text  { font-size: 1.7rem; }
 }
+
+/* ─── Rotate overlay (visible in portrait only) ─────────────────────────────── */
+#rotate-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: var(--bg-grad);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
+  padding: 32px;
+}
+.rotate-icon {
+  font-size: 4rem;
+  animation: rotateHint 1.8s ease-in-out infinite;
+}
+@keyframes rotateHint {
+  0%   { transform: rotate(0deg); }
+  40%  { transform: rotate(90deg); }
+  60%  { transform: rotate(90deg); }
+  100% { transform: rotate(0deg); }
+}
+#rotate-overlay p {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+/* Show overlay only on portrait mobile (< 600 px tall) during the turn screen */
+@media (orientation: portrait) and (max-width: 600px) {
+  #screen-turn:not([hidden]) ~ #rotate-overlay { display: flex; }
+}
+
+/* ─── Turn screen — landscape optimised ─────────────────────────────────────── */
+@media (orientation: landscape) and (max-height: 520px) {
+  #screen-turn {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100svh;
+    padding: 8px 12px;
+    gap: 8px;
+    align-items: stretch;
+    justify-items: stretch;
+  }
+
+  .turn-header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    max-width: none;
+    width: 100%;
+  }
+
+  .timer-wrap {
+    grid-column: 1;
+    grid-row: 2;
+    width: 90px;
+    height: 90px;
+    align-self: center;
+    justify-self: center;
+  }
+  .timer-svg  { width: 90px; height: 90px; }
+  #timer-number { font-size: 1.6rem; }
+
+  .word-card {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 10px 16px;
+    border-radius: 12px;
+    min-height: 0;
+    gap: 6px;
+  }
+
+  #word-card-text {
+    font-size: clamp(2.5rem, 12vw, 7rem);
+    line-height: 1.1;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  #word-card-category { font-size: 0.8rem; }
+
+  .turn-actions {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    flex-direction: row;
+    gap: 8px;
+    max-width: none;
+    width: 100%;
+  }
+
+  .btn-found-big {
+    flex: 2;
+    font-size: 1rem;
+    padding: 10px 12px;
+  }
+
+  .btn-skip-turn,
+  .btn-fault-turn {
+    flex: 1;
+    font-size: 0.85rem;
+    padding: 10px 8px;
+  }
+}
