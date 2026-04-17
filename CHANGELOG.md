@@ -1,3 +1,15 @@
+## [1.61.1](https://github.com/niafrond/niafrond.github.io/compare/v1.61.0...v1.61.1) (2026-04-17)
+
+### Bug Fixes
+
+* hide setup-hint when hidden attribute is set in times-up ([#63](https://github.com/niafrond/niafrond.github.io/issues/63)) ([bf9eee8](https://github.com/niafrond/niafrond.github.io/commit/bf9eee853d5861d68768c5502d721fa22cb666a5))
+
+## [1.61.0](https://github.com/niafrond/niafrond.github.io/compare/v1.60.2...v1.61.0) (2026-04-17)
+
+### Features
+
+* **times-up:** words editor with import/export and per-category counters ([#62](https://github.com/niafrond/niafrond.github.io/issues/62)) ([3008b4a](https://github.com/niafrond/niafrond.github.io/commit/3008b4a66ba8d84de8bb3242bfd88a0a83d287b0))
+
 ## [1.60.2](https://github.com/niafrond/niafrond.github.io/compare/v1.60.1...v1.60.2) (2026-04-17)
 
 ### Bug Fixes
