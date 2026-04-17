@@ -30,15 +30,24 @@ const ROUND_RULES = [
   {
     num: 2, icon: '☝️',
     title: 'Manche 2 — Un seul mot',
-    desc: `Un seul mot par carte. L'équipe n'a qu'une seule tentative. On peut passer des cartes.`,
+    desc: `L'orateur ne dit qu'un seul mot par carte. L'équipe n'a droit qu'à une seule proposition.
+✅ Bonne réponse → carte gagnée.
+❌ Mauvaise réponse → carte remise dans le jeu.
+⏭ L'orateur peut aussi passer s'il est bloqué.
+⛔ Interdits : plus d'un mot, partie du nom, traduction directe.`,
     canSkip: true,
     canFault: false,
   },
   {
     num: 3, icon: '🤐',
-    title: 'Manche 3 — Mime',
-    desc: `Interdiction de parler. Seuls les mimes et les bruitages sont autorisés. Pas de passage.`,
-    canSkip: false,
+    title: 'Manche 3 — Mime et bruitages',
+    desc: `L'orateur ne peut plus parler du tout : uniquement des mimes et des bruitages.
+Même fonctionnement que la manche 2 :
+✅ Bonne réponse → carte gagnée.
+❌ Mauvaise réponse → carte remise dans le jeu.
+⏭ L'orateur peut passer s'il est bloqué.
+⛔ Interdits : parler, former des mots, fredonner une chanson.`,
+    canSkip: true,
     canFault: false,
   },
 ];
