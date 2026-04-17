@@ -589,6 +589,19 @@ function renderWordsList() {
   el('words-count-info').textContent =
     `${editableWords.length} mot${editableWords.length !== 1 ? 's' : ''} dans le jeu`;
 
+  // Per-category counters
+  const catCounts = el('words-cat-counts');
+  catCounts.innerHTML = '';
+  const counts = {};
+  editableWords.forEach(w => { counts[w.category] = (counts[w.category] || 0) + 1; });
+  Object.entries(CATEGORY_LABELS).forEach(([key, { label, emoji }]) => {
+    const n = counts[key] || 0;
+    const badge = document.createElement('span');
+    badge.className = `words-cat-badge${n === 0 ? ' words-cat-badge--empty' : ''}`;
+    badge.textContent = `${emoji} ${label} ${n}`;
+    catCounts.appendChild(badge);
+  });
+
   if (editableWords.length === 0) {
     const empty = document.createElement('p');
     empty.style.cssText = 'color:var(--text-muted);font-size:0.9rem;text-align:center;padding:12px 0;';
