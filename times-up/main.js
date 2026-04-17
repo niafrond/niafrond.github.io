@@ -77,11 +77,12 @@ const SOLO_EMOJIS = ['🌺', '🦜', '🌴', '🐠', '🌸', '🦩', '🌿'];
 
 // ─── Persistance du nombre de cartes ───────────────────────────────────────────
 function loadCardCount() {
+  const ALLOWED = [0, 20, 30, 40, 50];
   try {
     const v = localStorage.getItem(CARD_COUNT_KEY);
     if (v !== null) {
       const n = parseInt(v, 10);
-      if (!isNaN(n) && n >= 0) return n;
+      if (ALLOWED.includes(n)) return n;
     }
   } catch (_) { /* ignore */ }
   return CARD_COUNT_DEFAULT;
@@ -939,11 +940,6 @@ function init() {
   state.cardCount = loadCardCount();
   const selectCardCount = el('select-card-count');
   selectCardCount.value = String(state.cardCount);
-  // If saved value doesn't match any option, fall back to default
-  if (selectCardCount.value !== String(state.cardCount)) {
-    selectCardCount.value = String(CARD_COUNT_DEFAULT);
-    state.cardCount = CARD_COUNT_DEFAULT;
-  }
   selectCardCount.addEventListener('change', () => {
     state.cardCount = parseInt(selectCardCount.value, 10);
     saveCardCount(state.cardCount);
