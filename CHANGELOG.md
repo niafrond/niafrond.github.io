@@ -1,3 +1,9 @@
+## [1.60.1](https://github.com/niafrond/niafrond.github.io/compare/v1.60.0...v1.60.1) (2026-04-17)
+
+### Bug Fixes
+
+* **times-up:** Erreur/Passer unreachable in landscape — redesign turn screen layout ([#60](https://github.com/niafrond/niafrond.github.io/issues/60)) ([2d0a275](https://github.com/niafrond/niafrond.github.io/commit/2d0a275f59625231585c2721d2860c29b72c7576)), closes [#rotate-overlay](https://github.com/niafrond/niafrond.github.io/issues/rotate-overlay)
+
 ## [1.60.0](https://github.com/niafrond/niafrond.github.io/compare/v1.59.0...v1.60.0) (2026-04-17)
 
 ### Features
