@@ -5,7 +5,7 @@
  * Flux : setup → teams → round-intro → pre-turn → turn → turn-end → round-end → game-over
  */
 
-import { getShuffledWords, getCategoryInfo, TOTAL_WORDS } from './words.js';
+import { getShuffledWords, getCategoryInfo, TOTAL_WORDS, shuffle } from './words.js';
 import {
   playTick, playTickUrgent, playBuzzer,
   playFound, playRoundStart, playGameOver,
@@ -13,7 +13,8 @@ import {
 } from './sound.js';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
-const TURN_DURATION   = 30;   // secondes par tour
+const TURN_DURATION         = 30;   // secondes par tour
+const TIMER_CIRCLE_RADIUS   = 46;   // rayon du cercle SVG du timer
 const MIN_PLAYERS     = 4;
 const ROUND_RULES     = [
   { num: 1, icon: '🗣️',  title: 'Manche 1 — Tout dire',  desc: 'Décrivez le mot avec autant de mots que vous voulez. Interdits : le mot lui-même et ses traductions directes.' },
@@ -63,15 +64,6 @@ function showToast(msg, type = 'info') {
   _toastTimer = setTimeout(() => { t.hidden = true; }, 2500);
 }
 
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
 // ─── ÉCRAN SETUP ───────────────────────────────────────────────────────────────
 function renderPlayerList() {
   const list = el('player-list');
@@ -79,11 +71,19 @@ function renderPlayerList() {
   state.playerNames.forEach((name, i) => {
     const item = document.createElement('div');
     item.className = 'player-item';
-    item.innerHTML = `
-      <span class="player-item-name">👤 ${name}</span>
-      <button class="btn-icon btn-danger" aria-label="Supprimer ${name}" data-idx="${i}">✕</button>
-    `;
-    item.querySelector('button').addEventListener('click', () => removePlayer(i));
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'player-item-name';
+    nameSpan.textContent = `👤 ${name}`;
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-icon btn-danger';
+    btn.setAttribute('aria-label', `Supprimer ${name}`);
+    btn.textContent = '✕';
+    btn.addEventListener('click', () => removePlayer(i));
+
+    item.appendChild(nameSpan);
+    item.appendChild(btn);
     list.appendChild(item);
   });
 
@@ -136,15 +136,32 @@ function renderTeams() {
     const card = document.createElement('div');
     card.className = 'team-card';
     card.style.setProperty('--team-color', team.color);
-    card.innerHTML = `
-      <div class="team-header">
-        <span class="team-emoji">${team.emoji}</span>
-        <span class="team-name">${team.name}</span>
-      </div>
-      <ul class="team-players">
-        ${team.players.map(p => `<li>👤 ${p}</li>`).join('')}
-      </ul>
-    `;
+
+    const header = document.createElement('div');
+    header.className = 'team-header';
+
+    const emojiSpan = document.createElement('span');
+    emojiSpan.className = 'team-emoji';
+    emojiSpan.textContent = team.emoji;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'team-name';
+    nameSpan.textContent = team.name;
+    nameSpan.style.color = team.color;
+
+    header.appendChild(emojiSpan);
+    header.appendChild(nameSpan);
+
+    const ul = document.createElement('ul');
+    ul.className = 'team-players';
+    team.players.forEach(p => {
+      const li = document.createElement('li');
+      li.textContent = `👤 ${p}`;
+      ul.appendChild(li);
+    });
+
+    card.appendChild(header);
+    card.appendChild(ul);
     container.appendChild(card);
   });
 }
@@ -268,8 +285,8 @@ function updateTimerDisplay() {
 
   timerNum.textContent = state.timeLeft;
 
-  // SVG circle : circumference ≈ 2π×46 ≈ 289
-  const circ = 2 * Math.PI * 46;
+  // SVG circle : circumference = 2π×TIMER_CIRCLE_RADIUS
+  const circ = 2 * Math.PI * TIMER_CIRCLE_RADIUS;
   const offset = circ * (1 - pct);
   timerRing.style.strokeDasharray = `${circ}`;
   timerRing.style.strokeDashoffset = `${offset}`;
