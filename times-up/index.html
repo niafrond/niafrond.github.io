@@ -28,15 +28,30 @@
     <p class="app-subtitle">Nout Péi 🌋🌊</p>
 
     <div class="card">
-      <div class="card-title">👥 Ajouter les joueurs</div>
-      <div class="input-row mb-12">
-        <input id="player-input" class="input" type="text"
-               placeholder="Prénom du joueur…" maxlength="24" autocomplete="off" autocorrect="off">
-        <button id="btn-add-player" class="btn btn-primary">+ Ajouter</button>
+      <!-- Onglets Joueurs / Membres -->
+      <div class="setup-tabs" role="tablist">
+        <button id="tab-joueurs" class="setup-tab setup-tab--active" role="tab" aria-selected="true" aria-controls="panel-joueurs">👥 Joueurs</button>
+        <button id="tab-membres" class="setup-tab" role="tab" aria-selected="false" aria-controls="panel-membres">⭐ Membres</button>
       </div>
-      <div id="player-list"></div>
-      <span id="player-count"></span>
-      <span id="setup-hint" hidden></span>
+
+      <!-- Panneau Joueurs -->
+      <div id="panel-joueurs" role="tabpanel">
+        <div class="input-row mb-12">
+          <input id="player-input" class="input" type="text"
+                 placeholder="Prénom du joueur…" maxlength="24" autocomplete="off" autocorrect="off">
+          <button id="btn-add-player" class="btn btn-primary">+ Ajouter</button>
+        </div>
+        <div id="player-list"></div>
+        <span id="player-count"></span>
+        <span id="setup-hint" hidden></span>
+      </div>
+
+      <!-- Panneau Membres -->
+      <div id="panel-membres" hidden role="tabpanel">
+        <p class="members-hint">Appuyez sur un membre pour l'ajouter à la partie en cours.</p>
+        <div id="members-list"></div>
+        <p id="members-empty" class="members-empty" hidden>Aucun membre sauvegardé — les joueurs sont automatiquement enregistrés après chaque partie.</p>
+      </div>
     </div>
 
     <div class="card">
@@ -139,11 +154,12 @@
   </div>
 
   <!-- Actions -->
-  <div class="turn-actions">
+  <div class="turn-actions" id="turn-actions">
+    <button id="btn-skip"  class="btn-skip-turn">❌ Passer</button>
     <button id="btn-found" class="btn-found-big">✅ Trouvé !</button>
-    <button id="btn-skip"  class="btn-skip-turn">⏭ Passer ce mot</button>
     <button id="btn-fault" class="btn-fault-turn">🚨 Erreur — arrêter le tour</button>
   </div>
+  <p class="swipe-hint-text" id="swipe-hint-text">← Passer &nbsp;·&nbsp; Trouvé →</p>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
