@@ -7,6 +7,8 @@
   --surface2:  #0d1f2f;
   --volcan:    #e85d04;
   --lagon:     #0096c7;
+  --foret:     #2d9c6e;
+  --soleil:    #d97706;
   --success:   #40916c;
   --danger:    #ef4444;
   --warning:   #f59e0b;
@@ -406,6 +408,35 @@ html, body {
   width: 100%;
 }
 .btn-skip-turn:hover { background: var(--surface); }
+
+.btn-fault-turn {
+  background: rgba(239,68,68,0.12);
+  color: var(--danger);
+  font-size: 0.95rem;
+  padding: 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(239,68,68,0.35);
+  cursor: pointer;
+  font-weight: 700;
+  transition: background 0.15s;
+  width: 100%;
+}
+.btn-fault-turn:hover { background: rgba(239,68,68,0.22); }
+
+/* ─── No-teams banner ──────────────────────────────────────────────────────── */
+.no-teams-banner {
+  background: rgba(245,158,11,0.12);
+  border: 1px solid var(--warning);
+  color: var(--warning);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.5;
+  width: 100%;
+  text-align: center;
+  margin-bottom: 8px;
+}
 
 /* ─── Turn end ─────────────────────────────────────────────────────────────── */
 .turn-end-score {

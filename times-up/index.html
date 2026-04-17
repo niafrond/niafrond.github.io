@@ -41,12 +41,16 @@
 
     <div class="card">
       <div class="card-title">📖 Règles rapides</div>
-      <p style="font-size:0.88rem; color:var(--text-muted); line-height:1.6">
-        <strong style="color:var(--text)">3 manches</strong> — même liste de mots réunionnais, chaque équipe joue à tour de rôle :<br>
-        🗣️ <strong style="color:var(--text)">Manche 1</strong> : Tout décrire<br>
+      <p style="font-size:0.88rem; color:var(--text-muted); line-height:1.7">
+        <strong style="color:var(--text)">3 manches</strong> sur les mêmes mots réunionnais — les équipes jouent à tour de rôle (30 s par tour) :<br><br>
+        🗣️ <strong style="color:var(--text)">Manche 1</strong> : Parler librement<br>
+        <span style="padding-left:1.2em">⛔ Interdit : dire le nom, épeler, traduire, passer</span><br>
+        <span style="padding-left:1.2em">🚨 Faute → tour arrêté immédiatement</span><br><br>
         ☝️ <strong style="color:var(--text)">Manche 2</strong> : Un seul mot<br>
-        🤐 <strong style="color:var(--text)">Manche 3</strong> : Mime uniquement<br>
-        <br>Timer de <strong style="color:var(--text)">30 secondes</strong> par tour — le téléphone se passe entre joueurs.
+        <span style="padding-left:1.2em">✅ Passer autorisé — une seule tentative par carte</span><br><br>
+        🤐 <strong style="color:var(--text)">Manche 3</strong> : Mime + bruitages uniquement<br>
+        <span style="padding-left:1.2em">⛔ Aucun mot, aucun passage</span><br><br>
+        🧮 1 carte trouvée = 1 point · <strong style="color:var(--text)">Mémorisez les mots !</strong>
       </p>
     </div>
 
@@ -132,7 +136,8 @@
   <!-- Actions -->
   <div class="turn-actions">
     <button id="btn-found" class="btn-found-big">✅ Trouvé !</button>
-    <button id="btn-skip"  class="btn-skip-turn">→ Passer ce mot</button>
+    <button id="btn-skip"  class="btn-skip-turn">⏭ Passer ce mot</button>
+    <button id="btn-fault" class="btn-fault-turn">🚨 Erreur — arrêter le tour</button>
   </div>
 </div>
 
@@ -140,7 +145,7 @@
      ÉCRAN 6 — FIN DE TOUR : résumé
      ═══════════════════════════════════════════════════════════════════════════ -->
 <div id="screen-turn-end" data-screen="screen-turn-end" class="screen-center">
-  <div style="font-size:2rem">⏱️ Temps écoulé !</div>
+  <div style="font-size:2rem" id="turn-end-reason">⏱️ Temps écoulé !</div>
   <div id="turn-end-team" style="font-size:1.2rem; font-weight:800;"></div>
   <p style="color:var(--text-muted)">
     <span id="turn-end-player" style="color:var(--text); font-weight:700;"></span> a trouvé

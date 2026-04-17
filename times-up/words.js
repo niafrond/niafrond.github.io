@@ -59,7 +59,7 @@ const RAW_WORDS = [
   { word: 'Kabar',                    category: 'culture' },
   { word: 'Fête du Dipavali',         category: 'culture' },
   { word: 'Tour des cirques',         category: 'culture' },
-  { word: 'Fête de l\'Eid',           category: 'culture' },
+  { word: 'Fête de l\'Aïd',           category: 'culture' },
   { word: 'Fête des vendanges',       category: 'culture' },
   { word: 'Téléphérique des Sables',  category: 'culture' },
 

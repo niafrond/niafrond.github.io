@@ -5,7 +5,7 @@
  * Flux : setup → teams → round-intro → pre-turn → turn → turn-end → round-end → game-over
  */
 
-import { getShuffledWords, getCategoryInfo, TOTAL_WORDS, shuffle } from './words.js';
+import { getShuffledWords, getCategoryInfo, shuffle } from './words.js';
 import {
   playTick, playTickUrgent, playBuzzer,
   playFound, playRoundStart, playGameOver,
@@ -13,38 +13,65 @@ import {
 } from './sound.js';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
-const TURN_DURATION         = 30;   // secondes par tour
-const TIMER_CIRCLE_RADIUS   = 46;   // rayon du cercle SVG du timer
-const MIN_PLAYERS     = 4;
-const ROUND_RULES     = [
-  { num: 1, icon: '🗣️',  title: 'Manche 1 — Tout dire',  desc: 'Décrivez le mot avec autant de mots que vous voulez. Interdits : le mot lui-même et ses traductions directes.' },
-  { num: 2, icon: '☝️',  title: 'Manche 2 — Un seul mot', desc: 'Vous ne pouvez utiliser qu\'un seul mot pour faire deviner. Pas de mimique.' },
-  { num: 3, icon: '🤐',  title: 'Manche 3 — Mime',        desc: 'Mimez uniquement, sans parler ni faire de bruit. Pas de passage autorisé !' },
+const TURN_DURATION       = 30;   // secondes par tour
+const TIMER_CIRCLE_RADIUS = 46;   // rayon du cercle SVG du timer
+const MIN_PLAYERS         = 4;
+
+const ROUND_RULES = [
+  {
+    num: 1, icon: '🗣️',
+    title: 'Manche 1 — Parler librement',
+    desc: `L'orateur peut parler librement.
+⛔ Interdit : dire le nom (ou une partie), épeler, traduire, passer une carte.
+🚨 Faute → tour arrêté immédiatement.`,
+    canSkip: false,
+    canFault: true,
+  },
+  {
+    num: 2, icon: '☝️',
+    title: 'Manche 2 — Un seul mot',
+    desc: `Un seul mot par carte. L'équipe n'a qu'une seule tentative. On peut passer des cartes.`,
+    canSkip: true,
+    canFault: false,
+  },
+  {
+    num: 3, icon: '🤐',
+    title: 'Manche 3 — Mime',
+    desc: `Interdiction de parler. Seuls les mimes et les bruitages sont autorisés. Pas de passage.`,
+    canSkip: false,
+    canFault: false,
+  },
 ];
+
+// ─── Métadonnées équipes (max 4) ───────────────────────────────────────────────
+const TEAMS_META = [
+  { name: 'Équipe Volcan', emoji: '🌋', color: 'var(--volcan)' },
+  { name: 'Équipe Lagon',  emoji: '🌊', color: 'var(--lagon)'  },
+  { name: 'Équipe Forêt',  emoji: '🌿', color: 'var(--foret)'  },
+  { name: 'Équipe Soleil', emoji: '☀️', color: 'var(--soleil)' },
+];
+
+// Emojis pour le mode jeu libre (5 ou 7 joueurs — pas d'équipes fixes)
+const SOLO_EMOJIS = ['🌺', '🦜', '🌴', '🐠', '🌸', '🦩', '🌿'];
 
 // ─── État du jeu ───────────────────────────────────────────────────────────────
 const state = {
-  playerNames: [],
-  teams: [],               // [{name, emoji, color, players, score: [0,0,0]}]
-  teamPlayerIdx: [],       // index du joueur actif par équipe
+  playerNames:    [],
+  teams:          [],      // [{name, emoji, color, players, score:[0,0,0]}]
+  teamPlayerIdx:  [],      // index du joueur actif par équipe
+  noTeamsMode:    false,   // true pour 5 ou 7 joueurs
 
-  allWords: [],            // mots pour toutes les manches
-  roundWords: [],          // mots restants dans la manche en cours
+  allWords:     [],        // mots du jeu (identiques aux 3 manches)
+  roundWords:   [],        // mots restants dans la manche en cours
   currentRound: 0,         // 1-3
   currentTeamIdx: 0,
 
-  turnFound: [],
-  turnSkipped: [],
+  turnFound:   [],
   currentWord: null,
 
   timerInterval: null,
   timeLeft: TURN_DURATION,
 };
-
-const TEAMS_META = [
-  { name: 'Équipe Volcan', emoji: '🌋', color: 'var(--volcan)' },
-  { name: 'Équipe Lagon',  emoji: '🌊', color: 'var(--lagon)' },
-];
 
 // ─── Helpers UI ────────────────────────────────────────────────────────────────
 function showScreen(id) {
@@ -117,21 +144,87 @@ function removePlayer(idx) {
   renderPlayerList();
 }
 
-// ─── ÉCRAN TEAMS ───────────────────────────────────────────────────────────────
+// ─── COMPOSITION DES ÉQUIPES ───────────────────────────────────────────────────
+/**
+ * Retourne un tableau de tailles d'équipes pour n joueurs.
+ * Retourne null pour 5 ou 7 joueurs (pas d'équipes fixes).
+ *   4  → [2, 2]
+ *   6  → [2, 2, 2]
+ *   8  → [2, 2, 2, 2]
+ *   9  → [3, 3, 3]
+ *  10  → [3, 3, 2, 2]
+ *  11  → [3, 3, 3, 2]
+ *  12  → [3, 3, 3, 3]
+ * >12  → 4 équipes, répartition aussi égale que possible
+ */
+function computeTeamLayout(n) {
+  switch (n) {
+    case 4:  return [2, 2];
+    case 5:  return null;
+    case 6:  return [2, 2, 2];
+    case 7:  return null;
+    case 8:  return [2, 2, 2, 2];
+    case 9:  return [3, 3, 3];
+    case 10: return [3, 3, 2, 2];
+    case 11: return [3, 3, 3, 2];
+    case 12: return [3, 3, 3, 3];
+    default: {
+      // Pour > 12 joueurs : 4 équipes aussi égales que possible
+      const numTeams = 4;
+      const base  = Math.floor(n / numTeams);
+      const extra = n % numTeams;
+      return Array.from({ length: numTeams }, (_, i) => base + (i < extra ? 1 : 0));
+    }
+  }
+}
+
 function assignTeams() {
   const players = shuffle([...state.playerNames]);
-  const mid = Math.ceil(players.length / 2);
-  state.teams = TEAMS_META.map((meta, i) => ({
-    ...meta,
-    players: i === 0 ? players.slice(0, mid) : players.slice(mid),
-    score: [0, 0, 0],
-  }));
+  const layout  = computeTeamLayout(players.length);
+
+  if (layout === null) {
+    // 5 ou 7 joueurs : jeu libre, chaque joueur est son propre "camp"
+    state.noTeamsMode = true;
+    state.teams = players.map((name, i) => ({
+      name,
+      emoji: SOLO_EMOJIS[i % SOLO_EMOJIS.length],
+      color: TEAMS_META[i % TEAMS_META.length].color,
+      players: [name],
+      score:   [0, 0, 0],
+    }));
+  } else {
+    state.noTeamsMode = false;
+    let offset = 0;
+    state.teams = layout.map((size, i) => {
+      const team = {
+        ...TEAMS_META[i],
+        players: players.slice(offset, offset + size),
+        score:   [0, 0, 0],
+      };
+      offset += size;
+      return team;
+    });
+  }
+
   state.teamPlayerIdx = state.teams.map(() => 0);
 }
 
 function renderTeams() {
   const container = el('teams-container');
   container.innerHTML = '';
+
+  if (state.noTeamsMode) {
+    container.style.gridTemplateColumns = '1fr';
+    const banner = document.createElement('div');
+    banner.className = 'no-teams-banner';
+    banner.textContent =
+      `⚠️ ${state.playerNames.length} joueurs — pas d'équipes fixes pour ce nombre. ` +
+      'Chaque joueur joue pour lui-même ! (Ajoutez ou retirez un joueur pour avoir des équipes.)';
+    container.appendChild(banner);
+  } else {
+    container.style.gridTemplateColumns = '';
+  }
+
   state.teams.forEach((team) => {
     const card = document.createElement('div');
     card.className = 'team-card';
@@ -175,14 +268,18 @@ function goToTeams() {
 // ─── LOGIQUE DE MANCHE ─────────────────────────────────────────────────────────
 function startRound(roundNum) {
   state.currentRound = roundNum;
-  state.roundWords = shuffle([...state.allWords]);
+  // Manche 1 : mélange complet ; manches 2 et 3 : mêmes cartes remélangées
+  if (roundNum === 1) {
+    state.allWords  = getShuffledWords();
+  }
+  state.roundWords   = shuffle([...state.allWords]);
   state.currentTeamIdx = 0;
 
   const r = ROUND_RULES[roundNum - 1];
-  el('round-intro-icon').textContent = r.icon;
+  el('round-intro-icon').textContent  = r.icon;
   el('round-intro-title').textContent = r.title;
-  el('round-intro-desc').textContent = r.desc;
-  el('round-intro-num').textContent = `${roundNum} / 3`;
+  el('round-intro-desc').textContent  = r.desc;
+  el('round-intro-num').textContent   = `${roundNum} / 3`;
   el('round-intro-words-left').textContent = `${state.roundWords.length} mots à faire deviner`;
 
   playRoundStart();
@@ -191,27 +288,27 @@ function startRound(roundNum) {
 
 // ─── PRÉ-TOUR ─────────────────────────────────────────────────────────────────
 function startPreTurn() {
-  const team = state.teams[state.currentTeamIdx];
-  const playerIdx = state.teamPlayerIdx[state.currentTeamIdx];
-  const playerName = team.players[playerIdx];
+  const team       = state.teams[state.currentTeamIdx];
+  const playerName = team.players[state.teamPlayerIdx[state.currentTeamIdx]];
 
-  el('pre-turn-team').textContent = `${team.emoji} ${team.name}`;
-  el('pre-turn-team').style.color = team.color;
+  el('pre-turn-team').textContent  = `${team.emoji} ${team.name}`;
+  el('pre-turn-team').style.color  = team.color;
   el('pre-turn-player').textContent = playerName;
-  el('pre-turn-round').textContent = `Manche ${state.currentRound} / 3`;
-  el('pre-turn-words-left').textContent = `${state.roundWords.length} mot${state.roundWords.length > 1 ? 's' : ''} restant${state.roundWords.length > 1 ? 's' : ''}`;
+  el('pre-turn-round').textContent  = `Manche ${state.currentRound} / 3`;
+  el('pre-turn-words-left').textContent =
+    `${state.roundWords.length} mot${state.roundWords.length > 1 ? 's' : ''} restant${state.roundWords.length > 1 ? 's' : ''}`;
 
   showScreen('screen-pre-turn');
 }
 
 // ─── TOUR ACTIF ────────────────────────────────────────────────────────────────
 function startTurn() {
-  state.turnFound = [];
-  state.turnSkipped = [];
-  state.timeLeft = TURN_DURATION;
+  state.turnFound  = [];
+  state.timeLeft   = TURN_DURATION;
 
-  // Manche 3 : pas de passage
-  el('btn-skip').hidden = state.currentRound === 3;
+  const rule = ROUND_RULES[state.currentRound - 1];
+  el('btn-skip').hidden  = !rule.canSkip;
+  el('btn-fault').hidden = !rule.canFault;
 
   updateTurnStats();
   drawNextWord();
@@ -223,14 +320,14 @@ function startTurn() {
 
 function drawNextWord() {
   if (state.roundWords.length === 0) {
-    endTurn(true);
+    endTurn('allFound');
     return;
   }
   state.currentWord = state.roundWords.shift();
   const cat = getCategoryInfo(state.currentWord.category);
-  el('word-card-text').textContent = state.currentWord.word;
+  el('word-card-text').textContent     = state.currentWord.word;
   el('word-card-category').textContent = `${cat.emoji} ${cat.label}`;
-  el('turn-round-badge').textContent = `Manche ${state.currentRound} — ${ROUND_RULES[state.currentRound - 1].icon}`;
+  el('turn-round-badge').textContent   = `Manche ${state.currentRound} — ${ROUND_RULES[state.currentRound - 1].icon}`;
 }
 
 function wordFound() {
@@ -241,11 +338,21 @@ function wordFound() {
 }
 
 function wordSkipped() {
-  state.turnSkipped.push(state.currentWord);
-  // Le mot retourne dans la pioche (en fin de liste)
+  // Le mot retourne en fin de pioche
   state.roundWords.push(state.currentWord);
   updateTurnStats();
   drawNextWord();
+}
+
+function wordFault() {
+  // Faute (manche 1) : le mot retourne en tête de pioche, tour arrêté
+  if (state.currentWord) {
+    state.roundWords.unshift(state.currentWord);
+    state.currentWord = null;
+  }
+  stopTimer();
+  playBuzzer();
+  endTurn('fault');
 }
 
 function updateTurnStats() {
@@ -268,7 +375,7 @@ function startTimer() {
     if (state.timeLeft <= 0) {
       clearInterval(state.timerInterval);
       playBuzzer();
-      endTurn(false);
+      endTurn('timeout');
     }
   }, 1000);
 }
@@ -279,46 +386,56 @@ function stopTimer() {
 }
 
 function updateTimerDisplay() {
-  const pct = state.timeLeft / TURN_DURATION;
-  const timerNum = el('timer-number');
+  const pct      = state.timeLeft / TURN_DURATION;
+  const timerNum  = el('timer-number');
   const timerRing = el('timer-ring-progress');
 
   timerNum.textContent = state.timeLeft;
 
-  // SVG circle : circumference = 2π×TIMER_CIRCLE_RADIUS
-  const circ = 2 * Math.PI * TIMER_CIRCLE_RADIUS;
+  const circ   = 2 * Math.PI * TIMER_CIRCLE_RADIUS;
   const offset = circ * (1 - pct);
-  timerRing.style.strokeDasharray = `${circ}`;
+  timerRing.style.strokeDasharray  = `${circ}`;
   timerRing.style.strokeDashoffset = `${offset}`;
 
-  // Couleur selon urgence
   if (state.timeLeft <= 5) {
     timerRing.style.stroke = 'var(--danger)';
-    timerNum.style.color = 'var(--danger)';
+    timerNum.style.color   = 'var(--danger)';
   } else if (state.timeLeft <= 10) {
     timerRing.style.stroke = 'var(--warning)';
-    timerNum.style.color = 'var(--warning)';
+    timerNum.style.color   = 'var(--warning)';
   } else {
     timerRing.style.stroke = 'var(--success)';
-    timerNum.style.color = 'var(--text)';
+    timerNum.style.color   = 'var(--text)';
   }
 }
 
 // ─── FIN DE TOUR ───────────────────────────────────────────────────────────────
-function endTurn(allWordsFound = false) {
+/**
+ * @param {'timeout'|'fault'|'all-found'} reason
+ */
+function endTurn(reason = 'timeout') {
   stopTimer();
 
   const team = state.teams[state.currentTeamIdx];
   team.score[state.currentRound - 1] += state.turnFound.length;
 
-  el('turn-end-team').textContent = `${team.emoji} ${team.name}`;
-  el('turn-end-player').textContent = state.teams[state.currentTeamIdx].players[state.teamPlayerIdx[state.currentTeamIdx]];
-  el('turn-end-count').textContent = state.turnFound.length;
+  // Message selon la raison
+  const reasonMsgs = {
+    timeout:   '⏱️ Temps écoulé !',
+    fault:     '🚨 Faute — tour arrêté !',
+    allFound:  '🎉 Tous les mots trouvés !',
+  };
+  el('turn-end-reason').textContent = reasonMsgs[reason] ?? '⏱️ Temps écoulé !';
+
+  el('turn-end-team').textContent   = `${team.emoji} ${team.name}`;
+  el('turn-end-player').textContent =
+    state.teams[state.currentTeamIdx].players[state.teamPlayerIdx[state.currentTeamIdx]];
+  el('turn-end-count').textContent  = state.turnFound.length;
 
   const foundList = el('turn-end-found-list');
   foundList.innerHTML = '';
   state.turnFound.forEach(w => {
-    const li = document.createElement('li');
+    const li  = document.createElement('li');
     const cat = getCategoryInfo(w.category);
     li.textContent = `${cat.emoji} ${w.word}`;
     foundList.appendChild(li);
@@ -330,7 +447,7 @@ function endTurn(allWordsFound = false) {
   const pi = state.teamPlayerIdx[state.currentTeamIdx];
   state.teamPlayerIdx[state.currentTeamIdx] = (pi + 1) % team.players.length;
 
-  if (allWordsFound || state.roundWords.length === 0) {
+  if (reason === 'allFound' || state.roundWords.length === 0) {
     el('btn-next-turn').dataset.nextAction = 'round-end';
     el('turn-end-all-found').hidden = false;
   } else {
@@ -346,7 +463,6 @@ function handleNextTurn() {
   if (action === 'round-end') {
     showRoundEnd();
   } else {
-    // Passer à l'équipe suivante
     state.currentTeamIdx = (state.currentTeamIdx + 1) % state.teams.length;
     startPreTurn();
   }
@@ -359,19 +475,32 @@ function showRoundEnd() {
   const scoreRows = el('round-end-scores');
   scoreRows.innerHTML = '';
   state.teams.forEach(team => {
-    const tr = document.createElement('tr');
+    const tr      = document.createElement('tr');
     const roundPts = team.score[state.currentRound - 1];
     const totalPts = team.score.reduce((a, b) => a + b, 0);
-    tr.innerHTML = `
-      <td><span style="color:${team.color}">${team.emoji} ${team.name}</span></td>
-      <td class="score-cell">${roundPts}</td>
-      <td class="score-cell total-score">${totalPts}</td>
-    `;
+
+    const tdName = document.createElement('td');
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = `${team.emoji} ${team.name}`;
+    nameSpan.style.color = team.color;
+    tdName.appendChild(nameSpan);
+
+    const tdRound = document.createElement('td');
+    tdRound.className = 'score-cell';
+    tdRound.textContent = roundPts;
+
+    const tdTotal = document.createElement('td');
+    tdTotal.className = 'score-cell total-score';
+    tdTotal.textContent = totalPts;
+
+    tr.appendChild(tdName);
+    tr.appendChild(tdRound);
+    tr.appendChild(tdTotal);
     scoreRows.appendChild(tr);
   });
 
   const isLastRound = state.currentRound === 3;
-  el('btn-next-round').hidden = isLastRound;
+  el('btn-next-round').hidden    = isLastRound;
   el('btn-final-results').hidden = !isLastRound;
 
   showScreen('screen-round-end');
@@ -381,34 +510,46 @@ function showRoundEnd() {
 function showGameOver() {
   playGameOver();
 
-  // Calcul du gagnant
-  const scored = state.teams.map(t => ({
-    team: t,
-    total: t.score.reduce((a, b) => a + b, 0),
-  }));
-  scored.sort((a, b) => b.total - a.total);
+  const scored = state.teams
+    .map(t => ({ team: t, total: t.score.reduce((a, b) => a + b, 0) }))
+    .sort((a, b) => b.total - a.total);
 
   const isTie = scored.length >= 2 && scored[0].total === scored[1].total;
 
+  const winnerEl = el('game-over-winner');
   if (isTie) {
-    el('game-over-winner').textContent = '🤝 Égalité !';
-    el('game-over-winner').style.color = 'var(--warning)';
+    winnerEl.textContent = '🤝 Égalité !';
+    winnerEl.style.color = 'var(--warning)';
   } else {
     const w = scored[0].team;
-    el('game-over-winner').textContent = `${w.emoji} ${w.name}`;
-    el('game-over-winner').style.color = w.color;
+    winnerEl.textContent = `${w.emoji} ${w.name}`;
+    winnerEl.style.color = w.color;
   }
 
+  const RANK_EMOJIS = ['🥇', '🥈', '🥉', '🎖️'];
   const finalScores = el('final-scores');
   finalScores.innerHTML = '';
   scored.forEach((s, i) => {
     const div = document.createElement('div');
     div.className = 'final-score-row';
-    div.innerHTML = `
-      <span class="final-rank">${i === 0 && !isTie ? '🥇' : i === 1 ? '🥈' : '🥉'}</span>
-      <span style="color:${s.team.color}">${s.team.emoji} ${s.team.name}</span>
-      <span class="final-pts">${s.total} pts</span>
-    `;
+
+    const rankSpan = document.createElement('span');
+    rankSpan.className = 'final-rank';
+    rankSpan.textContent = (i === 0 && !isTie)
+      ? RANK_EMOJIS[0]
+      : RANK_EMOJIS[Math.min(i, RANK_EMOJIS.length - 1)];
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = `${s.team.emoji} ${s.team.name}`;
+    nameSpan.style.color = s.team.color;
+
+    const ptsSpan = document.createElement('span');
+    ptsSpan.className = 'final-pts';
+    ptsSpan.textContent = `${s.total} pts`;
+
+    div.appendChild(rankSpan);
+    div.appendChild(nameSpan);
+    div.appendChild(ptsSpan);
     finalScores.appendChild(div);
   });
 
@@ -432,7 +573,6 @@ function init() {
     renderTeams();
   });
   el('btn-launch-game').addEventListener('click', () => {
-    state.allWords = getShuffledWords();
     startRound(1);
   });
 
@@ -448,6 +588,7 @@ function init() {
   // ── Turn ──
   el('btn-found').addEventListener('click', wordFound);
   el('btn-skip').addEventListener('click', wordSkipped);
+  el('btn-fault').addEventListener('click', wordFault);
 
   // ── Turn end ──
   el('btn-next-turn').addEventListener('click', handleNextTurn);
@@ -460,13 +601,13 @@ function init() {
 
   // ── Game over ──
   el('btn-replay').addEventListener('click', () => {
-    // Reset complet
-    state.playerNames = [];
-    state.teams = [];
-    state.teamPlayerIdx = [];
-    state.allWords = [];
-    state.roundWords = [];
-    state.currentRound = 0;
+    state.playerNames    = [];
+    state.teams          = [];
+    state.teamPlayerIdx  = [];
+    state.allWords       = [];
+    state.roundWords     = [];
+    state.currentRound   = 0;
+    state.noTeamsMode    = false;
     renderPlayerList();
     showScreen('screen-setup');
   });
@@ -477,9 +618,9 @@ function init() {
     el('btn-mute').textContent = getMuted() ? '🔇' : '🔊';
   });
 
-  // Afficher l'écran de démarrage
   renderPlayerList();
   showScreen('screen-setup');
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
