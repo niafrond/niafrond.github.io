@@ -1,3 +1,9 @@
+## [1.60.0](https://github.com/niafrond/niafrond.github.io/compare/v1.59.0...v1.60.0) (2026-04-17)
+
+### Features
+
+* Time's Up Nout Péi — team layout, per-round rules, 3 action buttons ([#59](https://github.com/niafrond/niafrond.github.io/issues/59)) ([332e329](https://github.com/niafrond/niafrond.github.io/commit/332e329f2136c0bc6643b26a7f51f87d1697cab2))
+
 ## [1.59.0](https://github.com/niafrond/niafrond.github.io/compare/v1.58.0...v1.59.0) (2026-04-11)
 
 ### Features
