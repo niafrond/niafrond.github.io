@@ -197,6 +197,7 @@ html, body {
   margin-top: 8px;
   display: block;
 }
+#setup-hint[hidden] { display: none; }
 
 /* ─── Home button ─────────────────────────────────────────────────────────── */
 .home-btn {
