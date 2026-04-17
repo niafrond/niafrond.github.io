@@ -1,3 +1,9 @@
+## [1.60.2](https://github.com/niafrond/niafrond.github.io/compare/v1.60.1...v1.60.2) (2026-04-17)
+
+### Bug Fixes
+
+* **times-up:** implement rounds 2 & 3 rules - round 3 allows passing, update descriptions ([#61](https://github.com/niafrond/niafrond.github.io/issues/61)) ([42f2601](https://github.com/niafrond/niafrond.github.io/commit/42f260191014304e5623d549af2304e6b3ec158b))
+
 ## [1.60.1](https://github.com/niafrond/niafrond.github.io/compare/v1.60.0...v1.60.1) (2026-04-17)
 
 ### Bug Fixes
