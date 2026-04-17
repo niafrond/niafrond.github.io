@@ -386,16 +386,22 @@ html, body {
 
 /* Boutons d'action */
 .turn-actions {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas: "skip found" "fault fault";
   gap: 10px;
   width: 100%;
   max-width: 480px;
 }
+/* Quand le bouton Skip est caché (manche 1), Trouvé prend toute la largeur */
+.turn-actions.no-skip {
+  grid-template-areas: "found found" "fault fault";
+}
 .btn-found-big {
+  grid-area: found;
   background: var(--success);
   color: #fff;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   padding: 20px;
   border-radius: var(--radius);
   border: none;
@@ -407,6 +413,7 @@ html, body {
 }
 .btn-found-big:active { transform: scale(0.97); }
 .btn-skip-turn {
+  grid-area: skip;
   background: var(--surface);
   color: var(--text);
   font-size: 1rem;
@@ -417,11 +424,12 @@ html, body {
   font-weight: 700;
   transition: background 0.15s;
   width: 100%;
-  min-height: 52px;
+  min-height: 64px;
 }
 .btn-skip-turn:hover { background: rgba(0,150,199,0.18); }
 
 .btn-fault-turn {
+  grid-area: fault;
   background: rgba(239,68,68,0.2);
   color: var(--danger);
   font-size: 0.95rem;
@@ -435,6 +443,30 @@ html, body {
   min-height: 52px;
 }
 .btn-fault-turn:hover { background: rgba(239,68,68,0.32); }
+
+/* Hint de swipe */
+.swipe-hint-text {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: center;
+  letter-spacing: 0.04em;
+  margin-top: -4px;
+  opacity: 0.7;
+}
+
+/* Swipe visual feedback on word card */
+.word-card {
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.word-card.swipe-hint--right {
+  border-color: var(--success);
+  box-shadow: var(--shadow), 0 0 24px rgba(64,145,108,0.45);
+}
+.word-card.swipe-hint--left {
+  border-color: var(--lagon);
+  box-shadow: var(--shadow), 0 0 24px rgba(0,150,199,0.45);
+}
+
 
 /* ─── No-teams banner ──────────────────────────────────────────────────────── */
 .no-teams-banner {
@@ -637,7 +669,92 @@ html, body {
   width: fit-content;
 }
 
-/* ─── Rotate overlay (hidden — le jeu fonctionne en portrait et paysage) ─── */
+/* ─── Setup tabs ────────────────────────────────────────────────────────────── */
+.setup-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+}
+.setup-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 9px 12px;
+  border-radius: calc(var(--radius-sm) - 2px);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  letter-spacing: 0.01em;
+}
+.setup-tab--active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* ─── Members list ──────────────────────────────────────────────────────────── */
+.members-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+.members-empty {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 12px 0;
+  line-height: 1.5;
+}
+#members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+.member-item {
+  display: flex;
+  align-items: center;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  user-select: none;
+}
+.member-item:hover { background: rgba(232,93,4,0.1); border-color: var(--volcan); }
+.member-item--added { opacity: 0.5; cursor: default; }
+.member-item--added:hover { background: var(--surface2); border-color: var(--border); }
+.member-item-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.member-item-stats {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.member-item-added-badge {
+  font-size: 0.75rem;
+  color: var(--success);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+
 #rotate-overlay {
   display: none;
 }
@@ -688,14 +805,15 @@ html, body {
   .turn-actions {
     grid-column: 1 / -1;
     grid-row: 3;
-    flex-direction: row;
+    /* En paysage, 3 colonnes : Passer (1fr) · Trouvé (2fr, plus grand) · Erreur (1fr) */
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-areas: "skip found fault";
     gap: 8px;
     max-width: none;
     width: 100%;
   }
 
   .btn-found-big {
-    flex: 2;
     font-size: 1rem;
     padding: 10px 12px;
     min-height: 48px;
@@ -703,9 +821,10 @@ html, body {
 
   .btn-skip-turn,
   .btn-fault-turn {
-    flex: 1;
     font-size: 0.85rem;
     padding: 10px 8px;
     min-height: 48px;
   }
+
+  .swipe-hint-text { display: none; }
 }

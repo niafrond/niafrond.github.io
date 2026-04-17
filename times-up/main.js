@@ -21,6 +21,13 @@ const WORD_CARD_HORIZONTAL_PAD   = 48;   // padding horizontal de .word-card (24
 const WORD_FONT_MIN              = 16;   // px — taille minimale du mot
 const WORD_FONT_MAX              = 200;  // px — taille maximale du mot
 
+// Swipe constants
+const SWIPE_THRESHOLD            = 70;   // px — distance minimale pour valider un swipe
+const SWIPE_VISUAL_THRESHOLD     = 20;   // px — distance à partir de laquelle l'indicateur s'affiche
+const SWIPE_VERTICAL_TOLERANCE   = 10;   // px — tolérance verticale avant d'annuler le swipe
+const SWIPE_MIN_OPACITY          = 0.4;  // opacité minimale de la carte pendant le swipe
+const SWIPE_OPACITY_DIST         = 280;  // px — distance sur laquelle l'opacité diminue
+
 const ROUND_RULES = [
   {
     num: 1, icon: '🗣️',
@@ -94,6 +101,8 @@ function showScreen(id) {
 
 function el(id) { return document.getElementById(id); }
 
+function getCurrentRoundRule() { return ROUND_RULES[state.currentRound - 1]; }
+
 let _toastTimer = null;
 function showToast(msg, type = 'info') {
   const t = el('toast');
@@ -155,6 +164,8 @@ function addPlayer() {
 function removePlayer(idx) {
   state.playerNames.splice(idx, 1);
   renderPlayerList();
+  // Refresh members tab if visible
+  if (!el('panel-membres').hidden) renderMembersList();
 }
 
 // ─── COMPOSITION DES ÉQUIPES ───────────────────────────────────────────────────
@@ -319,9 +330,16 @@ function startTurn() {
   state.turnFound  = [];
   state.timeLeft   = TURN_DURATION;
 
-  const rule = ROUND_RULES[state.currentRound - 1];
+  const rule = getCurrentRoundRule();
   el('btn-skip').hidden  = !rule.canSkip;
   el('btn-fault').hidden = !rule.canFault;
+  el('turn-actions').classList.toggle('no-skip', !rule.canSkip);
+
+  // Swipe hint: masquer la flèche gauche si on ne peut pas passer
+  const hintEl = el('swipe-hint-text');
+  hintEl.innerHTML = rule.canSkip
+    ? '← Passer &nbsp;·&nbsp; Trouvé →'
+    : 'Glissez à droite → Trouvé';
 
   updateTurnStats();
   drawNextWord();
@@ -545,6 +563,7 @@ function showRoundEnd() {
 // ─── FIN DU JEU ────────────────────────────────────────────────────────────────
 function showGameOver() {
   playGameOver();
+  saveMembersAfterGame();
 
   const scored = state.teams
     .map(t => ({ team: t, total: t.score.reduce((a, b) => a + b, 0) }))
@@ -728,7 +747,163 @@ function handleResetWords() {
   showToast('Mots remis par défaut ✅');
 }
 
-// ─── INITIALISATION ────────────────────────────────────────────────────────────
+// ─── MEMBRES (historique des joueurs) ─────────────────────────────────────────
+const MEMBERS_KEY = 'timesup-members';
+
+function loadMembers() {
+  try { return JSON.parse(localStorage.getItem(MEMBERS_KEY) || '[]'); } catch { return []; }
+}
+
+function saveMembers(members) {
+  localStorage.setItem(MEMBERS_KEY, JSON.stringify(members));
+}
+
+/** Sauvegarde les scores des joueurs après une partie terminée. */
+function saveMembersAfterGame() {
+  const members = loadMembers();
+  state.teams.forEach(team => {
+    const teamTotal = team.score.reduce((a, b) => a + b, 0);
+    team.players.forEach(playerName => {
+      const existing = members.find(m => m.name === playerName);
+      if (existing) {
+        existing.games  = (existing.games  || 0) + 1;
+        existing.totalPts = (existing.totalPts || 0) + teamTotal;
+      } else {
+        members.push({ name: playerName, games: 1, totalPts: teamTotal });
+      }
+    });
+  });
+  saveMembers(members);
+}
+
+function renderMembersList() {
+  const list    = el('members-list');
+  const empty   = el('members-empty');
+  const members = loadMembers();
+
+  list.innerHTML = '';
+
+  if (members.length === 0) {
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+
+  // Trier par totalPts décroissant
+  const sorted = [...members].sort((a, b) => (b.totalPts || 0) - (a.totalPts || 0));
+
+  sorted.forEach((m) => {
+    const isAdded = state.playerNames.includes(m.name);
+
+    const item = document.createElement('div');
+    item.className = `member-item${isAdded ? ' member-item--added' : ''}`;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'member-item-name';
+    nameSpan.textContent = `👤 ${m.name}`;
+
+    const statsSpan = document.createElement('span');
+    statsSpan.className = 'member-item-stats';
+    statsSpan.textContent = `${m.games} partie${m.games > 1 ? 's' : ''} · ${m.totalPts || 0} pts`;
+
+    item.appendChild(nameSpan);
+    item.appendChild(statsSpan);
+
+    if (isAdded) {
+      const badge = document.createElement('span');
+      badge.className = 'member-item-added-badge';
+      badge.textContent = '✓ Ajouté';
+      item.appendChild(badge);
+    } else {
+      // Bouton supprimer
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-icon btn-danger';
+      delBtn.setAttribute('aria-label', `Supprimer ${m.name}`);
+      delBtn.textContent = '✕';
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const all = loadMembers();
+        const idx = all.findIndex(x => x.name === m.name);
+        if (idx !== -1) { all.splice(idx, 1); saveMembers(all); }
+        renderMembersList();
+      });
+      item.appendChild(delBtn);
+    }
+
+    if (!isAdded) {
+      item.addEventListener('click', () => {
+        if (state.playerNames.includes(m.name)) return;
+        if (state.playerNames.length >= 20) { showToast('Maximum 20 joueurs', 'warn'); return; }
+        state.playerNames.push(m.name);
+        renderPlayerList();
+        renderMembersList();
+        showToast(`${m.name} ajouté(e) ✅`);
+      });
+    }
+
+    list.appendChild(item);
+  });
+}
+
+// ─── ONGLETS SETUP ─────────────────────────────────────────────────────────────
+function switchSetupTab(tab) {
+  const isJoueurs = (tab === 'joueurs');
+  el('tab-joueurs').className  = `setup-tab${isJoueurs ? ' setup-tab--active' : ''}`;
+  el('tab-membres').className  = `setup-tab${!isJoueurs ? ' setup-tab--active' : ''}`;
+  el('tab-joueurs').setAttribute('aria-selected', isJoueurs);
+  el('tab-membres').setAttribute('aria-selected', !isJoueurs);
+  el('panel-joueurs').hidden   = !isJoueurs;
+  el('panel-membres').hidden   = isJoueurs;
+  if (!isJoueurs) renderMembersList();
+}
+
+
+function initSwipe() {
+  const card = document.querySelector('.word-card');
+  let startX = 0, startY = 0, active = false;
+
+  card.addEventListener('touchstart', (e) => {
+    if (el('screen-turn').hidden) return;
+    startX  = e.touches[0].clientX;
+    startY  = e.touches[0].clientY;
+    active  = true;
+    card.style.transition = 'none';
+  }, { passive: true });
+
+  card.addEventListener('touchmove', (e) => {
+    if (!active) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if (Math.abs(dy) > Math.abs(dx) + SWIPE_VERTICAL_TOLERANCE) { active = false; resetCard(); return; }
+    card.style.transform = `translateX(${dx}px)`;
+    card.style.opacity   = String(Math.max(SWIPE_MIN_OPACITY, 1 - Math.abs(dx) / SWIPE_OPACITY_DIST));
+    card.classList.toggle('swipe-hint--right', dx >  SWIPE_VISUAL_THRESHOLD);
+    card.classList.toggle('swipe-hint--left',  dx < -SWIPE_VISUAL_THRESHOLD);
+  }, { passive: true });
+
+  card.addEventListener('touchend', (e) => {
+    if (!active) return;
+    active = false;
+    const dx = e.changedTouches[0].clientX - startX;
+    resetCard();
+    if (dx > SWIPE_THRESHOLD) {
+      wordFound();
+    } else if (dx < -SWIPE_THRESHOLD) {
+      const rule = getCurrentRoundRule();
+      if (rule.canSkip) wordSkipped();
+    }
+  }, { passive: true });
+
+  card.addEventListener('touchcancel', () => { active = false; resetCard(); }, { passive: true });
+
+  function resetCard() {
+    card.style.transition = '';
+    card.style.transform  = '';
+    card.style.opacity    = '';
+    card.classList.remove('swipe-hint--right', 'swipe-hint--left');
+  }
+}
+
 function init() {
   // ── Setup ──
   el('btn-add-player').addEventListener('click', addPlayer);
@@ -738,6 +913,10 @@ function init() {
   el('btn-start-game').addEventListener('click', () => {
     if (state.playerNames.length >= MIN_PLAYERS) goToTeams();
   });
+
+  // ── Setup tabs ──
+  el('tab-joueurs').addEventListener('click', () => switchSetupTab('joueurs'));
+  el('tab-membres').addEventListener('click', () => switchSetupTab('membres'));
 
   // ── Teams ──
   el('btn-reshuffle').addEventListener('click', () => {
@@ -780,6 +959,7 @@ function init() {
     state.roundWords     = [];
     state.currentRound   = 0;
     state.noTeamsMode    = false;
+    switchSetupTab('joueurs');
     renderPlayerList();
     showScreen('screen-setup');
   });
@@ -806,6 +986,9 @@ function init() {
   window.addEventListener('resize', () => {
     if (!el('screen-turn').hidden) fitWordCard();
   });
+
+  // ── Swipe support on turn screen ──
+  initSwipe();
 
   renderPlayerList();
   showScreen('screen-setup');
