@@ -3,7 +3,9 @@
  * pour le jeu Time's Up Nout Péi
  */
 
-const CATEGORY_LABELS = {
+const STORAGE_KEY = 'timesup_custom_words';
+
+export const CATEGORY_LABELS = {
   lieu:        { label: 'Lieu',         emoji: '🗺️' },
   gastronomie: { label: 'Gastronomie',  emoji: '🍛' },
   culture:     { label: 'Culture',      emoji: '🎵' },
@@ -11,7 +13,7 @@ const CATEGORY_LABELS = {
   creole:      { label: 'Créole',       emoji: '🗣️' },
 };
 
-const RAW_WORDS = [
+export const DEFAULT_WORDS = [
   // ─── Lieux ────────────────────────────────────────────────────────────────
   { word: 'Piton de la Fournaise',    category: 'lieu' },
   { word: 'Piton des Neiges',         category: 'lieu' },
@@ -96,12 +98,38 @@ export function shuffle(arr) {
   return a;
 }
 
+/** Retourne les mots personnalisés depuis localStorage, ou les mots par défaut. */
+export function loadWords() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const valid = parsed.filter(
+          w => w && typeof w.word === 'string' && w.word.trim() &&
+               typeof w.category === 'string' && w.category.trim()
+        ).map(w => ({ word: w.word.trim(), category: w.category.trim() }));
+        if (valid.length > 0) return valid;
+      }
+    }
+  } catch (_) { /* ignore */ }
+  return [...DEFAULT_WORDS];
+}
+
+/** Sauvegarde un tableau de mots dans localStorage. */
+export function saveWords(words) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+}
+
+/** Supprime les mots personnalisés (retour aux mots par défaut). */
+export function resetWords() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 export function getShuffledWords() {
-  return shuffle(RAW_WORDS);
+  return shuffle(loadWords());
 }
 
 export function getCategoryInfo(category) {
   return CATEGORY_LABELS[category] ?? { label: category, emoji: '❓' };
 }
-
-export const TOTAL_WORDS = RAW_WORDS.length;

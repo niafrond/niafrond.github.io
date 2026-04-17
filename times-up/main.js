@@ -5,7 +5,7 @@
  * Flux : setup → teams → round-intro → pre-turn → turn → turn-end → round-end → game-over
  */
 
-import { getShuffledWords, getCategoryInfo, shuffle } from './words.js';
+import { getShuffledWords, getCategoryInfo, shuffle, CATEGORY_LABELS, DEFAULT_WORDS, loadWords, saveWords, resetWords } from './words.js';
 import {
   playTick, playTickUrgent, playBuzzer,
   playFound, playRoundStart, playGameOver,
@@ -565,6 +565,142 @@ function showGameOver() {
   showScreen('screen-game-over');
 }
 
+// ─── ÉDITEUR DE MOTS ──────────────────────────────────────────────────────────
+let editableWords = [];
+
+/** Filtre et normalise un tableau brut en entrées {word, category} valides. */
+function filterValidWords(arr) {
+  return arr
+    .filter(w => w && typeof w.word === 'string' && w.word.trim() &&
+                 typeof w.category === 'string' && w.category.trim())
+    .map(w => ({ word: w.word.trim(), category: w.category.trim() }));
+}
+
+function openWordsEditor() {
+  editableWords = loadWords();
+  renderWordsList();
+  showScreen('screen-words');
+}
+
+function renderWordsList() {
+  const list = el('words-list');
+  list.innerHTML = '';
+
+  el('words-count-info').textContent =
+    `${editableWords.length} mot${editableWords.length !== 1 ? 's' : ''} dans le jeu`;
+
+  // Per-category counters
+  const catCounts = el('words-cat-counts');
+  catCounts.innerHTML = '';
+  const counts = {};
+  editableWords.forEach(w => { counts[w.category] = (counts[w.category] || 0) + 1; });
+  Object.entries(CATEGORY_LABELS).forEach(([key, { label, emoji }]) => {
+    const n = counts[key] || 0;
+    const badge = document.createElement('span');
+    badge.className = `words-cat-badge${n === 0 ? ' words-cat-badge--empty' : ''}`;
+    badge.textContent = `${emoji} ${label} ${n}`;
+    catCounts.appendChild(badge);
+  });
+
+  if (editableWords.length === 0) {
+    const empty = document.createElement('p');
+    empty.style.cssText = 'color:var(--text-muted);font-size:0.9rem;text-align:center;padding:12px 0;';
+    empty.textContent = 'Aucun mot — ajoutez-en ci-dessus !';
+    list.appendChild(empty);
+    return;
+  }
+
+  editableWords.forEach((entry, i) => {
+    const cat = getCategoryInfo(entry.category);
+    const row = document.createElement('div');
+    row.className = 'word-edit-row';
+
+    const info = document.createElement('div');
+    info.className = 'word-edit-info';
+
+    const wordSpan = document.createElement('span');
+    wordSpan.className = 'word-edit-text';
+    wordSpan.textContent = entry.word;
+
+    const catBadge = document.createElement('span');
+    catBadge.className = 'word-edit-cat';
+    catBadge.textContent = `${cat.emoji} ${cat.label}`;
+
+    info.appendChild(wordSpan);
+    info.appendChild(catBadge);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-icon btn-danger';
+    delBtn.setAttribute('aria-label', `Supprimer ${entry.word}`);
+    delBtn.textContent = '✕';
+    delBtn.addEventListener('click', () => deleteWord(i));
+
+    row.appendChild(info);
+    row.appendChild(delBtn);
+    list.appendChild(row);
+  });
+}
+
+function addWord() {
+  const textInput = el('word-new-text');
+  const catSelect = el('word-new-category');
+  const word = textInput.value.trim();
+  if (!word) { showToast('Entrez un mot', 'warn'); return; }
+  if (editableWords.some(w => w.word.toLowerCase() === word.toLowerCase())) {
+    showToast('Ce mot existe déjà', 'warn'); return;
+  }
+  editableWords.push({ word, category: catSelect.value });
+  saveWords(editableWords);
+  textInput.value = '';
+  textInput.focus();
+  renderWordsList();
+}
+
+function deleteWord(idx) {
+  editableWords.splice(idx, 1);
+  saveWords(editableWords);
+  renderWordsList();
+}
+
+function exportWords() {
+  const json = JSON.stringify(editableWords, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'timesup-mots.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importWords(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!Array.isArray(parsed)) throw new Error('Format invalide');
+      const valid = filterValidWords(parsed);
+      if (valid.length === 0) throw new Error('Aucun mot valide trouvé');
+      editableWords = valid;
+      saveWords(editableWords);
+      renderWordsList();
+      showToast(`${valid.length} mot${valid.length !== 1 ? 's' : ''} importé${valid.length !== 1 ? 's' : ''} ✅`);
+    } catch (err) {
+      showToast(`Erreur : ${err.message}`, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function handleResetWords() {
+  if (!confirm('Réinitialiser la liste avec les mots par défaut ?')) return;
+  resetWords();
+  editableWords = [...DEFAULT_WORDS];
+  renderWordsList();
+  showToast('Mots remis par défaut ✅');
+}
+
 // ─── INITIALISATION ────────────────────────────────────────────────────────────
 function init() {
   // ── Setup ──
@@ -626,6 +762,18 @@ function init() {
     setMuted(!getMuted());
     el('btn-mute').textContent = getMuted() ? '🔇' : '🔊';
   });
+
+  // ── Words editor ──
+  el('btn-edit-words').addEventListener('click', openWordsEditor);
+  el('btn-words-back').addEventListener('click', () => showScreen('screen-setup'));
+  el('btn-word-add').addEventListener('click', addWord);
+  el('word-new-text').addEventListener('keydown', e => { if (e.key === 'Enter') addWord(); });
+  el('btn-words-export').addEventListener('click', exportWords);
+  el('input-words-import').addEventListener('change', e => {
+    importWords(e.target.files[0]);
+    e.target.value = '';
+  });
+  el('btn-words-reset').addEventListener('click', handleResetWords);
 
   renderPlayerList();
   showScreen('screen-setup');
