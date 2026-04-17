@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Time's Up 🌋 Nout Péi</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b1e2d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Time's Up Péi">
+</head>
+<body>
+
+<!-- Bouton muet global (toujours visible) -->
+<button id="btn-mute" title="Son on/off">🔊</button>
+<div id="toast" class="toast" hidden></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 1 — SETUP : saisie des joueurs
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-setup" data-screen="screen-setup">
+  <div class="page-wrapper">
+    <a href="../" class="btn btn-secondary btn-sm home-btn">← Accueil</a>
+
+    <h1 class="app-title">⏱️ Time's Up</h1>
+    <p class="app-subtitle">Nout Péi 🌋🌊</p>
+
+    <div class="card">
+      <div class="card-title">👥 Ajouter les joueurs</div>
+      <div class="input-row mb-12">
+        <input id="player-input" class="input" type="text"
+               placeholder="Prénom du joueur…" maxlength="24" autocomplete="off" autocorrect="off">
+        <button id="btn-add-player" class="btn btn-primary">+ Ajouter</button>
+      </div>
+      <div id="player-list"></div>
+      <span id="player-count"></span>
+      <span id="setup-hint" hidden></span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📖 Règles rapides</div>
+      <p style="font-size:0.88rem; color:var(--text-muted); line-height:1.6">
+        <strong style="color:var(--text)">3 manches</strong> — même liste de mots réunionnais, chaque équipe joue à tour de rôle :<br>
+        🗣️ <strong style="color:var(--text)">Manche 1</strong> : Tout décrire<br>
+        ☝️ <strong style="color:var(--text)">Manche 2</strong> : Un seul mot<br>
+        🤐 <strong style="color:var(--text)">Manche 3</strong> : Mime uniquement<br>
+        <br>Timer de <strong style="color:var(--text)">30 secondes</strong> par tour — le téléphone se passe entre joueurs.
+      </p>
+    </div>
+
+    <button id="btn-start-game" class="btn btn-primary btn-lg w-full" disabled>
+      🚀 Créer les équipes
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 2 — TEAMS : affichage des équipes
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-teams" data-screen="screen-teams">
+  <div class="page-wrapper">
+    <h1 class="app-title" style="font-size:2rem;">🎲 Les Équipes</h1>
+    <p class="app-subtitle">Équipes définies aléatoirement</p>
+
+    <div id="teams-container"></div>
+
+    <button id="btn-reshuffle" class="btn btn-secondary w-full mb-12">
+      🔀 Rebattre les équipes
+    </button>
+    <button id="btn-launch-game" class="btn btn-primary btn-lg w-full">
+      🌋 C'est parti !
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 3 — ROUND INTRO : présentation de la manche
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-round-intro" data-screen="screen-round-intro" class="screen-center">
+  <span class="round-badge">Manche <span id="round-intro-num"></span></span>
+  <div id="round-intro-icon"></div>
+  <div id="round-intro-title"></div>
+  <p id="round-intro-desc"></p>
+  <p style="font-size:0.85rem; color:var(--text-muted)" id="round-intro-words-left"></p>
+  <button id="btn-round-go" class="btn btn-primary btn-lg">
+    ▶ Commencer la manche
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 4 — PRÉ-TOUR : passer le téléphone
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-pre-turn" data-screen="screen-pre-turn" class="screen-center">
+  <span class="round-badge" id="pre-turn-round"></span>
+  <p class="pre-turn-label">Au tour de</p>
+  <div id="pre-turn-team"></div>
+  <p class="pre-turn-label" style="margin-top:12px">Passez le téléphone à</p>
+  <div id="pre-turn-player"></div>
+  <p style="font-size:0.85rem; color:var(--text-muted)" id="pre-turn-words-left"></p>
+  <button id="btn-ready" class="btn btn-primary btn-lg" style="margin-top:8px">
+    ✅ Je suis prêt !
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 5 — TOUR ACTIF : timer + mot
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-turn" data-screen="screen-turn" hidden>
+  <!-- En-tête -->
+  <div class="turn-header">
+    <span id="turn-round-badge"></span>
+    <span class="turn-found-info">✅ <span id="turn-found-count">0</span> trouvé(s)</span>
+  </div>
+
+  <!-- Timer -->
+  <div class="timer-wrap">
+    <svg class="timer-svg" viewBox="0 0 100 100">
+      <circle class="timer-track"  cx="50" cy="50" r="46"/>
+      <circle class="timer-ring" id="timer-ring-progress" cx="50" cy="50" r="46"/>
+    </svg>
+    <div id="timer-number">30</div>
+  </div>
+
+  <!-- Carte mot -->
+  <div class="word-card">
+    <div id="word-card-text">…</div>
+    <div id="word-card-category"></div>
+  </div>
+
+  <!-- Actions -->
+  <div class="turn-actions">
+    <button id="btn-found" class="btn-found-big">✅ Trouvé !</button>
+    <button id="btn-skip"  class="btn-skip-turn">→ Passer ce mot</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 6 — FIN DE TOUR : résumé
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-turn-end" data-screen="screen-turn-end" class="screen-center">
+  <div style="font-size:2rem">⏱️ Temps écoulé !</div>
+  <div id="turn-end-team" style="font-size:1.2rem; font-weight:800;"></div>
+  <p style="color:var(--text-muted)">
+    <span id="turn-end-player" style="color:var(--text); font-weight:700;"></span> a trouvé
+  </p>
+  <div class="turn-end-score" id="turn-end-count">0</div>
+  <p class="turn-end-label">mot(s) ce tour</p>
+
+  <div class="card" style="max-width:440px">
+    <div class="card-title">✅ Mots trouvés</div>
+    <ul class="turn-end-found-list" id="turn-end-found-list"></ul>
+    <p style="margin-top:10px; font-size:0.85rem; color:var(--text-muted)">
+      <span id="turn-end-words-left"></span> mot(s) restant(s) dans la manche
+    </p>
+  </div>
+
+  <div class="all-found-banner" id="turn-end-all-found" hidden>
+    🎉 Tous les mots ont été trouvés ! La manche est terminée.
+  </div>
+
+  <button id="btn-next-turn" class="btn btn-primary btn-lg" data-next-action="next-turn">
+    ➡ Suivant
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 7 — FIN DE MANCHE : scores
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-round-end" data-screen="screen-round-end" class="screen-center">
+  <div style="font-size:2.5rem">🏆</div>
+  <h2 style="font-size:1.5rem; font-weight:800;">Fin de la manche <span id="round-end-num"></span></h2>
+
+  <div class="card" style="max-width:480px">
+    <table class="scores-table">
+      <thead>
+        <tr>
+          <th>Équipe</th>
+          <th class="score-cell">Cette manche</th>
+          <th class="score-cell">Total</th>
+        </tr>
+      </thead>
+      <tbody id="round-end-scores"></tbody>
+    </table>
+  </div>
+
+  <button id="btn-next-round" class="btn btn-primary btn-lg">
+    ▶ Manche suivante
+  </button>
+  <button id="btn-final-results" class="btn btn-primary btn-lg" hidden>
+    🏆 Résultats finaux
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 8 — GAME OVER : vainqueur
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-game-over" data-screen="screen-game-over" class="screen-center">
+  <div style="font-size:3rem">🎉</div>
+  <h2 style="font-size:1.1rem; color:var(--text-muted); font-weight:600;">Vainqueur</h2>
+  <div id="game-over-winner"></div>
+
+  <div id="final-scores"></div>
+
+  <button id="btn-replay" class="btn btn-secondary btn-lg mt-20">
+    🔄 Rejouer
+  </button>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
