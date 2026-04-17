@@ -13,9 +13,12 @@ import {
 } from './sound.js';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
-const TURN_DURATION       = 30;   // secondes par tour
-const TIMER_CIRCLE_RADIUS = 46;   // rayon du cercle SVG du timer
-const MIN_PLAYERS         = 4;
+const TURN_DURATION              = 30;   // secondes par tour
+const TIMER_CIRCLE_RADIUS        = 46;   // rayon du cercle SVG du timer
+const MIN_PLAYERS                = 4;
+const WORD_CARD_HORIZONTAL_PAD   = 48;   // padding horizontal de .word-card (24px × 2)
+const WORD_FONT_MIN              = 16;   // px — taille minimale du mot
+const WORD_FONT_MAX              = 200;  // px — taille maximale du mot
 
 const ROUND_RULES = [
   {
@@ -327,6 +330,28 @@ function startTurn() {
   showScreen('screen-turn');
 }
 
+function fitWordCard() {
+  const textEl = el('word-card-text');
+  const card   = textEl.closest('.word-card');
+  if (!card || !textEl.textContent.trim()) return;
+
+  const availW = card.clientWidth - WORD_CARD_HORIZONTAL_PAD;
+  if (availW <= 0) return;
+
+  // Binary-search the largest font size where text fits on one line
+  let lo = WORD_FONT_MIN, hi = WORD_FONT_MAX;
+  while (hi - lo > 1) {
+    const mid = Math.round((lo + hi) / 2);
+    textEl.style.fontSize = mid + 'px';
+    if (textEl.scrollWidth <= availW) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  textEl.style.fontSize = lo + 'px';
+}
+
 function drawNextWord() {
   if (state.roundWords.length === 0) {
     endTurn('allFound');
@@ -337,6 +362,7 @@ function drawNextWord() {
   el('word-card-text').textContent     = state.currentWord.word;
   el('word-card-category').textContent = `${cat.emoji} ${cat.label}`;
   el('turn-round-badge').textContent   = `Manche ${state.currentRound} — ${ROUND_RULES[state.currentRound - 1].icon}`;
+  fitWordCard();
 }
 
 function wordFound() {
@@ -625,6 +651,11 @@ function init() {
   el('btn-mute').addEventListener('click', () => {
     setMuted(!getMuted());
     el('btn-mute').textContent = getMuted() ? '🔇' : '🔊';
+  });
+
+  // ── Re-fit word on resize / orientation change ──
+  window.addEventListener('resize', () => {
+    if (!el('screen-turn').hidden) fitWordCard();
   });
 
   renderPlayerList();
