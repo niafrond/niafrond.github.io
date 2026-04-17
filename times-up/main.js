@@ -16,7 +16,8 @@ import {
 const TURN_DURATION              = 30;   // secondes par tour
 const TIMER_CIRCLE_RADIUS        = 46;   // rayon du cercle SVG du timer
 const MIN_PLAYERS                = 4;
-const CARD_COUNT                 = 40;   // nombre de cartes par partie
+const CARD_COUNT_DEFAULT         = 40;   // nombre de cartes par défaut
+const CARD_COUNT_KEY             = 'timesup_card_count';
 const WORD_CARD_HORIZONTAL_PAD   = 48;   // padding horizontal de .word-card (24px × 2)
 const WORD_FONT_MIN              = 16;   // px — taille minimale du mot
 const WORD_FONT_MAX              = 200;  // px — taille maximale du mot
@@ -74,6 +75,23 @@ const TEAMS_META = [
 // Emojis pour le mode jeu libre (5 ou 7 joueurs — pas d'équipes fixes)
 const SOLO_EMOJIS = ['🌺', '🦜', '🌴', '🐠', '🌸', '🦩', '🌿'];
 
+// ─── Persistance du nombre de cartes ───────────────────────────────────────────
+function loadCardCount() {
+  const ALLOWED = [0, 20, 30, 40, 50];
+  try {
+    const v = localStorage.getItem(CARD_COUNT_KEY);
+    if (v !== null) {
+      const n = parseInt(v, 10);
+      if (ALLOWED.includes(n)) return n;
+    }
+  } catch (_) { /* ignore */ }
+  return CARD_COUNT_DEFAULT;
+}
+
+function saveCardCount(n) {
+  try { localStorage.setItem(CARD_COUNT_KEY, String(n)); } catch (_) { /* ignore */ }
+}
+
 // ─── État du jeu ───────────────────────────────────────────────────────────────
 const state = {
   playerNames:    [],
@@ -91,6 +109,8 @@ const state = {
 
   timerInterval: null,
   timeLeft: TURN_DURATION,
+
+  cardCount: CARD_COUNT_DEFAULT,  // 0 = tous les mots disponibles
 };
 
 // ─── Helpers UI ────────────────────────────────────────────────────────────────
@@ -294,7 +314,9 @@ function startRound(roundNum) {
   state.currentRound = roundNum;
   // Manche 1 : mélange complet ; manches 2 et 3 : mêmes cartes remélangées
   if (roundNum === 1) {
-    state.allWords  = getShuffledWords().slice(0, CARD_COUNT);
+    const words = getShuffledWords();
+    const count = state.cardCount === 0 ? words.length : Math.min(state.cardCount, words.length);
+    state.allWords  = words.slice(0, count);
   }
   state.roundWords   = shuffle([...state.allWords]);
   state.currentTeamIdx = 0;
@@ -912,6 +934,15 @@ function init() {
   });
   el('btn-start-game').addEventListener('click', () => {
     if (state.playerNames.length >= MIN_PLAYERS) goToTeams();
+  });
+
+  // ── Options de partie ──
+  state.cardCount = loadCardCount();
+  const selectCardCount = el('select-card-count');
+  selectCardCount.value = String(state.cardCount);
+  selectCardCount.addEventListener('change', () => {
+    state.cardCount = parseInt(selectCardCount.value, 10);
+    saveCardCount(state.cardCount);
   });
 
   // ── Setup tabs ──
