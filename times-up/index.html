@@ -59,6 +59,9 @@
     <button id="btn-start-game" class="btn btn-primary btn-lg w-full" disabled>
       🚀 Créer les équipes
     </button>
+    <button id="btn-edit-words" class="btn btn-secondary w-full mt-12">
+      ✏️ Éditer les mots du jeu
+    </button>
   </div>
 </div>
 
@@ -213,6 +216,51 @@
   <button id="btn-replay" class="btn btn-secondary btn-lg mt-20">
     🔄 Rejouer
   </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 9 — ÉDITEUR DE MOTS
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-words" data-screen="screen-words">
+  <div class="page-wrapper">
+    <button id="btn-words-back" class="btn btn-secondary btn-sm home-btn">← Retour</button>
+
+    <h1 class="app-title" style="font-size:2rem;">✏️ Mots du jeu</h1>
+    <p id="words-count-info" class="app-subtitle"></p>
+
+    <!-- Actions globales -->
+    <div class="words-actions-row">
+      <button id="btn-words-export" class="btn btn-secondary btn-sm">⬇️ Exporter (JSON)</button>
+      <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+        ⬆️ Importer (JSON)
+        <input id="input-words-import" type="file" accept=".json,application/json" hidden>
+      </label>
+      <button id="btn-words-reset" class="btn btn-secondary btn-sm btn-danger-outline">🔄 Défaut</button>
+    </div>
+
+    <!-- Formulaire d'ajout -->
+    <div class="card">
+      <div class="card-title">➕ Ajouter un mot</div>
+      <div class="input-row">
+        <input id="word-new-text" class="input" type="text"
+               placeholder="Nouveau mot…" maxlength="60" autocomplete="off" autocorrect="off">
+        <select id="word-new-category" class="input" style="flex:0 0 auto; width:auto;">
+          <option value="lieu">🗺️ Lieu</option>
+          <option value="gastronomie">🍛 Gastronomie</option>
+          <option value="culture">🎵 Culture</option>
+          <option value="nature">🌿 Nature</option>
+          <option value="creole">🗣️ Créole</option>
+        </select>
+        <button id="btn-word-add" class="btn btn-primary btn-sm">+ Ajouter</button>
+      </div>
+    </div>
+
+    <!-- Liste des mots -->
+    <div class="card" style="padding:12px;">
+      <div class="card-title">📋 Liste des mots</div>
+      <div id="words-list"></div>
+    </div>
+  </div>
 </div>
 
 <!-- Overlay : rotate to landscape (shown in portrait via CSS) -->
