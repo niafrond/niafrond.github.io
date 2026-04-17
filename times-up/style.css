@@ -360,12 +360,17 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 12px;
+  overflow: hidden;
 }
 #word-card-text {
-  font-size: clamp(1.8rem, 7vw, 2.8rem);
+  font-size: 2rem; /* fallback — remplacé dynamiquement par fitWordCard() en JS */
   font-weight: 900;
   line-height: 1.2;
   color: var(--text);
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-align: center;
 }
 #word-card-category {
   font-size: 0.9rem;
@@ -394,35 +399,38 @@ html, body {
   font-weight: 800;
   transition: opacity 0.15s, transform 0.1s;
   width: 100%;
+  min-height: 64px;
 }
 .btn-found-big:active { transform: scale(0.97); }
 .btn-skip-turn {
-  background: transparent;
-  color: var(--text-muted);
+  background: var(--surface);
+  color: var(--text);
   font-size: 1rem;
   padding: 14px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.15s;
-  width: 100%;
-}
-.btn-skip-turn:hover { background: var(--surface); }
-
-.btn-fault-turn {
-  background: rgba(239,68,68,0.12);
-  color: var(--danger);
-  font-size: 0.95rem;
-  padding: 13px;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(239,68,68,0.35);
+  border: 2px solid var(--lagon);
   cursor: pointer;
   font-weight: 700;
   transition: background 0.15s;
   width: 100%;
+  min-height: 52px;
 }
-.btn-fault-turn:hover { background: rgba(239,68,68,0.22); }
+.btn-skip-turn:hover { background: rgba(0,150,199,0.18); }
+
+.btn-fault-turn {
+  background: rgba(239,68,68,0.2);
+  color: var(--danger);
+  font-size: 0.95rem;
+  padding: 13px;
+  border-radius: var(--radius-sm);
+  border: 2px solid rgba(239,68,68,0.6);
+  cursor: pointer;
+  font-weight: 700;
+  transition: background 0.15s;
+  width: 100%;
+  min-height: 52px;
+}
+.btn-fault-turn:hover { background: rgba(239,68,68,0.32); }
 
 /* ─── No-teams banner ──────────────────────────────────────────────────────── */
 .no-teams-banner {
@@ -557,7 +565,6 @@ html, body {
 /* ─── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 440px) {
   #teams-container { grid-template-columns: 1fr; }
-  #word-card-text  { font-size: 1.7rem; }
 }
 
 /* ─── Words editor ──────────────────────────────────────────────────────────── */
@@ -626,41 +633,9 @@ html, body {
   width: fit-content;
 }
 
-/* ─── Rotate overlay (visible in portrait only) ─────────────────────────────── */
+/* ─── Rotate overlay (hidden — le jeu fonctionne en portrait et paysage) ─── */
 #rotate-overlay {
   display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  background: var(--bg-grad);
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  text-align: center;
-  padding: 32px;
-}
-.rotate-icon {
-  font-size: 4rem;
-  animation: rotateHint 1.8s ease-in-out infinite;
-}
-@keyframes rotateHint {
-  0%   { transform: rotate(0deg); }
-  40%  { transform: rotate(90deg); }
-  60%  { transform: rotate(90deg); }
-  100% { transform: rotate(0deg); }
-}
-#rotate-overlay p {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--text);
-  max-width: 280px;
-  line-height: 1.5;
-}
-
-/* Show overlay only on portrait mobile (< 600 px tall) during the turn screen */
-@media (orientation: portrait) and (max-width: 600px) {
-  #screen-turn:not([hidden]) ~ #rotate-overlay { display: flex; }
 }
 
 /* ─── Turn screen — landscape optimised ─────────────────────────────────────── */
@@ -703,13 +678,6 @@ html, body {
     gap: 6px;
   }
 
-  #word-card-text {
-    font-size: clamp(2.5rem, 12vw, 7rem);
-    line-height: 1.1;
-    word-break: break-word;
-    overflow-wrap: break-word;
-  }
-
   #word-card-category { font-size: 0.8rem; }
 
   .turn-actions {
@@ -725,6 +693,7 @@ html, body {
     flex: 2;
     font-size: 1rem;
     padding: 10px 12px;
+    min-height: 48px;
   }
 
   .btn-skip-turn,
@@ -732,5 +701,6 @@ html, body {
     flex: 1;
     font-size: 0.85rem;
     padding: 10px 8px;
+    min-height: 48px;
   }
 }
