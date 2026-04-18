@@ -1,3 +1,9 @@
+## [1.65.0](https://github.com/niafrond/niafrond.github.io/compare/v1.64.1...v1.65.0) (2026-04-18)
+
+### Features
+
+* affiche le numéro de version dans le footer de index.html ([#87](https://github.com/niafrond/niafrond.github.io/issues/87)) ([cdbaf95](https://github.com/niafrond/niafrond.github.io/commit/cdbaf95cb365ca1aa895f9a0ef123ab8f5d0b505))
+
 ## [1.64.1](https://github.com/niafrond/niafrond.github.io/compare/v1.64.0...v1.64.1) (2026-04-18)
 
 ### Bug Fixes
