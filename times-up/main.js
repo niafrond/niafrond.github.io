@@ -783,6 +783,97 @@ function saveMembers(members) {
   localStorage.setItem(MEMBERS_KEY, JSON.stringify(members));
 }
 
+// ─── ONGLETS SETUP ─────────────────────────────────────────────────────────────
+function switchSetupTab(tab) {
+  el('panel-partie').hidden  = tab !== 'partie';
+  el('panel-membres').hidden = tab !== 'membres';
+  el('tab-btn-partie').classList.toggle('setup-tab--active', tab === 'partie');
+  el('tab-btn-membres').classList.toggle('setup-tab--active', tab === 'membres');
+  if (tab === 'membres') renderMembersList();
+}
+
+function renderMembersList() {
+  const members   = loadMembers();
+  const container = el('members-list');
+  container.innerHTML = '';
+
+  if (members.length === 0) {
+    const p = document.createElement('p');
+    p.className = 'members-empty';
+    p.textContent = 'Aucun joueur enregistré. Ajoutez-en ci-dessus ou terminez une partie !';
+    container.appendChild(p);
+    return;
+  }
+
+  members.forEach((member, idx) => {
+    const alreadyAdded = state.playerNames.includes(member.name);
+
+    const item = document.createElement('div');
+    item.className = `member-item${alreadyAdded ? ' member-item--added' : ''}`;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'member-item-name';
+    nameSpan.textContent = `👤 ${member.name}`;
+
+    const statsSpan = document.createElement('span');
+    statsSpan.className = 'member-item-stats';
+    statsSpan.textContent = member.games
+      ? `${member.games} partie${member.games > 1 ? 's' : ''} · ${member.totalPts || 0} pts`
+      : 'Aucune partie';
+
+    item.appendChild(nameSpan);
+    item.appendChild(statsSpan);
+
+    if (alreadyAdded) {
+      const badge = document.createElement('span');
+      badge.className = 'member-item-added-badge';
+      badge.textContent = '✓ Ajouté';
+      item.appendChild(badge);
+    } else {
+      item.addEventListener('click', () => addPlayerFromMember(member.name));
+    }
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-icon btn-danger';
+    delBtn.setAttribute('aria-label', `Supprimer ${member.name}`);
+    delBtn.textContent = '✕';
+    delBtn.addEventListener('click', (e) => { e.stopPropagation(); removeMember(idx); });
+    item.appendChild(delBtn);
+
+    container.appendChild(item);
+  });
+}
+
+function addMember() {
+  const input = el('member-input');
+  const name  = input.value.trim();
+  if (!name) { showToast('Entrez un prénom', 'warn'); return; }
+  const members = loadMembers();
+  if (members.find(m => m.name === name)) { showToast('Ce joueur existe déjà', 'warn'); return; }
+  members.push({ name, games: 0, totalPts: 0 });
+  saveMembers(members);
+  input.value = '';
+  input.focus();
+  renderMembersList();
+  showToast(`${name} enregistré ✅`);
+}
+
+function removeMember(idx) {
+  const members = loadMembers();
+  members.splice(idx, 1);
+  saveMembers(members);
+  renderMembersList();
+}
+
+function addPlayerFromMember(name) {
+  if (state.playerNames.includes(name)) { showToast('Déjà dans la partie', 'warn'); return; }
+  if (state.playerNames.length >= 20) { showToast('Maximum 20 joueurs', 'warn'); return; }
+  state.playerNames.push(name);
+  renderPlayerList();
+  renderMembersList();
+  showToast(`${name} ajouté à la partie ✅`);
+}
+
 /** Sauvegarde les scores des joueurs après une partie terminée. */
 function saveMembersAfterGame() {
   const members = loadMembers();
@@ -869,6 +960,8 @@ function updateFullscreenBtn() {
 
 function init() {
   // ── Setup ──
+  el('tab-btn-partie').addEventListener('click', () => switchSetupTab('partie'));
+  el('tab-btn-membres').addEventListener('click', () => switchSetupTab('membres'));
   el('btn-add-player').addEventListener('click', addPlayer);
   el('player-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') addPlayer();
@@ -876,6 +969,10 @@ function init() {
   el('btn-start-game').addEventListener('click', () => {
     if (state.playerNames.length >= MIN_PLAYERS) goToTeams();
   });
+
+  // ── Joueurs (membres persistants) ──
+  el('btn-add-member').addEventListener('click', addMember);
+  el('member-input').addEventListener('keydown', e => { if (e.key === 'Enter') addMember(); });
 
   // ── Options de partie ──
   state.cardCount = loadCardCount();
