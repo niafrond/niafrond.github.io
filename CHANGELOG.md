@@ -1,3 +1,9 @@
+## [1.66.0](https://github.com/niafrond/niafrond.github.io/compare/v1.65.0...v1.66.0) (2026-04-18)
+
+### Features
+
+* **times-up:** améliore l'IHM en cours de partie pour le mode paysage ([#89](https://github.com/niafrond/niafrond.github.io/issues/89)) ([f0b1f2a](https://github.com/niafrond/niafrond.github.io/commit/f0b1f2a0fc1bdf2c08397c7cdd32765b2894ff47))
+
 ## [1.65.0](https://github.com/niafrond/niafrond.github.io/compare/v1.64.1...v1.65.0) (2026-04-18)
 
 ### Features
