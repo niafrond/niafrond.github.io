@@ -1,3 +1,9 @@
+## [1.71.0](https://github.com/niafrond/niafrond.github.io/compare/v1.70.1...v1.71.0) (2026-04-18)
+
+### Features
+
+* **times-up:** adapt turn-end screen for landscape, remove found list, auto fullscreen ([#97](https://github.com/niafrond/niafrond.github.io/issues/97)) ([cfbee7b](https://github.com/niafrond/niafrond.github.io/commit/cfbee7b8386a8047f9a081a0a674cf143568179d))
+
 ## [1.70.1](https://github.com/niafrond/niafrond.github.io/compare/v1.70.0...v1.70.1) (2026-04-18)
 
 ### Bug Fixes
