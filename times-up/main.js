@@ -364,14 +364,13 @@ function startTurn() {
 
   const rule = getCurrentRoundRule();
   el('btn-skip').hidden  = !rule.canSkip;
-  el('btn-fault').hidden = !rule.canFault;
-
-  // Adapt play-area grid: no left column when fault button is hidden
-  const playArea = document.querySelector('.turn-play-area');
-  playArea.style.gridTemplateColumns = rule.canFault ? '' : '5fr 2fr';
+  // Keep btn-fault in the grid flow so the 3-column layout stays aligned;
+  // just hide it visually when not needed.
+  const faultBtn = el('btn-fault');
+  faultBtn.style.visibility   = rule.canFault ? '' : 'hidden';
+  faultBtn.style.pointerEvents = rule.canFault ? '' : 'none';
 
   // Mettre à jour le libellé du bouton faute selon la manche
-  const faultBtn = el('btn-fault');
   if (state.currentRound >= 2) {
     faultBtn.setAttribute('aria-label', 'Faute — passer la carte');
   } else {
