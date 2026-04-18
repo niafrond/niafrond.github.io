@@ -246,14 +246,6 @@ html, body {
   padding: 16px;
   box-shadow: 0 0 18px -4px var(--team-color, transparent);
 }
-.team-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.team-emoji { font-size: 1.5rem; }
-.team-name  { font-size: 1.1rem; font-weight: 800; }
 .team-players {
   list-style: none;
   display: flex;
