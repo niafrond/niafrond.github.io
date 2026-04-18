@@ -348,6 +348,7 @@ html, body {
 .turn-play-area {
   display: grid;
   grid-template-columns: 2fr 5fr 2fr;
+  grid-template-rows: minmax(0, 1fr);
   gap: 10px;
   flex: 1;
   width: 100%;
@@ -791,7 +792,7 @@ html, body {
 }
 
 /* ─── Turn screen — landscape optimised ─────────────────────────────────────── */
-@media (orientation: landscape) and (max-height: 520px) {
+@media (orientation: landscape) and (max-height: 600px) {
   #screen-turn {
     padding: 6px 10px;
     gap: 6px;
@@ -831,4 +832,54 @@ html, body {
   }
 
   .swipe-hint-text { display: none; }
+}
+
+/* ─── Turn screen — portrait adjustments ────────────────────────────────────── */
+/* Applies to all portrait screens (phones, tablets held vertically) */
+@media (orientation: portrait) {
+  .btn-turn-side {
+    font-size: 0.9rem;
+    gap: 6px;
+  }
+}
+
+/* Additional compaction for shorter portrait screens (≤ 740 px, e.g. SE, mid-range phones) */
+@media (orientation: portrait) and (max-height: 740px) {
+  #screen-turn {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .turn-play-area {
+    gap: 8px;
+  }
+
+  .turn-center-col {
+    gap: 8px;
+  }
+
+  .timer-wrap {
+    width: 72px;
+    height: 72px;
+  }
+  .timer-svg  { width: 72px; height: 72px; }
+  #timer-number { font-size: 1.5rem; }
+
+  .word-card {
+    padding: 12px;
+    gap: 6px;
+  }
+
+  .btn-skip-turn {
+    font-size: 0.88rem;
+    padding: 10px;
+  }
+
+  /* Override the general portrait value for tighter screens */
+  .btn-turn-side {
+    font-size: 0.85rem;
+    gap: 4px;
+  }
+
+  .swipe-hint-text { font-size: 0.72rem; }
 }
