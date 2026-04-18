@@ -245,6 +245,21 @@ header h1 {
 
 canvas { display: none; }
 
+.version-badge {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 940;
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 999px;
+  background: rgba(15, 52, 96, 0.86);
+  color: rgba(148, 163, 184, 1);
+  font-size: 0.82rem;
+  line-height: 1;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
 
 </style>
 </head>
@@ -508,6 +523,13 @@ openResultBtn.addEventListener('click', e => {
 
 // ── init ───────────────────────────────────────────────────
 startCamera()
+</script>
+
+<div id="qrscanner-version" class="version-badge" aria-label="Version de l'application"></div>
+<script type="module">
+  import { getMatch3Version } from '../match3-quest/version.js';
+  const versionEl = document.getElementById('qrscanner-version');
+  if (versionEl) versionEl.textContent = `v${getMatch3Version()}`;
 </script>
 </body>
 </html>

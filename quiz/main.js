@@ -9,10 +9,14 @@
 import { initHost } from './host.js';
 import { initClient } from './client.js';
 import { setMuted, getMuted } from './sound.js';
+import { getMatch3Version } from '../match3-quest/version.js';
 
 // ─── Bouton mute (persistant) ─────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+  const versionEl = document.getElementById('quiz-version');
+  if (versionEl) versionEl.textContent = `v${getMatch3Version()}`;
+
   const btnMute = document.getElementById('btn-mute');
   if (btnMute) {
     // Restaurer la préférence mute depuis localStorage
