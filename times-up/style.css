@@ -245,7 +245,6 @@ html, body {
   margin-bottom: 10px;
 }
 .team-emoji { font-size: 1.5rem; }
-.team-name  { font-weight: 800; font-size: 1rem; color: var(--team-color, var(--text)); }
 .team-players {
   list-style: none;
   display: flex;

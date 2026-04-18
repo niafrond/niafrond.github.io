@@ -66,10 +66,10 @@ Même fonctionnement que la manche 2 :
 
 // ─── Métadonnées équipes (max 4) ───────────────────────────────────────────────
 const TEAMS_META = [
-  { name: 'Équipe Volcan', emoji: '🌋', color: 'var(--volcan)' },
-  { name: 'Équipe Lagon',  emoji: '🌊', color: 'var(--lagon)'  },
-  { name: 'Équipe Forêt',  emoji: '🌿', color: 'var(--foret)'  },
-  { name: 'Équipe Soleil', emoji: '☀️', color: 'var(--soleil)' },
+  { emoji: '🌋', color: 'var(--volcan)' },
+  { emoji: '🌊', color: 'var(--lagon)'  },
+  { emoji: '🌿', color: 'var(--foret)'  },
+  { emoji: '☀️', color: 'var(--soleil)' },
 ];
 
 // Emojis pour le mode jeu libre (5 ou 7 joueurs — pas d'équipes fixes)
@@ -228,7 +228,6 @@ function assignTeams() {
     // 5 ou 7 joueurs : jeu libre, chaque joueur est son propre "camp"
     state.noTeamsMode = true;
     state.teams = players.map((name, i) => ({
-      name,
       emoji: SOLO_EMOJIS[i % SOLO_EMOJIS.length],
       color: TEAMS_META[i % TEAMS_META.length].color,
       players: [name],
@@ -249,6 +248,11 @@ function assignTeams() {
   }
 
   state.teamPlayerIdx = state.teams.map(() => 0);
+}
+
+/** Retourne un libellé court pour une équipe : emoji + liste des joueurs. */
+function teamLabel(team) {
+  return `${team.emoji} ${team.players.join(' · ')}`;
 }
 
 function renderTeams() {
@@ -279,13 +283,7 @@ function renderTeams() {
     emojiSpan.className = 'team-emoji';
     emojiSpan.textContent = team.emoji;
 
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'team-name';
-    nameSpan.textContent = team.name;
-    nameSpan.style.color = team.color;
-
     header.appendChild(emojiSpan);
-    header.appendChild(nameSpan);
 
     const ul = document.createElement('ul');
     ul.className = 'team-players';
@@ -335,7 +333,7 @@ function startPreTurn() {
   const team       = state.teams[state.currentTeamIdx];
   const playerName = team.players[state.teamPlayerIdx[state.currentTeamIdx]];
 
-  el('pre-turn-team').textContent  = `${team.emoji} ${team.name}`;
+  el('pre-turn-team').textContent  = teamLabel(team);
   el('pre-turn-team').style.color  = team.color;
   el('pre-turn-player').textContent = playerName;
   el('pre-turn-round').textContent  = `Manche ${state.currentRound} / 3`;
@@ -346,7 +344,7 @@ function startPreTurn() {
     const n = state.teams.length;
     const leftIdx = (state.currentTeamIdx - 1 + n) % n;
     const leftTeam = state.teams[leftIdx];
-    el('pre-turn-guesser').textContent = `${leftTeam.emoji} ${leftTeam.name}`;
+    el('pre-turn-guesser').textContent = teamLabel(leftTeam);
     el('pre-turn-guesser-wrap').hidden = false;
   } else {
     el('pre-turn-guesser-wrap').hidden = true;
@@ -520,7 +518,7 @@ function endTurn(reason = 'timeout') {
   };
   el('turn-end-reason').textContent = reasonMsgs[reason] ?? '⏱️ Temps écoulé !';
 
-  el('turn-end-team').textContent   = `${team.emoji} ${team.name}`;
+  el('turn-end-team').textContent   = teamLabel(team);
   el('turn-end-player').textContent =
     state.teams[state.currentTeamIdx].players[state.teamPlayerIdx[state.currentTeamIdx]];
   el('turn-end-count').textContent  = state.turnFound.length;
@@ -586,7 +584,7 @@ function showRoundEnd() {
 
     const tdName = document.createElement('td');
     const nameSpan = document.createElement('span');
-    nameSpan.textContent = `${team.emoji} ${team.name}`;
+    nameSpan.textContent = teamLabel(team);
     nameSpan.style.color = team.color;
     tdName.appendChild(nameSpan);
 
@@ -628,7 +626,7 @@ function showGameOver() {
     winnerEl.style.color = 'var(--warning)';
   } else {
     const w = scored[0].team;
-    winnerEl.textContent = `${w.emoji} ${w.name}`;
+    winnerEl.textContent = teamLabel(w);
     winnerEl.style.color = w.color;
   }
 
@@ -646,7 +644,7 @@ function showGameOver() {
       : RANK_EMOJIS[Math.min(i, RANK_EMOJIS.length - 1)];
 
     const nameSpan = document.createElement('span');
-    nameSpan.textContent = `${s.team.emoji} ${s.team.name}`;
+    nameSpan.textContent = teamLabel(s.team);
     nameSpan.style.color = s.team.color;
 
     const ptsSpan = document.createElement('span');
