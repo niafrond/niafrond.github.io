@@ -1069,7 +1069,7 @@ async function forceUpdate() {
       const keys = await caches.keys();
       await Promise.all(keys.map(k => caches.delete(k)));
     }
-  } catch (_) { /* ignore */ }
+  } catch (err) { console.warn('forceUpdate:', err); }
   location.reload();
 }
 
