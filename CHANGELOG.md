@@ -1,3 +1,15 @@
+## [1.64.0](https://github.com/niafrond/niafrond.github.io/compare/v1.63.0...v1.64.0) (2026-04-18)
+
+### Features
+
+* **times-up:** faute manche 2/3 passe la carte définitivement ([#78](https://github.com/niafrond/niafrond.github.io/issues/78)) ([f9c8792](https://github.com/niafrond/niafrond.github.io/commit/f9c8792c146dda761e6116c2c1e58d47a4524d8b))
+* **times-up:** remove team names from creation and display ([#79](https://github.com/niafrond/niafrond.github.io/issues/79)) ([830d516](https://github.com/niafrond/niafrond.github.io/commit/830d516787bd63a66477ed8c2f71d261cb13ab56))
+
+### Bug Fixes
+
+* noTeamsMode round-end scoring only attributes points to describer and their guesser ([#80](https://github.com/niafrond/niafrond.github.io/issues/80)) ([51abb8d](https://github.com/niafrond/niafrond.github.io/commit/51abb8d05b21b07af2cf8b3df49c870adf1d88da))
+* **times-up:** boutons du tour correctement affichés en portrait et paysage ([#82](https://github.com/niafrond/niafrond.github.io/issues/82)) ([0b0054a](https://github.com/niafrond/niafrond.github.io/commit/0b0054a41e35cd64f96c7b2a201a33354ab46e06))
+
 ## [1.63.0](https://github.com/niafrond/niafrond.github.io/compare/v1.62.0...v1.63.0) (2026-04-18)
 
 ### Features
