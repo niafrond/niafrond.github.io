@@ -283,12 +283,10 @@ html, body {
 #pre-turn-player {
   font-size: 2.4rem;
   font-weight: 900;
-  color: var(--text);
 }
 #pre-turn-guesser {
   font-size: 2.4rem;
   font-weight: 900;
-  color: var(--text);
 }
 .pre-turn-label {
   font-size: 1rem;
