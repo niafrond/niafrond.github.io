@@ -385,16 +385,30 @@ function startPreTurn() {
 
   el('pre-turn-round').textContent = `Manche ${state.currentRound} / 3`;
 
-  let sentence = `Au tour de ${playerName} qui fait deviner à `;
+  let guesserLabel;
   if (state.noTeamsMode) {
     const n = state.teams.length;
     const leftIdx = (state.currentTeamIdx - 1 + n) % n;
-    sentence += teamLabel(state.teams[leftIdx]);
+    guesserLabel = teamLabel(state.teams[leftIdx]);
   } else {
-    sentence += teamLabel(team);
+    const teammates = team.players.filter(p => p !== playerName);
+    guesserLabel = teammates.length ? teammates.join(' · ') : teamLabel(team);
   }
+
+  const playerSpan = document.createElement('span');
+  playerSpan.id = 'pre-turn-player';
+  playerSpan.textContent = playerName;
+
+  const guesserSpan = document.createElement('span');
+  guesserSpan.id = 'pre-turn-guesser';
+  guesserSpan.textContent = guesserLabel;
+
   const sentenceEl = el('pre-turn-sentence');
-  sentenceEl.textContent = sentence;
+  sentenceEl.innerHTML = '';
+  sentenceEl.appendChild(document.createTextNode('Au tour de '));
+  sentenceEl.appendChild(playerSpan);
+  sentenceEl.appendChild(document.createTextNode(' qui fait deviner à '));
+  sentenceEl.appendChild(guesserSpan);
   sentenceEl.style.color = team.color;
 
   showScreen('screen-pre-turn');
