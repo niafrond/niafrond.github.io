@@ -130,6 +130,8 @@ function showScreen(id) {
   _currentScreen = id;
   document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
   document.getElementById(id).hidden = false;
+  const versionEl = document.getElementById('timesup-version');
+  if (versionEl) versionEl.hidden = (id !== 'screen-setup');
   if (GAMEPLAY_SCREENS.has(id)) {
     requestLandscapeLock();
     requestFullscreenIfNeeded();
