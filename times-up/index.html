@@ -213,24 +213,20 @@
      ÉCRAN 6 — FIN DE TOUR : résumé
      ═══════════════════════════════════════════════════════════════════════════ -->
 <div id="screen-turn-end" data-screen="screen-turn-end" class="screen-center">
-  <div style="font-size:2rem" id="turn-end-reason">⏱️ Temps écoulé !</div>
-  <div id="turn-end-team" style="font-size:1.2rem; font-weight:800;"></div>
-  <p style="color:var(--text-muted)">
-    <span id="turn-end-player" style="color:var(--text); font-weight:700;"></span> a trouvé
-  </p>
-  <div class="turn-end-score" id="turn-end-count">0</div>
-  <p class="turn-end-label">mot(s) ce tour</p>
-
-  <div class="card" style="max-width:440px">
-    <div class="card-title">✅ Mots trouvés</div>
-    <ul class="turn-end-found-list" id="turn-end-found-list"></ul>
-    <p style="margin-top:10px; font-size:0.85rem; color:var(--text-muted)">
+  <div class="turn-end-info">
+    <div style="font-size:2rem" id="turn-end-reason">⏱️ Temps écoulé !</div>
+    <div id="turn-end-team" style="font-size:1.2rem; font-weight:800;"></div>
+    <p style="color:var(--text-muted)">
+      <span id="turn-end-player" style="color:var(--text); font-weight:700;"></span> a trouvé
+    </p>
+    <div class="turn-end-score" id="turn-end-count">0</div>
+    <p class="turn-end-label">mot(s) ce tour</p>
+    <p class="turn-end-words-left-text">
       <span id="turn-end-words-left"></span> mot(s) restant(s) dans la manche
     </p>
-  </div>
-
-  <div class="all-found-banner" id="turn-end-all-found" hidden>
-    🎉 Tous les mots ont été trouvés ! La manche est terminée.
+    <div class="all-found-banner" id="turn-end-all-found" hidden>
+      🎉 Tous les mots ont été trouvés ! La manche est terminée.
+    </div>
   </div>
 
   <button id="btn-next-turn" class="btn btn-primary btn-lg" data-next-action="next-turn">
