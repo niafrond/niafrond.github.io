@@ -435,6 +435,7 @@ function startTurn() {
   startTimer();
 
   showScreen('screen-turn');
+  fitWordCard(); // re-fit now that screen is visible (drawNextWord ran while hidden)
 }
 
 function fitWordCard() {
@@ -442,7 +443,8 @@ function fitWordCard() {
   const card   = textEl.closest('.word-card');
   if (!card || !textEl.textContent.trim()) return;
 
-  const availW = card.clientWidth - WORD_CARD_HORIZONTAL_PAD;
+  const cs     = getComputedStyle(card);
+  const availW = card.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
   if (availW <= 0) return;
 
   // Binary-search the largest font size where text fits on one line
