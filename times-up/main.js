@@ -35,9 +35,10 @@ const ROUND_RULES = [
     title: 'Manche 1 — Parler librement',
     desc: `L'orateur peut parler librement.
 ⛔ Interdit : dire le nom (ou une partie), épeler, traduire.
-✅ Les joueurs peuvent faire autant de propositions qu'ils souhaitent.`,
+✅ Les joueurs peuvent faire autant de propositions qu'ils souhaitent.
+🚨 Faute → tour arrêté immédiatement.`,
     canSkip: false,
-    canFault: false,
+    canFault: true,
   },
   {
     num: 2, icon: '☝️',
@@ -45,7 +46,7 @@ const ROUND_RULES = [
     desc: `L'orateur ne dit qu'un seul mot par carte. L'équipe n'a droit qu'à une seule proposition.
 ✅ Bonne réponse → carte gagnée.
 ❌ Mauvaise réponse → carte passée définitivement pour ce tour.
-🚨 Faute → carte passée définitivement pour ce tour (le tour continue).
+🚨 Faute → tour arrêté immédiatement.
 ⏭ L'orateur peut aussi passer s'il est bloqué.
 ⛔ Interdits : plus d'un mot, partie du nom, traduction directe.`,
     canSkip: true,
@@ -58,7 +59,7 @@ const ROUND_RULES = [
 Même fonctionnement que la manche 2 :
 ✅ Bonne réponse → carte gagnée.
 ❌ Mauvaise réponse → carte passée définitivement pour ce tour.
-🚨 Faute → carte passée définitivement pour ce tour (le tour continue).
+🚨 Faute → tour arrêté immédiatement.
 ⏭ L'orateur peut passer s'il est bloqué.
 ⛔ Interdits : parler, former des mots, fredonner une chanson.`,
     canSkip: true,
@@ -370,12 +371,7 @@ function startTurn() {
   faultBtn.style.visibility   = rule.canFault ? '' : 'hidden';
   faultBtn.style.pointerEvents = rule.canFault ? '' : 'none';
 
-  // Mettre à jour le libellé du bouton faute selon la manche
-  if (state.currentRound >= 2) {
-    faultBtn.setAttribute('aria-label', 'Faute — passer la carte');
-  } else {
-    faultBtn.setAttribute('aria-label', 'Erreur — arrêter le tour');
-  }
+  faultBtn.setAttribute('aria-label', 'Erreur — arrêter le tour');
 
   // Swipe hint: masquer la flèche gauche si on ne peut pas passer
   const hintEl = el('swipe-hint-text');
@@ -453,25 +449,13 @@ function wordSkipped() {
 }
 
 function wordFault() {
-  if (state.currentRound >= 2) {
-    // Manches 2 et 3 : faute = carte passée définitivement, le tour continue
-    if (state.currentWord) {
-      state.turnSkipped.push(state.currentWord);
-      state.currentWord = null;
-    }
-    playBuzzer();
-    updateTurnStats();
-    drawNextWord();
-  } else {
-    // Manche 1 : faute = tour arrêté immédiatement
-    if (state.currentWord) {
-      state.roundWords.unshift(state.currentWord);
-      state.currentWord = null;
-    }
-    stopTimer();
-    playBuzzer();
-    endTurn('fault');
+  if (state.currentWord) {
+    state.roundWords.unshift(state.currentWord);
+    state.currentWord = null;
   }
+  stopTimer();
+  playBuzzer();
+  endTurn('fault');
 }
 
 function updateTurnStats() {
