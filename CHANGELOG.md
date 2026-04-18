@@ -1,3 +1,23 @@
+## [1.62.0](https://github.com/niafrond/niafrond.github.io/compare/v1.61.1...v1.62.0) (2026-04-18)
+
+### Features
+
+* enable auto-merge for all ready pull requests ([#65](https://github.com/niafrond/niafrond.github.io/issues/65)) ([bacee85](https://github.com/niafrond/niafrond.github.io/commit/bacee851668cfc77f5de8bdb788c7562dd7f2937))
+* **times-up:** add Members tab + swipe mode on turn screen ([#68](https://github.com/niafrond/niafrond.github.io/issues/68)) ([db45a17](https://github.com/niafrond/niafrond.github.io/commit/db45a17ef0a801555c6ad818ead0e12eb61fc959))
+* **times-up:** add persistent players tab to setup screen ([#74](https://github.com/niafrond/niafrond.github.io/issues/74)) ([25cf25d](https://github.com/niafrond/niafrond.github.io/commit/25cf25dbbaee6981c6fcf7a180099be1e7d68e49))
+* **times-up:** add service worker for JS cache refresh mechanism ([#70](https://github.com/niafrond/niafrond.github.io/issues/70)) ([dab51f8](https://github.com/niafrond/niafrond.github.io/commit/dab51f83dae9c52ef5d428bf73dc8eb7dd332a6b))
+* **times-up:** configurable word count per game ([#69](https://github.com/niafrond/niafrond.github.io/issues/69)) ([37803bd](https://github.com/niafrond/niafrond.github.io/commit/37803bd1cdaa29f1f162886415002d5caa2bb7f5))
+* **times-up:** fullscreen mode + 2-5-2 grid layout for turn screen ([#73](https://github.com/niafrond/niafrond.github.io/issues/73)) ([9cea595](https://github.com/niafrond/niafrond.github.io/commit/9cea59567e2abf0f260f39823c8256d62f4eec0a))
+* **times-up:** remove joueurs/membres tabs, keep players on replay ([#72](https://github.com/niafrond/niafrond.github.io/issues/72)) ([802836a](https://github.com/niafrond/niafrond.github.io/commit/802836ac82daeb634ef4b502dbe6c3b92cffed46))
+
+### Bug Fixes
+
+* fix skip button and timeout word loss in Times Up ([#76](https://github.com/niafrond/niafrond.github.io/issues/76)) ([38efe87](https://github.com/niafrond/niafrond.github.io/commit/38efe87451e399a7f5a87a469f4d86859ee77cf3))
+* mobile game screen layout - use 100dvh, buttons always visible, text fills width ([#67](https://github.com/niafrond/niafrond.github.io/issues/67)) ([0baf8eb](https://github.com/niafrond/niafrond.github.io/commit/0baf8eb5f468c6694edb798a0edd698207802e8c))
+* **times-up:** auto-fit word width, fix button visibility and portrait blocking ([#64](https://github.com/niafrond/niafrond.github.io/issues/64)) ([7de99e3](https://github.com/niafrond/niafrond.github.io/commit/7de99e31fb826bd9ed0aebe7cb79f7b69176819e))
+* trigger semantic-release on pull_request closed instead of push to main ([#71](https://github.com/niafrond/niafrond.github.io/issues/71)) ([53742f4](https://github.com/niafrond/niafrond.github.io/commit/53742f471928412930703b28cb8e308b60624922))
+* trigger semantic-release via workflow_dispatch on auto-merge ([#75](https://github.com/niafrond/niafrond.github.io/issues/75)) ([7523b52](https://github.com/niafrond/niafrond.github.io/commit/7523b52c3f025f68591e48e051a2d98e3b795d09))
+
 ## [1.61.1](https://github.com/niafrond/niafrond.github.io/compare/v1.61.0...v1.61.1) (2026-04-17)
 
 ### Bug Fixes
