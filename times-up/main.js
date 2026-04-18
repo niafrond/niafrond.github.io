@@ -132,10 +132,20 @@ function showScreen(id) {
   document.getElementById(id).hidden = false;
   if (GAMEPLAY_SCREENS.has(id)) {
     requestLandscapeLock();
+    requestFullscreenIfNeeded();
   } else {
     releaseLandscapeLock();
   }
   updateRotateOverlay();
+}
+
+// ─── Plein écran automatique ──────────────────────────────────────────────────
+/** Demande le plein écran si ce n'est pas déjà le cas. Silencieux si refusé par le navigateur. */
+function requestFullscreenIfNeeded() {
+  if (document.fullscreenElement || document.webkitFullscreenElement) return;
+  const req = document.documentElement.requestFullscreen
+    || document.documentElement.webkitRequestFullscreen;
+  if (req) req.call(document.documentElement).catch(() => {});
 }
 
 // ─── Orientation paysage ───────────────────────────────────────────────────────
@@ -613,15 +623,6 @@ function endTurn(reason = 'timeout') {
   el('turn-end-player').textContent =
     state.teams[state.currentTeamIdx].players[state.teamPlayerIdx[state.currentTeamIdx]];
   el('turn-end-count').textContent  = state.turnFound.length;
-
-  const foundList = el('turn-end-found-list');
-  foundList.innerHTML = '';
-  state.turnFound.forEach(w => {
-    const li  = document.createElement('li');
-    const cat = getCategoryInfo(w.category);
-    li.textContent = `${cat.emoji} ${w.word}`;
-    foundList.appendChild(li);
-  });
 
   el('turn-end-words-left').textContent = state.roundWords.length;
 

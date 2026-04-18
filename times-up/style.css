@@ -499,6 +499,13 @@ html, body {
 }
 
 /* ─── Turn end ─────────────────────────────────────────────────────────────── */
+.turn-end-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
 .turn-end-score {
   font-size: 4rem;
   font-weight: 900;
@@ -506,22 +513,9 @@ html, body {
   line-height: 1;
 }
 .turn-end-label { color: var(--text-muted); font-size: 1rem; }
-.turn-end-found-list {
-  list-style: none;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-  max-height: 200px;
-  overflow-y: auto;
-}
-.turn-end-found-list li {
-  font-size: 0.95rem;
+.turn-end-words-left-text {
+  font-size: 0.9rem;
   color: var(--text-muted);
-  padding: 6px 10px;
-  background: var(--surface2);
-  border-radius: 6px;
 }
 .all-found-banner {
   background: rgba(64,145,108,0.15);
@@ -954,11 +948,26 @@ html, body {
     margin-top: 0 !important;
   }
 
-  /* Turn end */
+  /* Turn end — 2-column layout: info left | button right */
+  #screen-turn-end {
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+    padding: 10px 24px;
+  }
+  .turn-end-info {
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+  }
   #turn-end-reason   { font-size: 1.4rem !important; }
   .turn-end-score    { font-size: 2.8rem; }
-  .turn-end-found-list { max-height: 100px; }
-  #screen-turn-end .card { padding: 12px; margin-bottom: 6px; }
+  #screen-turn-end #btn-next-turn {
+    flex-shrink: 0;
+    width: 150px;
+    align-self: stretch;
+    font-size: 0.95rem;
+  }
 
   /* Round end */
   #screen-round-end h2   { font-size: 1.1rem; }
