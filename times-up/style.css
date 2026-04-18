@@ -566,6 +566,12 @@ html, body {
 .total-score { color: var(--warning); font-size: 1.15rem; }
 
 /* ─── Game over ─────────────────────────────────────────────────────────────── */
+.game-over-winner-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
 #game-over-winner {
   font-size: 2.2rem;
   font-weight: 900;
@@ -965,8 +971,35 @@ html, body {
   #screen-round-end h2   { font-size: 1.1rem; }
   #screen-round-end .card { padding: 12px; margin-bottom: 6px; }
 
-  /* Game over */
+  /* Game over — 2-column layout: winner left, scores + button right */
+  #screen-game-over {
+    display: grid;
+    grid-template-areas:
+      "winner scores"
+      "winner btn";
+    grid-template-columns: auto 1fr;
+    grid-template-rows: 1fr auto;
+    align-items: center;
+    gap: 6px 24px;
+    padding: 10px 24px;
+  }
+  .game-over-winner-info {
+    grid-area: winner;
+    align-self: center;
+    gap: 4px;
+  }
+  .game-over-winner-info > div:first-child { font-size: 2rem !important; }
   #game-over-winner { font-size: 1.6rem; }
+  #screen-game-over #final-scores {
+    grid-area: scores;
+    max-width: none;
+    align-self: end;
+  }
+  #screen-game-over #btn-replay {
+    grid-area: btn;
+    margin-top: 0;
+    width: 100%;
+  }
 
   /* Compact buttons on all center screens */
   .screen-center .btn-lg { padding: 10px 24px; font-size: 1rem; }
