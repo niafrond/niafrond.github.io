@@ -55,8 +55,7 @@ const ROUND_RULES = [
     title: 'Manche 2 — Un seul mot',
     desc: `L'orateur ne dit qu'un seul mot par carte. L'équipe n'a droit qu'à une seule proposition.
 ✅ Bonne réponse → carte gagnée.
-❌ Mauvaise réponse → carte passée définitivement pour ce tour.
-🚨 Faute → tour arrêté immédiatement.
+❌ Mauvaise réponse ou faute → carte passée définitivement pour ce tour.
 ⏭ L'orateur peut aussi passer s'il est bloqué.
 ⛔ Interdits : plus d'un mot, partie du nom, traduction directe.`,
     canSkip: true,
@@ -68,8 +67,7 @@ const ROUND_RULES = [
     desc: `L'orateur ne peut plus parler du tout : uniquement des mimes et des bruitages.
 Même fonctionnement que la manche 2 :
 ✅ Bonne réponse → carte gagnée.
-❌ Mauvaise réponse → carte passée définitivement pour ce tour.
-🚨 Faute → tour arrêté immédiatement.
+❌ Mauvaise réponse ou faute → carte passée définitivement pour ce tour.
 ⏭ L'orateur peut passer s'il est bloqué.
 ⛔ Interdits : parler, former des mots, fredonner une chanson.`,
     canSkip: true,
@@ -407,7 +405,7 @@ function startTurn() {
   faultBtn.style.visibility   = rule.canFault ? '' : 'hidden';
   faultBtn.style.pointerEvents = rule.canFault ? '' : 'none';
 
-  faultBtn.setAttribute('aria-label', 'Erreur — arrêter le tour');
+  faultBtn.setAttribute('aria-label', 'Erreur — passer la carte');
 
   // Swipe hint: masquer la flèche gauche si on ne peut pas passer
   const hintEl = el('swipe-hint-text');
@@ -502,13 +500,13 @@ function wordSkipped() {
 }
 
 function wordFault() {
+  // Manches 2 et 3 (canFault=true) : la carte est passée définitivement pour ce tour
   if (state.currentWord) {
-    state.roundWords.unshift(state.currentWord);
+    state.turnSkipped.push(state.currentWord);
     state.currentWord = null;
   }
-  stopTimer();
-  playBuzzer();
-  endTurn('fault');
+  updateTurnStats();
+  drawNextWord();
 }
 
 function updateTurnStats() {
