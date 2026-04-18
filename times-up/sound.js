@@ -70,23 +70,35 @@ export function playTickUrgent() {
   } catch (_) {}
 }
 
-/** Buzzer de fin de temps — onde carrée grave descendante */
+/** Sonnerie de fin de manche — sonnerie d'école (3 coups de cloche) */
 export function playBuzzer() {
   if (_muted) return;
   try {
     const ctx = getCtx();
     const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.connect(g); g.connect(ctx.destination);
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(300, now);
-    osc.frequency.exponentialRampToValueAtTime(80, now + 0.6);
-    g.gain.setValueAtTime(0, now);
-    g.gain.linearRampToValueAtTime(0.45, now + 0.02);
-    g.gain.setValueAtTime(0.45, now + 0.5);
-    g.gain.linearRampToValueAtTime(0, now + 0.7);
-    osc.start(now); osc.stop(now + 0.75);
+    // Three loud school-bell dings, each with sharp attack and long decay
+    [0, 0.55, 1.1].forEach((offset) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(900, now + offset);
+      // Add a slight inharmonic overtone for a metallic bell colour
+      const osc2 = ctx.createOscillator();
+      const g2 = ctx.createGain();
+      osc2.connect(g2); g2.connect(ctx.destination);
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1440, now + offset);
+      const ringDuration = 0.45;
+      g.gain.setValueAtTime(0, now + offset);
+      g.gain.linearRampToValueAtTime(0.7, now + offset + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, now + offset + ringDuration);
+      g2.gain.setValueAtTime(0, now + offset);
+      g2.gain.linearRampToValueAtTime(0.35, now + offset + 0.01);
+      g2.gain.exponentialRampToValueAtTime(0.001, now + offset + ringDuration * 0.6);
+      osc.start(now + offset); osc.stop(now + offset + ringDuration);
+      osc2.start(now + offset); osc2.stop(now + offset + ringDuration);
+    });
   } catch (_) {}
 }
 
