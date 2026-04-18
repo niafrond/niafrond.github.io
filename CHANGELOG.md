@@ -1,3 +1,9 @@
+## [1.69.0](https://github.com/niafrond/niafrond.github.io/compare/v1.68.2...v1.69.0) (2026-04-18)
+
+### Features
+
+* display build date and time alongside version in all apps ([#94](https://github.com/niafrond/niafrond.github.io/issues/94)) ([518edf8](https://github.com/niafrond/niafrond.github.io/commit/518edf863d4fe437cda69b702f40ceef79e83dd4))
+
 ## [1.68.2](https://github.com/niafrond/niafrond.github.io/compare/v1.68.1...v1.68.2) (2026-04-18)
 
 ### Bug Fixes
