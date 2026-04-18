@@ -1,3 +1,9 @@
+## [1.68.2](https://github.com/niafrond/niafrond.github.io/compare/v1.68.1...v1.68.2) (2026-04-18)
+
+### Bug Fixes
+
+* fitWordCard accounts for trouvé and erreur button widths when sizing word ([#93](https://github.com/niafrond/niafrond.github.io/issues/93)) ([d87ee96](https://github.com/niafrond/niafrond.github.io/commit/d87ee96e5c82301812a199cf7d8262f782ccb154))
+
 ## [1.68.1](https://github.com/niafrond/niafrond.github.io/compare/v1.68.0...v1.68.1) (2026-04-18)
 
 ### Bug Fixes
