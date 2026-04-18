@@ -35,10 +35,9 @@ const ROUND_RULES = [
     title: 'Manche 1 — Parler librement',
     desc: `L'orateur peut parler librement.
 ⛔ Interdit : dire le nom (ou une partie), épeler, traduire.
-✅ Les joueurs peuvent faire autant de propositions qu'ils souhaitent.
-🚨 Faute → tour arrêté immédiatement.`,
+✅ Les joueurs peuvent faire autant de propositions qu'ils souhaitent.`,
     canSkip: false,
-    canFault: true,
+    canFault: false,
   },
   {
     num: 2, icon: '☝️',
