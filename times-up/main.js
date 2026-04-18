@@ -604,15 +604,17 @@ function handleNextTurn() {
 function showRoundEnd() {
   el('round-end-num').textContent = state.currentRound;
 
-  // En mode sans équipes (5 ou 7 joueurs) : partager les points avec les voisins
+  // En mode sans équipes (5 ou 7 joueurs) : partager les points entre orateur et devineur
+  // L'orateur (i) et son devineur (voisin gauche = i-1) participent ensemble.
+  // Donc le joueur i reçoit ses propres points (quand il a été orateur) +
+  // les points du voisin droit (quand i était lui-même devineur).
   if (state.noTeamsMode) {
     const n = state.teams.length;
     const roundIdx = state.currentRound - 1;
     const origScores = state.teams.map(t => t.score[roundIdx] || 0);
     state.teams.forEach((team, i) => {
-      const leftIdx  = (i - 1 + n) % n;
       const rightIdx = (i + 1) % n;
-      team.score[roundIdx] = origScores[i] + origScores[leftIdx] + origScores[rightIdx];
+      team.score[roundIdx] = origScores[i] + origScores[rightIdx];
     });
   }
 
