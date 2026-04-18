@@ -169,13 +169,14 @@
     <span class="turn-found-info">✅ <span id="turn-found-count">0</span> trouvé(s)</span>
   </div>
 
-  <!-- Zone de jeu : grille 2fr (erreur) | 5fr (timer + mot + passer) | 2fr (trouvé) -->
+  <!-- Zone de jeu : grille fixe — col-gauche | centre | col-droite -->
   <div class="turn-play-area">
 
-    <!-- Colonne gauche : Erreur (2fr) -->
-    <button id="btn-fault" class="btn-fault-turn btn-turn-side" aria-label="Erreur — arrêter le tour"><span aria-hidden="true">🚨</span><span>Erreur</span></button>
+    <!-- Colonne gauche : Erreur (manche 3) OU Passer-côté (manche 2) — occupent la même cellule de grille -->
+    <button id="btn-fault"     class="btn-fault-turn btn-turn-side"    aria-label="Erreur — arrêter le tour"><span aria-hidden="true">🚨</span><span>Erreur</span></button>
+    <button id="btn-skip-side" class="btn-skip-side-turn btn-turn-side" aria-label="Passer cette carte"><span aria-hidden="true">⏭</span><span>Passer</span></button>
 
-    <!-- Colonne centrale : Timer + Mot + Passer (5fr) -->
+    <!-- Colonne centrale : Timer + Mot (+ Passer en bas pour manche 3) -->
     <div class="turn-center-col">
       <div class="timer-wrap">
         <svg class="timer-svg" viewBox="0 0 100 100">
@@ -193,7 +194,7 @@
       <button id="btn-skip" class="btn-skip-turn">❌ Passer</button>
     </div>
 
-    <!-- Colonne droite : Trouvé (2fr) -->
+    <!-- Colonne droite : Trouvé -->
     <button id="btn-found" class="btn-found-big btn-turn-side" aria-label="Trouvé !"><span aria-hidden="true">✅</span><span>Trouvé !</span></button>
 
   </div>
