@@ -295,11 +295,10 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
   height: 100vh;
   height: 100dvh;
-  padding: 20px;
-  gap: 12px;
+  padding: 12px;
+  gap: 10px;
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -307,9 +306,10 @@ html, body {
 .turn-header {
   display: flex;
   width: 100%;
-  max-width: 480px;
+  max-width: 900px;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 #turn-round-badge {
   font-size: 0.8rem;
@@ -322,16 +322,54 @@ html, body {
 }
 .turn-found-info { font-size: 0.85rem; color: var(--text-muted); }
 
+/* Bouton plein écran */
+.btn-fullscreen {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.btn-fullscreen:hover { background: var(--surface2); color: var(--text); }
+
+/* Zone de jeu : grille 2fr | 5fr | 2fr */
+.turn-play-area {
+  display: grid;
+  grid-template-columns: 2fr 5fr 2fr;
+  gap: 10px;
+  flex: 1;
+  width: 100%;
+  max-width: 900px;
+  min-height: 0;
+}
+
+/* Colonne centrale : timer + mot + passer */
+.turn-center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+}
+
 /* Timer circulaire */
 .timer-wrap {
   position: relative;
-  width: 110px;
-  height: 110px;
+  width: 90px;
+  height: 90px;
   flex-shrink: 0;
 }
 .timer-svg {
-  width: 110px;
-  height: 110px;
+  width: 90px;
+  height: 90px;
   transform: rotate(-90deg);
 }
 .timer-track  { fill: none; stroke: var(--border); stroke-width: 8; }
@@ -342,7 +380,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 900;
   color: var(--text);
 }
@@ -352,9 +390,8 @@ html, body {
   background: var(--surface);
   border: 2px solid var(--border);
   border-radius: 20px;
-  padding: 30px 24px;
+  padding: 20px 16px;
   width: 100%;
-  max-width: 480px;
   text-align: center;
   box-shadow: var(--shadow);
   flex: 1;
@@ -384,63 +421,53 @@ html, body {
   padding: 4px 14px;
 }
 
-/* Boutons d'action */
-.turn-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-areas: "skip found" "fault fault";
-  gap: 10px;
-  width: 100%;
-  max-width: 480px;
-}
-/* Quand le bouton Skip est caché (manche 1), Trouvé prend toute la largeur */
-.turn-actions.no-skip {
-  grid-template-areas: "found found" "fault fault";
-}
-.btn-found-big {
-  grid-area: found;
-  background: var(--success);
-  color: #fff;
-  font-size: 1.2rem;
-  padding: 20px;
-  border-radius: var(--radius);
-  border: none;
-  cursor: pointer;
-  font-weight: 800;
-  transition: opacity 0.15s, transform 0.1s;
-  width: 100%;
-  min-height: 64px;
-}
-.btn-found-big:active { transform: scale(0.97); }
+/* Bouton Passer (bas de la colonne centrale) */
 .btn-skip-turn {
-  grid-area: skip;
   background: var(--surface);
   color: var(--text);
-  font-size: 1rem;
-  padding: 14px;
+  font-size: 0.95rem;
+  padding: 12px;
   border-radius: var(--radius-sm);
   border: 2px solid var(--lagon);
   cursor: pointer;
   font-weight: 700;
   transition: background 0.15s;
   width: 100%;
-  min-height: 64px;
+  flex-shrink: 0;
 }
 .btn-skip-turn:hover { background: rgba(0,150,199,0.18); }
 
+/* Boutons latéraux : Trouvé (droite) et Erreur (gauche) */
+.btn-turn-side {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 1.05rem;
+  line-height: 1.3;
+  text-align: center;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-turn-side:active { transform: scale(0.97); }
+.btn-turn-side span { font-size: 0.85em; }
+
+.btn-found-big {
+  background: var(--success);
+  color: #fff;
+}
+.btn-found-big:hover { opacity: 0.88; }
+
 .btn-fault-turn {
-  grid-area: fault;
   background: rgba(239,68,68,0.2);
   color: var(--danger);
-  font-size: 0.95rem;
-  padding: 13px;
-  border-radius: var(--radius-sm);
-  border: 2px solid rgba(239,68,68,0.6);
-  cursor: pointer;
-  font-weight: 700;
-  transition: background 0.15s;
-  width: 100%;
-  min-height: 52px;
+  border: 2px solid rgba(239,68,68,0.6) !important;
 }
 .btn-fault-turn:hover { background: rgba(239,68,68,0.32); }
 
@@ -450,8 +477,8 @@ html, body {
   color: var(--text-muted);
   text-align: center;
   letter-spacing: 0.04em;
-  margin-top: -4px;
   opacity: 0.7;
+  flex-shrink: 0;
 }
 
 /* Swipe visual feedback on word card */
@@ -762,68 +789,41 @@ html, body {
 /* ─── Turn screen — landscape optimised ─────────────────────────────────────── */
 @media (orientation: landscape) and (max-height: 520px) {
   #screen-turn {
-    display: grid;
-    grid-template-columns: 110px 1fr;
-    grid-template-rows: auto 1fr auto;
-    height: 100vh;
-    height: 100dvh;
-    padding: 8px 12px;
-    gap: 8px;
-    align-items: stretch;
-    justify-items: stretch;
+    padding: 6px 10px;
+    gap: 6px;
   }
 
-  .turn-header {
-    grid-column: 1 / -1;
-    grid-row: 1;
-    max-width: none;
-    width: 100%;
+  .turn-play-area {
+    gap: 6px;
+  }
+
+  .turn-center-col {
+    gap: 6px;
   }
 
   .timer-wrap {
-    grid-column: 1;
-    grid-row: 2;
-    width: 90px;
-    height: 90px;
-    align-self: center;
-    justify-self: center;
+    width: 70px;
+    height: 70px;
   }
-  .timer-svg  { width: 90px; height: 90px; }
-  #timer-number { font-size: 1.6rem; }
+  .timer-svg  { width: 70px; height: 70px; }
+  #timer-number { font-size: 1.4rem; }
 
   .word-card {
-    grid-column: 2;
-    grid-row: 2;
-    padding: 10px 16px;
+    padding: 8px 12px;
     border-radius: 12px;
-    min-height: 0;
-    gap: 6px;
+    gap: 4px;
   }
 
   #word-card-category { font-size: 0.8rem; }
 
-  .turn-actions {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    /* En paysage, 3 colonnes : Passer (1fr) · Trouvé (2fr, plus grand) · Erreur (1fr) */
-    grid-template-columns: 1fr 2fr 1fr;
-    grid-template-areas: "skip found fault";
-    gap: 8px;
-    max-width: none;
-    width: 100%;
+  .btn-skip-turn {
+    font-size: 0.8rem;
+    padding: 8px;
   }
 
-  .btn-found-big {
-    font-size: 1rem;
-    padding: 10px 12px;
-    min-height: 48px;
-  }
-
-  .btn-skip-turn,
-  .btn-fault-turn {
+  .btn-turn-side {
     font-size: 0.85rem;
-    padding: 10px 8px;
-    min-height: 48px;
+    gap: 4px;
   }
 
   .swipe-hint-text { display: none; }

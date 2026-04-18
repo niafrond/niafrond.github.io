@@ -355,7 +355,6 @@ function startTurn() {
   const rule = getCurrentRoundRule();
   el('btn-skip').hidden  = !rule.canSkip;
   el('btn-fault').hidden = !rule.canFault;
-  el('turn-actions').classList.toggle('no-skip', !rule.canSkip);
 
   // Swipe hint: masquer la flèche gauche si on ne peut pas passer
   const hintEl = el('swipe-hint-text');
@@ -926,6 +925,25 @@ function initSwipe() {
   }
 }
 
+// ─── PLEIN ÉCRAN ───────────────────────────────────────────────────────────────
+function toggleFullscreen() {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    const req = document.documentElement.requestFullscreen
+      || document.documentElement.webkitRequestFullscreen;
+    if (req) req.call(document.documentElement).catch(() => {});
+  } else {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exit) exit.call(document).catch(() => {});
+  }
+}
+
+function updateFullscreenBtn() {
+  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const btn  = el('btn-fullscreen');
+  btn.textContent = isFs ? '⊡' : '⛶';
+  btn.title       = isFs ? 'Quitter le plein écran' : 'Plein écran';
+}
+
 function init() {
   // ── Setup ──
   el('btn-add-player').addEventListener('click', addPlayer);
@@ -1017,6 +1035,11 @@ function init() {
   window.addEventListener('resize', () => {
     if (!el('screen-turn').hidden) fitWordCard();
   });
+
+  // ── Fullscreen ──
+  el('btn-fullscreen').addEventListener('click', toggleFullscreen);
+  document.addEventListener('fullscreenchange', updateFullscreenBtn);
+  document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
 
   // ── Swipe support on turn screen ──
   initSwipe();

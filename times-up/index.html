@@ -150,29 +150,38 @@
   <div class="turn-header">
     <span id="turn-round-badge"></span>
     <span class="turn-found-info">✅ <span id="turn-found-count">0</span> trouvé(s)</span>
+    <button id="btn-fullscreen" class="btn-fullscreen" title="Plein écran">⛶</button>
   </div>
 
-  <!-- Timer -->
-  <div class="timer-wrap">
-    <svg class="timer-svg" viewBox="0 0 100 100">
-      <circle class="timer-track"  cx="50" cy="50" r="46"/>
-      <circle class="timer-ring" id="timer-ring-progress" cx="50" cy="50" r="46"/>
-    </svg>
-    <div id="timer-number">30</div>
+  <!-- Zone de jeu : grille 2fr (erreur) | 5fr (timer + mot + passer) | 2fr (trouvé) -->
+  <div class="turn-play-area">
+
+    <!-- Colonne gauche : Erreur (2fr) -->
+    <button id="btn-fault" class="btn-fault-turn btn-turn-side" aria-label="Erreur — arrêter le tour"><span aria-hidden="true">🚨</span><span>Erreur</span></button>
+
+    <!-- Colonne centrale : Timer + Mot + Passer (5fr) -->
+    <div class="turn-center-col">
+      <div class="timer-wrap">
+        <svg class="timer-svg" viewBox="0 0 100 100">
+          <circle class="timer-track"  cx="50" cy="50" r="46"/>
+          <circle class="timer-ring" id="timer-ring-progress" cx="50" cy="50" r="46"/>
+        </svg>
+        <div id="timer-number">30</div>
+      </div>
+
+      <div class="word-card">
+        <div id="word-card-text">…</div>
+        <div id="word-card-category"></div>
+      </div>
+
+      <button id="btn-skip" class="btn-skip-turn">❌ Passer</button>
+    </div>
+
+    <!-- Colonne droite : Trouvé (2fr) -->
+    <button id="btn-found" class="btn-found-big btn-turn-side" aria-label="Trouvé !"><span aria-hidden="true">✅</span><span>Trouvé !</span></button>
+
   </div>
 
-  <!-- Carte mot -->
-  <div class="word-card">
-    <div id="word-card-text">…</div>
-    <div id="word-card-category"></div>
-  </div>
-
-  <!-- Actions -->
-  <div class="turn-actions" id="turn-actions">
-    <button id="btn-skip"  class="btn-skip-turn">❌ Passer</button>
-    <button id="btn-found" class="btn-found-big">✅ Trouvé !</button>
-    <button id="btn-fault" class="btn-fault-turn">🚨 Erreur — arrêter le tour</button>
-  </div>
   <p class="swipe-hint-text" id="swipe-hint-text">← Passer &nbsp;·&nbsp; Trouvé →</p>
 </div>
 
