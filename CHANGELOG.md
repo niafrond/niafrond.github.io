@@ -1,3 +1,9 @@
+## [1.73.0](https://github.com/niafrond/niafrond.github.io/compare/v1.72.1...v1.73.0) (2026-04-18)
+
+### Features
+
+* **times-up:** manche 2 - remove Erreur button, add prominent Passer side button, fix button widths ([#102](https://github.com/niafrond/niafrond.github.io/issues/102)) ([4ab60b7](https://github.com/niafrond/niafrond.github.io/commit/4ab60b72383fbfd52858ac603b39cf66dbb3b345))
+
 ## [1.72.1](https://github.com/niafrond/niafrond.github.io/compare/v1.72.0...v1.72.1) (2026-04-18)
 
 ### Bug Fixes
