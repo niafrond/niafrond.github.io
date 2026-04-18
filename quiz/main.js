@@ -9,13 +9,19 @@
 import { initHost } from './host.js';
 import { initClient } from './client.js';
 import { setMuted, getMuted } from './sound.js';
-import { getMatch3Version } from '../match3-quest/version.js';
+import { getMatch3Version, getMatch3BuildDate } from '../match3-quest/version.js';
 
 // ─── Bouton mute (persistant) ─────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
   const versionEl = document.getElementById('quiz-version');
-  if (versionEl) versionEl.textContent = `v${getMatch3Version()}`;
+  if (versionEl) {
+    const buildDate = getMatch3BuildDate();
+    const dateLabel = buildDate
+      ? ` · ${new Date(buildDate).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}`
+      : '';
+    versionEl.textContent = `v${getMatch3Version()}${dateLabel}`;
+  }
 
   const btnMute = document.getElementById('btn-mute');
   if (btnMute) {
