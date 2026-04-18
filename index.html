@@ -202,8 +202,12 @@
 
         <footer>
             <p>💾 Les données sont sauvegardées localement (localStorage)</p>
-            <p>Made with ❤️</p>
+            <p>Made with ❤️ — <span id="app-version"></span></p>
         </footer>
     </div>
+    <script type="module">
+        import { getMatch3Version } from './match3-quest/version.js';
+        document.getElementById('app-version').textContent = 'v' + getMatch3Version();
+    </script>
 </body>
 </html>
