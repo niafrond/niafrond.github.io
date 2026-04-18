@@ -489,6 +489,12 @@ function updateTimerDisplay() {
 function endTurn(reason = 'timeout') {
   stopTimer();
 
+  // Remettre le mot courant dans le jeu si le temps est écoulé (ni trouvé ni passé)
+  if (reason === 'timeout' && state.currentWord) {
+    state.roundWords.push(state.currentWord);
+    state.currentWord = null;
+  }
+
   const team = state.teams[state.currentTeamIdx];
   team.score[state.currentRound - 1] += state.turnFound.length;
 
@@ -520,7 +526,7 @@ function endTurn(reason = 'timeout') {
   const pi = state.teamPlayerIdx[state.currentTeamIdx];
   state.teamPlayerIdx[state.currentTeamIdx] = (pi + 1) % team.players.length;
 
-  if (reason === 'allFound' || state.roundWords.length === 0) {
+  if (reason === 'allFound') {
     el('btn-next-turn').dataset.nextAction = 'round-end';
     el('turn-end-all-found').hidden = false;
   } else {
