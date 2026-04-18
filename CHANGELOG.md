@@ -1,3 +1,9 @@
+## [1.70.0](https://github.com/niafrond/niafrond.github.io/compare/v1.69.0...v1.70.0) (2026-04-18)
+
+### Features
+
+* **times-up:** add force-refresh button to bust SW cache ([#95](https://github.com/niafrond/niafrond.github.io/issues/95)) ([660d86e](https://github.com/niafrond/niafrond.github.io/commit/660d86e193a94b215fd3a8ee2a1ae948ed93ee72))
+
 ## [1.69.0](https://github.com/niafrond/niafrond.github.io/compare/v1.68.2...v1.69.0) (2026-04-18)
 
 ### Features
