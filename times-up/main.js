@@ -184,8 +184,6 @@ function addPlayer() {
 function removePlayer(idx) {
   state.playerNames.splice(idx, 1);
   renderPlayerList();
-  // Refresh members tab if visible
-  if (!el('panel-membres').hidden) renderMembersList();
 }
 
 // ─── COMPOSITION DES ÉQUIPES ───────────────────────────────────────────────────
@@ -798,87 +796,6 @@ function saveMembersAfterGame() {
   saveMembers(members);
 }
 
-function renderMembersList() {
-  const list    = el('members-list');
-  const empty   = el('members-empty');
-  const members = loadMembers();
-
-  list.innerHTML = '';
-
-  if (members.length === 0) {
-    empty.hidden = false;
-    return;
-  }
-  empty.hidden = true;
-
-  // Trier par totalPts décroissant
-  const sorted = [...members].sort((a, b) => (b.totalPts || 0) - (a.totalPts || 0));
-
-  sorted.forEach((m) => {
-    const isAdded = state.playerNames.includes(m.name);
-
-    const item = document.createElement('div');
-    item.className = `member-item${isAdded ? ' member-item--added' : ''}`;
-
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'member-item-name';
-    nameSpan.textContent = `👤 ${m.name}`;
-
-    const statsSpan = document.createElement('span');
-    statsSpan.className = 'member-item-stats';
-    statsSpan.textContent = `${m.games} partie${m.games > 1 ? 's' : ''} · ${m.totalPts || 0} pts`;
-
-    item.appendChild(nameSpan);
-    item.appendChild(statsSpan);
-
-    if (isAdded) {
-      const badge = document.createElement('span');
-      badge.className = 'member-item-added-badge';
-      badge.textContent = '✓ Ajouté';
-      item.appendChild(badge);
-    } else {
-      // Bouton supprimer
-      const delBtn = document.createElement('button');
-      delBtn.className = 'btn-icon btn-danger';
-      delBtn.setAttribute('aria-label', `Supprimer ${m.name}`);
-      delBtn.textContent = '✕';
-      delBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const all = loadMembers();
-        const idx = all.findIndex(x => x.name === m.name);
-        if (idx !== -1) { all.splice(idx, 1); saveMembers(all); }
-        renderMembersList();
-      });
-      item.appendChild(delBtn);
-    }
-
-    if (!isAdded) {
-      item.addEventListener('click', () => {
-        if (state.playerNames.includes(m.name)) return;
-        if (state.playerNames.length >= 20) { showToast('Maximum 20 joueurs', 'warn'); return; }
-        state.playerNames.push(m.name);
-        renderPlayerList();
-        renderMembersList();
-        showToast(`${m.name} ajouté(e) ✅`);
-      });
-    }
-
-    list.appendChild(item);
-  });
-}
-
-// ─── ONGLETS SETUP ─────────────────────────────────────────────────────────────
-function switchSetupTab(tab) {
-  const isJoueurs = (tab === 'joueurs');
-  el('tab-joueurs').className  = `setup-tab${isJoueurs ? ' setup-tab--active' : ''}`;
-  el('tab-membres').className  = `setup-tab${!isJoueurs ? ' setup-tab--active' : ''}`;
-  el('tab-joueurs').setAttribute('aria-selected', isJoueurs);
-  el('tab-membres').setAttribute('aria-selected', !isJoueurs);
-  el('panel-joueurs').hidden   = !isJoueurs;
-  el('panel-membres').hidden   = isJoueurs;
-  if (!isJoueurs) renderMembersList();
-}
-
 
 function initSwipe() {
   const card = document.querySelector('.word-card');
@@ -945,10 +862,6 @@ function init() {
     saveCardCount(state.cardCount);
   });
 
-  // ── Setup tabs ──
-  el('tab-joueurs').addEventListener('click', () => switchSetupTab('joueurs'));
-  el('tab-membres').addEventListener('click', () => switchSetupTab('membres'));
-
   // ── Teams ──
   el('btn-reshuffle').addEventListener('click', () => {
     assignTeams();
@@ -983,14 +896,12 @@ function init() {
 
   // ── Game over ──
   el('btn-replay').addEventListener('click', () => {
-    state.playerNames    = [];
     state.teams          = [];
     state.teamPlayerIdx  = [];
     state.allWords       = [];
     state.roundWords     = [];
     state.currentRound   = 0;
     state.noTeamsMode    = false;
-    switchSetupTab('joueurs');
     renderPlayerList();
     showScreen('screen-setup');
   });
