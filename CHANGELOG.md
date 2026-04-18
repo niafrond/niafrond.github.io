@@ -1,3 +1,9 @@
+## [1.72.0](https://github.com/niafrond/niafrond.github.io/compare/v1.71.0...v1.72.0) (2026-04-18)
+
+### Features
+
+* **times-up:** hide version badge during gameplay, move controls to bottom-right ([#99](https://github.com/niafrond/niafrond.github.io/issues/99)) ([ea828a1](https://github.com/niafrond/niafrond.github.io/commit/ea828a1a20a5eec4146b3233fc3660b5e3b8f752))
+
 ## [1.71.0](https://github.com/niafrond/niafrond.github.io/compare/v1.70.1...v1.71.0) (2026-04-18)
 
 ### Features
