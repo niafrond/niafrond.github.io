@@ -783,7 +783,7 @@ function switchSetupTab(tab) {
   el('panel-partie').hidden  = tab !== 'partie';
   el('panel-membres').hidden = tab !== 'membres';
   el('tab-btn-partie').classList.toggle('setup-tab--active', tab === 'partie');
-  el('tab-btn-joueurs').classList.toggle('setup-tab--active', tab === 'membres');
+  el('tab-btn-membres').classList.toggle('setup-tab--active', tab === 'membres');
   if (tab === 'membres') renderMembersList();
 }
 
@@ -937,7 +937,7 @@ function initSwipe() {
 function init() {
   // ── Setup ──
   el('tab-btn-partie').addEventListener('click', () => switchSetupTab('partie'));
-  el('tab-btn-joueurs').addEventListener('click', () => switchSetupTab('membres'));
+  el('tab-btn-membres').addEventListener('click', () => switchSetupTab('membres'));
   el('btn-add-player').addEventListener('click', addPlayer);
   el('player-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') addPlayer();
