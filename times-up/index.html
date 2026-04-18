@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<!-- Contrôles globaux (coin haut-droit) -->
+<!-- Contrôles globaux (coin bas-droit) -->
 <div id="top-right-controls">
   <button id="btn-fullscreen" class="btn-top-ctrl" title="Plein écran">⛶</button>
   <button id="btn-mute"       class="btn-top-ctrl" title="Son on/off">🔊</button>
@@ -152,15 +152,7 @@
 <div id="screen-pre-turn" data-screen="screen-pre-turn" class="screen-center">
   <div class="pre-turn-info">
     <span class="round-badge" id="pre-turn-round"></span>
-    <p class="pre-turn-label">Au tour de</p>
-    <div id="pre-turn-team"></div>
-    <p class="pre-turn-label" style="margin-top:12px">Passez le téléphone à</p>
-    <div id="pre-turn-player"></div>
-    <p style="font-size:0.85rem; color:var(--text-muted)" id="pre-turn-words-left"></p>
-    <div id="pre-turn-guesser-wrap" hidden>
-      <p class="pre-turn-label" style="margin-top:12px">Fait deviner à</p>
-      <div id="pre-turn-guesser"></div>
-    </div>
+    <p id="pre-turn-sentence" class="pre-turn-label" style="margin-top:12px; font-size:1.4rem; text-align:center"></p>
   </div>
   <button id="btn-ready" class="btn btn-primary btn-lg" style="margin-top:8px">
     ✅ Je suis prêt !
