@@ -28,14 +28,7 @@
     <p class="app-subtitle">Nout Péi 🌋🌊</p>
 
     <div class="card">
-      <!-- Onglets Joueurs / Membres -->
-      <div class="setup-tabs" role="tablist">
-        <button id="tab-joueurs" class="setup-tab setup-tab--active" role="tab" aria-selected="true" aria-controls="panel-joueurs">👥 Joueurs</button>
-        <button id="tab-membres" class="setup-tab" role="tab" aria-selected="false" aria-controls="panel-membres">⭐ Membres</button>
-      </div>
-
-      <!-- Panneau Joueurs -->
-      <div id="panel-joueurs" role="tabpanel">
+      <div id="panel-joueurs">
         <div class="input-row mb-12">
           <input id="player-input" class="input" type="text"
                  placeholder="Prénom du joueur…" maxlength="24" autocomplete="off" autocorrect="off">
@@ -44,13 +37,6 @@
         <div id="player-list"></div>
         <span id="player-count"></span>
         <span id="setup-hint" hidden></span>
-      </div>
-
-      <!-- Panneau Membres -->
-      <div id="panel-membres" hidden role="tabpanel">
-        <p class="members-hint">Appuyez sur un membre pour l'ajouter à la partie en cours.</p>
-        <div id="members-list"></div>
-        <p id="members-empty" class="members-empty" hidden>Aucun membre sauvegardé — les joueurs sont automatiquement enregistrés après chaque partie.</p>
       </div>
     </div>
 
