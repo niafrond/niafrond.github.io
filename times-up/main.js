@@ -1058,6 +1058,21 @@ function initSwipe() {
   }
 }
 
+// ─── MISE À JOUR FORCÉE ────────────────────────────────────────────────────────
+async function forceUpdate() {
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch (_) { /* ignore */ }
+  location.reload();
+}
+
 // ─── PLEIN ÉCRAN ───────────────────────────────────────────────────────────────
 function toggleFullscreen() {
   if (!document.fullscreenElement && !document.webkitFullscreenElement) {
@@ -1163,6 +1178,7 @@ function init() {
 
   // ── Words editor ──
   el('btn-edit-words').addEventListener('click', openWordsEditor);
+  el('btn-force-update').addEventListener('click', forceUpdate);
   el('btn-words-back').addEventListener('click', () => showScreen('screen-setup'));
   el('btn-word-add').addEventListener('click', addWord);
   el('word-new-text').addEventListener('keydown', e => { if (e.key === 'Enter') addWord(); });
