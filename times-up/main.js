@@ -55,11 +55,11 @@ const ROUND_RULES = [
     title: 'Manche 2 — Un seul mot',
     desc: `L'orateur ne dit qu'un seul mot par carte. L'équipe n'a droit qu'à une seule proposition.
 ✅ Bonne réponse → carte gagnée.
-❌ Mauvaise réponse ou faute → carte passée définitivement pour ce tour.
+❌ Mauvaise réponse → carte passée définitivement pour ce tour.
 ⏭ L'orateur peut aussi passer s'il est bloqué.
 ⛔ Interdits : plus d'un mot, partie du nom, traduction directe.`,
     canSkip: true,
-    canFault: true,
+    canFault: false,
   },
   {
     num: 3, icon: '🤐',
@@ -407,14 +407,29 @@ function startTurn() {
   state.timeLeft    = TURN_DURATION;
 
   const rule = getCurrentRoundRule();
-  el('btn-skip').hidden  = !rule.canSkip;
-  // Keep btn-fault in the grid flow so the 3-column layout stays aligned;
-  // just hide it visually when not needed.
-  const faultBtn = el('btn-fault');
-  faultBtn.style.visibility   = rule.canFault ? '' : 'hidden';
-  faultBtn.style.pointerEvents = rule.canFault ? '' : 'none';
 
-  faultBtn.setAttribute('aria-label', 'Erreur — passer la carte');
+  // Bouton Passer (bas de la colonne centrale) — uniquement manche 3 (canFault ET canSkip)
+  el('btn-skip').hidden = !(rule.canSkip && rule.canFault);
+
+  const faultBtn     = el('btn-fault');
+  const skipSideBtn  = el('btn-skip-side');
+
+  if (rule.canFault) {
+    // Manche 3 : Erreur visible à gauche, Passer en bas du centre
+    faultBtn.style.visibility    = '';
+    faultBtn.style.pointerEvents = '';
+    skipSideBtn.style.display    = 'none';
+  } else if (rule.canSkip) {
+    // Manche 2 : Passer côté visible à gauche, pas de bouton Erreur
+    faultBtn.style.visibility    = 'hidden';
+    faultBtn.style.pointerEvents = 'none';
+    skipSideBtn.style.display    = '';
+  } else {
+    // Manche 1 : ni Erreur ni Passer
+    faultBtn.style.visibility    = 'hidden';
+    faultBtn.style.pointerEvents = 'none';
+    skipSideBtn.style.display    = 'none';
+  }
 
   // Swipe hint: masquer la flèche gauche si on ne peut pas passer
   const hintEl = el('swipe-hint-text');
@@ -445,10 +460,11 @@ function fitWordCard() {
   const gap    = parseFloat(areaCS.columnGap) || 0;
 
   // Compute the available width for the word by subtracting the side buttons and gaps
-  // from the total play area width.  This ensures the text never exceeds the visible
-  // screen width even when taking into account the "Trouvé" (and "Erreur") button sizes.
+  // from the total play area width.  The left column always occupies a fixed slot
+  // (btn-fault uses visibility:hidden so its offsetWidth equals the column width in all rounds).
+  const leftColW = faultBtn.offsetWidth;
   const availW = turnArea.clientWidth
-    - faultBtn.offsetWidth
+    - leftColW
     - foundBtn.offsetWidth
     - 2 * gap
     - parseFloat(cs.paddingLeft)
@@ -1148,6 +1164,7 @@ function init() {
   // ── Turn ──
   el('btn-found').addEventListener('click', wordFound);
   el('btn-skip').addEventListener('click', wordSkipped);
+  el('btn-skip-side').addEventListener('click', wordSkipped);
   el('btn-fault').addEventListener('click', wordFault);
 
   // ── Turn end ──
