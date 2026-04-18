@@ -1,3 +1,9 @@
+## [1.68.1](https://github.com/niafrond/niafrond.github.io/compare/v1.68.0...v1.68.1) (2026-04-18)
+
+### Bug Fixes
+
+* **times-up:** remove team name and emoji from all displays ([#92](https://github.com/niafrond/niafrond.github.io/issues/92)) ([6723485](https://github.com/niafrond/niafrond.github.io/commit/672348530509fa1378591cd60fb832309308a30e))
+
 ## [1.68.0](https://github.com/niafrond/niafrond.github.io/compare/v1.67.0...v1.68.0) (2026-04-18)
 
 ### Features
