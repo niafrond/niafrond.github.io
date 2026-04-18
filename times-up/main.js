@@ -425,12 +425,27 @@ function startTurn() {
 }
 
 function fitWordCard() {
-  const textEl = el('word-card-text');
-  const card   = textEl.closest('.word-card');
+  const textEl   = el('word-card-text');
+  const card     = textEl.closest('.word-card');
   if (!card || !textEl.textContent.trim()) return;
 
+  const turnArea = document.querySelector('.turn-play-area');
+  const foundBtn = el('btn-found');
+  const faultBtn = el('btn-fault');
+
   const cs     = getComputedStyle(card);
-  const availW = card.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const areaCS = getComputedStyle(turnArea);
+  const gap    = parseFloat(areaCS.columnGap) || 0;
+
+  // Compute the available width for the word by subtracting the side buttons and gaps
+  // from the total play area width.  This ensures the text never exceeds the visible
+  // screen width even when taking into account the "Trouvé" (and "Erreur") button sizes.
+  const availW = turnArea.clientWidth
+    - faultBtn.offsetWidth
+    - foundBtn.offsetWidth
+    - 2 * gap
+    - parseFloat(cs.paddingLeft)
+    - parseFloat(cs.paddingRight);
   if (availW <= 0) return;
 
   // Binary-search the largest font size where text fits on one line
