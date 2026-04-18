@@ -1,3 +1,9 @@
+## [1.67.0](https://github.com/niafrond/niafrond.github.io/compare/v1.66.0...v1.67.0) (2026-04-18)
+
+### Features
+
+* display version badge from match3-quest/version.js on all apps ([#90](https://github.com/niafrond/niafrond.github.io/issues/90)) ([5551d2d](https://github.com/niafrond/niafrond.github.io/commit/5551d2d4ac3b996a4c5de40e2dc57be57c44bbe0))
+
 ## [1.66.0](https://github.com/niafrond/niafrond.github.io/compare/v1.65.0...v1.66.0) (2026-04-18)
 
 ### Features
