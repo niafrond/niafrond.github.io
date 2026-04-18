@@ -253,6 +253,7 @@ html, body {
   margin-bottom: 10px;
 }
 .team-emoji { font-size: 1.5rem; }
+.team-name  { font-size: 1.1rem; font-weight: 800; }
 .team-players {
   list-style: none;
   display: flex;

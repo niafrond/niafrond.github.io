@@ -79,10 +79,10 @@ Même fonctionnement que la manche 2 :
 
 // ─── Métadonnées équipes (max 4) ───────────────────────────────────────────────
 const TEAMS_META = [
-  { emoji: '🌋', color: 'var(--volcan)' },
-  { emoji: '🌊', color: 'var(--lagon)'  },
-  { emoji: '🌿', color: 'var(--foret)'  },
-  { emoji: '☀️', color: 'var(--soleil)' },
+  { name: 'Volcan', emoji: '🌋', color: 'var(--volcan)' },
+  { name: 'Lagon',  emoji: '🌊', color: 'var(--lagon)'  },
+  { name: 'Forêt',  emoji: '🌿', color: 'var(--foret)'  },
+  { name: 'Soleil', emoji: '☀️', color: 'var(--soleil)' },
 ];
 
 // Emojis pour le mode jeu libre (5 ou 7 joueurs — pas d'équipes fixes)
@@ -304,9 +304,10 @@ function assignTeams() {
   state.teamPlayerIdx = state.teams.map(() => 0);
 }
 
-/** Retourne un libellé court pour une équipe : emoji + liste des joueurs. */
+/** Retourne un libellé court pour une équipe : emoji + nom (si disponible) + liste des joueurs. */
 function teamLabel(team) {
-  return `${team.emoji} ${team.players.join(' · ')}`;
+  const id = team.name ? `${team.emoji} ${team.name}` : team.emoji;
+  return `${id} — ${team.players.join(' · ')}`;
 }
 
 function renderTeams() {
@@ -338,6 +339,14 @@ function renderTeams() {
     emojiSpan.textContent = team.emoji;
 
     header.appendChild(emojiSpan);
+
+    if (team.name) {
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'team-name';
+      nameSpan.textContent = team.name;
+      nameSpan.style.color = team.color;
+      header.appendChild(nameSpan);
+    }
 
     const ul = document.createElement('ul');
     ul.className = 'team-players';
@@ -611,6 +620,7 @@ function endTurn(reason = 'timeout') {
   el('turn-end-reason').textContent = reasonMsgs[reason] ?? '⏱️ Temps écoulé !';
 
   el('turn-end-team').textContent   = teamLabel(team);
+  el('turn-end-team').style.color   = team.color;
   el('turn-end-player').textContent =
     state.teams[state.currentTeamIdx].players[state.teamPlayerIdx[state.currentTeamIdx]];
   el('turn-end-count').textContent  = state.turnFound.length;
