@@ -1,3 +1,10 @@
+## [1.64.1](https://github.com/niafrond/niafrond.github.io/compare/v1.64.0...v1.64.1) (2026-04-18)
+
+### Bug Fixes
+
+* **times-up:** bouton erreur en manche 1, faute arrête le tour dans toutes les manches ([#84](https://github.com/niafrond/niafrond.github.io/issues/84)) ([e0569a0](https://github.com/niafrond/niafrond.github.io/commit/e0569a09f6f881301e0f7b3ff5c7d4f3fa87132b))
+* **times-up:** retire la modif de grille de bouton de increase-word-size-display ([#83](https://github.com/niafrond/niafrond.github.io/issues/83)) ([8a2d133](https://github.com/niafrond/niafrond.github.io/commit/8a2d13345e06d0194447a6fd19964e60f8a2fb61))
+
 ## [1.64.0](https://github.com/niafrond/niafrond.github.io/compare/v1.63.0...v1.64.0) (2026-04-18)
 
 ### Features
