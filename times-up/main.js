@@ -381,22 +381,19 @@ function startPreTurn() {
   const team       = state.teams[state.currentTeamIdx];
   const playerName = team.players[state.teamPlayerIdx[state.currentTeamIdx]];
 
-  el('pre-turn-team').textContent  = teamLabel(team);
-  el('pre-turn-team').style.color  = team.color;
-  el('pre-turn-player').textContent = playerName;
-  el('pre-turn-round').textContent  = `Manche ${state.currentRound} / 3`;
-  el('pre-turn-words-left').textContent =
-    `${state.roundWords.length} mot${state.roundWords.length > 1 ? 's' : ''} restant${state.roundWords.length > 1 ? 's' : ''}`;
+  el('pre-turn-round').textContent = `Manche ${state.currentRound} / 3`;
 
+  let sentence = `Au tour de ${playerName} qui fait deviner à `;
   if (state.noTeamsMode) {
     const n = state.teams.length;
     const leftIdx = (state.currentTeamIdx - 1 + n) % n;
-    const leftTeam = state.teams[leftIdx];
-    el('pre-turn-guesser').textContent = teamLabel(leftTeam);
-    el('pre-turn-guesser-wrap').hidden = false;
+    sentence += teamLabel(state.teams[leftIdx]);
   } else {
-    el('pre-turn-guesser-wrap').hidden = true;
+    sentence += teamLabel(team);
   }
+  const sentenceEl = el('pre-turn-sentence');
+  sentenceEl.textContent = sentence;
+  sentenceEl.style.color = team.color;
 
   showScreen('screen-pre-turn');
 }
