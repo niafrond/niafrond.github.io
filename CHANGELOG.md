@@ -1,3 +1,9 @@
+## [1.70.1](https://github.com/niafrond/niafrond.github.io/compare/v1.70.0...v1.70.1) (2026-04-18)
+
+### Bug Fixes
+
+* erreur en manche 2/3 passe la carte au lieu d'arrêter le tour ([#96](https://github.com/niafrond/niafrond.github.io/issues/96)) ([a885dcd](https://github.com/niafrond/niafrond.github.io/commit/a885dcd9252031de3ed95e9a5155482110397f83))
+
 ## [1.70.0](https://github.com/niafrond/niafrond.github.io/compare/v1.69.0...v1.70.0) (2026-04-18)
 
 ### Features
