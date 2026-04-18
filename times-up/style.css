@@ -314,6 +314,7 @@ html, body {
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+  padding-right: 52px; /* évite le chevauchement avec #btn-mute (fixed, right:14px, 40px large) */
 }
 #turn-round-badge {
   font-size: 0.8rem;
