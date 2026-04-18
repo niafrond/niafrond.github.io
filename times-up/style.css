@@ -205,14 +205,20 @@ html, body {
   margin-bottom: 16px;
 }
 
-/* ─── Mute button (fixe) ──────────────────────────────────────────────────── */
-#btn-mute {
+/* ─── Contrôles coin haut-droit (mute + plein écran) ─────────────────────── */
+#top-right-controls {
   position: fixed;
   top: 14px;
   right: 14px;
   z-index: 100;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.btn-top-ctrl {
   background: var(--surface);
   border: 1px solid var(--border);
+  color: var(--text-muted);
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -222,7 +228,9 @@ html, body {
   align-items: center;
   justify-content: center;
   box-shadow: var(--shadow);
+  transition: background 0.15s, color 0.15s;
 }
+.btn-top-ctrl:hover { background: var(--surface2); color: var(--text); }
 
 /* ─── Teams ────────────────────────────────────────────────────────────────── */
 #teams-container {
@@ -314,7 +322,6 @@ html, body {
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
-  padding-right: 52px; /* évite le chevauchement avec #btn-mute (fixed, right:14px, 40px large) */
 }
 #turn-round-badge {
   font-size: 0.8rem;
@@ -326,24 +333,6 @@ html, body {
   padding: 4px 12px;
 }
 .turn-found-info { font-size: 0.85rem; color: var(--text-muted); }
-
-/* Bouton plein écran */
-.btn-fullscreen {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  border-radius: 6px;
-  width: 32px;
-  height: 32px;
-  cursor: pointer;
-  font-size: 1rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s, color 0.15s;
-  flex-shrink: 0;
-}
-.btn-fullscreen:hover { background: var(--surface2); color: var(--text); }
 
 /* Zone de jeu : grille 2fr | 5fr | 2fr */
 .turn-play-area {
