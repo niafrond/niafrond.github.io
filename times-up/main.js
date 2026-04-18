@@ -391,7 +391,8 @@ function startPreTurn() {
     const leftIdx = (state.currentTeamIdx - 1 + n) % n;
     guesserLabel = teamLabel(state.teams[leftIdx]);
   } else {
-    guesserLabel = teamLabel(team);
+    const teammates = team.players.filter(p => p !== playerName);
+    guesserLabel = teammates.length ? teammates.join(' · ') : teamLabel(team);
   }
 
   const playerSpan = document.createElement('span');
