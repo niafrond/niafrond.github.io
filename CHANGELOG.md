@@ -1,3 +1,9 @@
+## [1.63.0](https://github.com/niafrond/niafrond.github.io/compare/v1.62.0...v1.63.0) (2026-04-18)
+
+### Features
+
+* **times-up:** round 1 unlimited guesses, larger word display, neighbor score pooling in 5/7-player mode ([#77](https://github.com/niafrond/niafrond.github.io/issues/77)) ([37b44f5](https://github.com/niafrond/niafrond.github.io/commit/37b44f5efa421071525a07f0e74162198572d69b))
+
 ## [1.62.0](https://github.com/niafrond/niafrond.github.io/compare/v1.61.1...v1.62.0) (2026-04-18)
 
 ### Features
