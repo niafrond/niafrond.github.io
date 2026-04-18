@@ -22,6 +22,16 @@ const WORD_CARD_HORIZONTAL_PAD   = 32;   // padding horizontal de .word-card (16
 const WORD_FONT_MIN              = 16;   // px — taille minimale du mot
 const WORD_FONT_MAX              = 200;  // px — taille maximale du mot
 
+// Écrans qui nécessitent le mode paysage
+const GAMEPLAY_SCREENS = new Set([
+  'screen-round-intro',
+  'screen-pre-turn',
+  'screen-turn',
+  'screen-turn-end',
+  'screen-round-end',
+  'screen-game-over',
+]);
+
 // Swipe constants
 const SWIPE_THRESHOLD            = 70;   // px — distance minimale pour valider un swipe
 const SWIPE_VISUAL_THRESHOLD     = 20;   // px — distance à partir de laquelle l'indicateur s'affiche
@@ -112,14 +122,54 @@ const state = {
 
   timerInterval: null,
   timeLeft: TURN_DURATION,
+  timerPaused: false,      // true quand le timer est suspendu (ex: overlay portrait)
 
   cardCount: CARD_COUNT_DEFAULT,  // 0 = tous les mots disponibles
 };
 
 // ─── Helpers UI ────────────────────────────────────────────────────────────────
+let _currentScreen = 'screen-setup';
+
 function showScreen(id) {
+  _currentScreen = id;
   document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
   document.getElementById(id).hidden = false;
+  if (GAMEPLAY_SCREENS.has(id)) {
+    requestLandscapeLock();
+  } else {
+    releaseLandscapeLock();
+  }
+  updateRotateOverlay();
+}
+
+// ─── Orientation paysage ───────────────────────────────────────────────────────
+async function requestLandscapeLock() {
+  try {
+    if (screen.orientation?.lock) {
+      await screen.orientation.lock('landscape');
+    }
+  } catch (_) { /* Silently ignore — l'overlay sert de repli */ }
+}
+
+function releaseLandscapeLock() {
+  try { screen.orientation?.unlock?.(); } catch (_) { /* ignore */ }
+}
+
+function updateRotateOverlay() {
+  const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+  const shouldShow = GAMEPLAY_SCREENS.has(_currentScreen) && isPortrait;
+  el('rotate-overlay').classList.toggle('active', shouldShow);
+  handleOrientationTimerState(shouldShow);
+}
+
+/** Pause le timer si l'overlay portrait apparaît pendant un tour actif, le reprend sinon. */
+function handleOrientationTimerState(overlayVisible) {
+  if (_currentScreen !== 'screen-turn') return;
+  if (overlayVisible) {
+    pauseTimer();
+  } else if (state.timerPaused) {
+    resumeTimer();
+  }
 }
 
 function el(id) { return document.getElementById(id); }
@@ -485,6 +535,22 @@ function startTimer() {
 function stopTimer() {
   clearInterval(state.timerInterval);
   state.timerInterval = null;
+  state.timerPaused   = false;
+}
+
+function pauseTimer() {
+  if (state.timerInterval !== null) {
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
+    state.timerPaused   = true;
+  }
+}
+
+function resumeTimer() {
+  if (state.timerPaused) {
+    state.timerPaused = false;
+    startTimer();
+  }
 }
 
 function updateTimerDisplay() {
@@ -1097,7 +1163,9 @@ function init() {
   // ── Re-fit word on resize / orientation change ──
   window.addEventListener('resize', () => {
     if (!el('screen-turn').hidden) fitWordCard();
+    updateRotateOverlay();
   });
+  window.addEventListener('orientationchange', updateRotateOverlay);
 
   // ── Fullscreen ──
   el('btn-fullscreen').addEventListener('click', toggleFullscreen);

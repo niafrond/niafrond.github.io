@@ -778,7 +778,41 @@ html, body {
 
 
 #rotate-overlay {
-  display: none;
+  display: none; /* shown via .active class */
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: var(--bg-grad);
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+#rotate-overlay.active { display: flex; }
+
+.rotate-overlay-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+}
+.rotate-overlay-phone {
+  font-size: 5rem;
+  display: block;
+  animation: rotatePhone 1.8s ease-in-out infinite;
+}
+@keyframes rotatePhone {
+  0%, 35%  { transform: rotate(0deg); }
+  65%, 100% { transform: rotate(90deg); }
+}
+.rotate-overlay-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.rotate-overlay-sub {
+  font-size: 0.95rem;
+  color: var(--text-muted);
 }
 
 /* ─── Turn screen — landscape optimised ─────────────────────────────────────── */
@@ -872,4 +906,68 @@ html, body {
   }
 
   .swipe-hint-text { font-size: 0.72rem; }
+}
+
+/* ─── Pre-turn info wrapper (portrait default) ──────────────────────────────── */
+.pre-turn-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ─── Center screens — landscape compact (mobile phones in landscape, height ≤ 600 px) ── */
+@media (orientation: landscape) and (max-height: 600px) {
+  .screen-center {
+    gap: 8px;
+    padding: 10px 20px;
+  }
+
+  .round-badge { font-size: 0.78rem; padding: 3px 12px; }
+
+  /* Round intro */
+  #round-intro-icon  { font-size: 2.5rem; margin-bottom: 0; }
+  #round-intro-title { font-size: 1.15rem; }
+  #round-intro-desc  { font-size: 0.82rem; }
+
+  /* Pre-turn — 2-column layout: info left | ready button right */
+  #screen-pre-turn {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 10px 24px;
+  }
+  .pre-turn-info {
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+  }
+  .pre-turn-label          { font-size: 0.85rem; margin-top: 0 !important; }
+  #pre-turn-team           { font-size: 1.3rem; }
+  #pre-turn-player,
+  #pre-turn-guesser        { font-size: 1.8rem; }
+  #screen-pre-turn #btn-ready {
+    flex-shrink: 0;
+    width: 150px;
+    align-self: stretch;
+    font-size: 0.95rem;
+    margin-top: 0 !important;
+  }
+
+  /* Turn end */
+  #turn-end-reason   { font-size: 1.4rem !important; }
+  .turn-end-score    { font-size: 2.8rem; }
+  .turn-end-found-list { max-height: 100px; }
+  #screen-turn-end .card { padding: 12px; margin-bottom: 6px; }
+
+  /* Round end */
+  #screen-round-end h2   { font-size: 1.1rem; }
+  #screen-round-end .card { padding: 12px; margin-bottom: 6px; }
+
+  /* Game over */
+  #game-over-winner { font-size: 1.6rem; }
+
+  /* Compact buttons on all center screens */
+  .screen-center .btn-lg { padding: 10px 24px; font-size: 1rem; }
 }

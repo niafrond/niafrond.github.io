@@ -20,6 +20,15 @@
 </div>
 <div id="toast" class="toast" hidden></div>
 
+<!-- Overlay "Tournez votre téléphone" — affiché sur les écrans de jeu en mode portrait -->
+<div id="rotate-overlay">
+  <div class="rotate-overlay-inner">
+    <div class="rotate-overlay-phone">📱</div>
+    <p class="rotate-overlay-title">Tournez votre téléphone</p>
+    <p class="rotate-overlay-sub">Le jeu se joue en mode paysage</p>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════════════════════════════════
      ÉCRAN 1 — SETUP : saisie des joueurs
      ═══════════════════════════════════════════════════════════════════════════ -->
@@ -138,15 +147,17 @@
      ÉCRAN 4 — PRÉ-TOUR : passer le téléphone
      ═══════════════════════════════════════════════════════════════════════════ -->
 <div id="screen-pre-turn" data-screen="screen-pre-turn" class="screen-center">
-  <span class="round-badge" id="pre-turn-round"></span>
-  <p class="pre-turn-label">Au tour de</p>
-  <div id="pre-turn-team"></div>
-  <p class="pre-turn-label" style="margin-top:12px">Passez le téléphone à</p>
-  <div id="pre-turn-player"></div>
-  <p style="font-size:0.85rem; color:var(--text-muted)" id="pre-turn-words-left"></p>
-  <div id="pre-turn-guesser-wrap" hidden>
-    <p class="pre-turn-label" style="margin-top:12px">Fait deviner à</p>
-    <div id="pre-turn-guesser"></div>
+  <div class="pre-turn-info">
+    <span class="round-badge" id="pre-turn-round"></span>
+    <p class="pre-turn-label">Au tour de</p>
+    <div id="pre-turn-team"></div>
+    <p class="pre-turn-label" style="margin-top:12px">Passez le téléphone à</p>
+    <div id="pre-turn-player"></div>
+    <p style="font-size:0.85rem; color:var(--text-muted)" id="pre-turn-words-left"></p>
+    <div id="pre-turn-guesser-wrap" hidden>
+      <p class="pre-turn-label" style="margin-top:12px">Fait deviner à</p>
+      <div id="pre-turn-guesser"></div>
+    </div>
   </div>
   <button id="btn-ready" class="btn btn-primary btn-lg" style="margin-top:8px">
     ✅ Je suis prêt !
