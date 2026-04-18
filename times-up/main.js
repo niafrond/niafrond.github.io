@@ -18,7 +18,7 @@ const TIMER_CIRCLE_RADIUS        = 46;   // rayon du cercle SVG du timer
 const MIN_PLAYERS                = 4;
 const CARD_COUNT_DEFAULT         = 40;   // nombre de cartes par défaut
 const CARD_COUNT_KEY             = 'timesup_card_count';
-const WORD_CARD_HORIZONTAL_PAD   = 48;   // padding horizontal de .word-card (24px × 2)
+const WORD_CARD_HORIZONTAL_PAD   = 32;   // padding horizontal de .word-card (16px × 2)
 const WORD_FONT_MIN              = 16;   // px — taille minimale du mot
 const WORD_FONT_MAX              = 200;  // px — taille maximale du mot
 
@@ -34,10 +34,10 @@ const ROUND_RULES = [
     num: 1, icon: '🗣️',
     title: 'Manche 1 — Parler librement',
     desc: `L'orateur peut parler librement.
-⛔ Interdit : dire le nom (ou une partie), épeler, traduire, passer une carte.
-🚨 Faute → tour arrêté immédiatement.`,
+⛔ Interdit : dire le nom (ou une partie), épeler, traduire.
+✅ Les joueurs peuvent faire autant de propositions qu'ils souhaitent.`,
     canSkip: false,
-    canFault: true,
+    canFault: false,
   },
   {
     num: 2, icon: '☝️',
@@ -345,6 +345,16 @@ function startPreTurn() {
   el('pre-turn-words-left').textContent =
     `${state.roundWords.length} mot${state.roundWords.length > 1 ? 's' : ''} restant${state.roundWords.length > 1 ? 's' : ''}`;
 
+  if (state.noTeamsMode) {
+    const n = state.teams.length;
+    const leftIdx = (state.currentTeamIdx - 1 + n) % n;
+    const leftTeam = state.teams[leftIdx];
+    el('pre-turn-guesser').textContent = `${leftTeam.emoji} ${leftTeam.name}`;
+    el('pre-turn-guesser-wrap').hidden = false;
+  } else {
+    el('pre-turn-guesser-wrap').hidden = true;
+  }
+
   showScreen('screen-pre-turn');
 }
 
@@ -357,6 +367,10 @@ function startTurn() {
   const rule = getCurrentRoundRule();
   el('btn-skip').hidden  = !rule.canSkip;
   el('btn-fault').hidden = !rule.canFault;
+
+  // Adapt play-area grid: no left column when fault button is hidden
+  const playArea = document.querySelector('.turn-play-area');
+  playArea.style.gridTemplateColumns = rule.canFault ? '' : '5fr 2fr';
 
   // Mettre à jour le libellé du bouton faute selon la manche
   const faultBtn = el('btn-fault');
@@ -591,6 +605,18 @@ function handleNextTurn() {
 // ─── FIN DE MANCHE ─────────────────────────────────────────────────────────────
 function showRoundEnd() {
   el('round-end-num').textContent = state.currentRound;
+
+  // En mode sans équipes (5 ou 7 joueurs) : partager les points avec les voisins
+  if (state.noTeamsMode) {
+    const n = state.teams.length;
+    const roundIdx = state.currentRound - 1;
+    const origScores = state.teams.map(t => t.score[roundIdx] || 0);
+    state.teams.forEach((team, i) => {
+      const leftIdx  = (i - 1 + n) % n;
+      const rightIdx = (i + 1) % n;
+      team.score[roundIdx] = origScores[i] + origScores[leftIdx] + origScores[rightIdx];
+    });
+  }
 
   const scoreRows = el('round-end-scores');
   scoreRows.innerHTML = '';
