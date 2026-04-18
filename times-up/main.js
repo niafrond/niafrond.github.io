@@ -569,11 +569,11 @@ function showRoundEnd() {
   if (state.noTeamsMode) {
     const n = state.teams.length;
     const roundIdx = state.currentRound - 1;
-    const origScores = state.teams.map(t => t.score[roundIdx]);
+    const origScores = state.teams.map(t => t.score[roundIdx] || 0);
     state.teams.forEach((team, i) => {
-      team.score[roundIdx] = origScores[i]
-        + origScores[(i - 1 + n) % n]
-        + origScores[(i + 1) % n];
+      const leftIdx  = (i - 1 + n) % n;
+      const rightIdx = (i + 1) % n;
+      team.score[roundIdx] = origScores[i] + origScores[leftIdx] + origScores[rightIdx];
     });
   }
 
