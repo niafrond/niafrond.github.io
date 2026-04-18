@@ -11,7 +11,7 @@ import {
   playFound, playRoundStart, playGameOver,
   setMuted, getMuted,
 } from './sound.js';
-import { getMatch3Version } from '../match3-quest/version.js';
+import { getMatch3Version, getMatch3BuildDate } from '../match3-quest/version.js';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 const TURN_DURATION              = 30;   // secondes par tour
@@ -1079,7 +1079,13 @@ function updateFullscreenBtn() {
 
 function init() {
   const versionEl = document.getElementById('timesup-version');
-  if (versionEl) versionEl.textContent = `v${getMatch3Version()}`;
+  if (versionEl) {
+    const buildDate = getMatch3BuildDate();
+    const dateLabel = buildDate
+      ? ` · ${new Date(buildDate).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}`
+      : '';
+    versionEl.textContent = `v${getMatch3Version()}${dateLabel}`;
+  }
 
   // ── Setup ──
   el('tab-btn-partie').addEventListener('click', () => switchSetupTab('partie'));
