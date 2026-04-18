@@ -44,11 +44,12 @@ const ROUND_RULES = [
     title: 'Manche 2 — Un seul mot',
     desc: `L'orateur ne dit qu'un seul mot par carte. L'équipe n'a droit qu'à une seule proposition.
 ✅ Bonne réponse → carte gagnée.
-❌ Mauvaise réponse → carte remise dans le jeu.
+❌ Mauvaise réponse → carte passée définitivement pour ce tour.
+🚨 Faute → carte passée définitivement pour ce tour (le tour continue).
 ⏭ L'orateur peut aussi passer s'il est bloqué.
 ⛔ Interdits : plus d'un mot, partie du nom, traduction directe.`,
     canSkip: true,
-    canFault: false,
+    canFault: true,
   },
   {
     num: 3, icon: '🤐',
@@ -56,11 +57,12 @@ const ROUND_RULES = [
     desc: `L'orateur ne peut plus parler du tout : uniquement des mimes et des bruitages.
 Même fonctionnement que la manche 2 :
 ✅ Bonne réponse → carte gagnée.
-❌ Mauvaise réponse → carte remise dans le jeu.
+❌ Mauvaise réponse → carte passée définitivement pour ce tour.
+🚨 Faute → carte passée définitivement pour ce tour (le tour continue).
 ⏭ L'orateur peut passer s'il est bloqué.
 ⛔ Interdits : parler, former des mots, fredonner une chanson.`,
     canSkip: true,
-    canFault: false,
+    canFault: true,
   },
 ];
 
@@ -105,6 +107,7 @@ const state = {
   currentTeamIdx: 0,
 
   turnFound:   [],
+  turnSkipped: [],   // cartes passées définitivement dans le tour en cours (manches 2 et 3)
   currentWord: null,
 
   timerInterval: null,
@@ -357,8 +360,9 @@ function startPreTurn() {
 
 // ─── TOUR ACTIF ────────────────────────────────────────────────────────────────
 function startTurn() {
-  state.turnFound  = [];
-  state.timeLeft   = TURN_DURATION;
+  state.turnFound   = [];
+  state.turnSkipped = [];
+  state.timeLeft    = TURN_DURATION;
 
   const rule = getCurrentRoundRule();
   el('btn-skip').hidden  = !rule.canSkip;
@@ -367,6 +371,14 @@ function startTurn() {
   // Adapt play-area grid: no left column when fault button is hidden
   const playArea = document.querySelector('.turn-play-area');
   playArea.style.gridTemplateColumns = rule.canFault ? '' : '5fr 2fr';
+
+  // Mettre à jour le libellé du bouton faute selon la manche
+  const faultBtn = el('btn-fault');
+  if (state.currentRound >= 2) {
+    faultBtn.setAttribute('aria-label', 'Faute — passer la carte');
+  } else {
+    faultBtn.setAttribute('aria-label', 'Erreur — arrêter le tour');
+  }
 
   // Swipe hint: masquer la flèche gauche si on ne peut pas passer
   const hintEl = el('swipe-hint-text');
@@ -406,7 +418,13 @@ function fitWordCard() {
 
 function drawNextWord() {
   if (state.roundWords.length === 0) {
-    endTurn('allFound');
+    // S'il reste des cartes passées définitivement, ce n'est pas "tous trouvés" :
+    // le tour se termine normalement et ces cartes reviendront pour les prochaines équipes.
+    if (state.turnSkipped.length > 0) {
+      endTurn('timeout');
+    } else {
+      endTurn('allFound');
+    }
     return;
   }
   state.currentWord = state.roundWords.shift();
@@ -425,21 +443,38 @@ function wordFound() {
 }
 
 function wordSkipped() {
-  // Le mot retourne en fin de pioche
-  state.roundWords.push(state.currentWord);
+  if (state.currentRound >= 2) {
+    // Manches 2 et 3 : la carte est passée définitivement pour ce tour
+    state.turnSkipped.push(state.currentWord);
+  } else {
+    // Manche 1 (ne devrait pas arriver, canSkip=false, mais par sécurité)
+    state.roundWords.push(state.currentWord);
+  }
+  state.currentWord = null;
   updateTurnStats();
   drawNextWord();
 }
 
 function wordFault() {
-  // Faute (manche 1) : le mot retourne en tête de pioche, tour arrêté
-  if (state.currentWord) {
-    state.roundWords.unshift(state.currentWord);
-    state.currentWord = null;
+  if (state.currentRound >= 2) {
+    // Manches 2 et 3 : faute = carte passée définitivement, le tour continue
+    if (state.currentWord) {
+      state.turnSkipped.push(state.currentWord);
+      state.currentWord = null;
+    }
+    playBuzzer();
+    updateTurnStats();
+    drawNextWord();
+  } else {
+    // Manche 1 : faute = tour arrêté immédiatement
+    if (state.currentWord) {
+      state.roundWords.unshift(state.currentWord);
+      state.currentWord = null;
+    }
+    stopTimer();
+    playBuzzer();
+    endTurn('fault');
   }
-  stopTimer();
-  playBuzzer();
-  endTurn('fault');
 }
 
 function updateTurnStats() {
@@ -507,6 +542,12 @@ function endTurn(reason = 'timeout') {
   if (reason === 'timeout' && state.currentWord) {
     state.roundWords.push(state.currentWord);
     state.currentWord = null;
+  }
+
+  // Remettre les cartes passées définitivement dans le pool de la manche pour les prochains tours
+  if (state.turnSkipped.length > 0) {
+    state.roundWords.push(...state.turnSkipped);
+    state.turnSkipped = [];
   }
 
   const team = state.teams[state.currentTeamIdx];
