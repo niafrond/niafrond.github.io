@@ -1,3 +1,9 @@
+## [1.68.0](https://github.com/niafrond/niafrond.github.io/compare/v1.67.0...v1.68.0) (2026-04-18)
+
+### Features
+
+* **times-up:** adapt game-over screen to landscape + fix fitWordCard sizing bug ([#91](https://github.com/niafrond/niafrond.github.io/issues/91)) ([f9d058b](https://github.com/niafrond/niafrond.github.io/commit/f9d058b5d825261a4a0db8b0802b0b81a9721130))
+
 ## [1.67.0](https://github.com/niafrond/niafrond.github.io/compare/v1.66.0...v1.67.0) (2026-04-18)
 
 ### Features
