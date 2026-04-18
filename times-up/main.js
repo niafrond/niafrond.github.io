@@ -79,14 +79,11 @@ Même fonctionnement que la manche 2 :
 
 // ─── Métadonnées équipes (max 4) ───────────────────────────────────────────────
 const TEAMS_META = [
-  { emoji: '🌋', color: 'var(--volcan)' },
-  { emoji: '🌊', color: 'var(--lagon)'  },
-  { emoji: '🌿', color: 'var(--foret)'  },
-  { emoji: '☀️', color: 'var(--soleil)' },
+  { color: 'var(--volcan)' },
+  { color: 'var(--lagon)'  },
+  { color: 'var(--foret)'  },
+  { color: 'var(--soleil)' },
 ];
-
-// Emojis pour le mode jeu libre (5 ou 7 joueurs — pas d'équipes fixes)
-const SOLO_EMOJIS = ['🌺', '🦜', '🌴', '🐠', '🌸', '🦩', '🌿'];
 
 // ─── Persistance du nombre de cartes ───────────────────────────────────────────
 function loadCardCount() {
@@ -282,7 +279,6 @@ function assignTeams() {
     // 5 ou 7 joueurs : jeu libre, chaque joueur est son propre "camp"
     state.noTeamsMode = true;
     state.teams = players.map((name, i) => ({
-      emoji: SOLO_EMOJIS[i % SOLO_EMOJIS.length],
       color: TEAMS_META[i % TEAMS_META.length].color,
       players: [name],
       score:   [0, 0, 0],
@@ -304,9 +300,9 @@ function assignTeams() {
   state.teamPlayerIdx = state.teams.map(() => 0);
 }
 
-/** Retourne un libellé court pour une équipe : emoji + liste des joueurs. */
+/** Retourne un libellé court pour une équipe : liste des joueurs. */
 function teamLabel(team) {
-  return `${team.emoji} ${team.players.join(' · ')}`;
+  return team.players.join(' · ');
 }
 
 function renderTeams() {
@@ -330,15 +326,6 @@ function renderTeams() {
     card.className = 'team-card';
     card.style.setProperty('--team-color', team.color);
 
-    const header = document.createElement('div');
-    header.className = 'team-header';
-
-    const emojiSpan = document.createElement('span');
-    emojiSpan.className = 'team-emoji';
-    emojiSpan.textContent = team.emoji;
-
-    header.appendChild(emojiSpan);
-
     const ul = document.createElement('ul');
     ul.className = 'team-players';
     team.players.forEach(p => {
@@ -347,7 +334,6 @@ function renderTeams() {
       ul.appendChild(li);
     });
 
-    card.appendChild(header);
     card.appendChild(ul);
     container.appendChild(card);
   });
