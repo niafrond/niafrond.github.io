@@ -130,6 +130,8 @@ function showScreen(id) {
   _currentScreen = id;
   document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
   document.getElementById(id).hidden = false;
+  const versionEl = document.getElementById('timesup-version');
+  if (versionEl) versionEl.hidden = (id !== 'screen-setup');
   if (GAMEPLAY_SCREENS.has(id)) {
     requestLandscapeLock();
     requestFullscreenIfNeeded();
@@ -1072,6 +1074,7 @@ function initSwipe() {
 
 // ─── MISE À JOUR FORCÉE ────────────────────────────────────────────────────────
 async function forceUpdate() {
+  showToast('🔄 Mise à jour en cours…');
   try {
     if ('serviceWorker' in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -1082,6 +1085,8 @@ async function forceUpdate() {
       await Promise.all(keys.map(k => caches.delete(k)));
     }
   } catch (err) { console.warn('forceUpdate:', err); }
+  // Flag to trigger a second reload once the new SW activates (so fresh content is served)
+  sessionStorage.setItem('_timesup_update', '1');
   location.reload();
 }
 
@@ -1222,6 +1227,17 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// After a force update, reload a second time once the new SW has activated and
+// cached fresh assets, so the user sees the updated version immediately.
+if ('serviceWorker' in navigator && sessionStorage.getItem('_timesup_update')) {
+  sessionStorage.removeItem('_timesup_update');
+  if (navigator.serviceWorker.controller) {
+    location.reload();
+  } else {
+    navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
+  }
+}
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});

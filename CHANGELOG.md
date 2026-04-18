@@ -1,3 +1,15 @@
+## [1.72.1](https://github.com/niafrond/niafrond.github.io/compare/v1.72.0...v1.72.1) (2026-04-18)
+
+### Bug Fixes
+
+* **times-up:** fix force-update button to properly refresh cached content ([#101](https://github.com/niafrond/niafrond.github.io/issues/101)) ([6540fbb](https://github.com/niafrond/niafrond.github.io/commit/6540fbb259c961bb0f02a94440927c0756616b0d))
+
+## [1.72.0](https://github.com/niafrond/niafrond.github.io/compare/v1.71.0...v1.72.0) (2026-04-18)
+
+### Features
+
+* **times-up:** hide version badge during gameplay, move controls to bottom-right ([#99](https://github.com/niafrond/niafrond.github.io/issues/99)) ([ea828a1](https://github.com/niafrond/niafrond.github.io/commit/ea828a1a20a5eec4146b3233fc3660b5e3b8f752))
+
 ## [1.71.0](https://github.com/niafrond/niafrond.github.io/compare/v1.70.1...v1.71.0) (2026-04-18)
 
 ### Features

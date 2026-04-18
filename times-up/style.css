@@ -205,10 +205,10 @@ html, body {
   margin-bottom: 16px;
 }
 
-/* ─── Contrôles coin haut-droit (mute + plein écran) ─────────────────────── */
+/* ─── Contrôles coin bas-droit (mute + plein écran) ──────────────────────── */
 #top-right-controls {
   position: fixed;
-  top: 14px;
+  bottom: 14px;
   right: 14px;
   z-index: 100;
   display: flex;
@@ -1030,7 +1030,7 @@ html, body {
 /* ─── Version badge ───────────────────────────────────────────────────────── */
 .version-badge {
   position: fixed;
-  right: 16px;
+  left: 16px;
   bottom: 16px;
   z-index: 940;
   padding: 8px 12px;
@@ -1045,7 +1045,7 @@ html, body {
 }
 @media (max-width: 480px) {
   .version-badge {
-    right: 12px;
+    left: 12px;
     bottom: 12px;
     padding: 7px 10px;
     font-size: 0.78rem;
