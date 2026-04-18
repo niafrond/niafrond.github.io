@@ -13,8 +13,11 @@
 </head>
 <body>
 
-<!-- Bouton muet global (toujours visible) -->
-<button id="btn-mute" title="Son on/off">🔊</button>
+<!-- Contrôles globaux (coin haut-droit) -->
+<div id="top-right-controls">
+  <button id="btn-fullscreen" class="btn-top-ctrl" title="Plein écran">⛶</button>
+  <button id="btn-mute"       class="btn-top-ctrl" title="Son on/off">🔊</button>
+</div>
 <div id="toast" class="toast" hidden></div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -158,7 +161,6 @@
   <div class="turn-header">
     <span id="turn-round-badge"></span>
     <span class="turn-found-info">✅ <span id="turn-found-count">0</span> trouvé(s)</span>
-    <button id="btn-fullscreen" class="btn-fullscreen" title="Plein écran">⛶</button>
   </div>
 
   <!-- Zone de jeu : grille 2fr (erreur) | 5fr (timer + mot + passer) | 2fr (trouvé) -->
