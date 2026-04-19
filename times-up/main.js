@@ -1371,6 +1371,44 @@ const TUTORIAL_SLIDES = [
     `,
   },
   {
+    icon: '🎮',
+    title: 'Faux jeu — Repère les boutons',
+    html: `
+      <p>Voici l'<strong>écran de jeu</strong> avec un seul mot et le chrono figé.
+      Repère chaque bouton avant de jouer :</p>
+      <div class="tuto-fake-turn">
+        <div class="tuto-fake-header">
+          <span class="tuto-fake-round-badge">☝️ Manche 2</span>
+          <span class="tuto-fake-stat">🃏 5 restant(s)</span>
+          <span class="tuto-fake-stat">✅ 2 trouvé(s)</span>
+          <span class="tuto-fake-undo-btn">↩ Annuler</span>
+        </div>
+        <div class="tuto-fake-grid">
+          <div class="tuto-fake-side-btn tuto-fake-skip">
+            <span style="font-size:1.1rem">⏭</span>
+            <span>Passer</span>
+          </div>
+          <div class="tuto-fake-center-col">
+            <div class="tuto-fake-timer-circle"><span>22</span></div>
+            <div class="tuto-fake-word">Séga</div>
+            <div class="tuto-fake-cat">🎵 Culture</div>
+          </div>
+          <div class="tuto-fake-side-btn tuto-fake-found">
+            <span style="font-size:1.1rem">✅</span>
+            <span>Trouvé !</span>
+          </div>
+        </div>
+        <div class="tuto-fake-callouts">
+          <div class="tuto-callout tuto-callout-up">⏭ <strong>Passer</strong> — trop difficile, carte remise en jeu plus tard</div>
+          <div></div>
+          <div class="tuto-callout tuto-callout-up">✅ <strong>Trouvé !</strong> — l'équipe a trouvé le mot</div>
+        </div>
+        <div class="tuto-fake-undo-callout">↩ <strong>Annuler</strong> (en haut à droite) — revient sur la dernière action (trouvé ou passé)</div>
+      </div>
+      <p>⏱️ En vrai, le chrono de <strong>30 s</strong> tourne — fais vite !</p>
+    `,
+  },
+  {
     icon: '🗣️',
     title: 'Manche 1 — Parler librement',
     html: `
