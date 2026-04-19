@@ -1,3 +1,9 @@
+## [1.78.0](https://github.com/niafrond/niafrond.github.io/compare/v1.77.0...v1.78.0) (2026-04-19)
+
+### Features
+
+* **times-up:** enable PWA installation with name Time's up ([#108](https://github.com/niafrond/niafrond.github.io/issues/108)) ([bfd7a78](https://github.com/niafrond/niafrond.github.io/commit/bfd7a780ccde3388b91629fb12f172f146d413ef))
+
 ## [1.77.0](https://github.com/niafrond/niafrond.github.io/compare/v1.76.0...v1.77.0) (2026-04-19)
 
 ### Features
