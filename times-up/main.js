@@ -1270,6 +1270,33 @@ async function forceUpdate() {
   location.reload();
 }
 
+// ─── INSTALLATION PWA ──────────────────────────────────────────────────────────
+let _pwaInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _pwaInstallPrompt = e;
+  const btn = document.getElementById('btn-install-pwa');
+  if (btn) btn.hidden = false;
+});
+
+window.addEventListener('appinstalled', () => {
+  _pwaInstallPrompt = null;
+  const btn = document.getElementById('btn-install-pwa');
+  if (btn) btn.hidden = true;
+});
+
+async function installPwa() {
+  if (!_pwaInstallPrompt) return;
+  _pwaInstallPrompt.prompt();
+  const { outcome } = await _pwaInstallPrompt.userChoice;
+  if (outcome === 'accepted') {
+    _pwaInstallPrompt = null;
+    const btn = document.getElementById('btn-install-pwa');
+    if (btn) btn.hidden = true;
+  }
+}
+
 // ─── TUTORIEL ──────────────────────────────────────────────────────────────────
 
 const TUTORIAL_SLIDES = [
@@ -1835,6 +1862,7 @@ function init() {
   // ── Words editor ──
   el('btn-edit-words').addEventListener('click', withCooldown(openWordsEditor));
   el('btn-force-update').addEventListener('click', withCooldown(forceUpdate));
+  el('btn-install-pwa').addEventListener('click', withCooldown(installPwa));
   el('btn-words-back').addEventListener('click', withCooldown(() => showScreen('screen-setup')));
   el('btn-word-add').addEventListener('click', withCooldown(addWord));
   el('word-new-text').addEventListener('keydown', e => { if (e.key === 'Enter') addWord(); });
