@@ -1,3 +1,9 @@
+## [1.82.1](https://github.com/niafrond/niafrond.github.io/compare/v1.82.0...v1.82.1) (2026-04-19)
+
+### Bug Fixes
+
+* corriger tuto manche 2 & 3 — orateur appuie sur Erreur, doit Passer en cas de faute ([#116](https://github.com/niafrond/niafrond.github.io/issues/116)) ([f7cec02](https://github.com/niafrond/niafrond.github.io/commit/f7cec0239aa0f85e16856a4efa07a95165844c2e))
+
 ## [1.82.0](https://github.com/niafrond/niafrond.github.io/compare/v1.81.0...v1.82.0) (2026-04-19)
 
 ### Features
