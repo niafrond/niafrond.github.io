@@ -1,3 +1,9 @@
+## [1.84.1](https://github.com/niafrond/niafrond.github.io/compare/v1.84.0...v1.84.1) (2026-04-19)
+
+### Bug Fixes
+
+* **times-up:** PWA installs as app instead of shortcut ([#120](https://github.com/niafrond/niafrond.github.io/issues/120)) ([ad653a7](https://github.com/niafrond/niafrond.github.io/commit/ad653a77926d3de1ce20e8aafe7d856c8a3d4c50))
+
 ## [1.84.0](https://github.com/niafrond/niafrond.github.io/compare/v1.83.0...v1.84.0) (2026-04-19)
 
 ### Features
