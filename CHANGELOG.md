@@ -1,3 +1,27 @@
+## [1.88.0](https://github.com/niafrond/niafrond.github.io/compare/v1.87.3...v1.88.0) (2026-04-19)
+
+### Features
+
+* **times-up:** demo mode explains the 'Je suis prêt !' button ([#130](https://github.com/niafrond/niafrond.github.io/issues/130)) ([5bc813b](https://github.com/niafrond/niafrond.github.io/commit/5bc813b6973890fcce55aaaabeeb0c6cbae71504))
+
+## [1.87.3](https://github.com/niafrond/niafrond.github.io/compare/v1.87.2...v1.87.3) (2026-04-19)
+
+### Bug Fixes
+
+* **times-up:** default PWA orientation to portrait in manifest ([#128](https://github.com/niafrond/niafrond.github.io/issues/128)) ([bd24a13](https://github.com/niafrond/niafrond.github.io/commit/bd24a13386dd1ea0bdb2626a820f4e15db72c1e8))
+
+## [1.87.2](https://github.com/niafrond/niafrond.github.io/compare/v1.87.1...v1.87.2) (2026-04-19)
+
+### Bug Fixes
+
+* **times-up:** hidden attribute ignored on .btn elements due to display:inline-flex override ([#126](https://github.com/niafrond/niafrond.github.io/issues/126)) ([fd2c47a](https://github.com/niafrond/niafrond.github.io/commit/fd2c47a46490f7dbbb66fda78b84c03895980ee2))
+
+## [1.87.1](https://github.com/niafrond/niafrond.github.io/compare/v1.87.0...v1.87.1) (2026-04-19)
+
+### Bug Fixes
+
+* **times-up:** fix PWA installation mode ([#127](https://github.com/niafrond/niafrond.github.io/issues/127)) ([a927d05](https://github.com/niafrond/niafrond.github.io/commit/a927d05209392832e48c9d258da8d0a2f479d340))
+
 ## [1.87.0](https://github.com/niafrond/niafrond.github.io/compare/v1.86.0...v1.87.0) (2026-04-19)
 
 ### Features

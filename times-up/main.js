@@ -188,7 +188,7 @@ function updateRotateOverlay() {
   if (_demoWaiting && !isPortrait) {
     _demoWaiting = false;
     _demoMode = true;
-    startTurn();
+    startPreTurn();
   }
 }
 
@@ -452,6 +452,7 @@ function startPreTurn() {
   sentenceEl.style.color = team.color;
 
   showScreen('screen-pre-turn');
+  if (_demoMode) showDemoTips('pre-turn');
 }
 
 // ─── TOUR ACTIF ────────────────────────────────────────────────────────────────
@@ -1285,6 +1286,33 @@ async function forceUpdate() {
   location.reload();
 }
 
+// ─── INSTALLATION PWA ──────────────────────────────────────────────────────────
+let _pwaInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _pwaInstallPrompt = e;
+  const btn = document.getElementById('btn-install-pwa');
+  if (btn) btn.hidden = false;
+});
+
+window.addEventListener('appinstalled', () => {
+  _pwaInstallPrompt = null;
+  const btn = document.getElementById('btn-install-pwa');
+  if (btn) btn.hidden = true;
+});
+
+async function installPwa() {
+  if (!_pwaInstallPrompt) return;
+  _pwaInstallPrompt.prompt();
+  const { outcome } = await _pwaInstallPrompt.userChoice;
+  if (outcome === 'accepted') {
+    _pwaInstallPrompt = null;
+    const btn = document.getElementById('btn-install-pwa');
+    if (btn) btn.hidden = true;
+  }
+}
+
 // ─── TUTORIEL ──────────────────────────────────────────────────────────────────
 
 const TUTORIAL_SLIDES = [
@@ -1549,8 +1577,11 @@ let _tutorialCurrentSlide = 0;
 let _demoMode    = false;
 let _demoWaiting = false; // true = attend le mode paysage avant de lancer la démo
 
-// Tips shown per round in demo mode, keyed by round number
+// Tips shown per round in demo mode, keyed by round number or 'pre-turn'
 const DEMO_TIPS = {
+  'pre-turn': [
+    { targetId: 'btn-ready', text: '✅ « Je suis prêt ! » — Passe le téléphone à l\'orateur, puis appuie ici quand tout le monde est prêt à jouer.' },
+  ],
   1: [
     { targetId: 'timer-number',   text: '⏱️ Le chrono ! En vraie partie il compte 30 secondes. Ici il est infini pour que tu puisses explorer sans pression.' },
     { targetId: 'word-card-text', text: '🃏 Le mot à faire deviner ! Décris-le librement — interdit de le dire, l\'épeler ou le traduire.' },
@@ -1664,7 +1695,7 @@ function startDemoTurn() {
   }
 
   _demoMode = true;
-  startTurn();
+  startPreTurn();
 }
 
 function openTutorial(startSlide = 0) {
@@ -1874,6 +1905,7 @@ function init() {
   // ── Words editor ──
   el('btn-edit-words').addEventListener('click', withCooldown(openWordsEditor));
   el('btn-force-update').addEventListener('click', withCooldown(forceUpdate));
+  el('btn-install-pwa').addEventListener('click', withCooldown(installPwa));
   el('btn-words-back').addEventListener('click', withCooldown(() => showScreen('screen-setup')));
   el('btn-word-add').addEventListener('click', withCooldown(addWord));
   el('word-new-text').addEventListener('keydown', e => { if (e.key === 'Enter') addWord(); });
