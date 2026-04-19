@@ -180,9 +180,20 @@ async function requestPortraitLock() {
 
 function updateRotateOverlay() {
   const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-  const shouldShow = GAMEPLAY_SCREENS.has(_currentScreen) && isPortrait;
-  el('rotate-overlay').classList.toggle('active', shouldShow || (_demoWaiting && isPortrait));
-  handleOrientationTimerState(shouldShow);
+  const isGameplayOrDemo = GAMEPLAY_SCREENS.has(_currentScreen) || _demoWaiting;
+
+  // Gameplay/demo screens need landscape; setup/menu screens need portrait
+  const shouldShow = isGameplayOrDemo ? isPortrait : !isPortrait;
+
+  const overlay = el('rotate-overlay');
+  overlay.classList.toggle('active', shouldShow);
+  overlay.classList.toggle('to-portrait', shouldShow && !isGameplayOrDemo);
+
+  el('rotate-overlay-sub').textContent = isGameplayOrDemo
+    ? 'Le jeu se joue en mode paysage'
+    : 'Les menus se naviguent en mode portrait';
+
+  handleOrientationTimerState(isGameplayOrDemo && isPortrait);
 
   // Lancer la démo dès que le téléphone passe en mode paysage
   if (_demoWaiting && !isPortrait) {
@@ -1690,7 +1701,7 @@ function startDemoTurn() {
   // Attendre le mode paysage avant d'afficher le premier écran de démo
   if (window.matchMedia('(orientation: portrait)').matches) {
     _demoWaiting = true;
-    el('rotate-overlay').classList.add('active');
+    updateRotateOverlay();
     return;
   }
 
