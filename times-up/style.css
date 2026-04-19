@@ -92,6 +92,33 @@ html, body {
   font-size: 0.85rem;
 }
 
+/* ─── Collapsible card (details/summary) ─────────────────────────────────── */
+details.card-collapsible { padding: 0; }
+details.card-collapsible > summary.card-title-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 20px;
+  margin-bottom: 0;
+  user-select: none;
+}
+details.card-collapsible > summary.card-title-summary::after {
+  content: '▼';
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+details.card-collapsible[open] > summary.card-title-summary::after {
+  transform: rotate(180deg);
+}
+details.card-collapsible > summary.card-title-summary::-webkit-details-marker { display: none; }
+details.card-collapsible > :not(summary) {
+  padding: 0 20px 20px;
+}
+
 /* ─── Buttons ─────────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
