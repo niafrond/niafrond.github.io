@@ -70,14 +70,14 @@ export function playTickUrgent() {
   } catch (_) {}
 }
 
-/** Sonnerie de fin de manche — sonnerie d'école (3 coups de cloche) */
+/** Sonnerie de fin de manche — sonnerie d'école (4 coups de cloche) */
 export function playBuzzer() {
   if (_muted) return;
   try {
     const ctx = getCtx();
     const now = ctx.currentTime;
-    // Three loud school-bell dings, each with sharp attack and long decay
-    [0, 0.55, 1.1].forEach((offset) => {
+    // Four loud school-bell dings, each with sharp attack and long decay
+    [0, 0.6, 1.2, 1.8].forEach((offset) => {
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
       osc.connect(g); g.connect(ctx.destination);
@@ -89,7 +89,7 @@ export function playBuzzer() {
       osc2.connect(g2); g2.connect(ctx.destination);
       osc2.type = 'sine';
       osc2.frequency.setValueAtTime(1440, now + offset);
-      const ringDuration = 0.45;
+      const ringDuration = 0.55;
       g.gain.setValueAtTime(0, now + offset);
       g.gain.linearRampToValueAtTime(0.7, now + offset + 0.01);
       g.gain.exponentialRampToValueAtTime(0.001, now + offset + ringDuration);
@@ -126,13 +126,84 @@ export function playRoundStart() {
   } catch (_) {}
 }
 
-/** Son de confirmation générique — appui sur un bouton en mode partie */
+/** Son de confirmation générique — navigation entre écrans */
 export function playButtonClick() {
   if (_muted) return;
   try {
     const ctx = getCtx();
     const now = ctx.currentTime;
     playNote(660, 'sine', now, 0.08, 0.15);
+  } catch (_) {}
+}
+
+/** Son de "Passer" — note neutre descendante */
+export function playSkip() {
+  if (_muted) return;
+  try {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    playNote(660, 'sine', now, 0.07, 0.18);
+    playNote(440, 'sine', now + 0.08, 0.1, 0.12);
+  } catch (_) {}
+}
+
+/** Son d'"Erreur" — buzz grave court */
+export function playFault() {
+  if (_muted) return;
+  try {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.connect(g); g.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(160, now);
+    osc.frequency.linearRampToValueAtTime(110, now + 0.18);
+    g.gain.setValueAtTime(0.2, now);
+    g.gain.linearRampToValueAtTime(0, now + 0.2);
+    osc.start(now); osc.stop(now + 0.2);
+  } catch (_) {}
+}
+
+/** Son d'"Annuler" — glissando descendant rapide */
+export function playUndo() {
+  if (_muted) return;
+  try {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    playNote(880, 'sine', now, 0.07, 0.18);
+    playNote(660, 'sine', now + 0.07, 0.07, 0.14);
+    playNote(440, 'sine', now + 0.14, 0.08, 0.10);
+  } catch (_) {}
+}
+
+/** Son de "Refaire" — glissando ascendant rapide */
+export function playRedo() {
+  if (_muted) return;
+  try {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    playNote(440, 'sine', now, 0.07, 0.10);
+    playNote(660, 'sine', now + 0.07, 0.07, 0.14);
+    playNote(880, 'sine', now + 0.14, 0.08, 0.18);
+  } catch (_) {}
+}
+
+/** Jingle de début de partie */
+export function playGameStart() {
+  if (_muted) return;
+  try {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    const notes = [
+      [523.25, 0.10], [659.25, 0.10], [783.99, 0.10],
+      [1046.5, 0.14], [783.99, 0.08], [1046.5, 0.22],
+    ];
+    let t = now;
+    notes.forEach(([freq, dur]) => {
+      playNote(freq, 'triangle', t, dur + 0.05, 0.35);
+      t += dur + 0.03;
+    });
   } catch (_) {}
 }
 
