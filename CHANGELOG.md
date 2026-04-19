@@ -1,3 +1,9 @@
+## [1.87.3](https://github.com/niafrond/niafrond.github.io/compare/v1.87.2...v1.87.3) (2026-04-19)
+
+### Bug Fixes
+
+* **times-up:** default PWA orientation to portrait in manifest ([#128](https://github.com/niafrond/niafrond.github.io/issues/128)) ([bd24a13](https://github.com/niafrond/niafrond.github.io/commit/bd24a13386dd1ea0bdb2626a820f4e15db72c1e8))
+
 ## [1.87.2](https://github.com/niafrond/niafrond.github.io/compare/v1.87.1...v1.87.2) (2026-04-19)
 
 ### Bug Fixes
