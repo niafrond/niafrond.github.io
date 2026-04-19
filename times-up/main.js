@@ -761,11 +761,20 @@ function updateTimerDisplay() {
 function endTurn(reason = 'timeout') {
   stopTimer();
 
-  // Mode démo : retour à l'écran d'accueil sans passer par le résumé de tour
+  // Mode démo : avancer manche par manche (1→2→3), puis retour à l'accueil
   if (_demoMode) {
-    _demoMode = false;
-    showToast('🎉 Bravo ! Vous êtes prêt à jouer !');
-    showScreen('screen-setup');
+    if (state.currentRound < 3) {
+      state.currentRound++;
+      state.roundWords  = [...state.allWords];  // même mot, nouvelle manche
+      state.currentWord = null;
+      const rule = ROUND_RULES[state.currentRound - 1];
+      showToast(`${rule.icon} Manche ${state.currentRound} — ${rule.title.split('—')[1].trim()}`);
+      startTurn();
+    } else {
+      _demoMode = false;
+      showToast('🎉 Bravo ! Vous êtes prêt à jouer !');
+      showScreen('screen-setup');
+    }
     return;
   }
 
@@ -1506,8 +1515,8 @@ function startDemoTurn() {
   closeTutorial();
   _demoMode = true;
 
-  // État minimal pour la démo : manche 2 (boutons Passer + Trouvé ! visibles)
-  state.currentRound    = 2;
+  // État minimal pour la démo : manche 1, 1 mot, pas de chrono
+  state.currentRound    = 1;
   state.currentTeamIdx  = 0;
   state.teamPlayerIdx   = [0];
   state.noTeamsMode     = false;
