@@ -1,3 +1,9 @@
+## [1.86.0](https://github.com/niafrond/niafrond.github.io/compare/v1.85.2...v1.86.0) (2026-04-19)
+
+### Features
+
+* **demo:** landscape gate, score inter-screens, undo/redo tip ([#125](https://github.com/niafrond/niafrond.github.io/issues/125)) ([ca844e5](https://github.com/niafrond/niafrond.github.io/commit/ca844e5de21e765a60e7e0b595fd85f554d1ff1d))
+
 ## [1.85.2](https://github.com/niafrond/niafrond.github.io/compare/v1.85.1...v1.85.2) (2026-04-19)
 
 ### Bug Fixes
