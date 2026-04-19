@@ -1594,6 +1594,7 @@ let _demoWaiting = false; // true = attend le mode paysage avant de lancer la d�
 // Tips shown per round in demo mode, keyed by round number or 'pre-turn'
 const DEMO_TIPS = {
   'pre-turn': [
+    { targetId: 'pre-turn-sentence', text: '🎤 L\'orateur (en haut) doit faire deviner les mots à son équipe ou à son partenaire (en bas). Seul l\'orateur voit les mots — les autres gardent les yeux fermés pendant la lecture !' },
     { targetId: 'btn-ready', text: '✅ « Je suis prêt ! » — Passe le téléphone à l\'orateur, puis appuie ici quand tout le monde est prêt à jouer.' },
   ],
   1: [
