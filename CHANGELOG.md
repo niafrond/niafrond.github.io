@@ -1,3 +1,9 @@
+## [1.88.1](https://github.com/niafrond/niafrond.github.io/compare/v1.88.0...v1.88.1) (2026-04-19)
+
+### Bug Fixes
+
+* **times-up:** allow rotation in PWA by removing portrait orientation lock ([#131](https://github.com/niafrond/niafrond.github.io/issues/131)) ([a8ecebb](https://github.com/niafrond/niafrond.github.io/commit/a8ecebb82b10b992b7c17ec4904d7c482078f169))
+
 ## [1.88.0](https://github.com/niafrond/niafrond.github.io/compare/v1.87.3...v1.88.0) (2026-04-19)
 
 ### Features
