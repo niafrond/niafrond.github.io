@@ -1461,7 +1461,7 @@ const TUTORIAL_SLIDES = [
       et des <strong>bruitages</strong>.</p>
       <div style="display:flex;flex-direction:column;gap:5px;margin:10px 0">
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Bonne réponse</strong> → carte gagnée</span></div>
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur</strong> (bouton gauche) → l'orateur a parlé ou fredonnée — carte perdue</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur</strong> (bouton gauche) → l'orateur a parlé ou fredonné — carte perdue</span></div>
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer</strong> (swipe ← ou glisse la carte à gauche) → carte remise dans le jeu pour ce tour</span></div>
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">⛔</span><span>Interdits : parler, former des mots, fredonner une chanson</span></div>
       </div>
@@ -1539,7 +1539,7 @@ const DEMO_TIPS = {
     { targetId: 'btn-pass',  text: '⏭ Nouveau en manche 2 ! Si tu es bloqué sur une carte, passe-la : elle reviendra pour un autre tour.' },
   ],
   3: [
-    { targetId: 'btn-pass', text: '🚨 En manche 3, ce bouton signale une Erreur : l\'orateur a parlé ou fredonnée. La carte est perdue pour ce tour.' },
+    { targetId: 'btn-pass', text: '🚨 En manche 3, ce bouton signale une Erreur : l\'orateur a parlé ou fredonné. La carte est perdue pour ce tour.' },
     { targetId: 'word-card-text', text: '⏭ Pour simplement Passer (sans erreur), glisse la carte vers la gauche. Le hint en bas de l\'écran te rappelle toujours les deux actions disponibles.' },
   ],
 };
