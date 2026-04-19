@@ -773,6 +773,7 @@ function endTurn(reason = 'timeout') {
     el('turn-end-words-left').textContent = state.roundWords.length;
     el('btn-next-turn').dataset.nextAction = 'round-end';
     el('turn-end-all-found').hidden = (reason !== 'allFound');
+    el('btn-correct-turn').hidden = true;
     showScreen('screen-turn-end');
     return;
   }
@@ -819,7 +820,79 @@ function endTurn(reason = 'timeout') {
     el('turn-end-all-found').hidden = true;
   }
 
+  // Show "Corriger" button only when there are found words to potentially un-count
+  el('btn-correct-turn').hidden = (state.turnFound.length === 0);
+
   showScreen('screen-turn-end');
+}
+
+// ─── CORRECTION DU TOUR ────────────────────────────────────────────────────────
+function openCorrectTurn() {
+  const list = el('correct-turn-list');
+  list.innerHTML = '';
+  state.turnFound.forEach((word, i) => {
+    const cat = getCategoryInfo(word.category);
+    const item = document.createElement('label');
+    item.className = 'correct-turn-item';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'correct-turn-checkbox';
+    checkbox.dataset.idx = i;
+    checkbox.checked = true;
+
+    const wordSpan = document.createElement('span');
+    wordSpan.className = 'correct-turn-word';
+    wordSpan.textContent = word.word;
+
+    const catSpan = document.createElement('span');
+    catSpan.className = 'correct-turn-cat';
+    catSpan.textContent = `${cat.emoji} ${cat.label}`;
+
+    item.appendChild(checkbox);
+    item.appendChild(wordSpan);
+    item.appendChild(catSpan);
+    list.appendChild(item);
+  });
+
+  el('correct-turn-overlay').hidden = false;
+}
+
+function closeCorrectTurn() {
+  el('correct-turn-overlay').hidden = true;
+}
+
+function applyTurnCorrection() {
+  if (state.currentRound < 1) return;
+  const checkboxes = el('correct-turn-list').querySelectorAll('input[type="checkbox"]');
+  const team = state.teams[state.currentTeamIdx];
+
+  // Collect indices of unchecked cards, sort descending for safe reverse splice
+  const indicesToRemove = [];
+  checkboxes.forEach((cb) => {
+    if (!cb.checked) indicesToRemove.push(parseInt(cb.dataset.idx, 10));
+  });
+
+  if (indicesToRemove.length > 0) {
+    indicesToRemove.sort((a, b) => b - a);
+    indicesToRemove.forEach(idx => {
+      const [word] = state.turnFound.splice(idx, 1);
+      state.roundWords.push(word);
+    });
+
+    // Adjust the team's score
+    team.score[state.currentRound - 1] -= indicesToRemove.length;
+    if (team.score[state.currentRound - 1] < 0) team.score[state.currentRound - 1] = 0;
+
+    // Update the turn-end display
+    el('turn-end-count').textContent = state.turnFound.length;
+    el('turn-end-words-left').textContent = state.roundWords.length;
+
+    // Hide the corriger button if nothing left to correct
+    el('btn-correct-turn').hidden = (state.turnFound.length === 0);
+  }
+
+  closeCorrectTurn();
 }
 
 function handleNextTurn() {
@@ -1735,6 +1808,12 @@ function init() {
   el('btn-redo').addEventListener('click', withCooldown(redoLastAction));
 
   // ── Turn end ──
+  el('btn-correct-turn').addEventListener('click', withCooldown(openCorrectTurn));
+  el('correct-turn-close').addEventListener('click', withCooldown(closeCorrectTurn));
+  el('correct-turn-confirm').addEventListener('click', withCooldown(applyTurnCorrection));
+  el('correct-turn-overlay').addEventListener('click', (e) => {
+    if (e.target === el('correct-turn-overlay')) closeCorrectTurn();
+  });
   el('btn-next-turn').addEventListener('click', withCooldown(() => {
     playButtonClick();
     handleNextTurn();
