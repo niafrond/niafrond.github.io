@@ -8,7 +8,8 @@
 import { getShuffledWords, getCategoryInfo, shuffle, CATEGORY_LABELS, DEFAULT_WORDS, loadWords, saveWords, resetWords } from './words.js';
 import {
   playTick, playTickUrgent, playBuzzer,
-  playFound, playRoundStart, playGameOver,
+  playFound, playRoundStart, playGameOver, playButtonClick,
+  playSkip, playFault, playUndo, playRedo, playGameStart,
   setMuted, getMuted,
 } from './sound.js';
 import { getMatch3Version, getMatch3BuildDate } from '../match3-quest/version.js';
@@ -397,7 +398,11 @@ function startRound(roundNum) {
   el('round-intro-num').textContent   = `${roundNum} / 3`;
   el('round-intro-words-left').textContent = `${state.roundWords.length} mots à faire deviner`;
 
-  playRoundStart();
+  if (roundNum === 1) {
+    playGameStart();
+  } else {
+    playRoundStart();
+  }
   showScreen('screen-round-intro');
 }
 
@@ -568,6 +573,7 @@ function wordFound() {
 }
 
 function wordSkipped() {
+  playSkip();
   state.actionHistory.push({ type: 'skipped', word: state.currentWord });
   state.redoStack = [];
   if (state.currentRound >= 2) {
@@ -584,6 +590,7 @@ function wordSkipped() {
 }
 
 function wordFault() {
+  playFault();
   // Manches 2 et 3 (canFault=true) : la carte est passée définitivement pour ce tour
   if (state.currentWord) {
     state.actionHistory.push({ type: 'fault', word: state.currentWord });
@@ -603,6 +610,7 @@ function updateUndoRedoButtons() {
 
 function undoLastAction() {
   if (state.actionHistory.length === 0) return;
+  playUndo();
   const action = state.actionHistory.pop();
   state.redoStack.push(action);
   const { type, word } = action;
@@ -650,6 +658,7 @@ function redoLastAction() {
     state.turnFound.push(word);
   } else {
     // 'skipped' ou 'fault'
+    playRedo();
     if (state.currentRound >= 2) {
       state.turnSkipped.push(word);
     } else {
@@ -1647,12 +1656,16 @@ function init() {
 
   // ── Round intro ──
   el('btn-round-go').addEventListener('click', withCooldown(() => {
+    playButtonClick();
     state.currentTeamIdx = 0;
     startPreTurn();
   }));
 
   // ── Pre-turn ──
-  el('btn-ready').addEventListener('click', withCooldown(startTurn));
+  el('btn-ready').addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    startTurn();
+  }));
 
   // ── Turn ──
   el('btn-found').addEventListener('click', withCooldown(wordFound));
@@ -1663,13 +1676,20 @@ function init() {
   el('btn-redo').addEventListener('click', withCooldown(redoLastAction));
 
   // ── Turn end ──
-  el('btn-next-turn').addEventListener('click', withCooldown(handleNextTurn));
+  el('btn-next-turn').addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    handleNextTurn();
+  }));
 
   // ── Round end ──
   el('btn-next-round').addEventListener('click', withCooldown(() => {
+    playButtonClick();
     startRound(state.currentRound + 1);
   }));
-  el('btn-final-results').addEventListener('click', withCooldown(showGameOver));
+  el('btn-final-results').addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    showGameOver();
+  }));
 
   // ── Game over ──
   el('btn-replay').addEventListener('click', withCooldown(() => {
