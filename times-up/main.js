@@ -187,8 +187,15 @@ async function requestPortraitLock() {
 function updateRotateOverlay() {
   const isPortrait = window.matchMedia('(orientation: portrait)').matches;
   const shouldShow = GAMEPLAY_SCREENS.has(_currentScreen) && isPortrait;
-  el('rotate-overlay').classList.toggle('active', shouldShow);
+  el('rotate-overlay').classList.toggle('active', shouldShow || (_demoWaiting && isPortrait));
   handleOrientationTimerState(shouldShow);
+
+  // Lancer la démo dès que le téléphone passe en mode paysage
+  if (_demoWaiting && !isPortrait) {
+    _demoWaiting = false;
+    _demoMode = true;
+    startTurn();
+  }
 }
 
 /** Pause le timer si l'overlay portrait apparaît pendant un tour actif, le reprend sinon. */
@@ -762,20 +769,24 @@ function updateTimerDisplay() {
 function endTurn(reason = 'timeout') {
   stopTimer();
 
-  // Mode démo : avancer manche par manche (1→2→3), puis retour à l'accueil
+  // Mode démo : montrer les écrans de fin de tour, fin de manche et fin de partie
   if (_demoMode) {
-    if (state.currentRound < 3) {
-      state.currentRound++;
-      state.roundWords  = [...state.allWords];  // même mot, nouvelle manche
-      state.currentWord = null;
-      const rule = ROUND_RULES[state.currentRound - 1];
-      showToast(`${rule.icon} Manche ${state.currentRound} — ${rule.title.split('—')[1].trim()}`);
-      startTurn();
-    } else {
-      _demoMode = false;
-      showToast('🎉 Bravo ! Vous êtes prêt à jouer !');
-      showScreen('screen-setup');
-    }
+    const team = state.teams[state.currentTeamIdx];
+    team.score[state.currentRound - 1] += state.turnFound.length;
+
+    const reasonMsgs = {
+      timeout:  '⏱️ Temps écoulé !',
+      fault:    '🚨 Faute — tour arrêté !',
+      allFound: '🎉 Tous les mots trouvés !',
+    };
+    el('turn-end-reason').textContent    = reasonMsgs[reason] ?? '⏱️ Temps écoulé !';
+    el('turn-end-team').textContent      = teamLabel(team);
+    el('turn-end-player').textContent    = team.players[0];
+    el('turn-end-count').textContent     = state.turnFound.length;
+    el('turn-end-words-left').textContent = '0';
+    el('btn-next-turn').dataset.nextAction = 'round-end';
+    el('turn-end-all-found').hidden = (reason !== 'allFound');
+    showScreen('screen-turn-end');
     return;
   }
 
@@ -888,6 +899,7 @@ function showRoundEnd() {
 
 // ─── FIN DU JEU ────────────────────────────────────────────────────────────────
 function showGameOver() {
+  _demoMode = false; // fin de la démo
   playGameOver();
   saveMembersAfterGame();
 
@@ -1510,7 +1522,8 @@ const TUTORIAL_SLIDES = [
 ];
 
 let _tutorialCurrentSlide = 0;
-let _demoMode = false;
+let _demoMode    = false;
+let _demoWaiting = false; // true = attend le mode paysage avant de lancer la démo
 
 // Tips shown per round in demo mode, keyed by round number
 const DEMO_TIPS = {
@@ -1518,6 +1531,7 @@ const DEMO_TIPS = {
     { targetId: 'timer-number',   text: '⏱️ Le chrono ! En vraie partie il compte 30 secondes. Ici il est infini pour que tu puisses explorer sans pression.' },
     { targetId: 'word-card-text', text: '🃏 Le mot à faire deviner ! Décris-le librement — interdit de le dire, l\'épeler ou le traduire.' },
     { targetId: 'btn-found',      text: '✅ Trouvé ! Appuie ici (ou glisse la carte à droite) quand ton équipe trouve le mot.' },
+    { targetId: null,             text: '↩ Annuler · ↪ Refaire — Après chaque action, ces deux boutons apparaissent de chaque côté du chrono. Appuie sur Annuler pour revenir en arrière (ex : tu as appuyé sur "Trouvé" par erreur) et sur Refaire pour rétablir l\'action annulée.' },
   ],
   2: [
     { targetId: 'btn-skip-side',  text: '⏭ Nouveau en manche 2 ! Si tu es bloqué sur une carte, passe-la : elle reviendra pour un autre tour.' },
@@ -1589,7 +1603,6 @@ function _showDemoTip(tips) {
 
 function startDemoTurn() {
   closeTutorial();
-  _demoMode = true;
 
   // État minimal pour la démo : manche 1, 1 mot, pas de chrono
   state.currentRound    = 1;
@@ -1611,6 +1624,14 @@ function startDemoTurn() {
   state.roundWords = [demoWord];
   state.currentWord = null;
 
+  // Attendre le mode paysage avant d'afficher le premier écran de démo
+  if (window.matchMedia('(orientation: portrait)').matches) {
+    _demoWaiting = true;
+    el('rotate-overlay').classList.add('active');
+    return;
+  }
+
+  _demoMode = true;
   startTurn();
 }
 
@@ -1779,7 +1800,14 @@ function init() {
   // ── Round end ──
   el('btn-next-round').addEventListener('click', withCooldown(() => {
     playButtonClick();
-    startRound(state.currentRound + 1);
+    if (_demoMode) {
+      state.currentRound++;
+      state.roundWords  = [...state.allWords];
+      state.currentWord = null;
+      startTurn();
+    } else {
+      startRound(state.currentRound + 1);
+    }
   }));
   el('btn-final-results').addEventListener('click', withCooldown(() => {
     playButtonClick();
