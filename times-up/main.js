@@ -471,27 +471,26 @@ function startTurn() {
 
   const rule = getCurrentRoundRule();
 
-  // Bouton Passer (bas de la colonne centrale) — uniquement manche 3 (canFault ET canSkip)
-  el('btn-skip').hidden = !(rule.canSkip && rule.canFault);
-
-  const faultBtn     = el('btn-fault');
-  const skipSideBtn  = el('btn-skip-side');
+  const passBtn = el('btn-pass');
 
   if (rule.canFault) {
-    // Manche 3 : Erreur visible à gauche, Passer en bas du centre
-    faultBtn.style.visibility    = '';
-    faultBtn.style.pointerEvents = '';
-    skipSideBtn.style.display    = 'none';
+    // Manche 3 : bouton Erreur (faute de l'orateur)
+    passBtn.style.visibility    = '';
+    passBtn.style.pointerEvents = '';
+    passBtn.className = 'btn-fault-turn btn-turn-side';
+    passBtn.setAttribute('aria-label', 'Erreur — arrêter le tour');
+    passBtn.innerHTML = '<span aria-hidden="true">🚨</span><span>Erreur</span>';
   } else if (rule.canSkip) {
-    // Manche 2 : Passer côté visible à gauche, pas de bouton Erreur
-    faultBtn.style.visibility    = 'hidden';
-    faultBtn.style.pointerEvents = 'none';
-    skipSideBtn.style.display    = '';
+    // Manche 2 : bouton Passer
+    passBtn.style.visibility    = '';
+    passBtn.style.pointerEvents = '';
+    passBtn.className = 'btn-skip-side-turn btn-turn-side';
+    passBtn.setAttribute('aria-label', 'Passer cette carte');
+    passBtn.innerHTML = '<span aria-hidden="true">⏭</span><span>Passer</span>';
   } else {
-    // Manche 1 : ni Erreur ni Passer
-    faultBtn.style.visibility    = 'hidden';
-    faultBtn.style.pointerEvents = 'none';
-    skipSideBtn.style.display    = 'none';
+    // Manche 1 : bouton invisible (visibility:hidden conserve la largeur de colonne)
+    passBtn.style.visibility    = 'hidden';
+    passBtn.style.pointerEvents = 'none';
   }
 
   // Swipe hint: masquer la flèche gauche si on ne peut pas passer
@@ -529,7 +528,7 @@ function fitWordCard() {
 
   const turnArea = document.querySelector('.turn-play-area');
   const foundBtn = el('btn-found');
-  const faultBtn = el('btn-fault');
+  const passBtn  = el('btn-pass');
 
   const cs     = getComputedStyle(card);
   const areaCS = getComputedStyle(turnArea);
@@ -537,8 +536,8 @@ function fitWordCard() {
 
   // Compute the available width for the word by subtracting the side buttons and gaps
   // from the total play area width.  The left column always occupies a fixed slot
-  // (btn-fault uses visibility:hidden so its offsetWidth equals the column width in all rounds).
-  const leftColW = faultBtn.offsetWidth;
+  // (btn-pass uses visibility:hidden so its offsetWidth equals the column width in all rounds).
+  const leftColW = passBtn.offsetWidth;
   const availW = turnArea.clientWidth
     - leftColW
     - foundBtn.offsetWidth
@@ -1402,7 +1401,7 @@ const TUTORIAL_SLIDES = [
       <p>L'orateur voit le mot à faire deviner. Le chronomètre de <strong>30 secondes</strong>
       tourne en haut au centre.</p>
       <div class="tuto-mock-turn">
-        <div class="tuto-mock-turn-side tuto-btn-fault">🚨<br>Erreur<br><span style="font-size:0.65rem;font-weight:400">(Manche 3)</span></div>
+        <div class="tuto-mock-turn-side tuto-btn-fault">🚨<br>Erreur<br><span style="font-size:0.65rem;font-weight:400">ou ⏭ Passer</span></div>
         <div class="tuto-mock-turn-center">
           <div class="tuto-mock-timer">30</div>
           <div class="tuto-mock-word">Séga</div>
@@ -1414,7 +1413,7 @@ const TUTORIAL_SLIDES = [
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Trouvé !</strong> — L'équipe a trouvé le mot</span></div>
       </div>
       <div style="display:flex;gap:6px;margin:4px 0">
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer</strong> — Mot trop difficile (manches 2 & 3)</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer / 🚨 Erreur</strong> — Bouton gauche : passer ou signaler une faute (manches 2 & 3)</span></div>
       </div>
       <div style="display:flex;gap:6px;margin:4px 0">
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">↩</span><span><strong>Annuler</strong> — Revient sur la dernière action</span></div>
@@ -1459,11 +1458,10 @@ const TUTORIAL_SLIDES = [
       et des <strong>bruitages</strong>.</p>
       <div style="display:flex;flex-direction:column;gap:5px;margin:10px 0">
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Bonne réponse</strong> → carte gagnée</span></div>
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span>L'orateur doit <strong>Passer</strong> s'il est bloqué ou s'il n'a pas respecté la règle</span></div>
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur</strong> → l'orateur a parlé ou fredonnée — carte perdue</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur / Passer</strong> → bouton gauche : l'orateur a parlé ou est bloqué — carte perdue pour ce tour</span></div>
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">⛔</span><span>Interdits : parler, former des mots, fredonner une chanson</span></div>
       </div>
-      <p>En cas de faute (il parle), <strong>l'orateur</strong> doit appuyer sur <strong>🚨 Erreur</strong> pour signaler la faute.</p>
+      <p>Le bouton gauche devient <strong>🚨 Erreur</strong> en manche 3. Appuie dessus si l'orateur parle par inadvertance ou s'il souhaite passer.</p>
     `,
   },
   {
@@ -1534,11 +1532,10 @@ const DEMO_TIPS = {
     { targetId: null,             text: '↩ Annuler · ↪ Refaire — Après chaque action, ces deux boutons apparaissent de chaque côté du chrono. Appuie sur Annuler pour revenir en arrière (ex : tu as appuyé sur "Trouvé" par erreur) et sur Refaire pour rétablir l\'action annulée.' },
   ],
   2: [
-    { targetId: 'btn-skip-side',  text: '⏭ Nouveau en manche 2 ! Si tu es bloqué sur une carte, passe-la : elle reviendra pour un autre tour.' },
+    { targetId: 'btn-pass',  text: '⏭ Nouveau en manche 2 ! Si tu es bloqué sur une carte, passe-la : elle reviendra pour un autre tour.' },
   ],
   3: [
-    { targetId: 'btn-fault', text: '🚨 Nouveau en manche 3 ! Si l\'orateur dit un mot par inadvertance, appuie ici pour signaler la faute.' },
-    { targetId: 'btn-skip',  text: '❌ Passer — en manche 3, ce bouton apparaît aussi en bas. Glisse à gauche ou appuie pour passer une carte.' },
+    { targetId: 'btn-pass', text: '🚨 Nouveau en manche 3 ! Ce bouton sert à la fois à Passer et à signaler une Erreur (l\'orateur a parlé). Glisse à gauche ou appuie ici.' },
   ],
 };
 
@@ -1785,9 +1782,10 @@ function init() {
 
   // ── Turn ──
   el('btn-found').addEventListener('click', withCooldown(wordFound));
-  el('btn-skip').addEventListener('click', withCooldown(wordSkipped));
-  el('btn-skip-side').addEventListener('click', withCooldown(wordSkipped));
-  el('btn-fault').addEventListener('click', withCooldown(wordFault));
+  el('btn-pass').addEventListener('click', withCooldown(() => {
+    if (getCurrentRoundRule().canFault) wordFault();
+    else wordSkipped();
+  }));
   el('btn-undo').addEventListener('click', withCooldown(undoLastAction));
   el('btn-redo').addEventListener('click', withCooldown(redoLastAction));
 

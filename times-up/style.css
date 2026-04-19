@@ -509,9 +509,8 @@ details.card-collapsible > :not(summary) {
 .btn-turn-side:active { transform: scale(0.97); }
 .btn-turn-side span { font-size: 0.85em; }
 
-/* Grille : btn-fault et btn-skip-side occupent la même cellule (col 1) */
-#btn-fault,
-#btn-skip-side {
+/* Grille : btn-pass occupe la cellule col 1 */
+#btn-pass {
   grid-column: 1 / 2;
   grid-row: 1 / 2;
 }
