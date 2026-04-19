@@ -495,11 +495,24 @@ function startTurn() {
 
   updateTurnStats();
   drawNextWord();
-  updateTimerDisplay();
-  startTimer();
+
+  if (_demoMode) {
+    // Pas de chrono en mode démo : afficher ∞ et cercle plein (2π*r circumference)
+    const circ = 2 * Math.PI * TIMER_CIRCLE_RADIUS;
+    const ring = el('timer-ring-progress');
+    el('timer-number').textContent = '∞';
+    el('timer-number').style.color = 'var(--text)';
+    ring.style.strokeDasharray = `${circ}`;
+    ring.style.strokeDashoffset = '0';
+    ring.style.stroke = 'var(--success)';
+  } else {
+    updateTimerDisplay();
+    startTimer();
+  }
 
   showScreen('screen-turn');
   fitWordCard(); // re-fit now that screen is visible (drawNextWord ran while hidden)
+  if (_demoMode) showDemoTips(state.currentRound);
 }
 
 function fitWordCard() {
@@ -748,6 +761,23 @@ function updateTimerDisplay() {
  */
 function endTurn(reason = 'timeout') {
   stopTimer();
+
+  // Mode démo : avancer manche par manche (1→2→3), puis retour à l'accueil
+  if (_demoMode) {
+    if (state.currentRound < 3) {
+      state.currentRound++;
+      state.roundWords  = [...state.allWords];  // même mot, nouvelle manche
+      state.currentWord = null;
+      const rule = ROUND_RULES[state.currentRound - 1];
+      showToast(`${rule.icon} Manche ${state.currentRound} — ${rule.title.split('—')[1].trim()}`);
+      startTurn();
+    } else {
+      _demoMode = false;
+      showToast('🎉 Bravo ! Vous êtes prêt à jouer !');
+      showScreen('screen-setup');
+    }
+    return;
+  }
 
   // Remettre le mot courant dans le jeu si le temps est écoulé (ni trouvé ni passé)
   if (reason === 'timeout' && state.currentWord) {
@@ -1380,44 +1410,6 @@ const TUTORIAL_SLIDES = [
     `,
   },
   {
-    icon: '🎮',
-    title: 'Faux jeu — Repère les boutons',
-    html: `
-      <p>Voici l'<strong>écran de jeu</strong> avec un seul mot et le chrono figé.
-      Repère chaque bouton avant de jouer :</p>
-      <div class="tuto-fake-turn">
-        <div class="tuto-fake-header">
-          <span class="tuto-fake-round-badge">☝️ Manche 2</span>
-          <span class="tuto-fake-stat">🃏 5 restant(s)</span>
-          <span class="tuto-fake-stat">✅ 2 trouvé(s)</span>
-          <span class="tuto-fake-undo-btn">↩ Annuler</span>
-        </div>
-        <div class="tuto-fake-grid">
-          <div class="tuto-fake-side-btn tuto-fake-skip">
-            <span style="font-size:1.1rem">⏭</span>
-            <span>Passer</span>
-          </div>
-          <div class="tuto-fake-center-col">
-            <div class="tuto-fake-timer-circle"><span>22</span></div>
-            <div class="tuto-fake-word">Séga</div>
-            <div class="tuto-fake-cat">🎵 Culture</div>
-          </div>
-          <div class="tuto-fake-side-btn tuto-fake-found">
-            <span style="font-size:1.1rem">✅</span>
-            <span>Trouvé !</span>
-          </div>
-        </div>
-        <div class="tuto-fake-callouts">
-          <div class="tuto-callout tuto-callout-up">⏭ <strong>Passer</strong> — trop difficile, carte remise en jeu plus tard</div>
-          <div></div>
-          <div class="tuto-callout tuto-callout-up">✅ <strong>Trouvé !</strong> — l'équipe a trouvé le mot</div>
-        </div>
-        <div class="tuto-fake-undo-callout">↩ <strong>Annuler</strong> (en haut à droite) — revient sur la dernière action (trouvé ou passé)</div>
-      </div>
-      <p>⏱️ En vrai, le chrono de <strong>30 s</strong> tourne — fais vite !</p>
-    `,
-  },
-  {
     icon: '🗣️',
     title: 'Manche 1 — Parler librement',
     html: `
@@ -1518,6 +1510,109 @@ const TUTORIAL_SLIDES = [
 ];
 
 let _tutorialCurrentSlide = 0;
+let _demoMode = false;
+
+// Tips shown per round in demo mode, keyed by round number
+const DEMO_TIPS = {
+  1: [
+    { targetId: 'timer-number',   text: '⏱️ Le chrono ! En vraie partie il compte 30 secondes. Ici il est infini pour que tu puisses explorer sans pression.' },
+    { targetId: 'word-card-text', text: '🃏 Le mot à faire deviner ! Décris-le librement — interdit de le dire, l\'épeler ou le traduire.' },
+    { targetId: 'btn-found',      text: '✅ Trouvé ! Appuie ici (ou glisse la carte à droite) quand ton équipe trouve le mot.' },
+  ],
+  2: [
+    { targetId: 'btn-skip-side',  text: '⏭ Nouveau en manche 2 ! Si tu es bloqué sur une carte, passe-la : elle reviendra pour un autre tour.' },
+  ],
+  3: [
+    { targetId: 'btn-fault', text: '🚨 Nouveau en manche 3 ! Si l\'orateur dit un mot par inadvertance, appuie ici pour signaler la faute.' },
+    { targetId: 'btn-skip',  text: '❌ Passer — en manche 3, ce bouton apparaît aussi en bas. Glisse à gauche ou appuie pour passer une carte.' },
+  ],
+};
+
+let _demoTipIdx = 0;
+
+function showDemoTips(round) {
+  const tips = DEMO_TIPS[round];
+  if (!tips || tips.length === 0) return;
+  _demoTipIdx = 0;
+  _showDemoTip(tips);
+}
+
+function _showDemoTip(tips) {
+  const tip     = tips[_demoTipIdx];
+  const overlay = el('demo-tooltip-overlay');
+  const ring    = el('demo-highlight-ring');
+  const textEl  = el('demo-tooltip-text');
+  const panel   = el('demo-tooltip-panel');
+
+  textEl.textContent = tip.text;
+
+  const target = tip.targetId ? document.getElementById(tip.targetId) : null;
+  if (target) {
+    const rect = target.getBoundingClientRect();
+    const pad  = 8;
+    ring.style.top    = (rect.top    - pad) + 'px';
+    ring.style.left   = (rect.left   - pad) + 'px';
+    ring.style.width  = (rect.width  + pad * 2) + 'px';
+    ring.style.height = (rect.height + pad * 2) + 'px';
+    ring.hidden = false;
+
+    const panelW = Math.min(280, window.innerWidth - 32);
+    const panelH = 130;
+    const gap    = 14;
+    let top  = rect.bottom + gap;
+    if (top + panelH > window.innerHeight - 10) top = rect.top - panelH - gap;
+    if (top < 10) top = 10;
+    let left = rect.left + rect.width / 2 - panelW / 2;
+    if (left < 10) left = 10;
+    if (left + panelW > window.innerWidth - 10) left = window.innerWidth - panelW - 10;
+    panel.style.top       = top + 'px';
+    panel.style.left      = left + 'px';
+    panel.style.transform = '';
+  } else {
+    ring.hidden = true;
+    panel.style.top       = '50%';
+    panel.style.left      = '50%';
+    panel.style.transform = 'translate(-50%,-50%)';
+  }
+
+  overlay.hidden = false;
+
+  el('demo-tooltip-ok').onclick = () => {
+    _demoTipIdx++;
+    if (_demoTipIdx < tips.length) {
+      _showDemoTip(tips);
+    } else {
+      overlay.hidden = true;
+    }
+  };
+}
+
+function startDemoTurn() {
+  closeTutorial();
+  _demoMode = true;
+
+  // État minimal pour la démo : manche 1, 1 mot, pas de chrono
+  state.currentRound    = 1;
+  state.currentTeamIdx  = 0;
+  state.teamPlayerIdx   = [0];
+  state.noTeamsMode     = false;
+  state.teams           = [{
+    color: 'var(--volcan)',
+    players: ['Vous'],
+    score: [0, 0, 0],
+  }];
+  state.actionHistory = [];
+  state.redoStack     = [];
+
+  // Choisir un mot aléatoire parmi les mots du jeu
+  const words    = getShuffledWords();
+  const demoWord = words[0];
+  state.allWords  = [demoWord];
+  state.roundWords = [demoWord];
+  state.currentWord = null;
+
+  startTurn();
+}
 
 function openTutorial(startSlide = 0) {
   _tutorialCurrentSlide = startSlide;
@@ -1721,6 +1816,9 @@ function init() {
     e.target.value = '';
   });
   el('btn-words-reset').addEventListener('click', withCooldown(handleResetWords));
+
+  // ── Démo ──
+  el('btn-launch-demo').addEventListener('click', withCooldown(startDemoTurn));
 
   // ── Tutoriel ──
   el('btn-tutorial').addEventListener('click', withCooldown(() => openTutorial(0)));

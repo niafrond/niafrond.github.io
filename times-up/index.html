@@ -39,6 +39,10 @@
     <h1 class="app-title">⏱️ Time's Up</h1>
     <p class="app-subtitle">Nout Péi 🌋🌊</p>
 
+    <button id="btn-tutorial" class="btn btn-secondary w-full mt-12">
+      ❓ Comment jouer — Tutoriel
+    </button>
+
     <div class="card">
       <!-- Onglets -->
       <div class="setup-tabs">
@@ -104,8 +108,8 @@
     <button id="btn-start-game" class="btn btn-primary btn-lg w-full" disabled>
       🚀 Répartir les joueurs
     </button>
-    <button id="btn-tutorial" class="btn btn-secondary w-full mt-12">
-      ❓ Comment jouer — Tutoriel
+    <button id="btn-launch-demo" class="btn btn-secondary w-full mt-12">
+      🎮 Fausse partie pour découvrir
     </button>
     <button id="btn-edit-words" class="btn btn-secondary w-full mt-12">
       ✏️ Éditer les mots du jeu
@@ -345,6 +349,17 @@
 </div>
 
 <div id="timesup-version" class="version-badge" aria-label="Version de l'application"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     DEMO TOOLTIP OVERLAY
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="demo-tooltip-overlay" hidden>
+  <div id="demo-highlight-ring"></div>
+  <div id="demo-tooltip-panel">
+    <p id="demo-tooltip-text"></p>
+    <button id="demo-tooltip-ok" class="btn btn-primary btn-sm">✅ OK, j'ai compris</button>
+  </div>
+</div>
 
 <script type="module" src="main.js"></script>
 </body>
