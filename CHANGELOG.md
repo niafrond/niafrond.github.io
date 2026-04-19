@@ -1,3 +1,9 @@
+## [1.88.0](https://github.com/niafrond/niafrond.github.io/compare/v1.87.3...v1.88.0) (2026-04-19)
+
+### Features
+
+* **times-up:** demo mode explains the 'Je suis prêt !' button ([#130](https://github.com/niafrond/niafrond.github.io/issues/130)) ([5bc813b](https://github.com/niafrond/niafrond.github.io/commit/5bc813b6973890fcce55aaaabeeb0c6cbae71504))
+
 ## [1.87.3](https://github.com/niafrond/niafrond.github.io/compare/v1.87.2...v1.87.3) (2026-04-19)
 
 ### Bug Fixes
