@@ -23,6 +23,7 @@ const MIN_PLAYERS                = 2;
 const CARD_COUNT_DEFAULT         = 40;
 const CARD_COUNT_KEY             = 'flashguess_card_count';
 const SELECTED_CATS_KEY          = 'flashguess_selected_cats';
+const KIDS_MODE_KEY              = 'flashguess_kids_mode';
 const WORD_CARD_HORIZONTAL_PAD   = 32;
 const WORD_FONT_MIN              = 16;
 const WORD_FONT_MAX              = 200;
@@ -129,6 +130,15 @@ function saveSelectedCategories(cats) {
   try { localStorage.setItem(SELECTED_CATS_KEY, JSON.stringify(cats)); } catch (_) { /* ignore */ }
 }
 
+// ─── Persistance du mode enfant ───────────────────────────────────────────────
+function loadKidsMode() {
+  try { return localStorage.getItem(KIDS_MODE_KEY) === '1'; } catch (_) { return false; }
+}
+
+function saveKidsMode(v) {
+  try { localStorage.setItem(KIDS_MODE_KEY, v ? '1' : '0'); } catch (_) { /* ignore */ }
+}
+
 // ─── État du jeu ───────────────────────────────────────────────────────────────
 const state = {
   playerNames:         [],
@@ -137,6 +147,7 @@ const state = {
   noTeamsMode:         false,
 
   selectedCategories:  [],    // catégories choisies pour cette partie
+  kidsMode:            false, // mode enfant : uniquement les mots adaptés -12 ans
 
   allWords:            [],
   roundWords:          [],
@@ -476,7 +487,7 @@ function renderTeams() {
 function startRound(roundNum) {
   state.currentRound = roundNum;
   if (roundNum === 1) {
-    const words = getShuffledWords(state.selectedCategories.length > 0 ? state.selectedCategories : null);
+    const words = getShuffledWords(state.selectedCategories.length > 0 ? state.selectedCategories : null, state.kidsMode);
     const count = state.cardCount === 0 ? words.length : Math.min(state.cardCount, words.length);
     state.allWords = words.slice(0, count);
     if (state.allWords.length === 0) {
@@ -649,6 +660,8 @@ function drawNextWord() {
   el('word-card-text').textContent     = state.currentWord.word;
   el('word-card-category').textContent = `${cat.emoji} ${cat.label}`;
   el('turn-round-badge').textContent   = `Manche ${state.currentRound} — ${ROUND_RULES[state.currentRound - 1].icon}`;
+  const kidsBadge = el('word-card-kids-badge');
+  if (kidsBadge) kidsBadge.hidden = !state.currentWord.kidFriendly;
   updateTurnStats();
   fitWordCard();
 }
@@ -726,6 +739,8 @@ function undoLastAction() {
   const cat = getCategoryInfo(word.category);
   el('word-card-text').textContent     = word.word;
   el('word-card-category').textContent = `${cat.emoji} ${cat.label}`;
+  const kidsBadge = el('word-card-kids-badge');
+  if (kidsBadge) kidsBadge.hidden = !word.kidFriendly;
   updateTurnStats();
   fitWordCard();
   updateUndoRedoButtons();
@@ -1073,7 +1088,11 @@ function filterValidWords(arr) {
   return arr
     .filter(w => w && typeof w.word === 'string' && w.word.trim() &&
                  typeof w.category === 'string' && w.category.trim())
-    .map(w => ({ word: w.word.trim(), category: w.category.trim() }));
+    .map(w => ({
+      word: w.word.trim(),
+      category: w.category.trim(),
+      ...(w.kidFriendly === true ? { kidFriendly: true } : {}),
+    }));
 }
 
 function openWordsEditor() {
@@ -1163,6 +1182,13 @@ function renderWordsList() {
     info.appendChild(wordSpan);
     info.appendChild(catBadge);
 
+    const kidBtn = document.createElement('button');
+    kidBtn.className = `btn-icon word-edit-kid-btn${entry.kidFriendly ? ' word-edit-kid-btn--on' : ''}`;
+    kidBtn.title = entry.kidFriendly ? 'Adapté -12 ans (cliquer pour retirer)' : 'Marquer comme adapté -12 ans';
+    kidBtn.setAttribute('aria-label', entry.kidFriendly ? 'Retirer le marquage -12 ans' : 'Marquer comme -12 ans');
+    kidBtn.textContent = '👶';
+    kidBtn.addEventListener('click', () => toggleKidFriendly(realIdx));
+
     const delBtn = document.createElement('button');
     delBtn.className = 'btn-icon btn-danger';
     delBtn.setAttribute('aria-label', `Supprimer ${entry.word}`);
@@ -1170,6 +1196,7 @@ function renderWordsList() {
     delBtn.addEventListener('click', () => deleteWord(realIdx));
 
     row.appendChild(info);
+    row.appendChild(kidBtn);
     row.appendChild(delBtn);
     list.appendChild(row);
   });
@@ -1202,6 +1229,18 @@ function deleteWord(idx) {
   renderWordsCatTabs();
   renderWordsList();
   showToast(`"${deleted.word}" supprimé`);
+}
+
+function toggleKidFriendly(idx) {
+  const entry = editableWords[idx];
+  if (!entry) return;
+  if (entry.kidFriendly) {
+    delete entry.kidFriendly;
+  } else {
+    entry.kidFriendly = true;
+  }
+  saveWords(editableWords);
+  renderWordsList();
 }
 
 function exportWords() {
@@ -1510,7 +1549,7 @@ function startDemoTurn() {
   state.actionHistory = [];
   state.redoStack     = [];
 
-  const words    = getShuffledWords();
+  const words    = getShuffledWords(null, state.kidsMode);
   const demoWord = words[0];
   state.allWords  = [demoWord];
   state.roundWords = [demoWord];
