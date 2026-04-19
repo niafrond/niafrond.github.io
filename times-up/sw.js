@@ -1,4 +1,4 @@
-const CACHE = 'timesup-v1';
+const CACHE = 'timesup-v2';
 
 const ASSETS = [
   './',
@@ -8,6 +8,7 @@ const ASSETS = [
   './sound.js',
   './style.css',
   './manifest.json',
+  './icon.svg',
 ];
 
 self.addEventListener('install', e => {
