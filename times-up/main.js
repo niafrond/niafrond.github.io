@@ -1711,11 +1711,11 @@ function startDemoTurn() {
   state.actionHistory = [];
   state.redoStack     = [];
 
-  // Choisir un mot aléatoire parmi les mots du jeu
+  // Choisir 3 mots aléatoires parmi les mots du jeu
   const words    = getShuffledWords();
-  const demoWord = words[0];
-  state.allWords  = [demoWord];
-  state.roundWords = [demoWord];
+  const demoWords = words.slice(0, 3);
+  state.allWords  = demoWords;
+  state.roundWords = [...demoWords];
   state.currentWord = null;
 
   // Attendre le mode paysage avant d'afficher le premier écran de démo
