@@ -1,3 +1,9 @@
+## [1.77.0](https://github.com/niafrond/niafrond.github.io/compare/v1.76.0...v1.77.0) (2026-04-19)
+
+### Features
+
+* **times-up:** highlight player names in pre-turn screen ([#107](https://github.com/niafrond/niafrond.github.io/issues/107)) ([c679d06](https://github.com/niafrond/niafrond.github.io/commit/c679d06ea665edc4da029267a652e821f1ef2225))
+
 ## [1.76.0](https://github.com/niafrond/niafrond.github.io/compare/v1.75.0...v1.76.0) (2026-04-19)
 
 ### Features
