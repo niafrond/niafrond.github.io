@@ -33,7 +33,8 @@
       {
         "assets": [
           "CHANGELOG.md",
-          "match3-quest/version.js"
+          "match3-quest/version.js",
+          "times-up/sw.js"
         ],
         "message": "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}"
       }
