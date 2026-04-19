@@ -1660,3 +1660,101 @@ details.card-collapsible > :not(summary) {
   white-space: nowrap;
   flex-shrink: 0;
 }
+
+/* ─── Kids mode toggle (Options de partie) ──────────────────────────────────── */
+.kids-mode-toggle-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 99px;
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+}
+.kids-mode-toggle-btn--on {
+  background: rgba(64,145,108,0.2);
+  border-color: var(--success);
+  color: var(--success);
+}
+.kids-mode-toggle-btn--forced {
+  background: rgba(64,145,108,0.1);
+  border-color: rgba(64,145,108,0.45);
+  color: var(--success);
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* ─── Player child toggle (input row) ──────────────────────────────────────── */
+.player-child-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
+}
+.player-child-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--success);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.player-child-toggle-label {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+/* ─── Child badge in player list ───────────────────────────────────────────── */
+.player-item-child-badge {
+  font-size: 0.75rem;
+  background: rgba(64,145,108,0.15);
+  border: 1px solid rgba(64,145,108,0.4);
+  color: var(--success);
+  border-radius: 99px;
+  padding: 2px 8px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ─── Kids badge on word card (gameplay) ────────────────────────────────────── */
+.word-card-kids-badge {
+  font-size: 0.75rem;
+  color: var(--success);
+  background: rgba(64,145,108,0.12);
+  border: 1px solid rgba(64,145,108,0.3);
+  border-radius: 99px;
+  padding: 3px 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ─── "J'ai lu !" button (child reading pause) ──────────────────────────────── */
+.child-read-btn {
+  flex-shrink: 0;
+  background: var(--lagon);
+  color: #fff;
+  animation: childReadAppear 0.25s ease both;
+}
+@keyframes childReadAppear {
+  from { transform: scale(0.88); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+.child-read-btn:hover:not(:disabled) { opacity: 0.88; }
+
+/* ─── Kids mode badge in words editor ──────────────────────────────────────── */
+.word-edit-kid-btn {
+  opacity: 0.35;
+  font-size: 1rem;
+  width: 32px;
+  height: 32px;
+}
+.word-edit-kid-btn--on {
+  opacity: 1;
+  background: rgba(64,145,108,0.15);
+  border-color: rgba(64,145,108,0.5);
+}

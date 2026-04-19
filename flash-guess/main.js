@@ -142,12 +142,14 @@ function saveKidsMode(v) {
 // ─── État du jeu ───────────────────────────────────────────────────────────────
 const state = {
   playerNames:         [],
+  playerIsChild:       new Set(), // noms des joueurs enfants (-12 ans)
   teams:               [],
   teamPlayerIdx:       [],
   noTeamsMode:         false,
 
   selectedCategories:  [],    // catégories choisies pour cette partie
   kidsMode:            false, // mode enfant : uniquement les mots adaptés -12 ans
+  kidsModeManual:      false, // activation manuelle du mode enfant (sans enfant dans la partie)
 
   allWords:            [],
   roundWords:          [],
@@ -256,13 +258,21 @@ function renderPlayerList() {
     nameSpan.className = 'player-item-name';
     nameSpan.textContent = `👤 ${name}`;
 
+    item.appendChild(nameSpan);
+
+    if (state.playerIsChild.has(name)) {
+      const badge = document.createElement('span');
+      badge.className = 'player-item-child-badge';
+      badge.textContent = '👶 Enfant';
+      item.appendChild(badge);
+    }
+
     const btn = document.createElement('button');
     btn.className = 'btn-icon btn-danger';
     btn.setAttribute('aria-label', `Supprimer ${name}`);
     btn.textContent = '✕';
     btn.addEventListener('click', () => removePlayer(i));
 
-    item.appendChild(nameSpan);
     item.appendChild(btn);
     list.appendChild(item);
   });
@@ -278,6 +288,8 @@ function renderPlayerList() {
   } else {
     hint.hidden = true;
   }
+
+  updateKidsModeStatus();
 }
 
 function addPlayer() {
@@ -286,15 +298,86 @@ function addPlayer() {
   if (!name) { showToast('Entrez un prénom', 'warn'); return; }
   if (state.playerNames.includes(name)) { showToast('Ce joueur existe déjà', 'warn'); return; }
   if (state.playerNames.length >= 20) { showToast('Maximum 20 joueurs', 'warn'); return; }
+  const isChild = el('player-is-child').checked;
   state.playerNames.push(name);
+  if (isChild) state.playerIsChild.add(name);
+  el('player-is-child').checked = false;
   input.value = '';
   input.focus();
   renderPlayerList();
 }
 
 function removePlayer(idx) {
+  const name = state.playerNames[idx];
+  state.playerIsChild.delete(name);
   state.playerNames.splice(idx, 1);
   renderPlayerList();
+}
+
+// ─── MODE ENFANT — statut et toggle ────────────────────────────────────────────
+function hasChildInGame() {
+  return state.playerNames.some(n => state.playerIsChild.has(n));
+}
+
+function updateKidsModeStatus() {
+  const forced = hasChildInGame();
+  state.kidsMode = forced || state.kidsModeManual;
+
+  const btn = el('toggle-kids-mode');
+  const autoTag = el('kids-mode-auto-tag');
+  if (!btn) return;
+
+  if (forced) {
+    btn.textContent = 'ON';
+    btn.className = 'kids-mode-toggle-btn kids-mode-toggle-btn--forced';
+    btn.setAttribute('aria-checked', 'true');
+    btn.disabled = true;
+    if (autoTag) autoTag.hidden = false;
+  } else {
+    btn.textContent = state.kidsModeManual ? 'ON' : 'OFF';
+    btn.className = `kids-mode-toggle-btn${state.kidsModeManual ? ' kids-mode-toggle-btn--on' : ''}`;
+    btn.setAttribute('aria-checked', String(state.kidsModeManual));
+    btn.disabled = false;
+    if (autoTag) autoTag.hidden = true;
+  }
+}
+
+function toggleKidsMode() {
+  if (hasChildInGame()) return; // forced — cannot toggle
+  state.kidsModeManual = !state.kidsModeManual;
+  saveKidsMode(state.kidsModeManual);
+  updateKidsModeStatus();
+}
+
+// ─── ORATEUR ENFANT — pause lecture ────────────────────────────────────────────
+function isCurrentOrateurChild() {
+  if (!state.teams.length) return false;
+  const team = state.teams[state.currentTeamIdx];
+  if (!team) return false;
+  const playerName = team.players[state.teamPlayerIdx[state.currentTeamIdx]];
+  return state.playerIsChild.has(playerName);
+}
+
+let _childReadFirstWord = false; // true si on attend le premier mot du tour
+
+function showChildReadBtn(visible) {
+  const btn = el('btn-child-read');
+  const foundBtn = el('btn-found');
+  const passBtn  = el('btn-pass');
+  if (!btn) return;
+  btn.hidden = !visible;
+  if (foundBtn) foundBtn.disabled = visible;
+  if (passBtn)  passBtn.disabled  = visible;
+}
+
+function childConfirmedRead() {
+  showChildReadBtn(false);
+  if (_childReadFirstWord) {
+    _childReadFirstWord = false;
+    startTimer();
+  } else {
+    resumeTimer();
+  }
 }
 
 // ─── ÉCRAN CATEGORIES ─────────────────────────────────────────────────────────
