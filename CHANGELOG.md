@@ -1,3 +1,9 @@
+## [1.75.0](https://github.com/niafrond/niafrond.github.io/compare/v1.74.0...v1.75.0) (2026-04-19)
+
+### Features
+
+* **times-up:** add undo button to revert last card action ([#105](https://github.com/niafrond/niafrond.github.io/issues/105)) ([a2c610e](https://github.com/niafrond/niafrond.github.io/commit/a2c610e7a683f6c5a7fe199a46520d417f695c24))
+
 ## [1.74.0](https://github.com/niafrond/niafrond.github.io/compare/v1.73.0...v1.74.0) (2026-04-19)
 
 ### Features
