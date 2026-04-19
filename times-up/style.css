@@ -356,27 +356,37 @@ details.card-collapsible > :not(summary) {
 }
 .turn-found-info { font-size: 0.85rem; color: var(--text-muted); }
 
-/* Bouton Annuler (header du tour actif) */
+/* Boutons Annuler / Refaire (côtés du timer) */
 @keyframes undo-appear {
   from { transform: scale(0.7); opacity: 0; }
   60%  { transform: scale(1.1); }
   to   { transform: scale(1);   opacity: 1; }
 }
 
-.btn-undo-turn {
+.timer-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btn-undo-redo {
   background: rgba(245,158,11,0.15);
   color: var(--warning);
   border: 2px solid rgba(245,158,11,0.6);
-  border-radius: 99px;
-  padding: 6px 14px;
-  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s;
-  line-height: 1;
+  line-height: 1.3;
+  text-align: center;
+  min-width: 52px;
   animation: undo-appear 0.35s ease both;
 }
-.btn-undo-turn:hover { background: rgba(245,158,11,0.28); }
+.btn-undo-redo:hover { background: rgba(245,158,11,0.28); }
 
 /* Zone de jeu : grille à largeurs fixes — col-gauche | centre | col-droite */
 .turn-play-area {
