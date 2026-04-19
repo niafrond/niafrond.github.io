@@ -773,8 +773,9 @@ function endTurn(reason = 'timeout') {
     el('turn-end-words-left').textContent = state.roundWords.length;
     el('btn-next-turn').dataset.nextAction = 'round-end';
     el('turn-end-all-found').hidden = (reason !== 'allFound');
-    el('btn-correct-turn').hidden = true;
+    el('btn-correct-turn').hidden = (state.turnFound.length === 0);
     showScreen('screen-turn-end');
+    if (state.turnFound.length > 0) showDemoTurnEndTips();
     return;
   }
 
@@ -1492,6 +1493,13 @@ const TUTORIAL_SLIDES = [
         <div style="font-size:1.2rem;margin-bottom:4px">⏱️ Temps écoulé !</div>
         <div style="font-size:2.5rem;font-weight:900;color:var(--success);line-height:1">4</div>
         <div style="font-size:0.82rem;color:var(--text-muted)">mot(s) ce tour · 12 restant(s)</div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;align-items:center">
+          <span class="tuto-btn" style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--text-muted);font-size:0.78rem;padding:5px 14px">✏️ Corriger</span>
+          <span class="tuto-btn tuto-btn-action" style="font-size:0.82rem;padding:6px 20px">➡ Suivant</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin:6px 0">
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✏️</span><span><strong>Corriger</strong> — Une faute n'a pas été signalée ? Décochez les mots concernés pour les retirer du score et les remettre dans le jeu.</span></div>
       </div>
       <p>Quand tous les mots d'une manche sont trouvés, le <strong>tableau des scores</strong>
       s'affiche avec les points de chaque équipe. Les points sont cumulés sur les 3 manches.</p>
@@ -1558,6 +1566,15 @@ const DEMO_TIPS = {
 };
 
 let _demoTipIdx = 0;
+
+const DEMO_TIPS_TURN_END = [
+  { targetId: 'btn-correct-turn', text: '✏️ Corriger le tour — Une faute n\'a pas été signalée pendant le jeu ? Appuie ici pour décocher les mots qui ne devraient pas être comptés : ils seront retirés du score et remis dans la manche.' },
+];
+
+function showDemoTurnEndTips() {
+  _demoTipIdx = 0;
+  _showDemoTip(DEMO_TIPS_TURN_END);
+}
 
 function showDemoTips(round) {
   const tips = DEMO_TIPS[round];
