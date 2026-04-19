@@ -1,3 +1,9 @@
+## [1.85.1](https://github.com/niafrond/niafrond.github.io/compare/v1.85.0...v1.85.1) (2026-04-19)
+
+### Bug Fixes
+
+* prevent scroll overflow in fullscreen mode for times-up screens ([#122](https://github.com/niafrond/niafrond.github.io/issues/122)) ([a8fd1ea](https://github.com/niafrond/niafrond.github.io/commit/a8fd1ea3eabb1d71616143b4f2455f2c42935632))
+
 ## [1.85.0](https://github.com/niafrond/niafrond.github.io/compare/v1.84.1...v1.85.0) (2026-04-19)
 
 ### Features
