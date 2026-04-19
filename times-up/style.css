@@ -281,15 +281,15 @@ html, body {
   font-weight: 900;
 }
 #pre-turn-player {
-  font-size: 2.4rem;
+  font-size: 3rem;
   font-weight: 900;
-  color: white;
+  color: #ffd166;
   display: block;
 }
 #pre-turn-guesser {
-  font-size: 2.4rem;
+  font-size: 3rem;
   font-weight: 900;
-  color: white;
+  color: #06d6a0;
   display: block;
 }
 .pre-turn-label {
@@ -974,7 +974,7 @@ html, body {
   .pre-turn-label          { font-size: 0.85rem; margin-top: 0 !important; }
   #pre-turn-team           { font-size: 1.3rem; }
   #pre-turn-player,
-  #pre-turn-guesser        { font-size: 1.8rem; }
+  #pre-turn-guesser        { font-size: 2.2rem; }
   #screen-pre-turn #btn-ready {
     flex-shrink: 0;
     width: 150px;
