@@ -1,3 +1,15 @@
+## [1.84.0](https://github.com/niafrond/niafrond.github.io/compare/v1.83.0...v1.84.0) (2026-04-19)
+
+### Features
+
+* **times-up:** ajoute slide "Faux jeu" dans le tutoriel avec chrono figé et bulles d'explication ([#118](https://github.com/niafrond/niafrond.github.io/issues/118)) ([f3c10ff](https://github.com/niafrond/niafrond.github.io/commit/f3c10ff11fe67cd9e2cce401bfe465e84faa9d74))
+
+## [1.83.0](https://github.com/niafrond/niafrond.github.io/compare/v1.82.1...v1.83.0) (2026-04-19)
+
+### Features
+
+* **times-up:** bouton Annuler côté timer, ajout Refaire, historique complet de manche ([#117](https://github.com/niafrond/niafrond.github.io/issues/117)) ([3a51106](https://github.com/niafrond/niafrond.github.io/commit/3a5110652ef2c59ef790851696dfbbf67d1c53e3))
+
 ## [1.82.1](https://github.com/niafrond/niafrond.github.io/compare/v1.82.0...v1.82.1) (2026-04-19)
 
 ### Bug Fixes

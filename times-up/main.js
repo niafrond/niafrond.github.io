@@ -129,7 +129,8 @@ const state = {
   turnFound:   [],
   turnSkipped: [],   // cartes passées définitivement dans le tour en cours (manches 2 et 3)
   currentWord: null,
-  lastAction:  null, // {type:'found'|'skipped'|'fault', word} — pour le bouton Annuler
+  actionHistory: [], // [{type:'found'|'skipped'|'fault', word}] — pile d'annulation depuis le début de la manche
+  redoStack:     [], // pile de ré-application (actions annulées)
 
   timerInterval: null,
   timeLeft: TURN_DURATION,
@@ -452,8 +453,9 @@ function startTurn() {
   state.turnFound   = [];
   state.turnSkipped = [];
   state.timeLeft    = TURN_DURATION;
-  state.lastAction  = null;
-  el('btn-undo').hidden = true;
+  state.actionHistory = [];
+  state.redoStack     = [];
+  updateUndoRedoButtons();
 
   const rule = getCurrentRoundRule();
 
@@ -556,18 +558,19 @@ function drawNextWord() {
 
 function wordFound() {
   playFound();
-  state.lastAction = { type: 'found', word: state.currentWord };
-  el('btn-undo').hidden = false;
+  state.actionHistory.push({ type: 'found', word: state.currentWord });
+  state.redoStack = [];
   state.turnFound.push(state.currentWord);
   state.currentWord = null;
   updateTurnStats();
   drawNextWord();
+  updateUndoRedoButtons();
 }
 
 function wordSkipped() {
   playButtonClick();
-  state.lastAction = { type: 'skipped', word: state.currentWord };
-  el('btn-undo').hidden = false;
+  state.actionHistory.push({ type: 'skipped', word: state.currentWord });
+  state.redoStack = [];
   if (state.currentRound >= 2) {
     // Manches 2 et 3 : la carte est passée définitivement pour ce tour
     state.turnSkipped.push(state.currentWord);
@@ -578,26 +581,34 @@ function wordSkipped() {
   state.currentWord = null;
   updateTurnStats();
   drawNextWord();
+  updateUndoRedoButtons();
 }
 
 function wordFault() {
   playButtonClick();
   // Manches 2 et 3 (canFault=true) : la carte est passée définitivement pour ce tour
   if (state.currentWord) {
-    state.lastAction = { type: 'fault', word: state.currentWord };
-    el('btn-undo').hidden = false;
+    state.actionHistory.push({ type: 'fault', word: state.currentWord });
+    state.redoStack = [];
     state.turnSkipped.push(state.currentWord);
     state.currentWord = null;
   }
   updateTurnStats();
   drawNextWord();
+  updateUndoRedoButtons();
+}
+
+function updateUndoRedoButtons() {
+  el('btn-undo').hidden = state.actionHistory.length === 0;
+  el('btn-redo').hidden = state.redoStack.length === 0;
 }
 
 function undoLastAction() {
-  if (!state.lastAction) return;
+  if (state.actionHistory.length === 0) return;
   playButtonClick();
-  const { type, word } = state.lastAction;
-  state.lastAction = null;
+  const action = state.actionHistory.pop();
+  state.redoStack.push(action);
+  const { type, word } = action;
 
   // Remettre le mot courant en tête du deck
   if (state.currentWord) {
@@ -627,7 +638,31 @@ function undoLastAction() {
   el('word-card-category').textContent = `${cat.emoji} ${cat.label}`;
   updateTurnStats();
   fitWordCard();
-  el('btn-undo').hidden = true;
+  updateUndoRedoButtons();
+}
+
+function redoLastAction() {
+  if (state.redoStack.length === 0) return;
+  const action = state.redoStack.pop();
+  state.actionHistory.push(action);
+  const { type, word } = action;
+
+  // currentWord doit être `word` à cet instant (c'est lui qui a été affiché après le dernier undo)
+  if (type === 'found') {
+    playFound();
+    state.turnFound.push(word);
+  } else {
+    // 'skipped' ou 'fault'
+    if (state.currentRound >= 2) {
+      state.turnSkipped.push(word);
+    } else {
+      state.roundWords.push(word);
+    }
+  }
+  state.currentWord = null;
+  updateTurnStats();
+  drawNextWord();
+  updateUndoRedoButtons();
 }
 
 function updateTurnStats() {
@@ -1339,6 +1374,44 @@ const TUTORIAL_SLIDES = [
     `,
   },
   {
+    icon: '🎮',
+    title: 'Faux jeu — Repère les boutons',
+    html: `
+      <p>Voici l'<strong>écran de jeu</strong> avec un seul mot et le chrono figé.
+      Repère chaque bouton avant de jouer :</p>
+      <div class="tuto-fake-turn">
+        <div class="tuto-fake-header">
+          <span class="tuto-fake-round-badge">☝️ Manche 2</span>
+          <span class="tuto-fake-stat">🃏 5 restant(s)</span>
+          <span class="tuto-fake-stat">✅ 2 trouvé(s)</span>
+          <span class="tuto-fake-undo-btn">↩ Annuler</span>
+        </div>
+        <div class="tuto-fake-grid">
+          <div class="tuto-fake-side-btn tuto-fake-skip">
+            <span style="font-size:1.1rem">⏭</span>
+            <span>Passer</span>
+          </div>
+          <div class="tuto-fake-center-col">
+            <div class="tuto-fake-timer-circle"><span>22</span></div>
+            <div class="tuto-fake-word">Séga</div>
+            <div class="tuto-fake-cat">🎵 Culture</div>
+          </div>
+          <div class="tuto-fake-side-btn tuto-fake-found">
+            <span style="font-size:1.1rem">✅</span>
+            <span>Trouvé !</span>
+          </div>
+        </div>
+        <div class="tuto-fake-callouts">
+          <div class="tuto-callout tuto-callout-up">⏭ <strong>Passer</strong> — trop difficile, carte remise en jeu plus tard</div>
+          <div></div>
+          <div class="tuto-callout tuto-callout-up">✅ <strong>Trouvé !</strong> — l'équipe a trouvé le mot</div>
+        </div>
+        <div class="tuto-fake-undo-callout">↩ <strong>Annuler</strong> (en haut à droite) — revient sur la dernière action (trouvé ou passé)</div>
+      </div>
+      <p>⏱️ En vrai, le chrono de <strong>30 s</strong> tourne — fais vite !</p>
+    `,
+  },
+  {
     icon: '🗣️',
     title: 'Manche 1 — Parler librement',
     html: `
@@ -1594,6 +1667,7 @@ function init() {
   el('btn-skip-side').addEventListener('click', withCooldown(wordSkipped));
   el('btn-fault').addEventListener('click', withCooldown(wordFault));
   el('btn-undo').addEventListener('click', withCooldown(undoLastAction));
+  el('btn-redo').addEventListener('click', withCooldown(redoLastAction));
 
   // ── Turn end ──
   el('btn-next-turn').addEventListener('click', withCooldown(() => {
