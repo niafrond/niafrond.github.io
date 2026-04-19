@@ -510,9 +510,8 @@ details.card-collapsible > :not(summary) {
 .btn-turn-side:active { transform: scale(0.97); }
 .btn-turn-side span { font-size: 0.85em; }
 
-/* Grille : btn-fault et btn-skip-side occupent la même cellule (col 1) */
-#btn-fault,
-#btn-skip-side {
+/* Grille : btn-pass occupe la cellule col 1 */
+#btn-pass {
   grid-column: 1 / 2;
   grid-row: 1 / 2;
 }
@@ -540,30 +539,6 @@ details.card-collapsible > :not(summary) {
   color: #fff;
 }
 .btn-skip-side-turn:hover { opacity: 0.88; }
-
-/* Hint de swipe */
-.swipe-hint-text {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  text-align: center;
-  letter-spacing: 0.04em;
-  opacity: 0.7;
-  flex-shrink: 0;
-}
-
-/* Swipe visual feedback on word card */
-.word-card {
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-.word-card.swipe-hint--right {
-  border-color: var(--success);
-  box-shadow: var(--shadow), 0 0 24px rgba(64,145,108,0.45);
-}
-.word-card.swipe-hint--left {
-  border-color: var(--lagon);
-  box-shadow: var(--shadow), 0 0 24px rgba(0,150,199,0.45);
-}
-
 
 /* ─── No-teams banner ──────────────────────────────────────────────────────── */
 .no-teams-banner {
@@ -929,8 +904,6 @@ details.card-collapsible > :not(summary) {
     font-size: 0.85rem;
     gap: 4px;
   }
-
-  .swipe-hint-text { display: none; }
 }
 
 /* ─── Turn screen — portrait adjustments ────────────────────────────────────── */
@@ -979,8 +952,6 @@ details.card-collapsible > :not(summary) {
     font-size: 0.85rem;
     gap: 4px;
   }
-
-  .swipe-hint-text { font-size: 0.72rem; }
 }
 
 /* ─── Pre-turn info wrapper (portrait default) ──────────────────────────────── */

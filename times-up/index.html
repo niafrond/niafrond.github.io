@@ -180,11 +180,10 @@
   <!-- Zone de jeu : grille fixe — col-gauche | centre | col-droite -->
   <div class="turn-play-area">
 
-    <!-- Colonne gauche : Erreur (manche 3) OU Passer-côté (manche 2) — occupent la même cellule de grille -->
-    <button id="btn-fault"     class="btn-fault-turn btn-turn-side"    aria-label="Erreur — arrêter le tour"><span aria-hidden="true">🚨</span><span>Erreur</span></button>
-    <button id="btn-skip-side" class="btn-skip-side-turn btn-turn-side" aria-label="Passer cette carte"><span aria-hidden="true">⏭</span><span>Passer</span></button>
+    <!-- Colonne gauche : Erreur (manche 3) OU Passer (manche 2) — un seul bouton -->
+    <button id="btn-pass" class="btn-skip-side-turn btn-turn-side" aria-label="Passer cette carte"><span aria-hidden="true">⏭</span><span>Passer</span></button>
 
-    <!-- Colonne centrale : Timer + Mot (+ Passer en bas pour manche 3) -->
+    <!-- Colonne centrale : Timer + Mot -->
     <div class="turn-center-col">
       <div class="timer-row">
         <button id="btn-undo" class="btn-undo-redo" title="Annuler" hidden>↩<br>Annuler</button>
@@ -202,8 +201,6 @@
         <div id="word-card-text">…</div>
         <div id="word-card-category"></div>
       </div>
-
-      <button id="btn-skip" class="btn-skip-turn">❌ Passer</button>
     </div>
 
     <!-- Colonne droite : Trouvé -->
@@ -211,7 +208,6 @@
 
   </div>
 
-  <p class="swipe-hint-text" id="swipe-hint-text">← Passer &nbsp;·&nbsp; Trouvé →</p>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════

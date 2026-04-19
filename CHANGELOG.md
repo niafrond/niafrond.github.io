@@ -1,3 +1,9 @@
+## [1.87.0](https://github.com/niafrond/niafrond.github.io/compare/v1.86.0...v1.87.0) (2026-04-19)
+
+### Features
+
+* **times-up:** fusionner les boutons Erreur et Passer en un seul bouton ([#124](https://github.com/niafrond/niafrond.github.io/issues/124)) ([27ab2ae](https://github.com/niafrond/niafrond.github.io/commit/27ab2ae5716d90b655560f4c217a49f37d1460ac))
+
 ## [1.86.0](https://github.com/niafrond/niafrond.github.io/compare/v1.85.2...v1.86.0) (2026-04-19)
 
 ### Features

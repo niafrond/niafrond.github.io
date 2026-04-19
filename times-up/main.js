@@ -34,12 +34,6 @@ const GAMEPLAY_SCREENS = new Set([
   'screen-game-over',
 ]);
 
-// Swipe constants
-const SWIPE_THRESHOLD            = 70;   // px — distance minimale pour valider un swipe
-const SWIPE_VISUAL_THRESHOLD     = 20;   // px — distance à partir de laquelle l'indicateur s'affiche
-const SWIPE_VERTICAL_TOLERANCE   = 10;   // px — tolérance verticale avant d'annuler le swipe
-const SWIPE_MIN_OPACITY          = 0.4;  // opacité minimale de la carte pendant le swipe
-const SWIPE_OPACITY_DIST         = 280;  // px — distance sur laquelle l'opacité diminue
 const CLICK_COOLDOWN             = 500;  // ms — délai minimum entre deux clics sur le même bouton
 
 const ROUND_RULES = [
@@ -471,34 +465,27 @@ function startTurn() {
 
   const rule = getCurrentRoundRule();
 
-  // Bouton Passer (bas de la colonne centrale) — uniquement manche 3 (canFault ET canSkip)
-  el('btn-skip').hidden = !(rule.canSkip && rule.canFault);
-
-  const faultBtn     = el('btn-fault');
-  const skipSideBtn  = el('btn-skip-side');
+  const passBtn = el('btn-pass');
 
   if (rule.canFault) {
-    // Manche 3 : Erreur visible à gauche, Passer en bas du centre
-    faultBtn.style.visibility    = '';
-    faultBtn.style.pointerEvents = '';
-    skipSideBtn.style.display    = 'none';
+    // Manche 3 : bouton Erreur (faute de l'orateur)
+    passBtn.style.visibility    = '';
+    passBtn.style.pointerEvents = '';
+    passBtn.className = 'btn-fault-turn btn-turn-side';
+    passBtn.setAttribute('aria-label', 'Erreur — arrêter le tour');
+    passBtn.innerHTML = '<span aria-hidden="true">🚨</span><span>Erreur / Passer</span>';
   } else if (rule.canSkip) {
-    // Manche 2 : Passer côté visible à gauche, pas de bouton Erreur
-    faultBtn.style.visibility    = 'hidden';
-    faultBtn.style.pointerEvents = 'none';
-    skipSideBtn.style.display    = '';
+    // Manche 2 : bouton Passer
+    passBtn.style.visibility    = '';
+    passBtn.style.pointerEvents = '';
+    passBtn.className = 'btn-skip-side-turn btn-turn-side';
+    passBtn.setAttribute('aria-label', 'Passer cette carte');
+    passBtn.innerHTML = '<span aria-hidden="true">⏭</span><span>Passer</span>';
   } else {
-    // Manche 1 : ni Erreur ni Passer
-    faultBtn.style.visibility    = 'hidden';
-    faultBtn.style.pointerEvents = 'none';
-    skipSideBtn.style.display    = 'none';
+    // Manche 1 : bouton invisible (visibility:hidden conserve la largeur de colonne)
+    passBtn.style.visibility    = 'hidden';
+    passBtn.style.pointerEvents = 'none';
   }
-
-  // Swipe hint: masquer la flèche gauche si on ne peut pas passer
-  const hintEl = el('swipe-hint-text');
-  hintEl.innerHTML = rule.canSkip
-    ? '← Passer &nbsp;·&nbsp; Trouvé →'
-    : 'Glissez à droite → Trouvé';
 
   updateTurnStats();
   drawNextWord();
@@ -529,7 +516,7 @@ function fitWordCard() {
 
   const turnArea = document.querySelector('.turn-play-area');
   const foundBtn = el('btn-found');
-  const faultBtn = el('btn-fault');
+  const passBtn  = el('btn-pass');
 
   const cs     = getComputedStyle(card);
   const areaCS = getComputedStyle(turnArea);
@@ -537,8 +524,8 @@ function fitWordCard() {
 
   // Compute the available width for the word by subtracting the side buttons and gaps
   // from the total play area width.  The left column always occupies a fixed slot
-  // (btn-fault uses visibility:hidden so its offsetWidth equals the column width in all rounds).
-  const leftColW = faultBtn.offsetWidth;
+  // (btn-pass uses visibility:hidden so its offsetWidth equals the column width in all rounds).
+  const leftColW = passBtn.offsetWidth;
   const availW = turnArea.clientWidth
     - leftColW
     - foundBtn.offsetWidth
@@ -1206,52 +1193,6 @@ function saveMembersAfterGame() {
 }
 
 
-function initSwipe() {
-  const card = document.querySelector('.word-card');
-  let startX = 0, startY = 0, active = false;
-
-  card.addEventListener('touchstart', (e) => {
-    if (el('screen-turn').hidden) return;
-    startX  = e.touches[0].clientX;
-    startY  = e.touches[0].clientY;
-    active  = true;
-    card.style.transition = 'none';
-  }, { passive: true });
-
-  card.addEventListener('touchmove', (e) => {
-    if (!active) return;
-    const dx = e.touches[0].clientX - startX;
-    const dy = e.touches[0].clientY - startY;
-    if (Math.abs(dy) > Math.abs(dx) + SWIPE_VERTICAL_TOLERANCE) { active = false; resetCard(); return; }
-    card.style.transform = `translateX(${dx}px)`;
-    card.style.opacity   = String(Math.max(SWIPE_MIN_OPACITY, 1 - Math.abs(dx) / SWIPE_OPACITY_DIST));
-    card.classList.toggle('swipe-hint--right', dx >  SWIPE_VISUAL_THRESHOLD);
-    card.classList.toggle('swipe-hint--left',  dx < -SWIPE_VISUAL_THRESHOLD);
-  }, { passive: true });
-
-  card.addEventListener('touchend', (e) => {
-    if (!active) return;
-    active = false;
-    const dx = e.changedTouches[0].clientX - startX;
-    resetCard();
-    if (dx > SWIPE_THRESHOLD) {
-      wordFound();
-    } else if (dx < -SWIPE_THRESHOLD) {
-      const rule = getCurrentRoundRule();
-      if (rule.canSkip) wordSkipped();
-    }
-  }, { passive: true });
-
-  card.addEventListener('touchcancel', () => { active = false; resetCard(); }, { passive: true });
-
-  function resetCard() {
-    card.style.transition = '';
-    card.style.transform  = '';
-    card.style.opacity    = '';
-    card.classList.remove('swipe-hint--right', 'swipe-hint--left');
-  }
-}
-
 // ─── MISE À JOUR FORCÉE ────────────────────────────────────────────────────────
 async function forceUpdate() {
   showToast('🔄 Mise à jour en cours…');
@@ -1402,19 +1343,22 @@ const TUTORIAL_SLIDES = [
       <p>L'orateur voit le mot à faire deviner. Le chronomètre de <strong>30 secondes</strong>
       tourne en haut au centre.</p>
       <div class="tuto-mock-turn">
-        <div class="tuto-mock-turn-side tuto-btn-fault">🚨<br>Erreur<br><span style="font-size:0.65rem;font-weight:400">(Manche 3)</span></div>
+        <div class="tuto-mock-turn-side tuto-btn-skip">⏭<br>Passer</div>
         <div class="tuto-mock-turn-center">
           <div class="tuto-mock-timer">30</div>
           <div class="tuto-mock-word">Séga</div>
           <div style="font-size:0.7rem;color:var(--text-muted);background:var(--surface2);border-radius:99px;padding:2px 10px">🎵 Culture</div>
         </div>
-        <div class="tuto-mock-turn-side tuto-btn-found">✅<br>Trouvé !<br><span style="font-size:0.65rem;font-weight:400">→ swipe</span></div>
+        <div class="tuto-mock-turn-side tuto-btn-found">✅<br>Trouvé !</div>
       </div>
       <div style="display:flex;gap:6px;margin:8px 0">
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Trouvé !</strong> — L'équipe a trouvé le mot</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Trouvé !</strong> — L'équipe a trouvé le mot (bouton droit)</span></div>
       </div>
       <div style="display:flex;gap:6px;margin:4px 0">
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer</strong> — Mot trop difficile (manches 2 & 3)</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer</strong> — Bouton gauche en manche 2</span></div>
+      </div>
+      <div style="display:flex;gap:6px;margin:4px 0">
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur / Passer</strong> — Bouton gauche en manche 3 : l'orateur a parlé ou passe la carte</span></div>
       </div>
       <div style="display:flex;gap:6px;margin:4px 0">
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">↩</span><span><strong>Annuler</strong> — Revient sur la dernière action</span></div>
@@ -1459,11 +1403,10 @@ const TUTORIAL_SLIDES = [
       et des <strong>bruitages</strong>.</p>
       <div style="display:flex;flex-direction:column;gap:5px;margin:10px 0">
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Bonne réponse</strong> → carte gagnée</span></div>
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span>L'orateur doit <strong>Passer</strong> s'il est bloqué ou s'il n'a pas respecté la règle</span></div>
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur</strong> → l'orateur a parlé ou fredonnée — carte perdue</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur / Passer</strong> (bouton gauche) → l'orateur a parlé ou est bloqué — carte perdue pour ce tour</span></div>
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">⛔</span><span>Interdits : parler, former des mots, fredonner une chanson</span></div>
       </div>
-      <p>En cas de faute (il parle), <strong>l'orateur</strong> doit appuyer sur <strong>🚨 Erreur</strong> pour signaler la faute.</p>
+      <p>En manche 3, le bouton gauche s'appelle <strong>🚨 Erreur / Passer</strong> : appuie dessus si l'orateur parle par inadvertance <em>ou</em> s'il souhaite passer.</p>
     `,
   },
   {
@@ -1534,11 +1477,10 @@ const DEMO_TIPS = {
     { targetId: null,             text: '↩ Annuler · ↪ Refaire — Après chaque action, ces deux boutons apparaissent de chaque côté du chrono. Appuie sur Annuler pour revenir en arrière (ex : tu as appuyé sur "Trouvé" par erreur) et sur Refaire pour rétablir l\'action annulée.' },
   ],
   2: [
-    { targetId: 'btn-skip-side',  text: '⏭ Nouveau en manche 2 ! Si tu es bloqué sur une carte, passe-la : elle reviendra pour un autre tour.' },
+    { targetId: 'btn-pass',  text: '⏭ Nouveau en manche 2 ! Si tu es bloqué sur une carte, passe-la : elle reviendra pour un autre tour.' },
   ],
   3: [
-    { targetId: 'btn-fault', text: '🚨 Nouveau en manche 3 ! Si l\'orateur dit un mot par inadvertance, appuie ici pour signaler la faute.' },
-    { targetId: 'btn-skip',  text: '❌ Passer — en manche 3, ce bouton apparaît aussi en bas. Glisse à gauche ou appuie pour passer une carte.' },
+    { targetId: 'btn-pass', text: '🚨 En manche 3, ce bouton s\'appelle Erreur / Passer. Appuie dessus si l\'orateur a parlé OU s\'il souhaite passer — la carte est perdue pour ce tour dans les deux cas.' },
   ],
 };
 
@@ -1785,9 +1727,10 @@ function init() {
 
   // ── Turn ──
   el('btn-found').addEventListener('click', withCooldown(wordFound));
-  el('btn-skip').addEventListener('click', withCooldown(wordSkipped));
-  el('btn-skip-side').addEventListener('click', withCooldown(wordSkipped));
-  el('btn-fault').addEventListener('click', withCooldown(wordFault));
+  el('btn-pass').addEventListener('click', withCooldown(() => {
+    if (getCurrentRoundRule().canFault) wordFault();
+    else wordSkipped();
+  }));
   el('btn-undo').addEventListener('click', withCooldown(undoLastAction));
   el('btn-redo').addEventListener('click', withCooldown(redoLastAction));
 
@@ -1873,9 +1816,6 @@ function init() {
   el('btn-fullscreen').addEventListener('click', withCooldown(toggleFullscreen));
   document.addEventListener('fullscreenchange', updateFullscreenBtn);
   document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
-
-  // ── Swipe support on turn screen ──
-  initSwipe();
 
   renderPlayerList();
   showScreen('screen-setup');
