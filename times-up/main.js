@@ -19,6 +19,7 @@ const TIMER_CIRCLE_RADIUS        = 46;   // rayon du cercle SVG du timer
 const MIN_PLAYERS                = 4;
 const CARD_COUNT_DEFAULT         = 40;   // nombre de cartes par défaut
 const CARD_COUNT_KEY             = 'timesup_card_count';
+const TEAM_SIZE_PREF_KEY         = 'timesup_team_size_pref';
 const WORD_CARD_HORIZONTAL_PAD   = 32;   // padding horizontal de .word-card (16px × 2)
 const WORD_FONT_MIN              = 16;   // px — taille minimale du mot
 const WORD_FONT_MAX              = 200;  // px — taille maximale du mot
@@ -100,6 +101,21 @@ function saveCardCount(n) {
   try { localStorage.setItem(CARD_COUNT_KEY, String(n)); } catch (_) { /* ignore */ }
 }
 
+function loadTeamSizePref() {
+  try {
+    const v = localStorage.getItem(TEAM_SIZE_PREF_KEY);
+    if (v !== null) {
+      const n = parseInt(v, 10);
+      if ([0, 2, 3, 4].includes(n)) return n;
+    }
+  } catch (_) { /* ignore */ }
+  return 0;
+}
+
+function saveTeamSizePref(n) {
+  try { localStorage.setItem(TEAM_SIZE_PREF_KEY, String(n)); } catch (_) { /* ignore */ }
+}
+
 // ─── État du jeu ───────────────────────────────────────────────────────────────
 const state = {
   playerNames:    [],
@@ -122,6 +138,7 @@ const state = {
   timerPaused: false,      // true quand le timer est suspendu (ex: overlay portrait)
 
   cardCount: CARD_COUNT_DEFAULT,  // 0 = tous les mots disponibles
+  teamSizePref: 0,                // 0 = auto, 2/3/4 = taille préférée par équipe
 };
 
 // ─── Helpers UI ────────────────────────────────────────────────────────────────
@@ -255,7 +272,10 @@ function removePlayer(idx) {
 // ─── COMPOSITION DES ÉQUIPES ───────────────────────────────────────────────────
 /**
  * Retourne un tableau de tailles d'équipes pour n joueurs.
- * Retourne null pour 5 ou 7 joueurs (pas d'équipes fixes).
+ * @param {number} n - nombre de joueurs
+ * @param {number} preferredSize - taille préférée par équipe (2, 3 ou 4), ou 0 pour auto.
+ *
+ * Mode auto (preferredSize = 0) :
  *   4  → [2, 2]
  *   6  → [2, 2, 2]
  *   8  → [2, 2, 2, 2]
@@ -264,31 +284,55 @@ function removePlayer(idx) {
  *  11  → [3, 3, 3, 2]
  *  12  → [3, 3, 3, 3]
  * >12  → 4 équipes, répartition aussi égale que possible
+ *   5 ou 7 → null (mode sans équipes)
+ *
+ * Mode taille préférée : le nombre d'équipes (2-4) dont la taille moyenne est
+ * la plus proche de preferredSize est choisi automatiquement.
+ * Ne renvoie jamais null — toujours au moins 2 équipes de 2+ joueurs.
  */
-function computeTeamLayout(n) {
-  switch (n) {
-    case 4:  return [2, 2];
-    case 5:  return null;
-    case 6:  return [2, 2, 2];
-    case 7:  return null;
-    case 8:  return [2, 2, 2, 2];
-    case 9:  return [3, 3, 3];
-    case 10: return [3, 3, 2, 2];
-    case 11: return [3, 3, 3, 2];
-    case 12: return [3, 3, 3, 3];
-    default: {
-      // Pour > 12 joueurs : 4 équipes aussi égales que possible
-      const numTeams = 4;
-      const base  = Math.floor(n / numTeams);
-      const extra = n % numTeams;
-      return Array.from({ length: numTeams }, (_, i) => base + (i < extra ? 1 : 0));
+function computeTeamLayout(n, preferredSize = 0) {
+  if (!preferredSize) {
+    // Mode auto : comportement d'origine
+    switch (n) {
+      case 4:  return [2, 2];
+      case 5:  return null;
+      case 6:  return [2, 2, 2];
+      case 7:  return null;
+      case 8:  return [2, 2, 2, 2];
+      case 9:  return [3, 3, 3];
+      case 10: return [3, 3, 2, 2];
+      case 11: return [3, 3, 3, 2];
+      case 12: return [3, 3, 3, 3];
+      default: {
+        // Pour > 12 joueurs : 4 équipes aussi égales que possible
+        const numTeams = 4;
+        const base  = Math.floor(n / numTeams);
+        const extra = n % numTeams;
+        return Array.from({ length: numTeams }, (_, i) => base + (i < extra ? 1 : 0));
+      }
     }
   }
+
+  // Mode taille préférée : trouver le nombre d'équipes optimal (2-4)
+  // dont la taille moyenne est la plus proche de preferredSize.
+  let bestNumTeams = 2;
+  let bestScore = Infinity;
+  for (let t = 2; t <= 4; t++) {
+    if (Math.floor(n / t) < 2) break; // éviter les équipes d'un seul joueur
+    const score = Math.abs(n / t - preferredSize);
+    if (score < bestScore) {
+      bestScore = score;
+      bestNumTeams = t;
+    }
+  }
+  const base  = Math.floor(n / bestNumTeams);
+  const extra = n % bestNumTeams;
+  return Array.from({ length: bestNumTeams }, (_, i) => base + (i < extra ? 1 : 0));
 }
 
 function assignTeams() {
   const players = shuffle([...state.playerNames]);
-  const layout  = computeTeamLayout(players.length);
+  const layout  = computeTeamLayout(players.length, state.teamSizePref);
 
   if (layout === null) {
     // 5 ou 7 joueurs : jeu libre, chaque joueur est son propre "camp"
@@ -329,8 +373,8 @@ function renderTeams() {
     const banner = document.createElement('div');
     banner.className = 'no-teams-banner';
     banner.textContent =
-      `⚠️ ${state.playerNames.length} joueurs — pas d'équipes fixes pour ce nombre. ` +
-      'Chaque joueur joue pour lui-même ! (Ajoutez ou retirez un joueur pour avoir des équipes.)';
+      `⚠️ ${state.playerNames.length} joueurs — pas d'équipes fixes pour ce nombre en mode auto. ` +
+      'Choisissez une taille d\'équipe dans les options pour former des équipes.';
     container.appendChild(banner);
   } else {
     container.style.gridTemplateColumns = '';
@@ -1210,6 +1254,14 @@ function init() {
   selectCardCount.addEventListener('change', () => {
     state.cardCount = parseInt(selectCardCount.value, 10);
     saveCardCount(state.cardCount);
+  });
+
+  state.teamSizePref = loadTeamSizePref();
+  const selectTeamSize = el('select-team-size');
+  selectTeamSize.value = String(state.teamSizePref);
+  selectTeamSize.addEventListener('change', () => {
+    state.teamSizePref = parseInt(selectTeamSize.value, 10);
+    saveTeamSizePref(state.teamSizePref);
   });
 
   // ── Teams ──
