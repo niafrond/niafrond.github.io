@@ -1,3 +1,9 @@
+## [1.87.1](https://github.com/niafrond/niafrond.github.io/compare/v1.87.0...v1.87.1) (2026-04-19)
+
+### Bug Fixes
+
+* **times-up:** fix PWA installation mode ([#127](https://github.com/niafrond/niafrond.github.io/issues/127)) ([a927d05](https://github.com/niafrond/niafrond.github.io/commit/a927d05209392832e48c9d258da8d0a2f479d340))
+
 ## [1.87.0](https://github.com/niafrond/niafrond.github.io/compare/v1.86.0...v1.87.0) (2026-04-19)
 
 ### Features
