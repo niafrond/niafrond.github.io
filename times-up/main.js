@@ -495,8 +495,20 @@ function startTurn() {
 
   updateTurnStats();
   drawNextWord();
-  updateTimerDisplay();
-  startTimer();
+
+  if (_demoMode) {
+    // Pas de chrono en mode démo : afficher ∞ et cercle plein
+    const circ = 2 * Math.PI * TIMER_CIRCLE_RADIUS;
+    const ring = el('timer-ring-progress');
+    el('timer-number').textContent = '∞';
+    el('timer-number').style.color = 'var(--text)';
+    ring.style.strokeDasharray  = `${circ}`;
+    ring.style.strokeDashoffset = '0';
+    ring.style.stroke = 'var(--success)';
+  } else {
+    updateTimerDisplay();
+    startTimer();
+  }
 
   showScreen('screen-turn');
   fitWordCard(); // re-fit now that screen is visible (drawNextWord ran while hidden)
@@ -748,6 +760,14 @@ function updateTimerDisplay() {
  */
 function endTurn(reason = 'timeout') {
   stopTimer();
+
+  // Mode démo : retour à l'écran d'accueil sans passer par le résumé de tour
+  if (_demoMode) {
+    _demoMode = false;
+    showToast('🎉 Bravo ! Vous êtes prêt à jouer !');
+    showScreen('screen-setup');
+    return;
+  }
 
   // Remettre le mot courant dans le jeu si le temps est écoulé (ni trouvé ni passé)
   if (reason === 'timeout' && state.currentWord) {
@@ -1381,40 +1401,21 @@ const TUTORIAL_SLIDES = [
   },
   {
     icon: '🎮',
-    title: 'Faux jeu — Repère les boutons',
+    title: 'Essaie par toi-même !',
     html: `
-      <p>Voici l'<strong>écran de jeu</strong> avec un seul mot et le chrono figé.
-      Repère chaque bouton avant de jouer :</p>
-      <div class="tuto-fake-turn">
-        <div class="tuto-fake-header">
-          <span class="tuto-fake-round-badge">☝️ Manche 2</span>
-          <span class="tuto-fake-stat">🃏 5 restant(s)</span>
-          <span class="tuto-fake-stat">✅ 2 trouvé(s)</span>
-          <span class="tuto-fake-undo-btn">↩ Annuler</span>
-        </div>
-        <div class="tuto-fake-grid">
-          <div class="tuto-fake-side-btn tuto-fake-skip">
-            <span style="font-size:1.1rem">⏭</span>
-            <span>Passer</span>
-          </div>
-          <div class="tuto-fake-center-col">
-            <div class="tuto-fake-timer-circle"><span>22</span></div>
-            <div class="tuto-fake-word">Séga</div>
-            <div class="tuto-fake-cat">🎵 Culture</div>
-          </div>
-          <div class="tuto-fake-side-btn tuto-fake-found">
-            <span style="font-size:1.1rem">✅</span>
-            <span>Trouvé !</span>
-          </div>
-        </div>
-        <div class="tuto-fake-callouts">
-          <div class="tuto-callout tuto-callout-up">⏭ <strong>Passer</strong> — trop difficile, carte remise en jeu plus tard</div>
-          <div></div>
-          <div class="tuto-callout tuto-callout-up">✅ <strong>Trouvé !</strong> — l'équipe a trouvé le mot</div>
-        </div>
-        <div class="tuto-fake-undo-callout">↩ <strong>Annuler</strong> (en haut à droite) — revient sur la dernière action (trouvé ou passé)</div>
+      <p>Place-toi à la place de l'orateur et appuie sur les boutons pour comprendre comment ça marche.</p>
+      <div style="display:flex;flex-direction:column;gap:5px;margin:10px 0">
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Trouvé !</strong> — l'équipe a trouvé le mot</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer</strong> — carte trop difficile</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">↩</span><span><strong>Annuler</strong> — revenir sur la dernière action</span></div>
       </div>
-      <p>⏱️ En vrai, le chrono de <strong>30 s</strong> tourne — fais vite !</p>
+      <p>La démo comporte <strong>un seul mot</strong> et <strong>pas de chrono</strong> — prends ton temps !</p>
+      <div style="text-align:center;margin-top:16px">
+        <button id="btn-launch-demo" class="btn btn-primary btn-lg">🎮 Lancer la démo</button>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-muted);text-align:center;margin-top:8px">
+        (Aucun joueur requis — revient à l'accueil après)
+      </p>
     `,
   },
   {
@@ -1518,6 +1519,34 @@ const TUTORIAL_SLIDES = [
 ];
 
 let _tutorialCurrentSlide = 0;
+let _demoMode = false;
+
+function startDemoTurn() {
+  closeTutorial();
+  _demoMode = true;
+
+  // État minimal pour la démo : manche 2 (boutons Passer + Trouvé ! visibles)
+  state.currentRound    = 2;
+  state.currentTeamIdx  = 0;
+  state.teamPlayerIdx   = [0];
+  state.noTeamsMode     = false;
+  state.teams           = [{
+    color:   'var(--volcan)',
+    players: ['Vous'],
+    score:   [0, 0, 0],
+  }];
+  state.actionHistory = [];
+  state.redoStack     = [];
+
+  // Choisir un mot aléatoire parmi les mots du jeu
+  const words    = getShuffledWords();
+  const demoWord = words[0];
+  state.allWords  = [demoWord];
+  state.roundWords = [demoWord];
+  state.currentWord = null;
+
+  startTurn();
+}
 
 function openTutorial(startSlide = 0) {
   _tutorialCurrentSlide = startSlide;
@@ -1540,6 +1569,12 @@ function renderTutorialSlide() {
     <div class="tuto-slide-title">${slide.title}</div>
     <div class="tuto-slide-body">${slide.html}</div>
   `;
+
+  // Bouton démo dans le slide dédié
+  const demoBtn = document.getElementById('btn-launch-demo');
+  if (demoBtn) {
+    demoBtn.addEventListener('click', withCooldown(startDemoTurn));
+  }
 
   // Dots
   const dotsEl = el('tutorial-dots');
