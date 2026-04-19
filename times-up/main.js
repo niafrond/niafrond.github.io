@@ -497,12 +497,12 @@ function startTurn() {
   drawNextWord();
 
   if (_demoMode) {
-    // Pas de chrono en mode démo : afficher ∞ et cercle plein
+    // Pas de chrono en mode démo : afficher ∞ et cercle plein (2π*r circumference)
     const circ = 2 * Math.PI * TIMER_CIRCLE_RADIUS;
     const ring = el('timer-ring-progress');
     el('timer-number').textContent = '∞';
     el('timer-number').style.color = 'var(--text)';
-    ring.style.strokeDasharray  = `${circ}`;
+    ring.style.strokeDasharray = `${circ}`;
     ring.style.strokeDashoffset = '0';
     ring.style.stroke = 'var(--success)';
   } else {
@@ -1531,9 +1531,9 @@ function startDemoTurn() {
   state.teamPlayerIdx   = [0];
   state.noTeamsMode     = false;
   state.teams           = [{
-    color:   'var(--volcan)',
+    color: 'var(--volcan)',
     players: ['Vous'],
-    score:   [0, 0, 0],
+    score: [0, 0, 0],
   }];
   state.actionHistory = [];
   state.redoStack     = [];
