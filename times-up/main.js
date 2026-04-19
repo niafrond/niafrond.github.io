@@ -1400,25 +1400,6 @@ const TUTORIAL_SLIDES = [
     `,
   },
   {
-    icon: '🎮',
-    title: 'Essaie par toi-même !',
-    html: `
-      <p>Place-toi à la place de l'orateur et appuie sur les boutons pour comprendre comment ça marche.</p>
-      <div style="display:flex;flex-direction:column;gap:5px;margin:10px 0">
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Trouvé !</strong> — l'équipe a trouvé le mot</span></div>
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer</strong> — carte trop difficile</span></div>
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">↩</span><span><strong>Annuler</strong> — revenir sur la dernière action</span></div>
-      </div>
-      <p>La démo comporte <strong>un seul mot</strong> et <strong>pas de chrono</strong> — prends ton temps !</p>
-      <div style="text-align:center;margin-top:16px">
-        <button id="btn-launch-demo" class="btn btn-primary btn-lg">🎮 Lancer la démo</button>
-      </div>
-      <p style="font-size:0.8rem;color:var(--text-muted);text-align:center;margin-top:8px">
-        (Aucun joueur requis — revient à l'accueil après)
-      </p>
-    `,
-  },
-  {
     icon: '🗣️',
     title: 'Manche 1 — Parler librement',
     html: `
@@ -1569,12 +1550,6 @@ function renderTutorialSlide() {
     <div class="tuto-slide-title">${slide.title}</div>
     <div class="tuto-slide-body">${slide.html}</div>
   `;
-
-  // Bouton démo dans le slide dédié
-  const demoBtn = document.getElementById('btn-launch-demo');
-  if (demoBtn) {
-    demoBtn.addEventListener('click', withCooldown(startDemoTurn));
-  }
 
   // Dots
   const dotsEl = el('tutorial-dots');
@@ -1756,6 +1731,9 @@ function init() {
     e.target.value = '';
   });
   el('btn-words-reset').addEventListener('click', withCooldown(handleResetWords));
+
+  // ── Démo ──
+  el('btn-launch-demo').addEventListener('click', withCooldown(startDemoTurn));
 
   // ── Tutoriel ──
   el('btn-tutorial').addEventListener('click', withCooldown(() => openTutorial(0)));
