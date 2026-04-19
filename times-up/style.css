@@ -325,6 +325,19 @@ html, body {
 }
 .turn-found-info { font-size: 0.85rem; color: var(--text-muted); }
 
+/* Bouton Annuler (header du tour actif) */
+.btn-undo-turn {
+  background: var(--surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1;
+}
+
 /* Zone de jeu : grille à largeurs fixes — col-gauche | centre | col-droite */
 .turn-play-area {
   display: grid;
