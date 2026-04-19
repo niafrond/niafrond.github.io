@@ -39,7 +39,6 @@ export const DEFAULT_WORDS = [
   { word: 'Case créole',              category: 'lieu' },
   { word: 'Boutik chinois',           category: 'lieu' },
   { word: 'Marché forain',            category: 'lieu' },
-  { word: 'Chemin cabri',             category: 'lieu' },
 
   // ─── Gastronomie ──────────────────────────────────────────────────────────
   { word: 'Rougail saucisse',         category: 'gastronomie' },
@@ -52,9 +51,7 @@ export const DEFAULT_WORDS = [
   { word: 'Rhum arrangé',             category: 'gastronomie' },
   { word: 'Punch coco',               category: 'gastronomie' },
   { word: 'Brèdes chouchou',          category: 'gastronomie' },
-  { word: 'Café Bourbon pointu',      category: 'gastronomie' },
   { word: 'Vanille Bourbon',          category: 'gastronomie' },
-  { word: 'Bonbon la cire',           category: 'gastronomie' },
   { word: 'Baba figue',               category: 'gastronomie' },
   { word: 'Cari',                     category: 'gastronomie' },
   { word: 'Rougail',                  category: 'gastronomie' },
@@ -77,7 +74,7 @@ export const DEFAULT_WORDS = [
   { word: 'Manioc',                   category: 'gastronomie' },
   { word: 'Patate douce',             category: 'gastronomie' },
   { word: 'Chouchou',                 category: 'gastronomie' },
-  { word: 'Galabé',                   category: 'gastronomie' },
+  { word: 'Zembrocal',                category: 'gastronomie' },
 
   // ─── Culture ──────────────────────────────────────────────────────────────
   { word: 'Maloya',                   category: 'culture' },
@@ -92,7 +89,6 @@ export const DEFAULT_WORDS = [
   { word: 'Kabar',                    category: 'culture' },
   { word: 'Fête du Dipavali',         category: 'culture' },
   { word: 'Fête de l\'Aïd',           category: 'culture' },
-  { word: 'Fête des vendanges',       category: 'culture' },
   { word: 'Téléphérique des Sables',  category: 'culture' },
   { word: 'Kayamb',                   category: 'culture' },
   { word: 'Séga',                     category: 'culture' },
@@ -107,19 +103,19 @@ export const DEFAULT_WORDS = [
   { word: 'Takamaka',                 category: 'nature' },
   { word: 'Vacoas',                   category: 'nature' },
   { word: 'Choca',                    category: 'nature' },
-  { word: 'Bulbul orphée',            category: 'nature' },
-  { word: 'Caméléon de Bourbon',      category: 'nature' },
   { word: 'Lézard vert',              category: 'nature' },
   { word: 'Letchi',                   category: 'nature' },
-  { word: 'Letchis',                  category: 'nature' },
   { word: 'Bibasse',                  category: 'nature' },
   { word: 'Tangor',                   category: 'nature' },
   { word: 'Goyavier',                 category: 'nature' },
   { word: 'Vacoa',                    category: 'nature' },
   { word: 'Filaos',                   category: 'nature' },
   { word: 'Fouquet',                  category: 'nature' },
-  { word: 'Bélier',                   category: 'nature' },
   { word: 'Cabri',                    category: 'nature' },
+  { word: 'Tec-tec',                  category: 'nature' },
+  { word: 'Lendormi',                 category: 'nature' },
+  { word: 'Zoizo bélier',             category: 'nature' },
+  { word: 'Zévi',                     category: 'nature' },
 
   // ─── Créole & Identité ────────────────────────────────────────────────────
   { word: 'Zoreil',                   category: 'creole' },
@@ -127,8 +123,6 @@ export const DEFAULT_WORDS = [
   { word: 'Kafrine',                  category: 'creole' },
   { word: 'Yab',                      category: 'creole' },
   { word: 'Malbar',                   category: 'creole' },
-  { word: 'Métis',                    category: 'creole' },
-  { word: 'La Réunion',               category: 'creole' },
   { word: 'Lontan',                   category: 'creole' },
   { word: 'Kaz',                      category: 'creole' },
   { word: 'Marmay',                   category: 'creole' },
@@ -138,7 +132,6 @@ export const DEFAULT_WORDS = [
   { word: 'Créole',                   category: 'creole' },
   { word: 'Cour',                     category: 'creole' },
   { word: 'Varangue',                 category: 'creole' },
-  { word: 'Largue la corde',          category: 'creole' },
 ];
 
 /** Mélange aléatoire (Fisher-Yates) */
