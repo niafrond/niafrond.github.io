@@ -1,3 +1,9 @@
+## [1.91.0](https://github.com/niafrond/niafrond.github.io/compare/v1.90.0...v1.91.0) (2026-04-19)
+
+### Features
+
+* use 3 words in demo mode instead of 1 ([#136](https://github.com/niafrond/niafrond.github.io/issues/136)) ([b81e754](https://github.com/niafrond/niafrond.github.io/commit/b81e754e869bb7e36f71ea66469a0a42fd1ed6ea))
+
 ## [1.90.0](https://github.com/niafrond/niafrond.github.io/compare/v1.89.0...v1.90.0) (2026-04-19)
 
 ### Features
