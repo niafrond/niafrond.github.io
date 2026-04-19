@@ -859,9 +859,16 @@ details.card-collapsible > :not(summary) {
   display: block;
   animation: rotatePhone 1.8s ease-in-out infinite;
 }
+#rotate-overlay.to-portrait .rotate-overlay-phone {
+  animation: rotatePhoneBack 1.8s ease-in-out infinite;
+}
 @keyframes rotatePhone {
   0%, 35%  { transform: rotate(0deg); }
   65%, 100% { transform: rotate(90deg); }
+}
+@keyframes rotatePhoneBack {
+  0%, 35%  { transform: rotate(90deg); }
+  65%, 100% { transform: rotate(0deg); }
 }
 .rotate-overlay-title {
   font-size: 1.5rem;

@@ -20,12 +20,12 @@
 </div>
 <div id="toast" class="toast" hidden></div>
 
-<!-- Overlay "Tournez votre téléphone" — affiché sur les écrans de jeu en mode portrait -->
+<!-- Overlay "Tournez votre téléphone" — affiché hors partie en mode paysage ou en jeu en mode portrait -->
 <div id="rotate-overlay">
   <div class="rotate-overlay-inner">
     <div class="rotate-overlay-phone">📱</div>
-    <p class="rotate-overlay-title">Tournez votre téléphone</p>
-    <p class="rotate-overlay-sub">Le jeu se joue en mode paysage</p>
+    <p id="rotate-overlay-title" class="rotate-overlay-title">Tournez votre téléphone</p>
+    <p id="rotate-overlay-sub" class="rotate-overlay-sub">Le jeu se joue en mode paysage</p>
   </div>
 </div>
 
@@ -335,8 +335,8 @@
           <option value="nature">🌿 Nature</option>
           <option value="creole">🗣️ Créole</option>
         </select>
-        <button id="btn-word-add" class="btn btn-primary btn-sm">+ Ajouter</button>
       </div>
+      <button id="btn-word-add" class="btn btn-primary w-full mt-12">+ Ajouter</button>
     </div>
 
     <!-- Liste des mots -->
