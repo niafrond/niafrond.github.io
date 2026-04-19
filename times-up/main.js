@@ -188,7 +188,7 @@ function updateRotateOverlay() {
   if (_demoWaiting && !isPortrait) {
     _demoWaiting = false;
     _demoMode = true;
-    startTurn();
+    startPreTurn();
   }
 }
 
@@ -452,6 +452,7 @@ function startPreTurn() {
   sentenceEl.style.color = team.color;
 
   showScreen('screen-pre-turn');
+  if (_demoMode) showDemoTips('pre-turn');
 }
 
 // ─── TOUR ACTIF ────────────────────────────────────────────────────────────────
@@ -1495,8 +1496,11 @@ let _tutorialCurrentSlide = 0;
 let _demoMode    = false;
 let _demoWaiting = false; // true = attend le mode paysage avant de lancer la démo
 
-// Tips shown per round in demo mode, keyed by round number
+// Tips shown per round in demo mode, keyed by round number or 'pre-turn'
 const DEMO_TIPS = {
+  'pre-turn': [
+    { targetId: 'btn-ready', text: '✅ « Je suis prêt ! » — Passe le téléphone à l\'orateur, puis appuie ici quand tout le monde est prêt à jouer.' },
+  ],
   1: [
     { targetId: 'timer-number',   text: '⏱️ Le chrono ! En vraie partie il compte 30 secondes. Ici il est infini pour que tu puisses explorer sans pression.' },
     { targetId: 'word-card-text', text: '🃏 Le mot à faire deviner ! Décris-le librement — interdit de le dire, l\'épeler ou le traduire.' },
@@ -1601,7 +1605,7 @@ function startDemoTurn() {
   }
 
   _demoMode = true;
-  startTurn();
+  startPreTurn();
 }
 
 function openTutorial(startSlide = 0) {
