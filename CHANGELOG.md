@@ -1,3 +1,9 @@
+## [1.84.0](https://github.com/niafrond/niafrond.github.io/compare/v1.83.0...v1.84.0) (2026-04-19)
+
+### Features
+
+* **times-up:** ajoute slide "Faux jeu" dans le tutoriel avec chrono figé et bulles d'explication ([#118](https://github.com/niafrond/niafrond.github.io/issues/118)) ([f3c10ff](https://github.com/niafrond/niafrond.github.io/commit/f3c10ff11fe67cd9e2cce401bfe465e84faa9d74))
+
 ## [1.83.0](https://github.com/niafrond/niafrond.github.io/compare/v1.82.1...v1.83.0) (2026-04-19)
 
 ### Features
