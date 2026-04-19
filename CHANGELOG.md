@@ -1,3 +1,9 @@
+## [1.89.0](https://github.com/niafrond/niafrond.github.io/compare/v1.88.1...v1.89.0) (2026-04-19)
+
+### Features
+
+* **times-up:** portrait overlay hors partie + bouton Ajouter sous le champ ([#132](https://github.com/niafrond/niafrond.github.io/issues/132)) ([46f396a](https://github.com/niafrond/niafrond.github.io/commit/46f396a29d81c458d4b22da69bbfc160655d56e1))
+
 ## [1.88.1](https://github.com/niafrond/niafrond.github.io/compare/v1.88.0...v1.88.1) (2026-04-19)
 
 ### Bug Fixes
