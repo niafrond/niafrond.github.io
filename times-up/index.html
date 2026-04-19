@@ -233,9 +233,27 @@
     </div>
   </div>
 
-  <button id="btn-next-turn" class="btn btn-primary btn-lg" data-next-action="next-turn">
-    ➡ Suivant
-  </button>
+  <div class="turn-end-actions">
+    <button id="btn-correct-turn" class="btn btn-secondary btn-sm" hidden>
+      ✏️ Corriger
+    </button>
+    <button id="btn-next-turn" class="btn btn-primary btn-lg" data-next-action="next-turn">
+      ➡ Suivant
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     OVERLAY — CORRIGER LE TOUR
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="correct-turn-overlay" class="correct-turn-overlay" hidden role="dialog" aria-modal="true" aria-label="Corriger le tour">
+  <div class="correct-turn-modal">
+    <button id="correct-turn-close" class="tutorial-close-btn" aria-label="Fermer">✕</button>
+    <div class="correct-turn-title">✏️ Corriger le tour</div>
+    <p class="correct-turn-desc">Décochez les mots qui n'auraient pas dû être comptés (faute non signalée, etc.).</p>
+    <div id="correct-turn-list" class="correct-turn-list"></div>
+    <button id="correct-turn-confirm" class="btn btn-primary w-full">✅ Valider la correction</button>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════

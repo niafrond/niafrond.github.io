@@ -774,7 +774,9 @@ function endTurn(reason = 'timeout') {
     el('turn-end-words-left').textContent = state.roundWords.length;
     el('btn-next-turn').dataset.nextAction = 'round-end';
     el('turn-end-all-found').hidden = (reason !== 'allFound');
+    el('btn-correct-turn').hidden = (state.turnFound.length === 0);
     showScreen('screen-turn-end');
+    if (state.turnFound.length > 0) showDemoTurnEndTips();
     return;
   }
 
@@ -820,7 +822,79 @@ function endTurn(reason = 'timeout') {
     el('turn-end-all-found').hidden = true;
   }
 
+  // Show "Corriger" button only when there are found words to potentially un-count
+  el('btn-correct-turn').hidden = (state.turnFound.length === 0);
+
   showScreen('screen-turn-end');
+}
+
+// ─── CORRECTION DU TOUR ────────────────────────────────────────────────────────
+function openCorrectTurn() {
+  const list = el('correct-turn-list');
+  list.innerHTML = '';
+  state.turnFound.forEach((word, i) => {
+    const cat = getCategoryInfo(word.category);
+    const item = document.createElement('label');
+    item.className = 'correct-turn-item';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'correct-turn-checkbox';
+    checkbox.dataset.idx = i;
+    checkbox.checked = true;
+
+    const wordSpan = document.createElement('span');
+    wordSpan.className = 'correct-turn-word';
+    wordSpan.textContent = word.word;
+
+    const catSpan = document.createElement('span');
+    catSpan.className = 'correct-turn-cat';
+    catSpan.textContent = `${cat.emoji} ${cat.label}`;
+
+    item.appendChild(checkbox);
+    item.appendChild(wordSpan);
+    item.appendChild(catSpan);
+    list.appendChild(item);
+  });
+
+  el('correct-turn-overlay').hidden = false;
+}
+
+function closeCorrectTurn() {
+  el('correct-turn-overlay').hidden = true;
+}
+
+function applyTurnCorrection() {
+  if (state.currentRound < 1) return;
+  const checkboxes = el('correct-turn-list').querySelectorAll('input[type="checkbox"]');
+  const team = state.teams[state.currentTeamIdx];
+
+  // Collect indices of unchecked cards, sort descending for safe reverse splice
+  const indicesToRemove = [];
+  checkboxes.forEach((cb) => {
+    if (!cb.checked) indicesToRemove.push(parseInt(cb.dataset.idx, 10));
+  });
+
+  if (indicesToRemove.length > 0) {
+    indicesToRemove.sort((a, b) => b - a);
+    indicesToRemove.forEach(idx => {
+      const [word] = state.turnFound.splice(idx, 1);
+      state.roundWords.push(word);
+    });
+
+    // Adjust the team's score
+    team.score[state.currentRound - 1] -= indicesToRemove.length;
+    if (team.score[state.currentRound - 1] < 0) team.score[state.currentRound - 1] = 0;
+
+    // Update the turn-end display
+    el('turn-end-count').textContent = state.turnFound.length;
+    el('turn-end-words-left').textContent = state.roundWords.length;
+
+    // Hide the corriger button if nothing left to correct
+    el('btn-correct-turn').hidden = (state.turnFound.length === 0);
+  }
+
+  closeCorrectTurn();
 }
 
 function handleNextTurn() {
@@ -1447,6 +1521,13 @@ const TUTORIAL_SLIDES = [
         <div style="font-size:1.2rem;margin-bottom:4px">⏱️ Temps écoulé !</div>
         <div style="font-size:2.5rem;font-weight:900;color:var(--success);line-height:1">4</div>
         <div style="font-size:0.82rem;color:var(--text-muted)">mot(s) ce tour · 12 restant(s)</div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;align-items:center">
+          <span class="tuto-btn" style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--text-muted);font-size:0.78rem;padding:5px 14px">✏️ Corriger</span>
+          <span class="tuto-btn tuto-btn-action" style="font-size:0.82rem;padding:6px 20px">➡ Suivant</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin:6px 0">
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✏️</span><span><strong>Corriger</strong> — Une faute n'a pas été signalée ? Décochez les mots concernés pour les retirer du score et les remettre dans le jeu.</span></div>
       </div>
       <p>Quand tous les mots d'une manche sont trouvés, le <strong>tableau des scores</strong>
       s'affiche avec les points de chaque équipe. Les points sont cumulés sur les 3 manches.</p>
@@ -1516,6 +1597,15 @@ const DEMO_TIPS = {
 };
 
 let _demoTipIdx = 0;
+
+const DEMO_TIPS_TURN_END = [
+  { targetId: 'btn-correct-turn', text: '✏️ Corriger le tour — Une faute n\'a pas été signalée pendant le jeu ? Appuie ici pour décocher les mots qui ne devraient pas être comptés : ils seront retirés du score et remis dans la manche.' },
+];
+
+function showDemoTurnEndTips() {
+  _demoTipIdx = 0;
+  _showDemoTip(DEMO_TIPS_TURN_END);
+}
 
 function showDemoTips(round) {
   const tips = DEMO_TIPS[round];
@@ -1766,6 +1856,12 @@ function init() {
   el('btn-redo').addEventListener('click', withCooldown(redoLastAction));
 
   // ── Turn end ──
+  el('btn-correct-turn').addEventListener('click', withCooldown(openCorrectTurn));
+  el('correct-turn-close').addEventListener('click', withCooldown(closeCorrectTurn));
+  el('correct-turn-confirm').addEventListener('click', withCooldown(applyTurnCorrection));
+  el('correct-turn-overlay').addEventListener('click', (e) => {
+    if (e.target === el('correct-turn-overlay')) closeCorrectTurn();
+  });
   el('btn-next-turn').addEventListener('click', withCooldown(() => {
     playButtonClick();
     handleNextTurn();
