@@ -1,3 +1,9 @@
+## [1.82.0](https://github.com/niafrond/niafrond.github.io/compare/v1.81.0...v1.82.0) (2026-04-19)
+
+### Features
+
+* **times-up:** rend la zone règles déroulable, repliée par défaut ([#115](https://github.com/niafrond/niafrond.github.io/issues/115)) ([2ec57a9](https://github.com/niafrond/niafrond.github.io/commit/2ec57a90644cd567a1b1b232813dc5c6f06fe0bc))
+
 ## [1.81.0](https://github.com/niafrond/niafrond.github.io/compare/v1.80.0...v1.81.0) (2026-04-19)
 
 ### Features
