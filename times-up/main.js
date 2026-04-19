@@ -410,9 +410,12 @@ function startPreTurn() {
 
   const sentenceEl = el('pre-turn-sentence');
   sentenceEl.innerHTML = '';
-  sentenceEl.appendChild(document.createTextNode('Au tour de '));
+  sentenceEl.appendChild(document.createTextNode('Au tour de'));
+  sentenceEl.appendChild(document.createElement('br'));
   sentenceEl.appendChild(playerSpan);
-  sentenceEl.appendChild(document.createTextNode(' qui fait deviner à '));
+  sentenceEl.appendChild(document.createElement('br'));
+  sentenceEl.appendChild(document.createTextNode('qui fait deviner à'));
+  sentenceEl.appendChild(document.createElement('br'));
   sentenceEl.appendChild(guesserSpan);
   sentenceEl.style.color = team.color;
 
