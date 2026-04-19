@@ -1359,7 +1359,7 @@ const TUTORIAL_SLIDES = [
       <div style="display:flex;flex-direction:column;gap:5px;margin:10px 0">
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Bonne réponse</strong> → carte gagnée (cliquer Trouvé !)</span></div>
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">❌</span><span><strong>Mauvaise réponse</strong> → carte perdue pour ce tour</span></div>
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span>L'orateur peut <strong>Passer</strong> s'il est bloqué</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span>L'orateur doit <strong>Passer</strong> s'il est bloqué ou s'il n'a pas respecté la règle</span></div>
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">⛔</span><span>Interdits : plusieurs mots, partie du nom, traduction directe</span></div>
       </div>
       <p>Le bouton <strong>⏭ Passer</strong> apparaît à gauche de l'écran.</p>
@@ -1373,12 +1373,11 @@ const TUTORIAL_SLIDES = [
       et des <strong>bruitages</strong>.</p>
       <div style="display:flex;flex-direction:column;gap:5px;margin:10px 0">
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Bonne réponse</strong> → carte gagnée</span></div>
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span>L'orateur peut <strong>Passer</strong> s'il est bloqué</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span>L'orateur doit <strong>Passer</strong> s'il est bloqué ou s'il n'a pas respecté la règle</span></div>
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur</strong> → l'orateur a parlé ou fredonnée — carte perdue</span></div>
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">⛔</span><span>Interdits : parler, former des mots, fredonner une chanson</span></div>
       </div>
-      <p>En cas de faute de l'orateur (il parle), les <strong>autres joueurs</strong>
-      doivent appuyer sur <strong>🚨 Erreur</strong> pour signaler la faute.</p>
+      <p>En cas de faute (il parle), <strong>l'orateur</strong> doit appuyer sur <strong>🚨 Erreur</strong> pour signaler la faute.</p>
     `,
   },
   {
