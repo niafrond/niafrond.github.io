@@ -1,3 +1,9 @@
+## [1.81.0](https://github.com/niafrond/niafrond.github.io/compare/v1.80.0...v1.81.0) (2026-04-19)
+
+### Features
+
+* **times-up:** add 500ms cooldown between button clicks ([#114](https://github.com/niafrond/niafrond.github.io/issues/114)) ([eef4ce8](https://github.com/niafrond/niafrond.github.io/commit/eef4ce8ab914151db3a8eedb12cb0d81b5a92326))
+
 ## [1.80.0](https://github.com/niafrond/niafrond.github.io/compare/v1.79.0...v1.80.0) (2026-04-19)
 
 ### Features
