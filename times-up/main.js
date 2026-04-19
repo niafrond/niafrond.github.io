@@ -1401,7 +1401,7 @@ const TUTORIAL_SLIDES = [
       <p>L'orateur voit le mot à faire deviner. Le chronomètre de <strong>30 secondes</strong>
       tourne en haut au centre.</p>
       <div class="tuto-mock-turn">
-        <div class="tuto-mock-turn-side tuto-btn-fault">🚨<br>Erreur<br><span style="font-size:0.65rem;font-weight:400">ou ⏭ Passer</span></div>
+        <div class="tuto-mock-turn-side tuto-btn-skip">⏭<br>Passer<br><span style="font-size:0.65rem;font-weight:400">← swipe</span></div>
         <div class="tuto-mock-turn-center">
           <div class="tuto-mock-timer">30</div>
           <div class="tuto-mock-word">Séga</div>
@@ -1410,10 +1410,13 @@ const TUTORIAL_SLIDES = [
         <div class="tuto-mock-turn-side tuto-btn-found">✅<br>Trouvé !<br><span style="font-size:0.65rem;font-weight:400">→ swipe</span></div>
       </div>
       <div style="display:flex;gap:6px;margin:8px 0">
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Trouvé !</strong> — L'équipe a trouvé le mot</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Trouvé !</strong> — L'équipe a trouvé le mot (bouton droit ou swipe →)</span></div>
       </div>
       <div style="display:flex;gap:6px;margin:4px 0">
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer / 🚨 Erreur</strong> — Bouton gauche : passer ou signaler une erreur (manches 2 & 3)</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer</strong> — Bouton gauche en manche 2 · Swipe ← en manche 3</span></div>
+      </div>
+      <div style="display:flex;gap:6px;margin:4px 0">
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur</strong> — Bouton gauche en manche 3 : l'orateur a parlé</span></div>
       </div>
       <div style="display:flex;gap:6px;margin:4px 0">
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">↩</span><span><strong>Annuler</strong> — Revient sur la dernière action</span></div>
@@ -1458,10 +1461,11 @@ const TUTORIAL_SLIDES = [
       et des <strong>bruitages</strong>.</p>
       <div style="display:flex;flex-direction:column;gap:5px;margin:10px 0">
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Bonne réponse</strong> → carte gagnée</span></div>
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur / Passer</strong> → bouton gauche : l'orateur a parlé ou est bloqué — carte perdue pour ce tour</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur</strong> (bouton gauche) → l'orateur a parlé ou fredonnée — carte perdue</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer</strong> (swipe ← ou glisse la carte à gauche) → carte remise dans le jeu pour ce tour</span></div>
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">⛔</span><span>Interdits : parler, former des mots, fredonner une chanson</span></div>
       </div>
-      <p>Le bouton gauche devient <strong>🚨 Erreur</strong> en manche 3. Appuie dessus si l'orateur parle par inadvertance ou s'il souhaite passer.</p>
+      <p>En manche 3, le bouton gauche devient <strong>🚨 Erreur</strong>. Pour Passer sans faute, glisse la carte vers la gauche.</p>
     `,
   },
   {
@@ -1535,7 +1539,8 @@ const DEMO_TIPS = {
     { targetId: 'btn-pass',  text: '⏭ Nouveau en manche 2 ! Si tu es bloqué sur une carte, passe-la : elle reviendra pour un autre tour.' },
   ],
   3: [
-    { targetId: 'btn-pass', text: '🚨 Nouveau en manche 3 ! Ce bouton sert à signaler une Erreur (l\'orateur a parlé) ou à Passer si tu es bloqué — même effet dans les deux cas.' },
+    { targetId: 'btn-pass', text: '🚨 En manche 3, ce bouton signale une Erreur : l\'orateur a parlé ou fredonnée. La carte est perdue pour ce tour.' },
+    { targetId: 'word-card-text', text: '⏭ Pour simplement Passer (sans erreur), glisse la carte vers la gauche. Le hint en bas de l\'écran te rappelle toujours les deux actions disponibles.' },
   ],
 };
 
