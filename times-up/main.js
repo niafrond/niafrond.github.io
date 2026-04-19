@@ -1867,6 +1867,17 @@ if ('serviceWorker' in navigator && sessionStorage.getItem('_timesup_update')) {
 }
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
+  navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+    .then(reg => {
+      // Check for a new SW on every page load so updates are picked up immediately.
+      reg.update().catch(() => {});
+      // When a new SW takes control (update deployed), reload to serve fresh assets.
+      // The controller check ensures we don't reload on first-ever SW install.
+      // { once: true } prevents multiple reloads if controllerchange fires again.
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
+      }
+    })
+    .catch(() => {});
 }
 

@@ -38,5 +38,14 @@ export function getMatch3BuildDate(){
 }
 `;
 
+const swTarget = path.resolve(process.cwd(), 'times-up/sw.js');
+const swContent = fs.readFileSync(swTarget, 'utf8');
+const newSwContent = swContent.replace(
+  /const CACHE = 'timesup-v[^']+';/,
+  `const CACHE = 'timesup-v${rawVersion}';`
+);
 fs.writeFileSync(target, nextContent, 'utf8');
 console.log(`Updated ${target} -> ${rawVersion}`);
+fs.writeFileSync(swTarget, newSwContent, 'utf8');
+console.log(`Updated ${swTarget} -> CACHE timesup-v${rawVersion}`);
+
