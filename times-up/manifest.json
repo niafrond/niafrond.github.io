@@ -4,7 +4,7 @@
   "description": "Time's Up thème Réunion — jeu 100% local, les joueurs se passent le téléphone",
   "start_url": "./",
   "display": "standalone",
-  "orientation": "landscape",
+  "orientation": "portrait",
   "background_color": "#0b1e2d",
   "theme_color": "#0b1e2d",
   "icons": [
