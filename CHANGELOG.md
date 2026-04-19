@@ -1,3 +1,9 @@
+## [1.87.2](https://github.com/niafrond/niafrond.github.io/compare/v1.87.1...v1.87.2) (2026-04-19)
+
+### Bug Fixes
+
+* **times-up:** hidden attribute ignored on .btn elements due to display:inline-flex override ([#126](https://github.com/niafrond/niafrond.github.io/issues/126)) ([fd2c47a](https://github.com/niafrond/niafrond.github.io/commit/fd2c47a46490f7dbbb66fda78b84c03895980ee2))
+
 ## [1.87.1](https://github.com/niafrond/niafrond.github.io/compare/v1.87.0...v1.87.1) (2026-04-19)
 
 ### Bug Fixes
