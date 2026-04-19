@@ -653,6 +653,10 @@ function startTurn() {
   state.redoStack     = [];
   updateUndoRedoButtons();
 
+  // Réinitialise le bouton "J'ai lu !" au début de chaque tour
+  showChildReadBtn(false);
+  _childReadFirstWord = false;
+
   const rule = getCurrentRoundRule();
   const passBtn = el('btn-pass');
 
@@ -686,7 +690,13 @@ function startTurn() {
     ring.style.stroke = 'var(--success)';
   } else {
     updateTimerDisplay();
-    startTimer();
+    // Si l'orateur est un enfant, on attend qu'il lise le mot avant de démarrer
+    if (isCurrentOrateurChild()) {
+      _childReadFirstWord = true;
+      showChildReadBtn(true);
+    } else {
+      startTimer();
+    }
   }
 
   showScreen('screen-turn');
@@ -747,6 +757,12 @@ function drawNextWord() {
   if (kidsBadge) kidsBadge.hidden = !state.currentWord.kidFriendly;
   updateTurnStats();
   fitWordCard();
+
+  // Pour les mots suivants (pas le 1er du tour) : pause lecture pour les enfants
+  if (!_demoMode && !_childReadFirstWord && isCurrentOrateurChild()) {
+    pauseTimer();
+    showChildReadBtn(true);
+  }
 }
 
 function wordFound() {
@@ -1691,6 +1707,11 @@ function init() {
     saveCardCount(state.cardCount);
   });
 
+  // ── Mode enfant ──
+  state.kidsModeManual = loadKidsMode();
+  updateKidsModeStatus();
+  el('toggle-kids-mode').addEventListener('click', withCooldown(toggleKidsMode));
+
   // ── Categories ──
   el('btn-categories-back').addEventListener('click', withCooldown(() => showScreen('screen-setup')));
   el('btn-cats-all').addEventListener('click', withCooldown(selectAllCategories));
@@ -1727,6 +1748,7 @@ function init() {
   }));
   el('btn-undo').addEventListener('click', withCooldown(undoLastAction));
   el('btn-redo').addEventListener('click', withCooldown(redoLastAction));
+  el('btn-child-read').addEventListener('click', withCooldown(childConfirmedRead));
 
   // ── Turn end ──
   el('btn-correct-turn').addEventListener('click', withCooldown(openCorrectTurn));
@@ -1766,6 +1788,7 @@ function init() {
     state.currentRound   = 0;
     state.noTeamsMode    = false;
     state.selectedCategories = [];
+    state.playerIsChild.clear();
     renderPlayerList();
     showScreen('screen-setup');
   }));
