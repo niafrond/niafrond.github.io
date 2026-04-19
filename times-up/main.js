@@ -137,7 +137,7 @@ function showScreen(id) {
     requestLandscapeLock();
     requestFullscreenIfNeeded();
   } else {
-    releaseLandscapeLock();
+    requestPortraitLock();
   }
   updateRotateOverlay();
 }
@@ -151,7 +151,7 @@ function requestFullscreenIfNeeded() {
   if (req) req.call(document.documentElement).catch(() => {});
 }
 
-// ─── Orientation paysage ───────────────────────────────────────────────────────
+// ─── Orientation paysage / portrait ───────────────────────────────────────────
 async function requestLandscapeLock() {
   try {
     if (screen.orientation?.lock) {
@@ -160,8 +160,12 @@ async function requestLandscapeLock() {
   } catch (_) { /* Silently ignore — l'overlay sert de repli */ }
 }
 
-function releaseLandscapeLock() {
-  try { screen.orientation?.unlock?.(); } catch (_) { /* ignore */ }
+async function requestPortraitLock() {
+  try {
+    if (screen.orientation?.lock) {
+      await screen.orientation.lock('portrait');
+    }
+  } catch (_) { /* Silently ignore */ }
 }
 
 function updateRotateOverlay() {
