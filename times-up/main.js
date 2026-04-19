@@ -1416,7 +1416,7 @@ function openTutorial(startSlide = 0) {
   _tutorialCurrentSlide = startSlide;
   renderTutorialSlide();
   el('tutorial-overlay').hidden = false;
-  el('tutorial-overlay').focus();
+  el('tutorial-close').focus();
 }
 
 function closeTutorial() {
@@ -1440,7 +1440,15 @@ function renderTutorialSlide() {
   for (let i = 0; i < total; i++) {
     const dot = document.createElement('button');
     dot.className = `tutorial-dot${i === _tutorialCurrentSlide ? ' active' : ''}`;
+    dot.setAttribute('role', 'tab');
     dot.setAttribute('aria-label', `Diapositive ${i + 1}`);
+    if (i === _tutorialCurrentSlide) {
+      dot.setAttribute('aria-current', 'true');
+      dot.setAttribute('aria-selected', 'true');
+    } else {
+      dot.removeAttribute('aria-current');
+      dot.setAttribute('aria-selected', 'false');
+    }
     dot.addEventListener('click', () => {
       _tutorialCurrentSlide = i;
       renderTutorialSlide();
@@ -1605,8 +1613,8 @@ function init() {
   });
   el('tutorial-overlay').addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeTutorial();
-    else if (e.key === 'ArrowRight') tutorialNext();
-    else if (e.key === 'ArrowLeft') tutorialPrev();
+    else if (e.key === 'ArrowRight') { e.preventDefault(); tutorialNext(); }
+    else if (e.key === 'ArrowLeft')  { e.preventDefault(); tutorialPrev(); }
   });
 
   // ── Re-fit word on resize / orientation change ──

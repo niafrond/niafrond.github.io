@@ -1080,7 +1080,7 @@ html, body {
   backdrop-filter: blur(4px);
   animation: tutoFadeIn 0.2s ease;
 }
-.tutorial-overlay[hidden] { display: none !important; }
+.tutorial-overlay[hidden] { display: none; }
 
 @keyframes tutoFadeIn {
   from { opacity: 0; }
