@@ -1,3 +1,9 @@
+## [1.85.0](https://github.com/niafrond/niafrond.github.io/compare/v1.84.1...v1.85.0) (2026-04-19)
+
+### Features
+
+* **times-up:** demo mode — 3-round guided tour with spotlight tooltips ([#121](https://github.com/niafrond/niafrond.github.io/issues/121)) ([1a53445](https://github.com/niafrond/niafrond.github.io/commit/1a53445ebfa8489b3da6357a9065b4727a24d72c))
+
 ## [1.84.1](https://github.com/niafrond/niafrond.github.io/compare/v1.84.0...v1.84.1) (2026-04-19)
 
 ### Bug Fixes
