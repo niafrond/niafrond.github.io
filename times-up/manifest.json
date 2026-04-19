@@ -1,6 +1,6 @@
 {
-  "name": "Time's Up Nout Péi",
-  "short_name": "Time's Up Péi",
+  "name": "Time's up",
+  "short_name": "Time's up",
   "description": "Time's Up thème Réunion — jeu 100% local, les joueurs se passent le téléphone",
   "start_url": "./",
   "display": "standalone",
@@ -9,9 +9,10 @@
   "theme_color": "#0b1e2d",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏱️</text></svg>",
+      "src": "icon.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }
