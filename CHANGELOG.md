@@ -1,3 +1,9 @@
+## [1.85.2](https://github.com/niafrond/niafrond.github.io/compare/v1.85.1...v1.85.2) (2026-04-19)
+
+### Bug Fixes
+
+* **times-up:** auto-invalidate cached JS on deployment via SW cache busting ([#123](https://github.com/niafrond/niafrond.github.io/issues/123)) ([0c93e3b](https://github.com/niafrond/niafrond.github.io/commit/0c93e3bb39e2fe807913b08d4dd0b329f52c9b76))
+
 ## [1.85.1](https://github.com/niafrond/niafrond.github.io/compare/v1.85.0...v1.85.1) (2026-04-19)
 
 ### Bug Fixes
