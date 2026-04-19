@@ -1,3 +1,9 @@
+## [1.76.0](https://github.com/niafrond/niafrond.github.io/compare/v1.75.0...v1.76.0) (2026-04-19)
+
+### Features
+
+* **times-up:** force portrait mode when no game is in progress ([#106](https://github.com/niafrond/niafrond.github.io/issues/106)) ([add6cb8](https://github.com/niafrond/niafrond.github.io/commit/add6cb89927e659726b64699106ca7e0c14edfb6))
+
 ## [1.75.0](https://github.com/niafrond/niafrond.github.io/compare/v1.74.0...v1.75.0) (2026-04-19)
 
 ### Features
