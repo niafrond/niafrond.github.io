@@ -374,7 +374,7 @@ function renderTeams() {
     banner.className = 'no-teams-banner';
     banner.textContent =
       `⚠️ ${state.playerNames.length} joueurs — pas d'équipes fixes pour ce nombre en mode auto. ` +
-      'Choisissez une taille d\'équipe dans les options pour former des équipes.';
+      "Choisissez une taille d'équipe dans les options pour former des équipes.";
     container.appendChild(banner);
   } else {
     container.style.gridTemplateColumns = '';
