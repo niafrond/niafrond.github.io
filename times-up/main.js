@@ -115,6 +115,7 @@ const state = {
   turnFound:   [],
   turnSkipped: [],   // cartes passées définitivement dans le tour en cours (manches 2 et 3)
   currentWord: null,
+  lastAction:  null, // {type:'found'|'skipped'|'fault', word} — pour le bouton Annuler
 
   timerInterval: null,
   timeLeft: TURN_DURATION,
@@ -419,6 +420,8 @@ function startTurn() {
   state.turnFound   = [];
   state.turnSkipped = [];
   state.timeLeft    = TURN_DURATION;
+  state.lastAction  = null;
+  el('btn-undo').hidden = true;
 
   const rule = getCurrentRoundRule();
 
@@ -521,6 +524,8 @@ function drawNextWord() {
 
 function wordFound() {
   playFound();
+  state.lastAction = { type: 'found', word: state.currentWord };
+  el('btn-undo').hidden = false;
   state.turnFound.push(state.currentWord);
   state.currentWord = null;
   updateTurnStats();
@@ -528,6 +533,8 @@ function wordFound() {
 }
 
 function wordSkipped() {
+  state.lastAction = { type: 'skipped', word: state.currentWord };
+  el('btn-undo').hidden = false;
   if (state.currentRound >= 2) {
     // Manches 2 et 3 : la carte est passée définitivement pour ce tour
     state.turnSkipped.push(state.currentWord);
@@ -543,11 +550,49 @@ function wordSkipped() {
 function wordFault() {
   // Manches 2 et 3 (canFault=true) : la carte est passée définitivement pour ce tour
   if (state.currentWord) {
+    state.lastAction = { type: 'fault', word: state.currentWord };
+    el('btn-undo').hidden = false;
     state.turnSkipped.push(state.currentWord);
     state.currentWord = null;
   }
   updateTurnStats();
   drawNextWord();
+}
+
+function undoLastAction() {
+  if (!state.lastAction) return;
+  const { type, word } = state.lastAction;
+  state.lastAction = null;
+
+  // Remettre le mot courant en tête du deck
+  if (state.currentWord) {
+    state.roundWords.unshift(state.currentWord);
+    state.currentWord = null;
+  }
+
+  // Annuler l'action précédente et restaurer la carte
+  if (type === 'found') {
+    const idx = state.turnFound.lastIndexOf(word);
+    if (idx !== -1) state.turnFound.splice(idx, 1);
+  } else {
+    // 'skipped' ou 'fault'
+    const idx = state.turnSkipped.lastIndexOf(word);
+    if (idx !== -1) {
+      state.turnSkipped.splice(idx, 1);
+    } else {
+      // manche 1 (canSkip=false en pratique) : la carte avait été remise dans roundWords
+      const ri = state.roundWords.lastIndexOf(word);
+      if (ri !== -1) state.roundWords.splice(ri, 1);
+    }
+  }
+
+  state.currentWord = word;
+  const cat = getCategoryInfo(word.category);
+  el('word-card-text').textContent     = word.word;
+  el('word-card-category').textContent = `${cat.emoji} ${cat.label}`;
+  updateTurnStats();
+  fitWordCard();
+  el('btn-undo').hidden = true;
 }
 
 function updateTurnStats() {
@@ -1183,6 +1228,7 @@ function init() {
   el('btn-skip').addEventListener('click', wordSkipped);
   el('btn-skip-side').addEventListener('click', wordSkipped);
   el('btn-fault').addEventListener('click', wordFault);
+  el('btn-undo').addEventListener('click', undoLastAction);
 
   // ── Turn end ──
   el('btn-next-turn').addEventListener('click', handleNextTurn);
