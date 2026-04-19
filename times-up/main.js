@@ -34,12 +34,6 @@ const GAMEPLAY_SCREENS = new Set([
   'screen-game-over',
 ]);
 
-// Swipe constants
-const SWIPE_THRESHOLD            = 70;   // px — distance minimale pour valider un swipe
-const SWIPE_VISUAL_THRESHOLD     = 20;   // px — distance à partir de laquelle l'indicateur s'affiche
-const SWIPE_VERTICAL_TOLERANCE   = 10;   // px — tolérance verticale avant d'annuler le swipe
-const SWIPE_MIN_OPACITY          = 0.4;  // opacité minimale de la carte pendant le swipe
-const SWIPE_OPACITY_DIST         = 280;  // px — distance sur laquelle l'opacité diminue
 const CLICK_COOLDOWN             = 500;  // ms — délai minimum entre deux clics sur le même bouton
 
 const ROUND_RULES = [
@@ -479,7 +473,7 @@ function startTurn() {
     passBtn.style.pointerEvents = '';
     passBtn.className = 'btn-fault-turn btn-turn-side';
     passBtn.setAttribute('aria-label', 'Erreur — arrêter le tour');
-    passBtn.innerHTML = '<span aria-hidden="true">🚨</span><span>Erreur</span>';
+    passBtn.innerHTML = '<span aria-hidden="true">🚨</span><span>Erreur / Passer</span>';
   } else if (rule.canSkip) {
     // Manche 2 : bouton Passer
     passBtn.style.visibility    = '';
@@ -492,12 +486,6 @@ function startTurn() {
     passBtn.style.visibility    = 'hidden';
     passBtn.style.pointerEvents = 'none';
   }
-
-  // Swipe hint: masquer la flèche gauche si on ne peut pas passer
-  const hintEl = el('swipe-hint-text');
-  hintEl.innerHTML = rule.canSkip
-    ? '← Passer &nbsp;·&nbsp; Trouvé →'
-    : 'Glissez à droite → Trouvé';
 
   updateTurnStats();
   drawNextWord();
@@ -1205,52 +1193,6 @@ function saveMembersAfterGame() {
 }
 
 
-function initSwipe() {
-  const card = document.querySelector('.word-card');
-  let startX = 0, startY = 0, active = false;
-
-  card.addEventListener('touchstart', (e) => {
-    if (el('screen-turn').hidden) return;
-    startX  = e.touches[0].clientX;
-    startY  = e.touches[0].clientY;
-    active  = true;
-    card.style.transition = 'none';
-  }, { passive: true });
-
-  card.addEventListener('touchmove', (e) => {
-    if (!active) return;
-    const dx = e.touches[0].clientX - startX;
-    const dy = e.touches[0].clientY - startY;
-    if (Math.abs(dy) > Math.abs(dx) + SWIPE_VERTICAL_TOLERANCE) { active = false; resetCard(); return; }
-    card.style.transform = `translateX(${dx}px)`;
-    card.style.opacity   = String(Math.max(SWIPE_MIN_OPACITY, 1 - Math.abs(dx) / SWIPE_OPACITY_DIST));
-    card.classList.toggle('swipe-hint--right', dx >  SWIPE_VISUAL_THRESHOLD);
-    card.classList.toggle('swipe-hint--left',  dx < -SWIPE_VISUAL_THRESHOLD);
-  }, { passive: true });
-
-  card.addEventListener('touchend', (e) => {
-    if (!active) return;
-    active = false;
-    const dx = e.changedTouches[0].clientX - startX;
-    resetCard();
-    if (dx > SWIPE_THRESHOLD) {
-      wordFound();
-    } else if (dx < -SWIPE_THRESHOLD) {
-      const rule = getCurrentRoundRule();
-      if (rule.canSkip) wordSkipped();
-    }
-  }, { passive: true });
-
-  card.addEventListener('touchcancel', () => { active = false; resetCard(); }, { passive: true });
-
-  function resetCard() {
-    card.style.transition = '';
-    card.style.transform  = '';
-    card.style.opacity    = '';
-    card.classList.remove('swipe-hint--right', 'swipe-hint--left');
-  }
-}
-
 // ─── MISE À JOUR FORCÉE ────────────────────────────────────────────────────────
 async function forceUpdate() {
   showToast('🔄 Mise à jour en cours…');
@@ -1401,22 +1343,22 @@ const TUTORIAL_SLIDES = [
       <p>L'orateur voit le mot à faire deviner. Le chronomètre de <strong>30 secondes</strong>
       tourne en haut au centre.</p>
       <div class="tuto-mock-turn">
-        <div class="tuto-mock-turn-side tuto-btn-skip">⏭<br>Passer<br><span style="font-size:0.65rem;font-weight:400">← swipe</span></div>
+        <div class="tuto-mock-turn-side tuto-btn-skip">⏭<br>Passer</div>
         <div class="tuto-mock-turn-center">
           <div class="tuto-mock-timer">30</div>
           <div class="tuto-mock-word">Séga</div>
           <div style="font-size:0.7rem;color:var(--text-muted);background:var(--surface2);border-radius:99px;padding:2px 10px">🎵 Culture</div>
         </div>
-        <div class="tuto-mock-turn-side tuto-btn-found">✅<br>Trouvé !<br><span style="font-size:0.65rem;font-weight:400">→ swipe</span></div>
+        <div class="tuto-mock-turn-side tuto-btn-found">✅<br>Trouvé !</div>
       </div>
       <div style="display:flex;gap:6px;margin:8px 0">
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Trouvé !</strong> — L'équipe a trouvé le mot (bouton droit ou swipe →)</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Trouvé !</strong> — L'équipe a trouvé le mot (bouton droit)</span></div>
       </div>
       <div style="display:flex;gap:6px;margin:4px 0">
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer</strong> — Bouton gauche en manche 2 · Swipe ← en manche 3</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer</strong> — Bouton gauche en manche 2</span></div>
       </div>
       <div style="display:flex;gap:6px;margin:4px 0">
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur</strong> — Bouton gauche en manche 3 : l'orateur a parlé</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur / Passer</strong> — Bouton gauche en manche 3 : l'orateur a parlé ou passe la carte</span></div>
       </div>
       <div style="display:flex;gap:6px;margin:4px 0">
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">↩</span><span><strong>Annuler</strong> — Revient sur la dernière action</span></div>
@@ -1461,11 +1403,10 @@ const TUTORIAL_SLIDES = [
       et des <strong>bruitages</strong>.</p>
       <div style="display:flex;flex-direction:column;gap:5px;margin:10px 0">
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Bonne réponse</strong> → carte gagnée</span></div>
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur</strong> (bouton gauche) → l'orateur a parlé ou fredonné — carte perdue</span></div>
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer</strong> (swipe ← ou glisse la carte à gauche) → carte remise dans le jeu pour ce tour</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur / Passer</strong> (bouton gauche) → l'orateur a parlé ou est bloqué — carte perdue pour ce tour</span></div>
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">⛔</span><span>Interdits : parler, former des mots, fredonner une chanson</span></div>
       </div>
-      <p>En manche 3, le bouton gauche devient <strong>🚨 Erreur</strong>. Pour Passer sans faute, glisse la carte vers la gauche.</p>
+      <p>En manche 3, le bouton gauche s'appelle <strong>🚨 Erreur / Passer</strong> : appuie dessus si l'orateur parle par inadvertance <em>ou</em> s'il souhaite passer.</p>
     `,
   },
   {
@@ -1539,8 +1480,7 @@ const DEMO_TIPS = {
     { targetId: 'btn-pass',  text: '⏭ Nouveau en manche 2 ! Si tu es bloqué sur une carte, passe-la : elle reviendra pour un autre tour.' },
   ],
   3: [
-    { targetId: 'btn-pass', text: '🚨 En manche 3, ce bouton signale une Erreur : l\'orateur a parlé ou fredonné. La carte est perdue pour ce tour.' },
-    { targetId: 'word-card-text', text: '⏭ Pour simplement Passer (sans erreur), glisse la carte vers la gauche. Le hint en bas de l\'écran te rappelle toujours les deux actions disponibles.' },
+    { targetId: 'btn-pass', text: '🚨 En manche 3, ce bouton s\'appelle Erreur / Passer. Appuie dessus si l\'orateur a parlé OU s\'il souhaite passer — la carte est perdue pour ce tour dans les deux cas.' },
   ],
 };
 
@@ -1876,9 +1816,6 @@ function init() {
   el('btn-fullscreen').addEventListener('click', withCooldown(toggleFullscreen));
   document.addEventListener('fullscreenchange', updateFullscreenBtn);
   document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
-
-  // ── Swipe support on turn screen ──
-  initSwipe();
 
   renderPlayerList();
   showScreen('screen-setup');
