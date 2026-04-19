@@ -16,7 +16,7 @@ import { getMatch3Version, getMatch3BuildDate } from '../match3-quest/version.js
 // ─── Constantes ────────────────────────────────────────────────────────────────
 const TURN_DURATION              = 30;   // secondes par tour
 const TIMER_CIRCLE_RADIUS        = 46;   // rayon du cercle SVG du timer
-const MIN_PLAYERS                = 4;
+const MIN_PLAYERS                = 2;
 const CARD_COUNT_DEFAULT         = 40;   // nombre de cartes par défaut
 const CARD_COUNT_KEY             = 'timesup_card_count';
 const WORD_CARD_HORIZONTAL_PAD   = 32;   // padding horizontal de .word-card (16px × 2)
@@ -267,6 +267,8 @@ function removePlayer(idx) {
  */
 function computeTeamLayout(n) {
   switch (n) {
+    case 2:  return [1, 1];
+    case 3:  return [1, 1, 1];
     case 4:  return [2, 2];
     case 5:  return null;
     case 6:  return [2, 2, 2];
@@ -397,7 +399,15 @@ function startPreTurn() {
     guesserLabel = teamLabel(state.teams[leftIdx]);
   } else {
     const teammates = team.players.filter(p => p !== playerName);
-    guesserLabel = teammates.length ? teammates.join(' · ') : teamLabel(team);
+    if (teammates.length) {
+      guesserLabel = teammates.join(' · ');
+    } else {
+      // Single-player team (e.g. 2-player mode): guesser is from all other teams
+      const others = state.teams
+        .filter((_, idx) => idx !== state.currentTeamIdx)
+        .flatMap(t => t.players);
+      guesserLabel = others.length ? others.join(' · ') : teamLabel(team);
+    }
   }
 
   const playerSpan = document.createElement('span');
@@ -1181,7 +1191,7 @@ const TUTORIAL_SLIDES = [
     icon: '👥',
     title: 'Écran d\'accueil — Ajouter des joueurs',
     html: `
-      <p>Saisissez au moins <strong>4 prénoms</strong> pour démarrer une partie.
+      <p>Saisissez au moins <strong>2 prénoms</strong> pour démarrer une partie (minimum 4 pour jouer en équipes de 2).
       Le bouton 🚀 se débloque automatiquement dès que le minimum est atteint.</p>
       <div class="tuto-mock">
         <div class="tuto-mock-row">
@@ -1227,7 +1237,8 @@ const TUTORIAL_SLIDES = [
     title: 'Écran — Les Équipes',
     html: `
       <p>Après avoir cliqué sur <strong>🚀 Répartir les joueurs</strong>, les équipes sont
-      formées <strong>aléatoirement</strong>. Pour 4 joueurs : 2 équipes de 2.
+      formées <strong>aléatoirement</strong>. Pour 2 joueurs : 2 équipes de 1 (duel).
+      Pour 4 joueurs : 2 équipes de 2.
       Pour 6 joueurs : 3 équipes de 2, etc.</p>
       <div class="tuto-mock">
         <div class="tuto-mock-row" style="gap:10px">
