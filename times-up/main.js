@@ -8,7 +8,7 @@
 import { getShuffledWords, getCategoryInfo, shuffle, CATEGORY_LABELS, DEFAULT_WORDS, loadWords, saveWords, resetWords } from './words.js';
 import {
   playTick, playTickUrgent, playBuzzer,
-  playFound, playRoundStart, playGameOver,
+  playFound, playRoundStart, playGameOver, playButtonClick,
   setMuted, getMuted,
 } from './sound.js';
 import { getMatch3Version, getMatch3BuildDate } from '../match3-quest/version.js';
@@ -565,6 +565,7 @@ function wordFound() {
 }
 
 function wordSkipped() {
+  playButtonClick();
   state.lastAction = { type: 'skipped', word: state.currentWord };
   el('btn-undo').hidden = false;
   if (state.currentRound >= 2) {
@@ -580,6 +581,7 @@ function wordSkipped() {
 }
 
 function wordFault() {
+  playButtonClick();
   // Manches 2 et 3 (canFault=true) : la carte est passée définitivement pour ce tour
   if (state.currentWord) {
     state.lastAction = { type: 'fault', word: state.currentWord };
@@ -593,6 +595,7 @@ function wordFault() {
 
 function undoLastAction() {
   if (!state.lastAction) return;
+  playButtonClick();
   const { type, word } = state.lastAction;
   state.lastAction = null;
 
@@ -1574,12 +1577,16 @@ function init() {
 
   // ── Round intro ──
   el('btn-round-go').addEventListener('click', withCooldown(() => {
+    playButtonClick();
     state.currentTeamIdx = 0;
     startPreTurn();
   }));
 
   // ── Pre-turn ──
-  el('btn-ready').addEventListener('click', withCooldown(startTurn));
+  el('btn-ready').addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    startTurn();
+  }));
 
   // ── Turn ──
   el('btn-found').addEventListener('click', withCooldown(wordFound));
@@ -1589,13 +1596,20 @@ function init() {
   el('btn-undo').addEventListener('click', withCooldown(undoLastAction));
 
   // ── Turn end ──
-  el('btn-next-turn').addEventListener('click', withCooldown(handleNextTurn));
+  el('btn-next-turn').addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    handleNextTurn();
+  }));
 
   // ── Round end ──
   el('btn-next-round').addEventListener('click', withCooldown(() => {
+    playButtonClick();
     startRound(state.currentRound + 1);
   }));
-  el('btn-final-results').addEventListener('click', withCooldown(showGameOver));
+  el('btn-final-results').addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    showGameOver();
+  }));
 
   // ── Game over ──
   el('btn-replay').addEventListener('click', withCooldown(() => {

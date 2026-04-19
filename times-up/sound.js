@@ -126,6 +126,16 @@ export function playRoundStart() {
   } catch (_) {}
 }
 
+/** Son de confirmation générique — appui sur un bouton en mode partie */
+export function playButtonClick() {
+  if (_muted) return;
+  try {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    playNote(660, 'sine', now, 0.08, 0.15);
+  } catch (_) {}
+}
+
 /** Fanfare de fin de partie */
 export function playGameOver() {
   if (_muted) return;
