@@ -515,12 +515,14 @@ function drawNextWord() {
   el('word-card-text').textContent     = state.currentWord.word;
   el('word-card-category').textContent = `${cat.emoji} ${cat.label}`;
   el('turn-round-badge').textContent   = `Manche ${state.currentRound} — ${ROUND_RULES[state.currentRound - 1].icon}`;
+  updateTurnStats();
   fitWordCard();
 }
 
 function wordFound() {
   playFound();
   state.turnFound.push(state.currentWord);
+  state.currentWord = null;
   updateTurnStats();
   drawNextWord();
 }
@@ -549,7 +551,8 @@ function wordFault() {
 }
 
 function updateTurnStats() {
-  el('turn-found-count').textContent = state.turnFound.length;
+  el('turn-found-count').textContent    = state.turnFound.length;
+  el('turn-words-left').textContent     = state.roundWords.length + (state.currentWord ? 1 : 0);
 }
 
 // ─── TIMER ─────────────────────────────────────────────────────────────────────
