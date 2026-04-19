@@ -1,3 +1,9 @@
+## [1.80.0](https://github.com/niafrond/niafrond.github.io/compare/v1.79.0...v1.80.0) (2026-04-19)
+
+### Features
+
+* **times-up:** make undo button more visible during a game turn ([#112](https://github.com/niafrond/niafrond.github.io/issues/112)) ([114e3bc](https://github.com/niafrond/niafrond.github.io/commit/114e3bce6260a5c9fe8df82c762dc72cddda50f2))
+
 ## [1.79.0](https://github.com/niafrond/niafrond.github.io/compare/v1.78.0...v1.79.0) (2026-04-19)
 
 ### Features
