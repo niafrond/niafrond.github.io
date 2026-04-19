@@ -512,6 +512,7 @@ function startTurn() {
 
   showScreen('screen-turn');
   fitWordCard(); // re-fit now that screen is visible (drawNextWord ran while hidden)
+  if (_demoMode) showDemoTips(state.currentRound);
 }
 
 function fitWordCard() {
@@ -1510,6 +1511,81 @@ const TUTORIAL_SLIDES = [
 
 let _tutorialCurrentSlide = 0;
 let _demoMode = false;
+
+// Tips shown per round in demo mode, keyed by round number
+const DEMO_TIPS = {
+  1: [
+    { targetId: 'timer-number',   text: '⏱️ Le chrono ! En vraie partie il compte 30 secondes. Ici il est infini pour que tu puisses explorer sans pression.' },
+    { targetId: 'word-card-text', text: '🃏 Le mot à faire deviner ! Décris-le librement — interdit de le dire, l\'épeler ou le traduire.' },
+    { targetId: 'btn-found',      text: '✅ Trouvé ! Appuie ici (ou glisse la carte à droite) quand ton équipe trouve le mot.' },
+  ],
+  2: [
+    { targetId: 'btn-skip-side',  text: '⏭ Nouveau en manche 2 ! Si tu es bloqué sur une carte, passe-la : elle reviendra pour un autre tour.' },
+  ],
+  3: [
+    { targetId: 'btn-fault', text: '🚨 Nouveau en manche 3 ! Si l\'orateur dit un mot par inadvertance, appuie ici pour signaler la faute.' },
+    { targetId: 'btn-skip',  text: '❌ Passer — en manche 3, ce bouton apparaît aussi en bas. Glisse à gauche ou appuie pour passer une carte.' },
+  ],
+};
+
+let _demoTipIdx = 0;
+
+function showDemoTips(round) {
+  const tips = DEMO_TIPS[round];
+  if (!tips || tips.length === 0) return;
+  _demoTipIdx = 0;
+  _showDemoTip(tips);
+}
+
+function _showDemoTip(tips) {
+  const tip     = tips[_demoTipIdx];
+  const overlay = el('demo-tooltip-overlay');
+  const ring    = el('demo-highlight-ring');
+  const textEl  = el('demo-tooltip-text');
+  const panel   = el('demo-tooltip-panel');
+
+  textEl.textContent = tip.text;
+
+  const target = tip.targetId ? document.getElementById(tip.targetId) : null;
+  if (target) {
+    const rect = target.getBoundingClientRect();
+    const pad  = 8;
+    ring.style.top    = (rect.top    - pad) + 'px';
+    ring.style.left   = (rect.left   - pad) + 'px';
+    ring.style.width  = (rect.width  + pad * 2) + 'px';
+    ring.style.height = (rect.height + pad * 2) + 'px';
+    ring.hidden = false;
+
+    const panelW = Math.min(280, window.innerWidth - 32);
+    const panelH = 130;
+    const gap    = 14;
+    let top  = rect.bottom + gap;
+    if (top + panelH > window.innerHeight - 10) top = rect.top - panelH - gap;
+    if (top < 10) top = 10;
+    let left = rect.left + rect.width / 2 - panelW / 2;
+    if (left < 10) left = 10;
+    if (left + panelW > window.innerWidth - 10) left = window.innerWidth - panelW - 10;
+    panel.style.top       = top + 'px';
+    panel.style.left      = left + 'px';
+    panel.style.transform = '';
+  } else {
+    ring.hidden = true;
+    panel.style.top       = '50%';
+    panel.style.left      = '50%';
+    panel.style.transform = 'translate(-50%,-50%)';
+  }
+
+  overlay.hidden = false;
+
+  el('demo-tooltip-ok').onclick = () => {
+    _demoTipIdx++;
+    if (_demoTipIdx < tips.length) {
+      _showDemoTip(tips);
+    } else {
+      overlay.hidden = true;
+    }
+  };
+}
 
 function startDemoTurn() {
   closeTutorial();
