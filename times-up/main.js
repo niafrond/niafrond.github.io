@@ -39,6 +39,7 @@ const SWIPE_VISUAL_THRESHOLD     = 20;   // px — distance à partir de laquell
 const SWIPE_VERTICAL_TOLERANCE   = 10;   // px — tolérance verticale avant d'annuler le swipe
 const SWIPE_MIN_OPACITY          = 0.4;  // opacité minimale de la carte pendant le swipe
 const SWIPE_OPACITY_DIST         = 280;  // px — distance sur laquelle l'opacité diminue
+const CLICK_COOLDOWN             = 500;  // ms — délai minimum entre deux clics sur le même bouton
 
 const ROUND_RULES = [
   {
@@ -82,6 +83,19 @@ const TEAMS_META = [
   { color: 'var(--foret)'  },
   { color: 'var(--soleil)' },
 ];
+
+// ─── Cooldown boutons ──────────────────────────────────────────────────────────
+// Retourne un handler enveloppé d'un délai minimum de CLICK_COOLDOWN ms entre
+// deux appels successifs sur le même bouton (évite le double-clic involontaire).
+function withCooldown(fn) {
+  let lastClick = 0;
+  return function (...args) {
+    const now = Date.now();
+    if (now - lastClick < CLICK_COOLDOWN) return;
+    lastClick = now;
+    fn.apply(this, args);
+  };
+}
 
 // ─── Persistance du nombre de cartes ───────────────────────────────────────────
 function loadCardCount() {
@@ -1527,18 +1541,18 @@ function init() {
   }
 
   // ── Setup ──
-  el('tab-btn-partie').addEventListener('click', () => switchSetupTab('partie'));
-  el('tab-btn-membres').addEventListener('click', () => switchSetupTab('membres'));
-  el('btn-add-player').addEventListener('click', addPlayer);
+  el('tab-btn-partie').addEventListener('click', withCooldown(() => switchSetupTab('partie')));
+  el('tab-btn-membres').addEventListener('click', withCooldown(() => switchSetupTab('membres')));
+  el('btn-add-player').addEventListener('click', withCooldown(addPlayer));
   el('player-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') addPlayer();
   });
-  el('btn-start-game').addEventListener('click', () => {
+  el('btn-start-game').addEventListener('click', withCooldown(() => {
     if (state.playerNames.length >= MIN_PLAYERS) goToTeams();
-  });
+  }));
 
   // ── Joueurs (membres persistants) ──
-  el('btn-add-member').addEventListener('click', addMember);
+  el('btn-add-member').addEventListener('click', withCooldown(addMember));
   el('member-input').addEventListener('keydown', e => { if (e.key === 'Enter') addMember(); });
 
   // ── Options de partie ──
@@ -1551,41 +1565,41 @@ function init() {
   });
 
   // ── Teams ──
-  el('btn-reshuffle').addEventListener('click', () => {
+  el('btn-reshuffle').addEventListener('click', withCooldown(() => {
     assignTeams();
     renderTeams();
-  });
-  el('btn-launch-game').addEventListener('click', () => {
+  }));
+  el('btn-launch-game').addEventListener('click', withCooldown(() => {
     startRound(1);
-  });
+  }));
 
   // ── Round intro ──
-  el('btn-round-go').addEventListener('click', () => {
+  el('btn-round-go').addEventListener('click', withCooldown(() => {
     state.currentTeamIdx = 0;
     startPreTurn();
-  });
+  }));
 
   // ── Pre-turn ──
-  el('btn-ready').addEventListener('click', startTurn);
+  el('btn-ready').addEventListener('click', withCooldown(startTurn));
 
   // ── Turn ──
-  el('btn-found').addEventListener('click', wordFound);
-  el('btn-skip').addEventListener('click', wordSkipped);
-  el('btn-skip-side').addEventListener('click', wordSkipped);
-  el('btn-fault').addEventListener('click', wordFault);
-  el('btn-undo').addEventListener('click', undoLastAction);
+  el('btn-found').addEventListener('click', withCooldown(wordFound));
+  el('btn-skip').addEventListener('click', withCooldown(wordSkipped));
+  el('btn-skip-side').addEventListener('click', withCooldown(wordSkipped));
+  el('btn-fault').addEventListener('click', withCooldown(wordFault));
+  el('btn-undo').addEventListener('click', withCooldown(undoLastAction));
 
   // ── Turn end ──
-  el('btn-next-turn').addEventListener('click', handleNextTurn);
+  el('btn-next-turn').addEventListener('click', withCooldown(handleNextTurn));
 
   // ── Round end ──
-  el('btn-next-round').addEventListener('click', () => {
+  el('btn-next-round').addEventListener('click', withCooldown(() => {
     startRound(state.currentRound + 1);
-  });
-  el('btn-final-results').addEventListener('click', showGameOver);
+  }));
+  el('btn-final-results').addEventListener('click', withCooldown(showGameOver));
 
   // ── Game over ──
-  el('btn-replay').addEventListener('click', () => {
+  el('btn-replay').addEventListener('click', withCooldown(() => {
     state.teams          = [];
     state.teamPlayerIdx  = [];
     state.allWords       = [];
@@ -1594,32 +1608,32 @@ function init() {
     state.noTeamsMode    = false;
     renderPlayerList();
     showScreen('screen-setup');
-  });
+  }));
 
   // ── Mute toggle ──
-  el('btn-mute').addEventListener('click', () => {
+  el('btn-mute').addEventListener('click', withCooldown(() => {
     setMuted(!getMuted());
     el('btn-mute').textContent = getMuted() ? '🔇' : '🔊';
-  });
+  }));
 
   // ── Words editor ──
-  el('btn-edit-words').addEventListener('click', openWordsEditor);
-  el('btn-force-update').addEventListener('click', forceUpdate);
-  el('btn-words-back').addEventListener('click', () => showScreen('screen-setup'));
-  el('btn-word-add').addEventListener('click', addWord);
+  el('btn-edit-words').addEventListener('click', withCooldown(openWordsEditor));
+  el('btn-force-update').addEventListener('click', withCooldown(forceUpdate));
+  el('btn-words-back').addEventListener('click', withCooldown(() => showScreen('screen-setup')));
+  el('btn-word-add').addEventListener('click', withCooldown(addWord));
   el('word-new-text').addEventListener('keydown', e => { if (e.key === 'Enter') addWord(); });
-  el('btn-words-export').addEventListener('click', exportWords);
+  el('btn-words-export').addEventListener('click', withCooldown(exportWords));
   el('input-words-import').addEventListener('change', e => {
     importWords(e.target.files[0]);
     e.target.value = '';
   });
-  el('btn-words-reset').addEventListener('click', handleResetWords);
+  el('btn-words-reset').addEventListener('click', withCooldown(handleResetWords));
 
   // ── Tutoriel ──
-  el('btn-tutorial').addEventListener('click', () => openTutorial(0));
-  el('tutorial-close').addEventListener('click', closeTutorial);
-  el('tutorial-prev').addEventListener('click', tutorialPrev);
-  el('tutorial-next').addEventListener('click', tutorialNext);
+  el('btn-tutorial').addEventListener('click', withCooldown(() => openTutorial(0)));
+  el('tutorial-close').addEventListener('click', withCooldown(closeTutorial));
+  el('tutorial-prev').addEventListener('click', withCooldown(tutorialPrev));
+  el('tutorial-next').addEventListener('click', withCooldown(tutorialNext));
   el('tutorial-overlay').addEventListener('click', (e) => {
     if (e.target === el('tutorial-overlay')) closeTutorial();
   });
@@ -1637,7 +1651,7 @@ function init() {
   window.addEventListener('orientationchange', updateRotateOverlay);
 
   // ── Fullscreen ──
-  el('btn-fullscreen').addEventListener('click', toggleFullscreen);
+  el('btn-fullscreen').addEventListener('click', withCooldown(toggleFullscreen));
   document.addEventListener('fullscreenchange', updateFullscreenBtn);
   document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
 
