@@ -1,3 +1,9 @@
+## [1.90.0](https://github.com/niafrond/niafrond.github.io/compare/v1.89.0...v1.90.0) (2026-04-19)
+
+### Features
+
+* add flash-guess game with category selection and per-category word editor ([#135](https://github.com/niafrond/niafrond.github.io/issues/135)) ([86e33e8](https://github.com/niafrond/niafrond.github.io/commit/86e33e8e0fafb2abd02a8541b424e7a03aeaefe4))
+
 ## [1.89.0](https://github.com/niafrond/niafrond.github.io/compare/v1.88.1...v1.89.0) (2026-04-19)
 
 ### Features
