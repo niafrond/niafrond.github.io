@@ -1159,7 +1159,325 @@ async function forceUpdate() {
   location.reload();
 }
 
-// ─── PLEIN ÉCRAN ───────────────────────────────────────────────────────────────
+// ─── TUTORIEL ──────────────────────────────────────────────────────────────────
+
+const TUTORIAL_SLIDES = [
+  {
+    icon: '⏱️',
+    title: 'Bienvenue dans Time\'s Up !',
+    html: `
+      <p>Time's Up est un jeu de société en <strong>3 manches progressives</strong> où les équipes
+      doivent faire deviner des mots réunionnais — les mêmes à chaque manche, mais avec des règles
+      de plus en plus difficiles !</p>
+      <p>Ce tutoriel vous explique chaque écran et chaque bouton du jeu. 🌋🌊</p>
+      <div class="tuto-mock" style="text-align:center;padding:14px">
+        <div style="font-size:1.5rem;margin-bottom:6px">🗣️ → ☝️ → 🤐</div>
+        <div style="font-size:0.82rem;color:var(--text-muted)">Parler librement → Un seul mot → Mime</div>
+      </div>
+      <p>1 mot trouvé = 1 point · L'équipe avec le plus de points gagne 🏆</p>
+    `,
+  },
+  {
+    icon: '👥',
+    title: 'Écran d\'accueil — Ajouter des joueurs',
+    html: `
+      <p>Saisissez au moins <strong>4 prénoms</strong> pour démarrer une partie.
+      Le bouton 🚀 se débloque automatiquement dès que le minimum est atteint.</p>
+      <div class="tuto-mock">
+        <div class="tuto-mock-row">
+          <span style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:0.82rem;color:var(--text-muted)">Prénom du joueur…</span>
+          <span class="tuto-btn tuto-btn-action">+ Ajouter</span>
+        </div>
+        <div class="tuto-mock-row">
+          <span style="font-size:1.1rem">👤</span>
+          <span class="tuto-mock-label"><strong>Lucie</strong></span>
+          <span style="font-size:0.75rem;color:var(--danger);cursor:pointer">✕</span>
+        </div>
+        <div class="tuto-mock-row">
+          <span style="font-size:1.1rem">👤</span>
+          <span class="tuto-mock-label"><strong>Maxime</strong></span>
+          <span style="font-size:0.75rem;color:var(--danger);cursor:pointer">✕</span>
+        </div>
+      </div>
+      <p>Cliquez sur <strong>✕</strong> à côté d'un prénom pour le retirer de la partie.</p>
+    `,
+  },
+  {
+    icon: '📋',
+    title: 'Onglet Joueurs & Options',
+    html: `
+      <p>L'onglet <strong>👥 Joueurs</strong> vous permet d'enregistrer des joueurs habituels.
+      Cliquez sur un nom enregistré pour l'ajouter rapidement à la partie en cours.</p>
+      <div class="tuto-mock">
+        <div class="tuto-mock-row" style="gap:4px">
+          <span style="flex:1;background:var(--surface);border-radius:6px;padding:5px 10px;font-size:0.82rem;text-align:center;font-weight:700">⚽ Partie</span>
+          <span style="flex:1;background:var(--volcan);border-radius:6px;padding:5px 10px;font-size:0.82rem;text-align:center;font-weight:700;color:#fff">👥 Joueurs</span>
+        </div>
+        <div class="tuto-mock-row">
+          <span style="font-size:1rem">👤</span>
+          <span class="tuto-mock-label"><strong>Kévin</strong> <span style="font-size:0.72rem">3 parties · 47 pts</span></span>
+        </div>
+      </div>
+      <p>Dans les <strong>⚙️ Options</strong>, choisissez le nombre de mots à utiliser pour la
+      partie (20, 30, 40, 50 ou tous les mots disponibles).</p>
+    `,
+  },
+  {
+    icon: '🎲',
+    title: 'Écran — Les Équipes',
+    html: `
+      <p>Après avoir cliqué sur <strong>🚀 Répartir les joueurs</strong>, les équipes sont
+      formées <strong>aléatoirement</strong>. Pour 4 joueurs : 2 équipes de 2.
+      Pour 6 joueurs : 3 équipes de 2, etc.</p>
+      <div class="tuto-mock">
+        <div class="tuto-mock-row" style="gap:10px">
+          <div style="flex:1;background:rgba(232,93,4,0.15);border:1px solid var(--volcan);border-radius:8px;padding:8px;text-align:center;font-size:0.82rem">
+            <div style="color:var(--volcan);font-weight:700">Équipe 🔴</div>
+            <div style="color:var(--text-muted)">👤 Lucie</div>
+            <div style="color:var(--text-muted)">👤 Marc</div>
+          </div>
+          <div style="flex:1;background:rgba(0,150,199,0.15);border:1px solid var(--lagon);border-radius:8px;padding:8px;text-align:center;font-size:0.82rem">
+            <div style="color:var(--lagon);font-weight:700">Équipe 🔵</div>
+            <div style="color:var(--text-muted)">👤 Sophie</div>
+            <div style="color:var(--text-muted)">👤 Kévin</div>
+          </div>
+        </div>
+        <div class="tuto-mock-row" style="justify-content:center;gap:8px;padding-top:8px">
+          <span class="tuto-btn" style="background:transparent;border:1px solid var(--border);color:var(--text-muted)">🔀 Rebattre</span>
+          <span class="tuto-btn tuto-btn-action">🌋 C'est parti !</span>
+        </div>
+      </div>
+      <p>Cliquez sur <strong>🔀 Rebattre</strong> pour tirer de nouvelles équipes au hasard.</p>
+    `,
+  },
+  {
+    icon: '📖',
+    title: 'Présentation de la manche',
+    html: `
+      <p>Avant chaque manche, un écran rappelle les <strong>règles spécifiques</strong> à
+      respecter pendant les 30 secondes de chaque tour.</p>
+      <div class="tuto-mock" style="text-align:center">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:4px 14px;display:inline-block;font-size:0.78rem;color:var(--warning);font-weight:700;margin-bottom:8px">Manche 1 / 3</div>
+        <div style="font-size:2rem;margin-bottom:4px">🗣️</div>
+        <div style="font-weight:800;font-size:0.95rem;margin-bottom:6px">Parler librement</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.5">Les règles de la manche s'affichent ici.</div>
+        <div class="tuto-btn tuto-btn-action" style="margin-top:10px;display:inline-flex">▶ Commencer la manche</div>
+      </div>
+      <p>Lisez les règles attentivement puis cliquez <strong>▶ Commencer la manche</strong> pour démarrer les tours.</p>
+    `,
+  },
+  {
+    icon: '📱',
+    title: 'Pré-tour — Passez le téléphone',
+    html: `
+      <p>Au début de chaque tour, le nom de <strong>l'orateur</strong> (celui qui fait deviner)
+      et des <strong>devineurs</strong> (son équipe) est affiché.</p>
+      <div class="tuto-mock" style="text-align:center;padding:14px">
+        <div style="font-size:0.78rem;color:var(--text-muted)">Au tour de</div>
+        <div style="font-size:1.4rem;font-weight:900;color:#ffd166">Sophie</div>
+        <div style="font-size:0.78rem;color:var(--text-muted)">qui fait deviner à</div>
+        <div style="font-size:1.4rem;font-weight:900;color:#06d6a0">Marc · Lucie</div>
+        <div class="tuto-btn tuto-btn-action" style="margin-top:10px;display:inline-flex">✅ Je suis prêt !</div>
+      </div>
+      <p>L'orateur prend le téléphone, vérifie les règles, puis clique <strong>✅ Je suis prêt !</strong>
+      pour lancer le chronomètre de 30 secondes.</p>
+    `,
+  },
+  {
+    icon: '⏱️',
+    title: 'Tour actif — Écran de jeu',
+    html: `
+      <p>L'orateur voit le mot à faire deviner. Le chronomètre de <strong>30 secondes</strong>
+      tourne en haut au centre.</p>
+      <div class="tuto-mock-turn">
+        <div class="tuto-mock-turn-side tuto-btn-fault">🚨<br>Erreur<br><span style="font-size:0.65rem;font-weight:400">(Manche 3)</span></div>
+        <div class="tuto-mock-turn-center">
+          <div class="tuto-mock-timer">30</div>
+          <div class="tuto-mock-word">Séga</div>
+          <div style="font-size:0.7rem;color:var(--text-muted);background:var(--surface2);border-radius:99px;padding:2px 10px">🎵 Culture</div>
+        </div>
+        <div class="tuto-mock-turn-side tuto-btn-found">✅<br>Trouvé !<br><span style="font-size:0.65rem;font-weight:400">→ swipe</span></div>
+      </div>
+      <div style="display:flex;gap:6px;margin:8px 0">
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Trouvé !</strong> — L'équipe a trouvé le mot</span></div>
+      </div>
+      <div style="display:flex;gap:6px;margin:4px 0">
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer</strong> — Mot trop difficile (manches 2 & 3)</span></div>
+      </div>
+      <div style="display:flex;gap:6px;margin:4px 0">
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">↩</span><span><strong>Annuler</strong> — Revient sur la dernière action</span></div>
+      </div>
+    `,
+  },
+  {
+    icon: '🗣️',
+    title: 'Manche 1 — Parler librement',
+    html: `
+      <p>L'orateur peut utiliser <strong>tous les mots qu'il veut</strong> pour décrire le mot,
+      sauf ceux interdits ci-dessous.</p>
+      <div style="display:flex;flex-direction:column;gap:5px;margin:10px 0">
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⛔</span><span>Interdits : dire le nom, épeler, traduire directement</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span>Les devineurs peuvent faire autant de propositions qu'ils veulent</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🃏</span><span>Pas de bouton Passer — continuez jusqu'à la fin du temps</span></div>
+      </div>
+      <p>💡 <strong>Conseil :</strong> mémorisez bien les mots que vous entendez, ils reviendront
+      aux manches 2 et 3 !</p>
+    `,
+  },
+  {
+    icon: '☝️',
+    title: 'Manche 2 — Un seul mot',
+    html: `
+      <p>L'orateur ne peut dire qu'<strong>un seul mot</strong> pour chaque carte.
+      L'équipe n'a droit qu'à <strong>une seule proposition</strong>.</p>
+      <div style="display:flex;flex-direction:column;gap:5px;margin:10px 0">
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Bonne réponse</strong> → carte gagnée (cliquer Trouvé !)</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">❌</span><span><strong>Mauvaise réponse</strong> → carte perdue pour ce tour</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span>L'orateur peut <strong>Passer</strong> s'il est bloqué</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⛔</span><span>Interdits : plusieurs mots, partie du nom, traduction directe</span></div>
+      </div>
+      <p>Le bouton <strong>⏭ Passer</strong> apparaît à gauche de l'écran.</p>
+    `,
+  },
+  {
+    icon: '🤐',
+    title: 'Manche 3 — Mime et bruitages',
+    html: `
+      <p>Plus de paroles ! L'orateur ne peut utiliser que des <strong>mimes</strong>
+      et des <strong>bruitages</strong>.</p>
+      <div style="display:flex;flex-direction:column;gap:5px;margin:10px 0">
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Bonne réponse</strong> → carte gagnée</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span>L'orateur peut <strong>Passer</strong> s'il est bloqué</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">🚨</span><span><strong>Erreur</strong> → l'orateur a parlé ou fredonnée — carte perdue</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⛔</span><span>Interdits : parler, former des mots, fredonner une chanson</span></div>
+      </div>
+      <p>En cas de faute de l'orateur (il parle), les <strong>autres joueurs</strong>
+      doivent appuyer sur <strong>🚨 Erreur</strong> pour signaler la faute.</p>
+    `,
+  },
+  {
+    icon: '📊',
+    title: 'Fin de tour & Fin de manche',
+    html: `
+      <p>À la fin de chaque tour (temps écoulé ou tous les mots trouvés), le <strong>récapitulatif</strong>
+      s'affiche : nombre de mots trouvés ce tour et nombre restant dans la manche.</p>
+      <div class="tuto-mock" style="text-align:center;padding:14px">
+        <div style="font-size:1.2rem;margin-bottom:4px">⏱️ Temps écoulé !</div>
+        <div style="font-size:2.5rem;font-weight:900;color:var(--success);line-height:1">4</div>
+        <div style="font-size:0.82rem;color:var(--text-muted)">mot(s) ce tour · 12 restant(s)</div>
+      </div>
+      <p>Quand tous les mots d'une manche sont trouvés, le <strong>tableau des scores</strong>
+      s'affiche avec les points de chaque équipe. Les points sont cumulés sur les 3 manches.</p>
+      <div class="tuto-mock">
+        <div class="tuto-mock-row">
+          <span class="tuto-mock-label" style="color:var(--volcan);font-weight:700">Équipe 🔴 (Sophie · Marc)</span>
+          <span style="font-weight:700">6</span>
+          <span style="font-weight:700;color:var(--warning);margin-left:10px">6 pts</span>
+        </div>
+        <div class="tuto-mock-row">
+          <span class="tuto-mock-label" style="color:var(--lagon);font-weight:700">Équipe 🔵 (Lucie · Kévin)</span>
+          <span style="font-weight:700">4</span>
+          <span style="font-weight:700;color:var(--warning);margin-left:10px">4 pts</span>
+        </div>
+      </div>
+    `,
+  },
+  {
+    icon: '🎉',
+    title: 'Fin de partie — Résultats finaux',
+    html: `
+      <p>Après les <strong>3 manches</strong>, le classement final s'affiche avec le total
+      de points de chaque équipe.</p>
+      <div class="tuto-mock" style="text-align:center;padding:14px">
+        <div style="font-size:2rem;margin-bottom:6px">🎉</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:6px">Vainqueur</div>
+        <div style="font-size:1.4rem;font-weight:900;color:var(--volcan);margin-bottom:10px">Sophie · Marc</div>
+        <div style="display:flex;flex-direction:column;gap:5px;font-size:0.85rem">
+          <div style="background:var(--surface);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px">
+            <span style="font-size:1.1rem">🥇</span>
+            <span style="font-weight:700;color:var(--volcan);flex:1;text-align:left">Sophie · Marc</span>
+            <span style="color:var(--warning);font-weight:700">18 pts</span>
+          </div>
+          <div style="background:var(--surface);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px">
+            <span style="font-size:1.1rem">🥈</span>
+            <span style="font-weight:700;color:var(--lagon);flex:1;text-align:left">Lucie · Kévin</span>
+            <span style="color:var(--warning);font-weight:700">14 pts</span>
+          </div>
+        </div>
+      </div>
+      <p>Cliquez <strong>🔄 Rejouer</strong> pour relancer une nouvelle partie avec les mêmes joueurs. Bonne chance ! 🌋</p>
+    `,
+  },
+];
+
+let _tutorialCurrentSlide = 0;
+
+function openTutorial(startSlide = 0) {
+  _tutorialCurrentSlide = startSlide;
+  renderTutorialSlide();
+  el('tutorial-overlay').hidden = false;
+  el('tutorial-overlay').focus();
+}
+
+function closeTutorial() {
+  el('tutorial-overlay').hidden = true;
+}
+
+function renderTutorialSlide() {
+  const total   = TUTORIAL_SLIDES.length;
+  const slide   = TUTORIAL_SLIDES[_tutorialCurrentSlide];
+  const content = el('tutorial-slide-content');
+
+  content.innerHTML = `
+    <div class="tuto-slide-icon">${slide.icon}</div>
+    <div class="tuto-slide-title">${slide.title}</div>
+    <div class="tuto-slide-body">${slide.html}</div>
+  `;
+
+  // Dots
+  const dotsEl = el('tutorial-dots');
+  dotsEl.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const dot = document.createElement('button');
+    dot.className = `tutorial-dot${i === _tutorialCurrentSlide ? ' active' : ''}`;
+    dot.setAttribute('aria-label', `Diapositive ${i + 1}`);
+    dot.addEventListener('click', () => {
+      _tutorialCurrentSlide = i;
+      renderTutorialSlide();
+    });
+    dotsEl.appendChild(dot);
+  }
+
+  // Prev / Next buttons
+  el('tutorial-prev').disabled = _tutorialCurrentSlide === 0;
+  const nextBtn = el('tutorial-next');
+  if (_tutorialCurrentSlide === total - 1) {
+    nextBtn.textContent = '✅ Fermer';
+  } else {
+    nextBtn.textContent = 'Suivant ›';
+  }
+
+  // Scroll slide content to top on navigation
+  content.scrollTop = 0;
+}
+
+function tutorialNext() {
+  if (_tutorialCurrentSlide < TUTORIAL_SLIDES.length - 1) {
+    _tutorialCurrentSlide++;
+    renderTutorialSlide();
+  } else {
+    closeTutorial();
+  }
+}
+
+function tutorialPrev() {
+  if (_tutorialCurrentSlide > 0) {
+    _tutorialCurrentSlide--;
+    renderTutorialSlide();
+  }
+}
+
+
 function toggleFullscreen() {
   if (!document.fullscreenElement && !document.webkitFullscreenElement) {
     const req = document.documentElement.requestFullscreen
@@ -1276,6 +1594,20 @@ function init() {
     e.target.value = '';
   });
   el('btn-words-reset').addEventListener('click', handleResetWords);
+
+  // ── Tutoriel ──
+  el('btn-tutorial').addEventListener('click', () => openTutorial(0));
+  el('tutorial-close').addEventListener('click', closeTutorial);
+  el('tutorial-prev').addEventListener('click', tutorialPrev);
+  el('tutorial-next').addEventListener('click', tutorialNext);
+  el('tutorial-overlay').addEventListener('click', (e) => {
+    if (e.target === el('tutorial-overlay')) closeTutorial();
+  });
+  el('tutorial-overlay').addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeTutorial();
+    else if (e.key === 'ArrowRight') tutorialNext();
+    else if (e.key === 'ArrowLeft') tutorialPrev();
+  });
 
   // ── Re-fit word on resize / orientation change ──
   window.addEventListener('resize', () => {
