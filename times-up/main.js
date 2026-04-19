@@ -968,10 +968,12 @@ function showRoundEnd() {
   el('btn-final-results').hidden = !isLastRound;
 
   showScreen('screen-round-end');
+  if (_demoMode) showDemoTips('round-end-' + state.currentRound);
 }
 
 // ─── FIN DU JEU ────────────────────────────────────────────────────────────────
 function showGameOver() {
+  const wasDemo = _demoMode;
   _demoMode = false; // fin de la démo
   playGameOver();
   saveMembersAfterGame();
@@ -1020,6 +1022,7 @@ function showGameOver() {
   });
 
   showScreen('screen-game-over');
+  if (wasDemo) showDemoTips('game-over');
 }
 
 // ─── ÉDITEUR DE MOTS ──────────────────────────────────────────────────────────
@@ -1604,6 +1607,22 @@ const DEMO_TIPS = {
   ],
   3: [
     { targetId: 'btn-pass', text: '🚨 En manche 3, ce bouton s\'appelle Erreur / Passer. Appuie dessus si l\'orateur a parlé OU s\'il souhaite passer — la carte est perdue pour ce tour dans les deux cas.' },
+  ],
+  'round-end-1': [
+    { targetId: 'round-end-scores', text: '🏆 Tableau des scores — « Cette manche » = points gagnés lors de cette manche. « Total » = cumul de toutes les manches.' },
+    { targetId: 'btn-next-round',   text: '☝️ Manche 2 : un seul mot ! L\'orateur n\'a droit qu\'à un seul indice. Mauvaise réponse → la carte est remise en jeu pour un autre tour.' },
+  ],
+  'round-end-2': [
+    { targetId: 'round-end-scores', text: '🏆 Scores après 2 manches — tous les mots sont remis en jeu pour la dernière manche.' },
+    { targetId: 'btn-next-round',   text: '🤐 Manche 3 : mime et bruitages uniquement ! Aucun mot autorisé, pas même fredonner une mélodie.' },
+  ],
+  'round-end-3': [
+    { targetId: 'round-end-scores',  text: '🏆 Scores des 3 manches — « Cette manche » = points de la manche 3, « Total » = score final de chaque équipe.' },
+    { targetId: 'btn-final-results', text: '🎉 Appuie ici pour découvrir le vainqueur et clore la partie !' },
+  ],
+  'game-over': [
+    { targetId: 'game-over-winner', text: '🎉 C\'est ainsi que se termine une vraie partie ! Retourne à l\'accueil pour lancer une partie avec tes amis.' },
+    { targetId: 'btn-replay',       text: '🔄 Ce bouton te ramène à l\'écran de départ pour configurer une vraie partie. Bonne chance !' },
   ],
 };
 
