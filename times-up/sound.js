@@ -76,28 +76,10 @@ export function playBuzzer() {
   try {
     const ctx = getCtx();
     const now = ctx.currentTime;
-    // Three loud school-bell dings, each with sharp attack and long decay
+    // Three school-bell dings: fundamental (900 Hz) + overtone (1440 Hz)
     [0, 0.55, 1.1].forEach((offset) => {
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      osc.connect(g); g.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(900, now + offset);
-      // Add a slight inharmonic overtone for a metallic bell colour
-      const osc2 = ctx.createOscillator();
-      const g2 = ctx.createGain();
-      osc2.connect(g2); g2.connect(ctx.destination);
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(1440, now + offset);
-      const ringDuration = 0.45;
-      g.gain.setValueAtTime(0, now + offset);
-      g.gain.linearRampToValueAtTime(0.7, now + offset + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.001, now + offset + ringDuration);
-      g2.gain.setValueAtTime(0, now + offset);
-      g2.gain.linearRampToValueAtTime(0.35, now + offset + 0.01);
-      g2.gain.exponentialRampToValueAtTime(0.001, now + offset + ringDuration * 0.6);
-      osc.start(now + offset); osc.stop(now + offset + ringDuration);
-      osc2.start(now + offset); osc2.stop(now + offset + ringDuration);
+      playNote(900,  'sine', now + offset, 0.40, 0.70);
+      playNote(1440, 'sine', now + offset, 0.25, 0.35);
     });
   } catch (_) {}
 }
