@@ -1,3 +1,9 @@
+## [1.79.0](https://github.com/niafrond/niafrond.github.io/compare/v1.78.0...v1.79.0) (2026-04-19)
+
+### Features
+
+* **times-up:** add interactive tutorial modal ([#110](https://github.com/niafrond/niafrond.github.io/issues/110)) ([f845547](https://github.com/niafrond/niafrond.github.io/commit/f8455471784eed6fab4717936b2b3cc21f9c7039))
+
 ## [1.78.0](https://github.com/niafrond/niafrond.github.io/compare/v1.77.0...v1.78.0) (2026-04-19)
 
 ### Features
