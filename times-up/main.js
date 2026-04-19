@@ -783,7 +783,7 @@ function endTurn(reason = 'timeout') {
     el('turn-end-team').textContent      = teamLabel(team);
     el('turn-end-player').textContent    = team.players[0];
     el('turn-end-count').textContent     = state.turnFound.length;
-    el('turn-end-words-left').textContent = '0';
+    el('turn-end-words-left').textContent = state.roundWords.length;
     el('btn-next-turn').dataset.nextAction = 'round-end';
     el('turn-end-all-found').hidden = (reason !== 'allFound');
     showScreen('screen-turn-end');
