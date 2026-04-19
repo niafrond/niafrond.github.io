@@ -1413,7 +1413,7 @@ const TUTORIAL_SLIDES = [
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Trouvé !</strong> — L'équipe a trouvé le mot</span></div>
       </div>
       <div style="display:flex;gap:6px;margin:4px 0">
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer / 🚨 Erreur</strong> — Bouton gauche : passer ou signaler une faute (manches 2 & 3)</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Passer / 🚨 Erreur</strong> — Bouton gauche : passer ou signaler une erreur (manches 2 & 3)</span></div>
       </div>
       <div style="display:flex;gap:6px;margin:4px 0">
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">↩</span><span><strong>Annuler</strong> — Revient sur la dernière action</span></div>
@@ -1535,7 +1535,7 @@ const DEMO_TIPS = {
     { targetId: 'btn-pass',  text: '⏭ Nouveau en manche 2 ! Si tu es bloqué sur une carte, passe-la : elle reviendra pour un autre tour.' },
   ],
   3: [
-    { targetId: 'btn-pass', text: '🚨 Nouveau en manche 3 ! Ce bouton sert à la fois à Passer et à signaler une Erreur (l\'orateur a parlé). Glisse à gauche ou appuie ici.' },
+    { targetId: 'btn-pass', text: '🚨 Nouveau en manche 3 ! Ce bouton sert à signaler une Erreur (l\'orateur a parlé) ou à Passer si tu es bloqué — même effet dans les deux cas.' },
   ],
 };
 
