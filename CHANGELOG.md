@@ -1,3 +1,9 @@
+## [1.74.0](https://github.com/niafrond/niafrond.github.io/compare/v1.73.0...v1.74.0) (2026-04-19)
+
+### Features
+
+* **times-up:** afficher le nombre de mots restants pendant la manche ([#104](https://github.com/niafrond/niafrond.github.io/issues/104)) ([15745a5](https://github.com/niafrond/niafrond.github.io/commit/15745a5d29c16532198639791b628171518f4e68))
+
 ## [1.73.0](https://github.com/niafrond/niafrond.github.io/compare/v1.72.1...v1.73.0) (2026-04-18)
 
 ### Features
