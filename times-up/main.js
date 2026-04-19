@@ -129,7 +129,8 @@ const state = {
   turnFound:   [],
   turnSkipped: [],   // cartes passées définitivement dans le tour en cours (manches 2 et 3)
   currentWord: null,
-  lastAction:  null, // {type:'found'|'skipped'|'fault', word} — pour le bouton Annuler
+  actionHistory: [], // [{type:'found'|'skipped'|'fault', word}] — pile d'annulation depuis le début de la manche
+  redoStack:     [], // pile de ré-application (actions annulées)
 
   timerInterval: null,
   timeLeft: TURN_DURATION,
@@ -452,8 +453,9 @@ function startTurn() {
   state.turnFound   = [];
   state.turnSkipped = [];
   state.timeLeft    = TURN_DURATION;
-  state.lastAction  = null;
-  el('btn-undo').hidden = true;
+  state.actionHistory = [];
+  state.redoStack     = [];
+  updateUndoRedoButtons();
 
   const rule = getCurrentRoundRule();
 
@@ -556,17 +558,18 @@ function drawNextWord() {
 
 function wordFound() {
   playFound();
-  state.lastAction = { type: 'found', word: state.currentWord };
-  el('btn-undo').hidden = false;
+  state.actionHistory.push({ type: 'found', word: state.currentWord });
+  state.redoStack = [];
   state.turnFound.push(state.currentWord);
   state.currentWord = null;
   updateTurnStats();
   drawNextWord();
+  updateUndoRedoButtons();
 }
 
 function wordSkipped() {
-  state.lastAction = { type: 'skipped', word: state.currentWord };
-  el('btn-undo').hidden = false;
+  state.actionHistory.push({ type: 'skipped', word: state.currentWord });
+  state.redoStack = [];
   if (state.currentRound >= 2) {
     // Manches 2 et 3 : la carte est passée définitivement pour ce tour
     state.turnSkipped.push(state.currentWord);
@@ -577,24 +580,32 @@ function wordSkipped() {
   state.currentWord = null;
   updateTurnStats();
   drawNextWord();
+  updateUndoRedoButtons();
 }
 
 function wordFault() {
   // Manches 2 et 3 (canFault=true) : la carte est passée définitivement pour ce tour
   if (state.currentWord) {
-    state.lastAction = { type: 'fault', word: state.currentWord };
-    el('btn-undo').hidden = false;
+    state.actionHistory.push({ type: 'fault', word: state.currentWord });
+    state.redoStack = [];
     state.turnSkipped.push(state.currentWord);
     state.currentWord = null;
   }
   updateTurnStats();
   drawNextWord();
+  updateUndoRedoButtons();
+}
+
+function updateUndoRedoButtons() {
+  el('btn-undo').hidden = state.actionHistory.length === 0;
+  el('btn-redo').hidden = state.redoStack.length === 0;
 }
 
 function undoLastAction() {
-  if (!state.lastAction) return;
-  const { type, word } = state.lastAction;
-  state.lastAction = null;
+  if (state.actionHistory.length === 0) return;
+  const action = state.actionHistory.pop();
+  state.redoStack.push(action);
+  const { type, word } = action;
 
   // Remettre le mot courant en tête du deck
   if (state.currentWord) {
@@ -624,7 +635,31 @@ function undoLastAction() {
   el('word-card-category').textContent = `${cat.emoji} ${cat.label}`;
   updateTurnStats();
   fitWordCard();
-  el('btn-undo').hidden = true;
+  updateUndoRedoButtons();
+}
+
+function redoLastAction() {
+  if (state.redoStack.length === 0) return;
+  const action = state.redoStack.pop();
+  state.actionHistory.push(action);
+  const { type, word } = action;
+
+  // currentWord doit être `word` à cet instant (c'est lui qui a été affiché après le dernier undo)
+  if (type === 'found') {
+    playFound();
+    state.turnFound.push(word);
+  } else {
+    // 'skipped' ou 'fault'
+    if (state.currentRound >= 2) {
+      state.turnSkipped.push(word);
+    } else {
+      state.roundWords.push(word);
+    }
+  }
+  state.currentWord = null;
+  updateTurnStats();
+  drawNextWord();
+  updateUndoRedoButtons();
 }
 
 function updateTurnStats() {
@@ -1587,6 +1622,7 @@ function init() {
   el('btn-skip-side').addEventListener('click', withCooldown(wordSkipped));
   el('btn-fault').addEventListener('click', withCooldown(wordFault));
   el('btn-undo').addEventListener('click', withCooldown(undoLastAction));
+  el('btn-redo').addEventListener('click', withCooldown(redoLastAction));
 
   // ── Turn end ──
   el('btn-next-turn').addEventListener('click', withCooldown(handleNextTurn));
