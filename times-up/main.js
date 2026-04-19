@@ -256,6 +256,7 @@ function removePlayer(idx) {
 /**
  * Retourne un tableau de tailles d'équipes pour n joueurs.
  * Retourne null pour 5 ou 7 joueurs (pas d'équipes fixes).
+ *   2  → [2]       (coopératif — 1 équipe de 2)
  *   4  → [2, 2]
  *   6  → [2, 2, 2]
  *   8  → [2, 2, 2, 2]
@@ -267,7 +268,7 @@ function removePlayer(idx) {
  */
 function computeTeamLayout(n) {
   switch (n) {
-    case 2:  return [1, 1];
+    case 2:  return [2];
     case 3:  return [1, 1, 1];
     case 4:  return [2, 2];
     case 5:  return null;
@@ -1191,7 +1192,7 @@ const TUTORIAL_SLIDES = [
     icon: '👥',
     title: 'Écran d\'accueil — Ajouter des joueurs',
     html: `
-      <p>Saisissez au moins <strong>2 prénoms</strong> pour démarrer une partie (minimum 4 pour jouer en équipes de 2).
+      <p>Saisissez au moins <strong>2 prénoms</strong> pour démarrer une partie.
       Le bouton 🚀 se débloque automatiquement dès que le minimum est atteint.</p>
       <div class="tuto-mock">
         <div class="tuto-mock-row">
@@ -1237,7 +1238,7 @@ const TUTORIAL_SLIDES = [
     title: 'Écran — Les Équipes',
     html: `
       <p>Après avoir cliqué sur <strong>🚀 Répartir les joueurs</strong>, les équipes sont
-      formées <strong>aléatoirement</strong>. Pour 2 joueurs : 2 équipes de 1 (duel).
+      formées <strong>aléatoirement</strong>. Pour 2 joueurs : 1 équipe de 2 (coopératif — score commun).
       Pour 4 joueurs : 2 équipes de 2.
       Pour 6 joueurs : 3 équipes de 2, etc.</p>
       <div class="tuto-mock">
