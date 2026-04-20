@@ -1,3 +1,9 @@
+## [1.97.1](https://github.com/niafrond/niafrond.github.io/compare/v1.97.0...v1.97.1) (2026-04-20)
+
+### Bug Fixes
+
+* restore playerIsChild from localStorage on replay ([#147](https://github.com/niafrond/niafrond.github.io/issues/147)) ([6e8c3a5](https://github.com/niafrond/niafrond.github.io/commit/6e8c3a52278cf8e274aac94525c046c2cf1606aa))
+
 ## [1.97.0](https://github.com/niafrond/niafrond.github.io/compare/v1.96.0...v1.97.0) (2026-04-20)
 
 ### Features
