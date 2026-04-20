@@ -1,3 +1,9 @@
+## [1.98.1](https://github.com/niafrond/niafrond.github.io/compare/v1.98.0...v1.98.1) (2026-04-20)
+
+### Bug Fixes
+
+* **flash-guess:** fix corrupted speaker emoji in mute toggle ([8929dc6](https://github.com/niafrond/niafrond.github.io/commit/8929dc6a323a196b0b04d92ca87d7c52289ce0d5))
+
 ## [1.98.0](https://github.com/niafrond/niafrond.github.io/compare/v1.97.1...v1.98.0) (2026-04-20)
 
 ### Features
