@@ -118,14 +118,17 @@ export function renderTeams() {
 
 function updateCoopButtons() {
   document.querySelectorAll('.btn-coop-opt').forEach(btn => {
-    const isActive = btn.dataset.obj === (state.coopObjective ?? '');
-    btn.classList.toggle('btn-coop-opt--active', isActive);
+    btn.classList.toggle('btn-coop-opt--active', state.coopObjectives.has(btn.dataset.obj));
   });
 }
 
 export function setCoopObjective(obj) {
-  // obj : '' (classique), 'time' (temps cumulé), 'turns' (moins de tours)
-  state.coopObjective = obj || null;
+  // obj : 'chrono' (temps cumulé) | 'precision' (moins de tours) — toggle
+  if (state.coopObjectives.has(obj)) {
+    state.coopObjectives.delete(obj);
+  } else {
+    state.coopObjectives.add(obj);
+  }
   updateCoopButtons();
 }
 
@@ -581,7 +584,7 @@ export function endTurn(reason = 'timeout') {
   }
 
   // Mode coop 2 joueurs : enregistrer le temps utilisé et le nombre de tours
-  if (state.coopObjective !== null) {
+  if (state.coopObjectives.size > 0) {
     state.coopTimeUsed   += TURN_DURATION - state.timeLeft;
     state.coopTurnsCount += 1;
   }
@@ -717,65 +720,56 @@ export function showRoundEnd() {
   const scoreRows = el('round-end-scores');
   scoreRows.innerHTML = '';
 
-  // Mode coop 2 joueurs : afficher temps ou tours cumulés à la place des points
-  if (state.coopObjective !== null) {
-    const theadRow = el('round-end-thead-row');
-    if (theadRow) {
-      const label = state.coopObjective === 'time' ? 'Temps cumulé' : 'Tours joués';
-      theadRow.innerHTML = `<th>Équipe</th><th class="score-cell">${label}</th>`;
-    }
+  const chrono    = state.coopObjectives.has('chrono');
+  const precision = state.coopObjectives.has('precision');
 
-    state.teams.forEach(team => {
-      const tr = document.createElement('tr');
-
-      const tdName = document.createElement('td');
-      const nameSpan = document.createElement('span');
-      nameSpan.textContent = teamLabel(team);
-      nameSpan.style.color = team.color;
-      tdName.appendChild(nameSpan);
-
-      const tdStat = document.createElement('td');
-      tdStat.className = 'score-cell total-score';
-      tdStat.textContent = state.coopObjective === 'time'
-        ? formatCoopTime(state.coopTimeUsed)
-        : state.coopTurnsCount;
-
-      tr.appendChild(tdName);
-      tr.appendChild(tdStat);
-      scoreRows.appendChild(tr);
-    });
-  } else {
-    // Affichage classique
-    const theadRow = el('round-end-thead-row');
-    if (theadRow) {
-      theadRow.innerHTML = '<th>Équipe</th><th class="score-cell">Cette manche</th><th class="score-cell">Total</th>';
-    }
-
-    state.teams.forEach(team => {
-      const tr      = document.createElement('tr');
-      const roundPts = team.score[state.currentRound - 1];
-      const totalPts = team.score.reduce((a, b) => a + b, 0);
-
-      const tdName = document.createElement('td');
-      const nameSpan = document.createElement('span');
-      nameSpan.textContent = teamLabel(team);
-      nameSpan.style.color = team.color;
-      tdName.appendChild(nameSpan);
-
-      const tdRound = document.createElement('td');
-      tdRound.className = 'score-cell';
-      tdRound.textContent = roundPts;
-
-      const tdTotal = document.createElement('td');
-      tdTotal.className = 'score-cell total-score';
-      tdTotal.textContent = totalPts;
-
-      tr.appendChild(tdName);
-      tr.appendChild(tdRound);
-      tr.appendChild(tdTotal);
-      scoreRows.appendChild(tr);
-    });
+  // En-tête du tableau : colonnes classiques + colonnes coop actives
+  const theadRow = el('round-end-thead-row');
+  if (theadRow) {
+    let html = '<th>Équipe</th><th class="score-cell">Cette manche</th><th class="score-cell">Total</th>';
+    if (chrono)    html += '<th class="score-cell">⏱️ Chrono</th>';
+    if (precision) html += '<th class="score-cell">🎯 Précision</th>';
+    theadRow.innerHTML = html;
   }
+
+  state.teams.forEach(team => {
+    const tr      = document.createElement('tr');
+    const roundPts = team.score[state.currentRound - 1];
+    const totalPts = team.score.reduce((a, b) => a + b, 0);
+
+    const tdName = document.createElement('td');
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = teamLabel(team);
+    nameSpan.style.color = team.color;
+    tdName.appendChild(nameSpan);
+
+    const tdRound = document.createElement('td');
+    tdRound.className = 'score-cell';
+    tdRound.textContent = roundPts;
+
+    const tdTotal = document.createElement('td');
+    tdTotal.className = 'score-cell total-score';
+    tdTotal.textContent = totalPts;
+
+    tr.appendChild(tdName);
+    tr.appendChild(tdRound);
+    tr.appendChild(tdTotal);
+
+    if (chrono) {
+      const tdTime = document.createElement('td');
+      tdTime.className = 'score-cell';
+      tdTime.textContent = formatCoopTime(state.coopTimeUsed);
+      tr.appendChild(tdTime);
+    }
+    if (precision) {
+      const tdTurns = document.createElement('td');
+      tdTurns.className = 'score-cell';
+      tdTurns.textContent = state.coopTurnsCount;
+      tr.appendChild(tdTurns);
+    }
+
+    scoreRows.appendChild(tr);
+  });
 
   const isLastRound = state.currentRound === 3;
   el('btn-next-round').hidden    = isLastRound;
@@ -796,35 +790,6 @@ export function showGameOver() {
   demo.mode = false;
   playGameOver();
   saveMembersAfterGame();
-
-  // Mode coop 2 joueurs : afficher le résumé temps ou tours
-  if (state.coopObjective !== null) {
-    const winnerEl = el('game-over-winner');
-    const team = state.teams[0];
-    if (team) {
-      winnerEl.textContent = teamLabel(team);
-      winnerEl.style.color = team.color;
-    }
-
-    const finalScores = el('final-scores');
-    finalScores.innerHTML = '';
-
-    const metricLabel = state.coopObjective === 'time'
-      ? `⏱️ ${formatCoopTime(state.coopTimeUsed)}`
-      : `🔢 ${state.coopTurnsCount} tour${state.coopTurnsCount !== 1 ? 's' : ''}`;
-
-    const scoreDiv = document.createElement('div');
-    scoreDiv.className = 'final-score-row';
-    scoreDiv.innerHTML = `
-      <span class="final-rank">🏆</span>
-      <span style="color:${team?.color ?? 'var(--text)'}; font-weight:700;">${team ? teamLabel(team) : ''}</span>
-      <span class="final-pts">${metricLabel}</span>
-    `;
-    finalScores.appendChild(scoreDiv);
-
-    showScreen('screen-game-over');
-    return;
-  }
 
   const scored = state.teams
     .map(t => ({ team: t, total: t.score.reduce((a, b) => a + b, 0) }))
@@ -868,6 +833,27 @@ export function showGameOver() {
     div.appendChild(ptsSpan);
     finalScores.appendChild(div);
   });
+
+  // Afficher les performances coop si au moins un objectif est actif
+  const chrono    = state.coopObjectives.has('chrono');
+  const precision = state.coopObjectives.has('precision');
+  if (chrono || precision) {
+    const perfDiv = document.createElement('div');
+    perfDiv.className = 'coop-perf-summary';
+    if (chrono) {
+      const p = document.createElement('p');
+      p.className = 'coop-perf-line';
+      p.textContent = `⏱️ Chrono : ${formatCoopTime(state.coopTimeUsed)}`;
+      perfDiv.appendChild(p);
+    }
+    if (precision) {
+      const p = document.createElement('p');
+      p.className = 'coop-perf-line';
+      p.textContent = `🎯 Précision : ${state.coopTurnsCount} tour${state.coopTurnsCount !== 1 ? 's' : ''}`;
+      perfDiv.appendChild(p);
+    }
+    finalScores.appendChild(perfDiv);
+  }
 
   showScreen('screen-game-over');
 }

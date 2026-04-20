@@ -135,8 +135,9 @@ describe('state', () => {
     expect(state.currentRound).toBe(0);
   });
 
-  test('coopObjective est null initialement', () => {
-    expect(state.coopObjective).toBeNull();
+  test('coopObjectives est un Set vide initialement', () => {
+    expect(state.coopObjectives).toBeInstanceOf(Set);
+    expect(state.coopObjectives.size).toBe(0);
   });
 
   test('coopTimeUsed est 0 initialement', () => {

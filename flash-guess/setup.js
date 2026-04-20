@@ -252,8 +252,8 @@ export function confirmCategories() {
     return;
   }
   saveSelectedCategories(state.selectedCategories);
-  // Réinitialiser l'objectif coop à chaque nouvelle partie
-  state.coopObjective  = null;
+  // Réinitialiser les objectifs coop à chaque nouvelle partie
+  state.coopObjectives = new Set();
   state.coopTimeUsed   = 0;
   state.coopTurnsCount = 0;
   assignTeams();

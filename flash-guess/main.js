@@ -208,7 +208,7 @@ function init() {
     state.noTeamsMode        = false;
     state.selectedCategories = [];
     state.playerIsChild.clear();
-    state.coopObjective  = null;
+    state.coopObjectives = new Set();
     state.coopTimeUsed   = 0;
     state.coopTurnsCount = 0;
     const freshMembers = loadMembers();
