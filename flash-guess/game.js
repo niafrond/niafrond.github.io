@@ -25,6 +25,16 @@ export function getCurrentRoundRule() { return ROUND_RULES[state.currentRound - 
 
 export function teamLabel(team) { return team.players.join(' · '); }
 
+/**
+ * Calcule l'index de l'équipe qui commence une nouvelle manche.
+ * Pour la manche 1, on démarre toujours à l'équipe 0.
+ * Pour les manches suivantes, on passe à l'équipe suivante afin
+ * qu'une même équipe ne joue pas deux fois de suite lors du changement de manche.
+ */
+export function nextRoundStartTeamIdx(currentTeamIdx, numTeams, roundNum) {
+  return roundNum === 1 ? 0 : (currentTeamIdx + 1) % numTeams;
+}
+
 // ─── COMPOSITION DES ÉQUIPES ───────────────────────────────────────────────────
 export function computeTeamLayout(n) {
   switch (n) {
@@ -314,7 +324,7 @@ export function startRound(roundNum) {
     state.coopTurnsCount = 0;
   }
   state.roundWords     = shuffle([...state.allWords]);
-  state.currentTeamIdx = 0;
+  state.currentTeamIdx = nextRoundStartTeamIdx(state.currentTeamIdx, state.teams.length, roundNum);
 
   const r = ROUND_RULES[roundNum - 1];
   el('round-intro-icon').textContent  = r.icon;
