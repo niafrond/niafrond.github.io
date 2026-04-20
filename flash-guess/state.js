@@ -16,7 +16,8 @@ export const GROUPS_KEY                 = 'flashguess_groups';
 export const WORD_FONT_MIN              = 16;
 export const WORD_FONT_MAX              = 200;
 export const CLICK_COOLDOWN             = 500;
-export const CHILD_READ_AUTO_MS         = 5000;
+export const CHILD_READ_MS_PER_LETTER   = 1420;
+export const CHILD_READ_MIN_MS          = 3000;
 
 export const GAMEPLAY_SCREENS = new Set([
   'screen-word-draft-cover',

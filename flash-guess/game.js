@@ -7,7 +7,7 @@ import {
   ROUND_RULES, TEAMS_META, GAMEPLAY_SCREENS,
   TURN_DURATION, TIMER_CIRCLE_RADIUS,
   WORD_FONT_MIN, WORD_FONT_MAX,
-  CHILD_READ_AUTO_MS,
+  CHILD_READ_MS_PER_LETTER, CHILD_READ_MIN_MS,
   ELIMINATIONS_PER_PLAYER,
 } from './state.js';
 import { el, showScreen, showToast } from './ui.js';
@@ -169,12 +169,17 @@ export function showChildReadBtn(visible) {
   if (errorBtn) errorBtn.disabled = visible;
   if (skipBtn)  skipBtn.disabled  = visible;
   if (visible && !demo.childReadFrozen) {
+    const word     = state.currentWord?.word ?? '';
+    // Count only non-space characters so multi-word phrases feel natural
+    const letters  = word.replace(/\s/g, '').length;
+    const duration = Math.max(CHILD_READ_MIN_MS, letters * CHILD_READ_MS_PER_LETTER);
     void btn.offsetWidth;
+    btn.style.setProperty('--child-read-duration', `${duration / 1000}s`);
     btn.classList.add('child-read-btn--countdown');
     state.childReadAutoTimer = setTimeout(() => {
       state.childReadAutoTimer = null;
       childConfirmedRead();
-    }, CHILD_READ_AUTO_MS);
+    }, duration);
   }
 }
 

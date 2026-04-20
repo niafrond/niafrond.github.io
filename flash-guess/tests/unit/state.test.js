@@ -7,7 +7,7 @@
 import { jest } from '@jest/globals';
 import {
   TURN_DURATION, TIMER_CIRCLE_RADIUS, MIN_PLAYERS,
-  CARD_COUNT_DEFAULT, CLICK_COOLDOWN, CHILD_READ_AUTO_MS,
+  CARD_COUNT_DEFAULT, CLICK_COOLDOWN, CHILD_READ_MS_PER_LETTER, CHILD_READ_MIN_MS,
   GAMEPLAY_SCREENS, ROUND_RULES, TEAMS_META,
   state, demo, demoHooks,
   withCooldown,
@@ -36,8 +36,12 @@ describe('Constantes', () => {
     expect(CLICK_COOLDOWN).toBeGreaterThan(0);
   });
 
-  test('CHILD_READ_AUTO_MS est un nombre positif', () => {
-    expect(CHILD_READ_AUTO_MS).toBeGreaterThan(0);
+  test('CHILD_READ_MS_PER_LETTER est un nombre positif', () => {
+    expect(CHILD_READ_MS_PER_LETTER).toBeGreaterThan(0);
+  });
+
+  test('CHILD_READ_MIN_MS est un nombre positif', () => {
+    expect(CHILD_READ_MIN_MS).toBeGreaterThan(0);
   });
 });
 
