@@ -85,7 +85,7 @@ export function renderMembersList() {
       const childBtn = document.createElement('button');
       childBtn.className = `member-child-btn${member.isChild ? ' member-child-btn--active' : ''}`;
       childBtn.title = member.isChild ? 'Retirer le marquage enfant' : 'Marquer comme enfant (-12 ans)';
-      childBtn.textContent = '👦';
+      childBtn.textContent = '👶';
       childBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const members2 = loadMembers();
