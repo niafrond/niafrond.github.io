@@ -1,3 +1,9 @@
+## [1.103.0](https://github.com/niafrond/niafrond.github.io/compare/v1.102.0...v1.103.0) (2026-04-20)
+
+### Features
+
+* **flash-guess:** bouton retour navigateur/téléphone ([a4201e1](https://github.com/niafrond/niafrond.github.io/commit/a4201e180e0d8cf4ed075cf34836d585b4f5e013))
+
 ## [1.102.0](https://github.com/niafrond/niafrond.github.io/compare/v1.101.0...v1.102.0) (2026-04-20)
 
 ### Features
