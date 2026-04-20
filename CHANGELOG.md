@@ -1,3 +1,9 @@
+## [1.104.0](https://github.com/niafrond/niafrond.github.io/compare/v1.103.1...v1.104.0) (2026-04-20)
+
+### Features
+
+* **flash-guess:** split btn-pass into btn-error and btn-skip stacked vertically ([7b2d4f2](https://github.com/niafrond/niafrond.github.io/commit/7b2d4f27b85aae6e0b5a0095b7ef711caeb86e05))
+
 ## [1.103.1](https://github.com/niafrond/niafrond.github.io/compare/v1.103.0...v1.103.1) (2026-04-20)
 
 ### Bug Fixes
