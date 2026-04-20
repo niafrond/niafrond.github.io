@@ -97,12 +97,6 @@
     <p class="app-subtitle">Faites deviner des mots en équipes !</p>
 
     <div class="card">
-      <!-- Onglets -->
-      <div class="setup-tabs">
-        <button class="setup-tab setup-tab--active" id="tab-btn-partie">⚽ Partie</button>
-        <button class="setup-tab" id="tab-btn-membres">👥 Joueurs</button>
-      </div>
-
       <!-- Panel Partie -->
       <div id="panel-partie">
         <div class="input-row mb-12">
@@ -117,16 +111,6 @@
         <div id="player-list"></div>
         <span id="player-count"></span>
         <span id="setup-hint" hidden></span>
-      </div>
-
-      <!-- Panel Joueurs persistants -->
-      <div id="panel-membres" hidden>
-        <p class="members-hint">Enregistrez des joueurs pour les retrouver rapidement.<br>Cliquez sur un nom pour l'ajouter à la partie en cours.</p>
-        <div class="input-row mb-12">
-          <input id="member-input" class="input" type="text"
-                 placeholder="Nouveau joueur…" maxlength="24" autocomplete="off" autocorrect="off">
-          <button id="btn-add-member" class="btn btn-primary">+ Enregistrer</button>
-        </div>
         <div id="members-list"></div>
       </div>
     </div>

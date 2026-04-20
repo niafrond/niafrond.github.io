@@ -304,7 +304,9 @@ function addPlayer() {
   el('player-is-child').checked = false;
   input.value = '';
   input.focus();
+  autoSaveMember(name);
   renderPlayerList();
+  renderMembersList();
 }
 
 function removePlayer(idx) {
@@ -312,6 +314,7 @@ function removePlayer(idx) {
   state.playerIsChild.delete(name);
   state.playerNames.splice(idx, 1);
   renderPlayerList();
+  renderMembersList();
 }
 
 // ─── MODE ENFANT — statut et toggle ────────────────────────────────────────────
@@ -1387,6 +1390,8 @@ function handleResetWords() {
 // ─── MEMBRES (historique des joueurs) ─────────────────────────────────────────
 const MEMBERS_KEY = 'flashguess-members';
 
+const _pendingChildMembers = new Set();
+
 function loadMembers() {
   try { return JSON.parse(localStorage.getItem(MEMBERS_KEY) || '[]'); } catch { return []; }
 }
@@ -1395,12 +1400,12 @@ function saveMembers(members) {
   localStorage.setItem(MEMBERS_KEY, JSON.stringify(members));
 }
 
-function switchSetupTab(tab) {
-  el('panel-partie').hidden  = tab !== 'partie';
-  el('panel-membres').hidden = tab !== 'membres';
-  el('tab-btn-partie').classList.toggle('setup-tab--active', tab === 'partie');
-  el('tab-btn-membres').classList.toggle('setup-tab--active', tab === 'membres');
-  if (tab === 'membres') renderMembersList();
+function autoSaveMember(name) {
+  const members = loadMembers();
+  if (!members.find(m => m.name === name)) {
+    members.push({ name, games: 0, totalPts: 0 });
+    saveMembers(members);
+  }
 }
 
 function renderMembersList() {
@@ -1408,16 +1413,16 @@ function renderMembersList() {
   const container = el('members-list');
   container.innerHTML = '';
 
-  if (members.length === 0) {
-    const p = document.createElement('p');
-    p.className = 'members-empty';
-    p.textContent = 'Aucun joueur enregistré. Ajoutez-en ci-dessus ou terminez une partie !';
-    container.appendChild(p);
-    return;
-  }
+  if (members.length === 0) return;
+
+  const hint = document.createElement('p');
+  hint.className = 'members-hint';
+  hint.textContent = 'Joueurs enregistrés — cliquez pour ajouter à la partie :';
+  container.appendChild(hint);
 
   members.forEach((member, idx) => {
     const alreadyAdded = state.playerNames.includes(member.name);
+    const isChild      = _pendingChildMembers.has(member.name);
 
     const item = document.createElement('div');
     item.className = `member-item${alreadyAdded ? ' member-item--added' : ''}`;
@@ -1435,13 +1440,30 @@ function renderMembersList() {
     item.appendChild(nameSpan);
     item.appendChild(statsSpan);
 
-    if (alreadyAdded) {
+    if (!alreadyAdded) {
+      const childBtn = document.createElement('button');
+      childBtn.className = `member-child-btn${isChild ? ' member-child-btn--active' : ''}`;
+      childBtn.title = isChild ? 'Retirer le marquage enfant' : 'Marquer comme enfant (-12 ans)';
+      childBtn.textContent = '👦';
+      childBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (_pendingChildMembers.has(member.name)) {
+          _pendingChildMembers.delete(member.name);
+        } else {
+          _pendingChildMembers.add(member.name);
+        }
+        renderMembersList();
+      });
+      item.appendChild(childBtn);
+      item.addEventListener('click', () => {
+        addPlayerFromMember(member.name, _pendingChildMembers.has(member.name));
+        _pendingChildMembers.delete(member.name);
+      });
+    } else {
       const badge = document.createElement('span');
       badge.className = 'member-item-added-badge';
       badge.textContent = '✓ Ajouté';
       item.appendChild(badge);
-    } else {
-      item.addEventListener('click', () => addPlayerFromMember(member.name));
     }
 
     const delBtn = document.createElement('button');
@@ -1455,20 +1477,6 @@ function renderMembersList() {
   });
 }
 
-function addMember() {
-  const input = el('member-input');
-  const name  = input.value.trim();
-  if (!name) { showToast('Entrez un prénom', 'warn'); return; }
-  const members = loadMembers();
-  if (members.find(m => m.name === name)) { showToast('Ce joueur existe déjà', 'warn'); return; }
-  members.push({ name, games: 0, totalPts: 0 });
-  saveMembers(members);
-  input.value = '';
-  input.focus();
-  renderMembersList();
-  showToast(`${name} enregistré ✅`);
-}
-
 function removeMember(idx) {
   const members = loadMembers();
   members.splice(idx, 1);
@@ -1476,10 +1484,11 @@ function removeMember(idx) {
   renderMembersList();
 }
 
-function addPlayerFromMember(name) {
+function addPlayerFromMember(name, isChild = false) {
   if (state.playerNames.includes(name)) { showToast('Déjà dans la partie', 'warn'); return; }
   if (state.playerNames.length >= 20) { showToast('Maximum 20 joueurs', 'warn'); return; }
   state.playerNames.push(name);
+  if (isChild) state.playerIsChild.add(name);
   renderPlayerList();
   renderMembersList();
   showToast(`${name} ajouté à la partie ✅`);
@@ -1686,17 +1695,12 @@ function updateFullscreenBtn() {
 // ─── INIT ──────────────────────────────────────────────────────────────────────
 function init() {
   // ── Setup ──
-  el('tab-btn-partie').addEventListener('click', withCooldown(() => switchSetupTab('partie')));
-  el('tab-btn-membres').addEventListener('click', withCooldown(() => switchSetupTab('membres')));
   el('btn-add-player').addEventListener('click', withCooldown(addPlayer));
   el('player-input').addEventListener('keydown', e => { if (e.key === 'Enter') addPlayer(); });
   el('btn-start-game').addEventListener('click', withCooldown(() => {
     if (state.playerNames.length >= MIN_PLAYERS) openCategorySelect();
   }));
-
-  // ── Membres persistants ──
-  el('btn-add-member').addEventListener('click', withCooldown(addMember));
-  el('member-input').addEventListener('keydown', e => { if (e.key === 'Enter') addMember(); });
+  renderMembersList();
 
   // ── Options de partie ──
   state.cardCount = loadCardCount();
@@ -1790,6 +1794,7 @@ function init() {
     state.selectedCategories = [];
     state.playerIsChild.clear();
     renderPlayerList();
+    renderMembersList();
     showScreen('screen-setup');
   }));
 
