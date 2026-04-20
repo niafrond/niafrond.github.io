@@ -99,7 +99,7 @@ export function renderTeams() {
     ul.className = 'team-players';
     team.players.forEach(p => {
       const li = document.createElement('li');
-      li.textContent = `👤 ${p}${state.playerIsChild.has(p) ? ' 👶' : ''}`;
+      li.textContent = `👤 ${p}${state.playerIsChild.has(p) ? ' 🧒' : ''}`;
       ul.appendChild(li);
     });
 
@@ -326,7 +326,7 @@ export function startPreTurn() {
 
   const playerSpan = document.createElement('span');
   playerSpan.id = 'pre-turn-player';
-  playerSpan.textContent = playerName + (state.playerIsChild.has(playerName) ? ' 👶' : '');
+  playerSpan.textContent = playerName + (state.playerIsChild.has(playerName) ? ' 🧒' : '');
 
   const guesserSpan = document.createElement('span');
   guesserSpan.id = 'pre-turn-guesser';

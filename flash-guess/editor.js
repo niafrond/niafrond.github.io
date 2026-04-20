@@ -110,7 +110,7 @@ export function renderWordsList() {
     kidBtn.className = `btn-icon word-edit-kid-btn${entry.kidFriendly ? ' word-edit-kid-btn--on' : ''}`;
     kidBtn.title = entry.kidFriendly ? 'Adapté -12 ans (cliquer pour retirer)' : 'Marquer comme adapté -12 ans';
     kidBtn.setAttribute('aria-label', entry.kidFriendly ? 'Retirer le marquage -12 ans' : 'Marquer comme -12 ans');
-    kidBtn.textContent = '👶';
+    kidBtn.textContent = '🧒';
     kidBtn.addEventListener('click', () => toggleKidFriendly(realIdx));
 
     const delBtn = document.createElement('button');

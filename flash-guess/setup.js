@@ -74,7 +74,7 @@ export function renderPlayerList() {
     if (state.playerIsChild.has(name)) {
       const badge = document.createElement('span');
       badge.className = 'player-item-child-badge';
-      badge.textContent = '👶 Enfant';
+      badge.textContent = '🧒 Enfant';
       item.appendChild(badge);
     }
 
