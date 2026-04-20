@@ -989,6 +989,7 @@ export function showWordDraftTurn(playerIdx) {
     list.appendChild(item);
   });
 
+  try { screen.orientation.lock('landscape'); } catch (_) {}
   showScreen('screen-word-draft');
 }
 
@@ -1012,6 +1013,7 @@ function toggleDraftElimination(idx) {
 }
 
 export function confirmWordDraftEliminations() {
+  try { screen.orientation.unlock(); } catch (_) {}
   const playerIdx = state.draftCurrentPlayerIdx;
   const chunk     = state.draftPlayerChunks[playerIdx];
 
