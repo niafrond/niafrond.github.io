@@ -1429,8 +1429,9 @@ function saveGroups(groups) {
 }
 
 function generateGroupId() {
-  return 'grp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+  return 'grp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7) + '-' + (++_groupIdCounter);
 }
+let _groupIdCounter = 0;
 
 function autoSaveMember(name, isChild = false) {
   const members = loadMembers();
@@ -1738,7 +1739,8 @@ function renderGroupsEditor() {
       delBtn.addEventListener('click', () => {
         if (!confirm(`Supprimer le groupe « ${group.name} » ?`)) return;
         const groups2 = loadGroups();
-        groups2.splice(groupIdx, 1);
+        const removeIdx = groups2.findIndex(x => x.id === group.id);
+        if (removeIdx !== -1) groups2.splice(removeIdx, 1);
         saveGroups(groups2);
         renderGroupsEditor();
         renderGroupsInSetup();
@@ -1779,7 +1781,8 @@ function renderGroupsEditor() {
           const groups2 = loadGroups();
           const g = groups2.find(x => x.id === group.id);
           if (g) {
-            g.members.splice(memberIdx, 1);
+            const mi = g.members.indexOf(name);
+            if (mi !== -1) g.members.splice(mi, 1);
             saveGroups(groups2);
           }
           renderGroupsEditor();
