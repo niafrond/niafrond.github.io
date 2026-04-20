@@ -1,9 +1,17 @@
-const CACHE = 'flashguess-v1.0.0';
+const CACHE = 'flashguess-v1.1.0';
 
 const ASSETS = [
   './',
   './index.html',
   './main.js',
+  './state.js',
+  './ui.js',
+  './game.js',
+  './setup.js',
+  './members.js',
+  './editor.js',
+  './demo.js',
+  './pwa.js',
   './words.js',
   './sound.js',
   './style.css',
