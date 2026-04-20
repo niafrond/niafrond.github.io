@@ -1,3 +1,9 @@
+## [1.94.0](https://github.com/niafrond/niafrond.github.io/compare/v1.93.1...v1.94.0) (2026-04-20)
+
+### Features
+
+* **flash-guess:** auto-dismiss "J'ai lu" button after 5s with color drain animation ([#142](https://github.com/niafrond/niafrond.github.io/issues/142)) ([ba89521](https://github.com/niafrond/niafrond.github.io/commit/ba89521a5bbbd1e7c39171b90bb5968c6f6079d0))
+
 ## [1.93.1](https://github.com/niafrond/niafrond.github.io/compare/v1.93.0...v1.93.1) (2026-04-20)
 
 ### Bug Fixes
