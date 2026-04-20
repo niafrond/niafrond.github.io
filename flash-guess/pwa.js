@@ -68,7 +68,44 @@ export async function forceUpdate() {
   location.reload();
 }
 
+// ─── Détection installation PWA ────────────────────────────────────────────────
+function isPwaInstalled() {
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches ||
+    navigator.standalone === true
+  );
+}
+
+// ─── Notification système de mise à jour ───────────────────────────────────────
+async function showUpdateNotification(reg) {
+  if (!isPwaInstalled()) return;
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'denied') return;
+
+  if (Notification.permission === 'default') {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') return;
+  }
+
+  const title = 'Flash Guess — Mise à jour';
+  const options = {
+    body: '🔄 Une nouvelle version est disponible.',
+    icon: './icon-192.png',
+    tag: 'fg-update',
+    renotify: false,
+  };
+
+  try {
+    await reg.showNotification(title, options);
+  } catch (_) {
+    try { new Notification(title, options); } catch (_) {}
+  }
+}
+
 // ─── Service Worker ────────────────────────────────────────────────────────────
+const SW_POLL_INTERVAL = 60 * 60 * 1000; // 1 heure
+
 export function initServiceWorker() {
   if ('serviceWorker' in navigator && sessionStorage.getItem('_flashguess_update')) {
     sessionStorage.removeItem('_flashguess_update');
@@ -83,6 +120,22 @@ export function initServiceWorker() {
     navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
       .then(reg => {
         reg.update().catch(() => {});
+
+        // Polling périodique pour détecter les nouvelles versions
+        setInterval(() => reg.update().catch(() => {}), SW_POLL_INTERVAL);
+
+        // Notification système quand une mise à jour est prête (PWA installée)
+        reg.addEventListener('updatefound', () => {
+          if (!navigator.serviceWorker.controller) return; // première installation
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed') {
+              showUpdateNotification(reg);
+            }
+          });
+        });
+
         if (navigator.serviceWorker.controller) {
           navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
         }
