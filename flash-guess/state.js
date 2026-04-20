@@ -100,6 +100,11 @@ export const state = {
   // Lecture enfant
   childReadFirstWord:  false,
   childReadAutoTimer:  null,
+
+  // Mode coopératif 2 joueurs : objectif alternatif
+  coopObjective:  null, // null | 'time' | 'turns'
+  coopTimeUsed:   0,    // secondes cumulées utilisées par l'équipe
+  coopTurnsCount: 0,    // nombre de tours joués par l'équipe
 };
 
 // ─── État démo ─────────────────────────────────────────────────────────────────

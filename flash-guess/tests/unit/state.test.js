@@ -134,6 +134,18 @@ describe('state', () => {
   test('currentRound est 0 initialement', () => {
     expect(state.currentRound).toBe(0);
   });
+
+  test('coopObjective est null initialement', () => {
+    expect(state.coopObjective).toBeNull();
+  });
+
+  test('coopTimeUsed est 0 initialement', () => {
+    expect(state.coopTimeUsed).toBe(0);
+  });
+
+  test('coopTurnsCount est 0 initialement', () => {
+    expect(state.coopTurnsCount).toBe(0);
+  });
 });
 
 // ─── demo (structure initiale) ────────────────────────────────────────────────

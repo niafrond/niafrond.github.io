@@ -174,6 +174,19 @@
 
     <div id="teams-container"></div>
 
+    <!-- Objectif coop : visible uniquement pour 2 joueurs -->
+    <div id="coop-objective-section" class="card" hidden>
+      <div class="card-title">🎯 Objectif de la partie</div>
+      <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:14px;">
+        Choisissez comment vous voulez mesurer votre performance :
+      </p>
+      <div class="coop-options-row">
+        <button class="btn btn-secondary btn-coop-opt" data-obj="">🃏 Nombre de mots</button>
+        <button class="btn btn-secondary btn-coop-opt" data-obj="time">⏱️ Moins de temps</button>
+        <button class="btn btn-secondary btn-coop-opt" data-obj="turns">🔢 Moins de tours</button>
+      </div>
+    </div>
+
     <button id="btn-reshuffle" class="btn btn-secondary w-full mb-12">
       🔀 Rebattre les équipes
     </button>
@@ -308,7 +321,7 @@
   <div class="card" style="max-width:480px">
     <table class="scores-table">
       <thead>
-        <tr>
+        <tr id="round-end-thead-row">
           <th>Équipe</th>
           <th class="score-cell">Cette manche</th>
           <th class="score-cell">Total</th>

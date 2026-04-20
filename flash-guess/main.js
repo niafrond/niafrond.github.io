@@ -20,6 +20,7 @@ import {
   assignTeams, renderTeams,
   pauseTimer, resumeTimer,
   fitWordCard,
+  setCoopObjective,
 } from './game.js';
 
 import {
@@ -134,6 +135,11 @@ function init() {
     updateRotateOverlay();
   }));
 
+  // ── Objectif coop 2 joueurs ──
+  document.querySelectorAll('.btn-coop-opt').forEach(btn => {
+    btn.addEventListener('click', withCooldown(() => setCoopObjective(btn.dataset.obj)));
+  });
+
   // ── Round intro ──
   el('btn-round-go').addEventListener('click', withCooldown(() => {
     playButtonClick();
@@ -202,6 +208,9 @@ function init() {
     state.noTeamsMode        = false;
     state.selectedCategories = [];
     state.playerIsChild.clear();
+    state.coopObjective  = null;
+    state.coopTimeUsed   = 0;
+    state.coopTurnsCount = 0;
     const freshMembers = loadMembers();
     state.playerNames.forEach(name => {
       const m = freshMembers.find(x => x.name === name);

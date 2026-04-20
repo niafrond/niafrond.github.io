@@ -252,6 +252,10 @@ export function confirmCategories() {
     return;
   }
   saveSelectedCategories(state.selectedCategories);
+  // Réinitialiser l'objectif coop à chaque nouvelle partie
+  state.coopObjective  = null;
+  state.coopTimeUsed   = 0;
+  state.coopTurnsCount = 0;
   assignTeams();
   renderTeams();
   showScreen('screen-teams');
