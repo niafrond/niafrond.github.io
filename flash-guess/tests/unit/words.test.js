@@ -116,17 +116,18 @@ describe('getShuffledWords', () => {
     expect(words.every(w => w.category === 'history')).toBe(true);
   });
 
-  test('inclut les mots enfants en mode enfant', () => {
+  test('renvoie uniquement les mots enfants en mode enfant', () => {
     const words = getShuffledWords(null, true);
-    expect(words.length).toBe(DEFAULT_WORDS.length);
-    expect(words.some(w => w.kidFriendly === true)).toBe(true);
+    const expected = DEFAULT_WORDS.filter(w => w.kidFriendly);
+    expect(words.length).toBe(expected.length);
+    expect(words.every(w => w.kidFriendly === true)).toBe(true);
   });
 
   test('filtre par catégorie en mode enfant', () => {
     const words = getShuffledWords(['sport'], true);
     expect(words.length).toBeGreaterThan(0);
     expect(words.every(w => w.category === 'sport')).toBe(true);
-    expect(words.some(w => w.kidFriendly === true)).toBe(true);
+    expect(words.every(w => w.kidFriendly === true)).toBe(true);
   });
 
   test('renvoie un tableau vide si aucune correspondance', () => {

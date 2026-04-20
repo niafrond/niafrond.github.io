@@ -437,7 +437,9 @@ export function getShuffledWords(selectedCategories = null, kidsMode = false) {
   let filtered = selectedCategories
     ? words.filter(w => selectedCategories.includes(w.category))
     : words;
-  if (!kidsMode) {
+  if (kidsMode) {
+    filtered = filtered.filter(w => w.kidFriendly);
+  } else {
     filtered = filtered.filter(w => !w.kidFriendly);
   }
   return shuffle(filtered);
