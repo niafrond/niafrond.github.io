@@ -1,3 +1,9 @@
+## [1.112.2](https://github.com/niafrond/niafrond.github.io/compare/v1.112.1...v1.112.2) (2026-04-20)
+
+### Bug Fixes
+
+* avoid same team playing first in consecutive rounds (hors coop) ([dc6f0f4](https://github.com/niafrond/niafrond.github.io/commit/dc6f0f4b2b9892eca7b56ff094992166a3ca022e))
+
 ## [1.112.1](https://github.com/niafrond/niafrond.github.io/compare/v1.112.0...v1.112.1) (2026-04-20)
 
 ### Bug Fixes
