@@ -984,13 +984,7 @@ export function showWordDraftTurn(playerIdx) {
     wordSpan.className = 'draft-word-text';
     wordSpan.textContent = word.word;
 
-    const catInfo      = getCategoryInfo(word.category);
-    const catSpan      = document.createElement('span');
-    catSpan.className  = 'draft-word-cat';
-    catSpan.textContent = `${catInfo.emoji} ${catInfo.label}`;
-
     item.appendChild(wordSpan);
-    item.appendChild(catSpan);
     item.addEventListener('click', () => toggleDraftElimination(i));
     list.appendChild(item);
   });
