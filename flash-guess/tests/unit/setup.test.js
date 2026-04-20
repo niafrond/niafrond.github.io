@@ -9,6 +9,7 @@ import {
   loadCardCount, saveCardCount,
   loadSelectedCategories, saveSelectedCategories,
   loadKidsMode, saveKidsMode,
+  loadWordDraftMode, saveWordDraftMode,
 } from '../../setup.js';
 import { CARD_COUNT_DEFAULT } from '../../state.js';
 import { CATEGORY_LABELS } from '../../words.js';
@@ -108,5 +109,28 @@ describe('loadKidsMode / saveKidsMode', () => {
   test('renvoie false si la donnée est invalide', () => {
     localStorage.setItem('flashguess_kids_mode', 'anything');
     expect(loadKidsMode()).toBe(false);
+  });
+});
+
+// ─── wordDraftMode ────────────────────────────────────────────────────────────
+
+describe('loadWordDraftMode / saveWordDraftMode', () => {
+  test('renvoie false si localStorage est vide', () => {
+    expect(loadWordDraftMode()).toBe(false);
+  });
+
+  test('sauvegarde et recharge true', () => {
+    saveWordDraftMode(true);
+    expect(loadWordDraftMode()).toBe(true);
+  });
+
+  test('sauvegarde et recharge false', () => {
+    saveWordDraftMode(false);
+    expect(loadWordDraftMode()).toBe(false);
+  });
+
+  test('renvoie false si la donnée est invalide', () => {
+    localStorage.setItem('flashguess_word_draft', 'anything');
+    expect(loadWordDraftMode()).toBe(false);
   });
 });

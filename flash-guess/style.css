@@ -1981,3 +1981,111 @@ details.card-collapsible > :not(summary) {
   border-color: var(--volcan);
   color: #fff;
 }
+
+/* ─── Word Draft (Tri caché) ─────────────────────────────────────────────── */
+
+/* Cover screen — player name */
+.draft-cover-name {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #ffd166;
+  text-align: center;
+  line-height: 1.15;
+  word-break: break-word;
+}
+
+/* Draft turn — header */
+.draft-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+.draft-player-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-top: 10px;
+  color: #ffd166;
+}
+.draft-instructions {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin-top: 6px;
+}
+
+/* Counter row */
+.draft-counter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.draft-counter-badge {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--warning);
+  background: rgba(245,158,11,0.12);
+  border: 1px solid rgba(245,158,11,0.4);
+  border-radius: 99px;
+  padding: 3px 12px;
+  transition: color 0.2s, background 0.2s;
+}
+.draft-counter-badge--full {
+  color: var(--danger);
+  background: rgba(239,68,68,0.12);
+  border-color: rgba(239,68,68,0.4);
+}
+
+/* Word list */
+.draft-word-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Individual word item — button */
+.draft-word-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  width: 100%;
+  color: var(--text);
+}
+.draft-word-item:hover {
+  background: rgba(232,93,4,0.1);
+  border-color: var(--volcan);
+}
+.draft-word-item--eliminated {
+  background: rgba(239,68,68,0.15);
+  border-color: var(--danger);
+  opacity: 0.85;
+}
+.draft-word-item--eliminated .draft-word-text {
+  text-decoration: line-through;
+  color: var(--danger);
+}
+
+.draft-word-text {
+  font-weight: 700;
+  font-size: 1rem;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.draft-word-cat {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: var(--surface);
+  border-radius: 99px;
+  padding: 2px 10px;
+  flex-shrink: 0;
+}

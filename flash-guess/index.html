@@ -97,8 +97,13 @@
       <div class="input-row mt-12">
         <label for="toggle-kids-mode" id="kids-mode-label" style="color:var(--text-muted);font-size:0.9rem;flex:1;">
           🧒 Mode Enfant <span id="kids-mode-auto-tag" style="font-size:0.78rem;color:var(--success);font-weight:700;" hidden>(auto)</span>
+        </label>        <button id="toggle-kids-mode" class="kids-mode-toggle-btn" role="switch" aria-checked="false">OFF</button>
+      </div>
+      <div class="input-row mt-12">
+        <label for="toggle-word-draft" style="color:var(--text-muted);font-size:0.9rem;flex:1;">
+          🎯 Choix des mots <span style="font-size:0.78rem;color:var(--text-muted);">(tri caché avant la partie)</span>
         </label>
-        <button id="toggle-kids-mode" class="kids-mode-toggle-btn" role="switch" aria-checked="false">OFF</button>
+        <button id="toggle-word-draft" class="kids-mode-toggle-btn" role="switch" aria-checked="false">OFF</button>
       </div>
     </div>
 
@@ -179,6 +184,50 @@
     </button>
     <button id="btn-launch-game" class="btn btn-primary btn-lg w-full">
       ⚡ C'est parti !
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 2b — WORD DRAFT COVER : passez le téléphone
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-word-draft-cover" data-screen="screen-word-draft-cover" class="screen-center">
+  <span id="draft-cover-num" class="round-badge"></span>
+  <div style="font-size:3.5rem">🙈</div>
+  <p style="color:var(--text-muted);font-size:1rem;margin:0;">Passez le téléphone à</p>
+  <div id="draft-cover-player" class="draft-cover-name"></div>
+  <p style="color:var(--text-muted);font-size:0.85rem;max-width:280px;text-align:center;margin:0;">
+    Attendez que le joueur soit seul avant de continuer.
+  </p>
+  <button id="btn-draft-cover-ready" class="btn btn-primary btn-lg">
+    👀 Je suis prêt, montrer mes mots
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 2c — WORD DRAFT : tri caché du joueur
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-word-draft" data-screen="screen-word-draft">
+  <div class="page-wrapper">
+    <div class="draft-header">
+      <div class="round-badge" style="display:inline-block;">🎯 Tri secret</div>
+      <h2 class="draft-player-title" id="draft-player-name"></h2>
+      <p class="draft-instructions">
+        Élimine exactement <strong>3 mots</strong> — ils ne seront <strong>pas</strong> dans la partie.<br>
+        <span style="font-size:0.82rem;color:var(--text-muted);">Les autres joueurs ne verront pas tes choix.</span>
+      </p>
+    </div>
+
+    <div class="card" style="padding:14px;">
+      <div class="draft-counter-row">
+        <span style="color:var(--text-muted);font-size:0.9rem;">Mots éliminés :</span>
+        <span id="draft-counter" class="draft-counter-badge">0 / 3</span>
+      </div>
+      <div id="draft-word-list" class="draft-word-list"></div>
+    </div>
+
+    <button id="btn-draft-confirm" class="btn btn-primary btn-lg w-full" disabled>
+      ✅ Confirmer et passer au suivant
     </button>
   </div>
 </div>
