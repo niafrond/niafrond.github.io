@@ -116,9 +116,8 @@ export const demo = {
  * game.js appelle ces fonctions si elles sont définies.
  */
 export const demoHooks = {
-  showTips:           null, // (round) => void
-  showTurnEndTips:    null, // () => void
-  showAfterFoundTips: null, // () => void — appelé après le premier mot trouvé en démo
+  showTips:        null, // (round) => void
+  showTurnEndTips: null, // () => void
 };
 
 // ─── Cooldown boutons ──────────────────────────────────────────────────────────

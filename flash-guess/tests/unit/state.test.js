@@ -159,9 +159,7 @@ describe('demoHooks', () => {
     expect(demoHooks.showTurnEndTips).toBeNull();
   });
 
-  test('showAfterFoundTips est null initialement', () => {
-    expect(demoHooks.showAfterFoundTips).toBeNull();
-  });
+
 });
 
 // ─── withCooldown ─────────────────────────────────────────────────────────────

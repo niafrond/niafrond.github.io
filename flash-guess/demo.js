@@ -106,15 +106,9 @@ function showDemoTurnEndTips() {
   _showDemoTip(tips);
 }
 
-function showAfterFoundTips() {
-  demo.tipIdx = 0;
-  _showDemoTip(DEMO_TIPS_AFTER_FIRST_FOUND);
-}
-
 // ─── Injection des hooks dans game.js ─────────────────────────────────────────
-demoHooks.showTips           = showDemoTips;
-demoHooks.showTurnEndTips    = showDemoTurnEndTips;
-demoHooks.showAfterFoundTips = showAfterFoundTips;
+demoHooks.showTips        = showDemoTips;
+demoHooks.showTurnEndTips = showDemoTurnEndTips;
 
 // ─── Lancement de la démo ─────────────────────────────────────────────────────
 export function startDemoTurn() {
