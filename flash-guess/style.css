@@ -1763,6 +1763,20 @@ details.card-collapsible > :not(summary) {
 }
 .child-read-btn:hover:not(:disabled) { opacity: 0.88; }
 
+/* Countdown drain: the lagon fill shrinks right-to-left over 5 s */
+.child-read-btn--countdown {
+  background-image: linear-gradient(var(--lagon), var(--lagon));
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-color: rgba(0, 150, 199, 0.25);
+  animation: childReadAppear 0.25s ease both,
+             childReadCountdown 5s linear 0.25s forwards;
+}
+@keyframes childReadCountdown {
+  from { background-size: 100% 100%; }
+  to   { background-size: 0%   100%; }
+}
+
 /* ─── Kids mode badge in words editor ──────────────────────────────────────── */
 .word-edit-kid-btn {
   opacity: 0.35;
