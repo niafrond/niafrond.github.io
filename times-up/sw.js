@@ -1,4 +1,4 @@
-const CACHE = 'timesup-v1.100.0';
+const CACHE = 'timesup-v1.101.0';
 
 const ASSETS = [
   './',

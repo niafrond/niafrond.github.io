@@ -1,3 +1,9 @@
+## [1.101.0](https://github.com/niafrond/niafrond.github.io/compare/v1.100.0...v1.101.0) (2026-04-20)
+
+### Features
+
+* restructure setup screen into 3 collapsed panels (nouveau joueur, groupe, enregistré) ([d9052d2](https://github.com/niafrond/niafrond.github.io/commit/d9052d21f18927bff1ee394593daed090f988a62))
+
 ## [1.100.0](https://github.com/niafrond/niafrond.github.io/compare/v1.99.2...v1.100.0) (2026-04-20)
 
 ### Features
