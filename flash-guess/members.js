@@ -70,7 +70,7 @@ export function renderMembersList() {
 
     const nameSpan = document.createElement('span');
     nameSpan.className = 'member-item-name';
-    nameSpan.textContent = `👤 ${member.name}${member.isChild ? ' 👶' : ''}`;
+    nameSpan.textContent = `👤 ${member.name}${member.isChild ? ' 🧒' : ''}`;
 
     const statsSpan = document.createElement('span');
     statsSpan.className = 'member-item-stats';
@@ -85,7 +85,7 @@ export function renderMembersList() {
       const childBtn = document.createElement('button');
       childBtn.className = `member-child-btn${member.isChild ? ' member-child-btn--active' : ''}`;
       childBtn.title = member.isChild ? 'Retirer le marquage enfant' : 'Marquer comme enfant (-12 ans)';
-      childBtn.textContent = '👶';
+      childBtn.textContent = '🧒';
       childBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const members2 = loadMembers();
@@ -223,7 +223,7 @@ export function renderGroupsInSetup() {
 
       const chip = document.createElement('button');
       chip.className = `setup-group-member${isAdded ? ' setup-group-member--added' : ''}`;
-      chip.textContent = `👤 ${name}${isChild ? ' 👶' : ''}`;
+      chip.textContent = `👤 ${name}${isChild ? ' 🧒' : ''}`;
       chip.disabled = isAdded;
       chip.title = isAdded ? `${name} déjà dans la partie` : `Ajouter ${name}`;
       if (!isAdded) {
@@ -371,7 +371,7 @@ export function renderGroupsEditor() {
         chip.className = 'group-member-chip';
 
         const nameEl = document.createElement('span');
-        nameEl.textContent = `👤 ${name}${isChild ? ' 👶' : ''}`;
+        nameEl.textContent = `👤 ${name}${isChild ? ' 🧒' : ''}`;
         chip.appendChild(nameEl);
 
         const removeBtn = document.createElement('button');
@@ -412,7 +412,7 @@ export function renderGroupsEditor() {
         const isChild = member.isChild ?? false;
         const btn = document.createElement('button');
         btn.className = 'setup-group-member';
-        btn.textContent = `👤 ${member.name}${isChild ? ' 👶' : ''}`;
+        btn.textContent = `👤 ${member.name}${isChild ? ' 🧒' : ''}`;
         btn.addEventListener('click', () => {
           const groups2 = loadGroups();
           const g = groups2.find(x => x.id === group.id);
