@@ -1,3 +1,9 @@
+## [1.99.1](https://github.com/niafrond/niafrond.github.io/compare/v1.99.0...v1.99.1) (2026-04-20)
+
+### Bug Fixes
+
+* checkout main branch on tag-triggered deploy ([#152](https://github.com/niafrond/niafrond.github.io/issues/152)) ([40d2881](https://github.com/niafrond/niafrond.github.io/commit/40d2881b506d52bf154e890caf35d9b2042179aa))
+
 ## [1.99.0](https://github.com/niafrond/niafrond.github.io/compare/v1.98.1...v1.99.0) (2026-04-20)
 
 ### Features
