@@ -1,3 +1,10 @@
+## [1.112.0](https://github.com/niafrond/niafrond.github.io/compare/v1.111.0...v1.112.0) (2026-04-20)
+
+### Features
+
+* force landscape orientation for word draft screen ([07013e0](https://github.com/niafrond/niafrond.github.io/commit/07013e097ed2473140a4c4c71de87a4f025607c4))
+* remove categories from word draft screen and maximize word size without scroll ([a23cca4](https://github.com/niafrond/niafrond.github.io/commit/a23cca4bdf24caf373f502abe26360cf60152536))
+
 ## [1.111.0](https://github.com/niafrond/niafrond.github.io/compare/v1.110.1...v1.111.0) (2026-04-20)
 
 ### Features
