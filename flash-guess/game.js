@@ -107,6 +107,30 @@ export function renderTeams() {
     card.appendChild(ul);
     container.appendChild(card);
   });
+
+  // Mode coop 2 joueurs : afficher le sélecteur d'objectif uniquement pour 2 joueurs
+  const coopSection = el('coop-objective-section');
+  if (coopSection) {
+    const isTwoPlayers = state.playerNames.length === 2;
+    coopSection.hidden = !isTwoPlayers;
+    if (isTwoPlayers) updateCoopButtons();
+  }
+}
+
+function updateCoopButtons() {
+  document.querySelectorAll('.btn-coop-opt').forEach(btn => {
+    btn.classList.toggle('btn-coop-opt--active', state.coopObjectives.has(btn.dataset.obj));
+  });
+}
+
+export function setCoopObjective(obj) {
+  // obj : 'chrono' (temps cumulé) | 'precision' (moins de tours) — toggle
+  if (state.coopObjectives.has(obj)) {
+    state.coopObjectives.delete(obj);
+  } else {
+    state.coopObjectives.add(obj);
+  }
+  updateCoopButtons();
 }
 
 // ─── LECTURE ENFANT ────────────────────────────────────────────────────────────
@@ -284,6 +308,9 @@ export function startRound(roundNum) {
       showScreen('screen-categories');
       return;
     }
+    // Initialiser les stats coopératives au début de la partie
+    state.coopTimeUsed   = 0;
+    state.coopTurnsCount = 0;
   }
   state.roundWords     = shuffle([...state.allWords]);
   state.currentTeamIdx = 0;
@@ -557,6 +584,12 @@ export function endTurn(reason = 'timeout') {
     return;
   }
 
+  // Mode coop 2 joueurs : enregistrer le temps utilisé et le nombre de tours
+  if (state.coopObjectives.size > 0) {
+    state.coopTimeUsed   += TURN_DURATION - state.timeLeft;
+    state.coopTurnsCount += 1;
+  }
+
   if (reason === 'timeout' && state.currentWord) {
     state.roundWords.push(state.currentWord);
     state.currentWord = null;
@@ -687,6 +720,19 @@ export function showRoundEnd() {
 
   const scoreRows = el('round-end-scores');
   scoreRows.innerHTML = '';
+
+  const chrono    = state.coopObjectives.has('chrono');
+  const precision = state.coopObjectives.has('precision');
+
+  // En-tête du tableau : colonnes classiques + colonnes coop actives
+  const theadRow = el('round-end-thead-row');
+  if (theadRow) {
+    let html = '<th>Équipe</th><th class="score-cell">Cette manche</th><th class="score-cell">Total</th>';
+    if (chrono)    html += '<th class="score-cell">⏱️ Chrono</th>';
+    if (precision) html += '<th class="score-cell">🎯 Précision</th>';
+    theadRow.innerHTML = html;
+  }
+
   state.teams.forEach(team => {
     const tr      = document.createElement('tr');
     const roundPts = team.score[state.currentRound - 1];
@@ -709,6 +755,20 @@ export function showRoundEnd() {
     tr.appendChild(tdName);
     tr.appendChild(tdRound);
     tr.appendChild(tdTotal);
+
+    if (chrono) {
+      const tdTime = document.createElement('td');
+      tdTime.className = 'score-cell';
+      tdTime.textContent = formatCoopTime(state.coopTimeUsed);
+      tr.appendChild(tdTime);
+    }
+    if (precision) {
+      const tdTurns = document.createElement('td');
+      tdTurns.className = 'score-cell';
+      tdTurns.textContent = state.coopTurnsCount;
+      tr.appendChild(tdTurns);
+    }
+
     scoreRows.appendChild(tr);
   });
 
@@ -717,6 +777,13 @@ export function showRoundEnd() {
   el('btn-final-results').hidden = !isLastRound;
 
   showScreen('screen-round-end');
+}
+
+function formatCoopTime(seconds) {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s === 0 ? `${m}min` : `${m}min ${s}s`;
 }
 
 // ─── FIN DU JEU ────────────────────────────────────────────────────────────────
@@ -767,6 +834,27 @@ export function showGameOver() {
     div.appendChild(ptsSpan);
     finalScores.appendChild(div);
   });
+
+  // Afficher les performances coop si au moins un objectif est actif
+  const chrono    = state.coopObjectives.has('chrono');
+  const precision = state.coopObjectives.has('precision');
+  if (chrono || precision) {
+    const perfDiv = document.createElement('div');
+    perfDiv.className = 'coop-perf-summary';
+    if (chrono) {
+      const p = document.createElement('p');
+      p.className = 'coop-perf-line';
+      p.textContent = `⏱️ Chrono : ${formatCoopTime(state.coopTimeUsed)}`;
+      perfDiv.appendChild(p);
+    }
+    if (precision) {
+      const p = document.createElement('p');
+      p.className = 'coop-perf-line';
+      p.textContent = `🎯 Précision : ${state.coopTurnsCount} tour${state.coopTurnsCount !== 1 ? 's' : ''}`;
+      perfDiv.appendChild(p);
+    }
+    finalScores.appendChild(perfDiv);
+  }
 
   showScreen('screen-game-over');
 }
