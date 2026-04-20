@@ -133,6 +133,9 @@
     <button id="btn-edit-words" class="btn btn-secondary w-full mt-12">
       ✏️ Éditer les mots du jeu
     </button>
+    <button id="btn-leaderboard" class="btn btn-secondary w-full mt-12">
+      🏆 Classement
+    </button>
     <button id="btn-install-pwa" class="btn btn-secondary w-full mt-12" hidden>
       📲 Installer l'application
     </button>
@@ -489,6 +492,26 @@
   <div id="demo-tooltip-panel">
     <p id="demo-tooltip-text"></p>
     <button id="demo-tooltip-ok" class="btn btn-primary btn-sm">✅ OK, j'ai compris</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 11 — CLASSEMENT
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-leaderboard" data-screen="screen-leaderboard">
+  <div class="page-wrapper">
+    <button id="btn-leaderboard-back" class="btn btn-secondary btn-sm home-btn">← Retour</button>
+
+    <h1 class="app-title" style="font-size:2rem;">🏆 Classement</h1>
+    <p class="app-subtitle">Historique de vos parties</p>
+
+    <div class="leaderboard-tabs">
+      <button class="leaderboard-tab-btn leaderboard-tab-btn--active" data-tab="standard">🎮 Standard</button>
+      <button class="leaderboard-tab-btn" data-tab="coop2">🤝 Coop 2 joueurs</button>
+    </div>
+
+    <div id="leaderboard-standard"></div>
+    <div id="leaderboard-coop2" hidden></div>
   </div>
 </div>
 

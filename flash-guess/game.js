@@ -18,6 +18,7 @@ import {
 } from './sound.js';
 import { getShuffledWords, getCategoryInfo, shuffle } from './words.js';
 import { saveMembersAfterGame } from './members.js';
+import { saveGameResult } from './leaderboard.js';
 
 // ─── Helpers internes ──────────────────────────────────────────────────────────
 export function getCurrentRoundRule() { return ROUND_RULES[state.currentRound - 1]; }
@@ -791,6 +792,22 @@ export function showGameOver() {
   demo.mode = false;
   playGameOver();
   saveMembersAfterGame();
+
+  const isCoop2 = state.coopObjectives.size > 0;
+  saveGameResult({
+    date:      new Date().toISOString(),
+    mode:      isCoop2 ? 'coop2' : 'standard',
+    teams:     state.teams.map(t => ({
+      players: t.players,
+      total:   t.score.reduce((a, b) => a + b, 0),
+    })),
+    cardCount: state.cardCount,
+    ...(isCoop2 ? {
+      objectives:    [...state.coopObjectives],
+      coopTimeUsed:  state.coopTimeUsed,
+      coopTurnsCount: state.coopTurnsCount,
+    } : {}),
+  });
 
   const scored = state.teams
     .map(t => ({ team: t, total: t.score.reduce((a, b) => a + b, 0) }))
