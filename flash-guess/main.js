@@ -95,7 +95,7 @@ function withCooldown(fn) {
 
 // ─── Persistance du nombre de cartes ───────────────────────────────────────────
 function loadCardCount() {
-  const ALLOWED = [0, 20, 30, 40, 50];
+  const ALLOWED = [0, 10, 20, 30, 40, 50];
   try {
     const v = localStorage.getItem(CARD_COUNT_KEY);
     if (v !== null) {
