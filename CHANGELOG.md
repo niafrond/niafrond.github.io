@@ -1,3 +1,9 @@
+## [1.116.0](https://github.com/niafrond/niafrond.github.io/compare/v1.115.0...v1.116.0) (2026-04-20)
+
+### Features
+
+* hide teams in 2-player coop mode, explain chrono/precision ([aa7cdda](https://github.com/niafrond/niafrond.github.io/commit/aa7cddaf15fecba292521a904b6cb0714aa50608))
+
 ## [1.115.0](https://github.com/niafrond/niafrond.github.io/compare/v1.114.2...v1.115.0) (2026-04-20)
 
 ### Features
