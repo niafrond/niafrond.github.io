@@ -788,7 +788,7 @@ function formatCoopTime(seconds) {
   if (seconds < 60) return `${seconds}s`;
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  return `${m}min ${s}s`;
+  return s === 0 ? `${m}min` : `${m}min ${s}s`;
 }
 
 // ─── FIN DU JEU ────────────────────────────────────────────────────────────────
@@ -811,7 +811,7 @@ export function showGameOver() {
 
     const metricLabel = state.coopObjective === 'time'
       ? `⏱️ ${formatCoopTime(state.coopTimeUsed)}`
-      : `🔢 ${state.coopTurnsCount} tour${state.coopTurnsCount > 1 ? 's' : ''}`;
+      : `🔢 ${state.coopTurnsCount} tour${state.coopTurnsCount !== 1 ? 's' : ''}`;
 
     const scoreDiv = document.createElement('div');
     scoreDiv.className = 'final-score-row';
