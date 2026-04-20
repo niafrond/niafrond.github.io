@@ -11,6 +11,8 @@
 
 const VERSION_URL = `${location.origin}/match3-quest/version.js`;
 const CHECK_INTERVAL = 60 * 60 * 1000; // 1 heure
+// Court délai initial pour ne pas bloquer le démarrage de l'application
+const INITIAL_CHECK_DELAY = 8000;
 
 // ─── Bandeau de mise à jour ───────────────────────────────────────────────────
 
@@ -97,13 +99,16 @@ export function initUpdateChecker(currentBuildDate, versionEl = null) {
 
   async function check() {
     try {
-      const res = await fetch(`${VERSION_URL}?_cb=${Date.now()}`, { cache: 'no-store' });
+      const res = await fetch(VERSION_URL, { cache: 'no-store' });
       if (!res.ok) return;
       const text = await res.text();
       const m = text.match(/buildDate:\s*'([^']+)'/);
       if (!m) return;
       const remoteBuildDate = m[1];
-      if (currentBuildDate && new Date(remoteBuildDate) > new Date(currentBuildDate)) {
+      const current = new Date(currentBuildDate);
+      const remote = new Date(remoteBuildDate);
+      if (isNaN(current.getTime()) || isNaN(remote.getTime())) return;
+      if (remote > current) {
         updateDetected = true;
         showBanner();
       }
@@ -125,8 +130,8 @@ export function initUpdateChecker(currentBuildDate, versionEl = null) {
     });
   }
 
-  // Première vérification après quelques secondes (sans bloquer le démarrage)
-  setTimeout(check, 8000);
+  // Première vérification après un court délai (sans bloquer le démarrage)
+  setTimeout(check, INITIAL_CHECK_DELAY);
   // Vérification toutes les heures
   setInterval(check, CHECK_INTERVAL);
 
