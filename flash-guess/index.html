@@ -219,7 +219,10 @@
 
   <!-- Zone de jeu -->
   <div class="turn-play-area">
-    <button id="btn-pass" class="btn-skip-side-turn btn-turn-side" aria-label="Passer cette carte"><span aria-hidden="true">⏭</span><span>Passer</span></button>
+    <div id="btn-pass-col" class="btn-pass-col">
+      <button id="btn-error" class="btn-fault-turn btn-turn-side" aria-label="Erreur — arrêter le tour" hidden><span aria-hidden="true">🚨</span><span>Erreur</span></button>
+      <button id="btn-skip" class="btn-skip-side-turn btn-turn-side" aria-label="Carte suivante"><span aria-hidden="true">⏭</span><span>Carte suivante</span></button>
+    </div>
 
     <div class="turn-center-col">
       <div class="timer-row">
