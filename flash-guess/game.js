@@ -980,17 +980,12 @@ export function showWordDraftTurn(playerIdx) {
     wordSpan.className = 'draft-word-text';
     wordSpan.textContent = word.word;
 
-    const catInfo      = getCategoryInfo(word.category);
-    const catSpan      = document.createElement('span');
-    catSpan.className  = 'draft-word-cat';
-    catSpan.textContent = `${catInfo.emoji} ${catInfo.label}`;
-
     item.appendChild(wordSpan);
-    item.appendChild(catSpan);
     item.addEventListener('click', () => toggleDraftElimination(i));
     list.appendChild(item);
   });
 
+  try { screen.orientation.lock('landscape'); } catch (_) {}
   showScreen('screen-word-draft');
 }
 
@@ -1014,6 +1009,7 @@ function toggleDraftElimination(idx) {
 }
 
 export function confirmWordDraftEliminations() {
+  try { screen.orientation.unlock(); } catch (_) {}
   const playerIdx = state.draftCurrentPlayerIdx;
   const chunk     = state.draftPlayerChunks[playerIdx];
 

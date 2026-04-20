@@ -2091,25 +2091,54 @@ details.card-collapsible > :not(summary) {
   border-color: rgba(239,68,68,0.4);
 }
 
+/* Full-height layout for word draft screen */
+#screen-word-draft {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+#screen-word-draft .page-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+#screen-word-draft .card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 /* Word list */
 .draft-word-list {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow: hidden;
 }
 
 /* Individual word item — button */
 .draft-word-item {
+  flex: 1;
+  min-height: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: center;
   background: var(--surface2);
   border: 2px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 11px 14px;
+  padding: 4px 14px;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
   transition: background 0.15s, border-color 0.15s, opacity 0.15s;
   width: 100%;
   color: var(--text);
@@ -2130,20 +2159,8 @@ details.card-collapsible > :not(summary) {
 
 .draft-word-text {
   font-weight: 700;
-  font-size: 1rem;
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
+  font-size: clamp(1.2rem, 4vw, 2.2rem);
   overflow: hidden;
-  text-overflow: ellipsis;
-}
-.draft-word-cat {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  background: var(--surface);
-  border-radius: 99px;
-  padding: 2px 10px;
-  flex-shrink: 0;
 }
 
 /* ─── Classement ─────────────────────────────────────────────────────────────── */
