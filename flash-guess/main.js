@@ -1648,10 +1648,10 @@ function startDemoTurn() {
   state.actionHistory = [];
   state.redoStack     = [];
 
-  const words    = getShuffledWords(null, state.kidsMode);
-  const demoWord = words[0];
-  state.allWords  = [demoWord];
-  state.roundWords = [demoWord];
+  const words     = getShuffledWords(null, state.kidsMode);
+  const demoWords = words.slice(0, 3);
+  state.allWords  = demoWords;
+  state.roundWords = [...demoWords];
   state.currentWord = null;
 
   if (window.matchMedia('(orientation: portrait)').matches) {
