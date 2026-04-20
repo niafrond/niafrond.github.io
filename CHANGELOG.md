@@ -1,3 +1,9 @@
+## [1.92.0](https://github.com/niafrond/niafrond.github.io/compare/v1.91.0...v1.92.0) (2026-04-20)
+
+### Features
+
+* **flash-guess:** merge player tabs, auto-save to registry, add child toggle on member items ([#138](https://github.com/niafrond/niafrond.github.io/issues/138)) ([101ffd7](https://github.com/niafrond/niafrond.github.io/commit/101ffd75cd807a35a9651e2a67f796cd4dd75931))
+
 ## [1.91.0](https://github.com/niafrond/niafrond.github.io/compare/v1.90.0...v1.91.0) (2026-04-19)
 
 ### Features
