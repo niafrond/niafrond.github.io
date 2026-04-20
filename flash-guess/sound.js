@@ -1,11 +1,24 @@
 /**
- * sound.js — Sons synthétiques pour Flash Guess
+ * sound.js — Sons pour Flash Guess
  *
- * Tous les sons sont générés via Web Audio API, sans fichier externe.
+ * La sonnerie de fin de tour utilise le fichier MP3 embarqué ;
+ * les autres sons sont générés via Web Audio API.
  */
 
 let _ctx = null;
 let _muted = false;
+
+// ─── MP3 bell buffer ──────────────────────────────────────────────────────────
+let _bellBuffer = null;
+
+async function _loadBell() {
+  try {
+    const ctx = getCtx();
+    const res = await fetch('./universfield-school-bell-199584.mp3');
+    const buf = await res.arrayBuffer();
+    _bellBuffer = await ctx.decodeAudioData(buf);
+  } catch (_) {}
+}
 
 export function setMuted(val) { _muted = val; }
 export function getMuted() { return _muted; }
@@ -18,6 +31,11 @@ function getCtx() {
     _ctx.resume().catch(() => {});
   }
   return _ctx;
+}
+
+// Kick off MP3 pre-load as soon as the module is imported (browser only)
+if (typeof fetch !== 'undefined') {
+  _loadBell();
 }
 
 function playNote(freq, type, startTime, duration, gain = 0.4) {
@@ -70,20 +88,29 @@ export function playTickUrgent() {
   } catch (_) {}
 }
 
-/** Sonnerie de fin de manche — sonnerie d'école (4 coups de cloche) */
+/** Sonnerie de fin de manche — MP3 école (fallback synthétique si non chargé) */
 export function playBuzzer() {
   if (_muted) return;
+  if (_bellBuffer) {
+    try {
+      const ctx = getCtx();
+      const source = ctx.createBufferSource();
+      source.buffer = _bellBuffer;
+      source.connect(ctx.destination);
+      source.start();
+    } catch (_) {}
+    return;
+  }
+  // Fallback : sonnerie synthétique si le MP3 n'est pas encore chargé
   try {
     const ctx = getCtx();
     const now = ctx.currentTime;
-    // Four loud school-bell dings, each with sharp attack and long decay
     [0, 0.6, 1.2, 1.8].forEach((offset) => {
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
       osc.connect(g); g.connect(ctx.destination);
       osc.type = 'sine';
       osc.frequency.setValueAtTime(900, now + offset);
-      // Add a slight inharmonic overtone for a metallic bell colour
       const osc2 = ctx.createOscillator();
       const g2 = ctx.createGain();
       osc2.connect(g2); g2.connect(ctx.destination);
