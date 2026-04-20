@@ -177,7 +177,6 @@ function init() {
   // ── Round intro ──
   el('btn-round-go').addEventListener('click', withCooldown(() => {
     playButtonClick();
-    state.currentTeamIdx = 0;
     startPreTurn();
     updateRotateOverlay();
   }));
