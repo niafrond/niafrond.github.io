@@ -10,6 +10,8 @@ export const CARD_COUNT_DEFAULT         = 40;
 export const CARD_COUNT_KEY             = 'flashguess_card_count';
 export const SELECTED_CATS_KEY          = 'flashguess_selected_cats';
 export const KIDS_MODE_KEY              = 'flashguess_kids_mode';
+export const WORD_DRAFT_KEY             = 'flashguess_word_draft';
+export const ELIMINATIONS_PER_PLAYER   = 3;
 export const GROUPS_KEY                 = 'flashguess_groups';
 export const WORD_FONT_MIN              = 16;
 export const WORD_FONT_MAX              = 200;
@@ -96,6 +98,12 @@ export const state = {
   timerPaused:         false,
 
   cardCount:           CARD_COUNT_DEFAULT,
+
+  // Word draft (tri caché)
+  wordDraftMode:       false,
+  draftPlayerChunks:   [],
+  draftCurrentPlayerIdx: 0,
+  draftEliminations:   [], // selected indices in current player's chunk
 
   // Lecture enfant
   childReadFirstWord:  false,

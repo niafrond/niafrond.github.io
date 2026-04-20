@@ -8,6 +8,7 @@ import {
   TURN_DURATION, TIMER_CIRCLE_RADIUS,
   WORD_FONT_MIN, WORD_FONT_MAX,
   CHILD_READ_AUTO_MS,
+  ELIMINATIONS_PER_PLAYER,
 } from './state.js';
 import { el, showScreen, showToast } from './ui.js';
 import {
@@ -768,4 +769,170 @@ export function showGameOver() {
   });
 
   showScreen('screen-game-over');
+}
+
+// ─── WORD DRAFT (TRI CACHÉ) ────────────────────────────────────────────────────
+
+/**
+ * Splits an array of words into N chunks as evenly as possible.
+ * Total words = cardCount + ELIMINATIONS_PER_PLAYER * N
+ * Each chunk has ~(cardCount/N + ELIMINATIONS_PER_PLAYER) words.
+ * After each player eliminates ELIMINATIONS_PER_PLAYER words, exactly cardCount remain.
+ *
+ * @param {Array} words - Shuffled word pool (length >= cardCount + E*N)
+ * @param {number} cardCount - Target game word count
+ * @param {number} nbPlayers - Number of players
+ * @param {number} eliminationsPerPlayer - Words each player eliminates (default: ELIMINATIONS_PER_PLAYER)
+ * @returns {Array<Array>} N chunks
+ */
+export function computeDraftChunks(words, cardCount, nbPlayers, eliminationsPerPlayer = ELIMINATIONS_PER_PLAYER) {
+  const total  = cardCount + eliminationsPerPlayer * nbPlayers;
+  const pool   = words.slice(0, total);
+  const chunks = [];
+  let offset   = 0;
+  for (let i = 0; i < nbPlayers; i++) {
+    const extra = i < (total % nbPlayers) ? 1 : 0;
+    const size  = Math.floor(total / nbPlayers) + extra;
+    chunks.push(pool.slice(offset, offset + size));
+    offset += size;
+  }
+  return chunks;
+}
+
+export function startWordDraft() {
+  const N         = state.playerNames.length;
+  const cardCount = state.cardCount;
+
+  const allShuffled = getShuffledWords(
+    state.selectedCategories.length > 0 ? state.selectedCategories : null,
+    state.kidsMode,
+  );
+
+  if (allShuffled.length === 0) {
+    showToast('Aucun mot dans les catégories sélectionnées !', 'error');
+    showScreen('screen-categories');
+    return;
+  }
+
+  // "Tous les mots" mode (cardCount === 0): skip draft
+  if (cardCount === 0) {
+    state.allWords = allShuffled;
+    startRound(1);
+    return;
+  }
+
+  const totalNeeded = cardCount + ELIMINATIONS_PER_PLAYER * N;
+  if (allShuffled.length < totalNeeded) {
+    showToast(
+      `Pas assez de mots pour le tri caché (${allShuffled.length} disponibles, ${totalNeeded} requis). La partie démarre normalement.`,
+      'warn',
+    );
+    const count    = Math.min(cardCount, allShuffled.length);
+    state.allWords = allShuffled.slice(0, count);
+    if (state.allWords.length === 0) {
+      showToast('Aucun mot dans les catégories sélectionnées !', 'error');
+      showScreen('screen-categories');
+      return;
+    }
+    startRound(1);
+    return;
+  }
+
+  state.draftPlayerChunks     = computeDraftChunks(allShuffled, cardCount, N);
+  state.draftCurrentPlayerIdx = 0;
+  state.draftEliminations     = [];
+
+  showWordDraftCover(0);
+}
+
+export function showWordDraftCover(playerIdx) {
+  state.draftCurrentPlayerIdx = playerIdx;
+  state.draftEliminations     = [];
+
+  const playerName = state.playerNames[playerIdx];
+  el('draft-cover-player').textContent = playerName;
+  el('draft-cover-num').textContent    =
+    `Joueur ${playerIdx + 1} / ${state.playerNames.length}`;
+
+  showScreen('screen-word-draft-cover');
+}
+
+export function showWordDraftTurn(playerIdx) {
+  const chunk      = state.draftPlayerChunks[playerIdx];
+  const playerName = state.playerNames[playerIdx];
+  const list       = el('draft-word-list');
+
+  state.draftEliminations = [];
+  list.innerHTML           = '';
+  el('draft-player-name').textContent = playerName;
+  el('draft-counter').textContent     = `0 / ${ELIMINATIONS_PER_PLAYER}`;
+  el('draft-counter').classList.remove('draft-counter-badge--full');
+  el('btn-draft-confirm').disabled    = true;
+
+  chunk.forEach((word, i) => {
+    const item = document.createElement('button');
+    item.className     = 'draft-word-item';
+    item.dataset.idx   = i;
+    item.setAttribute('type', 'button');
+
+    const wordSpan     = document.createElement('span');
+    wordSpan.className = 'draft-word-text';
+    wordSpan.textContent = word.word;
+
+    const catInfo      = getCategoryInfo(word.category);
+    const catSpan      = document.createElement('span');
+    catSpan.className  = 'draft-word-cat';
+    catSpan.textContent = `${catInfo.emoji} ${catInfo.label}`;
+
+    item.appendChild(wordSpan);
+    item.appendChild(catSpan);
+    item.addEventListener('click', () => toggleDraftElimination(i));
+    list.appendChild(item);
+  });
+
+  showScreen('screen-word-draft');
+}
+
+function toggleDraftElimination(idx) {
+  const items = el('draft-word-list').querySelectorAll('.draft-word-item');
+  const pos   = state.draftEliminations.indexOf(idx);
+
+  if (pos === -1) {
+    if (state.draftEliminations.length >= ELIMINATIONS_PER_PLAYER) return;
+    state.draftEliminations.push(idx);
+    items[idx].classList.add('draft-word-item--eliminated');
+  } else {
+    state.draftEliminations.splice(pos, 1);
+    items[idx].classList.remove('draft-word-item--eliminated');
+  }
+
+  const count = state.draftEliminations.length;
+  el('draft-counter').textContent  = `${count} / ${ELIMINATIONS_PER_PLAYER}`;
+  el('draft-counter').classList.toggle('draft-counter-badge--full', count === ELIMINATIONS_PER_PLAYER);
+  el('btn-draft-confirm').disabled = count !== ELIMINATIONS_PER_PLAYER;
+}
+
+export function confirmWordDraftEliminations() {
+  const playerIdx = state.draftCurrentPlayerIdx;
+  const chunk     = state.draftPlayerChunks[playerIdx];
+
+  // Keep only non-eliminated words
+  state.draftPlayerChunks[playerIdx] =
+    chunk.filter((_, i) => !state.draftEliminations.includes(i));
+
+  const nextIdx = playerIdx + 1;
+  if (nextIdx < state.playerNames.length) {
+    showWordDraftCover(nextIdx);
+  } else {
+    // All players done — build the final word list
+    state.allWords = shuffle(state.draftPlayerChunks.flat());
+    state.draftPlayerChunks   = [];
+    state.draftEliminations   = [];
+    if (state.allWords.length === 0) {
+      showToast('Aucun mot restant après le tri !', 'error');
+      showScreen('screen-categories');
+      return;
+    }
+    startRound(1);
+  }
 }

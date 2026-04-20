@@ -4,7 +4,7 @@
 
 import {
   state,
-  CARD_COUNT_DEFAULT, CARD_COUNT_KEY, SELECTED_CATS_KEY, KIDS_MODE_KEY,
+  CARD_COUNT_DEFAULT, CARD_COUNT_KEY, SELECTED_CATS_KEY, KIDS_MODE_KEY, WORD_DRAFT_KEY,
   MIN_PLAYERS,
 } from './state.js';
 import { el, showScreen, showToast } from './ui.js';
@@ -56,6 +56,15 @@ export function loadKidsMode() {
 
 export function saveKidsMode(v) {
   try { localStorage.setItem(KIDS_MODE_KEY, v ? '1' : '0'); } catch (_) { /* ignore */ }
+}
+
+// ─── Persistance du mode choix de mots ───────────────────────────────────────
+export function loadWordDraftMode() {
+  try { return localStorage.getItem(WORD_DRAFT_KEY) === '1'; } catch (_) { return false; }
+}
+
+export function saveWordDraftMode(v) {
+  try { localStorage.setItem(WORD_DRAFT_KEY, v ? '1' : '0'); } catch (_) { /* ignore */ }
 }
 
 // ─── ÉCRAN SETUP — joueurs ─────────────────────────────────────────────────────
