@@ -1784,3 +1784,123 @@ details.card-collapsible > :not(summary) {
   background: rgba(64,145,108,0.15);
   border-color: rgba(64,145,108,0.5);
 }
+
+/* ─── Groupes dans le setup ─────────────────────────────────────────────────── */
+#groups-in-setup {
+  margin-top: 14px;
+}
+.setup-group-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.setup-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.setup-group-name {
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+  font-size: 0.95rem;
+}
+.setup-group-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.setup-group-member {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.setup-group-member:hover:not(:disabled) {
+  background: rgba(232,93,4,0.15);
+  border-color: var(--volcan);
+}
+.setup-group-member--added,
+.setup-group-member:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ─── Éditeur de groupes ────────────────────────────────────────────────────── */
+.group-editor-card {
+  margin-bottom: 16px;
+}
+.group-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.group-editor-name {
+  font-weight: 700;
+  color: var(--warning);
+  font-size: 1rem;
+  flex: 1;
+}
+.group-editor-count {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.group-rename-input {
+  flex: 1;
+  min-width: 100px;
+}
+.group-editor-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.group-member-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 4px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  font-size: 0.82rem;
+  color: var(--text);
+}
+.group-member-remove {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  font-size: 0.7rem;
+  border-radius: 50%;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.group-editor-add {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.group-add-label {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.group-add-known {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
