@@ -1,3 +1,9 @@
+## [1.109.0](https://github.com/niafrond/niafrond.github.io/compare/v1.108.0...v1.109.0) (2026-04-20)
+
+### Features
+
+* suppress update notification and auto-reload during gameplay ([10a12ce](https://github.com/niafrond/niafrond.github.io/commit/10a12ce7f95816fa07cb82af172b56db0dc10e35))
+
 ## [1.108.0](https://github.com/niafrond/niafrond.github.io/compare/v1.107.0...v1.108.0) (2026-04-20)
 
 ### Features
