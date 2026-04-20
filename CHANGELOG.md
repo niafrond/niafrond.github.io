@@ -1,3 +1,9 @@
+## [1.95.0](https://github.com/niafrond/niafrond.github.io/compare/v1.94.0...v1.95.0) (2026-04-20)
+
+### Features
+
+* **flash-guess:** boutons annuler/refaire toujours visibles, grisés si non applicable ([#143](https://github.com/niafrond/niafrond.github.io/issues/143)) ([6879154](https://github.com/niafrond/niafrond.github.io/commit/6879154f75205f73c69345aeb8b5bdc2a30d5b1e))
+
 ## [1.94.0](https://github.com/niafrond/niafrond.github.io/compare/v1.93.1...v1.94.0) (2026-04-20)
 
 ### Features

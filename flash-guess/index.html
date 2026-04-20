@@ -111,7 +111,9 @@
         <div id="player-list"></div>
         <span id="player-count"></span>
         <span id="setup-hint" hidden></span>
+        <div id="groups-in-setup"></div>
         <div id="members-list"></div>
+        <button id="btn-manage-groups" class="btn btn-secondary btn-sm w-full mt-12">👥 Gérer les groupes</button>
       </div>
     </div>
 
@@ -261,7 +263,7 @@
 
     <div class="turn-center-col">
       <div class="timer-row">
-        <button id="btn-undo" class="btn-undo-redo" title="Annuler" hidden>↩<br>Annuler</button>
+        <button id="btn-undo" class="btn-undo-redo" title="Annuler" disabled>↩<br>Annuler</button>
         <div class="timer-wrap">
           <svg class="timer-svg" viewBox="0 0 100 100">
             <circle class="timer-track"  cx="50" cy="50" r="46"/>
@@ -269,7 +271,7 @@
           </svg>
           <div id="timer-number">30</div>
         </div>
-        <button id="btn-redo" class="btn-undo-redo" title="Refaire" hidden>↪<br>Refaire</button>
+        <button id="btn-redo" class="btn-undo-redo" title="Refaire" disabled>↪<br>Refaire</button>
       </div>
 
       <div class="word-card">
@@ -424,6 +426,30 @@
       <div class="card-title" id="words-list-title">📋 Liste des mots</div>
       <div id="words-list"></div>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 10 — GROUPES DE JOUEURS
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-groups" data-screen="screen-groups">
+  <div class="page-wrapper">
+    <button id="btn-groups-back" class="btn btn-secondary btn-sm home-btn">← Retour</button>
+
+    <h1 class="app-title" style="font-size:2rem;">👥 Groupes</h1>
+    <p class="app-subtitle">Retrouvez vos joueurs habituels en un clic</p>
+
+    <div class="card">
+      <div class="card-title">➕ Créer un groupe</div>
+      <div class="input-row">
+        <input id="group-new-name" class="input" type="text"
+               placeholder="Nom du groupe (ex : Famille)…" maxlength="30"
+               autocomplete="off" autocorrect="off">
+        <button id="btn-group-create" class="btn btn-primary">+ Créer</button>
+      </div>
+    </div>
+
+    <div id="groups-editor-list"></div>
   </div>
 </div>
 
