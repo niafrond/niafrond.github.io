@@ -222,6 +222,7 @@ function updateRotateOverlay() {
   if (_demoWaiting && !isPortrait) {
     _demoWaiting = false;
     _demoMode = true;
+    _demoChildReadFrozen = false;
     startPreTurn();
   }
 }
@@ -369,6 +370,7 @@ function isCurrentOrateurChild() {
 let _childReadFirstWord = false; // true si on attend le premier mot du tour
 let _childReadAutoTimer = null;  // timer d'auto-dismiss du bouton "J'ai lu !"
 const CHILD_READ_AUTO_MS = 5000; // durée avant auto-dismiss (ms)
+let _demoChildReadFrozen = false; // true en démo : bouton affiché mais figé jusqu'au clic "ok j'ai compris"
 
 function showChildReadBtn(visible) {
   const btn = el('btn-child-read');
@@ -384,7 +386,7 @@ function showChildReadBtn(visible) {
   btn.classList.remove('child-read-btn--countdown');
   if (foundBtn) foundBtn.disabled = visible;
   if (passBtn)  passBtn.disabled  = visible;
-  if (visible) {
+  if (visible && !_demoChildReadFrozen) {
     // Force un reflow pour relancer l'animation CSS proprement
     void btn.offsetWidth;
     btn.classList.add('child-read-btn--countdown');
@@ -397,6 +399,10 @@ function showChildReadBtn(visible) {
 
 function childConfirmedRead() {
   showChildReadBtn(false);
+  if (_demoMode) {
+    _childReadFirstWord = false;
+    return;
+  }
   if (_childReadFirstWord) {
     _childReadFirstWord = false;
     startTimer();
@@ -679,6 +685,7 @@ function startTurn() {
   updateUndoRedoButtons();
 
   // Réinitialise le bouton "J'ai lu !" au début de chaque tour
+  _demoChildReadFrozen = false;
   showChildReadBtn(false);
   _childReadFirstWord = false;
   _demoFirstWordFound = false;
@@ -714,6 +721,11 @@ function startTurn() {
     ring.style.strokeDasharray = `${circ}`;
     ring.style.strokeDashoffset = '0';
     ring.style.stroke = 'var(--success)';
+    if (isCurrentOrateurChild()) {
+      _childReadFirstWord = true;
+      _demoChildReadFrozen = true;
+      showChildReadBtn(true);
+    }
   } else {
     updateTimerDisplay();
     // Si l'orateur est un enfant, on attend qu'il lise le mot avant de démarrer
@@ -785,8 +797,8 @@ function drawNextWord() {
   fitWordCard();
 
   // Pour les mots suivants (pas le 1er du tour) : pause lecture pour les enfants
-  if (!_demoMode && !_childReadFirstWord && isCurrentOrateurChild()) {
-    pauseTimer();
+  if (!_childReadFirstWord && isCurrentOrateurChild()) {
+    if (!_demoMode) pauseTimer();
     showChildReadBtn(true);
   }
 }
@@ -1936,6 +1948,11 @@ const DEMO_TIPS = {
     { targetId: 'btn-ready', text: '✅ « Je suis prêt ! » — Passe le téléphone à l\'orateur, puis appuie ici quand tout le monde est prêt à jouer.' },
   ],
   1: [
+    {
+      targetId: 'btn-child-read',
+      text: '👀 J\'ai lu ! — L\'orateur est un enfant : ce bouton lui permet de confirmer qu\'il a bien lu le mot avant que le chrono démarre. Appuie sur « OK j\'ai compris » puis clique le bouton pour continuer !',
+      onOk: () => { _demoChildReadFrozen = false; showChildReadBtn(true); },
+    },
     { targetId: 'timer-number',   text: '⏱️ Le chrono ! En vraie partie il compte 30 secondes. Ici il est infini pour que tu puisses explorer sans pression.' },
     { targetId: 'word-card-text', text: '🃏 Le mot à faire deviner ! Décris-le librement — interdit de le dire, l\'épeler ou le traduire.' },
     { targetId: 'btn-found',      text: '✅ Trouvé ! Appuie ici quand ton équipe trouve le mot.' },
@@ -1952,7 +1969,6 @@ let _demoTipIdx = 0;
 
 const DEMO_TIPS_AFTER_FIRST_FOUND = [
   { targetId: 'btn-undo', text: '↩ Annuler — Tu as appuyé sur « Trouvé » trop vite ? Ce bouton annule le dernier mot. Le bouton ↪ Refaire apparaîtra alors juste à côté si tu veux rétablir.' },
-  { targetId: null,       text: '👀 J\'ai lu ! — Dans une vraie partie avec un enfant orateur, ce bouton apparaît sur le premier mot pour qu\'il confirme qu\'il a lu avant que le chrono démarre.' },
 ];
 
 const DEMO_TIPS_TURN_END = [
@@ -2012,6 +2028,8 @@ function _showDemoTip(tips) {
   overlay.hidden = false;
 
   el('demo-tooltip-ok').onclick = () => {
+    const currentTip = tips[_demoTipIdx];
+    if (currentTip.onOk) currentTip.onOk();
     _demoTipIdx++;
     if (_demoTipIdx < tips.length) {
       _showDemoTip(tips);
@@ -2028,13 +2046,15 @@ function startDemoTurn() {
   state.noTeamsMode     = false;
   state.teams           = [{
     color: 'var(--volcan)',
-    players: ['Vous'],
+    players: ['Enfant', 'Adulte'],
     score: [0, 0, 0],
   }];
+  state.playerIsChild = new Set(['Enfant']);
   state.actionHistory = [];
   state.redoStack     = [];
 
-  const words     = getShuffledWords(null, state.kidsMode);
+  // Mode enfant forcé pour la démo : mots adaptés -12 ans
+  const words     = getShuffledWords(null, true);
   const demoWords = words.slice(0, 3);
   state.allWords  = demoWords;
   state.roundWords = [...demoWords];
@@ -2046,8 +2066,9 @@ function startDemoTurn() {
     return;
   }
 
-  _demoMode           = true;
+  _demoMode = true;
   _demoFirstWordFound = false;
+  _demoChildReadFrozen = false;
   startPreTurn();
 }
 
@@ -2170,6 +2191,10 @@ function init() {
     playButtonClick();
     if (_demoMode) {
       state.currentRound++;
+      // Passe au joueur suivant dans l'équipe pour la manche suivante
+      const team = state.teams[state.currentTeamIdx];
+      state.teamPlayerIdx[state.currentTeamIdx] =
+        (state.teamPlayerIdx[state.currentTeamIdx] + 1) % team.players.length;
       state.roundWords  = [...state.allWords];
       state.currentWord = null;
       startTurn();
