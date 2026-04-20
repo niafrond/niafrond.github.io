@@ -45,6 +45,7 @@ import { openWordsEditor, addWord, exportWords, importWords, handleResetWords } 
 import { startDemoTurn } from './demo.js';
 import { toggleFullscreen, updateFullscreenBtn, forceUpdate, installPwa, initServiceWorker } from './pwa.js';
 import { playButtonClick } from './sound.js';
+import { openLeaderboard, renderLeaderboard } from './leaderboard.js';
 
 // ─── Overlay orientation ───────────────────────────────────────────────────────
 function handleOrientationTimerState(overlayVisible) {
@@ -280,6 +281,16 @@ function init() {
     e.target.value = '';
   });
   el('btn-words-reset').addEventListener('click', withCooldown(handleResetWords));
+
+  // ── Classement ──
+  el('btn-leaderboard').addEventListener('click', withCooldown(openLeaderboard));
+  el('btn-leaderboard-back').addEventListener('click', withCooldown(() => {
+    showScreen('screen-setup');
+    updateRotateOverlay();
+  }));
+  document.querySelectorAll('.leaderboard-tab-btn').forEach(btn => {
+    btn.addEventListener('click', withCooldown(() => renderLeaderboard(btn.dataset.tab)));
+  });
 
   // ── Démo ──
   el('btn-launch-demo').addEventListener('click', withCooldown(startDemoTurn));
