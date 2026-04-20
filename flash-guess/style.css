@@ -516,10 +516,17 @@ details.card-collapsible > :not(summary) {
 .btn-turn-side:active { transform: scale(0.97); }
 .btn-turn-side span { font-size: 0.85em; }
 
-/* Grille : btn-pass occupe la cellule col 1 */
-#btn-pass {
+/* Grille : conteneur gauche (erreur + carte suivante) */
+#btn-pass-col {
   grid-column: 1 / 2;
   grid-row: 1 / 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+#btn-pass-col .btn-turn-side {
+  flex: 1;
+  height: auto;
 }
 #btn-found {
   grid-column: 3 / 4;

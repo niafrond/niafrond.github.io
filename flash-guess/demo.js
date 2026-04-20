@@ -23,10 +23,11 @@ const DEMO_TIPS = {
     { targetId: 'btn-found',      text: '✅ Trouvé ! Appuie ici quand ton équipe trouve le mot.' },
   ],
   2: [
-    { targetId: 'btn-pass', text: '⏭ Nouveau en manche 2 ! Si tu es bloqué, passe la carte : elle reviendra pour un autre tour.' },
+    { targetId: 'btn-skip', text: '⏭ Nouveau en manche 2 ! Si tu es bloqué, passe la carte : elle reviendra pour un autre tour.' },
   ],
   3: [
-    { targetId: 'btn-pass', text: '🚨 En manche 3, ce bouton s\'appelle Erreur / Passer. Appuie si l\'orateur a parlé OU s\'il souhaite passer.' },
+    { targetId: 'btn-error', text: '🚨 En manche 3, appuie sur « Erreur » si l\'orateur a parlé.' },
+    { targetId: 'btn-skip',  text: '⏭ En manche 3, appuie sur « Carte suivante » si l\'orateur souhaite passer.' },
   ],
 };
 

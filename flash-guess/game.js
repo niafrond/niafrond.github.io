@@ -120,7 +120,8 @@ export function isCurrentOrateurChild() {
 export function showChildReadBtn(visible) {
   const btn     = el('btn-child-read');
   const foundBtn = el('btn-found');
-  const passBtn  = el('btn-pass');
+  const errorBtn = el('btn-error');
+  const skipBtn  = el('btn-skip');
   if (!btn) return;
   if (state.childReadAutoTimer !== null) {
     clearTimeout(state.childReadAutoTimer);
@@ -129,7 +130,8 @@ export function showChildReadBtn(visible) {
   btn.hidden = !visible;
   btn.classList.remove('child-read-btn--countdown');
   if (foundBtn) foundBtn.disabled = visible;
-  if (passBtn)  passBtn.disabled  = visible;
+  if (errorBtn) errorBtn.disabled = visible;
+  if (skipBtn)  skipBtn.disabled  = visible;
   if (visible && !demo.childReadFrozen) {
     void btn.offsetWidth;
     btn.classList.add('child-read-btn--countdown');
@@ -162,13 +164,13 @@ export function fitWordCard() {
 
   const turnArea = document.querySelector('.turn-play-area');
   const foundBtn = el('btn-found');
-  const passBtn  = el('btn-pass');
+  const passCol  = el('btn-pass-col');
 
   const cs     = getComputedStyle(card);
   const areaCS = getComputedStyle(turnArea);
   const gap    = parseFloat(areaCS.columnGap) || 0;
 
-  const leftColW = passBtn.offsetWidth;
+  const leftColW = passCol.offsetWidth;
   const availW = turnArea.clientWidth
     - leftColW
     - foundBtn.offsetWidth
@@ -361,25 +363,14 @@ export function startTurn() {
   state.childReadFirstWord = false;
   demo.firstWordFound = false;
 
-  const rule    = getCurrentRoundRule();
-  const passBtn = el('btn-pass');
+  const rule     = getCurrentRoundRule();
+  const errorBtn = el('btn-error');
+  const skipBtn  = el('btn-skip');
 
-  if (rule.canFault) {
-    passBtn.style.visibility    = '';
-    passBtn.style.pointerEvents = '';
-    passBtn.className = 'btn-fault-turn btn-turn-side';
-    passBtn.setAttribute('aria-label', 'Erreur — arrêter le tour');
-    passBtn.innerHTML = '<span aria-hidden="true">🚨</span><span>Erreur / Passer</span>';
-  } else if (rule.canSkip) {
-    passBtn.style.visibility    = '';
-    passBtn.style.pointerEvents = '';
-    passBtn.className = 'btn-skip-side-turn btn-turn-side';
-    passBtn.setAttribute('aria-label', 'Passer cette carte');
-    passBtn.innerHTML = '<span aria-hidden="true">⏭</span><span>Passer</span>';
-  } else {
-    passBtn.style.visibility    = 'hidden';
-    passBtn.style.pointerEvents = 'none';
-  }
+  errorBtn.hidden = !rule.canFault;
+  errorBtn.disabled = false;
+  skipBtn.hidden  = !rule.canSkip;
+  skipBtn.disabled = false;
 
   updateTurnStats();
   drawNextWord();
