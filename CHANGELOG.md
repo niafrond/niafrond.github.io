@@ -1,3 +1,9 @@
+## [1.105.0](https://github.com/niafrond/niafrond.github.io/compare/v1.104.0...v1.105.0) (2026-04-20)
+
+### Features
+
+* **flash-guess:** visually clarify player section on setup screen ([3afbca6](https://github.com/niafrond/niafrond.github.io/commit/3afbca66f52c4a98b3160128183db8855927654f))
+
 ## [1.104.0](https://github.com/niafrond/niafrond.github.io/compare/v1.103.1...v1.104.0) (2026-04-20)
 
 ### Features
