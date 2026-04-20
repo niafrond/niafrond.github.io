@@ -1834,11 +1834,11 @@ details.card-collapsible > :not(summary) {
 }
 .child-read-btn:hover:not(:disabled) { opacity: 0.88; }
 
-/* Countdown drain: the lagon fill shrinks right-to-left proportionally to the word length */
+/* Countdown drain: the lagon fill shrinks left-to-right proportionally to the word length */
 .child-read-btn--countdown {
   background-image: linear-gradient(var(--lagon), var(--lagon));
   background-repeat: no-repeat;
-  background-position: left center;
+  background-position: right center;
   background-color: rgba(0, 150, 199, 0.25);
   animation: childReadAppear 0.25s ease both,
              childReadCountdown var(--child-read-duration, 5s) linear 0.25s forwards;
