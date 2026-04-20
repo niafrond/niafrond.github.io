@@ -1831,7 +1831,7 @@ function init() {
       : '';
     versionEl.textContent = `v${getMatch3Version()}${dateLabel}`;
   }
-  initUpdateChecker(buildDate, versionEl);
+  initUpdateChecker(buildDate, versionEl, forceUpdate);
 
   // ── Setup ──
   el('tab-btn-partie').addEventListener('click', withCooldown(() => switchSetupTab('partie')));
