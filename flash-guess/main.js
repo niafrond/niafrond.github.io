@@ -16,6 +16,7 @@ import {
   setMuted, getMuted,
 } from './sound.js';
 import { getMatch3Version, getMatch3BuildDate } from '../match3-quest/version.js';
+import { initUpdateChecker } from '../update-checker.js';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 const TURN_DURATION              = 30;
@@ -2072,13 +2073,14 @@ function updateFullscreenBtn() {
 // ─── INIT ──────────────────────────────────────────────────────────────────────
 function init() {
   const versionEl = document.getElementById('flashguess-version');
+  const buildDate = getMatch3BuildDate();
   if (versionEl) {
-    const buildDate = getMatch3BuildDate();
     const dateLabel = buildDate
       ? ` · ${new Date(buildDate).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}`
       : '';
     versionEl.textContent = `v${getMatch3Version()}${dateLabel}`;
   }
+  initUpdateChecker(buildDate, versionEl);
 
   // ── Setup ──
   el('btn-add-player').addEventListener('click', withCooldown(addPlayer));
