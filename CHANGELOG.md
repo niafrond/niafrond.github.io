@@ -1,3 +1,9 @@
+## [1.115.0](https://github.com/niafrond/niafrond.github.io/compare/v1.114.2...v1.115.0) (2026-04-20)
+
+### Features
+
+* grid layout for word draft screen (tri secret) ([be64d06](https://github.com/niafrond/niafrond.github.io/commit/be64d06631313978cd4901f2de719b982ea142f5))
+
 ## [1.114.2](https://github.com/niafrond/niafrond.github.io/compare/v1.114.1...v1.114.2) (2026-04-20)
 
 ### Bug Fixes
