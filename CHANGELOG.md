@@ -1,3 +1,10 @@
+## [1.99.2](https://github.com/niafrond/niafrond.github.io/compare/v1.99.1...v1.99.2) (2026-04-20)
+
+### Bug Fixes
+
+* uniformise emoji enfant et remplace par texte lors de l'ajout de membre ([d8f3c11](https://github.com/niafrond/niafrond.github.io/commit/d8f3c11abf6dcbe84e60fa6734f2fa37ea99527f))
+* uniformise emoji enfant et remplace par texte lors de l'ajout de membre ([#154](https://github.com/niafrond/niafrond.github.io/issues/154)) ([9ed3b51](https://github.com/niafrond/niafrond.github.io/commit/9ed3b51f89eb1776a1609d0289a11b9610f3cda4))
+
 ## [1.99.1](https://github.com/niafrond/niafrond.github.io/compare/v1.99.0...v1.99.1) (2026-04-20)
 
 ### Bug Fixes
