@@ -1,3 +1,9 @@
+## [1.110.1](https://github.com/niafrond/niafrond.github.io/compare/v1.110.0...v1.110.1) (2026-04-20)
+
+### Bug Fixes
+
+* reload button in update banner triggers forceUpdate (clears SW + cache) ([88efe40](https://github.com/niafrond/niafrond.github.io/commit/88efe4059aaa5ec6a9b60defd2dea84267378a38))
+
 ## [1.110.0](https://github.com/niafrond/niafrond.github.io/compare/v1.109.1...v1.110.0) (2026-04-20)
 
 ### Features
