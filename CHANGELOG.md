@@ -1,3 +1,9 @@
+## [1.96.0](https://github.com/niafrond/niafrond.github.io/compare/v1.95.0...v1.96.0) (2026-04-20)
+
+### Features
+
+* **demo:** wait for first Trouvé before explaining Annuler/Refaire/J'ai lu ([#145](https://github.com/niafrond/niafrond.github.io/issues/145)) ([697722c](https://github.com/niafrond/niafrond.github.io/commit/697722c6cba593646443366bd4154ae2771344d5))
+
 ## [1.95.0](https://github.com/niafrond/niafrond.github.io/compare/v1.94.0...v1.95.0) (2026-04-20)
 
 ### Features
