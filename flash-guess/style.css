@@ -197,6 +197,17 @@ details.card-collapsible > :not(summary) {
 }
 .input::placeholder { color: var(--text-muted); }
 
+/* ─── Setup section label ─────────────────────────────────────────────────── */
+.setup-section-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--lagon);
+  margin-bottom: 10px;
+  padding-left: 4px;
+}
+
 /* ─── Player list ──────────────────────────────────────────────────────────── */
 #player-list {
   display: flex;
