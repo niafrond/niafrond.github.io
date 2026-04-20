@@ -8,6 +8,7 @@
 import {
   computeTeamLayout,
   teamLabel,
+  computeDraftChunks,
 } from '../../game.js';
 
 // ─── computeTeamLayout ────────────────────────────────────────────────────────
@@ -93,5 +94,67 @@ describe('teamLabel', () => {
   test('trois joueurs', () => {
     const team = { players: ['A', 'B', 'C'] };
     expect(teamLabel(team)).toBe('A · B · C');
+  });
+});
+
+// ─── computeDraftChunks ───────────────────────────────────────────────────────
+
+describe('computeDraftChunks', () => {
+  function makeWords(n) {
+    return Array.from({ length: n }, (_, i) => ({ word: `mot${i}`, category: 'test' }));
+  }
+
+  test('4 joueurs, 40 mots cibles → pool de 52 mots, 4 chunks', () => {
+    const words  = makeWords(52);
+    const chunks = computeDraftChunks(words, 40, 4);
+    expect(chunks).toHaveLength(4);
+    const totalWords = chunks.reduce((s, c) => s + c.length, 0);
+    expect(totalWords).toBe(52);
+  });
+
+  test('chaque chunk a la bonne taille (40 / 4 + 3 = 13)', () => {
+    const words  = makeWords(52);
+    const chunks = computeDraftChunks(words, 40, 4);
+    chunks.forEach(chunk => expect(chunk).toHaveLength(13));
+  });
+
+  test('après élimination de 3 par joueur il reste exactement cardCount mots', () => {
+    const words    = makeWords(52);
+    const chunks   = computeDraftChunks(words, 40, 4);
+    const remaining = chunks.reduce((s, c) => s + (c.length - 3), 0);
+    expect(remaining).toBe(40);
+  });
+
+  test('3 joueurs, 30 mots cibles → pool de 39, répartition quasi-égale', () => {
+    const words  = makeWords(39);
+    const chunks = computeDraftChunks(words, 30, 3);
+    expect(chunks).toHaveLength(3);
+    const totalWords = chunks.reduce((s, c) => s + c.length, 0);
+    expect(totalWords).toBe(39);
+    chunks.forEach(chunk => expect(chunk.length).toBe(13));
+  });
+
+  test('si le pool est plus grand que nécessaire, seuls les N premiers mots sont utilisés', () => {
+    const words  = makeWords(100);
+    const chunks = computeDraftChunks(words, 20, 2); // total = 26
+    const totalWords = chunks.reduce((s, c) => s + c.length, 0);
+    expect(totalWords).toBe(26);
+    // Les mots utilisés sont les 26 premiers
+    const usedWords = chunks.flat();
+    usedWords.forEach(w => {
+      const idx = parseInt(w.word.replace('mot', ''), 10);
+      expect(idx).toBeLessThan(26);
+    });
+  });
+
+  test('répartition équitable quand total non divisible par N', () => {
+    // 3 joueurs, 40 mots cibles → total = 49 = 3*16 + 1
+    const words  = makeWords(49);
+    const chunks = computeDraftChunks(words, 40, 3);
+    const sizes  = chunks.map(c => c.length);
+    const max    = Math.max(...sizes);
+    const min    = Math.min(...sizes);
+    expect(max - min).toBeLessThanOrEqual(1);
+    expect(sizes.reduce((s, v) => s + v, 0)).toBe(49);
   });
 });

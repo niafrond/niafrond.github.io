@@ -1,3 +1,15 @@
+## [1.106.1](https://github.com/niafrond/niafrond.github.io/compare/v1.106.0...v1.106.1) (2026-04-20)
+
+### Bug Fixes
+
+* **demo:** unfreeze child-read button only after tip 4 (btn-found) ([608521b](https://github.com/niafrond/niafrond.github.io/commit/608521b882c5d42ff8bdd756b902c07be8287e62))
+
+## [1.106.0](https://github.com/niafrond/niafrond.github.io/compare/v1.105.0...v1.106.0) (2026-04-20)
+
+### Features
+
+* implement word draft (tri caché) option for flash-guess ([4059337](https://github.com/niafrond/niafrond.github.io/commit/405933707db0e96aaaa9471b801515d8e9c58991))
+
 ## [1.105.0](https://github.com/niafrond/niafrond.github.io/compare/v1.104.0...v1.105.0) (2026-04-20)
 
 ### Features

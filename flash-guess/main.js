@@ -21,11 +21,13 @@ import {
   pauseTimer, resumeTimer,
   fitWordCard,
   setCoopObjective,
+  startWordDraft, showWordDraftTurn, confirmWordDraftEliminations,
 } from './game.js';
 
 import {
   loadCardCount, saveCardCount,
   loadKidsMode,
+  loadWordDraftMode, saveWordDraftMode,
   renderPlayerList,
   addPlayer,
   updateKidsModeStatus, toggleKidsMode,
@@ -116,6 +118,22 @@ function init() {
   updateKidsModeStatus();
   el('toggle-kids-mode').addEventListener('click', withCooldown(toggleKidsMode));
 
+  // ── Choix des mots (word draft) ──
+  state.wordDraftMode = loadWordDraftMode();
+  const wordDraftBtn = el('toggle-word-draft');
+  function updateWordDraftBtn() {
+    wordDraftBtn.textContent = state.wordDraftMode ? 'ON' : 'OFF';
+    wordDraftBtn.className =
+      `kids-mode-toggle-btn${state.wordDraftMode ? ' kids-mode-toggle-btn--on' : ''}`;
+    wordDraftBtn.setAttribute('aria-checked', String(state.wordDraftMode));
+  }
+  updateWordDraftBtn();
+  wordDraftBtn.addEventListener('click', withCooldown(() => {
+    state.wordDraftMode = !state.wordDraftMode;
+    saveWordDraftMode(state.wordDraftMode);
+    updateWordDraftBtn();
+  }));
+
   // ── Categories ──
   el('btn-categories-back').addEventListener('click', withCooldown(() => {
     showScreen('screen-setup');
@@ -131,7 +149,24 @@ function init() {
     renderTeams();
   }));
   el('btn-launch-game').addEventListener('click', withCooldown(() => {
-    startRound(1);
+    if (state.wordDraftMode) {
+      startWordDraft();
+    } else {
+      startRound(1);
+    }
+    updateRotateOverlay();
+  }));
+
+  // ── Word draft cover ──
+  el('btn-draft-cover-ready').addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    showWordDraftTurn(state.draftCurrentPlayerIdx);
+  }));
+
+  // ── Word draft turn ──
+  el('btn-draft-confirm').addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    confirmWordDraftEliminations();
     updateRotateOverlay();
   }));
 
