@@ -16,7 +16,7 @@ const INITIAL_CHECK_DELAY = 8000;
 
 // ─── Bandeau de mise à jour ───────────────────────────────────────────────────
 
-function createUpdateBanner() {
+function createUpdateBanner(reloadFn) {
   const banner = document.createElement('div');
   banner.id = 'update-banner';
   banner.setAttribute('role', 'status');
@@ -94,7 +94,7 @@ export function initUpdateChecker(currentBuildDate, versionEl = null, reloadFn =
   let updateDetected = false;
 
   function showBanner() {
-    if (!banner) banner = createUpdateBanner();
+    if (!banner) banner = createUpdateBanner(reloadFn);
     banner.style.display = 'flex';
   }
 
