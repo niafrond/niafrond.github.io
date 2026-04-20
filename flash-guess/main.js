@@ -826,8 +826,8 @@ function wordFault() {
 }
 
 function updateUndoRedoButtons() {
-  el('btn-undo').hidden = state.actionHistory.length === 0;
-  el('btn-redo').hidden = state.redoStack.length === 0;
+  el('btn-undo').disabled = state.actionHistory.length === 0;
+  el('btn-redo').disabled = state.redoStack.length === 0;
 }
 
 function undoLastAction() {
