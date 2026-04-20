@@ -1,3 +1,9 @@
+## [1.100.0](https://github.com/niafrond/niafrond.github.io/compare/v1.99.2...v1.100.0) (2026-04-20)
+
+### Features
+
+* replace 👶 with 🧒 in flash-guess ([0149dbe](https://github.com/niafrond/niafrond.github.io/commit/0149dbe8dd61bd9c2496d1fd99c40cea114fa60e))
+
 ## [1.99.2](https://github.com/niafrond/niafrond.github.io/compare/v1.99.1...v1.99.2) (2026-04-20)
 
 ### Bug Fixes
