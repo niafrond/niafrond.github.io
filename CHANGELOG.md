@@ -1,3 +1,13 @@
+## [1.98.0](https://github.com/niafrond/niafrond.github.io/compare/v1.97.1...v1.98.0) (2026-04-20)
+
+### Features
+
+* **flash-guess:** démo mode enfant avec J'ai lu! figé jusqu'à ok j'ai compris ([c834385](https://github.com/niafrond/niafrond.github.io/commit/c83438558cc68bd1b408d436406972821e6a57db))
+
+### Bug Fixes
+
+* **flash-guess:** align demo variable assignments to match project style ([52bb241](https://github.com/niafrond/niafrond.github.io/commit/52bb241e19803912fb806af81e984e41aeb76e05))
+
 ## [1.97.1](https://github.com/niafrond/niafrond.github.io/compare/v1.97.0...v1.97.1) (2026-04-20)
 
 ### Bug Fixes
