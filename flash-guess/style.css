@@ -413,6 +413,16 @@ details.card-collapsible > :not(summary) {
   padding: 4px 12px;
 }
 .turn-found-info { font-size: 0.85rem; color: var(--text-muted); }
+.turn-found-info-group { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+#turn-player-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 4px 12px;
+}
 
 /* Boutons Annuler / Refaire (côtés du timer) */
 

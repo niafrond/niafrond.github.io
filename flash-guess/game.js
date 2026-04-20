@@ -404,6 +404,10 @@ export function startTurn() {
   updateTurnStats();
   drawNextWord();
 
+  const team       = state.teams[state.currentTeamIdx];
+  const playerName = team.players[state.teamPlayerIdx[state.currentTeamIdx]];
+  el('turn-player-name').textContent = `👤 ${playerName}`;
+
   if (demo.mode) {
     const circ = 2 * Math.PI * TIMER_CIRCLE_RADIUS;
     const ring = el('timer-ring-progress');
@@ -442,12 +446,8 @@ export function drawNextWord() {
     return;
   }
   state.currentWord = state.roundWords.shift();
-  const cat = getCategoryInfo(state.currentWord.category);
   el('word-card-text').textContent     = state.currentWord.word;
-  el('word-card-category').textContent = `${cat.emoji} ${cat.label}`;
   el('turn-round-badge').textContent   = `Manche ${state.currentRound} — ${ROUND_RULES[state.currentRound - 1].icon}`;
-  const kidsBadge = el('word-card-kids-badge');
-  if (kidsBadge) kidsBadge.hidden = !state.currentWord.kidFriendly;
   updateTurnStats();
   fitWordCard();
 
@@ -526,11 +526,7 @@ export function undoLastAction() {
   }
 
   state.currentWord = word;
-  const cat = getCategoryInfo(word.category);
   el('word-card-text').textContent     = word.word;
-  el('word-card-category').textContent = `${cat.emoji} ${cat.label}`;
-  const kidsBadge = el('word-card-kids-badge');
-  if (kidsBadge) kidsBadge.hidden = !word.kidFriendly;
   updateTurnStats();
   fitWordCard();
   updateUndoRedoButtons();

@@ -283,8 +283,11 @@
   <!-- En-tête -->
   <div class="turn-header">
     <span id="turn-round-badge"></span>
-    <span class="turn-found-info">🃏 <span id="turn-words-left">0</span> restant(s)</span>
-    <span class="turn-found-info">✅ <span id="turn-found-count">0</span> trouvé(s)</span>
+    <span id="turn-player-name" class="turn-player-name"></span>
+    <div class="turn-found-info-group">
+      <span class="turn-found-info">🃏 <span id="turn-words-left">0</span> restant(s)</span>
+      <span class="turn-found-info">✅ <span id="turn-found-count">0</span> trouvé(s)</span>
+    </div>
   </div>
 
   <!-- Zone de jeu -->
@@ -309,8 +312,6 @@
 
       <div class="word-card">
         <div id="word-card-text">…</div>
-        <div id="word-card-category"></div>
-        <div id="word-card-kids-badge" class="word-card-kids-badge" hidden>🧒 -12 ans</div>
       </div>
       <button id="btn-child-read" class="btn btn-primary btn-lg w-full child-read-btn" hidden>
         👀 J'ai lu !
