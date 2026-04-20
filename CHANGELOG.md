@@ -1,3 +1,9 @@
+## [1.112.1](https://github.com/niafrond/niafrond.github.io/compare/v1.112.0...v1.112.1) (2026-04-20)
+
+### Bug Fixes
+
+* pass reloadFn to createUpdateBanner to fix reload button ([1a38e2b](https://github.com/niafrond/niafrond.github.io/commit/1a38e2bd92105d28f09e26fc9bf872607a2d869d))
+
 ## [1.112.0](https://github.com/niafrond/niafrond.github.io/compare/v1.111.0...v1.112.0) (2026-04-20)
 
 ### Features
