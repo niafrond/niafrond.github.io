@@ -319,16 +319,18 @@ export function resumeTimer() {
 export function startRound(roundNum) {
   state.currentRound = roundNum;
   if (roundNum === 1) {
-    const words = getShuffledWords(
-      state.selectedCategories.length > 0 ? state.selectedCategories : null,
-      state.kidsMode,
-    );
-    const count = state.cardCount === 0 ? words.length : Math.min(state.cardCount, words.length);
-    state.allWords = words.slice(0, count);
     if (state.allWords.length === 0) {
-      showToast('Aucun mot dans les catégories sélectionnées !', 'error');
-      showScreen('screen-categories');
-      return;
+      const words = getShuffledWords(
+        state.selectedCategories.length > 0 ? state.selectedCategories : null,
+        state.kidsMode,
+      );
+      const count = state.cardCount === 0 ? words.length : Math.min(state.cardCount, words.length);
+      state.allWords = words.slice(0, count);
+      if (state.allWords.length === 0) {
+        showToast('Aucun mot dans les catégories sélectionnées !', 'error');
+        showScreen('screen-categories');
+        return;
+      }
     }
     // Initialiser les stats coopératives au début de la partie
     state.coopTimeUsed   = 0;

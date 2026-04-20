@@ -151,6 +151,7 @@ function init() {
     if (state.wordDraftMode) {
       startWordDraft();
     } else {
+      state.allWords = [];
       startRound(1);
     }
     updateRotateOverlay();
