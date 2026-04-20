@@ -1,3 +1,9 @@
+## [1.103.1](https://github.com/niafrond/niafrond.github.io/compare/v1.103.0...v1.103.1) (2026-04-20)
+
+### Bug Fixes
+
+* reduce SW update polling to once per hour ([47244fb](https://github.com/niafrond/niafrond.github.io/commit/47244fb558acbbf99dfd9f79a1f4c90fde480054))
+
 ## [1.103.0](https://github.com/niafrond/niafrond.github.io/compare/v1.102.0...v1.103.0) (2026-04-20)
 
 ### Features
