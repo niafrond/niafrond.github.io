@@ -677,6 +677,7 @@ function startTurn() {
   // Réinitialise le bouton "J'ai lu !" au début de chaque tour
   showChildReadBtn(false);
   _childReadFirstWord = false;
+  _demoFirstWordFound = false;
 
   const rule = getCurrentRoundRule();
   const passBtn = el('btn-pass');
@@ -795,6 +796,11 @@ function wordFound() {
   updateTurnStats();
   drawNextWord();
   updateUndoRedoButtons();
+  if (_demoMode && !_demoFirstWordFound) {
+    _demoFirstWordFound = true;
+    _demoTipIdx = 0;
+    _showDemoTip(DEMO_TIPS_AFTER_FIRST_FOUND);
+  }
 }
 
 function wordSkipped() {
@@ -1574,8 +1580,9 @@ async function installPwa() {
 }
 
 // ─── DÉMO ──────────────────────────────────────────────────────────────────────
-let _demoMode    = false;
-let _demoWaiting = false;
+let _demoMode           = false;
+let _demoWaiting        = false;
+let _demoFirstWordFound = false;
 
 const DEMO_TIPS = {
   'pre-turn': [
@@ -1595,6 +1602,11 @@ const DEMO_TIPS = {
 };
 
 let _demoTipIdx = 0;
+
+const DEMO_TIPS_AFTER_FIRST_FOUND = [
+  { targetId: 'btn-undo', text: '↩ Annuler — Tu as appuyé sur « Trouvé » trop vite ? Ce bouton annule le dernier mot. Le bouton ↪ Refaire apparaîtra alors juste à côté si tu veux rétablir.' },
+  { targetId: null,       text: '👀 J\'ai lu ! — Dans une vraie partie avec un enfant orateur, ce bouton apparaît sur le premier mot pour qu\'il confirme qu\'il a lu avant que le chrono démarre.' },
+];
 
 const DEMO_TIPS_TURN_END = [
   { targetId: 'btn-correct-turn', text: '✏️ Corriger le tour — Une faute non signalée ? Appuie ici pour décocher les mots concernés.' },
@@ -1687,7 +1699,8 @@ function startDemoTurn() {
     return;
   }
 
-  _demoMode = true;
+  _demoMode           = true;
+  _demoFirstWordFound = false;
   startPreTurn();
 }
 
