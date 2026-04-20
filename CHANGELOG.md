@@ -1,3 +1,9 @@
+## [1.99.0](https://github.com/niafrond/niafrond.github.io/compare/v1.98.1...v1.99.0) (2026-04-20)
+
+### Features
+
+* **flash-guess:** use MP3 file for end-of-turn bell sound ([#151](https://github.com/niafrond/niafrond.github.io/issues/151)) ([8c8c1fe](https://github.com/niafrond/niafrond.github.io/commit/8c8c1fe72128bb9fc02c1fda14ba052826b37703))
+
 ## [1.98.1](https://github.com/niafrond/niafrond.github.io/compare/v1.98.0...v1.98.1) (2026-04-20)
 
 ### Bug Fixes
