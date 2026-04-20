@@ -127,6 +127,7 @@ export function showChildReadBtn(visible) {
     state.childReadAutoTimer = null;
   }
   btn.hidden = !visible;
+  btn.disabled = visible && demo.childReadFrozen;
   btn.classList.remove('child-read-btn--countdown');
   if (foundBtn) foundBtn.disabled = visible;
   if (passBtn)  passBtn.disabled  = visible;
