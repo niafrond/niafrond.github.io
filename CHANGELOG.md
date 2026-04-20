@@ -1,3 +1,9 @@
+## [1.114.0](https://github.com/niafrond/niafrond.github.io/compare/v1.113.0...v1.114.0) (2026-04-20)
+
+### Features
+
+* remove poll update and force update features from all apps ([b257c08](https://github.com/niafrond/niafrond.github.io/commit/b257c08c5298c1f5f60cb0d423e25133621f9d6f))
+
 ## [1.113.0](https://github.com/niafrond/niafrond.github.io/compare/v1.112.2...v1.113.0) (2026-04-20)
 
 ### Features
