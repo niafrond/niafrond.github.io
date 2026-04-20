@@ -10,7 +10,6 @@ import { initHost } from './host.js';
 import { initClient } from './client.js';
 import { setMuted, getMuted } from './sound.js';
 import { getMatch3Version, getMatch3BuildDate } from '../match3-quest/version.js';
-import { initUpdateChecker } from '../update-checker.js';
 
 // ─── Bouton mute (persistant) ─────────────────────────────────────────────────
 
@@ -23,7 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
       : '';
     versionEl.textContent = `v${getMatch3Version()}${dateLabel}`;
   }
-  initUpdateChecker(buildDate, versionEl);
 
   const btnMute = document.getElementById('btn-mute');
   if (btnMute) {

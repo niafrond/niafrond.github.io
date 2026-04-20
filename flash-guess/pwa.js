@@ -2,7 +2,7 @@
  * pwa.js — PWA : installation, plein écran, mise à jour forcée
  */
 
-import { el, getCurrentScreen, showToast } from './ui.js';
+import { el, getCurrentScreen } from './ui.js';
 import { GAMEPLAY_SCREENS } from './state.js';
 
 // ─── Installation PWA ──────────────────────────────────────────────────────────
@@ -51,23 +51,6 @@ export function updateFullscreenBtn() {
   btn.title       = isFs ? 'Quitter le plein écran' : 'Plein écran';
 }
 
-// ─── Mise à jour forcée ────────────────────────────────────────────────────────
-export async function forceUpdate() {
-  showToast('🔄 Mise à jour en cours…');
-  try {
-    if ('serviceWorker' in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map(r => r.unregister()));
-    }
-    if ('caches' in window) {
-      const keys = await caches.keys();
-      await Promise.all(keys.map(k => caches.delete(k)));
-    }
-  } catch (err) { console.warn('forceUpdate:', err); }
-  sessionStorage.setItem('_flashguess_update', '1');
-  location.reload();
-}
-
 // ─── Détection installation PWA ────────────────────────────────────────────────
 function isPwaInstalled() {
   return (
@@ -105,25 +88,11 @@ async function showUpdateNotification(reg) {
 }
 
 // ─── Service Worker ────────────────────────────────────────────────────────────
-const SW_POLL_INTERVAL = 60 * 60 * 1000; // 1 heure
-
 export function initServiceWorker() {
-  if ('serviceWorker' in navigator && sessionStorage.getItem('_flashguess_update')) {
-    sessionStorage.removeItem('_flashguess_update');
-    if (navigator.serviceWorker.controller) {
-      location.reload();
-    } else {
-      navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
-    }
-  }
-
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
       .then(reg => {
         reg.update().catch(() => {});
-
-        // Polling périodique pour détecter les nouvelles versions
-        setInterval(() => reg.update().catch(() => {}), SW_POLL_INTERVAL);
 
         // Notification système quand une mise à jour est prête (PWA installée)
         reg.addEventListener('updatefound', () => {

@@ -12,7 +12,6 @@ import { YouTubePlayer, probeEndpoints, quickCheckCachedEndpoint, getInstanceCac
 import { GameEngine } from './game.js';
 import { MSG, PHASE, MODE, TIMER, ANSWER_FORMAT, ANSWER_PROMPTS } from './constants.js';
 import { getMatch3Version, getMatch3BuildDate } from '../match3-quest/version.js';
-import { initUpdateChecker } from '../update-checker.js';
 import {
   showOnly, show, hide, renderShareLink, renderLobbyPlayers,
   renderScoreboard, renderJokers, renderGamePhase, renderPlaylist,
@@ -86,7 +85,6 @@ async function init() {
       : '';
     versionEl.textContent = `v${getMatch3Version()}${dateLabel}`;
   }
-  initUpdateChecker(buildDate, versionEl);
 
   // Remove unused screens to eliminate duplicate ID conflicts
   // (host and client share some IDs like 'scoreboard', 'phase-playing', etc.)

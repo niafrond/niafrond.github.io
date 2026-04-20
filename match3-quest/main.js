@@ -7,7 +7,6 @@ import { calculateXPGain } from "./experience.js";
 import { initializeAudioUI, playSfx, primeAudioFromGesture } from "./sound.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate } from "./version.js";
-import { initUpdateChecker } from "../update-checker.js";
 
 // initialisation de la partie
 console.log('Main.js loaded');
@@ -294,9 +293,6 @@ function init() {
     
     // Rendre la fonction clearSaveData accessible globalement pour le bouton
     window.clearPlayerSave = clearSaveData;
-
-    // Vérification des mises à jour (toutes les heures)
-    initUpdateChecker(getMatch3BuildDate());
 }
 
 // Les modules script sont automatiquement en defer, donc le DOM est déjà chargé
