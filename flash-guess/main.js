@@ -8,7 +8,6 @@ import { state, demo, withCooldown, GAMEPLAY_SCREENS } from './state.js';
 import { el, showScreen, getCurrentScreen } from './ui.js';
 import { setMuted, getMuted } from './sound.js';
 import { getMatch3Version, getMatch3BuildDate } from '../match3-quest/version.js';
-import { initUpdateChecker } from '../update-checker.js';
 
 import {
   startRound, startPreTurn, startTurn,
@@ -43,7 +42,7 @@ import {
 
 import { openWordsEditor, addWord, exportWords, importWords, handleResetWords } from './editor.js';
 import { startDemoTurn } from './demo.js';
-import { toggleFullscreen, updateFullscreenBtn, forceUpdate, installPwa, initServiceWorker } from './pwa.js';
+import { toggleFullscreen, updateFullscreenBtn, installPwa, initServiceWorker } from './pwa.js';
 import { playButtonClick } from './sound.js';
 import { openLeaderboard, renderLeaderboard } from './leaderboard.js';
 
@@ -83,7 +82,6 @@ function init() {
       : '';
     versionEl.textContent = `v${getMatch3Version()}${dateLabel}`;
   }
-  initUpdateChecker(buildDate, versionEl, forceUpdate);
 
   // ── Setup ──
   el('btn-add-player').addEventListener('click', withCooldown(addPlayer));
@@ -267,7 +265,6 @@ function init() {
 
   // ── Words editor ──
   el('btn-edit-words').addEventListener('click', withCooldown(openWordsEditor));
-  el('btn-force-update').addEventListener('click', withCooldown(forceUpdate));
   el('btn-install-pwa').addEventListener('click', withCooldown(installPwa));
   el('btn-words-back').addEventListener('click', withCooldown(() => {
     showScreen('screen-setup');

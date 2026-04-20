@@ -13,7 +13,6 @@ import {
   setMuted, getMuted,
 } from './sound.js';
 import { getMatch3Version, getMatch3BuildDate } from '../match3-quest/version.js';
-import { initUpdateChecker } from '../update-checker.js';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 const TURN_DURATION              = 30;   // secondes par tour
@@ -1283,24 +1282,6 @@ function saveMembersAfterGame() {
 }
 
 
-// ─── MISE À JOUR FORCÉE ────────────────────────────────────────────────────────
-async function forceUpdate() {
-  showToast('🔄 Mise à jour en cours…');
-  try {
-    if ('serviceWorker' in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map(r => r.unregister()));
-    }
-    if ('caches' in window) {
-      const keys = await caches.keys();
-      await Promise.all(keys.map(k => caches.delete(k)));
-    }
-  } catch (err) { console.warn('forceUpdate:', err); }
-  // Flag to trigger a second reload once the new SW activates (so fresh content is served)
-  sessionStorage.setItem('_timesup_update', '1');
-  location.reload();
-}
-
 // ─── INSTALLATION PWA ──────────────────────────────────────────────────────────
 let _pwaInstallPrompt = null;
 
@@ -1831,7 +1812,6 @@ function init() {
       : '';
     versionEl.textContent = `v${getMatch3Version()}${dateLabel}`;
   }
-  initUpdateChecker(buildDate, versionEl, forceUpdate);
 
   // ── Setup ──
   el('tab-btn-partie').addEventListener('click', withCooldown(() => switchSetupTab('partie')));
@@ -1937,7 +1917,6 @@ function init() {
 
   // ── Words editor ──
   el('btn-edit-words').addEventListener('click', withCooldown(openWordsEditor));
-  el('btn-force-update').addEventListener('click', withCooldown(forceUpdate));
   el('btn-install-pwa').addEventListener('click', withCooldown(installPwa));
   el('btn-words-back').addEventListener('click', withCooldown(() => showScreen('screen-setup')));
   el('btn-word-add').addEventListener('click', withCooldown(addWord));
@@ -1984,25 +1963,10 @@ function init() {
 
 document.addEventListener('DOMContentLoaded', init);
 
-// After a force update, reload a second time once the new SW has activated and
-// cached fresh assets, so the user sees the updated version immediately.
-if ('serviceWorker' in navigator && sessionStorage.getItem('_timesup_update')) {
-  sessionStorage.removeItem('_timesup_update');
-  if (navigator.serviceWorker.controller) {
-    location.reload();
-  } else {
-    navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
-  }
-}
-
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
     .then(reg => {
-      // Check for a new SW on every page load so updates are picked up immediately.
       reg.update().catch(() => {});
-      // When a new SW takes control (update deployed), reload to serve fresh assets.
-      // The controller check ensures we don't reload on first-ever SW install.
-      // { once: true } prevents multiple reloads if controllerchange fires again.
       if (navigator.serviceWorker.controller) {
         navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
       }
