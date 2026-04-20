@@ -42,15 +42,15 @@
     <div class="card">
       <!-- Panel Partie -->
       <div id="panel-partie">
-        <div class="input-row mb-12">
+        <div class="input-row">
           <input id="player-input" class="input" type="text"
                  placeholder="Prénom du joueur…" maxlength="24" autocomplete="off" autocorrect="off">
           <label class="player-child-toggle" title="Cocher si le joueur est un enfant (-12 ans)">
             <input type="checkbox" id="player-is-child">
             <span class="player-child-toggle-label">enfant ?</span>
           </label>
-          <button id="btn-add-player" class="btn btn-primary">+ Ajouter</button>
         </div>
+        <button id="btn-add-player" class="btn btn-primary w-full mb-12">+ Ajouter</button>
         <div id="player-list"></div>
         <span id="player-count"></span>
         <span id="setup-hint" hidden></span>
