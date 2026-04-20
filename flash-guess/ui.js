@@ -36,7 +36,7 @@ export async function requestPortraitLock() {
 }
 
 // ─── Navigation entre écrans ───────────────────────────────────────────────────
-export function showScreen(id) {
+export function showScreen(id, pushHistory = true) {
   _currentScreen = id;
   document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
   document.getElementById(id).hidden = false;
@@ -48,6 +48,7 @@ export function showScreen(id) {
   } else {
     requestPortraitLock();
   }
+  if (pushHistory) history.pushState({ screen: id }, '');
 }
 
 // ─── Toast ─────────────────────────────────────────────────────────────────────

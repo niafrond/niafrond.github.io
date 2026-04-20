@@ -243,6 +243,19 @@ function init() {
   // ── Démo ──
   el('btn-launch-demo').addEventListener('click', withCooldown(startDemoTurn));
 
+  // ── Bouton retour (navigateur / téléphone) ──
+  window.addEventListener('popstate', (e) => {
+    const current = getCurrentScreen();
+    if (GAMEPLAY_SCREENS.has(current)) {
+      // Bloquer le retour pendant le gameplay pour éviter une sortie accidentelle
+      history.pushState({ screen: current }, '');
+      return;
+    }
+    const target = e.state?.screen ?? 'screen-setup';
+    showScreen(target, false);
+    updateRotateOverlay();
+  });
+
   // ── Redimensionnement / orientation ──
   window.addEventListener('resize', () => {
     if (!el('screen-turn').hidden) fitWordCard();
