@@ -19,6 +19,8 @@ export const CLICK_COOLDOWN             = 500;
 export const CHILD_READ_AUTO_MS         = 5000;
 
 export const GAMEPLAY_SCREENS = new Set([
+  'screen-word-draft-cover',
+  'screen-word-draft',
   'screen-round-intro',
   'screen-pre-turn',
   'screen-turn',
