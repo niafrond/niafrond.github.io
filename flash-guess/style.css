@@ -2116,32 +2116,31 @@ details.card-collapsible > :not(summary) {
   overflow: hidden;
 }
 
-/* Word list */
+/* Word list — responsive grid; columns set by JS via gridTemplateColumns */
 .draft-word-list {
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-auto-rows: 1fr;
   gap: 8px;
   overflow: hidden;
 }
 
 /* Individual word item — button */
 .draft-word-item {
-  flex: 1;
-  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--surface2);
   border: 2px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 4px 14px;
+  padding: 4px 10px;
   cursor: pointer;
   text-align: center;
   transition: background 0.15s, border-color 0.15s, opacity 0.15s;
   width: 100%;
   color: var(--text);
+  min-height: 0;
 }
 .draft-word-item:hover {
   background: rgba(232,93,4,0.1);
@@ -2163,7 +2162,7 @@ details.card-collapsible > :not(summary) {
 
 .draft-word-text {
   font-weight: 700;
-  font-size: clamp(1.2rem, 4vw, 2.2rem);
+  font-size: clamp(0.85rem, min(3.5vw, 4vh), 2.2rem);
   overflow: hidden;
   word-break: break-word;
 }
@@ -2226,9 +2225,9 @@ details.card-collapsible > :not(summary) {
     gap: 4px;
   }
 
-  /* In landscape the right column is wide and items are tall — use bigger text */
+  /* In landscape the grid cells are wide — use both vw and vh for font sizing */
   #screen-word-draft .draft-word-text {
-    font-size: clamp(1rem, 5vw, 3rem);
+    font-size: clamp(0.85rem, min(4vw, 6vh), 3rem);
   }
 }
 

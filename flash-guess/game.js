@@ -985,6 +985,11 @@ export function showWordDraftTurn(playerIdx) {
   el('draft-counter').classList.remove('draft-counter-badge--full');
   el('btn-draft-confirm').disabled    = true;
 
+  // Compute grid columns: 2 for ≤4 words, 3 for ≤9, 4 for more
+  const n    = chunk.length;
+  const cols = n <= 4 ? 2 : n <= 9 ? 3 : 4;
+  list.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
   chunk.forEach((word, i) => {
     const item = document.createElement('button');
     item.className     = 'draft-word-item';
