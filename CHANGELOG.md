@@ -1,3 +1,9 @@
+## [1.111.0](https://github.com/niafrond/niafrond.github.io/compare/v1.110.1...v1.111.0) (2026-04-20)
+
+### Features
+
+* hide category/kids-badge in game, show current player name in turn header ([2f33f58](https://github.com/niafrond/niafrond.github.io/commit/2f33f58ba9aa47ec62d9d00b8983b702ccefe305))
+
 ## [1.110.1](https://github.com/niafrond/niafrond.github.io/compare/v1.110.0...v1.110.1) (2026-04-20)
 
 ### Bug Fixes
