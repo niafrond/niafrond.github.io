@@ -1421,8 +1421,8 @@ function renderMembersList() {
   container.appendChild(hint);
 
   members.forEach((member, idx) => {
-    const alreadyAdded = state.playerNames.includes(member.name);
-    const isChild      = _pendingChildMembers.has(member.name);
+    const alreadyAdded    = state.playerNames.includes(member.name);
+    const isPendingChild  = _pendingChildMembers.has(member.name);
 
     const item = document.createElement('div');
     item.className = `member-item${alreadyAdded ? ' member-item--added' : ''}`;
@@ -1442,8 +1442,8 @@ function renderMembersList() {
 
     if (!alreadyAdded) {
       const childBtn = document.createElement('button');
-      childBtn.className = `member-child-btn${isChild ? ' member-child-btn--active' : ''}`;
-      childBtn.title = isChild ? 'Retirer le marquage enfant' : 'Marquer comme enfant (-12 ans)';
+      childBtn.className = `member-child-btn${isPendingChild ? ' member-child-btn--active' : ''}`;
+      childBtn.title = isPendingChild ? 'Retirer le marquage enfant' : 'Marquer comme enfant (-12 ans)';
       childBtn.textContent = '👦';
       childBtn.addEventListener('click', (e) => {
         e.stopPropagation();
