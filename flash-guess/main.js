@@ -17,7 +17,6 @@ import {
   childConfirmedRead,
   handleNextTurn, showGameOver,
   openCorrectTurn, closeCorrectTurn, applyTurnCorrection,
-  getCurrentRoundRule,
   assignTeams, renderTeams,
   pauseTimer, resumeTimer,
   fitWordCard,
@@ -152,10 +151,8 @@ function init() {
 
   // ── Turn ──
   el('btn-found').addEventListener('click', withCooldown(wordFound));
-  el('btn-pass').addEventListener('click', withCooldown(() => {
-    if (getCurrentRoundRule().canFault) wordFault();
-    else wordSkipped();
-  }));
+  el('btn-error').addEventListener('click', withCooldown(wordFault));
+  el('btn-skip').addEventListener('click', withCooldown(wordSkipped));
   el('btn-undo').addEventListener('click', withCooldown(undoLastAction));
   el('btn-redo').addEventListener('click', withCooldown(redoLastAction));
   el('btn-child-read').addEventListener('click', withCooldown(childConfirmedRead));
