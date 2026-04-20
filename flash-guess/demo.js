@@ -15,12 +15,15 @@ const DEMO_TIPS = {
   1: [
     {
       targetId: 'btn-child-read',
-      text: '👀 J\'ai lu ! — L\'orateur est un enfant : ce bouton lui permet de confirmer qu\'il a bien lu le mot avant que le chrono démarre. Appuie sur « OK j\'ai compris » puis clique le bouton pour continuer !',
-      onOk: () => { demo.childReadFrozen = false; import('./game.js').then(({ showChildReadBtn }) => showChildReadBtn(true)); },
+      text: '👀 J\'ai lu ! — L\'orateur est un enfant : ce bouton lui permet de confirmer qu\'il a bien lu le mot avant que le chrono démarre.',
     },
     { targetId: 'timer-number',   text: '⏱️ Le chrono ! En vraie partie il compte 30 secondes. Ici il est infini pour que tu puisses explorer sans pression.' },
     { targetId: 'word-card-text', text: '🃏 Le mot à faire deviner ! Décris-le librement — interdit de le dire, l\'épeler ou le traduire.' },
-    { targetId: 'btn-found',      text: '✅ Trouvé ! Appuie ici quand ton équipe trouve le mot.' },
+    {
+      targetId: 'btn-found',
+      text: '✅ Trouvé ! Appuie ici quand ton équipe trouve le mot. D\'abord, clique sur « J\'ai lu » pour continuer !',
+      onOk: () => { demo.childReadFrozen = false; import('./game.js').then(({ showChildReadBtn }) => showChildReadBtn(true)); },
+    },
   ],
   2: [
     { targetId: 'btn-skip', text: '⏭ Nouveau en manche 2 ! Si tu es bloqué, passe la carte : elle reviendra pour un autre tour.' },
