@@ -1,3 +1,9 @@
+## [1.109.1](https://github.com/niafrond/niafrond.github.io/compare/v1.109.0...v1.109.1) (2026-04-20)
+
+### Bug Fixes
+
+* filter only kidFriendly words in kids mode and update tests ([73784f4](https://github.com/niafrond/niafrond.github.io/commit/73784f416061a415ab18e07f217b4dd832a611c9))
+
 ## [1.109.0](https://github.com/niafrond/niafrond.github.io/compare/v1.108.0...v1.109.0) (2026-04-20)
 
 ### Features
