@@ -1,3 +1,9 @@
+## [1.110.0](https://github.com/niafrond/niafrond.github.io/compare/v1.109.1...v1.110.0) (2026-04-20)
+
+### Features
+
+* add leaderboard tab with standard and 2-player coop rankings ([0ad3e1a](https://github.com/niafrond/niafrond.github.io/commit/0ad3e1ad451e09df316781e3d6e933bf91371d3a))
+
 ## [1.109.1](https://github.com/niafrond/niafrond.github.io/compare/v1.109.0...v1.109.1) (2026-04-20)
 
 ### Bug Fixes

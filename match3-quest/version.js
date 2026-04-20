@@ -1,9 +1,9 @@
 export const MATCH3_SEMVER = {
     major: 1,
-    minor: 109,
-    patch: 1,
+    minor: 110,
+    patch: 0,
     prerelease: '',
-    buildDate: '2026-04-20T18:59:04.478Z'
+    buildDate: '2026-04-20T19:00:59.402Z'
 };
 
 export function getMatch3Version(){
