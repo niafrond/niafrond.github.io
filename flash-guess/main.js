@@ -83,7 +83,7 @@ function init() {
       : '';
     versionEl.textContent = `v${getMatch3Version()}${dateLabel}`;
   }
-  initUpdateChecker(buildDate, versionEl);
+  initUpdateChecker(buildDate, versionEl, forceUpdate);
 
   // ── Setup ──
   el('btn-add-player').addEventListener('click', withCooldown(addPlayer));

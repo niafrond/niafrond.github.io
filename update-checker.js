@@ -6,7 +6,7 @@
  *
  * Usage :
  *   import { initUpdateChecker } from '../update-checker.js';
- *   const { checkNow } = initUpdateChecker(getMatch3BuildDate(), document.getElementById('version-badge'));
+ *   const { checkNow } = initUpdateChecker(getMatch3BuildDate(), document.getElementById('version-badge'), forceUpdate);
  */
 
 const VERSION_URL = `${location.origin}/match3-quest/version.js`;
@@ -60,7 +60,7 @@ function createUpdateBanner() {
     cursor:       'pointer',
     lineHeight:   '1.4',
   });
-  reloadBtn.addEventListener('click', () => location.reload());
+  reloadBtn.addEventListener('click', () => reloadFn());
 
   const dismissBtn = document.createElement('button');
   dismissBtn.textContent = '✕';
@@ -86,9 +86,10 @@ function createUpdateBanner() {
 /**
  * @param {string} currentBuildDate  — buildDate de la version actuellement chargée
  * @param {HTMLElement|null} versionEl — élément cliquable pour forcer la vérification (optionnel)
+ * @param {() => void} reloadFn — fonction appelée pour recharger après mise à jour (optionnel, défaut : location.reload)
  * @returns {{ checkNow: () => Promise<void> }}
  */
-export function initUpdateChecker(currentBuildDate, versionEl = null) {
+export function initUpdateChecker(currentBuildDate, versionEl = null, reloadFn = () => location.reload()) {
   let banner = null;
   let updateDetected = false;
 
