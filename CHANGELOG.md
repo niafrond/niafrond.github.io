@@ -1,3 +1,9 @@
+## [1.114.1](https://github.com/niafrond/niafrond.github.io/compare/v1.114.0...v1.114.1) (2026-04-20)
+
+### Bug Fixes
+
+* remove hardcoded currentTeamIdx=0 in btn-round-go handler ([ad1556b](https://github.com/niafrond/niafrond.github.io/commit/ad1556b2ad7612ce1d8efa413ae7410c84847f4c))
+
 ## [1.114.0](https://github.com/niafrond/niafrond.github.io/compare/v1.113.0...v1.114.0) (2026-04-20)
 
 ### Features
