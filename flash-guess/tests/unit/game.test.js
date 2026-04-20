@@ -9,6 +9,7 @@ import {
   computeTeamLayout,
   teamLabel,
   computeDraftChunks,
+  nextRoundStartTeamIdx,
 } from '../../game.js';
 
 // ─── computeTeamLayout ────────────────────────────────────────────────────────
@@ -156,5 +157,50 @@ describe('computeDraftChunks', () => {
     const min    = Math.min(...sizes);
     expect(max - min).toBeLessThanOrEqual(1);
     expect(sizes.reduce((s, v) => s + v, 0)).toBe(49);
+  });
+});
+
+// ─── nextRoundStartTeamIdx ────────────────────────────────────────────────────
+
+describe('nextRoundStartTeamIdx', () => {
+  test('manche 1 démarre toujours à l\'équipe 0', () => {
+    expect(nextRoundStartTeamIdx(0, 3, 1)).toBe(0);
+    expect(nextRoundStartTeamIdx(1, 3, 1)).toBe(0);
+    expect(nextRoundStartTeamIdx(2, 3, 1)).toBe(0);
+  });
+
+  test('manche 2 : démarre à l\'équipe suivante', () => {
+    expect(nextRoundStartTeamIdx(0, 3, 2)).toBe(1);
+    expect(nextRoundStartTeamIdx(1, 3, 2)).toBe(2);
+    expect(nextRoundStartTeamIdx(2, 3, 2)).toBe(0); // wrap-around
+  });
+
+  test('manche 3 : démarre à l\'équipe suivante', () => {
+    expect(nextRoundStartTeamIdx(0, 2, 3)).toBe(1);
+    expect(nextRoundStartTeamIdx(1, 2, 3)).toBe(0); // wrap-around
+  });
+
+  test('une seule équipe (coop) → toujours équipe 0', () => {
+    expect(nextRoundStartTeamIdx(0, 1, 1)).toBe(0);
+    expect(nextRoundStartTeamIdx(0, 1, 2)).toBe(0);
+    expect(nextRoundStartTeamIdx(0, 1, 3)).toBe(0);
+  });
+
+  test('4 équipes, rotation complète sur 3 manches', () => {
+    // Simule la dernière équipe à jouer à chaque manche
+    const lastTeamRound1 = 3; // équipe 3 a joué en dernier à la manche 1
+    const startRound2 = nextRoundStartTeamIdx(lastTeamRound1, 4, 2);
+    expect(startRound2).toBe(0); // 3 + 1 = 4 % 4 = 0
+
+    const lastTeamRound2 = 3; // équipe 3 a joué en dernier à la manche 2
+    const startRound3 = nextRoundStartTeamIdx(lastTeamRound2, 4, 3);
+    expect(startRound3).toBe(0);
+  });
+
+  test('ne joue pas la même équipe deux fois de suite au changement de manche', () => {
+    // Cas critique : l'équipe 0 était la dernière de la manche 1 — elle ne doit pas commencer la manche 2
+    const startRound2 = nextRoundStartTeamIdx(0, 2, 2);
+    expect(startRound2).not.toBe(0);
+    expect(startRound2).toBe(1);
   });
 });
