@@ -10,63 +10,6 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Flash Guess">
-  <style>
-    /* ─── Catégories : sélection ─────────────────────────────────────────────── */
-    .categories-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 10px;
-      margin: 12px 0;
-    }
-    .cat-toggle {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      padding: 12px 8px;
-      border-radius: var(--radius-sm);
-      border: 2px solid var(--border);
-      background: var(--surface);
-      cursor: pointer;
-      transition: border-color 0.18s, background 0.18s, opacity 0.18s;
-      user-select: none;
-    }
-    .cat-toggle--selected {
-      border-color: var(--volcan);
-      background: rgba(232,93,4,0.13);
-    }
-    .cat-toggle__emoji { font-size: 1.6rem; line-height: 1; }
-    .cat-toggle__label { font-size: 0.78rem; color: var(--text-muted); text-align: center; line-height: 1.2; }
-    .cat-toggle--selected .cat-toggle__label { color: var(--text); }
-    .cat-toggle__count  { font-size: 0.72rem; color: var(--text-muted); }
-    .cat-toggle--selected .cat-toggle__count { color: var(--volcan); }
-    .cat-selection-actions {
-      display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
-    }
-    /* ─── Éditeur de mots : onglets catégorie ──────────────────────────────── */
-    .words-cat-tabs {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-    .words-cat-tab {
-      padding: 4px 10px;
-      border-radius: 99px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text-muted);
-      font-size: 0.78rem;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-    }
-    .words-cat-tab--active {
-      background: var(--volcan);
-      border-color: var(--volcan);
-      color: #fff;
-    }
-  </style>
 </head>
 <body>
 
