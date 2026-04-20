@@ -363,15 +363,32 @@ function isCurrentOrateurChild() {
 }
 
 let _childReadFirstWord = false; // true si on attend le premier mot du tour
+let _childReadAutoTimer = null;  // timer d'auto-dismiss du bouton "J'ai lu !"
+const CHILD_READ_AUTO_MS = 5000; // durée avant auto-dismiss (ms)
 
 function showChildReadBtn(visible) {
   const btn = el('btn-child-read');
   const foundBtn = el('btn-found');
   const passBtn  = el('btn-pass');
   if (!btn) return;
+  // Annule toujours l'éventuel timer précédent
+  if (_childReadAutoTimer !== null) {
+    clearTimeout(_childReadAutoTimer);
+    _childReadAutoTimer = null;
+  }
   btn.hidden = !visible;
+  btn.classList.remove('child-read-btn--countdown');
   if (foundBtn) foundBtn.disabled = visible;
   if (passBtn)  passBtn.disabled  = visible;
+  if (visible) {
+    // Force un reflow pour relancer l'animation CSS proprement
+    void btn.offsetWidth;
+    btn.classList.add('child-read-btn--countdown');
+    _childReadAutoTimer = setTimeout(() => {
+      _childReadAutoTimer = null;
+      childConfirmedRead();
+    }, CHILD_READ_AUTO_MS);
+  }
 }
 
 function childConfirmedRead() {
