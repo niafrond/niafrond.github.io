@@ -1,4 +1,4 @@
-const CACHE = 'flashguess-v1.1.0';
+const CACHE = 'flashguess-v1.1.1';
 
 const ASSETS = [
   './',
@@ -19,6 +19,7 @@ const ASSETS = [
   './icon.svg',
   './icon-192.png',
   './icon-512.png',
+  './universfield-school-bell-199584.mp3',
 ];
 
 self.addEventListener('install', e => {
