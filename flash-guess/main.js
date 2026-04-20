@@ -220,8 +220,8 @@ function updateRotateOverlay() {
   handleOrientationTimerState(shouldShow);
 
   if (_demoWaiting && !isPortrait) {
-    _demoWaiting        = false;
-    _demoMode           = true;
+    _demoWaiting = false;
+    _demoMode = true;
     _demoChildReadFrozen = false;
     startPreTurn();
   }
@@ -2066,8 +2066,8 @@ function startDemoTurn() {
     return;
   }
 
-  _demoMode            = true;
-  _demoFirstWordFound  = false;
+  _demoMode = true;
+  _demoFirstWordFound = false;
   _demoChildReadFrozen = false;
   startPreTurn();
 }
