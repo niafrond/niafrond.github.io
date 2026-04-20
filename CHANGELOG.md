@@ -1,3 +1,9 @@
+## [1.106.0](https://github.com/niafrond/niafrond.github.io/compare/v1.105.0...v1.106.0) (2026-04-20)
+
+### Features
+
+* implement word draft (tri caché) option for flash-guess ([4059337](https://github.com/niafrond/niafrond.github.io/commit/405933707db0e96aaaa9471b801515d8e9c58991))
+
 ## [1.105.0](https://github.com/niafrond/niafrond.github.io/compare/v1.104.0...v1.105.0) (2026-04-20)
 
 ### Features
