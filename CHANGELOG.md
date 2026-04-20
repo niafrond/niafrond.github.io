@@ -1,3 +1,9 @@
+## [1.114.2](https://github.com/niafrond/niafrond.github.io/compare/v1.114.1...v1.114.2) (2026-04-20)
+
+### Bug Fixes
+
+* landscape layout for word draft (Tri secret) screen ([a09a437](https://github.com/niafrond/niafrond.github.io/commit/a09a437c08ed844ae71cd8f97b38f2bff363758a))
+
 ## [1.114.1](https://github.com/niafrond/niafrond.github.io/compare/v1.114.0...v1.114.1) (2026-04-20)
 
 ### Bug Fixes
