@@ -40,46 +40,48 @@
     <p class="app-subtitle">Faites deviner des mots en équipes !</p>
 
     <!-- Section joueurs -->
-    <div class="setup-section-label">👥 Joueurs</div>
+    <div class="setup-players-zone">
+      <div class="setup-section-label">① Ajouter des joueurs</div>
 
-    <!-- Joueurs actuellement dans la partie -->
-    <div class="card" id="panel-current-players">
-      <div class="card-title">Joueurs dans la partie</div>
-      <div id="player-list"></div>
-      <span id="player-count"></span>
-      <span id="setup-hint" hidden></span>
-    </div>
+      <!-- Joueurs actuellement dans la partie -->
+      <div class="card" id="panel-current-players">
+        <div class="card-title">Joueurs dans la partie</div>
+        <div id="player-list"></div>
+        <span id="player-count"></span>
+        <span id="setup-hint" hidden></span>
+      </div>
 
-    <!-- Panneau collapsible : Nouveau joueur -->
-    <details class="card card-collapsible" id="panel-add-new">
-      <summary class="card-title card-title-summary">➕ Nouveau joueur</summary>
-      <div>
-        <div class="input-row">
-          <input id="player-input" class="input" type="text"
-                 placeholder="Prénom du joueur…" maxlength="24" autocomplete="off" autocorrect="off">
-          <label class="player-child-toggle" title="Cocher si le joueur est un enfant (-12 ans)">
-            <input type="checkbox" id="player-is-child">
-            <span class="player-child-toggle-label">enfant ?</span>
-          </label>
+      <!-- Panneau collapsible : Nouveau joueur -->
+      <details class="card card-collapsible" id="panel-add-new" open>
+        <summary class="card-title card-title-summary">➕ Nouveau joueur</summary>
+        <div>
+          <div class="input-row">
+            <input id="player-input" class="input" type="text"
+                   placeholder="Prénom du joueur…" maxlength="24" autocomplete="off" autocorrect="off">
+            <label class="player-child-toggle" title="Cocher si le joueur est un enfant (-12 ans)">
+              <input type="checkbox" id="player-is-child">
+              <span class="player-child-toggle-label">enfant ?</span>
+            </label>
+          </div>
+          <button id="btn-add-player" class="btn btn-primary w-full mt-12">Ajouter</button>
         </div>
-        <button id="btn-add-player" class="btn btn-primary w-full mt-12">Ajouter</button>
-      </div>
-    </details>
+      </details>
 
-    <!-- Panneau collapsible : Depuis un groupe -->
-    <details class="card card-collapsible" id="panel-add-group">
-      <summary class="card-title card-title-summary">👥 Depuis un groupe</summary>
-      <div>
-        <div id="groups-in-setup"></div>
-        <button id="btn-manage-groups" class="btn btn-secondary btn-sm w-full mt-12">⚙️ Gérer les groupes</button>
-      </div>
-    </details>
+      <!-- Panneau collapsible : Depuis un groupe -->
+      <details class="card card-collapsible" id="panel-add-group">
+        <summary class="card-title card-title-summary">👥 Depuis un groupe</summary>
+        <div>
+          <div id="groups-in-setup"></div>
+          <button id="btn-manage-groups" class="btn btn-secondary btn-sm w-full mt-12">⚙️ Gérer les groupes</button>
+        </div>
+      </details>
 
-    <!-- Panneau collapsible : Joueur enregistré -->
-    <details class="card card-collapsible" id="panel-add-registered">
-      <summary class="card-title card-title-summary">📋 Joueur enregistré</summary>
-      <div id="members-list"></div>
-    </details>
+      <!-- Panneau collapsible : Joueur enregistré -->
+      <details class="card card-collapsible" id="panel-add-registered">
+        <summary class="card-title card-title-summary">📋 Joueur enregistré</summary>
+        <div id="members-list"></div>
+      </details>
+    </div>
 
     <div class="card">
       <div class="card-title">⚙️ Options de partie</div>
