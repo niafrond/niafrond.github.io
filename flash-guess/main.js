@@ -23,6 +23,7 @@ const MIN_PLAYERS                = 2;
 const CARD_COUNT_DEFAULT         = 40;
 const CARD_COUNT_KEY             = 'flashguess_card_count';
 const SELECTED_CATS_KEY          = 'flashguess_selected_cats';
+const KIDS_MODE_KEY              = 'flashguess_kids_mode';
 const WORD_CARD_HORIZONTAL_PAD   = 32;
 const WORD_FONT_MIN              = 16;
 const WORD_FONT_MAX              = 200;
@@ -129,14 +130,26 @@ function saveSelectedCategories(cats) {
   try { localStorage.setItem(SELECTED_CATS_KEY, JSON.stringify(cats)); } catch (_) { /* ignore */ }
 }
 
+// ─── Persistance du mode enfant ───────────────────────────────────────────────
+function loadKidsMode() {
+  try { return localStorage.getItem(KIDS_MODE_KEY) === '1'; } catch (_) { return false; }
+}
+
+function saveKidsMode(v) {
+  try { localStorage.setItem(KIDS_MODE_KEY, v ? '1' : '0'); } catch (_) { /* ignore */ }
+}
+
 // ─── État du jeu ───────────────────────────────────────────────────────────────
 const state = {
   playerNames:         [],
+  playerIsChild:       new Set(), // noms des joueurs enfants (-12 ans)
   teams:               [],
   teamPlayerIdx:       [],
   noTeamsMode:         false,
 
   selectedCategories:  [],    // catégories choisies pour cette partie
+  kidsMode:            false, // mode enfant : uniquement les mots adaptés -12 ans
+  kidsModeManual:      false, // activation manuelle du mode enfant (sans enfant dans la partie)
 
   allWords:            [],
   roundWords:          [],
@@ -245,13 +258,21 @@ function renderPlayerList() {
     nameSpan.className = 'player-item-name';
     nameSpan.textContent = `👤 ${name}`;
 
+    item.appendChild(nameSpan);
+
+    if (state.playerIsChild.has(name)) {
+      const badge = document.createElement('span');
+      badge.className = 'player-item-child-badge';
+      badge.textContent = '👶 Enfant';
+      item.appendChild(badge);
+    }
+
     const btn = document.createElement('button');
     btn.className = 'btn-icon btn-danger';
     btn.setAttribute('aria-label', `Supprimer ${name}`);
     btn.textContent = '✕';
     btn.addEventListener('click', () => removePlayer(i));
 
-    item.appendChild(nameSpan);
     item.appendChild(btn);
     list.appendChild(item);
   });
@@ -267,6 +288,8 @@ function renderPlayerList() {
   } else {
     hint.hidden = true;
   }
+
+  updateKidsModeStatus();
 }
 
 function addPlayer() {
@@ -275,15 +298,86 @@ function addPlayer() {
   if (!name) { showToast('Entrez un prénom', 'warn'); return; }
   if (state.playerNames.includes(name)) { showToast('Ce joueur existe déjà', 'warn'); return; }
   if (state.playerNames.length >= 20) { showToast('Maximum 20 joueurs', 'warn'); return; }
+  const isChild = el('player-is-child').checked;
   state.playerNames.push(name);
+  if (isChild) state.playerIsChild.add(name);
+  el('player-is-child').checked = false;
   input.value = '';
   input.focus();
   renderPlayerList();
 }
 
 function removePlayer(idx) {
+  const name = state.playerNames[idx];
+  state.playerIsChild.delete(name);
   state.playerNames.splice(idx, 1);
   renderPlayerList();
+}
+
+// ─── MODE ENFANT — statut et toggle ────────────────────────────────────────────
+function hasChildInGame() {
+  return state.playerNames.some(n => state.playerIsChild.has(n));
+}
+
+function updateKidsModeStatus() {
+  const forced = hasChildInGame();
+  state.kidsMode = forced || state.kidsModeManual;
+
+  const btn = el('toggle-kids-mode');
+  const autoTag = el('kids-mode-auto-tag');
+  if (!btn) return;
+
+  if (forced) {
+    btn.textContent = 'ON';
+    btn.className = 'kids-mode-toggle-btn kids-mode-toggle-btn--forced';
+    btn.setAttribute('aria-checked', 'true');
+    btn.disabled = true;
+    if (autoTag) autoTag.hidden = false;
+  } else {
+    btn.textContent = state.kidsModeManual ? 'ON' : 'OFF';
+    btn.className = `kids-mode-toggle-btn${state.kidsModeManual ? ' kids-mode-toggle-btn--on' : ''}`;
+    btn.setAttribute('aria-checked', String(state.kidsModeManual));
+    btn.disabled = false;
+    if (autoTag) autoTag.hidden = true;
+  }
+}
+
+function toggleKidsMode() {
+  if (hasChildInGame()) return; // forced — cannot toggle
+  state.kidsModeManual = !state.kidsModeManual;
+  saveKidsMode(state.kidsModeManual);
+  updateKidsModeStatus();
+}
+
+// ─── ORATEUR ENFANT — pause lecture ────────────────────────────────────────────
+function isCurrentOrateurChild() {
+  if (!state.teams.length) return false;
+  const team = state.teams[state.currentTeamIdx];
+  if (!team) return false;
+  const playerName = team.players[state.teamPlayerIdx[state.currentTeamIdx]];
+  return state.playerIsChild.has(playerName);
+}
+
+let _childReadFirstWord = false; // true si on attend le premier mot du tour
+
+function showChildReadBtn(visible) {
+  const btn = el('btn-child-read');
+  const foundBtn = el('btn-found');
+  const passBtn  = el('btn-pass');
+  if (!btn) return;
+  btn.hidden = !visible;
+  if (foundBtn) foundBtn.disabled = visible;
+  if (passBtn)  passBtn.disabled  = visible;
+}
+
+function childConfirmedRead() {
+  showChildReadBtn(false);
+  if (_childReadFirstWord) {
+    _childReadFirstWord = false;
+    startTimer();
+  } else {
+    resumeTimer();
+  }
 }
 
 // ─── ÉCRAN CATEGORIES ─────────────────────────────────────────────────────────
@@ -476,7 +570,7 @@ function renderTeams() {
 function startRound(roundNum) {
   state.currentRound = roundNum;
   if (roundNum === 1) {
-    const words = getShuffledWords(state.selectedCategories.length > 0 ? state.selectedCategories : null);
+    const words = getShuffledWords(state.selectedCategories.length > 0 ? state.selectedCategories : null, state.kidsMode);
     const count = state.cardCount === 0 ? words.length : Math.min(state.cardCount, words.length);
     state.allWords = words.slice(0, count);
     if (state.allWords.length === 0) {
@@ -559,6 +653,10 @@ function startTurn() {
   state.redoStack     = [];
   updateUndoRedoButtons();
 
+  // Réinitialise le bouton "J'ai lu !" au début de chaque tour
+  showChildReadBtn(false);
+  _childReadFirstWord = false;
+
   const rule = getCurrentRoundRule();
   const passBtn = el('btn-pass');
 
@@ -592,7 +690,13 @@ function startTurn() {
     ring.style.stroke = 'var(--success)';
   } else {
     updateTimerDisplay();
-    startTimer();
+    // Si l'orateur est un enfant, on attend qu'il lise le mot avant de démarrer
+    if (isCurrentOrateurChild()) {
+      _childReadFirstWord = true;
+      showChildReadBtn(true);
+    } else {
+      startTimer();
+    }
   }
 
   showScreen('screen-turn');
@@ -649,8 +753,16 @@ function drawNextWord() {
   el('word-card-text').textContent     = state.currentWord.word;
   el('word-card-category').textContent = `${cat.emoji} ${cat.label}`;
   el('turn-round-badge').textContent   = `Manche ${state.currentRound} — ${ROUND_RULES[state.currentRound - 1].icon}`;
+  const kidsBadge = el('word-card-kids-badge');
+  if (kidsBadge) kidsBadge.hidden = !state.currentWord.kidFriendly;
   updateTurnStats();
   fitWordCard();
+
+  // Pour les mots suivants (pas le 1er du tour) : pause lecture pour les enfants
+  if (!_demoMode && !_childReadFirstWord && isCurrentOrateurChild()) {
+    pauseTimer();
+    showChildReadBtn(true);
+  }
 }
 
 function wordFound() {
@@ -726,6 +838,8 @@ function undoLastAction() {
   const cat = getCategoryInfo(word.category);
   el('word-card-text').textContent     = word.word;
   el('word-card-category').textContent = `${cat.emoji} ${cat.label}`;
+  const kidsBadge = el('word-card-kids-badge');
+  if (kidsBadge) kidsBadge.hidden = !word.kidFriendly;
   updateTurnStats();
   fitWordCard();
   updateUndoRedoButtons();
@@ -1073,7 +1187,11 @@ function filterValidWords(arr) {
   return arr
     .filter(w => w && typeof w.word === 'string' && w.word.trim() &&
                  typeof w.category === 'string' && w.category.trim())
-    .map(w => ({ word: w.word.trim(), category: w.category.trim() }));
+    .map(w => ({
+      word: w.word.trim(),
+      category: w.category.trim(),
+      ...(w.kidFriendly === true ? { kidFriendly: true } : {}),
+    }));
 }
 
 function openWordsEditor() {
@@ -1163,6 +1281,13 @@ function renderWordsList() {
     info.appendChild(wordSpan);
     info.appendChild(catBadge);
 
+    const kidBtn = document.createElement('button');
+    kidBtn.className = `btn-icon word-edit-kid-btn${entry.kidFriendly ? ' word-edit-kid-btn--on' : ''}`;
+    kidBtn.title = entry.kidFriendly ? 'Adapté -12 ans (cliquer pour retirer)' : 'Marquer comme adapté -12 ans';
+    kidBtn.setAttribute('aria-label', entry.kidFriendly ? 'Retirer le marquage -12 ans' : 'Marquer comme -12 ans');
+    kidBtn.textContent = '👶';
+    kidBtn.addEventListener('click', () => toggleKidFriendly(realIdx));
+
     const delBtn = document.createElement('button');
     delBtn.className = 'btn-icon btn-danger';
     delBtn.setAttribute('aria-label', `Supprimer ${entry.word}`);
@@ -1170,6 +1295,7 @@ function renderWordsList() {
     delBtn.addEventListener('click', () => deleteWord(realIdx));
 
     row.appendChild(info);
+    row.appendChild(kidBtn);
     row.appendChild(delBtn);
     list.appendChild(row);
   });
@@ -1202,6 +1328,18 @@ function deleteWord(idx) {
   renderWordsCatTabs();
   renderWordsList();
   showToast(`"${deleted.word}" supprimé`);
+}
+
+function toggleKidFriendly(idx) {
+  const entry = editableWords[idx];
+  if (!entry) return;
+  if (entry.kidFriendly) {
+    delete entry.kidFriendly;
+  } else {
+    entry.kidFriendly = true;
+  }
+  saveWords(editableWords);
+  renderWordsList();
 }
 
 function exportWords() {
@@ -1510,7 +1648,7 @@ function startDemoTurn() {
   state.actionHistory = [];
   state.redoStack     = [];
 
-  const words     = getShuffledWords();
+  const words     = getShuffledWords(null, state.kidsMode);
   const demoWords = words.slice(0, 3);
   state.allWords  = demoWords;
   state.roundWords = [...demoWords];
@@ -1569,6 +1707,11 @@ function init() {
     saveCardCount(state.cardCount);
   });
 
+  // ── Mode enfant ──
+  state.kidsModeManual = loadKidsMode();
+  updateKidsModeStatus();
+  el('toggle-kids-mode').addEventListener('click', withCooldown(toggleKidsMode));
+
   // ── Categories ──
   el('btn-categories-back').addEventListener('click', withCooldown(() => showScreen('screen-setup')));
   el('btn-cats-all').addEventListener('click', withCooldown(selectAllCategories));
@@ -1605,6 +1748,7 @@ function init() {
   }));
   el('btn-undo').addEventListener('click', withCooldown(undoLastAction));
   el('btn-redo').addEventListener('click', withCooldown(redoLastAction));
+  el('btn-child-read').addEventListener('click', withCooldown(childConfirmedRead));
 
   // ── Turn end ──
   el('btn-correct-turn').addEventListener('click', withCooldown(openCorrectTurn));
@@ -1644,6 +1788,7 @@ function init() {
     state.currentRound   = 0;
     state.noTeamsMode    = false;
     state.selectedCategories = [];
+    state.playerIsChild.clear();
     renderPlayerList();
     showScreen('screen-setup');
   }));
