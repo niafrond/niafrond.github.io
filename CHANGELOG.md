@@ -1,3 +1,9 @@
+## [1.97.0](https://github.com/niafrond/niafrond.github.io/compare/v1.96.0...v1.97.0) (2026-04-20)
+
+### Features
+
+* hourly auto update checker with discreet banner on all apps ([#146](https://github.com/niafrond/niafrond.github.io/issues/146)) ([fa1eb75](https://github.com/niafrond/niafrond.github.io/commit/fa1eb75a3716c4dd125731646cdc95fdca326115))
+
 ## [1.96.0](https://github.com/niafrond/niafrond.github.io/compare/v1.95.0...v1.96.0) (2026-04-20)
 
 ### Features
