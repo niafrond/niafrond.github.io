@@ -1,3 +1,9 @@
+## [1.108.0](https://github.com/niafrond/niafrond.github.io/compare/v1.107.0...v1.108.0) (2026-04-20)
+
+### Features
+
+* **flash-guess:** clarify visually that the top block is for adding players ([8858df4](https://github.com/niafrond/niafrond.github.io/commit/8858df4624a3c3eaa65fbe393ad8c9da9142f555))
+
 ## [1.107.0](https://github.com/niafrond/niafrond.github.io/compare/v1.106.1...v1.107.0) (2026-04-20)
 
 ### Features
