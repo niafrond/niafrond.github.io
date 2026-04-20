@@ -2,8 +2,8 @@
  * pwa.js — PWA : installation, plein écran, mise à jour forcée
  */
 
-import { el } from './ui.js';
-import { showToast } from './ui.js';
+import { el, getCurrentScreen, showToast } from './ui.js';
+import { GAMEPLAY_SCREENS } from './state.js';
 
 // ─── Installation PWA ──────────────────────────────────────────────────────────
 let _pwaInstallPrompt = null;
@@ -79,6 +79,7 @@ function isPwaInstalled() {
 
 // ─── Notification système de mise à jour ───────────────────────────────────────
 async function showUpdateNotification(reg) {
+  if (GAMEPLAY_SCREENS.has(getCurrentScreen())) return;
   if (!isPwaInstalled()) return;
   if (!('Notification' in window)) return;
   if (Notification.permission === 'denied') return;
@@ -137,7 +138,9 @@ export function initServiceWorker() {
         });
 
         if (navigator.serviceWorker.controller) {
-          navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!GAMEPLAY_SCREENS.has(getCurrentScreen())) location.reload();
+          }, { once: true });
         }
       })
       .catch(() => {});
