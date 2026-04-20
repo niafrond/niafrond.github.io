@@ -2192,6 +2192,11 @@ function init() {
     state.noTeamsMode    = false;
     state.selectedCategories = [];
     state.playerIsChild.clear();
+    const freshMembers = loadMembers();
+    state.playerNames.forEach(name => {
+      const m = freshMembers.find(x => x.name === name);
+      if (m?.isChild) state.playerIsChild.add(name);
+    });
     renderPlayerList();
     renderMembersList();
     renderGroupsInSetup();
