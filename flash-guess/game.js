@@ -121,11 +121,17 @@ export function renderTeams() {
 
   // Mode coop 2 joueurs : afficher le sélecteur d'objectif uniquement pour 2 joueurs
   const coopSection = el('coop-objective-section');
+  const isTwoPlayers = state.playerNames.length === 2;
   if (coopSection) {
-    const isTwoPlayers = state.playerNames.length === 2;
     coopSection.hidden = !isTwoPlayers;
     if (isTwoPlayers) updateCoopButtons();
   }
+
+  // En mode 2 joueurs, les équipes n'ont pas besoin d'être affichées
+  const teamsContainer = el('teams-container');
+  if (teamsContainer) teamsContainer.hidden = isTwoPlayers;
+  const reshuffleBtn = el('btn-reshuffle');
+  if (reshuffleBtn) reshuffleBtn.hidden = isTwoPlayers;
 }
 
 function updateCoopButtons() {
