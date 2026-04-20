@@ -1,3 +1,9 @@
+## [1.93.0](https://github.com/niafrond/niafrond.github.io/compare/v1.92.0...v1.93.0) (2026-04-20)
+
+### Features
+
+* **flash-guess:** unflag existing words, add kid-friendly words list ([#139](https://github.com/niafrond/niafrond.github.io/issues/139)) ([ce51c94](https://github.com/niafrond/niafrond.github.io/commit/ce51c94c9d1650f1b4c6364f6c71c11fb12f6123))
+
 ## [1.92.0](https://github.com/niafrond/niafrond.github.io/compare/v1.91.0...v1.92.0) (2026-04-20)
 
 ### Features
