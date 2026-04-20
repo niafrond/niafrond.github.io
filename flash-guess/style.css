@@ -197,15 +197,27 @@ details.card-collapsible > :not(summary) {
 }
 .input::placeholder { color: var(--text-muted); }
 
+/* ─── Setup players zone ──────────────────────────────────────────────────── */
+.setup-players-zone {
+  background: rgba(0, 150, 199, 0.07);
+  border: 1.5px solid rgba(0, 150, 199, 0.28);
+  border-radius: var(--radius);
+  padding: 14px 14px 0;
+  margin-bottom: 16px;
+}
+.setup-players-zone .card {
+  background: var(--surface2);
+}
+
 /* ─── Setup section label ─────────────────────────────────────────────────── */
 .setup-section-label {
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.92rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   color: var(--lagon);
-  margin-bottom: 10px;
-  padding-left: 4px;
+  margin-bottom: 12px;
+  padding-left: 2px;
 }
 
 /* ─── Player list ──────────────────────────────────────────────────────────── */
