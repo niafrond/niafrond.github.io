@@ -1,3 +1,13 @@
+## [1.102.0](https://github.com/niafrond/niafrond.github.io/compare/v1.101.0...v1.102.0) (2026-04-20)
+
+### Features
+
+* redistribute kidFriendly words into proper categories, exclude them when kidsMode is off ([512adf1](https://github.com/niafrond/niafrond.github.io/commit/512adf1d16c7cf75a41b34b90f043b90706184ac))
+
+### Bug Fixes
+
+* move pyramide and château to general_knowledge per review feedback ([8bfaaaa](https://github.com/niafrond/niafrond.github.io/commit/8bfaaaaeb0a4c6f8cbb284278a5de1152fa30d9a))
+
 ## [1.101.0](https://github.com/niafrond/niafrond.github.io/compare/v1.100.0...v1.101.0) (2026-04-20)
 
 ### Features
