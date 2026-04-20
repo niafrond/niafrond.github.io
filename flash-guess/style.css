@@ -1717,8 +1717,10 @@ details.card-collapsible > :not(summary) {
   flex-shrink: 0;
 }
 .player-child-toggle-label {
-  font-size: 1.2rem;
+  font-size: 0.78rem;
   line-height: 1;
+  font-weight: 600;
+  color: var(--success);
 }
 
 /* ─── Child badge in player list ───────────────────────────────────────────── */
