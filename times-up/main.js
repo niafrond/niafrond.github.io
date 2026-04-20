@@ -13,6 +13,7 @@ import {
   setMuted, getMuted,
 } from './sound.js';
 import { getMatch3Version, getMatch3BuildDate } from '../match3-quest/version.js';
+import { initUpdateChecker } from '../update-checker.js';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 const TURN_DURATION              = 30;   // secondes par tour
@@ -1823,13 +1824,14 @@ function updateFullscreenBtn() {
 
 function init() {
   const versionEl = document.getElementById('timesup-version');
+  const buildDate = getMatch3BuildDate();
   if (versionEl) {
-    const buildDate = getMatch3BuildDate();
     const dateLabel = buildDate
       ? ` · ${new Date(buildDate).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}`
       : '';
     versionEl.textContent = `v${getMatch3Version()}${dateLabel}`;
   }
+  initUpdateChecker(buildDate, versionEl);
 
   // ── Setup ──
   el('tab-btn-partie').addEventListener('click', withCooldown(() => switchSetupTab('partie')));
