@@ -100,7 +100,10 @@ function showDemoTips(round) {
 
 function showDemoTurnEndTips() {
   demo.tipIdx = 0;
-  _showDemoTip(DEMO_TIPS_TURN_END);
+  const tips = demo.firstWordFound
+    ? [...DEMO_TIPS_AFTER_FIRST_FOUND, ...DEMO_TIPS_TURN_END]
+    : DEMO_TIPS_TURN_END;
+  _showDemoTip(tips);
 }
 
 function showAfterFoundTips() {

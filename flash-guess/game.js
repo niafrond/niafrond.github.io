@@ -449,7 +449,6 @@ export function wordFound() {
   updateUndoRedoButtons();
   if (demo.mode && !demo.firstWordFound) {
     demo.firstWordFound = true;
-    if (demoHooks.showAfterFoundTips) demoHooks.showAfterFoundTips();
   }
 }
 
