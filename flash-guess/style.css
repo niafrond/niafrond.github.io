@@ -202,8 +202,8 @@ details.card-collapsible > :not(summary) {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 10px;
 }
+#player-list:not(:empty) { margin-top: 10px; }
 .player-item {
   display: flex;
   align-items: center;
