@@ -1,3 +1,16 @@
+## [1.113.0](https://github.com/niafrond/niafrond.github.io/compare/v1.112.2...v1.113.0) (2026-04-20)
+
+### Features
+
+* proportional child-read timer based on word length (600ms/letter, min 3s) ([a620b6b](https://github.com/niafrond/niafrond.github.io/commit/a620b6b83cb8109b5a6a5ca7454517bfdea1eaa6))
+* set CHILD_READ_MS_PER_LETTER to 1420 ([6e12859](https://github.com/niafrond/niafrond.github.io/commit/6e12859184235adc38b5d5466c980cb67788e1b4))
+
+## [1.112.2](https://github.com/niafrond/niafrond.github.io/compare/v1.112.1...v1.112.2) (2026-04-20)
+
+### Bug Fixes
+
+* avoid same team playing first in consecutive rounds (hors coop) ([dc6f0f4](https://github.com/niafrond/niafrond.github.io/commit/dc6f0f4b2b9892eca7b56ff094992166a3ca022e))
+
 ## [1.112.1](https://github.com/niafrond/niafrond.github.io/compare/v1.112.0...v1.112.1) (2026-04-20)
 
 ### Bug Fixes
