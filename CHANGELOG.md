@@ -1,3 +1,14 @@
+## [1.107.0](https://github.com/niafrond/niafrond.github.io/compare/v1.106.1...v1.107.0) (2026-04-20)
+
+### Features
+
+* **flash-guess:** add cooperative 2-player objective mode (time or turns) ([100e9d1](https://github.com/niafrond/niafrond.github.io/commit/100e9d1efdc12f07407b88a4f6abc03b5b53b0e2))
+* **flash-guess:** coop mode — multi-select chrono+precision, remove classic option ([30e2b7c](https://github.com/niafrond/niafrond.github.io/commit/30e2b7ced23a40b8fddd884c31b336f77b6f9c55))
+
+### Bug Fixes
+
+* **flash-guess:** formatCoopTime omits 0s and fix turn pluralization ([23cefb0](https://github.com/niafrond/niafrond.github.io/commit/23cefb06823d46e88c4db4c8bddd3c4c3fa54b93))
+
 ## [1.106.1](https://github.com/niafrond/niafrond.github.io/compare/v1.106.0...v1.106.1) (2026-04-20)
 
 ### Bug Fixes
