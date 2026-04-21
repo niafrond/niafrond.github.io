@@ -1,3 +1,9 @@
+## [1.116.1](https://github.com/niafrond/niafrond.github.io/compare/v1.116.0...v1.116.1) (2026-04-21)
+
+### Bug Fixes
+
+* **flash-guess:** word draft words overwritten by startRound(1) ([155cc29](https://github.com/niafrond/niafrond.github.io/commit/155cc298e59c0813612587bab3a254c5ef122b73))
+
 ## [1.116.0](https://github.com/niafrond/niafrond.github.io/compare/v1.115.0...v1.116.0) (2026-04-20)
 
 ### Features
