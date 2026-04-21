@@ -168,6 +168,17 @@
 
       </div>
 
+      <!-- Ajouter des joueurs locaux (mode animateur uniquement) -->
+      <div id="animateur-add-player-section" class="card mb-16 host-only" hidden>
+        <div class="card-title">➕ Ajouter des joueurs</div>
+        <p class="chip-hint">Ajoutez les participants présents physiquement</p>
+        <div class="animateur-add-row mt-8">
+          <input id="animateur-player-name-input" class="input" type="text"
+            placeholder="Nom du joueur…" maxlength="24" autocomplete="off">
+          <button id="btn-animateur-add-player" class="btn btn-success" type="button">➕ Ajouter</button>
+        </div>
+      </div>
+
       <!-- Joueurs -->
       <div class="card mb-16">
         <div class="card-title">👥 Joueurs connectés</div>
@@ -257,6 +268,12 @@
       <div id="phase-buzzing" class="card phase-panel" hidden>
         <div id="buzz-queue" class="buzz-queue" hidden></div>
         <button id="btn-buzz" class="btn-buzz" disabled>🔔 BUZZER</button>
+        <!-- Mode animateur : sélection du joueur gagnant -->
+        <div id="animateur-player-picker" hidden>
+          <p class="animateur-picker-title">🎙️ Qui a répondu correctement ?</p>
+          <div id="animateur-picker-buttons" class="animateur-picker-grid"></div>
+          <button id="btn-animateur-nobody" class="btn btn-secondary w-full mt-8">⏭️ Personne</button>
+        </div>
       </div>
 
       <!-- Phase : réponse (texte ou choix) -->

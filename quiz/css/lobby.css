@@ -106,3 +106,10 @@
 .random-themes-btn {
   margin-top: 10px;
 }
+
+/* ─── Animateur : ajout de joueurs ───────────────────────────────────────── */
+.animateur-add-row {
+  display: flex;
+  gap: 8px;
+}
+.animateur-add-row .input { flex: 1; }

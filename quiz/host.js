@@ -13,6 +13,7 @@ import {
   renderFinalResults, startTimerBar, stopTimerBar,
   flashBuzz, showToast, setLoadingStatus, highlightChoices,
   showWrongPlayerNotification, renderLeaderboard, updateModeAvailability,
+  renderAnimateurPlayerPicker, hideAnimateurPlayerPicker,
 } from './ui.js';
 import {
   readPartyOptions,
@@ -61,6 +62,10 @@ let _currentRef = null;
 
 // Phase party précédente (pour détecter les transitions et éviter les toasts en double)
 let _partyPhase = null;
+
+// Compteur d'ID pour les joueurs locaux ajoutés par l'animateur
+let _localPlayerCounter = 0;
+const LOCAL_PLAYER_PREFIX = '__local_';
 
 // ─── Initialisation hôte ─────────────────────────────────────────────────────
 
@@ -149,6 +154,9 @@ async function startHostSession(hostName, savedPeerId = null, isRetry = false) {
       ref.engine.removePlayer(id);
     });
 
+    // Bouton "Ajouter un joueur" (mode animateur)
+    setupAnimateurAddPlayer(ref, peer);
+
     // Bouton "Démarrer"
     const btnStart = document.getElementById('btn-start-game');
     if (btnStart && !btnStart.dataset.bound) {
@@ -191,9 +199,51 @@ async function startHostSession(hostName, savedPeerId = null, isRetry = false) {
  * Diffuse la config en temps réel à tous les joueurs connectés.
  */
 function setupLobbyConfig(peer) {
+  // Initialiser la visibilité de la section "ajouter des joueurs"
+  _syncAnimateurAddSection(hostConfig.hostIsAnimateur ?? false);
+
   renderSetupForm(hostConfig, (changes) => {
     Object.assign(hostConfig, changes);
+    if ('hostIsAnimateur' in changes) {
+      _syncAnimateurAddSection(changes.hostIsAnimateur ?? false);
+    }
     peer.broadcast({ type: MSG.LOBBY_CONFIG, config: { ...hostConfig } });
+  });
+}
+
+function _syncAnimateurAddSection(isAnimateur) {
+  const section = document.getElementById('animateur-add-player-section');
+  if (section) section.hidden = !isAnimateur;
+}
+
+/**
+ * Initialise le bouton "Ajouter un joueur" dans le lobby (mode animateur).
+ */
+function setupAnimateurAddPlayer(ref, peer) {
+  const btn = document.getElementById('btn-animateur-add-player');
+  const input = document.getElementById('animateur-player-name-input');
+  if (!btn || !input || btn.dataset.bound) return;
+  btn.dataset.bound = '1';
+
+  const doAdd = () => {
+    const name = input.value.trim();
+    if (!name) { input.focus(); return; }
+    _localPlayerCounter++;
+    const id = `${LOCAL_PLAYER_PREFIX}${_localPlayerCounter}__`;
+    ref.engine.addPlayer(id, name);
+    clientState.players = ref.engine.state.players;
+    renderLobbyPlayers(clientState.players, true, (pid) => {
+      // Les joueurs locaux ne sont pas via PeerJS, pas besoin de peer.kick
+      if (!pid.startsWith(LOCAL_PLAYER_PREFIX)) peer.kick(pid);
+      ref.engine.removePlayer(pid);
+    });
+    input.value = '';
+    input.focus();
+  };
+
+  btn.addEventListener('click', doAdd);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); doAdd(); }
   });
 }
 
@@ -322,14 +372,22 @@ function handleHostStateChange(state, engine, peer) {
       showOnly('screen-game');
       renderScoreboard(state.players, clientState.hostIsReader);
       renderGamePhase(state.phase, buildRenderData(state, engine), true);
-      {
+      if (clientState.hostIsAnimateur) {
+        // Mode animateur : pas de timer de buzzer, afficher le sélecteur de joueur
+        stopTimerBar();
+        renderAnimateurPlayerPicker(
+          state.players,
+          (playerId) => engine.hostDirectAward(playerId),
+          () => engine.hostSkip()
+        );
+      } else {
         const buzzRemaining = state.buzzDeadline ? Math.max(0, state.buzzDeadline - Date.now()) : TIMER.BUZZ_DURATION;
         const buzzStartPct = Math.round((buzzRemaining / TIMER.BUZZ_DURATION) * 100);
         startTimerBar(TIMER.BUZZ_DURATION, 'timer-fill', buzzStartPct);
-      }
-      // Buzzer hôte (désactivé en mode hôte lecteur)
-      if (!clientState.hostIsReader) {
-        setupHostBuzzButton(engine);
+        // Buzzer hôte (désactivé en mode hôte lecteur)
+        if (!clientState.hostIsReader) {
+          setupHostBuzzButton(engine);
+        }
       }
       setupSkipButton(engine);
       break;
@@ -849,6 +907,11 @@ function setupPlayAgainButton(ref, peer) {
       // Diffuser la config actuelle aux clients déjà connectés
       peer.broadcast({ type: MSG.LOBBY_CONFIG, config: { ...hostConfig } });
       newEngine._broadcastPlayerList();
+
+      // Rebrancher le bouton "Ajouter un joueur" (mode animateur)
+      const btnAddPlayer = document.getElementById('btn-animateur-add-player');
+      if (btnAddPlayer) delete btnAddPlayer.dataset.bound;
+      setupAnimateurAddPlayer(ref, peer);
 
       // Bouton "Démarrer"
       const btnStart = document.getElementById('btn-start-game');

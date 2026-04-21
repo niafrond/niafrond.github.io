@@ -366,6 +366,40 @@ body.buzz-flash::after {
   opacity: 0.85;
 }
 
+/* ─── Animateur player picker ────────────────────────────────────────────── */
+#animateur-player-picker { margin-top: 12px; }
+#animateur-player-picker[hidden] { display: none !important; }
+.animateur-picker-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent2);
+  margin-bottom: 14px;
+}
+.animateur-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+.animateur-player-btn {
+  background: var(--surface2);
+  border: 2px solid var(--accent);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 14px 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  text-align: center;
+  word-break: break-word;
+}
+.animateur-player-btn:hover {
+  background: rgba(8,145,178,0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(8,145,178,0.3);
+}
+.animateur-player-btn:active { transform: translateY(0); }
+
 /* ─── Scoreboard ──────────────────────────────────────────────────────────── */
 .score-row {
   display: flex;
