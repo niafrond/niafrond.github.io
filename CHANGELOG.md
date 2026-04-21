@@ -1,3 +1,9 @@
+## [1.122.0](https://github.com/niafrond/niafrond.github.io/compare/v1.121.0...v1.122.0) (2026-04-21)
+
+### Features
+
+* **quiz:** set QCM as default game mode ([6cef0f8](https://github.com/niafrond/niafrond.github.io/commit/6cef0f89c91254a6bdcfb924cbf120852fc0b203))
+
 ## [1.121.0](https://github.com/niafrond/niafrond.github.io/compare/v1.120.0...v1.121.0) (2026-04-21)
 
 ### Features
