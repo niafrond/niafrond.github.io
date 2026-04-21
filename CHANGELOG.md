@@ -1,3 +1,9 @@
+## [1.123.0](https://github.com/niafrond/niafrond.github.io/compare/v1.122.0...v1.123.0) (2026-04-21)
+
+### Features
+
+* **quiz:** extend animateur mode to QCM, PINGPONG, BUZZ_QCM modes ([27a9d04](https://github.com/niafrond/niafrond.github.io/commit/27a9d04b39b650c048de1a4feb8ec2666969ce09))
+
 ## [1.122.0](https://github.com/niafrond/niafrond.github.io/compare/v1.121.0...v1.122.0) (2026-04-21)
 
 ### Features
