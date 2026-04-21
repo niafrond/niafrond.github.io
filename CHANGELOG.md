@@ -1,3 +1,9 @@
+## [1.121.0](https://github.com/niafrond/niafrond.github.io/compare/v1.120.0...v1.121.0) (2026-04-21)
+
+### Features
+
+* animateur mode - add local players in lobby + select winner per question ([ea7abf8](https://github.com/niafrond/niafrond.github.io/commit/ea7abf8421451b0979becf7a9975240052611a35))
+
 ## [1.120.0](https://github.com/niafrond/niafrond.github.io/compare/v1.119.0...v1.120.0) (2026-04-21)
 
 ### Features
