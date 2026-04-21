@@ -11,6 +11,7 @@ export const CARD_COUNT_KEY             = 'flashguess_card_count';
 export const SELECTED_CATS_KEY          = 'flashguess_selected_cats';
 export const KIDS_MODE_KEY              = 'flashguess_kids_mode';
 export const WORD_DRAFT_KEY             = 'flashguess_word_draft';
+export const ROTATING_GUESSER_KEY      = 'flashguess_rotating_guesser';
 export const ELIMINATIONS_PER_PLAYER   = 3;
 export const GROUPS_KEY                 = 'flashguess_groups';
 export const WORD_FONT_MIN              = 16;
@@ -107,6 +108,11 @@ export const state = {
   draftPlayerChunks:   [],
   draftCurrentPlayerIdx: 0,
   draftEliminations:   [], // selected indices in current player's chunk
+
+  // Mode devineur tournant
+  rotatingGuesserMode:   false,
+  rotatingGuesserTarget: [], // par équipe : indice du devineur tournant (0..n-2)
+  currentGuesserTeamIdx: -1, // index de l'équipe devinant au tour courant
 
   // Lecture enfant
   childReadFirstWord:  false,

@@ -4,7 +4,7 @@
 
 import {
   state,
-  CARD_COUNT_DEFAULT, CARD_COUNT_KEY, SELECTED_CATS_KEY, KIDS_MODE_KEY, WORD_DRAFT_KEY,
+  CARD_COUNT_DEFAULT, CARD_COUNT_KEY, SELECTED_CATS_KEY, KIDS_MODE_KEY, WORD_DRAFT_KEY, ROTATING_GUESSER_KEY,
   MIN_PLAYERS,
 } from './state.js';
 import { el, showScreen, showToast } from './ui.js';
@@ -65,6 +65,15 @@ export function loadWordDraftMode() {
 
 export function saveWordDraftMode(v) {
   try { localStorage.setItem(WORD_DRAFT_KEY, v ? '1' : '0'); } catch (_) { /* ignore */ }
+}
+
+// ─── Persistance du mode devineur tournant ────────────────────────────────────
+export function loadRotatingGuesserMode() {
+  try { return localStorage.getItem(ROTATING_GUESSER_KEY) === '1'; } catch (_) { return false; }
+}
+
+export function saveRotatingGuesserMode(v) {
+  try { localStorage.setItem(ROTATING_GUESSER_KEY, v ? '1' : '0'); } catch (_) { /* ignore */ }
 }
 
 // ─── ÉCRAN SETUP — joueurs ─────────────────────────────────────────────────────

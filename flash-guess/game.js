@@ -35,6 +35,24 @@ export function nextRoundStartTeamIdx(currentTeamIdx, numTeams, roundNum) {
   return roundNum === 1 ? 0 : (currentTeamIdx + 1) % numTeams;
 }
 
+/**
+ * En mode devineur tournant, calcule l'index de l'équipe qui devine.
+ * Chaque équipe i cible en rotation les (n-1) autres équipes :
+ *   cible = (i + 1 + rotatingTarget) % n
+ * où rotatingTarget vaut 0..n-2 et avance après chaque tour.
+ *
+ * @param {number} currentTeamIdx  - index de l'équipe qui parle
+ * @param {number} rotatingTarget  - compteur de rotation pour cette équipe
+ * @param {number} numTeams        - nombre total d'équipes
+ * @returns {number} index de l'équipe qui devine
+ */
+export function getRotatingGuesserTeamIdx(currentTeamIdx, rotatingTarget, numTeams) {
+  return (currentTeamIdx + 1 + rotatingTarget) % numTeams;
+}
+
+/** Nombres de joueurs pour lesquels le mode devineur tournant est disponible. */
+export const ROTATING_GUESSER_PLAYER_COUNTS = new Set([3, 4, 5, 7]);
+
 // ─── COMPOSITION DES ÉQUIPES ───────────────────────────────────────────────────
 export function computeTeamLayout(n) {
   switch (n) {
@@ -60,9 +78,17 @@ export function computeTeamLayout(n) {
 
 export function assignTeams() {
   const players = shuffle([...state.playerNames]);
-  const layout  = computeTeamLayout(players.length);
+  const n       = players.length;
+  const layout  = computeTeamLayout(n);
 
-  if (layout === null) {
+  // Le mode devineur tournant nécessite que chaque joueur soit sa propre "équipe"
+  // (comme le mode sans équipes 5/7 joueurs), même pour 3/4 joueurs dont le layout
+  // normal regroupe les joueurs en équipes.
+  const useRotating = state.rotatingGuesserMode && ROTATING_GUESSER_PLAYER_COUNTS.has(n);
+
+  if (layout === null || useRotating) {
+    // layout === null : nombre de joueurs sans groupement naturel (5, 7…)
+    // useRotating     : mode devineur tournant activé — jeu individuel imposé
     state.noTeamsMode = true;
     state.teams = players.map((name, i) => ({
       color: TEAMS_META[i % TEAMS_META.length].color,
@@ -84,6 +110,11 @@ export function assignTeams() {
   }
 
   state.teamPlayerIdx = state.teams.map(() => 0);
+
+  // Initialiser les compteurs de rotation (un par équipe, valeur dans 0..n-2).
+  // Un tableau vide signal que le mode est inactif — vérifié via .length > 0.
+  state.rotatingGuesserTarget   = useRotating ? state.teams.map(() => 0) : [];
+  state.currentGuesserTeamIdx   = -1;
 }
 
 export function renderTeams() {
@@ -94,9 +125,15 @@ export function renderTeams() {
     container.style.gridTemplateColumns = '1fr';
     const banner = document.createElement('div');
     banner.className = 'no-teams-banner';
-    banner.textContent =
-      `⚠️ ${state.playerNames.length} joueurs — pas d'équipes fixes pour ce nombre. ` +
-      'Chaque joueur joue pour lui-même ! (Ajoutez ou retirez un joueur pour avoir des équipes.)';
+    if (state.rotatingGuesserMode) {
+      banner.textContent =
+        `🔄 Mode devineur tournant — chaque joueur joue pour lui-même. ` +
+        `Le devineur change à chaque tour de façon tournante.`;
+    } else {
+      banner.textContent =
+        `⚠️ ${state.playerNames.length} joueurs — pas d'équipes fixes pour ce nombre. ` +
+        'Chaque joueur joue pour lui-même ! (Ajoutez ou retirez un joueur pour avoir des équipes.)';
+    }
     container.appendChild(banner);
   } else {
     container.style.gridTemplateColumns = '';
@@ -362,11 +399,22 @@ export function startPreTurn() {
   el('pre-turn-round').textContent = `Manche ${state.currentRound} / 3`;
 
   let guesserLabel;
-  if (state.noTeamsMode) {
+  if (state.rotatingGuesserMode && state.rotatingGuesserTarget.length > 0) {
+    const n = state.teams.length;
+    const guesserTeamIdx = getRotatingGuesserTeamIdx(
+      state.currentTeamIdx,
+      state.rotatingGuesserTarget[state.currentTeamIdx],
+      n,
+    );
+    state.currentGuesserTeamIdx = guesserTeamIdx;
+    guesserLabel = teamLabel(state.teams[guesserTeamIdx]);
+  } else if (state.noTeamsMode) {
     const n = state.teams.length;
     const leftIdx = (state.currentTeamIdx - 1 + n) % n;
+    state.currentGuesserTeamIdx = leftIdx;
     guesserLabel = teamLabel(state.teams[leftIdx]);
   } else {
+    state.currentGuesserTeamIdx = -1;
     const teammates = team.players.filter(p => p !== playerName);
     if (teammates.length) {
       guesserLabel = teammates.join(' · ');
@@ -623,6 +671,19 @@ export function endTurn(reason = 'timeout') {
   const team = state.teams[state.currentTeamIdx];
   team.score[state.currentRound - 1] += state.turnFound.length;
 
+  // Mode devineur tournant : le devineur gagne aussi les mêmes points, puis on avance la rotation
+  if (state.rotatingGuesserMode && state.rotatingGuesserTarget.length > 0) {
+    const guesserTeamIdx = state.currentGuesserTeamIdx;
+    if (guesserTeamIdx >= 0 && guesserTeamIdx !== state.currentTeamIdx) {
+      state.teams[guesserTeamIdx].score[state.currentRound - 1] += state.turnFound.length;
+    }
+    const n = state.teams.length;
+    // Chaque équipe a (n-1) cibles possibles (toutes sauf elle-même), donc le
+    // compteur tourne dans [0 .. n-2] avant de revenir à 0.
+    state.rotatingGuesserTarget[state.currentTeamIdx] =
+      (state.rotatingGuesserTarget[state.currentTeamIdx] + 1) % (n - 1);
+  }
+
   const reasonMsgs = {
     timeout:   '⏱️ Temps écoulé !',
     fault:     '🚨 Faute — tour arrêté !',
@@ -706,6 +767,14 @@ export function applyTurnCorrection() {
     team.score[state.currentRound - 1] -= indicesToRemove.length;
     if (team.score[state.currentRound - 1] < 0) team.score[state.currentRound - 1] = 0;
 
+    // En mode devineur tournant, corriger aussi le score du devineur
+    if (state.rotatingGuesserMode && state.currentGuesserTeamIdx >= 0 &&
+        state.currentGuesserTeamIdx !== state.currentTeamIdx) {
+      const guesserTeam = state.teams[state.currentGuesserTeamIdx];
+      guesserTeam.score[state.currentRound - 1] -= indicesToRemove.length;
+      if (guesserTeam.score[state.currentRound - 1] < 0) guesserTeam.score[state.currentRound - 1] = 0;
+    }
+
     el('turn-end-count').textContent = state.turnFound.length;
     el('turn-end-words-left').textContent = state.roundWords.length;
     el('btn-correct-turn').hidden = (state.turnFound.length === 0);
@@ -728,7 +797,10 @@ export function handleNextTurn() {
 export function showRoundEnd() {
   el('round-end-num').textContent = state.currentRound;
 
-  if (state.noTeamsMode) {
+  // En mode noTeams classique (5/7 joueurs sans rotation), redistribuer les points
+  // pour donner crédit au devineur (voisin de gauche). En mode devineur tournant,
+  // les points sont déjà distribués à chaque fin de tour — pas de redistribution.
+  if (state.noTeamsMode && !state.rotatingGuesserMode) {
     const n = state.teams.length;
     const roundIdx = state.currentRound - 1;
     const origScores = state.teams.map(t => t.score[roundIdx] || 0);

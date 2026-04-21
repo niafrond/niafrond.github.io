@@ -10,6 +10,8 @@ import {
   teamLabel,
   computeDraftChunks,
   nextRoundStartTeamIdx,
+  getRotatingGuesserTeamIdx,
+  ROTATING_GUESSER_PLAYER_COUNTS,
 } from '../../game.js';
 
 // ─── computeTeamLayout ────────────────────────────────────────────────────────
@@ -202,5 +204,91 @@ describe('nextRoundStartTeamIdx', () => {
     const startRound2 = nextRoundStartTeamIdx(0, 2, 2);
     expect(startRound2).not.toBe(0);
     expect(startRound2).toBe(1);
+  });
+});
+
+// ─── getRotatingGuesserTeamIdx ────────────────────────────────────────────────
+
+describe('getRotatingGuesserTeamIdx', () => {
+  test('rotation de base : devineur initial = voisin de droite', () => {
+    // 4 joueurs (indices 0-3), équipe 0 parle, target=0 → devineur = (0+1+0)%4 = 1
+    expect(getRotatingGuesserTeamIdx(0, 0, 4)).toBe(1);
+  });
+
+  test('rotation après un tour : devineur suivant', () => {
+    // équipe 0, target=1 → (0+1+1)%4 = 2
+    expect(getRotatingGuesserTeamIdx(0, 1, 4)).toBe(2);
+    // équipe 0, target=2 → (0+1+2)%4 = 3
+    expect(getRotatingGuesserTeamIdx(0, 2, 4)).toBe(3);
+    // équipe 0, target=3 (n-1=3 → wraps à 0) → mais on ne laisse pas target dépasser n-2
+  });
+
+  test('ne pointe jamais sur l\'équipe courante (4 joueurs)', () => {
+    const n = 4;
+    for (let team = 0; team < n; team++) {
+      for (let t = 0; t < n - 1; t++) {
+        const guesser = getRotatingGuesserTeamIdx(team, t, n);
+        expect(guesser).not.toBe(team);
+      }
+    }
+  });
+
+  test('ne pointe jamais sur l\'équipe courante (3 joueurs)', () => {
+    const n = 3;
+    for (let team = 0; team < n; team++) {
+      for (let t = 0; t < n - 1; t++) {
+        const guesser = getRotatingGuesserTeamIdx(team, t, n);
+        expect(guesser).not.toBe(team);
+      }
+    }
+  });
+
+  test('ne pointe jamais sur l\'équipe courante (7 joueurs)', () => {
+    const n = 7;
+    for (let team = 0; team < n; team++) {
+      for (let t = 0; t < n - 1; t++) {
+        const guesser = getRotatingGuesserTeamIdx(team, t, n);
+        expect(guesser).not.toBe(team);
+      }
+    }
+  });
+
+  test('couvre tous les autres joueurs exactement une fois par cycle', () => {
+    const n = 4;
+    for (let team = 0; team < n; team++) {
+      const guessers = new Set();
+      for (let t = 0; t < n - 1; t++) {
+        guessers.add(getRotatingGuesserTeamIdx(team, t, n));
+      }
+      // Doit avoir ciblé les n-1 autres équipes
+      expect(guessers.size).toBe(n - 1);
+      expect(guessers.has(team)).toBe(false);
+    }
+  });
+
+  test('exemple du sujet : a=0, x=1, y=2, z=3', () => {
+    // Le sujet dit : a fait deviner à x, puis y, puis z, puis x de nouveau
+    expect(getRotatingGuesserTeamIdx(0, 0, 4)).toBe(1); // x
+    expect(getRotatingGuesserTeamIdx(0, 1, 4)).toBe(2); // y
+    expect(getRotatingGuesserTeamIdx(0, 2, 4)).toBe(3); // z
+    // après z, target revient à 0 → x de nouveau
+    expect(getRotatingGuesserTeamIdx(0, 0, 4)).toBe(1); // x (cycle)
+  });
+});
+
+// ─── ROTATING_GUESSER_PLAYER_COUNTS ──────────────────────────────────────────
+
+describe('ROTATING_GUESSER_PLAYER_COUNTS', () => {
+  test('contient exactement 3, 4, 5 et 7', () => {
+    expect(ROTATING_GUESSER_PLAYER_COUNTS.has(3)).toBe(true);
+    expect(ROTATING_GUESSER_PLAYER_COUNTS.has(4)).toBe(true);
+    expect(ROTATING_GUESSER_PLAYER_COUNTS.has(5)).toBe(true);
+    expect(ROTATING_GUESSER_PLAYER_COUNTS.has(7)).toBe(true);
+  });
+
+  test('ne contient pas 2 ni 6 ni 8', () => {
+    expect(ROTATING_GUESSER_PLAYER_COUNTS.has(2)).toBe(false);
+    expect(ROTATING_GUESSER_PLAYER_COUNTS.has(6)).toBe(false);
+    expect(ROTATING_GUESSER_PLAYER_COUNTS.has(8)).toBe(false);
   });
 });
