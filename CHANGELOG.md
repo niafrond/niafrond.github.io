@@ -1,3 +1,9 @@
+## [1.120.0](https://github.com/niafrond/niafrond.github.io/compare/v1.119.0...v1.120.0) (2026-04-21)
+
+### Features
+
+* **flash-guess:** redesign app icon — centered bolt, vibrant gradient, colorful accents ([862826c](https://github.com/niafrond/niafrond.github.io/commit/862826c4d166adf333d392f652dfeed6639f17da))
+
 ## [1.119.0](https://github.com/niafrond/niafrond.github.io/compare/v1.118.0...v1.119.0) (2026-04-21)
 
 ### Features
