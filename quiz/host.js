@@ -40,7 +40,7 @@ import {
 // ─── Config de partie (hôte) ──────────────────────────────────────────────────
 
 const hostConfig = {
-  mode: MODE.CLASSIC,
+  mode: MODE.QCM,
   categories: [],
   difficulties: [],
   questionCount: 10,
