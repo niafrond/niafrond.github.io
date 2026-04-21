@@ -503,3 +503,71 @@ describe('Combo streak', () => {
     expect(engine.state.players[0].streak).toBe(0);
   });
 });
+
+// ─── Mode Animateur : hostDirectAward ─────────────────────────────────────────
+
+describe('hostDirectAward (mode animateur)', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  test('en phase BUZZING, attribue SCORE.CORRECT points au joueur désigné', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.startGame([Q1], { mode: MODE.CLASSIC, hostIsAnimateur: true });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+    expect(engine.state.phase).toBe(PHASE.BUZZING);
+
+    engine.hostDirectAward('p1');
+    expect(engine.state.players[0].score).toBe(SCORE.CORRECT);
+    expect(engine.state.phase).toBe(PHASE.ANSWER_RESULT);
+  });
+
+  test('passe en QUESTION_END après ANSWER_RESULT', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.startGame([Q1], { mode: MODE.CLASSIC, hostIsAnimateur: true });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+
+    engine.hostDirectAward('p1');
+    jest.advanceTimersByTime(TIMER.RESULT_DISPLAY + 100);
+    expect(engine.state.phase).toBe(PHASE.QUESTION_END);
+  });
+
+  test('est ignoré si la phase n\'est pas BUZZING', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.startGame([Q1], { mode: MODE.CLASSIC, hostIsAnimateur: true });
+    // En phase QUESTION_PREVIEW
+    expect(engine.state.phase).toBe(PHASE.QUESTION_PREVIEW);
+
+    engine.hostDirectAward('p1');
+    expect(engine.state.players[0].score).toBe(0);
+    expect(engine.state.phase).toBe(PHASE.QUESTION_PREVIEW);
+  });
+
+  test('est ignoré si l\'ID de joueur est invalide', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.startGame([Q1], { mode: MODE.CLASSIC, hostIsAnimateur: true });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+
+    engine.hostDirectAward('unknown-player');
+    // Doit rester en BUZZING
+    expect(engine.state.phase).toBe(PHASE.BUZZING);
+    expect(engine.state.players[0].score).toBe(0);
+  });
+
+  test('le résultat diffusé contient correct=true et le bon playerId', () => {
+    const { engine, peer } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.startGame([Q1], { mode: MODE.CLASSIC, hostIsAnimateur: true });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+
+    engine.hostDirectAward('p1');
+    const answerResultCall = peer.broadcast.mock.calls.find(c => c[0].type === 'ANSWER_RESULT');
+    expect(answerResultCall).toBeDefined();
+    expect(answerResultCall[0].correct).toBe(true);
+    expect(answerResultCall[0].playerId).toBe('p1');
+    expect(answerResultCall[0].points).toBe(SCORE.CORRECT);
+  });
+});

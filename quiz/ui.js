@@ -722,6 +722,41 @@ export function flashBuzz() {
   if (navigator.vibrate) navigator.vibrate(150);
 }
 
+// ─── Animateur player picker ──────────────────────────────────────────────────
+
+/**
+ * Affiche le panneau de sélection du joueur gagnant (mode animateur, phase BUZZING).
+ * @param {Array}    players       — liste des joueurs (id, name)
+ * @param {Function} onPickPlayer  — appelé avec (playerId) quand l'hôte choisit un joueur
+ * @param {Function} onSkip        — appelé quand l'hôte clique "Personne"
+ */
+export function renderAnimateurPlayerPicker(players, onPickPlayer, onSkip) {
+  const picker = el('animateur-player-picker');
+  const grid = el('animateur-picker-buttons');
+  const nobodyBtn = el('btn-animateur-nobody');
+  if (!picker || !grid || !nobodyBtn) return;
+
+  const eligible = players.filter(p => p.id !== '__host__');
+  grid.innerHTML = eligible.map(p =>
+    `<button class="animateur-player-btn" data-pid="${escapeHtml(p.id)}">${escapeHtml(p.name)}</button>`
+  ).join('');
+
+  grid.querySelectorAll('.animateur-player-btn').forEach(btn => {
+    btn.addEventListener('click', () => onPickPlayer(btn.dataset.pid));
+  });
+
+  nobodyBtn.onclick = onSkip;
+  picker.hidden = false;
+}
+
+/**
+ * Cache le panneau de sélection du joueur gagnant.
+ */
+export function hideAnimateurPlayerPicker() {
+  const picker = el('animateur-player-picker');
+  if (picker) picker.hidden = true;
+}
+
 // ─── Résultats finaux ─────────────────────────────────────────────────────────
 
 export function renderFinalResults(finalScores) {

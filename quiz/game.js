@@ -987,6 +987,40 @@ export class GameEngine {
     }
   }
 
+  /**
+   * Mode animateur : l'hôte sélectionne directement le joueur qui a donné la bonne réponse.
+   * Doit être appelé pendant la phase BUZZING.
+   * @param {string} playerId — ID du joueur à récompenser
+   */
+  hostDirectAward(playerId) {
+    if (this.state.phase !== PHASE.BUZZING) return;
+    const player = this.state.players.find(p => p.id === playerId);
+    if (!player) return;
+
+    this._clearAllTimers();
+
+    const points = SCORE.CORRECT;
+    player.score += points;
+    if (this.state.config.comboStreak) player.streak = (player.streak ?? 0) + 1;
+    this.state.roundPoints[playerId] = (this.state.roundPoints[playerId] ?? 0) + points;
+
+    const scores = this._getScores();
+    const result = {
+      correct: true,
+      playerId,
+      answer: null,
+      points,
+      speedBonus: 0,
+      nearMiss: false,
+      scores,
+      streak: this.state.config.comboStreak ? (player.streak ?? 0) : 0,
+    };
+    this.state.lastResult = result;
+    this.state.buzzQueue = [playerId];
+    this.peer.broadcast({ type: MSG.ANSWER_RESULT, ...result });
+    this._showAnswerResult(() => this._endQuestion(false));
+  }
+
   /** Appelé par l'hôte animateur pour révéler la bonne réponse à tous les joueurs */
   hostRevealAnswer() {
     if (this.state.phase !== PHASE.QUESTION_END) return;
