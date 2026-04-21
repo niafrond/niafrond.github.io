@@ -27,6 +27,7 @@ import {
   loadCardCount, saveCardCount,
   loadKidsMode,
   loadWordDraftMode, saveWordDraftMode,
+  loadRotatingGuesserMode, saveRotatingGuesserMode,
   renderPlayerList,
   addPlayer,
   updateKidsModeStatus, toggleKidsMode,
@@ -131,6 +132,22 @@ function init() {
     state.wordDraftMode = !state.wordDraftMode;
     saveWordDraftMode(state.wordDraftMode);
     updateWordDraftBtn();
+  }));
+
+  // ── Devineur tournant ──
+  state.rotatingGuesserMode = loadRotatingGuesserMode();
+  const rotatingGuesserBtn = el('toggle-rotating-guesser');
+  function updateRotatingGuesserBtn() {
+    rotatingGuesserBtn.textContent = state.rotatingGuesserMode ? 'ON' : 'OFF';
+    rotatingGuesserBtn.className =
+      `kids-mode-toggle-btn${state.rotatingGuesserMode ? ' kids-mode-toggle-btn--on' : ''}`;
+    rotatingGuesserBtn.setAttribute('aria-checked', String(state.rotatingGuesserMode));
+  }
+  updateRotatingGuesserBtn();
+  rotatingGuesserBtn.addEventListener('click', withCooldown(() => {
+    state.rotatingGuesserMode = !state.rotatingGuesserMode;
+    saveRotatingGuesserMode(state.rotatingGuesserMode);
+    updateRotatingGuesserBtn();
   }));
 
   // ── Categories ──
@@ -245,6 +262,8 @@ function init() {
     state.coopObjectives = new Set();
     state.coopTimeUsed   = 0;
     state.coopTurnsCount = 0;
+    state.rotatingGuesserTarget   = [];
+    state.currentGuesserTeamIdx   = -1;
     const freshMembers = loadMembers();
     state.playerNames.forEach(name => {
       const m = freshMembers.find(x => x.name === name);
