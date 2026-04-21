@@ -25,7 +25,7 @@ export const clientState = {
   selfEliminated: false, // Le joueur local a déjà répondu faux sur cette question (QCM)
   lastResult: null,
   finalScores: [],
-  mode: MODE.CLASSIC,
+  mode: MODE.QCM,
   config: {},
   showAnswerToHost: false,
   hostIsReader: false,
