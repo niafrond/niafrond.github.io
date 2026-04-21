@@ -225,7 +225,7 @@ const TUTORIAL_SLIDES = [
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:5px;margin:8px 0">
-        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Trouvé !</strong> — L'équipe a trouvé le mot (bouton droit)</span></div>
+        <div class="tuto-rule-badge"><span class="tuto-rule-icon">✅</span><span><strong>Trouvé !</strong> — L'équipe a trouvé le mot (grand bouton vert)</span></div>
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">⏭</span><span><strong>Carte suivante</strong> — Passer la carte (disponible à partir de la manche 2)</span></div>
         <div class="tuto-rule-badge"><span class="tuto-rule-icon">↩</span><span><strong>Annuler / Refaire</strong> — Corrige une action erronée</span></div>
       </div>
