@@ -469,15 +469,20 @@ export class GameEngine {
   // ─── Buzzing ─────────────────────────────────────────────────────────────
 
   _startBuzzing() {
-    this.state.buzzDeadline = Date.now() + TIMER.BUZZ_DURATION;
+    // En mode animateur, pas de deadline ni de timer automatique : l'hôte contrôle manuellement
+    if (!this.state.config.hostIsAnimateur) {
+      this.state.buzzDeadline = Date.now() + TIMER.BUZZ_DURATION;
+    }
     this.state.phase = PHASE.BUZZING;
     this.onStateChange({ ...this.state });
 
-    this._buzzTimer = setTimeout(() => {
-      if (this.state.phase === PHASE.BUZZING) {
-        this._skipQuestion();
-      }
-    }, TIMER.BUZZ_DURATION);
+    if (!this.state.config.hostIsAnimateur) {
+      this._buzzTimer = setTimeout(() => {
+        if (this.state.phase === PHASE.BUZZING) {
+          this._skipQuestion();
+        }
+      }, TIMER.BUZZ_DURATION);
+    }
   }
 
   _startAnswering() {
