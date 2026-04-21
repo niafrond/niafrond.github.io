@@ -1,3 +1,13 @@
+## [1.117.0](https://github.com/niafrond/niafrond.github.io/compare/v1.116.1...v1.117.0) (2026-04-21)
+
+### Features
+
+* add tutorial to flash-guess, similar to times-up ([161e9d1](https://github.com/niafrond/niafrond.github.io/commit/161e9d17183eda17fd39e09e7e00029b700c8865))
+
+### Bug Fixes
+
+* improve tutorial button description wording ([3d66b4b](https://github.com/niafrond/niafrond.github.io/commit/3d66b4b79ab6deebad47cc6b8d5a35490725d041))
+
 ## [1.116.1](https://github.com/niafrond/niafrond.github.io/compare/v1.116.0...v1.116.1) (2026-04-21)
 
 ### Bug Fixes
