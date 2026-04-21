@@ -1,3 +1,9 @@
+## [1.123.1](https://github.com/niafrond/niafrond.github.io/compare/v1.123.0...v1.123.1) (2026-04-21)
+
+### Bug Fixes
+
+* disable buzz timer in animateur mode ([a4b84ff](https://github.com/niafrond/niafrond.github.io/commit/a4b84ff9fce711dce46e67b37a310b661f116c16))
+
 ## [1.123.0](https://github.com/niafrond/niafrond.github.io/compare/v1.122.0...v1.123.0) (2026-04-21)
 
 ### Features
