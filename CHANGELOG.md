@@ -1,3 +1,9 @@
+## [1.119.0](https://github.com/niafrond/niafrond.github.io/compare/v1.118.0...v1.119.0) (2026-04-21)
+
+### Features
+
+* add skip round 3 button at end of round 2 ([15b09ed](https://github.com/niafrond/niafrond.github.io/commit/15b09ed4ede9b5d4b24b04c1e6b2b9431efd2e10))
+
 ## [1.118.0](https://github.com/niafrond/niafrond.github.io/compare/v1.117.0...v1.118.0) (2026-04-21)
 
 ### Features
