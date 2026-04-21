@@ -1,3 +1,9 @@
+## [1.118.0](https://github.com/niafrond/niafrond.github.io/compare/v1.117.0...v1.118.0) (2026-04-21)
+
+### Features
+
+* **flash-guess:** mode devineur tournant pour 3/4/5/7 joueurs ([1d9a627](https://github.com/niafrond/niafrond.github.io/commit/1d9a627af1811d743c83d5b887f29394c88a0c34))
+
 ## [1.117.0](https://github.com/niafrond/niafrond.github.io/compare/v1.116.1...v1.117.0) (2026-04-21)
 
 ### Features
