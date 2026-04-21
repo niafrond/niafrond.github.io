@@ -370,7 +370,11 @@ function handleHostStateChange(state, engine, peer) {
 
     case PHASE.BUZZING:
       showOnly('screen-game');
-      renderScoreboard(state.players, clientState.hostIsReader);
+      renderScoreboard(
+        state.players,
+        clientState.hostIsReader,
+        clientState.hostIsAnimateur ? (playerId) => engine.hostDirectAward(playerId) : null
+      );
       renderGamePhase(state.phase, buildRenderData(state, engine), true);
       if (clientState.hostIsAnimateur) {
         // Mode animateur : pas de timer de buzzer, afficher le sélecteur de joueur

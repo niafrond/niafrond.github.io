@@ -316,7 +316,7 @@ export function renderLobbyPlayers(players, isHost, onKick) {
 
 // ─── Scoreboard ───────────────────────────────────────────────────────────────
 
-export function renderScoreboard(players, hostIsReader = false) {
+export function renderScoreboard(players, hostIsReader = false, onPlayerClick = null) {
   const filtered = hostIsReader ? players.filter(p => p.id !== '__host__') : players;
   const sorted = [...filtered].sort((a, b) => b.score - a.score);
   const board = el('scoreboard');
@@ -326,8 +326,10 @@ export function renderScoreboard(players, hostIsReader = false) {
     const streakBadge = (p.streak ?? 0) >= 3
       ? `<span class="streak-badge" title="${p.streak} bonnes réponses consécutives !">🔥${p.streak}</span>`
       : '';
+    const clickable = onPlayerClick ? ' score-row--clickable' : '';
+    const dataPid = onPlayerClick ? ` data-pid="${escapeHtml(p.id)}"` : '';
     return `
-      <div class="score-row rank-${i + 1}">
+      <div class="score-row rank-${i + 1}${clickable}"${dataPid}>
         <span class="score-rank">${['🥇', '🥈', '🥉'][i] ?? (i + 1) + '.'}</span>
         <span class="score-name">${escapeHtml(p.name)}</span>
         ${streakBadge}
@@ -335,6 +337,12 @@ export function renderScoreboard(players, hostIsReader = false) {
       </div>
     `;
   }).join('');
+
+  if (onPlayerClick) {
+    board.querySelectorAll('.score-row--clickable[data-pid]').forEach(row => {
+      row.addEventListener('click', () => onPlayerClick(row.dataset.pid));
+    });
+  }
 }
 
 // ─── Phase de jeu ─────────────────────────────────────────────────────────────

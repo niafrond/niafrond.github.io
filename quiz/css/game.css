@@ -414,6 +414,9 @@ body.buzz-flash::after {
 .score-row.rank-1 { border-color: #f59e0b; background: rgba(245,158,11,0.1); }
 .score-row.rank-2 { border-color: #94a3b8; background: rgba(148,163,184,0.08); }
 .score-row.rank-3 { border-color: #b45309; background: rgba(180,83,9,0.08); }
+.score-row--clickable { cursor: pointer; transition: background 0.15s, transform 0.1s; }
+.score-row--clickable:hover { background: rgba(99,102,241,0.15) !important; transform: scale(1.02); }
+.score-row--clickable:active { transform: scale(0.98); }
 .score-rank { font-size: 1.2rem; flex-shrink: 0; }
 .score-name { flex: 1; font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .score-pts  { font-weight: 700; font-size: 0.95rem; color: var(--accent2); white-space: nowrap; }
