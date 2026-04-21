@@ -65,6 +65,7 @@ let _partyPhase = null;
 
 // Compteur d'ID pour les joueurs locaux ajoutés par l'animateur
 let _localPlayerCounter = 0;
+const LOCAL_PLAYER_PREFIX = '__local_';
 
 // ─── Initialisation hôte ─────────────────────────────────────────────────────
 
@@ -228,12 +229,12 @@ function setupAnimateurAddPlayer(ref, peer) {
     const name = input.value.trim();
     if (!name) { input.focus(); return; }
     _localPlayerCounter++;
-    const id = `__local_${_localPlayerCounter}__`;
+    const id = `${LOCAL_PLAYER_PREFIX}${_localPlayerCounter}__`;
     ref.engine.addPlayer(id, name);
     clientState.players = ref.engine.state.players;
     renderLobbyPlayers(clientState.players, true, (pid) => {
       // Les joueurs locaux ne sont pas via PeerJS, pas besoin de peer.kick
-      if (!pid.startsWith('__local_')) peer.kick(pid);
+      if (!pid.startsWith(LOCAL_PLAYER_PREFIX)) peer.kick(pid);
       ref.engine.removePlayer(pid);
     });
     input.value = '';
