@@ -571,7 +571,7 @@ function renderQuestion(q, data) {
   // Afficher la bonne réponse à l'hôte si option activée ou mode hôte lecteur
   const hostAnswer = el('host-answer-hint');
   if (hostAnswer) {
-    if (data.showAnswerToHost || data.hostIsReader) {
+    if (data.myId === '__host__' && (data.showAnswerToHost || data.hostIsReader)) {
       hostAnswer.textContent = `🔑 ${q.correctAnswer}`;
       hostAnswer.hidden = false;
     } else {
@@ -581,7 +581,7 @@ function renderQuestion(q, data) {
   // Afficher le trivia à l'hôte en mode hôte lecteur (visible dès la question)
   const triviaHint = el('host-trivia-hint');
   if (triviaHint) {
-    if ((data.showAnswerToHost || data.hostIsReader) && q?.trivia) {
+    if (data.myId === '__host__' && (data.showAnswerToHost || data.hostIsReader) && q?.trivia) {
       triviaHint.textContent = `💡 ${q.trivia}`;
       triviaHint.hidden = false;
     } else {
