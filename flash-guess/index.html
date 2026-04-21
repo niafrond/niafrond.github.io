@@ -39,6 +39,10 @@
     <h1 class="app-title">⚡ Flash Guess</h1>
     <p class="app-subtitle">Faites deviner des mots en équipes !</p>
 
+    <button id="btn-tutorial" class="btn btn-secondary w-full mt-12">
+      ❓ Comment jouer — Tutoriel
+    </button>
+
     <!-- Section joueurs -->
     <div class="setup-players-zone">
       <div class="setup-section-label">① Ajouter des joueurs</div>
@@ -524,6 +528,23 @@
 
     <div id="leaderboard-standard"></div>
     <div id="leaderboard-coop2" hidden></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TUTORIEL OVERLAY
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="tutorial-overlay" class="tutorial-overlay" hidden role="dialog" aria-modal="true" aria-label="Tutoriel">
+  <div class="tutorial-modal">
+    <button id="tutorial-close" class="tutorial-close-btn" aria-label="Fermer le tutoriel">✕</button>
+    <div id="tutorial-slide-content" class="tutorial-slide-content"></div>
+    <div class="tutorial-footer">
+      <div id="tutorial-dots" class="tutorial-dots"></div>
+      <div class="tutorial-nav-btns">
+        <button id="tutorial-prev" class="btn btn-secondary btn-sm">‹ Précédent</button>
+        <button id="tutorial-next" class="btn btn-primary btn-sm">Suivant ›</button>
+      </div>
+    </div>
   </div>
 </div>
 
