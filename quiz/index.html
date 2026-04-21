@@ -268,12 +268,13 @@
       <div id="phase-buzzing" class="card phase-panel" hidden>
         <div id="buzz-queue" class="buzz-queue" hidden></div>
         <button id="btn-buzz" class="btn-buzz" disabled>🔔 BUZZER</button>
-        <!-- Mode animateur : sélection du joueur gagnant -->
-        <div id="animateur-player-picker" hidden>
-          <p class="animateur-picker-title">🎙️ Qui a répondu correctement ?</p>
-          <div id="animateur-picker-buttons" class="animateur-picker-grid"></div>
-          <button id="btn-animateur-nobody" class="btn btn-secondary w-full mt-8">⏭️ Personne</button>
-        </div>
+      </div>
+
+      <!-- Mode animateur : sélection du joueur gagnant (commun à toutes les phases) -->
+      <div id="animateur-player-picker" hidden>
+        <p class="animateur-picker-title">🎙️ Qui a répondu correctement ?</p>
+        <div id="animateur-picker-buttons" class="animateur-picker-grid"></div>
+        <button id="btn-animateur-nobody" class="btn btn-secondary w-full mt-8">⏭️ Personne</button>
       </div>
 
       <!-- Phase : réponse (texte ou choix) -->
