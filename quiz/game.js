@@ -1064,10 +1064,6 @@ export class GameEngine {
     if (this.state.phase === PHASE.QUESTION_END || this.state.phase === PHASE.LOBBY ||
         this.state.phase === PHASE.GAME_OVER || this.state.phase === PHASE.ANSWER_RESULT) return;
     this._skipQuestion();
-    // En mode animateur, révéler immédiatement la réponse et le trivia
-    if (this.state.config.hostIsAnimateur) {
-      this.hostRevealAnswer();
-    }
   }
 
   // ─── Fin de partie ────────────────────────────────────────────────────────
