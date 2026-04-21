@@ -685,6 +685,7 @@ export class GameEngine {
   handleAnswer(peerId, text) {
     if (this.state.phase !== PHASE.ANSWERING) return;
     if (this.state.mode === MODE.QCM || this.state.mode === MODE.PINGPONG || this.state.mode === MODE.BUZZ_QCM) return;
+    if (this.state.config.hostIsAnimateur) return;
     if (this.state.buzzQueue[0] !== peerId) return;
 
     this._clearTimer('answer');
@@ -779,6 +780,7 @@ export class GameEngine {
   handleChoice(peerId, choice) {
     if (this.state.phase !== PHASE.ANSWERING) return;
     if (this.state.mode !== MODE.QCM && this.state.mode !== MODE.PINGPONG && this.state.mode !== MODE.BUZZ_QCM) return;
+    if (this.state.config.hostIsAnimateur) return;
     if (this.state.mode === MODE.QCM && this.state.eliminatedPlayers.includes(peerId)) return;
     if (this.state.mode === MODE.PINGPONG && this.state.buzzQueue[0] !== peerId) return;
     if (this.state.mode === MODE.BUZZ_QCM && this.state.buzzQueue[0] !== peerId) return;
@@ -993,7 +995,7 @@ export class GameEngine {
    * @param {string} playerId — ID du joueur à récompenser
    */
   hostDirectAward(playerId) {
-    if (this.state.phase !== PHASE.BUZZING) return;
+    if (this.state.phase !== PHASE.BUZZING && this.state.phase !== PHASE.ANSWERING) return;
     const player = this.state.players.find(p => p.id === playerId);
     if (!player) return;
 

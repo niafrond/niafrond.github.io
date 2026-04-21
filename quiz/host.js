@@ -395,51 +395,62 @@ function handleHostStateChange(state, engine, peer) {
     case PHASE.ANSWERING:
       showOnly('screen-game');
       renderScoreboard(state.players, clientState.hostIsReader);
-      // Détecter les nouvelles éliminations QCM côté hôte et notifier
-      if (state.mode === MODE.QCM) {
-        const newElim = state.eliminatedPlayers.filter(id => !prevEliminatedPlayers.includes(id));
-        newElim.forEach(id => {
-          const p = state.players.find(pl => pl.id === id);
-          if (p && p.id !== '__host__') showWrongPlayerNotification(p.name);
-        });
-        if (newElim.includes('__host__')) {
-          showToast('❌ Mauvaise réponse !', 'warn');
-          playWrong();
+      if (clientState.hostIsAnimateur) {
+        // Mode animateur : l'hôte sélectionne directement le gagnant, quel que soit le mode
+        stopTimerBar();
+        renderGamePhase(state.phase, buildRenderData(state, engine), true);
+        renderAnimateurPlayerPicker(
+          state.players,
+          (playerId) => engine.hostDirectAward(playerId),
+          () => engine.hostSkip()
+        );
+      } else {
+        // Détecter les nouvelles éliminations QCM côté hôte et notifier
+        if (state.mode === MODE.QCM) {
+          const newElim = state.eliminatedPlayers.filter(id => !prevEliminatedPlayers.includes(id));
+          newElim.forEach(id => {
+            const p = state.players.find(pl => pl.id === id);
+            if (p && p.id !== '__host__') showWrongPlayerNotification(p.name);
+          });
+          if (newElim.includes('__host__')) {
+            showToast('❌ Mauvaise réponse !', 'warn');
+            playWrong();
+          }
         }
-      }
-      {
-        const dur = (state.mode === MODE.QCM || state.mode === MODE.PINGPONG) ? TIMER.QCM_DURATION
-          : state.mode === MODE.SPEED ? TIMER.SPEED_ANSWER
-          : (state.config.answerTime ?? 15) * 1000;
-        startTimerBar(dur, 'timer-fill', 100, playTick);
-      }
-      {
-        const data = buildRenderData(state, engine);
-        if ((state.mode === MODE.QCM || state.mode === MODE.PINGPONG) && !clientState.hostIsReader) {
-          const isHostTurn = state.mode === MODE.PINGPONG ? state.buzzQueue[0] === '__host__' : true;
-          if (isHostTurn) {
+        {
+          const dur = (state.mode === MODE.QCM || state.mode === MODE.PINGPONG) ? TIMER.QCM_DURATION
+            : state.mode === MODE.SPEED ? TIMER.SPEED_ANSWER
+            : (state.config.answerTime ?? 15) * 1000;
+          startTimerBar(dur, 'timer-fill', 100, playTick);
+        }
+        {
+          const data = buildRenderData(state, engine);
+          if ((state.mode === MODE.QCM || state.mode === MODE.PINGPONG) && !clientState.hostIsReader) {
+            const isHostTurn = state.mode === MODE.PINGPONG ? state.buzzQueue[0] === '__host__' : true;
+            if (isHostTurn) {
+              data.onChoiceClick = (choice) => {
+                engine.handleChoice('__host__', choice);
+              };
+            }
+            data.eliminatedPlayers = state.eliminatedPlayers;
+          } else if (state.mode === MODE.BUZZ_QCM && !clientState.hostIsReader && state.buzzQcmCurrentBuzzer === '__host__') {
+            // L'hôte a buzzé en mode BUZZ_QCM : lui montrer les choix directement
             data.onChoiceClick = (choice) => {
               engine.handleChoice('__host__', choice);
             };
+            data.eliminatedPlayers = [];
           }
-          data.eliminatedPlayers = state.eliminatedPlayers;
-        } else if (state.mode === MODE.BUZZ_QCM && !clientState.hostIsReader && state.buzzQcmCurrentBuzzer === '__host__') {
-          // L'hôte a buzzé en mode BUZZ_QCM : lui montrer les choix directement
-          data.onChoiceClick = (choice) => {
-            engine.handleChoice('__host__', choice);
-          };
-          data.eliminatedPlayers = [];
+          renderGamePhase(state.phase, data, true);
         }
-        renderGamePhase(state.phase, data, true);
-      }
-      if (clientState.hostIsReader) {
-        // Mode hôte lecteur : boutons Correct / Incorrect pour juger à l'oral
-        if (state.mode !== MODE.QCM && state.mode !== MODE.PINGPONG && state.mode !== MODE.BUZZ_QCM) {
-          setupHostJudgeButtons(engine);
+        if (clientState.hostIsReader) {
+          // Mode hôte lecteur : boutons Correct / Incorrect pour juger à l'oral
+          if (state.mode !== MODE.QCM && state.mode !== MODE.PINGPONG && state.mode !== MODE.BUZZ_QCM) {
+            setupHostJudgeButtons(engine);
+          }
+        } else if (state.mode !== MODE.QCM && state.mode !== MODE.PINGPONG && state.mode !== MODE.BUZZ_QCM) {
+          // Réponse texte hôte classique
+          setupHostAnswerForm(engine, state);
         }
-      } else if (state.mode !== MODE.QCM && state.mode !== MODE.PINGPONG && state.mode !== MODE.BUZZ_QCM) {
-        // Réponse texte hôte classique
-        setupHostAnswerForm(engine, state);
       }
       setupSkipButton(engine);
       break;

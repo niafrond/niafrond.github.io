@@ -533,7 +533,7 @@ describe('hostDirectAward (mode animateur)', () => {
     expect(engine.state.phase).toBe(PHASE.QUESTION_END);
   });
 
-  test('est ignoré si la phase n\'est pas BUZZING', () => {
+  test('est ignoré si la phase n\'est pas BUZZING ni ANSWERING', () => {
     const { engine } = makeEngine();
     engine.addPlayer('p1', 'Alice');
     engine.startGame([Q1], { mode: MODE.CLASSIC, hostIsAnimateur: true });
@@ -569,5 +569,70 @@ describe('hostDirectAward (mode animateur)', () => {
     expect(answerResultCall[0].correct).toBe(true);
     expect(answerResultCall[0].playerId).toBe('p1');
     expect(answerResultCall[0].points).toBe(SCORE.CORRECT);
+  });
+
+  test('en mode QCM (phase ANSWERING), attribue SCORE.CORRECT au joueur désigné', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.addPlayer('p2', 'Bob');
+    engine.startGame([Q1], { mode: MODE.QCM, hostIsAnimateur: true });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+    expect(engine.state.phase).toBe(PHASE.ANSWERING);
+
+    engine.hostDirectAward('p1');
+    expect(engine.state.players.find(p => p.id === 'p1').score).toBe(SCORE.CORRECT);
+    expect(engine.state.phase).toBe(PHASE.ANSWER_RESULT);
+  });
+
+  test('en mode QCM animateur, handleChoice est ignoré (les joueurs ne peuvent pas s\'auto-scorer)', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.startGame([Q1], { mode: MODE.QCM, hostIsAnimateur: true });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+    expect(engine.state.phase).toBe(PHASE.ANSWERING);
+
+    engine.handleChoice('p1', Q1.correctAnswer);
+    expect(engine.state.players[0].score).toBe(0);
+    expect(engine.state.phase).toBe(PHASE.ANSWERING);
+  });
+
+  test('en mode PINGPONG (phase ANSWERING), attribue SCORE.CORRECT au joueur désigné', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.addPlayer('p2', 'Bob');
+    engine.startGame([Q1, Q2], { mode: MODE.PINGPONG, hostIsAnimateur: true });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+    expect(engine.state.phase).toBe(PHASE.ANSWERING);
+
+    engine.hostDirectAward('p2');
+    expect(engine.state.players.find(p => p.id === 'p2').score).toBe(SCORE.CORRECT);
+    expect(engine.state.phase).toBe(PHASE.ANSWER_RESULT);
+  });
+
+  test('en mode CLASSIC animateur, handleAnswer est ignoré (les joueurs ne peuvent pas s\'auto-scorer)', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.startGame([Q1], { mode: MODE.CLASSIC, hostIsAnimateur: true });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+    expect(engine.state.phase).toBe(PHASE.BUZZING);
+    engine.handleBuzz('p1');
+    expect(engine.state.phase).toBe(PHASE.ANSWERING);
+
+    engine.handleAnswer('p1', Q1.correctAnswer);
+    expect(engine.state.players[0].score).toBe(0);
+    expect(engine.state.phase).toBe(PHASE.ANSWERING);
+  });
+
+  test('en mode CLASSIC animateur, hostDirectAward fonctionne aussi depuis PHASE.ANSWERING', () => {
+    const { engine } = makeEngine();
+    engine.addPlayer('p1', 'Alice');
+    engine.startGame([Q1], { mode: MODE.CLASSIC, hostIsAnimateur: true });
+    jest.advanceTimersByTime(TIMER.QUESTION_PREVIEW + 100);
+    engine.handleBuzz('p1');
+    expect(engine.state.phase).toBe(PHASE.ANSWERING);
+
+    engine.hostDirectAward('p1');
+    expect(engine.state.players[0].score).toBe(SCORE.CORRECT);
+    expect(engine.state.phase).toBe(PHASE.ANSWER_RESULT);
   });
 });
