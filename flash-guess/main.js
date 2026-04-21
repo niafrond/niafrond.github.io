@@ -613,6 +613,11 @@ function init() {
     showGameOver();
     updateRotateOverlay();
   }));
+  el('btn-skip-round3').addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    showGameOver();
+    updateRotateOverlay();
+  }));
 
   // ── Game over ──
   el('btn-replay').addEventListener('click', withCooldown(() => {
