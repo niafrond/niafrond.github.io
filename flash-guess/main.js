@@ -21,6 +21,7 @@ import {
   fitWordCard,
   setCoopObjective,
   startWordDraft, showWordDraftTurn, confirmWordDraftEliminations,
+  finalizeRoundScores,
 } from './game.js';
 
 import {
@@ -207,6 +208,12 @@ function init() {
   el('btn-next-turn').addEventListener('click', withCooldown(() => {
     playButtonClick();
     handleNextTurn();
+    updateRotateOverlay();
+  }));
+  el('btn-skip-round3-turn').addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    finalizeRoundScores();
+    showGameOver();
     updateRotateOverlay();
   }));
 

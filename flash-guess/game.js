@@ -599,6 +599,7 @@ export function endTurn(reason = 'timeout') {
     el('btn-next-turn').dataset.nextAction = 'round-end';
     el('turn-end-all-found').hidden = (reason !== 'allFound');
     el('btn-correct-turn').hidden = (state.turnFound.length === 0);
+    el('btn-skip-round3-turn').hidden = true;
     showScreen('screen-turn-end');
     if (state.turnFound.length > 0 && demoHooks.showTurnEndTips) demoHooks.showTurnEndTips();
     return;
@@ -647,6 +648,7 @@ export function endTurn(reason = 'timeout') {
   }
 
   el('btn-correct-turn').hidden = (state.turnFound.length === 0);
+  el('btn-skip-round3-turn').hidden = !(reason === 'allFound' && state.currentRound === 2);
   showScreen('screen-turn-end');
 }
 
@@ -725,9 +727,12 @@ export function handleNextTurn() {
 }
 
 // ─── FIN DE MANCHE ─────────────────────────────────────────────────────────────
-export function showRoundEnd() {
-  el('round-end-num').textContent = state.currentRound;
 
+/**
+ * Applique l'ajustement des scores noTeamsMode pour la manche courante.
+ * À appeler une seule fois par manche, avant d'afficher les scores finaux.
+ */
+export function finalizeRoundScores() {
   if (state.noTeamsMode) {
     const n = state.teams.length;
     const roundIdx = state.currentRound - 1;
@@ -737,6 +742,12 @@ export function showRoundEnd() {
       team.score[roundIdx] = origScores[i] + origScores[rightIdx];
     });
   }
+}
+
+export function showRoundEnd() {
+  el('round-end-num').textContent = state.currentRound;
+
+  finalizeRoundScores();
 
   const scoreRows = el('round-end-scores');
   scoreRows.innerHTML = '';
