@@ -1,3 +1,9 @@
+## [1.123.2](https://github.com/niafrond/niafrond.github.io/compare/v1.123.1...v1.123.2) (2026-04-21)
+
+### Bug Fixes
+
+* **quiz:** mode animateur n'affiche plus les réponses directement ([c6da580](https://github.com/niafrond/niafrond.github.io/commit/c6da58021ad66d8ce131366ae04a3566cfbccf24))
+
 ## [1.123.1](https://github.com/niafrond/niafrond.github.io/compare/v1.123.0...v1.123.1) (2026-04-21)
 
 ### Bug Fixes
