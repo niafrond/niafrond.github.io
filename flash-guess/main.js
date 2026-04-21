@@ -226,6 +226,11 @@ function init() {
     }
     updateRotateOverlay();
   }));
+  el('btn-skip-round3').addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    showGameOver();
+    updateRotateOverlay();
+  }));
   el('btn-final-results').addEventListener('click', withCooldown(() => {
     playButtonClick();
     showGameOver();

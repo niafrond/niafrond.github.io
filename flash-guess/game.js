@@ -794,6 +794,7 @@ export function showRoundEnd() {
 
   const isLastRound = state.currentRound === 3;
   el('btn-next-round').hidden    = isLastRound;
+  el('btn-skip-round3').hidden   = state.currentRound !== 2;
   el('btn-final-results').hidden = !isLastRound;
 
   showScreen('screen-round-end');
