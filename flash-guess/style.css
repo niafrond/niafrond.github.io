@@ -278,21 +278,22 @@ details.card-collapsible > :not(summary) {
   align-items: center;
 }
 .btn-top-ctrl {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: none;
   color: var(--text-muted);
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 1.1rem;
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow);
-  transition: background 0.15s, color 0.15s;
+  opacity: 0.35;
+  transition: opacity 0.2s, background 0.15s;
 }
-.btn-top-ctrl:hover { background: var(--surface2); color: var(--text); }
+.btn-top-ctrl:hover,
+.btn-top-ctrl:focus-visible { opacity: 1; background: var(--surface2); outline: none; }
 
 /* ─── Teams ────────────────────────────────────────────────────────────────── */
 #teams-container {
