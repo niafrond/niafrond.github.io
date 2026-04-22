@@ -93,7 +93,7 @@ jobs:
             size="${entry##*:}"
             for ext in png webp; do
               fg="$RES/mipmap-${density}/ic_launcher_foreground.${ext}"
-              [ -f "$fg" ] && convert "$SRC" -resize "${size}x${size}" "$fg"
+              if [ -f "$fg" ]; then convert "$SRC" -resize "${size}x${size}" "$fg"; fi
             done
           done
 
