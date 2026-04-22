@@ -21,6 +21,9 @@ jobs:
   build-apk:
     runs-on: ubuntu-latest
 
+    env:
+      KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASSWORD || 'flashguess_ci_build' }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -59,15 +62,13 @@ jobs:
 
       - name: Set app version
         run: |
-          VERSION=$(node -e "
+          read -r VERSION VERSION_CODE < <(node -e "
             const c = require('fs').readFileSync('version.js','utf8');
             const m = c.match(/major:\s*(\d+),\s*minor:\s*(\d+),\s*patch:\s*(\d+)/);
-            console.log(m[1]+'.'+m[2]+'.'+m[3]);
-          ")
-          VERSION_CODE=$(node -e "
-            const c = require('fs').readFileSync('version.js','utf8');
-            const m = c.match(/major:\s*(\d+),\s*minor:\s*(\d+),\s*patch:\s*(\d+)/);
-            console.log(Number(m[1])*1000000 + Number(m[2])*1000 + Number(m[3]));
+            const [,maj,min,pat] = m;
+            const name = maj+'.'+min+'.'+pat;
+            const code = Number(maj)*1000000 + Number(min)*1000 + Number(pat);
+            process.stdout.write(name+' '+code);
           ")
           GRADLE="flash-guess-android/android/app/build.gradle"
           sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" "$GRADLE"
@@ -103,7 +104,7 @@ jobs:
             -alias flash-guess \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Flash Guess, OU=Game, O=Niafrond, L=FR, S=FR, C=FR" \
-            -storepass flashguess123 -keypass flashguess123
+            -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS"
 
       - name: Build release APK
         working-directory: flash-guess-android/android
@@ -116,8 +117,8 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
             --ks flash-guess-android/flash-guess.keystore \
             --ks-alias flash-guess \
-            --ks-pass pass:flashguess123 \
-            --key-pass pass:flashguess123 \
+            --ks-pass "pass:$KEYSTORE_PASS" \
+            --key-pass "pass:$KEYSTORE_PASS" \
             --out "$SIGNED" \
             "$UNSIGNED"
 
