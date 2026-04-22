@@ -12,8 +12,14 @@ import {
   getShuffledWords,
   getCategoryInfo,
   CATEGORY_LABELS,
-  DEFAULT_WORDS,
+  getDefaultWords,
 } from '../../words.js';
+
+let DEFAULT_WORDS;
+
+beforeAll(async () => {
+  DEFAULT_WORDS = await getDefaultWords();
+});
 
 beforeEach(() => {
   localStorage.clear();
@@ -53,50 +59,50 @@ describe('shuffle', () => {
 // ─── loadWords / saveWords / resetWords ───────────────────────────────────────
 
 describe('loadWords / saveWords / resetWords', () => {
-  test('renvoie les mots par défaut si localStorage est vide', () => {
-    const words = loadWords();
+  test('renvoie les mots par défaut si localStorage est vide', async () => {
+    const words = await loadWords();
     expect(words.length).toBe(DEFAULT_WORDS.length);
     expect(words[0]).toMatchObject({ word: expect.any(String), category: expect.any(String) });
   });
 
-  test('renvoie les mots par défaut si les données sont invalides', () => {
+  test('renvoie les mots par défaut si les données sont invalides', async () => {
     localStorage.setItem('flashguess_custom_words', 'not-json');
-    expect(loadWords().length).toBe(DEFAULT_WORDS.length);
+    expect((await loadWords()).length).toBe(DEFAULT_WORDS.length);
   });
 
-  test('renvoie les mots par défaut si le tableau est vide', () => {
+  test('renvoie les mots par défaut si le tableau est vide', async () => {
     localStorage.setItem('flashguess_custom_words', '[]');
-    expect(loadWords().length).toBe(DEFAULT_WORDS.length);
+    expect((await loadWords()).length).toBe(DEFAULT_WORDS.length);
   });
 
-  test('renvoie les mots par défaut si aucune entrée valide', () => {
+  test('renvoie les mots par défaut si aucune entrée valide', async () => {
     localStorage.setItem('flashguess_custom_words', JSON.stringify([{ word: '', category: '' }]));
-    expect(loadWords().length).toBe(DEFAULT_WORDS.length);
+    expect((await loadWords()).length).toBe(DEFAULT_WORDS.length);
   });
 
-  test('sauvegarde et recharge des mots personnalisés', () => {
+  test('sauvegarde et recharge des mots personnalisés', async () => {
     const custom = [
       { word: 'Test', category: 'general_knowledge' },
       { word: 'Bonjour', category: 'kids', kidFriendly: true },
     ];
     saveWords(custom);
-    const loaded = loadWords();
+    const loaded = await loadWords();
     expect(loaded).toHaveLength(2);
     expect(loaded[0]).toMatchObject({ word: 'Test', category: 'general_knowledge' });
     expect(loaded[1]).toMatchObject({ word: 'Bonjour', category: 'kids', kidFriendly: true });
   });
 
-  test('trim les espaces sur word et category', () => {
+  test('trim les espaces sur word et category', async () => {
     saveWords([{ word: '  Espace  ', category: '  history  ' }]);
-    const loaded = loadWords();
+    const loaded = await loadWords();
     expect(loaded[0].word).toBe('Espace');
     expect(loaded[0].category).toBe('history');
   });
 
-  test('resetWords supprime les données et retourne aux mots par défaut', () => {
+  test('resetWords supprime les données et retourne aux mots par défaut', async () => {
     saveWords([{ word: 'Custom', category: 'history' }]);
     resetWords();
-    const loaded = loadWords();
+    const loaded = await loadWords();
     expect(loaded.length).toBe(DEFAULT_WORDS.length);
   });
 });
@@ -104,34 +110,34 @@ describe('loadWords / saveWords / resetWords', () => {
 // ─── getShuffledWords ─────────────────────────────────────────────────────────
 
 describe('getShuffledWords', () => {
-  test('renvoie les mots sans kidFriendly si kidsMode désactivé', () => {
-    const words = getShuffledWords();
+  test('renvoie les mots sans kidFriendly si kidsMode désactivé', async () => {
+    const words = await getShuffledWords();
     const expected = DEFAULT_WORDS.filter(w => !w.kidFriendly);
     expect(words.length).toBe(expected.length);
   });
 
-  test('filtre par catégorie', () => {
-    const words = getShuffledWords(['history']);
+  test('filtre par catégorie', async () => {
+    const words = await getShuffledWords(['history']);
     expect(words.length).toBeGreaterThan(0);
     expect(words.every(w => w.category === 'history')).toBe(true);
   });
 
-  test('renvoie uniquement les mots enfants en mode enfant', () => {
-    const words = getShuffledWords(null, true);
+  test('renvoie uniquement les mots enfants en mode enfant', async () => {
+    const words = await getShuffledWords(null, true);
     const expected = DEFAULT_WORDS.filter(w => w.kidFriendly);
     expect(words.length).toBe(expected.length);
     expect(words.every(w => w.kidFriendly === true)).toBe(true);
   });
 
-  test('filtre par catégorie en mode enfant', () => {
-    const words = getShuffledWords(['sport'], true);
+  test('filtre par catégorie en mode enfant', async () => {
+    const words = await getShuffledWords(['sport'], true);
     expect(words.length).toBeGreaterThan(0);
     expect(words.every(w => w.category === 'sport')).toBe(true);
     expect(words.every(w => w.kidFriendly === true)).toBe(true);
   });
 
-  test('renvoie un tableau vide si aucune correspondance', () => {
-    const words = getShuffledWords(['inexistant']);
+  test('renvoie un tableau vide si aucune correspondance', async () => {
+    const words = await getShuffledWords(['inexistant']);
     expect(words).toHaveLength(0);
   });
 });

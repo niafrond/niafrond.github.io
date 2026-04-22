@@ -205,8 +205,8 @@ export function toggleKidsMode() {
 }
 
 // ─── ÉCRAN CATEGORIES ─────────────────────────────────────────────────────────
-function getWordCountsByCategory() {
-  const words = loadWords();
+async function getWordCountsByCategory() {
+  const words = await loadWords();
   const counts = {};
   words.forEach(w => { counts[w.category] = (counts[w.category] || 0) + 1; });
   return counts;
@@ -220,10 +220,10 @@ export function openCategorySelect() {
   showScreen('screen-categories');
 }
 
-export function renderCategories() {
+export async function renderCategories() {
   const grid = el('categories-grid');
   grid.innerHTML = '';
-  const counts = getWordCountsByCategory();
+  const counts = await getWordCountsByCategory();
 
   Object.entries(CATEGORY_LABELS).forEach(([key, { label, emoji }]) => {
     const isSelected = state.selectedCategories.includes(key);

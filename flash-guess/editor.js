@@ -3,7 +3,7 @@
  */
 
 import { el, showScreen, showToast } from './ui.js';
-import { CATEGORY_LABELS, loadWords, saveWords, resetWords, getCategoryInfo, DEFAULT_WORDS } from './words.js';
+import { CATEGORY_LABELS, loadWords, saveWords, resetWords, getCategoryInfo, getDefaultWords } from './words.js';
 
 let editableWords        = [];
 let _activeWordsCategory = 'all';
@@ -19,8 +19,8 @@ function filterValidWords(arr) {
     }));
 }
 
-export function openWordsEditor() {
-  editableWords = loadWords();
+export async function openWordsEditor() {
+  editableWords = await loadWords();
   _activeWordsCategory = 'all';
   renderWordsCatTabs();
   renderWordsList();
@@ -198,10 +198,10 @@ export function importWords(file) {
   reader.readAsText(file);
 }
 
-export function handleResetWords() {
+export async function handleResetWords() {
   if (!confirm('Réinitialiser la liste avec les mots par défaut ?')) return;
   resetWords();
-  editableWords = [...DEFAULT_WORDS];
+  editableWords = await getDefaultWords();
   _activeWordsCategory = 'all';
   renderWordsCatTabs();
   renderWordsList();
