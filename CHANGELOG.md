@@ -1,3 +1,9 @@
+## [1.129.1](https://github.com/niafrond/niafrond.github.io/compare/v1.129.0...v1.129.1) (2026-04-22)
+
+### Bug Fixes
+
+* upgrade Java to 21 in APK build workflow ([6b66f02](https://github.com/niafrond/niafrond.github.io/commit/6b66f02c9f3a89f0dcdedaedda02cdd9a284ece5))
+
 ## [1.129.0](https://github.com/niafrond/niafrond.github.io/compare/v1.128.0...v1.129.0) (2026-04-22)
 
 ### Features
