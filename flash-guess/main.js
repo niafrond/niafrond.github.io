@@ -561,12 +561,12 @@ function init() {
     assignTeams();
     renderTeams();
   }));
-  el('btn-launch-game').addEventListener('click', withCooldown(() => {
+  el('btn-launch-game').addEventListener('click', withCooldown(async () => {
     if (state.wordDraftMode) {
-      startWordDraft();
+      await startWordDraft();
     } else {
       state.allWords = [];
-      startRound(1);
+      await startRound(1);
     }
     updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();
@@ -580,9 +580,9 @@ function init() {
   }));
 
   // ── Word draft turn ──
-  el('btn-draft-confirm').addEventListener('click', withCooldown(() => {
+  el('btn-draft-confirm').addEventListener('click', withCooldown(async () => {
     playButtonClick();
-    confirmWordDraftEliminations();
+    await confirmWordDraftEliminations();
     updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();
   }));
@@ -631,7 +631,7 @@ function init() {
   }));
 
   // ── Round end ──
-  el('btn-next-round').addEventListener('click', withCooldown(() => {
+  el('btn-next-round').addEventListener('click', withCooldown(async () => {
     playButtonClick();
     if (demo.mode) {
       state.currentRound++;
@@ -642,7 +642,7 @@ function init() {
       state.currentWord = null;
       startTurn();
     } else {
-      startRound(state.currentRound + 1);
+      await startRound(state.currentRound + 1);
     }
     updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();

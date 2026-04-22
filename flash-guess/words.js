@@ -1,63 +1,77 @@
 /**
  * words.js — Liste de mots thématiques pour Flash Guess
- * Les mots sont stockés dans des fichiers JSON (un par catégorie)
- * dans le dossier words/.
+ * Les fichiers JSON sont chargés à la demande (lazy loading) :
+ * seules les catégories sélectionnées sont importées.
  */
 
-import historyWords         from './words/history.json'          with { type: 'json' };
-import geographyWords       from './words/geography.json'        with { type: 'json' };
-import musicWords           from './words/music.json'            with { type: 'json' };
-import filmAndTvWords       from './words/film_and_tv.json'      with { type: 'json' };
-import sportWords           from './words/sport.json'            with { type: 'json' };
-import scienceWords         from './words/science.json'          with { type: 'json' };
-import generalKnowledgeWords from './words/general_knowledge.json' with { type: 'json' };
-import artsAndLiteratureWords from './words/arts_and_literature.json' with { type: 'json' };
-import foodAndDrinkWords    from './words/food_and_drink.json'   with { type: 'json' };
-import societyAndCultureWords from './words/society_and_culture.json' with { type: 'json' };
-import boardGamesWords      from './words/board_games.json'      with { type: 'json' };
-import beachWords           from './words/beach.json'            with { type: 'json' };
-import appsWords            from './words/apps.json'             with { type: 'json' };
-import animeWords           from './words/anime.json'            with { type: 'json' };
-import anatomyWords         from './words/anatomy.json'          with { type: 'json' };
-import disneyWords          from './words/disney.json'           with { type: 'json' };
-import mythicalCreaturesWords from './words/mythical_creatures.json' with { type: 'json' };
-import harryPotterWords     from './words/harry_potter.json'     with { type: 'json' };
-import halloweenWords       from './words/halloween.json'        with { type: 'json' };
-import diyWords             from './words/diy.json'              with { type: 'json' };
-import horrorFilmsWords     from './words/horror_films.json'     with { type: 'json' };
-import gesturesWords        from './words/gestures.json'         with { type: 'json' };
-import actorsWords          from './words/actors.json'           with { type: 'json' };
-import simpsonsWords        from './words/simpsons.json'         with { type: 'json' };
-import tvCharactersWords    from './words/tv_characters.json'    with { type: 'json' };
-import lotrWords            from './words/lotr.json'             with { type: 'json' };
-import schoolWords          from './words/school.json'           with { type: 'json' };
-import expressionsWords     from './words/expressions.json'      with { type: 'json' };
-import kaamelottWords       from './words/kaamelott.json'        with { type: 'json' };
-import celebrationsWords    from './words/celebrations.json'     with { type: 'json' };
-import carsWords            from './words/cars.json'             with { type: 'json' };
-import cartoons2000sWords   from './words/cartoons_2000s.json'   with { type: 'json' };
-import christmasWords       from './words/christmas.json'        with { type: 'json' };
-import campingWords         from './words/camping.json'          with { type: 'json' };
-import cityWords            from './words/city.json'             with { type: 'json' };
-import brandsWords          from './words/brands.json'           with { type: 'json' };
-import clothingWords        from './words/clothing.json'         with { type: 'json' };
-import monumentsWords       from './words/monuments.json'        with { type: 'json' };
-import music80sWords        from './words/music_80s.json'        with { type: 'json' };
-import worldRegionsWords    from './words/world_regions.json'    with { type: 'json' };
-import retroObjectsWords    from './words/retro_objects.json'    with { type: 'json' };
-import weatherWords         from './words/weather.json'          with { type: 'json' };
-import religionsWords       from './words/religions.json'        with { type: 'json' };
-import gameShowsWords       from './words/game_shows.json'       with { type: 'json' };
-import superheroesWords     from './words/superheroes.json'      with { type: 'json' };
-import toysWords            from './words/toys.json'             with { type: 'json' };
-import tvPersonalitiesWords from './words/tv_personalities.json' with { type: 'json' };
-import starWarsWords        from './words/star_wars.json'        with { type: 'json' };
-import seriesWords          from './words/series.json'           with { type: 'json' };
-import spaceWords           from './words/space.json'            with { type: 'json' };
-import sportsWords          from './words/sports.json'           with { type: 'json' };
-import gamesWords           from './words/games.json'            with { type: 'json' };
-
 const STORAGE_KEY = 'flashguess_custom_words';
+
+/** Map catégorie → chemin relatif du fichier JSON. */
+const CATEGORY_FILE_MAP = {
+  history:             './words/history.json',
+  geography:           './words/geography.json',
+  music:               './words/music.json',
+  film_and_tv:         './words/film_and_tv.json',
+  sport:               './words/sport.json',
+  science:             './words/science.json',
+  general_knowledge:   './words/general_knowledge.json',
+  arts_and_literature: './words/arts_and_literature.json',
+  food_and_drink:      './words/food_and_drink.json',
+  society_and_culture: './words/society_and_culture.json',
+  board_games:         './words/board_games.json',
+  beach:               './words/beach.json',
+  apps:                './words/apps.json',
+  anime:               './words/anime.json',
+  anatomy:             './words/anatomy.json',
+  disney:              './words/disney.json',
+  mythical_creatures:  './words/mythical_creatures.json',
+  harry_potter:        './words/harry_potter.json',
+  halloween:           './words/halloween.json',
+  diy:                 './words/diy.json',
+  horror_films:        './words/horror_films.json',
+  gestures:            './words/gestures.json',
+  actors:              './words/actors.json',
+  simpsons:            './words/simpsons.json',
+  tv_characters:       './words/tv_characters.json',
+  lotr:                './words/lotr.json',
+  school:              './words/school.json',
+  expressions:         './words/expressions.json',
+  kaamelott:           './words/kaamelott.json',
+  celebrations:        './words/celebrations.json',
+  cars:                './words/cars.json',
+  cartoons_2000s:      './words/cartoons_2000s.json',
+  christmas:           './words/christmas.json',
+  camping:             './words/camping.json',
+  city:                './words/city.json',
+  brands:              './words/brands.json',
+  clothing:            './words/clothing.json',
+  monuments:           './words/monuments.json',
+  music_80s:           './words/music_80s.json',
+  world_regions:       './words/world_regions.json',
+  retro_objects:       './words/retro_objects.json',
+  weather:             './words/weather.json',
+  religions:           './words/religions.json',
+  game_shows:          './words/game_shows.json',
+  superheroes:         './words/superheroes.json',
+  toys:                './words/toys.json',
+  tv_personalities:    './words/tv_personalities.json',
+  star_wars:           './words/star_wars.json',
+  series:              './words/series.json',
+  space:               './words/space.json',
+  sports:              './words/sports.json',
+  games:               './words/games.json',
+};
+
+/** Cache en mémoire : catégorie → tableau brut du JSON. */
+const _cache = {};
+
+/** Charge les données brutes d'une catégorie (avec cache). */
+async function loadCategoryWords(category) {
+  if (_cache[category]) return _cache[category];
+  const mod = await import(CATEGORY_FILE_MAP[category], { with: { type: 'json' } });
+  _cache[category] = mod.default;
+  return _cache[category];
+}
 
 export const CATEGORY_LABELS = {
   history:             { label: 'Histoire',              emoji: '🏛️' },
@@ -114,70 +128,6 @@ export const CATEGORY_LABELS = {
   games:               { label: 'Jeux',                   emoji: '🎮' },
 };
 
-/** Associe chaque clé de catégorie à son tableau de mots JSON. */
-const CATEGORY_WORDS = {
-  history:             historyWords,
-  geography:           geographyWords,
-  music:               musicWords,
-  film_and_tv:         filmAndTvWords,
-  sport:               sportWords,
-  science:             scienceWords,
-  general_knowledge:   generalKnowledgeWords,
-  arts_and_literature: artsAndLiteratureWords,
-  food_and_drink:      foodAndDrinkWords,
-  society_and_culture: societyAndCultureWords,
-  board_games:         boardGamesWords,
-  beach:               beachWords,
-  apps:                appsWords,
-  anime:               animeWords,
-  anatomy:             anatomyWords,
-  disney:              disneyWords,
-  mythical_creatures:  mythicalCreaturesWords,
-  harry_potter:        harryPotterWords,
-  halloween:           halloweenWords,
-  diy:                 diyWords,
-  horror_films:        horrorFilmsWords,
-  gestures:            gesturesWords,
-  actors:              actorsWords,
-  simpsons:            simpsonsWords,
-  tv_characters:       tvCharactersWords,
-  lotr:                lotrWords,
-  school:              schoolWords,
-  expressions:         expressionsWords,
-  kaamelott:           kaamelottWords,
-  celebrations:        celebrationsWords,
-  cars:                carsWords,
-  cartoons_2000s:      cartoons2000sWords,
-  christmas:           christmasWords,
-  camping:             campingWords,
-  city:                cityWords,
-  brands:              brandsWords,
-  clothing:            clothingWords,
-  monuments:           monumentsWords,
-  music_80s:           music80sWords,
-  world_regions:       worldRegionsWords,
-  retro_objects:       retroObjectsWords,
-  weather:             weatherWords,
-  religions:           religionsWords,
-  game_shows:          gameShowsWords,
-  superheroes:         superheroesWords,
-  toys:                toysWords,
-  tv_personalities:    tvPersonalitiesWords,
-  star_wars:           starWarsWords,
-  series:              seriesWords,
-  space:               spaceWords,
-  sports:              sportsWords,
-  games:               gamesWords,
-};
-
-export const DEFAULT_WORDS = Object.entries(CATEGORY_WORDS).flatMap(
-  ([category, entries]) => entries.map(({ word, kidFriendly }) => ({
-    word,
-    category,
-    ...(kidFriendly ? { kidFriendly: true } : {}),
-  }))
-);
-
 /** Mélange aléatoire (Fisher-Yates) */
 export function shuffle(arr) {
   const a = [...arr];
@@ -188,8 +138,15 @@ export function shuffle(arr) {
   return a;
 }
 
-/** Retourne les mots personnalisés depuis localStorage, ou les mots par défaut. */
-export function loadWords() {
+/**
+ * Retourne les mots normalisés pour les catégories données.
+ * Si des mots personnalisés existent en localStorage, ils sont renvoyés
+ * en totalité (la catégorie sera filtrée par getShuffledWords si besoin).
+ * Sinon, seuls les fichiers JSON des catégories demandées sont chargés.
+ *
+ * @param {string[]|null} categories - catégories à charger, ou null pour toutes
+ */
+export async function loadWords(categories = null) {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -207,7 +164,37 @@ export function loadWords() {
       }
     }
   } catch (_) { /* ignore */ }
-  return [...DEFAULT_WORDS];
+
+  const cats = categories ?? Object.keys(CATEGORY_LABELS);
+  const chunks = await Promise.all(
+    cats
+      .filter(cat => cat in CATEGORY_FILE_MAP)
+      .map(async cat => {
+        const entries = await loadCategoryWords(cat);
+        return entries.map(({ word, kidFriendly }) => ({
+          word,
+          category: cat,
+          ...(kidFriendly ? { kidFriendly: true } : {}),
+        }));
+      })
+  );
+  return chunks.flat();
+}
+
+/** Charge la totalité des mots par défaut (toutes catégories, sans localStorage). */
+export async function getDefaultWords() {
+  const cats = Object.keys(CATEGORY_LABELS);
+  const chunks = await Promise.all(
+    cats.map(async cat => {
+      const entries = await loadCategoryWords(cat);
+      return entries.map(({ word, kidFriendly }) => ({
+        word,
+        category: cat,
+        ...(kidFriendly ? { kidFriendly: true } : {}),
+      }));
+    })
+  );
+  return chunks.flat();
 }
 
 /** Sauvegarde un tableau de mots dans localStorage. */
@@ -220,8 +207,8 @@ export function resetWords() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-export function getShuffledWords(selectedCategories = null, kidsMode = false) {
-  const words = loadWords();
+export async function getShuffledWords(selectedCategories = null, kidsMode = false) {
+  const words = await loadWords(selectedCategories);
   let filtered = selectedCategories
     ? words.filter(w => selectedCategories.includes(w.category))
     : words;

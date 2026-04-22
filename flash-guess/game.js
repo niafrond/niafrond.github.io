@@ -353,11 +353,11 @@ export function resumeTimer() {
 }
 
 // ─── LOGIQUE DE MANCHE ─────────────────────────────────────────────────────────
-export function startRound(roundNum) {
+export async function startRound(roundNum) {
   state.currentRound = roundNum;
   if (roundNum === 1) {
     if (state.allWords.length === 0) {
-      const words = getShuffledWords(
+      const words = await getShuffledWords(
         state.selectedCategories.length > 0 ? state.selectedCategories : null,
         state.kidsMode,
       );
@@ -1026,11 +1026,11 @@ export function computeDraftChunks(words, cardCount, nbPlayers, eliminationsPerP
   return chunks;
 }
 
-export function startWordDraft() {
+export async function startWordDraft() {
   const N         = state.playerNames.length;
   const cardCount = state.cardCount;
 
-  const allShuffled = getShuffledWords(
+  const allShuffled = await getShuffledWords(
     state.selectedCategories.length > 0 ? state.selectedCategories : null,
     state.kidsMode,
   );
@@ -1044,7 +1044,7 @@ export function startWordDraft() {
   // "Tous les mots" mode (cardCount === 0): skip draft
   if (cardCount === 0) {
     state.allWords = allShuffled;
-    startRound(1);
+    await startRound(1);
     return;
   }
 
@@ -1061,7 +1061,7 @@ export function startWordDraft() {
       showScreen('screen-categories');
       return;
     }
-    startRound(1);
+    await startRound(1);
     return;
   }
 
@@ -1139,7 +1139,7 @@ function toggleDraftElimination(idx) {
   el('btn-draft-confirm').disabled = count !== ELIMINATIONS_PER_PLAYER;
 }
 
-export function confirmWordDraftEliminations() {
+export async function confirmWordDraftEliminations() {
   try { screen.orientation.unlock(); } catch (_) {}
   const playerIdx = state.draftCurrentPlayerIdx;
   const chunk     = state.draftPlayerChunks[playerIdx];
@@ -1161,6 +1161,6 @@ export function confirmWordDraftEliminations() {
       showScreen('screen-categories');
       return;
     }
-    startRound(1);
+    await startRound(1);
   }
 }

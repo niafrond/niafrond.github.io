@@ -118,7 +118,7 @@ demoHooks.showTurnEndTips    = showDemoTurnEndTips;
 demoHooks.showAfterFoundTips = showAfterFoundTips;
 
 // ─── Lancement de la démo ─────────────────────────────────────────────────────
-export function startDemoTurn() {
+export async function startDemoTurn() {
   state.currentRound    = 1;
   state.currentTeamIdx  = 0;
   state.teamPlayerIdx   = [0];
@@ -132,7 +132,7 @@ export function startDemoTurn() {
   state.actionHistory = [];
   state.redoStack     = [];
 
-  const words     = getShuffledWords(null, true);
+  const words     = await getShuffledWords(null, true);
   const demoWords = words.slice(0, 3);
   state.allWords   = demoWords;
   state.roundWords = [...demoWords];
