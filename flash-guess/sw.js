@@ -14,6 +14,7 @@ const ASSETS = [
   './pwa.js',
   './words.js',
   './sound.js',
+  './version.js',
   './style.css',
   './manifest.json',
   './icon.svg',

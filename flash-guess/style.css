@@ -1179,8 +1179,8 @@ details.card-collapsible > :not(summary) {
 /* ─── Version badge ───────────────────────────────────────────────────────── */
 .version-badge {
   position: fixed;
-  left: 16px;
-  bottom: 16px;
+  right: 16px;
+  top: 16px;
   z-index: 940;
   padding: 8px 12px;
   border: 1px solid var(--border);
@@ -1194,8 +1194,8 @@ details.card-collapsible > :not(summary) {
 }
 @media (max-width: 480px) {
   .version-badge {
-    left: 12px;
-    bottom: 12px;
+    right: 12px;
+    top: 12px;
     padding: 7px 10px;
     font-size: 0.78rem;
   }
