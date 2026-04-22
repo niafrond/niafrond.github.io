@@ -1,3 +1,9 @@
+## [1.124.0](https://github.com/niafrond/niafrond.github.io/compare/v1.123.2...v1.124.0) (2026-04-22)
+
+### Features
+
+* migrate words to per-category JSON files + add 42 new categories ([1a367fd](https://github.com/niafrond/niafrond.github.io/commit/1a367fda1d0be43a651ea846dfa60f1a955bf96f))
+
 ## [1.123.2](https://github.com/niafrond/niafrond.github.io/compare/v1.123.1...v1.123.2) (2026-04-21)
 
 ### Bug Fixes
