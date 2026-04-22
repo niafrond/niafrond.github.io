@@ -288,7 +288,7 @@ export function updateUndoRedoButtons() {
 
 // ─── TIMER ─────────────────────────────────────────────────────────────────────
 export function updateTimerDisplay() {
-  const pct       = state.timeLeft / TURN_DURATION;
+  const pct       = state.timeLeft / state.turnDuration;
   const timerNum  = el('timer-number');
   const timerRing = el('timer-ring-progress');
 
@@ -453,7 +453,7 @@ export function startPreTurn() {
 export function startTurn() {
   state.turnFound     = [];
   state.turnSkipped   = [];
-  state.timeLeft      = TURN_DURATION;
+  state.timeLeft      = state.turnDuration;
   state.actionHistory = [];
   state.redoStack     = [];
   updateUndoRedoButtons();
@@ -654,7 +654,7 @@ export function endTurn(reason = 'timeout') {
 
   // Mode coop 2 joueurs : enregistrer le temps utilisé et le nombre de tours
   if (state.coopObjectives.size > 0) {
-    state.coopTimeUsed   += TURN_DURATION - state.timeLeft;
+    state.coopTimeUsed   += state.turnDuration - state.timeLeft;
     state.coopTurnsCount += 1;
   }
 
