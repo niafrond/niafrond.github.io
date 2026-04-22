@@ -3,7 +3,8 @@ name: Build Flash Guess APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: ['**']
+    tags: ['**']
     paths:
       - 'flash-guess/**'
       - 'flash-guess-android/**'
