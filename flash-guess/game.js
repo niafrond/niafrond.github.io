@@ -905,11 +905,16 @@ export function showGameOver() {
     .map(t => ({ team: t, total: t.score.reduce((a, b) => a + b, 0) }))
     .sort((a, b) => b.total - a.total);
 
-  const isTie = scored.length >= 2 && scored[0].total === scored[1].total;
+  const maxScore = scored[0].total;
+  const isTie = scored.length >= 2 && scored[1].total === maxScore;
 
   const winnerEl = el('game-over-winner');
   if (isTie) {
-    winnerEl.textContent = '🤝 Égalité !';
+    const tiedNames = scored
+      .filter(s => s.total === maxScore)
+      .map(s => teamLabel(s.team))
+      .join(' · ');
+    winnerEl.textContent = `🤝 Égalité ! ${tiedNames}`;
     winnerEl.style.color = 'var(--warning)';
   } else {
     const w = scored[0].team;
