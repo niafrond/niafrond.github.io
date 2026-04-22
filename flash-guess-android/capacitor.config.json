@@ -1,0 +1,13 @@
+{
+  "appId": "io.github.niafrond.flashguess",
+  "appName": "Flash Guess",
+  "webDir": "../flash-guess",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true
+    }
+  }
+}
