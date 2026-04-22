@@ -1,3 +1,10 @@
+## [1.127.0](https://github.com/niafrond/niafrond.github.io/compare/v1.126.0...v1.127.0) (2026-04-22)
+
+### Features
+
+* affiche la version en haut à droite dans flash-guess ([9c78330](https://github.com/niafrond/niafrond.github.io/commit/9c78330aa77d1b33bd8fe546141810e8ac2e3c25))
+* centralise la version dans /version.js partagé par toutes les apps ([3abd723](https://github.com/niafrond/niafrond.github.io/commit/3abd723a77e2cacf260cedb3c9f9a248a624f24d))
+
 ## [1.126.0](https://github.com/niafrond/niafrond.github.io/compare/v1.125.0...v1.126.0) (2026-04-22)
 
 ### Features
