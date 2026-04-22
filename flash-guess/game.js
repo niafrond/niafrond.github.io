@@ -1068,6 +1068,8 @@ export function startWordDraft() {
   state.draftPlayerChunks     = computeDraftChunks(allShuffled, cardCount, N);
   state.draftCurrentPlayerIdx = 0;
   state.draftEliminations     = [];
+  // Words beyond the distributed pool serve as the refresh reserve (kidsMode)
+  state.draftReservePool      = shuffle(allShuffled.slice(totalNeeded));
 
   showWordDraftCover(0);
 }
@@ -1102,18 +1104,47 @@ export function showWordDraftTurn(playerIdx) {
   list.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
   chunk.forEach((word, i) => {
-    const item = document.createElement('button');
-    item.className     = 'draft-word-item';
-    item.dataset.idx   = i;
-    item.setAttribute('type', 'button');
+    if (state.kidsMode) {
+      // In kids mode, wrap in a <div> so the refresh <button> inside is valid HTML
+      // (interactive elements cannot be descendants of <button>)
+      // The div handles elimination on click; the inner button handles refresh.
+      const item = document.createElement('div');
+      item.className   = 'draft-word-item';
+      item.dataset.idx = i;
 
-    const wordSpan     = document.createElement('span');
-    wordSpan.className = 'draft-word-text';
-    wordSpan.textContent = word.word;
+      const wordSpan     = document.createElement('span');
+      wordSpan.className = 'draft-word-text';
+      wordSpan.textContent = word.word;
+      item.appendChild(wordSpan);
 
-    item.appendChild(wordSpan);
-    item.addEventListener('click', () => toggleDraftElimination(i));
-    list.appendChild(item);
+      const refreshBtn = document.createElement('button');
+      refreshBtn.type      = 'button';
+      refreshBtn.className = 'draft-refresh-btn';
+      refreshBtn.title     = 'Changer ce mot';
+      refreshBtn.textContent = '🔄';
+      refreshBtn.disabled  = state.draftReservePool.length === 0;
+      refreshBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        refreshDraftWord(i);
+      });
+      item.appendChild(refreshBtn);
+
+      item.addEventListener('click', () => toggleDraftElimination(i));
+      list.appendChild(item);
+    } else {
+      const item = document.createElement('button');
+      item.className     = 'draft-word-item';
+      item.dataset.idx   = i;
+      item.setAttribute('type', 'button');
+
+      const wordSpan     = document.createElement('span');
+      wordSpan.className = 'draft-word-text';
+      wordSpan.textContent = word.word;
+
+      item.appendChild(wordSpan);
+      item.addEventListener('click', () => toggleDraftElimination(i));
+      list.appendChild(item);
+    }
   });
 
   try { screen.orientation.lock('landscape'); } catch (_) {}
@@ -1139,6 +1170,44 @@ function toggleDraftElimination(idx) {
   el('btn-draft-confirm').disabled = count !== ELIMINATIONS_PER_PLAYER;
 }
 
+function refreshDraftWord(idx) {
+  const reserve   = state.draftReservePool;
+  if (reserve.length === 0) return;
+
+  const playerIdx = state.draftCurrentPlayerIdx;
+  const chunk     = state.draftPlayerChunks[playerIdx];
+
+  // If the word was marked for elimination, un-mark it first
+  const elimPos = state.draftEliminations.indexOf(idx);
+  if (elimPos !== -1) {
+    state.draftEliminations.splice(elimPos, 1);
+  }
+
+  // Pull a random word from the reserve and put it in the chunk
+  const reserveIdx = Math.floor(Math.random() * reserve.length);
+  const newWord    = reserve.splice(reserveIdx, 1)[0];
+  chunk[idx]       = newWord;
+
+  // Update the card's text and visual state
+  const items = el('draft-word-list').querySelectorAll('.draft-word-item');
+  const item  = items[idx];
+  item.querySelector('.draft-word-text').textContent = newWord.word;
+  item.classList.remove('draft-word-item--eliminated');
+
+  // Disable all refresh buttons if the reserve is now empty
+  if (reserve.length === 0) {
+    el('draft-word-list').querySelectorAll('.draft-refresh-btn').forEach(btn => {
+      btn.disabled = true;
+    });
+  }
+
+  // Sync the elimination counter (un-marking may have changed count)
+  const count = state.draftEliminations.length;
+  el('draft-counter').textContent  = `${count} / ${ELIMINATIONS_PER_PLAYER}`;
+  el('draft-counter').classList.toggle('draft-counter-badge--full', count === ELIMINATIONS_PER_PLAYER);
+  el('btn-draft-confirm').disabled = count !== ELIMINATIONS_PER_PLAYER;
+}
+
 export function confirmWordDraftEliminations() {
   try { screen.orientation.unlock(); } catch (_) {}
   const playerIdx = state.draftCurrentPlayerIdx;
@@ -1156,6 +1225,7 @@ export function confirmWordDraftEliminations() {
     state.allWords = shuffle(state.draftPlayerChunks.flat());
     state.draftPlayerChunks   = [];
     state.draftEliminations   = [];
+    state.draftReservePool    = [];
     if (state.allWords.length === 0) {
       showToast('Aucun mot restant après le tri !', 'error');
       showScreen('screen-categories');

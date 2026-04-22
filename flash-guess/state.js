@@ -110,6 +110,7 @@ export const state = {
   draftPlayerChunks:   [],
   draftCurrentPlayerIdx: 0,
   draftEliminations:   [], // selected indices in current player's chunk
+  draftReservePool:    [], // extra words available for refresh (kidsMode only)
 
   // Mode devineur tournant
   rotatingGuesserMode:   false,
