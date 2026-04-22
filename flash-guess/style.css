@@ -161,6 +161,24 @@ details.card-collapsible > :not(summary) {
   border: 1px solid var(--border);
 }
 .btn-secondary:hover:not(:disabled) { background: var(--surface2); }
+/* Bouton fantôme — lien textuel discret sans bordure */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 10px 16px;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s;
+  width: 100%;
+  letter-spacing: 0.01em;
+}
+.btn-ghost:hover:not(:disabled) { opacity: 1; }
 .btn-lg   { padding: 16px 36px; font-size: 1.15rem; }
 .btn-sm   { padding: 8px 14px; font-size: 0.85rem; }
 .w-full   { width: 100%; }
