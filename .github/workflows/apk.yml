@@ -114,12 +114,16 @@ jobs:
         run: ./gradlew assembleRelease --no-daemon
 
       - name: Sign APK
+        shell: bash
         run: |
           UNSIGNED="flash-guess-android/android/app/build/outputs/apk/release/app-release-unsigned.apk"
           SIGNED="flash-guess-android/android/app/build/outputs/apk/release/flash-guess.apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+
+          export PATH="$ANDROID_SDK_ROOT/build-tools/35.0.0:$PATH"
+
+          apksigner sign \
             --ks flash-guess-android/flash-guess.keystore \
-            --ks-alias flash-guess \
+            --ks-key-alias flash-guess \
             --ks-pass "pass:$KEYSTORE_PASS" \
             --key-pass "pass:$KEYSTORE_PASS" \
             --out "$SIGNED" \
