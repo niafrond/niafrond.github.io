@@ -7,6 +7,11 @@ on:
     paths:
       - 'flash-guess/**'
       - 'flash-guess-android/**'
+  pull_request:
+    branches: ['**']
+    paths:
+      - 'flash-guess/**'
+      - 'flash-guess-android/**'
 
 permissions:
   contents: write
@@ -28,7 +33,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -66,6 +71,7 @@ jobs:
           retention-days: 30
 
       - name: Attach APK to latest GitHub release
+        if: github.event_name != 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
