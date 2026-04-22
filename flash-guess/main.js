@@ -7,7 +7,7 @@
 import { state, demo, withCooldown, GAMEPLAY_SCREENS } from './state.js';
 import { el, showScreen, getCurrentScreen } from './ui.js';
 import { setMuted, getMuted } from './sound.js';
-import { getMatch3Version, getMatch3BuildDate } from '../match3-quest/version.js';
+import { getVersion, getBuildDate } from '../version.js';
 
 import {
   startRound, startPreTurn, startTurn,
@@ -455,12 +455,12 @@ function updateRotateOverlay() {
 function init() {
   // ── Version ──
   const versionEl = document.getElementById('flashguess-version');
-  const buildDate = getMatch3BuildDate();
+  const buildDate = getBuildDate();
   if (versionEl) {
     const dateLabel = buildDate
       ? ` · ${new Date(buildDate).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}`
       : '';
-    versionEl.textContent = `v${getMatch3Version()}${dateLabel}`;
+    versionEl.textContent = `v${getVersion()}${dateLabel}`;
   }
 
   // ── Tutorial ──

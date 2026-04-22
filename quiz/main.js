@@ -9,18 +9,18 @@
 import { initHost } from './host.js';
 import { initClient } from './client.js';
 import { setMuted, getMuted } from './sound.js';
-import { getMatch3Version, getMatch3BuildDate } from '../match3-quest/version.js';
+import { getVersion, getBuildDate } from '../version.js';
 
 // ─── Bouton mute (persistant) ─────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
   const versionEl = document.getElementById('quiz-version');
-  const buildDate = getMatch3BuildDate();
+  const buildDate = getBuildDate();
   if (versionEl) {
     const dateLabel = buildDate
       ? ` · ${new Date(buildDate).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}`
       : '';
-    versionEl.textContent = `v${getMatch3Version()}${dateLabel}`;
+    versionEl.textContent = `v${getVersion()}${dateLabel}`;
   }
 
   const btnMute = document.getElementById('btn-mute');
