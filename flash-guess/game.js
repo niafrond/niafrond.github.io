@@ -825,7 +825,13 @@ export function showRoundEnd() {
     theadRow.innerHTML = html;
   }
 
-  state.teams.forEach(team => {
+  const sortedTeams = [...state.teams].sort((a, b) => {
+    const totA = a.score.reduce((s, v) => s + v, 0);
+    const totB = b.score.reduce((s, v) => s + v, 0);
+    return totB - totA;
+  });
+
+  sortedTeams.forEach(team => {
     const tr      = document.createElement('tr');
     const roundPts = team.score[state.currentRound - 1];
     const totalPts = team.score.reduce((a, b) => a + b, 0);
