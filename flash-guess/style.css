@@ -58,6 +58,16 @@ html, body {
   padding: 16px 0 calc(var(--bottom-nav-height) + 8px);
 }
 
+/* ─── Sticky action footer (setup & categories screens) ──────────────────── */
+.screen-sticky-footer {
+  position: sticky;
+  bottom: calc(var(--bottom-nav-height) + 8px);
+  z-index: 50;
+  padding-top: 12px;
+  background: var(--bg-grad);
+  background-attachment: fixed;
+}
+
 /* ─── App title ────────────────────────────────────────────────────────────── */
 .app-title {
   font-size: clamp(2rem, 7vw, 3.2rem);
