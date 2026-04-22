@@ -72,7 +72,7 @@ jobs:
           APK_PATH="flash-guess-android/android/app/build/outputs/apk/debug/app-debug.apk"
           RELEASE_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
           if [ -n "$RELEASE_TAG" ]; then
-            gh release upload "$RELEASE_TAG" "$APK_PATH#flash-guess-debug.apk" --clobber
+            gh release upload "$RELEASE_TAG" "$APK_PATH#flash-guess-debug-${RELEASE_TAG}.apk" --clobber
             echo "APK attached to release $RELEASE_TAG"
           else
             echo "No release found, APK available as workflow artifact only"
