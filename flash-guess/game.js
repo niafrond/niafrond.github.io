@@ -905,11 +905,16 @@ export function showGameOver() {
     .map(t => ({ team: t, total: t.score.reduce((a, b) => a + b, 0) }))
     .sort((a, b) => b.total - a.total);
 
-  const isTie = scored.length >= 2 && scored[0].total === scored[1].total;
+  const maxScore = scored[0].total;
+  const isTie = scored.length >= 2 && scored[1].total === maxScore;
 
   const winnerEl = el('game-over-winner');
   if (isTie) {
-    winnerEl.textContent = '🤝 Égalité !';
+    const tiedNames = scored
+      .filter(s => s.total === maxScore)
+      .map(s => teamLabel(s.team))
+      .join(' · ');
+    winnerEl.textContent = `🤝 Égalité ! ${tiedNames}`;
     winnerEl.style.color = 'var(--warning)';
   } else {
     const w = scored[0].team;
@@ -920,28 +925,47 @@ export function showGameOver() {
   const RANK_EMOJIS = ['🥇', '🥈', '🥉', '🎖️'];
   const finalScores = el('final-scores');
   finalScores.innerHTML = '';
-  scored.forEach((s, i) => {
+
+  // Group teams by score so tied teams share a single row
+  const scoreGroups = [];
+  for (const s of scored) {
+    const last = scoreGroups[scoreGroups.length - 1];
+    if (last && last.total === s.total) {
+      last.teams.push(s.team);
+    } else {
+      scoreGroups.push({ total: s.total, teams: [s.team] });
+    }
+  }
+
+  let rankIdx = 0;
+  scoreGroups.forEach(group => {
     const div = document.createElement('div');
     div.className = 'final-score-row';
 
     const rankSpan = document.createElement('span');
     rankSpan.className = 'final-rank';
-    rankSpan.textContent = (i === 0 && !isTie)
-      ? RANK_EMOJIS[0]
-      : RANK_EMOJIS[Math.min(i, RANK_EMOJIS.length - 1)];
+    rankSpan.textContent = RANK_EMOJIS[Math.min(rankIdx, RANK_EMOJIS.length - 1)];
 
     const nameSpan = document.createElement('span');
-    nameSpan.textContent = teamLabel(s.team);
-    nameSpan.style.color = s.team.color;
+    if (group.teams.length > 1) {
+      // Multiple teams tied at this score — join names, use warning color
+      nameSpan.textContent = group.teams.map(teamLabel).join(' · ');
+      nameSpan.style.color = 'var(--warning)';
+    } else {
+      nameSpan.textContent = teamLabel(group.teams[0]);
+      nameSpan.style.color = group.teams[0].color;
+    }
 
     const ptsSpan = document.createElement('span');
     ptsSpan.className = 'final-pts';
-    ptsSpan.textContent = `${s.total} pts`;
+    ptsSpan.textContent = `${group.total} pts`;
 
     div.appendChild(rankSpan);
     div.appendChild(nameSpan);
     div.appendChild(ptsSpan);
     finalScores.appendChild(div);
+
+    rankIdx += group.teams.length;
   });
 
   // Afficher les performances coop si au moins un objectif est actif
