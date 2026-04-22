@@ -1,3 +1,13 @@
+## [1.130.2](https://github.com/niafrond/niafrond.github.io/compare/v1.130.1...v1.130.2) (2026-04-22)
+
+### Bug Fixes
+
+* **apk:** add trailing newline so read succeeds under bash -e ([4202f75](https://github.com/niafrond/niafrond.github.io/commit/4202f756be653ae37e589bf8fdcc348f757400a7))
+* **apk:** install ImageMagick before icon generation step ([90b6817](https://github.com/niafrond/niafrond.github.io/commit/90b6817ccba67af1ce4703a9751b55da1bcb6d2e))
+* **apk:** release build, correct icon and version from version.js ([717a70d](https://github.com/niafrond/niafrond.github.io/commit/717a70dd063526b5510716c0726726dd32832667))
+* **apk:** use env var for keystore password, read version.js once ([969c811](https://github.com/niafrond/niafrond.github.io/commit/969c811cf73d68063f5567cdb36f987f4b25f5e1))
+* **apk:** use if/then/fi instead of &&-shortcircuit to avoid bash -e exit ([0c546e2](https://github.com/niafrond/niafrond.github.io/commit/0c546e27717b0e3b3100bd2d287b213f78be5333))
+
 ## [1.130.1](https://github.com/niafrond/niafrond.github.io/compare/v1.130.0...v1.130.1) (2026-04-22)
 
 ### Bug Fixes
