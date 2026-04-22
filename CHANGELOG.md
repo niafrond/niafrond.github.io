@@ -1,3 +1,9 @@
+## [1.129.2](https://github.com/niafrond/niafrond.github.io/compare/v1.129.1...v1.129.2) (2026-04-22)
+
+### Bug Fixes
+
+* **flash-guess:** fix APK non-interactive bug - add local version.js, leaderboard.js to SW cache ([900a7a4](https://github.com/niafrond/niafrond.github.io/commit/900a7a416f9ac8bcf64a820fb10a01a4c4c4bf43))
+
 ## [1.129.1](https://github.com/niafrond/niafrond.github.io/compare/v1.129.0...v1.129.1) (2026-04-22)
 
 ### Bug Fixes
