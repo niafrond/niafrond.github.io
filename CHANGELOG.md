@@ -1,3 +1,9 @@
+## [1.128.0](https://github.com/niafrond/niafrond.github.io/compare/v1.127.0...v1.128.0) (2026-04-22)
+
+### Features
+
+* **flash-guess:** add card refresh during word draft in kids mode ([fe38488](https://github.com/niafrond/niafrond.github.io/commit/fe384889699d07066cba37f8a472f0093abcd203))
+
 ## [1.127.0](https://github.com/niafrond/niafrond.github.io/compare/v1.126.0...v1.127.0) (2026-04-22)
 
 ### Features
