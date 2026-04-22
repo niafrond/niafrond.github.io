@@ -115,8 +115,8 @@ describe('loadKidsMode / saveKidsMode', () => {
 // ─── wordDraftMode ────────────────────────────────────────────────────────────
 
 describe('loadWordDraftMode / saveWordDraftMode', () => {
-  test('renvoie false si localStorage est vide', () => {
-    expect(loadWordDraftMode()).toBe(false);
+  test('renvoie true si localStorage est vide (valeur par défaut)', () => {
+    expect(loadWordDraftMode()).toBe(true);
   });
 
   test('sauvegarde et recharge true', () => {

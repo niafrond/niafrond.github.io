@@ -61,7 +61,10 @@ export function saveKidsMode(v) {
 
 // ─── Persistance du mode choix de mots ───────────────────────────────────────
 export function loadWordDraftMode() {
-  try { return localStorage.getItem(WORD_DRAFT_KEY) === '1'; } catch (_) { return false; }
+  try {
+    const stored = localStorage.getItem(WORD_DRAFT_KEY);
+    return stored === null ? true : stored === '1';
+  } catch (_) { return true; }
 }
 
 export function saveWordDraftMode(v) {
