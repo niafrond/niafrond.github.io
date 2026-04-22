@@ -1105,7 +1105,9 @@ export function showWordDraftTurn(playerIdx) {
 
   chunk.forEach((word, i) => {
     if (state.kidsMode) {
-      // In kids mode, wrap in a <div> so a <button> can live inside (valid HTML)
+      // In kids mode, wrap in a <div> so the refresh <button> inside is valid HTML
+      // (interactive elements cannot be descendants of <button>)
+      // The div handles elimination on click; the inner button handles refresh.
       const item = document.createElement('div');
       item.className   = 'draft-word-item';
       item.dataset.idx = i;
@@ -1194,7 +1196,7 @@ function refreshDraftWord(idx) {
 
   // Disable all refresh buttons if the reserve is now empty
   if (reserve.length === 0) {
-    item.closest('#draft-word-list').querySelectorAll('.draft-refresh-btn').forEach(btn => {
+    el('draft-word-list').querySelectorAll('.draft-refresh-btn').forEach(btn => {
       btn.disabled = true;
     });
   }
