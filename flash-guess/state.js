@@ -14,6 +14,7 @@ export const WORD_DRAFT_KEY             = 'flashguess_word_draft';
 export const ROTATING_GUESSER_KEY      = 'flashguess_rotating_guesser';
 export const ELIMINATIONS_PER_PLAYER   = 3;
 export const GROUPS_KEY                 = 'flashguess_groups';
+export const TURN_DURATION_KEY          = 'flashguess_turn_duration';
 export const WORD_FONT_MIN              = 16;
 export const WORD_FONT_MAX              = 200;
 export const CLICK_COOLDOWN             = 500;
@@ -102,6 +103,7 @@ export const state = {
   timerPaused:         false,
 
   cardCount:           CARD_COUNT_DEFAULT,
+  turnDuration:        30,
 
   // Word draft (tri caché)
   wordDraftMode:       false,
