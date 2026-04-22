@@ -1,3 +1,9 @@
+## [1.130.0](https://github.com/niafrond/niafrond.github.io/compare/v1.129.2...v1.130.0) (2026-04-22)
+
+### Features
+
+* **flash-guess:** plein écran intégral — manifest fullscreen + requestFullscreen sur tous les écrans ([62c8adf](https://github.com/niafrond/niafrond.github.io/commit/62c8adf37a47d32536706db991341b60e008b8a1))
+
 ## [1.129.2](https://github.com/niafrond/niafrond.github.io/compare/v1.129.1...v1.129.2) (2026-04-22)
 
 ### Bug Fixes
