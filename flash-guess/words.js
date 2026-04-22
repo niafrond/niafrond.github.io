@@ -138,6 +138,23 @@ export function shuffle(arr) {
   return a;
 }
 
+/** Charge et normalise les mots d'un ensemble de catégories (sans localStorage). */
+async function loadCategoriesFromFiles(cats) {
+  const chunks = await Promise.all(
+    cats
+      .filter(cat => cat in CATEGORY_FILE_MAP)
+      .map(async cat => {
+        const entries = await loadCategoryWords(cat);
+        return entries.map(({ word, kidFriendly }) => ({
+          word,
+          category: cat,
+          ...(kidFriendly ? { kidFriendly: true } : {}),
+        }));
+      })
+  );
+  return chunks.flat();
+}
+
 /**
  * Retourne les mots normalisés pour les catégories données.
  * Si des mots personnalisés existent en localStorage, ils sont renvoyés
@@ -165,36 +182,12 @@ export async function loadWords(categories = null) {
     }
   } catch (_) { /* ignore */ }
 
-  const cats = categories ?? Object.keys(CATEGORY_LABELS);
-  const chunks = await Promise.all(
-    cats
-      .filter(cat => cat in CATEGORY_FILE_MAP)
-      .map(async cat => {
-        const entries = await loadCategoryWords(cat);
-        return entries.map(({ word, kidFriendly }) => ({
-          word,
-          category: cat,
-          ...(kidFriendly ? { kidFriendly: true } : {}),
-        }));
-      })
-  );
-  return chunks.flat();
+  return loadCategoriesFromFiles(categories ?? Object.keys(CATEGORY_LABELS));
 }
 
 /** Charge la totalité des mots par défaut (toutes catégories, sans localStorage). */
-export async function getDefaultWords() {
-  const cats = Object.keys(CATEGORY_LABELS);
-  const chunks = await Promise.all(
-    cats.map(async cat => {
-      const entries = await loadCategoryWords(cat);
-      return entries.map(({ word, kidFriendly }) => ({
-        word,
-        category: cat,
-        ...(kidFriendly ? { kidFriendly: true } : {}),
-      }));
-    })
-  );
-  return chunks.flat();
+export function getDefaultWords() {
+  return loadCategoriesFromFiles(Object.keys(CATEGORY_LABELS));
 }
 
 /** Sauvegarde un tableau de mots dans localStorage. */
