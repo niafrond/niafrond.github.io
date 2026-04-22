@@ -1,3 +1,11 @@
+## [1.125.0](https://github.com/niafrond/niafrond.github.io/compare/v1.124.0...v1.125.0) (2026-04-22)
+
+### Features
+
+* bottom nav UI redesign for Flash Guess ([39cb3ac](https://github.com/niafrond/niafrond.github.io/commit/39cb3ac444059d84544720526f56a7c0f63866e0)), closes [#7c3aed](https://github.com/niafrond/niafrond.github.io/issues/7c3aed)
+* enable word draft by default ([fc1c80e](https://github.com/niafrond/niafrond.github.io/commit/fc1c80ec5d7b6125c9a8f1eaa383f334b032df78))
+* **flash-guess:** add bottom nav bar, settings screen, and in-game close button ([bbc240c](https://github.com/niafrond/niafrond.github.io/commit/bbc240c4d0a5ab38a8480c1ef9b0fa947d5d8caf))
+
 ## [1.124.0](https://github.com/niafrond/niafrond.github.io/compare/v1.123.2...v1.124.0) (2026-04-22)
 
 ### Features
