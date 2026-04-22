@@ -7,7 +7,7 @@
 import { state, demo, withCooldown, GAMEPLAY_SCREENS } from './state.js';
 import { el, showScreen, getCurrentScreen } from './ui.js';
 import { setMuted, getMuted } from './sound.js';
-import { getVersion, getBuildDate } from '../version.js';
+import { getVersion, getBuildDate } from './version.js';
 
 import {
   startRound, startPreTurn, startTurn,

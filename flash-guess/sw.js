@@ -13,6 +13,8 @@ const ASSETS = [
   './demo.js',
   './pwa.js',
   './words.js',
+  './leaderboard.js',
+  './version.js',
   './sound.js',
   './style.css',
   './manifest.json',
