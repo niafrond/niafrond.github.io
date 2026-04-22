@@ -41,7 +41,7 @@ export function showScreen(id, pushHistory = true) {
   document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
   document.getElementById(id).hidden = false;
   const versionEl = document.getElementById('flashguess-version');
-  if (versionEl) versionEl.hidden = (id !== 'screen-setup');
+  if (versionEl) versionEl.hidden = (id !== 'screen-settings');
   if (GAMEPLAY_SCREENS.has(id)) {
     requestLandscapeLock();
     requestFullscreenIfNeeded();
