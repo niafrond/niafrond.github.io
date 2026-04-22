@@ -68,7 +68,7 @@ jobs:
             const [,maj,min,pat] = m;
             const name = maj+'.'+min+'.'+pat;
             const code = Number(maj)*1000000 + Number(min)*1000 + Number(pat);
-            process.stdout.write(name+' '+code);
+            process.stdout.write(name+' '+code+'\n');
           ")
           GRADLE="flash-guess-android/android/app/build.gradle"
           sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" "$GRADLE"
