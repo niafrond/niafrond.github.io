@@ -1,0 +1,79 @@
+name: Build Flash Guess APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'flash-guess/**'
+      - 'flash-guess-android/**'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 12266719
+
+      - name: Install SDK components
+        run: |
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Install Capacitor
+        working-directory: flash-guess-android
+        run: npm install
+
+      - name: Add Android platform
+        working-directory: flash-guess-android
+        run: npx cap add android
+
+      - name: Copy web assets
+        working-directory: flash-guess-android
+        run: npx cap copy android
+
+      - name: Accept SDK licenses
+        run: yes | sdkmanager --licenses || true
+
+      - name: Build debug APK
+        working-directory: flash-guess-android/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flash-guess-debug-apk
+          path: flash-guess-android/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      - name: Attach APK to latest GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          APK_PATH="flash-guess-android/android/app/build/outputs/apk/debug/app-debug.apk"
+          RELEASE_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+          if [ -n "$RELEASE_TAG" ]; then
+            gh release upload "$RELEASE_TAG" "$APK_PATH#flash-guess-debug-${RELEASE_TAG}.apk" --clobber
+            echo "APK attached to release $RELEASE_TAG"
+          else
+            echo "No release found, APK available as workflow artifact only"
+          fi
