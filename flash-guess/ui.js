@@ -44,10 +44,10 @@ export function showScreen(id, pushHistory = true) {
   if (versionEl) versionEl.hidden = (id !== 'screen-setup');
   if (GAMEPLAY_SCREENS.has(id)) {
     requestLandscapeLock();
-    requestFullscreenIfNeeded();
   } else {
     requestPortraitLock();
   }
+  requestFullscreenIfNeeded();
   if (pushHistory) history.pushState({ screen: id }, '');
 }
 
