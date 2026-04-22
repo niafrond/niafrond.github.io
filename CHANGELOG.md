@@ -1,3 +1,9 @@
+## [1.130.1](https://github.com/niafrond/niafrond.github.io/compare/v1.130.0...v1.130.1) (2026-04-22)
+
+### Bug Fixes
+
+* **apk:** use --ks-key-alias and PATH-based apksigner in Sign APK step ([cdb459f](https://github.com/niafrond/niafrond.github.io/commit/cdb459f7913d530dac47794242cdf7a6dd78992d))
+
 ## [1.130.0](https://github.com/niafrond/niafrond.github.io/compare/v1.129.2...v1.130.0) (2026-04-22)
 
 ### Features
