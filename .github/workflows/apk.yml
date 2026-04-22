@@ -75,6 +75,9 @@ jobs:
           sed -i "s/versionName \"[^\"]*\"/versionName \"$VERSION\"/" "$GRADLE"
           echo "Set versionName=$VERSION versionCode=$VERSION_CODE"
 
+      - name: Install ImageMagick
+        run: sudo apt-get install -y imagemagick
+
       - name: Set app icons
         run: |
           RES="flash-guess-android/android/app/src/main/res"
