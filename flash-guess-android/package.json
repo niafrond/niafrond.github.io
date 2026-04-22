@@ -4,7 +4,7 @@
   "private": true,
   "description": "Android wrapper for Flash Guess PWA (Capacitor)",
   "scripts": {
-    "build": "npm run sync && cd android && ./gradlew assembleDebug",
+    "build": "npm run sync && cd android && ./gradlew assembleRelease",
     "sync": "npx cap sync android"
   },
   "dependencies": {
