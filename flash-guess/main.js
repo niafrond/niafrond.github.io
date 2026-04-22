@@ -25,6 +25,7 @@ import {
 
 import {
   loadCardCount, saveCardCount,
+  loadTurnDuration, saveTurnDuration,
   loadKidsMode,
   loadWordDraftMode, saveWordDraftMode,
   loadRotatingGuesserMode, saveRotatingGuesserMode,
@@ -46,6 +47,33 @@ import { startDemoTurn } from './demo.js';
 import { toggleFullscreen, updateFullscreenBtn, installPwa, initServiceWorker } from './pwa.js';
 import { playButtonClick } from './sound.js';
 import { openLeaderboard, renderLeaderboard } from './leaderboard.js';
+
+// ─── NAVIGATION ────────────────────────────────────────────────────────────────
+const NAV_SCREENS = new Set([
+  'screen-setup', 'screen-groups', 'screen-categories', 'screen-words', 'screen-settings',
+]);
+
+const GAME_FLOW_SCREENS = new Set([
+  'screen-teams',
+  'screen-word-draft-cover',
+  'screen-word-draft',
+  'screen-round-intro',
+  'screen-pre-turn',
+  'screen-turn',
+  'screen-turn-end',
+  'screen-round-end',
+  'screen-game-over',
+]);
+
+function updateNavVisibility(screen) {
+  const isNavScreen  = NAV_SCREENS.has(screen);
+  const isGameFlow   = GAME_FLOW_SCREENS.has(screen);
+  el('bottom-nav').hidden    = !isNavScreen;
+  el('btn-game-close').hidden = !isGameFlow;
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    btn.classList.toggle('bottom-nav-item--active', btn.dataset.tab === screen);
+  });
+}
 
 // ─── TUTORIAL ─────────────────────────────────────────────────────────────────
 const TUTORIAL_SLIDES = [
@@ -453,19 +481,15 @@ function init() {
   el('btn-add-player').addEventListener('click', withCooldown(addPlayer));
   el('player-input').addEventListener('keydown', e => { if (e.key === 'Enter') addPlayer(); });
   el('btn-start-game').addEventListener('click', withCooldown(() => {
-    if (state.playerNames.length >= 2) openCategorySelect();
+    if (state.playerNames.length >= 2) {
+      openCategorySelect();
+      updateNavVisibility('screen-categories');
+    }
   }));
   renderMembersList();
   renderGroupsInSetup();
 
   // ── Groupes ──
-  el('btn-manage-groups').addEventListener('click', withCooldown(openGroupsEditor));
-  el('btn-groups-back').addEventListener('click', withCooldown(() => {
-    renderMembersList();
-    renderGroupsInSetup();
-    showScreen('screen-setup');
-    updateRotateOverlay();
-  }));
   el('btn-group-create').addEventListener('click', withCooldown(createNewGroup));
   el('group-new-name').addEventListener('keydown', e => { if (e.key === 'Enter') createNewGroup(); });
 
@@ -476,6 +500,15 @@ function init() {
   selectCardCount.addEventListener('change', () => {
     state.cardCount = parseInt(selectCardCount.value, 10);
     saveCardCount(state.cardCount);
+  });
+
+  // ── Durée du tour ──
+  state.turnDuration = loadTurnDuration();
+  const selectTurnDuration = el('select-turn-duration');
+  selectTurnDuration.value = String(state.turnDuration);
+  selectTurnDuration.addEventListener('change', () => {
+    state.turnDuration = parseInt(selectTurnDuration.value, 10);
+    saveTurnDuration(state.turnDuration);
   });
 
   // ── Mode enfant ──
@@ -516,13 +549,12 @@ function init() {
   }));
 
   // ── Categories ──
-  el('btn-categories-back').addEventListener('click', withCooldown(() => {
-    showScreen('screen-setup');
-    updateRotateOverlay();
-  }));
   el('btn-cats-all').addEventListener('click', withCooldown(selectAllCategories));
   el('btn-cats-none').addEventListener('click', withCooldown(deselectAllCategories));
-  el('btn-cats-confirm').addEventListener('click', withCooldown(confirmCategories));
+  el('btn-cats-confirm').addEventListener('click', withCooldown(() => {
+    confirmCategories();
+    updateNavVisibility(getCurrentScreen());
+  }));
 
   // ── Teams ──
   el('btn-reshuffle').addEventListener('click', withCooldown(() => {
@@ -536,6 +568,7 @@ function init() {
       state.allWords = [];
       startRound(1);
     }
+    updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();
   }));
 
@@ -543,12 +576,14 @@ function init() {
   el('btn-draft-cover-ready').addEventListener('click', withCooldown(() => {
     playButtonClick();
     showWordDraftTurn(state.draftCurrentPlayerIdx);
+    updateNavVisibility(getCurrentScreen());
   }));
 
   // ── Word draft turn ──
   el('btn-draft-confirm').addEventListener('click', withCooldown(() => {
     playButtonClick();
     confirmWordDraftEliminations();
+    updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();
   }));
 
@@ -561,6 +596,7 @@ function init() {
   el('btn-round-go').addEventListener('click', withCooldown(() => {
     playButtonClick();
     startPreTurn();
+    updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();
   }));
 
@@ -568,6 +604,7 @@ function init() {
   el('btn-ready').addEventListener('click', withCooldown(() => {
     playButtonClick();
     startTurn();
+    updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();
   }));
 
@@ -589,6 +626,7 @@ function init() {
   el('btn-next-turn').addEventListener('click', withCooldown(() => {
     playButtonClick();
     handleNextTurn();
+    updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();
   }));
 
@@ -606,16 +644,19 @@ function init() {
     } else {
       startRound(state.currentRound + 1);
     }
+    updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();
   }));
   el('btn-final-results').addEventListener('click', withCooldown(() => {
     playButtonClick();
     showGameOver();
+    updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();
   }));
   el('btn-skip-round3').addEventListener('click', withCooldown(() => {
     playButtonClick();
     showGameOver();
+    updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();
   }));
 
@@ -643,6 +684,7 @@ function init() {
     renderMembersList();
     renderGroupsInSetup();
     showScreen('screen-setup');
+    updateNavVisibility('screen-setup');
     updateRotateOverlay();
   }));
 
@@ -653,12 +695,11 @@ function init() {
   }));
 
   // ── Words editor ──
-  el('btn-edit-words').addEventListener('click', withCooldown(openWordsEditor));
-  el('btn-install-pwa').addEventListener('click', withCooldown(installPwa));
-  el('btn-words-back').addEventListener('click', withCooldown(() => {
-    showScreen('screen-setup');
-    updateRotateOverlay();
+  el('btn-edit-words').addEventListener('click', withCooldown(() => {
+    openWordsEditor();
+    updateNavVisibility('screen-words');
   }));
+  el('btn-install-pwa').addEventListener('click', withCooldown(installPwa));
   el('btn-word-add').addEventListener('click', withCooldown(addWord));
   el('word-new-text').addEventListener('keydown', e => { if (e.key === 'Enter') addWord(); });
   el('btn-words-export').addEventListener('click', withCooldown(exportWords));
@@ -669,9 +710,13 @@ function init() {
   el('btn-words-reset').addEventListener('click', withCooldown(handleResetWords));
 
   // ── Classement ──
-  el('btn-leaderboard').addEventListener('click', withCooldown(openLeaderboard));
+  el('btn-leaderboard').addEventListener('click', withCooldown(() => {
+    openLeaderboard();
+    updateNavVisibility(getCurrentScreen());
+  }));
   el('btn-leaderboard-back').addEventListener('click', withCooldown(() => {
-    showScreen('screen-setup');
+    showScreen('screen-settings');
+    updateNavVisibility('screen-settings');
     updateRotateOverlay();
   }));
   document.querySelectorAll('.leaderboard-tab-btn').forEach(btn => {
@@ -679,7 +724,57 @@ function init() {
   });
 
   // ── Démo ──
-  el('btn-launch-demo').addEventListener('click', withCooldown(startDemoTurn));
+  el('btn-launch-demo').addEventListener('click', withCooldown(() => {
+    startDemoTurn();
+    updateNavVisibility(getCurrentScreen());
+  }));
+
+  // ── Bottom nav ──
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    btn.addEventListener('click', withCooldown(() => {
+      playButtonClick();
+      const tab = btn.dataset.tab;
+      if (tab === 'screen-groups') {
+        openGroupsEditor();
+      } else if (tab === 'screen-categories') {
+        openCategorySelect();
+      } else if (tab === 'screen-words') {
+        openWordsEditor();
+      } else if (tab === 'screen-setup') {
+        renderMembersList();
+        renderGroupsInSetup();
+        showScreen('screen-setup');
+      } else {
+        showScreen(tab);
+      }
+      updateNavVisibility(tab);
+      updateRotateOverlay();
+    }));
+  });
+
+  // ── Bouton fermer la partie ──
+  el('btn-game-close').addEventListener('click', withCooldown(() => {
+    if (state.timerInterval !== null) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+      state.timerPaused   = false;
+    }
+    state.teams                  = [];
+    state.teamPlayerIdx          = [];
+    state.allWords               = [];
+    state.roundWords             = [];
+    state.currentRound           = 0;
+    state.noTeamsMode            = false;
+    state.selectedCategories     = [];
+    state.coopObjectives         = new Set();
+    state.coopTimeUsed           = 0;
+    state.coopTurnsCount         = 0;
+    state.rotatingGuesserTarget  = [];
+    state.currentGuesserTeamIdx  = -1;
+    showScreen('screen-setup');
+    updateNavVisibility('screen-setup');
+    updateRotateOverlay();
+  }));
 
   // ── Bouton retour (navigateur / téléphone) ──
   window.addEventListener('popstate', (e) => {
@@ -691,6 +786,7 @@ function init() {
     }
     const target = e.state?.screen ?? 'screen-setup';
     showScreen(target, false);
+    updateNavVisibility(target);
     updateRotateOverlay();
   });
 
@@ -708,6 +804,7 @@ function init() {
 
   renderPlayerList();
   showScreen('screen-setup');
+  updateNavVisibility('screen-setup');
   updateRotateOverlay();
 }
 

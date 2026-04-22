@@ -5,6 +5,7 @@
 import {
   state,
   CARD_COUNT_DEFAULT, CARD_COUNT_KEY, SELECTED_CATS_KEY, KIDS_MODE_KEY, WORD_DRAFT_KEY, ROTATING_GUESSER_KEY,
+  TURN_DURATION_KEY,
   MIN_PLAYERS,
 } from './state.js';
 import { el, showScreen, showToast } from './ui.js';
@@ -74,6 +75,23 @@ export function loadRotatingGuesserMode() {
 
 export function saveRotatingGuesserMode(v) {
   try { localStorage.setItem(ROTATING_GUESSER_KEY, v ? '1' : '0'); } catch (_) { /* ignore */ }
+}
+
+// ─── Persistance de la durée du tour ──────────────────────────────────────────
+export function loadTurnDuration() {
+  const ALLOWED = [15, 20, 30, 45, 60];
+  try {
+    const v = localStorage.getItem(TURN_DURATION_KEY);
+    if (v !== null) {
+      const n = parseInt(v, 10);
+      if (ALLOWED.includes(n)) return n;
+    }
+  } catch (_) { /* ignore */ }
+  return 30;
+}
+
+export function saveTurnDuration(n) {
+  try { localStorage.setItem(TURN_DURATION_KEY, String(n)); } catch (_) { /* ignore */ }
 }
 
 // ─── ÉCRAN SETUP — joueurs ─────────────────────────────────────────────────────

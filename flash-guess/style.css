@@ -54,7 +54,7 @@ html, body {
 .page-wrapper {
   max-width: 560px;
   margin: 0 auto;
-  padding: 16px 0 60px;
+  padding: 16px 0 80px;
 }
 
 /* ─── App title ────────────────────────────────────────────────────────────── */
@@ -256,11 +256,11 @@ details.card-collapsible > :not(summary) {
   margin-bottom: 16px;
 }
 
-/* ─── Contrôles coin bas-droit (mute + plein écran) ──────────────────────── */
+/* ─── Contrôles globaux (mute + plein écran) ─────────────────────────────── */
 #top-right-controls {
   position: fixed;
-  bottom: 14px;
-  right: 14px;
+  bottom: calc(72px + 14px);
+  left: 14px;
   z-index: 100;
   display: flex;
   gap: 6px;
@@ -2365,3 +2365,73 @@ details.card-collapsible > :not(summary) {
   border-color: rgba(64, 145, 108, 0.4);
   background: rgba(64, 145, 108, 0.08);
 }
+
+/* ─── Bottom navigation bar ──────────────────────────────────────────────── */
+#bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+#bottom-nav[hidden] { display: none !important; }
+
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 10px 4px 8px;
+  cursor: pointer;
+  transition: color 0.15s;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-item:hover { color: var(--text); }
+
+.bottom-nav-item--active {
+  color: #7c3aed;
+}
+
+.bottom-nav-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+/* ─── In-game close button ───────────────────────────────────────────────── */
+.btn-game-close {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 150;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+  transition: background 0.15s, color 0.15s;
+}
+.btn-game-close[hidden] { display: none !important; }
+.btn-game-close:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
