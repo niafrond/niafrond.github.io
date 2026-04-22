@@ -1,4 +1,4 @@
-const CACHE = 'flashguess-v1.2.0';
+const CACHE = 'flashguess-v1.126.0';
 
 const ASSETS = [
   './',
@@ -14,7 +14,6 @@ const ASSETS = [
   './pwa.js',
   './words.js',
   './sound.js',
-  './version.js',
   './style.css',
   './manifest.json',
   './icon.svg',

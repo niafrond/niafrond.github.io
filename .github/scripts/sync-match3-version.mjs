@@ -15,37 +15,48 @@ if(!match){
 }
 
 const [, major, minor, patch, prerelease = ''] = match;
-const target = path.resolve(process.cwd(), 'match3-quest/version.js');
-
 const buildDate = new Date().toISOString();
 
-const nextContent = `export const MATCH3_SEMVER = {
-    major: ${Number(major)},
-    minor: ${Number(minor)},
-    patch: ${Number(patch)},
-    prerelease: '${prerelease}',
-    buildDate: '${buildDate}'
+// ── Root version.js ──
+const versionTarget = path.resolve(process.cwd(), 'version.js');
+const nextContent = `export const SITE_SEMVER = {
+  major: ${Number(major)},
+  minor: ${Number(minor)},
+  patch: ${Number(patch)},
+  prerelease: '${prerelease}',
+  buildDate: '${buildDate}',
 };
 
-export function getMatch3Version(){
-    const { major, minor, patch, prerelease } = MATCH3_SEMVER;
-    const base = \`${'${major}'}.${'${minor}'}.${'${patch}'}\`;
-    return prerelease ? \`${'${base}'}-${'${prerelease}'}\` : base;
+export function getVersion() {
+  const { major, minor, patch, prerelease } = SITE_SEMVER;
+  const base = \`${'${major}'}.${'${minor}'}.${'${patch}'}\`;
+  return prerelease ? \`${'${base}'}-${'${prerelease}'}\` : base;
 }
 
-export function getMatch3BuildDate(){
-    return MATCH3_SEMVER.buildDate || '';
+export function getBuildDate() {
+  return SITE_SEMVER.buildDate || '';
 }
 `;
+fs.writeFileSync(versionTarget, nextContent, 'utf8');
+console.log(`Updated ${versionTarget} -> ${rawVersion}`);
 
-const swTarget = path.resolve(process.cwd(), 'times-up/sw.js');
-const swContent = fs.readFileSync(swTarget, 'utf8');
-const newSwContent = swContent.replace(
+// ── times-up/sw.js ──
+const timesUpSwTarget = path.resolve(process.cwd(), 'times-up/sw.js');
+const timesUpSwContent = fs.readFileSync(timesUpSwTarget, 'utf8');
+const newTimesUpSwContent = timesUpSwContent.replace(
   /const CACHE = 'timesup-v[^']+';/,
   `const CACHE = 'timesup-v${rawVersion}';`
 );
-fs.writeFileSync(target, nextContent, 'utf8');
-console.log(`Updated ${target} -> ${rawVersion}`);
-fs.writeFileSync(swTarget, newSwContent, 'utf8');
-console.log(`Updated ${swTarget} -> CACHE timesup-v${rawVersion}`);
+fs.writeFileSync(timesUpSwTarget, newTimesUpSwContent, 'utf8');
+console.log(`Updated ${timesUpSwTarget} -> CACHE timesup-v${rawVersion}`);
+
+// ── flash-guess/sw.js ──
+const flashGuessSwTarget = path.resolve(process.cwd(), 'flash-guess/sw.js');
+const flashGuessSwContent = fs.readFileSync(flashGuessSwTarget, 'utf8');
+const newFlashGuessSwContent = flashGuessSwContent.replace(
+  /const CACHE = 'flashguess-v[^']+';/,
+  `const CACHE = 'flashguess-v${rawVersion}';`
+);
+fs.writeFileSync(flashGuessSwTarget, newFlashGuessSwContent, 'utf8');
+console.log(`Updated ${flashGuessSwTarget} -> CACHE flashguess-v${rawVersion}`);
 

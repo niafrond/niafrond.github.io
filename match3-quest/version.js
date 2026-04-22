@@ -1,17 +1,1 @@
-export const MATCH3_SEMVER = {
-    major: 1,
-    minor: 126,
-    patch: 0,
-    prerelease: '',
-    buildDate: '2026-04-22T07:18:41.144Z'
-};
-
-export function getMatch3Version(){
-    const { major, minor, patch, prerelease } = MATCH3_SEMVER;
-    const base = `${major}.${minor}.${patch}`;
-    return prerelease ? `${base}-${prerelease}` : base;
-}
-
-export function getMatch3BuildDate(){
-    return MATCH3_SEMVER.buildDate || '';
-}
+export { SITE_SEMVER as MATCH3_SEMVER, getVersion as getMatch3Version, getBuildDate as getMatch3BuildDate } from '../version.js';
