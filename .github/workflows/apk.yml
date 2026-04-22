@@ -21,6 +21,9 @@ jobs:
   build-apk:
     runs-on: ubuntu-latest
 
+    env:
+      KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASSWORD || 'flashguess_ci_build' }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,18 +60,80 @@ jobs:
         working-directory: flash-guess-android
         run: npx cap copy android
 
+      - name: Set app version
+        run: |
+          read -r VERSION VERSION_CODE < <(node -e "
+            const c = require('fs').readFileSync('version.js','utf8');
+            const m = c.match(/major:\s*(\d+),\s*minor:\s*(\d+),\s*patch:\s*(\d+)/);
+            const [,maj,min,pat] = m;
+            const name = maj+'.'+min+'.'+pat;
+            const code = Number(maj)*1000000 + Number(min)*1000 + Number(pat);
+            process.stdout.write(name+' '+code+'\n');
+          ")
+          GRADLE="flash-guess-android/android/app/build.gradle"
+          sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" "$GRADLE"
+          sed -i "s/versionName \"[^\"]*\"/versionName \"$VERSION\"/" "$GRADLE"
+          echo "Set versionName=$VERSION versionCode=$VERSION_CODE"
+
+      - name: Install ImageMagick
+        run: sudo apt-get install -y imagemagick
+
+      - name: Set app icons
+        run: |
+          RES="flash-guess-android/android/app/src/main/res"
+          SRC="flash-guess/icon-512.png"
+          for entry in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+            density="${entry%%:*}"
+            size="${entry##*:}"
+            convert "$SRC" -resize "${size}x${size}" "$RES/mipmap-${density}/ic_launcher.png"
+            convert "$SRC" -resize "${size}x${size}" "$RES/mipmap-${density}/ic_launcher_round.png"
+          done
+          for entry in mdpi:108 hdpi:162 xhdpi:216 xxhdpi:324 xxxhdpi:432; do
+            density="${entry%%:*}"
+            size="${entry##*:}"
+            for ext in png webp; do
+              fg="$RES/mipmap-${density}/ic_launcher_foreground.${ext}"
+              if [ -f "$fg" ]; then convert "$SRC" -resize "${size}x${size}" "$fg"; fi
+            done
+          done
+
       - name: Accept SDK licenses
         run: yes | sdkmanager --licenses || true
 
-      - name: Build debug APK
+      - name: Generate keystore
+        run: |
+          keytool -genkeypair -v \
+            -keystore flash-guess-android/flash-guess.keystore \
+            -alias flash-guess \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Flash Guess, OU=Game, O=Niafrond, L=FR, S=FR, C=FR" \
+            -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS"
+
+      - name: Build release APK
         working-directory: flash-guess-android/android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Sign APK
+        shell: bash
+        run: |
+          UNSIGNED="flash-guess-android/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          SIGNED="flash-guess-android/android/app/build/outputs/apk/release/flash-guess.apk"
+
+          export PATH="$ANDROID_SDK_ROOT/build-tools/35.0.0:$PATH"
+
+          apksigner sign \
+            --ks flash-guess-android/flash-guess.keystore \
+            --ks-key-alias flash-guess \
+            --ks-pass "pass:$KEYSTORE_PASS" \
+            --key-pass "pass:$KEYSTORE_PASS" \
+            --out "$SIGNED" \
+            "$UNSIGNED"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: flash-guess-debug-apk
-          path: flash-guess-android/android/app/build/outputs/apk/debug/app-debug.apk
+          name: flash-guess-apk
+          path: flash-guess-android/android/app/build/outputs/apk/release/flash-guess.apk
           retention-days: 30
 
       - name: Attach APK to latest GitHub release
@@ -76,10 +141,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          APK_PATH="flash-guess-android/android/app/build/outputs/apk/debug/app-debug.apk"
+          APK_PATH="flash-guess-android/android/app/build/outputs/apk/release/flash-guess.apk"
           RELEASE_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
           if [ -n "$RELEASE_TAG" ]; then
-            gh release upload "$RELEASE_TAG" "$APK_PATH#flash-guess-debug-${RELEASE_TAG}.apk" --clobber
+            gh release upload "$RELEASE_TAG" "$APK_PATH#flash-guess-${RELEASE_TAG}.apk" --clobber
             echo "APK attached to release $RELEASE_TAG"
           else
             echo "No release found, APK available as workflow artifact only"
