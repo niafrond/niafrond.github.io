@@ -1,3 +1,13 @@
+## [1.126.0](https://github.com/niafrond/niafrond.github.io/compare/v1.125.0...v1.126.0) (2026-04-22)
+
+### Features
+
+* add GitHub Actions workflow to build Flash Guess APK (Capacitor) ([32b55b1](https://github.com/niafrond/niafrond.github.io/commit/32b55b1a0fac6288faa6a1a05ba63c092ae89d18))
+
+### Bug Fixes
+
+* include release tag in APK filename ([bf2d3e7](https://github.com/niafrond/niafrond.github.io/commit/bf2d3e7c688b241a687fdc0ff7222fe9d42516ec))
+
 ## [1.125.0](https://github.com/niafrond/niafrond.github.io/compare/v1.124.0...v1.125.0) (2026-04-22)
 
 ### Features
