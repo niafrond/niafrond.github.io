@@ -3,7 +3,7 @@
   "short_name": "Flash Guess",
   "description": "Flash Guess — jeu de devinettes 100% local, catégories générales, les joueurs se passent le téléphone",
   "start_url": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "any",
   "background_color": "#0b1e2d",
   "theme_color": "#0b1e2d",
