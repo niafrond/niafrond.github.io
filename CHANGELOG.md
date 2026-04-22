@@ -1,3 +1,9 @@
+## [1.129.0](https://github.com/niafrond/niafrond.github.io/compare/v1.128.0...v1.129.0) (2026-04-22)
+
+### Features
+
+* lazy-load JSON word files per category (flash-guess) ([441b490](https://github.com/niafrond/niafrond.github.io/commit/441b49076c4b8560eee928904619db32fe2512c4))
+
 ## [1.128.0](https://github.com/niafrond/niafrond.github.io/compare/v1.127.0...v1.128.0) (2026-04-22)
 
 ### Features
