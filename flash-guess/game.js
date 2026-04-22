@@ -828,7 +828,7 @@ export function showRoundEnd() {
   const sortedTeams = [...state.teams].sort((a, b) => {
     const totA = a.score.reduce((s, v) => s + v, 0);
     const totB = b.score.reduce((s, v) => s + v, 0);
-    return totA - totB;
+    return totB - totA;
   });
 
   sortedTeams.forEach(team => {
