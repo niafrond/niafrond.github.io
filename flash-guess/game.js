@@ -1196,7 +1196,6 @@ export function showWordDraftTurn(playerIdx) {
 
   state.draftEliminations = [];
   list.innerHTML           = '';
-  el('draft-player-name').textContent = playerName;
   el('draft-counter').textContent     = `0 / ${ELIMINATIONS_PER_PLAYER}`;
   el('draft-counter').classList.remove('draft-counter-badge--full');
   el('btn-draft-confirm').disabled    = true;
@@ -1207,16 +1206,21 @@ export function showWordDraftTurn(playerIdx) {
   list.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
   chunk.forEach((word, i) => {
+    const wordLen = word.word.length;
+    const lenClass = wordLen > 14 ? 'draft-word-text--xs'
+                   : wordLen > 9  ? 'draft-word-text--sm'
+                   : '';
+
     if (state.kidsMode) {
       // In kids mode, wrap in a <div> so the refresh <button> inside is valid HTML
       // (interactive elements cannot be descendants of <button>)
       // The div handles elimination on click; the inner button handles refresh.
       const item = document.createElement('div');
-      item.className   = 'draft-word-item';
+      item.className   = 'draft-word-item draft-word-item--with-refresh';
       item.dataset.idx = i;
 
       const wordSpan     = document.createElement('span');
-      wordSpan.className = 'draft-word-text';
+      wordSpan.className = 'draft-word-text' + (lenClass ? ' ' + lenClass : '');
       wordSpan.textContent = word.word;
       item.appendChild(wordSpan);
 
@@ -1241,7 +1245,7 @@ export function showWordDraftTurn(playerIdx) {
       item.setAttribute('type', 'button');
 
       const wordSpan     = document.createElement('span');
-      wordSpan.className = 'draft-word-text';
+      wordSpan.className = 'draft-word-text' + (lenClass ? ' ' + lenClass : '');
       wordSpan.textContent = word.word;
 
       item.appendChild(wordSpan);
