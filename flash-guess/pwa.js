@@ -33,14 +33,19 @@ export async function installPwa() {
 }
 
 // ─── Plein écran ───────────────────────────────────────────────────────────────
+function requestImmersive() {
+  if (document.fullscreenElement || document.webkitFullscreenElement) return;
+  const docEl = document.documentElement;
+  if (docEl.requestFullscreen) {
+    docEl.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+  } else if (docEl.webkitRequestFullscreen) {
+    docEl.webkitRequestFullscreen().catch(() => {});
+  }
+}
+
 export function toggleFullscreen() {
   if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-    const docEl = document.documentElement;
-    if (docEl.requestFullscreen) {
-      docEl.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
-    } else if (docEl.webkitRequestFullscreen) {
-      docEl.webkitRequestFullscreen().catch(() => {});
-    }
+    requestImmersive();
   } else {
     const exit = document.exitFullscreen || document.webkitExitFullscreen;
     if (exit) exit.call(document).catch(() => {});
@@ -74,31 +79,18 @@ function isCapacitor() {
 export function initAutoFullscreen() {
   if (!isPwaInstalled() && !isCapacitor()) return;
 
-  const requestImmersive = () => {
-    if (document.fullscreenElement || document.webkitFullscreenElement) return;
-    const docEl = document.documentElement;
-    if (docEl.requestFullscreen) {
-      docEl.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
-    } else if (docEl.webkitRequestFullscreen) {
-      docEl.webkitRequestFullscreen().catch(() => {});
-    }
-  };
-
   // Premier clic/tap déclenche le mode immersif
   document.addEventListener('pointerdown', requestImmersive, { once: true });
 
   // Si le fullscreen est quitté (p. ex. par un geste système), on le rétablit
   // au prochain geste utilisateur
-  document.addEventListener('fullscreenchange', () => {
+  function onFullscreenChange() {
     if (!document.fullscreenElement && !document.webkitFullscreenElement) {
       document.addEventListener('pointerdown', requestImmersive, { once: true });
     }
-  });
-  document.addEventListener('webkitfullscreenchange', () => {
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-      document.addEventListener('pointerdown', requestImmersive, { once: true });
-    }
-  });
+  }
+  document.addEventListener('fullscreenchange', onFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 }
 
 // ─── Notification système de mise à jour ───────────────────────────────────────

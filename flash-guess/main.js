@@ -814,6 +814,7 @@ function init() {
   el('btn-fullscreen').addEventListener('click', withCooldown(toggleFullscreen));
   document.addEventListener('fullscreenchange', updateFullscreenBtn);
   document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+  initAutoFullscreen();
 
   renderPlayerList();
   showScreen('screen-setup');
@@ -823,4 +824,3 @@ function init() {
 
 document.addEventListener('DOMContentLoaded', init);
 initServiceWorker();
-initAutoFullscreen();
