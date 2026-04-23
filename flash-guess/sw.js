@@ -1,4 +1,4 @@
-const CACHE = 'flashguess-v1.126.0';
+const CACHE = 'flashguess-v1.133.0';
 
 const ASSETS = [
   './',
