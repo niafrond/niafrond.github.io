@@ -2,7 +2,7 @@
  * pwa.js — PWA : installation, plein écran, mise à jour forcée
  */
 
-import { el, getCurrentScreen } from './ui.js';
+import { el, getCurrentScreen, onScreenChange } from './ui.js';
 import { GAMEPLAY_SCREENS } from './state.js';
 
 // ─── Installation PWA ──────────────────────────────────────────────────────────
@@ -121,6 +121,8 @@ async function showUpdateNotification(reg) {
 }
 
 // ─── Service Worker ────────────────────────────────────────────────────────────
+let _reloadPending = false;
+
 export function initServiceWorker() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none', type: 'module' })
@@ -141,10 +143,19 @@ export function initServiceWorker() {
 
         if (navigator.serviceWorker.controller) {
           navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (!GAMEPLAY_SCREENS.has(getCurrentScreen())) location.reload();
+            if (!GAMEPLAY_SCREENS.has(getCurrentScreen())) {
+              location.reload();
+            } else {
+              _reloadPending = true;
+            }
           }, { once: true });
         }
       })
       .catch(() => {});
+
+    // Recharge dès que l'utilisateur quitte le gameplay si une mise à jour était en attente
+    onScreenChange(id => {
+      if (_reloadPending && !GAMEPLAY_SCREENS.has(id)) location.reload();
+    });
   }
 }

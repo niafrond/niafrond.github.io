@@ -90,3 +90,23 @@ export function getBuildDate() {
 fs.writeFileSync(flashGuessVersionTarget, flashGuessVersionContent, 'utf8');
 console.log(`Updated ${flashGuessVersionTarget} -> ${rawVersion}`);
 
+// ── flash-guess/sw.js — CACHE version ──
+const fgSwTarget = path.resolve(process.cwd(), 'flash-guess/sw.js');
+let fgSwContent = fs.readFileSync(fgSwTarget, 'utf8');
+fgSwContent = fgSwContent.replace(
+  /^const CACHE = 'flashguess-v[^']+';$/m,
+  `const CACHE = 'flashguess-v${Number(major)}.${Number(minor)}.${Number(patch)}';`
+);
+fs.writeFileSync(fgSwTarget, fgSwContent, 'utf8');
+console.log(`Updated flash-guess/sw.js CACHE -> flashguess-v${rawVersion}`);
+
+// ── times-up/sw.js — CACHE version ──
+const tuSwTarget = path.resolve(process.cwd(), 'times-up/sw.js');
+let tuSwContent = fs.readFileSync(tuSwTarget, 'utf8');
+tuSwContent = tuSwContent.replace(
+  /^const CACHE = 'timesup-v[^']+';$/m,
+  `const CACHE = 'timesup-v${Number(major)}.${Number(minor)}.${Number(patch)}';`
+);
+fs.writeFileSync(tuSwTarget, tuSwContent, 'utf8');
+console.log(`Updated times-up/sw.js CACHE -> timesup-v${rawVersion}`);
+
