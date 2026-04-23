@@ -1,3 +1,9 @@
+## [1.135.3](https://github.com/niafrond/niafrond.github.io/compare/v1.135.2...v1.135.3) (2026-04-23)
+
+### Bug Fixes
+
+* **flash-guess:** remove tri-secret header from word-draft screen, allow full width, fix refresh button overlap, add long-word font scaling ([2138de7](https://github.com/niafrond/niafrond.github.io/commit/2138de73a2caa1edaef93f9dcdc16bf7eefc607a))
+
 ## [1.135.2](https://github.com/niafrond/niafrond.github.io/compare/v1.135.1...v1.135.2) (2026-04-23)
 
 ### Bug Fixes
