@@ -99,12 +99,15 @@
       </p>
     </details>
 
-    <div class="screen-sticky-footer">
-      <button id="btn-start-game" class="btn btn-primary btn-lg w-full" disabled>
-        ▶ Jouer
-      </button>
-      <button id="btn-launch-demo" class="btn btn-secondary w-full mt-12">
+    <div class="demo-launch-wrapper">
+      <button id="btn-launch-demo" class="btn btn-secondary w-full">
         🎮 Fausse partie pour découvrir
+      </button>
+    </div>
+
+    <div class="screen-sticky-footer screen-sticky-footer--fab">
+      <button id="btn-start-game" class="btn btn-primary btn-fab" disabled aria-label="Jouer">
+        ▶
       </button>
     </div>
   </div>
@@ -268,9 +271,9 @@
   <!-- En-tête -->
   <div class="turn-header">
     <span id="turn-round-badge"></span>
-    <span id="turn-player-name"></span>
-    <div class="turn-found-info-group">
+    <div class="turn-player-group">
       <span class="turn-found-info">🃏 <span id="turn-words-left">0</span> restant(s)</span>
+      <span id="turn-player-name"></span>
       <span class="turn-found-info">✅ <span id="turn-found-count">0</span> trouvé(s)</span>
     </div>
   </div>

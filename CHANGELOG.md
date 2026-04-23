@@ -1,3 +1,19 @@
+## [1.132.0](https://github.com/niafrond/niafrond.github.io/compare/v1.131.0...v1.132.0) (2026-04-23)
+
+### Features
+
+* **flash-guess:** move demo button out of sticky footer, make play button a FAB ([30c97c1](https://github.com/niafrond/niafrond.github.io/commit/30c97c117cc684aaa3d625449dc55849b2022036))
+
+### Bug Fixes
+
+* **flash-guess:** increase FAB shadow opacity for better visibility ([ee9e3a6](https://github.com/niafrond/niafrond.github.io/commit/ee9e3a64e23eff843b2604153d60f73187640063))
+
+## [1.131.0](https://github.com/niafrond/niafrond.github.io/compare/v1.130.2...v1.131.0) (2026-04-23)
+
+### Features
+
+* **flash-guess:** afficher les infos mots restants/trouvés autour du nom du joueur ([f7ba979](https://github.com/niafrond/niafrond.github.io/commit/f7ba97996ab158d6a6b7a091f77a94ff8fe519ba))
+
 ## [1.130.2](https://github.com/niafrond/niafrond.github.io/compare/v1.130.1...v1.130.2) (2026-04-22)
 
 ### Bug Fixes

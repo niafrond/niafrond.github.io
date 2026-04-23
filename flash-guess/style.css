@@ -68,6 +68,38 @@ html, body {
   background-attachment: fixed;
 }
 
+/* FAB variant: transparent footer holding only the round play button */
+.screen-sticky-footer--fab {
+  background: transparent;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
+/* Round play FAB button */
+.btn-fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.55);
+  flex-shrink: 0;
+}
+.btn-fab:disabled {
+  opacity: 0.4;
+  box-shadow: none;
+}
+
+/* Demo launch button wrapper */
+.demo-launch-wrapper {
+  margin-top: 16px;
+  margin-bottom: 4px;
+}
+
 /* ─── App title ────────────────────────────────────────────────────────────── */
 .app-title {
   font-size: clamp(2rem, 7vw, 3.2rem);
@@ -479,8 +511,8 @@ details.card-collapsible > :not(summary) {
   border-radius: 99px;
   padding: 4px 12px;
 }
-.turn-found-info { font-size: 0.85rem; color: var(--text-muted); }
-.turn-found-info-group { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.turn-found-info { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; }
+.turn-player-group { display: flex; align-items: center; gap: 8px; }
 #turn-player-name {
   font-size: 0.9rem;
   font-weight: 700;
