@@ -4,10 +4,13 @@
 
 import { GAMEPLAY_SCREENS } from './state.js';
 
-let _currentScreen = 'screen-setup';
-let _toastTimer    = null;
+let _currentScreen  = 'screen-setup';
+let _toastTimer     = null;
+let _onScreenChange = null;
 
 export function getCurrentScreen() { return _currentScreen; }
+
+export function onScreenChange(cb) { _onScreenChange = cb; }
 
 export function el(id) { return document.getElementById(id); }
 
@@ -49,6 +52,7 @@ export function showScreen(id, pushHistory = true) {
   }
   requestFullscreenIfNeeded();
   if (pushHistory) history.pushState({ screen: id }, '');
+  if (_onScreenChange) _onScreenChange(id);
 }
 
 // ─── Toast ─────────────────────────────────────────────────────────────────────

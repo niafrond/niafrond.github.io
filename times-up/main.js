@@ -136,9 +136,11 @@ const state = {
 
 // ─── Helpers UI ────────────────────────────────────────────────────────────────
 let _currentScreen = 'screen-setup';
+let _reloadPending = false;
 
 function showScreen(id) {
   _currentScreen = id;
+  if (_reloadPending && !GAMEPLAY_SCREENS.has(id)) { location.reload(); return; }
   document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
   document.getElementById(id).hidden = false;
   const versionEl = document.getElementById('timesup-version');
@@ -1968,7 +1970,13 @@ if ('serviceWorker' in navigator) {
     .then(reg => {
       reg.update().catch(() => {});
       if (navigator.serviceWorker.controller) {
-        navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!GAMEPLAY_SCREENS.has(_currentScreen)) {
+            location.reload();
+          } else {
+            _reloadPending = true;
+          }
+        }, { once: true });
       }
     })
     .catch(() => {});

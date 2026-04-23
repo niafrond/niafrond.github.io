@@ -1,5 +1,5 @@
-import { SITE_SEMVER } from './version.js';
-const CACHE = `timesup-v${SITE_SEMVER.major}.${SITE_SEMVER.minor}.${SITE_SEMVER.patch}`;
+// CACHE est mis à jour automatiquement par .github/scripts/sync-match3-version.mjs à chaque release.
+const CACHE = 'timesup-v1.135.2';
 
 const ASSETS = [
   './',

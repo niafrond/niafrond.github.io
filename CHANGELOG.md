@@ -1,3 +1,9 @@
+## [1.135.2](https://github.com/niafrond/niafrond.github.io/compare/v1.135.1...v1.135.2) (2026-04-23)
+
+### Bug Fixes
+
+* hardcode CACHE in sw.js and defer SW reload after gameplay ([e7147c3](https://github.com/niafrond/niafrond.github.io/commit/e7147c3eb365b59196983bf9167f573de8511186))
+
 ## [1.135.1](https://github.com/niafrond/niafrond.github.io/compare/v1.135.0...v1.135.1) (2026-04-23)
 
 ### Bug Fixes
