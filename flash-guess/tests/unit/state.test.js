@@ -219,3 +219,39 @@ describe('withCooldown', () => {
     expect(fn).toHaveBeenCalledWith('a', 'b');
   });
 });
+
+// ─── DIFFICULTIES ─────────────────────────────────────────────────────────────
+
+import { DIFFICULTIES, DIFFICULTY_KEY } from '../../state.js';
+
+describe('DIFFICULTIES', () => {
+  test('contient exactement les 4 niveaux', () => {
+    expect(Object.keys(DIFFICULTIES)).toEqual(['facile', 'moyen', 'difficile', 'god']);
+  });
+
+  test('chaque niveau a label, emoji, divisor et timer', () => {
+    Object.values(DIFFICULTIES).forEach(d => {
+      expect(typeof d.label).toBe('string');
+      expect(typeof d.emoji).toBe('string');
+    });
+  });
+
+  test('facile et moyen ont timer null (utilise le réglage utilisateur)', () => {
+    expect(DIFFICULTIES.facile.timer).toBeNull();
+    expect(DIFFICULTIES.moyen.timer).toBeNull();
+  });
+
+  test('difficile impose 20 s', () => {
+    expect(DIFFICULTIES.difficile.timer).toBe(20);
+  });
+
+  test('god impose 15 s et aucun divisor', () => {
+    expect(DIFFICULTIES.god.timer).toBe(15);
+    expect(DIFFICULTIES.god.divisor).toBeNull();
+  });
+
+  test('DIFFICULTY_KEY est une chaîne non vide', () => {
+    expect(typeof DIFFICULTY_KEY).toBe('string');
+    expect(DIFFICULTY_KEY.length).toBeGreaterThan(0);
+  });
+});

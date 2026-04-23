@@ -8,7 +8,7 @@ import {
   TURN_DURATION, TIMER_CIRCLE_RADIUS,
   WORD_FONT_MIN, WORD_FONT_MAX,
   CHILD_READ_MS_PER_LETTER, CHILD_READ_MIN_MS,
-  ELIMINATIONS_PER_PLAYER,
+  ELIMINATIONS_PER_PLAYER, DIFFICULTIES,
 } from './state.js';
 import { el, showScreen, showToast } from './ui.js';
 import {
@@ -164,6 +164,13 @@ export function renderTeams() {
     if (isTwoPlayers) updateCoopButtons();
   }
 
+  // Sélecteur de difficulté (mode 2 joueurs uniquement)
+  const difficultySection = el('difficulty-section');
+  if (difficultySection) {
+    difficultySection.hidden = !isTwoPlayers;
+    if (isTwoPlayers) updateDifficultyButtons();
+  }
+
   // En mode 2 joueurs, les équipes n'ont pas besoin d'être affichées
   const teamsContainer = el('teams-container');
   if (teamsContainer) teamsContainer.hidden = isTwoPlayers;
@@ -185,6 +192,43 @@ export function setCoopObjective(obj) {
     state.coopObjectives.add(obj);
   }
   updateCoopButtons();
+}
+
+// ─── NIVEAU DE DIFFICULTÉ (mode 2 joueurs) ────────────────────────────────────
+export function setDifficultyLevel(level) {
+  if (!Object.prototype.hasOwnProperty.call(DIFFICULTIES, level)) return;
+  state.difficultyLevel = level;
+  updateDifficultyButtons();
+}
+
+function updateDifficultyButtons() {
+  document.querySelectorAll('.btn-difficulty').forEach(btn => {
+    btn.classList.toggle('btn-difficulty--active', btn.dataset.difficulty === state.difficultyLevel);
+  });
+
+  const descEl = el('difficulty-desc');
+  if (!descEl) return;
+  const dur = state.turnDuration;
+  const DESCS = {
+    facile:    `Tous les mots sont connus à l'avance. Chrono : ${dur} s.`,
+    moyen:     `~1/3 des mots sont inconnus à l'avance. Chrono : ${dur} s.`,
+    difficile: `~1/2 des mots sont inconnus à l'avance. Chrono : 20 s.`,
+    god:       `Aucun tri caché. Chrono : 15 s. ⚠️ Toute erreur en manche 3 est éliminatoire !`,
+  };
+  descEl.textContent = DESCS[state.difficultyLevel] ?? '';
+}
+
+/**
+ * Retourne la durée du tour effective en tenant compte du niveau de difficulté.
+ * En mode 2 joueurs, Difficile impose 20 s et God impose 15 s.
+ * Pour les autres niveaux, la durée configurée par l'utilisateur est utilisée.
+ */
+export function getEffectiveTurnDuration() {
+  if (state.playerNames.length === 2) {
+    const { timer } = DIFFICULTIES[state.difficultyLevel] ?? {};
+    if (timer !== null && timer !== undefined) return timer;
+  }
+  return state.turnDuration;
 }
 
 // ─── LECTURE ENFANT ────────────────────────────────────────────────────────────
@@ -369,9 +413,10 @@ export async function startRound(roundNum) {
         return;
       }
     }
-    // Initialiser les stats coopératives au début de la partie
-    state.coopTimeUsed   = 0;
-    state.coopTurnsCount = 0;
+    // Initialiser les stats coopératives et l'état God mode au début de la partie
+    state.coopTimeUsed    = 0;
+    state.coopTurnsCount  = 0;
+    state.godModeEliminated = false;
   }
   state.roundWords     = shuffle([...state.allWords]);
   state.currentTeamIdx = nextRoundStartTeamIdx(state.currentTeamIdx, state.teams.length, roundNum);
@@ -453,7 +498,7 @@ export function startPreTurn() {
 export function startTurn() {
   state.turnFound     = [];
   state.turnSkipped   = [];
-  state.timeLeft      = state.turnDuration;
+  state.timeLeft      = getEffectiveTurnDuration();
   state.actionHistory = [];
   state.redoStack     = [];
   updateUndoRedoButtons();
@@ -567,6 +612,19 @@ export function wordFault() {
     state.currentWord = null;
   }
   updateTurnStats();
+
+  // God mode (2 joueurs) : une erreur en manche 3 est éliminatoire
+  if (
+    state.playerNames.length === 2 &&
+    state.difficultyLevel === 'god' &&
+    state.currentRound === 3
+  ) {
+    state.godModeEliminated = true;
+    stopTimer();
+    endTurn('god_fault');
+    return;
+  }
+
   drawNextWord();
   updateUndoRedoButtons();
 }
@@ -654,7 +712,7 @@ export function endTurn(reason = 'timeout') {
 
   // Mode coop 2 joueurs : enregistrer le temps utilisé et le nombre de tours
   if (state.coopObjectives.size > 0) {
-    state.coopTimeUsed   += state.turnDuration - state.timeLeft;
+    state.coopTimeUsed   += getEffectiveTurnDuration() - state.timeLeft;
     state.coopTurnsCount += 1;
   }
 
@@ -688,6 +746,7 @@ export function endTurn(reason = 'timeout') {
     timeout:   '⏱️ Temps écoulé !',
     fault:     '🚨 Faute — tour arrêté !',
     allFound:  '🎉 Tous les mots trouvés !',
+    god_fault: '☠️ Éliminé ! Faute en manche 3 — Partie terminée.',
   };
   el('turn-end-reason').textContent = reasonMsgs[reason] ?? '⏱️ Temps écoulé !';
   el('turn-end-team').textContent   = teamLabel(team);
@@ -702,6 +761,9 @@ export function endTurn(reason = 'timeout') {
   if (reason === 'allFound') {
     el('btn-next-turn').dataset.nextAction = 'round-end';
     el('turn-end-all-found').hidden = false;
+  } else if (reason === 'god_fault') {
+    el('btn-next-turn').dataset.nextAction = 'game-over';
+    el('turn-end-all-found').hidden = true;
   } else {
     el('btn-next-turn').dataset.nextAction = 'next-turn';
     el('turn-end-all-found').hidden = true;
@@ -787,6 +849,8 @@ export function handleNextTurn() {
   const action = el('btn-next-turn').dataset.nextAction;
   if (action === 'round-end') {
     showRoundEnd();
+  } else if (action === 'game-over') {
+    showGameOver();
   } else {
     state.currentTeamIdx = (state.currentTeamIdx + 1) % state.teams.length;
     startPreTurn();
@@ -915,7 +979,10 @@ export function showGameOver() {
   const isTie = scored.length >= 2 && scored[1].total === maxScore;
 
   const winnerEl = el('game-over-winner');
-  if (isTie) {
+  if (state.godModeEliminated) {
+    winnerEl.textContent = '☠️ Éliminé — faute en manche 3';
+    winnerEl.style.color = 'var(--danger)';
+  } else if (isTie) {
     const tiedNames = scored
       .filter(s => s.total === maxScore)
       .map(s => teamLabel(s.team))
@@ -1027,8 +1094,10 @@ export function computeDraftChunks(words, cardCount, nbPlayers, eliminationsPerP
 }
 
 export async function startWordDraft() {
-  const N         = state.playerNames.length;
-  const cardCount = state.cardCount;
+  const N           = state.playerNames.length;
+  const cardCount   = state.cardCount;
+  const isTwoPlayer = N === 2;
+  const difficulty  = state.difficultyLevel;
 
   const allShuffled = await getShuffledWords(
     state.selectedCategories.length > 0 ? state.selectedCategories : null,
@@ -1041,14 +1110,23 @@ export async function startWordDraft() {
     return;
   }
 
-  // "Tous les mots" mode (cardCount === 0): skip draft
-  if (cardCount === 0) {
-    state.allWords = allShuffled;
+  // "Tous les mots" mode (cardCount === 0) ou God mode : pas de tri caché
+  if (cardCount === 0 || (isTwoPlayer && difficulty === 'god')) {
+    const count    = cardCount === 0 ? allShuffled.length : Math.min(cardCount, allShuffled.length);
+    state.allWords = allShuffled.slice(0, count);
+    if (state.allWords.length === 0) {
+      showToast('Aucun mot dans les catégories sélectionnées !', 'error');
+      showScreen('screen-categories');
+      return;
+    }
     await startRound(1);
     return;
   }
 
+  // La quantité totale de mots nécessaires dans le pool est identique pour tous les
+  // niveaux de difficulté : X + E*N. Le diviseur ne change que la répartition interne.
   const totalNeeded = cardCount + ELIMINATIONS_PER_PLAYER * N;
+
   if (allShuffled.length < totalNeeded) {
     showToast(
       `Pas assez de mots pour le tri caché (${allShuffled.length} disponibles, ${totalNeeded} requis). La partie démarre normalement.`,
@@ -1065,11 +1143,36 @@ export async function startWordDraft() {
     return;
   }
 
-  state.draftPlayerChunks     = computeDraftChunks(allShuffled, cardCount, N);
-  state.draftCurrentPlayerIdx = 0;
-  state.draftEliminations     = [];
-  // Words beyond the distributed pool serve as the refresh reserve (kidsMode)
-  state.draftReservePool      = shuffle(allShuffled.slice(totalNeeded));
+  const divisor = isTwoPlayer ? (DIFFICULTIES[difficulty]?.divisor ?? null) : null;
+
+  // Tri caché avec des mots inconnus : uniquement pour Moyen (D=3) et Difficile (D=4).
+  // Pour Facile (D=2) et les modes multi-joueurs, tous les mots passent par les chunks
+  // (aucun mot inconnu), ce qui donne le même résultat que le mode standard.
+  if (isTwoPlayer && divisor !== null && difficulty !== 'facile') {
+    // Moyen (D=3) ou Difficile (D=4) : une partie des mots n'est pas montrée au tri
+    const retainedPerPlayer = Math.floor(cardCount / divisor);
+    const totalRetained     = N * retainedPerPlayer;    // mots qui passent par les chunks
+    const unknownCount      = cardCount - totalRetained; // mots inconnus (pas montrés)
+    const totalChunkWords   = totalRetained + ELIMINATIONS_PER_PLAYER * N;
+
+    const draftPool               = allShuffled.slice(0, totalChunkWords);
+    state.draftUnknownWords       = allShuffled.slice(totalChunkWords, totalChunkWords + unknownCount);
+    // Reserve pool pour le refresh en mode enfant
+    state.draftReservePool        = shuffle(allShuffled.slice(totalChunkWords + unknownCount));
+
+    // computeDraftChunks attend cardCount = nombre de mots retenus total (= totalRetained)
+    state.draftPlayerChunks       = computeDraftChunks(draftPool, totalRetained, N);
+    state.draftCurrentPlayerIdx   = 0;
+    state.draftEliminations       = [];
+  } else {
+    // Facile (D=2) ou mode non-2-joueurs : comportement standard — tous les mots passent par les chunks
+    state.draftUnknownWords       = [];
+    state.draftPlayerChunks       = computeDraftChunks(allShuffled, cardCount, N);
+    state.draftCurrentPlayerIdx   = 0;
+    state.draftEliminations       = [];
+    // Words beyond the distributed pool serve as the refresh reserve (kidsMode)
+    state.draftReservePool        = shuffle(allShuffled.slice(totalNeeded));
+  }
 
   showWordDraftCover(0);
 }
@@ -1221,11 +1324,12 @@ export async function confirmWordDraftEliminations() {
   if (nextIdx < state.playerNames.length) {
     showWordDraftCover(nextIdx);
   } else {
-    // All players done — build the final word list
-    state.allWords = shuffle(state.draftPlayerChunks.flat());
+    // All players done — build the final word list (known + unknown)
+    state.allWords = shuffle([...state.draftPlayerChunks.flat(), ...state.draftUnknownWords]);
     state.draftPlayerChunks   = [];
     state.draftEliminations   = [];
     state.draftReservePool    = [];
+    state.draftUnknownWords   = [];
     if (state.allWords.length === 0) {
       showToast('Aucun mot restant après le tri !', 'error');
       showScreen('screen-categories');
