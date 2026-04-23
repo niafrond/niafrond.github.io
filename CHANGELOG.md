@@ -1,3 +1,10 @@
+## [1.135.1](https://github.com/niafrond/niafrond.github.io/compare/v1.135.0...v1.135.1) (2026-04-23)
+
+### Bug Fixes
+
+* **flash-guess:** agrandir draft-refresh-btn à 44×44px (WCAG touch target) ([7b12801](https://github.com/niafrond/niafrond.github.io/commit/7b12801aa5457656d01ce6bf1ab47b73fec09c41))
+* **flash-guess:** agrandir le bouton rafraîchir la carte dans le tri caché ([4ddc73f](https://github.com/niafrond/niafrond.github.io/commit/4ddc73f02ba41da6443e9402691c2aff4499201a))
+
 ## [1.135.0](https://github.com/niafrond/niafrond.github.io/compare/v1.134.0...v1.135.0) (2026-04-23)
 
 ### Features
