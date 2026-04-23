@@ -1,3 +1,13 @@
+## [1.134.0](https://github.com/niafrond/niafrond.github.io/compare/v1.133.0...v1.134.0) (2026-04-23)
+
+### Features
+
+* cache-independent version strategy via module SWs importing version.js ([5800d55](https://github.com/niafrond/niafrond.github.io/commit/5800d55b38888ac60a38c33a2f18fd9a42a70891))
+
+### Bug Fixes
+
+* sync version files to 1.133.0 (were stuck at 126) ([950bb43](https://github.com/niafrond/niafrond.github.io/commit/950bb43f0f40d61bdef0ee107a7c752283fb7f70))
+
 ## [1.133.0](https://github.com/niafrond/niafrond.github.io/compare/v1.132.0...v1.133.0) (2026-04-23)
 
 ### Features
