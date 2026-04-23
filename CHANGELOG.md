@@ -1,3 +1,9 @@
+## [1.135.4](https://github.com/niafrond/niafrond.github.io/compare/v1.135.3...v1.135.4) (2026-04-23)
+
+### Bug Fixes
+
+* include all version files in semantic-release git assets ([642ee37](https://github.com/niafrond/niafrond.github.io/commit/642ee378f9773e2872d7ffb071f726f3eee7d222))
+
 ## [1.135.3](https://github.com/niafrond/niafrond.github.io/compare/v1.135.2...v1.135.3) (2026-04-23)
 
 ### Bug Fixes
