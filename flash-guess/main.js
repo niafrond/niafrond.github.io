@@ -46,7 +46,7 @@ import {
 
 import { openWordsEditor, addWord, exportWords, importWords, handleResetWords } from './editor.js';
 import { startDemoTurn } from './demo.js';
-import { toggleFullscreen, updateFullscreenBtn, installPwa, initServiceWorker } from './pwa.js';
+import { toggleFullscreen, updateFullscreenBtn, installPwa, initServiceWorker, initAutoFullscreen } from './pwa.js';
 import { playButtonClick } from './sound.js';
 import { openLeaderboard, renderLeaderboard } from './leaderboard.js';
 
@@ -823,3 +823,4 @@ function init() {
 
 document.addEventListener('DOMContentLoaded', init);
 initServiceWorker();
+initAutoFullscreen();
