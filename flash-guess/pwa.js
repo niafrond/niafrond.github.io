@@ -33,11 +33,19 @@ export async function installPwa() {
 }
 
 // ─── Plein écran ───────────────────────────────────────────────────────────────
+function requestImmersive() {
+  if (document.fullscreenElement || document.webkitFullscreenElement) return;
+  const docEl = document.documentElement;
+  if (docEl.requestFullscreen) {
+    docEl.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+  } else if (docEl.webkitRequestFullscreen) {
+    docEl.webkitRequestFullscreen().catch(() => {});
+  }
+}
+
 export function toggleFullscreen() {
   if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-    const req = document.documentElement.requestFullscreen
-      || document.documentElement.webkitRequestFullscreen;
-    if (req) req.call(document.documentElement).catch(() => {});
+    requestImmersive();
   } else {
     const exit = document.exitFullscreen || document.webkitExitFullscreen;
     if (exit) exit.call(document).catch(() => {});
@@ -58,6 +66,31 @@ function isPwaInstalled() {
     window.matchMedia('(display-mode: fullscreen)').matches ||
     navigator.standalone === true
   );
+}
+
+function isCapacitor() {
+  return !!(window.Capacitor);
+}
+
+// ─── Plein écran automatique (PWA / APK) ───────────────────────────────────────
+// En mode standalone, fullscreen PWA ou Capacitor, on demande le vrai mode
+// immersif dès le premier geste utilisateur pour cacher barre d'état et de
+// navigation sur Android.
+export function initAutoFullscreen() {
+  if (!isPwaInstalled() && !isCapacitor()) return;
+
+  // Premier clic/tap déclenche le mode immersif
+  document.addEventListener('pointerdown', requestImmersive, { once: true });
+
+  // Si le fullscreen est quitté (p. ex. par un geste système), on le rétablit
+  // au prochain geste utilisateur
+  function onFullscreenChange() {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      document.addEventListener('pointerdown', requestImmersive, { once: true });
+    }
+  }
+  document.addEventListener('fullscreenchange', onFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 }
 
 // ─── Notification système de mise à jour ───────────────────────────────────────
