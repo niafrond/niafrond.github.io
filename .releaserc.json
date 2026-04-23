@@ -33,7 +33,10 @@
       {
         "assets": [
           "CHANGELOG.md",
-          "match3-quest/version.js",
+          "version.js",
+          "flash-guess/version.js",
+          "flash-guess/sw.js",
+          "times-up/version.js",
           "times-up/sw.js"
         ],
         "message": "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}"
