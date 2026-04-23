@@ -12,6 +12,7 @@ import {
   nextRoundStartTeamIdx,
   getRotatingGuesserTeamIdx,
   ROTATING_GUESSER_PLAYER_COUNTS,
+  getEffectiveTurnDuration,
 } from '../../game.js';
 
 // ─── computeTeamLayout ────────────────────────────────────────────────────────
@@ -290,5 +291,111 @@ describe('ROTATING_GUESSER_PLAYER_COUNTS', () => {
     expect(ROTATING_GUESSER_PLAYER_COUNTS.has(2)).toBe(false);
     expect(ROTATING_GUESSER_PLAYER_COUNTS.has(6)).toBe(false);
     expect(ROTATING_GUESSER_PLAYER_COUNTS.has(8)).toBe(false);
+  });
+});
+
+// ─── getEffectiveTurnDuration ────────────────────────────────────────────────
+
+import { state } from '../../state.js';
+
+describe('getEffectiveTurnDuration', () => {
+  const originalDuration = state.turnDuration;
+  const originalPlayers  = [...state.playerNames];
+  const originalDiff     = state.difficultyLevel;
+
+  afterEach(() => {
+    state.turnDuration    = originalDuration;
+    state.playerNames     = originalPlayers;
+    state.difficultyLevel = originalDiff;
+  });
+
+  test('Difficile + 2 joueurs → 20 s (override)', () => {
+    state.playerNames     = ['A', 'B'];
+    state.difficultyLevel = 'difficile';
+    state.turnDuration    = 30;
+    expect(getEffectiveTurnDuration()).toBe(20);
+  });
+
+  test('God + 2 joueurs → 15 s (override)', () => {
+    state.playerNames     = ['A', 'B'];
+    state.difficultyLevel = 'god';
+    state.turnDuration    = 30;
+    expect(getEffectiveTurnDuration()).toBe(15);
+  });
+
+  test('Moyen + 2 joueurs → turnDuration utilisateur', () => {
+    state.playerNames     = ['A', 'B'];
+    state.difficultyLevel = 'moyen';
+    state.turnDuration    = 45;
+    expect(getEffectiveTurnDuration()).toBe(45);
+  });
+
+  test('Facile + 2 joueurs → turnDuration utilisateur', () => {
+    state.playerNames     = ['A', 'B'];
+    state.difficultyLevel = 'facile';
+    state.turnDuration    = 30;
+    expect(getEffectiveTurnDuration()).toBe(30);
+  });
+
+  test('God + 4 joueurs (non-2-joueurs) → turnDuration utilisateur', () => {
+    state.playerNames     = ['A', 'B', 'C', 'D'];
+    state.difficultyLevel = 'god';
+    state.turnDuration    = 30;
+    expect(getEffectiveTurnDuration()).toBe(30);
+  });
+});
+
+// ─── Difficulté : chunking avec inconnus ──────────────────────────────────────
+
+describe('computeDraftChunks (Moyen / Difficile)', () => {
+  function makeWords(n) {
+    return Array.from({ length: n }, (_, i) => ({ word: `mot${i}`, category: 'test' }));
+  }
+
+  test('Moyen (D=3) : 2 joueurs, 40 mots → 26 mots dans les chunks, 14 inconnus', () => {
+    const X = 40; const N = 2; const D = 3;
+    const retainedPerPlayer = Math.floor(X / D); // 13
+    const totalRetained     = N * retainedPerPlayer; // 26
+    const E = 3;
+    const totalChunkWords   = totalRetained + E * N; // 32
+    const unknownCount      = X - totalRetained; // 14
+
+    const draftPool = makeWords(totalChunkWords);
+    const chunks = computeDraftChunks(draftPool, totalRetained, N, E);
+    expect(chunks).toHaveLength(N);
+    expect(chunks.reduce((s, c) => s + c.length, 0)).toBe(totalChunkWords);
+
+    const retained = chunks.reduce((s, c) => s + (c.length - E), 0);
+    expect(retained).toBe(totalRetained); // 26
+
+    // After adding unknowns: total game words = 40
+    expect(retained + unknownCount).toBe(X);
+  });
+
+  test('Difficile (D=4) : 2 joueurs, 40 mots → 20 retenus, 20 inconnus', () => {
+    const X = 40; const N = 2; const D = 4;
+    const retainedPerPlayer = Math.floor(X / D); // 10
+    const totalRetained     = N * retainedPerPlayer; // 20
+    const E = 3;
+    const totalChunkWords   = totalRetained + E * N; // 26
+    const unknownCount      = X - totalRetained; // 20
+
+    const draftPool = makeWords(totalChunkWords);
+    const chunks = computeDraftChunks(draftPool, totalRetained, N, E);
+    expect(chunks).toHaveLength(N);
+    const retained = chunks.reduce((s, c) => s + (c.length - E), 0);
+    expect(retained).toBe(totalRetained); // 20
+    expect(retained + unknownCount).toBe(X);
+  });
+
+  test('Le total words requis (X + E*N) est constant quelle que soit la difficulté', () => {
+    const X = 40; const N = 2; const E = 3;
+    [2, 3, 4].forEach(D => {
+      const retainedPerPlayer = Math.floor(X / D);
+      const totalRetained     = N * retainedPerPlayer;
+      const totalChunkWords   = totalRetained + E * N;
+      const unknownCount      = X - totalRetained;
+      expect(totalChunkWords + unknownCount).toBe(X + E * N); // toujours 46
+    });
   });
 });

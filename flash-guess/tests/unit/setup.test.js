@@ -10,6 +10,7 @@ import {
   loadSelectedCategories, saveSelectedCategories,
   loadKidsMode, saveKidsMode,
   loadWordDraftMode, saveWordDraftMode,
+  loadDifficulty, saveDifficulty,
 } from '../../setup.js';
 import { CARD_COUNT_DEFAULT } from '../../state.js';
 import { CATEGORY_LABELS } from '../../words.js';
@@ -132,5 +133,33 @@ describe('loadWordDraftMode / saveWordDraftMode', () => {
   test('renvoie false si la donnée est invalide', () => {
     localStorage.setItem('flashguess_word_draft', 'anything');
     expect(loadWordDraftMode()).toBe(false);
+  });
+});
+
+// ─── difficulty ───────────────────────────────────────────────────────────────
+
+describe('loadDifficulty / saveDifficulty', () => {
+  test('renvoie "moyen" si localStorage est vide (valeur par défaut)', () => {
+    expect(loadDifficulty()).toBe('moyen');
+  });
+
+  test('sauvegarde et recharge "facile"', () => {
+    saveDifficulty('facile');
+    expect(loadDifficulty()).toBe('facile');
+  });
+
+  test('sauvegarde et recharge "difficile"', () => {
+    saveDifficulty('difficile');
+    expect(loadDifficulty()).toBe('difficile');
+  });
+
+  test('sauvegarde et recharge "god"', () => {
+    saveDifficulty('god');
+    expect(loadDifficulty()).toBe('god');
+  });
+
+  test('renvoie "moyen" pour une valeur inconnue', () => {
+    localStorage.setItem('flashguess_difficulty', 'ultra');
+    expect(loadDifficulty()).toBe('moyen');
   });
 });

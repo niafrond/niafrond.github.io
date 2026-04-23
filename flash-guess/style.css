@@ -368,6 +368,28 @@ details.card-collapsible > :not(summary) {
   font-weight: 700;
 }
 
+/* ─── Sélecteur de difficulté (mode 2 joueurs) ──────────────────────────────── */
+.difficulty-options-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.btn-difficulty {
+  flex: 1;
+  min-width: 60px;
+  padding: 10px 6px;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.btn-difficulty--active {
+  background: var(--volcan) !important;
+  border-color: var(--volcan) !important;
+  color: #fff !important;
+  font-weight: 700;
+}
+
 /* ─── Performance coop (game over) ─────────────────────────────────────────── */
 .coop-perf-summary {
   margin-top: 16px;

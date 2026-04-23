@@ -15,11 +15,28 @@ export const ROTATING_GUESSER_KEY      = 'flashguess_rotating_guesser';
 export const ELIMINATIONS_PER_PLAYER   = 3;
 export const GROUPS_KEY                 = 'flashguess_groups';
 export const TURN_DURATION_KEY          = 'flashguess_turn_duration';
+export const DIFFICULTY_KEY             = 'flashguess_difficulty';
 export const WORD_FONT_MIN              = 16;
 export const WORD_FONT_MAX              = 200;
 export const CLICK_COOLDOWN             = 500;
 export const CHILD_READ_MS_PER_LETTER   = 1420;
 export const CHILD_READ_MIN_MS          = 3000;
+
+/**
+ * Niveaux de difficulté (mode 2 joueurs uniquement).
+ * divisor : chaque joueur retient floor(cardCount / divisor) mots après le tri.
+ *   - facile (D=2)    : 2 × (X/2) = X mots connus → 0 inconnu
+ *   - moyen  (D=3)    : 2 × (X/3) ≈ 2X/3 connus  → ~1/3 inconnu
+ *   - difficile (D=4) : 2 × (X/4) = X/2 connus    → ~1/2 inconnu
+ *   - god    (null)   : aucun tri caché             → tout inconnu
+ * timer : durée du tour imposée par la difficulté (null = utilise le réglage utilisateur).
+ */
+export const DIFFICULTIES = {
+  facile:    { label: 'Facile',    emoji: '🟢', divisor: 2,    timer: null },
+  moyen:     { label: 'Moyen',     emoji: '🟡', divisor: 3,    timer: null },
+  difficile: { label: 'Difficile', emoji: '🟠', divisor: 4,    timer: 20   },
+  god:       { label: 'God',       emoji: '☠️', divisor: null, timer: 15   },
+};
 
 export const GAMEPLAY_SCREENS = new Set([
   'screen-word-draft-cover',
@@ -105,12 +122,19 @@ export const state = {
   cardCount:           CARD_COUNT_DEFAULT,
   turnDuration:        30,
 
+  // Niveau de difficulté (mode 2 joueurs uniquement)
+  difficultyLevel:      'moyen',
+
   // Word draft (tri caché)
   wordDraftMode:       false,
   draftPlayerChunks:   [],
   draftCurrentPlayerIdx: 0,
   draftEliminations:   [], // selected indices in current player's chunk
   draftReservePool:    [], // extra words available for refresh (kidsMode only)
+  draftUnknownWords:   [], // mots non montrés lors du tri (Moyen / Difficile)
+
+  // God mode
+  godModeEliminated:   false, // true si une faute éliminatoire a été commise en manche 3
 
   // Mode devineur tournant
   rotatingGuesserMode:   false,

@@ -148,6 +148,21 @@
 
     <div id="teams-container"></div>
 
+    <!-- Niveau de difficulté : visible uniquement pour 2 joueurs -->
+    <div id="difficulty-section" class="card" hidden>
+      <div class="card-title">⚡ Niveau de difficulté</div>
+      <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:14px;">
+        Choisissez l'intensité de la partie à 2 joueurs :
+      </p>
+      <div class="difficulty-options-row">
+        <button class="btn btn-secondary btn-difficulty" data-difficulty="facile"    title="Tous les mots connus à l'avance">🟢 Facile</button>
+        <button class="btn btn-secondary btn-difficulty" data-difficulty="moyen"     title="~1/3 des mots inconnus à l'avance">🟡 Moyen</button>
+        <button class="btn btn-secondary btn-difficulty" data-difficulty="difficile" title="~1/2 des mots inconnus · 20 s">🟠 Difficile</button>
+        <button class="btn btn-secondary btn-difficulty" data-difficulty="god"       title="Aucun tri caché · 15 s · erreur éliminatoire en manche 3">☠️ God</button>
+      </div>
+      <p id="difficulty-desc" style="font-size:0.82rem;color:var(--text-muted);margin-top:10px;text-align:center;min-height:1.4em;"></p>
+    </div>
+
     <!-- Objectif coop : visible uniquement pour 2 joueurs -->
     <div id="coop-objective-section" class="card" hidden>
       <div class="card-title">🎯 Objectif de la partie</div>

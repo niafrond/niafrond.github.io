@@ -20,6 +20,7 @@ import {
   pauseTimer, resumeTimer,
   fitWordCard,
   setCoopObjective,
+  setDifficultyLevel,
   startWordDraft, showWordDraftTurn, confirmWordDraftEliminations,
 } from './game.js';
 
@@ -29,6 +30,7 @@ import {
   loadKidsMode,
   loadWordDraftMode, saveWordDraftMode,
   loadRotatingGuesserMode, saveRotatingGuesserMode,
+  loadDifficulty, saveDifficulty,
   renderPlayerList,
   addPlayer,
   updateKidsModeStatus, toggleKidsMode,
@@ -548,6 +550,15 @@ function init() {
     updateRotatingGuesserBtn();
   }));
 
+  // ── Niveau de difficulté (mode 2 joueurs) ──
+  state.difficultyLevel = loadDifficulty();
+  document.querySelectorAll('.btn-difficulty').forEach(btn => {
+    btn.addEventListener('click', withCooldown(() => {
+      setDifficultyLevel(btn.dataset.difficulty);
+      saveDifficulty(btn.dataset.difficulty);
+    }));
+  });
+
   // ── Categories ──
   el('btn-cats-all').addEventListener('click', withCooldown(selectAllCategories));
   el('btn-cats-none').addEventListener('click', withCooldown(deselectAllCategories));
@@ -673,6 +684,7 @@ function init() {
     state.coopObjectives = new Set();
     state.coopTimeUsed   = 0;
     state.coopTurnsCount = 0;
+    state.godModeEliminated = false;
     state.rotatingGuesserTarget   = [];
     state.currentGuesserTeamIdx   = -1;
     const freshMembers = loadMembers();
@@ -769,6 +781,7 @@ function init() {
     state.coopObjectives         = new Set();
     state.coopTimeUsed           = 0;
     state.coopTurnsCount         = 0;
+    state.godModeEliminated      = false;
     state.rotatingGuesserTarget  = [];
     state.currentGuesserTeamIdx  = -1;
     showScreen('screen-setup');

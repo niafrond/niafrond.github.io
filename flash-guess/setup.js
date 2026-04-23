@@ -5,7 +5,7 @@
 import {
   state,
   CARD_COUNT_DEFAULT, CARD_COUNT_KEY, SELECTED_CATS_KEY, KIDS_MODE_KEY, WORD_DRAFT_KEY, ROTATING_GUESSER_KEY,
-  TURN_DURATION_KEY,
+  TURN_DURATION_KEY, DIFFICULTY_KEY,
   MIN_PLAYERS,
 } from './state.js';
 import { el, showScreen, showToast } from './ui.js';
@@ -95,6 +95,19 @@ export function loadTurnDuration() {
 
 export function saveTurnDuration(n) {
   try { localStorage.setItem(TURN_DURATION_KEY, String(n)); } catch (_) { /* ignore */ }
+}
+
+// ─── Persistance du niveau de difficulté (mode 2 joueurs) ────────────────────
+export function loadDifficulty() {
+  try {
+    const v = localStorage.getItem(DIFFICULTY_KEY);
+    if (v && ['facile', 'moyen', 'difficile', 'god'].includes(v)) return v;
+  } catch (_) { /* ignore */ }
+  return 'moyen';
+}
+
+export function saveDifficulty(v) {
+  try { localStorage.setItem(DIFFICULTY_KEY, v); } catch (_) { /* ignore */ }
 }
 
 // ─── ÉCRAN SETUP — joueurs ─────────────────────────────────────────────────────
