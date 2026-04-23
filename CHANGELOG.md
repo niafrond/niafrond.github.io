@@ -1,3 +1,13 @@
+## [1.133.0](https://github.com/niafrond/niafrond.github.io/compare/v1.132.0...v1.133.0) (2026-04-23)
+
+### Features
+
+* add difficulty levels (Facile/Moyen/Difficile/God) for 2-player Flash Guess mode ([099c4d9](https://github.com/niafrond/niafrond.github.io/commit/099c4d924ead254e342f7d257fde13f57b21df86))
+
+### Bug Fixes
+
+* address code review - explicit difficulty check, clarify comments ([f7fe31e](https://github.com/niafrond/niafrond.github.io/commit/f7fe31e764ebab5eef704d682d058d54a2adde7c))
+
 ## [1.132.0](https://github.com/niafrond/niafrond.github.io/compare/v1.131.0...v1.132.0) (2026-04-23)
 
 ### Features
