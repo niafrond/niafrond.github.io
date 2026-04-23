@@ -1,3 +1,9 @@
+## [1.135.0](https://github.com/niafrond/niafrond.github.io/compare/v1.134.0...v1.135.0) (2026-04-23)
+
+### Features
+
+* **flash-guess:** fullscreen immersif masque barre d'état et navigation (all modes) ([bb9e234](https://github.com/niafrond/niafrond.github.io/commit/bb9e23444e2a2c7ca00c5f652248d4764e0436c6))
+
 ## [1.134.0](https://github.com/niafrond/niafrond.github.io/compare/v1.133.0...v1.134.0) (2026-04-23)
 
 ### Features
