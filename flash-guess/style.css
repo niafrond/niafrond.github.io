@@ -2153,19 +2153,13 @@ details.card-collapsible > :not(summary) {
 /* Draft turn — header */
 .draft-header {
   text-align: center;
-  margin-bottom: 16px;
-}
-.draft-player-title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  margin-top: 10px;
-  color: #ffd166;
+  margin-bottom: 8px;
 }
 .draft-instructions {
   color: var(--text-muted);
-  font-size: 0.9rem;
-  line-height: 1.55;
-  margin-top: 6px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-top: 0;
 }
 
 /* Counter row */
@@ -2207,6 +2201,11 @@ details.card-collapsible > :not(summary) {
   flex-direction: column;
   overflow: hidden;
   padding-bottom: 0;
+  max-width: none;
+  width: 100%;
+  padding-left: 12px;
+  padding-right: 12px;
+  box-sizing: border-box;
 }
 #screen-word-draft .card {
   flex: 1;
@@ -2260,8 +2259,9 @@ details.card-collapsible > :not(summary) {
 /* Refresh button shown inside each card in kids mode */
 .draft-refresh-btn {
   position: absolute;
-  bottom: 4px;
+  top: 50%;
   right: 4px;
+  transform: translateY(-50%);
   background: none;
   border: none;
   padding: 6px 8px;
@@ -2287,6 +2287,11 @@ details.card-collapsible > :not(summary) {
   cursor: not-allowed;
 }
 
+/* Reserve right space so the word text never slides under the refresh button */
+.draft-word-item--with-refresh {
+  padding-right: 44px;
+}
+
 .draft-card {
   padding: 14px;
 }
@@ -2297,41 +2302,33 @@ details.card-collapsible > :not(summary) {
   overflow: hidden;
   word-break: break-word;
 }
+/* Scale down font for longer words */
+.draft-word-text--sm {
+  font-size: clamp(0.75rem, min(2.8vw, 3.5vh), 1.8rem);
+}
+.draft-word-text--xs {
+  font-size: clamp(0.65rem, min(2.2vw, 2.8vh), 1.4rem);
+}
 
 /* ─── Word draft screen — landscape compact ─────────────────────────────────── */
-/* Phones held in landscape (~375 px tall): switch to a 2-column grid so the
-   word list claims the full height and the words can be as large as possible. */
+/* Phones held in landscape (~375 px tall): the header (instructions only) is
+   hidden to save space; the card takes the full height. */
 @media (orientation: landscape) and (max-height: 600px) {
   #screen-word-draft .page-wrapper {
     display: grid;
-    grid-template-columns: minmax(120px, 26%) 1fr;
+    grid-template-columns: 1fr;
     grid-template-rows: 1fr auto;
     grid-template-areas:
-      "header card"
-      "btn    card";
+      "card"
+      "btn";
     gap: 8px;
     padding: 8px 12px;
     max-width: none;
   }
 
+  /* Hide the header entirely — no badge/player name, just instructions which we also hide */
   #screen-word-draft .draft-header {
-    grid-area: header;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 0;
-    gap: 4px;
-  }
-
-  /* Hide the long instruction text to save vertical space */
-  #screen-word-draft .draft-instructions {
     display: none;
-  }
-
-  #screen-word-draft .draft-player-title {
-    font-size: 1rem;
-    margin-top: 2px;
   }
 
   #screen-word-draft .draft-card {
@@ -2359,6 +2356,12 @@ details.card-collapsible > :not(summary) {
   /* In landscape the grid cells are wide — use both vw and vh for font sizing */
   #screen-word-draft .draft-word-text {
     font-size: clamp(0.85rem, min(4vw, 6vh), 3rem);
+  }
+  #screen-word-draft .draft-word-text--sm {
+    font-size: clamp(0.75rem, min(3.2vw, 5vh), 2.4rem);
+  }
+  #screen-word-draft .draft-word-text--xs {
+    font-size: clamp(0.65rem, min(2.5vw, 4vh), 2rem);
   }
 }
 
