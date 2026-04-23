@@ -1,3 +1,9 @@
+## [1.131.0](https://github.com/niafrond/niafrond.github.io/compare/v1.130.2...v1.131.0) (2026-04-23)
+
+### Features
+
+* **flash-guess:** afficher les infos mots restants/trouvés autour du nom du joueur ([f7ba979](https://github.com/niafrond/niafrond.github.io/commit/f7ba97996ab158d6a6b7a091f77a94ff8fe519ba))
+
 ## [1.130.2](https://github.com/niafrond/niafrond.github.io/compare/v1.130.1...v1.130.2) (2026-04-22)
 
 ### Bug Fixes
