@@ -1964,7 +1964,7 @@ function init() {
 document.addEventListener('DOMContentLoaded', init);
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+  navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none', type: 'module' })
     .then(reg => {
       reg.update().catch(() => {});
       if (navigator.serviceWorker.controller) {
