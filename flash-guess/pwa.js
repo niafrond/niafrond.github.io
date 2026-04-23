@@ -90,7 +90,7 @@ async function showUpdateNotification(reg) {
 // ─── Service Worker ────────────────────────────────────────────────────────────
 export function initServiceWorker() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none', type: 'module' })
       .then(reg => {
         reg.update().catch(() => {});
 

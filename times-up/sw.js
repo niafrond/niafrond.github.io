@@ -1,4 +1,5 @@
-const CACHE = 'timesup-v1.133.0';
+import { SITE_SEMVER } from './version.js';
+const CACHE = `timesup-v${SITE_SEMVER.major}.${SITE_SEMVER.minor}.${SITE_SEMVER.patch}`;
 
 const ASSETS = [
   './',
@@ -11,6 +12,7 @@ const ASSETS = [
   './icon.svg',
   './icon-192.png',
   './icon-512.png',
+  './version.js',
 ];
 
 self.addEventListener('install', e => {
