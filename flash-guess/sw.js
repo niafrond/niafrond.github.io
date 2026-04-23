@@ -1,5 +1,4 @@
-import { SITE_SEMVER } from './version.js';
-const CACHE = `flashguess-v${SITE_SEMVER.major}.${SITE_SEMVER.minor}.${SITE_SEMVER.patch}`;
+const CACHE = 'flashguess-v1.133.0';
 
 const ASSETS = [
   './',

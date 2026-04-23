@@ -1,5 +1,4 @@
-import { SITE_SEMVER } from './version.js';
-const CACHE = `timesup-v${SITE_SEMVER.major}.${SITE_SEMVER.minor}.${SITE_SEMVER.patch}`;
+const CACHE = 'timesup-v1.133.0';
 
 const ASSETS = [
   './',
