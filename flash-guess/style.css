@@ -513,6 +513,7 @@ details.card-collapsible > :not(summary) {
 }
 .turn-found-info { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; }
 .turn-player-group { display: flex; align-items: center; gap: 8px; }
+#turn-round-badge, .turn-header-spacer { flex: 1; }
 #turn-player-name {
   font-size: 0.9rem;
   font-weight: 700;
