@@ -1123,10 +1123,8 @@ export async function startWordDraft() {
     return;
   }
 
-  // ── Tri caché avec niveau de difficulté (Moyen / Difficile) ─────────────────
-  // Pour tous les niveaux de difficulté (y compris Facile) et le mode standard :
-  //   totalNeeded = cardCount + ELIMINATIONS_PER_PLAYER * N
-  // Le diviseur change seulement la répartition entre mots montrés et mots inconnus.
+  // La quantité totale de mots nécessaires dans le pool est identique pour tous les
+  // niveaux de difficulté : X + E*N. Le diviseur ne change que la répartition interne.
   const totalNeeded = cardCount + ELIMINATIONS_PER_PLAYER * N;
 
   if (allShuffled.length < totalNeeded) {
@@ -1147,7 +1145,10 @@ export async function startWordDraft() {
 
   const divisor = isTwoPlayer ? (DIFFICULTIES[difficulty]?.divisor ?? null) : null;
 
-  if (isTwoPlayer && divisor !== null && divisor > 2) {
+  // Tri caché avec des mots inconnus : uniquement pour Moyen (D=3) et Difficile (D=4).
+  // Pour Facile (D=2) et les modes multi-joueurs, tous les mots passent par les chunks
+  // (aucun mot inconnu), ce qui donne le même résultat que le mode standard.
+  if (isTwoPlayer && divisor !== null && difficulty !== 'facile') {
     // Moyen (D=3) ou Difficile (D=4) : une partie des mots n'est pas montrée au tri
     const retainedPerPlayer = Math.floor(cardCount / divisor);
     const totalRetained     = N * retainedPerPlayer;    // mots qui passent par les chunks
