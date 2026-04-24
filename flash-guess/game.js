@@ -176,6 +176,20 @@ export function renderTeams() {
   if (teamsContainer) teamsContainer.hidden = isTwoPlayers;
   const reshuffleBtn = el('btn-reshuffle');
   if (reshuffleBtn) reshuffleBtn.hidden = isTwoPlayers;
+
+  // Mode devineur tournant : section visible pour 3, 4, 5 ou 7 joueurs
+  const rotatingSection = el('rotating-guesser-section');
+  if (rotatingSection) {
+    const supportsRotating = ROTATING_GUESSER_PLAYER_COUNTS.has(state.playerNames.length);
+    rotatingSection.hidden = !supportsRotating;
+    const rotatingTeamsBtn = el('toggle-rotating-guesser-teams');
+    if (rotatingTeamsBtn) {
+      rotatingTeamsBtn.textContent = state.rotatingGuesserMode ? 'ON' : 'OFF';
+      rotatingTeamsBtn.className =
+        `kids-mode-toggle-btn${state.rotatingGuesserMode ? ' kids-mode-toggle-btn--on' : ''}`;
+      rotatingTeamsBtn.setAttribute('aria-checked', String(state.rotatingGuesserMode));
+    }
+  }
 }
 
 function updateCoopButtons() {

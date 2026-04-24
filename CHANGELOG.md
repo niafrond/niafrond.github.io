@@ -1,3 +1,21 @@
+## [1.137.0](https://github.com/niafrond/niafrond.github.io/compare/v1.136.1...v1.137.0) (2026-04-24)
+
+### Features
+
+* hide fullscreen and sound buttons during gameplay screens ([ee6ef41](https://github.com/niafrond/niafrond.github.io/commit/ee6ef416388b88323b19a252cfadb898ac748e00))
+
+## [1.136.1](https://github.com/niafrond/niafrond.github.io/compare/v1.136.0...v1.136.1) (2026-04-24)
+
+### Bug Fixes
+
+* bouton enfant/créer hors rectangle + 2 catégories par ligne ([abaf934](https://github.com/niafrond/niafrond.github.io/commit/abaf9349bd5e0329f17584db8c93853f30b19662))
+
+## [1.136.0](https://github.com/niafrond/niafrond.github.io/compare/v1.135.4...v1.136.0) (2026-04-24)
+
+### Features
+
+* add rotating guesser toggle to les équipes page ([c30869d](https://github.com/niafrond/niafrond.github.io/commit/c30869d7015771e5749c833b557608da4f32ee77))
+
 ## [1.135.4](https://github.com/niafrond/niafrond.github.io/compare/v1.135.3...v1.135.4) (2026-04-23)
 
 ### Bug Fixes
