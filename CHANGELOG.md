@@ -1,3 +1,9 @@
+## [1.138.0](https://github.com/niafrond/niafrond.github.io/compare/v1.137.1...v1.138.0) (2026-04-24)
+
+### Features
+
+* **flash-guess:** add Abandonner button for round 1 ([9dbf230](https://github.com/niafrond/niafrond.github.io/commit/9dbf230200f0a0ee2c52d7074e215bceec4419ae))
+
 ## [1.137.1](https://github.com/niafrond/niafrond.github.io/compare/v1.137.0...v1.137.1) (2026-04-24)
 
 ### Bug Fixes
