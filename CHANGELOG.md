@@ -1,3 +1,9 @@
+## [1.136.0](https://github.com/niafrond/niafrond.github.io/compare/v1.135.4...v1.136.0) (2026-04-24)
+
+### Features
+
+* add rotating guesser toggle to les équipes page ([c30869d](https://github.com/niafrond/niafrond.github.io/commit/c30869d7015771e5749c833b557608da4f32ee77))
+
 ## [1.135.4](https://github.com/niafrond/niafrond.github.io/compare/v1.135.3...v1.135.4) (2026-04-23)
 
 ### Bug Fixes
