@@ -1,3 +1,9 @@
+## [1.137.0](https://github.com/niafrond/niafrond.github.io/compare/v1.136.1...v1.137.0) (2026-04-24)
+
+### Features
+
+* hide fullscreen and sound buttons during gameplay screens ([ee6ef41](https://github.com/niafrond/niafrond.github.io/commit/ee6ef416388b88323b19a252cfadb898ac748e00))
+
 ## [1.136.1](https://github.com/niafrond/niafrond.github.io/compare/v1.136.0...v1.136.1) (2026-04-24)
 
 ### Bug Fixes
