@@ -45,6 +45,8 @@ export function showScreen(id, pushHistory = true) {
   document.getElementById(id).hidden = false;
   const versionEl = document.getElementById('flashguess-version');
   if (versionEl) versionEl.hidden = (id !== 'screen-setup');
+  const topControls = document.getElementById('top-right-controls');
+  if (topControls) topControls.hidden = GAMEPLAY_SCREENS.has(id);
   if (GAMEPLAY_SCREENS.has(id)) {
     requestLandscapeLock();
   } else {
