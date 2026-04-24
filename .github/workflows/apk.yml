@@ -123,7 +123,7 @@ jobs:
               -keyalg RSA -keysize 2048 -validity 10000 \
               -dname "CN=Flash Guess, OU=Game, O=Niafrond, L=FR, S=FR, C=FR" \
               -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS"
-            echo "WARNING: Generated a fresh keystore — APK cannot be installed over a previously signed build. Add KEYSTORE_BASE64 secret to fix this."
+            echo "WARNING: Generated a fresh keystore -- APK cannot be installed over a previously signed build. Add KEYSTORE_BASE64 secret to fix this."
           fi
 
       - name: Build release APK
