@@ -572,6 +572,13 @@ function init() {
     assignTeams();
     renderTeams();
   }));
+  el('toggle-rotating-guesser-teams').addEventListener('click', withCooldown(() => {
+    state.rotatingGuesserMode = !state.rotatingGuesserMode;
+    saveRotatingGuesserMode(state.rotatingGuesserMode);
+    assignTeams();
+    renderTeams();
+    updateRotatingGuesserBtn();
+  }));
   el('btn-launch-game').addEventListener('click', withCooldown(async () => {
     if (state.wordDraftMode) {
       await startWordDraft();
