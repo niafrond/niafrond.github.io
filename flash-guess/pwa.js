@@ -72,13 +72,12 @@ function isCapacitor() {
   return !!(window.Capacitor);
 }
 
-// ─── Plein écran automatique (PWA / APK) ───────────────────────────────────────
-// En mode standalone, fullscreen PWA ou Capacitor, on demande le vrai mode
-// immersif dès le premier geste utilisateur pour cacher barre d'état et de
-// navigation sur Android.
+// ─── Plein écran automatique ───────────────────────────────────────────────────
+// On demande le vrai mode immersif dès le premier geste utilisateur pour cacher
+// les barres de navigation Android qui peuvent recouvrir des zones cliquables,
+// que l'app soit installée en PWA, packagée via Capacitor ou ouverte dans le
+// navigateur.
 export function initAutoFullscreen() {
-  if (!isPwaInstalled() && !isCapacitor()) return;
-
   // Premier clic/tap déclenche le mode immersif
   document.addEventListener('pointerdown', requestImmersive, { once: true });
 
