@@ -1,3 +1,9 @@
+## [1.136.1](https://github.com/niafrond/niafrond.github.io/compare/v1.136.0...v1.136.1) (2026-04-24)
+
+### Bug Fixes
+
+* bouton enfant/créer hors rectangle + 2 catégories par ligne ([abaf934](https://github.com/niafrond/niafrond.github.io/commit/abaf9349bd5e0329f17584db8c93853f30b19662))
+
 ## [1.136.0](https://github.com/niafrond/niafrond.github.io/compare/v1.135.4...v1.136.0) (2026-04-24)
 
 ### Features
