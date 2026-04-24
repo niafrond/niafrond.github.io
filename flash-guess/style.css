@@ -244,6 +244,7 @@ details.card-collapsible > :not(summary) {
 }
 .input {
   flex: 1;
+  min-width: 0;
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--text);
@@ -2084,7 +2085,7 @@ details.card-collapsible > :not(summary) {
 /* ─── Catégories : sélection ─────────────────────────────────────────────── */
 .categories-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
   margin: 12px 0;
 }
