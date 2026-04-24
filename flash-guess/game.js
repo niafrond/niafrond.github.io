@@ -255,10 +255,11 @@ export function isCurrentOrateurChild() {
 }
 
 export function showChildReadBtn(visible) {
-  const btn     = el('btn-child-read');
-  const foundBtn = el('btn-found');
-  const errorBtn = el('btn-error');
-  const skipBtn  = el('btn-skip');
+  const btn        = el('btn-child-read');
+  const foundBtn   = el('btn-found');
+  const errorBtn   = el('btn-error');
+  const skipBtn    = el('btn-skip');
+  const abandonBtn = el('btn-abandon');
   if (!btn) return;
   if (state.childReadAutoTimer !== null) {
     clearTimeout(state.childReadAutoTimer);
@@ -266,9 +267,10 @@ export function showChildReadBtn(visible) {
   }
   btn.hidden = !visible;
   btn.classList.remove('child-read-btn--countdown');
-  if (foundBtn) foundBtn.disabled = visible;
-  if (errorBtn) errorBtn.disabled = visible;
-  if (skipBtn)  skipBtn.disabled  = visible;
+  if (foundBtn)   foundBtn.disabled   = visible;
+  if (errorBtn)   errorBtn.disabled   = visible;
+  if (skipBtn)    skipBtn.disabled    = visible;
+  if (abandonBtn) abandonBtn.disabled = visible;
   if (visible && !demo.childReadFrozen) {
     const word     = state.currentWord?.word ?? '';
     // Count only non-space characters so multi-word phrases feel natural
@@ -522,14 +524,17 @@ export function startTurn() {
   state.childReadFirstWord = false;
   demo.firstWordFound = false;
 
-  const rule     = getCurrentRoundRule();
-  const errorBtn = el('btn-error');
-  const skipBtn  = el('btn-skip');
+  const rule       = getCurrentRoundRule();
+  const errorBtn   = el('btn-error');
+  const skipBtn    = el('btn-skip');
+  const abandonBtn = el('btn-abandon');
 
   errorBtn.hidden = !rule.canFault;
   errorBtn.disabled = false;
   skipBtn.hidden  = !rule.canSkip;
   skipBtn.disabled = false;
+  abandonBtn.hidden   = state.currentRound !== 1;
+  abandonBtn.disabled = false;
 
   updateTurnStats();
   drawNextWord();
@@ -643,6 +648,11 @@ export function wordFault() {
   updateUndoRedoButtons();
 }
 
+export function turnAbandoned() {
+  stopTimer();
+  endTurn('abandon');
+}
+
 export function undoLastAction() {
   if (state.actionHistory.length === 0) return;
   playUndo();
@@ -710,6 +720,7 @@ export function endTurn(reason = 'timeout') {
       timeout:  '⏱️ Temps écoulé !',
       fault:    '🚨 Faute — tour arrêté !',
       allFound: '🎉 Tous les mots trouvés !',
+      abandon:  '🏳️ Tour abandonné !',
     };
     el('turn-end-reason').textContent    = reasonMsgs[reason] ?? '⏱️ Temps écoulé !';
     el('turn-end-team').textContent      = teamLabel(team);
@@ -730,7 +741,7 @@ export function endTurn(reason = 'timeout') {
     state.coopTurnsCount += 1;
   }
 
-  if (reason === 'timeout' && state.currentWord) {
+  if ((reason === 'timeout' || reason === 'abandon') && state.currentWord) {
     state.roundWords.push(state.currentWord);
     state.currentWord = null;
   }
@@ -761,6 +772,7 @@ export function endTurn(reason = 'timeout') {
     fault:     '🚨 Faute — tour arrêté !',
     allFound:  '🎉 Tous les mots trouvés !',
     god_fault: '☠️ Éliminé ! Faute en manche 3 — Partie terminée.',
+    abandon:   '🏳️ Tour abandonné !',
   };
   el('turn-end-reason').textContent = reasonMsgs[reason] ?? '⏱️ Temps écoulé !';
   el('turn-end-team').textContent   = teamLabel(team);
