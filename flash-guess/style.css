@@ -710,6 +710,15 @@ details.card-collapsible > :not(summary) {
 }
 .btn-skip-side-turn:hover { opacity: 0.88; }
 
+/* Bouton Abandonner le tour (manche 1) */
+.btn-abandon-turn {
+  background: var(--surface);
+  color: var(--text-muted);
+  border: 2px solid rgba(148,163,184,0.35) !important;
+  font-size: 0.9rem;
+}
+.btn-abandon-turn:hover { background: rgba(148,163,184,0.12); color: var(--text); }
+
 /* ─── No-teams banner ──────────────────────────────────────────────────────── */
 .no-teams-banner {
   background: rgba(245,158,11,0.12);

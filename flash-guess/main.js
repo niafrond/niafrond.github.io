@@ -11,7 +11,7 @@ import { getVersion, getBuildDate } from './version.js';
 
 import {
   startRound, startPreTurn, startTurn,
-  wordFound, wordSkipped, wordFault,
+  wordFound, wordSkipped, wordFault, turnAbandoned,
   undoLastAction, redoLastAction,
   childConfirmedRead,
   handleNextTurn, showGameOver,
@@ -630,6 +630,7 @@ function init() {
   el('btn-found').addEventListener('click', withCooldown(wordFound));
   el('btn-error').addEventListener('click', withCooldown(wordFault));
   el('btn-skip').addEventListener('click', withCooldown(wordSkipped));
+  el('btn-abandon').addEventListener('click', withCooldown(turnAbandoned));
   el('btn-undo').addEventListener('click', withCooldown(undoLastAction));
   el('btn-redo').addEventListener('click', withCooldown(redoLastAction));
   el('btn-child-read').addEventListener('click', withCooldown(childConfirmedRead));
