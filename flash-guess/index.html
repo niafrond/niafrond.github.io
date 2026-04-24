@@ -184,6 +184,16 @@
       </div>
     </div>
 
+    <!-- Mode devineur tournant : visible pour 3, 4, 5 ou 7 joueurs -->
+    <div id="rotating-guesser-section" class="card" hidden>
+      <div class="input-row">
+        <label for="toggle-rotating-guesser-teams" style="color:var(--text-muted);font-size:0.9rem;flex:1;">
+          🔄 Mode devineur tournant <span style="font-size:0.78rem;color:var(--text-muted);">(le devineur change à chaque tour)</span>
+        </label>
+        <button id="toggle-rotating-guesser-teams" class="kids-mode-toggle-btn" role="switch" aria-checked="false">OFF</button>
+      </div>
+    </div>
+
     <button id="btn-reshuffle" class="btn-ghost w-full mb-12">
       🔀 Rebattre les équipes
     </button>
