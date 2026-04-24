@@ -1,3 +1,9 @@
+## [1.137.1](https://github.com/niafrond/niafrond.github.io/compare/v1.137.0...v1.137.1) (2026-04-24)
+
+### Bug Fixes
+
+* **flash-guess:** always request fullscreen on first user gesture ([e8b0521](https://github.com/niafrond/niafrond.github.io/commit/e8b052113524de25c2bce86a7d4e2938b788d505))
+
 ## [1.137.0](https://github.com/niafrond/niafrond.github.io/compare/v1.136.1...v1.137.0) (2026-04-24)
 
 ### Features
