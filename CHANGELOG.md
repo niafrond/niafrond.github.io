@@ -1,3 +1,16 @@
+## [1.138.1](https://github.com/niafrond/niafrond.github.io/compare/v1.138.0...v1.138.1) (2026-04-24)
+
+### Bug Fixes
+
+* **apk:** use persistent KEYSTORE_BASE64 secret to prevent certificate conflicts on reinstall ([2147edc](https://github.com/niafrond/niafrond.github.io/commit/2147edc885e996fdb9f7832c6d9c80ca1510bd48))
+* replace em dash with double hyphen in warning message ([795c0e6](https://github.com/niafrond/niafrond.github.io/commit/795c0e6cbaeabb851d37db502fb8b9815635caec))
+
+## [1.138.0](https://github.com/niafrond/niafrond.github.io/compare/v1.137.1...v1.138.0) (2026-04-24)
+
+### Features
+
+* **flash-guess:** add Abandonner button for round 1 ([9dbf230](https://github.com/niafrond/niafrond.github.io/commit/9dbf230200f0a0ee2c52d7074e215bceec4419ae))
+
 ## [1.137.1](https://github.com/niafrond/niafrond.github.io/compare/v1.137.0...v1.137.1) (2026-04-24)
 
 ### Bug Fixes

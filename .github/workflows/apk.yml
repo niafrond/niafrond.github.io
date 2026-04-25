@@ -100,14 +100,31 @@ jobs:
       - name: Accept SDK licenses
         run: yes | sdkmanager --licenses || true
 
-      - name: Generate keystore
+      # To allow reinstalling the APK without a certificate conflict, store a
+      # persistent keystore as a base64-encoded GitHub secret named KEYSTORE_BASE64.
+      # Generate it once with:
+      #   keytool -genkeypair -keystore flash-guess.keystore -alias flash-guess \
+      #           -keyalg RSA -keysize 2048 -validity 10000 \
+      #           -dname "CN=Flash Guess, OU=Game, O=Niafrond, L=FR, S=FR, C=FR" \
+      #           -storepass <password> -keypass <password>
+      #   base64 -w 0 flash-guess.keystore
+      # Then add the output as the KEYSTORE_BASE64 secret and the password as KEYSTORE_PASSWORD.
+      - name: Restore or generate keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          keytool -genkeypair -v \
-            -keystore flash-guess-android/flash-guess.keystore \
-            -alias flash-guess \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Flash Guess, OU=Game, O=Niafrond, L=FR, S=FR, C=FR" \
-            -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > flash-guess-android/flash-guess.keystore
+            echo "Using stored keystore from secret (consistent certificate across builds)"
+          else
+            keytool -genkeypair -v \
+              -keystore flash-guess-android/flash-guess.keystore \
+              -alias flash-guess \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Flash Guess, OU=Game, O=Niafrond, L=FR, S=FR, C=FR" \
+              -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS"
+            echo "WARNING: Generated a fresh keystore -- APK cannot be installed over a previously signed build. Add KEYSTORE_BASE64 secret to fix this."
+          fi
 
       - name: Build release APK
         working-directory: flash-guess-android/android
