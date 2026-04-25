@@ -1,3 +1,9 @@
+## [1.138.2](https://github.com/niafrond/niafrond.github.io/compare/v1.138.1...v1.138.2) (2026-04-25)
+
+### Bug Fixes
+
+* **flash-guess:** move bouton Suivant en bas au centre en fin de tour ([6b0dadf](https://github.com/niafrond/niafrond.github.io/commit/6b0dadf92ba1c1a2aee9542b0888af4034a543f5))
+
 ## [1.138.1](https://github.com/niafrond/niafrond.github.io/compare/v1.138.0...v1.138.1) (2026-04-24)
 
 ### Bug Fixes
