@@ -743,6 +743,19 @@ details.card-collapsible > :not(summary) {
   align-items: stretch;
 }
 
+/* Portrait: next button fixed at bottom-center to avoid misclicks */
+#screen-turn-end {
+  padding-bottom: 6rem;
+}
+#screen-turn-end #btn-next-turn {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 200px;
+  z-index: 5;
+}
+
 .turn-end-info {
   display: flex;
   flex-direction: column;
@@ -1228,6 +1241,11 @@ details.card-collapsible > :not(summary) {
     gap: 8px;
   }
   #screen-turn-end #btn-next-turn {
+    position: static;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    min-width: auto;
     flex: 1;
     font-size: 0.95rem;
   }
