@@ -1,3 +1,9 @@
+## [1.142.0](https://github.com/niafrond/niafrond.github.io/compare/v1.141.0...v1.142.0) (2026-04-27)
+
+### Features
+
+* **flash-guess:** synthèse vocale pour annoncer le joueur au pré-tour ([79789d9](https://github.com/niafrond/niafrond.github.io/commit/79789d91525c4d6dde31057b20a7c3b8a53649e9))
+
 ## [1.141.0](https://github.com/niafrond/niafrond.github.io/compare/v1.140.0...v1.141.0) (2026-04-27)
 
 ### Features
