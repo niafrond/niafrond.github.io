@@ -1,3 +1,9 @@
+## [1.145.0](https://github.com/niafrond/niafrond.github.io/compare/v1.144.0...v1.145.0) (2026-04-27)
+
+### Features
+
+* **flash-guess:** add Android APK download link in settings ([d42c3d4](https://github.com/niafrond/niafrond.github.io/commit/d42c3d416bcdd43009f244fbac4e4d538100befa))
+
 ## [1.144.0](https://github.com/niafrond/niafrond.github.io/compare/v1.143.2...v1.144.0) (2026-04-27)
 
 ### Features
