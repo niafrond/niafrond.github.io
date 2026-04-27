@@ -708,6 +708,20 @@ function init() {
     updateRotateOverlay();
   }));
 
+  // ── Theme toggle ──
+  const THEME_KEY = 'fg_theme';
+  function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    el('btn-theme').textContent = theme === 'light' ? '☀️' : '🌙';
+    el('btn-theme').title = theme === 'light' ? 'Passer en mode sombre' : 'Passer en mode clair';
+  }
+  applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+  el('btn-theme').addEventListener('click', withCooldown(() => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
+  }));
+
   // ── Mute toggle ──
   el('btn-mute').addEventListener('click', withCooldown(() => {
     setMuted(!getMuted());
