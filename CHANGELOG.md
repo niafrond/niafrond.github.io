@@ -1,3 +1,15 @@
+## [1.143.0](https://github.com/niafrond/niafrond.github.io/compare/v1.142.0...v1.143.0) (2026-04-27)
+
+### Features
+
+* **quiz:** always show answers in animateur mode, remove reveal button ([f3bf16a](https://github.com/niafrond/niafrond.github.io/commit/f3bf16ab0403dc691e169dd48585053b102f54f6))
+* **quiz:** show correct/wrong answers log to host at question end ([9ce1d35](https://github.com/niafrond/niafrond.github.io/commit/9ce1d354234b20ad41de3a0d4add12a66e1aa85c))
+* **quiz:** show QCM choices at question end for animateur host ([d0c7651](https://github.com/niafrond/niafrond.github.io/commit/d0c7651ed09bcc157a3c23ffdcc8855eb131771b))
+
+### Bug Fixes
+
+* **quiz:** hide answer label when no question data, fix trivia comment ([fc3ac8e](https://github.com/niafrond/niafrond.github.io/commit/fc3ac8edb16bb23c104a6a9c5f6f8433f07574e9))
+
 ## [1.142.0](https://github.com/niafrond/niafrond.github.io/compare/v1.141.0...v1.142.0) (2026-04-27)
 
 ### Features
