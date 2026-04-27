@@ -525,10 +525,10 @@ export function renderGamePhase(phase, data, isHost) {
         answerReveal.hidden = false;
       }
       const correctAnswerLabel = el('correct-answer-label');
-      if (correctAnswerLabel) correctAnswerLabel.hidden = false;
+      if (correctAnswerLabel) correctAnswerLabel.hidden = !q2;
       const skipBadge = el('skipped-badge');
       if (skipBadge) skipBadge.hidden = !data.lastResult?.skipped;
-      // Trivia (anecdote) toujours affiché
+      // Trivia (anecdote) affiché si disponible
       const triviaEl = el('question-trivia');
       if (triviaEl) {
         if (q2?.trivia) {
