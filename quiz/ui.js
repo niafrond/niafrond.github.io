@@ -519,31 +519,59 @@ export function renderGamePhase(phase, data, isHost) {
       show('phase-question-preview');
       show('phase-question-end');
       const q2 = data.currentQuestion;
-      const isAnimateur = data.hostIsAnimateur ?? false;
-      const answerRevealed = data.answerRevealed ?? true; // par défaut, réponse visible
-      const showAnswer = !isAnimateur || answerRevealed;
       const answerReveal = el('correct-answer-reveal');
       if (answerReveal && q2) {
-        answerReveal.textContent = showAnswer ? (q2.correctAnswer ?? '') : '';
-        answerReveal.hidden = !showAnswer;
+        answerReveal.textContent = q2.correctAnswer ?? '';
+        answerReveal.hidden = false;
       }
       const correctAnswerLabel = el('correct-answer-label');
-      if (correctAnswerLabel) correctAnswerLabel.hidden = !showAnswer;
+      if (correctAnswerLabel) correctAnswerLabel.hidden = !q2;
       const skipBadge = el('skipped-badge');
       if (skipBadge) skipBadge.hidden = !data.lastResult?.skipped;
-      // Trivia (anecdote) affiché à tous quand la réponse est révélée
+      // Trivia (anecdote) affiché si disponible
       const triviaEl = el('question-trivia');
       if (triviaEl) {
-        if (showAnswer && q2?.trivia) {
+        if (q2?.trivia) {
           triviaEl.textContent = `💡 ${q2.trivia}`;
           triviaEl.hidden = false;
         } else {
           triviaEl.hidden = true;
         }
       }
-      // Bouton "Révéler la réponse" — hôte animateur uniquement, avant révélation
+      // Bouton "Révéler la réponse" — toujours caché (les réponses sont toujours visibles)
       const revealBtn = el('btn-reveal-answer');
-      if (revealBtn) revealBtn.hidden = !isHost || !isAnimateur || answerRevealed;
+      if (revealBtn) revealBtn.hidden = true;
+      // Choix QCM — visible uniquement pour l'hôte animateur (pour relire les options à l'oral)
+      const choicesEndEl = el('host-qcm-choices-end');
+      if (choicesEndEl) {
+        if (isHost && data.hostIsAnimateur && q2?.choices?.length) {
+          choicesEndEl.innerHTML = q2.choices.map(c => {
+            const isCorrect = c === q2.correctAnswer;
+            const cls = isCorrect ? ' choice-correct' : '';
+            return `<button class="choice-btn${cls}" disabled>${escapeHtml(c)}</button>`;
+          }).join('');
+          choicesEndEl.hidden = false;
+        } else {
+          choicesEndEl.hidden = true;
+        }
+      }
+      // Journal des réponses — visible uniquement pour l'hôte
+      const answersLogEl = el('host-answers-log');
+      if (answersLogEl) {
+        if (isHost && data.answersLog?.length) {
+          answersLogEl.innerHTML = data.answersLog.map(entry => {
+            const player = data.players?.find(p => p.id === entry.playerId);
+            const name = escapeHtml(player ? player.name : entry.playerId);
+            const icon = entry.correct ? '✅' : entry.nearMiss ? '🤏' : '❌';
+            const cls = entry.correct ? 'answer-log-correct' : entry.nearMiss ? 'answer-log-near' : 'answer-log-wrong';
+            const answerText = entry.answer ? ` — <em>« ${escapeHtml(entry.answer)} »</em>` : '';
+            return `<div class="answer-log-entry ${cls}">${icon} <strong>${name}</strong>${answerText}</div>`;
+          }).join('');
+          answersLogEl.hidden = false;
+        } else {
+          answersLogEl.hidden = true;
+        }
+      }
       // Bouton "Suivant" visible uniquement pour l'hôte
       const nextBtn = el('btn-next-question');
       if (nextBtn) nextBtn.hidden = !isHost;

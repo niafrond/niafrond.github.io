@@ -522,6 +522,7 @@ function buildRenderData(state, engine) {
     hostIsReader: clientState.hostIsReader,
     hostIsAnimateur: clientState.hostIsAnimateur,
     answerRevealed: state.answerRevealedForCurrentQuestion ?? false,
+    answersLog: state.answersLog ?? [],
   };
 }
 
