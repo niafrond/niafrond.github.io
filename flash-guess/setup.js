@@ -4,7 +4,7 @@
 
 import {
   state,
-  CARD_COUNT_DEFAULT, CARD_COUNT_KEY, SELECTED_CATS_KEY, KIDS_MODE_KEY, WORD_DRAFT_KEY, ROTATING_GUESSER_KEY,
+  CARD_COUNT_DEFAULT, CARD_COUNT_KEY, SELECTED_CATS_KEY, KIDS_MODE_KEY, KIDS_QUESTIONS_KEY, KIDS_READ_TIME_KEY, WORD_DRAFT_KEY, ROTATING_GUESSER_KEY,
   TURN_DURATION_KEY, DIFFICULTY_KEY,
   MIN_PLAYERS,
 } from './state.js';
@@ -57,6 +57,30 @@ export function loadKidsMode() {
 
 export function saveKidsMode(v) {
   try { localStorage.setItem(KIDS_MODE_KEY, v ? '1' : '0'); } catch (_) { /* ignore */ }
+}
+
+// ─── Persistance du toggle "activer questions enfants" ────────────────────────
+export function loadKidsQuestionsEnabled() {
+  try {
+    const stored = localStorage.getItem(KIDS_QUESTIONS_KEY);
+    return stored === null ? true : stored === '1';
+  } catch (_) { return true; }
+}
+
+export function saveKidsQuestionsEnabled(v) {
+  try { localStorage.setItem(KIDS_QUESTIONS_KEY, v ? '1' : '0'); } catch (_) { /* ignore */ }
+}
+
+// ─── Persistance du toggle "activer temps de lecture pour enfants" ─────────────
+export function loadKidsReadTimeEnabled() {
+  try {
+    const stored = localStorage.getItem(KIDS_READ_TIME_KEY);
+    return stored === null ? true : stored === '1';
+  } catch (_) { return true; }
+}
+
+export function saveKidsReadTimeEnabled(v) {
+  try { localStorage.setItem(KIDS_READ_TIME_KEY, v ? '1' : '0'); } catch (_) { /* ignore */ }
 }
 
 // ─── Persistance du mode choix de mots ───────────────────────────────────────
@@ -188,7 +212,7 @@ export function hasChildInGame() {
 }
 
 export function updateKidsModeStatus() {
-  const forced = hasChildInGame();
+  const forced = hasChildInGame() && state.kidsQuestionsEnabled;
   state.kidsMode = forced || state.kidsModeManual;
 
   const btn     = el('toggle-kids-mode');

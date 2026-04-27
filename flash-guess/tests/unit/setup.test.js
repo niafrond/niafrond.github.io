@@ -9,6 +9,8 @@ import {
   loadCardCount, saveCardCount,
   loadSelectedCategories, saveSelectedCategories,
   loadKidsMode, saveKidsMode,
+  loadKidsQuestionsEnabled, saveKidsQuestionsEnabled,
+  loadKidsReadTimeEnabled, saveKidsReadTimeEnabled,
   loadWordDraftMode, saveWordDraftMode,
   loadDifficulty, saveDifficulty,
 } from '../../setup.js';
@@ -110,6 +112,52 @@ describe('loadKidsMode / saveKidsMode', () => {
   test('renvoie false si la donnée est invalide', () => {
     localStorage.setItem('flashguess_kids_mode', 'anything');
     expect(loadKidsMode()).toBe(false);
+  });
+});
+
+// ─── kidsQuestionsEnabled ─────────────────────────────────────────────────────
+
+describe('loadKidsQuestionsEnabled / saveKidsQuestionsEnabled', () => {
+  test('renvoie true si localStorage est vide (valeur par défaut)', () => {
+    expect(loadKidsQuestionsEnabled()).toBe(true);
+  });
+
+  test('sauvegarde et recharge true', () => {
+    saveKidsQuestionsEnabled(true);
+    expect(loadKidsQuestionsEnabled()).toBe(true);
+  });
+
+  test('sauvegarde et recharge false', () => {
+    saveKidsQuestionsEnabled(false);
+    expect(loadKidsQuestionsEnabled()).toBe(false);
+  });
+
+  test('renvoie false si la donnée est invalide', () => {
+    localStorage.setItem('flashguess_kids_questions', 'anything');
+    expect(loadKidsQuestionsEnabled()).toBe(false);
+  });
+});
+
+// ─── kidsReadTimeEnabled ──────────────────────────────────────────────────────
+
+describe('loadKidsReadTimeEnabled / saveKidsReadTimeEnabled', () => {
+  test('renvoie true si localStorage est vide (valeur par défaut)', () => {
+    expect(loadKidsReadTimeEnabled()).toBe(true);
+  });
+
+  test('sauvegarde et recharge true', () => {
+    saveKidsReadTimeEnabled(true);
+    expect(loadKidsReadTimeEnabled()).toBe(true);
+  });
+
+  test('sauvegarde et recharge false', () => {
+    saveKidsReadTimeEnabled(false);
+    expect(loadKidsReadTimeEnabled()).toBe(false);
+  });
+
+  test('renvoie false si la donnée est invalide', () => {
+    localStorage.setItem('flashguess_kids_read_time', 'anything');
+    expect(loadKidsReadTimeEnabled()).toBe(false);
   });
 });
 
