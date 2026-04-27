@@ -254,6 +254,11 @@ export function isCurrentOrateurChild() {
   return state.playerIsChild.has(playerName);
 }
 
+/** Renvoie true si le temps de lecture enfant doit s'activer pour l'orateur courant. */
+export function isChildReadTimeNeeded() {
+  return state.kidsReadTimeEnabled && isCurrentOrateurChild();
+}
+
 export function showChildReadBtn(visible) {
   const btn        = el('btn-child-read');
   const foundBtn   = el('btn-found');
@@ -551,14 +556,14 @@ export function startTurn() {
     ring.style.strokeDasharray  = `${circ}`;
     ring.style.strokeDashoffset = '0';
     ring.style.stroke = 'var(--success)';
-    if (isCurrentOrateurChild()) {
+    if (isChildReadTimeNeeded()) {
       state.childReadFirstWord = true;
       demo.childReadFrozen = true;
       showChildReadBtn(true);
     }
   } else {
     updateTimerDisplay();
-    if (isCurrentOrateurChild()) {
+    if (isChildReadTimeNeeded()) {
       state.childReadFirstWord = true;
       showChildReadBtn(true);
     } else {
@@ -586,7 +591,7 @@ export function drawNextWord() {
   updateTurnStats();
   fitWordCard();
 
-  if (!state.childReadFirstWord && isCurrentOrateurChild()) {
+  if (!state.childReadFirstWord && isChildReadTimeNeeded()) {
     if (!demo.mode) pauseTimer();
     showChildReadBtn(true);
   }

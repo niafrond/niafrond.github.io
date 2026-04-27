@@ -15,6 +15,7 @@
 
 <!-- Contrôles globaux (coin bas-droit) -->
 <div id="top-right-controls">
+  <button id="btn-theme"      class="btn-top-ctrl" title="Thème clair/sombre">🌙</button>
   <button id="btn-fullscreen" class="btn-top-ctrl" title="Plein écran">⛶</button>
   <button id="btn-mute"       class="btn-top-ctrl" title="Son on/off">🔊</button>
 </div>
@@ -572,6 +573,18 @@
           🧒 Mode Enfant <span id="kids-mode-auto-tag" style="font-size:0.78rem;color:var(--success);font-weight:700;" hidden>(auto)</span>
         </label>
         <button id="toggle-kids-mode" class="kids-mode-toggle-btn" role="switch" aria-checked="false">OFF</button>
+      </div>
+      <div class="input-row mt-12">
+        <label for="toggle-kids-questions" style="color:var(--text-muted);font-size:0.9rem;flex:1;">
+          📚 Activer questions enfants <span style="font-size:0.78rem;color:var(--text-muted);">(mots adaptés aux enfants)</span>
+        </label>
+        <button id="toggle-kids-questions" class="kids-mode-toggle-btn kids-mode-toggle-btn--on" role="switch" aria-checked="true">ON</button>
+      </div>
+      <div class="input-row mt-12">
+        <label for="toggle-kids-read-time" style="color:var(--text-muted);font-size:0.9rem;flex:1;">
+          ⏳ Activer temps de lecture pour enfants
+        </label>
+        <button id="toggle-kids-read-time" class="kids-mode-toggle-btn kids-mode-toggle-btn--on" role="switch" aria-checked="true">ON</button>
       </div>
       <div class="input-row mt-12">
         <label for="toggle-word-draft" style="color:var(--text-muted);font-size:0.9rem;flex:1;">

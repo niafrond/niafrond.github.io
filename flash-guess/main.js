@@ -28,6 +28,8 @@ import {
   loadCardCount, saveCardCount,
   loadTurnDuration, saveTurnDuration,
   loadKidsMode,
+  loadKidsQuestionsEnabled, saveKidsQuestionsEnabled,
+  loadKidsReadTimeEnabled, saveKidsReadTimeEnabled,
   loadWordDraftMode, saveWordDraftMode,
   loadRotatingGuesserMode, saveRotatingGuesserMode,
   loadDifficulty, saveDifficulty,
@@ -518,6 +520,39 @@ function init() {
   updateKidsModeStatus();
   el('toggle-kids-mode').addEventListener('click', withCooldown(toggleKidsMode));
 
+  // ── Activer questions enfants ──
+  state.kidsQuestionsEnabled = loadKidsQuestionsEnabled();
+  const kidsQuestionsBtn = el('toggle-kids-questions');
+  function updateKidsQuestionsBtn() {
+    kidsQuestionsBtn.textContent = state.kidsQuestionsEnabled ? 'ON' : 'OFF';
+    kidsQuestionsBtn.className =
+      `kids-mode-toggle-btn${state.kidsQuestionsEnabled ? ' kids-mode-toggle-btn--on' : ''}`;
+    kidsQuestionsBtn.setAttribute('aria-checked', String(state.kidsQuestionsEnabled));
+  }
+  updateKidsQuestionsBtn();
+  kidsQuestionsBtn.addEventListener('click', withCooldown(() => {
+    state.kidsQuestionsEnabled = !state.kidsQuestionsEnabled;
+    saveKidsQuestionsEnabled(state.kidsQuestionsEnabled);
+    updateKidsQuestionsBtn();
+    updateKidsModeStatus();
+  }));
+
+  // ── Activer temps de lecture pour enfants ──
+  state.kidsReadTimeEnabled = loadKidsReadTimeEnabled();
+  const kidsReadTimeBtn = el('toggle-kids-read-time');
+  function updateKidsReadTimeBtn() {
+    kidsReadTimeBtn.textContent = state.kidsReadTimeEnabled ? 'ON' : 'OFF';
+    kidsReadTimeBtn.className =
+      `kids-mode-toggle-btn${state.kidsReadTimeEnabled ? ' kids-mode-toggle-btn--on' : ''}`;
+    kidsReadTimeBtn.setAttribute('aria-checked', String(state.kidsReadTimeEnabled));
+  }
+  updateKidsReadTimeBtn();
+  kidsReadTimeBtn.addEventListener('click', withCooldown(() => {
+    state.kidsReadTimeEnabled = !state.kidsReadTimeEnabled;
+    saveKidsReadTimeEnabled(state.kidsReadTimeEnabled);
+    updateKidsReadTimeBtn();
+  }));
+
   // ── Choix des mots (word draft) ──
   state.wordDraftMode = loadWordDraftMode();
   const wordDraftBtn = el('toggle-word-draft');
@@ -706,6 +741,20 @@ function init() {
     showScreen('screen-setup');
     updateNavVisibility('screen-setup');
     updateRotateOverlay();
+  }));
+
+  // ── Theme toggle ──
+  const THEME_KEY = 'fg_theme';
+  function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    el('btn-theme').textContent = theme === 'light' ? '☀️' : '🌙';
+    el('btn-theme').title = theme === 'light' ? 'Passer en mode sombre' : 'Passer en mode clair';
+  }
+  applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+  el('btn-theme').addEventListener('click', withCooldown(() => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
   }));
 
   // ── Mute toggle ──
