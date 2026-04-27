@@ -519,31 +519,28 @@ export function renderGamePhase(phase, data, isHost) {
       show('phase-question-preview');
       show('phase-question-end');
       const q2 = data.currentQuestion;
-      const isAnimateur = data.hostIsAnimateur ?? false;
-      const answerRevealed = data.answerRevealed ?? true; // par défaut, réponse visible
-      const showAnswer = !isAnimateur || answerRevealed;
       const answerReveal = el('correct-answer-reveal');
       if (answerReveal && q2) {
-        answerReveal.textContent = showAnswer ? (q2.correctAnswer ?? '') : '';
-        answerReveal.hidden = !showAnswer;
+        answerReveal.textContent = q2.correctAnswer ?? '';
+        answerReveal.hidden = false;
       }
       const correctAnswerLabel = el('correct-answer-label');
-      if (correctAnswerLabel) correctAnswerLabel.hidden = !showAnswer;
+      if (correctAnswerLabel) correctAnswerLabel.hidden = false;
       const skipBadge = el('skipped-badge');
       if (skipBadge) skipBadge.hidden = !data.lastResult?.skipped;
-      // Trivia (anecdote) affiché à tous quand la réponse est révélée
+      // Trivia (anecdote) toujours affiché
       const triviaEl = el('question-trivia');
       if (triviaEl) {
-        if (showAnswer && q2?.trivia) {
+        if (q2?.trivia) {
           triviaEl.textContent = `💡 ${q2.trivia}`;
           triviaEl.hidden = false;
         } else {
           triviaEl.hidden = true;
         }
       }
-      // Bouton "Révéler la réponse" — hôte animateur uniquement, avant révélation
+      // Bouton "Révéler la réponse" — toujours caché (les réponses sont toujours visibles)
       const revealBtn = el('btn-reveal-answer');
-      if (revealBtn) revealBtn.hidden = !isHost || !isAnimateur || answerRevealed;
+      if (revealBtn) revealBtn.hidden = true;
       // Bouton "Suivant" visible uniquement pour l'hôte
       const nextBtn = el('btn-next-question');
       if (nextBtn) nextBtn.hidden = !isHost;

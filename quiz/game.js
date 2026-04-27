@@ -977,9 +977,8 @@ export class GameEngine {
 
     this.peer.broadcast({
       type: MSG.QUESTION_END,
-      // En mode animateur, la réponse est cachée jusqu'à révélation manuelle
-      correctAnswer: isAnimateur ? null : q.correctAnswer,
-      trivia: isAnimateur ? null : (q.trivia ?? null),
+      correctAnswer: q.correctAnswer,
+      trivia: q.trivia ?? null,
       skipped,
       scores: this._getScores(),
       betReveal: Object.keys(this.state.bets).length > 0 ? { ...this.state.bets } : null,
