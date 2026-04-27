@@ -1,3 +1,9 @@
+## [1.143.2](https://github.com/niafrond/niafrond.github.io/compare/v1.143.1...v1.143.2) (2026-04-27)
+
+### Bug Fixes
+
+* word draft OK button always visible without scroll (grid layout) ([7b77ef4](https://github.com/niafrond/niafrond.github.io/commit/7b77ef46afc69bd3e8e501c245c2c71b8ff8e676))
+
 ## [1.143.1](https://github.com/niafrond/niafrond.github.io/compare/v1.143.0...v1.143.1) (2026-04-27)
 
 ### Bug Fixes
