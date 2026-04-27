@@ -726,6 +726,7 @@ const NEXT_TURN_BTN_DELAY = 1000;
  */
 function lockNextTurnBtn() {
   const btn = el('btn-next-turn');
+  if (!btn) return;
   btn.disabled = true;
   setTimeout(() => { btn.disabled = false; }, NEXT_TURN_BTN_DELAY);
 }
