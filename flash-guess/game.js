@@ -15,7 +15,7 @@ import {
   playTick, playTickUrgent, playBuzzer,
   playFound, playRoundStart, playGameOver, playButtonClick,
   playSkip, playFault, playUndo, playRedo, playGameStart,
-  speakPlayerName,
+  speakPreTurn,
 } from './sound.js';
 import { getShuffledWords, getCategoryInfo, shuffle } from './words.js';
 import { saveMembersAfterGame } from './members.js';
@@ -513,7 +513,7 @@ export function startPreTurn() {
   sentenceEl.style.color = team.color;
 
   showScreen('screen-pre-turn');
-  speakPlayerName(playerName);
+  speakPreTurn(playerName, guesserLabel);
   if (demo.mode && demoHooks.showTips) demoHooks.showTips('pre-turn');
 }
 

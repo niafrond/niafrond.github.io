@@ -6,7 +6,7 @@
 
 import { state, demo, withCooldown, GAMEPLAY_SCREENS } from './state.js';
 import { el, showScreen, getCurrentScreen } from './ui.js';
-import { setMuted, getMuted } from './sound.js';
+import { setMuted, getMuted, prewarmPlayerNames } from './sound.js';
 import { getVersion, getBuildDate } from './version.js';
 
 import {
@@ -615,6 +615,7 @@ function init() {
     updateRotatingGuesserBtn();
   }));
   el('btn-launch-game').addEventListener('click', withCooldown(async () => {
+    prewarmPlayerNames(state.playerNames);
     if (state.wordDraftMode) {
       await startWordDraft();
     } else {

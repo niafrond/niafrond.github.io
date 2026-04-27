@@ -235,16 +235,40 @@ export function playGameStart() {
 }
 
 /**
- * Synthèse vocale — annonce le nom du joueur dont c'est le tour.
+ * Pré-amorce le moteur TTS dans le contexte d'un geste utilisateur.
+ * Doit être appelée lors d'un clic utilisateur (ex. btn-launch-game) pour
+ * débloquer speechSynthesis sur mobile (iOS Safari notamment).
+ * Les noms sont prononcés silencieusement et à vitesse maximale.
+ */
+export function prewarmPlayerNames(names) {
+  if (typeof speechSynthesis === 'undefined') return;
+  try {
+    speechSynthesis.cancel();
+    names.forEach(name => {
+      const utt = new SpeechSynthesisUtterance(name);
+      utt.lang = 'fr-FR';
+      utt.volume = 0;
+      utt.rate = 5;
+      speechSynthesis.speak(utt);
+    });
+  } catch (_) {}
+}
+
+/**
+ * Synthèse vocale — annonce le nom du joueur dont c'est le tour
+ * et, si fourni, le nom du devineur.
  * Utilise la Web Speech API (SpeechSynthesis) si disponible.
  * Respecte le réglage muet ; silencieux en cas d'absence de support.
  */
-export function speakPlayerName(name) {
+export function speakPreTurn(playerName, guesserLabel) {
   if (_muted) return;
   if (typeof speechSynthesis === 'undefined') return;
   try {
     speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(`Au tour de ${name}`);
+    const guesserText = guesserLabel
+      ? `. ${guesserLabel.replace(/ · /g, ' et ')} doit deviner`
+      : '';
+    const utt = new SpeechSynthesisUtterance(`Au tour de ${playerName}${guesserText}`);
     utt.lang = 'fr-FR';
     utt.rate = 1;
     utt.pitch = 1;
