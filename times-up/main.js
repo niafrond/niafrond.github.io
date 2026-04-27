@@ -1926,6 +1926,10 @@ function init() {
   }));
 
   // ── Mute toggle ──
+  el('btn-mute').addEventListener('click', withCooldown(() => {
+    setMuted(!getMuted());
+    el('btn-mute').textContent = getMuted() ? '🔇' : '🔊';
+  }));
 
   // ── Words editor ──
   el('btn-edit-words').addEventListener('click', withCooldown(openWordsEditor));

@@ -267,8 +267,8 @@
         const btn = document.getElementById('btn-theme');
         function applyTheme(theme) {
             document.documentElement.dataset.theme = theme;
-            btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-            btn.title = theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre';
+            btn.textContent = theme === 'light' ? '🌙' : '☀️';
+            btn.title = theme === 'light' ? 'Passer en mode sombre' : 'Passer en mode clair';
         }
         applyTheme(localStorage.getItem(THEME_KEY) || 'light');
         btn.addEventListener('click', () => {
