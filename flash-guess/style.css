@@ -2236,8 +2236,9 @@ details.card-collapsible > :not(summary) {
 #screen-word-draft .page-wrapper {
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 8px;
   overflow: hidden;
   padding-bottom: 0;
   max-width: none;
@@ -2247,7 +2248,6 @@ details.card-collapsible > :not(summary) {
   box-sizing: border-box;
 }
 #screen-word-draft .card {
-  flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
