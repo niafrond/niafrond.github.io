@@ -6,7 +6,7 @@
 
 import { state, demo, withCooldown, GAMEPLAY_SCREENS } from './state.js';
 import { el, showScreen, getCurrentScreen } from './ui.js';
-import { setMuted, getMuted } from './sound.js';
+import { setMuted, getMuted, prewarmPlayer, prewarmPlayerNames } from './sound.js';
 import { getVersion, getBuildDate } from './version.js';
 
 import {
@@ -33,6 +33,7 @@ import {
   loadWordDraftMode, saveWordDraftMode,
   loadRotatingGuesserMode, saveRotatingGuesserMode,
   loadDifficulty, saveDifficulty,
+  loadCurrentPlayers,
   renderPlayerList,
   addPlayer,
   updateKidsModeStatus, toggleKidsMode,
@@ -482,8 +483,16 @@ function init() {
   });
 
   // ── Setup ──
-  el('btn-add-player').addEventListener('click', withCooldown(addPlayer));
-  el('player-input').addEventListener('keydown', e => { if (e.key === 'Enter') addPlayer(); });
+  el('btn-add-player').addEventListener('click', withCooldown(() => {
+    const added = addPlayer();
+    if (added) prewarmPlayer(added);
+  }));
+  el('player-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const added = addPlayer();
+      if (added) prewarmPlayer(added);
+    }
+  });
   el('btn-start-game').addEventListener('click', withCooldown(() => {
     if (state.playerNames.length >= 2) {
       openCategorySelect();
@@ -615,6 +624,7 @@ function init() {
     updateRotatingGuesserBtn();
   }));
   el('btn-launch-game').addEventListener('click', withCooldown(async () => {
+    prewarmPlayerNames(state.playerNames);
     if (state.wordDraftMode) {
       await startWordDraft();
     } else {
@@ -873,6 +883,19 @@ function init() {
   document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
   initAutoFullscreen();
   initApkDownloadLink();
+
+  // ── Restore saved players ──
+  const savedPlayers = loadCurrentPlayers();
+  if (savedPlayers.length > 0) {
+    const members = loadMembers();
+    savedPlayers.forEach(name => {
+      if (!state.playerNames.includes(name) && state.playerNames.length < 20) {
+        state.playerNames.push(name);
+        const m = members.find(x => x.name === name);
+        if (m?.isChild) state.playerIsChild.add(name);
+      }
+    });
+  }
 
   renderPlayerList();
   showScreen('screen-setup');

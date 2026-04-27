@@ -5,6 +5,8 @@
  * les autres sons sont générés via Web Audio API.
  */
 
+import { TTS_PREWARM_KEY } from './state.js';
+
 let _ctx = null;
 let _muted = false;
 
@@ -234,21 +236,109 @@ export function playGameStart() {
   } catch (_) {}
 }
 
+// ─── TTS — phrases fixes et suivi pré-amorçage ───────────────────────────────
+
 /**
- * Synthèse vocale — annonce le nom du joueur dont c'est le tour.
- * Utilise la Web Speech API (SpeechSynthesis) si disponible.
- * Respecte le réglage muet ; silencieux en cas d'absence de support.
+ * Morceaux fixes de la phrase d'annonce de tour.
+ * Stockés séparément pour être pré-amorcés une seule fois au lancement.
  */
-export function speakPlayerName(name) {
+const FIXED_PHRASES = ["C'est le tour de", 'de faire deviner à'];
+
+/** Ensemble en mémoire des textes déjà mis en file silencieuse. */
+const _prewarmed = new Set();
+
+function _silentUtt(text) {
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang   = 'fr-FR';
+  utt.volume = 0;
+  utt.rate   = 5;
+  return utt;
+}
+
+/**
+ * Met en file une utterance silencieuse pour `text` si ce n'est pas encore fait.
+ * Ne doit être appelé que depuis un contexte de geste utilisateur.
+ */
+function _queueSilent(text) {
+  if (_prewarmed.has(text)) return;
+  _prewarmed.add(text);
+  speechSynthesis.speak(_silentUtt(text));
+}
+
+/**
+ * Enregistre un nom de joueur dans localStorage pour mémoriser
+ * qu'il a été soumis au pré-amorçage TTS.
+ */
+function _savePrewarmedName(name) {
+  try {
+    const stored = JSON.parse(localStorage.getItem(TTS_PREWARM_KEY) || '[]');
+    if (!stored.includes(name)) {
+      stored.push(name);
+      localStorage.setItem(TTS_PREWARM_KEY, JSON.stringify(stored));
+    }
+  } catch (_) { /* ignore */ }
+}
+
+/**
+ * Renvoie les noms de joueurs précédemment enregistrés pour le pré-amorçage TTS.
+ */
+export function loadPrewarmedNames() {
+  try { return JSON.parse(localStorage.getItem(TTS_PREWARM_KEY) || '[]'); } catch { return []; }
+}
+
+/**
+ * Pré-amorce le moteur TTS pour un seul joueur, sans annuler la file en cours.
+ * À appeler dans le contexte d'un geste utilisateur (clic "Ajouter").
+ */
+export function prewarmPlayer(name) {
+  if (typeof speechSynthesis === 'undefined') return;
+  try {
+    _queueSilent(name);
+    _savePrewarmedName(name);
+  } catch (_) {}
+}
+
+/**
+ * Pré-amorce le moteur TTS dans le contexte d'un geste utilisateur.
+ * Annule la file en cours, réinitialise le suivi, puis met en file
+ * silencieusement les phrases fixes et tous les noms de joueurs.
+ */
+export function prewarmPlayerNames(names) {
+  if (typeof speechSynthesis === 'undefined') return;
+  try {
+    speechSynthesis.cancel();
+    _prewarmed.clear();
+    FIXED_PHRASES.forEach(p => _queueSilent(p));
+    names.forEach(name => {
+      _queueSilent(name);
+      _savePrewarmedName(name);
+    });
+  } catch (_) {}
+}
+
+/**
+ * Synthèse vocale — annonce le nom du joueur dont c'est le tour
+ * et, si fourni, le nom du devineur.
+ * La phrase est découpée en morceaux distincts pour bénéficier
+ * du pré-amorçage TTS effectué sur chaque segment.
+ */
+export function speakPreTurn(playerName, guesserLabel) {
   if (_muted) return;
   if (typeof speechSynthesis === 'undefined') return;
   try {
     speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(`Au tour de ${name}`);
-    utt.lang = 'fr-FR';
-    utt.rate = 1;
-    utt.pitch = 1;
-    speechSynthesis.speak(utt);
+    const parts = ["C'est le tour de", playerName];
+    if (guesserLabel) {
+      parts.push('de faire deviner à');
+      parts.push(guesserLabel.replace(/ · /g, ' et '));
+    }
+    parts.forEach(text => {
+      const utt   = new SpeechSynthesisUtterance(text);
+      utt.lang    = 'fr-FR';
+      utt.rate    = 1;
+      utt.pitch   = 1;
+      speechSynthesis.speak(utt);
+    });
   } catch (_) {}
 }
 
