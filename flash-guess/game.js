@@ -716,6 +716,21 @@ export function redoLastAction() {
 }
 
 // ─── FIN DE TOUR ───────────────────────────────────────────────────────────────
+
+/** Durée (ms) pendant laquelle le bouton Suivant est verrouillé après la fin d'un tour. */
+const NEXT_TURN_BTN_DELAY = 1000;
+
+/**
+ * Désactive temporairement le bouton Suivant après la fin d'un tour
+ * pour éviter les faux clics dus à une pression résiduelle sur l'écran.
+ */
+function lockNextTurnBtn() {
+  const btn = el('btn-next-turn');
+  if (!btn) return;
+  btn.disabled = true;
+  setTimeout(() => { btn.disabled = false; }, NEXT_TURN_BTN_DELAY);
+}
+
 export function endTurn(reason = 'timeout') {
   stopTimer();
 
@@ -738,6 +753,7 @@ export function endTurn(reason = 'timeout') {
     el('turn-end-all-found').hidden = (reason !== 'allFound');
     el('btn-correct-turn').hidden = (state.turnFound.length === 0);
     showScreen('screen-turn-end');
+    lockNextTurnBtn();
     if (state.turnFound.length > 0 && demoHooks.showTurnEndTips) demoHooks.showTurnEndTips();
     return;
   }
@@ -804,6 +820,7 @@ export function endTurn(reason = 'timeout') {
 
   el('btn-correct-turn').hidden = (state.turnFound.length === 0);
   showScreen('screen-turn-end');
+  lockNextTurnBtn();
 }
 
 // ─── CORRECTION DU TOUR ────────────────────────────────────────────────────────
