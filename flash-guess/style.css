@@ -1231,12 +1231,10 @@ details.card-collapsible > :not(summary) {
     margin-top: 0 !important;
   }
 
-  /* Turn end — 2-column layout: info left | button right */
+  /* Turn end — compact column layout en paysage, bouton Suivant épinglé en bas */
   #screen-turn-end {
-    flex-direction: row;
-    align-items: center;
-    gap: 20px;
-    padding: 10px 24px;
+    flex-direction: column;
+    padding: 8px 24px 5rem;
   }
   .turn-end-info {
     flex: 1;
@@ -1246,21 +1244,21 @@ details.card-collapsible > :not(summary) {
   #turn-end-reason   { font-size: 1.4rem !important; }
   .turn-end-score    { font-size: 2.8rem; }
   #screen-turn-end .turn-end-actions {
-    flex-shrink: 0;
-    width: 150px;
-    align-self: stretch;
+    align-self: center;
+    width: auto;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
   }
   #screen-turn-end #btn-next-turn {
-    position: static;
-    bottom: auto;
-    left: auto;
-    transform: none;
-    min-width: auto;
-    flex: 1;
-    font-size: 0.95rem;
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 200px;
+    z-index: 5;
+    flex: unset;
+    font-size: 1rem;
   }
 
   /* Round end */
