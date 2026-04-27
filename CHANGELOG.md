@@ -1,3 +1,9 @@
+## [1.145.1](https://github.com/niafrond/niafrond.github.io/compare/v1.145.0...v1.145.1) (2026-04-27)
+
+### Bug Fixes
+
+* **flash-guess:** prevent accidental text selection during gameplay ([1c06939](https://github.com/niafrond/niafrond.github.io/commit/1c069399b4b0931bb40ad38ba7f913df2bcd6136))
+
 ## [1.145.0](https://github.com/niafrond/niafrond.github.io/compare/v1.144.0...v1.145.0) (2026-04-27)
 
 ### Features
