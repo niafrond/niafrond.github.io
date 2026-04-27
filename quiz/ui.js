@@ -541,6 +541,20 @@ export function renderGamePhase(phase, data, isHost) {
       // Bouton "Révéler la réponse" — toujours caché (les réponses sont toujours visibles)
       const revealBtn = el('btn-reveal-answer');
       if (revealBtn) revealBtn.hidden = true;
+      // Choix QCM — visible uniquement pour l'hôte animateur (pour relire les options à l'oral)
+      const choicesEndEl = el('host-qcm-choices-end');
+      if (choicesEndEl) {
+        if (isHost && data.hostIsAnimateur && q2?.choices?.length) {
+          choicesEndEl.innerHTML = q2.choices.map(c => {
+            const isCorrect = c === q2.correctAnswer;
+            const cls = isCorrect ? ' choice-correct' : '';
+            return `<button class="choice-btn${cls}" disabled>${escapeHtml(c)}</button>`;
+          }).join('');
+          choicesEndEl.hidden = false;
+        } else {
+          choicesEndEl.hidden = true;
+        }
+      }
       // Journal des réponses — visible uniquement pour l'hôte
       const answersLogEl = el('host-answers-log');
       if (answersLogEl) {
