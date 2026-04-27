@@ -1,3 +1,9 @@
+## [1.140.0](https://github.com/niafrond/niafrond.github.io/compare/v1.139.0...v1.140.0) (2026-04-27)
+
+### Features
+
+* **flash-guess:** add two kids toggles - activer questions enfants & activer temps de lecture ([5485576](https://github.com/niafrond/niafrond.github.io/commit/548557636a8341cf727f910f087899c443c26a28))
+
 ## [1.139.0](https://github.com/niafrond/niafrond.github.io/compare/v1.138.2...v1.139.0) (2026-04-27)
 
 ### Features
