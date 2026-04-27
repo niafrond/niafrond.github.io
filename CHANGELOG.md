@@ -1,3 +1,13 @@
+## [1.141.0](https://github.com/niafrond/niafrond.github.io/compare/v1.140.0...v1.141.0) (2026-04-27)
+
+### Features
+
+* **flash-guess:** add Île de la Réunion category (deselected by default) with Times Up Nout Pei words ([5c75452](https://github.com/niafrond/niafrond.github.io/commit/5c754524573d4d5772319e0f40906016076e4ad2))
+
+### Bug Fixes
+
+* **flash-guess:** fix spacing alignment in CATEGORY_LABELS for reunion entry ([3f1f58d](https://github.com/niafrond/niafrond.github.io/commit/3f1f58d656c94267bd2a4c1a36d03cbbae1451c9))
+
 ## [1.140.0](https://github.com/niafrond/niafrond.github.io/compare/v1.139.0...v1.140.0) (2026-04-27)
 
 ### Features
