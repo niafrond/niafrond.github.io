@@ -1911,11 +1911,21 @@ function init() {
     showScreen('screen-setup');
   }));
 
-  // ── Mute toggle ──
-  el('btn-mute').addEventListener('click', withCooldown(() => {
-    setMuted(!getMuted());
-    el('btn-mute').textContent = getMuted() ? '🔇' : '🔊';
+  // ── Theme toggle ──
+  const THEME_KEY = 'tu_theme';
+  function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    el('btn-theme').textContent = theme === 'light' ? '☀️' : '🌙';
+    el('btn-theme').title = theme === 'light' ? 'Passer en mode sombre' : 'Passer en mode clair';
+  }
+  applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+  el('btn-theme').addEventListener('click', withCooldown(() => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
   }));
+
+  // ── Mute toggle ──
 
   // ── Words editor ──
   el('btn-edit-words').addEventListener('click', withCooldown(openWordsEditor));

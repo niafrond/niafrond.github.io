@@ -26,6 +26,19 @@
   --bg-grad: linear-gradient(160deg, #0b1e2d 0%, #0d2640 60%, #0a1f2e 100%);
 }
 
+/* ─── Thème clair ───────────────────────────────────────────────────────────── */
+html[data-theme="light"] {
+  --bg:        #f0f4f8;
+  --surface:   #ffffff;
+  --surface2:  #e8edf3;
+  --text:      #1a2332;
+  --text-muted:#64748b;
+  --border:    rgba(0,0,0,0.1);
+  --shadow:    0 4px 20px rgba(0,0,0,0.1);
+
+  --bg-grad: linear-gradient(160deg, #dde8f5 0%, #e8f4fb 60%, #d6e8f2 100%);
+}
+
 html, body {
   height: 100%;
   background: var(--bg-grad);
