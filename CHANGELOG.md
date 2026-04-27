@@ -1,3 +1,13 @@
+## [1.139.0](https://github.com/niafrond/niafrond.github.io/compare/v1.138.2...v1.139.0) (2026-04-27)
+
+### Features
+
+* add dark/light theme toggle to flash-guess, times-up, and landing page ([c5b5715](https://github.com/niafrond/niafrond.github.io/commit/c5b5715481c2941913b2b2037592e983040f5486))
+
+### Bug Fixes
+
+* restore times-up mute toggle and correct theme icon/tooltip logic in landing page ([fcab303](https://github.com/niafrond/niafrond.github.io/commit/fcab3032c11459ae832222d13e8e968e544421a9))
+
 ## [1.138.2](https://github.com/niafrond/niafrond.github.io/compare/v1.138.1...v1.138.2) (2026-04-25)
 
 ### Bug Fixes
