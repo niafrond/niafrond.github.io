@@ -5,7 +5,7 @@
 import {
   state,
   CARD_COUNT_DEFAULT, CARD_COUNT_KEY, SELECTED_CATS_KEY, KIDS_MODE_KEY, KIDS_QUESTIONS_KEY, KIDS_READ_TIME_KEY, WORD_DRAFT_KEY, ROTATING_GUESSER_KEY,
-  TURN_DURATION_KEY, DIFFICULTY_KEY,
+  TURN_DURATION_KEY, DIFFICULTY_KEY, PLAYERS_KEY,
   MIN_PLAYERS,
 } from './state.js';
 import { el, showScreen, showToast } from './ui.js';
@@ -141,6 +141,22 @@ export function saveDifficulty(v) {
   try { localStorage.setItem(DIFFICULTY_KEY, v); } catch (_) { /* ignore */ }
 }
 
+// ─── Persistance de la liste de joueurs ───────────────────────────────────────
+export function loadCurrentPlayers() {
+  try {
+    const raw = localStorage.getItem(PLAYERS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (_) { /* ignore */ }
+  return [];
+}
+
+export function saveCurrentPlayers() {
+  try { localStorage.setItem(PLAYERS_KEY, JSON.stringify(state.playerNames)); } catch (_) { /* ignore */ }
+}
+
 // ─── ÉCRAN SETUP — joueurs ─────────────────────────────────────────────────────
 export function renderPlayerList() {
   const list = el('player-list');
@@ -189,9 +205,9 @@ export function renderPlayerList() {
 export function addPlayer() {
   const input = el('player-input');
   const name = input.value.trim();
-  if (!name) { showToast('Entrez un prénom', 'warn'); return; }
-  if (state.playerNames.includes(name)) { showToast('Ce joueur existe déjà', 'warn'); return; }
-  if (state.playerNames.length >= 20) { showToast('Maximum 20 joueurs', 'warn'); return; }
+  if (!name) { showToast('Entrez un prénom', 'warn'); return null; }
+  if (state.playerNames.includes(name)) { showToast('Ce joueur existe déjà', 'warn'); return null; }
+  if (state.playerNames.length >= 20) { showToast('Maximum 20 joueurs', 'warn'); return null; }
   const isChild = el('player-is-child').checked;
   state.playerNames.push(name);
   if (isChild) state.playerIsChild.add(name);
@@ -199,15 +215,18 @@ export function addPlayer() {
   input.value = '';
   input.focus();
   autoSaveMember(name, isChild);
+  saveCurrentPlayers();
   renderPlayerList();
   renderMembersList();
   renderGroupsInSetup();
+  return name;
 }
 
 export function removePlayer(idx) {
   const name = state.playerNames[idx];
   state.playerIsChild.delete(name);
   state.playerNames.splice(idx, 1);
+  saveCurrentPlayers();
   renderPlayerList();
   renderMembersList();
   renderGroupsInSetup();
