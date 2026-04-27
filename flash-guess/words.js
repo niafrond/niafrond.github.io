@@ -127,7 +127,7 @@ export const CATEGORY_LABELS = {
   space:               { label: 'Espace',                 emoji: '🚀' },
   sports:              { label: 'Sports',                 emoji: '🏅' },
   games:               { label: 'Jeux',                   emoji: '🎮' },
-  reunion:             { label: 'Île de la Réunion',       emoji: '🌋' },
+  reunion:             { label: 'Île de la Réunion',     emoji: '🌋' },
 };
 
 /** Mélange aléatoire (Fisher-Yates) */
