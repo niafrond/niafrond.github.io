@@ -235,6 +235,21 @@ export function playGameStart() {
 }
 
 /**
+ * Pré-amorce le moteur TTS pour un seul joueur, sans annuler la file en cours.
+ * À appeler dans le contexte d'un geste utilisateur (clic "Ajouter").
+ */
+export function prewarmPlayer(name) {
+  if (typeof speechSynthesis === 'undefined') return;
+  try {
+    const utt = new SpeechSynthesisUtterance(name);
+    utt.lang = 'fr-FR';
+    utt.volume = 0;
+    utt.rate = 5;
+    speechSynthesis.speak(utt);
+  } catch (_) {}
+}
+
+/**
  * Pré-amorce le moteur TTS dans le contexte d'un geste utilisateur.
  * Doit être appelée lors d'un clic utilisateur (ex. btn-launch-game) pour
  * débloquer speechSynthesis sur mobile (iOS Safari notamment).
