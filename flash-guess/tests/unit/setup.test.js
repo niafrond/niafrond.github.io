@@ -11,9 +11,9 @@ import {
   loadKidsMode, saveKidsMode,
   loadWordDraftMode, saveWordDraftMode,
   loadDifficulty, saveDifficulty,
+  DEFAULT_SELECTED_CATEGORIES,
 } from '../../setup.js';
 import { CARD_COUNT_DEFAULT } from '../../state.js';
-import { CATEGORY_LABELS } from '../../words.js';
 
 beforeEach(() => {
   localStorage.clear();
@@ -57,9 +57,9 @@ describe('loadCardCount / saveCardCount', () => {
 // ─── selectedCategories ───────────────────────────────────────────────────────
 
 describe('loadSelectedCategories / saveSelectedCategories', () => {
-  test('renvoie toutes les catégories si localStorage est vide', () => {
+  test('renvoie toutes les catégories par défaut si localStorage est vide', () => {
     const cats = loadSelectedCategories();
-    expect(cats).toEqual(Object.keys(CATEGORY_LABELS));
+    expect(cats).toEqual(DEFAULT_SELECTED_CATEGORIES);
   });
 
   test('sauvegarde et recharge un sous-ensemble', () => {
@@ -76,17 +76,17 @@ describe('loadSelectedCategories / saveSelectedCategories', () => {
 
   test('renvoie le défaut si toutes les catégories sont invalides', () => {
     saveSelectedCategories(['fake1', 'fake2']);
-    expect(loadSelectedCategories()).toEqual(Object.keys(CATEGORY_LABELS));
+    expect(loadSelectedCategories()).toEqual(DEFAULT_SELECTED_CATEGORIES);
   });
 
   test('renvoie le défaut si le JSON est corrompu', () => {
     localStorage.setItem('flashguess_selected_cats', 'not-json');
-    expect(loadSelectedCategories()).toEqual(Object.keys(CATEGORY_LABELS));
+    expect(loadSelectedCategories()).toEqual(DEFAULT_SELECTED_CATEGORIES);
   });
 
   test('renvoie le défaut si le tableau est vide', () => {
     saveSelectedCategories([]);
-    expect(loadSelectedCategories()).toEqual(Object.keys(CATEGORY_LABELS));
+    expect(loadSelectedCategories()).toEqual(DEFAULT_SELECTED_CATEGORIES);
   });
 });
 

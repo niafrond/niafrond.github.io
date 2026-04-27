@@ -75,6 +75,7 @@ const ASSETS = [
   './words/space.json',
   './words/sports.json',
   './words/games.json',
+  './words/reunion.json',
 ];
 
 self.addEventListener('install', e => {
