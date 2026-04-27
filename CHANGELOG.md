@@ -1,3 +1,10 @@
+## [1.143.1](https://github.com/niafrond/niafrond.github.io/compare/v1.143.0...v1.143.1) (2026-04-27)
+
+### Bug Fixes
+
+* add null guard in lockNextTurnBtn ([ecb57c0](https://github.com/niafrond/niafrond.github.io/commit/ecb57c017d221561c4601151da107de84caa00bf))
+* btn-next-turn en bas en paysage + délai 1s anti-misclick après fin de tour ([2d5db92](https://github.com/niafrond/niafrond.github.io/commit/2d5db926f8753746fa0d12652c06ff967743466d))
+
 ## [1.143.0](https://github.com/niafrond/niafrond.github.io/compare/v1.142.0...v1.143.0) (2026-04-27)
 
 ### Features
