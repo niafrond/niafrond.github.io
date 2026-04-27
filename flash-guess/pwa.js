@@ -32,6 +32,13 @@ export async function installPwa() {
   }
 }
 
+// ─── Lien téléchargement APK Android ──────────────────────────────────────────
+export function initApkDownloadLink() {
+  if (!isAndroidBrowser()) return;
+  const link = document.getElementById('btn-download-apk');
+  if (link) link.hidden = false;
+}
+
 // ─── Plein écran ───────────────────────────────────────────────────────────────
 function requestImmersive() {
   if (document.fullscreenElement || document.webkitFullscreenElement) return;
@@ -70,6 +77,10 @@ function isPwaInstalled() {
 
 function isCapacitor() {
   return !!(window.Capacitor);
+}
+
+function isAndroidBrowser() {
+  return /Android/i.test(navigator.userAgent) && !isCapacitor();
 }
 
 // ─── Plein écran automatique ───────────────────────────────────────────────────
