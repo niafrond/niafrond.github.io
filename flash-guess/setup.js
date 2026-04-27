@@ -31,6 +31,13 @@ export function saveCardCount(n) {
 }
 
 // ─── Persistance des catégories sélectionnées ─────────────────────────────────
+/** Catégories exclues de la sélection par défaut (désélectionnées à la première utilisation). */
+const CATEGORIES_OFF_BY_DEFAULT = new Set(['reunion']);
+
+export const DEFAULT_SELECTED_CATEGORIES = Object.keys(CATEGORY_LABELS).filter(
+  k => !CATEGORIES_OFF_BY_DEFAULT.has(k)
+);
+
 export function loadSelectedCategories() {
   try {
     const raw = localStorage.getItem(SELECTED_CATS_KEY);
@@ -43,7 +50,7 @@ export function loadSelectedCategories() {
       }
     }
   } catch (_) { /* ignore */ }
-  return Object.keys(CATEGORY_LABELS);
+  return DEFAULT_SELECTED_CATEGORIES;
 }
 
 export function saveSelectedCategories(cats) {

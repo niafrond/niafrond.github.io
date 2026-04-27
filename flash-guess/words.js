@@ -60,6 +60,7 @@ const CATEGORY_FILE_MAP = {
   space:               './words/space.json',
   sports:              './words/sports.json',
   games:               './words/games.json',
+  reunion:             './words/reunion.json',
 };
 
 /** Cache en mémoire : catégorie → tableau brut du JSON. */
@@ -126,6 +127,7 @@ export const CATEGORY_LABELS = {
   space:               { label: 'Espace',                 emoji: '🚀' },
   sports:              { label: 'Sports',                 emoji: '🏅' },
   games:               { label: 'Jeux',                   emoji: '🎮' },
+  reunion:             { label: 'Île de la Réunion',     emoji: '🌋' },
 };
 
 /** Mélange aléatoire (Fisher-Yates) */
