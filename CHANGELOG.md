@@ -1,3 +1,11 @@
+## [1.144.0](https://github.com/niafrond/niafrond.github.io/compare/v1.143.2...v1.144.0) (2026-04-27)
+
+### Features
+
+* **flash-guess:** persist player list to localStorage; prewarm TTS per player on add ([1261cea](https://github.com/niafrond/niafrond.github.io/commit/1261ceae0423c36bc2f3d3be113e92875bf6f29a))
+* **flash-guess:** pre-warm TTS on game launch, announce guesser by voice ([fe34efa](https://github.com/niafrond/niafrond.github.io/commit/fe34efabf9534af57532659177ce95c1bf816580))
+* **flash-guess:** split TTS pre-turn into chunks; pre-warm fixed phrases; localStorage registry ([d07cf2e](https://github.com/niafrond/niafrond.github.io/commit/d07cf2ed65165de5ad67bed41e0f0a88da98fa17))
+
 ## [1.143.2](https://github.com/niafrond/niafrond.github.io/compare/v1.143.1...v1.143.2) (2026-04-27)
 
 ### Bug Fixes
