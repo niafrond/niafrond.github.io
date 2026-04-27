@@ -541,6 +541,23 @@ export function renderGamePhase(phase, data, isHost) {
       // Bouton "Révéler la réponse" — toujours caché (les réponses sont toujours visibles)
       const revealBtn = el('btn-reveal-answer');
       if (revealBtn) revealBtn.hidden = true;
+      // Journal des réponses — visible uniquement pour l'hôte
+      const answersLogEl = el('host-answers-log');
+      if (answersLogEl) {
+        if (isHost && data.answersLog?.length) {
+          answersLogEl.innerHTML = data.answersLog.map(entry => {
+            const player = data.players?.find(p => p.id === entry.playerId);
+            const name = escapeHtml(player ? player.name : entry.playerId);
+            const icon = entry.correct ? '✅' : entry.nearMiss ? '🤏' : '❌';
+            const cls = entry.correct ? 'answer-log-correct' : entry.nearMiss ? 'answer-log-near' : 'answer-log-wrong';
+            const answerText = entry.answer ? ` — <em>« ${escapeHtml(entry.answer)} »</em>` : '';
+            return `<div class="answer-log-entry ${cls}">${icon} <strong>${name}</strong>${answerText}</div>`;
+          }).join('');
+          answersLogEl.hidden = false;
+        } else {
+          answersLogEl.hidden = true;
+        }
+      }
       // Bouton "Suivant" visible uniquement pour l'hôte
       const nextBtn = el('btn-next-question');
       if (nextBtn) nextBtn.hidden = !isHost;

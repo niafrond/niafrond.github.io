@@ -366,6 +366,24 @@ body.buzz-flash::after {
   opacity: 0.85;
 }
 
+/* ─── Journal des réponses (hôte, fin de question) ──────────────────────── */
+.host-answers-log {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+.answer-log-entry {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+.answer-log-correct { background: rgba(34,197,94,0.12); color: var(--success); }
+.answer-log-near    { background: rgba(234,179,8,0.12);  color: var(--warning); }
+.answer-log-wrong   { background: rgba(239,68,68,0.12);  color: var(--danger); }
+
 /* ─── Animateur player picker ────────────────────────────────────────────── */
 #animateur-player-picker { margin-top: 12px; }
 #animateur-player-picker[hidden] { display: none !important; }

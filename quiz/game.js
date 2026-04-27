@@ -55,6 +55,7 @@ export class GameEngine {
       wrongAnswers: [],  // Joueurs ayant répondu faux en mode buzzer (question courante)
       eliminatedPlayers: [], // Joueurs ayant mal répondu en QCM (question courante)
       lastResult: null,  // { correct, playerId, answer, points, speedBonus, nearMiss }
+      answersLog: [],    // [{ playerId, answer, correct, nearMiss }] — toutes les réponses de la question
       config: {
         questionCount: 10,
         answerTime: 15,
@@ -318,6 +319,7 @@ export class GameEngine {
     this.state.wrongAnswers = [];
     this.state.eliminatedPlayers = [];
     this.state.lastResult = null;
+    this.state.answersLog = [];
     this.state.bets = {};
     this.state.betDeadline = null;
     this.state.doubleDownPlayers = [];
@@ -707,6 +709,8 @@ export class GameEngine {
     const scores = this._getScores();
     const player = this.state.players.find(p => p.id === peerId);
 
+    this.state.answersLog.push({ playerId: peerId, answer: text, correct, nearMiss });
+
     const result = {
       correct,
       playerId: peerId,
@@ -751,6 +755,8 @@ export class GameEngine {
     const { points, speedBonus } = this._calcPoints(peerId, isCorrect, elapsed, this._getAnswerDuration(peerId));
     const scores = this._getScores();
     const player = this.state.players.find(p => p.id === peerId);
+
+    this.state.answersLog.push({ playerId: peerId, answer: null, correct: isCorrect, nearMiss: false });
 
     const result = {
       correct: isCorrect,
@@ -814,6 +820,8 @@ export class GameEngine {
       }
       this.state.roundPoints[peerId] = (this.state.roundPoints[peerId] ?? 0) + Math.max(0, points);
 
+      this.state.answersLog.push({ playerId: peerId, answer: choice, correct: true, nearMiss: false });
+
       const scores = this._getScores();
       const result = {
         correct: true,
@@ -844,6 +852,8 @@ export class GameEngine {
       if (this.state.config.comboStreak && player) player.streak = 0;
 
       this.state.wrongAnswers.push(peerId);
+
+      this.state.answersLog.push({ playerId: peerId, answer: choice, correct: false, nearMiss: false });
 
       const scores = this._getScores();
       const result = {
@@ -876,6 +886,8 @@ export class GameEngine {
       }
       if (this.state.config.comboStreak && player) player.streak = 0;
 
+      this.state.answersLog.push({ playerId: peerId, answer: choice, correct: false, nearMiss: false });
+
       const scores = this._getScores();
       this.peer.broadcast({ type: MSG.WRONG_CHOICE, playerId: peerId, choice, points: malusPoints, scores });
       this.onStateChange({ ...this.state });
@@ -895,6 +907,8 @@ export class GameEngine {
         malusPoints -= bet;
       }
       if (this.state.config.comboStreak && player) player.streak = 0;
+
+      this.state.answersLog.push({ playerId: peerId, answer: choice, correct: false, nearMiss: false });
 
       const scores = this._getScores();
       this.peer.broadcast({ type: MSG.WRONG_CHOICE, playerId: peerId, choice, points: malusPoints, scores });
@@ -1011,6 +1025,7 @@ export class GameEngine {
     this.state.roundPoints[playerId] = (this.state.roundPoints[playerId] ?? 0) + points;
 
     const scores = this._getScores();
+    this.state.answersLog.push({ playerId, answer: null, correct: true, nearMiss: false });
     const result = {
       correct: true,
       playerId,
