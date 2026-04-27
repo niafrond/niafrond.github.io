@@ -10,6 +10,8 @@ export const CARD_COUNT_DEFAULT         = 40;
 export const CARD_COUNT_KEY             = 'flashguess_card_count';
 export const SELECTED_CATS_KEY          = 'flashguess_selected_cats';
 export const KIDS_MODE_KEY              = 'flashguess_kids_mode';
+export const KIDS_QUESTIONS_KEY         = 'flashguess_kids_questions';
+export const KIDS_READ_TIME_KEY         = 'flashguess_kids_read_time';
 export const WORD_DRAFT_KEY             = 'flashguess_word_draft';
 export const ROTATING_GUESSER_KEY      = 'flashguess_rotating_guesser';
 export const ELIMINATIONS_PER_PLAYER   = 3;
@@ -103,6 +105,8 @@ export const state = {
   selectedCategories:  [],
   kidsMode:            false,
   kidsModeManual:      false,
+  kidsQuestionsEnabled: true,  // toggle: activer questions enfants
+  kidsReadTimeEnabled:  true,  // toggle: activer temps de lecture pour enfants
 
   allWords:            [],
   roundWords:          [],
