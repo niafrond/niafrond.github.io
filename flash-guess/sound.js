@@ -234,6 +234,24 @@ export function playGameStart() {
   } catch (_) {}
 }
 
+/**
+ * Synthèse vocale — annonce le nom du joueur dont c'est le tour.
+ * Utilise la Web Speech API (SpeechSynthesis) si disponible.
+ * Respecte le réglage muet ; silencieux en cas d'absence de support.
+ */
+export function speakPlayerName(name) {
+  if (_muted) return;
+  if (typeof speechSynthesis === 'undefined') return;
+  try {
+    speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(`Au tour de ${name}`);
+    utt.lang = 'fr-FR';
+    utt.rate = 1;
+    utt.pitch = 1;
+    speechSynthesis.speak(utt);
+  } catch (_) {}
+}
+
 /** Fanfare de fin de partie */
 export function playGameOver() {
   if (_muted) return;
