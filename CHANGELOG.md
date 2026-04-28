@@ -1,3 +1,9 @@
+## [1.153.0](https://github.com/niafrond/niafrond.github.io/compare/v1.152.2...v1.153.0) (2026-04-28)
+
+### Features
+
+* transform floating fullscreen/night/mute buttons into normal UI buttons in setup header ([0eba950](https://github.com/niafrond/niafrond.github.io/commit/0eba950eb8e4ca2fc1ec9d337966a1d02d7e27c6))
+
 ## [1.152.2](https://github.com/niafrond/niafrond.github.io/compare/v1.152.1...v1.152.2) (2026-04-28)
 
 ### Bug Fixes

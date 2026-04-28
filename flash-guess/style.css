@@ -336,17 +336,21 @@ details.card-collapsible > :not(summary) {
 /* ─── Home button ─────────────────────────────────────────────────────────── */
 .home-btn {
   display: inline-flex;
+  margin-bottom: 0;
+}
+
+/* ─── Header row: home button + top controls ──────────────────────────────── */
+.setup-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 16px;
 }
 
 /* ─── Contrôles globaux (mute + plein écran) ─────────────────────────────── */
 #top-right-controls {
-  position: fixed;
-  bottom: calc(var(--bottom-nav-height) + 14px);
-  left: 14px;
-  z-index: 100;
   display: flex;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
 }
 .btn-top-ctrl {
@@ -361,7 +365,7 @@ details.card-collapsible > :not(summary) {
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.35;
+  opacity: 0.55;
   transition: opacity 0.2s, background 0.15s;
 }
 .btn-top-ctrl:hover,

@@ -13,12 +13,6 @@
 </head>
 <body>
 
-<!-- Contrôles globaux (coin bas-droit) -->
-<div id="top-right-controls">
-  <button id="btn-theme"      class="btn-top-ctrl" title="Thème clair/sombre">🌙</button>
-  <button id="btn-fullscreen" class="btn-top-ctrl" title="Plein écran">⛶</button>
-  <button id="btn-mute"       class="btn-top-ctrl" title="Son on/off">🔊</button>
-</div>
 <div id="toast" class="toast" hidden></div>
 
 <!-- Overlay "Tournez votre téléphone" -->
@@ -35,7 +29,14 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 <div id="screen-setup" data-screen="screen-setup">
   <div class="page-wrapper">
-    <a href="../" class="btn btn-secondary btn-sm home-btn">← Accueil</a>
+    <div class="setup-header-row">
+      <a href="../" class="btn btn-secondary btn-sm home-btn">← Accueil</a>
+      <div id="top-right-controls">
+        <button id="btn-theme"      class="btn-top-ctrl" title="Thème clair/sombre">🌙</button>
+        <button id="btn-fullscreen" class="btn-top-ctrl" title="Plein écran">⛶</button>
+        <button id="btn-mute"       class="btn-top-ctrl" title="Son on/off">🔊</button>
+      </div>
+    </div>
 
     <h1 class="app-title">⚡ Flash Guess</h1>
     <p class="app-subtitle">Faites deviner des mots en équipes !</p>
