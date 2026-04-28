@@ -451,6 +451,8 @@ test.describe('Premier lancement', () => {
     await expect(page.locator('#bottom-nav')).toBeVisible({ timeout: 8_000 });
     await page.click('#first-launch-demo');
     await expect(page.locator('#first-launch-overlay')).toBeHidden();
+    // The demo starts in landscape; on desktop the pre-turn screen should appear
+    await expect(page.locator('#screen-pre-turn')).toBeVisible({ timeout: 5_000 });
   });
 });
 
