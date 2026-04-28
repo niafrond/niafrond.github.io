@@ -556,7 +556,10 @@ function init() {
   // ── Mode enfant ──
   state.kidsModeManual = loadKidsMode();
   updateKidsModeStatus();
-  el('toggle-kids-mode').addEventListener('click', withCooldown(toggleKidsMode));
+  el('toggle-kids-mode').addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    toggleKidsMode();
+  }));
 
   // ── Activer questions enfants ──
   state.kidsQuestionsEnabled = loadKidsQuestionsEnabled();
