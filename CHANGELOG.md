@@ -1,3 +1,9 @@
+## [1.148.0](https://github.com/niafrond/niafrond.github.io/compare/v1.147.0...v1.148.0) (2026-04-28)
+
+### Features
+
+* affiche mots restants et score sur l'écran pré-tour (Flash Guess) ([cafd388](https://github.com/niafrond/niafrond.github.io/commit/cafd38837eff2ad6097fabbf6c4e6b1bfbf74d88))
+
 ## [1.147.0](https://github.com/niafrond/niafrond.github.io/compare/v1.146.1...v1.147.0) (2026-04-28)
 
 ### Features
