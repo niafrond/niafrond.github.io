@@ -50,7 +50,7 @@ import {
 import { openWordsEditor, addWord, exportWords, importWords, handleResetWords } from './editor.js';
 import { startDemoTurn } from './demo.js';
 import { toggleFullscreen, updateFullscreenBtn, installPwa, initServiceWorker, initAutoFullscreen, initApkDownloadLink } from './pwa.js';
-import { playButtonClick } from './sound.js';
+import { playButtonClick, playReady, playNextCard, playAdvance } from './sound.js';
 import { openLeaderboard, renderLeaderboard } from './leaderboard.js';
 
 // ─── NAVIGATION ────────────────────────────────────────────────────────────────
@@ -681,7 +681,7 @@ function init() {
 
   // ── Pre-turn ──
   el('btn-ready').addEventListener('click', withCooldown(() => {
-    playButtonClick();
+    playReady();
     startTurn();
     updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();
@@ -704,7 +704,7 @@ function init() {
     if (e.target === el('correct-turn-overlay')) closeCorrectTurn();
   });
   el('btn-next-turn').addEventListener('click', withCooldown(() => {
-    playButtonClick();
+    playNextCard();
     handleNextTurn();
     updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();
@@ -712,7 +712,7 @@ function init() {
 
   // ── Round end ──
   el('btn-next-round').addEventListener('click', withCooldown(async () => {
-    playButtonClick();
+    playAdvance();
     if (demo.mode) {
       state.currentRound++;
       const team = state.teams[state.currentTeamIdx];
@@ -728,13 +728,13 @@ function init() {
     updateRotateOverlay();
   }));
   el('btn-final-results').addEventListener('click', withCooldown(() => {
-    playButtonClick();
+    playAdvance();
     showGameOver();
     updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();
   }));
   el('btn-skip-round3').addEventListener('click', withCooldown(() => {
-    playButtonClick();
+    playAdvance();
     showGameOver();
     updateNavVisibility(getCurrentScreen());
     updateRotateOverlay();

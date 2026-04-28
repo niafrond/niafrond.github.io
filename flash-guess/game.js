@@ -15,6 +15,7 @@ import {
   playTick, playTickUrgent, playBuzzer,
   playFound, playRoundStart, playGameOver, playButtonClick,
   playSkip, playFault, playUndo, playRedo, playGameStart,
+  playAbandon,
   speakPreTurn,
 } from './sound.js';
 import { getShuffledWords, getCategoryInfo, shuffle } from './words.js';
@@ -700,6 +701,7 @@ export function wordFault() {
 }
 
 export function turnAbandoned() {
+  playAbandon();
   stopTimer();
   endTurn('abandon');
 }
