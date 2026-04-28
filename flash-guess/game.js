@@ -545,6 +545,11 @@ export function startPreTurn() {
   sentenceEl.style.color = team.color;
 
   speakPreTurn(playerName, guesserLabel);
+
+  const totalScore = team.score.reduce((a, b) => a + b, 0);
+  el('pre-turn-words-left').textContent = state.roundWords.length;
+  el('pre-turn-score').textContent      = totalScore;
+
   showScreen('screen-pre-turn');
   if (demo.mode && demoHooks.showTips) demoHooks.showTips('pre-turn');
 }
