@@ -191,6 +191,38 @@ export function renderTeams() {
       rotatingTeamsBtn.setAttribute('aria-checked', String(state.rotatingGuesserMode));
     }
   }
+
+  // ── Rappel et modification des paramètres de partie ──
+  const forced = state.playerIsChild.size > 0 && state.kidsQuestionsEnabled;
+  const kidsModeTeamsBtn = el('toggle-kids-mode-teams');
+  const kidsModeTeamsAutoTag = el('kids-mode-teams-auto-tag');
+  if (kidsModeTeamsBtn) {
+    if (forced) {
+      kidsModeTeamsBtn.textContent = 'ON';
+      kidsModeTeamsBtn.className = 'kids-mode-toggle-btn kids-mode-toggle-btn--forced';
+      kidsModeTeamsBtn.setAttribute('aria-checked', 'true');
+      kidsModeTeamsBtn.disabled = true;
+      if (kidsModeTeamsAutoTag) kidsModeTeamsAutoTag.hidden = false;
+    } else {
+      kidsModeTeamsBtn.textContent = state.kidsModeManual ? 'ON' : 'OFF';
+      kidsModeTeamsBtn.className =
+        `kids-mode-toggle-btn${state.kidsModeManual ? ' kids-mode-toggle-btn--on' : ''}`;
+      kidsModeTeamsBtn.setAttribute('aria-checked', String(state.kidsModeManual));
+      kidsModeTeamsBtn.disabled = false;
+      if (kidsModeTeamsAutoTag) kidsModeTeamsAutoTag.hidden = true;
+    }
+  }
+
+  const turnDurationTeamsSelect = el('select-turn-duration-teams');
+  if (turnDurationTeamsSelect) turnDurationTeamsSelect.value = String(state.turnDuration);
+
+  const wordDraftTeamsBtn = el('toggle-word-draft-teams');
+  if (wordDraftTeamsBtn) {
+    wordDraftTeamsBtn.textContent = state.wordDraftMode ? 'ON' : 'OFF';
+    wordDraftTeamsBtn.className =
+      `kids-mode-toggle-btn${state.wordDraftMode ? ' kids-mode-toggle-btn--on' : ''}`;
+    wordDraftTeamsBtn.setAttribute('aria-checked', String(state.wordDraftMode));
+  }
 }
 
 function updateCoopButtons() {

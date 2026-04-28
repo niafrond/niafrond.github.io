@@ -195,6 +195,33 @@
       </div>
     </div>
 
+    <!-- Rappel et modification des paramètres de partie -->
+    <div id="game-settings-summary" class="card">
+      <div class="card-title">⚙️ Paramètres de la partie</div>
+      <div class="input-row">
+        <label style="color:var(--text-muted);font-size:0.9rem;flex:1;">
+          🧒 Mode Enfant <span id="kids-mode-teams-auto-tag" style="font-size:0.78rem;color:var(--success);font-weight:700;" hidden>(auto)</span>
+        </label>
+        <button id="toggle-kids-mode-teams" class="kids-mode-toggle-btn" role="switch" aria-checked="false">OFF</button>
+      </div>
+      <div class="input-row mt-12">
+        <label for="select-turn-duration-teams" style="color:var(--text-muted);font-size:0.9rem;flex:1;">⏱️ Durée du tour</label>
+        <select id="select-turn-duration-teams" class="input" style="flex:0 0 auto;width:auto;">
+          <option value="15">15 secondes</option>
+          <option value="20">20 secondes</option>
+          <option value="30">30 sec (défaut)</option>
+          <option value="45">45 secondes</option>
+          <option value="60">60 secondes</option>
+        </select>
+      </div>
+      <div class="input-row mt-12">
+        <label style="color:var(--text-muted);font-size:0.9rem;flex:1;">
+          🎯 Choix des mots <span style="font-size:0.78rem;color:var(--text-muted);">(tri caché avant la partie)</span>
+        </label>
+        <button id="toggle-word-draft-teams" class="kids-mode-toggle-btn" role="switch" aria-checked="false">OFF</button>
+      </div>
+    </div>
+
     <button id="btn-reshuffle" class="btn-ghost w-full mb-12">
       🔀 Rebattre les équipes
     </button>
