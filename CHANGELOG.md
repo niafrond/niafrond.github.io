@@ -1,3 +1,9 @@
+## [1.149.0](https://github.com/niafrond/niafrond.github.io/compare/v1.148.0...v1.149.0) (2026-04-28)
+
+### Features
+
+* afficher les noms des guessers durant le tour ([5914963](https://github.com/niafrond/niafrond.github.io/commit/5914963fb9e744465a1f3cebdc79a8edc6a9df33))
+
 ## [1.148.0](https://github.com/niafrond/niafrond.github.io/compare/v1.147.0...v1.148.0) (2026-04-28)
 
 ### Features
