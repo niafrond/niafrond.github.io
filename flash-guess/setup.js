@@ -158,12 +158,15 @@ export function saveCurrentPlayers() {
 }
 
 // ─── ÉCRAN SETUP — joueurs ─────────────────────────────────────────────────────
+let _lastAddedPlayer = null;
+
 export function renderPlayerList() {
   const list = el('player-list');
   list.innerHTML = '';
   state.playerNames.forEach((name, i) => {
     const item = document.createElement('div');
-    item.className = 'player-item';
+    item.className = name === _lastAddedPlayer ? 'player-item player-item--new' : 'player-item';
+    if (name === _lastAddedPlayer) _lastAddedPlayer = null;
 
     const nameSpan = document.createElement('span');
     nameSpan.className = 'player-item-name';
@@ -188,7 +191,8 @@ export function renderPlayerList() {
   });
 
   const count = state.playerNames.length;
-  el('player-count').textContent = `${count} joueur${count > 1 ? 's' : ''}`;
+  el('player-count').textContent = count > 0 ? `${count} joueur${count > 1 ? 's' : ''}` : '';
+  el('player-count').hidden = count === 0;
   el('btn-start-game').disabled = count < MIN_PLAYERS;
 
   const hint = el('setup-hint');
@@ -214,11 +218,13 @@ export function addPlayer() {
   el('player-is-child').checked = false;
   input.value = '';
   input.focus();
+  _lastAddedPlayer = name;
   autoSaveMember(name, isChild);
   saveCurrentPlayers();
   renderPlayerList();
   renderMembersList();
   renderGroupsInSetup();
+  showToast(`${name} ajouté ✅`);
   return name;
 }
 
