@@ -243,6 +243,90 @@ test.describe('APK Android — flux de jeu (Pixel 5 paysage)', () => {
   });
 });
 
+// ─── Plein écran immersif ─────────────────────────────────────────────────────
+//
+// Ces tests valident le comportement de pwa.js / initAutoFullscreen() :
+//  – masquage du bouton plein écran dans un WebView Capacitor (APK),
+//  – appel de requestFullscreen au chargement de la page,
+//  – ré-appel automatique après chaque sortie du plein écran (fullscreenchange),
+//  – persistence de l'écouteur fullscreenchange (non { once: true }),
+//  – fallback pointerdown pour les navigateurs exigeant un geste utilisateur.
+//
+// L'API requestFullscreen est remplacée par un compteur via addInitScript afin
+// de vérifier les appels sans déclencher de vraie transition plein écran.
+// L'override se fait sur Element.prototype pour garantir que le spy est actif
+// avant que les modules ES de la page ne capturent des références à la méthode.
+
+/** Injecte un spy sur Element.prototype.requestFullscreen avant le chargement. */
+async function withFullscreenSpy(page, capacitor = false) {
+  await page.addInitScript((useCapacitor) => {
+    window.__fsCallCount = 0;
+    Element.prototype.requestFullscreen = function () {
+      window.__fsCallCount++;
+      return Promise.resolve();
+    };
+    if (useCapacitor) window.Capacitor = {};
+  }, capacitor);
+}
+
+test.describe('APK Android — plein écran immersif (Pixel 5 portrait)', () => {
+  test.use(PIXEL_5_PORTRAIT);
+
+  test('le bouton plein écran est masqué dans un WebView Capacitor', async ({ page }) => {
+    await page.addInitScript(() => { window.Capacitor = {}; });
+    await page.goto(APP);
+    await waitForInit(page);
+    await expect(page.locator('#btn-fullscreen')).toBeHidden();
+  });
+
+  test('requestFullscreen est appelé au chargement de la page (contexte APK)', async ({ page }) => {
+    await withFullscreenSpy(page, true);
+    await page.goto(APP);
+    await waitForInit(page);
+    const calls = await page.evaluate(() => window.__fsCallCount);
+    expect(calls).toBeGreaterThan(0);
+  });
+
+  test('requestFullscreen est rappelé automatiquement à chaque sortie du plein écran', async ({ page }) => {
+    await withFullscreenSpy(page);
+    await page.goto(APP);
+    await waitForInit(page);
+    // Réinitialise le compteur après l'appel initial au chargement
+    await page.evaluate(() => { window.__fsCallCount = 0; });
+    // Simule une sortie du plein écran (ex : retour depuis le switcher Android)
+    await page.evaluate(() => document.dispatchEvent(new Event('fullscreenchange')));
+    const calls = await page.evaluate(() => window.__fsCallCount);
+    expect(calls).toBeGreaterThan(0);
+  });
+
+  test("l'écouteur fullscreenchange est permanent (plusieurs sorties successives)", async ({ page }) => {
+    await withFullscreenSpy(page);
+    await page.goto(APP);
+    await waitForInit(page);
+    await page.evaluate(() => { window.__fsCallCount = 0; });
+    // Simule deux sorties successives du plein écran
+    await page.evaluate(() => {
+      document.dispatchEvent(new Event('fullscreenchange'));
+      document.dispatchEvent(new Event('fullscreenchange'));
+    });
+    const calls = await page.evaluate(() => window.__fsCallCount);
+    expect(calls).toBe(2);
+  });
+
+  test('requestFullscreen est appelé après un premier geste utilisateur (fallback navigateur)', async ({ page }) => {
+    // Contexte navigateur — pas de window.Capacitor
+    await withFullscreenSpy(page);
+    await page.goto(APP);
+    await waitForInit(page);
+    // Réinitialise après l'appel initial (qui peut échouer sans geste dans un vrai navigateur)
+    await page.evaluate(() => { window.__fsCallCount = 0; });
+    // Simule un geste utilisateur (tap → pointerdown)
+    await page.evaluate(() => document.dispatchEvent(new PointerEvent('pointerdown')));
+    const calls = await page.evaluate(() => window.__fsCallCount);
+    expect(calls).toBeGreaterThan(0);
+  });
+});
+
 // ─── Validation des correctifs APK ────────────────────────────────────────────
 
 test.describe('APK Android — validation des correctifs', () => {
