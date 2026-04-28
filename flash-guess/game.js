@@ -491,39 +491,45 @@ export async function startRound(roundNum) {
 }
 
 // ─── PRÉ-TOUR ─────────────────────────────────────────────────────────────────
+
+/**
+ * Retourne le label des devineurs pour le tour courant.
+ * Doit être appelé après que state.currentGuesserTeamIdx a été mis à jour.
+ */
+function computeGuesserLabel() {
+  const team       = state.teams[state.currentTeamIdx];
+  const playerName = team.players[state.teamPlayerIdx[state.currentTeamIdx]];
+  if (state.currentGuesserTeamIdx >= 0) {
+    return teamLabel(state.teams[state.currentGuesserTeamIdx]);
+  }
+  const teammates = team.players.filter(p => p !== playerName);
+  if (teammates.length) return teammates.join(' · ');
+  const others = state.teams
+    .filter((_, idx) => idx !== state.currentTeamIdx)
+    .flatMap(t => t.players);
+  return others.length ? others.join(' · ') : teamLabel(team);
+}
+
 export function startPreTurn() {
   const team       = state.teams[state.currentTeamIdx];
   const playerName = team.players[state.teamPlayerIdx[state.currentTeamIdx]];
 
   el('pre-turn-round').textContent = `Manche ${state.currentRound} / 3`;
 
-  let guesserLabel;
   if (state.rotatingGuesserMode && state.rotatingGuesserTarget.length > 0) {
     const n = state.teams.length;
-    const guesserTeamIdx = getRotatingGuesserTeamIdx(
+    state.currentGuesserTeamIdx = getRotatingGuesserTeamIdx(
       state.currentTeamIdx,
       state.rotatingGuesserTarget[state.currentTeamIdx],
       n,
     );
-    state.currentGuesserTeamIdx = guesserTeamIdx;
-    guesserLabel = teamLabel(state.teams[guesserTeamIdx]);
   } else if (state.noTeamsMode) {
     const n = state.teams.length;
-    const leftIdx = (state.currentTeamIdx - 1 + n) % n;
-    state.currentGuesserTeamIdx = leftIdx;
-    guesserLabel = teamLabel(state.teams[leftIdx]);
+    state.currentGuesserTeamIdx = (state.currentTeamIdx - 1 + n) % n;
   } else {
     state.currentGuesserTeamIdx = -1;
-    const teammates = team.players.filter(p => p !== playerName);
-    if (teammates.length) {
-      guesserLabel = teammates.join(' · ');
-    } else {
-      const others = state.teams
-        .filter((_, idx) => idx !== state.currentTeamIdx)
-        .flatMap(t => t.players);
-      guesserLabel = others.length ? others.join(' · ') : teamLabel(team);
-    }
   }
+  const guesserLabel = computeGuesserLabel();
 
   const playerSpan = document.createElement('span');
   playerSpan.id = 'pre-turn-player';
@@ -586,6 +592,7 @@ export function startTurn() {
   const team       = state.teams[state.currentTeamIdx];
   const playerName = team.players[state.teamPlayerIdx[state.currentTeamIdx]];
   el('turn-player-name').textContent = `👤 ${playerName}`;
+  el('turn-guesser-name').textContent = `👥 ${computeGuesserLabel()}`;
 
   if (demo.mode) {
     const circ = 2 * Math.PI * TIMER_CIRCLE_RADIUS;
