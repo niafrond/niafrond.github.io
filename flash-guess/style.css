@@ -311,12 +311,20 @@ details.card-collapsible > :not(summary) {
   padding: 10px 14px;
 }
 .player-item-name { font-weight: 600; }
+@keyframes player-appear {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+.player-item--new {
+  animation: player-appear 0.22s ease both;
+}
 #player-count {
   font-size: 0.85rem;
   color: var(--text-muted);
   margin-top: 6px;
   display: block;
 }
+#player-count[hidden] { display: none; }
 #setup-hint {
   font-size: 0.85rem;
   color: var(--warning);
