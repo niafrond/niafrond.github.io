@@ -1,3 +1,9 @@
+## [1.151.0](https://github.com/niafrond/niafrond.github.io/compare/v1.150.0...v1.151.0) (2026-04-28)
+
+### Features
+
+* **android:** fullscreen immersive native APK for Flash Guess ([2cf74ee](https://github.com/niafrond/niafrond.github.io/commit/2cf74eefb6f06edb8f0de067e92d3d5f4dac54df))
+
 ## [1.150.0](https://github.com/niafrond/niafrond.github.io/compare/v1.149.0...v1.150.0) (2026-04-28)
 
 ### Features
