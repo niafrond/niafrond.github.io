@@ -38,10 +38,12 @@ const PIXEL_5_LANDSCAPE = deviceSettings('Pixel 5', { viewport: { width: 851, he
 async function waitForInit(page) {
   await expect(page.locator('#bottom-nav')).toBeVisible({ timeout: 8_000 });
   // Dismiss the first-launch modal if shown (new-user onboarding)
-  const overlay = page.locator('#first-launch-overlay');
-  if (await overlay.isVisible()) {
-    await page.click('#first-launch-skip');
-  }
+  // Use evaluate to hide it directly — avoids firing a real pointerdown that
+  // would consume the {once:true} fullscreen listener in pwa.js.
+  await page.evaluate(() => {
+    const el = document.getElementById('first-launch-overlay');
+    if (el && !el.hidden) el.hidden = true;
+  });
 }
 
 /** Ajoute un joueur via le formulaire et attend que le cooldown (500 ms) expire. */
