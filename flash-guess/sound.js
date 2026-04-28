@@ -387,6 +387,43 @@ export function speakPreTurn(playerName, guesserLabel) {
   } catch (_) {}
 }
 
+/** Son de "Tous les mots trouvés" — fanfare triomphante de fin de manche */
+export function playAllWordsFound() {
+  if (_muted) return;
+  try {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5, 1046.5, 1318.5];
+    const durs  = [0.08,   0.08,   0.08,   0.10,   0.10,   0.08,   0.22];
+    let t = now;
+    notes.forEach((freq, i) => {
+      playNote(freq, 'triangle', t, durs[i] + 0.04, 0.38);
+      t += durs[i] + 0.02;
+    });
+  } catch (_) {}
+}
+
+/** Son de sélection/déselection de mot dans le draft — clic sourd */
+export function playDraftWord() {
+  if (_muted) return;
+  try {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    playNote(500, 'triangle', now, 0.06, 0.18);
+  } catch (_) {}
+}
+
+/** Son d'ouverture de la correction — double clic léger descendant */
+export function playCorrect() {
+  if (_muted) return;
+  try {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    playNote(880, 'sine', now,        0.05, 0.14);
+    playNote(660, 'sine', now + 0.07, 0.05, 0.11);
+  } catch (_) {}
+}
+
 /** Fanfare de fin de partie */
 export function playGameOver() {
   if (_muted) return;
