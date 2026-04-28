@@ -1,3 +1,9 @@
+## [1.146.0](https://github.com/niafrond/niafrond.github.io/compare/v1.145.2...v1.146.0) (2026-04-28)
+
+### Features
+
+* TTS flash-guess - simplify text, speed up voice, trigger on button press ([9240056](https://github.com/niafrond/niafrond.github.io/commit/9240056ff523d8bfd8948646a91d3cf8779d9634))
+
 ## [1.145.2](https://github.com/niafrond/niafrond.github.io/compare/v1.145.1...v1.145.2) (2026-04-28)
 
 ### Bug Fixes
