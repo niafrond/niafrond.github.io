@@ -20,7 +20,7 @@ export function autoSaveMember(name, isChild = false) {
   const members = loadMembers();
   const existing = members.find(m => m.name === name);
   if (!existing) {
-    const entry = { name, games: 0, totalPts: 0 };
+    const entry = { name, games: 0, bestPts: 0 };
     if (isChild) entry.isChild = true;
     members.push(entry);
     saveMembers(members);
@@ -37,11 +37,12 @@ export function saveMembersAfterGame() {
     team.players.forEach(playerName => {
       const existing = members.find(m => m.name === playerName);
       if (existing) {
-        existing.games    = (existing.games    || 0) + 1;
-        existing.totalPts = (existing.totalPts || 0) + teamTotal;
+        existing.games   = (existing.games || 0) + 1;
+        existing.bestPts = Math.max(existing.bestPts ?? existing.totalPts ?? 0, teamTotal);
+        delete existing.totalPts;
         if (state.playerIsChild.has(playerName)) existing.isChild = true;
       } else {
-        const entry = { name: playerName, games: 1, totalPts: teamTotal };
+        const entry = { name: playerName, games: 1, bestPts: teamTotal };
         if (state.playerIsChild.has(playerName)) entry.isChild = true;
         members.push(entry);
       }
@@ -86,7 +87,7 @@ export function renderMembersList() {
     const statsSpan = document.createElement('span');
     statsSpan.className = 'member-item-stats';
     statsSpan.textContent = member.games
-      ? `${member.games} partie${member.games > 1 ? 's' : ''} · ${member.totalPts || 0} pts`
+      ? `${member.games} partie${member.games > 1 ? 's' : ''} · record : ${member.bestPts ?? member.totalPts ?? 0} pts`
       : 'Aucune partie';
 
     item.appendChild(nameSpan);

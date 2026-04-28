@@ -39,8 +39,8 @@ describe('loadMembers / saveMembers', () => {
 
   test('sauvegarde et recharge une liste de membres', () => {
     const members = [
-      { name: 'Alice', games: 3, totalPts: 15 },
-      { name: 'Bob', games: 1, totalPts: 5 },
+      { name: 'Alice', games: 3, bestPts: 15 },
+      { name: 'Bob', games: 1, bestPts: 5 },
     ];
     saveMembers(members);
     expect(loadMembers()).toEqual(members);
@@ -59,7 +59,7 @@ describe('autoSaveMember', () => {
     autoSaveMember('Alice');
     const members = loadMembers();
     expect(members).toHaveLength(1);
-    expect(members[0]).toMatchObject({ name: 'Alice', games: 0, totalPts: 0 });
+    expect(members[0]).toMatchObject({ name: 'Alice', games: 0, bestPts: 0 });
   });
 
   test('n\'ajoute pas de doublon', () => {
@@ -99,20 +99,43 @@ describe('saveMembersAfterGame', () => {
     saveMembersAfterGame();
     const members = loadMembers();
     expect(members).toHaveLength(2);
-    expect(members.find(m => m.name === 'Alice')).toMatchObject({ games: 1, totalPts: 6 });
-    expect(members.find(m => m.name === 'Bob')).toMatchObject({ games: 1, totalPts: 6 });
+    expect(members.find(m => m.name === 'Alice')).toMatchObject({ games: 1, bestPts: 6 });
+    expect(members.find(m => m.name === 'Bob')).toMatchObject({ games: 1, bestPts: 6 });
   });
 
-  test('accumule les parties pour un membre existant', () => {
-    saveMembers([{ name: 'Alice', games: 2, totalPts: 10 }]);
+  test('met à jour le meilleur score (pas la somme) pour un membre existant', () => {
+    saveMembers([{ name: 'Alice', games: 2, bestPts: 10 }]);
     state.teams = [
       { players: ['Alice'], score: [1, 2, 3] },
     ];
     saveMembersAfterGame();
     const alice = loadMembers().find(m => m.name === 'Alice');
     expect(alice.games).toBe(3);
-    expect(alice.totalPts).toBe(16); // 10 + 6
+    expect(alice.bestPts).toBe(10); // max(10, 6) = 10
   });
+
+  test('met à jour le meilleur score si la nouvelle partie est meilleure', () => {
+    saveMembers([{ name: 'Alice', games: 2, bestPts: 4 }]);
+    state.teams = [
+      { players: ['Alice'], score: [1, 2, 3] },
+    ];
+    saveMembersAfterGame();
+    const alice = loadMembers().find(m => m.name === 'Alice');
+    expect(alice.games).toBe(3);
+    expect(alice.bestPts).toBe(6); // max(4, 6) = 6
+  });
+
+  test('migre l\'ancien champ totalPts vers bestPts', () => {
+    saveMembers([{ name: 'Alice', games: 2, totalPts: 8 }]);
+    state.teams = [
+      { players: ['Alice'], score: [1, 2, 3] },
+    ];
+    saveMembersAfterGame();
+    const alice = loadMembers().find(m => m.name === 'Alice');
+    expect(alice.bestPts).toBe(8); // max(totalPts=8, 6) = 8
+    expect(alice.totalPts).toBeUndefined();
+  });
+
 
   test('enregistre isChild si le joueur est marqué enfant', () => {
     state.playerIsChild = new Set(['Alice']);
@@ -131,8 +154,8 @@ describe('saveMembersAfterGame', () => {
     ];
     saveMembersAfterGame();
     const members = loadMembers();
-    expect(members.find(m => m.name === 'Alice').totalPts).toBe(5);
-    expect(members.find(m => m.name === 'Bob').totalPts).toBe(3);
+    expect(members.find(m => m.name === 'Alice').bestPts).toBe(5);
+    expect(members.find(m => m.name === 'Bob').bestPts).toBe(3);
   });
 });
 
