@@ -1,3 +1,9 @@
+## [1.152.0](https://github.com/niafrond/niafrond.github.io/compare/v1.151.0...v1.152.0) (2026-04-28)
+
+### Features
+
+* **flash-guess:** add missing game sounds (allWordsFound, draft, corriger, turn-end, button clicks) ([a1f8507](https://github.com/niafrond/niafrond.github.io/commit/a1f8507febc355b58f881f5e1210a27773f28395))
+
 ## [1.151.0](https://github.com/niafrond/niafrond.github.io/compare/v1.150.0...v1.151.0) (2026-04-28)
 
 ### Features
