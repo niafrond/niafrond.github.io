@@ -544,8 +544,8 @@ export function startPreTurn() {
   sentenceEl.appendChild(guesserSpan);
   sentenceEl.style.color = team.color;
 
-  showScreen('screen-pre-turn');
   speakPreTurn(playerName, guesserLabel);
+  showScreen('screen-pre-turn');
   if (demo.mode && demoHooks.showTips) demoHooks.showTips('pre-turn');
 }
 

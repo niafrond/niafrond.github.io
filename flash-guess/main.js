@@ -848,7 +848,7 @@ function init() {
   });
 
   // ── Bouton fermer la partie ──
-  el('btn-game-close').addEventListener('click', withCooldown(() => {
+  function closeGame() {
     if (state.timerInterval !== null) {
       clearInterval(state.timerInterval);
       state.timerInterval = null;
@@ -870,14 +870,16 @@ function init() {
     showScreen('screen-setup');
     updateNavVisibility('screen-setup');
     updateRotateOverlay();
-  }));
+  }
+  const closeGameSafe = withCooldown(closeGame);
+  el('btn-game-close').addEventListener('click', closeGameSafe);
 
   // ── Bouton retour (navigateur / téléphone) ──
   window.addEventListener('popstate', (e) => {
     const current = getCurrentScreen();
     if (GAMEPLAY_SCREENS.has(current)) {
-      // Bloquer le retour pendant le gameplay pour éviter une sortie accidentelle
-      history.pushState({ screen: current }, '');
+      // Retour vers la config de partie depuis le gameplay
+      closeGameSafe();
       return;
     }
     const target = e.state?.screen ?? 'screen-setup';
