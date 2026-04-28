@@ -1,3 +1,9 @@
+## [1.150.0](https://github.com/niafrond/niafrond.github.io/compare/v1.149.0...v1.150.0) (2026-04-28)
+
+### Features
+
+* **flash-guess:** distinct sounds for each gameplay button ([fc92874](https://github.com/niafrond/niafrond.github.io/commit/fc92874eccb147f17b1e61ea965c290a09feeb0f))
+
 ## [1.149.0](https://github.com/niafrond/niafrond.github.io/compare/v1.148.0...v1.149.0) (2026-04-28)
 
 ### Features
