@@ -14,6 +14,13 @@ const APP  = `${BASE}/flash-guess/`;
 /** Attend que l'app JS soit initialisée (la barre de nav devient visible). */
 async function waitForInit(page) {
   await expect(page.locator('#bottom-nav')).toBeVisible({ timeout: 8_000 });
+  // Dismiss the first-launch modal if shown (new-user onboarding)
+  // Use evaluate to hide it directly — avoids firing a real pointerdown that
+  // would consume the {once:true} fullscreen listener in pwa.js.
+  await page.evaluate(() => {
+    const el = document.getElementById('first-launch-overlay');
+    if (el && !el.hidden) el.hidden = true;
+  });
 }
 
 /** Ajoute un joueur via le formulaire et attend que le cooldown (500 ms) expire. */
@@ -406,6 +413,48 @@ test.describe('Écran Paramètres', () => {
   test('la sélection de la durée du tour fonctionne', async ({ page }) => {
     await page.selectOption('#select-turn-duration', '60');
     await expect(page.locator('#select-turn-duration')).toHaveValue('60');
+  });
+});
+
+// ─── Premier lancement ────────────────────────────────────────────────────────
+
+test.describe('Premier lancement', () => {
+  test("l'overlay apparaît au premier lancement (sans clé localStorage)", async ({ page }) => {
+    await page.goto(APP);
+    await expect(page.locator('#bottom-nav')).toBeVisible({ timeout: 8_000 });
+    await expect(page.locator('#first-launch-overlay')).toBeVisible();
+  });
+
+  test("l'overlay ne s'affiche pas si la clé flashguess_has_played est présente", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('flashguess_has_played', '1'));
+    await page.goto(APP);
+    await expect(page.locator('#bottom-nav')).toBeVisible({ timeout: 8_000 });
+    await expect(page.locator('#first-launch-overlay')).toBeHidden();
+  });
+
+  test('le bouton "Jouer directement" ferme l\'overlay', async ({ page }) => {
+    await page.goto(APP);
+    await expect(page.locator('#bottom-nav')).toBeVisible({ timeout: 8_000 });
+    await expect(page.locator('#first-launch-overlay')).toBeVisible();
+    await page.click('#first-launch-skip');
+    await expect(page.locator('#first-launch-overlay')).toBeHidden();
+  });
+
+  test('le bouton "Guide d\'utilisation" ferme l\'overlay et ouvre le guide', async ({ page }) => {
+    await page.goto(APP);
+    await expect(page.locator('#bottom-nav')).toBeVisible({ timeout: 8_000 });
+    await page.click('#first-launch-guide');
+    await expect(page.locator('#first-launch-overlay')).toBeHidden();
+    await expect(page.locator('#tutorial-overlay')).toBeVisible();
+  });
+
+  test('le bouton "Tutoriel" ferme l\'overlay et démarre la fausse partie', async ({ page }) => {
+    await page.goto(APP);
+    await expect(page.locator('#bottom-nav')).toBeVisible({ timeout: 8_000 });
+    await page.click('#first-launch-demo');
+    await expect(page.locator('#first-launch-overlay')).toBeHidden();
+    // The demo starts in landscape; on desktop the pre-turn screen should appear
+    await expect(page.locator('#screen-pre-turn')).toBeVisible({ timeout: 5_000 });
   });
 });
 

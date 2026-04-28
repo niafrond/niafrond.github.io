@@ -4,7 +4,7 @@
  * Flux : setup → categories → teams → round-intro → pre-turn → turn → turn-end → round-end → game-over
  */
 
-import { state, demo, withCooldown, GAMEPLAY_SCREENS } from './state.js';
+import { state, demo, withCooldown, GAMEPLAY_SCREENS, HAS_PLAYED_KEY } from './state.js';
 import { el, showScreen, getCurrentScreen } from './ui.js';
 import { setMuted, getMuted, prewarmPlayer, prewarmPlayerNames } from './sound.js';
 import { getVersion, getBuildDate } from './version.js';
@@ -90,7 +90,7 @@ const TUTORIAL_SLIDES = [
       <p>Flash Guess est un jeu de société en <strong>3 manches progressives</strong> où les équipes
       doivent faire deviner des mots — les mêmes à chaque manche, mais avec des règles
       de plus en plus difficiles !</p>
-      <p>Ce tutoriel vous explique chaque écran et chaque bouton du jeu. 🎉</p>
+      <p>Ce guide d'utilisation vous explique chaque écran et chaque bouton du jeu. 🎉</p>
       <div class="tuto-mock" style="text-align:center;padding:14px">
         <div style="font-size:1.5rem;margin-bottom:6px">🗣️ → ☝️ → 🤐</div>
         <div style="font-size:0.82rem;color:var(--text-muted)">Parler librement → Un seul mot → Mime</div>
@@ -432,6 +432,19 @@ function tutorialPrev() {
   }
 }
 
+// ─── PREMIER LANCEMENT ────────────────────────────────────────────────────────
+function checkFirstLaunch() {
+  try {
+    if (!localStorage.getItem(HAS_PLAYED_KEY)) {
+      el('first-launch-overlay').hidden = false;
+    }
+  } catch (_) { /* ignore */ }
+}
+
+function closeFirstLaunch() {
+  el('first-launch-overlay').hidden = true;
+}
+
 // ─── Overlay orientation ───────────────────────────────────────────────────────
 function handleOrientationTimerState(overlayVisible) {
   if (getCurrentScreen() !== 'screen-turn') return;
@@ -482,6 +495,19 @@ function init() {
     else if (e.key === 'ArrowRight') { e.preventDefault(); tutorialNext(); }
     else if (e.key === 'ArrowLeft')  { e.preventDefault(); tutorialPrev(); }
   });
+
+  // ── Premier lancement ──
+  el('first-launch-guide').addEventListener('click', withCooldown(() => {
+    closeFirstLaunch();
+    openTutorial(0);
+  }));
+  el('first-launch-demo').addEventListener('click', withCooldown(() => {
+    closeFirstLaunch();
+    playButtonClick();
+    startDemoTurn();
+    updateNavVisibility(getCurrentScreen());
+  }));
+  el('first-launch-skip').addEventListener('click', withCooldown(closeFirstLaunch));
 
   // ── Setup ──
   el('btn-add-player').addEventListener('click', withCooldown(() => {
@@ -655,6 +681,7 @@ function init() {
   el('btn-launch-game').addEventListener('click', withCooldown(async () => {
     playButtonClick();
     prewarmPlayerNames(state.playerNames);
+    try { localStorage.setItem(HAS_PLAYED_KEY, '1'); } catch (_) { /* ignore */ }
     if (state.wordDraftMode) {
       await startWordDraft();
     } else {
@@ -935,6 +962,7 @@ function init() {
   showScreen('screen-setup');
   updateNavVisibility('screen-setup');
   updateRotateOverlay();
+  checkFirstLaunch();
 }
 
 document.addEventListener('DOMContentLoaded', init);

@@ -1599,6 +1599,25 @@ details.card-collapsible > :not(summary) {
   .tutorial-dot { width: 7px; height: 7px; }
 }
 
+/* ─── Premier lancement modal ───────────────────────────────────────────── */
+.first-launch-modal {
+  padding: 32px 24px 28px;
+  text-align: center;
+  overflow-y: auto;
+}
+.first-launch-modal .tuto-slide-icon { font-size: 3rem; margin-bottom: 10px; }
+.first-launch-modal .tuto-slide-title { margin-bottom: 12px; }
+.first-launch-desc {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+.first-launch-btns {
+  display: flex;
+  flex-direction: column;
+}
+
 /* ─── Fake turn screen — interactive tutorial slide ─────────────────────── */
 .tuto-fake-turn {
   background: var(--surface2);
