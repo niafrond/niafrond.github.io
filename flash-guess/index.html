@@ -103,7 +103,7 @@
 
     <div class="demo-launch-wrapper">
       <button id="btn-launch-demo" class="btn btn-secondary w-full">
-        🎮 Fausse partie pour découvrir
+        🎮 Tutoriel
       </button>
     </div>
 
@@ -554,11 +554,11 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
-     TUTORIEL OVERLAY
+     GUIDE D'UTILISATION OVERLAY
      ═══════════════════════════════════════════════════════════════════════════ -->
-<div id="tutorial-overlay" class="tutorial-overlay" hidden role="dialog" aria-modal="true" aria-label="Tutoriel">
+<div id="tutorial-overlay" class="tutorial-overlay" hidden role="dialog" aria-modal="true" aria-label="Guide d'utilisation">
   <div class="tutorial-modal">
-    <button id="tutorial-close" class="tutorial-close-btn" aria-label="Fermer le tutoriel">✕</button>
+    <button id="tutorial-close" class="tutorial-close-btn" aria-label="Fermer le guide d'utilisation">✕</button>
     <div id="tutorial-slide-content" class="tutorial-slide-content"></div>
     <div class="tutorial-footer">
       <div id="tutorial-dots" class="tutorial-dots"></div>
@@ -566,6 +566,22 @@
         <button id="tutorial-prev" class="btn btn-secondary btn-sm">‹ Précédent</button>
         <button id="tutorial-next" class="btn btn-primary btn-sm">Suivant ›</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PREMIER LANCEMENT OVERLAY
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="first-launch-overlay" class="tutorial-overlay" hidden role="dialog" aria-modal="true" aria-label="Bienvenue dans Flash Guess">
+  <div class="tutorial-modal first-launch-modal">
+    <div class="tuto-slide-icon">⚡</div>
+    <div class="tuto-slide-title">Bienvenue dans Flash Guess !</div>
+    <p class="first-launch-desc">C'est votre première visite. Par où souhaitez-vous commencer ?</p>
+    <div class="first-launch-btns">
+      <button id="first-launch-guide" class="btn btn-secondary w-full">📖 Guide d'utilisation</button>
+      <button id="first-launch-demo" class="btn btn-secondary w-full mt-12">🎮 Tutoriel</button>
+      <button id="first-launch-skip" class="btn btn-ghost w-full mt-12">▶ Jouer directement</button>
     </div>
   </div>
 </div>
@@ -638,7 +654,7 @@
     <div class="card">
       <div class="card-title">ℹ️ Application</div>
       <button id="btn-tutorial" class="btn btn-secondary w-full">
-        ❓ Comment jouer — Tutoriel
+        ❓ Guide d'utilisation
       </button>
       <button id="btn-leaderboard" class="btn btn-secondary w-full mt-12">
         🏆 Classement

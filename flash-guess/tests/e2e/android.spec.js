@@ -37,6 +37,11 @@ const PIXEL_5_LANDSCAPE = deviceSettings('Pixel 5', { viewport: { width: 851, he
 /** Attend que l'app JS soit initialisée (la barre de nav devient visible). */
 async function waitForInit(page) {
   await expect(page.locator('#bottom-nav')).toBeVisible({ timeout: 8_000 });
+  // Dismiss the first-launch modal if shown (new-user onboarding)
+  const overlay = page.locator('#first-launch-overlay');
+  if (await overlay.isVisible()) {
+    await page.click('#first-launch-skip');
+  }
 }
 
 /** Ajoute un joueur via le formulaire et attend que le cooldown (500 ms) expire. */

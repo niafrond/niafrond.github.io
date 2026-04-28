@@ -20,6 +20,7 @@ export const TURN_DURATION_KEY          = 'flashguess_turn_duration';
 export const DIFFICULTY_KEY             = 'flashguess_difficulty';
 export const PLAYERS_KEY                = 'flashguess_players';
 export const TTS_PREWARM_KEY            = 'flashguess_tts_prewarmed';
+export const HAS_PLAYED_KEY             = 'flashguess_has_played';
 export const WORD_FONT_MIN              = 16;
 export const WORD_FONT_MAX              = 200;
 export const CLICK_COOLDOWN             = 500;
