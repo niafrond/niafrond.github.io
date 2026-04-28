@@ -625,7 +625,8 @@ export function startTurn() {
 export function drawNextWord() {
   if (state.roundWords.length === 0) {
     if (state.turnSkipped.length > 0) {
-      endTurn('timeout');
+      playAbandon();
+      endTurn('abandon');
     } else {
       endTurn('allFound');
     }
