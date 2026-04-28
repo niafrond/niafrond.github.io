@@ -1,3 +1,25 @@
+## [1.154.0](https://github.com/niafrond/niafrond.github.io/compare/v1.153.0...v1.154.0) (2026-04-28)
+
+### Features
+
+* **flash-guess:** améliore l'UX du menu d'ajout de joueur ([10450c0](https://github.com/niafrond/niafrond.github.io/commit/10450c03a4c84eee84e39913a1864af872602886))
+
+### Bug Fixes
+
+* **flash-guess:** pluralisation française et vérification groupes par données ([e00cf17](https://github.com/niafrond/niafrond.github.io/commit/e00cf177105eeda6d143c222e8124f46158b9a29))
+
+## [1.153.0](https://github.com/niafrond/niafrond.github.io/compare/v1.152.2...v1.153.0) (2026-04-28)
+
+### Features
+
+* transform floating fullscreen/night/mute buttons into normal UI buttons in setup header ([0eba950](https://github.com/niafrond/niafrond.github.io/commit/0eba950eb8e4ca2fc1ec9d337966a1d02d7e27c6))
+
+## [1.152.2](https://github.com/niafrond/niafrond.github.io/compare/v1.152.1...v1.152.2) (2026-04-28)
+
+### Bug Fixes
+
+* play abandon sound instead of MP3 when turn ends on fault/skip ([d97764c](https://github.com/niafrond/niafrond.github.io/commit/d97764cc7bc21765c2c0a2f711ff8b009c935aad))
+
 ## [1.152.1](https://github.com/niafrond/niafrond.github.io/compare/v1.152.0...v1.152.1) (2026-04-28)
 
 ### Bug Fixes

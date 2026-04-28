@@ -55,6 +55,17 @@ export function renderMembersList() {
   const container = el('members-list');
   container.innerHTML = '';
 
+  const summaryEl = document.getElementById('summary-add-registered');
+  if (summaryEl) {
+    if (members.length > 1) {
+      summaryEl.textContent = `📋 Joueurs enregistrés (${members.length})`;
+    } else if (members.length === 1) {
+      summaryEl.textContent = `📋 Joueur enregistré (1)`;
+    } else {
+      summaryEl.textContent = '📋 Joueur enregistré';
+    }
+  }
+
   if (members.length === 0) return;
 
   const hint = document.createElement('p');
@@ -164,6 +175,14 @@ export function renderGroupsInSetup() {
 
   const groups = loadGroups();
   const nonEmpty = groups.filter(g => g.members.length > 0);
+
+  const summaryEl = document.getElementById('summary-add-group');
+  if (summaryEl) {
+    summaryEl.textContent = nonEmpty.length > 0
+      ? `👥 Depuis un groupe (${nonEmpty.length})`
+      : '👥 Depuis un groupe';
+  }
+
   if (nonEmpty.length === 0) return;
 
   const hint = document.createElement('p');
