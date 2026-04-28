@@ -629,8 +629,8 @@ function init() {
     toggleKidsMode();
     renderTeams();
   }));
-  el('select-turn-duration-teams').addEventListener('change', () => {
-    state.turnDuration = parseInt(el('select-turn-duration-teams').value, 10);
+  el('select-turn-duration-teams').addEventListener('change', function () {
+    state.turnDuration = parseInt(this.value, 10);
     saveTurnDuration(state.turnDuration);
     el('select-turn-duration').value = String(state.turnDuration);
   });
