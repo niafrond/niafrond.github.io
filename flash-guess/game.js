@@ -15,7 +15,7 @@ import {
   playTick, playTickUrgent, playBuzzer,
   playFound, playRoundStart, playGameOver, playButtonClick,
   playSkip, playFault, playUndo, playRedo, playGameStart,
-  playAbandon,
+  playAbandon, playAllWordsFound, playDraftWord, playCorrect,
   speakPreTurn,
 } from './sound.js';
 import { getShuffledWords, getCategoryInfo, shuffle } from './words.js';
@@ -424,7 +424,6 @@ export function startTimer() {
 
     if (state.timeLeft <= 0) {
       clearInterval(state.timerInterval);
-      playBuzzer();
       endTurn('timeout');
     }
   }, 1000);
@@ -780,6 +779,12 @@ function lockNextTurnBtn() {
 export function endTurn(reason = 'timeout') {
   stopTimer();
 
+  if (reason === 'timeout') {
+    playBuzzer();
+  } else if (reason === 'allFound') {
+    playAllWordsFound();
+  }
+
   if (demo.mode) {
     const team = state.teams[state.currentTeamIdx];
     team.score[state.currentRound - 1] += state.turnFound.length;
@@ -871,6 +876,7 @@ export function endTurn(reason = 'timeout') {
 
 // ─── CORRECTION DU TOUR ────────────────────────────────────────────────────────
 export function openCorrectTurn() {
+  playCorrect();
   const list = el('correct-turn-list');
   list.innerHTML = '';
   state.turnFound.forEach((word, i) => {
@@ -1367,6 +1373,8 @@ function toggleDraftElimination(idx) {
     items[idx].classList.remove('draft-word-item--eliminated');
   }
 
+  playDraftWord();
+
   const count = state.draftEliminations.length;
   el('draft-counter').textContent  = `${count} / ${ELIMINATIONS_PER_PLAYER}`;
   el('draft-counter').classList.toggle('draft-counter-badge--full', count === ELIMINATIONS_PER_PLAYER);
@@ -1376,6 +1384,8 @@ function toggleDraftElimination(idx) {
 function refreshDraftWord(idx) {
   const reserve   = state.draftReservePool;
   if (reserve.length === 0) return;
+
+  playDraftWord();
 
   const playerIdx = state.draftCurrentPlayerIdx;
   const chunk     = state.draftPlayerChunks[playerIdx];
