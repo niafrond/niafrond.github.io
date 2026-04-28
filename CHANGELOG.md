@@ -1,3 +1,10 @@
+## [1.146.1](https://github.com/niafrond/niafrond.github.io/compare/v1.146.0...v1.146.1) (2026-04-28)
+
+### Bug Fixes
+
+* pressing native back button in gameplay goes to screen-setup instead of blocking ([0dbd119](https://github.com/niafrond/niafrond.github.io/commit/0dbd119095b489353dacd53e6bf60cf8096bfcd2))
+* use shared closeGameSafe with cooldown for both back button and close button ([c5abcc0](https://github.com/niafrond/niafrond.github.io/commit/c5abcc02a7e86e228a67c82ef99f4cb94049c264))
+
 ## [1.146.0](https://github.com/niafrond/niafrond.github.io/compare/v1.145.2...v1.146.0) (2026-04-28)
 
 ### Features
