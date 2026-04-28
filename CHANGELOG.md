@@ -1,3 +1,9 @@
+## [1.152.1](https://github.com/niafrond/niafrond.github.io/compare/v1.152.0...v1.152.1) (2026-04-28)
+
+### Bug Fixes
+
+* re-apply immersive fullscreen on focus/resume in MainActivity ([8f87585](https://github.com/niafrond/niafrond.github.io/commit/8f87585f6bd224f4f517f7754b43076612e0e341))
+
 ## [1.152.0](https://github.com/niafrond/niafrond.github.io/compare/v1.151.0...v1.152.0) (2026-04-28)
 
 ### Features
