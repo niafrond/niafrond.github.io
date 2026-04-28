@@ -283,6 +283,11 @@ export function playGameStart() {
 
 // ─── TTS — phrases fixes et suivi pré-amorçage ───────────────────────────────
 
+/** Renvoie true si l'appli tourne dans un WebView Capacitor (APK Android). */
+function _isCapacitor() {
+  return !!(window.Capacitor);
+}
+
 /**
  * Morceaux fixes de la phrase d'annonce de tour.
  * Stockés séparément pour être pré-amorcés une seule fois au lancement.
@@ -334,9 +339,11 @@ export function loadPrewarmedNames() {
 /**
  * Pré-amorce le moteur TTS pour un seul joueur, sans annuler la file en cours.
  * À appeler dans le contexte d'un geste utilisateur (clic "Ajouter").
+ * Sans effet en mode APK (Capacitor) où la file silencieuse n'est pas fiable.
  */
 export function prewarmPlayer(name) {
   if (typeof speechSynthesis === 'undefined') return;
+  if (_isCapacitor()) return;
   try {
     _queueSilent(name);
     _savePrewarmedName(name);
@@ -347,9 +354,11 @@ export function prewarmPlayer(name) {
  * Pré-amorce le moteur TTS dans le contexte d'un geste utilisateur.
  * Annule la file en cours, réinitialise le suivi, puis met en file
  * silencieusement les phrases fixes et tous les noms de joueurs.
+ * Sans effet en mode APK (Capacitor) où la file silencieuse n'est pas fiable.
  */
 export function prewarmPlayerNames(names) {
   if (typeof speechSynthesis === 'undefined') return;
+  if (_isCapacitor()) return;
   try {
     speechSynthesis.cancel();
     _prewarmed.clear();
@@ -364,8 +373,10 @@ export function prewarmPlayerNames(names) {
 /**
  * Synthèse vocale — annonce le nom du joueur dont c'est le tour
  * et, si fourni, le nom du devineur.
- * La phrase est découpée en morceaux distincts pour bénéficier
+ * En mode navigateur la phrase est découpée en morceaux distincts pour bénéficier
  * du pré-amorçage TTS effectué sur chaque segment.
+ * En mode APK (Capacitor / Android WebView) une seule utterance est utilisée
+ * pour éviter les problèmes de file multiples sur Android.
  */
 export function speakPreTurn(playerName, guesserLabel) {
   if (_muted) return;
@@ -377,13 +388,22 @@ export function speakPreTurn(playerName, guesserLabel) {
       parts.push('pour');
       parts.push(guesserLabel.replace(/ · /g, ' et '));
     }
-    parts.forEach(text => {
-      const utt   = new SpeechSynthesisUtterance(text);
+    if (_isCapacitor()) {
+      // Android WebView : une seule utterance pour fiabilité
+      const utt   = new SpeechSynthesisUtterance(parts.join(' '));
       utt.lang    = 'fr-FR';
       utt.rate    = 1.25;
       utt.pitch   = 1;
       speechSynthesis.speak(utt);
-    });
+    } else {
+      parts.forEach(text => {
+        const utt   = new SpeechSynthesisUtterance(text);
+        utt.lang    = 'fr-FR';
+        utt.rate    = 1.25;
+        utt.pitch   = 1;
+        speechSynthesis.speak(utt);
+      });
+    }
   } catch (_) {}
 }
 
