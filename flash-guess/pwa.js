@@ -84,18 +84,33 @@ function isAndroidBrowser() {
 }
 
 // ─── Plein écran automatique ───────────────────────────────────────────────────
-// On demande le vrai mode immersif dès le premier geste utilisateur pour cacher
-// les barres de navigation Android qui peuvent recouvrir des zones cliquables,
-// que l'app soit installée en PWA, packagée via Capacitor ou ouverte dans le
-// navigateur.
+// On demande le vrai mode immersif dès que possible pour cacher les barres de
+// navigation Android qui peuvent recouvrir des zones cliquables, que l'app soit
+// installée en PWA, packagée via Capacitor ou ouverte dans le navigateur.
+// Dans un WebView Capacitor (APK), requestFullscreen() est autorisé sans geste
+// utilisateur préalable, ce qui permet un plein écran immédiat et permanent.
 export function initAutoFullscreen() {
-  // Premier clic/tap déclenche le mode immersif
+  // Dans le contexte APK (Capacitor), on masque le bouton toggle car le plein
+  // écran est permanent — le bouton n'aurait aucun effet utile.
+  if (isCapacitor()) {
+    const btn = el('btn-fullscreen');
+    if (btn) btn.hidden = true;
+  }
+
+  // Tentative immédiate : fonctionne sans geste dans un WebView Capacitor.
+  // Dans un navigateur, l'appel sera bloqué silencieusement si aucun geste
+  // n'a encore eu lieu ; le fallback pointerdown prend alors le relais.
+  requestImmersive();
+
+  // Fallback pour les navigateurs qui exigent un geste utilisateur préalable.
   document.addEventListener('pointerdown', requestImmersive, { once: true });
 
-  // Si le fullscreen est quitté (p. ex. par un geste système), on le rétablit
-  // au prochain geste utilisateur
+  // Si le fullscreen est quitté (p. ex. par un geste système ou la touche Retour
+  // Android), on le rétablit aussitôt sans attendre le prochain geste.
   function onFullscreenChange() {
     if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      requestImmersive();
+      // Second fallback gestuel pour les navigateurs qui refusent l'appel direct.
       document.addEventListener('pointerdown', requestImmersive, { once: true });
     }
   }
