@@ -1,3 +1,13 @@
+## [1.155.0](https://github.com/niafrond/niafrond.github.io/compare/v1.154.1...v1.155.0) (2026-04-28)
+
+### Features
+
+* **flash-guess:** first-launch modal + rename tutoriel/fausse partie ([dfbaf67](https://github.com/niafrond/niafrond.github.io/commit/dfbaf6756d80ec1915d9474bafa6348204df26e7))
+
+### Bug Fixes
+
+* **tests:** dismiss first-launch overlay via evaluate to avoid consuming pointerdown listener ([069c84e](https://github.com/niafrond/niafrond.github.io/commit/069c84e3f449f68aea763e73cd05bbdb718cb4c9))
+
 ## [1.154.1](https://github.com/niafrond/niafrond.github.io/compare/v1.154.0...v1.154.1) (2026-04-28)
 
 ### Bug Fixes
