@@ -1,3 +1,9 @@
+## [1.152.2](https://github.com/niafrond/niafrond.github.io/compare/v1.152.1...v1.152.2) (2026-04-28)
+
+### Bug Fixes
+
+* play abandon sound instead of MP3 when turn ends on fault/skip ([d97764c](https://github.com/niafrond/niafrond.github.io/commit/d97764cc7bc21765c2c0a2f711ff8b009c935aad))
+
 ## [1.152.1](https://github.com/niafrond/niafrond.github.io/compare/v1.152.0...v1.152.1) (2026-04-28)
 
 ### Bug Fixes
