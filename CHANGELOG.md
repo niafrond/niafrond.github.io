@@ -1,3 +1,9 @@
+## [1.145.2](https://github.com/niafrond/niafrond.github.io/compare/v1.145.1...v1.145.2) (2026-04-28)
+
+### Bug Fixes
+
+* **flash-guess:** plein écran permanent sur APK (Capacitor WebView) ([bbdc521](https://github.com/niafrond/niafrond.github.io/commit/bbdc521a31dca1dd8cdb1f99d35268cd988464de))
+
 ## [1.145.1](https://github.com/niafrond/niafrond.github.io/compare/v1.145.0...v1.145.1) (2026-04-27)
 
 ### Bug Fixes
