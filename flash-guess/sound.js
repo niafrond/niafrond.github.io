@@ -165,14 +165,59 @@ export function playButtonClick() {
   } catch (_) {}
 }
 
-/** Son de "Passer" — note neutre descendante */
+/** Son de "Passer" — glissé neutre en trois paliers descendants */
 export function playSkip() {
   if (_muted) return;
   try {
     const ctx = getCtx();
     const now = ctx.currentTime;
-    playNote(660, 'sine', now, 0.07, 0.18);
-    playNote(440, 'sine', now + 0.08, 0.1, 0.12);
+    playNote(660, 'triangle', now,        0.06, 0.20);
+    playNote(550, 'triangle', now + 0.07, 0.06, 0.16);
+    playNote(440, 'triangle', now + 0.14, 0.08, 0.12);
+  } catch (_) {}
+}
+
+/** Son d'"Abandonner" — trois notes descendantes lourdes */
+export function playAbandon() {
+  if (_muted) return;
+  try {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    playNote(440, 'triangle', now,        0.10, 0.28);
+    playNote(330, 'triangle', now + 0.11, 0.10, 0.22);
+    playNote(220, 'triangle', now + 0.22, 0.14, 0.18);
+  } catch (_) {}
+}
+
+/** Son de "Je suis prêt" — double ping ascendant lumineux */
+export function playReady() {
+  if (_muted) return;
+  try {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    playNote(659, 'sine', now,        0.08, 0.20);
+    playNote(988, 'sine', now + 0.09, 0.12, 0.22);
+  } catch (_) {}
+}
+
+/** Son de "Carte suivante" — claquement sec très court */
+export function playNextCard() {
+  if (_muted) return;
+  try {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    playNote(880, 'sine', now, 0.04, 0.22);
+  } catch (_) {}
+}
+
+/** Son de "Suivant" — deux notes montantes, sensation d'avancer */
+export function playNextTurn() {
+  if (_muted) return;
+  try {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+    playNote(523, 'triangle', now,        0.07, 0.18);
+    playNote(784, 'triangle', now + 0.08, 0.10, 0.20);
   } catch (_) {}
 }
 
