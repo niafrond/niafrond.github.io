@@ -15,6 +15,24 @@ public class MainActivity extends BridgeActivity {
         // Keep the screen on during gameplay
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+        applyImmersiveFullscreen();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        applyImmersiveFullscreen();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            applyImmersiveFullscreen();
+        }
+    }
+
+    private void applyImmersiveFullscreen() {
         // Immersive fullscreen: hide status bar and navigation bar
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         WindowInsetsControllerCompat ctrl =
