@@ -855,14 +855,15 @@ function init() {
     updateNavVisibility('screen-setup');
     updateRotateOverlay();
   }
-  el('btn-game-close').addEventListener('click', withCooldown(closeGame));
+  const closeGameSafe = withCooldown(closeGame);
+  el('btn-game-close').addEventListener('click', closeGameSafe);
 
   // ── Bouton retour (navigateur / téléphone) ──
   window.addEventListener('popstate', (e) => {
     const current = getCurrentScreen();
     if (GAMEPLAY_SCREENS.has(current)) {
       // Retour vers la config de partie depuis le gameplay
-      closeGame();
+      closeGameSafe();
       return;
     }
     const target = e.state?.screen ?? 'screen-setup';
