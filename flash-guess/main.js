@@ -43,6 +43,7 @@ import {
 
 import {
   loadMembers,
+  loadGroups,
   renderMembersList, renderGroupsInSetup,
   openGroupsEditor, createNewGroup,
 } from './members.js';
@@ -502,8 +503,7 @@ function init() {
   renderMembersList();
   if (loadMembers().length > 0) el('panel-add-registered').open = true;
   renderGroupsInSetup();
-  const setupGroupContainer = el('groups-in-setup');
-  if (setupGroupContainer && setupGroupContainer.children.length > 0) el('panel-add-group').open = true;
+  if (loadGroups().some(g => g.members.length > 0)) el('panel-add-group').open = true;
 
   // ── Groupes ──
   el('btn-group-create').addEventListener('click', withCooldown(createNewGroup));

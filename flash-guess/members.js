@@ -57,9 +57,13 @@ export function renderMembersList() {
 
   const summaryEl = document.getElementById('summary-add-registered');
   if (summaryEl) {
-    summaryEl.textContent = members.length > 0
-      ? `📋 Joueur enregistré (${members.length})`
-      : '📋 Joueur enregistré';
+    if (members.length > 1) {
+      summaryEl.textContent = `📋 Joueurs enregistrés (${members.length})`;
+    } else if (members.length === 1) {
+      summaryEl.textContent = `📋 Joueur enregistré (1)`;
+    } else {
+      summaryEl.textContent = '📋 Joueur enregistré';
+    }
   }
 
   if (members.length === 0) return;
