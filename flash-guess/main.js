@@ -540,6 +540,7 @@ function init() {
   }
   updateKidsQuestionsBtn();
   kidsQuestionsBtn.addEventListener('click', withCooldown(() => {
+    playButtonClick();
     state.kidsQuestionsEnabled = !state.kidsQuestionsEnabled;
     saveKidsQuestionsEnabled(state.kidsQuestionsEnabled);
     updateKidsQuestionsBtn();
@@ -557,6 +558,7 @@ function init() {
   }
   updateKidsReadTimeBtn();
   kidsReadTimeBtn.addEventListener('click', withCooldown(() => {
+    playButtonClick();
     state.kidsReadTimeEnabled = !state.kidsReadTimeEnabled;
     saveKidsReadTimeEnabled(state.kidsReadTimeEnabled);
     updateKidsReadTimeBtn();
@@ -573,6 +575,7 @@ function init() {
   }
   updateWordDraftBtn();
   wordDraftBtn.addEventListener('click', withCooldown(() => {
+    playButtonClick();
     state.wordDraftMode = !state.wordDraftMode;
     saveWordDraftMode(state.wordDraftMode);
     updateWordDraftBtn();
@@ -589,6 +592,7 @@ function init() {
   }
   updateRotatingGuesserBtn();
   rotatingGuesserBtn.addEventListener('click', withCooldown(() => {
+    playButtonClick();
     state.rotatingGuesserMode = !state.rotatingGuesserMode;
     saveRotatingGuesserMode(state.rotatingGuesserMode);
     updateRotatingGuesserBtn();
@@ -598,25 +602,29 @@ function init() {
   state.difficultyLevel = loadDifficulty();
   document.querySelectorAll('.btn-difficulty').forEach(btn => {
     btn.addEventListener('click', withCooldown(() => {
+      playButtonClick();
       setDifficultyLevel(btn.dataset.difficulty);
       saveDifficulty(btn.dataset.difficulty);
     }));
   });
 
   // ── Categories ──
-  el('btn-cats-all').addEventListener('click', withCooldown(selectAllCategories));
-  el('btn-cats-none').addEventListener('click', withCooldown(deselectAllCategories));
+  el('btn-cats-all').addEventListener('click', withCooldown(() => { playButtonClick(); selectAllCategories(); }));
+  el('btn-cats-none').addEventListener('click', withCooldown(() => { playButtonClick(); deselectAllCategories(); }));
   el('btn-cats-confirm').addEventListener('click', withCooldown(() => {
+    playButtonClick();
     confirmCategories();
     updateNavVisibility(getCurrentScreen());
   }));
 
   // ── Teams ──
   el('btn-reshuffle').addEventListener('click', withCooldown(() => {
+    playButtonClick();
     assignTeams();
     renderTeams();
   }));
   el('toggle-rotating-guesser-teams').addEventListener('click', withCooldown(() => {
+    playButtonClick();
     state.rotatingGuesserMode = !state.rotatingGuesserMode;
     saveRotatingGuesserMode(state.rotatingGuesserMode);
     assignTeams();
@@ -626,6 +634,7 @@ function init() {
 
   // ── Paramètres rappelés sur l'écran équipes ──
   el('toggle-kids-mode-teams').addEventListener('click', withCooldown(() => {
+    playButtonClick();
     toggleKidsMode();
     renderTeams();
   }));
@@ -635,11 +644,13 @@ function init() {
     el('select-turn-duration').value = String(state.turnDuration);
   });
   el('toggle-word-draft-teams').addEventListener('click', withCooldown(() => {
+    playButtonClick();
     state.wordDraftMode = !state.wordDraftMode;
     saveWordDraftMode(state.wordDraftMode);
     renderTeams();
   }));
   el('btn-launch-game').addEventListener('click', withCooldown(async () => {
+    playButtonClick();
     prewarmPlayerNames(state.playerNames);
     if (state.wordDraftMode) {
       await startWordDraft();
@@ -698,8 +709,8 @@ function init() {
 
   // ── Turn end ──
   el('btn-correct-turn').addEventListener('click', withCooldown(openCorrectTurn));
-  el('correct-turn-close').addEventListener('click', withCooldown(closeCorrectTurn));
-  el('correct-turn-confirm').addEventListener('click', withCooldown(applyTurnCorrection));
+  el('correct-turn-close').addEventListener('click', withCooldown(() => { playButtonClick(); closeCorrectTurn(); }));
+  el('correct-turn-confirm').addEventListener('click', withCooldown(() => { playButtonClick(); applyTurnCorrection(); }));
   el('correct-turn-overlay').addEventListener('click', (e) => {
     if (e.target === el('correct-turn-overlay')) closeCorrectTurn();
   });
@@ -820,6 +831,7 @@ function init() {
 
   // ── Démo ──
   el('btn-launch-demo').addEventListener('click', withCooldown(() => {
+    playButtonClick();
     startDemoTurn();
     updateNavVisibility(getCurrentScreen());
   }));
@@ -849,6 +861,7 @@ function init() {
 
   // ── Bouton fermer la partie ──
   function closeGame() {
+    playButtonClick();
     if (state.timerInterval !== null) {
       clearInterval(state.timerInterval);
       state.timerInterval = null;
