@@ -242,7 +242,7 @@ export function playGameStart() {
  * Morceaux fixes de la phrase d'annonce de tour.
  * Stockés séparément pour être pré-amorcés une seule fois au lancement.
  */
-const FIXED_PHRASES = ["C'est le tour de", 'de faire deviner à'];
+const FIXED_PHRASES = ['Au tour de', 'pour'];
 
 /** Ensemble en mémoire des textes déjà mis en file silencieuse. */
 const _prewarmed = new Set();
@@ -327,15 +327,15 @@ export function speakPreTurn(playerName, guesserLabel) {
   if (typeof speechSynthesis === 'undefined') return;
   try {
     speechSynthesis.cancel();
-    const parts = ["C'est le tour de", playerName];
+    const parts = ['Au tour de', playerName];
     if (guesserLabel) {
-      parts.push('de faire deviner à');
+      parts.push('pour');
       parts.push(guesserLabel.replace(/ · /g, ' et '));
     }
     parts.forEach(text => {
       const utt   = new SpeechSynthesisUtterance(text);
       utt.lang    = 'fr-FR';
-      utt.rate    = 1;
+      utt.rate    = 1.25;
       utt.pitch   = 1;
       speechSynthesis.speak(utt);
     });
