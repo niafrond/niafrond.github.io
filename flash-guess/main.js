@@ -623,6 +623,22 @@ function init() {
     renderTeams();
     updateRotatingGuesserBtn();
   }));
+
+  // ── Paramètres rappelés sur l'écran équipes ──
+  el('toggle-kids-mode-teams').addEventListener('click', withCooldown(() => {
+    toggleKidsMode();
+    renderTeams();
+  }));
+  el('select-turn-duration-teams').addEventListener('change', function () {
+    state.turnDuration = parseInt(this.value, 10);
+    saveTurnDuration(state.turnDuration);
+    el('select-turn-duration').value = String(state.turnDuration);
+  });
+  el('toggle-word-draft-teams').addEventListener('click', withCooldown(() => {
+    state.wordDraftMode = !state.wordDraftMode;
+    saveWordDraftMode(state.wordDraftMode);
+    renderTeams();
+  }));
   el('btn-launch-game').addEventListener('click', withCooldown(async () => {
     prewarmPlayerNames(state.playerNames);
     if (state.wordDraftMode) {

@@ -1,3 +1,19 @@
+## [1.148.0](https://github.com/niafrond/niafrond.github.io/compare/v1.147.0...v1.148.0) (2026-04-28)
+
+### Features
+
+* affiche mots restants et score sur l'écran pré-tour (Flash Guess) ([cafd388](https://github.com/niafrond/niafrond.github.io/commit/cafd38837eff2ad6097fabbf6c4e6b1bfbf74d88))
+
+## [1.147.0](https://github.com/niafrond/niafrond.github.io/compare/v1.146.1...v1.147.0) (2026-04-28)
+
+### Features
+
+* affiche les paramètres de partie sur l'écran des équipes avec possibilité de les modifier ([a2c1a2d](https://github.com/niafrond/niafrond.github.io/commit/a2c1a2d37d1b7808c27120587b7d3b4def52b6ba))
+
+### Bug Fixes
+
+* use this.value in turn duration handler to avoid redundant DOM query ([693d00f](https://github.com/niafrond/niafrond.github.io/commit/693d00f14e161e6ef1a8d88c48b7689cf465b281))
+
 ## [1.146.1](https://github.com/niafrond/niafrond.github.io/compare/v1.146.0...v1.146.1) (2026-04-28)
 
 ### Bug Fixes
