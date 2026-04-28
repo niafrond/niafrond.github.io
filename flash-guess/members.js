@@ -87,7 +87,7 @@ export function renderMembersList() {
     const statsSpan = document.createElement('span');
     statsSpan.className = 'member-item-stats';
     statsSpan.textContent = member.games
-      ? `${member.games} partie${member.games > 1 ? 's' : ''} · record : ${member.bestPts ?? member.totalPts ?? 0} pts`
+      ? `${member.games} partie${member.games > 1 ? 's' : ''} · record : ${member.bestPts ?? 0} pts`
       : 'Aucune partie';
 
     item.appendChild(nameSpan);
