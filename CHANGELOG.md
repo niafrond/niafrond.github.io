@@ -1,3 +1,9 @@
+## [1.154.1](https://github.com/niafrond/niafrond.github.io/compare/v1.154.0...v1.154.1) (2026-04-28)
+
+### Bug Fixes
+
+* **tts:** fix TTS in APK (Capacitor) mode — use single utterance on Android WebView ([97d7ff1](https://github.com/niafrond/niafrond.github.io/commit/97d7ff14fb571aae2e761b0df0bef4087417eadc))
+
 ## [1.154.0](https://github.com/niafrond/niafrond.github.io/compare/v1.153.0...v1.154.0) (2026-04-28)
 
 ### Features
