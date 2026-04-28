@@ -1,3 +1,10 @@
+## [1.155.2](https://github.com/niafrond/niafrond.github.io/compare/v1.155.1...v1.155.2) (2026-04-28)
+
+### Bug Fixes
+
+* affiche le meilleur score (pas la somme) pour chaque joueur enregistré ([5f2954d](https://github.com/niafrond/niafrond.github.io/commit/5f2954dd87fe7d55d3a3d41d438301f620877057))
+* remove stale totalPts fallback in member display ([7725894](https://github.com/niafrond/niafrond.github.io/commit/772589484880a80a38529692a0c18b97d495d930))
+
 ## [1.155.1](https://github.com/niafrond/niafrond.github.io/compare/v1.155.0...v1.155.1) (2026-04-28)
 
 ### Bug Fixes
