@@ -1,3 +1,9 @@
+## [1.155.3](https://github.com/niafrond/niafrond.github.io/compare/v1.155.2...v1.155.3) (2026-04-28)
+
+### Bug Fixes
+
+* toggleKidsMode — garde trop large bloquait le bouton Mode Enfant ([f285074](https://github.com/niafrond/niafrond.github.io/commit/f285074f81d76f838c2744a40b37384d21bf31cd))
+
 ## [1.155.2](https://github.com/niafrond/niafrond.github.io/compare/v1.155.1...v1.155.2) (2026-04-28)
 
 ### Bug Fixes
