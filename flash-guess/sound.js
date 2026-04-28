@@ -211,7 +211,7 @@ export function playNextCard() {
 }
 
 /** Son de "Suivant" — deux notes montantes, sensation d'avancer */
-export function playNextTurn() {
+export function playAdvance() {
   if (_muted) return;
   try {
     const ctx = getCtx();
