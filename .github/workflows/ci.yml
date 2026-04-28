@@ -75,6 +75,12 @@ jobs:
         working-directory: flash-guess-android
         run: npx cap copy android
 
+      - name: Apply Android customizations
+        run: |
+          JAVA_DIR="flash-guess-android/android/app/src/main/java/io/github/niafrond/flashguess"
+          mkdir -p "$JAVA_DIR"
+          cp flash-guess-android/src/main/java/io/github/niafrond/flashguess/MainActivity.java "$JAVA_DIR/MainActivity.java"
+
       - name: Run Android unit tests
         working-directory: flash-guess-android/android
         run: ./gradlew testDebugUnitTest --no-daemon
