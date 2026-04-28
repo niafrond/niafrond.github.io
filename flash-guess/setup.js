@@ -267,7 +267,7 @@ export function updateKidsModeStatus() {
 }
 
 export function toggleKidsMode() {
-  if (hasChildInGame()) return;
+  if (hasChildInGame() && state.kidsQuestionsEnabled) return;
   state.kidsModeManual = !state.kidsModeManual;
   saveKidsMode(state.kidsModeManual);
   updateKidsModeStatus();
