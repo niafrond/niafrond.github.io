@@ -495,12 +495,14 @@ details.card-collapsible > :not(summary) {
   font-weight: 900;
   color: #ffd166;
   display: block;
+  text-shadow: 0 2px 12px rgba(255,209,102,0.35);
 }
 #pre-turn-guesser {
   font-size: 3rem;
   font-weight: 900;
   color: #06d6a0;
   display: block;
+  text-shadow: 0 2px 12px rgba(6,214,160,0.3);
 }
 .pre-turn-label {
   font-size: 1rem;
@@ -527,6 +529,7 @@ details.card-collapsible > :not(summary) {
 #screen-word-draft-cover,
 #screen-word-draft,
 #screen-round-intro,
+#screen-pre-turn,
 #screen-turn,
 #screen-turn-end,
 #screen-round-end,
@@ -661,12 +664,12 @@ details.card-collapsible > :not(summary) {
 /* Carte mot */
 .word-card {
   background: var(--surface);
-  border: 2px solid var(--border);
+  border: 2px solid rgba(255,255,255,0.09);
   border-radius: 20px;
   padding: 20px 16px;
   width: 100%;
   text-align: center;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), 0 0 40px rgba(0,150,199,0.07);
   flex: 1;
   min-height: 0;
   display: flex;
@@ -675,6 +678,12 @@ details.card-collapsible > :not(summary) {
   justify-content: center;
   gap: 12px;
   overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+/* Subtle glow when animated (new word) */
+.word-card--new {
+  animation: wordCardIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+  border-color: rgba(0,150,199,0.22);
 }
 #word-card-text {
   font-size: 2rem; /* fallback — remplacé dynamiquement par fitWordCard() en JS */
@@ -751,6 +760,7 @@ details.card-collapsible > :not(summary) {
 .btn-found-big {
   background: var(--success);
   color: #fff;
+  box-shadow: 0 4px 20px rgba(64,145,108,0.4);
 }
 .btn-found-big:hover { opacity: 0.88; }
 
@@ -2590,6 +2600,109 @@ details.card-collapsible > :not(summary) {
   background: rgba(64, 145, 108, 0.08);
 }
 
+/* ─── Screen fade-in ─────────────────────────────────────────────────────── */
+@keyframes screenFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* Gentle entrance for non-gameplay screens */
+#screen-setup:not([hidden]),
+#screen-categories:not([hidden]),
+#screen-teams:not([hidden]),
+#screen-groups:not([hidden]),
+#screen-words:not([hidden]),
+#screen-settings:not([hidden]),
+#screen-leaderboard:not([hidden]) {
+  animation: screenFadeIn 0.22s ease both;
+}
+/* Fast fade for gameplay transition screens */
+#screen-round-intro:not([hidden]),
+#screen-pre-turn:not([hidden]),
+#screen-turn-end:not([hidden]),
+#screen-round-end:not([hidden]),
+#screen-game-over:not([hidden]),
+#screen-word-draft-cover:not([hidden]) {
+  animation: screenFadeIn 0.18s ease both;
+}
+
+/* ─── Word card — new word slide-in animation ────────────────────────────── */
+@keyframes wordCardIn {
+  from { transform: translateY(-10px) scale(0.96); opacity: 0; }
+  to   { transform: translateY(0)     scale(1);    opacity: 1; }
+}
+
+/* ─── "Trouvé !" button flash animation ──────────────────────────────────── */
+@keyframes foundFlash {
+  0%   { filter: brightness(1) saturate(1); transform: scale(1); }
+  35%  { filter: brightness(1.35) saturate(1.2); transform: scale(1.05); }
+  100% { filter: brightness(1) saturate(1); transform: scale(1); }
+}
+.btn-found-big--flash {
+  animation: foundFlash 0.28s ease both;
+}
+
+/* ─── Timer — urgency pulse animation ────────────────────────────────────── */
+@keyframes timerUrgentBeat {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.1); }
+}
+.timer-wrap--urgent {
+  animation: timerUrgentBeat 0.5s ease infinite;
+}
+
+/* ─── Turn-end score pop-in animation ────────────────────────────────────── */
+@keyframes scorePopIn {
+  0%   { transform: scale(0.5); opacity: 0; }
+  70%  { transform: scale(1.12); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.turn-end-score--animate {
+  animation: scorePopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ─── Round intro — staggered entrance ───────────────────────────────────── */
+@keyframes roundIntroIn {
+  from { transform: scale(0.82) translateY(16px); opacity: 0; }
+  to   { transform: scale(1)    translateY(0);    opacity: 1; }
+}
+#screen-round-intro:not([hidden]) #round-intro-icon {
+  animation: roundIntroIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) 0.02s both;
+}
+#screen-round-intro:not([hidden]) #round-intro-title {
+  animation: roundIntroIn 0.24s ease 0.1s both;
+}
+#screen-round-intro:not([hidden]) #round-intro-desc {
+  animation: roundIntroIn 0.22s ease 0.16s both;
+}
+#screen-round-intro:not([hidden]) #round-intro-words-left {
+  animation: roundIntroIn 0.2s ease 0.22s both;
+}
+#screen-round-intro:not([hidden]) #btn-round-go {
+  animation: roundIntroIn 0.2s ease 0.28s both;
+}
+
+/* ─── Game-over winner pop-in ────────────────────────────────────────────── */
+@keyframes winnerPopIn {
+  0%   { transform: scale(0.7) rotate(-4deg); opacity: 0; }
+  65%  { transform: scale(1.06) rotate(1deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+#screen-game-over:not([hidden]) .game-over-winner-info {
+  animation: winnerPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.06s both;
+}
+
+/* ─── Pre-turn player name emphasis ─────────────────────────────────────── */
+@keyframes preTurnPlayerIn {
+  from { transform: scale(0.88) translateY(8px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+#screen-pre-turn:not([hidden]) #pre-turn-player {
+  animation: preTurnPlayerIn 0.24s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both;
+}
+#screen-pre-turn:not([hidden]) #pre-turn-guesser {
+  animation: preTurnPlayerIn 0.22s ease 0.12s both;
+}
+
 /* ─── Bottom navigation bar ──────────────────────────────────────────────── */
 #bottom-nav {
   position: fixed;
@@ -2628,13 +2741,28 @@ details.card-collapsible > :not(summary) {
 .bottom-nav-item:hover { color: var(--text); }
 
 .bottom-nav-item--active {
-  color: #7c3aed;
+  color: var(--volcan);
+  position: relative;
+}
+.bottom-nav-item--active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 30%;
+  right: 30%;
+  height: 3px;
+  background: var(--volcan);
+  border-radius: 0 0 3px 3px;
 }
 
 .bottom-nav-icon {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.bottom-nav-item--active .bottom-nav-icon {
+  transform: scale(1.18);
 }
 
 /* ─── In-game close button ───────────────────────────────────────────────── */
