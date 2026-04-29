@@ -49,7 +49,6 @@ import {
   renderMembersList, renderGroupsInSetup,
   openGroupsEditor, createNewGroup,
   addPlayerFromMember,
-  clearMembers,
 } from './members.js';
 
 import { openWordsEditor, addWord, exportWords, importWords, handleResetWords } from './editor.js';
@@ -955,18 +954,6 @@ function init() {
     if (!confirm('Effacer tout le classement ?')) return;
     clearLeaderboard();
     renderLeaderboard();
-    showToast('Classement effacé ✅');
-  }));
-
-  // ── Données ──
-  el('btn-clear-members').addEventListener('click', withCooldown(() => {
-    if (!confirm('Effacer l\'historique des joueurs enregistrés ?')) return;
-    clearMembers();
-    showToast('Historique effacé ✅');
-  }));
-  el('btn-clear-leaderboard').addEventListener('click', withCooldown(() => {
-    if (!confirm('Effacer tout le classement ?')) return;
-    clearLeaderboard();
     showToast('Classement effacé ✅');
   }));
 

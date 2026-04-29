@@ -3,7 +3,7 @@
  * Gère la persistance et l'affichage des résultats de parties.
  */
 
-import { el, showScreen } from './ui.js';
+import { el, showScreen, showToast } from './ui.js';
 
 const LEADERBOARD_KEY = 'flashguess_leaderboard';
 const MAX_ENTRIES     = 100;
@@ -20,6 +20,14 @@ function saveLeaderboard(entries) {
 
 export function clearLeaderboard() {
   try { localStorage.removeItem(LEADERBOARD_KEY); } catch (_) { /* ignore */ }
+}
+
+export function removeLeaderboardEntry(idx) {
+  const entries = loadLeaderboard();
+  if (idx >= 0 && idx < entries.length) {
+    entries.splice(idx, 1);
+    saveLeaderboard(entries);
+  }
 }
 
 /**
@@ -63,8 +71,8 @@ export function openLeaderboard() {
 export function renderLeaderboard(tabName = 'standard') {
   _currentTab = tabName;
   const entries  = loadLeaderboard();
-  const standard = entries.filter(e => e.mode === 'standard');
-  const coop2    = entries.filter(e => e.mode === 'coop2');
+  const standard = entries.map((e, i) => ({ ...e, _idx: i })).filter(e => e.mode === 'standard');
+  const coop2    = entries.map((e, i) => ({ ...e, _idx: i })).filter(e => e.mode === 'coop2');
 
   renderStandardTab(standard);
   renderCoop2Tab(coop2);
@@ -102,6 +110,18 @@ function renderStandardTab(entries) {
     const meta = document.createElement('div');
     meta.className = 'leaderboard-meta';
     meta.textContent = `${formatDate(entry.date)} · 🃏 ${entry.cardCount} cartes`;
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'leaderboard-entry-del';
+    delBtn.setAttribute('aria-label', 'Supprimer cette partie');
+    delBtn.title = 'Supprimer';
+    delBtn.textContent = '✕';
+    delBtn.addEventListener('click', () => {
+      removeLeaderboardEntry(entry._idx);
+      renderLeaderboard(_currentTab);
+      showToast('Partie supprimée ✅');
+    });
+    meta.appendChild(delBtn);
     card.appendChild(meta);
 
     const sorted = [...entry.teams].sort((a, b) => b.total - a.total);
@@ -156,6 +176,18 @@ function renderCoop2Tab(entries) {
     const meta = document.createElement('div');
     meta.className = 'leaderboard-meta';
     meta.textContent = formatDate(entry.date);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'leaderboard-entry-del';
+    delBtn.setAttribute('aria-label', 'Supprimer cette partie');
+    delBtn.title = 'Supprimer';
+    delBtn.textContent = '✕';
+    delBtn.addEventListener('click', () => {
+      removeLeaderboardEntry(entry._idx);
+      renderLeaderboard(_currentTab);
+      showToast('Partie supprimée ✅');
+    });
+    meta.appendChild(delBtn);
     card.appendChild(meta);
 
     // Joueurs + score

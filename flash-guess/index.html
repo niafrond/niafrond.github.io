@@ -77,6 +77,16 @@
     </div>
 
     <details class="card card-collapsible">
+      <summary id="summary-add-registered" class="card-title card-title-summary">📋 Joueurs enregistrés</summary>
+      <div id="members-list"></div>
+    </details>
+
+    <details class="card card-collapsible">
+      <summary id="summary-add-group" class="card-title card-title-summary">👥 Depuis un groupe</summary>
+      <div id="groups-in-setup"></div>
+    </details>
+
+    <details class="card card-collapsible">
       <summary class="card-title card-title-summary">📖 Règles rapides</summary>
       <p style="font-size:0.88rem; color:var(--text-muted); line-height:1.7">
         <strong style="color:var(--text)">3 manches</strong> sur les mêmes mots — les équipes jouent à tour de rôle (30 s par tour) :<br><br>
@@ -669,16 +679,6 @@
       </a>
       <button id="btn-apk-update" class="btn btn-primary w-full mt-12" hidden>
         🔄 Mettre à jour
-      </button>
-    </div>
-
-    <div class="card">
-      <div class="card-title">🗂️ Données</div>
-      <button id="btn-clear-members" class="btn btn-danger-outline w-full">
-        🗑️ Historique des joueurs
-      </button>
-      <button id="btn-clear-leaderboard" class="btn btn-danger-outline w-full mt-12">
-        🗑️ Classement
       </button>
     </div>
   </div>
