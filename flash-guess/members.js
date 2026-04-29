@@ -138,6 +138,12 @@ export function removeMember(idx) {
   renderGroupsInSetup();
 }
 
+export function clearMembers() {
+  localStorage.removeItem(MEMBERS_KEY);
+  renderMembersList();
+  renderGroupsInSetup();
+}
+
 export function addPlayerFromMember(name) {
   if (state.playerNames.includes(name)) { showToast('Déjà dans la partie', 'warn'); return; }
   if (state.playerNames.length >= 20) { showToast('Maximum 20 joueurs', 'warn'); return; }

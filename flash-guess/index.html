@@ -530,7 +530,10 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 <div id="screen-leaderboard" data-screen="screen-leaderboard">
   <div class="page-wrapper">
-    <button id="btn-leaderboard-back" class="btn btn-secondary btn-sm home-btn">← Retour</button>
+    <div class="setup-header-row">
+      <button id="btn-leaderboard-back" class="btn btn-secondary btn-sm home-btn">← Retour</button>
+      <button id="btn-leaderboard-clear" class="btn-icon btn-danger" title="Effacer le classement" aria-label="Effacer le classement">🗑️</button>
+    </div>
 
     <h1 class="app-title" style="font-size:2rem;">🏆 Classement</h1>
     <p class="app-subtitle">Historique de vos parties</p>
@@ -666,6 +669,16 @@
       </a>
       <button id="btn-apk-update" class="btn btn-primary w-full mt-12" hidden>
         🔄 Mettre à jour
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🗂️ Données</div>
+      <button id="btn-clear-members" class="btn btn-danger-outline w-full">
+        🗑️ Historique des joueurs
+      </button>
+      <button id="btn-clear-leaderboard" class="btn btn-danger-outline w-full mt-12">
+        🗑️ Classement
       </button>
     </div>
   </div>

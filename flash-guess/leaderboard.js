@@ -18,6 +18,10 @@ function saveLeaderboard(entries) {
   try { localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(entries)); } catch (_) { /* ignore */ }
 }
 
+export function clearLeaderboard() {
+  try { localStorage.removeItem(LEADERBOARD_KEY); } catch (_) { /* ignore */ }
+}
+
 /**
  * Enregistre une partie dans le classement.
  * @param {{ date: string, mode: 'standard'|'coop2', teams: Array, cardCount: number,

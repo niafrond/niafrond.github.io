@@ -49,13 +49,14 @@ import {
   renderMembersList, renderGroupsInSetup,
   openGroupsEditor, createNewGroup,
   addPlayerFromMember,
+  clearMembers,
 } from './members.js';
 
 import { openWordsEditor, addWord, exportWords, importWords, handleResetWords } from './editor.js';
 import { startDemoTurn } from './demo.js';
 import { toggleFullscreen, updateFullscreenBtn, installPwa, initServiceWorker, initAutoFullscreen, initApkDownloadLink, checkApkUpdate, doApkUpdate } from './pwa.js';
 import { playButtonClick, playReady, playNextCard, playAdvance } from './sound.js';
-import { openLeaderboard, renderLeaderboard } from './leaderboard.js';
+import { openLeaderboard, renderLeaderboard, clearLeaderboard } from './leaderboard.js';
 
 // ─── NAVIGATION ────────────────────────────────────────────────────────────────
 const NAV_SCREENS = new Set([
@@ -950,6 +951,24 @@ function init() {
   document.querySelectorAll('.leaderboard-tab-btn').forEach(btn => {
     btn.addEventListener('click', withCooldown(() => renderLeaderboard(btn.dataset.tab)));
   });
+  el('btn-leaderboard-clear').addEventListener('click', withCooldown(() => {
+    if (!confirm('Effacer tout le classement ?')) return;
+    clearLeaderboard();
+    renderLeaderboard();
+    showToast('Classement effacé ✅');
+  }));
+
+  // ── Données ──
+  el('btn-clear-members').addEventListener('click', withCooldown(() => {
+    if (!confirm('Effacer l\'historique des joueurs enregistrés ?')) return;
+    clearMembers();
+    showToast('Historique effacé ✅');
+  }));
+  el('btn-clear-leaderboard').addEventListener('click', withCooldown(() => {
+    if (!confirm('Effacer tout le classement ?')) return;
+    clearLeaderboard();
+    showToast('Classement effacé ✅');
+  }));
 
   // ── Démo ──
   el('btn-launch-demo').addEventListener('click', withCooldown(() => {
