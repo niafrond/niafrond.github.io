@@ -326,10 +326,14 @@ export function addPlayer(nameOverride) {
   const name = nameOverride !== undefined ? nameOverride : input.value.trim();
   if (!name) { showToast('Entrez un prénom', 'warn'); return null; }
 
-  // Reconnaître un nom de groupe (correspondance exacte, insensible à la casse)
+  // Reconnaître un nom de groupe (correspondance exacte ou préfixe unique, insensible à la casse)
   const groups = loadGroups();
   const nameLower = name.toLowerCase();
-  const matchedGroup = groups.find(g => g.name.toLowerCase() === nameLower && g.members.length > 0);
+  let matchedGroup = groups.find(g => g.name.toLowerCase() === nameLower && g.members.length > 0);
+  if (!matchedGroup) {
+    const prefixMatches = groups.filter(g => g.name.toLowerCase().startsWith(nameLower) && g.members.length > 0);
+    if (prefixMatches.length === 1) matchedGroup = prefixMatches[0];
+  }
   if (matchedGroup) {
     const allMembers = loadMembers();
     const addedNames = [];
