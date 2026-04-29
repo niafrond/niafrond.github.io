@@ -16,7 +16,7 @@ import {
   playFound, playRoundStart, playGameOver, playButtonClick,
   playSkip, playFault, playUndo, playRedo, playGameStart,
   playAbandon, playAllWordsFound, playDraftWord, playCorrect,
-  speakPreTurn,
+  speakPreTurn, getMuted,
 } from './sound.js';
 import { getShuffledWords, getCategoryInfo, shuffle } from './words.js';
 import { saveMembersAfterGame } from './members.js';
@@ -26,6 +26,16 @@ import { saveGameResult } from './leaderboard.js';
 export function getCurrentRoundRule() { return ROUND_RULES[state.currentRound - 1]; }
 
 export function teamLabel(team) { return team.players.join(' · '); }
+
+/**
+ * Déclenche un retour haptique (vibration) si le navigateur le supporte et que
+ * le son n'est pas coupé (lorsque l'utilisateur a désactivé le son, il est
+ * raisonnable de supposer qu'il préfère un mode discret sans vibration non plus).
+ * @param {number|number[]} pattern - durée en ms ou tableau [vibrer, pause, vibrer, …]
+ */
+function vibrate(pattern) {
+  if (!getMuted()) navigator.vibrate?.(pattern);
+}
 
 /**
  * Calcule l'index de l'équipe qui commence une nouvelle manche.
@@ -390,6 +400,7 @@ export function updateTimerDisplay() {
   const pct       = state.timeLeft / state.turnDuration;
   const timerNum  = el('timer-number');
   const timerRing = el('timer-ring-progress');
+  const timerWrap = document.querySelector('.timer-wrap');
 
   timerNum.textContent = state.timeLeft;
 
@@ -401,12 +412,15 @@ export function updateTimerDisplay() {
   if (state.timeLeft <= 5) {
     timerRing.style.stroke = 'var(--danger)';
     timerNum.style.color   = 'var(--danger)';
+    timerWrap?.classList.add('timer-wrap--urgent');
   } else if (state.timeLeft <= 10) {
     timerRing.style.stroke = 'var(--warning)';
     timerNum.style.color   = 'var(--warning)';
+    timerWrap?.classList.remove('timer-wrap--urgent');
   } else {
     timerRing.style.stroke = 'var(--success)';
     timerNum.style.color   = 'var(--text)';
+    timerWrap?.classList.remove('timer-wrap--urgent');
   }
 }
 
@@ -569,6 +583,10 @@ export function startTurn() {
   state.redoStack     = [];
   updateUndoRedoButtons();
 
+  // Reset animated states from previous turn
+  document.querySelector('.timer-wrap')?.classList.remove('timer-wrap--urgent');
+  el('btn-found')?.classList.remove('btn-found-big--flash');
+
   demo.childReadFrozen = false;
   showChildReadBtn(false);
   state.childReadFirstWord = false;
@@ -638,6 +656,14 @@ export function drawNextWord() {
   updateTurnStats();
   fitWordCard();
 
+  // Animate word card entrance
+  const wordCard = el('word-card-text')?.closest('.word-card');
+  if (wordCard) {
+    wordCard.classList.remove('word-card--new');
+    void wordCard.offsetWidth; // force reflow so removing+re-adding the class restarts the animation
+    wordCard.classList.add('word-card--new');
+  }
+
   if (!state.childReadFirstWord && isChildReadTimeNeeded()) {
     if (!demo.mode) pauseTimer();
     showChildReadBtn(true);
@@ -647,6 +673,7 @@ export function drawNextWord() {
 
 export function wordFound() {
   playFound();
+  vibrate(35);
   state.actionHistory.push({ type: 'found', word: state.currentWord });
   state.redoStack = [];
   state.turnFound.push(state.currentWord);
@@ -654,6 +681,15 @@ export function wordFound() {
   updateTurnStats();
   drawNextWord();
   updateUndoRedoButtons();
+
+  // Flash the found button for tactile feedback
+  const foundBtn = el('btn-found');
+  if (foundBtn) {
+    foundBtn.classList.remove('btn-found-big--flash');
+    void foundBtn.offsetWidth; // force reflow to restart CSS animation
+    foundBtn.classList.add('btn-found-big--flash');
+  }
+
   if (demo.mode && !demo.firstWordFound) {
     demo.firstWordFound = true;
     if (demoHooks.showAfterFoundTips) demoHooks.showAfterFoundTips();
@@ -781,10 +817,15 @@ function lockNextTurnBtn() {
 export function endTurn(reason = 'timeout') {
   stopTimer();
 
+  // Clear timer urgency state and haptic feedback
+  document.querySelector('.timer-wrap')?.classList.remove('timer-wrap--urgent');
+
   if (reason === 'timeout') {
     playBuzzer();
+    vibrate([100, 50, 80]);
   } else if (reason === 'allFound') {
     playAllWordsFound();
+    vibrate(60);
   }
 
   if (demo.mode) {
@@ -806,6 +847,7 @@ export function endTurn(reason = 'timeout') {
     el('turn-end-all-found').hidden = (reason !== 'allFound');
     el('btn-correct-turn').hidden = (state.turnFound.length === 0);
     showScreen('screen-turn-end');
+    _animateScore();
     lockNextTurnBtn();
     if (state.turnFound.length > 0 && demoHooks.showTurnEndTips) demoHooks.showTurnEndTips();
     return;
@@ -873,7 +915,17 @@ export function endTurn(reason = 'timeout') {
 
   el('btn-correct-turn').hidden = (state.turnFound.length === 0);
   showScreen('screen-turn-end');
+  _animateScore();
   lockNextTurnBtn();
+}
+
+// ─── Animate turn-end score pop-in ────────────────────────────────────────────
+function _animateScore() {
+  const scoreEl = el('turn-end-count');
+  if (!scoreEl) return;
+  scoreEl.classList.remove('turn-end-score--animate');
+  void scoreEl.offsetWidth; // force reflow so removing+re-adding the class restarts the animation
+  scoreEl.classList.add('turn-end-score--animate');
 }
 
 // ─── CORRECTION DU TOUR ────────────────────────────────────────────────────────
