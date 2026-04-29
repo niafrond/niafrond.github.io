@@ -1,3 +1,13 @@
+## [1.157.0](https://github.com/niafrond/niafrond.github.io/compare/v1.156.0...v1.157.0) (2026-04-29)
+
+### Features
+
+* redesign player add UX with quick-add input, 3-dot menu and suggestions dropdown ([daf3f6b](https://github.com/niafrond/niafrond.github.io/commit/daf3f6bca6bb3ebb1df25cd595004e7ebad08653))
+
+### Bug Fixes
+
+* correct child status preservation in player rename, tighten player count test assertion ([43a8568](https://github.com/niafrond/niafrond.github.io/commit/43a8568f38c13f661667fe3234768d48aac3b228))
+
 ## [1.156.0](https://github.com/niafrond/niafrond.github.io/compare/v1.155.3...v1.156.0) (2026-04-29)
 
 ### Features
