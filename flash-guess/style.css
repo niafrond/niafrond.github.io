@@ -2730,7 +2730,25 @@ details.card-collapsible > :not(summary) {
   font-size: 0.78rem;
   color: var(--text-muted);
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
+
+.leaderboard-entry-del {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  opacity: 0.45;
+  cursor: pointer;
+  font-size: 0.72rem;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.leaderboard-entry-del:hover { opacity: 1; color: var(--danger); }
 
 .leaderboard-team-row {
   display: flex;
