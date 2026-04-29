@@ -80,6 +80,12 @@ jobs:
           JAVA_DIR="flash-guess-android/android/app/src/main/java/io/github/niafrond/flashguess"
           mkdir -p "$JAVA_DIR"
           cp flash-guess-android/src/main/java/io/github/niafrond/flashguess/MainActivity.java "$JAVA_DIR/MainActivity.java"
+          cp flash-guess-android/src/main/java/io/github/niafrond/flashguess/ApkUpdaterPlugin.java "$JAVA_DIR/ApkUpdaterPlugin.java"
+
+          # Copie file_paths.xml pour FileProvider
+          XML_DIR="flash-guess-android/android/app/src/main/res/xml"
+          mkdir -p "$XML_DIR"
+          cp flash-guess-android/src/main/res/xml/file_paths.xml "$XML_DIR/file_paths.xml"
 
       - name: Run Android unit tests
         working-directory: flash-guess-android/android
