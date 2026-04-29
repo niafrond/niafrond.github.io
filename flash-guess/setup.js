@@ -11,7 +11,7 @@ import {
 import { el, showScreen, showToast } from './ui.js';
 import { CATEGORY_LABELS, loadWords } from './words.js';
 import { assignTeams, renderTeams } from './game.js';
-import { renderMembersList, renderGroupsInSetup, autoSaveMember } from './members.js';
+import { loadMembers, loadGroups, autoSaveMember } from './members.js';
 
 // ─── Persistance du nombre de cartes ───────────────────────────────────────────
 export function loadCardCount() {
@@ -160,39 +160,143 @@ export function saveCurrentPlayers() {
 // ─── ÉCRAN SETUP — joueurs ─────────────────────────────────────────────────────
 let _lastAddedPlayer = null;
 
+/** Crée le menu 3-points contextuel pour un joueur. */
+function buildPlayerMenu(name, idx, item) {
+  const menuBtn = document.createElement('button');
+  menuBtn.className = 'player-item-menu-btn btn-icon';
+  menuBtn.setAttribute('aria-label', `Options pour ${name}`);
+  menuBtn.textContent = '⋯';
+
+  const popup = document.createElement('div');
+  popup.className = 'player-item-menu-popup';
+  popup.hidden = true;
+
+  // Action : marquer / démarquer enfant
+  const childAction = document.createElement('button');
+  childAction.className = 'player-menu-action';
+  childAction.textContent = state.playerIsChild.has(name) ? '😊 Retirer "Enfant"' : '👶 Marquer comme enfant';
+  childAction.addEventListener('click', (e) => {
+    e.stopPropagation();
+    togglePlayerChild(name);
+    popup.hidden = true;
+  });
+  popup.appendChild(childAction);
+
+  // Action : modifier le nom
+  const renameAction = document.createElement('button');
+  renameAction.className = 'player-menu-action';
+  renameAction.textContent = '✏️ Modifier le nom';
+  renameAction.addEventListener('click', (e) => {
+    e.stopPropagation();
+    popup.hidden = true;
+    startRenamePlayer(idx, item, name);
+  });
+  popup.appendChild(renameAction);
+
+  // Action : supprimer
+  const deleteAction = document.createElement('button');
+  deleteAction.className = 'player-menu-action player-menu-delete btn-danger';
+  deleteAction.textContent = '🗑️ Supprimer le joueur';
+  deleteAction.setAttribute('aria-label', `Supprimer ${name}`);
+  deleteAction.addEventListener('click', (e) => {
+    e.stopPropagation();
+    popup.hidden = true;
+    removePlayer(idx);
+  });
+  popup.appendChild(deleteAction);
+
+  menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const wasHidden = popup.hidden;
+    // Fermer tous les autres menus ouverts
+    document.querySelectorAll('.player-item-menu-popup').forEach(p => { p.hidden = true; });
+    popup.hidden = !wasHidden;
+  });
+
+  item.appendChild(menuBtn);
+  item.appendChild(popup);
+}
+
+/** Déclenche le mode renommage inline pour un joueur. */
+function startRenamePlayer(idx, item, oldName) {
+  // Remplacer temporairement le nom par un champ de saisie
+  const nameSpan = item.querySelector('.player-item-name');
+  if (!nameSpan) return;
+
+  const input = document.createElement('input');
+  input.className = 'player-rename-input';
+  input.type = 'text';
+  input.value = oldName;
+  input.maxLength = 24;
+  input.setAttribute('autocomplete', 'off');
+  input.setAttribute('autocorrect', 'off');
+  nameSpan.replaceWith(input);
+  input.focus();
+  input.select();
+
+  const doRename = () => {
+    const newName = input.value.trim();
+    if (!newName || newName === oldName) { renderPlayerList(); return; }
+    if (state.playerNames.includes(newName)) { showToast('Ce joueur existe déjà', 'warn'); renderPlayerList(); return; }
+    const wasChild = state.playerIsChild.has(oldName);
+    state.playerIsChild.delete(oldName);
+    state.playerNames[idx] = newName;
+    if (wasChild) state.playerIsChild.add(newName);
+    autoSaveMember(newName, wasChild);
+    saveCurrentPlayers();
+    renderPlayerList();
+    showToast(`${oldName} → ${newName} ✅`);
+  };
+
+  input.addEventListener('blur', doRename);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { e.preventDefault(); renderPlayerList(); }
+  });
+}
+
 export function renderPlayerList() {
   const list = el('player-list');
   list.innerHTML = '';
+  const emptyState = el('player-empty-state');
+
   state.playerNames.forEach((name, i) => {
     const item = document.createElement('div');
     item.className = name === _lastAddedPlayer ? 'player-item player-item--new' : 'player-item';
     if (name === _lastAddedPlayer) _lastAddedPlayer = null;
 
+    const avatar = document.createElement('span');
+    avatar.className = 'player-item-avatar';
+    avatar.textContent = '👤';
+    avatar.setAttribute('aria-hidden', 'true');
+    item.appendChild(avatar);
+
     const nameSpan = document.createElement('span');
     nameSpan.className = 'player-item-name';
-    nameSpan.textContent = `👤 ${name}`;
+    nameSpan.textContent = name;
     item.appendChild(nameSpan);
 
     if (state.playerIsChild.has(name)) {
       const badge = document.createElement('span');
       badge.className = 'player-item-child-badge';
-      badge.textContent = '🧒 Enfant';
+      badge.textContent = '👶 Enfant';
       item.appendChild(badge);
     }
 
-    const btn = document.createElement('button');
-    btn.className = 'btn-icon btn-danger';
-    btn.setAttribute('aria-label', `Supprimer ${name}`);
-    btn.textContent = '✕';
-    btn.addEventListener('click', () => removePlayer(i));
-
-    item.appendChild(btn);
+    buildPlayerMenu(name, i, item);
     list.appendChild(item);
   });
 
   const count = state.playerNames.length;
-  el('player-count').textContent = count > 0 ? `${count} joueur${count > 1 ? 's' : ''}` : '';
-  el('player-count').hidden = count === 0;
+
+  // Compteur dans l'en-tête
+  const countEl = el('player-count');
+  countEl.textContent = count > 0 ? `(${count})` : '';
+  countEl.hidden = count === 0;
+
+  // État vide
+  if (emptyState) emptyState.hidden = count > 0;
+
   el('btn-start-game').disabled = count < MIN_PLAYERS;
 
   const hint = el('setup-hint');
@@ -206,24 +310,34 @@ export function renderPlayerList() {
   updateKidsModeStatus();
 }
 
-export function addPlayer() {
+export function togglePlayerChild(name) {
+  if (state.playerIsChild.has(name)) {
+    state.playerIsChild.delete(name);
+  } else {
+    state.playerIsChild.add(name);
+  }
+  saveCurrentPlayers();
+  renderPlayerList();
+  updateKidsModeStatus();
+}
+
+export function addPlayer(nameOverride) {
   const input = el('player-input');
-  const name = input.value.trim();
+  const name = nameOverride !== undefined ? nameOverride : input.value.trim();
   if (!name) { showToast('Entrez un prénom', 'warn'); return null; }
   if (state.playerNames.includes(name)) { showToast('Ce joueur existe déjà', 'warn'); return null; }
   if (state.playerNames.length >= 20) { showToast('Maximum 20 joueurs', 'warn'); return null; }
-  const isChild = el('player-is-child').checked;
   state.playerNames.push(name);
-  if (isChild) state.playerIsChild.add(name);
-  el('player-is-child').checked = false;
   input.value = '';
   input.focus();
   _lastAddedPlayer = name;
-  autoSaveMember(name, isChild);
+  // Respecte le statut enfant enregistré précédemment
+  const members = loadMembers();
+  const existing = members.find(m => m.name === name);
+  if (existing?.isChild) state.playerIsChild.add(name);
+  autoSaveMember(name, state.playerIsChild.has(name));
   saveCurrentPlayers();
   renderPlayerList();
-  renderMembersList();
-  renderGroupsInSetup();
   showToast(`${name} ajouté ✅`);
   return name;
 }
@@ -234,8 +348,34 @@ export function removePlayer(idx) {
   state.playerNames.splice(idx, 1);
   saveCurrentPlayers();
   renderPlayerList();
-  renderMembersList();
-  renderGroupsInSetup();
+}
+
+/** Retourne les suggestions de joueurs/groupes correspondant à la requête (max 5). */
+export function getSuggestions(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const results = [];
+  const members = loadMembers();
+  members.forEach(m => {
+    if (
+      m.name.toLowerCase().includes(q) &&
+      !state.playerNames.includes(m.name) &&
+      results.length < 3
+    ) {
+      results.push({ type: 'member', name: m.name, label: 'joueur enregistré', isChild: !!m.isChild });
+    }
+  });
+  const groups = loadGroups();
+  groups.forEach(g => {
+    if (
+      g.name.toLowerCase().includes(q) &&
+      g.members.length > 0 &&
+      results.length < 5
+    ) {
+      results.push({ type: 'group', name: g.name, label: `groupe (${g.members.length})`, members: g.members });
+    }
+  });
+  return results;
 }
 
 // ─── MODE ENFANT ──────────────────────────────────────────────────────────────

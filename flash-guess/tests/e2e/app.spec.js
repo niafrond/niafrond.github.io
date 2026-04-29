@@ -115,14 +115,16 @@ test.describe('Gestion des joueurs', () => {
   test('le compteur de joueurs est correct', async ({ page }) => {
     await addPlayer(page, 'Alice');
     await addPlayer(page, 'Bob');
-    await expect(page.locator('#player-count')).toContainText('2 joueurs');
+    await expect(page.locator('#player-count')).toContainText('(2)');
   });
 
   test('supprimer un joueur repasse le bouton Démarrer en désactivé', async ({ page }) => {
     await addPlayer(page, 'Alice');
     await addPlayer(page, 'Bob');
     await expect(page.locator('#btn-start-game')).toBeEnabled();
-    await page.locator('#player-list .btn-icon').first().click();
+    // Ouvrir le menu 3-points du premier joueur et cliquer sur Supprimer
+    await page.locator('#player-list .player-item-menu-btn').first().click();
+    await page.locator('#player-list .player-menu-delete').first().click();
     await expect(page.locator('#player-list .player-item')).toHaveCount(1);
     await expect(page.locator('#btn-start-game')).toBeDisabled();
   });

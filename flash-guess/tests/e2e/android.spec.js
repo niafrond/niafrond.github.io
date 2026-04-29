@@ -46,10 +46,10 @@ async function waitForInit(page) {
   });
 }
 
-/** Ajoute un joueur via le formulaire et attend que le cooldown (500 ms) expire. */
+/** Ajoute un joueur via le champ de saisie (touche Entrée) et attend que le cooldown (500 ms) expire. */
 async function addPlayer(page, name) {
   await page.fill('#player-input', name);
-  await page.click('#btn-add-player');
+  await page.press('#player-input', 'Enter');
   // Attend que le joueur soit visible dans la liste (confirme l'ajout)
   await expect(page.locator('#player-list')).toContainText(name, { timeout: 3_000 });
   // Attend la fin du withCooldown global (500 ms) avant toute nouvelle interaction
@@ -118,7 +118,7 @@ test.describe('APK Android — interactions tactiles (Pixel 5 portrait)', () => 
     await waitForInit(page);
     await page.tap('#player-input');
     await page.fill('#player-input', 'Alice');
-    await page.tap('#btn-add-player');
+    await page.press('#player-input', 'Enter');
     await expect(page.locator('#player-list .player-item')).toHaveCount(1);
     await expect(page.locator('#player-list')).toContainText('Alice');
   });

@@ -43,45 +43,37 @@
 
     <!-- Section joueurs -->
     <div class="setup-players-zone">
-      <div class="setup-section-label">① Ajouter des joueurs</div>
+      <!-- En-tête avec compteur -->
+      <div class="setup-players-header">
+        <span class="setup-players-title">Joueurs</span>
+        <span id="player-count" class="setup-players-count"></span>
+      </div>
 
-      <!-- Joueurs actuellement dans la partie -->
+      <!-- Liste des joueurs (+ état vide) -->
       <div class="card" id="panel-current-players">
-        <div class="card-title">Joueurs dans la partie</div>
+        <div id="player-empty-state" class="player-empty-state">
+          <span class="player-empty-icon">👥</span>
+          <p class="player-empty-text">Ajoutez votre premier joueur</p>
+        </div>
         <div id="player-list"></div>
-        <span id="player-count"></span>
         <span id="setup-hint" hidden></span>
       </div>
 
-      <!-- Panneau collapsible : Nouveau joueur -->
-      <details class="card card-collapsible" id="panel-add-new" open>
-        <summary class="card-title card-title-summary">➕ Nouveau joueur</summary>
-        <div>
-          <div class="input-row">
-            <input id="player-input" class="input" type="text"
-                   placeholder="Prénom du joueur…" maxlength="24" autocomplete="off" autocorrect="off">
-            <label class="player-child-toggle" title="Cocher si le joueur est un enfant (-12 ans)">
-              <input type="checkbox" id="player-is-child">
-              <span class="player-child-toggle-label">enfant ?</span>
-            </label>
-          </div>
-          <button id="btn-add-player" class="btn btn-primary w-full mt-12">Ajouter</button>
+      <!-- Ajout rapide -->
+      <div class="quick-add-wrapper">
+        <div class="quick-add-input-row">
+          <span class="quick-add-icon" aria-hidden="true">＋</span>
+          <input id="player-input" class="quick-add-input" type="text"
+                 placeholder="Ajouter un joueur…" maxlength="24"
+                 autocomplete="off" autocorrect="off" spellcheck="false">
+          <button id="btn-add-player" class="quick-add-submit" aria-label="Ajouter le joueur">➜</button>
         </div>
-      </details>
+        <div id="quick-add-suggestions" class="quick-add-suggestions" hidden></div>
+      </div>
+      <p class="quick-add-hint">Appuyez sur Entrée pour ajouter rapidement</p>
 
-      <!-- Panneau collapsible : Depuis un groupe -->
-      <details class="card card-collapsible" id="panel-add-group">
-        <summary id="summary-add-group" class="card-title card-title-summary">👥 Depuis un groupe</summary>
-        <div>
-          <div id="groups-in-setup"></div>
-        </div>
-      </details>
-
-      <!-- Panneau collapsible : Joueur enregistré -->
-      <details class="card card-collapsible" id="panel-add-registered">
-        <summary id="summary-add-registered" class="card-title card-title-summary">📋 Joueur enregistré</summary>
-        <div id="members-list"></div>
-      </details>
+      <!-- Checkbox enfant gardée pour compatibilité interne (non affichée) -->
+      <input type="checkbox" id="player-is-child" aria-hidden="true" style="display:none">
     </div>
 
     <details class="card card-collapsible">
