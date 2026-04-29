@@ -325,6 +325,39 @@ export function addPlayer(nameOverride) {
   const input = el('player-input');
   const name = nameOverride !== undefined ? nameOverride : input.value.trim();
   if (!name) { showToast('Entrez un prénom', 'warn'); return null; }
+
+  // Reconnaître un nom de groupe (correspondance exacte ou préfixe unique, insensible à la casse)
+  const groups = loadGroups();
+  const nameLower = name.toLowerCase();
+  let matchedGroup = groups.find(g => g.name.toLowerCase() === nameLower && g.members.length > 0);
+  if (!matchedGroup) {
+    const prefixMatches = groups.filter(g => g.name.toLowerCase().startsWith(nameLower) && g.members.length > 0);
+    if (prefixMatches.length === 1) matchedGroup = prefixMatches[0];
+  }
+  if (matchedGroup) {
+    const allMembers = loadMembers();
+    const addedNames = [];
+    matchedGroup.members.forEach(memberName => {
+      if (!state.playerNames.includes(memberName) && state.playerNames.length < 20) {
+        const memberData = allMembers.find(m => m.name === memberName);
+        state.playerNames.push(memberName);
+        if (memberData?.isChild) state.playerIsChild.add(memberName);
+        addedNames.push(memberName);
+      }
+    });
+    input.value = '';
+    input.focus();
+    if (addedNames.length > 0) {
+      saveCurrentPlayers();
+      renderPlayerList();
+      const n = addedNames.length;
+      showToast(`${n} joueur${n > 1 ? 's' : ''} ajouté${n > 1 ? 's' : ''} (${matchedGroup.name}) ✅`);
+      return addedNames;
+    }
+    showToast('Tous les membres de ce groupe sont déjà ajoutés', 'warn');
+    return null;
+  }
+
   if (state.playerNames.includes(name)) { showToast('Ce joueur existe déjà', 'warn'); return null; }
   if (state.playerNames.length >= 20) { showToast('Maximum 20 joueurs', 'warn'); return null; }
   state.playerNames.push(name);
