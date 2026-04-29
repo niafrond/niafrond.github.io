@@ -16,7 +16,7 @@ import {
   playFound, playRoundStart, playGameOver, playButtonClick,
   playSkip, playFault, playUndo, playRedo, playGameStart,
   playAbandon, playAllWordsFound, playDraftWord, playCorrect,
-  speakPreTurn,
+  speakPreTurn, getMuted,
 } from './sound.js';
 import { getShuffledWords, getCategoryInfo, shuffle } from './words.js';
 import { saveMembersAfterGame } from './members.js';
@@ -26,6 +26,16 @@ import { saveGameResult } from './leaderboard.js';
 export function getCurrentRoundRule() { return ROUND_RULES[state.currentRound - 1]; }
 
 export function teamLabel(team) { return team.players.join(' · '); }
+
+/**
+ * Déclenche un retour haptique (vibration) si le navigateur le supporte et que
+ * le son n'est pas coupé (lorsque l'utilisateur a désactivé le son, il est
+ * raisonnable de supposer qu'il préfère un mode discret sans vibration non plus).
+ * @param {number|number[]} pattern - durée en ms ou tableau [vibrer, pause, vibrer, …]
+ */
+function vibrate(pattern) {
+  if (!getMuted()) navigator.vibrate?.(pattern);
+}
 
 /**
  * Calcule l'index de l'équipe qui commence une nouvelle manche.
@@ -650,7 +660,7 @@ export function drawNextWord() {
   const wordCard = el('word-card-text')?.closest('.word-card');
   if (wordCard) {
     wordCard.classList.remove('word-card--new');
-    void wordCard.offsetWidth; // force reflow
+    void wordCard.offsetWidth; // force reflow so removing+re-adding the class restarts the animation
     wordCard.classList.add('word-card--new');
   }
 
@@ -662,7 +672,7 @@ export function drawNextWord() {
 
 export function wordFound() {
   playFound();
-  navigator.vibrate?.(35);
+  vibrate(35);
   state.actionHistory.push({ type: 'found', word: state.currentWord });
   state.redoStack = [];
   state.turnFound.push(state.currentWord);
@@ -675,7 +685,7 @@ export function wordFound() {
   const foundBtn = el('btn-found');
   if (foundBtn) {
     foundBtn.classList.remove('btn-found-big--flash');
-    void foundBtn.offsetWidth;
+    void foundBtn.offsetWidth; // force reflow to restart CSS animation
     foundBtn.classList.add('btn-found-big--flash');
   }
 
@@ -811,10 +821,10 @@ export function endTurn(reason = 'timeout') {
 
   if (reason === 'timeout') {
     playBuzzer();
-    navigator.vibrate?.([100, 50, 80]);
+    vibrate([100, 50, 80]);
   } else if (reason === 'allFound') {
     playAllWordsFound();
-    navigator.vibrate?.(60);
+    vibrate(60);
   }
 
   if (demo.mode) {
@@ -913,7 +923,7 @@ function _animateScore() {
   const scoreEl = el('turn-end-count');
   if (!scoreEl) return;
   scoreEl.classList.remove('turn-end-score--animate');
-  void scoreEl.offsetWidth;
+  void scoreEl.offsetWidth; // force reflow so removing+re-adding the class restarts the animation
   scoreEl.classList.add('turn-end-score--animate');
 }
 
