@@ -112,7 +112,7 @@ export async function checkApkUpdate() {
 
   try {
     // Vérifier le cache (une fois par jour maximum)
-    const cached = sessionStorage.getItem(APK_UPDATE_CHECK_KEY);
+    const cached = localStorage.getItem(APK_UPDATE_CHECK_KEY);
     if (cached) {
       const { latestTag, checked } = JSON.parse(cached);
       if (Date.now() - checked < 24 * 60 * 60 * 1000) {
@@ -127,7 +127,7 @@ export async function checkApkUpdate() {
     if (!res.ok) return;
     const { tag_name: latestTag } = await res.json();
 
-    sessionStorage.setItem(APK_UPDATE_CHECK_KEY, JSON.stringify({ latestTag, checked: Date.now() }));
+    localStorage.setItem(APK_UPDATE_CHECK_KEY, JSON.stringify({ latestTag, checked: Date.now() }));
 
     if (_isNewerVersion(latestTag, getVersion())) _showApkUpdateBtn(latestTag);
   } catch (_) {

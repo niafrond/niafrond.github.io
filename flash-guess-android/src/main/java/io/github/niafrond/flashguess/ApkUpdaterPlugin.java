@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.util.Log;
 
 import androidx.core.content.FileProvider;
 
@@ -26,6 +27,7 @@ import java.io.File;
 @CapacitorPlugin(name = "ApkUpdater")
 public class ApkUpdaterPlugin extends Plugin {
 
+    private static final String TAG = "ApkUpdaterPlugin";
     private static final String APK_FILENAME = "flash-guess-update.apk";
 
     private long downloadId = -1;
@@ -43,7 +45,9 @@ public class ApkUpdaterPlugin extends Plugin {
 
         // Supprime l'ancien APK si présent
         File dest = new File(ctx.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), APK_FILENAME);
-        if (dest.exists()) dest.delete();
+        if (dest.exists() && !dest.delete()) {
+            Log.w(TAG, "Could not delete existing APK file: " + dest.getAbsolutePath());
+        }
 
         DownloadManager dm = (DownloadManager) ctx.getSystemService(Context.DOWNLOAD_SERVICE);
         DownloadManager.Request req = new DownloadManager.Request(Uri.parse(url))
@@ -66,7 +70,9 @@ public class ApkUpdaterPlugin extends Plugin {
                 if (id != downloadId) return;
                 try {
                     context.unregisterReceiver(this);
-                } catch (Exception ignored) {}
+                } catch (IllegalArgumentException e) {
+                    Log.w(TAG, "Receiver already unregistered", e);
+                }
                 installApk(context, dest);
             }
         };
@@ -96,13 +102,16 @@ public class ApkUpdaterPlugin extends Plugin {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             ctx.startActivity(intent);
         } catch (Exception e) {
+            Log.e(TAG, "Failed to install APK via FileProvider, falling back to browser", e);
             // En cas d'échec (ex. permission non accordée), ouvrir l'URL dans le navigateur
             try {
                 Intent fallback = new Intent(Intent.ACTION_VIEW, Uri.parse(
                         "https://github.com/niafrond/niafrond.github.io/releases/latest/download/flash-guess.apk"));
                 fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 ctx.startActivity(fallback);
-            } catch (Exception ignored) {}
+            } catch (Exception fallbackEx) {
+                Log.e(TAG, "Browser fallback also failed", fallbackEx);
+            }
         }
     }
 }
