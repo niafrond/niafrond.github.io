@@ -65,6 +65,56 @@ jobs:
           JAVA_DIR="flash-guess-android/android/app/src/main/java/io/github/niafrond/flashguess"
           mkdir -p "$JAVA_DIR"
           cp flash-guess-android/src/main/java/io/github/niafrond/flashguess/MainActivity.java "$JAVA_DIR/MainActivity.java"
+          cp flash-guess-android/src/main/java/io/github/niafrond/flashguess/ApkUpdaterPlugin.java "$JAVA_DIR/ApkUpdaterPlugin.java"
+
+          # Copie file_paths.xml pour FileProvider
+          XML_DIR="flash-guess-android/android/app/src/main/res/xml"
+          mkdir -p "$XML_DIR"
+          cp flash-guess-android/src/main/res/xml/file_paths.xml "$XML_DIR/file_paths.xml"
+
+          # Patch AndroidManifest : permission d'installation + FileProvider
+          MANIFEST="flash-guess-android/android/app/src/main/AndroidManifest.xml"
+          python3 - "$MANIFEST" <<'PYEOF'
+import sys, xml.etree.ElementTree as ET
+
+ET.register_namespace('android', 'http://schemas.android.com/apk/res/android')
+ET.register_namespace('tools', 'http://schemas.android.com/tools')
+tree = ET.parse(sys.argv[1])
+root = tree.getroot()
+NS = 'http://schemas.android.com/apk/res/android'
+
+# Ajoute REQUEST_INSTALL_PACKAGES si absent
+perm = f'{{{NS}}}name'
+pkg = 'android.permission.REQUEST_INSTALL_PACKAGES'
+existing_perms = {e.get(perm) for e in root.findall('uses-permission')}
+if pkg not in existing_perms:
+    el = ET.SubElement(root, 'uses-permission')
+    el.set(f'{{{NS}}}name', pkg)
+    # Déplace l'élément avant <application>
+    children = list(root)
+    root.remove(el)
+    app_idx = next(i for i, c in enumerate(children) if c.tag == 'application')
+    children.insert(app_idx, el)
+    root[:] = children
+
+# Ajoute FileProvider si absent
+app = root.find('application')
+if app is not None:
+    providers = [c for c in app if c.tag == 'provider']
+    has_fp = any(c.get(f'{{{NS}}}name') == 'androidx.core.content.FileProvider' for c in providers)
+    if not has_fp:
+        provider = ET.SubElement(app, 'provider')
+        provider.set(f'{{{NS}}}name', 'androidx.core.content.FileProvider')
+        provider.set(f'{{{NS}}}authorities', '${applicationId}.fileprovider')
+        provider.set(f'{{{NS}}}exported', 'false')
+        provider.set(f'{{{NS}}}grantUriPermissions', 'true')
+        meta = ET.SubElement(provider, 'meta-data')
+        meta.set(f'{{{NS}}}name', 'android.support.FILE_PROVIDER_PATHS')
+        meta.set(f'{{{NS}}}resource', '@xml/file_paths')
+
+ET.indent(tree, space='    ')
+tree.write(sys.argv[1], encoding='unicode', xml_declaration=True)
+PYEOF
 
       - name: Set app version
         run: |

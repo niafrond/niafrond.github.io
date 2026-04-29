@@ -53,7 +53,7 @@ import {
 
 import { openWordsEditor, addWord, exportWords, importWords, handleResetWords } from './editor.js';
 import { startDemoTurn } from './demo.js';
-import { toggleFullscreen, updateFullscreenBtn, installPwa, initServiceWorker, initAutoFullscreen, initApkDownloadLink } from './pwa.js';
+import { toggleFullscreen, updateFullscreenBtn, installPwa, initServiceWorker, initAutoFullscreen, initApkDownloadLink, checkApkUpdate, doApkUpdate } from './pwa.js';
 import { playButtonClick, playReady, playNextCard, playAdvance } from './sound.js';
 import { openLeaderboard, renderLeaderboard } from './leaderboard.js';
 
@@ -1036,6 +1036,10 @@ function init() {
   document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
   initAutoFullscreen();
   initApkDownloadLink();
+
+  // ── Mise à jour APK (Capacitor) ──
+  el('btn-apk-update').addEventListener('click', withCooldown(doApkUpdate));
+  checkApkUpdate();
 
   // ── Restore saved players ──
   const savedPlayers = loadCurrentPlayers();

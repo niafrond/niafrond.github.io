@@ -4,6 +4,7 @@
 
 import { el, getCurrentScreen, onScreenChange } from './ui.js';
 import { GAMEPLAY_SCREENS } from './state.js';
+import { getVersion } from './version.js';
 
 // ─── Installation PWA ──────────────────────────────────────────────────────────
 let _pwaInstallPrompt = null;
@@ -83,7 +84,101 @@ function isAndroidBrowser() {
   return /Android/i.test(navigator.userAgent) && !isCapacitor();
 }
 
-// ─── Plein écran automatique ───────────────────────────────────────────────────
+// ─── Mise à jour APK (Capacitor) ───────────────────────────────────────────────
+const APK_URL = 'https://github.com/niafrond/niafrond.github.io/releases/latest/download/flash-guess.apk';
+const APK_VERSION_API = 'https://api.github.com/repos/niafrond/niafrond.github.io/releases/latest';
+const APK_UPDATE_CHECK_KEY = 'fg_apk_update_check';
+
+function _parseVersionParts(str) {
+  const m = String(str).replace(/^v/, '').match(/^(\d+)\.(\d+)\.(\d+)/);
+  return m ? [+m[1], +m[2], +m[3]] : [0, 0, 0];
+}
+
+function _isNewerVersion(latest, current) {
+  const [lMaj, lMin, lPat] = _parseVersionParts(latest);
+  const [cMaj, cMin, cPat] = _parseVersionParts(current);
+  if (lMaj !== cMaj) return lMaj > cMaj;
+  if (lMin !== cMin) return lMin > cMin;
+  return lPat > cPat;
+}
+
+/**
+ * Vérifie si une nouvelle version APK est disponible (seulement dans le contexte Capacitor).
+ * Affiche le bouton de mise à jour si c'est le cas.
+ * Le résultat est mis en cache 24 h pour éviter les requêtes répétées.
+ */
+export async function checkApkUpdate() {
+  if (!isCapacitor()) return;
+
+  try {
+    // Vérifier le cache (une fois par jour maximum)
+    const cached = localStorage.getItem(APK_UPDATE_CHECK_KEY);
+    if (cached) {
+      const { latestTag, checked } = JSON.parse(cached);
+      if (Date.now() - checked < 24 * 60 * 60 * 1000) {
+        if (latestTag && _isNewerVersion(latestTag, getVersion())) _showApkUpdateBtn(latestTag);
+        return;
+      }
+    }
+
+    const res = await fetch(APK_VERSION_API, {
+      headers: { Accept: 'application/vnd.github.v3+json' },
+    });
+    if (!res.ok) return;
+    const { tag_name: latestTag } = await res.json();
+
+    localStorage.setItem(APK_UPDATE_CHECK_KEY, JSON.stringify({ latestTag, checked: Date.now() }));
+
+    if (_isNewerVersion(latestTag, getVersion())) _showApkUpdateBtn(latestTag);
+  } catch (_) {
+    // Silencieux — la vérification de mise à jour est optionnelle
+  }
+}
+
+function _showApkUpdateBtn(latestVersion) {
+  const btn = document.getElementById('btn-apk-update');
+  if (!btn) return;
+  btn.dataset.version = latestVersion;
+  btn.hidden = false;
+}
+
+/**
+ * Lance le téléchargement en arrière-plan via le plugin natif Capacitor,
+ * puis déclenche l'installation une fois le téléchargement terminé.
+ * Si le plugin n'est pas disponible, ouvre l'URL dans le navigateur.
+ */
+export async function doApkUpdate() {
+  const btn = document.getElementById('btn-apk-update');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Téléchargement…';
+  }
+
+  try {
+    const plugin = window.Capacitor?.Plugins?.ApkUpdater;
+    if (plugin) {
+      await plugin.downloadAndInstall({ url: APK_URL });
+      // Le plugin télécharge en arrière-plan et lance l'installeur Android
+      // automatiquement à la fin → on peut laisser le bouton désactivé.
+    } else {
+      // Fallback navigateur
+      window.open(APK_URL, '_blank');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🔄 Mettre à jour';
+      }
+    }
+  } catch (_) {
+    // Fallback en cas d'erreur du plugin
+    window.open(APK_URL, '_blank');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🔄 Mettre à jour';
+    }
+  }
+}
+
+
 // On demande le vrai mode immersif dès que possible pour cacher les barres de
 // navigation Android qui peuvent recouvrir des zones cliquables, que l'app soit
 // installée en PWA, packagée via Capacitor ou ouverte dans le navigateur.
