@@ -65,6 +65,25 @@ jobs:
           JAVA_DIR="flash-guess-android/android/app/src/main/java/io/github/niafrond/flashguess"
           mkdir -p "$JAVA_DIR"
           cp flash-guess-android/src/main/java/io/github/niafrond/flashguess/MainActivity.java "$JAVA_DIR/MainActivity.java"
+          cp flash-guess-android/src/main/java/io/github/niafrond/flashguess/ApkUpdaterPlugin.java "$JAVA_DIR/ApkUpdaterPlugin.java"
+
+          # Copie file_paths.xml pour FileProvider
+          XML_DIR="flash-guess-android/android/app/src/main/res/xml"
+          mkdir -p "$XML_DIR"
+          cp flash-guess-android/src/main/res/xml/file_paths.xml "$XML_DIR/file_paths.xml"
+
+          # Patch AndroidManifest : permission d'installation + FileProvider
+          MANIFEST="flash-guess-android/android/app/src/main/AndroidManifest.xml"
+
+          # Ajoute REQUEST_INSTALL_PACKAGES si absent
+          if ! grep -q "REQUEST_INSTALL_PACKAGES" "$MANIFEST"; then
+            sed -i 's|<application|<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />\n    <application|' "$MANIFEST"
+          fi
+
+          # Ajoute FileProvider à l'intérieur de <application> si absent
+          if ! grep -q "fileprovider" "$MANIFEST"; then
+            sed -i 's|</application>|    <provider\n            android:name="androidx.core.content.FileProvider"\n            android:authorities="${applicationId}.fileprovider"\n            android:exported="false"\n            android:grantUriPermissions="true">\n            <meta-data\n                android:name="android.support.FILE_PROVIDER_PATHS"\n                android:resource="@xml/file_paths" />\n        </provider>\n    </application>|' "$MANIFEST"
+          fi
 
       - name: Set app version
         run: |
