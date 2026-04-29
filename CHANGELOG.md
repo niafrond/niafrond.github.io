@@ -1,3 +1,14 @@
+## [1.156.0](https://github.com/niafrond/niafrond.github.io/compare/v1.155.3...v1.156.0) (2026-04-29)
+
+### Features
+
+* **flash-guess:** améliore l'UI/UX globale ([135a707](https://github.com/niafrond/niafrond.github.io/commit/135a7070f4181dd96ea3336bc9d80771bbdd961f))
+
+### Bug Fixes
+
+* address code review - centralize vibrate helper, improve comments ([d6e2e30](https://github.com/niafrond/niafrond.github.io/commit/d6e2e30c8c25c516f9e97e6bbde50eac133786d6))
+* prevent word descender clipping when J'ai lu button appears in kids mode ([472b454](https://github.com/niafrond/niafrond.github.io/commit/472b454bbbb4617201231ac1cb2c659669327506))
+
 ## [1.155.3](https://github.com/niafrond/niafrond.github.io/compare/v1.155.2...v1.155.3) (2026-04-28)
 
 ### Bug Fixes
