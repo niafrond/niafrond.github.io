@@ -1,3 +1,14 @@
+## [1.159.0](https://github.com/niafrond/niafrond.github.io/compare/v1.158.0...v1.159.0) (2026-04-29)
+
+### Features
+
+* **apk:** in-app update check with background download and install ([f40bfc9](https://github.com/niafrond/niafrond.github.io/commit/f40bfc92e7cfad36ed2b9818e2eb4d19a5d5fb6d))
+
+### Bug Fixes
+
+* **apk:** address code review - localStorage, logging, robust XML patching ([594b740](https://github.com/niafrond/niafrond.github.io/commit/594b7404e6f67a536e475a1ac1c5c36f67fdd3eb))
+* **ci:** copy ApkUpdaterPlugin.java + file_paths.xml in ci.yml ([e641040](https://github.com/niafrond/niafrond.github.io/commit/e641040b5db132fded5bce9e5c3f37e8ea98f8ab))
+
 ## [1.158.0](https://github.com/niafrond/niafrond.github.io/compare/v1.157.0...v1.158.0) (2026-04-29)
 
 ### Features
