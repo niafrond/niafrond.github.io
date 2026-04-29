@@ -3,7 +3,7 @@
  * Gère la persistance et l'affichage des résultats de parties.
  */
 
-import { el, showScreen } from './ui.js';
+import { el, showScreen, showToast } from './ui.js';
 
 const LEADERBOARD_KEY = 'flashguess_leaderboard';
 const MAX_ENTRIES     = 100;
@@ -16,6 +16,18 @@ export function loadLeaderboard() {
 
 function saveLeaderboard(entries) {
   try { localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(entries)); } catch (_) { /* ignore */ }
+}
+
+export function clearLeaderboard() {
+  try { localStorage.removeItem(LEADERBOARD_KEY); } catch (_) { /* ignore */ }
+}
+
+export function removeLeaderboardEntry(idx) {
+  const entries = loadLeaderboard();
+  if (idx >= 0 && idx < entries.length) {
+    entries.splice(idx, 1);
+    saveLeaderboard(entries);
+  }
 }
 
 /**
@@ -58,7 +70,7 @@ export function openLeaderboard() {
 
 export function renderLeaderboard(tabName = 'standard') {
   _currentTab = tabName;
-  const entries  = loadLeaderboard();
+  const entries  = loadLeaderboard().map((e, i) => ({ ...e, _idx: i }));
   const standard = entries.filter(e => e.mode === 'standard');
   const coop2    = entries.filter(e => e.mode === 'coop2');
 
@@ -73,6 +85,22 @@ function setActiveTab(tabName) {
   });
   el('leaderboard-standard').hidden = (tabName !== 'standard');
   el('leaderboard-coop2').hidden    = (tabName !== 'coop2');
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+function makeEntryDelBtn(entry) {
+  const btn = document.createElement('button');
+  btn.className = 'leaderboard-entry-del';
+  btn.setAttribute('aria-label', 'Supprimer cette partie');
+  btn.title = 'Supprimer';
+  btn.textContent = '✕';
+  btn.addEventListener('click', () => {
+    removeLeaderboardEntry(entry._idx);
+    renderLeaderboard(_currentTab);
+    showToast('Partie supprimée ✅');
+  });
+  return btn;
 }
 
 // ─── Onglet Standard ───────────────────────────────────────────────────────────
@@ -98,6 +126,9 @@ function renderStandardTab(entries) {
     const meta = document.createElement('div');
     meta.className = 'leaderboard-meta';
     meta.textContent = `${formatDate(entry.date)} · 🃏 ${entry.cardCount} cartes`;
+
+    const delBtn = makeEntryDelBtn(entry);
+    meta.appendChild(delBtn);
     card.appendChild(meta);
 
     const sorted = [...entry.teams].sort((a, b) => b.total - a.total);
@@ -152,6 +183,9 @@ function renderCoop2Tab(entries) {
     const meta = document.createElement('div');
     meta.className = 'leaderboard-meta';
     meta.textContent = formatDate(entry.date);
+
+    const delBtn = makeEntryDelBtn(entry);
+    meta.appendChild(delBtn);
     card.appendChild(meta);
 
     // Joueurs + score
