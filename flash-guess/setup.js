@@ -238,10 +238,11 @@ function startRenamePlayer(idx, item, oldName) {
     const newName = input.value.trim();
     if (!newName || newName === oldName) { renderPlayerList(); return; }
     if (state.playerNames.includes(newName)) { showToast('Ce joueur existe déjà', 'warn'); renderPlayerList(); return; }
+    const wasChild = state.playerIsChild.has(oldName);
     state.playerIsChild.delete(oldName);
     state.playerNames[idx] = newName;
-    if (state.playerIsChild.has(oldName)) state.playerIsChild.add(newName);
-    autoSaveMember(newName, state.playerIsChild.has(newName));
+    if (wasChild) state.playerIsChild.add(newName);
+    autoSaveMember(newName, wasChild);
     saveCurrentPlayers();
     renderPlayerList();
     showToast(`${oldName} → ${newName} ✅`);

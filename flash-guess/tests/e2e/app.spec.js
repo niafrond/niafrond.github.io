@@ -115,7 +115,7 @@ test.describe('Gestion des joueurs', () => {
   test('le compteur de joueurs est correct', async ({ page }) => {
     await addPlayer(page, 'Alice');
     await addPlayer(page, 'Bob');
-    await expect(page.locator('#player-count')).toContainText('2');
+    await expect(page.locator('#player-count')).toContainText('(2)');
   });
 
   test('supprimer un joueur repasse le bouton Démarrer en désactivé', async ({ page }) => {
