@@ -1,3 +1,9 @@
+## [1.160.0](https://github.com/niafrond/niafrond.github.io/compare/v1.159.1...v1.160.0) (2026-04-29)
+
+### Features
+
+* per-item deletion for leaderboard entries and registered players ([db8fdec](https://github.com/niafrond/niafrond.github.io/commit/db8fdecffb5de3d0664f0a0d1359eed3b573244b))
+
 ## [1.159.1](https://github.com/niafrond/niafrond.github.io/compare/v1.159.0...v1.159.1) (2026-04-29)
 
 ### Bug Fixes
