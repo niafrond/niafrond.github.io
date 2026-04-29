@@ -5,7 +5,7 @@
  */
 
 import { state, demo, withCooldown, GAMEPLAY_SCREENS, HAS_PLAYED_KEY } from './state.js';
-import { el, showScreen, getCurrentScreen } from './ui.js';
+import { el, showScreen, getCurrentScreen, showToast } from './ui.js';
 import { setMuted, getMuted, prewarmPlayer, prewarmPlayerNames } from './sound.js';
 import { getVersion, getBuildDate } from './version.js';
 
@@ -39,6 +39,8 @@ import {
   updateKidsModeStatus, toggleKidsMode,
   openCategorySelect,
   selectAllCategories, deselectAllCategories, confirmCategories,
+  getSuggestions,
+  saveCurrentPlayers,
 } from './setup.js';
 
 import {
@@ -46,6 +48,7 @@ import {
   loadGroups,
   renderMembersList, renderGroupsInSetup,
   openGroupsEditor, createNewGroup,
+  addPlayerFromMember,
 } from './members.js';
 
 import { openWordsEditor, addWord, exportWords, importWords, handleResetWords } from './editor.js';
@@ -512,13 +515,25 @@ function init() {
   // ── Setup ──
   el('btn-add-player').addEventListener('click', withCooldown(() => {
     const added = addPlayer();
-    if (added) prewarmPlayer(added);
+    if (added) {
+      prewarmPlayer(added);
+      hideSuggestions();
+    }
   }));
   el('player-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       const added = addPlayer();
-      if (added) prewarmPlayer(added);
+      if (added) {
+        prewarmPlayer(added);
+        hideSuggestions();
+      }
+    } else if (e.key === 'Escape') {
+      hideSuggestions();
     }
+  });
+  el('player-input').addEventListener('input', () => {
+    const query = el('player-input').value;
+    renderQuickAddSuggestions(query);
   });
   el('btn-start-game').addEventListener('click', withCooldown(() => {
     if (state.playerNames.length >= 2) {
@@ -526,10 +541,84 @@ function init() {
       updateNavVisibility('screen-categories');
     }
   }));
-  renderMembersList();
-  if (loadMembers().length > 0) el('panel-add-registered').open = true;
-  renderGroupsInSetup();
-  if (loadGroups().some(g => g.members.length > 0)) el('panel-add-group').open = true;
+
+  // ── Suggestions rapides ──
+  function hideSuggestions() {
+    const box = el('quick-add-suggestions');
+    if (box) { box.hidden = true; box.innerHTML = ''; }
+  }
+
+  function renderQuickAddSuggestions(query) {
+    const box = el('quick-add-suggestions');
+    if (!box) return;
+    const suggestions = getSuggestions(query);
+    if (!suggestions.length) { box.hidden = true; box.innerHTML = ''; return; }
+    box.innerHTML = '';
+    suggestions.forEach(s => {
+      const item = document.createElement('div');
+      item.className = 'quick-add-suggestion-item';
+      item.setAttribute('role', 'option');
+
+      const icon = document.createElement('span');
+      icon.className = 'suggestion-icon';
+      icon.textContent = s.type === 'group' ? '👥' : '👤';
+      item.appendChild(icon);
+
+      const info = document.createElement('span');
+      info.className = 'suggestion-info';
+      const nameLine = document.createElement('span');
+      nameLine.className = 'suggestion-name';
+      nameLine.textContent = s.name;
+      const labelLine = document.createElement('span');
+      labelLine.className = 'suggestion-label';
+      labelLine.textContent = s.label;
+      info.appendChild(nameLine);
+      info.appendChild(labelLine);
+      item.appendChild(info);
+
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // évite le blur sur l'input
+        hideSuggestions();
+        if (s.type === 'group') {
+          const freshMembers = loadMembers();
+          let added = 0;
+          s.members.forEach(name => {
+            if (!state.playerNames.includes(name) && state.playerNames.length < 20) {
+              const memberData = freshMembers.find(m => m.name === name);
+              state.playerNames.push(name);
+              if (memberData?.isChild) state.playerIsChild.add(name);
+              prewarmPlayer(name);
+              added++;
+            }
+          });
+          if (added > 0) {
+            saveCurrentPlayers();
+            renderPlayerList();
+            updateKidsModeStatus();
+            showToast(`${added} joueur${added > 1 ? 's' : ''} ajouté${added > 1 ? 's' : ''} ✅`);
+          }
+          el('player-input').value = '';
+          el('player-input').focus();
+        } else {
+          addPlayerFromMember(s.name);
+          el('player-input').value = '';
+          el('player-input').focus();
+        }
+      });
+      box.appendChild(item);
+    });
+    box.hidden = false;
+  }
+
+  // Fermer suggestions si clic hors de la zone
+  document.addEventListener('click', (e) => {
+    const wrapper = document.querySelector('.quick-add-wrapper');
+    if (wrapper && !wrapper.contains(e.target)) hideSuggestions();
+    // Fermer les menus 3-points
+    if (!e.target.closest('.player-item-menu-btn') && !e.target.closest('.player-item-menu-popup')) {
+      document.querySelectorAll('.player-item-menu-popup').forEach(p => { p.hidden = true; });
+    }
+  });
 
   // ── Groupes ──
   el('btn-group-create').addEventListener('click', withCooldown(createNewGroup));

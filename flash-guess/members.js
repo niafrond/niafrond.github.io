@@ -54,6 +54,7 @@ export function saveMembersAfterGame() {
 export function renderMembersList() {
   const members   = loadMembers();
   const container = el('members-list');
+  if (!container) return;
   container.innerHTML = '';
 
   const summaryEl = document.getElementById('summary-add-registered');
