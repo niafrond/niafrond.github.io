@@ -1,3 +1,10 @@
+## [1.158.0](https://github.com/niafrond/niafrond.github.io/compare/v1.157.0...v1.158.0) (2026-04-29)
+
+### Features
+
+* **flash-guess:** reconnaître le préfixe d'un groupe lors de l'ajout d'un joueur ([e807fb4](https://github.com/niafrond/niafrond.github.io/commit/e807fb49abefc6b8d174cd63bc9bf0fb64169964))
+* **flash-guess:** reconnaître un nom de groupe lors de l'ajout d'un joueur ([90f49e1](https://github.com/niafrond/niafrond.github.io/commit/90f49e11510c4d955888c25fa55bc5566feb2416))
+
 ## [1.157.0](https://github.com/niafrond/niafrond.github.io/compare/v1.156.0...v1.157.0) (2026-04-29)
 
 ### Features
