@@ -8,11 +8,6 @@ on:
     paths:
       - 'flash-guess/**'
       - 'flash-guess-android/**'
-  pull_request:
-    branches: ['**']
-    paths:
-      - 'flash-guess/**'
-      - 'flash-guess-android/**'
 
 permissions:
   contents: write
