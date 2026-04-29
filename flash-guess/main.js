@@ -516,7 +516,7 @@ function init() {
   el('btn-add-player').addEventListener('click', withCooldown(() => {
     const added = addPlayer();
     if (added) {
-      prewarmPlayer(added);
+      if (Array.isArray(added)) { added.forEach(n => prewarmPlayer(n)); } else { prewarmPlayer(added); }
       hideSuggestions();
     }
   }));
@@ -524,7 +524,7 @@ function init() {
     if (e.key === 'Enter') {
       const added = addPlayer();
       if (added) {
-        prewarmPlayer(added);
+        if (Array.isArray(added)) { added.forEach(n => prewarmPlayer(n)); } else { prewarmPlayer(added); }
         hideSuggestions();
       }
     } else if (e.key === 'Escape') {
