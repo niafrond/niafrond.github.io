@@ -70,9 +70,9 @@ export function openLeaderboard() {
 
 export function renderLeaderboard(tabName = 'standard') {
   _currentTab = tabName;
-  const entries  = loadLeaderboard();
-  const standard = entries.map((e, i) => ({ ...e, _idx: i })).filter(e => e.mode === 'standard');
-  const coop2    = entries.map((e, i) => ({ ...e, _idx: i })).filter(e => e.mode === 'coop2');
+  const entries  = loadLeaderboard().map((e, i) => ({ ...e, _idx: i }));
+  const standard = entries.filter(e => e.mode === 'standard');
+  const coop2    = entries.filter(e => e.mode === 'coop2');
 
   renderStandardTab(standard);
   renderCoop2Tab(coop2);
@@ -85,6 +85,22 @@ function setActiveTab(tabName) {
   });
   el('leaderboard-standard').hidden = (tabName !== 'standard');
   el('leaderboard-coop2').hidden    = (tabName !== 'coop2');
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+function makeEntryDelBtn(entry) {
+  const btn = document.createElement('button');
+  btn.className = 'leaderboard-entry-del';
+  btn.setAttribute('aria-label', 'Supprimer cette partie');
+  btn.title = 'Supprimer';
+  btn.textContent = '✕';
+  btn.addEventListener('click', () => {
+    removeLeaderboardEntry(entry._idx);
+    renderLeaderboard(_currentTab);
+    showToast('Partie supprimée ✅');
+  });
+  return btn;
 }
 
 // ─── Onglet Standard ───────────────────────────────────────────────────────────
@@ -111,16 +127,7 @@ function renderStandardTab(entries) {
     meta.className = 'leaderboard-meta';
     meta.textContent = `${formatDate(entry.date)} · 🃏 ${entry.cardCount} cartes`;
 
-    const delBtn = document.createElement('button');
-    delBtn.className = 'leaderboard-entry-del';
-    delBtn.setAttribute('aria-label', 'Supprimer cette partie');
-    delBtn.title = 'Supprimer';
-    delBtn.textContent = '✕';
-    delBtn.addEventListener('click', () => {
-      removeLeaderboardEntry(entry._idx);
-      renderLeaderboard(_currentTab);
-      showToast('Partie supprimée ✅');
-    });
+    const delBtn = makeEntryDelBtn(entry);
     meta.appendChild(delBtn);
     card.appendChild(meta);
 
@@ -177,16 +184,7 @@ function renderCoop2Tab(entries) {
     meta.className = 'leaderboard-meta';
     meta.textContent = formatDate(entry.date);
 
-    const delBtn = document.createElement('button');
-    delBtn.className = 'leaderboard-entry-del';
-    delBtn.setAttribute('aria-label', 'Supprimer cette partie');
-    delBtn.title = 'Supprimer';
-    delBtn.textContent = '✕';
-    delBtn.addEventListener('click', () => {
-      removeLeaderboardEntry(entry._idx);
-      renderLeaderboard(_currentTab);
-      showToast('Partie supprimée ✅');
-    });
+    const delBtn = makeEntryDelBtn(entry);
     meta.appendChild(delBtn);
     card.appendChild(meta);
 
