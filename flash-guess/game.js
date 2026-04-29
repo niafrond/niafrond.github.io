@@ -376,7 +376,7 @@ export function fitWordCard() {
   while (hi - lo > 1) {
     const mid = Math.round((lo + hi) / 2);
     textEl.style.fontSize = mid + 'px';
-    if (textEl.scrollWidth <= availW) {
+    if (textEl.scrollWidth <= availW && card.scrollHeight <= card.clientHeight) {
       lo = mid;
     } else {
       hi = mid;
@@ -667,6 +667,7 @@ export function drawNextWord() {
   if (!state.childReadFirstWord && isChildReadTimeNeeded()) {
     if (!demo.mode) pauseTimer();
     showChildReadBtn(true);
+    fitWordCard();
   }
 }
 
