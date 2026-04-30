@@ -520,6 +520,6 @@ body {
     max-width: 800px;
     left: 50%;
     transform: translateX(-50%);
-    border-radius: 0 0 0 0;
+    border-radius: 0;
   }
 }

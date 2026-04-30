@@ -264,7 +264,7 @@ el('btn-copy-link').addEventListener('click', () => {
     setTimeout(() => { el('btn-copy-link').textContent = '📋 Copier'; }, 2000);
   }).catch(() => {
     el('share-link').select();
-    document.execCommand('copy');
+    el('share-link').setSelectionRange(0, 99999);
   });
 });
 
