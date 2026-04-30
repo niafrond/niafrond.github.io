@@ -1,3 +1,9 @@
+## [1.161.0](https://github.com/niafrond/niafrond.github.io/compare/v1.160.0...v1.161.0) (2026-04-30)
+
+### Features
+
+* clean up index.html - remove QR scanner and Times Up, reorder cards ([ed157ba](https://github.com/niafrond/niafrond.github.io/commit/ed157ba7cc5fd9003ece0062243d2fa86966ad31))
+
 ## [1.160.0](https://github.com/niafrond/niafrond.github.io/compare/v1.159.1...v1.160.0) (2026-04-29)
 
 ### Features
