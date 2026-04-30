@@ -1,3 +1,13 @@
+## [1.162.0](https://github.com/niafrond/niafrond.github.io/compare/v1.161.0...v1.162.0) (2026-04-30)
+
+### Features
+
+* add Scrum Poker P2P app + clean up README ([d8ce1c9](https://github.com/niafrond/niafrond.github.io/commit/d8ce1c92992931375ce1b794cb8e5cbdad7b5d95))
+
+### Bug Fixes
+
+* address code review — remove deprecated execCommand, simplify border-radius ([2789939](https://github.com/niafrond/niafrond.github.io/commit/278993958a6a634c1687e8dd61e87a3486e09443))
+
 ## [1.161.0](https://github.com/niafrond/niafrond.github.io/compare/v1.160.0...v1.161.0) (2026-04-30)
 
 ### Features
