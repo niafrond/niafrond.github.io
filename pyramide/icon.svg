@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="20" fill="#0d1b2a"/>
+  <!-- Pyramid shape -->
+  <polygon points="50,15 85,80 15,80" fill="none" stroke="#f0a500" stroke-width="4" stroke-linejoin="round"/>
+  <!-- Inner lines -->
+  <line x1="28" y1="57" x2="72" y2="57" stroke="#f0a500" stroke-width="2.5" opacity="0.7"/>
+  <line x1="38" y1="80" x2="62" y2="80" stroke="#f0a500" stroke-width="2.5" opacity="0.4"/>
+  <!-- Top star -->
+  <circle cx="50" cy="19" r="4" fill="#ffe082"/>
+</svg>

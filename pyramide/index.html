@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Pyramide 🔺</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0d1b2a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Pyramide">
+</head>
+<body>
+
+<!-- Contrôles globaux -->
+<div id="top-right-controls">
+  <button id="btn-theme" class="btn-top-ctrl" title="Thème clair/sombre">🌙</button>
+  <button id="btn-mute"  class="btn-top-ctrl" title="Son on/off">🔊</button>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 1 — SETUP : joueurs & options
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-setup" data-screen="screen-setup">
+  <div class="page-wrapper">
+    <a href="../" class="btn btn-secondary btn-sm home-btn">← Accueil</a>
+
+    <h1 class="app-title">🔺 Pyramide</h1>
+    <p class="app-subtitle">Le jeu de devinettes en équipe</p>
+
+    <details class="card" style="margin-top:16px">
+      <summary class="card-title" style="cursor:pointer;margin-bottom:0">📖 Comment jouer</summary>
+      <p style="font-size:0.88rem;color:var(--text-muted);line-height:1.7;margin-top:10px">
+        <strong style="color:var(--text)">La pyramide a 5 niveaux</strong> (15 mots au total).<br>
+        Les équipes s'affrontent à tour de rôle :<br><br>
+        🗣️ <strong style="color:var(--text)">L'orateur</strong> fait deviner chaque mot
+        sans le prononcer, l'épeler ou le traduire.<br>
+        ✅ Mot trouvé → <strong style="color:var(--text)">Trouvé !</strong> — le mot est validé.<br>
+        ⏭️ Mot difficile → <strong style="color:var(--text)">Passer</strong> — revient plus tard.<br><br>
+        🔺 <strong style="color:var(--text)">Montez la pyramide</strong> : il faut deviner toute
+        une rangée pour passer au niveau supérieur.<br>
+        🏆 Les mots en haut rapportent plus de points !
+      </p>
+    </details>
+
+    <div class="card">
+      <div class="card-title">👥 Joueurs</div>
+      <div class="input-row">
+        <input id="player-input" class="input" type="text"
+               placeholder="Prénom du joueur…" maxlength="20"
+               autocomplete="off" autocorrect="off" autocapitalize="words">
+        <button id="btn-add-player" class="btn btn-primary">+ Ajouter</button>
+      </div>
+      <div id="player-list" style="margin-top:10px"></div>
+      <span id="player-count" class="player-count"></span>
+      <span id="setup-hint"   class="setup-hint" hidden></span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚙️ Options</div>
+      <div class="options-row">
+        <label for="select-duration">⏱️ Durée du tour</label>
+        <select id="select-duration" class="input" style="width:auto;flex:0 0 auto">
+          <option value="30">30 s</option>
+          <option value="45">45 s</option>
+          <option value="60" selected>60 s</option>
+          <option value="90">90 s</option>
+        </select>
+      </div>
+      <div class="options-row mt-8">
+        <label for="select-turns">🔄 Tours par équipe</label>
+        <select id="select-turns" class="input" style="width:auto;flex:0 0 auto">
+          <option value="1">1 tour</option>
+          <option value="2" selected>2 tours</option>
+          <option value="3">3 tours</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="btn-start-game" class="btn btn-primary w-full mt-16" disabled>
+      🔺 Lancer la partie
+    </button>
+
+    <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;margin-top:16px" id="app-version"></p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 2 — ÉQUIPES
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-teams" data-screen="screen-teams" hidden>
+  <div class="page-wrapper">
+    <h2 class="app-title" style="font-size:clamp(1.6rem,6vw,2.4rem);margin-bottom:8px">Les équipes</h2>
+    <p class="app-subtitle">Les joueurs ont été répartis automatiquement</p>
+
+    <div id="teams-grid" class="teams-grid"></div>
+
+    <div style="margin-top:20px;padding:14px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);font-size:0.85rem;color:var(--text-muted);line-height:1.6">
+      🔺 La pyramide a <strong style="color:var(--text)">5 niveaux</strong> et <strong style="color:var(--text)">15 mots</strong>.<br>
+      Chaque équipe joue sur sa propre pyramide avec les <strong style="color:var(--text)">mêmes mots</strong>.<br>
+      Points : +1 pt (bas) → +5 pts (sommet) 🏆
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button id="btn-teams-back" class="btn btn-secondary" style="flex:0 0 auto">← Retour</button>
+      <button id="btn-teams-start" class="btn btn-primary w-full">
+        🚀 C'est parti !
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 3 — PRÉ-TOUR
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-pre-turn" data-screen="screen-pre-turn" hidden>
+  <div id="pre-turn-wrapper" class="pre-turn-wrapper">
+    <div id="pre-turn-header" class="pre-turn-header"></div>
+    <div id="pre-turn-turn-info" style="font-size:0.9rem;color:var(--text-muted)"></div>
+
+    <div id="pre-turn-describe" class="pre-turn-describe"></div>
+
+    <div style="background:var(--surface);border-radius:var(--radius);padding:14px;border:1px solid var(--border);font-size:0.83rem;color:var(--text-muted);text-align:center;line-height:1.7">
+      📱 <strong style="color:var(--text)">L'orateur garde le téléphone</strong><br>
+      Les autres joueurs ne regardent pas l'écran !<br>
+      Décrivez le mot sans le dire, l'épeler, ni le traduire.
+    </div>
+
+    <!-- Scores actuels -->
+    <div class="pre-turn-scores">
+      <div id="pre-score-0" class="pre-turn-score-card">
+        <div class="pre-turn-score-name"></div>
+        <div class="pre-turn-score-pts">0</div>
+        <div class="pre-turn-score-row"></div>
+      </div>
+      <div id="pre-score-1" class="pre-turn-score-card">
+        <div class="pre-turn-score-name"></div>
+        <div class="pre-turn-score-pts">0</div>
+        <div class="pre-turn-score-row"></div>
+      </div>
+    </div>
+
+    <button id="btn-pre-turn-start" class="btn btn-primary w-full" style="padding:18px;font-size:1.1rem">
+      ▶️ Commencer le tour
+    </button>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 4 — TOUR ACTIF
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-turn" data-screen="screen-turn" hidden>
+  <div id="turn-wrapper" class="turn-wrapper">
+
+    <!-- En-tête : équipe + timer -->
+    <div class="turn-header">
+      <span id="turn-team-name" class="turn-team-badge"></span>
+      <div class="timer-container">
+        <svg class="timer-svg" viewBox="0 0 52 52">
+          <circle class="timer-track" cx="26" cy="26" r="20"/>
+          <circle id="timer-prog"  class="timer-prog"  cx="26" cy="26" r="20"/>
+          <text   id="timer-number" class="timer-number" x="26" y="26">60</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Mot à faire deviner -->
+    <div class="word-area">
+      <div class="word-hint">🙈 Seul l'orateur regarde l'écran</div>
+      <div id="word-category" class="word-category"></div>
+      <div id="word-text"     class="word-text"></div>
+    </div>
+
+    <!-- Pyramide -->
+    <div class="pyramid-area">
+      <div id="turn-pyramid"></div>
+    </div>
+
+    <!-- Boutons d'action -->
+    <div class="turn-actions">
+      <button id="btn-skip" class="btn-turn btn-skip">
+        <span class="btn-turn-icon">⏭</span>
+        <span class="btn-turn-label">Passer</span>
+      </button>
+      <button id="btn-found" class="btn-turn btn-found">
+        <span class="btn-turn-icon">✅</span>
+        <span class="btn-turn-label">Trouvé !</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 5 — FIN DE TOUR
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-turn-end" data-screen="screen-turn-end" hidden>
+  <div id="turn-end-wrapper" class="turn-end-wrapper">
+
+    <div id="turn-end-title" class="turn-end-title"></div>
+    <div id="turn-end-team"  style="text-align:center;color:var(--text-muted);font-size:0.9rem;margin-top:-8px"></div>
+
+    <!-- Stats du tour -->
+    <div class="turn-end-summary">
+      <div class="stat-card">
+        <div class="stat-card-value" id="stat-found">0</div>
+        <div class="stat-card-label">Mots trouvés</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-value" id="stat-pts">+0</div>
+        <div class="stat-card-label">Points gagnés</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-value" id="stat-total">0</div>
+        <div class="stat-card-label">Score total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-value" id="stat-level">1/5</div>
+        <div class="stat-card-label">Niveau atteint</div>
+      </div>
+    </div>
+
+    <!-- Mots trouvés ce tour -->
+    <div class="card" style="padding:14px">
+      <div class="card-title">✅ Mots trouvés ce tour</div>
+      <div id="words-found-chips" class="words-found-list"></div>
+    </div>
+
+    <!-- Comparaison pyramides -->
+    <div class="card" style="padding:14px">
+      <div class="card-title">🔺 État des pyramides</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="text-align:center">
+          <div id="end-pyramid-team-0"  style="font-size:0.8rem;font-weight:700;color:var(--team1);margin-bottom:4px"></div>
+          <div id="end-pyramid-score-0" style="font-size:1rem;font-weight:700;margin-bottom:6px;color:var(--text)"></div>
+          <div id="end-pyramid-0" class="pyramid-full"></div>
+        </div>
+        <div style="text-align:center">
+          <div id="end-pyramid-team-1"  style="font-size:0.8rem;font-weight:700;color:var(--team2);margin-bottom:4px"></div>
+          <div id="end-pyramid-score-1" style="font-size:1rem;font-weight:700;margin-bottom:6px;color:var(--text)"></div>
+          <div id="end-pyramid-1" class="pyramid-full"></div>
+        </div>
+      </div>
+    </div>
+
+    <button id="btn-turn-end-next" class="btn btn-primary w-full" style="padding:16px;font-size:1.05rem">
+      ➡️ Tour suivant
+    </button>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 6 — FIN DE PARTIE
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-game-over" data-screen="screen-game-over" hidden>
+  <div class="gameover-wrapper">
+
+    <h2 class="gameover-title">🏁 Fin de partie !</h2>
+
+    <div id="gameover-banner" class="winner-banner"></div>
+
+    <div class="result-grid">
+      <div id="result-card-0" class="result-team-card">
+        <div id="result-name-0"  class="result-team-name"></div>
+        <div id="result-score-0" class="result-team-score"></div>
+        <div                     class="result-team-pts">points</div>
+        <div id="result-level-0" style="font-size:0.75rem;color:var(--text-muted);margin-top:4px"></div>
+      </div>
+      <div id="result-card-1" class="result-team-card">
+        <div id="result-name-1"  class="result-team-name"></div>
+        <div id="result-score-1" class="result-team-score"></div>
+        <div                     class="result-team-pts">points</div>
+        <div id="result-level-1" style="font-size:0.75rem;color:var(--text-muted);margin-top:4px"></div>
+      </div>
+    </div>
+
+    <!-- Pyramides finales -->
+    <div class="card" style="padding:14px">
+      <div class="card-title">🔺 Pyramides finales</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="text-align:center">
+          <div id="end-name-go-0" style="font-size:0.8rem;font-weight:700;color:var(--team1);margin-bottom:6px"></div>
+          <div id="gameover-pyramid-0" class="pyramid-full"></div>
+        </div>
+        <div style="text-align:center">
+          <div id="end-name-go-1" style="font-size:0.8rem;font-weight:700;color:var(--team2);margin-bottom:6px"></div>
+          <div id="gameover-pyramid-1" class="pyramid-full"></div>
+        </div>
+      </div>
+    </div>
+
+    <button id="btn-replay-same" class="btn btn-primary w-full">
+      🔄 Rejouer avec les mêmes joueurs
+    </button>
+    <button id="btn-play-again" class="btn btn-secondary w-full mt-8">
+      🏠 Retour à l'accueil du jeu
+    </button>
+
+  </div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
