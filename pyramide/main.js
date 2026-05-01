@@ -52,8 +52,7 @@ const state = {
   playerNames: [],
 
   // Game
-  teams: null,         // [{name, color, players, found:[false×15], score, describerIdx}]
-  words: [],           // 15 mots de la partie
+  teams: null,         // [{name, color, players, words:[15 mots], found:[false×15], score, describerIdx}]
 
   currentTeamIdx: 0,
   turnsDone: [0, 0],
@@ -360,12 +359,15 @@ function renderTeams() {
 
 function goToTeams() {
   assignTeams();
-  state.words = getGameWords();
+  // Generate unique word sets for each team (no overlap)
+  const words0 = getGameWords();
+  const words1 = getGameWords(new Set(words0.map(w => w.word)));
   state.turnsDone = [0, 0];
   state.currentTeamIdx = 0;
   state.gameOver = false;
-  // Reset found + score for all teams
-  state.teams.forEach(t => {
+  // Reset found + score + words for all teams
+  state.teams.forEach((t, i) => {
+    t.words = i === 0 ? words0 : words1;
     t.found = new Array(TOTAL_WORDS).fill(false);
     t.score = 0;
     t.describerIdx = 0;
@@ -450,7 +452,7 @@ function showCurrentWord() {
   }
 
   const wordIdx = state.turnQueue[state.turnQueuePos % state.turnQueue.length];
-  const word = state.words[wordIdx];
+  const word = team.words[wordIdx];
 
   el('word-text').textContent = word.word;
   const catInfo = CATEGORIES[word.cat] || { label: word.cat, emoji: '❓' };
@@ -460,7 +462,7 @@ function showCurrentWord() {
   el('turn-pyramid').innerHTML = buildPyramidHTML(
     team.found,
     wordIdx,
-    state.words.map(w => w.word),
+    team.words.map(w => w.word),
     true,
   );
 }
@@ -472,7 +474,7 @@ function getCurrentWordIdx() {
 function wordFound() {
   const team = state.teams[state.currentTeamIdx];
   const idx = getCurrentWordIdx();
-  const word = state.words[idx];
+  const word = team.words[idx];
 
   // Mark as found
   team.found[idx] = true;
@@ -619,7 +621,7 @@ function buildPyramidFull(teamIdx) {
   return buildPyramidHTML(
     team.found,
     -1,
-    state.words.map(w => w.word),
+    team.words.map(w => w.word),
     false,
   );
 }
