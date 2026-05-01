@@ -351,9 +351,10 @@ export function shuffle(arr) {
 
 /**
  * Retourne 15 mots mélangés pour une partie.
- * Assure la diversité des catégories : max 3 mots par catégorie.
+ * Assure la diversité des catégories : max 2 mots par catégorie.
+ * @param {Set<string>} [exclude] - Ensemble de mots à exclure (pour éviter les doublons entre équipes).
  */
-export function getGameWords() {
+export function getGameWords(exclude = new Set()) {
   const byCategory = {};
   for (const w of POOL) {
     if (!byCategory[w.cat]) byCategory[w.cat] = [];
@@ -363,9 +364,9 @@ export function getGameWords() {
   const result = [];
   const shuffledCats = shuffle(Object.keys(byCategory));
 
-  // Pick up to 2 words per category in first pass
+  // Pick up to 2 words per category in first pass (excluding already-used words)
   for (const cat of shuffledCats) {
-    const words = shuffle(byCategory[cat]);
+    const words = shuffle(byCategory[cat]).filter(w => !exclude.has(w.word));
     const pick = Math.min(2, words.length);
     result.push(...words.slice(0, pick));
   }
