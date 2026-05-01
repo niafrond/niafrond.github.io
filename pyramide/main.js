@@ -97,7 +97,9 @@ const GAME_SCREENS = new Set(['screen-pre-turn', 'screen-turn', 'screen-turn-end
 function showScreen(id) {
   document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
   el(id).hidden = false;
-  el('top-right-controls').hidden = GAME_SCREENS.has(id);
+  const inGame = GAME_SCREENS.has(id);
+  el('btn-theme').hidden = inGame;
+  el('btn-mute').hidden  = inGame;
 }
 
 // ─── Persistance options ────────────────────────────────────────────────────────
@@ -702,7 +704,35 @@ function applyMute(muted) {
   try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch (_) {}
 }
 
-// ─── INIT ──────────────────────────────────────────────────────────────────────
+// ─── PLEIN ÉCRAN ───────────────────────────────────────────────────────────────
+function _requestFullscreen() {
+  if (document.fullscreenElement || document.webkitFullscreenElement) return;
+  const docEl = document.documentElement;
+  if (docEl.requestFullscreen) {
+    docEl.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+  } else if (docEl.webkitRequestFullscreen) {
+    docEl.webkitRequestFullscreen().catch(() => {});
+  }
+}
+
+function updateFullscreenBtn() {
+  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const btn  = el('btn-fullscreen');
+  if (!btn) return;
+  btn.textContent = isFs ? '⊡' : '⛶';
+  btn.title       = isFs ? 'Quitter le plein écran' : 'Plein écran';
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    _requestFullscreen();
+  } else {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exit) exit.call(document).catch(() => {});
+  }
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
   // Version
   try {
@@ -730,6 +760,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Controls ────────────────────────────────────────────────────────────
   el('btn-theme').addEventListener('click', toggleTheme);
   el('btn-mute').addEventListener('click', () => applyMute(!getMuted()));
+  el('btn-fullscreen').addEventListener('click', toggleFullscreen);
+  document.addEventListener('fullscreenchange', updateFullscreenBtn);
+  document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
 
   // ── Setup ───────────────────────────────────────────────────────────────
   el('btn-add-player').addEventListener('click', addPlayer);
