@@ -92,9 +92,12 @@ function showToast(msg) {
   _toastTimer = setTimeout(() => { t.hidden = true; }, 2500);
 }
 
+const GAME_SCREENS = new Set(['screen-pre-turn', 'screen-turn', 'screen-turn-end', 'screen-game-over']);
+
 function showScreen(id) {
   document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
   el(id).hidden = false;
+  el('top-right-controls').hidden = GAME_SCREENS.has(id);
 }
 
 // ─── Persistance options ────────────────────────────────────────────────────────
