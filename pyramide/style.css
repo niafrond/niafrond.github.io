@@ -704,3 +704,35 @@ html[data-theme="light"] .pyramid-cell.cell-locked {
   .pyramid-full .pyramid-cell { width: 52px; height: 40px; }
   .pts-label { font-size: 0.6rem; }
 }
+
+/* ─── Scoreboard ─────────────────────────────────────────────────────────── */
+.scoreboard-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  margin-top: 6px;
+  border: 1px solid var(--border);
+}
+.scoreboard-rank {
+  font-size: 1.1rem;
+  min-width: 28px;
+  text-align: center;
+}
+.scoreboard-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scoreboard-score {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--gold);
+  white-space: nowrap;
+}

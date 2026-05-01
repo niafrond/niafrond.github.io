@@ -40,6 +40,8 @@ const TOTAL_WORDS = 15;
 
 const TURN_DURATION_KEY = 'pyramide_turn_duration';
 const TURNS_PER_TEAM_KEY = 'pyramide_turns_per_team';
+const PLAYERS_KEY = 'pyramide_players';
+const SCORES_KEY  = 'pyramide_scores';
 
 const TEAM_COLORS = ['--team1', '--team2'];
 const TEAM_NAMES  = ['Équipe 1', 'Équipe 2'];
@@ -111,6 +113,87 @@ function saveOptions() {
     localStorage.setItem(TURN_DURATION_KEY, String(state.turnDuration));
     localStorage.setItem(TURNS_PER_TEAM_KEY, String(state.turnsPerTeam));
   } catch (_) {}
+}
+
+// ─── Persistance joueurs ────────────────────────────────────────────────────────
+function loadPlayers() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PLAYERS_KEY) || '[]');
+    if (Array.isArray(saved)) {
+      state.playerNames = saved.filter(n => typeof n === 'string' && n.length > 0);
+    }
+  } catch (_) {}
+}
+
+function savePlayers() {
+  try {
+    localStorage.setItem(PLAYERS_KEY, JSON.stringify(state.playerNames));
+  } catch (_) {}
+}
+
+// ─── Persistance scores ─────────────────────────────────────────────────────────
+function loadScores() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SCORES_KEY) || '{}');
+    if (saved && typeof saved === 'object' && !Array.isArray(saved)) return saved;
+  } catch (_) {}
+  return {};
+}
+
+function saveGameScores() {
+  if (!state.teams) return;
+  const scores = loadScores();
+  state.teams.forEach(team => {
+    team.players.forEach(player => {
+      scores[player] = (scores[player] || 0) + team.score;
+    });
+  });
+  try {
+    localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+  } catch (_) {}
+  renderScoreboard();
+}
+
+function resetScores() {
+  try { localStorage.removeItem(SCORES_KEY); } catch (_) {}
+  renderScoreboard();
+}
+
+function renderScoreboard() {
+  const card = el('scoreboard-card');
+  if (!card) return;
+  const scores = loadScores();
+  const entries = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  if (entries.length === 0) {
+    card.hidden = true;
+    return;
+  }
+  card.hidden = false;
+  const list = el('scoreboard-list');
+  list.innerHTML = '';
+  entries.forEach(([name, score], idx) => {
+    const medals = ['🥇', '🥈', '🥉'];
+    const medal = idx < medals.length ? medals[idx] : `${idx + 1}.`;
+    const item = document.createElement('div');
+    item.className = 'scoreboard-item';
+
+    const rankEl = document.createElement('span');
+    rankEl.className = 'scoreboard-rank';
+    rankEl.textContent = medal;
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'scoreboard-name';
+    nameEl.textContent = name;
+
+    const scoreEl = document.createElement('span');
+    scoreEl.className = 'scoreboard-score';
+    scoreEl.textContent = `${score} pts`;
+
+    item.appendChild(rankEl);
+    item.appendChild(nameEl);
+    item.appendChild(scoreEl);
+    list.appendChild(item);
+  });
 }
 
 // ─── Pyramide helpers ───────────────────────────────────────────────────────────
@@ -237,11 +320,13 @@ function addPlayer() {
   state.playerNames.push(name);
   input.value = '';
   input.focus();
+  savePlayers();
   renderPlayerList();
 }
 
 function removePlayer(idx) {
   state.playerNames.splice(idx, 1);
+  savePlayers();
   renderPlayerList();
 }
 
@@ -558,6 +643,7 @@ function nextTurnOrGameOver() {
 // ─── FIN DE PARTIE ─────────────────────────────────────────────────────────────
 function showGameOver() {
   playGameOver();
+  saveGameScores();
 
   const scores = state.teams.map((t, i) => ({ i, score: t.score, name: t.name, found: t.found }));
   const maxScore = Math.max(...scores.map(s => s.score));
@@ -632,6 +718,10 @@ document.addEventListener('DOMContentLoaded', () => {
   el('select-duration').value = String(state.turnDuration);
   el('select-turns').value = String(state.turnsPerTeam);
 
+  // Players
+  loadPlayers();
+  renderScoreboard();
+
   // ── Controls ────────────────────────────────────────────────────────────
   el('btn-theme').addEventListener('click', toggleTheme);
   el('btn-mute').addEventListener('click', () => applyMute(!getMuted()));
@@ -693,9 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Game over ────────────────────────────────────────────────────────────
   el('btn-play-again').addEventListener('click', () => {
     playButtonClick();
-    // Reset and go back to setup
-    state.playerNames = [];
-    renderPlayerList();
+    // Go back to setup (player list is kept from localStorage)
     showScreen('screen-setup');
   });
 
@@ -703,6 +791,11 @@ document.addEventListener('DOMContentLoaded', () => {
     playButtonClick();
     goToTeams();
   }));
+
+  el('btn-reset-scores').addEventListener('click', () => {
+    playButtonClick();
+    resetScores();
+  });
 
   // Initial render
   renderPlayerList();
