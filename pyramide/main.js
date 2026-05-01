@@ -56,6 +56,10 @@ const GAME_MODE_KEY      = 'pyramide_game_mode';
 const TEAM_COLORS = ['--team1', '--team2'];
 const TEAM_NAMES  = ['Équipe 1', 'Équipe 2'];
 
+// ─── Constantes mode Noms propres ──────────────────────────────────────────────
+const NP_FAIL_BONUS           = 1;   // pts pour l'adversaire si enchère > 1 brique et échec
+const NP_FAIL_BONUS_ONE_BRICK = 2;   // pts pour l'adversaire si enchère 1 brique et échec
+
 // ─── Configurations des manches ────────────────────────────────────────────────
 const GAME_MODES = {
   enigmes: {
@@ -433,20 +437,21 @@ function renderPlayerList() {
 
   // Check start conditions based on mode
   let canStart = count >= MIN_PLAYERS;
-  let hintText = count < MIN_PLAYERS ? `Minimum ${MIN_PLAYERS} joueurs requis` : '';
+  const hints = [];
+  if (count < MIN_PLAYERS) hints.push(`Minimum ${MIN_PLAYERS} joueurs requis`);
 
   if (state.gameMode === 'grandepyramide') {
     const finalist = el('select-finalist')?.value;
     if (!finalist) {
       canStart = false;
-      hintText = hintText || 'Sélectionnez un finaliste';
+      hints.push('Sélectionnez un finaliste');
     }
   }
 
   el('btn-start-game').disabled = !canStart;
   const hint = el('setup-hint');
-  if (hintText) {
-    hint.textContent = hintText;
+  if (hints.length > 0) {
+    hint.textContent = hints.join(' — ');
     hint.hidden = false;
   } else {
     hint.hidden = true;
@@ -800,11 +805,16 @@ function showCurrentWord() {
 
   // Word progress dots
   if (mode !== 'libre') {
-    const found = mode === 'nomspropres'
-      ? []
-      : (mode === 'grandepyramide' ? state.teams[0].found : team.found);
-    const total = (mode === 'nomspropres') ? state.npNames.length
-      : (GAME_MODES[mode]?.wordCount || found.length);
+    let found, total, currentDot;
+    if (mode === 'nomspropres') {
+      found = [];
+      total = state.npNames.length;
+      currentDot = state.npNamePos;  // highlight current name by position
+    } else {
+      found = mode === 'grandepyramide' ? state.teams[0].found : team.found;
+      total = GAME_MODES[mode]?.wordCount || found.length;
+      currentDot = wordIdx;
+    }
     const prog = el('word-progress');
     if (prog) {
       prog.innerHTML = '';
@@ -812,7 +822,7 @@ function showCurrentWord() {
         const dot = document.createElement('span');
         dot.className = 'wp-dot';
         if (found[i]) dot.classList.add('found');
-        else if (i === wordIdx) dot.classList.add('current');
+        else if (i === currentDot) dot.classList.add('current');
         prog.appendChild(dot);
       }
       prog.hidden = false;
@@ -933,9 +943,9 @@ function wordSkip() {
     state.bricksUsed++;
     el('brick-used').textContent = String(state.bricksUsed);
     if (state.bricksUsed >= state.npBidAmount) {
-      // Failed: +1pt for opponent (+2 if bid was 1)
+      // Failed: +1pt for opponent, +2pt if bid was 1 brick (reward for bold bid)
       const opponent = 1 - state.npBidWinner;
-      const pts = state.npBidAmount === 1 ? 2 : 1;
+      const pts = state.npBidAmount === 1 ? NP_FAIL_BONUS_ONE_BRICK : NP_FAIL_BONUS;
       state.teams[opponent].score += pts;
       endTurn('brickLimit');
       return;
@@ -1141,10 +1151,10 @@ function endTurn(reason) {
     el('turn-end-team').textContent = `Thème : ${state.npTheme}`;
 
     el('stat-found').textContent = state.turnFoundThisTurn.length;
-    const totalFoundAllNames = state.teams.reduce((s, t) => s + t.score, 0);
+    const npFailPts = state.npBidAmount === 1 ? NP_FAIL_BONUS_ONE_BRICK : NP_FAIL_BONUS;
     el('stat-pts').textContent = reason === 'found'
       ? `+1 → ${state.teams[state.npBidWinner].name}`
-      : `+${state.npBidAmount === 1 ? 2 : 1} → ${state.teams[1 - state.npBidWinner].name}`;
+      : `+${npFailPts} → ${state.teams[1 - state.npBidWinner].name}`;
     el('stat-total').textContent = `${state.teams[0].score} / ${state.teams[1].score}`;
     el('stat-level').textContent = `${state.npNamePos} / ${state.npNames.length}`;
 
