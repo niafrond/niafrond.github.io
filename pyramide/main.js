@@ -434,8 +434,8 @@ function startTimer() {
   state.timerInterval = setInterval(() => {
     state.timeLeft--;
     updateTimerDisplay();
-    if (state.timeLeft <= 5) playTickUrgent();
-    else if (state.timeLeft <= 10) playTick();
+    if (state.timeLeft <= 5 && state.timeLeft > 0) playTickUrgent();
+    else if (state.timeLeft <= 10 && state.timeLeft > 5) playTick();
     if (state.timeLeft <= 0) {
       stopTimer();
       playBuzzer();
@@ -637,7 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
   el('btn-mute').addEventListener('click', () => applyMute(!getMuted()));
 
   // ── Setup ───────────────────────────────────────────────────────────────
-  el('btn-add-player').addEventListener('click', addPlayer);
+  el('btn-add-player').addEventListener('click', () => { playButtonClick(); addPlayer(); });
   el('player-input').addEventListener('keydown', e => { if (e.key === 'Enter') addPlayer(); });
 
   el('select-duration').addEventListener('change', e => {
