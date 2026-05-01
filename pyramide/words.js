@@ -80,7 +80,6 @@ const POOL = [
   { word: 'Le Roi Lion',        cat: 'cinema' },
   { word: 'Shrek',              cat: 'cinema' },
   { word: 'Frozen',             cat: 'cinema' },
-  { word: 'Titanic',            cat: 'cinema' },
   { word: 'Mad Max',            cat: 'cinema' },
 
   // ─── Géographie ───────────────────────────────────────────────────────────────
@@ -336,7 +335,7 @@ const POOL = [
   { word: 'Peindre',       cat: 'actions' },
   { word: 'Tricoter',      cat: 'actions' },
   { word: 'Coudre',        cat: 'actions' },
-  { word: 'Conduire',      cat: 'actions' },
+  { word: 'Chuchoter',     cat: 'actions' },
   { word: 'Réparer',       cat: 'actions' },
 ];
 

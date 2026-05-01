@@ -301,7 +301,7 @@ function startPreTurn() {
   el('pre-turn-header').textContent = `${team.name} 🔺`;
 
   const guessers = team.players.filter(p => p !== describer);
-  const guesserLabel = guessers.length ? guessers.join(' & ') : '… tous le monde autour';
+  const guesserLabel = guessers.length ? guessers.join(' & ') : 'tout le monde autour';
   el('pre-turn-describe').innerHTML =
     `<strong>${describer}</strong> décrit les mots<br>` +
     `<span style="font-size:0.9rem">Les autres devinent : <strong>${guesserLabel}</strong></span>`;

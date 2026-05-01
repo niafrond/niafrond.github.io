@@ -1,4 +1,4 @@
-// CACHE est mis à jour automatiquement par .github/scripts/sync-match3-version.mjs à chaque release.
+// Version du cache à mettre à jour manuellement lors d'une release.
 const CACHE = 'pyramide-v1.0.0';
 
 const ASSETS = [
