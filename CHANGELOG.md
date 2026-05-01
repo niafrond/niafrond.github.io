@@ -1,3 +1,9 @@
+## [1.164.0](https://github.com/niafrond/niafrond.github.io/compare/v1.163.0...v1.164.0) (2026-05-01)
+
+### Features
+
+* **pyramide:** persist player list and scores in localStorage ([2002eeb](https://github.com/niafrond/niafrond.github.io/commit/2002eeb00d34b55f6ad9e5378656b17407947d89))
+
 ## [1.163.0](https://github.com/niafrond/niafrond.github.io/compare/v1.162.0...v1.163.0) (2026-05-01)
 
 ### Features
