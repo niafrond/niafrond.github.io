@@ -1,3 +1,13 @@
+## [1.163.0](https://github.com/niafrond/niafrond.github.io/compare/v1.162.0...v1.163.0) (2026-05-01)
+
+### Features
+
+* add Pyramide game (5-level word guessing game) ([c2fbd40](https://github.com/niafrond/niafrond.github.io/commit/c2fbd40d36c16c5348a305cd685765b34785f056))
+
+### Bug Fixes
+
+* remove duplicate words, fix typo and sw.js comment ([71e0a01](https://github.com/niafrond/niafrond.github.io/commit/71e0a0163e67e501065f34a219cb5224f4f1bc85))
+
 ## [1.162.0](https://github.com/niafrond/niafrond.github.io/compare/v1.161.0...v1.162.0) (2026-04-30)
 
 ### Features
