@@ -173,8 +173,9 @@ function showScreen(id) {
   document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
   el(id).hidden = false;
   const inGame = GAME_SCREENS.has(id);
-  el('btn-theme').hidden = inGame;
-  el('btn-mute').hidden  = inGame;
+  el('btn-theme').hidden      = inGame;
+  el('btn-mute').hidden       = inGame;
+  el('btn-fullscreen').hidden = inGame;
 }
 
 // ─── Persistance options ────────────────────────────────────────────────────────
