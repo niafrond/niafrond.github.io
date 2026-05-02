@@ -1,10 +1,12 @@
-// Version du cache à mettre à jour manuellement lors d'une release.
+// Version du cache — mise à jour automatique par le script de release.
+// Ne pas modifier manuellement : sync-version met à jour cette ligne.
 const CACHE = 'pyramide-v1.0.0';
 
 const ASSETS = [
   './',
   './index.html',
   './main.js',
+  './pwa.js',
   './words.js',
   './sound.js',
   './style.css',

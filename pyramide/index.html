@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Pyramide 🔺</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
@@ -13,6 +13,15 @@
 </head>
 <body>
 
+<!-- Overlay "Tournez votre téléphone" (affiché automatiquement si nécessaire) -->
+<div id="rotate-overlay">
+  <div class="rotate-overlay-inner">
+    <div class="rotate-overlay-phone">📱</div>
+    <p class="rotate-overlay-title">Tournez votre téléphone</p>
+    <p class="rotate-overlay-sub">Le jeu se joue en mode portrait</p>
+  </div>
+</div>
+
 <!-- Contrôles globaux -->
 <div id="top-right-controls">
   <button id="btn-theme"      class="btn-top-ctrl" title="Thème clair/sombre">🌙</button>
@@ -22,29 +31,12 @@
 <div id="toast" class="toast" hidden></div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
-     ÉCRAN 1 — SETUP : joueurs & options
+     ÉCRAN 1 — SETUP : joueurs & mode
      ═══════════════════════════════════════════════════════════════════════════ -->
 <div id="screen-setup" data-screen="screen-setup">
   <div class="page-wrapper">
-    <a href="../" class="btn btn-secondary btn-sm home-btn">← Accueil</a>
-
     <h1 class="app-title">🔺 Pyramide</h1>
     <p class="app-subtitle">Le jeu de devinettes en équipe</p>
-
-    <details class="card" style="margin-top:16px">
-      <summary class="card-title" style="cursor:pointer;margin-bottom:0">📖 Comment jouer</summary>
-      <p style="font-size:0.88rem;color:var(--text-muted);line-height:1.7;margin-top:10px">
-        <strong style="color:var(--text)">La pyramide a 5 niveaux</strong> (15 mots au total).<br>
-        Les équipes s'affrontent à tour de rôle :<br><br>
-        🗣️ <strong style="color:var(--text)">L'orateur</strong> fait deviner chaque mot
-        sans le prononcer, l'épeler ou le traduire.<br>
-        ✅ Mot trouvé → <strong style="color:var(--text)">Trouvé !</strong> — le mot est validé.<br>
-        ⏭️ Mot difficile → <strong style="color:var(--text)">Passer</strong> — revient plus tard.<br><br>
-        🔺 <strong style="color:var(--text)">Montez la pyramide</strong> : il faut deviner toute
-        une rangée pour passer au niveau supérieur.<br>
-        🏆 Les mots en haut rapportent plus de points !
-      </p>
-    </details>
 
     <div class="card">
       <div class="card-title">👥 Joueurs</div>
@@ -69,27 +61,6 @@
         <button class="mode-btn" data-mode="libre">🔺<br><span>Mode libre</span></button>
       </div>
       <p class="mode-desc" id="mode-desc"></p>
-    </div>
-
-    <div class="card">
-      <div class="card-title">⚙️ Options</div>
-      <div class="options-row" id="duration-row">
-        <label for="select-duration">⏱️ Durée du tour</label>
-        <select id="select-duration" class="input" style="width:auto;flex:0 0 auto">
-          <option value="30">30 s</option>
-          <option value="45">45 s</option>
-          <option value="60" selected>60 s</option>
-          <option value="90">90 s</option>
-        </select>
-      </div>
-      <div class="options-row mt-8" id="turns-row">
-        <label for="select-turns">🔄 Tours par équipe</label>
-        <select id="select-turns" class="input" style="width:auto;flex:0 0 auto">
-          <option value="1">1 tour</option>
-          <option value="2" selected>2 tours</option>
-          <option value="3">3 tours</option>
-        </select>
-      </div>
       <div class="options-row mt-8" id="np-names-row" hidden>
         <label for="select-np-names">🏷️ Noms par thème</label>
         <select id="select-np-names" class="input" style="width:auto;flex:0 0 auto">
@@ -109,17 +80,6 @@
     <button id="btn-start-game" class="btn btn-primary w-full mt-16" disabled>
       🔺 Lancer la partie
     </button>
-
-    <!-- Classement -->
-    <div id="scoreboard-card" class="card" hidden>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div class="card-title" style="margin-bottom:0">📊 Classement</div>
-        <button id="btn-reset-scores" class="btn btn-secondary btn-sm" style="font-size:0.78rem;padding:5px 10px">Réinitialiser</button>
-      </div>
-      <div id="scoreboard-list"></div>
-    </div>
-
-    <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;margin-top:16px" id="app-version"></p>
   </div>
 </div>
 
@@ -385,15 +345,130 @@
       </div>
     </div>
 
-    <button id="btn-replay-same" class="btn btn-primary w-full">
-      🔄 Rejouer avec les mêmes joueurs
+    <button id="btn-next-manche" class="btn btn-primary w-full">
+      ▶️ Manche suivante →
     </button>
-    <button id="btn-play-again" class="btn btn-secondary w-full mt-8">
+    <button id="btn-replay-same" class="btn btn-secondary w-full mt-8">
+      🔄 Rejouer même manche
+    </button>
+    <button id="btn-play-again" class="btn btn-ghost w-full mt-8">
       🏠 Retour à l'accueil du jeu
     </button>
 
   </div>
 </div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 8 — PRÉ-MANCHE (règles avant chaque manche)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-pre-round" data-screen="screen-pre-round" hidden>
+  <div class="page-wrapper">
+    <div id="pre-round-manche-num" class="pre-round-manche-num" hidden></div>
+    <div class="pre-round-hero">
+      <div id="pre-round-icon"  class="pre-round-icon"></div>
+      <h2 id="pre-round-title" class="pre-round-title"></h2>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📖 Règles de cette manche</div>
+      <ul id="pre-round-rules" class="pre-round-rules-list"></ul>
+    </div>
+
+    <button id="btn-pre-round-start" class="btn btn-primary w-full" style="padding:18px;font-size:1.1rem;margin-top:16px">
+      🚀 C'est parti !
+    </button>
+    <button id="btn-pre-round-back" class="btn btn-ghost w-full mt-8">
+      ← Choisir une autre manche
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 9 — PARAMÈTRES
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-settings" data-screen="screen-settings" hidden>
+  <div class="page-wrapper">
+    <h1 class="app-title" style="font-size:2rem;">⚙️ Paramètres</h1>
+    <p class="app-subtitle">Options de partie et configuration</p>
+
+    <div class="card">
+      <div class="card-title">🎮 Options de partie</div>
+      <div class="options-row" id="duration-row">
+        <label for="select-duration">⏱️ Durée du tour</label>
+        <select id="select-duration" class="input" style="width:auto;flex:0 0 auto">
+          <option value="30">30 s</option>
+          <option value="45">45 s</option>
+          <option value="60" selected>60 s</option>
+          <option value="90">90 s</option>
+        </select>
+      </div>
+      <div class="options-row mt-8" id="turns-row">
+        <label for="select-turns">🔄 Tours par équipe</label>
+        <select id="select-turns" class="input" style="width:auto;flex:0 0 auto">
+          <option value="1">1 tour</option>
+          <option value="2" selected>2 tours</option>
+          <option value="3">3 tours</option>
+        </select>
+      </div>
+      <div class="options-row mt-8">
+        <label style="flex:1">🧒 Mode enfant <span style="font-size:0.78rem;color:var(--text-muted)">(mots adaptés aux enfants)</span></label>
+        <button id="toggle-kids-mode" class="kids-mode-toggle-btn" role="switch" aria-checked="false">OFF</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">ℹ️ Application</div>
+      <button id="btn-install-pwa" class="btn btn-secondary w-full" hidden>
+        📲 Installer l'application
+      </button>
+      <a id="btn-download-apk"
+         href="https://github.com/niafrond/niafrond.github.io/releases/latest/download/pyramide.apk"
+         class="btn btn-secondary w-full mt-12"
+         download
+         hidden>
+        🤖 Télécharger l'APK Android
+      </a>
+      <button id="btn-apk-update" class="btn btn-primary w-full mt-12" hidden>
+        🔄 Mettre à jour
+      </button>
+      <a href="../" class="btn btn-ghost w-full mt-12">← Accueil du site</a>
+      <p id="app-version" style="text-align:center;color:var(--text-muted);font-size:0.8rem;margin-top:16px"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 10 — CLASSEMENT (scores cumulés)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-leaderboard" data-screen="screen-leaderboard" hidden>
+  <div class="page-wrapper">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <h1 class="app-title" style="font-size:2rem;">🏆 Classement</h1>
+      <button id="btn-reset-scores" class="btn-icon btn-danger" title="Effacer le classement" aria-label="Effacer le classement">🗑️</button>
+    </div>
+    <p class="app-subtitle">Scores cumulés de toutes vos parties</p>
+    <div id="scoreboard-list" class="scoreboard-list-container" style="margin-top:16px"></div>
+    <p id="leaderboard-empty" class="leaderboard-empty" hidden>Aucune partie enregistrée. Jouez une partie pour voir votre classement ici !</p>
+  </div>
+</div>
+
+
+<button id="btn-game-close" class="btn-game-close" hidden aria-label="Quitter la partie">✕</button>
+
+<nav id="bottom-nav" class="bottom-nav" hidden>
+  <button class="bottom-nav-item" data-tab="screen-setup" id="nav-jouer">
+    <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    <span>Jouer</span>
+  </button>
+  <button class="bottom-nav-item" data-tab="screen-leaderboard" id="nav-classement">
+    <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2zM5 18h14v2H5z"/></svg>
+    <span>Classement</span>
+  </button>
+  <button class="bottom-nav-item" data-tab="screen-settings" id="nav-parametres">
+    <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+    <span>Paramètres</span>
+  </button>
+</nav>
 
 <script type="module" src="main.js"></script>
 </body>
