@@ -865,7 +865,8 @@ function startPreTurn() {
     grandepyramide: '🏆 Phrases complètes et mimiques autorisées ✅',
     libre:          '🔺 Décrivez le mot sans le dire, l\'épeler, ni le traduire.',
   };
-  el('pre-turn-mode-rule').textContent = MODE_RULE_HINT[mode] || '';
+  const modeRuleEl = el('pre-turn-mode-rule');
+  if (modeRuleEl) modeRuleEl.textContent = MODE_RULE_HINT[mode] || '';
 
   // Scores
   state.teams.forEach((t, i) => {
