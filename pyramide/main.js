@@ -857,6 +857,17 @@ function startPreTurn() {
       `Tour ${state.turnsDone[state.currentTeamIdx] + 1} / ${state.turnsPerTeam}`;
   }
 
+  // Règle courte adaptée au mode
+  const MODE_RULE_HINT = {
+    enigmes:        '🧩 Indices en briques — pas de synonymes, traductions ni gestes.',
+    contrelamontre: '⏱️ Phrases, mimes, tout est permis — faites deviner vite !',
+    nomspropres:    '🏷️ Devinez les noms propres en un minimum de briques.',
+    grandepyramide: '🏆 Phrases complètes et mimiques autorisées ✅',
+    libre:          '🔺 Décrivez le mot sans le dire, l\'épeler, ni le traduire.',
+  };
+  const modeRuleEl = el('pre-turn-mode-rule');
+  if (modeRuleEl) modeRuleEl.textContent = MODE_RULE_HINT[mode] || '';
+
   // Scores
   state.teams.forEach((t, i) => {
     const scoreEl = el(`pre-score-${i}`);
