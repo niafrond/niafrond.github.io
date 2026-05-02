@@ -176,8 +176,73 @@ function showToast(msg) {
 }
 
 const GAME_SCREENS = new Set([
+  'screen-teams', 'screen-pre-round',
   'screen-pre-turn', 'screen-turn', 'screen-turn-end', 'screen-game-over', 'screen-bid',
 ]);
+
+// Écrans de jeu où le bouton ✕ est visible (exclut les transitions et l'écran final)
+const SHOW_CLOSE_BTN_SCREENS = new Set([
+  'screen-pre-turn', 'screen-turn', 'screen-turn-end', 'screen-bid',
+]);
+
+// ─── Ordre des manches (enchainement automatique) ───────────────────────────────
+const MANCHE_ORDER = ['enigmes', 'contrelamontre', 'nomspropres', 'grandepyramide', 'libre'];
+
+// ─── Contenu des écrans pré-manche ─────────────────────────────────────────────
+const PRE_ROUND_CONTENT = {
+  enigmes: {
+    icon: '🧩',
+    title: 'Les Énigmes',
+    rules: [
+      '5 mots à faire deviner',
+      '13 briques au maximum — 10 secondes par brique',
+      'Chaque brique = 1 indice ou idée',
+      'Score : 1 pt par mot + briques non utilisées',
+      'Pas de synonymes, traductions ni gestes',
+    ],
+  },
+  contrelamontre: {
+    icon: '⏱️',
+    title: 'Contre-la-montre',
+    rules: [
+      '7 mots d\'un même thème secret',
+      '30 secondes pour tous les faire deviner',
+      'Toutes les descriptions sont autorisées (phrases, mimes…)',
+      'Score : 1 pt par mot trouvé',
+    ],
+  },
+  nomspropres: {
+    icon: '🏷️',
+    title: 'Noms propres',
+    rules: [
+      '3 noms propres liés par un thème commun',
+      'Enchères : chaque équipe annonce en combien de briques elle peut réussir',
+      'L\'adversaire peut surenchérir (moins de briques = défi plus difficile)',
+      'Échec → l\'adversaire gagne des points bonus',
+    ],
+  },
+  grandepyramide: {
+    icon: '🏆',
+    title: 'La Grande Pyramide',
+    rules: [
+      'Le finaliste doit deviner 6 mots en 1 minute',
+      'Les maître-mots décrivent les mots un par un',
+      'Phrases complètes et mimiques autorisées ✅',
+      'Un bonus de +10 secondes est disponible une seule fois',
+    ],
+  },
+  libre: {
+    icon: '🔺',
+    title: 'Mode Libre',
+    rules: [
+      'Pyramide classique : 5 niveaux, 15 mots',
+      'Chaque équipe gravit sa propre pyramide',
+      'Montez niveau par niveau pour marquer plus de points',
+      'Points : +1 pt (bas) jusqu\'à +5 pts (sommet)',
+      'Pas de synonymes, traductions ni épelage',
+    ],
+  },
+};
 
 // ─── Navigation avec historique ────────────────────────────────────────────────
 let _currentScreen = 'screen-setup';
@@ -188,9 +253,16 @@ function _applyScreen(id) {
   _currentScreen = id;
   document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
   el(id).hidden = false;
-  const inGame = GAME_SCREENS.has(id);
-  el('btn-theme').hidden = inGame;
-  el('btn-mute').hidden  = inGame;
+  const isNav    = NAV_SCREENS.has(id);
+  const isGame   = GAME_SCREENS.has(id);
+  el('btn-theme').hidden    = isGame;
+  el('btn-mute').hidden     = isGame;
+  el('bottom-nav').hidden   = !isNav;
+  el('btn-game-close').hidden = !SHOW_CLOSE_BTN_SCREENS.has(id);
+  // Highlight active tab
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    btn.classList.toggle('bottom-nav-item--active', btn.dataset.tab === id);
+  });
 }
 
 function showScreen(id) {
@@ -200,6 +272,9 @@ function showScreen(id) {
   if (!GAME_SCREENS.has(id) && id !== 'screen-teams') {
     history.pushState({ screen: id }, '', `#${id}`);
   }
+
+  // Rafraîchir le classement à chaque ouverture de l'écran
+  if (id === 'screen-leaderboard') renderScoreboard();
 
   // Déclencher un rechargement SW différé si on quitte le gameplay
   checkPendingReload(id, GAME_SCREENS);
@@ -293,17 +368,17 @@ function resetScores() {
 }
 
 function renderScoreboard() {
-  const card = el('scoreboard-card');
-  if (!card) return;
-  const scores = loadScores();
+  const list  = el('scoreboard-list');
+  const empty = el('leaderboard-empty');
+  if (!list) return;
+  const scores  = loadScores();
   const entries = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  list.innerHTML = '';
   if (entries.length === 0) {
-    card.hidden = true;
+    if (empty) empty.hidden = false;
     return;
   }
-  card.hidden = false;
-  const list = el('scoreboard-list');
-  list.innerHTML = '';
+  if (empty) empty.hidden = true;
   entries.forEach(([name, score], idx) => {
     const medals = ['🥇', '🥈', '🥉'];
     const medal = idx < medals.length ? medals[idx] : `${idx + 1}.`;
@@ -329,6 +404,44 @@ function renderScoreboard() {
   });
 }
 
+// ─── Pré-manche : affiche les règles avant chaque manche ───────────────────────
+function showPreRound() {
+  const mode    = state.gameMode;
+  const content = PRE_ROUND_CONTENT[mode] || { icon: '🔺', title: mode, rules: [] };
+
+  el('pre-round-icon').textContent  = content.icon;
+  el('pre-round-title').textContent = content.title;
+
+  const ul = el('pre-round-rules');
+  ul.innerHTML = '';
+  content.rules.forEach(text => {
+    const li = document.createElement('li');
+    li.textContent = text;
+    ul.appendChild(li);
+  });
+
+  // Numéro de manche dans la séquence
+  const idx    = MANCHE_ORDER.indexOf(mode);
+  const numEl  = el('pre-round-manche-num');
+  if (numEl) {
+    numEl.textContent = `Manche ${idx + 1} / ${MANCHE_ORDER.length}`;
+    numEl.hidden      = false;
+  }
+
+  _applyScreen('screen-pre-round');
+  // pas de pushState → la touche Retour reviendra à setup
+}
+
+// ─── Enchainement des manches ───────────────────────────────────────────────────
+function nextManche() {
+  const idx  = MANCHE_ORDER.indexOf(state.gameMode);
+  const next = MANCHE_ORDER[(idx + 1) % MANCHE_ORDER.length];
+  state.gameMode = next;
+  saveOptions();
+  updateModeUI();
+  showPreRound();
+}
+
 // ─── Gestion du mode de jeu ─────────────────────────────────────────────────────
 function updateModeUI() {
   const mode = state.gameMode;
@@ -342,9 +455,7 @@ function updateModeUI() {
   // Description
   el('mode-desc').textContent = cfg.desc;
 
-  // Show/hide options
-  el('duration-row').hidden  = (mode !== 'libre');
-  el('turns-row').hidden     = (mode === 'grandepyramide');
+  // Show/hide mode-specific options (duration/turns now live in settings)
   el('np-names-row').hidden  = (mode !== 'nomspropres');
   el('finalist-row').hidden  = (mode !== 'grandepyramide');
 
@@ -1540,8 +1651,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   el('btn-start-game').addEventListener('click', withCooldown(() => {
     playButtonClick();
+    showPreRound();
+  }));
+
+  // ── Pre-round ────────────────────────────────────────────────────────────
+  el('btn-pre-round-start').addEventListener('click', withCooldown(() => {
+    playButtonClick();
     goToTeams();
   }));
+  el('btn-pre-round-back').addEventListener('click', () => {
+    playButtonClick();
+    showScreen('screen-setup');
+  });
 
   // ── Teams ───────────────────────────────────────────────────────────────
   el('btn-teams-start').addEventListener('click', withCooldown(() => {
@@ -1550,7 +1671,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }));
   el('btn-teams-back').addEventListener('click', () => {
     playButtonClick();
-    showScreen('screen-setup');
+    showPreRound();
   });
 
   // ── Pre-turn ─────────────────────────────────────────────────────────────
@@ -1592,21 +1713,44 @@ document.addEventListener('DOMContentLoaded', () => {
   }));
 
   // ── Game over ────────────────────────────────────────────────────────────
-  el('btn-play-again').addEventListener('click', () => {
+  el('btn-next-manche').addEventListener('click', withCooldown(() => {
     playButtonClick();
-    // Go back to setup (player list is kept from localStorage)
-    showScreen('screen-setup');
-  });
+    nextManche();
+  }));
 
   el('btn-replay-same').addEventListener('click', withCooldown(() => {
     playButtonClick();
-    goToTeams();
+    showPreRound();
   }));
+
+  el('btn-play-again').addEventListener('click', () => {
+    playButtonClick();
+    showScreen('screen-setup');
+  });
 
   el('btn-reset-scores').addEventListener('click', () => {
     playButtonClick();
     resetScores();
+    showToast('Classement effacé ✅');
   });
+
+  // ── Bottom nav ──────────────────────────────────────────────────────────
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    btn.addEventListener('click', withCooldown(() => {
+      playButtonClick();
+      showScreen(btn.dataset.tab);
+    }));
+  });
+
+  // ── Bouton fermer la partie ──────────────────────────────────────────────
+  el('btn-game-close').addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    if (state.timerInterval !== null) {
+      clearInterval(state.timerInterval);
+      state.timerInterval = null;
+    }
+    showScreen('screen-setup');
+  }));
 
   // Initial render
   renderPlayerList();
@@ -1629,6 +1773,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Revenir au setup depuis n'importe quel écran de navigation (pas depuis le gameplay)
     if (!GAME_SCREENS.has(_currentScreen)) {
       _applyScreen(target);
+      if (target === 'screen-leaderboard') renderScoreboard();
       checkPendingReload(target, GAME_SCREENS);
     }
   });
