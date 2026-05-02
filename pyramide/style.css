@@ -541,17 +541,22 @@ html, body {
 }
 
 /* ─── Timer ──────────────────────────────────────────────────────────────── */
+@keyframes timer-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.12); }
+}
+
 .timer-container {
   display: flex;
   align-items: center;
   gap: 6px;
 }
-.timer-svg { width: 52px; height: 52px; }
-.timer-track { fill: none; stroke: var(--border); stroke-width: 4; }
+.timer-svg { width: 80px; height: 80px; }
+.timer-track { fill: none; stroke: var(--border); stroke-width: 6; }
 .timer-prog  {
   fill: none;
   stroke: var(--gold);
-  stroke-width: 4;
+  stroke-width: 6;
   stroke-linecap: round;
   stroke-dasharray: 126;
   stroke-dashoffset: 0;
@@ -560,13 +565,19 @@ html, body {
   transition: stroke 0.5s;
 }
 .timer-prog.urgent { stroke: var(--danger); }
+.timer-container.urgent {
+  animation: timer-pulse 0.6s ease-in-out infinite;
+  transform-origin: center;
+}
 .timer-number {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 900;
   fill: var(--text);
   dominant-baseline: central;
   text-anchor: middle;
+  transition: fill 0.5s;
 }
+.timer-number.urgent { fill: var(--danger); }
 
 /* ─── Word display ───────────────────────────────────────────────────────── */
 .word-area {
