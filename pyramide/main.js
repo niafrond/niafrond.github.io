@@ -484,7 +484,7 @@ function updateModeUI() {
 
   // Description
   if (state.playingAll) {
-    el('mode-desc').textContent = "Joue toutes les manches dans l'ordre\u00a0: Énigmes, Contre-la-montre, Noms propres, Grande Pyramide, Mode libre.";
+    el('mode-desc').textContent = "Joue toutes les manches dans l'ordre : Énigmes, Contre-la-montre, Noms propres, Grande Pyramide, Mode libre.";
   } else {
     el('mode-desc').textContent = GAME_MODES[mode].desc;
   }
