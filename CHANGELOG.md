@@ -1,3 +1,13 @@
+## [1.169.0](https://github.com/niafrond/niafrond.github.io/compare/v1.168.1...v1.169.0) (2026-05-02)
+
+### Features
+
+* **pyramide:** ajouter rappel orateur sur screen-pre-round et règles mode-spécifiques sur screen-pre-turn ([e68b41a](https://github.com/niafrond/niafrond.github.io/commit/e68b41afdcfd14bfab7267712ab44420a8195488))
+
+### Bug Fixes
+
+* **pyramide:** null-check pre-turn-mode-rule, vider le span par défaut ([e690d70](https://github.com/niafrond/niafrond.github.io/commit/e690d7009136b9b6e774316a6defc0a1b4fa8990))
+
 ## [1.168.1](https://github.com/niafrond/niafrond.github.io/compare/v1.168.0...v1.168.1) (2026-05-02)
 
 ### Bug Fixes
