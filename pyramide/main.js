@@ -25,10 +25,17 @@ import {
   playPyramidComplete, setMuted, getMuted,
 } from './sound.js';
 import { getVersion, getBuildDate } from '../version.js';
+import {
+  toggleFullscreen, updateFullscreenBtn, installPwa,
+  initServiceWorker, initAutoFullscreen, initApkDownloadLink,
+  checkApkUpdate, doApkUpdate, checkPendingReload,
+} from './pwa.js';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 const MIN_PLAYERS = 2;
 const CLICK_COOLDOWN = 400;  // ms entre deux clics
+
+const KIDS_MODE_KEY = 'pyramide_kids_mode';
 
 /**
  * Structure de la pyramide :
@@ -106,6 +113,7 @@ const state = {
   // Setup
   playerNames: [],
   gameMode: 'enigmes',        // manche courante
+  kidsMode: false,            // mode enfant
 
   // Game
   teams: null,         // [{name, color, players, words:[n mots], found:[false×n], score, describerIdx}]
@@ -167,14 +175,34 @@ function showToast(msg) {
   _toastTimer = setTimeout(() => { t.hidden = true; }, 2500);
 }
 
-const GAME_SCREENS = new Set(['screen-pre-turn', 'screen-turn', 'screen-turn-end', 'screen-game-over', 'screen-bid']);
+const GAME_SCREENS = new Set([
+  'screen-pre-turn', 'screen-turn', 'screen-turn-end', 'screen-game-over', 'screen-bid',
+]);
 
-function showScreen(id) {
+// ─── Navigation avec historique ────────────────────────────────────────────────
+let _currentScreen = 'screen-setup';
+
+function getCurrentScreen() { return _currentScreen; }
+
+function _applyScreen(id) {
+  _currentScreen = id;
   document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
   el(id).hidden = false;
   const inGame = GAME_SCREENS.has(id);
   el('btn-theme').hidden = inGame;
   el('btn-mute').hidden  = inGame;
+}
+
+function showScreen(id) {
+  _applyScreen(id);
+
+  // Mise à jour de l'URL sans rechargement (permet la touche Retour)
+  if (!GAME_SCREENS.has(id) && id !== 'screen-teams') {
+    history.pushState({ screen: id }, '', `#${id}`);
+  }
+
+  // Déclencher un rechargement SW différé si on quitte le gameplay
+  checkPendingReload(id, GAME_SCREENS);
 }
 
 // ─── Persistance options ────────────────────────────────────────────────────────
@@ -195,6 +223,29 @@ function saveOptions() {
     localStorage.setItem(TURNS_PER_TEAM_KEY, String(state.turnsPerTeam));
     localStorage.setItem(GAME_MODE_KEY, state.gameMode);
   } catch (_) {}
+}
+
+// ─── Persistance mode enfant ────────────────────────────────────────────────────
+function loadKidsMode() {
+  try { return localStorage.getItem(KIDS_MODE_KEY) === '1'; } catch (_) { return false; }
+}
+
+function saveKidsMode(v) {
+  try { localStorage.setItem(KIDS_MODE_KEY, v ? '1' : '0'); } catch (_) {}
+}
+
+function updateKidsModeUI() {
+  const btn = el('toggle-kids-mode');
+  if (!btn) return;
+  btn.textContent = state.kidsMode ? 'ON' : 'OFF';
+  btn.className = `kids-mode-toggle-btn${state.kidsMode ? ' kids-mode-toggle-btn--on' : ''}`;
+  btn.setAttribute('aria-checked', String(state.kidsMode));
+}
+
+function toggleKidsMode() {
+  state.kidsMode = !state.kidsMode;
+  saveKidsMode(state.kidsMode);
+  updateKidsModeUI();
 }
 
 // ─── Persistance joueurs ────────────────────────────────────────────────────────
@@ -537,8 +588,8 @@ function goToTeams() {
   const mode = state.gameMode;
 
   if (mode === 'libre') {
-    const words0 = getGameWords();
-    const words1 = getGameWords(new Set(words0.map(w => w.word)));
+    const words0 = getGameWords(new Set(), state.kidsMode);
+    const words1 = getGameWords(new Set(words0.map(w => w.word)), state.kidsMode);
     state.teams.forEach((t, i) => {
       t.words = i === 0 ? words0 : words1;
       t.found = new Array(TOTAL_WORDS).fill(false);
@@ -547,8 +598,8 @@ function goToTeams() {
     });
 
   } else if (mode === 'enigmes') {
-    const words0 = getEnigmesWords();
-    const words1 = getEnigmesWords(new Set(words0.map(w => w.word)));
+    const words0 = getEnigmesWords(new Set(), state.kidsMode);
+    const words1 = getEnigmesWords(new Set(words0.map(w => w.word)), state.kidsMode);
     state.teams.forEach((t, i) => {
       t.words = i === 0 ? words0 : words1;
       t.found = new Array(5).fill(false);
@@ -559,7 +610,7 @@ function goToTeams() {
   } else if (mode === 'contrelamontre') {
     const usedCats = new Set();
     state.teams.forEach((t) => {
-      const { cat, catInfo, words } = getContreLaMontre(usedCats);
+      const { cat, catInfo, words } = getContreLaMontre(usedCats, state.kidsMode);
       usedCats.add(cat);
       t.words = words;
       t.clmCat = cat;
@@ -586,7 +637,7 @@ function goToTeams() {
     });
 
   } else if (mode === 'grandepyramide') {
-    const words = getGrandePyramideWords();
+    const words = getGrandePyramideWords(state.kidsMode);
     state.teams[0].words = words;
     state.teams[0].found = new Array(6).fill(false);
     state.teams[0].score = 0;
@@ -1409,32 +1460,11 @@ function applyMute(muted) {
   try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch (_) {}
 }
 
-// ─── PLEIN ÉCRAN ───────────────────────────────────────────────────────────────
-function _requestFullscreen() {
-  if (document.fullscreenElement || document.webkitFullscreenElement) return;
-  const docEl = document.documentElement;
-  if (docEl.requestFullscreen) {
-    docEl.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
-  } else if (docEl.webkitRequestFullscreen) {
-    docEl.webkitRequestFullscreen().catch(() => {});
-  }
-}
-
-function updateFullscreenBtn() {
-  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-  const btn  = el('btn-fullscreen');
-  if (!btn) return;
-  btn.textContent = isFs ? '⊡' : '⛶';
-  btn.title       = isFs ? 'Quitter le plein écran' : 'Plein écran';
-}
-
-function toggleFullscreen() {
-  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-    _requestFullscreen();
-  } else {
-    const exit = document.exitFullscreen || document.webkitExitFullscreen;
-    if (exit) exit.call(document).catch(() => {});
-  }
+// ─── OVERLAY ORIENTATION ───────────────────────────────────────────────────────
+function updateRotateOverlay() {
+  const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+  const overlay = el('rotate-overlay');
+  if (overlay) overlay.classList.toggle('active', isLandscape);
 }
 
 
@@ -1452,6 +1482,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Mute
   const savedMute = (() => { try { return localStorage.getItem(MUTE_KEY) === '1'; } catch (_) { return false; } })();
   applyMute(savedMute);
+
+  // Kids mode
+  state.kidsMode = loadKidsMode();
+  updateKidsModeUI();
 
   // Options
   loadOptions();
@@ -1480,6 +1514,16 @@ document.addEventListener('DOMContentLoaded', () => {
   el('btn-fullscreen').addEventListener('click', toggleFullscreen);
   document.addEventListener('fullscreenchange', updateFullscreenBtn);
   document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+
+  // ── Kids mode ───────────────────────────────────────────────────────────
+  el('toggle-kids-mode')?.addEventListener('click', () => {
+    playButtonClick();
+    toggleKidsMode();
+  });
+
+  // ── PWA / APK ───────────────────────────────────────────────────────────
+  el('btn-install-pwa')?.addEventListener('click', withCooldown(installPwa));
+  el('btn-apk-update')?.addEventListener('click', withCooldown(doApkUpdate));
 
   // ── Setup ───────────────────────────────────────────────────────────────
   el('btn-add-player').addEventListener('click', addPlayer);
@@ -1568,8 +1612,24 @@ document.addEventListener('DOMContentLoaded', () => {
   renderPlayerList();
   showScreen('screen-setup');
 
-  // Service Worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  }
+  // ── PWA : service worker, plein écran, APK ──────────────────────────────
+  initServiceWorker(getCurrentScreen, GAME_SCREENS);
+  initAutoFullscreen();
+  initApkDownloadLink();
+  checkApkUpdate();
+
+  // ── Orientation overlay ─────────────────────────────────────────────────
+  updateRotateOverlay();
+  window.addEventListener('resize', updateRotateOverlay);
+  window.addEventListener('orientationchange', updateRotateOverlay);
+
+  // ── Bouton Retour (historique) ──────────────────────────────────────────
+  window.addEventListener('popstate', (e) => {
+    const target = e.state?.screen || 'screen-setup';
+    // Revenir au setup depuis n'importe quel écran de navigation (pas depuis le gameplay)
+    if (!GAME_SCREENS.has(_currentScreen)) {
+      _applyScreen(target);
+      checkPendingReload(target, GAME_SCREENS);
+    }
+  });
 });

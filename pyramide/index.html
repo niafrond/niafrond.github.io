@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Pyramide 🔺</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
@@ -12,6 +12,15 @@
   <meta name="apple-mobile-web-app-title" content="Pyramide">
 </head>
 <body>
+
+<!-- Overlay "Tournez votre téléphone" (affiché automatiquement si nécessaire) -->
+<div id="rotate-overlay">
+  <div class="rotate-overlay-inner">
+    <div class="rotate-overlay-phone">📱</div>
+    <p class="rotate-overlay-title">Tournez votre téléphone</p>
+    <p class="rotate-overlay-sub">Le jeu se joue en mode portrait</p>
+  </div>
+</div>
 
 <!-- Contrôles globaux -->
 <div id="top-right-controls">
@@ -104,11 +113,32 @@
           <option value="">-- Choisir --</option>
         </select>
       </div>
+      <div class="options-row mt-8">
+        <label style="flex:1">🧒 Mode enfant <span style="font-size:0.78rem;color:var(--text-muted)">(mots adaptés aux enfants)</span></label>
+        <button id="toggle-kids-mode" class="kids-mode-toggle-btn" role="switch" aria-checked="false">OFF</button>
+      </div>
     </div>
 
     <button id="btn-start-game" class="btn btn-primary w-full mt-16" disabled>
       🔺 Lancer la partie
     </button>
+
+    <!-- Boutons PWA / APK -->
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+      <button id="btn-install-pwa" class="btn btn-secondary w-full" hidden>
+        📲 Installer l'application
+      </button>
+      <a id="btn-download-apk"
+         href="https://github.com/niafrond/niafrond.github.io/releases/latest/download/pyramide.apk"
+         class="btn btn-secondary w-full"
+         download
+         hidden>
+        🤖 Télécharger l'APK Android
+      </a>
+      <button id="btn-apk-update" class="btn btn-primary w-full" hidden>
+        🔄 Mettre à jour
+      </button>
+    </div>
 
     <!-- Classement -->
     <div id="scoreboard-card" class="card" hidden>

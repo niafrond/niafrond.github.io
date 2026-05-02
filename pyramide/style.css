@@ -866,3 +866,62 @@ html[data-theme="light"] .pyramid-cell.cell-locked {
   color: var(--gold);
   white-space: nowrap;
 }
+
+/* ─── Rotate overlay ─────────────────────────────────────────────────────────── */
+#rotate-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: var(--bg-grad);
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+#rotate-overlay.active { display: flex; }
+
+.rotate-overlay-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+}
+.rotate-overlay-phone {
+  font-size: 5rem;
+  display: block;
+  animation: rotatePhonePyramide 1.8s ease-in-out infinite;
+}
+@keyframes rotatePhonePyramide {
+  0%,  35%  { transform: rotate(90deg); }
+  65%, 100% { transform: rotate(0deg);  }
+}
+.rotate-overlay-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.rotate-overlay-sub {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+/* ─── Kids mode toggle ───────────────────────────────────────────────────────── */
+.kids-mode-toggle-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 99px;
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+}
+.kids-mode-toggle-btn--on {
+  background: rgba(64,145,108,0.2);
+  border-color: var(--success);
+  color: var(--success);
+}
