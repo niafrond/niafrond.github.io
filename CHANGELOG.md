@@ -1,3 +1,9 @@
+## [1.168.0](https://github.com/niafrond/niafrond.github.io/compare/v1.167.0...v1.168.0) (2026-05-02)
+
+### Features
+
+* **pyramide:** partie complète - manche selection is now optional ([80e3d9e](https://github.com/niafrond/niafrond.github.io/commit/80e3d9e38c31d60d117410a4590b13ae78cf93cd))
+
 ## [1.167.0](https://github.com/niafrond/niafrond.github.io/compare/v1.166.0...v1.167.0) (2026-05-02)
 
 ### Features
