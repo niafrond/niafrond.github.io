@@ -877,6 +877,7 @@ html[data-theme="light"] .pyramid-cell.cell-locked {
 .mode-btn span { font-size: 0.78rem; display: block; margin-top: 2px; }
 .mode-btn:hover  { border-color: var(--gold); color: var(--text); }
 .mode-btn.active { border-color: var(--gold); color: var(--text); background: color-mix(in srgb, var(--gold) 10%, var(--surface2)); }
+.mode-btn--all { grid-column: 1 / -1; }
 .mode-desc {
   font-size: 0.82rem;
   color: var(--text-muted);
