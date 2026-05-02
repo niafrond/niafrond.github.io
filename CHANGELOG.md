@@ -1,3 +1,9 @@
+## [1.170.1](https://github.com/niafrond/niafrond.github.io/compare/v1.170.0...v1.170.1) (2026-05-02)
+
+### Bug Fixes
+
+* **pyramide:** refresh words at each new turn in enigmes & contrelamontre modes ([35ab49c](https://github.com/niafrond/niafrond.github.io/commit/35ab49c3953617c714482234ddfdd97c9335d7d1))
+
 ## [1.170.0](https://github.com/niafrond/niafrond.github.io/compare/v1.169.2...v1.170.0) (2026-05-02)
 
 ### Features
