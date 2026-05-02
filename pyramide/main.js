@@ -1050,7 +1050,7 @@ function startTurn() {
   el('pyramid-area').hidden   = false;
   el('gp-note').hidden        = (mode !== 'grandepyramide');
   el('btn-extra-time').hidden = (mode !== 'grandepyramide');
-  const timerContainer = document.querySelector('.timer-container');
+  const timerContainer = el('timer-container');
   if (timerContainer) timerContainer.hidden = (mode === 'nomspropres');
 
   // Skip button label
@@ -1371,7 +1371,7 @@ function startTurnAfterBid() {
   el('pyramid-area').hidden = true;
   el('gp-note').hidden = true;
   el('btn-extra-time').hidden = true;
-  const timerContainer = document.querySelector('.timer-container');
+  const timerContainer = el('timer-container');
   if (timerContainer) timerContainer.hidden = true;
   const skipLabel = el('btn-skip-label');
   if (skipLabel) skipLabel.textContent = 'Brique suivante';
@@ -1431,8 +1431,13 @@ function updateTimerDisplay() {
   const prog = el('timer-prog');
   prog.style.strokeDasharray = String(circ);
   prog.style.strokeDashoffset = String(circ * (1 - fraction));
-  prog.classList.toggle('urgent', t <= 5);
-  el('timer-number').textContent = String(Math.max(0, t));
+  const urgent = t <= 5;
+  prog.classList.toggle('urgent', urgent);
+  const timerNum = el('timer-number');
+  timerNum.textContent = String(Math.max(0, t));
+  timerNum.classList.toggle('urgent', urgent);
+  const timerContainer = el('timer-container');
+  if (timerContainer) timerContainer.classList.toggle('urgent', urgent);
 }
 
 // ─── FIN DE TOUR ───────────────────────────────────────────────────────────────
