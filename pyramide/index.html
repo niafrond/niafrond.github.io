@@ -22,12 +22,6 @@
   </div>
 </div>
 
-<!-- Contrôles globaux -->
-<div id="top-right-controls">
-  <button id="btn-theme"      class="btn-top-ctrl" title="Thème clair/sombre">🌙</button>
-  <button id="btn-mute"       class="btn-top-ctrl" title="Son on/off">🔊</button>
-  <button id="btn-fullscreen" class="btn-top-ctrl" title="Plein écran">⛶</button>
-</div>
 <div id="toast" class="toast" hidden></div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -35,20 +29,44 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 <div id="screen-setup" data-screen="screen-setup">
   <div class="page-wrapper">
+    <div class="setup-header-row">
+      <a href="../" class="btn btn-secondary btn-sm home-btn">← Accueil</a>
+      <div id="top-right-controls">
+        <button id="btn-theme"      class="btn-top-ctrl" title="Thème clair/sombre">🌙</button>
+        <button id="btn-fullscreen" class="btn-top-ctrl" title="Plein écran">⛶</button>
+        <button id="btn-mute"       class="btn-top-ctrl" title="Son on/off">🔊</button>
+      </div>
+    </div>
+
     <h1 class="app-title">🔺 Pyramide</h1>
     <p class="app-subtitle">Le jeu de devinettes en équipe</p>
 
-    <div class="card">
-      <div class="card-title">👥 Joueurs</div>
-      <div class="input-row">
-        <input id="player-input" class="input" type="text"
-               placeholder="Prénom du joueur…" maxlength="20"
-               autocomplete="off" autocorrect="off" autocapitalize="words">
-        <button id="btn-add-player" class="btn btn-primary">+ Ajouter</button>
+    <!-- Section joueurs -->
+    <div class="setup-players-zone">
+      <div class="setup-players-header">
+        <span class="setup-players-title">Joueurs</span>
+        <span id="player-count" class="setup-players-count"></span>
       </div>
-      <div id="player-list" style="margin-top:10px"></div>
-      <span id="player-count" class="player-count"></span>
-      <span id="setup-hint"   class="setup-hint" hidden></span>
+
+      <div class="card" id="panel-current-players">
+        <div id="player-empty-state" class="player-empty-state">
+          <span class="player-empty-icon">👥</span>
+          <p class="player-empty-text">Ajoutez votre premier joueur</p>
+        </div>
+        <div id="player-list"></div>
+        <span id="setup-hint" hidden></span>
+      </div>
+
+      <div class="quick-add-wrapper">
+        <div class="quick-add-input-row">
+          <span class="quick-add-icon" aria-hidden="true">+</span>
+          <input id="player-input" class="quick-add-input" type="text"
+                 placeholder="Prénom du joueur…" maxlength="20"
+                 autocomplete="off" autocorrect="off" autocapitalize="words">
+          <button id="btn-add-player" class="quick-add-submit" aria-label="Ajouter le joueur">➜</button>
+        </div>
+      </div>
+      <p class="quick-add-hint">Appuyez sur Entrée pour ajouter rapidement</p>
     </div>
 
     <div class="card" id="mode-card">
@@ -77,9 +95,11 @@
       </div>
     </div>
 
-    <button id="btn-start-game" class="btn btn-primary w-full mt-16" disabled>
-      🔺 Lancer la partie
-    </button>
+    <div class="screen-sticky-footer screen-sticky-footer--fab">
+      <button id="btn-start-game" class="btn btn-primary btn-fab" disabled aria-label="Jouer">
+        ▶
+      </button>
+    </div>
   </div>
 </div>
 

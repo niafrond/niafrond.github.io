@@ -245,14 +245,12 @@ const PRE_ROUND_CONTENT = {
 };
 
 // ─── Navigation avec historique ────────────────────────────────────────────────
+const NAV_SCREENS = new Set(['screen-setup', 'screen-leaderboard', 'screen-settings']);
+
 let _currentScreen = 'screen-setup';
 
 function getCurrentScreen() { return _currentScreen; }
 
-function _applyScreen(id) {
-  _currentScreen = id;
-  document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
-  el(id).hidden = false;
 function _applyScreen(id) {
   _currentScreen = id;
   document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
@@ -600,7 +598,14 @@ function renderPlayerList() {
   });
 
   const count = state.playerNames.length;
-  el('player-count').textContent = `${count} joueur${count > 1 ? 's' : ''}`;
+  const countEl = el('player-count');
+  if (count > 0) {
+    countEl.textContent = `${count} joueur${count > 1 ? 's' : ''}`;
+    countEl.hidden = false;
+  } else {
+    countEl.textContent = '';
+    countEl.hidden = true;
+  }
 
   // Check start conditions based on mode
   let canStart = count >= MIN_PLAYERS;
