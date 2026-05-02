@@ -1,3 +1,9 @@
+## [1.171.0](https://github.com/niafrond/niafrond.github.io/compare/v1.170.1...v1.171.0) (2026-05-02)
+
+### Features
+
+* **pyramide:** meilleure visibilité du timer ([ea04e2a](https://github.com/niafrond/niafrond.github.io/commit/ea04e2af6c44bf65c1dd6cffef991aafa8790abd))
+
 ## [1.170.1](https://github.com/niafrond/niafrond.github.io/compare/v1.170.0...v1.170.1) (2026-05-02)
 
 ### Bug Fixes
