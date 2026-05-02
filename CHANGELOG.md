@@ -1,3 +1,9 @@
+## [1.169.2](https://github.com/niafrond/niafrond.github.io/compare/v1.169.1...v1.169.2) (2026-05-02)
+
+### Bug Fixes
+
+* pyramide - convert btn-start-game from FAB to full-width button ([6b80edb](https://github.com/niafrond/niafrond.github.io/commit/6b80edbb4530aac5f1f353d62fd684f18323dfcb))
+
 ## [1.169.1](https://github.com/niafrond/niafrond.github.io/compare/v1.169.0...v1.169.1) (2026-05-02)
 
 ### Bug Fixes
