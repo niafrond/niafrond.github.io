@@ -1,3 +1,10 @@
+## [1.168.1](https://github.com/niafrond/niafrond.github.io/compare/v1.168.0...v1.168.1) (2026-05-02)
+
+### Bug Fixes
+
+* **pyramide:** fix SyntaxError from unescaped apostrophe in l'ordre string literal ([00f83c8](https://github.com/niafrond/niafrond.github.io/commit/00f83c8981eba228142800e5ee7494c30721945b))
+* **pyramide:** simplify mode-desc string to use regular space ([bb623d1](https://github.com/niafrond/niafrond.github.io/commit/bb623d15c24a0b44095409a915f9833c1be53b4b))
+
 ## [1.168.0](https://github.com/niafrond/niafrond.github.io/compare/v1.167.0...v1.168.0) (2026-05-02)
 
 ### Features
