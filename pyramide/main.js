@@ -151,6 +151,9 @@ const state = {
   bricksUsed: 0,
   bricksLimit: 13,
 
+  // ── Mode Contre-la-montre ────────────────────────────────────────────────
+  clmUsedCats: new Set(), // catégories déjà jouées (évite les répétitions entre tours)
+
   // ── Mode Noms propres ────────────────────────────────────────────────────
   npNames: [],           // noms propres de la session
   npNamePos: 0,          // nom en cours (0-indexed)
@@ -827,10 +830,10 @@ function goToTeams() {
     });
 
   } else if (mode === 'contrelamontre') {
-    const usedCats = new Set();
+    state.clmUsedCats = new Set();
     state.teams.forEach((t) => {
-      const { cat, catInfo, words } = getContreLaMontre(usedCats, state.kidsMode);
-      usedCats.add(cat);
+      const { cat, catInfo, words } = getContreLaMontre(state.clmUsedCats, state.kidsMode);
+      state.clmUsedCats.add(cat);
       t.words = words;
       t.clmCat = cat;
       t.clmCatInfo = catInfo;
@@ -996,11 +999,26 @@ function startTurn() {
       return;
     }
   } else if (mode === 'enigmes') {
+    // Nouveau tour pour cette équipe : renouveler les mots
+    if (state.turnsDone[state.currentTeamIdx] > 0) {
+      const usedWords = new Set(state.teams.flatMap(t => (t.words || []).map(w => w?.word).filter(Boolean)));
+      team.words = getEnigmesWords(usedWords, state.kidsMode);
+      team.found = new Array(5).fill(false);
+    }
     const remaining = team.found.map((f, i) => f ? -1 : i).filter(i => i >= 0);
     state.turnQueue = remaining;
     state.timeLeft  = 10;  // per-brick timer
     state.bricksLimit = 13;
   } else if (mode === 'contrelamontre') {
+    // Nouveau tour pour cette équipe : renouveler les mots (nouveau thème)
+    if (state.turnsDone[state.currentTeamIdx] > 0) {
+      const { cat, catInfo, words } = getContreLaMontre(state.clmUsedCats, state.kidsMode);
+      state.clmUsedCats.add(cat);
+      team.words = words;
+      team.clmCat = cat;
+      team.clmCatInfo = catInfo;
+      team.found = new Array(7).fill(false);
+    }
     const remaining = team.found.map((f, i) => f ? -1 : i).filter(i => i >= 0);
     state.turnQueue = remaining;
     state.timeLeft  = 30;
