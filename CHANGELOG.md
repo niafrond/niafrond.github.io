@@ -1,3 +1,13 @@
+## [1.165.0](https://github.com/niafrond/niafrond.github.io/compare/v1.164.0...v1.165.0) (2026-05-02)
+
+### Features
+
+* implement Pyramide game manches (Énigmes, Contre-la-montre, Noms propres, Grande Pyramide) ([5032bb7](https://github.com/niafrond/niafrond.github.io/commit/5032bb782120cb1ff3b336ea14ca29a75f03b73c))
+
+### Bug Fixes
+
+* address code review feedback (hint text, NP scoring constants, dots logic clarity) ([2f230de](https://github.com/niafrond/niafrond.github.io/commit/2f230de23b05c288316bdcc3a52b4c3a7b68f960))
+
 ## [1.164.0](https://github.com/niafrond/niafrond.github.io/compare/v1.163.0...v1.164.0) (2026-05-01)
 
 ### Features
