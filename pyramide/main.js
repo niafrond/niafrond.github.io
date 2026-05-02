@@ -54,6 +54,18 @@ const PYRAMID_ROWS = [
 ];
 const TOTAL_WORDS = 15;
 
+/**
+ * Disposition en pyramide pour les modes avec peu de mots.
+ * Chaque entrée est un tableau de rangées (bas → haut),
+ * chaque rangée listant les indices de mots qui la composent.
+ */
+const MINI_PYRAMID_ROWS = {
+  3: [[0, 1], [2]],
+  5: [[0, 1, 2], [3, 4]],
+  6: [[0, 1, 2], [3, 4], [5]],
+  7: [[0, 1, 2, 3], [4, 5, 6]],
+};
+
 const TURN_DURATION_KEY  = 'pyramide_turn_duration';
 const TURNS_PER_TEAM_KEY = 'pyramide_turns_per_team';
 const PLAYERS_KEY        = 'pyramide_players';
@@ -614,6 +626,51 @@ function truncate(str, max) {
   return str.length <= max ? str : str.slice(0, max - 1) + '…';
 }
 
+/**
+ * Construit le HTML d'une mini-pyramide pour les modes non-libre (3, 5, 6, 7 mots).
+ * @param {boolean[]} found      - état des mots (true = trouvé)
+ * @param {number}    currentIdx - index du mot actuel (-1 = aucun)
+ */
+function buildMiniPyramidHTML(found, currentIdx = -1) {
+  const total    = found.length;
+  const rows     = MINI_PYRAMID_ROWS[total];
+  const foundCnt = found.filter(Boolean).length;
+
+  let html = '<div class="mini-pyramid-wrapper">';
+  html += '<div class="pyramid mini-pyramid">';
+
+  if (rows) {
+    // Rendu du sommet vers la base (reverse rows)
+    for (let r = rows.length - 1; r >= 0; r--) {
+      html += '<div class="pyramid-row">';
+      for (const i of rows[r]) {
+        let cls = 'pyramid-cell ';
+        if (found[i])       cls += 'cell-found';
+        else if (i === currentIdx) cls += 'cell-current';
+        else                cls += 'cell-pending';
+        html += `<div class="${cls}"></div>`;
+      }
+      html += '</div>';
+    }
+  } else {
+    // Fallback : rangée unique
+    html += '<div class="pyramid-row">';
+    for (let i = 0; i < total; i++) {
+      let cls = 'pyramid-cell ';
+      if (found[i])       cls += 'cell-found';
+      else if (i === currentIdx) cls += 'cell-current';
+      else                cls += 'cell-pending';
+      html += `<div class="${cls}"></div>`;
+    }
+    html += '</div>';
+  }
+
+  html += '</div>';
+  html += `<div class="wp-count">${foundCnt}\u00a0/\u00a0${total}</div>`;
+  html += '</div>';
+  return html;
+}
+
 // ─── ÉCRAN SETUP ───────────────────────────────────────────────────────────────
 function renderPlayerList() {
   const list = el('player-list');
@@ -812,10 +869,26 @@ function goToTeams() {
   }
 
   renderTeams();
+  // Mettre à jour le texte d'info de la page équipes selon le mode
+  _updateTeamsModeInfo(mode);
   showScreen('screen-teams');
 }
 
 // ─── PRÉ-TOUR ─────────────────────────────────────────────────────────────────
+/** Met à jour le bloc d'info de la page équipes selon le mode joué. */
+function _updateTeamsModeInfo(mode) {
+  const el2 = el('teams-mode-info');
+  if (!el2) return;
+  const MODE_INFO = {
+    enigmes:        `🧩 <strong style="color:var(--text)">${GAME_MODES.enigmes.wordCount} mots</strong> à faire deviner avec des briques<br>Score : 1 pt/mot + briques non utilisées`,
+    contrelamontre: `⏱️ <strong style="color:var(--text)">${GAME_MODES.contrelamontre.wordCount} mots</strong> d'un même thème secret à deviner en <strong style="color:var(--text)">30 secondes</strong>`,
+    nomspropres:    `🏷️ <strong style="color:var(--text)">${state.npNamesCount} noms propres</strong> liés par un thème commun — enchères par briques`,
+    grandepyramide: `🏆 Le finaliste doit deviner <strong style="color:var(--text)">${GAME_MODES.grandepyramide.wordCount} mots</strong> en <strong style="color:var(--text)">1 minute</strong><br>Phrases complètes et mimiques autorisées ✅`,
+    libre:          `🔺 La pyramide a <strong style="color:var(--text)">5 niveaux</strong> et <strong style="color:var(--text)">15 mots</strong>.<br>Chaque équipe gravit sa propre pyramide.<br>Points : +1 pt (bas) → +5 pts (sommet) 🏆`,
+  };
+  el2.innerHTML = MODE_INFO[mode] || MODE_INFO.libre;
+}
+
 function startPreTurn() {
   const mode = state.gameMode;
   const team = state.teams[state.currentTeamIdx];
@@ -948,8 +1021,10 @@ function startTurn() {
   const cfg = GAME_MODES[mode];
   el('brick-display').hidden  = !cfg.brickTimer && mode !== 'enigmes';
   el('turn-theme-badge').hidden = (mode !== 'contrelamontre');
-  el('word-progress').hidden  = (mode === 'libre');
-  el('pyramid-area').hidden   = (mode !== 'libre');
+  // Dots uniquement pour nomspropres (les autres modes utilisent la mini-pyramide)
+  el('word-progress').hidden  = true;
+  // Pyramide : pleine pour libre, mini pour les autres (nomspropres gérée dans startTurnAfterBid)
+  el('pyramid-area').hidden   = false;
   el('gp-note').hidden        = (mode !== 'grandepyramide');
   el('btn-extra-time').hidden = (mode !== 'grandepyramide');
   const timerContainer = document.querySelector('.timer-container');
@@ -1019,37 +1094,30 @@ function showCurrentWord() {
     el('word-category').textContent = '';
   }
 
-  // Update pyramid (libre mode only)
+  // Mise à jour de la pyramide selon le mode
   if (mode === 'libre') {
     el('turn-pyramid').innerHTML = buildPyramidHTML(
       team.found, wordIdx, team.words.map(w => w.word), true,
     );
-  }
-
-  // Word progress dots
-  if (mode !== 'libre') {
-    let found, total, currentDot;
-    if (mode === 'nomspropres') {
-      found = [];
-      total = state.npNames.length;
-      currentDot = state.npNamePos;  // highlight current name by position
-    } else {
-      found = mode === 'grandepyramide' ? state.teams[0].found : team.found;
-      total = GAME_MODES[mode]?.wordCount || found.length;
-      currentDot = wordIdx;
-    }
+  } else if (mode === 'nomspropres') {
+    // Dots de progression pour nomspropres (pas de pyramide)
+    const total      = state.npNames.length;
+    const currentDot = state.npNamePos;
     const prog = el('word-progress');
     if (prog) {
       prog.innerHTML = '';
       for (let i = 0; i < total; i++) {
         const dot = document.createElement('span');
         dot.className = 'wp-dot';
-        if (found[i]) dot.classList.add('found');
-        else if (i === currentDot) dot.classList.add('current');
+        if (i === currentDot) dot.classList.add('current');
         prog.appendChild(dot);
       }
       prog.hidden = false;
     }
+  } else {
+    // Mini-pyramide pour enigmes / contrelamontre / grandepyramide
+    const found = mode === 'grandepyramide' ? state.teams[0].found : team.found;
+    el('turn-pyramid').innerHTML = buildMiniPyramidHTML(found, wordIdx);
   }
 }
 
@@ -1470,13 +1538,17 @@ function endTurn(reason) {
     });
   }
 
-  // Pyramids comparison (libre mode only)
+  // Comparaison des pyramides (fin de tour)
   if (mode === 'libre') {
     el('end-pyramid-0').innerHTML = buildPyramidFull(0);
     el('end-pyramid-1').innerHTML = buildPyramidFull(1);
   } else {
-    el('end-pyramid-0').innerHTML = '';
-    el('end-pyramid-1').innerHTML = '';
+    // Mini-pyramide pour enigmes / contrelamontre
+    state.teams.forEach((t, i) => {
+      el(`end-pyramid-${i}`).innerHTML = t.found.length > 0
+        ? buildMiniPyramidHTML(t.found, -1)
+        : '';
+    });
   }
   el('end-pyramid-team-0').textContent = state.teams[0].name;
   el('end-pyramid-team-1').textContent = state.teams[1].name;
@@ -1567,7 +1639,7 @@ function showGameOver(gpResult) {
     el('result-card-1').style.setProperty('--team-color', `var(${state.teams[1].colorVar})`);
     el('result-card-1').classList.remove('winner');
 
-    el('gameover-pyramid-0').innerHTML = '';
+    el('gameover-pyramid-0').innerHTML = buildMiniPyramidHTML(gpTeam.found, -1);
     el('gameover-pyramid-1').innerHTML = '';
     if (el('end-name-go-0')) el('end-name-go-0').textContent = state.gpFinalistName;
     if (el('end-name-go-1')) el('end-name-go-1').textContent = state.teams[1].name;
@@ -1611,7 +1683,9 @@ function showGameOver(gpResult) {
       el(`gameover-pyramid-${i}`).innerHTML = buildPyramidFull(i);
     } else {
       el(`result-level-${i}`).textContent = `${score} pts`;
-      el(`gameover-pyramid-${i}`).innerHTML = '';
+      el(`gameover-pyramid-${i}`).innerHTML = found.length > 0
+        ? buildMiniPyramidHTML(found, -1)
+        : '';
     }
     const goNameEl = el(`end-name-go-${i}`);
     if (goNameEl) goNameEl.textContent = name;
