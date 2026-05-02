@@ -453,10 +453,14 @@ function showPreRound() {
 }
 
 // ─── Enchainement des manches ───────────────────────────────────────────────────
+function isLastManche() {
+  return state.playingAll && MANCHE_ORDER.indexOf(state.gameMode) === MANCHE_ORDER.length - 1;
+}
+
 function nextManche() {
   const idx  = MANCHE_ORDER.indexOf(state.gameMode);
   // En partie complète, retour à l'accueil après la dernière manche
-  if (state.playingAll && idx === MANCHE_ORDER.length - 1) {
+  if (isLastManche()) {
     state.gameMode = MANCHE_ORDER[0];
     saveOptions();
     updateModeUI();
@@ -1560,11 +1564,9 @@ function showGameOver(gpResult) {
     if (el('end-name-go-1')) el('end-name-go-1').textContent = state.teams[1].name;
 
     // Libellé du bouton "Manche suivante" selon le contexte
-    const gpMancheIdx = MANCHE_ORDER.indexOf(mode);
-    const gpIsLastManche = state.playingAll && gpMancheIdx === MANCHE_ORDER.length - 1;
     const gpNextBtn = el('btn-next-manche');
     if (gpNextBtn) {
-      gpNextBtn.textContent = gpIsLastManche ? '🎊 Terminer la partie' : '▶️ Manche suivante →';
+      gpNextBtn.textContent = isLastManche() ? '🎊 Terminer la partie' : '▶️ Manche suivante →';
     }
 
     showScreen('screen-game-over');
@@ -1607,11 +1609,9 @@ function showGameOver(gpResult) {
   });
 
   // Libellé du bouton "Manche suivante" selon le contexte
-  const mancheIdx = MANCHE_ORDER.indexOf(mode);
-  const isLastManche = state.playingAll && mancheIdx === MANCHE_ORDER.length - 1;
   const nextMancheBtn = el('btn-next-manche');
   if (nextMancheBtn) {
-    nextMancheBtn.textContent = isLastManche ? '🎊 Terminer la partie' : '▶️ Manche suivante →';
+    nextMancheBtn.textContent = isLastManche() ? '🎊 Terminer la partie' : '▶️ Manche suivante →';
   }
 
   showScreen('screen-game-over');
