@@ -1,3 +1,10 @@
+## [1.166.0](https://github.com/niafrond/niafrond.github.io/compare/v1.165.0...v1.166.0) (2026-05-02)
+
+### Features
+
+* **pyramide:** add bottom nav, settings/leaderboard screens, pre-round rules, manche chaining ([fb722fc](https://github.com/niafrond/niafrond.github.io/commit/fb722fc218cb005947b9640df3cc2876abb1e516))
+* **pyramide:** add pwa/apk, kids mode, history nav, rotate overlay, SW deferred reload ([d54860a](https://github.com/niafrond/niafrond.github.io/commit/d54860a7087b26180c50f7136870da94f5519a97))
+
 ## [1.165.0](https://github.com/niafrond/niafrond.github.io/compare/v1.164.0...v1.165.0) (2026-05-02)
 
 ### Features
