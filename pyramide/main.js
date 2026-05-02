@@ -253,11 +253,16 @@ function _applyScreen(id) {
   _currentScreen = id;
   document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
   el(id).hidden = false;
+function _applyScreen(id) {
+  _currentScreen = id;
+  document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
+  el(id).hidden = false;
   const isNav    = NAV_SCREENS.has(id);
   const isGame   = GAME_SCREENS.has(id);
-  el('btn-theme').hidden    = isGame;
-  el('btn-mute').hidden     = isGame;
-  el('bottom-nav').hidden   = !isNav;
+  el('btn-theme').hidden      = isGame;
+  el('btn-mute').hidden       = isGame;
+  el('btn-fullscreen').hidden = isGame;
+  el('bottom-nav').hidden     = !isNav;
   el('btn-game-close').hidden = !SHOW_CLOSE_BTN_SCREENS.has(id);
   // Highlight active tab
   document.querySelectorAll('.bottom-nav-item').forEach(btn => {
