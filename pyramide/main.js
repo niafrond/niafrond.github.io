@@ -1484,7 +1484,9 @@ function endTurn(reason) {
   el('end-pyramid-score-1').textContent = state.teams[1].score + ' pts';
 
   // Next button label
-  if (reason === 'pyramidComplete') state.gameOver = true;
+  // When a team completes the pyramid, exhaust their remaining turns instead of ending
+  // immediately, so the other team still gets to play their fair share of turns.
+  if (reason === 'pyramidComplete') state.turnsDone[state.currentTeamIdx] = state.turnsPerTeam;
   const allDone = state.turnsDone.every(d => d >= state.turnsPerTeam) || state.gameOver;
   el('btn-turn-end-next').textContent = allDone ? '🏁 Voir les résultats' : '➡️ Tour suivant';
 
