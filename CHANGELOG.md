@@ -1,3 +1,9 @@
+## [1.169.1](https://github.com/niafrond/niafrond.github.io/compare/v1.169.0...v1.169.1) (2026-05-02)
+
+### Bug Fixes
+
+* pyramide libre - don't end game immediately when pyramid is completed on first turn ([203d4b3](https://github.com/niafrond/niafrond.github.io/commit/203d4b3ab06bbe50181bf6cd9adc7bdd2df887bf))
+
 ## [1.169.0](https://github.com/niafrond/niafrond.github.io/compare/v1.168.1...v1.169.0) (2026-05-02)
 
 ### Features
