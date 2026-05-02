@@ -1,3 +1,9 @@
+## [1.170.0](https://github.com/niafrond/niafrond.github.io/compare/v1.169.2...v1.170.0) (2026-05-02)
+
+### Features
+
+* **pyramide:** add mini pyramid visual & fix word count confusion in partie complète ([9c3c493](https://github.com/niafrond/niafrond.github.io/commit/9c3c4930752934b20e7777d1d6feb30c661ed0df))
+
 ## [1.169.2](https://github.com/niafrond/niafrond.github.io/compare/v1.169.1...v1.169.2) (2026-05-02)
 
 ### Bug Fixes
