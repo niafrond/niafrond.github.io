@@ -291,14 +291,10 @@ function loadOptions() {
     if ([30, 45, 60, 90].includes(d)) state.turnDuration = d;
     const t = parseInt(localStorage.getItem(TURNS_PER_TEAM_KEY), 10);
     if ([1, 2, 3].includes(t)) state.turnsPerTeam = t;
-    const m = localStorage.getItem(GAME_MODE_KEY);
-    if (m === 'all') {
-      state.playingAll = true;
-      state.gameMode = MANCHE_ORDER[0];
-    } else if (m && GAME_MODES[m]) {
-      state.playingAll = false;
-      state.gameMode = m;
-    }
+    // Toujours démarrer en "partie complète" par défaut ; on ignore les modes
+    // individuels sauvegardés lors des sessions précédentes.
+    state.playingAll = true;
+    state.gameMode = MANCHE_ORDER[0];
   } catch (_) {}
 }
 
@@ -488,7 +484,7 @@ function updateModeUI() {
 
   // Description
   if (state.playingAll) {
-    el('mode-desc').textContent = 'Joue toutes les manches dans l'ordre : Énigmes, Contre-la-montre, Noms propres, Grande Pyramide, Mode libre.';
+    el('mode-desc').textContent = "Joue toutes les manches dans l'ordre : Énigmes, Contre-la-montre, Noms propres, Grande Pyramide, Mode libre.";
   } else {
     el('mode-desc').textContent = GAME_MODES[mode].desc;
   }
@@ -656,7 +652,7 @@ function renderPlayerList() {
   const hints = [];
   if (count < MIN_PLAYERS) hints.push(`Minimum ${MIN_PLAYERS} joueurs requis`);
 
-  if (state.gameMode === 'grandepyramide') {
+  if (!state.playingAll && state.gameMode === 'grandepyramide') {
     const finalist = el('select-finalist')?.value;
     if (!finalist) {
       canStart = false;
@@ -674,7 +670,7 @@ function renderPlayerList() {
   }
 
   // Update finalist select if needed
-  if (state.gameMode === 'grandepyramide') updateFinalistSelect();
+  if (!state.playingAll && state.gameMode === 'grandepyramide') updateFinalistSelect();
 }
 
 function addPlayer() {
