@@ -374,3 +374,74 @@ export function getGameWords(exclude = new Set()) {
   // Shuffle and take 15
   return shuffle(result).slice(0, 15);
 }
+
+// ─── Manche "Les Énigmes" ──────────────────────────────────────────────────────
+/**
+ * Retourne 5 mots pour la manche Les Énigmes.
+ * @param {Set<string>} [exclude]
+ */
+export function getEnigmesWords(exclude = new Set()) {
+  return shuffle(POOL.filter(w => !exclude.has(w.word))).slice(0, 5);
+}
+
+// ─── Manche "Contre-la-montre" ─────────────────────────────────────────────────
+/**
+ * Retourne 7 mots d'une même catégorie pour la manche Contre-la-montre.
+ * @param {Set<string>} [usedCats] - Catégories déjà utilisées (pour varier).
+ * @returns {{ cat: string, catInfo: object, words: object[] }}
+ */
+export function getContreLaMontre(usedCats = new Set()) {
+  const byCategory = {};
+  for (const w of POOL) {
+    if (!byCategory[w.cat]) byCategory[w.cat] = [];
+    byCategory[w.cat].push(w);
+  }
+  const eligible = Object.keys(byCategory).filter(c => byCategory[c].length >= 7);
+  const available = eligible.filter(c => !usedCats.has(c));
+  const cats = available.length > 0 ? available : eligible;
+  const cat = shuffle(cats)[0];
+  const words = shuffle(byCategory[cat]).slice(0, 7);
+  return { cat, catInfo: CATEGORIES[cat], words };
+}
+
+// ─── Manche "La Grande Pyramide" ───────────────────────────────────────────────
+/**
+ * Retourne 6 mots pour la Grande Pyramide.
+ */
+export function getGrandePyramideWords() {
+  return shuffle([...POOL]).slice(0, 6);
+}
+
+// ─── Manche "Noms propres" ─────────────────────────────────────────────────────
+/**
+ * Ensemble de noms propres groupés par thème pour la manche Noms propres.
+ */
+export const NOMS_PROPRES_SETS = [
+  { theme: 'Présidents français',           names: ['Charles de Gaulle', 'François Mitterrand', 'Jacques Chirac', 'Nicolas Sarkozy', 'François Hollande', 'Emmanuel Macron'] },
+  { theme: 'Planètes du Système solaire',   names: ['Mercure', 'Vénus', 'Mars', 'Jupiter', 'Saturne', 'Uranus', 'Neptune'] },
+  { theme: 'Capitales européennes',         names: ['Paris', 'Berlin', 'Madrid', 'Rome', 'Lisbonne', 'Vienne', 'Amsterdam', 'Bruxelles', 'Stockholm', 'Varsovie'] },
+  { theme: 'Footballeurs légendaires',      names: ['Zinedine Zidane', 'Pelé', 'Maradona', 'Ronaldo', 'Messi', 'Mbappé', 'Ronaldinho', 'Thierry Henry'] },
+  { theme: 'Acteurs hollywoodiens',         names: ['Tom Hanks', 'Brad Pitt', 'Leonardo DiCaprio', 'Morgan Freeman', 'Meryl Streep', 'Denzel Washington', 'Jodie Foster', 'Cate Blanchett'] },
+  { theme: 'Grands compositeurs classiques', names: ['Mozart', 'Beethoven', 'Bach', 'Chopin', 'Vivaldi', 'Tchaïkovski', 'Liszt', 'Haendel'] },
+  { theme: 'Super-héros Marvel',            names: ['Spider-Man', 'Iron Man', 'Captain America', 'Thor', 'Hulk', 'Black Widow', 'Docteur Strange', 'Black Panther'] },
+  { theme: 'Auteurs français classiques',   names: ['Victor Hugo', 'Molière', 'Voltaire', 'Gustave Flaubert', 'Émile Zola', 'Honoré de Balzac', 'Marcel Proust', 'Charles Baudelaire'] },
+  { theme: 'Peintres célèbres',             names: ['Léonard de Vinci', 'Pablo Picasso', 'Salvador Dalí', 'Claude Monet', 'Vincent van Gogh', 'Michel-Ange', 'Rembrandt', 'Paul Gauguin'] },
+  { theme: 'Fleuves de France',             names: ['Seine', 'Loire', 'Garonne', 'Rhône', 'Dordogne', 'Saône', 'Moselle'] },
+  { theme: 'Villes françaises',             names: ['Paris', 'Lyon', 'Marseille', 'Bordeaux', 'Toulouse', 'Nice', 'Nantes', 'Strasbourg', 'Montpellier', 'Rennes'] },
+  { theme: 'Fromages français',             names: ['Camembert', 'Brie', 'Roquefort', 'Comté', 'Reblochon', 'Munster', 'Époisses', 'Cantal', 'Emmental'] },
+  { theme: 'Présidents américains',         names: ['Abraham Lincoln', 'John Kennedy', 'Franklin Roosevelt', 'Barack Obama', 'George Washington', 'Theodore Roosevelt', 'Bill Clinton'] },
+  { theme: 'Personnages de Disney',         names: ['Mickey Mouse', 'Simba', 'Elsa', 'Cendrillon', 'Ariel', 'Belle', 'Bambi', 'Mulan', 'Pinocchio'] },
+  { theme: 'Pays d\'Afrique',              names: ['Maroc', 'Égypte', 'Algérie', 'Éthiopie', 'Nigeria', 'Afrique du Sud', 'Tunisie', 'Sénégal', 'Kenya', 'Ghana'] },
+];
+
+/**
+ * Retourne un set de noms propres pour la manche Noms propres.
+ * @param {Set<string>} [usedThemes] - Thèmes déjà utilisés (pour varier).
+ * @returns {{ theme: string, names: string[] }}
+ */
+export function getNomsPropreSet(usedThemes = new Set()) {
+  const available = NOMS_PROPRES_SETS.filter(s => !usedThemes.has(s.theme));
+  const pool = available.length > 0 ? available : NOMS_PROPRES_SETS;
+  const set = shuffle(pool)[0];
+  return { theme: set.theme, names: shuffle([...set.names]).slice(0, 3) };
+}
