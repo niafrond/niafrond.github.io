@@ -113,6 +113,7 @@ const state = {
   // Setup
   playerNames: [],
   gameMode: 'enigmes',        // manche courante
+  playingAll: true,           // true = jouer toutes les manches (partie complète)
   kidsMode: false,            // mode enfant
 
   // Game
@@ -291,7 +292,13 @@ function loadOptions() {
     const t = parseInt(localStorage.getItem(TURNS_PER_TEAM_KEY), 10);
     if ([1, 2, 3].includes(t)) state.turnsPerTeam = t;
     const m = localStorage.getItem(GAME_MODE_KEY);
-    if (m && GAME_MODES[m]) state.gameMode = m;
+    if (m === 'all') {
+      state.playingAll = true;
+      state.gameMode = MANCHE_ORDER[0];
+    } else if (m && GAME_MODES[m]) {
+      state.playingAll = false;
+      state.gameMode = m;
+    }
   } catch (_) {}
 }
 
@@ -299,7 +306,7 @@ function saveOptions() {
   try {
     localStorage.setItem(TURN_DURATION_KEY, String(state.turnDuration));
     localStorage.setItem(TURNS_PER_TEAM_KEY, String(state.turnsPerTeam));
-    localStorage.setItem(GAME_MODE_KEY, state.gameMode);
+    localStorage.setItem(GAME_MODE_KEY, state.playingAll ? 'all' : state.gameMode);
   } catch (_) {}
 }
 
@@ -423,12 +430,22 @@ function showPreRound() {
     ul.appendChild(li);
   });
 
-  // Numéro de manche dans la séquence
+  // Numéro de manche dans la séquence (affiché uniquement en partie complète)
   const idx    = MANCHE_ORDER.indexOf(mode);
   const numEl  = el('pre-round-manche-num');
   if (numEl) {
-    numEl.textContent = `Manche ${idx + 1} / ${MANCHE_ORDER.length}`;
-    numEl.hidden      = false;
+    if (state.playingAll) {
+      numEl.textContent = `Manche ${idx + 1} / ${MANCHE_ORDER.length}`;
+      numEl.hidden      = false;
+    } else {
+      numEl.hidden = true;
+    }
+  }
+
+  // Bouton retour
+  const backBtn = el('btn-pre-round-back');
+  if (backBtn) {
+    backBtn.textContent = state.playingAll ? '← Annuler la partie' : '← Choisir une autre manche';
   }
 
   _applyScreen('screen-pre-round');
@@ -436,8 +453,21 @@ function showPreRound() {
 }
 
 // ─── Enchainement des manches ───────────────────────────────────────────────────
+function isLastManche() {
+  return state.playingAll && MANCHE_ORDER.indexOf(state.gameMode) === MANCHE_ORDER.length - 1;
+}
+
 function nextManche() {
   const idx  = MANCHE_ORDER.indexOf(state.gameMode);
+  // En partie complète, retour à l'accueil après la dernière manche
+  if (isLastManche()) {
+    state.gameMode = MANCHE_ORDER[0];
+    saveOptions();
+    updateModeUI();
+    showToast('🎊 Partie complète terminée !');
+    showScreen('screen-setup');
+    return;
+  }
   const next = MANCHE_ORDER[(idx + 1) % MANCHE_ORDER.length];
   state.gameMode = next;
   saveOptions();
@@ -448,28 +478,36 @@ function nextManche() {
 // ─── Gestion du mode de jeu ─────────────────────────────────────────────────────
 function updateModeUI() {
   const mode = state.gameMode;
-  const cfg  = GAME_MODES[mode];
 
   // Highlight active mode button
   document.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.mode === mode);
+    btn.classList.toggle('active',
+      state.playingAll ? btn.dataset.mode === 'all' : btn.dataset.mode === mode,
+    );
   });
 
   // Description
-  el('mode-desc').textContent = cfg.desc;
+  if (state.playingAll) {
+    el('mode-desc').textContent = 'Joue toutes les manches dans l'ordre : Énigmes, Contre-la-montre, Noms propres, Grande Pyramide, Mode libre.';
+  } else {
+    el('mode-desc').textContent = GAME_MODES[mode].desc;
+  }
 
   // Show/hide mode-specific options (duration/turns now live in settings)
-  el('np-names-row').hidden  = (mode !== 'nomspropres');
-  el('finalist-row').hidden  = (mode !== 'grandepyramide');
+  el('np-names-row').hidden  = (mode !== 'nomspropres' || state.playingAll);
+  el('finalist-row').hidden  = (mode !== 'grandepyramide' || state.playingAll);
 
   // Update start button label
   const startBtn = el('btn-start-game');
   if (startBtn) {
-    startBtn.textContent = mode === 'grandepyramide' ? '🏆 Lancer la Grande Pyramide' : '🔺 Lancer la partie';
+    if (state.playingAll) {
+      startBtn.textContent = '🎯 Lancer la partie complète';
+    } else {
+      startBtn.textContent = mode === 'grandepyramide' ? '🏆 Lancer la Grande Pyramide' : '🔺 Lancer la partie';
+    }
   }
 
   // Refresh finalist select
-  if (mode === 'grandepyramide') updateFinalistSelect();
 }
 
 function updateFinalistSelect() {
@@ -489,7 +527,13 @@ function updateFinalistSelect() {
 }
 
 function selectMode(mode) {
-  state.gameMode = mode;
+  if (mode === 'all') {
+    state.playingAll = true;
+    state.gameMode = MANCHE_ORDER[0];
+  } else {
+    state.playingAll = false;
+    state.gameMode = mode;
+  }
   saveOptions();
   updateModeUI();
   renderPlayerList(); // re-check start button
@@ -1519,6 +1563,12 @@ function showGameOver(gpResult) {
     if (el('end-name-go-0')) el('end-name-go-0').textContent = state.gpFinalistName;
     if (el('end-name-go-1')) el('end-name-go-1').textContent = state.teams[1].name;
 
+    // Libellé du bouton "Manche suivante" selon le contexte
+    const gpNextBtn = el('btn-next-manche');
+    if (gpNextBtn) {
+      gpNextBtn.textContent = isLastManche() ? '🎊 Terminer la partie' : '▶️ Manche suivante →';
+    }
+
     showScreen('screen-game-over');
     return;
   }
@@ -1557,6 +1607,12 @@ function showGameOver(gpResult) {
     const goNameEl = el(`end-name-go-${i}`);
     if (goNameEl) goNameEl.textContent = name;
   });
+
+  // Libellé du bouton "Manche suivante" selon le contexte
+  const nextMancheBtn = el('btn-next-manche');
+  if (nextMancheBtn) {
+    nextMancheBtn.textContent = isLastManche() ? '🎊 Terminer la partie' : '▶️ Manche suivante →';
+  }
 
   showScreen('screen-game-over');
 }
