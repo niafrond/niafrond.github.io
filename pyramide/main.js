@@ -56,8 +56,9 @@ const TOTAL_WORDS = 15;
 
 /**
  * Disposition en pyramide pour les modes avec peu de mots.
- * Chaque entrée est un tableau de rangées (bas → haut),
- * chaque rangée listant les indices de mots qui la composent.
+ * Les rangées sont ordonnées bas → haut (index 0 = rangée du bas la plus large).
+ * Le rendu visuellement inverse cet ordre (sommet en haut, base en bas).
+ * Ex. pour 3 mots : [[0,1], [2]] → 2 cellules en bas, 1 au sommet.
  */
 const MINI_PYRAMID_ROWS = {
   3: [[0, 1], [2]],
@@ -877,16 +878,18 @@ function goToTeams() {
 // ─── PRÉ-TOUR ─────────────────────────────────────────────────────────────────
 /** Met à jour le bloc d'info de la page équipes selon le mode joué. */
 function _updateTeamsModeInfo(mode) {
-  const el2 = el('teams-mode-info');
-  if (!el2) return;
+  const modeInfoEl = el('teams-mode-info');
+  if (!modeInfoEl) return;
+  // GAME_MODES.*.wordCount et state.npNamesCount sont toujours des entiers (pas de risque XSS).
+  const npCount = Number(state.npNamesCount);
   const MODE_INFO = {
     enigmes:        `🧩 <strong style="color:var(--text)">${GAME_MODES.enigmes.wordCount} mots</strong> à faire deviner avec des briques<br>Score : 1 pt/mot + briques non utilisées`,
     contrelamontre: `⏱️ <strong style="color:var(--text)">${GAME_MODES.contrelamontre.wordCount} mots</strong> d'un même thème secret à deviner en <strong style="color:var(--text)">30 secondes</strong>`,
-    nomspropres:    `🏷️ <strong style="color:var(--text)">${state.npNamesCount} noms propres</strong> liés par un thème commun — enchères par briques`,
+    nomspropres:    `🏷️ <strong style="color:var(--text)">${npCount} noms propres</strong> liés par un thème commun — enchères par briques`,
     grandepyramide: `🏆 Le finaliste doit deviner <strong style="color:var(--text)">${GAME_MODES.grandepyramide.wordCount} mots</strong> en <strong style="color:var(--text)">1 minute</strong><br>Phrases complètes et mimiques autorisées ✅`,
     libre:          `🔺 La pyramide a <strong style="color:var(--text)">5 niveaux</strong> et <strong style="color:var(--text)">15 mots</strong>.<br>Chaque équipe gravit sa propre pyramide.<br>Points : +1 pt (bas) → +5 pts (sommet) 🏆`,
   };
-  el2.innerHTML = MODE_INFO[mode] || MODE_INFO.libre;
+  modeInfoEl.innerHTML = MODE_INFO[mode] || MODE_INFO.libre;
 }
 
 function startPreTurn() {
@@ -1021,7 +1024,9 @@ function startTurn() {
   const cfg = GAME_MODES[mode];
   el('brick-display').hidden  = !cfg.brickTimer && mode !== 'enigmes';
   el('turn-theme-badge').hidden = (mode !== 'contrelamontre');
-  // Dots uniquement pour nomspropres (les autres modes utilisent la mini-pyramide)
+  // Les dots (word-progress) sont réservés à nomspropres, géré via startTurnAfterBid().
+  // startTurn() ne traite jamais nomspropres (retour anticipé vers startBidScreen()),
+  // donc cette ligne masque les dots pour tous les modes qui passent ici.
   el('word-progress').hidden  = true;
   // Pyramide : pleine pour libre, mini pour les autres (nomspropres gérée dans startTurnAfterBid)
   el('pyramid-area').hidden   = false;
