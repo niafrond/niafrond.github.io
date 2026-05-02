@@ -1,3 +1,26 @@
+## [1.166.0](https://github.com/niafrond/niafrond.github.io/compare/v1.165.0...v1.166.0) (2026-05-02)
+
+### Features
+
+* **pyramide:** add bottom nav, settings/leaderboard screens, pre-round rules, manche chaining ([fb722fc](https://github.com/niafrond/niafrond.github.io/commit/fb722fc218cb005947b9640df3cc2876abb1e516))
+* **pyramide:** add pwa/apk, kids mode, history nav, rotate overlay, SW deferred reload ([d54860a](https://github.com/niafrond/niafrond.github.io/commit/d54860a7087b26180c50f7136870da94f5519a97))
+
+## [1.165.0](https://github.com/niafrond/niafrond.github.io/compare/v1.164.0...v1.165.0) (2026-05-02)
+
+### Features
+
+* implement Pyramide game manches (Énigmes, Contre-la-montre, Noms propres, Grande Pyramide) ([5032bb7](https://github.com/niafrond/niafrond.github.io/commit/5032bb782120cb1ff3b336ea14ca29a75f03b73c))
+
+### Bug Fixes
+
+* address code review feedback (hint text, NP scoring constants, dots logic clarity) ([2f230de](https://github.com/niafrond/niafrond.github.io/commit/2f230de23b05c288316bdcc3a52b4c3a7b68f960))
+
+## [1.164.0](https://github.com/niafrond/niafrond.github.io/compare/v1.163.0...v1.164.0) (2026-05-01)
+
+### Features
+
+* **pyramide:** persist player list and scores in localStorage ([2002eeb](https://github.com/niafrond/niafrond.github.io/commit/2002eeb00d34b55f6ad9e5378656b17407947d89))
+
 ## [1.163.0](https://github.com/niafrond/niafrond.github.io/compare/v1.162.0...v1.163.0) (2026-05-01)
 
 ### Features
