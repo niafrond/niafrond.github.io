@@ -1,3 +1,9 @@
+## [1.167.0](https://github.com/niafrond/niafrond.github.io/compare/v1.166.0...v1.167.0) (2026-05-02)
+
+### Features
+
+* **pyramide:** redesign home page UI to match flash-guess style ([135107d](https://github.com/niafrond/niafrond.github.io/commit/135107d7192c7598bfe46d996154a1b96de93ffb))
+
 ## [1.166.0](https://github.com/niafrond/niafrond.github.io/compare/v1.165.0...v1.166.0) (2026-05-02)
 
 ### Features
