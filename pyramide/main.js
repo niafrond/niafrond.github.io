@@ -2220,11 +2220,11 @@ function _renderCorrectionCard() {
 
   // Initial votes
   const iv = item.votes || [];
-  const v  = iv.filter(x => x.vote === 'valid').length;
-  const in_ = iv.filter(x => x.vote === 'invalid').length;
-  const d  = iv.filter(x => x.vote === 'doubtful').length;
+  const validCount   = iv.filter(x => x.vote === 'valid').length;
+  const invalidCount = iv.filter(x => x.vote === 'invalid').length;
+  const doubtCount   = iv.filter(x => x.vote === 'doubtful').length;
   el('correction-initial-votes').textContent =
-    `Votes initiaux — ✅ ${v}  ❌ ${in_}  ⚠️ ${d}`;
+    `Votes initiaux — ✅ ${validCount}  ❌ ${invalidCount}  ⚠️ ${doubtCount}`;
 
   // Reset revote panel
   state.v2CorrectionVotes = [];
@@ -2511,9 +2511,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Turn ────────────────────────────────────────────────────────────────
   el('btn-found').addEventListener('click', withCooldown(() => {
-    // Allow action if timer is running OR in no-timer modes (nomspropres, officielle)
-    if (!state.timerInterval && state.gameMode !== 'nomspropres' && state.gameMode !== 'officielle') return;
-    if (state.gameMode === 'officielle' && !state.timerInterval) return;
+    // Allow action only when timer is running (covers all modes including officielle)
+    if (!state.timerInterval && state.gameMode !== 'nomspropres') return;
     wordFound();
   }));
   el('btn-skip').addEventListener('click', withCooldown(() => {
