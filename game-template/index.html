@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <!-- TODO : Changez le titre et la couleur de thème -->
+  <title>Mon Jeu 🎮</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b1e2d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mon Jeu">
+</head>
+<body>
+
+<!-- Toast notifications -->
+<div id="toast" class="toast" hidden></div>
+
+<!-- Overlay "Tournez votre téléphone" (activé dans style.css si besoin) -->
+<div id="rotate-overlay">
+  <div class="rotate-overlay-inner">
+    <div class="rotate-overlay-phone">📱</div>
+    <p class="rotate-overlay-title">Tournez votre téléphone</p>
+    <p class="rotate-overlay-sub">Le jeu se joue en mode paysage</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 1 — SETUP : saisie des joueurs + réglages
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-setup" data-screen="screen-setup">
+  <div class="page-wrapper">
+
+    <!-- En-tête -->
+    <div class="setup-header-row">
+      <a href="../" class="btn btn-secondary btn-sm">← Accueil</a>
+      <div id="top-right-controls">
+        <!-- TODO : Ajoutez ou supprimez des contrôles selon vos besoins -->
+        <button id="btn-theme"      class="btn-top-ctrl" title="Thème clair/sombre">🌙</button>
+        <button id="btn-fullscreen" class="btn-top-ctrl" title="Plein écran">⛶</button>
+        <button id="btn-mute"       class="btn-top-ctrl" title="Son on/off">🔊</button>
+      </div>
+    </div>
+
+    <!-- Titre -->
+    <!-- TODO : Changez l'emoji et le nom du jeu -->
+    <h1 class="app-title">🎮 Mon Jeu</h1>
+    <p class="app-subtitle">TODO : décrivez votre jeu en une phrase</p>
+
+    <!-- Zone joueurs -->
+    <div class="setup-players-zone">
+      <div class="setup-players-header">
+        <span class="setup-players-title">Joueurs</span>
+        <span id="player-count" class="setup-players-count"></span>
+      </div>
+
+      <div class="card" id="panel-current-players">
+        <div id="player-empty-state" class="player-empty-state">
+          <span class="player-empty-icon">👥</span>
+          <p class="player-empty-text">Ajoutez votre premier joueur</p>
+        </div>
+        <div id="player-list"></div>
+        <span id="setup-hint" hidden>⚠️ Ajoutez au moins 2 joueurs</span>
+      </div>
+
+      <!-- Ajout rapide -->
+      <div class="quick-add-wrapper">
+        <div class="quick-add-input-row">
+          <span class="quick-add-icon" aria-hidden="true">＋</span>
+          <input id="player-input" class="quick-add-input" type="text"
+                 placeholder="Ajouter un joueur…" maxlength="24"
+                 autocomplete="off" autocorrect="off" spellcheck="false">
+          <button id="btn-add-player" class="quick-add-submit" aria-label="Ajouter le joueur">➜</button>
+        </div>
+      </div>
+      <p class="quick-add-hint">Appuyez sur Entrée pour ajouter rapidement</p>
+    </div>
+
+    <!-- Réglages -->
+    <details class="card card-collapsible">
+      <summary class="card-title card-title-summary">⚙️ Réglages</summary>
+      <div>
+        <!-- Durée du tour -->
+        <div class="input-row" style="margin-bottom:12px;">
+          <label for="turn-duration-input" style="flex:1;color:var(--text-muted);font-size:0.9rem;">
+            ⏱️ Durée du tour (secondes)
+          </label>
+          <input id="turn-duration-input" type="number" class="input"
+                 min="10" max="120" value="30" style="width:72px;flex:none;text-align:center;">
+        </div>
+        <!-- TODO : Ajoutez vos propres réglages ici -->
+      </div>
+    </details>
+
+    <!-- Règles rapides -->
+    <details class="card card-collapsible">
+      <summary class="card-title card-title-summary">📖 Règles</summary>
+      <div>
+        <!-- TODO : Décrivez les règles de votre jeu -->
+        <p style="font-size:0.88rem;color:var(--text-muted);line-height:1.7">
+          Décrivez ici les règles de votre jeu.<br><br>
+          🎯 <strong style="color:var(--text)">Objectif</strong> : …<br>
+          🔄 <strong style="color:var(--text)">Déroulement</strong> : …<br>
+          🏆 <strong style="color:var(--text)">Victoire</strong> : L'équipe avec le plus de points gagne !
+        </p>
+      </div>
+    </details>
+
+    <!-- Bouton installer PWA (caché par défaut, affiché par pwa.js) -->
+    <button id="btn-install-pwa" class="btn btn-secondary w-full mb-12" hidden>
+      📲 Installer l'application
+    </button>
+
+    <!-- Bouton Jouer -->
+    <div class="screen-sticky-footer screen-sticky-footer--fab">
+      <button id="btn-start-game" class="btn btn-primary btn-fab" disabled aria-label="Jouer">
+        ▶
+      </button>
+    </div>
+
+    <p id="game-version" style="text-align:center;font-size:0.75rem;color:var(--text-muted);margin-top:4px;"></p>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 2 — TEAMS : affichage des équipes
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-teams" data-screen="screen-teams" hidden>
+  <div class="page-wrapper screen-center">
+
+    <h1 class="app-title" style="font-size:2rem;">🎲 Les Équipes</h1>
+    <p class="app-subtitle">Équipes définies aléatoirement</p>
+
+    <div id="teams-container"></div>
+
+    <!-- TODO : Ajoutez des options spécifiques au jeu ici (ex. choix de catégorie) -->
+
+    <div style="display:flex;gap:12px;width:100%;margin-top:8px;">
+      <button id="btn-back-from-teams" class="btn btn-secondary" style="flex:1;">
+        ← Retour
+      </button>
+      <button id="btn-play-now" class="btn btn-primary" style="flex:2;">
+        ▶ C'est parti !
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 3 — TURN : tour en cours
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-turn" data-screen="screen-turn" hidden>
+  <div class="screen-center" style="gap:20px;">
+
+    <!-- En-tête : équipe + score -->
+    <div class="turn-header" style="width:100%;max-width:500px;">
+      <div>
+        <div class="turn-team-label">
+          <!-- TODO : Ajustez le libellé selon votre jeu (ex. "L'orateur") -->
+          C'est au tour de
+        </div>
+        <div id="turn-team-name" class="turn-team-label" style="font-size:1.3rem;"></div>
+      </div>
+      <div class="score-badge">
+        Score : <span id="score-display">0</span>
+      </div>
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-container">
+      <svg class="timer-svg" viewBox="0 0 100 100">
+        <circle class="timer-track"    cx="50" cy="50" r="46"/>
+        <circle class="timer-progress" cx="50" cy="50" r="46" id="timer-progress"/>
+      </svg>
+      <div class="timer-label" id="timer-label">30</div>
+    </div>
+
+    <!-- Contenu du tour -->
+    <!-- TODO : Remplacez ceci par votre contenu de jeu (mot, défi, question…) -->
+    <div class="turn-content-wrapper" style="width:100%;max-width:500px;">
+      <div id="turn-content">? ? ?</div>
+    </div>
+
+    <!-- Actions -->
+    <!-- TODO : Adaptez les boutons à votre jeu (trouvé / passer / faute…) -->
+    <div class="turn-actions" style="width:100%;max-width:500px;">
+      <button id="btn-found" class="btn btn-success">
+        ✅ Trouvé
+      </button>
+      <button id="btn-end-turn" class="btn btn-secondary">
+        ⏭ Terminer
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 4 — TURN END : résumé du tour
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-turn-end" data-screen="screen-turn-end" hidden>
+  <div class="page-wrapper screen-center">
+
+    <h1 class="app-title" style="font-size:2rem;">⏰ Fin du tour</h1>
+
+    <!-- Scores de toutes les équipes -->
+    <div id="turn-end-scores" class="turn-end-scores" style="width:100%;max-width:500px;"></div>
+
+    <!-- TODO : Ajoutez ici la liste des éléments trouvés/ratés si besoin -->
+
+    <div style="display:flex;gap:12px;width:100%;max-width:500px;">
+      <button id="btn-game-over" class="btn btn-secondary" style="flex:1;">
+        🏁 Terminer la partie
+      </button>
+      <button id="btn-next-turn" class="btn btn-primary" style="flex:2;">
+        ▶ Tour suivant
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 5 — GAME OVER : classement final
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-game-over" data-screen="screen-game-over" hidden>
+  <div class="page-wrapper screen-center">
+
+    <div style="font-size:4rem;">🏆</div>
+    <h1 class="app-title" style="font-size:2.2rem;">Résultats</h1>
+
+    <div id="game-over-results" style="width:100%;max-width:500px;"></div>
+
+    <!-- TODO : Ajoutez ici des statistiques supplémentaires si nécessaire -->
+
+    <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:500px;margin-top:8px;">
+      <button id="btn-play-again" class="btn btn-primary btn-lg w-full">
+        🔄 Rejouer
+      </button>
+      <button id="btn-back-home" class="btn btn-secondary w-full">
+        🏠 Retour à l'accueil
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
