@@ -1,3 +1,9 @@
+## [1.174.0](https://github.com/niafrond/niafrond.github.io/compare/v1.173.0...v1.174.0) (2026-05-03)
+
+### Features
+
+* **pyramide:** enforce portrait mode ([0b8ee2c](https://github.com/niafrond/niafrond.github.io/commit/0b8ee2c274f9e792d32f207bf4af33a5ee4c0543))
+
 ## [1.173.0](https://github.com/niafrond/niafrond.github.io/compare/v1.172.0...v1.173.0) (2026-05-03)
 
 ### Features
