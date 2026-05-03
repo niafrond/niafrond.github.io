@@ -1,3 +1,9 @@
+## [1.175.0](https://github.com/niafrond/niafrond.github.io/compare/v1.174.0...v1.175.0) (2026-05-03)
+
+### Features
+
+* **pyramide:** afficher la pyramide visuelle en Manche 4 ([ed86447](https://github.com/niafrond/niafrond.github.io/commit/ed8644707b87f2e7011a94eb6f587e5199bdf9b0))
+
 ## [1.174.0](https://github.com/niafrond/niafrond.github.io/compare/v1.173.0...v1.174.0) (2026-05-03)
 
 ### Features
