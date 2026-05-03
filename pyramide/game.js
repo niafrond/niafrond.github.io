@@ -782,13 +782,8 @@ function v2ClueTimeUp() {
   } else if (round.id === 'pingpong') {
     _pingPongNextClueTeam();
   } else if (round.id === 'nomspropres') {
-    // Indice raté en Noms Propres
-    state.currentWordIdx++;
-    if (state.currentWordIdx >= state.currentTurnWords.length) {
-      _endNomsPropresRound();
-    } else {
-      showBidding();
-    }
+    // Indice raté en Noms Propres → mot manqué
+    _afterNomsPropresWord(false);
   }
 }
 export { v2ClueTimeUp };
@@ -924,7 +919,7 @@ export function showBidding() {
   const wordIdx    = state.npCurrentWord;
 
   if (wordIdx >= npSet.words.length) {
-    _endNomsPropresRound();
+    _v2NextRound();
     return;
   }
 
