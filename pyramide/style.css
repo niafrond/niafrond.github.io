@@ -481,6 +481,57 @@ html, body {
 /* ─── Round-end screen ────────────────────────────────────────────────────── */
 /* reuses .turn-end-scores, .turn-end-score-row, .turn-end-pts */
 
+/* ─── Pyramid view (Manche 4) ─────────────────────────────────────────────── */
+.pyramid-view {
+  width: 100%;
+  max-width: 500px;
+  max-height: 38vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 0;
+}
+.pyramid-row {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+}
+.pyramid-brick {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 5px 4px;
+  font-size: clamp(0.58rem, 1.8vw, 0.78rem);
+  font-weight: 600;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+  transition: background 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s, box-shadow 0.2s;
+}
+.pyramid-brick--found {
+  color: var(--success);
+  background: rgba(64,145,108,0.12);
+  border-color: rgba(64,145,108,0.3);
+  opacity: 0.75;
+}
+.pyramid-brick--current {
+  color: #fff;
+  background: var(--volcan);
+  border-color: var(--volcan);
+  box-shadow: 0 0 10px rgba(232,93,4,0.45);
+}
+.pyramid-brick--upcoming {
+  opacity: 0.4;
+}
+
 /* ─── Game-over screen ────────────────────────────────────────────────────── */
 .result-row {
   display: flex; align-items: center; gap: 12px;
