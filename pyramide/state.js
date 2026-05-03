@@ -8,7 +8,9 @@ export const TEAMS_META = [
 ];
 
 export const GAMEPLAY_SCREENS = new Set([
+  'screen-pre-round',
   'screen-turn',
+  'screen-turn-end',
   'screen-bidding',
   'screen-timer',
   'screen-final',
