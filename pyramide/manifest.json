@@ -4,7 +4,7 @@
   "description": "Jeu de devinettes en équipe — 4 manches, description libre, un mot, expressions, pyramide !",
   "start_url": "./",
   "display": "fullscreen",
-  "orientation": "any",
+  "orientation": "portrait",
   "background_color": "#0b1e2d",
   "theme_color": "#0b1e2d",
   "icons": [
