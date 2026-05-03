@@ -1,3 +1,9 @@
+## [1.176.0](https://github.com/niafrond/niafrond.github.io/compare/v1.175.0...v1.176.0) (2026-05-03)
+
+### Features
+
+* Add Pyramide TV game implementation ([9eebbfb](https://github.com/niafrond/niafrond.github.io/commit/9eebbfbbd0580aaec1ddd2a98c077fb7e80975f4))
+
 ## [1.175.0](https://github.com/niafrond/niafrond.github.io/compare/v1.174.0...v1.175.0) (2026-05-03)
 
 ### Features
