@@ -78,6 +78,7 @@
         <button class="mode-btn" data-mode="nomspropres">🏷️<br><span>Noms propres</span></button>
         <button class="mode-btn" data-mode="grandepyramide">🏆<br><span>Grande Pyramide</span></button>
         <button class="mode-btn" data-mode="libre">🔺<br><span>Mode libre</span></button>
+        <button class="mode-btn" data-mode="officielle">🏛️<br><span>Mode officiel</span></button>
       </div>
       <p class="mode-desc" id="mode-desc"></p>
       <div class="options-row mt-8" id="np-names-row" hidden>
@@ -214,6 +215,13 @@
 
     <!-- Bouton temps bonus (Mode Grande Pyramide) -->
     <button id="btn-extra-time" class="btn btn-secondary w-full" style="margin:0 16px 0;width:calc(100% - 32px)" hidden>⏰ +10 secondes</button>
+
+    <!-- Saisie de l'indice (Mode officiel uniquement) -->
+    <div id="v2-clue-area" class="v2-clue-area" hidden>
+      <input id="v2-clue-input" class="v2-clue-input" type="text"
+             placeholder="Tapez votre indice avant de parler…" maxlength="80"
+             autocomplete="off" autocorrect="off" autocapitalize="off">
+    </div>
 
     <!-- Boutons d'action -->
     <div class="turn-actions">
@@ -378,6 +386,100 @@
 
   </div>
 </div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 11 — VOTE (Mode officiel — arbitrage des juges)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-vote" data-screen="screen-vote" hidden>
+  <div class="page-wrapper">
+
+    <div id="vote-round-badge" class="vote-round-badge"></div>
+
+    <!-- Mot + indice soumis -->
+    <div class="card" style="text-align:center;margin-top:12px">
+      <div style="font-size:0.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Mot à deviner</div>
+      <div id="vote-word-text" style="font-size:1.6rem;font-weight:800;color:var(--gold)"></div>
+      <div id="vote-clue-row" style="margin-top:8px;font-size:0.9rem;color:var(--text-muted)" hidden>
+        Indice : <strong id="vote-clue-text" style="color:var(--text)"></strong>
+      </div>
+    </div>
+
+    <!-- Rappel de règle -->
+    <div id="vote-rule-box" class="vote-rule-box"></div>
+
+    <!-- Panneau de vote par juge (séquentiel / anonyme) -->
+    <div id="vote-judge-panel" class="card" style="margin-top:12px">
+      <div id="vote-judge-title" class="card-title"></div>
+      <p style="text-align:center;font-size:0.82rem;color:var(--text-muted);margin-bottom:14px">
+        L'indice respectait-il la règle de cette manche ?
+      </p>
+      <div class="vote-actions">
+        <button id="btn-vote-valid"    class="btn-vote btn-vote-valid">✅<span>Valide</span></button>
+        <button id="btn-vote-invalid"  class="btn-vote btn-vote-invalid">❌<span>Invalide</span></button>
+        <button id="btn-vote-doubtful" class="btn-vote btn-vote-doubtful">⚠️<span>Douteux</span></button>
+      </div>
+    </div>
+
+    <!-- Résultat (affiché après tous les votes) -->
+    <div id="vote-results" class="card" style="margin-top:12px" hidden>
+      <div class="card-title">🗳️ Résultat du vote</div>
+      <div id="vote-tally" class="vote-tally"></div>
+      <div id="vote-verdict" class="vote-verdict"></div>
+      <button id="btn-vote-continue" class="btn btn-primary w-full" style="margin-top:14px">
+        Continuer ▶️
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 12 — CORRECTION (Mode officiel — révision des indices douteux)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-correction" data-screen="screen-correction" hidden>
+  <div class="page-wrapper">
+
+    <div class="pre-round-hero" style="margin-bottom:0">
+      <div class="pre-round-icon">🔍</div>
+      <h2 class="pre-round-title" style="font-size:1.6rem">Phase de correction</h2>
+    </div>
+    <div id="correction-progress" style="text-align:center;color:var(--text-muted);font-size:0.85rem;margin-bottom:12px"></div>
+
+    <!-- Indice en révision -->
+    <div class="card" style="text-align:center">
+      <div style="font-size:0.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Mot à deviner</div>
+      <div id="correction-word" style="font-size:1.4rem;font-weight:800;color:var(--gold)"></div>
+      <div id="correction-clue-row" style="margin-top:6px;font-size:0.9rem;color:var(--text-muted)" hidden>
+        Indice : <strong id="correction-clue-text" style="color:var(--text)"></strong>
+      </div>
+      <div id="correction-initial-votes" style="margin-top:10px;font-size:0.82rem;color:var(--text-muted)"></div>
+    </div>
+
+    <!-- Re-vote par juge -->
+    <div id="correction-vote-panel" class="card" style="margin-top:12px">
+      <div id="correction-judge-title" class="card-title"></div>
+      <p style="text-align:center;font-size:0.82rem;color:var(--text-muted);margin-bottom:14px">
+        Après discussion, cet indice était-il valide ?
+      </p>
+      <div class="vote-actions vote-actions--two">
+        <button id="btn-corr-valid"   class="btn-vote btn-vote-valid">✅<span>Valide</span></button>
+        <button id="btn-corr-invalid" class="btn-vote btn-vote-invalid">❌<span>Invalide</span></button>
+      </div>
+    </div>
+
+    <!-- Résultat de la correction -->
+    <div id="correction-result-panel" class="card" style="margin-top:12px" hidden>
+      <div id="correction-result-text" style="text-align:center;font-size:1.05rem;line-height:1.6"></div>
+      <button id="btn-correction-next" class="btn btn-primary w-full" style="margin-top:14px">
+        Suivant ▶️
+      </button>
+    </div>
+
+  </div>
+</div>
+
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      ÉCRAN 8 — PRÉ-MANCHE (règles avant chaque manche)

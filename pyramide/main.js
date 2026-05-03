@@ -119,7 +119,53 @@ const GAME_MODES = {
     wordCount: 15,
     showPyramid: true,
   },
+  officielle: {
+    label: '🏛️ Mode officiel',
+    desc: '5 manches progressives avec arbitrage des joueurs : indices libres, un seul mot, expression, pyramide, finale. Minimum 4 joueurs.',
+    wordCount: 8,
+    showPyramid: false,
+  },
 };
+
+// ─── Configuration des manches Mode officiel (V2) ──────────────────────────────
+const V2_ROUNDS = [
+  {
+    id: 1, type: 'free_clue', emoji: '💬', label: 'Indices libres',
+    words: 8, time: 45,
+    rule: '<strong>Tout est permis</strong> : phrases, gestes, mimiques…',
+    desc: '8 mots, 45 secondes. Tous les types d\'indices sont autorisés.',
+    ruleShort: 'Tout est permis : phrases, gestes, mimiques…',
+  },
+  {
+    id: 2, type: 'one_word', emoji: '1️⃣', label: 'Un seul mot',
+    words: 8, time: 45,
+    rule: '<strong>Un seul mot</strong> par indice. Phrases et gestes interdits.',
+    desc: '8 mots, 45 secondes. Chaque indice = exactement un seul mot.',
+    ruleShort: 'Un seul mot par indice. Phrases interdites.',
+  },
+  {
+    id: 3, type: 'expression', emoji: '💡', label: 'En expression',
+    words: 4, time: 60,
+    rule: 'Indice = <strong>une expression consacrée</strong> (ex : « avoir le cafard »). Pas d\'autres mots.',
+    desc: '4 mots, 60 secondes. Chaque indice = une expression figée de la langue.',
+    ruleShort: 'Indice = une expression figée uniquement.',
+  },
+  {
+    id: 4, type: 'pyramid', emoji: '🔺', label: 'La Pyramide',
+    words: 6, time: 60,
+    rule: '<strong>Un mot par brique</strong>. Un seul indice à la fois, mot à mot.',
+    desc: '6 mots, 60 secondes. Style pyramide TV : un mot par indice, une brique à la fois.',
+    ruleShort: 'Un mot par brique. Un seul indice à la fois.',
+  },
+  {
+    id: 5, type: 'final', emoji: '🏆', label: 'La Finale',
+    words: 6, time: 60,
+    rule: '<strong>Phrases complètes</strong> et mimiques autorisées. Un mot par brique.',
+    desc: '6 mots, 60 secondes. Manche finale : tout est permis !',
+    ruleShort: 'Phrases et mimiques OK. Un indice par brique.',
+    optional: true,
+  },
+];
 
 // ─── État global ────────────────────────────────────────────────────────────────
 const state = {
@@ -168,6 +214,28 @@ const state = {
   // ── Mode Grande Pyramide ─────────────────────────────────────────────────
   gpExtraTimeUsed: false,
   gpFinalistName: '',
+
+  // ── Mode officiel (V2) ──────────────────────────────────────────────────
+  v2RoundIdx: 0,          // index courant dans V2_ROUNDS
+  v2CurrentRound: null,   // V2_ROUNDS[v2RoundIdx]
+  v2PausedTimeLeft: 0,    // timer mis en pause pendant le vote
+  v2UsedWords: null,      // Set des mots déjà utilisés (évite les répétitions)
+
+  // État du vote en cours
+  v2VoteWord: '',
+  v2VoteClue: '',
+  v2VoteWordIdx: -1,
+  v2VoteTeamIdx: -1,
+  v2VoteJudges: [],       // noms des juges (joueurs non actifs)
+  v2VoteIdx: 0,           // juge courant
+  v2Votes: [],            // [{judge, vote}]
+  v2FlaggedClues: [],     // [{word, clue, votes, teamIdx, wordIdx, pendingPts}]
+
+  // État de la phase de correction
+  v2CorrectionIdx: 0,
+  v2CorrectionJudges: [],
+  v2CorrectionJudgeIdx: 0,
+  v2CorrectionVotes: [],
 };
 
 // ─── Utilitaires ────────────────────────────────────────────────────────────────
@@ -195,11 +263,12 @@ function showToast(msg) {
 const GAME_SCREENS = new Set([
   'screen-teams', 'screen-pre-round',
   'screen-pre-turn', 'screen-turn', 'screen-turn-end', 'screen-game-over', 'screen-bid',
+  'screen-vote', 'screen-correction',
 ]);
 
-// Écrans de jeu où le bouton ✕ est visible (exclut les transitions et l'écran final)
 const SHOW_CLOSE_BTN_SCREENS = new Set([
   'screen-pre-turn', 'screen-turn', 'screen-turn-end', 'screen-bid',
+  'screen-vote', 'screen-correction',
 ]);
 
 // ─── Ordre des manches (enchainement automatique) ───────────────────────────────
@@ -257,6 +326,19 @@ const PRE_ROUND_CONTENT = {
       'Montez niveau par niveau pour marquer plus de points',
       'Points : +1 pt (bas) jusqu\'à +5 pts (sommet)',
       'Pas de synonymes, traductions ni épelage',
+    ],
+  },
+  officielle: {
+    icon: '🏛️',
+    title: 'Mode officiel',
+    rules: [
+      '5 manches progressives : indices libres → un mot → expression → pyramide → finale',
+      'Après chaque mot trouvé, les juges (équipe adverse) votent sur la validité de l\'indice',
+      'Vote VALIDE ✅ : le point est confirmé',
+      'Vote DOUTEUX ⚠️ : point en attente — revu en phase de correction',
+      'Vote INVALIDE ❌ : point annulé (et pénalité optionnelle)',
+      'Phase de correction en fin de chaque tour pour réviser les indices douteux',
+      'Minimum 4 joueurs — 2 équipes de 2',
     ],
   },
 };
@@ -429,6 +511,39 @@ function renderScoreboard() {
 // ─── Pré-manche : affiche les règles avant chaque manche ───────────────────────
 function showPreRound() {
   const mode    = state.gameMode;
+
+  // Mode officiel : afficher les règles de la sous-manche courante
+  if (mode === 'officielle' && state.v2CurrentRound) {
+    const round = state.v2CurrentRound;
+    el('pre-round-icon').textContent  = round.emoji;
+    el('pre-round-title').textContent = `Manche ${round.id} — ${round.label}`;
+
+    const ul = el('pre-round-rules');
+    ul.innerHTML = '';
+    const rules = [
+      round.desc,
+      `Règle : ${round.ruleShort}`,
+      'Après chaque mot trouvé, les juges (équipe adverse) votent sur l\'indice',
+      'Indice INVALIDE : point annulé | DOUTEUX : point en attente (correction après le tour)',
+    ];
+    rules.forEach(text => {
+      const li = document.createElement('li');
+      li.textContent = text;
+      ul.appendChild(li);
+    });
+
+    const numEl = el('pre-round-manche-num');
+    if (numEl) {
+      numEl.textContent = `Sous-manche ${round.id} / ${V2_ROUNDS.length}`;
+      numEl.hidden = false;
+    }
+    const backBtn = el('btn-pre-round-back');
+    if (backBtn) backBtn.textContent = '← Retour au menu';
+
+    _applyScreen('screen-pre-round');
+    return;
+  }
+
   const content = PRE_ROUND_CONTENT[mode] || { icon: '🔺', title: mode, rules: [] };
 
   el('pre-round-icon').textContent  = content.icon;
@@ -713,6 +828,14 @@ function renderPlayerList() {
   const hints = [];
   if (count < MIN_PLAYERS) hints.push(`Minimum ${MIN_PLAYERS} joueurs requis`);
 
+  if (!state.playingAll && state.gameMode === 'officielle') {
+    const needed = 4;
+    if (count < needed) {
+      canStart = false;
+      if (!hints.length) hints.push(`Minimum ${needed} joueurs pour ce mode`);
+    }
+  }
+
   if (!state.playingAll && state.gameMode === 'grandepyramide') {
     const finalist = el('select-finalist')?.value;
     if (!finalist) {
@@ -870,6 +993,20 @@ function goToTeams() {
     state.teams[1].score = 0;
     state.teams[1].describerIdx = 0;
     state.gpExtraTimeUsed = false;
+
+  } else if (mode === 'officielle') {
+    // Initialise le mode officiel : démarre à la manche 1
+    state.v2RoundIdx = 0;
+    state.v2UsedWords = new Set();
+    state.v2FlaggedClues = [];
+    state.teams.forEach((t) => {
+      t.words = [];
+      t.found = [];
+      t.score = 0;
+      t.pendingPts = 0;
+      t.describerIdx = 0;
+    });
+    initV2Round();
   }
 
   renderTeams();
@@ -891,6 +1028,7 @@ function _updateTeamsModeInfo(mode) {
     nomspropres:    `🏷️ <strong style="color:var(--text)">${npCount} noms propres</strong> liés par un thème commun — enchères par briques`,
     grandepyramide: `🏆 Le finaliste doit deviner <strong style="color:var(--text)">${GAME_MODES.grandepyramide.wordCount} mots</strong> en <strong style="color:var(--text)">1 minute</strong><br>Phrases complètes et mimiques autorisées ✅`,
     libre:          `🔺 La pyramide a <strong style="color:var(--text)">5 niveaux</strong> et <strong style="color:var(--text)">15 mots</strong>.<br>Chaque équipe gravit sa propre pyramide.<br>Points : +1 pt (bas) → +5 pts (sommet) 🏆`,
+    officielle:     `🏛️ <strong style="color:var(--text)">5 manches</strong> avec arbitrage des joueurs.<br>Les juges (équipe adverse) votent sur chaque indice. 🗳️`,
   };
   modeInfoEl.innerHTML = MODE_INFO[mode] || MODE_INFO.libre;
 }
@@ -919,6 +1057,18 @@ function startPreTurn() {
       `<strong style="color:var(--gold)">${state.npTheme}</strong><br>` +
       `<span style="font-size:0.82rem;color:var(--text-muted)">${state.npNames.length} noms propres à deviner par enchères</span>`;
     el('pre-turn-turn-info').textContent = `Tour ${state.turnsDone[state.currentTeamIdx] + 1} / ${state.turnsPerTeam}`;
+  } else if (mode === 'officielle') {
+    const round = state.v2CurrentRound;
+    el('pre-turn-header').textContent = `${round.emoji} Manche ${round.id} — ${round.label}`;
+    const guessers = team.players.filter(p => p !== describer);
+    const guesserLabel = guessers.length ? guessers.join(' & ') : 'son/sa coéquipier(e)';
+    const judges = _getV2Judges();
+    const judgeLabel = judges.join(' & ');
+    el('pre-turn-describe').innerHTML =
+      `<strong>${describer}</strong> donne les indices<br>` +
+      `<span style="font-size:0.9rem">Devine : <strong>${guesserLabel}</strong></span><br>` +
+      `<span style="font-size:0.82rem;color:var(--text-muted)">Juges : <strong style="color:var(--text)">${judgeLabel}</strong></span>`;
+    el('pre-turn-turn-info').textContent = `${round.words} mots — ${round.time}s`;
   } else {
     el('pre-turn-header').textContent = `${team.name} 🔺`;
 
@@ -943,6 +1093,7 @@ function startPreTurn() {
     nomspropres:    '🏷️ Devinez les noms propres en un minimum de briques.',
     grandepyramide: '🏆 Phrases complètes et mimiques autorisées ✅',
     libre:          '🔺 Décrivez le mot sans le dire, l\'épeler, ni le traduire.',
+    officielle:     state.v2CurrentRound ? `🏛️ Règle : ${state.v2CurrentRound.ruleShort}` : '',
   };
   const modeRuleEl = el('pre-turn-mode-rule');
   if (modeRuleEl) modeRuleEl.textContent = MODE_RULE_HINT[mode] || '';
@@ -956,6 +1107,9 @@ function startPreTurn() {
       rowLabel = row < PYRAMID_ROWS.length ? `Niveau ${row + 1} / 5` : '🏆 Complète !';
     } else if (mode === 'grandepyramide') {
       rowLabel = i === 0 ? 'Finaliste' : 'Maître-mots';
+    } else if (mode === 'officielle') {
+      const pending = t.pendingPts || 0;
+      rowLabel = pending > 0 ? `+${pending} en attente` : `${t.score} pt${t.score !== 1 ? 's' : ''}`;
     } else {
       rowLabel = `${t.score} pt${t.score > 1 ? 's' : ''}`;
     }
@@ -1030,6 +1184,12 @@ function startTurn() {
     state.timeLeft  = 60;
     state.bricksLimit = 0;
     state.gpExtraTimeUsed = false;
+  } else if (mode === 'officielle') {
+    const round = state.v2CurrentRound;
+    const remaining = team.found.map((f, i) => f ? -1 : i).filter(i => i >= 0);
+    state.turnQueue = remaining;
+    state.timeLeft  = round.time;
+    state.bricksLimit = 0;
   }
 
   // Shared UI setup
@@ -1052,6 +1212,16 @@ function startTurn() {
   el('btn-extra-time').hidden = (mode !== 'grandepyramide');
   const timerContainer = el('timer-container');
   if (timerContainer) timerContainer.hidden = (mode === 'nomspropres');
+
+  // Clue input for officielle mode
+  const clueArea = el('v2-clue-area');
+  if (clueArea) {
+    clueArea.hidden = (mode !== 'officielle');
+    if (mode === 'officielle') {
+      const inp = el('v2-clue-input');
+      if (inp) inp.value = '';
+    }
+  }
 
   // Skip button label
   const skipLabel = el('btn-skip-label');
@@ -1138,9 +1308,9 @@ function showCurrentWord() {
       prog.hidden = false;
     }
   } else {
-    // Mini-pyramide pour enigmes / contrelamontre / grandepyramide
+    // Mini-pyramide pour enigmes / contrelamontre / grandepyramide / officielle
     const found = mode === 'grandepyramide' ? state.teams[0].found : team.found;
-    el('turn-pyramid').innerHTML = buildMiniPyramidHTML(found, wordIdx);
+    el('turn-pyramid').innerHTML = found.length > 0 ? buildMiniPyramidHTML(found, wordIdx) : '';
   }
 }
 
@@ -1165,6 +1335,16 @@ function wordFound() {
     state.turnFoundThisTurn.push({ word, idx: state.npNamePos });
     stopTimer();
     endTurn('found');
+    return;
+  }
+
+  // ── Mode officiel : pause timer + écran de vote ──────────────────────────
+  if (mode === 'officielle') {
+    const clue = (el('v2-clue-input')?.value || '').trim();
+    el('v2-clue-input') && (el('v2-clue-input').value = '');
+    stopTimer();
+    state.v2PausedTimeLeft = state.timeLeft;
+    startVoteScreen(word, clue, idx, state.currentTeamIdx);
     return;
   }
 
@@ -1422,6 +1602,7 @@ function updateTimerDisplay() {
   if (mode === 'enigmes') total = 10;
   else if (mode === 'contrelamontre') total = 30;
   else if (mode === 'grandepyramide') total = state.gpExtraTimeUsed ? 70 : 60;
+  else if (mode === 'officielle') total = state.v2CurrentRound ? state.v2CurrentRound.time : 60;
   else total = state.turnDuration;
 
   const fraction = Math.min(1, Math.max(0, t / total));
@@ -1513,6 +1694,19 @@ function endTurn(reason) {
   const team = state.teams[state.currentTeamIdx];
   state.turnsDone[state.currentTeamIdx]++;
   team.describerIdx++;
+
+  // ── Mode officiel : phase de correction avant d'afficher fin de tour ─────
+  if (mode === 'officielle') {
+    const flagged = state.v2FlaggedClues.filter(f => f.teamIdx === state.currentTeamIdx && !f.reviewed);
+    if (flagged.length > 0) {
+      // Sauvegarde la raison pour l'afficher après correction
+      state._v2EndReason = reason;
+      startCorrectionPhase();
+      return;
+    }
+    _showV2TurnEnd(reason);
+    return;
+  }
 
   const turnEnd = el('turn-end-wrapper');
   turnEnd.style.setProperty('--team-color', `var(${team.colorVar})`);
@@ -1616,6 +1810,32 @@ function nextTurnOrGameOver() {
     }
     // More names: start bid for next name
     state.currentTeamIdx = state.npBidderTeam;
+    startPreTurn();
+    return;
+  }
+
+  // Mode officiel: advance sub-rounds when both teams have played
+  if (mode === 'officielle') {
+    const allDone = state.turnsDone.every(d => d >= 1);
+    if (allDone) {
+      // Both teams played this sub-round
+      const nextRoundIdx = state.v2RoundIdx + 1;
+      if (nextRoundIdx >= V2_ROUNDS.length) {
+        showGameOver();
+        return;
+      }
+      // Advance to next sub-round
+      state.v2RoundIdx = nextRoundIdx;
+      state.turnsDone = [0, 0];
+      state.currentTeamIdx = 0;
+      state.v2FlaggedClues = [];
+      initV2Round();
+      showPreRound();
+      return;
+    }
+    // Find the team that hasn't played yet
+    let next = (state.currentTeamIdx + 1) % state.teams.length;
+    state.currentTeamIdx = next;
     startPreTurn();
     return;
   }
@@ -1728,6 +1948,431 @@ function showGameOver(gpResult) {
   showScreen('screen-game-over');
 }
 
+// ─── MODE OFFICIEL (V2) — FONCTIONS ────────────────────────────────────────────
+
+/** Retourne les noms des joueurs juges pour le tour en cours (équipe adverse). */
+function _getV2Judges() {
+  if (!state.teams) return [];
+  const otherTeam = state.teams[1 - state.currentTeamIdx];
+  return otherTeam ? [...otherTeam.players] : [];
+}
+
+/** Initialise les mots pour la manche V2 courante (pour l'équipe active). */
+function initV2Round() {
+  const round = V2_ROUNDS[state.v2RoundIdx];
+  state.v2CurrentRound = round;
+
+  // Chaque équipe obtient ses propres mots (différents des mots déjà joués)
+  state.teams.forEach((t) => {
+    const words = getGameWords(state.v2UsedWords, state.kidsMode).slice(0, round.words);
+    words.forEach(w => state.v2UsedWords.add(w.word));
+    t.words = words;
+    t.found = new Array(words.length).fill(false);
+    t.pendingPts = t.pendingPts || 0;
+    t.score = t.score || 0;
+    t.describerIdx = t.describerIdx || 0;
+  });
+}
+
+/** Affiche l'écran de vote pour un indice donné. */
+function startVoteScreen(word, clue, wordIdx, teamIdx) {
+  state.v2VoteWord    = word;
+  state.v2VoteClue    = clue;
+  state.v2VoteWordIdx = wordIdx;
+  state.v2VoteTeamIdx = teamIdx;
+  state.v2VoteJudges  = _getV2Judges();
+  state.v2VoteIdx     = 0;
+  state.v2Votes       = [];
+
+  const round = state.v2CurrentRound;
+
+  // Round badge
+  el('vote-round-badge').textContent = `${round.emoji} Manche ${round.id} — ${round.label}`;
+
+  // Word display
+  el('vote-word-text').textContent = word;
+
+  // Clue display
+  const clueRow = el('vote-clue-row');
+  const clueTextEl = el('vote-clue-text');
+  if (clue) {
+    clueTextEl.textContent = clue;
+    clueRow.hidden = false;
+  } else {
+    clueRow.hidden = true;
+  }
+
+  // Rule reminder
+  el('vote-rule-box').innerHTML = `📖 Règle : ${round.rule}`;
+
+  // Reset results panel
+  el('vote-results').hidden = true;
+  el('vote-judge-panel').hidden = false;
+
+  _renderV2JudgeVotePanel();
+  showScreen('screen-vote');
+}
+
+/** Affiche le panneau de vote pour le juge courant. */
+function _renderV2JudgeVotePanel() {
+  if (state.v2VoteJudges.length === 0) {
+    // Pas de juges (pas assez de joueurs) → auto-accept
+    _tallyV2Votes();
+    return;
+  }
+  const judge = state.v2VoteJudges[state.v2VoteIdx];
+  el('vote-judge-title').textContent = `🧑 ${judge} — vote`;
+
+  // Enable all buttons
+  [el('btn-vote-valid'), el('btn-vote-invalid'), el('btn-vote-doubtful')].forEach(b => {
+    if (b) b.disabled = false;
+  });
+}
+
+/** Enregistre le vote d'un juge. */
+function castV2Vote(type) {
+  if (state.v2VoteIdx >= state.v2VoteJudges.length) return;
+  const judge = state.v2VoteJudges[state.v2VoteIdx];
+  state.v2Votes.push({ judge, vote: type });
+
+  // Disable buttons briefly to prevent double-tap
+  [el('btn-vote-valid'), el('btn-vote-invalid'), el('btn-vote-doubtful')].forEach(b => {
+    if (b) b.disabled = true;
+  });
+
+  state.v2VoteIdx++;
+  if (state.v2VoteIdx < state.v2VoteJudges.length) {
+    _renderV2JudgeVotePanel();
+  } else {
+    _tallyV2Votes();
+  }
+}
+
+/** Calcule le résultat et affiche le verdict. */
+function _tallyV2Votes() {
+  const votes = state.v2Votes;
+  const valid    = votes.filter(v => v.vote === 'valid').length;
+  const invalid  = votes.filter(v => v.vote === 'invalid').length;
+  const doubtful = votes.filter(v => v.vote === 'doubtful').length;
+  const total    = votes.length;
+
+  let status;
+  if (total === 0) {
+    status = 'accepted';  // auto-accept si pas de juges
+  } else if (invalid > total / 2) {
+    status = 'rejected';
+  } else if (valid > total / 2) {
+    status = 'accepted';
+  } else {
+    // majorité doubtful ou égalité
+    status = 'accepted_with_flag';
+  }
+
+  // Tally display
+  const tallyEl = el('vote-tally');
+  tallyEl.innerHTML = '';
+  const items = [
+    { label: '✅ Valide', count: valid, cls: '' },
+    { label: '❌ Invalide', count: invalid, cls: '' },
+    { label: '⚠️ Douteux', count: doubtful, cls: '' },
+  ];
+  items.forEach(({ label, count }) => {
+    const div = document.createElement('div');
+    div.className = 'vote-tally-item';
+    div.textContent = `${label} : ${count}`;
+    tallyEl.appendChild(div);
+  });
+
+  // Verdict display
+  const verdictEl = el('vote-verdict');
+  if (status === 'accepted') {
+    verdictEl.textContent = '✅ Indice valide — point confirmé !';
+    verdictEl.className = 'vote-verdict vote-verdict--accepted';
+  } else if (status === 'accepted_with_flag') {
+    verdictEl.textContent = '⚠️ Indice douteux — point en attente (révision en fin de tour)';
+    verdictEl.className = 'vote-verdict vote-verdict--flagged';
+  } else {
+    verdictEl.textContent = '❌ Indice invalide — point annulé !';
+    verdictEl.className = 'vote-verdict vote-verdict--rejected';
+  }
+
+  el('vote-judge-panel').hidden = true;
+  el('vote-results').hidden = false;
+
+  // Apply result immediately
+  _applyVoteResult(status, state.v2VoteWord, state.v2VoteWordIdx, state.v2VoteTeamIdx, state.v2VoteClue, votes);
+}
+
+/** Applique le résultat du vote sur l'état du jeu. */
+function _applyVoteResult(status, word, wordIdx, teamIdx, clue, votes) {
+  const team = state.teams[teamIdx];
+
+  if (status === 'accepted') {
+    // Point confirmé immédiatement
+    team.found[wordIdx] = true;
+    team.score++;
+    state.turnFoundThisTurn.push({ word, idx: wordIdx });
+  } else if (status === 'accepted_with_flag') {
+    // Point en attente — sera confirmé ou annulé en correction
+    team.found[wordIdx] = true;
+    team.pendingPts = (team.pendingPts || 0) + 1;
+    state.turnFoundThisTurn.push({ word, idx: wordIdx });
+    state.v2FlaggedClues.push({
+      word,
+      clue,
+      votes,
+      teamIdx,
+      wordIdx,
+      pendingPts: 1,
+      reviewed: false,
+    });
+  } else {
+    // Indice rejeté — mot non trouvé, reste dans la queue
+    team.found[wordIdx] = false;
+    // Retire le mot de turnFoundThisTurn si déjà ajouté
+    state.turnFoundThisTurn = state.turnFoundThisTurn.filter(f => f.idx !== wordIdx);
+  }
+}
+
+/** Reprend le tour après un vote (bouton "Continuer"). */
+function continueAfterVote() {
+  const team = state.teams[state.currentTeamIdx];
+  const round = state.v2CurrentRound;
+
+  // Efface l'input
+  const inp = el('v2-clue-input');
+  if (inp) inp.value = '';
+
+  // Si le vote a REJETÉ l'indice, le mot reste dans la queue (ne pas le retirer)
+  const lastVote = state.v2Votes;
+  const invalid  = lastVote.filter(v => v.vote === 'invalid').length;
+  const total    = lastVote.length;
+  const wasRejected = total > 0 && invalid > total / 2;
+
+  if (!wasRejected) {
+    // Mot trouvé (confirmé ou en attente) — retirer de la queue
+    const pos = state.turnQueuePos % state.turnQueue.length;
+    state.turnQueue.splice(pos, 1);
+    if (state.turnQueuePos >= state.turnQueue.length) state.turnQueuePos = 0;
+  }
+
+  // Vérifier si tous les mots sont faits
+  if (state.turnQueue.length === 0) {
+    // Pas de relance du timer — fin de tour
+    endTurn('allFound');
+    return;
+  }
+
+  // Remettre le timer en marche
+  state.timeLeft = state.v2PausedTimeLeft;
+  updateTimerDisplay();
+
+  // Effacer le clue input
+  showScreen('screen-turn');
+  startTimer();
+}
+
+// ─── PHASE DE CORRECTION (V2) ──────────────────────────────────────────────────
+
+/** Démarre la phase de correction pour les indices douteux du tour courant. */
+function startCorrectionPhase() {
+  const flagged = state.v2FlaggedClues.filter(
+    f => f.teamIdx === state.currentTeamIdx && !f.reviewed,
+  );
+
+  if (flagged.length === 0) {
+    _showV2TurnEnd(state._v2EndReason || 'timeout');
+    return;
+  }
+
+  state.v2CorrectionIdx    = 0;
+  state.v2CorrectionJudges = _getV2Judges();
+  _renderCorrectionCard();
+}
+
+/** Affiche la carte de correction pour l'indice courant. */
+function _renderCorrectionCard() {
+  const flagged = state.v2FlaggedClues.filter(
+    f => f.teamIdx === state.currentTeamIdx && !f.reviewed,
+  );
+  if (state.v2CorrectionIdx >= flagged.length) {
+    // Tous les indices douteux ont été révisés
+    _showV2TurnEnd(state._v2EndReason || 'timeout');
+    return;
+  }
+
+  const item = flagged[state.v2CorrectionIdx];
+
+  // Progress
+  el('correction-progress').textContent =
+    `Révision ${state.v2CorrectionIdx + 1} / ${flagged.length}`;
+
+  // Word + clue
+  el('correction-word').textContent = item.word;
+  const clueRow = el('correction-clue-row');
+  const clueEl  = el('correction-clue-text');
+  if (item.clue) {
+    clueEl.textContent = item.clue;
+    clueRow.hidden = false;
+  } else {
+    clueRow.hidden = true;
+  }
+
+  // Initial votes
+  const iv = item.votes || [];
+  const v  = iv.filter(x => x.vote === 'valid').length;
+  const in_ = iv.filter(x => x.vote === 'invalid').length;
+  const d  = iv.filter(x => x.vote === 'doubtful').length;
+  el('correction-initial-votes').textContent =
+    `Votes initiaux — ✅ ${v}  ❌ ${in_}  ⚠️ ${d}`;
+
+  // Reset revote panel
+  state.v2CorrectionVotes = [];
+  state.v2CorrectionJudgeIdx = 0;
+  el('correction-result-panel').hidden = true;
+  el('correction-vote-panel').hidden = false;
+
+  _renderCorrectionJudgePanel();
+  showScreen('screen-correction');
+}
+
+/** Affiche le panneau de re-vote pour le juge courant. */
+function _renderCorrectionJudgePanel() {
+  if (state.v2CorrectionJudges.length === 0) {
+    _applyCorrectionResult();
+    return;
+  }
+  const judge = state.v2CorrectionJudges[state.v2CorrectionJudgeIdx];
+  el('correction-judge-title').textContent = `🧑 ${judge} — vote`;
+  [el('btn-corr-valid'), el('btn-corr-invalid')].forEach(b => {
+    if (b) b.disabled = false;
+  });
+}
+
+/** Enregistre un vote de correction. */
+function castCorrectionVote(isValid) {
+  if (state.v2CorrectionJudgeIdx >= state.v2CorrectionJudges.length) return;
+  const judge = state.v2CorrectionJudges[state.v2CorrectionJudgeIdx];
+  state.v2CorrectionVotes.push({ judge, valid: isValid });
+
+  [el('btn-corr-valid'), el('btn-corr-invalid')].forEach(b => {
+    if (b) b.disabled = true;
+  });
+
+  state.v2CorrectionJudgeIdx++;
+  if (state.v2CorrectionJudgeIdx < state.v2CorrectionJudges.length) {
+    _renderCorrectionJudgePanel();
+  } else {
+    _applyCorrectionResult();
+  }
+}
+
+/** Applique le résultat de la correction sur le score. */
+function _applyCorrectionResult() {
+  const flagged = state.v2FlaggedClues.filter(
+    f => f.teamIdx === state.currentTeamIdx && !f.reviewed,
+  );
+  const item   = flagged[state.v2CorrectionIdx];
+  const votes  = state.v2CorrectionVotes;
+  const total  = votes.length;
+  const validV = votes.filter(v => v.valid).length;
+
+  let confirmed;
+  if (total === 0) {
+    confirmed = true;  // pas de juges → confirmer
+  } else if (validV > total / 2) {
+    confirmed = true;
+  } else if (validV < total / 2) {
+    confirmed = false;
+  } else {
+    // Égalité → garder la décision initiale (accepté_with_flag = confirmer)
+    confirmed = true;
+  }
+
+  const team = state.teams[item.teamIdx];
+  item.reviewed = true;
+
+  if (confirmed) {
+    // Convertir le point pending en point confirmé
+    team.score++;
+    team.pendingPts = Math.max(0, (team.pendingPts || 0) - 1);
+    el('correction-result-text').innerHTML =
+      `✅ Indice <strong>validé</strong> — point confirmé pour <strong>${team.name}</strong> !`;
+  } else {
+    // Annuler le point pending
+    team.found[item.wordIdx] = false;
+    team.pendingPts = Math.max(0, (team.pendingPts || 0) - 1);
+    el('correction-result-text').innerHTML =
+      `❌ Indice <strong>invalidé</strong> — point retiré pour <strong>${team.name}</strong>.`;
+  }
+
+  el('correction-vote-panel').hidden = true;
+  el('correction-result-panel').hidden = false;
+}
+
+/** Passe à l'indice suivant ou termine la correction. */
+function advanceCorrectionCard() {
+  state.v2CorrectionIdx++;
+  const flagged = state.v2FlaggedClues.filter(
+    f => f.teamIdx === state.currentTeamIdx && !f.reviewed,
+  );
+  if (state.v2CorrectionIdx >= flagged.length) {
+    _showV2TurnEnd(state._v2EndReason || 'timeout');
+  } else {
+    _renderCorrectionCard();
+  }
+}
+
+/** Affiche l'écran fin-de-tour pour le mode officiel. */
+function _showV2TurnEnd(reason) {
+  const team = state.teams[state.currentTeamIdx];
+  const round = state.v2CurrentRound;
+
+  const turnEnd = el('turn-end-wrapper');
+  turnEnd.style.setProperty('--team-color', `var(${team.colorVar})`);
+
+  let title = 'Temps écoulé ⏰';
+  if (reason === 'allFound') title = '🎉 Tous les mots trouvés !';
+  el('turn-end-title').textContent = title;
+  el('turn-end-team').textContent = `${round.emoji} Manche ${round.id} — ${team.name}`;
+
+  const foundCount = team.found.filter(Boolean).length;
+  el('stat-found').textContent = foundCount;
+  el('stat-pts').textContent   = `+${team.score}`;
+  el('stat-total').textContent = team.score;
+  el('stat-level').textContent = `${foundCount} / ${round.words}`;
+
+  // Words found this turn
+  const chipsEl = el('words-found-chips');
+  chipsEl.innerHTML = '';
+  if (state.turnFoundThisTurn.length === 0) {
+    chipsEl.innerHTML = '<span style="color:var(--text-muted);font-size:0.85rem">Aucun mot trouvé</span>';
+  } else {
+    state.turnFoundThisTurn.forEach(({ word }) => {
+      const chip = document.createElement('span');
+      chip.className = 'word-chip';
+      chip.textContent = word;
+      chipsEl.appendChild(chip);
+    });
+  }
+
+  // Score display (no pyramid for this mode)
+  state.teams.forEach((t, i) => {
+    el(`end-pyramid-${i}`).innerHTML = '';
+  });
+  el('end-pyramid-team-0').textContent = state.teams[0].name;
+  el('end-pyramid-team-1').textContent = state.teams[1].name;
+  el('end-pyramid-score-0').textContent = state.teams[0].score + ' pts';
+  el('end-pyramid-score-1').textContent = state.teams[1].score + ' pts';
+
+  const allTeamsDone = state.turnsDone.every(d => d >= 1);
+  const isLastRound  = state.v2RoundIdx >= V2_ROUNDS.length - 1;
+  const gameEnds     = allTeamsDone && isLastRound;
+  el('btn-turn-end-next').textContent = gameEnds ? '🏁 Voir les résultats' : '➡️ Tour suivant';
+
+  showScreen('screen-turn-end');
+}
+
 // ─── THÈME ─────────────────────────────────────────────────────────────────────
 const THEME_KEY = 'pyramide_theme';
 function applyTheme(theme) {
@@ -1834,7 +2479,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Pre-round ────────────────────────────────────────────────────────────
   el('btn-pre-round-start').addEventListener('click', withCooldown(() => {
     playButtonClick();
-    goToTeams();
+    // Mode officiel : first sub-round goes to teams, subsequent go directly to pre-turn
+    if (state.gameMode === 'officielle' && state.v2RoundIdx > 0) {
+      state.turnsDone = [0, 0];
+      state.currentTeamIdx = 0;
+      startPreTurn();
+    } else {
+      goToTeams();
+    }
   }));
   el('btn-pre-round-back').addEventListener('click', () => {
     playButtonClick();
@@ -1859,13 +2511,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Turn ────────────────────────────────────────────────────────────────
   el('btn-found').addEventListener('click', withCooldown(() => {
-    // Allow action if timer is running OR in no-timer modes (nomspropres)
-    if (!state.timerInterval && state.gameMode !== 'nomspropres') return;
+    // Allow action if timer is running OR in no-timer modes (nomspropres, officielle)
+    if (!state.timerInterval && state.gameMode !== 'nomspropres' && state.gameMode !== 'officielle') return;
+    if (state.gameMode === 'officielle' && !state.timerInterval) return;
     wordFound();
   }));
   el('btn-skip').addEventListener('click', withCooldown(() => {
     if (!state.timerInterval && state.gameMode !== 'nomspropres') return;
     wordSkip();
+  }));
+
+  // ── Vote screen (Mode officiel) ─────────────────────────────────────────
+  el('btn-vote-valid')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    castV2Vote('valid');
+  }));
+  el('btn-vote-invalid')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    castV2Vote('invalid');
+  }));
+  el('btn-vote-doubtful')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    castV2Vote('doubtful');
+  }));
+  el('btn-vote-continue')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    continueAfterVote();
+  }));
+
+  // ── Correction screen (Mode officiel) ──────────────────────────────────
+  el('btn-corr-valid')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    castCorrectionVote(true);
+  }));
+  el('btn-corr-invalid')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    castCorrectionVote(false);
+  }));
+  el('btn-correction-next')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    advanceCorrectionCard();
   }));
 
   // Extra time button (Mode Grande Pyramide)
