@@ -1,3 +1,9 @@
+## [1.172.0](https://github.com/niafrond/niafrond.github.io/compare/v1.171.0...v1.172.0) (2026-05-03)
+
+### Features
+
+* add game-template based on flash-guess architecture ([dc72365](https://github.com/niafrond/niafrond.github.io/commit/dc72365d7fe3a33b2b101491f9f8517b2bf74508))
+
 ## [1.171.0](https://github.com/niafrond/niafrond.github.io/compare/v1.170.1...v1.171.0) (2026-05-02)
 
 ### Features
