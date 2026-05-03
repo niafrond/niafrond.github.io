@@ -199,6 +199,48 @@ export function startTurn() {
   showScreen('screen-turn');
 }
 
+function _buildPyramidRows(words) {
+  const rows = [];
+  let idx = 0;
+  let rowSize = 1;
+  while (idx < words.length) {
+    const end = Math.min(idx + rowSize, words.length);
+    rows.push(words.slice(idx, end).map((w, ri) => ({ word: w, globalIdx: idx + ri })));
+    idx += rowSize;
+    rowSize++;
+  }
+  return rows;
+}
+
+function _renderPyramidView() {
+  const view = el('pyramid-view');
+  if (!view) return;
+
+  if (state.currentRound !== 4) {
+    view.hidden = true;
+    return;
+  }
+
+  const words   = state.currentTurnWords;
+  const current = state.currentWordIdx;
+  const rows    = _buildPyramidRows(words);
+
+  view.innerHTML = rows.map(row =>
+    `<div class="pyramid-row">${
+      row.map(({ word, globalIdx }) => {
+        let cls = 'pyramid-brick';
+        if (globalIdx < current)       cls += ' pyramid-brick--found';
+        else if (globalIdx === current) cls += ' pyramid-brick--current';
+        else                           cls += ' pyramid-brick--upcoming';
+        const label = globalIdx < current ? '✔' : _escHtml(word);
+        return `<div class="${cls}" title="${_escHtml(word)}">${label}</div>`;
+      }).join('')
+    }</div>`
+  ).join('');
+
+  view.hidden = false;
+}
+
 function _renderCurrentWord() {
   const content = el('turn-content');
   if (!content) return;
@@ -224,6 +266,8 @@ function _renderCurrentWord() {
     stopTimer();
     setTimeout(() => endTurn(), 900);
   }
+
+  _renderPyramidView();
 }
 
 export function wordFound() {
