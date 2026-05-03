@@ -90,3 +90,169 @@ export function getGameWords(count = 20) {
   const shuffled = [...WORDS].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, Math.min(count, WORDS.length)).map(w => w.word);
 }
+
+// ─── Mode Officiel — Mots pour les Énigmes ────────────────────────────────────
+// Pool étendu de mots communs pour la manche 1 (énigmes)
+const ENIGMES_POOL = [
+  'soleil', 'nuage', 'pluie', 'neige', 'vent', 'orage', 'arc-en-ciel',
+  'arbre', 'forêt', 'fleuve', 'océan', 'plage', 'île', 'montagne', 'désert',
+  'maison', 'appartement', 'cuisine', 'salon', 'jardin', 'fenêtre', 'porte',
+  'voiture', 'avion', 'bateau', 'train', 'vélo', 'moto', 'bus', 'fusée',
+  'chien', 'chat', 'lapin', 'cochon', 'vache', 'cheval', 'mouton', 'poule',
+  'lion', 'tigre', 'ours', 'loup', 'renard', 'cerf', 'dauphin', 'tortue',
+  'pomme', 'orange', 'banane', 'raisin', 'cerises', 'mangue', 'poire', 'prune',
+  'pain', 'gâteau', 'glace', 'pizza', 'burger', 'soupe', 'crêpe', 'confiture',
+  'livre', 'journal', 'télévision', 'téléphone', 'ordinateur', 'radio', 'appareil photo',
+  'médecin', 'policier', 'pompier', 'boulanger', 'professeur', 'acteur', 'chanteur',
+  'sport', 'football', 'tennis', 'natation', 'ski', 'danse', 'musique', 'peinture',
+  'chapeau', 'manteau', 'chaussures', 'sac', 'montre', 'cravate', 'robe',
+  'école', 'hôpital', 'cinéma', 'musée', 'restaurant', 'supermarché', 'aéroport',
+  'printemps', 'été', 'automne', 'hiver', 'matin', 'soir', 'nuit', 'midi',
+  'rouge', 'bleu', 'vert', 'jaune', 'orange', 'violet', 'rose', 'noir', 'blanc',
+];
+
+/**
+ * Retourne `count` mots uniques pour les Énigmes.
+ * @param {number} count
+ * @param {string[]} [exclude=[]] — mots déjà utilisés à exclure
+ * @returns {string[]}
+ */
+export function getEnigmesWords(count = 5, exclude = []) {
+  const pool = ENIGMES_POOL.filter(w => !exclude.includes(w));
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+
+// ─── Mode Officiel — Mots Ping-Pong ───────────────────────────────────────────
+/**
+ * Retourne les mots partagés pour le Ping-Pong (manche 2).
+ * @param {number} count
+ * @returns {string[]}
+ */
+export function getPingpongWords(count = 5) {
+  return getEnigmesWords(count);
+}
+
+// ─── Mode Officiel — Noms Propres (Manche 3) ──────────────────────────────────
+export const NOMS_PROPRES_SETS = [
+  {
+    theme: 'Personnages historiques',
+    words: ['Napoléon Bonaparte', 'Marie Curie', 'Jules César', 'Cléopâtre', 'Louis XIV', 'Albert Einstein', 'Jeanne d\'Arc', 'Charlemagne'],
+  },
+  {
+    theme: 'Chanteurs & Musiciens',
+    words: ['Michael Jackson', 'Edith Piaf', 'Elvis Presley', 'Céline Dion', 'David Bowie', 'Freddie Mercury', 'Madonna', 'Bob Marley'],
+  },
+  {
+    theme: 'Personnages de cinéma',
+    words: ['Indiana Jones', 'James Bond', 'Superman', 'Batman', 'Zorro', 'Sherlock Holmes', 'Rocky Balboa', 'Robin Hood'],
+  },
+  {
+    theme: 'Pays du monde',
+    words: ['Australie', 'Brésil', 'Japon', 'Inde', 'Canada', 'Mexique', 'Afrique du Sud', 'Norvège'],
+  },
+  {
+    theme: 'Sportifs célèbres',
+    words: ['Zinedine Zidane', 'Serena Williams', 'Muhammad Ali', 'Michael Jordan', 'Usain Bolt', 'Roger Federer', 'Pelé', 'Lionel Messi'],
+  },
+  {
+    theme: 'Villes du monde',
+    words: ['New York', 'Tokyo', 'Rio de Janeiro', 'Dubaï', 'Sydney', 'Istanbul', 'Barcelone', 'Amsterdam'],
+  },
+  {
+    theme: 'Personnages de fiction',
+    words: ['Cendrillon', 'Pinocchio', 'Don Quichotte', 'Dracula', 'Tarzan', 'Frankenstein', 'Robin des Bois', 'Blanche-Neige'],
+  },
+  {
+    theme: 'Inventeurs & Scientifiques',
+    words: ['Thomas Edison', 'Leonardo da Vinci', 'Isaac Newton', 'Charles Darwin', 'Louis Pasteur', 'Nikola Tesla', 'Galilée', 'Archimède'],
+  },
+];
+
+/**
+ * Retourne un set de noms propres aléatoire.
+ * @returns {{ theme: string, words: string[] }}
+ */
+export function getNomsPropreSet() {
+  const set = NOMS_PROPRES_SETS[Math.floor(Math.random() * NOMS_PROPRES_SETS.length)];
+  const shuffled = [...set.words].sort(() => Math.random() - 0.5);
+  return { theme: set.theme, words: shuffled.slice(0, 3) };
+}
+
+// ─── Mode Officiel — Contre-la-Montre (Manche 4) ─────────────────────────────
+export const CONTRE_LA_MONTRE_SETS = [
+  { theme: 'Les sports',      words: ['football', 'natation', 'tennis', 'escrime', 'judo', 'cyclisme', 'rugby'] },
+  { theme: 'La cuisine',      words: ['couteau', 'casserole', 'four', 'réfrigérateur', 'spatule', 'poêle', 'mixeur'] },
+  { theme: 'Les animaux de la ferme', words: ['vache', 'cochon', 'poule', 'mouton', 'chèvre', 'cheval', 'canard'] },
+  { theme: 'Les transports',  words: ['voiture', 'avion', 'bateau', 'train', 'vélo', 'moto', 'hélicoptère'] },
+  { theme: 'La musique',      words: ['guitare', 'piano', 'violon', 'trompette', 'batterie', 'flûte', 'saxophone'] },
+  { theme: 'Les métiers',     words: ['médecin', 'pompier', 'policier', 'boulanger', 'professeur', 'jardinier', 'pilote'] },
+  { theme: 'Les fruits',      words: ['pomme', 'banane', 'cerise', 'orange', 'raisin', 'mangue', 'kiwi'] },
+  { theme: 'La nature',       words: ['forêt', 'rivière', 'montagne', 'volcan', 'désert', 'glacier', 'île'] },
+  { theme: 'Les vêtements',   words: ['manteau', 'robe', 'pantalon', 'chapeau', 'écharpe', 'gants', 'chaussettes'] },
+  { theme: 'Les pays',        words: ['France', 'Espagne', 'Italie', 'Allemagne', 'Portugal', 'Grèce', 'Maroc'] },
+];
+
+/**
+ * Retourne un set de mots pour le Contre-la-Montre.
+ * @param {string[]} [exclude=[]] — thèmes à exclure
+ * @returns {{ theme: string, words: string[] }}
+ */
+export function getContreLaMontre(exclude = []) {
+  const available = CONTRE_LA_MONTRE_SETS.filter(s => !exclude.includes(s.theme));
+  const pool = available.length > 0 ? available : CONTRE_LA_MONTRE_SETS;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ─── Mode Officiel — La Grande Pyramide (Finale) ──────────────────────────────
+export const GRANDE_PYRAMIDE_SETS = [
+  [
+    'avoir le cafard',
+    'casser les pieds',
+    'avoir la tête dans les nuages',
+    'prendre le taureau par les cornes',
+    'se lever du pied gauche',
+    'avoir d\'autres chats à fouetter',
+  ],
+  [
+    'manger les pissenlits par la racine',
+    'avoir le beurre et l\'argent du beurre',
+    'poser un lapin',
+    'tomber dans les pommes',
+    'avoir le vent en poupe',
+    'brûler les étapes',
+  ],
+  [
+    'tourner autour du pot',
+    'casser du sucre sur le dos de quelqu\'un',
+    'avoir les dents qui rayent le parquet',
+    'ne pas être dans son assiette',
+    'mettre les pieds dans le plat',
+    'couper les cheveux en quatre',
+  ],
+  [
+    'vendre la peau de l\'ours avant de l\'avoir tué',
+    'avoir du pain sur la planche',
+    'tirer les vers du nez',
+    'faire la fine bouche',
+    'avoir du mal à avaler la pilule',
+    'rouler quelqu\'un dans la farine',
+  ],
+  [
+    'arriver comme un cheveu sur la soupe',
+    'ne pas y aller par quatre chemins',
+    'avoir le cœur sur la main',
+    'raconter des salades',
+    'tomber à pic',
+    'faire d\'une pierre deux coups',
+  ],
+];
+
+/**
+ * Retourne un set de 6 expressions pour la Grande Pyramide.
+ * @returns {string[]}
+ */
+export function getGrandePyramideWords() {
+  const set = GRANDE_PYRAMIDE_SETS[Math.floor(Math.random() * GRANDE_PYRAMIDE_SETS.length)];
+  return [...set].sort(() => Math.random() - 0.5);
+}

@@ -6,8 +6,8 @@
 
 import {
   state, withCooldown,
-  PLAYERS_KEY, TURN_DURATION_KEY, WORD_COUNT_KEY, ENABLE_ROUND5_KEY, THEME_KEY,
-  TURN_DURATION_DEFAULT, WORD_COUNT_DEFAULT, MIN_PLAYERS,
+  PLAYERS_KEY, TURN_DURATION_KEY, WORD_COUNT_KEY, ENABLE_ROUND5_KEY, THEME_KEY, GAME_MODE_KEY,
+  TURN_DURATION_DEFAULT, WORD_COUNT_DEFAULT, MIN_PLAYERS, V2_ROUNDS,
 } from './state.js';
 import { el, showScreen, showToast } from './ui.js';
 import { setMuted, getMuted, playButtonClick, playGameStart } from './sound.js';
@@ -17,6 +17,11 @@ import {
   startTurn, wordFound, wordSkipped, wordContested, endTurn,
   startCorrectionPhase, castCorrectionVote, proceedAfterCorrection,
   nextRound, showGameOver,
+  // V2 (Mode Officiel)
+  initOfficielGame, showV2PreRound, startV2Turn,
+  v2EnigmesClueGiven, v2PingPongClueGiven, v2NomsPropresClueGiven,
+  showBidding, placeBid, confirmBids, startNomsPropresWord,
+  v2ContinueAfterTurn, v2NextRoundFromRoundEnd,
 } from './game.js';
 import { toggleFullscreen, updateFullscreenBtn, installPwa, initServiceWorker, initAutoFullscreen } from './pwa.js';
 
@@ -98,6 +103,10 @@ function _loadSettings() {
     state.enableRound5 = localStorage.getItem(ENABLE_ROUND5_KEY) === 'true';
   } catch (_) { state.enableRound5 = false; }
 
+  try {
+    state.gameMode = localStorage.getItem(GAME_MODE_KEY) || 'classique';
+  } catch (_) { state.gameMode = 'classique'; }
+
   const durInput = el('turn-duration-input');
   if (durInput) durInput.value = state.turnDuration;
 
@@ -106,12 +115,29 @@ function _loadSettings() {
 
   const r5Toggle = el('toggle-round5');
   if (r5Toggle) r5Toggle.checked = state.enableRound5;
+
+  _applyGameModeUI();
 }
 
 function _saveSettings() {
   localStorage.setItem(TURN_DURATION_KEY, String(state.turnDuration));
   localStorage.setItem(WORD_COUNT_KEY,    String(state.wordCount));
   localStorage.setItem(ENABLE_ROUND5_KEY, String(state.enableRound5));
+  localStorage.setItem(GAME_MODE_KEY,     state.gameMode);
+}
+
+function _applyGameModeUI() {
+  const btnC = el('btn-mode-classique');
+  const btnO = el('btn-mode-officiel');
+  const isOfficiel = state.gameMode === 'officiel';
+  if (btnC) btnC.classList.toggle('mode-btn--active', !isOfficiel);
+  if (btnO) btnO.classList.toggle('mode-btn--active',  isOfficiel);
+
+  // Masquer les réglages classiques si mode officiel
+  const r5Row  = el('toggle-round5')?.closest('.toggle-row');
+  const wcRow  = el('word-count-input')?.closest('.input-row');
+  if (r5Row) r5Row.hidden = isOfficiel;
+  if (wcRow) wcRow.hidden = isOfficiel;
 }
 
 // ─── THÈME ────────────────────────────────────────────────────────────────────
@@ -211,7 +237,11 @@ window.addEventListener('DOMContentLoaded', () => {
   // ── Teams ─────────────────────────────────────────────────────────────────
   el('btn-play-now')?.addEventListener('click', withCooldown(() => {
     playButtonClick();
-    initGame();
+    if (state.gameMode === 'officiel') {
+      initOfficielGame();
+    } else {
+      initGame();
+    }
   }));
 
   el('btn-back-from-teams')?.addEventListener('click', withCooldown(() => {
@@ -222,7 +252,11 @@ window.addEventListener('DOMContentLoaded', () => {
   // ── Pre-round ─────────────────────────────────────────────────────────────
   el('btn-start-round')?.addEventListener('click', withCooldown(() => {
     playButtonClick();
-    startTurn();
+    if (state.gameMode === 'officiel') {
+      startV2Turn();
+    } else {
+      startTurn();
+    }
   }));
 
   // ── Turn ──────────────────────────────────────────────────────────────────
@@ -254,7 +288,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
   el('btn-next-from-turn-end')?.addEventListener('click', withCooldown(() => {
     playButtonClick();
-    proceedAfterCorrection();
+    if (state.gameMode === 'officiel') {
+      v2ContinueAfterTurn();
+    } else {
+      proceedAfterCorrection();
+    }
   }));
 
   // ── Correction ────────────────────────────────────────────────────────────
@@ -274,7 +312,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // ── Round-end ─────────────────────────────────────────────────────────────
   el('btn-next-round')?.addEventListener('click', withCooldown(() => {
     playButtonClick();
-    nextRound();
+    nextRound(); // nextRound already dispatches V2 internally
   }));
 
   el('btn-round-end-gameover')?.addEventListener('click', withCooldown(() => {
@@ -298,6 +336,54 @@ window.addEventListener('DOMContentLoaded', () => {
   el('btn-back-home')?.addEventListener('click', withCooldown(() => {
     playButtonClick();
     _goToSetup();
+  }));
+
+  // ── Bidding (Mode Officiel, Manche 3) ────────────────────────────────────
+  el('bidding-teams-area')?.addEventListener('click', e => {
+    const btn = e.target.closest('.bid-btn');
+    if (!btn) return;
+    playButtonClick();
+    const teamIdx = parseInt(btn.dataset.team, 10);
+    const bid     = parseInt(btn.dataset.bid, 10);
+    placeBid(teamIdx, bid);
+  });
+
+  el('btn-confirm-bids')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    const action = el('btn-confirm-bids').dataset.action;
+    if (action === 'start-np') {
+      // Reset action tag and start the word
+      el('btn-confirm-bids').dataset.action = '';
+      el('btn-confirm-bids').textContent = '▶ Lancer le duel';
+      startNomsPropresWord();
+    } else {
+      confirmBids();
+    }
+  }));
+
+  // ── Clue given (Mode Officiel, Manches 1-3) ───────────────────────────────
+  el('btn-clue-given')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    if (state.gameMode !== 'officiel') return;
+    const roundId = V2_ROUNDS[state.v2RoundIdx]?.id || '';
+    if (roundId === 'enigmes')        v2EnigmesClueGiven();
+    else if (roundId === 'pingpong')      v2PingPongClueGiven();
+    else if (roundId === 'nomspropres')   v2NomsPropresClueGiven();
+  }));
+
+  // ── Mode de jeu ───────────────────────────────────────────────────────────
+  el('btn-mode-classique')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    state.gameMode = 'classique';
+    _saveSettings();
+    _applyGameModeUI();
+  }));
+
+  el('btn-mode-officiel')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    state.gameMode = 'officiel';
+    _saveSettings();
+    _applyGameModeUI();
   }));
 
   // ── Browser back button ───────────────────────────────────────────────────

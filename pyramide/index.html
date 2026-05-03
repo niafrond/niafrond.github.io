@@ -66,6 +66,21 @@
       <p class="quick-add-hint">Appuyez sur Entrée pour ajouter rapidement</p>
     </div>
 
+    <!-- Mode de jeu -->
+    <div class="card mode-selector-card">
+      <div class="card-title">🎮 Mode de jeu</div>
+      <div class="mode-selector">
+        <button id="btn-mode-classique" class="mode-btn mode-btn--active">
+          <div class="mode-btn-title">🎲 Classique</div>
+          <div class="mode-btn-desc">4 manches · Description libre</div>
+        </button>
+        <button id="btn-mode-officiel" class="mode-btn">
+          <div class="mode-btn-title">📺 Officiel</div>
+          <div class="mode-btn-desc">Reproduction fidèle de l'émission TV</div>
+        </button>
+      </div>
+    </div>
+
     <!-- Réglages -->
     <details class="card card-collapsible">
       <summary class="card-title card-title-summary">⚙️ Réglages</summary>
@@ -212,6 +227,20 @@
       <div class="timer-label" id="timer-label">60</div>
     </div>
 
+    <!-- Compteur de briques (Mode Officiel, Manches 1-3) -->
+    <div id="brick-bar" class="brick-bar" hidden>
+      <div class="brick-info">
+        <span>🧱</span>
+        <span id="bricks-left" class="brick-count">13</span>
+        <span class="brick-label">briques</span>
+        <span id="brick-word-progress" class="brick-word-progress"></span>
+      </div>
+      <div id="brick-visual" class="brick-visual"></div>
+    </div>
+
+    <!-- Info équipe pour Ping-Pong -->
+    <div id="clue-team-info" class="clue-team-info" hidden></div>
+
     <!-- Mot à faire deviner -->
     <div class="turn-content-wrapper" style="width:100%;max-width:500px;">
       <div id="turn-content" class="turn-word">? ? ?</div>
@@ -226,6 +255,13 @@
       <button id="btn-found"   class="btn btn-success turn-action-btn">✔ Trouvé</button>
       <button id="btn-skip"    class="btn btn-secondary turn-action-btn">✖ Passer</button>
       <button id="btn-contest" class="btn btn-warning turn-action-btn">⚠️ Contesté</button>
+    </div>
+
+    <!-- Bouton "Donner un indice" (Mode Officiel, Manches 1-3) -->
+    <div id="officiel-clue-area" class="officiel-clue-area" hidden>
+      <button id="btn-clue-given" class="btn btn-warning w-full">
+        💡 Indice donné &nbsp;(−1 🧱)
+      </button>
     </div>
 
     <!-- Fin de tour manuelle -->
@@ -324,6 +360,34 @@
       <button id="btn-play-again" class="btn btn-primary btn-lg w-full">🔄 Rejouer</button>
       <button id="btn-back-home"  class="btn btn-secondary w-full">🏠 Retour à l'accueil</button>
     </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 9 — BIDDING (Enchères — Manche 3 Mode Officiel)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-bidding" data-screen="screen-bidding" hidden>
+  <div class="page-wrapper screen-center">
+
+    <p class="pre-round-manche-num">Manche 3 — Les Noms Propres</p>
+    <div class="pre-round-icon">⚖️</div>
+    <h1 class="app-title" style="font-size:1.6rem;">Enchères</h1>
+
+    <div id="bidding-theme-info" class="bidding-theme-info"></div>
+
+    <p class="bidding-hint">
+      Enchérissez le nombre de briques (1 à 3).<br>
+      La mise la plus basse gagne le droit de donner les indices.
+    </p>
+
+    <div id="bidding-teams-area" style="width:100%;max-width:500px;display:flex;flex-direction:column;gap:14px;"></div>
+
+    <div id="bid-result-info" class="bid-result-info" hidden></div>
+
+    <button id="btn-confirm-bids" class="btn btn-primary btn-lg w-full" style="max-width:500px;" disabled>
+      ▶ Lancer le duel
+    </button>
 
   </div>
 </div>
