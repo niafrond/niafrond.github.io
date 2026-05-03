@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Pyramide 🔺</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b1e2d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Pyramide">
+</head>
+<body>
+
+<!-- Toast notifications -->
+<div id="toast" class="toast" hidden></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 1 — SETUP
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-setup" data-screen="screen-setup">
+  <div class="page-wrapper">
+
+    <div class="setup-header-row">
+      <a href="../" class="btn btn-secondary btn-sm">← Accueil</a>
+      <div id="top-right-controls">
+        <button id="btn-theme"      class="btn-top-ctrl" title="Thème clair/sombre">🌙</button>
+        <button id="btn-fullscreen" class="btn-top-ctrl" title="Plein écran">⛶</button>
+        <button id="btn-mute"       class="btn-top-ctrl" title="Son on/off">🔊</button>
+      </div>
+    </div>
+
+    <h1 class="app-title">🔺 Pyramide</h1>
+    <p class="app-subtitle">Le jeu de devinettes en équipe — 4 manches, 1 gagnant !</p>
+
+    <!-- Joueurs -->
+    <div class="setup-players-zone">
+      <div class="setup-players-header">
+        <span class="setup-players-title">Joueurs</span>
+        <span id="player-count" class="setup-players-count"></span>
+      </div>
+      <div class="card" id="panel-current-players">
+        <div id="player-empty-state" class="player-empty-state">
+          <span class="player-empty-icon">👥</span>
+          <p class="player-empty-text">Ajoutez vos joueurs (min. 2)</p>
+        </div>
+        <div id="player-list"></div>
+        <span id="setup-hint" hidden>⚠️ Ajoutez au moins 2 joueurs</span>
+      </div>
+      <div class="quick-add-wrapper">
+        <div class="quick-add-input-row">
+          <span class="quick-add-icon" aria-hidden="true">＋</span>
+          <input id="player-input" class="quick-add-input" type="text"
+                 placeholder="Ajouter un joueur…" maxlength="24"
+                 autocomplete="off" autocorrect="off" spellcheck="false">
+          <button id="btn-add-player" class="quick-add-submit" aria-label="Ajouter">➜</button>
+        </div>
+      </div>
+      <p class="quick-add-hint">Appuyez sur Entrée pour ajouter rapidement</p>
+    </div>
+
+    <!-- Réglages -->
+    <details class="card card-collapsible">
+      <summary class="card-title card-title-summary">⚙️ Réglages</summary>
+      <div>
+        <div class="input-row">
+          <label for="turn-duration-input" class="input-label">⏱️ Durée du tour (s)</label>
+          <input id="turn-duration-input" type="number" class="input"
+                 min="10" max="180" value="60">
+        </div>
+        <div class="input-row">
+          <label for="word-count-input" class="input-label">📝 Nombre de mots</label>
+          <input id="word-count-input" type="number" class="input"
+                 min="5" max="40" value="20">
+        </div>
+        <div class="toggle-row">
+          <label for="toggle-round5" class="input-label">🏆 Activer la Manche 5 (Finale)</label>
+          <label class="toggle-switch">
+            <input id="toggle-round5" type="checkbox">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </details>
+
+    <!-- Règles rapides -->
+    <details class="card card-collapsible">
+      <summary class="card-title card-title-summary">📖 Règles</summary>
+      <div style="font-size:0.88rem;color:var(--text-muted);line-height:1.8">
+        <p>🎯 <strong style="color:var(--text)">Objectif</strong> : Faire deviner le plus de mots à votre équipe.</p><br>
+        <p>🔄 <strong style="color:var(--text)">Déroulement</strong> : Chaque équipe joue à tour de rôle dans chaque manche.</p><br>
+        <p>📋 <strong style="color:var(--text)">4 manches</strong> :</p>
+        <p>1. <strong style="color:var(--text)">Libre</strong> — Description libre (sans dire le mot)</p>
+        <p>2. <strong style="color:var(--text)">Un mot</strong> — Un seul mot comme indice</p>
+        <p>3. <strong style="color:var(--text)">Expressions</strong> — Expression, sans les mots qui la composent</p>
+        <p>4. <strong style="color:var(--text)">Pyramide</strong> — Mots dans l'ordre, sans passer</p><br>
+        <p>🏆 <strong style="color:var(--text)">Victoire</strong> : L'équipe avec le plus de points gagne !</p>
+      </div>
+    </details>
+
+    <button id="btn-install-pwa" class="btn btn-secondary w-full mb-12" hidden>
+      📲 Installer l'application
+    </button>
+
+    <div class="screen-sticky-footer screen-sticky-footer--fab">
+      <button id="btn-start-game" class="btn btn-primary btn-fab" disabled aria-label="Jouer">
+        ▶
+      </button>
+    </div>
+
+    <p id="game-version" style="text-align:center;font-size:0.75rem;color:var(--text-muted);margin-top:4px;"></p>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 2 — TEAMS
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-teams" data-screen="screen-teams" hidden>
+  <div class="page-wrapper screen-center">
+
+    <h1 class="app-title" style="font-size:2rem;">🎲 Les Équipes</h1>
+    <p class="app-subtitle">Équipes définies aléatoirement</p>
+
+    <div id="teams-container"></div>
+
+    <div style="display:flex;gap:12px;width:100%;margin-top:8px;">
+      <button id="btn-back-from-teams" class="btn btn-secondary" style="flex:1;">← Retour</button>
+      <button id="btn-play-now"        class="btn btn-primary"   style="flex:2;">▶ C'est parti !</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 3 — PRE-ROUND (Explication des règles)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-pre-round" data-screen="screen-pre-round" hidden>
+  <div class="page-wrapper screen-center">
+
+    <p id="pre-round-manche-num" class="pre-round-manche-num">Manche 1</p>
+    <div id="pre-round-icon" class="pre-round-icon">🗣️</div>
+    <h1 id="pre-round-title" class="app-title" style="font-size:1.8rem;">Manche 1 — Description libre</h1>
+
+    <!-- Règles -->
+    <div class="rule-card">
+      <div class="rule-row">
+        <span class="rule-icon rule-icon--do">✅</span>
+        <div>
+          <div class="rule-label">Vous pouvez</div>
+          <div id="pre-round-do" class="rule-text">Décrire le mot librement</div>
+        </div>
+      </div>
+      <hr class="rule-separator">
+      <div class="rule-row">
+        <span class="rule-icon rule-icon--forbid">🚫</span>
+        <div>
+          <div class="rule-label">Interdit</div>
+          <div id="pre-round-forbid" class="rule-text">Le mot lui-même ou un mot de la même famille</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Règle spéciale (conditionnel) -->
+    <div id="pre-round-special-container" class="rule-special-box" hidden>
+      <span id="pre-round-special"></span>
+    </div>
+
+    <!-- Équipe qui commence -->
+    <div class="pre-round-team-info">
+      C'est au tour de <strong id="pre-round-team" style="color:var(--volcan)">Équipe Rouge</strong>
+    </div>
+
+    <button id="btn-start-round" class="btn btn-primary btn-lg w-full" style="margin-top:8px;">
+      ▶ Lancer le tour
+    </button>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 4 — TURN (Tour en cours)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-turn" data-screen="screen-turn" hidden>
+  <div class="screen-center" style="gap:16px;">
+
+    <!-- En-tête -->
+    <div class="turn-header" style="width:100%;max-width:500px;">
+      <div>
+        <div class="turn-team-label" style="font-size:0.85rem;color:var(--text-muted);">C'est au tour de</div>
+        <div id="turn-team-name" class="turn-team-label" style="font-size:1.3rem;"></div>
+        <div id="turn-round-label" class="turn-round-badge">Manche 1 — Libre</div>
+      </div>
+      <div class="score-badge">
+        Score : <span id="score-display">0</span>
+      </div>
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-container">
+      <svg class="timer-svg" viewBox="0 0 100 100">
+        <circle class="timer-track"    cx="50" cy="50" r="46"/>
+        <circle class="timer-progress" cx="50" cy="50" r="46" id="timer-progress"/>
+      </svg>
+      <div class="timer-label" id="timer-label">60</div>
+    </div>
+
+    <!-- Mot à faire deviner -->
+    <div class="turn-content-wrapper" style="width:100%;max-width:500px;">
+      <div id="turn-content" class="turn-word">? ? ?</div>
+      <div id="turn-pyramid-progress" class="turn-pyramid-progress" hidden>1 / 20</div>
+    </div>
+
+    <!-- Actions -->
+    <div class="turn-actions" style="width:100%;max-width:500px;">
+      <button id="btn-found"   class="btn btn-success turn-action-btn">✔ Trouvé</button>
+      <button id="btn-skip"    class="btn btn-secondary turn-action-btn">✖ Passer</button>
+      <button id="btn-contest" class="btn btn-warning turn-action-btn">⚠️ Contesté</button>
+    </div>
+
+    <!-- Fin de tour manuelle -->
+    <button id="btn-end-turn" class="btn btn-secondary btn-sm" style="opacity:0.7;">
+      ⏭ Terminer le tour
+    </button>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 5 — TURN END (Résumé du tour)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-turn-end" data-screen="screen-turn-end" hidden>
+  <div class="page-wrapper screen-center">
+
+    <h1 class="app-title" style="font-size:1.8rem;">⏰ Fin du tour</h1>
+
+    <div id="turn-end-summary" style="width:100%;max-width:500px;"></div>
+
+    <!-- Mots trouvés -->
+    <div class="card" style="width:100%;max-width:500px;">
+      <div class="card-title">Mots devinés ce tour</div>
+      <div id="turn-end-found-list" class="word-chip-list"></div>
+    </div>
+
+    <!-- Bandeau contestation -->
+    <div id="turn-end-contested-badge" class="contested-badge" hidden></div>
+
+    <!-- Actions -->
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:500px;">
+      <button id="btn-go-correction" class="btn btn-warning w-full" hidden>
+        ⚠️ Corriger les indices contestés
+      </button>
+      <button id="btn-next-from-turn-end" class="btn btn-primary w-full">
+        ▶ Continuer
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 6 — CORRECTION
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-correction" data-screen="screen-correction" hidden>
+  <div class="page-wrapper screen-center">
+
+    <h1 class="app-title" style="font-size:1.8rem;">⚖️ Correction</h1>
+    <p class="app-subtitle">Validez ou invalidez les indices contestés</p>
+
+    <div id="correction-list" style="width:100%;max-width:500px;"></div>
+
+    <button id="btn-confirm-correction" class="btn btn-primary w-full" style="max-width:500px;">
+      ✔ Confirmer et continuer
+    </button>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 7 — ROUND END (Fin de manche)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-round-end" data-screen="screen-round-end" hidden>
+  <div class="page-wrapper screen-center">
+
+    <div style="font-size:3rem;">🔔</div>
+    <h1 id="round-end-title" class="app-title" style="font-size:1.8rem;">Fin de la Manche 1</h1>
+
+    <div id="round-end-scores" class="turn-end-scores" style="width:100%;max-width:500px;"></div>
+
+    <div style="display:flex;gap:12px;width:100%;max-width:500px;margin-top:8px;">
+      <button id="btn-round-end-gameover" class="btn btn-secondary" style="flex:1;">
+        🏁 Terminer
+      </button>
+      <button id="btn-next-round" class="btn btn-primary" style="flex:2;">
+        ▶ Manche suivante
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 8 — GAME OVER
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-game-over" data-screen="screen-game-over" hidden>
+  <div class="page-wrapper screen-center">
+
+    <div style="font-size:4rem;">🏆</div>
+    <h1 class="app-title" style="font-size:2.2rem;">Résultats</h1>
+
+    <div id="game-over-results" style="width:100%;max-width:500px;"></div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:500px;margin-top:8px;">
+      <button id="btn-play-again" class="btn btn-primary btn-lg w-full">🔄 Rejouer</button>
+      <button id="btn-back-home"  class="btn btn-secondary w-full">🏠 Retour à l'accueil</button>
+    </div>
+
+  </div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
