@@ -1,3 +1,9 @@
+## [1.176.1](https://github.com/niafrond/niafrond.github.io/compare/v1.176.0...v1.176.1) (2026-05-03)
+
+### Bug Fixes
+
+* add screen-pre-round and screen-turn-end to GAMEPLAY_SCREENS for landscape mode ([f45c886](https://github.com/niafrond/niafrond.github.io/commit/f45c886b6e6d330a5ce78ab65ad62e6fc3186785))
+
 ## [1.176.0](https://github.com/niafrond/niafrond.github.io/compare/v1.175.0...v1.176.0) (2026-05-03)
 
 ### Features
