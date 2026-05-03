@@ -77,7 +77,7 @@ export const WORDS = [
   { word: 'yoyo',        cat: 'divers' },
   { word: 'révolution',  cat: 'divers' },
   { word: 'origami',     cat: 'divers' },
-  { word: 'submarine',   cat: 'divers' },
+  { word: 'sous-marin',  cat: 'divers' },
   { word: 'tornade',     cat: 'divers' },
 ];
 
