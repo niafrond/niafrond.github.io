@@ -41,6 +41,12 @@ function requestImmersive() {
   }
 }
 
+function lockLandscape() {
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('landscape').catch(() => {});
+  }
+}
+
 export function toggleFullscreen() {
   if (!document.fullscreenElement && !document.webkitFullscreenElement) {
     requestImmersive();
@@ -64,6 +70,7 @@ export function initAutoFullscreen() {
     if (btn) btn.hidden = true;
   }
   requestImmersive();
+  lockLandscape();
   document.addEventListener('pointerdown', requestImmersive, { once: true });
 
   function onFullscreenChange() {
