@@ -66,6 +66,10 @@ export function initAutoFullscreen() {
     const btn = el('btn-fullscreen');
     if (btn) btn.hidden = true;
   }
+  // Lock orientation to portrait
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('portrait').catch(() => {});
+  }
   requestImmersive();
   document.addEventListener('pointerdown', requestImmersive, { once: true });
 

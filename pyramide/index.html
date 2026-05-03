@@ -16,6 +16,12 @@
 <!-- Toast notifications -->
 <div id="toast" class="toast" hidden></div>
 
+<!-- Portrait-only overlay -->
+<div id="rotate-overlay">
+  <div class="rotate-icon">📱</div>
+  <p>Retournez votre appareil en mode portrait pour jouer à Pyramide 🔺</p>
+</div>
+
 <!-- ═══════════════════════════════════════════════════════════════════════════
      ÉCRAN 1 — SETUP
      ═══════════════════════════════════════════════════════════════════════════ -->
@@ -211,6 +217,9 @@
       <div id="turn-content" class="turn-word">? ? ?</div>
       <div id="turn-pyramid-progress" class="turn-pyramid-progress" hidden>1 / 20</div>
     </div>
+
+    <!-- Pyramide visuelle (Manche 4 uniquement) -->
+    <div id="pyramid-view" class="pyramid-view" hidden></div>
 
     <!-- Actions -->
     <div class="turn-actions" style="width:100%;max-width:500px;">
