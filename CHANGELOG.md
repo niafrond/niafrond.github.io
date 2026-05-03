@@ -1,3 +1,13 @@
+## [1.173.0](https://github.com/niafrond/niafrond.github.io/compare/v1.172.0...v1.173.0) (2026-05-03)
+
+### Features
+
+* implement Pyramide party game based on game-template ([e0826fb](https://github.com/niafrond/niafrond.github.io/commit/e0826fbc1adad63bd832060e3b60d4f77c2c44ec))
+
+### Bug Fixes
+
+* correct English word 'submarine' to French 'sous-marin' in word list ([a690536](https://github.com/niafrond/niafrond.github.io/commit/a690536a0336a67b89875be5bcc14450e09b33e1))
+
 ## [1.172.0](https://github.com/niafrond/niafrond.github.io/compare/v1.171.0...v1.172.0) (2026-05-03)
 
 ### Features
