@@ -90,3 +90,53 @@ export function getGameWords(count = 20) {
   const shuffled = [...WORDS].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, Math.min(count, WORDS.length)).map(w => w.word);
 }
+
+// ─── Expressions idiomatiques (Manche 3) ───────────────────────────────────────
+
+export const EXPRESSIONS = [
+  'tomber dans les pommes',
+  'avoir le cafard',
+  'coup de foudre',
+  'casser les pieds',
+  'poser un lapin',
+  'il pleut des cordes',
+  'garder la tête hors de l\'eau',
+  'les doigts dans le nez',
+  'faire d\'une pierre deux coups',
+  'coûter les yeux de la tête',
+  'avoir la tête dans les nuages',
+  'prendre le taureau par les cornes',
+  'se lever du bon pied',
+  'mettre les pieds dans le plat',
+  'avoir du pain sur la planche',
+  'être dans la lune',
+  'perdre la boule',
+  'avoir d\'autres chats à fouetter',
+  'se faire rouler dans la farine',
+  'ne pas être sorti de l\'auberge',
+  'mettre son grain de sel',
+  'donner sa langue au chat',
+  'avoir le bras long',
+  'chercher des noises',
+  'se mettre le doigt dans l\'œil',
+  'tomber à pic',
+  'casser du sucre sur le dos',
+  'avoir les yeux plus grands que le ventre',
+  'faire la fine bouche',
+  'brûler la chandelle par les deux bouts',
+  'avoir d\'autres cordes à son arc',
+  'noyer le poisson',
+  'tourner autour du pot',
+  'avoir le vent en poupe',
+  'casser les œufs dans le panier',
+];
+
+/**
+ * Retourne `count` expressions aléatoires pour la Manche 3.
+ * @param {number} count
+ * @returns {string[]}
+ */
+export function getExpressionWords(count = 15) {
+  const shuffled = [...EXPRESSIONS].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(count, EXPRESSIONS.length));
+}

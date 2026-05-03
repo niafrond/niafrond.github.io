@@ -85,7 +85,8 @@ export const state = {
   teamsPlayedThisRound:  0,
 
   // Mots
-  allWords:          [],   // pool fixe pour toute la partie
+  allWords:          [],   // pool fixe pour les manches 1, 2, 4, 5
+  expressionWords:   [],   // pool fixe pour la manche 3 (expressions idiomatiques)
   currentTurnWords:  [],   // ordre des mots pour le tour en cours
   currentWordIdx:    0,
 

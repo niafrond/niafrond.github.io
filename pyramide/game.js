@@ -7,7 +7,7 @@
 import { state, PRE_ROUND_CONTENT, TEAMS_META } from './state.js';
 import { el, showScreen, showToast } from './ui.js';
 import { playTick, playTickUrgent, playBuzzer, playFound, playGameStart, playGameOver } from './sound.js';
-import { getGameWords } from './words.js';
+import { getGameWords, getExpressionWords } from './words.js';
 
 // ─── Équipes ───────────────────────────────────────────────────────────────────
 
@@ -38,6 +38,7 @@ export function renderTeams() {
 
 export function initGame() {
   state.allWords            = getGameWords(state.wordCount);
+  state.expressionWords     = getExpressionWords(Math.max(10, Math.floor(state.wordCount * 0.75)));
   state.currentRound        = 1;
   state.currentPhase        = 1;
   state.teamsPlayedThisRound = 0;
@@ -157,8 +158,10 @@ export function startTurn() {
   state.skippedWordsThisTurn = [];
   state.contestedClues       = [];
 
-  // Ordre des mots : fixe (pyramide) ou mélangé
-  if (state.currentRound === 4) {
+  // Ordre des mots : expressions pour manche 3, fixe pour manche 4, mélangé sinon
+  if (state.currentRound === 3) {
+    state.currentTurnWords = [...state.expressionWords].sort(() => Math.random() - 0.5);
+  } else if (state.currentRound === 4) {
     state.currentTurnWords = [...state.allWords];
   } else {
     state.currentTurnWords = [...state.allWords].sort(() => Math.random() - 0.5);
