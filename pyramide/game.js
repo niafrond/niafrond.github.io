@@ -62,15 +62,15 @@ export function showPreRound() {
   // Personnalisation pour la manche 5 (deux phases)
   if (roundNum === 5) {
     if (phase === 1) {
-      title   = 'Manche 5 — Finale · Phase 1';
-      doText  = 'Description libre — Décrivez le mot avec tous les moyens.';
+      title      = 'Manche 5 — Finale · Phase 1';
+      doText     = 'Description libre — Décrivez le mot avec tous les moyens.';
       forbidText = 'Le mot lui-même ou tout mot de la même famille';
-      special = '⚡ Phase 1/2 de la Finale';
+      special    = '🔄 Les mêmes mots sont réutilisés · Phase 1/2';
     } else {
-      title   = 'Manche 5 — Finale · Phase 2';
-      doText  = 'Un seul mot comme indice.';
+      title      = 'Manche 5 — Finale · Phase 2';
+      doText     = 'Un seul mot comme indice.';
       forbidText = 'Plusieurs mots, variantes ou déclinaisons';
-      special = '⚡ Phase 2/2 de la Finale';
+      special    = '🔄 Les mêmes mots sont réutilisés · Phase 2/2';
     }
   }
 
