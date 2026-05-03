@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Pyramide 🏛️</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b1e2d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Pyramide">
+</head>
+<body>
+
+<div id="toast" class="toast" hidden></div>
+
+<div id="rotate-overlay">
+  <div class="rotate-overlay-inner">
+    <div class="rotate-overlay-phone">📱</div>
+    <p class="rotate-overlay-title">Tournez votre téléphone</p>
+    <p class="rotate-overlay-sub">Le jeu se joue en mode paysage</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 1 — SETUP
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-setup" data-screen="screen-setup">
+  <div class="page-wrapper">
+
+    <div class="setup-header-row">
+      <a href="../" class="btn btn-secondary btn-sm">← Accueil</a>
+      <div id="top-right-controls">
+        <button id="btn-theme"      class="btn-top-ctrl" title="Thème clair/sombre">🌙</button>
+        <button id="btn-fullscreen" class="btn-top-ctrl" title="Plein écran">⛶</button>
+        <button id="btn-mute"       class="btn-top-ctrl" title="Son on/off">🔊</button>
+      </div>
+    </div>
+
+    <h1 class="app-title">🏛️ Pyramide</h1>
+    <p class="app-subtitle">4 manches + la Grande Finale</p>
+
+    <!-- Teams preview -->
+    <div class="teams-preview">
+      <div class="team-chip" style="background:rgba(232,93,4,0.12);border-color:var(--volcan)">
+        <span style="color:var(--volcan)">🔴 Équipe Rouge</span>
+      </div>
+      <div class="teams-vs">VS</div>
+      <div class="team-chip" style="background:rgba(0,150,199,0.12);border-color:var(--lagon)">
+        <span style="color:var(--lagon)">🔵 Équipe Bleue</span>
+      </div>
+    </div>
+
+    <!-- Player list -->
+    <div class="setup-players-zone">
+      <div class="setup-players-header">
+        <span class="setup-players-title">Joueurs</span>
+        <span id="player-count" class="setup-players-count"></span>
+      </div>
+
+      <div class="card" id="panel-current-players">
+        <div id="player-empty-state" class="player-empty-state">
+          <span class="player-empty-icon">👥</span>
+          <p class="player-empty-text">Ajoutez au moins 2 joueurs</p>
+        </div>
+        <div id="player-list"></div>
+        <span id="setup-hint" hidden>⚠️ Ajoutez au moins 2 joueurs</span>
+      </div>
+
+      <div class="quick-add-wrapper">
+        <div class="quick-add-input-row">
+          <span class="quick-add-icon" aria-hidden="true">＋</span>
+          <input id="player-input" class="quick-add-input" type="text"
+                 placeholder="Ajouter un joueur…" maxlength="24"
+                 autocomplete="off" autocorrect="off" spellcheck="false">
+          <button id="btn-add-player" class="quick-add-submit" aria-label="Ajouter">➜</button>
+        </div>
+      </div>
+      <p class="quick-add-hint">Appuyez sur Entrée pour ajouter rapidement • Les joueurs sont répartis automatiquement</p>
+    </div>
+
+    <!-- Rules summary -->
+    <details class="card card-collapsible">
+      <summary class="card-title card-title-summary">📖 Les 5 manches</summary>
+      <div class="rules-list">
+        <div class="rule-item"><span class="rule-badge" style="background:var(--lagon)">1</span> <strong>Les Énigmes</strong> — Faites deviner 5 mots avec des indices (13 briques)</div>
+        <div class="rule-item"><span class="rule-badge" style="background:var(--soleil)">2</span> <strong>Ping-Pong</strong> — Un indice chacun, les équipes alternent</div>
+        <div class="rule-item"><span class="rule-badge" style="background:var(--foret)">3</span> <strong>Noms Propres</strong> — Misez pour avoir le droit de donner les indices</div>
+        <div class="rule-item"><span class="rule-badge" style="background:var(--danger)">4</span> <strong>Contre-la-Montre</strong> — 7 mots en 30 secondes</div>
+        <div class="rule-item"><span class="rule-badge" style="background:#ffd700;color:#000">F</span> <strong>La Grande Pyramide</strong> — 6 expressions, 60 secondes, jackpot !</div>
+      </div>
+    </details>
+
+    <button id="btn-install-pwa" class="btn btn-secondary w-full mb-12" hidden>
+      📲 Installer l'application
+    </button>
+
+    <div class="screen-sticky-footer screen-sticky-footer--fab">
+      <button id="btn-start-game" class="btn btn-primary btn-fab" disabled aria-label="Jouer">
+        ▶
+      </button>
+    </div>
+
+    <p id="game-version" style="text-align:center;font-size:0.75rem;color:var(--text-muted);margin-top:4px;"></p>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 2 — PRE-ROUND
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-pre-round" data-screen="screen-pre-round" hidden>
+  <div class="page-wrapper screen-center">
+
+    <div id="pre-round-bar" class="pre-round-bar"></div>
+
+    <h1 id="pre-round-title" class="app-title" style="font-size:1.7rem;"></h1>
+
+    <p id="pre-round-theme" class="pre-round-theme" hidden></p>
+
+    <div class="card" style="width:100%;max-width:520px;">
+      <div class="card-title">Règles</div>
+      <ul id="pre-round-rules" class="pre-round-rules"></ul>
+    </div>
+
+    <button id="btn-pre-round-start" class="btn btn-primary btn-lg w-full" style="max-width:520px;">
+      ▶ Commencer
+    </button>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 3 — TURN (R1 / R2 / R3)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-turn" data-screen="screen-turn" hidden>
+  <div class="turn-layout">
+
+    <!-- Header -->
+    <div class="turn-header-bar">
+      <span id="turn-round-badge" class="round-badge"></span>
+      <div class="turn-team-info">
+        <span id="turn-team-name" class="turn-team-name"></span>
+        <span id="turn-subtitle" class="turn-subtitle" hidden></span>
+      </div>
+      <div id="turn-scores" class="turn-scores-row"></div>
+    </div>
+
+    <!-- Word display -->
+    <div class="word-display-wrapper">
+      <div id="turn-word" class="word-display"></div>
+    </div>
+
+    <!-- Bricks -->
+    <div class="bricks-section">
+      <div id="turn-bricks" class="bricks-row"></div>
+      <div id="turn-bricks-count" class="bricks-count"></div>
+      <div id="turn-clue-count" class="clue-count"></div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="turn-actions">
+      <button id="btn-give-clue"  class="btn btn-lagon turn-btn">Donner un indice 🧱</button>
+      <button id="btn-word-found" class="btn btn-success turn-btn">Mot trouvé ✅</button>
+      <button id="btn-word-skip"  class="btn btn-danger  turn-btn">Passer ❌</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 4 — TURN-END
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-turn-end" data-screen="screen-turn-end" hidden>
+  <div class="page-wrapper screen-center">
+
+    <div style="font-size:3rem;">⏸️</div>
+    <h2 id="sub-turn-message" class="app-title" style="font-size:1.7rem;"></h2>
+
+    <div id="turn-end-scores" class="turn-end-scores" style="width:100%;max-width:500px;"></div>
+
+    <button id="btn-next-sub-turn" class="btn btn-primary btn-lg w-full" style="max-width:500px;">
+      ▶ Continuer
+    </button>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 5 — BIDDING (R3)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-bidding" data-screen="screen-bidding" hidden>
+  <div class="page-wrapper screen-center">
+
+    <span class="round-badge" style="background:var(--foret)">Manche 3</span>
+    <h2 class="app-title" style="font-size:1.5rem;">
+      Thème : <span id="bidding-theme"></span>
+    </h2>
+    <p class="app-subtitle">
+      Mot <span id="bidding-word-num"></span> / <span id="bidding-total"></span>
+    </p>
+
+    <!-- Team A bid -->
+    <div id="bidding-section-a" class="bid-card" style="border-color:var(--volcan)">
+      <div class="bid-team-label" style="color:var(--volcan)">🔴 Équipe Rouge — misez en secret</div>
+      <div class="bid-selector">
+        <button class="bid-btn bid-btn-a" data-bid="1">1 🧱</button>
+        <button class="bid-btn bid-btn-a" data-bid="2">2 🧱</button>
+        <button class="bid-btn bid-btn-a" data-bid="3">3 🧱</button>
+      </div>
+      <div id="bidding-status-a" class="bid-status"></div>
+      <button id="btn-bid-confirm-a" class="btn btn-primary w-full" disabled>Confirmer ma mise</button>
+    </div>
+
+    <!-- Team B bid -->
+    <div id="bidding-section-b" class="bid-card" style="border-color:var(--lagon)" hidden>
+      <div class="bid-team-label" style="color:var(--lagon)">🔵 Équipe Bleue — misez en secret</div>
+      <div class="bid-selector">
+        <button class="bid-btn bid-btn-b" data-bid="1">1 🧱</button>
+        <button class="bid-btn bid-btn-b" data-bid="2">2 🧱</button>
+        <button class="bid-btn bid-btn-b" data-bid="3">3 🧱</button>
+      </div>
+      <div id="bidding-status-b" class="bid-status"></div>
+      <button id="btn-bid-confirm-b" class="btn btn-lagon w-full" disabled>Confirmer ma mise</button>
+    </div>
+
+    <!-- Reveal -->
+    <div id="bidding-reveal" class="bid-reveal" hidden>
+      <div id="bidding-reveal-a" class="bid-reveal-item"></div>
+      <div id="bidding-reveal-b" class="bid-reveal-item"></div>
+      <div id="bidding-tie" class="bid-tie" hidden>⚡ Égalité ! Nouvelle mise…</div>
+      <div id="bidding-winner" class="bid-winner" hidden></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 6 — TIMER (R4)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-timer" data-screen="screen-timer" hidden>
+  <div class="timer-layout">
+
+    <!-- Header -->
+    <div class="timer-header">
+      <span class="round-badge" style="background:var(--danger)">Manche 4</span>
+      <span id="timer-team-name" class="turn-team-name"></span>
+      <div id="timer-scores" class="turn-scores-row"></div>
+    </div>
+
+    <!-- Theme -->
+    <p id="timer-theme" class="timer-theme"></p>
+
+    <!-- Word -->
+    <div class="word-display-wrapper word-display-wrapper--timer">
+      <div id="timer-word" class="word-display"></div>
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-container">
+      <svg class="timer-svg" viewBox="0 0 100 100">
+        <circle class="timer-track"    cx="50" cy="50" r="46"/>
+        <circle class="timer-progress" cx="50" cy="50" r="46" id="r4-timer-progress"/>
+      </svg>
+      <div class="timer-label" id="r4-timer-label">30</div>
+    </div>
+
+    <!-- Actions -->
+    <div class="turn-actions">
+      <button id="btn-timer-found" class="btn btn-success turn-btn">Trouvé ✅</button>
+      <button id="btn-timer-skip"  class="btn btn-danger  turn-btn">Passer ❌</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 7 — FINAL
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-final" data-screen="screen-final" hidden>
+  <div class="final-layout">
+
+    <!-- Header -->
+    <div class="final-header">
+      <span class="round-badge" style="background:#c8a000;color:#000;">🏛️ Finale</span>
+      <span id="final-progress" class="final-progress"></span>
+    </div>
+
+    <!-- Expression -->
+    <div class="word-display-wrapper word-display-wrapper--final">
+      <div id="final-word" class="word-display word-display--final"></div>
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-container">
+      <svg class="timer-svg" viewBox="0 0 100 100">
+        <circle class="timer-track"    cx="50" cy="50" r="46"/>
+        <circle class="timer-progress timer-progress--final" cx="50" cy="50" r="46" id="final-timer-progress"/>
+      </svg>
+      <div class="timer-label" id="final-timer-label">60</div>
+    </div>
+
+    <!-- Actions -->
+    <div class="turn-actions">
+      <button id="btn-final-found"  class="btn btn-success  turn-btn">Trouvé ✅</button>
+      <button id="btn-final-failed" class="btn btn-danger   turn-btn">Raté ❌</button>
+    </div>
+    <div style="display:flex;justify-content:center;margin-top:8px;">
+      <button id="btn-final-bonus" class="btn btn-secondary">⏱️ +10 secondes</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ÉCRAN 8 — GAME OVER
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-game-over" data-screen="screen-game-over" hidden>
+  <div class="page-wrapper screen-center">
+
+    <div id="game-over-jackpot" class="jackpot-banner" hidden>
+      🎉 JACKPOT ! 🎉
+    </div>
+
+    <div style="font-size:4rem;">🏆</div>
+    <h1 class="app-title" style="font-size:2rem;">Résultats finaux</h1>
+
+    <div id="game-over-results" style="width:100%;max-width:500px;"></div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:500px;margin-top:8px;">
+      <button id="btn-play-again" class="btn btn-primary btn-lg w-full">
+        🔄 Rejouer
+      </button>
+      <button id="btn-back-home" class="btn btn-secondary w-full">
+        🏠 Retour à l'accueil
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
