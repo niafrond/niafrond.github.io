@@ -72,6 +72,7 @@ export const state = {
   finalTimerInterval: null,
   finalBonusUsed: false,
   finalBestTeam: null,      // index of team that plays the Final
+  finalCanJackpot: true,    // false if any word was skipped
 };
 
 export function withCooldown(fn) {

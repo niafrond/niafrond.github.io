@@ -128,6 +128,7 @@ const ROUND_INFO = [
       '6 expressions françaises à faire deviner',
       '60 secondes + 1 bonus de +10 secondes (une seule fois)',
       'Toutes trouvées avant la fin → JACKPOT 🎉',
+      'Passer → mot perdu, JACKPOT impossible',
       'Les deux équipes jouent ensemble !',
     ],
   },
@@ -923,6 +924,7 @@ export function startFinal() {
   state.finalWordIdx    = 0;
   state.finalTimer      = 60;
   state.finalBonusUsed  = false;
+  state.finalCanJackpot = true;
   showPreRound(5, () => _enterFinal());
 }
 
@@ -1024,7 +1026,7 @@ export function finalWordFound() {
 
   if (state.finalWordIdx >= words.length) {
     _stopFinalTimer();
-    endFinal(true);
+    endFinal(state.finalCanJackpot);
     return;
   }
 
@@ -1035,10 +1037,23 @@ export function finalWordFound() {
 }
 
 export function finalWordFailed() {
-  // Any failure in the Final immediately ends the game (spec)
-  _stopFinalTimer();
+  // Skip word — jackpot no longer possible
+  const words = state.wordSets.final.words;
+  state.finalCanJackpot = false;
   playBuzzer();
-  endFinal(false);
+  showToast('Mot passé', 'warning');
+  state.finalWordIdx++;
+
+  if (state.finalWordIdx >= words.length) {
+    _stopFinalTimer();
+    endFinal(false);
+    return;
+  }
+
+  const wordEl     = el('final-word');
+  const progressEl = el('final-progress');
+  if (wordEl)     wordEl.textContent     = words[state.finalWordIdx];
+  if (progressEl) progressEl.textContent = `${state.finalWordIdx + 1} / ${words.length}`;
 }
 
 export function useBonusTime() {
