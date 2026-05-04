@@ -6,7 +6,7 @@
 import { state, TEAMS_META } from './state.js';
 import { el, showScreen, showToast } from './ui.js';
 import { playFound, playBuzzer, playTick, playTickUrgent, playGameOver, playGameStart, playButtonClick } from './sound.js';
-import { getR1Words, getR2Words, getR3Set, getR4Set, getFinalSet } from './words.js';
+import { getR1PhraseSets, getR2Words, getR3Set, getR4Set, getFinalSet } from './words.js';
 
 // ─── Callbacks pour navigation linéaire ───────────────────────────────────────
 let _preRoundNext = null;
@@ -50,9 +50,9 @@ export function renderTeams() {
 // ─── Word sets ─────────────────────────────────────────────────────────────────
 
 export function generateWordSets() {
-  const r1 = getR1Words();
-  state.wordSets.round1.teamA = r1.slice(0, 5);
-  state.wordSets.round1.teamB = r1.slice(5, 10);
+  const r1 = getR1PhraseSets(10);
+  state.wordSets.round1.teamA = r1.slice(0, 5);   // 5 phrase options for team A
+  state.wordSets.round1.teamB = r1.slice(5, 10);  // 5 phrase options for team B
 
   const r2 = getR2Words();
   state.wordSets.round2.shared = r2.slice(0, 5);
@@ -78,11 +78,12 @@ const ROUND_INFO = [
     name: 'Manche 1 — Les Énigmes 🧩',
     color: 'var(--lagon)',
     rules: [
-      'Chaque équipe joue à son tour',
-      '5 mots à faire deviner — 13 briques par équipe',
-      'Chaque indice coûte 1 brique 🧱',
-      'Mot trouvé → +1 point ✅',
-      'Briques restantes à la fin → points bonus',
+      'Le donneur choisit une phrase parmi 5 (les devineurs détournent les yeux)',
+      '5 mots cachés sont liés à cette phrase',
+      '13 briques partagées — chaque indice coûte 1 brique 🧱',
+      'Engagez le nombre d\'indices AVANT chaque mot',
+      'Mot trouvé → +2 points ✅',
+      'Fin : les devineurs cherchent le lien → bonne réponse +3 🎯',
       '❌ Interdits : gestes, sons, même famille, traduction directe',
     ],
   },
@@ -151,6 +152,14 @@ export function showPreRound(round, onStart) {
     const themeNote = el('pre-round-theme');
     if (themeNote) {
       themeNote.textContent = `Thème : ${state.wordSets.round3.theme}`;
+      themeNote.hidden = false;
+    }
+  } else if (round === 5 && state.finalBestTeam !== null) {
+    const themeNote = el('pre-round-theme');
+    if (themeNote) {
+      const t = state.teams[state.finalBestTeam];
+      themeNote.textContent = `🏆 ${t.name} joue la Finale !`;
+      themeNote.style.color = t.color;
       themeNote.hidden = false;
     }
   } else {
@@ -250,95 +259,189 @@ export function startRound1() {
 }
 
 export function initR1Turn(subTeam) {
-  state.r1SubTeam   = subTeam;
-  state.r1WordIdx   = 0;
-  state.r1BricksLeft = 13;
-  state.r1ClueCount = 0;
-  state.currentTeam = subTeam;
+  state.r1SubTeam      = subTeam;
+  state.r1WordIdx      = 0;
+  state.r1ClueBudget   = 13;
+  state.r1FoundWords   = [];
+  state.r1SelectedSet  = null;
+  state.r1CommittedClues = 0;
+  state.r1CluesGiven   = 0;
+  state.currentTeam    = subTeam;
 
-  const team  = state.teams[subTeam];
-  const words = subTeam === 0 ? state.wordSets.round1.teamA : state.wordSets.round1.teamB;
+  const sets = subTeam === 0 ? state.wordSets.round1.teamA : state.wordSets.round1.teamB;
+  state.r1PhraseSets = sets;
 
-  _updateTurnHeader(1, team);
-  _updateWord(words[0]);
-  _updateBricks(13, 13);
+  // Populate phrase selection screen
+  const team    = state.teams[subTeam];
+  const titleEl = el('r1-phrase-team');
+  const listEl  = el('r1-phrase-list');
+  const budgetEl = el('r1-phrase-budget');
+
+  if (titleEl)  { titleEl.textContent = team.name; titleEl.style.color = team.color; }
+  if (budgetEl) budgetEl.textContent = '13 briques disponibles';
+  if (listEl) {
+    listEl.innerHTML = sets.map((s, i) => `
+      <button class="r1-phrase-btn" data-idx="${i}">${s.phrase}</button>
+    `).join('');
+  }
+
+  showScreen('screen-r1-phrase');
+}
+
+export function r1SelectPhrase(idx) {
+  state.r1SelectedSet    = state.r1PhraseSets[idx];
+  state.r1WordIdx        = 0;
+  state.r1CommittedClues = 0;
+  state.r1CluesGiven     = 0;
+
+  _r1ShowCurrentWord();
+}
+
+function _r1ShowCurrentWord() {
+  const set  = state.r1SelectedSet;
+  const word = set.words[state.r1WordIdx];
+  const team = state.teams[state.r1SubTeam];
+
+  _updateTurnHeader(1, team, `Mot ${state.r1WordIdx + 1}/5 — ${state.r1ClueBudget} briques restantes`);
+  _updateWord(word);
+  _updateBricks(state.r1ClueBudget, 13);
   _updateClueCount(0);
   _updateScores();
-  _setTurnButtons('full');
 
+  // Show commit section, hide action buttons
+  _r1ShowCommitSection();
   showScreen('screen-turn');
 }
 
-export function r1GiveClue() {
-  if (state.r1BricksLeft <= 0) return;
-  playButtonClick();
+function _r1ShowCommitSection() {
+  const commitEl = el('r1-commit-section');
+  const budgetEl = el('r1-commit-budget');
+  if (!commitEl) return;
 
-  state.r1BricksLeft--;
-  state.r1ClueCount++;
-  _updateBricks(state.r1BricksLeft, 13);
-  _updateClueCount(state.r1ClueCount);
+  // Update budget display
+  if (budgetEl) budgetEl.textContent = `${state.r1ClueBudget} brique${state.r1ClueBudget !== 1 ? 's' : ''} restante${state.r1ClueBudget !== 1 ? 's' : ''}`;
 
-  if (state.r1BricksLeft <= 0) {
-    playBuzzer();
-    showToast('Plus de briques ! Mot perdu.', 'warning');
-    setTimeout(() => _r1ForceSkip(), 900);
+  // Enable/disable commit buttons based on available budget
+  commitEl.querySelectorAll('.r1-commit-btn').forEach(btn => {
+    const n = parseInt(btn.dataset.n, 10);
+    btn.disabled = n > state.r1ClueBudget || state.r1ClueBudget === 0;
+  });
+
+  commitEl.hidden = false;
+  // Hide main action buttons during commit phase
+  const clueBtn  = el('btn-give-clue');
+  const foundBtn = el('btn-word-found');
+  const skipBtn  = el('btn-word-skip');
+  if (clueBtn)  clueBtn.hidden  = true;
+  if (foundBtn) foundBtn.hidden = true;
+  if (skipBtn)  skipBtn.hidden  = state.r1ClueBudget > 0; // can always pass if no budget
+
+  // If no budget left, only "Passer" is visible (word is lost by default)
+  if (state.r1ClueBudget === 0) {
+    commitEl.hidden = true;
+    if (skipBtn) skipBtn.hidden = false;
   }
 }
 
-function _r1ForceSkip() {
-  const words = state.r1SubTeam === 0 ? state.wordSets.round1.teamA : state.wordSets.round1.teamB;
-  state.r1WordIdx++;
-  state.r1ClueCount = 0;
+export function r1CommitClues(n) {
+  if (n > state.r1ClueBudget) return;
+  state.r1CommittedClues = n;
+  state.r1CluesGiven     = 0;
 
-  if (state.r1WordIdx >= words.length) {
-    r1EndSubTurn();
-    return;
-  }
-  _updateWord(words[state.r1WordIdx]);
+  const commitEl = el('r1-commit-section');
+  if (commitEl) commitEl.hidden = true;
+
+  _setTurnButtons('full');
   _updateClueCount(0);
-  _updateBricks(0, 13);
+}
+
+export function r1GiveClue() {
+  if (state.r1CluesGiven >= state.r1CommittedClues) return;
+  playButtonClick();
+
+  state.r1ClueBudget--;
+  state.r1CluesGiven++;
+
+  _updateBricks(state.r1ClueBudget, 13);
+  _updateClueCount(state.r1CluesGiven);
+  _updateTurnHeader(1, state.teams[state.r1SubTeam],
+    `Mot ${state.r1WordIdx + 1}/5 — ${state.r1ClueBudget} briques restantes`);
+
+  // Once all committed clues are given, hide the Give-Clue button
+  if (state.r1CluesGiven >= state.r1CommittedClues) {
+    const clueBtn = el('btn-give-clue');
+    if (clueBtn) clueBtn.hidden = true;
+  }
+
+  if (state.r1ClueBudget <= 0) {
+    playBuzzer();
+    showToast('Plus de briques ! Mot perdu.', 'warning');
+    setTimeout(() => r1WordLost(), 900);
+  }
 }
 
 export function r1WordFound() {
-  const words = state.r1SubTeam === 0 ? state.wordSets.round1.teamA : state.wordSets.round1.teamB;
   playFound();
-  state.teams[state.r1SubTeam].score++;
+  const word = state.r1SelectedSet.words[state.r1WordIdx];
+  state.teams[state.r1SubTeam].score += 2;
+  state.r1FoundWords.push(word);
   state.r1WordIdx++;
-  state.r1ClueCount = 0;
+  state.r1CommittedClues = 0;
+  state.r1CluesGiven     = 0;
   _updateScores();
 
-  if (state.r1WordIdx >= words.length) {
-    const bonus = state.r1BricksLeft;
-    if (bonus > 0) {
-      state.teams[state.r1SubTeam].score += bonus;
-      _updateScores();
-      showToast(`🎉 Tous trouvés ! +${bonus} pts bonus`, 'success');
-    } else {
-      showToast('🎉 Tous les mots trouvés !', 'success');
-    }
-    setTimeout(() => r1EndSubTurn(), 1200);
+  if (state.r1WordIdx >= state.r1SelectedSet.words.length) {
+    _r1AfterAllWords();
     return;
   }
-
-  _updateWord(words[state.r1WordIdx]);
-  _updateClueCount(0);
-  _updateBricks(state.r1BricksLeft, 13);
+  _r1ShowCurrentWord();
 }
 
-export function r1WordSkipped() {
-  const words = state.r1SubTeam === 0 ? state.wordSets.round1.teamA : state.wordSets.round1.teamB;
+export function r1WordLost() {
   playBuzzer();
   state.r1WordIdx++;
-  state.r1ClueCount = 0;
+  state.r1CommittedClues = 0;
+  state.r1CluesGiven     = 0;
 
-  if (state.r1WordIdx >= words.length || state.r1BricksLeft <= 0) {
+  if (state.r1WordIdx >= state.r1SelectedSet.words.length) {
+    _r1AfterAllWords();
+    return;
+  }
+  _r1ShowCurrentWord();
+}
+
+function _r1AfterAllWords() {
+  if (state.r1FoundWords.length === 0) {
+    // No words found → skip link phase
     r1EndSubTurn();
     return;
   }
 
-  _updateWord(words[state.r1WordIdx]);
-  _updateClueCount(0);
-  _updateBricks(state.r1BricksLeft, 13);
+  // Populate and show link screen
+  const wordsEl = el('r1-link-words');
+  const phraseEl = el('r1-link-phrase-hint');
+  if (wordsEl) {
+    wordsEl.innerHTML = state.r1FoundWords.map(w =>
+      `<div class="r1-link-word">${w}</div>`
+    ).join('');
+  }
+  if (phraseEl) phraseEl.textContent = `(${state.r1FoundWords.length} mot${state.r1FoundWords.length > 1 ? 's' : ''} trouvé${state.r1FoundWords.length > 1 ? 's' : ''})`;
+
+  showScreen('screen-r1-link');
+}
+
+export function r1LinkFound() {
+  playFound();
+  state.teams[state.r1SubTeam].score += 3;
+  _updateScores();
+  showToast(`🎯 Lien trouvé ! +3 pts pour ${state.teams[state.r1SubTeam].name}`, 'success');
+  setTimeout(() => r1EndSubTurn(), 900);
+}
+
+export function r1LinkFailed() {
+  playBuzzer();
+  showToast('Lien raté !', 'warning');
+  setTimeout(() => r1EndSubTurn(), 700);
 }
 
 export function r1EndSubTurn() {
@@ -677,6 +780,9 @@ export function r4WordSkipped() {
 
 export function r4EndSubTurn() {
   stopR4Timer();
+  // Store per-team count for Final tiebreaker
+  state.r4FoundCounts[state.r4SubTeam] = state.r4FoundCount;
+
   const team = state.teams[state.r4SubTeam];
   const msg  = `${team.name} : ${state.r4FoundCount} mot${state.r4FoundCount !== 1 ? 's' : ''} trouvé${state.r4FoundCount !== 1 ? 's' : ''}`;
 
@@ -714,7 +820,20 @@ export function stopR4Timer() {
 
 // ─── Finale — La Grande Pyramide ───────────────────────────────────────────────
 
+function _determineFinalTeam() {
+  const [scoreA, scoreB] = state.teams.map(t => t.score);
+  if (scoreA > scoreB) {
+    state.finalBestTeam = 0;
+  } else if (scoreB > scoreA) {
+    state.finalBestTeam = 1;
+  } else {
+    // Tie → team with most R4 words found; if still tied → team 0
+    state.finalBestTeam = state.r4FoundCounts[1] > state.r4FoundCounts[0] ? 1 : 0;
+  }
+}
+
 export function startFinal() {
+  _determineFinalTeam();
   state.currentRound    = 5;
   state.finalWordIdx    = 0;
   state.finalTimer      = 60;
@@ -722,17 +841,64 @@ export function startFinal() {
   showPreRound(5, () => _enterFinal());
 }
 
+// ─── Pyramid visualization ──────────────────────────────────────────────────────
+
+const PYRAMID_LABELS = ['①', '②', '③', '④', '⑤', '⑥'];
+
+function _renderPyramid() {
+  const container = el('pyramid-container');
+  if (!container) return;
+
+  // Build from top (level 6 = narrowest) to bottom (level 1 = widest)
+  let html = '';
+  for (let lvl = 5; lvl >= 0; lvl--) {
+    const cls = lvl > 0 ? 'pyramid-cell--locked' : 'pyramid-cell--active';
+    const txt = lvl > 0 ? '?' : '???';
+    html += `
+      <div class="pyramid-row pyramid-row-${lvl + 1}">
+        <div class="pyramid-cell ${cls}" id="pyramid-cell-${lvl}">
+          <span class="pyramid-cell-label">${PYRAMID_LABELS[lvl]}</span>
+          <span class="pyramid-cell-text">${txt}</span>
+        </div>
+      </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function _updatePyramid(completedIdx) {
+  const doneEl = el(`pyramid-cell-${completedIdx}`);
+  if (doneEl) {
+    doneEl.className = 'pyramid-cell pyramid-cell--completed';
+    const t = doneEl.querySelector('.pyramid-cell-text');
+    if (t) t.textContent = state.wordSets.final.words[completedIdx];
+  }
+  const nextEl = el(`pyramid-cell-${completedIdx + 1}`);
+  if (nextEl) {
+    nextEl.className = 'pyramid-cell pyramid-cell--active';
+    const t = nextEl.querySelector('.pyramid-cell-text');
+    if (t) t.textContent = '???';
+  }
+}
+
 function _enterFinal() {
   const words = state.wordSets.final.words;
+  const bestTeam = state.finalBestTeam !== null ? state.teams[state.finalBestTeam] : null;
 
-  const wordEl    = el('final-word');
+  const wordEl     = el('final-word');
   const progressEl = el('final-progress');
-  const bonusBtn  = el('btn-final-bonus');
+  const bonusBtn   = el('btn-final-bonus');
+  const teamEl     = el('final-team-name');
 
   if (wordEl)     wordEl.textContent     = words[0];
   if (progressEl) progressEl.textContent = `1 / ${words.length}`;
   if (bonusBtn)   bonusBtn.disabled      = false;
+  if (teamEl && bestTeam) {
+    teamEl.textContent = bestTeam.name;
+    teamEl.style.color = bestTeam.color;
+    teamEl.hidden = false;
+  }
 
+  _renderPyramid();
   _updateTimerCircle(60, 70, 'final-timer-progress', 'final-timer-label');
   _updateScores();
 
@@ -768,6 +934,7 @@ function _stopFinalTimer() {
 export function finalWordFound() {
   const words = state.wordSets.final.words;
   playFound();
+  _updatePyramid(state.finalWordIdx);
   state.finalWordIdx++;
 
   if (state.finalWordIdx >= words.length) {
@@ -783,20 +950,10 @@ export function finalWordFound() {
 }
 
 export function finalWordFailed() {
-  const words = state.wordSets.final.words;
+  // Any failure in the Final immediately ends the game (spec)
+  _stopFinalTimer();
   playBuzzer();
-  state.finalWordIdx++;
-
-  if (state.finalWordIdx >= words.length) {
-    _stopFinalTimer();
-    endFinal(false);
-    return;
-  }
-
-  const wordEl     = el('final-word');
-  const progressEl = el('final-progress');
-  if (wordEl)     wordEl.textContent     = words[state.finalWordIdx];
-  if (progressEl) progressEl.textContent = `${state.finalWordIdx + 1} / ${words.length}`;
+  endFinal(false);
 }
 
 export function useBonusTime() {
@@ -859,7 +1016,7 @@ export function handleWordFound() {
 }
 
 export function handleWordSkip() {
-  if (state.currentRound === 1) r1WordSkipped();
+  if (state.currentRound === 1) r1WordLost();
   else if (state.currentRound === 2) r2WordMissed();
   else if (state.currentRound === 3) r3WordFailed();
 }

@@ -34,9 +34,13 @@ export const state = {
 
   // Round 1
   r1SubTeam: 0,
+  r1PhraseSets: [],         // 5 phrase options shown to the current team
+  r1SelectedSet: null,      // { phrase, words[] } — the option picked by clue giver
   r1WordIdx: 0,
-  r1BricksLeft: 13,
-  r1ClueCount: 0,
+  r1ClueBudget: 13,         // shared clue budget for the sub-turn
+  r1CommittedClues: 0,      // clues committed for the current word
+  r1CluesGiven: 0,          // clues given so far for the current word
+  r1FoundWords: [],         // words successfully guessed (revealed in link phase)
 
   // Round 2
   r2WordIdx: 0,
@@ -58,6 +62,7 @@ export const state = {
   r4SubTeam: 0,
   r4WordIdx: 0,
   r4FoundCount: 0,
+  r4FoundCounts: [0, 0],    // per-team R4 word counts (tiebreaker for Final)
   r4TimeRemaining: 30,
   r4TimerInterval: null,
 
@@ -66,6 +71,7 @@ export const state = {
   finalTimer: 60,
   finalTimerInterval: null,
   finalBonusUsed: false,
+  finalBestTeam: null,      // index of team that plays the Final
 };
 
 export function withCooldown(fn) {

@@ -13,6 +13,7 @@ import {
   triggerPreRoundStart, triggerNextTurn,
   startRound1,
   handleGiveClue, handleWordFound, handleWordSkip,
+  r1SelectPhrase, r1CommitClues, r1LinkFound, r1LinkFailed,
   r4WordFound, r4WordSkipped,
   finalWordFound, finalWordFailed, useBonusTime,
   showGameOver,
@@ -185,6 +186,33 @@ window.addEventListener('DOMContentLoaded', () => {
   el('btn-pre-round-start')?.addEventListener('click', withCooldown(() => {
     playButtonClick();
     triggerPreRoundStart();
+  }));
+
+  // ── R1 Phrase selection screen ───────────────────────────────────────────────
+  el('r1-phrase-list')?.addEventListener('click', withCooldown(e => {
+    const btn = e.target.closest('.r1-phrase-btn');
+    if (!btn) return;
+    playButtonClick();
+    r1SelectPhrase(parseInt(btn.dataset.idx, 10));
+  }));
+
+  // ── R1 Commit section (inside screen-turn) ────────────────────────────────
+  el('r1-commit-section')?.addEventListener('click', withCooldown(e => {
+    const btn = e.target.closest('.r1-commit-btn');
+    if (!btn || btn.disabled) return;
+    playButtonClick();
+    r1CommitClues(parseInt(btn.dataset.n, 10));
+  }));
+
+  // ── R1 Link phase screen ─────────────────────────────────────────────────────
+  el('btn-r1-link-found')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    r1LinkFound();
+  }));
+
+  el('btn-r1-link-failed')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    r1LinkFailed();
   }));
 
   // ── Turn screen (R1, R2, R3) ────────────────────────────────────────────────

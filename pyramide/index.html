@@ -131,8 +131,51 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     ÉCRAN 3 — TURN (R1 / R2 / R3)
+<!-- ═══════════════════════════════════════════════════════════════════════════     ÉCRAN 2b — MANCHE 1 : SÉLECTION DE PHRASE
+     ══════════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-r1-phrase" data-screen="screen-r1-phrase" hidden>
+  <div class="page-wrapper screen-center">
+
+    <span class="round-badge" style="background:var(--lagon)">Manche 1 — Les Énigmes</span>
+    <p class="app-subtitle" style="margin-bottom:4px;">
+      Donneur : <strong id="r1-phrase-team" style="font-size:1.05rem;"></strong>
+    </p>
+    <p id="r1-phrase-budget" class="r1-phrase-budget"></p>
+    <p class="r1-phrase-instruction">
+      Choisissez une phrase — les devineurs détournent les yeux 🙈
+    </p>
+
+    <div id="r1-phrase-list" class="r1-phrase-list"></div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════════
+     ÉCRAN 2c — MANCHE 1 : PHASE DU LIEN
+     ══════════════════════════════════════════════════════════════════════════════ -->
+<div id="screen-r1-link" data-screen="screen-r1-link" hidden>
+  <div class="page-wrapper screen-center">
+
+    <span class="round-badge" style="background:var(--lagon)">Manche 1 — Le Lien 🎯</span>
+    <h2 class="app-title" style="font-size:1.6rem;">Trouvez le lien !</h2>
+    <p id="r1-link-phrase-hint" class="app-subtitle"></p>
+
+    <div class="card" style="width:100%;max-width:520px;">
+      <div class="card-title">Mots trouvés</div>
+      <div id="r1-link-words" class="r1-link-words"></div>
+    </div>
+
+    <p class="r1-link-instruction">Les devineurs énoncent le lien à voix haute, le donneur confirme.</p>
+
+    <div class="r1-link-actions">
+      <button id="btn-r1-link-found" class="btn btn-success btn-lg">🎯 Lien trouvé ! (+3 pts)</button>
+      <button id="btn-r1-link-failed" class="btn btn-danger  btn-lg">❌ Lien raté</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════════     ÉCRAN 3 — TURN (R1 / R2 / R3)
      ═══════════════════════════════════════════════════════════════════════════ -->
 <div id="screen-turn" data-screen="screen-turn" hidden>
   <div class="turn-layout">
@@ -157,6 +200,19 @@
       <div id="turn-bricks" class="bricks-row"></div>
       <div id="turn-bricks-count" class="bricks-count"></div>
       <div id="turn-clue-count" class="clue-count"></div>
+    </div>
+
+    <!-- R1 Commit section (only shown for Round 1 — clue-count commitment) -->
+    <div id="r1-commit-section" class="r1-commit-section" hidden>
+      <div class="r1-commit-label">Combien d'indices pour ce mot ?</div>
+      <div id="r1-commit-budget" class="r1-commit-budget"></div>
+      <div class="r1-commit-btns">
+        <button class="btn r1-commit-btn btn-lagon" data-n="1">1 🧱</button>
+        <button class="btn r1-commit-btn btn-lagon" data-n="2">2 🧱</button>
+        <button class="btn r1-commit-btn btn-lagon" data-n="3">3 🧱</button>
+        <button class="btn r1-commit-btn btn-lagon" data-n="4">4 🧱</button>
+        <button class="btn r1-commit-btn btn-lagon" data-n="5">5 🧱</button>
+      </div>
     </div>
 
     <!-- Action buttons -->
@@ -285,12 +341,16 @@
     <div class="final-header">
       <span class="round-badge" style="background:#c8a000;color:#000;">🏛️ Finale</span>
       <span id="final-progress" class="final-progress"></span>
+      <span id="final-team-name" class="turn-team-name" hidden></span>
     </div>
 
-    <!-- Expression -->
+    <!-- Expression courante -->
     <div class="word-display-wrapper word-display-wrapper--final">
       <div id="final-word" class="word-display word-display--final"></div>
     </div>
+
+    <!-- Pyramide -->
+    <div id="pyramid-container" class="pyramid-container"></div>
 
     <!-- Timer -->
     <div class="timer-container">
