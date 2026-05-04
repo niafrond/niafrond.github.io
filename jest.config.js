@@ -45,5 +45,29 @@ export default {
       testMatch: ['<rootDir>/pyramide/tests/unit/words.test.js'],
       transform: {},
     },
+    // ── Taboo : logique de jeu (jsdom pour Web Audio) ────────────────────────
+    {
+      displayName: 'taboo-jsdom',
+      testEnvironment: 'jsdom',
+      testMatch: ['<rootDir>/taboo/tests/unit/game.test.js'],
+      transform: {},
+    },
+    // ── Blind-test : fuzzy + joker (node) ────────────────────────────────────
+    {
+      displayName: 'blind-test-node',
+      testEnvironment: 'node',
+      testMatch: [
+        '<rootDir>/blind-test/tests/unit/fuzzy.test.js',
+        '<rootDir>/blind-test/tests/unit/joker.test.js',
+      ],
+      transform: {},
+    },
+    // ── Blind-test : playlist (jsdom pour localStorage) ───────────────────────
+    {
+      displayName: 'blind-test-jsdom',
+      testEnvironment: 'jsdom',
+      testMatch: ['<rootDir>/blind-test/tests/unit/playlist.test.js'],
+      transform: {},
+    },
   ],
 };
