@@ -526,6 +526,8 @@ html, body {
   min-height: 100vh;
   padding: 16px;
   gap: 12px;
+  border-top: 4px solid transparent;
+  transition: border-color 0.3s, background 0.3s;
 }
 
 .turn-header-bar {
