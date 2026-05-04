@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Taboo 🚫</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b1e2d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Taboo">
+</head>
+<body>
+
+<div id="toast" class="toast" hidden></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 1 — SETUP (HOST uniquement)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-setup" data-screen="screen-setup" hidden>
+  <div class="page-wrapper">
+
+    <div class="setup-header-row">
+      <a href="../" class="btn btn-secondary btn-sm">← Accueil</a>
+      <div id="top-right-controls">
+        <button id="btn-theme"      class="btn-top-ctrl" title="Thème clair/sombre">🌙</button>
+        <button id="btn-fullscreen" class="btn-top-ctrl" title="Plein écran">⛶</button>
+        <button id="btn-mute"       class="btn-top-ctrl" title="Son on/off">🔊</button>
+      </div>
+    </div>
+
+    <h1 class="app-title">Taboo 🚫</h1>
+    <p class="app-subtitle">2 téléphones — donnez des indices sans dire les mots interdits !</p>
+
+    <!-- Team names -->
+    <div class="card">
+      <div class="card-title">Noms des équipes</div>
+      <div class="setup-teams-grid">
+        <div class="team-input-group">
+          <label class="team-input-label team-input-label--red" for="input-team-a">🔴 Téléphone A (host)</label>
+          <input id="input-team-a" class="team-input" type="text" value="Équipe Rouge" maxlength="20" autocomplete="off">
+        </div>
+        <div class="team-input-group">
+          <label class="team-input-label team-input-label--blue" for="input-team-b">🔵 Téléphone B (client)</label>
+          <input id="input-team-b" class="team-input" type="text" value="Équipe Bleue" maxlength="20" autocomplete="off">
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="card">
+      <div class="card-title">Paramètres</div>
+      <div class="settings-grid">
+        <div class="setting-group">
+          <label class="setting-label" for="sel-timer">⏱️ Durée d'un tour</label>
+          <select id="sel-timer" class="setting-select">
+            <option value="30">30 secondes</option>
+            <option value="45">45 secondes</option>
+            <option value="60" selected>60 secondes</option>
+            <option value="90">90 secondes</option>
+          </select>
+        </div>
+        <div class="setting-group">
+          <label class="setting-label" for="sel-rounds">🔄 Manches</label>
+          <select id="sel-rounds" class="setting-select">
+            <option value="3">3 manches</option>
+            <option value="5" selected>5 manches</option>
+            <option value="7">7 manches</option>
+            <option value="10">10 manches</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rules -->
+    <details class="card" style="margin-bottom:16px;">
+      <summary class="card-title" style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+        <span>📖 Règles</span><span style="opacity:.5;font-size:0.8em;">▼</span>
+      </summary>
+      <div style="margin-top:12px;font-size:0.9rem;color:var(--text-muted);line-height:1.7;">
+        <p>🔴 Le téléphone A doit faire deviner des mots à son équipe sans dire les mots interdits indiqués sur la carte.</p>
+        <p style="margin-top:8px;">🔵 Le téléphone B juge et appuie sur <strong>BUZZ !</strong> dès qu'un mot interdit est prononcé.</p>
+        <p style="margin-top:8px;">✅ <strong>Trouvé</strong> → +1 pt à l'équipe donneur<br>
+           🔔 <strong>Buzz</strong> → carte écartée, +1 pt à l'équipe juge<br>
+           ❌ <strong>Passer</strong> → carte écartée, 0 pt</p>
+        <p style="margin-top:8px;">Les équipes alternent le rôle donneur / juge à chaque tour.</p>
+      </div>
+    </details>
+
+    <button id="btn-install-pwa" class="btn btn-secondary w-full mb-12" hidden>
+      📲 Installer l'application
+    </button>
+
+    <div class="screen-sticky-footer">
+      <button id="btn-create-game" class="btn btn-primary w-full btn-lg">
+        ▶ Créer la partie
+      </button>
+    </div>
+
+    <p id="game-version" style="text-align:center;margin-top:12px;"></p>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 2 — HOST LOBBY (HOST attend le client)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-host-lobby" data-screen="screen-host-lobby" hidden>
+  <div class="page-wrapper screen-center">
+
+    <h2 class="app-title" style="font-size:1.8rem;">Partagez ce lien 📲</h2>
+    <p style="color:var(--text-muted);font-size:0.95rem;">Scannez le QR code avec l'autre téléphone</p>
+
+    <div class="lobby-qr-wrapper">
+      <img id="lobby-qr" class="lobby-qr" src="" alt="QR Code">
+    </div>
+
+    <div class="lobby-url-box">
+      <span id="lobby-url" title="Lien de la partie"></span>
+      <button id="btn-copy-url" class="btn btn-secondary btn-sm" style="flex-shrink:0;">Copier</button>
+    </div>
+
+    <p class="lobby-status" id="lobby-status">
+      <span class="lobby-spinner"></span> Création de la session…
+    </p>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 3 — CLIENT CONNECT (CLIENT en cours de connexion)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-client-connect" data-screen="screen-client-connect" hidden>
+  <div class="screen-center">
+    <div style="font-size:3.5rem;">🚫</div>
+    <h1 class="app-title" style="font-size:2rem;">Taboo</h1>
+    <div id="connect-spinner" class="lobby-spinner" style="width:32px;height:32px;border-width:4px;"></div>
+    <p id="connect-status" class="connect-status">Connexion en cours…</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 4 — PRE-TURN (les deux téléphones)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-pre-turn" data-screen="screen-pre-turn" hidden>
+  <div class="page-wrapper screen-center">
+
+    <p id="pre-turn-round" class="pre-turn-round">Manche 1 / 5</p>
+
+    <div style="font-size:3rem;margin:8px 0;">📣</div>
+    <p class="pre-turn-headline">C'est au tour de</p>
+    <p id="pre-turn-giver" class="pre-turn-team" style="color:var(--volcan);">Équipe Rouge</p>
+    <p class="pre-turn-judge-line">de donner des indices — <span id="pre-turn-judge" style="font-weight:700;">Équipe Bleue</span> jugera</p>
+
+    <div id="pre-turn-role" class="pre-turn-role">…</div>
+
+    <button id="btn-ready" class="btn btn-success btn-lg w-full" style="max-width:380px;margin-top:8px;">
+      ✅ Je suis prêt
+    </button>
+
+    <p id="pre-turn-wait" class="pre-turn-wait" hidden>
+      ⏳ En attente de l'autre équipe…
+    </p>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 5 — TURN GIVER (téléphone du donneur)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-turn-giver" data-screen="screen-turn-giver" hidden>
+  <div class="turn-layout">
+
+    <!-- Timer -->
+    <div>
+      <div class="timer-bar-wrapper">
+        <div id="timer-bar" class="timer-bar" style="width:100%;"></div>
+      </div>
+      <span id="timer-label">60</span>
+    </div>
+
+    <!-- Header -->
+    <div class="turn-header">
+      <span id="giver-round" class="turn-round-badge">Manche 1/5</span>
+      <span id="giver-team"  class="turn-team-label">📣 Équipe Rouge</span>
+      <span id="giver-stats" class="turn-stats">✅ 0  ❌ 0  🔔 0</span>
+    </div>
+
+    <!-- Taboo card -->
+    <div class="taboo-card">
+      <div id="giver-word" class="taboo-word">—</div>
+      <hr class="taboo-divider">
+      <ul id="giver-forbidden" class="forbidden-list"></ul>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="giver-actions">
+      <button id="btn-found" class="btn btn-success">✅ Trouvé</button>
+      <button id="btn-pass"  class="btn btn-danger">❌ Passer</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 6 — TURN JUDGE (téléphone du juge)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-turn-judge" data-screen="screen-turn-judge" hidden>
+  <div class="turn-layout">
+
+    <!-- Timer (partagé via JS) -->
+    <div>
+      <div class="timer-bar-wrapper">
+        <div id="timer-bar-j" class="timer-bar" style="width:100%;"></div>
+      </div>
+      <span id="timer-label-j">60</span>
+    </div>
+
+    <!-- Header -->
+    <div class="turn-header">
+      <span id="judge-round" class="turn-round-badge">Manche 1/5</span>
+      <span id="judge-team"  class="turn-team-label">👀 Équipe Bleue</span>
+    </div>
+
+    <!-- Taboo card (lecture seule) -->
+    <div class="taboo-card">
+      <div id="judge-word" class="taboo-word">—</div>
+      <hr class="taboo-divider">
+      <ul id="judge-forbidden" class="forbidden-list"></ul>
+    </div>
+
+    <!-- BUZZ button -->
+    <div class="buzz-wrapper">
+      <button id="btn-buzz" class="btn-buzz">
+        🔔<br>BUZZ !
+        <span class="btn-buzz-sub">Mot interdit !</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 7 — TURN END (les deux téléphones)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-turn-end" data-screen="screen-turn-end" hidden>
+  <div class="page-wrapper screen-center">
+
+    <div style="font-size:3rem;">⏱️</div>
+    <h2 class="app-title" style="font-size:1.6rem;">Temps écoulé !</h2>
+
+    <div id="turn-end-stats" class="turn-end-stats"></div>
+
+    <div class="scores-list" id="turn-end-scores"></div>
+
+    <button id="btn-next-turn" class="btn btn-primary btn-lg w-full" style="max-width:380px;" hidden>
+      ▶ Tour suivant
+    </button>
+
+    <p id="turn-end-wait" class="turn-end-wait">
+      ⏳ En attente de l'hôte…
+    </p>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 8 — GAME OVER (les deux téléphones)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-game-over" data-screen="screen-game-over" hidden>
+  <div class="page-wrapper screen-center">
+
+    <div style="font-size:3.5rem;">🏆</div>
+    <h2 id="go-winner" class="go-winner">Équipe X gagne !</h2>
+
+    <div id="go-scores" class="go-scores"></div>
+
+    <button id="btn-replay" class="btn btn-primary btn-lg w-full" style="max-width:380px;" hidden>
+      🔄 Rejouer
+    </button>
+
+    <p id="go-wait" class="go-wait" hidden>
+      ⏳ En attente de l'hôte…
+    </p>
+
+    <a href="../" class="btn btn-secondary mt-12" style="max-width:380px;width:100%;">
+      ← Retour à l'accueil
+    </a>
+
+  </div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
