@@ -151,12 +151,23 @@ export function renderTurnEnd(s, asHost) {
 
   const scoresEl = el('turn-end-scores');
   if (scoresEl) {
-    scoresEl.innerHTML = s.teams.map((t, i) => `
-      <div class="score-row ${i === 0 ? 'score-red' : 'score-blue'}">
-        <span class="score-team">${i === 0 ? '🔴' : '🔵'} ${t.name}</span>
-        <span class="score-pts">${t.score} pt${t.score !== 1 ? 's' : ''}</span>
-      </div>
-    `).join('');
+    scoresEl.innerHTML = '';
+    s.teams.forEach((t, i) => {
+      const row = document.createElement('div');
+      row.className = `score-row ${i === 0 ? 'score-red' : 'score-blue'}`;
+      
+      const teamSpan = document.createElement('span');
+      teamSpan.className = 'score-team';
+      teamSpan.textContent = `${i === 0 ? '🔴' : '🔵'} ${t.name}`;
+      
+      const ptsSpan = document.createElement('span');
+      ptsSpan.className = 'score-pts';
+      ptsSpan.textContent = `${t.score} pt${t.score !== 1 ? 's' : ''}`;
+      
+      row.appendChild(teamSpan);
+      row.appendChild(ptsSpan);
+      scoresEl.appendChild(row);
+    });
   }
 
   const nextBtn = el('btn-next-turn');
@@ -178,13 +189,28 @@ export function renderGameOver(s, asHost) {
 
   const scoresEl = el('go-scores');
   if (scoresEl) {
-    scoresEl.innerHTML = sorted.map((t, rank) => `
-      <div class="go-row">
-        <span class="go-rank">${rank === 0 ? '🏆' : '🥈'}</span>
-        <span class="go-team">${t.teamIdx === 0 ? '🔴' : '🔵'} ${t.name}</span>
-        <span class="go-pts">${t.score} pt${t.score !== 1 ? 's' : ''}</span>
-      </div>
-    `).join('');
+    scoresEl.innerHTML = '';
+    sorted.forEach((t, rank) => {
+      const row = document.createElement('div');
+      row.className = 'go-row';
+      
+      const rankSpan = document.createElement('span');
+      rankSpan.className = 'go-rank';
+      rankSpan.textContent = rank === 0 ? '🏆' : '🥈';
+      
+      const teamSpan = document.createElement('span');
+      teamSpan.className = 'go-team';
+      teamSpan.textContent = `${t.teamIdx === 0 ? '🔴' : '🔵'} ${t.name}`;
+      
+      const ptsSpan = document.createElement('span');
+      ptsSpan.className = 'go-pts';
+      ptsSpan.textContent = `${t.score} pt${t.score !== 1 ? 's' : ''}`;
+      
+      row.appendChild(rankSpan);
+      row.appendChild(teamSpan);
+      row.appendChild(ptsSpan);
+      scoresEl.appendChild(row);
+    });
   }
 
   const replayBtn = el('btn-replay');
