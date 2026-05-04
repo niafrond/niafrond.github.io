@@ -280,10 +280,9 @@ export function initR1Turn(subTeam) {
   if (titleEl)  { titleEl.textContent = team.name; titleEl.style.color = team.color; }
   if (budgetEl) budgetEl.textContent = '13 briques disponibles';
   if (listEl) {
-    listEl.innerHTML = sets.map((s, i) => {
-      const displayPhrase = s.phrase.replace(/\{([^}]+)\}/g, '<strong>$1</strong>');
-      return `<button class="r1-phrase-btn" data-idx="${i}">${displayPhrase}</button>`;
-    }).join('');
+    listEl.innerHTML = sets.map((s, i) =>
+      `<button class="r1-phrase-btn" data-idx="${i}">${s.theme}</button>`
+    ).join('');
   }
 
   showScreen('screen-r1-phrase');
