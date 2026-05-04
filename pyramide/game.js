@@ -181,6 +181,18 @@ function _updateTurnHeader(round, team, subtitle = '') {
   if (badge) badge.textContent = roundNames[round] || '';
   if (teamNameEl) { teamNameEl.textContent = team.name; teamNameEl.style.color = team.color; }
   if (subtitleEl) { subtitleEl.textContent = subtitle; subtitleEl.hidden = !subtitle; }
+
+  // R2: tint the screen border with the active team's color; clear for other rounds
+  const layout = document.querySelector('.turn-layout');
+  if (layout) {
+    if (round === 2) {
+      layout.style.borderTopColor = team.color;
+      layout.style.background = `linear-gradient(180deg, ${team.color}18 0%, transparent 120px)`;
+    } else {
+      layout.style.borderTopColor = 'transparent';
+      layout.style.background = '';
+    }
+  }
 }
 
 function _updateWord(word) {
@@ -508,6 +520,10 @@ function _enterR2() {
   const team  = state.teams[state.r2Giver];
   const words = state.wordSets.round2.shared;
   const opponent = state.teams[1 - state.r2Giver];
+
+  // Hide R1 phrase display
+  const phraseDisplay = el('r1-phrase-display');
+  if (phraseDisplay) phraseDisplay.hidden = true;
 
   _updateTurnHeader(2, team, `Indice à ${opponent.name}`);
   _updateWord(words[state.r2WordIdx]);
