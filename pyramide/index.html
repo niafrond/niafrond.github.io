@@ -157,20 +157,40 @@
   <div class="page-wrapper screen-center">
 
     <span class="round-badge" style="background:var(--lagon)">Manche 1 — Le Mot Mystère 🎯</span>
-    <h2 class="app-title" style="font-size:1.6rem;">Quel est le mot mystère&nbsp;?</h2>
 
-    <div class="card r1-link-phrase-card" style="width:100%;max-width:520px;">
-      <div class="card-title">La phrase à compléter</div>
-      <p id="r1-link-phrase-hint" class="r1-link-phrase-hint"></p>
+    <!-- Étape 1 : Passer le téléphone -->
+    <div id="r1-link-step-pass" class="r1-link-step">
+      <div class="r1-pass-icon">📱</div>
+      <h2 class="app-title" style="font-size:1.5rem;">Passez le téléphone&nbsp;!</h2>
+      <p id="r1-pass-team-msg" class="app-subtitle"></p>
+      <p class="r1-link-instruction">L'équipe adverse va lire la phrase et trouver le mot mystère.</p>
+      <button id="btn-r1-pass-done" class="btn btn-primary btn-lg w-full" style="max-width:440px;">
+        ✅ L'équipe a le téléphone
+      </button>
     </div>
 
-    <div id="r1-link-words" class="r1-link-words"></div>
+    <!-- Étape 2 : Lire la phrase -->
+    <div id="r1-link-step-read" class="r1-link-step" hidden>
+      <h2 class="app-title" style="font-size:1.4rem;">Lisez la phrase&nbsp;!</h2>
+      <p class="r1-link-instruction" style="margin-bottom:8px;">Complétez les blancs, puis énoncez le mot mystère à voix haute.</p>
+      <div class="card r1-link-phrase-card" style="width:100%;max-width:520px;">
+        <div class="card-title">La phrase à compléter</div>
+        <p id="r1-link-phrase-hint" class="r1-link-phrase-hint"></p>
+      </div>
+      <div id="r1-link-words" class="r1-link-words"></div>
+      <button id="btn-r1-read-done" class="btn btn-lagon btn-lg w-full" style="max-width:440px;">
+        👂 Le donneur reprend le téléphone
+      </button>
+    </div>
 
-    <p class="r1-link-instruction">Les devineurs énoncent le mot mystère à voix haute, le donneur confirme.</p>
-
-    <div class="r1-link-actions">
-      <button id="btn-r1-link-found" class="btn btn-success btn-lg">🎯 Lien trouvé ! (+3 pts)</button>
-      <button id="btn-r1-link-failed" class="btn btn-danger  btn-lg">❌ Lien raté</button>
+    <!-- Étape 3 : Valider la réponse -->
+    <div id="r1-link-step-judge" class="r1-link-step" hidden>
+      <h2 class="app-title" style="font-size:1.4rem;">Le mot mystère a-t-il été trouvé&nbsp;?</h2>
+      <p class="r1-link-instruction">Confirmez si la réponse énocée est correcte.</p>
+      <div class="r1-link-actions">
+        <button id="btn-r1-link-found" class="btn btn-success btn-lg">🎯 Oui, trouvé ! (+3 pts)</button>
+        <button id="btn-r1-link-failed" class="btn btn-danger  btn-lg">❌ Non, raté</button>
+      </div>
     </div>
 
   </div>

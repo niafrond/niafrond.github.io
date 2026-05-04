@@ -429,11 +429,11 @@ export function r1WordLost() {
 }
 
 function _r1AfterAllWords() {
-  const set = state.r1SelectedSet;
-  const phraseEl = el('r1-link-phrase-hint');
-  const wordsEl  = el('r1-link-words');
+  const set      = state.r1SelectedSet;
+  const opponent = state.teams[1 - state.r1SubTeam];
 
-  // Render the phrase with found words revealed and unfound blanked
+  // Prepare the phrase for step 2 (filled in later)
+  const phraseEl = el('r1-link-phrase-hint');
   if (phraseEl && set?.phrase) {
     const foundSet = new Set(state.r1FoundWords.map(w => w.toLowerCase()));
     phraseEl.innerHTML = set.phrase.replace(/\{([^}]+)\}/g, (_, word) =>
@@ -443,12 +443,31 @@ function _r1AfterAllWords() {
     );
   }
 
+  const wordsEl = el('r1-link-words');
   if (wordsEl) {
     const n = state.r1FoundWords.length;
-    wordsEl.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem;">${n} mot${n !== 1 ? 's' : ''} trouvé${n !== 1 ? 's' : ''} — Devinez le mot mystère !</p>`;
+    wordsEl.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem;">${n} mot${n !== 1 ? 's' : ''} trouvé${n !== 1 ? 's' : ''}</p>`;
   }
 
+  // Show step 1: pass phone
+  const msgEl = el('r1-pass-team-msg');
+  if (msgEl) msgEl.innerHTML = `Passez le téléphone à <strong style="color:${opponent.color}">${opponent.name}</strong>`;
+
+  el('r1-link-step-pass')?.removeAttribute('hidden');
+  el('r1-link-step-read')?.setAttribute('hidden', '');
+  el('r1-link-step-judge')?.setAttribute('hidden', '');
+
   showScreen('screen-r1-link');
+}
+
+export function r1LinkPassDone() {
+  el('r1-link-step-pass')?.setAttribute('hidden', '');
+  el('r1-link-step-read')?.removeAttribute('hidden');
+}
+
+export function r1LinkReadDone() {
+  el('r1-link-step-read')?.setAttribute('hidden', '');
+  el('r1-link-step-judge')?.removeAttribute('hidden');
 }
 
 export function r1LinkFound() {
