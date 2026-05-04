@@ -901,6 +901,40 @@ html, body {
 }
 .r1-phrase-btn:active { transform: translateY(0); }
 
+/* ─── Round 1 — Phrase with blanks (inside screen-turn) ─────────────────── */
+.r1-phrase-display {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  text-align: center;
+  padding: 12px 16px;
+  background: rgba(0,150,199,0.06);
+  border: 1.5px solid rgba(0,150,199,0.2);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 500px;
+  color: var(--text-muted);
+}
+.r1-phrase-found {
+  color: var(--lagon);
+  font-weight: 800;
+  font-style: normal;
+}
+.r1-phrase-blank {
+  color: var(--text-muted);
+  letter-spacing: 3px;
+  font-style: italic;
+  opacity: 0.6;
+}
+
+/* ─── Round 1 — Link phase phrase card ──────────────────────────────────── */
+.r1-link-phrase-card { text-align: left; }
+.r1-link-phrase-hint {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
 /* ─── Round 1 — Commit section (inside screen-turn) ─────────────────────── */
 .r1-commit-section {
   background: rgba(0,150,199,0.07);
