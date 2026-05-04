@@ -19,8 +19,10 @@ describe('R1_PHRASE_SETS', () => {
     expect(R1_PHRASE_SETS.length).toBeGreaterThanOrEqual(20);
   });
 
-  test('chaque set a une phrase non vide et exactement 5 mots', () => {
+  test('chaque set a un thème, une phrase non vide et exactement 5 mots', () => {
     R1_PHRASE_SETS.forEach((set, i) => {
+      expect(typeof set.theme).toBe('string');
+      expect(set.theme.length).toBeGreaterThan(0);
       expect(typeof set.phrase).toBe('string');
       expect(set.phrase.length).toBeGreaterThan(0);
       expect(Array.isArray(set.words)).toBe(true);
@@ -32,10 +34,10 @@ describe('R1_PHRASE_SETS', () => {
     });
   });
 
-  test('les phrases sont toutes distinctes', () => {
-    const phrases = R1_PHRASE_SETS.map(s => s.phrase);
-    const unique  = new Set(phrases);
-    expect(unique.size).toBe(phrases.length);
+  test('les thèmes sont tous distincts', () => {
+    const themes = R1_PHRASE_SETS.map(s => s.theme);
+    const unique = new Set(themes);
+    expect(unique.size).toBe(themes.length);
   });
 });
 
