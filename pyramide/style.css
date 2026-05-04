@@ -634,6 +634,30 @@ html, body {
   font-size: 0.8rem;
   color: var(--text-muted);
 }
+.r1-clue-timer-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 6px 14px;
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--radius-sm);
+}
+.r1-clue-timer-icon {
+  font-size: 1rem;
+}
+.r1-clue-timer-label {
+  font-size: 1.4rem;
+  font-weight: 800;
+  min-width: 2.8ch;
+  text-align: center;
+  transition: color 0.3s;
+}
+.r1-clue-timer-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
 
 /* ─── Turn action buttons ─────────────────────────────────────────────────── */
 .turn-btn {

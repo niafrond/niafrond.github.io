@@ -128,7 +128,7 @@ const ROUND_INFO = [
       '6 expressions françaises à faire deviner',
       '60 secondes + 1 bonus de +10 secondes (une seule fois)',
       'Toutes trouvées avant la fin → JACKPOT 🎉',
-      'Passer → mot perdu, JACKPOT impossible',
+      '⚠️ Indice invalide (même famille, geste…) → ÉCHEC IMMÉDIAT',
       'Les deux équipes jouent ensemble !',
     ],
   },
@@ -266,6 +266,46 @@ function _setTurnButtons(mode) {
 
 // ─── Round 1 — Les Énigmes ─────────────────────────────────────────────────────
 
+const R1_CLUE_TIMER_DURATION = 10;
+
+function _startR1ClueTimer() {
+  _stopR1ClueTimer();
+  state.r1ClueTimeLeft = R1_CLUE_TIMER_DURATION;
+  _updateR1ClueTimerUI();
+  const timerRow = el('r1-clue-timer-row');
+  if (timerRow) timerRow.hidden = false;
+
+  state.r1ClueTimerInterval = setInterval(() => {
+    state.r1ClueTimeLeft--;
+    _updateR1ClueTimerUI();
+    if (state.r1ClueTimeLeft <= 3) playTickUrgent();
+    else if (state.r1ClueTimeLeft <= 5) playTick();
+
+    if (state.r1ClueTimeLeft <= 0) {
+      _stopR1ClueTimer();
+      playBuzzer();
+      r1WordLost();
+    }
+  }, 1000);
+}
+
+function _stopR1ClueTimer() {
+  if (state.r1ClueTimerInterval) {
+    clearInterval(state.r1ClueTimerInterval);
+    state.r1ClueTimerInterval = null;
+  }
+  const timerRow = el('r1-clue-timer-row');
+  if (timerRow) timerRow.hidden = true;
+}
+
+function _updateR1ClueTimerUI() {
+  const label = el('r1-clue-timer-label');
+  if (!label) return;
+  label.textContent = `${state.r1ClueTimeLeft}s`;
+  const pct = state.r1ClueTimeLeft / R1_CLUE_TIMER_DURATION;
+  label.style.color = pct > 0.5 ? 'var(--success)' : pct > 0.2 ? 'var(--warning)' : 'var(--danger)';
+}
+
 export function startRound1() {
   state.currentRound = 1;
   showPreRound(1, () => initR1Turn(0));
@@ -375,6 +415,7 @@ function _r1ShowCommitSection() {
 
 export function r1CommitClues(n) {
   if (n > state.r1ClueBudget) return;
+  _stopR1ClueTimer();
   state.r1CommittedClues = n;
   state.r1CluesGiven     = 0;
 
@@ -389,6 +430,7 @@ export function r1GiveClue() {
   if (state.r1CluesGiven >= state.r1CommittedClues) return;
   playButtonClick();
 
+  _stopR1ClueTimer();
   state.r1ClueBudget--;
   state.r1CluesGiven++;
 
@@ -407,10 +449,14 @@ export function r1GiveClue() {
     playBuzzer();
     showToast('Plus de briques ! Mot perdu.', 'warning');
     setTimeout(() => r1WordLost(), 900);
+    return;
   }
+
+  _startR1ClueTimer();
 }
 
 export function r1WordFound() {
+  _stopR1ClueTimer();
   playFound();
   const word = state.r1SelectedSet.words[state.r1WordIdx];
   state.teams[state.r1SubTeam].score += 2;
@@ -429,6 +475,7 @@ export function r1WordFound() {
 }
 
 export function r1WordLost() {
+  _stopR1ClueTimer();
   playBuzzer();
   state.r1WordIdx++;
   state.r1CommittedClues = 0;
@@ -442,6 +489,7 @@ export function r1WordLost() {
 }
 
 function _r1AfterAllWords() {
+  _stopR1ClueTimer();
   const set      = state.r1SelectedSet;
   const opponent = state.teams[1 - state.r1SubTeam];
 
@@ -1037,23 +1085,11 @@ export function finalWordFound() {
 }
 
 export function finalWordFailed() {
-  // Skip word — jackpot no longer possible
-  const words = state.wordSets.final.words;
-  state.finalCanJackpot = false;
+  // Any invalid clue = immediate failure (per game rules)
+  _stopFinalTimer();
   playBuzzer();
-  showToast('Mot passé', 'warning');
-  state.finalWordIdx++;
-
-  if (state.finalWordIdx >= words.length) {
-    _stopFinalTimer();
-    endFinal(false);
-    return;
-  }
-
-  const wordEl     = el('final-word');
-  const progressEl = el('final-progress');
-  if (wordEl)     wordEl.textContent     = words[state.finalWordIdx];
-  if (progressEl) progressEl.textContent = `${state.finalWordIdx + 1} / ${words.length}`;
+  showToast('Indice invalide — partie terminée !', 'warning');
+  setTimeout(() => endFinal(false), 1200);
 }
 
 export function useBonusTime() {

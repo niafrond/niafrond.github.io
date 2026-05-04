@@ -889,6 +889,16 @@ export const R1_PHRASE_SETS = [
   { theme: 'Internet & web', phrase: 'Un {moteur} de {recherche} permet un {clic} vers une {page} du {réseau}', words: ['moteur', 'recherche', 'clic', 'page', 'réseau'], reponse: 'navigateur' },
   { theme: 'Astronomie', phrase: "Dans la {nuit}, une {lumière} d'{étoile} brille dans la vaste {galaxie} {infinie}", words: ['nuit', 'lumière', 'étoile', 'galaxie', 'infinie'], reponse: 'univers' },
   { theme: 'Artisanat textile', phrase: 'Un {fil} de {laine} sur une {aiguille} crée un {tissu} en {maille}', words: ['fil', 'laine', 'aiguille', 'tissu', 'maille'], reponse: 'tricot' },
+  { theme: 'Sport & performance', phrase: "Un {athlète} {court} sur une {piste} pour battre un {record} de {vitesse}", words: ['athlète', 'court', 'piste', 'record', 'vitesse'], reponse: 'sprint' },
+  { theme: 'Animal de mer', phrase: "Un {mammifère} {marin} avec des {nageoires} et un {dos} {bleu} nage en {groupe}", words: ['mammifère', 'marin', 'nageoires', 'dos', 'bleu'], reponse: 'dauphin' },
+  { theme: 'Boisson chaude', phrase: "Des {feuilles} {séchées} dans de l'{eau} {chaude} créent une {infusion} {aromatique}", words: ['feuilles', 'séchées', 'eau', 'chaude', 'infusion'], reponse: 'thé' },
+  { theme: 'Construction', phrase: "Des {briques} assemblées avec du {ciment} forment un {mur} {solide} d'une {maison}", words: ['briques', 'ciment', 'mur', 'solide', 'maison'], reponse: 'maçon' },
+  { theme: 'Sport d\'équipe', phrase: "Onze {joueurs} avec un {ballon} marquent un {but} dans le {filet} adverse sur un {terrain}", words: ['joueurs', 'ballon', 'but', 'filet', 'terrain'], reponse: 'football' },
+  { theme: 'Voyage aérien', phrase: "Un {appareil} {volant} avec des {ailes} décolle d'une {piste} vers le {ciel}", words: ['appareil', 'volant', 'ailes', 'piste', 'ciel'], reponse: 'avion' },
+  { theme: 'Instrument à cordes', phrase: "Un {musicien} fait vibrer des {cordes} avec un {archet} sur un {bois} {verni}", words: ['musicien', 'cordes', 'archet', 'bois', 'verni'], reponse: 'violon' },
+  { theme: 'Ustensile de cuisine', phrase: "Un {outil} {creux} avec un {manche} sert à {verser} une {soupe} {chaude}", words: ['outil', 'creux', 'manche', 'verser', 'soupe'], reponse: 'louche' },
+  { theme: 'Lieu de soin', phrase: "Des {médecins} et des {infirmiers} soignent des {patients} dans des {chambres} {blanches}", words: ['médecins', 'infirmiers', 'patients', 'chambres', 'blanches'], reponse: 'hôpital' },
+  { theme: 'Fruit d\'été', phrase: "Un {fruit} {rouge} et {juteux} avec des {graines} {noires} est dégusté en {été}", words: ['fruit', 'rouge', 'juteux', 'graines', 'noires'], reponse: 'pastèque' },
 ];
 // ── MANCHE 3 : Noms propres (ensembles thèmes) ──────────────
 export const R3_SETS = [
@@ -915,6 +925,12 @@ export const R3_SETS = [
   { theme: 'Films célèbres', words: ['TITANIC','AVATAR','GLADIATOR','INCEPTION','MATRIX','ALIEN','ROCKY','JOKER','AMELIE','INTOUCHABLES','FROZEN','COCO','BATMAN','SUPERMAN','SPIDERMAN'] },
   { theme: 'Personnages fictifs', words: ['HARRY POTTER','SUPERMAN','BATMAN','SPIDERMAN','HULK','IRON MAN','SHERLOCK','VADER','YODA','FRODO','GANDALF','ELSA','SIMBA','POKEMON','MARIO'] },
   { theme: 'YouTubeurs / Streamers', words: ['SQUEEZIE','CYPRIEN','MISTER V','AMIXEM','GMK','INOXTAG','MICHOU','LOCKLEAR','GOTAGA','ZERATOR','POKIMANE','NINJA','PEWDIEPIE','MRBEAST','VALOUZZ'] },
+
+  { theme: 'Prix Nobel de physique', words: ['EINSTEIN','CURIE','BOHR','HEISENBERG','DIRAC','FEYNMAN','PLANCK','RUTHERFORD','FERMI','SCHRODINGER','PAULI','LANDAU','HIGGS','HAWKING','NOBEL'] },
+  { theme: 'Pays d\'Asie', words: ['JAPON','CHINE','INDE','CORÉE','THAÏLANDE','VIETNAM','INDONÉSIE','MALAISIE','PHILIPPINES','SINGAPOUR','PAKISTAN','BANGLADESH','CAMBODGE','BIRMANIE','LAOS'] },
+  { theme: 'Explorateurs & navigateurs', words: ['CHRISTOPHE COLOMB','MAGELLAN','VASCO DE GAMA','AMERIGO VESPUCCI','JAMES COOK','LEIF ERIKSON','MARCO POLO','IBN BATTUTA','ABEL TASMAN','HENRY HUDSON','BARTOLOMEU DIAS','BOUGAINVILLE','LA PEROUSE','AMUNDSEN','SHACKLETON'] },
+  { theme: 'Chefs cuisiniers célèbres', words: ['BOCUSE','ROBUCHON','DUCASSE','ESCOFFIER','RAMSAY','OLIVER','BOCUSE','TROISGROS','GUÉRARD','LOISEAU','PIERRARD','DUCASSE','BLANC','CHAPEL','GIRARDEL'] },
+  { theme: 'Sportifs français', words: ['ZIDANE','MBAPPE','NADAL','THURAM','PLATINI','VIEIRA','HENRY','CANTONA','BARTHEZ','DESCHAMPS','PETIT','DESAILLY','LIZARAZU','PIRES','ANELKA'] },
 ];
 // ── MANCHE 4 : Contre-la-montre (sets thématiques) ──────────
 export const R4_SETS = [
@@ -941,6 +957,18 @@ export const R4_SETS = [
   { theme: 'Langues', words: ['FRANCAIS','ANGLAIS','ESPAGNOL','ITALIEN','ALLEMAND','CHINOIS','ARABE'] },
   { theme: 'Sports collectifs', words: ['FOOTBALL','BASKET','HANDBALL','RUGBY','VOLLEY','HOCKEY','BASEBALL'] },
   { theme: 'Objets électroniques', words: ['TELEPHONE','ORDINATEUR','TABLETTE','TELEVISION','CASQUE','SOURIS','CLAVIER'] },
+
+  { theme: 'Saisons & météo', words: ['PRINTEMPS','ETE','AUTOMNE','HIVER','PLUIE','NEIGE','SOLEIL'] },
+  { theme: 'Fleurs', words: ['ROSE','TULIPE','MARGUERITE','PIVOINE','ORCHIDEE','LIS','JASMIN'] },
+  { theme: 'Épices & condiments', words: ['SEL','POIVRE','CANNELLE','CUMIN','PAPRIKA','THYM','BASILIC'] },
+  { theme: 'Professions de santé', words: ['MEDECIN','INFIRMIER','CHIRURGIEN','PHARMACIEN','DENTISTE','KINESITHERAPEUTE','VETERINAIRE'] },
+  { theme: 'Pays d\'Amérique latine', words: ['BRESIL','MEXIQUE','ARGENTINE','COLOMBIE','CHILI','PERU','VENEZUELA'] },
+
+  { theme: 'Superhéros', words: ['BATMAN','SUPERMAN','SPIDERMAN','IRONMAN','HULK','THOR','FLASH'] },
+  { theme: 'Planètes du système solaire', words: ['MERCURE','VENUS','TERRE','MARS','JUPITER','SATURNE','URANUS'] },
+  { theme: 'Sports individuels', words: ['TENNIS','NATATION','ATHLETISME','CYCLISME','GOLF','SKI','BOXE'] },
+  { theme: 'Animaux de la jungle', words: ['LION','TIGRE','ELEPHANT','GORILLE','LEOPARD','HIPPO','CROCODILE'] },
+  { theme: 'Matières scolaires', words: ['MATHS','FRANCAIS','HISTOIRE','GEOGRAPHIE','SCIENCES','ANGLAIS','SPORT'] },
 ];
 
 // ── Finale : La Grande Pyramide (expressions) ────────────────
@@ -948,7 +976,6 @@ export const FINAL_SETS = [
   ['AVOIR LE CAFARD','CASSER LES PIEDS','IL PLEUT DES CORDES','POSER UN LAPIN','PRENDRE LA POUDRE D\'ESCAMPETTE','TOURNER EN ROND'],
   ['AVOIR LE CŒUR SUR LA MAIN','BRÛLER LES ÉTAPES','DONNER SA LANGUE AU CHAT','METTRE LES PIEDS DANS LE PLAT','NOYER LE POISSON','TOMBER DANS LES POMMES'],
   ['AVOIR D\'AUTRES CHATS À FOUETTER','CASSER DU SUCRE SUR LE DOS','ÊTRE DANS SES PETITS SOULIERS','MANGER À TOUS LES RÂTELIERS','PRENDRE LE TAUREAU PAR LES CORNES','SE JETER À L\'EAU'],
-// ── Ajout massif : 70+ expressions supplémentaires ───────────
   ['ARC-EN-CIEL','POMME DE PIN','CROQUE-MONSIEUR','SALLE À MANGER','CHEF-D\'ŒUVRE','GARDE À VUE'],
   ['PRISE DE PAROLE','MISE EN SCÈNE','PLAN DE TABLE','SENS INTERDIT','LIGNE DE VIE','POINT MORT'],
   ['COUP DE BARRE','COUP DE GUEULE','COUP DE SOLEIL','COUP DE VENT','COUP DE FEU','COUP DE THÉÂTRE'],
@@ -960,7 +987,7 @@ export const FINAL_SETS = [
   ['COUP DE FOUDRE','COUP DE FIL','COUP DE CHAPEAU','COUP DE PRESSION','COUP DE POUCE','COUP DE BALAI'],
   ['FIL ROUGE','FIL CONDUCTEUR','FIL D\'ARIANE','FIL À COUDRE','FIL DE FER','FIL DE L\'HISTOIRE'],
   ['JEU D\'ENFANT','JEU DE RÔLE','JEU VIDÉO','JEU DE CARTES','JEU D\'ÉCHECS','JEU DE SOCIÉTÉ'],
-  ['SAC À DOS','SAC À MAIN','SAC DE VOYAGE','SAC DE SPORT','SAC À DOS','SAC POUBELLE'],
+  ['SAC À DOS','SAC À MAIN','SAC DE VOYAGE','SAC DE SPORT','SAC POUBELLE','SAC À MALICE'],
   ['VERRE D\'EAU','VERRE DE VIN','VERRE BRISÉ','VERRE À PIED','VERRE DOUBLÉ','VERRE FUMÉ'],
   ['TABLE RONDE','TABLE BASSE','TABLE DE NUIT','TABLE DE JEU','TABLE DE TRAVAIL','TABLE À REPASSER'],
   ['CHASSE À L\'HOMME','CHASSE AU TRÉSOR','CHASSE NEIGE','CHASSE D\'EAU','CHASSE À COURRE','CHASSE AUX SORCIÈRES'],
@@ -969,4 +996,11 @@ export const FINAL_SETS = [
   ['ROUE LIBRE','ROUE DE SECOURS','ROUE ARRIÈRE','ROUE AVANT','ROUE DENTÉE','ROUE TOURNE'],
   ['FEU ROUGE','FEU VERT','FEU DE JOIE','FEU DE CAMP','FEU DE SIGNALISATION','FEU SACRÉ'],
   ['POINT DE NON-RETOUR','POINT FINAL','POINT D\'EAU','POINT DE VUE','POINT DE CHUTE','POINT DE REPÈRE'],
+  ['BLANC COMME NEIGE','BLANC DE POULET','BLANC BEC','BLANC SEING','MANGER TOUT SON BLANC','NUIT BLANCHE'],
+  ['CŒUR DE LION','CŒUR À CŒUR','COUP DE CŒUR','BEAU COMME UN CŒUR','EN AVOIR LE CŒUR NET','SERRER LE CŒUR'],
+  ['LANGUE DE BOIS','LANGUE DE CHAT','MAUVAISE LANGUE','TENIR SA LANGUE','LANGUE VERTE','PRENDRE LANGUE'],
+  ['PIQUER UNE CRISE','PIQUER UN SOLEIL','PIQUER DU NEZ','PIQUER UNE TÊTE','PIQUER AU VIF','PIQUER SA CURIOSITÉ'],
+  ['MAIN DANS LE SAC','MAIN MISE','MAIN LEVÉE','EN VENIR AUX MAINS','DE MAIN DE MAÎTRE','METTRE LA MAIN À LA PÂTE'],
+  ['DOS AU MUR','DANS LE DOS','EN AVOIR PLEIN LE DOS','AVOIR BON DOS','TOURNER LE DOS','SE METTRE À DOS'],
+  ['COUP DE CHAPEAU','COUP DE MAIN','COUP DE FOUDRE','COUP DE GRÂCE','COUP D\'ÉTAT','COUP DE THÉÂTRE'],
 ];

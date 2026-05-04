@@ -224,6 +224,12 @@
       <div id="turn-bricks" class="bricks-row"></div>
       <div id="turn-bricks-count" class="bricks-count"></div>
       <div id="turn-clue-count" class="clue-count"></div>
+      <!-- R1 per-clue timer (10 seconds countdown after each clue) -->
+      <div id="r1-clue-timer-row" class="r1-clue-timer-row" hidden>
+        <span class="r1-clue-timer-icon">⏱</span>
+        <span id="r1-clue-timer-label" class="r1-clue-timer-label">10s</span>
+        <span class="r1-clue-timer-hint">pour répondre</span>
+      </div>
     </div>
 
     <!-- R1 Commit section (only shown for Round 1 — clue-count commitment) -->
@@ -390,7 +396,7 @@
     <!-- Actions -->
     <div class="turn-actions">
       <button id="btn-final-found"  class="btn btn-success  turn-btn">Trouvé ✅</button>
-      <button id="btn-final-failed" class="btn btn-secondary turn-btn">Passer ⏭️</button>
+      <button id="btn-final-failed" class="btn btn-danger  turn-btn">Indice invalide ❌</button>
     </div>
     <div style="display:flex;justify-content:center;margin-top:8px;">
       <button id="btn-final-bonus" class="btn btn-secondary">⏱️ +10 secondes</button>

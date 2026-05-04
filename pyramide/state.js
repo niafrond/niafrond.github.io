@@ -32,6 +32,8 @@ export const state = {
     final:  { words: [] }
   },
 
+  contestedClues: [],       // clues flagged as potentially invalid (for manual review)
+
   // Round 1
   r1SubTeam: 0,
   r1PhraseSets: [],         // 5 phrase options shown to the current team
@@ -41,6 +43,8 @@ export const state = {
   r1CommittedClues: 0,      // clues committed for the current word
   r1CluesGiven: 0,          // clues given so far for the current word
   r1FoundWords: [],         // words successfully guessed (revealed in link phase)
+  r1ClueTimeLeft: 10,       // seconds remaining in the per-clue 10-second timer
+  r1ClueTimerInterval: null,// setInterval handle for the per-clue timer
 
   // Round 2
   r2WordIdx: 0,
