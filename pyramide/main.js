@@ -14,6 +14,7 @@ import {
   startRound1,
   handleGiveClue, handleWordFound, handleWordSkip,
   r1SelectPhrase, r1CommitClues, r1LinkFound, r1LinkFailed,
+  r3StartWord,
   r4WordFound, r4WordSkipped,
   finalWordFound, finalWordFailed, useBonusTime,
   showGameOver,
@@ -261,7 +262,10 @@ window.addEventListener('DOMContentLoaded', () => {
     playButtonClick();
     submitBid(1);
   }));
-
+  el('btn-r3-start')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    r3StartWord();
+  }));
   // ── Timer screen (R4) ───────────────────────────────────────────────────────
   el('btn-timer-found')?.addEventListener('click', withCooldown(() => {
     playButtonClick();
