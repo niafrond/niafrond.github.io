@@ -867,100 +867,28 @@ export const R2_WORDS = [
   'Zombie',
   'Zoo'
 ];
+// ── MANCHE 1 : Les Énigmes (phrases à trous) ────────────────
 export const R1_PHRASE_SETS = [
-  { phrase: 'Fruits rouges', words: ['FRAISE', 'CERISE', 'FRAMBOISE', 'GROSEILLE', 'MYRTILLE'] }, { phrase: 'Pays d\'Amérique du Sud', words: ['BRÉSIL', 'ARGENTINE', 'COLOMBIE', 'PÉROU', 'CHILI'] }, 
-  { phrase: 'Planètes du système solaire', words: ['MARS', 'VÉNUS', 'SATURNE', 'JUPITER', 'MERCURE'] }, { phrase: 'Instruments à cordes', words: ['VIOLON', 'VIOLONCELLE', 'GUITARE', 'HARPE', 'LUTH'] }, { phrase: 'Sports d\'hiver', words: ['SKI', 'LUGE', 'BOBSLEIGH', 'CURLING', 'PATINAGE'] }, { phrase: 'Auteurs classiques français', words: ['MOLIÈRE', 'RACINE', 'CORNEILLE', 'VOLTAIRE', 'HUGO'] }, { phrase: 'Capitales européennes', words: ['ROME', 'MADRID', 'BERLIN', 'AMSTERDAM', 'LISBONNE'] }, { phrase: 'Animaux de la savane', words: ['LION', 'ÉLÉPHANT', 'GIRAFE', 'ZÈBRE', 'RHINOCÉROS'] }, { phrase: 'Types de pâtes', words: ['SPAGHETTI', 'LASAGNE', 'PENNE', 'TAGLIATELLE', 'GNOCCHI'] }, { phrase: 'Volcans célèbres', words: ['VÉSUVE', 'ETNA', 'KRAKATOA', 'FUJIYAMA', 'STROMBOLI'] }, { phrase: 'Types de danse', words: ['VALSE', 'TANGO', 'SALSA', 'MAMBO', 'CHA-CHA'] }, { phrase: 'Fleurs du jardin', words: ['ROSE', 'TULIPE', 'LAVANDE', 'MARGUERITE', 'PIVOINE'] }, { phrase: 'Fromages français', words: ['BRIE', 'CAMEMBERT', 'ROQUEFORT', 'COMTÉ', 'MUNSTER'] }, { phrase: 'Inventeurs célèbres', words: ['EDISON', 'TESLA', 'CURIE', 'PASTEUR', 'BELL'] }, { phrase: 'Métiers de la santé', words: ['MÉDECIN', 'CHIRURGIEN', 'INFIRMIER', 'PHARMACIEN', 'RADIOLOGUE'] }, { phrase: 'Héros de bande dessinée', words: ['ASTÉRIX', 'TINTIN', 'SPIROU', 'GASTON', 'BLAKE'] }, { phrase: 'Épices du monde', words: ['CUMIN', 'SAFRAN', 'CANNELLE', 'CARDAMOME', 'CURCUMA'] }, { phrase: 'Monuments parisiens', words: ['LOUVRE', 'EIFFEL', 'INVALIDES', 'SACRÉ-CŒUR', 'PANTHÉON'] }, { phrase: 'Outils de jardinage', words: ['RÂTEAU', 'BÊCHE', 'SÉCATEUR', 'ARROSOIR', 'FOURCHE'] }, { phrase: 'Sports olympiques d\'été', words: ['NATATION', 'ATHLÉTISME', 'ESCRIME', 'AVIRON', 'BOXE'] }, { phrase: 'Types de nuages', words: ['CUMULUS', 'STRATUS', 'CIRRUS', 'NIMBUS', 'ALTOCUMULUS'] }, { phrase: 'Animaux nocturnes', words: ['HIBOU', 'CHAUVE-SOURIS', 'RENARD', 'HÉRISSON', 'LOUP'] }, { phrase: 'Philosophes grecs', words: ['SOCRATE', 'PLATON', 'ARISTOTE', 'ÉPICURE', 'DIOGÈNE'] }, { phrase: 'Légumes du potager', words: ['TOMATE', 'COURGETTE', 'POIREAU', 'CAROTTE', 'HARICOT'] }, { phrase: 'Instruments à vent', words: ['TROMPETTE', 'FLÛTE', 'CLARINETTE', 'TROMBONE', 'HAUTBOIS'] }, { phrase: 'Pierres précieuses', words: ['DIAMANT', 'RUBIS', 'ÉMERAUDE', 'SAPHIR', 'TOPAZE'] }, { phrase: 'Sports de raquette', words: ['TENNIS', 'BADMINTON', 'SQUASH', 'PING-PONG', 'PADEL'] },
-  { phrase: 'Arbres fruitiers', words: ['POMMIER', 'POIRIER', 'CERISIER', 'PRUNIER', 'FIGUIER'] },
-  { phrase: 'Animaux marins', words: ['REQUIN','DAUPHIN','BALEINE','POULPE','CRABE'] },
-  { phrase: 'Oiseaux', words: ['AIGLE','PIGEON','MOINEAU','HIBOU','CYGNE'] },
-  { phrase: 'Boissons chaudes', words: ['CAFÉ','THÉ','CHOCOLAT','INFUSION','MATCHA'] },
-  { phrase: 'Boissons froides', words: ['EAU','SODA','JUS','LIMONADE','SMOOTHIE'] },
-  { phrase: 'Desserts', words: ['GÂTEAU','TARTE','GLACE','CRÊPE','MOUSSE'] },
-  { phrase: 'Plats italiens', words: ['PIZZA','RISOTTO','LASAGNE','RAVIOLI','CARBONARA'] },
-  { phrase: 'Fast-food', words: ['BURGER','FRITES','HOTDOG','NUGGETS','WRAP'] },
-  { phrase: 'Poissons', words: ['SAUMON','THON','TRUITE','BAR','MAQUEREAU'] },
-  { phrase: 'Animaux domestiques', words: ['CHIEN','CHAT','HAMSTER','POISSON','LAPIN'] },
-  { phrase: 'Insectes', words: ['FOURMI','ABEILLE','MOUCHE','MOUSTIQUE','SCARABÉE'] },
-
-  { phrase: 'Couleurs', words: ['ROUGE','BLEU','VERT','JAUNE','NOIR'] },
-  { phrase: 'Formes géométriques', words: ['CARRÉ','CERCLE','TRIANGLE','RECTANGLE','OVALE'] },
-  { phrase: 'Objets de cuisine', words: ['COUTEAU','FOURCHETTE','CUILLÈRE','POÊLE','CASSEROLE'] },
-  { phrase: 'Électroménager', words: ['FRIGO','FOUR','MICRO-ONDES','LAVE-LINGE','GRILLE-PAIN'] },
-  { phrase: 'Pièces de la maison', words: ['SALON','CUISINE','CHAMBRE','SALLE DE BAIN','GARAGE'] },
-  { phrase: 'Meubles', words: ['TABLE','CHAISE','CANAPÉ','LIT','ARMOIRE'] },
-  { phrase: 'Objets du bureau', words: ['STYLO','CRAYON','CLAVIER','SOURIS','ÉCRAN'] },
-  { phrase: 'Fournitures scolaires', words: ['CAHIER','AGENDA','RÈGLE','GOMME','TROUSSE'] },
-  { phrase: 'Vêtements', words: ['PANTALON','CHEMISE','VESTE','ROBE','MANTEAU'] },
-  { phrase: 'Chaussures', words: ['BASKETS','BOTTES','SANDALES','MOCASSINS','ESCARPINS'] },
-
-  { phrase: 'Sports collectifs', words: ['FOOTBALL','BASKET','RUGBY','HANDBALL','VOLLEY'] },
-  { phrase: 'Sports individuels', words: ['TENNIS','BOXE','GOLF','JUDO','NATATION'] },
-  { phrase: 'Sports extrêmes', words: ['SURF','SKATE','SNOWBOARD','PARACHUTE','ESCALADE'] },
-  { phrase: 'Transports', words: ['VOITURE','BUS','TRAIN','AVION','BATEAU'] },
-  { phrase: 'Marques automobiles', words: ['RENAULT','BMW','AUDI','TESLA','TOYOTA'] },
-  { phrase: 'Langues', words: ['FRANÇAIS','ANGLAIS','ESPAGNOL','ALLEMAND','ITALIEN'] },
-  { phrase: 'Pays d\'Europe', words: ['FRANCE','ESPAGNE','ITALIE','ALLEMAGNE','BELGIQUE'] },
-  { phrase: 'Continents', words: ['EUROPE','ASIE','AFRIQUE','AMÉRIQUE','OCÉANIE'] },
-  { phrase: 'Capitales du monde', words: ['PARIS','LONDRES','TOKYO','BERLIN','MADRID'] },
-  { phrase: 'Villes du monde', words: ['NEW YORK','TOKYO','DUBAÏ','SYDNEY','ROME'] },
-
-  { phrase: 'Métiers du bâtiment', words: ['MAÇON','ÉLECTRICIEN','PLOMBIER','PEINTRE','ARCHITECTE'] },
-  { phrase: 'Métiers du droit', words: ['AVOCAT','JUGE','NOTAIRE','PROCUREUR','GREFFIER'] },
-  { phrase: 'Métiers artistiques', words: ['PEINTRE','ACTEUR','CHANTEUR','DANSEUR','SCULPTEUR'] },
-  { phrase: 'Métiers du numérique', words: ['DÉVELOPPEUR','DESIGNER','DATA','ADMIN','WEBMASTER'] },
-  { phrase: 'Professions sportives', words: ['FOOTBALLEUR','COACH','ARBITRE','KINÉ','ENTRAÎNEUR'] },
-
-  { phrase: 'Films d\'action', words: ['DIE HARD','GLADIATOR','JOHN WICK','MAD MAX','ROCKY'] },
-  { phrase: 'Films d\'animation', words: ['SHREK','FROZEN','COCO','TOY STORY','CARS'] },
-  { phrase: 'Films cultes', words: ['TITANIC','AVATAR','MATRIX','ALIEN','INCEPTION'] },
-  { phrase: 'Séries TV', words: ['FRIENDS','BREAKING BAD','LOST','DARK','NARCOS'] },
-  { phrase: 'Personnages Disney', words: ['MICKEY','SIMBA','ELSA','ALADDIN','ARIEL'] },
-
-  { phrase: 'Super-héros', words: ['SUPERMAN','BATMAN','SPIDERMAN','HULK','IRON MAN'] },
-  { phrase: 'Jeux vidéo', words: ['MARIO','ZELDA','SONIC','FIFA','MINECRAFT'] },
-  { phrase: 'Consoles', words: ['PLAYSTATION','XBOX','SWITCH','GAMEBOY','DS'] },
-
-  { phrase: 'Objets électroniques', words: ['TÉLÉPHONE','ORDINATEUR','TABLETTE','CASQUE','TV'] },
-  { phrase: 'Réseaux sociaux', words: ['FACEBOOK','INSTAGRAM','TWITTER','SNAPCHAT','TIKTOK'] },
-
-  { phrase: 'Émotions', words: ['JOIE','TRISTESSE','COLÈRE','PEUR','SURPRISE'] },
-  { phrase: 'Qualités', words: ['GENTIL','DRÔLE','COURAGEUX','PATIENT','CRÉATIF'] },
-  { phrase: 'Défauts', words: ['IMPATIENT','PARESSEUX','JALOUX','ORGUEILLEUX','TIMIDE'] },
-
-  { phrase: 'Saisons', words: ['PRINTEMPS','ÉTÉ','AUTOMNE','HIVER','SAISON SÈCHE'] },
-  { phrase: 'Météo', words: ['SOLEIL','PLUIE','VENT','NEIGE','ORAGE'] },
-  { phrase: 'Catastrophes naturelles', words: ['SÉISME','TSUNAMI','VOLCAN','INONDATION','OURAGAN'] },
-
-  { phrase: 'Matériaux', words: ['BOIS','MÉTAL','VERRE','PLASTIQUE','PIERRE'] },
-  { phrase: 'Énergies', words: ['SOLAIRE','ÉOLIEN','NUCLÉAIRE','GAZ','CHARBON'] },
-
-  { phrase: 'Outils', words: ['MARTEAU','TOURNEVIS','SCIE','PERCEUSE','CLÉ'] },
-  { phrase: 'Jardinage', words: ['POT','TERRE','GRAINE','PLANTE','ARROSOIR'] },
-
-  { phrase: 'Types de livres', words: ['ROMAN','BD','ESSAI','POÉSIE','BIOGRAPHIE'] },
-  { phrase: 'Genres musicaux', words: ['ROCK','POP','RAP','JAZZ','CLASSIQUE'] },
-
-  { phrase: 'Vacances', words: ['PLAGE','HÔTEL','VALISE','PASSEPORT','AVION'] },
-  { phrase: 'Montagne', words: ['NEIGE','SKI','SOMMET','REFUGE','GLACIER'] },
-
-  { phrase: 'Corps humain', words: ['TÊTE','BRAS','JAMBE','MAIN','PIED'] },
-  { phrase: 'Sens', words: ['VUE','ODORAT','GOÛT','TOUCHER','OUÏE'] },
-
-  { phrase: 'Objets du quotidien', words: ['CLÉ','PORTE','LAMPE','HORLOGE','MIROIR'] },
-  { phrase: 'Papeterie', words: ['ENVELOPPE','TIMBRE','PAPIER','COLLE','CISEAUX'] },
-
-  { phrase: 'Animaux de la jungle', words: ['TIGRE','SINGE','SERPENT','PERROQUET','PANTHÈRE'] },
-  { phrase: 'Animaux polaires', words: ['OURS','PHOQUE','MORSE','RENARD','PINGOUIN'] },
-  { phrase: 'Animaux du désert', words: ['CHAMEAU','SCORPION','SERPENT','FENNEC','LÉZARD'] },
-
-  { phrase: 'Fromages du monde', words: ['CHEDDAR','GOUDA','PARMESAN','MOZZARELLA','FETA'] },
-  { phrase: 'Pains', words: ['BAGUETTE','PAIN DE MIE','COMPLET','SEIGLE','BRIOCHE'] },
-
-  { phrase: 'Objets connectés', words: ['MONTRE','ENCEINTE','CAMÉRA','THERMOSTAT','DRONE'] },
-  { phrase: 'Sécurité', words: ['ALARME','CAMÉRA','CODE','SERRURE','DIGICODE'] },
-
-  { phrase: 'Jeux de société', words: ['MONOPOLY','SCRABBLE','UNO','CLUE','RISK'] },
-  { phrase: 'Cartes', words: ['AS','ROI','DAME','VALET','DIX'] },
+  { phrase: 'Dans une {formule} de {politesse}, un mot {signifiant} {content} et {enchanté} est utilisé', words: ['formule', 'politesse', 'signifiant', 'content', 'enchanté'], reponse: 'ravi' },
+  { phrase: 'Un élément {rond} de {pâte} {farci} de {légume} est souvent servi avec de la {tomate}', words: ['rond', 'pâte', 'farci', 'légume', 'tomate'], reponse: 'ravioli' },
+  { phrase: 'Une {partition} contient une {note} et un {rythme} de {son} joué par un {instrument}', words: ['partition', 'note', 'rythme', 'son', 'instrument'], reponse: 'mélodie' },
+  { phrase: 'Après la {pluie} et le {soleil}, un {arc} de {couleur} apparaît dans le {ciel}', words: ['pluie', 'soleil', 'arc', 'couleur', 'ciel'], reponse: 'arc-en-ciel' },
+  { phrase: 'Un {enseignant} utilise une {craie} pour {écrire} sur un {tableau} en {classe}', words: ['enseignant', 'craie', 'écrire', 'tableau', 'classe'], reponse: 'école' },
+  { phrase: 'Un objet {portable} avec {écran} {tactile} permet un {appel} et une {application}', words: ['portable', 'écran', 'tactile', 'appel', 'application'], reponse: 'smartphone' },
+  { phrase: "Un {félin} {sauvage} d'{Afrique} possède des {rayures} {noir} et blanc", words: ['félin', 'sauvage', 'Afrique', 'rayures', 'noir'], reponse: 'zèbre' },
+  { phrase: 'Un aliment {gourmand} au {sucre} et à la {pâte} sort du {four} pour une {fête}', words: ['gourmand', 'sucre', 'pâte', 'four', 'fête'], reponse: 'gâteau' },
+  { phrase: 'Un {ancien} moyen de {voyage} avec {wagon} à {vapeur} circule sur des {rails}', words: ['ancien', 'voyage', 'wagon', 'vapeur', 'rails'], reponse: 'locomotive' },
+  { phrase: "Une {vague} de {sable} s'étend à l'{horizon} comme une {plage} sans {sel}", words: ['vague', 'sable', 'horizon', 'plage', 'sel'], reponse: 'mer' },
+  { phrase: 'Un {roman} avec {couverture} raconte une {histoire} sur plusieurs {pages} écrites par un {auteur}', words: ['roman', 'couverture', 'histoire', 'pages', 'auteur'], reponse: 'livre' },
+  { phrase: "Un objet {mesure} l'{heure} et la {minute} avec un {tic} visible sur un {cadran}", words: ['mesure', 'heure', 'minute', 'tic', 'cadran'], reponse: 'horloge' },
+  { phrase: "Une {carte} indique un {coffre} rempli d'{or} sur une {île} avec un {trésor}", words: ['carte', 'coffre', 'or', 'île', 'trésor'], reponse: 'pirate' },
+  { phrase: 'Un {snack} avec {pain}, {viande} et {sauce} se mange avec la {main}', words: ['snack', 'pain', 'viande', 'sauce', 'main'], reponse: 'sandwich' },
+  { phrase: "Un {joueur} utilise une {manette} pour battre un {boss} dans un {niveau} à l'{écran}", words: ['joueur', 'manette', 'boss', 'niveau', 'écran'], reponse: 'jeu vidéo' },
+  { phrase: 'Sur une {montagne}, un {flocon} {blanc} tombe avec la {neige} et le {froid}', words: ['montagne', 'flocon', 'blanc', 'neige', 'froid'], reponse: 'hiver' },
+  { phrase: "Un élément {vert} avec {feuille}, {bois} et {racine} produit de l'{oxygène}", words: ['vert', 'feuille', 'bois', 'racine', 'oxygène'], reponse: 'arbre' },
+  { phrase: 'Un {moteur} de {recherche} permet un {clic} vers une {page} du {réseau}', words: ['moteur', 'recherche', 'clic', 'page', 'réseau'], reponse: 'navigateur' },
+  { phrase: "Dans la {nuit}, une {lumière} d'{étoile} brille dans la vaste {galaxie} {infinie}", words: ['nuit', 'lumière', 'étoile', 'galaxie', 'infinie'], reponse: 'univers' },
+  { phrase: 'Un {fil} de {laine} sur une {aiguille} crée un {tissu} en {maille}', words: ['fil', 'laine', 'aiguille', 'tissu', 'maille'], reponse: 'tricot' },
 ];
 // ── MANCHE 3 : Noms propres (ensembles thèmes) ──────────────
 export const R3_SETS = [

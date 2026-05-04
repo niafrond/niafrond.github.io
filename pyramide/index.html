@@ -156,16 +156,17 @@
 <div id="screen-r1-link" data-screen="screen-r1-link" hidden>
   <div class="page-wrapper screen-center">
 
-    <span class="round-badge" style="background:var(--lagon)">Manche 1 — Le Lien 🎯</span>
-    <h2 class="app-title" style="font-size:1.6rem;">Trouvez le lien !</h2>
-    <p id="r1-link-phrase-hint" class="app-subtitle"></p>
+    <span class="round-badge" style="background:var(--lagon)">Manche 1 — Le Mot Mystère 🎯</span>
+    <h2 class="app-title" style="font-size:1.6rem;">Quel est le mot mystère&nbsp;?</h2>
 
-    <div class="card" style="width:100%;max-width:520px;">
-      <div class="card-title">Mots trouvés</div>
-      <div id="r1-link-words" class="r1-link-words"></div>
+    <div class="card r1-link-phrase-card" style="width:100%;max-width:520px;">
+      <div class="card-title">La phrase à compléter</div>
+      <p id="r1-link-phrase-hint" class="r1-link-phrase-hint"></p>
     </div>
 
-    <p class="r1-link-instruction">Les devineurs énoncent le lien à voix haute, le donneur confirme.</p>
+    <div id="r1-link-words" class="r1-link-words"></div>
+
+    <p class="r1-link-instruction">Les devineurs énoncent le mot mystère à voix haute, le donneur confirme.</p>
 
     <div class="r1-link-actions">
       <button id="btn-r1-link-found" class="btn btn-success btn-lg">🎯 Lien trouvé ! (+3 pts)</button>
@@ -194,6 +195,9 @@
     <div class="word-display-wrapper">
       <div id="turn-word" class="word-display"></div>
     </div>
+
+    <!-- R1 phrase with blanks (visible during manche 1) -->
+    <div id="r1-phrase-display" class="r1-phrase-display" hidden></div>
 
     <!-- Bricks -->
     <div class="bricks-section">

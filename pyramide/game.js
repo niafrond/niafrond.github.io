@@ -280,9 +280,10 @@ export function initR1Turn(subTeam) {
   if (titleEl)  { titleEl.textContent = team.name; titleEl.style.color = team.color; }
   if (budgetEl) budgetEl.textContent = '13 briques disponibles';
   if (listEl) {
-    listEl.innerHTML = sets.map((s, i) => `
-      <button class="r1-phrase-btn" data-idx="${i}">${s.phrase}</button>
-    `).join('');
+    listEl.innerHTML = sets.map((s, i) => {
+      const displayPhrase = s.phrase.replace(/\{([^}]+)\}/g, '<strong>$1</strong>');
+      return `<button class="r1-phrase-btn" data-idx="${i}">${displayPhrase}</button>`;
+    }).join('');
   }
 
   showScreen('screen-r1-phrase');
@@ -307,10 +308,27 @@ function _r1ShowCurrentWord() {
   _updateBricks(state.r1ClueBudget, 13);
   _updateClueCount(0);
   _updateScores();
+  _updateR1Phrase();
 
   // Show commit section, hide action buttons
   _r1ShowCommitSection();
   showScreen('screen-turn');
+}
+
+function _updateR1Phrase() {
+  const set = state.r1SelectedSet;
+  if (!set || !set.phrase) return;
+  const displayEl = el('r1-phrase-display');
+  if (!displayEl) return;
+  const foundSet = new Set(state.r1FoundWords.map(w => w.toLowerCase()));
+  const rendered = set.phrase.replace(/\{([^}]+)\}/g, (_, word) => {
+    if (foundSet.has(word.toLowerCase())) {
+      return `<span class="r1-phrase-found">${word}</span>`;
+    }
+    return `<span class="r1-phrase-blank">_ _ _</span>`;
+  });
+  displayEl.innerHTML = rendered;
+  displayEl.hidden = false;
 }
 
 function _r1ShowCommitSection() {
@@ -389,6 +407,7 @@ export function r1WordFound() {
   state.r1CommittedClues = 0;
   state.r1CluesGiven     = 0;
   _updateScores();
+  _updateR1Phrase();
 
   if (state.r1WordIdx >= state.r1SelectedSet.words.length) {
     _r1AfterAllWords();
@@ -411,21 +430,24 @@ export function r1WordLost() {
 }
 
 function _r1AfterAllWords() {
-  if (state.r1FoundWords.length === 0) {
-    // No words found → skip link phase
-    r1EndSubTurn();
-    return;
+  const set = state.r1SelectedSet;
+  const phraseEl = el('r1-link-phrase-hint');
+  const wordsEl  = el('r1-link-words');
+
+  // Render the phrase with found words revealed and unfound blanked
+  if (phraseEl && set?.phrase) {
+    const foundSet = new Set(state.r1FoundWords.map(w => w.toLowerCase()));
+    phraseEl.innerHTML = set.phrase.replace(/\{([^}]+)\}/g, (_, word) =>
+      foundSet.has(word.toLowerCase())
+        ? `<span class="r1-phrase-found">${word}</span>`
+        : `<span class="r1-phrase-blank">_ _ _</span>`
+    );
   }
 
-  // Populate and show link screen
-  const wordsEl = el('r1-link-words');
-  const phraseEl = el('r1-link-phrase-hint');
   if (wordsEl) {
-    wordsEl.innerHTML = state.r1FoundWords.map(w =>
-      `<div class="r1-link-word">${w}</div>`
-    ).join('');
+    const n = state.r1FoundWords.length;
+    wordsEl.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem;">${n} mot${n !== 1 ? 's' : ''} trouvé${n !== 1 ? 's' : ''} — Devinez le mot mystère !</p>`;
   }
-  if (phraseEl) phraseEl.textContent = `(${state.r1FoundWords.length} mot${state.r1FoundWords.length > 1 ? 's' : ''} trouvé${state.r1FoundWords.length > 1 ? 's' : ''})`;
 
   showScreen('screen-r1-link');
 }
