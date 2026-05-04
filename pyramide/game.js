@@ -664,6 +664,12 @@ function _resolveBids() {
   if (bidAEl)   bidAEl.textContent = `${state.teams[0].name} : ${bidA} brique${bidA > 1 ? 's' : ''}`;
   if (bidBEl)   bidBEl.textContent = `${state.teams[1].name} : ${bidB} brique${bidB > 1 ? 's' : ''}`;
 
+  // Hide the bid input sections — result is shown in the reveal area
+  const sectionA = el('bidding-section-a');
+  const sectionB = el('bidding-section-b');
+  if (sectionA) sectionA.hidden = true;
+  if (sectionB) sectionB.hidden = true;
+
   if (bidA === bidB) {
     const tieEl = el('bidding-tie');
     if (tieEl) tieEl.hidden = false;
