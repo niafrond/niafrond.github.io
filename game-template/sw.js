@@ -1,6 +1,6 @@
 // TODO : Mettez à jour CACHE à chaque release pour forcer le rechargement du cache.
 // Convention : '<nomjeu>-v<semver>'
-const CACHE = 'template-v1.0.0';
+const CACHE = 'template-v1.176.1';
 
 // TODO : Listez ici tous les fichiers à mettre en cache pour le mode hors-ligne.
 const ASSETS = [
