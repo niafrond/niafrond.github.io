@@ -38,5 +38,12 @@ export default {
       ],
       transform: {},
     },
+    // ── Pyramide : mots (node, pas de DOM) ──────────────────────────────────
+    {
+      displayName: 'pyramide-words',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/pyramide/tests/unit/words.test.js'],
+      transform: {},
+    },
   ],
 };
