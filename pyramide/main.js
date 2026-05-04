@@ -205,7 +205,8 @@ window.addEventListener('DOMContentLoaded', () => {
     r1CommitClues(parseInt(btn.dataset.n, 10));
   }));
 
-  // ── R1 Link phase screen ─────────────────────────────────────────────────────  el('btn-r1-pass-done')?.addEventListener('click', withCooldown(() => {
+  // ── R1 Link phase screen ─────────────────────────────────────────────────────
+  el('btn-r1-pass-done')?.addEventListener('click', withCooldown(() => {
     playButtonClick();
     r1LinkPassDone();
   }));
