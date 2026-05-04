@@ -13,7 +13,7 @@ import {
   triggerPreRoundStart, triggerNextTurn,
   startRound1,
   handleGiveClue, handleWordFound, handleWordSkip,
-  r1SelectPhrase, r1CommitClues, r1LinkFound, r1LinkFailed,
+  r1SelectPhrase, r1CommitClues, r1LinkFound, r1LinkFailed, r1LinkPassDone, r1LinkReadDone,
   r3StartWord,
   r4WordFound, r4WordSkipped,
   finalWordFound, finalWordFailed, useBonusTime,
@@ -205,7 +205,15 @@ window.addEventListener('DOMContentLoaded', () => {
     r1CommitClues(parseInt(btn.dataset.n, 10));
   }));
 
-  // ── R1 Link phase screen ─────────────────────────────────────────────────────
+  // ── R1 Link phase screen ─────────────────────────────────────────────────────  el('btn-r1-pass-done')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    r1LinkPassDone();
+  }));
+
+  el('btn-r1-read-done')?.addEventListener('click', withCooldown(() => {
+    playButtonClick();
+    r1LinkReadDone();
+  }));
   el('btn-r1-link-found')?.addEventListener('click', withCooldown(() => {
     playButtonClick();
     r1LinkFound();

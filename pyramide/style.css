@@ -976,6 +976,10 @@ html, body {
   transform: none;
 }
 
+/* ─── Round 1 — Link phase steps ────────────────────────────────────────────── */
+.r1-link-step { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; }
+.r1-pass-icon { font-size: 3.5rem; }
+
 /* ─── Round 1 — Link phase screen ─────────────────────────────────────────── */
 .r1-link-words {
   display: flex;
