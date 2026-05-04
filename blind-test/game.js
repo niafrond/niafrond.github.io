@@ -246,10 +246,10 @@ export class GameEngine {
     this.state.playbackError = null;
 
     // L'host joue localement
-    this.yt.load(song.videoId, 0);
+    this.yt.load(song.videoId, 'middle');
 
     // Les clients reçoivent l'instruction de jouer (avec offset de sync)
-    const startAt = TIMER.SYNC_OFFSET / 1000;
+    const startAt = 'middle';
     const choices = this.state.mode === MODE.FOUR_CHOICES ? this.state.choices : undefined;
 
     setTimeout(() => {
