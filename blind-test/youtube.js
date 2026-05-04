@@ -567,7 +567,9 @@ export class YouTubePlayer extends EventTarget {
     const applyAndPlay = (url) => {
       if (this._currentVideoId !== videoId) return;
       audio.src = url;
-      if (seekTo > 0) {
+      if (seekTo === 'middle') {
+        audio.addEventListener('loadedmetadata', () => { audio.currentTime = audio.duration / 2; }, { once: true });
+      } else if (seekTo > 0) {
         audio.addEventListener('canplay', () => { audio.currentTime = seekTo; }, { once: true });
       }
       audio.play().catch(() => {});
