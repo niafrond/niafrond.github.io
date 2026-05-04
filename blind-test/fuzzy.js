@@ -108,7 +108,11 @@ export function validateBothAnswer(guess, song) {
   const raw = String(guess).trim();
   const titleArtist = `${song.title} ${song.artist}`;
   const artistTitle = `${song.artist} ${song.title}`;
-  if (fuzzyMatch(raw, titleArtist) || fuzzyMatch(raw, artistTitle)) return true;
+  // Guard: the guess must be at least 75% as long as the combined string (no spaces)
+  // to avoid a title-only answer fuzzy-matching the combined string via high threshold.
+  const gsLen = normalize(raw).replace(/\s/g, '').length;
+  const rsLen = normalize(titleArtist).replace(/\s/g, '').length;
+  if (rsLen > 0 && gsLen >= rsLen * 0.75 && (fuzzyMatch(raw, titleArtist) || fuzzyMatch(raw, artistTitle))) return true;
 
   const normalizedGuess = normalize(raw);
   const normalizedTitle = normalize(song.title);
