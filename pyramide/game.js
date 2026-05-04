@@ -267,6 +267,8 @@ function _setTurnButtons(mode) {
 // ─── Round 1 — Les Énigmes ─────────────────────────────────────────────────────
 
 const R1_CLUE_TIMER_DURATION = 10;
+const R1_CLUE_TIMER_URGENT_THRESHOLD  = 3;  // seconds — red + urgent tick
+const R1_CLUE_TIMER_WARNING_THRESHOLD = 5;  // seconds — orange + tick
 
 function _startR1ClueTimer() {
   _stopR1ClueTimer();
@@ -278,8 +280,8 @@ function _startR1ClueTimer() {
   state.r1ClueTimerInterval = setInterval(() => {
     state.r1ClueTimeLeft--;
     _updateR1ClueTimerUI();
-    if (state.r1ClueTimeLeft <= 3) playTickUrgent();
-    else if (state.r1ClueTimeLeft <= 5) playTick();
+    if (state.r1ClueTimeLeft <= R1_CLUE_TIMER_URGENT_THRESHOLD) playTickUrgent();
+    else if (state.r1ClueTimeLeft <= R1_CLUE_TIMER_WARNING_THRESHOLD) playTick();
 
     if (state.r1ClueTimeLeft <= 0) {
       _stopR1ClueTimer();
