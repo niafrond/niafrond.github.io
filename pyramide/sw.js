@@ -1,4 +1,4 @@
-const CACHE = 'pyramide-v1.0.0';
+const CACHE = 'pyramide-v1.176.1';
 const ASSETS = [
   './', './index.html', './main.js', './state.js', './ui.js',
   './game.js', './pwa.js', './sound.js', './style.css',
