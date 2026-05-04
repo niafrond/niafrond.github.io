@@ -867,57 +867,152 @@ export const R2_WORDS = [
   'Zombie',
   'Zoo'
 ];
-
-// ── MANCHE 1 : Les Énigmes (ensembles thèmes + 5 mots) ──────
 export const R1_PHRASE_SETS = [
-  { phrase: 'Fruits rouges',               words: ['FRAISE', 'CERISE', 'FRAMBOISE', 'GROSEILLE', 'MYRTILLE'] },
-  { phrase: 'Pays d\'Amérique du Sud',     words: ['BRÉSIL', 'ARGENTINE', 'COLOMBIE', 'PÉROU', 'CHILI'] },
-  { phrase: 'Planètes du système solaire', words: ['MARS', 'VÉNUS', 'SATURNE', 'JUPITER', 'MERCURE'] },
-  { phrase: 'Instruments à cordes',        words: ['VIOLON', 'VIOLONCELLE', 'GUITARE', 'HARPE', 'LUTH'] },
-  { phrase: 'Sports d\'hiver',             words: ['SKI', 'LUGE', 'BOBSLEIGH', 'CURLING', 'PATINAGE'] },
-  { phrase: 'Auteurs classiques français', words: ['MOLIÈRE', 'RACINE', 'CORNEILLE', 'VOLTAIRE', 'HUGO'] },
-  { phrase: 'Capitales européennes',       words: ['ROME', 'MADRID', 'BERLIN', 'AMSTERDAM', 'LISBONNE'] },
-  { phrase: 'Animaux de la savane',        words: ['LION', 'ÉLÉPHANT', 'GIRAFE', 'ZÈBRE', 'RHINOCÉROS'] },
-  { phrase: 'Types de pâtes',              words: ['SPAGHETTI', 'LASAGNE', 'PENNE', 'TAGLIATELLE', 'GNOCCHI'] },
-  { phrase: 'Volcans célèbres',            words: ['VÉSUVE', 'ETNA', 'KRAKATOA', 'FUJIYAMA', 'STROMBOLI'] },
-  { phrase: 'Types de danse',              words: ['VALSE', 'TANGO', 'SALSA', 'MAMBO', 'CHA-CHA'] },
-  { phrase: 'Fleurs du jardin',            words: ['ROSE', 'TULIPE', 'LAVANDE', 'MARGUERITE', 'PIVOINE'] },
-  { phrase: 'Fromages français',           words: ['BRIE', 'CAMEMBERT', 'ROQUEFORT', 'COMTÉ', 'MUNSTER'] },
-  { phrase: 'Inventeurs célèbres',         words: ['EDISON', 'TESLA', 'CURIE', 'PASTEUR', 'BELL'] },
-  { phrase: 'Métiers de la santé',         words: ['MÉDECIN', 'CHIRURGIEN', 'INFIRMIER', 'PHARMACIEN', 'RADIOLOGUE'] },
-  { phrase: 'Héros de bande dessinée',     words: ['ASTÉRIX', 'TINTIN', 'SPIROU', 'GASTON', 'BLAKE'] },
-  { phrase: 'Épices du monde',             words: ['CUMIN', 'SAFRAN', 'CANNELLE', 'CARDAMOME', 'CURCUMA'] },
-  { phrase: 'Monuments parisiens',         words: ['LOUVRE', 'EIFFEL', 'INVALIDES', 'SACRÉ-CŒUR', 'PANTHÉON'] },
-  { phrase: 'Outils de jardinage',         words: ['RÂTEAU', 'BÊCHE', 'SÉCATEUR', 'ARROSOIR', 'FOURCHE'] },
-  { phrase: 'Sports olympiques d\'été',    words: ['NATATION', 'ATHLÉTISME', 'ESCRIME', 'AVIRON', 'BOXE'] },
-  { phrase: 'Types de nuages',             words: ['CUMULUS', 'STRATUS', 'CIRRUS', 'NIMBUS', 'ALTOCUMULUS'] },
-  { phrase: 'Animaux nocturnes',           words: ['HIBOU', 'CHAUVE-SOURIS', 'RENARD', 'HÉRISSON', 'LOUP'] },
-  { phrase: 'Philosophes grecs',           words: ['SOCRATE', 'PLATON', 'ARISTOTE', 'ÉPICURE', 'DIOGÈNE'] },
-  { phrase: 'Légumes du potager',          words: ['TOMATE', 'COURGETTE', 'POIREAU', 'CAROTTE', 'HARICOT'] },
-  { phrase: 'Instruments à vent',          words: ['TROMPETTE', 'FLÛTE', 'CLARINETTE', 'TROMBONE', 'HAUTBOIS'] },
-  { phrase: 'Pierres précieuses',          words: ['DIAMANT', 'RUBIS', 'ÉMERAUDE', 'SAPHIR', 'TOPAZE'] },
-  { phrase: 'Sports de raquette',          words: ['TENNIS', 'BADMINTON', 'SQUASH', 'PING-PONG', 'PADEL'] },
-  { phrase: 'Arbres fruitiers',            words: ['POMMIER', 'POIRIER', 'CERISIER', 'PRUNIER', 'FIGUIER'] },
-];
+  { phrase: 'Fruits rouges', words: ['FRAISE', 'CERISE', 'FRAMBOISE', 'GROSEILLE', 'MYRTILLE'] }, { phrase: 'Pays d\'Amérique du Sud', words: ['BRÉSIL', 'ARGENTINE', 'COLOMBIE', 'PÉROU', 'CHILI'] }, 
+  { phrase: 'Planètes du système solaire', words: ['MARS', 'VÉNUS', 'SATURNE', 'JUPITER', 'MERCURE'] }, { phrase: 'Instruments à cordes', words: ['VIOLON', 'VIOLONCELLE', 'GUITARE', 'HARPE', 'LUTH'] }, { phrase: 'Sports d\'hiver', words: ['SKI', 'LUGE', 'BOBSLEIGH', 'CURLING', 'PATINAGE'] }, { phrase: 'Auteurs classiques français', words: ['MOLIÈRE', 'RACINE', 'CORNEILLE', 'VOLTAIRE', 'HUGO'] }, { phrase: 'Capitales européennes', words: ['ROME', 'MADRID', 'BERLIN', 'AMSTERDAM', 'LISBONNE'] }, { phrase: 'Animaux de la savane', words: ['LION', 'ÉLÉPHANT', 'GIRAFE', 'ZÈBRE', 'RHINOCÉROS'] }, { phrase: 'Types de pâtes', words: ['SPAGHETTI', 'LASAGNE', 'PENNE', 'TAGLIATELLE', 'GNOCCHI'] }, { phrase: 'Volcans célèbres', words: ['VÉSUVE', 'ETNA', 'KRAKATOA', 'FUJIYAMA', 'STROMBOLI'] }, { phrase: 'Types de danse', words: ['VALSE', 'TANGO', 'SALSA', 'MAMBO', 'CHA-CHA'] }, { phrase: 'Fleurs du jardin', words: ['ROSE', 'TULIPE', 'LAVANDE', 'MARGUERITE', 'PIVOINE'] }, { phrase: 'Fromages français', words: ['BRIE', 'CAMEMBERT', 'ROQUEFORT', 'COMTÉ', 'MUNSTER'] }, { phrase: 'Inventeurs célèbres', words: ['EDISON', 'TESLA', 'CURIE', 'PASTEUR', 'BELL'] }, { phrase: 'Métiers de la santé', words: ['MÉDECIN', 'CHIRURGIEN', 'INFIRMIER', 'PHARMACIEN', 'RADIOLOGUE'] }, { phrase: 'Héros de bande dessinée', words: ['ASTÉRIX', 'TINTIN', 'SPIROU', 'GASTON', 'BLAKE'] }, { phrase: 'Épices du monde', words: ['CUMIN', 'SAFRAN', 'CANNELLE', 'CARDAMOME', 'CURCUMA'] }, { phrase: 'Monuments parisiens', words: ['LOUVRE', 'EIFFEL', 'INVALIDES', 'SACRÉ-CŒUR', 'PANTHÉON'] }, { phrase: 'Outils de jardinage', words: ['RÂTEAU', 'BÊCHE', 'SÉCATEUR', 'ARROSOIR', 'FOURCHE'] }, { phrase: 'Sports olympiques d\'été', words: ['NATATION', 'ATHLÉTISME', 'ESCRIME', 'AVIRON', 'BOXE'] }, { phrase: 'Types de nuages', words: ['CUMULUS', 'STRATUS', 'CIRRUS', 'NIMBUS', 'ALTOCUMULUS'] }, { phrase: 'Animaux nocturnes', words: ['HIBOU', 'CHAUVE-SOURIS', 'RENARD', 'HÉRISSON', 'LOUP'] }, { phrase: 'Philosophes grecs', words: ['SOCRATE', 'PLATON', 'ARISTOTE', 'ÉPICURE', 'DIOGÈNE'] }, { phrase: 'Légumes du potager', words: ['TOMATE', 'COURGETTE', 'POIREAU', 'CAROTTE', 'HARICOT'] }, { phrase: 'Instruments à vent', words: ['TROMPETTE', 'FLÛTE', 'CLARINETTE', 'TROMBONE', 'HAUTBOIS'] }, { phrase: 'Pierres précieuses', words: ['DIAMANT', 'RUBIS', 'ÉMERAUDE', 'SAPHIR', 'TOPAZE'] }, { phrase: 'Sports de raquette', words: ['TENNIS', 'BADMINTON', 'SQUASH', 'PING-PONG', 'PADEL'] },
+  { phrase: 'Arbres fruitiers', words: ['POMMIER', 'POIRIER', 'CERISIER', 'PRUNIER', 'FIGUIER'] },
+  { phrase: 'Animaux marins', words: ['REQUIN','DAUPHIN','BALEINE','POULPE','CRABE'] },
+  { phrase: 'Oiseaux', words: ['AIGLE','PIGEON','MOINEAU','HIBOU','CYGNE'] },
+  { phrase: 'Boissons chaudes', words: ['CAFÉ','THÉ','CHOCOLAT','INFUSION','MATCHA'] },
+  { phrase: 'Boissons froides', words: ['EAU','SODA','JUS','LIMONADE','SMOOTHIE'] },
+  { phrase: 'Desserts', words: ['GÂTEAU','TARTE','GLACE','CRÊPE','MOUSSE'] },
+  { phrase: 'Plats italiens', words: ['PIZZA','RISOTTO','LASAGNE','RAVIOLI','CARBONARA'] },
+  { phrase: 'Fast-food', words: ['BURGER','FRITES','HOTDOG','NUGGETS','WRAP'] },
+  { phrase: 'Poissons', words: ['SAUMON','THON','TRUITE','BAR','MAQUEREAU'] },
+  { phrase: 'Animaux domestiques', words: ['CHIEN','CHAT','HAMSTER','POISSON','LAPIN'] },
+  { phrase: 'Insectes', words: ['FOURMI','ABEILLE','MOUCHE','MOUSTIQUE','SCARABÉE'] },
 
+  { phrase: 'Couleurs', words: ['ROUGE','BLEU','VERT','JAUNE','NOIR'] },
+  { phrase: 'Formes géométriques', words: ['CARRÉ','CERCLE','TRIANGLE','RECTANGLE','OVALE'] },
+  { phrase: 'Objets de cuisine', words: ['COUTEAU','FOURCHETTE','CUILLÈRE','POÊLE','CASSEROLE'] },
+  { phrase: 'Électroménager', words: ['FRIGO','FOUR','MICRO-ONDES','LAVE-LINGE','GRILLE-PAIN'] },
+  { phrase: 'Pièces de la maison', words: ['SALON','CUISINE','CHAMBRE','SALLE DE BAIN','GARAGE'] },
+  { phrase: 'Meubles', words: ['TABLE','CHAISE','CANAPÉ','LIT','ARMOIRE'] },
+  { phrase: 'Objets du bureau', words: ['STYLO','CRAYON','CLAVIER','SOURIS','ÉCRAN'] },
+  { phrase: 'Fournitures scolaires', words: ['CAHIER','AGENDA','RÈGLE','GOMME','TROUSSE'] },
+  { phrase: 'Vêtements', words: ['PANTALON','CHEMISE','VESTE','ROBE','MANTEAU'] },
+  { phrase: 'Chaussures', words: ['BASKETS','BOTTES','SANDALES','MOCASSINS','ESCARPINS'] },
+
+  { phrase: 'Sports collectifs', words: ['FOOTBALL','BASKET','RUGBY','HANDBALL','VOLLEY'] },
+  { phrase: 'Sports individuels', words: ['TENNIS','BOXE','GOLF','JUDO','NATATION'] },
+  { phrase: 'Sports extrêmes', words: ['SURF','SKATE','SNOWBOARD','PARACHUTE','ESCALADE'] },
+  { phrase: 'Transports', words: ['VOITURE','BUS','TRAIN','AVION','BATEAU'] },
+  { phrase: 'Marques automobiles', words: ['RENAULT','BMW','AUDI','TESLA','TOYOTA'] },
+  { phrase: 'Langues', words: ['FRANÇAIS','ANGLAIS','ESPAGNOL','ALLEMAND','ITALIEN'] },
+  { phrase: 'Pays d\'Europe', words: ['FRANCE','ESPAGNE','ITALIE','ALLEMAGNE','BELGIQUE'] },
+  { phrase: 'Continents', words: ['EUROPE','ASIE','AFRIQUE','AMÉRIQUE','OCÉANIE'] },
+  { phrase: 'Capitales du monde', words: ['PARIS','LONDRES','TOKYO','BERLIN','MADRID'] },
+  { phrase: 'Villes du monde', words: ['NEW YORK','TOKYO','DUBAÏ','SYDNEY','ROME'] },
+
+  { phrase: 'Métiers du bâtiment', words: ['MAÇON','ÉLECTRICIEN','PLOMBIER','PEINTRE','ARCHITECTE'] },
+  { phrase: 'Métiers du droit', words: ['AVOCAT','JUGE','NOTAIRE','PROCUREUR','GREFFIER'] },
+  { phrase: 'Métiers artistiques', words: ['PEINTRE','ACTEUR','CHANTEUR','DANSEUR','SCULPTEUR'] },
+  { phrase: 'Métiers du numérique', words: ['DÉVELOPPEUR','DESIGNER','DATA','ADMIN','WEBMASTER'] },
+  { phrase: 'Professions sportives', words: ['FOOTBALLEUR','COACH','ARBITRE','KINÉ','ENTRAÎNEUR'] },
+
+  { phrase: 'Films d\'action', words: ['DIE HARD','GLADIATOR','JOHN WICK','MAD MAX','ROCKY'] },
+  { phrase: 'Films d\'animation', words: ['SHREK','FROZEN','COCO','TOY STORY','CARS'] },
+  { phrase: 'Films cultes', words: ['TITANIC','AVATAR','MATRIX','ALIEN','INCEPTION'] },
+  { phrase: 'Séries TV', words: ['FRIENDS','BREAKING BAD','LOST','DARK','NARCOS'] },
+  { phrase: 'Personnages Disney', words: ['MICKEY','SIMBA','ELSA','ALADDIN','ARIEL'] },
+
+  { phrase: 'Super-héros', words: ['SUPERMAN','BATMAN','SPIDERMAN','HULK','IRON MAN'] },
+  { phrase: 'Jeux vidéo', words: ['MARIO','ZELDA','SONIC','FIFA','MINECRAFT'] },
+  { phrase: 'Consoles', words: ['PLAYSTATION','XBOX','SWITCH','GAMEBOY','DS'] },
+
+  { phrase: 'Objets électroniques', words: ['TÉLÉPHONE','ORDINATEUR','TABLETTE','CASQUE','TV'] },
+  { phrase: 'Réseaux sociaux', words: ['FACEBOOK','INSTAGRAM','TWITTER','SNAPCHAT','TIKTOK'] },
+
+  { phrase: 'Émotions', words: ['JOIE','TRISTESSE','COLÈRE','PEUR','SURPRISE'] },
+  { phrase: 'Qualités', words: ['GENTIL','DRÔLE','COURAGEUX','PATIENT','CRÉATIF'] },
+  { phrase: 'Défauts', words: ['IMPATIENT','PARESSEUX','JALOUX','ORGUEILLEUX','TIMIDE'] },
+
+  { phrase: 'Saisons', words: ['PRINTEMPS','ÉTÉ','AUTOMNE','HIVER','SAISON SÈCHE'] },
+  { phrase: 'Météo', words: ['SOLEIL','PLUIE','VENT','NEIGE','ORAGE'] },
+  { phrase: 'Catastrophes naturelles', words: ['SÉISME','TSUNAMI','VOLCAN','INONDATION','OURAGAN'] },
+
+  { phrase: 'Matériaux', words: ['BOIS','MÉTAL','VERRE','PLASTIQUE','PIERRE'] },
+  { phrase: 'Énergies', words: ['SOLAIRE','ÉOLIEN','NUCLÉAIRE','GAZ','CHARBON'] },
+
+  { phrase: 'Outils', words: ['MARTEAU','TOURNEVIS','SCIE','PERCEUSE','CLÉ'] },
+  { phrase: 'Jardinage', words: ['POT','TERRE','GRAINE','PLANTE','ARROSOIR'] },
+
+  { phrase: 'Types de livres', words: ['ROMAN','BD','ESSAI','POÉSIE','BIOGRAPHIE'] },
+  { phrase: 'Genres musicaux', words: ['ROCK','POP','RAP','JAZZ','CLASSIQUE'] },
+
+  { phrase: 'Vacances', words: ['PLAGE','HÔTEL','VALISE','PASSEPORT','AVION'] },
+  { phrase: 'Montagne', words: ['NEIGE','SKI','SOMMET','REFUGE','GLACIER'] },
+
+  { phrase: 'Corps humain', words: ['TÊTE','BRAS','JAMBE','MAIN','PIED'] },
+  { phrase: 'Sens', words: ['VUE','ODORAT','GOÛT','TOUCHER','OUÏE'] },
+
+  { phrase: 'Objets du quotidien', words: ['CLÉ','PORTE','LAMPE','HORLOGE','MIROIR'] },
+  { phrase: 'Papeterie', words: ['ENVELOPPE','TIMBRE','PAPIER','COLLE','CISEAUX'] },
+
+  { phrase: 'Animaux de la jungle', words: ['TIGRE','SINGE','SERPENT','PERROQUET','PANTHÈRE'] },
+  { phrase: 'Animaux polaires', words: ['OURS','PHOQUE','MORSE','RENARD','PINGOUIN'] },
+  { phrase: 'Animaux du désert', words: ['CHAMEAU','SCORPION','SERPENT','FENNEC','LÉZARD'] },
+
+  { phrase: 'Fromages du monde', words: ['CHEDDAR','GOUDA','PARMESAN','MOZZARELLA','FETA'] },
+  { phrase: 'Pains', words: ['BAGUETTE','PAIN DE MIE','COMPLET','SEIGLE','BRIOCHE'] },
+
+  { phrase: 'Objets connectés', words: ['MONTRE','ENCEINTE','CAMÉRA','THERMOSTAT','DRONE'] },
+  { phrase: 'Sécurité', words: ['ALARME','CAMÉRA','CODE','SERRURE','DIGICODE'] },
+
+  { phrase: 'Jeux de société', words: ['MONOPOLY','SCRABBLE','UNO','CLUE','RISK'] },
+  { phrase: 'Cartes', words: ['AS','ROI','DAME','VALET','DIX'] },
+];
 // ── MANCHE 3 : Noms propres (ensembles thèmes) ──────────────
 export const R3_SETS = [
   { theme: 'Pays du monde', words: ['FRANCE','ESPAGNE','ITALIE','ALLEMAGNE','JAPON','BRÉSIL','CANADA','MEXIQUE','CHINE','RUSSIE','AUSTRALIE','INDE','ÉGYPTE','MAROC','ARGENTINE'] },
   { theme: 'Célébrités françaises', words: ['HUGO','VOLTAIRE','MOLIÈRE','NAPOLÉON','BAUDELAIRE','ZOLA','FLAUBERT','RIMBAUD','VERLAINE','CAMUS','SARTRE','DE GAULLE','PICASSO','MONET','PROUST'] },
-  { theme: 'Personnages historiques', words: ['CLÉOPÂTRE','CHARLEMAGNE','CHRISTOPHE COLOMB','EINSTEIN','SHAKESPEARE','DARWIN','GALILÉE','LÉONARD DE VINCI','MOZART','BEETHOVEN','NEWTON','PLATON','SOCRATE','MAGELLAN','PASTEUR'] },
+  { theme: 'Personnages historiques', words: ['CLÉOPÂTRE','CHARLEMAGNE','COLOMB','EINSTEIN','SHAKESPEARE','DARWIN','GALILÉE','DE VINCI','MOZART','BEETHOVEN','NEWTON','PLATON','SOCRATE','MAGELLAN','PASTEUR'] },
   { theme: 'Villes françaises', words: ['PARIS','LYON','MARSEILLE','BORDEAUX','TOULOUSE','NANTES','NICE','STRASBOURG','MONTPELLIER','RENNES','ROUEN','LILLE','GRENOBLE','DIJON','REIMS'] },
   { theme: 'Pays d\'Afrique', words: ['SÉNÉGAL','MALI','CAMEROUN','CÔTE D\'IVOIRE','TUNISIE','ALGÉRIE','NIGERIA','KENYA','GHANA','ÉTHIOPIE','TANZANIE','MADAGASCAR','MOZAMBIQUE','ANGOLA','ZAMBIE'] },
-];
 
+  { theme: 'Capitales du monde', words: ['PARIS','ROME','MADRID','BERLIN','TOKYO','OTTAWA','BRASILIA','PEKIN','MOSCOU','LONDRES','DUBLIN','VIENNE','PRAGUE','ATHENES','OSLO'] },
+  { theme: 'Présidents américains', words: ['WASHINGTON','LINCOLN','ROOSEVELT','KENNEDY','NIXON','REAGAN','CLINTON','BUSH','OBAMA','TRUMP','BIDEN','JEFFERSON','MADISON','MONROE','GRANT'] },
+  { theme: 'Écrivains célèbres', words: ['HUGO','ZOLA','ORWELL','TOLSTOI','DOSTOIEVSKI','KAFKA','HEMINGWAY','JOYCE','PROUST','CAMUS','SARTRE','BALZAC','VERNE','TWAIN','AUSTEN'] },
+  { theme: 'Peintres célèbres', words: ['MONET','MANET','RENOIR','PICASSO','VAN GOGH','DALI','MICHEL-ANGE','RAPHAEL','REMBRANDT','CEZANNE','GAUGUIN','MATISSE','KANDINSKY','POLLOCK','WARHOL'] },
+  { theme: 'Philosophes', words: ['PLATON','SOCRATE','ARISTOTE','DESCARTES','KANT','NIETZSCHE','ROUSSEAU','VOLTAIRE','HEGEL','MARX','SPINOZA','LOCKE','HOBBES','FOUCAULT','DERRIDA'] },
+
+  { theme: 'Acteurs hollywoodiens', words: ['DICAPRIO','PITT','CRUISE','HANKS','DEPP','SMITH','FREEMAN','WASHINGTON','CLOONEY','DAMON','WAHLBERG','JACKMAN','BALE','PHOENIX','REEVES'] },
+  { theme: 'Chanteurs internationaux', words: ['MJ','MADONNA','BEYONCE','RIHANNA','DRAKE','EMINEM','ADELE','STING','PRINCE','ELVIS','SINATRA','SHAKIRA','BIEBER','WEEKND','BRUNO MARS'] },
+  { theme: 'Groupes de musique', words: ['BEATLES','QUEEN','ABBA','METALLICA','NIRVANA','U2','COLDPLAY','RADIOHEAD','PINK FLOYD','ROLLING STONES','MAROON 5','LINKIN PARK','OASIS','MUSE','IMAGINE DRAGONS'] },
+  { theme: 'Marques automobiles', words: ['RENAULT','PEUGEOT','CITROEN','BMW','AUDI','MERCEDES','TESLA','TOYOTA','HONDA','FORD','FERRARI','LAMBORGHINI','VOLKSWAGEN','HYUNDAI','KIA'] },
+  { theme: 'Entreprises tech', words: ['APPLE','GOOGLE','MICROSOFT','AMAZON','META','NETFLIX','TESLA','INTEL','IBM','ORACLE','SAMSUNG','SONY','UBER','AIRBNB','SPOTIFY'] },
+
+  { theme: 'Clubs de football', words: ['PSG','OM','OL','BARCELONE','REAL MADRID','LIVERPOOL','CHELSEA','ARSENAL','BAYERN','DORTMUND','JUVENTUS','MILAN','INTER','AJAX','PORTO'] },
+  { theme: 'Joueurs de football', words: ['MBAPPE','MESSI','RONALDO','NEYMAR','ZIDANE','BENZEMA','HAALAND','MODRIC','KANE','SALAH','DE BRUYNE','GRIEZMANN','POGBA','RONALDINHO','IBRAHIMOVIC'] },
+  { theme: 'Films célèbres', words: ['TITANIC','AVATAR','GLADIATOR','INCEPTION','MATRIX','ALIEN','ROCKY','JOKER','AMELIE','INTOUCHABLES','FROZEN','COCO','BATMAN','SUPERMAN','SPIDERMAN'] },
+  { theme: 'Personnages fictifs', words: ['HARRY POTTER','SUPERMAN','BATMAN','SPIDERMAN','HULK','IRON MAN','SHERLOCK','VADER','YODA','FRODO','GANDALF','ELSA','SIMBA','POKEMON','MARIO'] },
+  { theme: 'YouTubeurs / Streamers', words: ['SQUEEZIE','CYPRIEN','MISTER V','AMIXEM','GMK','INOXTAG','MICHOU','LOCKLEAR','GOTAGA','ZERATOR','POKIMANE','NINJA','PEWDIEPIE','MRBEAST','VALOUZZ'] },
+];
 // ── MANCHE 4 : Contre-la-montre (sets thématiques) ──────────
 export const R4_SETS = [
-  { theme: 'Les animaux de la ferme', words: ['VACHE','COCHON','CHEVAL','MOUTON','POULE','LAPIN','ÂNE'] },
-  { theme: 'Les instruments de musique', words: ['PIANO','GUITARE','VIOLON','FLÛTE','TROMPETTE','BATTERIE','HARPE'] },
-  { theme: 'Les sports olympiques', words: ['NATATION','CYCLISME','ATHLÉTISME','TENNIS','FOOTBALL','BOXE','ESCRIME'] },
-  { theme: 'Les fruits exotiques', words: ['MANGUE','ANANAS','PAPAYE','LITCHI','GRENADE','NOIX DE COCO','KIWI'] },
-  { theme: 'Les métiers', words: ['MÉDECIN','BOULANGER','PILOTE','POMPIER','PROFESSEUR','CUISINIER','ARCHITECTE'] },
-  { theme: 'Les films', words: ['INTOUCHABLES','AMÉLIE','AVATAR','TITANIC','MATRIX','ALIEN','CASABLANCA'] },
-  { theme: 'Les capitales du monde', words: ['ROME','MADRID','BERLIN','TOKYO','OTTAWA','BRASÍLIA','PÉKIN'] },
+  { theme: 'Animaux de la ferme', words: ['VACHE','COCHON','CHEVAL','MOUTON','POULE','LAPIN','ANE'] },
+  { theme: 'Instruments de musique', words: ['PIANO','GUITARE','VIOLON','FLUTE','TROMPETTE','BATTERIE','HARPE'] },
+  { theme: 'Sports olympiques', words: ['NATATION','CYCLISME','ATHLETISME','TENNIS','FOOTBALL','BOXE','ESCRIME'] },
+  { theme: 'Fruits exotiques', words: ['MANGUE','ANANAS','PAPAYE','LITCHI','GRENADE','COCO','KIWI'] },
+  { theme: 'Métiers', words: ['MEDECIN','BOULANGER','PILOTE','POMPIER','PROFESSEUR','CUISINIER','ARCHITECTE'] },
+
+  { theme: 'Légumes', words: ['CAROTTE','TOMATE','POIREAU','COURGETTE','AUBERGINE','OIGNON','POMME DE TERRE'] },
+  { theme: 'Couleurs', words: ['ROUGE','BLEU','VERT','JAUNE','NOIR','BLANC','ORANGE'] },
+  { theme: 'Meubles', words: ['TABLE','CHAISE','CANAPE','LIT','ARMOIRE','BUREAU','ETAGERE'] },
+  { theme: 'Vêtements', words: ['CHEMISE','PANTALON','VESTE','ROBE','CHAUSSURES','MANTEAU','T-SHIRT'] },
+  { theme: 'Objets scolaires', words: ['STYLO','CRAYON','GOMME','REGLE','CAHIER','LIVRE','SAC'] },
+
+  { theme: 'Parties du corps', words: ['TETE','BRAS','JAMBE','MAIN','PIED','YEUX','BOUCHE'] },
+  { theme: 'Animaux marins', words: ['REQUIN','DAUPHIN','BALEINE','POULPE','CRABE','MEDUSE','RAIE'] },
+  { theme: 'Oiseaux', words: ['AIGLE','MOINEAU','PIGEON','HIBOU','PERROQUET','CANARD','CYGNE'] },
+  { theme: 'Boissons', words: ['EAU','JUS','SODA','CAFE','THE','LAIT','BIERE'] },
+  { theme: 'Desserts', words: ['GATEAU','TARTE','GLACE','CREPE','MOUSSE','BISCUIT','BROWNIE'] },
+
+  { theme: 'Transports', words: ['VOITURE','BUS','TRAIN','AVION','VELO','MOTO','BATEAU'] },
+  { theme: 'Pays européens', words: ['FRANCE','ESPAGNE','ITALIE','ALLEMAGNE','BELGIQUE','SUISSE','PORTUGAL'] },
+  { theme: 'Langues', words: ['FRANCAIS','ANGLAIS','ESPAGNOL','ITALIEN','ALLEMAND','CHINOIS','ARABE'] },
+  { theme: 'Sports collectifs', words: ['FOOTBALL','BASKET','HANDBALL','RUGBY','VOLLEY','HOCKEY','BASEBALL'] },
+  { theme: 'Objets électroniques', words: ['TELEPHONE','ORDINATEUR','TABLETTE','TELEVISION','CASQUE','SOURIS','CLAVIER'] },
 ];
 
 // ── Finale : La Grande Pyramide (expressions) ────────────────
@@ -925,4 +1020,25 @@ export const FINAL_SETS = [
   ['AVOIR LE CAFARD','CASSER LES PIEDS','IL PLEUT DES CORDES','POSER UN LAPIN','PRENDRE LA POUDRE D\'ESCAMPETTE','TOURNER EN ROND'],
   ['AVOIR LE CŒUR SUR LA MAIN','BRÛLER LES ÉTAPES','DONNER SA LANGUE AU CHAT','METTRE LES PIEDS DANS LE PLAT','NOYER LE POISSON','TOMBER DANS LES POMMES'],
   ['AVOIR D\'AUTRES CHATS À FOUETTER','CASSER DU SUCRE SUR LE DOS','ÊTRE DANS SES PETITS SOULIERS','MANGER À TOUS LES RÂTELIERS','PRENDRE LE TAUREAU PAR LES CORNES','SE JETER À L\'EAU'],
+// ── Ajout massif : 70+ expressions supplémentaires ───────────
+  ['ARC-EN-CIEL','POMME DE PIN','CROQUE-MONSIEUR','SALLE À MANGER','CHEF-D\'ŒUVRE','GARDE À VUE'],
+  ['PRISE DE PAROLE','MISE EN SCÈNE','PLAN DE TABLE','SENS INTERDIT','LIGNE DE VIE','POINT MORT'],
+  ['COUP DE BARRE','COUP DE GUEULE','COUP DE SOLEIL','COUP DE VENT','COUP DE FEU','COUP DE THÉÂTRE'],
+  ['MAIN FORTE','MAIN COURANTE','MAIN LOURDE','MAIN HEUREUSE','MAIN INVISIBLE','MAIN TENDUE'],
+  ['AVOIR LA TÊTE DANS LES NUAGES','AVOIR LES YEUX PLUS GROS QUE LE VENTRE','AVOIR UN POIL DANS LA MAIN','CHERCHER MIDI À QUATORZE HEURES','METTRE DE L\'EAU DANS SON VIN','REMUER CIEL ET TERRE'],
+  ['JETER L\'ÉPONGE','TENIR SA LANGUE','AVOIR LE VENT EN POUPE','ALLER DROIT AU BUT','FAIRE D\'UNE PIERRE DEUX COUPS','ÊTRE AU PIED DU MUR'],
+  ['PASSER L\'ÉPONGE','PRENDRE LA TÊTE','FAIRE LA SOURDE OREILLE','DONNER LE TON','CHANGER DE DISQUE','MONTER AU CRÉNEAU'],
+  ['ÊTRE SUR LES NERFS','AVOIR LA DALLE','ÊTRE À CÔTÉ DE LA PLAQUE','TOMBER DE HAUT','RESTER DE MARBRE','AVOIR LE BEGUIN'],
+  ['COUP DE FOUDRE','COUP DE FIL','COUP DE CHAPEAU','COUP DE PRESSION','COUP DE POUCE','COUP DE BALAI'],
+  ['FIL ROUGE','FIL CONDUCTEUR','FIL D\'ARIANE','FIL À COUDRE','FIL DE FER','FIL DE L\'HISTOIRE'],
+  ['JEU D\'ENFANT','JEU DE RÔLE','JEU VIDÉO','JEU DE CARTES','JEU D\'ÉCHECS','JEU DE SOCIÉTÉ'],
+  ['SAC À DOS','SAC À MAIN','SAC DE VOYAGE','SAC DE SPORT','SAC À DOS','SAC POUBELLE'],
+  ['VERRE D\'EAU','VERRE DE VIN','VERRE BRISÉ','VERRE À PIED','VERRE DOUBLÉ','VERRE FUMÉ'],
+  ['TABLE RONDE','TABLE BASSE','TABLE DE NUIT','TABLE DE JEU','TABLE DE TRAVAIL','TABLE À REPASSER'],
+  ['CHASSE À L\'HOMME','CHASSE AU TRÉSOR','CHASSE NEIGE','CHASSE D\'EAU','CHASSE À COURRE','CHASSE AUX SORCIÈRES'],
+  ['PIERRE ANGULAIRE','PIERRE PRÉCIEUSE','PIERRE TOMBALE','PIERRE À FEU','PIERRE DE TAILLE','PIERRE QUI ROULE'],
+  ['VENT DE FOLIE','VENT D\'EST','VENT DU NORD','VENT SOLAIRE','VENT CONTRAIRE','VENT ARRIÈRE'],
+  ['ROUE LIBRE','ROUE DE SECOURS','ROUE ARRIÈRE','ROUE AVANT','ROUE DENTÉE','ROUE TOURNE'],
+  ['FEU ROUGE','FEU VERT','FEU DE JOIE','FEU DE CAMP','FEU DE SIGNALISATION','FEU SACRÉ'],
+  ['POINT DE NON-RETOUR','POINT FINAL','POINT D\'EAU','POINT DE VUE','POINT DE CHUTE','POINT DE REPÈRE'],
 ];

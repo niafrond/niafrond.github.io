@@ -559,6 +559,8 @@ export function showBidding(wordIdx) {
   const confirmB = el('btn-bid-confirm-b');
   if (confirmA) confirmA.disabled = true;
   if (confirmB) confirmB.disabled = true;
+  const startBtn0 = el('btn-r3-start');
+  if (startBtn0) startBtn0.hidden = true;
 
   showScreen('screen-bidding');
 }
@@ -628,14 +630,26 @@ function _resolveBids() {
   state.r3BricksLeft = state.r3MaxBricks;
   state.r3ClueCount  = 0;
 
+  const giver   = state.teams[state.r3Giver];
+  const guesser = state.teams[1 - state.r3Giver];
   const winnerEl = el('bidding-winner');
   if (winnerEl) {
-    winnerEl.textContent = `${state.teams[state.r3Giver].name} donne les indices (${state.r3MaxBricks} brique${state.r3MaxBricks > 1 ? 's' : ''})`;
-    winnerEl.style.color = state.teams[state.r3Giver].color;
+    winnerEl.innerHTML = `
+      <div class="bid-play-row">
+        <span class="bid-play-label">🗣 Maître-mot</span>
+        <span class="bid-play-team" style="color:${giver.color}">${giver.name}</span>
+        <span class="bid-play-bricks">${state.r3MaxBricks} brique${state.r3MaxBricks > 1 ? 's' : ''}</span>
+      </div>
+      <div class="bid-play-row">
+        <span class="bid-play-label">🎯 Candidat</span>
+        <span class="bid-play-team" style="color:${guesser.color}">${guesser.name}</span>
+      </div>
+    `;
     winnerEl.hidden = false;
   }
 
-  setTimeout(() => r3StartWord(), 1500);
+  const startBtn = el('btn-r3-start');
+  if (startBtn) startBtn.hidden = false;
 }
 
 export function r3StartWord() {
@@ -713,6 +727,12 @@ function _updateTimerCircle(timeLeft, total, progressId, labelId) {
   if (label) label.textContent = timeLeft;
 }
 
+function _updateR4WordCount(set, wordIdx) {
+  const remaining = set.words.length - wordIdx;
+  const countEl = el('timer-word-count');
+  if (countEl) countEl.textContent = `${remaining} mot${remaining !== 1 ? 's' : ''} restant${remaining !== 1 ? 's' : ''}`;
+}
+
 export function startRound4() {
   state.currentRound = 4;
   state.r4SubTeam   = 0;
@@ -740,6 +760,7 @@ export function initR4Turn(subTeam) {
 
   _updateTimerCircle(30, 30, 'r4-timer-progress', 'r4-timer-label');
   _updateScores();
+  _updateR4WordCount(set, 0);
 
   showScreen('screen-timer');
   setTimeout(() => startR4Timer(), 600);
@@ -760,6 +781,7 @@ export function r4WordFound() {
     return;
   }
 
+  _updateR4WordCount(set, state.r4WordIdx);
   const wordEl = el('timer-word');
   if (wordEl) wordEl.textContent = set.words[state.r4WordIdx];
 }
@@ -774,6 +796,7 @@ export function r4WordSkipped() {
     return;
   }
 
+  _updateR4WordCount(set, state.r4WordIdx);
   const wordEl = el('timer-word');
   if (wordEl) wordEl.textContent = set.words[state.r4WordIdx];
 }
