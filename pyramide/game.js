@@ -57,16 +57,16 @@ export function generateWordSets() {
   const r2 = getR2Words();
   state.wordSets.round2.shared = r2.slice(0, 5);
 
-  const r3 = getR3Set();
+  const r3 = getR3Set(state.gameMode);
   state.wordSets.round3.theme = r3.theme;
   state.wordSets.round3.words = r3.words.slice(0, 5);
 
-  const r4a = getR4Set();
+  const r4a = getR4Set(null, state.gameMode);
   state.wordSets.round4.teamA = { theme: r4a.theme, words: r4a.words.slice(0, 7) };
-  const r4b = getR4Set(r4a.theme);
+  const r4b = getR4Set(r4a.theme, state.gameMode);
   state.wordSets.round4.teamB = { theme: r4b.theme, words: r4b.words.slice(0, 7) };
 
-  state.wordSets.final.words = getFinalSet();
+  state.wordSets.final.words = getFinalSet(state.gameMode);
 }
 
 // ─── Pre-round screen ──────────────────────────────────────────────────────────
