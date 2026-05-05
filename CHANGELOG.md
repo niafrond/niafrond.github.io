@@ -1,3 +1,9 @@
+## [1.178.0](https://github.com/niafrond/niafrond.github.io/compare/v1.177.6...v1.178.0) (2026-05-05)
+
+### Features
+
+* **pyramide:** avoid repeating words across games using localStorage history ([8dbc0ff](https://github.com/niafrond/niafrond.github.io/commit/8dbc0ff8918f854caea0acf98059b8b796721d3c))
+
 ## [1.177.6](https://github.com/niafrond/niafrond.github.io/compare/v1.177.5...v1.177.6) (2026-05-05)
 
 ### Bug Fixes
