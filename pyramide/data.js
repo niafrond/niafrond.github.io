@@ -867,28 +867,170 @@ export const R2_WORDS = [
   'Zombie',
   'Zoo'
 ];
+
+export const R1_PHRASE_SETS_ADULTE = [ 
+
+  { theme: 'formes anciennes', phrase: "Un élément {circulaire} de {semoule} {garni} de {verdure} est souvent servi avec de la {sauce}", words: ['circulaire', 'semoule', 'garni', 'verdure', 'sauce'], reponse: 'ravioli' },
+
+  { theme: 'organisation invisible', phrase: "Une {portée} contient une {tonalité} et un {tempo} de {vibration} joué par un {outil}", words: ['portée', 'tonalité', 'tempo', 'vibration', 'outil'], reponse: 'mélodie' },
+
+  { theme: 'apparition fugace', phrase: "Après la {bruine} et l'{astre}, une {farandole} de {teinte} apparaît dans la {voûte}", words: ['bruine', 'astre', 'farandole', 'teinte', 'voûte'], reponse: 'arc-en-ciel' },
+
+  { theme: 'transmission', phrase: "Un {formateur} utilise une {pierre} pour {tracer} sur un {support} en {cours}", words: ['formateur', 'pierre', 'tracer', 'support', 'cours'], reponse: 'école' },
+
+  { theme: 'prolongement de soi', phrase: "Un objet {nomade} avec {surface} {sensible} permet un {contact} et une {fonction}", words: ['nomade', 'surface', 'sensible', 'contact', 'fonction'], reponse: 'smartphone' },
+
+  { theme: 'contraste vivant', phrase: "Un {carnivore} {indompté} d'{savane} possède des {bandes} {sombre} et clair", words: ['carnivore', 'indompté', 'savane', 'bandes', 'sombre'], reponse: 'zèbre' },
+
+  { theme: 'plaisir partagé', phrase: "Un aliment {sucré} au {glucose} et à la {préparation} sort du {foyer} pour une {célébration}", words: ['sucré', 'glucose', 'préparation', 'foyer', 'célébration'], reponse: 'gâteau' },
+
+  { theme: 'force en mouvement', phrase: "Un {vétuste} moyen de {trajet} avec {convoi} à {fumée} circule sur des {voies}", words: ['vétuste', 'trajet', 'convoi', 'fumée', 'voies'], reponse: 'locomotive' },
+
+  { theme: 'illusion de similitude', phrase: "Une {ondulation} de {grains} s'étend à l'{ligne} comme une {berge} sans {iode}", words: ['ondulation', 'grains', 'ligne', 'berge', 'iode'], reponse: 'mer' },
+
+  { theme: 'trace humaine', phrase: "Un {ouvrage} avec {jaquette} raconte un {récit} sur plusieurs {feuillets} écrits par un {écrivain}", words: ['ouvrage', 'jaquette', 'récit', 'feuillets', 'écrivain'], reponse: 'livre' },
+
+  { theme: 'cycle discret', phrase: "Un objet {calcule} l'{instant} et la {division} avec un {battement} visible sur un {disque}", words: ['calcule', 'instant', 'division', 'battement', 'disque'], reponse: 'horloge' },
+
+  { theme: 'quête', phrase: "Une {esquisse} indique un {butin} rempli d'{métal} sur une {terre} avec un {magot}", words: ['esquisse', 'butin', 'métal', 'terre', 'magot'], reponse: 'pirate' },
+
+  { theme: 'nécessité rapide', phrase: "Un {encas} avec {mie}, {chair} et {condiment} se mange avec la {paume}", words: ['encas', 'mie', 'chair', 'condiment', 'paume'], reponse: 'sandwich' },
+
+  { theme: 'défi simulé', phrase: "Un {participant} utilise un {contrôleur} pour battre un {ennemi} dans un {palier} à l'{affichage}", words: ['participant', 'contrôleur', 'ennemi', 'palier', 'affichage'], reponse: 'jeu vidéo' },
+
+  { theme: 'ralentissement', phrase: "Sur une {cime}, un {cristal} {pâle} tombe avec la {gelée} et le {givre}", words: ['cime', 'cristal', 'pâle', 'gelée', 'givre'], reponse: 'hiver' },
+
+  { theme: 'équilibre vital', phrase: "Un élément {chlorophyllien} avec {fronde}, {tronc} et {ancrage} produit de l'{air}", words: ['chlorophyllien', 'fronde', 'tronc', 'ancrage', 'air'], reponse: 'arbre' },
+
+  { theme: 'navigation abstraite', phrase: "Un {explorateur} de {requête} permet une {pression} vers une {interface} du {maillage}", words: ['explorateur', 'requête', 'pression', 'interface', 'maillage'], reponse: 'navigateur' },
+
+  { theme: 'immensité', phrase: "Dans la {pénombre}, une {lueur} d'{astre} brille dans la vaste {nébuleuse} {sans fin}", words: ['pénombre', 'lueur', 'astre', 'nébuleuse', 'sans fin'], reponse: 'univers' },
+
+  { theme: 'patience', phrase: "Un {brin} de {fibres} sur une {tige} crée un {assemblage} en {boucle}", words: ['brin', 'fibres', 'tige', 'assemblage', 'boucle'], reponse: 'tricot' },
+
+  { theme: 'transformation', phrase: "Un {assemblage} de {grains} {chauffé} donne une {croûte} et une {mie}", words: ['assemblage', 'grains', 'chauffé', 'croûte', 'mie'], reponse: 'pain' },
+
+  { theme: 'verticalité', phrase: "Une {structure} de {pierre} {élevée} domine la {ville} avec des {étages}", words: ['structure', 'pierre', 'élevée', 'ville', 'étages'], reponse: 'tour' },
+
+  { theme: 'flux continu', phrase: "Une {masse} d'{eau} en {mouvement} suit un {lit} jusqu'à la {mer}", words: ['masse', 'eau', 'mouvement', 'lit', 'mer'], reponse: 'rivière' },
+
+  { theme: 'contenu fermé', phrase: "Un {récipient} avec {couvercle} garde un {liquide} à l'abri de l'{air}", words: ['récipient', 'couvercle', 'liquide', 'air'], reponse: 'bouteille' },
+
+  { theme: 'projection', phrase: "Un {dispositif} diffuse une {image} sur un {mur} dans une {salle}", words: ['dispositif', 'image', 'mur', 'salle'], reponse: 'projecteur' },
+
+  { theme: 'repère', phrase: "Un {signe} indique une {direction} sur une {route} pour les {voyageurs}", words: ['signe', 'direction', 'route', 'voyageurs'], reponse: 'panneau' },
+
+  { theme: 'équilibre fragile', phrase: "Une {surface} {plane} repose sur {pieds} et supporte des {objets}", words: ['surface', 'plane', 'pieds', 'objets'], reponse: 'table' },
+
+  { theme: 'empreinte', phrase: "Une {marque} laissée par un {pas} sur le {sol} humide", words: ['marque', 'pas', 'sol'], reponse: 'trace' },
+
+  { theme: 'répétition', phrase: "Un {cycle} de {jours} forme une {unité} de {temps}", words: ['cycle', 'jours', 'unité', 'temps'], reponse: 'semaine' },
+
+  { theme: 'énergie contenue', phrase: "Un {élément} {chargé} fournit du {courant} à un {appareil}", words: ['élément', 'chargé', 'courant', 'appareil'], reponse: 'batterie' },
+
+  { theme: 'reflet', phrase: "Une {surface} {polie} renvoie une {image} fidèle du {visage}", words: ['surface', 'polie', 'image', 'visage'], reponse: 'miroir' },
+
+  { theme: 'fragment', phrase: "Un {morceau} de {verre} {tranchant} issu d'une {cassure}", words: ['morceau', 'verre', 'tranchant', 'cassure'], reponse: 'éclat' },
+
+  { theme: 'liaison', phrase: "Un {objet} {souple} relie deux {points} sous {tension}", words: ['objet', 'souple', 'points', 'tension'], reponse: 'corde' },
+
+  { theme: 'passage', phrase: "Un {espace} étroit permet le {franchissement} entre deux {lieux}", words: ['espace', 'franchissement', 'lieux'], reponse: 'couloir' },
+
+  { theme: 'capture', phrase: "Un {outil} {adhésif} retient un {élément} par {contact}", words: ['outil', 'adhésif', 'élément', 'contact'], reponse: 'colle' },
+
+  { theme: 'division', phrase: "Un {instrument} coupe une {matière} en plusieurs {parties}", words: ['instrument', 'matière', 'parties'], reponse: 'couteau' },
+
+  { theme: 'signal faible', phrase: "Un {son} bref attire l'attention dans le {silence}", words: ['son', 'attention', 'silence'], reponse: 'bip' },
+
+  { theme: 'support', phrase: "Une {planche} {fixée} au {mur} accueille des {objets}", words: ['planche', 'fixée', 'mur', 'objets'], reponse: 'étagère' },
+
+  { theme: 'protection', phrase: "Un {revêtement} {épais} isole du {froid} et du {vent}", words: ['revêtement', 'épais', 'froid', 'vent'], reponse: 'manteau' },
+
+  { theme: 'élévation', phrase: "Un {dispositif} permet de monter d''un {niveau} à un autre sans {effort}", words: ['dispositif', 'niveau', 'effort'], reponse: 'ascenseur' },
+
+  { theme: 'contrainte', phrase: "Un {lien} {rigide} maintient un {objet} en {place}", words: ['lien', 'rigide', 'objet', 'place'], reponse: 'clou' },
+
+  { theme: 'oscillation', phrase: "Un {mouvement} {régulier} alterne entre deux {positions}", words: ['mouvement', 'régulier', 'positions'], reponse: 'balancement' },
+
+  { theme: 'ouverture', phrase: "Une {partie} mobile permet l'{entrée} dans un {espace}", words: ['partie', 'entrée', 'espace'], reponse: 'porte' },
+
+  { theme: 'filtration', phrase: "Un {dispositif} sépare le {solide} du {liquide}", words: ['dispositif', 'solide', 'liquide'], reponse: 'filtre' },
+
+  { theme: 'projection mentale', phrase: "Une {représentation} interne guide une {action} future", words: ['représentation', 'action'], reponse: 'idée' },
+
+  { theme: 'réserve', phrase: "Un {espace} contient des {ressources} pour un usage {ultérieur}", words: ['espace', 'ressources', 'ultérieur'], reponse: 'stock' },
+
+  { theme: 'pression', phrase: "Un {gaz} comprimé dans un {volume} exerce une {force}", words: ['gaz', 'volume', 'force'], reponse: 'air' },
+
+  { theme: 'guidage', phrase: "Un {tracé} indique un {chemin} à suivre sur une {surface}", words: ['tracé', 'chemin', 'surface'], reponse: 'ligne' },
+
+  { theme: 'diffusion', phrase: "Une {substance} se répand dans un {milieu} jusqu'à {uniformité}", words: ['substance', 'milieu', 'uniformité'], reponse: 'odeur' },
+
+  { theme: 'résistance', phrase: "Un {matériau} oppose une {force} à une {déformation}", words: ['matériau', 'force', 'déformation'], reponse: 'solidité' },
+
+  { theme: 'accumulation', phrase: "Un {amas} de {particules} forme une {surface} instable", words: ['amas', 'particules', 'surface'], reponse: 'tas' },
+
+  { theme: 'vitesse', phrase: "Un {déplacement} rapide couvre une {distance} en peu de {temps}", words: ['déplacement', 'distance', 'temps'], reponse: 'course' },
+
+  { theme: 'rotation', phrase: "Un {objet} tourne autour d'un {axe} de manière {continue}", words: ['objet', 'axe', 'continue'], reponse: 'roue' },
+
+  { theme: 'chaleur', phrase: "Une {source} produit de la {température} par {combustion}", words: ['source', 'température', 'combustion'], reponse: 'feu' },
+
+  { theme: 'contact', phrase: "Deux {surfaces} se touchent en un {point} commun", words: ['surfaces', 'point'], reponse: 'contact' },
+
+  { theme: 'séparation', phrase: "Une {barrière} divise un {espace} en deux {zones}", words: ['barrière', 'espace', 'zones'], reponse: 'mur' },
+
+  { theme: 'retour', phrase: "Un {chemin} mène à son {point} de {départ}", words: ['chemin', 'point', 'départ'], reponse: 'boucle' },
+
+  { theme: 'résonance', phrase: "Un {espace} amplifie un {son} par {vibration}", words: ['espace', 'son', 'vibration'], reponse: 'écho' },
+
+  { theme: 'observation', phrase: "Un {instrument} permet de voir à {distance} avec précision", words: ['instrument', 'distance'], reponse: 'jumelles' },
+
+  { theme: 'compression', phrase: "Un {objet} réduit son {volume} sous une {force}", words: ['objet', 'volume', 'force'], reponse: 'ressort' },
+
+  { theme: 'distribution', phrase: "Un {réseau} répartit une {ressource} vers plusieurs {points}", words: ['réseau', 'ressource', 'points'], reponse: 'circuit' },
+
+  { theme: 'stabilité', phrase: "Une {base} large assure l'{équilibre} d'un {objet}", words: ['base', 'équilibre', 'objet'], reponse: 'socle' },
+
+  { theme: 'transition', phrase: "Un {moment} marque le passage d'un {état} à un autre", words: ['moment', 'état'], reponse: 'changement' },
+
+  { theme: 'mouvement interne', phrase: "Une {force} agit à l'intérieur d'un {corps} en {action}", words: ['force', 'corps', 'action'], reponse: 'énergie' },
+
+  { theme: 'alignement', phrase: "Plusieurs {éléments} disposés en {suite} forment une {structure}", words: ['éléments', 'suite', 'structure'], reponse: 'ligne' },
+
+  { theme: 'acte', phrase: "Une {réaction} rapide suit un {stimulus} sans {calcul}", words: ['réaction', 'stimulus', 'calcul'], reponse: 'réflexe' },
+
+  { theme: 'suspension', phrase: "Un {objet} reste en {l'air} sans {support} visible", words: ['objet', 'air', 'support'], reponse: 'flottement' },
+
+  { theme: 'origine', phrase: "Un {point} marque le début d'un {processus}", words: ['point', 'processus'], reponse: 'départ' },
+
+  { theme: 'pas plus', phrase: "Un {moment} conclut une {suite} d'{événements}", words: ['moment', 'suite', 'événements'], reponse: 'fin' },
+
+
+];
 // ── MANCHE 1 : Les Énigmes (phrases à trous) ────────────────
 export const R1_PHRASE_SETS = [
-  { theme: 'Synonyme de politesse', phrase: 'Dans une {formule} de {politesse}, un mot {signifiant} {content} et {enchanté} est utilisé', words: ['formule', 'politesse', 'signifiant', 'content', 'enchanté'], reponse: 'ravi' },
-  { theme: 'Cuisine italienne', phrase: 'Un élément {rond} de {pâte} {farci} de {légume} est souvent servi avec de la {tomate}', words: ['rond', 'pâte', 'farci', 'légume', 'tomate'], reponse: 'ravioli' },
-  { theme: 'Musique & harmonie', phrase: 'Une {partition} contient une {note} et un {rythme} de {son} joué par un {instrument}', words: ['partition', 'note', 'rythme', 'son', 'instrument'], reponse: 'mélodie' },
-  { theme: 'Phénomène météo', phrase: 'Après la {pluie} et le {soleil}, un {arc} de {couleur} apparaît dans le {ciel}', words: ['pluie', 'soleil', 'arc', 'couleur', 'ciel'], reponse: 'arc-en-ciel' },
-  { theme: 'Vie scolaire', phrase: 'Un {enseignant} utilise une {craie} pour {écrire} sur un {tableau} en {classe}', words: ['enseignant', 'craie', 'écrire', 'tableau', 'classe'], reponse: 'école' },
-  { theme: 'Technologie mobile', phrase: 'Un objet {portable} avec {écran} {tactile} permet un {appel} et une {application}', words: ['portable', 'écran', 'tactile', 'appel', 'application'], reponse: 'smartphone' },
-  { theme: 'Animal sauvage', phrase: "Un {félin} {sauvage} d'{Afrique} possède des {rayures} {noir} et blanc", words: ['félin', 'sauvage', 'Afrique', 'rayures', 'noir'], reponse: 'zèbre' },
-  { theme: 'Pâtisserie & fête', phrase: 'Un aliment {gourmand} au {sucre} et à la {pâte} sort du {four} pour une {fête}', words: ['gourmand', 'sucre', 'pâte', 'four', 'fête'], reponse: 'gâteau' },
-  { theme: 'Transport ancien', phrase: 'Un {ancien} moyen de {voyage} avec {wagon} à {vapeur} circule sur des {rails}', words: ['ancien', 'voyage', 'wagon', 'vapeur', 'rails'], reponse: 'locomotive' },
-  { theme: 'Nature & étendue', phrase: "Une {vague} de {sable} s'étend à l'{horizon} comme une {plage} sans {sel}", words: ['vague', 'sable', 'horizon', 'plage', 'sel'], reponse: 'mer' },
-  { theme: 'Lecture & littérature', phrase: 'Un {roman} avec {couverture} raconte une {histoire} sur plusieurs {pages} écrites par un {auteur}', words: ['roman', 'couverture', 'histoire', 'pages', 'auteur'], reponse: 'livre' },
-  { theme: 'Mesure du temps', phrase: "Un objet {mesure} l'{heure} et la {minute} avec un {tic} visible sur un {cadran}", words: ['mesure', 'heure', 'minute', 'tic', 'cadran'], reponse: 'horloge' },
-  { theme: 'Aventure & trésor', phrase: "Une {carte} indique un {coffre} rempli d'{or} sur une {île} avec un {trésor}", words: ['carte', 'coffre', 'or', 'île', 'trésor'], reponse: 'pirate' },
-  { theme: 'Repas rapide', phrase: 'Un {snack} avec {pain}, {viande} et {sauce} se mange avec la {main}', words: ['snack', 'pain', 'viande', 'sauce', 'main'], reponse: 'sandwich' },
-  { theme: 'Jeu vidéo', phrase: "Un {joueur} utilise une {manette} pour battre un {boss} dans un {niveau} à l'{écran}", words: ['joueur', 'manette', 'boss', 'niveau', 'écran'], reponse: 'jeu vidéo' },
-  { theme: 'Saison froide', phrase: 'Sur une {montagne}, un {flocon} {blanc} tombe avec la {neige} et le {froid}', words: ['montagne', 'flocon', 'blanc', 'neige', 'froid'], reponse: 'hiver' },
-  { theme: 'Végétal & nature', phrase: "Un élément {vert} avec {feuille}, {bois} et {racine} produit de l'{oxygène}", words: ['vert', 'feuille', 'bois', 'racine', 'oxygène'], reponse: 'arbre' },
-  { theme: 'Internet & web', phrase: 'Un {moteur} de {recherche} permet un {clic} vers une {page} du {réseau}', words: ['moteur', 'recherche', 'clic', 'page', 'réseau'], reponse: 'navigateur' },
-  { theme: 'Astronomie', phrase: "Dans la {nuit}, une {lumière} d'{étoile} brille dans la vaste {galaxie} {infinie}", words: ['nuit', 'lumière', 'étoile', 'galaxie', 'infinie'], reponse: 'univers' },
-  { theme: 'Artisanat textile', phrase: 'Un {fil} de {laine} sur une {aiguille} crée un {tissu} en {maille}', words: ['fil', 'laine', 'aiguille', 'tissu', 'maille'], reponse: 'tricot' },
+  
+  { mode:"child",theme: 'Cuisine italienne', phrase: 'Un élément {rond} de {pâte} {farci} de {légume} est souvent servi avec de la {tomate}', words: ['rond', 'pâte', 'farci', 'légume', 'tomate'], reponse: 'ravioli' },
+  { mode:"child",theme: 'Phénomène météo', phrase: 'Après la {pluie} et le {soleil}, un {arc} de {couleur} apparaît dans le {ciel}', words: ['pluie', 'soleil', 'arc', 'couleur', 'ciel'], reponse: 'arc-en-ciel' },
+  {mode:"child", theme: 'Vie scolaire', phrase: 'Un {enseignant} utilise une {craie} pour {écrire} sur un {tableau} en {classe}', words: ['enseignant', 'craie', 'écrire', 'tableau', 'classe'], reponse: 'école' },
+  { mode:"child",theme: 'Technologie mobile', phrase: 'Un objet {portable} avec {écran} {tactile} permet un {appel} et une {application}', words: ['portable', 'écran', 'tactile', 'appel', 'application'], reponse: 'smartphone' },
+  { mode:"child",theme: 'Animal sauvage', phrase: "Un {félin} {sauvage} d'{Afrique} possède des {rayures} {noir} et blanc", words: ['félin', 'sauvage', 'Afrique', 'rayures', 'noir'], reponse: 'zèbre' },
+  {mode:"child", theme: 'Synonyme de politesse', phrase: 'Dans une {formule} de {politesse}, un mot {signifiant} {content} et {enchanté} est utilisé', words: ['formule', 'politesse', 'signifiant', 'content', 'enchanté'], reponse: 'ravi' },
+  { mode:"child",theme: 'Pâtisserie & fête', phrase: 'Un aliment {gourmand} au {sucre} et à la {pâte} sort du {four} pour une {fête}', words: ['gourmand', 'sucre', 'pâte', 'four', 'fête'], reponse: 'gâteau' },
+  { mode:"child",theme: 'Musique & harmonie', phrase: 'Une {partition} contient une {note} et un {rythme} de {son} joué par un {instrument}', words: ['partition', 'note', 'rythme', 'son', 'instrument'], reponse: 'mélodie' },
+  { mode:"child",theme: 'Transport ancien', phrase: 'Un {ancien} moyen de {voyage} avec {wagon} à {vapeur} circule sur des {rails}', words: ['ancien', 'voyage', 'wagon', 'vapeur', 'rails'], reponse: 'locomotive' },
+  { mode:"child",theme: 'Nature & étendue', phrase: "Une {vague} de {sable} s'étend à l'{horizon} comme une {plage} sans {sel}", words: ['vague', 'sable', 'horizon', 'plage', 'sel'], reponse: 'mer' },
+  { mode:"child",theme: 'Lecture & littérature', phrase: 'Un {roman} avec {couverture} raconte une {histoire} sur plusieurs {pages} écrites par un {auteur}', words: ['roman', 'couverture', 'histoire', 'pages', 'auteur'], reponse: 'livre' },
+  { mode:"child",theme: 'Mesure du temps', phrase: "Un objet {mesure} l'{heure} et la {minute} avec un {tic} visible sur un {cadran}", words: ['mesure', 'heure', 'minute', 'tic', 'cadran'], reponse: 'horloge' },
+  { mode:"child",theme: 'Aventure & trésor', phrase: "Une {carte} indique un {coffre} rempli d'{or} sur une {île} avec un {trésor}", words: ['carte', 'coffre', 'or', 'île', 'trésor'], reponse: 'pirate' },
+  { mode:"child",theme: 'Repas rapide', phrase: 'Un {snack} avec {pain}, {viande} et {sauce} se mange avec la {main}', words: ['snack', 'pain', 'viande', 'sauce', 'main'], reponse: 'sandwich' },
+  { mode:"child",theme: 'Jeu vidéo', phrase: "Un {joueur} utilise une {manette} pour battre un {boss} dans un {niveau} à l'{écran}", words: ['joueur', 'manette', 'boss', 'niveau', 'écran'], reponse: 'jeu vidéo' },
+  { mode:"child",theme: 'Saison froide', phrase: 'Sur une {montagne}, un {flocon} {blanc} tombe avec la {neige} et le {froid}', words: ['montagne', 'flocon', 'blanc', 'neige', 'froid'], reponse: 'hiver' },
+  { mode:"child",theme: 'Végétal & nature', phrase: "Un élément {vert} avec {feuille}, {bois} et {racine} produit de l'{oxygène}", words: ['vert', 'feuille', 'bois', 'racine', 'oxygène'], reponse: 'arbre' },
+  { mode:"child",theme: 'Internet & web', phrase: 'Un {moteur} de {recherche} permet un {clic} vers une {page} du {réseau}', words: ['moteur', 'recherche', 'clic', 'page', 'réseau'], reponse: 'navigateur' },
+  { mode:"child",theme: 'Astronomie', phrase: "Dans la {nuit}, une {lumière} d'{étoile} brille dans la vaste {galaxie} {infinie}", words: ['nuit', 'lumière', 'étoile', 'galaxie', 'infinie'], reponse: 'univers' },
+  { mode:"child",theme: 'Artisanat textile', phrase: 'Un {fil} de {laine} sur une {aiguille} crée un {tissu} en {maille}', words: ['fil', 'laine', 'aiguille', 'tissu', 'maille'], reponse: 'tricot' },
 ];
 // ── MANCHE 3 : Noms propres (ensembles thèmes) ──────────────
 export const R3_SETS = [
