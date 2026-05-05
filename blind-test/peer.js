@@ -31,6 +31,7 @@ const ICE_CONFIG = {
     { urls: 'turn:openrelay.metered.ca:443',               username: TURN_USER, credential: TURN_CRED },
     { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: TURN_USER, credential: TURN_CRED },
   ],
+  iceCandidatePoolSize: 2,
 };
 
 // Charge PeerJS depuis CDN si pas déjà présent
@@ -143,25 +144,54 @@ export class BlindTestPeer extends EventTarget {
 
     this._peer.on('open', (id) => {
       this.peerId = id;
-      const conn = this._peer.connect(hostPeerId, { reliable: true });
-      this._hostConn = conn;
-
-      conn.on('open', () => {
-        this._attachClientConnHandlers(conn, hostPeerId);
-        this.dispatchEvent(new CustomEvent('ready', { detail: { peerId: id } }));
-      });
-
-      // Erreur avant que la connexion soit ouverte
-      conn.on('error', (err) => {
-        console.error('[PeerJS client conn init]', err);
-        this.dispatchEvent(new CustomEvent('error', { detail: { err } }));
-      });
+      this._tryInitialConnect(hostPeerId, 0);
     });
 
     this._peer.on('error', (err) => {
       console.error('[PeerJS client]', err);
       this.dispatchEvent(new CustomEvent('error', { detail: { err } }));
     });
+  }
+
+  // Retries the initial connection up to 10 times with a 4-second ICE/TURN timeout.
+  // On the same LAN or behind symmetric NAT, direct candidates fail quickly and
+  // TURN relay candidates take longer — retrying gives TURN time to allocate.
+  _tryInitialConnect(hostPeerId, attempt) {
+    const MAX_INIT_ATTEMPTS = 10;
+    if (attempt >= MAX_INIT_ATTEMPTS) {
+      this.dispatchEvent(new CustomEvent('error', {
+        detail: { err: new Error('Impossible de rejoindre la salle après plusieurs tentatives') },
+      }));
+      return;
+    }
+
+    const conn = this._peer.connect(hostPeerId, { reliable: true });
+    let settled = false;
+
+    const retry = () => {
+      if (settled) return;
+      settled = true;
+      try { conn.close(); } catch { /* ignore */ }
+      console.warn(`[PeerJS client init] tentative ${attempt + 1} échouée, nouvelle tentative…`);
+      setTimeout(() => this._tryInitialConnect(hostPeerId, attempt + 1), INITIAL_CONNECT_RETRY_DELAY_MS);
+    };
+
+    conn.on('open', () => {
+      if (settled) return;
+      settled = true;
+      this._hostConn = conn;
+      this._attachClientConnHandlers(conn, hostPeerId);
+      this.dispatchEvent(new CustomEvent('ready', { detail: { peerId: this.peerId } }));
+    });
+
+    conn.on('error', (err) => {
+      console.warn(`[PeerJS client init tentative ${attempt + 1}]`, err);
+      retry();
+    });
+
+    conn.on('close', () => retry());
+
+    setTimeout(retry, INITIAL_CONNECT_TIMEOUT_MS);
   }
 
   /** Attache les gestionnaires data/close/error à une connexion client active */
