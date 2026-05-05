@@ -18,6 +18,8 @@ import { MSG } from './constants.js';
 const PEERJS_CDN = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js';
 
 const MAX_RECONNECT_ATTEMPTS = 150;
+const INITIAL_CONNECT_TIMEOUT_MS = 4000; // time to wait for ICE/TURN before retrying
+const INITIAL_CONNECT_RETRY_DELAY_MS = 1500;
 
 // TURN servers allow WebRTC to work when direct P2P fails (e.g. behind a VPN).
 // openrelayproject credentials are intentionally public (Open Relay Project free TURN service).
@@ -139,24 +141,55 @@ export class ScrumPokerPeer extends EventTarget {
 
     this._peer.on('open', (id) => {
       this.peerId = id;
-      const conn = this._peer.connect(hostPeerId, { reliable: true });
-      this._hostConn = conn;
-
-      conn.on('open', () => {
-        this._attachClientConnHandlers(conn, hostPeerId);
-        this.dispatchEvent(new CustomEvent('ready', { detail: { peerId: id } }));
-      });
-
-      conn.on('error', (err) => {
-        console.error('[PeerJS client conn init]', err);
-        this.dispatchEvent(new CustomEvent('error', { detail: { err } }));
-      });
+      this._tryInitialConnect(hostPeerId, 0);
     });
 
     this._peer.on('error', (err) => {
       console.error('[PeerJS client]', err);
       this.dispatchEvent(new CustomEvent('error', { detail: { err } }));
     });
+  }
+
+  // Attempts to establish the first connection to the host, retrying on failure.
+  // When all users are behind a VPN, direct P2P (STUN) often fails and TURN relay
+  // negotiation can take longer than a single attempt allows.
+  _tryInitialConnect(hostPeerId, attempt) {
+    const MAX_INIT_ATTEMPTS = 10;
+    if (attempt >= MAX_INIT_ATTEMPTS) {
+      this.dispatchEvent(new CustomEvent('error', {
+        detail: { err: new Error('Impossible de rejoindre la salle après plusieurs tentatives') },
+      }));
+      return;
+    }
+
+    const conn = this._peer.connect(hostPeerId, { reliable: true });
+    let settled = false;
+
+    const retry = () => {
+      if (settled) return;
+      settled = true;
+      try { conn.close(); } catch { /* ignore */ }
+      console.warn(`[PeerJS client init] tentative ${attempt + 1} échouée, nouvelle tentative…`);
+      setTimeout(() => this._tryInitialConnect(hostPeerId, attempt + 1), INITIAL_CONNECT_RETRY_DELAY_MS);
+    };
+
+    conn.on('open', () => {
+      if (settled) return;
+      settled = true;
+      this._hostConn = conn;
+      this._attachClientConnHandlers(conn, hostPeerId);
+      this.dispatchEvent(new CustomEvent('ready', { detail: { peerId: this.peerId } }));
+    });
+
+    conn.on('error', (err) => {
+      console.warn(`[PeerJS client init attempt ${attempt + 1}]`, err);
+      retry();
+    });
+
+    conn.on('close', () => retry());
+
+    // Timeout: give ICE/TURN negotiation time to complete before retrying
+    setTimeout(retry, INITIAL_CONNECT_TIMEOUT_MS);
   }
 
   _attachClientConnHandlers(conn, hostPeerId) {
@@ -184,22 +217,27 @@ export class ScrumPokerPeer extends EventTarget {
     this._reconnectAttempts++;
 
     const conn = this._peer.connect(hostPeerId, { reliable: true });
-    let connected = false;
+    let settled = false;
+
+    const retry = () => {
+      if (settled) return;
+      settled = true;
+      try { conn.close(); } catch { /* ignore */ }
+      this._tryReconnect(hostPeerId);
+    };
 
     conn.on('open', () => {
-      connected = true;
+      if (settled) return;
+      settled = true;
       this._hostConn = conn;
       this._reconnecting = false;
       this._attachClientConnHandlers(conn, hostPeerId);
       this.dispatchEvent(new CustomEvent('host-reconnected', { detail: { peerId: this.peerId } }));
     });
 
-    setTimeout(() => {
-      if (!connected) {
-        try { conn.close(); } catch { /* ignore */ }
-        this._tryReconnect(hostPeerId);
-      }
-    }, 2000);
+    conn.on('error', () => retry());
+
+    setTimeout(retry, 2000);
   }
 
   sendToHost(data) {
