@@ -33,6 +33,7 @@ const ICE_CONFIG = {
     { urls: 'turn:openrelay.metered.ca:443',                 username: TURN_USER, credential: TURN_CRED },
     { urls: 'turn:openrelay.metered.ca:443?transport=tcp',   username: TURN_USER, credential: TURN_CRED },
   ],
+  iceCandidatePoolSize: 2,
 };
 
 function loadPeerJS() {
