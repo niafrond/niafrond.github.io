@@ -1,3 +1,9 @@
+## [1.177.2](https://github.com/niafrond/niafrond.github.io/compare/v1.177.1...v1.177.2) (2026-05-05)
+
+### Bug Fixes
+
+* **scrum-poker:** add TURN servers so WebRTC works behind a VPN ([7fd4f75](https://github.com/niafrond/niafrond.github.io/commit/7fd4f753421be071b983c573b92f0e9a9c5ca71b))
+
 ## [1.177.1](https://github.com/niafrond/niafrond.github.io/compare/v1.177.0...v1.177.1) (2026-05-05)
 
 ### Bug Fixes
