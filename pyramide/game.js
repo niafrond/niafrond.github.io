@@ -50,7 +50,7 @@ export function renderTeams() {
 // ─── Word sets ─────────────────────────────────────────────────────────────────
 
 export function generateWordSets() {
-  const r1 = getR1PhraseSets(10);
+  const r1 = getR1PhraseSets(10, state.gameMode);
   state.wordSets.round1.teamA = r1.slice(0, 5);   // 5 phrase options for team A
   state.wordSets.round1.teamB = r1.slice(5, 10);  // 5 phrase options for team B
 

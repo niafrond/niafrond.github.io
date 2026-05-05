@@ -1,5 +1,6 @@
 export const PLAYERS_KEY       = 'pyramide_players';
 export const R2_BUZZ_DELAY_KEY = 'pyramide_r2_buzz_delay';
+export const GAME_MODE_KEY     = 'pyramide_game_mode';
 export const CLICK_COOLDOWN    = 400;
 export const MIN_PLAYERS       = 2;
 
@@ -24,6 +25,8 @@ export const state = {
 
   currentRound: 0,   // 1,2,3,4,5(final)
   currentPhase: 'setup',
+
+  gameMode: 'child', // 'child' | 'adult' | 'mix'
 
   wordSets: {
     round1: { teamA: [], teamB: [] },

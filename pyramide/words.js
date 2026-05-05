@@ -4,6 +4,7 @@
 // ============================================================
 import {
   R1_PHRASE_SETS,
+  R1_PHRASE_SETS_ADULTE,
   R2_WORDS,
   R3_SETS,
   R4_SETS,
@@ -11,14 +12,20 @@ import {
 } from './data.js';
 
 // Re-export des constantes pour rétrocompatibilité
-export { R1_PHRASE_SETS, R2_WORDS, R3_SETS, R4_SETS, FINAL_SETS };
+export { R1_PHRASE_SETS, R1_PHRASE_SETS_ADULTE, R2_WORDS, R3_SETS, R4_SETS, FINAL_SETS };
 
 // Alias plat (rétrocompatibilité)
 export const R1_WORDS = R1_PHRASE_SETS.flatMap(s => s.words);
 
+// Pools R1 par mode (mode taggé explicitement)
+const R1_CHILD_POOL = R1_PHRASE_SETS.map(s => ({ ...s, mode: 'child' }));
+const R1_ADULT_POOL = R1_PHRASE_SETS_ADULTE.map(s => ({ ...s, mode: 'adult' }));
+
 // ── Historique localStorage (évite les répétitions entre parties) ─────────────
 const USED_KEYS = {
-  r1:    'pyramide_used_r1',    // set de reponse
+  r1:      'pyramide_used_r1',        // child (rétrocompat)
+  r1adult: 'pyramide_used_r1_adult',  // adult
+  r1mix:   'pyramide_used_r1_mix',    // mix
   r2:    'pyramide_used_r2',    // set de mots (chaînes)
   r3:    'pyramide_used_r3',    // set de thèmes
   r4:    'pyramide_used_r4',    // set de thèmes
@@ -59,11 +66,22 @@ function _markUsed(usedKey, ids, existingUsed) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Retourne n ensembles phrases distincts tirés aléatoirement (non déjà joués). */
-export function getR1PhraseSets(n) {
-  const { items, used } = _unusedPool(R1_PHRASE_SETS, USED_KEYS.r1, s => s.reponse);
+/**
+ * Retourne n ensembles phrases distincts tirés aléatoirement (non déjà joués).
+ * @param {number} n - nombre de sets à retourner
+ * @param {'child'|'adult'|'mix'} [mode='child'] - mode de jeu
+ */
+export function getR1PhraseSets(n, mode = 'child') {
+  const pool = mode === 'adult' ? R1_ADULT_POOL
+             : mode === 'mix'   ? [...R1_CHILD_POOL, ...R1_ADULT_POOL]
+             : R1_CHILD_POOL;
+  const usedKey = mode === 'adult' ? USED_KEYS.r1adult
+                : mode === 'mix'   ? USED_KEYS.r1mix
+                : USED_KEYS.r1;
+  const getId = s => s.theme;
+  const { items, used } = _unusedPool(pool, usedKey, getId);
   const selected = [...items].sort(() => Math.random() - 0.5).slice(0, Math.min(n, items.length));
-  _markUsed(USED_KEYS.r1, selected.map(s => s.reponse), used);
+  _markUsed(usedKey, selected.map(getId), used);
   return selected;
 }
 

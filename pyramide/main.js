@@ -4,7 +4,7 @@
  * Flux : setup → pre-round → turn (→ bidding / timer / final) → turn-end → game-over
  */
 
-import { state, withCooldown, PLAYERS_KEY, R2_BUZZ_DELAY_KEY, MIN_PLAYERS } from './state.js';
+import { state, withCooldown, PLAYERS_KEY, R2_BUZZ_DELAY_KEY, GAME_MODE_KEY, MIN_PLAYERS } from './state.js';
 import { el, showScreen, showToast } from './ui.js';
 import { setMuted, getMuted, playButtonClick, playGameStart } from './sound.js';
 import { getVersion } from './version.js';
@@ -154,6 +154,18 @@ window.addEventListener('DOMContentLoaded', () => {
       buzzInput.value = v;
       state.r2BuzzDelay = v;
       localStorage.setItem(R2_BUZZ_DELAY_KEY, v);
+    });
+  }
+
+  // Charger le mode de jeu (enfants / adultes / mixte)
+  const savedMode = localStorage.getItem(GAME_MODE_KEY);
+  if (savedMode === 'adult' || savedMode === 'mix') state.gameMode = savedMode;
+  const modeSelect = document.getElementById('game-mode');
+  if (modeSelect) {
+    modeSelect.value = state.gameMode;
+    modeSelect.addEventListener('change', () => {
+      state.gameMode = modeSelect.value;
+      localStorage.setItem(GAME_MODE_KEY, state.gameMode);
     });
   }
   _applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
