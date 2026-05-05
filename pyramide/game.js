@@ -63,8 +63,7 @@ export function generateWordSets() {
 
   const r4a = getR4Set();
   state.wordSets.round4.teamA = { theme: r4a.theme, words: r4a.words.slice(0, 7) };
-  const r4bCandidates = [0,1,2,3,4,5,6].map(() => getR4Set());
-  const r4b = r4bCandidates.find(s => s.theme !== r4a.theme) || r4bCandidates[0];
+  const r4b = getR4Set(r4a.theme);
   state.wordSets.round4.teamB = { theme: r4b.theme, words: r4b.words.slice(0, 7) };
 
   state.wordSets.final.words = getFinalSet();

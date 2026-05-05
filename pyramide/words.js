@@ -16,25 +16,102 @@ export { R1_PHRASE_SETS, R2_WORDS, R3_SETS, R4_SETS, FINAL_SETS };
 // Alias plat (rétrocompatibilité)
 export const R1_WORDS = R1_PHRASE_SETS.flatMap(s => s.words);
 
-/** Retourne n ensembles phrases distincts tirés aléatoirement. */
+// ── Historique localStorage (évite les répétitions entre parties) ─────────────
+const USED_KEYS = {
+  r1:    'pyramide_used_r1',    // set de reponse
+  r2:    'pyramide_used_r2',    // set de mots (chaînes)
+  r3:    'pyramide_used_r3',    // set de thèmes
+  r4:    'pyramide_used_r4',    // set de thèmes
+  final: 'pyramide_used_final', // première expression de chaque set
+};
+
+function _storageGet(key) {
+  try {
+    if (typeof localStorage === 'undefined') return new Set();
+    return new Set(JSON.parse(localStorage.getItem(key) || '[]'));
+  } catch { return new Set(); }
+}
+
+function _storageSet(key, set) {
+  try {
+    if (typeof localStorage !== 'undefined')
+      localStorage.setItem(key, JSON.stringify([...set]));
+  } catch { /* ignore */ }
+}
+
+/**
+ * Retourne les éléments non encore utilisés de pool.
+ * Si tous ont été utilisés, réinitialise l'historique et retourne pool entier.
+ */
+function _unusedPool(pool, usedKey, getId) {
+  const used = _storageGet(usedKey);
+  const unused = pool.filter(item => !used.has(getId(item)));
+  if (unused.length > 0) return { items: unused, used };
+  // Tout a été joué → réinitialisation
+  return { items: [...pool], used: new Set() };
+}
+
+function _markUsed(usedKey, ids, existingUsed) {
+  const used = existingUsed ?? _storageGet(usedKey);
+  for (const id of ids) used.add(id);
+  _storageSet(usedKey, used);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Retourne n ensembles phrases distincts tirés aléatoirement (non déjà joués). */
 export function getR1PhraseSets(n) {
-  const pool = [...R1_PHRASE_SETS].sort(() => Math.random() - 0.5);
-  return pool.slice(0, Math.min(n, pool.length));
+  const { items, used } = _unusedPool(R1_PHRASE_SETS, USED_KEYS.r1, s => s.reponse);
+  const selected = [...items].sort(() => Math.random() - 0.5).slice(0, Math.min(n, items.length));
+  _markUsed(USED_KEYS.r1, selected.map(s => s.reponse), used);
+  return selected;
 }
 
 /** Alias historique. */
 export function getR1Words() {
   return [...R1_WORDS].sort(() => Math.random() - 0.5);
 }
+
+/**
+ * Retourne tous les mots R2 mélangés, les mots non encore joués en premier.
+ * Les 5 premiers (ceux utilisés par le jeu) sont marqués comme joués.
+ */
 export function getR2Words() {
-  return [...R2_WORDS].sort(() => Math.random() - 0.5);
+  const { items: unused, used } = _unusedPool(R2_WORDS, USED_KEYS.r2, w => w);
+  const usedWords = R2_WORDS.filter(w => used.has(w));
+  const shuffledUnused = [...unused].sort(() => Math.random() - 0.5);
+  const shuffledUsed   = [...usedWords].sort(() => Math.random() - 0.5);
+  const ordered = [...shuffledUnused, ...shuffledUsed];
+  // Marquer les 5 premiers comme joués (le jeu en utilise toujours 5)
+  _markUsed(USED_KEYS.r2, ordered.slice(0, 5).map(w => w), used);
+  return ordered;
 }
+
+/** Retourne un set R3 non encore joué (reset si tous épuisés). */
 export function getR3Set() {
-  return R3_SETS[Math.floor(Math.random() * R3_SETS.length)];
+  const { items, used } = _unusedPool(R3_SETS, USED_KEYS.r3, s => s.theme);
+  const set = items[Math.floor(Math.random() * items.length)];
+  _markUsed(USED_KEYS.r3, [set.theme], used);
+  return set;
 }
-export function getR4Set() {
-  return R4_SETS[Math.floor(Math.random() * R4_SETS.length)];
+
+/**
+ * Retourne un set R4 non encore joué.
+ * @param {string|null} excludeTheme - Thème à exclure (pour éviter doublons équipe A/B)
+ */
+export function getR4Set(excludeTheme = null) {
+  const { items, used } = _unusedPool(R4_SETS, USED_KEYS.r4, s => s.theme);
+  const candidates = excludeTheme ? items.filter(s => s.theme !== excludeTheme) : items;
+  const pool = candidates.length > 0 ? candidates : items;
+  const set = pool[Math.floor(Math.random() * pool.length)];
+  _markUsed(USED_KEYS.r4, [set.theme], used);
+  return set;
 }
+
+/** Retourne un set Final non encore joué (reset si tous épuisés). */
 export function getFinalSet() {
-  return [...FINAL_SETS[Math.floor(Math.random() * FINAL_SETS.length)]];
+  const { items, used } = _unusedPool(FINAL_SETS, USED_KEYS.final, s => s[0]);
+  const set = items[Math.floor(Math.random() * items.length)];
+  _markUsed(USED_KEYS.final, [set[0]], used);
+  return [...set];
 }
