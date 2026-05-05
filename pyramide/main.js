@@ -4,7 +4,7 @@
  * Flux : setup → pre-round → turn (→ bidding / timer / final) → turn-end → game-over
  */
 
-import { state, withCooldown, PLAYERS_KEY, MIN_PLAYERS } from './state.js';
+import { state, withCooldown, PLAYERS_KEY, R2_BUZZ_DELAY_KEY, MIN_PLAYERS } from './state.js';
 import { el, showScreen, showToast } from './ui.js';
 import { setMuted, getMuted, playButtonClick, playGameStart } from './sound.js';
 import { getVersion } from './version.js';
@@ -137,6 +137,19 @@ function _resetGame() {
 
 window.addEventListener('DOMContentLoaded', () => {
   _loadPlayers();
+  // Charger le réglage du délai buzz Ping-Pong
+  const savedBuzzDelay = parseInt(localStorage.getItem(R2_BUZZ_DELAY_KEY), 10);
+  if (!isNaN(savedBuzzDelay) && savedBuzzDelay >= 5) state.r2BuzzDelay = savedBuzzDelay;
+  const buzzInput = document.getElementById('r2-buzz-delay');
+  if (buzzInput) {
+    buzzInput.value = state.r2BuzzDelay;
+    buzzInput.addEventListener('change', () => {
+      const v = Math.max(5, Math.min(120, parseInt(buzzInput.value, 10) || 15));
+      buzzInput.value = v;
+      state.r2BuzzDelay = v;
+      localStorage.setItem(R2_BUZZ_DELAY_KEY, v);
+    });
+  }
   _applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
 
   initAutoFullscreen();

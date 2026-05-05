@@ -92,6 +92,18 @@
       </div>
     </details>
 
+    <!-- [E2] Paramètres de jeu -->
+    <details class="card card-collapsible">
+      <summary class="card-title card-title-summary">⚙️ Paramètres</summary>
+      <div style="display:flex;flex-direction:column;gap:14px;padding-top:4px;">
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:0.92rem;">
+          <span>⏱ Buzz Ping-Pong (secondes)</span>
+          <input id="r2-buzz-delay" type="number" min="5" max="120" value="15"
+                 style="width:72px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:1rem;text-align:center;">
+        </label>
+      </div>
+    </details>
+
     <button id="btn-install-pwa" class="btn btn-secondary w-full mb-12" hidden>
       📲 Installer l'application
     </button>
@@ -178,6 +190,11 @@
         <p id="r1-link-phrase-hint" class="r1-link-phrase-hint"></p>
       </div>
       <div id="r1-link-words" class="r1-link-words"></div>
+      <!-- [D] Mot mystère affiché pour l'équipe adverse -->
+      <div class="r1-mystery-banner">
+        <span class="r1-mystery-label">🎯 Mot mystère</span>
+        <span id="r1-mystery-word" class="r1-mystery-word" hidden></span>
+      </div>
       <button id="btn-r1-read-done" class="btn btn-lagon btn-lg w-full" style="max-width:440px;">
         👂 Le donneur reprend le téléphone
       </button>
@@ -288,6 +305,7 @@
         <button class="bid-btn bid-btn-a" data-bid="1">1 🧱</button>
         <button class="bid-btn bid-btn-a" data-bid="2">2 🧱</button>
         <button class="bid-btn bid-btn-a" data-bid="3">3 🧱</button>
+        <button class="bid-btn bid-btn-a" data-bid="4">4 🧱</button>
       </div>
       <div id="bidding-status-a" class="bid-status"></div>
       <button id="btn-bid-confirm-a" class="btn btn-primary w-full" disabled>Confirmer ma mise</button>
@@ -300,6 +318,7 @@
         <button class="bid-btn bid-btn-b" data-bid="1">1 🧱</button>
         <button class="bid-btn bid-btn-b" data-bid="2">2 🧱</button>
         <button class="bid-btn bid-btn-b" data-bid="3">3 🧱</button>
+        <button class="bid-btn bid-btn-b" data-bid="4">4 🧱</button>
       </div>
       <div id="bidding-status-b" class="bid-status"></div>
       <button id="btn-bid-confirm-b" class="btn btn-lagon w-full" disabled>Confirmer ma mise</button>

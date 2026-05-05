@@ -94,7 +94,8 @@ const ROUND_INFO = [
       '5 mots partagés — 13 briques communes',
       "L'équipe en jeu donne UN seul indice, l'autre équipe devine",
       "Mot trouvé → +1 à l'équipe qui a donné l'indice",
-      "Raté → les rôles s'inversent pour le mot suivant",
+      "Raté ou Passe → le mot reste, les rôles s'inversent",
+      'Passer coûte aussi 1 brique 🧱',
       '0 brique = fin de manche',
     ],
   },
@@ -102,7 +103,7 @@ const ROUND_INFO = [
     name: 'Manche 3 — Noms Propres 🌍',
     color: 'var(--foret)',
     rules: [
-      'Chaque équipe mise secrètement 1 à 3 briques',
+      'Chaque équipe mise secrètement 1 à 4 briques',
       'La plus petite mise gagne le rôle de donneur d\'indices',
       'Égalité → nouvelle mise',
       'Mot trouvé → +1 au donneur',
@@ -183,7 +184,7 @@ function _updateTurnHeader(round, team, subtitle = '') {
   if (teamNameEl) { teamNameEl.textContent = team.name; teamNameEl.style.color = team.color; }
   if (subtitleEl) { subtitleEl.textContent = subtitle; subtitleEl.hidden = !subtitle; }
 
-  // R2: tint the screen border with the active team's color; clear for other rounds
+  // R2: tint the screen border and word wrapper with active team's color; clear for other rounds
   const layout = document.querySelector('.turn-layout');
   if (layout) {
     if (round === 2) {
@@ -194,6 +195,17 @@ function _updateTurnHeader(round, team, subtitle = '') {
       layout.style.background = '';
     }
   }
+  // [F] R2: liseré coloré autour de la zone mot selon équipe active
+  const wordWrapper = document.querySelector('#screen-turn .word-display-wrapper');
+  if (wordWrapper) {
+    if (round === 2) {
+      wordWrapper.style.border = `3px solid ${team.color}`;
+      wordWrapper.style.boxShadow = `0 0 14px ${team.color}66`;
+    } else {
+      wordWrapper.style.border = '';
+      wordWrapper.style.boxShadow = '';
+    }
+  }
 }
 
 function _updateWord(word) {
@@ -201,13 +213,22 @@ function _updateWord(word) {
   if (wordEl) wordEl.textContent = word || '';
 }
 
-function _updateBricks(left, total) {
+// committed = nb de briques misées non encore données (affichées en surbrillance or)
+function _updateBricks(left, total, committed = 0) {
   const bricksEl = el('turn-bricks');
   if (!bricksEl) return;
   bricksEl.innerHTML = '';
+  const used = total - left;
+  const free = left - committed;
   for (let i = 0; i < total; i++) {
     const brick = document.createElement('span');
-    brick.className = i < (total - left) ? 'brick brick-used' : 'brick brick-active';
+    if (i < used) {
+      brick.className = 'brick brick-used';
+    } else if (i < used + free) {
+      brick.className = 'brick brick-active';
+    } else {
+      brick.className = 'brick brick-committed';
+    }
     bricksEl.appendChild(brick);
   }
   const countEl = el('turn-bricks-count');
@@ -317,10 +338,10 @@ function _r1ShowCurrentWord() {
 
   _updateTurnHeader(1, team, `Mot ${state.r1WordIdx + 1}/5 — ${state.r1ClueBudget} briques restantes`);
   _updateWord(word);
-  _updateBricks(state.r1ClueBudget, 13);
+  _updateBricks(state.r1ClueBudget, 13, 0); // no committed clues yet at start of word
   _updateClueCount(0);
   _updateScores();
-  _updateR1Phrase();
+  // [A] Ne pas afficher la phrase pendant le devinement — reste hidden
 
   // Show commit section, hide action buttons
   _r1ShowCommitSection();
@@ -381,6 +402,8 @@ export function r1CommitClues(n) {
   const commitEl = el('r1-commit-section');
   if (commitEl) commitEl.hidden = true;
 
+  // [C] Mettre en surbrillance les briques misées
+  _updateBricks(state.r1ClueBudget, 13, n);
   _setTurnButtons('full');
   _updateClueCount(0);
 }
@@ -392,7 +415,9 @@ export function r1GiveClue() {
   state.r1ClueBudget--;
   state.r1CluesGiven++;
 
-  _updateBricks(state.r1ClueBudget, 13);
+  // [C] briques committed restantes non encore données
+  const remainingCommitted = Math.max(0, state.r1CommittedClues - state.r1CluesGiven);
+  _updateBricks(state.r1ClueBudget, 13, remainingCommitted);
   _updateClueCount(state.r1CluesGiven);
   _updateTurnHeader(1, state.teams[state.r1SubTeam],
     `Mot ${state.r1WordIdx + 1}/5 — ${state.r1ClueBudget} briques restantes`);
@@ -415,11 +440,14 @@ export function r1WordFound() {
   const word = state.r1SelectedSet.words[state.r1WordIdx];
   state.teams[state.r1SubTeam].score += 2;
   state.r1FoundWords.push(word);
+  // [B] Déduire les briques misées non utilisées
+  const unusedFound = state.r1CommittedClues - state.r1CluesGiven;
+  if (unusedFound > 0) state.r1ClueBudget = Math.max(0, state.r1ClueBudget - unusedFound);
   state.r1WordIdx++;
   state.r1CommittedClues = 0;
   state.r1CluesGiven     = 0;
   _updateScores();
-  _updateR1Phrase();
+  // [A] Pas d'appel à _updateR1Phrase pendant le jeu (phrase cachée)
 
   if (state.r1WordIdx >= state.r1SelectedSet.words.length) {
     _r1AfterAllWords();
@@ -430,6 +458,9 @@ export function r1WordFound() {
 
 export function r1WordLost() {
   playBuzzer();
+  // [B] Déduire les briques misées non utilisées
+  const unusedLost = state.r1CommittedClues - state.r1CluesGiven;
+  if (unusedLost > 0) state.r1ClueBudget = Math.max(0, state.r1ClueBudget - unusedLost);
   state.r1WordIdx++;
   state.r1CommittedClues = 0;
   state.r1CluesGiven     = 0;
@@ -460,6 +491,13 @@ function _r1AfterAllWords() {
   if (wordsEl) {
     const n = state.r1FoundWords.length;
     wordsEl.innerHTML = `<p style="color:var(--text-muted);font-size:0.85rem;">${n} mot${n !== 1 ? 's' : ''} trouvé${n !== 1 ? 's' : ''}</p>`;
+  }
+
+  // [D] Afficher le mot mystère pour l'équipe adverse
+  const mysteryWordEl = el('r1-mystery-word');
+  if (mysteryWordEl && set?.theme) {
+    mysteryWordEl.textContent = set.theme;
+    mysteryWordEl.hidden = false;
   }
 
   // Show step 1: pass phone
@@ -513,10 +551,15 @@ export function startRound2() {
   state.r2BricksLeft = 13;
   state.r2Giver      = 0;
   state.r2ClueGiven  = false;
+  clearTimeout(state.r2BuzzTimeoutId);
+  state.r2BuzzTimeoutId = null;
   showPreRound(2, () => _enterR2());
 }
 
 function _enterR2() {
+  // [E2] Réinitialiser le buzz timer pour ce sous-tour
+  clearTimeout(state.r2BuzzTimeoutId);
+  state.r2BuzzTimeoutId = null;
   state.r2ClueGiven = false;
   const team  = state.teams[state.r2Giver];
   const words = state.wordSets.round2.shared;
@@ -534,6 +577,18 @@ function _enterR2() {
   _setTurnButtons('clue-only');
 
   showScreen('screen-turn');
+
+  // [E2] Buzz après r2BuzzDelay secondes, puis repart en boucle
+  const delay = (state.r2BuzzDelay || 15) * 1000;
+  function scheduleBuzz() {
+    state.r2BuzzTimeoutId = setTimeout(() => {
+      if (state.currentRound === 2) {
+        playBuzzer();
+        scheduleBuzz();
+      }
+    }, delay);
+  }
+  scheduleBuzz();
 }
 
 export function r2GiveClue() {
@@ -552,6 +607,8 @@ export function r2GiveClue() {
 
 export function r2WordFound() {
   if (!state.r2ClueGiven) return;
+  clearTimeout(state.r2BuzzTimeoutId);
+  state.r2BuzzTimeoutId = null;
   playFound();
   state.teams[state.r2Giver].score++;
   state.r2WordIdx++;
@@ -567,11 +624,15 @@ export function r2WordFound() {
 
 export function r2WordMissed() {
   if (!state.r2ClueGiven) return;
+  clearTimeout(state.r2BuzzTimeoutId);
+  state.r2BuzzTimeoutId = null;
   playBuzzer();
-  state.r2WordIdx++;
+  // [E] Passer ne change pas le mot mais coûte 1 brique
+  state.r2BricksLeft = Math.max(0, state.r2BricksLeft - 1);
+  _updateBricks(state.r2BricksLeft, 13);
   state.r2Giver = 1 - state.r2Giver;
 
-  if (state.r2WordIdx >= state.wordSets.round2.shared.length || state.r2BricksLeft <= 0) {
+  if (state.r2BricksLeft <= 0) {
     r2EndRound();
     return;
   }
@@ -579,6 +640,8 @@ export function r2WordMissed() {
 }
 
 export function r2EndRound() {
+  clearTimeout(state.r2BuzzTimeoutId);
+  state.r2BuzzTimeoutId = null;
   _showTurnEnd('Fin de la Manche 2 !', () => startRound3());
 }
 

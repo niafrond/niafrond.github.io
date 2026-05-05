@@ -1,6 +1,7 @@
-export const PLAYERS_KEY    = 'pyramide_players';
-export const CLICK_COOLDOWN = 400;
-export const MIN_PLAYERS    = 2;
+export const PLAYERS_KEY       = 'pyramide_players';
+export const R2_BUZZ_DELAY_KEY = 'pyramide_r2_buzz_delay';
+export const CLICK_COOLDOWN    = 400;
+export const MIN_PLAYERS       = 2;
 
 export const TEAMS_META = [
   { color: 'var(--volcan)', label: 'Équipe Rouge' },
@@ -47,6 +48,8 @@ export const state = {
   r2BricksLeft: 13,
   r2Giver: 0,
   r2ClueGiven: false,
+  r2BuzzDelay: 15,      // seconds before buzz in ping-pong (configurable)
+  r2BuzzTimeoutId: null,
 
   // Round 3
   r3WordIdx: 0,
