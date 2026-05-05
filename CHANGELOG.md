@@ -1,3 +1,9 @@
+## [1.179.0](https://github.com/niafrond/niafrond.github.io/compare/v1.178.0...v1.179.0) (2026-05-05)
+
+### Features
+
+* **pyramide:** add child/adult/mix game mode for round 1 phrases ([0c28bdc](https://github.com/niafrond/niafrond.github.io/commit/0c28bdc312d179e6ad0c7dfb9961378e2b94e3ef))
+
 ## [1.178.0](https://github.com/niafrond/niafrond.github.io/compare/v1.177.6...v1.178.0) (2026-05-05)
 
 ### Features
