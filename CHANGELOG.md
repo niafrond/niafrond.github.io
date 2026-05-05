@@ -1,3 +1,9 @@
+## [1.180.0](https://github.com/niafrond/niafrond.github.io/compare/v1.179.0...v1.180.0) (2026-05-05)
+
+### Features
+
+* **pyramide:** extend child mode to R3, R4 and Final sets ([cd1d6bc](https://github.com/niafrond/niafrond.github.io/commit/cd1d6bc69dad071c1a1ed1bc32a9fbcf81217438))
+
 ## [1.179.0](https://github.com/niafrond/niafrond.github.io/compare/v1.178.0...v1.179.0) (2026-05-05)
 
 ### Features
