@@ -19,6 +19,20 @@ const PEERJS_CDN = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js
 
 const MAX_RECONNECT_ATTEMPTS = 150;
 
+// TURN servers allow WebRTC to work when direct P2P fails (e.g. behind a VPN).
+// openrelayproject credentials are intentionally public (Open Relay Project free TURN service).
+const TURN_USER = 'openrelayproject';
+const TURN_CRED = 'openrelayproject';
+const ICE_CONFIG = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun.relay.metered.ca:80' },
+    { urls: 'turn:openrelay.metered.ca:80',                  username: TURN_USER, credential: TURN_CRED },
+    { urls: 'turn:openrelay.metered.ca:443',                 username: TURN_USER, credential: TURN_CRED },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp',   username: TURN_USER, credential: TURN_CRED },
+  ],
+};
+
 function loadPeerJS() {
   return new Promise((resolve, reject) => {
     if (window.Peer) { resolve(); return; }
@@ -47,7 +61,7 @@ export class ScrumPokerPeer extends EventTarget {
   async startHost() {
     await loadPeerJS();
     this.isHost = true;
-    this._peer = new Peer();
+    this._peer = new Peer(undefined, { config: ICE_CONFIG });
 
     this._peer.on('open', (id) => {
       this.peerId = id;
@@ -121,7 +135,7 @@ export class ScrumPokerPeer extends EventTarget {
     this.isHost = false;
     this._reconnecting = false;
     this._reconnectAttempts = 0;
-    this._peer = new Peer();
+    this._peer = new Peer(undefined, { config: ICE_CONFIG });
 
     this._peer.on('open', (id) => {
       this.peerId = id;
