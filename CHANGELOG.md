@@ -1,3 +1,9 @@
+## [1.177.4](https://github.com/niafrond/niafrond.github.io/compare/v1.177.3...v1.177.4) (2026-05-05)
+
+### Bug Fixes
+
+* auto-install Playwright chromium browser via postinstall ([41da2c2](https://github.com/niafrond/niafrond.github.io/commit/41da2c22bdb976dd7f47103741fd47eca0d3039a))
+
 ## [1.177.3](https://github.com/niafrond/niafrond.github.io/compare/v1.177.2...v1.177.3) (2026-05-05)
 
 ### Bug Fixes
