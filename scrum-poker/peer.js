@@ -18,6 +18,7 @@ import { MSG } from './constants.js';
 const PEERJS_CDN = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js';
 
 const MAX_RECONNECT_ATTEMPTS = 150;
+const MAX_INIT_ATTEMPTS = 10;
 const INITIAL_CONNECT_TIMEOUT_MS = 4000; // time to wait for ICE/TURN before retrying
 const INITIAL_CONNECT_RETRY_DELAY_MS = 1500;
 
@@ -155,7 +156,6 @@ export class ScrumPokerPeer extends EventTarget {
   // When all users are behind a VPN, direct P2P (STUN) often fails and TURN relay
   // negotiation can take longer than a single attempt allows.
   _tryInitialConnect(hostPeerId, attempt) {
-    const MAX_INIT_ATTEMPTS = 10;
     if (attempt >= MAX_INIT_ATTEMPTS) {
       this.dispatchEvent(new CustomEvent('error', {
         detail: { err: new Error('Impossible de rejoindre la salle après plusieurs tentatives') },

@@ -21,6 +21,7 @@ const PEERJS_CDN = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js
 const MAX_RECONNECT_ATTEMPTS = 150;
 const INITIAL_CONNECT_TIMEOUT_MS = 4000; // time to wait for ICE/TURN before retrying
 const INITIAL_CONNECT_RETRY_DELAY_MS = 1500;
+const MAX_INIT_ATTEMPTS = 10;
 
 // TURN servers allow WebRTC to work when direct P2P fails (e.g. same LAN, behind NAT/VPN).
 // openrelayproject credentials are intentionally public (Open Relay Project free TURN service).
@@ -159,7 +160,6 @@ export class QuizPeer extends EventTarget {
   // On the same LAN or behind symmetric NAT, direct candidates fail quickly and
   // TURN relay candidates take longer — retrying gives TURN time to allocate.
   _tryInitialConnect(hostPeerId, attempt) {
-    const MAX_INIT_ATTEMPTS = 10;
     if (attempt >= MAX_INIT_ATTEMPTS) {
       this.dispatchEvent(new CustomEvent('error', {
         detail: { err: new Error('Impossible de rejoindre la salle après plusieurs tentatives') },
