@@ -36,13 +36,14 @@ html[data-theme="light"] {
 
 html, body {
   height: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   background: var(--bg-grad);
   background-attachment: fixed;
   color: var(--text);
   font-family: var(--font);
   font-size: 16px;
   line-height: 1.5;
-  overflow-x: hidden;
 }
 
 /* ─── Screens ─────────────────────────────────────────────────────────────── */
@@ -353,7 +354,8 @@ html, body {
 .turn-layout {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
   padding: 16px;
   max-width: 560px;
   margin: 0 auto;
@@ -391,9 +393,11 @@ html, body {
   padding: 20px 18px;
   box-shadow: var(--shadow);
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  overflow: hidden;
   margin-bottom: 16px;
 }
 .taboo-word {
@@ -415,6 +419,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  overflow-y: auto;
 }
 .forbidden-item {
   display: flex;
