@@ -16,6 +16,8 @@
 import { MSG } from './constants.js';
 
 const PEERJS_CDN = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js';
+const INITIAL_CONNECT_TIMEOUT_MS = 4000; // time to wait for ICE/TURN before retrying
+const INITIAL_CONNECT_RETRY_DELAY_MS = 1500;
 
 // TURN servers allow WebRTC to work when direct P2P fails (e.g. same LAN, behind NAT/VPN).
 // openrelayproject credentials are intentionally public (Open Relay Project free TURN service).
