@@ -1,3 +1,9 @@
+## [1.177.6](https://github.com/niafrond/niafrond.github.io/compare/v1.177.5...v1.177.6) (2026-05-05)
+
+### Bug Fixes
+
+* **pyramide:** manche 1 affiche la reponse comme mot mystere et non le theme ([9960d11](https://github.com/niafrond/niafrond.github.io/commit/9960d118e27d8bd90ae915445d7f9312f1ff07fa))
+
 ## [1.177.5](https://github.com/niafrond/niafrond.github.io/compare/v1.177.4...v1.177.5) (2026-05-05)
 
 ### Bug Fixes
