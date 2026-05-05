@@ -1,3 +1,9 @@
+## [1.177.3](https://github.com/niafrond/niafrond.github.io/compare/v1.177.2...v1.177.3) (2026-05-05)
+
+### Bug Fixes
+
+* **scrum-poker:** retry initial connection for VPN users ([b29d166](https://github.com/niafrond/niafrond.github.io/commit/b29d166f8d77ed04a4a70f3b2529d61bdc9ebb5b))
+
 ## [1.177.2](https://github.com/niafrond/niafrond.github.io/compare/v1.177.1...v1.177.2) (2026-05-05)
 
 ### Bug Fixes
