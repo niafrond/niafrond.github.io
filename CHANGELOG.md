@@ -1,3 +1,10 @@
+## [1.177.5](https://github.com/niafrond/niafrond.github.io/compare/v1.177.4...v1.177.5) (2026-05-05)
+
+### Bug Fixes
+
+* add iceCandidatePoolSize + _tryInitialConnect retry to all peer.js files ([7ae70b5](https://github.com/niafrond/niafrond.github.io/commit/7ae70b5790df38adfa742af20c025d5a54fd6fe2))
+* add STUN/TURN ICE config to taboo, quiz and blind-test peer.js for same-network WebRTC ([7f600a1](https://github.com/niafrond/niafrond.github.io/commit/7f600a1ebecf2e1c18e71da820f7cbdbd15e5e43))
+
 ## [1.177.4](https://github.com/niafrond/niafrond.github.io/compare/v1.177.3...v1.177.4) (2026-05-05)
 
 ### Bug Fixes
