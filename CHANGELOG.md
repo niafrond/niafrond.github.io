@@ -1,3 +1,24 @@
+## [1.177.0](https://github.com/niafrond/niafrond.github.io/compare/v1.176.1...v1.177.0) (2026-05-04)
+
+### Features
+
+* **blind-test:** start audio playback at midpoint of video ([c384c81](https://github.com/niafrond/niafrond.github.io/commit/c384c81d082f257ced86dc948f50053d1b0dd5cf))
+* initial implementation of Taboo game with state management, UI, and service worker ([6cf85c9](https://github.com/niafrond/niafrond.github.io/commit/6cf85c9dfce21fd5e12abc0e37b8d892bf8324fd))
+* **pyramide:** extract word data to data.js, add mots folder word lists ([0057347](https://github.com/niafrond/niafrond.github.io/commit/005734700fe6d3bf53302be88cac842cf96970f7))
+* **pyramide:** implement full game — R1 phrase-select, link phase, pyramid visualization, best-team Final ([4e8ca4d](https://github.com/niafrond/niafrond.github.io/commit/4e8ca4d6ee4677624cd4c93f8a0bad94cde06698))
+* **pyramide:** R1 affiche le thème à la sélection, phrase à trous pendant le jeu ([5113ff2](https://github.com/niafrond/niafrond.github.io/commit/5113ff2c0e09ceb10484de9cde9511c903d3ff1b))
+* **pyramide:** R1 lien — flux en 3 étapes (passer tel, lire phrase, valider) ([23c3cb7](https://github.com/niafrond/niafrond.github.io/commit/23c3cb75be8bdd67e72d67d6d07a6ede3b440f54))
+* **pyramide:** R1 phrase à trous — révèle les mots au fil de la partie ([ea80f5a](https://github.com/niafrond/niafrond.github.io/commit/ea80f5a6f74e4d757a29fd00d6c97b87abec350f))
+* **pyramide:** R2 cache la phrase, teinte l'écran en couleur de l'équipe ([6b3387a](https://github.com/niafrond/niafrond.github.io/commit/6b3387a48030395f687276460481d6468b34d3c5))
+* **pyramide:** R3 confirm button + R4 word count + expanded data ([35e8592](https://github.com/niafrond/niafrond.github.io/commit/35e85926b7e102346b076aa6beee639feb123701)), closes [#timer-word-count](https://github.com/niafrond/niafrond.github.io/issues/timer-word-count)
+* update version numbers and build dates across multiple files ([95decec](https://github.com/niafrond/niafrond.github.io/commit/95decec195e4b5017dd76fb0f268e0d99257c524))
+
+### Bug Fixes
+
+* **pyramide:** manche 5 - bouton Passer au lieu de Raté, JACKPOT annulé si skip ([4c12310](https://github.com/niafrond/niafrond.github.io/commit/4c123101c1d382161c33afbccf5f7e6531cd3582))
+* **pyramide:** R3 cache les mises après résolution, R4 compteur en haut ([71c9e50](https://github.com/niafrond/niafrond.github.io/commit/71c9e50b7a73338063171a70eb1892e53119c6b8))
+* **taboo:** prevent XSS vulnerabilities in team name rendering ([7a5d9e5](https://github.com/niafrond/niafrond.github.io/commit/7a5d9e50bb8fe636667b24c1ed2268f2fd721ea7))
+
 ## [1.176.1](https://github.com/niafrond/niafrond.github.io/compare/v1.176.0...v1.176.1) (2026-05-03)
 
 ### Bug Fixes
