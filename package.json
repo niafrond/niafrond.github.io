@@ -4,6 +4,7 @@
   "description": "Release automation for static apps",
   "type": "module",
   "scripts": {
+    "postinstall": "npx playwright install chromium",
     "release": "semantic-release",
     "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:e2e": "playwright test",
