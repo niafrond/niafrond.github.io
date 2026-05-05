@@ -4,7 +4,7 @@
   "description": "Jeu de la Pyramide — 4 manches + finale",
   "start_url": "./",
   "display": "fullscreen",
-  "orientation": "landscape",
+  "orientation": "portrait",
   "background_color": "#0b1e2d",
   "theme_color": "#0b1e2d",
   "icons": [
