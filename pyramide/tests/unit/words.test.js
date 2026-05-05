@@ -170,7 +170,7 @@ describe('FINAL_SETS', () => {
 
   test('chaque set contient exactement 6 expressions', () => {
     FINAL_SETS.forEach(set => {
-      expect(set.length).toBe(6);
+      expect(set.words.length).toBe(6);
     });
   });
 });
@@ -182,8 +182,8 @@ describe('getFinalSet', () => {
 
   test('retourne une copie (ne modifie pas la source)', () => {
     const result = getFinalSet();
-    const originalFirst = FINAL_SETS[0][0];
+    const originalFirst = FINAL_SETS[0].words[0];
     result[0] = 'MUTATION_TEST';
-    expect(FINAL_SETS.flat()).toContain(originalFirst);
+    expect(FINAL_SETS.flatMap(s => s.words)).toContain(originalFirst);
   });
 });

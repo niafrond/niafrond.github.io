@@ -106,8 +106,11 @@ export function getR2Words() {
 }
 
 /** Retourne un set R3 non encore joué (reset si tous épuisés). */
-export function getR3Set() {
-  const { items, used } = _unusedPool(R3_SETS, USED_KEYS.r3, s => s.theme);
+export function getR3Set(mode = 'child') {
+  const pool = mode === 'child' ? R3_SETS.filter(s => s.mode === 'child')
+             : mode === 'adult' ? R3_SETS.filter(s => s.mode !== 'child')
+             : R3_SETS;
+  const { items, used } = _unusedPool(pool, USED_KEYS.r3, s => s.theme);
   const set = items[Math.floor(Math.random() * items.length)];
   _markUsed(USED_KEYS.r3, [set.theme], used);
   return set;
@@ -116,9 +119,13 @@ export function getR3Set() {
 /**
  * Retourne un set R4 non encore joué.
  * @param {string|null} excludeTheme - Thème à exclure (pour éviter doublons équipe A/B)
+ * @param {'child'|'adult'|'mix'} [mode='child'] - mode de jeu
  */
-export function getR4Set(excludeTheme = null) {
-  const { items, used } = _unusedPool(R4_SETS, USED_KEYS.r4, s => s.theme);
+export function getR4Set(excludeTheme = null, mode = 'child') {
+  const fullPool = mode === 'child' ? R4_SETS.filter(s => s.mode === 'child')
+                 : mode === 'adult' ? R4_SETS.filter(s => s.mode !== 'child')
+                 : R4_SETS;
+  const { items, used } = _unusedPool(fullPool, USED_KEYS.r4, s => s.theme);
   const candidates = excludeTheme ? items.filter(s => s.theme !== excludeTheme) : items;
   const pool = candidates.length > 0 ? candidates : items;
   const set = pool[Math.floor(Math.random() * pool.length)];
@@ -127,9 +134,12 @@ export function getR4Set(excludeTheme = null) {
 }
 
 /** Retourne un set Final non encore joué (reset si tous épuisés). */
-export function getFinalSet() {
-  const { items, used } = _unusedPool(FINAL_SETS, USED_KEYS.final, s => s[0]);
+export function getFinalSet(mode = 'child') {
+  const pool = mode === 'child' ? FINAL_SETS.filter(s => s.mode === 'child')
+             : mode === 'adult' ? FINAL_SETS.filter(s => s.mode !== 'child')
+             : FINAL_SETS;
+  const { items, used } = _unusedPool(pool, USED_KEYS.final, s => s.words[0]);
   const set = items[Math.floor(Math.random() * items.length)];
-  _markUsed(USED_KEYS.final, [set[0]], used);
-  return [...set];
+  _markUsed(USED_KEYS.final, [set.words[0]], used);
+  return [...set.words];
 }
