@@ -1,3 +1,9 @@
+## [1.177.1](https://github.com/niafrond/niafrond.github.io/compare/v1.177.0...v1.177.1) (2026-05-05)
+
+### Bug Fixes
+
+* syntax error in pyramide/main.js - comment swallowed btn-r1-pass-done listener ([d0c0dde](https://github.com/niafrond/niafrond.github.io/commit/d0c0dde44b221cc523df690cb4765d7a064b79c9))
+
 ## [1.177.0](https://github.com/niafrond/niafrond.github.io/compare/v1.176.1...v1.177.0) (2026-05-04)
 
 ### Features
