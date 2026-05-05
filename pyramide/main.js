@@ -109,13 +109,19 @@ function _toggleTheme() {
 
 // ─── Game start ────────────────────────────────────────────────────────────────
 
-function _startGame() {
+function _showTeams() {
   if (state.playerNames.length < MIN_PLAYERS) {
     showToast(`Ajoutez au moins ${MIN_PLAYERS} joueurs`, 'warning');
     return;
   }
-  playGameStart();
+  playButtonClick();
   assignTeams();
+  renderTeams();
+  showScreen('screen-teams');
+}
+
+function _launchGame() {
+  playGameStart();
   generateWordSets();
 
   // Reset scores for a fresh game
@@ -160,8 +166,18 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // ── Setup screen ────────────────────────────────────────────────────────────
   el('btn-start-game')?.addEventListener('click', withCooldown(() => {
+    _showTeams();
+  }));
+
+  // ── Teams screen ────────────────────────────────────────────────────────────
+  el('btn-reshuffle')?.addEventListener('click', withCooldown(() => {
     playButtonClick();
-    _startGame();
+    assignTeams();
+    renderTeams();
+  }));
+
+  el('btn-launch-game')?.addEventListener('click', withCooldown(() => {
+    _launchGame();
   }));
 
   el('btn-add-player')?.addEventListener('click', withCooldown(() => {
