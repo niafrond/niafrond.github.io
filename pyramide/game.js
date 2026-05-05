@@ -495,8 +495,8 @@ function _r1AfterAllWords() {
 
   // [D] Afficher le mot mystère pour l'équipe adverse
   const mysteryWordEl = el('r1-mystery-word');
-  if (mysteryWordEl && set?.theme) {
-    mysteryWordEl.textContent = set.theme;
+  if (mysteryWordEl && set?.reponse) {
+    mysteryWordEl.textContent = set.reponse;
     mysteryWordEl.hidden = false;
   }
 
