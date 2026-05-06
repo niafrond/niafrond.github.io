@@ -223,8 +223,8 @@ async function _createSession() {
 }
 
 function _hostStartGame() {
-  if (state.players.length < 1) {
-    showToast('Attendez au moins un joueur !', 'error');
+  if (state.players.length < 2) {
+    showToast('Attendez au moins un autre joueur !', 'error');
     return;
   }
   const { rounds, timer } = _saveSettings();

@@ -80,9 +80,12 @@ export function haversineKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/** Score basé sur la distance (style GeoGuessr, max 5000). */
+/** Score basé sur la distance (style GeoGuessr, max 5000).
+ * Decay factor 2000 km gives ~2866 pts at 1000 km, ~82 pts at 10 000 km. */
+const SCORE_DECAY_KM = 2000;
+
 export function calcScore(distKm) {
-  return Math.round(MAX_SCORE_PER_ROUND * Math.exp(-distKm / 2000));
+  return Math.round(MAX_SCORE_PER_ROUND * Math.exp(-distKm / SCORE_DECAY_KM));
 }
 
 // ─── Gestion des joueurs ──────────────────────────────────────────────────────
