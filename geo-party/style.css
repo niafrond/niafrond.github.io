@@ -598,6 +598,15 @@ html, body {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ─── Lobby preload status ────────────────────────────────────────────────── */
+.lobby-preload-status {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  min-height: 1.2em;
+  text-align: center;
+}
+
 /* ─── Waiting screen ─────────────────────────────────────────────────────── */
 .waiting-wrap {
   display: flex;
@@ -608,4 +617,38 @@ html, body {
   gap: 16px;
   padding: 24px;
   text-align: center;
+}
+
+/* ─── Desktop (≥ 900 px) ─────────────────────────────────────────────────── */
+@media (min-width: 900px) {
+  /* Écrans setup / lobby / game-over : colonne plus large */
+  .page-wrapper {
+    max-width: 720px;
+  }
+
+  /* Lobby : disposition en deux colonnes (QR + liste joueurs côte à côte) */
+  #screen-lobby .page-wrapper.screen-center {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 32px;
+    padding-top: 40px;
+  }
+  .lobby-qr-wrapper { flex-shrink: 0; }
+  #screen-lobby .players-section {
+    flex: 1;
+    min-width: 220px;
+    margin-top: 0;
+  }
+  #screen-lobby h2,
+  #screen-lobby > .page-wrapper > p {
+    width: 100%;
+  }
+
+  /* Mini-carte plus grande par défaut sur desktop */
+  .map-overlay {
+    width: 280px;
+    height: 190px;
+  }
 }

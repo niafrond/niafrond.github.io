@@ -30,27 +30,31 @@ export function initGame(peer, onStateChange, onTick) {
 const _MAPILLARY_IMAGES_URL = 'https://graph.mapillary.com/images';
 
 /**
- * Cherche un panorama Mapillary proche des coordonnées données.
- * Essaie progressivement un bbox plus large, puis accepte des images non-pano.
- * @returns {string|null} image id ou null si non trouvé
+ * Cherche un panorama Mapillary viable (is_pano=true) proche des coordonnées données.
+ * Essaie progressivement des bboxes de plus en plus larges.
+ * N'accepte que des vraies images 360° (is_pano vérifié côté API et dans la réponse).
+ * @returns {string|null} image id ou null si aucun panorama viable trouvé
  */
 async function _fetchMapillaryImageId(lat, lng, token) {
   const attempts = [
-    { d: 0.005, pano: true  },
-    { d: 0.02,  pano: true  },
-    { d: 0.07,  pano: true  },
-    { d: 0.07,  pano: false },
+    { d: 0.005 },
+    { d: 0.02  },
+    { d: 0.07  },
+    { d: 0.15  },
+    { d: 0.4   },
   ];
-  for (const { d, pano } of attempts) {
+  for (const { d } of attempts) {
     const bbox = `${lng - d},${lat - d},${lng + d},${lat + d}`;
     const url  = `${_MAPILLARY_IMAGES_URL}?access_token=${encodeURIComponent(token)}`
-               + `&fields=id&bbox=${bbox}${pano ? '&is_pano=true' : ''}&limit=10`;
+               + `&fields=id,is_pano&bbox=${bbox}&is_pano=true&limit=20`;
     try {
       const res  = await fetch(url);
       if (!res.ok) return null; // token invalide ou erreur API, ne pas réessayer
       const json = await res.json();
-      if (json.data?.length) {
-        return json.data[Math.floor(Math.random() * json.data.length)].id;
+      // Filtrer pour ne garder que les vraies images 360° confirmées
+      const panos = (json.data ?? []).filter(img => img.is_pano === true);
+      if (panos.length) {
+        return panos[Math.floor(Math.random() * panos.length)].id;
       }
     } catch { /* erreur réseau, on essaie le delta suivant */ }
   }
@@ -58,20 +62,28 @@ async function _fetchMapillaryImageId(lat, lng, token) {
 }
 
 /**
- * Résout les identifiants Mapillary pour tous les lieux d'une partie.
- * Appelé par l'hôte avant startGame().
- * @param {object[]} locations  lieux bruts depuis locations.js
- * @param {string}   token      token d'accès Mapillary du HOST
- * @returns {Promise<object[]>} lieux enrichis avec { mapillaryId }
+ * Résout les identifiants Mapillary pour une sélection de lieux.
+ * Accepte plus de candidats que nécessaire et préfère ceux ayant un panorama viable.
+ *
+ * @param {object[]} candidates  lieux candidats (plus que wantCount pour avoir des replis)
+ * @param {number}   wantCount   nombre de lieux à retourner pour la partie
+ * @param {string}   token       token d'accès Mapillary du HOST
+ * @returns {Promise<object[]>}  wantCount lieux enrichis avec { mapillaryId }
  */
-export async function prepareRoundLocations(locations, token) {
-  if (!token) return locations.map(l => ({ ...l, mapillaryId: null }));
-  return Promise.all(
-    locations.map(async l => ({
+export async function prepareRoundLocations(candidates, wantCount, token) {
+  if (!token) return candidates.slice(0, wantCount).map(l => ({ ...l, mapillaryId: null }));
+
+  const results = await Promise.all(
+    candidates.map(async l => ({
       ...l,
       mapillaryId: await _fetchMapillaryImageId(l.lat, l.lng, token),
     }))
   );
+
+  // Préférer les lieux avec un panorama viable ; compléter avec les autres si nécessaire
+  const withPano    = results.filter(l => l.mapillaryId !== null);
+  const withoutPano = results.filter(l => l.mapillaryId === null);
+  return [...withPano, ...withoutPano].slice(0, wantCount);
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
