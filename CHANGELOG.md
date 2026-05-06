@@ -1,3 +1,16 @@
+## [1.181.0](https://github.com/niafrond/niafrond.github.io/compare/v1.180.0...v1.181.0) (2026-05-06)
+
+### Features
+
+* **geo-party:** add GeoGuessr-style multiplayer party game ([f6e646f](https://github.com/niafrond/niafrond.github.io/commit/f6e646f1cd096b215cfea99fcaebb67094629f80))
+* **geo-party:** hardcode default Mapillary token so no setup required ([33f8ebf](https://github.com/niafrond/niafrond.github.io/commit/33f8ebfb56d4a8b7011d326239ccbc58ff950ffb))
+* **geo-party:** hide Mapillary token card from setup UI ([539afd1](https://github.com/niafrond/niafrond.github.io/commit/539afd19a013c0c885a798fc5d0bdf2d6af02b88))
+* **geo-party:** replace static photos with Mapillary interactive 360° Street View ([c31c575](https://github.com/niafrond/niafrond.github.io/commit/c31c575838935f727cf80587999050fdd28fdea3))
+
+### Bug Fixes
+
+* **geo-party:** require 2+ players to start, add decay constant, fix location name spelling ([b4925ba](https://github.com/niafrond/niafrond.github.io/commit/b4925ba890de218960f2034dc54d3422d61d30ae))
+
 ## [1.180.0](https://github.com/niafrond/niafrond.github.io/compare/v1.179.0...v1.180.0) (2026-05-05)
 
 ### Features
