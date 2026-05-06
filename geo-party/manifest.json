@@ -1,0 +1,11 @@
+{
+  "name": "Geo Party 🌍",
+  "short_name": "GeoParty",
+  "description": "Jeu multijoueur de géographie style GeoGuessr — devinez où se trouvent les photos !",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0b1e2d",
+  "theme_color": "#0b1e2d",
+  "icons": []
+}

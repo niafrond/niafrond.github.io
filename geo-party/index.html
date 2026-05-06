@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Geo Party 🌍</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b1e2d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="GeoParty">
+</head>
+<body>
+
+<div id="toast" class="toast" hidden></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 1 — SETUP (HOST uniquement)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-setup" data-screen="screen-setup" hidden>
+  <div class="page-wrapper">
+
+    <div class="setup-header-row">
+      <a href="../" class="btn btn-secondary btn-sm">← Accueil</a>
+      <div id="top-right-controls">
+        <button id="btn-theme"      class="btn-top-ctrl" title="Thème">☀️</button>
+        <button id="btn-fullscreen" class="btn-top-ctrl" title="Plein écran">⛶</button>
+        <button id="btn-mute"       class="btn-top-ctrl" title="Son">🔊</button>
+      </div>
+    </div>
+
+    <h1 class="app-title">Geo Party 🌍</h1>
+    <p class="app-subtitle">Devinez où se trouvent les photos — mode multijoueur</p>
+
+    <!-- Votre nom -->
+    <div class="card">
+      <div class="card-title">Votre nom</div>
+      <div class="team-input-group">
+        <label class="team-input-label" for="input-host-name">👤 Nom du joueur hôte</label>
+        <input id="input-host-name" class="team-input" type="text" value="Hôte" maxlength="20" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Paramètres -->
+    <div class="card">
+      <div class="card-title">Paramètres</div>
+      <div class="settings-grid">
+        <div class="setting-group">
+          <label class="setting-label" for="sel-rounds">🔄 Manches</label>
+          <select id="sel-rounds" class="setting-select">
+            <option value="3">3 manches</option>
+            <option value="5" selected>5 manches</option>
+            <option value="7">7 manches</option>
+            <option value="10">10 manches</option>
+          </select>
+        </div>
+        <div class="setting-group">
+          <label class="setting-label" for="sel-timer">⏱️ Temps / manche</label>
+          <select id="sel-timer" class="setting-select">
+            <option value="30">30 secondes</option>
+            <option value="60" selected>60 secondes</option>
+            <option value="90">90 secondes</option>
+            <option value="120">2 minutes</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Règles -->
+    <details class="card" style="margin-bottom:16px;">
+      <summary class="card-title" style="cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;">
+        <span>📖 Comment jouer</span><span style="opacity:.5;font-size:0.8em;">▼</span>
+      </summary>
+      <div style="margin-top:12px;font-size:0.9rem;color:var(--text-muted);line-height:1.7;">
+        <p>🌍 Une photo d'un lieu quelque part dans le monde est montrée à tous les joueurs.</p>
+        <p style="margin-top:8px;">📍 Chaque joueur place une épingle sur la carte mondiale et confirme son choix.</p>
+        <p style="margin-top:8px;">🏆 Le score dépend de la distance — plus vous êtes proche, plus vous gagnez de points (max 5000 pts/manche).</p>
+        <p style="margin-top:8px;">➡️ Partagez le lien avec les autres joueurs qui rejoindront depuis leur téléphone.</p>
+      </div>
+    </details>
+
+    <button id="btn-install-pwa" class="btn btn-secondary w-full mb-12" hidden>
+      📲 Installer l'application
+    </button>
+
+    <div class="screen-sticky-footer">
+      <button id="btn-create-game" class="btn btn-primary w-full btn-lg">
+        ▶ Créer la partie
+      </button>
+    </div>
+
+    <p id="game-version" style="text-align:center;margin-top:12px;font-size:0.8rem;color:var(--text-muted);"></p>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 2 — LOBBY HOST (en attente des joueurs)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-lobby" data-screen="screen-lobby" hidden>
+  <div class="page-wrapper screen-center">
+
+    <h2 style="font-size:1.4rem;font-weight:800;">Partagez ce lien 📲</h2>
+    <p style="color:var(--text-muted);font-size:0.9rem;">Les autres joueurs rejoignent depuis leur téléphone</p>
+
+    <div class="lobby-qr-wrapper">
+      <img id="lobby-qr" class="lobby-qr" src="" alt="QR Code">
+    </div>
+
+    <div class="lobby-url-box">
+      <span id="lobby-url"></span>
+      <button id="btn-copy-url" class="btn btn-secondary btn-sm" style="flex-shrink:0;">Copier</button>
+    </div>
+
+    <div class="players-section">
+      <p class="players-title">Joueurs connectés</p>
+      <ul id="lobby-players" class="players-list"></ul>
+    </div>
+
+    <button id="btn-start-game" class="btn btn-success btn-lg w-full" style="max-width:380px;" hidden>
+      🚀 Démarrer la partie
+    </button>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 3 — JOIN (CLIENT, saisie du nom)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-join" data-screen="screen-join" hidden>
+  <div class="screen-center">
+    <div style="font-size:3.5rem;">🌍</div>
+    <h1 class="app-title" style="font-size:2rem;">Geo Party</h1>
+    <div class="join-form">
+      <label class="setting-label" for="input-client-name">Votre prénom</label>
+      <input id="input-client-name" class="team-input" type="text" placeholder="ex : Alice" maxlength="20" autocomplete="off">
+      <button id="btn-join" class="btn btn-primary btn-lg">
+        🎮 Rejoindre la partie
+      </button>
+      <p id="join-status"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 4 — WAITING (CLIENT, en attente du début)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-waiting" data-screen="screen-waiting" hidden>
+  <div class="waiting-wrap">
+    <div style="font-size:3rem;">🌍</div>
+    <h2 style="font-size:1.4rem;font-weight:800;">En attente de l'hôte…</h2>
+    <div class="spinner"></div>
+    <div class="players-section" style="max-width:360px;">
+      <p class="players-title">Joueurs dans le lobby</p>
+      <ul id="waiting-players" class="players-list"></ul>
+    </div>
+    <p style="color:var(--text-muted);font-size:0.85rem;">L'hôte lancera la partie quand tout le monde est prêt</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 5 — PRE-ROUND (compte à rebours 3-2-1)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-pre-round" data-screen="screen-pre-round" hidden>
+  <div class="pre-round-wrapper">
+    <p id="pre-round-round" class="pre-round-round">Manche 1 / 5</p>
+    <p class="pre-round-label">Préparez-vous !</p>
+    <div id="pre-round-number" class="pre-round-count">3</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 6 — ROUND (image + carte pour deviner)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-round" data-screen="screen-round" hidden>
+
+  <!-- Header : badge + timer -->
+  <div class="round-header">
+    <span id="round-badge" class="round-badge">Manche 1/5</span>
+    <div class="timer-bar-wrapper">
+      <div id="round-timer-bar" class="timer-bar" style="width:100%;"></div>
+    </div>
+    <span id="round-timer-label" class="timer-label">60</span>
+  </div>
+
+  <!-- Image du lieu -->
+  <div class="round-image-wrap">
+    <img id="round-image" src="" alt="Lieu à deviner" onerror="this.style.display='none';this.nextElementSibling.hidden=false;">
+    <div class="image-fallback" hidden>🗺️ Image non disponible</div>
+  </div>
+
+  <!-- Statut des devinettes -->
+  <div style="text-align:center;padding:4px 0;font-size:0.78rem;color:var(--text-muted);">
+    <span id="round-guess-status">0 / 1 joueur a deviné</span>
+  </div>
+
+  <!-- Carte Leaflet -->
+  <div class="round-map-wrap">
+    <div id="guess-map"></div>
+    <div class="confirm-btn-wrap">
+      <button id="btn-confirm-guess" class="btn btn-success w-full btn-lg" disabled>
+        📍 Cliquez sur la carte pour deviner
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 7 — RESULTS (carte des réponses + scores)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-results" data-screen="screen-results" hidden>
+
+  <div class="results-header">
+    <p id="results-location-name" class="results-location">—</p>
+    <p style="font-size:0.8rem;color:var(--text-muted);">Résultats de la manche</p>
+  </div>
+
+  <!-- Carte résultats -->
+  <div id="results-map"></div>
+
+  <!-- Tableau des scores -->
+  <div class="results-scores-wrap">
+    <div id="results-scores"></div>
+  </div>
+
+  <!-- Bouton suivant (HOST seulement) -->
+  <div class="results-actions">
+    <button id="btn-skip-results" class="btn btn-primary w-full" hidden>
+      ▶ Tour suivant
+    </button>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 8 — GAME OVER
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-game-over" data-screen="screen-game-over" hidden>
+  <div class="screen-center">
+    <div style="font-size:3.5rem;">🏆</div>
+    <p id="gameover-winner" class="go-winner">—</p>
+    <div class="gameover-scores-wrap">
+      <div id="gameover-scores"></div>
+    </div>
+    <button id="btn-replay" class="btn btn-primary btn-lg w-full" style="max-width:380px;" hidden>
+      🔄 Rejouer
+    </button>
+    <a href="../" class="btn btn-secondary mt-12" style="max-width:380px;width:100%;">
+      ← Retour à l'accueil
+    </a>
+  </div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
