@@ -182,14 +182,17 @@ async function initHostFlow() {
   showScreen('screen-setup');
 }
 
+// Token Mapillary par défaut (client access token, utilisé côté navigateur)
+const DEFAULT_MAPILLARY_TOKEN = 'MLY|27736853439250253|def00cd1848cdcedd08fa8ce951b0d27';
+
 function _loadPersistedSettings() {
   try {
     const s = JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || '{}');
     if (s.timer)  el('sel-timer').value  = String(s.timer);
     if (s.rounds) el('sel-rounds').value = String(s.rounds);
     if (s.name)   el('input-host-name').value = s.name;
-    const token = localStorage.getItem(STORAGE_KEY_TOKEN) || '';
-    if (token) el('input-mapillary-token').value = token;
+    const token = localStorage.getItem(STORAGE_KEY_TOKEN) || DEFAULT_MAPILLARY_TOKEN;
+    el('input-mapillary-token').value = token;
   } catch { /* ignore */ }
 }
 
