@@ -7,8 +7,12 @@
   <link rel="stylesheet" href="style.css">
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <!-- Mapillary JS (Street View) -->
+  <link rel="stylesheet" href="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.css">
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Mapillary JS SDK -->
+  <script src="https://unpkg.com/mapillary-js@4.1.2/dist/mapillary.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0b1e2d">
   <meta name="mobile-web-app-capable" content="yes">
@@ -35,7 +39,7 @@
     </div>
 
     <h1 class="app-title">Geo Party 🌍</h1>
-    <p class="app-subtitle">Devinez où se trouvent les photos — mode multijoueur</p>
+    <p class="app-subtitle">Explorez le monde en Street View — mode multijoueur</p>
 
     <!-- Votre nom -->
     <div class="card">
@@ -43,6 +47,22 @@
       <div class="team-input-group">
         <label class="team-input-label" for="input-host-name">👤 Nom du joueur hôte</label>
         <input id="input-host-name" class="team-input" type="text" value="Hôte" maxlength="20" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Token Mapillary -->
+    <div class="card">
+      <div class="card-title">🔑 Token Mapillary (Street View)</div>
+      <div class="team-input-group">
+        <label class="team-input-label" for="input-mapillary-token">Token d'accès (partagé avec les joueurs)</label>
+        <input id="input-mapillary-token" class="team-input" type="password"
+               placeholder="MLY|…" autocomplete="off" spellcheck="false">
+        <p class="setting-label" style="margin-top:6px;line-height:1.5;">
+          Créez un compte gratuit sur
+          <a href="https://www.mapillary.com/dashboard/developers" target="_blank" rel="noopener"
+             style="color:var(--accent);">mapillary.com/dashboard/developers</a>,
+          puis créez une application et copiez le token d'accès client.
+        </p>
       </div>
     </div>
 
@@ -62,10 +82,10 @@
         <div class="setting-group">
           <label class="setting-label" for="sel-timer">⏱️ Temps / manche</label>
           <select id="sel-timer" class="setting-select">
-            <option value="30">30 secondes</option>
-            <option value="60" selected>60 secondes</option>
-            <option value="90">90 secondes</option>
+            <option value="60">60 secondes</option>
+            <option value="90" selected>90 secondes</option>
             <option value="120">2 minutes</option>
+            <option value="180">3 minutes</option>
           </select>
         </div>
       </div>
@@ -77,10 +97,10 @@
         <span>📖 Comment jouer</span><span style="opacity:.5;font-size:0.8em;">▼</span>
       </summary>
       <div style="margin-top:12px;font-size:0.9rem;color:var(--text-muted);line-height:1.7;">
-        <p>🌍 Une photo d'un lieu quelque part dans le monde est montrée à tous les joueurs.</p>
-        <p style="margin-top:8px;">📍 Chaque joueur place une épingle sur la carte mondiale et confirme son choix.</p>
-        <p style="margin-top:8px;">🏆 Le score dépend de la distance — plus vous êtes proche, plus vous gagnez de points (max 5000 pts/manche).</p>
-        <p style="margin-top:8px;">➡️ Partagez le lien avec les autres joueurs qui rejoindront depuis leur téléphone.</p>
+        <p>🌍 Vous êtes déposé quelque part dans le monde en Street View — regardez autour de vous et naviguez pour trouver des indices.</p>
+        <p style="margin-top:8px;">📍 Cliquez sur la mini-carte (bas à droite) pour placer votre épingle, puis confirmez.</p>
+        <p style="margin-top:8px;">🏆 Score max 5000 pts par manche — plus vous êtes proche, plus vous marquez.</p>
+        <p style="margin-top:8px;">➡️ Partagez le lien avec les joueurs qui rejoindront depuis leur téléphone.</p>
       </div>
     </details>
 
@@ -175,7 +195,7 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════
-     ÉCRAN 6 — ROUND (image + carte pour deviner)
+     ÉCRAN 6 — ROUND (Street View + mini-carte overlay)
      ═══════════════════════════════════════════════════════════════════ -->
 <div id="screen-round" data-screen="screen-round" hidden>
 
@@ -185,28 +205,29 @@
     <div class="timer-bar-wrapper">
       <div id="round-timer-bar" class="timer-bar" style="width:100%;"></div>
     </div>
-    <span id="round-timer-label" class="timer-label">60</span>
+    <span id="round-timer-label" class="timer-label">90</span>
   </div>
 
-  <!-- Image du lieu -->
-  <div class="round-image-wrap">
-    <img id="round-image" src="" alt="Lieu à deviner" onerror="this.style.display='none';this.nextElementSibling.hidden=false;">
-    <div class="image-fallback" hidden>🗺️ Image non disponible</div>
-  </div>
+  <!-- Zone principale : viewer 360° + overlay carte -->
+  <div class="round-main">
 
-  <!-- Statut des devinettes -->
-  <div style="text-align:center;padding:4px 0;font-size:0.78rem;color:var(--text-muted);">
-    <span id="round-guess-status">0 / 1 joueur a deviné</span>
-  </div>
+    <!-- Viewer Street View Mapillary -->
+    <div id="mapillary-container"></div>
 
-  <!-- Carte Leaflet -->
-  <div class="round-map-wrap">
-    <div id="guess-map"></div>
-    <div class="confirm-btn-wrap">
-      <button id="btn-confirm-guess" class="btn btn-success w-full btn-lg" disabled>
-        📍 Cliquez sur la carte pour deviner
+    <!-- Mini-carte (coin bas-droite, expansible) -->
+    <div id="map-overlay" class="map-overlay">
+      <div id="guess-map"></div>
+      <button id="btn-expand-map" class="btn-map-toggle" title="Agrandir la carte">⛶</button>
+    </div>
+
+    <!-- Barre basse : statut + confirmer -->
+    <div class="round-bottom-overlay">
+      <span id="round-guess-status" class="round-guess-status">0 / 1 joueur a deviné</span>
+      <button id="btn-confirm-guess" class="btn btn-success btn-confirm" disabled>
+        📍 Confirmer
       </button>
     </div>
+
   </div>
 
 </div>

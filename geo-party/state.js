@@ -1,5 +1,6 @@
 // ─── Clés localStorage ─────────────────────────────────────────────────────
 export const STORAGE_KEY_SETTINGS = 'geoparty_settings';
+export const STORAGE_KEY_TOKEN    = 'geoparty_mapillary_token';
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
 export const TIMER_DEFAULT  = 60;
@@ -59,12 +60,15 @@ export const state = {
   currentRound: 0,
   timeLeft: TIMER_DEFAULT,
 
-  // Lieu courant : null en GUESSING (image seulement), révélé en RESULTS
-  currentLocation: null,  // { id, imageUrl, name, country, lat?, lng? }
+  // Lieu courant : null en GUESSING (mapillaryId seulement), révélé en RESULTS
+  currentLocation: null,  // { id, mapillaryId, name, country, lat?, lng? }
 
   // Countdown pré-round
   countdown: 3,
 
-  // Tous les lieux pré-tirés pour la partie
-  locationQueue: [],  // [{ id, imageUrl, name, country, lat, lng }]
+  // Tous les lieux pré-tirés pour la partie (avec mapillaryId résolu)
+  locationQueue: [],  // [{ id, mapillaryId, name, country, lat, lng }]
+
+  // Token Mapillary partagé par le HOST avec tous les clients
+  mapillaryToken: null,
 };

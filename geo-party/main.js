@@ -9,14 +9,14 @@
 import { GeoPeer }              from './peer.js';
 import {
   state, PHASES, MSG,
-  STORAGE_KEY_SETTINGS,
+  STORAGE_KEY_SETTINGS, STORAGE_KEY_TOKEN,
   TIMER_DEFAULT, ROUNDS_DEFAULT, HOST_ID,
 }                               from './state.js';
 import {
   initGame, addHostPlayer,
   handleClientJoin, handlePlayerLeave,
   handleClientMessage, startGame, submitGuess,
-  skipResults, restartGame,
+  skipResults, restartGame, prepareRoundLocations,
 }                               from './game.js';
 import {
   el, showScreen, showToast,
@@ -24,6 +24,8 @@ import {
   renderPreRound, renderRound, renderResults, renderGameOver,
   updateTimerBar, initGuessMap, resetGuessMap,
   hasGuessMarker, getGuessCoords, initResultsMap, onScreenChange,
+  setMapillaryToken, showMapillaryImage, destroyMapillaryViewer,
+  invalidateGuessMap,
 }                               from './ui.js';
 import { getMuted, setMuted }   from './sound.js';
 import { getVersion }           from './version.js';
@@ -59,32 +61,38 @@ async function renderForRole(s, asHost) {
       showScreen('screen-pre-round');
       break;
 
-    case PHASES.GUESSING:
+    case PHASES.GUESSING: {
       showScreen('screen-round');
-      renderRound(s, asHost);
+      renderRound(s);
       _myGuessConfirmed = false;
       _pendingGuess     = null;
-      // Init map only once when entering guessing
+      _collapseMap();
       if (!_guessMapReady) {
         _guessMapReady = true;
         await initGuessMap(_onMapClick);
       } else {
         resetGuessMap();
       }
+      // Sync token de l'hôte (reçu via snapshot pour les clients)
+      if (s.mapillaryToken) setMapillaryToken(s.mapillaryToken);
+      await showMapillaryImage(s.currentLocation?.mapillaryId);
       _updateConfirmBtn();
       break;
+    }
 
     case PHASES.RESULTS:
+      destroyMapillaryViewer();
       showScreen('screen-results');
       renderResults(s);
       if (s.currentLocation?.lat != null) {
         await initResultsMap(s.players, s.currentLocation.lat, s.currentLocation.lng);
       }
-      const skipBtn = el('btn-skip-results');
-      if (skipBtn) skipBtn.hidden = !asHost;
+      { const skipBtn = el('btn-skip-results');
+        if (skipBtn) skipBtn.hidden = !asHost; }
       break;
 
     case PHASES.GAME_OVER:
+      destroyMapillaryViewer();
       showScreen('screen-game-over');
       renderGameOver(s, asHost);
       break;
@@ -96,6 +104,7 @@ async function renderForRole(s, asHost) {
 let _guessMapReady      = false;
 let _myGuessConfirmed   = false;
 let _pendingGuess       = null; // { lat, lng }
+let _mapExpanded        = false;
 
 function _onMapClick(lat, lng) {
   if (_myGuessConfirmed) return;
@@ -107,7 +116,7 @@ function _updateConfirmBtn() {
   const btn = el('btn-confirm-guess');
   if (!btn) return;
   const hasMark = _pendingGuess !== null || hasGuessMarker();
-  btn.disabled    = _myGuessConfirmed || !hasMark;
+  btn.disabled = _myGuessConfirmed || !hasMark;
   if (_myGuessConfirmed) {
     btn.textContent = '✅ Deviné !';
   } else if (hasMark) {
@@ -130,6 +139,27 @@ function _confirmGuess() {
   } else {
     peer.sendToHost({ type: MSG.GUESS, lat: coords.lat, lng: coords.lng });
   }
+}
+
+// ─── Map overlay expand/collapse ────────────────────────────────────────────
+
+function _collapseMap() {
+  _mapExpanded = false;
+  const overlay = el('map-overlay');
+  const btn     = el('btn-expand-map');
+  if (overlay) overlay.classList.remove('map-expanded');
+  if (btn)     btn.textContent = '⛶';
+}
+
+function _toggleMap(e) {
+  e.stopPropagation();
+  _mapExpanded = !_mapExpanded;
+  const overlay = el('map-overlay');
+  const btn     = el('btn-expand-map');
+  if (overlay) overlay.classList.toggle('map-expanded', _mapExpanded);
+  if (btn)     btn.textContent = _mapExpanded ? '✕' : '⛶';
+  // Recalcul taille Leaflet après transition CSS
+  setTimeout(() => invalidateGuessMap(), 320);
 }
 
 // ─── Timer bar HOST ────────────────────────────────────────────────────────────
@@ -158,6 +188,8 @@ function _loadPersistedSettings() {
     if (s.timer)  el('sel-timer').value  = String(s.timer);
     if (s.rounds) el('sel-rounds').value = String(s.rounds);
     if (s.name)   el('input-host-name').value = s.name;
+    const token = localStorage.getItem(STORAGE_KEY_TOKEN) || '';
+    if (token) el('input-mapillary-token').value = token;
   } catch { /* ignore */ }
 }
 
@@ -165,8 +197,10 @@ function _saveSettings() {
   const name   = el('input-host-name').value.trim() || 'Hôte';
   const timer  = parseInt(el('sel-timer').value, 10);
   const rounds = parseInt(el('sel-rounds').value, 10);
+  const token  = el('input-mapillary-token').value.trim();
   localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify({ name, timer, rounds }));
-  return { name, timer, rounds };
+  localStorage.setItem(STORAGE_KEY_TOKEN, token);
+  return { name, timer, rounds, token };
 }
 
 async function _createSession() {
@@ -197,10 +231,6 @@ async function _createSession() {
     }, { once: true });
   });
 
-  peer.addEventListener('player-join', (e) => {
-    // Le JOIN réel arrive dans le message MSG.JOIN
-  });
-
   peer.addEventListener('player-leave', (e) => {
     const { peerId } = e.detail;
     handlePlayerLeave(peerId);
@@ -214,7 +244,6 @@ async function _createSession() {
   peer.addEventListener('message', (e) => {
     const { from, data } = e.detail;
     handleClientMessage(from, data);
-    // Après handleClientMessage, _syncAll() est appelé → _onStateChange → renderForRole
   });
 
   peer.addEventListener('error', (e) => {
@@ -222,13 +251,26 @@ async function _createSession() {
   });
 }
 
-function _hostStartGame() {
+async function _hostStartGame() {
   if (state.players.length < 2) {
     showToast('Attendez au moins un autre joueur !', 'error');
     return;
   }
-  const { rounds, timer } = _saveSettings();
-  const locs = pickLocations(rounds);
+  const { rounds, timer, token } = _saveSettings();
+  const rawLocs = pickLocations(rounds);
+
+  // Récupérer les IDs Mapillary (loading state)
+  const btn = el('btn-start-game');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Chargement des panoramas…'; }
+
+  const locs = await prepareRoundLocations(rawLocs, token);
+
+  if (btn) { btn.disabled = false; btn.textContent = '🚀 Démarrer la partie'; }
+
+  // Stocker token dans l'état pour partage via SYNC
+  state.mapillaryToken = token || null;
+  setMapillaryToken(token);
+
   startGame(locs, rounds, timer);
 }
 
@@ -261,6 +303,8 @@ async function initClientFlow(hostId) {
       if (data.type === MSG.SYNC) {
         Object.assign(state, data.state);
         state.players = data.state.players;
+        // Appliquer le token Mapillary de l'hôte
+        if (data.state.mapillaryToken) setMapillaryToken(data.state.mapillaryToken);
         renderForRole(data.state, false);
       } else if (data.type === MSG.TICK) {
         state.timeLeft = data.timeLeft;
@@ -290,18 +334,31 @@ function _wireActions() {
   // Round → confirm guess
   el('btn-confirm-guess').addEventListener('click', _confirmGuess);
 
+  // Round → expand/collapse map overlay
+  el('btn-expand-map').addEventListener('click', _toggleMap);
+
   // Results → skip (HOST only)
   el('btn-skip-results').addEventListener('click', () => {
     if (isHost) skipResults();
   });
 
   // Game over → replay (HOST only)
-  el('btn-replay').addEventListener('click', () => {
+  el('btn-replay').addEventListener('click', async () => {
     if (!isHost) return;
-    const { rounds, timer } = _saveSettings();
+    const { rounds, timer, token } = _saveSettings();
     state.timerDuration = timer;
     state.totalRounds   = rounds;
-    const locs = pickLocations(rounds);
+
+    const btn = el('btn-replay');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Chargement…'; }
+
+    const rawLocs = pickLocations(rounds);
+    const locs    = await prepareRoundLocations(rawLocs, token);
+
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Rejouer'; }
+
+    state.mapillaryToken = token || null;
+    setMapillaryToken(token);
     _guessMapReady = false;
     restartGame(locs);
   });
@@ -313,7 +370,6 @@ function _wireActions() {
 // ─── Setup screen controls ────────────────────────────────────────────────────
 
 function _initSetupControls() {
-  // Theme
   const saved = localStorage.getItem('geoparty_theme') || 'dark';
   document.documentElement.dataset.theme = saved;
   _applyThemeBtn(saved);
