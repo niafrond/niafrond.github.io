@@ -234,7 +234,7 @@ export const LOCATIONS = [
   },
   {
     id: 26,
-    name: 'Baie d\'Ha Long',
+    name: 'Baie d\'Hạ Long',
     country: 'Viêt Nam',
     lat: 20.9101,
     lng: 107.1839,
