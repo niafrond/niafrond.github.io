@@ -1,6 +1,6 @@
 /**
  * ui.js — Navigation d'écrans et rendu pour Geo Party
- * Gère aussi les cartes Leaflet.
+ * Gère les cartes Leaflet et le viewer Street View Mapillary.
  */
 
 // ─── Helpers DOM ──────────────────────────────────────────────────────────────
@@ -33,6 +33,116 @@ export function showToast(msg, type = 'info') {
   toast._tid = setTimeout(() => { toast.hidden = true; }, 3500);
 }
 
+// ─── Mapillary Viewer ──────────────────────────────────────────────────────────
+
+let _mapillaryViewer = null;
+let _mapillaryToken  = null;
+let _currentImageId  = null;
+
+/** Stocke le token Mapillary (depuis l'hôte ou le SYNC). */
+export function setMapillaryToken(token) {
+  _mapillaryToken = token || null;
+}
+
+function _waitForMapillarySDK() {
+  return new Promise(resolve => {
+    if (window.mapillary?.Viewer) { resolve(); return; }
+    const t = setInterval(() => {
+      if (window.mapillary?.Viewer) { clearInterval(t); resolve(); }
+    }, 100);
+    // Résoudre quand même après 8s pour ne pas bloquer indéfiniment
+    setTimeout(() => { clearInterval(t); resolve(); }, 8000);
+  });
+}
+
+/**
+ * Affiche (ou navigue vers) un panorama Mapillary dans #mapillary-container.
+ * Si imageId est null ou qu'il n'y a pas de token, affiche un placeholder.
+ */
+export async function showMapillaryImage(imageId) {
+  const container = el('mapillary-container');
+  if (!container) return;
+
+  if (!_mapillaryToken) {
+    _clearViewer(container, '🔑', 'Entrez un token Mapillary dans les paramètres pour activer la vue 360°');
+    return;
+  }
+
+  if (!imageId) {
+    _clearViewer(container, '🗺️', 'Aucun panorama Street View trouvé pour ce lieu');
+    return;
+  }
+
+  await _waitForMapillarySDK();
+
+  if (!window.mapillary?.Viewer) {
+    _clearViewer(container, '❌', 'SDK Mapillary non chargé');
+    return;
+  }
+
+  // Naviguer vers la nouvelle image si le viewer existe déjà
+  if (_mapillaryViewer && _currentImageId !== imageId) {
+    try {
+      await _mapillaryViewer.moveTo(imageId);
+      _currentImageId = imageId;
+      return;
+    } catch {
+      // Recréer le viewer si moveTo échoue
+      destroyMapillaryViewer();
+    }
+  }
+
+  if (_currentImageId === imageId && _mapillaryViewer) return; // déjà à jour
+
+  // Créer un nouveau viewer
+  _destroyViewerInstance();
+  container.innerHTML = '';
+  _currentImageId = imageId;
+
+  try {
+    _mapillaryViewer = new window.mapillary.Viewer({
+      accessToken: _mapillaryToken,
+      container:   'mapillary-container',
+      imageId,
+      component:   { cover: false },
+    });
+  } catch (err) {
+    console.error('[Mapillary viewer]', err);
+    _currentImageId = null;
+    _clearViewer(container, '❌', 'Impossible de charger le panorama. Vérifiez votre token Mapillary.');
+  }
+}
+
+/** Détruit proprement le viewer Mapillary. */
+export function destroyMapillaryViewer() {
+  _destroyViewerInstance();
+  _currentImageId = null;
+  const container = el('mapillary-container');
+  if (container) container.innerHTML = '';
+}
+
+function _destroyViewerInstance() {
+  if (_mapillaryViewer) {
+    try { _mapillaryViewer.remove(); } catch { /* ignore */ }
+    _mapillaryViewer = null;
+  }
+}
+
+function _clearViewer(container, icon, msg) {
+  _destroyViewerInstance();
+  _currentImageId = null;
+  const wrap = document.createElement('div');
+  wrap.className = 'mapillary-placeholder';
+  const ico = document.createElement('div');
+  ico.textContent = icon;
+  ico.style.fontSize = '2.5rem';
+  const p = document.createElement('p');
+  p.textContent = msg;
+  wrap.append(ico, p);
+  container.innerHTML = '';
+  container.appendChild(wrap);
+}
+
 // ─── Cartes Leaflet ────────────────────────────────────────────────────────────
 
 let _guessMap       = null;
@@ -50,7 +160,7 @@ function _waitForLeaflet() {
 }
 
 /**
- * Initialise (ou réinitialise) la carte de pari.
+ * Initialise (ou réinitialise) la carte de devinette.
  * @param {function} onGuess  appelé avec (lat, lng) quand le joueur clique
  */
 export async function initGuessMap(onGuess) {
@@ -60,14 +170,11 @@ export async function initGuessMap(onGuess) {
   const container = el('guess-map');
   if (!container) return;
 
-  // Détruire la carte précédente si elle existe
   if (_guessMap) {
     _guessMap.remove();
     _guessMap    = null;
     _guessMarker = null;
   }
-
-  container.style.height = '';  // laisser CSS décider
 
   _guessMap = L.map('guess-map', {
     center: [20, 0],
@@ -110,8 +217,12 @@ export function resetGuessMap() {
     _guessMarker = null;
   }
   if (_guessMap) _guessMap.setView([20, 0], 2);
-  // Invalidate size in case the container changed
   setTimeout(() => { if (_guessMap) _guessMap.invalidateSize(); }, 100);
+}
+
+/** Force un recalcul de taille (après expand/collapse de l'overlay). */
+export function invalidateGuessMap() {
+  setTimeout(() => { if (_guessMap) _guessMap.invalidateSize(); }, 50);
 }
 
 /** Retourne true si un marqueur est posé. */
@@ -157,7 +268,7 @@ export async function initResultsMap(players, actualLat, actualLng) {
     iconSize: [36, 36],
     iconAnchor: [18, 18],
   });
-  const actualMarker = L.marker([actualLat, actualLng], { icon: actualIcon })
+  L.marker([actualLat, actualLng], { icon: actualIcon })
     .addTo(_resultsMap)
     .bindPopup('<strong>Lieu réel</strong>');
   bounds.push([actualLat, actualLng]);
@@ -178,7 +289,6 @@ export async function initResultsMap(players, actualLat, actualLng) {
       .addTo(_resultsMap)
       .bindPopup(`<strong>${_escHtml(p.name)}</strong><br>${_fmtDist(p.guessDistance)}<br>${p.guessScore ?? 0} pts`);
 
-    // Ligne jusqu'au lieu réel
     L.polyline([[lat, lng], [actualLat, actualLng]], {
       color: p.color,
       weight: 2,
@@ -274,21 +384,13 @@ export function renderPreRound(s) {
   if (el_r) el_r.textContent = `Manche ${s.currentRound + 1} / ${s.totalRounds}`;
 }
 
-/** Round : image + timer + statut guesses */
-export function renderRound(s, isHost) {
-  const img = el('round-image');
-  if (img && s.currentLocation?.imageUrl) {
-    if (img.dataset.src !== s.currentLocation.imageUrl) {
-      img.dataset.src = s.currentLocation.imageUrl;
-      img.src = s.currentLocation.imageUrl;
-    }
-  }
+/** Round : timer + statut guesses (l'image/viewer est géré séparément) */
+export function renderRound(s) {
   const badge = el('round-badge');
   if (badge) badge.textContent = `Manche ${s.currentRound} / ${s.totalRounds}`;
 
   updateTimerBar(s.timeLeft, s.timerDuration);
 
-  // Compteur de joueurs ayant deviné
   const guessedCount = s.players.filter(p => p.hasGuessed).length;
   const status = el('round-guess-status');
   if (status) {
@@ -300,13 +402,11 @@ export function renderRound(s, isHost) {
 export function renderResults(s) {
   const loc = s.currentLocation;
 
-  // Nom du lieu
   const nameEl = el('results-location-name');
   if (nameEl) {
     nameEl.textContent = loc ? `${loc.name} — ${loc.country}` : '—';
   }
 
-  // Tableau des scores du tour
   const list = el('results-scores');
   if (list) {
     list.innerHTML = '';
@@ -386,3 +486,4 @@ export function renderGameOver(s, isHost) {
   const btn = el('btn-replay');
   if (btn) btn.hidden = !isHost;
 }
+

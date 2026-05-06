@@ -34,7 +34,7 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Ne pas intercepter les requêtes cross-origin (Wikimedia, OpenStreetMap, PeerJS CDN)
+  // Ne pas intercepter les requêtes cross-origin (Mapillary, OpenStreetMap, PeerJS CDN)
   if (!e.request.url.startsWith(self.location.origin)) return;
   e.respondWith(
     caches.match(e.request).then(res => res || fetch(e.request))

@@ -25,6 +25,55 @@ export function initGame(peer, onStateChange, onTick) {
   _onTick        = onTick;
 }
 
+// ─── Mapillary API ────────────────────────────────────────────────────────────
+
+const _MAPILLARY_IMAGES_URL = 'https://graph.mapillary.com/images';
+
+/**
+ * Cherche un panorama Mapillary proche des coordonnées données.
+ * Essaie progressivement un bbox plus large, puis accepte des images non-pano.
+ * @returns {string|null} image id ou null si non trouvé
+ */
+async function _fetchMapillaryImageId(lat, lng, token) {
+  const attempts = [
+    { d: 0.005, pano: true  },
+    { d: 0.02,  pano: true  },
+    { d: 0.07,  pano: true  },
+    { d: 0.07,  pano: false },
+  ];
+  for (const { d, pano } of attempts) {
+    const bbox = `${lng - d},${lat - d},${lng + d},${lat + d}`;
+    const url  = `${_MAPILLARY_IMAGES_URL}?access_token=${encodeURIComponent(token)}`
+               + `&fields=id&bbox=${bbox}${pano ? '&is_pano=true' : ''}&limit=10`;
+    try {
+      const res  = await fetch(url);
+      if (!res.ok) return null; // token invalide ou erreur API, ne pas réessayer
+      const json = await res.json();
+      if (json.data?.length) {
+        return json.data[Math.floor(Math.random() * json.data.length)].id;
+      }
+    } catch { /* erreur réseau, on essaie le delta suivant */ }
+  }
+  return null;
+}
+
+/**
+ * Résout les identifiants Mapillary pour tous les lieux d'une partie.
+ * Appelé par l'hôte avant startGame().
+ * @param {object[]} locations  lieux bruts depuis locations.js
+ * @param {string}   token      token d'accès Mapillary du HOST
+ * @returns {Promise<object[]>} lieux enrichis avec { mapillaryId }
+ */
+export async function prepareRoundLocations(locations, token) {
+  if (!token) return locations.map(l => ({ ...l, mapillaryId: null }));
+  return Promise.all(
+    locations.map(async l => ({
+      ...l,
+      mapillaryId: await _fetchMapillaryImageId(l.lat, l.lng, token),
+    }))
+  );
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
@@ -35,10 +84,10 @@ export function initGame(peer, onStateChange, onTick) {
 function _snapshot(withCoords = false) {
   const loc = state.currentLocation;
   const locSnap = loc ? {
-    id:       loc.id,
-    imageUrl: loc.imageUrl,
-    name:     loc.name,
-    country:  loc.country,
+    id:          loc.id,
+    mapillaryId: loc.mapillaryId ?? null,
+    name:        loc.name,
+    country:     loc.country,
     ...(withCoords ? { lat: loc.lat, lng: loc.lng } : {}),
   } : null;
 
@@ -51,6 +100,7 @@ function _snapshot(withCoords = false) {
     timeLeft:         state.timeLeft,
     currentLocation:  locSnap,
     countdown:        state.countdown,
+    mapillaryToken:   state.mapillaryToken,
   };
 }
 
