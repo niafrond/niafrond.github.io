@@ -172,6 +172,49 @@ function _onTick(value, kind) {
   }
 }
 
+// ─── Pré-chargement des panoramas (lobby) ─────────────────────────────────────
+
+/** Nombre de lieux candidats supplémentaires pour garantir assez de panoramas viables. */
+const EXTRA_LOC_CANDIDATES = 8;
+
+let _preloadPromise = null; // Promise<object[]>
+let _preloadRounds  = null;
+let _preloadToken   = null;
+
+/** Lance la résolution Mapillary en arrière-plan dès que la session est créée. */
+function _startPreload(rounds, token) {
+  _preloadRounds  = rounds;
+  _preloadToken   = token;
+  const rawLocs   = pickLocations(rounds + EXTRA_LOC_CANDIDATES);
+  _preloadPromise = prepareRoundLocations(rawLocs, rounds, token);
+
+  // Mettre à jour l'indicateur de statut dans le lobby
+  const statusEl = el('lobby-preload-status');
+  if (statusEl) statusEl.textContent = '⏳ Chargement des panoramas en arrière-plan…';
+
+  _preloadPromise.then(() => {
+    const s = el('lobby-preload-status');
+    if (s) s.textContent = '✅ Panoramas prêts !';
+  }).catch(() => {
+    const s = el('lobby-preload-status');
+    if (s) s.textContent = '⚠️ Impossible de précharger les panoramas.';
+  });
+}
+
+/**
+ * Retourne les lieux préchargés si disponibles et compatibles,
+ * sinon les récupère à la demande.
+ */
+async function _getLocations(rounds, token) {
+  if (_preloadPromise && _preloadRounds === rounds && _preloadToken === token) {
+    const locs      = await _preloadPromise;
+    _preloadPromise = null; // consommer le cache
+    return locs;
+  }
+  const rawLocs = pickLocations(rounds + EXTRA_LOC_CANDIDATES);
+  return prepareRoundLocations(rawLocs, rounds, token);
+}
+
 // ─── Flow HOST ────────────────────────────────────────────────────────────────
 
 async function initHostFlow() {
@@ -207,7 +250,7 @@ function _saveSettings() {
 }
 
 async function _createSession() {
-  const { name, timer, rounds } = _saveSettings();
+  const { name, timer, rounds, token } = _saveSettings();
 
   // Ajouter le joueur HOST
   addHostPlayer(name);
@@ -215,6 +258,9 @@ async function _createSession() {
   state.totalRounds   = rounds;
 
   showScreen('screen-lobby');
+
+  // Lancer le pré-chargement des panoramas dès l'entrée dans le lobby
+  _startPreload(rounds, token);
 
   try {
     await peer.startHost();
@@ -260,13 +306,12 @@ async function _hostStartGame() {
     return;
   }
   const { rounds, timer, token } = _saveSettings();
-  const rawLocs = pickLocations(rounds);
 
-  // Récupérer les IDs Mapillary (loading state)
+  // Récupérer les IDs Mapillary (préchargés ou à la demande)
   const btn = el('btn-start-game');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Chargement des panoramas…'; }
 
-  const locs = await prepareRoundLocations(rawLocs, token);
+  const locs = await _getLocations(rounds, token);
 
   if (btn) { btn.disabled = false; btn.textContent = '🚀 Démarrer la partie'; }
 
@@ -355,8 +400,8 @@ function _wireActions() {
     const btn = el('btn-replay');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Chargement…'; }
 
-    const rawLocs = pickLocations(rounds);
-    const locs    = await prepareRoundLocations(rawLocs, token);
+    const rawLocs = pickLocations(rounds + EXTRA_LOC_CANDIDATES);
+    const locs    = await prepareRoundLocations(rawLocs, rounds, token);
 
     if (btn) { btn.disabled = false; btn.textContent = '🔄 Rejouer'; }
 
