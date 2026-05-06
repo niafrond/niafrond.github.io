@@ -1,3 +1,9 @@
+## [1.182.0](https://github.com/niafrond/niafrond.github.io/compare/v1.181.0...v1.182.0) (2026-05-06)
+
+### Features
+
+* **geo-party:** only accept viable panoramas, preload in lobby, desktop layout ([9201b9a](https://github.com/niafrond/niafrond.github.io/commit/9201b9a9449feb8c64538ed788b2aa0ad0029c61))
+
 ## [1.181.0](https://github.com/niafrond/niafrond.github.io/compare/v1.180.0...v1.181.0) (2026-05-06)
 
 ### Features
