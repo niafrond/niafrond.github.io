@@ -61,29 +61,41 @@ async function _fetchMapillaryImageId(lat, lng, token) {
   return null;
 }
 
+/** Taille des lots traités en parallèle lors de la résolution des panoramas. */
+const _BATCH_SIZE = 10;
+
 /**
  * Résout les identifiants Mapillary pour une sélection de lieux.
- * Accepte plus de candidats que nécessaire et préfère ceux ayant un panorama viable.
+ * Traite les candidats par lots et s'arrête dès que wantCount panoramas viables
+ * sont trouvés. Ne retourne jamais de lieux sans panorama tant que le pool n'est
+ * pas épuisé.
  *
- * @param {object[]} candidates  lieux candidats (plus que wantCount pour avoir des replis)
+ * @param {object[]} candidates  lieux candidats (idéalement tous les lieux disponibles)
  * @param {number}   wantCount   nombre de lieux à retourner pour la partie
  * @param {string}   token       token d'accès Mapillary du HOST
- * @returns {Promise<object[]>}  wantCount lieux enrichis avec { mapillaryId }
+ * @returns {Promise<object[]>}  jusqu'à wantCount lieux enrichis avec { mapillaryId }
  */
 export async function prepareRoundLocations(candidates, wantCount, token) {
   if (!token) return candidates.slice(0, wantCount).map(l => ({ ...l, mapillaryId: null }));
 
-  const results = await Promise.all(
-    candidates.map(async l => ({
-      ...l,
-      mapillaryId: await _fetchMapillaryImageId(l.lat, l.lng, token),
-    }))
-  );
+  const withPano = [];
 
-  // Préférer les lieux avec un panorama viable ; compléter avec les autres si nécessaire
-  const withPano    = results.filter(l => l.mapillaryId !== null);
-  const withoutPano = results.filter(l => l.mapillaryId === null);
-  return [...withPano, ...withoutPano].slice(0, wantCount);
+  for (let i = 0; i < candidates.length && withPano.length < wantCount; i += _BATCH_SIZE) {
+    const batch   = candidates.slice(i, i + _BATCH_SIZE);
+    const results = await Promise.all(
+      batch.map(async l => ({
+        ...l,
+        mapillaryId: await _fetchMapillaryImageId(l.lat, l.lng, token),
+      }))
+    );
+    for (const r of results) {
+      if (r.mapillaryId !== null && withPano.length < wantCount) {
+        withPano.push(r);
+      }
+    }
+  }
+
+  return withPano;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

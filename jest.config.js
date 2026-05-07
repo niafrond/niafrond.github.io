@@ -52,6 +52,13 @@ export default {
       testMatch: ['<rootDir>/taboo/tests/unit/game.test.js'],
       transform: {},
     },
+    // ── Geo Party : logique de jeu (node, fetch mocké) ───────────────────────
+    {
+      displayName: 'geo-party-node',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/geo-party/tests/unit/game.test.js'],
+      transform: {},
+    },
     // ── Blind-test : fuzzy + joker (node) ────────────────────────────────────
     {
       displayName: 'blind-test-node',
