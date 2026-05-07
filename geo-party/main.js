@@ -243,6 +243,11 @@ async function initHostFlow() {
 // Token Mapillary par défaut (client access token, utilisé côté navigateur)
 const DEFAULT_MAPILLARY_TOKEN = 'MLY|27736853439250253|def00cd1848cdcedd08fa8ce951b0d27';
 
+function _getMaxRoundsForRegion(region) {
+  if (!region || region === REGION_DEFAULT) return LOCATIONS.length;
+  return LOCATIONS.filter(l => l.region === region).length;
+}
+
 function _loadPersistedSettings() {
   try {
     const s = JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || '{}');
@@ -256,10 +261,21 @@ function _loadPersistedSettings() {
 }
 
 function _saveSettings() {
+  const roundsSelect = el('sel-rounds');
   const name   = el('input-host-name').value.trim() || 'Hôte';
   const timer  = parseInt(el('sel-timer').value, 10);
-  const rounds = parseInt(el('sel-rounds').value, 10);
   const region = el('sel-region').value || REGION_DEFAULT;
+  const requestedRounds = parseInt(roundsSelect.value, 10);
+  const roundsOptions = Array.from(roundsSelect.options)
+    .map(opt => parseInt(opt.value, 10))
+    .filter(Number.isFinite)
+    .sort((a, b) => a - b);
+  const maxRounds = _getMaxRoundsForRegion(region);
+  const allowedRounds = roundsOptions.filter(v => v <= maxRounds);
+  const rounds = allowedRounds.includes(requestedRounds)
+    ? requestedRounds
+    : ((allowedRounds.length ? allowedRounds[allowedRounds.length - 1] : null) ?? roundsOptions[0]);
+  if (rounds !== requestedRounds) roundsSelect.value = String(rounds);
   const token  = el('input-mapillary-token').value.trim();
   localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify({ name, timer, rounds, region }));
   localStorage.setItem(STORAGE_KEY_TOKEN, token);
