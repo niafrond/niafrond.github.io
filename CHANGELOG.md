@@ -1,3 +1,10 @@
+## [1.183.0](https://github.com/niafrond/niafrond.github.io/compare/v1.182.0...v1.183.0) (2026-05-07)
+
+### Features
+
+* **geo-party:** auto-submit on timer end, post-validation lock, per-player status chips ([828bab1](https://github.com/niafrond/niafrond.github.io/commit/828bab1292c767fe12189386cd7a9c58700cf108))
+* **geo-party:** fix panorama retry + add unit tests ([c8315a2](https://github.com/niafrond/niafrond.github.io/commit/c8315a275e7e3638f381d9800ccdfd2240c4a326))
+
 ## [1.182.0](https://github.com/niafrond/niafrond.github.io/compare/v1.181.0...v1.182.0) (2026-05-06)
 
 ### Features
