@@ -422,7 +422,7 @@ export const LOCATIONS = [
     id: 45,
     name: 'Statues Moaï',
     country: 'Île de Pâques (Chili)',
-    region: 'ameriques',
+    region: 'oceanie',
     lat: -27.1213,
     lng: -109.3661,
     difficulty: 'hard',
@@ -485,10 +485,9 @@ export const LOCATIONS = [
  * @returns {object[]}
  */
 export function pickLocations(n, region = 'monde') {
-  const pool = region && region !== 'monde'
+  const arr = region && region !== 'monde'
     ? LOCATIONS.filter(l => l.region === region)
     : [...LOCATIONS];
-  const arr = [...pool];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
