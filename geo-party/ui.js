@@ -391,10 +391,28 @@ export function renderRound(s) {
 
   updateTimerBar(s.timeLeft, s.timerDuration);
 
-  const guessedCount = s.players.filter(p => p.hasGuessed).length;
   const status = el('round-guess-status');
   if (status) {
-    status.textContent = `${guessedCount} / ${s.players.length} joueurs ont deviné`;
+    status.innerHTML = '';
+    s.players.forEach((p) => {
+      const chip = document.createElement('span');
+      chip.className = 'player-status-chip' + (p.hasGuessed ? ' chip-guessed' : '');
+
+      const dot = document.createElement('span');
+      dot.className = 'chip-dot';
+      dot.style.background = p.color;
+
+      const name = document.createElement('span');
+      name.className = 'chip-name';
+      name.textContent = p.name;
+
+      const icon = document.createElement('span');
+      icon.className = 'chip-icon';
+      icon.textContent = p.hasGuessed ? '✅' : '⏳';
+
+      chip.append(dot, name, icon);
+      status.appendChild(chip);
+    });
   }
 }
 
