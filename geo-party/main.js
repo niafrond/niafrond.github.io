@@ -62,15 +62,19 @@ async function renderForRole(s, asHost) {
       break;
 
     case PHASES.GUESSING: {
+      const isNewRound = s.currentRound !== _lastGuessRound;
+      if (isNewRound) {
+        _lastGuessRound   = s.currentRound;
+        _myGuessConfirmed = false;
+        _pendingGuess     = null;
+        _collapseMap();
+      }
       showScreen('screen-round');
       renderRound(s);
-      _myGuessConfirmed = false;
-      _pendingGuess     = null;
-      _collapseMap();
       if (!_guessMapReady) {
         _guessMapReady = true;
         await initGuessMap(_onMapClick);
-      } else {
+      } else if (isNewRound) {
         resetGuessMap();
       }
       // Sync token de l'hôte (reçu via snapshot pour les clients)
@@ -105,6 +109,7 @@ let _guessMapReady      = false;
 let _myGuessConfirmed   = false;
 let _pendingGuess       = null; // { lat, lng }
 let _mapExpanded        = false;
+let _lastGuessRound     = 0;   // détecte les transitions de manche
 
 function _onMapClick(lat, lng) {
   if (_myGuessConfirmed) return;
@@ -165,7 +170,18 @@ function _toggleMap(e) {
 // ─── Timer bar HOST ────────────────────────────────────────────────────────────
 
 function _onTick(value, kind) {
-  if (kind === 'round') updateTimerBar(value, state.timerDuration);
+  if (kind === 'round') {
+    updateTimerBar(value, state.timerDuration);
+    // Auto-soumettre le pari en attente du HOST quand le chrono atteint 0
+    if (value === 0 && !_myGuessConfirmed) {
+      const coords = _pendingGuess || getGuessCoords();
+      if (coords) {
+        _myGuessConfirmed = true;
+        _updateConfirmBtn();
+        submitGuess(HOST_ID, coords.lat, coords.lng);
+      }
+    }
+  }
   if (kind === 'countdown') {
     const numEl = el('pre-round-number');
     if (numEl) numEl.textContent = value;
@@ -358,6 +374,15 @@ async function initClientFlow(hostId) {
       } else if (data.type === MSG.TICK) {
         state.timeLeft = data.timeLeft;
         updateTimerBar(data.timeLeft, state.timerDuration);
+        // Auto-soumettre le pari en attente du CLIENT quand le chrono atteint 0
+        if (data.timeLeft === 0 && !_myGuessConfirmed && state.phase === PHASES.GUESSING) {
+          const coords = _pendingGuess || getGuessCoords();
+          if (coords) {
+            _myGuessConfirmed = true;
+            _updateConfirmBtn();
+            peer.sendToHost({ type: MSG.GUESS, lat: coords.lat, lng: coords.lng });
+          }
+        }
       }
     });
 
@@ -408,7 +433,10 @@ function _wireActions() {
 
     state.mapillaryToken = token || null;
     setMapillaryToken(token);
-    _guessMapReady = false;
+    _guessMapReady  = false;
+    _lastGuessRound = 0;
+    _myGuessConfirmed = false;
+    _pendingGuess     = null;
     restartGame(locs);
   });
 
