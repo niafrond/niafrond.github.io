@@ -275,21 +275,35 @@ function _startGuessing() {
 
     if (state.timeLeft <= 0) {
       _stopTimer();
-      _endRound();
+      // Précaution : submitGuess() peut avoir déjà appelé _endRound() et changé la phase
+      if (state.phase === PHASES.GUESSING) _endRound();
     }
   }, 1000);
 }
 
 /** Un joueur soumet son pari (host ou client). */
 export function submitGuess(playerId, lat, lng) {
-  if (state.phase !== PHASES.GUESSING) return;
+  const inGuessing = state.phase === PHASES.GUESSING;
+  const inResults  = state.phase === PHASES.RESULTS;
+  if (!inGuessing && !inResults) return;
   const player = state.players.find(p => p.id === playerId);
   if (!player || player.hasGuessed) return;
 
   player.guess      = { lat, lng };
   player.hasGuessed = true;
 
-  // Vérifier si tout le monde a deviné
+  if (inResults) {
+    // Pari tardif reçu après la fin du chrono : recalcule le score de ce joueur
+    const loc         = state.currentLocation;
+    const dist        = haversineKm(player.guess.lat, player.guess.lng, loc.lat, loc.lng);
+    player.guessDistance = dist;
+    player.guessScore    = calcScore(dist);
+    player.score        += player.guessScore;
+    _syncAll(true);
+    return;
+  }
+
+  // Phase GUESSING normale
   const allGuessed = state.players.every(p => p.hasGuessed);
   if (allGuessed) {
     _stopTimer();
