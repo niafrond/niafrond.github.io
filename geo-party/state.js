@@ -5,6 +5,7 @@ export const STORAGE_KEY_TOKEN    = 'geoparty_mapillary_token';
 // ─── Constantes ─────────────────────────────────────────────────────────────
 export const TIMER_DEFAULT  = 60;
 export const ROUNDS_DEFAULT = 5;
+export const REGION_DEFAULT = 'monde';
 export const MAX_SCORE_PER_ROUND = 5000;
 export const RESULTS_DISPLAY_SEC = 8; // secondes d'affichage des résultats
 
