@@ -29,7 +29,7 @@ import {
 }                               from './ui.js';
 import { getMuted, setMuted }   from './sound.js';
 import { getVersion }           from './version.js';
-import { pickLocations }        from './locations.js';
+import { pickLocations, LOCATIONS } from './locations.js';
 import {
   installPwa, initAutoFullscreen, initServiceWorker, toggleFullscreen,
 }                               from './pwa.js';
@@ -174,9 +174,6 @@ function _onTick(value, kind) {
 
 // ─── Pré-chargement des panoramas (lobby) ─────────────────────────────────────
 
-/** Nombre de lieux candidats supplémentaires pour garantir assez de panoramas viables. */
-const EXTRA_LOC_CANDIDATES = 8;
-
 let _preloadPromise = null; // Promise<object[]>
 let _preloadRounds  = null;
 let _preloadToken   = null;
@@ -185,7 +182,7 @@ let _preloadToken   = null;
 function _startPreload(rounds, token) {
   _preloadRounds  = rounds;
   _preloadToken   = token;
-  const rawLocs   = pickLocations(rounds + EXTRA_LOC_CANDIDATES);
+  const rawLocs   = pickLocations(LOCATIONS.length);
   _preloadPromise = prepareRoundLocations(rawLocs, rounds, token);
 
   // Mettre à jour l'indicateur de statut dans le lobby
@@ -211,7 +208,7 @@ async function _getLocations(rounds, token) {
     _preloadPromise = null; // consommer le cache
     return locs;
   }
-  const rawLocs = pickLocations(rounds + EXTRA_LOC_CANDIDATES);
+  const rawLocs = pickLocations(LOCATIONS.length);
   return prepareRoundLocations(rawLocs, rounds, token);
 }
 
@@ -400,7 +397,7 @@ function _wireActions() {
     const btn = el('btn-replay');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Chargement…'; }
 
-    const rawLocs = pickLocations(rounds + EXTRA_LOC_CANDIDATES);
+    const rawLocs = pickLocations(LOCATIONS.length);
     const locs    = await prepareRoundLocations(rawLocs, rounds, token);
 
     if (btn) { btn.disabled = false; btn.textContent = '🔄 Rejouer'; }
