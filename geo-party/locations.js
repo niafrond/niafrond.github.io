@@ -485,7 +485,7 @@ export const LOCATIONS = [
  * @returns {object[]}
  */
 export function pickLocations(n, region = 'monde') {
-  const arr = region && region !== 'monde'
+  const arr = region !== 'monde'
     ? LOCATIONS.filter(l => l.region === region)
     : [...LOCATIONS];
   for (let i = arr.length - 1; i > 0; i--) {

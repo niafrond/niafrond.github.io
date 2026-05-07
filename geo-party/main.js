@@ -272,9 +272,14 @@ function _saveSettings() {
     .sort((a, b) => a - b);
   const maxRounds = _getMaxRoundsForRegion(region);
   const allowedRounds = roundsOptions.filter(v => v <= maxRounds);
-  const rounds = allowedRounds.includes(requestedRounds)
-    ? requestedRounds
-    : ((allowedRounds.length ? allowedRounds[allowedRounds.length - 1] : null) ?? roundsOptions[0]);
+  let rounds = requestedRounds;
+  if (!allowedRounds.includes(requestedRounds)) {
+    if (allowedRounds.length) {
+      rounds = allowedRounds[allowedRounds.length - 1];
+    } else {
+      rounds = roundsOptions[0];
+    }
+  }
   if (rounds !== requestedRounds) roundsSelect.value = String(rounds);
   const token  = el('input-mapillary-token').value.trim();
   localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify({ name, timer, rounds, region }));
