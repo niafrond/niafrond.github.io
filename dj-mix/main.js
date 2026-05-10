@@ -93,9 +93,8 @@ const clearQueueBtn  = document.getElementById('clear-queue-btn');
 // OAuth (PKCE) flow
 oauthBtn.addEventListener('click', async () => {
   hideSetupError();
-  const redirectUri = window.location.origin + window.location.pathname;
   try {
-    await auth.startPKCE(DEFAULT_CLIENT_ID, redirectUri);
+    await auth.startPKCE(DEFAULT_CLIENT_ID);
   } catch (err) {
     showSetupError(err.message);
   }

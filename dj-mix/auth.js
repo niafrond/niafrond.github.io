@@ -15,6 +15,23 @@ const SCOPES = [
   'user-modify-playback-state',
 ].join(' ');
 
+/**
+ * Build the redirect URI that must be registered in the Spotify dashboard.
+ * Spotify only accepts HTTPS URIs or http://localhost (exception for local dev).
+ * When running on plain HTTP from any other hostname (e.g. an IP address or a
+ * machine name), we swap the host to "localhost" so the redirect is accepted.
+ * The page must be accessible on localhost with the same port for this to work.
+ */
+function resolveRedirectUri() {
+  const loc = window.location;
+  if (loc.protocol === 'https:' || loc.hostname === 'localhost') {
+    return loc.origin + loc.pathname;
+  }
+  // Plain HTTP on a non-localhost host → use localhost with the same port
+  const port = loc.port ? `:${loc.port}` : '';
+  return `http://localhost${port}${loc.pathname}`;
+}
+
 const LS = {
   clientId:     'djmix_client_id',
   accessToken:  'djmix_access_token',
@@ -43,6 +60,7 @@ export class SpotifyAuth {
   async startPKCE(clientId, redirectUri) {
     const verifier   = generateVerifier();
     const challenge  = await generateChallenge(verifier);
+    const redirect   = redirectUri ?? resolveRedirectUri();
 
     localStorage.setItem(LS.clientId, clientId);
     sessionStorage.setItem(SS_VERIFIER, verifier);
@@ -51,7 +69,7 @@ export class SpotifyAuth {
     url.searchParams.set('response_type',          'code');
     url.searchParams.set('client_id',              clientId);
     url.searchParams.set('scope',                  SCOPES);
-    url.searchParams.set('redirect_uri',           redirectUri);
+    url.searchParams.set('redirect_uri',           redirect);
     url.searchParams.set('code_challenge_method',  'S256');
     url.searchParams.set('code_challenge',         challenge);
 
@@ -81,7 +99,7 @@ export class SpotifyAuth {
     if (!verifier) throw new Error('Code verifier manquant – recommencez la connexion.');
 
     const clientId    = this.clientId;
-    const redirectUri = window.location.origin + window.location.pathname;
+    const redirectUri = resolveRedirectUri();
 
     const res = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
