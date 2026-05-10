@@ -61,7 +61,7 @@ export class SpotifyAPI {
    * @returns {Promise<SpotifyTrack[]>}
    */
   async getPlaylistTracks(playlistId) {
-    const data = await this.#get(`/playlists/${playlistId}/tracks?limit=100${this.#mkMarket()}`);
+    const data = await this.#get(`/playlists/${playlistId}/items?limit=100${this.#mkMarket()}`);
     return data.items
       .filter(item => item.track && item.track.type === 'track')
       .map(item => item.track);
