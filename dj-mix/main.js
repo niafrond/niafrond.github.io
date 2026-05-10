@@ -18,6 +18,7 @@ const queue = [];
 let currentIndex = -1;  // index of the currently playing track
 let isPlaying = false;
 let searchTimeout = null;
+let pendingAutoplay = false; // true if a track was queued before player was ready
 
 // ── DOM refs ─────────────────────────────────────────────
 const setupScreen    = document.getElementById('setup-screen');
@@ -203,9 +204,18 @@ async function connectWithAuth() {
 // ── Player events ─────────────────────────────────────────
 
 function hookPlayerEvents() {
-  player.addEventListener('ready', () => {
+  player.addEventListener('ready', async () => {
     playPauseBtn.disabled = false;
     showToast('✓ Platines prêtes');
+    if (pendingAutoplay && currentIndex >= 0 && queue[currentIndex]) {
+      pendingAutoplay = false;
+      try {
+        await player.play(queue[currentIndex].uri);
+        isPlaying = true;
+        playIcon.textContent = '⏸';
+        updateNowPlaying(queue[currentIndex]);
+      } catch (e) { showToast(`⚠️ ${e.message}`, true); }
+    }
   });
 
   player.addEventListener('statechange', ({ detail }) => {
@@ -380,6 +390,8 @@ async function loadPlaylists() {
                 playIcon.textContent = '⏸';
                 updateNowPlaying(queue[0]);
               } catch (e) { /* player not ready, user can press play */ }
+            } else {
+              pendingAutoplay = true;
             }
           }
           showToast(`✔ ${tracks.length} titres chargés`);
@@ -512,6 +524,8 @@ async function addToQueue(track) {
       } catch (e) {
         showToast(`⚠️ ${e.message}`, true);
       }
+    } else {
+      pendingAutoplay = true;
     }
   }
 
