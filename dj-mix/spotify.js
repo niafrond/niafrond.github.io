@@ -45,7 +45,7 @@ export class SpotifyAPI {
    */
   async search(query) {
     const q = encodeURIComponent(query.trim());
-    const data = await this.#get(`/search?q=${q}&type=track&limit=20&offset=0${this.#mkMarket()}`);
+    const data = await this.#get(`/search?q=${q}&type=track${this.#mkMarket()}`);
     return data.tracks.items;
   }
 
