@@ -41,11 +41,11 @@ export class SpotifyAPI {
   /**
    * Search for tracks on Spotify.
    * @param {string} query
-   * @returns {Promise<SpotifyTrack[]>} up to 15 results
+   * @returns {Promise<SpotifyTrack[]>} up to 20 results
    */
   async search(query) {
     const q = encodeURIComponent(query.trim());
-    const data = await this.#get(`/search?q=${q}&type=track&limit=15${this.#mkMarket()}`);
+    const data = await this.#get(`/search?q=${q}&type=track&limit=20&offset=0${this.#mkMarket()}`);
     return data.tracks.items;
   }
 
