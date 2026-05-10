@@ -58,6 +58,20 @@ export class SpotifyAuth {
    * @param {string} redirectUri  Must be registered in the Spotify app dashboard.
    */
   async startPKCE(clientId, redirectUri) {
+    // Spotify only accepts HTTPS or http://localhost.
+    // If we're on plain HTTP with a non-localhost host (e.g. an IP address),
+    // the verifier stored in sessionStorage won't survive the redirect back
+    // because localhost is a different origin. Solution: bounce to localhost
+    // first so the entire PKCE flow (start + callback) shares one origin.
+    const loc = window.location;
+    if (loc.protocol !== 'https:' && loc.hostname !== 'localhost') {
+      const bounced = new URL(loc.href);
+      bounced.hostname = 'localhost';
+      bounced.searchParams.set('_init_pkce', '1');
+      window.location.href = bounced.toString();
+      return;
+    }
+
     const verifier   = generateVerifier();
     const challenge  = await generateChallenge(verifier);
     const redirect   = redirectUri ?? resolveRedirectUri();
