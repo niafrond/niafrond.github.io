@@ -68,11 +68,14 @@ input {
 /* ── Setup screen ─────────────────────────────────────── */
 #setup-screen {
   min-height: 100dvh;
-  display: flex !important;
   align-items: center;
   justify-content: center;
   padding: 24px 20px;
   background: radial-gradient(ellipse at 50% 0%, #1a1a2e 0%, var(--bg) 70%);
+}
+
+#setup-screen.active {
+  display: flex;
 }
 
 .setup-container {
@@ -436,6 +439,12 @@ input {
   padding: 16px 16px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+}
+
+.playlist-overlay-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .playlist-overlay-title {

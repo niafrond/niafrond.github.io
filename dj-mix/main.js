@@ -56,10 +56,11 @@ const queueList      = document.getElementById('queue-list');
 const emptyQueue     = document.getElementById('empty-queue');
 const clearQueueBtn  = document.getElementById('clear-queue-btn');
 
-const playlistBtn      = document.getElementById('playlist-btn');
-const playlistOverlay  = document.getElementById('playlist-overlay');
-const playlistCloseBtn = document.getElementById('playlist-close-btn');
-const playlistListEl   = document.getElementById('playlist-list');
+const playlistBtn       = document.getElementById('playlist-btn');
+const playlistOverlay   = document.getElementById('playlist-overlay');
+const playlistCloseBtn  = document.getElementById('playlist-close-btn');
+const playlistLogoutBtn = document.getElementById('playlist-logout-btn');
+const playlistListEl    = document.getElementById('playlist-list');
 
 // ── Boot ─────────────────────────────────────────────────
 (async function init() {
@@ -131,7 +132,7 @@ tokenBtn.addEventListener('click', async () => {
 });
 
 // Logout
-logoutBtn?.addEventListener('click', () => {
+logoutBtn?.addEventListener('click', async () => {
   auth.logout();
   player?.destroy();
   player = null;
@@ -139,7 +140,8 @@ logoutBtn?.addEventListener('click', () => {
   queue.length = 0;
   currentIndex = -1;
   isPlaying = false;
-  showSetup();
+  // Relancer directement l'auth Spotify
+  await auth.startPKCE(DEFAULT_CLIENT_ID);
 });
 
 // ── Connect with stored auth ──────────────────────────────
@@ -284,6 +286,14 @@ crossfadeSlider.addEventListener('input', () => {
 // Playlist picker
 playlistBtn.addEventListener('click', openPlaylistPicker);
 playlistCloseBtn.addEventListener('click', () => { playlistOverlay.hidden = true; });
+playlistLogoutBtn.addEventListener('click', async () => {
+  playlistOverlay.hidden = true;
+  auth.logout();
+  player?.destroy();
+  player = null; api = null;
+  queue.length = 0; currentIndex = -1; isPlaying = false;
+  await auth.startPKCE(DEFAULT_CLIENT_ID);
+});
 
 async function openPlaylistPicker() {
   playlistOverlay.hidden = false;
