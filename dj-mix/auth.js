@@ -16,20 +16,15 @@ const SCOPES = [
 ].join(' ');
 
 /**
- * Build the redirect URI that must be registered in the Spotify dashboard.
- * Spotify only accepts HTTPS URIs or http://localhost (exception for local dev).
- * When running on plain HTTP from any other hostname (e.g. an IP address or a
- * machine name), we swap the host to "localhost" so the redirect is accepted.
- * The page must be accessible on localhost with the same port for this to work.
+ * Build the redirect URI that must match exactly what is registered in the
+ * Spotify dashboard. We always use the current origin so that the redirect
+ * comes back to the same page regardless of how the app is accessed
+ * (https://niafrond.github.io, http://localhost:8080, http://172.x.x.x:8080…).
+ * Register every URL you use in your Spotify app's Redirect URIs list.
  */
 function resolveRedirectUri() {
   const loc = window.location;
-  if (loc.protocol === 'https:' || loc.hostname === 'localhost') {
-    return loc.origin + loc.pathname;
-  }
-  // Plain HTTP on a non-localhost host → use localhost with the same port
-  const port = loc.port ? `:${loc.port}` : '';
-  return `http://localhost${port}${loc.pathname}`;
+  return loc.origin + loc.pathname;
 }
 
 const LS = {
@@ -58,20 +53,8 @@ export class SpotifyAuth {
    * @param {string} redirectUri  Must be registered in the Spotify app dashboard.
    */
   async startPKCE(clientId, redirectUri) {
-    // Spotify only accepts HTTPS or http://localhost.
-    // If we're on plain HTTP with a non-localhost host (e.g. an IP address),
-    // the verifier stored in sessionStorage won't survive the redirect back
-    // because localhost is a different origin. Solution: bounce to localhost
-    // first so the entire PKCE flow (start + callback) shares one origin.
-    const loc = window.location;
-    if (loc.protocol !== 'https:' && loc.hostname !== 'localhost') {
-      const bounced = new URL(loc.href);
-      bounced.hostname = 'localhost';
-      bounced.searchParams.set('_init_pkce', '1');
-      window.location.href = bounced.toString();
-      return;
-    }
-
+    // No bounce needed: we always redirect back to the current origin, so
+    // sessionStorage is preserved across start → Spotify login → callback.
     const verifier   = generateVerifier();
     const challenge  = await generateChallenge(verifier);
     const redirect   = redirectUri ?? resolveRedirectUri();
