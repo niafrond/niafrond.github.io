@@ -127,17 +127,22 @@ export class DJPlayer extends EventTarget {
     const from = this.#activePlayer;
     const to = this.#inactivePlayer;
 
+    if (!from || !this.#activeDevice) {
+      this.#isCrossfading = false;
+      throw new Error('Cannot crossfade: active deck unavailable');
+    }
+
     // FIX B — Resolve the inactive device ID before attempting crossfade.
     // If the inactive deck went offline (not_ready) since last use, its device_id
     // may be stale or null. We force a reconnect and wait for the new device_id.
     let toDevice = this.#inactiveDevice;
-    if (!toDevice) {
+    if (!to || !toDevice) {
       console.warn('Inactive deck has no device ID — forcing reconnect…');
       try {
         toDevice = await this.#reconnectDeck(to, this.#active === 'A' ? 'B' : 'A');
       } catch (err) {
-        this.#isCrossfading = false;
-        throw new Error(`Cannot crossfade: inactive deck failed to reconnect (${err.message})`);
+        await this.#fallbackSwitchOnActiveDeck(uri, `inactive deck failed to reconnect (${err.message})`);
+        return;
       }
     }
 
@@ -189,8 +194,7 @@ export class DJPlayer extends EventTarget {
         }, stepMs);
       });
     } catch (err) {
-      this.#isCrossfading = false;
-      throw err;
+      await this.#fallbackSwitchOnActiveDeck(uri, err.message);
     }
   }
 
@@ -351,6 +355,22 @@ export class DJPlayer extends EventTarget {
   #isActive(player) {
     return (this.#active === 'A' && player === this.#playerA)
         || (this.#active === 'B' && player === this.#playerB);
+  }
+
+  async #fallbackSwitchOnActiveDeck(uri, reason) {
+    console.warn(`Crossfade fallback on active deck: ${reason}`);
+    const activePlayer = this.#activePlayer;
+    const activeDevice = this.#activeDevice;
+    if (!activePlayer || !activeDevice) {
+      this.#isCrossfading = false;
+      throw new Error(`Cannot play fallback: ${reason}`);
+    }
+    await activePlayer.setVolume(1);
+    await this.#playOnDevice(activeDevice, uri);
+    this.#currentTrackUri = uri;
+    this.#crossfadeNotified = false;
+    this.#trackEndNotified = false;
+    this.#isCrossfading = false;
   }
 
   async #playOnDevice(deviceId, uri) {
