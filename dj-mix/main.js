@@ -56,11 +56,44 @@ const queueList      = document.getElementById('queue-list');
 const emptyQueue     = document.getElementById('empty-queue');
 const clearQueueBtn  = document.getElementById('clear-queue-btn');
 
-const playlistBtn       = document.getElementById('playlist-btn');
-const playlistOverlay   = document.getElementById('playlist-overlay');
-const playlistCloseBtn  = document.getElementById('playlist-close-btn');
-const playlistLogoutBtn = document.getElementById('playlist-logout-btn');
 const playlistListEl    = document.getElementById('playlist-list');
+
+// Backward-compat stubs (elements removed from HTML, listeners guarded with ?.)
+const playlistBtn       = null;
+const playlistOverlay   = null;
+const playlistCloseBtn  = null;
+const playlistLogoutBtn = null;
+
+// ── Tab navigation ────────────────────────────────────────
+const tabBtns = document.querySelectorAll('.tab-bar-btn');
+const tabPanels = {
+  mix:      document.getElementById('tab-mix'),
+  playlist: document.getElementById('tab-playlist'),
+  config:   document.getElementById('tab-config'),
+};
+let activeTab = 'mix';
+let playlistLoaded = false;
+
+function switchTab(name) {
+  tabBtns.forEach(btn => {
+    const on = btn.dataset.tab === name;
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  Object.entries(tabPanels).forEach(([key, panel]) => {
+    const on = key === name;
+    panel.classList.toggle('active', on);
+    panel.hidden = !on;
+  });
+  activeTab = name;
+  if (name === 'playlist' && !playlistLoaded) {
+    loadPlaylists();
+  }
+}
+
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
 
 // ── Boot ─────────────────────────────────────────────────
 (async function init() {
@@ -140,6 +173,8 @@ function doLogout() {
   queue.length = 0;
   currentIndex = -1;
   isPlaying = false;
+  playlistLoaded = false;
+  switchTab('mix');
   showSetup();
 }
 logoutBtn?.addEventListener('click', doLogout);
@@ -284,18 +319,17 @@ crossfadeSlider.addEventListener('input', () => {
 });
 
 // Playlist picker
-playlistBtn.addEventListener('click', openPlaylistPicker);
-playlistCloseBtn.addEventListener('click', () => { playlistOverlay.hidden = true; });
-playlistLogoutBtn.addEventListener('click', () => {
+playlistCloseBtn?.addEventListener('click', () => { playlistOverlay.hidden = true; });
+playlistLogoutBtn?.addEventListener('click', () => {
   playlistOverlay.hidden = true;
   doLogout();
 });
 
-async function openPlaylistPicker() {
-  playlistOverlay.hidden = false;
+async function loadPlaylists() {
   playlistListEl.innerHTML = '<div class="search-loading">🎵 Chargement…</div>';
   try {
     const playlists = await api.getMyPlaylists();
+    playlistLoaded = true;
     if (!playlists.length) {
       playlistListEl.innerHTML = '<div class="search-empty">Aucune playlist trouvée</div>';
       return;
@@ -320,7 +354,8 @@ async function openPlaylistPicker() {
         playlistListEl.innerHTML = '<div class="search-loading">⏳ Chargement des titres…</div>';
         try {
           const tracks = await api.getPlaylistTracks(playlistId);
-          playlistOverlay.hidden = true;
+          switchTab('mix');
+          playlistLoaded = false; // force refresh on next visit
           // Add all tracks silently; only play the first if queue was empty
           const wasEmpty = currentIndex < 0;
           tracks.forEach(t => {

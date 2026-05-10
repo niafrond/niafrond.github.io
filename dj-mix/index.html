@@ -55,108 +55,128 @@
 
   <!-- ── Main App Screen ────────────────────────────────── -->
   <div id="app-screen" class="screen" hidden>
-    <!-- User header -->
+
+    <!-- Compact header -->
     <div class="app-header">
       <div class="app-header-user">
         <img id="user-avatar" class="user-avatar" src="" alt="" hidden>
         <span id="user-name" class="user-name"></span>
       </div>
-      <button id="logout-btn" class="logout-btn" title="Se déconnecter" aria-label="Déconnexion">↩ Déconnexion</button>
     </div>
-    <!-- Search bar (sticky) -->
+
+    <!-- Search bar (always visible, above tab panels) -->
     <div class="search-bar">
-      <div class="search-row">
-        <div class="search-input-wrapper">
-          <span class="search-icon">🔍</span>
-          <input type="search" id="search-input" placeholder="Rechercher une chanson…" autocomplete="off">
-          <button id="search-clear" class="search-clear" hidden aria-label="Effacer">✕</button>
-        </div>
-        <button id="playlist-btn" class="playlist-btn" aria-label="Charger une playlist" title="Mes playlists">📂</button>
+      <div class="search-input-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="search" id="search-input" placeholder="Rechercher une chanson…" autocomplete="off">
+        <button id="search-clear" class="search-clear" hidden aria-label="Effacer">✕</button>
       </div>
     </div>
 
-    <!-- Search results overlay -->
+    <!-- Tab panels -->
+    <div class="tab-panels">
+
+      <!-- ── Mix tab ── -->
+      <div id="tab-mix" class="tab-panel active">
+        <!-- Player -->
+        <div class="player-section">
+          <div class="now-playing">
+            <div class="album-art-wrapper">
+              <img id="album-art" src="" alt="" class="album-art" hidden>
+              <div class="album-art-placeholder" id="art-placeholder">🎵</div>
+              <div class="crossfade-ring" id="crossfade-ring" hidden></div>
+            </div>
+            <div class="track-info">
+              <div id="track-name" class="track-name">Aucune chanson</div>
+              <div id="track-artist" class="track-artist">Ajoutez des chansons à la file d'attente</div>
+            </div>
+          </div>
+          <div class="progress-section">
+            <div class="progress-bar-bg">
+              <div class="crossfade-zone" id="crossfade-zone"></div>
+              <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="time-labels">
+              <span id="current-time">0:00</span>
+              <span id="total-time">0:00</span>
+            </div>
+          </div>
+          <div class="controls">
+            <button class="ctrl-btn" id="prev-btn" title="Précédent" aria-label="Précédent">⏮</button>
+            <button class="ctrl-btn play-btn" id="play-pause-btn" title="Play/Pause" aria-label="Play/Pause">
+              <span id="play-icon">▶</span>
+            </button>
+            <button class="ctrl-btn fade-btn" id="next-btn" title="Crossfade vers le suivant" aria-label="Crossfade suivant">
+              <span>⏭</span>
+              <span class="fade-label">Fade</span>
+            </button>
+          </div>
+        </div>
+        <!-- Queue -->
+        <div class="queue-section">
+          <div class="queue-header">
+            <h2 class="queue-title">File d'attente</h2>
+            <button id="clear-queue-btn" class="clear-btn">Vider</button>
+          </div>
+          <div id="queue-list" class="queue-list">
+            <div class="empty-queue" id="empty-queue">
+              <div class="empty-icon">🎶</div>
+              <p>Recherchez des chansons pour les ajouter</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Playlist tab ── -->
+      <div id="tab-playlist" class="tab-panel" hidden>
+        <div class="panel-header">
+          <h2 class="panel-title">Mes playlists</h2>
+        </div>
+        <div id="playlist-list" class="playlist-list"></div>
+      </div>
+
+      <!-- ── Config tab ── -->
+      <div id="tab-config" class="tab-panel" hidden>
+        <div class="panel-header">
+          <h2 class="panel-title">Configuration</h2>
+        </div>
+        <div class="config-section">
+          <div class="config-block">
+            <div class="config-label">
+              <span class="fade-wave">〜〜</span>
+              <span>Crossfade</span>
+              <span id="crossfade-value" class="crossfade-value">5s</span>
+            </div>
+            <input type="range" id="crossfade-slider" min="1" max="15" value="5" class="fade-slider" aria-label="Durée du crossfade">
+          </div>
+          <div class="config-block">
+            <button id="logout-btn" class="logout-btn--full">↩ Se déconnecter</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Search results overlay (full screen, above tab panels) -->
     <div id="search-overlay" class="search-overlay" hidden>
       <div id="search-results" class="search-results"></div>
     </div>
 
-    <!-- Playlist picker overlay -->
-    <div id="playlist-overlay" class="playlist-overlay" hidden>
-      <div class="playlist-overlay-header">
-        <h2 class="playlist-overlay-title">Mes playlists</h2>
-        <div class="playlist-overlay-actions">
-          <button id="playlist-logout-btn" class="logout-btn" title="Se déconnecter">↩ Déco</button>
-          <button id="playlist-close-btn" class="overlay-close-btn">✕</button>
-        </div>
-      </div>
-      <div id="playlist-list" class="playlist-list"></div>
-    </div>
-
-    <!-- Player -->
-    <div class="player-section">
-
-      <!-- Album art + track info -->
-      <div class="now-playing">
-        <div class="album-art-wrapper">
-          <img id="album-art" src="" alt="" class="album-art" hidden>
-          <div class="album-art-placeholder" id="art-placeholder">🎵</div>
-          <div class="crossfade-ring" id="crossfade-ring" hidden></div>
-        </div>
-        <div class="track-info">
-          <div id="track-name" class="track-name">Aucune chanson</div>
-          <div id="track-artist" class="track-artist">Ajoutez des chansons à la file d'attente</div>
-        </div>
-      </div>
-
-      <!-- Progress bar -->
-      <div class="progress-section">
-        <div class="progress-bar-bg">
-          <div class="crossfade-zone" id="crossfade-zone"></div>
-          <div class="progress-fill" id="progress-fill"></div>
-        </div>
-        <div class="time-labels">
-          <span id="current-time">0:00</span>
-          <span id="total-time">0:00</span>
-        </div>
-      </div>
-
-      <!-- Playback controls -->
-      <div class="controls">
-        <button class="ctrl-btn" id="prev-btn" title="Précédent" aria-label="Précédent">⏮</button>
-        <button class="ctrl-btn play-btn" id="play-pause-btn" title="Play/Pause" aria-label="Play/Pause">
-          <span id="play-icon">▶</span>
-        </button>
-        <button class="ctrl-btn fade-btn" id="next-btn" title="Crossfade vers le suivant" aria-label="Crossfade suivant">
-          <span>⏭</span>
-          <span class="fade-label">Fade</span>
-        </button>
-      </div>
-
-      <!-- Crossfade duration slider -->
-      <div class="crossfade-control">
-        <div class="crossfade-row">
-          <span class="fade-wave">〜〜</span>
-          <span>Crossfade</span>
-          <span id="crossfade-value" class="crossfade-value">5s</span>
-        </div>
-        <input type="range" id="crossfade-slider" min="1" max="15" value="5" class="fade-slider" aria-label="Durée du crossfade">
-      </div>
-
-    </div>
-
-    <!-- Queue -->
-    <div class="queue-section">
-      <div class="queue-header">
-        <h2 class="queue-title">File d'attente</h2>
-        <button id="clear-queue-btn" class="clear-btn">Vider</button>
-      </div>
-      <div id="queue-list" class="queue-list">
-        <div class="empty-queue" id="empty-queue">
-          <div class="empty-icon">🎶</div>
-          <p>Recherchez des chansons pour les ajouter</p>
-        </div>
-      </div>
-    </div>
+    <!-- Bottom tab bar -->
+    <nav class="tab-bar" aria-label="Navigation principale">
+      <button class="tab-bar-btn active" data-tab="mix" aria-selected="true">
+        <span class="tab-icon">🎚️</span>
+        <span class="tab-label">Mix</span>
+      </button>
+      <button class="tab-bar-btn" data-tab="playlist" aria-selected="false">
+        <span class="tab-icon">📂</span>
+        <span class="tab-label">Playlists</span>
+      </button>
+      <button class="tab-bar-btn" data-tab="config" aria-selected="false">
+        <span class="tab-icon">⚙️</span>
+        <span class="tab-label">Config</span>
+      </button>
+    </nav>
 
   </div>
 
