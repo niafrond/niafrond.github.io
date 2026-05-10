@@ -20,6 +20,26 @@ let isPlaying = false;
 let searchTimeout = null;
 let pendingAutoplay = false; // true if a track was queued before player was ready
 
+// ── Queue persistence ─────────────────────────────────────
+const QUEUE_KEY = 'dj-mix:queue';
+
+function saveQueue() {
+  try {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify({ items: queue, index: currentIndex }));
+  } catch (_) { /* quota exceeded */ }
+}
+
+function restoreQueue() {
+  try {
+    const raw = localStorage.getItem(QUEUE_KEY);
+    if (!raw) return;
+    const { items, index } = JSON.parse(raw);
+    if (!Array.isArray(items) || !items.length) return;
+    queue.push(...items);
+    currentIndex = typeof index === 'number' ? index : 0;
+  } catch (_) { /* données corrompues, on ignore */ }
+}
+
 // ── DOM refs ─────────────────────────────────────────────
 const setupScreen    = document.getElementById('setup-screen');
 const appScreen      = document.getElementById('app-screen');
@@ -175,6 +195,7 @@ function doLogout() {
   currentIndex = -1;
   isPlaying = false;
   playlistLoaded = false;
+  localStorage.removeItem(QUEUE_KEY);
   switchTab('mix');
   showSetup();
 }
@@ -538,6 +559,7 @@ async function addToQueue(track) {
 }
 
 function renderQueue() {
+  saveQueue();
   if (!queue.length) {
     queueList.innerHTML = '';
     queueList.appendChild(emptyQueue);
@@ -674,6 +696,9 @@ function showApp(me) {
     }
     if (userName) userName.textContent = me.display_name ?? me.id;
   }
+
+  // Restore queue from previous session if any
+  restoreQueue();
 
   // Init UI state
   renderQueue();
