@@ -49,10 +49,10 @@ export class SpotifyAPI {
     return data.tracks.items;
   }
 
-  /** Fetch the current user’s playlists (up to 50). */
+  /** Fetch the current user's playlists with track count (up to 50). */
   async getMyPlaylists() {
-    const data = await this.#get('/me/playlists?limit=50');
-    return data.items;
+    const data = await this.#get('/me/playlists?limit=50&fields=items(id,name,images,tracks.total,tracks.href),total,next');
+    return (data.items ?? []).filter(Boolean);
   }
 
   /**

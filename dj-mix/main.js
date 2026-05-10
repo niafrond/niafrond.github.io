@@ -336,13 +336,14 @@ async function loadPlaylists() {
     }
     playlistListEl.innerHTML = playlists.map(pl => {
       const img   = pl.images?.[0]?.url ?? '';
-      const count = pl.tracks?.total ?? '?';
+      const total = pl.tracks?.total;
+      const count = total != null ? `${total} titre${total !== 1 ? 's' : ''}` : '';
       return `
         <div class="playlist-item" data-id="${escHtml(pl.id)}" role="button" tabindex="0">
           <img class="playlist-cover" src="${escHtml(img)}" alt="" loading="lazy">
           <div class="playlist-info">
             <div class="playlist-name">${escHtml(pl.name)}</div>
-            <div class="playlist-meta">${count} titres</div>
+            <div class="playlist-meta">${count}</div>
           </div>
           <span class="playlist-load-btn">Charger</span>
         </div>`;
