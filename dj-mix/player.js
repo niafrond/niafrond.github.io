@@ -21,6 +21,7 @@ export class DJPlayer extends EventTarget {
   #crossfadeDuration = 5000; // ms
   #isCrossfading = false;
   #crossfadeNotified = false; // guard: only fire crossfadeready once per track
+  #trackEndNotified = false;  // guard: only fire trackend once per track
   #trackInterval = null;
   #crossfadeInterval = null; // stored so destroy() can abort it
   #currentTrackUri = null;
@@ -49,7 +50,7 @@ export class DJPlayer extends EventTarget {
   // ── Initialisation ────────────────────────────────────
 
   async init() {
-    await window.spotifySDKReady;
+    console.log('Initializing DJPlayer...');
 
     const [a, b] = await Promise.all([
       this.#createDeck('DJ Mix – Deck A'),
@@ -60,8 +61,21 @@ export class DJPlayer extends EventTarget {
     this.#deviceA = a.deviceId;
     this.#playerB = b.player;
     this.#deviceB = b.deviceId;
+    console.log('DJPlayer initialized.');
 
-    // Deck A starts active at full volume; Deck B silent
+    // FIX A — Keep device IDs in sync on reconnect (ready fires with new device_id).
+    // IMPORTANT: only update on 'ready', never clear on 'not_ready' — the old
+    // device_id stays valid for a short grace period and we need it for crossfade.
+    this.#playerA.addListener('ready', ({ device_id }) => {
+      this.#deviceA = device_id;
+      console.log(`Deck A reconnected with device ID: ${device_id}`);
+    });
+    this.#playerB.addListener('ready', ({ device_id }) => {
+      this.#deviceB = device_id;
+      console.log(`Deck B reconnected with device ID: ${device_id}`);
+    });
+
+    // Deck A starts active at full volume; Deck B stays silent.
     await this.#playerA.setVolume(1);
     await this.#playerB.setVolume(0);
 
@@ -76,6 +90,7 @@ export class DJPlayer extends EventTarget {
   async play(uri) {
     this.#currentTrackUri = uri;
     this.#crossfadeNotified = false;
+    this.#trackEndNotified = false;
     await this.#activePlayer.setVolume(1);
     await this.#playOnDevice(this.#activeDevice, uri);
   }
@@ -103,19 +118,28 @@ export class DJPlayer extends EventTarget {
     const duration = durationOverride ?? this.#crossfadeDuration;
     const from = this.#activePlayer;
     const to = this.#inactivePlayer;
-    const toDevice = this.#inactiveDevice;
+
+    // FIX B — Resolve the inactive device ID before attempting crossfade.
+    // If the inactive deck went offline (not_ready) since last use, its device_id
+    // may be stale or null. We force a reconnect and wait for the new device_id.
+    let toDevice = this.#inactiveDevice;
+    if (!toDevice) {
+      console.warn('Inactive deck has no device ID — forcing reconnect…');
+      try {
+        toDevice = await this.#reconnectDeck(to, this.#active === 'A' ? 'B' : 'A');
+      } catch (err) {
+        this.#isCrossfading = false;
+        throw new Error(`Cannot crossfade: inactive deck failed to reconnect (${err.message})`);
+      }
+    }
+
+    console.log(`Crossfade: from deck ${this.#active} → to device ${toDevice}, duration ${duration} ms`);
 
     try {
       // Prime the incoming deck silently
       await to.setVolume(0);
       await this.#playOnDevice(toDevice, uri);
 
-      // Swap active deck so progress tracking follows the incoming track
-      this.#active = this.#active === 'A' ? 'B' : 'A';
-      this.#currentTrackUri = uri;
-      this.#crossfadeNotified = false;
-
-      // Run the volume crossfade with an ease-in-out curve
       const STEPS = 80;
       const stepMs = duration / STEPS;
 
@@ -130,8 +154,17 @@ export class DJPlayer extends EventTarget {
             return;
           }
           step++;
+
+          // Switch active deck on the first tick (incoming deck has had time to start)
+          if (step === 1) {
+            this.#active = this.#active === 'A' ? 'B' : 'A';
+            this.#currentTrackUri = uri;
+            this.#crossfadeNotified = false;
+            this.#trackEndNotified = false;
+          }
+
           const t = step / STEPS;
-          // Ease in-out: smooth S-curve
+          // Ease in-out S-curve
           const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
           from?.setVolume(1 - eased);
           to?.setVolume(eased);
@@ -139,7 +172,6 @@ export class DJPlayer extends EventTarget {
           if (step >= STEPS) {
             clearInterval(this.#crossfadeInterval);
             this.#crossfadeInterval = null;
-            // Ensure exact final volumes
             from?.setVolume(0);
             to?.setVolume(1);
             from?.pause();
@@ -183,10 +215,39 @@ export class DJPlayer extends EventTarget {
 
   // ── Private helpers ───────────────────────────────────
 
-  get #activePlayer() { return this.#active === 'A' ? this.#playerA : this.#playerB; }
+  get #activePlayer()  { return this.#active === 'A' ? this.#playerA : this.#playerB; }
   get #activeDevice()  { return this.#active === 'A' ? this.#deviceA : this.#deviceB; }
   get #inactivePlayer(){ return this.#active === 'A' ? this.#playerB : this.#playerA; }
   get #inactiveDevice(){ return this.#active === 'A' ? this.#deviceB : this.#deviceA; }
+
+  /**
+   * FIX B — Force a reconnect on a deck that lost its device_id.
+   * Calls player.connect() again and waits for the 'ready' event (max 8 s).
+   * Updates #deviceA / #deviceB and returns the new device_id.
+   *
+   * @param {Spotify.Player} player
+   * @param {'A'|'B'} deck
+   * @returns {Promise<string>} new device_id
+   */
+  #reconnectDeck(player, deck) {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        player.removeListener('ready', onReady);
+        reject(new Error(`Deck ${deck} reconnect timed out`));
+      }, 8000);
+
+      const onReady = ({ device_id }) => {
+        clearTimeout(timeout);
+        if (deck === 'A') this.#deviceA = device_id;
+        else              this.#deviceB = device_id;
+        console.log(`Deck ${deck} reconnected with new device ID: ${device_id}`);
+        resolve(device_id);
+      };
+
+      player.addListener('ready', onReady);
+      player.connect();
+    });
+  }
 
   /** Create a single Spotify.Player deck and return { player, deviceId }. */
   #createDeck(name) {
@@ -198,10 +259,21 @@ export class DJPlayer extends EventTarget {
       });
 
       player.addListener('ready', ({ device_id }) => {
+        console.log(`Deck "${name}" ready with device ID ${device_id}`);
         resolve({ player, deviceId: device_id });
       });
 
+      // FIX A — Do NOT clear the device_id on not_ready.
+      // Log the event for debugging but keep the last known device_id intact
+      // so crossfadeTo() can detect null and trigger #reconnectDeck.
       player.addListener('not_ready', ({ device_id }) => {
+        console.warn(`Deck "${name}" went offline (${device_id}) — device_id preserved for reconnect detection`);
+        // Intentionally NOT updating #deviceA / #deviceB here.
+        // If the deck went offline its stored device_id is now invalid;
+        // set it to null so crossfadeTo() knows it must reconnect.
+        if (name.endsWith('Deck A')) this.#deviceA = null;
+        if (name.endsWith('Deck B')) this.#deviceB = null;
+
         this.dispatchEvent(new CustomEvent('error', {
           detail: { message: `Deck "${name}" went offline (${device_id})` },
         }));
@@ -251,8 +323,9 @@ export class DJPlayer extends EventTarget {
         this.dispatchEvent(new Event('crossfadeready'));
       }
 
-      // Track ended with nothing queued / crossfade not triggered
-      if (remaining <= 100 && !this.#isCrossfading) {
+      // trackend fired at most once per track
+      if (remaining <= 100 && !this.#isCrossfading && !this.#trackEndNotified) {
+        this.#trackEndNotified = true;
         this.dispatchEvent(new Event('trackend'));
       }
     }, 300);
