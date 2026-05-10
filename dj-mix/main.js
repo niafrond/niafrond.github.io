@@ -25,11 +25,9 @@ const appScreen      = document.getElementById('app-screen');
 const setupError     = document.getElementById('setup-error');
 const setupLoading   = document.getElementById('setup-loading');
 
-const clientIdInput   = document.getElementById('client-id-input');
 const tokenInput      = document.getElementById('token-input');
 const oauthBtn        = document.getElementById('oauth-btn');
 const tokenBtn        = document.getElementById('token-btn');
-const redirectDisplay = document.getElementById('redirect-uri-display');
 const logoutBtn       = document.getElementById('logout-btn');
 const userAvatar      = document.getElementById('user-avatar');
 const userName        = document.getElementById('user-name');
@@ -60,12 +58,6 @@ const clearQueueBtn  = document.getElementById('clear-queue-btn');
 
 // ── Boot ─────────────────────────────────────────────────
 (async function init() {
-  const redirectUri = window.location.origin + window.location.pathname;
-  redirectDisplay.textContent = redirectUri;
-
-  // Pre-fill Client ID
-  clientIdInput.value = auth.clientId ?? DEFAULT_CLIENT_ID;
-
   // Handle PKCE callback (?code= in query string)
   if (window.location.search.includes('code=') || window.location.search.includes('error=')) {
     showSetupLoading(true, 'Connexion Spotify…');
@@ -98,24 +90,12 @@ const clearQueueBtn  = document.getElementById('clear-queue-btn');
 
 // ── Setup event listeners ─────────────────────────────────
 
-// Tab switching
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(`${btn.dataset.tab}-panel`).classList.add('active');
-  });
-});
-
 // OAuth (PKCE) flow
 oauthBtn.addEventListener('click', async () => {
-  const clientId = clientIdInput.value.trim() || DEFAULT_CLIENT_ID;
-  if (!clientId) { showSetupError('Entrez votre Client ID.'); return; }
   hideSetupError();
   const redirectUri = window.location.origin + window.location.pathname;
   try {
-    await auth.startPKCE(clientId, redirectUri);
+    await auth.startPKCE(DEFAULT_CLIENT_ID, redirectUri);
   } catch (err) {
     showSetupError(err.message);
   }

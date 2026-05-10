@@ -111,34 +111,6 @@ input {
   margin-top: 4px;
 }
 
-/* Tabs */
-.tab-bar {
-  display: flex;
-  background: var(--surface);
-  border-radius: var(--radius-sm);
-  padding: 4px;
-  gap: 4px;
-}
-
-.tab-btn {
-  flex: 1;
-  padding: 10px;
-  border-radius: var(--radius-xs);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-muted);
-  transition: var(--transition);
-}
-
-.tab-btn.active {
-  background: var(--surface3);
-  color: var(--text);
-}
-
-/* Auth panels */
-.auth-panel { display: none; flex-direction: column; gap: 16px; }
-.auth-panel.active { display: flex; }
-
 .form-group {
   display: flex;
   flex-direction: column;
@@ -165,28 +137,6 @@ input {
 .form-group input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-dim);
-}
-
-.hint-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.hint-box code {
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 11px;
-  background: var(--surface3);
-  padding: 2px 6px;
-  border-radius: 4px;
-  color: var(--fade);
-  word-break: break-all;
 }
 
 .connect-btn {
@@ -227,6 +177,39 @@ input {
   flex-direction: column;
   min-height: 100dvh;
   position: relative;
+}
+
+.connect-btn--secondary {
+  background: var(--surface3);
+  color: var(--text);
+  margin-top: 4px;
+}
+
+.connect-btn--secondary:hover { filter: brightness(1.15); }
+
+.manual-details {
+  width: 100%;
+}
+
+.manual-details summary {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px 0;
+  list-style: none;
+  user-select: none;
+}
+
+.manual-details summary::-webkit-details-marker { display: none; }
+
+.manual-details[open] summary { color: var(--text); }
+
+.manual-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
 }
 
 /* ── App header ───────────────────────────────────────── */

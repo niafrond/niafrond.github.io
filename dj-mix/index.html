@@ -28,38 +28,23 @@
         <p class="setup-subtitle">Spotify Crossfade Player</p>
       </div>
 
-      <div class="tab-bar">
-        <button class="tab-btn active" data-tab="oauth">Connexion</button>
-        <button class="tab-btn" data-tab="token">Token manuel</button>
-      </div>
+      <button class="connect-btn" id="oauth-btn">Se connecter avec Spotify</button>
 
-      <!-- OAuth panel -->
-      <div class="auth-panel active" id="oauth-panel">
-        <div class="form-group">
-          <label for="client-id-input">Client ID Spotify</label>
-          <input type="text" id="client-id-input" placeholder="Client ID" autocomplete="off" spellcheck="false">
+      <!-- Manual token fallback (advanced) -->
+      <details class="manual-details">
+        <summary>Token manuel (avancé)</summary>
+        <div class="manual-body">
+          <div class="form-group">
+            <label for="token-input">Access Token Spotify</label>
+            <input type="password" id="token-input" placeholder="Collez votre token ici" autocomplete="off" spellcheck="false">
+          </div>
+          <button class="connect-btn connect-btn--secondary" id="token-btn">Connecter</button>
         </div>
-        <div class="hint-box">
-          <p>Redirect URI à enregistrer dans votre app&nbsp;:</p>
-          <p><code id="redirect-uri-display"></code></p>
-          <p>⚠️ Spotify Premium requis</p>
-        </div>
-        <button class="connect-btn" id="oauth-btn">Se connecter avec Spotify</button>
-      </div>
+      </details>
 
-      <!-- Manual token panel -->
-      <div class="auth-panel" id="token-panel">
-        <div class="form-group">
-          <label for="token-input">Access Token Spotify</label>
-          <input type="password" id="token-input" placeholder="Collez votre token ici" autocomplete="off" spellcheck="false">
-        </div>
-        <div class="hint-box">
-          <p>Obtenez un token depuis la <a href="https://developer.spotify.com/console/get-search-item/" target="_blank" rel="noopener noreferrer">console Spotify</a></p>
-          <p>Scopes requis&nbsp;: <code>streaming user-read-email user-read-private user-modify-playback-state</code></p>
-          <p>⚠️ Spotify Premium requis</p>
-        </div>
-        <button class="connect-btn" id="token-btn">Connecter</button>
-      </div>
+      <!-- Hidden: kept for JS compatibility, values set by main.js -->
+      <input type="hidden" id="client-id-input">
+      <span id="redirect-uri-display" hidden></span>
 
       <div id="setup-error" class="error-msg" hidden></div>
       <div id="setup-loading" class="loading-msg" hidden>
