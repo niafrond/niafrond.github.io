@@ -203,6 +203,11 @@ async function connectWithAuth() {
 // ── Player events ─────────────────────────────────────────
 
 function hookPlayerEvents() {
+  player.addEventListener('ready', () => {
+    playPauseBtn.disabled = false;
+    showToast('✓ Platines prêtes');
+  });
+
   player.addEventListener('statechange', ({ detail }) => {
     isPlaying = !detail.paused;
     playIcon.textContent = isPlaying ? '⏸' : '▶';
@@ -658,7 +663,7 @@ function showApp(me) {
 
   // Init UI state
   renderQueue();
-  playPauseBtn.disabled = false;
+  playPauseBtn.disabled = true; // enabled once player.init() fires 'ready'
 }
 
 function showSetupError(msg) {
