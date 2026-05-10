@@ -113,7 +113,12 @@ function switchTab(name) {
 }
 
 tabBtns.forEach(btn => {
-  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    // Always reset playlist to list view on explicit tab click
+    if (tab === 'playlist') playlistLoaded = false;
+    switchTab(tab);
+  });
 });
 
 // ── Boot ─────────────────────────────────────────────────
@@ -301,6 +306,7 @@ function hookPlayerEvents() {
 // ── Playback controls ─────────────────────────────────────
 
 playPauseBtn.addEventListener('click', async () => {
+  player?.activateElement(); // unlock browser autoplay within user gesture context
   if (!player || currentIndex < 0) return;
 
   if (!isPlaying && currentIndex >= 0 && queue[currentIndex]) {
@@ -375,51 +381,63 @@ async function loadPlaylists() {
       const total = pl.tracks?.total;
       const count = total != null ? `${total} titre${total !== 1 ? 's' : ''}` : '';
       return `
-        <div class="playlist-item" data-id="${escHtml(pl.id)}" role="button" tabindex="0">
+        <div class="playlist-item" data-id="${escHtml(pl.id)}" data-name="${escHtml(pl.name)}" role="button" tabindex="0">
           <img class="playlist-cover" src="${escHtml(img)}" alt="" loading="lazy">
           <div class="playlist-info">
             <div class="playlist-name">${escHtml(pl.name)}</div>
             <div class="playlist-meta">${count}</div>
           </div>
-          <span class="playlist-load-btn">Charger</span>
+          <span class="playlist-load-btn">›</span>
         </div>`;
     }).join('');
 
     playlistListEl.querySelectorAll('.playlist-item').forEach(el => {
-      el.addEventListener('click', async () => {
-        const playlistId = el.dataset.id;
-        playlistListEl.innerHTML = '<div class="search-loading">⏳ Chargement des titres…</div>';
-        try {
-          const tracks = await api.getPlaylistTracks(playlistId);
-          switchTab('mix');
-          playlistLoaded = false; // force refresh on next visit
-          // Add all tracks silently; only play the first if queue was empty
-          const wasEmpty = currentIndex < 0;
-          tracks.forEach(t => {
-            const artUrl = t.album?.images?.[1]?.url ?? t.album?.images?.[0]?.url ?? '';
-            queue.push({ id: t.id, uri: t.uri, name: t.name,
-              artist: t.artists.map(a => a.name).join(', '), artUrl, duration: t.duration_ms });
-          });
-          renderQueue();
-          if (wasEmpty && queue.length > 0) {
-            currentIndex = 0;
-            renderQueue();
-            if (player?.isReady) {
-              try {
-                await player.play(queue[0].uri);
-                isPlaying = true;
-                playIcon.textContent = '⏸';
-                updateNowPlaying(queue[0]);
-              } catch (e) { /* player not ready, user can press play */ }
-            } else {
-              pendingAutoplay = true;
-            }
-          }
-          showToast(`✔ ${tracks.length} titres chargés`);
-        } catch (e) {
-          playlistListEl.innerHTML = `<div class="search-empty">⚠️ ${escHtml(e.message)}</div>`;
-        }
+      el.addEventListener('click', () => showPlaylistTracks(el.dataset.id, el.dataset.name));
+    });
+  } catch (e) {
+    playlistListEl.innerHTML = `<div class="search-empty">⚠️ ${escHtml(e.message)}</div>`;
+  }
+}
+
+async function showPlaylistTracks(playlistId, playlistName) {
+  playlistListEl.innerHTML = '<div class="search-loading">⏳ Chargement des titres…</div>';
+  try {
+    const tracks = await api.getPlaylistTracks(playlistId);
+    const backBar = `
+      <div class="playlist-back-bar">
+        <button class="playlist-back-btn">← Playlists</button>
+        <span class="playlist-back-name">${escHtml(playlistName)}</span>
+      </div>`;
+    if (!tracks.length) {
+      playlistListEl.innerHTML = backBar + '<div class="search-empty">Aucun titre</div>';
+    } else {
+      playlistListEl.innerHTML = backBar + tracks.map((t, i) => {
+        const artUrl = t.album?.images?.[2]?.url ?? t.album?.images?.[0]?.url ?? '';
+        const artist = t.artists.map(a => escHtml(a.name)).join(', ');
+        return `
+          <div class="playlist-track-item">
+            <img class="playlist-cover" src="${escHtml(artUrl)}" alt="" loading="lazy">
+            <div class="playlist-info">
+              <div class="playlist-name">${escHtml(t.name)}</div>
+              <div class="playlist-meta">${artist}</div>
+            </div>
+            <button class="playlist-add-btn" data-index="${i}" aria-label="Ajouter">+</button>
+          </div>`;
+      }).join('');
+
+      playlistListEl.querySelectorAll('.playlist-add-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const t = tracks[Number(btn.dataset.index)];
+          player?.activateElement();
+          await addToQueue(t);
+          btn.textContent = '✔';
+          btn.disabled = true;
+        });
       });
+    }
+    playlistListEl.querySelector('.playlist-back-btn').addEventListener('click', () => {
+      playlistLoaded = false;
+      loadPlaylists();
     });
   } catch (e) {
     playlistListEl.innerHTML = `<div class="search-empty">⚠️ ${escHtml(e.message)}</div>`;
@@ -481,7 +499,10 @@ async function runSearch(query) {
     searchResults.innerHTML = tracks.map(t => buildResultHTML(t)).join('');
 
     searchResults.querySelectorAll('.search-result-item').forEach((el, i) => {
-      el.addEventListener('click', () => addToQueue(tracks[i]));
+      el.addEventListener('click', () => {
+        player?.activateElement(); // unlock browser autoplay within user gesture context
+        addToQueue(tracks[i]);
+      });
     });
   } catch (e) {
     searchResults.innerHTML = `<div class="search-empty">⚠️ ${e.message}</div>`;

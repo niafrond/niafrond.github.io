@@ -149,6 +149,15 @@ export class DJPlayer extends EventTarget {
     return this.crossfadeTo(uri, 250);
   }
 
+  /**
+   * Must be called synchronously from a user gesture (click) to unblock
+   * browser autoplay restrictions before the first audio playback.
+   */
+  activateElement() {
+    this.#playerA?.activateElement();
+    this.#playerB?.activateElement();
+  }
+
   // ── Cleanup ───────────────────────────────────────────
 
   destroy() {
