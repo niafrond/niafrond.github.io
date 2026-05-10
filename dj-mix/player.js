@@ -22,8 +22,10 @@ export class DJPlayer extends EventTarget {
   #isCrossfading = false;
   #crossfadeNotified = false; // guard: only fire crossfadeready once per track
   #trackInterval = null;
+  #crossfadeInterval = null; // stored so destroy() can abort it
   #currentTrackUri = null;
   #ready = false;
+  #destroyed = false;
 
   /**
    * @param {() => Promise<string>} getToken  Async function returning a valid access token.
@@ -119,20 +121,28 @@ export class DJPlayer extends EventTarget {
 
       await new Promise((resolve) => {
         let step = 0;
-        const tick = setInterval(() => {
+        this.#crossfadeInterval = setInterval(() => {
+          if (this.#destroyed) {
+            clearInterval(this.#crossfadeInterval);
+            this.#crossfadeInterval = null;
+            this.#isCrossfading = false;
+            resolve();
+            return;
+          }
           step++;
           const t = step / STEPS;
           // Ease in-out: smooth S-curve
           const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-          from.setVolume(1 - eased);
-          to.setVolume(eased);
+          from?.setVolume(1 - eased);
+          to?.setVolume(eased);
 
           if (step >= STEPS) {
-            clearInterval(tick);
+            clearInterval(this.#crossfadeInterval);
+            this.#crossfadeInterval = null;
             // Ensure exact final volumes
-            from.setVolume(0);
-            to.setVolume(1);
-            from.pause();
+            from?.setVolume(0);
+            to?.setVolume(1);
+            from?.pause();
             this.#isCrossfading = false;
             resolve();
           }
@@ -161,9 +171,14 @@ export class DJPlayer extends EventTarget {
   // ── Cleanup ───────────────────────────────────────────
 
   destroy() {
+    this.#destroyed = true;
     clearInterval(this.#trackInterval);
+    clearInterval(this.#crossfadeInterval);
+    this.#crossfadeInterval = null;
     this.#playerA?.disconnect();
     this.#playerB?.disconnect();
+    this.#playerA = null;
+    this.#playerB = null;
   }
 
   // ── Private helpers ───────────────────────────────────
@@ -217,6 +232,7 @@ export class DJPlayer extends EventTarget {
   /** Poll active deck state for progress and auto-crossfade triggering. */
   #startTracking() {
     this.#trackInterval = setInterval(async () => {
+      if (this.#destroyed || !this.#activePlayer) return;
       const state = await this.#activePlayer.getCurrentState();
       if (!state || !state.duration) return;
 
