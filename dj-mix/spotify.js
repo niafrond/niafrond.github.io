@@ -4,6 +4,7 @@
 export class SpotifyAPI {
   #getToken; // async () => string
   #base = 'https://api.spotify.com/v1';
+  #market = null; // cached from getMe()
 
   /**
    * @param {() => Promise<string>} getToken  Async function returning a valid access token.
@@ -27,7 +28,14 @@ export class SpotifyAPI {
 
   /** Verify token is valid and return the user's profile. */
   async getMe() {
-    return this.#get('/me');
+    const me = await this.#get('/me');
+    if (me.country) this.#market = me.country;
+    return me;
+  }
+
+  /** Returns `&market=XX` using the user's cached country, or empty string. */
+  #mkMarket() {
+    return this.#market ? `&market=${this.#market}` : '';
   }
 
   /**
@@ -37,7 +45,7 @@ export class SpotifyAPI {
    */
   async search(query) {
     const q = encodeURIComponent(query.trim());
-    const data = await this.#get(`/search?q=${q}&type=track&limit=15&market=from_token`);
+    const data = await this.#get(`/search?q=${q}&type=track&limit=15${this.#mkMarket()}`);
     return data.tracks.items;
   }
 
@@ -53,7 +61,7 @@ export class SpotifyAPI {
    * @returns {Promise<SpotifyTrack[]>}
    */
   async getPlaylistTracks(playlistId) {
-    const data = await this.#get(`/playlists/${encodeURIComponent(playlistId)}/tracks?limit=100&market=from_token`);
+    const data = await this.#get(`/playlists/${playlistId}/tracks?limit=100${this.#mkMarket()}`);
     return data.items
       .filter(item => item.track && item.track.type === 'track')
       .map(item => item.track);
