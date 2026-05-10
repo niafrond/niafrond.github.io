@@ -16,15 +16,13 @@ const SCOPES = [
 ].join(' ');
 
 /**
- * Build the redirect URI that must match exactly what is registered in the
- * Spotify dashboard. We always use the current origin so that the redirect
- * comes back to the same page regardless of how the app is accessed
- * (https://niafrond.github.io, http://localhost:8080, http://172.x.x.x:8080…).
+ * Build the redirect URI that must be registered in the Spotify dashboard.
+ * Always uses the current origin so the redirect lands back on the same page
+ * (works with https://niafrond.github.io, http://localhost:8080, http://172.x.x.x:8080…).
  * Register every URL you use in your Spotify app's Redirect URIs list.
  */
 function resolveRedirectUri() {
-  const loc = window.location;
-  return loc.origin + loc.pathname;
+  return window.location.origin + window.location.pathname;
 }
 
 const LS = {
@@ -53,8 +51,8 @@ export class SpotifyAuth {
    * @param {string} redirectUri  Must be registered in the Spotify app dashboard.
    */
   async startPKCE(clientId, redirectUri) {
-    // No bounce needed: we always redirect back to the current origin, so
-    // sessionStorage is preserved across start → Spotify login → callback.
+    // The redirect comes back to the same origin, so sessionStorage is always
+    // preserved across start → Spotify login → callback — no bounce needed.
     const verifier   = generateVerifier();
     const challenge  = await generateChallenge(verifier);
     const redirect   = redirectUri ?? resolveRedirectUri();
