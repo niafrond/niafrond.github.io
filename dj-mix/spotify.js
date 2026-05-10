@@ -2,16 +2,20 @@
  * Spotify Web API wrapper – read-only calls used by DJ Mix.
  */
 export class SpotifyAPI {
-  #token;
+  #getToken; // async () => string
   #base = 'https://api.spotify.com/v1';
 
-  constructor(token) {
-    this.#token = token;
+  /**
+   * @param {() => Promise<string>} getToken  Async function returning a valid access token.
+   */
+  constructor(getToken) {
+    this.#getToken = getToken;
   }
 
   async #get(path) {
+    const token = await this.#getToken();
     const res = await fetch(`${this.#base}${path}`, {
-      headers: { Authorization: `Bearer ${this.#token}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));

@@ -5,6 +5,10 @@
 
 import { SpotifyAPI } from './spotify.js';
 import { DJPlayer } from './player.js';
+import { SpotifyAuth } from './auth.js';
+
+const auth = new SpotifyAuth();
+const DEFAULT_CLIENT_ID = '2185f62bdf5f4d7a824aa14642484b05';
 
 // ── App state ────────────────────────────────────────────
 let api = null;
@@ -21,11 +25,14 @@ const appScreen      = document.getElementById('app-screen');
 const setupError     = document.getElementById('setup-error');
 const setupLoading   = document.getElementById('setup-loading');
 
-const clientIdInput  = document.getElementById('client-id-input');
-const tokenInput     = document.getElementById('token-input');
-const oauthBtn       = document.getElementById('oauth-btn');
-const tokenBtn       = document.getElementById('token-btn');
+const clientIdInput   = document.getElementById('client-id-input');
+const tokenInput      = document.getElementById('token-input');
+const oauthBtn        = document.getElementById('oauth-btn');
+const tokenBtn        = document.getElementById('token-btn');
 const redirectDisplay = document.getElementById('redirect-uri-display');
+const logoutBtn       = document.getElementById('logout-btn');
+const userAvatar      = document.getElementById('user-avatar');
+const userName        = document.getElementById('user-name');
 
 const searchInput    = document.getElementById('search-input');
 const searchClear    = document.getElementById('search-clear');
@@ -52,24 +59,38 @@ const emptyQueue     = document.getElementById('empty-queue');
 const clearQueueBtn  = document.getElementById('clear-queue-btn');
 
 // ── Boot ─────────────────────────────────────────────────
-(function init() {
+(async function init() {
   const redirectUri = window.location.origin + window.location.pathname;
   redirectDisplay.textContent = redirectUri;
 
-  // Check if Spotify redirected back with a token in the URL hash
-  const hash = parseHash();
-  if (hash.access_token) {
-    history.replaceState(null, '', window.location.pathname);
-    sessionStorage.setItem('djmix_token', hash.access_token);
-    connectWithToken(hash.access_token);
+  // Pre-fill Client ID
+  clientIdInput.value = auth.clientId ?? DEFAULT_CLIENT_ID;
+
+  // Handle PKCE callback (?code= in query string)
+  if (window.location.search.includes('code=') || window.location.search.includes('error=')) {
+    showSetupLoading(true, 'Connexion Spotify…');
+    try {
+      await auth.handleCallback();
+      await connectWithAuth();
+    } catch (err) {
+      showSetupLoading(false);
+      showSetupError(err.message);
+      showSetup();
+    }
     return;
   }
 
-  // Restore saved token
-  const saved = sessionStorage.getItem('djmix_token');
-  if (saved) {
-    connectWithToken(saved);
-    return;
+  // Restore existing session (auto-refresh if needed)
+  if (auth.hasStoredTokens) {
+    showSetupLoading(true, 'Restauration de la session…');
+    try {
+      await connectWithAuth();
+      return;
+    } catch (err) {
+      // Token invalid or expired without refresh → fall through to setup
+      auth.logout();
+    }
+    showSetupLoading(false);
   }
 
   showSetup();
@@ -87,62 +108,64 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-// OAuth flow
-oauthBtn.addEventListener('click', () => {
-  const clientId = clientIdInput.value.trim();
+// OAuth (PKCE) flow
+oauthBtn.addEventListener('click', async () => {
+  const clientId = clientIdInput.value.trim() || DEFAULT_CLIENT_ID;
   if (!clientId) { showSetupError('Entrez votre Client ID.'); return; }
-  sessionStorage.setItem('djmix_client_id', clientId);
-
+  hideSetupError();
   const redirectUri = window.location.origin + window.location.pathname;
-  const scopes = [
-    'streaming',
-    'user-read-email',
-    'user-read-private',
-    'user-modify-playback-state',
-  ].join(' ');
-
-  const url = new URL('https://accounts.spotify.com/authorize');
-  url.searchParams.set('response_type', 'token');
-  url.searchParams.set('client_id', clientId);
-  url.searchParams.set('scope', scopes);
-  url.searchParams.set('redirect_uri', redirectUri);
-
-  window.location.href = url.toString();
+  try {
+    await auth.startPKCE(clientId, redirectUri);
+  } catch (err) {
+    showSetupError(err.message);
+  }
 });
 
 // Manual token
-tokenBtn.addEventListener('click', () => {
+tokenBtn.addEventListener('click', async () => {
   const token = tokenInput.value.trim();
   if (!token) { showSetupError('Entrez votre token Spotify.'); return; }
-  connectWithToken(token);
-});
-
-// ── Connect with token ────────────────────────────────────
-
-async function connectWithToken(token) {
-  showSetupLoading(true);
   hideSetupError();
-
+  auth.setManualToken(token);
+  showSetupLoading(true, 'Connexion…');
   try {
-    api = new SpotifyAPI(token);
-    const me = await api.getMe();
-
-    player = new DJPlayer(token);
-    hookPlayerEvents();
-
-    showSetupLoading(false, 'Initialisation des platines…');
-    await player.init();
-
-    sessionStorage.setItem('djmix_token', token);
-    showApp(me);
+    await connectWithAuth();
   } catch (err) {
-    sessionStorage.removeItem('djmix_token');
+    auth.logout();
     showSetupLoading(false);
     showSetupError(err.message);
-    player?.destroy();
-    player = null;
-    api = null;
   }
+});
+
+// Logout
+logoutBtn?.addEventListener('click', () => {
+  auth.logout();
+  player?.destroy();
+  player = null;
+  api = null;
+  queue.length = 0;
+  currentIndex = -1;
+  isPlaying = false;
+  showSetup();
+});
+
+// ── Connect with stored auth ──────────────────────────────
+
+async function connectWithAuth() {
+  hideSetupError();
+
+  const getToken = () => auth.getToken();
+  api = new SpotifyAPI(getToken);
+  const me = await api.getMe();
+
+  player = new DJPlayer(getToken);
+  hookPlayerEvents();
+
+  showSetupLoading(true, 'Initialisation des platines…');
+  await player.init();
+
+  showSetupLoading(false);
+  showApp(me);
 }
 
 // ── Player events ─────────────────────────────────────────
@@ -519,6 +542,16 @@ function showApp(me) {
   appScreen.hidden = false;
   appScreen.classList.add('active');
 
+  // Show user profile in header
+  if (me) {
+    const img = me.images?.[0]?.url;
+    if (img && userAvatar) {
+      userAvatar.src = img;
+      userAvatar.hidden = false;
+    }
+    if (userName) userName.textContent = me.display_name ?? me.id;
+  }
+
   // Init UI state
   renderQueue();
   playPauseBtn.disabled = false;
@@ -552,11 +585,6 @@ function formatTime(ms) {
   const m = Math.floor(total / 60);
   const s = total % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
-}
-
-function parseHash() {
-  const hash = window.location.hash.slice(1);
-  return Object.fromEntries(new URLSearchParams(hash));
 }
 
 /** Escape HTML to prevent XSS when inserting user/API content. */

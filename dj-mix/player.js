@@ -12,7 +12,7 @@
  */
 export class DJPlayer extends EventTarget {
   // Private fields
-  #token;
+  #getToken; // async () => string
   #playerA = null;
   #playerB = null;
   #deviceA = null;
@@ -24,9 +24,12 @@ export class DJPlayer extends EventTarget {
   #trackInterval = null;
   #currentTrackUri = null;
 
-  constructor(token) {
+  /**
+   * @param {() => Promise<string>} getToken  Async function returning a valid access token.
+   */
+  constructor(getToken) {
     super();
-    this.#token = token;
+    this.#getToken = getToken;
   }
 
   // ── Public getters / setters ─────────────────────────
@@ -163,7 +166,7 @@ export class DJPlayer extends EventTarget {
     return new Promise((resolve, reject) => {
       const player = new Spotify.Player({
         name,
-        getOAuthToken: (cb) => cb(this.#token),
+        getOAuthToken: (cb) => this.#getToken().then(cb),
         volume: 0,
       });
 
@@ -233,12 +236,13 @@ export class DJPlayer extends EventTarget {
   }
 
   async #playOnDevice(deviceId, uri) {
+    const token = await this.#getToken();
     const res = await fetch(
       `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
       {
         method: 'PUT',
         headers: {
-          Authorization: `Bearer ${this.#token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ uris: [uri] }),

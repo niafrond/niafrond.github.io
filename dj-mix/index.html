@@ -37,12 +37,12 @@
       <div class="auth-panel active" id="oauth-panel">
         <div class="form-group">
           <label for="client-id-input">Client ID Spotify</label>
-          <input type="text" id="client-id-input" placeholder="Votre Client ID" autocomplete="off" spellcheck="false">
+          <input type="text" id="client-id-input" placeholder="Client ID" autocomplete="off" spellcheck="false">
         </div>
         <div class="hint-box">
-          <p>1. Créez une app sur <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer">developer.spotify.com</a></p>
-          <p>2. Ajoutez comme Redirect URI&nbsp;: <code id="redirect-uri-display"></code></p>
-          <p>3. Copiez le Client ID ici</p>
+          <p>Redirect URI à enregistrer dans votre app&nbsp;:</p>
+          <p><code id="redirect-uri-display"></code></p>
+          <p>⚠️ Spotify Premium requis</p>
         </div>
         <button class="connect-btn" id="oauth-btn">Se connecter avec Spotify</button>
       </div>
@@ -70,7 +70,14 @@
 
   <!-- ── Main App Screen ────────────────────────────────── -->
   <div id="app-screen" class="screen" hidden>
-
+    <!-- User header -->
+    <div class="app-header">
+      <div class="app-header-user">
+        <img id="user-avatar" class="user-avatar" src="" alt="" hidden>
+        <span id="user-name" class="user-name"></span>
+      </div>
+      <button id="logout-btn" class="logout-btn" title="Se déconnecter" aria-label="Déconnexion">↩ Déconnexion</button>
+    </div>
     <!-- Search bar (sticky) -->
     <div class="search-bar">
       <div class="search-input-wrapper">
