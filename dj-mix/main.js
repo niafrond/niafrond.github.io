@@ -132,7 +132,7 @@ tokenBtn.addEventListener('click', async () => {
 });
 
 // Logout
-logoutBtn?.addEventListener('click', async () => {
+function doLogout() {
   auth.logout();
   player?.destroy();
   player = null;
@@ -140,9 +140,9 @@ logoutBtn?.addEventListener('click', async () => {
   queue.length = 0;
   currentIndex = -1;
   isPlaying = false;
-  // Relancer directement l'auth Spotify
-  await auth.startPKCE(DEFAULT_CLIENT_ID);
-});
+  showSetup();
+}
+logoutBtn?.addEventListener('click', doLogout);
 
 // ── Connect with stored auth ──────────────────────────────
 
@@ -286,13 +286,9 @@ crossfadeSlider.addEventListener('input', () => {
 // Playlist picker
 playlistBtn.addEventListener('click', openPlaylistPicker);
 playlistCloseBtn.addEventListener('click', () => { playlistOverlay.hidden = true; });
-playlistLogoutBtn.addEventListener('click', async () => {
+playlistLogoutBtn.addEventListener('click', () => {
   playlistOverlay.hidden = true;
-  auth.logout();
-  player?.destroy();
-  player = null; api = null;
-  queue.length = 0; currentIndex = -1; isPlaying = false;
-  await auth.startPKCE(DEFAULT_CLIENT_ID);
+  doLogout();
 });
 
 async function openPlaylistPicker() {
