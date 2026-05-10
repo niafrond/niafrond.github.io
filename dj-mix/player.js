@@ -52,6 +52,14 @@ export class DJPlayer extends EventTarget {
   async init() {
     console.log('Initializing DJPlayer...');
 
+    const sdkReady = globalThis.window?.spotifySDKReady;
+    if (sdkReady && typeof sdkReady.then === 'function') {
+      await sdkReady;
+    }
+    if (!globalThis.Spotify?.Player) {
+      throw new Error('Spotify Web Playback SDK not ready');
+    }
+
     const [a, b] = await Promise.all([
       this.#createDeck('DJ Mix – Deck A'),
       this.#createDeck('DJ Mix – Deck B'),
@@ -257,6 +265,7 @@ export class DJPlayer extends EventTarget {
 
   /** Create a single Spotify.Player deck and return { player, deviceId }. */
   #createDeck(name) {
+    console.log(`Creating deck "${name}"...`);
     return new Promise((resolve, reject) => {
       const player = new Spotify.Player({
         name,
@@ -287,6 +296,7 @@ export class DJPlayer extends EventTarget {
 
       player.addListener('player_state_changed', (state) => {
         if (state && this.#isActive(player)) {
+          console.log(`Deck "${name}" state changed: track "${state.track_window?.current_track?.name}" paused=${state.paused}`);
           this.dispatchEvent(new CustomEvent('statechange', {
             detail: {
               track: state.track_window?.current_track ?? null,
@@ -298,6 +308,7 @@ export class DJPlayer extends EventTarget {
 
       for (const event of ['initialization_error', 'authentication_error', 'account_error']) {
         player.addListener(event, ({ message }) => {
+          console.error(`Deck "${name}" ${event}: ${message}`);
           this.dispatchEvent(new CustomEvent('error', { detail: { message } }));
           reject(new Error(message));
         });
