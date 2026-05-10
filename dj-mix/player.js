@@ -231,12 +231,18 @@ export class DJPlayer extends EventTarget {
    */
   #reconnectDeck(player, deck) {
     return new Promise((resolve, reject) => {
+      if (!player || this.#destroyed) {
+        reject(new Error(`Deck ${deck} unavailable for reconnect`));
+        return;
+      }
+
       const timeout = setTimeout(() => {
-        player.removeListener('ready', onReady);
+        player?.removeListener?.('ready', onReady);
         reject(new Error(`Deck ${deck} reconnect timed out`));
       }, 8000);
 
       const onReady = ({ device_id }) => {
+        player?.removeListener?.('ready', onReady);
         clearTimeout(timeout);
         if (deck === 'A') this.#deviceA = device_id;
         else              this.#deviceB = device_id;
