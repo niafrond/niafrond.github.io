@@ -60,10 +60,9 @@ export class DJPlayer extends EventTarget {
       throw new Error('Spotify Web Playback SDK not ready');
     }
 
-    const [a, b] = await Promise.all([
-      this.#createDeck('DJ Mix – Deck A'),
-      this.#createDeck('DJ Mix – Deck B'),
-    ]);
+    // Initialize decks sequentially with retry: parallel init can leave one deck hanging.
+    const a = await this.#createDeckWithRetry('DJ Mix – Deck A');
+    const b = await this.#createDeckWithRetry('DJ Mix – Deck B');
 
     this.#playerA = a.player;
     this.#deviceA = a.deviceId;
@@ -229,6 +228,22 @@ export class DJPlayer extends EventTarget {
     });
   }
 
+  async #createDeckWithRetry(name, maxAttempts = 3) {
+    let lastError = null;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await this.#createDeck(name, 10000);
+      } catch (err) {
+        lastError = err;
+        console.warn(`${name} init attempt ${attempt}/${maxAttempts} failed: ${err.message}`);
+        if (attempt < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 600));
+        }
+      }
+    }
+    throw new Error(`${name} failed to initialize after ${maxAttempts} attempts (${lastError?.message ?? 'unknown error'})`);
+  }
+
   async #ensureInactiveDeck() {
     const deck = this.#active === 'A' ? 'B' : 'A';
     let player = deck === 'A' ? this.#playerA : this.#playerB;
@@ -296,16 +311,27 @@ export class DJPlayer extends EventTarget {
   }
 
   /** Create a single Spotify.Player deck and return { player, deviceId }. */
-  #createDeck(name) {
+  #createDeck(name, timeoutMs = 10000) {
     console.log(`Creating deck "${name}"...`);
     return new Promise((resolve, reject) => {
+      let settled = false;
       const player = new Spotify.Player({
         name,
         getOAuthToken: (cb) => this.#getToken().then(cb),
         volume: 0,
       });
 
+      const timeout = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        player.disconnect();
+        reject(new Error(`Deck init timeout (${timeoutMs}ms)`));
+      }, timeoutMs);
+
       player.addListener('ready', ({ device_id }) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
         console.log(`Deck "${name}" ready with device ID ${device_id}`);
         resolve({ player, deviceId: device_id });
       });
@@ -340,7 +366,11 @@ export class DJPlayer extends EventTarget {
 
       for (const event of ['initialization_error', 'authentication_error', 'account_error']) {
         player.addListener(event, ({ message }) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
           console.error(`Deck "${name}" ${event}: ${message}`);
+          player.disconnect();
           this.dispatchEvent(new CustomEvent('error', { detail: { message } }));
           reject(new Error(message));
         });
