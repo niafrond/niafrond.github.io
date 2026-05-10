@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>DJ Mix</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <script>
+    // Capture Spotify SDK ready event before SDK script runs
+    window.spotifySDKReady = new Promise(resolve => {
+      window.onSpotifyWebPlaybackSDKReady = resolve;
+    });
+  </script>
+  <script src="https://sdk.scdn.co/spotify-player.js"></script>
+</head>
+<body>
+
+  <!-- ── Setup Screen ────────────────────────────────────── -->
+  <div id="setup-screen" class="screen active">
+    <div class="setup-container">
+      <div class="setup-logo">
+        <div class="logo-icon">🎚️</div>
+        <h1>DJ Mix</h1>
+        <p class="setup-subtitle">Spotify Crossfade Player</p>
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="oauth">Connexion</button>
+        <button class="tab-btn" data-tab="token">Token manuel</button>
+      </div>
+
+      <!-- OAuth panel -->
+      <div class="auth-panel active" id="oauth-panel">
+        <div class="form-group">
+          <label for="client-id-input">Client ID Spotify</label>
+          <input type="text" id="client-id-input" placeholder="Votre Client ID" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="hint-box">
+          <p>1. Créez une app sur <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer">developer.spotify.com</a></p>
+          <p>2. Ajoutez comme Redirect URI&nbsp;: <code id="redirect-uri-display"></code></p>
+          <p>3. Copiez le Client ID ici</p>
+        </div>
+        <button class="connect-btn" id="oauth-btn">Se connecter avec Spotify</button>
+      </div>
+
+      <!-- Manual token panel -->
+      <div class="auth-panel" id="token-panel">
+        <div class="form-group">
+          <label for="token-input">Access Token Spotify</label>
+          <input type="password" id="token-input" placeholder="Collez votre token ici" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="hint-box">
+          <p>Obtenez un token depuis la <a href="https://developer.spotify.com/console/get-search-item/" target="_blank" rel="noopener noreferrer">console Spotify</a></p>
+          <p>Scopes requis&nbsp;: <code>streaming user-read-email user-read-private user-modify-playback-state</code></p>
+          <p>⚠️ Spotify Premium requis</p>
+        </div>
+        <button class="connect-btn" id="token-btn">Connecter</button>
+      </div>
+
+      <div id="setup-error" class="error-msg" hidden></div>
+      <div id="setup-loading" class="loading-msg" hidden>
+        <span class="spinner"></span> Connexion en cours…
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main App Screen ────────────────────────────────── -->
+  <div id="app-screen" class="screen" hidden>
+
+    <!-- Search bar (sticky) -->
+    <div class="search-bar">
+      <div class="search-input-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="search" id="search-input" placeholder="Rechercher une chanson…" autocomplete="off">
+        <button id="search-clear" class="search-clear" hidden aria-label="Effacer">✕</button>
+      </div>
+    </div>
+
+    <!-- Search results overlay -->
+    <div id="search-overlay" class="search-overlay" hidden>
+      <div id="search-results" class="search-results"></div>
+    </div>
+
+    <!-- Player -->
+    <div class="player-section">
+
+      <!-- Album art + track info -->
+      <div class="now-playing">
+        <div class="album-art-wrapper">
+          <img id="album-art" src="" alt="" class="album-art" hidden>
+          <div class="album-art-placeholder" id="art-placeholder">🎵</div>
+          <div class="crossfade-ring" id="crossfade-ring" hidden></div>
+        </div>
+        <div class="track-info">
+          <div id="track-name" class="track-name">Aucune chanson</div>
+          <div id="track-artist" class="track-artist">Ajoutez des chansons à la file d'attente</div>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="progress-section">
+        <div class="progress-bar-bg">
+          <div class="crossfade-zone" id="crossfade-zone"></div>
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="time-labels">
+          <span id="current-time">0:00</span>
+          <span id="total-time">0:00</span>
+        </div>
+      </div>
+
+      <!-- Playback controls -->
+      <div class="controls">
+        <button class="ctrl-btn" id="prev-btn" title="Précédent" aria-label="Précédent">⏮</button>
+        <button class="ctrl-btn play-btn" id="play-pause-btn" title="Play/Pause" aria-label="Play/Pause">
+          <span id="play-icon">▶</span>
+        </button>
+        <button class="ctrl-btn fade-btn" id="next-btn" title="Crossfade vers le suivant" aria-label="Crossfade suivant">
+          <span>⏭</span>
+          <span class="fade-label">Fade</span>
+        </button>
+      </div>
+
+      <!-- Crossfade duration slider -->
+      <div class="crossfade-control">
+        <div class="crossfade-row">
+          <span class="fade-wave">〜〜</span>
+          <span>Crossfade</span>
+          <span id="crossfade-value" class="crossfade-value">5s</span>
+        </div>
+        <input type="range" id="crossfade-slider" min="1" max="15" value="5" class="fade-slider" aria-label="Durée du crossfade">
+      </div>
+
+    </div>
+
+    <!-- Queue -->
+    <div class="queue-section">
+      <div class="queue-header">
+        <h2 class="queue-title">File d'attente</h2>
+        <button id="clear-queue-btn" class="clear-btn">Vider</button>
+      </div>
+      <div id="queue-list" class="queue-list">
+        <div class="empty-queue" id="empty-queue">
+          <div class="empty-icon">🎶</div>
+          <p>Recherchez des chansons pour les ajouter</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
