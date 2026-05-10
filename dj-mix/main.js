@@ -58,6 +58,15 @@ const clearQueueBtn  = document.getElementById('clear-queue-btn');
 
 // ── Boot ─────────────────────────────────────────────────
 (async function init() {
+  const params = new URLSearchParams(window.location.search);
+
+  // Bounce from auth.js (non-localhost HTTP) → start PKCE from current origin
+  if (params.has('_init_pkce')) {
+    history.replaceState(null, '', window.location.pathname);
+    await auth.startPKCE(DEFAULT_CLIENT_ID);
+    return;
+  }
+
   // Handle PKCE callback (?code= in query string)
   if (window.location.search.includes('code=') || window.location.search.includes('error=')) {
     showSetupLoading(true, 'Connexion Spotify…');
