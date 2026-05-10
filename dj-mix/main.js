@@ -56,6 +56,11 @@ const queueList      = document.getElementById('queue-list');
 const emptyQueue     = document.getElementById('empty-queue');
 const clearQueueBtn  = document.getElementById('clear-queue-btn');
 
+const playlistBtn      = document.getElementById('playlist-btn');
+const playlistOverlay  = document.getElementById('playlist-overlay');
+const playlistCloseBtn = document.getElementById('playlist-close-btn');
+const playlistListEl   = document.getElementById('playlist-list');
+
 // ── Boot ─────────────────────────────────────────────────
 (async function init() {
   const params = new URLSearchParams(window.location.search);
@@ -149,11 +154,13 @@ async function connectWithAuth() {
   player = new DJPlayer(getToken);
   hookPlayerEvents();
 
-  showSetupLoading(true, 'Initialisation des platines…');
-  await player.init();
-
   showSetupLoading(false);
   showApp(me);
+
+  // Init player in background – requires Spotify Premium, may take a few seconds
+  player.init().catch(() => {
+    showToast('⚠️ Platines non disponibles (Spotify Premium requis)', true);
+  });
 }
 
 // ── Player events ─────────────────────────────────────────
@@ -274,6 +281,71 @@ crossfadeSlider.addEventListener('input', () => {
   if (player) player.crossfadeDuration = sec * 1000;
 });
 
+// Playlist picker
+playlistBtn.addEventListener('click', openPlaylistPicker);
+playlistCloseBtn.addEventListener('click', () => { playlistOverlay.hidden = true; });
+
+async function openPlaylistPicker() {
+  playlistOverlay.hidden = false;
+  playlistListEl.innerHTML = '<div class="search-loading">🎵 Chargement…</div>';
+  try {
+    const playlists = await api.getMyPlaylists();
+    if (!playlists.length) {
+      playlistListEl.innerHTML = '<div class="search-empty">Aucune playlist trouvée</div>';
+      return;
+    }
+    playlistListEl.innerHTML = playlists.map(pl => {
+      const img   = pl.images?.[0]?.url ?? '';
+      const count = pl.tracks?.total ?? '?';
+      return `
+        <div class="playlist-item" data-id="${escHtml(pl.id)}" role="button" tabindex="0">
+          <img class="playlist-cover" src="${escHtml(img)}" alt="" loading="lazy">
+          <div class="playlist-info">
+            <div class="playlist-name">${escHtml(pl.name)}</div>
+            <div class="playlist-meta">${count} titres</div>
+          </div>
+          <span class="playlist-load-btn">Charger</span>
+        </div>`;
+    }).join('');
+
+    playlistListEl.querySelectorAll('.playlist-item').forEach(el => {
+      el.addEventListener('click', async () => {
+        const playlistId = el.dataset.id;
+        playlistListEl.innerHTML = '<div class="search-loading">⏳ Chargement des titres…</div>';
+        try {
+          const tracks = await api.getPlaylistTracks(playlistId);
+          playlistOverlay.hidden = true;
+          // Add all tracks silently; only play the first if queue was empty
+          const wasEmpty = currentIndex < 0;
+          tracks.forEach(t => {
+            const artUrl = t.album?.images?.[1]?.url ?? t.album?.images?.[0]?.url ?? '';
+            queue.push({ id: t.id, uri: t.uri, name: t.name,
+              artist: t.artists.map(a => a.name).join(', '), artUrl, duration: t.duration_ms });
+          });
+          renderQueue();
+          if (wasEmpty && queue.length > 0) {
+            currentIndex = 0;
+            renderQueue();
+            if (player?.isReady) {
+              try {
+                await player.play(queue[0].uri);
+                isPlaying = true;
+                playIcon.textContent = '⏸';
+                updateNowPlaying(queue[0]);
+              } catch (e) { /* player not ready, user can press play */ }
+            }
+          }
+          showToast(`✔ ${tracks.length} titres chargés`);
+        } catch (e) {
+          playlistListEl.innerHTML = `<div class="search-empty">⚠️ ${escHtml(e.message)}</div>`;
+        }
+      });
+    });
+  } catch (e) {
+    playlistListEl.innerHTML = `<div class="search-empty">⚠️ ${escHtml(e.message)}</div>`;
+  }
+}
+
 // Clear queue
 clearQueueBtn.addEventListener('click', () => {
   if (!queue.length) return;
@@ -384,13 +456,15 @@ async function addToQueue(track) {
   if (currentIndex < 0) {
     currentIndex = 0;
     renderQueue();
-    try {
-      await player.play(item.uri);
-      isPlaying = true;
-      playIcon.textContent = '⏸';
-      updateNowPlaying(item);
-    } catch (e) {
-      showToast(`⚠️ ${e.message}`, true);
+    if (player?.isReady) {
+      try {
+        await player.play(item.uri);
+        isPlaying = true;
+        playIcon.textContent = '⏸';
+        updateNowPlaying(item);
+      } catch (e) {
+        showToast(`⚠️ ${e.message}`, true);
+      }
     }
   }
 

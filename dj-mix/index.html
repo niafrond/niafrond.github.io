@@ -36,7 +36,7 @@
         <div class="manual-body">
           <div class="form-group">
             <label for="token-input">Access Token Spotify</label>
-            <input type="password" id="token-input" placeholder="Collez votre token ici" autocomplete="off" spellcheck="false">
+            <input type="text" id="token-input" placeholder="Collez votre token ici" autocomplete="off" spellcheck="false">
           </div>
           <button class="connect-btn connect-btn--secondary" id="token-btn">Connecter</button>
         </div>
@@ -65,16 +65,28 @@
     </div>
     <!-- Search bar (sticky) -->
     <div class="search-bar">
-      <div class="search-input-wrapper">
-        <span class="search-icon">🔍</span>
-        <input type="search" id="search-input" placeholder="Rechercher une chanson…" autocomplete="off">
-        <button id="search-clear" class="search-clear" hidden aria-label="Effacer">✕</button>
+      <div class="search-row">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="search" id="search-input" placeholder="Rechercher une chanson…" autocomplete="off">
+          <button id="search-clear" class="search-clear" hidden aria-label="Effacer">✕</button>
+        </div>
+        <button id="playlist-btn" class="playlist-btn" aria-label="Charger une playlist" title="Mes playlists">📂</button>
       </div>
     </div>
 
     <!-- Search results overlay -->
     <div id="search-overlay" class="search-overlay" hidden>
       <div id="search-results" class="search-results"></div>
+    </div>
+
+    <!-- Playlist picker overlay -->
+    <div id="playlist-overlay" class="playlist-overlay" hidden>
+      <div class="playlist-overlay-header">
+        <h2 class="playlist-overlay-title">Mes playlists</h2>
+        <button id="playlist-close-btn" class="overlay-close-btn">✕</button>
+      </div>
+      <div id="playlist-list" class="playlist-list"></div>
     </div>
 
     <!-- Player -->

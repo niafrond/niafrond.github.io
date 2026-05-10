@@ -23,6 +23,7 @@ export class DJPlayer extends EventTarget {
   #crossfadeNotified = false; // guard: only fire crossfadeready once per track
   #trackInterval = null;
   #currentTrackUri = null;
+  #ready = false;
 
   /**
    * @param {() => Promise<string>} getToken  Async function returning a valid access token.
@@ -41,6 +42,7 @@ export class DJPlayer extends EventTarget {
   }
 
   get isCrossfading() { return this.#isCrossfading; }
+  get isReady() { return this.#ready; }
 
   // ── Initialisation ────────────────────────────────────
 
@@ -62,6 +64,7 @@ export class DJPlayer extends EventTarget {
     await this.#playerB.setVolume(0);
 
     this.#startTracking();
+    this.#ready = true;
     this.dispatchEvent(new CustomEvent('ready'));
   }
 

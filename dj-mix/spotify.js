@@ -40,6 +40,24 @@ export class SpotifyAPI {
     const data = await this.#get(`/search?q=${q}&type=track&limit=15&market=from_token`);
     return data.tracks.items;
   }
+
+  /** Fetch the current user’s playlists (up to 50). */
+  async getMyPlaylists() {
+    const data = await this.#get('/me/playlists?limit=50');
+    return data.items;
+  }
+
+  /**
+   * Fetch tracks from a playlist (up to 100).
+   * @param {string} playlistId
+   * @returns {Promise<SpotifyTrack[]>}
+   */
+  async getPlaylistTracks(playlistId) {
+    const data = await this.#get(`/playlists/${encodeURIComponent(playlistId)}/tracks?limit=100&market=from_token`);
+    return data.items
+      .filter(item => item.track && item.track.type === 'track')
+      .map(item => item.track);
+  }
 }
 
 /**
