@@ -74,14 +74,8 @@ export class DJPlayer extends EventTarget {
     // FIX A — Keep device IDs in sync on reconnect (ready fires with new device_id).
     // IMPORTANT: only update on 'ready', never clear on 'not_ready' — the old
     // device_id stays valid for a short grace period and we need it for crossfade.
-    this.#playerA.addListener('ready', ({ device_id }) => {
-      this.#deviceA = device_id;
-      console.log(`Deck A reconnected with device ID: ${device_id}`);
-    });
-    this.#playerB.addListener('ready', ({ device_id }) => {
-      this.#deviceB = device_id;
-      console.log(`Deck B reconnected with device ID: ${device_id}`);
-    });
+    this.#attachDeckReadySync(this.#playerA, 'A');
+    this.#attachDeckReadySync(this.#playerB, 'B');
 
     // Deck A starts active at full volume; Deck B stays silent.
     await this.#playerA.setVolume(1);
@@ -125,25 +119,20 @@ export class DJPlayer extends EventTarget {
 
     const duration = durationOverride ?? this.#crossfadeDuration;
     const from = this.#activePlayer;
-    const to = this.#inactivePlayer;
 
     if (!from || !this.#activeDevice) {
       this.#isCrossfading = false;
       throw new Error('Cannot crossfade: active deck unavailable');
     }
 
-    // FIX B — Resolve the inactive device ID before attempting crossfade.
-    // If the inactive deck went offline (not_ready) since last use, its device_id
-    // may be stale or null. We force a reconnect and wait for the new device_id.
-    let toDevice = this.#inactiveDevice;
-    if (!to || !toDevice) {
-      console.warn('Inactive deck has no device ID — forcing reconnect…');
-      try {
-        toDevice = await this.#reconnectDeck(to, this.#active === 'A' ? 'B' : 'A');
-      } catch (err) {
-        await this.#fallbackSwitchOnActiveDeck(uri, `inactive deck failed to reconnect (${err.message})`);
-        return;
-      }
+    // Keep crossfade as primary behavior: recover inactive deck before fallback.
+    let to;
+    let toDevice;
+    try {
+      ({ player: to, deviceId: toDevice } = await this.#ensureInactiveDeck());
+    } catch (err) {
+      await this.#fallbackSwitchOnActiveDeck(uri, `inactive deck unavailable (${err.message})`);
+      return;
     }
 
     console.log(`Crossfade: from deck ${this.#active} → to device ${toDevice}, duration ${duration} ms`);
@@ -231,6 +220,45 @@ export class DJPlayer extends EventTarget {
   get #activeDevice()  { return this.#active === 'A' ? this.#deviceA : this.#deviceB; }
   get #inactivePlayer(){ return this.#active === 'A' ? this.#playerB : this.#playerA; }
   get #inactiveDevice(){ return this.#active === 'A' ? this.#deviceB : this.#deviceA; }
+
+  #attachDeckReadySync(player, deck) {
+    player?.addListener('ready', ({ device_id }) => {
+      if (deck === 'A') this.#deviceA = device_id;
+      else this.#deviceB = device_id;
+      console.log(`Deck ${deck} reconnected with device ID: ${device_id}`);
+    });
+  }
+
+  async #ensureInactiveDeck() {
+    const deck = this.#active === 'A' ? 'B' : 'A';
+    let player = deck === 'A' ? this.#playerA : this.#playerB;
+    let deviceId = deck === 'A' ? this.#deviceA : this.#deviceB;
+
+    if (player && deviceId) {
+      return { player, deviceId };
+    }
+
+    if (player && !deviceId) {
+      console.warn(`Deck ${deck} has no device ID — reconnecting before crossfade…`);
+      const reconnected = await this.#reconnectDeck(player, deck);
+      return { player, deviceId: reconnected };
+    }
+
+    console.warn(`Deck ${deck} missing player instance — recreating deck…`);
+    const recreated = await this.#createDeck(`DJ Mix – Deck ${deck}`);
+    player = recreated.player;
+    deviceId = recreated.deviceId;
+    if (deck === 'A') {
+      this.#playerA = player;
+      this.#deviceA = deviceId;
+    } else {
+      this.#playerB = player;
+      this.#deviceB = deviceId;
+    }
+    this.#attachDeckReadySync(player, deck);
+    await player.setVolume(0);
+    return { player, deviceId };
+  }
 
   /**
    * FIX B — Force a reconnect on a deck that lost its device_id.
