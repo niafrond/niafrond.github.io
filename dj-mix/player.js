@@ -98,7 +98,7 @@ export class DJPlayer extends EventTarget {
     this.#crossfadeNotified = false;
     this.#trackEndNotified = false;
     await this.#activePlayer.setVolume(1);
-    await this.#playOnDeckWithRecovery(this.#active === 'A' ? 'A' : 'B', this.#activePlayer, this.#activeDevice, uri);
+    await this.#playOnDevice(this.#activeDevice, uri);
   }
 
   /** Toggle play / pause on the active deck. */
@@ -123,7 +123,6 @@ export class DJPlayer extends EventTarget {
 
     const duration = durationOverride ?? this.#crossfadeDuration;
     const from = this.#activePlayer;
-    const toDeck = this.#active === 'A' ? 'B' : 'A';
 
     if (!from || !this.#activeDevice) {
       this.#isCrossfading = false;
@@ -145,7 +144,7 @@ export class DJPlayer extends EventTarget {
     try {
       // Prime the incoming deck silently
       await to.setVolume(0);
-      await this.#playOnDeckWithRecovery(toDeck, to, toDevice, uri);
+      await this.#playOnDevice(toDevice, uri);
 
       const STEPS = 80;
       const stepMs = duration / STEPS;
@@ -446,30 +445,11 @@ export class DJPlayer extends EventTarget {
       throw new Error(`Cannot play fallback: ${reason}`);
     }
     await activePlayer.setVolume(1);
-    await this.#playOnDeckWithRecovery(this.#active === 'A' ? 'A' : 'B', activePlayer, activeDevice, uri);
+    await this.#playOnDevice(activeDevice, uri);
     this.#currentTrackUri = uri;
     this.#crossfadeNotified = false;
     this.#trackEndNotified = false;
     this.#isCrossfading = false;
-  }
-
-  #isDeviceNotFoundError(err) {
-    const msg = String(err?.message ?? '').toLowerCase();
-    return msg.includes('device not found') || msg.includes('http 404');
-  }
-
-  async #playOnDeckWithRecovery(deck, player, deviceId, uri) {
-    try {
-      await this.#playOnDevice(deviceId, uri);
-      return;
-    } catch (err) {
-      if (!this.#isDeviceNotFoundError(err)) {
-        throw err;
-      }
-      console.warn(`Deck ${deck} device rejected (${err.message}) — reconnect and retry`);
-      const refreshedDeviceId = await this.#reconnectDeck(player, deck);
-      await this.#playOnDevice(refreshedDeviceId, uri);
-    }
   }
 
   async #playOnDevice(deviceId, uri) {

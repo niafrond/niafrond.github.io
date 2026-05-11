@@ -15,6 +15,7 @@ const SCOPES = [
   'user-modify-playback-state',
   'playlist-read-private',
   'playlist-read-collaborative',
+  'user-library-read'
 ].join(' ');
 
 /**

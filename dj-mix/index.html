@@ -13,6 +13,7 @@
     // Capture Spotify SDK ready event before SDK script runs
     window.spotifySDKReady = new Promise(resolve => {
       window.onSpotifyWebPlaybackSDKReady = resolve;
+      
     });
   </script>
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
