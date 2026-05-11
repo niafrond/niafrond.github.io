@@ -47,10 +47,17 @@
       <div id="tab-mix" class="tab-panel active">
         <div class="player-section">
           <div class="now-playing">
-            <div class="album-art-wrapper">
-              <img id="album-art" src="" alt="" class="album-art" hidden>
-              <div class="album-art-placeholder" id="art-placeholder">🎵</div>
-              <div class="crossfade-ring" id="crossfade-ring" hidden></div>
+            <div class="album-art-pair">
+              <div class="album-art-wrapper">
+                <img id="album-art" src="" alt="" class="album-art" hidden>
+                <div class="album-art-placeholder" id="art-placeholder">🎵</div>
+                <div class="crossfade-ring" id="crossfade-ring" hidden></div>
+              </div>
+              <div class="album-art-next-wrapper" aria-live="polite">
+                <img id="next-album-art" src="" alt="" class="album-art-next" hidden>
+                <div class="album-art-next-placeholder" id="next-art-placeholder">♪</div>
+                <div id="next-art-label" class="next-art-label">A suivre</div>
+              </div>
             </div>
             <div class="track-info">
               <div id="track-name" class="track-name">Aucune chanson</div>

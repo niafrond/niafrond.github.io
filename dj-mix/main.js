@@ -26,6 +26,8 @@ let playbackDurationMs = 0;
 let lastSearchQuery = '';
 let pendingSearchAdd = false;
 let searchDebounceTimer = null;
+let launchPreviewActive = false;
+let launchPreviewArtUrl = '';
 
 const setupScreen = document.getElementById('setup-screen');
 const appScreen = document.getElementById('app-screen');
@@ -42,6 +44,9 @@ const searchResults = document.getElementById('search-results');
 
 const albumArt = document.getElementById('album-art');
 const artPlaceholder = document.getElementById('art-placeholder');
+const nextAlbumArt = document.getElementById('next-album-art');
+const nextArtPlaceholder = document.getElementById('next-art-placeholder');
+const nextArtLabel = document.getElementById('next-art-label');
 const crossfadeRing = document.getElementById('crossfade-ring');
 const trackName = document.getElementById('track-name');
 const trackArtist = document.getElementById('track-artist');
@@ -447,6 +452,15 @@ async function startPlaybackForIndex(index, mode) {
   const item = queue[index];
   if (!item || !player) return;
 
+  if (mode === 'crossfade' && currentTrackId && item.id !== currentTrackId) {
+    launchPreviewActive = true;
+    launchPreviewArtUrl = item.artUrl || '';
+  } else {
+    launchPreviewActive = false;
+    launchPreviewArtUrl = '';
+  }
+  updateUpcomingArtwork();
+
   currentIndex = index;
   currentTrackId = item.id;
 
@@ -466,10 +480,14 @@ async function startPlaybackForIndex(index, mode) {
     isPlaying = true;
     playIcon.textContent = '⏸';
     prefetchNext(index + 1);
+    launchPreviewActive = false;
+    launchPreviewArtUrl = '';
     renderQueue();
   } catch (err) {
     item.sourceState = 'error';
     item.sourceError = err.message;
+    launchPreviewActive = false;
+    launchPreviewArtUrl = '';
     renderQueue();
     showToast(`API: ${err.message}`, true);
     throw err;
@@ -665,6 +683,7 @@ function prefetchNext(index) {
 
 function renderQueue() {
   saveQueue();
+  updateUpcomingArtwork();
 
   if (!queue.length) {
     queueList.innerHTML = '';
@@ -848,6 +867,35 @@ function updateNowPlaying(item) {
     albumArt.hidden = true;
     artPlaceholder.style.display = '';
   }
+
+  updateUpcomingArtwork();
+}
+
+function updateUpcomingArtwork() {
+  if (!nextAlbumArt || !nextArtPlaceholder || !nextArtLabel) return;
+
+  let label = 'A suivre';
+  let artUrl = '';
+
+  if (launchPreviewActive) {
+    label = 'En lancement';
+    artUrl = launchPreviewArtUrl;
+  } else {
+    const next = queue[currentIndex + 1];
+    artUrl = next?.artUrl || '';
+  }
+
+  if (artUrl) {
+    nextAlbumArt.src = artUrl;
+    nextAlbumArt.hidden = false;
+    nextArtPlaceholder.style.display = 'none';
+  } else {
+    nextAlbumArt.src = '';
+    nextAlbumArt.hidden = true;
+    nextArtPlaceholder.style.display = '';
+  }
+
+  nextArtLabel.textContent = label;
 }
 
 function showCrossfadeRing(on) {
@@ -917,6 +965,8 @@ function showApp() {
 function doLogout() {
   player?.destroy();
   player = null;
+  launchPreviewActive = false;
+  launchPreviewArtUrl = '';
 
   for (const item of queue) releaseLocalBlob(item);
   if (blobCleanupTimer) {
@@ -1010,6 +1060,7 @@ function buildResultHTML(track, kind = 'song', index = 0) {
   const hasDuration = Number(track.duration_ms) > 0;
   const dur = hasDuration ? formatTime(track.duration_ms) : '--:--';
   const isArtistResult = Boolean(track.isArtistResult);
+  const localBadge = track.isLocalResult ? '<span class="result-local-badge" title="Fichier local">📁</span>' : '';
   const durationHtml = isArtistResult ? '<span class="result-duration">Artiste</span>' : `<span class="result-duration">${dur}</span>`;
   const addLabel = isArtistResult ? '🔎' : '+';
   const addAria = isArtistResult ? 'Rechercher cet artiste' : 'Ajouter';
@@ -1018,7 +1069,7 @@ function buildResultHTML(track, kind = 'song', index = 0) {
     <div class="search-result-item" data-kind="${kind}" data-index="${index}" role="button" tabindex="0">
       <img class="result-art" src="${escHtml(artUrl)}" alt="" loading="lazy">
       <div class="result-info">
-        <div class="result-name">${escHtml(track.name)}</div>
+        <div class="result-name">${escHtml(track.name)} ${localBadge}</div>
         <div class="result-artist">${escHtml(artist)}</div>
       </div>
       ${durationHtml}
@@ -1143,6 +1194,7 @@ function splitItunesSearchQuery(rawQuery) {
 
 function mapApiTrackToSearchItem(track) {
   if (!track) return null;
+  const isLocalResult = isLocalTrackResult(track);
 
   const type = String(track.type || track.resultType || track.kind || '').toLowerCase();
   const isArtistResult = Boolean(
@@ -1163,6 +1215,7 @@ function mapApiTrackToSearchItem(track) {
       duration_ms: 0,
       duration: 0,
       isArtistResult: true,
+      isLocalResult,
       popularityScore: getPopularityScore(track),
       artists: [{ name: artistName }],
       album: { images: artUrl ? [{ url: artUrl }] : [] },
@@ -1186,6 +1239,7 @@ function mapApiTrackToSearchItem(track) {
     duration_ms: duration,
     duration,
     isArtistResult: false,
+    isLocalResult,
     popularityScore: getPopularityScore(track),
     artists: [{ name: artist }],
     album: { images: artUrl ? [{ url: artUrl }, { url: artUrl }] : [] },
@@ -1194,7 +1248,12 @@ function mapApiTrackToSearchItem(track) {
 }
 
 function sortSearchResultsByPopularity(a, b) {
-  // Put songs before artists, then sort by popularity descending.
+  // Put local results first, then songs before artists, then popularity.
+  if (a.isLocalResult !== b.isLocalResult) {
+    return a.isLocalResult ? -1 : 1;
+  }
+
+  // Then put songs before artists.
   if (a.isArtistResult !== b.isArtistResult) {
     return a.isArtistResult ? 1 : -1;
   }
@@ -1203,8 +1262,39 @@ function sortSearchResultsByPopularity(a, b) {
   const scoreB = Number.isFinite(b.popularityScore) ? b.popularityScore : 0;
   if (scoreA !== scoreB) return scoreB - scoreA;
 
-  // Keep deterministic ordering when popularity is missing/equal.
-  return String(a.name || '').localeCompare(String(b.name || ''), 'fr', { sensitivity: 'base' });
+  // Keep API order when popularity is equal or missing.
+  return 0;
+}
+
+function isLocalTrackResult(track) {
+  if (!track || typeof track !== 'object') return false;
+
+  // Primary API contract: cached results must be flagged with cached=true.
+  if (track.cached === true || track.isCached === true) return true;
+
+  const candidates = [
+    track.isLocal,
+    track.local,
+    track.sourceType,
+    track.source,
+    track.location,
+    track.storage,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'boolean') {
+      if (candidate) return true;
+      continue;
+    }
+
+    const text = String(candidate || '').trim().toLowerCase();
+    if (!text) continue;
+    if (text === 'local' || text === 'cached' || text === 'cache' || text === 'disk' || text === 'file' || text === 'true') {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function getPopularityScore(track) {
