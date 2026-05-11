@@ -17,6 +17,9 @@ export class DJPlayer extends EventTarget {
   #playerB = null;
   #deviceA = null;
   #deviceB = null;
+  #deviceASeenAt = 0;
+  #deviceBSeenAt = 0;
+  #deviceTtlMs = 10 * 60 * 1000; // keep device IDs valid for 10 minutes
   #active = 'A';           // which deck is the "current" one
   #crossfadeDuration = 5000; // ms
   #isCrossfading = false;
@@ -66,8 +69,10 @@ export class DJPlayer extends EventTarget {
 
     this.#playerA = a.player;
     this.#deviceA = a.deviceId;
+    this.#deviceASeenAt = Date.now();
     this.#playerB = b.player;
     this.#deviceB = b.deviceId;
+    this.#deviceBSeenAt = Date.now();
     console.log('DJPlayer initialized.');
 
     // FIX A — Keep device IDs in sync on reconnect (ready fires with new device_id).
@@ -222,10 +227,20 @@ export class DJPlayer extends EventTarget {
 
   #attachDeckReadySync(player, deck) {
     player?.addListener('ready', ({ device_id }) => {
-      if (deck === 'A') this.#deviceA = device_id;
-      else this.#deviceB = device_id;
+      if (deck === 'A') {
+        this.#deviceA = device_id;
+        this.#deviceASeenAt = Date.now();
+      } else {
+        this.#deviceB = device_id;
+        this.#deviceBSeenAt = Date.now();
+      }
       console.log(`Deck ${deck} reconnected with device ID: ${device_id}`);
     });
+  }
+
+  #isDeviceFresh(deck) {
+    const seenAt = deck === 'A' ? this.#deviceASeenAt : this.#deviceBSeenAt;
+    return Date.now() - seenAt <= this.#deviceTtlMs;
   }
 
   async #createDeckWithRetry(name, maxAttempts = 3) {
@@ -249,8 +264,14 @@ export class DJPlayer extends EventTarget {
     let player = deck === 'A' ? this.#playerA : this.#playerB;
     let deviceId = deck === 'A' ? this.#deviceA : this.#deviceB;
 
-    if (player && deviceId) {
+    if (player && deviceId && this.#isDeviceFresh(deck)) {
       return { player, deviceId };
+    }
+
+    if (player && deviceId && !this.#isDeviceFresh(deck)) {
+      console.warn(`Deck ${deck} device ID expired (>${this.#deviceTtlMs} ms) — reconnecting before crossfade…`);
+      const reconnected = await this.#reconnectDeck(player, deck);
+      return { player, deviceId: reconnected };
     }
 
     if (player && !deviceId) {
@@ -299,8 +320,13 @@ export class DJPlayer extends EventTarget {
       const onReady = ({ device_id }) => {
         player?.removeListener?.('ready', onReady);
         clearTimeout(timeout);
-        if (deck === 'A') this.#deviceA = device_id;
-        else              this.#deviceB = device_id;
+        if (deck === 'A') {
+          this.#deviceA = device_id;
+          this.#deviceASeenAt = Date.now();
+        } else {
+          this.#deviceB = device_id;
+          this.#deviceBSeenAt = Date.now();
+        }
         console.log(`Deck ${deck} reconnected with new device ID: ${device_id}`);
         resolve(device_id);
       };
@@ -340,12 +366,7 @@ export class DJPlayer extends EventTarget {
       // Log the event for debugging but keep the last known device_id intact
       // so crossfadeTo() can detect null and trigger #reconnectDeck.
       player.addListener('not_ready', ({ device_id }) => {
-        console.warn(`Deck "${name}" went offline (${device_id}) — device_id preserved for reconnect detection`);
-        // Intentionally NOT updating #deviceA / #deviceB here.
-        // If the deck went offline its stored device_id is now invalid;
-        // set it to null so crossfadeTo() knows it must reconnect.
-        if (name.endsWith('Deck A')) this.#deviceA = null;
-        if (name.endsWith('Deck B')) this.#deviceB = null;
+        console.warn(`Deck "${name}" went offline (${device_id}) — keeping last device_id for up to ${this.#deviceTtlMs} ms`);
 
         this.dispatchEvent(new CustomEvent('error', {
           detail: { message: `Deck "${name}" went offline (${device_id})` },
