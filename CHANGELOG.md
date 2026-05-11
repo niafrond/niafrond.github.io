@@ -1,3 +1,9 @@
+## [1.185.0](https://github.com/niafrond/niafrond.github.io/compare/v1.184.0...v1.185.0) (2026-05-11)
+
+### Features
+
+* **dj-mix:** enhance album art display with next track preview and local result badge ([ab3251d](https://github.com/niafrond/niafrond.github.io/commit/ab3251daebbaa47057159b8c14e96dec477c086e))
+
 ## [1.184.0](https://github.com/niafrond/niafrond.github.io/compare/v1.183.0...v1.184.0) (2026-05-11)
 
 ### Features
