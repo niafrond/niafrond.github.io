@@ -80,8 +80,10 @@ let mixFeatures = {
   autoBpm: false,
   echo: false,
   distortion: false,
-  vocalRemove: false,
-  instruRemove: false,
+  deckFx: {
+    A: { vocalRemove: false, instruRemove: false },
+    B: { vocalRemove: false, instruRemove: false },
+  },
 };
 let fxControlsHidden = false;
 const deckDisplayItems = { A: null, B: null };
@@ -115,6 +117,8 @@ const deckAVol = document.getElementById('deck-a-vol');
 const deckBVol = document.getElementById('deck-b-vol');
 const deckASlider = document.getElementById('deck-a-slider');
 const deckBSlider = document.getElementById('deck-b-slider');
+const deckAProgress = document.getElementById('deck-a-progress');
+const deckBProgress = document.getElementById('deck-b-progress');
 const deckAFill = document.getElementById('deck-a-fill');
 const deckBFill = document.getElementById('deck-b-fill');
 const trackArtistB = document.getElementById('track-artist-b');
@@ -134,8 +138,10 @@ const deckFxActions = document.querySelector('.deck-fx-actions');
 const autoBpmBtn = document.getElementById('fx-auto-bpm-btn');
 const echoBtn = document.getElementById('fx-echo-btn');
 const distortionBtn = document.getElementById('fx-distortion-btn');
-const vocalRemoveBtn = document.getElementById('fx-vocal-btn');
-const instruRemoveBtn = document.getElementById('fx-instru-btn');
+const deckAVocalBtn = document.getElementById('deck-a-vocal-btn');
+const deckAInstruBtn = document.getElementById('deck-a-instru-btn');
+const deckBVocalBtn = document.getElementById('deck-b-vocal-btn');
+const deckBInstruBtn = document.getElementById('deck-b-instru-btn');
 const autoMixBtn = document.getElementById('automix-btn');
 const crossfadeSlider = document.getElementById('crossfade-slider');
 const crossfadeValue = document.getElementById('crossfade-value');
@@ -203,12 +209,14 @@ const mixControls = createMixControls({
   deckAPanel,
   deckBPanel,
   deckFxActions,
+  deckScopedFxButtons: {
+    A: { vocalRemoveBtn: deckAVocalBtn, instruRemoveBtn: deckAInstruBtn },
+    B: { vocalRemoveBtn: deckBVocalBtn, instruRemoveBtn: deckBInstruBtn },
+  },
   deckMixLabel,
   deckMixSlider,
   distortionBtn,
   echoBtn,
-  vocalRemoveBtn,
-  instruRemoveBtn,
   fxVisibilityBtn,
   getDeckBCueIndex: () => deckBCueIndex,
   getDeckCueDeck: () => deckCueDeck,
@@ -658,8 +666,9 @@ async function launchDeckFromQueue(deck, options = {}) {
   } else if (deckItemIndex >= 0) {
     targetIndex = deckItemIndex;
   } else if (deck === inactiveDeck) {
-    targetIndex = fallbackIndex + 1 < queue.length ? fallbackIndex + 1 : fallbackIndex;
+    targetIndex = getFollowingQueueIndex(fallbackIndex);
   }
+  if (targetIndex < 0) targetIndex = fallbackIndex;
 
   const item = queue[targetIndex];
   if (!item) return;
@@ -688,7 +697,7 @@ async function launchDeckFromQueue(deck, options = {}) {
       launchPreviewTitle = '';
       launchPreviewArtist = '';
       launchPreviewDeck = null;
-      prefetchNext(targetIndex + 1);
+      prefetchNext(getFollowingQueueIndex(targetIndex));
       renderQueue();
     } else {
       launchPreviewActive = true;
@@ -813,6 +822,34 @@ deckBSlider?.addEventListener('input', () => {
   player.setDeckVolumes(a, b, 80);
 });
 
+deckAProgress?.addEventListener('click', (event) => {
+  seekDeckFromProgressEvent('A', event);
+});
+
+deckBProgress?.addEventListener('click', (event) => {
+  seekDeckFromProgressEvent('B', event);
+});
+
+deckAProgress?.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  const rect = deckAProgress.getBoundingClientRect();
+  seekDeckFromProgressEvent('A', {
+    currentTarget: deckAProgress,
+    clientX: rect.left + (rect.width / 2),
+  });
+});
+
+deckBProgress?.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  const rect = deckBProgress.getBoundingClientRect();
+  seekDeckFromProgressEvent('B', {
+    currentTarget: deckBProgress,
+    clientX: rect.left + (rect.width / 2),
+  });
+});
+
 autoBpmBtn?.addEventListener('click', () => {
   setMixFeatureEnabled('autoBpm', !mixFeatures.autoBpm);
 });
@@ -825,12 +862,24 @@ distortionBtn?.addEventListener('click', () => {
   setMixFeatureEnabled('distortion', !mixFeatures.distortion);
 });
 
-vocalRemoveBtn?.addEventListener('click', () => {
-  setMixFeatureEnabled('vocalRemove', !mixFeatures.vocalRemove);
+deckAVocalBtn?.addEventListener('click', () => {
+  const enabled = Boolean(mixFeatures.deckFx?.A?.vocalRemove);
+  setMixFeatureEnabled('vocalRemove', !enabled, 'A');
 });
 
-instruRemoveBtn?.addEventListener('click', () => {
-  setMixFeatureEnabled('instruRemove', !mixFeatures.instruRemove);
+deckAInstruBtn?.addEventListener('click', () => {
+  const enabled = Boolean(mixFeatures.deckFx?.A?.instruRemove);
+  setMixFeatureEnabled('instruRemove', !enabled, 'A');
+});
+
+deckBVocalBtn?.addEventListener('click', () => {
+  const enabled = Boolean(mixFeatures.deckFx?.B?.vocalRemove);
+  setMixFeatureEnabled('vocalRemove', !enabled, 'B');
+});
+
+deckBInstruBtn?.addEventListener('click', () => {
+  const enabled = Boolean(mixFeatures.deckFx?.B?.instruRemove);
+  setMixFeatureEnabled('instruRemove', !enabled, 'B');
 });
 
 
@@ -1138,11 +1187,12 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     // After a crossfade: load next track into the now-inactive deck (paused, ready for next fade)
     if ((mode === 'autofade' || mode === 'crossfade') && player) {
       const inactiveDeck = getInactiveDeck();
-      const nextItem = queue[index + 1];
+      const nextIndex = getFollowingQueueIndex(index);
+      const nextItem = nextIndex >= 0 ? queue[nextIndex] : null;
       if (nextItem) {
         logDebug('startPlaybackForIndex(): preparing inactive deck with next track', {
           inactiveDeck,
-          nextIndex: index + 1,
+          nextIndex,
           nextItemId: nextItem.id,
           nextItemName: nextItem.name,
         });
@@ -1156,7 +1206,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     }
 
     isPlaying = true;
-    prefetchNext(index + 1);
+  prefetchNext(getFollowingQueueIndex(index));
     launchPreviewActive = false;
     launchPreviewArtUrl = '';
     launchPreviewTitle = '';
@@ -1193,6 +1243,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
 }
 
 function prefetchNext(index) {
+  if (index < 0) return;
   const next = queue[index];
   if (!next) return;
   if (next.localBlobUrl) return;
@@ -1383,10 +1434,38 @@ function touchQueueItem(item) {
   item.lastTouchedAt = Date.now();
 }
 
+function getWrappedQueueIndex(index) {
+  if (!queue.length) return -1;
+  const numeric = Number(index);
+  if (!Number.isFinite(numeric)) return -1;
+  return ((numeric % queue.length) + queue.length) % queue.length;
+}
+
+function getFollowingQueueIndex(index) {
+  if (queue.length <= 1) return -1;
+  return getWrappedQueueIndex(index + 1);
+}
+
 function updateCrossfadeBars({ fromDeck,fromVolume, toVolume, toPosition, toDuration }) {
   if(fromDeck === 'A') {
     updateDeckMixUI(toVolume);
   }else {updateDeckMixUI(fromVolume);}
+}
+
+async function seekDeckFromProgressEvent(deck, event) {
+  if (!player || !event?.currentTarget) return;
+  const detail = player._lastDeckState;
+  const deckState = deck === 'B' ? detail?.deckB : detail?.deckA;
+  const durationMs = Number(deckState?.durationMs) || 0;
+  if (durationMs <= 0) return;
+
+  const rect = event.currentTarget.getBoundingClientRect();
+  if (!rect.width) return;
+
+  const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+  await player.seekDeckTo(deck, durationMs * ratio).catch((err) => {
+    showToast(`Erreur: ${err.message}`, true);
+  });
 }
 
 updateCrossfadeControlUI(crossfadeSlider.value);
@@ -1408,8 +1487,10 @@ function doLogout() {
     autoBpm: false,
     echo: false,
     distortion: false,
-    vocalRemove: false,
-    instruRemove: false,
+    deckFx: {
+      A: { vocalRemove: false, instruRemove: false },
+      B: { vocalRemove: false, instruRemove: false },
+    },
   };
 
   player?.destroy();

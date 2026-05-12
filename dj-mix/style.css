@@ -1051,6 +1051,57 @@ input {
   color: var(--text);
 }
 
+.deck-local-fx {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.deck-fx-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+
+.deck-fx-chip:hover {
+  border-color: rgba(255, 255, 255, 0.24);
+  color: var(--text);
+}
+
+.deck-fx-chip:active {
+  transform: scale(0.97);
+  background: var(--surface2);
+}
+
+.deck-fx-chip.is-enabled {
+  border-color: rgba(239, 68, 68, 0.72);
+  background: rgba(239, 68, 68, 0.14);
+  color: #ff7b7b;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.18);
+}
+
+.deck-fx-emoji {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.deck-fx-chip-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.35px;
+  text-transform: uppercase;
+}
+
 .deck-volume-control {
   width: 100%;
   padding: 2px 0;
@@ -1160,6 +1211,21 @@ input {
   background: var(--surface3);
   border-radius: 999px;
   overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+
+.deck-progress-bar:hover {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.deck-progress-bar:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-dim), 0 0 0 1px var(--accent);
+}
+
+.deck-progress-bar:active {
+  transform: scaleY(1.15);
 }
 
 .deck-progress-fill {
@@ -1403,6 +1469,17 @@ input {
   border-color: var(--accent);
   color: var(--accent);
   background: var(--accent-dim);
+}
+
+@media (max-width: 420px) {
+  .deck-fx-chip {
+    gap: 4px;
+    padding: 7px 8px;
+  }
+
+  .deck-fx-chip-label {
+    font-size: 10px;
+  }
 }
 
 .crossfade-control--mix {

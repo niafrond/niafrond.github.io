@@ -6,6 +6,59 @@ const logDebug = (event, payload) => logger.debug(event, payload);
 const logInfo = (event, payload) => logger.info(event, payload);
 const logError = (event, payload) => logger.error(event, payload);
 
+function createDefaultDeckFx() {
+  return {
+    A: { vocalRemove: false, instruRemove: false },
+    B: { vocalRemove: false, instruRemove: false },
+  };
+}
+
+function mergeMixFeatureSettings(current, next) {
+  const base = current || {};
+  const incoming = next || {};
+  const mergedDeckFx = createDefaultDeckFx();
+
+  for (const deck of ['A', 'B']) {
+    mergedDeckFx[deck] = {
+      ...mergedDeckFx[deck],
+      ...(base.deckFx?.[deck] || {}),
+      ...(incoming.deckFx?.[deck] || {}),
+    };
+
+    if (incoming[deck]?.vocalRemove !== undefined || incoming[deck]?.instruRemove !== undefined) {
+      mergedDeckFx[deck] = {
+        ...mergedDeckFx[deck],
+        ...(incoming[deck] || {}),
+      };
+    }
+  }
+
+  if (incoming.vocalRemove !== undefined || incoming.instruRemove !== undefined) {
+    mergedDeckFx.A = {
+      ...mergedDeckFx.A,
+      vocalRemove: incoming.vocalRemove !== undefined ? Boolean(incoming.vocalRemove) : mergedDeckFx.A.vocalRemove,
+      instruRemove: incoming.instruRemove !== undefined ? Boolean(incoming.instruRemove) : mergedDeckFx.A.instruRemove,
+    };
+    mergedDeckFx.B = {
+      ...mergedDeckFx.B,
+      vocalRemove: incoming.vocalRemove !== undefined ? Boolean(incoming.vocalRemove) : mergedDeckFx.B.vocalRemove,
+      instruRemove: incoming.instruRemove !== undefined ? Boolean(incoming.instruRemove) : mergedDeckFx.B.instruRemove,
+    };
+  }
+
+  for (const deck of ['A', 'B']) {
+    if (mergedDeckFx[deck].vocalRemove) mergedDeckFx[deck].instruRemove = false;
+    if (mergedDeckFx[deck].instruRemove) mergedDeckFx[deck].vocalRemove = false;
+  }
+
+  return {
+    autoBpm: incoming.autoBpm !== undefined ? Boolean(incoming.autoBpm) : Boolean(base.autoBpm),
+    echo: incoming.echo !== undefined ? Boolean(incoming.echo) : Boolean(base.echo),
+    distortion: incoming.distortion !== undefined ? Boolean(incoming.distortion) : Boolean(base.distortion),
+    deckFx: mergedDeckFx,
+  };
+}
+
 /**
  * DJPlayer - dual local-audio deck player with true crossfade.
  *
@@ -31,8 +84,7 @@ export class DJPlayer extends EventTarget {
     autoBpm: false,
     echo: false,
     distortion: false,
-    vocalRemove: false,
-    instruRemove: false,
+    deckFx: createDefaultDeckFx(),
   };
   #ready = false;
   #destroyed = false;
@@ -173,10 +225,7 @@ export class DJPlayer extends EventTarget {
   }
 
   setMixFeatures(settings) {
-    this.#mixFeatureSettings = {
-      ...this.#mixFeatureSettings,
-      ...settings,
-    };
+    this.#mixFeatureSettings = mergeMixFeatureSettings(this.#mixFeatureSettings, settings);
 
     if (this.#mixFeatures) {
       this.#mixFeatures.setEnabled(this.#mixFeatureSettings).catch(() => {
@@ -197,7 +246,11 @@ export class DJPlayer extends EventTarget {
   }
 
   async seekTo(positionMs, options = {}) {
-    const active = this.#activeAudio;
+    return this.seekDeckTo(this.#active, positionMs, options);
+  }
+
+  async seekDeckTo(deck, positionMs, options = {}) {
+    const active = deck === 'B' ? this.#audioB : this.#audioA;
     if (!active) return;
 
     const durationMs = Number.isFinite(active.duration) && active.duration > 0
@@ -220,6 +273,7 @@ export class DJPlayer extends EventTarget {
     await this.#fadeVolume(active, initialVolume, floorVolume, fadeMs);
     active.currentTime = safeTargetMs / 1000;
     await this.#fadeVolume(active, floorVolume, initialVolume, fadeMs);
+    this.#emitDeckState();
   }
 
   async crossfadeTo(source, durationOverride) {
@@ -419,7 +473,7 @@ export class DJPlayer extends EventTarget {
     });
 
     audio.addEventListener('error', () => {
-      console.error(`Audio error on deck ${deck}:`, audio.error);
+      if(error.message == "MEDIA_ELEMENT_ERROR: Empty src attribute") return
       const src = audio.currentSrc || audio.src || '';
       if (!src || this.#destroyed) return;
       this.dispatchEvent(new CustomEvent('error', {

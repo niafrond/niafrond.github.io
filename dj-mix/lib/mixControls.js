@@ -4,12 +4,11 @@ export function createMixControls(options) {
     deckAPanel,
     deckBPanel,
     deckFxActions,
+    deckScopedFxButtons,
     deckMixLabel,
     deckMixSlider,
     distortionBtn,
     echoBtn,
-    vocalRemoveBtn ,
-    instruRemoveBtn,
     fxVisibilityBtn,
     getDeckBCueIndex,
     getDeckCueDeck,
@@ -24,6 +23,8 @@ export function createMixControls(options) {
     setDeckMixRatio,
     setMixFeatures,
   } = options;
+
+  const DECK_SCOPED_FEATURES = new Set(['vocalRemove', 'instruRemove']);
 
   function clampCrossfadeSeconds(value) {
     return Math.max(1, Math.min(30, Number(value) || 12));
@@ -74,13 +75,28 @@ export function createMixControls(options) {
     btn.textContent = `${label}: ${active ? 'ON' : 'OFF'}`;
   }
 
+  function styleDeckFxButton(btn, active, label, platineLabel) {
+    if (!btn) return;
+    btn.classList.toggle('is-enabled', active);
+    btn.setAttribute('aria-pressed', String(active));
+    btn.setAttribute('title', `${label} platine ${platineLabel}: ${active ? 'ON' : 'OFF'}`);
+    btn.setAttribute('aria-label', `${label} platine ${platineLabel}: ${active ? 'activé' : 'désactivé'}`);
+  }
+
+  function getDeckFxState(deck) {
+    const features = getMixFeatures();
+    return features.deckFx?.[deck] || { vocalRemove: false, instruRemove: false };
+  }
+
   function updateMixFeaturesUI() {
     const features = getMixFeatures();
     styleFxButton(autoBpmBtn, features.autoBpm, 'Auto BPM');
     styleFxButton(echoBtn, features.echo, 'Echo');
     styleFxButton(distortionBtn, features.distortion, 'Distorsion');
-    styleFxButton(vocalRemoveBtn, features.vocalRemove, 'Voix');
-    styleFxButton(instruRemoveBtn, features.instruRemove, 'Instru');
+    styleDeckFxButton(deckScopedFxButtons?.A?.vocalRemoveBtn, getDeckFxState('A').vocalRemove, 'Retrait voix', '1');
+    styleDeckFxButton(deckScopedFxButtons?.A?.instruRemoveBtn, getDeckFxState('A').instruRemove, 'Retrait instru', '1');
+    styleDeckFxButton(deckScopedFxButtons?.B?.vocalRemoveBtn, getDeckFxState('B').vocalRemove, 'Retrait voix', '2');
+    styleDeckFxButton(deckScopedFxButtons?.B?.instruRemoveBtn, getDeckFxState('B').instruRemove, 'Retrait instru', '2');
   }
 
   function updateDeckCueUI() {
@@ -113,11 +129,31 @@ export function createMixControls(options) {
     updateMixFeaturesUI();
   }
 
-  function setMixFeatureEnabled(name, enabled) {
-    setMixFeatures({
-      ...getMixFeatures(),
-      [name]: Boolean(enabled),
-    });
+  function setMixFeatureEnabled(name, enabled, deck = null) {
+    const nextEnabled = Boolean(enabled);
+    const features = getMixFeatures();
+    if (DECK_SCOPED_FEATURES.has(name)) {
+      const targetDeck = deck === 'B' ? 'B' : (deck === 'A' ? 'A' : getFocusDeck());
+      const nextDeckFx = {
+        A: { vocalRemove: false, instruRemove: false, ...(features.deckFx?.A || {}) },
+        B: { vocalRemove: false, instruRemove: false, ...(features.deckFx?.B || {}) },
+      };
+      nextDeckFx[targetDeck] = {
+        ...nextDeckFx[targetDeck],
+        [name]: nextEnabled,
+      };
+      if (name === 'vocalRemove' && nextEnabled) nextDeckFx[targetDeck].instruRemove = false;
+      if (name === 'instruRemove' && nextEnabled) nextDeckFx[targetDeck].vocalRemove = false;
+      setMixFeatures({
+        ...features,
+        deckFx: nextDeckFx,
+      });
+    } else {
+      setMixFeatures({
+        ...features,
+        [name]: nextEnabled,
+      });
+    }
     applyMixFeatures();
   }
 

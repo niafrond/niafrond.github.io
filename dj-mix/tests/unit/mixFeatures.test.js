@@ -13,6 +13,10 @@ let mediaElementSourceCalls = 0;
 function createAudioContextMock() {
   audioCtxConstructorCalls += 1;
 
+  const createPassThroughNode = () => ({
+    connect: () => {},
+  });
+
   const ctx = {
     state: 'running',
     destination: {},
@@ -24,6 +28,13 @@ function createAudioContextMock() {
     createGain: () => ({
       connect: () => {},
       gain: { value: 1 },
+    }),
+    createChannelSplitter: () => createPassThroughNode(),
+    createChannelMerger: () => createPassThroughNode(),
+    createAnalyser: () => ({
+      connect: () => {},
+      fftSize: 1024,
+      getFloatTimeDomainData: (buffer) => buffer.fill(0),
     }),
     createDelay: () => ({
       connect: () => {},
@@ -62,7 +73,7 @@ function makeAudioEl() {
 
 // ─── Import ───────────────────────────────────────────────────────────────────
 
-import { SimpleMixFeatures } from '../../lib/mixFeatures.js';
+import { SimpleMixFeatures, computeAdaptiveMidSideGains } from '../../lib/mixFeatures.js';
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
@@ -116,6 +127,17 @@ describe('SimpleMixFeatures — lazy AudioContext creation', () => {
     await features.setEnabled({ autoBpm: false, echo: false, distortion: true });
 
     expect(audioCtxConstructorCalls).toBe(1);
+  });
+
+  test('AudioContext IS created when deck vocal removal is enabled', async () => {
+    const audioA = makeAudioEl();
+    const audioB = makeAudioEl();
+    const features = new SimpleMixFeatures(audioA, audioB);
+
+    await features.setEnabled({ deckFx: { A: { vocalRemove: true } } });
+
+    expect(audioCtxConstructorCalls).toBe(1);
+    expect(mediaElementSourceCalls).toBe(2);
   });
 
   test('AudioContext created only once when features toggled on then off', async () => {
@@ -179,5 +201,30 @@ describe('SimpleMixFeatures — destroy()', () => {
     expect(() => features.destroy()).not.toThrow();
     expect(audioA.playbackRate).toBe(1);
     expect(audioB.playbackRate).toBe(1);
+  });
+});
+
+describe('computeAdaptiveMidSideGains()', () => {
+  test('attenuates mid harder for vocal removal on mid-heavy tracks', () => {
+    const gains = computeAdaptiveMidSideGains('vocalRemove', { mid: 0.92, side: 0.08 });
+
+    expect(gains.midGain).toBeLessThan(0.2);
+    expect(gains.sideGain).toBeGreaterThan(0.9);
+    expect(gains.midGain).toBeLessThan(gains.sideGain);
+  });
+
+  test('attenuates side harder for instrumental removal on wide tracks', () => {
+    const gains = computeAdaptiveMidSideGains('instruRemove', { mid: 0.18, side: 0.82 });
+
+    expect(gains.sideGain).toBeLessThan(0.25);
+    expect(gains.midGain).toBeGreaterThan(0.9);
+    expect(gains.sideGain).toBeLessThan(gains.midGain);
+  });
+
+  test('keeps more of the target band when the song is poorly separated', () => {
+    const gains = computeAdaptiveMidSideGains('vocalRemove', { mid: 0.52, side: 0.48 });
+
+    expect(gains.midGain).toBeGreaterThan(0.4);
+    expect(gains.sideGain).toBeGreaterThan(0.9);
   });
 });
