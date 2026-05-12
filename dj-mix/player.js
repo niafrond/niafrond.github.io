@@ -31,6 +31,8 @@ export class DJPlayer extends EventTarget {
     autoBpm: false,
     echo: false,
     distortion: false,
+    vocalRemove: false,
+    instruRemove: false,
   };
   #ready = false;
   #destroyed = false;

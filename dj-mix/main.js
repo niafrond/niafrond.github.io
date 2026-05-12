@@ -80,6 +80,8 @@ let mixFeatures = {
   autoBpm: false,
   echo: false,
   distortion: false,
+  vocalRemove: false,
+  instruRemove: false,
 };
 let fxControlsHidden = false;
 const deckDisplayItems = { A: null, B: null };
@@ -132,6 +134,8 @@ const deckFxActions = document.querySelector('.deck-fx-actions');
 const autoBpmBtn = document.getElementById('fx-auto-bpm-btn');
 const echoBtn = document.getElementById('fx-echo-btn');
 const distortionBtn = document.getElementById('fx-distortion-btn');
+const vocalRemoveBtn = document.getElementById('fx-vocal-btn');
+const instruRemoveBtn = document.getElementById('fx-instru-btn');
 const autoMixBtn = document.getElementById('automix-btn');
 const crossfadeSlider = document.getElementById('crossfade-slider');
 const crossfadeValue = document.getElementById('crossfade-value');
@@ -203,6 +207,8 @@ const mixControls = createMixControls({
   deckMixSlider,
   distortionBtn,
   echoBtn,
+  vocalRemoveBtn,
+  instruRemoveBtn,
   fxVisibilityBtn,
   getDeckBCueIndex: () => deckBCueIndex,
   getDeckCueDeck: () => deckCueDeck,
@@ -819,6 +825,14 @@ distortionBtn?.addEventListener('click', () => {
   setMixFeatureEnabled('distortion', !mixFeatures.distortion);
 });
 
+vocalRemoveBtn?.addEventListener('click', () => {
+  setMixFeatureEnabled('vocalRemove', !mixFeatures.vocalRemove);
+});
+
+instruRemoveBtn?.addEventListener('click', () => {
+  setMixFeatureEnabled('instruRemove', !mixFeatures.instruRemove);
+});
+
 
 
 clearQueueBtn.addEventListener('click', () => {
@@ -1394,6 +1408,8 @@ function doLogout() {
     autoBpm: false,
     echo: false,
     distortion: false,
+    vocalRemove: false,
+    instruRemove: false,
   };
 
   player?.destroy();

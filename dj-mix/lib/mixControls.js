@@ -8,6 +8,8 @@ export function createMixControls(options) {
     deckMixSlider,
     distortionBtn,
     echoBtn,
+    vocalRemoveBtn ,
+    instruRemoveBtn,
     fxVisibilityBtn,
     getDeckBCueIndex,
     getDeckCueDeck,
@@ -77,6 +79,8 @@ export function createMixControls(options) {
     styleFxButton(autoBpmBtn, features.autoBpm, 'Auto BPM');
     styleFxButton(echoBtn, features.echo, 'Echo');
     styleFxButton(distortionBtn, features.distortion, 'Distorsion');
+    styleFxButton(vocalRemoveBtn, features.vocalRemove, 'Voix');
+    styleFxButton(instruRemoveBtn, features.instruRemove, 'Instru');
   }
 
   function updateDeckCueUI() {
