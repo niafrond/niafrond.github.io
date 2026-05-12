@@ -1,4 +1,10 @@
 import { SimpleMixFeatures } from './lib/mixFeatures.js';
+import { createLogger } from './lib/logger.js';
+
+const logger = createLogger('player');
+const logDebug = (event, payload) => logger.debug(event, payload);
+const logInfo = (event, payload) => logger.info(event, payload);
+const logError = (event, payload) => logger.error(event, payload);
 
 /**
  * DJPlayer - dual local-audio deck player with true crossfade.
@@ -52,6 +58,10 @@ export class DJPlayer extends EventTarget {
     this.#startTracking();
     this.#ready = true;
     this.#emitDeckState();
+    logInfo('player.init.ready', {
+      crossfadeDurationMs: this.#crossfadeDuration,
+      activeDeck: this.#active,
+    });
     this.dispatchEvent(new CustomEvent('ready'));
   }
 
@@ -88,6 +98,13 @@ export class DJPlayer extends EventTarget {
 
     this.#setDeckLoudness(targetDeck, normalized.loudnessDb);
 
+    logInfo('deck.load.begin', {
+      targetDeck,
+      paused: options.paused === true,
+      makeActive: options.makeActive === true,
+      hasUrl: !!normalized.url,
+    });
+
     if (options.paused === true) {
       await this.#loadOnly(audio, normalized.url);
     } else {
@@ -101,6 +118,10 @@ export class DJPlayer extends EventTarget {
     }
 
     this.#emitDeckState();
+    logInfo('deck.load.done', {
+      targetDeck,
+      activeDeck: this.#active,
+    });
   }
 
   pauseDeck(deck) {
@@ -230,6 +251,14 @@ export class DJPlayer extends EventTarget {
     const from = fromDeck === 'A' ? this.#audioA : this.#audioB;
     const to = toDeck === 'A' ? this.#audioA : this.#audioB;
 
+    logInfo('crossfade.begin', {
+      desiredDeck,
+      fromDeck,
+      toDeck,
+      durationMs: this.#crossfadeDuration,
+      hasUrl: !!normalized.url,
+    });
+
     // Capture current base mix levels before loading the new track so the
     // crossfade starts from the current slider position instead of jumping to 0.
     const compFrom = this.#getDeckCompensation(fromDeck);
@@ -239,7 +268,9 @@ export class DJPlayer extends EventTarget {
 
     try {
       this.#setDeckLoudness(toDeck, normalized.loudnessDb);
+      
       await this.#loadAndPlay(to, normalized.url);
+      
 
       const tickMs = 16;
 
@@ -275,6 +306,7 @@ export class DJPlayer extends EventTarget {
 
           this.dispatchEvent(new CustomEvent('crossfadeprogress', {
             detail: {
+              fromDeck,
               fromVolume: fromBase,
               toVolume: toBase,
               toPosition: Number.isFinite(to.currentTime) ? to.currentTime * 1000 : 0,
@@ -291,11 +323,11 @@ export class DJPlayer extends EventTarget {
             from.currentTime = 0;
             from.src = '';
             this.#setDeckLoudness(fromDeck, null);
-            if (toDeck === 'A') {
-              this.#applyDeckBaseMix(1, 0);
-            } else {
-              this.#applyDeckBaseMix(0, 1);
-            }
+            // if (toDeck === 'A') {
+            //   this.#applyDeckBaseMix(1, 0);
+            // } else {
+            //   this.#applyDeckBaseMix(0, 1);
+            // }
             resolve();
           }
         }, tickMs);
@@ -305,10 +337,20 @@ export class DJPlayer extends EventTarget {
       this.#crossfadeNotified = false;
       this.#trackEndNotified = false;
       this.#emitDeckState();
+      logInfo('crossfade.done', {
+        activeDeck: this.#active,
+        fromDeck,
+        toDeck,
+      });
     } catch (err) {
       to.pause();
       to.currentTime = 0;
       to.src = '';
+      logError('crossfade.failed', {
+        fromDeck,
+        toDeck,
+        message: err?.message,
+      });
       throw err;
     } finally {
       this.#isCrossfading = false;
@@ -375,6 +417,7 @@ export class DJPlayer extends EventTarget {
     });
 
     audio.addEventListener('error', () => {
+      console.error(`Audio error on deck ${deck}:`, audio.error);
       const src = audio.currentSrc || audio.src || '';
       if (!src || this.#destroyed) return;
       this.dispatchEvent(new CustomEvent('error', {
@@ -384,11 +427,17 @@ export class DJPlayer extends EventTarget {
 
     return audio;
   }
-
+/**
+ * 
+ * @param {*} audio 
+ * @param {*} sourceUrl 
+ */
   async #loadAndPlay(audio, sourceUrl) {
+    if(!audio.paused) return;
     audio.pause();
     audio.currentTime = 0;
     audio.src = sourceUrl;
+
 
     await new Promise((resolve, reject) => {
       const onCanPlay = () => {
@@ -408,8 +457,12 @@ export class DJPlayer extends EventTarget {
       audio.addEventListener('error', onError, { once: true });
       audio.load();
     });
-
+    
     await audio.play();
+    
+    logDebug('audio.loadAndPlay.started', {
+      srcPreview: String(sourceUrl || '').slice(0, 96),
+    });
   }
 
   async #loadOnly(audio, sourceUrl) {
@@ -427,6 +480,9 @@ export class DJPlayer extends EventTarget {
       audio.addEventListener('canplay', onCanPlay, { once: true });
       audio.addEventListener('error', onError, { once: true });
       audio.load();
+    });
+    logDebug('audio.loadOnly.primed', {
+      srcPreview: String(sourceUrl || '').slice(0, 96),
     });
   }
 
@@ -454,11 +510,21 @@ export class DJPlayer extends EventTarget {
 
       if (!active.paused && !this.#isCrossfading && !this.#crossfadeNotified && remaining <= this.#crossfadeDuration && remaining > 0) {
         this.#crossfadeNotified = true;
+        logInfo('tracking.crossfadeReady.thresholdReached', {
+          activeDeck: this.#active,
+          remainingMs: remaining,
+          crossfadeDurationMs: this.#crossfadeDuration,
+        });
         this.dispatchEvent(new Event('crossfadeready'));
       }
 
       if ((active.ended || remaining <= 120) && !this.#isCrossfading && !this.#trackEndNotified) {
         this.#trackEndNotified = true;
+        logInfo('tracking.trackEnd.reached', {
+          activeDeck: this.#active,
+          remainingMs: remaining,
+          ended: active.ended,
+        });
         this.dispatchEvent(new Event('trackend'));
       }
     }, 300);
@@ -533,6 +599,7 @@ export class DJPlayer extends EventTarget {
   #emitDeckState() {
     if (!this.#audioA || !this.#audioB) return;
 
+    
     this.dispatchEvent(new CustomEvent('deckstate', {
       detail: {
         activeDeck: this.#active,

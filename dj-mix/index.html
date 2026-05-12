@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0a0a0f">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>DJ Mix</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='0.9em' font-size='56'%3E%F0%9F%8E%9A%EF%B8%8F%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
 </head>
@@ -57,11 +59,10 @@
                   <div class="crossfade-ring" id="crossfade-ring" hidden></div>
                   <button id="deck-a-launch" class="deck-overlay-btn" type="button" aria-label="Play/Pause platine 1">▶</button>
                 </div>
-                <div id="track-name" class="deck-track-name">Aucune chanson</div>
-                <div id="track-artist-a" class="deck-track-artist"></div>
                 <div class="deck-progress-bar">
                   <div class="deck-progress-fill" id="deck-a-fill"></div>
                 </div>
+                <div id="track-artist-a" class="deck-track-artist"></div>
                 <input type="range" id="deck-a-slider" min="0" max="100" value="100" hidden aria-hidden="true">
               </div>
               <div class="deck-panel" id="deck-b-panel">
@@ -76,11 +77,9 @@
                   <div class="album-art-next-placeholder" id="next-art-placeholder">♪</div>
                   <button id="deck-b-launch" class="deck-overlay-btn" type="button" aria-label="Charger/lancer platine 2">▶</button>
                 </div>
-                <div id="next-art-label" class="next-art-label"></div>
                 <div class="deck-progress-bar">
                   <div class="deck-progress-fill" id="deck-b-fill"></div>
                 </div>
-                <div id="deck-b-track-name" class="deck-track-name"></div>
                 <div id="track-artist-b" class="deck-track-artist"></div>
                 <input type="range" id="deck-b-slider" min="0" max="100" value="0" hidden aria-hidden="true">
               </div>
@@ -98,8 +97,7 @@
 
         <div id="deck-mix-control" class="deck-mix-control">
           <div class="crossfade-row">
-            <span>Mix manuel</span>
-            <span id="deck-mix-label" class="crossfade-value">Platine 1 100% / Platine 2 0%</span>
+            <span>Mix </span>
           </div>
           <input type="range" id="deck-mix-slider" min="0" max="100" value="0" class="fade-slider" aria-label="Mix manuel entre platine 1 et platine 2">
           <div class="deck-mix-actions">
@@ -175,6 +173,18 @@
               <button id="downloader-api-test-btn" class="connect-btn connect-btn--secondary" type="button">Tester l'API</button>
             </div>
             <div id="downloader-api-status" class="setup-subtitle">Configurez l'API pour activer la recherche et le téléchargement local temporaire.</div>
+          </div>
+
+          <div class="config-block">
+            <div class="config-label">
+              <span>Logs console</span>
+            </div>
+            <label class="toggle-row" for="debug-logs-toggle">
+              <input type="checkbox" id="debug-logs-toggle" class="toggle-input">
+              <span class="toggle-slider" aria-hidden="true"></span>
+              <span class="toggle-label">Mode debug</span>
+            </label>
+            <div id="debug-logs-status" class="setup-subtitle">Mode debug inactif: seuls les warnings et erreurs sont affiches.</div>
           </div>
 
           <div class="config-block">

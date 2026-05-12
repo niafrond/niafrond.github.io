@@ -6,12 +6,43 @@
 
 import { DJPlayer } from './player.js';
 import { AutoFadeManager } from './lib/autoFadeManager.js';
+import {
+  createAudioSourceManager,
+  getDirectPlayableSourceUrl,
+} from './lib/audioSourceManager.js';
+import { createDownloaderConfigManager } from './lib/downloaderConfig.js';
+import {
+  createLogger,
+  setDebugLoggingEnabled,
+} from './lib/logger.js';
+import { createMixControls } from './lib/mixControls.js';
+import { createPlaylistManager } from './lib/playlistManager.js';
+import { restoreQueueFromStorage, saveQueueToStorage } from './lib/queueStorage.js';
+import { createShellUi } from './lib/shellUi.js';
+import { createDjMixRenderer } from './lib/uiRenderer.js';
+import {
+  buildSearchResultsSectionsHTML,
+  escHtml,
+  extractTrackLoudnessDb,
+  getBestArtworkUrl,
+  getTrackDurationMs,
+  mapApiTrackToSearchItem,
+  normalizeApiSearchResponse,
+  sortSearchResultsByPopularity,
+} from './lib/searchUtils.js';
 
 const QUEUE_KEY = 'dj-mix:queue';
 const DOWNLOADER_API_URL_KEY = 'dj-mix:downloader:api:url';
 const FX_VISIBILITY_KEY = 'dj-mix:fx:hidden';
+const DEBUG_LOGS_KEY = 'dj-mix:logs:debug';
 const DEFAULT_DOWNLOADER_API_URL = 'http://192.168.8.149:3000';
 const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
+
+const logger = createLogger('main');
+const logDebug = (event, payload) => logger.debug(event, payload);
+const logInfo = (event, payload) => logger.info(event, payload);
+const logWarn = (event, payload) => logger.warn(event, payload);
+const logError = (event, payload) => logger.error(event, payload);
 
 // Request persistent storage on load
 if ('storage' in navigator && 'persist' in navigator.storage) {
@@ -41,7 +72,6 @@ let launchPreviewArtist = '';
 let launchPreviewDeck = null;
 let draggedQueueIndex = -1;
 let suppressQueueItemClick = false;
-let toastTimer = null;
 let deckMixRatio = 0;
 let manualMixLock = false;
 let deckBCueIndex = -1;
@@ -73,9 +103,7 @@ const albumArt = document.getElementById('album-art');
 const artPlaceholder = document.getElementById('art-placeholder');
 const nextAlbumArt = document.getElementById('next-album-art');
 const nextArtPlaceholder = document.getElementById('next-art-placeholder');
-const nextArtLabel = document.getElementById('next-art-label');
 const crossfadeRing = document.getElementById('crossfade-ring');
-const trackName = document.getElementById('track-name');
 const trackArtistA = document.getElementById('track-artist-a');
 const trackArtist = document.getElementById('track-artist');
 const clearCacheBtn = document.getElementById('clear-cache-btn');
@@ -87,7 +115,6 @@ const deckASlider = document.getElementById('deck-a-slider');
 const deckBSlider = document.getElementById('deck-b-slider');
 const deckAFill = document.getElementById('deck-a-fill');
 const deckBFill = document.getElementById('deck-b-fill');
-const deckBTrackName = document.getElementById('deck-b-track-name');
 const trackArtistB = document.getElementById('track-artist-b');
 const deckABpm = document.getElementById('deck-a-bpm');
 const deckBBpm = document.getElementById('deck-b-bpm');
@@ -121,6 +148,8 @@ const downloaderApiUrlInput = document.getElementById('downloader-api-url-input'
 const downloaderApiSaveBtn = document.getElementById('downloader-api-save-btn');
 const downloaderApiTestBtn = document.getElementById('downloader-api-test-btn');
 const downloaderApiStatus = document.getElementById('downloader-api-status');
+const debugLogsToggle = document.getElementById('debug-logs-toggle');
+const debugLogsStatus = document.getElementById('debug-logs-status');
 
 const tabBtns = document.querySelectorAll('.tab-bar-btn');
 const tabPanels = {
@@ -129,6 +158,255 @@ const tabPanels = {
   config: document.getElementById('tab-config'),
 };
 const deckMixControl = document.getElementById('deck-mix-control');
+
+const shellUi = createShellUi({
+  appScreen,
+  crossfadeRing,
+  setupError,
+  setupLoading,
+  setupScreen,
+});
+
+const {
+  hideSetupError,
+  showApp,
+  showCrossfadeRing,
+  showSetup,
+  showSetupError,
+  showSetupLoading,
+  showToast,
+} = shellUi;
+
+const downloaderConfig = createDownloaderConfigManager({
+  defaultUrl: DEFAULT_DOWNLOADER_API_URL,
+  inputEl: downloaderApiUrlInput,
+  saveBtn: downloaderApiSaveBtn,
+  statusEl: downloaderApiStatus,
+  storageKey: DOWNLOADER_API_URL_KEY,
+  testBtn: downloaderApiTestBtn,
+});
+
+const {
+  getDownloaderApiUrl,
+  loadIntoForm: loadDownloaderApiConfigIntoForm,
+  saveFromForm: saveDownloaderApiConfigFromForm,
+  setStatus: setDownloaderApiStatus,
+  setupEvents: setupDownloaderApiConfigEvents,
+} = downloaderConfig;
+
+const mixControls = createMixControls({
+  autoBpmBtn,
+  deckAPanel,
+  deckBPanel,
+  deckFxActions,
+  deckMixLabel,
+  deckMixSlider,
+  distortionBtn,
+  echoBtn,
+  fxVisibilityBtn,
+  getDeckBCueIndex: () => deckBCueIndex,
+  getDeckCueDeck: () => deckCueDeck,
+  getDeckMixRatio: () => deckMixRatio,
+  getFxControlsHidden: () => fxControlsHidden,
+  getManualMixLock: () => manualMixLock,
+  getMixFeatures: () => mixFeatures,
+  getPlayer: () => player,
+  getQueueLength: () => queue.length,
+  manualLockBtn,
+  onFocusDeckChanged: () => {
+    // if (queue.length) renderQueue();
+  },
+  setDeckMixRatio: (value) => {
+    deckMixRatio = value;
+  },
+  setMixFeatures: (value) => {
+    mixFeatures = value;
+  },
+});
+
+const {
+  applyDeckMixRatio,
+  applyMixFeatures,
+  clampCrossfadeSeconds,
+  clampDeckMixRatio,
+  deckToPlatineLabel,
+  getFocusDeck,
+  getInactiveDeck,
+  setMixFeatureEnabled,
+  updateDeckCueUI,
+  updateDeckMixUI,
+  updateFxVisibilityUI,
+  updateManualLockUI,
+  updateMixFeaturesUI,
+} = mixControls;
+
+const saveQueue = () => {
+  logDebug('saveQueue()', { currentIndex, length: queue.length });
+  saveQueueToStorage({
+    currentIndex,
+    queue,
+    storageKey: QUEUE_KEY,
+  });
+};
+
+const restoreQueue = () => {
+  logInfo('restoreQueue(): loading queue from storage');
+  const restored = restoreQueueFromStorage(QUEUE_KEY);
+  if (!restored?.items?.length) {
+    logInfo('restoreQueue(): no stored queue found');
+    return;
+  }
+
+  for (const item of restored.items) {
+    queue.push(item);
+  }
+
+  currentIndex = restored.index;
+  if (currentIndex >= queue.length) currentIndex = queue.length - 1;
+  currentTrackId = queue[currentIndex]?.id ?? null;
+  logInfo('restoreQueue(): queue restored', {
+    currentIndex,
+    length: queue.length,
+    currentTrackId,
+  });
+};
+
+const audioSourceManager = createAudioSourceManager({
+  audioCacheName: AUDIO_CACHE_NAME,
+  getDownloaderApiUrl,
+  normalizeApiSearchResponse,
+  onQueueUpdated: () => renderQueue(),
+  sessionBlobCache,
+  touchQueueItem,
+});
+
+const uiRenderer = createDjMixRenderer({
+  albumArt,
+  artPlaceholder,
+  autoMixBtn,
+  clampDeckMixRatio,
+  deckABpm,
+  deckABpmReset,
+  deckAFill,
+  deckALaunchBtn,
+  deckAPanel,
+  deckAVol,
+  deckBBpm,
+  deckBBpmReset,
+  deckBFill,
+  deckBLaunchBtn,
+  deckBPanel,
+  deckBVol,
+  emptyQueue,
+  getCurrentIndex: () => currentIndex,
+  getCurrentTrackId: () => currentTrackId,
+  getDeckBCueIndex: () => deckBCueIndex,
+  getDeckDisplayItems: () => deckDisplayItems,
+  getDeckMixRatio: () => deckMixRatio,
+  getFocusDeck,
+  getInactiveDeck,
+  getIsPlaying: () => isPlaying,
+  getLaunchPreviewState: () => ({
+    active: launchPreviewActive,
+    artUrl: launchPreviewArtUrl,
+    artist: launchPreviewArtist,
+    deck: launchPreviewDeck,
+    title: launchPreviewTitle,
+  }),
+  getPlayer: () => player,
+  getPrevIsCrossfading: () => prevIsCrossfading,
+  getQueue: () => queue,
+  nextAlbumArt,
+  nextArtPlaceholder,
+  queueList,
+  setDeckMixRatio: (value) => {
+    deckMixRatio = value;
+  },
+  setPrevIsCrossfading: (value) => {
+    prevIsCrossfading = value;
+  },
+  trackArtist,
+  trackArtistA,
+  trackArtistB,
+  updateDeckCueUI,
+  updateDeckMixUI,
+});
+
+const {
+  clearSessionBlobCache,
+  deleteLocalCacheSong,
+  ensureLocalSource,
+  releaseLocalBlob,
+  searchTracksViaApi,
+} = audioSourceManager;
+
+const playlistManager = createPlaylistManager({
+  escHtml,
+  getCurrentIndex: () => currentIndex,
+  getDownloaderApiUrl,
+  getPlayer: () => player,
+  getPlaylistLoaded: () => playlistLoaded,
+  getQueue: () => queue,
+  playlistListEl,
+  renderQueue,
+  saveQueue,
+  setCurrentIndex: (value) => {
+    currentIndex = value;
+  },
+  setPendingAutoplay: (value) => {
+    pendingAutoplay = value;
+  },
+  setPlaylistLoaded: (value) => {
+    playlistLoaded = value;
+  },
+  showToast,
+  startPlaybackForIndex,
+  tabBtns,
+  tabPanels,
+});
+
+const { switchTab } = playlistManager;
+
+const renderDeckState = (detail) => uiRenderer.renderDeckState(detail);
+const updateNowPlaying = (item, deck = getFocusDeck()) => uiRenderer.updateNowPlaying(item, deck);
+const updateUpcomingArtwork = () => uiRenderer.updateUpcomingArtwork();
+
+function readDebugLogsSetting() {
+  try {
+    return localStorage.getItem(DEBUG_LOGS_KEY) === '1';
+  } catch (_) {
+    return false;
+  }
+}
+
+function persistDebugLogsSetting(enabled) {
+  try {
+    localStorage.setItem(DEBUG_LOGS_KEY, enabled ? '1' : '0');
+  } catch (_) {
+    // ignore storage failures
+  }
+}
+
+function updateDebugLogsUi(enabled) {
+  if (debugLogsToggle) debugLogsToggle.checked = Boolean(enabled);
+  if (!debugLogsStatus) return;
+  debugLogsStatus.textContent = enabled
+    ? 'Mode debug actif: logs info + debug visibles dans la console.'
+    : 'Mode debug inactif: seuls les warnings et erreurs sont affiches.';
+}
+
+function applyDebugLogsSetting(enabled, options = {}) {
+  const { persist = true } = options;
+  const safeEnabled = Boolean(enabled);
+  setDebugLoggingEnabled(safeEnabled);
+  updateDebugLogsUi(safeEnabled);
+  if (persist) persistDebugLogsSetting(safeEnabled);
+  if (safeEnabled) {
+    logWarn('debug.mode.enabled', { enabled: safeEnabled });
+  } else {
+    logWarn('debug.mode.disabled', { enabled: safeEnabled });
+  }
+}
 
 
 
@@ -164,6 +442,12 @@ tabBtns.forEach((btn) => {
 });
 
 (async function init() {
+  applyDebugLogsSetting(readDebugLogsSetting(), { persist: false });
+
+  debugLogsToggle?.addEventListener('change', () => {
+    applyDebugLogsSetting(Boolean(debugLogsToggle.checked), { persist: true });
+  });
+
   loadDownloaderApiConfigIntoForm();
   setupDownloaderApiConfigEvents();
   setupMediaSession();
@@ -204,6 +488,7 @@ oauthBtn?.addEventListener('click', async () => {
 logoutBtn?.addEventListener('click', doLogout);
 
 async function connectLocal() {
+  logInfo('connectLocal(): initializing local dual-deck player');
   hideSetupError();
   startBlobCleanupLoop();
 
@@ -216,11 +501,15 @@ async function connectLocal() {
   showApp();
 
   await player.init();
+  logInfo('connectLocal(): player initialized', {
+    crossfadeDurationMs: player.crossfadeDuration,
+  });
 }
 
 function hookPlayerEvents() {
   player.addEventListener('ready', async () => {
-    showToast('Platines locales prêtes');
+    logInfo('player.ready', { pendingAutoplay, currentIndex, queueLength: queue.length });
+    // showToast('Platines locales prêtes');
     applyDeckMixRatio(deckMixRatio, 0);
     player.setMixFeatures(mixFeatures);
 
@@ -231,6 +520,7 @@ function hookPlayerEvents() {
   });
 
   player.addEventListener('statechange', ({ detail }) => {
+    logDebug('player.statechange', detail);
     isPlaying = !detail.paused;
     if ('mediaSession' in navigator) {
       navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
@@ -247,19 +537,22 @@ function hookPlayerEvents() {
   });
 
   player.addEventListener('crossfadeready', () => {
+    logInfo('player.crossfadeready: triggering autofade manager');
     autoFadeManager.handleReady().catch(() => {
       // handled internally by manager callbacks
     });
   });
 
   player.addEventListener('trackend', () => {
+    logInfo('player.trackend');
     isPlaying = false;
     showCrossfadeRing(false);
     renderQueue();
   });
 
     player.addEventListener('error', ({ detail }) => {
-      showToast(`Erreur API: ${detail.message}`, true);
+      logError('player.error', detail);
+      // showToast(`Erreur API: ${detail.message}`, true);
     });
 
     player.addEventListener('crossfadeprogress', ({ detail }) => {
@@ -281,6 +574,14 @@ autoMixBtn?.addEventListener('click', async () => {
     : (currentIndex + 1 < queue.length ? currentIndex + 1 : (queue.length > 1 ? 0 : -1));
   if (nextIndex < 0) return;
 
+  logInfo('automix.click', {
+    currentIndex,
+    nextIndex,
+    preparedIndex,
+    inactiveDeck,
+    queueLength: queue.length,
+  });
+
   showCrossfadeRing(true);
   showToast('AutoMix en cours...');
 
@@ -288,6 +589,7 @@ autoMixBtn?.addEventListener('click', async () => {
     await startPlaybackForIndex(nextIndex, 'crossfade', { targetDeck: inactiveDeck });
     renderQueue();
   } catch (err) {
+    logError('automix.failed', { message: err?.message, nextIndex, inactiveDeck });
     showToast(`API: ${err.message}`, true);
   } finally {
     showCrossfadeRing(false);
@@ -310,85 +612,6 @@ function setupMediaSession() {
   navigator.mediaSession.setActionHandler('nexttrack', () => autoMixBtn?.click());
 }
 
-function clampCrossfadeSeconds(value) {
-  return Math.max(1, Math.min(30, Number(value) || 12));
-}
-
-function clampDeckMixRatio(value) {
-  return Math.max(0, Math.min(1, Number(value) || 0));
-}
-
-function updateDeckMixUI(ratio) {
-  const safeRatio = clampDeckMixRatio(ratio);
-  const deckA = Math.round((1 - safeRatio) * 100);
-  const deckB = Math.round(safeRatio * 100);
-  if (deckMixSlider) {
-    deckMixSlider.value = String(deckB);
-  }
-  if (deckMixLabel) deckMixLabel.textContent = `Platine 1 ${deckA}% / Platine 2 ${deckB}%`;
-}
-
-function updateManualLockUI() {
-  if (!manualLockBtn) return;
-  manualLockBtn.setAttribute('aria-pressed', String(manualMixLock));
-  manualLockBtn.textContent = manualMixLock ? 'Auto-Fade: OFF (verrou)' : 'Auto-Fade: ON';
-}
-
-function updateFxVisibilityUI() {
-  if (!fxVisibilityBtn || !deckFxActions) return;
-  deckFxActions.hidden = fxControlsHidden;
-  fxVisibilityBtn.setAttribute('aria-expanded', String(!fxControlsHidden));
-  fxVisibilityBtn.textContent = fxControlsHidden ? 'FX ▸' : 'FX ▾';
-}
-
-function applyMixFeatures() {
-  if (player) player.setMixFeatures(mixFeatures);
-  updateMixFeaturesUI();
-}
-
-function setMixFeatureEnabled(name, enabled) {
-  mixFeatures = {
-    ...mixFeatures,
-    [name]: Boolean(enabled),
-  };
-  applyMixFeatures();
-}
-
-function styleFxButton(btn, active, label) {
-  if (!btn) return;
-  btn.classList.toggle('is-enabled', active);
-  btn.setAttribute('aria-pressed', String(active));
-  btn.textContent = `${label}: ${active ? 'ON' : 'OFF'}`;
-}
-
-function updateMixFeaturesUI() {
-  styleFxButton(autoBpmBtn, mixFeatures.autoBpm, 'Auto BPM');
-  styleFxButton(echoBtn, mixFeatures.echo, 'Echo');
-  styleFxButton(distortionBtn, mixFeatures.distortion, 'Distorsion');
-}
-
-function updateDeckCueUI() {
-  const inactiveDeck = deckCueDeck || getInactiveDeck();
-  const inactivePanel = inactiveDeck === 'A' ? deckAPanel : deckBPanel;
-  const otherPanel = inactiveDeck === 'A' ? deckBPanel : deckAPanel;
-  if (!inactivePanel) return;
-  const hasCue = deckBCueIndex >= 0 && !!queue[deckBCueIndex];
-  inactivePanel.classList.toggle('has-cue', hasCue);
-  otherPanel?.classList.remove('has-cue');
-}
-
-function applyDeckMixRatio(ratio, transitionMs = 140) {
-  const prevFocus = getFocusDeck();
-  deckMixRatio = clampDeckMixRatio(ratio);
-  updateDeckMixUI(deckMixRatio);
-  if (player) player.setDeckMixRatio(deckMixRatio, transitionMs);
-  const nextFocus = getFocusDeck();
-  updateDeckCueUI();
-  if (prevFocus !== nextFocus && queue.length) {
-    renderQueue();
-  }
-}
-
 clearCacheBtn?.addEventListener('click', async () => {
   if (!('caches' in window)) {
     showToast('Cache API non disponible', true);
@@ -409,90 +632,6 @@ clearCacheBtn?.addEventListener('click', async () => {
     showToast(`Erreur suppression cache: ${err.message}`, true);
   }
 });
-
-function getFocusDeck() {
-  // Focused platter only when mix is strictly above 50%.
-  return deckMixRatio > 0.5 ? 'B' : 'A';
-}
-
-function getInactiveDeck() {
-  return getFocusDeck() === 'A' ? 'B' : 'A';
-}
-
-function deckToPlatineLabel(deck) {
-  return deck === 'A' ? '1' : '2';
-}
-
-function renderDeckState(detail) {
-  if (!detail) return;
-
-  const volA = detail.deckA?.volume || 0;
-  const volB = detail.deckB?.volume || 0;
-  const hasAudio = volA + volB > 0;
-  const focusedDeck = hasAudio ? (volB > volA ? 'B' : 'A') : getFocusDeck();
-
-  // Clear the outgoing deck when crossfade ends (outgoing = previous focus, now inactive)
-  if (prevIsCrossfading && !detail.isCrossfading) {
-    const clearedDeck = focusedDeck === 'A' ? 'B' : 'A';
-    deckDisplayItems[clearedDeck] = null;
-  }
-  prevIsCrossfading = detail.isCrossfading;
-
-  if (deckAPanel) {
-    deckAPanel.classList.toggle('is-playing', Boolean(detail.deckA?.playing));
-    deckAPanel.classList.toggle('is-active', focusedDeck === 'A');
-  }
-  if (deckBPanel) {
-    deckBPanel.classList.toggle('is-playing', Boolean(detail.deckB?.playing));
-    deckBPanel.classList.toggle('is-active', focusedDeck === 'B');
-  }
-
-  // Dominant = deck with >= 50% of total volume
-  const bIsDominant = hasAudio && volB > volA;
-  if (deckAPanel) deckAPanel.classList.toggle('is-dominant', hasAudio && !bIsDominant);
-  if (deckBPanel) deckBPanel.classList.toggle('is-dominant', bIsDominant);
-
-  // Per-deck track names
-  if (trackName) trackName.textContent = deckDisplayItems.A?.name || '';
-  if (deckBTrackName) deckBTrackName.textContent = deckDisplayItems.B?.name || '';
-
-  if (!detail.isCrossfading) {
-    const totalVolume = (detail.deckA?.volume || 0) + (detail.deckB?.volume || 0);
-    if (totalVolume > 0) {
-      const ratioB = (detail.deckB?.volume || 0) / totalVolume;
-      deckMixRatio = clampDeckMixRatio(ratioB);
-      updateDeckMixUI(deckMixRatio);
-      updateDeckCueUI();
-    }
-  }
-
-  if (deckAVol) deckAVol.textContent = `${Math.round((detail.deckA?.volume || 0) * 100)}%`;
-  if (deckBVol) deckBVol.textContent = `${Math.round((detail.deckB?.volume || 0) * 100)}%`;
-
-  // BPM display
-  const rateA = detail.deckA?.playbackRate ?? 1;
-  const rateB = detail.deckB?.playbackRate ?? 1;
-  if (deckABpm) deckABpm.textContent = Math.abs(rateA - 1) > 0.005 ? `×${rateA.toFixed(2)}` : '';
-  if (deckBBpm) deckBBpm.textContent = Math.abs(rateB - 1) > 0.005 ? `×${rateB.toFixed(2)}` : '';
-  if (deckABpmReset) deckABpmReset.hidden = Math.abs(rateA - 1) <= 0.005;
-  if (deckBBpmReset) deckBBpmReset.hidden = Math.abs(rateB - 1) <= 0.005;
-
-  // Overlay button icons
-  if (deckALaunchBtn) deckALaunchBtn.textContent = detail.deckA?.playing ? '⏸' : '▶';
-  if (deckBLaunchBtn) deckBLaunchBtn.textContent = detail.deckB?.playing ? '⏸' : '▶';
-
-  // Cache last state for click handlers
-  if (player) player._lastDeckState = detail;
-
-  if (deckAFill) {
-    const pctA = detail.deckA?.durationMs > 0 ? (detail.deckA.positionMs / detail.deckA.durationMs) * 100 : 0;
-    deckAFill.style.width = `${Math.min(100, pctA)}%`;
-  }
-  if (deckBFill) {
-    const pctB = detail.deckB?.durationMs > 0 ? (detail.deckB.positionMs / detail.deckB.durationMs) * 100 : 0;
-    deckBFill.style.width = `${Math.min(100, pctB)}%`;
-  }
-}
 
 async function launchDeckFromQueue(deck, options = {}) {
   if (!player || !queue.length) {
@@ -518,13 +657,22 @@ async function launchDeckFromQueue(deck, options = {}) {
   const item = queue[targetIndex];
   if (!item) return;
 
+  logInfo('launchDeckFromQueue(): deck load requested', {
+    deck,
+    targetIndex,
+    currentIndex,
+    itemId: item.id,
+    itemName: item.name,
+    options,
+  });
+
   try {
     const sourceUrl = await ensureLocalSource(item);
     const isFocusDeck = deck === getFocusDeck();
     const paused = typeof options.paused === 'boolean' ? options.paused : !isFocusDeck;
     await player.playOnDeck(deck, { url: sourceUrl, loudnessDb: item.loudnessDb }, { makeActive: false, paused });
     deckDisplayItems[deck] = item;
-
+    console.log('Deck loaded with item:', { deck, item });
     if (isFocusDeck) {
       currentIndex = targetIndex;
       currentTrackId = item.id;
@@ -543,10 +691,20 @@ async function launchDeckFromQueue(deck, options = {}) {
       launchPreviewDeck = deck;
       deckCueDeck = deck;
       updateUpcomingArtwork();
-      if (deck === 'B' && deckBTrackName) deckBTrackName.textContent = item.name;
-      if (deck === 'A' && trackName) trackName.textContent = item.name;
     }
+    logInfo('launchDeckFromQueue(): deck loaded', {
+      deck,
+      itemId: item.id,
+      isFocusDeck,
+      paused,
+    });
   } catch (err) {
+    logError('launchDeckFromQueue(): failed', {
+      deck,
+      targetIndex,
+      itemId: item.id,
+      message: err?.message,
+    });
     showToast(`API: ${err.message}`, true);
   }
 }
@@ -748,6 +906,7 @@ searchOverlay.addEventListener('click', (e) => {
 });
 
 async function runSearch(query) {
+  logInfo('runSearch(): querying API', { query });
   try {
     if (!getDownloaderApiUrl()) {
       searchResults.innerHTML = '<div class="search-empty">Configurez l’API de téléchargement dans l’onglet Config</div>';
@@ -755,6 +914,7 @@ async function runSearch(query) {
     }
 
     const tracks = await searchTracksViaApi(query);
+    logInfo('runSearch(): API results', { query, count: tracks?.length || 0 });
     if (!tracks?.length) {
       searchResults.innerHTML = '<div class="search-empty">Aucun résultat</div>';
       return;
@@ -820,6 +980,7 @@ async function runSearch(query) {
       });
     });
   } catch (err) {
+    logError('runSearch(): failed', { query, message: err?.message });
     searchResults.innerHTML = `<div class="search-empty">⚠ ${escHtml(err.message)}</div>`;
   }
 }
@@ -854,6 +1015,13 @@ async function addToQueue(track) {
 
   queue.push(item);
   const addedIndex = queue.length - 1;
+  logInfo('addToQueue(): item added', {
+    addedIndex,
+    id: item.id,
+    name: item.name,
+    artist: item.artist,
+    queueLength: queue.length,
+  });
   renderQueue();
 
   if (!isPlaying && !player?.isCrossfading) {
@@ -888,6 +1056,16 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     ? getFocusDeck()
     : getInactiveDeck());
 
+  logInfo('startPlaybackForIndex(): begin', {
+    index,
+    mode,
+    targetDeck,
+    currentIndex,
+    currentTrackId,
+    itemId: item.id,
+    itemName: item.name,
+  });
+
   if (mode === 'crossfade' && currentTrackId && item.id !== currentTrackId) {
     launchPreviewActive = true;
     launchPreviewArtUrl = item.artUrl || '';
@@ -909,6 +1087,14 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     if (mode === 'play') deckDisplayItems[targetDeck === 'A' ? 'B' : 'A'] = null;
     updateNowPlaying(item, targetDeck);
     const sourceUrl = await ensureLocalSource(item);
+    logDebug('startPlaybackForIndex(): source resolved', {
+      index,
+      mode,
+      targetDeck,
+      sourcePreview: String(sourceUrl || '').slice(0, 80),
+      sourceState: item.sourceState,
+      sourceMeta: item.sourceMeta,
+    });
 
     if (mode === 'autofade') {
       await player.crossfadeToDeck(targetDeck, { url: sourceUrl, loudnessDb: item.loudnessDb });
@@ -939,6 +1125,12 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       const inactiveDeck = getInactiveDeck();
       const nextItem = queue[index + 1];
       if (nextItem) {
+        logDebug('startPlaybackForIndex(): preparing inactive deck with next track', {
+          inactiveDeck,
+          nextIndex: index + 1,
+          nextItemId: nextItem.id,
+          nextItemName: nextItem.name,
+        });
         ensureLocalSource(nextItem).then((nextUrl) => {
           if (!player) return;
           player.playOnDeck(inactiveDeck, { url: nextUrl, loudnessDb: nextItem.loudnessDb }, { paused: true });
@@ -956,6 +1148,14 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     launchPreviewArtist = '';
     launchPreviewDeck = null;
     renderQueue();
+    logInfo('startPlaybackForIndex(): done', {
+      mode,
+      index,
+      currentIndex,
+      currentTrackId,
+      targetDeck,
+      isPlaying,
+    });
   } catch (err) {
     item.sourceState = 'error';
     item.sourceError = err.message;
@@ -965,282 +1165,27 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     launchPreviewArtist = '';
     launchPreviewDeck = null;
     renderQueue();
+    logError('startPlaybackForIndex(): failed', {
+      mode,
+      index,
+      targetDeck,
+      itemId: item.id,
+      message: err?.message,
+    });
     showToast(`API: ${err.message}`, true);
     throw err;
   }
-}
-
-async function ensureLocalSource(item) {
-  const cacheKey = getTrackCacheKey(item);
-  const cachedSource = sessionBlobCache.get(cacheKey);
-  if (item.localBlobUrl) return item.localBlobUrl;
-
-  if (item.persistedSourceUrl) {
-    const isPlayable = await canLoadAudioSource(item.persistedSourceUrl);
-    if (isPlayable) {
-      item.localBlobUrl = item.persistedSourceUrl;
-      item.sourceState = 'ready';
-      item.sourceError = null;
-      touchQueueItem(item);
-      hydrateItemDurationFromLocalSource(item);
-      renderQueue();
-      return item.localBlobUrl;
-    }
-    item.persistedSourceUrl = '';
-  }
-
-  const directFromUri = getDirectPlayableSourceUrl(item);
-  if (directFromUri) {
-    const isPlayable = await canLoadAudioSource(directFromUri);
-    if (isPlayable) {
-      item.persistedSourceUrl = directFromUri;
-      item.localBlobUrl = directFromUri;
-      item.sourceState = 'ready';
-      item.sourceError = null;
-      touchQueueItem(item);
-      hydrateItemDurationFromLocalSource(item);
-      renderQueue();
-      return item.localBlobUrl;
-    }
-  }
-
-  if (cachedSource) {
-    item.localBlobUrl = typeof cachedSource === 'string' ? cachedSource : cachedSource.url;
-    if (Number.isFinite(cachedSource?.loudnessDb)) {
-      item.loudnessDb = cachedSource.loudnessDb;
-    }
-    item.sourceState = 'ready';
-    item.sourceError = null;
-    touchQueueItem(item);
-    hydrateItemDurationFromLocalSource(item);
-    renderQueue();
-    return item.localBlobUrl;
-  }
-
-  const persistedBlobUrl = await restorePersistedAudioBlobUrl(cacheKey);
-  if (persistedBlobUrl) {
-    item.localBlobUrl = persistedBlobUrl;
-    sessionBlobCache.set(cacheKey, {
-      url: persistedBlobUrl,
-      loudnessDb: Number.isFinite(item.loudnessDb) ? item.loudnessDb : null,
-    });
-    item.sourceState = 'ready';
-    item.sourceError = null;
-    touchQueueItem(item);
-    hydrateItemDurationFromLocalSource(item);
-    renderQueue();
-    return item.localBlobUrl;
-  }
-
-  item.sourceState = 'resolving';
-  item.sourceError = null;
-  renderQueue();
-
-  try {
-    const downloaded = await downloadTrackViaApi(item);
-    item.localBlobUrl = downloaded.url;
-    if (Number.isFinite(downloaded.loudnessDb)) {
-      item.loudnessDb = downloaded.loudnessDb;
-    }
-    sessionBlobCache.set(cacheKey, {
-      url: item.localBlobUrl,
-      loudnessDb: Number.isFinite(item.loudnessDb) ? item.loudnessDb : null,
-    });
-    item.sourceState = 'ready';
-    item.sourceMode = 'api';
-    item.sourceMeta = downloaded.sourceMeta || null;
-    touchQueueItem(item);
-    hydrateItemDurationFromLocalSource(item);
-    renderQueue();
-    return item.localBlobUrl;
-  } catch (err) {
-    item.sourceState = 'error';
-    item.sourceError = err.message;
-    renderQueue();
-    throw err;
-  }
-}
-
-async function hydrateItemDurationFromLocalSource(item) {
-  if (!item || item.duration > 0 || !item.localBlobUrl) return;
-  if (item.durationProbeInFlight) return;
-
-  item.durationProbeInFlight = true;
-  try {
-    const durationMs = await readAudioDurationMs(item.localBlobUrl);
-    if (durationMs > 0) {
-      item.duration = durationMs;
-      renderQueue();
-    }
-  } finally {
-    item.durationProbeInFlight = false;
-  }
-}
-
-function readAudioDurationMs(sourceUrl) {
-  return new Promise((resolve) => {
-    if (!sourceUrl) {
-      resolve(0);
-      return;
-    }
-
-    const audio = new Audio();
-    audio.preload = 'metadata';
-
-    let settled = false;
-    const cleanup = () => {
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
-      audio.removeEventListener('error', onError);
-      clearTimeout(timeoutId);
-      audio.src = '';
-    };
-
-    const finish = (value) => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      resolve(value);
-    };
-
-    const onLoadedMetadata = () => {
-      if (Number.isFinite(audio.duration) && audio.duration > 0) {
-        finish(Math.round(audio.duration * 1000));
-        return;
-      }
-      finish(0);
-    };
-
-    const onError = () => finish(0);
-    const timeoutId = setTimeout(() => finish(0), 8000);
-
-    audio.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
-    audio.addEventListener('error', onError, { once: true });
-    audio.src = sourceUrl;
-  });
-}
-
-async function searchTracksViaApi(query, limit = 25) {
-  const baseUrl = getDownloaderApiUrl();
-  if (!baseUrl) throw new Error('URL API downloader manquante (Config)');
-
-  const parsed = splitItunesSearchQuery(query);
-  const searchAttempts = [
-    { term: parsed.title, artist: parsed.artist },
-    { term: cleanItunesSearchText(query), artist: '' },
-  ]
-    .map((attempt) => ({
-      term: cleanItunesSearchText(attempt.term || ''),
-      artist: cleanItunesSearchText(attempt.artist || ''),
-    }))
-    .filter((attempt, index, array) => array.findIndex((candidate) => candidate.term === attempt.term && candidate.artist === attempt.artist) === index)
-    .filter((attempt) => attempt.term);
-
-  for (const attempt of searchAttempts) {
-    const limitParam = Number.isFinite(limit) && limit > 0 ? `&limit=${encodeURIComponent(limit)}` : '';
-    const url = `${baseUrl}/api/search?term=${encodeURIComponent(attempt.term)}${attempt.artist ? `&artist=${encodeURIComponent(attempt.artist)}` : ''}${limitParam}`;
-    const res = await fetch(url, { headers: { Accept: 'application/json' } });
-    if (!res.ok) continue;
-
-    const data = await res.json().catch(() => null);
-    const items = normalizeApiSearchResponse(data);
-    if (items.length) return items;
-  }
-
-  return [];
-}
-
-async function deleteLocalCacheSong(track) {
-  const baseUrl = getDownloaderApiUrl();
-  if (!baseUrl) throw new Error('URL API downloader manquante (Config)');
-
-  const payload = {};
-  if (track.cachePath) {
-    payload.cachePath = track.cachePath;
-  } else {
-    payload.trackName = track.name;
-    if (track.artist) payload.artistName = track.artist;
-  }
-
-  const res = await fetch(`${baseUrl}/api/cache/files`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`HTTP ${res.status} ${body}`.trim());
-  }
-}
-
-async function downloadTrackViaApi(item) {
-  const baseUrl = getDownloaderApiUrl();
-  if (!baseUrl) {
-    throw new Error('URL API downloader manquante (Config)');
-  }
-
-  const payload = {
-    trackName: item.name,
-    artistName: item.artist,
-    searchQuery: `${item.artist} ${item.name}`,
-    title: item.name,
-    artist: item.artist,
-    id: item.id,
-    ratingKey: item.ratingKey,
-  };
-
-  const res = await fetch(`${baseUrl}/api/download`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`HTTP ${res.status} ${body}`.trim());
-  }
-
-  const contentType = (res.headers.get('content-type') || '').toLowerCase();
-  if (contentType.includes('audio') || contentType.includes('octet-stream')) {
-    const blob = await res.blob();
-    if (!blob || blob.size === 0) throw new Error('Flux audio vide depuis API');
-    await persistAudioBlob(getTrackCacheKey(item), blob);
-    return {
-      url: URL.createObjectURL(blob),
-      loudnessDb: Number.isFinite(item.loudnessDb) ? item.loudnessDb : null,
-      sourceMeta: 'audio-stream',
-    };
-  }
-
-  const data = await res.json().catch(() => null);
-  const directUrl = data?.downloadUrl || data?.url || data?.fileUrl || data?.audioUrl;
-  if (!directUrl) {
-    throw new Error('Réponse API sans URL audio');
-  }
-
-  const mediaRes = await fetch(directUrl);
-  if (!mediaRes.ok) {
-    throw new Error(`Téléchargement URL API impossible (HTTP ${mediaRes.status})`);
-  }
-
-  const mediaBlob = await mediaRes.blob();
-  if (!mediaBlob || mediaBlob.size === 0) {
-    throw new Error('Audio téléchargé vide');
-  }
-  await persistAudioBlob(getTrackCacheKey(item), mediaBlob);
-
-  const loudnessDb = extractTrackLoudnessDb(data);
-  return {
-    url: URL.createObjectURL(mediaBlob),
-    loudnessDb: Number.isFinite(loudnessDb) ? loudnessDb : (Number.isFinite(item.loudnessDb) ? item.loudnessDb : null),
-    sourceMeta: data?.source || data?.provider || data?.cachePath || '',
-  };
 }
 
 function prefetchNext(index) {
   const next = queue[index];
   if (!next) return;
   if (next.localBlobUrl) return;
+  logDebug('prefetchNext(): prefetching track source', {
+    index,
+    id: next.id,
+    name: next.name,
+  });
   touchQueueItem(next);
 
   ensureLocalSource(next).catch(() => {
@@ -1250,50 +1195,23 @@ function prefetchNext(index) {
 
 function renderQueue() {
   saveQueue();
-  updateUpcomingArtwork();
+  uiRenderer.updateUpcomingArtwork();
   updateDeckCueUI();
 
   if (!queue.length) {
-    queueList.innerHTML = '';
-    queueList.appendChild(emptyQueue);
-    emptyQueue.style.display = '';
-    if (autoMixBtn) autoMixBtn.disabled = true;
+    uiRenderer.queueList.innerHTML = '';
+    uiRenderer.queueList.appendChild(uiRenderer.emptyQueue);
+    uiRenderer.emptyQueue.style.display = '';
+    if (uiRenderer.autoMixBtn) uiRenderer.autoMixBtn.disabled = true;
     return;
   }
 
-  emptyQueue.style.display = 'none';
-  if (autoMixBtn) autoMixBtn.disabled = queue.length <= 1;
+  uiRenderer.emptyQueue.style.display = 'none';
+  if (uiRenderer.autoMixBtn) uiRenderer.autoMixBtn.disabled = queue.length <= 1;
 
-  queueList.innerHTML = queue.map((item, i) => {
-    const isCurrent = item.id === currentTrackId;
-    const cls = isCurrent ? 'queue-item is-current' : 'queue-item';
-    const showPlayingBars = isCurrent && isPlaying;
+  uiRenderer.queueList.innerHTML = uiRenderer.buildQueueHTML();
 
-    const numHtml = showPlayingBars
-      ? '<div class="queue-num"><div class="playing-bars" aria-label="En cours"><span></span><span></span><span></span></div></div>'
-      : `<div class="queue-num">${i + 1}</div>`;
-    const cueBtnClass = i === deckBCueIndex ? 'queue-cue is-selected' : 'queue-cue';
-    const inactiveDeck = getInactiveDeck();
-    const cueBtnLabel = i === deckBCueIndex ? 'Cue ✓' : `Cue Platine ${inactiveDeck === 'A' ? '1' : '2'}`;
-    const bpmDisplay = item.bpm ? ` • ${Math.round(item.bpm)} BPM` : '';
-
-    return `
-      <div class="${cls}" data-index="${i}" role="button" tabindex="0" draggable="true">
-        ${numHtml}
-        <img class="queue-art" src="${escHtml(item.artUrl)}" alt="" loading="lazy">
-        <div class="queue-info">
-          <div class="queue-name">${escHtml(item.name)}</div>
-          <div class="queue-artist">${escHtml(item.artist)} ${renderSourceBadge(item)}${bpmDisplay}</div>
-        </div>
-        <span class="queue-duration">${formatTime(item.duration)}</span>
-        <div class="queue-actions">
-          <button class="${cueBtnClass}" data-index="${i}" aria-label="Cue platine inactive">${cueBtnLabel}</button>
-          <button class="queue-remove" data-index="${i}" aria-label="Retirer">✕</button>
-        </div>
-      </div>`;
-  }).join('');
-
-  queueList.querySelectorAll('.queue-item').forEach((el) => {
+  uiRenderer.queueList.querySelectorAll('.queue-item').forEach((el) => {
     el.addEventListener('dragstart', (event) => {
       draggedQueueIndex = Number(el.dataset.index);
       el.classList.add('is-dragging');
@@ -1306,7 +1224,7 @@ function renderQueue() {
     el.addEventListener('dragend', () => {
       draggedQueueIndex = -1;
       clearQueueDragMarkers();
-      queueList.querySelectorAll('.queue-item').forEach((node) => node.classList.remove('is-dragging'));
+      uiRenderer.queueList.querySelectorAll('.queue-item').forEach((node) => node.classList.remove('is-dragging'));
       requestAnimationFrame(() => {
         suppressQueueItemClick = false;
       });
@@ -1360,7 +1278,7 @@ function renderQueue() {
     });
   });
 
-  queueList.querySelectorAll('.queue-remove').forEach((btn) => {
+  uiRenderer.queueList.querySelectorAll('.queue-remove').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const idx = Number(btn.dataset.index);
@@ -1368,7 +1286,7 @@ function renderQueue() {
     });
   });
 
-  queueList.querySelectorAll('.queue-cue').forEach((btn) => {
+  uiRenderer.queueList.querySelectorAll('.queue-cue').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const idx = Number(btn.dataset.index);
@@ -1385,13 +1303,6 @@ function renderQueue() {
   });
 }
 
-function renderSourceBadge(item) {
-  if (item.sourceState === 'ready') return '• Cache ✓';
-  if (item.sourceState === 'resolving') return '• Cache ...';
-  if (item.sourceState === 'error') return '• Cache !';
-  return '';
-}
-
 function removeFromQueue(idx) {
   const item = queue[idx];
   if (item?.id === currentTrackId) return;
@@ -1406,7 +1317,7 @@ function removeFromQueue(idx) {
 }
 
 function clearQueueDragMarkers() {
-  queueList.querySelectorAll('.queue-item').forEach((el) => {
+  uiRenderer.queueList.querySelectorAll('.queue-item').forEach((el) => {
     el.classList.remove('is-dragging', 'is-drag-over-before', 'is-drag-over-after');
   });
 }
@@ -1456,248 +1367,10 @@ function touchQueueItem(item) {
   item.lastTouchedAt = Date.now();
 }
 
-async function loadPlaylists() {
-  playlistLoaded = true;
-  
-  const baseUrl = getDownloaderApiUrl();
-  if (!baseUrl) {
-    playlistListEl.innerHTML = `
-      <div class="search-empty">
-        URL API manquante. Configurez l'API dans l'onglet Configuration.
-      </div>`;
-    return;
-  }
-
-  playlistListEl.innerHTML = '<div class="search-loading">Chargement du cache...</div>';
-
-  try {
-    const res = await fetch(`${baseUrl}/api/cache/files`, { headers: { Accept: 'application/json' } });
-    if (!res.ok) throw new Error(`Erreur ${res.status}: ${res.statusText}`);
-    
-    const data = await res.json();
-    const files = Array.isArray(data) ? data : (data.results || data.files || []);
-    
-    if (!files.length) {
-      playlistListEl.innerHTML = `
-        <div class="search-empty">
-          Aucun fichier en cache. Recherchez des chansons pour les ajouter.
-        </div>`;
-      return;
-    }
-
-    playlistListEl.innerHTML = files.map((file, i) => `
-      <div class="cache-item" data-index="${i}">
-        <div class="cache-info">
-          <div class="cache-name">${escHtml(file.trackName || file.name || file.title || 'Inconnu')}</div>
-          <div class="cache-artist">${escHtml(file.artistName || file.artist || 'Artiste inconnu')}</div>
-        </div>
-        <button class="cache-add-btn" data-index="${i}" aria-label="Ajouter à la file">➕</button>
-      </div>
-    `).join('');
-
-    playlistListEl.querySelectorAll('.cache-add-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const idx = Number(btn.dataset.index);
-        const file = files[idx];
-        
-        addCacheFileToQueue(file);
-      });
-    });
-  } catch (err) {
-    playlistListEl.innerHTML = `
-      <div class="search-empty">
-        Erreur lors du chargement du cache: ${escHtml(err.message)}
-      </div>`;
-  }
-}
-
-function addCacheFileToQueue(file) {
-  if (!file) return;
-  
-  const item = {
-    id: file.id || file.cachePath || file.path || `cache-${Date.now()}`,
-    name: file.trackName || file.name || file.title || 'Inconnu',
-    artist: file.artistName || file.artist || 'Artiste inconnu',
-    artUrl: file.artworkUrl || file.artUrl || '',
-    duration: file.duration || 0,
-    sourceState: file.cachePath ? 'idle' : 'ready',
-    localBlobUrl: file.url || file.localUrl || file.streamUrl || '',
-    persistedSourceUrl: file.url || file.localUrl || file.streamUrl || '',
-    cachePath: file.cachePath || '',
-    ratingKey: file.ratingKey || '',
-  };
-  
-  const isDuplicateCacheFile = queue.some(
-    (q) => q.id === item.id || (q.name === item.name && q.artist === item.artist)
-  );
-  if (isDuplicateCacheFile) {
-    showToast(`Déjà dans la file : ${item.name}`, true);
-    return;
-  }
-
-  queue.push(item);
-  
-  if (currentIndex < 0 && queue.length === 1) {
-    currentIndex = 0;
-    pendingAutoplay = true;
-    if (player && player.isReady) {
-      startPlaybackForIndex(0, 'play').catch(err => showToast(`Erreur: ${err.message}`, true));
-    }
-  }
-  
-  renderQueue();
-  saveQueue();
-  showToast(`"${item.name}" ajouté à la file`);
-}
-
-function switchTab(name) {
-  tabBtns.forEach((btn) => {
-    const on = btn.dataset.tab === name;
-    btn.classList.toggle('active', on);
-    btn.setAttribute('aria-selected', on ? 'true' : 'false');
-  });
-
-  Object.entries(tabPanels).forEach(([key, panel]) => {
-    const on = key === name;
-    panel.classList.toggle('active', on);
-    panel.hidden = !on;
-  });
-
-  if (name === 'playlist' && !playlistLoaded) loadPlaylists();
-}
-
-function loadDownloaderApiConfigIntoForm() {
-  const url = localStorage.getItem(DOWNLOADER_API_URL_KEY) || DEFAULT_DOWNLOADER_API_URL;
-  if (!localStorage.getItem(DOWNLOADER_API_URL_KEY)) {
-    localStorage.setItem(DOWNLOADER_API_URL_KEY, url);
-  }
-  if (downloaderApiUrlInput) downloaderApiUrlInput.value = url;
-}
-
-function saveDownloaderApiConfigFromForm() {
-  const baseUrl = (downloaderApiUrlInput?.value || DEFAULT_DOWNLOADER_API_URL).trim();
-  localStorage.setItem(DOWNLOADER_API_URL_KEY, baseUrl);
-}
-
-function setupDownloaderApiConfigEvents() {
-  downloaderApiSaveBtn?.addEventListener('click', () => {
-    saveDownloaderApiConfigFromForm();
-    setDownloaderApiStatus('Configuration API enregistrée', false);
-  });
-
-  downloaderApiTestBtn?.addEventListener('click', async () => {
-    saveDownloaderApiConfigFromForm();
-    setDownloaderApiStatus('Test API en cours...', false);
-
-    try {
-      const baseUrl = getDownloaderApiUrl();
-      if (!baseUrl) throw new Error('URL API manquante');
-      const res = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(5000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setDownloaderApiStatus('Serveur disponible ✓', false);
-    } catch (err) {
-      setDownloaderApiStatus(`Serveur indisponible: ${err.message}`, true);
-    }
-  });
-}
-
-function setDownloaderApiStatus(message, isError) {
-  if (!downloaderApiStatus) return;
-  downloaderApiStatus.textContent = message;
-  downloaderApiStatus.style.color = isError ? '#f87171' : 'var(--text-muted)';
-}
-
-function getDownloaderApiUrl() {
-  return (localStorage.getItem(DOWNLOADER_API_URL_KEY) || DEFAULT_DOWNLOADER_API_URL).trim().replace(/\/$/, '');
-}
-
-function updateNowPlaying(item, deck = getFocusDeck()) {
-  if ('mediaSession' in navigator) {
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: item.name || 'DJ Mix',
-      artist: item.artist || '',
-      artwork: item.artUrl ? [{ src: item.artUrl, sizes: '512x512', type: 'image/jpeg' }] : [],
-    });
-  }
-
-  // Route art to the target platter only (avoid swapping artwork between platters)
-  const focusArt = deck === 'A' ? albumArt : nextAlbumArt;
-  const focusPlaceholder = deck === 'A' ? artPlaceholder : nextArtPlaceholder;
-
-  if (item.artUrl) {
-    focusArt.src = item.artUrl;
-    focusArt.hidden = false;
-    focusPlaceholder.style.display = 'none';
-  } else {
-    focusArt.src = '';
-    focusArt.hidden = true;
-    focusPlaceholder.style.display = '';
-  }
-
-  if (deck === 'A') {
-    if (trackName) trackName.textContent = item.name || '';
-    if (trackArtistA) trackArtistA.textContent = item.artist || '';
-  } else {
-    if (deckBTrackName) deckBTrackName.textContent = item.name || '';
-    if (trackArtistB) trackArtistB.textContent = item.artist || '';
-  }
-
-  if (trackArtist) trackArtist.textContent = item.artist;
-
-  updateUpcomingArtwork();
-}
-
-function updateUpcomingArtwork() {
-  // Route upcoming/launch preview to a stable target platter.
-  const targetDeck = launchPreviewActive && (launchPreviewDeck === 'A' || launchPreviewDeck === 'B')
-    ? launchPreviewDeck
-    : getInactiveDeck();
-  const inactiveArt = targetDeck === 'A' ? albumArt : nextAlbumArt;
-  const inactivePlaceholder = targetDeck === 'A' ? artPlaceholder : nextArtPlaceholder;
-  const inactiveLabel = targetDeck === 'A' ? null : nextArtLabel; // label only exists on platter 2 panel
-
-  let label = '';
-  let artUrl = '';
-  let artist = '';
-
-  if (launchPreviewActive) {
-    label = launchPreviewTitle || '';
-    artUrl = launchPreviewArtUrl;
-    artist = launchPreviewArtist || '';
-  } else {
-    const next = queue[currentIndex + 1];
-    label = next?.name || '';
-    artUrl = next?.artUrl || '';
-    artist = next?.artist || '';
-  }
-
-  if (artUrl) {
-    inactiveArt.src = artUrl;
-    inactiveArt.hidden = false;
-    inactivePlaceholder.style.display = 'none';
-  } else {
-    inactiveArt.src = '';
-    inactiveArt.hidden = true;
-    inactivePlaceholder.style.display = '';
-  }
-
-  if (inactiveLabel) inactiveLabel.textContent = label;
-  if (targetDeck === 'A') {
-    if (trackName) trackName.textContent = label;
-    if (trackArtistA) trackArtistA.textContent = artist;
-  } else {
-    if (deckBTrackName) deckBTrackName.textContent = label;
-    if (trackArtistB) trackArtistB.textContent = artist;
-  }
-}
-
-function showCrossfadeRing(on) {
-  crossfadeRing.hidden = !on;
-}
-
-function updateCrossfadeBars({ fromVolume, toVolume, toPosition, toDuration }) {
-  updateDeckMixUI(toVolume);
+function updateCrossfadeBars({ fromDeck,fromVolume, toVolume, toPosition, toDuration }) {
+  if(fromDeck === 'A') {
+    updateDeckMixUI(toVolume);
+  }else {updateDeckMixUI(fromVolume);}
 }
 
 updateCrossfadeControlUI(crossfadeSlider.value);
@@ -1707,55 +1380,6 @@ updateDeckCueUI();
 updateMixFeaturesUI();
 fxControlsHidden = localStorage.getItem(FX_VISIBILITY_KEY) === '1';
 updateFxVisibilityUI();
-
-function showToast(msg, isError = false) {
-  const existing = document.querySelector('.toast');
-  if (existing) existing.remove();
-  clearTimeout(toastTimer);
-
-  const el = document.createElement('div');
-  el.className = 'toast';
-  if (isError) el.style.borderColor = '#f87171';
-  el.textContent = msg;
-  document.body.appendChild(el);
-
-  toastTimer = setTimeout(() => el.remove(), 3000);
-}
-
-function showSetup() {
-  setupScreen.classList.add('active');
-  setupScreen.hidden = false;
-  appScreen.classList.remove('active');
-  appScreen.hidden = true;
-  showSetupLoading(false);
-}
-
-function showSetupError(message) {
-  if (!setupError) return;
-  setupError.textContent = message || 'Erreur inconnue';
-  setupError.hidden = false;
-}
-
-function hideSetupError() {
-  if (!setupError) return;
-  setupError.hidden = true;
-  setupError.textContent = '';
-}
-
-function showSetupLoading(on, message = null) {
-  if (!setupLoading) return;
-
-  setupLoading.hidden = !on;
-  if (!on) return;
-
-  if (message) {
-    setupLoading.textContent = '';
-    const spinner = document.createElement('span');
-    spinner.className = 'spinner';
-    setupLoading.appendChild(spinner);
-    setupLoading.appendChild(document.createTextNode(` ${message}`));
-  }
-}
 
 function doLogout() {
   launchPreviewArtUrl = '';
@@ -1796,8 +1420,6 @@ function doLogout() {
   deckCueDeck = null;
   switchTab('mix');
   showCrossfadeRing(false);
-  if (trackName) trackName.textContent = 'Aucune chanson';
-  if (deckBTrackName) deckBTrackName.textContent = '';
   trackArtist.textContent = 'Ajoutez des chansons à la file d\'attente';
   albumArt.src = '';
   albumArt.hidden = true;
@@ -1805,7 +1427,6 @@ function doLogout() {
   nextAlbumArt.src = '';
   nextAlbumArt.hidden = true;
   nextArtPlaceholder.style.display = '';
-  nextArtLabel.textContent = '';
   if (trackArtistA) trackArtistA.textContent = '';
   if (trackArtistB) trackArtistB.textContent = '';
   updateManualLockUI();
@@ -1813,124 +1434,6 @@ function doLogout() {
   updateMixFeaturesUI();
   renderQueue();
   showSetup();
-}
-
-function showApp() {
-  setupScreen.classList.remove('active');
-  setupScreen.hidden = true;
-  appScreen.classList.add('active');
-  appScreen.hidden = false;
-  hideSetupError();
-}
-
-function releaseLocalBlob(item) {
-  if (!item?.localBlobUrl) return;
-  item.localBlobUrl = null;
-  touchQueueItem(item);
-}
-
-function clearSessionBlobCache() {
-  for (const cachedSource of sessionBlobCache.values()) {
-    const blobUrl = typeof cachedSource === 'string' ? cachedSource : cachedSource?.url;
-    if (blobUrl && String(blobUrl).startsWith('blob:')) {
-      URL.revokeObjectURL(blobUrl);
-    }
-  }
-  sessionBlobCache.clear();
-}
-
-function getPersistentAudioCacheRequest(cacheKey) {
-  const safeKey = encodeURIComponent(String(cacheKey || 'unknown'));
-  return new Request(`https://dj-mix.local/cache-audio/${safeKey}`);
-}
-
-async function persistAudioBlob(cacheKey, blob) {
-  if (!cacheKey || !blob || blob.size <= 0) return;
-  if (!('caches' in window)) return;
-
-  try {
-    const cache = await caches.open(AUDIO_CACHE_NAME);
-    const req = getPersistentAudioCacheRequest(cacheKey);
-    const res = new Response(blob, {
-      headers: {
-        'content-type': blob.type || 'audio/mpeg',
-      },
-    });
-    await cache.put(req, res);
-  } catch (_) {
-    // persistent cache is best effort only
-  }
-}
-
-async function restorePersistedAudioBlobUrl(cacheKey) {
-  if (!cacheKey) return null;
-  if (!('caches' in window)) return null;
-
-  try {
-    const cache = await caches.open(AUDIO_CACHE_NAME);
-    const req = getPersistentAudioCacheRequest(cacheKey);
-    const cached = await cache.match(req);
-    if (!cached) return null;
-    const blob = await cached.blob();
-    if (!blob || blob.size <= 0) return null;
-    return URL.createObjectURL(blob);
-  } catch (_) {
-    return null;
-  }
-}
-
-function saveQueue() {
-  try {
-    const serialized = {
-      index: currentIndex,
-      items: queue.map((item) => ({
-        id: item.id,
-        uri: item.uri,
-        name: item.name,
-        artist: item.artist,
-        artUrl: item.artUrl,
-        duration: item.duration,
-        loudnessDb: Number.isFinite(item.loudnessDb) ? item.loudnessDb : null,
-        cachePath: item.cachePath || '',
-        ratingKey: item.ratingKey || '',
-        persistedSourceUrl: item.persistedSourceUrl || '',
-        sourceState: item.sourceState === 'ready' ? 'idle' : item.sourceState,
-      })),
-    };
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(serialized));
-  } catch (_) {
-    // ignore quota errors
-  }
-}
-
-function restoreQueue() {
-  try {
-    const raw = localStorage.getItem(QUEUE_KEY);
-    if (!raw) return;
-
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed.items) || !parsed.items.length) return;
-
-    for (const item of parsed.items) {
-      queue.push({
-        ...item,
-        sourceState: 'idle',
-        sourceError: null,
-        sourceMeta: null,
-        localBlobUrl: null,
-        cachePath: item.cachePath || '',
-        loudnessDb: Number.isFinite(Number(item.loudnessDb)) ? Number(item.loudnessDb) : null,
-        persistedSourceUrl: item.persistedSourceUrl || '',
-        lastTouchedAt: Date.now(),
-      });
-    }
-
-    currentIndex = typeof parsed.index === 'number' ? Math.max(0, parsed.index) : 0;
-    if (currentIndex >= queue.length) currentIndex = queue.length - 1;
-    currentTrackId = queue[currentIndex]?.id ?? null;
-  } catch (_) {
-    // ignore corrupted data
-  }
 }
 
 function openSearch() {
@@ -1943,619 +1446,6 @@ function closeSearch() {
   if (searchClose) searchClose.hidden = true;
 }
 
-function buildResultHTML(track, kind = 'song', index = 0) {
-  const artUrl = getBestArtworkUrl(track);
-  const artist = track.artists ? track.artists.map((a) => a.name).join(', ') : (track.artist || 'Artiste inconnu');
-  const hasDuration = Number(track.duration_ms) > 0;
-  const dur = hasDuration ? formatTime(track.duration_ms) : '--:--';
-  const isArtistResult = Boolean(track.isArtistResult);
-  const localBadge = track.isLocalResult ? '<span class="result-local-badge" title="Fichier local">📁</span>' : '';
-  const durationHtml = isArtistResult ? '<span class="result-duration">Artiste</span>' : `<span class="result-duration">${dur}</span>`;
-  const addLabel = isArtistResult ? '🔎' : '+';
-  const addAria = isArtistResult ? 'Rechercher cet artiste' : 'Ajouter';
-  const deleteBtn = (!isArtistResult && track.isLocalResult)
-    ? `<button class="delete-btn" aria-label="Supprimer" data-track-name="${escHtml(track.name)}" data-artist-name="${escHtml(artist)}" data-cache-path="${escHtml(track.cachePath || '')}">🗑</button>`
-    : '';
-
-  return `
-    <div class="search-result-item" data-kind="${kind}" data-index="${index}" role="button" tabindex="0">
-      <img class="result-art" src="${escHtml(artUrl)}" alt="" loading="lazy">
-      <div class="result-info">
-        <div class="result-name">${escHtml(track.name)} ${localBadge}</div>
-        <div class="result-artist">${escHtml(artist)}</div>
-      </div>
-      ${durationHtml}
-      ${deleteBtn}
-      <button class="add-btn" aria-label="${addAria}">${addLabel}</button>
-    </div>`;
-}
-
-function buildSearchResultsSectionsHTML(songResults, artistResults) {
-  const songs = Array.isArray(songResults) ? songResults : [];
-  const artists = Array.isArray(artistResults) ? artistResults : [];
-  const sections = [];
-
-  if (songs.length) {
-    sections.push(`
-      <div class="search-section" data-section="songs">
-        <div class="search-empty" style="text-align:left; padding-bottom:6px;">Musiques (${songs.length})</div>
-        ${songs.map((track, index) => buildResultHTML(track, 'song', index)).join('')}
-      </div>
-    `);
-  }
-
-  if (artists.length) {
-    sections.push(`
-      <div class="search-section" data-section="artists">
-        <div class="search-empty" style="text-align:left; padding-bottom:6px;">Artistes (${artists.length})</div>
-        ${artists.map((track, index) => buildResultHTML(track, 'artist', index)).join('')}
-      </div>
-    `);
-  }
-
-  return sections.join('');
-}
-
-function normalizeApiSearchResponse(data) {
-  if (!data) return [];
-  const rootCandidates = [];
-
-  if (Array.isArray(data)) rootCandidates.push(...data);
-  if (Array.isArray(data.results)) rootCandidates.push(...data.results);
-  if (Array.isArray(data.items)) rootCandidates.push(...data.items);
-  if (Array.isArray(data?.artists?.results)) rootCandidates.push(...data.artists.results);
-  if (Array.isArray(data?.tracks?.results)) rootCandidates.push(...data.tracks.results);
-  if (Array.isArray(data.tracks)) rootCandidates.push(...data.tracks);
-  if (Array.isArray(data.songs)) rootCandidates.push(...data.songs);
-  if (Array.isArray(data.artists)) rootCandidates.push(...data.artists);
-  if (Array.isArray(data.media)) rootCandidates.push(...data.media);
-  if (Array.isArray(data?.tracks?.items)) rootCandidates.push(...data.tracks.items);
-  if (Array.isArray(data?.items?.tracks)) rootCandidates.push(...data.items.tracks);
-  if (Array.isArray(data?.data)) rootCandidates.push(...data.data);
-
-  if (!rootCandidates.length) {
-    rootCandidates.push(data);
-  }
-
-  return rootCandidates.flatMap((item) => extractSongCandidatesFromApiItem(item));
-}
-
-function extractSongCandidatesFromApiItem(item) {
-  if (!item) return [];
-  if (Array.isArray(item)) return item.flatMap((entry) => extractSongCandidatesFromApiItem(entry));
-  if (typeof item !== 'object') return [];
-
-  const type = String(item.type || item.resultType || item.kind || '').toLowerCase();
-  const nestedSongCollections = [
-    item.results,
-    item?.artists?.results,
-    item?.tracks?.results,
-    item.tracks,
-    item.songs,
-    item.topTracks,
-    item.popularTracks,
-    item.items,
-    item.data,
-    item?.items?.tracks,
-    item?.album?.tracks,
-  ];
-
-  const nestedSongs = nestedSongCollections
-    .filter((collection) => Array.isArray(collection) && collection.length)
-    .flatMap((collection) => extractSongCandidatesFromApiItem(collection));
-
-  if (nestedSongs.length) return nestedSongs;
-
-  if (type.includes('artist') || type.includes('artiste')) {
-    // Pure artist entries are not directly playable in queue.
-    return [];
-  }
-
-  const hasTrackShape = Boolean(
-    item.title
-    || item.trackName
-    || item.song
-    || (item.name && (item.duration || item.duration_ms || item.uri || item.downloadUrl))
-  );
-
-  return hasTrackShape ? [item] : [];
-}
-
-function cleanItunesSearchText(text) {
-  return String(text || '')
-    .replace(/\s*[\[(][^\])\n]*[\])\n]/g, '')
-    .replace(/\s*[-–|]\s*(Official|Audio|Lyrics?|Video|HD|HQ|4K|Live|Karaoke|Cover|Clip).*/i, '')
-    .replace(/\s+(feat\.?|ft\.?)\s+.+$/i, '')
-    .trim();
-}
-
-function splitItunesSearchQuery(rawQuery) {
-  const cleaned = cleanItunesSearchText(rawQuery);
-  const separators = [' - ', ' – ', ' — ', ' | ', ': '];
-  for (const separator of separators) {
-    const parts = cleaned.split(separator);
-    if (parts.length >= 2) {
-      return {
-        artist: parts[0].trim(),
-        title: parts.slice(1).join(separator).trim(),
-      };
-    }
-  }
-
-  return { artist: '', title: cleaned };
-}
-
-function mapApiTrackToSearchItem(track) {
-  if (!track) return null;
-  const isLocalResult = isLocalTrackResult(track);
-
-  const type = String(track.type || track.resultType || track.kind || '').toLowerCase();
-  const isArtistResult = Boolean(
-    type.includes('artist')
-    || type.includes('artiste')
-    || (!track.trackName && !track.title && !track.song && !track.previewUrl && !track.downloadUrl && track.name)
-  );
-
-  if (isArtistResult) {
-    const artistName = track.name || track.artistName || track.artist || 'Artiste inconnu';
-    const artUrl = getBestArtworkUrl(track);
-    return {
-      id: track.id || track.artistId || `artist:${artistName}`,
-      uri: track.viewUrl || track.artistViewUrl || `api:artist:${track.id || artistName}`,
-      name: artistName,
-      artist: artistName,
-      artUrl,
-      duration_ms: 0,
-      duration: 0,
-      isArtistResult: true,
-      isLocalResult,
-      popularityScore: getPopularityScore(track),
-      artists: [{ name: artistName }],
-      album: { images: artUrl ? [{ url: artUrl }] : [] },
-      downloadUrl: '',
-    };
-  }
-
-  const title = track.title || track.trackName || track.name || track.song || track.grandparentTitle;
-  if (!title) return null;
-
-  const artist = track.artist || track.artistName || track.originalTitle || track.grandparentTitle || track.collectionName || 'Artiste inconnu';
-  const artUrl = getBestArtworkUrl(track);
-  const duration = getTrackDurationMs(track);
-
-  return {
-    id: track.id || track.ratingKey || `${title}-${artist}`,
-    uri: track.uri || track.downloadUrl || `api:track:${track.id || title}`,
-    name: title,
-    artist,
-    artUrl,
-    duration_ms: duration,
-    duration,
-    loudnessDb: extractTrackLoudnessDb(track),
-    isArtistResult: false,
-    isLocalResult,
-    cachePath: track.cachePath || track.filePath || track.path || '',
-    popularityScore: getPopularityScore(track),
-    artists: [{ name: artist }],
-    album: { images: artUrl ? [{ url: artUrl }, { url: artUrl }] : [] },
-    downloadUrl: track.downloadUrl || track.streamUrl || track.url || '',
-  };
-}
-
-function sortSearchResultsByPopularity(a, b) {
-  // Put local results first, then songs before artists, then popularity.
-  if (a.isLocalResult !== b.isLocalResult) {
-    return a.isLocalResult ? -1 : 1;
-  }
-
-  // Then put songs before artists.
-  if (a.isArtistResult !== b.isArtistResult) {
-    return a.isArtistResult ? 1 : -1;
-  }
-
-  const scoreA = Number.isFinite(a.popularityScore) ? a.popularityScore : 0;
-  const scoreB = Number.isFinite(b.popularityScore) ? b.popularityScore : 0;
-  if (scoreA !== scoreB) return scoreB - scoreA;
-
-  // Keep API order when popularity is equal or missing.
-  return 0;
-}
-
-function isLocalTrackResult(track) {
-  if (!track || typeof track !== 'object') return false;
-
-  // Primary API contract: cached results must be flagged with cached=true.
-  if (track.cached === true || track.isCached === true) return true;
-
-  const candidates = [
-    track.isLocal,
-    track.local,
-    track.sourceType,
-    track.source,
-    track.location,
-    track.storage,
-  ];
-
-  for (const candidate of candidates) {
-    if (typeof candidate === 'boolean') {
-      if (candidate) return true;
-      continue;
-    }
-
-    const text = String(candidate || '').trim().toLowerCase();
-    if (!text) continue;
-    if (text === 'local' || text === 'cached' || text === 'cache' || text === 'disk' || text === 'file' || text === 'true') {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function getPopularityScore(track) {
-  if (!track || typeof track !== 'object') return 0;
-
-  const candidates = [
-    track.popularity,
-    track.popularityScore,
-    track.score,
-    track.rank,
-    track.rating,
-    track.ratingCount,
-    track.listenerCount,
-    track.playCount,
-    track.plays,
-    track.views,
-    track.followers,
-    track.weight,
-    track.position,
-    track.index,
-    track.order,
-    track.sort,
-    track.metrics?.popularity,
-    track.stats?.popularity,
-  ];
-
-  for (const candidate of candidates) {
-    const numeric = Number(candidate);
-    if (Number.isFinite(numeric) && numeric > 0) {
-      // Lower rank/position means more popular, invert those.
-      if (candidate === track.rank || candidate === track.position || candidate === track.index || candidate === track.order || candidate === track.sort) {
-        return 1_000_000 - numeric;
-      }
-      return numeric;
-    }
-  }
-
-  return 0;
-}
-
-function extractTrackLoudnessDb(track) {
-  if (!track || typeof track !== 'object') return null;
-
-  const candidates = [
-    track.loudnessDb,
-    track.loudness_db,
-    track.loudness,
-    track.decibels,
-    track.decibel,
-    track.db,
-    track.volumeDb,
-    track.volume_db,
-    track.replayGainDb,
-    track.replaygain,
-    track.audio?.loudnessDb,
-    track.audio?.loudness,
-    track.metadata?.loudnessDb,
-    track.metadata?.loudness,
-    track.metadata?.decibels,
-    track.meta?.loudnessDb,
-    track.meta?.loudness,
-    track.stats?.loudness,
-    track.analysis?.loudness,
-  ];
-
-  for (const candidate of candidates) {
-    const db = parseDecibelValue(candidate);
-    if (Number.isFinite(db)) return db;
-  }
-
-  return null;
-}
-
-function parseDecibelValue(value) {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value !== 'string') return null;
-
-  const match = value.trim().match(/-?\d+(?:[.,]\d+)?/);
-  if (!match) return null;
-
-  const normalized = match[0].replace(',', '.');
-  const numeric = Number(normalized);
-  return Number.isFinite(numeric) ? numeric : null;
-}
-
-function getTrackCacheKey(track) {
-  if (!track) return '';
-  return String(track.uri || track.id || `${track.artist || ''}::${track.name || track.title || ''}`);
-}
-
-function getDirectPlayableSourceUrl(track) {
-  if (!track) return '';
-
-  const candidates = [
-    track.persistedSourceUrl,
-    track.localBlobUrl,
-    track.downloadUrl,
-    track.streamUrl,
-    track.fileUrl,
-    track.audioUrl,
-    track.url,
-    track.uri,
-  ];
-
-  for (const candidate of candidates) {
-    if (typeof candidate !== 'string') continue;
-    const value = candidate.trim();
-    if (!value) continue;
-    if (value.startsWith('blob:')) return value;
-    if (/^https?:\/\//i.test(value) && isTrustedLocalAudioUrl(value)) return value;
-  }
-
-  return '';
-}
-
-function isTrustedLocalAudioUrl(url) {
-  if (!url || typeof url !== 'string') return false;
-
-  try {
-    const parsed = new URL(url, window.location.href);
-    const sameOrigin = parsed.origin === window.location.origin;
-    const downloaderApi = getDownloaderApiUrl();
-    const apiOrigin = downloaderApi ? new URL(downloaderApi, window.location.href).origin : '';
-    const fromConfiguredApi = apiOrigin && parsed.origin === apiOrigin;
-    const hasCachePath = /\/api\/cache\//i.test(parsed.pathname) || /\/cache\//i.test(parsed.pathname);
-
-    return sameOrigin || (fromConfiguredApi && hasCachePath);
-  } catch (_) {
-    return false;
-  }
-}
-
-function canLoadAudioSource(sourceUrl) {
-  return new Promise((resolve) => {
-    if (!sourceUrl) {
-      resolve(false);
-      return;
-    }
-
-    const audio = new Audio();
-    audio.preload = 'metadata';
-
-    let settled = false;
-    const cleanup = () => {
-      audio.removeEventListener('canplay', onCanPlay);
-      audio.removeEventListener('error', onError);
-      clearTimeout(timeoutId);
-      audio.src = '';
-    };
-
-    const finish = (ok) => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      resolve(ok);
-    };
-
-    const onCanPlay = () => finish(true);
-    const onError = () => finish(false);
-    const timeoutId = setTimeout(() => finish(false), 6000);
-
-    audio.addEventListener('canplay', onCanPlay, { once: true });
-    audio.addEventListener('error', onError, { once: true });
-    audio.src = sourceUrl;
-    audio.load();
-  });
-}
-
-function getTrackDurationMs(track) {
-  if (!track) return 0;
-
-  const candidates = [
-    // Direct properties (most common)
-    track.duration_ms,
-    track.durationMs,
-    track.durationMS,
-    track.trackDurationMs,
-    track.track_duration_ms,
-    track.lengthMs,
-    track.length_ms,
-    track.trackTimeMillis,
-    track.timeMillis,
-    track.durationMillis,
-    track.durationInMs,
-    track.durationInSec,
-    track.durationInSeconds,
-    track.lengthSeconds,
-    track.seconds,
-    track.duration,
-    track.length,
-    track.runtime,
-    track.time,
-    track.formattedDuration,
-    track.formatted_duration,
-    // Alternative naming conventions
-    track.durationMilliseconds,
-    track.durationInMilliseconds,
-    track.lengthMilliseconds,
-    track.lengthInMilliseconds,
-    track.totalDuration,
-    track.totalDurationMs,
-    track.totalLength,
-    track.playbackDuration,
-    track.trackDuration,
-    track.songLength,
-    track.audioDuration,
-    track.mediaLength,
-    track.totalMilliseconds,
-    track.playback_duration,
-    track.trackLength,
-    // Nested duration objects
-    track.duration?.ms,
-    track.duration?.milliseconds,
-    track.duration?.millis,
-    track.duration?.seconds,
-    track.duration?.sec,
-    track.duration?.formatted,
-    track.duration?.text,
-    track.meta?.duration,
-    track.metadata?.duration,
-    track.attributes?.duration,
-    // Spotify-like nested (sometimes at top level too)
-    track.track?.duration_ms,
-    track.track?.duration,
-    track.track?.trackTimeMillis,
-    track.track?.duration?.ms,
-  ];
-
-  for (const value of candidates) {
-    const ms = parseDurationToMs(value);
-    if (ms > 0) return ms;
-  }
-
-  return 0;
-}
-
-function parseDurationToMs(value) {
-  if (value && typeof value === 'object') {
-    const nested = [
-      value.ms,
-      value.milliseconds,
-      value.millis,
-      value.seconds,
-      value.sec,
-      value.formatted,
-      value.text,
-      value.value,
-      value.duration,
-    ];
-
-    for (const candidate of nested) {
-      const ms = parseDurationToMs(candidate);
-      if (ms > 0) return ms;
-    }
-    return 0;
-  }
-
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    if (value <= 0) return 0;
-    // Most APIs return ms; small numeric values are usually seconds.
-    return value < 1000 ? Math.round(value * 1000) : Math.round(value);
-  }
-
-  if (typeof value !== 'string') return 0;
-  const text = value.trim();
-  if (!text) return 0;
-
-  const isoMatch = text.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/i);
-  if (isoMatch) {
-    const h = Number(isoMatch[1] || 0);
-    const m = Number(isoMatch[2] || 0);
-    const s = Number(isoMatch[3] || 0);
-    const totalSeconds = (h * 3600) + (m * 60) + s;
-    if (totalSeconds > 0) return totalSeconds * 1000;
-  }
-
-  if (/^\d+(\.\d+)?$/.test(text)) {
-    const numeric = Number(text);
-    if (!Number.isFinite(numeric) || numeric <= 0) return 0;
-    return numeric < 1000 ? Math.round(numeric * 1000) : Math.round(numeric);
-  }
-
-  const colonParts = text.split(':').map((part) => Number(part));
-  if (colonParts.length >= 2 && colonParts.every((n) => Number.isFinite(n) && n >= 0)) {
-    let seconds = 0;
-    for (const part of colonParts) {
-      seconds = (seconds * 60) + part;
-    }
-    return Math.round(seconds * 1000);
-  }
-
-  const match = text.match(/(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?\s*(?:(\d+)\s*s)?/i);
-  if (match) {
-    const h = Number(match[1] || 0);
-    const m = Number(match[2] || 0);
-    const s = Number(match[3] || 0);
-    const totalSeconds = (h * 3600) + (m * 60) + s;
-    if (totalSeconds > 0) return totalSeconds * 1000;
-  }
-
-  return 0;
-}
-
-function getBestArtworkUrl(track) {
-  if (!track) return '';
-
-  const directCandidates = [
-    track.artUrl,
-    track.artworkUrl100,
-    track.artworkUrl60,
-    track.artworkUrl,
-    track.cover,
-    track.coverUrl,
-    track.image,
-    track.imageUrl,
-    track.thumbnail,
-    track.thumb,
-    track.poster,
-    track.posterUrl,
-  ];
-
-  for (const candidate of directCandidates) {
-    if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
-  }
-
-  const nestedCollections = [
-    track.album?.images,
-    track.images,
-    track.thumbnails,
-    track.artworks,
-    track.covers,
-  ];
-
-  for (const collection of nestedCollections) {
-    if (!Array.isArray(collection) || !collection.length) continue;
-
-    for (const image of collection) {
-      if (!image) continue;
-      if (typeof image === 'string' && image.trim()) return image.trim();
-      if (typeof image?.url === 'string' && image.url.trim()) return image.url.trim();
-      if (typeof image?.src === 'string' && image.src.trim()) return image.src.trim();
-    }
-  }
-
-  if (typeof track.album?.artwork === 'string' && track.album.artwork.trim()) return track.album.artwork.trim();
-  if (typeof track.album?.cover === 'string' && track.album.cover.trim()) return track.album.cover.trim();
-
-  return '';
-}
-
-function formatTime(ms) {
-  const total = Math.round((Number(ms) || 0) / 1000);
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
-
-function escHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 /**
  * @typedef {Object} QueueItem
