@@ -228,7 +228,7 @@ const mixControls = createMixControls({
   getQueueLength: () => queue.length,
   manualLockBtn,
   onFocusDeckChanged: () => {
-    // if (queue.length) renderQueue();
+    updateDeckCueUI();
   },
   setDeckMixRatio: (value) => {
     deckMixRatio = value;
@@ -315,6 +315,7 @@ const uiRenderer = createDjMixRenderer({
   getCurrentIndex: () => currentIndex,
   getCurrentTrackId: () => currentTrackId,
   getDeckBCueIndex: () => deckBCueIndex,
+  getDeckCueDeck: () => deckCueDeck,
   getDeckDisplayItems: () => deckDisplayItems,
   getDeckMixRatio: () => deckMixRatio,
   getFocusDeck,
@@ -580,7 +581,10 @@ function hookPlayerEvents() {
 
 autoMixBtn?.addEventListener('click', async () => {
   if (!player || player.isCrossfading) return;
-  const inactiveDeck = deckCueDeck || getInactiveDeck();
+  const hasCue = deckBCueIndex >= 0 && deckBCueIndex < queue.length;
+  const inactiveDeck = hasCue && (deckCueDeck === 'A' || deckCueDeck === 'B')
+    ? deckCueDeck
+    : getInactiveDeck();
   const preparedItem = deckDisplayItems[inactiveDeck];
   const preparedIndex = preparedItem ? queue.findIndex((item) => item.id === preparedItem.id) : -1;
   const nextIndex = preparedIndex >= 0
@@ -653,19 +657,21 @@ async function launchDeckFromQueue(deck, options = {}) {
     return;
   }
 
+  let targetDeck = deck === 'B' ? 'B' : 'A';
+
   const fallbackIndex = currentIndex >= 0 && queue[currentIndex] ? currentIndex : 0;
   const inactiveDeck = getInactiveDeck();
-  const deckItemIndex = deckDisplayItems[deck]
-    ? queue.findIndex((q) => q.id === deckDisplayItems[deck]?.id)
+  const deckItemIndex = deckDisplayItems[targetDeck]
+    ? queue.findIndex((q) => q.id === deckDisplayItems[targetDeck]?.id)
     : -1;
 
   let targetIndex = fallbackIndex;
   if (options.useCue === true && deckBCueIndex >= 0 && queue[deckBCueIndex]) {
     targetIndex = deckBCueIndex;
-    deckBCueIndex=-1;
+    deckBCueIndex = -1;
   } else if (deckItemIndex >= 0) {
     targetIndex = deckItemIndex;
-  } else if (deck === inactiveDeck) {
+  } else if (targetDeck === inactiveDeck) {
     targetIndex = getFollowingQueueIndex(fallbackIndex);
   }
   if (targetIndex < 0) targetIndex = fallbackIndex;
@@ -674,7 +680,7 @@ async function launchDeckFromQueue(deck, options = {}) {
   if (!item) return;
 
   logInfo('launchDeckFromQueue(): deck load requested', {
-    deck,
+    deck: targetDeck,
     targetIndex,
     currentIndex,
     itemId: item.id,
@@ -684,15 +690,15 @@ async function launchDeckFromQueue(deck, options = {}) {
 
   try {
     const sourceUrl = await ensureLocalSource(item);
-    const isFocusDeck = deck === getFocusDeck();
+    const isFocusDeck = targetDeck === getFocusDeck();
     const paused = typeof options.paused === 'boolean' ? options.paused : !isFocusDeck;
-    await player.playOnDeck(deck, { url: sourceUrl, loudnessDb: item.loudnessDb }, { makeActive: false, paused });
-    deckDisplayItems[deck] = item;
+    await player.playOnDeck(targetDeck, { url: sourceUrl, loudnessDb: item.loudnessDb }, { makeActive: false, paused });
+    deckDisplayItems[targetDeck] = item;
     
     if (isFocusDeck) {
       currentIndex = targetIndex;
       currentTrackId = item.id;
-      updateNowPlaying(item, deck);
+      updateNowPlaying(item, targetDeck);
       isPlaying = true;
       launchPreviewTitle = '';
       launchPreviewArtist = '';
@@ -704,19 +710,19 @@ async function launchDeckFromQueue(deck, options = {}) {
       launchPreviewArtUrl = item.artUrl || '';
       launchPreviewTitle = item.name || '';
       launchPreviewArtist = item.artist || '';
-      launchPreviewDeck = deck;
-      deckCueDeck = deck;
+      launchPreviewDeck = targetDeck;
+      deckCueDeck = targetDeck;
       updateUpcomingArtwork();
     }
     logInfo('launchDeckFromQueue(): deck loaded', {
-      deck,
+      deck: targetDeck,
       itemId: item.id,
       isFocusDeck,
       paused,
     });
   } catch (err) {
     logError('launchDeckFromQueue(): failed', {
-      deck,
+      deck: targetDeck,
       targetIndex,
       itemId: item.id,
       message: err?.message,
@@ -1356,16 +1362,15 @@ function renderQueue() {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const idx = Number(btn.dataset.index);
+      const deck = btn.dataset.deck === 'B' ? 'B' : 'A';
       if (idx < 0 || idx >= queue.length) return;
       deckBCueIndex = idx;
-      deckCueDeck = getInactiveDeck();
+      deckCueDeck = deck;
       updateDeckCueUI();
-        const inactiveDeck = deckCueDeck;
-      showToast(`Cue Platine ${deckToPlatineLabel(inactiveDeck)}: ${queue[idx].name}`);
+      showToast(`Cue Platine ${deckToPlatineLabel(deck)}: ${queue[idx].name}`);
       renderQueue();
-      // Load the cued song on the inactive deck
-      await launchDeckFromQueue(inactiveDeck, { paused: true, useCue: true });
-      
+
+      await launchDeckFromQueue(deck, { paused: true, useCue: true });
     });
   });
 }

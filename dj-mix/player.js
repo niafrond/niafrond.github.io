@@ -246,11 +246,7 @@ export class DJPlayer extends EventTarget {
   }
 
   async seekTo(positionMs, options = {}) {
-    return this.seekDeckTo(this.#active, positionMs, options);
-  }
-
-  async seekDeckTo(deck, positionMs, options = {}) {
-    const active = deck === 'B' ? this.#audioB : this.#audioA;
+    const active = this.#activeAudio;
     if (!active) return;
 
     const durationMs = Number.isFinite(active.duration) && active.duration > 0
@@ -273,7 +269,6 @@ export class DJPlayer extends EventTarget {
     await this.#fadeVolume(active, initialVolume, floorVolume, fadeMs);
     active.currentTime = safeTargetMs / 1000;
     await this.#fadeVolume(active, floorVolume, initialVolume, fadeMs);
-    this.#emitDeckState();
   }
 
   async crossfadeTo(source, durationOverride) {
@@ -473,7 +468,6 @@ export class DJPlayer extends EventTarget {
     });
 
     audio.addEventListener('error', () => {
-      if(error.message == "MEDIA_ELEMENT_ERROR: Empty src attribute") return
       const src = audio.currentSrc || audio.src || '';
       if (!src || this.#destroyed) return;
       this.dispatchEvent(new CustomEvent('error', {

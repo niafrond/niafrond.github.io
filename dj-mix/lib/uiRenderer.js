@@ -29,6 +29,7 @@ export function createDjMixRenderer(options) {
     getCurrentTrackId,
     getIsPlaying,
     getDeckBCueIndex,
+    getDeckCueDeck,
     getInactiveDeck,
     getFocusDeck,
     getDeckDisplayItems,
@@ -62,7 +63,7 @@ export function createDjMixRenderer(options) {
     const currentTrackId = getCurrentTrackId();
     const isPlaying = getIsPlaying();
     const deckBCueIndex = getDeckBCueIndex();
-    const inactiveDeck = getInactiveDeck();
+    const deckCueDeck = getDeckCueDeck();
 
     return queue.map((item, i) => {
       const isCurrent = item.id === currentTrackId;
@@ -72,8 +73,10 @@ export function createDjMixRenderer(options) {
       const numHtml = showPlayingBars
         ? '<div class="queue-num"><div class="playing-bars" aria-label="En cours"><span></span><span></span><span></span></div></div>'
         : `<div class="queue-num">${i + 1}</div>`;
-      const cueBtnClass = 'queue-cue';
-      const cueBtnLabel = `Cue Platine ${inactiveDeck === 'A' ? '1' : '2'}`;
+      const cueASelected = deckBCueIndex === i && deckCueDeck === 'A';
+      const cueBSelected = deckBCueIndex === i && deckCueDeck === 'B';
+      const cueAClass = `queue-cue${cueASelected ? ' is-selected' : ''}`;
+      const cueBClass = `queue-cue${cueBSelected ? ' is-selected' : ''}`;
       const bpmDisplay = item.bpm ? ` • ${Math.round(item.bpm)} BPM` : '';
 
       return `
@@ -86,7 +89,8 @@ export function createDjMixRenderer(options) {
         </div>
         <span class="queue-duration">${formatTime(item.duration)}</span>
         <div class="queue-actions">
-          <button class="${cueBtnClass}" data-index="${i}" aria-label="Cue platine inactive">${cueBtnLabel}</button>
+          <button class="${cueAClass}" data-index="${i}" data-deck="A" aria-label="Cue platine 1">Cue 1</button>
+          <button class="${cueBClass}" data-index="${i}" data-deck="B" aria-label="Cue platine 2">Cue 2</button>
           <button class="queue-remove" data-index="${i}" aria-label="Retirer">✕</button>
         </div>
       </div>`;
