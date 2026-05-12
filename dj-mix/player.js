@@ -271,6 +271,35 @@ export class DJPlayer extends EventTarget {
     await this.#fadeVolume(active, floorVolume, initialVolume, fadeMs);
   }
 
+  async seekDeckTo(deck, positionMs, options = {}) {
+    const targetDeck = deck === 'B' ? 'B' : 'A';
+    const audio = targetDeck === 'B' ? this.#audioB : this.#audioA;
+    if (!audio) return;
+
+    const durationMs = Number.isFinite(audio.duration) && audio.duration > 0
+      ? audio.duration * 1000
+      : 0;
+    if (!durationMs) return;
+
+    const safeTargetMs = Math.max(0, Math.min(durationMs, Number(positionMs) || 0));
+    const wasPaused = audio.paused;
+    const fadeMs = Math.max(40, Number(options.fadeMs) || 180);
+
+    if (this.#isCrossfading || wasPaused) {
+      audio.currentTime = safeTargetMs / 1000;
+      this.#emitDeckState();
+      return;
+    }
+
+    const initialVolume = Math.max(0, Math.min(1, audio.volume || 1));
+    const floorVolume = Math.min(initialVolume, 0.08);
+
+    await this.#fadeVolume(audio, initialVolume, floorVolume, fadeMs);
+    audio.currentTime = safeTargetMs / 1000;
+    await this.#fadeVolume(audio, floorVolume, initialVolume, fadeMs);
+    this.#emitDeckState();
+  }
+
   async crossfadeTo(source, durationOverride) {
     return this.crossfadeToDeck(null, source, durationOverride);
   }

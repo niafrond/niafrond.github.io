@@ -7,10 +7,104 @@ const ENERGY_EPSILON  = 1e-4;
 const DISTORTION_K    = 140;
 const ECHO_DELAY_S    = 0.22;
 const ECHO_FEEDBACK   = 0.28;
+const STEM_SYNC_INTERVAL_MS = 1200;
+
+const DEMUCS_WEB_MODULE_URL = 'https://cdn.jsdelivr.net/npm/demucs-web@1.0.2/+esm';
+const ONNX_RUNTIME_MODULE_URL = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.min.mjs';
 
 // ─── Tiny utilities ───────────────────────────────────────────────────────────
 
 function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+let _demucsRuntimePromise = null;
+
+async function loadDemucsRuntime() {
+  if (_demucsRuntimePromise) return _demucsRuntimePromise;
+
+  _demucsRuntimePromise = (async () => {
+    const [demucsModule, ortModule] = await Promise.all([
+      import(DEMUCS_WEB_MODULE_URL),
+      import(ONNX_RUNTIME_MODULE_URL),
+    ]);
+
+    const ort = ortModule.default || ortModule;
+    if (ort?.env?.wasm) {
+      ort.env.wasm.numThreads = 1;
+      ort.env.wasm.simd = true;
+    }
+
+    return {
+      DemucsProcessor: demucsModule.DemucsProcessor,
+      CONSTANTS: demucsModule.CONSTANTS,
+      ort,
+    };
+  })().catch((err) => {
+    _demucsRuntimePromise = null;
+    throw err;
+  });
+
+  return _demucsRuntimePromise;
+}
+
+function encodeStereoWav(left, right, sampleRate = 44100) {
+  const length = Math.min(left?.length || 0, right?.length || 0);
+  const bytesPerSample = 2;
+  const blockAlign = 2 * bytesPerSample;
+  const dataSize = length * blockAlign;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+
+  let offset = 0;
+  const writeStr = (s) => {
+    for (let i = 0; i < s.length; i += 1) view.setUint8(offset + i, s.charCodeAt(i));
+    offset += s.length;
+  };
+
+  writeStr('RIFF');
+  view.setUint32(offset, 36 + dataSize, true); offset += 4;
+  writeStr('WAVE');
+  writeStr('fmt ');
+  view.setUint32(offset, 16, true); offset += 4;
+  view.setUint16(offset, 1, true); offset += 2; // PCM
+  view.setUint16(offset, 2, true); offset += 2; // Stereo
+  view.setUint32(offset, sampleRate, true); offset += 4;
+  view.setUint32(offset, sampleRate * blockAlign, true); offset += 4;
+  view.setUint16(offset, blockAlign, true); offset += 2;
+  view.setUint16(offset, bytesPerSample * 8, true); offset += 2;
+  writeStr('data');
+  view.setUint32(offset, dataSize, true); offset += 4;
+
+  for (let i = 0; i < length; i += 1) {
+    const l = clamp(left[i] || 0, -1, 1);
+    const r = clamp(right[i] || 0, -1, 1);
+    view.setInt16(offset, l < 0 ? l * 0x8000 : l * 0x7fff, true); offset += 2;
+    view.setInt16(offset, r < 0 ? r * 0x8000 : r * 0x7fff, true); offset += 2;
+  }
+
+  return new Blob([buffer], { type: 'audio/wav' });
+}
+
+async function decodeAsStereo44100(ctx, arrayBuffer) {
+  const decoded = await ctx.decodeAudioData(arrayBuffer.slice(0));
+  if (!decoded) return null;
+
+  const targetRate = 44100;
+  const duration = Math.max(0.01, decoded.duration || 0);
+  const frameCount = Math.max(1, Math.ceil(duration * targetRate));
+  const offline = new OfflineAudioContext(2, frameCount, targetRate);
+  const src = offline.createBufferSource();
+  src.buffer = decoded;
+  src.connect(offline.destination);
+  src.start(0);
+
+  const rendered = await offline.startRendering();
+  const left = new Float32Array(rendered.getChannelData(0));
+  const right = rendered.numberOfChannels > 1
+    ? new Float32Array(rendered.getChannelData(1))
+    : new Float32Array(rendered.getChannelData(0));
+
+  return { left, right };
+}
 
 // ─── Distortion curve (computed once, reused for every deck) ─────────────────
 
@@ -180,6 +274,14 @@ export class SimpleMixFeatures {
 
   #nodesA = null;
   #nodesB = null;
+  #demucsProcessor = null;
+  #demucsUnavailable = false;
+  #stemCache = new Map();
+  #deckStemState = {
+    A: { originalSrc: '', appliedSrc: '', stemMode: null, token: 0, processing: false },
+    B: { originalSrc: '', appliedSrc: '', stemMode: null, token: 0, processing: false },
+  };
+  #lastStemSyncAt = 0;
 
   // Smoothed gain state tracked on the JS side (for adaptive computation only)
   #msState = {
@@ -225,7 +327,7 @@ export class SimpleMixFeatures {
   tick(activeDeck) {
     if (!this.#ready) return;
 
-    const { autoBpm, deckFx } = this.#settings;
+    const { autoBpm } = this.#settings;
 
     if (autoBpm && !this.#audioA.paused && !this.#audioB.paused) {
       const active   = activeDeck === 'B' ? this.#audioB : this.#audioA;
@@ -237,16 +339,26 @@ export class SimpleMixFeatures {
       active.playbackRate   += (1 - active.playbackRate) * 0.1;
     }
 
-    if (deckFx.A.vocalRemove || deckFx.A.instruRemove) this.#tickMsAdaptive('A');
-    if (deckFx.B.vocalRemove || deckFx.B.instruRemove) this.#tickMsAdaptive('B');
+    const now = Date.now();
+    if (now - this.#lastStemSyncAt >= STEM_SYNC_INTERVAL_MS) {
+      this.#lastStemSyncAt = now;
+      void this.#syncAllDeckStemModes(false);
+    }
   }
 
   destroy() {
+    void this.#syncAllDeckStemModes(true, true);
     if (this.#audioA) this.#audioA.playbackRate = 1;
     if (this.#audioB) this.#audioB.playbackRate = 1;
     this.#audioCtx?.close().catch(() => {});
     this.#audioCtx = null;
     this.#nodesA = this.#nodesB = null;
+    for (const stems of this.#stemCache.values()) {
+      if (stems.vocalsUrl) URL.revokeObjectURL(stems.vocalsUrl);
+      if (stems.instrumentalUrl) URL.revokeObjectURL(stems.instrumentalUrl);
+    }
+    this.#stemCache.clear();
+    this.#demucsProcessor = null;
     this.#ready  = false;
     this.#msState = { A: { midGain: 1, sideGain: 1 }, B: { midGain: 1, sideGain: 1 } };
   }
@@ -333,10 +445,178 @@ export class SimpleMixFeatures {
     this.#setParamSmooth(ms.sideGain.gain, state.sideGain);
   }
 
+  #deckMode(deck) {
+    const fx = this.#settings.deckFx?.[deck];
+    if (fx?.vocalRemove) return 'vocalRemove';
+    if (fx?.instruRemove) return 'instruRemove';
+    return null;
+  }
+
+  #deckAudio(deck) {
+    return deck === 'B' ? this.#audioB : this.#audioA;
+  }
+
+  async #ensureDemucsProcessor() {
+    if (this.#demucsProcessor) return this.#demucsProcessor;
+    if (this.#demucsUnavailable) throw new Error('demucs.unavailable');
+
+    try {
+      const runtime = await loadDemucsRuntime();
+      const processor = new runtime.DemucsProcessor({
+        ort: runtime.ort,
+        sessionOptions: {
+          enableCpuMemArena: false,
+          enableMemPattern: false,
+        },
+      });
+
+      await processor.loadModel(runtime.CONSTANTS?.DEFAULT_MODEL_URL);
+      this.#demucsProcessor = processor;
+      return processor;
+    } catch (err) {
+      this.#demucsUnavailable = true;
+      throw err;
+    }
+  }
+
+  async #getOrCreateStems(sourceUrl) {
+    const cached = this.#stemCache.get(sourceUrl);
+    if (cached) return cached;
+
+    const processor = await this.#ensureDemucsProcessor();
+    const response = await fetch(sourceUrl);
+    if (!response.ok) throw new Error(`stem.fetch.failed:${response.status}`);
+
+    const arrayBuffer = await response.arrayBuffer();
+    const stereo = await decodeAsStereo44100(this.#audioCtx, arrayBuffer);
+    if (!stereo) throw new Error('stem.decode.failed');
+
+    const result = await processor.separate(stereo.left, stereo.right);
+
+    const vocalsLeft = result?.vocals?.left;
+    const vocalsRight = result?.vocals?.right;
+    if (!vocalsLeft || !vocalsRight) throw new Error('stem.vocals.missing');
+
+    const len = vocalsLeft.length;
+    const instrumentalLeft = new Float32Array(len);
+    const instrumentalRight = new Float32Array(len);
+    const tracks = ['drums', 'bass', 'other'];
+
+    for (const track of tracks) {
+      const t = result?.[track];
+      if (!t?.left || !t?.right) continue;
+      for (let i = 0; i < len; i += 1) {
+        instrumentalLeft[i] += t.left[i] || 0;
+        instrumentalRight[i] += t.right[i] || 0;
+      }
+    }
+
+    const stems = {
+      vocalsUrl: URL.createObjectURL(encodeStereoWav(vocalsLeft, vocalsRight, 44100)),
+      instrumentalUrl: URL.createObjectURL(encodeStereoWav(instrumentalLeft, instrumentalRight, 44100)),
+    };
+
+    this.#stemCache.set(sourceUrl, stems);
+    return stems;
+  }
+
+  async #swapDeckSource(audio, nextSrc) {
+    if (!audio || !nextSrc) return;
+    const currentSrc = audio.currentSrc || audio.src || '';
+    if (currentSrc === nextSrc) return;
+
+    const wasPaused = audio.paused;
+    const prevTime = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+
+    audio.src = nextSrc;
+
+    await new Promise((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        audio.removeEventListener('loadedmetadata', onLoaded);
+        audio.removeEventListener('error', onLoaded);
+        resolve();
+      };
+      const onLoaded = () => finish();
+      audio.addEventListener('loadedmetadata', onLoaded, { once: true });
+      audio.addEventListener('error', onLoaded, { once: true });
+      setTimeout(finish, 3000);
+    });
+
+    if (prevTime > 0 && Number.isFinite(audio.duration) && audio.duration > 0) {
+      const seekTime = Math.min(prevTime, Math.max(0, audio.duration - 0.05));
+      try { audio.currentTime = seekTime; } catch {}
+    }
+
+    if (!wasPaused) {
+      await audio.play().catch(() => {});
+    }
+  }
+
+  async #syncDeckStemMode(deck, force = false, restoreOnly = false) {
+    const audio = this.#deckAudio(deck);
+    if (!audio) return;
+
+    const state = this.#deckStemState[deck];
+    const mode = restoreOnly ? null : this.#deckMode(deck);
+    const currentSrc = audio.currentSrc || audio.src || '';
+    const isAppliedSrc = Boolean(state.appliedSrc) && currentSrc === state.appliedSrc;
+
+    if (!mode) {
+      if (isAppliedSrc && state.originalSrc) {
+        await this.#swapDeckSource(audio, state.originalSrc);
+      }
+      state.appliedSrc = '';
+      state.stemMode = null;
+      state.processing = false;
+      return;
+    }
+
+    if (!currentSrc) return;
+    if (state.processing && !force) return;
+
+    const baseSrc = isAppliedSrc ? state.originalSrc : currentSrc;
+    if (!baseSrc) return;
+
+    if (!force && state.stemMode === mode && isAppliedSrc) return;
+
+    const token = state.token + 1;
+    state.token = token;
+    state.processing = true;
+
+    try {
+      const stems = await this.#getOrCreateStems(baseSrc);
+      if (state.token !== token) return;
+
+      const nextStemSrc = mode === 'instruRemove' ? stems.vocalsUrl : stems.instrumentalUrl;
+      if (!nextStemSrc) return;
+
+      await this.#swapDeckSource(audio, nextStemSrc);
+      if (state.token !== token) return;
+
+      state.originalSrc = baseSrc;
+      state.appliedSrc = nextStemSrc;
+      state.stemMode = mode;
+    } catch {
+      // Keep playback alive when model loading/inference fails.
+    } finally {
+      if (state.token === token) state.processing = false;
+    }
+  }
+
+  async #syncAllDeckStemModes(force = false, restoreOnly = false) {
+    await Promise.all([
+      this.#syncDeckStemMode('A', force, restoreOnly),
+      this.#syncDeckStemMode('B', force, restoreOnly),
+    ]);
+  }
+
   #apply() {
     if (!this.#ready) return;
 
-    const { echo, distortion, autoBpm, deckFx } = this.#settings;
+    const { echo, distortion, autoBpm } = this.#settings;
 
     for (const deck of ['A', 'B']) {
       const n = this.#nodes(deck);
@@ -345,10 +625,11 @@ export class SimpleMixFeatures {
       n.distWet.gain.value = distortion ? 0.35 : 0;
       n.distDry.gain.value = 1;
 
-      const fx = deckFx[deck];
-      if (fx.vocalRemove || fx.instruRemove) this.#tickMsAdaptive(deck);
-      else this.#resetMs(deck);
+      // Legacy M/S shaping is disabled when using Demucs stems.
+      this.#resetMs(deck);
     }
+
+    void this.#syncAllDeckStemModes(true);
 
     if (!autoBpm) {
       this.#audioA.playbackRate += (1 - this.#audioA.playbackRate) * 0.25;
