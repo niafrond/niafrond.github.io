@@ -76,5 +76,12 @@ export default {
       testMatch: ['<rootDir>/blind-test/tests/unit/playlist.test.js'],
       transform: {},
     },
+    // ── DJ Mix : player + mixFeatures (jsdom pour Audio / AudioContext) ────────
+    {
+      displayName: 'dj-mix-jsdom',
+      testEnvironment: 'jsdom',
+      testMatch: ['<rootDir>/dj-mix/tests/unit/*.test.js'],
+      transform: {},
+    },
   ],
 };

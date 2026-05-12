@@ -41,27 +41,78 @@
         <input type="search" id="search-input" placeholder="Rechercher une chanson…" autocomplete="off">
         <button id="search-clear" class="search-clear" hidden aria-label="Effacer">✕</button>
       </div>
+      <button id="search-close" class="search-close-btn" type="button" hidden>Fermer</button>
     </div>
 
     <div class="tab-panels">
       <div id="tab-mix" class="tab-panel active">
         <div class="player-section">
           <div class="now-playing">
-            <div class="album-art-pair">
-              <div class="album-art-wrapper">
-                <img id="album-art" src="" alt="" class="album-art" hidden>
-                <div class="album-art-placeholder" id="art-placeholder">🎵</div>
-                <div class="crossfade-ring" id="crossfade-ring" hidden></div>
+            <div class="deck-panels" aria-live="polite">
+              <div class="deck-panel" id="deck-a-panel">
+                <div class="deck-head">
+                  <span class="deck-title">Platine 1</span>
+                  <span class="deck-vol" id="deck-a-vol">100%</span>
+                </div>
+                <div class="album-art-wrapper">
+                  <img id="album-art" src="" alt="" class="album-art" hidden>
+                  <div class="album-art-placeholder" id="art-placeholder">🎵</div>
+                  <div class="crossfade-ring" id="crossfade-ring" hidden></div>
+                </div>
+                <div class="deck-volume-control">
+                  <input type="range" id="deck-a-slider" min="0" max="100" value="100" class="fade-slider" aria-label="Volume platine 1">
+                </div>
+                <button id="deck-a-launch" class="deck-launch-btn" type="button">Lancer platine 1</button>
               </div>
-              <div class="album-art-next-wrapper" aria-live="polite">
-                <img id="next-album-art" src="" alt="" class="album-art-next" hidden>
-                <div class="album-art-next-placeholder" id="next-art-placeholder">♪</div>
+              <div class="deck-panel" id="deck-b-panel">
+                <div class="deck-head">
+                  <span class="deck-title">Platine 2</span>
+                  <span class="deck-vol" id="deck-b-vol">0%</span>
+                </div>
+                <div class="album-art-next-wrapper">
+                  <img id="next-album-art" src="" alt="" class="album-art-next" hidden>
+                  <div class="album-art-next-placeholder" id="next-art-placeholder">♪</div>
+                </div>
                 <div id="next-art-label" class="next-art-label">A suivre</div>
+                <div id="deck-b-cue-label" class="next-art-label">Cue: suivant</div>
+                <div class="deck-volume-control">
+                  <input type="range" id="deck-b-slider" min="0" max="100" value="0" class="fade-slider" aria-label="Volume platine 2">
+                </div>
+                <button id="deck-b-launch" class="deck-launch-btn" type="button">Lancer platine 2</button>
               </div>
             </div>
             <div class="track-info">
               <div id="track-name" class="track-name">Aucune chanson</div>
               <div id="track-artist" class="track-artist">Ajoutez des chansons à la file d'attente</div>
+            </div>
+            <div id="deck-mix-control" class="deck-mix-control">
+              <div class="crossfade-row">
+                <span>Mix manuel</span>
+                <span id="deck-mix-label" class="crossfade-value">P1 100% / P2 0%</span>
+              </div>
+              <input type="range" id="deck-mix-slider" min="0" max="100" value="0" class="fade-slider" aria-label="Mix manuel entre platine 1 et platine 2">
+              <div class="deck-mix-actions">
+                <button id="deck-sync-btn" class="deck-launch-btn" type="button">Sync</button>
+                <button id="manual-lock-btn" class="deck-launch-btn" type="button" aria-pressed="false">Auto-Fade: ON</button>
+                <button id="fx-visibility-btn" class="deck-launch-btn fx-visibility-btn" type="button" aria-expanded="true">FX ▾</button>
+              </div>
+              <div class="crossfade-control crossfade-control--mix">
+                <div class="crossfade-row">
+                  <span class="fade-wave">〜〜</span>
+                  <span>Crossfade platines</span>
+                  <span id="crossfade-value-mix" class="crossfade-value">12s</span>
+                </div>
+                <div class="crossfade-inline-actions">
+                  <button id="crossfade-slower-btn" class="crossfade-step-btn" type="button" aria-label="Ralentir le crossfade">-</button>
+                  <input type="range" id="crossfade-slider-mix" min="1" max="30" value="12" class="fade-slider" aria-label="Durée du crossfade sur les platines">
+                  <button id="crossfade-faster-btn" class="crossfade-step-btn" type="button" aria-label="Accélérer le crossfade">+</button>
+                </div>
+              </div>
+              <div class="deck-fx-actions">
+                <button id="fx-auto-bpm-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="false">Auto BPM: OFF</button>
+                <button id="fx-echo-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="false">Echo: OFF</button>
+                <button id="fx-distortion-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="false">Distorsion: OFF</button>
+              </div>
             </div>
           </div>
           <div class="progress-section">
