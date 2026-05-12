@@ -1,3 +1,10 @@
+## [1.188.0](https://github.com/niafrond/niafrond.github.io/compare/v1.187.0...v1.188.0) (2026-05-12)
+
+### Features
+
+* **dj-mix:** stable ([83134c2](https://github.com/niafrond/niafrond.github.io/commit/83134c2f339958c44ae04fb374a66d00fb261a03))
+* **dj-mix:** stable ([14557a7](https://github.com/niafrond/niafrond.github.io/commit/14557a709e3fbaa2f28bbc6468039c780c964a68))
+
 ## [1.187.0](https://github.com/niafrond/niafrond.github.io/compare/v1.186.0...v1.187.0) (2026-05-12)
 
 ### Features
