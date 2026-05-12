@@ -1,3 +1,13 @@
+## [1.187.0](https://github.com/niafrond/niafrond.github.io/compare/v1.186.0...v1.187.0) (2026-05-12)
+
+### Features
+
+* **dj-mix:** stable ([b8f7b35](https://github.com/niafrond/niafrond.github.io/commit/b8f7b35e563936422ca332a05b3e703f5e0e0a76))
+
+### Bug Fixes
+
+* **dj-mix:** do not create AudioContext when no effects are enabled ([df6c8b5](https://github.com/niafrond/niafrond.github.io/commit/df6c8b5bb646be1f9368008d1e4ab37920725237))
+
 ## [1.186.0](https://github.com/niafrond/niafrond.github.io/compare/v1.185.0...v1.186.0) (2026-05-12)
 
 ### Features
