@@ -87,7 +87,12 @@ export class DJPlayer extends EventTarget {
     if (!audio) return;
 
     this.#setDeckLoudness(targetDeck, normalized.loudnessDb);
-    await this.#loadAndPlay(audio, normalized.url);
+
+    if (options.paused === true) {
+      await this.#loadOnly(audio, normalized.url);
+    } else {
+      await this.#loadAndPlay(audio, normalized.url);
+    }
 
     if (options.makeActive === true) {
       this.#active = targetDeck;
@@ -96,6 +101,30 @@ export class DJPlayer extends EventTarget {
     }
 
     this.#emitDeckState();
+  }
+
+  pauseDeck(deck) {
+    const audio = deck === 'B' ? this.#audioB : this.#audioA;
+    audio?.pause();
+    this.#emitDeckState();
+  }
+
+  async resumeDeck(deck) {
+    const audio = deck === 'B' ? this.#audioB : this.#audioA;
+    if (!audio || !audio.src) return;
+    await audio.play().catch(() => {});
+    this.#emitDeckState();
+  }
+
+  setDeckPlaybackRate(deck, rate) {
+    const audio = deck === 'B' ? this.#audioB : this.#audioA;
+    if (!audio) return;
+    audio.playbackRate = Math.max(0.5, Math.min(2.0, Number(rate) || 1));
+    this.#emitDeckState();
+  }
+
+  resetDeckPlaybackRate(deck) {
+    this.setDeckPlaybackRate(deck, 1.0);
   }
 
   setDeckMixRatio(ratio, transitionMs = 140) {
@@ -116,15 +145,7 @@ export class DJPlayer extends EventTarget {
     const active = this.#activeAudio;
     const inactive = this.#inactiveAudio;
     if (!active || !inactive) return;
-    if (!Number.isFinite(active.currentTime) || active.currentTime < 0) return;
-
-    const activeTime = active.currentTime;
-    let targetTime = activeTime;
-    if (Number.isFinite(inactive.duration) && inactive.duration > 0) {
-      targetTime = Math.max(0, Math.min(inactive.duration, activeTime));
-    }
-
-    inactive.currentTime = targetTime;
+    inactive.playbackRate = active.playbackRate;
     this.#emitDeckState();
   }
 
@@ -193,17 +214,31 @@ export class DJPlayer extends EventTarget {
     if (durationOverride) {
       this.crossfadeDuration = durationOverride;
     }
-    const fromDeck = this.#active;
+    // Determine fade direction: load new track on target deck, fade from the other.
+    // When no target is specified, fade from the dominant (louder) deck.
     const desiredDeck = targetDeck === 'A' || targetDeck === 'B' ? targetDeck : null;
-    const toDeck = desiredDeck && desiredDeck !== fromDeck
-      ? desiredDeck
-      : (fromDeck === 'A' ? 'B' : 'A');
+    let fromDeck, toDeck;
+    if (desiredDeck) {
+      toDeck = desiredDeck;
+      fromDeck = desiredDeck === 'A' ? 'B' : 'A';
+    } else {
+      const volA = this.#audioA?.volume || 0;
+      const volB = this.#audioB?.volume || 0;
+      fromDeck = volB >= volA ? 'B' : 'A';
+      toDeck = fromDeck === 'A' ? 'B' : 'A';
+    }
     const from = fromDeck === 'A' ? this.#audioA : this.#audioB;
     const to = toDeck === 'A' ? this.#audioA : this.#audioB;
 
+    // Capture current base mix levels before loading the new track so the
+    // crossfade starts from the current slider position instead of jumping to 0.
+    const compFrom = this.#getDeckCompensation(fromDeck);
+    const compTo = this.#getDeckCompensation(toDeck);
+    const startBaseFrom = compFrom > 0 ? Math.max(0, Math.min(1, from.volume / compFrom)) : 1;
+    const startBaseTo = compTo > 0 ? Math.max(0, Math.min(1, to.volume / compTo)) : 0;
+
     try {
       this.#setDeckLoudness(toDeck, normalized.loudnessDb);
-      this.#applyDeckBaseMix(fromDeck === 'A' ? 1 : 0, fromDeck === 'B' ? 1 : 0);
       await this.#loadAndPlay(to, normalized.url);
 
       const tickMs = 16;
@@ -229,8 +264,8 @@ export class DJPlayer extends EventTarget {
           const t = progress;
           const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 
-          const fromBase = Math.max(0, 1 - eased);
-          const toBase = Math.min(1, eased);
+          const fromBase = Math.max(0, startBaseFrom * (1 - eased));
+          const toBase = Math.min(1, startBaseTo + (1 - startBaseTo) * eased);
           if (fromDeck === 'A') {
             this.#applyDeckBaseMix(fromBase, toBase);
           } else {
@@ -377,6 +412,24 @@ export class DJPlayer extends EventTarget {
     await audio.play();
   }
 
+  async #loadOnly(audio, sourceUrl) {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.src = sourceUrl;
+
+    await new Promise((resolve, reject) => {
+      const onCanPlay = () => { cleanup(); resolve(); };
+      const onError = () => { cleanup(); reject(new Error('Flux audio API non lisible')); };
+      const cleanup = () => {
+        audio.removeEventListener('canplay', onCanPlay);
+        audio.removeEventListener('error', onError);
+      };
+      audio.addEventListener('canplay', onCanPlay, { once: true });
+      audio.addEventListener('error', onError, { once: true });
+      audio.load();
+    });
+  }
+
   #startTracking() {
     this.#trackInterval = setInterval(() => {
       if (this.#destroyed || !this.#ready) return;
@@ -490,6 +543,8 @@ export class DJPlayer extends EventTarget {
           loudnessDb: this.#deckLoudnessDb.A,
           positionMs: Number.isFinite(this.#audioA.currentTime) ? this.#audioA.currentTime * 1000 : 0,
           durationMs: Number.isFinite(this.#audioA.duration) && this.#audioA.duration > 0 ? this.#audioA.duration * 1000 : 0,
+          playbackRate: Number.isFinite(this.#audioA.playbackRate) ? this.#audioA.playbackRate : 1,
+          hasSrc: !!this.#audioA.src,
         },
         deckB: {
           playing: !this.#audioB.paused,
@@ -497,6 +552,8 @@ export class DJPlayer extends EventTarget {
           loudnessDb: this.#deckLoudnessDb.B,
           positionMs: Number.isFinite(this.#audioB.currentTime) ? this.#audioB.currentTime * 1000 : 0,
           durationMs: Number.isFinite(this.#audioB.duration) && this.#audioB.duration > 0 ? this.#audioB.duration * 1000 : 0,
+          playbackRate: Number.isFinite(this.#audioB.playbackRate) ? this.#audioB.playbackRate : 1,
+          hasSrc: !!this.#audioB.src,
         },
       },
     }));

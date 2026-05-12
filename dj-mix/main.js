@@ -10,8 +10,13 @@ import { AutoFadeManager } from './lib/autoFadeManager.js';
 const QUEUE_KEY = 'dj-mix:queue';
 const DOWNLOADER_API_URL_KEY = 'dj-mix:downloader:api:url';
 const FX_VISIBILITY_KEY = 'dj-mix:fx:hidden';
-const DEFAULT_DOWNLOADER_API_URL = 'http://localhost:3000';
+const DEFAULT_DOWNLOADER_API_URL = 'http://192.168.8.149:3000';
 const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
+
+// Request persistent storage on load
+if ('storage' in navigator && 'persist' in navigator.storage) {
+  navigator.storage.persist().catch(() => {});
+}
 
 let player = null;
 const sessionBlobCache = new Map();
@@ -31,18 +36,24 @@ let pendingSearchAdd = false;
 let searchDebounceTimer = null;
 let launchPreviewActive = false;
 let launchPreviewArtUrl = '';
+let launchPreviewTitle = '';
+let launchPreviewArtist = '';
+let launchPreviewDeck = null;
 let draggedQueueIndex = -1;
 let suppressQueueItemClick = false;
 let toastTimer = null;
 let deckMixRatio = 0;
 let manualMixLock = false;
 let deckBCueIndex = -1;
+let deckCueDeck = null;
 let mixFeatures = {
   autoBpm: false,
   echo: false,
   distortion: false,
 };
 let fxControlsHidden = false;
+const deckDisplayItems = { A: null, B: null };
+let prevIsCrossfading = false;
 
 const setupScreen = document.getElementById('setup-screen');
 const appScreen = document.getElementById('app-screen');
@@ -65,18 +76,23 @@ const nextArtPlaceholder = document.getElementById('next-art-placeholder');
 const nextArtLabel = document.getElementById('next-art-label');
 const crossfadeRing = document.getElementById('crossfade-ring');
 const trackName = document.getElementById('track-name');
+const trackArtistA = document.getElementById('track-artist-a');
 const trackArtist = document.getElementById('track-artist');
-const progressBarBg = document.querySelector('.progress-bar-bg');
-const progressFill = document.getElementById('progress-fill');
-const crossfadeZone = document.getElementById('crossfade-zone');
-const currentTimeEl = document.getElementById('current-time');
-const totalTimeEl = document.getElementById('total-time');
+const clearCacheBtn = document.getElementById('clear-cache-btn');
 const deckAPanel = document.getElementById('deck-a-panel');
 const deckBPanel = document.getElementById('deck-b-panel');
 const deckAVol = document.getElementById('deck-a-vol');
 const deckBVol = document.getElementById('deck-b-vol');
 const deckASlider = document.getElementById('deck-a-slider');
 const deckBSlider = document.getElementById('deck-b-slider');
+const deckAFill = document.getElementById('deck-a-fill');
+const deckBFill = document.getElementById('deck-b-fill');
+const deckBTrackName = document.getElementById('deck-b-track-name');
+const trackArtistB = document.getElementById('track-artist-b');
+const deckABpm = document.getElementById('deck-a-bpm');
+const deckBBpm = document.getElementById('deck-b-bpm');
+const deckABpmReset = document.getElementById('deck-a-bpm-reset');
+const deckBBpmReset = document.getElementById('deck-b-bpm-reset');
 const deckALaunchBtn = document.getElementById('deck-a-launch');
 const deckBLaunchBtn = document.getElementById('deck-b-launch');
 const deckMixSlider = document.getElementById('deck-mix-slider');
@@ -89,10 +105,7 @@ const deckFxActions = document.querySelector('.deck-fx-actions');
 const autoBpmBtn = document.getElementById('fx-auto-bpm-btn');
 const echoBtn = document.getElementById('fx-echo-btn');
 const distortionBtn = document.getElementById('fx-distortion-btn');
-const playPauseBtn = document.getElementById('play-pause-btn');
-const playIcon = document.getElementById('play-icon');
-const prevBtn = document.getElementById('prev-btn');
-const nextBtn = document.getElementById('next-btn');
+const autoMixBtn = document.getElementById('automix-btn');
 const crossfadeSlider = document.getElementById('crossfade-slider');
 const crossfadeValue = document.getElementById('crossfade-value');
 const crossfadeSliderMix = document.getElementById('crossfade-slider-mix');
@@ -117,14 +130,13 @@ const tabPanels = {
 };
 const deckMixControl = document.getElementById('deck-mix-control');
 
-function syncMixOptionsVisibilityOnScroll() {
-  if (!tabPanels.mix || !deckMixControl) return;
-  const shouldHide = tabPanels.mix.scrollTop > 28;
-  tabPanels.mix.classList.toggle('mix-options-collapsed', shouldHide);
-  deckMixControl.setAttribute('aria-hidden', String(shouldHide));
-}
 
-tabPanels.mix?.addEventListener('scroll', syncMixOptionsVisibilityOnScroll, { passive: true });
+
+document.getElementById('toggle-mix-menu-btn')?.addEventListener('click', () => {
+  if (!tabPanels.mix || !deckMixControl) return;
+  const isCollapsed = tabPanels.mix.classList.toggle('mix-options-collapsed');
+  deckMixControl.setAttribute('aria-hidden', String(isCollapsed));
+});
 
 const autoFadeManager = new AutoFadeManager({
   getQueueLength: () => queue.length,
@@ -154,10 +166,12 @@ tabBtns.forEach((btn) => {
 (async function init() {
   loadDownloaderApiConfigIntoForm();
   setupDownloaderApiConfigEvents();
+  setupMediaSession();
   restoreQueue();
   if (queue.length) {
     renderQueue();
     if (currentIndex >= 0 && queue[currentIndex]) {
+      deckDisplayItems.A = queue[currentIndex];
       updateNowPlaying(queue[currentIndex]);
     }
   }
@@ -206,7 +220,6 @@ async function connectLocal() {
 
 function hookPlayerEvents() {
   player.addEventListener('ready', async () => {
-    playPauseBtn.disabled = false;
     showToast('Platines locales prêtes');
     applyDeckMixRatio(deckMixRatio, 0);
     player.setMixFeatures(mixFeatures);
@@ -219,7 +232,9 @@ function hookPlayerEvents() {
 
   player.addEventListener('statechange', ({ detail }) => {
     isPlaying = !detail.paused;
-    playIcon.textContent = isPlaying ? '⏸' : '▶';
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+    }
     renderQueue();
   });
 
@@ -229,13 +244,6 @@ function hookPlayerEvents() {
 
     playbackPositionMs = position;
     playbackDurationMs = duration;
-
-    progressFill.style.width = `${(position / duration) * 100}%`;
-    currentTimeEl.textContent = formatTime(position);
-    totalTimeEl.textContent = formatTime(duration);
-
-    const fadePct = Math.min(100, (player.crossfadeDuration / duration) * 100);
-    crossfadeZone.style.width = `${fadePct}%`;
   });
 
   player.addEventListener('crossfadeready', () => {
@@ -246,7 +254,6 @@ function hookPlayerEvents() {
 
   player.addEventListener('trackend', () => {
     isPlaying = false;
-    playIcon.textContent = '▶';
     showCrossfadeRing(false);
     renderQueue();
   });
@@ -264,28 +271,21 @@ function hookPlayerEvents() {
     });
 }
 
-playPauseBtn.addEventListener('click', async () => {
-  player?.activateElement();
-  if (!player || currentIndex < 0) return;
-
-  if (!isPlaying && queue[currentIndex]) {
-    await startPlaybackForIndex(currentIndex, 'play');
-    return;
-  }
-
-  await player.togglePause().catch((err) => showToast(`Erreur: ${err.message}`, true));
-});
-
-nextBtn.addEventListener('click', async () => {
+autoMixBtn?.addEventListener('click', async () => {
   if (!player || player.isCrossfading) return;
-  const nextIndex = currentIndex + 1 < queue.length ? currentIndex + 1 : (queue.length > 1 ? 0 : -1);
+  const inactiveDeck = deckCueDeck || getInactiveDeck();
+  const preparedItem = deckDisplayItems[inactiveDeck];
+  const preparedIndex = preparedItem ? queue.findIndex((item) => item.id === preparedItem.id) : -1;
+  const nextIndex = preparedIndex >= 0
+    ? preparedIndex
+    : (currentIndex + 1 < queue.length ? currentIndex + 1 : (queue.length > 1 ? 0 : -1));
   if (nextIndex < 0) return;
 
   showCrossfadeRing(true);
-  showToast('Crossfade en cours...');
+  showToast('AutoMix en cours...');
 
   try {
-    await startPlaybackForIndex(nextIndex, 'crossfade');
+    await startPlaybackForIndex(nextIndex, 'crossfade', { targetDeck: inactiveDeck });
     renderQueue();
   } catch (err) {
     showToast(`API: ${err.message}`, true);
@@ -294,19 +294,21 @@ nextBtn.addEventListener('click', async () => {
   }
 });
 
-prevBtn.addEventListener('click', async () => {
-  if (!player || currentIndex <= 0 || player.isCrossfading) return;
-
-  showCrossfadeRing(true);
-  try {
-    await startPlaybackForIndex(currentIndex - 1, 'crossfade');
-    renderQueue();
-  } catch (err) {
-    showToast(`API: ${err.message}`, true);
-  } finally {
-    showCrossfadeRing(false);
-  }
-});
+function setupMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  navigator.mediaSession.setActionHandler('play', () => {
+    const focusDeck = getFocusDeck();
+    if (focusDeck === 'A') deckALaunchBtn?.click();
+    else deckBLaunchBtn?.click();
+  });
+  navigator.mediaSession.setActionHandler('pause', () => {
+    const focusDeck = getFocusDeck();
+    if (focusDeck === 'A') deckALaunchBtn?.click();
+    else deckBLaunchBtn?.click();
+  });
+  navigator.mediaSession.setActionHandler('previoustrack', null);
+  navigator.mediaSession.setActionHandler('nexttrack', () => autoMixBtn?.click());
+}
 
 function clampCrossfadeSeconds(value) {
   return Math.max(1, Math.min(30, Number(value) || 12));
@@ -320,8 +322,10 @@ function updateDeckMixUI(ratio) {
   const safeRatio = clampDeckMixRatio(ratio);
   const deckA = Math.round((1 - safeRatio) * 100);
   const deckB = Math.round(safeRatio * 100);
-  if (deckMixSlider) deckMixSlider.value = String(deckB);
-  if (deckMixLabel) deckMixLabel.textContent = `P1 ${deckA}% / P2 ${deckB}%`;
+  if (deckMixSlider) {
+    deckMixSlider.value = String(deckB);
+  }
+  if (deckMixLabel) deckMixLabel.textContent = `Platine 1 ${deckA}% / Platine 2 ${deckB}%`;
 }
 
 function updateManualLockUI() {
@@ -364,81 +368,183 @@ function updateMixFeaturesUI() {
 }
 
 function updateDeckCueUI() {
-  if (!deckBCueLabel) return;
-  if (deckBCueIndex < 0 || !queue[deckBCueIndex]) {
-    deckBCueLabel.textContent = 'Cue: suivant';
-    return;
-  }
-  deckBCueLabel.textContent = `Cue: ${queue[deckBCueIndex].name}`;
+  const inactiveDeck = deckCueDeck || getInactiveDeck();
+  const inactivePanel = inactiveDeck === 'A' ? deckAPanel : deckBPanel;
+  const otherPanel = inactiveDeck === 'A' ? deckBPanel : deckAPanel;
+  if (!inactivePanel) return;
+  const hasCue = deckBCueIndex >= 0 && !!queue[deckBCueIndex];
+  inactivePanel.classList.toggle('has-cue', hasCue);
+  otherPanel?.classList.remove('has-cue');
 }
 
 function applyDeckMixRatio(ratio, transitionMs = 140) {
+  const prevFocus = getFocusDeck();
   deckMixRatio = clampDeckMixRatio(ratio);
   updateDeckMixUI(deckMixRatio);
   if (player) player.setDeckMixRatio(deckMixRatio, transitionMs);
+  const nextFocus = getFocusDeck();
+  updateDeckCueUI();
+  if (prevFocus !== nextFocus && queue.length) {
+    renderQueue();
+  }
+}
+
+clearCacheBtn?.addEventListener('click', async () => {
+  if (!('caches' in window)) {
+    showToast('Cache API non disponible', true);
+    return;
+  }
+  
+  try {
+    const cacheNames = await caches.keys();
+    const audioCaches = cacheNames.filter(name => name === AUDIO_CACHE_NAME);
+    
+    for (const cacheName of audioCaches) {
+      await caches.delete(cacheName);
+    }
+    
+    sessionBlobCache.clear();
+    showToast('Cache local vidé');
+  } catch (err) {
+    showToast(`Erreur suppression cache: ${err.message}`, true);
+  }
+});
+
+function getFocusDeck() {
+  // Focused platter only when mix is strictly above 50%.
+  return deckMixRatio > 0.5 ? 'B' : 'A';
+}
+
+function getInactiveDeck() {
+  return getFocusDeck() === 'A' ? 'B' : 'A';
+}
+
+function deckToPlatineLabel(deck) {
+  return deck === 'A' ? '1' : '2';
 }
 
 function renderDeckState(detail) {
   if (!detail) return;
+
+  const volA = detail.deckA?.volume || 0;
+  const volB = detail.deckB?.volume || 0;
+  const hasAudio = volA + volB > 0;
+  const focusedDeck = hasAudio ? (volB > volA ? 'B' : 'A') : getFocusDeck();
+
+  // Clear the outgoing deck when crossfade ends (outgoing = previous focus, now inactive)
+  if (prevIsCrossfading && !detail.isCrossfading) {
+    const clearedDeck = focusedDeck === 'A' ? 'B' : 'A';
+    deckDisplayItems[clearedDeck] = null;
+  }
+  prevIsCrossfading = detail.isCrossfading;
+
   if (deckAPanel) {
     deckAPanel.classList.toggle('is-playing', Boolean(detail.deckA?.playing));
-    deckAPanel.classList.toggle('is-active', detail.activeDeck === 'A');
+    deckAPanel.classList.toggle('is-active', focusedDeck === 'A');
   }
   if (deckBPanel) {
     deckBPanel.classList.toggle('is-playing', Boolean(detail.deckB?.playing));
-    deckBPanel.classList.toggle('is-active', detail.activeDeck === 'B');
+    deckBPanel.classList.toggle('is-active', focusedDeck === 'B');
   }
+
+  // Dominant = deck with >= 50% of total volume
+  const bIsDominant = hasAudio && volB > volA;
+  if (deckAPanel) deckAPanel.classList.toggle('is-dominant', hasAudio && !bIsDominant);
+  if (deckBPanel) deckBPanel.classList.toggle('is-dominant', bIsDominant);
+
+  // Per-deck track names
+  if (trackName) trackName.textContent = deckDisplayItems.A?.name || '';
+  if (deckBTrackName) deckBTrackName.textContent = deckDisplayItems.B?.name || '';
 
   if (!detail.isCrossfading) {
     const totalVolume = (detail.deckA?.volume || 0) + (detail.deckB?.volume || 0);
     if (totalVolume > 0) {
       const ratioB = (detail.deckB?.volume || 0) / totalVolume;
-      updateDeckMixUI(ratioB);
+      deckMixRatio = clampDeckMixRatio(ratioB);
+      updateDeckMixUI(deckMixRatio);
+      updateDeckCueUI();
     }
   }
 
   if (deckAVol) deckAVol.textContent = `${Math.round((detail.deckA?.volume || 0) * 100)}%`;
   if (deckBVol) deckBVol.textContent = `${Math.round((detail.deckB?.volume || 0) * 100)}%`;
-  if (deckASlider && document.activeElement !== deckASlider) {
-    deckASlider.value = String(Math.round((detail.deckA?.volume || 0) * 100));
+
+  // BPM display
+  const rateA = detail.deckA?.playbackRate ?? 1;
+  const rateB = detail.deckB?.playbackRate ?? 1;
+  if (deckABpm) deckABpm.textContent = Math.abs(rateA - 1) > 0.005 ? `×${rateA.toFixed(2)}` : '';
+  if (deckBBpm) deckBBpm.textContent = Math.abs(rateB - 1) > 0.005 ? `×${rateB.toFixed(2)}` : '';
+  if (deckABpmReset) deckABpmReset.hidden = Math.abs(rateA - 1) <= 0.005;
+  if (deckBBpmReset) deckBBpmReset.hidden = Math.abs(rateB - 1) <= 0.005;
+
+  // Overlay button icons
+  if (deckALaunchBtn) deckALaunchBtn.textContent = detail.deckA?.playing ? '⏸' : '▶';
+  if (deckBLaunchBtn) deckBLaunchBtn.textContent = detail.deckB?.playing ? '⏸' : '▶';
+
+  // Cache last state for click handlers
+  if (player) player._lastDeckState = detail;
+
+  if (deckAFill) {
+    const pctA = detail.deckA?.durationMs > 0 ? (detail.deckA.positionMs / detail.deckA.durationMs) * 100 : 0;
+    deckAFill.style.width = `${Math.min(100, pctA)}%`;
   }
-  if (deckBSlider && document.activeElement !== deckBSlider) {
-    deckBSlider.value = String(Math.round((detail.deckB?.volume || 0) * 100));
+  if (deckBFill) {
+    const pctB = detail.deckB?.durationMs > 0 ? (detail.deckB.positionMs / detail.deckB.durationMs) * 100 : 0;
+    deckBFill.style.width = `${Math.min(100, pctB)}%`;
   }
 }
 
-async function launchDeckFromQueue(deck) {
+async function launchDeckFromQueue(deck, options = {}) {
   if (!player || !queue.length) {
     showToast('Ajoutez une chanson dans la file', true);
     return;
   }
 
-  const fallbackIndex = currentIndex >= 0 ? currentIndex : 0;
-  const targetIndex = deck === 'B'
-    ? (deckBCueIndex >= 0 && queue[deckBCueIndex]
-      ? deckBCueIndex
-      : (fallbackIndex + 1 < queue.length ? fallbackIndex + 1 : fallbackIndex))
-    : fallbackIndex;
+  const fallbackIndex = currentIndex >= 0 && queue[currentIndex] ? currentIndex : 0;
+  const inactiveDeck = getInactiveDeck();
+  const deckItemIndex = deckDisplayItems[deck]
+    ? queue.findIndex((q) => q.id === deckDisplayItems[deck]?.id)
+    : -1;
+
+  let targetIndex = fallbackIndex;
+  if (options.useCue === true && deckBCueIndex >= 0 && queue[deckBCueIndex]) {
+    targetIndex = deckBCueIndex;
+  } else if (deckItemIndex >= 0) {
+    targetIndex = deckItemIndex;
+  } else if (deck === inactiveDeck) {
+    targetIndex = fallbackIndex + 1 < queue.length ? fallbackIndex + 1 : fallbackIndex;
+  }
 
   const item = queue[targetIndex];
   if (!item) return;
 
   try {
     const sourceUrl = await ensureLocalSource(item);
-    await player.playOnDeck(deck, { url: sourceUrl, loudnessDb: item.loudnessDb }, { makeActive: deck === 'A' });
+    const isFocusDeck = deck === getFocusDeck();
+    const paused = typeof options.paused === 'boolean' ? options.paused : !isFocusDeck;
+    await player.playOnDeck(deck, { url: sourceUrl, loudnessDb: item.loudnessDb }, { makeActive: false, paused });
+    deckDisplayItems[deck] = item;
 
-    if (deck === 'A') {
+    if (isFocusDeck) {
       currentIndex = targetIndex;
       currentTrackId = item.id;
-      updateNowPlaying(item);
+      updateNowPlaying(item, deck);
       isPlaying = true;
-      playIcon.textContent = '⏸';
+      launchPreviewTitle = '';
+      launchPreviewArtist = '';
+      launchPreviewDeck = null;
       prefetchNext(targetIndex + 1);
       renderQueue();
     } else {
       launchPreviewActive = true;
       launchPreviewArtUrl = item.artUrl || '';
+      launchPreviewTitle = item.name || '';
+      launchPreviewArtist = item.artist || '';
+      launchPreviewDeck = deck;
+      deckCueDeck = deck;
       updateUpcomingArtwork();
+      if (deck === 'B' && deckBTrackName) deckBTrackName.textContent = item.name;
+      if (deck === 'A' && trackName) trackName.textContent = item.name;
     }
   } catch (err) {
     showToast(`API: ${err.message}`, true);
@@ -480,21 +586,41 @@ crossfadeSlowerBtn?.addEventListener('click', () => {
 });
 
 deckMixSlider?.addEventListener('input', () => {
-  applyDeckMixRatio((Number(deckMixSlider.value) || 0) / 100, 120);
+  const sliderValue = (Number(deckMixSlider.value) || 0) / 100;
+  applyDeckMixRatio(sliderValue, 120);
 });
 
 deckALaunchBtn?.addEventListener('click', async () => {
-  await launchDeckFromQueue('A');
+  if (!player) return;
+  const lastDetail = player._lastDeckState;
+  if (lastDetail?.deckA?.playing) {
+    player.pauseDeck('A');
+  } else if (lastDetail?.deckA?.hasSrc) {
+    await player.resumeDeck('A').catch((err) => showToast(`Erreur: ${err.message}`, true));
+  } else {
+    await launchDeckFromQueue('A', { paused: false }).catch((err) => showToast(`Erreur: ${err.message}`, true));
+  }
 });
 
 deckBLaunchBtn?.addEventListener('click', async () => {
-  await launchDeckFromQueue('B');
+  if (!player) return;
+  const lastDetail = player._lastDeckState;
+  if (lastDetail?.deckB?.playing) {
+    player.pauseDeck('B');
+  } else if (lastDetail?.deckB?.hasSrc) {
+    await player.resumeDeck('B').catch((err) => showToast(`Erreur: ${err.message}`, true));
+  } else {
+    await launchDeckFromQueue('B', { paused: false }).catch((err) => showToast(`Erreur: ${err.message}`, true));
+  }
 });
+
+deckABpmReset?.addEventListener('click', () => { player?.resetDeckPlaybackRate('A'); });
+deckBBpmReset?.addEventListener('click', () => { player?.resetDeckPlaybackRate('B'); });
 
 deckSyncBtn?.addEventListener('click', () => {
   if (!player) return;
   player.syncDecksToActive();
-  showToast('Platines synchronisées');
+  showToast('BPM synchronisés');
 });
 
 manualLockBtn?.addEventListener('click', () => {
@@ -534,27 +660,7 @@ distortionBtn?.addEventListener('click', () => {
   setMixFeatureEnabled('distortion', !mixFeatures.distortion);
 });
 
-progressBarBg?.addEventListener('click', async (event) => {
-  if (!player || currentIndex < 0 || player.isCrossfading) return;
-  if (!playbackDurationMs || !Number.isFinite(playbackDurationMs) || playbackDurationMs <= 0) return;
 
-  const rect = progressBarBg.getBoundingClientRect();
-  if (!rect.width) return;
-
-  const relativeX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
-  const ratio = relativeX / rect.width;
-  const targetMs = Math.round(playbackDurationMs * ratio);
-
-  try {
-    await player.seekTo(targetMs, { fadeMs: 180 });
-    playbackPositionMs = targetMs;
-    progressFill.style.width = `${ratio * 100}%`;
-    currentTimeEl.textContent = formatTime(playbackPositionMs);
-    totalTimeEl.textContent = formatTime(playbackDurationMs);
-  } catch (err) {
-    showToast(`Erreur seek: ${err.message}`, true);
-  }
-});
 
 clearQueueBtn.addEventListener('click', () => {
   if (!queue.length) return;
@@ -728,6 +834,7 @@ async function addToQueue(track) {
     artist: track.artists ? track.artists.map((a) => a.name).join(', ') : (track.artist || 'Artiste inconnu'),
     artUrl,
     duration,
+    bpm: track.bpm || track.tempo || null,
     loudnessDb: extractTrackLoudnessDb(track),
     persistedSourceUrl: getDirectPlayableSourceUrl(track),
     sourceState: 'idle',
@@ -773,49 +880,90 @@ async function addToQueue(track) {
   showToast(`✔ "${item.name}" ajouté`);
 }
 
-async function startPlaybackForIndex(index, mode) {
+async function startPlaybackForIndex(index, mode, options = {}) {
   const item = queue[index];
   if (!item || !player) return;
+
+  const targetDeck = options.targetDeck || ((mode === 'play' || mode === 'switch')
+    ? getFocusDeck()
+    : getInactiveDeck());
 
   if (mode === 'crossfade' && currentTrackId && item.id !== currentTrackId) {
     launchPreviewActive = true;
     launchPreviewArtUrl = item.artUrl || '';
+    launchPreviewTitle = item.name || '';
+    launchPreviewArtist = item.artist || '';
+    launchPreviewDeck = targetDeck;
   } else {
     launchPreviewActive = false;
     launchPreviewArtUrl = '';
+    launchPreviewTitle = '';
+    launchPreviewArtist = '';
+    launchPreviewDeck = null;
   }
   updateUpcomingArtwork();
 
-  currentIndex = index;
-  currentTrackId = item.id;
-
   try {
     touchQueueItem(item);
-    updateNowPlaying(item);
+    deckDisplayItems[targetDeck] = item;
+    if (mode === 'play') deckDisplayItems[targetDeck === 'A' ? 'B' : 'A'] = null;
+    updateNowPlaying(item, targetDeck);
     const sourceUrl = await ensureLocalSource(item);
 
     if (mode === 'autofade') {
-      const targetDeck = player.activeDeck === 'B' ? 'A' : 'B';
       await player.crossfadeToDeck(targetDeck, { url: sourceUrl, loudnessDb: item.loudnessDb });
     } else if (mode === 'crossfade') {
-      await player.crossfadeTo({ url: sourceUrl, loudnessDb: item.loudnessDb });
+      await player.crossfadeToDeck(targetDeck, { url: sourceUrl, loudnessDb: item.loudnessDb });
     } else if (mode === 'switch') {
-      await player.switchTo({ url: sourceUrl, loudnessDb: item.loudnessDb });
+      await player.playOnDeck(getFocusDeck(), { url: sourceUrl, loudnessDb: item.loudnessDb }, { makeActive: false, paused: false });
     } else {
-      await player.play({ url: sourceUrl, loudnessDb: item.loudnessDb });
+      await player.playOnDeck(getFocusDeck(), { url: sourceUrl, loudnessDb: item.loudnessDb }, { makeActive: false, paused: false });
+    }
+
+    if (mode === 'autofade' || mode === 'crossfade') {
+      currentIndex = index;
+      currentTrackId = item.id;
+    } else {
+      currentIndex = index;
+      currentTrackId = item.id;
+    }
+
+    // Sync deckMixRatio to the actual post-fade state so volumes stay consistent
+    if ((mode === 'autofade' || mode === 'crossfade') && player) {
+      const newRatio = targetDeck === 'B' ? 1 : 0;
+      applyDeckMixRatio(newRatio, 0);
+    }
+
+    // After a crossfade: load next track into the now-inactive deck (paused, ready for next fade)
+    if ((mode === 'autofade' || mode === 'crossfade') && player) {
+      const inactiveDeck = getInactiveDeck();
+      const nextItem = queue[index + 1];
+      if (nextItem) {
+        ensureLocalSource(nextItem).then((nextUrl) => {
+          if (!player) return;
+          player.playOnDeck(inactiveDeck, { url: nextUrl, loudnessDb: nextItem.loudnessDb }, { paused: true });
+          deckDisplayItems[inactiveDeck] = nextItem;
+          renderQueue();
+        }).catch(() => {});
+      }
     }
 
     isPlaying = true;
-    playIcon.textContent = '⏸';
     prefetchNext(index + 1);
     launchPreviewActive = false;
     launchPreviewArtUrl = '';
+    launchPreviewTitle = '';
+    launchPreviewArtist = '';
+    launchPreviewDeck = null;
     renderQueue();
   } catch (err) {
     item.sourceState = 'error';
     item.sourceError = err.message;
     launchPreviewActive = false;
     launchPreviewArtUrl = '';
+    launchPreviewTitle = '';
+    launchPreviewArtist = '';
+    launchPreviewDeck = null;
     renderQueue();
     showToast(`API: ${err.message}`, true);
     throw err;
@@ -1109,14 +1257,12 @@ function renderQueue() {
     queueList.innerHTML = '';
     queueList.appendChild(emptyQueue);
     emptyQueue.style.display = '';
-    nextBtn.disabled = true;
-    prevBtn.disabled = true;
+    if (autoMixBtn) autoMixBtn.disabled = true;
     return;
   }
 
   emptyQueue.style.display = 'none';
-  nextBtn.disabled = queue.length <= 1;
-  prevBtn.disabled = currentIndex <= 0;
+  if (autoMixBtn) autoMixBtn.disabled = queue.length <= 1;
 
   queueList.innerHTML = queue.map((item, i) => {
     const isCurrent = item.id === currentTrackId;
@@ -1127,7 +1273,9 @@ function renderQueue() {
       ? '<div class="queue-num"><div class="playing-bars" aria-label="En cours"><span></span><span></span><span></span></div></div>'
       : `<div class="queue-num">${i + 1}</div>`;
     const cueBtnClass = i === deckBCueIndex ? 'queue-cue is-selected' : 'queue-cue';
-    const cueBtnLabel = i === deckBCueIndex ? 'Cue ✓' : 'Cue P2';
+    const inactiveDeck = getInactiveDeck();
+    const cueBtnLabel = i === deckBCueIndex ? 'Cue ✓' : `Cue Platine ${inactiveDeck === 'A' ? '1' : '2'}`;
+    const bpmDisplay = item.bpm ? ` • ${Math.round(item.bpm)} BPM` : '';
 
     return `
       <div class="${cls}" data-index="${i}" role="button" tabindex="0" draggable="true">
@@ -1135,11 +1283,11 @@ function renderQueue() {
         <img class="queue-art" src="${escHtml(item.artUrl)}" alt="" loading="lazy">
         <div class="queue-info">
           <div class="queue-name">${escHtml(item.name)}</div>
-          <div class="queue-artist">${escHtml(item.artist)} ${renderSourceBadge(item)}</div>
+          <div class="queue-artist">${escHtml(item.artist)} ${renderSourceBadge(item)}${bpmDisplay}</div>
         </div>
         <span class="queue-duration">${formatTime(item.duration)}</span>
         <div class="queue-actions">
-          <button class="${cueBtnClass}" data-index="${i}" aria-label="Cue platine 2">${cueBtnLabel}</button>
+          <button class="${cueBtnClass}" data-index="${i}" aria-label="Cue platine inactive">${cueBtnLabel}</button>
           <button class="queue-remove" data-index="${i}" aria-label="Retirer">✕</button>
         </div>
       </div>`;
@@ -1221,14 +1369,18 @@ function renderQueue() {
   });
 
   queueList.querySelectorAll('.queue-cue').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const idx = Number(btn.dataset.index);
       if (idx < 0 || idx >= queue.length) return;
       deckBCueIndex = idx;
+        deckCueDeck = getInactiveDeck();
       updateDeckCueUI();
-      showToast(`Cue P2: ${queue[idx].name}`);
+        const inactiveDeck = deckCueDeck;
+      showToast(`Cue Platine ${deckToPlatineLabel(inactiveDeck)}: ${queue[idx].name}`);
       renderQueue();
+      // Load the cued song on the inactive deck
+      await launchDeckFromQueue(inactiveDeck, { paused: true, useCue: true });
     });
   });
 }
@@ -1247,6 +1399,7 @@ function removeFromQueue(idx) {
   releaseLocalBlob(removed);
   if (deckBCueIndex === idx) deckBCueIndex = -1;
   else if (deckBCueIndex > idx) deckBCueIndex -= 1;
+  if (deckCueDeck && deckDisplayItems[deckCueDeck]?.id === item?.id) deckCueDeck = null;
   updateDeckCueUI();
   updateCurrentIndex();
   renderQueue();
@@ -1412,7 +1565,6 @@ function switchTab(name) {
   });
 
   if (name === 'playlist' && !playlistLoaded) loadPlaylists();
-  if (name === 'mix') syncMixOptionsVisibilityOnScroll();
 }
 
 function loadDownloaderApiConfigIntoForm() {
@@ -1439,14 +1591,13 @@ function setupDownloaderApiConfigEvents() {
     setDownloaderApiStatus('Test API en cours...', false);
 
     try {
-      if (!getDownloaderApiUrl()) {
-        throw new Error('URL API manquante');
-      }
-      const tracks = await searchTracksViaApi('Daft Punk', 1);
-      if (!tracks.length) throw new Error('Aucun résultat de test');
-      setDownloaderApiStatus('Connexion API OK', false);
+      const baseUrl = getDownloaderApiUrl();
+      if (!baseUrl) throw new Error('URL API manquante');
+      const res = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(5000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setDownloaderApiStatus('Serveur disponible ✓', false);
     } catch (err) {
-      setDownloaderApiStatus(`API indisponible: ${err.message}`, true);
+      setDownloaderApiStatus(`Serveur indisponible: ${err.message}`, true);
     }
   });
 }
@@ -1461,48 +1612,84 @@ function getDownloaderApiUrl() {
   return (localStorage.getItem(DOWNLOADER_API_URL_KEY) || DEFAULT_DOWNLOADER_API_URL).trim().replace(/\/$/, '');
 }
 
-function updateNowPlaying(item) {
-  trackName.textContent = item.name;
-  trackArtist.textContent = item.artist;
+function updateNowPlaying(item, deck = getFocusDeck()) {
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: item.name || 'DJ Mix',
+      artist: item.artist || '',
+      artwork: item.artUrl ? [{ src: item.artUrl, sizes: '512x512', type: 'image/jpeg' }] : [],
+    });
+  }
+
+  // Route art to the target platter only (avoid swapping artwork between platters)
+  const focusArt = deck === 'A' ? albumArt : nextAlbumArt;
+  const focusPlaceholder = deck === 'A' ? artPlaceholder : nextArtPlaceholder;
 
   if (item.artUrl) {
-    albumArt.src = item.artUrl;
-    albumArt.hidden = false;
-    artPlaceholder.style.display = 'none';
+    focusArt.src = item.artUrl;
+    focusArt.hidden = false;
+    focusPlaceholder.style.display = 'none';
   } else {
-    albumArt.src = '';
-    albumArt.hidden = true;
-    artPlaceholder.style.display = '';
+    focusArt.src = '';
+    focusArt.hidden = true;
+    focusPlaceholder.style.display = '';
   }
+
+  if (deck === 'A') {
+    if (trackName) trackName.textContent = item.name || '';
+    if (trackArtistA) trackArtistA.textContent = item.artist || '';
+  } else {
+    if (deckBTrackName) deckBTrackName.textContent = item.name || '';
+    if (trackArtistB) trackArtistB.textContent = item.artist || '';
+  }
+
+  if (trackArtist) trackArtist.textContent = item.artist;
 
   updateUpcomingArtwork();
 }
 
 function updateUpcomingArtwork() {
-  if (!nextAlbumArt || !nextArtPlaceholder || !nextArtLabel) return;
+  // Route upcoming/launch preview to a stable target platter.
+  const targetDeck = launchPreviewActive && (launchPreviewDeck === 'A' || launchPreviewDeck === 'B')
+    ? launchPreviewDeck
+    : getInactiveDeck();
+  const inactiveArt = targetDeck === 'A' ? albumArt : nextAlbumArt;
+  const inactivePlaceholder = targetDeck === 'A' ? artPlaceholder : nextArtPlaceholder;
+  const inactiveLabel = targetDeck === 'A' ? null : nextArtLabel; // label only exists on platter 2 panel
 
-  let label = 'A suivre';
+  let label = '';
   let artUrl = '';
+  let artist = '';
 
   if (launchPreviewActive) {
-    label = 'En lancement';
+    label = launchPreviewTitle || '';
     artUrl = launchPreviewArtUrl;
+    artist = launchPreviewArtist || '';
   } else {
     const next = queue[currentIndex + 1];
+    label = next?.name || '';
     artUrl = next?.artUrl || '';
+    artist = next?.artist || '';
   }
 
   if (artUrl) {
-    nextAlbumArt.src = artUrl;
-    nextAlbumArt.hidden = false;
-    nextArtPlaceholder.style.display = 'none';
+    inactiveArt.src = artUrl;
+    inactiveArt.hidden = false;
+    inactivePlaceholder.style.display = 'none';
   } else {
-    nextAlbumArt.src = '';
-    nextAlbumArt.hidden = true;
-    nextArtPlaceholder.style.display = '';
+    inactiveArt.src = '';
+    inactiveArt.hidden = true;
+    inactivePlaceholder.style.display = '';
   }
 
-  nextArtLabel.textContent = label;
+  if (inactiveLabel) inactiveLabel.textContent = label;
+  if (targetDeck === 'A') {
+    if (trackName) trackName.textContent = label;
+    if (trackArtistA) trackArtistA.textContent = artist;
+  } else {
+    if (deckBTrackName) deckBTrackName.textContent = label;
+    if (trackArtistB) trackArtistB.textContent = artist;
+  }
 }
 
 function showCrossfadeRing(on) {
@@ -1603,15 +1790,14 @@ function doLogout() {
   playbackDurationMs = 0;
 
   localStorage.removeItem(QUEUE_KEY);
+  deckDisplayItems.A = null;
+  deckDisplayItems.B = null;
+  prevIsCrossfading = false;
+  deckCueDeck = null;
   switchTab('mix');
   showCrossfadeRing(false);
-  playPauseBtn.disabled = true;
-  playIcon.textContent = '▶';
-  progressFill.style.width = '0%';
-  crossfadeZone.style.width = '0%';
-  currentTimeEl.textContent = '0:00';
-  totalTimeEl.textContent = '0:00';
-  trackName.textContent = 'Aucune chanson';
+  if (trackName) trackName.textContent = 'Aucune chanson';
+  if (deckBTrackName) deckBTrackName.textContent = '';
   trackArtist.textContent = 'Ajoutez des chansons à la file d\'attente';
   albumArt.src = '';
   albumArt.hidden = true;
@@ -1619,7 +1805,9 @@ function doLogout() {
   nextAlbumArt.src = '';
   nextAlbumArt.hidden = true;
   nextArtPlaceholder.style.display = '';
-  nextArtLabel.textContent = 'A suivre';
+  nextArtLabel.textContent = '';
+  if (trackArtistA) trackArtistA.textContent = '';
+  if (trackArtistB) trackArtistB.textContent = '';
   updateManualLockUI();
   updateDeckCueUI();
   updateMixFeaturesUI();

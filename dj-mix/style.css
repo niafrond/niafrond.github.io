@@ -802,7 +802,7 @@ input {
   position: sticky;
   top: 0;
   z-index: 6;
-  background: linear-gradient(180deg, rgba(10, 10, 15, 0.98) 0%, rgba(10, 10, 15, 0.9) 100%);
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
   padding-bottom: 14px;
 }
@@ -843,6 +843,29 @@ input {
   gap: 8px;
 }
 
+.deck-panel.has-cue {
+  border-color: var(--fade);
+  box-shadow: 0 0 0 1px var(--fade-dim), 0 0 12px var(--fade-dim);
+}
+
+.deck-panel.has-cue .deck-title {
+  color: var(--fade);
+}
+
+.deck-panel.has-cue .next-art-label {
+  color: var(--fade);
+}
+
+.deck-panel.is-dominant .deck-track-name {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.deck-panel.is-dominant.is-playing {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-dim), 0 0 12px var(--accent-dim);
+}
+
 .deck-panel.is-active {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px rgba(77, 208, 225, 0.22);
@@ -853,7 +876,8 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 4px;
+  min-width: 0;
 }
 
 .deck-title {
@@ -870,6 +894,53 @@ input {
   font-variant-numeric: tabular-nums;
 }
 
+.deck-bpm {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.deck-bpm-reset {
+  font-size: 11px;
+  color: var(--fade);
+  padding: 0 2px;
+  flex-shrink: 0;
+  line-height: 1;
+  opacity: 0.75;
+  transition: opacity var(--transition);
+}
+.deck-bpm-reset:hover { opacity: 1; }
+
+.deck-overlay-btn {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 22px;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  pointer-events: auto;
+}
+
+.album-art-wrapper:hover .deck-overlay-btn,
+.album-art-next-wrapper:hover .deck-overlay-btn {
+  opacity: 1;
+}
+
+.deck-panel:not(.is-playing) .deck-overlay-btn {
+  opacity: 0.6;
+}
+
+.deck-overlay-btn:active {
+  background: rgba(0, 0, 0, 0.7);
+  transform: scale(0.93);
+}
+
 .album-art-wrapper {
   position: relative;
   width: min(136px, 34vw);
@@ -877,6 +948,7 @@ input {
 }
 
 .album-art-next-wrapper {
+  position: relative;
   width: min(136px, 34vw);
   display: flex;
   flex-direction: column;
@@ -962,8 +1034,14 @@ input {
   justify-content: center;
   font-size: 64px;
   color: var(--text-dim);
+  letter-spacing: 0.2px;
+  width: 100%;
+  max-width: min(136px, 34vw);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
 /* Crossfade ring animation around album art */
 .crossfade-ring {
   position: absolute;
@@ -986,9 +1064,68 @@ input {
   padding: 0 8px;
 }
 
+.deck-track-name {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  width: min(136px, 34vw);
+  max-width: min(136px, 34vw);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+}
+
+.deck-track-artist {
+  font-size: 10px;
+  line-height: 1.15;
+  color: var(--text-dim);
+  text-align: center;
+  width: min(136px, 34vw);
+  max-width: min(136px, 34vw);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 4px;
+}
+
+.progress-bar-bg {
+  position: relative;
+  height: 6px;
   background: var(--surface3);
   border-radius: 999px;
   overflow: hidden;
+  cursor: pointer;
+}
+
+.deck-progress-bar {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  background: var(--surface3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.deck-progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.3s linear;
+}
+
+.deck-panel.is-active .deck-progress-fill {
+  background: var(--accent);
+}
+
+.deck-panel:not(.is-active) .deck-progress-fill {
+  background: var(--fade);
 }
 
 .crossfade-zone {
