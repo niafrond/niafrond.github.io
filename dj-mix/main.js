@@ -648,6 +648,7 @@ async function launchDeckFromQueue(deck, options = {}) {
   let targetIndex = fallbackIndex;
   if (options.useCue === true && deckBCueIndex >= 0 && queue[deckBCueIndex]) {
     targetIndex = deckBCueIndex;
+    deckBCueIndex=-1;
   } else if (deckItemIndex >= 0) {
     targetIndex = deckItemIndex;
   } else if (deck === inactiveDeck) {
@@ -672,7 +673,7 @@ async function launchDeckFromQueue(deck, options = {}) {
     const paused = typeof options.paused === 'boolean' ? options.paused : !isFocusDeck;
     await player.playOnDeck(deck, { url: sourceUrl, loudnessDb: item.loudnessDb }, { makeActive: false, paused });
     deckDisplayItems[deck] = item;
-    console.log('Deck loaded with item:', { deck, item });
+    
     if (isFocusDeck) {
       currentIndex = targetIndex;
       currentTrackId = item.id;
@@ -1292,13 +1293,14 @@ function renderQueue() {
       const idx = Number(btn.dataset.index);
       if (idx < 0 || idx >= queue.length) return;
       deckBCueIndex = idx;
-        deckCueDeck = getInactiveDeck();
+      deckCueDeck = getInactiveDeck();
       updateDeckCueUI();
         const inactiveDeck = deckCueDeck;
       showToast(`Cue Platine ${deckToPlatineLabel(inactiveDeck)}: ${queue[idx].name}`);
       renderQueue();
       // Load the cued song on the inactive deck
       await launchDeckFromQueue(inactiveDeck, { paused: true, useCue: true });
+      
     });
   });
 }

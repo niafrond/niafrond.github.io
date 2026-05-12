@@ -72,8 +72,8 @@ export function createDjMixRenderer(options) {
       const numHtml = showPlayingBars
         ? '<div class="queue-num"><div class="playing-bars" aria-label="En cours"><span></span><span></span><span></span></div></div>'
         : `<div class="queue-num">${i + 1}</div>`;
-      const cueBtnClass = i === deckBCueIndex ? 'queue-cue is-selected' : 'queue-cue';
-      const cueBtnLabel = i === deckBCueIndex ? 'Cue ✓' : `Cue Platine ${inactiveDeck === 'A' ? '1' : '2'}`;
+      const cueBtnClass = 'queue-cue';
+      const cueBtnLabel = `Cue Platine ${inactiveDeck === 'A' ? '1' : '2'}`;
       const bpmDisplay = item.bpm ? ` • ${Math.round(item.bpm)} BPM` : '';
 
       return `
