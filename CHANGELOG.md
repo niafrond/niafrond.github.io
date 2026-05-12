@@ -1,3 +1,9 @@
+## [1.186.0](https://github.com/niafrond/niafrond.github.io/compare/v1.185.0...v1.186.0) (2026-05-12)
+
+### Features
+
+* dj-mix - default crossfade 12s, max 30s, cache file browsing ([eee6536](https://github.com/niafrond/niafrond.github.io/commit/eee653642410ecc1aec2f15c6756ec22d4a84d28))
+
 ## [1.185.0](https://github.com/niafrond/niafrond.github.io/compare/v1.184.0...v1.185.0) (2026-05-11)
 
 ### Features
