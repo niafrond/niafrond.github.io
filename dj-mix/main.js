@@ -785,11 +785,87 @@ function touchQueueItem(item) {
 
 async function loadPlaylists() {
   playlistLoaded = true;
-  playlistListEl.innerHTML = `
-    <div class="search-empty">
-      Le cache local remplace maintenant les playlists.<br>
-      Recherchez une chanson via l'API en haut pour l'ajouter à la file.
-    </div>`;
+  
+  const baseUrl = getDownloaderApiUrl();
+  if (!baseUrl) {
+    playlistListEl.innerHTML = `
+      <div class="search-empty">
+        URL API manquante. Configurez l'API dans l'onglet Configuration.
+      </div>`;
+    return;
+  }
+
+  playlistListEl.innerHTML = '<div class="search-loading">Chargement du cache...</div>';
+
+  try {
+    const res = await fetch(`${baseUrl}/api/cache/files`, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`Erreur ${res.status}: ${res.statusText}`);
+    
+    const data = await res.json();
+    const files = Array.isArray(data) ? data : data.files || [];
+    
+    if (!files.length) {
+      playlistListEl.innerHTML = `
+        <div class="search-empty">
+          Aucun fichier en cache. Recherchez des chansons pour les ajouter.
+        </div>`;
+      return;
+    }
+
+    playlistListEl.innerHTML = files.map((file, i) => `
+      <div class="cache-item" data-index="${i}">
+        <div class="cache-info">
+          <div class="cache-name">${escHtml(file.name || file.title || 'Inconnu')}</div>
+          <div class="cache-artist">${escHtml(file.artist || 'Artiste inconnu')}</div>
+        </div>
+        <button class="cache-add-btn" data-index="${i}" aria-label="Ajouter à la file">➕</button>
+      </div>
+    `).join('');
+
+    playlistListEl.querySelectorAll('.cache-add-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = Number(btn.dataset.index);
+        const file = files[idx];
+        
+        addCacheFileToQueue(file);
+      });
+    });
+  } catch (err) {
+    playlistListEl.innerHTML = `
+      <div class="search-empty">
+        Erreur lors du chargement du cache: ${escHtml(err.message)}
+      </div>`;
+  }
+}
+
+function addCacheFileToQueue(file) {
+  if (!file) return;
+  
+  const item = {
+    id: file.id || file.path || `cache-${Date.now()}`,
+    name: file.name || file.title || 'Inconnu',
+    artist: file.artist || 'Artiste inconnu',
+    artUrl: file.artUrl || '',
+    duration: file.duration || 0,
+    sourceState: 'ready',
+    localBlobUrl: file.url || file.localUrl || '',
+    ratingKey: file.ratingKey || '',
+  };
+  
+  queue.push(item);
+  
+  if (currentIndex < 0 && queue.length === 1) {
+    currentIndex = 0;
+    pendingAutoplay = true;
+    if (player && player.isReady) {
+      startPlaybackForIndex(0, 'play').catch(err => showToast(`Erreur: ${err.message}`, true));
+    }
+  }
+  
+  renderQueue();
+  saveQueue();
+  showToast(`"${item.name}" ajouté à la file`);
 }
 
 function switchTab(name) {

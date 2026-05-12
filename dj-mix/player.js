@@ -7,7 +7,7 @@ export class DJPlayer extends EventTarget {
   #audioA = null;
   #audioB = null;
   #active = 'A';
-  #crossfadeDuration = 5000;
+  #crossfadeDuration = 12000;
   #isCrossfading = false;
   #crossfadeNotified = false;
   #trackEndNotified = false;
