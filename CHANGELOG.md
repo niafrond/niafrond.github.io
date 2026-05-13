@@ -1,3 +1,9 @@
+## [1.190.1](https://github.com/niafrond/niafrond.github.io/compare/v1.190.0...v1.190.1) (2026-05-13)
+
+### Bug Fixes
+
+* **dj-mix:** stable ([6e491d4](https://github.com/niafrond/niafrond.github.io/commit/6e491d4237bebddc47414361f2318a5178e36bdd))
+
 ## [1.190.0](https://github.com/niafrond/niafrond.github.io/compare/v1.189.0...v1.190.0) (2026-05-13)
 
 ### Features
