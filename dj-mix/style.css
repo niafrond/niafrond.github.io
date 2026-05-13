@@ -882,6 +882,40 @@ input {
 }
 .cache-add-btn:hover { background: var(--accent-dim); }
 
+.cache-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cache-delete-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 99, 132, 0.9);
+  background: none;
+  color: rgba(255, 99, 132, 0.95);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cache-delete-btn:hover {
+  background: rgba(255, 99, 132, 0.14);
+}
+
+.cache-delete-btn:disabled,
+.cache-add-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 /* ── Player section ───────────────────────────────────── */
 .player-section {
   display: flex;

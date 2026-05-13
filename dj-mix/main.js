@@ -397,6 +397,7 @@ const {
 } = audioSourceManager;
 
 const playlistManager = createPlaylistManager({
+  deleteLocalCacheSong,
   escHtml,
   getCurrentIndex: () => currentIndex,
   getDownloaderApiUrl,
@@ -421,7 +422,11 @@ const playlistManager = createPlaylistManager({
   tabPanels,
 });
 
-const { switchTab } = playlistManager;
+const { setCacheFilter, switchTab } = playlistManager;
+
+function isCacheTabActive() {
+  return Boolean(tabPanels.playlist && tabPanels.playlist.classList.contains('active') && !tabPanels.playlist.hidden);
+}
 
 const renderDeckState = (detail) => uiRenderer.renderDeckState(detail);
 const updateNowPlaying = (item, deck = getFocusDeck()) => uiRenderer.updateNowPlaying(item, deck);
@@ -510,6 +515,10 @@ tabBtns.forEach((btn) => {
     if (tab === 'playlist') playlistLoaded = false;
     if (tab === 'mix') closeSearch();
     switchTab(tab);
+    if (tab === 'playlist') {
+      setCacheFilter(searchInput.value.trim());
+      closeSearch();
+    }
   });
 });
 
@@ -1004,6 +1013,12 @@ searchInput.addEventListener('input', () => {
   searchClear.hidden = !q;
   clearTimeout(searchDebounceTimer);
 
+   if (isCacheTabActive()) {
+    setCacheFilter(q);
+    closeSearch();
+    return;
+  }
+
   if (!q) {
     lastSearchQuery = '';
     closeSearch();
@@ -1027,9 +1042,16 @@ searchInput.addEventListener('keydown', async (event) => {
   if (event.key !== 'Enter') return;
 
   const q = searchInput.value.trim();
-  if (!q) return;
   event.preventDefault();
   clearTimeout(searchDebounceTimer);
+
+  if (isCacheTabActive()) {
+    setCacheFilter(q);
+    closeSearch();
+    return;
+  }
+
+  if (!q) return;
 
   if (q === lastSearchQuery) return;
 
@@ -1044,6 +1066,9 @@ searchClear.addEventListener('click', () => {
   searchInput.value = '';
   searchClear.hidden = true;
   lastSearchQuery = '';
+  if (isCacheTabActive()) {
+    setCacheFilter('');
+  }
   closeSearch();
   searchInput.focus();
 });

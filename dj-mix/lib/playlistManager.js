@@ -12,6 +12,7 @@ function hasAvailableStems(file) {
 
 export function createPlaylistManager(options) {
   const {
+    deleteLocalCacheSong,
     escHtml,
     getCurrentIndex,
     getDownloaderApiUrl,
@@ -29,6 +30,101 @@ export function createPlaylistManager(options) {
     tabBtns,
     tabPanels,
   } = options;
+
+  let cacheFiles = [];
+  let cacheFilterQuery = '';
+
+  function normalizeText(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  function renderCacheList() {
+    const normalizedFilter = normalizeText(cacheFilterQuery);
+    const visibleFiles = normalizedFilter
+      ? cacheFiles.filter((file) => {
+        const trackName = normalizeText(file.trackName || file.name || file.title);
+        const artistName = normalizeText(file.artistName || file.artist);
+        return trackName.includes(normalizedFilter) || artistName.includes(normalizedFilter);
+      })
+      : cacheFiles;
+
+    if (!cacheFiles.length) {
+      playlistListEl.innerHTML = `
+      <div class="search-empty">
+        Aucun fichier en cache. Recherchez des chansons pour les ajouter.
+      </div>`;
+      return;
+    }
+
+    if (!visibleFiles.length) {
+      playlistListEl.innerHTML = `
+      <div class="search-empty">
+        Aucun morceau du cache ne correspond a cette recherche.
+      </div>`;
+      return;
+    }
+
+    playlistListEl.innerHTML = visibleFiles.map((file) => {
+      const sourceIndex = cacheFiles.indexOf(file);
+      return `
+      <div class="cache-item" data-index="${sourceIndex}">
+        <div class="cache-info">
+          <div class="cache-name">${escHtml(file.trackName || file.name || file.title || 'Inconnu')}${hasAvailableStems(file) ? ' <span class="cache-stem-badge" title="Stems disponibles">🧩</span>' : ''}</div>
+          <div class="cache-artist">${escHtml(file.artistName || file.artist || 'Artiste inconnu')}</div>
+        </div>
+        <div class="cache-actions">
+          <button class="cache-add-btn" data-index="${sourceIndex}" aria-label="Ajouter a la file">➕</button>
+          <button class="cache-delete-btn" data-index="${sourceIndex}" aria-label="Supprimer du cache API">🗑</button>
+        </div>
+      </div>
+    `;
+    }).join('');
+
+    playlistListEl.querySelectorAll('.cache-add-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = Number(btn.dataset.index);
+        const file = cacheFiles[idx];
+        addCacheFileToQueue(file);
+      });
+    });
+
+    playlistListEl.querySelectorAll('.cache-delete-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const idx = Number(btn.dataset.index);
+        const file = cacheFiles[idx];
+        if (!file) return;
+
+        const track = {
+          cachePath: file.cachePath || '',
+          name: file.trackName || file.name || file.title || '',
+          artist: file.artistName || file.artist || '',
+        };
+
+        const previous = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '…';
+        try {
+          await deleteLocalCacheSong(track);
+          showToast(`Supprime: ${track.name || 'morceau cache'}`);
+          cacheFiles.splice(idx, 1);
+          renderCacheList();
+        } catch (err) {
+          showToast(`Erreur suppression: ${err.message}`, true);
+          btn.disabled = false;
+          btn.textContent = previous;
+        }
+      });
+    });
+  }
+
+  function setCacheFilter(query) {
+    cacheFilterQuery = String(query || '').trim();
+    if (getPlaylistLoaded()) {
+      renderCacheList();
+    }
+  }
 
   function addCacheFileToQueue(file) {
     if (!file) return;
@@ -98,37 +194,13 @@ export function createPlaylistManager(options) {
 
       const data = await res.json();
       const files = Array.isArray(data) ? data : (data.results || data.files || []);
+      cacheFiles = Array.isArray(files) ? files.slice() : [];
       logger.info('playlist.cacheList.load.success', {
         baseUrl,
-        filesCount: files.length,
+        filesCount: cacheFiles.length,
       });
 
-      if (!files.length) {
-        playlistListEl.innerHTML = `
-        <div class="search-empty">
-          Aucun fichier en cache. Recherchez des chansons pour les ajouter.
-        </div>`;
-        return;
-      }
-
-      playlistListEl.innerHTML = files.map((file, i) => `
-      <div class="cache-item" data-index="${i}">
-        <div class="cache-info">
-          <div class="cache-name">${escHtml(file.trackName || file.name || file.title || 'Inconnu')}${hasAvailableStems(file) ? ' <span class="cache-stem-badge" title="Stems disponibles">🧩</span>' : ''}</div>
-          <div class="cache-artist">${escHtml(file.artistName || file.artist || 'Artiste inconnu')}</div>
-        </div>
-        <button class="cache-add-btn" data-index="${i}" aria-label="Ajouter à la file">➕</button>
-      </div>
-    `).join('');
-
-      playlistListEl.querySelectorAll('.cache-add-btn').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const idx = Number(btn.dataset.index);
-          const file = files[idx];
-          addCacheFileToQueue(file);
-        });
-      });
+      renderCacheList();
     } catch (err) {
       logger.error('playlist.cacheList.load.failed', {
         message: err?.message,
@@ -159,6 +231,7 @@ export function createPlaylistManager(options) {
   return {
     addCacheFileToQueue,
     loadPlaylists,
+    setCacheFilter,
     switchTab,
   };
 }
