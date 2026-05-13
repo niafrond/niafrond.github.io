@@ -1484,7 +1484,13 @@ input {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015));
 }
 
-.deck-mix-actions,
+.deck-mix-actions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .deck-fx-actions {
   width: 100%;
   display: grid;

@@ -132,10 +132,10 @@ const deckBLaunchBtn = document.getElementById('deck-b-launch');
 const deckMixSlider = document.getElementById('deck-mix-slider');
 const deckMixLabel = document.getElementById('deck-mix-label');
 const deckBCueLabel = document.getElementById('deck-b-cue-label');
-const deckSyncBtn = document.getElementById('deck-sync-btn');
 const manualLockBtn = document.getElementById('manual-lock-btn');
 const fxVisibilityBtn = document.getElementById('fx-visibility-btn');
 const deckFxActions = document.querySelector('.deck-fx-actions');
+const crossfadeControlMix = document.querySelector('.crossfade-control--mix');
 const autoBpmBtn = document.getElementById('fx-auto-bpm-btn');
 const echoBtn = document.getElementById('fx-echo-btn');
 const distortionBtn = document.getElementById('fx-distortion-btn');
@@ -207,6 +207,7 @@ const {
 
 const mixControls = createMixControls({
   autoBpmBtn,
+  crossfadeControlMix,
   deckAPanel,
   deckBPanel,
   deckFxActions,
@@ -816,12 +817,6 @@ deckBLaunchBtn?.addEventListener('click', async () => {
 deckABpmReset?.addEventListener('click', () => { player?.resetDeckPlaybackRate('A'); });
 deckBBpmReset?.addEventListener('click', () => { player?.resetDeckPlaybackRate('B'); });
 
-deckSyncBtn?.addEventListener('click', () => {
-  if (!player) return;
-  player.syncDecksToActive();
-  showToast('BPM synchronisés');
-});
-
 manualLockBtn?.addEventListener('click', () => {
   manualMixLock = !manualMixLock;
   updateManualLockUI();
@@ -876,7 +871,12 @@ deckBProgress?.addEventListener('keydown', (event) => {
 });
 
 autoBpmBtn?.addEventListener('click', () => {
-  setMixFeatureEnabled('autoBpm', !mixFeatures.autoBpm);
+  const nextEnabled = !mixFeatures.autoBpm;
+  setMixFeatureEnabled('autoBpm', nextEnabled);
+  if (nextEnabled && player) {
+    player.syncDecksToActive();
+    showToast('Auto BPM active + Sync BPM');
+  }
 });
 
 echoBtn?.addEventListener('click', () => {

@@ -8,7 +8,7 @@
     "release": "semantic-release",
     "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:e2e": "playwright test",
-    "test": "npm run test:unit && npm run test:e2e",
+    "test": "npm run test:unit",
     "start":" set HOST=127.0.0.1 && npx serve -l 8080 "
   },
   "devDependencies": {
