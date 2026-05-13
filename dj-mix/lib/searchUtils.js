@@ -194,6 +194,7 @@ export function mapApiTrackToSearchItem(track) {
     duration_ms: duration,
     duration,
     loudnessDb: extractTrackLoudnessDb(track),
+    audioFeatures: extractAudioFeatures(track),
     isArtistResult: false,
     isLocalResult,
     cachePath: track.cachePath || track.filePath || track.path || '',
@@ -351,6 +352,26 @@ export function getPopularityScore(track) {
   }
 
   return 0;
+}
+
+export function extractAudioFeatures(track) {
+  if (!track || typeof track !== 'object') {
+    return null;
+  }
+  const features = track.audioFeatures || track.audio_features || {};
+  if (!Object.keys(features).length) return null;
+  return {
+    bpm: Number(features.bpm),
+    energy: Number(features.energy),
+    danceability: Number(features.danceability),
+    acousticness: Number(features.acousticness),
+    instrumentalness: Number(features.instrumentalness),
+    liveness: Number(features.liveness),
+    speechiness: Number(features.speechiness),
+    valence: Number(features.valence),
+    rhythm: String(features.rhythm || '').toLowerCase(),
+    source: String(features.source || 'unknown'),
+  };
 }
 
 export function extractTrackLoudnessDb(track) {

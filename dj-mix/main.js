@@ -5,6 +5,10 @@
  */
 
 import { DJPlayer } from './player.js';
+import {
+  MIX_TRANSITION_MODE_LABELS,
+  MIX_TRANSITION_MODES,
+} from './lib/mixFeatures.js';
 import { AutoFadeManager } from './lib/autoFadeManager.js';
 import {
   createAudioSourceManager,
@@ -23,6 +27,7 @@ import { createDjMixRenderer } from './lib/uiRenderer.js';
 import {
   buildSearchResultsSectionsHTML,
   escHtml,
+  extractAudioFeatures,
   extractStemSourceUrls,
   extractTrackLoudnessDb,
   getBestArtworkUrl,
@@ -36,6 +41,7 @@ const QUEUE_KEY = 'dj-mix:queue';
 const DOWNLOADER_API_URL_KEY = 'dj-mix:downloader:api:url';
 const FX_VISIBILITY_KEY = 'dj-mix:fx:hidden';
 const DEBUG_LOGS_KEY = 'dj-mix:logs:debug';
+const MIX_TRANSITION_MODE_KEY = 'dj-mix:transition:mode';
 const DEFAULT_DOWNLOADER_API_URL = 'http://192.168.8.149:3000';
 const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
 
@@ -89,6 +95,35 @@ let mixFeatures = {
 let fxControlsHidden = false;
 const deckDisplayItems = { A: null, B: null };
 let prevIsCrossfading = false;
+let selectedTransitionMode = readTransitionModeSetting();
+
+function readTransitionModeSetting() {
+  try {
+    const stored = localStorage.getItem(MIX_TRANSITION_MODE_KEY) || 'auto';
+    return MIX_TRANSITION_MODES.includes(stored) ? stored : 'auto';
+  } catch (_) {
+    return 'auto';
+  }
+}
+
+function persistTransitionModeSetting(mode) {
+  try {
+    localStorage.setItem(MIX_TRANSITION_MODE_KEY, mode);
+  } catch (_) {
+    // ignore storage failures
+  }
+}
+
+function applyTransitionModeSetting(mode, options = {}) {
+  const { persist = true } = options;
+  const safeMode = MIX_TRANSITION_MODES.includes(mode) ? mode : 'auto';
+  selectedTransitionMode = safeMode;
+  if (mixTransitionModeSelect) {
+    mixTransitionModeSelect.value = safeMode;
+  }
+  player?.setTransitionMode(safeMode);
+  if (persist) persistTransitionModeSetting(safeMode);
+}
 
 const setupScreen = document.getElementById('setup-screen');
 const appScreen = document.getElementById('app-screen');
@@ -132,10 +167,12 @@ const deckBLaunchBtn = document.getElementById('deck-b-launch');
 const deckMixSlider = document.getElementById('deck-mix-slider');
 const deckMixLabel = document.getElementById('deck-mix-label');
 const deckBCueLabel = document.getElementById('deck-b-cue-label');
-const deckSyncBtn = document.getElementById('deck-sync-btn');
+const mixTransitionModeSelect = document.getElementById('mix-transition-mode');
+const mixModeRow = document.querySelector('.mix-mode-row');
 const manualLockBtn = document.getElementById('manual-lock-btn');
 const fxVisibilityBtn = document.getElementById('fx-visibility-btn');
 const deckFxActions = document.querySelector('.deck-fx-actions');
+const crossfadeControlMix = document.querySelector('.crossfade-control--mix');
 const autoBpmBtn = document.getElementById('fx-auto-bpm-btn');
 const echoBtn = document.getElementById('fx-echo-btn');
 const distortionBtn = document.getElementById('fx-distortion-btn');
@@ -207,6 +244,8 @@ const {
 
 const mixControls = createMixControls({
   autoBpmBtn,
+  crossfadeControlMix,
+  mixModeRow,
   deckAPanel,
   deckBPanel,
   deckFxActions,
@@ -476,6 +515,7 @@ tabBtns.forEach((btn) => {
 
 (async function init() {
   applyDebugLogsSetting(readDebugLogsSetting(), { persist: false });
+  applyTransitionModeSetting(selectedTransitionMode, { persist: false });
 
   debugLogsToggle?.addEventListener('change', () => {
     applyDebugLogsSetting(Boolean(debugLogsToggle.checked), { persist: true });
@@ -528,6 +568,7 @@ async function connectLocal() {
   player?.destroy();
   player = new DJPlayer();
   player.crossfadeDuration = clampCrossfadeSeconds(crossfadeSlider.value) * 1000;
+  player.setTransitionMode(selectedTransitionMode);
   player.setMixFeatures(mixFeatures);
   hookPlayerEvents();
 
@@ -536,6 +577,7 @@ async function connectLocal() {
   await player.init();
   logInfo('connectLocal(): player initialized', {
     crossfadeDurationMs: player.crossfadeDuration,
+    transitionMode: selectedTransitionMode,
   });
 }
 
@@ -590,6 +632,14 @@ function hookPlayerEvents() {
 
     player.addEventListener('crossfadeprogress', ({ detail }) => {
       updateCrossfadeBars(detail);
+    });
+
+    player.addEventListener('transitionmode', ({ detail }) => {
+      const requestedMode = detail?.requestedMode || 'auto';
+      const effectiveMode = detail?.effectiveMode || requestedMode;
+      if (requestedMode !== 'auto') return;
+      const label = MIX_TRANSITION_MODE_LABELS[effectiveMode] || effectiveMode;
+      showToast(`AutoMix mode: ${label}`);
     });
 
     player.addEventListener('deckstate', ({ detail }) => {
@@ -710,7 +760,14 @@ async function launchDeckFromQueue(deck, options = {}) {
     const sourceUrl = await ensureLocalSource(item);
     const isFocusDeck = targetDeck === getFocusDeck();
     const paused = typeof options.paused === 'boolean' ? options.paused : !isFocusDeck;
-    await player.playOnDeck(targetDeck, { url: sourceUrl, loudnessDb: item.loudnessDb, stems: item.stems }, { makeActive: false, paused });
+    await player.playOnDeck(targetDeck, {
+      url: sourceUrl,
+      loudnessDb: item.loudnessDb,
+      bpm: item.bpm,
+      durationMs: item.duration,
+      audioFeatures: item.audioFeatures,
+      stems: item.stems,
+    }, { makeActive: false, paused });
     deckDisplayItems[targetDeck] = item;
     
     if (isFocusDeck) {
@@ -816,12 +873,6 @@ deckBLaunchBtn?.addEventListener('click', async () => {
 deckABpmReset?.addEventListener('click', () => { player?.resetDeckPlaybackRate('A'); });
 deckBBpmReset?.addEventListener('click', () => { player?.resetDeckPlaybackRate('B'); });
 
-deckSyncBtn?.addEventListener('click', () => {
-  if (!player) return;
-  player.syncDecksToActive();
-  showToast('BPM synchronisés');
-});
-
 manualLockBtn?.addEventListener('click', () => {
   manualMixLock = !manualMixLock;
   updateManualLockUI();
@@ -831,6 +882,13 @@ fxVisibilityBtn?.addEventListener('click', () => {
   fxControlsHidden = !fxControlsHidden;
   localStorage.setItem(FX_VISIBILITY_KEY, fxControlsHidden ? '1' : '0');
   updateFxVisibilityUI();
+});
+
+mixTransitionModeSelect?.addEventListener('change', () => {
+  const nextMode = String(mixTransitionModeSelect.value || 'auto');
+  applyTransitionModeSetting(nextMode, { persist: true });
+  const label = MIX_TRANSITION_MODE_LABELS[selectedTransitionMode] || selectedTransitionMode;
+  showToast(`Mode AutoMix: ${label}`);
 });
 
 deckASlider?.addEventListener('input', () => {
@@ -876,7 +934,12 @@ deckBProgress?.addEventListener('keydown', (event) => {
 });
 
 autoBpmBtn?.addEventListener('click', () => {
-  setMixFeatureEnabled('autoBpm', !mixFeatures.autoBpm);
+  const nextEnabled = !mixFeatures.autoBpm;
+  setMixFeatureEnabled('autoBpm', nextEnabled);
+  if (nextEnabled && player) {
+    player.syncDecksToActive();
+    showToast('Auto BPM active + Sync BPM');
+  }
 });
 
 echoBtn?.addEventListener('click', () => {
@@ -1100,6 +1163,7 @@ async function addToQueue(track, options = {}) {
   const artUrl = getBestArtworkUrl(track);
   const duration = getTrackDurationMs(track);
   const stems = extractStemSourceUrls(track);
+  const audioFeatures = extractAudioFeatures(track);
   const item = {
     id: track.id || track.ratingKey || track.uri || track.name,
     uri: track.uri || track.downloadUrl || `api:track:${track.id || track.name}`,
@@ -1109,6 +1173,7 @@ async function addToQueue(track, options = {}) {
     duration,
     bpm: track.bpm || track.tempo || null,
     loudnessDb: extractTrackLoudnessDb(track),
+    audioFeatures,
     stems: {
       vocalsUrl: stems.vocalsUrl,
       instrumentalUrl: stems.instrumentalUrl,
@@ -1248,13 +1313,41 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     });
 
     if (mode === 'autofade') {
-      await player.crossfadeToDeck(targetDeck, { url: sourceUrl, loudnessDb: item.loudnessDb, stems: item.stems });
+      await player.crossfadeToDeck(targetDeck, {
+        url: sourceUrl,
+        loudnessDb: item.loudnessDb,
+        bpm: item.bpm,
+        durationMs: item.duration,
+        audioFeatures: item.audioFeatures,
+        stems: item.stems,
+      });
     } else if (mode === 'crossfade') {
-      await player.crossfadeToDeck(targetDeck, { url: sourceUrl, loudnessDb: item.loudnessDb, stems: item.stems });
+      await player.crossfadeToDeck(targetDeck, {
+        url: sourceUrl,
+        loudnessDb: item.loudnessDb,
+        bpm: item.bpm,
+        durationMs: item.duration,
+        audioFeatures: item.audioFeatures,
+        stems: item.stems,
+      });
     } else if (mode === 'switch') {
-      await player.playOnDeck(getFocusDeck(), { url: sourceUrl, loudnessDb: item.loudnessDb, stems: item.stems }, { makeActive: false, paused: false });
+      await player.playOnDeck(getFocusDeck(), {
+        url: sourceUrl,
+        loudnessDb: item.loudnessDb,
+        bpm: item.bpm,
+        durationMs: item.duration,
+        audioFeatures: item.audioFeatures,
+        stems: item.stems,
+      }, { makeActive: false, paused: false });
     } else {
-      await player.playOnDeck(getFocusDeck(), { url: sourceUrl, loudnessDb: item.loudnessDb, stems: item.stems }, { makeActive: false, paused: false });
+      await player.playOnDeck(getFocusDeck(), {
+        url: sourceUrl,
+        loudnessDb: item.loudnessDb,
+        bpm: item.bpm,
+        durationMs: item.duration,
+        audioFeatures: item.audioFeatures,
+        stems: item.stems,
+      }, { makeActive: false, paused: false });
     }
 
     if (mode === 'autofade' || mode === 'crossfade') {
@@ -1285,7 +1378,14 @@ async function startPlaybackForIndex(index, mode, options = {}) {
         });
         ensureLocalSource(nextItem).then((nextUrl) => {
           if (!player) return;
-          player.playOnDeck(inactiveDeck, { url: nextUrl, loudnessDb: nextItem.loudnessDb, stems: nextItem.stems }, { paused: true });
+          player.playOnDeck(inactiveDeck, {
+            url: nextUrl,
+            loudnessDb: nextItem.loudnessDb,
+            bpm: nextItem.bpm,
+            durationMs: nextItem.duration,
+            audioFeatures: nextItem.audioFeatures,
+            stems: nextItem.stems,
+          }, { paused: true });
           deckDisplayItems[inactiveDeck] = nextItem;
           renderQueue();
         }).catch(() => {});

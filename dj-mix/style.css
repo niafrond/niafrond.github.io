@@ -1473,6 +1473,10 @@ input {
   gap: 10px;
 }
 
+.crossfade-control[hidden] {
+  display: none;
+}
+
 .deck-mix-control {
   width: 100%;
   display: flex;
@@ -1484,7 +1488,13 @@ input {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015));
 }
 
-.deck-mix-actions,
+.deck-mix-actions {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .deck-fx-actions {
   width: 100%;
   display: grid;
@@ -1529,6 +1539,36 @@ input {
   border: 0;
   border-radius: 0;
   background: transparent;
+}
+
+.mix-mode-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mix-mode-row[hidden] {
+  display: none;
+}
+
+.mix-mode-row label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mix-mode-select {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(14, 17, 26, 0.9);
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.mix-mode-select:focus {
+  outline: 2px solid rgba(245, 158, 11, 0.35);
+  outline-offset: 1px;
 }
 
 .crossfade-row {

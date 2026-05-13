@@ -1,3 +1,50 @@
+// ─── Transition modes (exported for UI selection and player) ────────────────
+
+export const MIX_TRANSITION_MODES = Object.freeze([
+  'auto',
+  'crossfade_linear',
+  'crossfade_logarithmic',
+  'fade_in_out',
+  'cut_transition',
+  'filter_sweep_low_high',
+  'eq_transition_simple',
+  'echo_out_light',
+  'reverb_short_simple',
+  'short_loop',
+  'brake_tape_stop_simple',
+  'short_reverse',
+  'sidechain_basic',
+  'volume_ducking',
+  'gain_automation',
+  'filter_automation',
+]);
+
+export const MIX_TRANSITION_MODE_LABELS = Object.freeze({
+  auto: 'Auto (meilleur)',
+  crossfade_linear: 'Crossfade lineaire',
+  crossfade_logarithmic: 'Crossfade logarithmique',
+  fade_in_out: 'Fade in / Fade out',
+  cut_transition: 'Cut transition',
+  filter_sweep_low_high: 'Filter sweep (low-pass / high-pass)',
+  eq_transition_simple: 'EQ transition simple',
+  echo_out_light: 'Echo out leger',
+  reverb_short_simple: 'Reverb courte et simple',
+  short_loop: 'Loop courte',
+  brake_tape_stop_simple: 'Brake / tape stop simple',
+  short_reverse: 'Reverse court',
+  sidechain_basic: 'Sidechain basique',
+  volume_ducking: 'Volume ducking',
+  gain_automation: 'Automation de gain',
+  filter_automation: 'Automation de filtre',
+});
+
+export const DEFAULT_TRANSITION_MODE = 'auto';
+
+export function normalizeTransitionMode(mode) {
+  const next = String(mode || '').trim();
+  return MIX_TRANSITION_MODES.includes(next) ? next : DEFAULT_TRANSITION_MODE;
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const FFT_SIZE        = 1024;
