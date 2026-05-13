@@ -1,3 +1,17 @@
+## [1.189.0](https://github.com/niafrond/niafrond.github.io/compare/v1.188.0...v1.189.0) (2026-05-13)
+
+### Features
+
+* **dj-mix:** stable ([dd65e83](https://github.com/niafrond/niafrond.github.io/commit/dd65e839287179998c81b014a73fdede7b0185cf))
+* **dj-mix:** stable ([f3cee40](https://github.com/niafrond/niafrond.github.io/commit/f3cee40584e623844caaf53d867077cbc4069e53))
+* **dj-mix:** stable ([5e166e9](https://github.com/niafrond/niafrond.github.io/commit/5e166e91429a18f5c8a58da78a02a764f96d0c5d))
+* **dj-mix:** stable ([04d65e2](https://github.com/niafrond/niafrond.github.io/commit/04d65e2d0109ab36e614eb651b6ee3ac08a42fd7))
+
+### Bug Fixes
+
+* correct unit tests for mixFeatures.js ([379a713](https://github.com/niafrond/niafrond.github.io/commit/379a713597fe34b7df74bdce5556eacbbf088610))
+* **dj-mix:** stable ([72ab4de](https://github.com/niafrond/niafrond.github.io/commit/72ab4de855278c483bc5a3376524224f1e2d2ad6))
+
 ## [1.188.0](https://github.com/niafrond/niafrond.github.io/compare/v1.187.0...v1.188.0) (2026-05-12)
 
 ### Features
