@@ -1,10 +1,23 @@
-import { SimpleMixFeatures } from './lib/mixFeatures.js';
+import {
+  SimpleMixFeatures,
+  MIX_TRANSITION_MODES,
+  MIX_TRANSITION_MODE_LABELS,
+  DEFAULT_TRANSITION_MODE,
+  normalizeTransitionMode,
+} from './lib/mixFeatures.js';
 import { createLogger } from './lib/logger.js';
 
 const logger = createLogger('player');
 const logDebug = (event, payload) => logger.debug(event, payload);
 const logInfo = (event, payload) => logger.info(event, payload);
 const logError = (event, payload) => logger.error(event, payload);
+
+// Re-export for UI/main.js
+export { MIX_TRANSITION_MODES, MIX_TRANSITION_MODE_LABELS };
+
+function clamp01(value) {
+  return Math.max(0, Math.min(1, Number(value) || 0));
+}
 
 function createDefaultDeckFx() {
   return {
@@ -79,6 +92,11 @@ export class DJPlayer extends EventTarget {
   #trackInterval = null;
   #crossfadeInterval = null;
   #manualMixInterval = null;
+  #transitionMode = DEFAULT_TRANSITION_MODE;
+  #deckSourceMeta = {
+    A: null,
+    B: null,
+  };
   #mixFeatures = null;
   #mixFeatureSettings = {
     autoBpm: false,
@@ -98,6 +116,15 @@ export class DJPlayer extends EventTarget {
   get isCrossfading() { return this.#isCrossfading; }
   get isReady() { return this.#ready; }
   get activeDeck() { return this.#active; }
+  get transitionMode() { return this.#transitionMode; }
+
+  static getTransitionModes() {
+    return [...MIX_TRANSITION_MODES];
+  }
+
+  setTransitionMode(mode) {
+    this.#transitionMode = normalizeTransitionMode(mode);
+  }
 
   async init() {
     this.#audioA = this.#createDeckAudio('A');
@@ -133,6 +160,8 @@ export class DJPlayer extends EventTarget {
 
     this.#setDeckLoudness(activeDeck, normalized.loudnessDb);
     this.#setDeckLoudness(inactiveDeck, null);
+    this.#deckSourceMeta[activeDeck] = normalized;
+    this.#deckSourceMeta[inactiveDeck] = null;
 
     inactive.pause();
     inactive.currentTime = 0;
@@ -152,6 +181,7 @@ export class DJPlayer extends EventTarget {
     if (!audio) return;
 
     this.#setDeckLoudness(targetDeck, normalized.loudnessDb);
+    this.#deckSourceMeta[targetDeck] = normalized;
 
     logInfo('deck.load.begin', {
       targetDeck,
@@ -333,9 +363,20 @@ export class DJPlayer extends EventTarget {
     this.#isCrossfading = true;
     this.#crossfadeNotified = true;
 
-    if (durationOverride) {
-      this.crossfadeDuration = durationOverride;
+    let overrideMs = null;
+    let transitionOptions = {};
+    if (typeof durationOverride === 'number') {
+      overrideMs = durationOverride;
+    } else if (durationOverride && typeof durationOverride === 'object') {
+      transitionOptions = durationOverride;
     }
+
+    if (overrideMs) {
+      this.crossfadeDuration = overrideMs;
+    }
+
+    const requestedMode = normalizeTransitionMode(transitionOptions.mode || this.#transitionMode);
+
     // Determine fade direction: load new track on target deck, fade from the other.
     // When no target is specified, fade from the dominant (louder) deck.
     const desiredDeck = targetDeck === 'A' || targetDeck === 'B' ? targetDeck : null;
@@ -352,13 +393,28 @@ export class DJPlayer extends EventTarget {
     const from = fromDeck === 'A' ? this.#audioA : this.#audioB;
     const to = toDeck === 'A' ? this.#audioA : this.#audioB;
 
+    const effectiveMode = requestedMode === 'auto'
+      ? this.#chooseAutoTransitionMode(fromDeck, normalized)
+      : requestedMode;
+
     logInfo('crossfade.begin', {
       desiredDeck,
       fromDeck,
       toDeck,
       durationMs: this.#crossfadeDuration,
+      requestedMode,
+      effectiveMode,
       hasUrl: !!normalized.url,
     });
+
+    this.dispatchEvent(new CustomEvent('transitionmode', {
+      detail: {
+        requestedMode,
+        effectiveMode,
+        fromDeck,
+        toDeck,
+      },
+    }));
 
     // Capture current base mix levels before loading the new track so the
     // crossfade starts from the current slider position instead of jumping to 0.
@@ -369,71 +425,28 @@ export class DJPlayer extends EventTarget {
 
     try {
       this.#setDeckLoudness(toDeck, normalized.loudnessDb);
+      this.#deckSourceMeta[toDeck] = normalized;
       this.#mixFeatures?.setDeckSourceMetadata(toDeck, normalized);
       
       await this.#loadAndPlay(to, normalized.url);
-      
 
-      const tickMs = 16;
-
-      await new Promise((resolve) => {
-        let progress = 0;
-        let lastTickAt = performance.now();
-
-        this.#crossfadeInterval = setInterval(() => {
-          if (this.#destroyed) {
-            clearInterval(this.#crossfadeInterval);
-            this.#crossfadeInterval = null;
-            resolve();
-            return;
-          }
-
-          const now = performance.now();
-          const elapsedMs = Math.max(0, now - lastTickAt);
-          lastTickAt = now;
-          const liveDuration = Math.max(250, Number(this.#crossfadeDuration) || 5000);
-
-          progress = Math.min(1, progress + (elapsedMs / liveDuration));
-          const t = progress;
-          const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-
-          const fromBase = Math.max(0, startBaseFrom * (1 - eased));
-          const toBase = Math.min(1, startBaseTo + (1 - startBaseTo) * eased);
-          if (fromDeck === 'A') {
-            this.#applyDeckBaseMix(fromBase, toBase);
-          } else {
-            this.#applyDeckBaseMix(toBase, fromBase);
-          }
-          this.#emitDeckState();
-
-          this.dispatchEvent(new CustomEvent('crossfadeprogress', {
-            detail: {
-              fromDeck,
-              fromVolume: fromBase,
-              toVolume: toBase,
-              toPosition: Number.isFinite(to.currentTime) ? to.currentTime * 1000 : 0,
-              toDuration: Number.isFinite(to.duration) && to.duration > 0 ? to.duration * 1000 : 0,
-              durationMs: liveDuration,
-              progress,
-            },
-          }));
-
-          if (progress >= 1) {
-            clearInterval(this.#crossfadeInterval);
-            this.#crossfadeInterval = null;
-            from.pause();
-            from.currentTime = 0;
-            from.src = '';
-            this.#setDeckLoudness(fromDeck, null);
-            // if (toDeck === 'A') {
-            //   this.#applyDeckBaseMix(1, 0);
-            // } else {
-            //   this.#applyDeckBaseMix(0, 1);
-            // }
-            resolve();
-          }
-        }, tickMs);
+      await this.#runTransitionMode({
+        effectiveMode,
+        fromDeck,
+        toDeck,
+        from,
+        to,
+        startBaseFrom,
+        startBaseTo,
       });
+
+      from.pause();
+      from.currentTime = 0;
+      from.src = '';
+      from.playbackRate = 1;
+      to.playbackRate = 1;
+      this.#setDeckLoudness(fromDeck, null);
+      this.#deckSourceMeta[fromDeck] = null;
 
       this.#active = toDeck;
       this.#crossfadeNotified = false;
@@ -461,6 +474,306 @@ export class DJPlayer extends EventTarget {
 
   async switchTo(sourceUrl) {
     return this.crossfadeToDeck(null, sourceUrl, 250);
+  }
+
+  #chooseAutoTransitionMode(fromDeck, nextSource) {
+    const current = this.#deckSourceMeta[fromDeck] || {};
+    const currFeatures = current.audioFeatures;
+    const nextFeatures = nextSource?.audioFeatures;
+    const bpmA = Number(currFeatures?.bpm || current.bpm);
+    const bpmB = Number(nextFeatures?.bpm || nextSource?.bpm);
+    const loudA = Number(current.loudnessDb);
+    const loudB = Number(nextSource?.loudnessDb);
+    const diffBpm = Number.isFinite(bpmA) && Number.isFinite(bpmB) ? Math.abs(bpmA - bpmB) : null;
+    const diffLoud = Number.isFinite(loudA) && Number.isFinite(loudB) ? Math.abs(loudA - loudB) : null;
+    const nextDurationMs = Number(nextSource?.durationMs);
+
+    const energyA = Number(currFeatures?.energy);
+    const energyB = Number(nextFeatures?.energy);
+    const diffEnergy = Number.isFinite(energyA) && Number.isFinite(energyB) ? Math.abs(energyA - energyB) : null;
+
+    const danceA = Number(currFeatures?.danceability);
+    const danceB = Number(nextFeatures?.danceability);
+    const diffDance = Number.isFinite(danceA) && Number.isFinite(danceB) ? Math.abs(danceA - danceB) : null;
+
+    const rhythmA = String(currFeatures?.rhythm || '');
+    const rhythmB = String(nextFeatures?.rhythm || '');
+
+    const currentDeckAudio = fromDeck === 'B' ? this.#audioB : this.#audioA;
+    const remainingMs = currentDeckAudio && Number.isFinite(currentDeckAudio.duration) && currentDeckAudio.duration > 0
+      ? Math.max(0, (currentDeckAudio.duration - currentDeckAudio.currentTime) * 1000)
+      : null;
+
+    if (Number.isFinite(nextDurationMs) && nextDurationMs < 95_000) {
+      return 'cut_transition';
+    }
+    if (Number.isFinite(remainingMs) && remainingMs < 3_500) {
+      return 'echo_out_light';
+    }
+    if (rhythmA && rhythmB && rhythmA === rhythmB && Number.isFinite(diffBpm) && diffBpm <= 1) {
+      return 'crossfade_linear';
+    }
+    if (Number.isFinite(diffBpm) && diffBpm <= 2 && (!Number.isFinite(diffLoud) || diffLoud <= 2)) {
+      return 'crossfade_logarithmic';
+    }
+    if (Number.isFinite(diffEnergy) && diffEnergy >= 0.35 && Number.isFinite(energyB) && energyB < 0.4) {
+      return 'fade_in_out';
+    }
+    if (Number.isFinite(diffDance) && diffDance >= 0.3) {
+      return 'filter_sweep_low_high';
+    }
+    if (Number.isFinite(diffBpm) && diffBpm <= 6) {
+      return 'filter_automation';
+    }
+    if (Number.isFinite(diffEnergy) && diffEnergy >= 0.25) {
+      return 'eq_transition_simple';
+    }
+    if (Number.isFinite(diffBpm) && diffBpm <= 10) {
+      return 'sidechain_basic';
+    }
+    if (Number.isFinite(diffLoud) && diffLoud >= 5) {
+      return 'volume_ducking';
+    }
+    if (Number.isFinite(diffBpm) && diffBpm >= 20) {
+      return 'brake_tape_stop_simple';
+    }
+    if (Number.isFinite(danceA) && Number.isFinite(danceB) && danceA > 0.65 && danceB > 0.65) {
+      return 'short_loop';
+    }
+
+    return 'gain_automation';
+  }
+
+  async #runTransitionMode(context) {
+    const mode = normalizeTransitionMode(context.effectiveMode);
+    if (mode === 'cut_transition') {
+      this.#runCutTransition(context);
+      return;
+    }
+
+    const liveDuration = Math.max(250, Number(this.#crossfadeDuration) || 5000);
+    const startEcho = this.#mixFeatureSettings.echo;
+    const startDistortion = this.#mixFeatureSettings.distortion;
+
+    if (mode === 'echo_out_light' && !startEcho) {
+      this.setMixFeatures({ echo: true });
+    }
+    if (mode === 'reverb_short_simple' && !startDistortion) {
+      this.setMixFeatures({ distortion: true });
+    }
+
+    try {
+      await new Promise((resolve) => {
+        let progress = 0;
+        let lastTickAt = performance.now();
+        let loopAnchor = context.to.currentTime || 0;
+
+        this.#crossfadeInterval = setInterval(() => {
+          if (this.#destroyed) {
+            clearInterval(this.#crossfadeInterval);
+            this.#crossfadeInterval = null;
+            resolve();
+            return;
+          }
+
+          const now = performance.now();
+          const elapsedMs = Math.max(0, now - lastTickAt);
+          lastTickAt = now;
+          progress = Math.min(1, progress + (elapsedMs / liveDuration));
+
+          const levels = this.#computeTransitionLevels(mode, progress, context.startBaseFrom, context.startBaseTo);
+          let fromBase = levels.from;
+          let toBase = levels.to;
+
+          if (mode === 'short_loop' && progress < 0.45 && Number.isFinite(context.to.currentTime)) {
+            const loopLen = 0.42;
+            if ((context.to.currentTime - loopAnchor) > loopLen) {
+              context.to.currentTime = loopAnchor;
+            }
+          }
+
+          if (mode === 'short_reverse' && progress < 0.18 && Number.isFinite(context.from.currentTime) && context.from.currentTime > 0.18) {
+            context.from.currentTime = Math.max(0, context.from.currentTime - 0.045);
+          }
+
+          if (mode === 'brake_tape_stop_simple') {
+            context.from.playbackRate = Math.max(0.2, 1 - (0.85 * progress));
+            context.to.playbackRate = Math.min(1, 0.9 + (0.1 * progress));
+          } else if (mode === 'filter_sweep_low_high' || mode === 'filter_automation') {
+            context.from.playbackRate = Math.max(0.86, 1 - (0.16 * progress));
+            context.to.playbackRate = Math.max(0.9, 1.08 - (0.18 * progress));
+          } else {
+            context.from.playbackRate += (1 - context.from.playbackRate) * 0.18;
+            context.to.playbackRate += (1 - context.to.playbackRate) * 0.18;
+          }
+
+          fromBase = clamp01(fromBase);
+          toBase = clamp01(toBase);
+
+          if (context.fromDeck === 'A') {
+            this.#applyDeckBaseMix(fromBase, toBase);
+          } else {
+            this.#applyDeckBaseMix(toBase, fromBase);
+          }
+
+          this.#emitDeckState();
+          this.dispatchEvent(new CustomEvent('crossfadeprogress', {
+            detail: {
+              fromDeck: context.fromDeck,
+              fromVolume: fromBase,
+              toVolume: toBase,
+              toPosition: Number.isFinite(context.to.currentTime) ? context.to.currentTime * 1000 : 0,
+              toDuration: Number.isFinite(context.to.duration) && context.to.duration > 0 ? context.to.duration * 1000 : 0,
+              durationMs: liveDuration,
+              progress,
+              mode,
+            },
+          }));
+
+          if (progress >= 1) {
+            clearInterval(this.#crossfadeInterval);
+            this.#crossfadeInterval = null;
+            resolve();
+          }
+        }, 16);
+      });
+    } finally {
+      if (mode === 'echo_out_light' && !startEcho) {
+        this.setMixFeatures({ echo: false });
+      }
+      if (mode === 'reverb_short_simple' && !startDistortion) {
+        this.setMixFeatures({ distortion: false });
+      }
+      context.from.playbackRate = 1;
+      context.to.playbackRate = 1;
+    }
+  }
+
+  #runCutTransition(context) {
+    const fromBase = 0;
+    const toBase = 1;
+    if (context.fromDeck === 'A') {
+      this.#applyDeckBaseMix(fromBase, toBase);
+    } else {
+      this.#applyDeckBaseMix(toBase, fromBase);
+    }
+
+    this.#emitDeckState();
+    this.dispatchEvent(new CustomEvent('crossfadeprogress', {
+      detail: {
+        fromDeck: context.fromDeck,
+        fromVolume: fromBase,
+        toVolume: toBase,
+        toPosition: Number.isFinite(context.to.currentTime) ? context.to.currentTime * 1000 : 0,
+        toDuration: Number.isFinite(context.to.duration) && context.to.duration > 0 ? context.to.duration * 1000 : 0,
+        durationMs: 80,
+        progress: 1,
+        mode: 'cut_transition',
+      },
+    }));
+  }
+
+  #computeTransitionLevels(mode, t, startBaseFrom, startBaseTo) {
+    const clampedT = clamp01(t);
+    const linearFrom = startBaseFrom * (1 - clampedT);
+    const linearTo = startBaseTo + ((1 - startBaseTo) * clampedT);
+
+    switch (mode) {
+      case 'crossfade_linear': {
+        return { from: linearFrom, to: linearTo };
+      }
+      case 'crossfade_logarithmic': {
+        const from = startBaseFrom * Math.cos((Math.PI / 2) * clampedT);
+        const to = startBaseTo + ((1 - startBaseTo) * Math.sin((Math.PI / 2) * clampedT));
+        return { from, to };
+      }
+      case 'fade_in_out': {
+        if (clampedT < 0.52) {
+          const phase = clampedT / 0.52;
+          return { from: startBaseFrom * (1 - phase), to: startBaseTo * 0.25 };
+        }
+        const phase = (clampedT - 0.52) / 0.48;
+        return { from: 0, to: startBaseTo + ((1 - startBaseTo) * phase) };
+      }
+      case 'filter_sweep_low_high': {
+        const eased = Math.sqrt(clampedT);
+        return {
+          from: startBaseFrom * (1 - eased),
+          to: startBaseTo + ((1 - startBaseTo) * (0.85 * eased + 0.15 * clampedT)),
+        };
+      }
+      case 'eq_transition_simple': {
+        const from = startBaseFrom * (1 - (0.82 * clampedT));
+        const to = startBaseTo + ((1 - startBaseTo) * Math.pow(clampedT, 1.2));
+        return { from, to };
+      }
+      case 'echo_out_light': {
+        return {
+          from: Math.max(0.06, startBaseFrom * (1 - clampedT)),
+          to: startBaseTo + ((1 - startBaseTo) * Math.pow(clampedT, 1.05)),
+        };
+      }
+      case 'reverb_short_simple': {
+        const from = clampedT < 0.8
+          ? Math.max(0.1, startBaseFrom * (1 - (0.92 * clampedT)))
+          : startBaseFrom * (1 - clampedT);
+        const to = startBaseTo + ((1 - startBaseTo) * Math.pow(clampedT, 1.3));
+        return { from, to };
+      }
+      case 'short_loop': {
+        const pulse = 0.85 + (0.15 * Math.abs(Math.sin(clampedT * Math.PI * 6)));
+        return {
+          from: startBaseFrom * (1 - clampedT),
+          to: (startBaseTo + ((1 - startBaseTo) * clampedT)) * pulse,
+        };
+      }
+      case 'brake_tape_stop_simple': {
+        const drag = Math.pow(clampedT, 1.6);
+        return {
+          from: startBaseFrom * (1 - drag),
+          to: startBaseTo + ((1 - startBaseTo) * Math.pow(clampedT, 1.1)),
+        };
+      }
+      case 'short_reverse': {
+        const wobble = 1 - (0.18 * Math.sin(clampedT * Math.PI * 7));
+        return {
+          from: startBaseFrom * (1 - clampedT) * wobble,
+          to: startBaseTo + ((1 - startBaseTo) * clampedT),
+        };
+      }
+      case 'sidechain_basic': {
+        const pump = 1 - (0.25 * Math.max(0, Math.sin(clampedT * Math.PI * 8)));
+        return {
+          from: linearFrom,
+          to: linearTo * pump,
+        };
+      }
+      case 'volume_ducking': {
+        const duck = clampedT < 0.4
+          ? (1 - (0.7 * (clampedT / 0.4)))
+          : (0.3 - (0.3 * ((clampedT - 0.4) / 0.6)));
+        return {
+          from: startBaseFrom * Math.max(0, duck),
+          to: linearTo,
+        };
+      }
+      case 'gain_automation': {
+        return {
+          from: startBaseFrom * (1 - Math.pow(clampedT, 1.8)),
+          to: startBaseTo + ((1 - startBaseTo) * Math.pow(clampedT, 1.45)),
+        };
+      }
+      case 'filter_automation': {
+        const sweep = 0.5 - (0.5 * Math.cos(Math.PI * clampedT));
+        return {
+          from: startBaseFrom * (1 - sweep),
+          to: startBaseTo + ((1 - startBaseTo) * sweep),
+        };
+      }
+      default: {
+        return { from: linearFrom, to: linearTo };
+      }
+    }
   }
 
   activateElement() {
@@ -729,12 +1042,24 @@ export class DJPlayer extends EventTarget {
 
   #normalizeSource(source) {
     if (typeof source === 'string') {
-      return { url: source, loudnessDb: null, stems: { vocalsUrl: '', instrumentalUrl: '' } };
+      return {
+        url: source,
+        loudnessDb: null,
+        bpm: null,
+        durationMs: null,
+        audioFeatures: null,
+        stems: { vocalsUrl: '', instrumentalUrl: '' },
+      };
     }
 
     if (source && typeof source === 'object') {
       const url = String(source.url || source.sourceUrl || source.src || '');
       const loudness = Number(source.loudnessDb);
+      const bpm = Number(source.bpm);
+      const durationMs = Number(source.durationMs);
+      const audioFeatures = source.audioFeatures && typeof source.audioFeatures === 'object'
+        ? source.audioFeatures
+        : null;
       const stems = {
         vocalsUrl: typeof source?.stems?.vocalsUrl === 'string' ? source.stems.vocalsUrl : '',
         instrumentalUrl: typeof source?.stems?.instrumentalUrl === 'string' ? source.stems.instrumentalUrl : '',
@@ -742,11 +1067,21 @@ export class DJPlayer extends EventTarget {
       return {
         url,
         loudnessDb: Number.isFinite(loudness) ? loudness : null,
+        bpm: Number.isFinite(bpm) ? bpm : null,
+        durationMs: Number.isFinite(durationMs) && durationMs > 0 ? durationMs : null,
+        audioFeatures,
         stems,
       };
     }
 
-    return { url: '', loudnessDb: null, stems: { vocalsUrl: '', instrumentalUrl: '' } };
+    return {
+      url: '',
+      loudnessDb: null,
+      bpm: null,
+      durationMs: null,
+      audioFeatures: null,
+      stems: { vocalsUrl: '', instrumentalUrl: '' },
+    };
   }
 
   #setDeckLoudness(deck, loudnessDb) {
