@@ -49,52 +49,16 @@ export function normalizeTransitionMode(mode) {
 
 const FFT_SIZE        = 1024;
 const SMOOTH_TAU      = 0.08;   // seconds – AudioParam setTargetAtTime time-constant
-const SMOOTH_JS       = 0.34;   // fallback lerp alpha (kept for computeAdaptiveMidSideGains)
+const SMOOTH_JS       = 0.34;   // lerp alpha for computeAdaptiveMidSideGains
 const ENERGY_EPSILON  = 1e-4;
 const DISTORTION_K    = 140;
 const ECHO_DELAY_S    = 0.22;
 const ECHO_FEEDBACK   = 0.28;
 const STEM_SYNC_INTERVAL_MS = 1200;
 
-const DEMUCS_WEB_MODULE_URL = 'https://cdn.jsdelivr.net/npm/demucs-web@1.0.2/+esm';
-const ONNX_RUNTIME_MODULE_URL = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.min.mjs';
-
 // ─── Tiny utilities ───────────────────────────────────────────────────────────
 
 function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
-
-let _demucsRuntimePromise = null;
-
-async function loadDemucsRuntime() {
-  if (_demucsRuntimePromise) return _demucsRuntimePromise;
-
-  _demucsRuntimePromise = (async () => {
-    console.debug('[mixFeatures] loadDemucsRuntime: start');
-    const [demucsModule, ortModule] = await Promise.all([
-      import(DEMUCS_WEB_MODULE_URL),
-      import(ONNX_RUNTIME_MODULE_URL),
-    ]);
-
-    const ort = ortModule.default || ortModule;
-    if (ort?.env?.wasm) {
-      ort.env.wasm.numThreads = 1;
-      ort.env.wasm.simd = true;
-    }
-
-    console.debug('[mixFeatures] loadDemucsRuntime: ready');
-    return {
-      DemucsProcessor: demucsModule.DemucsProcessor,
-      CONSTANTS: demucsModule.CONSTANTS,
-      ort,
-    };
-  })().catch((err) => {
-    console.debug('[mixFeatures] loadDemucsRuntime: error', err);
-    _demucsRuntimePromise = null;
-    throw err;
-  });
-
-  return _demucsRuntimePromise;
-}
 
 function encodeStereoWav(left, right, sampleRate = 44100) {
   const length = Math.min(left?.length || 0, right?.length || 0);
@@ -324,9 +288,6 @@ export class SimpleMixFeatures {
 
   #nodesA = null;
   #nodesB = null;
-  #demucsProcessor = null;
-  #demucsUnavailable = false;
-  #stemCache = new Map();
   #deckStemState = {
     A: { originalSrc: '', appliedSrc: '', stemMode: null, token: 0, processing: false, providedStems: { vocalsUrl: '', instrumentalUrl: '' } },
     B: { originalSrc: '', appliedSrc: '', stemMode: null, token: 0, processing: false, providedStems: { vocalsUrl: '', instrumentalUrl: '' } },
@@ -417,6 +378,15 @@ export class SimpleMixFeatures {
       this.#lastStemSyncAt = now;
       void this.#syncAllDeckStemModes(false);
     }
+
+    // M/S adaptive gains: active when no server-side stem swap is in effect
+    for (const deck of ['A', 'B']) {
+      if (this.#deckStemState[deck].stemMode) {
+        this.#resetMs(deck);
+      } else {
+        this.#tickMsAdaptive(deck);
+      }
+    }
   }
 
   destroy() {
@@ -427,12 +397,6 @@ export class SimpleMixFeatures {
     this.#audioCtx?.close().catch(() => {});
     this.#audioCtx = null;
     this.#nodesA = this.#nodesB = null;
-    for (const stems of this.#stemCache.values()) {
-      if (stems.vocalsUrl) URL.revokeObjectURL(stems.vocalsUrl);
-      if (stems.instrumentalUrl) URL.revokeObjectURL(stems.instrumentalUrl);
-    }
-    this.#stemCache.clear();
-    this.#demucsProcessor = null;
     this.#ready  = false;
     this.#msState = { A: { midGain: 1, sideGain: 1 }, B: { midGain: 1, sideGain: 1 } };
   }
@@ -530,78 +494,6 @@ export class SimpleMixFeatures {
     return deck === 'B' ? this.#audioB : this.#audioA;
   }
 
-  async #ensureDemucsProcessor() {
-    if (this.#demucsProcessor) return this.#demucsProcessor;
-    if (this.#demucsUnavailable) throw new Error('demucs.unavailable');
-
-    console.debug('[mixFeatures] ensureDemucsProcessor: loading model…');
-    try {
-      const runtime = await loadDemucsRuntime();
-      const processor = new runtime.DemucsProcessor({
-        ort: runtime.ort,
-        sessionOptions: {
-          enableCpuMemArena: false,
-          enableMemPattern: false,
-        },
-      });
-
-      await processor.loadModel(runtime.CONSTANTS?.DEFAULT_MODEL_URL);
-      this.#demucsProcessor = processor;
-      console.debug('[mixFeatures] ensureDemucsProcessor: model loaded');
-      return processor;
-    } catch (err) {
-      console.debug('[mixFeatures] ensureDemucsProcessor: error', err);
-      this.#demucsUnavailable = true;
-      throw err;
-    }
-  }
-
-  async #getOrCreateStems(sourceUrl) {
-    const cached = this.#stemCache.get(sourceUrl);
-    if (cached) {
-      console.debug('[mixFeatures] getOrCreateStems: cache hit', sourceUrl);
-      return cached;
-    }
-
-    console.debug('[mixFeatures] getOrCreateStems: separating stems for', sourceUrl);
-    const processor = await this.#ensureDemucsProcessor();
-    const response = await fetch(sourceUrl);
-    if (!response.ok) throw new Error(`stem.fetch.failed:${response.status}`);
-
-    const arrayBuffer = await response.arrayBuffer();
-    const stereo = await decodeAsStereo44100(this.#audioCtx, arrayBuffer);
-    if (!stereo) throw new Error('stem.decode.failed');
-
-    const result = await processor.separate(stereo.left, stereo.right);
-
-    const vocalsLeft = result?.vocals?.left;
-    const vocalsRight = result?.vocals?.right;
-    if (!vocalsLeft || !vocalsRight) throw new Error('stem.vocals.missing');
-
-    const len = vocalsLeft.length;
-    const instrumentalLeft = new Float32Array(len);
-    const instrumentalRight = new Float32Array(len);
-    const tracks = ['drums', 'bass', 'other'];
-
-    for (const track of tracks) {
-      const t = result?.[track];
-      if (!t?.left || !t?.right) continue;
-      for (let i = 0; i < len; i += 1) {
-        instrumentalLeft[i] += t.left[i] || 0;
-        instrumentalRight[i] += t.right[i] || 0;
-      }
-    }
-
-    const stems = {
-      vocalsUrl: URL.createObjectURL(encodeStereoWav(vocalsLeft, vocalsRight, 44100)),
-      instrumentalUrl: URL.createObjectURL(encodeStereoWav(instrumentalLeft, instrumentalRight, 44100)),
-    };
-
-    this.#stemCache.set(sourceUrl, stems);
-    console.debug('[mixFeatures] getOrCreateStems: done', sourceUrl);
-    return stems;
-  }
-
   async #swapDeckSource(audio, nextSrc) {
     if (!audio || !nextSrc) return;
     const currentSrc = audio.currentSrc || audio.src || '';
@@ -676,12 +568,11 @@ export class SimpleMixFeatures {
       const providedInstrumental = typeof provided.instrumentalUrl === 'string' ? provided.instrumentalUrl : '';
       const needsVocals = mode === 'instruRemove';
       const hasRequiredProvided = needsVocals ? !!providedVocals : !!providedInstrumental;
-      const stems = hasRequiredProvided
-        ? {
-            vocalsUrl: providedVocals,
-            instrumentalUrl: providedInstrumental,
-          }
-        : await this.#getOrCreateStems(baseSrc);
+      if (!hasRequiredProvided) return;
+      const stems = {
+        vocalsUrl: providedVocals,
+        instrumentalUrl: providedInstrumental,
+      };
       if (state.token !== token) return;
 
       const nextStemSrc = mode === 'instruRemove' ? stems.vocalsUrl : stems.instrumentalUrl;
@@ -721,9 +612,6 @@ export class SimpleMixFeatures {
       n.dry.gain.value     = 1;
       n.distWet.gain.value = distortion ? 0.35 : 0;
       n.distDry.gain.value = 1;
-
-      // Legacy M/S shaping is disabled when using Demucs stems.
-      this.#resetMs(deck);
     }
 
     void this.#syncAllDeckStemModes(true);
