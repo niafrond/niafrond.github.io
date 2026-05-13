@@ -1,3 +1,16 @@
+## [1.190.0](https://github.com/niafrond/niafrond.github.io/compare/v1.189.0...v1.190.0) (2026-05-13)
+
+### Features
+
+* **dj-mix:** handle stems ([d9d72ee](https://github.com/niafrond/niafrond.github.io/commit/d9d72ee96e1a264bb89d0c9b6fe7279c10f70856))
+* **dj-mix:** handle stems ([1a92dcc](https://github.com/niafrond/niafrond.github.io/commit/1a92dccffe2c3df87f6f471739d296c6c41acc4c))
+* **dj-mix:** stable ([59c819f](https://github.com/niafrond/niafrond.github.io/commit/59c819f79bb11241bace3e5070fa1df0df213f4f))
+
+### Bug Fixes
+
+* **dj-mix:** stable ([431524f](https://github.com/niafrond/niafrond.github.io/commit/431524f932e42cc6229b64d59d5d59ae14469164))
+* **dj-mix:** stable ([2daaead](https://github.com/niafrond/niafrond.github.io/commit/2daaead043fa27c362dae4723217899be5177b0b))
+
 ## [1.189.0](https://github.com/niafrond/niafrond.github.io/compare/v1.188.0...v1.189.0) (2026-05-13)
 
 ### Features
