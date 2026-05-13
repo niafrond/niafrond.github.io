@@ -139,6 +139,7 @@ export class DJPlayer extends EventTarget {
     inactive.src = '';
 
     this.#applyDeckBaseMix(activeDeck === 'A' ? 1 : 0, activeDeck === 'B' ? 1 : 0);
+    this.#mixFeatures?.setDeckSourceMetadata(activeDeck, normalized);
     await this.#loadAndPlay(active, normalized.url);
     this.#emitDeckState();
   }
@@ -158,6 +159,8 @@ export class DJPlayer extends EventTarget {
       makeActive: options.makeActive === true,
       hasUrl: !!normalized.url,
     });
+
+    this.#mixFeatures?.setDeckSourceMetadata(targetDeck, normalized);
 
     if (options.paused === true) {
       await this.#loadOnly(audio, normalized.url);
@@ -232,6 +235,24 @@ export class DJPlayer extends EventTarget {
         // optional effects should never break playback
       });
     }
+  }
+
+  /**
+   * Notify mixFeatures of updated stem URLs for an already-loaded deck.
+   * Safe to call at any time; no-ops if the deck has no source.
+   */
+  updateDeckStems(deck, stems) {
+    const safeDeck = deck === 'B' ? 'B' : 'A';
+    const audio = safeDeck === 'A' ? this.#audioA : this.#audioB;
+    const currentUrl = audio?.currentSrc || audio?.src || '';
+    if (!currentUrl) return;
+    this.#mixFeatures?.setDeckSourceMetadata(safeDeck, {
+      url: currentUrl,
+      stems: {
+        vocalsUrl: typeof stems?.vocalsUrl === 'string' ? stems.vocalsUrl : '',
+        instrumentalUrl: typeof stems?.instrumentalUrl === 'string' ? stems.instrumentalUrl : '',
+      },
+    });
   }
 
   async togglePause() {
@@ -348,6 +369,7 @@ export class DJPlayer extends EventTarget {
 
     try {
       this.#setDeckLoudness(toDeck, normalized.loudnessDb);
+      this.#mixFeatures?.setDeckSourceMetadata(toDeck, normalized);
       
       await this.#loadAndPlay(to, normalized.url);
       
@@ -707,19 +729,24 @@ export class DJPlayer extends EventTarget {
 
   #normalizeSource(source) {
     if (typeof source === 'string') {
-      return { url: source, loudnessDb: null };
+      return { url: source, loudnessDb: null, stems: { vocalsUrl: '', instrumentalUrl: '' } };
     }
 
     if (source && typeof source === 'object') {
       const url = String(source.url || source.sourceUrl || source.src || '');
       const loudness = Number(source.loudnessDb);
+      const stems = {
+        vocalsUrl: typeof source?.stems?.vocalsUrl === 'string' ? source.stems.vocalsUrl : '',
+        instrumentalUrl: typeof source?.stems?.instrumentalUrl === 'string' ? source.stems.instrumentalUrl : '',
+      };
       return {
         url,
         loudnessDb: Number.isFinite(loudness) ? loudness : null,
+        stems,
       };
     }
 
-    return { url: '', loudnessDb: null };
+    return { url: '', loudnessDb: null, stems: { vocalsUrl: '', instrumentalUrl: '' } };
   }
 
   #setDeckLoudness(deck, loudnessDb) {

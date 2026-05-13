@@ -22,6 +22,7 @@ async function loadDemucsRuntime() {
   if (_demucsRuntimePromise) return _demucsRuntimePromise;
 
   _demucsRuntimePromise = (async () => {
+    console.debug('[mixFeatures] loadDemucsRuntime: start');
     const [demucsModule, ortModule] = await Promise.all([
       import(DEMUCS_WEB_MODULE_URL),
       import(ONNX_RUNTIME_MODULE_URL),
@@ -33,12 +34,14 @@ async function loadDemucsRuntime() {
       ort.env.wasm.simd = true;
     }
 
+    console.debug('[mixFeatures] loadDemucsRuntime: ready');
     return {
       DemucsProcessor: demucsModule.DemucsProcessor,
       CONSTANTS: demucsModule.CONSTANTS,
       ort,
     };
   })().catch((err) => {
+    console.debug('[mixFeatures] loadDemucsRuntime: error', err);
     _demucsRuntimePromise = null;
     throw err;
   });
@@ -278,8 +281,8 @@ export class SimpleMixFeatures {
   #demucsUnavailable = false;
   #stemCache = new Map();
   #deckStemState = {
-    A: { originalSrc: '', appliedSrc: '', stemMode: null, token: 0, processing: false },
-    B: { originalSrc: '', appliedSrc: '', stemMode: null, token: 0, processing: false },
+    A: { originalSrc: '', appliedSrc: '', stemMode: null, token: 0, processing: false, providedStems: { vocalsUrl: '', instrumentalUrl: '' } },
+    B: { originalSrc: '', appliedSrc: '', stemMode: null, token: 0, processing: false, providedStems: { vocalsUrl: '', instrumentalUrl: '' } },
   };
   #lastStemSyncAt = 0;
 
@@ -301,14 +304,17 @@ export class SimpleMixFeatures {
     const Ctx = window.AudioContext ?? window.webkitAudioContext;
     if (!Ctx) return;
 
+    console.debug('[mixFeatures] ensureReady: creating AudioContext');
     this.#audioCtx = new Ctx();
     this.#nodesA   = this.#buildDeck(this.#audioA);
     this.#nodesB   = this.#buildDeck(this.#audioB);
     this.#ready    = true;
+    console.debug('[mixFeatures] ensureReady: ready');
     this.#apply();
   }
 
   async setEnabled(next) {
+    console.debug('[mixFeatures] setEnabled:', next);
     this.#settings = mergeSettings(this.#settings, next);
 
     const { autoBpm, echo, distortion, deckFx } = this.#settings;
@@ -318,6 +324,26 @@ export class SimpleMixFeatures {
 
     if (needsCtx) await this.ensureReady();
     this.#apply();
+  }
+
+  setDeckSourceMetadata(deck, source) {
+    console.debug('[mixFeatures] setDeckSourceMetadata: deck=%s url=%s stems=%o', deck, source?.url, source?.stems);
+    const d = deck === 'B' ? 'B' : 'A';
+    const state = this.#deckStemState[d];
+    const url = typeof source?.url === 'string' ? source.url : '';
+    const stems = {
+      vocalsUrl: typeof source?.stems?.vocalsUrl === 'string' ? source.stems.vocalsUrl : '',
+      instrumentalUrl: typeof source?.stems?.instrumentalUrl === 'string' ? source.stems.instrumentalUrl : '',
+    };
+
+    state.originalSrc = url;
+    state.appliedSrc = '';
+    state.stemMode = null;
+    state.providedStems = stems;
+
+    if (this.#ready) {
+      void this.#syncDeckStemMode(d, true, false);
+    }
   }
 
   /**
@@ -347,6 +373,7 @@ export class SimpleMixFeatures {
   }
 
   destroy() {
+    console.debug('[mixFeatures] destroy');
     void this.#syncAllDeckStemModes(true, true);
     if (this.#audioA) this.#audioA.playbackRate = 1;
     if (this.#audioB) this.#audioB.playbackRate = 1;
@@ -460,6 +487,7 @@ export class SimpleMixFeatures {
     if (this.#demucsProcessor) return this.#demucsProcessor;
     if (this.#demucsUnavailable) throw new Error('demucs.unavailable');
 
+    console.debug('[mixFeatures] ensureDemucsProcessor: loading model…');
     try {
       const runtime = await loadDemucsRuntime();
       const processor = new runtime.DemucsProcessor({
@@ -472,8 +500,10 @@ export class SimpleMixFeatures {
 
       await processor.loadModel(runtime.CONSTANTS?.DEFAULT_MODEL_URL);
       this.#demucsProcessor = processor;
+      console.debug('[mixFeatures] ensureDemucsProcessor: model loaded');
       return processor;
     } catch (err) {
+      console.debug('[mixFeatures] ensureDemucsProcessor: error', err);
       this.#demucsUnavailable = true;
       throw err;
     }
@@ -481,8 +511,12 @@ export class SimpleMixFeatures {
 
   async #getOrCreateStems(sourceUrl) {
     const cached = this.#stemCache.get(sourceUrl);
-    if (cached) return cached;
+    if (cached) {
+      console.debug('[mixFeatures] getOrCreateStems: cache hit', sourceUrl);
+      return cached;
+    }
 
+    console.debug('[mixFeatures] getOrCreateStems: separating stems for', sourceUrl);
     const processor = await this.#ensureDemucsProcessor();
     const response = await fetch(sourceUrl);
     if (!response.ok) throw new Error(`stem.fetch.failed:${response.status}`);
@@ -517,6 +551,7 @@ export class SimpleMixFeatures {
     };
 
     this.#stemCache.set(sourceUrl, stems);
+    console.debug('[mixFeatures] getOrCreateStems: done', sourceUrl);
     return stems;
   }
 
@@ -525,6 +560,7 @@ export class SimpleMixFeatures {
     const currentSrc = audio.currentSrc || audio.src || '';
     if (currentSrc === nextSrc) return;
 
+    console.debug('[mixFeatures] swapDeckSource:', currentSrc, '→', nextSrc);
     const wasPaused = audio.paused;
     const prevTime = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
 
@@ -559,6 +595,7 @@ export class SimpleMixFeatures {
     const audio = this.#deckAudio(deck);
     if (!audio) return;
 
+    console.debug('[mixFeatures] syncDeckStemMode: deck=%s force=%s restoreOnly=%s', deck, force, restoreOnly);
     const state = this.#deckStemState[deck];
     const mode = restoreOnly ? null : this.#deckMode(deck);
     const currentSrc = audio.currentSrc || audio.src || '';
@@ -587,7 +624,17 @@ export class SimpleMixFeatures {
     state.processing = true;
 
     try {
-      const stems = await this.#getOrCreateStems(baseSrc);
+      const provided = state.providedStems || {};
+      const providedVocals = typeof provided.vocalsUrl === 'string' ? provided.vocalsUrl : '';
+      const providedInstrumental = typeof provided.instrumentalUrl === 'string' ? provided.instrumentalUrl : '';
+      const needsVocals = mode === 'instruRemove';
+      const hasRequiredProvided = needsVocals ? !!providedVocals : !!providedInstrumental;
+      const stems = hasRequiredProvided
+        ? {
+            vocalsUrl: providedVocals,
+            instrumentalUrl: providedInstrumental,
+          }
+        : await this.#getOrCreateStems(baseSrc);
       if (state.token !== token) return;
 
       const nextStemSrc = mode === 'instruRemove' ? stems.vocalsUrl : stems.instrumentalUrl;
@@ -599,7 +646,9 @@ export class SimpleMixFeatures {
       state.originalSrc = baseSrc;
       state.appliedSrc = nextStemSrc;
       state.stemMode = mode;
-    } catch {
+      console.debug('[mixFeatures] syncDeckStemMode: deck=%s mode=%s applied', deck, mode);
+    } catch (err) {
+      console.debug('[mixFeatures] syncDeckStemMode: deck=%s error', deck, err);
       // Keep playback alive when model loading/inference fails.
     } finally {
       if (state.token === token) state.processing = false;
@@ -617,6 +666,7 @@ export class SimpleMixFeatures {
     if (!this.#ready) return;
 
     const { echo, distortion, autoBpm } = this.#settings;
+    console.debug('[mixFeatures] apply: echo=%s distortion=%s autoBpm=%s deckFx=%o', echo, distortion, autoBpm, this.#settings.deckFx);
 
     for (const deck of ['A', 'B']) {
       const n = this.#nodes(deck);

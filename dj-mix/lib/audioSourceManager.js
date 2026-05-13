@@ -1,5 +1,6 @@
 import {
   cleanItunesSearchText,
+  extractStemSourceUrls,
   extractTrackLoudnessDb,
   splitItunesSearchQuery,
 } from './searchUtils.js';
@@ -190,7 +191,15 @@ async function restorePersistedAudioBlobUrl(cacheKey, audioCacheName) {
 export function releaseLocalBlob(item, touchQueueItem) {
   if (!item?.localBlobUrl) return;
   logDebug('blob.release.item', { id: item.id, name: item.name });
+  const localStems = item.localStemUrls || {};
+  if (localStems.vocalsUrl && String(localStems.vocalsUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(localStems.vocalsUrl);
+  }
+  if (localStems.instrumentalUrl && String(localStems.instrumentalUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(localStems.instrumentalUrl);
+  }
   item.localBlobUrl = null;
+  item.localStemUrls = null;
   touchQueueItem?.(item);
 }
 
@@ -200,6 +209,13 @@ export function clearSessionBlobCache(sessionBlobCache) {
     const blobUrl = typeof cachedSource === 'string' ? cachedSource : cachedSource?.url;
     if (blobUrl && String(blobUrl).startsWith('blob:')) {
       URL.revokeObjectURL(blobUrl);
+    }
+    const stems = cachedSource?.stems || {};
+    if (stems.vocalsUrl && String(stems.vocalsUrl).startsWith('blob:')) {
+      URL.revokeObjectURL(stems.vocalsUrl);
+    }
+    if (stems.instrumentalUrl && String(stems.instrumentalUrl).startsWith('blob:')) {
+      URL.revokeObjectURL(stems.instrumentalUrl);
     }
   }
   sessionBlobCache.clear();
@@ -214,6 +230,136 @@ export function createAudioSourceManager(options) {
     sessionBlobCache,
     touchQueueItem,
   } = options;
+
+  function getStemCacheKey(cacheKey, variant) {
+    return `${cacheKey}:stem:${variant}`;
+  }
+
+  function sanitizeStemSources(raw) {
+    const src = raw || {};
+    return {
+      vocalsUrl: typeof src.vocalsUrl === 'string' ? src.vocalsUrl : '',
+      instrumentalUrl: typeof src.instrumentalUrl === 'string' ? src.instrumentalUrl : '',
+    };
+  }
+
+  async function resolveStemVariantUrl(cacheKey, variant, sourceUrl) {
+    if (!sourceUrl || typeof sourceUrl !== 'string') return '';
+    let trimmed = sourceUrl.trim();
+    if (!trimmed) return '';
+    if (trimmed.startsWith('blob:')) return trimmed;
+
+    if (/^\/(api|cache)\//i.test(trimmed)) {
+      const baseUrl = getDownloaderApiUrl();
+      if (baseUrl) {
+        try {
+          trimmed = new URL(trimmed, baseUrl).toString();
+        } catch (_) {
+          // Keep original if URL construction fails.
+        }
+      }
+    }
+
+    const cachedUrl = await restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, variant), audioCacheName);
+    if (cachedUrl) return cachedUrl;
+
+    if (isTrustedLocalAudioUrl(trimmed, getDownloaderApiUrl)) {
+      const playable = await canLoadAudioSource(trimmed);
+      if (playable) return trimmed;
+    }
+
+    const res = await fetch(trimmed);
+    if (!res.ok) throw new Error(`stem.${variant}.download.failed:${res.status}`);
+    const blob = await res.blob();
+    if (!blob || blob.size <= 0) throw new Error(`stem.${variant}.empty`);
+    await persistAudioBlob(getStemCacheKey(cacheKey, variant), blob, audioCacheName);
+    return URL.createObjectURL(blob);
+  }
+
+  async function downloadStemVariantViaApi(item, cacheKey, variant) {
+    const baseUrl = getDownloaderApiUrl();
+    if (!baseUrl) return '';
+    if (!cacheKey) return '';
+
+    const persisted = await restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, variant), audioCacheName);
+    if (persisted) return persisted;
+
+    const params = new URLSearchParams();
+    params.set('stem', variant);
+    if (item?.cachePath) {
+      params.set('cachePath', item.cachePath);
+    } else if (item?.name) {
+      params.set('trackName', item.name);
+      if (item.artist) params.set('artistName', item.artist);
+    } else {
+      return '';
+    }
+
+    const res = await fetch(`${baseUrl}/api/stems/download?${params}`, {
+      signal: AbortSignal.timeout(12000),
+    });
+
+    if (!res.ok) {
+      throw new Error(`stem.${variant}.download.api.failed:${res.status}`);
+    }
+
+    const blob = await res.blob();
+    if (!blob || blob.size <= 0) throw new Error(`stem.${variant}.download.api.empty`);
+    await persistAudioBlob(getStemCacheKey(cacheKey, variant), blob, audioCacheName);
+    return URL.createObjectURL(blob);
+  }
+
+  async function warmStemLocalSources(item, cacheKey) {
+    if (!item || !cacheKey) return;
+
+    const sourceStems = sanitizeStemSources(extractStemSourceUrls(item));
+    if (!sourceStems.vocalsUrl && !sourceStems.instrumentalUrl) return;
+
+    const existingStems = sanitizeStemSources(item.localStemUrls || item.stems);
+
+    try {
+      const [vocalsUrl, instrumentalUrl] = await Promise.all([
+        existingStems.vocalsUrl || !sourceStems.vocalsUrl
+          ? Promise.resolve(existingStems.vocalsUrl || sourceStems.vocalsUrl)
+          : resolveStemVariantUrl(cacheKey, 'vocals', sourceStems.vocalsUrl),
+        existingStems.instrumentalUrl || !sourceStems.instrumentalUrl
+          ? Promise.resolve(existingStems.instrumentalUrl || sourceStems.instrumentalUrl)
+          : resolveStemVariantUrl(cacheKey, 'instrumental', sourceStems.instrumentalUrl),
+      ]);
+
+      item.localStemUrls = {
+        vocalsUrl: vocalsUrl || sourceStems.vocalsUrl || '',
+        instrumentalUrl: instrumentalUrl || sourceStems.instrumentalUrl || '',
+      };
+      item.stems = {
+        vocalsUrl: item.localStemUrls.vocalsUrl,
+        instrumentalUrl: item.localStemUrls.instrumentalUrl,
+      };
+
+      const existingSession = sessionBlobCache.get(cacheKey);
+      if (existingSession && typeof existingSession === 'object') {
+        sessionBlobCache.set(cacheKey, {
+          ...existingSession,
+          stems: { ...item.localStemUrls },
+        });
+      }
+
+      touchQueueItem(item);
+      onQueueUpdated?.();
+      logDebug('source.ensure.stems.cached', {
+        cacheKey,
+        id: item?.id,
+        hasVocals: !!item.localStemUrls.vocalsUrl,
+        hasInstrumental: !!item.localStemUrls.instrumentalUrl,
+      });
+    } catch (err) {
+      logWarn('source.ensure.stems.cache.failed', {
+        cacheKey,
+        id: item?.id,
+        message: err?.message,
+      });
+    }
+  }
 
   async function hydrateItemDurationFromLocalSource(item) {
     if (!item || item.duration > 0 || !item.localBlobUrl) return;
@@ -328,6 +474,7 @@ export function createAudioSourceManager(options) {
     const cacheKey = getTrackCacheKey(item);
     const cachedSource = sessionBlobCache.get(cacheKey);
     if (item.localBlobUrl) {
+      void warmStemLocalSources(item, cacheKey);
       logDebug('source.ensure.hit.itemBlob', { cacheKey, id: item?.id });
       return item.localBlobUrl;
     }
@@ -342,6 +489,7 @@ export function createAudioSourceManager(options) {
         hydrateItemDurationFromLocalSource(item);
         console.log('Using persisted source URL for item:', { cacheKey, id: item?.id, persistedSourceUrl: item.persistedSourceUrl });
         onQueueUpdated?.();
+        void warmStemLocalSources(item, cacheKey);
         logInfo('source.ensure.hit.persistedSourceUrl', { cacheKey, id: item?.id });
         return item.localBlobUrl;
       }
@@ -363,6 +511,7 @@ export function createAudioSourceManager(options) {
         touchQueueItem(item);
         hydrateItemDurationFromLocalSource(item);
         onQueueUpdated?.();
+        void warmStemLocalSources(item, cacheKey);
         logInfo('source.ensure.hit.trustedDirectUrl', {
           cacheKey,
           id: item?.id,
@@ -381,11 +530,16 @@ export function createAudioSourceManager(options) {
       if (Number.isFinite(cachedSource?.loudnessDb)) {
         item.loudnessDb = cachedSource.loudnessDb;
       }
+      if (cachedSource?.stems && typeof cachedSource.stems === 'object') {
+        item.localStemUrls = sanitizeStemSources(cachedSource.stems);
+        item.stems = { ...item.localStemUrls };
+      }
       item.sourceState = 'ready';
       item.sourceError = null;
       touchQueueItem(item);
       hydrateItemDurationFromLocalSource(item);
       onQueueUpdated?.();
+      void warmStemLocalSources(item, cacheKey);
       logInfo('source.ensure.hit.sessionBlobCache', {
         cacheKey,
         id: item?.id,
@@ -399,12 +553,14 @@ export function createAudioSourceManager(options) {
       sessionBlobCache.set(cacheKey, {
         url: persistedBlobUrl,
         loudnessDb: Number.isFinite(item.loudnessDb) ? item.loudnessDb : null,
+        stems: sanitizeStemSources(item.localStemUrls || item.stems),
       });
       item.sourceState = 'ready';
       item.sourceError = null;
       touchQueueItem(item);
       hydrateItemDurationFromLocalSource(item);
       onQueueUpdated?.();
+      void warmStemLocalSources(item, cacheKey);
       logInfo('source.ensure.hit.persistentCacheApi', {
         cacheKey,
         id: item?.id,
@@ -425,6 +581,7 @@ export function createAudioSourceManager(options) {
       sessionBlobCache.set(cacheKey, {
         url: item.localBlobUrl,
         loudnessDb: Number.isFinite(item.loudnessDb) ? item.loudnessDb : null,
+        stems: sanitizeStemSources(item.localStemUrls || item.stems),
       });
       item.sourceState = 'ready';
       item.sourceMode = 'api';
@@ -432,6 +589,7 @@ export function createAudioSourceManager(options) {
       touchQueueItem(item);
       hydrateItemDurationFromLocalSource(item);
       onQueueUpdated?.();
+      void warmStemLocalSources(item, cacheKey);
       logInfo('source.ensure.resolved.fromApiDownload', {
         cacheKey,
         id: item?.id,
@@ -496,6 +654,167 @@ export function createAudioSourceManager(options) {
     return [];
   }
 
+  /**
+   * GET /api/stems – returns { status, vocals, instrumental, ... } or null on failure.
+   * Identification priority: cachePath > trackName+artistName.
+   */
+  async function fetchServerStemsStatus(item) {
+    const baseUrl = getDownloaderApiUrl();
+    if (!baseUrl) return null;
+
+    const params = new URLSearchParams();
+    if (item.cachePath) {
+      params.set('cachePath', item.cachePath);
+    } else if (item.name) {
+      params.set('trackName', item.name);
+      if (item.artist) params.set('artistName', item.artist);
+    } else {
+      return null;
+    }
+
+    logDebug('api.stems.get', { id: item?.id, cachePath: item?.cachePath });
+    try {
+      const res = await fetch(`${baseUrl}/api/stems?${params}`, {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.status === 404) return null;
+      if (!res.ok) {
+        logWarn('api.stems.get.nonOk', { status: res.status });
+        return null;
+      }
+      return await res.json();
+    } catch (err) {
+      logWarn('api.stems.get.failed', { message: err?.message });
+      return null;
+    }
+  }
+
+  /**
+   * POST /api/stems – triggers server-side stem separation (background).
+   * Returns the response body or null on failure.
+   */
+  async function triggerServerStemsGeneration(item) {
+    const baseUrl = getDownloaderApiUrl();
+    if (!baseUrl) return null;
+
+    const payload = {};
+    if (item.cachePath) payload.cachePath = item.cachePath;
+    if (item.name) payload.trackName = item.name;
+    if (item.artist) payload.artistName = item.artist;
+
+    logDebug('api.stems.post', { id: item?.id, cachePath: item?.cachePath });
+    try {
+      const res = await fetch(`${baseUrl}/api/stems`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) {
+        logWarn('api.stems.post.nonOk', { status: res.status });
+        return null;
+      }
+      return await res.json();
+    } catch (err) {
+      logWarn('api.stems.post.failed', { message: err?.message });
+      return null;
+    }
+  }
+
+  /**
+   * Attempts to enrich an item's stems from the server.
+   * - If the server has stems ready, downloads them as blobs and updates item.localStemUrls.
+   * - If stems aren't started yet, triggers generation (fire-and-forget).
+   * - If stems are pending, does nothing (generation is already running).
+   * Safe to call multiple times; bails early if stems are already resolved locally.
+   */
+  async function enrichStemsFromServer(item) {
+    if (!item) return;
+
+    // Already have both stems locally
+    const existing = sanitizeStemSources(item.localStemUrls || item.stems);
+    if (existing.vocalsUrl && existing.instrumentalUrl) return;
+
+    // Need at least a cachePath or name to identify the track
+    if (!item.cachePath && !item.name) return;
+
+    const stemData = await fetchServerStemsStatus(item);
+    if (!stemData) return;
+
+    logDebug('api.stems.status', { id: item?.id, status: stemData.status });
+
+    if (stemData.status === 'not_started') {
+      logInfo('api.stems.trigger', { id: item?.id, cachePath: item?.cachePath });
+      void triggerServerStemsGeneration(item);
+      return;
+    }
+
+    if (stemData.status !== 'ready') return; // pending or unknown – nothing to do yet
+
+    // Build URLs from the paths returned by the server
+    const cacheKey = getTrackCacheKey(item);
+    const baseUrl = getDownloaderApiUrl() || '';
+
+    const toStemUrl = async (rawPath, variant) => {
+      if (!rawPath || typeof rawPath !== 'string') return '';
+      const trimmed = rawPath.trim();
+      if (!trimmed) return '';
+      if (trimmed.startsWith('blob:')) return trimmed;
+
+      // Relative path → prefix with API base URL
+      let fullUrl = trimmed;
+      if (trimmed.startsWith('/')) {
+        fullUrl = baseUrl ? `${baseUrl}${trimmed}` : trimmed;
+      }
+
+      return resolveStemVariantUrl(cacheKey, variant, fullUrl).catch(() => '');
+    };
+
+    const downloadViaApiOrFallback = async (variant, fallbackPath) => {
+      try {
+        return await downloadStemVariantViaApi(item, cacheKey, variant);
+      } catch (err) {
+        logWarn('api.stems.download.failed', {
+          id: item?.id,
+          variant,
+          status: Number(String(err?.message || '').split(':').pop()) || undefined,
+          message: err?.message,
+        });
+        return toStemUrl(fallbackPath, variant);
+      }
+    };
+
+    const [vocalsUrl, instrumentalUrl] = await Promise.all([
+      existing.vocalsUrl || downloadViaApiOrFallback('vocals', stemData.vocals),
+      existing.instrumentalUrl || downloadViaApiOrFallback('instrumental', stemData.instrumental),
+    ]);
+
+    if (!vocalsUrl && !instrumentalUrl) return;
+
+    item.localStemUrls = {
+      vocalsUrl: vocalsUrl || existing.vocalsUrl || '',
+      instrumentalUrl: instrumentalUrl || existing.instrumentalUrl || '',
+    };
+    item.stems = { ...item.localStemUrls };
+
+    const existingSession = sessionBlobCache.get(cacheKey);
+    if (existingSession && typeof existingSession === 'object') {
+      sessionBlobCache.set(cacheKey, {
+        ...existingSession,
+        stems: { ...item.localStemUrls },
+      });
+    }
+
+    touchQueueItem(item);
+    onQueueUpdated?.();
+    logInfo('api.stems.enriched', {
+      id: item?.id,
+      hasVocals: !!item.localStemUrls.vocalsUrl,
+      hasInstrumental: !!item.localStemUrls.instrumentalUrl,
+    });
+  }
+
   async function deleteLocalCacheSong(track) {
     const baseUrl = getDownloaderApiUrl();
     if (!baseUrl) throw new Error('URL API downloader manquante (Config)');
@@ -536,6 +855,7 @@ export function createAudioSourceManager(options) {
   return {
     clearSessionBlobCache: () => clearSessionBlobCache(sessionBlobCache),
     deleteLocalCacheSong,
+    enrichStemsFromServer,
     ensureLocalSource,
     releaseLocalBlob: (item) => releaseLocalBlob(item, touchQueueItem),
     searchTracksViaApi,
