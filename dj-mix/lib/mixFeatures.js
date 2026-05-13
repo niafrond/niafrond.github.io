@@ -60,65 +60,6 @@ const STEM_SYNC_INTERVAL_MS = 1200;
 
 function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
 
-function encodeStereoWav(left, right, sampleRate = 44100) {
-  const length = Math.min(left?.length || 0, right?.length || 0);
-  const bytesPerSample = 2;
-  const blockAlign = 2 * bytesPerSample;
-  const dataSize = length * blockAlign;
-  const buffer = new ArrayBuffer(44 + dataSize);
-  const view = new DataView(buffer);
-
-  let offset = 0;
-  const writeStr = (s) => {
-    for (let i = 0; i < s.length; i += 1) view.setUint8(offset + i, s.charCodeAt(i));
-    offset += s.length;
-  };
-
-  writeStr('RIFF');
-  view.setUint32(offset, 36 + dataSize, true); offset += 4;
-  writeStr('WAVE');
-  writeStr('fmt ');
-  view.setUint32(offset, 16, true); offset += 4;
-  view.setUint16(offset, 1, true); offset += 2; // PCM
-  view.setUint16(offset, 2, true); offset += 2; // Stereo
-  view.setUint32(offset, sampleRate, true); offset += 4;
-  view.setUint32(offset, sampleRate * blockAlign, true); offset += 4;
-  view.setUint16(offset, blockAlign, true); offset += 2;
-  view.setUint16(offset, bytesPerSample * 8, true); offset += 2;
-  writeStr('data');
-  view.setUint32(offset, dataSize, true); offset += 4;
-
-  for (let i = 0; i < length; i += 1) {
-    const l = clamp(left[i] || 0, -1, 1);
-    const r = clamp(right[i] || 0, -1, 1);
-    view.setInt16(offset, l < 0 ? l * 0x8000 : l * 0x7fff, true); offset += 2;
-    view.setInt16(offset, r < 0 ? r * 0x8000 : r * 0x7fff, true); offset += 2;
-  }
-
-  return new Blob([buffer], { type: 'audio/wav' });
-}
-
-async function decodeAsStereo44100(ctx, arrayBuffer) {
-  const decoded = await ctx.decodeAudioData(arrayBuffer.slice(0));
-  if (!decoded) return null;
-
-  const targetRate = 44100;
-  const duration = Math.max(0.01, decoded.duration || 0);
-  const frameCount = Math.max(1, Math.ceil(duration * targetRate));
-  const offline = new OfflineAudioContext(2, frameCount, targetRate);
-  const src = offline.createBufferSource();
-  src.buffer = decoded;
-  src.connect(offline.destination);
-  src.start(0);
-
-  const rendered = await offline.startRendering();
-  const left = new Float32Array(rendered.getChannelData(0));
-  const right = rendered.numberOfChannels > 1
-    ? new Float32Array(rendered.getChannelData(1))
-    : new Float32Array(rendered.getChannelData(0));
-
-  return { left, right };
-}
 
 // ─── Distortion curve (computed once, reused for every deck) ─────────────────
 
