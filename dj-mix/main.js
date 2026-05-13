@@ -23,6 +23,7 @@ import { createDjMixRenderer } from './lib/uiRenderer.js';
 import {
   buildSearchResultsSectionsHTML,
   escHtml,
+  extractStemSourceUrls,
   extractTrackLoudnessDb,
   getBestArtworkUrl,
   getTrackDurationMs,
@@ -350,6 +351,7 @@ const uiRenderer = createDjMixRenderer({
 const {
   clearSessionBlobCache,
   deleteLocalCacheSong,
+  enrichStemsFromServer,
   ensureLocalSource,
   releaseLocalBlob,
   searchTracksViaApi,
@@ -423,6 +425,21 @@ function applyDebugLogsSetting(enabled, options = {}) {
   }
 }
 
+/**
+ * Fire-and-forget: enrich item stems from the server, then notify mixFeatures
+ * of the updated URLs if the item is still loaded on the given deck.
+ */
+function backgroundEnrichStems(deck, item) {
+  if (!item || !deck) return;
+  enrichStemsFromServer(item).then(() => {
+    const stems = item.localStemUrls || item.stems;
+    if (!stems?.vocalsUrl && !stems?.instrumentalUrl) return;
+    if (deckDisplayItems[deck] !== item) return; // item was swapped out
+    player?.updateDeckStems(deck, stems);
+    logDebug('stems.enriched.deck', { deck, id: item?.id, hasVocals: !!stems.vocalsUrl, hasInstrumental: !!stems.instrumentalUrl });
+  }).catch(() => {});
+}
+
 
 
 document.getElementById('toggle-mix-menu-btn')?.addEventListener('click', () => {
@@ -452,6 +469,7 @@ tabBtns.forEach((btn) => {
   btn.addEventListener('click', () => {
     const tab = btn.dataset.tab;
     if (tab === 'playlist') playlistLoaded = false;
+    if (tab === 'mix') closeSearch();
     switchTab(tab);
   });
 });
@@ -692,7 +710,7 @@ async function launchDeckFromQueue(deck, options = {}) {
     const sourceUrl = await ensureLocalSource(item);
     const isFocusDeck = targetDeck === getFocusDeck();
     const paused = typeof options.paused === 'boolean' ? options.paused : !isFocusDeck;
-    await player.playOnDeck(targetDeck, { url: sourceUrl, loudnessDb: item.loudnessDb }, { makeActive: false, paused });
+    await player.playOnDeck(targetDeck, { url: sourceUrl, loudnessDb: item.loudnessDb, stems: item.stems }, { makeActive: false, paused });
     deckDisplayItems[targetDeck] = item;
     
     if (isFocusDeck) {
@@ -720,6 +738,7 @@ async function launchDeckFromQueue(deck, options = {}) {
       isFocusDeck,
       paused,
     });
+    backgroundEnrichStems(targetDeck, item);
   } catch (err) {
     logError('launchDeckFromQueue(): failed', {
       deck: targetDeck,
@@ -1020,11 +1039,32 @@ async function runSearch(query) {
       });
     });
     searchResults.querySelectorAll('.search-result-item').forEach((el, i) => {
-      el.addEventListener('click', () => {
-        player?.activateElement();
+      const resolveResult = () => {
         const kind = el.dataset.kind;
         const idx = Number(el.dataset.index);
-        const result = kind === 'artist' ? artistResults[idx] : songResults[idx];
+        return kind === 'artist' ? artistResults[idx] : songResults[idx];
+      };
+
+      el.querySelector('.play-now-btn')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        player?.activateElement();
+        const result = resolveResult();
+        if (!result || result?.isArtistResult) return;
+        if (pendingSearchAdd) return;
+
+        pendingSearchAdd = true;
+        addToQueue(result, { playNow: true, preferFade: true })
+          .catch((err) => {
+            showToast(`API: ${err.message}`, true);
+          })
+          .finally(() => {
+            pendingSearchAdd = false;
+          });
+      });
+
+      el.addEventListener('click', () => {
+        player?.activateElement();
+        const result = resolveResult();
         if (!result) return;
 
         if (result?.isArtistResult) {
@@ -1055,9 +1095,11 @@ async function runSearch(query) {
   }
 }
 
-async function addToQueue(track) {
+async function addToQueue(track, options = {}) {
+  const { playNow = false, preferFade = false } = options;
   const artUrl = getBestArtworkUrl(track);
   const duration = getTrackDurationMs(track);
+  const stems = extractStemSourceUrls(track);
   const item = {
     id: track.id || track.ratingKey || track.uri || track.name,
     uri: track.uri || track.downloadUrl || `api:track:${track.id || track.name}`,
@@ -1067,6 +1109,10 @@ async function addToQueue(track) {
     duration,
     bpm: track.bpm || track.tempo || null,
     loudnessDb: extractTrackLoudnessDb(track),
+    stems: {
+      vocalsUrl: stems.vocalsUrl,
+      instrumentalUrl: stems.instrumentalUrl,
+    },
     persistedSourceUrl: getDirectPlayableSourceUrl(track),
     sourceState: 'idle',
     sourceError: null,
@@ -1080,6 +1126,26 @@ async function addToQueue(track) {
   );
   if (isDuplicate) {
     showToast(`Déjà dans la file : ${item.name}`, true);
+
+    if (playNow && player && !player.isCrossfading) {
+      const existingIndex = queue.findIndex(
+        (q) => q.id === item.id || (q.name === item.name && q.artist === item.artist)
+      );
+      if (existingIndex >= 0) {
+        const useFade = isPlaying && preferFade;
+        if (useFade) showCrossfadeRing(true);
+        try {
+          await startPlaybackForIndex(existingIndex, useFade ? 'crossfade' : 'play');
+          currentIndex = existingIndex;
+          currentTrackId = queue[existingIndex]?.id ?? null;
+          renderQueue();
+          closeSearch();
+        } finally {
+          if (useFade) showCrossfadeRing(false);
+        }
+      }
+    }
+
     return;
   }
 
@@ -1093,6 +1159,21 @@ async function addToQueue(track) {
     queueLength: queue.length,
   });
   renderQueue();
+
+  if (playNow && player && !player.isCrossfading && isPlaying) {
+    const useFade = Boolean(preferFade);
+    if (useFade) showCrossfadeRing(true);
+    try {
+      await startPlaybackForIndex(addedIndex, useFade ? 'crossfade' : 'play');
+      currentIndex = addedIndex;
+      currentTrackId = item.id;
+      renderQueue();
+      closeSearch();
+    } finally {
+      if (useFade) showCrossfadeRing(false);
+    }
+    return;
+  }
 
   if (!isPlaying && !player?.isCrossfading) {
     currentIndex = addedIndex;
@@ -1167,13 +1248,13 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     });
 
     if (mode === 'autofade') {
-      await player.crossfadeToDeck(targetDeck, { url: sourceUrl, loudnessDb: item.loudnessDb });
+      await player.crossfadeToDeck(targetDeck, { url: sourceUrl, loudnessDb: item.loudnessDb, stems: item.stems });
     } else if (mode === 'crossfade') {
-      await player.crossfadeToDeck(targetDeck, { url: sourceUrl, loudnessDb: item.loudnessDb });
+      await player.crossfadeToDeck(targetDeck, { url: sourceUrl, loudnessDb: item.loudnessDb, stems: item.stems });
     } else if (mode === 'switch') {
-      await player.playOnDeck(getFocusDeck(), { url: sourceUrl, loudnessDb: item.loudnessDb }, { makeActive: false, paused: false });
+      await player.playOnDeck(getFocusDeck(), { url: sourceUrl, loudnessDb: item.loudnessDb, stems: item.stems }, { makeActive: false, paused: false });
     } else {
-      await player.playOnDeck(getFocusDeck(), { url: sourceUrl, loudnessDb: item.loudnessDb }, { makeActive: false, paused: false });
+      await player.playOnDeck(getFocusDeck(), { url: sourceUrl, loudnessDb: item.loudnessDb, stems: item.stems }, { makeActive: false, paused: false });
     }
 
     if (mode === 'autofade' || mode === 'crossfade') {
@@ -1204,7 +1285,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
         });
         ensureLocalSource(nextItem).then((nextUrl) => {
           if (!player) return;
-          player.playOnDeck(inactiveDeck, { url: nextUrl, loudnessDb: nextItem.loudnessDb }, { paused: true });
+          player.playOnDeck(inactiveDeck, { url: nextUrl, loudnessDb: nextItem.loudnessDb, stems: nextItem.stems }, { paused: true });
           deckDisplayItems[inactiveDeck] = nextItem;
           renderQueue();
         }).catch(() => {});
@@ -1227,6 +1308,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       targetDeck,
       isPlaying,
     });
+    backgroundEnrichStems(targetDeck, item);
   } catch (err) {
     item.sourceState = 'error';
     item.sourceError = err.message;

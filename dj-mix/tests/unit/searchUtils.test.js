@@ -1,5 +1,6 @@
 import {
   buildSearchResultsSectionsHTML,
+  extractStemSourceUrls,
   getTrackDurationMs,
   mapApiTrackToSearchItem,
   normalizeApiSearchResponse,
@@ -57,6 +58,20 @@ describe('dj-mix searchUtils', () => {
       duration_ms: 637000,
       loudnessDb: -8.5,
       popularityScore: 88,
+    });
+  });
+
+  test('extractStemSourceUrls reads direct vocal/no-vocal URLs from API payload', () => {
+    const stems = extractStemSourceUrls({
+      vocalsUrl: 'https://api.example/cache/stems/song-vocals.mp3',
+      noVocalUrl: 'https://api.example/cache/stems/song-no-vocals.mp3',
+      vocalsPath: '/mnt/d/media/stems/song-vocals.mp3',
+      instrumentalPath: '/mnt/d/media/stems/song-no-vocals.mp3',
+    });
+
+    expect(stems).toEqual({
+      vocalsUrl: 'https://api.example/cache/stems/song-vocals.mp3',
+      instrumentalUrl: 'https://api.example/cache/stems/song-no-vocals.mp3',
     });
   });
 

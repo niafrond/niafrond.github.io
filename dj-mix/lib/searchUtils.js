@@ -5,9 +5,15 @@ export function buildResultHTML(track, kind = 'song', index = 0) {
   const dur = hasDuration ? formatTime(track.duration_ms) : '--:--';
   const isArtistResult = Boolean(track.isArtistResult);
   const localBadge = track.isLocalResult ? '<span class="result-local-badge" title="Fichier local">📁</span>' : '';
+  const stemsBadge = (!isArtistResult && hasAvailableStems(track))
+    ? '<span class="result-stem-badge" title="Stems disponibles">🧩</span>'
+    : '';
   const durationHtml = isArtistResult ? '<span class="result-duration">Artiste</span>' : `<span class="result-duration">${dur}</span>`;
   const addLabel = isArtistResult ? '🔎' : '+';
   const addAria = isArtistResult ? 'Rechercher cet artiste' : 'Ajouter';
+  const playNowBtn = !isArtistResult
+    ? '<button class="play-now-btn" type="button" aria-label="Lire de suite (fade)">Fade</button>'
+    : '';
   const deleteBtn = (!isArtistResult && track.isLocalResult)
     ? `<button class="delete-btn" aria-label="Supprimer" data-track-name="${escHtml(track.name)}" data-artist-name="${escHtml(artist)}" data-cache-path="${escHtml(track.cachePath || '')}">🗑</button>`
     : '';
@@ -16,12 +22,13 @@ export function buildResultHTML(track, kind = 'song', index = 0) {
     <div class="search-result-item" data-kind="${kind}" data-index="${index}" role="button" tabindex="0">
       <img class="result-art" src="${escHtml(artUrl)}" alt="" loading="lazy">
       <div class="result-info">
-        <div class="result-name">${escHtml(track.name)} ${localBadge}</div>
+        <div class="result-name">${escHtml(track.name)} ${localBadge}${stemsBadge}</div>
         <div class="result-artist">${escHtml(artist)}</div>
       </div>
       ${durationHtml}
+      ${playNowBtn}
       ${deleteBtn}
-      <button class="add-btn" aria-label="${addAria}">${addLabel}</button>
+      <button class="add-btn" type="button" aria-label="${addAria}">${addLabel}</button>
     </div>`;
 }
 
@@ -142,6 +149,7 @@ export function splitItunesSearchQuery(rawQuery) {
 export function mapApiTrackToSearchItem(track) {
   if (!track) return null;
   const isLocalResult = isLocalTrackResult(track);
+  const stems = extractStemSourceUrls(track);
 
   const type = String(track.type || track.resultType || track.kind || '').toLowerCase();
   const isArtistResult = Boolean(
@@ -193,7 +201,73 @@ export function mapApiTrackToSearchItem(track) {
     artists: [{ name: artist }],
     album: { images: artUrl ? [{ url: artUrl }, { url: artUrl }] : [] },
     downloadUrl: track.downloadUrl || track.streamUrl || track.url || '',
+    vocalsUrl: stems.vocalsUrl,
+    instrumentalUrl: stems.instrumentalUrl,
   };
+}
+
+export function extractStemSourceUrls(track) {
+  if (!track || typeof track !== 'object') {
+    return { vocalsUrl: '', instrumentalUrl: '' };
+  }
+
+  const isUsableStemUrl = (value) => {
+    if (typeof value !== 'string') return false;
+    const trimmed = value.trim();
+    if (!trimmed) return false;
+    if (trimmed.startsWith('blob:')) return true;
+    if (/^https?:\/\//i.test(trimmed)) return true;
+    if (/^\/(api|cache)\//i.test(trimmed)) return true;
+    return false;
+  };
+
+  const pickFirst = (candidates) => {
+    for (const candidate of candidates) {
+      if (!isUsableStemUrl(candidate)) continue;
+      return candidate.trim();
+    }
+    return '';
+  };
+
+  const vocalsUrl = pickFirst([
+    track.vocalsUrl,
+    track.vocals_url,
+    track.vocalUrl,
+    track.vocal_url,
+    track.withVocalsUrl,
+    track.voiceUrl,
+    track.stems?.vocalsUrl,
+    track.stems?.vocalUrl,
+    track.vocalsPath,
+    track.versions?.vocal?.url,
+    track.versions?.vocals?.url,
+  ]);
+
+  const instrumentalUrl = pickFirst([
+    track.instrumentalUrl,
+    track.instrumental_url,
+    track.noVocalUrl,
+    track.no_vocal_url,
+    track.novocalUrl,
+    track.noVocalsUrl,
+    track.withoutVocalsUrl,
+    track.karaokeUrl,
+    track.stems?.instrumentalUrl,
+    track.stems?.noVocalUrl,
+    track.instrumentalPath,
+    track.versions?.novocal?.url,
+    track.versions?.instrumental?.url,
+    track.versions?.no_vocals?.url,
+  ]);
+
+  return { vocalsUrl, instrumentalUrl };
+}
+
+export function hasAvailableStems(track) {
+  if (!track || typeof track !== 'object') return false;
+  const stems = extractStemSourceUrls(track);
+  if (stems.vocalsUrl || stems.instrumentalUrl) return true;
+  return String(track.stemsStatus || '').toLowerCase() === 'ready';
 }
 
 export function sortSearchResultsByPopularity(a, b) {

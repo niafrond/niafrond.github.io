@@ -2,6 +2,14 @@ import { createLogger } from './logger.js';
 
 const logger = createLogger('playlist');
 
+function hasAvailableStems(file) {
+  if (!file || typeof file !== 'object') return false;
+  const statusReady = String(file.stemsStatus || '').toLowerCase() === 'ready';
+  const hasVocals = typeof file.vocalsPath === 'string' && file.vocalsPath.trim().length > 0;
+  const hasInstrumental = typeof file.instrumentalPath === 'string' && file.instrumentalPath.trim().length > 0;
+  return statusReady || hasVocals || hasInstrumental;
+}
+
 export function createPlaylistManager(options) {
   const {
     escHtml,
@@ -106,7 +114,7 @@ export function createPlaylistManager(options) {
       playlistListEl.innerHTML = files.map((file, i) => `
       <div class="cache-item" data-index="${i}">
         <div class="cache-info">
-          <div class="cache-name">${escHtml(file.trackName || file.name || file.title || 'Inconnu')}</div>
+          <div class="cache-name">${escHtml(file.trackName || file.name || file.title || 'Inconnu')}${hasAvailableStems(file) ? ' <span class="cache-stem-badge" title="Stems disponibles">🧩</span>' : ''}</div>
           <div class="cache-artist">${escHtml(file.artistName || file.artist || 'Artiste inconnu')}</div>
         </div>
         <button class="cache-add-btn" data-index="${i}" aria-label="Ajouter à la file">➕</button>
