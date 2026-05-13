@@ -27,7 +27,7 @@ function createAudioContextMock() {
     },
     createGain: () => ({
       connect: () => {},
-      gain: { value: 1 },
+      gain: { value: 1, cancelScheduledValues: () => {}, setTargetAtTime: () => {} },
     }),
     createChannelSplitter: () => createPassThroughNode(),
     createChannelMerger: () => createPassThroughNode(),
@@ -206,7 +206,7 @@ describe('SimpleMixFeatures — destroy()', () => {
 
 describe('computeAdaptiveMidSideGains()', () => {
   test('attenuates mid harder for vocal removal on mid-heavy tracks', () => {
-    const gains = computeAdaptiveMidSideGains('vocalRemove', { mid: 0.92, side: 0.08 });
+    const gains = computeAdaptiveMidSideGains('vocalRemove', 0.92, 0.08);
 
     expect(gains.midGain).toBeLessThan(0.2);
     expect(gains.sideGain).toBeGreaterThan(0.9);
@@ -214,7 +214,7 @@ describe('computeAdaptiveMidSideGains()', () => {
   });
 
   test('attenuates side harder for instrumental removal on wide tracks', () => {
-    const gains = computeAdaptiveMidSideGains('instruRemove', { mid: 0.18, side: 0.82 });
+    const gains = computeAdaptiveMidSideGains('instruRemove', 0.18, 0.82);
 
     expect(gains.sideGain).toBeLessThan(0.25);
     expect(gains.midGain).toBeGreaterThan(0.9);
@@ -222,7 +222,7 @@ describe('computeAdaptiveMidSideGains()', () => {
   });
 
   test('keeps more of the target band when the song is poorly separated', () => {
-    const gains = computeAdaptiveMidSideGains('vocalRemove', { mid: 0.52, side: 0.48 });
+    const gains = computeAdaptiveMidSideGains('vocalRemove', 0.52, 0.48);
 
     expect(gains.midGain).toBeGreaterThan(0.4);
     expect(gains.sideGain).toBeGreaterThan(0.9);
