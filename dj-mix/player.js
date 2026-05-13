@@ -92,6 +92,7 @@ export class DJPlayer extends EventTarget {
   #trackInterval = null;
   #crossfadeInterval = null;
   #manualMixInterval = null;
+  #deckMixRatio = 0;
   #transitionMode = DEFAULT_TRANSITION_MODE;
   #deckSourceMeta = {
     A: null,
@@ -237,10 +238,7 @@ export class DJPlayer extends EventTarget {
 
   setDeckMixRatio(ratio, transitionMs = 140) {
     const safeRatio = Math.max(0, Math.min(1, Number(ratio) || 0));
-    const targetA = 1 - safeRatio;
-    const targetB = safeRatio;
-
-    this.#smoothSetDeckVolumes(targetA, targetB, transitionMs);
+    this.#smoothSetDeckMixRatio(safeRatio, transitionMs);
   }
 
   setDeckVolumes(volumeA, volumeB, transitionMs = 100) {
@@ -1001,6 +999,7 @@ export class DJPlayer extends EventTarget {
       const nextA = Math.max(0, Math.min(1, fromA + ((targetA - fromA) * t)));
       const nextB = Math.max(0, Math.min(1, fromB + ((targetB - fromB) * t)));
       this.#applyDeckBaseMix(nextA, nextB);
+      this.#deckMixRatio = this.#mixRatioFromGains(nextA, nextB);
       this.#emitDeckState();
 
       if (step >= steps) {
@@ -1008,6 +1007,56 @@ export class DJPlayer extends EventTarget {
         this.#manualMixInterval = null;
       }
     }, 16);
+  }
+
+  #smoothSetDeckMixRatio(targetRatio, durationMs) {
+    clearInterval(this.#manualMixInterval);
+    this.#manualMixInterval = null;
+
+    if (!this.#audioA || !this.#audioB) return;
+
+    const fromRatio = Math.max(0, Math.min(1, Number(this.#deckMixRatio) || 0));
+    const toRatio = Math.max(0, Math.min(1, Number(targetRatio) || 0));
+    const ms = Math.max(16, Number(durationMs) || 140);
+    const steps = Math.max(1, Math.round(ms / 16));
+    let step = 0;
+
+    this.#manualMixInterval = setInterval(() => {
+      if (this.#destroyed || !this.#audioA || !this.#audioB) {
+        clearInterval(this.#manualMixInterval);
+        this.#manualMixInterval = null;
+        return;
+      }
+
+      step += 1;
+      const t = Math.min(1, step / steps);
+      const ratio = fromRatio + ((toRatio - fromRatio) * t);
+      const gains = this.#equalPowerGainsFromRatio(ratio);
+
+      this.#applyDeckBaseMix(gains.a, gains.b);
+      this.#deckMixRatio = ratio;
+      this.#emitDeckState();
+
+      if (step >= steps) {
+        clearInterval(this.#manualMixInterval);
+        this.#manualMixInterval = null;
+      }
+    }, 16);
+  }
+
+  #equalPowerGainsFromRatio(ratio) {
+    const safeRatio = Math.max(0, Math.min(1, Number(ratio) || 0));
+    return {
+      a: Math.cos((Math.PI / 2) * safeRatio),
+      b: Math.sin((Math.PI / 2) * safeRatio),
+    };
+  }
+
+  #mixRatioFromGains(gainA, gainB) {
+    const safeA = Math.max(0, Number(gainA) || 0);
+    const safeB = Math.max(0, Number(gainB) || 0);
+    const angle = Math.atan2(safeB, safeA);
+    return Math.max(0, Math.min(1, angle / (Math.PI / 2)));
   }
 
   #emitDeckState() {
@@ -1113,7 +1162,21 @@ export class DJPlayer extends EventTarget {
     const compA = this.#getDeckCompensation('A');
     const compB = this.#getDeckCompensation('B');
 
-    this.#audioA.volume = Math.max(0, Math.min(1, safeA * compA));
-    this.#audioB.volume = Math.max(0, Math.min(1, safeB * compB));
+    let nextA;
+    let nextB;
+
+    if (safeA > 0 && safeB > 0) {
+      // Use a shared compensation factor so the A/B ratio remains exact
+      // for any slider position, including while smoothing.
+      const sharedComp = Math.max(0, Math.min(compA, compB, 1));
+      nextA = Math.max(0, Math.min(1, safeA * sharedComp));
+      nextB = Math.max(0, Math.min(1, safeB * sharedComp));
+    } else {
+      nextA = Math.max(0, Math.min(1, safeA * compA));
+      nextB = Math.max(0, Math.min(1, safeB * compB));
+    }
+
+    this.#audioA.volume = nextA;
+    this.#audioB.volume = nextB;
   }
 }
