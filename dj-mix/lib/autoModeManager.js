@@ -477,6 +477,32 @@ export function createAutoModeManager({
     logger?.debug?.('autoDj: reset');
   }
 
+  /**
+   * Add the pending next track (already found during timing calculation) to queue
+   * Returns true if track was added, false otherwise
+   */
+  async function addPendingTrackToQueue() {
+    if (!pendingNextTrack) {
+      logger?.debug?.('autoDj: no pending track to add');
+      return false;
+    }
+
+    try {
+      logger?.info?.('autoDj: adding pending track to queue', {
+        name: pendingNextTrack.trackName || pendingNextTrack.name,
+        artist: pendingNextTrack.artistName || pendingNextTrack.artist,
+      });
+
+      await addToQueue(pendingNextTrack);
+      return true;
+    } catch (err) {
+      logger?.error?.('autoDj: failed to add pending track', {
+        error: err?.message,
+      });
+      return false;
+    }
+  }
+
   return {
     // State
     isAutoModeEnabled: () => autoModeEnabled,
@@ -491,6 +517,7 @@ export function createAutoModeManager({
 
     // Main functionality
     searchAndAddNextTrack,
+    addPendingTrackToQueue,
     scheduleAutomixTiming,
     onTrackFinished,
     fetchMixData,

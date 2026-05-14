@@ -716,22 +716,22 @@ function hookPlayerEvents() {
         remainingMs: duration - position,
       });
 
-      // Search and add next track if not already in queue
-      const currentTrack = queue[currentIndex];
-      if (currentTrack) {
-        autoModeManager.searchAndAddNextTrack(currentTrack)
-          .then(() => {
-            // Trigger automix after track is added
+      // Add pending track (already found during timing calculation) to queue
+      autoModeManager.addPendingTrackToQueue()
+        .then((added) => {
+          if (added) {
+            logDebug('autoDj: pending track added, triggering automix', {});
             const nextIdx = currentIndex + 1;
             if (nextIdx < queue.length) {
-              logDebug('autoDj: triggering automix after adding track', { nextIdx });
               autoMixBtn?.click?.();
             }
-          })
-          .catch(err => {
-            logWarn('autoDj: failed to add next track', { error: err?.message });
-          });
-      }
+          } else {
+            logDebug('autoDj: no pending track, skipping automix trigger', {});
+          }
+        })
+        .catch(err => {
+          logWarn('autoDj: failed to add pending track', { error: err?.message });
+        });
     }
   });
 
