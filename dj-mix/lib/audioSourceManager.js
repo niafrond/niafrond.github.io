@@ -732,13 +732,16 @@ export function createAudioSourceManager(options) {
   async function enrichStemsFromServer(item) {
     if (!item) return;
 
-    // Already have both stems locally
+    // Already have both stems locally in memory
     const existing = sanitizeStemSources(item.localStemUrls || item.stems);
     if (existing.vocalsUrl && existing.instrumentalUrl) return;
 
     // Need at least a cachePath or name to identify the track
     if (!item.cachePath && !item.name) return;
 
+    const cacheKey = getTrackCacheKey(item);
+
+    // Skip persistent cache check for now - check if both stems are already in memory/session
     const stemData = await fetchServerStemsStatus(item);
     if (!stemData) return;
 
@@ -753,7 +756,6 @@ export function createAudioSourceManager(options) {
     if (stemData.status !== 'ready') return; // pending or unknown – nothing to do yet
 
     // Build URLs from the paths returned by the server
-    const cacheKey = getTrackCacheKey(item);
     const baseUrl = getDownloaderApiUrl() || '';
 
     const toStemUrl = async (rawPath, variant) => {
@@ -773,7 +775,8 @@ export function createAudioSourceManager(options) {
 
     const downloadViaApiOrFallback = async (variant, fallbackPath) => {
       try {
-        return await downloadStemVariantViaApi(item, cacheKey, variant);
+        const downloadedUrl = await downloadStemVariantViaApi(item, cacheKey, variant);
+        if (downloadedUrl) return downloadedUrl;
       } catch (err) {
         logWarn('api.stems.download.failed', {
           id: item?.id,
@@ -781,16 +784,20 @@ export function createAudioSourceManager(options) {
           status: Number(String(err?.message || '').split(':').pop()) || undefined,
           message: err?.message,
         });
-        return toStemUrl(fallbackPath, variant);
       }
+      return toStemUrl(fallbackPath, variant);
     };
 
+    // Launch both stem downloads immediately in parallel after stems? confirms 'ready'
     const [vocalsUrl, instrumentalUrl] = await Promise.all([
       existing.vocalsUrl || downloadViaApiOrFallback('vocals', stemData.vocals),
       existing.instrumentalUrl || downloadViaApiOrFallback('instrumental', stemData.instrumental),
     ]);
 
-    if (!vocalsUrl && !instrumentalUrl) return;
+    if (!vocalsUrl && !instrumentalUrl) {
+      logWarn('stems.both.failed', { id: item?.id });
+      return;
+    }
 
     item.localStemUrls = {
       vocalsUrl: vocalsUrl || existing.vocalsUrl || '',

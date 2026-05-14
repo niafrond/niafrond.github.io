@@ -24,6 +24,7 @@ import { createPlaylistManager } from './lib/playlistManager.js';
 import { restoreQueueFromStorage, saveQueueToStorage } from './lib/queueStorage.js';
 import { createShellUi } from './lib/shellUi.js';
 import { createDjMixRenderer } from './lib/uiRenderer.js';
+import { createAutoModeManager } from './lib/autoModeManager.js';
 import {
   buildSearchResultsSectionsHTML,
   escHtml,
@@ -83,6 +84,13 @@ let deckMixRatio = 0;
 let manualMixLock = false;
 let deckBCueIndex = -1;
 let deckCueDeck = null;
+
+/**
+ * Track stem loading status per deck: { A: boolean, B: boolean }
+ * true = stems loaded/available, false = stems not yet available
+ */
+let stemsLoadedPerDeck = { A: false, B: false };
+
 let mixFeatures = {
   autoBpm: false,
   echo: false,
@@ -176,10 +184,13 @@ const crossfadeControlMix = document.querySelector('.crossfade-control--mix');
 const autoBpmBtn = document.getElementById('fx-auto-bpm-btn');
 const echoBtn = document.getElementById('fx-echo-btn');
 const distortionBtn = document.getElementById('fx-distortion-btn');
+const autoModeBtn = document.getElementById('auto-mode-btn');
 const deckAVocalBtn = document.getElementById('deck-a-vocal-btn');
 const deckAInstruBtn = document.getElementById('deck-a-instru-btn');
 const deckBVocalBtn = document.getElementById('deck-b-vocal-btn');
 const deckBInstruBtn = document.getElementById('deck-b-instru-btn');
+const deckAstemsIndicator = document.getElementById('deck-a-stems-indicator');
+const deckBstemsIndicator = document.getElementById('deck-b-stems-indicator');
 const autoMixBtn = document.getElementById('automix-btn');
 const crossfadeSlider = document.getElementById('crossfade-slider');
 const crossfadeValue = document.getElementById('crossfade-value');
@@ -490,18 +501,48 @@ function applyDebugLogsSetting(enabled, options = {}) {
 }
 
 /**
+ * Update stem removal button disabled state for a deck based on stem availability.
+ * Disable buttons if stems are not yet loaded, enable if they are available.
+ * Also show/hide the stems indicator icon.
+ */
+function updateStemButtonState(deck) {
+  const stemsAvailable = stemsLoadedPerDeck[deck] || false;
+  const safeDeck = deck === 'B' ? 'B' : 'A';
+  
+  if (safeDeck === 'A') {
+    deckAVocalBtn?.setAttribute('disabled', stemsAvailable ? '' : 'disabled');
+    deckAInstruBtn?.setAttribute('disabled', stemsAvailable ? '' : 'disabled');
+    deckAstemsIndicator?.setAttribute('hidden', stemsAvailable ? '' : 'hidden');
+  } else {
+    deckBVocalBtn?.setAttribute('disabled', stemsAvailable ? '' : 'disabled');
+    deckBInstruBtn?.setAttribute('disabled', stemsAvailable ? '' : 'disabled');
+    deckBstemsIndicator?.setAttribute('hidden', stemsAvailable ? '' : 'hidden');
+  }
+}
+
+/**
  * Fire-and-forget: enrich item stems from the server, then notify mixFeatures
  * of the updated URLs if the item is still loaded on the given deck.
  */
 function backgroundEnrichStems(deck, item) {
   if (!item || !deck) return;
-  enrichStemsFromServer(item).then(() => {
-    const stems = item.localStemUrls || item.stems;
-    if (!stems?.vocalsUrl && !stems?.instrumentalUrl) return;
-    if (deckDisplayItems[deck] !== item) return; // item was swapped out
-    player?.updateDeckStems(deck, stems);
-    logDebug('stems.enriched.deck', { deck, id: item?.id, hasVocals: !!stems.vocalsUrl, hasInstrumental: !!stems.instrumentalUrl });
-  }).catch(() => {});
+  enrichStemsFromServer(item)
+    .then(() => {
+      // After enrichment, check if stems are now available
+      const stems = item.localStemUrls || item.stems;
+      if (!stems?.vocalsUrl && !stems?.instrumentalUrl) return; // no stems found
+      if (deckDisplayItems[deck] !== item) return; // item was swapped out
+      
+      // Mark stems as loaded for this deck
+      stemsLoadedPerDeck[deck] = true;
+      updateStemButtonState(deck);
+      
+      player?.updateDeckStems(deck, stems);
+      logDebug('stems.enriched.deck', { deck, id: item?.id, hasVocals: !!stems.vocalsUrl, hasInstrumental: !!stems.instrumentalUrl });
+    })
+    .catch((err) => {
+      logWarn('stems.enrichment.error', { deck, id: item?.id, error: err?.message });
+    });
 }
 
 
@@ -529,6 +570,16 @@ const autoFadeManager = new AutoFadeManager({
   onEnd: () => showCrossfadeRing(false),
 });
 
+const autoModeManager = createAutoModeManager({
+  getDownloaderApiUrl,
+  getQueue: () => queue,
+  getCurrentTrackId: () => currentTrackId,
+  searchTracksViaApi,
+  addToQueue,
+  showToast,
+  logger,
+});
+
 tabBtns.forEach((btn) => {
   btn.addEventListener('click', () => {
     const tab = btn.dataset.tab;
@@ -545,6 +596,9 @@ tabBtns.forEach((btn) => {
 (async function init() {
   applyDebugLogsSetting(readDebugLogsSetting(), { persist: false });
   applyTransitionModeSetting(selectedTransitionMode, { persist: false });
+
+  autoModeManager.initialize();
+  updateAutoModeUI();
 
   debugLogsToggle?.addEventListener('change', () => {
     applyDebugLogsSetting(Boolean(debugLogsToggle.checked), { persist: true });
@@ -652,6 +706,12 @@ function hookPlayerEvents() {
     isPlaying = false;
     showCrossfadeRing(false);
     renderQueue();
+    
+    // Trigger auto mode search on track end
+    const currentTrack = queue[currentIndex];
+    if (currentTrack) {
+      autoModeManager.onTrackFinished(currentTrack);
+    }
   });
 
     player.addEventListener('error', ({ detail }) => {
@@ -978,6 +1038,19 @@ echoBtn?.addEventListener('click', () => {
 distortionBtn?.addEventListener('click', () => {
   setMixFeatureEnabled('distortion', !mixFeatures.distortion);
 });
+
+autoModeBtn?.addEventListener('click', () => {
+  const isEnabled = autoModeManager.toggleAutoMode();
+  autoModeBtn.setAttribute('aria-pressed', String(isEnabled));
+  autoModeBtn.textContent = `Auto Mode: ${isEnabled ? 'ON' : 'OFF'}`;
+  showToast(`Auto Mode: ${isEnabled ? '🤖 ON' : 'OFF'}`);
+});
+
+function updateAutoModeUI() {
+  const isEnabled = autoModeManager.isAutoModeEnabled();
+  autoModeBtn.setAttribute('aria-pressed', String(isEnabled));
+  autoModeBtn.textContent = `Auto Mode: ${isEnabled ? 'ON' : 'OFF'}`;
+}
 
 deckAVocalBtn?.addEventListener('click', () => {
   const enabled = Boolean(mixFeatures.deckFx?.A?.vocalRemove);
@@ -1388,6 +1461,13 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     deckDisplayItems[targetDeck] = item;
     if (mode === 'play') deckDisplayItems[targetDeck === 'A' ? 'B' : 'A'] = null;
     updateNowPlaying(item, targetDeck);
+    
+    // Check if stems are already available in cache
+    const hasStemsInCache = !!(item.localStemUrls?.vocalsUrl || item.localStemUrls?.instrumentalUrl || 
+                                item.stems?.vocalsUrl || item.stems?.instrumentalUrl);
+    stemsLoadedPerDeck[targetDeck] = hasStemsInCache;
+    updateStemButtonState(targetDeck);
+    
     const sourceUrl = await ensureLocalSource(item);
     logDebug('startPlaybackForIndex(): source resolved', {
       index,
@@ -1464,6 +1544,13 @@ async function startPlaybackForIndex(index, mode, options = {}) {
         });
         ensureLocalSource(nextItem).then((nextUrl) => {
           if (!player) return;
+          
+          // Check if stems are already available in cache for inactive deck
+          const nextHasStemsInCache = !!(nextItem.localStemUrls?.vocalsUrl || nextItem.localStemUrls?.instrumentalUrl || 
+                                          nextItem.stems?.vocalsUrl || nextItem.stems?.instrumentalUrl);
+          stemsLoadedPerDeck[inactiveDeck] = nextHasStemsInCache;
+          updateStemButtonState(inactiveDeck);
+          
           player.playOnDeck(inactiveDeck, {
             url: nextUrl,
             loudnessDb: nextItem.loudnessDb,
@@ -1473,6 +1560,10 @@ async function startPlaybackForIndex(index, mode, options = {}) {
             stems: nextItem.stems,
           }, { paused: true });
           deckDisplayItems[inactiveDeck] = nextItem;
+          
+          // Always fetch stems from server for the next track
+          backgroundEnrichStems(inactiveDeck, nextItem);
+          
           renderQueue();
         }).catch(() => {});
       }
@@ -1531,6 +1622,9 @@ function prefetchNext(index) {
   ensureLocalSource(next).catch(() => {
     // silent prefetch failure: user can still trigger manually and get toast
   });
+  
+  // Always fetch stems from server for any queued track (background enrichment)
+  enrichStemsFromServer(next).catch(() => {});
 }
 
 function renderQueue() {
@@ -1766,6 +1860,8 @@ function doLogout() {
     },
   };
 
+  autoModeManager.reset();
+
   player?.destroy();
   player = null;
 
@@ -1804,6 +1900,7 @@ function doLogout() {
   updateManualLockUI();
   updateDeckCueUI();
   updateMixFeaturesUI();
+  updateAutoModeUI();
   renderQueue();
   showSetup();
 }

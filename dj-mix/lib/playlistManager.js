@@ -195,6 +195,55 @@ export function createPlaylistManager(options) {
     showToast(`"${item.name}" ajouté à la file`);
   }
 
+  async function fetchAllCacheFiles(baseUrl, onProgress) {
+    const headers = { Accept: 'application/json' };
+    const pageSize = 200;
+    const allFiles = [];
+    let offset = 0;
+    let pageIndex = 0;
+
+    while (true) {
+      const pageUrl = `${baseUrl}/api/cache/files?limit=${pageSize}&offset=${offset}`;
+      const res = await fetch(pageUrl, { headers });
+      if (!res.ok) throw new Error(`Erreur ${res.status}: ${res.statusText}`);
+
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        return data.slice();
+      }
+
+      const pageResults = Array.isArray(data?.results)
+        ? data.results
+        : (Array.isArray(data?.files) ? data.files : []);
+
+      allFiles.push(...pageResults);
+
+      if (typeof onProgress === 'function') {
+        onProgress({
+          files: allFiles,
+          pageResults,
+          hasMore: Boolean(data?.hasMore),
+          count: Number.isFinite(Number(data?.count)) ? Number(data.count) : null,
+        });
+      }
+
+      const hasMore = Boolean(data?.hasMore);
+      if (!hasMore || pageResults.length === 0) {
+        break;
+      }
+
+      offset += pageResults.length;
+      pageIndex += 1;
+
+      // Safety net against malformed pagination responses.
+      if (pageIndex > 1000) {
+        throw new Error('Pagination cache interrompue (trop de pages)');
+      }
+    }
+
+    return allFiles;
+  }
+
   async function loadPlaylists() {
     setPlaylistLoaded(true);
     logger.info('playlist.cacheList.load.begin');
@@ -212,12 +261,20 @@ export function createPlaylistManager(options) {
     playlistListEl.innerHTML = '<div class="search-loading">Chargement du cache...</div>';
 
     try {
-      const res = await fetch(`${baseUrl}/api/cache/files`, { headers: { Accept: 'application/json' } });
-      if (!res.ok) throw new Error(`Erreur ${res.status}: ${res.statusText}`);
+      cacheFiles = await fetchAllCacheFiles(baseUrl, ({ files, hasMore, count }) => {
+        cacheFiles = files.slice();
+        if (!cacheFiles.length) {
+          playlistListEl.innerHTML = '<div class="search-loading">Chargement du cache...</div>';
+          return;
+        }
 
-      const data = await res.json();
-      const files = Array.isArray(data) ? data : (data.results || data.files || []);
-      cacheFiles = Array.isArray(files) ? files.slice() : [];
+        renderCacheList();
+
+        if (hasMore) {
+          const loaded = cacheFiles.length;
+          logger.info('playlist.cacheList.load.progress', { loaded, count });
+        }
+      });
       logger.info('playlist.cacheList.load.success', {
         baseUrl,
         filesCount: cacheFiles.length,
