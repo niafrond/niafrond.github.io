@@ -1,3 +1,9 @@
+## [1.193.0](https://github.com/niafrond/niafrond.github.io/compare/v1.192.0...v1.193.0) (2026-05-14)
+
+### Features
+
+* **dj-mix:** add cache fade button and functionality ([6da7922](https://github.com/niafrond/niafrond.github.io/commit/6da7922966f231274eed0c61928615ff3a89f996))
+
 ## [1.192.0](https://github.com/niafrond/niafrond.github.io/compare/v1.191.0...v1.192.0) (2026-05-14)
 
 ### Features
