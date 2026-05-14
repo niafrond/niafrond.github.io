@@ -27,6 +27,7 @@ export function createPlaylistManager(options) {
     setPlaylistLoaded,
     showToast,
     startPlaybackForIndex,
+    triggerCacheFade,
     tabBtns,
     tabPanels,
   } = options;
@@ -73,6 +74,7 @@ export function createPlaylistManager(options) {
           <div class="cache-artist">${escHtml(file.artistName || file.artist || 'Artiste inconnu')}</div>
         </div>
         <div class="cache-actions">
+          <button class="cache-fade-btn" data-index="${sourceIndex}" aria-label="Charger sur platine inactive puis AutoMix">Fade</button>
           <button class="cache-add-btn" data-index="${sourceIndex}" aria-label="Ajouter a la file">➕</button>
           <button class="cache-delete-btn" data-index="${sourceIndex}" aria-label="Supprimer du cache API">🗑</button>
         </div>
@@ -86,6 +88,27 @@ export function createPlaylistManager(options) {
         const idx = Number(btn.dataset.index);
         const file = cacheFiles[idx];
         addCacheFileToQueue(file);
+      });
+    });
+
+    playlistListEl.querySelectorAll('.cache-fade-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const idx = Number(btn.dataset.index);
+        const file = cacheFiles[idx];
+        if (!file) return;
+
+        const previous = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '...';
+        try {
+          await triggerCacheFade?.(file);
+        } catch (err) {
+          showToast(`Erreur fade: ${err.message}`, true);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = previous;
+        }
       });
     });
 

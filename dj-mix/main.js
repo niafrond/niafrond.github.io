@@ -418,6 +418,26 @@ const playlistManager = createPlaylistManager({
   },
   showToast,
   startPlaybackForIndex,
+  triggerCacheFade: async (file) => {
+    if (!file) return;
+    await triggerSearchFade({
+      id: file.id || file.cachePath || file.path || file.url || file.trackName,
+      uri: file.url || file.localUrl || file.streamUrl || file.path || '',
+      name: file.trackName || file.name || file.title || 'Inconnu',
+      artist: file.artistName || file.artist || 'Artiste inconnu',
+      artUrl: file.artworkUrl || file.artUrl || '',
+      duration: Number(file.duration) || 0,
+      bpm: file.bpm || file.tempo || null,
+      loudnessDb: Number(file.loudnessDb),
+      audioFeatures: file.audioFeatures || null,
+      stems: {
+        vocalsUrl: file.vocalsUrl || '',
+        instrumentalUrl: file.instrumentalUrl || '',
+      },
+      cachePath: file.cachePath || '',
+      downloadUrl: file.url || file.localUrl || file.streamUrl || '',
+    });
+  },
   tabBtns,
   tabPanels,
 });
@@ -1141,7 +1161,7 @@ async function runSearch(query) {
         if (pendingSearchAdd) return;
 
         pendingSearchAdd = true;
-        addToQueue(result, { playNow: true, preferFade: true })
+        triggerSearchFade(result)
           .catch((err) => {
             showToast(`API: ${err.message}`, true);
           })
@@ -1181,6 +1201,47 @@ async function runSearch(query) {
     logError('runSearch(): failed', { query, message: err?.message });
     searchResults.innerHTML = `<div class="search-empty">⚠ ${escHtml(err.message)}</div>`;
   }
+}
+
+function getQueueIndexForTrack(track) {
+  const trackId = track?.id || track?.ratingKey || track?.uri || track?.name;
+  const trackName = track?.name || track?.title || '';
+  const trackArtist = track?.artists
+    ? track.artists.map((a) => a.name).join(', ')
+    : (track?.artist || 'Artiste inconnu');
+
+  return queue.findIndex(
+    (q) => q.id === trackId || (q.name === trackName && q.artist === trackArtist)
+  );
+}
+
+async function triggerSearchFade(track) {
+  if (!player || player.isCrossfading) return;
+
+  // If nothing is currently playing, keep the existing direct play behavior.
+  if (!isPlaying) {
+    await addToQueue(track, { playNow: true, preferFade: false });
+    return;
+  }
+
+  let targetIndex = getQueueIndexForTrack(track);
+  if (targetIndex < 0) {
+    await addToQueue(track);
+    targetIndex = getQueueIndexForTrack(track);
+  }
+
+  if (targetIndex < 0) return;
+
+  const inactiveDeck = getInactiveDeck();
+  deckBCueIndex = targetIndex;
+  deckCueDeck = inactiveDeck;
+  updateDeckCueUI();
+  renderQueue();
+
+  await launchDeckFromQueue(inactiveDeck, { paused: true, useCue: true });
+  showToast(`Platine ${deckToPlatineLabel(inactiveDeck)} prechargee, AutoMix...`);
+  autoMixBtn?.click();
+  closeSearch();
 }
 
 async function addToQueue(track, options = {}) {
