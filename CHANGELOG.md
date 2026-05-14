@@ -1,3 +1,13 @@
+## [1.192.0](https://github.com/niafrond/niafrond.github.io/compare/v1.191.0...v1.192.0) (2026-05-14)
+
+### Features
+
+* **dj-mix:** retire l'utilisation de demucs ([9b1a476](https://github.com/niafrond/niafrond.github.io/commit/9b1a47658db4d572b4aa589eef4569e388b0d6e2))
+
+### Bug Fixes
+
+* **dj-mix:** remove remaining dead code (encodeStereoWav, decodeAsStereo44100) ([12a4131](https://github.com/niafrond/niafrond.github.io/commit/12a4131795c81f748c8b366c32f62a2e77fdb932))
+
 ## [1.191.0](https://github.com/niafrond/niafrond.github.io/compare/v1.190.1...v1.191.0) (2026-05-13)
 
 ### Features
