@@ -85,6 +85,10 @@ let manualMixLock = false;
 let deckBCueIndex = -1;
 let deckCueDeck = null;
 
+// Auto DJ timing
+let nextAutomixTriggerMs = -1; // When to trigger automix (ms from start)
+let automixTriggeredForTrack = false; // Has automix been triggered for current track
+
 /**
  * Track stem loading status per deck: { A: boolean, B: boolean }
  * true = stems loaded/available, false = stems not yet available
@@ -574,10 +578,16 @@ const autoModeManager = createAutoModeManager({
   getDownloaderApiUrl,
   getQueue: () => queue,
   getCurrentTrackId: () => currentTrackId,
+  getCurrentTrackIndex: () => currentIndex,
   searchTracksViaApi,
   addToQueue,
   showToast,
   logger,
+  onAutomixTimingCalculated: (triggerMs) => {
+    nextAutomixTriggerMs = triggerMs;
+    automixTriggeredForTrack = false;
+    logDebug('autoDj: timing calculated', { triggerMs });
+  },
 });
 
 tabBtns.forEach((btn) => {
@@ -692,6 +702,26 @@ function hookPlayerEvents() {
 
     playbackPositionMs = position;
     playbackDurationMs = duration;
+
+    // Auto DJ: Check if it's time to trigger automix
+    if (autoModeManager.isAutoModeEnabled() && 
+        !automixTriggeredForTrack && 
+        nextAutomixTriggerMs > 0 && 
+        position >= nextAutomixTriggerMs) {
+      
+      automixTriggeredForTrack = true;
+      logInfo('autoDj: triggering automix at optimal moment', {
+        position,
+        triggerMs: nextAutomixTriggerMs,
+        remainingMs: duration - position,
+      });
+
+      // Trigger automix automatically
+      const nextIdx = currentIndex + 1;
+      if (nextIdx < queue.length) {
+        autoMixBtn?.click?.();
+      }
+    }
   });
 
   player.addEventListener('crossfadeready', () => {
@@ -1586,6 +1616,11 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       isPlaying,
     });
     backgroundEnrichStems(targetDeck, item);
+    
+    // Schedule automix timing for auto DJ mode and reset trigger flag
+    automixTriggeredForTrack = false;
+    nextAutomixTriggerMs = -1;
+    autoModeManager.scheduleAutomixTiming(item);
   } catch (err) {
     item.sourceState = 'error';
     item.sourceError = err.message;
@@ -1880,6 +1915,10 @@ function doLogout() {
   playlistLoaded = false;
   playbackPositionMs = 0;
   playbackDurationMs = 0;
+
+  // Reset auto DJ timing
+  nextAutomixTriggerMs = -1;
+  automixTriggeredForTrack = false;
 
   localStorage.removeItem(QUEUE_KEY);
   deckDisplayItems.A = null;
