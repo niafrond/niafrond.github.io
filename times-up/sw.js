@@ -1,5 +1,5 @@
 // CACHE est mis à jour automatiquement par .github/scripts/sync-match3-version.mjs à chaque release.
-const CACHE = 'timesup-v1.193.0';
+const CACHE = 'timesup-v1.194.0';
 
 const ASSETS = [
   './',
