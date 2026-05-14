@@ -716,10 +716,21 @@ function hookPlayerEvents() {
         remainingMs: duration - position,
       });
 
-      // Trigger automix automatically
-      const nextIdx = currentIndex + 1;
-      if (nextIdx < queue.length) {
-        autoMixBtn?.click?.();
+      // Search and add next track if not already in queue
+      const currentTrack = queue[currentIndex];
+      if (currentTrack) {
+        autoModeManager.searchAndAddNextTrack(currentTrack)
+          .then(() => {
+            // Trigger automix after track is added
+            const nextIdx = currentIndex + 1;
+            if (nextIdx < queue.length) {
+              logDebug('autoDj: triggering automix after adding track', { nextIdx });
+              autoMixBtn?.click?.();
+            }
+          })
+          .catch(err => {
+            logWarn('autoDj: failed to add next track', { error: err?.message });
+          });
       }
     }
   });

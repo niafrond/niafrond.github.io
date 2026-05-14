@@ -41,13 +41,20 @@ export function createPlaylistManager(options) {
 
   function renderCacheList() {
     const normalizedFilter = normalizeText(cacheFilterQuery);
-    const visibleFiles = normalizedFilter
+    let visibleFiles = normalizedFilter
       ? cacheFiles.filter((file) => {
         const trackName = normalizeText(file.trackName || file.name || file.title);
         const artistName = normalizeText(file.artistName || file.artist);
         return trackName.includes(normalizedFilter) || artistName.includes(normalizedFilter);
       })
       : cacheFiles;
+
+    // Trier alphabétiquement par titre
+    visibleFiles = visibleFiles.sort((a, b) => {
+      const titleA = (a.trackName || a.name || a.title || 'Inconnu').toLowerCase();
+      const titleB = (b.trackName || b.name || b.title || 'Inconnu').toLowerCase();
+      return titleA.localeCompare(titleB, 'fr');
+    });
 
     if (!cacheFiles.length) {
       playlistListEl.innerHTML = `
