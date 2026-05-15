@@ -1,3 +1,9 @@
+## [1.197.0](https://github.com/niafrond/niafrond.github.io/compare/v1.196.1...v1.197.0) (2026-05-15)
+
+### Features
+
+* enhance stem handling and auto-suggestion functionality ([beb8ab8](https://github.com/niafrond/niafrond.github.io/commit/beb8ab87ccf5bb7b39ef8e2745b62777c1da0e90))
+
 ## [1.196.1](https://github.com/niafrond/niafrond.github.io/compare/v1.196.0...v1.196.1) (2026-05-15)
 
 ### Bug Fixes
