@@ -294,6 +294,8 @@ export class DJPlayer extends EventTarget {
       stems: {
         vocalsUrl: typeof stems?.vocalsUrl === 'string' ? stems.vocalsUrl : '',
         instrumentalUrl: typeof stems?.instrumentalUrl === 'string' ? stems.instrumentalUrl : '',
+        echoUrl: typeof stems?.echoUrl === 'string' ? stems.echoUrl : '',
+        distortionUrl: typeof stems?.distortionUrl === 'string' ? stems.distortionUrl : '',
       },
     });
   }
@@ -1126,7 +1128,7 @@ export class DJPlayer extends EventTarget {
         bpm: null,
         durationMs: null,
         audioFeatures: null,
-        stems: { vocalsUrl: '', instrumentalUrl: '' },
+        stems: { vocalsUrl: '', instrumentalUrl: '', echoUrl: '', distortionUrl: '' },
       };
     }
 
@@ -1142,6 +1144,8 @@ export class DJPlayer extends EventTarget {
       const stems = {
         vocalsUrl: typeof source?.stems?.vocalsUrl === 'string' ? source.stems.vocalsUrl : '',
         instrumentalUrl: typeof source?.stems?.instrumentalUrl === 'string' ? source.stems.instrumentalUrl : '',
+        echoUrl: typeof source?.stems?.echoUrl === 'string' ? source.stems.echoUrl : '',
+        distortionUrl: typeof source?.stems?.distortionUrl === 'string' ? source.stems.distortionUrl : '',
       };
       return {
         url,
@@ -1161,7 +1165,7 @@ export class DJPlayer extends EventTarget {
       durationMs: null,
       startPositionMs: null,
       audioFeatures: null,
-      stems: { vocalsUrl: '', instrumentalUrl: '' },
+      stems: { vocalsUrl: '', instrumentalUrl: '', echoUrl: '', distortionUrl: '' },
     };
   }
 

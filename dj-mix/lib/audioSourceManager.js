@@ -198,6 +198,12 @@ export function releaseLocalBlob(item, touchQueueItem) {
   if (localStems.instrumentalUrl && String(localStems.instrumentalUrl).startsWith('blob:')) {
     URL.revokeObjectURL(localStems.instrumentalUrl);
   }
+  if (localStems.echoUrl && String(localStems.echoUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(localStems.echoUrl);
+  }
+  if (localStems.distortionUrl && String(localStems.distortionUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(localStems.distortionUrl);
+  }
   item.localBlobUrl = null;
   item.localStemUrls = null;
   touchQueueItem?.(item);
@@ -216,6 +222,12 @@ export function clearSessionBlobCache(sessionBlobCache) {
     }
     if (stems.instrumentalUrl && String(stems.instrumentalUrl).startsWith('blob:')) {
       URL.revokeObjectURL(stems.instrumentalUrl);
+    }
+    if (stems.echoUrl && String(stems.echoUrl).startsWith('blob:')) {
+      URL.revokeObjectURL(stems.echoUrl);
+    }
+    if (stems.distortionUrl && String(stems.distortionUrl).startsWith('blob:')) {
+      URL.revokeObjectURL(stems.distortionUrl);
     }
   }
   sessionBlobCache.clear();
@@ -240,6 +252,8 @@ export function createAudioSourceManager(options) {
     return {
       vocalsUrl: typeof src.vocalsUrl === 'string' ? src.vocalsUrl : '',
       instrumentalUrl: typeof src.instrumentalUrl === 'string' ? src.instrumentalUrl : '',
+      echoUrl: typeof src.echoUrl === 'string' ? src.echoUrl : '',
+      distortionUrl: typeof src.distortionUrl === 'string' ? src.distortionUrl : '',
     };
   }
 
@@ -300,7 +314,9 @@ export function createAudioSourceManager(options) {
     });
 
     if (!res.ok) {
-      throw new Error(`stem.${variant}.download.api.failed:${res.status}`);
+      console.error(`stem.${variant}.download.api.failed:${res.status}`);
+      return '';
+     
     }
 
     const blob = await res.blob();
@@ -313,27 +329,37 @@ export function createAudioSourceManager(options) {
     if (!item || !cacheKey) return;
 
     const sourceStems = sanitizeStemSources(extractStemSourceUrls(item));
-    if (!sourceStems.vocalsUrl && !sourceStems.instrumentalUrl) return;
+    if (!sourceStems.vocalsUrl && !sourceStems.instrumentalUrl && !sourceStems.echoUrl && !sourceStems.distortionUrl) return;
 
     const existingStems = sanitizeStemSources(item.localStemUrls || item.stems);
 
     try {
-      const [vocalsUrl, instrumentalUrl] = await Promise.all([
+      const [vocalsUrl, instrumentalUrl, echoUrl, distortionUrl] = await Promise.all([
         existingStems.vocalsUrl || !sourceStems.vocalsUrl
           ? Promise.resolve(existingStems.vocalsUrl || sourceStems.vocalsUrl)
           : resolveStemVariantUrl(cacheKey, 'vocals', sourceStems.vocalsUrl),
         existingStems.instrumentalUrl || !sourceStems.instrumentalUrl
           ? Promise.resolve(existingStems.instrumentalUrl || sourceStems.instrumentalUrl)
           : resolveStemVariantUrl(cacheKey, 'instrumental', sourceStems.instrumentalUrl),
+        existingStems.echoUrl || !sourceStems.echoUrl
+          ? Promise.resolve(existingStems.echoUrl || sourceStems.echoUrl)
+          : resolveStemVariantUrl(cacheKey, 'echo', sourceStems.echoUrl),
+        existingStems.distortionUrl || !sourceStems.distortionUrl
+          ? Promise.resolve(existingStems.distortionUrl || sourceStems.distortionUrl)
+          : resolveStemVariantUrl(cacheKey, 'distortion', sourceStems.distortionUrl),
       ]);
 
       item.localStemUrls = {
         vocalsUrl: vocalsUrl || sourceStems.vocalsUrl || '',
         instrumentalUrl: instrumentalUrl || sourceStems.instrumentalUrl || '',
+        echoUrl: echoUrl || sourceStems.echoUrl || '',
+        distortionUrl: distortionUrl || sourceStems.distortionUrl || '',
       };
       item.stems = {
         vocalsUrl: item.localStemUrls.vocalsUrl,
         instrumentalUrl: item.localStemUrls.instrumentalUrl,
+        echoUrl: item.localStemUrls.echoUrl,
+        distortionUrl: item.localStemUrls.distortionUrl,
       };
 
       const existingSession = sessionBlobCache.get(cacheKey);
@@ -351,6 +377,8 @@ export function createAudioSourceManager(options) {
         id: item?.id,
         hasVocals: !!item.localStemUrls.vocalsUrl,
         hasInstrumental: !!item.localStemUrls.instrumentalUrl,
+        hasEcho: !!item.localStemUrls.echoUrl,
+        hasDistortion: !!item.localStemUrls.distortionUrl,
       });
     } catch (err) {
       logWarn('source.ensure.stems.cache.failed', {
@@ -732,9 +760,9 @@ export function createAudioSourceManager(options) {
   async function enrichStemsFromServer(item) {
     if (!item) return;
 
-    // Already have both stems locally in memory
+    // Already have all stem variants locally in memory
     const existing = sanitizeStemSources(item.localStemUrls || item.stems);
-    if (existing.vocalsUrl && existing.instrumentalUrl) return;
+    if (existing.vocalsUrl && existing.instrumentalUrl && existing.echoUrl && existing.distortionUrl) return;
 
     // Need at least a cachePath or name to identify the track
     if (!item.cachePath && !item.name) return;
@@ -789,19 +817,23 @@ export function createAudioSourceManager(options) {
     };
 
     // Launch both stem downloads immediately in parallel after stems? confirms 'ready'
-    const [vocalsUrl, instrumentalUrl] = await Promise.all([
+    const [vocalsUrl, instrumentalUrl, echoUrl, distortionUrl] = await Promise.all([
       existing.vocalsUrl || downloadViaApiOrFallback('vocals', stemData.vocals),
       existing.instrumentalUrl || downloadViaApiOrFallback('instrumental', stemData.instrumental),
+      existing.echoUrl || downloadViaApiOrFallback('echo', stemData.echo),
+      existing.distortionUrl || downloadViaApiOrFallback('distortion', stemData.distortion),
     ]);
 
-    if (!vocalsUrl && !instrumentalUrl) {
-      logWarn('stems.both.failed', { id: item?.id });
+    if (!vocalsUrl && !instrumentalUrl && !echoUrl && !distortionUrl) {
+      logWarn('stems.all.failed', { id: item?.id });
       return;
     }
 
     item.localStemUrls = {
       vocalsUrl: vocalsUrl || existing.vocalsUrl || '',
       instrumentalUrl: instrumentalUrl || existing.instrumentalUrl || '',
+      echoUrl: echoUrl || existing.echoUrl || '',
+      distortionUrl: distortionUrl || existing.distortionUrl || '',
     };
     item.stems = { ...item.localStemUrls };
 
@@ -819,6 +851,8 @@ export function createAudioSourceManager(options) {
       id: item?.id,
       hasVocals: !!item.localStemUrls.vocalsUrl,
       hasInstrumental: !!item.localStemUrls.instrumentalUrl,
+      hasEcho: !!item.localStemUrls.echoUrl,
+      hasDistortion: !!item.localStemUrls.distortionUrl,
     });
   }
 

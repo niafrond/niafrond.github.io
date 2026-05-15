@@ -246,8 +246,8 @@ export class SimpleMixFeatures {
   #nodesA = null;
   #nodesB = null;
   #deckStemState = {
-    A: { originalSrc: '', appliedSrc: '', stemMode: null, token: 0, processing: false, providedStems: { vocalsUrl: '', instrumentalUrl: '' } },
-    B: { originalSrc: '', appliedSrc: '', stemMode: null, token: 0, processing: false, providedStems: { vocalsUrl: '', instrumentalUrl: '' } },
+    A: { originalSrc: '', appliedSrc: '', stemMode: null, token: 0, processing: false, providedStems: { vocalsUrl: '', instrumentalUrl: '', echoUrl: '', distortionUrl: '' } },
+    B: { originalSrc: '', appliedSrc: '', stemMode: null, token: 0, processing: false, providedStems: { vocalsUrl: '', instrumentalUrl: '', echoUrl: '', distortionUrl: '' } },
   };
   #lastStemSyncAt = 0;
 
@@ -299,6 +299,8 @@ export class SimpleMixFeatures {
     const stems = {
       vocalsUrl: typeof source?.stems?.vocalsUrl === 'string' ? source.stems.vocalsUrl : '',
       instrumentalUrl: typeof source?.stems?.instrumentalUrl === 'string' ? source.stems.instrumentalUrl : '',
+      echoUrl: typeof source?.stems?.echoUrl === 'string' ? source.stems.echoUrl : '',
+      distortionUrl: typeof source?.stems?.distortionUrl === 'string' ? source.stems.distortionUrl : '',
     };
 
     state.originalSrc = url;
@@ -308,7 +310,6 @@ export class SimpleMixFeatures {
 
     if (this.#ready) {
       void this.#syncDeckStemMode(d, true, false);
-      this.#syncDeckEchoStemSource(d, true);
     }
   }
 
@@ -339,7 +340,6 @@ export class SimpleMixFeatures {
 
     // M/S adaptive gains: active when no server-side stem swap is in effect
     for (const deck of ['A', 'B']) {
-      this.#syncDeckEchoStemPlayback(deck);
       if (this.#deckStemState[deck].stemMode) {
         this.#resetMs(deck);
       } else {
@@ -466,6 +466,8 @@ export class SimpleMixFeatures {
     const fx = this.#settings.deckFx?.[deck];
     if (fx?.vocalRemove) return 'vocalRemove';
     if (fx?.instruRemove) return 'instruRemove';
+    if (this.#settings.distortion) return 'distortion';
+    if (this.#settings.echo) return 'echo';
     return null;
   }
 
@@ -636,19 +638,21 @@ export class SimpleMixFeatures {
 
     try {
       const provided = state.providedStems || {};
-      const providedVocals = typeof provided.vocalsUrl === 'string' ? provided.vocalsUrl : '';
-      const providedInstrumental = typeof provided.instrumentalUrl === 'string' ? provided.instrumentalUrl : '';
-      const needsVocals = mode === 'instruRemove';
-      const hasRequiredProvided = needsVocals ? !!providedVocals : !!providedInstrumental;
-      if (!hasRequiredProvided) return;
       const stems = {
-        vocalsUrl: providedVocals,
-        instrumentalUrl: providedInstrumental,
+        vocalsUrl: typeof provided.vocalsUrl === 'string' ? provided.vocalsUrl : '',
+        instrumentalUrl: typeof provided.instrumentalUrl === 'string' ? provided.instrumentalUrl : '',
+        echoUrl: typeof provided.echoUrl === 'string' ? provided.echoUrl : '',
+        distortionUrl: typeof provided.distortionUrl === 'string' ? provided.distortionUrl : '',
       };
-      if (state.token !== token) return;
-
-      const nextStemSrc = mode === 'instruRemove' ? stems.vocalsUrl : stems.instrumentalUrl;
+      const nextStemSrc = mode === 'instruRemove'
+        ? stems.vocalsUrl
+        : mode === 'vocalRemove'
+          ? stems.instrumentalUrl
+          : mode === 'distortion'
+            ? stems.distortionUrl
+            : stems.echoUrl;
       if (!nextStemSrc) return;
+      if (state.token !== token) return;
 
       await this.#swapDeckSource(audio, nextStemSrc);
       if (state.token !== token) return;
@@ -680,13 +684,16 @@ export class SimpleMixFeatures {
 
     for (const deck of ['A', 'B']) {
       const n = this.#nodes(deck);
-      n.wet.gain.value     = echo       ? 0.35 : 0;
-      n.dry.gain.value     = 1;
-      n.distWet.gain.value = distortion ? 0.35 : 0;
+      // Echo/distortion now come from API-generated stem files.
+      n.wet.gain.value = 0;
+      n.dry.gain.value = 1;
+      n.distWet.gain.value = 0;
       n.distDry.gain.value = 1;
+      n.echoBaseSend.gain.value = 1;
+      n.echoStemSend.gain.value = 0;
+      n.echoStemAudio?.pause?.();
     }
 
-    this.#syncAllDeckEchoStemSources(true);
     void this.#syncAllDeckStemModes(true);
 
     if (!autoBpm) {

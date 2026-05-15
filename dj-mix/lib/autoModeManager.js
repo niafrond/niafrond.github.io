@@ -515,35 +515,48 @@ export function createAutoModeManager({
   /**
    * Search for recommendations and prepare next track
    */
-  async function searchAndAddNextTrack(currentTrack) {
+  async function searchAndAddNextTrack(currentTrack, options = {}) {
+    const force = options?.force === true;
+
     if (!autoModeEnabled) {
       logger?.debug?.('autoDj: disabled, skipping search');
-      return;
+      return false;
     }
 
     if (!currentTrack) {
       logger?.debug?.('autoDj: no current track, skipping search');
-      return;
+      return false;
+    }
+
+    // Check if there's already a song queued after the current track
+    const queue = getQueue();
+    const currentIndex = Number(getCurrentTrackIndex?.()) || -1;
+    if (!force && currentIndex >= 0 && currentIndex + 1 < queue.length) {
+      logger?.debug?.('autoDj: next track already queued, skipping search', {
+        currentIndex,
+        queueLength: queue.length,
+      });
+      return false;
     }
 
     // Avoid too frequent searches
     const now = Date.now();
-    if (now - lastSearchTime < SEARCH_COOLDOWN_MS) {
+    if (!force && now - lastSearchTime < SEARCH_COOLDOWN_MS) {
       logger?.debug?.('autoDj: search cooldown active', {
         currentTrackId: currentTrack.id,
         elapsedMs: now - lastSearchTime,
         cooldownMs: SEARCH_COOLDOWN_MS,
       });
-      return;
+      return false;
     }
 
     // Avoid searching for the same track multiple times
-    if (lastSearchedTrackId === currentTrack.id) {
+    if (!force && lastSearchedTrackId === currentTrack.id) {
       logger?.debug?.('autoDj: already searched for this track', {
         currentTrackId: currentTrack.id,
         currentTrackName: currentTrack.name,
       });
-      return;
+      return false;
     }
 
     lastSearchedTrackId = currentTrack.id;
@@ -621,7 +634,7 @@ export function createAutoModeManager({
           trackName: currentTrack.name,
           artistName: currentTrack.artist,
         });
-        return;
+        return false;
       }
 
       logger?.debug?.('autoDj: search returned results', { count: results.length });
@@ -686,21 +699,28 @@ export function createAutoModeManager({
             logger?.debug?.('autoDj: failed to prefetch next mix data', { error: err?.message });
           });
 
-        await addToQueue(selectedTrack);
+        await addToQueue(selectedTrack, {
+          source: 'auto-dj',
+          autoDjReferenceTrackId: currentTrack.id || null,
+          showAddedToast: false,
+        });
         pendingNextTrack = selectedTrack;
 
         showToast?.(
           `🤖 AutoDJ: "${selectedTrack.trackName || selectedTrack.name}" queued`,
           false
         );
+        return true;
       } else {
         logger?.warn?.('autoDj: no unplayed tracks found in results');
+        return false;
       }
     } catch (err) {
       logger?.error?.('autoDj: search failed', {
         error: err?.message,
         currentTrackName: currentTrack.name,
       });
+      return false;
     }
   }
 
@@ -797,7 +817,11 @@ export function createAutoModeManager({
         artist: pendingNextTrack.artistName || pendingNextTrack.artist,
       });
 
-      await addToQueue(pendingNextTrack);
+      await addToQueue(pendingNextTrack, {
+        source: 'auto-dj',
+        autoDjReferenceTrackId: getCurrentTrackId?.() || null,
+        showAddedToast: false,
+      });
       pendingNextTrack = null;
       return true;
     } catch (err) {

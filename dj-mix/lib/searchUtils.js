@@ -205,12 +205,14 @@ export function mapApiTrackToSearchItem(track) {
     downloadUrl: track.downloadUrl || track.streamUrl || track.url || '',
     vocalsUrl: stems.vocalsUrl,
     instrumentalUrl: stems.instrumentalUrl,
+    echoUrl: stems.echoUrl,
+    distortionUrl: stems.distortionUrl,
   };
 }
 
 export function extractStemSourceUrls(track) {
   if (!track || typeof track !== 'object') {
-    return { vocalsUrl: '', instrumentalUrl: '' };
+    return { vocalsUrl: '', instrumentalUrl: '', echoUrl: '', distortionUrl: '' };
   }
 
   const isUsableStemUrl = (value) => {
@@ -266,13 +268,37 @@ export function extractStemSourceUrls(track) {
     track.versions?.no_vocals?.url,
   ]);
 
-  return { vocalsUrl, instrumentalUrl };
+  const echoUrl = pickFirst([
+    track.echo,
+    track.echoUrl,
+    track.echo_url,
+    track.vocalEchoUrl,
+    track.stems?.echo,
+    track.stems?.echoUrl,
+    track.effects?.echo,
+    track.versions?.echo?.url,
+    track.echoPath,
+  ]);
+
+  const distortionUrl = pickFirst([
+    track.distortion,
+    track.distortionUrl,
+    track.distortion_url,
+    track.vocalDistortionUrl,
+    track.stems?.distortion,
+    track.stems?.distortionUrl,
+    track.effects?.distortion,
+    track.versions?.distortion?.url,
+    track.distortionPath,
+  ]);
+
+  return { vocalsUrl, instrumentalUrl, echoUrl, distortionUrl };
 }
 
 export function hasAvailableStems(track) {
   if (!track || typeof track !== 'object') return false;
   const stems = extractStemSourceUrls(track);
-  if (stems.vocalsUrl || stems.instrumentalUrl) return true;
+  if (stems.vocalsUrl || stems.instrumentalUrl || stems.echoUrl || stems.distortionUrl) return true;
   return String(track.stemsStatus || '').toLowerCase() === 'ready';
 }
 

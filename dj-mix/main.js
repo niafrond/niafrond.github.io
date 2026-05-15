@@ -44,7 +44,6 @@ const FX_VISIBILITY_KEY = 'dj-mix:fx:hidden';
 const DEBUG_LOGS_KEY = 'dj-mix:logs:debug';
 const MIX_TRANSITION_MODE_KEY = 'dj-mix:transition:mode';
 const TRACK_MAX_DURATION_KEY = 'dj-mix:track:max-duration';
-const TRACK_MAX_DURATION_ENABLED_KEY = 'dj-mix:track:max-duration:enabled';
 const DEFAULT_DOWNLOADER_API_URL = 'http://192.168.8.149:3000';
 const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
 
@@ -84,6 +83,7 @@ let draggedQueueIndex = -1;
 let suppressQueueItemClick = false;
 let deckMixRatio = 0;
 let manualMixLock = false;
+let autoSuggestionRefreshInProgress = false;
 let deckBCueIndex = -1;
 let deckCueDeck = null;
 const deckMixDataByTrackId = new Map();
@@ -113,8 +113,7 @@ const deckDisplayItems = { A: null, B: null };
 let prevIsCrossfading = false;
 let selectedTransitionMode = readTransitionModeSetting();
 let trackMaxDurationSec = readTrackMaxDurationSetting();
-let trackMaxDurationEnabled = readTrackMaxDurationEnabledSetting();
-let trackMaxDurationAppliedSec = trackMaxDurationEnabled ? trackMaxDurationSec : 0;
+let trackMaxDurationAppliedSec = trackMaxDurationSec;
 
 function readTransitionModeSetting() {
   try {
@@ -151,27 +150,6 @@ function persistTrackMaxDurationSetting(seconds) {
   }
 }
 
-function readTrackMaxDurationEnabledSetting() {
-  try {
-    const stored = localStorage.getItem(TRACK_MAX_DURATION_ENABLED_KEY);
-    return stored == null ? true : stored === '1';
-  } catch (_) {
-    return true;
-  }
-}
-
-function persistTrackMaxDurationEnabledSetting(enabled) {
-  try {
-    localStorage.setItem(TRACK_MAX_DURATION_ENABLED_KEY, enabled ? '1' : '0');
-  } catch (_) {
-    // ignore storage failures
-  }
-}
-
-function getEffectiveTrackMaxDurationSec() {
-  return trackMaxDurationEnabled ? trackMaxDurationSec : 0;
-}
-
 function applyTransitionModeSetting(mode, options = {}) {
   const { persist = true } = options;
   const safeMode = MIX_TRANSITION_MODES.includes(mode) ? mode : 'auto';
@@ -184,30 +162,37 @@ function applyTransitionModeSetting(mode, options = {}) {
 }
 
 function recalculateAutomixTimingIfNeeded() {
-  const effectiveMaxDurationSec = getEffectiveTrackMaxDurationSec();
-
   // If auto mode is enabled and a track is playing, recalculate timing
   if (autoModeManager.isAutoModeEnabled() && currentIndex >= 0 && queue[currentIndex]) {
     const currentItem = queue[currentIndex];
     logDebug('trackMaxDuration: recalculating automix timing', { 
       trackName: currentItem.name,
-      newMaxDurationSec: effectiveMaxDurationSec,
-      enabled: trackMaxDurationEnabled,
+      newMaxDurationSec: trackMaxDurationSec,
     });
-    applyTrackMaxDurationForCurrentPlayback();
     autoModeManager.scheduleAutomixTiming(currentItem);
-    updateMaxDurationMarker();
-  } else {
-    logDebug('autoDj: skip automix recalculation', {
-      autoModeEnabled: autoModeManager.isAutoModeEnabled(),
-      currentIndex,
-      hasCurrentTrack: Boolean(queue[currentIndex]),
-    });
   }
 }
 
 function applyTrackMaxDurationForCurrentPlayback() {
-  trackMaxDurationAppliedSec = getEffectiveTrackMaxDurationSec();
+  trackMaxDurationAppliedSec = trackMaxDurationSec;
+}
+
+function applyTrackMaxDurationSetting(nextValue, logEvent) {
+  const value = Math.max(0, Math.min(600, Number.parseInt(String(nextValue || '0'), 10) || 0));
+  trackMaxDurationSec = value;
+  applyTrackMaxDurationForCurrentPlayback();
+  persistTrackMaxDurationSetting(value);
+  if (trackMaxDurationInput) {
+    trackMaxDurationInput.value = String(value);
+  }
+
+  const msg = value > 0 ? `Durée max: ${value}s` : 'Durée max: désactivée';
+  showToast(msg);
+  logDebug(logEvent || 'trackMaxDuration: setting changed', { value });
+
+  // Keep trigger and marker aligned with zone-aware automix timing.
+  recalculateAutomixTimingIfNeeded();
+  updateMaxDurationMarker();
 }
 
 const setupScreen = document.getElementById('setup-screen');
@@ -249,12 +234,13 @@ const deckABpmReset = document.getElementById('deck-a-bpm-reset');
 const deckBBpmReset = document.getElementById('deck-b-bpm-reset');
 const deckALaunchBtn = document.getElementById('deck-a-launch');
 const deckBLaunchBtn = document.getElementById('deck-b-launch');
+const deckARefreshSuggestionBtn = document.getElementById('deck-a-refresh-suggestion');
+const deckBRefreshSuggestionBtn = document.getElementById('deck-b-refresh-suggestion');
 const deckMixSlider = document.getElementById('deck-mix-slider');
 const deckMixLabel = document.getElementById('deck-mix-label');
 const deckBCueLabel = document.getElementById('deck-b-cue-label');
 const mixTransitionModeSelect = document.getElementById('mix-transition-mode');
 const trackMaxDurationInput = document.getElementById('track-max-duration');
-const trackMaxDurationToggleBtn = document.getElementById('track-max-duration-toggle');
 const trackMaxDurationMinus = document.getElementById('track-max-duration-minus');
 const trackMaxDurationPlus = document.getElementById('track-max-duration-plus');
 const mixModeRow = document.querySelector('.mix-mode-row');
@@ -533,6 +519,8 @@ const playlistManager = createPlaylistManager({
       stems: {
         vocalsUrl: file.vocalsUrl || '',
         instrumentalUrl: file.instrumentalUrl || '',
+        echoUrl: file.echoUrl || '',
+        distortionUrl: file.distortionUrl || '',
       },
       cachePath: file.cachePath || '',
       downloadUrl: file.url || file.localUrl || file.streamUrl || '',
@@ -551,6 +539,7 @@ function isCacheTabActive() {
 const renderDeckState = (detail) => {
   uiRenderer.renderDeckState(detail);
   updatePlannedStartMarker();
+  updateSuggestionRefreshButtons();
 };
 const updateNowPlaying = (item, deck = getFocusDeck()) => uiRenderer.updateNowPlaying(item, deck);
 const updateUpcomingArtwork = () => uiRenderer.updateUpcomingArtwork();
@@ -601,41 +590,6 @@ function applyDebugLogsSetting(enabled, options = {}) {
   }
 }
 
-function updateTrackMaxDurationToggleUI() {
-  if (!trackMaxDurationToggleBtn) return;
-  trackMaxDurationToggleBtn.setAttribute('aria-pressed', String(trackMaxDurationEnabled));
-  trackMaxDurationToggleBtn.textContent = `Durée max: ${trackMaxDurationEnabled ? 'ON' : 'OFF'}`;
-  trackMaxDurationToggleBtn.classList.toggle('is-enabled', trackMaxDurationEnabled);
-}
-
-function applyTrackMaxDurationEnabledSetting(enabled, options = {}) {
-  const { persist = true, showFeedback = false } = options;
-  trackMaxDurationEnabled = Boolean(enabled);
-  if (persist) persistTrackMaxDurationEnabledSetting(trackMaxDurationEnabled);
-  updateTrackMaxDurationToggleUI();
-  applyTrackMaxDurationForCurrentPlayback();
-  updateMaxDurationMarker();
-
-  if (trackMaxDurationEnabled) {
-    recalculateAutomixTimingIfNeeded();
-  }
-
-  if (!trackMaxDurationEnabled && showFeedback) {
-    showToast('Durée max désactivée (valeur conservée)');
-  } else if (trackMaxDurationEnabled && showFeedback) {
-    const msg = trackMaxDurationSec > 0
-      ? `Durée max activée: ${trackMaxDurationSec}s`
-      : 'Durée max activée: aucune limite';
-    showToast(msg);
-  }
-
-  logDebug('trackMaxDuration: enabled changed', {
-    enabled: trackMaxDurationEnabled,
-    configuredSec: trackMaxDurationSec,
-    appliedSec: trackMaxDurationAppliedSec,
-  });
-}
-
 /**
  * Update stem removal button disabled state for a deck based on stem availability.
  * Disable buttons if stems are not yet loaded, enable if they are available.
@@ -666,15 +620,22 @@ function backgroundEnrichStems(deck, item) {
     .then(() => {
       // After enrichment, check if stems are now available
       const stems = item.localStemUrls || item.stems;
-      if (!stems?.vocalsUrl && !stems?.instrumentalUrl) return; // no stems found
+      if (!stems?.vocalsUrl && !stems?.instrumentalUrl && !stems?.echoUrl && !stems?.distortionUrl) return; // no stems found
       if (deckDisplayItems[deck] !== item) return; // item was swapped out
-      
-      // Mark stems as loaded for this deck
-      stemsLoadedPerDeck[deck] = true;
+
+      // Vocal/instrumental toggles depend on classic stems availability.
+      stemsLoadedPerDeck[deck] = Boolean(stems?.vocalsUrl || stems?.instrumentalUrl);
       updateStemButtonState(deck);
-      
+
       player?.updateDeckStems(deck, stems);
-      logDebug('stems.enriched.deck', { deck, id: item?.id, hasVocals: !!stems.vocalsUrl, hasInstrumental: !!stems.instrumentalUrl });
+      logDebug('stems.enriched.deck', {
+        deck,
+        id: item?.id,
+        hasVocals: !!stems.vocalsUrl,
+        hasInstrumental: !!stems.instrumentalUrl,
+        hasEcho: !!stems.echoUrl,
+        hasDistortion: !!stems.distortionUrl,
+      });
     })
     .catch((err) => {
       logWarn('stems.enrichment.error', { deck, id: item?.id, error: err?.message });
@@ -701,6 +662,99 @@ function storeTrackMixData(item, mixData) {
   }
 }
 
+function resolveMixDataStartOffsetMs(mixData) {
+  if (!mixData || typeof mixData !== 'object') return 0;
+
+  const probableStartSec = Number(mixData.probableSongStartSec);
+  const hasProbableStart = Number.isFinite(probableStartSec) && probableStartSec > 0;
+  let recommendedSec = hasProbableStart ? probableStartSec : 0;
+
+  // Honor explicit recommendation fields when present on mix payload.
+  const explicitOffsetMs = resolveTrackStartOffsetMs(mixData);
+  if (explicitOffsetMs > 0) {
+    recommendedSec = Math.max(recommendedSec, explicitOffsetMs / 1000);
+  }
+
+  const indicators = mixData.indicators && typeof mixData.indicators === 'object'
+    ? mixData.indicators
+    : null;
+
+  const toFiniteNumber = (value) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
+  };
+
+  const introDanceability = toFiniteNumber(
+    indicators?.introDanceability
+    ?? indicators?.openingDanceability
+    ?? indicators?.startDanceability
+    ?? indicators?.danceabilityIntro
+  );
+  const introEnergy = toFiniteNumber(
+    indicators?.introEnergy
+    ?? indicators?.openingEnergy
+    ?? indicators?.startEnergy
+    ?? indicators?.energyIntro
+  );
+
+  const sortedPeakZones = Array.isArray(mixData.peakZones)
+    ? [...mixData.peakZones]
+      .filter((zone) => Number.isFinite(Number(zone?.startSec)))
+      .sort((a, b) => Number(a.startSec) - Number(b.startSec))
+    : [];
+
+  const firstPeakZone = sortedPeakZones[0] || null;
+  const firstPeakStartSec = Number(firstPeakZone?.startSec);
+  const hasPeak = Number.isFinite(firstPeakStartSec) && firstPeakStartSec > 0;
+  const firstPeakScore = toFiniteNumber(firstPeakZone?.score);
+
+  const introLooksWeak = (
+    (introDanceability != null && introDanceability <= 0.45)
+    || (introEnergy != null && introEnergy <= 0.4)
+    || (hasProbableStart && probableStartSec >= 6)
+  );
+
+  const peakIsLateEnough = hasPeak
+    && firstPeakStartSec >= Math.max(10, (hasProbableStart ? probableStartSec : 0) + 8)
+    && (firstPeakScore == null || firstPeakScore >= 0.25);
+
+  // If intro is likely non-danceable, start from first peak to keep momentum.
+  if (introLooksWeak && peakIsLateEnough) {
+    recommendedSec = Math.max(recommendedSec, firstPeakStartSec);
+  }
+
+  if (!Number.isFinite(recommendedSec) || recommendedSec <= 0) return 0;
+  return Math.round(recommendedSec * 1000);
+}
+
+function applyMixSuggestedStartOffset(item, mixData, options = {}) {
+  if (!item || !mixData) return false;
+
+  const { overrideExisting = false } = options;
+  const existingOffsetMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
+  if (existingOffsetMs > 0 && !overrideExisting) return false;
+
+  const suggestedOffsetMs = resolveMixDataStartOffsetMs(mixData);
+  if (suggestedOffsetMs <= 0) return false;
+
+  const durationMs = Math.max(0, Number(item.duration) || 0);
+  const cappedOffsetMs = durationMs > 0
+    ? Math.max(0, Math.min(suggestedOffsetMs, Math.max(0, durationMs - 1000)))
+    : Math.max(0, suggestedOffsetMs);
+
+  if (cappedOffsetMs <= 0 || cappedOffsetMs === existingOffsetMs) return false;
+
+  item.autoDjStartOffsetMs = cappedOffsetMs;
+  touchQueueItem(item);
+  logInfo('autoDj: start offset updated from mix data', {
+    id: item.id,
+    name: item.name,
+    artist: item.artist,
+    startOffsetMs: cappedOffsetMs,
+  });
+  return true;
+}
+
 function preloadMixDataForDeckItem(item, deck) {
   if (!item) return;
 
@@ -710,6 +764,11 @@ function preloadMixDataForDeckItem(item, deck) {
       if (!mixData) return;
 
       storeTrackMixData(item, mixData);
+      const startOffsetUpdated = applyMixSuggestedStartOffset(item, mixData);
+      if (startOffsetUpdated) {
+        updatePlannedStartMarker();
+        renderQueue();
+      }
       if (deckDisplayItems[currentDeck] === item) {
         renderMixZones();
       }
@@ -761,18 +820,13 @@ const autoModeManager = createAutoModeManager({
   onAutomixTimingCalculated: (triggerMs) => {
     nextAutomixTriggerMs = triggerMs;
     automixTriggeredForTrack = false;
-    logDebug('autoDj: timing calculated', {
-      triggerMs,
-      currentTrackId,
-      currentTrackName: queue[currentIndex]?.name,
-      playbackDurationMs,
-      currentPlayingDeck,
-    });
+    logDebug('autoDj: timing calculated', { triggerMs });
     updateAutoDjMarker();
     updateMaxDurationMarker();
   },
   onMixDataUpdated: () => {
     renderMixZones();
+    updateMaxDurationMarker();
   },
 });
 
@@ -797,7 +851,6 @@ tabBtns.forEach((btn) => {
   if (trackMaxDurationInput) {
     trackMaxDurationInput.value = String(trackMaxDurationSec);
   }
-  applyTrackMaxDurationEnabledSetting(trackMaxDurationEnabled, { persist: false, showFeedback: false });
 
   autoModeManager.initialize();
   updateAutoModeUI();
@@ -894,15 +947,6 @@ function hookPlayerEvents() {
 
     playbackPositionMs = position;
     playbackDurationMs = duration;
-    logDebug('player.progress', {
-      position,
-      duration,
-      autoModeEnabled: autoModeManager.isAutoModeEnabled(),
-      nextAutomixTriggerMs,
-      automixTriggeredForTrack,
-      currentIndex,
-      currentTrackId,
-    });
 
     // Auto DJ: Check if it's time to trigger automix
     if (autoModeManager.isAutoModeEnabled() && 
@@ -923,33 +967,18 @@ function hookPlayerEvents() {
       autoModeManager.addPendingTrackToQueue()
         .then((added) => {
           if (added) {
-            logDebug('autoDj: pending track added, triggering automix', {
-              queueLength: queue.length,
-              currentIndex,
-              nextIdx: currentIndex + 1,
-            });
+            logDebug('autoDj: pending track added, triggering automix', {});
             const nextIdx = currentIndex + 1;
             if (nextIdx < queue.length) {
               autoMixBtn?.click?.();
             }
           } else {
-            logDebug('autoDj: no pending track, skipping automix trigger', {
-              queueLength: queue.length,
-              currentIndex,
-              nextAutomixTriggerMs,
-            });
+            logDebug('autoDj: no pending track, skipping automix trigger', {});
           }
         })
         .catch(err => {
           logWarn('autoDj: failed to add pending track', { error: err?.message });
         });
-    } else {
-      logDebug('autoDj: progress check skipped', {
-        autoModeEnabled: autoModeManager.isAutoModeEnabled(),
-        automixTriggeredForTrack,
-        nextAutomixTriggerMs,
-        position,
-      });
     }
   });
 
@@ -1249,60 +1278,19 @@ mixTransitionModeSelect?.addEventListener('change', () => {
 });
 
 trackMaxDurationInput?.addEventListener('change', () => {
-  const value = Math.max(0, Math.min(600, parseInt(trackMaxDurationInput.value || '0', 10)));
-  trackMaxDurationSec = value;
-  persistTrackMaxDurationSetting(value);
-  trackMaxDurationInput.value = String(value);
-  const msg = trackMaxDurationEnabled
-    ? (value > 0 ? `Durée max: ${value}s` : 'Durée max: aucune limite')
-    : `Durée max sauvegardée: ${value}s (OFF)`;
-  showToast(msg);
-  logDebug('trackMaxDuration: setting changed', { value, enabled: trackMaxDurationEnabled });
-  if (trackMaxDurationEnabled) {
-    recalculateAutomixTimingIfNeeded();
-  }
-  updateMaxDurationMarker();
-});
-
-trackMaxDurationToggleBtn?.addEventListener('click', () => {
-  applyTrackMaxDurationEnabledSetting(!trackMaxDurationEnabled, {
-    persist: true,
-    showFeedback: true,
-  });
+  applyTrackMaxDurationSetting(trackMaxDurationInput.value, 'trackMaxDuration: setting changed');
 });
 
 trackMaxDurationMinus?.addEventListener('click', () => {
   const current = parseInt(trackMaxDurationInput?.value || '0', 10);
   const newValue = Math.max(0, current - 5);
-  trackMaxDurationSec = newValue;
-  if (trackMaxDurationInput) trackMaxDurationInput.value = String(newValue);
-  persistTrackMaxDurationSetting(newValue);
-  const msg = trackMaxDurationEnabled
-    ? (newValue > 0 ? `Durée max: ${newValue}s` : 'Durée max: aucune limite')
-    : `Durée max sauvegardée: ${newValue}s (OFF)`;
-  showToast(msg);
-  logDebug('trackMaxDuration: decreased', { value: newValue, enabled: trackMaxDurationEnabled });
-  if (trackMaxDurationEnabled) {
-    recalculateAutomixTimingIfNeeded();
-  }
-  updateMaxDurationMarker();
+  applyTrackMaxDurationSetting(newValue, 'trackMaxDuration: decreased');
 });
 
 trackMaxDurationPlus?.addEventListener('click', () => {
   const current = parseInt(trackMaxDurationInput?.value || '0', 10);
   const newValue = Math.min(600, current + 5);
-  trackMaxDurationSec = newValue;
-  if (trackMaxDurationInput) trackMaxDurationInput.value = String(newValue);
-  persistTrackMaxDurationSetting(newValue);
-  const msg = trackMaxDurationEnabled
-    ? (newValue > 0 ? `Durée max: ${newValue}s` : 'Durée max: aucune limite')
-    : `Durée max sauvegardée: ${newValue}s (OFF)`;
-  showToast(msg);
-  logDebug('trackMaxDuration: increased', { value: newValue, enabled: trackMaxDurationEnabled });
-  if (trackMaxDurationEnabled) {
-    recalculateAutomixTimingIfNeeded();
-  }
-  updateMaxDurationMarker();
+  applyTrackMaxDurationSetting(newValue, 'trackMaxDuration: increased');
 });
 
 deckASlider?.addEventListener('input', () => {
@@ -1371,24 +1359,16 @@ autoModeBtn?.addEventListener('click', () => {
 
   if (isEnabled && currentIndex >= 0 && queue[currentIndex]) {
     const currentItem = queue[currentIndex];
-    logDebug('autoDj: enabled, scheduling immediate search', {
-      currentIndex,
-      trackName: currentItem.name,
-      artistName: currentItem.artist,
-    });
     autoModeManager.scheduleAutomixTiming(currentItem);
     autoModeManager.searchAndAddNextTrack(currentItem).catch((err) => {
       logWarn('autoDj: immediate search on enable failed', { error: err?.message });
     });
   } else {
-    logDebug('autoDj: toggle without active track', {
-      isEnabled,
-      currentIndex,
-      queueLength: queue.length,
-    });
     updateAutoDjMarker();
     updateMaxDurationMarker();
   }
+
+  updateSuggestionRefreshButtons();
 
   showToast(`Auto Mode: ${isEnabled ? '🤖 ON' : 'OFF'}`);
 });
@@ -1397,7 +1377,92 @@ function updateAutoModeUI() {
   const isEnabled = autoModeManager.isAutoModeEnabled();
   autoModeBtn.setAttribute('aria-pressed', String(isEnabled));
   autoModeBtn.textContent = `Auto Mode: ${isEnabled ? 'ON' : 'OFF'}`;
+  updateSuggestionRefreshButtons();
 }
+
+function updateSuggestionRefreshButtons() {
+  const isEnabled = autoModeManager.isAutoModeEnabled();
+  const hasCurrent = isPlaying && currentIndex >= 0 && Boolean(queue[currentIndex]);
+  const activeDeck = getResolvedActiveDeck();
+  const shouldShow = isEnabled && hasCurrent;
+
+  const applyState = (button, deck) => {
+    if (!button) return;
+    const visible = shouldShow && deck === activeDeck;
+    button.hidden = !visible;
+    button.disabled = !visible || autoSuggestionRefreshInProgress;
+  };
+
+  applyState(deckARefreshSuggestionBtn, 'A');
+  applyState(deckBRefreshSuggestionBtn, 'B');
+}
+
+function findAutoSuggestedTrackIndexAfterCurrent(currentTrack) {
+  const referenceId = currentTrack?.id || null;
+  for (let i = Math.max(0, currentIndex + 1); i < queue.length; i += 1) {
+    const item = queue[i];
+    if (!item || item.queueSource !== 'auto-dj') continue;
+    if (!referenceId || !item.autoDjReferenceTrackId || item.autoDjReferenceTrackId === referenceId) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+async function refreshAutoSuggestionForCurrentTrack() {
+  if (autoSuggestionRefreshInProgress) return;
+  if (!autoModeManager.isAutoModeEnabled()) {
+    showToast('Activez Auto Mode pour changer la suggestion', true);
+    return;
+  }
+
+  const currentItem = queue[currentIndex];
+  if (!currentItem) {
+    showToast('Aucune piste en cours', true);
+    return;
+  }
+
+  autoSuggestionRefreshInProgress = true;
+  updateSuggestionRefreshButtons();
+
+  const previousAutoSuggestionIndex = findAutoSuggestedTrackIndexAfterCurrent(currentItem);
+  const previousAutoSuggestion = previousAutoSuggestionIndex >= 0 ? queue[previousAutoSuggestionIndex] : null;
+
+  try {
+    const added = await autoModeManager.searchAndAddNextTrack(currentItem, { force: true });
+    if (!added) {
+      showToast('Aucune nouvelle suggestion disponible', true);
+      return;
+    }
+
+    if (previousAutoSuggestion) {
+      const idx = queue.indexOf(previousAutoSuggestion);
+      if (idx >= 0 && idx !== currentIndex) {
+        removeFromQueue(idx);
+      }
+    }
+
+    const inactiveDeck = getResolvedInactiveDeck();
+    if (inactiveDeck) {
+      await launchDeckFromQueue(inactiveDeck, { paused: true });
+    }
+    showToast('🤖 Suggestion AutoDJ changée');
+  } catch (err) {
+    logWarn('autoDj: refresh suggestion failed', { error: err?.message });
+    showToast(`AutoDJ: ${err?.message || 'erreur de suggestion'}`, true);
+  } finally {
+    autoSuggestionRefreshInProgress = false;
+    updateSuggestionRefreshButtons();
+  }
+}
+
+deckARefreshSuggestionBtn?.addEventListener('click', () => {
+  refreshAutoSuggestionForCurrentTrack().catch(() => {});
+});
+
+deckBRefreshSuggestionBtn?.addEventListener('click', () => {
+  refreshAutoSuggestionForCurrentTrack().catch(() => {});
+});
 
 function updateAutoDjMarker() {
   const isEnabled = autoModeManager.isAutoModeEnabled();
@@ -1443,9 +1508,7 @@ function updateMaxDurationMarker() {
   if (deckAMaxDurMarker) deckAMaxDurMarker.hidden = true;
   if (deckBMaxDurMarker) deckBMaxDurMarker.hidden = true;
 
-  const effectiveMaxDurationSec = trackMaxDurationEnabled
-    ? (isPlaying ? trackMaxDurationAppliedSec : trackMaxDurationSec)
-    : 0;
+  const effectiveMaxDurationSec = isPlaying ? trackMaxDurationAppliedSec : trackMaxDurationSec;
   if (effectiveMaxDurationSec <= 0) return;
 
   const durationMs = playbackDurationMs > 0 ? playbackDurationMs : (queue[currentIndex]?.duration ?? 0);
@@ -1454,7 +1517,26 @@ function updateMaxDurationMarker() {
   const maxMs = effectiveMaxDurationSec * 1000;
   if (maxMs >= durationMs) return;
 
-  const pct = Math.min(100, (maxMs / durationMs) * 100);
+  let markerMs = maxMs;
+  const currentItem = queue[currentIndex];
+  const fallbackMixData = autoModeManager.getCurrentTrackMixData?.();
+  const mixData = getTrackMixData(currentItem) || fallbackMixData || null;
+
+  if (mixData && typeof autoModeManager.findBestTransitionZone === 'function') {
+    const preferredZone = autoModeManager.findBestTransitionZone(mixData, {
+      targetSec: effectiveMaxDurationSec,
+    });
+
+    const zoneTriggerSec = Number.isFinite(preferredZone?.triggerSec)
+      ? preferredZone.triggerSec
+      : Number(preferredZone?.zone?.startSec);
+
+    if (Number.isFinite(zoneTriggerSec) && zoneTriggerSec > 0) {
+      markerMs = Math.min(maxMs, zoneTriggerSec * 1000);
+    }
+  }
+
+  const pct = Math.min(100, (markerMs / durationMs) * 100);
   const marker = currentPlayingDeck === 'B' ? deckBMaxDurMarker : deckAMaxDurMarker;
   if (marker) {
     marker.style.left = `${pct}%`;
@@ -1801,7 +1883,13 @@ async function triggerSearchFade(track) {
 }
 
 async function addToQueue(track, options = {}) {
-  const { playNow = false, preferFade = false } = options;
+  const {
+    playNow = false,
+    preferFade = false,
+    source = 'manual',
+    autoDjReferenceTrackId = null,
+    showAddedToast = true,
+  } = options;
   const artUrl = getBestArtworkUrl(track);
   const duration = getTrackDurationMs(track);
   const stems = extractStemSourceUrls(track);
@@ -1820,12 +1908,16 @@ async function addToQueue(track, options = {}) {
     stems: {
       vocalsUrl: stems.vocalsUrl,
       instrumentalUrl: stems.instrumentalUrl,
+      echoUrl: stems.echoUrl,
+      distortionUrl: stems.distortionUrl,
     },
     persistedSourceUrl: getDirectPlayableSourceUrl(track),
     sourceState: 'idle',
     sourceError: null,
     sourceMeta: null,
     localBlobUrl: null,
+    queueSource: source,
+    autoDjReferenceTrackId: source === 'auto-dj' ? (autoDjReferenceTrackId || null) : null,
     autoDjStartOffsetMs: suggestedStartOffsetMs,
     lastTouchedAt: Date.now(),
   };
@@ -1905,13 +1997,18 @@ async function addToQueue(track, options = {}) {
     // keep silent; item state already shows error in queue
   });
 
-  showToast(`✔ "${item.name}" ajouté`);
+  // Preload mix data early so start offset recommendations are available before cue/play.
+  preloadMixDataForDeckItem(item, getResolvedInactiveDeck()).catch(() => {});
+
+  if (showAddedToast) {
+    showToast(`✔ "${item.name}" ajouté`);
+  }
 }
 
 async function startPlaybackForIndex(index, mode, options = {}) {
   const item = queue[index];
   if (!item || !player) return;
-  const startPositionMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
+  let startPositionMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
 
   const targetDeck = options.targetDeck || ((mode === 'play' || mode === 'switch')
     ? getResolvedActiveDeck()
@@ -1947,7 +2044,22 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     deckDisplayItems[targetDeck] = item;
     if (mode === 'play') deckDisplayItems[targetDeck === 'A' ? 'B' : 'A'] = null;
     updateNowPlaying(item, targetDeck);
-    preloadMixDataForDeckItem(item, targetDeck);
+
+    const cachedMixData = getTrackMixData(item);
+    if (cachedMixData) {
+      applyMixSuggestedStartOffset(item, cachedMixData);
+      startPositionMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
+    }
+
+    const mixPreloadPromise = preloadMixDataForDeckItem(item, targetDeck);
+    if (startPositionMs <= 0) {
+      await Promise.race([
+        mixPreloadPromise,
+        new Promise((resolve) => setTimeout(resolve, 700)),
+      ]);
+      startPositionMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
+    }
+
     updatePlannedStartMarker();
     
     // Check if stems are already available in cache
@@ -2030,8 +2142,11 @@ async function startPlaybackForIndex(index, mode, options = {}) {
           nextItemId: nextItem.id,
           nextItemName: nextItem.name,
         });
-        ensureLocalSource(nextItem).then((nextUrl) => {
+        ensureLocalSource(nextItem).then(async (nextUrl) => {
           if (!player) return;
+
+          await preloadMixDataForDeckItem(nextItem, inactiveDeck);
+          const nextStartPositionMs = Math.max(0, Number(nextItem.autoDjStartOffsetMs) || 0);
           
           // Check if stems are already available in cache for inactive deck
           const nextHasStemsInCache = !!(nextItem.localStemUrls?.vocalsUrl || nextItem.localStemUrls?.instrumentalUrl || 
@@ -2048,10 +2163,9 @@ async function startPlaybackForIndex(index, mode, options = {}) {
             stems: nextItem.stems,
           }, {
             paused: true,
-            startPositionMs: Math.max(0, Number(nextItem.autoDjStartOffsetMs) || 0),
+            startPositionMs: nextStartPositionMs,
           });
           deckDisplayItems[inactiveDeck] = nextItem;
-          preloadMixDataForDeckItem(nextItem, inactiveDeck);
           updatePlannedStartMarker();
           
           // Always fetch stems from server for the next track
@@ -2084,15 +2198,6 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     automixTriggeredForTrack = false;
     nextAutomixTriggerMs = -1;
     currentPlayingDeck = targetDeck;
-    logDebug('autoDj: preparing next timing after playback start', {
-      mode,
-      index,
-      targetDeck,
-      trackName: item.name,
-      artistName: item.artist,
-      autoDjStartOffsetMs: item.autoDjStartOffsetMs,
-      trackDurationMs: item.duration,
-    });
     applyTrackMaxDurationForCurrentPlayback();
     updateAutoDjMarker();
     updateMaxDurationMarker();
@@ -2201,6 +2306,7 @@ function renderQueue() {
     uiRenderer.queueList.appendChild(uiRenderer.emptyQueue);
     uiRenderer.emptyQueue.style.display = '';
     if (uiRenderer.autoMixBtn) uiRenderer.autoMixBtn.disabled = true;
+    updateSuggestionRefreshButtons();
     return;
   }
 
@@ -2299,6 +2405,8 @@ function renderQueue() {
       await launchDeckFromQueue(deck, { paused: true, useCue: true });
     });
   });
+
+  updateSuggestionRefreshButtons();
 }
 
 function removeFromQueue(idx) {
@@ -2306,6 +2414,10 @@ function removeFromQueue(idx) {
   if (item?.id === currentTrackId) return;
   const [removed] = queue.splice(idx, 1);
   releaseLocalBlob(removed);
+
+  if (deckDisplayItems.A?.id === removed?.id) deckDisplayItems.A = null;
+  if (deckDisplayItems.B?.id === removed?.id) deckDisplayItems.B = null;
+
   if (deckBCueIndex === idx) deckBCueIndex = -1;
   else if (deckBCueIndex > idx) deckBCueIndex -= 1;
   if (deckCueDeck && deckDisplayItems[deckCueDeck]?.id === item?.id) deckCueDeck = null;

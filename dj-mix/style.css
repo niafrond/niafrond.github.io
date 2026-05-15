@@ -1101,6 +1101,38 @@ input {
   transform: scale(0.93);
 }
 
+.deck-suggestion-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+  transition: transform 0.15s ease, background 0.15s ease, opacity 0.2s ease;
+}
+
+.deck-suggestion-btn:hover {
+  background: rgba(0, 0, 0, 0.86);
+}
+
+.deck-suggestion-btn:active {
+  transform: scale(0.93);
+}
+
+.deck-suggestion-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .album-art-wrapper {
   position: relative;
   width: min(136px, 34vw);
@@ -2138,13 +2170,6 @@ input {
   .album-art-wrapper {
     width: 132px;
     height: 132px;
-  }
-
-  .album-art-next-wrapper,
-  .album-art-next,
-  .album-art-next-placeholder {
-    width: 88px;
-    height: 88px;
   }
 
   .track-name { font-size: 22px; }
