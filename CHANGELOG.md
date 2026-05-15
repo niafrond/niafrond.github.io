@@ -1,3 +1,10 @@
+## [1.196.1](https://github.com/niafrond/niafrond.github.io/compare/v1.196.0...v1.196.1) (2026-05-15)
+
+### Bug Fixes
+
+* **dj-mix:** ok ([2f683b8](https://github.com/niafrond/niafrond.github.io/commit/2f683b8a6db8fdaf6bf2673eb6d2cba158b154f7))
+* **dj-mix:** stem ([c7aba3e](https://github.com/niafrond/niafrond.github.io/commit/c7aba3e4d2e4d90a4894c328c247b0e2be5df27c))
+
 ## [1.196.0](https://github.com/niafrond/niafrond.github.io/compare/v1.195.0...v1.196.0) (2026-05-14)
 
 ### Features
