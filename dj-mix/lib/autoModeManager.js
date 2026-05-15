@@ -34,7 +34,9 @@ export function createAutoModeManager({
   addToQueue,
   showToast,
   logger,
+  getTrackMaxDurationSec,
   onAutomixTimingCalculated,
+  onMixDataUpdated,
 }) {
   let autoModeEnabled = false;
   let playHistory = new Set(); // Track IDs of songs that have been played
@@ -51,7 +53,8 @@ export function createAutoModeManager({
   // Load settings and history from localStorage
   function loadSettings() {
     try {
-      autoModeEnabled = localStorage.getItem(AUTO_MODE_KEY) === '1';
+      const rawAutoMode = localStorage.getItem(AUTO_MODE_KEY);
+      autoModeEnabled = rawAutoMode == null ? true : rawAutoMode === '1';
       const historyJson = localStorage.getItem(AUTO_MODE_HISTORY_KEY);
       if (historyJson) {
         const history = JSON.parse(historyJson);
@@ -129,57 +132,167 @@ export function createAutoModeManager({
   }
 
   /**
-   * Find best safe transition zone in a track
-   * Prefer breakdown zones, then other safe zones
+   * Check if a time point is within an avoid transition zone
    */
-  function findBestTransitionZone(mixData) {
+  function isInAvoidZone(timeSec, mixData) {
+    if (!mixData?.avoidTransitionZones?.length) return false;
+    
+    return mixData.avoidTransitionZones.some(
+      zone => timeSec >= zone.startSec && timeSec <= zone.endSec
+    );
+  }
+
+  /**
+   * Check if a time point is within a drop zone
+   */
+  function isInDropZone(timeSec, mixData) {
+    if (!mixData?.dropZones?.length) return false;
+    
+    return mixData.dropZones.some(
+      zone => timeSec >= zone.startSec && timeSec <= zone.endSec
+    );
+  }
+
+  /**
+   * Check if a zone is valid (not in avoid/drop zones)
+   */
+  function isValidTransitionZone(zone, mixData) {
+    if (!zone) return false;
+    
+    // Never transition in avoid zones
+    if (isInAvoidZone(zone.startSec, mixData) || isInAvoidZone(zone.endSec, mixData)) {
+      return false;
+    }
+    
+    // Never transition in drop zones (they're interesting moments)
+    if (isInDropZone(zone.startSec, mixData) || isInDropZone(zone.endSec, mixData)) {
+      return false;
+    }
+    
+    return true;
+  }
+
+  /**
+   * Find best safe transition zone in a track.
+   * - If targetSec is provided, pick zone closest to that target (max duration case).
+   * - Otherwise prefer a safe zone close to track end, but still before the end.
+   */
+  function findBestTransitionZone(mixData, options = {}) {
     if (!mixData) return null;
 
-    // Prefer breakdown zones (they're natural stopping points)
-    if (mixData.breakdownZones?.length) {
-      // Choose the breakdown zone closest to 2/3 of the track
-      const optimalTime = mixData.durationSec * 0.67;
-      let best = mixData.breakdownZones[0];
-      let bestDiff = Math.abs(best.startSec - optimalTime);
+    const durationSec = Number(mixData.durationSec) || 0;
+    const requestedTargetSec = Number(options.targetSec);
+    const hasTarget = Number.isFinite(requestedTargetSec) && requestedTargetSec > 0;
+    const fallbackEndTargetSec = durationSec > 0
+      ? Math.max(0, durationSec - 8)
+      : 0;
+    const targetSec = hasTarget ? requestedTargetSec : fallbackEndTargetSec;
 
-      for (const zone of mixData.breakdownZones) {
-        const diff = Math.abs(zone.startSec - optimalTime);
-        if (diff < bestDiff) {
+    const clampToZone = (valueSec, zone) => {
+      if (!zone) return valueSec;
+      const startSec = Number(zone.startSec) || 0;
+      const endSec = Number(zone.endSec) || startSec;
+      return Math.min(endSec, Math.max(startSec, valueSec));
+    };
+
+    const zoneDistanceToTarget = (zone) => {
+      if (!zone) return Infinity;
+      const startSec = Number(zone.startSec) || 0;
+      const endSec = Number(zone.endSec) || startSec;
+      if (targetSec < startSec) return startSec - targetSec;
+      if (targetSec > endSec) return targetSec - endSec;
+      return 0;
+    };
+
+    const scoreCandidateZones = (zones = [], type) => {
+      let best = null;
+      let bestDistance = Infinity;
+
+      for (const zone of zones) {
+        if (!isValidTransitionZone(zone, mixData)) {
+          logger?.debug?.('autoDj: skipping invalid zone', {
+            type,
+            startSec: zone.startSec,
+            endSec: zone.endSec,
+            inAvoid: isInAvoidZone(zone.startSec, mixData),
+            inDrop: isInDropZone(zone.startSec, mixData),
+          });
+          continue;
+        }
+
+        const distance = zoneDistanceToTarget(zone);
+        if (distance < bestDistance) {
           best = zone;
-          bestDiff = diff;
+          bestDistance = distance;
         }
       }
-      return { zone: best, type: 'breakdown', mixData };
-    }
 
-    // Then use general safe transition zones
-    if (mixData.safeTransitionZones?.length) {
-      const optimalTime = mixData.durationSec * 0.67;
-      let best = mixData.safeTransitionZones[0];
-      let bestDiff = Math.abs(best.startSec - optimalTime);
+      if (!best) return null;
 
-      for (const zone of mixData.safeTransitionZones) {
-        const diff = Math.abs(zone.startSec - optimalTime);
-        if (diff < bestDiff) {
-          best = zone;
-          bestDiff = diff;
-        }
-      }
-      return { zone: best, type: 'safe', mixData };
-    }
+      return {
+        zone: best,
+        type,
+        mixData,
+        triggerSec: clampToZone(targetSec, best),
+      };
+    };
 
-    // Fallback: suggest transition window
+    // Prefer safeTransitionZones for AutoDJ timing.
+    const safeCandidate = scoreCandidateZones(mixData.safeTransitionZones, 'safe');
+    if (safeCandidate) return safeCandidate;
+
+    // If no safeTransitionZone exists, fallback to breakdown zones.
+    const breakdownCandidate = scoreCandidateZones(mixData.breakdownZones, 'breakdown');
+    if (breakdownCandidate) return breakdownCandidate;
+
+    // Fallback: suggest transition window, avoiding problematic zones
     if (mixData.indicators?.transitionWindowHintSec) {
       const hint = mixData.indicators.transitionWindowHintSec;
       const idealStart = Math.max(
         mixData.probableSongStartSec + mixData.durationSec - hint.ideal,
         mixData.probableSongStartSec + mixData.durationSec * 0.6
       );
-      return {
-        zone: { startSec: idealStart, endSec: idealStart + hint.ideal },
-        type: 'estimated',
-        mixData,
-      };
+
+      // Verify fallback zone is valid
+      const fallbackZone = { startSec: idealStart, endSec: idealStart + hint.ideal };
+      if (isValidTransitionZone(fallbackZone, mixData)) {
+        return {
+          zone: fallbackZone,
+          type: 'estimated',
+          mixData,
+          triggerSec: clampToZone(targetSec, fallbackZone),
+        };
+      }
+    }
+
+    // As last resort, try to find a gap between avoid/drop zones
+    logger?.debug?.('autoDj: no valid transition zones found, attempting to find gap');
+    const allProblematicZones = [
+      ...(mixData.avoidTransitionZones || []),
+      ...(mixData.dropZones || []),
+    ].sort((a, b) => a.startSec - b.startSec);
+
+    if (allProblematicZones.length > 0) {
+      // Try to find a gap before the first problematic zone
+      const firstZone = allProblematicZones[0];
+      if (firstZone.startSec > 10) {
+        const gapZone = {
+          startSec: Math.max(1, firstZone.startSec - 5),
+          endSec: Math.min(firstZone.startSec, firstZone.startSec - 1),
+        };
+        if (gapZone.endSec > gapZone.startSec) {
+          logger?.debug?.('autoDj: using gap before first problematic zone', {
+            startSec: gapZone.startSec,
+            endSec: gapZone.endSec,
+          });
+          return {
+            zone: gapZone,
+            type: 'gap',
+            mixData,
+            triggerSec: clampToZone(targetSec, gapZone),
+          };
+        }
+      }
     }
 
     return null;
@@ -187,16 +300,33 @@ export function createAutoModeManager({
 
   /**
    * Recommend transition type based on track characteristics
+   * Considers drop zones and avoid zones to pick the most appropriate transition
    */
   function recommendTransitionType(currentMixData, nextMixData) {
+    // Check if next track has drops coming - use filter to preserve energy
+    if (nextMixData?.dropZones?.length && nextMixData.dropZones[0].startSec < 10) {
+      return 'filter_sweep_high_to_low'; // Smooth filter sweep before the drop
+    }
+
     // If next track has a clear breakdown at start, use crossfade to it
     if (nextMixData?.breakdownZones?.length && nextMixData.breakdownZones[0].startSec < 5) {
       return 'crossfade_logarithmic';
     }
 
-    // If current track has drop zones, might want to fade before that
+    // If current track has drop zones ending soon, want smooth transition out
     if (currentMixData?.dropZones?.length) {
-      return 'filter_sweep_low_high';
+      const lastDrop = currentMixData.dropZones[currentMixData.dropZones.length - 1];
+      if (lastDrop && lastDrop.endSec < currentMixData.durationSec - 5) {
+        return 'filter_sweep_low_high'; // Restore energy after drop
+      }
+    }
+
+    // Check if we're transitioning from breakdown zone - can be more aggressive
+    if (currentMixData?.breakdownZones?.length) {
+      const lastBreakdown = currentMixData.breakdownZones[currentMixData.breakdownZones.length - 1];
+      if (lastBreakdown && lastBreakdown.endSec < currentMixData.durationSec - 2) {
+        return 'crossfade_linear'; // Standard crossfade works well after breakdown
+      }
     }
 
     // Default to a smooth crossfade
@@ -250,19 +380,42 @@ export function createAutoModeManager({
     if (!autoModeEnabled || !currentTrack) return;
 
     clearAutomixTimer();
+    currentTrackMixData = null;
+    onMixDataUpdated?.(null);
 
     logger?.debug?.('autoDj: scheduling automix timing for', {
       trackName: currentTrack.name,
       durationMs: currentTrack.duration,
+      artistName: currentTrack.artist,
+      maxDurationSec: getTrackMaxDurationSec?.() || 0,
     });
 
     // Fetch mix data for current track
     fetchMixData(currentTrack.name, currentTrack.artist)
       .then(mixData => {
         currentTrackMixData = mixData;
+        onMixDataUpdated?.(mixData);
+
+        const maxDurationSec = getTrackMaxDurationSec?.() || 0;
+        const maxDurationMs = maxDurationSec > 0 ? maxDurationSec * 1000 : -1;
 
         if (!mixData) {
           logger?.debug?.('autoDj: no mix data available, using duration-based timing');
+          
+          // If max duration is set, use it as constraint
+          if (maxDurationMs > 0) {
+            const triggerMs = Math.min(maxDurationMs, Math.max(
+              currentTrack.duration - 20000,
+              currentTrack.duration * 0.75
+            ));
+            logger?.debug?.('autoDj: calculated fallback timing with max duration constraint', { 
+              triggerMs, 
+              maxDurationMs 
+            });
+            onAutomixTimingCalculated?.(triggerMs);
+            return;
+          }
+          
           // Fallback: trigger 20s before end
           const triggerMs = Math.max(
             currentTrack.duration - 20000,
@@ -273,21 +426,43 @@ export function createAutoModeManager({
           return;
         }
 
-        const transitionZone = findBestTransitionZone(mixData);
+        const targetSecForZone = maxDurationSec > 0 ? maxDurationSec : null;
+        const transitionZone = findBestTransitionZone(mixData, {
+          targetSec: targetSecForZone,
+        });
         if (transitionZone) {
-          const triggerMs = transitionZone.zone.startSec * 1000;
-          const reason = transitionZone.type === 'breakdown'
+          // Trigger inside the selected safe zone (or fallback zone), not at track end.
+          const computedTriggerSec = Number.isFinite(transitionZone.triggerSec)
+            ? transitionZone.triggerSec
+            : transitionZone.zone.startSec;
+          let triggerMs = computedTriggerSec * 1000;
+          let reason = transitionZone.type === 'breakdown'
             ? 'breakdown zone'
             : transitionZone.type === 'safe'
               ? 'safe zone'
-              : 'estimated transition window';
+              : transitionZone.type === 'gap'
+                ? 'gap between problematic zones'
+                : 'estimated transition window';
+
+          // Apply max duration constraint if set: trigger at max duration if before zone end
+          if (maxDurationMs > 0 && triggerMs > maxDurationMs) {
+            logger?.info?.('autoDj: max duration constraint applied (zone end after max)', {
+              trackName: currentTrack.name,
+              zoneEndMs: triggerMs,
+              maxDurationMs,
+            });
+            triggerMs = maxDurationMs;
+            reason += ' (capped by max duration)';
+          }
 
           logger?.info?.('autoDj: calculated automix timing', {
             trackName: currentTrack.name,
             triggerMs,
             reason,
+            triggerSec: computedTriggerSec,
             zoneStart: transitionZone.zone.startSec,
             zoneEnd: transitionZone.zone.endSec,
+            maxDurationSec,
           });
 
           onAutomixTimingCalculated?.(triggerMs);
@@ -295,14 +470,44 @@ export function createAutoModeManager({
         }
 
         logger?.debug?.('autoDj: no transition zone found');
+        
+        // Fallback: try to find any safe point avoiding problematic zones
+        const allProblematicZones = [
+          ...(mixData.avoidTransitionZones || []),
+          ...(mixData.dropZones || []),
+        ].sort((a, b) => a.startSec - b.startSec);
+
+        if (allProblematicZones.length > 0) {
+          // Try to find a gap before the first problematic zone
+          const firstZone = allProblematicZones[0];
+          if (firstZone.startSec > 10) {
+            const safeTimeMs = Math.max(5000, (firstZone.startSec - 2) * 1000);
+            logger?.info?.('autoDj: using fallback safe point before problematic zones', {
+              trackName: currentTrack.name,
+              triggerMs: safeTimeMs,
+            });
+            onAutomixTimingCalculated?.(safeTimeMs);
+            return;
+          }
+        }
+
         onAutomixTimingCalculated?.(-1);
       })
       .catch(err => {
         logger?.warn?.('autoDj: failed to fetch mix data for scheduling', {
           error: err?.message,
         });
+        currentTrackMixData = null;
+        onMixDataUpdated?.(null);
         // Fallback timing
-        const triggerMs = Math.max(currentTrack.duration - 20000, currentTrack.duration * 0.75);
+        const maxDurationSec = getTrackMaxDurationSec?.() || 0;
+        const maxDurationMs = maxDurationSec > 0 ? maxDurationSec * 1000 : -1;
+        
+        let triggerMs = Math.max(currentTrack.duration - 20000, currentTrack.duration * 0.75);
+        if (maxDurationMs > 0) {
+          triggerMs = Math.min(maxDurationMs, triggerMs);
+        }
+        
         onAutomixTimingCalculated?.(triggerMs);
       });
   }
@@ -324,13 +529,20 @@ export function createAutoModeManager({
     // Avoid too frequent searches
     const now = Date.now();
     if (now - lastSearchTime < SEARCH_COOLDOWN_MS) {
-      logger?.debug?.('autoDj: search cooldown active');
+      logger?.debug?.('autoDj: search cooldown active', {
+        currentTrackId: currentTrack.id,
+        elapsedMs: now - lastSearchTime,
+        cooldownMs: SEARCH_COOLDOWN_MS,
+      });
       return;
     }
 
     // Avoid searching for the same track multiple times
     if (lastSearchedTrackId === currentTrack.id) {
-      logger?.debug?.('autoDj: already searched for this track');
+      logger?.debug?.('autoDj: already searched for this track', {
+        currentTrackId: currentTrack.id,
+        currentTrackName: currentTrack.name,
+      });
       return;
     }
 
@@ -444,6 +656,7 @@ export function createAutoModeManager({
           ...result,
           name: result.name || result.trackName || result.title || '',
           artist: result.artist || result.artistName || '',
+          autoDjStartOffsetMs: extractSuggestedStartOffsetMs(result),
         };
         selectedIndex = i;
         break;
@@ -453,6 +666,7 @@ export function createAutoModeManager({
         logger?.info?.('autoDj: adding recommended track', {
           name: selectedTrack.trackName || selectedTrack.name,
           artist: selectedTrack.artistName || selectedTrack.artist,
+          selectedIndex,
         });
 
         // Fetch mix data for the recommended track
@@ -500,11 +714,14 @@ export function createAutoModeManager({
     clearAutomixTimer();
     markTrackAsPlayed(finishedTrack.id);
     currentTrackMixData = null;
+    onMixDataUpdated?.(null);
     pendingNextTrack = null;
     nextTrackMixData = null;
 
     logger?.debug?.('autoDj: track finished, searching for next', {
       trackName: finishedTrack.name,
+      trackId: finishedTrack.id,
+      playHistorySize: playHistory.size,
     });
 
     // Search with a slight delay to allow queue state to update
@@ -533,6 +750,7 @@ export function createAutoModeManager({
     lastSearchedTrackId = null;
     lastSearchTime = 0;
     currentTrackMixData = null;
+    onMixDataUpdated?.(null);
     pendingNextTrack = null;
     nextTrackMixData = null;
     MIX_DATA_CACHE.clear();
@@ -602,6 +820,11 @@ export function createAutoModeManager({
     getNextTrackMixData: () => nextTrackMixData,
     getPendingNextTrack: () => pendingNextTrack,
 
+    // Zone validation
+    isInAvoidZone,
+    isInDropZone,
+    isValidTransitionZone,
+
     // Main functionality
     searchAndAddNextTrack,
     addPendingTrackToQueue,
@@ -615,6 +838,57 @@ export function createAutoModeManager({
     initialize,
     reset,
   };
+}
+
+function extractSuggestedStartOffsetMs(result) {
+  if (!result || typeof result !== 'object') return 0;
+
+  const numberLikeToMs = (value) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric <= 0) return 0;
+    // Heuristic: values under 1000 are likely seconds.
+    return numeric < 1000 ? Math.round(numeric * 1000) : Math.round(numeric);
+  };
+
+  const directCandidates = [
+    result.autoDjStartOffsetMs,
+    result.startOffsetMs,
+    result.startTimeMs,
+    result.startMs,
+    result.offsetMs,
+    result.entryPointMs,
+    result.cueInMs,
+    result.mixStartMs,
+    result.startSec,
+    result.startTimeSec,
+    result.startSeconds,
+    result.offsetSec,
+    result.entryPointSec,
+    result.cueInSec,
+    result.mixStartSec,
+  ];
+
+  for (const candidate of directCandidates) {
+    const ms = numberLikeToMs(candidate);
+    if (ms > 0) return ms;
+  }
+
+  const nestedCandidates = [
+    result.mixSuggestion,
+    result.suggestion,
+    result.mix,
+    result.transition,
+    result.recommendation,
+    result.meta,
+  ];
+
+  for (const nested of nestedCandidates) {
+    if (!nested || typeof nested !== 'object') continue;
+    const nestedMs = extractSuggestedStartOffsetMs(nested);
+    if (nestedMs > 0) return nestedMs;
+  }
+
+  return 0;
 }
 
 export default createAutoModeManager;

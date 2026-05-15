@@ -127,6 +127,22 @@ function defaultDeckFx() {
            B: { vocalRemove: false, instruRemove: false } };
 }
 
+function createAuxStemAudioElement() {
+  if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+    const audio = document.createElement('audio');
+    audio.preload = 'auto';
+    audio.crossOrigin = 'anonymous';
+    return audio;
+  }
+  if (typeof Audio === 'function') {
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audio.crossOrigin = 'anonymous';
+    return audio;
+  }
+  return null;
+}
+
 /**
  * Immutably merges a partial `next` settings object into `current`.
  * Handles both top-level shorthand (next.vocalRemove) and per-deck form (next.deckFx.A.vocalRemove).
@@ -292,6 +308,7 @@ export class SimpleMixFeatures {
 
     if (this.#ready) {
       void this.#syncDeckStemMode(d, true, false);
+      this.#syncDeckEchoStemSource(d, true);
     }
   }
 
@@ -322,6 +339,7 @@ export class SimpleMixFeatures {
 
     // M/S adaptive gains: active when no server-side stem swap is in effect
     for (const deck of ['A', 'B']) {
+      this.#syncDeckEchoStemPlayback(deck);
       if (this.#deckStemState[deck].stemMode) {
         this.#resetMs(deck);
       } else {
@@ -335,6 +353,12 @@ export class SimpleMixFeatures {
     void this.#syncAllDeckStemModes(true, true);
     if (this.#audioA) this.#audioA.playbackRate = 1;
     if (this.#audioB) this.#audioB.playbackRate = 1;
+    for (const deck of ['A', 'B']) {
+      const stemAudio = this.#nodes(deck)?.echoStemAudio;
+      if (!stemAudio) continue;
+      stemAudio.pause?.();
+      stemAudio.src = '';
+    }
     this.#audioCtx?.close().catch(() => {});
     this.#audioCtx = null;
     this.#nodesA = this.#nodesB = null;
@@ -349,6 +373,8 @@ export class SimpleMixFeatures {
 
     const source  = ctx.createMediaElementSource(audioEl);
     const preGain = ctx.createGain();
+    const echoBaseSend = ctx.createGain();    echoBaseSend.gain.value = 1;
+    const echoStemSend = ctx.createGain();    echoStemSend.gain.value = 0;
 
     // Echo
     const delay    = ctx.createDelay(0.8);    delay.delayTime.value = ECHO_DELAY_S;
@@ -368,9 +394,11 @@ export class SimpleMixFeatures {
 
     // ── Graph ────────────────────────────────────────────────────────────────
     source.connect(preGain);
+    source.connect(echoBaseSend);
 
     preGain.connect(dry);
-    preGain.connect(delay);
+    echoBaseSend.connect(delay);
+    echoStemSend.connect(delay);
     delay.connect(feedback); feedback.connect(delay);
     delay.connect(wet);
 
@@ -382,7 +410,17 @@ export class SimpleMixFeatures {
     distWet.connect(ms.input);
     ms.output.connect(ctx.destination);
 
-    return { wet, dry, distWet, distDry, ms };
+    return {
+      wet,
+      dry,
+      distWet,
+      distDry,
+      ms,
+      echoBaseSend,
+      echoStemSend,
+      echoStemAudio: null,
+      echoStemSource: null,
+    };
   }
 
   #nodes(deck) { return deck === 'B' ? this.#nodesB : this.#nodesA; }
@@ -433,6 +471,99 @@ export class SimpleMixFeatures {
 
   #deckAudio(deck) {
     return deck === 'B' ? this.#audioB : this.#audioA;
+  }
+
+  #ensureDeckEchoStemAudio(deck) {
+    const nodes = this.#nodes(deck);
+    if (!nodes || nodes.echoStemAudio || !this.#audioCtx) return nodes?.echoStemAudio ?? null;
+
+    const stemAudio = createAuxStemAudioElement();
+    if (!stemAudio) return null;
+
+    nodes.echoStemAudio = stemAudio;
+    nodes.echoStemSource = this.#audioCtx.createMediaElementSource(stemAudio);
+    nodes.echoStemSource.connect(nodes.echoStemSend);
+    return stemAudio;
+  }
+
+  #syncDeckEchoStemPlayback(deck, forceSeek = false) {
+    if (!this.#settings.echo) return;
+
+    const nodes = this.#nodes(deck);
+    const stemAudio = nodes?.echoStemAudio;
+    const mainAudio = this.#deckAudio(deck);
+    if (!stemAudio || !mainAudio || !nodes) return;
+    if (!nodes.echoStemSend.gain.value) return;
+
+    const mainTime = Number.isFinite(mainAudio.currentTime) ? mainAudio.currentTime : 0;
+    const stemTime = Number.isFinite(stemAudio.currentTime) ? stemAudio.currentTime : 0;
+
+    stemAudio.playbackRate = Number.isFinite(mainAudio.playbackRate) ? mainAudio.playbackRate : 1;
+
+    if (forceSeek || Math.abs(mainTime - stemTime) > 0.12) {
+      try {
+        stemAudio.currentTime = mainTime;
+      } catch {}
+    }
+
+    if (mainAudio.paused) {
+      stemAudio.pause?.();
+      return;
+    }
+
+    try {
+      const maybePromise = stemAudio.play?.();
+      maybePromise?.catch?.(() => {});
+    } catch {}
+  }
+
+  #syncDeckEchoStemSource(deck, forceSeek = false) {
+    const nodes = this.#nodes(deck);
+    if (!nodes) return;
+
+    const vocalsUrl = this.#settings.echo
+      ? (this.#deckStemState[deck]?.providedStems?.vocalsUrl || '')
+      : '';
+
+    if (!vocalsUrl) {
+      nodes.echoBaseSend.gain.value = 1;
+      nodes.echoStemSend.gain.value = 0;
+      nodes.echoStemAudio?.pause?.();
+      return;
+    }
+
+    const stemAudio = this.#ensureDeckEchoStemAudio(deck);
+    if (!stemAudio) {
+      nodes.echoBaseSend.gain.value = 1;
+      nodes.echoStemSend.gain.value = 0;
+      return;
+    }
+
+    const currentSrc = stemAudio.currentSrc || stemAudio.src || '';
+    if (currentSrc !== vocalsUrl) {
+      stemAudio.src = vocalsUrl;
+      forceSeek = true;
+
+      if (typeof stemAudio.addEventListener === 'function') {
+        let settled = false;
+        const finalize = () => {
+          if (settled) return;
+          settled = true;
+          this.#syncDeckEchoStemPlayback(deck, true);
+        };
+        stemAudio.addEventListener('loadedmetadata', finalize, { once: true });
+        setTimeout(finalize, 3000);
+      }
+    }
+
+    nodes.echoBaseSend.gain.value = 0;
+    nodes.echoStemSend.gain.value = 1;
+    this.#syncDeckEchoStemPlayback(deck, forceSeek);
+  }
+
+  #syncAllDeckEchoStemSources(forceSeek = false) {
+    this.#syncDeckEchoStemSource('A', forceSeek);
+    this.#syncDeckEchoStemSource('B', forceSeek);
   }
 
   async #swapDeckSource(audio, nextSrc) {
@@ -555,6 +686,7 @@ export class SimpleMixFeatures {
       n.distDry.gain.value = 1;
     }
 
+    this.#syncAllDeckEchoStemSources(true);
     void this.#syncAllDeckStemModes(true);
 
     if (!autoBpm) {

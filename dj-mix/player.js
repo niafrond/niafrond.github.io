@@ -199,6 +199,21 @@ export class DJPlayer extends EventTarget {
       await this.#loadAndPlay(audio, normalized.url);
     }
 
+    const preferredStartMs = Number.isFinite(normalized.startPositionMs) && normalized.startPositionMs > 0
+      ? normalized.startPositionMs
+      : (Number.isFinite(options.startPositionMs) && options.startPositionMs > 0
+        ? options.startPositionMs
+        : 0);
+
+    if (preferredStartMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const durationMs = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration * 1000 : normalized.durationMs;
+      const safeTargetMs = Number.isFinite(durationMs)
+        ? Math.max(0, Math.min(durationMs, preferredStartMs))
+        : Math.max(0, preferredStartMs);
+      audio.currentTime = safeTargetMs / 1000;
+    }
+
     if (options.makeActive === true) {
       this.#active = targetDeck;
       this.#crossfadeNotified = false;
@@ -374,6 +389,7 @@ export class DJPlayer extends EventTarget {
     }
 
     const requestedMode = normalizeTransitionMode(transitionOptions.mode || this.#transitionMode);
+    const transitionStartPositionMs = Number(transitionOptions.startPositionMs);
 
     // Determine fade direction: load new track on target deck, fade from the other.
     // When no target is specified, fade from the dominant (louder) deck.
@@ -427,6 +443,19 @@ export class DJPlayer extends EventTarget {
       this.#mixFeatures?.setDeckSourceMetadata(toDeck, normalized);
       
       await this.#loadAndPlay(to, normalized.url);
+
+      const preferredStartMs = Number.isFinite(normalized.startPositionMs) && normalized.startPositionMs > 0
+        ? normalized.startPositionMs
+        : (Number.isFinite(transitionStartPositionMs) && transitionStartPositionMs > 0
+          ? transitionStartPositionMs
+          : 0);
+      if (preferredStartMs > 0) {
+        const durationMs = Number.isFinite(to.duration) && to.duration > 0 ? to.duration * 1000 : normalized.durationMs;
+        const safeTargetMs = Number.isFinite(durationMs)
+          ? Math.max(0, Math.min(durationMs, preferredStartMs))
+          : Math.max(0, preferredStartMs);
+        to.currentTime = safeTargetMs / 1000;
+      }
 
       await this.#runTransitionMode({
         effectiveMode,
@@ -1106,6 +1135,7 @@ export class DJPlayer extends EventTarget {
       const loudness = Number(source.loudnessDb);
       const bpm = Number(source.bpm);
       const durationMs = Number(source.durationMs);
+      const startPositionMs = Number(source.startPositionMs);
       const audioFeatures = source.audioFeatures && typeof source.audioFeatures === 'object'
         ? source.audioFeatures
         : null;
@@ -1118,6 +1148,7 @@ export class DJPlayer extends EventTarget {
         loudnessDb: Number.isFinite(loudness) ? loudness : null,
         bpm: Number.isFinite(bpm) ? bpm : null,
         durationMs: Number.isFinite(durationMs) && durationMs > 0 ? durationMs : null,
+        startPositionMs: Number.isFinite(startPositionMs) && startPositionMs > 0 ? startPositionMs : null,
         audioFeatures,
         stems,
       };
@@ -1128,6 +1159,7 @@ export class DJPlayer extends EventTarget {
       loudnessDb: null,
       bpm: null,
       durationMs: null,
+      startPositionMs: null,
       audioFeatures: null,
       stems: { vocalsUrl: '', instrumentalUrl: '' },
     };

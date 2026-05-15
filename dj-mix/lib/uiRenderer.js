@@ -107,8 +107,11 @@ export function createDjMixRenderer(options) {
     const focusedDeck = hasAudio ? (volB > volA ? 'B' : 'A') : getFocusDeck();
 
     if (getPrevIsCrossfading() && !detail.isCrossfading) {
-      const clearedDeck = focusedDeck === 'A' ? 'B' : 'A';
-      deckDisplayItems[clearedDeck] = null;
+      // Only clear decks that truly ended the fade without any loaded source.
+      // If the inactive deck has already been preloaded with the next track,
+      // keep its display item intact.
+      if (!detail.deckA?.hasSrc) deckDisplayItems.A = null;
+      if (!detail.deckB?.hasSrc) deckDisplayItems.B = null;
     }
     setPrevIsCrossfading(detail.isCrossfading);
 
