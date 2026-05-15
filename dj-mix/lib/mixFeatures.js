@@ -309,6 +309,7 @@ export class SimpleMixFeatures {
     state.providedStems = stems;
 
     if (this.#ready) {
+      this.#syncDeckEchoStemSource(d, true);
       void this.#syncDeckStemMode(d, true, false);
     }
   }
@@ -356,7 +357,7 @@ export class SimpleMixFeatures {
     for (const deck of ['A', 'B']) {
       const stemAudio = this.#nodes(deck)?.echoStemAudio;
       if (!stemAudio) continue;
-      stemAudio.pause?.();
+      this.#safePause(stemAudio);
       stemAudio.src = '';
     }
     this.#audioCtx?.close().catch(() => {});
@@ -475,6 +476,12 @@ export class SimpleMixFeatures {
     return deck === 'B' ? this.#audioB : this.#audioA;
   }
 
+  #safePause(audio) {
+    try {
+      audio?.pause?.();
+    } catch {}
+  }
+
   #ensureDeckEchoStemAudio(deck) {
     const nodes = this.#nodes(deck);
     if (!nodes || nodes.echoStemAudio || !this.#audioCtx) return nodes?.echoStemAudio ?? null;
@@ -509,7 +516,7 @@ export class SimpleMixFeatures {
     }
 
     if (mainAudio.paused) {
-      stemAudio.pause?.();
+      this.#safePause(stemAudio);
       return;
     }
 
@@ -530,7 +537,7 @@ export class SimpleMixFeatures {
     if (!vocalsUrl) {
       nodes.echoBaseSend.gain.value = 1;
       nodes.echoStemSend.gain.value = 0;
-      nodes.echoStemAudio?.pause?.();
+      this.#safePause(nodes.echoStemAudio);
       return;
     }
 
@@ -691,9 +698,10 @@ export class SimpleMixFeatures {
       n.distDry.gain.value = 1;
       n.echoBaseSend.gain.value = 1;
       n.echoStemSend.gain.value = 0;
-      n.echoStemAudio?.pause?.();
+      this.#safePause(n.echoStemAudio);
     }
 
+    this.#syncAllDeckEchoStemSources(true);
     void this.#syncAllDeckStemModes(true);
 
     if (!autoBpm) {
