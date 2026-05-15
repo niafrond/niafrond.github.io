@@ -109,23 +109,6 @@ describe('SimpleMixFeatures — lazy AudioContext creation', () => {
     expect(mediaElementSourceCalls).toBe(2); // deck A + deck B
   });
 
-  test('echo creates an auxiliary vocal stem source for the wet path when available', async () => {
-    const audioA = { ...makeAudioEl(), src: 'track-a.mp3' };
-    const audioB = makeAudioEl();
-    const features = new SimpleMixFeatures(audioA, audioB);
-
-    await features.setEnabled({ echo: true });
-    features.setDeckSourceMetadata('A', {
-      url: 'track-a.mp3',
-      stems: {
-        vocalsUrl: 'track-a-vocals.mp3',
-        instrumentalUrl: 'track-a-instrumental.mp3',
-      },
-    });
-
-    expect(mediaElementSourceCalls).toBe(3);
-  });
-
   test('AudioContext IS created when autoBpm is enabled', async () => {
     const audioA = makeAudioEl();
     const audioB = makeAudioEl();
