@@ -198,6 +198,7 @@ export function mapApiTrackToSearchItem(track) {
     isArtistResult: false,
     isLocalResult,
     cachePath: track.cachePath || track.filePath || track.path || '',
+    stemsStatus: track.stemsStatus || '',
     popularityScore: getPopularityScore(track),
     artists: [{ name: artist }],
     album: { images: artUrl ? [{ url: artUrl }, { url: artUrl }] : [] },
@@ -231,12 +232,14 @@ export function extractStemSourceUrls(track) {
   };
 
   const vocalsUrl = pickFirst([
+    track.vocals,
     track.vocalsUrl,
     track.vocals_url,
     track.vocalUrl,
     track.vocal_url,
     track.withVocalsUrl,
     track.voiceUrl,
+    track.stems?.vocals,
     track.stems?.vocalsUrl,
     track.stems?.vocalUrl,
     track.vocalsPath,
@@ -245,6 +248,7 @@ export function extractStemSourceUrls(track) {
   ]);
 
   const instrumentalUrl = pickFirst([
+    track.instrumental,
     track.instrumentalUrl,
     track.instrumental_url,
     track.noVocalUrl,
@@ -253,6 +257,7 @@ export function extractStemSourceUrls(track) {
     track.noVocalsUrl,
     track.withoutVocalsUrl,
     track.karaokeUrl,
+    track.stems?.instrumental,
     track.stems?.instrumentalUrl,
     track.stems?.noVocalUrl,
     track.instrumentalPath,

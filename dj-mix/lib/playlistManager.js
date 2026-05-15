@@ -5,8 +5,10 @@ const logger = createLogger('playlist');
 function hasAvailableStems(file) {
   if (!file || typeof file !== 'object') return false;
   const statusReady = String(file.stemsStatus || '').toLowerCase() === 'ready';
-  const hasVocals = typeof file.vocalsPath === 'string' && file.vocalsPath.trim().length > 0;
-  const hasInstrumental = typeof file.instrumentalPath === 'string' && file.instrumentalPath.trim().length > 0;
+  const hasVocals = [file.vocals, file.vocalsPath, file.vocalsUrl, file.stems?.vocals, file.stems?.vocalsUrl]
+    .some((value) => typeof value === 'string' && value.trim().length > 0);
+  const hasInstrumental = [file.instrumental, file.instrumentalPath, file.instrumentalUrl, file.stems?.instrumental, file.stems?.instrumentalUrl]
+    .some((value) => typeof value === 'string' && value.trim().length > 0);
   return statusReady || hasVocals || hasInstrumental;
 }
 
@@ -159,6 +161,8 @@ export function createPlaylistManager(options) {
   function addCacheFileToQueue(file) {
     if (!file) return;
 
+    const vocalsSource = file.vocals || file.vocalsUrl || file.vocalsPath || file.stems?.vocals || file.stems?.vocalsUrl || '';
+    const instrumentalSource = file.instrumental || file.instrumentalUrl || file.instrumentalPath || file.stems?.instrumental || file.stems?.instrumentalUrl || '';
     const queue = getQueue();
     const item = {
       id: file.id || file.cachePath || file.path || `cache-${Date.now()}`,
@@ -171,6 +175,13 @@ export function createPlaylistManager(options) {
       persistedSourceUrl: file.url || file.localUrl || file.streamUrl || '',
       cachePath: file.cachePath || '',
       ratingKey: file.ratingKey || '',
+      stemsStatus: file.stemsStatus || '',
+      vocals: vocalsSource,
+      instrumental: instrumentalSource,
+      stems: {
+        vocals: vocalsSource,
+        instrumental: instrumentalSource,
+      },
     };
 
     const isDuplicateCacheFile = queue.some(

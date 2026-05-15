@@ -343,12 +343,72 @@ export function createAutoModeManager({
         artistName: currentTrack.artist,
       });
 
-      // Search using current track artist and "similar" query
-      const query = `${currentTrack.artist} similar`;
-      const results = await searchTracksViaApi(query);
+      let results = [];
+
+      // Primary strategy: use dedicated suggestions endpoint from downloader API.
+      try {
+        const apiUrl = getDownloaderApiUrl();
+        if (apiUrl) {
+          const params = new URLSearchParams();
+          if (currentTrack.name) params.append('track', currentTrack.name);
+          if (currentTrack.artist) params.append('artist', currentTrack.artist);
+          params.append('limit', '25');
+          params.append('allowSameArtist', 'false');
+
+          const suggestionPathCandidates = ['/api/suggestions', '/suggestions'];
+          for (const path of suggestionPathCandidates) {
+            const suggestionUrl = `${apiUrl}${path}?${params.toString()}`;
+            const suggestionRes = await fetch(suggestionUrl, {
+              method: 'GET',
+              headers: { Accept: 'application/json' },
+            });
+
+            if (!suggestionRes.ok) {
+              logger?.debug?.('autoDj: suggestions endpoint unavailable', {
+                path,
+                status: suggestionRes.status,
+              });
+              continue;
+            }
+
+            const suggestionData = await suggestionRes.json().catch(() => null);
+            const suggestionResults = Array.isArray(suggestionData?.results)
+              ? suggestionData.results
+              : [];
+
+            // Keep API ordering but ensure score-first behavior when scores are present.
+            results = [...suggestionResults].sort((a, b) => {
+              const scoreA = Number.isFinite(Number(a?.similarityScore)) ? Number(a.similarityScore) : -1;
+              const scoreB = Number.isFinite(Number(b?.similarityScore)) ? Number(b.similarityScore) : -1;
+              return scoreB - scoreA;
+            });
+
+            logger?.debug?.('autoDj: suggestions results', {
+              path,
+              count: results.length,
+              referenceTrack: currentTrack.name,
+              referenceArtist: currentTrack.artist,
+            });
+            break;
+          }
+        }
+      } catch (err) {
+        logger?.warn?.('autoDj: suggestions fetch failed', {
+          error: err?.message,
+        });
+      }
+
+      // Fallback strategy: plain search without "similar" keyword.
+      if (!results.length) {
+        const query = [currentTrack.artist, currentTrack.name].filter(Boolean).join(' ').trim();
+        results = await searchTracksViaApi(query);
+      }
 
       if (!results || results.length === 0) {
-        logger?.warn?.('autoDj: no search results', { query });
+        logger?.warn?.('autoDj: no search/suggestion results', {
+          trackName: currentTrack.name,
+          artistName: currentTrack.artist,
+        });
         return;
       }
 
@@ -380,7 +440,11 @@ export function createAutoModeManager({
           continue;
         }
 
-        selectedTrack = result;
+        selectedTrack = {
+          ...result,
+          name: result.name || result.trackName || result.title || '',
+          artist: result.artist || result.artistName || '',
+        };
         selectedIndex = i;
         break;
       }
@@ -482,9 +546,31 @@ export function createAutoModeManager({
    * Returns true if track was added, false otherwise
    */
   async function addPendingTrackToQueue() {
+    const queue = getQueue();
+    const currentIndex = Number(getCurrentTrackIndex?.()) || 0;
+    const hasImmediateNextTrack = currentIndex >= 0 && (currentIndex + 1) < queue.length;
+
     if (!pendingNextTrack) {
-      logger?.debug?.('autoDj: no pending track to add');
-      return false;
+      logger?.debug?.('autoDj: no pending track to add', { hasImmediateNextTrack });
+      return hasImmediateNextTrack;
+    }
+
+    const pendingId = pendingNextTrack.id || pendingNextTrack.ratingKey || pendingNextTrack.uri || pendingNextTrack.name;
+    const pendingName = pendingNextTrack.trackName || pendingNextTrack.name || pendingNextTrack.title || '';
+    const pendingArtist = pendingNextTrack.artistName || pendingNextTrack.artist || '';
+    const alreadyQueued = queue.some((item) => {
+      if (!item) return false;
+      if (pendingId && item.id === pendingId) return true;
+      return item.name === pendingName && item.artist === pendingArtist;
+    });
+
+    if (alreadyQueued) {
+      logger?.debug?.('autoDj: pending track already in queue', {
+        name: pendingName,
+        artist: pendingArtist,
+      });
+      pendingNextTrack = null;
+      return true;
     }
 
     try {
@@ -494,6 +580,7 @@ export function createAutoModeManager({
       });
 
       await addToQueue(pendingNextTrack);
+      pendingNextTrack = null;
       return true;
     } catch (err) {
       logger?.error?.('autoDj: failed to add pending track', {

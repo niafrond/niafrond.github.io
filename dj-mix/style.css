@@ -1323,7 +1323,7 @@ input {
   height: 4px;
   background: var(--surface3);
   border-radius: 999px;
-  overflow: hidden;
+  overflow: visible;
   cursor: pointer;
   transition: box-shadow var(--transition), transform var(--transition);
 }
@@ -1350,6 +1350,29 @@ input {
   background: var(--accent);
   border-radius: 999px;
   transition: width 0.3s linear;
+  overflow: hidden;
+}
+
+.autodj-marker {
+  position: absolute;
+  top: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  width: 2px;
+  height: 100%;
+  background: #ffd700;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.autodj-marker::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: #ffd700;
+  margin-bottom: 1px;
 }
 
 .deck-panel.is-active .deck-progress-fill {

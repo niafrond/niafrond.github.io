@@ -88,6 +88,7 @@ let deckCueDeck = null;
 // Auto DJ timing
 let nextAutomixTriggerMs = -1; // When to trigger automix (ms from start)
 let automixTriggeredForTrack = false; // Has automix been triggered for current track
+let currentPlayingDeck = 'A'; // Which deck has the currently playing track
 
 /**
  * Track stem loading status per deck: { A: boolean, B: boolean }
@@ -196,6 +197,8 @@ const deckBInstruBtn = document.getElementById('deck-b-instru-btn');
 const deckAstemsIndicator = document.getElementById('deck-a-stems-indicator');
 const deckBstemsIndicator = document.getElementById('deck-b-stems-indicator');
 const autoMixBtn = document.getElementById('automix-btn');
+const deckAAutoDjMarker = document.getElementById('deck-a-autodj-marker');
+const deckBAutoDjMarker = document.getElementById('deck-b-autodj-marker');
 const crossfadeSlider = document.getElementById('crossfade-slider');
 const crossfadeValue = document.getElementById('crossfade-value');
 const crossfadeSliderMix = document.getElementById('crossfade-slider-mix');
@@ -514,13 +517,13 @@ function updateStemButtonState(deck) {
   const safeDeck = deck === 'B' ? 'B' : 'A';
   
   if (safeDeck === 'A') {
-    deckAVocalBtn?.setAttribute('disabled', stemsAvailable ? '' : 'disabled');
-    deckAInstruBtn?.setAttribute('disabled', stemsAvailable ? '' : 'disabled');
-    deckAstemsIndicator?.setAttribute('hidden', stemsAvailable ? '' : 'hidden');
+    if (deckAVocalBtn) deckAVocalBtn.disabled = !stemsAvailable;
+    if (deckAInstruBtn) deckAInstruBtn.disabled = !stemsAvailable;
+    if (deckAstemsIndicator) deckAstemsIndicator.hidden = !stemsAvailable;
   } else {
-    deckBVocalBtn?.setAttribute('disabled', stemsAvailable ? '' : 'disabled');
-    deckBInstruBtn?.setAttribute('disabled', stemsAvailable ? '' : 'disabled');
-    deckBstemsIndicator?.setAttribute('hidden', stemsAvailable ? '' : 'hidden');
+    if (deckBVocalBtn) deckBVocalBtn.disabled = !stemsAvailable;
+    if (deckBInstruBtn) deckBInstruBtn.disabled = !stemsAvailable;
+    if (deckBstemsIndicator) deckBstemsIndicator.hidden = !stemsAvailable;
   }
 }
 
@@ -587,6 +590,7 @@ const autoModeManager = createAutoModeManager({
     nextAutomixTriggerMs = triggerMs;
     automixTriggeredForTrack = false;
     logDebug('autoDj: timing calculated', { triggerMs });
+    updateAutoDjMarker();
   },
 });
 
@@ -710,6 +714,7 @@ function hookPlayerEvents() {
         position >= nextAutomixTriggerMs) {
       
       automixTriggeredForTrack = true;
+      updateAutoDjMarker();
       logInfo('autoDj: triggering automix at optimal moment', {
         position,
         triggerMs: nextAutomixTriggerMs,
@@ -1084,6 +1089,17 @@ autoModeBtn?.addEventListener('click', () => {
   const isEnabled = autoModeManager.toggleAutoMode();
   autoModeBtn.setAttribute('aria-pressed', String(isEnabled));
   autoModeBtn.textContent = `Auto Mode: ${isEnabled ? 'ON' : 'OFF'}`;
+
+  if (isEnabled && currentIndex >= 0 && queue[currentIndex]) {
+    const currentItem = queue[currentIndex];
+    autoModeManager.scheduleAutomixTiming(currentItem);
+    autoModeManager.searchAndAddNextTrack(currentItem).catch((err) => {
+      logWarn('autoDj: immediate search on enable failed', { error: err?.message });
+    });
+  } else {
+    updateAutoDjMarker();
+  }
+
   showToast(`Auto Mode: ${isEnabled ? '🤖 ON' : 'OFF'}`);
 });
 
@@ -1091,6 +1107,25 @@ function updateAutoModeUI() {
   const isEnabled = autoModeManager.isAutoModeEnabled();
   autoModeBtn.setAttribute('aria-pressed', String(isEnabled));
   autoModeBtn.textContent = `Auto Mode: ${isEnabled ? 'ON' : 'OFF'}`;
+}
+
+function updateAutoDjMarker() {
+  const isEnabled = autoModeManager.isAutoModeEnabled();
+  const durationMs = playbackDurationMs > 0 ? playbackDurationMs : (queue[currentIndex]?.duration ?? 0);
+  const hasTiming = nextAutomixTriggerMs > 0 && durationMs > 0 && !automixTriggeredForTrack;
+
+  // Hide both markers first
+  if (deckAAutoDjMarker) deckAAutoDjMarker.hidden = true;
+  if (deckBAutoDjMarker) deckBAutoDjMarker.hidden = true;
+
+  if (!isEnabled || !hasTiming) return;
+
+  const pct = Math.min(100, Math.max(0, (nextAutomixTriggerMs / durationMs) * 100));
+  const marker = currentPlayingDeck === 'B' ? deckBAutoDjMarker : deckAAutoDjMarker;
+  if (marker) {
+    marker.style.left = `${pct}%`;
+    marker.hidden = false;
+  }
 }
 
 deckAVocalBtn?.addEventListener('click', () => {
@@ -1631,7 +1666,12 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     // Schedule automix timing for auto DJ mode and reset trigger flag
     automixTriggeredForTrack = false;
     nextAutomixTriggerMs = -1;
+    currentPlayingDeck = targetDeck;
+    updateAutoDjMarker();
     autoModeManager.scheduleAutomixTiming(item);
+    autoModeManager.searchAndAddNextTrack(item).catch((err) => {
+      logWarn('autoDj: search on track start failed', { error: err?.message });
+    });
   } catch (err) {
     item.sourceState = 'error';
     item.sourceError = err.message;
@@ -1930,6 +1970,7 @@ function doLogout() {
   // Reset auto DJ timing
   nextAutomixTriggerMs = -1;
   automixTriggeredForTrack = false;
+  updateAutoDjMarker();
 
   localStorage.removeItem(QUEUE_KEY);
   deckDisplayItems.A = null;
