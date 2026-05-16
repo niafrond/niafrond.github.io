@@ -207,6 +207,26 @@
       <div id="tab-playlist" class="tab-panel" hidden>
         <div class="panel-header">
           <h2 class="panel-title">Cache</h2>
+          <span id="cache-filter-count" class="panel-meta">0 morceau</span>
+        </div>
+        <div class="cache-filter-bar" aria-label="Filtres du cache">
+          <label class="cache-filter-field">
+            <span>Genre / style</span>
+            <select id="cache-genre-filter">
+              <option value="">Tous les genres</option>
+            </select>
+          </label>
+          <label class="cache-filter-field">
+            <span>Année</span>
+            <select id="cache-year-filter">
+              <option value="">Toutes les années</option>
+            </select>
+          </label>
+          <label class="cache-filter-toggle" for="cache-stems-filter">
+            <input type="checkbox" id="cache-stems-filter">
+            <span>Avec stems</span>
+          </label>
+          <button id="cache-reset-filters" class="cache-reset-filters" type="button" hidden>Réinitialiser</button>
         </div>
         <div id="playlist-list" class="playlist-list"></div>
       </div>

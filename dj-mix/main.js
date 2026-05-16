@@ -277,6 +277,11 @@ const queueList = document.getElementById('queue-list');
 const emptyQueue = document.getElementById('empty-queue');
 const clearQueueBtn = document.getElementById('clear-queue-btn');
 const playlistListEl = document.getElementById('playlist-list');
+const cacheFilterCountEl = document.getElementById('cache-filter-count');
+const cacheGenreFilterEl = document.getElementById('cache-genre-filter');
+const cacheYearFilterEl = document.getElementById('cache-year-filter');
+const cacheStemsFilterEl = document.getElementById('cache-stems-filter');
+const cacheResetFiltersBtn = document.getElementById('cache-reset-filters');
 
 const downloaderApiUrlInput = document.getElementById('downloader-api-url-input');
 const downloaderApiSaveBtn = document.getElementById('downloader-api-save-btn');
@@ -483,6 +488,11 @@ const {
 } = audioSourceManager;
 
 const playlistManager = createPlaylistManager({
+  cacheFilterCountEl,
+  cacheGenreFilterEl,
+  cacheResetFiltersBtn,
+  cacheStemsFilterEl,
+  cacheYearFilterEl,
   deleteLocalCacheSong,
   escHtml,
   getCurrentIndex: () => currentIndex,
