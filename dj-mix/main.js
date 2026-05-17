@@ -6,6 +6,8 @@
 
 import { DJPlayer } from './player.js';
 import {
+  getAllowedTransitionModesForRam,
+  getTransitionRamRequirementsMb,
   MIX_TRANSITION_MODE_LABELS,
   MIX_TRANSITION_MODES,
 } from './lib/mixFeatures.js';
@@ -44,8 +46,11 @@ const FX_VISIBILITY_KEY = 'dj-mix:fx:hidden';
 const DEBUG_LOGS_KEY = 'dj-mix:logs:debug';
 const MIX_TRANSITION_MODE_KEY = 'dj-mix:transition:mode';
 const TRACK_MAX_DURATION_KEY = 'dj-mix:track:max-duration';
+const RAM_FILTER_ENABLED_KEY = 'dj-mix:ram-filter:enabled';
+const RAM_TOTAL_MB_OVERRIDE_KEY = 'dj-mix:ram-filter:total-mb-override';
 const DEFAULT_DOWNLOADER_API_URL = 'http://192.168.8.149:3000';
 const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
+const MOBILE_TRANSITION_RAM_BUDGET_RATIO = 0.12;
 
 const logger = createLogger('main');
 const logDebug = (event, payload) => logger.debug(event, payload);
@@ -112,8 +117,205 @@ let fxControlsHidden = false;
 const deckDisplayItems = { A: null, B: null };
 let prevIsCrossfading = false;
 let selectedTransitionMode = readTransitionModeSetting();
+let ramFilterEnabled = readRamFilterEnabledSetting();
+let ramTotalMbOverride = readRamTotalMbOverrideSetting();
+let allowedTransitionModes = [...MIX_TRANSITION_MODES];
+let transitionRamRequirementsMb = getTransitionRamRequirementsMb();
+let transitionRamCapability = null;
 let trackMaxDurationSec = readTrackMaxDurationSetting();
 let trackMaxDurationAppliedSec = trackMaxDurationSec;
+
+function isMobileDevice() {
+  const ua = String(navigator.userAgent || navigator.vendor || '').toLowerCase();
+  const coarseTouch = window.matchMedia?.('(pointer: coarse)')?.matches === true;
+  return /android|iphone|ipad|ipod|mobile|windows phone|opera mini|blackberry/.test(ua)
+    || (coarseTouch && Math.min(window.innerWidth, window.innerHeight) < 900);
+}
+
+function estimateTotalDeviceRamMb() {
+  if (Number.isFinite(navigator.deviceMemory) && navigator.deviceMemory > 0) {
+    return Math.round(navigator.deviceMemory * 1024);
+  }
+
+  const cores = Number(navigator.hardwareConcurrency) || 0;
+  if (cores <= 2) return 1536;
+  if (cores <= 4) return 2048;
+  if (cores <= 6) return 3072;
+  return 4096;
+}
+
+function readRamFilterEnabledSetting() {
+  try {
+    const stored = localStorage.getItem(RAM_FILTER_ENABLED_KEY);
+    if (stored == null) return true;
+    return stored !== '0';
+  } catch (_) {
+    return true;
+  }
+}
+
+function persistRamFilterEnabledSetting(enabled) {
+  try {
+    localStorage.setItem(RAM_FILTER_ENABLED_KEY, enabled ? '1' : '0');
+  } catch (_) {
+    // ignore storage failures
+  }
+}
+
+function readRamTotalMbOverrideSetting() {
+  try {
+    const stored = Number.parseInt(localStorage.getItem(RAM_TOTAL_MB_OVERRIDE_KEY) || '0', 10);
+    if (!Number.isFinite(stored) || stored <= 0) return 0;
+    return Math.max(512, Math.min(32768, stored));
+  } catch (_) {
+    return 0;
+  }
+}
+
+function persistRamTotalMbOverrideSetting(totalMb) {
+  try {
+    const safeMb = Math.max(0, Number.parseInt(String(totalMb || '0'), 10) || 0);
+    localStorage.setItem(RAM_TOTAL_MB_OVERRIDE_KEY, String(safeMb));
+  } catch (_) {
+    // ignore storage failures
+  }
+}
+
+function computeTransitionRamRequirements() {
+  const crossfadeSeconds = clampCrossfadeSeconds(crossfadeSlider?.value || 12);
+  transitionRamRequirementsMb = getTransitionRamRequirementsMb({
+    crossfadeDurationMs: crossfadeSeconds * 1000,
+  });
+}
+
+function getSafeAllowedTransitionMode(mode) {
+  const normalized = MIX_TRANSITION_MODES.includes(mode) ? mode : 'auto';
+  const allowedSet = new Set(allowedTransitionModes);
+  if (allowedSet.has(normalized)) return normalized;
+  if (allowedSet.has('auto')) return 'auto';
+  return allowedTransitionModes[0] || 'cut_transition';
+}
+
+function updateTransitionModeAvailabilityUI() {
+  if (!mixTransitionModeSelect) return;
+  const allowedSet = new Set(allowedTransitionModes);
+
+  for (const option of mixTransitionModeSelect.options) {
+    const mode = String(option.value || '');
+    const label = MIX_TRANSITION_MODE_LABELS[mode] || mode;
+    const ramMb = Number(transitionRamRequirementsMb?.[mode]) || 0;
+    const ramSuffix = mode === 'auto' ? '' : ` (~${Math.round(ramMb)} Mo RAM)`;
+    const enabled = allowedSet.has(mode);
+
+    option.disabled = !enabled;
+    option.textContent = enabled
+      ? `${label}${ramSuffix}`
+      : `${label}${ramSuffix} [desactive]`;
+  }
+
+  const safeCurrent = getSafeAllowedTransitionMode(mixTransitionModeSelect.value || selectedTransitionMode);
+  mixTransitionModeSelect.value = safeCurrent;
+}
+
+function applyTransitionCapabilitiesForDevice(options = {}) {
+  const { announce = false } = options;
+  computeTransitionRamRequirements();
+
+  const mobile = isMobileDevice();
+  const shouldApplyFilter = ramFilterEnabled && (mobile || ramTotalMbOverride > 0);
+
+  if (!shouldApplyFilter) {
+    allowedTransitionModes = [...MIX_TRANSITION_MODES];
+    transitionRamCapability = {
+      enabled: false,
+      mobile: false,
+      totalRamMb: null,
+      transitionBudgetMb: null,
+      disabledModes: [],
+    };
+    updateTransitionModeAvailabilityUI();
+    return;
+  }
+
+  const totalRamMb = ramTotalMbOverride > 0 ? ramTotalMbOverride : estimateTotalDeviceRamMb();
+  const transitionBudgetMb = Math.max(64, Math.round(totalRamMb * MOBILE_TRANSITION_RAM_BUDGET_RATIO));
+  allowedTransitionModes = getAllowedTransitionModesForRam(transitionBudgetMb, {
+    crossfadeDurationMs: clampCrossfadeSeconds(crossfadeSlider?.value || 12) * 1000,
+  });
+
+  const disabledModes = MIX_TRANSITION_MODES.filter((mode) => !allowedTransitionModes.includes(mode));
+  transitionRamCapability = {
+    enabled: true,
+    mobile: true,
+    totalRamMb,
+    transitionBudgetMb,
+    ramOverrideMb: ramTotalMbOverride,
+    disabledModes,
+  };
+
+  updateTransitionModeAvailabilityUI();
+
+  logInfo('transition.ram.capability', {
+    mobile,
+    totalRamMb,
+    transitionBudgetMb,
+    disabledModes,
+  });
+
+  if (announce && disabledModes.length > 0) {
+    showToast(`Transitions limitees (RAM mobile: ${Math.round(totalRamMb / 1024)} Go)`);
+  }
+}
+
+function updateRamFilterConfigUI() {
+  if (ramFilterEnabledToggle) {
+    ramFilterEnabledToggle.checked = ramFilterEnabled;
+  }
+
+  if (ramTotalMemoryInput) {
+    const effectiveGb = ramTotalMbOverride > 0
+      ? Math.max(0.5, Math.round((ramTotalMbOverride / 1024) * 10) / 10)
+      : 0;
+    if (document.activeElement !== ramTotalMemoryInput) {
+      ramTotalMemoryInput.value = String(effectiveGb);
+    }
+  }
+
+  if (ramFilterStatus) {
+    if (!ramFilterEnabled) {
+      ramFilterStatus.textContent = 'Filtre RAM inactif: toutes les transitions sont disponibles.';
+    } else if (transitionRamCapability?.enabled) {
+      const totalGb = Math.round(((transitionRamCapability.totalRamMb || 0) / 1024) * 10) / 10;
+      const budgetMb = transitionRamCapability.transitionBudgetMb || 0;
+      const disabled = transitionRamCapability.disabledModes?.length || 0;
+      const suffix = ramTotalMbOverride > 0 ? ' (valeur manuelle)' : '';
+      ramFilterStatus.textContent = `RAM ${totalGb} Go${suffix} - budget transitions ${budgetMb} Mo - ${disabled} mode(s) desactive(s).`;
+    } else {
+      ramFilterStatus.textContent = 'Filtre RAM actif mais non applique sur cet appareil sans valeur manuelle.';
+    }
+  }
+}
+
+function applyRamFilterSettings(options = {}) {
+  const { persist = true, announce = false } = options;
+  if (persist) {
+    persistRamFilterEnabledSetting(ramFilterEnabled);
+    persistRamTotalMbOverrideSetting(ramTotalMbOverride);
+  }
+
+  applyTransitionCapabilitiesForDevice({ announce });
+  updateRamFilterConfigUI();
+
+  if (player) {
+    player.setAllowedTransitionModes(allowedTransitionModes);
+  }
+
+  const safeMode = getSafeAllowedTransitionMode(selectedTransitionMode);
+  if (safeMode !== selectedTransitionMode) {
+    applyTransitionModeSetting(safeMode, { persist: true });
+    showToast(`Mode AutoMix ajuste (RAM): ${MIX_TRANSITION_MODE_LABELS[safeMode] || safeMode}`);
+  }
+}
 
 function readTransitionModeSetting() {
   try {
@@ -152,7 +354,7 @@ function persistTrackMaxDurationSetting(seconds) {
 
 function applyTransitionModeSetting(mode, options = {}) {
   const { persist = true } = options;
-  const safeMode = MIX_TRANSITION_MODES.includes(mode) ? mode : 'auto';
+  const safeMode = getSafeAllowedTransitionMode(mode);
   selectedTransitionMode = safeMode;
   if (mixTransitionModeSelect) {
     mixTransitionModeSelect.value = safeMode;
@@ -289,6 +491,9 @@ const downloaderApiTestBtn = document.getElementById('downloader-api-test-btn');
 const downloaderApiStatus = document.getElementById('downloader-api-status');
 const debugLogsToggle = document.getElementById('debug-logs-toggle');
 const debugLogsStatus = document.getElementById('debug-logs-status');
+const ramFilterEnabledToggle = document.getElementById('ram-filter-enabled-toggle');
+const ramTotalMemoryInput = document.getElementById('ram-total-memory-gb');
+const ramFilterStatus = document.getElementById('ram-filter-status');
 
 const tabBtns = document.querySelectorAll('.tab-bar-btn');
 const tabPanels = {
@@ -854,6 +1059,7 @@ tabBtns.forEach((btn) => {
 });
 
 (async function init() {
+  applyRamFilterSettings({ persist: false, announce: true });
   applyDebugLogsSetting(readDebugLogsSetting(), { persist: false });
   applyTransitionModeSetting(selectedTransitionMode, { persist: false });
   
@@ -916,6 +1122,7 @@ async function connectLocal() {
   player?.destroy();
   player = new DJPlayer();
   player.crossfadeDuration = clampCrossfadeSeconds(crossfadeSlider.value) * 1000;
+  player.setAllowedTransitionModes(allowedTransitionModes);
   player.setTransitionMode(selectedTransitionMode);
   player.setMixFeatures(mixFeatures);
   hookPlayerEvents();
@@ -1216,7 +1423,12 @@ function updateCrossfadeControlUI(seconds) {
 function setCrossfadeDurationSeconds(seconds) {
   const safeSeconds = clampCrossfadeSeconds(seconds);
   updateCrossfadeControlUI(safeSeconds);
-  if (player) player.crossfadeDuration = safeSeconds * 1000;
+  applyRamFilterSettings({ persist: false, announce: false });
+
+  if (player) {
+    player.crossfadeDuration = safeSeconds * 1000;
+    player.setAllowedTransitionModes(allowedTransitionModes);
+  }
 }
 
 crossfadeSlider.addEventListener('input', () => {
@@ -1285,6 +1497,21 @@ mixTransitionModeSelect?.addEventListener('change', () => {
   applyTransitionModeSetting(nextMode, { persist: true });
   const label = MIX_TRANSITION_MODE_LABELS[selectedTransitionMode] || selectedTransitionMode;
   showToast(`Mode AutoMix: ${label}`);
+});
+
+ramFilterEnabledToggle?.addEventListener('change', () => {
+  ramFilterEnabled = Boolean(ramFilterEnabledToggle.checked);
+  applyRamFilterSettings({ persist: true, announce: true });
+});
+
+ramTotalMemoryInput?.addEventListener('change', () => {
+  const nextGb = Number.parseFloat(String(ramTotalMemoryInput.value || '0'));
+  if (!Number.isFinite(nextGb) || nextGb <= 0) {
+    ramTotalMbOverride = 0;
+  } else {
+    ramTotalMbOverride = Math.max(512, Math.min(32768, Math.round(nextGb * 1024)));
+  }
+  applyRamFilterSettings({ persist: true, announce: true });
 });
 
 trackMaxDurationInput?.addEventListener('change', () => {

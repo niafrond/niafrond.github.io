@@ -45,6 +45,88 @@ export function normalizeTransitionMode(mode) {
   return MIX_TRANSITION_MODES.includes(next) ? next : DEFAULT_TRANSITION_MODE;
 }
 
+const TRANSITION_EXTRA_RAM_MB = Object.freeze({
+  auto: 0,
+  crossfade_linear: 18,
+  crossfade_logarithmic: 20,
+  fade_in_out: 24,
+  cut_transition: 6,
+  filter_sweep_low_high: 96,
+  eq_transition_simple: 44,
+  echo_out_light: 128,
+  reverb_short_simple: 172,
+  short_loop: 108,
+  brake_tape_stop_simple: 58,
+  short_reverse: 122,
+  sidechain_basic: 52,
+  volume_ducking: 40,
+  gain_automation: 34,
+  filter_automation: 104,
+});
+
+const TRANSITION_OVERLAP_MULTIPLIER = Object.freeze({
+  auto: 0,
+  crossfade_linear: 1.0,
+  crossfade_logarithmic: 1.02,
+  fade_in_out: 1.05,
+  cut_transition: 0.12,
+  filter_sweep_low_high: 1.2,
+  eq_transition_simple: 1.08,
+  echo_out_light: 1.35,
+  reverb_short_simple: 1.55,
+  short_loop: 1.22,
+  brake_tape_stop_simple: 1.12,
+  short_reverse: 1.24,
+  sidechain_basic: 1.1,
+  volume_ducking: 1.06,
+  gain_automation: 1.0,
+  filter_automation: 1.25,
+});
+
+export function getTransitionRamRequirementsMb(options = {}) {
+  const crossfadeDurationMs = Math.max(250, Number(options.crossfadeDurationMs) || 12000);
+  const sampleRate = Number(options.sampleRate) > 0 ? Number(options.sampleRate) : 44100;
+  const channels = Number(options.channels) > 0 ? Number(options.channels) : 2;
+  const bytesPerSample = Number(options.bytesPerSample) > 0 ? Number(options.bytesPerSample) : 4;
+  const overlapSeconds = crossfadeDurationMs / 1000;
+  const overlapMb = (sampleRate * channels * bytesPerSample * overlapSeconds) / (1024 * 1024);
+
+  const profile = {};
+  for (const mode of MIX_TRANSITION_MODES) {
+    const extraMb = TRANSITION_EXTRA_RAM_MB[mode] || 0;
+    const overlapFactor = TRANSITION_OVERLAP_MULTIPLIER[mode] || 1;
+    const estimateMb = mode === 'auto'
+      ? 0
+      : Math.round((extraMb + (overlapMb * overlapFactor)) * 10) / 10;
+    profile[mode] = estimateMb;
+  }
+  return profile;
+}
+
+export function getTransitionRamRequirementMb(mode, options = {}) {
+  const safeMode = normalizeTransitionMode(mode);
+  const profile = getTransitionRamRequirementsMb(options);
+  return Number(profile[safeMode]) || 0;
+}
+
+export function getAllowedTransitionModesForRam(ramBudgetMb, options = {}) {
+  const budgetMb = Math.max(0, Number(ramBudgetMb) || 0);
+  const profile = getTransitionRamRequirementsMb(options);
+  const allowed = MIX_TRANSITION_MODES.filter((mode) => {
+    if (mode === 'auto') return true;
+    return (Number(profile[mode]) || 0) <= budgetMb;
+  });
+
+  if (!allowed.includes('cut_transition')) {
+    allowed.push('cut_transition');
+  }
+  if (!allowed.includes('auto')) {
+    allowed.unshift('auto');
+  }
+
+  return allowed;
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const FFT_SIZE        = 1024;

@@ -94,6 +94,7 @@ export class DJPlayer extends EventTarget {
   #manualMixInterval = null;
   #deckMixRatio = 0;
   #transitionMode = DEFAULT_TRANSITION_MODE;
+  #allowedTransitionModes = new Set(MIX_TRANSITION_MODES);
   #deckSourceMeta = {
     A: null,
     B: null,
@@ -123,8 +124,32 @@ export class DJPlayer extends EventTarget {
     return [...MIX_TRANSITION_MODES];
   }
 
+  setAllowedTransitionModes(modes) {
+    const incoming = Array.isArray(modes) ? modes : [];
+    const nextAllowed = new Set(
+      incoming
+        .map((mode) => normalizeTransitionMode(mode))
+        .filter((mode) => MIX_TRANSITION_MODES.includes(mode)),
+    );
+
+    if (!nextAllowed.size) {
+      for (const mode of MIX_TRANSITION_MODES) {
+        nextAllowed.add(mode);
+      }
+    }
+
+    nextAllowed.add('auto');
+    nextAllowed.add('cut_transition');
+    this.#allowedTransitionModes = nextAllowed;
+    this.#transitionMode = this.#resolveAllowedTransitionMode(this.#transitionMode);
+  }
+
+  getAllowedTransitionModes() {
+    return [...this.#allowedTransitionModes];
+  }
+
   setTransitionMode(mode) {
-    this.#transitionMode = normalizeTransitionMode(mode);
+    this.#transitionMode = this.#resolveAllowedTransitionMode(mode);
   }
 
   async init() {
@@ -409,9 +434,10 @@ export class DJPlayer extends EventTarget {
     const from = fromDeck === 'A' ? this.#audioA : this.#audioB;
     const to = toDeck === 'A' ? this.#audioA : this.#audioB;
 
-    const effectiveMode = requestedMode === 'auto'
+    const computedMode = requestedMode === 'auto'
       ? this.#chooseAutoTransitionMode(fromDeck, normalized)
       : requestedMode;
+    const effectiveMode = this.#resolveAllowedTransitionMode(computedMode);
 
     logInfo('crossfade.begin', {
       desiredDeck,
@@ -571,6 +597,32 @@ export class DJPlayer extends EventTarget {
     }
 
     return 'gain_automation';
+  }
+
+  #resolveAllowedTransitionMode(mode) {
+    const safeMode = normalizeTransitionMode(mode);
+    if (this.#allowedTransitionModes.has(safeMode)) {
+      return safeMode;
+    }
+
+    if (safeMode === 'auto' && this.#allowedTransitionModes.size) {
+      return 'auto';
+    }
+
+    const fallbackOrder = [
+      'crossfade_linear',
+      'crossfade_logarithmic',
+      'fade_in_out',
+      'cut_transition',
+    ];
+
+    for (const candidate of fallbackOrder) {
+      if (this.#allowedTransitionModes.has(candidate)) {
+        return candidate;
+      }
+    }
+
+    return 'cut_transition';
   }
 
   async #runTransitionMode(context) {
