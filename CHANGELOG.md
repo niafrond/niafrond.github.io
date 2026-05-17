@@ -1,3 +1,10 @@
+## [1.199.0](https://github.com/niafrond/niafrond.github.io/compare/v1.198.0...v1.199.0) (2026-05-17)
+
+### Features
+
+* **dj-mix:** add RAM filter configuration and transition mode management ([98ae28b](https://github.com/niafrond/niafrond.github.io/commit/98ae28b3a94b5e6c8bb142798183d296fa0dce51))
+* enhance DJPlayer with smooth playback rate transitions and new deck features ([25f931b](https://github.com/niafrond/niafrond.github.io/commit/25f931bd8ccbe846f1dc4a670f7c0fd4055f71bc))
+
 ## [1.198.0](https://github.com/niafrond/niafrond.github.io/compare/v1.197.0...v1.198.0) (2026-05-17)
 
 ### Features
