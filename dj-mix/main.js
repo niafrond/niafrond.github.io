@@ -142,7 +142,18 @@ const djFxRuntime = {
   loopTimers: { A: null, B: null },
   playbackRateTimers: { A: null, B: null },
   samplingAudioContext: null,
+  vinylNoiseBuffer: null,
+  scratch: {
+    animationFrameId: null,
+    deck: 'A',
+    velocity: 0,
+    currentRate: 0,
+    endAtMs: 0,
+    lastReverseSeekAtMs: 0,
+    running: false,
+  },
   transientActionTimers: new Map(),
+  autoDjRestoreTimers: new Map(),
   activeTransientActions: new Set(),
 };
 let fxControlsHidden = false;
@@ -203,10 +214,26 @@ function getSafeAutoDjFxMinIntervalSec(value) {
   return Math.max(1, Math.min(180, numeric || 14));
 }
 
+function getSafeAutoDjFxMaxIntervalSec(value) {
+  const numeric = Math.round(Number(value) || 0);
+  return Math.max(3, Math.min(300, numeric || 45));
+}
+
+function normalizeAutoDjFxIntervalSettings(minIntervalSec, maxIntervalSec) {
+  const safeMin = getSafeAutoDjFxMinIntervalSec(minIntervalSec);
+  const safeMaxRaw = getSafeAutoDjFxMaxIntervalSec(maxIntervalSec);
+  return {
+    minIntervalSec: safeMin,
+    maxIntervalSec: Math.max(safeMin, safeMaxRaw),
+  };
+}
+
 function readAutoDjFxSettings() {
+  const defaultsIntervals = normalizeAutoDjFxIntervalSettings(14, 45);
   const defaults = {
     allowed: createDefaultAutoDjFxAllowed(),
-    minIntervalSec: 14,
+    minIntervalSec: defaultsIntervals.minIntervalSec,
+    maxIntervalSec: defaultsIntervals.maxIntervalSec,
   };
 
   try {
@@ -225,9 +252,15 @@ function readAutoDjFxSettings() {
       }
     }
 
+    const intervals = normalizeAutoDjFxIntervalSettings(
+      parsed?.minIntervalSec,
+      parsed?.maxIntervalSec,
+    );
+
     return {
       allowed,
-      minIntervalSec: getSafeAutoDjFxMinIntervalSec(parsed?.minIntervalSec),
+      minIntervalSec: intervals.minIntervalSec,
+      maxIntervalSec: intervals.maxIntervalSec,
     };
   } catch (_) {
     return defaults;
@@ -249,8 +282,21 @@ function isAutoDjFxTypeAllowed(type) {
 }
 
 function updateAutoDjFxConfigUI() {
+  const intervals = normalizeAutoDjFxIntervalSettings(
+    autoDjFxSettings.minIntervalSec,
+    autoDjFxSettings.maxIntervalSec,
+  );
+  autoDjFxSettings = {
+    ...autoDjFxSettings,
+    minIntervalSec: intervals.minIntervalSec,
+    maxIntervalSec: intervals.maxIntervalSec,
+  };
+
   if (autoDjFxMinIntervalInput) {
-    autoDjFxMinIntervalInput.value = String(getSafeAutoDjFxMinIntervalSec(autoDjFxSettings.minIntervalSec));
+    autoDjFxMinIntervalInput.value = String(intervals.minIntervalSec);
+  }
+  if (autoDjFxMaxIntervalInput) {
+    autoDjFxMaxIntervalInput.value = String(intervals.maxIntervalSec);
   }
 
   for (const toggleEl of autoDjFxToggleEls) {
@@ -262,8 +308,7 @@ function updateAutoDjFxConfigUI() {
     const allowedCount = AUTO_DJ_FX_TYPES.reduce((count, type) => {
       return count + (isAutoDjFxTypeAllowed(type) ? 1 : 0);
     }, 0);
-    const minIntervalSec = getSafeAutoDjFxMinIntervalSec(autoDjFxSettings.minIntervalSec);
-    autoDjFxStatus.textContent = `Robot FX: ${allowedCount}/${AUTO_DJ_FX_TYPES.length} autorises, intervalle minimum ${minIntervalSec}s.`;
+    autoDjFxStatus.textContent = `Robot FX: ${allowedCount}/${AUTO_DJ_FX_TYPES.length} autorises, intervalle ${intervals.minIntervalSec}s a ${intervals.maxIntervalSec}s.`;
   }
 }
 
@@ -495,13 +540,19 @@ function applyTransitionModeSetting(mode, options = {}) {
   updateDjFxMenuUI();
 }
 
-function recalculateAutomixTimingIfNeeded() {
+function recalculateAutomixTimingIfNeeded(logEvent = 'autoDj: recalculating automix timing') {
   // If auto mode is enabled and a track is playing, recalculate timing
   if (autoModeManager.isAutoModeEnabled() && currentIndex >= 0 && queue[currentIndex]) {
     const currentItem = queue[currentIndex];
-    logDebug('trackMaxDuration: recalculating automix timing', { 
+    const intervals = normalizeAutoDjFxIntervalSettings(
+      autoDjFxSettings.minIntervalSec,
+      autoDjFxSettings.maxIntervalSec,
+    );
+    logDebug(logEvent, {
       trackName: currentItem.name,
       newMaxDurationSec: trackMaxDurationSec,
+      autoFxMinIntervalSec: intervals.minIntervalSec,
+      autoFxMaxIntervalSec: intervals.maxIntervalSec,
     });
     autoModeManager.scheduleAutomixTiming(currentItem);
   }
@@ -542,7 +593,7 @@ function applyTrackMaxDurationSetting(nextValue, logEvent) {
   logDebug(logEvent || 'trackMaxDuration: setting changed', { value });
 
   // Keep trigger and marker aligned with zone-aware automix timing.
-  recalculateAutomixTimingIfNeeded();
+  recalculateAutomixTimingIfNeeded('trackMaxDuration: recalculating automix timing');
   updateMaxDurationMarker();
 }
 
@@ -649,6 +700,7 @@ const ramTotalMemoryInput = document.getElementById('ram-total-memory-gb');
 const ramFilterStatus = document.getElementById('ram-filter-status');
 const autoDjFxStatus = document.getElementById('auto-dj-fx-status');
 const autoDjFxMinIntervalInput = document.getElementById('auto-dj-fx-min-interval-input');
+const autoDjFxMaxIntervalInput = document.getElementById('auto-dj-fx-max-interval-input');
 const autoDjFxToggleEls = Array.from(document.querySelectorAll('[data-auto-fx-type]'));
 
 const tabBtns = document.querySelectorAll('.tab-bar-btn');
@@ -841,6 +893,148 @@ function triggerBackspinFx(deck) {
   }
 }
 
+function getOrCreateFxAudioContext() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return null;
+
+  if (!djFxRuntime.samplingAudioContext) {
+    djFxRuntime.samplingAudioContext = new Ctx();
+  }
+
+  const ctx = djFxRuntime.samplingAudioContext;
+  if (ctx.state === 'suspended') {
+    ctx.resume().catch(() => {});
+  }
+  return ctx;
+}
+
+function getOrCreateVinylNoiseBuffer(ctx) {
+  if (!ctx) return null;
+  if (djFxRuntime.vinylNoiseBuffer) return djFxRuntime.vinylNoiseBuffer;
+
+  const buffer = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i += 1) {
+    data[i] = ((Math.random() * 2) - 1) * 0.02;
+  }
+
+  djFxRuntime.vinylNoiseBuffer = buffer;
+  return buffer;
+}
+
+function playVinylNoise(intensity = 1) {
+  const ctx = getOrCreateFxAudioContext();
+  if (!ctx) return;
+
+  const noiseBuffer = getOrCreateVinylNoiseBuffer(ctx);
+  if (!noiseBuffer) return;
+
+  const noise = ctx.createBufferSource();
+  noise.buffer = noiseBuffer;
+
+  const highPass = ctx.createBiquadFilter();
+  highPass.type = 'highpass';
+  highPass.frequency.setValueAtTime(1200, ctx.currentTime);
+
+  const gain = ctx.createGain();
+  const safeIntensity = Math.max(0.15, Math.min(2, Number(intensity) || 1));
+  gain.gain.setValueAtTime(0.05 * safeIntensity, ctx.currentTime);
+
+  noise.connect(highPass);
+  highPass.connect(gain);
+  gain.connect(ctx.destination);
+
+  noise.start(ctx.currentTime);
+  noise.stop(ctx.currentTime + 0.12);
+}
+
+function setScratchVelocity(value) {
+  const velocity = Number(value) || 0;
+  djFxRuntime.scratch.velocity = Math.max(-2, Math.min(2, velocity));
+}
+
+function stopScratchEngine(resetPlaybackRate = true) {
+  const scratch = djFxRuntime.scratch;
+  if (scratch.animationFrameId) {
+    cancelAnimationFrame(scratch.animationFrameId);
+    scratch.animationFrameId = null;
+  }
+  scratch.running = false;
+  scratch.velocity = 0;
+  scratch.currentRate = 0;
+  scratch.endAtMs = 0;
+  scratch.lastReverseSeekAtMs = 0;
+
+  if (resetPlaybackRate && player) {
+    player.resetDeckPlaybackRate(scratch.deck === 'B' ? 'B' : 'A');
+  }
+}
+
+function runScratchEngineFrame() {
+  const scratch = djFxRuntime.scratch;
+  if (!scratch.running || !player) {
+    scratch.animationFrameId = null;
+    return;
+  }
+
+  const nowMs = window.performance?.now?.() || Date.now();
+  const deck = scratch.deck === 'B' ? 'B' : 'A';
+  const targetRate = Math.max(-2, Math.min(2, Number(scratch.velocity) || 0));
+
+  // Keep mobile audio stable by smoothing velocity changes every frame.
+  scratch.currentRate = (scratch.currentRate * 0.8) + (targetRate * 0.2);
+
+  if (scratch.currentRate >= -0.03) {
+    const forwardRate = 1 + (Math.abs(scratch.currentRate) * 0.32);
+    player.setDeckPlaybackRate(deck, Math.max(0.82, Math.min(1.62, forwardRate)));
+  } else {
+    const pullStrength = Math.abs(scratch.currentRate);
+    player.setDeckPlaybackRate(deck, Math.max(0.7, 1 - (pullStrength * 0.2)));
+
+    const cadenceMs = Math.max(48, 92 - (pullStrength * 22));
+    if ((nowMs - scratch.lastReverseSeekAtMs) >= cadenceMs) {
+      const state = getDeckStateForFx(deck);
+      const positionMs = Number(state?.positionMs) || 0;
+      const durationMs = Number(state?.durationMs) || 0;
+      if (positionMs > 0 && durationMs > 0) {
+        const pullMs = Math.max(26, Math.min(140, 28 + (pullStrength * 42)));
+        const targetMs = Math.max(0, Math.min(durationMs - 5, positionMs - pullMs));
+        player.seekDeckTo(deck, targetMs, { instant: true }).catch(() => {});
+      }
+      scratch.lastReverseSeekAtMs = nowMs;
+    }
+  }
+
+  if (nowMs >= scratch.endAtMs && Math.abs(targetRate) < 0.02 && Math.abs(scratch.currentRate) < 0.03) {
+    stopScratchEngine(true);
+    return;
+  }
+
+  scratch.animationFrameId = requestAnimationFrame(runScratchEngineFrame);
+}
+
+function ensureScratchEngine(deck, durationMs = 520) {
+  const scratch = djFxRuntime.scratch;
+  const safeDeck = deck === 'B' ? 'B' : 'A';
+  const previousDeck = scratch.deck === 'B' ? 'B' : 'A';
+  if (scratch.running && previousDeck !== safeDeck && player) {
+    player.resetDeckPlaybackRate(previousDeck);
+  }
+  scratch.deck = safeDeck;
+  scratch.endAtMs = Math.max(scratch.endAtMs, (window.performance?.now?.() || Date.now()) + Math.max(180, Number(durationMs) || 520));
+  scratch.running = true;
+
+  const prevRateTimer = djFxRuntime.playbackRateTimers[safeDeck];
+  if (prevRateTimer) {
+    clearTimeout(prevRateTimer);
+    djFxRuntime.playbackRateTimers[safeDeck] = null;
+  }
+
+  if (!scratch.animationFrameId) {
+    scratch.animationFrameId = requestAnimationFrame(runScratchEngineFrame);
+  }
+}
+
 function triggerScratchFx(deck) {
   if (!player) return;
   const safeDeck = deck === 'B' ? 'B' : 'A';
@@ -849,12 +1043,14 @@ function triggerScratchFx(deck) {
   const durationMs = Number(state?.durationMs) || 0;
   if (anchorMs <= 0 || durationMs <= 0) return;
 
-  const offsets = [-85, 65, -55, 45, -35, 25];
-  offsets.forEach((offset, index) => {
+  ensureScratchEngine(safeDeck, 760);
+  playVinylNoise(1);
+
+  const velocityPattern = [1.5, -1.35, 1.16, -1.02, 0.88, -0.62, 0.48, -0.3, 0.18, 0.08, 0];
+  velocityPattern.forEach((velocity, index) => {
     setTimeout(() => {
-      const targetMs = Math.max(0, Math.min(durationMs - 5, anchorMs + offset));
-      player?.seekDeckTo(safeDeck, targetMs, { instant: true }).catch(() => {});
-    }, index * 60);
+      setScratchVelocity(velocity);
+    }, index * 68);
   });
 }
 
@@ -908,19 +1104,10 @@ function triggerHotCueFx(deck) {
 
 function triggerSamplingFx() {
   try {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) {
+    const ctx = getOrCreateFxAudioContext();
+    if (!ctx) {
       showToast('Sampling indisponible: AudioContext non supporte.', true);
       return;
-    }
-
-    if (!djFxRuntime.samplingAudioContext) {
-      djFxRuntime.samplingAudioContext = new Ctx();
-    }
-
-    const ctx = djFxRuntime.samplingAudioContext;
-    if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
     }
 
     const now = ctx.currentTime;
@@ -986,7 +1173,7 @@ function triggerFlangerPhaserFx(deck) {
 }
 
 function triggerNoiseFx() {
-  triggerSamplingFx();
+  playVinylNoise(1.35);
   triggerSamplingFx();
 }
 
@@ -1008,6 +1195,42 @@ function triggerTransientDjFxAction(action, durationMs = 900) {
 
   djFxRuntime.transientActionTimers.set(action, timer);
   updateDjFxMenuUI();
+}
+
+function scheduleAutoDjRestoreTimer(key, durationMs, restoreFn) {
+  if (!key || typeof restoreFn !== 'function') return;
+  const prevTimer = djFxRuntime.autoDjRestoreTimers.get(key);
+  if (prevTimer) clearTimeout(prevTimer);
+
+  const safeDuration = Math.max(120, Number(durationMs) || 900);
+  const timer = setTimeout(() => {
+    djFxRuntime.autoDjRestoreTimers.delete(key);
+    restoreFn();
+    updateDjFxMenuUI();
+  }, safeDuration);
+
+  djFxRuntime.autoDjRestoreTimers.set(key, timer);
+}
+
+function scheduleAutoDjMixFeatureRestore(feature, previousValue, durationMs) {
+  const key = `feature:${feature}`;
+  const expectedCurrent = !Boolean(previousValue);
+  scheduleAutoDjRestoreTimer(key, durationMs, () => {
+    if (Boolean(mixFeatures?.[feature]) === expectedCurrent) {
+      setMixFeatureEnabled(feature, Boolean(previousValue));
+    }
+  });
+}
+
+function scheduleAutoDjFilterRestore(deck, previousMode, durationMs) {
+  const safeDeck = deck === 'B' ? 'B' : 'A';
+  const prevMode = previousMode === 'lowPass' || previousMode === 'highPass' ? previousMode : 'off';
+  scheduleAutoDjRestoreTimer(`filter:${safeDeck}`, durationMs, () => {
+    const currentMode = mixFeatures.deckFx?.[safeDeck]?.filterMode || 'off';
+    if (currentMode !== prevMode) {
+      setDeckFilterMode(prevMode, safeDeck);
+    }
+  });
 }
 
 function updateDjFxMenuUI() {
@@ -1682,6 +1905,13 @@ const autoModeManager = createAutoModeManager({
   logger,
   getTrackMaxDurationSec: () => trackMaxDurationAppliedSec,
   getAutoFxMinGapMs: () => getSafeAutoDjFxMinIntervalSec(autoDjFxSettings.minIntervalSec) * 1000,
+  getAutoFxMaxGapMs: () => {
+    const intervals = normalizeAutoDjFxIntervalSettings(
+      autoDjFxSettings.minIntervalSec,
+      autoDjFxSettings.maxIntervalSec,
+    );
+    return intervals.maxIntervalSec * 1000;
+  },
   onAutomixTimingCalculated: (triggerMs) => {
     nextAutomixTriggerMs = triggerMs;
     automixTriggeredForTrack = false;
@@ -2213,12 +2443,33 @@ ramTotalMemoryInput?.addEventListener('change', () => {
 });
 
 autoDjFxMinIntervalInput?.addEventListener('change', () => {
+  const intervals = normalizeAutoDjFxIntervalSettings(
+    autoDjFxMinIntervalInput.value,
+    autoDjFxSettings.maxIntervalSec,
+  );
   autoDjFxSettings = {
     ...autoDjFxSettings,
-    minIntervalSec: getSafeAutoDjFxMinIntervalSec(autoDjFxMinIntervalInput.value),
+    minIntervalSec: intervals.minIntervalSec,
+    maxIntervalSec: intervals.maxIntervalSec,
   };
   persistAutoDjFxSettings();
   updateAutoDjFxConfigUI();
+  recalculateAutomixTimingIfNeeded('autoDjFx: min interval changed');
+});
+
+autoDjFxMaxIntervalInput?.addEventListener('change', () => {
+  const intervals = normalizeAutoDjFxIntervalSettings(
+    autoDjFxSettings.minIntervalSec,
+    autoDjFxMaxIntervalInput.value,
+  );
+  autoDjFxSettings = {
+    ...autoDjFxSettings,
+    minIntervalSec: intervals.minIntervalSec,
+    maxIntervalSec: intervals.maxIntervalSec,
+  };
+  persistAutoDjFxSettings();
+  updateAutoDjFxConfigUI();
+  recalculateAutomixTimingIfNeeded('autoDjFx: max interval changed');
 });
 
 for (const toggleEl of autoDjFxToggleEls) {
@@ -2421,51 +2672,75 @@ function triggerAutoDjCreativeFxEvent(event) {
 }
 
 function applyAutoDjCreativeFx(type, targetDeck) {
+  const safeDeck = targetDeck === 'B' ? 'B' : 'A';
   switch (type) {
     case 'filter':
-      cycleFocusedDeckFilterMode();
+      {
+        const prevMode = mixFeatures.deckFx?.[safeDeck]?.filterMode || 'off';
+        setDeckFilterMode('lowPass', safeDeck);
+        scheduleAutoDjFilterRestore(safeDeck, prevMode, 1800);
+      }
       return true;
     case 'lowPass':
-      setDeckFilterMode('lowPass', targetDeck);
+      {
+        const prevMode = mixFeatures.deckFx?.[safeDeck]?.filterMode || 'off';
+        setDeckFilterMode('lowPass', safeDeck);
+        scheduleAutoDjFilterRestore(safeDeck, prevMode, 1800);
+      }
       return true;
     case 'highPass':
-      setDeckFilterMode('highPass', targetDeck);
+      {
+        const prevMode = mixFeatures.deckFx?.[safeDeck]?.filterMode || 'off';
+        setDeckFilterMode('highPass', safeDeck);
+        scheduleAutoDjFilterRestore(safeDeck, prevMode, 1800);
+      }
       return true;
     case 'echoDelay':
-      setMixFeatureEnabled('echo', !mixFeatures.echo);
+      {
+        const prevEcho = Boolean(mixFeatures.echo);
+        setMixFeatureEnabled('echo', true);
+        scheduleAutoDjMixFeatureRestore('echo', prevEcho, 1200);
+      }
       triggerTransientDjFxAction('echoDelay', 1200);
       return true;
     case 'reverb':
-      setMixFeatureEnabled('echo', true);
-      setMixFeatureEnabled('distortion', true);
+      {
+        const prevEcho = Boolean(mixFeatures.echo);
+        const prevDistortion = Boolean(mixFeatures.distortion);
+        setMixFeatureEnabled('echo', true);
+        setMixFeatureEnabled('distortion', true);
+        scheduleAutoDjMixFeatureRestore('echo', prevEcho, 1200);
+        scheduleAutoDjMixFeatureRestore('distortion', prevDistortion, 1200);
+      }
       triggerTransientDjFxAction('reverb', 1200);
-      setTimeout(() => {
-        setMixFeatureEnabled('echo', false);
-        setMixFeatureEnabled('distortion', false);
-      }, 1200);
       return true;
     case 'flangerPhaser':
-      triggerFlangerPhaserFx(targetDeck);
+      {
+        const prevDistortion = Boolean(mixFeatures.distortion);
+        setMixFeatureEnabled('distortion', true);
+        scheduleAutoDjMixFeatureRestore('distortion', prevDistortion, 1600);
+      }
+      triggerFlangerPhaserFx(safeDeck);
       triggerTransientDjFxAction('flangerPhaser', 1600);
       return true;
     case 'roll':
-      triggerLoopRoll(targetDeck, { windowMs: 220, totalMs: 1100, tickMs: 105 });
+      triggerLoopRoll(safeDeck, { windowMs: 220, totalMs: 1100, tickMs: 105 });
       triggerTransientDjFxAction('roll', 1000);
       return true;
     case 'loop':
-      triggerLoopRoll(targetDeck, { windowMs: 520, totalMs: 2400, tickMs: 115 });
+      triggerLoopRoll(safeDeck, { windowMs: 520, totalMs: 2400, tickMs: 115 });
       triggerTransientDjFxAction('loop', 2600);
       return true;
     case 'beatRepeat':
-      triggerLoopRoll(targetDeck, { windowMs: 140, totalMs: 950, tickMs: 90, instantSeek: true });
+      triggerLoopRoll(safeDeck, { windowMs: 140, totalMs: 950, tickMs: 90, instantSeek: true });
       triggerTransientDjFxAction('beatRepeat', 900);
       return true;
     case 'brake':
-      triggerBrakeFx(targetDeck);
+      triggerBrakeFx(safeDeck);
       triggerTransientDjFxAction('brake', 900);
       return true;
     case 'backspin':
-      triggerBackspinFx(targetDeck);
+      triggerBackspinFx(safeDeck);
       triggerTransientDjFxAction('backspin', 1200);
       return true;
     case 'noise':
@@ -2473,23 +2748,31 @@ function applyAutoDjCreativeFx(type, targetDeck) {
       triggerTransientDjFxAction('noise', 800);
       return true;
     case 'eq':
-      cycleFocusedDeckFilterMode();
+      {
+        const prevMode = mixFeatures.deckFx?.[safeDeck]?.filterMode || 'off';
+        setDeckFilterMode('highPass', safeDeck);
+        scheduleAutoDjFilterRestore(safeDeck, prevMode, 1800);
+      }
       return true;
     case 'pitchTempo':
-      applyTemporaryDeckPlaybackRate(targetDeck, 1.06, 2000);
-      setMixFeatureEnabled('autoBpm', !mixFeatures.autoBpm);
+      {
+        const prevAutoBpm = Boolean(mixFeatures.autoBpm);
+        applyTemporaryDeckPlaybackRate(safeDeck, 1.06, 2000);
+        setMixFeatureEnabled('autoBpm', true);
+        scheduleAutoDjMixFeatureRestore('autoBpm', prevAutoBpm, 2000);
+      }
       triggerTransientDjFxAction('pitchTempo', 2000);
       return true;
     case 'keyShift':
-      applyTemporaryDeckPlaybackRate(targetDeck, 1.035, 1800);
+      applyTemporaryDeckPlaybackRate(safeDeck, 1.035, 1800);
       triggerTransientDjFxAction('keyShift', 1800);
       return true;
     case 'scratching':
-      triggerScratchFx(targetDeck);
+      triggerScratchFx(safeDeck);
       triggerTransientDjFxAction('scratching', 450);
       return true;
     case 'hotCues':
-      triggerHotCueFx(targetDeck);
+      triggerHotCueFx(safeDeck);
       triggerTransientDjFxAction('hotCues', 450);
       return true;
     case 'sampling':
@@ -3671,6 +3954,16 @@ function doLogout() {
 
   player?.destroy();
   player = null;
+
+  for (const timer of djFxRuntime.transientActionTimers.values()) {
+    clearTimeout(timer);
+  }
+  djFxRuntime.transientActionTimers.clear();
+  for (const timer of djFxRuntime.autoDjRestoreTimers.values()) {
+    clearTimeout(timer);
+  }
+  djFxRuntime.autoDjRestoreTimers.clear();
+  djFxRuntime.activeTransientActions.clear();
 
   for (const item of queue) releaseLocalBlob(item);
   clearSessionBlobCache();

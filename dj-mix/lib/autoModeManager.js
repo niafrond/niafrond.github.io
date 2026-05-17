@@ -36,6 +36,7 @@ export function createAutoModeManager({
   logger,
   getTrackMaxDurationSec,
   getAutoFxMinGapMs,
+  getAutoFxMaxGapMs,
   onAutomixTimingCalculated,
   onMixDataUpdated,
   onAutoFxPlanCalculated,
@@ -55,6 +56,8 @@ export function createAutoModeManager({
   const AUTO_FX_LAST_WINDOW_MINUTES = 2; // X minutes mentioned by user requirement
   const AUTO_FX_MAX_IN_LAST_WINDOW = 2;
   const AUTO_FX_MIN_GAP_MS = 14000;
+  const AUTO_FX_MAX_GAP_MS = 45000;
+  const AUTO_FX_CADENCE_TYPES = Object.freeze(['echoDelay', 'filter', 'reverb']);
 
   const AUTO_FX_PRIORITY = Object.freeze({
     hotCues: 4,
@@ -73,6 +76,21 @@ export function createAutoModeManager({
   function toFiniteNumber(value, fallback = 0) {
     const n = Number(value);
     return Number.isFinite(n) ? n : fallback;
+  }
+
+  function getAutoFxGapBoundsMs() {
+    const minGapMs = Math.max(
+      1000,
+      toFiniteNumber(getAutoFxMinGapMs?.(), AUTO_FX_MIN_GAP_MS),
+    );
+    const maxGapRawMs = Math.max(
+      minGapMs,
+      toFiniteNumber(getAutoFxMaxGapMs?.(), AUTO_FX_MAX_GAP_MS),
+    );
+    return {
+      minGapMs,
+      maxGapMs: Math.max(minGapMs, maxGapRawMs),
+    };
   }
 
   function pickZoneAnchorMs(zones, options = {}) {
@@ -104,12 +122,9 @@ export function createAutoModeManager({
     return bestMs;
   }
 
-  function enforceAutoFxDensity(events, effectiveEndMs) {
+  function enforceAutoFxDensity(events, effectiveEndMs, options = {}) {
     if (!Array.isArray(events) || events.length === 0) return [];
-    const minGapMs = Math.max(
-      1000,
-      toFiniteNumber(getAutoFxMinGapMs?.(), AUTO_FX_MIN_GAP_MS),
-    );
+    const { minGapMs, maxGapMs } = getAutoFxGapBoundsMs();
 
     const sorted = [...events].sort((a, b) => a.timeMs - b.timeMs);
     const spaced = [];
@@ -126,10 +141,51 @@ export function createAutoModeManager({
       spaced.push(event);
     }
 
+    const cadenceMinMs = Math.max(6000, options.minTimelineMs || 6000);
+    const cadenceMaxMs = Math.max(cadenceMinMs, toFiniteNumber(options.maxTimelineMs, effectiveEndMs));
+    const cadenceTrackKey = String(options.trackKey || 'track');
+
+    const withMaxGap = [];
+    let prevTimeMs = cadenceMinMs;
+    let cadenceSeq = 0;
+
+    const pushCadenceEventsUntil = (targetTimeMs) => {
+      while ((targetTimeMs - prevTimeMs) > maxGapMs) {
+        const candidateMs = Math.round(prevTimeMs + maxGapMs);
+        if (candidateMs >= targetTimeMs) break;
+        const cadenceType = AUTO_FX_CADENCE_TYPES[cadenceSeq % AUTO_FX_CADENCE_TYPES.length];
+        cadenceSeq += 1;
+        withMaxGap.push({
+          id: `${cadenceTrackKey}::cadence::${cadenceType}::${candidateMs}`,
+          type: cadenceType,
+          label: AUTO_FX_LABELS[cadenceType] || cadenceType,
+          timeMs: candidateMs,
+          reason: 'max-gap cadence fill',
+        });
+        prevTimeMs = candidateMs;
+      }
+    };
+
+    for (const event of spaced) {
+      pushCadenceEventsUntil(event.timeMs);
+      withMaxGap.push(event);
+      prevTimeMs = event.timeMs;
+    }
+
+    pushCadenceEventsUntil(cadenceMaxMs);
+
+    const normalized = withMaxGap
+      .filter((event) => event.timeMs >= cadenceMinMs && event.timeMs <= cadenceMaxMs)
+      .sort((a, b) => a.timeMs - b.timeMs);
+
     const lastWindowMs = AUTO_FX_LAST_WINDOW_MINUTES * 60 * 1000;
-    const tailStartMs = Math.max(0, effectiveEndMs - lastWindowMs);
-    const outsideTail = spaced.filter((event) => event.timeMs < tailStartMs);
-    const inTail = spaced
+    const tailStartMs = Math.max(cadenceMinMs, effectiveEndMs - lastWindowMs);
+    const outsideTail = normalized.filter((event) => event.timeMs < tailStartMs);
+    const maxByCadenceInTail = Math.max(
+      AUTO_FX_MAX_IN_LAST_WINDOW,
+      Math.ceil(lastWindowMs / Math.max(1, maxGapMs)),
+    );
+    const inTail = normalized
       .filter((event) => event.timeMs >= tailStartMs)
       .sort((a, b) => {
         const pa = AUTO_FX_PRIORITY[a.type] || 0;
@@ -137,7 +193,7 @@ export function createAutoModeManager({
         if (pb !== pa) return pb - pa;
         return a.timeMs - b.timeMs;
       })
-      .slice(0, AUTO_FX_MAX_IN_LAST_WINDOW)
+      .slice(0, maxByCadenceInTail)
       .sort((a, b) => a.timeMs - b.timeMs);
 
     return [...outsideTail, ...inTail].sort((a, b) => a.timeMs - b.timeMs);
@@ -168,10 +224,7 @@ export function createAutoModeManager({
     const transitionAnchorMs = triggerMs > 0
       ? Math.min(triggerMs, timelineMaxMs)
       : Math.round(timelineMaxMs * 0.82);
-    const minGapMs = Math.max(
-      1000,
-      toFiniteNumber(getAutoFxMinGapMs?.(), AUTO_FX_MIN_GAP_MS),
-    );
+    const { minGapMs } = getAutoFxGapBoundsMs();
 
     const addEvent = (type, preferredMs, reason) => {
       const timeMs = Math.round(Math.max(6000, Math.min(timelineMaxMs, preferredMs)));
@@ -251,6 +304,11 @@ export function createAutoModeManager({
     const planned = enforceAutoFxDensity(
       candidates.filter(Boolean),
       effectiveEndMs,
+      {
+        minTimelineMs: 6000,
+        maxTimelineMs: timelineMaxMs,
+        trackKey: String(currentTrack?.id || currentTrack?.uri || currentTrack?.name || 'track'),
+      },
     );
 
     return planned;

@@ -25,5 +25,10 @@ export default defineConfig({
       testDir: './flash-guess/tests/e2e',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'dj-mix',
+      testDir: './dj-mix/tests/e2e',
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
 });

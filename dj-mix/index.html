@@ -432,7 +432,20 @@
                 aria-label="Intervalle minimum entre deux FX automatiques"
               >
             </div>
-            <div id="auto-dj-fx-status" class="setup-subtitle">Robot FX: 18/18 autorises, intervalle minimum 14s.</div>
+            <div class="form-group auto-dj-fx-interval-group">
+              <label for="auto-dj-fx-max-interval-input">Intervalle maximum entre deux FX (secondes)</label>
+              <input
+                type="number"
+                id="auto-dj-fx-max-interval-input"
+                min="3"
+                max="300"
+                step="1"
+                value="45"
+                inputmode="numeric"
+                aria-label="Intervalle maximum entre deux FX automatiques"
+              >
+            </div>
+            <div id="auto-dj-fx-status" class="setup-subtitle">Robot FX: 18/18 autorises, intervalle 14s a 45s.</div>
           </div>
 
           <div class="config-block">
