@@ -35,8 +35,10 @@ export function createAutoModeManager({
   showToast,
   logger,
   getTrackMaxDurationSec,
+  getAutoFxMinGapMs,
   onAutomixTimingCalculated,
   onMixDataUpdated,
+  onAutoFxPlanCalculated,
 }) {
   let autoModeEnabled = false;
   let playHistory = new Set(); // Track IDs of songs that have been played
@@ -46,9 +48,264 @@ export function createAutoModeManager({
   let pendingNextTrack = null;
   let nextTrackMixData = null;
   let automixTimerHandle = null;
+  let pendingAutoFxEvents = [];
   
   const SEARCH_COOLDOWN_MS = 5000; // Minimum time between searches
   const MIX_DATA_CACHE = new Map(); // Cache mix data per track
+  const AUTO_FX_LAST_WINDOW_MINUTES = 2; // X minutes mentioned by user requirement
+  const AUTO_FX_MAX_IN_LAST_WINDOW = 2;
+  const AUTO_FX_MIN_GAP_MS = 14000;
+
+  const AUTO_FX_PRIORITY = Object.freeze({
+    hotCues: 4,
+    sampling: 3,
+    scratching: 2,
+    keyShift: 1,
+  });
+
+  const AUTO_FX_LABELS = Object.freeze({
+    keyShift: 'Key Shift / Harmonic',
+    scratching: 'Scratching',
+    hotCues: 'Hot Cues',
+    sampling: 'Sampling',
+  });
+
+  function toFiniteNumber(value, fallback = 0) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function pickZoneAnchorMs(zones, options = {}) {
+    const anchorMs = toFiniteNumber(options.anchorMs, 0);
+    const maxMs = toFiniteNumber(options.maxMs, Number.POSITIVE_INFINITY);
+    const minMs = toFiniteNumber(options.minMs, 0);
+    if (!Array.isArray(zones) || zones.length === 0) return -1;
+
+    let bestMs = -1;
+    let bestDistance = Number.POSITIVE_INFINITY;
+
+    for (const zone of zones) {
+      const startMs = toFiniteNumber(zone?.startSec, -1) * 1000;
+      const endMs = toFiniteNumber(zone?.endSec, -1) * 1000;
+      if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) continue;
+
+      let candidateMs = anchorMs;
+      if (candidateMs < startMs) candidateMs = startMs;
+      if (candidateMs > endMs) candidateMs = endMs;
+      if (candidateMs < minMs || candidateMs > maxMs) continue;
+
+      const distance = Math.abs(candidateMs - anchorMs);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestMs = candidateMs;
+      }
+    }
+
+    return bestMs;
+  }
+
+  function enforceAutoFxDensity(events, effectiveEndMs) {
+    if (!Array.isArray(events) || events.length === 0) return [];
+    const minGapMs = Math.max(
+      1000,
+      toFiniteNumber(getAutoFxMinGapMs?.(), AUTO_FX_MIN_GAP_MS),
+    );
+
+    const sorted = [...events].sort((a, b) => a.timeMs - b.timeMs);
+    const spaced = [];
+
+    for (const event of sorted) {
+      const previous = spaced[spaced.length - 1];
+      if (previous && (event.timeMs - previous.timeMs) < minGapMs) {
+        const keepCurrent = (AUTO_FX_PRIORITY[event.type] || 0) > (AUTO_FX_PRIORITY[previous.type] || 0);
+        if (keepCurrent) {
+          spaced[spaced.length - 1] = event;
+        }
+        continue;
+      }
+      spaced.push(event);
+    }
+
+    const lastWindowMs = AUTO_FX_LAST_WINDOW_MINUTES * 60 * 1000;
+    const tailStartMs = Math.max(0, effectiveEndMs - lastWindowMs);
+    const outsideTail = spaced.filter((event) => event.timeMs < tailStartMs);
+    const inTail = spaced
+      .filter((event) => event.timeMs >= tailStartMs)
+      .sort((a, b) => {
+        const pa = AUTO_FX_PRIORITY[a.type] || 0;
+        const pb = AUTO_FX_PRIORITY[b.type] || 0;
+        if (pb !== pa) return pb - pa;
+        return a.timeMs - b.timeMs;
+      })
+      .slice(0, AUTO_FX_MAX_IN_LAST_WINDOW)
+      .sort((a, b) => a.timeMs - b.timeMs);
+
+    return [...outsideTail, ...inTail].sort((a, b) => a.timeMs - b.timeMs);
+  }
+
+  function buildAutoFxPlan({ currentTrack, mixData, triggerMs, maxDurationSec }) {
+    const trackDurationMs = toFiniteNumber(currentTrack?.duration, 0);
+    const mixDurationMs = Math.round(toFiniteNumber(mixData?.durationSec, 0) * 1000);
+    let durationMs = Math.max(trackDurationMs, mixDurationMs, 0);
+
+    if (durationMs <= 0) {
+      const fallbackFromMaxDurationMs = toFiniteNumber(maxDurationSec, 0) > 0
+        ? Math.round(toFiniteNumber(maxDurationSec, 0) * 1000)
+        : 0;
+      const fallbackFromTriggerMs = toFiniteNumber(triggerMs, 0) > 0
+        ? Math.round(toFiniteNumber(triggerMs, 0) + 20000)
+        : 0;
+      durationMs = Math.max(fallbackFromMaxDurationMs, fallbackFromTriggerMs, 45000);
+    }
+
+    if (durationMs <= 0) return [];
+
+    const maxDurationMs = toFiniteNumber(maxDurationSec, 0) > 0
+      ? toFiniteNumber(maxDurationSec, 0) * 1000
+      : -1;
+    const effectiveEndMs = maxDurationMs > 0 ? Math.min(durationMs, maxDurationMs) : durationMs;
+    const timelineMaxMs = Math.max(12000, effectiveEndMs - 5000);
+    const transitionAnchorMs = triggerMs > 0
+      ? Math.min(triggerMs, timelineMaxMs)
+      : Math.round(timelineMaxMs * 0.82);
+    const minGapMs = Math.max(
+      1000,
+      toFiniteNumber(getAutoFxMinGapMs?.(), AUTO_FX_MIN_GAP_MS),
+    );
+
+    const addEvent = (type, preferredMs, reason) => {
+      const timeMs = Math.round(Math.max(6000, Math.min(timelineMaxMs, preferredMs)));
+      if (!Number.isFinite(timeMs)) return null;
+      return {
+        id: `${String(currentTrack?.id || currentTrack?.uri || currentTrack?.name || 'track')}::${type}::${timeMs}`,
+        type,
+        label: AUTO_FX_LABELS[type] || type,
+        timeMs,
+        reason,
+      };
+    };
+
+    const candidates = [];
+
+    const safeNearAnchorMs = pickZoneAnchorMs(mixData?.safeTransitionZones, {
+      anchorMs: Math.max(10000, transitionAnchorMs - 18000),
+      minMs: 6000,
+      maxMs: timelineMaxMs,
+    });
+
+    const breakdownNearAnchorMs = pickZoneAnchorMs(mixData?.breakdownZones, {
+      anchorMs: Math.max(8000, transitionAnchorMs - 12000),
+      minMs: 6000,
+      maxMs: timelineMaxMs,
+    });
+
+    const peakNearAnchorMs = pickZoneAnchorMs(mixData?.peakZones, {
+      anchorMs: Math.max(9000, transitionAnchorMs - 26000),
+      minMs: 6000,
+      maxMs: timelineMaxMs,
+    });
+
+    candidates.push(
+      addEvent(
+        'keyShift',
+        safeNearAnchorMs > 0 ? safeNearAnchorMs : Math.max(12000, transitionAnchorMs - 45000),
+        safeNearAnchorMs > 0 ? 'safe-zone harmonic match' : 'pre-transition harmonic window',
+      ),
+    );
+
+    candidates.push(
+      addEvent(
+        'sampling',
+        breakdownNearAnchorMs > 0 ? breakdownNearAnchorMs : Math.max(12000, transitionAnchorMs - 55000),
+        breakdownNearAnchorMs > 0 ? 'breakdown sampling pocket' : 'energy support before transition',
+      ),
+    );
+
+    candidates.push(
+      addEvent(
+        'hotCues',
+        peakNearAnchorMs > 0 ? peakNearAnchorMs : Math.max(12000, transitionAnchorMs - 30000),
+        peakNearAnchorMs > 0 ? 'peak-zone cue trigger' : 'structured cue rehearsal',
+      ),
+    );
+
+    candidates.push(
+      addEvent(
+        'scratching',
+        breakdownNearAnchorMs > 0 ? (breakdownNearAnchorMs + 7000) : Math.max(12000, transitionAnchorMs - 12000),
+        breakdownNearAnchorMs > 0 ? 'post-breakdown texture' : 'late-track scratch accent',
+      ),
+    );
+
+    // With shorter min intervals, add softer intermediate accents so the setting has audible impact.
+    if (minGapMs <= 10000) {
+      const softAnchorA = Math.max(6000, transitionAnchorMs - Math.max(minGapMs * 2, 6000));
+      const softAnchorB = Math.max(6000, transitionAnchorMs - Math.max(minGapMs, 3000));
+      const softAnchorC = Math.max(6000, transitionAnchorMs - Math.max(Math.round(minGapMs * 0.6), 2000));
+
+      candidates.push(addEvent('echoDelay', softAnchorA, 'rhythmic pre-transition echo'));
+      candidates.push(addEvent('filter', softAnchorB, 'smooth pre-transition filter'));
+      candidates.push(addEvent('reverb', softAnchorC, 'transition space accent'));
+    }
+
+    const planned = enforceAutoFxDensity(
+      candidates.filter(Boolean),
+      effectiveEndMs,
+    );
+
+    return planned;
+  }
+
+  function planAutoFxEvents(context = {}) {
+    const planned = buildAutoFxPlan(context).map((event) => ({
+      ...event,
+      triggered: false,
+      trackId: context.currentTrack?.id || null,
+      trackName: context.currentTrack?.name || '',
+    }));
+
+    pendingAutoFxEvents = planned;
+    onAutoFxPlanCalculated?.(planned, {
+      lastWindowMinutes: AUTO_FX_LAST_WINDOW_MINUTES,
+      maxInLastWindow: AUTO_FX_MAX_IN_LAST_WINDOW,
+    });
+
+    logger?.debug?.('autoDj: creative FX plan calculated', {
+      count: planned.length,
+      events: planned.map((event) => ({
+        type: event.type,
+        timeMs: event.timeMs,
+        reason: event.reason,
+      })),
+      trackName: context.currentTrack?.name,
+      triggerMs: context.triggerMs,
+    });
+  }
+
+  function consumeReadyAutoFxEvents(positionMs, options = {}) {
+    const position = toFiniteNumber(positionMs, 0);
+    const currentTrackId = options.currentTrackId || null;
+    if (position <= 0 || !pendingAutoFxEvents.length) return [];
+
+    const ready = [];
+    const remaining = [];
+
+    for (const event of pendingAutoFxEvents) {
+      if (!event) continue;
+      if (currentTrackId && event.trackId && event.trackId !== currentTrackId) {
+        continue;
+      }
+
+      if (position >= event.timeMs) {
+        ready.push(event);
+      } else {
+        remaining.push(event);
+      }
+    }
+
+    pendingAutoFxEvents = remaining;
+    return ready;
+  }
 
   // Load settings and history from localStorage
   function loadSettings() {
@@ -381,6 +638,7 @@ export function createAutoModeManager({
 
     clearAutomixTimer();
     currentTrackMixData = null;
+    pendingAutoFxEvents = [];
     onMixDataUpdated?.(null);
 
     logger?.debug?.('autoDj: scheduling automix timing for', {
@@ -413,6 +671,12 @@ export function createAutoModeManager({
               maxDurationMs 
             });
             onAutomixTimingCalculated?.(triggerMs);
+            planAutoFxEvents({
+              currentTrack,
+              mixData: null,
+              triggerMs,
+              maxDurationSec,
+            });
             return;
           }
           
@@ -423,6 +687,12 @@ export function createAutoModeManager({
           );
           logger?.debug?.('autoDj: calculated fallback timing', { triggerMs });
           onAutomixTimingCalculated?.(triggerMs);
+          planAutoFxEvents({
+            currentTrack,
+            mixData: null,
+            triggerMs,
+            maxDurationSec,
+          });
           return;
         }
 
@@ -466,6 +736,12 @@ export function createAutoModeManager({
           });
 
           onAutomixTimingCalculated?.(triggerMs);
+          planAutoFxEvents({
+            currentTrack,
+            mixData,
+            triggerMs,
+            maxDurationSec,
+          });
           return;
         }
 
@@ -487,11 +763,23 @@ export function createAutoModeManager({
               triggerMs: safeTimeMs,
             });
             onAutomixTimingCalculated?.(safeTimeMs);
+            planAutoFxEvents({
+              currentTrack,
+              mixData,
+              triggerMs: safeTimeMs,
+              maxDurationSec,
+            });
             return;
           }
         }
 
         onAutomixTimingCalculated?.(-1);
+        planAutoFxEvents({
+          currentTrack,
+          mixData,
+          triggerMs: -1,
+          maxDurationSec,
+        });
       })
       .catch(err => {
         logger?.warn?.('autoDj: failed to fetch mix data for scheduling', {
@@ -509,7 +797,44 @@ export function createAutoModeManager({
         }
         
         onAutomixTimingCalculated?.(triggerMs);
+        planAutoFxEvents({
+          currentTrack,
+          mixData: null,
+          triggerMs,
+          maxDurationSec,
+        });
       });
+  }
+
+  /**
+   * Build up to two previous-track references for suggestions API.
+   * Supports mixed payload items (title string or { track, artist } object).
+   */
+  function buildSuggestionTrackReferences(currentTrack, queue, currentIndex) {
+    if (!Array.isArray(queue) || !Number.isFinite(currentIndex) || currentIndex <= 0) {
+      return [];
+    }
+
+    const references = [];
+    const currentTrackId = currentTrack?.id || null;
+
+    for (let i = currentIndex - 1; i >= 0 && references.length < 2; i--) {
+      const item = queue[i];
+      if (!item) continue;
+
+      const itemId = item.id || item.ratingKey || item.uri || null;
+      if (currentTrackId && itemId && itemId === currentTrackId) continue;
+
+      const trackName = String(item.trackName || item.name || item.title || '').trim();
+      const artistName = String(item.artistName || item.artist || '').trim();
+      if (!trackName) continue;
+
+      references.push(artistName
+        ? { track: trackName, artist: artistName }
+        : trackName);
+    }
+
+    return references;
   }
 
   /**
@@ -575,8 +900,12 @@ export function createAutoModeManager({
         const apiUrl = getDownloaderApiUrl();
         if (apiUrl) {
           const params = new URLSearchParams();
+          const previousTrackReferences = buildSuggestionTrackReferences(currentTrack, queue, currentIndex);
           if (currentTrack.name) params.append('track', currentTrack.name);
           if (currentTrack.artist) params.append('artist', currentTrack.artist);
+          if (previousTrackReferences.length > 0) {
+            params.append('tracks', JSON.stringify(previousTrackReferences));
+          }
           params.append('limit', '25');
           params.append('allowSameArtist', 'false');
 
@@ -613,6 +942,7 @@ export function createAutoModeManager({
               count: results.length,
               referenceTrack: currentTrack.name,
               referenceArtist: currentTrack.artist,
+              referenceTracksCount: previousTrackReferences.length,
             });
             break;
           }
@@ -640,8 +970,8 @@ export function createAutoModeManager({
       logger?.debug?.('autoDj: search returned results', { count: results.length });
 
       // Find first result that hasn't been played yet and isn't in queue
-      const queue = getQueue();
-      const queueIds = new Set(queue.map(item => item.id));
+      const queueSnapshot = getQueue();
+      const queueIds = new Set(queueSnapshot.map(item => item.id));
 
       let selectedTrack = null;
       let selectedIndex = -1;
@@ -737,6 +1067,7 @@ export function createAutoModeManager({
     onMixDataUpdated?.(null);
     pendingNextTrack = null;
     nextTrackMixData = null;
+    pendingAutoFxEvents = [];
 
     logger?.debug?.('autoDj: track finished, searching for next', {
       trackName: finishedTrack.name,
@@ -773,6 +1104,7 @@ export function createAutoModeManager({
     onMixDataUpdated?.(null);
     pendingNextTrack = null;
     nextTrackMixData = null;
+    pendingAutoFxEvents = [];
     MIX_DATA_CACHE.clear();
     autoModeEnabled = false;
     saveSettings();
@@ -843,6 +1175,7 @@ export function createAutoModeManager({
     getCurrentTrackMixData: () => currentTrackMixData,
     getNextTrackMixData: () => nextTrackMixData,
     getPendingNextTrack: () => pendingNextTrack,
+    getPendingAutoFxEvents: () => [...pendingAutoFxEvents],
 
     // Zone validation
     isInAvoidZone,
@@ -853,6 +1186,7 @@ export function createAutoModeManager({
     searchAndAddNextTrack,
     addPendingTrackToQueue,
     scheduleAutomixTiming,
+    consumeReadyAutoFxEvents,
     onTrackFinished,
     fetchMixData,
     findBestTransitionZone,

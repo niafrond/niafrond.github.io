@@ -45,6 +45,12 @@ function createAudioContextMock() {
       curve: null,
       oversample: 'none',
     }),
+    createBiquadFilter: () => ({
+      connect: () => {},
+      type: 'allpass',
+      frequency: { value: 18000, cancelScheduledValues: () => {}, setTargetAtTime: () => {} },
+      Q: { value: 0.7, cancelScheduledValues: () => {}, setTargetAtTime: () => {} },
+    }),
   };
   return ctx;
 }
@@ -68,6 +74,12 @@ function makeAudioEl() {
     duration: NaN,
     playbackRate: 1,
     volume: 1,
+    src: '',
+    currentSrc: '',
+    play: () => Promise.resolve(),
+    pause: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
   };
 }
 
@@ -107,6 +119,22 @@ describe('SimpleMixFeatures — lazy AudioContext creation', () => {
 
     expect(audioCtxConstructorCalls).toBe(1);
     expect(mediaElementSourceCalls).toBe(2); // deck A + deck B
+  });
+
+  test('echo keeps the original deck source while creating an auxiliary wet path', async () => {
+    const audioA = { ...makeAudioEl(), src: 'track-a.mp3', currentSrc: 'track-a.mp3' };
+    const audioB = makeAudioEl();
+    const features = new SimpleMixFeatures(audioA, audioB);
+
+    await features.setEnabled({ echo: true });
+    features.setDeckSourceMetadata('A', {
+      url: 'track-a.mp3',
+      stems: { vocalsUrl: 'track-a-vocals.mp3', echoUrl: 'track-a-echo.mp3' },
+    });
+
+    expect(audioA.src).toBe('track-a.mp3');
+    expect(audioA.currentSrc).toBe('track-a.mp3');
+    expect(mediaElementSourceCalls).toBe(3);
   });
 
   test('AudioContext IS created when autoBpm is enabled', async () => {

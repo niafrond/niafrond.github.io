@@ -134,8 +134,12 @@ const SMOOTH_TAU      = 0.08;   // seconds – AudioParam setTargetAtTime time-c
 const SMOOTH_JS       = 0.34;   // lerp alpha for computeAdaptiveMidSideGains
 const ENERGY_EPSILON  = 1e-4;
 const DISTORTION_K    = 140;
+const DISTORTION_WET_MIX = 0.36;
+const DISTORTION_DRY_MIX = 0.84;
 const ECHO_DELAY_S    = 0.22;
 const ECHO_FEEDBACK   = 0.28;
+const ECHO_WET_MIX    = 0.28;
+const ECHO_DRY_MIX    = 0.9;
 const STEM_SYNC_INTERVAL_MS = 1200;
 
 // ─── Tiny utilities ───────────────────────────────────────────────────────────
@@ -205,8 +209,10 @@ export function computeAdaptiveMidSideGains(mode, midEnergy, sideEnergy) {
 // ─── Settings helpers ─────────────────────────────────────────────────────────
 
 function defaultDeckFx() {
-  return { A: { vocalRemove: false, instruRemove: false },
-           B: { vocalRemove: false, instruRemove: false } };
+  return {
+    A: { vocalRemove: false, instruRemove: false, filterMode: 'off' },
+    B: { vocalRemove: false, instruRemove: false, filterMode: 'off' },
+  };
 }
 
 function createAuxStemAudioElement() {
@@ -392,6 +398,8 @@ export class SimpleMixFeatures {
 
     if (this.#ready) {
       void this.#syncDeckStemMode(d, true, false);
+      this.#syncDeckEchoStemSource(d, true);
+      this.#syncDeckDistortionStemSource(d, true);
     }
   }
 
@@ -418,6 +426,8 @@ export class SimpleMixFeatures {
     if (now - this.#lastStemSyncAt >= STEM_SYNC_INTERVAL_MS) {
       this.#lastStemSyncAt = now;
       void this.#syncAllDeckStemModes(false);
+      this.#syncAllDeckEchoStemSources(false);
+      this.#syncAllDeckDistortionStemSources(false);
     }
 
     // M/S adaptive gains: active when no server-side stem swap is in effect
@@ -437,9 +447,16 @@ export class SimpleMixFeatures {
     if (this.#audioB) this.#audioB.playbackRate = 1;
     for (const deck of ['A', 'B']) {
       const stemAudio = this.#nodes(deck)?.echoStemAudio;
-      if (!stemAudio) continue;
-      stemAudio.pause?.();
-      stemAudio.src = '';
+      if (stemAudio) {
+        stemAudio.pause?.();
+        stemAudio.src = '';
+      }
+
+      const distortionStemAudio = this.#nodes(deck)?.distortionStemAudio;
+      if (distortionStemAudio) {
+        distortionStemAudio.pause?.();
+        distortionStemAudio.src = '';
+      }
     }
     this.#audioCtx?.close().catch(() => {});
     this.#audioCtx = null;
@@ -457,6 +474,8 @@ export class SimpleMixFeatures {
     const preGain = ctx.createGain();
     const echoBaseSend = ctx.createGain();    echoBaseSend.gain.value = 1;
     const echoStemSend = ctx.createGain();    echoStemSend.gain.value = 0;
+    const distBaseSend = ctx.createGain();    distBaseSend.gain.value = 0;
+    const distStemSend = ctx.createGain();    distStemSend.gain.value = 0;
 
     // Echo
     const delay    = ctx.createDelay(0.8);    delay.delayTime.value = ECHO_DELAY_S;
@@ -473,10 +492,15 @@ export class SimpleMixFeatures {
 
     // Mid/Side
     const ms = createMidSideChain(ctx);
+    const toneFilter = ctx.createBiquadFilter();
+    toneFilter.type = 'allpass';
+    toneFilter.frequency.value = 18000;
+    toneFilter.Q.value = 0.7;
 
     // ── Graph ────────────────────────────────────────────────────────────────
     source.connect(preGain);
     source.connect(echoBaseSend);
+    source.connect(distBaseSend);
 
     preGain.connect(dry);
     echoBaseSend.connect(delay);
@@ -485,11 +509,13 @@ export class SimpleMixFeatures {
     delay.connect(wet);
 
     dry.connect(distDry); wet.connect(distDry);
-    dry.connect(distNode); wet.connect(distNode);
+    distBaseSend.connect(distNode);
+    distStemSend.connect(distNode);
     distNode.connect(distWet);
 
-    distDry.connect(ms.input);
-    distWet.connect(ms.input);
+    distDry.connect(toneFilter);
+    distWet.connect(toneFilter);
+    toneFilter.connect(ms.input);
     ms.output.connect(ctx.destination);
 
     return {
@@ -498,10 +524,15 @@ export class SimpleMixFeatures {
       distWet,
       distDry,
       ms,
+      toneFilter,
       echoBaseSend,
       echoStemSend,
       echoStemAudio: null,
       echoStemSource: null,
+      distBaseSend,
+      distStemSend,
+      distortionStemAudio: null,
+      distortionStemSource: null,
     };
   }
 
@@ -548,8 +579,6 @@ export class SimpleMixFeatures {
     const fx = this.#settings.deckFx?.[deck];
     if (fx?.vocalRemove) return 'vocalRemove';
     if (fx?.instruRemove) return 'instruRemove';
-    if (this.#settings.distortion) return 'distortion';
-    if (this.#settings.echo) return 'echo';
     return null;
   }
 
@@ -605,6 +634,20 @@ export class SimpleMixFeatures {
     const nodes = this.#nodes(deck);
     if (!nodes) return;
 
+    if (!this.#settings.echo) {
+      nodes.echoBaseSend.gain.value = 1;
+      nodes.echoStemSend.gain.value = 0;
+      this.#setParamSmooth(nodes.wet.gain, 0);
+      this.#setParamSmooth(nodes.dry.gain, 1);
+      nodes.echoStemAudio?.pause?.();
+      return;
+    }
+
+    // Keep the dry signal slightly under unity while echo is active,
+    // so repetitions remain audible without overpowering the main track.
+    this.#setParamSmooth(nodes.wet.gain, ECHO_WET_MIX);
+    this.#setParamSmooth(nodes.dry.gain, ECHO_DRY_MIX);
+
     const vocalsUrl = this.#settings.echo
       ? (this.#deckStemState[deck]?.providedStems?.vocalsUrl || '')
       : '';
@@ -648,6 +691,112 @@ export class SimpleMixFeatures {
   #syncAllDeckEchoStemSources(forceSeek = false) {
     this.#syncDeckEchoStemSource('A', forceSeek);
     this.#syncDeckEchoStemSource('B', forceSeek);
+  }
+
+  #ensureDeckDistortionStemAudio(deck) {
+    const nodes = this.#nodes(deck);
+    if (!nodes || nodes.distortionStemAudio || !this.#audioCtx) return nodes?.distortionStemAudio ?? null;
+
+    const stemAudio = createAuxStemAudioElement();
+    if (!stemAudio) return null;
+
+    nodes.distortionStemAudio = stemAudio;
+    nodes.distortionStemSource = this.#audioCtx.createMediaElementSource(stemAudio);
+    nodes.distortionStemSource.connect(nodes.distStemSend);
+    return stemAudio;
+  }
+
+  #syncDeckDistortionStemPlayback(deck, forceSeek = false) {
+    if (!this.#settings.distortion) return;
+
+    const nodes = this.#nodes(deck);
+    const stemAudio = nodes?.distortionStemAudio;
+    const mainAudio = this.#deckAudio(deck);
+    if (!stemAudio || !mainAudio || !nodes) return;
+    if (!nodes.distStemSend.gain.value) return;
+
+    const mainTime = Number.isFinite(mainAudio.currentTime) ? mainAudio.currentTime : 0;
+    const stemTime = Number.isFinite(stemAudio.currentTime) ? stemAudio.currentTime : 0;
+
+    stemAudio.playbackRate = Number.isFinite(mainAudio.playbackRate) ? mainAudio.playbackRate : 1;
+
+    if (forceSeek || Math.abs(mainTime - stemTime) > 0.12) {
+      try {
+        stemAudio.currentTime = mainTime;
+      } catch {}
+    }
+
+    if (mainAudio.paused) {
+      stemAudio.pause?.();
+      return;
+    }
+
+    try {
+      const maybePromise = stemAudio.play?.();
+      maybePromise?.catch?.(() => {});
+    } catch {}
+  }
+
+  #syncDeckDistortionStemSource(deck, forceSeek = false) {
+    const nodes = this.#nodes(deck);
+    if (!nodes) return;
+
+    const distortionUrl = this.#settings.distortion
+      ? (this.#deckStemState[deck]?.providedStems?.distortionUrl || '')
+      : '';
+
+    if (!this.#settings.distortion) {
+      nodes.distBaseSend.gain.value = 0;
+      nodes.distStemSend.gain.value = 0;
+      this.#setParamSmooth(nodes.distWet.gain, 0);
+      this.#setParamSmooth(nodes.distDry.gain, 1);
+      nodes.distortionStemAudio?.pause?.();
+      return;
+    }
+
+    // Reverb-style blend: lower dry a bit and raise wet while the effect is active.
+    this.#setParamSmooth(nodes.distWet.gain, DISTORTION_WET_MIX);
+    this.#setParamSmooth(nodes.distDry.gain, DISTORTION_DRY_MIX);
+
+    if (!distortionUrl) {
+      nodes.distBaseSend.gain.value = 1;
+      nodes.distStemSend.gain.value = 0;
+      nodes.distortionStemAudio?.pause?.();
+      return;
+    }
+
+    const stemAudio = this.#ensureDeckDistortionStemAudio(deck);
+    if (!stemAudio) {
+      nodes.distBaseSend.gain.value = 1;
+      nodes.distStemSend.gain.value = 0;
+      return;
+    }
+
+    const currentSrc = stemAudio.currentSrc || stemAudio.src || '';
+    if (currentSrc !== distortionUrl) {
+      stemAudio.src = distortionUrl;
+      forceSeek = true;
+
+      if (typeof stemAudio.addEventListener === 'function') {
+        let settled = false;
+        const finalize = () => {
+          if (settled) return;
+          settled = true;
+          this.#syncDeckDistortionStemPlayback(deck, true);
+        };
+        stemAudio.addEventListener('loadedmetadata', finalize, { once: true });
+        setTimeout(finalize, 3000);
+      }
+    }
+
+    nodes.distBaseSend.gain.value = 0;
+    nodes.distStemSend.gain.value = 1;
+    this.#syncDeckDistortionStemPlayback(deck, forceSeek);
+  }
+
+  #syncAllDeckDistortionStemSources(forceSeek = false) {
+    this.#syncDeckDistortionStemSource('A', forceSeek);
+    this.#syncDeckDistortionStemSource('B', forceSeek);
   }
 
   async #swapDeckSource(audio, nextSrc) {
@@ -730,9 +879,7 @@ export class SimpleMixFeatures {
         ? stems.vocalsUrl
         : mode === 'vocalRemove'
           ? stems.instrumentalUrl
-          : mode === 'distortion'
-            ? stems.distortionUrl
-            : stems.echoUrl;
+          : stems.echoUrl;
       if (!nextStemSrc) return;
       if (state.token !== token) return;
 
@@ -758,6 +905,33 @@ export class SimpleMixFeatures {
     ]);
   }
 
+  #applyDeckToneFilter(deck) {
+    const node = this.#nodes(deck);
+    const filter = node?.toneFilter;
+    if (!filter) return;
+
+    const rawMode = this.#settings.deckFx?.[deck]?.filterMode;
+    const mode = rawMode === 'lowPass' || rawMode === 'highPass' ? rawMode : 'off';
+
+    if (mode === 'lowPass') {
+      filter.type = 'lowpass';
+      this.#setParamSmooth(filter.frequency, 1400);
+      this.#setParamSmooth(filter.Q, 0.85);
+      return;
+    }
+
+    if (mode === 'highPass') {
+      filter.type = 'highpass';
+      this.#setParamSmooth(filter.frequency, 280);
+      this.#setParamSmooth(filter.Q, 0.8);
+      return;
+    }
+
+    filter.type = 'allpass';
+    this.#setParamSmooth(filter.frequency, 18000);
+    this.#setParamSmooth(filter.Q, 0.7);
+  }
+
   #apply() {
     if (!this.#ready) return;
 
@@ -766,16 +940,22 @@ export class SimpleMixFeatures {
 
     for (const deck of ['A', 'B']) {
       const n = this.#nodes(deck);
-      // Echo/distortion now come from API-generated stem files.
+      // Start from neutral mix values, then effect sync reapplies active settings.
       n.wet.gain.value = 0;
       n.dry.gain.value = 1;
       n.distWet.gain.value = 0;
       n.distDry.gain.value = 1;
+      n.distBaseSend.gain.value = 0;
+      n.distStemSend.gain.value = 0;
       n.echoBaseSend.gain.value = 1;
       n.echoStemSend.gain.value = 0;
       n.echoStemAudio?.pause?.();
+      n.distortionStemAudio?.pause?.();
+      this.#applyDeckToneFilter(deck);
     }
 
+    this.#syncAllDeckEchoStemSources(true);
+    this.#syncAllDeckDistortionStemSources(true);
     void this.#syncAllDeckStemModes(true);
 
     if (!autoBpm) {

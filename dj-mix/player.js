@@ -21,8 +21,8 @@ function clamp01(value) {
 
 function createDefaultDeckFx() {
   return {
-    A: { vocalRemove: false, instruRemove: false },
-    B: { vocalRemove: false, instruRemove: false },
+    A: { vocalRemove: false, instruRemove: false, filterMode: 'off' },
+    B: { vocalRemove: false, instruRemove: false, filterMode: 'off' },
   };
 }
 
@@ -92,6 +92,10 @@ export class DJPlayer extends EventTarget {
   #trackInterval = null;
   #crossfadeInterval = null;
   #manualMixInterval = null;
+  #playbackRateIntervals = {
+    A: null,
+    B: null,
+  };
   #deckMixRatio = 0;
   #transitionMode = DEFAULT_TRANSITION_MODE;
   #allowedTransitionModes = new Set(MIX_TRANSITION_MODES);
@@ -266,10 +270,8 @@ export class DJPlayer extends EventTarget {
   }
 
   setDeckPlaybackRate(deck, rate) {
-    const audio = deck === 'B' ? this.#audioB : this.#audioA;
-    if (!audio) return;
-    audio.playbackRate = Math.max(0.5, Math.min(2.0, Number(rate) || 1));
-    this.#emitDeckState();
+    const targetDeck = deck === 'B' ? 'B' : 'A';
+    this.#smoothSetDeckPlaybackRate(targetDeck, rate, 180);
   }
 
   resetDeckPlaybackRate(deck) {
@@ -291,8 +293,8 @@ export class DJPlayer extends EventTarget {
     const active = this.#activeAudio;
     const inactive = this.#inactiveAudio;
     if (!active || !inactive) return;
-    inactive.playbackRate = active.playbackRate;
-    this.#emitDeckState();
+    const inactiveDeck = this.#active === 'A' ? 'B' : 'A';
+    this.#smoothSetDeckPlaybackRate(inactiveDeck, active.playbackRate, 220);
   }
 
   setMixFeatures(settings) {
@@ -374,9 +376,10 @@ export class DJPlayer extends EventTarget {
 
     const safeTargetMs = Math.max(0, Math.min(durationMs, Number(positionMs) || 0));
     const wasPaused = audio.paused;
+    const instant = options?.instant === true;
     const fadeMs = Math.max(40, Number(options.fadeMs) || 180);
 
-    if (this.#isCrossfading || wasPaused) {
+    if (instant || this.#isCrossfading || wasPaused) {
       audio.currentTime = safeTargetMs / 1000;
       this.#emitDeckState();
       return;
@@ -498,8 +501,8 @@ export class DJPlayer extends EventTarget {
       from.pause();
       from.currentTime = 0;
       from.src = '';
-      from.playbackRate = 1;
-      to.playbackRate = 1;
+      this.#smoothSetDeckPlaybackRate(fromDeck, 1, 140);
+      this.#smoothSetDeckPlaybackRate(toDeck, 1, 220);
       this.#setDeckLoudness(fromDeck, null);
       this.#deckSourceMeta[fromDeck] = null;
 
@@ -634,12 +637,11 @@ export class DJPlayer extends EventTarget {
 
     const liveDuration = Math.max(250, Number(this.#crossfadeDuration) || 5000);
     const startEcho = this.#mixFeatureSettings.echo;
-    const startDistortion = this.#mixFeatureSettings.distortion;
 
     if (mode === 'echo_out_light' && !startEcho) {
       this.setMixFeatures({ echo: true });
     }
-    if (mode === 'reverb_short_simple' && !startDistortion) {
+    if (mode === 'reverb_short_simple' && !this.#mixFeatureSettings.distortion) {
       this.setMixFeatures({ distortion: true });
     }
 
@@ -667,7 +669,7 @@ export class DJPlayer extends EventTarget {
           let toBase = levels.to;
 
           if (mode === 'short_loop' && progress < 0.45 && Number.isFinite(context.to.currentTime)) {
-            const loopLen = 0.42;
+            const loopLen = 0.85;
             if ((context.to.currentTime - loopAnchor) > loopLen) {
               context.to.currentTime = loopAnchor;
             }
@@ -722,11 +724,8 @@ export class DJPlayer extends EventTarget {
       if (mode === 'echo_out_light' && !startEcho) {
         this.setMixFeatures({ echo: false });
       }
-      if (mode === 'reverb_short_simple' && !startDistortion) {
-        this.setMixFeatures({ distortion: false });
-      }
-      context.from.playbackRate = 1;
-      context.to.playbackRate = 1;
+      this.#smoothSetDeckPlaybackRate(context.fromDeck, 1, 160);
+      this.#smoothSetDeckPlaybackRate(context.toDeck, 1, 220);
     }
   }
 
@@ -1056,6 +1055,51 @@ export class DJPlayer extends EventTarget {
         }
       }, stepMs);
     });
+  }
+
+  #smoothSetDeckPlaybackRate(deck, targetRate, durationMs = 180) {
+    const targetDeck = deck === 'B' ? 'B' : 'A';
+    const audio = targetDeck === 'B' ? this.#audioB : this.#audioA;
+    if (!audio) return;
+
+    const safeTarget = Math.max(0.5, Math.min(2.0, Number(targetRate) || 1));
+    const fromRate = Math.max(0.5, Math.min(2.0, Number(audio.playbackRate) || 1));
+    const intervalKey = targetDeck;
+
+    clearInterval(this.#playbackRateIntervals[intervalKey]);
+    this.#playbackRateIntervals[intervalKey] = null;
+
+    if (durationMs <= 0 || Math.abs(fromRate - safeTarget) < 0.001) {
+      audio.playbackRate = safeTarget;
+      this.#emitDeckState();
+      return;
+    }
+
+    const ms = Math.max(32, Number(durationMs) || 180);
+    const steps = Math.max(1, Math.round(ms / 16));
+    let step = 0;
+
+    this.#playbackRateIntervals[intervalKey] = setInterval(() => {
+      const currentAudio = intervalKey === 'B' ? this.#audioB : this.#audioA;
+      if (this.#destroyed || !currentAudio) {
+        clearInterval(this.#playbackRateIntervals[intervalKey]);
+        this.#playbackRateIntervals[intervalKey] = null;
+        return;
+      }
+
+      step += 1;
+      const t = Math.min(1, step / steps);
+      const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      currentAudio.playbackRate = fromRate + ((safeTarget - fromRate) * eased);
+      this.#emitDeckState();
+
+      if (step >= steps) {
+        clearInterval(this.#playbackRateIntervals[intervalKey]);
+        this.#playbackRateIntervals[intervalKey] = null;
+        currentAudio.playbackRate = safeTarget;
+        this.#emitDeckState();
+      }
+    }, 16);
   }
 
   #smoothSetDeckVolumes(targetA, targetB, durationMs) {

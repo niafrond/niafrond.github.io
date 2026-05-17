@@ -46,11 +46,36 @@ const FX_VISIBILITY_KEY = 'dj-mix:fx:hidden';
 const DEBUG_LOGS_KEY = 'dj-mix:logs:debug';
 const MIX_TRANSITION_MODE_KEY = 'dj-mix:transition:mode';
 const TRACK_MAX_DURATION_KEY = 'dj-mix:track:max-duration';
+const TRACK_MAX_DURATION_ENABLED_KEY = 'dj-mix:track:max-duration:enabled';
 const RAM_FILTER_ENABLED_KEY = 'dj-mix:ram-filter:enabled';
 const RAM_TOTAL_MB_OVERRIDE_KEY = 'dj-mix:ram-filter:total-mb-override';
+const AUTO_DJ_FX_SETTINGS_KEY = 'dj-mix:auto-dj:fx:settings';
 const DEFAULT_DOWNLOADER_API_URL = 'http://192.168.8.149:3000';
 const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
 const MOBILE_TRANSITION_RAM_BUDGET_RATIO = 0.12;
+
+const AUTO_DJ_FX_CONFIG = Object.freeze({
+  filter: { label: 'Filter', category: 'filter' },
+  lowPass: { label: 'Low-pass', category: 'filter' },
+  highPass: { label: 'High-pass', category: 'filter' },
+  echoDelay: { label: 'Echo / Delay', category: 'modulation' },
+  reverb: { label: 'Reverb', category: 'modulation' },
+  flangerPhaser: { label: 'Flanger / Phaser', category: 'modulation' },
+  roll: { label: 'Roll / Loop', category: 'beat' },
+  loop: { label: 'Loop', category: 'beat' },
+  beatRepeat: { label: 'Beat Repeat', category: 'beat' },
+  brake: { label: 'Brake / Vinyl Stop', category: 'transport' },
+  backspin: { label: 'Backspin / Rewind', category: 'transport' },
+  noise: { label: 'Noise FX', category: 'textural' },
+  eq: { label: 'EQ', category: 'filter' },
+  pitchTempo: { label: 'Pitch / Tempo', category: 'pitch' },
+  keyShift: { label: 'Key Shift / Harmonic', category: 'pitch' },
+  scratching: { label: 'Scratching', category: 'scratch' },
+  hotCues: { label: 'Hot Cues', category: 'cue' },
+  sampling: { label: 'Sampling', category: 'sample' },
+});
+
+const AUTO_DJ_FX_TYPES = Object.freeze(Object.keys(AUTO_DJ_FX_CONFIG));
 
 const logger = createLogger('main');
 const logDebug = (event, payload) => logger.debug(event, payload);
@@ -109,9 +134,16 @@ let mixFeatures = {
   echo: false,
   distortion: false,
   deckFx: {
-    A: { vocalRemove: false, instruRemove: false },
-    B: { vocalRemove: false, instruRemove: false },
+    A: { vocalRemove: false, instruRemove: false, filterMode: 'off' },
+    B: { vocalRemove: false, instruRemove: false, filterMode: 'off' },
   },
+};
+const djFxRuntime = {
+  loopTimers: { A: null, B: null },
+  playbackRateTimers: { A: null, B: null },
+  samplingAudioContext: null,
+  transientActionTimers: new Map(),
+  activeTransientActions: new Set(),
 };
 let fxControlsHidden = false;
 const deckDisplayItems = { A: null, B: null };
@@ -123,7 +155,11 @@ let allowedTransitionModes = [...MIX_TRANSITION_MODES];
 let transitionRamRequirementsMb = getTransitionRamRequirementsMb();
 let transitionRamCapability = null;
 let trackMaxDurationSec = readTrackMaxDurationSetting();
-let trackMaxDurationAppliedSec = trackMaxDurationSec;
+let trackMaxDurationEnabled = readTrackMaxDurationEnabledSetting(trackMaxDurationSec > 0);
+let trackMaxDurationAppliedSec = trackMaxDurationEnabled ? trackMaxDurationSec : 0;
+let lastTrackMaxDurationSec = trackMaxDurationSec > 0 ? trackMaxDurationSec : 120;
+let autoDjFxSettings = readAutoDjFxSettings();
+let lastAutoDjFxTriggeredAt = 0;
 
 function isMobileDevice() {
   const ua = String(navigator.userAgent || navigator.vendor || '').toLowerCase();
@@ -151,6 +187,83 @@ function readRamFilterEnabledSetting() {
     return stored !== '0';
   } catch (_) {
     return true;
+  }
+}
+
+function createDefaultAutoDjFxAllowed() {
+  const defaults = {};
+  for (const type of AUTO_DJ_FX_TYPES) {
+    defaults[type] = true;
+  }
+  return defaults;
+}
+
+function getSafeAutoDjFxMinIntervalSec(value) {
+  const numeric = Math.round(Number(value) || 0);
+  return Math.max(1, Math.min(180, numeric || 14));
+}
+
+function readAutoDjFxSettings() {
+  const defaults = {
+    allowed: createDefaultAutoDjFxAllowed(),
+    minIntervalSec: 14,
+  };
+
+  try {
+    const raw = localStorage.getItem(AUTO_DJ_FX_SETTINGS_KEY);
+    if (!raw) return defaults;
+
+    const parsed = JSON.parse(raw);
+    const allowedFromStorage = (parsed && typeof parsed.allowed === 'object') ? parsed.allowed : {};
+    const allowed = { ...defaults.allowed };
+
+    // Accept any FX from config, even if not in AUTO_DJ_FX_TYPES
+    // This allows autodj to launch FX regardless of config coherence
+    for (const type in allowedFromStorage) {
+      if (Object.prototype.hasOwnProperty.call(allowedFromStorage, type)) {
+        allowed[type] = Boolean(allowedFromStorage[type]);
+      }
+    }
+
+    return {
+      allowed,
+      minIntervalSec: getSafeAutoDjFxMinIntervalSec(parsed?.minIntervalSec),
+    };
+  } catch (_) {
+    return defaults;
+  }
+}
+
+function persistAutoDjFxSettings() {
+  try {
+    localStorage.setItem(AUTO_DJ_FX_SETTINGS_KEY, JSON.stringify(autoDjFxSettings));
+  } catch (_) {
+    // ignore storage failures
+  }
+}
+
+function isAutoDjFxTypeAllowed(type) {
+  if (!type) return false;
+  if (!Object.prototype.hasOwnProperty.call(autoDjFxSettings.allowed, type)) return true;
+  return Boolean(autoDjFxSettings.allowed[type]);
+}
+
+function updateAutoDjFxConfigUI() {
+  if (autoDjFxMinIntervalInput) {
+    autoDjFxMinIntervalInput.value = String(getSafeAutoDjFxMinIntervalSec(autoDjFxSettings.minIntervalSec));
+  }
+
+  for (const toggleEl of autoDjFxToggleEls) {
+    const type = String(toggleEl.dataset.autoFxType || '');
+    toggleEl.checked = isAutoDjFxTypeAllowed(type);
+  }
+
+  if (autoDjFxStatus) {
+    const allowedCount = AUTO_DJ_FX_TYPES.reduce((count, type) => {
+      return count + (isAutoDjFxTypeAllowed(type) ? 1 : 0);
+    }, 0);
+    const minIntervalSec = getSafeAutoDjFxMinIntervalSec(autoDjFxSettings.minIntervalSec);
+    autoDjFxStatus.textContent = `Robot FX: ${allowedCount}/${AUTO_DJ_FX_TYPES.length} autorises, intervalle minimum ${minIntervalSec}s.`;
   }
 }
 
@@ -182,7 +295,7 @@ function persistRamTotalMbOverrideSetting(totalMb) {
 }
 
 function computeTransitionRamRequirements() {
-  const crossfadeSeconds = clampCrossfadeSeconds(crossfadeSlider?.value || 12);
+  const crossfadeSeconds = clampCrossfadeSeconds(crossfadeSlider?.value || localStorage.getItem('dj-mix:crossfade-seconds') || 6);
   transitionRamRequirementsMb = getTransitionRamRequirementsMb({
     crossfadeDurationMs: crossfadeSeconds * 1000,
   });
@@ -240,7 +353,7 @@ function applyTransitionCapabilitiesForDevice(options = {}) {
   const totalRamMb = ramTotalMbOverride > 0 ? ramTotalMbOverride : estimateTotalDeviceRamMb();
   const transitionBudgetMb = Math.max(64, Math.round(totalRamMb * MOBILE_TRANSITION_RAM_BUDGET_RATIO));
   allowedTransitionModes = getAllowedTransitionModesForRam(transitionBudgetMb, {
-    crossfadeDurationMs: clampCrossfadeSeconds(crossfadeSlider?.value || 12) * 1000,
+    crossfadeDurationMs: clampCrossfadeSeconds(crossfadeSlider?.value || localStorage.getItem('dj-mix:crossfade-seconds') || 6) * 1000,
   });
 
   const disabledModes = MIX_TRANSITION_MODES.filter((mode) => !allowedTransitionModes.includes(mode));
@@ -352,6 +465,24 @@ function persistTrackMaxDurationSetting(seconds) {
   }
 }
 
+function readTrackMaxDurationEnabledSetting(fallback = true) {
+  try {
+    const stored = localStorage.getItem(TRACK_MAX_DURATION_ENABLED_KEY);
+    if (stored == null) return Boolean(fallback);
+    return stored !== '0';
+  } catch (_) {
+    return Boolean(fallback);
+  }
+}
+
+function persistTrackMaxDurationEnabledSetting(enabled) {
+  try {
+    localStorage.setItem(TRACK_MAX_DURATION_ENABLED_KEY, enabled ? '1' : '0');
+  } catch (_) {
+    // ignore storage failures
+  }
+}
+
 function applyTransitionModeSetting(mode, options = {}) {
   const { persist = true } = options;
   const safeMode = getSafeAllowedTransitionMode(mode);
@@ -361,6 +492,7 @@ function applyTransitionModeSetting(mode, options = {}) {
   }
   player?.setTransitionMode(safeMode);
   if (persist) persistTransitionModeSetting(safeMode);
+  updateDjFxMenuUI();
 }
 
 function recalculateAutomixTimingIfNeeded() {
@@ -376,17 +508,34 @@ function recalculateAutomixTimingIfNeeded() {
 }
 
 function applyTrackMaxDurationForCurrentPlayback() {
-  trackMaxDurationAppliedSec = trackMaxDurationSec;
+  trackMaxDurationAppliedSec = trackMaxDurationEnabled ? trackMaxDurationSec : 0;
+}
+
+function updateTrackMaxDurationUI() {
+  if (trackMaxDurationInput) {
+    trackMaxDurationInput.value = String(trackMaxDurationSec);
+  }
+  if (trackMaxDurationMinus) {
+    trackMaxDurationMinus.disabled = false;
+  }
+  if (trackMaxDurationPlus) {
+    trackMaxDurationPlus.disabled = false;
+  }
+  if (trackMaxDurationToggle) {
+    trackMaxDurationToggle.textContent = trackMaxDurationEnabled ? 'Durée max: ON' : 'Durée max: OFF';
+    trackMaxDurationToggle.setAttribute('aria-pressed', String(trackMaxDurationEnabled));
+  }
 }
 
 function applyTrackMaxDurationSetting(nextValue, logEvent) {
   const value = Math.max(0, Math.min(600, Number.parseInt(String(nextValue || '0'), 10) || 0));
   trackMaxDurationSec = value;
+  if (value > 0) {
+    lastTrackMaxDurationSec = value;
+  }
   applyTrackMaxDurationForCurrentPlayback();
   persistTrackMaxDurationSetting(value);
-  if (trackMaxDurationInput) {
-    trackMaxDurationInput.value = String(value);
-  }
+  updateTrackMaxDurationUI();
 
   const msg = value > 0 ? `Durée max: ${value}s` : 'Durée max: désactivée';
   showToast(msg);
@@ -453,7 +602,11 @@ const crossfadeControlMix = document.querySelector('.crossfade-control--mix');
 const autoBpmBtn = document.getElementById('fx-auto-bpm-btn');
 const echoBtn = document.getElementById('fx-echo-btn');
 const distortionBtn = document.getElementById('fx-distortion-btn');
+const trackMaxDurationToggle = document.getElementById('track-max-duration-toggle');
+const djFxMenu = document.getElementById('dj-fx-menu');
+const djFxButtons = Array.from(djFxMenu?.querySelectorAll('[data-fx-action]') || []);
 const autoModeBtn = document.getElementById('auto-mode-btn');
+const autoDjNextFxCountdown = document.getElementById('autodj-next-fx-countdown');
 const deckAVocalBtn = document.getElementById('deck-a-vocal-btn');
 const deckAInstruBtn = document.getElementById('deck-a-instru-btn');
 const deckBVocalBtn = document.getElementById('deck-b-vocal-btn');
@@ -494,6 +647,9 @@ const debugLogsStatus = document.getElementById('debug-logs-status');
 const ramFilterEnabledToggle = document.getElementById('ram-filter-enabled-toggle');
 const ramTotalMemoryInput = document.getElementById('ram-total-memory-gb');
 const ramFilterStatus = document.getElementById('ram-filter-status');
+const autoDjFxStatus = document.getElementById('auto-dj-fx-status');
+const autoDjFxMinIntervalInput = document.getElementById('auto-dj-fx-min-interval-input');
+const autoDjFxToggleEls = Array.from(document.querySelectorAll('[data-auto-fx-type]'));
 
 const tabBtns = document.querySelectorAll('.tab-bar-btn');
 const tabPanels = {
@@ -521,6 +677,15 @@ const {
   showToast,
 } = shellUi;
 
+function syncAutoModeButtonUI(isEnabled) {
+  if (!autoModeBtn) return;
+  autoModeBtn.setAttribute('aria-pressed', String(isEnabled));
+  autoModeBtn.classList.toggle('is-enabled', isEnabled);
+  autoModeBtn.textContent = '🤖';
+  autoModeBtn.title = `AutoDJ ${isEnabled ? 'actif' : 'inactif'}: recherche et ajoute automatiquement les chansons suivantes`;
+  autoModeBtn.setAttribute('aria-label', `AutoDJ ${isEnabled ? 'actif' : 'inactif'}`);
+}
+
 const downloaderConfig = createDownloaderConfigManager({
   defaultUrl: DEFAULT_DOWNLOADER_API_URL,
   inputEl: downloaderApiUrlInput,
@@ -529,6 +694,456 @@ const downloaderConfig = createDownloaderConfigManager({
   storageKey: DOWNLOADER_API_URL_KEY,
   testBtn: downloaderApiTestBtn,
 });
+const DJ_FX_TRANSITION_MODE = Object.freeze({
+  filter: 'filter_sweep_low_high',
+  lowPass: 'filter_sweep_low_high',
+  highPass: 'filter_sweep_low_high',
+  reverb: 'reverb_short_simple',
+  roll: 'short_loop',
+  loop: 'short_loop',
+  beatRepeat: 'short_loop',
+  brake: 'brake_tape_stop_simple',
+  backspin: 'short_reverse',
+  noise: 'filter_automation',
+  eq: 'eq_transition_simple',
+});
+
+const DJ_FX_TOGGLE_FEATURE = Object.freeze({
+  echoDelay: 'echo',
+  flangerPhaser: 'distortion',
+  pitchTempo: 'autoBpm',
+});
+
+const DJ_FX_TRANSIENT_ACTIONS = new Set([
+  'reverb',
+  'roll',
+  'loop',
+  'beatRepeat',
+  'brake',
+  'backspin',
+  'noise',
+  'keyShift',
+  'scratching',
+  'hotCues',
+  'sampling',
+]);
+
+function getFocusedDeckForFx() {
+  return deckMixRatio > 0.5 ? 'B' : 'A';
+}
+
+function getDeckStateForFx(deck) {
+  const state = player?._lastDeckState;
+  if (!state) return null;
+  return deck === 'B' ? state.deckB : state.deckA;
+}
+
+function clearDeckLoopFx(deck) {
+  const timer = djFxRuntime.loopTimers[deck];
+  if (timer) {
+    clearInterval(timer);
+    djFxRuntime.loopTimers[deck] = null;
+  }
+}
+
+function setDeckFilterMode(mode, deck = getFocusedDeckForFx()) {
+  const safeDeck = deck === 'B' ? 'B' : 'A';
+  const safeMode = mode === 'lowPass' || mode === 'highPass' ? mode : 'off';
+  const nextDeckFx = {
+    A: { vocalRemove: false, instruRemove: false, filterMode: 'off', ...(mixFeatures.deckFx?.A || {}) },
+    B: { vocalRemove: false, instruRemove: false, filterMode: 'off', ...(mixFeatures.deckFx?.B || {}) },
+  };
+  nextDeckFx[safeDeck] = {
+    ...nextDeckFx[safeDeck],
+    filterMode: safeMode,
+  };
+
+  mixFeatures = {
+    ...mixFeatures,
+    deckFx: nextDeckFx,
+  };
+  applyMixFeatures();
+  updateDjFxMenuUI();
+}
+
+function cycleFocusedDeckFilterMode() {
+  const deck = getFocusedDeckForFx();
+  const currentMode = mixFeatures.deckFx?.[deck]?.filterMode || 'off';
+  const nextMode = currentMode === 'off'
+    ? 'lowPass'
+    : currentMode === 'lowPass'
+      ? 'highPass'
+      : 'off';
+  setDeckFilterMode(nextMode, deck);
+  const label = nextMode === 'off' ? 'Filter OFF' : (nextMode === 'lowPass' ? 'Low-pass ON' : 'High-pass ON');
+  showToast(label);
+}
+
+function applyTemporaryDeckPlaybackRate(deck, targetRate, durationMs = 1600) {
+  if (!player) return;
+  const safeDeck = deck === 'B' ? 'B' : 'A';
+  const safeRate = Math.max(0.55, Math.min(1.45, Number(targetRate) || 1));
+  player.setDeckPlaybackRate(safeDeck, safeRate);
+
+  const prevTimer = djFxRuntime.playbackRateTimers[safeDeck];
+  if (prevTimer) clearTimeout(prevTimer);
+  djFxRuntime.playbackRateTimers[safeDeck] = setTimeout(() => {
+    player?.resetDeckPlaybackRate(safeDeck);
+    djFxRuntime.playbackRateTimers[safeDeck] = null;
+  }, Math.max(120, Number(durationMs) || 1600));
+}
+
+function triggerLoopRoll(deck, options = {}) {
+  if (!player) return;
+  const safeDeck = deck === 'B' ? 'B' : 'A';
+  const state = getDeckStateForFx(safeDeck);
+  const anchorMs = Number(state?.positionMs) || 0;
+  const durationMs = Number(state?.durationMs) || 0;
+  if (anchorMs <= 0 || durationMs <= 0) return;
+
+  const windowMs = Math.max(90, Number(options.windowMs) || 220);
+  const totalMs = Math.max(180, Number(options.totalMs) || 1300);
+  const tickMs = Math.max(55, Number(options.tickMs) || 110);
+  const instantSeek = options.instantSeek === true;
+  const loopStartMs = Math.max(0, Math.min(durationMs - 5, anchorMs - windowMs));
+
+  clearDeckLoopFx(safeDeck);
+  const startedAt = Date.now();
+  djFxRuntime.loopTimers[safeDeck] = setInterval(() => {
+    if (!player) {
+      clearDeckLoopFx(safeDeck);
+      return;
+    }
+    player.seekDeckTo(
+      safeDeck,
+      loopStartMs,
+      instantSeek ? { instant: true } : { fadeMs: 52 },
+    ).catch(() => {});
+    if (Date.now() - startedAt >= totalMs) {
+      clearDeckLoopFx(safeDeck);
+    }
+  }, tickMs);
+}
+
+function triggerBackspinFx(deck) {
+  if (!player) return;
+  const safeDeck = deck === 'B' ? 'B' : 'A';
+  const state = getDeckStateForFx(safeDeck);
+  const anchorMs = Number(state?.positionMs) || 0;
+  if (anchorMs <= 200) return;
+
+  applyTemporaryDeckPlaybackRate(safeDeck, 1.18, 640);
+  for (let i = 0; i < 8; i += 1) {
+    const targetMs = Math.max(0, anchorMs - ((i + 1) * 90));
+    setTimeout(() => {
+      player?.seekDeckTo(safeDeck, targetMs, { instant: true }).catch(() => {});
+    }, i * 66);
+  }
+}
+
+function triggerScratchFx(deck) {
+  if (!player) return;
+  const safeDeck = deck === 'B' ? 'B' : 'A';
+  const state = getDeckStateForFx(safeDeck);
+  const anchorMs = Number(state?.positionMs) || 0;
+  const durationMs = Number(state?.durationMs) || 0;
+  if (anchorMs <= 0 || durationMs <= 0) return;
+
+  const offsets = [-85, 65, -55, 45, -35, 25];
+  offsets.forEach((offset, index) => {
+    setTimeout(() => {
+      const targetMs = Math.max(0, Math.min(durationMs - 5, anchorMs + offset));
+      player?.seekDeckTo(safeDeck, targetMs, { instant: true }).catch(() => {});
+    }, index * 60);
+  });
+}
+
+function triggerHotCueFx(deck) {
+  if (!player) return;
+  const safeDeck = deck === 'B' ? 'B' : 'A';
+  const state = getDeckStateForFx(safeDeck);
+  const durationMs = Number(state?.durationMs) || 0;
+  if (durationMs <= 0) return;
+
+  const item = deckDisplayItems[safeDeck] || queue[currentIndex] || null;
+  const mixData = getTrackMixData(item)
+    || (safeDeck === currentPlayingDeck ? autoModeManager.getCurrentTrackMixData?.() : autoModeManager.getNextTrackMixData?.())
+    || null;
+
+  const cueCandidatesMs = [];
+  const pushCue = (sec) => {
+    const ms = Math.round(Number(sec) * 1000);
+    if (!Number.isFinite(ms) || ms <= 800 || ms >= (durationMs - 800)) return;
+    cueCandidatesMs.push(ms);
+  };
+
+  const zoneLists = [mixData?.dropZones, mixData?.peakZones, mixData?.safeTransitionZones];
+  for (const zones of zoneLists) {
+    if (!Array.isArray(zones)) continue;
+    for (const zone of zones) {
+      pushCue(zone?.startSec);
+      if (cueCandidatesMs.length >= 8) break;
+    }
+    if (cueCandidatesMs.length >= 8) break;
+  }
+
+  if (!cueCandidatesMs.length) {
+    cueCandidatesMs.push(
+      Math.round(durationMs * 0.2),
+      Math.round(durationMs * 0.4),
+      Math.round(durationMs * 0.6),
+      Math.round(durationMs * 0.8),
+    );
+  }
+
+  const uniqueCues = [...new Set(cueCandidatesMs)].sort((a, b) => a - b);
+  if (!uniqueCues.length) return;
+
+  const currentPositionMs = Math.max(0, Number(state?.positionMs) || 0);
+  const nextCueIndex = uniqueCues.findIndex((cueMs) => cueMs > currentPositionMs);
+  const targetMs = nextCueIndex >= 0 ? uniqueCues[nextCueIndex] : uniqueCues[0];
+
+  player.seekDeckTo(safeDeck, targetMs, { fadeMs: 34 }).catch(() => {});
+}
+
+function triggerSamplingFx() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) {
+      showToast('Sampling indisponible: AudioContext non supporte.', true);
+      return;
+    }
+
+    if (!djFxRuntime.samplingAudioContext) {
+      djFxRuntime.samplingAudioContext = new Ctx();
+    }
+
+    const ctx = djFxRuntime.samplingAudioContext;
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(920, now + 0.18);
+
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1500, now);
+    filter.Q.setValueAtTime(3.2, now);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.09, now + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.36);
+  } catch (err) {
+    showToast(`Sampling indisponible: ${err?.message || 'erreur audio'}`, true);
+  }
+}
+
+function triggerBrakeFx(deck) {
+  if (!player) return;
+  const safeDeck = deck === 'B' ? 'B' : 'A';
+  let step = 0;
+  const maxSteps = 12;
+  const timer = setInterval(() => {
+    step += 1;
+    const ratio = step / maxSteps;
+    const rate = Math.max(0.35, 1 - (ratio * 0.7));
+    player?.setDeckPlaybackRate(safeDeck, rate);
+    if (step >= maxSteps) {
+      clearInterval(timer);
+      setTimeout(() => player?.resetDeckPlaybackRate(safeDeck), 120);
+    }
+  }, 48);
+}
+
+function triggerFlangerPhaserFx(deck) {
+  if (!player) return;
+  const safeDeck = deck === 'B' ? 'B' : 'A';
+  const startedAt = Date.now();
+  const totalMs = 1500;
+  const timer = setInterval(() => {
+    const elapsed = Date.now() - startedAt;
+    const phase = elapsed / 85;
+    const rate = 1 + (Math.sin(phase) * 0.06);
+    player?.setDeckPlaybackRate(safeDeck, rate);
+    if (elapsed >= totalMs) {
+      clearInterval(timer);
+      player?.resetDeckPlaybackRate(safeDeck);
+    }
+  }, 70);
+}
+
+function triggerNoiseFx() {
+  triggerSamplingFx();
+  triggerSamplingFx();
+}
+
+function triggerTransientDjFxAction(action, durationMs = 900) {
+  if (!action) return;
+
+  djFxRuntime.activeTransientActions.add(action);
+  const prevTimer = djFxRuntime.transientActionTimers.get(action);
+  if (prevTimer) {
+    clearTimeout(prevTimer);
+  }
+
+  const safeDuration = Math.max(120, Number(durationMs) || 900);
+  const timer = setTimeout(() => {
+    djFxRuntime.activeTransientActions.delete(action);
+    djFxRuntime.transientActionTimers.delete(action);
+    updateDjFxMenuUI();
+  }, safeDuration);
+
+  djFxRuntime.transientActionTimers.set(action, timer);
+  updateDjFxMenuUI();
+}
+
+function updateDjFxMenuUI() {
+  if (!djFxButtons.length) return;
+  const focusDeck = getFocusedDeckForFx();
+  const focusFilterMode = mixFeatures.deckFx?.[focusDeck]?.filterMode || 'off';
+  for (const btn of djFxButtons) {
+    const action = String(btn.dataset.fxAction || '');
+    const feature = DJ_FX_TOGGLE_FEATURE[action];
+    const transitionMode = DJ_FX_TRANSITION_MODE[action];
+
+    let isEnabled = false;
+    if (DJ_FX_TRANSIENT_ACTIONS.has(action)) {
+      isEnabled = djFxRuntime.activeTransientActions.has(action);
+    } else if (action === 'filter') {
+      isEnabled = focusFilterMode !== 'off';
+    } else if (action === 'lowPass') {
+      isEnabled = focusFilterMode === 'lowPass';
+    } else if (action === 'highPass') {
+      isEnabled = focusFilterMode === 'highPass';
+    } else if (feature) {
+      isEnabled = Boolean(mixFeatures?.[feature]);
+    } else if (transitionMode) {
+      isEnabled = selectedTransitionMode === transitionMode;
+    }
+
+    btn.classList.toggle('is-enabled', isEnabled);
+    btn.setAttribute('aria-pressed', String(isEnabled));
+  }
+}
+
+function applyDjFxTransition(action, toastLabel, suppressToast = false) {
+  const transitionMode = DJ_FX_TRANSITION_MODE[action];
+  if (!transitionMode) return;
+  applyTransitionModeSetting(transitionMode, { persist: true });
+  const label = MIX_TRANSITION_MODE_LABELS[selectedTransitionMode] || selectedTransitionMode;
+  if (!suppressToast) showToast(`${toastLabel} -> ${label}`);
+}
+
+function toggleDjFxFeature(action, toastLabel, afterEnable, suppressToast = false) {
+  const feature = DJ_FX_TOGGLE_FEATURE[action];
+  if (!feature) return;
+  const nextEnabled = !Boolean(mixFeatures?.[feature]);
+  setMixFeatureEnabled(feature, nextEnabled);
+  if (nextEnabled) afterEnable?.();
+  if (!suppressToast) showToast(`${toastLabel}: ${nextEnabled ? 'ON' : 'OFF'}`);
+  updateDjFxMenuUI();
+}
+
+function handleDjFxAction(action) {
+  const focusDeck = getFocusedDeckForFx();
+
+  switch (action) {
+    case 'filter':
+      cycleFocusedDeckFilterMode();
+      applyDjFxTransition('filter', 'Filter mode AutoMix', true);
+      break;
+    case 'lowPass':
+      setDeckFilterMode(mixFeatures.deckFx?.[focusDeck]?.filterMode === 'lowPass' ? 'off' : 'lowPass', focusDeck);
+      applyDjFxTransition('lowPass', 'Low-pass AutoMix', true);
+      break;
+    case 'highPass':
+      setDeckFilterMode(mixFeatures.deckFx?.[focusDeck]?.filterMode === 'highPass' ? 'off' : 'highPass', focusDeck);
+      applyDjFxTransition('highPass', 'High-pass AutoMix', true);
+      break;
+    case 'echoDelay':
+      toggleDjFxFeature('echoDelay', 'Echo / Delay', undefined, true);
+      break;
+    case 'reverb':
+      setMixFeatureEnabled('echo', true);
+      setMixFeatureEnabled('distortion', true);
+      triggerTransientDjFxAction('reverb', 1200);
+      setTimeout(() => {
+        setMixFeatureEnabled('echo', false);
+        setMixFeatureEnabled('distortion', false);
+        updateDjFxMenuUI();
+      }, 1200);
+      break;
+    case 'flangerPhaser':
+      triggerFlangerPhaserFx(focusDeck);
+      toggleDjFxFeature('flangerPhaser', 'Flanger / Phaser', undefined, true);
+      break;
+    case 'roll':
+      triggerLoopRoll(focusDeck, { windowMs: 220, totalMs: 1100, tickMs: 105 });
+      triggerTransientDjFxAction('roll', 1000);
+      break;
+    case 'loop':
+      triggerLoopRoll(focusDeck, { windowMs: 520, totalMs: 2400, tickMs: 115 });
+      triggerTransientDjFxAction('loop', 2600);
+      break;
+    case 'beatRepeat':
+      triggerLoopRoll(focusDeck, { windowMs: 140, totalMs: 950, tickMs: 90, instantSeek: true });
+      triggerTransientDjFxAction('beatRepeat', 900);
+      break;
+    case 'brake':
+      triggerBrakeFx(focusDeck);
+      triggerTransientDjFxAction('brake', 900);
+      break;
+    case 'backspin':
+      triggerBackspinFx(focusDeck);
+      triggerTransientDjFxAction('backspin', 1200);
+      break;
+    case 'noise':
+      triggerNoiseFx();
+      triggerTransientDjFxAction('noise', 800);
+      break;
+    case 'eq':
+      cycleFocusedDeckFilterMode();
+      applyDjFxTransition('eq', 'EQ AutoMix', true);
+      break;
+    case 'pitchTempo':
+      applyTemporaryDeckPlaybackRate(focusDeck, 1.06, 2000);
+      toggleDjFxFeature('pitchTempo', 'Pitch / Tempo', () => {
+        player?.syncDecksToActive();
+      }, true);
+      break;
+    case 'keyShift':
+      applyTemporaryDeckPlaybackRate(focusDeck, 1.035, 1800);
+      triggerTransientDjFxAction('keyShift', 1800);
+      break;
+    case 'scratching':
+      triggerScratchFx(focusDeck);
+      triggerTransientDjFxAction('scratching', 450);
+      break;
+    case 'hotCues':
+      triggerHotCueFx(focusDeck);
+      triggerTransientDjFxAction('hotCues', 450);
+      break;
+    case 'sampling':
+      triggerSamplingFx();
+      triggerTransientDjFxAction('sampling', 500);
+      break;
+    default:
+      break;
+  }
+}
 
 const {
   getDownloaderApiUrl,
@@ -1003,7 +1618,41 @@ document.getElementById('toggle-mix-menu-btn')?.addEventListener('click', () => 
   if (!tabPanels.mix || !deckMixControl) return;
   const isCollapsed = tabPanels.mix.classList.toggle('mix-options-collapsed');
   deckMixControl.setAttribute('aria-hidden', String(isCollapsed));
+  if (!isCollapsed) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollMixControlIntoView();
+      });
+    });
+  }
 });
+
+function scrollMixControlIntoView() {
+  if (!tabPanels.mix || !deckMixControl) return;
+
+  const panel = tabPanels.mix;
+  const panelRect = panel.getBoundingClientRect();
+  const controlRect = deckMixControl.getBoundingClientRect();
+  const playerSection = panel.querySelector('.player-section');
+  const stickyHeight = Math.max(0, Number(playerSection?.getBoundingClientRect().height) || 0);
+
+  // Keep the mix controls below the sticky decks header and with a small bottom margin.
+  const topOffset = stickyHeight + 10;
+  const bottomMargin = 12;
+  const visibleTop = panelRect.top + topOffset;
+  const visibleBottom = panelRect.bottom - bottomMargin;
+  const fullyVisible = controlRect.top >= visibleTop && controlRect.bottom <= visibleBottom;
+  if (fullyVisible) return;
+
+  const controlTopInPanel = (controlRect.top - panelRect.top) + panel.scrollTop;
+  const desiredTop = Math.max(0, controlTopInPanel - topOffset);
+  const maxTop = Math.max(0, panel.scrollHeight - panel.clientHeight);
+
+  panel.scrollTo({
+    top: Math.min(desiredTop, maxTop),
+    behavior: 'smooth',
+  });
+}
 
 const autoFadeManager = new AutoFadeManager({
   getQueueLength: () => queue.length,
@@ -1032,6 +1681,7 @@ const autoModeManager = createAutoModeManager({
   showToast,
   logger,
   getTrackMaxDurationSec: () => trackMaxDurationAppliedSec,
+  getAutoFxMinGapMs: () => getSafeAutoDjFxMinIntervalSec(autoDjFxSettings.minIntervalSec) * 1000,
   onAutomixTimingCalculated: (triggerMs) => {
     nextAutomixTriggerMs = triggerMs;
     automixTriggeredForTrack = false;
@@ -1042,6 +1692,17 @@ const autoModeManager = createAutoModeManager({
   onMixDataUpdated: () => {
     renderMixZones();
     updateMaxDurationMarker();
+  },
+  onAutoFxPlanCalculated: (events, meta) => {
+    logDebug('autoDj: creative fx plan', {
+      total: events?.length || 0,
+      events: (events || []).map((event) => ({
+        type: event.type,
+        timeMs: event.timeMs,
+      })),
+      windowMinutes: meta?.lastWindowMinutes,
+      maxInWindow: meta?.maxInLastWindow,
+    });
   },
 });
 
@@ -1064,12 +1725,11 @@ tabBtns.forEach((btn) => {
   applyTransitionModeSetting(selectedTransitionMode, { persist: false });
   
   // Initialize track max duration UI
-  if (trackMaxDurationInput) {
-    trackMaxDurationInput.value = String(trackMaxDurationSec);
-  }
+  updateTrackMaxDurationUI();
 
   autoModeManager.initialize();
   updateAutoModeUI();
+  updateAutoDjFxConfigUI();
 
   debugLogsToggle?.addEventListener('change', () => {
     applyDebugLogsSetting(Boolean(debugLogsToggle.checked), { persist: true });
@@ -1121,7 +1781,11 @@ async function connectLocal() {
 
   player?.destroy();
   player = new DJPlayer();
+  const savedCrossfadeVal = localStorage.getItem('dj-mix:crossfade-seconds') || 6;
+  crossfadeSlider.value = savedCrossfadeVal;
+  if (crossfadeSliderMix) crossfadeSliderMix.value = savedCrossfadeVal;
   player.crossfadeDuration = clampCrossfadeSeconds(crossfadeSlider.value) * 1000;
+  updateCrossfadeControlUI(clampCrossfadeSeconds(savedCrossfadeVal));
   player.setAllowedTransitionModes(allowedTransitionModes);
   player.setTransitionMode(selectedTransitionMode);
   player.setMixFeatures(mixFeatures);
@@ -1164,6 +1828,29 @@ function hookPlayerEvents() {
 
     playbackPositionMs = position;
     playbackDurationMs = duration;
+
+    if (autoModeManager.isAutoModeEnabled()) {
+      const dueAutoFxEvents = autoModeManager.consumeReadyAutoFxEvents(position, {
+        currentTrackId: queue[currentIndex]?.id || null,
+      });
+      for (const event of dueAutoFxEvents) {
+        triggerAutoDjCreativeFxEvent(event);
+      }
+
+      if (autoDjNextFxCountdown) {
+        const pending = autoModeManager.getPendingAutoFxEvents();
+        const next = pending.find((e) => e.timeMs > position);
+        if (next) {
+          const secLeft = Math.ceil((next.timeMs - position) / 1000);
+          autoDjNextFxCountdown.textContent = `FX ${secLeft}s`;
+          autoDjNextFxCountdown.hidden = false;
+        } else {
+          autoDjNextFxCountdown.hidden = true;
+        }
+      }
+    } else if (autoDjNextFxCountdown) {
+      autoDjNextFxCountdown.hidden = true;
+    }
 
     // Auto DJ: Check if it's time to trigger automix
     if (autoModeManager.isAutoModeEnabled() && 
@@ -1382,7 +2069,6 @@ async function launchDeckFromQueue(deck, options = {}) {
         launchPreviewArtist = '';
         launchPreviewDeck = null;
         prefetchNext(getFollowingQueueIndex(targetIndex));
-        renderQueue();
       } else {
         launchPreviewActive = true;
         launchPreviewArtUrl = item.artUrl || '';
@@ -1392,6 +2078,7 @@ async function launchDeckFromQueue(deck, options = {}) {
         deckCueDeck = targetDeck;
         updateUpcomingArtwork();
       }
+      renderQueue();
       logInfo('launchDeckFromQueue(): deck loaded', {
         deck: targetDeck,
         itemId: item.id,
@@ -1424,11 +2111,22 @@ function setCrossfadeDurationSeconds(seconds) {
   const safeSeconds = clampCrossfadeSeconds(seconds);
   updateCrossfadeControlUI(safeSeconds);
   applyRamFilterSettings({ persist: false, announce: false });
+  
+  // Persist crossfade setting to localStorage
+  localStorage.setItem('dj-mix:crossfade-seconds', String(safeSeconds));
 
   if (player) {
     player.crossfadeDuration = safeSeconds * 1000;
     player.setAllowedTransitionModes(allowedTransitionModes);
   }
+}
+
+// Initialize crossfade slider from localStorage
+const savedCrossfade = localStorage.getItem('dj-mix:crossfade-seconds');
+if (savedCrossfade) {
+  crossfadeSlider.value = savedCrossfade;
+  if (crossfadeSliderMix) crossfadeSliderMix.value = savedCrossfade;
+  setCrossfadeDurationSeconds(savedCrossfade);
 }
 
 crossfadeSlider.addEventListener('input', () => {
@@ -1514,8 +2212,53 @@ ramTotalMemoryInput?.addEventListener('change', () => {
   applyRamFilterSettings({ persist: true, announce: true });
 });
 
+autoDjFxMinIntervalInput?.addEventListener('change', () => {
+  autoDjFxSettings = {
+    ...autoDjFxSettings,
+    minIntervalSec: getSafeAutoDjFxMinIntervalSec(autoDjFxMinIntervalInput.value),
+  };
+  persistAutoDjFxSettings();
+  updateAutoDjFxConfigUI();
+});
+
+for (const toggleEl of autoDjFxToggleEls) {
+  toggleEl.addEventListener('change', () => {
+    const type = String(toggleEl.dataset.autoFxType || '');
+    if (!type) return;
+    autoDjFxSettings = {
+      ...autoDjFxSettings,
+      allowed: {
+        ...(autoDjFxSettings.allowed || createDefaultAutoDjFxAllowed()),
+        [type]: Boolean(toggleEl.checked),
+      },
+    };
+    persistAutoDjFxSettings();
+    updateAutoDjFxConfigUI();
+  });
+}
+
 trackMaxDurationInput?.addEventListener('change', () => {
   applyTrackMaxDurationSetting(trackMaxDurationInput.value, 'trackMaxDuration: setting changed');
+});
+
+trackMaxDurationToggle?.addEventListener('click', () => {
+  trackMaxDurationEnabled = !trackMaxDurationEnabled;
+
+  if (trackMaxDurationEnabled && trackMaxDurationSec <= 0) {
+    trackMaxDurationSec = lastTrackMaxDurationSec;
+    persistTrackMaxDurationSetting(trackMaxDurationSec);
+  }
+
+  persistTrackMaxDurationEnabledSetting(trackMaxDurationEnabled);
+  applyTrackMaxDurationForCurrentPlayback();
+  updateTrackMaxDurationUI();
+  showToast(trackMaxDurationEnabled ? `Durée max: ON (${trackMaxDurationSec}s)` : 'Durée max: OFF');
+  logDebug('trackMaxDuration: toggled', {
+    enabled: trackMaxDurationEnabled,
+    value: trackMaxDurationSec,
+  });
+  recalculateAutomixTimingIfNeeded();
+  updateMaxDurationMarker();
 });
 
 trackMaxDurationMinus?.addEventListener('click', () => {
@@ -1578,21 +2321,34 @@ autoBpmBtn?.addEventListener('click', () => {
   if (nextEnabled && player) {
     player.syncDecksToActive();
     showToast('Auto BPM active + Sync BPM');
+  } else if (player) {
+    player.resetDeckPlaybackRate('A');
+    player.resetDeckPlaybackRate('B');
   }
+  updateDjFxMenuUI();
 });
 
 echoBtn?.addEventListener('click', () => {
   setMixFeatureEnabled('echo', !mixFeatures.echo);
+  updateDjFxMenuUI();
 });
 
 distortionBtn?.addEventListener('click', () => {
   setMixFeatureEnabled('distortion', !mixFeatures.distortion);
+  updateDjFxMenuUI();
+});
+
+djFxMenu?.addEventListener('click', (event) => {
+  const button = event.target?.closest?.('[data-fx-action]');
+  if (!button) return;
+  const action = String(button.dataset.fxAction || '');
+  if (!action) return;
+  handleDjFxAction(action);
 });
 
 autoModeBtn?.addEventListener('click', () => {
   const isEnabled = autoModeManager.toggleAutoMode();
-  autoModeBtn.setAttribute('aria-pressed', String(isEnabled));
-  autoModeBtn.textContent = `Auto Mode: ${isEnabled ? 'ON' : 'OFF'}`;
+  syncAutoModeButtonUI(isEnabled);
 
   if (isEnabled && currentIndex >= 0 && queue[currentIndex]) {
     const currentItem = queue[currentIndex];
@@ -1607,14 +2363,142 @@ autoModeBtn?.addEventListener('click', () => {
 
   updateSuggestionRefreshButtons();
 
-  showToast(`Auto Mode: ${isEnabled ? '🤖 ON' : 'OFF'}`);
+  showToast(`AutoDJ: ${isEnabled ? 'ON' : 'OFF'}`);
 });
 
 function updateAutoModeUI() {
   const isEnabled = autoModeManager.isAutoModeEnabled();
-  autoModeBtn.setAttribute('aria-pressed', String(isEnabled));
-  autoModeBtn.textContent = `Auto Mode: ${isEnabled ? 'ON' : 'OFF'}`;
+  syncAutoModeButtonUI(isEnabled);
   updateSuggestionRefreshButtons();
+}
+
+function triggerAutoDjCreativeFxEvent(event) {
+  const type = String(event?.type || '');
+  const label = String(event?.label || type || 'FX');
+  const reason = String(event?.reason || '');
+
+  logInfo('autoDj: creative fx triggered', {
+    type,
+    label,
+    reason,
+    timeMs: Number(event?.timeMs) || 0,
+    trackId: event?.trackId || null,
+  });
+
+  if (!type) {
+    logDebug('autoDj: creative fx skipped (no type)', { type, label });
+    return;
+  }
+
+  if (!isAutoDjFxTypeAllowed(type)) {
+    logDebug('autoDj: creative fx skipped (not allowed)', { type, label });
+    return;
+  }
+
+  const now = Date.now();
+  const minGapMs = getSafeAutoDjFxMinIntervalSec(autoDjFxSettings.minIntervalSec) * 1000;
+  const elapsedMs = now - lastAutoDjFxTriggeredAt;
+  if (lastAutoDjFxTriggeredAt > 0 && elapsedMs < minGapMs) {
+    logDebug('autoDj: creative fx skipped (min interval)', {
+      type,
+      label,
+      elapsedMs,
+      requiredMs: minGapMs,
+    });
+    return;
+  }
+
+  const targetDeck = currentPlayingDeck === 'B' ? 'B' : 'A';
+  const applied = applyAutoDjCreativeFx(type, targetDeck);
+  if (!applied) {
+    logDebug('autoDj: creative fx skipped (unsupported type)', { type, label });
+    return;
+  }
+
+  lastAutoDjFxTriggeredAt = now;
+  const suffix = reason ? ` (${reason})` : '';
+  showToast(`🤖 Auto FX: ${label}${suffix}`);
+}
+
+function applyAutoDjCreativeFx(type, targetDeck) {
+  switch (type) {
+    case 'filter':
+      cycleFocusedDeckFilterMode();
+      return true;
+    case 'lowPass':
+      setDeckFilterMode('lowPass', targetDeck);
+      return true;
+    case 'highPass':
+      setDeckFilterMode('highPass', targetDeck);
+      return true;
+    case 'echoDelay':
+      setMixFeatureEnabled('echo', !mixFeatures.echo);
+      triggerTransientDjFxAction('echoDelay', 1200);
+      return true;
+    case 'reverb':
+      setMixFeatureEnabled('echo', true);
+      setMixFeatureEnabled('distortion', true);
+      triggerTransientDjFxAction('reverb', 1200);
+      setTimeout(() => {
+        setMixFeatureEnabled('echo', false);
+        setMixFeatureEnabled('distortion', false);
+      }, 1200);
+      return true;
+    case 'flangerPhaser':
+      triggerFlangerPhaserFx(targetDeck);
+      triggerTransientDjFxAction('flangerPhaser', 1600);
+      return true;
+    case 'roll':
+      triggerLoopRoll(targetDeck, { windowMs: 220, totalMs: 1100, tickMs: 105 });
+      triggerTransientDjFxAction('roll', 1000);
+      return true;
+    case 'loop':
+      triggerLoopRoll(targetDeck, { windowMs: 520, totalMs: 2400, tickMs: 115 });
+      triggerTransientDjFxAction('loop', 2600);
+      return true;
+    case 'beatRepeat':
+      triggerLoopRoll(targetDeck, { windowMs: 140, totalMs: 950, tickMs: 90, instantSeek: true });
+      triggerTransientDjFxAction('beatRepeat', 900);
+      return true;
+    case 'brake':
+      triggerBrakeFx(targetDeck);
+      triggerTransientDjFxAction('brake', 900);
+      return true;
+    case 'backspin':
+      triggerBackspinFx(targetDeck);
+      triggerTransientDjFxAction('backspin', 1200);
+      return true;
+    case 'noise':
+      triggerNoiseFx();
+      triggerTransientDjFxAction('noise', 800);
+      return true;
+    case 'eq':
+      cycleFocusedDeckFilterMode();
+      return true;
+    case 'pitchTempo':
+      applyTemporaryDeckPlaybackRate(targetDeck, 1.06, 2000);
+      setMixFeatureEnabled('autoBpm', !mixFeatures.autoBpm);
+      triggerTransientDjFxAction('pitchTempo', 2000);
+      return true;
+    case 'keyShift':
+      applyTemporaryDeckPlaybackRate(targetDeck, 1.035, 1800);
+      triggerTransientDjFxAction('keyShift', 1800);
+      return true;
+    case 'scratching':
+      triggerScratchFx(targetDeck);
+      triggerTransientDjFxAction('scratching', 450);
+      return true;
+    case 'hotCues':
+      triggerHotCueFx(targetDeck);
+      triggerTransientDjFxAction('hotCues', 450);
+      return true;
+    case 'sampling':
+      triggerSamplingFx();
+      triggerTransientDjFxAction('sampling', 500);
+      return true;
+    default:
+      return false;
+  }
 }
 
 function updateSuggestionRefreshButtons() {
@@ -1745,7 +2629,9 @@ function updateMaxDurationMarker() {
   if (deckAMaxDurMarker) deckAMaxDurMarker.hidden = true;
   if (deckBMaxDurMarker) deckBMaxDurMarker.hidden = true;
 
-  const effectiveMaxDurationSec = isPlaying ? trackMaxDurationAppliedSec : trackMaxDurationSec;
+  const effectiveMaxDurationSec = trackMaxDurationEnabled
+    ? (isPlaying ? trackMaxDurationAppliedSec : trackMaxDurationSec)
+    : 0;
   if (effectiveMaxDurationSec <= 0) return;
 
   const durationMs = playbackDurationMs > 0 ? playbackDurationMs : (queue[currentIndex]?.duration ?? 0);
@@ -1764,12 +2650,12 @@ function updateMaxDurationMarker() {
       targetSec: effectiveMaxDurationSec,
     });
 
-    const zoneTriggerSec = Number.isFinite(preferredZone?.triggerSec)
-      ? preferredZone.triggerSec
-      : Number(preferredZone?.zone?.startSec);
+    const zoneEndSec = Number.isFinite(preferredZone?.zone?.endSec)
+      ? preferredZone.zone.endSec
+      : Number(preferredZone?.triggerSec);
 
-    if (Number.isFinite(zoneTriggerSec) && zoneTriggerSec > 0) {
-      markerMs = Math.min(maxMs, zoneTriggerSec * 1000);
+    if (Number.isFinite(zoneEndSec) && zoneEndSec > 0) {
+      markerMs = Math.min(durationMs, zoneEndSec * 1000);
     }
   }
 
@@ -2760,6 +3646,7 @@ updateDeckMixUI(deckMixRatio);
 updateManualLockUI();
 updateDeckCueUI();
 updateMixFeaturesUI();
+updateDjFxMenuUI();
 fxControlsHidden = localStorage.getItem(FX_VISIBILITY_KEY) === '1';
 updateFxVisibilityUI();
 
@@ -2775,8 +3662,8 @@ function doLogout() {
     echo: false,
     distortion: false,
     deckFx: {
-      A: { vocalRemove: false, instruRemove: false },
-      B: { vocalRemove: false, instruRemove: false },
+      A: { vocalRemove: false, instruRemove: false, filterMode: 'off' },
+      B: { vocalRemove: false, instruRemove: false, filterMode: 'off' },
     },
   };
 
@@ -2804,6 +3691,7 @@ function doLogout() {
   // Reset auto DJ timing
   nextAutomixTriggerMs = -1;
   automixTriggeredForTrack = false;
+  lastAutoDjFxTriggeredAt = 0;
   updateAutoDjMarker();
   updateMaxDurationMarker();
 
@@ -2826,6 +3714,7 @@ function doLogout() {
   updateManualLockUI();
   updateDeckCueUI();
   updateMixFeaturesUI();
+  updateDjFxMenuUI();
   updateAutoModeUI();
   renderQueue();
   showSetup();

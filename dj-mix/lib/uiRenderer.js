@@ -64,11 +64,25 @@ export function createDjMixRenderer(options) {
     const isPlaying = getIsPlaying();
     const deckBCueIndex = getDeckBCueIndex();
     const deckCueDeck = getDeckCueDeck();
+    const deckDisplayItems = getDeckDisplayItems();
+
+    const loadedDeckByTrackId = new Map();
+    const deckAId = deckDisplayItems?.A?.id;
+    const deckBId = deckDisplayItems?.B?.id;
+    if (deckAId != null) loadedDeckByTrackId.set(deckAId, 'A');
+    if (deckBId != null) {
+      const existing = loadedDeckByTrackId.get(deckBId);
+      loadedDeckByTrackId.set(deckBId, existing ? 'AB' : 'B');
+    }
 
     return queue.map((item, i) => {
       const isCurrent = item.id === currentTrackId;
       const cls = isCurrent ? 'queue-item is-current' : 'queue-item';
       const showPlayingBars = isCurrent && isPlaying;
+      const loadedDeck = loadedDeckByTrackId.get(item.id) || '';
+      const deckLoadedBadge = loadedDeck
+        ? `<span class="queue-deck-badge" title="Charge sur platine ${loadedDeck === 'AB' ? '1 et 2' : loadedDeck}" aria-label="Charge sur platine ${loadedDeck === 'AB' ? '1 et 2' : loadedDeck}">${loadedDeck === 'AB' ? 'DJ 1+2' : `DJ ${loadedDeck}`}</span>`
+        : '';
 
       const numHtml = showPlayingBars
         ? '<div class="queue-num"><div class="playing-bars" aria-label="En cours"><span></span><span></span><span></span></div></div>'
@@ -84,7 +98,10 @@ export function createDjMixRenderer(options) {
         ${numHtml}
         <img class="queue-art" src="${escHtml(item.artUrl)}" alt="" loading="lazy">
         <div class="queue-info">
-          <div class="queue-name">${escHtml(item.name)}</div>
+          <div class="queue-name-wrap">
+            <div class="queue-name">${escHtml(item.name)}</div>
+            ${deckLoadedBadge}
+          </div>
           <div class="queue-artist">${escHtml(item.artist)} ${renderSourceBadge(item)}${bpmDisplay}</div>
         </div>
         <span class="queue-duration">${formatTime(item.duration)}</span>
