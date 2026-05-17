@@ -12,8 +12,160 @@ function hasAvailableStems(file) {
   return statusReady || hasVocals || hasInstrumental;
 }
 
+function normalizeText(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function appendFacetValues(target, value) {
+  if (Array.isArray(value)) {
+    value.forEach((entry) => appendFacetValues(target, entry));
+    return;
+  }
+
+  if (value && typeof value === 'object') {
+    appendFacetValues(target, value.name);
+    appendFacetValues(target, value.label);
+    appendFacetValues(target, value.value);
+    return;
+  }
+
+  if (typeof value !== 'string' && typeof value !== 'number') return;
+
+  String(value)
+    .split(/[;,|]+/g)
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .forEach((entry) => target.push(entry));
+}
+
+function dedupeFacetValues(values) {
+  const seen = new Map();
+  values.forEach((value) => {
+    const normalized = normalizeText(value);
+    if (!normalized || seen.has(normalized)) return;
+    seen.set(normalized, String(value).trim());
+  });
+  return Array.from(seen.values());
+}
+
+export function extractCacheGenres(file) {
+  const values = [];
+  const rhythm = file?.audioFeatures?.rhythm;
+
+  [
+    file?.genre,
+    file?.genres,
+    file?.genreName,
+    file?.genreNames,
+    file?.primaryGenreName,
+    file?.style,
+    file?.styles,
+    file?.tags,
+    file?.metadata?.genre,
+    file?.metadata?.genres,
+    file?.album?.genre,
+    file?.album?.genres,
+    file?.audioFeatures?.genre,
+    file?.audioFeatures?.genres,
+    rhythm ? `Rythme: ${rhythm}` : '',
+  ].forEach((candidate) => appendFacetValues(values, candidate));
+
+  return dedupeFacetValues(values);
+}
+
+export function extractCacheYear(file) {
+  const candidates = [
+    file?.year,
+    file?.releaseYear,
+    file?.release_date,
+    file?.releaseDate,
+    file?.release_date_local,
+    file?.albumYear,
+    file?.date,
+    file?.publishedAt,
+    file?.metadata?.year,
+    file?.metadata?.date,
+    file?.album?.release_date,
+    file?.album?.releaseDate,
+    file?.album?.year,
+  ];
+
+  for (const candidate of candidates) {
+    const match = String(candidate || '').match(/\b(19\d{2}|20\d{2})\b/);
+    if (match) return match[1];
+  }
+
+  return '';
+}
+
+function buildCacheSearchText(file) {
+  return normalizeText([
+    file?.trackName,
+    file?.name,
+    file?.title,
+    file?.artistName,
+    file?.artist,
+    extractCacheYear(file),
+    ...extractCacheGenres(file),
+  ].filter(Boolean).join(' '));
+}
+
+export function collectCacheFilterOptions(files) {
+  const genres = new Set();
+  const years = new Set();
+  let hasStemmedTracks = false;
+
+  (Array.isArray(files) ? files : []).forEach((file) => {
+    extractCacheGenres(file).forEach((genre) => genres.add(genre));
+    const year = extractCacheYear(file);
+    if (year) years.add(year);
+    if (!hasStemmedTracks && hasAvailableStems(file)) {
+      hasStemmedTracks = true;
+    }
+  });
+
+  return {
+    genres: Array.from(genres).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' })),
+    hasStemmedTracks,
+    years: Array.from(years).sort((a, b) => Number(b) - Number(a)),
+  };
+}
+
+export function filterCacheFiles(files, filters = {}) {
+  const normalizedQuery = normalizeText(filters.query);
+  const selectedGenre = normalizeText(filters.genre);
+  const selectedYear = String(filters.year || '').trim();
+  const stemsOnly = Boolean(filters.stemsOnly);
+
+  return (Array.isArray(files) ? files : []).filter((file) => {
+    if (normalizedQuery && !buildCacheSearchText(file).includes(normalizedQuery)) {
+      return false;
+    }
+
+    if (selectedGenre) {
+      const genres = extractCacheGenres(file).map((genre) => normalizeText(genre));
+      if (!genres.includes(selectedGenre)) return false;
+    }
+
+    if (selectedYear && extractCacheYear(file) !== selectedYear) {
+      return false;
+    }
+
+    if (stemsOnly && !hasAvailableStems(file)) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
 export function createPlaylistManager(options) {
   const {
+    cacheFilterCountEl,
+    cacheGenreFilterEl,
+    cacheResetFiltersBtn,
+    cacheStemsFilterEl,
+    cacheYearFilterEl,
     deleteLocalCacheSong,
     escHtml,
     getCurrentIndex,
@@ -35,28 +187,68 @@ export function createPlaylistManager(options) {
   } = options;
 
   let cacheFiles = [];
-  let cacheFilterQuery = '';
+  const cacheFilters = {
+    genre: '',
+    query: '',
+    stemsOnly: false,
+    year: '',
+  };
 
-  function normalizeText(value) {
-    return String(value || '').trim().toLowerCase();
+  function hasActiveCacheFilters() {
+    return Boolean(cacheFilters.query || cacheFilters.genre || cacheFilters.year || cacheFilters.stemsOnly);
+  }
+
+  function renderFilterOptions() {
+    const { genres, hasStemmedTracks, years } = collectCacheFilterOptions(cacheFiles);
+
+    if (cacheGenreFilterEl) {
+      cacheGenreFilterEl.innerHTML = [
+        '<option value="">Tous les genres</option>',
+        ...genres.map((genre) => `<option value="${escHtml(genre)}">${escHtml(genre)}</option>`),
+      ].join('');
+      cacheGenreFilterEl.value = cacheFilters.genre;
+      cacheGenreFilterEl.disabled = genres.length === 0;
+    }
+
+    if (cacheYearFilterEl) {
+      cacheYearFilterEl.innerHTML = [
+        '<option value="">Toutes les années</option>',
+        ...years.map((year) => `<option value="${escHtml(year)}">${escHtml(year)}</option>`),
+      ].join('');
+      cacheYearFilterEl.value = cacheFilters.year;
+      cacheYearFilterEl.disabled = years.length === 0;
+    }
+
+    if (cacheStemsFilterEl) {
+      cacheStemsFilterEl.checked = cacheFilters.stemsOnly;
+      cacheStemsFilterEl.disabled = !hasStemmedTracks;
+      if (!hasStemmedTracks) {
+        cacheFilters.stemsOnly = false;
+        cacheStemsFilterEl.checked = false;
+      }
+    }
+
+    if (cacheResetFiltersBtn) {
+      cacheResetFiltersBtn.hidden = !hasActiveCacheFilters();
+    }
   }
 
   function renderCacheList() {
-    const normalizedFilter = normalizeText(cacheFilterQuery);
-    let visibleFiles = normalizedFilter
-      ? cacheFiles.filter((file) => {
-        const trackName = normalizeText(file.trackName || file.name || file.title);
-        const artistName = normalizeText(file.artistName || file.artist);
-        return trackName.includes(normalizedFilter) || artistName.includes(normalizedFilter);
-      })
-      : cacheFiles;
+    renderFilterOptions();
+    let visibleFiles = filterCacheFiles(cacheFiles, cacheFilters);
 
     // Trier alphabétiquement par titre
-    visibleFiles = visibleFiles.sort((a, b) => {
+    visibleFiles = visibleFiles.slice().sort((a, b) => {
       const titleA = (a.trackName || a.name || a.title || 'Inconnu').toLowerCase();
       const titleB = (b.trackName || b.name || b.title || 'Inconnu').toLowerCase();
       return titleA.localeCompare(titleB, 'fr');
     });
+
+    if (cacheFilterCountEl) {
+      cacheFilterCountEl.textContent = cacheFiles.length
+        ? `${visibleFiles.length} / ${cacheFiles.length} morceau${cacheFiles.length > 1 ? 'x' : ''}`
+        : '0 morceau';
+    }
 
     if (!cacheFiles.length) {
       playlistListEl.innerHTML = `
@@ -69,7 +261,7 @@ export function createPlaylistManager(options) {
     if (!visibleFiles.length) {
       playlistListEl.innerHTML = `
       <div class="search-empty">
-        Aucun morceau du cache ne correspond a cette recherche.
+        Aucun morceau du cache ne correspond aux filtres actifs.
       </div>`;
       return;
     }
@@ -152,9 +344,23 @@ export function createPlaylistManager(options) {
   }
 
   function setCacheFilter(query) {
-    cacheFilterQuery = String(query || '').trim();
+    cacheFilters.query = String(query || '').trim();
     if (getPlaylistLoaded()) {
       renderCacheList();
+    }
+  }
+
+  function resetCacheFilters() {
+    cacheFilters.genre = '';
+    cacheFilters.stemsOnly = false;
+    cacheFilters.year = '';
+    if (cacheGenreFilterEl) cacheGenreFilterEl.value = '';
+    if (cacheYearFilterEl) cacheYearFilterEl.value = '';
+    if (cacheStemsFilterEl) cacheStemsFilterEl.checked = false;
+    if (getPlaylistLoaded()) {
+      renderCacheList();
+    } else {
+      renderFilterOptions();
     }
   }
 
@@ -282,6 +488,7 @@ export function createPlaylistManager(options) {
       cacheFiles = await fetchAllCacheFiles(baseUrl, ({ files, hasMore, count }) => {
         cacheFiles = files.slice();
         if (!cacheFiles.length) {
+          renderFilterOptions();
           playlistListEl.innerHTML = '<div class="search-loading">Chargement du cache...</div>';
           return;
         }
@@ -309,6 +516,27 @@ export function createPlaylistManager(options) {
       </div>`;
     }
   }
+
+  cacheGenreFilterEl?.addEventListener('change', () => {
+    cacheFilters.genre = String(cacheGenreFilterEl.value || '').trim();
+    if (getPlaylistLoaded()) renderCacheList();
+  });
+
+  cacheYearFilterEl?.addEventListener('change', () => {
+    cacheFilters.year = String(cacheYearFilterEl.value || '').trim();
+    if (getPlaylistLoaded()) renderCacheList();
+  });
+
+  cacheStemsFilterEl?.addEventListener('change', () => {
+    cacheFilters.stemsOnly = Boolean(cacheStemsFilterEl.checked);
+    if (getPlaylistLoaded()) renderCacheList();
+  });
+
+  cacheResetFiltersBtn?.addEventListener('click', () => {
+    resetCacheFilters();
+  });
+
+  renderFilterOptions();
 
   function switchTab(name) {
     tabBtns.forEach((btn) => {
