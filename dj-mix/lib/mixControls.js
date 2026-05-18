@@ -2,6 +2,8 @@ export function createMixControls(options) {
   const {
     autoBpmBtn,
     crossfadeControlMix,
+    djFxMenu,
+    djFxRow,
     mixModeRow,
     deckAPanel,
     deckBPanel,
@@ -67,6 +69,8 @@ export function createMixControls(options) {
     if (!fxVisibilityBtn) return;
     const hidden = getFxControlsHidden();
     if (deckFxActions) deckFxActions.hidden = hidden;
+    if (djFxRow) djFxRow.hidden = hidden;
+    if (djFxMenu) djFxMenu.hidden = hidden;
     if (crossfadeControlMix) crossfadeControlMix.hidden = hidden;
     if (mixModeRow) mixModeRow.hidden = hidden;
     fxVisibilityBtn.setAttribute('aria-expanded', String(!getFxControlsHidden()));

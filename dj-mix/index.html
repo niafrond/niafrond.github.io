@@ -50,8 +50,7 @@
               <button id="dj-mode-music-btn" class="dj-mode-btn dj-mode-btn--active" type="button" aria-pressed="true" title="Priorise les chansons du même genre ou artiste">🎵 Musique</button>
               <div id="dance-genre-prefs" class="dance-genre-prefs" hidden>
                 <span class="dance-genre-label">Genres :</span>
-                <div id="dance-genre-chips" class="dance-genre-chips" aria-label="Genres musicaux préférés"></div>
-                <input id="dance-genre-input" class="dance-genre-input" type="text" placeholder="Ajouter un genre…" autocomplete="off" aria-label="Ajouter un genre">
+                <select id="dance-genre-list" class="mix-mode-select" aria-label="Genre musical préféré"></select>
               </div>
             </div>
             <div class="deck-panels" aria-live="polite">
@@ -219,6 +218,7 @@
               <button type="button" class="dj-fx-btn" data-fx-action="keyShift" title="Key Shift / Harmonic Mixing">Key Shift / Harmonic</button>
               <button type="button" class="dj-fx-btn" data-fx-action="scratching" title="Scratching: effet manuel type jog/vinyle">Scratching</button>
               <button type="button" class="dj-fx-btn" data-fx-action="hotCues" title="Hot Cues: points de declenchement">Hot Cues</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="loopCue" title="Loop Cue: revient au dernier hot cue en boucle">Loop Cue</button>
               <button type="button" class="dj-fx-btn" data-fx-action="sampling" title="Sampling: ajout de sons externes">Sampling</button>
             </div>
           </div>

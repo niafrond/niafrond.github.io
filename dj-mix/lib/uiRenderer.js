@@ -1,4 +1,4 @@
-import { escHtml, formatTime } from './searchUtils.js';
+import { escHtml, extractTrackBpm, extractTrackGenre, formatTime } from './searchUtils.js';
 
 export function createDjMixRenderer(options) {
   const {
@@ -25,6 +25,7 @@ export function createDjMixRenderer(options) {
     trackArtistA,
     trackArtistB,
     getQueue,
+    getDjMode,
     getCurrentIndex,
     getCurrentTrackId,
     getIsPlaying,
@@ -49,6 +50,46 @@ export function createDjMixRenderer(options) {
     const safeArtist = String(artist || '').trim();
     if (safeTitle && safeArtist) return `${safeTitle} • ${safeArtist}`;
     return safeTitle || safeArtist || '';
+  }
+
+  function isDanceMode() {
+    return getDjMode?.() === 'dance';
+  }
+
+  function getDanceMetaSuffix(item) {
+    if (!isDanceMode()) return '';
+    const parts = [];
+    const bpm = Number(extractTrackBpm(item));
+    const genre = String(extractTrackGenre(item) || '').trim();
+    if (Number.isFinite(bpm) && bpm > 0) parts.push(`${Math.round(bpm)} BPM`);
+    if (genre) parts.push(genre);
+    return parts.length ? ` • ${parts.join(' • ')}` : '';
+  }
+
+  function composeDeckMetaWithDance(item) {
+    return `${composeDeckMeta(item?.name || '', item?.artist || '')}${getDanceMetaSuffix(item)}`;
+  }
+
+  function refreshDeckMetaDisplays() {
+    const deckDisplayItems = getDeckDisplayItems();
+    const deckAItem = deckDisplayItems?.A || null;
+    const deckBItem = deckDisplayItems?.B || null;
+
+    if (trackArtistA) trackArtistA.textContent = deckAItem ? composeDeckMetaWithDance(deckAItem) : '';
+    if (trackArtistB) trackArtistB.textContent = deckBItem ? composeDeckMetaWithDance(deckBItem) : '';
+
+    const deckABaseMeta = isDanceMode() ? getDanceMetaSuffix(deckAItem).replace(/^\s*•\s*/, '') : '';
+    const deckBBaseMeta = isDanceMode() ? getDanceMetaSuffix(deckBItem).replace(/^\s*•\s*/, '') : '';
+
+    const player = getPlayer();
+    const detail = player?._lastDeckState || null;
+    const rateA = detail?.deckA?.playbackRate ?? 1;
+    const rateB = detail?.deckB?.playbackRate ?? 1;
+    const rateAText = Math.abs(rateA - 1) > 0.005 ? `×${rateA.toFixed(2)}` : '';
+    const rateBText = Math.abs(rateB - 1) > 0.005 ? `×${rateB.toFixed(2)}` : '';
+
+    if (deckABpm) deckABpm.textContent = [deckABaseMeta, rateAText].filter(Boolean).join(' · ');
+    if (deckBBpm) deckBBpm.textContent = [deckBBaseMeta, rateBText].filter(Boolean).join(' · ');
   }
 
   function renderSourceBadge(item) {
@@ -80,18 +121,19 @@ export function createDjMixRenderer(options) {
       const cls = isCurrent ? 'queue-item is-current' : 'queue-item';
       const showPlayingBars = isCurrent && isPlaying;
       const loadedDeck = loadedDeckByTrackId.get(item.id) || '';
-      const deckLoadedBadge = loadedDeck
-        ? `<span class="queue-deck-badge" title="Charge sur platine ${loadedDeck === 'AB' ? '1 et 2' : loadedDeck}" aria-label="Charge sur platine ${loadedDeck === 'AB' ? '1 et 2' : loadedDeck}">${loadedDeck === 'AB' ? 'DJ 1+2' : `DJ ${loadedDeck}`}</span>`
-        : '';
+      const cueALoaded = loadedDeck === 'A' || loadedDeck === 'AB';
+      const cueBLoaded = loadedDeck === 'B' || loadedDeck === 'AB';
 
       const numHtml = showPlayingBars
         ? '<div class="queue-num"><div class="playing-bars" aria-label="En cours"><span></span><span></span><span></span></div></div>'
         : `<div class="queue-num">${i + 1}</div>`;
       const cueASelected = deckBCueIndex === i && deckCueDeck === 'A';
       const cueBSelected = deckBCueIndex === i && deckCueDeck === 'B';
-      const cueAClass = `queue-cue${cueASelected ? ' is-selected' : ''}`;
-      const cueBClass = `queue-cue${cueBSelected ? ' is-selected' : ''}`;
-      const bpmDisplay = item.bpm ? ` • ${Math.round(item.bpm)} BPM` : '';
+      const cueAClass = `queue-cue${cueASelected ? ' is-selected' : ''}${cueALoaded ? ' is-loaded-deck' : ''}`;
+      const cueBClass = `queue-cue${cueBSelected ? ' is-selected' : ''}${cueBLoaded ? ' is-loaded-deck' : ''}`;
+      const cueADisabled = cueALoaded ? 'disabled aria-disabled="true" title="Déjà chargée sur platine 1"' : '';
+      const cueBDisabled = cueBLoaded ? 'disabled aria-disabled="true" title="Déjà chargée sur platine 2"' : '';
+      const danceMeta = getDanceMetaSuffix(item);
 
       return `
       <div class="${cls}" data-index="${i}" role="button" tabindex="0" draggable="true">
@@ -100,14 +142,13 @@ export function createDjMixRenderer(options) {
         <div class="queue-info">
           <div class="queue-name-wrap">
             <div class="queue-name">${escHtml(item.name)}</div>
-            ${deckLoadedBadge}
           </div>
-          <div class="queue-artist">${escHtml(item.artist)} ${renderSourceBadge(item)}${bpmDisplay}</div>
+          <div class="queue-artist">${escHtml(item.artist)} ${renderSourceBadge(item)}${escHtml(danceMeta)}</div>
         </div>
         <span class="queue-duration">${formatTime(item.duration)}</span>
         <div class="queue-actions">
-          <button class="${cueAClass}" data-index="${i}" data-deck="A" aria-label="Cue platine 1">Cue 1</button>
-          <button class="${cueBClass}" data-index="${i}" data-deck="B" aria-label="Cue platine 2">Cue 2</button>
+          <button class="${cueAClass}" data-index="${i}" data-deck="A" aria-label="Cue platine 1" ${cueADisabled}>Cue 1</button>
+          <button class="${cueBClass}" data-index="${i}" data-deck="B" aria-label="Cue platine 2" ${cueBDisabled}>Cue 2</button>
           <button class="queue-remove" data-index="${i}" aria-label="Retirer">✕</button>
         </div>
       </div>`;
@@ -141,16 +182,7 @@ export function createDjMixRenderer(options) {
     const bIsDominant = hasAudio && volB > volA;
     if (deckAPanel) deckAPanel.classList.toggle('is-dominant', hasAudio && !bIsDominant);
     if (deckBPanel) deckBPanel.classList.toggle('is-dominant', bIsDominant);
-    if(deckDisplayItems.A){
-      if (trackArtistA) {
-            trackArtistA.textContent = composeDeckMeta(deckDisplayItems.A?.name || '', deckDisplayItems.A?.artist || '');
-          }
-    }
-    if(deckDisplayItems.B){
-      if (trackArtistB) {
-        trackArtistB.textContent = composeDeckMeta(deckDisplayItems.B?.name || '', deckDisplayItems.B?.artist || '');
-      }
-    }
+    refreshDeckMetaDisplays();
 
     // Keep the mix slider state driven by the explicit UI mix ratio.
     // Deriving it back from live deck volumes causes oscillation with smoothing
@@ -163,8 +195,6 @@ export function createDjMixRenderer(options) {
 
     const rateA = detail.deckA?.playbackRate ?? 1;
     const rateB = detail.deckB?.playbackRate ?? 1;
-    if (deckABpm) deckABpm.textContent = Math.abs(rateA - 1) > 0.005 ? `×${rateA.toFixed(2)}` : '';
-    if (deckBBpm) deckBBpm.textContent = Math.abs(rateB - 1) > 0.005 ? `×${rateB.toFixed(2)}` : '';
     if (deckABpmReset) deckABpmReset.hidden = Math.abs(rateA - 1) <= 0.005;
     if (deckBBpmReset) deckBBpmReset.hidden = Math.abs(rateB - 1) <= 0.005;
 
@@ -251,14 +281,15 @@ export function createDjMixRenderer(options) {
 
     if (deck === 'A') {
       
-      if (trackArtistA) trackArtistA.textContent = composeDeckMeta(item.name || '', item.artist || '');
+      if (trackArtistA) trackArtistA.textContent = composeDeckMetaWithDance(item);
     } else {
-      if (trackArtistB) trackArtistB.textContent = composeDeckMeta(item.name || '', item.artist || '');
+      if (trackArtistB) trackArtistB.textContent = composeDeckMetaWithDance(item);
     }
 
     if (trackArtist) trackArtist.textContent = item.artist;
 
     updateUpcomingArtwork();
+    refreshDeckMetaDisplays();
   }
 
   return {
@@ -267,6 +298,7 @@ export function createDjMixRenderer(options) {
     emptyQueue,
     queueList,
     renderDeckState,
+    refreshDeckMetaDisplays,
     updateNowPlaying,
     updateUpcomingArtwork,
   };

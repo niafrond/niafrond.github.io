@@ -184,6 +184,9 @@ export function mapApiTrackToSearchItem(track) {
   const artist = track.artist || track.artistName || track.originalTitle || track.grandparentTitle || track.collectionName || 'Artiste inconnu';
   const artUrl = getBestArtworkUrl(track);
   const duration = getTrackDurationMs(track);
+  const audioFeatures = extractAudioFeatures(track);
+  const bpm = extractTrackBpm({ ...track, audioFeatures });
+  const genre = extractTrackGenre(track);
 
   return {
     id: track.id || track.ratingKey || `${title}-${artist}`,
@@ -193,8 +196,10 @@ export function mapApiTrackToSearchItem(track) {
     artUrl,
     duration_ms: duration,
     duration,
+    bpm,
+    genre,
     loudnessDb: extractTrackLoudnessDb(track),
-    audioFeatures: extractAudioFeatures(track),
+    audioFeatures,
     isArtistResult: false,
     isLocalResult,
     cachePath: track.cachePath || track.filePath || track.path || '',
@@ -403,6 +408,67 @@ export function extractAudioFeatures(track) {
     rhythm: String(features.rhythm || '').toLowerCase(),
     source: String(features.source || 'unknown'),
   };
+}
+
+export function extractTrackBpm(track) {
+  if (!track || typeof track !== 'object') return null;
+
+  const directCandidates = [
+    track.bpm,
+    track.tempo,
+    track.beatsPerMinute,
+    track.beats_per_minute,
+    track.trackBpm,
+    track.track_bpm,
+    track.analysis?.bpm,
+    track.stats?.bpm,
+    track.metadata?.bpm,
+    track.audioFeatures?.bpm,
+    track.audio_features?.bpm,
+  ];
+
+  for (const value of directCandidates) {
+    const bpm = Number(value);
+    if (Number.isFinite(bpm) && bpm > 0) return bpm;
+  }
+
+  return null;
+}
+
+export function extractTrackGenre(track) {
+  if (!track || typeof track !== 'object') return '';
+
+  const scalarCandidates = [
+    track.genre,
+    track.style,
+    track.category,
+    track.subgenre,
+    track.subGenre,
+    track.metadata?.genre,
+    track.tags?.genre,
+  ];
+
+  for (const value of scalarCandidates) {
+    const genre = String(value || '').trim();
+    if (genre) return genre;
+  }
+
+  const arrayCandidates = [track.genres, track.genreNames, track.styles, track.tags];
+  for (const list of arrayCandidates) {
+    if (!Array.isArray(list) || !list.length) continue;
+    const first = list[0];
+    if (typeof first === 'string') {
+      const genre = first.trim();
+      if (genre) return genre;
+      continue;
+    }
+    if (first && typeof first === 'object') {
+      const genre = String(first.name || first.label || first.genre || '').trim();
+      if (genre) return genre;
+    }
+  }
+
+  return '';
 }
 
 export function extractTrackLoudnessDb(track) {

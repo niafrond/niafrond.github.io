@@ -13,6 +13,8 @@ async function gotoAppWithMockedApi(page) {
 
   await page.goto(APP);
   await expect(page.locator('#app-screen')).toBeVisible();
+}
+
 const QUEUE_KEY = 'dj-mix:queue';
 
 const DEFAULT_CACHE_FILES = [
@@ -175,7 +177,7 @@ async function seedLocalStorage(page, options = {}) {
     apiKey: API_URL_STORAGE_KEY,
   });
 }
-}
+
 async function gotoApp(page) {
   await page.goto(APP);
   await expect(page.locator('#app-screen')).toBeVisible();
@@ -230,8 +232,10 @@ test.describe('DJ Mix IHM - structure et navigation', () => {
     await expect(page.locator('#fx-visibility-btn')).toHaveAttribute('aria-expanded', 'true');
     await page.click('#fx-visibility-btn');
     await expect(page.locator('#fx-visibility-btn')).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('.dj-fx-row')).toBeHidden();
     await page.click('#fx-visibility-btn');
     await expect(page.locator('#fx-visibility-btn')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('.dj-fx-row')).toBeVisible();
   });
 });
 

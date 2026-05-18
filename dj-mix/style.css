@@ -1120,60 +1120,17 @@ input {
   align-items: center;
   gap: 6px;
   width: 100%;
-  padding: 4px 0 2px;
+  padding: 2px 0 0;
 }
 
 .dance-genre-label {
-  font-size: 0.82em;
-  color: var(--text-muted, #999);
+  font-size: 12px;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
-.dance-genre-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.dance-genre-chip {
-  padding: 3px 11px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  font-size: 0.82em;
-  cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.dance-genre-chip--selected {
-  background: rgba(230, 92, 0, 0.25);
-  border-color: #e65c00;
-  color: #e65c00;
-}
-
-.dance-genre-chip__remove {
-  font-size: 0.85em;
-  opacity: 0.7;
-  margin-left: 2px;
-}
-
-.dance-genre-input {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  border-radius: 14px;
-  padding: 3px 10px;
-  font-size: 0.82em;
-  width: 140px;
-  outline: none;
-}
-
-.dance-genre-input:focus {
-  border-color: #e65c00;
+.dance-genre-prefs .mix-mode-select {
+  max-width: 320px;
 }
 
 .deck-panels {
@@ -2057,7 +2014,8 @@ input {
 
 @media (max-width: 420px) {
   .dj-fx-menu {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
   }
 }
 
@@ -2393,6 +2351,22 @@ input {
   border-color: var(--fade);
   color: var(--fade);
   background: rgba(126, 34, 206, 0.14);
+}
+
+.queue-cue.is-loaded-deck {
+  border-color: rgba(29, 185, 84, 0.78);
+  color: #7ef1ab;
+  background: rgba(29, 185, 84, 0.2);
+  box-shadow: 0 0 10px rgba(29, 185, 84, 0.35);
+}
+
+.queue-cue.is-loaded-deck:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.queue-cue:disabled {
+  pointer-events: none;
 }
 
 .queue-remove {
