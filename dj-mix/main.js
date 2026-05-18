@@ -6,11 +6,10 @@
 
 import { DJPlayer } from './player.js';
 import {
-  getAllowedTransitionModesForRam,
   getTransitionRamRequirementsMb,
   MIX_TRANSITION_MODE_LABELS,
   MIX_TRANSITION_MODES,
-} from './lib/mixFeatures.js';
+} from './lib/transitionModes.js';
 import { AutoFadeManager } from './lib/autoFadeManager.js';
 import {
   createAudioSourceManager,
@@ -27,6 +26,27 @@ import { restoreQueueFromStorage, saveQueueToStorage } from './lib/queueStorage.
 import { createShellUi } from './lib/shellUi.js';
 import { createDjMixRenderer } from './lib/uiRenderer.js';
 import { createAutoModeManager } from './lib/autoModeManager.js';
+import { createAppState } from './lib/appState.js';
+import {
+  AUTO_DJ_FX_TYPES,
+  canTriggerAutoDjFx,
+  createDefaultAutoDjFxAllowed,
+  getAutoDjFxMaxGapMs,
+  getAutoDjFxStatusText,
+  getSafeAutoDjFxMinIntervalSec,
+  normalizeAutoDjFxIntervalSettings,
+  persistAutoDjFxSettings,
+  readAutoDjFxSettings,
+} from './lib/autoDjFxManager.js';
+import {
+  markAutomixTriggered,
+  resetAutomixTimeline,
+  setAutomixTriggerMs,
+  shouldTriggerAutomix,
+} from './lib/automixTimeline.js';
+import { getOtherDeck, toDeck } from './lib/deckHelpers.js';
+import { computeTransitionRamProfile } from './lib/ramProfile.js';
+import { attachQueueDndHandlers, clearQueueDragMarkers } from './lib/queueDnD.js';
 import {
   buildSearchResultsSectionsHTML,
   escHtml,
@@ -39,43 +59,34 @@ import {
   normalizeApiSearchResponse,
   sortSearchResultsByPopularity,
 } from './lib/searchUtils.js';
+import {
+  persistCrossfadeSecondsSetting,
+  persistDebugLogsSetting,
+  persistFxControlsHiddenSetting,
+  persistRamFilterEnabledSetting,
+  persistRamTotalMbOverrideSetting,
+  persistTrackMaxDurationEnabledSetting,
+  persistTrackMaxDurationSetting,
+  persistTransitionModeSetting,
+  readCrossfadeSecondsSetting,
+  readDebugLogsSetting,
+  readFxControlsHiddenSetting,
+  readRamFilterEnabledSetting,
+  readRamTotalMbOverrideSetting,
+  readTrackMaxDurationEnabledSetting,
+  readTrackMaxDurationSetting,
+  readTransitionModeSetting,
+  removeQueueSetting,
+  readDjModeSetting,
+  persistDjModeSetting,
+  readDjModeGenrePrefs,
+  persistDjModeGenrePrefs,
+} from './lib/settingsStorage.js';
+import { DEFAULT_DOWNLOADER_API_URL, STORAGE_KEYS } from './lib/storageKeys.js';
 
-const QUEUE_KEY = 'dj-mix:queue';
-const DOWNLOADER_API_URL_KEY = 'dj-mix:downloader:api:url';
-const FX_VISIBILITY_KEY = 'dj-mix:fx:hidden';
-const DEBUG_LOGS_KEY = 'dj-mix:logs:debug';
-const MIX_TRANSITION_MODE_KEY = 'dj-mix:transition:mode';
-const TRACK_MAX_DURATION_KEY = 'dj-mix:track:max-duration';
-const TRACK_MAX_DURATION_ENABLED_KEY = 'dj-mix:track:max-duration:enabled';
-const RAM_FILTER_ENABLED_KEY = 'dj-mix:ram-filter:enabled';
-const RAM_TOTAL_MB_OVERRIDE_KEY = 'dj-mix:ram-filter:total-mb-override';
-const AUTO_DJ_FX_SETTINGS_KEY = 'dj-mix:auto-dj:fx:settings';
-const DEFAULT_DOWNLOADER_API_URL = 'http://192.168.8.149:3000';
+const QUEUE_KEY = STORAGE_KEYS.queue;
+const DOWNLOADER_API_URL_KEY = STORAGE_KEYS.downloaderApiUrl;
 const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
-const MOBILE_TRANSITION_RAM_BUDGET_RATIO = 0.12;
-
-const AUTO_DJ_FX_CONFIG = Object.freeze({
-  filter: { label: 'Filter', category: 'filter' },
-  lowPass: { label: 'Low-pass', category: 'filter' },
-  highPass: { label: 'High-pass', category: 'filter' },
-  echoDelay: { label: 'Echo / Delay', category: 'modulation' },
-  reverb: { label: 'Reverb', category: 'modulation' },
-  flangerPhaser: { label: 'Flanger / Phaser', category: 'modulation' },
-  roll: { label: 'Roll / Loop', category: 'beat' },
-  loop: { label: 'Loop', category: 'beat' },
-  beatRepeat: { label: 'Beat Repeat', category: 'beat' },
-  brake: { label: 'Brake / Vinyl Stop', category: 'transport' },
-  backspin: { label: 'Backspin / Rewind', category: 'transport' },
-  noise: { label: 'Noise FX', category: 'textural' },
-  eq: { label: 'EQ', category: 'filter' },
-  pitchTempo: { label: 'Pitch / Tempo', category: 'pitch' },
-  keyShift: { label: 'Key Shift / Harmonic', category: 'pitch' },
-  scratching: { label: 'Scratching', category: 'scratch' },
-  hotCues: { label: 'Hot Cues', category: 'cue' },
-  sampling: { label: 'Sampling', category: 'sample' },
-});
-
-const AUTO_DJ_FX_TYPES = Object.freeze(Object.keys(AUTO_DJ_FX_CONFIG));
 
 const logger = createLogger('main');
 const logDebug = (event, payload) => logger.debug(event, payload);
@@ -90,6 +101,7 @@ if ('storage' in navigator && 'persist' in navigator.storage) {
 
 let player = null;
 const sessionBlobCache = new Map();
+const appState = createAppState();
 
 /** @type {Array<QueueItem>} */
 const queue = [];
@@ -109,8 +121,6 @@ let launchPreviewArtUrl = '';
 let launchPreviewTitle = '';
 let launchPreviewArtist = '';
 let launchPreviewDeck = null;
-let draggedQueueIndex = -1;
-let suppressQueueItemClick = false;
 let deckMixRatio = 0;
 let manualMixLock = false;
 let autoSuggestionRefreshInProgress = false;
@@ -119,9 +129,7 @@ let deckCueDeck = null;
 const deckMixDataByTrackId = new Map();
 
 // Auto DJ timing
-let nextAutomixTriggerMs = -1; // When to trigger automix (ms from start)
-let automixTriggeredForTrack = false; // Has automix been triggered for current track
-let currentPlayingDeck = 'A'; // Which deck has the currently playing track
+const automixTimeline = appState.automixTimeline;
 
 /**
  * Track stem loading status per deck: { A: boolean, B: boolean }
@@ -159,7 +167,7 @@ const djFxRuntime = {
 let fxControlsHidden = false;
 const deckDisplayItems = { A: null, B: null };
 let prevIsCrossfading = false;
-let selectedTransitionMode = readTransitionModeSetting();
+let selectedTransitionMode = readTransitionModeSetting(MIX_TRANSITION_MODES);
 let ramFilterEnabled = readRamFilterEnabledSetting();
 let ramTotalMbOverride = readRamTotalMbOverrideSetting();
 let allowedTransitionModes = [...MIX_TRANSITION_MODES];
@@ -171,113 +179,12 @@ let trackMaxDurationAppliedSec = trackMaxDurationEnabled ? trackMaxDurationSec :
 let lastTrackMaxDurationSec = trackMaxDurationSec > 0 ? trackMaxDurationSec : 120;
 let autoDjFxSettings = readAutoDjFxSettings();
 let lastAutoDjFxTriggeredAt = 0;
-
-function isMobileDevice() {
-  const ua = String(navigator.userAgent || navigator.vendor || '').toLowerCase();
-  const coarseTouch = window.matchMedia?.('(pointer: coarse)')?.matches === true;
-  return /android|iphone|ipad|ipod|mobile|windows phone|opera mini|blackberry/.test(ua)
-    || (coarseTouch && Math.min(window.innerWidth, window.innerHeight) < 900);
-}
-
-function estimateTotalDeviceRamMb() {
-  if (Number.isFinite(navigator.deviceMemory) && navigator.deviceMemory > 0) {
-    return Math.round(navigator.deviceMemory * 1024);
-  }
-
-  const cores = Number(navigator.hardwareConcurrency) || 0;
-  if (cores <= 2) return 1536;
-  if (cores <= 4) return 2048;
-  if (cores <= 6) return 3072;
-  return 4096;
-}
-
-function readRamFilterEnabledSetting() {
-  try {
-    const stored = localStorage.getItem(RAM_FILTER_ENABLED_KEY);
-    if (stored == null) return true;
-    return stored !== '0';
-  } catch (_) {
-    return true;
-  }
-}
-
-function createDefaultAutoDjFxAllowed() {
-  const defaults = {};
-  for (const type of AUTO_DJ_FX_TYPES) {
-    defaults[type] = true;
-  }
-  return defaults;
-}
-
-function getSafeAutoDjFxMinIntervalSec(value) {
-  const numeric = Math.round(Number(value) || 0);
-  return Math.max(1, Math.min(180, numeric || 14));
-}
-
-function getSafeAutoDjFxMaxIntervalSec(value) {
-  const numeric = Math.round(Number(value) || 0);
-  return Math.max(3, Math.min(300, numeric || 45));
-}
-
-function normalizeAutoDjFxIntervalSettings(minIntervalSec, maxIntervalSec) {
-  const safeMin = getSafeAutoDjFxMinIntervalSec(minIntervalSec);
-  const safeMaxRaw = getSafeAutoDjFxMaxIntervalSec(maxIntervalSec);
-  return {
-    minIntervalSec: safeMin,
-    maxIntervalSec: Math.max(safeMin, safeMaxRaw),
-  };
-}
-
-function readAutoDjFxSettings() {
-  const defaultsIntervals = normalizeAutoDjFxIntervalSettings(14, 45);
-  const defaults = {
-    allowed: createDefaultAutoDjFxAllowed(),
-    minIntervalSec: defaultsIntervals.minIntervalSec,
-    maxIntervalSec: defaultsIntervals.maxIntervalSec,
-  };
-
-  try {
-    const raw = localStorage.getItem(AUTO_DJ_FX_SETTINGS_KEY);
-    if (!raw) return defaults;
-
-    const parsed = JSON.parse(raw);
-    const allowedFromStorage = (parsed && typeof parsed.allowed === 'object') ? parsed.allowed : {};
-    const allowed = { ...defaults.allowed };
-
-    // Accept any FX from config, even if not in AUTO_DJ_FX_TYPES
-    // This allows autodj to launch FX regardless of config coherence
-    for (const type in allowedFromStorage) {
-      if (Object.prototype.hasOwnProperty.call(allowedFromStorage, type)) {
-        allowed[type] = Boolean(allowedFromStorage[type]);
-      }
-    }
-
-    const intervals = normalizeAutoDjFxIntervalSettings(
-      parsed?.minIntervalSec,
-      parsed?.maxIntervalSec,
-    );
-
-    return {
-      allowed,
-      minIntervalSec: intervals.minIntervalSec,
-      maxIntervalSec: intervals.maxIntervalSec,
-    };
-  } catch (_) {
-    return defaults;
-  }
-}
-
-function persistAutoDjFxSettings() {
-  try {
-    localStorage.setItem(AUTO_DJ_FX_SETTINGS_KEY, JSON.stringify(autoDjFxSettings));
-  } catch (_) {
-    // ignore storage failures
-  }
-}
+let djMode = readDjModeSetting(); // 'dance' | 'music'
+let djModeGenrePrefs = readDjModeGenrePrefs(); // string[]
 
 function isAutoDjFxTypeAllowed(type) {
   if (!type) return false;
-  if (!Object.prototype.hasOwnProperty.call(autoDjFxSettings.allowed, type)) return true;
+  if (!Object.prototype.hasOwnProperty.call(autoDjFxSettings.allowed || {}, type)) return true;
   return Boolean(autoDjFxSettings.allowed[type]);
 }
 
@@ -305,42 +212,68 @@ function updateAutoDjFxConfigUI() {
   }
 
   if (autoDjFxStatus) {
-    const allowedCount = AUTO_DJ_FX_TYPES.reduce((count, type) => {
-      return count + (isAutoDjFxTypeAllowed(type) ? 1 : 0);
-    }, 0);
-    autoDjFxStatus.textContent = `Robot FX: ${allowedCount}/${AUTO_DJ_FX_TYPES.length} autorises, intervalle ${intervals.minIntervalSec}s a ${intervals.maxIntervalSec}s.`;
+    autoDjFxStatus.textContent = getAutoDjFxStatusText(autoDjFxSettings);
   }
 }
 
-function persistRamFilterEnabledSetting(enabled) {
-  try {
-    localStorage.setItem(RAM_FILTER_ENABLED_KEY, enabled ? '1' : '0');
-  } catch (_) {
-    // ignore storage failures
-  }
+// --- DJ Mode helpers ---
+
+function getActiveDeckBpm() {
+  const activeDeck = automixTimeline?.currentPlayingDeck || 'A';
+  const item = deckDisplayItems[activeDeck];
+  const bpm = Number(item?.bpm);
+  return Number.isFinite(bpm) && bpm > 0 ? bpm : null;
 }
 
-function readRamTotalMbOverrideSetting() {
-  try {
-    const stored = Number.parseInt(localStorage.getItem(RAM_TOTAL_MB_OVERRIDE_KEY) || '0', 10);
-    if (!Number.isFinite(stored) || stored <= 0) return 0;
-    return Math.max(512, Math.min(32768, stored));
-  } catch (_) {
-    return 0;
-  }
+function getActiveDeckGenre() {
+  const activeDeck = automixTimeline?.currentPlayingDeck || 'A';
+  const item = deckDisplayItems[activeDeck];
+  return typeof item?.genre === 'string' ? item.genre.trim() : null;
 }
 
-function persistRamTotalMbOverrideSetting(totalMb) {
-  try {
-    const safeMb = Math.max(0, Number.parseInt(String(totalMb || '0'), 10) || 0);
-    localStorage.setItem(RAM_TOTAL_MB_OVERRIDE_KEY, String(safeMb));
-  } catch (_) {
-    // ignore storage failures
+/**
+ * Apply FX interval & allowed presets based on the selected DJ mode and current BPM.
+ * Does not persist — caller must call persistAutoDjFxSettings() if desired.
+ */
+function applyDjModeFxPreset(mode, currentBpm) {
+  const disabledInMusicLow = ['brake', 'backspin', 'scratching', 'roll'];
+  const disabledInMusicNormal = ['brake', 'backspin'];
+  const allowed = { ...createDefaultAutoDjFxAllowed() };
+
+  let minIntervalSec;
+  let maxIntervalSec;
+
+  if (mode === 'dance') {
+    minIntervalSec = 8;
+    maxIntervalSec = 20;
+    // all FX active
+  } else {
+    const bpm = Number.isFinite(currentBpm) ? currentBpm : 90;
+    if (bpm < 90) {
+      minIntervalSec = 40;
+      maxIntervalSec = 120;
+      for (const type of disabledInMusicLow) allowed[type] = false;
+    } else {
+      minIntervalSec = 20;
+      maxIntervalSec = 60;
+      for (const type of disabledInMusicNormal) allowed[type] = false;
+    }
   }
+
+  autoDjFxSettings = {
+    ...autoDjFxSettings,
+    minIntervalSec,
+    maxIntervalSec,
+    allowed,
+  };
+  persistAutoDjFxSettings(autoDjFxSettings);
+  updateAutoDjFxConfigUI();
 }
 
 function computeTransitionRamRequirements() {
-  const crossfadeSeconds = clampCrossfadeSeconds(crossfadeSlider?.value || localStorage.getItem('dj-mix:crossfade-seconds') || 6);
+  const crossfadeSeconds = clampCrossfadeSeconds(
+    crossfadeSlider?.value || readCrossfadeSecondsSetting(6),
+  );
   transitionRamRequirementsMb = getTransitionRamRequirementsMb({
     crossfadeDurationMs: crossfadeSeconds * 1000,
   });
@@ -379,42 +312,21 @@ function applyTransitionCapabilitiesForDevice(options = {}) {
   const { announce = false } = options;
   computeTransitionRamRequirements();
 
-  const mobile = isMobileDevice();
-  const shouldApplyFilter = ramFilterEnabled && (mobile || ramTotalMbOverride > 0);
-
-  if (!shouldApplyFilter) {
-    allowedTransitionModes = [...MIX_TRANSITION_MODES];
-    transitionRamCapability = {
-      enabled: false,
-      mobile: false,
-      totalRamMb: null,
-      transitionBudgetMb: null,
-      disabledModes: [],
-    };
-    updateTransitionModeAvailabilityUI();
-    return;
-  }
-
-  const totalRamMb = ramTotalMbOverride > 0 ? ramTotalMbOverride : estimateTotalDeviceRamMb();
-  const transitionBudgetMb = Math.max(64, Math.round(totalRamMb * MOBILE_TRANSITION_RAM_BUDGET_RATIO));
-  allowedTransitionModes = getAllowedTransitionModesForRam(transitionBudgetMb, {
-    crossfadeDurationMs: clampCrossfadeSeconds(crossfadeSlider?.value || localStorage.getItem('dj-mix:crossfade-seconds') || 6) * 1000,
+  const profile = computeTransitionRamProfile({
+    ramFilterEnabled,
+    ramTotalMbOverride,
+    crossfadeDurationMs: clampCrossfadeSeconds(crossfadeSlider?.value || readCrossfadeSecondsSetting(6)) * 1000,
   });
-
-  const disabledModes = MIX_TRANSITION_MODES.filter((mode) => !allowedTransitionModes.includes(mode));
-  transitionRamCapability = {
-    enabled: true,
-    mobile: true,
-    totalRamMb,
-    transitionBudgetMb,
-    ramOverrideMb: ramTotalMbOverride,
-    disabledModes,
-  };
+  allowedTransitionModes = profile.allowedTransitionModes;
+  transitionRamCapability = profile.capability;
+  const disabledModes = transitionRamCapability?.disabledModes || [];
+  const totalRamMb = transitionRamCapability?.totalRamMb || 0;
+  const transitionBudgetMb = transitionRamCapability?.transitionBudgetMb || 0;
 
   updateTransitionModeAvailabilityUI();
 
   logInfo('transition.ram.capability', {
-    mobile,
+    mobile: transitionRamCapability?.mobile || false,
     totalRamMb,
     transitionBudgetMb,
     disabledModes,
@@ -472,59 +384,6 @@ function applyRamFilterSettings(options = {}) {
   if (safeMode !== selectedTransitionMode) {
     applyTransitionModeSetting(safeMode, { persist: true });
     showToast(`Mode AutoMix ajuste (RAM): ${MIX_TRANSITION_MODE_LABELS[safeMode] || safeMode}`);
-  }
-}
-
-function readTransitionModeSetting() {
-  try {
-    const stored = localStorage.getItem(MIX_TRANSITION_MODE_KEY) || 'auto';
-    return MIX_TRANSITION_MODES.includes(stored) ? stored : 'auto';
-  } catch (_) {
-    return 'auto';
-  }
-}
-
-function persistTransitionModeSetting(mode) {
-  try {
-    localStorage.setItem(MIX_TRANSITION_MODE_KEY, mode);
-  } catch (_) {
-    // ignore storage failures
-  }
-}
-
-function readTrackMaxDurationSetting() {
-  try {
-    const stored = localStorage.getItem(TRACK_MAX_DURATION_KEY) || '0';
-    const value = parseInt(stored, 10);
-    return (value >= 30 && value <= 600) ? value : 0;
-  } catch (_) {
-    return 0;
-  }
-}
-
-function persistTrackMaxDurationSetting(seconds) {
-  try {
-    localStorage.setItem(TRACK_MAX_DURATION_KEY, String(seconds));
-  } catch (_) {
-    // ignore storage failures
-  }
-}
-
-function readTrackMaxDurationEnabledSetting(fallback = true) {
-  try {
-    const stored = localStorage.getItem(TRACK_MAX_DURATION_ENABLED_KEY);
-    if (stored == null) return Boolean(fallback);
-    return stored !== '0';
-  } catch (_) {
-    return Boolean(fallback);
-  }
-}
-
-function persistTrackMaxDurationEnabledSetting(enabled) {
-  try {
-    localStorage.setItem(TRACK_MAX_DURATION_ENABLED_KEY, enabled ? '1' : '0');
-  } catch (_) {
-    // ignore storage failures
   }
 }
 
@@ -694,6 +553,11 @@ const downloaderApiSaveBtn = document.getElementById('downloader-api-save-btn');
 const downloaderApiTestBtn = document.getElementById('downloader-api-test-btn');
 const downloaderApiStatus = document.getElementById('downloader-api-status');
 const debugLogsToggle = document.getElementById('debug-logs-toggle');
+const djModeDanceBtn = document.getElementById('dj-mode-dance-btn');
+const djModeMusicBtn = document.getElementById('dj-mode-music-btn');
+const danceGenrePrefs = document.getElementById('dance-genre-prefs');
+const danceGenreChips = document.getElementById('dance-genre-chips');
+const danceGenreInput = document.getElementById('dance-genre-input');
 const debugLogsStatus = document.getElementById('debug-logs-status');
 const ramFilterEnabledToggle = document.getElementById('ram-filter-enabled-toggle');
 const ramTotalMemoryInput = document.getElementById('ram-total-memory-gb');
@@ -1056,14 +920,14 @@ function triggerScratchFx(deck) {
 
 function triggerHotCueFx(deck) {
   if (!player) return;
-  const safeDeck = deck === 'B' ? 'B' : 'A';
+  const safeDeck = toDeck(deck);
   const state = getDeckStateForFx(safeDeck);
   const durationMs = Number(state?.durationMs) || 0;
   if (durationMs <= 0) return;
 
   const item = deckDisplayItems[safeDeck] || queue[currentIndex] || null;
   const mixData = getTrackMixData(item)
-    || (safeDeck === currentPlayingDeck ? autoModeManager.getCurrentTrackMixData?.() : autoModeManager.getNextTrackMixData?.())
+    || (safeDeck === automixTimeline.currentPlayingDeck ? autoModeManager.getCurrentTrackMixData?.() : autoModeManager.getNextTrackMixData?.())
     || null;
 
   const cueCandidatesMs = [];
@@ -1599,27 +1463,11 @@ const updateUpcomingArtwork = () => uiRenderer.updateUpcomingArtwork();
 
 function getResolvedActiveDeck() {
   const activeDeck = player?.activeDeck;
-  return activeDeck === 'B' ? 'B' : 'A';
+  return toDeck(activeDeck);
 }
 
 function getResolvedInactiveDeck() {
-  return getResolvedActiveDeck() === 'A' ? 'B' : 'A';
-}
-
-function readDebugLogsSetting() {
-  try {
-    return localStorage.getItem(DEBUG_LOGS_KEY) === '1';
-  } catch (_) {
-    return false;
-  }
-}
-
-function persistDebugLogsSetting(enabled) {
-  try {
-    localStorage.setItem(DEBUG_LOGS_KEY, enabled ? '1' : '0');
-  } catch (_) {
-    // ignore storage failures
-  }
+  return getOtherDeck(getResolvedActiveDeck());
 }
 
 function updateDebugLogsUi(enabled) {
@@ -1905,16 +1753,12 @@ const autoModeManager = createAutoModeManager({
   logger,
   getTrackMaxDurationSec: () => trackMaxDurationAppliedSec,
   getAutoFxMinGapMs: () => getSafeAutoDjFxMinIntervalSec(autoDjFxSettings.minIntervalSec) * 1000,
-  getAutoFxMaxGapMs: () => {
-    const intervals = normalizeAutoDjFxIntervalSettings(
-      autoDjFxSettings.minIntervalSec,
-      autoDjFxSettings.maxIntervalSec,
-    );
-    return intervals.maxIntervalSec * 1000;
-  },
+  getAutoFxMaxGapMs: () => getAutoDjFxMaxGapMs(autoDjFxSettings),
+  getDjMode: () => djMode,
+  getDjModeGenrePrefs: () => djModeGenrePrefs,
+  getCurrentBpm: getActiveDeckBpm,
   onAutomixTimingCalculated: (triggerMs) => {
-    nextAutomixTriggerMs = triggerMs;
-    automixTriggeredForTrack = false;
+    setAutomixTriggerMs(automixTimeline, triggerMs);
     logDebug('autoDj: timing calculated', { triggerMs });
     updateAutoDjMarker();
     updateMaxDurationMarker();
@@ -1949,6 +1793,96 @@ tabBtns.forEach((btn) => {
   });
 });
 
+// --- DJ Mode UI ---
+
+function renderDjModeUI() {
+  const isDance = djMode === 'dance';
+  if (djModeDanceBtn) {
+    djModeDanceBtn.classList.toggle('dj-mode-btn--active', isDance);
+    djModeDanceBtn.setAttribute('aria-pressed', String(isDance));
+  }
+  if (djModeMusicBtn) {
+    djModeMusicBtn.classList.toggle('dj-mode-btn--active', !isDance);
+    djModeMusicBtn.setAttribute('aria-pressed', String(!isDance));
+  }
+  if (danceGenrePrefs) {
+    danceGenrePrefs.hidden = !isDance;
+  }
+  if (isDance) renderGenreChips();
+}
+
+function renderGenreChips() {
+  if (!danceGenreChips) return;
+  danceGenreChips.innerHTML = '';
+  for (const genre of djModeGenrePrefs) {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'dance-genre-chip dance-genre-chip--selected';
+    chip.dataset.genre = genre;
+    chip.setAttribute('aria-pressed', 'true');
+    chip.innerHTML = `${escHtml(genre)}<span class="dance-genre-chip__remove" aria-hidden="true">✕</span>`;
+    chip.addEventListener('click', () => removeDjGenrePref(genre));
+    danceGenreChips.appendChild(chip);
+  }
+}
+
+function suggestGenreChipFromCurrentTrack() {
+  if (djMode !== 'dance') return;
+  const genre = getActiveDeckGenre();
+  if (!genre || djModeGenrePrefs.includes(genre)) return;
+  // Show suggestion chip (unselected) if not already in chips
+  if (!danceGenreChips) return;
+  const existing = danceGenreChips.querySelector(`[data-genre="${CSS.escape(genre)}"]`);
+  if (existing) return;
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = 'dance-genre-chip';
+  chip.dataset.genre = genre;
+  chip.setAttribute('aria-pressed', 'false');
+  chip.title = `Ajouter "${genre}" aux genres préférés`;
+  chip.innerHTML = `${escHtml(genre)} <span style="opacity:0.6;font-size:0.8em">(suggéré)</span>`;
+  chip.addEventListener('click', () => {
+    addDjGenrePref(genre);
+  });
+  danceGenreChips.appendChild(chip);
+}
+
+function addDjGenrePref(genre) {
+  const g = genre.trim();
+  if (!g || djModeGenrePrefs.includes(g)) return;
+  djModeGenrePrefs = [...djModeGenrePrefs, g];
+  persistDjModeGenrePrefs(djModeGenrePrefs);
+  renderGenreChips();
+}
+
+function removeDjGenrePref(genre) {
+  djModeGenrePrefs = djModeGenrePrefs.filter((g) => g !== genre);
+  persistDjModeGenrePrefs(djModeGenrePrefs);
+  renderGenreChips();
+}
+
+function setDjMode(mode) {
+  djMode = mode;
+  persistDjModeSetting(mode);
+  applyDjModeFxPreset(mode, getActiveDeckBpm());
+  renderDjModeUI();
+  logDebug('djMode: changed', { mode, bpm: getActiveDeckBpm() });
+}
+
+djModeDanceBtn?.addEventListener('click', () => setDjMode('dance'));
+djModeMusicBtn?.addEventListener('click', () => setDjMode('music'));
+
+danceGenreInput?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const val = danceGenreInput.value.trim();
+    if (val) {
+      addDjGenrePref(val);
+      danceGenreInput.value = '';
+    }
+    e.preventDefault();
+  }
+});
+
 (async function init() {
   applyRamFilterSettings({ persist: false, announce: true });
   applyDebugLogsSetting(readDebugLogsSetting(), { persist: false });
@@ -1960,6 +1894,7 @@ tabBtns.forEach((btn) => {
   autoModeManager.initialize();
   updateAutoModeUI();
   updateAutoDjFxConfigUI();
+  renderDjModeUI();
 
   debugLogsToggle?.addEventListener('change', () => {
     applyDebugLogsSetting(Boolean(debugLogsToggle.checked), { persist: true });
@@ -2011,7 +1946,7 @@ async function connectLocal() {
 
   player?.destroy();
   player = new DJPlayer();
-  const savedCrossfadeVal = localStorage.getItem('dj-mix:crossfade-seconds') || 6;
+  const savedCrossfadeVal = readCrossfadeSecondsSetting(6);
   crossfadeSlider.value = savedCrossfadeVal;
   if (crossfadeSliderMix) crossfadeSliderMix.value = savedCrossfadeVal;
   player.crossfadeDuration = clampCrossfadeSeconds(crossfadeSlider.value) * 1000;
@@ -2083,17 +2018,14 @@ function hookPlayerEvents() {
     }
 
     // Auto DJ: Check if it's time to trigger automix
-    if (autoModeManager.isAutoModeEnabled() && 
-        !automixTriggeredForTrack && 
-        nextAutomixTriggerMs > 0 && 
-        position >= nextAutomixTriggerMs) {
+    if (autoModeManager.isAutoModeEnabled() && shouldTriggerAutomix(automixTimeline, position)) {
       
-      automixTriggeredForTrack = true;
+      markAutomixTriggered(automixTimeline);
       updateAutoDjMarker();
       updateMaxDurationMarker();
       logInfo('autoDj: triggering automix at optimal moment', {
         position,
-        triggerMs: nextAutomixTriggerMs,
+        triggerMs: automixTimeline.nextTriggerMs,
         remainingMs: duration - position,
       });
 
@@ -2299,6 +2231,9 @@ async function launchDeckFromQueue(deck, options = {}) {
         launchPreviewArtist = '';
         launchPreviewDeck = null;
         prefetchNext(getFollowingQueueIndex(targetIndex));
+        // Reapply DJ mode preset with updated BPM, and suggest genre chip
+        applyDjModeFxPreset(djMode, item.bpm || null);
+        suggestGenreChipFromCurrentTrack();
       } else {
         launchPreviewActive = true;
         launchPreviewArtUrl = item.artUrl || '';
@@ -2342,8 +2277,8 @@ function setCrossfadeDurationSeconds(seconds) {
   updateCrossfadeControlUI(safeSeconds);
   applyRamFilterSettings({ persist: false, announce: false });
   
-  // Persist crossfade setting to localStorage
-  localStorage.setItem('dj-mix:crossfade-seconds', String(safeSeconds));
+  // Persist crossfade setting so RAM profile and player restart stay aligned.
+  persistCrossfadeSecondsSetting(safeSeconds);
 
   if (player) {
     player.crossfadeDuration = safeSeconds * 1000;
@@ -2352,7 +2287,7 @@ function setCrossfadeDurationSeconds(seconds) {
 }
 
 // Initialize crossfade slider from localStorage
-const savedCrossfade = localStorage.getItem('dj-mix:crossfade-seconds');
+const savedCrossfade = readCrossfadeSecondsSetting(null);
 if (savedCrossfade) {
   crossfadeSlider.value = savedCrossfade;
   if (crossfadeSliderMix) crossfadeSliderMix.value = savedCrossfade;
@@ -2416,7 +2351,7 @@ manualLockBtn?.addEventListener('click', () => {
 
 fxVisibilityBtn?.addEventListener('click', () => {
   fxControlsHidden = !fxControlsHidden;
-  localStorage.setItem(FX_VISIBILITY_KEY, fxControlsHidden ? '1' : '0');
+  persistFxControlsHiddenSetting(fxControlsHidden);
   updateFxVisibilityUI();
 });
 
@@ -2452,7 +2387,7 @@ autoDjFxMinIntervalInput?.addEventListener('change', () => {
     minIntervalSec: intervals.minIntervalSec,
     maxIntervalSec: intervals.maxIntervalSec,
   };
-  persistAutoDjFxSettings();
+  persistAutoDjFxSettings(autoDjFxSettings);
   updateAutoDjFxConfigUI();
   recalculateAutomixTimingIfNeeded('autoDjFx: min interval changed');
 });
@@ -2467,7 +2402,7 @@ autoDjFxMaxIntervalInput?.addEventListener('change', () => {
     minIntervalSec: intervals.minIntervalSec,
     maxIntervalSec: intervals.maxIntervalSec,
   };
-  persistAutoDjFxSettings();
+  persistAutoDjFxSettings(autoDjFxSettings);
   updateAutoDjFxConfigUI();
   recalculateAutomixTimingIfNeeded('autoDjFx: max interval changed');
 });
@@ -2483,7 +2418,7 @@ for (const toggleEl of autoDjFxToggleEls) {
         [type]: Boolean(toggleEl.checked),
       },
     };
-    persistAutoDjFxSettings();
+    persistAutoDjFxSettings(autoDjFxSettings);
     updateAutoDjFxConfigUI();
   });
 }
@@ -2636,30 +2571,20 @@ function triggerAutoDjCreativeFxEvent(event) {
     trackId: event?.trackId || null,
   });
 
-  if (!type) {
-    logDebug('autoDj: creative fx skipped (no type)', { type, label });
-    return;
-  }
-
-  if (!isAutoDjFxTypeAllowed(type)) {
-    logDebug('autoDj: creative fx skipped (not allowed)', { type, label });
-    return;
-  }
-
   const now = Date.now();
-  const minGapMs = getSafeAutoDjFxMinIntervalSec(autoDjFxSettings.minIntervalSec) * 1000;
-  const elapsedMs = now - lastAutoDjFxTriggeredAt;
-  if (lastAutoDjFxTriggeredAt > 0 && elapsedMs < minGapMs) {
+  const triggerDecision = canTriggerAutoDjFx(event, autoDjFxSettings, lastAutoDjFxTriggeredAt, now);
+  if (!triggerDecision.allowed) {
     logDebug('autoDj: creative fx skipped (min interval)', {
       type,
       label,
-      elapsedMs,
-      requiredMs: minGapMs,
+      reason: triggerDecision.reason,
+      elapsedMs: triggerDecision.elapsedMs,
+      requiredMs: triggerDecision.minGapMs,
     });
     return;
   }
 
-  const targetDeck = currentPlayingDeck === 'B' ? 'B' : 'A';
+  const targetDeck = toDeck(automixTimeline.currentPlayingDeck);
   const applied = applyAutoDjCreativeFx(type, targetDeck);
   if (!applied) {
     logDebug('autoDj: creative fx skipped (unsupported type)', { type, label });
@@ -2871,7 +2796,7 @@ deckBRefreshSuggestionBtn?.addEventListener('click', () => {
 function updateAutoDjMarker() {
   const isEnabled = autoModeManager.isAutoModeEnabled();
   const durationMs = playbackDurationMs > 0 ? playbackDurationMs : (queue[currentIndex]?.duration ?? 0);
-  const hasTiming = nextAutomixTriggerMs > 0 && durationMs > 0 && !automixTriggeredForTrack;
+  const hasTiming = automixTimeline.nextTriggerMs > 0 && durationMs > 0 && !automixTimeline.triggeredForTrack;
 
   // Hide both markers first
   if (deckAAutoDjMarker) deckAAutoDjMarker.hidden = true;
@@ -2879,8 +2804,8 @@ function updateAutoDjMarker() {
 
   if (!isEnabled || !hasTiming) return;
 
-  const pct = Math.min(100, Math.max(0, (nextAutomixTriggerMs / durationMs) * 100));
-  const marker = currentPlayingDeck === 'B' ? deckBAutoDjMarker : deckAAutoDjMarker;
+  const pct = Math.min(100, Math.max(0, (automixTimeline.nextTriggerMs / durationMs) * 100));
+  const marker = automixTimeline.currentPlayingDeck === 'B' ? deckBAutoDjMarker : deckAAutoDjMarker;
   if (marker) {
     marker.style.left = `${pct}%`;
     marker.hidden = false;
@@ -2943,7 +2868,7 @@ function updateMaxDurationMarker() {
   }
 
   const pct = Math.min(100, (markerMs / durationMs) * 100);
-  const marker = currentPlayingDeck === 'B' ? deckBMaxDurMarker : deckAMaxDurMarker;
+  const marker = automixTimeline.currentPlayingDeck === 'B' ? deckBMaxDurMarker : deckAMaxDurMarker;
   if (marker) {
     marker.style.left = `${pct}%`;
     marker.hidden = false;
@@ -3013,14 +2938,14 @@ function renderMixZones() {
 
   const playbackDuration = playbackDurationMs > 0 ? playbackDurationMs : (queue[currentIndex]?.duration ?? 0);
   const mixDataA = getTrackMixData(deckDisplayItems.A)
-    || (currentPlayingDeck === 'A' ? autoModeManager.getCurrentTrackMixData?.() : null)
-    || (currentPlayingDeck !== 'A' ? autoModeManager.getNextTrackMixData?.() : null);
+    || (automixTimeline.currentPlayingDeck === 'A' ? autoModeManager.getCurrentTrackMixData?.() : null)
+    || (automixTimeline.currentPlayingDeck !== 'A' ? autoModeManager.getNextTrackMixData?.() : null);
   const mixDataB = getTrackMixData(deckDisplayItems.B)
-    || (currentPlayingDeck === 'B' ? autoModeManager.getCurrentTrackMixData?.() : null)
-    || (currentPlayingDeck !== 'B' ? autoModeManager.getNextTrackMixData?.() : null);
+    || (automixTimeline.currentPlayingDeck === 'B' ? autoModeManager.getCurrentTrackMixData?.() : null)
+    || (automixTimeline.currentPlayingDeck !== 'B' ? autoModeManager.getNextTrackMixData?.() : null);
 
-  renderLayer(deckAZoneLayer, mixDataA, deckDisplayItems.A?.duration || playbackDuration);
-  renderLayer(deckBZoneLayer, mixDataB, deckDisplayItems.B?.duration || playbackDuration);
+  renderLayer(deckAProgressZones, mixDataA, playbackDuration);
+  renderLayer(deckBProgressZones, mixDataB, playbackDuration);
 }
 
 deckAVocalBtn?.addEventListener('click', () => {
@@ -3601,9 +3526,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     backgroundEnrichStems(targetDeck, item);
     
     // Schedule automix timing for auto DJ mode and reset trigger flag
-    automixTriggeredForTrack = false;
-    nextAutomixTriggerMs = -1;
-    currentPlayingDeck = targetDeck;
+    resetAutomixTimeline(automixTimeline, targetDeck);
     applyTrackMaxDurationForCurrentPlayback();
     updateAutoDjMarker();
     updateMaxDurationMarker();
@@ -3721,62 +3644,13 @@ function renderQueue() {
 
   uiRenderer.queueList.innerHTML = uiRenderer.buildQueueHTML();
 
-  uiRenderer.queueList.querySelectorAll('.queue-item').forEach((el) => {
-    el.addEventListener('dragstart', (event) => {
-      draggedQueueIndex = Number(el.dataset.index);
-      el.classList.add('is-dragging');
-      if (event.dataTransfer) {
-        event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData('text/plain', String(draggedQueueIndex));
-      }
-    });
-
-    el.addEventListener('dragend', () => {
-      draggedQueueIndex = -1;
-      clearQueueDragMarkers();
-      uiRenderer.queueList.querySelectorAll('.queue-item').forEach((node) => node.classList.remove('is-dragging'));
-      requestAnimationFrame(() => {
-        suppressQueueItemClick = false;
-      });
-    });
-
-    el.addEventListener('dragover', (event) => {
-      if (draggedQueueIndex < 0) return;
-      event.preventDefault();
-      const targetIndex = Number(el.dataset.index);
-      if (targetIndex === draggedQueueIndex) return;
-
-      const rect = el.getBoundingClientRect();
-      const insertAfter = event.clientY >= rect.top + (rect.height / 2);
-      clearQueueDragMarkers();
-      el.classList.add(insertAfter ? 'is-drag-over-after' : 'is-drag-over-before');
-    });
-
-    el.addEventListener('dragleave', (event) => {
-      if (!el.contains(event.relatedTarget)) {
-        el.classList.remove('is-drag-over-before', 'is-drag-over-after');
-      }
-    });
-
-    el.addEventListener('drop', (event) => {
-      if (draggedQueueIndex < 0) return;
-      event.preventDefault();
-      const targetIndex = Number(el.dataset.index);
-      const rect = el.getBoundingClientRect();
-      const insertAfter = event.clientY >= rect.top + (rect.height / 2);
-      reorderQueue(draggedQueueIndex, targetIndex, insertAfter);
-      suppressQueueItemClick = true;
-    });
-
-    el.addEventListener('click', async (e) => {
-      if (e.target.classList.contains('queue-remove') || e.target.classList.contains('queue-cue')) return;
-      if (suppressQueueItemClick) {
-        suppressQueueItemClick = false;
-        return;
-      }
-      const idx = Number(el.dataset.index);
-      if (idx === currentIndex || player.isCrossfading) return;
-
+  attachQueueDndHandlers({
+    queueList: uiRenderer.queueList,
+    state: appState.queueDnd,
+    onReorder: (fromIndex, targetIndex, insertAfter) => {
+      reorderQueue(fromIndex, targetIndex, insertAfter);
+    },
+    onActivate: async (idx) => {
       showCrossfadeRing(true);
       try {
         await startPlaybackForIndex(idx, 'crossfade');
@@ -3785,7 +3659,9 @@ function renderQueue() {
       } finally {
         showCrossfadeRing(false);
       }
-    });
+    },
+    getCurrentIndex: () => currentIndex,
+    isCrossfading: () => Boolean(player?.isCrossfading),
   });
 
   uiRenderer.queueList.querySelectorAll('.queue-remove').forEach((btn) => {
@@ -3832,12 +3708,6 @@ function removeFromQueue(idx) {
   renderQueue();
 }
 
-function clearQueueDragMarkers() {
-  uiRenderer.queueList.querySelectorAll('.queue-item').forEach((el) => {
-    el.classList.remove('is-dragging', 'is-drag-over-before', 'is-drag-over-after');
-  });
-}
-
 function reorderQueue(fromIndex, targetIndex, insertAfter = false) {
   if (fromIndex === targetIndex) return;
   if (fromIndex < 0 || targetIndex < 0) return;
@@ -3858,7 +3728,7 @@ function reorderQueue(fromIndex, targetIndex, insertAfter = false) {
   }
   updateDeckCueUI();
   updateCurrentIndex();
-  clearQueueDragMarkers();
+  clearQueueDragMarkers(uiRenderer.queueList);
   renderQueue();
 }
 
@@ -3930,7 +3800,7 @@ updateManualLockUI();
 updateDeckCueUI();
 updateMixFeaturesUI();
 updateDjFxMenuUI();
-fxControlsHidden = localStorage.getItem(FX_VISIBILITY_KEY) === '1';
+fxControlsHidden = readFxControlsHiddenSetting();
 updateFxVisibilityUI();
 
 function doLogout() {
@@ -3982,13 +3852,12 @@ function doLogout() {
   playbackDurationMs = 0;
 
   // Reset auto DJ timing
-  nextAutomixTriggerMs = -1;
-  automixTriggeredForTrack = false;
+  resetAutomixTimeline(automixTimeline, 'A');
   lastAutoDjFxTriggeredAt = 0;
   updateAutoDjMarker();
   updateMaxDurationMarker();
 
-  localStorage.removeItem(QUEUE_KEY);
+  removeQueueSetting();
   deckDisplayItems.A = null;
   deckDisplayItems.B = null;
   prevIsCrossfading = false;
@@ -4023,20 +3892,3 @@ function closeSearch() {
   if (searchClose) searchClose.hidden = true;
 }
 
-
-/**
- * @typedef {Object} QueueItem
- * @property {string} id
- * @property {string} uri
- * @property {string} name
- * @property {string} artist
- * @property {string} artUrl
- * @property {number} duration
- * @property {number|null} loudnessDb
- * @property {'idle'|'resolving'|'ready'|'error'} sourceState
- * @property {string|null} sourceError
- * @property {string|null} sourceMeta
- * @property {string|null} localBlobUrl
- * @property {string} persistedSourceUrl
- * @property {number} lastTouchedAt
- */

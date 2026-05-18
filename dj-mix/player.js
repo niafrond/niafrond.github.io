@@ -1,9 +1,11 @@
 import {
-  SimpleMixFeatures,
-  MIX_TRANSITION_MODES,
-  MIX_TRANSITION_MODE_LABELS,
   DEFAULT_TRANSITION_MODE,
+  MIX_TRANSITION_MODE_LABELS,
+  MIX_TRANSITION_MODES,
   normalizeTransitionMode,
+} from './lib/transitionModes.js';
+import {
+  SimpleMixFeatures,
 } from './lib/mixFeatures.js';
 import { createLogger } from './lib/logger.js';
 

@@ -45,6 +45,15 @@
       <div id="tab-mix" class="tab-panel active">
         <div class="player-section">
           <div class="now-playing">
+            <div id="dj-mode-bar" class="dj-mode-bar" role="group" aria-label="Mode DJ">
+              <button id="dj-mode-dance-btn" class="dj-mode-btn" type="button" aria-pressed="false" title="Priorise les chansons dansables avec BPM élevé">🕺 Dance</button>
+              <button id="dj-mode-music-btn" class="dj-mode-btn dj-mode-btn--active" type="button" aria-pressed="true" title="Priorise les chansons du même genre ou artiste">🎵 Musique</button>
+              <div id="dance-genre-prefs" class="dance-genre-prefs" hidden>
+                <span class="dance-genre-label">Genres :</span>
+                <div id="dance-genre-chips" class="dance-genre-chips" aria-label="Genres musicaux préférés"></div>
+                <input id="dance-genre-input" class="dance-genre-input" type="text" placeholder="Ajouter un genre…" autocomplete="off" aria-label="Ajouter un genre">
+              </div>
+            </div>
             <div class="deck-panels" aria-live="polite">
               <div class="deck-panel" id="deck-a-panel">
                 <div class="deck-head">
