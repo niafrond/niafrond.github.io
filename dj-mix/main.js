@@ -1037,9 +1037,22 @@ function storeTrackMixData(item, mixData) {
 function resolveMixDataStartOffsetMs(mixData) {
   if (!mixData || typeof mixData !== 'object') return 0;
 
-  const probableStartSec = Number(mixData.probableSongStartSec);
-  const hasProbableStart = Number.isFinite(probableStartSec) && probableStartSec > 0;
-  let recommendedSec = hasProbableStart ? probableStartSec : 0;
+  const toFiniteNumber = (value) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
+  };
+
+  // Prefer recommendedSongStartSec (explicit API recommendation) over probableSongStartSec.
+  const recommendedSongStartSec = toFiniteNumber(mixData.recommendedSongStartSec);
+  const probableStartSec = toFiniteNumber(mixData.probableSongStartSec);
+  const hasProbableStart = probableStartSec != null && probableStartSec > 0;
+
+  let recommendedSec = 0;
+  if (recommendedSongStartSec != null && recommendedSongStartSec > 0) {
+    recommendedSec = recommendedSongStartSec;
+  } else if (hasProbableStart) {
+    recommendedSec = probableStartSec;
+  }
 
   // Honor explicit recommendation fields when present on mix payload.
   const explicitOffsetMs = resolveTrackStartOffsetMs(mixData);
@@ -1047,16 +1060,26 @@ function resolveMixDataStartOffsetMs(mixData) {
     recommendedSec = Math.max(recommendedSec, explicitOffsetMs / 1000);
   }
 
+  // Use startRecommendation from the API when available — it is authoritative.
+  const startRec = mixData.startRecommendation && typeof mixData.startRecommendation === 'object'
+    ? mixData.startRecommendation
+    : null;
+
+  const introLooksSlow = startRec != null
+    ? Boolean(startRec.introLooksSlow)
+    : hasProbableStart && probableStartSec >= 6;
+
+  // introDanceability and laterDanceabilityPeak come from startRecommendation directly.
+  const introDanceability = toFiniteNumber(startRec?.introDanceability);
+  const laterDanceabilityPeak = toFiniteNumber(startRec?.laterDanceabilityPeak);
+  const startRecConfidence = toFiniteNumber(startRec?.confidence) ?? 1;
+
+  // Fallback: read from indicators sub-fields if startRecommendation not present.
   const indicators = mixData.indicators && typeof mixData.indicators === 'object'
     ? mixData.indicators
     : null;
 
-  const toFiniteNumber = (value) => {
-    const numeric = Number(value);
-    return Number.isFinite(numeric) ? numeric : null;
-  };
-
-  const introDanceability = toFiniteNumber(
+  const introDanceabilityFallback = introDanceability ?? toFiniteNumber(
     indicators?.introDanceability
     ?? indicators?.openingDanceability
     ?? indicators?.startDanceability
@@ -1080,18 +1103,27 @@ function resolveMixDataStartOffsetMs(mixData) {
   const hasPeak = Number.isFinite(firstPeakStartSec) && firstPeakStartSec > 0;
   const firstPeakScore = toFiniteNumber(firstPeakZone?.score);
 
-  const introLooksWeak = (
-    (introDanceability != null && introDanceability <= 0.45)
-    || (introEnergy != null && introEnergy <= 0.4)
-    || (hasProbableStart && probableStartSec >= 6)
-  );
+  // introLooksWeak: use API's introLooksSlow if confident, else fall back to heuristics.
+  const introLooksWeak = startRec != null && startRecConfidence >= 0.5
+    ? introLooksSlow || (introDanceability != null && introDanceability <= 0.45)
+    : (
+      (introDanceabilityFallback != null && introDanceabilityFallback <= 0.45)
+      || (introEnergy != null && introEnergy <= 0.4)
+      || (hasProbableStart && probableStartSec >= 6)
+    );
 
   const peakIsLateEnough = hasPeak
     && firstPeakStartSec >= Math.max(10, (hasProbableStart ? probableStartSec : 0) + 8)
     && (firstPeakScore == null || firstPeakScore >= 0.25);
 
-  // If intro is likely non-danceable, start from first peak to keep momentum.
-  if (introLooksWeak && peakIsLateEnough) {
+  // When API says intro is slow and there's a later danceability peak, skip to it.
+  if (introLooksWeak && laterDanceabilityPeak != null && laterDanceabilityPeak > 0) {
+    // laterDanceabilityPeak is a value (0-1), not a time; use peakZones for timing.
+    if (peakIsLateEnough) {
+      recommendedSec = Math.max(recommendedSec, firstPeakStartSec);
+    }
+  } else if (introLooksWeak && peakIsLateEnough) {
+    // If intro is likely non-danceable, start from first peak to keep momentum.
     recommendedSec = Math.max(recommendedSec, firstPeakStartSec);
   }
 
