@@ -403,3 +403,553 @@ test.describe('DJ Mix IHM - cache et file d attente', () => {
     await expect(page.locator('#queue-list .queue-item')).toHaveCount(1);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers supplémentaires
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Ajoute une chanson depuis la recherche et ferme l'overlay. */
+async function addTrackViaSearch(page, term) {
+  await page.fill('#search-input', term);
+  await page.press('#search-input', 'Enter');
+  await expect(page.locator('#search-overlay')).toBeVisible();
+  const addBtn = page.locator('.search-result-item[data-kind="song"] .add-btn').first();
+  await expect(addBtn).toBeVisible();
+  await addBtn.click();
+  await page.click('#search-close');
+}
+
+/** Génère N items de queue factices. */
+function makeQueueItems(count) {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `t${i + 1}`,
+    uri: `api:track:t${i + 1}`,
+    name: `Track ${i + 1}`,
+    artist: `Artist ${i + 1}`,
+    artUrl: '',
+    duration: 200000 + i * 10000,
+    loudnessDb: null,
+    cachePath: '',
+    ratingKey: '',
+    persistedSourceUrl: '',
+    sourceState: 'idle',
+  }));
+}
+
+const UISTATE_REF_ERRORS =
+  /currentIndex is not defined|deckBCueIndex is not defined|deckCueDeck is not defined|prevIsCrossfading is not defined|deckMixRatio is not defined|currentTrackId is not defined|isPlaying is not defined/;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHEMIN UTILISATEUR COMPLET
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('Chemin utilisateur complet', () => {
+  test('ajout via recherche → cue platine B → DnD → suppression', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(2), queueIndex: 0 });
+    await expect(page.locator('#queue-list .queue-item')).toHaveCount(2);
+
+    // 1. Ajoute un 3e morceau via la recherche
+    await addTrackViaSearch(page, 'new track');
+    await expect(page.locator('#queue-list .queue-item')).toHaveCount(3);
+
+    // 2. Met le 3e item en cue sur la platine B
+    const cueBBtn = page.locator('.queue-item[data-index="2"] .queue-cue[data-deck="B"]');
+    await cueBBtn.click();
+    await expect(cueBBtn).toHaveClass(/is-selected/);
+
+    // 3. Réorganise : déplace item 1 vers item 2 via DnD
+    await page.locator('.queue-item[data-index="1"]').dragTo(
+      page.locator('.queue-item[data-index="2"]'),
+    );
+    await expect(page.locator('#queue-list .queue-item')).toHaveCount(3);
+
+    // 4. Supprime le dernier item
+    await page.locator('#queue-list .queue-remove').last().click();
+    await expect(page.locator('#queue-list .queue-item')).toHaveCount(2);
+  });
+
+  test('AutoMix : ajout chanson → cue B → automix → toast sans Erreur', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(3), queueIndex: 0 });
+
+    // Ajoute un 4e item
+    await addTrackViaSearch(page, 'deep house');
+    await expect(page.locator('#queue-list .queue-item')).toHaveCount(4);
+
+    // Sélectionne un cue B sur item 2
+    const cueB = page.locator('.queue-item[data-index="2"] .queue-cue[data-deck="B"]');
+    await cueB.click();
+    await expect(cueB).toHaveClass(/is-selected/);
+
+    // Déclenche AutoMix
+    await page.click('#automix-btn');
+    const toast = page.locator('.toast');
+    if (await toast.count() > 0) {
+      await expect(toast).not.toContainText('Erreur');
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// File d'attente — comportements avancés
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('DJ Mix IHM - file d attente avancée', () => {
+  test('restaure la queue depuis le localStorage au rechargement', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(3), queueIndex: 1 });
+    await expect(page.locator('#queue-list .queue-item')).toHaveCount(3);
+  });
+
+  test('queue vide affiche le placeholder #empty-queue', async ({ page }) => {
+    await setupApp(page, { queueItems: [], queueIndex: 0 });
+    await expect(page.locator('#empty-queue')).toBeVisible();
+    await expect(page.locator('#queue-list .queue-item')).toHaveCount(0);
+  });
+
+  test('ajout via recherche incrémente le compteur d items', async ({ page }) => {
+    await setupApp(page);
+    await addTrackViaSearch(page, 'jazz');
+    await expect(page.locator('#queue-list .queue-item')).toHaveCount(1);
+    await addTrackViaSearch(page, 'techno');
+    await expect(page.locator('#queue-list .queue-item')).toHaveCount(2);
+  });
+
+  test('remove supprime uniquement l item ciblé', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(4), queueIndex: 0 });
+    await page.locator('.queue-item[data-index="2"] .queue-remove').click();
+    await expect(page.locator('#queue-list .queue-item')).toHaveCount(3);
+  });
+
+  test('clear queue conserve uniquement l item courant', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(4), queueIndex: 0 });
+    await page.click('#clear-queue-btn');
+    await expect(page.locator('#queue-list .queue-item')).toHaveCount(1);
+  });
+
+  test('réorganisation DnD conserve le nombre d items', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(3), queueIndex: 0 });
+    await page.locator('.queue-item[data-index="2"]').dragTo(
+      page.locator('.queue-item[data-index="0"]'),
+    );
+    await expect(page.locator('#queue-list .queue-item')).toHaveCount(3);
+  });
+
+  test('numéros 1-based visibles sur les items', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(3), queueIndex: 0 });
+    const nums = await page.locator('#queue-list .queue-num').allTextContents();
+    expect(nums.some((n) => /[1-9]/.test(n))).toBe(true);
+  });
+
+  test('chips BPM et genre affichées si présentes dans les données', async ({ page }) => {
+    const items = [{
+      id: 'bpm-1', uri: 'api:track:bpm-1', name: 'Bpm Track', artist: 'DJ',
+      artUrl: '', duration: 200000, loudnessDb: null, cachePath: '', ratingKey: '',
+      persistedSourceUrl: '', sourceState: 'idle', bpm: 128, genre: 'House',
+    }];
+    await setupApp(page, { queueItems: items, queueIndex: 0 });
+    await expect(page.locator('#queue-list .queue-chip')).toHaveCount(2);
+    await expect(page.locator('#queue-list')).toContainText('128 BPM');
+    await expect(page.locator('#queue-list')).toContainText('House');
+  });
+
+  test('item courant porte la classe is-current', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(3), queueIndex: 1 });
+    await expect(page.locator('#queue-list .queue-item.is-current')).toHaveCount(1);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cue — assigner une piste à une platine depuis la file
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('DJ Mix IHM - cue platines', () => {
+  test('cue A sélectionne le bouton is-selected', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(3), queueIndex: 0 });
+    const cueA = page.locator('.queue-item[data-index="1"] .queue-cue[data-deck="A"]');
+    await cueA.click();
+    await expect(cueA).toHaveClass(/is-selected/);
+  });
+
+  test('cue B sélectionne le bouton is-selected', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(3), queueIndex: 0 });
+    const cueB = page.locator('.queue-item[data-index="2"] .queue-cue[data-deck="B"]');
+    await cueB.click();
+    await expect(cueB).toHaveClass(/is-selected/);
+  });
+
+  test('cliquer cue sur un autre item désélectionne le précédent', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(3), queueIndex: 0 });
+    const cueB1 = page.locator('.queue-item[data-index="1"] .queue-cue[data-deck="B"]');
+    const cueB2 = page.locator('.queue-item[data-index="2"] .queue-cue[data-deck="B"]');
+    await cueB1.click();
+    await expect(cueB1).toHaveClass(/is-selected/);
+    await cueB2.click();
+    await expect(cueB2).toHaveClass(/is-selected/);
+    await expect(cueB1).not.toHaveClass(/is-selected/);
+  });
+
+  test('double-clic sur le même bouton cue le désélectionne', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(3), queueIndex: 0 });
+    const cueB = page.locator('.queue-item[data-index="1"] .queue-cue[data-deck="B"]');
+    await cueB.click();
+    await expect(cueB).toHaveClass(/is-selected/);
+    await cueB.click();
+    await expect(cueB).not.toHaveClass(/is-selected/);
+  });
+
+  test('bouton cue de l item 1 n est pas disabled par défaut', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(2), queueIndex: 0 });
+    await expect(page.locator('.queue-item[data-index="1"] .queue-cue[data-deck="A"]')).not.toBeDisabled();
+  });
+
+  test('cue A et cue B sur items différents peuvent coexister', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(4), queueIndex: 0 });
+    await page.locator('.queue-item[data-index="1"] .queue-cue[data-deck="A"]').click();
+    await page.locator('.queue-item[data-index="2"] .queue-cue[data-deck="B"]').click();
+    await expect(page.locator('.queue-cue.is-selected')).toHaveCount(2);
+  });
+
+  test('cue sur item puis suppression de cet item réinitialise le cue', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(3), queueIndex: 0 });
+    await page.locator('.queue-item[data-index="2"] .queue-cue[data-deck="B"]').click();
+    await expect(page.locator('.queue-cue.is-selected')).toHaveCount(1);
+    await page.locator('.queue-item[data-index="2"] .queue-remove').click();
+    await expect(page.locator('.queue-cue.is-selected')).toHaveCount(0);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AutoMix et AutoDJ
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('DJ Mix IHM - AutoMix et AutoDJ', () => {
+  test('bouton AutoMix visible', async ({ page }) => {
+    await setupApp(page);
+    await expect(page.locator('#automix-btn')).toBeVisible();
+  });
+
+  test('AutoDJ toggle change aria-pressed', async ({ page }) => {
+    await setupApp(page);
+    const btn = page.locator('#auto-mode-btn');
+    await expect(btn).toHaveAttribute('aria-pressed', 'false');
+    await btn.click();
+    await expect(btn).toHaveAttribute('aria-pressed', 'true');
+    await btn.click();
+    await expect(btn).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('AutoMix avec queue vide ne produit pas de toast d erreur', async ({ page }) => {
+    await setupApp(page, { queueItems: [], queueIndex: 0 });
+    await page.click('#automix-btn');
+    await expect(page.locator('.toast')).toHaveCount(0);
+  });
+
+  test('AutoMix avec 1 seul item ne produit pas de toast d erreur', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(1), queueIndex: 0 });
+    await page.click('#automix-btn');
+    await expect(page.locator('.toast')).toHaveCount(0);
+  });
+
+  test('AutoMix avec 2+ items déclenche un toast AutoMix', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(2), queueIndex: 0 });
+    await page.click('#automix-btn');
+    await expect(page.locator('.toast')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('.toast')).toContainText('AutoMix');
+  });
+
+  test('cue sélectionné avant AutoMix ne génère pas de toast Erreur', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(3), queueIndex: 0 });
+    await page.locator('.queue-item[data-index="2"] .queue-cue[data-deck="B"]').click();
+    await page.click('#automix-btn');
+    const toastCount = await page.locator('.toast').count();
+    if (toastCount > 0) {
+      await expect(page.locator('.toast')).not.toContainText('Erreur');
+    }
+  });
+
+  test('AutoDJ activé puis désactivé ne laisse pas de toast Erreur', async ({ page }) => {
+    await setupApp(page, { queueItems: makeQueueItems(3), queueIndex: 0 });
+    await page.click('#auto-mode-btn');
+    await page.waitForTimeout(200);
+    await page.click('#auto-mode-btn');
+    const toastCount = await page.locator('.toast').count();
+    if (toastCount > 0) {
+      await expect(page.locator('.toast')).not.toContainText('Erreur');
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Crossfader et contrôles de mix
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('DJ Mix IHM - crossfader et mix', () => {
+  test('crossfader démarre à 0', async ({ page }) => {
+    await setupApp(page);
+    await expect(page.locator('#deck-mix-slider')).toHaveValue('0');
+  });
+
+  test('déplacer le crossfader à 100 accepte la valeur', async ({ page }) => {
+    await setupApp(page);
+    await page.fill('#deck-mix-slider', '100');
+    await page.locator('#deck-mix-slider').dispatchEvent('input');
+    await expect(page.locator('#deck-mix-slider')).toHaveValue('100');
+  });
+
+  test('crossfader à 50 accepte la valeur', async ({ page }) => {
+    await setupApp(page);
+    await page.fill('#deck-mix-slider', '50');
+    await page.locator('#deck-mix-slider').dispatchEvent('input');
+    await expect(page.locator('#deck-mix-slider')).toHaveValue('50');
+  });
+
+  test('boutons +/- ajustent la durée crossfade', async ({ page }) => {
+    await setupApp(page);
+    const label = page.locator('#crossfade-value-mix');
+    const initial = await label.textContent();
+    await page.click('#crossfade-faster-btn');
+    expect(await label.textContent()).not.toBe(initial);
+    await page.click('#crossfade-slower-btn');
+    expect(await label.textContent()).toBe(initial);
+  });
+
+  test('mode transition changeable depuis le panel mix', async ({ page }) => {
+    await setupApp(page);
+    await page.selectOption('#mix-transition-mode', 'cut_transition');
+    await expect(page.locator('#mix-transition-mode')).toHaveValue('cut_transition');
+  });
+
+  test('Manual-lock bascule Auto-Fade ON/OFF', async ({ page }) => {
+    await setupApp(page);
+    await expect(page.locator('#manual-lock-btn')).toContainText('Auto-Fade: ON');
+    await page.click('#manual-lock-btn');
+    await expect(page.locator('#manual-lock-btn')).toContainText('Auto-Fade: OFF');
+  });
+
+  test('toggle durée max change le texte du bouton', async ({ page }) => {
+    await setupApp(page);
+    const toggle = page.locator('#track-max-duration-toggle');
+    const before = await toggle.textContent();
+    await toggle.click();
+    expect(await toggle.textContent()).not.toBe(before);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Platines
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('DJ Mix IHM - platines', () => {
+  test('les deux deck panels sont visibles', async ({ page }) => {
+    await setupApp(page);
+    await expect(page.locator('#deck-a-panel')).toBeVisible();
+    await expect(page.locator('#deck-b-panel')).toBeVisible();
+  });
+
+  test('les labels volume sont affichés', async ({ page }) => {
+    await setupApp(page);
+    await expect(page.locator('#deck-a-vol')).toBeVisible();
+    await expect(page.locator('#deck-b-vol')).toBeVisible();
+  });
+
+  test('les barres de progression existent dans le DOM', async ({ page }) => {
+    await setupApp(page);
+    await expect(page.locator('#deck-a-progress')).toBeVisible();
+    await expect(page.locator('#deck-b-progress')).toBeVisible();
+  });
+
+  test('clic launch deck A sans audio ne génère pas de ReferenceError', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await setupApp(page, { queueItems: makeQueueItems(1), queueIndex: 0 });
+    await page.click('#deck-a-launch');
+    await page.waitForTimeout(300);
+    expect(errors.filter((e) => UISTATE_REF_ERRORS.test(e))).toHaveLength(0);
+  });
+
+  test('clic launch deck B sans audio ne génère pas de ReferenceError', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await setupApp(page, { queueItems: makeQueueItems(2), queueIndex: 0 });
+    await page.click('#deck-b-launch');
+    await page.waitForTimeout(300);
+    expect(errors.filter((e) => UISTATE_REF_ERRORS.test(e))).toHaveLength(0);
+  });
+
+  test('les marqueurs AutoDJ et max-duration sont attachés au DOM', async ({ page }) => {
+    await setupApp(page);
+    await expect(page.locator('#deck-a-autodj-marker')).toBeAttached();
+    await expect(page.locator('#deck-b-autodj-marker')).toBeAttached();
+    await expect(page.locator('#deck-a-maxdur-marker')).toBeAttached();
+    await expect(page.locator('#deck-b-maxdur-marker')).toBeAttached();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Modes DJ
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('DJ Mix IHM - modes DJ', () => {
+  test('par défaut le mode Music est actif', async ({ page }) => {
+    await setupApp(page);
+    await expect(page.locator('#dj-mode-music-btn')).toHaveClass(/is-active/);
+    await expect(page.locator('#dance-genre-list')).toBeHidden();
+  });
+
+  test('passer en mode Dance affiche la liste de genres', async ({ page }) => {
+    await setupApp(page);
+    await page.click('#dj-mode-dance-btn');
+    await expect(page.locator('#dj-mode-dance-btn')).toHaveClass(/is-active/);
+    await expect(page.locator('#dance-genre-list')).toBeVisible();
+  });
+
+  test('repasser en mode Music masque la liste de genres', async ({ page }) => {
+    await setupApp(page);
+    await page.click('#dj-mode-dance-btn');
+    await page.click('#dj-mode-music-btn');
+    await expect(page.locator('#dance-genre-list')).toBeHidden();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FX
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('DJ Mix IHM - FX', () => {
+  test('les boutons FX principaux sont visibles', async ({ page }) => {
+    await setupApp(page);
+    await expect(page.locator('#fx-auto-bpm-btn')).toBeVisible();
+    await expect(page.locator('#fx-echo-btn')).toBeVisible();
+    await expect(page.locator('#fx-distortion-btn')).toBeVisible();
+  });
+
+  test('toggle Auto BPM ON puis OFF', async ({ page }) => {
+    await setupApp(page);
+    await page.click('#fx-auto-bpm-btn');
+    await expect(page.locator('#fx-auto-bpm-btn')).toContainText('ON');
+    await page.click('#fx-auto-bpm-btn');
+    await expect(page.locator('#fx-auto-bpm-btn')).toContainText('OFF');
+  });
+
+  test('toggle Echo ON', async ({ page }) => {
+    await setupApp(page);
+    await page.click('#fx-echo-btn');
+    await expect(page.locator('#fx-echo-btn')).toContainText('ON');
+  });
+
+  test('toggle Distortion ON', async ({ page }) => {
+    await setupApp(page);
+    await page.click('#fx-distortion-btn');
+    await expect(page.locator('#fx-distortion-btn')).toContainText('ON');
+  });
+
+  test('masquer puis afficher le panneau FX', async ({ page }) => {
+    await setupApp(page);
+    await expect(page.locator('.dj-fx-row')).toBeVisible();
+    await page.click('#fx-visibility-btn');
+    await expect(page.locator('.dj-fx-row')).toBeHidden();
+    await page.click('#fx-visibility-btn');
+    await expect(page.locator('.dj-fx-row')).toBeVisible();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Recherche avancée
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('DJ Mix IHM - recherche avancée', () => {
+  test('plusieurs recherches successives accumulent les items dans la queue', async ({ page }) => {
+    await setupApp(page);
+    await addTrackViaSearch(page, 'house');
+    await addTrackViaSearch(page, 'techno');
+    await expect(page.locator('#queue-list .queue-item')).toHaveCount(2);
+  });
+
+  test('recherche sans résultats n affiche pas d items songs', async ({ page }) => {
+    await setupApp(page, { onSearchRequest: () => ({ results: [] }) });
+    await page.fill('#search-input', 'noresult');
+    await page.press('#search-input', 'Enter');
+    await expect(page.locator('#search-overlay')).toBeVisible();
+    await expect(page.locator('#search-results .search-result-item[data-kind="song"]')).toHaveCount(0);
+  });
+
+  test('la touche Escape ferme l overlay de recherche', async ({ page }) => {
+    await setupApp(page);
+    await page.fill('#search-input', 'test');
+    await page.press('#search-input', 'Enter');
+    await expect(page.locator('#search-overlay')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#search-overlay')).toBeHidden();
+  });
+
+  test('bouton Fade ajoute dans la queue sans ReferenceError', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await setupApp(page);
+    await page.fill('#search-input', 'ambient');
+    await page.press('#search-input', 'Enter');
+    await expect(page.locator('#search-overlay')).toBeVisible();
+    const fadeBtn = page.locator('.search-result-item[data-kind="song"] .play-now-btn').first();
+    await expect(fadeBtn).toBeVisible();
+    await fadeBtn.click();
+    await page.waitForTimeout(300);
+    expect(errors.filter((e) => UISTATE_REF_ERRORS.test(e))).toHaveLength(0);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Régression uiState — aucune ReferenceError liée à la migration
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('DJ Mix - régression uiState', () => {
+  test('aucune ReferenceError au chargement avec queue vide', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await setupApp(page, { queueItems: [], queueIndex: 0 });
+    await page.waitForTimeout(500);
+    expect(errors.filter((e) => UISTATE_REF_ERRORS.test(e))).toHaveLength(0);
+  });
+
+  test('aucune ReferenceError avec queue de 5 items et interactions', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await setupApp(page, { queueItems: makeQueueItems(5), queueIndex: 2 });
+    await page.locator('.queue-item[data-index="3"] .queue-cue[data-deck="B"]').click();
+    await page.locator('.queue-item[data-index="1"] .queue-cue[data-deck="A"]').click();
+    await page.click('#automix-btn');
+    await page.click('#manual-lock-btn');
+    await page.fill('#deck-mix-slider', '50');
+    await page.locator('#deck-mix-slider').dispatchEvent('input');
+    await page.waitForTimeout(300);
+    expect(errors.filter((e) => UISTATE_REF_ERRORS.test(e))).toHaveLength(0);
+  });
+
+  test('launchDeckFromQueue ne lève pas currentIndex is not defined', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await setupApp(page, { queueItems: makeQueueItems(3), queueIndex: 0 });
+    await page.click('#deck-a-launch');
+    await page.click('#deck-b-launch');
+    await page.waitForTimeout(300);
+    expect(errors.filter((e) => /currentIndex is not defined/.test(e))).toHaveLength(0);
+  });
+
+  test('DnD réorganisation ne génère pas de ReferenceError', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await setupApp(page, { queueItems: makeQueueItems(4), queueIndex: 0 });
+    await page.locator('.queue-item[data-index="3"]').dragTo(
+      page.locator('.queue-item[data-index="1"]'),
+    );
+    await page.waitForTimeout(200);
+    expect(errors.filter((e) => UISTATE_REF_ERRORS.test(e))).toHaveLength(0);
+  });
+
+  test('reset complet via logout ne génère pas de ReferenceError', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await setupApp(page, { queueItems: makeQueueItems(3), queueIndex: 1 });
+    await page.click('#logout-btn');
+    await page.waitForTimeout(300);
+    expect(errors.filter((e) => UISTATE_REF_ERRORS.test(e))).toHaveLength(0);
+  });
+});

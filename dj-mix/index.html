@@ -56,8 +56,7 @@
             <div class="deck-panels" aria-live="polite">
               <div class="deck-panel" id="deck-a-panel">
                 <div class="deck-head">
-                  <span class="deck-title">Platine 1</span>
-                  <span class="deck-bpm" id="deck-a-bpm"></span>
+
                   <button class="deck-bpm-reset" id="deck-a-bpm-reset" title="Reset BPM" hidden>↺</button>
                   <span class="deck-stems-indicator" id="deck-a-stems-indicator" title="Stems chargés" hidden>🎼</span>
                   <span class="deck-vol" id="deck-a-vol">100%</span>
@@ -91,7 +90,6 @@
               </div>
               <div class="deck-panel" id="deck-b-panel">
                 <div class="deck-head">
-                  <span class="deck-title">Platine 2</span>
                   <span class="deck-bpm" id="deck-b-bpm"></span>
                   <button class="deck-bpm-reset" id="deck-b-bpm-reset" title="Reset BPM" hidden>↺</button>
                   <span class="deck-stems-indicator" id="deck-b-stems-indicator" title="Stems chargés" hidden>🎼</span>
@@ -334,6 +332,7 @@
           <div class="config-block">
             <div class="config-label">
               <span>Auto DJ FX</span>
+              <button id="auto-dj-fx-enabled-btn" class="auto-dj-fx-enable-btn" type="button" aria-pressed="true">AutoFX: ON</button>
             </div>
             <div class="setup-subtitle">Autoriser les effets que le robot peut declencher automatiquement.</div>
             <div class="auto-dj-fx-grid">

@@ -87,6 +87,7 @@ import {
 } from './lib/settingsStorage.js';
 import { DEFAULT_DOWNLOADER_API_URL, STORAGE_KEYS } from './lib/storageKeys.js';
 
+import { uiState } from './lib/uiState.js';
 const QUEUE_KEY = STORAGE_KEYS.queue;
 const DOWNLOADER_API_URL_KEY = STORAGE_KEYS.downloaderApiUrl;
 const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
@@ -107,10 +108,7 @@ const sessionBlobCache = new Map();
 const appState = createAppState();
 
 /** @type {Array<QueueItem>} */
-const queue = [];
-let currentIndex = -1;
-let currentTrackId = null;
-let isPlaying = false;
+const queue = uiState.queue; // alias → uiState.queue
 let pendingAutoplay = false;
 let playlistLoaded = false;
 let blobCleanupTimer = null;
@@ -124,11 +122,9 @@ let launchPreviewArtUrl = '';
 let launchPreviewTitle = '';
 let launchPreviewArtist = '';
 let launchPreviewDeck = null;
-let deckMixRatio = 0;
+let launchPreviewItem = null;
 let manualMixLock = false;
 let autoSuggestionRefreshInProgress = false;
-let deckBCueIndex = -1;
-let deckCueDeck = null;
 const deckMixDataByTrackId = new Map();
 
 // Auto DJ timing
@@ -150,8 +146,7 @@ let mixFeatures = {
   },
 };
 let fxControlsHidden = false;
-const deckDisplayItems = { A: null, B: null };
-let prevIsCrossfading = false;
+const deckDisplayItems = uiState.deckDisplayItems; // alias → uiState.deckDisplayItems
 let selectedTransitionMode = readTransitionModeSetting(MIX_TRANSITION_MODES);
 let ramFilterEnabled = readRamFilterEnabledSetting();
 let ramTotalMbOverride = readRamTotalMbOverrideSetting();
@@ -180,20 +175,32 @@ function updateAutoDjFxConfigUI() {
   );
   autoDjFxSettings = {
     ...autoDjFxSettings,
+    enabled: autoDjFxSettings.enabled !== false,
     minIntervalSec: intervals.minIntervalSec,
     maxIntervalSec: intervals.maxIntervalSec,
   };
 
   if (autoDjFxMinIntervalInput) {
     autoDjFxMinIntervalInput.value = String(intervals.minIntervalSec);
+    autoDjFxMinIntervalInput.disabled = autoDjFxSettings.enabled === false;
   }
   if (autoDjFxMaxIntervalInput) {
     autoDjFxMaxIntervalInput.value = String(intervals.maxIntervalSec);
+    autoDjFxMaxIntervalInput.disabled = autoDjFxSettings.enabled === false;
   }
 
   for (const toggleEl of autoDjFxToggleEls) {
     const type = String(toggleEl.dataset.autoFxType || '');
     toggleEl.checked = isAutoDjFxTypeAllowed(type);
+    toggleEl.disabled = autoDjFxSettings.enabled === false;
+  }
+
+  if (autoDjFxEnabledBtn) {
+    const enabled = autoDjFxSettings.enabled !== false;
+    autoDjFxEnabledBtn.classList.toggle('is-enabled', enabled);
+    autoDjFxEnabledBtn.textContent = `AutoFX: ${enabled ? 'ON' : 'OFF'}`;
+    autoDjFxEnabledBtn.setAttribute('aria-pressed', String(enabled));
+    autoDjFxEnabledBtn.setAttribute('aria-label', `Auto FX ${enabled ? 'actif' : 'inactif'}`);
   }
 
   if (autoDjFxStatus) {
@@ -387,8 +394,8 @@ function applyTransitionModeSetting(mode, options = {}) {
 
 function recalculateAutomixTimingIfNeeded(logEvent = 'autoDj: recalculating automix timing') {
   // If auto mode is enabled and a track is playing, recalculate timing
-  if (autoModeManager.isAutoModeEnabled() && currentIndex >= 0 && queue[currentIndex]) {
-    const currentItem = queue[currentIndex];
+  if (autoModeManager.isAutoModeEnabled() && uiState.currentIndex >= 0 && queue[uiState.currentIndex]) {
+    const currentItem = queue[uiState.currentIndex];
     const intervals = normalizeAutoDjFxIntervalSettings(
       autoDjFxSettings.minIntervalSec,
       autoDjFxSettings.maxIntervalSec,
@@ -477,6 +484,8 @@ const deckBProgressZones = document.getElementById('deck-b-zone-layer');
 const deckAFill = document.getElementById('deck-a-fill');
 const deckBFill = document.getElementById('deck-b-fill');
 const trackArtistB = document.getElementById('track-artist-b');
+const deckATitle = document.getElementById('deck-a-title');
+const deckBTitle = document.getElementById('deck-b-title');
 const deckABpm = document.getElementById('deck-a-bpm');
 const deckBBpm = document.getElementById('deck-b-bpm');
 const deckABpmReset = document.getElementById('deck-a-bpm-reset');
@@ -553,6 +562,7 @@ const djFxRow = document.querySelector('.dj-fx-row');
 const autoDjFxStatus = document.getElementById('auto-dj-fx-status');
 const autoDjFxMinIntervalInput = document.getElementById('auto-dj-fx-min-interval-input');
 const autoDjFxMaxIntervalInput = document.getElementById('auto-dj-fx-max-interval-input');
+const autoDjFxEnabledBtn = document.getElementById('auto-dj-fx-enabled-btn');
 const autoDjFxToggleEls = Array.from(document.querySelectorAll('[data-auto-fx-type]'));
 
 const tabBtns = document.querySelectorAll('.tab-bar-btn');
@@ -624,9 +634,10 @@ const mixControls = createMixControls({
   distortionBtn,
   echoBtn,
   fxVisibilityBtn,
-  getDeckBCueIndex: () => deckBCueIndex,
-  getDeckCueDeck: () => deckCueDeck,
-  getDeckMixRatio: () => deckMixRatio,
+  getDeckBCueIndex: () => uiState.deckBCueIndex,
+  getDeckCueDeck: () => uiState.deckCueDeck,
+  getDeckDisplayItems: () => deckDisplayItems,
+  getDeckMixRatio: () => uiState.deckMixRatio,
   getFxControlsHidden: () => fxControlsHidden,
   getManualMixLock: () => manualMixLock,
   getMixFeatures: () => mixFeatures,
@@ -636,8 +647,11 @@ const mixControls = createMixControls({
   onFocusDeckChanged: () => {
     updateDeckCueUI();
   },
+  setDeckCueDeck: (value) => {
+    uiState.deckCueDeck = value === 'B' ? 'B' : 'A';
+  },
   setDeckMixRatio: (value) => {
-    deckMixRatio = value;
+    uiState.deckMixRatio = value;
   },
   setMixFeatures: (value) => {
     mixFeatures = value;
@@ -665,10 +679,10 @@ const djFxController = createDjFxController({
   applyTransitionModeSetting,
   djFxButtons,
   getAutomixCurrentPlayingDeck: () => automixTimeline.currentPlayingDeck,
-  getCurrentIndex: () => currentIndex,
+  getCurrentIndex: () => uiState.currentIndex,
   getCurrentTrackMixData: () => autoModeManager.getCurrentTrackMixData?.(),
   getDeckDisplayItems: () => deckDisplayItems,
-  getDeckMixRatio: () => deckMixRatio,
+  getDeckMixRatio: () => uiState.deckMixRatio,
   getMixFeatures: () => mixFeatures,
   getNextTrackMixData: () => autoModeManager.getNextTrackMixData?.(),
   getPlayer: () => player,
@@ -691,9 +705,9 @@ const {
 } = djFxController;
 
 const saveQueue = () => {
-  logDebug('saveQueue()', { currentIndex, length: queue.length });
+  logDebug('saveQueue()', { currentIndex: uiState.currentIndex, length: queue.length });
   saveQueueToStorage({
-    currentIndex,
+    currentIndex: uiState.currentIndex,
     queue,
     storageKey: QUEUE_KEY,
   });
@@ -711,13 +725,13 @@ const restoreQueue = () => {
     queue.push(item);
   }
 
-  currentIndex = restored.index;
-  if (currentIndex >= queue.length) currentIndex = queue.length - 1;
-  currentTrackId = queue[currentIndex]?.id ?? null;
+  uiState.currentIndex = restored.index;
+  if (uiState.currentIndex >= queue.length) uiState.currentIndex = queue.length - 1;
+  uiState.currentTrackId = queue[uiState.currentIndex]?.id ?? null;
   logInfo('restoreQueue(): queue restored', {
-    currentIndex,
+    currentIndex: uiState.currentIndex,
     length: queue.length,
-    currentTrackId,
+    currentTrackId: uiState.currentTrackId,
   });
 };
 
@@ -740,42 +754,45 @@ const uiRenderer = createDjMixRenderer({
   deckAFill,
   deckALaunchBtn,
   deckAPanel,
+  deckATitle,
   deckAVol,
   deckBBpm,
   deckBBpmReset,
   deckBFill,
   deckBLaunchBtn,
   deckBPanel,
+  deckBTitle,
   deckBVol,
   emptyQueue,
-  getCurrentIndex: () => currentIndex,
-  getCurrentTrackId: () => currentTrackId,
-  getDeckBCueIndex: () => deckBCueIndex,
-  getDeckCueDeck: () => deckCueDeck,
+  getCurrentIndex: () => uiState.currentIndex,
+  getCurrentTrackId: () => uiState.currentTrackId,
+  getDeckBCueIndex: () => uiState.deckBCueIndex,
+  getDeckCueDeck: () => uiState.deckCueDeck,
   getDeckDisplayItems: () => deckDisplayItems,
-  getDeckMixRatio: () => deckMixRatio,
+  getDeckMixRatio: () => uiState.deckMixRatio,
   getDjMode: () => djMode,
   getFocusDeck,
   getInactiveDeck,
-  getIsPlaying: () => isPlaying,
+  getIsPlaying: () => uiState.isPlaying,
   getLaunchPreviewState: () => ({
     active: launchPreviewActive,
     artUrl: launchPreviewArtUrl,
     artist: launchPreviewArtist,
     deck: launchPreviewDeck,
+    item: launchPreviewItem,
     title: launchPreviewTitle,
   }),
   getPlayer: () => player,
-  getPrevIsCrossfading: () => prevIsCrossfading,
+  getPrevIsCrossfading: () => uiState.prevIsCrossfading,
   getQueue: () => queue,
   nextAlbumArt,
   nextArtPlaceholder,
   queueList,
   setDeckMixRatio: (value) => {
-    deckMixRatio = value;
+    uiState.deckMixRatio = value;
   },
   setPrevIsCrossfading: (value) => {
-    prevIsCrossfading = value;
+    uiState.prevIsCrossfading = value;
   },
   trackArtist,
   trackArtistA,
@@ -801,7 +818,7 @@ const playlistManager = createPlaylistManager({
   cacheYearFilterEl,
   deleteLocalCacheSong,
   escHtml,
-  getCurrentIndex: () => currentIndex,
+  getCurrentIndex: () => uiState.currentIndex,
   getDownloaderApiUrl,
   getPlayer: () => player,
   getPlaylistLoaded: () => playlistLoaded,
@@ -810,7 +827,7 @@ const playlistManager = createPlaylistManager({
   renderQueue,
   saveQueue,
   setCurrentIndex: (value) => {
-    currentIndex = value;
+    uiState.currentIndex = value;
   },
   setPendingAutoplay: (value) => {
     pendingAutoplay = value;
@@ -888,6 +905,35 @@ function applyDebugLogsSetting(enabled, options = {}) {
   } else {
     logWarn('debug.mode.disabled', { enabled: safeEnabled });
   }
+}
+
+/**
+ * Central deck state controller.
+ * Assigns an item (or null) to a deck and synchronises all dependent UI in one shot:
+ *   - deckDisplayItems mutation
+ *   - stem button state
+ *   - deck title/meta labels (refreshDeckMetaDisplays)
+ *   - cue panel highlight (updateDeckCueUI)
+ *
+ * Always use this instead of writing deckDisplayItems[deck] directly so that UI
+ * and internal state can never diverge.
+ *
+ * @param {'A'|'B'} deck
+ * @param {object|null} item  Queue item, or null to clear the deck.
+ */
+function setDeckItem(deck, item) {
+  const safeDeck = deck === 'B' ? 'B' : 'A';
+  deckDisplayItems[safeDeck] = item ?? null;
+
+  const hasStemsInCache = !!(
+    item?.localStemUrls?.vocalsUrl || item?.localStemUrls?.instrumentalUrl ||
+    item?.stems?.vocalsUrl || item?.stems?.instrumentalUrl
+  );
+  stemsLoadedPerDeck[safeDeck] = hasStemsInCache;
+  updateStemButtonState(safeDeck);
+
+  uiRenderer.refreshDeckMetaDisplays();
+  updateDeckCueUI();
 }
 
 /**
@@ -1126,7 +1172,7 @@ function scrollMixControlIntoView() {
 
 const autoFadeManager = new AutoFadeManager({
   getQueueLength: () => queue.length,
-  getCurrentIndex: () => currentIndex,
+  getCurrentIndex: () => uiState.currentIndex,
   isLocked: () => manualMixLock,
   onSkipLocked: () => showToast('Auto-fade verrouille (mix manuel)'),
   onStart: () => {
@@ -1144,8 +1190,8 @@ const autoFadeManager = new AutoFadeManager({
 const autoModeManager = createAutoModeManager({
   getDownloaderApiUrl,
   getQueue: () => queue,
-  getCurrentTrackId: () => currentTrackId,
-  getCurrentTrackIndex: () => currentIndex,
+  getCurrentTrackId: () => uiState.currentTrackId,
+  getCurrentTrackIndex: () => uiState.currentIndex,
   searchTracksViaApi,
   addToQueue,
   showToast,
@@ -1279,7 +1325,7 @@ function setDjMode(mode) {
   renderDjModeUI();
   renderQueue();
   uiRenderer.refreshDeckMetaDisplays();
-  if (player?._lastDeckState) renderDeckState(player._lastDeckState);
+  if (uiState.lastDeckState) renderDeckState(uiState.lastDeckState);
   logDebug('djMode: changed', { mode, bpm: getActiveDeckBpm() });
 }
 
@@ -1315,9 +1361,9 @@ danceGenreList?.addEventListener('change', () => {
   restoreQueue();
   if (queue.length) {
     renderQueue();
-    if (currentIndex >= 0 && queue[currentIndex]) {
-      deckDisplayItems.A = queue[currentIndex];
-      updateNowPlaying(queue[currentIndex]);
+    if (uiState.currentIndex >= 0 && queue[uiState.currentIndex]) {
+      setDeckItem('A', queue[uiState.currentIndex]);
+      updateNowPlaying(queue[uiState.currentIndex]);
     }
   }
   startBlobCleanupLoop();
@@ -1376,22 +1422,22 @@ async function connectLocal() {
 
 function hookPlayerEvents() {
   player.addEventListener('ready', async () => {
-    logInfo('player.ready', { pendingAutoplay, currentIndex, queueLength: queue.length });
+    logInfo('player.ready', { pendingAutoplay, currentIndex: uiState.currentIndex, queueLength: queue.length });
     // showToast('Platines locales prêtes');
-    applyDeckMixRatio(deckMixRatio, 0);
+    applyDeckMixRatio(uiState.deckMixRatio, 0);
     player.setMixFeatures(mixFeatures);
 
-    if (pendingAutoplay && currentIndex >= 0 && queue[currentIndex]) {
+    if (pendingAutoplay && uiState.currentIndex >= 0 && queue[uiState.currentIndex]) {
       pendingAutoplay = false;
-      await startPlaybackForIndex(currentIndex, 'play');
+      await startPlaybackForIndex(uiState.currentIndex, 'play');
     }
   });
 
   player.addEventListener('statechange', ({ detail }) => {
     logDebug('player.statechange', detail);
-    isPlaying = !detail.paused;
+    uiState.isPlaying = !detail.paused;
     if ('mediaSession' in navigator) {
-      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+      navigator.mediaSession.playbackState = uiState.isPlaying ? 'playing' : 'paused';
     }
     renderQueue();
   });
@@ -1405,21 +1451,25 @@ function hookPlayerEvents() {
 
     if (autoModeManager.isAutoModeEnabled()) {
       const dueAutoFxEvents = autoModeManager.consumeReadyAutoFxEvents(position, {
-        currentTrackId: queue[currentIndex]?.id || null,
+        currentTrackId: queue[uiState.currentIndex]?.id || null,
       });
       for (const event of dueAutoFxEvents) {
         triggerAutoDjCreativeFxEvent(event);
       }
 
       if (autoDjNextFxCountdown) {
-        const pending = autoModeManager.getPendingAutoFxEvents();
-        const next = pending.find((e) => e.timeMs > position);
-        if (next) {
-          const secLeft = Math.ceil((next.timeMs - position) / 1000);
-          autoDjNextFxCountdown.textContent = `FX ${secLeft}s`;
-          autoDjNextFxCountdown.hidden = false;
-        } else {
+        if (autoDjFxSettings.enabled === false) {
           autoDjNextFxCountdown.hidden = true;
+        } else {
+          const pending = autoModeManager.getPendingAutoFxEvents();
+          const next = pending.find((e) => e.timeMs > position);
+          if (next) {
+            const secLeft = Math.ceil((next.timeMs - position) / 1000);
+            autoDjNextFxCountdown.textContent = `FX ${secLeft}s`;
+            autoDjNextFxCountdown.hidden = false;
+          } else {
+            autoDjNextFxCountdown.hidden = true;
+          }
         }
       }
     } else if (autoDjNextFxCountdown) {
@@ -1443,7 +1493,7 @@ function hookPlayerEvents() {
         .then((added) => {
           if (added) {
             logDebug('autoDj: pending track added, triggering automix', {});
-            const nextIdx = currentIndex + 1;
+            const nextIdx = uiState.currentIndex + 1;
             if (nextIdx < queue.length) {
               autoMixBtn?.click?.();
             }
@@ -1466,12 +1516,12 @@ function hookPlayerEvents() {
 
   player.addEventListener('trackend', () => {
     logInfo('player.trackend');
-    isPlaying = false;
+    uiState.isPlaying = false;
     showCrossfadeRing(false);
     renderQueue();
     
     // Trigger auto mode search on track end
-    const currentTrack = queue[currentIndex];
+    const currentTrack = queue[uiState.currentIndex];
     if (currentTrack) {
       autoModeManager.onTrackFinished(currentTrack);
     }
@@ -1495,29 +1545,30 @@ function hookPlayerEvents() {
     });
 
     player.addEventListener('deckstate', ({ detail }) => {
+      uiState.lastDeckState = detail;
       renderDeckState(detail);
     });
 }
 
 autoMixBtn?.addEventListener('click', async () => {
   if (!player || player.isCrossfading) return;
-  const hasCue = deckBCueIndex >= 0 && deckBCueIndex < queue.length;
-  const inactiveDeck = hasCue && (deckCueDeck === 'A' || deckCueDeck === 'B')
-    ? deckCueDeck
+  const hasCue = uiState.deckBCueIndex >= 0 && uiState.deckBCueIndex < queue.length;
+  const inactiveDeck = hasCue && (uiState.deckCueDeck === 'A' || uiState.deckCueDeck === 'B')
+    ? uiState.deckCueDeck
     : getResolvedInactiveDeck();
   const preparedItem = deckDisplayItems[inactiveDeck];
   const preparedIndex = preparedItem ? queue.findIndex((item) => item.id === preparedItem.id) : -1;
-  const sequentialNextIndex = currentIndex + 1 < queue.length ? currentIndex + 1 : -1;
-  const preferredIndex = hasCue ? deckBCueIndex : sequentialNextIndex;
+  const sequentialNextIndex = uiState.currentIndex + 1 < queue.length ? uiState.currentIndex + 1 : -1;
+  const preferredIndex = hasCue ? uiState.deckBCueIndex : sequentialNextIndex;
   const canUsePreparedIndex = preparedIndex >= 0
-    && (hasCue ? preparedIndex === deckBCueIndex : preparedIndex === sequentialNextIndex);
+    && (hasCue ? preparedIndex === uiState.deckBCueIndex : preparedIndex === sequentialNextIndex);
   const nextIndex = canUsePreparedIndex
     ? preparedIndex
     : (preferredIndex >= 0 ? preferredIndex : (queue.length > 1 ? 0 : -1));
   if (nextIndex < 0) return;
 
   logInfo('automix.click', {
-    currentIndex,
+    currentIndex: uiState.currentIndex,
     nextIndex,
     preparedIndex,
     preferredIndex,
@@ -1585,16 +1636,15 @@ async function launchDeckFromQueue(deck, options = {}) {
 
   let targetDeck = deck === 'B' ? 'B' : 'A';
 
-  const fallbackIndex = currentIndex >= 0 && queue[currentIndex] ? currentIndex : 0;
+  const fallbackIndex = uiState.currentIndex >= 0 && queue[uiState.currentIndex] ? uiState.currentIndex : 0;
   const inactiveDeck = getResolvedInactiveDeck();
   const deckItemIndex = deckDisplayItems[targetDeck]
     ? queue.findIndex((q) => q.id === deckDisplayItems[targetDeck]?.id)
     : -1;
 
   let targetIndex = fallbackIndex;
-  if (options.useCue === true && deckBCueIndex >= 0 && queue[deckBCueIndex]) {
-    targetIndex = deckBCueIndex;
-    deckBCueIndex = -1;
+  if (options.useCue === true && uiState.deckBCueIndex >= 0 && queue[uiState.deckBCueIndex]) {
+    targetIndex = uiState.deckBCueIndex;
   } else if (deckItemIndex >= 0) {
     targetIndex = deckItemIndex;
   } else if (targetDeck === inactiveDeck) {
@@ -1608,7 +1658,7 @@ async function launchDeckFromQueue(deck, options = {}) {
   logInfo('launchDeckFromQueue(): deck load requested', {
     deck: targetDeck,
     targetIndex,
-    currentIndex,
+    currentIndex: uiState.currentIndex,
     itemId: item.id,
     itemName: item.name,
     options,
@@ -1616,6 +1666,8 @@ async function launchDeckFromQueue(deck, options = {}) {
 
     try {
       await preloadMixDataForDeckItem(item, targetDeck);
+      setDeckItem(targetDeck, item);
+      updatePlannedStartMarker();
       const sourceUrl = await ensureLocalSource(item);
       const isFocusDeck = targetDeck === getResolvedActiveDeck();
       const paused = typeof options.paused === 'boolean' ? options.paused : !isFocusDeck;
@@ -1628,17 +1680,16 @@ async function launchDeckFromQueue(deck, options = {}) {
         stems: item.stems,
         startPositionMs: Math.max(0, Number(item.autoDjStartOffsetMs) || 0),
       }, { makeActive: false, paused });
-      deckDisplayItems[targetDeck] = item;
-      updatePlannedStartMarker();
     
       if (isFocusDeck) {
-        currentIndex = targetIndex;
-        currentTrackId = item.id;
+        uiState.currentIndex = targetIndex;
+        uiState.currentTrackId = item.id;
         updateNowPlaying(item, targetDeck);
-        isPlaying = true;
+        uiState.isPlaying = true;
         launchPreviewTitle = '';
         launchPreviewArtist = '';
         launchPreviewDeck = null;
+        launchPreviewItem = null;
         prefetchNext(getFollowingQueueIndex(targetIndex));
         // Reapply DJ mode preset with updated BPM, and suggest genre chip
         applyDjModeFxPreset(djMode, item.bpm || null);
@@ -1649,7 +1700,8 @@ async function launchDeckFromQueue(deck, options = {}) {
         launchPreviewTitle = item.name || '';
         launchPreviewArtist = item.artist || '';
         launchPreviewDeck = targetDeck;
-        deckCueDeck = targetDeck;
+        launchPreviewItem = item;
+        uiState.deckCueDeck = targetDeck;
         updateUpcomingArtwork();
       }
       renderQueue();
@@ -1728,7 +1780,7 @@ deckMixSlider?.addEventListener('input', () => {
 
 deckALaunchBtn?.addEventListener('click', async () => {
   if (!player) return;
-  const lastDetail = player._lastDeckState;
+  const lastDetail = uiState.lastDeckState;
   if (lastDetail?.deckA?.playing) {
     player.pauseDeck('A');
   } else if (lastDetail?.deckA?.hasSrc) {
@@ -1740,7 +1792,7 @@ deckALaunchBtn?.addEventListener('click', async () => {
 
 deckBLaunchBtn?.addEventListener('click', async () => {
   if (!player) return;
-  const lastDetail = player._lastDeckState;
+  const lastDetail = uiState.lastDeckState;
   if (lastDetail?.deckB?.playing) {
     player.pauseDeck('B');
   } else if (lastDetail?.deckB?.hasSrc) {
@@ -1814,6 +1866,20 @@ autoDjFxMaxIntervalInput?.addEventListener('change', () => {
   persistAutoDjFxSettings(autoDjFxSettings);
   updateAutoDjFxConfigUI();
   recalculateAutomixTimingIfNeeded('autoDjFx: max interval changed');
+});
+
+autoDjFxEnabledBtn?.addEventListener('click', () => {
+  const nextEnabled = autoDjFxSettings.enabled === false;
+  autoDjFxSettings = {
+    ...autoDjFxSettings,
+    enabled: nextEnabled,
+  };
+  persistAutoDjFxSettings(autoDjFxSettings);
+  updateAutoDjFxConfigUI();
+  if (!nextEnabled && autoDjNextFxCountdown) {
+    autoDjNextFxCountdown.hidden = true;
+  }
+  showToast(`AutoFX ${nextEnabled ? 'activé' : 'désactivé'}`);
 });
 
 for (const toggleEl of autoDjFxToggleEls) {
@@ -1945,8 +2011,8 @@ autoModeBtn?.addEventListener('click', () => {
   const isEnabled = autoModeManager.toggleAutoMode();
   syncAutoModeButtonUI(isEnabled);
 
-  if (isEnabled && currentIndex >= 0 && queue[currentIndex]) {
-    const currentItem = queue[currentIndex];
+  if (isEnabled && uiState.currentIndex >= 0 && queue[uiState.currentIndex]) {
+    const currentItem = queue[uiState.currentIndex];
     autoModeManager.scheduleAutomixTiming(currentItem);
     autoModeManager.searchAndAddNextTrack(currentItem).catch((err) => {
       logWarn('autoDj: immediate search on enable failed', { error: err?.message });
@@ -2007,7 +2073,7 @@ function triggerAutoDjCreativeFxEvent(event) {
 
 function updateSuggestionRefreshButtons() {
   const isEnabled = autoModeManager.isAutoModeEnabled();
-  const hasCurrent = isPlaying && currentIndex >= 0 && Boolean(queue[currentIndex]);
+  const hasCurrent = uiState.isPlaying && uiState.currentIndex >= 0 && Boolean(queue[uiState.currentIndex]);
   const activeDeck = getResolvedActiveDeck();
   const shouldShow = isEnabled && hasCurrent;
 
@@ -2024,7 +2090,7 @@ function updateSuggestionRefreshButtons() {
 
 function findAutoSuggestedTrackIndexAfterCurrent(currentTrack) {
   const referenceId = currentTrack?.id || null;
-  for (let i = Math.max(0, currentIndex + 1); i < queue.length; i += 1) {
+  for (let i = Math.max(0, uiState.currentIndex + 1); i < queue.length; i += 1) {
     const item = queue[i];
     if (!item || item.queueSource !== 'auto-dj') continue;
     if (!referenceId || !item.autoDjReferenceTrackId || item.autoDjReferenceTrackId === referenceId) {
@@ -2041,7 +2107,7 @@ async function refreshAutoSuggestionForCurrentTrack() {
     return;
   }
 
-  const currentItem = queue[currentIndex];
+  const currentItem = queue[uiState.currentIndex];
   if (!currentItem) {
     showToast('Aucune piste en cours', true);
     return;
@@ -2062,7 +2128,7 @@ async function refreshAutoSuggestionForCurrentTrack() {
 
     if (previousAutoSuggestion) {
       const idx = queue.indexOf(previousAutoSuggestion);
-      if (idx >= 0 && idx !== currentIndex) {
+      if (idx >= 0 && idx !== uiState.currentIndex) {
         removeFromQueue(idx);
       }
     }
@@ -2091,7 +2157,7 @@ deckBRefreshSuggestionBtn?.addEventListener('click', () => {
 
 function updateAutoDjMarker() {
   const isEnabled = autoModeManager.isAutoModeEnabled();
-  const durationMs = playbackDurationMs > 0 ? playbackDurationMs : (queue[currentIndex]?.duration ?? 0);
+  const durationMs = playbackDurationMs > 0 ? playbackDurationMs : (queue[uiState.currentIndex]?.duration ?? 0);
   const hasTiming = automixTimeline.nextTriggerMs > 0 && durationMs > 0 && !automixTimeline.triggeredForTrack;
 
   // Hide both markers first
@@ -2134,18 +2200,18 @@ function updateMaxDurationMarker() {
   if (deckBMaxDurMarker) deckBMaxDurMarker.hidden = true;
 
   const effectiveMaxDurationSec = trackMaxDurationEnabled
-    ? (isPlaying ? trackMaxDurationAppliedSec : trackMaxDurationSec)
+    ? (uiState.isPlaying ? trackMaxDurationAppliedSec : trackMaxDurationSec)
     : 0;
   if (effectiveMaxDurationSec <= 0) return;
 
-  const durationMs = playbackDurationMs > 0 ? playbackDurationMs : (queue[currentIndex]?.duration ?? 0);
+  const durationMs = playbackDurationMs > 0 ? playbackDurationMs : (queue[uiState.currentIndex]?.duration ?? 0);
   if (durationMs <= 0) return;
 
   const maxMs = effectiveMaxDurationSec * 1000;
   if (maxMs >= durationMs) return;
 
   let markerMs = maxMs;
-  const currentItem = queue[currentIndex];
+  const currentItem = queue[uiState.currentIndex];
   const fallbackMixData = autoModeManager.getCurrentTrackMixData?.();
   const mixData = getTrackMixData(currentItem) || fallbackMixData || null;
 
@@ -2232,7 +2298,7 @@ function renderMixZones() {
     }
   };
 
-  const playbackDuration = playbackDurationMs > 0 ? playbackDurationMs : (queue[currentIndex]?.duration ?? 0);
+  const playbackDuration = playbackDurationMs > 0 ? playbackDurationMs : (queue[uiState.currentIndex]?.duration ?? 0);
   const mixDataA = getTrackMixData(deckDisplayItems.A)
     || (automixTimeline.currentPlayingDeck === 'A' ? autoModeManager.getCurrentTrackMixData?.() : null)
     || (automixTimeline.currentPlayingDeck !== 'A' ? autoModeManager.getNextTrackMixData?.() : null);
@@ -2269,25 +2335,25 @@ deckBInstruBtn?.addEventListener('click', () => {
 clearQueueBtn.addEventListener('click', () => {
   if (!queue.length) return;
 
-  if (currentTrackId) {
-    const current = queue.find((item) => item.id === currentTrackId);
+  if (uiState.currentTrackId) {
+    const current = queue.find((item) => item.id === uiState.currentTrackId);
     if (current) {
       for (const item of queue) {
-        if (item.id !== currentTrackId) releaseLocalBlob(item);
+        if (item.id !== uiState.currentTrackId) releaseLocalBlob(item);
       }
       queue.length = 0;
       queue.push(current);
-      currentIndex = 0;
+      uiState.currentIndex = 0;
     } else {
       for (const item of queue) releaseLocalBlob(item);
       queue.length = 0;
-      currentIndex = -1;
-      currentTrackId = null;
+      uiState.currentIndex = -1;
+      uiState.currentTrackId = null;
     }
   } else {
     for (const item of queue) releaseLocalBlob(item);
     queue.length = 0;
-    currentIndex = -1;
+    uiState.currentIndex = -1;
   }
 
   renderQueue();
@@ -2484,7 +2550,7 @@ async function triggerSearchFade(track) {
   if (!player || player.isCrossfading) return;
 
   // If nothing is currently playing, keep the existing direct play behavior.
-  if (!isPlaying) {
+  if (!uiState.isPlaying) {
     await addToQueue(track, { playNow: true, preferFade: false });
     return;
   }
@@ -2498,8 +2564,8 @@ async function triggerSearchFade(track) {
   if (targetIndex < 0) return;
 
   const inactiveDeck = getResolvedInactiveDeck();
-  deckBCueIndex = targetIndex;
-  deckCueDeck = inactiveDeck;
+  uiState.deckBCueIndex = targetIndex;
+  uiState.deckCueDeck = inactiveDeck;
   updateDeckCueUI();
   renderQueue();
 
@@ -2521,6 +2587,8 @@ async function addToQueue(track, options = {}) {
   const duration = getTrackDurationMs(track);
   const stems = extractStemSourceUrls(track);
   const audioFeatures = extractAudioFeatures(track);
+  const bpm = extractTrackBpm({ ...track, audioFeatures });
+  const genre = extractTrackGenre(track);
   const suggestedStartOffsetMs = resolveTrackStartOffsetMs(track);
   const item = {
     id: track.id || track.ratingKey || track.uri || track.name,
@@ -2529,7 +2597,8 @@ async function addToQueue(track, options = {}) {
     artist: track.artists ? track.artists.map((a) => a.name).join(', ') : (track.artist || 'Artiste inconnu'),
     artUrl,
     duration,
-    bpm: track.bpm || track.tempo || null,
+    bpm,
+    genre,
     loudnessDb: extractTrackLoudnessDb(track),
     audioFeatures,
     stems: {
@@ -2560,12 +2629,12 @@ async function addToQueue(track, options = {}) {
         (q) => q.id === item.id || (q.name === item.name && q.artist === item.artist)
       );
       if (existingIndex >= 0) {
-        const useFade = isPlaying && preferFade;
+        const useFade = uiState.isPlaying && preferFade;
         if (useFade) showCrossfadeRing(true);
         try {
           await startPlaybackForIndex(existingIndex, useFade ? 'crossfade' : 'play');
-          currentIndex = existingIndex;
-          currentTrackId = queue[existingIndex]?.id ?? null;
+          uiState.currentIndex = existingIndex;
+          uiState.currentTrackId = queue[existingIndex]?.id ?? null;
           renderQueue();
           closeSearch();
         } finally {
@@ -2588,13 +2657,13 @@ async function addToQueue(track, options = {}) {
   });
   renderQueue();
 
-  if (playNow && player && !player.isCrossfading && isPlaying) {
+  if (playNow && player && !player.isCrossfading && uiState.isPlaying) {
     const useFade = Boolean(preferFade);
     if (useFade) showCrossfadeRing(true);
     try {
       await startPlaybackForIndex(addedIndex, useFade ? 'crossfade' : 'play');
-      currentIndex = addedIndex;
-      currentTrackId = item.id;
+      uiState.currentIndex = addedIndex;
+      uiState.currentTrackId = item.id;
       renderQueue();
       closeSearch();
     } finally {
@@ -2603,19 +2672,19 @@ async function addToQueue(track, options = {}) {
     return;
   }
 
-  if (!isPlaying && !player?.isCrossfading) {
-    currentIndex = addedIndex;
-    currentTrackId = item.id;
+  if (!uiState.isPlaying && !player?.isCrossfading) {
+    uiState.currentIndex = addedIndex;
+    uiState.currentTrackId = item.id;
     renderQueue();
 
     if (player?.isReady) {
-      await startPlaybackForIndex(currentIndex, 'play');
+      await startPlaybackForIndex(uiState.currentIndex, 'play');
     } else {
       pendingAutoplay = true;
     }
-  } else if (currentIndex < 0) {
-    currentIndex = 0;
-    currentTrackId = queue[0]?.id ?? null;
+  } else if (uiState.currentIndex < 0) {
+    uiState.currentIndex = 0;
+    uiState.currentTrackId = queue[0]?.id ?? null;
     renderQueue();
   }
 
@@ -2645,31 +2714,33 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     index,
     mode,
     targetDeck,
-    currentIndex,
-    currentTrackId,
+    currentIndex: uiState.currentIndex,
+    currentTrackId: uiState.currentTrackId,
     itemId: item.id,
     itemName: item.name,
   });
 
-  if (mode === 'crossfade' && currentTrackId && item.id !== currentTrackId) {
+  if (mode === 'crossfade' && uiState.currentTrackId && item.id !== uiState.currentTrackId) {
     launchPreviewActive = true;
     launchPreviewArtUrl = item.artUrl || '';
     launchPreviewTitle = item.name || '';
     launchPreviewArtist = item.artist || '';
     launchPreviewDeck = targetDeck;
+    launchPreviewItem = item;
   } else {
     launchPreviewActive = false;
     launchPreviewArtUrl = '';
     launchPreviewTitle = '';
     launchPreviewArtist = '';
     launchPreviewDeck = null;
+    launchPreviewItem = null;
   }
   updateUpcomingArtwork();
 
   try {
     touchQueueItem(item);
-    deckDisplayItems[targetDeck] = item;
-    if (mode === 'play') deckDisplayItems[targetDeck === 'A' ? 'B' : 'A'] = null;
+    setDeckItem(targetDeck, item);
+    if (mode === 'play') setDeckItem(targetDeck === 'A' ? 'B' : 'A', null);
     updateNowPlaying(item, targetDeck);
 
     const cachedMixData = getTrackMixData(item);
@@ -2688,13 +2759,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     }
 
     updatePlannedStartMarker();
-    
-    // Check if stems are already available in cache
-    const hasStemsInCache = !!(item.localStemUrls?.vocalsUrl || item.localStemUrls?.instrumentalUrl || 
-                                item.stems?.vocalsUrl || item.stems?.instrumentalUrl);
-    stemsLoadedPerDeck[targetDeck] = hasStemsInCache;
-    updateStemButtonState(targetDeck);
-    
+
     const sourceUrl = await ensureLocalSource(item);
     logDebug('startPlaybackForIndex(): source resolved', {
       index,
@@ -2744,14 +2809,14 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     }
 
     if (mode === 'autofade' || mode === 'crossfade') {
-      currentIndex = index;
-      currentTrackId = item.id;
+      uiState.currentIndex = index;
+      uiState.currentTrackId = item.id;
     } else {
-      currentIndex = index;
-      currentTrackId = item.id;
+      uiState.currentIndex = index;
+      uiState.currentTrackId = item.id;
     }
 
-    // Sync deckMixRatio to the actual post-fade state so volumes stay consistent
+    // Sync uiState.deckMixRatio to the actual post-fade state so volumes stay consistent
     if ((mode === 'autofade' || mode === 'crossfade') && player) {
       const newRatio = targetDeck === 'B' ? 1 : 0;
       applyDeckMixRatio(newRatio, 0);
@@ -2769,19 +2834,17 @@ async function startPlaybackForIndex(index, mode, options = {}) {
           nextItemId: nextItem.id,
           nextItemName: nextItem.name,
         });
+
+        setDeckItem(inactiveDeck, nextItem);
+        updatePlannedStartMarker();
+
         ensureLocalSource(nextItem).then(async (nextUrl) => {
           if (!player) return;
 
           await preloadMixDataForDeckItem(nextItem, inactiveDeck);
           const nextStartPositionMs = Math.max(0, Number(nextItem.autoDjStartOffsetMs) || 0);
-          
-          // Check if stems are already available in cache for inactive deck
-          const nextHasStemsInCache = !!(nextItem.localStemUrls?.vocalsUrl || nextItem.localStemUrls?.instrumentalUrl || 
-                                          nextItem.stems?.vocalsUrl || nextItem.stems?.instrumentalUrl);
-          stemsLoadedPerDeck[inactiveDeck] = nextHasStemsInCache;
-          updateStemButtonState(inactiveDeck);
-          
-          player.playOnDeck(inactiveDeck, {
+
+          await player.playOnDeck(inactiveDeck, {
             url: nextUrl,
             loudnessDb: nextItem.loudnessDb,
             bpm: nextItem.bpm,
@@ -2792,8 +2855,6 @@ async function startPlaybackForIndex(index, mode, options = {}) {
             paused: true,
             startPositionMs: nextStartPositionMs,
           });
-          deckDisplayItems[inactiveDeck] = nextItem;
-          updatePlannedStartMarker();
           
           // Always fetch stems from server for the next track
           backgroundEnrichStems(inactiveDeck, nextItem);
@@ -2803,21 +2864,22 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       }
     }
 
-    isPlaying = true;
+    uiState.isPlaying = true;
   prefetchNext(getFollowingQueueIndex(index, { wrap: false }));
     launchPreviewActive = false;
     launchPreviewArtUrl = '';
     launchPreviewTitle = '';
     launchPreviewArtist = '';
     launchPreviewDeck = null;
+    launchPreviewItem = null;
     renderQueue();
     logInfo('startPlaybackForIndex(): done', {
       mode,
       index,
-      currentIndex,
-      currentTrackId,
+      currentIndex: uiState.currentIndex,
+      currentTrackId: uiState.currentTrackId,
       targetDeck,
-      isPlaying,
+      isPlaying: uiState.isPlaying,
     });
     backgroundEnrichStems(targetDeck, item);
     
@@ -2838,6 +2900,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     launchPreviewTitle = '';
     launchPreviewArtist = '';
     launchPreviewDeck = null;
+    launchPreviewItem = null;
     renderQueue();
     logError('startPlaybackForIndex(): failed', {
       mode,
@@ -2950,13 +3013,13 @@ function renderQueue() {
       showCrossfadeRing(true);
       try {
         await startPlaybackForIndex(idx, 'crossfade');
-        currentIndex = idx;
+        uiState.currentIndex = idx;
         renderQueue();
       } finally {
         showCrossfadeRing(false);
       }
     },
-    getCurrentIndex: () => currentIndex,
+    getCurrentIndex: () => uiState.currentIndex,
     isCrossfading: () => Boolean(player?.isCrossfading),
   });
 
@@ -2974,8 +3037,8 @@ function renderQueue() {
       const idx = Number(btn.dataset.index);
       const deck = btn.dataset.deck === 'B' ? 'B' : 'A';
       if (idx < 0 || idx >= queue.length) return;
-      deckBCueIndex = idx;
-      deckCueDeck = deck;
+      uiState.deckBCueIndex = idx;
+      uiState.deckCueDeck = deck;
       updateDeckCueUI();
       showToast(`Cue Platine ${deckToPlatineLabel(deck)}: ${queue[idx].name}`);
       renderQueue();
@@ -2989,16 +3052,16 @@ function renderQueue() {
 
 function removeFromQueue(idx) {
   const item = queue[idx];
-  if (item?.id === currentTrackId) return;
+  if (item?.id === uiState.currentTrackId) return;
   const [removed] = queue.splice(idx, 1);
   releaseLocalBlob(removed);
 
-  if (deckDisplayItems.A?.id === removed?.id) deckDisplayItems.A = null;
-  if (deckDisplayItems.B?.id === removed?.id) deckDisplayItems.B = null;
+  if (deckDisplayItems.A?.id === removed?.id) setDeckItem('A', null);
+  if (deckDisplayItems.B?.id === removed?.id) setDeckItem('B', null);
 
-  if (deckBCueIndex === idx) deckBCueIndex = -1;
-  else if (deckBCueIndex > idx) deckBCueIndex -= 1;
-  if (deckCueDeck && deckDisplayItems[deckCueDeck]?.id === item?.id) deckCueDeck = null;
+  if (uiState.deckBCueIndex === idx) uiState.deckBCueIndex = -1;
+  else if (uiState.deckBCueIndex > idx) uiState.deckBCueIndex -= 1;
+  if (uiState.deckCueDeck && deckDisplayItems[uiState.deckCueDeck]?.id === item?.id) uiState.deckCueDeck = null;
   updateDeckCueUI();
   updateCurrentIndex();
   renderQueue();
@@ -3016,11 +3079,11 @@ function reorderQueue(fromIndex, targetIndex, insertAfter = false) {
   insertIndex = Math.max(0, Math.min(queue.length, insertIndex));
 
   queue.splice(insertIndex, 0, moved);
-  if (deckBCueIndex === fromIndex) {
-    deckBCueIndex = insertIndex;
+  if (uiState.deckBCueIndex === fromIndex) {
+    uiState.deckBCueIndex = insertIndex;
   } else {
-    if (fromIndex < deckBCueIndex && insertIndex >= deckBCueIndex) deckBCueIndex -= 1;
-    if (fromIndex > deckBCueIndex && insertIndex <= deckBCueIndex) deckBCueIndex += 1;
+    if (fromIndex < uiState.deckBCueIndex && insertIndex >= uiState.deckBCueIndex) uiState.deckBCueIndex -= 1;
+    if (fromIndex > uiState.deckBCueIndex && insertIndex <= uiState.deckBCueIndex) uiState.deckBCueIndex += 1;
   }
   updateDeckCueUI();
   updateCurrentIndex();
@@ -3029,12 +3092,12 @@ function reorderQueue(fromIndex, targetIndex, insertAfter = false) {
 }
 
 function updateCurrentIndex() {
-  if (!currentTrackId) {
-    currentIndex = -1;
+  if (!uiState.currentTrackId) {
+    uiState.currentIndex = -1;
     return;
   }
-  const idx = queue.findIndex((item) => item.id === currentTrackId);
-  currentIndex = idx >= 0 ? idx : -1;
+  const idx = queue.findIndex((item) => item.id === uiState.currentTrackId);
+  uiState.currentIndex = idx >= 0 ? idx : -1;
 }
 
 function startBlobCleanupLoop() {
@@ -3076,7 +3139,7 @@ function updateCrossfadeBars({ fromDeck,fromVolume, toVolume, toPosition, toDura
 
 async function seekDeckFromProgressEvent(deck, event) {
   if (!player || !event?.currentTarget) return;
-  const detail = player._lastDeckState;
+  const detail = uiState.lastDeckState;
   const deckState = deck === 'B' ? detail?.deckB : detail?.deckA;
   const durationMs = Number(deckState?.durationMs) || 0;
   if (durationMs <= 0) return;
@@ -3091,7 +3154,7 @@ async function seekDeckFromProgressEvent(deck, event) {
 }
 
 updateCrossfadeControlUI(crossfadeSlider.value);
-updateDeckMixUI(deckMixRatio);
+updateDeckMixUI(uiState.deckMixRatio);
 updateManualLockUI();
 updateDeckCueUI();
 updateMixFeaturesUI();
@@ -3105,7 +3168,7 @@ function doLogout() {
   lastSearchQuery = '';
   pendingSearchAdd = false;
   manualMixLock = false;
-  deckBCueIndex = -1;
+  uiState.deckBCueIndex = -1;
   mixFeatures = {
     autoBpm: false,
     echo: false,
@@ -3132,9 +3195,9 @@ function doLogout() {
   }
 
   queue.length = 0;
-  currentIndex = -1;
-  currentTrackId = null;
-  isPlaying = false;
+  uiState.currentIndex = -1;
+  uiState.currentTrackId = null;
+  uiState.isPlaying = false;
   playlistLoaded = false;
   playbackPositionMs = 0;
   playbackDurationMs = 0;
@@ -3148,8 +3211,8 @@ function doLogout() {
   removeQueueSetting();
   deckDisplayItems.A = null;
   deckDisplayItems.B = null;
-  prevIsCrossfading = false;
-  deckCueDeck = null;
+  uiState.prevIsCrossfading = false;
+  uiState.deckCueDeck = null;
   switchTab('mix');
   showCrossfadeRing(false);
   trackArtist.textContent = 'Ajoutez des chansons à la file d\'attente';

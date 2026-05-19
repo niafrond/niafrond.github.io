@@ -379,9 +379,33 @@ input {
 .config-label {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   font-size: 14px;
   color: var(--text-muted);
+}
+
+.auto-dj-fx-enable-btn {
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(29, 185, 84, 0.45);
+  background: rgba(29, 185, 84, 0.14);
+  color: #8ff0b7;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: var(--transition);
+}
+
+.auto-dj-fx-enable-btn:not(.is-enabled) {
+  border-color: var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+}
+
+.auto-dj-fx-enable-btn:active {
+  transform: scale(0.98);
 }
 
 .toggle-row {
@@ -1189,11 +1213,15 @@ input {
 }
 
 .deck-title {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 700;
+  letter-spacing: 0.2px;
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .deck-vol {
@@ -1494,6 +1522,17 @@ input {
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 0 4px;
+}
+
+.deck-track-main {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.deck-chips {
+  justify-content: center;
+  margin-top: 4px;
 }
 
 .progress-bar-bg {
@@ -2299,6 +2338,26 @@ input {
 
 .queue-item.is-current .queue-name { color: var(--accent); }
 
+.queue-cache-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.queue-cache-dot.is-ready {
+  background: #22c55e;
+}
+
+.queue-cache-dot.is-resolving {
+  background: #f59e0b;
+}
+
+.queue-cache-dot.is-error {
+  background: #ef4444;
+}
+
 .queue-deck-badge {
   display: inline-flex;
   align-items: center;
@@ -2322,6 +2381,24 @@ input {
   overflow: hidden;
   text-overflow: ellipsis;
   margin-top: 2px;
+}
+
+.queue-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.queue-chip {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 6px;
+  white-space: nowrap;
 }
 
 .queue-duration {

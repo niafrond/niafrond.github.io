@@ -1,4 +1,5 @@
 import { toDeck } from './deckHelpers.js';
+import { uiState } from './uiState.js';
 
 const DJ_FX_TRANSITION_MODE = Object.freeze({
   filter: 'filter_sweep_low_high',
@@ -84,7 +85,7 @@ export function createDjFxController(options) {
   }
 
   function getDeckStateForFx(deck) {
-    const state = getPlayer()?._lastDeckState;
+    const state = uiState.lastDeckState;
     if (!state) return null;
     return deck === 'B' ? state.deckB : state.deckA;
   }
@@ -196,7 +197,7 @@ export function createDjFxController(options) {
     }
   }
 
-  function getOrCreateFxAudioContext() {
+  async function getOrCreateFxAudioContext() {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return null;
 
@@ -206,8 +207,14 @@ export function createDjFxController(options) {
 
     const ctx = runtime.samplingAudioContext;
     if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
+      try {
+        await ctx.resume();
+      } catch {
+        return null;
+      }
     }
+
+    if (ctx.state === 'closed') return null;
     return ctx;
   }
 
@@ -225,8 +232,8 @@ export function createDjFxController(options) {
     return buffer;
   }
 
-  function playVinylNoise(intensity = 1) {
-    const ctx = getOrCreateFxAudioContext();
+  async function playVinylNoise(intensity = 1) {
+    const ctx = await getOrCreateFxAudioContext();
     if (!ctx) return;
 
     const noiseBuffer = getOrCreateVinylNoiseBuffer(ctx);
@@ -442,37 +449,39 @@ export function createDjFxController(options) {
     return true;
   }
 
-  function triggerSamplingFx() {
+  async function triggerSamplingFx() {
     try {
-      const ctx = getOrCreateFxAudioContext();
+      const ctx = await getOrCreateFxAudioContext();
       if (!ctx) {
         showToast('Sampling indisponible: AudioContext non supporte.', true);
         return;
       }
 
-      const now = ctx.currentTime;
+      const now = ctx.currentTime + 0.01;
       const osc = ctx.createOscillator();
       const filter = ctx.createBiquadFilter();
       const gain = ctx.createGain();
 
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(180, now);
-      osc.frequency.exponentialRampToValueAtTime(920, now + 0.18);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(980, now + 0.22);
+      osc.frequency.exponentialRampToValueAtTime(640, now + 0.52);
 
       filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(1500, now);
-      filter.Q.setValueAtTime(3.2, now);
+      filter.frequency.setValueAtTime(2100, now);
+      filter.Q.setValueAtTime(4.6, now);
 
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.09, now + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
+      gain.gain.exponentialRampToValueAtTime(0.16, now + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.055, now + 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.58);
 
       osc.connect(filter);
       filter.connect(gain);
       gain.connect(ctx.destination);
 
       osc.start(now);
-      osc.stop(now + 0.36);
+      osc.stop(now + 0.62);
     } catch (err) {
       showToast(`Sampling indisponible: ${err?.message || 'erreur audio'}`, true);
     }
@@ -513,8 +522,8 @@ export function createDjFxController(options) {
   }
 
   function triggerNoiseFx() {
-    playVinylNoise(1.35);
-    triggerSamplingFx();
+    void playVinylNoise(1.35);
+    void triggerSamplingFx();
   }
 
   function triggerTransientDjFxAction(action, durationMs = 900) {
@@ -707,7 +716,7 @@ export function createDjFxController(options) {
         break;
       }
       case 'sampling':
-        triggerSamplingFx();
+        void triggerSamplingFx();
         triggerTransientDjFxAction('sampling', 500);
         break;
       default:
@@ -825,7 +834,7 @@ export function createDjFxController(options) {
         }
         return true;
       case 'sampling':
-        triggerSamplingFx();
+        void triggerSamplingFx();
         triggerTransientDjFxAction('sampling', 500);
         return true;
       default:

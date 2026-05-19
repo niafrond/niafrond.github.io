@@ -8,6 +8,8 @@ export function createDjMixRenderer(options) {
     deckBVol,
     deckAFill,
     deckBFill,
+    deckATitle,
+    deckBTitle,
     deckABpm,
     deckBBpm,
     deckABpmReset,
@@ -45,11 +47,38 @@ export function createDjMixRenderer(options) {
     getPlayer,
   } = options;
 
+  const lastDeckMetaItems = {
+    A: null,
+    B: null,
+  };
+
   function composeDeckMeta(title, artist) {
     const safeTitle = String(title || '').trim();
     const safeArtist = String(artist || '').trim();
     if (safeTitle && safeArtist) return `${safeTitle} • ${safeArtist}`;
     return safeTitle || safeArtist || '';
+  }
+
+  function buildDanceMetaChips(item, extraClass = '') {
+    if (!isDanceMode()) return '';
+    const bpm = Number(extractTrackBpm(item));
+    const genre = String(extractTrackGenre(item) || '').trim();
+    const bpmHtml = Number.isFinite(bpm) && bpm > 0 ? `<span class="queue-chip">${Math.round(bpm)} BPM</span>` : '';
+    const genreHtml = genre ? `<span class="queue-chip">${escHtml(genre)}</span>` : '';
+    if (!bpmHtml && !genreHtml) return '';
+    const className = extraClass ? `queue-chips ${extraClass}` : 'queue-chips';
+    return `<div class="${className}">${bpmHtml}${genreHtml}</div>`;
+  }
+
+  function renderDeckMetaContent(target, item, fallbackTitle = '', fallbackArtist = '') {
+    if (!target) return;
+    const mainLabel = item
+      ? composeDeckMeta(item?.name || '', item?.artist || '')
+      : composeDeckMeta(fallbackTitle, fallbackArtist);
+    const chipsHtml = item ? buildDanceMetaChips(item, 'deck-chips') : '';
+    target.innerHTML = mainLabel
+      ? `<div class="deck-track-main">${escHtml(mainLabel)}</div>${chipsHtml}`
+      : chipsHtml;
   }
 
   function isDanceMode() {
@@ -70,16 +99,60 @@ export function createDjMixRenderer(options) {
     return `${composeDeckMeta(item?.name || '', item?.artist || '')}${getDanceMetaSuffix(item)}`;
   }
 
+  function composeDeckHeadMeta(item) {
+    if (!item) return '';
+    const parts = [];
+    const bpm = Number(extractTrackBpm(item));
+    const genre = String(extractTrackGenre(item) || '').trim();
+    if (Number.isFinite(bpm) && bpm > 0) parts.push(`${Math.round(bpm)} BPM`);
+    if (genre) parts.push(genre);
+    return parts.join(' · ');
+  }
+
+  function isDeckArtworkVisible(deck) {
+    if (deck === 'A') return Boolean(albumArt && albumArt.hidden === false);
+    return Boolean(nextAlbumArt && nextAlbumArt.hidden === false);
+  }
+
+  function resolveDeckMetaItem(deck, deckDisplayItems, launchPreview, queue, currentIndex) {
+    const loadedItem = deckDisplayItems?.[deck] || null;
+    let nextItem = loadedItem;
+
+    if (!nextItem && launchPreview?.active && launchPreview.deck === deck && launchPreview.item) {
+      nextItem = launchPreview.item;
+    }
+
+    if (!nextItem && deck === getInactiveDeck()) {
+      nextItem = queue[currentIndex + 1] || null;
+    }
+
+    if (!nextItem && deck === getFocusDeck()) {
+      nextItem = queue[currentIndex] || null;
+    }
+
+    if (nextItem) {
+      lastDeckMetaItems[deck] = nextItem;
+      return nextItem;
+    }
+
+    if (isDeckArtworkVisible(deck) && lastDeckMetaItems[deck]) {
+      return lastDeckMetaItems[deck];
+    }
+
+    lastDeckMetaItems[deck] = null;
+    return null;
+  }
+
   function refreshDeckMetaDisplays() {
     const deckDisplayItems = getDeckDisplayItems();
-    const deckAItem = deckDisplayItems?.A || null;
-    const deckBItem = deckDisplayItems?.B || null;
+    const launchPreview = getLaunchPreviewState();
+    const queue = getQueue();
+    const currentIndex = getCurrentIndex();
+    const deckAItem = resolveDeckMetaItem('A', deckDisplayItems, launchPreview, queue, currentIndex);
+    const deckBItem = resolveDeckMetaItem('B', deckDisplayItems, launchPreview, queue, currentIndex);
 
-    if (trackArtistA) trackArtistA.textContent = deckAItem ? composeDeckMetaWithDance(deckAItem) : '';
-    if (trackArtistB) trackArtistB.textContent = deckBItem ? composeDeckMetaWithDance(deckBItem) : '';
-
-    const deckABaseMeta = isDanceMode() ? getDanceMetaSuffix(deckAItem).replace(/^\s*•\s*/, '') : '';
-    const deckBBaseMeta = isDanceMode() ? getDanceMetaSuffix(deckBItem).replace(/^\s*•\s*/, '') : '';
+    renderDeckMetaContent(trackArtistA, deckAItem);
+    renderDeckMetaContent(trackArtistB, deckBItem);
 
     const player = getPlayer();
     const detail = player?._lastDeckState || null;
@@ -88,14 +161,16 @@ export function createDjMixRenderer(options) {
     const rateAText = Math.abs(rateA - 1) > 0.005 ? `×${rateA.toFixed(2)}` : '';
     const rateBText = Math.abs(rateB - 1) > 0.005 ? `×${rateB.toFixed(2)}` : '';
 
-    if (deckABpm) deckABpm.textContent = [deckABaseMeta, rateAText].filter(Boolean).join(' · ');
-    if (deckBBpm) deckBBpm.textContent = [deckBBaseMeta, rateBText].filter(Boolean).join(' · ');
+    if (deckATitle) deckATitle.textContent = composeDeckHeadMeta(deckAItem);
+    if (deckBTitle) deckBTitle.textContent = composeDeckHeadMeta(deckBItem);
+    if (deckABpm) deckABpm.textContent = rateAText;
+    if (deckBBpm) deckBBpm.textContent = rateBText;
   }
 
   function renderSourceBadge(item) {
-    if (item.sourceState === 'ready') return '• Cache ✓';
-    if (item.sourceState === 'resolving') return '• Cache ...';
-    if (item.sourceState === 'error') return '• Cache !';
+    if (item.sourceState === 'ready') return '<span class="queue-cache-dot is-ready" aria-label="Cache prêt" title="Cache prêt"></span>';
+    if (item.sourceState === 'resolving') return '<span class="queue-cache-dot is-resolving" aria-label="Cache en cours" title="Cache en cours"></span>';
+    if (item.sourceState === 'error') return '<span class="queue-cache-dot is-error" aria-label="Erreur cache" title="Erreur cache"></span>';
     return '';
   }
 
@@ -133,7 +208,8 @@ export function createDjMixRenderer(options) {
       const cueBClass = `queue-cue${cueBSelected ? ' is-selected' : ''}${cueBLoaded ? ' is-loaded-deck' : ''}`;
       const cueADisabled = cueALoaded ? 'disabled aria-disabled="true" title="Déjà chargée sur platine 1"' : '';
       const cueBDisabled = cueBLoaded ? 'disabled aria-disabled="true" title="Déjà chargée sur platine 2"' : '';
-      const danceMeta = getDanceMetaSuffix(item);
+      const metaChips = buildDanceMetaChips(item);
+      const sourceBadge = renderSourceBadge(item);
 
       return `
       <div class="${cls}" data-index="${i}" role="button" tabindex="0" draggable="true">
@@ -142,8 +218,10 @@ export function createDjMixRenderer(options) {
         <div class="queue-info">
           <div class="queue-name-wrap">
             <div class="queue-name">${escHtml(item.name)}</div>
+            ${sourceBadge}
           </div>
-          <div class="queue-artist">${escHtml(item.artist)} ${renderSourceBadge(item)}${escHtml(danceMeta)}</div>
+          <div class="queue-artist">${escHtml(item.artist)}</div>
+          ${metaChips}
         </div>
         <span class="queue-duration">${formatTime(item.duration)}</span>
         <div class="queue-actions">
@@ -218,6 +296,7 @@ export function createDjMixRenderer(options) {
     const launchPreview = getLaunchPreviewState();
     const queue = getQueue();
     const currentIndex = getCurrentIndex();
+    const deckDisplayItems = getDeckDisplayItems();
     const albumArtA = albumArt;
     const albumArtB = nextAlbumArt;
     const artPlaceholderA = artPlaceholder;
@@ -228,10 +307,12 @@ export function createDjMixRenderer(options) {
     const inactiveArt = targetDeck === 'A' ? albumArtA : albumArtB;
     const inactivePlaceholder = targetDeck === 'A' ? artPlaceholderA : artPlaceholderB;
     const inactiveTrackArtist = targetDeck === 'A' ? trackArtistA : trackArtistB;
+    const loadedDeckItem = resolveDeckMetaItem(targetDeck, deckDisplayItems, launchPreview, queue, currentIndex);
 
     let label = '';
     let artUrl = '';
     let artist = '';
+    let displayItem = loadedDeckItem;
 
     if (launchPreview.active) {
       label = launchPreview.title || '';
@@ -242,6 +323,7 @@ export function createDjMixRenderer(options) {
       label = next?.name || '';
       artUrl = next?.artUrl || '';
       artist = next?.artist || '';
+      displayItem = loadedDeckItem || next || null;
     }
 
     if (artUrl) {
@@ -253,7 +335,7 @@ export function createDjMixRenderer(options) {
       inactiveArt.hidden = true;
       inactivePlaceholder.style.display = '';
     }
-    if (inactiveTrackArtist) inactiveTrackArtist.textContent = composeDeckMeta(label, artist);
+    renderDeckMetaContent(inactiveTrackArtist, displayItem, label, artist);
   
   }
 
@@ -280,10 +362,9 @@ export function createDjMixRenderer(options) {
     }
 
     if (deck === 'A') {
-      
-      if (trackArtistA) trackArtistA.textContent = composeDeckMetaWithDance(item);
+      renderDeckMetaContent(trackArtistA, item);
     } else {
-      if (trackArtistB) trackArtistB.textContent = composeDeckMetaWithDance(item);
+      renderDeckMetaContent(trackArtistB, item);
     }
 
     if (trackArtist) trackArtist.textContent = item.artist;

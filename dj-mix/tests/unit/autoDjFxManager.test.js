@@ -42,4 +42,11 @@ describe('autoDjFxManager', () => {
     expect(second.allowed).toBe(false);
     expect(second.reason).toBe('min-interval');
   });
+
+  test('canTriggerAutoDjFx returns disabled when global auto fx is off', () => {
+    const settings = normalizeAutoDjFxSettings({ enabled: false });
+    const result = canTriggerAutoDjFx({ type: 'echoDelay' }, settings, 0, 2000);
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toBe('disabled');
+  });
 });

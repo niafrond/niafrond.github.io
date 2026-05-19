@@ -1,4 +1,5 @@
 import { createLogger } from './logger.js';
+import { extractTrackBpm, extractTrackGenre } from './searchUtils.js';
 
 const logger = createLogger('playlist');
 
@@ -376,6 +377,8 @@ export function createPlaylistManager(options) {
       artist: file.artistName || file.artist || 'Artiste inconnu',
       artUrl: file.artworkUrl || file.artUrl || '',
       duration: file.duration || 0,
+      bpm: extractTrackBpm(file),
+      genre: extractTrackGenre(file),
       sourceState: file.cachePath ? 'idle' : 'ready',
       localBlobUrl: file.url || file.localUrl || file.streamUrl || '',
       persistedSourceUrl: file.url || file.localUrl || file.streamUrl || '',

@@ -16,6 +16,7 @@ export function createMixControls(options) {
     fxVisibilityBtn,
     getDeckBCueIndex,
     getDeckCueDeck,
+    getDeckDisplayItems,
     getDeckMixRatio,
     getManualMixLock,
     getMixFeatures,
@@ -24,6 +25,7 @@ export function createMixControls(options) {
     getFxControlsHidden,
     manualLockBtn,
     onFocusDeckChanged,
+    setDeckCueDeck,
     setDeckMixRatio,
     setMixFeatures,
   } = options;
@@ -109,12 +111,27 @@ export function createMixControls(options) {
   }
 
   function updateDeckCueUI() {
-    const inactiveDeck = getDeckCueDeck() || getInactiveDeck();
-    const inactivePanel = inactiveDeck === 'A' ? deckAPanel : deckBPanel;
-    const otherPanel = inactiveDeck === 'A' ? deckBPanel : deckAPanel;
-    if (!inactivePanel) return;
-    const hasCue = getDeckBCueIndex() >= 0 && getDeckBCueIndex() < getQueueLength();
-    inactivePanel.classList.toggle('has-cue', hasCue);
+    const manualCueDeck = getDeckCueDeck();
+    const hasManualCue = getDeckBCueIndex() >= 0 && getDeckBCueIndex() < getQueueLength();
+    const inactiveDeck = getInactiveDeck();
+    const cueDeck = (hasManualCue && (manualCueDeck === 'A' || manualCueDeck === 'B'))
+      ? (manualCueDeck === inactiveDeck ? manualCueDeck : inactiveDeck)
+      : inactiveDeck;
+
+    if (hasManualCue && cueDeck !== manualCueDeck) {
+      setDeckCueDeck?.(cueDeck);
+    }
+
+    const cuePanel = cueDeck === 'A' ? deckAPanel : deckBPanel;
+    const otherPanel = cueDeck === 'A' ? deckBPanel : deckAPanel;
+    if (!cuePanel) return;
+
+    const deckDisplayItems = getDeckDisplayItems?.() || {};
+    const cueDeckItem = deckDisplayItems[cueDeck] || null;
+    const otherDeckItem = deckDisplayItems[cueDeck === 'A' ? 'B' : 'A'] || null;
+    const hasPreparedCueDeck = Boolean(cueDeckItem && cueDeckItem.id != null && cueDeckItem.id !== otherDeckItem?.id);
+
+    cuePanel.classList.toggle('has-cue', hasManualCue || hasPreparedCueDeck);
     otherPanel?.classList.remove('has-cue');
   }
 

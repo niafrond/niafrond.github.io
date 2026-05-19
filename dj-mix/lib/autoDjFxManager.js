@@ -66,6 +66,7 @@ export function normalizeAutoDjFxSettings(raw) {
   );
 
   return {
+    enabled: raw?.enabled !== undefined ? Boolean(raw.enabled) : true,
     allowed,
     minIntervalSec: intervals.minIntervalSec,
     maxIntervalSec: intervals.maxIntervalSec,
@@ -102,7 +103,8 @@ export function getAutoDjFxStatusText(settings) {
   const allowedCount = AUTO_DJ_FX_TYPES.reduce((count, type) => {
     return count + (isAutoDjFxTypeAllowed(normalized, type) ? 1 : 0);
   }, 0);
-  return `Robot FX: ${allowedCount}/${AUTO_DJ_FX_TYPES.length} autorises, intervalle ${normalized.minIntervalSec}s a ${normalized.maxIntervalSec}s.`;
+  const globalState = normalized.enabled ? 'ON' : 'OFF';
+  return `Robot FX ${globalState}: ${allowedCount}/${AUTO_DJ_FX_TYPES.length} autorises, intervalle ${normalized.minIntervalSec}s a ${normalized.maxIntervalSec}s.`;
 }
 
 export function getAutoDjFxMaxGapMs(settings) {
@@ -111,15 +113,22 @@ export function getAutoDjFxMaxGapMs(settings) {
 }
 
 export function canTriggerAutoDjFx(event, settings, lastTriggeredAtMs, nowMs = Date.now()) {
+  const normalized = normalizeAutoDjFxSettings(settings);
+  if (!normalized.enabled) {
+    const typeDisabled = String(event?.type || '');
+    const labelDisabled = String(event?.label || typeDisabled || 'FX');
+    return { allowed: false, reason: 'disabled', type: typeDisabled, label: labelDisabled };
+  }
+
   const type = String(event?.type || '');
   const label = String(event?.label || type || 'FX');
   if (!type) return { allowed: false, reason: 'missing-type', type, label };
 
-  if (!isAutoDjFxTypeAllowed(settings, type)) {
+  if (!isAutoDjFxTypeAllowed(normalized, type)) {
     return { allowed: false, reason: 'not-allowed', type, label };
   }
 
-  const minGapMs = getSafeAutoDjFxMinIntervalSec(settings?.minIntervalSec) * 1000;
+  const minGapMs = getSafeAutoDjFxMinIntervalSec(normalized.minIntervalSec) * 1000;
   const elapsedMs = nowMs - (Number(lastTriggeredAtMs) || 0);
   if (Number(lastTriggeredAtMs) > 0 && elapsedMs < minGapMs) {
     return { allowed: false, reason: 'min-interval', type, label, elapsedMs, minGapMs };

@@ -721,7 +721,6 @@ export class SimpleMixFeatures {
     const audio = this.#deckAudio(deck);
     if (!audio) return;
 
-    console.debug('[mixFeatures] syncDeckStemMode: deck=%s force=%s restoreOnly=%s', deck, force, restoreOnly);
     const state = this.#deckStemState[deck];
     const mode = restoreOnly ? null : this.#deckMode(deck);
     const currentSrc = audio.currentSrc || audio.src || '';
@@ -729,6 +728,7 @@ export class SimpleMixFeatures {
 
     if (!mode) {
       if (isAppliedSrc && state.originalSrc) {
+        console.debug('[mixFeatures] syncDeckStemMode: deck=%s restoring original', deck);
         await this.#swapDeckSource(audio, state.originalSrc);
       }
       state.appliedSrc = '';
@@ -744,6 +744,8 @@ export class SimpleMixFeatures {
     if (!baseSrc) return;
 
     if (!force && state.stemMode === mode && isAppliedSrc) return;
+
+    console.debug('[mixFeatures] syncDeckStemMode: deck=%s force=%s mode=%s', deck, force, mode);
 
     const token = state.token + 1;
     state.token = token;

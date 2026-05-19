@@ -438,14 +438,42 @@ export function extractTrackBpm(track) {
 export function extractTrackGenre(track) {
   if (!track || typeof track !== 'object') return '';
 
+  const collectValues = (target, value) => {
+    if (Array.isArray(value)) {
+      value.forEach((entry) => collectValues(target, entry));
+      return;
+    }
+
+    if (value && typeof value === 'object') {
+      collectValues(target, value.name);
+      collectValues(target, value.label);
+      collectValues(target, value.value);
+      collectValues(target, value.genre);
+      return;
+    }
+
+    const text = String(value || '').trim();
+    if (!text) return;
+    text.split(/[;,|]+/g).forEach((part) => {
+      const genre = String(part || '').trim();
+      if (genre) target.push(genre);
+    });
+  };
+
   const scalarCandidates = [
     track.genre,
+    track.genreName,
+    track.primaryGenreName,
     track.style,
     track.category,
     track.subgenre,
     track.subGenre,
     track.metadata?.genre,
+    track.album?.genre,
+    track.audioFeatures?.genre,
+    track.audio_features?.genre,
     track.tags?.genre,
+    track.audioFeatures?.rhythm ? `Rythme: ${track.audioFeatures.rhythm}` : '',
   ];
 
   for (const value of scalarCandidates) {
@@ -453,20 +481,20 @@ export function extractTrackGenre(track) {
     if (genre) return genre;
   }
 
-  const arrayCandidates = [track.genres, track.genreNames, track.styles, track.tags];
-  for (const list of arrayCandidates) {
-    if (!Array.isArray(list) || !list.length) continue;
-    const first = list[0];
-    if (typeof first === 'string') {
-      const genre = first.trim();
-      if (genre) return genre;
-      continue;
-    }
-    if (first && typeof first === 'object') {
-      const genre = String(first.name || first.label || first.genre || '').trim();
-      if (genre) return genre;
-    }
-  }
+  const values = [];
+  [
+    track.genres,
+    track.genreNames,
+    track.styles,
+    track.tags,
+    track.metadata?.genres,
+    track.album?.genres,
+    track.audioFeatures?.genres,
+    track.audio_features?.genres,
+  ].forEach((candidate) => collectValues(values, candidate));
+
+  const firstGenre = values.find((value) => String(value || '').trim());
+  if (firstGenre) return String(firstGenre).trim();
 
   return '';
 }
