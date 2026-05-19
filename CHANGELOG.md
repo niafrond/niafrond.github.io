@@ -1,3 +1,15 @@
+## [1.200.0](https://github.com/niafrond/niafrond.github.io/compare/v1.199.0...v1.200.0) (2026-05-19)
+
+### Features
+
+* add low-pass and high-pass filter options, enhance suggestion functionality, and improve UI layout ([f86f93b](https://github.com/niafrond/niafrond.github.io/commit/f86f93b1c8a8ca54e32f9a935fa75f555ab29773))
+* enhance auto DJ FX settings with max interval input and update UI ([da7fe18](https://github.com/niafrond/niafrond.github.io/commit/da7fe180cc0fe0bc835291f12ba1e40201bb2f81))
+* enhance auto mode manager with vocal sensitivity adjustments and improved transition recommendations ([ebd5857](https://github.com/niafrond/niafrond.github.io/commit/ebd5857d2ed8036c135e31002e4e1a6f9b2921a0))
+* enhance media session support with artwork and playback controls, improve search functionality ([2792f89](https://github.com/niafrond/niafrond.github.io/commit/2792f893bf806f9e9025b120fca19c057caf7efc))
+* implement genre selection dropdown and enhance BPM/genre extraction for dance mode ([db41e29](https://github.com/niafrond/niafrond.github.io/commit/db41e294c76d096c6c11087a4ebad57eb49dff8d))
+* **tests:** enhance e2e and unit tests for DJ Mix application ([3a78c49](https://github.com/niafrond/niafrond.github.io/commit/3a78c49fa6140500b5a849bdfc19d08f30fb4b9e))
+* update genre selection functionality and UI, enhance default settings for auto DJ effects ([4aa5e08](https://github.com/niafrond/niafrond.github.io/commit/4aa5e0808679ab6c7850310d9d2a64af34d5bdc6))
+
 ## [1.199.0](https://github.com/niafrond/niafrond.github.io/compare/v1.198.0...v1.199.0) (2026-05-17)
 
 ### Features
