@@ -1,3 +1,187 @@
+## [1.200.0](https://github.com/niafrond/niafrond.github.io/compare/v1.199.0...v1.200.0) (2026-05-19)
+
+### Features
+
+* add low-pass and high-pass filter options, enhance suggestion functionality, and improve UI layout ([f86f93b](https://github.com/niafrond/niafrond.github.io/commit/f86f93b1c8a8ca54e32f9a935fa75f555ab29773))
+* enhance auto DJ FX settings with max interval input and update UI ([da7fe18](https://github.com/niafrond/niafrond.github.io/commit/da7fe180cc0fe0bc835291f12ba1e40201bb2f81))
+* enhance auto mode manager with vocal sensitivity adjustments and improved transition recommendations ([ebd5857](https://github.com/niafrond/niafrond.github.io/commit/ebd5857d2ed8036c135e31002e4e1a6f9b2921a0))
+* enhance media session support with artwork and playback controls, improve search functionality ([2792f89](https://github.com/niafrond/niafrond.github.io/commit/2792f893bf806f9e9025b120fca19c057caf7efc))
+* implement genre selection dropdown and enhance BPM/genre extraction for dance mode ([db41e29](https://github.com/niafrond/niafrond.github.io/commit/db41e294c76d096c6c11087a4ebad57eb49dff8d))
+* **tests:** enhance e2e and unit tests for DJ Mix application ([3a78c49](https://github.com/niafrond/niafrond.github.io/commit/3a78c49fa6140500b5a849bdfc19d08f30fb4b9e))
+* update genre selection functionality and UI, enhance default settings for auto DJ effects ([4aa5e08](https://github.com/niafrond/niafrond.github.io/commit/4aa5e0808679ab6c7850310d9d2a64af34d5bdc6))
+
+## [1.199.0](https://github.com/niafrond/niafrond.github.io/compare/v1.198.0...v1.199.0) (2026-05-17)
+
+### Features
+
+* **dj-mix:** add RAM filter configuration and transition mode management ([98ae28b](https://github.com/niafrond/niafrond.github.io/commit/98ae28b3a94b5e6c8bb142798183d296fa0dce51))
+* enhance DJPlayer with smooth playback rate transitions and new deck features ([25f931b](https://github.com/niafrond/niafrond.github.io/commit/25f931bd8ccbe846f1dc4a670f7c0fd4055f71bc))
+
+## [1.198.0](https://github.com/niafrond/niafrond.github.io/compare/v1.197.0...v1.198.0) (2026-05-17)
+
+### Features
+
+* add dj-mix cache filters ([0e0fa4b](https://github.com/niafrond/niafrond.github.io/commit/0e0fa4b7c420c4d3a8211489ad784fc6b291209f))
+
+## [1.197.0](https://github.com/niafrond/niafrond.github.io/compare/v1.196.1...v1.197.0) (2026-05-15)
+
+### Features
+
+* enhance stem handling and auto-suggestion functionality ([beb8ab8](https://github.com/niafrond/niafrond.github.io/commit/beb8ab87ccf5bb7b39ef8e2745b62777c1da0e90))
+
+## [1.196.1](https://github.com/niafrond/niafrond.github.io/compare/v1.196.0...v1.196.1) (2026-05-15)
+
+### Bug Fixes
+
+* **dj-mix:** ok ([2f683b8](https://github.com/niafrond/niafrond.github.io/commit/2f683b8a6db8fdaf6bf2673eb6d2cba158b154f7))
+* **dj-mix:** stem ([c7aba3e](https://github.com/niafrond/niafrond.github.io/commit/c7aba3e4d2e4d90a4894c328c247b0e2be5df27c))
+
+## [1.196.0](https://github.com/niafrond/niafrond.github.io/compare/v1.195.0...v1.196.0) (2026-05-14)
+
+### Features
+
+* **dj-mix:** stable ([1908ba3](https://github.com/niafrond/niafrond.github.io/commit/1908ba3c9a87a76bffc2935b6a4650aa97badf12))
+
+## [1.195.0](https://github.com/niafrond/niafrond.github.io/compare/v1.194.0...v1.195.0) (2026-05-14)
+
+### Features
+
+* **dj-mix:** stable ([2963d44](https://github.com/niafrond/niafrond.github.io/commit/2963d44eb4398e914c5aa1e67f380032af3efe9f))
+
+## [1.194.0](https://github.com/niafrond/niafrond.github.io/compare/v1.193.0...v1.194.0) (2026-05-14)
+
+### Features
+
+* **dj-mix:** stable ([692371f](https://github.com/niafrond/niafrond.github.io/commit/692371f997b070ca1b3082f9ddca8f4a5109204e))
+* **dj-mix:** stable ([1cbece7](https://github.com/niafrond/niafrond.github.io/commit/1cbece7b266b75b9c3ebaa23800a317f36bf08b5))
+* **dj-mix:** stable ([b6fe4c5](https://github.com/niafrond/niafrond.github.io/commit/b6fe4c514721d529e0b71789adebd24e5a77e348))
+
+## [1.193.0](https://github.com/niafrond/niafrond.github.io/compare/v1.192.0...v1.193.0) (2026-05-14)
+
+### Features
+
+* **dj-mix:** add cache fade button and functionality ([6da7922](https://github.com/niafrond/niafrond.github.io/commit/6da7922966f231274eed0c61928615ff3a89f996))
+
+## [1.192.0](https://github.com/niafrond/niafrond.github.io/compare/v1.191.0...v1.192.0) (2026-05-14)
+
+### Features
+
+* **dj-mix:** retire l'utilisation de demucs ([9b1a476](https://github.com/niafrond/niafrond.github.io/commit/9b1a47658db4d572b4aa589eef4569e388b0d6e2))
+
+### Bug Fixes
+
+* **dj-mix:** remove remaining dead code (encodeStereoWav, decodeAsStereo44100) ([12a4131](https://github.com/niafrond/niafrond.github.io/commit/12a4131795c81f748c8b366c32f62a2e77fdb932))
+
+## [1.191.0](https://github.com/niafrond/niafrond.github.io/compare/v1.190.1...v1.191.0) (2026-05-13)
+
+### Features
+
+* **dj-mix:** stable ([01419ca](https://github.com/niafrond/niafrond.github.io/commit/01419caadea8b0419e7a09d09e75b2ab4cf7d1c0))
+
+## [1.190.1](https://github.com/niafrond/niafrond.github.io/compare/v1.190.0...v1.190.1) (2026-05-13)
+
+### Bug Fixes
+
+* **dj-mix:** stable ([6e491d4](https://github.com/niafrond/niafrond.github.io/commit/6e491d4237bebddc47414361f2318a5178e36bdd))
+
+## [1.190.0](https://github.com/niafrond/niafrond.github.io/compare/v1.189.0...v1.190.0) (2026-05-13)
+
+### Features
+
+* **dj-mix:** handle stems ([d9d72ee](https://github.com/niafrond/niafrond.github.io/commit/d9d72ee96e1a264bb89d0c9b6fe7279c10f70856))
+* **dj-mix:** handle stems ([1a92dcc](https://github.com/niafrond/niafrond.github.io/commit/1a92dccffe2c3df87f6f471739d296c6c41acc4c))
+* **dj-mix:** stable ([59c819f](https://github.com/niafrond/niafrond.github.io/commit/59c819f79bb11241bace3e5070fa1df0df213f4f))
+
+### Bug Fixes
+
+* **dj-mix:** stable ([431524f](https://github.com/niafrond/niafrond.github.io/commit/431524f932e42cc6229b64d59d5d59ae14469164))
+* **dj-mix:** stable ([2daaead](https://github.com/niafrond/niafrond.github.io/commit/2daaead043fa27c362dae4723217899be5177b0b))
+
+## [1.189.0](https://github.com/niafrond/niafrond.github.io/compare/v1.188.0...v1.189.0) (2026-05-13)
+
+### Features
+
+* **dj-mix:** stable ([dd65e83](https://github.com/niafrond/niafrond.github.io/commit/dd65e839287179998c81b014a73fdede7b0185cf))
+* **dj-mix:** stable ([f3cee40](https://github.com/niafrond/niafrond.github.io/commit/f3cee40584e623844caaf53d867077cbc4069e53))
+* **dj-mix:** stable ([5e166e9](https://github.com/niafrond/niafrond.github.io/commit/5e166e91429a18f5c8a58da78a02a764f96d0c5d))
+* **dj-mix:** stable ([04d65e2](https://github.com/niafrond/niafrond.github.io/commit/04d65e2d0109ab36e614eb651b6ee3ac08a42fd7))
+
+### Bug Fixes
+
+* correct unit tests for mixFeatures.js ([379a713](https://github.com/niafrond/niafrond.github.io/commit/379a713597fe34b7df74bdce5556eacbbf088610))
+* **dj-mix:** stable ([72ab4de](https://github.com/niafrond/niafrond.github.io/commit/72ab4de855278c483bc5a3376524224f1e2d2ad6))
+
+## [1.188.0](https://github.com/niafrond/niafrond.github.io/compare/v1.187.0...v1.188.0) (2026-05-12)
+
+### Features
+
+* **dj-mix:** stable ([83134c2](https://github.com/niafrond/niafrond.github.io/commit/83134c2f339958c44ae04fb374a66d00fb261a03))
+* **dj-mix:** stable ([14557a7](https://github.com/niafrond/niafrond.github.io/commit/14557a709e3fbaa2f28bbc6468039c780c964a68))
+
+## [1.187.0](https://github.com/niafrond/niafrond.github.io/compare/v1.186.0...v1.187.0) (2026-05-12)
+
+### Features
+
+* **dj-mix:** stable ([b8f7b35](https://github.com/niafrond/niafrond.github.io/commit/b8f7b35e563936422ca332a05b3e703f5e0e0a76))
+
+### Bug Fixes
+
+* **dj-mix:** do not create AudioContext when no effects are enabled ([df6c8b5](https://github.com/niafrond/niafrond.github.io/commit/df6c8b5bb646be1f9368008d1e4ab37920725237))
+
+## [1.186.0](https://github.com/niafrond/niafrond.github.io/compare/v1.185.0...v1.186.0) (2026-05-12)
+
+### Features
+
+* dj-mix - default crossfade 12s, max 30s, cache file browsing ([eee6536](https://github.com/niafrond/niafrond.github.io/commit/eee653642410ecc1aec2f15c6756ec22d4a84d28))
+
+## [1.185.0](https://github.com/niafrond/niafrond.github.io/compare/v1.184.0...v1.185.0) (2026-05-11)
+
+### Features
+
+* **dj-mix:** enhance album art display with next track preview and local result badge ([ab3251d](https://github.com/niafrond/niafrond.github.io/commit/ab3251daebbaa47057159b8c14e96dec477c086e))
+
+## [1.184.0](https://github.com/niafrond/niafrond.github.io/compare/v1.183.0...v1.184.0) (2026-05-11)
+
+### Features
+
+* add DJ Mix app (Spotify crossfade player) ([b17f1a2](https://github.com/niafrond/niafrond.github.io/commit/b17f1a2b235fba47db97426a9ba772d892cd3026))
+* DJ Mix – Spotify crossfade DJ player ([9ad6dd4](https://github.com/niafrond/niafrond.github.io/commit/9ad6dd417ef48be2286478748383cfd9f4533584))
+* **dj-mix:** auto-play first track even if player not ready yet (pendingAutoplay) ([fb01151](https://github.com/niafrond/niafrond.github.io/commit/fb0115189e725d915276f7719070a9c098193015))
+* **dj-mix:** cache client ID + redirect URI, simplify setup screen ([8839041](https://github.com/niafrond/niafrond.github.io/commit/88390413a298c6674c830175877b5ee7aa512949))
+* **dj-mix:** dj mix app ([c4505a4](https://github.com/niafrond/niafrond.github.io/commit/c4505a41ce273c78abf2ba7346fe39ca977af031))
+* **dj-mix:** migrate auth to PKCE + refresh token, pre-fill client ID ([1dc2835](https://github.com/niafrond/niafrond.github.io/commit/1dc28350acea9657fd0ea080b24139428f123888))
+* **dj-mix:** persist queue to localStorage, restore on reconnect, clear on logout ([0aaf3f3](https://github.com/niafrond/niafrond.github.io/commit/0aaf3f3fb55f9b3ec08f7128dbfe56170d7a4527))
+* **dj-mix:** show app immediately after auth + playlist picker ([82d87bd](https://github.com/niafrond/niafrond.github.io/commit/82d87bd91808d424b80252a6d6cff500ba068d53)), closes [DJPlayer#isReady](https://github.com/niafrond/DJPlayer/issues/isReady)
+* **dj-mix:** three-tab layout (Mix/Playlist/Config) for mobile portrait ([376ede0](https://github.com/niafrond/niafrond.github.io/commit/376ede084c1bfba03b31dbae14a13bd5f23a60ed))
+* **dj-mix:** two-level playlist nav, activateElement to fix autoplay sound ([50b5f97](https://github.com/niafrond/niafrond.github.io/commit/50b5f970efffa853c853a2676316bdce29a62ef7))
+
+### Bug Fixes
+
+* **dj-mix:** add logout button in playlist overlay; fix setup screen visibility ([86b3616](https://github.com/niafrond/niafrond.github.io/commit/86b3616b9d9c05ee607ef41ffd63aa01141722ee))
+* **dj-mix:** add playlist scopes to Spotify auth ([262b6e0](https://github.com/niafrond/niafrond.github.io/commit/262b6e03321a018493b60b709348cd5a926757e4))
+* **dj-mix:** add pure-JS SHA-256 fallback when crypto.subtle unavailable ([30b53d4](https://github.com/niafrond/niafrond.github.io/commit/30b53d4fc6b73ea01afe98b977e865a41939534c))
+* **dj-mix:** disable play button until player ready event fires ([d7698c6](https://github.com/niafrond/niafrond.github.io/commit/d7698c6b4cf32766081bc10241865ea4e510fe7a))
+* **dj-mix:** fallback to active deck when inactive deck reconnect fails ([2acb2f8](https://github.com/niafrond/niafrond.github.io/commit/2acb2f86512a2d4e575b5089e5570aa4b4c48fce))
+* **dj-mix:** fix 401 caused by cross-origin sessionStorage loss during PKCE ([a95d8d9](https://github.com/niafrond/niafrond.github.io/commit/a95d8d965d5ec034813e238cf41eaaad531cf8d2))
+* **dj-mix:** force localhost redirect URI when running on plain HTTP ([25f16a3](https://github.com/niafrond/niafrond.github.io/commit/25f16a371c231d9d691dbffaa9fb8017d595988b))
+* **dj-mix:** guard reconnect listener cleanup when deck is null ([2a3e628](https://github.com/niafrond/niafrond.github.io/commit/2a3e628137029e29cc31b4629573b689fb7d1328))
+* **dj-mix:** handle ?_init_pkce=1 in boot to start PKCE flow ([0a82314](https://github.com/niafrond/niafrond.github.io/commit/0a82314e71b9d7ffdd9e83f02db6e148fab36ac1))
+* **dj-mix:** initialize decks sequentially with timeout and retry ([9f079f5](https://github.com/niafrond/niafrond.github.io/commit/9f079f5c98ddb744c498af5903e04430278e8570))
+* **dj-mix:** keep active deck device_id updated on reconnect ([a98d6ad](https://github.com/niafrond/niafrond.github.io/commit/a98d6ad107ae70de9cf7eaac221e1ef7016febac))
+* **dj-mix:** keep deck device ids with 10min TTL before reconnect ([7a31bfc](https://github.com/niafrond/niafrond.github.io/commit/7a31bfc6e3b10db2bd45335659c9e22795b923c8))
+* **dj-mix:** logout returns to setup screen instead of auto-reconnecting ([64d6008](https://github.com/niafrond/niafrond.github.io/commit/64d6008f1d55be0b35eb54831b566d1cd34cc62a))
+* **dj-mix:** prevent setVolume on null after destroy (crossfade + tracking guards) ([59af95f](https://github.com/niafrond/niafrond.github.io/commit/59af95f7c00f57eae65cd36dd1a391a532387375))
+* **dj-mix:** reconnect and retry on Device not found during play/crossfade ([806f2aa](https://github.com/niafrond/niafrond.github.io/commit/806f2aad43b6a32c15c203a4074855203208a074))
+* **dj-mix:** recover inactive deck for crossfade via reconnect or recreate ([d5bb781](https://github.com/niafrond/niafrond.github.io/commit/d5bb7818badf1c603fa4497af17a6b5e81daf1de))
+* **dj-mix:** remove broken localhost bounce, use current origin as redirect URI ([1f3544d](https://github.com/niafrond/niafrond.github.io/commit/1f3544dcaa4eec64b4aabf836c0643fdb323c07d))
+* **dj-mix:** replace deprecated market=from_token with cached user country ([a7f31e5](https://github.com/niafrond/niafrond.github.io/commit/a7f31e52f1e7b18e77165d751a7e16590b3c1f7a))
+* **dj-mix:** request tracks.total via fields param; show proper count in playlist list ([e483ecb](https://github.com/niafrond/niafrond.github.io/commit/e483ecbe79fae544a6a99e5342691cc361134481))
+* **dj-mix:** simplify search URL to q=&type=track&market= only ([549aa9c](https://github.com/niafrond/niafrond.github.io/commit/549aa9cdf418510935f8a46d8b40d8aa22e04fd6))
+* **dj-mix:** use /playlists/{id}/items instead of deprecated /tracks endpoint ([99b59d2](https://github.com/niafrond/niafrond.github.io/commit/99b59d2cc9f6a9abb8c63a310973a2a4df982af2))
+* **dj-mix:** use correct search param q= and remove invalid locale param ([04224a4](https://github.com/niafrond/niafrond.github.io/commit/04224a4117666e2c336a1f50d9948af636355ed8))
+* **dj-mix:** use current origin as redirect URI instead of 127.0.0.1 ([9330c91](https://github.com/niafrond/niafrond.github.io/commit/9330c9144e715b3ab92926182a433ec9eecdfb69))
+* **dj-mix:** wait for Spotify SDK before deck initialization ([a5c505e](https://github.com/niafrond/niafrond.github.io/commit/a5c505efe250f283a2d32d92d3ce7a4a311fba29))
+
 ## [1.183.0](https://github.com/niafrond/niafrond.github.io/compare/v1.182.0...v1.183.0) (2026-05-07)
 
 ### Features

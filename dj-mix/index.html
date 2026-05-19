@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>DJ Mix</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='0.9em' font-size='56'%3E%F0%9F%8E%9A%EF%B8%8F%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <div id="setup-screen" class="screen" hidden>
+    <div class="setup-container">
+      <div class="setup-logo">
+        <div class="logo-icon">🎚️</div>
+        <h1>DJ Mix</h1>
+        <p class="setup-subtitle">Téléchargement local via API</p>
+      </div>
+
+      <button class="connect-btn" id="oauth-btn">Démarrer</button>
+
+      <div id="setup-error" class="error-msg" hidden></div>
+      <div id="setup-loading" class="loading-msg" hidden>
+        <span class="spinner"></span> Initialisation en cours…
+      </div>
+    </div>
+  </div>
+
+  <div id="app-screen" class="screen active">
+
+    <div class="search-bar">
+      <div class="search-input-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="search" id="search-input" placeholder="Rechercher une chanson…" autocomplete="off">
+        <button id="search-clear" class="search-clear" hidden aria-label="Effacer">✕</button>
+      </div>
+      <button id="search-close" class="search-close-btn" type="button" hidden>Fermer</button>
+    </div>
+
+    <div class="tab-panels">
+      <div id="tab-mix" class="tab-panel active">
+        <div class="player-section">
+          <div class="now-playing">
+            <div id="dj-mode-bar" class="dj-mode-bar" role="group" aria-label="Mode DJ">
+              <button id="dj-mode-dance-btn" class="dj-mode-btn" type="button" aria-pressed="false" title="Priorise les chansons dansables avec BPM élevé">🕺 Dance</button>
+              <button id="dj-mode-music-btn" class="dj-mode-btn dj-mode-btn--active" type="button" aria-pressed="true" title="Priorise les chansons du même genre ou artiste">🎵 Musique</button>
+              <div id="dance-genre-prefs" class="dance-genre-prefs" hidden>
+                <span class="dance-genre-label">Genres :</span>
+                <select id="dance-genre-list" class="mix-mode-select" aria-label="Genre musical préféré"></select>
+              </div>
+            </div>
+            <div class="deck-panels" aria-live="polite">
+              <div class="deck-panel" id="deck-a-panel">
+                <div class="deck-head">
+
+                  <button class="deck-bpm-reset" id="deck-a-bpm-reset" title="Reset BPM" hidden>↺</button>
+                  <span class="deck-stems-indicator" id="deck-a-stems-indicator" title="Stems chargés" hidden>🎼</span>
+                  <span class="deck-vol" id="deck-a-vol">100%</span>
+                </div>
+                <div class="album-art-wrapper">
+                  <img id="album-art" src="" alt="" class="album-art" hidden>
+                  <div class="album-art-placeholder" id="art-placeholder">🎵</div>
+                  <div class="crossfade-ring" id="crossfade-ring" hidden></div>
+                  <button id="deck-a-launch" class="deck-overlay-btn" type="button" aria-label="Play/Pause platine 1">▶</button>
+                </div>
+                <div class="deck-progress-bar" id="deck-a-progress" role="button" tabindex="0" aria-label="Position platine 1">
+                  <div class="deck-progress-zones" id="deck-a-zone-layer" aria-hidden="true"></div>
+                  <div class="deck-progress-fill" id="deck-a-fill"></div>
+                  <div class="autodj-start-marker" id="deck-a-autodj-start-marker" hidden aria-hidden="true"></div>
+                  <div class="autodj-marker" id="deck-a-autodj-marker" hidden aria-hidden="true"></div>
+                  <div class="maxdur-marker" id="deck-a-maxdur-marker" hidden aria-hidden="true"></div>
+                </div>
+                <div id="track-artist-a" class="deck-track-artist"></div>
+                <div class="deck-local-fx" aria-label="Effets de la platine 1">
+                  <button id="deck-a-lowpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="Low-pass platine 1" title="Low-pass platine 1">
+                    <span class="deck-fx-emoji" aria-hidden="true">⬇</span>
+                    <span class="deck-fx-chip-label">Low-pass</span>
+                  </button>
+                  <button id="deck-a-highpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="High-pass platine 1" title="High-pass platine 1">
+                    <span class="deck-fx-emoji" aria-hidden="true">⬆</span>
+                    <span class="deck-fx-chip-label">High-pass</span>
+                  </button>
+                  <button id="deck-a-change-suggestion-btn" class="deck-fx-chip" type="button" aria-label="Changer suggestion platine 1" title="Changer suggestion AutoDJ platine 1" hidden>
+                    <span class="deck-fx-emoji" aria-hidden="true">↻</span>
+                    <span class="deck-fx-chip-label">Suggestion</span>
+                  </button>
+                </div>
+                <input type="range" id="deck-a-slider" min="0" max="100" value="100" hidden aria-hidden="true">
+              </div>
+              <div class="deck-panel" id="deck-b-panel">
+                <div class="deck-head">
+                  <span class="deck-bpm" id="deck-b-bpm"></span>
+                  <button class="deck-bpm-reset" id="deck-b-bpm-reset" title="Reset BPM" hidden>↺</button>
+                  <span class="deck-stems-indicator" id="deck-b-stems-indicator" title="Stems chargés" hidden>🎼</span>
+                  <span class="deck-vol" id="deck-b-vol">0%</span>
+                </div>
+                <div class="album-art-next-wrapper">
+                  <img id="next-album-art" src="" alt="" class="album-art-next" hidden>
+                  <div class="album-art-next-placeholder" id="next-art-placeholder">♪</div>
+                  <button id="deck-b-launch" class="deck-overlay-btn" type="button" aria-label="Charger/lancer platine 2">▶</button>
+                </div>
+                <div class="deck-progress-bar" id="deck-b-progress" role="button" tabindex="0" aria-label="Position platine 2">
+                  <div class="deck-progress-zones" id="deck-b-zone-layer" aria-hidden="true"></div>
+                  <div class="deck-progress-fill" id="deck-b-fill"></div>
+                  <div class="autodj-start-marker" id="deck-b-autodj-start-marker" hidden aria-hidden="true"></div>
+                  <div class="autodj-marker" id="deck-b-autodj-marker" hidden aria-hidden="true"></div>
+                  <div class="maxdur-marker" id="deck-b-maxdur-marker" hidden aria-hidden="true"></div>
+                </div>
+                <div id="track-artist-b" class="deck-track-artist"></div>
+                <div class="deck-local-fx" aria-label="Effets de la platine 2">
+                  <button id="deck-b-lowpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="Low-pass platine 2" title="Low-pass platine 2">
+                    <span class="deck-fx-emoji" aria-hidden="true">⬇</span>
+                    <span class="deck-fx-chip-label">Low-pass</span>
+                  </button>
+                  <button id="deck-b-highpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="High-pass platine 2" title="High-pass platine 2">
+                    <span class="deck-fx-emoji" aria-hidden="true">⬆</span>
+                    <span class="deck-fx-chip-label">High-pass</span>
+                  </button>
+                  <button id="deck-b-change-suggestion-btn" class="deck-fx-chip" type="button" aria-label="Changer suggestion platine 2" title="Changer suggestion AutoDJ platine 2" hidden>
+                    <span class="deck-fx-emoji" aria-hidden="true">↻</span>
+                    <span class="deck-fx-chip-label">Suggestion</span>
+                  </button>
+                </div>
+                <input type="range" id="deck-b-slider" min="0" max="100" value="0" hidden aria-hidden="true">
+              </div>
+            </div>
+            <span id="track-artist" hidden></span>
+          </div>
+          <div class="controls">
+            <button class="ctrl-btn fade-btn" id="automix-btn" title="AutoMix vers la platine inactive" aria-label="AutoMix">
+              <span>⏭</span>
+              <span class="fade-label">AutoMix</span>
+            </button>
+            <div class="autodj-btn-wrap">
+              <button id="auto-mode-btn" class="ctrl-btn autodj-btn" type="button" aria-pressed="false" title="AutoDJ inactif: recherche et ajoute automatiquement les chansons suivantes" aria-label="AutoDJ inactif">🤖</button>
+              <span id="autodj-next-fx-countdown" class="autodj-next-fx-countdown" hidden aria-hidden="true"></span>
+            </div>
+            <button class="ctrl-btn" id="toggle-mix-menu-btn" title="Afficher/cacher le menu mix" aria-label="Menu mix">🎛️</button>
+          </div>
+        </div>
+
+        <div id="deck-mix-control" class="deck-mix-control">
+          <div class="crossfade-row">
+            <span>Mix </span>
+          </div>
+          <input type="range" id="deck-mix-slider" min="0" max="100" value="0" class="fade-slider" aria-label="Mix manuel entre platine 1 et platine 2">
+          <div class="deck-mix-actions">
+            <button id="fx-visibility-btn" class="deck-launch-btn fx-visibility-btn" type="button" aria-expanded="true">FX ▾</button>
+          </div>
+          <div class="crossfade-control crossfade-control--mix">
+            <div class="crossfade-row">
+              <span class="fade-wave">〜〜</span>
+              <span>Crossfade platines</span>
+              <span id="crossfade-value-mix" class="crossfade-value">6s</span>
+            </div>
+            <div class="crossfade-inline-actions ">
+              <button id="crossfade-slower-btn" class="crossfade-step-btn" type="button" aria-label="Ralentir le crossfade">-</button>
+              <input type="range" id="crossfade-slider-mix" min="1" max="30" value="6" class="fade-slider" aria-label="Durée du crossfade sur les platines">
+              <button id="crossfade-faster-btn" class="crossfade-step-btn" type="button" aria-label="Accélérer le crossfade">+</button>
+            </div>
+          </div>
+          <div class="mix-mode-row">
+            <label for="mix-transition-mode">Mode AutoMix</label>
+            <select id="mix-transition-mode" class="mix-mode-select" aria-label="Mode de transition AutoMix">
+              <option value="auto">Auto (meilleur)</option>
+              <option value="crossfade_linear">Crossfade lineaire</option>
+              <option value="crossfade_logarithmic">Crossfade logarithmique</option>
+              <option value="fade_in_out">Fade in / Fade out</option>
+              <option value="cut_transition">Cut transition</option>
+              <option value="filter_sweep_low_high">Filter sweep (low-pass / high-pass)</option>
+              <option value="eq_transition_simple">EQ transition simple</option>
+              <option value="echo_out_light">Echo out leger</option>
+              <option value="reverb_short_simple">Reverb courte et simple</option>
+              <option value="short_loop">Loop courte</option>
+              <option value="brake_tape_stop_simple">Brake / tape stop simple</option>
+              <option value="short_reverse">Reverse court</option>
+              <option value="sidechain_basic">Sidechain basique</option>
+              <option value="volume_ducking">Volume ducking</option>
+              <option value="gain_automation">Automation de gain</option>
+              <option value="filter_automation">Automation de filtre</option>
+            </select>
+          </div>
+          <div class="mix-mode-row">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <label for="track-max-duration" style="margin: 0;">Durée max de piste (sec)</label>
+              <button id="track-max-duration-toggle" class="deck-launch-btn fx-toggle" type="button" aria-pressed="true">Durée max: ON</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button id="track-max-duration-minus" class="crossfade-step-btn" type="button" aria-label="Diminuer la durée max">-</button>
+              <input type="number" id="track-max-duration" class="mix-mode-select" min="30" max="600" step="5" value="0" aria-label="Durée maximale de la piste en secondes (0 = aucune limite)" style="width: 60px; text-align: center;">
+              <span style="font-size: 0.9em; color: #666;">sec</span>
+              <button id="track-max-duration-plus" class="crossfade-step-btn" type="button" aria-label="Augmenter la durée max">+</button>
+            </div>
+          </div>
+          <div class="deck-fx-actions">
+            <button id="fx-auto-bpm-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="false">Auto BPM: OFF</button>
+            <button id="fx-echo-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="false">Echo: OFF</button>
+            <button id="fx-distortion-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="false">Distorsion: OFF</button>
+            <button id="manual-lock-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="false">Auto-Fade: ON</button>
+          </div>
+          <div class="mix-mode-row dj-fx-row">
+            <label>FX DJ (raccourcis)</label>
+            <div id="dj-fx-menu" class="dj-fx-menu" aria-label="Effets DJ rapides">
+              <button type="button" class="dj-fx-btn" data-fx-action="filter" title="Filter (filtre): coupe des frequences">Filter</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="lowPass" title="Low-pass: enleve les aigus">Low-pass</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="highPass" title="High-pass: enleve les basses">High-pass</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="vocalRemove" title="Retrait voix sur la platine active">Voix</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="instruRemove" title="Retrait instru sur la platine active">Instru</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="echoDelay" title="Echo / Delay: repetition decalee">Echo / Delay</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="reverb" title="Reverb: sensation d'espace">Reverb</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="flangerPhaser" title="Flanger / Phaser: balayage metal/spatial">Flanger / Phaser</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="roll" title="Roll / Loop Roll: repetition courte">Roll / Loop Roll</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="loop" title="Loop: boucle une section">Loop</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="beatRepeat" title="Beat Repeat / Stutter: repetitions rythmiques">Beat Repeat / Stutter</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="brake" title="Brake / Vinyl Stop: ralentissement progressif">Brake / Vinyl Stop</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="backspin" title="Backspin / Rewind: retour rapide arriere">Backspin / Rewind</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="noise" title="Noise FX: white noise sweep">Noise FX</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="eq" title="EQ: basses / mediums / aigus">EQ</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="pitchTempo" title="Pitch / Tempo: synchronisation BPM">Pitch / Tempo</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="keyShift" title="Key Shift / Harmonic Mixing">Key Shift / Harmonic</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="scratching" title="Scratching: effet manuel type jog/vinyle">Scratching</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="hotCues" title="Hot Cues: points de declenchement">Hot Cues</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="loopCue" title="Loop Cue: revient au dernier hot cue en boucle">Loop Cue</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="sampling" title="Sampling: ajout de sons externes">Sampling</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="queue-section">
+          <div class="queue-header">
+            <h2 class="queue-title">File d'attente</h2>
+            <button id="clear-queue-btn" class="clear-btn">Vider</button>
+          </div>
+          <div id="queue-list" class="queue-list">
+            <div class="empty-queue" id="empty-queue">
+              <div class="empty-icon">🎶</div>
+              <p>Recherchez des chansons pour les ajouter</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="tab-playlist" class="tab-panel" hidden>
+        <div class="panel-header">
+          <h2 class="panel-title">Cache</h2>
+          <span id="cache-filter-count" class="panel-meta">0 morceau</span>
+        </div>
+        <div class="cache-filter-bar" aria-label="Filtres du cache">
+          <label class="cache-filter-field">
+            <span>Genre / style</span>
+            <select id="cache-genre-filter">
+              <option value="">Tous les genres</option>
+            </select>
+          </label>
+          <label class="cache-filter-field">
+            <span>Année</span>
+            <select id="cache-year-filter">
+              <option value="">Toutes les années</option>
+            </select>
+          </label>
+          <label class="cache-filter-toggle" for="cache-stems-filter">
+            <input type="checkbox" id="cache-stems-filter">
+            <span>Avec stems</span>
+          </label>
+          <button id="cache-reset-filters" class="cache-reset-filters" type="button" hidden>Réinitialiser</button>
+        </div>
+        <div id="playlist-list" class="playlist-list"></div>
+      </div>
+
+      <div id="tab-config" class="tab-panel" hidden>
+        <div class="panel-header">
+          <h2 class="panel-title">Configuration</h2>
+        </div>
+        <div class="config-section">
+          <div class="config-block">
+            <div class="config-label">
+              <span class="fade-wave">〜〜</span>
+              <span>Crossfade</span>
+              <span id="crossfade-value" class="crossfade-value">6s</span>
+            </div>
+            <input type="range" id="crossfade-slider" min="1" max="30" value="6" class="fade-slider" aria-label="Durée du crossfade">
+          </div>
+
+          <div class="config-block">
+            <div class="config-label">
+              <span>Filtre RAM transitions</span>
+            </div>
+            <label class="toggle-row" for="ram-filter-enabled-toggle">
+              <input type="checkbox" id="ram-filter-enabled-toggle" class="toggle-input" checked>
+              <span class="toggle-slider" aria-hidden="true"></span>
+              <span class="toggle-label">Activer le filtre RAM</span>
+            </label>
+            <div class="form-group">
+              <label for="ram-total-memory-gb">RAM totale cible (Go, 0 = auto)</label>
+              <input
+                type="number"
+                id="ram-total-memory-gb"
+                min="0"
+                max="32"
+                step="0.5"
+                value="0"
+                aria-label="RAM totale cible pour le filtre de transitions"
+              >
+            </div>
+            <div id="ram-filter-status" class="setup-subtitle">Filtre RAM actif.</div>
+          </div>
+
+          <div class="config-block">
+            <div class="config-label">
+              <span>API de téléchargement</span>
+            </div>
+            <div class="form-group">
+              <label for="downloader-api-url-input">URL API</label>
+              <input type="text" id="downloader-api-url-input" value="http://192.168.8.149:3000" placeholder="http://192.168.8.149:3000" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="controls" style="justify-content:flex-start; gap:10px;">
+              <button id="downloader-api-save-btn" class="connect-btn connect-btn--secondary" type="button">Sauver l'API</button>
+              <button id="downloader-api-test-btn" class="connect-btn connect-btn--secondary" type="button">Tester l'API</button>
+            </div>
+            <div id="downloader-api-status" class="setup-subtitle">Configurez l'API pour activer la recherche et le téléchargement local temporaire.</div>
+          </div>
+
+          <div class="config-block">
+            <div class="config-label">
+              <span>Logs console</span>
+            </div>
+            <label class="toggle-row" for="debug-logs-toggle">
+              <input type="checkbox" id="debug-logs-toggle" class="toggle-input">
+              <span class="toggle-slider" aria-hidden="true"></span>
+              <span class="toggle-label">Mode debug</span>
+            </label>
+            <div id="debug-logs-status" class="setup-subtitle">Mode debug inactif: seuls les warnings et erreurs sont affiches.</div>
+          </div>
+
+          <div class="config-block">
+            <div class="config-label">
+              <span>Auto DJ FX</span>
+              <button id="auto-dj-fx-enabled-btn" class="auto-dj-fx-enable-btn" type="button" aria-pressed="true">AutoFX: ON</button>
+            </div>
+            <div class="setup-subtitle">Autoriser les effets que le robot peut declencher automatiquement.</div>
+            <div class="auto-dj-fx-grid">
+              <label class="toggle-row" for="auto-dj-fx-filter-toggle">
+                <input type="checkbox" id="auto-dj-fx-filter-toggle" class="toggle-input" data-auto-fx-type="filter" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Filter</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-lowpass-toggle">
+                <input type="checkbox" id="auto-dj-fx-lowpass-toggle" class="toggle-input" data-auto-fx-type="lowPass" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Low-pass</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-highpass-toggle">
+                <input type="checkbox" id="auto-dj-fx-highpass-toggle" class="toggle-input" data-auto-fx-type="highPass" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">High-pass</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-echo-toggle">
+                <input type="checkbox" id="auto-dj-fx-echo-toggle" class="toggle-input" data-auto-fx-type="echoDelay" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Echo / Delay</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-reverb-toggle">
+                <input type="checkbox" id="auto-dj-fx-reverb-toggle" class="toggle-input" data-auto-fx-type="reverb" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Reverb</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-flanger-toggle">
+                <input type="checkbox" id="auto-dj-fx-flanger-toggle" class="toggle-input" data-auto-fx-type="flangerPhaser" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Flanger / Phaser</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-roll-toggle">
+                <input type="checkbox" id="auto-dj-fx-roll-toggle" class="toggle-input" data-auto-fx-type="roll" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Roll / Loop</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-loop-toggle">
+                <input type="checkbox" id="auto-dj-fx-loop-toggle" class="toggle-input" data-auto-fx-type="loop" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Loop</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-beatrepeat-toggle">
+                <input type="checkbox" id="auto-dj-fx-beatrepeat-toggle" class="toggle-input" data-auto-fx-type="beatRepeat" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Beat Repeat</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-brake-toggle">
+                <input type="checkbox" id="auto-dj-fx-brake-toggle" class="toggle-input" data-auto-fx-type="brake" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Brake / Vinyl Stop</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-backspin-toggle">
+                <input type="checkbox" id="auto-dj-fx-backspin-toggle" class="toggle-input" data-auto-fx-type="backspin" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Backspin / Rewind</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-noise-toggle">
+                <input type="checkbox" id="auto-dj-fx-noise-toggle" class="toggle-input" data-auto-fx-type="noise" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Noise FX</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-eq-toggle">
+                <input type="checkbox" id="auto-dj-fx-eq-toggle" class="toggle-input" data-auto-fx-type="eq" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">EQ</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-pitch-toggle">
+                <input type="checkbox" id="auto-dj-fx-pitch-toggle" class="toggle-input" data-auto-fx-type="pitchTempo" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Pitch / Tempo</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-keyshift-toggle">
+                <input type="checkbox" id="auto-dj-fx-keyshift-toggle" class="toggle-input" data-auto-fx-type="keyShift" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Key Shift / Harmonic</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-scratching-toggle">
+                <input type="checkbox" id="auto-dj-fx-scratching-toggle" class="toggle-input" data-auto-fx-type="scratching" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Scratching</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-hotcues-toggle">
+                <input type="checkbox" id="auto-dj-fx-hotcues-toggle" class="toggle-input" data-auto-fx-type="hotCues" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Hot Cues</span>
+              </label>
+              <label class="toggle-row" for="auto-dj-fx-sampling-toggle">
+                <input type="checkbox" id="auto-dj-fx-sampling-toggle" class="toggle-input" data-auto-fx-type="sampling" checked>
+                <span class="toggle-slider" aria-hidden="true"></span>
+                <span class="toggle-label">Sampling</span>
+              </label>
+            </div>
+            <div class="form-group auto-dj-fx-interval-group">
+              <label for="auto-dj-fx-min-interval-input">Intervalle minimum entre deux FX (secondes)</label>
+              <input
+                type="number"
+                id="auto-dj-fx-min-interval-input"
+                min="1"
+                max="180"
+                step="1"
+                value="14"
+                inputmode="numeric"
+                aria-label="Intervalle minimum entre deux FX automatiques"
+              >
+            </div>
+            <div class="form-group auto-dj-fx-interval-group">
+              <label for="auto-dj-fx-max-interval-input">Intervalle maximum entre deux FX (secondes)</label>
+              <input
+                type="number"
+                id="auto-dj-fx-max-interval-input"
+                min="3"
+                max="300"
+                step="1"
+                value="45"
+                inputmode="numeric"
+                aria-label="Intervalle maximum entre deux FX automatiques"
+              >
+            </div>
+            <div id="auto-dj-fx-status" class="setup-subtitle">Robot FX: 18/18 autorises, intervalle 14s a 45s.</div>
+          </div>
+
+          <div class="config-block">
+            <button id="clear-cache-btn" class="logout-btn--full">🗑️ Vider le cache local</button>
+          </div>
+
+          <div class="config-block">
+            <button id="logout-btn" class="logout-btn--full">↩ Réinitialiser</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="search-overlay" class="search-overlay" hidden>
+      <div id="search-results" class="search-results"></div>
+    </div>
+
+    <nav class="tab-bar" aria-label="Navigation principale">
+      <button class="tab-bar-btn active" data-tab="mix" aria-selected="true">
+        <span class="tab-icon">🎚️</span>
+        <span class="tab-label">Mix</span>
+      </button>
+      <button class="tab-bar-btn" data-tab="playlist" aria-selected="false">
+        <span class="tab-icon">🗂️</span>
+        <span class="tab-label">Cache</span>
+      </button>
+      <button class="tab-bar-btn" data-tab="config" aria-selected="false">
+        <span class="tab-icon">⚙️</span>
+        <span class="tab-label">Config</span>
+      </button>
+    </nav>
+  </div>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>

@@ -10,7 +10,7 @@ export default defineConfig({
   webServer: {
     command: 'npx serve . --listen 4173 --no-clipboard',
     url: 'http://localhost:4173',
-    timeout: 15_000,
+    timeout: 60_000,
     reuseExistingServer: false,
   },
   reporter: [['list']],
@@ -23,6 +23,11 @@ export default defineConfig({
     {
       name: 'flash-guess',
       testDir: './flash-guess/tests/e2e',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'dj-mix',
+      testDir: './dj-mix/tests/e2e',
       use: { ...devices['Desktop Chrome'] },
     },
   ],
