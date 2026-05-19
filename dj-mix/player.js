@@ -759,7 +759,7 @@ export class DJPlayer extends EventTarget {
     const clampedT = clamp01(t);
     const linearFrom = startBaseFrom * (1 - clampedT);
     const linearTo = startBaseTo + ((1 - startBaseTo) * clampedT);
-
+    
     switch (mode) {
       case 'crossfade_linear': {
         return { from: linearFrom, to: linearTo };

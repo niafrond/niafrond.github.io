@@ -255,7 +255,8 @@ export class SimpleMixFeatures {
     const { autoBpm, echo, distortion, deckFx } = this.#settings;
     const needsCtx = autoBpm || echo || distortion
       || deckFx.A.vocalRemove || deckFx.A.instruRemove
-      || deckFx.B.vocalRemove || deckFx.B.instruRemove;
+      || deckFx.B.vocalRemove || deckFx.B.instruRemove
+      || deckFx.A.filterMode !== 'off' || deckFx.B.filterMode !== 'off';
 
     if (needsCtx) await this.ensureReady();
     this.#apply();

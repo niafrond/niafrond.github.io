@@ -637,11 +637,11 @@ export function createAudioSourceManager(options) {
     }
   }
 
-  async function searchTracksViaApi(query, limit = 25) {
+  async function searchTracksViaApi(query, limit = 25, skipCache = false) {
     const baseUrl = getDownloaderApiUrl();
     if (!baseUrl) throw new Error('URL API downloader manquante (Config)');
 
-    logInfo('api.search.begin', { query, limit, baseUrl });
+    logInfo('api.search.begin', { query, limit, skipCache, baseUrl });
 
     const parsed = splitItunesSearchQuery(query);
     const searchAttempts = [
@@ -657,7 +657,8 @@ export function createAudioSourceManager(options) {
 
     for (const attempt of searchAttempts) {
       const limitParam = Number.isFinite(limit) && limit > 0 ? `&limit=${encodeURIComponent(limit)}` : '';
-      const url = `${baseUrl}/api/search?term=${encodeURIComponent(attempt.term)}${attempt.artist ? `&artist=${encodeURIComponent(attempt.artist)}` : ''}${limitParam}`;
+      const cacheParam = skipCache ? '&nocache=1' : '';
+      const url = `${baseUrl}/api/search?term=${encodeURIComponent(attempt.term)}${attempt.artist ? `&artist=${encodeURIComponent(attempt.artist)}` : ''}${limitParam}${cacheParam}`;
       const res = await fetch(url, { headers: { Accept: 'application/json' } });
       if (!res.ok) {
         logWarn('api.search.attempt.failed', {

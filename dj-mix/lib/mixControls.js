@@ -108,6 +108,10 @@ export function createMixControls(options) {
     styleDeckFxButton(deckScopedFxButtons?.A?.instruRemoveBtn, getDeckFxState('A').instruRemove, 'Retrait instru', '1');
     styleDeckFxButton(deckScopedFxButtons?.B?.vocalRemoveBtn, getDeckFxState('B').vocalRemove, 'Retrait voix', '2');
     styleDeckFxButton(deckScopedFxButtons?.B?.instruRemoveBtn, getDeckFxState('B').instruRemove, 'Retrait instru', '2');
+    styleDeckFxButton(deckScopedFxButtons?.A?.lowPassBtn, getDeckFxState('A').filterMode === 'lowPass', 'Low-pass', '1');
+    styleDeckFxButton(deckScopedFxButtons?.A?.highPassBtn, getDeckFxState('A').filterMode === 'highPass', 'High-pass', '1');
+    styleDeckFxButton(deckScopedFxButtons?.B?.lowPassBtn, getDeckFxState('B').filterMode === 'lowPass', 'Low-pass', '2');
+    styleDeckFxButton(deckScopedFxButtons?.B?.highPassBtn, getDeckFxState('B').filterMode === 'highPass', 'High-pass', '2');
   }
 
   function updateDeckCueUI() {

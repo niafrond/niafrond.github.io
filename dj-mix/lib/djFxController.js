@@ -600,6 +600,10 @@ export function createDjFxController(options) {
         isEnabled = focusFilterMode === 'lowPass';
       } else if (action === 'highPass') {
         isEnabled = focusFilterMode === 'highPass';
+      } else if (action === 'vocalRemove') {
+        isEnabled = Boolean(getMixFeatures().deckFx?.[focusDeck]?.vocalRemove);
+      } else if (action === 'instruRemove') {
+        isEnabled = Boolean(getMixFeatures().deckFx?.[focusDeck]?.instruRemove);
       } else if (feature) {
         isEnabled = Boolean(getMixFeatures()?.[feature]);
       } else if (transitionMode) {
@@ -645,6 +649,16 @@ export function createDjFxController(options) {
         setDeckFilterMode(getMixFeatures().deckFx?.[focusDeck]?.filterMode === 'highPass' ? 'off' : 'highPass', focusDeck);
         applyDjFxTransition('highPass', 'High-pass AutoMix', true);
         break;
+      case 'vocalRemove': {
+        const enabled = Boolean(getMixFeatures().deckFx?.[focusDeck]?.vocalRemove);
+        setMixFeatureEnabled('vocalRemove', !enabled, focusDeck);
+        break;
+      }
+      case 'instruRemove': {
+        const enabled = Boolean(getMixFeatures().deckFx?.[focusDeck]?.instruRemove);
+        setMixFeatureEnabled('instruRemove', !enabled, focusDeck);
+        break;
+      }
       case 'echoDelay':
         toggleDjFxFeature('echoDelay', 'Echo / Delay', undefined, true);
         break;

@@ -492,8 +492,8 @@ const deckABpmReset = document.getElementById('deck-a-bpm-reset');
 const deckBBpmReset = document.getElementById('deck-b-bpm-reset');
 const deckALaunchBtn = document.getElementById('deck-a-launch');
 const deckBLaunchBtn = document.getElementById('deck-b-launch');
-const deckARefreshSuggestionBtn = document.getElementById('deck-a-refresh-suggestion');
-const deckBRefreshSuggestionBtn = document.getElementById('deck-b-refresh-suggestion');
+const deckAChangeSuggestionBtn = document.getElementById('deck-a-change-suggestion-btn');
+const deckBChangeSuggestionBtn = document.getElementById('deck-b-change-suggestion-btn');
 const deckMixSlider = document.getElementById('deck-mix-slider');
 const deckMixLabel = document.getElementById('deck-mix-label');
 const deckBCueLabel = document.getElementById('deck-b-cue-label');
@@ -514,10 +514,10 @@ const djFxMenu = document.getElementById('dj-fx-menu');
 const djFxButtons = Array.from(djFxMenu?.querySelectorAll('[data-fx-action]') || []);
 const autoModeBtn = document.getElementById('auto-mode-btn');
 const autoDjNextFxCountdown = document.getElementById('autodj-next-fx-countdown');
-const deckAVocalBtn = document.getElementById('deck-a-vocal-btn');
-const deckAInstruBtn = document.getElementById('deck-a-instru-btn');
-const deckBVocalBtn = document.getElementById('deck-b-vocal-btn');
-const deckBInstruBtn = document.getElementById('deck-b-instru-btn');
+const deckALowPassBtn = document.getElementById('deck-a-lowpass-btn');
+const deckAHighPassBtn = document.getElementById('deck-a-highpass-btn');
+const deckBLowPassBtn = document.getElementById('deck-b-lowpass-btn');
+const deckBHighPassBtn = document.getElementById('deck-b-highpass-btn');
 const deckAstemsIndicator = document.getElementById('deck-a-stems-indicator');
 const deckBstemsIndicator = document.getElementById('deck-b-stems-indicator');
 const autoMixBtn = document.getElementById('automix-btn');
@@ -626,8 +626,8 @@ const mixControls = createMixControls({
   deckBPanel,
   deckFxActions,
   deckScopedFxButtons: {
-    A: { vocalRemoveBtn: deckAVocalBtn, instruRemoveBtn: deckAInstruBtn },
-    B: { vocalRemoveBtn: deckBVocalBtn, instruRemoveBtn: deckBInstruBtn },
+    A: { lowPassBtn: deckALowPassBtn, highPassBtn: deckAHighPassBtn },
+    B: { lowPassBtn: deckBLowPassBtn, highPassBtn: deckBHighPassBtn },
   },
   deckMixLabel,
   deckMixSlider,
@@ -946,14 +946,38 @@ function updateStemButtonState(deck) {
   const safeDeck = deck === 'B' ? 'B' : 'A';
   
   if (safeDeck === 'A') {
-    if (deckAVocalBtn) deckAVocalBtn.disabled = !stemsAvailable;
-    if (deckAInstruBtn) deckAInstruBtn.disabled = !stemsAvailable;
     if (deckAstemsIndicator) deckAstemsIndicator.hidden = !stemsAvailable;
   } else {
-    if (deckBVocalBtn) deckBVocalBtn.disabled = !stemsAvailable;
-    if (deckBInstruBtn) deckBInstruBtn.disabled = !stemsAvailable;
     if (deckBstemsIndicator) deckBstemsIndicator.hidden = !stemsAvailable;
   }
+}
+
+function setDeckFilterModeForDeck(deck, mode) {
+  const safeDeck = deck === 'B' ? 'B' : 'A';
+  const safeMode = mode === 'lowPass' || mode === 'highPass' ? mode : 'off';
+  const nextDeckFx = {
+    A: { vocalRemove: false, instruRemove: false, filterMode: 'off', ...(mixFeatures.deckFx?.A || {}) },
+    B: { vocalRemove: false, instruRemove: false, filterMode: 'off', ...(mixFeatures.deckFx?.B || {}) },
+  };
+  nextDeckFx[safeDeck] = {
+    ...nextDeckFx[safeDeck],
+    filterMode: safeMode,
+  };
+
+  mixFeatures = {
+    ...mixFeatures,
+    deckFx: nextDeckFx,
+  };
+  applyMixFeatures();
+  updateDjFxMenuUI();
+}
+
+function toggleDeckFilterMode(deck, requestedMode) {
+  const safeDeck = deck === 'B' ? 'B' : 'A';
+  const safeMode = requestedMode === 'lowPass' || requestedMode === 'highPass' ? requestedMode : 'off';
+  const currentMode = mixFeatures.deckFx?.[safeDeck]?.filterMode || 'off';
+  const nextMode = currentMode === safeMode ? 'off' : safeMode;
+  setDeckFilterModeForDeck(safeDeck, nextMode);
 }
 
 /**
@@ -2084,8 +2108,8 @@ function updateSuggestionRefreshButtons() {
     button.disabled = !visible || autoSuggestionRefreshInProgress;
   };
 
-  applyState(deckARefreshSuggestionBtn, 'A');
-  applyState(deckBRefreshSuggestionBtn, 'B');
+  applyState(deckAChangeSuggestionBtn, 'A');
+  applyState(deckBChangeSuggestionBtn, 'B');
 }
 
 function findAutoSuggestedTrackIndexAfterCurrent(currentTrack) {
@@ -2147,11 +2171,11 @@ async function refreshAutoSuggestionForCurrentTrack() {
   }
 }
 
-deckARefreshSuggestionBtn?.addEventListener('click', () => {
+deckAChangeSuggestionBtn?.addEventListener('click', () => {
   refreshAutoSuggestionForCurrentTrack().catch(() => {});
 });
 
-deckBRefreshSuggestionBtn?.addEventListener('click', () => {
+deckBChangeSuggestionBtn?.addEventListener('click', () => {
   refreshAutoSuggestionForCurrentTrack().catch(() => {});
 });
 
@@ -2310,24 +2334,20 @@ function renderMixZones() {
   renderLayer(deckBProgressZones, mixDataB, playbackDuration);
 }
 
-deckAVocalBtn?.addEventListener('click', () => {
-  const enabled = Boolean(mixFeatures.deckFx?.A?.vocalRemove);
-  setMixFeatureEnabled('vocalRemove', !enabled, 'A');
+deckALowPassBtn?.addEventListener('click', () => {
+  toggleDeckFilterMode('A', 'lowPass');
 });
 
-deckAInstruBtn?.addEventListener('click', () => {
-  const enabled = Boolean(mixFeatures.deckFx?.A?.instruRemove);
-  setMixFeatureEnabled('instruRemove', !enabled, 'A');
+deckAHighPassBtn?.addEventListener('click', () => {
+  toggleDeckFilterMode('A', 'highPass');
 });
 
-deckBVocalBtn?.addEventListener('click', () => {
-  const enabled = Boolean(mixFeatures.deckFx?.B?.vocalRemove);
-  setMixFeatureEnabled('vocalRemove', !enabled, 'B');
+deckBLowPassBtn?.addEventListener('click', () => {
+  toggleDeckFilterMode('B', 'lowPass');
 });
 
-deckBInstruBtn?.addEventListener('click', () => {
-  const enabled = Boolean(mixFeatures.deckFx?.B?.instruRemove);
-  setMixFeatureEnabled('instruRemove', !enabled, 'B');
+deckBHighPassBtn?.addEventListener('click', () => {
+  toggleDeckFilterMode('B', 'highPass');
 });
 
 
@@ -2409,7 +2429,7 @@ searchInput.addEventListener('keydown', async (event) => {
   openSearch();
   searchResults.innerHTML = '<div class="search-loading">Recherche API...</div>';
   lastSearchQuery = q;
-  await runSearch(q);
+  await runSearch(q, true);
 });
 
 searchClear.addEventListener('click', () => {
@@ -2433,15 +2453,15 @@ searchOverlay.addEventListener('click', (e) => {
   if (e.target === searchOverlay) closeSearch();
 });
 
-async function runSearch(query) {
-  logInfo('runSearch(): querying API', { query });
+async function runSearch(query, skipCache = false) {
+  logInfo('runSearch(): querying API', { query, skipCache });
   try {
     if (!getDownloaderApiUrl()) {
       searchResults.innerHTML = '<div class="search-empty">Configurez l’API de téléchargement dans l’onglet Config</div>';
       return;
     }
 
-    const tracks = await searchTracksViaApi(query);
+    const tracks = await searchTracksViaApi(query, 25, skipCache);
     logInfo('runSearch(): API results', { query, count: tracks?.length || 0 });
     if (!tracks?.length) {
       searchResults.innerHTML = '<div class="search-empty">Aucun résultat</div>';
