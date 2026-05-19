@@ -45,11 +45,18 @@
       <div id="tab-mix" class="tab-panel active">
         <div class="player-section">
           <div class="now-playing">
+            <div id="dj-mode-bar" class="dj-mode-bar" role="group" aria-label="Mode DJ">
+              <button id="dj-mode-dance-btn" class="dj-mode-btn" type="button" aria-pressed="false" title="Priorise les chansons dansables avec BPM élevé">🕺 Dance</button>
+              <button id="dj-mode-music-btn" class="dj-mode-btn dj-mode-btn--active" type="button" aria-pressed="true" title="Priorise les chansons du même genre ou artiste">🎵 Musique</button>
+              <div id="dance-genre-prefs" class="dance-genre-prefs" hidden>
+                <span class="dance-genre-label">Genres :</span>
+                <select id="dance-genre-list" class="mix-mode-select" aria-label="Genre musical préféré"></select>
+              </div>
+            </div>
             <div class="deck-panels" aria-live="polite">
               <div class="deck-panel" id="deck-a-panel">
                 <div class="deck-head">
-                  <span class="deck-title">Platine 1</span>
-                  <span class="deck-bpm" id="deck-a-bpm"></span>
+
                   <button class="deck-bpm-reset" id="deck-a-bpm-reset" title="Reset BPM" hidden>↺</button>
                   <span class="deck-stems-indicator" id="deck-a-stems-indicator" title="Stems chargés" hidden>🎼</span>
                   <span class="deck-vol" id="deck-a-vol">100%</span>
@@ -58,7 +65,6 @@
                   <img id="album-art" src="" alt="" class="album-art" hidden>
                   <div class="album-art-placeholder" id="art-placeholder">🎵</div>
                   <div class="crossfade-ring" id="crossfade-ring" hidden></div>
-                  <button id="deck-a-refresh-suggestion" class="deck-suggestion-btn" type="button" hidden title="Changer la suggestion AutoDJ" aria-label="Changer la suggestion AutoDJ">↻</button>
                   <button id="deck-a-launch" class="deck-overlay-btn" type="button" aria-label="Play/Pause platine 1">▶</button>
                 </div>
                 <div class="deck-progress-bar" id="deck-a-progress" role="button" tabindex="0" aria-label="Position platine 1">
@@ -70,20 +76,23 @@
                 </div>
                 <div id="track-artist-a" class="deck-track-artist"></div>
                 <div class="deck-local-fx" aria-label="Effets de la platine 1">
-                  <button id="deck-a-vocal-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="Retrait voix platine 1" title="Retrait voix platine 1">
-                    <span class="deck-fx-emoji" aria-hidden="true">❌</span>
-                    <span class="deck-fx-chip-label">Voix</span>
+                  <button id="deck-a-lowpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="Low-pass platine 1" title="Low-pass platine 1">
+                    <span class="deck-fx-emoji" aria-hidden="true">⬇</span>
+                    <span class="deck-fx-chip-label">Low-pass</span>
                   </button>
-                  <button id="deck-a-instru-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="Retrait instru platine 1" title="Retrait instru platine 1">
-                    <span class="deck-fx-emoji" aria-hidden="true">❌</span>
-                    <span class="deck-fx-chip-label">Instru</span>
+                  <button id="deck-a-highpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="High-pass platine 1" title="High-pass platine 1">
+                    <span class="deck-fx-emoji" aria-hidden="true">⬆</span>
+                    <span class="deck-fx-chip-label">High-pass</span>
+                  </button>
+                  <button id="deck-a-change-suggestion-btn" class="deck-fx-chip" type="button" aria-label="Changer suggestion platine 1" title="Changer suggestion AutoDJ platine 1" hidden>
+                    <span class="deck-fx-emoji" aria-hidden="true">↻</span>
+                    <span class="deck-fx-chip-label">Suggestion</span>
                   </button>
                 </div>
                 <input type="range" id="deck-a-slider" min="0" max="100" value="100" hidden aria-hidden="true">
               </div>
               <div class="deck-panel" id="deck-b-panel">
                 <div class="deck-head">
-                  <span class="deck-title">Platine 2</span>
                   <span class="deck-bpm" id="deck-b-bpm"></span>
                   <button class="deck-bpm-reset" id="deck-b-bpm-reset" title="Reset BPM" hidden>↺</button>
                   <span class="deck-stems-indicator" id="deck-b-stems-indicator" title="Stems chargés" hidden>🎼</span>
@@ -92,7 +101,6 @@
                 <div class="album-art-next-wrapper">
                   <img id="next-album-art" src="" alt="" class="album-art-next" hidden>
                   <div class="album-art-next-placeholder" id="next-art-placeholder">♪</div>
-                  <button id="deck-b-refresh-suggestion" class="deck-suggestion-btn" type="button" hidden title="Changer la suggestion AutoDJ" aria-label="Changer la suggestion AutoDJ">↻</button>
                   <button id="deck-b-launch" class="deck-overlay-btn" type="button" aria-label="Charger/lancer platine 2">▶</button>
                 </div>
                 <div class="deck-progress-bar" id="deck-b-progress" role="button" tabindex="0" aria-label="Position platine 2">
@@ -104,13 +112,17 @@
                 </div>
                 <div id="track-artist-b" class="deck-track-artist"></div>
                 <div class="deck-local-fx" aria-label="Effets de la platine 2">
-                  <button id="deck-b-vocal-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="Retrait voix platine 2" title="Retrait voix platine 2">
-                    <span class="deck-fx-emoji" aria-hidden="true">❌</span>
-                    <span class="deck-fx-chip-label">Voix</span>
+                  <button id="deck-b-lowpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="Low-pass platine 2" title="Low-pass platine 2">
+                    <span class="deck-fx-emoji" aria-hidden="true">⬇</span>
+                    <span class="deck-fx-chip-label">Low-pass</span>
                   </button>
-                  <button id="deck-b-instru-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="Retrait instru platine 2" title="Retrait instru platine 2">
-                    <span class="deck-fx-emoji" aria-hidden="true">❌</span>
-                    <span class="deck-fx-chip-label">Instru</span>
+                  <button id="deck-b-highpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="High-pass platine 2" title="High-pass platine 2">
+                    <span class="deck-fx-emoji" aria-hidden="true">⬆</span>
+                    <span class="deck-fx-chip-label">High-pass</span>
+                  </button>
+                  <button id="deck-b-change-suggestion-btn" class="deck-fx-chip" type="button" aria-label="Changer suggestion platine 2" title="Changer suggestion AutoDJ platine 2" hidden>
+                    <span class="deck-fx-emoji" aria-hidden="true">↻</span>
+                    <span class="deck-fx-chip-label">Suggestion</span>
                   </button>
                 </div>
                 <input type="range" id="deck-b-slider" min="0" max="100" value="0" hidden aria-hidden="true">
@@ -196,6 +208,8 @@
               <button type="button" class="dj-fx-btn" data-fx-action="filter" title="Filter (filtre): coupe des frequences">Filter</button>
               <button type="button" class="dj-fx-btn" data-fx-action="lowPass" title="Low-pass: enleve les aigus">Low-pass</button>
               <button type="button" class="dj-fx-btn" data-fx-action="highPass" title="High-pass: enleve les basses">High-pass</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="vocalRemove" title="Retrait voix sur la platine active">Voix</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="instruRemove" title="Retrait instru sur la platine active">Instru</button>
               <button type="button" class="dj-fx-btn" data-fx-action="echoDelay" title="Echo / Delay: repetition decalee">Echo / Delay</button>
               <button type="button" class="dj-fx-btn" data-fx-action="reverb" title="Reverb: sensation d'espace">Reverb</button>
               <button type="button" class="dj-fx-btn" data-fx-action="flangerPhaser" title="Flanger / Phaser: balayage metal/spatial">Flanger / Phaser</button>
@@ -210,6 +224,7 @@
               <button type="button" class="dj-fx-btn" data-fx-action="keyShift" title="Key Shift / Harmonic Mixing">Key Shift / Harmonic</button>
               <button type="button" class="dj-fx-btn" data-fx-action="scratching" title="Scratching: effet manuel type jog/vinyle">Scratching</button>
               <button type="button" class="dj-fx-btn" data-fx-action="hotCues" title="Hot Cues: points de declenchement">Hot Cues</button>
+              <button type="button" class="dj-fx-btn" data-fx-action="loopCue" title="Loop Cue: revient au dernier hot cue en boucle">Loop Cue</button>
               <button type="button" class="dj-fx-btn" data-fx-action="sampling" title="Sampling: ajout de sons externes">Sampling</button>
             </div>
           </div>
@@ -325,6 +340,7 @@
           <div class="config-block">
             <div class="config-label">
               <span>Auto DJ FX</span>
+              <button id="auto-dj-fx-enabled-btn" class="auto-dj-fx-enable-btn" type="button" aria-pressed="true">AutoFX: ON</button>
             </div>
             <div class="setup-subtitle">Autoriser les effets que le robot peut declencher automatiquement.</div>
             <div class="auto-dj-fx-grid">
@@ -432,7 +448,20 @@
                 aria-label="Intervalle minimum entre deux FX automatiques"
               >
             </div>
-            <div id="auto-dj-fx-status" class="setup-subtitle">Robot FX: 18/18 autorises, intervalle minimum 14s.</div>
+            <div class="form-group auto-dj-fx-interval-group">
+              <label for="auto-dj-fx-max-interval-input">Intervalle maximum entre deux FX (secondes)</label>
+              <input
+                type="number"
+                id="auto-dj-fx-max-interval-input"
+                min="3"
+                max="300"
+                step="1"
+                value="45"
+                inputmode="numeric"
+                aria-label="Intervalle maximum entre deux FX automatiques"
+              >
+            </div>
+            <div id="auto-dj-fx-status" class="setup-subtitle">Robot FX: 18/18 autorises, intervalle 14s a 45s.</div>
           </div>
 
           <div class="config-block">

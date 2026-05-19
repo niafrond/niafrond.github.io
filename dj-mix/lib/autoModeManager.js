@@ -36,6 +36,10 @@ export function createAutoModeManager({
   logger,
   getTrackMaxDurationSec,
   getAutoFxMinGapMs,
+  getAutoFxMaxGapMs,
+  getDjMode,
+  getDjModeGenrePrefs,
+  getCurrentBpm,
   onAutomixTimingCalculated,
   onMixDataUpdated,
   onAutoFxPlanCalculated,
@@ -55,6 +59,8 @@ export function createAutoModeManager({
   const AUTO_FX_LAST_WINDOW_MINUTES = 2; // X minutes mentioned by user requirement
   const AUTO_FX_MAX_IN_LAST_WINDOW = 2;
   const AUTO_FX_MIN_GAP_MS = 14000;
+  const AUTO_FX_MAX_GAP_MS = 45000;
+  const AUTO_FX_CADENCE_TYPES = Object.freeze(['echoDelay', 'filter', 'reverb']);
 
   const AUTO_FX_PRIORITY = Object.freeze({
     hotCues: 4,
@@ -73,6 +79,21 @@ export function createAutoModeManager({
   function toFiniteNumber(value, fallback = 0) {
     const n = Number(value);
     return Number.isFinite(n) ? n : fallback;
+  }
+
+  function getAutoFxGapBoundsMs() {
+    const minGapMs = Math.max(
+      1000,
+      toFiniteNumber(getAutoFxMinGapMs?.(), AUTO_FX_MIN_GAP_MS),
+    );
+    const maxGapRawMs = Math.max(
+      minGapMs,
+      toFiniteNumber(getAutoFxMaxGapMs?.(), AUTO_FX_MAX_GAP_MS),
+    );
+    return {
+      minGapMs,
+      maxGapMs: Math.max(minGapMs, maxGapRawMs),
+    };
   }
 
   function pickZoneAnchorMs(zones, options = {}) {
@@ -104,12 +125,9 @@ export function createAutoModeManager({
     return bestMs;
   }
 
-  function enforceAutoFxDensity(events, effectiveEndMs) {
+  function enforceAutoFxDensity(events, effectiveEndMs, options = {}) {
     if (!Array.isArray(events) || events.length === 0) return [];
-    const minGapMs = Math.max(
-      1000,
-      toFiniteNumber(getAutoFxMinGapMs?.(), AUTO_FX_MIN_GAP_MS),
-    );
+    const { minGapMs, maxGapMs } = getAutoFxGapBoundsMs();
 
     const sorted = [...events].sort((a, b) => a.timeMs - b.timeMs);
     const spaced = [];
@@ -126,10 +144,51 @@ export function createAutoModeManager({
       spaced.push(event);
     }
 
+    const cadenceMinMs = Math.max(6000, options.minTimelineMs || 6000);
+    const cadenceMaxMs = Math.max(cadenceMinMs, toFiniteNumber(options.maxTimelineMs, effectiveEndMs));
+    const cadenceTrackKey = String(options.trackKey || 'track');
+
+    const withMaxGap = [];
+    let prevTimeMs = cadenceMinMs;
+    let cadenceSeq = 0;
+
+    const pushCadenceEventsUntil = (targetTimeMs) => {
+      while ((targetTimeMs - prevTimeMs) > maxGapMs) {
+        const candidateMs = Math.round(prevTimeMs + maxGapMs);
+        if (candidateMs >= targetTimeMs) break;
+        const cadenceType = AUTO_FX_CADENCE_TYPES[cadenceSeq % AUTO_FX_CADENCE_TYPES.length];
+        cadenceSeq += 1;
+        withMaxGap.push({
+          id: `${cadenceTrackKey}::cadence::${cadenceType}::${candidateMs}`,
+          type: cadenceType,
+          label: AUTO_FX_LABELS[cadenceType] || cadenceType,
+          timeMs: candidateMs,
+          reason: 'max-gap cadence fill',
+        });
+        prevTimeMs = candidateMs;
+      }
+    };
+
+    for (const event of spaced) {
+      pushCadenceEventsUntil(event.timeMs);
+      withMaxGap.push(event);
+      prevTimeMs = event.timeMs;
+    }
+
+    pushCadenceEventsUntil(cadenceMaxMs);
+
+    const normalized = withMaxGap
+      .filter((event) => event.timeMs >= cadenceMinMs && event.timeMs <= cadenceMaxMs)
+      .sort((a, b) => a.timeMs - b.timeMs);
+
     const lastWindowMs = AUTO_FX_LAST_WINDOW_MINUTES * 60 * 1000;
-    const tailStartMs = Math.max(0, effectiveEndMs - lastWindowMs);
-    const outsideTail = spaced.filter((event) => event.timeMs < tailStartMs);
-    const inTail = spaced
+    const tailStartMs = Math.max(cadenceMinMs, effectiveEndMs - lastWindowMs);
+    const outsideTail = normalized.filter((event) => event.timeMs < tailStartMs);
+    const maxByCadenceInTail = Math.max(
+      AUTO_FX_MAX_IN_LAST_WINDOW,
+      Math.ceil(lastWindowMs / Math.max(1, maxGapMs)),
+    );
+    const inTail = normalized
       .filter((event) => event.timeMs >= tailStartMs)
       .sort((a, b) => {
         const pa = AUTO_FX_PRIORITY[a.type] || 0;
@@ -137,7 +196,7 @@ export function createAutoModeManager({
         if (pb !== pa) return pb - pa;
         return a.timeMs - b.timeMs;
       })
-      .slice(0, AUTO_FX_MAX_IN_LAST_WINDOW)
+      .slice(0, maxByCadenceInTail)
       .sort((a, b) => a.timeMs - b.timeMs);
 
     return [...outsideTail, ...inTail].sort((a, b) => a.timeMs - b.timeMs);
@@ -168,13 +227,87 @@ export function createAutoModeManager({
     const transitionAnchorMs = triggerMs > 0
       ? Math.min(triggerMs, timelineMaxMs)
       : Math.round(timelineMaxMs * 0.82);
-    const minGapMs = Math.max(
-      1000,
-      toFiniteNumber(getAutoFxMinGapMs?.(), AUTO_FX_MIN_GAP_MS),
-    );
+    const { minGapMs } = getAutoFxGapBoundsMs();
+
+    // --- Helper: snap a time to the nearest phrase boundary within ±snapWindowMs ---
+    const phraseGrid = Array.isArray(mixData?.indicators?.phraseGrid)
+      ? mixData.indicators.phraseGrid
+      : [];
+    const snapToPhraseGrid = (preferredMs, snapWindowMs = 3000) => {
+      if (phraseGrid.length === 0) return preferredMs;
+      let bestMs = preferredMs;
+      let bestDist = snapWindowMs;
+      for (const { timeSec } of phraseGrid) {
+        const gridMs = toFiniteNumber(timeSec, -1) * 1000;
+        if (gridMs <= 0) continue;
+        const dist = Math.abs(gridMs - preferredMs);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestMs = gridMs;
+        }
+      }
+      return bestMs;
+    };
+
+    // --- Helper: detect if a given time is in a high-vocal region ---
+    const vocalProfile = Array.isArray(mixData?.indicators?.vocalPresenceProfile)
+      ? mixData.indicators.vocalPresenceProfile
+      : [];
+    const isHighVocalMoment = (preferredMs, threshold = 0.6) => {
+      if (vocalProfile.length === 0) return false;
+      const preferredSec = preferredMs / 1000;
+      // Find surrounding samples
+      let closest = null;
+      let closestDist = Infinity;
+      for (const { timeSec, value } of vocalProfile) {
+        const dist = Math.abs(toFiniteNumber(timeSec, -1) - preferredSec);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closest = { timeSec, value };
+        }
+      }
+      return closest != null && toFiniteNumber(closest.value, 0) >= threshold;
+    };
+
+    // --- Helper: find the nearest low-vocal moment close to preferredMs ---
+    const findLowVocalNearby = (preferredMs, searchWindowMs = 8000, threshold = 0.45) => {
+      if (vocalProfile.length === 0) return preferredMs;
+      const minMs = Math.max(6000, preferredMs - searchWindowMs);
+      const maxMs = Math.min(timelineMaxMs, preferredMs + searchWindowMs);
+      let best = null;
+      let bestDist = Infinity;
+      for (const { timeSec, value } of vocalProfile) {
+        const ms = toFiniteNumber(timeSec, -1) * 1000;
+        if (ms < minMs || ms > maxMs) continue;
+        const vocalVal = toFiniteNumber(value, 1);
+        if (vocalVal <= threshold) {
+          const dist = Math.abs(ms - preferredMs);
+          if (dist < bestDist) {
+            bestDist = dist;
+            best = ms;
+          }
+        }
+      }
+      return best != null ? best : preferredMs;
+    };
 
     const addEvent = (type, preferredMs, reason) => {
-      const timeMs = Math.round(Math.max(6000, Math.min(timelineMaxMs, preferredMs)));
+      let resolvedMs = preferredMs;
+
+      // Snap vocal-sensitive FX away from high-vocal moments.
+      const vocalSensitiveTypes = ['scratching', 'echoDelay'];
+      if (vocalSensitiveTypes.includes(type) && isHighVocalMoment(resolvedMs)) {
+        const alternative = findLowVocalNearby(resolvedMs);
+        if (alternative !== resolvedMs) {
+          resolvedMs = alternative;
+          reason = `${reason} (shifted from vocal peak)`;
+        }
+      }
+
+      // Snap all events to the nearest phrase boundary when possible.
+      resolvedMs = snapToPhraseGrid(resolvedMs, 3500);
+
+      const timeMs = Math.round(Math.max(6000, Math.min(timelineMaxMs, resolvedMs)));
       if (!Number.isFinite(timeMs)) return null;
       return {
         id: `${String(currentTrack?.id || currentTrack?.uri || currentTrack?.name || 'track')}::${type}::${timeMs}`,
@@ -251,6 +384,11 @@ export function createAutoModeManager({
     const planned = enforceAutoFxDensity(
       candidates.filter(Boolean),
       effectiveEndMs,
+      {
+        minTimelineMs: 6000,
+        maxTimelineMs: timelineMaxMs,
+        trackKey: String(currentTrack?.id || currentTrack?.uri || currentTrack?.name || 'track'),
+      },
     );
 
     return planned;
@@ -462,10 +600,8 @@ export function createAutoModeManager({
     };
 
     const scoreCandidateZones = (zones = [], type) => {
-      let best = null;
-      let bestDistance = Infinity;
-
-      for (const zone of zones) {
+      // Separate phrase-aligned zones from non-aligned ones; prefer phrase-aligned.
+      const validZones = zones.filter((zone) => {
         if (!isValidTransitionZone(zone, mixData)) {
           logger?.debug?.('autoDj: skipping invalid zone', {
             type,
@@ -474,9 +610,19 @@ export function createAutoModeManager({
             inAvoid: isInAvoidZone(zone.startSec, mixData),
             inDrop: isInDropZone(zone.startSec, mixData),
           });
-          continue;
+          return false;
         }
+        return true;
+      });
 
+      if (validZones.length === 0) return null;
+
+      const phraseAligned = validZones.filter((z) => z.phraseAligned === true);
+      const candidatePool = phraseAligned.length > 0 ? phraseAligned : validZones;
+
+      let best = null;
+      let bestDistance = Infinity;
+      for (const zone of candidatePool) {
         const distance = zoneDistanceToTarget(zone);
         if (distance < bestDistance) {
           best = zone;
@@ -557,11 +703,37 @@ export function createAutoModeManager({
 
   /**
    * Recommend transition type based on track characteristics
-   * Considers drop zones and avoid zones to pick the most appropriate transition
+   * Considers drop zones and avoid zones to pick the most appropriate transition.
+   * Uses kickReentry, tempoBpm, energyStability, grooveStability when available.
    */
   function recommendTransitionType(currentMixData, nextMixData) {
-    // Check if next track has drops coming - use filter to preserve energy
-    if (nextMixData?.dropZones?.length && nextMixData.dropZones[0].startSec < 10) {
+    const currentIndicators = currentMixData?.indicators || {};
+    const nextIndicators = nextMixData?.indicators || {};
+
+    // --- Tempo matching ---
+    const currentBpm = toFiniteNumber(currentIndicators.tempoBpm, 0)
+      || toFiniteNumber(currentMixData?.audioFeatures?.bpm, 0);
+    const nextBpm = toFiniteNumber(nextIndicators.tempoBpm, 0)
+      || toFiniteNumber(nextMixData?.audioFeatures?.bpm, 0);
+    const deltaBpm = currentBpm > 0 && nextBpm > 0 ? Math.abs(currentBpm - nextBpm) : null;
+
+    // --- Stability indicators ---
+    const energyStability = toFiniteNumber(currentIndicators.energyStability, -1);
+    const grooveStability = toFiniteNumber(currentIndicators.grooveStability, -1);
+    const isCurrentStable = energyStability >= 0.65 && grooveStability >= 0.65;
+    const isCurrentUnstable = energyStability >= 0 && energyStability < 0.35;
+
+    // --- Drop zones: check if next track has a drop with kick reentry near the start ---
+    const nextFirstDrop = nextMixData?.dropZones?.[0] || null;
+    const nextDropIsEarly = nextFirstDrop && nextFirstDrop.startSec < 10;
+    const nextDropHasKickReentry = nextFirstDrop && nextFirstDrop.kickReentry === 1;
+
+    if (nextDropIsEarly && nextDropHasKickReentry) {
+      // Hard cut or sidechain to land exactly on the kick reentry
+      return deltaBpm != null && deltaBpm <= 4 ? 'cut_transition' : 'sidechain_basic';
+    }
+
+    if (nextDropIsEarly) {
       return 'filter_sweep_high_to_low'; // Smooth filter sweep before the drop
     }
 
@@ -570,20 +742,37 @@ export function createAutoModeManager({
       return 'crossfade_logarithmic';
     }
 
-    // If current track has drop zones ending soon, want smooth transition out
+    // Check current track drop endings with kick reentry — use sidechain to boost energy
     if (currentMixData?.dropZones?.length) {
       const lastDrop = currentMixData.dropZones[currentMixData.dropZones.length - 1];
-      if (lastDrop && lastDrop.endSec < currentMixData.durationSec - 5) {
+      if (lastDrop && lastDrop.endSec < (currentMixData.durationSec || Infinity) - 5) {
+        if (lastDrop.kickReentry === 1 && isCurrentStable) {
+          return 'sidechain_basic'; // Kick reentry + stable groove → sidechain pump
+        }
         return 'filter_sweep_low_high'; // Restore energy after drop
       }
     }
 
-    // Check if we're transitioning from breakdown zone - can be more aggressive
+    // Unstable energy profile → cut transition avoids jarring crossfades
+    if (isCurrentUnstable) {
+      return deltaBpm != null && deltaBpm <= 6 ? 'crossfade_linear' : 'cut_transition';
+    }
+
+    // Check if we're transitioning from breakdown zone
     if (currentMixData?.breakdownZones?.length) {
       const lastBreakdown = currentMixData.breakdownZones[currentMixData.breakdownZones.length - 1];
-      if (lastBreakdown && lastBreakdown.endSec < currentMixData.durationSec - 2) {
-        return 'crossfade_linear'; // Standard crossfade works well after breakdown
+      if (lastBreakdown && lastBreakdown.endSec < (currentMixData.durationSec || Infinity) - 2) {
+        // Stable groove after breakdown → smooth crossfade
+        if (isCurrentStable) return 'crossfade_logarithmic';
+        return 'crossfade_linear';
       }
+    }
+
+    // BPM-guided fallback using waveform tempoBpm when available
+    if (deltaBpm != null) {
+      if (deltaBpm <= 1 && isCurrentStable) return 'crossfade_linear';
+      if (deltaBpm <= 4) return 'crossfade_logarithmic';
+      if (deltaBpm >= 20) return 'filter_automation';
     }
 
     // Default to a smooth crossfade
@@ -700,12 +889,19 @@ export function createAutoModeManager({
         const transitionZone = findBestTransitionZone(mixData, {
           targetSec: targetSecForZone,
         });
+
+        // Confidence in transition zone detection: if low, pull trigger earlier as safety buffer.
+        const transitionConfidence = toFiniteNumber(mixData.confidence?.transitions, 1);
+        const confidenceBufferMs = transitionConfidence < 0.5
+          ? Math.round((1 - transitionConfidence) * 8000) // up to 8s earlier when confidence=0
+          : 0;
+
         if (transitionZone) {
           // Trigger inside the selected safe zone (or fallback zone), not at track end.
           const computedTriggerSec = Number.isFinite(transitionZone.triggerSec)
             ? transitionZone.triggerSec
             : transitionZone.zone.startSec;
-          let triggerMs = computedTriggerSec * 1000;
+          let triggerMs = computedTriggerSec * 1000 - confidenceBufferMs;
           let reason = transitionZone.type === 'breakdown'
             ? 'breakdown zone'
             : transitionZone.type === 'safe'
@@ -713,6 +909,10 @@ export function createAutoModeManager({
               : transitionZone.type === 'gap'
                 ? 'gap between problematic zones'
                 : 'estimated transition window';
+
+          if (confidenceBufferMs > 0) {
+            reason += ` (−${Math.round(confidenceBufferMs / 1000)}s low-confidence buffer)`;
+          }
 
           // Apply max duration constraint if set: trigger at max duration if before zone end
           if (maxDurationMs > 0 && triggerMs > maxDurationMs) {
@@ -732,6 +932,8 @@ export function createAutoModeManager({
             triggerSec: computedTriggerSec,
             zoneStart: transitionZone.zone.startSec,
             zoneEnd: transitionZone.zone.endSec,
+            transitionConfidence,
+            confidenceBufferMs,
             maxDurationSec,
           });
 
@@ -909,6 +1111,23 @@ export function createAutoModeManager({
           params.append('limit', '25');
           params.append('allowSameArtist', 'false');
 
+          // DJ Mode: send additional hints to the suggestions API
+          const djMode = getDjMode?.() || 'music';
+          const currentBpm = toFiniteNumber(getCurrentBpm?.(), 0);
+          const genrePrefs = getDjModeGenrePrefs?.() || [];
+
+          if (djMode === 'dance') {
+            if (currentBpm > 0) params.append('minBpm', String(Math.max(1, Math.round(currentBpm - 10))));
+            params.append('preferDanceable', 'true');
+            if (genrePrefs.length > 0) params.append('preferGenres', JSON.stringify(genrePrefs));
+          } else {
+            if (currentTrack.genre) params.append('preferGenre', currentTrack.genre);
+            if (currentTrack.artist) params.append('preferArtist', currentTrack.artist);
+            if (currentBpm > 0 && currentBpm < 90) {
+              params.append('maxBpmJump', '30');
+            }
+          }
+
           const suggestionPathCandidates = ['/api/suggestions', '/suggestions'];
           for (const path of suggestionPathCandidates) {
             const suggestionUrl = `${apiUrl}${path}?${params.toString()}`;
@@ -969,6 +1188,31 @@ export function createAutoModeManager({
 
       logger?.debug?.('autoDj: search returned results', { count: results.length });
 
+      // DJ Mode: client-side reorder / filter
+      const djModeForFilter = getDjMode?.() || 'music';
+      const currentBpmForFilter = toFiniteNumber(getCurrentBpm?.(), 0);
+
+      if (djModeForFilter === 'dance' && currentBpmForFilter > 0) {
+        // Sort by BPM descending (higher BPM first) among results that have bpm
+        results = [...results].sort((a, b) => {
+          const bA = toFiniteNumber(a?.bpm, 0);
+          const bB = toFiniteNumber(b?.bpm, 0);
+          if (bA <= 0 && bB <= 0) return 0;
+          if (bA <= 0) return 1;
+          if (bB <= 0) return -1;
+          return bB - bA;
+        });
+      } else if (djModeForFilter === 'music') {
+        // Boost same genre/artist to top
+        results = [...results].sort((a, b) => {
+          const scoreA = (a?.genre && currentTrack.genre && String(a.genre).toLowerCase() === String(currentTrack.genre).toLowerCase() ? 2 : 0)
+            + (a?.artist && currentTrack.artist && String(a.artist).toLowerCase() === String(currentTrack.artist).toLowerCase() ? 1 : 0);
+          const scoreB = (b?.genre && currentTrack.genre && String(b.genre).toLowerCase() === String(currentTrack.genre).toLowerCase() ? 2 : 0)
+            + (b?.artist && currentTrack.artist && String(b.artist).toLowerCase() === String(currentTrack.artist).toLowerCase() ? 1 : 0);
+          return scoreB - scoreA;
+        });
+      }
+
       // Find first result that hasn't been played yet and isn't in queue
       const queueSnapshot = getQueue();
       const queueIds = new Set(queueSnapshot.map(item => item.id));
@@ -993,6 +1237,30 @@ export function createAutoModeManager({
             artistName,
           });
           continue;
+        }
+
+        // DJ Mode BPM filtering
+        const resultBpm = toFiniteNumber(result?.bpm, 0);
+        if (djModeForFilter === 'dance' && currentBpmForFilter > 0 && resultBpm > 0) {
+          if (resultBpm < currentBpmForFilter - 15) {
+            logger?.debug?.('autoDj: skipping low-BPM suggestion (dance mode)', {
+              trackName,
+              resultBpm,
+              currentBpm: currentBpmForFilter,
+            });
+            showToast?.(`🕺 AutoDJ: "${trackName}" refusé (BPM trop bas: ${resultBpm})`, false);
+            continue;
+          }
+        }
+        if (djModeForFilter === 'music' && currentBpmForFilter > 0 && currentBpmForFilter < 90 && resultBpm > 0) {
+          if (resultBpm > currentBpmForFilter + 30) {
+            logger?.debug?.('autoDj: skipping high-BPM suggestion (music/slow mode)', {
+              trackName,
+              resultBpm,
+              currentBpm: currentBpmForFilter,
+            });
+            continue;
+          }
         }
 
         selectedTrack = {

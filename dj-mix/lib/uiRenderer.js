@@ -1,4 +1,4 @@
-import { escHtml, formatTime } from './searchUtils.js';
+import { escHtml, extractTrackBpm, extractTrackGenre, formatTime } from './searchUtils.js';
 
 export function createDjMixRenderer(options) {
   const {
@@ -8,6 +8,8 @@ export function createDjMixRenderer(options) {
     deckBVol,
     deckAFill,
     deckBFill,
+    deckATitle,
+    deckBTitle,
     deckABpm,
     deckBBpm,
     deckABpmReset,
@@ -25,6 +27,7 @@ export function createDjMixRenderer(options) {
     trackArtistA,
     trackArtistB,
     getQueue,
+    getDjMode,
     getCurrentIndex,
     getCurrentTrackId,
     getIsPlaying,
@@ -44,6 +47,11 @@ export function createDjMixRenderer(options) {
     getPlayer,
   } = options;
 
+  const lastDeckMetaItems = {
+    A: null,
+    B: null,
+  };
+
   function composeDeckMeta(title, artist) {
     const safeTitle = String(title || '').trim();
     const safeArtist = String(artist || '').trim();
@@ -51,10 +59,132 @@ export function createDjMixRenderer(options) {
     return safeTitle || safeArtist || '';
   }
 
+  function getMediaSessionArtwork(item) {
+    if (item?.artUrl) {
+      return [{ src: item.artUrl, sizes: '512x512', type: 'image/jpeg' }];
+    }
+
+    return [{
+      src: 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 512 512%27%3E%3Crect width=%27512%27 height=%27512%27 rx=%27100%27 fill=%270a0a0f%27/%3E%3Ctext x=%27256%27 y=%27340%27 text-anchor=%27middle%27 font-size=%27300%27%3E%F0%9F%8E%9A%EF%B8%8F%3C/text%3E%3C/svg%3E',
+      sizes: '512x512',
+      type: 'image/svg+xml',
+    }];
+  }
+
+  function buildDanceMetaChips(item, extraClass = '') {
+    if (!isDanceMode()) return '';
+    const bpm = Number(extractTrackBpm(item));
+    const genre = String(extractTrackGenre(item) || '').trim();
+    const bpmHtml = Number.isFinite(bpm) && bpm > 0 ? `<span class="queue-chip">${Math.round(bpm)} BPM</span>` : '';
+    const genreHtml = genre
+      ? `<button type="button" class="queue-chip queue-chip--genre" data-genre="${escHtml(genre)}" aria-label="Filtrer par genre ${escHtml(genre)}">${escHtml(genre)}</button>`
+      : '';
+    if (!bpmHtml && !genreHtml) return '';
+    const className = extraClass ? `queue-chips ${extraClass}` : 'queue-chips';
+    return `<div class="${className}">${bpmHtml}${genreHtml}</div>`;
+  }
+
+  function renderDeckMetaContent(target, item, fallbackTitle = '', fallbackArtist = '') {
+    if (!target) return;
+    const mainLabel = item
+      ? composeDeckMeta(item?.name || '', item?.artist || '')
+      : composeDeckMeta(fallbackTitle, fallbackArtist);
+    const chipsHtml = item ? buildDanceMetaChips(item, 'deck-chips') : '';
+    target.innerHTML = mainLabel
+      ? `<div class="deck-track-main">${escHtml(mainLabel)}</div>${chipsHtml}`
+      : chipsHtml;
+  }
+
+  function isDanceMode() {
+    return getDjMode?.() === 'dance';
+  }
+
+  function getDanceMetaSuffix(item) {
+    if (!isDanceMode()) return '';
+    const parts = [];
+    const bpm = Number(extractTrackBpm(item));
+    const genre = String(extractTrackGenre(item) || '').trim();
+    if (Number.isFinite(bpm) && bpm > 0) parts.push(`${Math.round(bpm)} BPM`);
+    if (genre) parts.push(genre);
+    return parts.length ? ` • ${parts.join(' • ')}` : '';
+  }
+
+  function composeDeckMetaWithDance(item) {
+    return `${composeDeckMeta(item?.name || '', item?.artist || '')}${getDanceMetaSuffix(item)}`;
+  }
+
+  function composeDeckHeadMeta(item) {
+    if (!item) return '';
+    const parts = [];
+    const bpm = Number(extractTrackBpm(item));
+    const genre = String(extractTrackGenre(item) || '').trim();
+    if (Number.isFinite(bpm) && bpm > 0) parts.push(`${Math.round(bpm)} BPM`);
+    if (genre) parts.push(genre);
+    return parts.join(' · ');
+  }
+
+  function isDeckArtworkVisible(deck) {
+    if (deck === 'A') return Boolean(albumArt && albumArt.hidden === false);
+    return Boolean(nextAlbumArt && nextAlbumArt.hidden === false);
+  }
+
+  function resolveDeckMetaItem(deck, deckDisplayItems, launchPreview, queue, currentIndex) {
+    const loadedItem = deckDisplayItems?.[deck] || null;
+    let nextItem = loadedItem;
+
+    if (!nextItem && launchPreview?.active && launchPreview.deck === deck && launchPreview.item) {
+      nextItem = launchPreview.item;
+    }
+
+    if (!nextItem && deck === getInactiveDeck()) {
+      nextItem = queue[currentIndex + 1] || null;
+    }
+
+    if (!nextItem && deck === getFocusDeck()) {
+      nextItem = queue[currentIndex] || null;
+    }
+
+    if (nextItem) {
+      lastDeckMetaItems[deck] = nextItem;
+      return nextItem;
+    }
+
+    if (isDeckArtworkVisible(deck) && lastDeckMetaItems[deck]) {
+      return lastDeckMetaItems[deck];
+    }
+
+    lastDeckMetaItems[deck] = null;
+    return null;
+  }
+
+  function refreshDeckMetaDisplays() {
+    const deckDisplayItems = getDeckDisplayItems();
+    const launchPreview = getLaunchPreviewState();
+    const queue = getQueue();
+    const currentIndex = getCurrentIndex();
+    const deckAItem = resolveDeckMetaItem('A', deckDisplayItems, launchPreview, queue, currentIndex);
+    const deckBItem = resolveDeckMetaItem('B', deckDisplayItems, launchPreview, queue, currentIndex);
+
+    renderDeckMetaContent(trackArtistA, deckAItem);
+    renderDeckMetaContent(trackArtistB, deckBItem);
+
+    const player = getPlayer();
+    const detail = player?._lastDeckState || null;
+    const rateA = detail?.deckA?.playbackRate ?? 1;
+    const rateB = detail?.deckB?.playbackRate ?? 1;
+    const rateAText = Math.abs(rateA - 1) > 0.005 ? `×${rateA.toFixed(2)}` : '';
+    const rateBText = Math.abs(rateB - 1) > 0.005 ? `×${rateB.toFixed(2)}` : '';
+
+    if (deckATitle) deckATitle.textContent = composeDeckHeadMeta(deckAItem);
+    if (deckBTitle) deckBTitle.textContent = composeDeckHeadMeta(deckBItem);
+    if (deckABpm) deckABpm.textContent = rateAText;
+    if (deckBBpm) deckBBpm.textContent = rateBText;
+  }
+
   function renderSourceBadge(item) {
-    if (item.sourceState === 'ready') return '• Cache ✓';
-    if (item.sourceState === 'resolving') return '• Cache ...';
-    if (item.sourceState === 'error') return '• Cache !';
+    if (item.sourceState === 'ready') return '<span class="queue-cache-dot is-ready" aria-label="Cache prêt" title="Cache prêt"></span>';
+    if (item.sourceState === 'resolving') return '<span class="queue-cache-dot is-resolving" aria-label="Cache en cours" title="Cache en cours"></span>';
+    if (item.sourceState === 'error') return '<span class="queue-cache-dot is-error" aria-label="Erreur cache" title="Erreur cache"></span>';
     return '';
   }
 
@@ -80,18 +210,20 @@ export function createDjMixRenderer(options) {
       const cls = isCurrent ? 'queue-item is-current' : 'queue-item';
       const showPlayingBars = isCurrent && isPlaying;
       const loadedDeck = loadedDeckByTrackId.get(item.id) || '';
-      const deckLoadedBadge = loadedDeck
-        ? `<span class="queue-deck-badge" title="Charge sur platine ${loadedDeck === 'AB' ? '1 et 2' : loadedDeck}" aria-label="Charge sur platine ${loadedDeck === 'AB' ? '1 et 2' : loadedDeck}">${loadedDeck === 'AB' ? 'DJ 1+2' : `DJ ${loadedDeck}`}</span>`
-        : '';
+      const cueALoaded = loadedDeck === 'A' || loadedDeck === 'AB';
+      const cueBLoaded = loadedDeck === 'B' || loadedDeck === 'AB';
 
       const numHtml = showPlayingBars
         ? '<div class="queue-num"><div class="playing-bars" aria-label="En cours"><span></span><span></span><span></span></div></div>'
         : `<div class="queue-num">${i + 1}</div>`;
       const cueASelected = deckBCueIndex === i && deckCueDeck === 'A';
       const cueBSelected = deckBCueIndex === i && deckCueDeck === 'B';
-      const cueAClass = `queue-cue${cueASelected ? ' is-selected' : ''}`;
-      const cueBClass = `queue-cue${cueBSelected ? ' is-selected' : ''}`;
-      const bpmDisplay = item.bpm ? ` • ${Math.round(item.bpm)} BPM` : '';
+      const cueAClass = `queue-cue${cueASelected ? ' is-selected' : ''}${cueALoaded ? ' is-loaded-deck' : ''}`;
+      const cueBClass = `queue-cue${cueBSelected ? ' is-selected' : ''}${cueBLoaded ? ' is-loaded-deck' : ''}`;
+      const cueADisabled = cueALoaded ? 'disabled aria-disabled="true" title="Déjà chargée sur platine 1"' : '';
+      const cueBDisabled = cueBLoaded ? 'disabled aria-disabled="true" title="Déjà chargée sur platine 2"' : '';
+      const metaChips = buildDanceMetaChips(item);
+      const sourceBadge = renderSourceBadge(item);
 
       return `
       <div class="${cls}" data-index="${i}" role="button" tabindex="0" draggable="true">
@@ -100,14 +232,15 @@ export function createDjMixRenderer(options) {
         <div class="queue-info">
           <div class="queue-name-wrap">
             <div class="queue-name">${escHtml(item.name)}</div>
-            ${deckLoadedBadge}
+            ${sourceBadge}
           </div>
-          <div class="queue-artist">${escHtml(item.artist)} ${renderSourceBadge(item)}${bpmDisplay}</div>
+          <div class="queue-artist">${escHtml(item.artist)}</div>
+          ${metaChips}
         </div>
         <span class="queue-duration">${formatTime(item.duration)}</span>
         <div class="queue-actions">
-          <button class="${cueAClass}" data-index="${i}" data-deck="A" aria-label="Cue platine 1">Cue 1</button>
-          <button class="${cueBClass}" data-index="${i}" data-deck="B" aria-label="Cue platine 2">Cue 2</button>
+          <button class="${cueAClass}" data-index="${i}" data-deck="A" aria-label="Cue platine 1" ${cueADisabled}>Cue 1</button>
+          <button class="${cueBClass}" data-index="${i}" data-deck="B" aria-label="Cue platine 2" ${cueBDisabled}>Cue 2</button>
           <button class="queue-remove" data-index="${i}" aria-label="Retirer">✕</button>
         </div>
       </div>`;
@@ -141,16 +274,7 @@ export function createDjMixRenderer(options) {
     const bIsDominant = hasAudio && volB > volA;
     if (deckAPanel) deckAPanel.classList.toggle('is-dominant', hasAudio && !bIsDominant);
     if (deckBPanel) deckBPanel.classList.toggle('is-dominant', bIsDominant);
-    if(deckDisplayItems.A){
-      if (trackArtistA) {
-            trackArtistA.textContent = composeDeckMeta(deckDisplayItems.A?.name || '', deckDisplayItems.A?.artist || '');
-          }
-    }
-    if(deckDisplayItems.B){
-      if (trackArtistB) {
-        trackArtistB.textContent = composeDeckMeta(deckDisplayItems.B?.name || '', deckDisplayItems.B?.artist || '');
-      }
-    }
+    refreshDeckMetaDisplays();
 
     // Keep the mix slider state driven by the explicit UI mix ratio.
     // Deriving it back from live deck volumes causes oscillation with smoothing
@@ -163,8 +287,6 @@ export function createDjMixRenderer(options) {
 
     const rateA = detail.deckA?.playbackRate ?? 1;
     const rateB = detail.deckB?.playbackRate ?? 1;
-    if (deckABpm) deckABpm.textContent = Math.abs(rateA - 1) > 0.005 ? `×${rateA.toFixed(2)}` : '';
-    if (deckBBpm) deckBBpm.textContent = Math.abs(rateB - 1) > 0.005 ? `×${rateB.toFixed(2)}` : '';
     if (deckABpmReset) deckABpmReset.hidden = Math.abs(rateA - 1) <= 0.005;
     if (deckBBpmReset) deckBBpmReset.hidden = Math.abs(rateB - 1) <= 0.005;
 
@@ -188,6 +310,7 @@ export function createDjMixRenderer(options) {
     const launchPreview = getLaunchPreviewState();
     const queue = getQueue();
     const currentIndex = getCurrentIndex();
+    const deckDisplayItems = getDeckDisplayItems();
     const albumArtA = albumArt;
     const albumArtB = nextAlbumArt;
     const artPlaceholderA = artPlaceholder;
@@ -198,10 +321,12 @@ export function createDjMixRenderer(options) {
     const inactiveArt = targetDeck === 'A' ? albumArtA : albumArtB;
     const inactivePlaceholder = targetDeck === 'A' ? artPlaceholderA : artPlaceholderB;
     const inactiveTrackArtist = targetDeck === 'A' ? trackArtistA : trackArtistB;
+    const loadedDeckItem = resolveDeckMetaItem(targetDeck, deckDisplayItems, launchPreview, queue, currentIndex);
 
     let label = '';
     let artUrl = '';
     let artist = '';
+    let displayItem = loadedDeckItem;
 
     if (launchPreview.active) {
       label = launchPreview.title || '';
@@ -212,6 +337,7 @@ export function createDjMixRenderer(options) {
       label = next?.name || '';
       artUrl = next?.artUrl || '';
       artist = next?.artist || '';
+      displayItem = loadedDeckItem || next || null;
     }
 
     if (artUrl) {
@@ -223,16 +349,20 @@ export function createDjMixRenderer(options) {
       inactiveArt.hidden = true;
       inactivePlaceholder.style.display = '';
     }
-    if (inactiveTrackArtist) inactiveTrackArtist.textContent = composeDeckMeta(label, artist);
+    renderDeckMetaContent(inactiveTrackArtist, displayItem, label, artist);
   
   }
 
   function updateNowPlaying(item, deck = getFocusDeck()) {
     if ('mediaSession' in navigator) {
+      const safeTitle = String(item?.name || item?.title || 'DJ Mix').trim() || 'DJ Mix';
+      const safeArtist = String(item?.artist || item?.artistName || '').trim();
+      const safeAlbum = String(item?.album?.name || item?.albumName || item?.collectionName || 'DJ Mix').trim() || 'DJ Mix';
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: item.name || 'DJ Mix',
-        artist: item.artist || '',
-        artwork: item.artUrl ? [{ src: item.artUrl, sizes: '512x512', type: 'image/jpeg' }] : [],
+        title: safeTitle,
+        artist: safeArtist,
+        album: safeAlbum,
+        artwork: getMediaSessionArtwork(item),
       });
     }
 
@@ -250,15 +380,15 @@ export function createDjMixRenderer(options) {
     }
 
     if (deck === 'A') {
-      
-      if (trackArtistA) trackArtistA.textContent = composeDeckMeta(item.name || '', item.artist || '');
+      renderDeckMetaContent(trackArtistA, item);
     } else {
-      if (trackArtistB) trackArtistB.textContent = composeDeckMeta(item.name || '', item.artist || '');
+      renderDeckMetaContent(trackArtistB, item);
     }
 
     if (trackArtist) trackArtist.textContent = item.artist;
 
     updateUpcomingArtwork();
+    refreshDeckMetaDisplays();
   }
 
   return {
@@ -267,6 +397,7 @@ export function createDjMixRenderer(options) {
     emptyQueue,
     queueList,
     renderDeckState,
+    refreshDeckMetaDisplays,
     updateNowPlaying,
     updateUpcomingArtwork,
   };

@@ -1,4 +1,5 @@
 import { createLogger } from './logger.js';
+import { extractTrackBpm, extractTrackGenre } from './searchUtils.js';
 
 const logger = createLogger('storage');
 
@@ -19,11 +20,13 @@ export function saveQueueToStorage(options) {
         artist: item.artist,
         artUrl: item.artUrl,
         duration: item.duration,
+        bpm: Number.isFinite(Number(extractTrackBpm(item))) ? Number(extractTrackBpm(item)) : null,
+        genre: String(extractTrackGenre(item) || '').trim(),
         loudnessDb: Number.isFinite(item.loudnessDb) ? item.loudnessDb : null,
         cachePath: item.cachePath || '',
         ratingKey: item.ratingKey || '',
         persistedSourceUrl: item.persistedSourceUrl || '',
-        sourceState: item.sourceState === 'ready' ? 'idle' : item.sourceState,
+        sourceState: typeof item.sourceState === 'string' ? item.sourceState : 'idle',
       })),
     };
     localStorage.setItem(storageKey, JSON.stringify(serialized));
@@ -56,7 +59,9 @@ export function restoreQueueFromStorage(storageKey) {
 
     const items = parsed.items.map((item) => ({
       ...item,
-      sourceState: 'idle',
+      bpm: Number.isFinite(Number(item.bpm)) ? Number(item.bpm) : null,
+      genre: String(item.genre || '').trim(),
+      sourceState: typeof item.sourceState === 'string' ? item.sourceState : 'idle',
       sourceError: null,
       sourceMeta: null,
       localBlobUrl: null,

@@ -184,6 +184,9 @@ export function mapApiTrackToSearchItem(track) {
   const artist = track.artist || track.artistName || track.originalTitle || track.grandparentTitle || track.collectionName || 'Artiste inconnu';
   const artUrl = getBestArtworkUrl(track);
   const duration = getTrackDurationMs(track);
+  const audioFeatures = extractAudioFeatures(track);
+  const bpm = extractTrackBpm({ ...track, audioFeatures });
+  const genre = extractTrackGenre(track);
 
   return {
     id: track.id || track.ratingKey || `${title}-${artist}`,
@@ -193,8 +196,10 @@ export function mapApiTrackToSearchItem(track) {
     artUrl,
     duration_ms: duration,
     duration,
+    bpm,
+    genre,
     loudnessDb: extractTrackLoudnessDb(track),
-    audioFeatures: extractAudioFeatures(track),
+    audioFeatures,
     isArtistResult: false,
     isLocalResult,
     cachePath: track.cachePath || track.filePath || track.path || '',
@@ -403,6 +408,95 @@ export function extractAudioFeatures(track) {
     rhythm: String(features.rhythm || '').toLowerCase(),
     source: String(features.source || 'unknown'),
   };
+}
+
+export function extractTrackBpm(track) {
+  if (!track || typeof track !== 'object') return null;
+
+  const directCandidates = [
+    track.bpm,
+    track.tempo,
+    track.beatsPerMinute,
+    track.beats_per_minute,
+    track.trackBpm,
+    track.track_bpm,
+    track.analysis?.bpm,
+    track.stats?.bpm,
+    track.metadata?.bpm,
+    track.audioFeatures?.bpm,
+    track.audio_features?.bpm,
+  ];
+
+  for (const value of directCandidates) {
+    const bpm = Number(value);
+    if (Number.isFinite(bpm) && bpm > 0) return bpm;
+  }
+
+  return null;
+}
+
+export function extractTrackGenre(track) {
+  if (!track || typeof track !== 'object') return '';
+
+  const collectValues = (target, value) => {
+    if (Array.isArray(value)) {
+      value.forEach((entry) => collectValues(target, entry));
+      return;
+    }
+
+    if (value && typeof value === 'object') {
+      collectValues(target, value.name);
+      collectValues(target, value.label);
+      collectValues(target, value.value);
+      collectValues(target, value.genre);
+      return;
+    }
+
+    const text = String(value || '').trim();
+    if (!text) return;
+    text.split(/[;,|]+/g).forEach((part) => {
+      const genre = String(part || '').trim();
+      if (genre) target.push(genre);
+    });
+  };
+
+  const scalarCandidates = [
+    track.genre,
+    track.genreName,
+    track.primaryGenreName,
+    track.style,
+    track.category,
+    track.subgenre,
+    track.subGenre,
+    track.metadata?.genre,
+    track.album?.genre,
+    track.audioFeatures?.genre,
+    track.audio_features?.genre,
+    track.tags?.genre,
+    track.audioFeatures?.rhythm ? `Rythme: ${track.audioFeatures.rhythm}` : '',
+  ];
+
+  for (const value of scalarCandidates) {
+    const genre = String(value || '').trim();
+    if (genre) return genre;
+  }
+
+  const values = [];
+  [
+    track.genres,
+    track.genreNames,
+    track.styles,
+    track.tags,
+    track.metadata?.genres,
+    track.album?.genres,
+    track.audioFeatures?.genres,
+    track.audio_features?.genres,
+  ].forEach((candidate) => collectValues(values, candidate));
+
+  const firstGenre = values.find((value) => String(value || '').trim());
+  if (firstGenre) return String(firstGenre).trim();
+
+  return '';
 }
 
 export function extractTrackLoudnessDb(track) {
