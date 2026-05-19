@@ -25,7 +25,10 @@ export const AUTO_DJ_FX_TYPES = Object.freeze(Object.keys(AUTO_DJ_FX_CONFIG));
 
 export function createDefaultAutoDjFxAllowed() {
   const defaults = {};
-  for (const type of AUTO_DJ_FX_TYPES) defaults[type] = true;
+  for (const type of AUTO_DJ_FX_TYPES) {
+    // Disable hotCues and reverb by default
+    defaults[type] = type !== 'hotCues' && type !== 'reverb';
+  }
   return defaults;
 }
 

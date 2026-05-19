@@ -76,7 +76,9 @@ export function createDjMixRenderer(options) {
     const bpm = Number(extractTrackBpm(item));
     const genre = String(extractTrackGenre(item) || '').trim();
     const bpmHtml = Number.isFinite(bpm) && bpm > 0 ? `<span class="queue-chip">${Math.round(bpm)} BPM</span>` : '';
-    const genreHtml = genre ? `<span class="queue-chip">${escHtml(genre)}</span>` : '';
+    const genreHtml = genre
+      ? `<button type="button" class="queue-chip queue-chip--genre" data-genre="${escHtml(genre)}" aria-label="Filtrer par genre ${escHtml(genre)}">${escHtml(genre)}</button>`
+      : '';
     if (!bpmHtml && !genreHtml) return '';
     const className = extraClass ? `queue-chips ${extraClass}` : 'queue-chips';
     return `<div class="${className}">${bpmHtml}${genreHtml}</div>`;

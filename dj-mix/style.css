@@ -2412,6 +2412,16 @@ input {
   white-space: nowrap;
 }
 
+.queue-chip--genre {
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition), background-color var(--transition);
+}
+
+.queue-chip--genre:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--text);
+}
+
 .queue-duration {
   font-size: 12px;
   color: var(--text-muted);

@@ -1317,17 +1317,17 @@ function renderGenreList() {
   const options = getDanceGenreOptions();
   danceGenreList.innerHTML = '';
 
-  const emptyOption = document.createElement('option');
-  emptyOption.value = '';
-  emptyOption.textContent = 'Tous les genres';
-  danceGenreList.appendChild(emptyOption);
-
   for (const genre of options) {
     const option = document.createElement('option');
     option.value = genre;
     option.textContent = genre;
     danceGenreList.appendChild(option);
   }
+
+  const emptyOption = document.createElement('option');
+  emptyOption.value = '';
+  emptyOption.textContent = 'Tous les genres';
+  danceGenreList.insertBefore(emptyOption, danceGenreList.firstChild);
 
   const selectedGenre = String(djModeGenrePrefs[0] || '').trim().toLowerCase();
   danceGenreList.value = '';
@@ -1339,6 +1339,21 @@ function renderGenreList() {
       }
     }
   }
+}
+
+function setPreferredDanceGenre(genre) {
+  const selected = String(genre || '').trim();
+  djModeGenrePrefs = selected ? [selected] : [];
+  persistDjModeGenrePrefs(djModeGenrePrefs);
+  renderGenreList();
+}
+
+function handleGenreChipClick(event) {
+  const target = event.target instanceof HTMLElement ? event.target.closest('.queue-chip--genre[data-genre]') : null;
+  if (!target) return;
+  event.preventDefault();
+  event.stopPropagation();
+  setPreferredDanceGenre(target.dataset.genre);
 }
 
 function suggestGenreFromCurrentTrack() {
@@ -1366,10 +1381,12 @@ djModeDanceBtn?.addEventListener('click', () => setDjMode('dance'));
 djModeMusicBtn?.addEventListener('click', () => setDjMode('music'));
 
 danceGenreList?.addEventListener('change', () => {
-  const selected = String(danceGenreList.value || '').trim();
-  djModeGenrePrefs = selected ? [selected] : [];
-  persistDjModeGenrePrefs(djModeGenrePrefs);
+  setPreferredDanceGenre(danceGenreList.value);
 });
+
+queueList?.addEventListener('click', handleGenreChipClick, true);
+trackArtistA?.addEventListener('click', handleGenreChipClick);
+trackArtistB?.addEventListener('click', handleGenreChipClick);
 
 (async function init() {
   applyRamFilterSettings({ persist: false, announce: true });
@@ -2290,9 +2307,9 @@ function updateMaxDurationMarker() {
       targetSec: effectiveMaxDurationSec,
     });
 
-    const zoneEndSec = Number.isFinite(preferredZone?.zone?.endSec)
-      ? preferredZone.zone.endSec
-      : Number(preferredZone?.triggerSec);
+    const zoneEndSec = Number.isFinite(Number(preferredZone?.triggerSec))
+      ? Number(preferredZone.triggerSec)
+      : Number(preferredZone?.zone?.endSec);
 
     if (Number.isFinite(zoneEndSec) && zoneEndSec > 0) {
       markerMs = Math.min(durationMs, zoneEndSec * 1000);

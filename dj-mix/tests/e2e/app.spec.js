@@ -808,6 +808,22 @@ test.describe('DJ Mix IHM - modes DJ', () => {
     await page.click('#dj-mode-music-btn');
     await expect(page.locator('#dance-genre-list')).toBeHidden();
   });
+
+  test('cliquer une pastille de genre selectionne ce genre dans la liste', async ({ page }) => {
+    await setupApp(page, {
+      queueItems: [
+        { ...DEFAULT_QUEUE_ITEMS[0], genre: 'House' },
+        { ...DEFAULT_QUEUE_ITEMS[1], genre: 'IDM' },
+      ],
+    });
+
+    await page.click('#dj-mode-dance-btn');
+    const genreChip = page.locator('#queue-list .queue-chip--genre[data-genre="House"]');
+
+    await expect(genreChip).toBeVisible();
+    await genreChip.click();
+    await expect(page.locator('#dance-genre-list')).toHaveValue('House');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

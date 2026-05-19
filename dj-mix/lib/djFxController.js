@@ -416,7 +416,8 @@ export function createDjFxController(options) {
 
     const currentPositionMs = Math.max(0, Number(state?.positionMs) || 0);
     const nextCueIndex = uniqueCues.findIndex((cueMs) => cueMs > currentPositionMs);
-    const targetMs = nextCueIndex >= 0 ? uniqueCues[nextCueIndex] : uniqueCues[0];
+    if (nextCueIndex < 0) return;
+    const targetMs = uniqueCues[nextCueIndex];
 
     player.seekDeckTo(safeDeck, targetMs, { fadeMs: 34 }).catch(() => {});
   }
