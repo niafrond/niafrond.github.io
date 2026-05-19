@@ -462,6 +462,7 @@ const searchClear = document.getElementById('search-clear');
 const searchClose = document.getElementById('search-close');
 const searchOverlay = document.getElementById('search-overlay');
 const searchResults = document.getElementById('search-results');
+const searchIcon = document.querySelector('.search-icon');
 
 const albumArt = document.getElementById('album-art');
 const artPlaceholder = document.getElementById('art-placeholder');
@@ -541,6 +542,7 @@ const clearQueueBtn = document.getElementById('clear-queue-btn');
 const playlistListEl = document.getElementById('playlist-list');
 const cacheFilterCountEl = document.getElementById('cache-filter-count');
 const cacheGenreFilterEl = document.getElementById('cache-genre-filter');
+const cacheGenreFilterFieldEl = cacheGenreFilterEl?.closest('.cache-filter-field') || null;
 const cacheYearFilterEl = document.getElementById('cache-year-filter');
 const cacheStemsFilterEl = document.getElementById('cache-stems-filter');
 const cacheResetFiltersBtn = document.getElementById('cache-reset-filters');
@@ -1277,6 +1279,13 @@ function renderDjModeUI() {
   if (danceGenrePrefs) {
     danceGenrePrefs.hidden = !isDance;
   }
+  if (cacheGenreFilterFieldEl) {
+    cacheGenreFilterFieldEl.hidden = !isDance;
+    if (!isDance && cacheGenreFilterEl && cacheGenreFilterEl.value) {
+      cacheGenreFilterEl.value = '';
+      cacheGenreFilterEl.dispatchEvent(new Event('change'));
+    }
+  }
   if (isDance) renderGenreList();
 }
 
@@ -1463,6 +1472,7 @@ function hookPlayerEvents() {
     if ('mediaSession' in navigator) {
       navigator.mediaSession.playbackState = uiState.isPlaying ? 'playing' : 'paused';
     }
+    updateMediaSessionPositionState();
     renderQueue();
   });
 
@@ -1472,6 +1482,7 @@ function hookPlayerEvents() {
 
     playbackPositionMs = position;
     playbackDurationMs = duration;
+    updateMediaSessionPositionState(position, duration);
 
     if (autoModeManager.isAutoModeEnabled()) {
       const dueAutoFxEvents = autoModeManager.consumeReadyAutoFxEvents(position, {
@@ -1627,8 +1638,43 @@ function setupMediaSession() {
     if (focusDeck === 'A') deckALaunchBtn?.click();
     else deckBLaunchBtn?.click();
   });
+  navigator.mediaSession.setActionHandler('stop', () => {
+    player?.pause?.();
+  });
+  navigator.mediaSession.setActionHandler('seekbackward', (event) => {
+    const offset = Number(event?.seekOffset) || 10;
+    const position = Math.max(0, (playbackPositionMs || 0) - (offset * 1000));
+    player?.seekTo?.(position, { fadeMs: 0 });
+  });
+  navigator.mediaSession.setActionHandler('seekforward', (event) => {
+    const offset = Number(event?.seekOffset) || 10;
+    const position = Math.max(0, (playbackPositionMs || 0) + (offset * 1000));
+    player?.seekTo?.(position, { fadeMs: 0 });
+  });
+  navigator.mediaSession.setActionHandler('seekto', (event) => {
+    if (event?.fastSeek === false && !Number.isFinite(event?.seekTime)) return;
+    const position = Math.max(0, Number(event?.seekTime || 0) * 1000);
+    player?.seekTo?.(position, { fadeMs: 0 });
+  });
   navigator.mediaSession.setActionHandler('previoustrack', null);
   navigator.mediaSession.setActionHandler('nexttrack', () => autoMixBtn?.click());
+}
+
+function updateMediaSessionPositionState(positionMs = playbackPositionMs, durationMs = playbackDurationMs) {
+  if (!('mediaSession' in navigator)) return;
+  const safeDuration = Number(durationMs);
+  const safePosition = Number(positionMs);
+  if (!Number.isFinite(safeDuration) || safeDuration <= 0 || !Number.isFinite(safePosition)) return;
+
+  try {
+    navigator.mediaSession.setPositionState({
+      duration: Math.max(0, safeDuration / 1000),
+      position: Math.max(0, Math.min(safeDuration, safePosition)) / 1000,
+      playbackRate: 1,
+    });
+  } catch (_) {
+    // Unsupported in some browser/Android combinations.
+  }
 }
 
 clearCacheBtn?.addEventListener('click', async () => {
@@ -2424,12 +2470,44 @@ searchInput.addEventListener('keydown', async (event) => {
 
   if (!q) return;
 
-  if (q === lastSearchQuery) return;
+  openSearch();
+  searchResults.innerHTML = '<div class="search-loading">Recherche API...</div>';
+  lastSearchQuery = q;
+  await runSearch(q, true);
+});
+
+if (searchIcon) {
+  searchIcon.setAttribute('role', 'button');
+  searchIcon.setAttribute('tabindex', '0');
+  searchIcon.setAttribute('aria-label', 'Rechercher');
+}
+
+const triggerSearchFromUserAction = async () => {
+  const q = searchInput.value.trim();
+  clearTimeout(searchDebounceTimer);
+
+  if (isCacheTabActive()) {
+    setCacheFilter(q);
+    closeSearch();
+    return;
+  }
+
+  if (!q) return;
 
   openSearch();
   searchResults.innerHTML = '<div class="search-loading">Recherche API...</div>';
   lastSearchQuery = q;
   await runSearch(q, true);
+};
+
+searchIcon?.addEventListener('click', () => {
+  void triggerSearchFromUserAction();
+});
+
+searchIcon?.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  void triggerSearchFromUserAction();
 });
 
 searchClear.addEventListener('click', () => {

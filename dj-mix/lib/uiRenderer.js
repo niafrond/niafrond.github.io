@@ -59,6 +59,18 @@ export function createDjMixRenderer(options) {
     return safeTitle || safeArtist || '';
   }
 
+  function getMediaSessionArtwork(item) {
+    if (item?.artUrl) {
+      return [{ src: item.artUrl, sizes: '512x512', type: 'image/jpeg' }];
+    }
+
+    return [{
+      src: 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 512 512%27%3E%3Crect width=%27512%27 height=%27512%27 rx=%27100%27 fill=%270a0a0f%27/%3E%3Ctext x=%27256%27 y=%27340%27 text-anchor=%27middle%27 font-size=%27300%27%3E%F0%9F%8E%9A%EF%B8%8F%3C/text%3E%3C/svg%3E',
+      sizes: '512x512',
+      type: 'image/svg+xml',
+    }];
+  }
+
   function buildDanceMetaChips(item, extraClass = '') {
     if (!isDanceMode()) return '';
     const bpm = Number(extractTrackBpm(item));
@@ -341,10 +353,14 @@ export function createDjMixRenderer(options) {
 
   function updateNowPlaying(item, deck = getFocusDeck()) {
     if ('mediaSession' in navigator) {
+      const safeTitle = String(item?.name || item?.title || 'DJ Mix').trim() || 'DJ Mix';
+      const safeArtist = String(item?.artist || item?.artistName || '').trim();
+      const safeAlbum = String(item?.album?.name || item?.albumName || item?.collectionName || 'DJ Mix').trim() || 'DJ Mix';
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: item.name || 'DJ Mix',
-        artist: item.artist || '',
-        artwork: item.artUrl ? [{ src: item.artUrl, sizes: '512x512', type: 'image/jpeg' }] : [],
+        title: safeTitle,
+        artist: safeArtist,
+        album: safeAlbum,
+        artwork: getMediaSessionArtwork(item),
       });
     }
 
