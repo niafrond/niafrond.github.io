@@ -1,3 +1,9 @@
+## [1.202.1](https://github.com/niafrond/niafrond.github.io/compare/v1.202.0...v1.202.1) (2026-05-20)
+
+### Bug Fixes
+
+* reduce dj-mix memory pressure on mobile ([6dd7afa](https://github.com/niafrond/niafrond.github.io/commit/6dd7afa529bd434104cbfb501b364d2f6e068453))
+
 ## [1.202.0](https://github.com/niafrond/niafrond.github.io/compare/v1.201.0...v1.202.0) (2026-05-20)
 
 ### Features
