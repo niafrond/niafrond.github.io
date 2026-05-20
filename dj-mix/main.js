@@ -88,6 +88,7 @@ import {
 import { DEFAULT_DOWNLOADER_API_URL, STORAGE_KEYS } from './lib/storageKeys.js';
 import { DANCE_GENRE_DEFAULTS } from './lib/danceGenreConfig.js';
 import { DJ_MODES } from './lib/djModeConfig.js';
+import { createApiHealthMonitor } from './lib/apiHealthMonitor.js';
 
 import { uiState } from './lib/uiState.js';
 const QUEUE_KEY = STORAGE_KEYS.queue;
@@ -604,6 +605,13 @@ function syncAutoModeButtonUI(isEnabled) {
   autoModeBtn.setAttribute('aria-label', `AutoDJ ${isEnabled ? 'actif' : 'inactif'}`);
 }
 
+const apiOfflineBadge = document.getElementById('api-offline-badge');
+
+function setApiOfflineBadgeVisible(visible) {
+  if (!apiOfflineBadge) return;
+  apiOfflineBadge.hidden = !visible;
+}
+
 const downloaderConfig = createDownloaderConfigManager({
   defaultUrl: DEFAULT_DOWNLOADER_API_URL,
   inputEl: downloaderApiUrlInput,
@@ -619,6 +627,20 @@ const {
   setStatus: setDownloaderApiStatus,
   setupEvents: setupDownloaderApiConfigEvents,
 } = downloaderConfig;
+
+const apiHealthMonitor = createApiHealthMonitor({
+  getDownloaderApiUrl,
+  onOffline: () => {
+    logWarn('api.health.offline', {});
+    setApiOfflineBadgeVisible(true);
+    showToast('API hors ligne – mode local uniquement', true);
+  },
+  onOnline: () => {
+    logInfo('api.health.online', {});
+    setApiOfflineBadgeVisible(false);
+    showToast('API de retour en ligne ✓', false);
+  },
+});
 
 const mixControls = createMixControls({
   autoBpmBtn,
@@ -740,6 +762,7 @@ const restoreQueue = () => {
 };
 
 const audioSourceManager = createAudioSourceManager({
+  apiHealthMonitor,
   audioCacheName: AUDIO_CACHE_NAME,
   getDownloaderApiUrl,
   normalizeApiSearchResponse,
@@ -1248,6 +1271,7 @@ const autoFadeManager = new AutoFadeManager({
 });
 
 const autoModeManager = createAutoModeManager({
+  apiHealthMonitor,
   getDownloaderApiUrl,
   getQueue: () => queue,
   getCurrentTrackId: () => uiState.currentTrackId,
@@ -2583,6 +2607,11 @@ async function runSearch(query, skipCache = false) {
   try {
     if (!getDownloaderApiUrl()) {
       searchResults.innerHTML = '<div class="search-empty">Configurez l’API de téléchargement dans l’onglet Config</div>';
+      return;
+    }
+
+    if (apiHealthMonitor.isOffline()) {
+      searchResults.innerHTML = '<div class="search-empty">⚠ API hors ligne – recherche indisponible</div>';
       return;
     }
 

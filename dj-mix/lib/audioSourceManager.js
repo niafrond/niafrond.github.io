@@ -236,6 +236,7 @@ export function clearSessionBlobCache(sessionBlobCache) {
 
 export function createAudioSourceManager(options) {
   const {
+    apiHealthMonitor,
     audioCacheName,
     getDownloaderApiUrl,
     onQueueUpdated,
@@ -416,6 +417,10 @@ export function createAudioSourceManager(options) {
       throw new Error('URL API downloader manquante (Config)');
     }
 
+    if (apiHealthMonitor?.isOffline()) {
+      throw new Error('API hors ligne – téléchargement impossible');
+    }
+
     logInfo('api.download.request', {
       id: item?.id,
       name: item?.name,
@@ -433,17 +438,26 @@ export function createAudioSourceManager(options) {
       ratingKey: item.ratingKey,
     };
 
-    const res = await fetch(`${baseUrl}/api/download`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    let res;
+    try {
+      res = await fetch(`${baseUrl}/api/download`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      apiHealthMonitor?.recordFailure();
+      throw err;
+    }
 
     if (!res.ok) {
+      apiHealthMonitor?.recordFailure();
       const body = await res.text().catch(() => '');
       logWarn('api.download.response.nonOk', { status: res.status, body });
       throw new Error(`HTTP ${res.status} ${body}`.trim());
     }
+
+    apiHealthMonitor?.recordSuccess();
 
     const contentType = (res.headers.get('content-type') || '').toLowerCase();
     if (contentType.includes('audio') || contentType.includes('octet-stream')) {
@@ -641,6 +655,11 @@ export function createAudioSourceManager(options) {
     const baseUrl = getDownloaderApiUrl();
     if (!baseUrl) throw new Error('URL API downloader manquante (Config)');
 
+    if (apiHealthMonitor?.isOffline()) {
+      logInfo('api.search.skipped.offline', { query });
+      return [];
+    }
+
     logInfo('api.search.begin', { query, limit, skipCache, baseUrl });
 
     const parsed = splitItunesSearchQuery(query);
@@ -655,12 +674,22 @@ export function createAudioSourceManager(options) {
       .filter((attempt, index, array) => array.findIndex((candidate) => candidate.term === attempt.term && candidate.artist === attempt.artist) === index)
       .filter((attempt) => attempt.term);
 
+    let anyAttemptMade = false;
     for (const attempt of searchAttempts) {
       const limitParam = Number.isFinite(limit) && limit > 0 ? `&limit=${encodeURIComponent(limit)}` : '';
       const cacheParam = skipCache ? '&nocache=1' : '';
       const url = `${baseUrl}/api/search?term=${encodeURIComponent(attempt.term)}${attempt.artist ? `&artist=${encodeURIComponent(attempt.artist)}` : ''}${limitParam}${cacheParam}`;
-      const res = await fetch(url, { headers: { Accept: 'application/json' } });
+      let res;
+      try {
+        res = await fetch(url, { headers: { Accept: 'application/json' } });
+        anyAttemptMade = true;
+      } catch (err) {
+        apiHealthMonitor?.recordFailure();
+        logWarn('api.search.attempt.networkError', { term: attempt.term, error: err?.message });
+        continue;
+      }
       if (!res.ok) {
+        apiHealthMonitor?.recordFailure();
         logWarn('api.search.attempt.failed', {
           term: attempt.term,
           artist: attempt.artist,
@@ -669,6 +698,7 @@ export function createAudioSourceManager(options) {
         continue;
       }
 
+      apiHealthMonitor?.recordSuccess();
       const data = await res.json().catch(() => null);
       const items = options.normalizeApiSearchResponse(data);
       logDebug('api.search.attempt.result', {
@@ -677,6 +707,10 @@ export function createAudioSourceManager(options) {
         count: items.length,
       });
       if (items.length) return items;
+    }
+
+    if (!anyAttemptMade && searchAttempts.length > 0) {
+      // All attempts failed with network errors → already recorded failures above
     }
 
     logInfo('api.search.noResults', { query });
@@ -690,6 +724,7 @@ export function createAudioSourceManager(options) {
   async function fetchServerStemsStatus(item) {
     const baseUrl = getDownloaderApiUrl();
     if (!baseUrl) return null;
+    if (apiHealthMonitor?.isOffline()) return null;
 
     const params = new URLSearchParams();
     if (item.cachePath) {
@@ -709,11 +744,14 @@ export function createAudioSourceManager(options) {
       });
       if (res.status === 404) return null;
       if (!res.ok) {
+        apiHealthMonitor?.recordFailure();
         logWarn('api.stems.get.nonOk', { status: res.status });
         return null;
       }
+      apiHealthMonitor?.recordSuccess();
       return await res.json();
     } catch (err) {
+      apiHealthMonitor?.recordFailure();
       logWarn('api.stems.get.failed', { message: err?.message });
       return null;
     }
@@ -726,6 +764,7 @@ export function createAudioSourceManager(options) {
   async function triggerServerStemsGeneration(item) {
     const baseUrl = getDownloaderApiUrl();
     if (!baseUrl) return null;
+    if (apiHealthMonitor?.isOffline()) return null;
 
     const payload = {};
     if (item.cachePath) payload.cachePath = item.cachePath;
@@ -741,11 +780,14 @@ export function createAudioSourceManager(options) {
         signal: AbortSignal.timeout(10000),
       });
       if (!res.ok) {
+        apiHealthMonitor?.recordFailure();
         logWarn('api.stems.post.nonOk', { status: res.status });
         return null;
       }
+      apiHealthMonitor?.recordSuccess();
       return await res.json();
     } catch (err) {
+      apiHealthMonitor?.recordFailure();
       logWarn('api.stems.post.failed', { message: err?.message });
       return null;
     }
