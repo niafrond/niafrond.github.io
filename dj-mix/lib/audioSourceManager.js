@@ -189,8 +189,11 @@ async function restorePersistedAudioBlobUrl(cacheKey, audioCacheName) {
 }
 
 export function releaseLocalBlob(item, touchQueueItem) {
-  if (!item?.localBlobUrl) return;
+  if (!item) return;
   logDebug('blob.release.item', { id: item.id, name: item.name });
+  if (item.localBlobUrl && String(item.localBlobUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(item.localBlobUrl);
+  }
   const localStems = item.localStemUrls || {};
   if (localStems.vocalsUrl && String(localStems.vocalsUrl).startsWith('blob:')) {
     URL.revokeObjectURL(localStems.vocalsUrl);
@@ -207,6 +210,30 @@ export function releaseLocalBlob(item, touchQueueItem) {
   item.localBlobUrl = null;
   item.localStemUrls = null;
   touchQueueItem?.(item);
+}
+
+function evictSessionBlobCacheEntry(sessionBlobCache, cacheKey) {
+  if (!cacheKey || !sessionBlobCache?.has(cacheKey)) return false;
+  const cachedSource = sessionBlobCache.get(cacheKey);
+  const blobUrl = typeof cachedSource === 'string' ? cachedSource : cachedSource?.url;
+  if (blobUrl && String(blobUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(blobUrl);
+  }
+  const stems = cachedSource?.stems || {};
+  if (stems.vocalsUrl && String(stems.vocalsUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(stems.vocalsUrl);
+  }
+  if (stems.instrumentalUrl && String(stems.instrumentalUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(stems.instrumentalUrl);
+  }
+  if (stems.echoUrl && String(stems.echoUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(stems.echoUrl);
+  }
+  if (stems.distortionUrl && String(stems.distortionUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(stems.distortionUrl);
+  }
+  sessionBlobCache.delete(cacheKey);
+  return true;
 }
 
 export function clearSessionBlobCache(sessionBlobCache) {
@@ -241,6 +268,7 @@ export function createAudioSourceManager(options) {
     getDownloaderApiUrl,
     onQueueUpdated,
     sessionBlobCache,
+    shouldWarmStems,
     touchQueueItem,
   } = options;
 
@@ -411,6 +439,11 @@ export function createAudioSourceManager(options) {
     }
   }
 
+  function maybeWarmStemLocalSources(item, cacheKey) {
+    if (shouldWarmStems?.(item) === false) return;
+    void warmStemLocalSources(item, cacheKey);
+  }
+
   async function downloadTrackViaApi(item) {
     const baseUrl = getDownloaderApiUrl();
     if (!baseUrl) {
@@ -516,7 +549,7 @@ export function createAudioSourceManager(options) {
     const cacheKey = getTrackCacheKey(item);
     const cachedSource = sessionBlobCache.get(cacheKey);
     if (item.localBlobUrl) {
-      void warmStemLocalSources(item, cacheKey);
+      maybeWarmStemLocalSources(item, cacheKey);
       logDebug('source.ensure.hit.itemBlob', { cacheKey, id: item?.id });
       return item.localBlobUrl;
     }
@@ -531,7 +564,7 @@ export function createAudioSourceManager(options) {
         hydrateItemDurationFromLocalSource(item);
         console.log('Using persisted source URL for item:', { cacheKey, id: item?.id, persistedSourceUrl: item.persistedSourceUrl });
         onQueueUpdated?.();
-        void warmStemLocalSources(item, cacheKey);
+        maybeWarmStemLocalSources(item, cacheKey);
         logInfo('source.ensure.hit.persistedSourceUrl', { cacheKey, id: item?.id });
         return item.localBlobUrl;
       }
@@ -553,7 +586,7 @@ export function createAudioSourceManager(options) {
         touchQueueItem(item);
         hydrateItemDurationFromLocalSource(item);
         onQueueUpdated?.();
-        void warmStemLocalSources(item, cacheKey);
+        maybeWarmStemLocalSources(item, cacheKey);
         logInfo('source.ensure.hit.trustedDirectUrl', {
           cacheKey,
           id: item?.id,
@@ -581,7 +614,7 @@ export function createAudioSourceManager(options) {
       touchQueueItem(item);
       hydrateItemDurationFromLocalSource(item);
       onQueueUpdated?.();
-      void warmStemLocalSources(item, cacheKey);
+      maybeWarmStemLocalSources(item, cacheKey);
       logInfo('source.ensure.hit.sessionBlobCache', {
         cacheKey,
         id: item?.id,
@@ -602,7 +635,7 @@ export function createAudioSourceManager(options) {
       touchQueueItem(item);
       hydrateItemDurationFromLocalSource(item);
       onQueueUpdated?.();
-      void warmStemLocalSources(item, cacheKey);
+      maybeWarmStemLocalSources(item, cacheKey);
       logInfo('source.ensure.hit.persistentCacheApi', {
         cacheKey,
         id: item?.id,
@@ -631,7 +664,7 @@ export function createAudioSourceManager(options) {
       touchQueueItem(item);
       hydrateItemDurationFromLocalSource(item);
       onQueueUpdated?.();
-      void warmStemLocalSources(item, cacheKey);
+      maybeWarmStemLocalSources(item, cacheKey);
       logInfo('source.ensure.resolved.fromApiDownload', {
         cacheKey,
         id: item?.id,
@@ -649,6 +682,26 @@ export function createAudioSourceManager(options) {
       });
       throw err;
     }
+  }
+
+  function evictTrackSource(item, options = {}) {
+    if (!item) return false;
+    const { notify = true } = options;
+    const cacheKey = getTrackCacheKey(item);
+    const hadLocalSource = Boolean(item.localBlobUrl || item.localStemUrls);
+    releaseLocalBlob(item, touchQueueItem);
+    const hadSessionSource = evictSessionBlobCacheEntry(sessionBlobCache, cacheKey);
+    item.sourceError = null;
+    item.sourceState = item.persistedSourceUrl ? 'ready' : 'idle';
+    touchQueueItem(item);
+    if (notify) onQueueUpdated?.();
+    logDebug('source.evict', {
+      cacheKey,
+      id: item?.id,
+      hadLocalSource,
+      hadSessionSource,
+    });
+    return hadLocalSource || hadSessionSource;
   }
 
   async function searchTracksViaApi(query, limit = 25, skipCache = false) {
@@ -941,6 +994,7 @@ export function createAudioSourceManager(options) {
     deleteLocalCacheSong,
     enrichStemsFromServer,
     ensureLocalSource,
+    evictTrackSource,
     releaseLocalBlob: (item) => releaseLocalBlob(item, touchQueueItem),
     searchTracksViaApi,
   };

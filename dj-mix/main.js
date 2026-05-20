@@ -46,7 +46,7 @@ import {
   shouldTriggerAutomix,
 } from './lib/automixTimeline.js';
 import { getOtherDeck, toDeck } from './lib/deckHelpers.js';
-import { computeTransitionRamProfile } from './lib/ramProfile.js';
+import { computeTransitionRamProfile, estimateTotalDeviceRamMb, isMobileDevice } from './lib/ramProfile.js';
 import { attachQueueDndHandlers, clearQueueDragMarkers } from './lib/queueDnD.js';
 import {
   buildSearchResultsSectionsHTML,
@@ -89,6 +89,7 @@ import { DEFAULT_DOWNLOADER_API_URL, STORAGE_KEYS } from './lib/storageKeys.js';
 import { DANCE_GENRE_DEFAULTS } from './lib/danceGenreConfig.js';
 import { DJ_MODES } from './lib/djModeConfig.js';
 import { createApiHealthMonitor } from './lib/apiHealthMonitor.js';
+import { isLowMemoryPlaybackDevice } from './lib/playbackMemoryPolicy.js';
 
 import { uiState } from './lib/uiState.js';
 const QUEUE_KEY = STORAGE_KEYS.queue;
@@ -333,6 +334,30 @@ function applyTransitionCapabilitiesForDevice(options = {}) {
   }
 }
 
+function isLowMemoryPlaybackMode() {
+  return isLowMemoryPlaybackDevice({
+    enabled: true,
+    mobile: isMobileDevice(),
+    totalRamMb: ramTotalMbOverride > 0 ? ramTotalMbOverride : estimateTotalDeviceRamMb(),
+  });
+}
+
+function trimRetainedAudioSources() {
+  if (!isLowMemoryPlaybackMode()) return;
+  let trimmedCount = 0;
+  for (const item of queue) {
+    if (!item) continue;
+    if (deckDisplayItems.A === item || deckDisplayItems.B === item || launchPreviewItem === item) continue;
+    if (evictTrackSource(item, { notify: false })) {
+      trimmedCount += 1;
+    }
+  }
+  if (trimmedCount > 0) {
+    renderQueue();
+    logInfo('memory.trim.lowRam', { trimmedCount, queueLength: queue.length });
+  }
+}
+
 function updateRamFilterConfigUI() {
   if (ramFilterEnabledToggle) {
     ramFilterEnabledToggle.checked = ramFilterEnabled;
@@ -381,6 +406,8 @@ function applyRamFilterSettings(options = {}) {
     applyTransitionModeSetting(safeMode, { persist: true });
     showToast(`Mode AutoMix ajuste (RAM): ${MIX_TRANSITION_MODE_LABELS[safeMode] || safeMode}`);
   }
+
+  trimRetainedAudioSources();
 }
 
 function applyTransitionModeSetting(mode, options = {}) {
@@ -768,6 +795,7 @@ const audioSourceManager = createAudioSourceManager({
   normalizeApiSearchResponse,
   onQueueUpdated: () => renderQueue(),
   sessionBlobCache,
+  shouldWarmStems: (item) => !isLowMemoryPlaybackMode() || deckDisplayItems.A === item || deckDisplayItems.B === item,
   touchQueueItem,
 });
 
@@ -833,6 +861,7 @@ const {
   deleteLocalCacheSong,
   enrichStemsFromServer,
   ensureLocalSource,
+  evictTrackSource,
   releaseLocalBlob,
   searchTracksViaApi,
 } = audioSourceManager;
@@ -1852,6 +1881,7 @@ async function launchDeckFromQueue(deck, options = {}) {
         isFocusDeck,
         paused,
       });
+      trimRetainedAudioSources();
       backgroundEnrichStems(targetDeck, item);
     } catch (err) {
       logError('launchDeckFromQueue(): failed', {
@@ -3039,7 +3069,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     }
 
     uiState.isPlaying = true;
-  prefetchNext(getFollowingQueueIndex(index, { wrap: false }));
+    prefetchNext(getFollowingQueueIndex(index, { wrap: false }));
     launchPreviewActive = false;
     launchPreviewArtUrl = '';
     launchPreviewTitle = '';
@@ -3055,6 +3085,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       targetDeck,
       isPlaying: uiState.isPlaying,
     });
+    trimRetainedAudioSources();
     backgroundEnrichStems(targetDeck, item);
     
     // Schedule automix timing for auto DJ mode and reset trigger flag
@@ -3142,6 +3173,15 @@ function prefetchNext(index) {
   if (index < 0) return;
   const next = queue[index];
   if (!next) return;
+  if (isLowMemoryPlaybackMode()) {
+    logDebug('prefetchNext(): skipped low-memory prefetch', {
+      index,
+      id: next.id,
+      name: next.name,
+    });
+    trimRetainedAudioSources();
+    return;
+  }
   if (next.localBlobUrl) return;
   logDebug('prefetchNext(): prefetching track source', {
     index,
@@ -3416,4 +3456,3 @@ function closeSearch() {
   searchOverlay.hidden = true;
   if (searchClose) searchClose.hidden = true;
 }
-
