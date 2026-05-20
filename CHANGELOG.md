@@ -1,3 +1,9 @@
+## [1.201.0](https://github.com/niafrond/niafrond.github.io/compare/v1.200.0...v1.201.0) (2026-05-20)
+
+### Features
+
+* implement DJ mode configuration and default dance genre preferences, enhance UI elements ([c5618b7](https://github.com/niafrond/niafrond.github.io/commit/c5618b76a6caed4dd7446bdaab6ad92fcdae4bc5))
+
 ## [1.200.0](https://github.com/niafrond/niafrond.github.io/compare/v1.199.0...v1.200.0) (2026-05-19)
 
 ### Features
