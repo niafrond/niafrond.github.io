@@ -15,7 +15,8 @@ describe('audioSourceManager', () => {
       }],
     ]);
     const touchQueueItem = jest.fn();
-    const revokeSpy = jest.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    URL.revokeObjectURL = jest.fn();
     const manager = createAudioSourceManager({
       apiHealthMonitor: null,
       audioCacheName: 'dj-mix:test',
@@ -46,12 +47,12 @@ describe('audioSourceManager', () => {
     expect(item.localStemUrls).toBeNull();
     expect(item.sourceState).toBe('idle');
     expect(sessionBlobCache.size).toBe(0);
-    expect(revokeSpy).toHaveBeenCalledWith('blob:item-track-1');
-    expect(revokeSpy).toHaveBeenCalledWith('blob:item-vocals-1');
-    expect(revokeSpy).toHaveBeenCalledWith('blob:session-track-1');
-    expect(revokeSpy).toHaveBeenCalledWith('blob:session-vocals-1');
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:item-track-1');
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:item-vocals-1');
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:session-track-1');
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:session-vocals-1');
     expect(touchQueueItem).toHaveBeenCalled();
 
-    revokeSpy.mockRestore();
+    URL.revokeObjectURL = originalRevokeObjectURL;
   });
 });
