@@ -189,8 +189,11 @@ async function restorePersistedAudioBlobUrl(cacheKey, audioCacheName) {
 }
 
 export function releaseLocalBlob(item, touchQueueItem) {
-  if (!item?.localBlobUrl) return;
+  if (!item) return;
   logDebug('blob.release.item', { id: item.id, name: item.name });
+  if (item.localBlobUrl && String(item.localBlobUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(item.localBlobUrl);
+  }
   const localStems = item.localStemUrls || {};
   if (localStems.vocalsUrl && String(localStems.vocalsUrl).startsWith('blob:')) {
     URL.revokeObjectURL(localStems.vocalsUrl);
@@ -207,6 +210,30 @@ export function releaseLocalBlob(item, touchQueueItem) {
   item.localBlobUrl = null;
   item.localStemUrls = null;
   touchQueueItem?.(item);
+}
+
+function evictSessionBlobCacheEntry(sessionBlobCache, cacheKey) {
+  if (!cacheKey || !sessionBlobCache?.has(cacheKey)) return false;
+  const cachedSource = sessionBlobCache.get(cacheKey);
+  const blobUrl = typeof cachedSource === 'string' ? cachedSource : cachedSource?.url;
+  if (blobUrl && String(blobUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(blobUrl);
+  }
+  const stems = cachedSource?.stems || {};
+  if (stems.vocalsUrl && String(stems.vocalsUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(stems.vocalsUrl);
+  }
+  if (stems.instrumentalUrl && String(stems.instrumentalUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(stems.instrumentalUrl);
+  }
+  if (stems.echoUrl && String(stems.echoUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(stems.echoUrl);
+  }
+  if (stems.distortionUrl && String(stems.distortionUrl).startsWith('blob:')) {
+    URL.revokeObjectURL(stems.distortionUrl);
+  }
+  sessionBlobCache.delete(cacheKey);
+  return true;
 }
 
 export function clearSessionBlobCache(sessionBlobCache) {
@@ -236,10 +263,12 @@ export function clearSessionBlobCache(sessionBlobCache) {
 
 export function createAudioSourceManager(options) {
   const {
+    apiHealthMonitor,
     audioCacheName,
     getDownloaderApiUrl,
     onQueueUpdated,
     sessionBlobCache,
+    shouldWarmStems,
     touchQueueItem,
   } = options;
 
@@ -410,10 +439,19 @@ export function createAudioSourceManager(options) {
     }
   }
 
+  function maybeWarmStemLocalSources(item, cacheKey) {
+    if (shouldWarmStems?.(item) === false) return;
+    void warmStemLocalSources(item, cacheKey);
+  }
+
   async function downloadTrackViaApi(item) {
     const baseUrl = getDownloaderApiUrl();
     if (!baseUrl) {
       throw new Error('URL API downloader manquante (Config)');
+    }
+
+    if (apiHealthMonitor?.isOffline()) {
+      throw new Error('API hors ligne – téléchargement impossible');
     }
 
     logInfo('api.download.request', {
@@ -433,17 +471,26 @@ export function createAudioSourceManager(options) {
       ratingKey: item.ratingKey,
     };
 
-    const res = await fetch(`${baseUrl}/api/download`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    let res;
+    try {
+      res = await fetch(`${baseUrl}/api/download`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      apiHealthMonitor?.recordFailure();
+      throw err;
+    }
 
     if (!res.ok) {
+      apiHealthMonitor?.recordFailure();
       const body = await res.text().catch(() => '');
       logWarn('api.download.response.nonOk', { status: res.status, body });
       throw new Error(`HTTP ${res.status} ${body}`.trim());
     }
+
+    apiHealthMonitor?.recordSuccess();
 
     const contentType = (res.headers.get('content-type') || '').toLowerCase();
     if (contentType.includes('audio') || contentType.includes('octet-stream')) {
@@ -502,7 +549,7 @@ export function createAudioSourceManager(options) {
     const cacheKey = getTrackCacheKey(item);
     const cachedSource = sessionBlobCache.get(cacheKey);
     if (item.localBlobUrl) {
-      void warmStemLocalSources(item, cacheKey);
+      maybeWarmStemLocalSources(item, cacheKey);
       logDebug('source.ensure.hit.itemBlob', { cacheKey, id: item?.id });
       return item.localBlobUrl;
     }
@@ -517,7 +564,7 @@ export function createAudioSourceManager(options) {
         hydrateItemDurationFromLocalSource(item);
         console.log('Using persisted source URL for item:', { cacheKey, id: item?.id, persistedSourceUrl: item.persistedSourceUrl });
         onQueueUpdated?.();
-        void warmStemLocalSources(item, cacheKey);
+        maybeWarmStemLocalSources(item, cacheKey);
         logInfo('source.ensure.hit.persistedSourceUrl', { cacheKey, id: item?.id });
         return item.localBlobUrl;
       }
@@ -539,7 +586,7 @@ export function createAudioSourceManager(options) {
         touchQueueItem(item);
         hydrateItemDurationFromLocalSource(item);
         onQueueUpdated?.();
-        void warmStemLocalSources(item, cacheKey);
+        maybeWarmStemLocalSources(item, cacheKey);
         logInfo('source.ensure.hit.trustedDirectUrl', {
           cacheKey,
           id: item?.id,
@@ -567,7 +614,7 @@ export function createAudioSourceManager(options) {
       touchQueueItem(item);
       hydrateItemDurationFromLocalSource(item);
       onQueueUpdated?.();
-      void warmStemLocalSources(item, cacheKey);
+      maybeWarmStemLocalSources(item, cacheKey);
       logInfo('source.ensure.hit.sessionBlobCache', {
         cacheKey,
         id: item?.id,
@@ -588,7 +635,7 @@ export function createAudioSourceManager(options) {
       touchQueueItem(item);
       hydrateItemDurationFromLocalSource(item);
       onQueueUpdated?.();
-      void warmStemLocalSources(item, cacheKey);
+      maybeWarmStemLocalSources(item, cacheKey);
       logInfo('source.ensure.hit.persistentCacheApi', {
         cacheKey,
         id: item?.id,
@@ -617,7 +664,7 @@ export function createAudioSourceManager(options) {
       touchQueueItem(item);
       hydrateItemDurationFromLocalSource(item);
       onQueueUpdated?.();
-      void warmStemLocalSources(item, cacheKey);
+      maybeWarmStemLocalSources(item, cacheKey);
       logInfo('source.ensure.resolved.fromApiDownload', {
         cacheKey,
         id: item?.id,
@@ -637,9 +684,34 @@ export function createAudioSourceManager(options) {
     }
   }
 
+  function evictTrackSource(item, options = {}) {
+    if (!item) return false;
+    const { notify = true } = options;
+    const cacheKey = getTrackCacheKey(item);
+    const hadLocalSource = Boolean(item.localBlobUrl || item.localStemUrls);
+    releaseLocalBlob(item, touchQueueItem);
+    const hadSessionSource = evictSessionBlobCacheEntry(sessionBlobCache, cacheKey);
+    item.sourceError = null;
+    item.sourceState = item.persistedSourceUrl ? 'ready' : 'idle';
+    touchQueueItem(item);
+    if (notify) onQueueUpdated?.();
+    logDebug('source.evict', {
+      cacheKey,
+      id: item?.id,
+      hadLocalSource,
+      hadSessionSource,
+    });
+    return hadLocalSource || hadSessionSource;
+  }
+
   async function searchTracksViaApi(query, limit = 25, skipCache = false) {
     const baseUrl = getDownloaderApiUrl();
     if (!baseUrl) throw new Error('URL API downloader manquante (Config)');
+
+    if (apiHealthMonitor?.isOffline()) {
+      logInfo('api.search.skipped.offline', { query });
+      return [];
+    }
 
     logInfo('api.search.begin', { query, limit, skipCache, baseUrl });
 
@@ -655,12 +727,22 @@ export function createAudioSourceManager(options) {
       .filter((attempt, index, array) => array.findIndex((candidate) => candidate.term === attempt.term && candidate.artist === attempt.artist) === index)
       .filter((attempt) => attempt.term);
 
+    let anyAttemptMade = false;
     for (const attempt of searchAttempts) {
       const limitParam = Number.isFinite(limit) && limit > 0 ? `&limit=${encodeURIComponent(limit)}` : '';
       const cacheParam = skipCache ? '&nocache=1' : '';
       const url = `${baseUrl}/api/search?term=${encodeURIComponent(attempt.term)}${attempt.artist ? `&artist=${encodeURIComponent(attempt.artist)}` : ''}${limitParam}${cacheParam}`;
-      const res = await fetch(url, { headers: { Accept: 'application/json' } });
+      let res;
+      try {
+        res = await fetch(url, { headers: { Accept: 'application/json' } });
+        anyAttemptMade = true;
+      } catch (err) {
+        apiHealthMonitor?.recordFailure();
+        logWarn('api.search.attempt.networkError', { term: attempt.term, error: err?.message });
+        continue;
+      }
       if (!res.ok) {
+        apiHealthMonitor?.recordFailure();
         logWarn('api.search.attempt.failed', {
           term: attempt.term,
           artist: attempt.artist,
@@ -669,6 +751,7 @@ export function createAudioSourceManager(options) {
         continue;
       }
 
+      apiHealthMonitor?.recordSuccess();
       const data = await res.json().catch(() => null);
       const items = options.normalizeApiSearchResponse(data);
       logDebug('api.search.attempt.result', {
@@ -677,6 +760,10 @@ export function createAudioSourceManager(options) {
         count: items.length,
       });
       if (items.length) return items;
+    }
+
+    if (!anyAttemptMade && searchAttempts.length > 0) {
+      // All attempts failed with network errors → already recorded failures above
     }
 
     logInfo('api.search.noResults', { query });
@@ -690,6 +777,7 @@ export function createAudioSourceManager(options) {
   async function fetchServerStemsStatus(item) {
     const baseUrl = getDownloaderApiUrl();
     if (!baseUrl) return null;
+    if (apiHealthMonitor?.isOffline()) return null;
 
     const params = new URLSearchParams();
     if (item.cachePath) {
@@ -709,11 +797,14 @@ export function createAudioSourceManager(options) {
       });
       if (res.status === 404) return null;
       if (!res.ok) {
+        apiHealthMonitor?.recordFailure();
         logWarn('api.stems.get.nonOk', { status: res.status });
         return null;
       }
+      apiHealthMonitor?.recordSuccess();
       return await res.json();
     } catch (err) {
+      apiHealthMonitor?.recordFailure();
       logWarn('api.stems.get.failed', { message: err?.message });
       return null;
     }
@@ -726,6 +817,7 @@ export function createAudioSourceManager(options) {
   async function triggerServerStemsGeneration(item) {
     const baseUrl = getDownloaderApiUrl();
     if (!baseUrl) return null;
+    if (apiHealthMonitor?.isOffline()) return null;
 
     const payload = {};
     if (item.cachePath) payload.cachePath = item.cachePath;
@@ -741,11 +833,14 @@ export function createAudioSourceManager(options) {
         signal: AbortSignal.timeout(10000),
       });
       if (!res.ok) {
+        apiHealthMonitor?.recordFailure();
         logWarn('api.stems.post.nonOk', { status: res.status });
         return null;
       }
+      apiHealthMonitor?.recordSuccess();
       return await res.json();
     } catch (err) {
+      apiHealthMonitor?.recordFailure();
       logWarn('api.stems.post.failed', { message: err?.message });
       return null;
     }
@@ -899,6 +994,7 @@ export function createAudioSourceManager(options) {
     deleteLocalCacheSong,
     enrichStemsFromServer,
     ensureLocalSource,
+    evictTrackSource,
     releaseLocalBlob: (item) => releaseLocalBlob(item, touchQueueItem),
     searchTracksViaApi,
   };

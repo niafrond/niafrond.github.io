@@ -46,7 +46,7 @@ import {
   shouldTriggerAutomix,
 } from './lib/automixTimeline.js';
 import { getOtherDeck, toDeck } from './lib/deckHelpers.js';
-import { computeTransitionRamProfile } from './lib/ramProfile.js';
+import { computeTransitionRamProfile, estimateTotalDeviceRamMb, isMobileDevice } from './lib/ramProfile.js';
 import { attachQueueDndHandlers, clearQueueDragMarkers } from './lib/queueDnD.js';
 import {
   buildSearchResultsSectionsHTML,
@@ -86,6 +86,10 @@ import {
   persistDjModeGenrePrefs,
 } from './lib/settingsStorage.js';
 import { DEFAULT_DOWNLOADER_API_URL, STORAGE_KEYS } from './lib/storageKeys.js';
+import { DANCE_GENRE_DEFAULTS } from './lib/danceGenreConfig.js';
+import { DJ_MODES } from './lib/djModeConfig.js';
+import { createApiHealthMonitor } from './lib/apiHealthMonitor.js';
+import { isLowMemoryPlaybackDevice } from './lib/playbackMemoryPolicy.js';
 
 import { uiState } from './lib/uiState.js';
 const QUEUE_KEY = STORAGE_KEYS.queue;
@@ -330,6 +334,30 @@ function applyTransitionCapabilitiesForDevice(options = {}) {
   }
 }
 
+function isLowMemoryPlaybackMode() {
+  return isLowMemoryPlaybackDevice({
+    enabled: true,
+    mobile: isMobileDevice(),
+    totalRamMb: ramTotalMbOverride > 0 ? ramTotalMbOverride : estimateTotalDeviceRamMb(),
+  });
+}
+
+function trimRetainedAudioSources() {
+  if (!isLowMemoryPlaybackMode()) return;
+  let trimmedCount = 0;
+  for (const item of queue) {
+    if (!item) continue;
+    if (deckDisplayItems.A === item || deckDisplayItems.B === item || launchPreviewItem === item) continue;
+    if (evictTrackSource(item, { notify: false })) {
+      trimmedCount += 1;
+    }
+  }
+  if (trimmedCount > 0) {
+    renderQueue();
+    logInfo('memory.trim.lowRam', { trimmedCount, queueLength: queue.length });
+  }
+}
+
 function updateRamFilterConfigUI() {
   if (ramFilterEnabledToggle) {
     ramFilterEnabledToggle.checked = ramFilterEnabled;
@@ -378,6 +406,8 @@ function applyRamFilterSettings(options = {}) {
     applyTransitionModeSetting(safeMode, { persist: true });
     showToast(`Mode AutoMix ajuste (RAM): ${MIX_TRANSITION_MODE_LABELS[safeMode] || safeMode}`);
   }
+
+  trimRetainedAudioSources();
 }
 
 function applyTransitionModeSetting(mode, options = {}) {
@@ -552,10 +582,10 @@ const downloaderApiSaveBtn = document.getElementById('downloader-api-save-btn');
 const downloaderApiTestBtn = document.getElementById('downloader-api-test-btn');
 const downloaderApiStatus = document.getElementById('downloader-api-status');
 const debugLogsToggle = document.getElementById('debug-logs-toggle');
-const djModeDanceBtn = document.getElementById('dj-mode-dance-btn');
-const djModeMusicBtn = document.getElementById('dj-mode-music-btn');
-const danceGenrePrefs = document.getElementById('dance-genre-prefs');
-const danceGenreList = document.getElementById('dance-genre-list');
+const configDjModeDanceBtn = document.getElementById('config-dj-mode-dance-btn');
+const configDjModeMusicBtn = document.getElementById('config-dj-mode-music-btn');
+const configDanceGenrePrefs = document.getElementById('config-dance-genre-prefs');
+const configDanceGenreList = document.getElementById('config-dance-genre-list');
 const debugLogsStatus = document.getElementById('debug-logs-status');
 const ramFilterEnabledToggle = document.getElementById('ram-filter-enabled-toggle');
 const ramTotalMemoryInput = document.getElementById('ram-total-memory-gb');
@@ -602,6 +632,13 @@ function syncAutoModeButtonUI(isEnabled) {
   autoModeBtn.setAttribute('aria-label', `AutoDJ ${isEnabled ? 'actif' : 'inactif'}`);
 }
 
+const apiOfflineBadge = document.getElementById('api-offline-badge');
+
+function setApiOfflineBadgeVisible(visible) {
+  if (!apiOfflineBadge) return;
+  apiOfflineBadge.hidden = !visible;
+}
+
 const downloaderConfig = createDownloaderConfigManager({
   defaultUrl: DEFAULT_DOWNLOADER_API_URL,
   inputEl: downloaderApiUrlInput,
@@ -617,6 +654,20 @@ const {
   setStatus: setDownloaderApiStatus,
   setupEvents: setupDownloaderApiConfigEvents,
 } = downloaderConfig;
+
+const apiHealthMonitor = createApiHealthMonitor({
+  getDownloaderApiUrl,
+  onOffline: () => {
+    logWarn('api.health.offline', {});
+    setApiOfflineBadgeVisible(true);
+    showToast('API hors ligne – mode local uniquement', true);
+  },
+  onOnline: () => {
+    logInfo('api.health.online', {});
+    setApiOfflineBadgeVisible(false);
+    showToast('API de retour en ligne ✓', false);
+  },
+});
 
 const mixControls = createMixControls({
   autoBpmBtn,
@@ -738,11 +789,13 @@ const restoreQueue = () => {
 };
 
 const audioSourceManager = createAudioSourceManager({
+  apiHealthMonitor,
   audioCacheName: AUDIO_CACHE_NAME,
   getDownloaderApiUrl,
   normalizeApiSearchResponse,
   onQueueUpdated: () => renderQueue(),
   sessionBlobCache,
+  shouldWarmStems: (item) => !isLowMemoryPlaybackMode() || deckDisplayItems.A === item || deckDisplayItems.B === item,
   touchQueueItem,
 });
 
@@ -808,6 +861,7 @@ const {
   deleteLocalCacheSong,
   enrichStemsFromServer,
   ensureLocalSource,
+  evictTrackSource,
   releaseLocalBlob,
   searchTracksViaApi,
 } = audioSourceManager;
@@ -1246,6 +1300,7 @@ const autoFadeManager = new AutoFadeManager({
 });
 
 const autoModeManager = createAutoModeManager({
+  apiHealthMonitor,
   getDownloaderApiUrl,
   getQueue: () => queue,
   getCurrentTrackId: () => uiState.currentTrackId,
@@ -1300,16 +1355,16 @@ tabBtns.forEach((btn) => {
 
 function renderDjModeUI() {
   const isDance = djMode === 'dance';
-  if (djModeDanceBtn) {
-    djModeDanceBtn.classList.toggle('dj-mode-btn--active', isDance);
-    djModeDanceBtn.setAttribute('aria-pressed', String(isDance));
+  if (configDjModeDanceBtn) {
+    configDjModeDanceBtn.classList.toggle('dj-mode-btn--active', isDance);
+    configDjModeDanceBtn.setAttribute('aria-pressed', String(isDance));
   }
-  if (djModeMusicBtn) {
-    djModeMusicBtn.classList.toggle('dj-mode-btn--active', !isDance);
-    djModeMusicBtn.setAttribute('aria-pressed', String(!isDance));
+  if (configDjModeMusicBtn) {
+    configDjModeMusicBtn.classList.toggle('dj-mode-btn--active', !isDance);
+    configDjModeMusicBtn.setAttribute('aria-pressed', String(!isDance));
   }
-  if (danceGenrePrefs) {
-    danceGenrePrefs.hidden = !isDance;
+  if (configDanceGenrePrefs) {
+    configDanceGenrePrefs.hidden = !isDance;
   }
   if (cacheGenreFilterFieldEl) {
     cacheGenreFilterFieldEl.hidden = !isDance;
@@ -1322,51 +1377,37 @@ function renderDjModeUI() {
 }
 
 function getDanceGenreOptions() {
-  const defaults = [
-    'House',
-    'Tech House',
-    'Deep House',
-    'EDM',
-    'Dance Pop',
-    'Afro House',
-    'Disco',
-    'Funk',
-    'Hip-Hop',
-    'Amapiano',
-    'Techno',
-    'Trance',
-  ];
   const fromQueue = queue.map((item) => String(item?.genre || '').trim()).filter(Boolean);
   const fromDecks = [
     String(deckDisplayItems.A?.genre || '').trim(),
     String(deckDisplayItems.B?.genre || '').trim(),
   ].filter(Boolean);
-  return Array.from(new Set([...defaults, ...djModeGenrePrefs, ...fromQueue, ...fromDecks]));
+  return Array.from(new Set([...DANCE_GENRE_DEFAULTS, ...djModeGenrePrefs, ...fromQueue, ...fromDecks]));
 }
 
 function renderGenreList() {
-  if (!danceGenreList) return;
+  if (!configDanceGenreList) return;
   const options = getDanceGenreOptions();
-  danceGenreList.innerHTML = '';
+  configDanceGenreList.innerHTML = '';
 
   for (const genre of options) {
     const option = document.createElement('option');
     option.value = genre;
     option.textContent = genre;
-    danceGenreList.appendChild(option);
+    configDanceGenreList.appendChild(option);
   }
 
   const emptyOption = document.createElement('option');
   emptyOption.value = '';
   emptyOption.textContent = 'Tous les genres';
-  danceGenreList.insertBefore(emptyOption, danceGenreList.firstChild);
+  configDanceGenreList.insertBefore(emptyOption, configDanceGenreList.firstChild);
 
   const selectedGenre = String(djModeGenrePrefs[0] || '').trim().toLowerCase();
-  danceGenreList.value = '';
+  configDanceGenreList.value = '';
   if (selectedGenre) {
-    for (const option of danceGenreList.options) {
+    for (const option of configDanceGenreList.options) {
       if (String(option.value).trim().toLowerCase() === selectedGenre) {
-        danceGenreList.value = option.value;
+        configDanceGenreList.value = option.value;
         break;
       }
     }
@@ -1409,11 +1450,21 @@ function setDjMode(mode) {
   logDebug('djMode: changed', { mode, bpm: getActiveDeckBpm() });
 }
 
-djModeDanceBtn?.addEventListener('click', () => setDjMode('dance'));
-djModeMusicBtn?.addEventListener('click', () => setDjMode('music'));
+configDjModeDanceBtn?.addEventListener('click', () => setDjMode('dance'));
+configDjModeMusicBtn?.addEventListener('click', () => setDjMode('music'));
 
-danceGenreList?.addEventListener('change', () => {
-  setPreferredDanceGenre(danceGenreList.value);
+// Initialize DJ mode buttons from config
+if (configDjModeDanceBtn) {
+  configDjModeDanceBtn.title = DJ_MODES.dance.title;
+  configDjModeDanceBtn.setAttribute('aria-label', DJ_MODES.dance.ariaLabel);
+}
+if (configDjModeMusicBtn) {
+  configDjModeMusicBtn.title = DJ_MODES.music.title;
+  configDjModeMusicBtn.setAttribute('aria-label', DJ_MODES.music.ariaLabel);
+}
+
+configDanceGenreList?.addEventListener('change', () => {
+  setPreferredDanceGenre(configDanceGenreList.value);
 });
 
 queueList?.addEventListener('click', handleGenreChipClick, true);
@@ -1830,6 +1881,7 @@ async function launchDeckFromQueue(deck, options = {}) {
         isFocusDeck,
         paused,
       });
+      trimRetainedAudioSources();
       backgroundEnrichStems(targetDeck, item);
     } catch (err) {
       logError('launchDeckFromQueue(): failed', {
@@ -2588,6 +2640,11 @@ async function runSearch(query, skipCache = false) {
       return;
     }
 
+    if (apiHealthMonitor.isOffline()) {
+      searchResults.innerHTML = '<div class="search-empty">⚠ API hors ligne – recherche indisponible</div>';
+      return;
+    }
+
     const tracks = await searchTracksViaApi(query, 25, skipCache);
     logInfo('runSearch(): API results', { query, count: tracks?.length || 0 });
     if (!tracks?.length) {
@@ -3012,7 +3069,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     }
 
     uiState.isPlaying = true;
-  prefetchNext(getFollowingQueueIndex(index, { wrap: false }));
+    prefetchNext(getFollowingQueueIndex(index, { wrap: false }));
     launchPreviewActive = false;
     launchPreviewArtUrl = '';
     launchPreviewTitle = '';
@@ -3028,6 +3085,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       targetDeck,
       isPlaying: uiState.isPlaying,
     });
+    trimRetainedAudioSources();
     backgroundEnrichStems(targetDeck, item);
     
     // Schedule automix timing for auto DJ mode and reset trigger flag
@@ -3115,6 +3173,15 @@ function prefetchNext(index) {
   if (index < 0) return;
   const next = queue[index];
   if (!next) return;
+  if (isLowMemoryPlaybackMode()) {
+    logDebug('prefetchNext(): skipped low-memory prefetch', {
+      index,
+      id: next.id,
+      name: next.name,
+    });
+    trimRetainedAudioSources();
+    return;
+  }
   if (next.localBlobUrl) return;
   logDebug('prefetchNext(): prefetching track source', {
     index,
@@ -3389,4 +3456,3 @@ function closeSearch() {
   searchOverlay.hidden = true;
   if (searchClose) searchClose.hidden = true;
 }
-
