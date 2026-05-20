@@ -26,6 +26,7 @@ const AUTO_MODE_HISTORY_KEY = 'dj-mix:auto-mode:history';
  */
 
 export function createAutoModeManager({
+  apiHealthMonitor,
   getDownloaderApiUrl,
   getQueue,
   getCurrentTrackId,
@@ -485,6 +486,7 @@ export function createAutoModeManager({
     try {
       const apiUrl = getDownloaderApiUrl();
       if (!apiUrl) return null;
+      if (apiHealthMonitor?.isOffline()) return null;
 
       const params = new URLSearchParams();
       params.append('track', trackName);
@@ -496,6 +498,7 @@ export function createAutoModeManager({
       });
 
       if (!response.ok) {
+        apiHealthMonitor?.recordFailure();
         logger?.debug?.('autoDj: mix data fetch failed', {
           status: response.status,
           trackName,
@@ -503,6 +506,7 @@ export function createAutoModeManager({
         return null;
       }
 
+      apiHealthMonitor?.recordSuccess();
       const data = await response.json();
       const mixData = data?.mix || null;
 
@@ -518,6 +522,7 @@ export function createAutoModeManager({
 
       return mixData;
     } catch (err) {
+      apiHealthMonitor?.recordFailure();
       logger?.warn?.('autoDj: failed to fetch mix data', {
         error: err?.message,
         trackName,
@@ -1100,7 +1105,7 @@ export function createAutoModeManager({
       // Primary strategy: use dedicated suggestions endpoint from downloader API.
       try {
         const apiUrl = getDownloaderApiUrl();
-        if (apiUrl) {
+        if (apiUrl && !apiHealthMonitor?.isOffline()) {
           const params = new URLSearchParams();
           const previousTrackReferences = buildSuggestionTrackReferences(currentTrack, queue, currentIndex);
           if (currentTrack.name) params.append('track', currentTrack.name);
@@ -1131,12 +1136,23 @@ export function createAutoModeManager({
           const suggestionPathCandidates = ['/api/suggestions', '/suggestions'];
           for (const path of suggestionPathCandidates) {
             const suggestionUrl = `${apiUrl}${path}?${params.toString()}`;
-            const suggestionRes = await fetch(suggestionUrl, {
-              method: 'GET',
-              headers: { Accept: 'application/json' },
-            });
+            let suggestionRes;
+            try {
+              suggestionRes = await fetch(suggestionUrl, {
+                method: 'GET',
+                headers: { Accept: 'application/json' },
+              });
+            } catch (fetchErr) {
+              apiHealthMonitor?.recordFailure();
+              logger?.debug?.('autoDj: suggestions fetch network error', {
+                path,
+                error: fetchErr?.message,
+              });
+              break;
+            }
 
             if (!suggestionRes.ok) {
+              apiHealthMonitor?.recordFailure();
               logger?.debug?.('autoDj: suggestions endpoint unavailable', {
                 path,
                 status: suggestionRes.status,
@@ -1144,6 +1160,7 @@ export function createAutoModeManager({
               continue;
             }
 
+            apiHealthMonitor?.recordSuccess();
             const suggestionData = await suggestionRes.json().catch(() => null);
             const suggestionResults = Array.isArray(suggestionData?.results)
               ? suggestionData.results
