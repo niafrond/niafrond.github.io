@@ -1319,13 +1319,13 @@ input {
 
 .album-art-wrapper {
   position: relative;
-  width: min(136px, 34vw);
-  height: min(136px, 34vw);
+  width: min(122px, 31vw);
+  height: min(122px, 31vw);
 }
 
 .album-art-next-wrapper {
   position: relative;
-  width: min(136px, 34vw);
+  width: min(122px, 31vw);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1334,8 +1334,8 @@ input {
 
 .album-art-next,
 .album-art-next-placeholder {
-  width: min(136px, 34vw);
-  height: min(136px, 34vw);
+  width: min(122px, 31vw);
+  height: min(122px, 31vw);
   border-radius: 50%;
   object-fit: cover;
 }
@@ -1480,7 +1480,7 @@ input {
   color: var(--text-dim);
   letter-spacing: 0.2px;
   width: 100%;
-  max-width: min(136px, 34vw);
+  max-width: min(122px, 31vw);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -1512,8 +1512,8 @@ input {
   font-size: 11px;
   color: var(--text-muted);
   text-align: center;
-  width: min(136px, 34vw);
-  max-width: min(136px, 34vw);
+  width: min(122px, 31vw);
+  max-width: min(122px, 31vw);
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -1526,8 +1526,8 @@ input {
   line-height: 1.15;
   color: var(--text-dim);
   text-align: center;
-  width: min(136px, 34vw);
-  max-width: min(136px, 34vw);
+  width: min(122px, 31vw);
+  max-width: min(122px, 31vw);
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -2539,8 +2539,8 @@ input {
 
 @media (min-width: 600px) {
   .album-art-wrapper {
-    width: 132px;
-    height: 132px;
+    width: 119px;
+    height: 119px;
   }
 
   .track-name { font-size: 22px; }

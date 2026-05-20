@@ -220,8 +220,8 @@ export function createDjMixRenderer(options) {
       const cueBSelected = deckBCueIndex === i && deckCueDeck === 'B';
       const cueAClass = `queue-cue${cueASelected ? ' is-selected' : ''}${cueALoaded ? ' is-loaded-deck' : ''}`;
       const cueBClass = `queue-cue${cueBSelected ? ' is-selected' : ''}${cueBLoaded ? ' is-loaded-deck' : ''}`;
-      const cueADisabled = cueALoaded ? 'disabled aria-disabled="true" title="Déjà chargée sur platine 1"' : '';
-      const cueBDisabled = cueBLoaded ? 'disabled aria-disabled="true" title="Déjà chargée sur platine 2"' : '';
+      const cueADisabled = 'disabled aria-disabled="true"';
+      const cueBDisabled = 'disabled aria-disabled="true"';
       const metaChips = buildDanceMetaChips(item);
       const sourceBadge = renderSourceBadge(item);
 
