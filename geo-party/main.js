@@ -10,7 +10,7 @@ import { GeoPeer }              from './peer.js';
 import {
   state, PHASES, MSG,
   STORAGE_KEY_SETTINGS, STORAGE_KEY_TOKEN,
-  TIMER_DEFAULT, ROUNDS_DEFAULT, HOST_ID,
+  TIMER_DEFAULT, ROUNDS_DEFAULT, REGION_DEFAULT, HOST_ID,
 }                               from './state.js';
 import {
   initGame, addHostPlayer,
@@ -192,13 +192,15 @@ function _onTick(value, kind) {
 
 let _preloadPromise = null; // Promise<object[]>
 let _preloadRounds  = null;
+let _preloadRegion  = null;
 let _preloadToken   = null;
 
 /** Lance la résolution Mapillary en arrière-plan dès que la session est créée. */
-function _startPreload(rounds, token) {
+function _startPreload(rounds, region, token) {
   _preloadRounds  = rounds;
+  _preloadRegion  = region;
   _preloadToken   = token;
-  const rawLocs   = pickLocations(LOCATIONS.length);
+  const rawLocs   = pickLocations(LOCATIONS.length, region);
   _preloadPromise = prepareRoundLocations(rawLocs, rounds, token);
 
   // Mettre à jour l'indicateur de statut dans le lobby
@@ -218,13 +220,13 @@ function _startPreload(rounds, token) {
  * Retourne les lieux préchargés si disponibles et compatibles,
  * sinon les récupère à la demande.
  */
-async function _getLocations(rounds, token) {
-  if (_preloadPromise && _preloadRounds === rounds && _preloadToken === token) {
+async function _getLocations(rounds, region, token) {
+  if (_preloadPromise && _preloadRounds === rounds && _preloadRegion === region && _preloadToken === token) {
     const locs      = await _preloadPromise;
     _preloadPromise = null; // consommer le cache
     return locs;
   }
-  const rawLocs = pickLocations(LOCATIONS.length);
+  const rawLocs = pickLocations(LOCATIONS.length, region);
   return prepareRoundLocations(rawLocs, rounds, token);
 }
 
@@ -241,11 +243,17 @@ async function initHostFlow() {
 // Token Mapillary par défaut (client access token, utilisé côté navigateur)
 const DEFAULT_MAPILLARY_TOKEN = 'MLY|27736853439250253|def00cd1848cdcedd08fa8ce951b0d27';
 
+function _getMaxRoundsForRegion(region) {
+  if (!region || region === REGION_DEFAULT) return LOCATIONS.length;
+  return LOCATIONS.filter(l => l.region === region).length;
+}
+
 function _loadPersistedSettings() {
   try {
     const s = JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || '{}');
     if (s.timer)  el('sel-timer').value  = String(s.timer);
     if (s.rounds) el('sel-rounds').value = String(s.rounds);
+    if (s.region) el('sel-region').value = s.region;
     if (s.name)   el('input-host-name').value = s.name;
     const token = localStorage.getItem(STORAGE_KEY_TOKEN) || DEFAULT_MAPILLARY_TOKEN;
     el('input-mapillary-token').value = token;
@@ -253,17 +261,34 @@ function _loadPersistedSettings() {
 }
 
 function _saveSettings() {
+  const roundsSelect = el('sel-rounds');
   const name   = el('input-host-name').value.trim() || 'Hôte';
   const timer  = parseInt(el('sel-timer').value, 10);
-  const rounds = parseInt(el('sel-rounds').value, 10);
+  const region = el('sel-region').value || REGION_DEFAULT;
+  const requestedRounds = parseInt(roundsSelect.value, 10);
+  const roundsOptions = Array.from(roundsSelect.options)
+    .map(opt => parseInt(opt.value, 10))
+    .filter(Number.isFinite)
+    .sort((a, b) => a - b);
+  const maxRounds = _getMaxRoundsForRegion(region);
+  const allowedRounds = roundsOptions.filter(v => v <= maxRounds);
+  let rounds = requestedRounds;
+  if (!allowedRounds.includes(requestedRounds)) {
+    if (allowedRounds.length) {
+      rounds = allowedRounds[allowedRounds.length - 1];
+    } else {
+      rounds = roundsOptions[0];
+    }
+  }
+  if (rounds !== requestedRounds) roundsSelect.value = String(rounds);
   const token  = el('input-mapillary-token').value.trim();
-  localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify({ name, timer, rounds }));
+  localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify({ name, timer, rounds, region }));
   localStorage.setItem(STORAGE_KEY_TOKEN, token);
-  return { name, timer, rounds, token };
+  return { name, timer, rounds, region, token };
 }
 
 async function _createSession() {
-  const { name, timer, rounds, token } = _saveSettings();
+  const { name, timer, rounds, region, token } = _saveSettings();
 
   // Ajouter le joueur HOST
   addHostPlayer(name);
@@ -273,7 +298,7 @@ async function _createSession() {
   showScreen('screen-lobby');
 
   // Lancer le pré-chargement des panoramas dès l'entrée dans le lobby
-  _startPreload(rounds, token);
+  _startPreload(rounds, region, token);
 
   try {
     await peer.startHost();
@@ -318,13 +343,13 @@ async function _hostStartGame() {
     showToast('Attendez au moins un autre joueur !', 'error');
     return;
   }
-  const { rounds, timer, token } = _saveSettings();
+  const { rounds, timer, region, token } = _saveSettings();
 
   // Récupérer les IDs Mapillary (préchargés ou à la demande)
   const btn = el('btn-start-game');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Chargement des panoramas…'; }
 
-  const locs = await _getLocations(rounds, token);
+  const locs = await _getLocations(rounds, region, token);
 
   if (btn) { btn.disabled = false; btn.textContent = '🚀 Démarrer la partie'; }
 
@@ -415,14 +440,14 @@ function _wireActions() {
   // Game over → replay (HOST only)
   el('btn-replay').addEventListener('click', async () => {
     if (!isHost) return;
-    const { rounds, timer, token } = _saveSettings();
+    const { rounds, timer, region, token } = _saveSettings();
     state.timerDuration = timer;
     state.totalRounds   = rounds;
 
     const btn = el('btn-replay');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Chargement…'; }
 
-    const rawLocs = pickLocations(LOCATIONS.length);
+    const rawLocs = pickLocations(LOCATIONS.length, region);
     const locs    = await prepareRoundLocations(rawLocs, rounds, token);
 
     if (btn) { btn.disabled = false; btn.textContent = '🔄 Rejouer'; }
