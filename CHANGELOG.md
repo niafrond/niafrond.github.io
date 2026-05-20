@@ -1,3 +1,17 @@
+## [1.203.0](https://github.com/niafrond/niafrond.github.io/compare/v1.202.1...v1.203.0) (2026-05-20)
+
+### Features
+
+* **geo-party:** add timer options and world region filter ([5ac773b](https://github.com/niafrond/niafrond.github.io/commit/5ac773bd842d07bb3d1aea6a13c28e3b50be17f2))
+* **geo-party:** auto-submit on timer end, post-validation lock, per-player status chips ([fdd75a2](https://github.com/niafrond/niafrond.github.io/commit/fdd75a28a796c20b6760336f027645d7c148a022))
+* **geo-party:** fix panorama retry + add unit tests ([036fbee](https://github.com/niafrond/niafrond.github.io/commit/036fbee3f93309e7ec8342323be0c333056d7c96))
+
+### Bug Fixes
+
+* **geo-party:** clamp rounds to available locations for selected region ([8322a36](https://github.com/niafrond/niafrond.github.io/commit/8322a3623fa3cb89801a8ddfb2c12f5e5fdc4853))
+* **geo-party:** Easter Island → oceanie; remove redundant spread in pickLocations ([a54c355](https://github.com/niafrond/niafrond.github.io/commit/a54c355144e075a05c941f41a6b735f7340dc9ba))
+* **geo-party:** finalize conflict resolution and clamp rounds by region ([9500323](https://github.com/niafrond/niafrond.github.io/commit/9500323dbfc79a3b771994bc1d6d0f48d7dee8da))
+
 ## [1.202.1](https://github.com/niafrond/niafrond.github.io/compare/v1.202.0...v1.202.1) (2026-05-20)
 
 ### Bug Fixes
