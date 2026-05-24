@@ -83,5 +83,12 @@ export default {
       testMatch: ['<rootDir>/dj-mix/tests/unit/*.test.js'],
       transform: {},
     },
+    // ── Mix Blind Test : logique de pairing/cache (node) ─────────────────────
+    {
+      displayName: 'mix-blind-test-node',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/mix-blind-test/tests/unit/*.test.js'],
+      transform: {},
+    },
   ],
 };
