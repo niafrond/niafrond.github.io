@@ -162,6 +162,8 @@ export function filterCacheFiles(files, filters = {}) {
 
 export function createPlaylistManager(options) {
   const {
+    addToFilRouge,
+    addToPriorityQueue,
     cacheFilterCountEl,
     cacheGenreFilterEl,
     cacheResetFiltersBtn,
@@ -278,6 +280,8 @@ export function createPlaylistManager(options) {
         <div class="cache-actions">
           <button class="cache-fade-btn" data-index="${sourceIndex}" aria-label="Charger sur platine inactive puis AutoMix">Fade</button>
           <button class="cache-add-btn" data-index="${sourceIndex}" aria-label="Ajouter a la file">➕</button>
+          <button class="cache-filrouge-btn" data-index="${sourceIndex}" aria-label="Ajouter au fil rouge" title="Ajouter au fil rouge">🎶</button>
+          <button class="cache-priority-btn" data-index="${sourceIndex}" aria-label="File prioritaire" title="Ajouter à la file prioritaire">⏭</button>
           <button class="cache-delete-btn" data-index="${sourceIndex}" aria-label="Supprimer du cache API">🗑</button>
         </div>
       </div>
@@ -340,6 +344,24 @@ export function createPlaylistManager(options) {
           btn.disabled = false;
           btn.textContent = previous;
         }
+      });
+    });
+
+    playlistListEl.querySelectorAll('.cache-filrouge-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = Number(btn.dataset.index);
+        const file = cacheFiles[idx];
+        if (file && addToFilRouge) addToFilRouge(file);
+      });
+    });
+
+    playlistListEl.querySelectorAll('.cache-priority-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = Number(btn.dataset.index);
+        const file = cacheFiles[idx];
+        if (file && addToPriorityQueue) addToPriorityQueue(file);
       });
     });
   }

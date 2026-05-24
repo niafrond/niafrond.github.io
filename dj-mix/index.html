@@ -238,6 +238,25 @@
 
       </div>
 
+      <div id="tab-filrouge" class="tab-panel" hidden>
+        <div class="panel-header">
+          <h2 class="panel-title">Fil rouge</h2>
+          <span id="filrouge-count" class="panel-meta">0 morceau</span>
+        </div>
+        <div class="filrouge-controls">
+          <button id="filrouge-shuffle-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="false">Shuffle: OFF</button>
+          <button id="filrouge-clear-btn" class="clear-btn" type="button">Vider</button>
+        </div>
+        <div class="filrouge-priority-section">
+          <h3 class="filrouge-subtitle">⏭ File prioritaire <span id="filrouge-priority-count" class="panel-meta">0</span></h3>
+          <div id="filrouge-priority-list" class="filrouge-list"></div>
+        </div>
+        <div class="filrouge-playlist-section">
+          <h3 class="filrouge-subtitle">🎵 Playlist fil rouge</h3>
+          <div id="filrouge-playlist-list" class="filrouge-list"></div>
+        </div>
+      </div>
+
       <div id="tab-playlist" class="tab-panel" hidden>
         <div class="panel-header">
           <h2 class="panel-title">Cache</h2>
@@ -490,6 +509,10 @@
       <button class="tab-bar-btn active" data-tab="mix" aria-selected="true">
         <span class="tab-icon">🎚️</span>
         <span class="tab-label">Mix</span>
+      </button>
+      <button class="tab-bar-btn" data-tab="filrouge" aria-selected="false">
+        <span class="tab-icon">🎶</span>
+        <span class="tab-label">Fil rouge</span>
       </button>
       <button class="tab-bar-btn" data-tab="playlist" aria-selected="false">
         <span class="tab-icon">🗂️</span>
