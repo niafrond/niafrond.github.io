@@ -322,39 +322,56 @@ function wireSongForm() {
   });
 
   refs.btnImportDjMix.addEventListener('click', () => {
-    const imported = readDjMixQueueTracks();
+    void (async () => {
+      let imported = readDjMixQueueTracks();
+      if (!imported.length) {
+        updateStatus('Chargement du cache serveur…');
+        imported = (await stemClient.fetchServerCacheTracks())
+          .map((raw) => normalizeTrack(raw, { requireName: false }))
+          .filter((track) => Boolean(track?.name || track?.cachePath));
+      }
 
-    if (!imported.length) {
-      updateStatus('Aucune chanson importable trouvée dans DJ Mix.', true);
-      return;
-    }
+      if (!imported.length) {
+        updateStatus('Aucune chanson importable trouvée dans DJ Mix.', true);
+        return;
+      }
 
-    const addedCount = mergeTracks(imported);
-    if (!addedCount) {
-      updateStatus('Toutes les chansons DJ Mix sont déjà présentes.', true);
-      return;
-    }
-    updateStatus(`${addedCount} chanson(s) importée(s) depuis DJ Mix.`);
+      const addedCount = mergeTracks(imported);
+      if (!addedCount) {
+        updateStatus('Toutes les chansons DJ Mix sont déjà présentes.', true);
+        return;
+      }
+      updateStatus(`${addedCount} chanson(s) importée(s) depuis DJ Mix.`);
+    })();
   });
 
   refs.btnAddRandomDjMix.addEventListener('click', () => {
-    const imported = readDjMixQueueTracks();
-    if (!imported.length) {
-      updateStatus('Aucune chanson importable trouvée dans DJ Mix.', true);
-      return;
-    }
+    void (async () => {
+      let imported = readDjMixQueueTracks();
+      if (!imported.length) {
+        updateStatus('Chargement du cache serveur…');
+        imported = (await stemClient.fetchServerCacheTracks())
+          .map((raw) => normalizeTrack(raw, { requireName: false }))
+          .filter((track) => Boolean(track?.name || track?.cachePath));
+      }
 
-    const existingKeys = new Set(state.tracks.map((track) => trackSourceKey(track)));
-    const available = imported.filter((track) => !existingKeys.has(trackSourceKey(track)));
-    if (!available.length) {
-      updateStatus('Toutes les chansons DJ Mix sont déjà présentes.', true);
-      return;
-    }
+      if (!imported.length) {
+        updateStatus('Aucune chanson importable trouvée dans DJ Mix.', true);
+        return;
+      }
 
-    const requestedCount = Math.floor(Number(refs.randomAddCount?.value));
-    const picked = pickRandomTracks(available, requestedCount);
-    mergeTracks(picked);
-    updateStatus(`${picked.length} chanson(s) aléatoire(s) ajoutée(s) depuis DJ Mix.`);
+      const existingKeys = new Set(state.tracks.map((track) => trackSourceKey(track)));
+      const available = imported.filter((track) => !existingKeys.has(trackSourceKey(track)));
+      if (!available.length) {
+        updateStatus('Toutes les chansons DJ Mix sont déjà présentes.', true);
+        return;
+      }
+
+      const requestedCount = Math.floor(Number(refs.randomAddCount?.value));
+      const picked = pickRandomTracks(available, requestedCount);
+      mergeTracks(picked);
+      updateStatus(`${picked.length} chanson(s) aléatoire(s) ajoutée(s) depuis DJ Mix.`);
+    })();
   });
 }
 
