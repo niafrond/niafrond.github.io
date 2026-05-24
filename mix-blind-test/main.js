@@ -1,4 +1,4 @@
-import { chooseRoundPair } from './game-logic.js';
+import { chooseRoundPair, pickRandomTracks } from './game-logic.js';
 import { StemClient } from './stem-client.js';
 
 const TRACKS_KEY = 'mix-blind-test:tracks';
@@ -20,6 +20,7 @@ const refs = {
   songForm: document.getElementById('song-form'),
   btnImportDjMix: document.getElementById('btn-import-dj-mix'),
   btnAddRandomDjMix: document.getElementById('btn-add-random-dj-mix'),
+  randomAddCount: document.getElementById('random-add-count'),
   tracksBody: document.getElementById('tracks-body'),
   difficultMode: document.getElementById('difficult-mode'),
   btnStartRound: document.getElementById('btn-start-round'),
@@ -337,9 +338,10 @@ function wireSongForm() {
       return;
     }
 
-    const randomTrack = available[Math.floor(Math.random() * available.length)];
-    mergeTracks([randomTrack]);
-    updateStatus(`Chanson aléatoire ajoutée : ${randomTrack.name}.`);
+    const requestedCount = Math.floor(Number(refs.randomAddCount?.value));
+    const picked = pickRandomTracks(available, requestedCount);
+    mergeTracks(picked);
+    updateStatus(`${picked.length} chanson(s) aléatoire(s) ajoutée(s) depuis DJ Mix.`);
   });
 }
 

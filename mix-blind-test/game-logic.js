@@ -69,3 +69,18 @@ export function pruneStemCacheEntries(entries, { maxBytes = 180 * 1024 * 1024, m
 
   return { kept, evicted, totalBytes };
 }
+
+export function pickRandomTracks(tracks, count = 1, rng = Math.random) {
+  const pool = Array.isArray(tracks) ? [...tracks] : [];
+  if (!pool.length) return [];
+
+  const requested = Math.floor(Number(count));
+  const take = Math.min(pool.length, Number.isFinite(requested) && requested > 0 ? requested : 1);
+
+  for (let index = pool.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(rng() * (index + 1));
+    [pool[index], pool[swapIndex]] = [pool[swapIndex], pool[index]];
+  }
+
+  return pool.slice(0, take);
+}

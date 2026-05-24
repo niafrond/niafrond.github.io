@@ -32,7 +32,10 @@
         <button class="btn primary" type="submit">Ajouter</button>
       </form>
       <button id="btn-import-dj-mix" type="button" class="btn">Importer depuis la queue DJ Mix</button>
-      <button id="btn-add-random-dj-mix" type="button" class="btn">Ajouter une chanson aléatoire (DJ Mix)</button>
+      <div class="inline">
+        <input id="random-add-count" type="number" min="1" step="1" value="5" aria-label="Nombre de chansons aléatoires à ajouter">
+        <button id="btn-add-random-dj-mix" type="button" class="btn">Ajouter des chansons aléatoires (DJ Mix)</button>
+      </div>
 
       <div class="table-wrap">
         <table>

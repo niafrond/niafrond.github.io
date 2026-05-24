@@ -1,4 +1,4 @@
-import { chooseRoundPair, makePairKey, pruneStemCacheEntries } from '../../game-logic.js';
+import { chooseRoundPair, makePairKey, pickRandomTracks, pruneStemCacheEntries } from '../../game-logic.js';
 
 describe('mix-blind-test game logic', () => {
   test('chooseRoundPair selects closest BPM pair by default', () => {
@@ -36,5 +36,22 @@ describe('mix-blind-test game logic', () => {
     expect(result.kept.map((item) => item.key)).toEqual(['fresh', 'mid']);
     expect(result.evicted.map((item) => item.key)).toEqual(['old']);
     expect(result.totalBytes).toBe(200);
+  });
+
+  test('pickRandomTracks returns requested unique subset', () => {
+    const tracks = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }];
+    const picked = pickRandomTracks(tracks, 3, (() => {
+      const values = [0.8, 0.2, 0.6];
+      return () => values.shift() ?? 0;
+    })());
+
+    expect(picked).toHaveLength(3);
+    expect(new Set(picked.map((item) => item.id)).size).toBe(3);
+  });
+
+  test('pickRandomTracks caps at available tracks and defaults invalid count to one', () => {
+    const tracks = [{ id: 'a' }, { id: 'b' }];
+    expect(pickRandomTracks(tracks, 10, () => 0)).toHaveLength(2);
+    expect(pickRandomTracks(tracks, 0, () => 0)).toHaveLength(1);
   });
 });
