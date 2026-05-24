@@ -1,3 +1,9 @@
+## [1.206.1](https://github.com/niafrond/niafrond.github.io/compare/v1.206.0...v1.206.1) (2026-05-24)
+
+### Bug Fixes
+
+* **mix-blind-test:** make song add resilient and explicit on duplicates ([fe3556a](https://github.com/niafrond/niafrond.github.io/commit/fe3556a44f8b1333f8581c87d5d193ec17ce19bc))
+
 ## [1.206.0](https://github.com/niafrond/niafrond.github.io/compare/v1.205.0...v1.206.0) (2026-05-24)
 
 ### Features
