@@ -1,4 +1,4 @@
-import { chooseRoundPair, pickRandomTracks } from './game-logic.js';
+import { chooseRoundPair, makePairKey, pickRandomTracks } from './game-logic.js';
 import { StemClient } from './stem-client.js';
 
 const TRACKS_KEY = 'mix-blind-test:tracks';
@@ -11,6 +11,7 @@ const state = {
   usedPairKeys: new Set(),
   round: 0,
   playing: null,
+  pending: null,
   teams: loadTeams(),
 };
 
@@ -23,8 +24,12 @@ const refs = {
   randomAddCount: document.getElementById('random-add-count'),
   tracksBody: document.getElementById('tracks-body'),
   difficultMode: document.getElementById('difficult-mode'),
+  btnPreviewRound: document.getElementById('btn-preview-round'),
   btnStartRound: document.getElementById('btn-start-round'),
   btnStopRound: document.getElementById('btn-stop-round'),
+  btnSwapVocals: document.getElementById('btn-swap-vocals'),
+  btnSwapInstrumental: document.getElementById('btn-swap-instrumental'),
+  btnSwapBoth: document.getElementById('btn-swap-both'),
   gameStatus: document.getElementById('game-status'),
   roundLabel: document.getElementById('round-label'),
   nowPlaying: document.getElementById('now-playing'),
@@ -109,9 +114,14 @@ function renderTracks() {
     removeBtn.className = 'btn danger';
     removeBtn.textContent = 'Supprimer';
     removeBtn.addEventListener('click', () => {
+      if (state.pending && (state.pending.vocalsTrack.id === track.id || state.pending.instrumentalTrack.id === track.id)) {
+        state.pending = null;
+      }
       state.tracks = state.tracks.filter((item) => item.id !== track.id);
       saveTracks();
       renderTracks();
+      renderPendingRound();
+      updateRoundButtons();
     });
     actionCell.appendChild(removeBtn);
 
@@ -217,36 +227,183 @@ function applyStemVolumes() {
   updateVolumeSliderLabels();
 }
 
-async function startRound() {
+function formatMixReveal(vocalsTrack, instrumentalTrack) {
+  return [
+    `🎤 Voix : ${vocalsTrack.name} — ${vocalsTrack.artist || 'Artiste inconnu'}`,
+    `🎼 Instru : ${instrumentalTrack.name} — ${instrumentalTrack.artist || 'Artiste inconnu'}`,
+  ].join(' | ');
+}
+
+function toFiniteBpm(value) {
+  const bpm = Number(value);
+  return Number.isFinite(bpm) && bpm > 0 ? bpm : null;
+}
+
+function chooseReplacementTrack(candidates, referenceBpm, difficultMode = false) {
+  if (!candidates.length) return null;
+  if (difficultMode) return candidates[Math.floor(Math.random() * candidates.length)];
+
+  const refBpm = toFiniteBpm(referenceBpm);
+  if (refBpm == null) return candidates[Math.floor(Math.random() * candidates.length)];
+
+  const scored = candidates.map((track) => ({
+    track,
+    gap: (() => {
+      const bpm = toFiniteBpm(track.bpm);
+      return bpm == null ? Number.POSITIVE_INFINITY : Math.abs(bpm - refBpm);
+    })(),
+  })).sort((a, b) => a.gap - b.gap);
+
+  const bestGap = scored[0].gap;
+  const finalists = scored.filter((item) => item.gap === bestGap).map((item) => item.track);
+  return finalists[Math.floor(Math.random() * finalists.length)];
+}
+
+function updateRoundButtons() {
+  const isPlaying = Boolean(state.playing);
+  const hasPending = Boolean(state.pending);
+  refs.btnPreviewRound.disabled = isPlaying;
+  refs.btnStartRound.disabled = isPlaying || !hasPending;
+  refs.btnStopRound.disabled = !isPlaying;
+  refs.btnSwapVocals.disabled = isPlaying || !hasPending;
+  refs.btnSwapInstrumental.disabled = isPlaying || !hasPending;
+  refs.btnSwapBoth.disabled = isPlaying || !hasPending;
+}
+
+function renderPendingRound() {
+  if (state.pending) {
+    refs.revealAnswer.textContent = formatMixReveal(state.pending.vocalsTrack, state.pending.instrumentalTrack);
+    if (!state.playing) {
+      refs.nowPlaying.textContent = '🧩 Combinaison prête (non lancée)';
+    }
+  } else if (!state.playing) {
+    refs.revealAnswer.textContent = 'Préparez une combinaison pour l’afficher au game master.';
+    refs.nowPlaying.textContent = '⏸️ Aucun mix en cours';
+  }
+}
+
+function createPendingRoundFromPair(pair, swap = Math.random() < 0.5) {
+  return {
+    pairKey: pair.key,
+    vocalsTrack: swap ? pair.right : pair.left,
+    instrumentalTrack: swap ? pair.left : pair.right,
+  };
+}
+
+function pickNewPair(excludedPairKeys = new Set()) {
+  const usedWithExclusions = new Set([...state.usedPairKeys, ...excludedPairKeys]);
+  return chooseRoundPair(state.tracks, usedWithExclusions, refs.difficultMode.checked);
+}
+
+function prepareRound() {
   if (state.playing) return;
   if (state.tracks.length < 2) {
     updateStatus('Ajoutez au moins deux chansons.', true);
     return;
   }
 
-  const choice = chooseRoundPair(state.tracks, state.usedPairKeys, refs.difficultMode.checked);
+  let choice = pickNewPair();
   if (!choice) {
     state.usedPairKeys.clear();
-    updateStatus('Toutes les paires ont été jouées. Réinitialisation des paires.', false);
+    choice = pickNewPair();
+  }
+  if (!choice) {
+    state.pending = null;
+    renderPendingRound();
+    updateRoundButtons();
+    updateStatus('Impossible de trouver une combinaison jouable.', true);
     return;
   }
 
+  state.pending = createPendingRoundFromPair(choice);
+  renderPendingRound();
+  updateRoundButtons();
+  updateStatus('Combinaison prête. Vous pouvez changer voix/instru avant de lancer.', false);
+}
+
+function swapPendingVocals() {
+  if (!state.pending || state.playing) return;
+  const fixedInstrumental = state.pending.instrumentalTrack;
+  const currentVocals = state.pending.vocalsTrack;
+  const candidates = state.tracks.filter((track) => (
+    track.id !== fixedInstrumental.id
+    && track.id !== currentVocals.id
+    && !state.usedPairKeys.has(makePairKey(track, fixedInstrumental))
+  ));
+  const nextVocals = chooseReplacementTrack(candidates, fixedInstrumental.bpm, refs.difficultMode.checked);
+  if (!nextVocals) {
+    updateStatus('Aucune autre voix disponible pour cette instru.', true);
+    return;
+  }
+  state.pending = {
+    pairKey: makePairKey(nextVocals, fixedInstrumental),
+    vocalsTrack: nextVocals,
+    instrumentalTrack: fixedInstrumental,
+  };
+  renderPendingRound();
+  updateRoundButtons();
+  updateStatus('Voix changée.', false);
+}
+
+function swapPendingInstrumental() {
+  if (!state.pending || state.playing) return;
+  const fixedVocals = state.pending.vocalsTrack;
+  const currentInstrumental = state.pending.instrumentalTrack;
+  const candidates = state.tracks.filter((track) => (
+    track.id !== fixedVocals.id
+    && track.id !== currentInstrumental.id
+    && !state.usedPairKeys.has(makePairKey(fixedVocals, track))
+  ));
+  const nextInstrumental = chooseReplacementTrack(candidates, fixedVocals.bpm, refs.difficultMode.checked);
+  if (!nextInstrumental) {
+    updateStatus('Aucune autre instru disponible pour cette voix.', true);
+    return;
+  }
+  state.pending = {
+    pairKey: makePairKey(fixedVocals, nextInstrumental),
+    vocalsTrack: fixedVocals,
+    instrumentalTrack: nextInstrumental,
+  };
+  renderPendingRound();
+  updateRoundButtons();
+  updateStatus('Instru changée.', false);
+}
+
+function swapPendingBoth() {
+  if (!state.pending || state.playing) return;
+  const excluded = new Set([state.pending.pairKey]);
+  let choice = pickNewPair(excluded);
+  if (!choice) {
+    state.usedPairKeys.clear();
+    choice = pickNewPair(excluded);
+  }
+  if (!choice) {
+    updateStatus('Aucune autre combinaison disponible.', true);
+    return;
+  }
+  state.pending = createPendingRoundFromPair(choice);
+  renderPendingRound();
+  updateRoundButtons();
+  updateStatus('Voix + instru changées.', false);
+}
+
+async function startRound() {
+  if (state.playing) return;
+  if (!state.pending) {
+    updateStatus('Préparez une combinaison avant de lancer.', true);
+    return;
+  }
+  const pending = state.pending;
+
   state.round += 1;
   refs.roundLabel.textContent = `Manche ${state.round}`;
-
-  const swap = Math.random() < 0.5;
-  const vocalsTrack = swap ? choice.right : choice.left;
-  const instrumentalTrack = swap ? choice.left : choice.right;
-  refs.revealAnswer.textContent = [
-    `🎤 Voix : ${vocalsTrack.name} — ${vocalsTrack.artist || 'Artiste inconnu'}`,
-    `🎼 Instru : ${instrumentalTrack.name} — ${instrumentalTrack.artist || 'Artiste inconnu'}`,
-  ].join(' | ');
+  refs.revealAnswer.textContent = formatMixReveal(pending.vocalsTrack, pending.instrumentalTrack);
 
   try {
     updateStatus('Préparation des stems…');
     const [vocalsUrl, instrumentalUrl] = await Promise.all([
-      stemClient.ensureStemUrl(vocalsTrack, 'vocals', (msg) => updateStatus(msg)),
-      stemClient.ensureStemUrl(instrumentalTrack, 'instrumental', (msg) => updateStatus(msg)),
+      stemClient.ensureStemUrl(pending.vocalsTrack, 'vocals', (msg) => updateStatus(msg)),
+      stemClient.ensureStemUrl(pending.instrumentalTrack, 'instrumental', (msg) => updateStatus(msg)),
     ]);
 
     const vocalsAudio = new Audio(vocalsUrl);
@@ -259,15 +416,15 @@ async function startRound() {
     await Promise.all([vocalsAudio.play(), instrumentalAudio.play()]);
 
     state.playing = {
-      pairKey: choice.key,
-      vocalsTrack,
-      instrumentalTrack,
+      pairKey: pending.pairKey,
+      vocalsTrack: pending.vocalsTrack,
+      instrumentalTrack: pending.instrumentalTrack,
       vocalsAudio,
       instrumentalAudio,
     };
-    state.usedPairKeys.add(choice.key);
-    refs.btnStopRound.disabled = false;
-    refs.btnStartRound.disabled = true;
+    state.pending = null;
+    state.usedPairKeys.add(pending.pairKey);
+    updateRoundButtons();
     refs.nowPlaying.textContent = '🎧 Mix en cours…';
     updateStatus('Manche lancée. Le game master gère les points.', false);
   } catch (error) {
@@ -285,20 +442,14 @@ function stopRound(showAnswer = true) {
     current.instrumentalAudio.currentTime = 0;
   }
 
-  refs.btnStopRound.disabled = true;
-  refs.btnStartRound.disabled = false;
-
   if (showAnswer && current) {
-    refs.revealAnswer.textContent = [
-      `🎤 Voix : ${current.vocalsTrack.name} — ${current.vocalsTrack.artist || 'Artiste inconnu'}`,
-      `🎼 Instru : ${current.instrumentalTrack.name} — ${current.instrumentalTrack.artist || 'Artiste inconnu'}`,
-    ].join(' | ');
+    refs.revealAnswer.textContent = formatMixReveal(current.vocalsTrack, current.instrumentalTrack);
     refs.nowPlaying.textContent = '✅ Manche terminée';
-  } else {
-    refs.nowPlaying.textContent = '⏸️ Aucun mix en cours';
   }
 
   state.playing = null;
+  renderPendingRound();
+  updateRoundButtons();
 }
 
 function wireScoreControls() {
@@ -428,6 +579,18 @@ function init() {
   refs.btnStartRound.addEventListener('click', () => {
     void startRound();
   });
+  refs.btnPreviewRound.addEventListener('click', () => {
+    prepareRound();
+  });
+  refs.btnSwapVocals.addEventListener('click', () => {
+    swapPendingVocals();
+  });
+  refs.btnSwapInstrumental.addEventListener('click', () => {
+    swapPendingInstrumental();
+  });
+  refs.btnSwapBoth.addEventListener('click', () => {
+    swapPendingBoth();
+  });
 
   refs.btnStopRound.addEventListener('click', () => {
     stopRound(true);
@@ -436,6 +599,8 @@ function init() {
 
   renderTracks();
   renderScores();
+  renderPendingRound();
+  updateRoundButtons();
   updateStatus('Prêt. Ajoutez des chansons puis démarrez une manche.');
 
   window.addEventListener('beforeunload', () => {

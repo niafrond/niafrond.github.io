@@ -51,8 +51,14 @@
       <h2>Partie</h2>
       <label class="toggle"><input id="difficult-mode" type="checkbox"> Mode difficile (paires BPM aléatoires)</label>
       <div class="inline">
-        <button id="btn-start-round" class="btn primary" type="button">Démarrer manche</button>
+        <button id="btn-preview-round" class="btn" type="button">Préparer combinaison</button>
+        <button id="btn-start-round" class="btn primary" type="button" disabled>Lancer lecture</button>
         <button id="btn-stop-round" class="btn" type="button" disabled>Stop + révéler</button>
+      </div>
+      <div class="inline">
+        <button id="btn-swap-vocals" class="btn" type="button" disabled>Changer voix</button>
+        <button id="btn-swap-instrumental" class="btn" type="button" disabled>Changer instru</button>
+        <button id="btn-swap-both" class="btn" type="button" disabled>Changer les deux</button>
       </div>
       <div class="stem-sliders">
         <label class="stem-slider" for="vocals-volume">
@@ -68,7 +74,7 @@
       </div>
       <p id="round-label">Manche 0</p>
       <p id="now-playing">⏸️ Aucun mix en cours</p>
-      <p id="reveal-answer" class="answer">Réponse cachée jusqu’à la fin de la manche.</p>
+      <p id="reveal-answer" class="answer">Préparez une combinaison pour l’afficher au game master.</p>
       <p id="game-status" class="status"></p>
     </section>
 
