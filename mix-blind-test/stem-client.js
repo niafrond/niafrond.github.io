@@ -268,6 +268,29 @@ export class StemClient {
     throw new Error(`Les stems de "${track?.name || 'chanson inconnue'}" ne sont pas prêts`);
   }
 
+  async fetchServerCacheTracks() {
+    if (!this.apiUrl) return [];
+    try {
+      const response = await fetch(`${this.apiUrl}/api/cache/files`, {
+        headers: { Accept: 'application/json' },
+        signal: createTimeoutSignal(9000),
+      });
+      if (!response.ok) return [];
+      const data = await response.json();
+      const files = Array.isArray(data)
+        ? data
+        : (Array.isArray(data?.results) ? data.results : (Array.isArray(data?.files) ? data.files : []));
+      return files.map((file) => ({
+        name: normalizeText(file?.trackName || file?.name || file?.title),
+        artist: normalizeText(file?.artistName || file?.artist),
+        cachePath: normalizeText(file?.cachePath),
+        bpm: file?.bpm,
+      })).filter((track) => track.name || track.cachePath);
+    } catch (_) {
+      return [];
+    }
+  }
+
   dispose() {
     for (const objectUrl of this.objectUrls.values()) {
       URL.revokeObjectURL(objectUrl);
