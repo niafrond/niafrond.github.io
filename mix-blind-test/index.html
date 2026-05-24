@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mix Blind Test</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>🎛️ Mix Blind Test</h1>
+      <p>Un seul téléphone (game master) : voix d’un titre + instru d’un autre.</p>
+    </header>
+
+    <section class="card">
+      <h2>Serveur stems (comme DJ Mix)</h2>
+      <div class="inline">
+        <input id="api-url" type="url" placeholder="http://192.168.x.x:3000" aria-label="URL API stems">
+        <button id="btn-save-api" class="btn">Sauver</button>
+      </div>
+      <small>Utilise les endpoints <code>/api/stems</code> et <code>/api/stems/download</code>.</small>
+    </section>
+
+    <section class="card">
+      <h2>Bibliothèque chansons</h2>
+      <form id="song-form" class="grid-form">
+        <input name="name" placeholder="Titre" required>
+        <input name="artist" placeholder="Artiste">
+        <input name="cachePath" placeholder="cachePath (optionnel)">
+        <input name="bpm" type="number" min="1" placeholder="BPM (optionnel)">
+        <button class="btn primary" type="submit">Ajouter</button>
+      </form>
+      <button id="btn-import-dj-mix" type="button" class="btn">Importer depuis la queue DJ Mix</button>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Titre</th><th>Artiste</th><th>BPM</th><th>cachePath</th><th></th></tr>
+          </thead>
+          <tbody id="tracks-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Partie</h2>
+      <label class="toggle"><input id="difficult-mode" type="checkbox"> Mode difficile (paires BPM aléatoires)</label>
+      <div class="inline">
+        <button id="btn-start-round" class="btn primary" type="button">Démarrer manche</button>
+        <button id="btn-stop-round" class="btn" type="button" disabled>Stop + révéler</button>
+      </div>
+      <p id="round-label">Manche 0</p>
+      <p id="now-playing">⏸️ Aucun mix en cours</p>
+      <p id="reveal-answer" class="answer">Réponse cachée jusqu’à la fin de la manche.</p>
+      <p id="game-status" class="status"></p>
+    </section>
+
+    <section class="card">
+      <h2>Scores (game master)</h2>
+      <div class="score-grid">
+        <div class="team-box">
+          <input id="team-a-name" value="Équipe A" aria-label="Nom équipe A">
+          <p id="team-a-score" class="score">0</p>
+          <div class="inline">
+            <button id="team-a-plus-1" class="btn primary" type="button">+1</button>
+            <button id="team-a-minus-1" class="btn" type="button">-1</button>
+          </div>
+        </div>
+        <div class="team-box">
+          <input id="team-b-name" value="Équipe B" aria-label="Nom équipe B">
+          <p id="team-b-score" class="score">0</p>
+          <div class="inline">
+            <button id="team-b-plus-1" class="btn primary" type="button">+1</button>
+            <button id="team-b-minus-1" class="btn" type="button">-1</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
