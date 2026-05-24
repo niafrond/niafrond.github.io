@@ -2540,8 +2540,21 @@ input {
 
 /* ── Responsive ───────────────────────────────────────── */
 /* ── Playlist list in tab panel ───────────────────────── */
+#tab-mix,
 #tab-playlist {
+  -webkit-user-select: none;
+  user-select: none;
   overflow: hidden;
+}
+
+#tab-mix input,
+#tab-mix textarea,
+#tab-mix [contenteditable='true'],
+#tab-playlist input,
+#tab-playlist textarea,
+#tab-playlist [contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 #tab-playlist .playlist-list {

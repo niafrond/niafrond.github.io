@@ -5,6 +5,15 @@ export function clearQueueDragMarkers(queueList) {
   });
 }
 
+function blurEditableActiveElement(queueList) {
+  const doc = queueList?.ownerDocument;
+  const active = doc?.activeElement;
+  if (!active || typeof active.blur !== 'function') return;
+  const tag = active.tagName;
+  const isTextInput = tag === 'INPUT' || tag === 'TEXTAREA';
+  if (isTextInput || active.isContentEditable) active.blur();
+}
+
 export function attachQueueDndHandlers(options) {
   const {
     queueList,
@@ -19,6 +28,7 @@ export function attachQueueDndHandlers(options) {
 
   queueList.querySelectorAll('.queue-item').forEach((el) => {
     el.addEventListener('dragstart', (event) => {
+      blurEditableActiveElement(queueList);
       state.draggedQueueIndex = Number(el.dataset.index);
       el.classList.add('is-dragging');
       if (event.dataTransfer) {
@@ -57,6 +67,7 @@ export function attachQueueDndHandlers(options) {
     el.addEventListener('drop', (event) => {
       if (state.draggedQueueIndex < 0) return;
       event.preventDefault();
+      blurEditableActiveElement(queueList);
       const targetIndex = Number(el.dataset.index);
       const rect = el.getBoundingClientRect();
       const insertAfter = event.clientY >= rect.top + (rect.height / 2);
