@@ -1,3 +1,9 @@
+## [1.206.0](https://github.com/niafrond/niafrond.github.io/compare/v1.205.0...v1.206.0) (2026-05-24)
+
+### Features
+
+* **mix-blind-test:** add bulk random DJ mix import ([66f4909](https://github.com/niafrond/niafrond.github.io/commit/66f4909483ac1c1d200c96ecf91fc842d9d5af5b))
+
 ## [1.205.0](https://github.com/niafrond/niafrond.github.io/compare/v1.204.0...v1.205.0) (2026-05-24)
 
 ### Features
