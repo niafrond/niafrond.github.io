@@ -1,4 +1,4 @@
-import { chooseRoundPair, pickRandomTracks } from './game-logic.js';
+import { chooseRoundPair, makePairKey, pickRandomTracks } from './game-logic.js';
 import { StemClient } from './stem-client.js';
 
 const TRACKS_KEY = 'mix-blind-test:tracks';
@@ -11,8 +11,8 @@ const state = {
   usedPairKeys: new Set(),
   round: 0,
   playing: null,
+  pending: null,
   teams: loadTeams(),
-  volumeLeveler: null,
 };
 
 const refs = {
@@ -24,8 +24,12 @@ const refs = {
   randomAddCount: document.getElementById('random-add-count'),
   tracksBody: document.getElementById('tracks-body'),
   difficultMode: document.getElementById('difficult-mode'),
+  btnPreviewRound: document.getElementById('btn-preview-round'),
   btnStartRound: document.getElementById('btn-start-round'),
   btnStopRound: document.getElementById('btn-stop-round'),
+  btnSwapVocals: document.getElementById('btn-swap-vocals'),
+  btnSwapInstrumental: document.getElementById('btn-swap-instrumental'),
+  btnSwapBoth: document.getElementById('btn-swap-both'),
   gameStatus: document.getElementById('game-status'),
   roundLabel: document.getElementById('round-label'),
   nowPlaying: document.getElementById('now-playing'),
@@ -38,6 +42,10 @@ const refs = {
   teamAMinus1: document.getElementById('team-a-minus-1'),
   teamBPlus1: document.getElementById('team-b-plus-1'),
   teamBMinus1: document.getElementById('team-b-minus-1'),
+  vocalsVolume: document.getElementById('vocals-volume'),
+  instrumentalVolume: document.getElementById('instrumental-volume'),
+  vocalsVolumeValue: document.getElementById('vocals-volume-value'),
+  instrumentalVolumeValue: document.getElementById('instrumental-volume-value'),
 };
 
 function loadTracks() {
@@ -106,9 +114,14 @@ function renderTracks() {
     removeBtn.className = 'btn danger';
     removeBtn.textContent = 'Supprimer';
     removeBtn.addEventListener('click', () => {
+      if (state.pending && (state.pending.vocalsTrack.id === track.id || state.pending.instrumentalTrack.id === track.id)) {
+        state.pending = null;
+      }
       state.tracks = state.tracks.filter((item) => item.id !== track.id);
       saveTracks();
       renderTracks();
+      renderPendingRound();
+      updateRoundButtons();
     });
     actionCell.appendChild(removeBtn);
 
@@ -191,154 +204,227 @@ function mergeTracks(nextTracks) {
   return addedCount;
 }
 
-function createStemVolumeLeveler(vocalsAudio, instrumentalAudio) {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) return null;
+function sliderValueToVolume(value) {
+  const parsed = Number(value);
+  const clamped = Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 100;
+  return clamped / 100;
+}
 
-  const context = new AudioContextClass();
-  const vocalsSource = context.createMediaElementSource(vocalsAudio);
-  const instrumentalSource = context.createMediaElementSource(instrumentalAudio);
+function updateVolumeSliderLabels() {
+  const vocalsVolume = sliderValueToVolume(refs.vocalsVolume?.value);
+  const instrumentalVolume = sliderValueToVolume(refs.instrumentalVolume?.value);
+  if (refs.vocalsVolumeValue) refs.vocalsVolumeValue.textContent = `${Math.round(vocalsVolume * 100)}%`;
+  if (refs.instrumentalVolumeValue) refs.instrumentalVolumeValue.textContent = `${Math.round(instrumentalVolume * 100)}%`;
+}
 
-  const vocalsAnalyser = context.createAnalyser();
-  const instrumentalAnalyser = context.createAnalyser();
-  vocalsAnalyser.fftSize = 2048;
-  instrumentalAnalyser.fftSize = 2048;
+function applyStemVolumes() {
+  const vocalsVolume = sliderValueToVolume(refs.vocalsVolume?.value);
+  const instrumentalVolume = sliderValueToVolume(refs.instrumentalVolume?.value);
+  if (state.playing) {
+    state.playing.vocalsAudio.volume = vocalsVolume;
+    state.playing.instrumentalAudio.volume = instrumentalVolume;
+  }
+  updateVolumeSliderLabels();
+}
 
-  const vocalsGain = context.createGain();
-  const instrumentalGain = context.createGain();
-  vocalsGain.gain.value = 1;
-  instrumentalGain.gain.value = 1;
+function formatMixReveal(vocalsTrack, instrumentalTrack) {
+  return [
+    `🎤 Voix : ${vocalsTrack.name} — ${vocalsTrack.artist || 'Artiste inconnu'}`,
+    `🎼 Instru : ${instrumentalTrack.name} — ${instrumentalTrack.artist || 'Artiste inconnu'}`,
+  ].join(' | ');
+}
 
-  vocalsSource.connect(vocalsAnalyser);
-  vocalsAnalyser.connect(vocalsGain);
-  vocalsGain.connect(context.destination);
+function toFiniteBpm(value) {
+  const bpm = Number(value);
+  return Number.isFinite(bpm) && bpm > 0 ? bpm : null;
+}
 
-  instrumentalSource.connect(instrumentalAnalyser);
-  instrumentalAnalyser.connect(instrumentalGain);
-  instrumentalGain.connect(context.destination);
+function chooseReplacementTrack(candidates, referenceBpm, difficultMode = false) {
+  if (!candidates.length) return null;
+  if (difficultMode) return candidates[Math.floor(Math.random() * candidates.length)];
 
-  const vocalsBuffer = new Float32Array(vocalsAnalyser.fftSize);
-  const instrumentalBuffer = new Float32Array(instrumentalAnalyser.fftSize);
-  const DB_EPSILON = 1e-8;
-  const MAX_GAIN_RATIO = 2.2;
-  const MIN_GAIN_RATIO = 1 / MAX_GAIN_RATIO;
-  const MAX_DB_DELTA = 10;
-  let rafId = null;
-  let stopped = false;
+  const refBpm = toFiniteBpm(referenceBpm);
+  if (refBpm == null) return candidates[Math.floor(Math.random() * candidates.length)];
 
-  function readDb(analyser, buffer) {
-    analyser.getFloatTimeDomainData(buffer);
-    let sum = 0;
-    for (let index = 0; index < buffer.length; index += 1) {
-      sum += buffer[index] * buffer[index];
+  const scored = candidates.map((track) => ({
+    track,
+    gap: (() => {
+      const bpm = toFiniteBpm(track.bpm);
+      return bpm == null ? Number.POSITIVE_INFINITY : Math.abs(bpm - refBpm);
+    })(),
+  })).sort((a, b) => a.gap - b.gap);
+
+  const bestGap = scored[0].gap;
+  const finalists = scored.filter((item) => item.gap === bestGap).map((item) => item.track);
+  return finalists[Math.floor(Math.random() * finalists.length)];
+}
+
+function updateRoundButtons() {
+  const isPlaying = Boolean(state.playing);
+  const hasPending = Boolean(state.pending);
+  refs.btnPreviewRound.disabled = isPlaying;
+  refs.btnStartRound.disabled = isPlaying || !hasPending;
+  refs.btnStopRound.disabled = !isPlaying;
+  refs.btnSwapVocals.disabled = isPlaying || !hasPending;
+  refs.btnSwapInstrumental.disabled = isPlaying || !hasPending;
+  refs.btnSwapBoth.disabled = isPlaying || !hasPending;
+}
+
+function renderPendingRound() {
+  if (state.pending) {
+    refs.revealAnswer.textContent = formatMixReveal(state.pending.vocalsTrack, state.pending.instrumentalTrack);
+    if (!state.playing) {
+      refs.nowPlaying.textContent = '🧩 Combinaison prête (non lancée)';
     }
-    const rms = Math.sqrt(sum / buffer.length);
-    return 20 * Math.log10(Math.max(rms, DB_EPSILON));
+  } else if (!state.playing) {
+    refs.revealAnswer.textContent = 'Préparez une combinaison pour l’afficher au game master.';
+    refs.nowPlaying.textContent = '⏸️ Aucun mix en cours';
   }
+}
 
-  function setTargetGains(vocalsDb, instrumentalDb) {
-    const delta = Math.max(-MAX_DB_DELTA, Math.min(MAX_DB_DELTA, vocalsDb - instrumentalDb));
-    const ratio = Math.pow(10, Math.abs(delta) / 20);
-    const correction = Math.min(MAX_GAIN_RATIO, Math.max(MIN_GAIN_RATIO, ratio));
-    let vocalsTarget = 1;
-    let instrumentalTarget = 1;
-
-    if (delta > 0) {
-      instrumentalTarget = correction;
-    } else if (delta < 0) {
-      vocalsTarget = correction;
-    }
-
-    vocalsGain.gain.value = vocalsGain.gain.value * 0.85 + vocalsTarget * 0.15;
-    instrumentalGain.gain.value = instrumentalGain.gain.value * 0.85 + instrumentalTarget * 0.15;
-  }
-
-  function tick() {
-    if (stopped) return;
-    setTargetGains(readDb(vocalsAnalyser, vocalsBuffer), readDb(instrumentalAnalyser, instrumentalBuffer));
-    rafId = window.requestAnimationFrame(tick);
-  }
-
+function createPendingRoundFromPair(pair, swap = Math.random() < 0.5) {
   return {
-    async start() {
-      await context.resume();
-      tick();
-    },
-    stop() {
-      stopped = true;
-      if (rafId !== null) window.cancelAnimationFrame(rafId);
-      vocalsSource.disconnect();
-      vocalsAnalyser.disconnect();
-      vocalsGain.disconnect();
-      instrumentalSource.disconnect();
-      instrumentalAnalyser.disconnect();
-      instrumentalGain.disconnect();
-      if (context.state !== 'closed') void context.close();
-    },
+    pairKey: pair.key,
+    vocalsTrack: swap ? pair.right : pair.left,
+    instrumentalTrack: swap ? pair.left : pair.right,
   };
 }
 
-async function startRound() {
+function pickNewPair(excludedPairKeys = new Set()) {
+  const usedWithExclusions = new Set([...state.usedPairKeys, ...excludedPairKeys]);
+  return chooseRoundPair(state.tracks, usedWithExclusions, refs.difficultMode.checked);
+}
+
+function prepareRound() {
   if (state.playing) return;
   if (state.tracks.length < 2) {
     updateStatus('Ajoutez au moins deux chansons.', true);
     return;
   }
 
-  const choice = chooseRoundPair(state.tracks, state.usedPairKeys, refs.difficultMode.checked);
+  let choice = pickNewPair();
   if (!choice) {
     state.usedPairKeys.clear();
-    updateStatus('Toutes les paires ont été jouées. Réinitialisation des paires.', false);
+    choice = pickNewPair();
+  }
+  if (!choice) {
+    state.pending = null;
+    renderPendingRound();
+    updateRoundButtons();
+    updateStatus('Impossible de trouver une combinaison jouable.', true);
     return;
   }
 
+  state.pending = createPendingRoundFromPair(choice);
+  renderPendingRound();
+  updateRoundButtons();
+  updateStatus('Combinaison prête. Vous pouvez changer voix/instru avant de lancer.', false);
+}
+
+function swapPendingVocals() {
+  if (!state.pending || state.playing) return;
+  const fixedInstrumental = state.pending.instrumentalTrack;
+  const currentVocals = state.pending.vocalsTrack;
+  const candidates = state.tracks.filter((track) => (
+    track.id !== fixedInstrumental.id
+    && track.id !== currentVocals.id
+    && !state.usedPairKeys.has(makePairKey(track, fixedInstrumental))
+  ));
+  const nextVocals = chooseReplacementTrack(candidates, fixedInstrumental.bpm, refs.difficultMode.checked);
+  if (!nextVocals) {
+    updateStatus('Aucune autre voix disponible pour cette instru.', true);
+    return;
+  }
+  state.pending = {
+    pairKey: makePairKey(nextVocals, fixedInstrumental),
+    vocalsTrack: nextVocals,
+    instrumentalTrack: fixedInstrumental,
+  };
+  renderPendingRound();
+  updateRoundButtons();
+  updateStatus('Voix changée.', false);
+}
+
+function swapPendingInstrumental() {
+  if (!state.pending || state.playing) return;
+  const fixedVocals = state.pending.vocalsTrack;
+  const currentInstrumental = state.pending.instrumentalTrack;
+  const candidates = state.tracks.filter((track) => (
+    track.id !== fixedVocals.id
+    && track.id !== currentInstrumental.id
+    && !state.usedPairKeys.has(makePairKey(fixedVocals, track))
+  ));
+  const nextInstrumental = chooseReplacementTrack(candidates, fixedVocals.bpm, refs.difficultMode.checked);
+  if (!nextInstrumental) {
+    updateStatus('Aucune autre instru disponible pour cette voix.', true);
+    return;
+  }
+  state.pending = {
+    pairKey: makePairKey(fixedVocals, nextInstrumental),
+    vocalsTrack: fixedVocals,
+    instrumentalTrack: nextInstrumental,
+  };
+  renderPendingRound();
+  updateRoundButtons();
+  updateStatus('Instru changée.', false);
+}
+
+function swapPendingBoth() {
+  if (!state.pending || state.playing) return;
+  const excluded = new Set([state.pending.pairKey]);
+  let choice = pickNewPair(excluded);
+  if (!choice) {
+    state.usedPairKeys.clear();
+    choice = pickNewPair(excluded);
+  }
+  if (!choice) {
+    updateStatus('Aucune autre combinaison disponible.', true);
+    return;
+  }
+  state.pending = createPendingRoundFromPair(choice);
+  renderPendingRound();
+  updateRoundButtons();
+  updateStatus('Voix + instru changées.', false);
+}
+
+async function startRound() {
+  if (state.playing) return;
+  if (!state.pending) {
+    updateStatus('Préparez une combinaison avant de lancer.', true);
+    return;
+  }
+  const pending = state.pending;
+
   state.round += 1;
   refs.roundLabel.textContent = `Manche ${state.round}`;
-
-  const swap = Math.random() < 0.5;
-  const vocalsTrack = swap ? choice.right : choice.left;
-  const instrumentalTrack = swap ? choice.left : choice.right;
-  refs.revealAnswer.textContent = [
-    `🎤 Voix : ${vocalsTrack.name} — ${vocalsTrack.artist || 'Artiste inconnu'}`,
-    `🎼 Instru : ${instrumentalTrack.name} — ${instrumentalTrack.artist || 'Artiste inconnu'}`,
-  ].join(' | ');
+  refs.revealAnswer.textContent = formatMixReveal(pending.vocalsTrack, pending.instrumentalTrack);
 
   try {
     updateStatus('Préparation des stems…');
     const [vocalsUrl, instrumentalUrl] = await Promise.all([
-      stemClient.ensureStemUrl(vocalsTrack, 'vocals', (msg) => updateStatus(msg)),
-      stemClient.ensureStemUrl(instrumentalTrack, 'instrumental', (msg) => updateStatus(msg)),
+      stemClient.ensureStemUrl(pending.vocalsTrack, 'vocals', (msg) => updateStatus(msg)),
+      stemClient.ensureStemUrl(pending.instrumentalTrack, 'instrumental', (msg) => updateStatus(msg)),
     ]);
 
     const vocalsAudio = new Audio(vocalsUrl);
     const instrumentalAudio = new Audio(instrumentalUrl);
     vocalsAudio.preload = 'auto';
     instrumentalAudio.preload = 'auto';
-    vocalsAudio.volume = 1;
-    instrumentalAudio.volume = 1;
-
-    try {
-      const volumeLeveler = createStemVolumeLeveler(vocalsAudio, instrumentalAudio);
-      if (volumeLeveler) {
-        await volumeLeveler.start();
-        state.volumeLeveler = volumeLeveler;
-      }
-    } catch (_) {
-      state.volumeLeveler = null;
-    }
+    vocalsAudio.volume = sliderValueToVolume(refs.vocalsVolume?.value);
+    instrumentalAudio.volume = sliderValueToVolume(refs.instrumentalVolume?.value);
 
     await Promise.all([vocalsAudio.play(), instrumentalAudio.play()]);
 
     state.playing = {
-      pairKey: choice.key,
-      vocalsTrack,
-      instrumentalTrack,
+      pairKey: pending.pairKey,
+      vocalsTrack: pending.vocalsTrack,
+      instrumentalTrack: pending.instrumentalTrack,
       vocalsAudio,
       instrumentalAudio,
     };
-    state.usedPairKeys.add(choice.key);
-    refs.btnStopRound.disabled = false;
-    refs.btnStartRound.disabled = true;
+    state.pending = null;
+    state.usedPairKeys.add(pending.pairKey);
+    updateRoundButtons();
     refs.nowPlaying.textContent = '🎧 Mix en cours…';
     updateStatus('Manche lancée. Le game master gère les points.', false);
   } catch (error) {
@@ -349,10 +435,6 @@ async function startRound() {
 
 function stopRound(showAnswer = true) {
   const current = state.playing;
-  if (state.volumeLeveler) {
-    state.volumeLeveler.stop();
-    state.volumeLeveler = null;
-  }
   if (current) {
     current.vocalsAudio.pause();
     current.instrumentalAudio.pause();
@@ -360,20 +442,14 @@ function stopRound(showAnswer = true) {
     current.instrumentalAudio.currentTime = 0;
   }
 
-  refs.btnStopRound.disabled = true;
-  refs.btnStartRound.disabled = false;
-
   if (showAnswer && current) {
-    refs.revealAnswer.textContent = [
-      `🎤 Voix : ${current.vocalsTrack.name} — ${current.vocalsTrack.artist || 'Artiste inconnu'}`,
-      `🎼 Instru : ${current.instrumentalTrack.name} — ${current.instrumentalTrack.artist || 'Artiste inconnu'}`,
-    ].join(' | ');
+    refs.revealAnswer.textContent = formatMixReveal(current.vocalsTrack, current.instrumentalTrack);
     refs.nowPlaying.textContent = '✅ Manche terminée';
-  } else {
-    refs.nowPlaying.textContent = '⏸️ Aucun mix en cours';
   }
 
   state.playing = null;
+  renderPendingRound();
+  updateRoundButtons();
 }
 
 function wireScoreControls() {
@@ -393,6 +469,11 @@ function wireScoreControls() {
     saveTeams();
     renderScores();
   });
+}
+
+function wireVolumeControls() {
+  refs.vocalsVolume?.addEventListener('input', () => applyStemVolumes());
+  refs.instrumentalVolume?.addEventListener('input', () => applyStemVolumes());
 }
 
 function adjustScore(index, delta) {
@@ -492,9 +573,23 @@ function init() {
   initApiConfig();
   wireSongForm();
   wireScoreControls();
+  wireVolumeControls();
+  updateVolumeSliderLabels();
 
   refs.btnStartRound.addEventListener('click', () => {
     void startRound();
+  });
+  refs.btnPreviewRound.addEventListener('click', () => {
+    prepareRound();
+  });
+  refs.btnSwapVocals.addEventListener('click', () => {
+    swapPendingVocals();
+  });
+  refs.btnSwapInstrumental.addEventListener('click', () => {
+    swapPendingInstrumental();
+  });
+  refs.btnSwapBoth.addEventListener('click', () => {
+    swapPendingBoth();
   });
 
   refs.btnStopRound.addEventListener('click', () => {
@@ -504,6 +599,8 @@ function init() {
 
   renderTracks();
   renderScores();
+  renderPendingRound();
+  updateRoundButtons();
   updateStatus('Prêt. Ajoutez des chansons puis démarrez une manche.');
 
   window.addEventListener('beforeunload', () => {

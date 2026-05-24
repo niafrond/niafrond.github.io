@@ -61,4 +61,17 @@ th, td { text-align: left; border-bottom: 1px solid #334155; padding: 8px; font-
 .team-box { border: 1px solid #334155; border-radius: 12px; padding: 12px; }
 .score { font-size: 2rem; margin: 10px 0; }
 .toggle { display: block; margin-bottom: 10px; }
+.stem-sliders { margin-top: 10px; display: grid; gap: 8px; }
+.stem-slider {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.stem-slider strong {
+  color: #bbf7d0;
+  min-width: 42px;
+  text-align: right;
+}
+input[type='range'] { width: 100%; }
 code { color: #86efac; }
