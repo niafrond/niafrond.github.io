@@ -339,6 +339,28 @@
 
           <div class="config-block">
             <div class="config-label">
+              <span>Spotify (fil rouge)</span>
+            </div>
+            <div class="form-group">
+              <label for="spotify-client-id-input">Client ID Spotify</label>
+              <input type="text" id="spotify-client-id-input" placeholder="Client ID de votre app Spotify" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="controls" style="justify-content:flex-start; gap:10px;">
+              <button id="spotify-connect-btn" class="connect-btn connect-btn--secondary" type="button">Se connecter</button>
+              <button id="spotify-disconnect-btn" class="connect-btn connect-btn--secondary" type="button">Se déconnecter</button>
+            </div>
+            <div class="form-group">
+              <label for="spotify-playlist-input">Playlist Spotify (URL, URI ou ID)</label>
+              <input type="text" id="spotify-playlist-input" placeholder="https://open.spotify.com/playlist/..." autocomplete="off" spellcheck="false">
+            </div>
+            <div class="controls" style="justify-content:flex-start; gap:10px;">
+              <button id="spotify-import-filrouge-btn" class="connect-btn connect-btn--secondary" type="button">Importer vers fil rouge</button>
+            </div>
+            <div id="spotify-status" class="setup-subtitle">Spotify non connecté. Optionnel pour utiliser l'application.</div>
+          </div>
+
+          <div class="config-block">
+            <div class="config-label">
               <span>Logs console</span>
             </div>
             <label class="toggle-row" for="debug-logs-toggle">

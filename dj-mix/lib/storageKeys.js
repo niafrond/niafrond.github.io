@@ -13,6 +13,9 @@ export const STORAGE_KEYS = Object.freeze({
   crossfadeSeconds: 'dj-mix:crossfade-seconds',
   djMode: 'dj-mix:dj-mode',
   djModeGenrePrefs: 'dj-mix:dj-mode:genre-prefs',
+  spotifyClientId: 'dj-mix:spotify:client-id',
+  spotifyAuth: 'dj-mix:spotify:auth',
+  spotifyFilRougeSource: 'dj-mix:spotify:fil-rouge-source',
 });
 
 export const DEFAULT_DOWNLOADER_API_URL = 'http://192.168.8.149:3000';
