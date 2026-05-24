@@ -22,7 +22,7 @@ describe('mix-blind-test game logic', () => {
 
     const used = new Set(['a__b']);
     const pair = chooseRoundPair(tracks, used, false, () => 0);
-    expect(makePairKey(pair.left, pair.right)).toBe('a__c');
+    expect(makePairKey(pair.left, pair.right)).toBe('b__c');
   });
 
   test('pruneStemCacheEntries evicts oldest entries until under limits', () => {
