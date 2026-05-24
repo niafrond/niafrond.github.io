@@ -200,8 +200,6 @@ export function createSpotifyClient(options = {}) {
     if (!code && !error) return { handled: false };
 
     const expectedState = sessionStorage.getItem('dj-mix:spotify:oauth-state');
-    sessionStorage.removeItem('dj-mix:spotify:oauth-state');
-    sessionStorage.removeItem('dj-mix:spotify:pkce-verifier');
     url.searchParams.delete('code');
     url.searchParams.delete('state');
     url.searchParams.delete('error');
@@ -214,8 +212,13 @@ export function createSpotifyClient(options = {}) {
       throw new Error('État OAuth Spotify invalide');
     }
 
-    await exchangeCode(code, expectedState);
-    return { handled: true };
+    try {
+      await exchangeCode(code, expectedState);
+      return { handled: true };
+    } finally {
+      sessionStorage.removeItem('dj-mix:spotify:oauth-state');
+      sessionStorage.removeItem('dj-mix:spotify:pkce-verifier');
+    }
   }
 
   async function refreshAccessToken(auth) {
