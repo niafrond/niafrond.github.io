@@ -54,6 +54,18 @@
         <button id="btn-start-round" class="btn primary" type="button">Démarrer manche</button>
         <button id="btn-stop-round" class="btn" type="button" disabled>Stop + révéler</button>
       </div>
+      <div class="stem-sliders">
+        <label class="stem-slider" for="vocals-volume">
+          <span>🎤 Voix</span>
+          <input id="vocals-volume" type="range" min="0" max="100" step="1" value="100" aria-label="Volume voix">
+          <strong id="vocals-volume-value">100%</strong>
+        </label>
+        <label class="stem-slider" for="instrumental-volume">
+          <span>🎼 Instru</span>
+          <input id="instrumental-volume" type="range" min="0" max="100" step="1" value="100" aria-label="Volume instrumental">
+          <strong id="instrumental-volume-value">100%</strong>
+        </label>
+      </div>
       <p id="round-label">Manche 0</p>
       <p id="now-playing">⏸️ Aucun mix en cours</p>
       <p id="reveal-answer" class="answer">Réponse cachée jusqu’à la fin de la manche.</p>
