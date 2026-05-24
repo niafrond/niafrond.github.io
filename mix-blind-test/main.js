@@ -19,6 +19,7 @@ const refs = {
   btnSaveApi: document.getElementById('btn-save-api'),
   songForm: document.getElementById('song-form'),
   btnImportDjMix: document.getElementById('btn-import-dj-mix'),
+  btnAddRandomDjMix: document.getElementById('btn-add-random-dj-mix'),
   tracksBody: document.getElementById('tracks-body'),
   difficultMode: document.getElementById('difficult-mode'),
   btnStartRound: document.getElementById('btn-start-round'),
@@ -136,10 +137,47 @@ function normalizeTrack(raw) {
 function dedupeBySource(tracks) {
   const map = new Map();
   for (const track of tracks) {
-    const key = track.cachePath || `${track.name.toLowerCase()}::${track.artist.toLowerCase()}`;
+    const key = trackSourceKey(track);
     if (!map.has(key)) map.set(key, track);
   }
   return [...map.values()];
+}
+
+function trackSourceKey(track) {
+  return track.cachePath || `${track.name.toLowerCase()}::${track.artist.toLowerCase()}`;
+}
+
+function readDjMixQueueTracks() {
+  const raw = localStorage.getItem('dj-mix:queue');
+  const parsed = (() => {
+    try {
+      return JSON.parse(raw || '[]');
+    } catch (_) {
+      return [];
+    }
+  })();
+
+  return Array.isArray(parsed)
+    ? parsed
+      .map((item) => normalizeTrack({
+        name: item?.name || item?.title,
+        artist: item?.artist,
+        cachePath: item?.cachePath,
+        bpm: item?.bpm,
+      }))
+      .filter(Boolean)
+    : [];
+}
+
+function mergeTracks(nextTracks) {
+  const previousCount = state.tracks.length;
+  state.tracks = dedupeBySource([...state.tracks, ...nextTracks]);
+  const addedCount = state.tracks.length - previousCount;
+  if (addedCount > 0) {
+    saveTracks();
+    renderTracks();
+  }
+  return addedCount;
 }
 
 async function startRound() {
@@ -264,43 +302,44 @@ function wireSongForm() {
       return;
     }
 
-    state.tracks = dedupeBySource([...state.tracks, track]);
-    saveTracks();
-    renderTracks();
+    mergeTracks([track]);
     refs.songForm.reset();
     updateStatus('Chanson ajoutée.');
   });
 
   refs.btnImportDjMix.addEventListener('click', () => {
-    const raw = localStorage.getItem('dj-mix:queue');
-    const parsed = (() => {
-      try {
-        return JSON.parse(raw || '[]');
-      } catch (_) {
-        return [];
-      }
-    })();
-
-    const imported = Array.isArray(parsed)
-      ? parsed
-        .map((item) => normalizeTrack({
-          name: item?.name || item?.title,
-          artist: item?.artist,
-          cachePath: item?.cachePath,
-          bpm: item?.bpm,
-        }))
-        .filter(Boolean)
-      : [];
+    const imported = readDjMixQueueTracks();
 
     if (!imported.length) {
       updateStatus('Aucune chanson importable trouvée dans DJ Mix.', true);
       return;
     }
 
-    state.tracks = dedupeBySource([...state.tracks, ...imported]);
-    saveTracks();
-    renderTracks();
-    updateStatus(`${imported.length} chanson(s) importée(s) depuis DJ Mix.`);
+    const addedCount = mergeTracks(imported);
+    if (!addedCount) {
+      updateStatus('Toutes les chansons DJ Mix sont déjà présentes.', true);
+      return;
+    }
+    updateStatus(`${addedCount} chanson(s) importée(s) depuis DJ Mix.`);
+  });
+
+  refs.btnAddRandomDjMix.addEventListener('click', () => {
+    const imported = readDjMixQueueTracks();
+    if (!imported.length) {
+      updateStatus('Aucune chanson importable trouvée dans DJ Mix.', true);
+      return;
+    }
+
+    const existingKeys = new Set(state.tracks.map((track) => trackSourceKey(track)));
+    const available = imported.filter((track) => !existingKeys.has(trackSourceKey(track)));
+    if (!available.length) {
+      updateStatus('Toutes les chansons DJ Mix sont déjà présentes.', true);
+      return;
+    }
+
+    const randomTrack = available[Math.floor(Math.random() * available.length)];
+    mergeTracks([randomTrack]);
+    updateStatus(`Chanson aléatoire ajoutée : ${randomTrack.name}.`);
   });
 }
 
