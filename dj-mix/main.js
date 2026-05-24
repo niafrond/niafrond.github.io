@@ -91,11 +91,13 @@ import { DANCE_GENRE_DEFAULTS } from './lib/danceGenreConfig.js';
 import { DJ_MODES } from './lib/djModeConfig.js';
 import { createApiHealthMonitor } from './lib/apiHealthMonitor.js';
 import { isLowMemoryPlaybackDevice } from './lib/playbackMemoryPolicy.js';
+import { createSpotifyClient } from './lib/spotifyClient.js';
 
 import { uiState } from './lib/uiState.js';
 const QUEUE_KEY = STORAGE_KEYS.queue;
 const DOWNLOADER_API_URL_KEY = STORAGE_KEYS.downloaderApiUrl;
 const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
+const SPOTIFY_FIL_ROUGE_POLL_MS = 120000;
 
 const logger = createLogger('main');
 const logDebug = (event, payload) => logger.debug(event, payload);
@@ -131,6 +133,10 @@ let launchPreviewItem = null;
 let manualMixLock = false;
 let autoSuggestionRefreshInProgress = false;
 const deckMixDataByTrackId = new Map();
+let spotifySyncTimer = null;
+let spotifySyncInFlight = false;
+
+const spotifyClient = createSpotifyClient();
 
 // Auto DJ timing
 const automixTimeline = appState.automixTimeline;
@@ -589,6 +595,12 @@ const downloaderApiUrlInput = document.getElementById('downloader-api-url-input'
 const downloaderApiSaveBtn = document.getElementById('downloader-api-save-btn');
 const downloaderApiTestBtn = document.getElementById('downloader-api-test-btn');
 const downloaderApiStatus = document.getElementById('downloader-api-status');
+const spotifyClientIdInput = document.getElementById('spotify-client-id-input');
+const spotifyConnectBtn = document.getElementById('spotify-connect-btn');
+const spotifyDisconnectBtn = document.getElementById('spotify-disconnect-btn');
+const spotifyPlaylistInput = document.getElementById('spotify-playlist-input');
+const spotifyImportFilRougeBtn = document.getElementById('spotify-import-filrouge-btn');
+const spotifyStatus = document.getElementById('spotify-status');
 const debugLogsToggle = document.getElementById('debug-logs-toggle');
 const configDjModeDanceBtn = document.getElementById('config-dj-mode-dance-btn');
 const configDjModeMusicBtn = document.getElementById('config-dj-mode-music-btn');
@@ -1026,6 +1038,136 @@ function renderFilRouge() {
   });
 }
 
+function readSpotifyFilRougeSource() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.spotifyFilRougeSource);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed;
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeSpotifyFilRougeSource(source) {
+  try {
+    if (!source) {
+      localStorage.removeItem(STORAGE_KEYS.spotifyFilRougeSource);
+      return;
+    }
+    localStorage.setItem(STORAGE_KEYS.spotifyFilRougeSource, JSON.stringify(source));
+  } catch (_) {
+    // ignore storage failures
+  }
+}
+
+function setSpotifyStatus(message, isError = false) {
+  if (!spotifyStatus) return;
+  spotifyStatus.textContent = String(message || '');
+  spotifyStatus.style.color = isError ? '#ff7b7b' : '';
+}
+
+function updateSpotifyConfigUi() {
+  if (spotifyClientIdInput) {
+    spotifyClientIdInput.value = spotifyClient.getStoredClientId();
+  }
+  const connected = spotifyClient.isConnected();
+  const source = readSpotifyFilRougeSource();
+  if (spotifyPlaylistInput && source?.playlistId && !spotifyPlaylistInput.value.trim()) {
+    spotifyPlaylistInput.value = source.playlistId;
+  }
+  if (spotifyConnectBtn) spotifyConnectBtn.disabled = false;
+  if (spotifyDisconnectBtn) spotifyDisconnectBtn.disabled = !connected;
+  if (spotifyImportFilRougeBtn) spotifyImportFilRougeBtn.disabled = !connected;
+  if (connected) {
+    setSpotifyStatus(source?.playlistName
+      ? `Spotify connecté. Sync active: ${source.playlistName}`
+      : 'Spotify connecté. Vous pouvez importer une playlist dans le fil rouge.');
+    return;
+  }
+  setSpotifyStatus('Spotify non connecté. Optionnel pour utiliser l\'application.');
+}
+
+function applySpotifyPlaylistToFilRouge(tracks) {
+  filRougeManager.clearPriorityQueue();
+  filRougeManager.clearPlaylist();
+  for (const track of tracks) {
+    filRougeManager.addToPlaylist(track);
+  }
+  renderFilRouge();
+}
+
+function stopSpotifyFilRougeSync() {
+  if (spotifySyncTimer) {
+    clearInterval(spotifySyncTimer);
+    spotifySyncTimer = null;
+  }
+}
+
+async function syncSpotifyFilRougeIfChanged(options = {}) {
+  const { silent = false } = options;
+  const source = readSpotifyFilRougeSource();
+  if (!source?.playlistId) return false;
+  if (spotifySyncInFlight) return false;
+  spotifySyncInFlight = true;
+  try {
+    const snapshot = await spotifyClient.fetchPlaylistSnapshot(source.playlistId);
+    if (snapshot?.snapshot_id && source.snapshotId && snapshot.snapshot_id === source.snapshotId) {
+      return false;
+    }
+
+    const { tracks, fingerprint } = await spotifyClient.fetchPlaylistTracks(source.playlistId);
+    applySpotifyPlaylistToFilRouge(tracks);
+    writeSpotifyFilRougeSource({
+      ...source,
+      playlistName: snapshot?.name || source.playlistName || '',
+      snapshotId: snapshot?.snapshot_id || '',
+      fingerprint,
+      updatedAt: Date.now(),
+    });
+    updateSpotifyConfigUi();
+    if (!silent) {
+      showToast(`Fil rouge Spotify mis à jour (${tracks.length} morceau${tracks.length > 1 ? 'x' : ''})`);
+    }
+    return true;
+  } catch (err) {
+    if (!silent) setSpotifyStatus(`Erreur sync Spotify: ${err.message}`, true);
+    return false;
+  } finally {
+    spotifySyncInFlight = false;
+  }
+}
+
+function startSpotifyFilRougeSyncLoop() {
+  stopSpotifyFilRougeSync();
+  const source = readSpotifyFilRougeSource();
+  if (!source?.playlistId || !spotifyClient.isConnected()) return;
+  spotifySyncTimer = setInterval(() => {
+    syncSpotifyFilRougeIfChanged({ silent: true }).catch(() => {});
+  }, SPOTIFY_FIL_ROUGE_POLL_MS);
+}
+
+async function importSpotifyPlaylistToFilRouge() {
+  const parsedId = spotifyClient.parseSpotifyPlaylistId(spotifyPlaylistInput?.value);
+  if (!parsedId) {
+    throw new Error('Playlist Spotify invalide (URL/URI/ID attendu)');
+  }
+  const snapshot = await spotifyClient.fetchPlaylistSnapshot(parsedId);
+  const { tracks, fingerprint } = await spotifyClient.fetchPlaylistTracks(parsedId);
+  applySpotifyPlaylistToFilRouge(tracks);
+  writeSpotifyFilRougeSource({
+    playlistId: parsedId,
+    playlistName: snapshot?.name || '',
+    snapshotId: snapshot?.snapshot_id || '',
+    fingerprint,
+    updatedAt: Date.now(),
+  });
+  startSpotifyFilRougeSyncLoop();
+  updateSpotifyConfigUi();
+  showToast(`Fil rouge importé depuis Spotify (${tracks.length} morceau${tracks.length > 1 ? 'x' : ''})`);
+}
+
 filRougeShuffleBtn?.addEventListener('click', () => {
   const on = filRougeManager.toggleShuffle();
   showToast(`Shuffle fil rouge: ${on ? 'ON' : 'OFF'}`);
@@ -1035,7 +1177,10 @@ filRougeShuffleBtn?.addEventListener('click', () => {
 filRougeClearBtn?.addEventListener('click', () => {
   filRougeManager.clearPlaylist();
   filRougeManager.clearPriorityQueue();
+  writeSpotifyFilRougeSource(null);
+  stopSpotifyFilRougeSync();
   showToast('Fil rouge vidé');
+  updateSpotifyConfigUi();
   renderFilRouge();
 });
 
@@ -1651,7 +1796,56 @@ queueList?.addEventListener('click', handleGenreChipClick, true);
 trackArtistA?.addEventListener('click', handleGenreChipClick);
 trackArtistB?.addEventListener('click', handleGenreChipClick);
 
+spotifyClientIdInput?.addEventListener('change', () => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.spotifyClientId, String(spotifyClientIdInput.value || '').trim());
+  } catch (_) {
+    // ignore storage failures
+  }
+});
+
+spotifyConnectBtn?.addEventListener('click', async () => {
+  const clientId = String(spotifyClientIdInput?.value || '').trim();
+  if (!clientId) {
+    setSpotifyStatus('Client ID Spotify manquant', true);
+    return;
+  }
+  try {
+    setSpotifyStatus('Redirection vers Spotify...');
+    await spotifyClient.startLogin(clientId);
+  } catch (err) {
+    setSpotifyStatus(`Connexion Spotify impossible: ${err.message}`, true);
+  }
+});
+
+spotifyDisconnectBtn?.addEventListener('click', () => {
+  spotifyClient.clearAuth();
+  stopSpotifyFilRougeSync();
+  updateSpotifyConfigUi();
+  showToast('Spotify déconnecté');
+});
+
+spotifyImportFilRougeBtn?.addEventListener('click', async () => {
+  try {
+    setSpotifyStatus('Import Spotify en cours...');
+    await importSpotifyPlaylistToFilRouge();
+  } catch (err) {
+    setSpotifyStatus(`Import Spotify impossible: ${err.message}`, true);
+    showToast(`Import Spotify impossible: ${err.message}`, true);
+  }
+});
+
 (async function init() {
+  if (spotifyClientIdInput) {
+    spotifyClientIdInput.value = spotifyClient.getStoredClientId();
+  }
+  try {
+    await spotifyClient.maybeHandleRedirect();
+  } catch (err) {
+    setSpotifyStatus(`Connexion Spotify échouée: ${err.message}`, true);
+  }
+  updateSpotifyConfigUi();
+
   applyRamFilterSettings({ persist: false, announce: true });
   applyDebugLogsSetting(readDebugLogsSetting(), { persist: false });
   applyTransitionModeSetting(selectedTransitionMode, { persist: false });
@@ -1663,6 +1857,7 @@ trackArtistB?.addEventListener('click', handleGenreChipClick);
   updateAutoModeUI();
   updateAutoDjFxConfigUI();
   renderDjModeUI();
+  startSpotifyFilRougeSyncLoop();
 
   debugLogsToggle?.addEventListener('change', () => {
     applyDebugLogsSetting(Boolean(debugLogsToggle.checked), { persist: true });
@@ -1727,6 +1922,7 @@ async function connectLocal() {
   showApp();
 
   await player.init();
+  startSpotifyFilRougeSyncLoop();
   logInfo('connectLocal(): player initialized', {
     crossfadeDurationMs: player.crossfadeDuration,
     transitionMode: selectedTransitionMode,
@@ -3658,6 +3854,7 @@ function doLogout() {
     clearInterval(blobCleanupTimer);
     blobCleanupTimer = null;
   }
+  stopSpotifyFilRougeSync();
 
   queue.length = 0;
   uiState.currentIndex = -1;
