@@ -1,3 +1,10 @@
+## [1.207.0](https://github.com/niafrond/niafrond.github.io/compare/v1.206.2...v1.207.0) (2026-05-24)
+
+### Features
+
+* **mix-blind-test:** add manual stem volume sliders ([70415e7](https://github.com/niafrond/niafrond.github.io/commit/70415e7f306ec370a7b0952c145ad9d547f8d474))
+* **mix-blind-test:** add pre-listen combo preview controls ([a83cbae](https://github.com/niafrond/niafrond.github.io/commit/a83cbae9e66f91250711d2c60037e933256c65e2))
+
 ## [1.206.2](https://github.com/niafrond/niafrond.github.io/compare/v1.206.1...v1.206.2) (2026-05-24)
 
 ### Bug Fixes
