@@ -23,6 +23,7 @@ import {
 import { createMixControls } from './lib/mixControls.js';
 import { createDjFxController } from './lib/djFxController.js';
 import { createPlaylistManager } from './lib/playlistManager.js';
+import { createFilRougeManager } from './lib/filRougeManager.js';
 import { restoreQueueFromStorage, saveQueueToStorage } from './lib/queueStorage.js';
 import { createShellUi } from './lib/shellUi.js';
 import { createDjMixRenderer } from './lib/uiRenderer.js';
@@ -577,6 +578,13 @@ const cacheYearFilterEl = document.getElementById('cache-year-filter');
 const cacheStemsFilterEl = document.getElementById('cache-stems-filter');
 const cacheResetFiltersBtn = document.getElementById('cache-reset-filters');
 
+const filRougeCountEl = document.getElementById('filrouge-count');
+const filRougePriorityCountEl = document.getElementById('filrouge-priority-count');
+const filRougePlaylistListEl = document.getElementById('filrouge-playlist-list');
+const filRougePriorityListEl = document.getElementById('filrouge-priority-list');
+const filRougeShuffleBtn = document.getElementById('filrouge-shuffle-btn');
+const filRougeClearBtn = document.getElementById('filrouge-clear-btn');
+
 const downloaderApiUrlInput = document.getElementById('downloader-api-url-input');
 const downloaderApiSaveBtn = document.getElementById('downloader-api-save-btn');
 const downloaderApiTestBtn = document.getElementById('downloader-api-test-btn');
@@ -600,6 +608,7 @@ const autoDjFxToggleEls = Array.from(document.querySelectorAll('[data-auto-fx-ty
 const tabBtns = document.querySelectorAll('.tab-bar-btn');
 const tabPanels = {
   mix: document.getElementById('tab-mix'),
+  filrouge: document.getElementById('tab-filrouge'),
   playlist: document.getElementById('tab-playlist'),
   config: document.getElementById('tab-config'),
 };
@@ -867,6 +876,8 @@ const {
 } = audioSourceManager;
 
 const playlistManager = createPlaylistManager({
+  addToFilRouge: (file) => addToFilRouge(file),
+  addToPriorityQueue: (file) => addToPriorityQueue(file),
   cacheFilterCountEl,
   cacheGenreFilterEl,
   cacheResetFiltersBtn,
@@ -920,6 +931,172 @@ const playlistManager = createPlaylistManager({
 });
 
 const { setCacheFilter, switchTab } = playlistManager;
+
+const filRougeManager = createFilRougeManager();
+
+// ── Fil rouge UI rendering ──────────────────────────────────────────────────
+
+function renderFilRouge() {
+  const playlist = filRougeManager.getPlaylist();
+  const priorityQueue = filRougeManager.getPriorityQueue();
+  const filRougeIndex = filRougeManager.getCurrentIndex();
+
+  if (filRougeCountEl) {
+    filRougeCountEl.textContent = `${playlist.length} morceau${playlist.length > 1 ? 'x' : ''}`;
+  }
+  if (filRougePriorityCountEl) {
+    filRougePriorityCountEl.textContent = String(priorityQueue.length);
+  }
+  if (filRougeShuffleBtn) {
+    const on = filRougeManager.isShuffleEnabled();
+    filRougeShuffleBtn.textContent = `Shuffle: ${on ? 'ON' : 'OFF'}`;
+    filRougeShuffleBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+
+  // Priority queue
+  if (filRougePriorityListEl) {
+    if (!priorityQueue.length) {
+      filRougePriorityListEl.innerHTML = '<div class="filrouge-empty">Aucun morceau en file prioritaire</div>';
+    } else {
+      filRougePriorityListEl.innerHTML = priorityQueue.map((item, idx) => `
+        <div class="filrouge-item filrouge-priority-item" data-index="${idx}">
+          <div class="filrouge-info">
+            <span class="filrouge-pos">${idx + 1}.</span>
+            <div class="filrouge-name">${escHtml(item.name || 'Inconnu')}</div>
+            <div class="filrouge-artist">${escHtml(item.artist || '')}</div>
+          </div>
+          <button class="filrouge-remove-btn" data-type="priority" data-index="${idx}" aria-label="Retirer">✕</button>
+        </div>
+      `).join('');
+    }
+  }
+
+  // Playlist fil rouge
+  if (filRougePlaylistListEl) {
+    if (!playlist.length) {
+      filRougePlaylistListEl.innerHTML = '<div class="filrouge-empty">Playlist vide. Ajoutez des morceaux depuis le Cache.</div>';
+    } else {
+      filRougePlaylistListEl.innerHTML = playlist.map((item, idx) => `
+        <div class="filrouge-item${idx === filRougeIndex ? ' filrouge-current' : ''}" data-index="${idx}">
+          <div class="filrouge-info">
+            <span class="filrouge-pos">${idx + 1}.</span>
+            <div class="filrouge-name">${escHtml(item.name || 'Inconnu')}</div>
+            <div class="filrouge-artist">${escHtml(item.artist || '')}</div>
+          </div>
+          <div class="filrouge-actions">
+            <button class="filrouge-priority-add-btn" data-index="${idx}" aria-label="Ajouter à la file prioritaire" title="Ajouter à la file prioritaire">⏭</button>
+            <button class="filrouge-remove-btn" data-type="playlist" data-index="${idx}" aria-label="Retirer">✕</button>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+
+  // Attach event handlers
+  document.querySelectorAll('.filrouge-remove-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const type = btn.dataset.type;
+      const idx = Number(btn.dataset.index);
+      if (type === 'priority') {
+        filRougeManager.removeFromPriorityQueue(idx);
+      } else {
+        filRougeManager.removeFromPlaylist(idx);
+      }
+      renderFilRouge();
+    });
+  });
+
+  document.querySelectorAll('.filrouge-priority-add-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = Number(btn.dataset.index);
+      const playlist = filRougeManager.getPlaylist();
+      const item = playlist[idx];
+      if (item) {
+        const added = filRougeManager.addToPriorityQueue(item);
+        if (added) {
+          showToast(`"${item.name}" → file prioritaire`);
+        } else {
+          showToast(`Déjà en file prioritaire`, true);
+        }
+        renderFilRouge();
+      }
+    });
+  });
+}
+
+filRougeShuffleBtn?.addEventListener('click', () => {
+  const on = filRougeManager.toggleShuffle();
+  showToast(`Shuffle fil rouge: ${on ? 'ON' : 'OFF'}`);
+  renderFilRouge();
+});
+
+filRougeClearBtn?.addEventListener('click', () => {
+  filRougeManager.clearPlaylist();
+  filRougeManager.clearPriorityQueue();
+  showToast('Fil rouge vidé');
+  renderFilRouge();
+});
+
+/**
+ * Adds a track item (from queue format) to the fil rouge playlist.
+ */
+function addToFilRouge(item) {
+  if (!item) return;
+  const filRougeItem = {
+    id: item.id || item.cachePath || `fr-${Date.now()}`,
+    name: item.name || item.trackName || item.title || 'Inconnu',
+    artist: item.artist || item.artistName || 'Artiste inconnu',
+    artUrl: item.artUrl || item.artworkUrl || '',
+    duration: item.duration || 0,
+    bpm: item.bpm || null,
+    genre: item.genre || '',
+    cachePath: item.cachePath || '',
+    persistedSourceUrl: item.persistedSourceUrl || item.url || item.localUrl || item.streamUrl || '',
+    ratingKey: item.ratingKey || '',
+    stemsStatus: item.stemsStatus || '',
+    stems: item.stems || null,
+  };
+  const added = filRougeManager.addToPlaylist(filRougeItem);
+  if (added) {
+    showToast(`"${filRougeItem.name}" ajouté au fil rouge`);
+  } else {
+    showToast(`Déjà dans le fil rouge`, true);
+  }
+  renderFilRouge();
+}
+
+/**
+ * Adds a track item to the priority queue.
+ */
+function addToPriorityQueue(item) {
+  if (!item) return;
+  const filRougeItem = {
+    id: item.id || item.cachePath || `pq-${Date.now()}`,
+    name: item.name || item.trackName || item.title || 'Inconnu',
+    artist: item.artist || item.artistName || 'Artiste inconnu',
+    artUrl: item.artUrl || item.artworkUrl || '',
+    duration: item.duration || 0,
+    bpm: item.bpm || null,
+    genre: item.genre || '',
+    cachePath: item.cachePath || '',
+    persistedSourceUrl: item.persistedSourceUrl || item.url || item.localUrl || item.streamUrl || '',
+    ratingKey: item.ratingKey || '',
+    stemsStatus: item.stemsStatus || '',
+    stems: item.stems || null,
+  };
+  const added = filRougeManager.addToPriorityQueue(filRougeItem);
+  if (added) {
+    showToast(`"${filRougeItem.name}" → file prioritaire`);
+  } else {
+    showToast(`Déjà en file prioritaire`, true);
+  }
+  renderFilRouge();
+}
+
+// Initial render
+renderFilRouge();
 
 function isCacheTabActive() {
   return Boolean(tabPanels.playlist && tabPanels.playlist.classList.contains('active') && !tabPanels.playlist.hidden);
@@ -1348,6 +1525,9 @@ tabBtns.forEach((btn) => {
       setCacheFilter(searchInput.value.trim());
       closeSearch();
     }
+    if (tab === 'filrouge') {
+      renderFilRouge();
+    }
   });
 });
 
@@ -1660,6 +1840,45 @@ function hookPlayerEvents() {
     if (currentTrack) {
       autoModeManager.onTrackFinished(currentTrack);
     }
+
+    // Fil rouge: if no next track in queue, get from fil rouge
+    const hasNextInQueue = (uiState.currentIndex + 1) < queue.length;
+    if (!hasNextInQueue && filRougeManager.isActive()) {
+      const nextFromFilRouge = filRougeManager.getNextTrack();
+      if (nextFromFilRouge) {
+        logInfo('filRouge.trackend.addNext', { name: nextFromFilRouge.name });
+        const item = {
+          id: nextFromFilRouge.id || `filrouge-${Date.now()}`,
+          uri: nextFromFilRouge.persistedSourceUrl || '',
+          name: nextFromFilRouge.name || 'Inconnu',
+          artist: nextFromFilRouge.artist || 'Artiste inconnu',
+          artUrl: nextFromFilRouge.artUrl || '',
+          duration: nextFromFilRouge.duration || 0,
+          bpm: nextFromFilRouge.bpm || null,
+          genre: nextFromFilRouge.genre || '',
+          cachePath: nextFromFilRouge.cachePath || '',
+          persistedSourceUrl: nextFromFilRouge.persistedSourceUrl || '',
+          ratingKey: nextFromFilRouge.ratingKey || '',
+          stemsStatus: nextFromFilRouge.stemsStatus || '',
+          stems: nextFromFilRouge.stems || null,
+          sourceState: 'idle',
+          sourceError: null,
+          sourceMeta: null,
+          localBlobUrl: null,
+          queueSource: 'fil-rouge',
+          lastTouchedAt: Date.now(),
+        };
+        queue.push(item);
+        const nextIdx = queue.length - 1;
+        uiState.currentIndex = nextIdx;
+        uiState.currentTrackId = item.id;
+        renderQueue();
+        renderFilRouge();
+        startPlaybackForIndex(nextIdx, 'play').catch((err) => {
+          logError('filRouge.trackend.playFailed', { message: err?.message });
+        });
+      }
+    }
   });
 
     player.addEventListener('error', ({ detail }) => {
@@ -1697,9 +1916,41 @@ autoMixBtn?.addEventListener('click', async () => {
   const preferredIndex = hasCue ? uiState.deckBCueIndex : sequentialNextIndex;
   const canUsePreparedIndex = preparedIndex >= 0
     && (hasCue ? preparedIndex === uiState.deckBCueIndex : preparedIndex === sequentialNextIndex);
-  const nextIndex = canUsePreparedIndex
+  let nextIndex = canUsePreparedIndex
     ? preparedIndex
     : (preferredIndex >= 0 ? preferredIndex : (queue.length > 1 ? 0 : -1));
+
+  // Fil rouge fallback: if no next track in queue, add from fil rouge
+  if (nextIndex < 0 && filRougeManager.isActive()) {
+    const nextFromFilRouge = filRougeManager.getNextTrack();
+    if (nextFromFilRouge) {
+      const item = {
+        id: nextFromFilRouge.id || `filrouge-${Date.now()}`,
+        uri: nextFromFilRouge.persistedSourceUrl || '',
+        name: nextFromFilRouge.name || 'Inconnu',
+        artist: nextFromFilRouge.artist || 'Artiste inconnu',
+        artUrl: nextFromFilRouge.artUrl || '',
+        duration: nextFromFilRouge.duration || 0,
+        bpm: nextFromFilRouge.bpm || null,
+        genre: nextFromFilRouge.genre || '',
+        cachePath: nextFromFilRouge.cachePath || '',
+        persistedSourceUrl: nextFromFilRouge.persistedSourceUrl || '',
+        ratingKey: nextFromFilRouge.ratingKey || '',
+        stemsStatus: nextFromFilRouge.stemsStatus || '',
+        stems: nextFromFilRouge.stems || null,
+        sourceState: 'idle',
+        sourceError: null,
+        sourceMeta: null,
+        localBlobUrl: null,
+        queueSource: 'fil-rouge',
+        lastTouchedAt: Date.now(),
+      };
+      queue.push(item);
+      nextIndex = queue.length - 1;
+      renderFilRouge();
+    }
+  }
+
   if (nextIndex < 0) return;
 
   logInfo('automix.click', {

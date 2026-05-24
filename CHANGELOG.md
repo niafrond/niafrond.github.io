@@ -1,3 +1,9 @@
+## [1.204.0](https://github.com/niafrond/niafrond.github.io/compare/v1.203.0...v1.204.0) (2026-05-24)
+
+### Features
+
+* **dj-mix:** add playlist fil rouge with priority queue ([486e1b4](https://github.com/niafrond/niafrond.github.io/commit/486e1b4df3938279df6dbb06ad5b5cb9e6d80a5d))
+
 ## [1.203.0](https://github.com/niafrond/niafrond.github.io/compare/v1.202.1...v1.203.0) (2026-05-20)
 
 ### Features
