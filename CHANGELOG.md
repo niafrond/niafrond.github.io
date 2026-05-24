@@ -1,3 +1,9 @@
+## [1.206.2](https://github.com/niafrond/niafrond.github.io/compare/v1.206.1...v1.206.2) (2026-05-24)
+
+### Bug Fixes
+
+* **mix-blind-test:** use server cache endpoint for track import ([5310eca](https://github.com/niafrond/niafrond.github.io/commit/5310eca3914fc6459c2734a6b276ea0dc2e64721))
+
 ## [1.206.1](https://github.com/niafrond/niafrond.github.io/compare/v1.206.0...v1.206.1) (2026-05-24)
 
 ### Bug Fixes

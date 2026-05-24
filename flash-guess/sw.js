@@ -1,5 +1,5 @@
 // CACHE est mis à jour automatiquement par .github/scripts/sync-match3-version.mjs à chaque release.
-const CACHE = 'flashguess-v1.206.1';
+const CACHE = 'flashguess-v1.206.2';
 
 const ASSETS = [
   './',
