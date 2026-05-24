@@ -42,7 +42,10 @@ const refs = {
 function loadTracks() {
   try {
     const parsed = JSON.parse(localStorage.getItem(TRACKS_KEY) || '[]');
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((item) => normalizeTrack(item, { requireName: false }))
+      .filter((track) => Boolean(track?.name || track?.cachePath));
   } catch (_) {
     return [];
   }
@@ -120,14 +123,16 @@ function renderScores() {
   refs.teamBScore.textContent = String(state.teams[1].score);
 }
 
-function normalizeTrack(raw) {
+function normalizeTrack(raw, options = {}) {
+  const { requireName = true } = options;
   const name = String(raw?.name || '').trim();
-  if (!name) return null;
+  if (requireName && !name) return null;
   const artist = String(raw?.artist || '').trim();
   const cachePath = String(raw?.cachePath || '').trim();
   const bpm = Number(raw?.bpm);
+  const rawId = String(raw?.id || '').trim();
   return {
-    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    id: rawId || (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`),
     name,
     artist,
     cachePath,
@@ -145,7 +150,11 @@ function dedupeBySource(tracks) {
 }
 
 function trackSourceKey(track) {
-  return track.cachePath || `${track.name.toLowerCase()}::${track.artist.toLowerCase()}`;
+  const cachePath = String(track?.cachePath || '').trim();
+  if (cachePath) return cachePath;
+  const name = String(track?.name || '').trim().toLowerCase();
+  const artist = String(track?.artist || '').trim().toLowerCase();
+  return `${name}::${artist}`;
 }
 
 function readDjMixQueueTracks() {
@@ -303,8 +312,12 @@ function wireSongForm() {
       return;
     }
 
-    mergeTracks([track]);
+    const addedCount = mergeTracks([track]);
     refs.songForm.reset();
+    if (!addedCount) {
+      updateStatus('Cette chanson est déjà dans la bibliothèque.', true);
+      return;
+    }
     updateStatus('Chanson ajoutée.');
   });
 
