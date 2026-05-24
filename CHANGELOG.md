@@ -1,3 +1,9 @@
+## [1.205.0](https://github.com/niafrond/niafrond.github.io/compare/v1.204.0...v1.205.0) (2026-05-24)
+
+### Features
+
+* add mix blind test app with stem-based rounds ([aaf2ff2](https://github.com/niafrond/niafrond.github.io/commit/aaf2ff2f228d471eeb9a31b19037288a28f9c98b))
+
 ## [1.204.0](https://github.com/niafrond/niafrond.github.io/compare/v1.203.0...v1.204.0) (2026-05-24)
 
 ### Features
