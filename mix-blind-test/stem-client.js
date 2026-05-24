@@ -10,6 +10,10 @@ function normalizeText(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function normalizeApiUrl(value) {
+  return normalizeText(value).replace(/\/+$/, '');
+}
+
 function safeJsonParse(raw, fallback) {
   if (!raw) return fallback;
   try {
@@ -23,10 +27,17 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function createTimeoutSignal(ms) {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(ms);
+  }
+  return undefined;
+}
+
 export class StemClient {
   constructor({ maxBytes, maxEntries } = {}) {
     const storedApi = localStorage.getItem(MIX_API_URL_KEY) || localStorage.getItem(STORAGE_KEYS.downloaderApiUrl);
-    this.apiUrl = normalizeText(storedApi || DEFAULT_DOWNLOADER_API_URL);
+    this.apiUrl = normalizeApiUrl(storedApi || DEFAULT_DOWNLOADER_API_URL);
     this.maxBytes = Number(maxBytes) || 180 * 1024 * 1024;
     this.maxEntries = Number(maxEntries) || 24;
     this.maxObjectUrls = 6;
@@ -39,7 +50,7 @@ export class StemClient {
   }
 
   setApiUrl(url) {
-    this.apiUrl = normalizeText(url);
+    this.apiUrl = normalizeApiUrl(url);
     localStorage.setItem(MIX_API_URL_KEY, this.apiUrl);
   }
 
@@ -167,29 +178,34 @@ export class StemClient {
   async fetchStemsStatus(track) {
     const params = this.buildTrackParams(track);
     if (!params.toString() || !this.apiUrl) return null;
-    const response = await fetch(`${this.apiUrl}/api/stems?${params}`, {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(9000),
-    });
-    if (response.status === 404) return null;
-    if (!response.ok) throw new Error(`Erreur stems (${response.status})`);
-    return response.json();
+    try {
+      const response = await fetch(`${this.apiUrl}/api/stems?${params}`, {
+        headers: { Accept: 'application/json' },
+        signal: createTimeoutSignal(9000),
+      });
+      if (response.status === 404) return null;
+      if (!response.ok) return null;
+      return await response.json();
+    } catch (_) {
+      return null;
+    }
   }
 
   async triggerStemGeneration(track) {
     const params = this.buildTrackParams(track);
-    if (!params.toString() || !this.apiUrl) return;
+    if (!params.toString() || !this.apiUrl) return false;
 
     const payload = Object.fromEntries(params.entries());
-    const response = await fetch(`${this.apiUrl}/api/stems`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (!response.ok && response.status !== 409) {
-      throw new Error(`Impossible de lancer la génération des stems (${response.status})`);
+    try {
+      const response = await fetch(`${this.apiUrl}/api/stems`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: createTimeoutSignal(10000),
+      });
+      return response.ok || response.status === 409;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -199,7 +215,7 @@ export class StemClient {
 
     params.set('stem', variant);
     const response = await fetch(`${this.apiUrl}/api/stems/download?${params}`, {
-      signal: AbortSignal.timeout(15000),
+      signal: createTimeoutSignal(15000),
     });
 
     if (!response.ok) {
@@ -224,19 +240,29 @@ export class StemClient {
       const status = await this.fetchStemsStatus(track);
       const state = status?.status;
       if (state === 'ready') {
-        onStatus?.(`Téléchargement ${variantsLabel}…`);
-        const blob = await this.downloadStem(track, variant);
-        return this.saveStemBlob(track, variant, blob);
+        try {
+          onStatus?.(`Téléchargement ${variantsLabel}…`);
+          const blob = await this.downloadStem(track, variant);
+          return this.saveStemBlob(track, variant, blob);
+        } catch (error) {
+          if (attempt >= 5) throw error;
+          onStatus?.('Erreur de téléchargement, nouvelle tentative…');
+          await sleep(1500);
+          continue;
+        }
       }
 
       if (state === 'not_started' || !state) {
         onStatus?.('Génération des stems sur le serveur…');
-        await this.triggerStemGeneration(track);
+        const launched = await this.triggerStemGeneration(track);
+        if (!launched) {
+          onStatus?.('Serveur stems indisponible, nouvelle tentative…');
+        }
       } else {
         onStatus?.('Stems en cours de préparation…');
       }
 
-      await sleep(2000);
+      if (attempt < 5) await sleep(2000);
     }
 
     throw new Error(`Les stems de "${track?.name || 'chanson inconnue'}" ne sont pas prêts`);
