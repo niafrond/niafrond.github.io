@@ -21,6 +21,11 @@ body {
   display: grid;
   gap: 16px;
 }
+.screen {
+  display: grid;
+  gap: 16px;
+}
+.hidden { display: none !important; }
 .card {
   background: color-mix(in srgb, var(--card) 92%, black 8%);
   border: 1px solid #334155;
@@ -28,6 +33,7 @@ body {
   padding: 16px;
 }
 .inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.inline h2 { margin: 0; }
 .inline input { flex: 1 1 150px; min-width: 0; }
 .grid-form {
   display: grid;
