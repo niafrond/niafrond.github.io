@@ -1,3 +1,9 @@
+## [1.208.0](https://github.com/niafrond/niafrond.github.io/compare/v1.207.1...v1.208.0) (2026-05-25)
+
+### Features
+
+* sequential Spotify playlist prefetch to local cache ([024473d](https://github.com/niafrond/niafrond.github.io/commit/024473d24ff582970779867109695617cfab3feb))
+
 ## [1.207.1](https://github.com/niafrond/niafrond.github.io/compare/v1.207.0...v1.207.1) (2026-05-25)
 
 ### Bug Fixes
