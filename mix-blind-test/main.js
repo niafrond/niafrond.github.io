@@ -9,6 +9,7 @@ const stemClient = new StemClient();
 const state = {
   tracks: loadTracks(),
   usedPairKeys: new Set(),
+  usedTrackIds: new Set(),
   round: 0,
   playing: null,
   pending: null,
@@ -16,6 +17,11 @@ const state = {
 };
 
 const refs = {
+  screenSetup: document.getElementById('screen-setup'),
+  screenGame: document.getElementById('screen-game'),
+  btnGoGame: document.getElementById('btn-go-game'),
+  btnBackSetup: document.getElementById('btn-back-setup'),
+  setupStatus: document.getElementById('setup-status'),
   apiUrl: document.getElementById('api-url'),
   btnSaveApi: document.getElementById('btn-save-api'),
   songForm: document.getElementById('song-form'),
@@ -89,6 +95,20 @@ function saveTeams() {
 function updateStatus(message, isError = false) {
   refs.gameStatus.textContent = message;
   refs.gameStatus.classList.toggle('error', Boolean(isError));
+  if (refs.setupStatus) {
+    refs.setupStatus.textContent = message;
+    refs.setupStatus.classList.toggle('error', Boolean(isError));
+  }
+}
+
+function countUnusedTracks() {
+  return state.tracks.filter((track) => !state.usedTrackIds.has(track.id)).length;
+}
+
+function showScreen(nextScreen) {
+  const showSetup = nextScreen === 'setup';
+  refs.screenSetup?.classList.toggle('hidden', !showSetup);
+  refs.screenGame?.classList.toggle('hidden', showSetup);
 }
 
 function renderTracks() {
@@ -262,7 +282,8 @@ function chooseReplacementTrack(candidates, referenceBpm, difficultMode = false)
 function updateRoundButtons() {
   const isPlaying = Boolean(state.playing);
   const hasPending = Boolean(state.pending);
-  refs.btnPreviewRound.disabled = isPlaying;
+  const hasEnoughUnusedTracks = countUnusedTracks() >= 2;
+  refs.btnPreviewRound.disabled = isPlaying || !hasEnoughUnusedTracks;
   refs.btnStartRound.disabled = isPlaying || !hasPending;
   refs.btnStopRound.disabled = !isPlaying;
   refs.btnSwapVocals.disabled = isPlaying || !hasPending;
@@ -292,26 +313,27 @@ function createPendingRoundFromPair(pair, swap = Math.random() < 0.5) {
 
 function pickNewPair(excludedPairKeys = new Set()) {
   const usedWithExclusions = new Set([...state.usedPairKeys, ...excludedPairKeys]);
-  return chooseRoundPair(state.tracks, usedWithExclusions, refs.difficultMode.checked);
+  const availableTracks = state.tracks.filter((track) => !state.usedTrackIds.has(track.id));
+  return chooseRoundPair(availableTracks, usedWithExclusions, refs.difficultMode.checked);
 }
 
 function prepareRound() {
   if (state.playing) return;
-  if (state.tracks.length < 2) {
-    updateStatus('Ajoutez au moins deux chansons.', true);
+  if (countUnusedTracks() < 2) {
+    if (state.tracks.length < 2) {
+      updateStatus('Ajoutez au moins deux chansons.', true);
+    } else {
+      updateStatus('Plus assez de chansons inédites pour préparer une nouvelle manche.', true);
+    }
     return;
   }
 
   let choice = pickNewPair();
   if (!choice) {
-    state.usedPairKeys.clear();
-    choice = pickNewPair();
-  }
-  if (!choice) {
     state.pending = null;
     renderPendingRound();
     updateRoundButtons();
-    updateStatus('Impossible de trouver une combinaison jouable.', true);
+    updateStatus('Aucune combinaison inédite restante pour cette partie.', true);
     return;
   }
 
@@ -328,6 +350,7 @@ function swapPendingVocals() {
   const candidates = state.tracks.filter((track) => (
     track.id !== fixedInstrumental.id
     && track.id !== currentVocals.id
+    && !state.usedTrackIds.has(track.id)
     && !state.usedPairKeys.has(makePairKey(track, fixedInstrumental))
   ));
   const nextVocals = chooseReplacementTrack(candidates, fixedInstrumental.bpm, refs.difficultMode.checked);
@@ -352,6 +375,7 @@ function swapPendingInstrumental() {
   const candidates = state.tracks.filter((track) => (
     track.id !== fixedVocals.id
     && track.id !== currentInstrumental.id
+    && !state.usedTrackIds.has(track.id)
     && !state.usedPairKeys.has(makePairKey(fixedVocals, track))
   ));
   const nextInstrumental = chooseReplacementTrack(candidates, fixedVocals.bpm, refs.difficultMode.checked);
@@ -372,11 +396,7 @@ function swapPendingInstrumental() {
 function swapPendingBoth() {
   if (!state.pending || state.playing) return;
   const excluded = new Set([state.pending.pairKey]);
-  let choice = pickNewPair(excluded);
-  if (!choice) {
-    state.usedPairKeys.clear();
-    choice = pickNewPair(excluded);
-  }
+  const choice = pickNewPair(excluded);
   if (!choice) {
     updateStatus('Aucune autre combinaison disponible.', true);
     return;
@@ -424,6 +444,8 @@ async function startRound() {
     };
     state.pending = null;
     state.usedPairKeys.add(pending.pairKey);
+    state.usedTrackIds.add(pending.vocalsTrack.id);
+    state.usedTrackIds.add(pending.instrumentalTrack.id);
     updateRoundButtons();
     refs.nowPlaying.textContent = '🎧 Mix en cours…';
     updateStatus('Manche lancée. Le game master gère les points.', false);
@@ -569,6 +591,17 @@ function initApiConfig() {
   });
 }
 
+function startNewGameSession() {
+  stopRound(false);
+  state.pending = null;
+  state.usedPairKeys.clear();
+  state.usedTrackIds.clear();
+  state.round = 0;
+  refs.roundLabel.textContent = 'Manche 0';
+  renderPendingRound();
+  updateRoundButtons();
+}
+
 function init() {
   initApiConfig();
   wireSongForm();
@@ -597,11 +630,28 @@ function init() {
     updateStatus('Manche stoppée.');
   });
 
+  refs.btnGoGame?.addEventListener('click', () => {
+    if (state.tracks.length < 2) {
+      updateStatus('Ajoutez au moins deux chansons avant de commencer la partie.', true);
+      return;
+    }
+    startNewGameSession();
+    showScreen('game');
+    updateStatus('Partie initialisée. Préparez une combinaison.', false);
+  });
+
+  refs.btnBackSetup?.addEventListener('click', () => {
+    stopRound(false);
+    showScreen('setup');
+    updateStatus('Retour à la configuration.', false);
+  });
+
   renderTracks();
   renderScores();
   renderPendingRound();
   updateRoundButtons();
-  updateStatus('Prêt. Ajoutez des chansons puis démarrez une manche.');
+  showScreen('setup');
+  updateStatus('Configurez l’API, ajoutez des chansons puis passez à l’écran partie.');
 
   window.addEventListener('beforeunload', () => {
     stopRound(false);

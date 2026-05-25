@@ -25,6 +25,18 @@ describe('mix-blind-test game logic', () => {
     expect(makePairKey(pair.left, pair.right)).toBe('b__c');
   });
 
+  test('chooseRoundPair excludes tracks already used in current game', () => {
+    const tracks = [
+      { id: 'a', bpm: 100 },
+      { id: 'b', bpm: 101 },
+      { id: 'c', bpm: 102 },
+      { id: 'd', bpm: 140 },
+    ];
+    const excludedTrackIds = new Set(['b', 'c']);
+    const pair = chooseRoundPair(tracks, new Set(), false, () => 0, excludedTrackIds);
+    expect(makePairKey(pair.left, pair.right)).toBe('a__d');
+  });
+
   test('pruneStemCacheEntries evicts oldest entries until under limits', () => {
     const now = Date.now();
     const result = pruneStemCacheEntries([

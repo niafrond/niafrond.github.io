@@ -13,7 +13,13 @@ export function makePairKey(trackA, trackB) {
   return `${left}__${right}`;
 }
 
-export function chooseRoundPair(tracks, usedPairKeys = new Set(), difficultMode = false, rng = Math.random) {
+export function chooseRoundPair(
+  tracks,
+  usedPairKeys = new Set(),
+  difficultMode = false,
+  rng = Math.random,
+  excludedTrackIds = new Set(),
+) {
   if (!Array.isArray(tracks) || tracks.length < 2) return null;
 
   const candidates = [];
@@ -21,6 +27,7 @@ export function chooseRoundPair(tracks, usedPairKeys = new Set(), difficultMode 
     for (let j = i + 1; j < tracks.length; j += 1) {
       const left = tracks[i];
       const right = tracks[j];
+      if (excludedTrackIds.has(left.id) || excludedTrackIds.has(right.id)) continue;
       const key = makePairKey(left, right);
       if (!key || usedPairKeys.has(key)) continue;
       const leftBpm = toFiniteBpm(left.bpm);
