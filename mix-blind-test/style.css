@@ -10,6 +10,7 @@
 * { box-sizing: border-box; }
 body {
   margin: 0;
+  overflow-x: hidden;
   font-family: Inter, system-ui, -apple-system, sans-serif;
   background: radial-gradient(circle at top, #1d4ed8, var(--bg));
   color: var(--text);
@@ -27,6 +28,7 @@ body {
   padding: 16px;
 }
 .inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.inline input { flex: 1 1 150px; min-width: 0; }
 .grid-form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -39,6 +41,7 @@ input {
   border-radius: 10px;
   color: var(--text);
   padding: 10px;
+  max-width: 100%;
 }
 .btn {
   border: 1px solid #64748b;
