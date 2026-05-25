@@ -1,3 +1,9 @@
+## [1.207.1](https://github.com/niafrond/niafrond.github.io/compare/v1.207.0...v1.207.1) (2026-05-25)
+
+### Bug Fixes
+
+* prevent horizontal overflow in mix-blind-test layout ([c6a2be0](https://github.com/niafrond/niafrond.github.io/commit/c6a2be0a5f7eb06ab71eb76c30fb17c482dabc42))
+
 ## [1.207.0](https://github.com/niafrond/niafrond.github.io/compare/v1.206.2...v1.207.0) (2026-05-24)
 
 ### Features
