@@ -135,6 +135,7 @@ let autoSuggestionRefreshInProgress = false;
 const deckMixDataByTrackId = new Map();
 let spotifySyncTimer = null;
 let spotifySyncInFlight = false;
+let spotifyPrefetchGeneration = 0;
 
 const spotifyClient = createSpotifyClient();
 
@@ -883,6 +884,7 @@ const {
   enrichStemsFromServer,
   ensureLocalSource,
   evictTrackSource,
+  prefetchTrackToLocalCache,
   releaseLocalBlob,
   searchTracksViaApi,
 } = audioSourceManager;
@@ -1105,6 +1107,32 @@ function stopSpotifyFilRougeSync() {
   }
 }
 
+/**
+ * Caches all tracks from a Spotify playlist into the local API cache, one by
+ * one (sequentially) to avoid flooding the device with parallel requests.
+ * Each call increments a generation counter; a stale loop detects the change
+ * and exits early so only the latest import is being prefetched at any time.
+ */
+async function startSpotifyPlaylistPrefetch(tracks) {
+  if (!Array.isArray(tracks) || tracks.length === 0) return;
+  const generation = ++spotifyPrefetchGeneration;
+  let cached = 0;
+  let failed = 0;
+  for (let i = 0; i < tracks.length; i++) {
+    if (spotifyPrefetchGeneration !== generation) return;
+    const track = tracks[i];
+    setSpotifyStatus(`Cache Spotify : ${i + 1} / ${tracks.length}…`);
+    const ok = await prefetchTrackToLocalCache(track).catch(() => false);
+    if (ok) cached++;
+    else failed++;
+  }
+  if (spotifyPrefetchGeneration !== generation) return;
+  const summary = failed > 0
+    ? `Cache Spotify : ${cached} mis en cache, ${failed} échec${failed > 1 ? 's' : ''}`
+    : `Cache Spotify : ${cached} morceau${cached > 1 ? 'x' : ''} mis en cache`;
+  setSpotifyStatus(summary);
+}
+
 async function syncSpotifyFilRougeIfChanged(options = {}) {
   const { silent = false } = options;
   const source = readSpotifyFilRougeSource();
@@ -1130,6 +1158,7 @@ async function syncSpotifyFilRougeIfChanged(options = {}) {
     if (!silent) {
       showToast(`Fil rouge Spotify mis à jour (${tracks.length} morceau${tracks.length > 1 ? 'x' : ''})`);
     }
+    startSpotifyPlaylistPrefetch(tracks).catch(() => {});
     return true;
   } catch (err) {
     if (!silent) setSpotifyStatus(`Erreur sync Spotify: ${err.message}`, true);
@@ -1166,6 +1195,7 @@ async function importSpotifyPlaylistToFilRouge() {
   startSpotifyFilRougeSyncLoop();
   updateSpotifyConfigUi();
   showToast(`Fil rouge importé depuis Spotify (${tracks.length} morceau${tracks.length > 1 ? 'x' : ''})`);
+  startSpotifyPlaylistPrefetch(tracks).catch(() => {});
 }
 
 filRougeShuffleBtn?.addEventListener('click', () => {
@@ -1179,6 +1209,7 @@ filRougeClearBtn?.addEventListener('click', () => {
   filRougeManager.clearPriorityQueue();
   writeSpotifyFilRougeSource(null);
   stopSpotifyFilRougeSync();
+  spotifyPrefetchGeneration++;
   showToast('Fil rouge vidé');
   updateSpotifyConfigUi();
   renderFilRouge();
@@ -1821,6 +1852,7 @@ spotifyConnectBtn?.addEventListener('click', async () => {
 spotifyDisconnectBtn?.addEventListener('click', () => {
   spotifyClient.clearAuth();
   stopSpotifyFilRougeSync();
+  spotifyPrefetchGeneration++;
   updateSpotifyConfigUi();
   showToast('Spotify déconnecté');
 });
