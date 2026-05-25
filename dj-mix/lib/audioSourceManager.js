@@ -989,12 +989,48 @@ export function createAudioSourceManager(options) {
     });
   }
 
+  /**
+   * Pre-fetches a track into the local cache without affecting item state.
+   * Downloads via the API (which stores it server-side) and persists the blob
+   * in browser Cache Storage, then immediately revokes the ephemeral blob URL.
+   * Returns true on success, false if skipped or failed.
+   */
+  async function prefetchTrackToLocalCache(item) {
+    if (!item?.name || !item?.artist) return false;
+    if (apiHealthMonitor?.isOffline()) return false;
+
+    const cacheKey = getTrackCacheKey(item);
+
+    if (sessionBlobCache.has(cacheKey)) {
+      logDebug('prefetch.skip.sessionCache', { cacheKey });
+      return true;
+    }
+
+    const persisted = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName).catch(() => null);
+    if (persisted) {
+      URL.revokeObjectURL(persisted);
+      logDebug('prefetch.skip.persisted', { cacheKey });
+      return true;
+    }
+
+    try {
+      const result = await downloadTrackViaApi(item);
+      if (result?.url) URL.revokeObjectURL(result.url);
+      logInfo('prefetch.success', { cacheKey, name: item.name, artist: item.artist });
+      return true;
+    } catch (err) {
+      logWarn('prefetch.failed', { cacheKey, name: item?.name, error: err?.message });
+      return false;
+    }
+  }
+
   return {
     clearSessionBlobCache: () => clearSessionBlobCache(sessionBlobCache),
     deleteLocalCacheSong,
     enrichStemsFromServer,
     ensureLocalSource,
     evictTrackSource,
+    prefetchTrackToLocalCache,
     releaseLocalBlob: (item) => releaseLocalBlob(item, touchQueueItem),
     searchTracksViaApi,
   };
