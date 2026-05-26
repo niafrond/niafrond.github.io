@@ -288,6 +288,23 @@ function writePlaylistHistory(history) {
   safeSetStorage(STORAGE_KEYS.spotifyPlaylistHistory, clean.length ? JSON.stringify(clean) : null);
 }
 
+function parseRetryAfterMs(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return 0;
+
+  const seconds = Number(raw);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.round(seconds * 1000);
+  }
+
+  const asDate = Date.parse(raw);
+  if (Number.isFinite(asDate)) {
+    return Math.max(0, asDate - Date.now());
+  }
+
+  return 0;
+}
+
 export function createSpotifyClient(options = {}) {
   const {
     redirectUri = window.location.origin + window.location.pathname,
@@ -434,7 +451,10 @@ export function createSpotifyClient(options = {}) {
     });
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      throw new Error(data?.error?.message || `Spotify HTTP ${res.status}`);
+      const err = new Error(data?.error?.message || `Spotify HTTP ${res.status}`);
+      err.status = res.status;
+      err.retryAfterMs = parseRetryAfterMs(res.headers.get('Retry-After'));
+      throw err;
     }
     return data;
   }

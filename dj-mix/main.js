@@ -97,7 +97,8 @@ import { uiState } from './lib/uiState.js';
 const QUEUE_KEY = STORAGE_KEYS.queue;
 const DOWNLOADER_API_URL_KEY = STORAGE_KEYS.downloaderApiUrl;
 const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
-const SPOTIFY_FIL_ROUGE_POLL_MS = 60000;
+const SPOTIFY_FIL_ROUGE_POLL_MS = 120000;
+const SPOTIFY_FIL_ROUGE_BACKOFF_MAX_MULTIPLIER = 32;
 
 const logger = createLogger('main');
 const logDebug = (event, payload) => logger.debug(event, payload);
@@ -135,10 +136,8 @@ let autoSuggestionRefreshInProgress = false;
 const deckMixDataByTrackId = new Map();
 let spotifySyncTimer = null;
 let spotifySyncInFlight = false;
+let spotifySyncBackoffAttempts = 0;
 let spotifyPrefetchGeneration = 0;
-let spotifyPlaylistsLoading = false;
-let spotifyPlaylistsLoaded = false;
-let spotifyPlaylistOptions = [];
 
 const spotifyClient = createSpotifyClient();
 
@@ -504,7 +503,6 @@ const searchClose = document.getElementById('search-close');
 const searchOverlay = document.getElementById('search-overlay');
 const searchResults = document.getElementById('search-results');
 const searchIcon = document.querySelector('.search-icon');
-const searchBar = document.querySelector('.search-bar');
 
 const albumArt = document.getElementById('album-art');
 const artPlaceholder = document.getElementById('art-placeholder');
@@ -590,7 +588,9 @@ const cacheStemsFilterEl = document.getElementById('cache-stems-filter');
 const cacheResetFiltersBtn = document.getElementById('cache-reset-filters');
 
 const filRougeCountEl = document.getElementById('filrouge-count');
+const filRougePriorityCountEl = document.getElementById('filrouge-priority-count');
 const filRougePlaylistListEl = document.getElementById('filrouge-playlist-list');
+const filRougePriorityListEl = document.getElementById('filrouge-priority-list');
 const filRougeShuffleBtn = document.getElementById('filrouge-shuffle-btn');
 const filRougeClearBtn = document.getElementById('filrouge-clear-btn');
 
@@ -601,10 +601,10 @@ const downloaderApiStatus = document.getElementById('downloader-api-status');
 const spotifyClientIdInput = document.getElementById('spotify-client-id-input');
 const spotifyConnectBtn = document.getElementById('spotify-connect-btn');
 const spotifyDisconnectBtn = document.getElementById('spotify-disconnect-btn');
-const spotifyPlaylistSelect = document.getElementById('spotify-playlist-select');
 const spotifyPlaylistInput = document.getElementById('spotify-playlist-input');
 const spotifyImportFilRougeBtn = document.getElementById('spotify-import-filrouge-btn');
 const spotifyStatus = document.getElementById('spotify-status');
+const spotifyConnectionBadge = document.getElementById('spotify-connection-badge');
 const debugLogsToggle = document.getElementById('debug-logs-toggle');
 const configDjModeDanceBtn = document.getElementById('config-dj-mode-dance-btn');
 const configDjModeMusicBtn = document.getElementById('config-dj-mode-music-btn');
@@ -894,7 +894,7 @@ const {
 
 const playlistManager = createPlaylistManager({
   addToFilRouge: (file) => addToFilRouge(file),
-  addToPriorityQueue: (file) => addToMixPriorityQueue(file),
+  addToPriorityQueue: (file) => addToPriorityQueue(file),
   cacheFilterCountEl,
   cacheGenreFilterEl,
   cacheResetFiltersBtn,
@@ -955,15 +955,37 @@ const filRougeManager = createFilRougeManager();
 
 function renderFilRouge() {
   const playlist = filRougeManager.getPlaylist();
+  const priorityQueue = filRougeManager.getPriorityQueue();
   const filRougeIndex = filRougeManager.getCurrentIndex();
 
   if (filRougeCountEl) {
     filRougeCountEl.textContent = `${playlist.length} morceau${playlist.length > 1 ? 'x' : ''}`;
   }
+  if (filRougePriorityCountEl) {
+    filRougePriorityCountEl.textContent = String(priorityQueue.length);
+  }
   if (filRougeShuffleBtn) {
     const on = filRougeManager.isShuffleEnabled();
     filRougeShuffleBtn.textContent = `Shuffle: ${on ? 'ON' : 'OFF'}`;
     filRougeShuffleBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+
+  // Priority queue
+  if (filRougePriorityListEl) {
+    if (!priorityQueue.length) {
+      filRougePriorityListEl.innerHTML = '<div class="filrouge-empty">Aucun morceau en file prioritaire</div>';
+    } else {
+      filRougePriorityListEl.innerHTML = priorityQueue.map((item, idx) => `
+        <div class="filrouge-item filrouge-priority-item" data-index="${idx}">
+          <div class="filrouge-info">
+            <span class="filrouge-pos">${idx + 1}.</span>
+            <div class="filrouge-name">${escHtml(item.name || 'Inconnu')}</div>
+            <div class="filrouge-artist">${escHtml(item.artist || '')}</div>
+          </div>
+          <button class="filrouge-remove-btn" data-type="priority" data-index="${idx}" aria-label="Retirer">✕</button>
+        </div>
+      `).join('');
+    }
   }
 
   // Playlist fil rouge
@@ -979,7 +1001,7 @@ function renderFilRouge() {
             <div class="filrouge-artist">${escHtml(item.artist || '')}</div>
           </div>
           <div class="filrouge-actions">
-            <button class="filrouge-set-current-btn" data-index="${idx}" aria-label="Recaler sur ${idx + 1}" title="Recaler l'indicateur ici">${idx + 1}</button>
+            <button class="filrouge-priority-add-btn" data-index="${idx}" aria-label="Ajouter à la file prioritaire" title="Ajouter à la file prioritaire">⏭</button>
             <button class="filrouge-remove-btn" data-type="playlist" data-index="${idx}" aria-label="Retirer">✕</button>
           </div>
         </div>
@@ -991,17 +1013,30 @@ function renderFilRouge() {
   document.querySelectorAll('.filrouge-remove-btn').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
+      const type = btn.dataset.type;
       const idx = Number(btn.dataset.index);
-      filRougeManager.removeFromPlaylist(idx);
+      if (type === 'priority') {
+        filRougeManager.removeFromPriorityQueue(idx);
+      } else {
+        filRougeManager.removeFromPlaylist(idx);
+      }
       renderFilRouge();
     });
   });
 
-  document.querySelectorAll('.filrouge-set-current-btn').forEach((btn) => {
+  document.querySelectorAll('.filrouge-priority-add-btn').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const idx = Number(btn.dataset.index);
-      if (filRougeManager.setCurrentIndex(idx)) {
+      const playlist = filRougeManager.getPlaylist();
+      const item = playlist[idx];
+      if (item) {
+        const added = filRougeManager.addToPriorityQueue(item);
+        if (added) {
+          showToast(`"${item.name}" → file prioritaire`);
+        } else {
+          showToast(`Déjà en file prioritaire`, true);
+        }
         renderFilRouge();
       }
     });
@@ -1034,91 +1069,29 @@ function writeSpotifyFilRougeSource(source) {
 
 function setSpotifyStatus(message, isError = false) {
   if (!spotifyStatus) return;
+  const connected = spotifyClient.isConnected();
   spotifyStatus.textContent = String(message || '');
-  spotifyStatus.style.color = isError ? '#ff7b7b' : '';
-}
-
-function renderSpotifyPlaylistSelect() {
-  if (!spotifyPlaylistSelect) return;
-  const previous = spotifyPlaylistSelect.value;
-  spotifyPlaylistSelect.innerHTML = '';
-
-  const placeholder = document.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = spotifyPlaylistsLoading
-    ? 'Chargement des playlists Spotify...'
-    : 'Choisir une playlist Spotify';
-  spotifyPlaylistSelect.appendChild(placeholder);
-
-  for (const playlist of spotifyPlaylistOptions) {
-    const option = document.createElement('option');
-    option.value = playlist.playlistId;
-    option.textContent = playlist.playlistName
-      ? `${playlist.playlistName} (${playlist.playlistId})`
-      : playlist.playlistId;
-    spotifyPlaylistSelect.appendChild(option);
+  spotifyStatus.classList.remove('is-connected', 'is-disconnected', 'is-error');
+  if (isError) {
+    spotifyStatus.classList.add('is-error');
+  } else if (connected) {
+    spotifyStatus.classList.add('is-connected');
+  } else {
+    spotifyStatus.classList.add('is-disconnected');
   }
 
-  const inputPlaylistId = spotifyClient.parseSpotifyPlaylistId(spotifyPlaylistInput?.value);
-  const selected = inputPlaylistId || previous;
-  const hasSelected = spotifyPlaylistOptions.some((entry) => entry.playlistId === selected);
-  spotifyPlaylistSelect.value = hasSelected ? selected : '';
-}
-
-function setSpotifyPlaylistOptions(playlists) {
-  const dedup = new Map();
-  for (const entry of Array.isArray(playlists) ? playlists : []) {
-    const playlistId = String(entry?.playlistId || '').trim();
-    if (!playlistId) continue;
-    const playlistName = String(entry?.playlistName || '').trim();
-    if (!dedup.has(playlistId)) {
-      dedup.set(playlistId, {
-        playlistId,
-        playlistName,
-        updatedAt: Number(entry?.updatedAt) || 0,
-      });
-      continue;
+  if (spotifyConnectionBadge) {
+    spotifyConnectionBadge.classList.remove('is-connected', 'is-disconnected', 'is-error');
+    if (isError) {
+      spotifyConnectionBadge.classList.add('is-error');
+      spotifyConnectionBadge.textContent = '● Erreur Spotify';
+    } else if (connected) {
+      spotifyConnectionBadge.classList.add('is-connected');
+      spotifyConnectionBadge.textContent = '● Connecté';
+    } else {
+      spotifyConnectionBadge.classList.add('is-disconnected');
+      spotifyConnectionBadge.textContent = '● Déconnecté';
     }
-    const current = dedup.get(playlistId);
-    if (!current.playlistName && playlistName) current.playlistName = playlistName;
-    current.updatedAt = Math.max(current.updatedAt || 0, Number(entry?.updatedAt) || 0);
-  }
-
-  spotifyPlaylistOptions = Array.from(dedup.values()).sort((a, b) => {
-    const byDate = (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0);
-    if (byDate !== 0) return byDate;
-    return String(a.playlistName || a.playlistId).localeCompare(String(b.playlistName || b.playlistId), 'fr', { sensitivity: 'base' });
-  });
-  renderSpotifyPlaylistSelect();
-}
-
-async function loadSpotifyPlaylistOptions() {
-  const remembered = spotifyClient.getRememberedPlaylists();
-  setSpotifyPlaylistOptions(remembered);
-
-  if (!spotifyClient.isConnected() || spotifyPlaylistsLoading) {
-    if (!spotifyClient.isConnected()) spotifyPlaylistsLoaded = false;
-    return;
-  }
-
-  spotifyPlaylistsLoading = true;
-  renderSpotifyPlaylistSelect();
-  try {
-    const playlists = await spotifyClient.fetchUserPlaylists();
-    const merged = [
-      ...playlists.map((entry) => ({ ...entry, updatedAt: Date.now() })),
-      ...spotifyClient.getRememberedPlaylists(),
-    ];
-    setSpotifyPlaylistOptions(merged);
-    for (const playlist of playlists) {
-      spotifyClient.rememberPlaylist(playlist.playlistId, playlist.playlistName);
-    }
-    spotifyPlaylistsLoaded = true;
-  } catch (_) {
-    spotifyPlaylistsLoaded = false;
-  } finally {
-    spotifyPlaylistsLoading = false;
-    renderSpotifyPlaylistSelect();
   }
 }
 
@@ -1131,16 +1104,18 @@ function updateSpotifyConfigUi() {
   if (spotifyPlaylistInput && source?.playlistId && !spotifyPlaylistInput.value.trim()) {
     spotifyPlaylistInput.value = source.playlistId;
   }
-  if (spotifyPlaylistSelect) {
-    spotifyPlaylistSelect.disabled = !connected || spotifyPlaylistsLoading;
-  }
-  if (spotifyConnectBtn) spotifyConnectBtn.disabled = false;
+  if (spotifyConnectBtn) spotifyConnectBtn.disabled = connected;
   if (spotifyDisconnectBtn) spotifyDisconnectBtn.disabled = !connected;
   if (spotifyImportFilRougeBtn) spotifyImportFilRougeBtn.disabled = !connected;
-  renderSpotifyPlaylistSelect();
-  if (connected && !spotifyPlaylistsLoaded) {
-    loadSpotifyPlaylistOptions().catch(() => {});
+
+  if (spotifyConnectBtn) {
+    spotifyConnectBtn.textContent = connected ? 'Spotify connecté' : 'Se connecter';
   }
+
+  if (spotifyPlaylistInput) {
+    spotifyPlaylistInput.disabled = !connected;
+  }
+
   if (connected) {
     setSpotifyStatus(source?.playlistName
       ? `Spotify connecté. Sync active: ${source.playlistName}`
@@ -1151,6 +1126,7 @@ function updateSpotifyConfigUi() {
 }
 
 function applySpotifyPlaylistToFilRouge(tracks) {
+  filRougeManager.clearPriorityQueue();
   filRougeManager.clearPlaylist();
   for (const track of tracks) {
     filRougeManager.addToPlaylist(track);
@@ -1158,18 +1134,22 @@ function applySpotifyPlaylistToFilRouge(tracks) {
   renderFilRouge();
 }
 
-function updateSearchBarVisibility(activeTab) {
-  if (!searchBar) return;
-  const shouldHide = activeTab === 'filrouge';
-  searchBar.hidden = shouldHide;
-  if (shouldHide) closeSearch();
-}
-
 function stopSpotifyFilRougeSync() {
   if (spotifySyncTimer) {
-    clearInterval(spotifySyncTimer);
+    clearTimeout(spotifySyncTimer);
     spotifySyncTimer = null;
   }
+}
+
+function resetSpotifyFilRougeBackoff() {
+  spotifySyncBackoffAttempts = 0;
+}
+
+function getSpotifyFilRougeNextDelayMs(error) {
+  const retryAfterMs = Number(error?.retryAfterMs) || 0;
+  const exponentialMs = SPOTIFY_FIL_ROUGE_POLL_MS
+    * Math.min(2 ** spotifySyncBackoffAttempts, SPOTIFY_FIL_ROUGE_BACKOFF_MAX_MULTIPLIER);
+  return Math.max(SPOTIFY_FIL_ROUGE_POLL_MS, retryAfterMs, exponentialMs);
 }
 
 /**
@@ -1205,17 +1185,12 @@ async function syncSpotifyFilRougeIfChanged(options = {}) {
   if (spotifySyncInFlight) return false;
   spotifySyncInFlight = true;
   try {
-    const snapshot = await spotifyClient.fetchPlaylistSnapshot(source.playlistId).catch(() => null);
-    const { tracks, fingerprint } = await spotifyClient.fetchPlaylistTracks(source.playlistId);
-    const previousFingerprint = String(source.fingerprint || '').trim();
-    const nextFingerprint = String(fingerprint || '').trim();
-    const snapshotChanged = Boolean(snapshot?.snapshot_id)
-      && String(snapshot.snapshot_id).trim() !== String(source.snapshotId || '').trim();
-    const fingerprintChanged = !previousFingerprint || (nextFingerprint && nextFingerprint !== previousFingerprint);
-    if (!snapshotChanged && !fingerprintChanged) {
+    const snapshot = await spotifyClient.fetchPlaylistSnapshot(source.playlistId);
+    if (snapshot?.snapshot_id && source.snapshotId && snapshot.snapshot_id === source.snapshotId) {
       return false;
     }
 
+    const { tracks, fingerprint } = await spotifyClient.fetchPlaylistTracks(source.playlistId);
     applySpotifyPlaylistToFilRouge(tracks);
     writeSpotifyFilRougeSource({
       ...source,
@@ -1224,7 +1199,6 @@ async function syncSpotifyFilRougeIfChanged(options = {}) {
       fingerprint,
       updatedAt: Date.now(),
     });
-    spotifyClient.rememberPlaylist(source.playlistId, snapshot?.name || source.playlistName || '');
     updateSpotifyConfigUi();
     if (!silent) {
       showToast(`Fil rouge Spotify mis à jour (${tracks.length} morceau${tracks.length > 1 ? 'x' : ''})`);
@@ -1233,7 +1207,7 @@ async function syncSpotifyFilRougeIfChanged(options = {}) {
     return true;
   } catch (err) {
     if (!silent) setSpotifyStatus(`Erreur sync Spotify: ${err.message}`, true);
-    return false;
+    throw err;
   } finally {
     spotifySyncInFlight = false;
   }
@@ -1241,11 +1215,36 @@ async function syncSpotifyFilRougeIfChanged(options = {}) {
 
 function startSpotifyFilRougeSyncLoop() {
   stopSpotifyFilRougeSync();
+  resetSpotifyFilRougeBackoff();
   const source = readSpotifyFilRougeSource();
   if (!source?.playlistId || !spotifyClient.isConnected()) return;
-  syncSpotifyFilRougeIfChanged({ silent: true }).catch(() => {});
-  spotifySyncTimer = setInterval(() => {
-    syncSpotifyFilRougeIfChanged({ silent: true }).catch(() => {});
+
+  const runSync = async () => {
+    const currentSource = readSpotifyFilRougeSource();
+    if (!currentSource?.playlistId || !spotifyClient.isConnected()) {
+      stopSpotifyFilRougeSync();
+      return;
+    }
+
+    let nextDelayMs = SPOTIFY_FIL_ROUGE_POLL_MS;
+    try {
+      await syncSpotifyFilRougeIfChanged({ silent: true });
+      resetSpotifyFilRougeBackoff();
+    } catch (err) {
+      spotifySyncBackoffAttempts = Math.min(
+        spotifySyncBackoffAttempts + 1,
+        Math.log2(SPOTIFY_FIL_ROUGE_BACKOFF_MAX_MULTIPLIER),
+      );
+      nextDelayMs = getSpotifyFilRougeNextDelayMs(err);
+    }
+
+    spotifySyncTimer = setTimeout(() => {
+      runSync().catch(() => {});
+    }, nextDelayMs);
+  };
+
+  spotifySyncTimer = setTimeout(() => {
+    runSync().catch(() => {});
   }, SPOTIFY_FIL_ROUGE_POLL_MS);
 }
 
@@ -1264,7 +1263,6 @@ async function importSpotifyPlaylistToFilRouge() {
     fingerprint,
     updatedAt: Date.now(),
   });
-  spotifyClient.rememberPlaylist(parsedId, snapshot?.name || '');
   startSpotifyFilRougeSyncLoop();
   updateSpotifyConfigUi();
   showToast(`Fil rouge importé depuis Spotify (${tracks.length} morceau${tracks.length > 1 ? 'x' : ''})`);
@@ -1279,6 +1277,7 @@ filRougeShuffleBtn?.addEventListener('click', () => {
 
 filRougeClearBtn?.addEventListener('click', () => {
   filRougeManager.clearPlaylist();
+  filRougeManager.clearPriorityQueue();
   writeSpotifyFilRougeSource(null);
   stopSpotifyFilRougeSync();
   spotifyPrefetchGeneration++;
@@ -1316,9 +1315,9 @@ function addToFilRouge(item) {
 }
 
 /**
- * Adds a track item to the mix priority queue.
+ * Adds a track item to the priority queue.
  */
-function addToMixPriorityQueue(item) {
+function addToPriorityQueue(item) {
   if (!item) return;
   const filRougeItem = {
     id: item.id || item.cachePath || `pq-${Date.now()}`,
@@ -1334,12 +1333,11 @@ function addToMixPriorityQueue(item) {
     stemsStatus: item.stemsStatus || '',
     stems: item.stems || null,
   };
-  const addedIndex = insertQueueItemAfterCurrent(filRougeItem);
-  const added = addedIndex >= 0;
+  const added = filRougeManager.addToPriorityQueue(filRougeItem);
   if (added) {
-    showToast(`"${filRougeItem.name}" → file prioritaire du mix`);
+    showToast(`"${filRougeItem.name}" → file prioritaire`);
   } else {
-    showToast(`Déjà en file prioritaire du mix`, true);
+    showToast(`Déjà en file prioritaire`, true);
   }
   renderFilRouge();
 }
@@ -1728,7 +1726,6 @@ const autoFadeManager = new AutoFadeManager({
 const autoModeManager = createAutoModeManager({
   apiHealthMonitor,
   getDownloaderApiUrl,
-  getFilRougeManager: () => filRougeManager,
   getQueue: () => queue,
   getCurrentTrackId: () => uiState.currentTrackId,
   getCurrentTrackIndex: () => uiState.currentIndex,
@@ -1771,7 +1768,6 @@ tabBtns.forEach((btn) => {
     if (tab === 'playlist') playlistLoaded = false;
     if (tab === 'mix') closeSearch();
     switchTab(tab);
-    updateSearchBarVisibility(tab);
     if (tab === 'playlist') {
       setCacheFilter(searchInput.value.trim());
       closeSearch();
@@ -1928,21 +1924,8 @@ spotifyDisconnectBtn?.addEventListener('click', () => {
   spotifyClient.clearAuth();
   stopSpotifyFilRougeSync();
   spotifyPrefetchGeneration++;
-  spotifyPlaylistsLoaded = false;
-  spotifyPlaylistsLoading = false;
-  setSpotifyPlaylistOptions(spotifyClient.getRememberedPlaylists());
   updateSpotifyConfigUi();
   showToast('Spotify déconnecté');
-});
-
-spotifyPlaylistSelect?.addEventListener('change', () => {
-  const selectedId = String(spotifyPlaylistSelect.value || '').trim();
-  if (!selectedId || !spotifyPlaylistInput) return;
-  spotifyPlaylistInput.value = selectedId;
-});
-
-spotifyPlaylistInput?.addEventListener('change', () => {
-  renderSpotifyPlaylistSelect();
 });
 
 spotifyImportFilRougeBtn?.addEventListener('click', async () => {
@@ -1964,7 +1947,6 @@ spotifyImportFilRougeBtn?.addEventListener('click', async () => {
   } catch (err) {
     setSpotifyStatus(`Connexion Spotify échouée: ${err.message}`, true);
   }
-  await loadSpotifyPlaylistOptions().catch(() => {});
   updateSpotifyConfigUi();
 
   applyRamFilterSettings({ persist: false, announce: true });
@@ -1978,7 +1960,6 @@ spotifyImportFilRougeBtn?.addEventListener('click', async () => {
   updateAutoModeUI();
   updateAutoDjFxConfigUI();
   renderDjModeUI();
-  updateSearchBarVisibility('mix');
   startSpotifyFilRougeSyncLoop();
 
   debugLogsToggle?.addEventListener('change', () => {
@@ -3419,7 +3400,8 @@ async function addToQueue(track, options = {}) {
     return;
   }
 
-  const addedIndex = insertQueueItemBeforeFilRouge(item);
+  queue.push(item);
+  const addedIndex = queue.length - 1;
   logInfo('addToQueue(): item added', {
     addedIndex,
     id: item.id,
@@ -3471,31 +3453,6 @@ async function addToQueue(track, options = {}) {
   if (showAddedToast) {
     showToast(`✔ "${item.name}" ajouté`);
   }
-}
-
-function findFirstFilRougeIndex() {
-  return queue.findIndex((item) => item.queueSource === 'fil-rouge');
-}
-
-function insertQueueItemBeforeFilRouge(item) {
-  const currentTrack = uiState.currentIndex >= 0 ? queue[uiState.currentIndex] : null;
-  const currentIsFilRouge = currentTrack?.queueSource === 'fil-rouge';
-  const firstFilRougeIndex = findFirstFilRougeIndex();
-  const insertIndex = currentIsFilRouge
-    ? Math.min(uiState.currentIndex + 1, queue.length)
-    : (firstFilRougeIndex >= 0 ? firstFilRougeIndex : queue.length);
-  queue.splice(insertIndex, 0, item);
-
-  return insertIndex;
-}
-
-function insertQueueItemAfterCurrent(item) {
-  const desiredIndex = uiState.currentIndex >= 0 ? uiState.currentIndex + 1 : 0;
-  const insertIndex = Math.min(desiredIndex, queue.length);
-
-  queue.splice(insertIndex, 0, item);
-
-  return insertIndex;
 }
 
 async function startPlaybackForIndex(index, mode, options = {}) {
@@ -4022,7 +3979,6 @@ function doLogout() {
   uiState.prevIsCrossfading = false;
   uiState.deckCueDeck = null;
   switchTab('mix');
-  updateSearchBarVisibility('mix');
   showCrossfadeRing(false);
   trackArtist.textContent = 'Ajoutez des chansons à la file d\'attente';
   albumArt.src = '';

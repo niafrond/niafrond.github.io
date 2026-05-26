@@ -389,6 +389,64 @@ input {
   color: var(--text-muted);
 }
 
+.spotify-connection-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+}
+
+.spotify-connection-badge.is-connected {
+  border-color: rgba(29, 185, 84, 0.5);
+  background: rgba(29, 185, 84, 0.14);
+  color: #8ff0b7;
+}
+
+.spotify-connection-badge.is-disconnected {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  color: #b9bdd6;
+}
+
+.spotify-connection-badge.is-error {
+  border-color: rgba(248, 113, 113, 0.5);
+  background: rgba(248, 113, 113, 0.14);
+  color: #ff8e8e;
+}
+
+#spotify-status {
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-top: 2px;
+}
+
+#spotify-status.is-connected {
+  border-color: rgba(29, 185, 84, 0.35);
+  background: rgba(29, 185, 84, 0.08);
+  color: #9cf3bf;
+}
+
+#spotify-status.is-disconnected {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: #acb2ce;
+}
+
+#spotify-status.is-error {
+  border-color: rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.08);
+  color: #ff8e8e;
+}
+
 .auto-dj-fx-enable-btn {
   min-height: 30px;
   padding: 0 12px;
