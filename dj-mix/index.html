@@ -247,10 +247,6 @@
           <button id="filrouge-shuffle-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="false">Shuffle: OFF</button>
           <button id="filrouge-clear-btn" class="clear-btn" type="button">Vider</button>
         </div>
-        <div class="filrouge-priority-section">
-          <h3 class="filrouge-subtitle">⏭ File prioritaire <span id="filrouge-priority-count" class="panel-meta">0</span></h3>
-          <div id="filrouge-priority-list" class="filrouge-list"></div>
-        </div>
         <div class="filrouge-playlist-section">
           <h3 class="filrouge-subtitle">🎵 Playlist fil rouge</h3>
           <div id="filrouge-playlist-list" class="filrouge-list"></div>
@@ -348,6 +344,12 @@
             <div class="controls" style="justify-content:flex-start; gap:10px;">
               <button id="spotify-connect-btn" class="connect-btn connect-btn--secondary" type="button">Se connecter</button>
               <button id="spotify-disconnect-btn" class="connect-btn connect-btn--secondary" type="button">Se déconnecter</button>
+            </div>
+            <div class="form-group">
+              <label for="spotify-playlist-select">Vos playlists Spotify</label>
+              <select id="spotify-playlist-select" class="mix-mode-select" disabled>
+                <option value="">Choisir une playlist Spotify</option>
+              </select>
             </div>
             <div class="form-group">
               <label for="spotify-playlist-input">Playlist Spotify (URL, URI ou ID)</label>

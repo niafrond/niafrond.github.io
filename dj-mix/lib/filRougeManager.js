@@ -2,15 +2,11 @@
  * filRougeManager.js — Gestion de la playlist "fil rouge".
  *
  * La playlist fil rouge est une liste de morceaux qui joue en continu en
- * arrière-plan. L'utilisateur peut aussi mettre des morceaux en "file
- * d'attente prioritaire" : ceux-ci passent juste après le morceau en cours.
- * Quand la file prioritaire est vide, la lecture reprend depuis la playlist
- * fil rouge.
+ * arrière-plan. Elle avance simplement dans l'ordre ou en shuffle.
  *
  * Logique :
  *   - nextTrack() : retourne le prochain morceau à jouer
- *     1. S'il y a un morceau en file prioritaire → on le prend
- *     2. Sinon → on prend le suivant dans la playlist fil rouge
+ *     1. On prend le suivant dans la playlist fil rouge
  *   - La playlist fil rouge est persistée dans localStorage
  *   - L'index courant de la playlist fil rouge est aussi persisté
  */
@@ -39,9 +35,6 @@ const logger = createLogger('filRouge');
 export function createFilRougeManager() {
   /** @type {FilRougeItem[]} */
   let playlist = [];
-
-  /** @type {FilRougeItem[]} */
-  let priorityQueue = [];
 
   /** Index courant dans la playlist fil rouge (-1 = pas encore commencé). */
   let currentIndex = -1;
@@ -181,61 +174,15 @@ export function createFilRougeManager() {
     save();
   }
 
-  // ── File d'attente prioritaire ──────────────────────────────────────────
-
-  /**
-   * Ajoute un morceau en file d'attente prioritaire.
-   * Ce morceau sera lu juste après le morceau en cours.
-   * @param {FilRougeItem} item
-   * @returns {boolean} true si ajouté, false si doublon
-   */
-  function addToPriorityQueue(item) {
-    if (!item) return false;
-    const isDuplicate = priorityQueue.some(
-      (p) => p.id === item.id || (p.name === item.name && p.artist === item.artist)
-    );
-    if (isDuplicate) {
-      logger.debug('filRouge.addToPriorityQueue.duplicate', { name: item.name });
-      return false;
-    }
-    priorityQueue.push(deserializeItem(serializeItem(item)));
-    logger.info('filRouge.addToPriorityQueue', { name: item.name, queueLength: priorityQueue.length });
-    return true;
-  }
-
-  /**
-   * Supprime un morceau de la file prioritaire par index.
-   */
-  function removeFromPriorityQueue(index) {
-    if (index < 0 || index >= priorityQueue.length) return;
-    priorityQueue.splice(index, 1);
-  }
-
-  /**
-   * Vide la file d'attente prioritaire.
-   */
-  function clearPriorityQueue() {
-    priorityQueue = [];
-  }
-
   // ── Sélection du prochain morceau ──────────────────────────────────────
 
   /**
    * Retourne le prochain morceau à lire.
-   *   1. Si la file prioritaire a un morceau → le retire et le retourne
-   *   2. Sinon → avance dans la playlist fil rouge et retourne le suivant
+  *   1. Avance dans la playlist fil rouge et retourne le suivant
    *
    * @returns {FilRougeItem|null}
    */
   function getNextTrack() {
-    // Priorité 1 : file d'attente prioritaire
-    if (priorityQueue.length > 0) {
-      const next = priorityQueue.shift();
-      logger.info('filRouge.getNextTrack.fromPriority', { name: next.name, remainingPriority: priorityQueue.length });
-      return next;
-    }
-
-    // Priorité 2 : playlist fil rouge
     if (playlist.length === 0) {
       logger.debug('filRouge.getNextTrack.empty');
       return null;
@@ -263,9 +210,6 @@ export function createFilRougeManager() {
    * @returns {FilRougeItem|null}
    */
   function peekNextTrack() {
-    if (priorityQueue.length > 0) {
-      return priorityQueue[0];
-    }
     if (playlist.length === 0) return null;
     const peekIndex = shuffleEnabled
       ? 0 // can't predict shuffle
@@ -277,14 +221,7 @@ export function createFilRougeManager() {
    * Indique si le fil rouge est actif (a des morceaux).
    */
   function isActive() {
-    return playlist.length > 0 || priorityQueue.length > 0;
-  }
-
-  /**
-   * Indique s'il y a des morceaux en file prioritaire.
-   */
-  function hasPriorityTracks() {
-    return priorityQueue.length > 0;
+    return playlist.length > 0;
   }
 
   // ── Getters ─────────────────────────────────────────────────────────────
@@ -293,20 +230,25 @@ export function createFilRougeManager() {
     return playlist.slice();
   }
 
-  function getPriorityQueue() {
-    return priorityQueue.slice();
-  }
-
   function getPlaylistLength() {
     return playlist.length;
   }
 
-  function getPriorityQueueLength() {
-    return priorityQueue.length;
-  }
-
   function getCurrentIndex() {
     return currentIndex;
+  }
+
+  /**
+   * Positionne l'index courant sur un morceau specifique de la playlist.
+   * @param {number} index
+   * @returns {boolean} true si index valide, sinon false
+   */
+  function setCurrentIndex(index) {
+    if (!Number.isInteger(index)) return false;
+    if (index < 0 || index >= playlist.length) return false;
+    currentIndex = index;
+    save();
+    return true;
   }
 
   function isShuffleEnabled() {
@@ -332,14 +274,7 @@ export function createFilRougeManager() {
     getPlaylist,
     getPlaylistLength,
     getCurrentIndex,
-
-    // File prioritaire
-    addToPriorityQueue,
-    removeFromPriorityQueue,
-    clearPriorityQueue,
-    getPriorityQueue,
-    getPriorityQueueLength,
-    hasPriorityTracks,
+    setCurrentIndex,
 
     // Lecture
     getNextTrack,

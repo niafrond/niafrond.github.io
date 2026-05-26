@@ -31,6 +31,7 @@ function makeTrack(overrides = {}) {
 function makeRenderer({
   queue = [],
   currentTrackId = null,
+  currentIndexOverride = null,
   isPlaying = false,
   deckBCueIndex = -1,
   deckCueDeck = null,
@@ -55,7 +56,9 @@ function makeRenderer({
     // Getters d'état
     getQueue: () => queue,
     getDjMode: () => djMode,
-    getCurrentIndex: () => queue.findIndex((t) => t.id === currentTrackId),
+    getCurrentIndex: () => (currentIndexOverride == null
+      ? queue.findIndex((t) => t.id === currentTrackId)
+      : currentIndexOverride),
     getCurrentTrackId: () => currentTrackId,
     getIsPlaying: () => isPlaying,
     getDeckBCueIndex: () => deckBCueIndex,
@@ -200,6 +203,28 @@ describe('buildQueueHTML', () => {
     expect(() => buildQueueHTML()).not.toThrow();
     const html = buildQueueHTML();
     expect(html).not.toBe('');
+  });
+
+  test('n’affiche que les 5 morceaux lus précédents et les grise', () => {
+    const tracks = Array.from({ length: 10 }, (_, i) => makeTrack({
+      id: `t${i}`,
+      name: `Track ${i}`,
+    }));
+    const { buildQueueHTML } = makeRenderer({
+      queue: tracks,
+      currentTrackId: 't7',
+      currentIndexOverride: 7,
+    });
+
+    const html = buildQueueHTML();
+
+    expect(html).not.toContain('data-index="0"');
+    expect(html).not.toContain('data-index="1"');
+    expect(html).toContain('data-index="2"');
+    expect(html).toContain('data-index="9"');
+    expect(html).toContain('class="queue-item is-played" data-index="2"');
+    expect(html).toContain('class="queue-item is-played" data-index="6"');
+    expect(html).toContain('class="queue-item is-current" data-index="7"');
   });
 
   test('chips BPM et genre affichées en mode dance si présentes', () => {

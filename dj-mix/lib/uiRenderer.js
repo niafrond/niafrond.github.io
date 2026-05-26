@@ -1,5 +1,7 @@
 import { escHtml, extractTrackBpm, extractTrackGenre, formatTime } from './searchUtils.js';
 
+const MAX_VISIBLE_PLAYED_TRACKS = 5;
+
 export function createDjMixRenderer(options) {
   const {
     deckAPanel,
@@ -190,11 +192,15 @@ export function createDjMixRenderer(options) {
 
   function buildQueueHTML() {
     const queue = getQueue();
+    const currentIndex = getCurrentIndex();
     const currentTrackId = getCurrentTrackId();
     const isPlaying = getIsPlaying();
     const deckBCueIndex = getDeckBCueIndex();
     const deckCueDeck = getDeckCueDeck();
     const deckDisplayItems = getDeckDisplayItems();
+    const visibleStartIndex = currentIndex > 0
+      ? Math.max(0, currentIndex - MAX_VISIBLE_PLAYED_TRACKS)
+      : 0;
 
     const loadedDeckByTrackId = new Map();
     const deckAId = deckDisplayItems?.A?.id;
@@ -205,9 +211,15 @@ export function createDjMixRenderer(options) {
       loadedDeckByTrackId.set(deckBId, existing ? 'AB' : 'B');
     }
 
-    return queue.map((item, i) => {
-      const isCurrent = item.id === currentTrackId;
-      const cls = isCurrent ? 'queue-item is-current' : 'queue-item';
+    return queue.slice(visibleStartIndex).map((item, offset) => {
+      const i = visibleStartIndex + offset;
+      const isCurrent = i === currentIndex || (currentIndex < 0 && item.id === currentTrackId);
+      const isPlayed = currentIndex > 0 && i < currentIndex;
+      const cls = [
+        'queue-item',
+        isCurrent ? 'is-current' : '',
+        isPlayed ? 'is-played' : '',
+      ].filter(Boolean).join(' ');
       const showPlayingBars = isCurrent && isPlaying;
       const loadedDeck = loadedDeckByTrackId.get(item.id) || '';
       const cueALoaded = loadedDeck === 'A' || loadedDeck === 'AB';

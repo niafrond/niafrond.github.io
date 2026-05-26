@@ -281,7 +281,7 @@ export function createPlaylistManager(options) {
           <button class="cache-fade-btn" data-index="${sourceIndex}" aria-label="Charger sur platine inactive puis AutoMix">Fade</button>
           <button class="cache-add-btn" data-index="${sourceIndex}" aria-label="Ajouter a la file">➕</button>
           <button class="cache-filrouge-btn" data-index="${sourceIndex}" aria-label="Ajouter au fil rouge" title="Ajouter au fil rouge">🎶</button>
-          <button class="cache-priority-btn" data-index="${sourceIndex}" aria-label="File prioritaire" title="Ajouter à la file prioritaire">⏭</button>
+          <button class="cache-priority-btn" data-index="${sourceIndex}" aria-label="File du mix" title="Ajouter à la file du mix">⏭</button>
           <button class="cache-delete-btn" data-index="${sourceIndex}" aria-label="Supprimer du cache API">🗑</button>
         </div>
       </div>
@@ -423,8 +423,17 @@ export function createPlaylistManager(options) {
       return;
     }
 
-    queue.push(item);
+    const currentIndex = getCurrentIndex();
+    const currentTrack = currentIndex >= 0 ? queue[currentIndex] : null;
+    const currentIsFilRouge = currentTrack?.queueSource === 'fil-rouge';
+    const firstFilRougeIndex = queue.findIndex((entry) => entry.queueSource === 'fil-rouge');
+    const insertIndex = currentIsFilRouge
+      ? Math.min(currentIndex + 1, queue.length)
+      : (firstFilRougeIndex >= 0 ? firstFilRougeIndex : queue.length);
+    queue.splice(insertIndex, 0, item);
+
     logger.info('playlist.cacheItem.addedToQueue', {
+      addedIndex: insertIndex,
       id: item.id,
       name: item.name,
       artist: item.artist,

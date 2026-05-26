@@ -28,6 +28,7 @@ const AUTO_MODE_HISTORY_KEY = 'dj-mix:auto-mode:history';
 export function createAutoModeManager({
   apiHealthMonitor,
   getDownloaderApiUrl,
+  getFilRougeManager,
   getQueue,
   getCurrentTrackId,
   getCurrentTrackIndex,
@@ -1044,6 +1045,20 @@ export function createAutoModeManager({
     return references;
   }
 
+  function isTrackAlreadyQueued(queue, track) {
+    if (!Array.isArray(queue) || !track) return false;
+    const trackId = track.id || track.ratingKey || track.uri || null;
+    const trackName = String(track.trackName || track.name || track.title || '').trim();
+    const trackArtist = String(track.artistName || track.artist || '').trim();
+
+    return queue.some((item) => {
+      if (!item) return false;
+      const itemId = item.id || item.ratingKey || item.uri || null;
+      if (trackId && itemId && itemId === trackId) return true;
+      return trackName && item.name === trackName && item.artist === trackArtist;
+    });
+  }
+
   /**
    * Search for recommendations and prepare next track
    */
@@ -1069,6 +1084,39 @@ export function createAutoModeManager({
         queueLength: queue.length,
       });
       return false;
+    }
+
+    const filRougeManager = getFilRougeManager?.();
+    if (filRougeManager?.isActive?.()) {
+      const nextFromFilRouge = filRougeManager.getNextTrack?.();
+      if (nextFromFilRouge && !isTrackAlreadyQueued(queue, nextFromFilRouge)) {
+        logger?.info?.('autoDj: using fil rouge track instead of searching', {
+          currentTrackId: currentTrack.id,
+          trackName: nextFromFilRouge.name,
+          artistName: nextFromFilRouge.artist,
+        });
+
+        await addToQueue(nextFromFilRouge, {
+          source: 'fil-rouge',
+          autoDjReferenceTrackId: currentTrack.id || null,
+          showAddedToast: false,
+        });
+
+        pendingNextTrack = nextFromFilRouge;
+        showToast?.(
+          `🎶 Fil rouge: "${nextFromFilRouge.name || nextFromFilRouge.trackName || 'morceau'}" ajouté à la queue`,
+          false
+        );
+        return true;
+      }
+
+      if (nextFromFilRouge) {
+        logger?.debug?.('autoDj: fil rouge track already queued, skipping', {
+          currentTrackId: currentTrack.id,
+          trackName: nextFromFilRouge.name,
+          artistName: nextFromFilRouge.artist,
+        });
+      }
     }
 
     // Avoid too frequent searches

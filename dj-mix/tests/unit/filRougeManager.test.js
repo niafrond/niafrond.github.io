@@ -46,44 +46,8 @@ describe('filRougeManager', () => {
     });
   });
 
-  describe('priority queue', () => {
-    test('adds items to priority queue', () => {
-      const mgr = createFilRougeManager();
-      const added = mgr.addToPriorityQueue({ id: '1', name: 'Song A', artist: 'A' });
-      expect(added).toBe(true);
-      expect(mgr.getPriorityQueueLength()).toBe(1);
-    });
-
-    test('rejects duplicates in priority queue', () => {
-      const mgr = createFilRougeManager();
-      mgr.addToPriorityQueue({ id: '1', name: 'Song A', artist: 'A' });
-      const added = mgr.addToPriorityQueue({ id: '1', name: 'Song A', artist: 'A' });
-      expect(added).toBe(false);
-      expect(mgr.getPriorityQueueLength()).toBe(1);
-    });
-
-    test('removes from priority queue', () => {
-      const mgr = createFilRougeManager();
-      mgr.addToPriorityQueue({ id: '1', name: 'Song A', artist: 'A' });
-      mgr.addToPriorityQueue({ id: '2', name: 'Song B', artist: 'B' });
-      mgr.removeFromPriorityQueue(0);
-      expect(mgr.getPriorityQueueLength()).toBe(1);
-      expect(mgr.getPriorityQueue()[0].name).toBe('Song B');
-    });
-  });
-
   describe('getNextTrack', () => {
-    test('returns from priority queue first', () => {
-      const mgr = createFilRougeManager();
-      mgr.addToPlaylist({ id: '1', name: 'Playlist Song', artist: 'A' });
-      mgr.addToPriorityQueue({ id: '2', name: 'Priority Song', artist: 'B' });
-
-      const next = mgr.getNextTrack();
-      expect(next.name).toBe('Priority Song');
-      expect(mgr.getPriorityQueueLength()).toBe(0);
-    });
-
-    test('falls back to playlist when priority queue is empty', () => {
+    test('returns from playlist first', () => {
       const mgr = createFilRougeManager();
       mgr.addToPlaylist({ id: '1', name: 'Song A', artist: 'A' });
       mgr.addToPlaylist({ id: '2', name: 'Song B', artist: 'B' });
@@ -110,18 +74,6 @@ describe('filRougeManager', () => {
       const mgr = createFilRougeManager();
       expect(mgr.getNextTrack()).toBeNull();
     });
-
-    test('priority queue exhausts before playlist continues', () => {
-      const mgr = createFilRougeManager();
-      mgr.addToPlaylist({ id: '1', name: 'P1', artist: 'A' });
-      mgr.addToPlaylist({ id: '2', name: 'P2', artist: 'A' });
-      mgr.addToPriorityQueue({ id: '3', name: 'Q1', artist: 'B' });
-      mgr.addToPriorityQueue({ id: '4', name: 'Q2', artist: 'B' });
-
-      expect(mgr.getNextTrack().name).toBe('Q1');
-      expect(mgr.getNextTrack().name).toBe('Q2');
-      expect(mgr.getNextTrack().name).toBe('P1'); // now falls back to playlist
-    });
   });
 
   describe('isActive', () => {
@@ -133,12 +85,6 @@ describe('filRougeManager', () => {
     test('returns true with playlist items', () => {
       const mgr = createFilRougeManager();
       mgr.addToPlaylist({ id: '1', name: 'A', artist: 'A' });
-      expect(mgr.isActive()).toBe(true);
-    });
-
-    test('returns true with priority queue items', () => {
-      const mgr = createFilRougeManager();
-      mgr.addToPriorityQueue({ id: '1', name: 'A', artist: 'A' });
       expect(mgr.isActive()).toBe(true);
     });
   });
@@ -178,15 +124,26 @@ describe('filRougeManager', () => {
       // Peek again - should still be Song A since we didn't advance
       expect(mgr.peekNextTrack().name).toBe('Song A');
     });
+  });
 
-    test('returns priority queue item when available', () => {
+  describe('setCurrentIndex', () => {
+    test('sets current index when valid', () => {
       const mgr = createFilRougeManager();
-      mgr.addToPlaylist({ id: '1', name: 'Playlist Song', artist: 'A' });
-      mgr.addToPriorityQueue({ id: '2', name: 'Priority Song', artist: 'B' });
+      mgr.addToPlaylist({ id: '1', name: 'Song A', artist: 'A' });
+      mgr.addToPlaylist({ id: '2', name: 'Song B', artist: 'B' });
 
-      expect(mgr.peekNextTrack().name).toBe('Priority Song');
-      // Priority queue should not be modified
-      expect(mgr.getPriorityQueueLength()).toBe(1);
+      const updated = mgr.setCurrentIndex(1);
+      expect(updated).toBe(true);
+      expect(mgr.getCurrentIndex()).toBe(1);
+    });
+
+    test('rejects invalid index', () => {
+      const mgr = createFilRougeManager();
+      mgr.addToPlaylist({ id: '1', name: 'Song A', artist: 'A' });
+
+      const updated = mgr.setCurrentIndex(99);
+      expect(updated).toBe(false);
+      expect(mgr.getCurrentIndex()).toBe(-1);
     });
   });
 });
