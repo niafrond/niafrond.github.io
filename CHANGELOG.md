@@ -1,3 +1,11 @@
+## [1.209.0](https://github.com/niafrond/niafrond.github.io/compare/v1.208.0...v1.209.0) (2026-05-26)
+
+### Features
+
+* add Spotify connection badge and enhance UI for connection status ([d2ac451](https://github.com/niafrond/niafrond.github.io/commit/d2ac4511b478b87c2e59b8ef528d6d9e4e9ef8fd))
+* add Spotify playlist history storage key and enhance UI for playlist selection ([217b5e8](https://github.com/niafrond/niafrond.github.io/commit/217b5e87e19c92f744fb5c241276890d54e17e93))
+* implement priority queue for fil rouge playlist management and enhance Spotify fetch retry logic ([fe9fa7b](https://github.com/niafrond/niafrond.github.io/commit/fe9fa7b377de11e5d0181c3f2bc91705d6e63b2b))
+
 ## [1.208.0](https://github.com/niafrond/niafrond.github.io/compare/v1.207.1...v1.208.0) (2026-05-25)
 
 ### Features
