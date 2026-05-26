@@ -364,6 +364,24 @@
 
           <div class="config-block">
             <div class="config-label">
+              <span>Playlist TXT (fil rouge)</span>
+            </div>
+            <div class="form-group">
+              <label for="txt-playlist-file-input">Fichier TXT (une ligne = artiste - titre)</label>
+              <input type="file" id="txt-playlist-file-input" accept=".txt,text/plain">
+            </div>
+            <div class="form-group">
+              <label for="txt-playlist-textarea">Ou coller directement (artiste - titre, une par ligne)</label>
+              <textarea id="txt-playlist-textarea" rows="5" placeholder="Daft Punk - Around The World&#10;Michael Jackson - Thriller&#10;..." autocomplete="off" spellcheck="false" style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:14px;font-family:inherit;resize:vertical;color:var(--text);"></textarea>
+            </div>
+            <div class="controls" style="justify-content:flex-start; gap:10px;">
+              <button id="txt-import-filrouge-btn" class="connect-btn connect-btn--secondary" type="button">Importer vers fil rouge</button>
+            </div>
+            <div id="txt-playlist-status" class="setup-subtitle">Importez une playlist au format TXT (artiste - titre) sans passer par Spotify.</div>
+          </div>
+
+          <div class="config-block">
+            <div class="config-label">
               <span>Logs console</span>
             </div>
             <label class="toggle-row" for="debug-logs-toggle">

@@ -605,6 +605,10 @@ const spotifyPlaylistInput = document.getElementById('spotify-playlist-input');
 const spotifyImportFilRougeBtn = document.getElementById('spotify-import-filrouge-btn');
 const spotifyStatus = document.getElementById('spotify-status');
 const spotifyConnectionBadge = document.getElementById('spotify-connection-badge');
+const txtPlaylistFileInput = document.getElementById('txt-playlist-file-input');
+const txtPlaylistTextarea = document.getElementById('txt-playlist-textarea');
+const txtImportFilRougeBtn = document.getElementById('txt-import-filrouge-btn');
+const txtPlaylistStatus = document.getElementById('txt-playlist-status');
 const debugLogsToggle = document.getElementById('debug-logs-toggle');
 const configDjModeDanceBtn = document.getElementById('config-dj-mode-dance-btn');
 const configDjModeMusicBtn = document.getElementById('config-dj-mode-music-btn');
@@ -1131,6 +1135,66 @@ function applySpotifyPlaylistToFilRouge(tracks) {
   for (const track of tracks) {
     filRougeManager.addToPlaylist(track);
   }
+  renderFilRouge();
+}
+
+/**
+ * Parses a TXT playlist where each line is "artiste - titre".
+ * Lines starting with '#' or empty lines are ignored.
+ * @param {string} text
+ * @returns {Array<{id:string, name:string, artist:string, artUrl:string, duration:number, bpm:null, genre:string, cachePath:string, persistedSourceUrl:string, ratingKey:string, stemsStatus:string, stems:null, source:string}>}
+ */
+function parseTxtPlaylist(text) {
+  const tracks = [];
+  const lines = String(text || '').split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const dashIdx = trimmed.indexOf(' - ');
+    let artist, name;
+    if (dashIdx >= 0) {
+      artist = trimmed.slice(0, dashIdx).trim();
+      name = trimmed.slice(dashIdx + 3).trim();
+    } else {
+      artist = 'Artiste inconnu';
+      name = trimmed;
+    }
+    if (!name) continue;
+    tracks.push({
+      id: `txt-${tracks.length}-${encodeURIComponent(artist)}-${encodeURIComponent(name)}`,
+      name,
+      artist: artist || 'Artiste inconnu',
+      artUrl: '',
+      duration: 0,
+      bpm: null,
+      genre: '',
+      cachePath: '',
+      persistedSourceUrl: '',
+      ratingKey: '',
+      stemsStatus: '',
+      stems: null,
+      source: 'txt',
+    });
+  }
+  return tracks;
+}
+
+function setTxtPlaylistStatus(msg, isError = false) {
+  if (!txtPlaylistStatus) return;
+  txtPlaylistStatus.textContent = msg;
+  txtPlaylistStatus.style.color = isError ? 'var(--error, #e55)' : '';
+}
+
+function applyTxtPlaylistToFilRouge(tracks) {
+  stopSpotifyFilRougeSync();
+  writeSpotifyFilRougeSource(null);
+  spotifyPrefetchGeneration++;
+  filRougeManager.clearPriorityQueue();
+  filRougeManager.clearPlaylist();
+  for (const track of tracks) {
+    filRougeManager.addToPlaylist(track);
+  }
+  updateSpotifyConfigUi();
   renderFilRouge();
 }
 
@@ -1935,6 +1999,31 @@ spotifyImportFilRougeBtn?.addEventListener('click', async () => {
   } catch (err) {
     setSpotifyStatus(`Import Spotify impossible: ${err.message}`, true);
     showToast(`Import Spotify impossible: ${err.message}`, true);
+  }
+});
+
+txtImportFilRougeBtn?.addEventListener('click', async () => {
+  try {
+    let text = '';
+    const file = txtPlaylistFileInput?.files?.[0];
+    if (file) {
+      text = await file.text();
+    } else {
+      text = txtPlaylistTextarea?.value || '';
+    }
+    const tracks = parseTxtPlaylist(text);
+    if (!tracks.length) {
+      setTxtPlaylistStatus('Aucun morceau trouvé. Vérifiez le format (artiste - titre).', true);
+      return;
+    }
+    applyTxtPlaylistToFilRouge(tracks);
+    if (txtPlaylistFileInput) txtPlaylistFileInput.value = '';
+    if (txtPlaylistTextarea) txtPlaylistTextarea.value = '';
+    setTxtPlaylistStatus(`Fil rouge importé depuis TXT (${tracks.length} morceau${tracks.length > 1 ? 'x' : ''}).`);
+    showToast(`Fil rouge importé depuis TXT (${tracks.length} morceau${tracks.length > 1 ? 'x' : ''})`);
+  } catch (err) {
+    setTxtPlaylistStatus(`Import TXT impossible: ${err.message}`, true);
+    showToast(`Import TXT impossible: ${err.message}`, true);
   }
 });
 
