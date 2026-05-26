@@ -6,6 +6,9 @@ const SPOTIFY_API_BASE_URL = 'https://api.spotify.com/v1';
 const SPOTIFY_SCOPES = 'playlist-read-private playlist-read-collaborative';
 const TOKEN_REFRESH_SKEW_MS = 60_000;
 const SPOTIFY_PLAYLIST_HISTORY_MAX = 20;
+const SPOTIFY_FETCH_MAX_RETRIES = 2;
+const SPOTIFY_FETCH_BASE_BACKOFF_MS = 1000;
+const SPOTIFY_FETCH_MAX_BACKOFF_MS = 30000;
 
 function safeSetStorage(key, value) {
   try {
@@ -305,6 +308,21 @@ function parseRetryAfterMs(value) {
   return 0;
 }
 
+function waitMs(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, Math.max(0, Number(ms) || 0));
+  });
+}
+
+function computeRetryDelayMs(attempt, retryAfterMs = 0) {
+  const jitterMs = Math.floor(Math.random() * 250);
+  if (retryAfterMs > 0) {
+    return Math.min(retryAfterMs + jitterMs, SPOTIFY_FETCH_MAX_BACKOFF_MS);
+  }
+  const exponential = SPOTIFY_FETCH_BASE_BACKOFF_MS * (2 ** Math.max(0, attempt));
+  return Math.min(exponential + jitterMs, SPOTIFY_FETCH_MAX_BACKOFF_MS);
+}
+
 export function createSpotifyClient(options = {}) {
   const {
     redirectUri = window.location.origin + window.location.pathname,
@@ -446,17 +464,41 @@ export function createSpotifyClient(options = {}) {
     const endpoint = /^https?:\/\//i.test(pathOrUrl)
       ? pathOrUrl
       : `${SPOTIFY_API_BASE_URL}${pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`}`;
-    const res = await fetch(endpoint, {
-      headers: { Authorization: 'Bearer ' + token },
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok) {
+    for (let attempt = 0; attempt <= SPOTIFY_FETCH_MAX_RETRIES; attempt++) {
+      let res;
+      try {
+        res = await fetch(endpoint, {
+          headers: { Authorization: 'Bearer ' + token },
+        });
+      } catch (networkErr) {
+        const canRetryNetwork = attempt < SPOTIFY_FETCH_MAX_RETRIES;
+        if (canRetryNetwork) {
+          await waitMs(computeRetryDelayMs(attempt));
+          continue;
+        }
+        throw networkErr;
+      }
+
+      const data = await res.json().catch(() => null);
+      if (res.ok) {
+        return data;
+      }
+
+      const retryAfterMs = parseRetryAfterMs(res.headers.get('Retry-After'));
+      const shouldRetry = res.status === 429 || res.status === 502 || res.status === 503 || res.status === 504;
+      const canRetry = shouldRetry && attempt < SPOTIFY_FETCH_MAX_RETRIES;
+      if (canRetry) {
+        await waitMs(computeRetryDelayMs(attempt, retryAfterMs));
+        continue;
+      }
+
       const err = new Error(data?.error?.message || `Spotify HTTP ${res.status}`);
       err.status = res.status;
-      err.retryAfterMs = parseRetryAfterMs(res.headers.get('Retry-After'));
+      err.retryAfterMs = retryAfterMs;
       throw err;
     }
-    return data;
+
+    throw new Error('Spotify request failed unexpectedly');
   }
 
   async function fetchPlaylistSnapshot(playlistId) {
@@ -487,7 +529,7 @@ export function createSpotifyClient(options = {}) {
   async function fetchPlaylistTracks(playlistId) {
     const allItems = [];
     const fields = 'items(is_local,item(type,id,uri,name,duration_ms,artists(name),album(images(url))),track(type,id,uri,name,duration_ms,artists(name),album(images(url)))),next,total';
-    let nextUrl = `${SPOTIFY_API_BASE_URL}/playlists/${encodeURIComponent(playlistId)}/items?fields=${encodeURIComponent(fields)}&limit=50&additional_types=track,episode`;
+    let nextUrl = `${SPOTIFY_API_BASE_URL}/playlists/${encodeURIComponent(playlistId)}/items?fields=${encodeURIComponent(fields)}&limit=100&additional_types=track,episode`;
     while (nextUrl) {
       const data = await spotifyFetch(nextUrl);
       const items = Array.isArray(data?.items) ? data.items : [];

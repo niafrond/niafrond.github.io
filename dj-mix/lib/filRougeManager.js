@@ -36,6 +36,9 @@ export function createFilRougeManager() {
   /** @type {FilRougeItem[]} */
   let playlist = [];
 
+  /** @type {FilRougeItem[]} */
+  let priorityQueue = [];
+
   /** Index courant dans la playlist fil rouge (-1 = pas encore commencé). */
   let currentIndex = -1;
 
@@ -48,6 +51,7 @@ export function createFilRougeManager() {
     try {
       const data = {
         playlist: playlist.map(serializeItem),
+        priorityQueue: priorityQueue.map(serializeItem),
         currentIndex,
         shuffleEnabled,
       };
@@ -65,6 +69,9 @@ export function createFilRougeManager() {
       const data = JSON.parse(raw);
       if (Array.isArray(data.playlist)) {
         playlist = data.playlist.map(deserializeItem);
+      }
+      if (Array.isArray(data.priorityQueue)) {
+        priorityQueue = data.priorityQueue.map(deserializeItem);
       }
       if (typeof data.currentIndex === 'number') {
         currentIndex = data.currentIndex;
@@ -129,6 +136,46 @@ export function createFilRougeManager() {
   }
 
   /**
+   * Ajoute un morceau a la file prioritaire.
+   * @param {FilRougeItem} item
+   * @returns {boolean} true si ajoute, false si doublon
+   */
+  function addToPriorityQueue(item) {
+    if (!item) return false;
+    const isDuplicate = priorityQueue.some(
+      (p) => p.id === item.id || (p.name === item.name && p.artist === item.artist)
+    );
+    if (isDuplicate) {
+      logger.debug('filRouge.addToPriorityQueue.duplicate', { name: item.name });
+      return false;
+    }
+    priorityQueue.push(deserializeItem(serializeItem(item)));
+    logger.info('filRouge.addToPriorityQueue', { name: item.name, priorityLength: priorityQueue.length });
+    save();
+    return true;
+  }
+
+  /**
+   * Supprime un morceau de la file prioritaire par index.
+   * @param {number} index
+   */
+  function removeFromPriorityQueue(index) {
+    if (index < 0 || index >= priorityQueue.length) return;
+    const removed = priorityQueue.splice(index, 1)[0];
+    logger.info('filRouge.removeFromPriorityQueue', { name: removed?.name, priorityLength: priorityQueue.length });
+    save();
+  }
+
+  /**
+   * Vide la file prioritaire.
+   */
+  function clearPriorityQueue() {
+    priorityQueue = [];
+    logger.info('filRouge.clearPriorityQueue');
+    save();
+  }
+
+  /**
    * Supprime un morceau de la playlist fil rouge par index.
    * @param {number} index
    */
@@ -183,6 +230,17 @@ export function createFilRougeManager() {
    * @returns {FilRougeItem|null}
    */
   function getNextTrack() {
+    if (priorityQueue.length > 0) {
+      const nextPriority = priorityQueue.shift() || null;
+      save();
+      if (!nextPriority) return null;
+      logger.info('filRouge.getNextTrack.fromPriorityQueue', {
+        name: nextPriority.name,
+        priorityLength: priorityQueue.length,
+      });
+      return { ...nextPriority, lastTouchedAt: Date.now() };
+    }
+
     if (playlist.length === 0) {
       logger.debug('filRouge.getNextTrack.empty');
       return null;
@@ -234,6 +292,14 @@ export function createFilRougeManager() {
     return playlist.length;
   }
 
+  function getPriorityQueue() {
+    return priorityQueue.slice();
+  }
+
+  function getPriorityQueueLength() {
+    return priorityQueue.length;
+  }
+
   function getCurrentIndex() {
     return currentIndex;
   }
@@ -268,11 +334,16 @@ export function createFilRougeManager() {
   return {
     // Playlist fil rouge
     addToPlaylist,
+    addToPriorityQueue,
     removeFromPlaylist,
+    removeFromPriorityQueue,
     clearPlaylist,
+    clearPriorityQueue,
     reorderPlaylist,
     getPlaylist,
     getPlaylistLength,
+    getPriorityQueue,
+    getPriorityQueueLength,
     getCurrentIndex,
     setCurrentIndex,
 
