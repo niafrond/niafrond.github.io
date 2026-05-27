@@ -184,10 +184,14 @@ export function createDjMixRenderer(options) {
   }
 
   function renderSourceBadge(item) {
-    if (item.sourceState === 'ready') return '<span class="queue-cache-dot is-ready" aria-label="Cache prêt" title="Cache prêt"></span>';
-    if (item.sourceState === 'resolving') return '<span class="queue-cache-dot is-resolving" aria-label="Cache en cours" title="Cache en cours"></span>';
-    if (item.sourceState === 'error') return '<span class="queue-cache-dot is-error" aria-label="Erreur cache" title="Erreur cache"></span>';
-    return '';
+    let html = '';
+    if (item.queueSource === 'fil-rouge') {
+      html += '<span class="queue-filrouge-badge" title="Fil rouge" aria-label="Fil rouge">fil rouge</span>';
+    }
+    if (item.sourceState === 'ready') html += '<span class="queue-cache-dot is-ready" aria-label="Cache prêt" title="Cache prêt"></span>';
+    else if (item.sourceState === 'resolving') html += '<span class="queue-cache-dot is-resolving" aria-label="Cache en cours" title="Cache en cours"></span>';
+    else if (item.sourceState === 'error') html += '<span class="queue-cache-dot is-error" aria-label="Erreur cache" title="Erreur cache"></span>';
+    return html;
   }
 
   function buildQueueHTML() {
@@ -240,7 +244,7 @@ export function createDjMixRenderer(options) {
       return `
       <div class="${cls}" data-index="${i}" role="button" tabindex="0" draggable="true">
         ${numHtml}
-        <img class="queue-art" src="${escHtml(item.artUrl)}" alt="" loading="lazy">
+        <img class="queue-art"${item.artUrl ? ` src="${escHtml(item.artUrl)}"` : ' hidden'} alt="" loading="lazy" onerror="this.hidden=true">
         <div class="queue-info">
           <div class="queue-name-wrap">
             <div class="queue-name">${escHtml(item.name)}</div>
@@ -353,6 +357,10 @@ export function createDjMixRenderer(options) {
     }
 
     if (artUrl) {
+      inactiveArt.onerror = () => {
+        inactiveArt.hidden = true;
+        inactivePlaceholder.style.display = '';
+      };
       inactiveArt.src = artUrl;
       inactiveArt.hidden = false;
       inactivePlaceholder.style.display = 'none';
@@ -382,6 +390,10 @@ export function createDjMixRenderer(options) {
     const focusPlaceholder = deck === 'A' ? artPlaceholder : nextArtPlaceholder;
 
     if (item.artUrl) {
+      focusArt.onerror = () => {
+        focusArt.hidden = true;
+        focusPlaceholder.style.display = '';
+      };
       focusArt.src = item.artUrl;
       focusArt.hidden = false;
       focusPlaceholder.style.display = 'none';

@@ -123,6 +123,14 @@ export function persistDjModeGenrePrefs(genres) {
   safeSet(STORAGE_KEYS.djModeGenrePrefs, JSON.stringify(Array.isArray(genres) ? genres : []));
 }
 
+export function readAutoSuggestionQueueSearchEnabledSetting() {
+  return readBooleanSetting(STORAGE_KEYS.autoSuggestionQueueSearchEnabled, true);
+}
+
+export function persistAutoSuggestionQueueSearchEnabledSetting(enabled) {
+  persistBooleanSetting(STORAGE_KEYS.autoSuggestionQueueSearchEnabled, enabled);
+}
+
 export function removeQueueSetting() {
   try {
     localStorage.removeItem(STORAGE_KEYS.queue);

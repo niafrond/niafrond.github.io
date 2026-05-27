@@ -55,4 +55,45 @@ describe('autoModeManager', () => {
     });
     expect(searchTracksViaApi).toHaveBeenCalledTimes(1);
   });
+
+  test('skips queued suggestion search when disabled', async () => {
+    const queue = [
+      { id: 'current', name: 'Current Song', artist: 'Artist A' },
+    ];
+    const addToQueue = jest.fn().mockResolvedValue(undefined);
+    const searchTracksViaApi = jest.fn().mockResolvedValue([
+      { id: 'suggestion-1', name: 'Suggestion Song', artist: 'Artist B' },
+    ]);
+
+    const manager = createAutoModeManager({
+      apiHealthMonitor: { isOffline: () => false, recordSuccess: jest.fn(), recordFailure: jest.fn() },
+      getDownloaderApiUrl: () => '',
+      getFilRougeManager: () => ({ isActive: () => false, getNextTrack: () => null }),
+      getQueue: () => queue,
+      getCurrentTrackId: () => 'current',
+      getCurrentTrackIndex: () => 0,
+      searchTracksViaApi,
+      addToQueue,
+      showToast: jest.fn(),
+      logger: { debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() },
+      getTrackMaxDurationSec: () => 0,
+      getAutoFxMinGapMs: () => 14000,
+      getAutoFxMaxGapMs: () => 45000,
+      getDjMode: () => 'music',
+      getDjModeGenrePrefs: () => [],
+      getCurrentBpm: () => 0,
+      onAutomixTimingCalculated: jest.fn(),
+      onMixDataUpdated: jest.fn(),
+      onAutoFxPlanCalculated: jest.fn(),
+    });
+
+    manager.toggleAutoMode();
+    manager.setSuggestionSearchEnabled(false);
+
+    const added = await manager.searchAndAddNextTrack(queue[0]);
+
+    expect(added).toBe(false);
+    expect(searchTracksViaApi).not.toHaveBeenCalled();
+    expect(addToQueue).not.toHaveBeenCalled();
+  });
 });

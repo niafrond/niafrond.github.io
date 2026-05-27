@@ -193,6 +193,20 @@ export function createFilRougeManager() {
   }
 
   /**
+   * Met à jour des champs d'un morceau de la playlist en le cherchant par id.
+   * @param {string|number} id
+   * @param {Partial<FilRougeItem>} patch
+   * @returns {boolean} true si l'item a été trouvé et modifié
+   */
+  function patchPlaylistItem(id, patch) {
+    const idx = playlist.findIndex((p) => p.id === id);
+    if (idx === -1) return false;
+    Object.assign(playlist[idx], patch);
+    save();
+    return true;
+  }
+
+  /**
    * Vide la playlist fil rouge.
    */
   function clearPlaylist() {
@@ -335,6 +349,7 @@ export function createFilRougeManager() {
     // Playlist fil rouge
     addToPlaylist,
     addToPriorityQueue,
+    patchPlaylistItem,
     removeFromPlaylist,
     removeFromPriorityQueue,
     clearPlaylist,

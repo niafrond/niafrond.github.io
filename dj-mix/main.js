@@ -64,6 +64,7 @@ import {
   sortSearchResultsByPopularity,
 } from './lib/searchUtils.js';
 import {
+  persistAutoSuggestionQueueSearchEnabledSetting,
   persistCrossfadeSecondsSetting,
   persistDebugLogsSetting,
   persistFxControlsHiddenSetting,
@@ -72,6 +73,7 @@ import {
   persistTrackMaxDurationEnabledSetting,
   persistTrackMaxDurationSetting,
   persistTransitionModeSetting,
+  readAutoSuggestionQueueSearchEnabledSetting,
   readCrossfadeSecondsSetting,
   readDebugLogsSetting,
   readFxControlsHiddenSetting,
@@ -175,6 +177,7 @@ let autoDjFxSettings = readAutoDjFxSettings();
 let lastAutoDjFxTriggeredAt = 0;
 let djMode = readDjModeSetting(); // 'dance' | 'music'
 let djModeGenrePrefs = readDjModeGenrePrefs(); // string[]
+let autoSuggestionQueueSearchEnabled = readAutoSuggestionQueueSearchEnabledSetting();
 
 function isAutoDjFxTypeAllowed(type) {
   if (!type) return false;
@@ -610,11 +613,13 @@ const txtPlaylistTextarea = document.getElementById('txt-playlist-textarea');
 const txtImportFilRougeBtn = document.getElementById('txt-import-filrouge-btn');
 const txtPlaylistStatus = document.getElementById('txt-playlist-status');
 const debugLogsToggle = document.getElementById('debug-logs-toggle');
+const autoSuggestionQueueSearchToggle = document.getElementById('auto-suggestion-queue-search-toggle');
 const configDjModeDanceBtn = document.getElementById('config-dj-mode-dance-btn');
 const configDjModeMusicBtn = document.getElementById('config-dj-mode-music-btn');
 const configDanceGenrePrefs = document.getElementById('config-dance-genre-prefs');
 const configDanceGenreList = document.getElementById('config-dance-genre-list');
 const debugLogsStatus = document.getElementById('debug-logs-status');
+const autoSuggestionQueueSearchStatus = document.getElementById('auto-suggestion-queue-search-status');
 const ramFilterEnabledToggle = document.getElementById('ram-filter-enabled-toggle');
 const ramTotalMemoryInput = document.getElementById('ram-total-memory-gb');
 const ramFilterStatus = document.getElementById('ram-filter-status');
@@ -891,6 +896,7 @@ const {
   enrichStemsFromServer,
   ensureLocalSource,
   evictTrackSource,
+  isTrackInLocalCache,
   prefetchTrackToLocalCache,
   releaseLocalBlob,
   searchTracksViaApi,
@@ -954,6 +960,48 @@ const playlistManager = createPlaylistManager({
 const { setCacheFilter, switchTab } = playlistManager;
 
 const filRougeManager = createFilRougeManager();
+const filRougeTrackStatusByKey = new Map();
+
+function getFilRougeTrackKey(item) {
+  if (!item) return '';
+  return String(item.id || item.cachePath || `${item.artist || ''}::${item.name || item.title || ''}`);
+}
+
+function hasStemsForTrack(item) {
+  return Boolean(
+    item?.localStemUrls?.vocalsUrl
+      || item?.localStemUrls?.instrumentalUrl
+      || item?.localStemUrls?.echoUrl
+      || item?.localStemUrls?.distortionUrl
+      || item?.stems?.vocalsUrl
+      || item?.stems?.instrumentalUrl
+      || item?.stems?.echoUrl
+      || item?.stems?.distortionUrl
+  );
+}
+
+function setFilRougeTrackStatus(item, patch = {}) {
+  const key = getFilRougeTrackKey(item);
+  if (!key) return;
+  const prev = filRougeTrackStatusByKey.get(key) || {};
+  filRougeTrackStatusByKey.set(key, {
+    ...prev,
+    ...patch,
+    updatedAt: Date.now(),
+  });
+}
+
+function getFilRougeTrackStatus(item) {
+  const key = getFilRougeTrackKey(item);
+  const stored = key ? filRougeTrackStatusByKey.get(key) : null;
+  const stemsOk = hasStemsForTrack(item) || Boolean(stored?.stemsOk);
+  const inferredDone = Boolean(item?.cachePath || item?.persistedSourceUrl);
+  const downloadState = stored?.downloadState || (inferredDone ? 'done' : 'idle');
+  return {
+    downloadState,
+    stemsOk,
+  };
+}
 
 // ── Fil rouge UI rendering ──────────────────────────────────────────────────
 
@@ -981,6 +1029,7 @@ function renderFilRouge() {
     } else {
       filRougePriorityListEl.innerHTML = priorityQueue.map((item, idx) => `
         <div class="filrouge-item filrouge-priority-item" data-index="${idx}">
+          <img class="filrouge-art"${item.artUrl ? ` src="${escHtml(item.artUrl)}"` : ' hidden'} alt="" loading="lazy" onerror="this.hidden=true">
           <div class="filrouge-info">
             <span class="filrouge-pos">${idx + 1}.</span>
             <div class="filrouge-name">${escHtml(item.name || 'Inconnu')}</div>
@@ -998,17 +1047,45 @@ function renderFilRouge() {
       filRougePlaylistListEl.innerHTML = '<div class="filrouge-empty">Playlist vide. Ajoutez des morceaux depuis le Cache.</div>';
     } else {
       filRougePlaylistListEl.innerHTML = playlist.map((item, idx) => `
+        ${(() => {
+          const status = getFilRougeTrackStatus(item);
+          const downloadLabel = status.downloadState === 'downloading'
+            ? 'Download en cours'
+            : status.downloadState === 'done'
+              ? 'Download fini'
+              : status.downloadState === 'error'
+                ? 'Download erreur'
+                : 'Download en attente';
+          const downloadClass = status.downloadState === 'downloading'
+            ? 'is-downloading'
+            : status.downloadState === 'done'
+              ? 'is-done'
+              : status.downloadState === 'error'
+                ? 'is-error'
+                : 'is-idle';
+          const stemsLabel = status.stemsOk ? 'Stems OK' : 'Stems --';
+          const stemsClass = status.stemsOk ? 'is-done' : 'is-idle';
+          return `
         <div class="filrouge-item${idx === filRougeIndex ? ' filrouge-current' : ''}" data-index="${idx}">
+          <img class="filrouge-art"${item.artUrl ? ` src="${escHtml(item.artUrl)}"` : ' hidden'} alt="" loading="lazy" onerror="this.hidden=true">
           <div class="filrouge-info">
             <span class="filrouge-pos">${idx + 1}.</span>
-            <div class="filrouge-name">${escHtml(item.name || 'Inconnu')}</div>
-            <div class="filrouge-artist">${escHtml(item.artist || '')}</div>
+            <div class="filrouge-meta">
+              <div class="filrouge-name">${escHtml(item.name || 'Inconnu')}</div>
+              <div class="filrouge-artist">${escHtml(item.artist || '')}</div>
+              <div class="filrouge-statuses">
+                <span class="filrouge-status ${downloadClass}">${downloadLabel}</span>
+                <span class="filrouge-status ${stemsClass}">${stemsLabel}</span>
+              </div>
+            </div>
           </div>
           <div class="filrouge-actions">
-            <button class="filrouge-priority-add-btn" data-index="${idx}" aria-label="Ajouter à la file prioritaire" title="Ajouter à la file prioritaire">⏭</button>
+            <button class="filrouge-priority-add-btn" data-index="${idx}" aria-label="Ajouter à la file d'attente" title="Ajouter à la file d'attente">⏭</button>
             <button class="filrouge-remove-btn" data-type="playlist" data-index="${idx}" aria-label="Retirer">✕</button>
           </div>
         </div>
+          `;
+        })()}
       `).join('');
     }
   }
@@ -1022,6 +1099,9 @@ function renderFilRouge() {
       if (type === 'priority') {
         filRougeManager.removeFromPriorityQueue(idx);
       } else {
+        const removed = filRougeManager.getPlaylist()[idx];
+        const key = getFilRougeTrackKey(removed);
+        if (key) filRougeTrackStatusByKey.delete(key);
         filRougeManager.removeFromPlaylist(idx);
       }
       renderFilRouge();
@@ -1035,13 +1115,8 @@ function renderFilRouge() {
       const playlist = filRougeManager.getPlaylist();
       const item = playlist[idx];
       if (item) {
-        const added = filRougeManager.addToPriorityQueue(item);
-        if (added) {
-          showToast(`"${item.name}" → file prioritaire`);
-        } else {
-          showToast(`Déjà en file prioritaire`, true);
-        }
-        renderFilRouge();
+        addToQueue(item, { source: 'fil-rouge', showAddedToast: false });
+        showToast(`"${item.name}" → file d'attente`);
       }
     });
   });
@@ -1130,9 +1205,14 @@ function updateSpotifyConfigUi() {
 }
 
 function applySpotifyPlaylistToFilRouge(tracks) {
+  filRougeTrackStatusByKey.clear();
   filRougeManager.clearPriorityQueue();
   filRougeManager.clearPlaylist();
   for (const track of tracks) {
+    setFilRougeTrackStatus(track, {
+      downloadState: track?.cachePath || track?.persistedSourceUrl ? 'done' : 'idle',
+      stemsOk: hasStemsForTrack(track),
+    });
     filRougeManager.addToPlaylist(track);
   }
   renderFilRouge();
@@ -1150,11 +1230,12 @@ function parseTxtPlaylist(text) {
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
-    const dashIdx = trimmed.indexOf(' - ');
     let artist, name;
-    if (dashIdx >= 0) {
-      artist = trimmed.slice(0, dashIdx).trim();
-      name = trimmed.slice(dashIdx + 3).trim();
+    // Accept "artiste - titre" with flexible whitespace and dash variants.
+    const splitMatch = trimmed.match(/^(.+?)\s+(?:-|–|—)\s+(.+)$/u);
+    if (splitMatch) {
+      artist = splitMatch[1].trim();
+      name = splitMatch[2].trim();
     } else {
       artist = 'Artiste inconnu';
       name = trimmed;
@@ -1189,13 +1270,105 @@ function applyTxtPlaylistToFilRouge(tracks) {
   stopSpotifyFilRougeSync();
   writeSpotifyFilRougeSource(null);
   spotifyPrefetchGeneration++;
+  filRougeTrackStatusByKey.clear();
   filRougeManager.clearPriorityQueue();
   filRougeManager.clearPlaylist();
   for (const track of tracks) {
+    setFilRougeTrackStatus(track, {
+      downloadState: 'idle',
+      stemsOk: false,
+    });
     filRougeManager.addToPlaylist(track);
   }
   updateSpotifyConfigUi();
   renderFilRouge();
+}
+
+/**
+ * Recherche l'artwork d'un morceau du fil rouge via l'API et met à jour
+ * l'artUrl dans le gestionnaire fil rouge puis re-rend la liste.
+ * Ne fait rien si le morceau a déjà un artUrl.
+ * @param {import('./lib/filRougeManager.js').FilRougeItem} track
+ */
+async function fetchFilRougeArtwork(track) {
+  if (!track?.id || track.artUrl) return;
+  try {
+    const results = await searchTracksViaApi(`${track.artist} ${track.name}`, 5);
+    const artUrl = results[0]?.artUrl || '';
+    if (artUrl) {
+      filRougeManager.patchPlaylistItem(track.id, { artUrl });
+      renderFilRouge();
+    }
+  } catch (_) {}
+}
+
+/**
+ * Récupère l'artwork d'un item de la file d'attente via l'API si l'artUrl
+ * est vide, met à jour l'objet en place, synchronise le fil rouge si besoin,
+ * et rafraîchit l'affichage (pochette + liste).
+ * @param {object} item  - item de la file d'attente
+ * @param {string} [deck] - deck en cours de lecture (pour rafraîchir la pochette)
+ */
+async function fetchAndStoreArtworkForItem(item, deck) {
+  if (!item || item.artUrl) return;
+  try {
+    const results = await searchTracksViaApi(`${item.artist} ${item.name}`, 5);
+    const artUrl = results[0]?.artUrl || '';
+    if (!artUrl) return;
+    item.artUrl = artUrl;
+    // Sync with fil rouge if this item is tracked there
+    if (item.id) {
+      filRougeManager.patchPlaylistItem(item.id, { artUrl });
+    }
+    updateNowPlaying(item, deck ?? getFocusDeck());
+    renderQueue();
+    renderFilRouge();
+  } catch (_) {}
+}
+
+/**
+ * Preloads TXT-imported tracks through the downloader API so files are
+ * downloaded/cached server-side just like Spotify imports.
+ */
+async function startTxtPlaylistPrefetch(tracks) {
+  if (!Array.isArray(tracks) || tracks.length === 0) return;
+  const generation = ++spotifyPrefetchGeneration;
+  let cached = 0;
+  let failed = 0;
+
+  for (let i = 0; i < tracks.length; i++) {
+    if (spotifyPrefetchGeneration !== generation) return;
+    const track = tracks[i];
+    setFilRougeTrackStatus(track, {
+      downloadState: 'downloading',
+      stemsOk: hasStemsForTrack(track),
+    });
+    renderFilRouge();
+    setTxtPlaylistStatus(`Téléchargement serveur TXT : ${i + 1} / ${tracks.length}…`);
+    const ok = await prefetchTrackToLocalCache(track).catch(() => false);
+    if (ok) {
+      cached++;
+      await enrichStemsFromServer(track).catch(() => {});
+      setFilRougeTrackStatus(track, {
+        downloadState: 'done',
+        stemsOk: hasStemsForTrack(track),
+      });
+    } else {
+      failed++;
+      setFilRougeTrackStatus(track, {
+        downloadState: 'error',
+        stemsOk: hasStemsForTrack(track),
+      });
+    }
+    await fetchFilRougeArtwork(track).catch(() => {});
+    renderFilRouge();
+  }
+
+  if (spotifyPrefetchGeneration !== generation) return;
+  const summary = failed > 0
+    ? `Import TXT : ${cached} mis en cache serveur, ${failed} échec${failed > 1 ? 's' : ''}.`
+    : `Import TXT : ${cached} morceau${cached > 1 ? 'x' : ''} mis en cache serveur.`;
+  setTxtPlaylistStatus(summary, failed > 0 && cached === 0);
 }
 
 function stopSpotifyFilRougeSync() {
@@ -1340,6 +1513,7 @@ filRougeShuffleBtn?.addEventListener('click', () => {
 });
 
 filRougeClearBtn?.addEventListener('click', () => {
+  filRougeTrackStatusByKey.clear();
   filRougeManager.clearPlaylist();
   filRougeManager.clearPriorityQueue();
   writeSpotifyFilRougeSource(null);
@@ -1371,6 +1545,10 @@ function addToFilRouge(item) {
   };
   const added = filRougeManager.addToPlaylist(filRougeItem);
   if (added) {
+    setFilRougeTrackStatus(filRougeItem, {
+      downloadState: filRougeItem.cachePath || filRougeItem.persistedSourceUrl ? 'done' : 'idle',
+      stemsOk: hasStemsForTrack(filRougeItem),
+    });
     showToast(`"${filRougeItem.name}" ajouté au fil rouge`);
   } else {
     showToast(`Déjà dans le fil rouge`, true);
@@ -1383,31 +1561,64 @@ function addToFilRouge(item) {
  */
 function addToPriorityQueue(item) {
   if (!item) return;
-  const filRougeItem = {
-    id: item.id || item.cachePath || `pq-${Date.now()}`,
-    name: item.name || item.trackName || item.title || 'Inconnu',
-    artist: item.artist || item.artistName || 'Artiste inconnu',
-    artUrl: item.artUrl || item.artworkUrl || '',
-    duration: item.duration || 0,
-    bpm: item.bpm || null,
-    genre: item.genre || '',
-    cachePath: item.cachePath || '',
-    persistedSourceUrl: item.persistedSourceUrl || item.url || item.localUrl || item.streamUrl || '',
-    ratingKey: item.ratingKey || '',
-    stemsStatus: item.stemsStatus || '',
-    stems: item.stems || null,
-  };
-  const added = filRougeManager.addToPriorityQueue(filRougeItem);
-  if (added) {
-    showToast(`"${filRougeItem.name}" → file prioritaire`);
-  } else {
-    showToast(`Déjà en file prioritaire`, true);
-  }
-  renderFilRouge();
+  addToQueue(item, { source: 'fil-rouge', showAddedToast: false });
+  const name = item.name || item.trackName || item.title || 'Inconnu';
+  showToast(`"${name}" → file d'attente`);
 }
 
 // Initial render
 renderFilRouge();
+
+/**
+ * Au chargement de la page, vérifie quels morceaux du fil rouge sont déjà
+ * dans le cache local du navigateur et met à jour leurs labels en conséquence.
+ * Les morceaux absents du cache sont téléchargés en séquentiel puis marqués.
+ */
+async function startFilRougeStartupCacheSync() {
+  const playlist = filRougeManager.getPlaylist();
+  if (!playlist.length) return;
+
+  // Phase 1 : vérification rapide du cache sans téléchargement
+  for (const track of playlist) {
+    const inCache = await isTrackInLocalCache(track).catch(() => false);
+    if (inCache) {
+      await enrichStemsFromServer(track).catch(() => {});
+      setFilRougeTrackStatus(track, {
+        downloadState: 'done',
+        stemsOk: hasStemsForTrack(track),
+      });
+    }
+  }
+  renderFilRouge();
+
+  // Phase 2 : télécharger ce qui manque
+  for (const track of playlist) {
+    const key = getFilRougeTrackKey(track);
+    const existing = filRougeTrackStatusByKey.get(key);
+    if (existing?.downloadState === 'done') continue;
+
+    setFilRougeTrackStatus(track, {
+      downloadState: 'downloading',
+      stemsOk: hasStemsForTrack(track),
+    });
+    renderFilRouge();
+
+    const ok = await prefetchTrackToLocalCache(track).catch(() => false);
+    if (ok) {
+      await enrichStemsFromServer(track).catch(() => {});
+      setFilRougeTrackStatus(track, {
+        downloadState: 'done',
+        stemsOk: hasStemsForTrack(track),
+      });
+    } else {
+      setFilRougeTrackStatus(track, {
+        downloadState: 'error',
+        stemsOk: hasStemsForTrack(track),
+      });
+    }
+    renderFilRouge();
+  }
+}
 
 function isCacheTabActive() {
   return Boolean(tabPanels.playlist && tabPanels.playlist.classList.contains('active') && !tabPanels.playlist.hidden);
@@ -2019,8 +2230,9 @@ txtImportFilRougeBtn?.addEventListener('click', async () => {
     applyTxtPlaylistToFilRouge(tracks);
     if (txtPlaylistFileInput) txtPlaylistFileInput.value = '';
     if (txtPlaylistTextarea) txtPlaylistTextarea.value = '';
-    setTxtPlaylistStatus(`Fil rouge importé depuis TXT (${tracks.length} morceau${tracks.length > 1 ? 'x' : ''}).`);
+    setTxtPlaylistStatus(`Fil rouge importé depuis TXT (${tracks.length} morceau${tracks.length > 1 ? 'x' : ''}). Téléchargement serveur en cours…`);
     showToast(`Fil rouge importé depuis TXT (${tracks.length} morceau${tracks.length > 1 ? 'x' : ''})`);
+    await startTxtPlaylistPrefetch(tracks);
   } catch (err) {
     setTxtPlaylistStatus(`Import TXT impossible: ${err.message}`, true);
     showToast(`Import TXT impossible: ${err.message}`, true);
@@ -2041,6 +2253,10 @@ txtImportFilRougeBtn?.addEventListener('click', async () => {
   applyRamFilterSettings({ persist: false, announce: true });
   applyDebugLogsSetting(readDebugLogsSetting(), { persist: false });
   applyTransitionModeSetting(selectedTransitionMode, { persist: false });
+  applyAutoSuggestionQueueSearchSetting(readAutoSuggestionQueueSearchEnabledSetting(), {
+    persist: false,
+    announce: false,
+  });
   
   // Initialize track max duration UI
   updateTrackMaxDurationUI();
@@ -2055,6 +2271,13 @@ txtImportFilRougeBtn?.addEventListener('click', async () => {
     applyDebugLogsSetting(Boolean(debugLogsToggle.checked), { persist: true });
   });
 
+  autoSuggestionQueueSearchToggle?.addEventListener('change', () => {
+    applyAutoSuggestionQueueSearchSetting(Boolean(autoSuggestionQueueSearchToggle.checked), {
+      persist: true,
+      announce: true,
+    });
+  });
+
   loadDownloaderApiConfigIntoForm();
   setupDownloaderApiConfigEvents();
   setupMediaSession();
@@ -2064,10 +2287,24 @@ txtImportFilRougeBtn?.addEventListener('click', async () => {
     if (uiState.currentIndex >= 0 && queue[uiState.currentIndex]) {
       setDeckItem('A', queue[uiState.currentIndex]);
       updateNowPlaying(queue[uiState.currentIndex]);
+      fetchAndStoreArtworkForItem(queue[uiState.currentIndex], 'A').catch(() => {});
     }
   }
   startBlobCleanupLoop();
   showSetupLoading(false);
+
+  // Enrich artworks for persisted fil rouge items that don't have one yet.
+  const filRougeItemsWithoutArt = filRougeManager.getPlaylist().filter((t) => !t.artUrl);
+  if (filRougeItemsWithoutArt.length) {
+    (async () => {
+      for (const track of filRougeItemsWithoutArt) {
+        await fetchFilRougeArtwork(track).catch(() => {});
+      }
+    })().catch(() => {});
+  }
+
+  // Vérification et téléchargement au démarrage des morceaux du fil rouge.
+  startFilRougeStartupCacheSync().catch(() => {});
 
   try {
     await connectLocal();
@@ -2131,6 +2368,38 @@ function hookPlayerEvents() {
     if (pendingAutoplay && uiState.currentIndex >= 0 && queue[uiState.currentIndex]) {
       pendingAutoplay = false;
       await startPlaybackForIndex(uiState.currentIndex, 'play');
+    } else if (!uiState.isPlaying && queue.length === 0 && filRougeManager.isActive()) {
+      pendingAutoplay = false;
+      const nextFromFilRouge = filRougeManager.getNextTrack();
+      if (nextFromFilRouge) {
+        const filRougeItem = {
+          id: nextFromFilRouge.id || `filrouge-${Date.now()}`,
+          uri: nextFromFilRouge.persistedSourceUrl || '',
+          name: nextFromFilRouge.name || 'Inconnu',
+          artist: nextFromFilRouge.artist || 'Artiste inconnu',
+          artUrl: nextFromFilRouge.artUrl || '',
+          duration: nextFromFilRouge.duration || 0,
+          bpm: nextFromFilRouge.bpm || null,
+          genre: nextFromFilRouge.genre || '',
+          cachePath: nextFromFilRouge.cachePath || '',
+          persistedSourceUrl: nextFromFilRouge.persistedSourceUrl || '',
+          ratingKey: nextFromFilRouge.ratingKey || '',
+          stemsStatus: nextFromFilRouge.stemsStatus || '',
+          stems: nextFromFilRouge.stems || null,
+          sourceState: 'idle',
+          sourceError: null,
+          sourceMeta: null,
+          localBlobUrl: null,
+          queueSource: 'fil-rouge',
+          lastTouchedAt: Date.now(),
+        };
+        queue.push(filRougeItem);
+        uiState.currentIndex = 0;
+        uiState.currentTrackId = filRougeItem.id;
+        renderQueue();
+        renderFilRouge();
+        await startPlaybackForIndex(0, 'play');
+      }
     }
   });
 
@@ -2306,7 +2575,7 @@ autoMixBtn?.addEventListener('click', async () => {
     && (hasCue ? preparedIndex === uiState.deckBCueIndex : preparedIndex === sequentialNextIndex);
   let nextIndex = canUsePreparedIndex
     ? preparedIndex
-    : (preferredIndex >= 0 ? preferredIndex : (queue.length > 1 ? 0 : -1));
+    : (preferredIndex >= 0 ? preferredIndex : -1);
 
   // Fil rouge fallback: if no next track in queue, add from fil rouge
   if (nextIndex < 0 && filRougeManager.isActive()) {
@@ -2438,9 +2707,43 @@ clearCacheBtn?.addEventListener('click', async () => {
 });
 
 async function launchDeckFromQueue(deck, options = {}) {
-  if (!player || !queue.length) {
-    showToast('Ajoutez une chanson dans la file', true);
-    return;
+  if (!player) return;
+  if (!queue.length) {
+    if (filRougeManager.isActive()) {
+      const nextFromFilRouge = filRougeManager.getNextTrack();
+      if (nextFromFilRouge) {
+        const filRougeItem = {
+          id: nextFromFilRouge.id || `filrouge-${Date.now()}`,
+          uri: nextFromFilRouge.persistedSourceUrl || '',
+          name: nextFromFilRouge.name || 'Inconnu',
+          artist: nextFromFilRouge.artist || 'Artiste inconnu',
+          artUrl: nextFromFilRouge.artUrl || '',
+          duration: nextFromFilRouge.duration || 0,
+          bpm: nextFromFilRouge.bpm || null,
+          genre: nextFromFilRouge.genre || '',
+          cachePath: nextFromFilRouge.cachePath || '',
+          persistedSourceUrl: nextFromFilRouge.persistedSourceUrl || '',
+          ratingKey: nextFromFilRouge.ratingKey || '',
+          stemsStatus: nextFromFilRouge.stemsStatus || '',
+          stems: nextFromFilRouge.stems || null,
+          sourceState: 'idle',
+          sourceError: null,
+          sourceMeta: null,
+          localBlobUrl: null,
+          queueSource: 'fil-rouge',
+          lastTouchedAt: Date.now(),
+        };
+        queue.push(filRougeItem);
+        uiState.currentIndex = 0;
+        uiState.currentTrackId = filRougeItem.id;
+        renderQueue();
+        renderFilRouge();
+      }
+    }
+    if (!queue.length) {
+      showToast('Ajoutez une chanson dans la file', true);
+      return;
+    }
   }
 
   let targetDeck = deck === 'B' ? 'B' : 'A';
@@ -2494,6 +2797,7 @@ async function launchDeckFromQueue(deck, options = {}) {
         uiState.currentIndex = targetIndex;
         uiState.currentTrackId = item.id;
         updateNowPlaying(item, targetDeck);
+        fetchAndStoreArtworkForItem(item, targetDeck).catch(() => {});
         uiState.isPlaying = true;
         launchPreviewTitle = '';
         launchPreviewArtist = '';
@@ -2512,6 +2816,14 @@ async function launchDeckFromQueue(deck, options = {}) {
         launchPreviewItem = item;
         uiState.deckCueDeck = targetDeck;
         updateUpcomingArtwork();
+        if (!item.artUrl) {
+          fetchAndStoreArtworkForItem(item, targetDeck).then(() => {
+            if (launchPreviewItem === item) {
+              launchPreviewArtUrl = item.artUrl || '';
+              updateUpcomingArtwork();
+            }
+          }).catch(() => {});
+        }
       }
       renderQueue();
       logInfo('launchDeckFromQueue(): deck loaded', {
@@ -2824,9 +3136,11 @@ autoModeBtn?.addEventListener('click', () => {
   if (isEnabled && uiState.currentIndex >= 0 && queue[uiState.currentIndex]) {
     const currentItem = queue[uiState.currentIndex];
     autoModeManager.scheduleAutomixTiming(currentItem);
-    autoModeManager.searchAndAddNextTrack(currentItem).catch((err) => {
-      logWarn('autoDj: immediate search on enable failed', { error: err?.message });
-    });
+    if (autoSuggestionQueueSearchEnabled) {
+      autoModeManager.searchAndAddNextTrack(currentItem).catch((err) => {
+        logWarn('autoDj: immediate search on enable failed', { error: err?.message });
+      });
+    }
   } else {
     updateAutoDjMarker();
     updateMaxDurationMarker();
@@ -2841,6 +3155,31 @@ function updateAutoModeUI() {
   const isEnabled = autoModeManager.isAutoModeEnabled();
   syncAutoModeButtonUI(isEnabled);
   updateSuggestionRefreshButtons();
+}
+
+function updateAutoSuggestionQueueSearchUi() {
+  if (autoSuggestionQueueSearchToggle) {
+    autoSuggestionQueueSearchToggle.checked = Boolean(autoSuggestionQueueSearchEnabled);
+  }
+  if (autoSuggestionQueueSearchStatus) {
+    autoSuggestionQueueSearchStatus.textContent = autoSuggestionQueueSearchEnabled
+      ? "Recherche de suggestion en file d'attente active."
+      : "Recherche de suggestion en file d'attente desactivee.";
+  }
+}
+
+function applyAutoSuggestionQueueSearchSetting(enabled, options = {}) {
+  const { persist = true, announce = false } = options;
+  autoSuggestionQueueSearchEnabled = Boolean(enabled);
+  autoModeManager.setSuggestionSearchEnabled?.(autoSuggestionQueueSearchEnabled);
+  updateAutoSuggestionQueueSearchUi();
+  updateSuggestionRefreshButtons();
+  if (persist) {
+    persistAutoSuggestionQueueSearchEnabledSetting(autoSuggestionQueueSearchEnabled);
+  }
+  if (announce) {
+    showToast(`Recherche suggestion queue: ${autoSuggestionQueueSearchEnabled ? 'ON' : 'OFF'}`);
+  }
 }
 
 function triggerAutoDjCreativeFxEvent(event) {
@@ -2885,7 +3224,7 @@ function updateSuggestionRefreshButtons() {
   const isEnabled = autoModeManager.isAutoModeEnabled();
   const hasCurrent = uiState.isPlaying && uiState.currentIndex >= 0 && Boolean(queue[uiState.currentIndex]);
   const activeDeck = getResolvedActiveDeck();
-  const shouldShow = isEnabled && hasCurrent;
+  const shouldShow = isEnabled && hasCurrent && autoSuggestionQueueSearchEnabled;
 
   const applyState = (button, deck) => {
     if (!button) return;
@@ -2912,6 +3251,10 @@ function findAutoSuggestedTrackIndexAfterCurrent(currentTrack) {
 
 async function refreshAutoSuggestionForCurrentTrack() {
   if (autoSuggestionRefreshInProgress) return;
+  if (!autoSuggestionQueueSearchEnabled) {
+    showToast("Recherche de suggestion en file d'attente desactivee", true);
+    return;
+  }
   if (!autoModeManager.isAutoModeEnabled()) {
     showToast('Activez Auto Mode pour changer la suggestion', true);
     return;
@@ -3585,6 +3928,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     setDeckItem(targetDeck, item);
     if (mode === 'play') setDeckItem(targetDeck === 'A' ? 'B' : 'A', null);
     updateNowPlaying(item, targetDeck);
+    fetchAndStoreArtworkForItem(item, targetDeck).catch(() => {});
 
     const cachedMixData = getTrackMixData(item);
     if (cachedMixData) {
@@ -3639,7 +3983,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
         durationMs: item.duration,
         audioFeatures: item.audioFeatures,
         stems: item.stems,
-      }, { makeActive: false, paused: false, startPositionMs });
+      }, { makeActive: true, paused: false, startPositionMs });
     } else {
       await player.playOnDeck(getResolvedActiveDeck(), {
         url: sourceUrl,
@@ -3648,7 +3992,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
         durationMs: item.duration,
         audioFeatures: item.audioFeatures,
         stems: item.stems,
-      }, { makeActive: false, paused: false, startPositionMs });
+      }, { makeActive: true, paused: false, startPositionMs });
     }
 
     if (mode === 'autofade' || mode === 'crossfade') {
@@ -3733,9 +4077,11 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     updateAutoDjMarker();
     updateMaxDurationMarker();
     autoModeManager.scheduleAutomixTiming(item);
-    autoModeManager.searchAndAddNextTrack(item).catch((err) => {
-      logWarn('autoDj: search on track start failed', { error: err?.message });
-    });
+    if (autoSuggestionQueueSearchEnabled) {
+      autoModeManager.searchAndAddNextTrack(item).catch((err) => {
+        logWarn('autoDj: search on track start failed', { error: err?.message });
+      });
+    }
   } catch (err) {
     item.sourceState = 'error';
     item.sourceError = err.message;
@@ -3837,6 +4183,16 @@ function prefetchNext(index) {
   enrichStemsFromServer(next).catch(() => {});
 }
 
+function buildFilRougeHintHTML() {
+  if (!filRougeManager.isActive()) return '';
+  const next = filRougeManager.peekNextTrack();
+  if (!next) return '';
+  const artHtml = next.artUrl
+    ? `<img class="queue-art" src="${escHtml(next.artUrl)}" alt="" loading="lazy">`
+    : '<div class="queue-art"></div>';
+  return `<div class="queue-filrouge-hint">${artHtml}<div class="queue-info"><div class="queue-filrouge-hint-label">Prochain · fil rouge</div><div class="queue-name">${escHtml(next.name || 'Inconnu')}</div><div class="queue-artist">${escHtml(next.artist || '')}</div></div></div>`;
+}
+
 function renderQueue() {
   saveQueue();
   uiRenderer.updateUpcomingArtwork();
@@ -3846,15 +4202,19 @@ function renderQueue() {
     uiRenderer.queueList.innerHTML = '';
     uiRenderer.queueList.appendChild(uiRenderer.emptyQueue);
     uiRenderer.emptyQueue.style.display = '';
-    if (uiRenderer.autoMixBtn) uiRenderer.autoMixBtn.disabled = true;
+    const hintHtml = buildFilRougeHintHTML();
+    if (hintHtml) uiRenderer.queueList.insertAdjacentHTML('beforeend', hintHtml);
+    if (uiRenderer.autoMixBtn) uiRenderer.autoMixBtn.disabled = !filRougeManager.isActive();
     updateSuggestionRefreshButtons();
     return;
   }
 
   uiRenderer.emptyQueue.style.display = 'none';
-  if (uiRenderer.autoMixBtn) uiRenderer.autoMixBtn.disabled = queue.length <= 1;
+  if (uiRenderer.autoMixBtn) uiRenderer.autoMixBtn.disabled = queue.length <= 1 && !filRougeManager.isActive();
 
   uiRenderer.queueList.innerHTML = uiRenderer.buildQueueHTML();
+  const hintHtml = buildFilRougeHintHTML();
+  if (hintHtml) uiRenderer.queueList.insertAdjacentHTML('beforeend', hintHtml);
 
   attachQueueDndHandlers({
     queueList: uiRenderer.queueList,

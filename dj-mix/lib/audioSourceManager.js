@@ -990,6 +990,23 @@ export function createAudioSourceManager(options) {
   }
 
   /**
+   * Checks whether a track is already stored in the local browser Cache Storage
+   * (or in the in-memory session blob cache).  Does NOT trigger any download.
+   * Returns true if the track is cached, false otherwise.
+   */
+  async function isTrackInLocalCache(item) {
+    if (!item?.name || !item?.artist) return false;
+    const cacheKey = getTrackCacheKey(item);
+    if (sessionBlobCache.has(cacheKey)) return true;
+    const persisted = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName).catch(() => null);
+    if (persisted) {
+      URL.revokeObjectURL(persisted);
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Pre-fetches a track into the local cache without affecting item state.
    * Downloads via the API (which stores it server-side) and persists the blob
    * in browser Cache Storage, then immediately revokes the ephemeral blob URL.
@@ -1030,6 +1047,7 @@ export function createAudioSourceManager(options) {
     enrichStemsFromServer,
     ensureLocalSource,
     evictTrackSource,
+    isTrackInLocalCache,
     prefetchTrackToLocalCache,
     releaseLocalBlob: (item) => releaseLocalBlob(item, touchQueueItem),
     searchTracksViaApi,

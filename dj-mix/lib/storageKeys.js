@@ -10,6 +10,7 @@ export const STORAGE_KEYS = Object.freeze({
   ramFilterEnabled: 'dj-mix:ram-filter:enabled',
   ramTotalMbOverride: 'dj-mix:ram-filter:total-mb-override',
   autoDjFxSettings: 'dj-mix:auto-dj:fx:settings',
+  autoSuggestionQueueSearchEnabled: 'dj-mix:auto-dj:suggestion-queue-search:enabled',
   crossfadeSeconds: 'dj-mix:crossfade-seconds',
   djMode: 'dj-mix:dj-mode',
   djModeGenrePrefs: 'dj-mix:dj-mode:genre-prefs',

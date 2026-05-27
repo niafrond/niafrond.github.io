@@ -55,6 +55,7 @@ export function createAutoModeManager({
   let nextTrackMixData = null;
   let automixTimerHandle = null;
   let pendingAutoFxEvents = [];
+  let suggestionSearchEnabled = true;
   
   const SEARCH_COOLDOWN_MS = 5000; // Minimum time between searches
   const MIX_DATA_CACHE = new Map(); // Cache mix data per track
@@ -824,6 +825,18 @@ export function createAutoModeManager({
     }
   }
 
+  function isSuggestionSearchEnabled() {
+    return suggestionSearchEnabled !== false;
+  }
+
+  function setSuggestionSearchEnabled(enabled) {
+    suggestionSearchEnabled = enabled !== false;
+    logger?.info?.('autoDj: suggestion queue search setting changed', {
+      suggestionSearchEnabled,
+    });
+    return suggestionSearchEnabled;
+  }
+
   /**
    * Schedule automix to trigger at optimal moment
    * Called when a new track is added to queue
@@ -1072,6 +1085,11 @@ export function createAutoModeManager({
 
     if (!currentTrack) {
       logger?.debug?.('autoDj: no current track, skipping search');
+      return false;
+    }
+
+    if (!isSuggestionSearchEnabled()) {
+      logger?.debug?.('autoDj: suggestion queue search disabled, skipping search');
       return false;
     }
 
@@ -1521,6 +1539,8 @@ export function createAutoModeManager({
     scheduleAutomixTiming,
     consumeReadyAutoFxEvents,
     onTrackFinished,
+    isSuggestionSearchEnabled,
+    setSuggestionSearchEnabled,
     fetchMixData,
     findBestTransitionZone,
     recommendTransitionType,
