@@ -1,3 +1,9 @@
+## [1.211.0](https://github.com/niafrond/niafrond.github.io/compare/v1.210.0...v1.211.0) (2026-05-27)
+
+### Features
+
+* add suggestion search toggle for auto DJ mode ([44c9857](https://github.com/niafrond/niafrond.github.io/commit/44c9857c4013bfd2f2b4b6253a07b32a3315b84f))
+
 ## [1.210.0](https://github.com/niafrond/niafrond.github.io/compare/v1.209.0...v1.210.0) (2026-05-26)
 
 ### Features
