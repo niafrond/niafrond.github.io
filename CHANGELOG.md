@@ -1,3 +1,9 @@
+## [1.211.1](https://github.com/niafrond/niafrond.github.io/compare/v1.211.0...v1.211.1) (2026-05-28)
+
+### Bug Fixes
+
+* auto-mix ne se déclenchait pas sur les chansons fil rouge ([bb41359](https://github.com/niafrond/niafrond.github.io/commit/bb41359367a93981a272bfc1eafa48ff752ca760))
+
 ## [1.211.0](https://github.com/niafrond/niafrond.github.io/compare/v1.210.0...v1.211.0) (2026-05-27)
 
 ### Features
