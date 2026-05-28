@@ -2001,6 +2001,7 @@ const autoFadeManager = new AutoFadeManager({
 const autoModeManager = createAutoModeManager({
   apiHealthMonitor,
   getDownloaderApiUrl,
+  getFilRougeManager: () => filRougeManager,
   getQueue: () => queue,
   getCurrentTrackId: () => uiState.currentTrackId,
   getCurrentTrackIndex: () => uiState.currentIndex,
@@ -2469,6 +2470,10 @@ function hookPlayerEvents() {
             if (nextIdx < queue.length) {
               autoMixBtn?.click?.();
             }
+          } else if (filRougeManager.isActive()) {
+            // Fil rouge: autoMixBtn a un fallback pour récupérer le prochain morceau
+            logDebug('autoDj: no pending track but fil rouge active, triggering automix', {});
+            autoMixBtn?.click?.();
           } else {
             logDebug('autoDj: no pending track, skipping automix trigger', {});
           }
