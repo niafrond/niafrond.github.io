@@ -791,6 +791,43 @@ const {
   updateDjFxMenuUI,
 } = djFxController;
 
+// ── Background task scheduling utilities ──────────────────────────────────────
+// Debounce: coalesce rapid-fire calls, executing only after the delay has elapsed
+// without new invocations.
+function createDebouncedFn(fn, delayMs) {
+  let timer = null;
+  const debounced = () => {
+    if (timer !== null) clearTimeout(timer);
+    timer = setTimeout(() => { timer = null; fn(); }, delayMs);
+  };
+  debounced.flush = () => { if (timer !== null) { clearTimeout(timer); timer = null; fn(); } };
+  debounced.cancel = () => { if (timer !== null) { clearTimeout(timer); timer = null; } };
+  return debounced;
+}
+
+// Schedule work during idle time (or after a short delay as fallback)
+const scheduleIdle = typeof requestIdleCallback === 'function'
+  ? (fn, timeout = 2000) => requestIdleCallback(fn, { timeout })
+  : (fn) => setTimeout(fn, 80);
+
+// Serialized background task queue: ensures only one heavy background task runs
+// at a time to avoid saturating the network/CPU during playback.
+const _bgTaskQueue = [];
+let _bgTaskRunning = false;
+function enqueueBackgroundTask(taskFn) {
+  _bgTaskQueue.push(taskFn);
+  _drainBackgroundTasks();
+}
+async function _drainBackgroundTasks() {
+  if (_bgTaskRunning) return;
+  _bgTaskRunning = true;
+  while (_bgTaskQueue.length > 0) {
+    const task = _bgTaskQueue.shift();
+    try { await task(); } catch (_) { /* background tasks are best-effort */ }
+  }
+  _bgTaskRunning = false;
+}
+
 const saveQueue = () => {
   logDebug('saveQueue()', { currentIndex: uiState.currentIndex, length: queue.length });
   saveQueueToStorage({
@@ -799,6 +836,9 @@ const saveQueue = () => {
     storageKey: QUEUE_KEY,
   });
 };
+
+// Debounced version: avoids writing to localStorage on every rapid-fire renderQueue call.
+const saveQueueDebounced = createDebouncedFn(saveQueue, 1500);
 
 const restoreQueue = () => {
   logInfo('restoreQueue(): loading queue from storage');
@@ -822,12 +862,16 @@ const restoreQueue = () => {
   });
 };
 
+// Debounced renderQueue for background callbacks (stem enrichment, duration hydration, etc.)
+// These fire rapidly and individually aren't urgent for UI — coalesce into one repaint.
+const renderQueueDebounced = createDebouncedFn(() => renderQueue(), 300);
+
 const audioSourceManager = createAudioSourceManager({
   apiHealthMonitor,
   audioCacheName: AUDIO_CACHE_NAME,
   getDownloaderApiUrl,
   normalizeApiSearchResponse,
-  onQueueUpdated: () => renderQueue(),
+  onQueueUpdated: () => renderQueueDebounced(),
   sessionBlobCache,
   shouldWarmStems: (item) => !isLowMemoryPlaybackMode() || deckDisplayItems.A === item || deckDisplayItems.B === item,
   touchQueueItem,
@@ -1741,7 +1785,7 @@ function toggleDeckFilterMode(deck, requestedMode) {
  */
 function backgroundEnrichStems(deck, item) {
   if (!item || !deck) return;
-  enrichStemsFromServer(item)
+  enqueueBackgroundTask(() => enrichStemsFromServer(item)
     .then(() => {
       // After enrichment, check if stems are now available
       const stems = item.localStemUrls || item.stems;
@@ -1764,7 +1808,8 @@ function backgroundEnrichStems(deck, item) {
     })
     .catch((err) => {
       logWarn('stems.enrichment.error', { deck, id: item?.id, error: err?.message });
-    });
+    })
+  );
 }
 
 function getTrackMixData(item) {
@@ -2315,6 +2360,8 @@ txtImportFilRougeBtn?.addEventListener('click', async () => {
 })();
 
 window.addEventListener('beforeunload', () => {
+  // Flush any pending debounced queue save before unload
+  saveQueueDebounced.flush();
   clearSessionBlobCache();
 });
 
@@ -4083,9 +4130,12 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     updateMaxDurationMarker();
     autoModeManager.scheduleAutomixTiming(item);
     if (autoSuggestionQueueSearchEnabled) {
-      autoModeManager.searchAndAddNextTrack(item).catch((err) => {
-        logWarn('autoDj: search on track start failed', { error: err?.message });
-      });
+      // Defer suggestion search to idle time to avoid competing with playback startup
+      scheduleIdle(() => {
+        autoModeManager.searchAndAddNextTrack(item).catch((err) => {
+          logWarn('autoDj: search on track start failed', { error: err?.message });
+        });
+      }, 3000);
     }
   } catch (err) {
     item.sourceState = 'error';
@@ -4173,19 +4223,25 @@ function prefetchNext(index) {
     return;
   }
   if (next.localBlobUrl) return;
-  logDebug('prefetchNext(): prefetching track source', {
-    index,
-    id: next.id,
-    name: next.name,
-  });
-  touchQueueItem(next);
 
-  ensureLocalSource(next).catch(() => {
-    // silent prefetch failure: user can still trigger manually and get toast
+  // Defer prefetch to idle time to avoid competing with active playback audio decoding
+  scheduleIdle(() => {
+    // Re-check conditions after idle delay (track may have been removed or loaded)
+    if (next.localBlobUrl || !queue.includes(next)) return;
+    logDebug('prefetchNext(): prefetching track source', {
+      index,
+      id: next.id,
+      name: next.name,
+    });
+    touchQueueItem(next);
+
+    enqueueBackgroundTask(() => ensureLocalSource(next).catch(() => {
+      // silent prefetch failure: user can still trigger manually and get toast
+    }));
+
+    // Stems enrichment goes through the serialized queue too
+    enqueueBackgroundTask(() => enrichStemsFromServer(next).catch(() => {}));
   });
-  
-  // Always fetch stems from server for any queued track (background enrichment)
-  enrichStemsFromServer(next).catch(() => {});
 }
 
 function buildFilRougeHintHTML() {
@@ -4199,7 +4255,7 @@ function buildFilRougeHintHTML() {
 }
 
 function renderQueue() {
-  saveQueue();
+  saveQueueDebounced();
   uiRenderer.updateUpcomingArtwork();
   updateDeckCueUI();
 
