@@ -1,3 +1,9 @@
+## [1.212.0](https://github.com/niafrond/niafrond.github.io/compare/v1.211.2...v1.212.0) (2026-05-30)
+
+### Features
+
+* update source badge styling and remove duration display in queue ([301ad72](https://github.com/niafrond/niafrond.github.io/commit/301ad72906b85538514b2dbe1b3565c55256d6a3))
+
 ## [1.211.2](https://github.com/niafrond/niafrond.github.io/compare/v1.211.1...v1.211.2) (2026-05-30)
 
 ### Performance Improvements
