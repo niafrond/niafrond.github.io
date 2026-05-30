@@ -42,6 +42,7 @@ export function createAutoModeManager({
   getDjMode,
   getDjModeGenrePrefs,
   getCurrentBpm,
+  getActualDurationMs,
   onAutomixTimingCalculated,
   onMixDataUpdated,
   onAutoFxPlanCalculated,
@@ -867,12 +868,13 @@ export function createAutoModeManager({
 
         if (!mixData) {
           logger?.debug?.('autoDj: no mix data available, using duration-based timing');
+          const resolvedDurationMs = Math.max(currentTrack.duration || 0, getActualDurationMs?.() || 0);
           
           // If max duration is set, use it as constraint
           if (maxDurationMs > 0) {
             const triggerMs = Math.min(maxDurationMs, Math.max(
-              currentTrack.duration - 20000,
-              currentTrack.duration * 0.75
+              resolvedDurationMs - 20000,
+              resolvedDurationMs * 0.75
             ));
             logger?.debug?.('autoDj: calculated fallback timing with max duration constraint', { 
               triggerMs, 
@@ -890,8 +892,8 @@ export function createAutoModeManager({
           
           // Fallback: trigger 20s before end
           const triggerMs = Math.max(
-            currentTrack.duration - 20000,
-            currentTrack.duration * 0.75
+            resolvedDurationMs - 20000,
+            resolvedDurationMs * 0.75
           );
           logger?.debug?.('autoDj: calculated fallback timing', { triggerMs });
           onAutomixTimingCalculated?.(triggerMs);
@@ -1012,7 +1014,8 @@ export function createAutoModeManager({
         const maxDurationSec = getTrackMaxDurationSec?.() || 0;
         const maxDurationMs = maxDurationSec > 0 ? maxDurationSec * 1000 : -1;
         
-        let triggerMs = Math.max(currentTrack.duration - 20000, currentTrack.duration * 0.75);
+        const resolvedDurationMs = Math.max(currentTrack.duration || 0, getActualDurationMs?.() || 0);
+        let triggerMs = Math.max(resolvedDurationMs - 20000, resolvedDurationMs * 0.75);
         if (maxDurationMs > 0) {
           triggerMs = Math.min(maxDurationMs, triggerMs);
         }

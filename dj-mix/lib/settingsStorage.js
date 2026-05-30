@@ -131,6 +131,22 @@ export function persistAutoSuggestionQueueSearchEnabledSetting(enabled) {
   persistBooleanSetting(STORAGE_KEYS.autoSuggestionQueueSearchEnabled, enabled);
 }
 
+export function readQueueLoopSetting() {
+  return readBooleanSetting(STORAGE_KEYS.queueLoop, true);
+}
+
+export function persistQueueLoopSetting(enabled) {
+  persistBooleanSetting(STORAGE_KEYS.queueLoop, enabled);
+}
+
+export function readQueueShuffleSetting() {
+  return readBooleanSetting(STORAGE_KEYS.queueShuffle, false);
+}
+
+export function persistQueueShuffleSetting(enabled) {
+  persistBooleanSetting(STORAGE_KEYS.queueShuffle, enabled);
+}
+
 export function removeQueueSetting() {
   try {
     localStorage.removeItem(STORAGE_KEYS.queue);

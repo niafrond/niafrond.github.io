@@ -45,6 +45,9 @@ export function createFilRougeManager() {
   /** Indique si la lecture est en mode shuffle */
   let shuffleEnabled = false;
 
+  /** Indique si la lecture boucle sur la playlist (true = reboucle en fin, false = s'arrête) */
+  let loopEnabled = true;
+
   // ── Persistence ─────────────────────────────────────────────────────────
 
   function save() {
@@ -54,6 +57,7 @@ export function createFilRougeManager() {
         priorityQueue: priorityQueue.map(serializeItem),
         currentIndex,
         shuffleEnabled,
+        loopEnabled,
       };
       localStorage.setItem(STORAGE_KEYS.filRouge, JSON.stringify(data));
       logger.debug('filRouge.save.success', { playlistLength: playlist.length, currentIndex });
@@ -78,6 +82,9 @@ export function createFilRougeManager() {
       }
       if (typeof data.shuffleEnabled === 'boolean') {
         shuffleEnabled = data.shuffleEnabled;
+      }
+      if (typeof data.loopEnabled === 'boolean') {
+        loopEnabled = data.loopEnabled;
       }
       logger.info('filRouge.restore.success', { playlistLength: playlist.length, currentIndex });
     } catch (_) {
@@ -264,7 +271,16 @@ export function createFilRougeManager() {
       const randomIndex = Math.floor(Math.random() * playlist.length);
       currentIndex = randomIndex;
     } else {
-      currentIndex = (currentIndex + 1) % playlist.length;
+      const nextIndex = currentIndex + 1;
+      if (nextIndex >= playlist.length) {
+        if (!loopEnabled) {
+          logger.info('filRouge.getNextTrack.endOfPlaylist.loopOff');
+          return null;
+        }
+        currentIndex = 0;
+      } else {
+        currentIndex = nextIndex;
+      }
     }
 
     const next = playlist[currentIndex];
@@ -331,6 +347,23 @@ export function createFilRougeManager() {
     return true;
   }
 
+  /**
+   * Positionne le fil rouge pour que le prochain appel à getNextTrack() retourne le morceau
+   * à targetIdx. Tous les morceaux situés entre la position courante et targetIdx sont sautés.
+   * @param {number} targetIdx - index du morceau à jouer en prochain
+   * @returns {boolean} true si le saut a été effectué, false si l'index est invalide
+   */
+  function jumpToIndex(targetIdx) {
+    if (!Number.isInteger(targetIdx)) return false;
+    if (targetIdx < 0 || targetIdx >= playlist.length) return false;
+    // Positionner à targetIdx - 1 pour que getNextTrack() retourne targetIdx
+    const prevIndex = currentIndex;
+    currentIndex = targetIdx - 1;
+    logger.info('filRouge.jumpToIndex', { targetIdx, from: prevIndex, skippedCount: targetIdx - prevIndex - 1 });
+    save();
+    return true;
+  }
+
   function isShuffleEnabled() {
     return shuffleEnabled;
   }
@@ -339,6 +372,16 @@ export function createFilRougeManager() {
     shuffleEnabled = !shuffleEnabled;
     save();
     return shuffleEnabled;
+  }
+
+  function isLoopEnabled() {
+    return loopEnabled;
+  }
+
+  function setLoopEnabled(value) {
+    loopEnabled = Boolean(value);
+    save();
+    return loopEnabled;
   }
 
   // ── Initialisation ─────────────────────────────────────────────────────
@@ -361,6 +404,7 @@ export function createFilRougeManager() {
     getPriorityQueueLength,
     getCurrentIndex,
     setCurrentIndex,
+    jumpToIndex,
 
     // Lecture
     getNextTrack,
@@ -370,6 +414,10 @@ export function createFilRougeManager() {
     // Shuffle
     isShuffleEnabled,
     toggleShuffle,
+
+    // Loop
+    isLoopEnabled,
+    setLoopEnabled,
 
     // Persistence
     save,

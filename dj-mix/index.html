@@ -245,6 +245,7 @@
         </div>
         <div class="filrouge-controls">
           <button id="filrouge-shuffle-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="false">Shuffle: OFF</button>
+          <button id="filrouge-loop-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="true">Loop: ON</button>
           <button id="filrouge-clear-btn" class="clear-btn" type="button">Vider</button>
         </div>
         <div class="filrouge-playlist-section">
@@ -292,6 +293,22 @@
               <span id="crossfade-value" class="crossfade-value">6s</span>
             </div>
             <input type="range" id="crossfade-slider" min="1" max="30" value="6" class="fade-slider" aria-label="Durée du crossfade">
+          </div>
+
+          <div class="config-block">
+            <div class="config-label">
+              <span>File d'attente</span>
+            </div>
+            <label class="toggle-row" for="queue-loop-toggle">
+              <input type="checkbox" id="queue-loop-toggle" class="toggle-input" checked>
+              <span class="toggle-slider" aria-hidden="true"></span>
+              <span class="toggle-label">Répéter (Loop)</span>
+            </label>
+            <label class="toggle-row" for="queue-shuffle-toggle">
+              <input type="checkbox" id="queue-shuffle-toggle" class="toggle-input">
+              <span class="toggle-slider" aria-hidden="true"></span>
+              <span class="toggle-label">Aléatoire (Shuffle)</span>
+            </label>
           </div>
 
           <div class="config-block">

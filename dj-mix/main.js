@@ -68,6 +68,8 @@ import {
   persistCrossfadeSecondsSetting,
   persistDebugLogsSetting,
   persistFxControlsHiddenSetting,
+  persistQueueLoopSetting,
+  persistQueueShuffleSetting,
   persistRamFilterEnabledSetting,
   persistRamTotalMbOverrideSetting,
   persistTrackMaxDurationEnabledSetting,
@@ -77,6 +79,8 @@ import {
   readCrossfadeSecondsSetting,
   readDebugLogsSetting,
   readFxControlsHiddenSetting,
+  readQueueLoopSetting,
+  readQueueShuffleSetting,
   readRamFilterEnabledSetting,
   readRamTotalMbOverrideSetting,
   readTrackMaxDurationEnabledSetting,
@@ -124,6 +128,7 @@ let playlistLoaded = false;
 let blobCleanupTimer = null;
 let playbackPositionMs = 0;
 let playbackDurationMs = 0;
+let automixRescheduledForTrackId = null;
 let lastSearchQuery = '';
 let pendingSearchAdd = false;
 let searchDebounceTimer = null;
@@ -178,6 +183,8 @@ let lastAutoDjFxTriggeredAt = 0;
 let djMode = readDjModeSetting(); // 'dance' | 'music'
 let djModeGenrePrefs = readDjModeGenrePrefs(); // string[]
 let autoSuggestionQueueSearchEnabled = readAutoSuggestionQueueSearchEnabledSetting();
+let queueLoopEnabled = readQueueLoopSetting();
+let queueShuffleEnabled = readQueueShuffleSetting();
 
 function isAutoDjFxTypeAllowed(type) {
   if (!type) return false;
@@ -400,6 +407,11 @@ function updateRamFilterConfigUI() {
   }
 }
 
+function updateQueueModeConfigUI() {
+  if (queueLoopToggle) queueLoopToggle.checked = queueLoopEnabled;
+  if (queueShuffleToggle) queueShuffleToggle.checked = queueShuffleEnabled;
+}
+
 function applyRamFilterSettings(options = {}) {
   const { persist = true, announce = false } = options;
   if (persist) {
@@ -595,6 +607,7 @@ const filRougePriorityCountEl = document.getElementById('filrouge-priority-count
 const filRougePlaylistListEl = document.getElementById('filrouge-playlist-list');
 const filRougePriorityListEl = document.getElementById('filrouge-priority-list');
 const filRougeShuffleBtn = document.getElementById('filrouge-shuffle-btn');
+const filRougeLoopBtn = document.getElementById('filrouge-loop-btn');
 const filRougeClearBtn = document.getElementById('filrouge-clear-btn');
 
 const downloaderApiUrlInput = document.getElementById('downloader-api-url-input');
@@ -605,6 +618,7 @@ const spotifyClientIdInput = document.getElementById('spotify-client-id-input');
 const spotifyConnectBtn = document.getElementById('spotify-connect-btn');
 const spotifyDisconnectBtn = document.getElementById('spotify-disconnect-btn');
 const spotifyPlaylistInput = document.getElementById('spotify-playlist-input');
+const spotifyPlaylistSelect = document.getElementById('spotify-playlist-select');
 const spotifyImportFilRougeBtn = document.getElementById('spotify-import-filrouge-btn');
 const spotifyStatus = document.getElementById('spotify-status');
 const spotifyConnectionBadge = document.getElementById('spotify-connection-badge');
@@ -623,6 +637,8 @@ const autoSuggestionQueueSearchStatus = document.getElementById('auto-suggestion
 const ramFilterEnabledToggle = document.getElementById('ram-filter-enabled-toggle');
 const ramTotalMemoryInput = document.getElementById('ram-total-memory-gb');
 const ramFilterStatus = document.getElementById('ram-filter-status');
+const queueLoopToggle = document.getElementById('queue-loop-toggle');
+const queueShuffleToggle = document.getElementById('queue-shuffle-toggle');
 const djFxRow = document.querySelector('.dj-fx-row');
 const autoDjFxStatus = document.getElementById('auto-dj-fx-status');
 const autoDjFxMinIntervalInput = document.getElementById('auto-dj-fx-min-interval-input');
@@ -1065,6 +1081,11 @@ function renderFilRouge() {
     filRougeShuffleBtn.textContent = `Shuffle: ${on ? 'ON' : 'OFF'}`;
     filRougeShuffleBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
   }
+  if (filRougeLoopBtn) {
+    const on = filRougeManager.isLoopEnabled();
+    filRougeLoopBtn.textContent = `Loop: ${on ? 'ON' : 'OFF'}`;
+    filRougeLoopBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
 
   // Priority queue
   if (filRougePriorityListEl) {
@@ -1124,6 +1145,7 @@ function renderFilRouge() {
             </div>
           </div>
           <div class="filrouge-actions">
+            ${idx > filRougeIndex + 1 ? `<button class="filrouge-set-current-btn" data-index="${idx}" aria-label="Sauter à ce morceau" title="Sauter ici (skip les ${idx - filRougeIndex - 1} morceau${idx - filRougeIndex - 1 > 1 ? 'x' : ''} précédents)">⏩</button>` : ''}
             <button class="filrouge-priority-add-btn" data-index="${idx}" aria-label="Ajouter à la file d'attente" title="Ajouter à la file d'attente">⏭</button>
             <button class="filrouge-remove-btn" data-type="playlist" data-index="${idx}" aria-label="Retirer">✕</button>
           </div>
@@ -1162,6 +1184,19 @@ function renderFilRouge() {
         addToQueue(item, { source: 'fil-rouge', showAddedToast: false });
         showToast(`"${item.name}" → file d'attente`);
       }
+    });
+  });
+
+  document.querySelectorAll('.filrouge-set-current-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = Number(btn.dataset.index);
+      const playlist = filRougeManager.getPlaylist();
+      const item = playlist[idx];
+      if (!item) return;
+      filRougeManager.jumpToIndex(idx);
+      renderFilRouge();
+      showToast(`⏩ Fil rouge : prochain → "${item.name}"`);
     });
   });
 }
@@ -1238,6 +1273,9 @@ function updateSpotifyConfigUi() {
   if (spotifyPlaylistInput) {
     spotifyPlaylistInput.disabled = !connected;
   }
+  if (spotifyPlaylistSelect) {
+    spotifyPlaylistSelect.disabled = !connected;
+  }
 
   if (connected) {
     setSpotifyStatus(source?.playlistName
@@ -1245,7 +1283,30 @@ function updateSpotifyConfigUi() {
       : 'Spotify connecté. Vous pouvez importer une playlist dans le fil rouge.');
     return;
   }
+  // Disconnected: clear the dropdown
+  if (spotifyPlaylistSelect) {
+    spotifyPlaylistSelect.innerHTML = '<option value="">Choisir une playlist Spotify</option>';
+  }
   setSpotifyStatus('Spotify non connecté. Optionnel pour utiliser l\'application.');
+}
+
+async function refreshSpotifyPlaylistDropdown() {
+  if (!spotifyPlaylistSelect) return;
+  if (!spotifyClient.isConnected()) return;
+  try {
+    const playlists = await spotifyClient.fetchUserPlaylists();
+    const currentVal = spotifyPlaylistSelect.value || spotifyPlaylistInput?.value?.trim() || '';
+    spotifyPlaylistSelect.innerHTML = '<option value="">Choisir une playlist Spotify</option>';
+    for (const pl of playlists) {
+      const opt = document.createElement('option');
+      opt.value = pl.playlistId;
+      opt.textContent = pl.playlistName || pl.playlistId;
+      if (pl.playlistId === currentVal) opt.selected = true;
+      spotifyPlaylistSelect.appendChild(opt);
+    }
+  } catch (err) {
+    logWarn('spotify: failed to fetch user playlists', { error: err?.message });
+  }
 }
 
 function applySpotifyPlaylistToFilRouge(tracks) {
@@ -1553,6 +1614,12 @@ async function importSpotifyPlaylistToFilRouge() {
 filRougeShuffleBtn?.addEventListener('click', () => {
   const on = filRougeManager.toggleShuffle();
   showToast(`Shuffle fil rouge: ${on ? 'ON' : 'OFF'}`);
+  renderFilRouge();
+});
+
+filRougeLoopBtn?.addEventListener('click', () => {
+  const on = filRougeManager.setLoopEnabled(!filRougeManager.isLoopEnabled());
+  showToast(`Loop fil rouge: ${on ? 'ON' : 'OFF'}`);
   renderFilRouge();
 });
 
@@ -2060,6 +2127,7 @@ const autoModeManager = createAutoModeManager({
   getDjMode: () => djMode,
   getDjModeGenrePrefs: () => djModeGenrePrefs,
   getCurrentBpm: getActiveDeckBpm,
+  getActualDurationMs: () => playbackDurationMs,
   onAutomixTimingCalculated: (triggerMs) => {
     setAutomixTriggerMs(automixTimeline, triggerMs);
     logDebug('autoDj: timing calculated', { triggerMs });
@@ -2095,6 +2163,9 @@ tabBtns.forEach((btn) => {
     }
     if (tab === 'filrouge') {
       renderFilRouge();
+    }
+    if (tab === 'config' && spotifyClient.isConnected()) {
+      refreshSpotifyPlaylistDropdown().catch(() => {});
     }
   });
 });
@@ -2219,6 +2290,13 @@ queueList?.addEventListener('click', handleGenreChipClick, true);
 trackArtistA?.addEventListener('click', handleGenreChipClick);
 trackArtistB?.addEventListener('click', handleGenreChipClick);
 
+spotifyPlaylistSelect?.addEventListener('change', () => {
+  const selectedId = spotifyPlaylistSelect.value;
+  if (selectedId && spotifyPlaylistInput) {
+    spotifyPlaylistInput.value = selectedId;
+  }
+});
+
 spotifyClientIdInput?.addEventListener('change', () => {
   try {
     localStorage.setItem(STORAGE_KEYS.spotifyClientId, String(spotifyClientIdInput.value || '').trim());
@@ -2295,6 +2373,9 @@ txtImportFilRougeBtn?.addEventListener('click', async () => {
     setSpotifyStatus(`Connexion Spotify échouée: ${err.message}`, true);
   }
   updateSpotifyConfigUi();
+  if (spotifyClient.isConnected()) {
+    refreshSpotifyPlaylistDropdown().catch(() => {});
+  }
 
   applyRamFilterSettings({ persist: false, announce: true });
   applyDebugLogsSetting(readDebugLogsSetting(), { persist: false });
@@ -2496,6 +2577,19 @@ function hookPlayerEvents() {
       autoDjNextFxCountdown.hidden = true;
     }
 
+    // Auto DJ: if timing not yet set (e.g. fil rouge track had duration=0 at schedule time),
+    // reschedule now that real duration is known from the audio.
+    if (autoModeManager.isAutoModeEnabled()
+        && automixTimeline.nextTriggerMs <= 0
+        && !automixTimeline.triggeredForTrack
+        && duration > 0) {
+      const currentTrackId = queue[uiState.currentIndex]?.id || null;
+      if (currentTrackId && automixRescheduledForTrackId !== currentTrackId) {
+        automixRescheduledForTrackId = currentTrackId;
+        recalculateAutomixTimingIfNeeded('autoDj: rescheduling after real duration known');
+      }
+    }
+
     // Auto DJ: Check if it's time to trigger automix
     if (autoModeManager.isAutoModeEnabled() && shouldTriggerAutomix(automixTimeline, position)) {
       
@@ -2513,8 +2607,7 @@ function hookPlayerEvents() {
         .then((added) => {
           if (added) {
             logDebug('autoDj: pending track added, triggering automix', {});
-            const nextIdx = uiState.currentIndex + 1;
-            if (nextIdx < queue.length) {
+            if (getFollowingQueueIndex(uiState.currentIndex) >= 0) {
               autoMixBtn?.click?.();
             }
           } else if (filRougeManager.isActive()) {
@@ -2551,7 +2644,7 @@ function hookPlayerEvents() {
     }
 
     // Fil rouge: if no next track in queue, get from fil rouge
-    const hasNextInQueue = (uiState.currentIndex + 1) < queue.length;
+    const hasNextInQueue = getFollowingQueueIndex(uiState.currentIndex) >= 0;
     if (!hasNextInQueue && filRougeManager.isActive()) {
       const nextFromFilRouge = filRougeManager.getNextTrack();
       if (nextFromFilRouge) {
@@ -2610,6 +2703,9 @@ function hookPlayerEvents() {
     player.addEventListener('deckstate', ({ detail }) => {
       uiState.lastDeckState = detail;
       renderDeckState(detail);
+      // Update max duration marker when the playing deck's duration becomes available
+      // (handles fil rouge tracks that have duration=0 in queue metadata).
+      if (trackMaxDurationEnabled) updateMaxDurationMarker();
     });
 }
 
@@ -2621,10 +2717,10 @@ autoMixBtn?.addEventListener('click', async () => {
     : getResolvedInactiveDeck();
   const preparedItem = deckDisplayItems[inactiveDeck];
   const preparedIndex = preparedItem ? queue.findIndex((item) => item.id === preparedItem.id) : -1;
-  const sequentialNextIndex = uiState.currentIndex + 1 < queue.length ? uiState.currentIndex + 1 : -1;
-  const preferredIndex = hasCue ? uiState.deckBCueIndex : sequentialNextIndex;
+  const naturalNextIndex = getFollowingQueueIndex(uiState.currentIndex);
+  const preferredIndex = hasCue ? uiState.deckBCueIndex : naturalNextIndex;
   const canUsePreparedIndex = preparedIndex >= 0
-    && (hasCue ? preparedIndex === uiState.deckBCueIndex : preparedIndex === sequentialNextIndex);
+    && (hasCue ? preparedIndex === uiState.deckBCueIndex : preparedIndex === naturalNextIndex);
   let nextIndex = canUsePreparedIndex
     ? preparedIndex
     : (preferredIndex >= 0 ? preferredIndex : -1);
@@ -2935,6 +3031,19 @@ crossfadeSlider.addEventListener('input', () => {
 
 crossfadeSliderMix?.addEventListener('input', () => {
   setCrossfadeDurationSeconds(crossfadeSliderMix.value);
+});
+
+// Initialize queue loop/shuffle from persisted settings
+updateQueueModeConfigUI();
+
+queueLoopToggle?.addEventListener('change', () => {
+  queueLoopEnabled = Boolean(queueLoopToggle.checked);
+  persistQueueLoopSetting(queueLoopEnabled);
+});
+
+queueShuffleToggle?.addEventListener('change', () => {
+  queueShuffleEnabled = Boolean(queueShuffleToggle.checked);
+  persistQueueShuffleSetting(queueShuffleEnabled);
 });
 
 crossfadeFasterBtn?.addEventListener('click', () => {
@@ -3409,7 +3518,13 @@ function updateMaxDurationMarker() {
     : 0;
   if (effectiveMaxDurationSec <= 0) return;
 
-  const durationMs = playbackDurationMs > 0 ? playbackDurationMs : (queue[uiState.currentIndex]?.duration ?? 0);
+  // Prefer the specific playing deck's duration (accurate even during crossfades and
+  // for fil rouge tracks that may have duration=0 in queue metadata).
+  const playingDeck = automixTimeline.currentPlayingDeck || 'A';
+  const deckStateDurationMs = uiState.lastDeckState?.[`deck${playingDeck}`]?.durationMs ?? 0;
+  const durationMs = deckStateDurationMs > 0
+    ? deckStateDurationMs
+    : (playbackDurationMs > 0 ? playbackDurationMs : (queue[uiState.currentIndex]?.duration ?? 0));
   if (durationMs <= 0) return;
 
   const maxMs = effectiveMaxDurationSec * 1000;
@@ -4125,6 +4240,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     
     // Schedule automix timing for auto DJ mode and reset trigger flag
     resetAutomixTimeline(automixTimeline, targetDeck);
+    automixRescheduledForTrackId = null;
     applyTrackMaxDurationForCurrentPlayback();
     updateAutoDjMarker();
     updateMaxDurationMarker();
@@ -4396,9 +4512,22 @@ function getWrappedQueueIndex(index) {
 function getFollowingQueueIndex(index, options = {}) {
   if (queue.length <= 1) return -1;
 
-  const { wrap = true } = options;
   const numeric = Number(index);
   if (!Number.isFinite(numeric)) return -1;
+
+  const explicitWrap = 'wrap' in options;
+  const wrap = explicitWrap ? options.wrap : queueLoopEnabled;
+
+  // Apply shuffle only for natural next-track calls (not explicit wrap:false prefetch calls)
+  if (queueShuffleEnabled && !explicitWrap) {
+    let randomIdx;
+    let attempts = 0;
+    do {
+      randomIdx = Math.floor(Math.random() * queue.length);
+      attempts++;
+    } while (randomIdx === numeric && attempts < 20);
+    return randomIdx === numeric ? -1 : randomIdx;
+  }
 
   const nextIndex = numeric + 1;
   if (nextIndex < queue.length) return nextIndex;

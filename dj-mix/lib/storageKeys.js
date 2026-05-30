@@ -12,6 +12,8 @@ export const STORAGE_KEYS = Object.freeze({
   autoDjFxSettings: 'dj-mix:auto-dj:fx:settings',
   autoSuggestionQueueSearchEnabled: 'dj-mix:auto-dj:suggestion-queue-search:enabled',
   crossfadeSeconds: 'dj-mix:crossfade-seconds',
+  queueLoop: 'dj-mix:queue:loop',
+  queueShuffle: 'dj-mix:queue:shuffle',
   djMode: 'dj-mix:dj-mode',
   djModeGenrePrefs: 'dj-mix:dj-mode:genre-prefs',
   spotifyClientId: 'dj-mix:spotify:client-id',
