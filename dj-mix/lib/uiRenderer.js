@@ -186,7 +186,7 @@ export function createDjMixRenderer(options) {
   function renderSourceBadge(item) {
     let html = '';
     if (item.queueSource === 'fil-rouge') {
-      html += '<span class="queue-filrouge-badge" title="Fil rouge" aria-label="Fil rouge">fil rouge</span>';
+      html += '<span class="queue-filrouge-dot" title="Fil rouge" aria-label="Fil rouge"></span>';
     }
     if (item.sourceState === 'ready') html += '<span class="queue-cache-dot is-ready" aria-label="Cache prêt" title="Cache prêt"></span>';
     else if (item.sourceState === 'resolving') html += '<span class="queue-cache-dot is-resolving" aria-label="Cache en cours" title="Cache en cours"></span>';
@@ -253,10 +253,7 @@ export function createDjMixRenderer(options) {
           <div class="queue-artist">${escHtml(item.artist)}</div>
           ${metaChips}
         </div>
-        <span class="queue-duration">${formatTime(item.duration)}</span>
         <div class="queue-actions">
-          <button class="${cueAClass}" data-index="${i}" data-deck="A" aria-label="Cue platine 1" ${cueADisabled}>Cue 1</button>
-          <button class="${cueBClass}" data-index="${i}" data-deck="B" aria-label="Cue platine 2" ${cueBDisabled}>Cue 2</button>
           <button class="queue-remove" data-index="${i}" aria-label="Retirer">✕</button>
         </div>
       </div>`;
