@@ -1,3 +1,9 @@
+## [1.211.2](https://github.com/niafrond/niafrond.github.io/compare/v1.211.1...v1.211.2) (2026-05-30)
+
+### Performance Improvements
+
+* **dj-mix:** debounce renderQueue/saveQueue and serialize background tasks to reduce playback stuttering ([91851ca](https://github.com/niafrond/niafrond.github.io/commit/91851cadcc68450d501a04d1696f8b68541ae195))
+
 ## [1.211.1](https://github.com/niafrond/niafrond.github.io/compare/v1.211.0...v1.211.1) (2026-05-28)
 
 ### Bug Fixes
