@@ -1,3 +1,9 @@
+## [1.213.0](https://github.com/niafrond/niafrond.github.io/compare/v1.212.0...v1.213.0) (2026-05-30)
+
+### Features
+
+* add loop and shuffle options for playlist management and persist settings ([a889615](https://github.com/niafrond/niafrond.github.io/commit/a8896152d7b5d4f293d6e961b69e68ee68b94604))
+
 ## [1.212.0](https://github.com/niafrond/niafrond.github.io/compare/v1.211.2...v1.212.0) (2026-05-30)
 
 ### Features
