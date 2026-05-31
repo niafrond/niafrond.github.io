@@ -306,6 +306,18 @@ export function createFilRougeManager() {
   }
 
   /**
+   * Peek: retourne le prochain morceau sans avancer l'index.
+   * Vérifie d'abord la file prioritaire, puis la playlist.
+   * @returns {FilRougeItem|null}
+   */
+  function peekNextTrackFromAny() {
+    if (priorityQueue.length > 0) {
+      return { ...priorityQueue[0], lastTouchedAt: Date.now() };
+    }
+    return peekNextTrack();
+  }
+
+  /**
    * Indique si le fil rouge est actif (a des morceaux).
    */
   function isActive() {
@@ -409,6 +421,7 @@ export function createFilRougeManager() {
     // Lecture
     getNextTrack,
     peekNextTrack,
+    peekNextTrackFromAny,
     isActive,
 
     // Shuffle

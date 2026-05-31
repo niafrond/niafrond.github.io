@@ -5,6 +5,28 @@
  */
 
 import { DJPlayer } from './player.js';
+
+// --- Wake Lock (garder l'écran allumé pendant la lecture) ---
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => {
+        wakeLock = null;
+      });
+    }
+  } catch (err) {
+    // Peut échouer sur certains navigateurs ou si déjà actif
+    wakeLock = null;
+  }
+}
+function releaseWakeLock() {
+  if (wakeLock) {
+    wakeLock.release().catch(() => {});
+    wakeLock = null;
+  }
+}
 import {
   getTransitionRamRequirementsMb,
   MIX_TRANSITION_MODE_LABELS,
@@ -185,6 +207,10 @@ let djModeGenrePrefs = readDjModeGenrePrefs(); // string[]
 let autoSuggestionQueueSearchEnabled = readAutoSuggestionQueueSearchEnabledSetting();
 let queueLoopEnabled = readQueueLoopSetting();
 let queueShuffleEnabled = readQueueShuffleSetting();
+
+/** Morceau fil rouge préchargé sur le deck inactif via peek (non encore consommé par getNextTrack).
+ * Null si aucun ghost en attente. */
+let pendingFilRougeOnInactiveDeck = null;
 
 function isAutoDjFxTypeAllowed(type) {
   if (!type) return false;
@@ -1065,6 +1091,18 @@ function getFilRougeTrackStatus(item) {
 
 // ── Fil rouge UI rendering ──────────────────────────────────────────────────
 
+function buildFilRougeDanceChips(item) {
+  if (djMode !== 'dance') return '';
+  const bpm = Number(extractTrackBpm(item));
+  const genre = String(extractTrackGenre(item) || '').trim();
+  const bpmHtml = Number.isFinite(bpm) && bpm > 0 ? `<span class="queue-chip">${Math.round(bpm)} BPM</span>` : '';
+  const genreHtml = genre
+    ? `<button type="button" class="queue-chip queue-chip--genre" data-genre="${escHtml(genre)}" aria-label="Filtrer par genre ${escHtml(genre)}">${escHtml(genre)}</button>`
+    : '';
+  if (!bpmHtml && !genreHtml) return '';
+  return `<div class="queue-chips">${bpmHtml}${genreHtml}</div>`;
+}
+
 function renderFilRouge() {
   const playlist = filRougeManager.getPlaylist();
   const priorityQueue = filRougeManager.getPriorityQueue();
@@ -1099,6 +1137,7 @@ function renderFilRouge() {
             <span class="filrouge-pos">${idx + 1}.</span>
             <div class="filrouge-name">${escHtml(item.name || 'Inconnu')}</div>
             <div class="filrouge-artist">${escHtml(item.artist || '')}</div>
+            ${buildFilRougeDanceChips(item)}
           </div>
           <button class="filrouge-remove-btn" data-type="priority" data-index="${idx}" aria-label="Retirer">✕</button>
         </div>
@@ -1138,6 +1177,7 @@ function renderFilRouge() {
             <div class="filrouge-meta">
               <div class="filrouge-name">${escHtml(item.name || 'Inconnu')}</div>
               <div class="filrouge-artist">${escHtml(item.artist || '')}</div>
+              ${buildFilRougeDanceChips(item)}
               <div class="filrouge-statuses">
                 <span class="filrouge-status ${downloadClass}">${downloadLabel}</span>
                 <span class="filrouge-status ${stemsClass}">${stemsLabel}</span>
@@ -2538,6 +2578,12 @@ function hookPlayerEvents() {
     if ('mediaSession' in navigator) {
       navigator.mediaSession.playbackState = uiState.isPlaying ? 'playing' : 'paused';
     }
+    // Wake Lock: activer si lecture, relâcher sinon
+    if (uiState.isPlaying) {
+      requestWakeLock();
+    } else {
+      releaseWakeLock();
+    }
     updateMediaSessionPositionState();
     renderQueue();
   });
@@ -2898,6 +2944,12 @@ async function launchDeckFromQueue(deck, options = {}) {
 
   const fallbackIndex = uiState.currentIndex >= 0 && queue[uiState.currentIndex] ? uiState.currentIndex : 0;
   const inactiveDeck = getResolvedInactiveDeck();
+
+  // Si on charge explicitement le deck inactif, effacer le ghost fil rouge éventuel.
+  if (targetDeck === inactiveDeck && pendingFilRougeOnInactiveDeck) {
+    pendingFilRougeOnInactiveDeck = null;
+  }
+
   const deckItemIndex = deckDisplayItems[targetDeck]
     ? queue.findIndex((q) => q.id === deckDisplayItems[targetDeck]?.id)
     : -1;
@@ -4008,6 +4060,39 @@ async function addToQueue(track, options = {}) {
     artist: item.artist,
     queueLength: queue.length,
   });
+
+  // Si le deck inactif avait un morceau fil rouge préchargé via peek (ghost), le remplacer
+  // par la nouvelle entrée. Le fil rouge n'a PAS encore avancé son index (on utilisait peek),
+  // donc la chanson ghost "retourne" naturellement en tant que prochain du fil rouge.
+  if (pendingFilRougeOnInactiveDeck && !playNow) {
+    const prevGhost = pendingFilRougeOnInactiveDeck;
+    pendingFilRougeOnInactiveDeck = null;
+    const inactiveDeck = getResolvedInactiveDeck();
+    if (deckDisplayItems[inactiveDeck] === prevGhost) {
+      setDeckItem(inactiveDeck, item);
+      logInfo('addToQueue(): replacing fil rouge ghost on inactive deck', {
+        inactiveDeck,
+        newItemId: item.id,
+        newItemName: item.name,
+      });
+      ensureLocalSource(item).then(async (url) => {
+        if (!player || deckDisplayItems[inactiveDeck] !== item) return;
+        await preloadMixDataForDeckItem(item, inactiveDeck);
+        const startMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
+        await player.playOnDeck(inactiveDeck, {
+          url,
+          loudnessDb: item.loudnessDb,
+          bpm: item.bpm,
+          durationMs: item.duration,
+          audioFeatures: item.audioFeatures,
+          stems: item.stems,
+        }, { paused: true, startPositionMs: startMs });
+        backgroundEnrichStems(inactiveDeck, item);
+        renderQueue();
+      }).catch(() => {});
+    }
+  }
+
   renderQueue();
 
   if (playNow && player && !player.isCrossfading && uiState.isPlaying) {
@@ -4089,6 +4174,9 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     launchPreviewItem = null;
   }
   updateUpcomingArtwork();
+
+  // Un nouveau morceau démarre : effacer le ghost fil rouge potentiellement en attente sur le deck inactif.
+  pendingFilRougeOnInactiveDeck = null;
 
   try {
     touchQueueItem(item);
@@ -4215,8 +4303,65 @@ async function startPlaybackForIndex(index, mode, options = {}) {
           
           renderQueue();
         }).catch(() => {});
-      }
-    }
+      } else if (filRougeManager.isActive() && !isLowMemoryPlaybackMode()) {
+        // Pas de prochain morceau en file d'attente, mais le fil rouge en a un :
+        // précharger le prochain morceau fil rouge sur le deck inactif (via peek, sans avancer l'index).
+        const peekedFilRouge = filRougeManager.peekNextTrackFromAny();
+        if (peekedFilRouge) {
+          const ghostItem = {
+            id: peekedFilRouge.id || `filrouge-ghost-${Date.now()}`,
+            uri: peekedFilRouge.persistedSourceUrl || '',
+            name: peekedFilRouge.name || 'Inconnu',
+            artist: peekedFilRouge.artist || 'Artiste inconnu',
+            artUrl: peekedFilRouge.artUrl || '',
+            duration: peekedFilRouge.duration || 0,
+            bpm: peekedFilRouge.bpm || null,
+            genre: peekedFilRouge.genre || '',
+            cachePath: peekedFilRouge.cachePath || '',
+            persistedSourceUrl: peekedFilRouge.persistedSourceUrl || '',
+            ratingKey: peekedFilRouge.ratingKey || '',
+            stemsStatus: peekedFilRouge.stemsStatus || '',
+            stems: peekedFilRouge.stems || null,
+            sourceState: 'idle',
+            sourceError: null,
+            sourceMeta: null,
+            localBlobUrl: null,
+            queueSource: 'fil-rouge',
+            lastTouchedAt: Date.now(),
+          };
+          setDeckItem(inactiveDeck, ghostItem);
+          pendingFilRougeOnInactiveDeck = ghostItem;
+          updatePlannedStartMarker();
+
+          logDebug('startPlaybackForIndex(): preloading fil rouge ghost on inactive deck', {
+            inactiveDeck,
+            ghostId: ghostItem.id,
+            ghostName: ghostItem.name,
+          });
+
+          ensureLocalSource(ghostItem).then(async (ghostUrl) => {
+            if (!player || pendingFilRougeOnInactiveDeck !== ghostItem) return;
+            await preloadMixDataForDeckItem(ghostItem, inactiveDeck);
+            const ghostStartMs = Math.max(0, Number(ghostItem.autoDjStartOffsetMs) || 0);
+            if (pendingFilRougeOnInactiveDeck !== ghostItem) return;
+            await player.playOnDeck(inactiveDeck, {
+              url: ghostUrl,
+              loudnessDb: ghostItem.loudnessDb,
+              bpm: ghostItem.bpm,
+              durationMs: ghostItem.duration,
+              audioFeatures: ghostItem.audioFeatures,
+              stems: ghostItem.stems,
+            }, { paused: true, startPositionMs: ghostStartMs });
+            backgroundEnrichStems(inactiveDeck, ghostItem);
+            renderQueue();
+          }).catch(() => {
+            if (pendingFilRougeOnInactiveDeck === ghostItem) {
+              pendingFilRougeOnInactiveDeck = null;
+              setDeckItem(inactiveDeck, null);
+            }
+          });
+        }
+      }    }
 
     uiState.isPlaying = true;
     prefetchNext(getFollowingQueueIndex(index, { wrap: false }));
@@ -4362,6 +4507,8 @@ function prefetchNext(index) {
 
 function buildFilRougeHintHTML() {
   if (!filRougeManager.isActive()) return '';
+  // Si le morceau suivant est déjà préchargé sur le deck inactif, ne pas afficher le hint doublon.
+  if (pendingFilRougeOnInactiveDeck) return '';
   const next = filRougeManager.peekNextTrack();
   if (!next) return '';
   const artHtml = next.artUrl
