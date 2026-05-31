@@ -3579,17 +3579,20 @@ function updateMaxDurationMarker() {
     : (playbackDurationMs > 0 ? playbackDurationMs : (queue[uiState.currentIndex]?.duration ?? 0));
   if (durationMs <= 0) return;
 
-  const maxMs = effectiveMaxDurationSec * 1000;
+  const currentItem = queue[uiState.currentIndex];
+  const startOffsetMs = Math.max(0, Number(currentItem?.autoDjStartOffsetMs) || 0);
+  // Shift the max-duration wall by the song start offset so the marker reflects
+  // "X seconds from the actual start of playback" in absolute file time.
+  const maxMs = effectiveMaxDurationSec * 1000 + startOffsetMs;
   if (maxMs >= durationMs) return;
 
   let markerMs = maxMs;
-  const currentItem = queue[uiState.currentIndex];
   const fallbackMixData = autoModeManager.getCurrentTrackMixData?.();
   const mixData = getTrackMixData(currentItem) || fallbackMixData || null;
 
   if (mixData && typeof autoModeManager.findBestTransitionZone === 'function') {
     const preferredZone = autoModeManager.findBestTransitionZone(mixData, {
-      targetSec: effectiveMaxDurationSec,
+      targetSec: effectiveMaxDurationSec + startOffsetMs / 1000,
     });
 
     const zoneEndSec = Number.isFinite(Number(preferredZone?.triggerSec))

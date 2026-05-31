@@ -576,6 +576,74 @@ export function createAutoModeManager({
   }
 
   /**
+   * Strictly blocked zone types when max duration is ON.
+   * Covers:
+   *   1. high_energy_peak  — peakZones with intensity 'high' or reason matching
+   *   2. drop_or_impact    — all dropZones or reason matching
+   *   3. high_tension      — avoidTransitionZones with matching reason
+   *   4. intro_identification — avoidTransitionZones with matching reason, or before probableSongStartSec
+   *
+   * Returns { blocked: true, zoneEndSec } | { blocked: false }
+   */
+  function getMaxDurationStrictBlock(timeSec, mixData) {
+    if (!mixData) return { blocked: false };
+
+    const STRICT_BLOCK_REASONS = ['high_energy_peak', 'drop_or_impact', 'high_tension', 'intro_identification'];
+
+    // 1. high_energy_peak: peakZones with intensity containing 'high'
+    const peakZones = Array.isArray(mixData.peakZones) ? mixData.peakZones : [];
+    for (const zone of peakZones) {
+      const intensity = String(zone.intensity || zone.reason || '').toLowerCase();
+      if ((intensity.includes('high') || intensity === 'high_energy_peak') &&
+          timeSec >= zone.startSec && timeSec <= zone.endSec) {
+        return { blocked: true, zoneEndSec: zone.endSec };
+      }
+    }
+
+    // 2. drop_or_impact: all dropZones
+    const dropZones = Array.isArray(mixData.dropZones) ? mixData.dropZones : [];
+    for (const zone of dropZones) {
+      if (timeSec >= zone.startSec && timeSec <= zone.endSec) {
+        return { blocked: true, zoneEndSec: zone.endSec };
+      }
+    }
+
+    // 3 & 4. avoidTransitionZones with strict-blocked reason, plus intro check
+    const avoidZones = Array.isArray(mixData.avoidTransitionZones) ? mixData.avoidTransitionZones : [];
+    for (const zone of avoidZones) {
+      const reason = String(zone.reason || zone.type || '').toLowerCase().replace(/[\s-]/g, '_');
+      if (STRICT_BLOCK_REASONS.some(r => reason.includes(r)) &&
+          timeSec >= zone.startSec && timeSec <= zone.endSec) {
+        return { blocked: true, zoneEndSec: zone.endSec };
+      }
+    }
+
+    // 4. intro_identification: time before probableSongStartSec
+    const probableStart = toFiniteNumber(mixData.probableSongStartSec, 0);
+    if (probableStart > 0 && timeSec < probableStart) {
+      return { blocked: true, zoneEndSec: probableStart };
+    }
+
+    return { blocked: false };
+  }
+
+  /**
+   * When max-duration constrains triggerMs and that point falls inside a strictly
+   * blocked zone, advance triggerMs to just after the zone end.
+   * Returns the adjusted triggerMs (may be unchanged).
+   */
+  function advancePastMaxDurationBlock(triggerMs, mixData, trackDurationMs) {
+    if (!mixData) return triggerMs;
+    const triggerSec = triggerMs / 1000;
+    const block = getMaxDurationStrictBlock(triggerSec, mixData);
+    if (!block.blocked) return triggerMs;
+
+    const advancedMs = Math.round(block.zoneEndSec * 1000) + 500; // 0.5 s buffer after zone
+    const cap = trackDurationMs > 0 ? Math.max(triggerMs, trackDurationMs - 10000) : advancedMs;
+    return Math.min(advancedMs, cap);
+  }
+
+  /**
    * Find best safe transition zone in a track.
    * - If targetSec is provided, pick zone closest to that target (max duration case).
    * - Otherwise prefer a safe zone close to track end, but still before the end.
@@ -863,7 +931,12 @@ export function createAutoModeManager({
         currentTrackMixData = mixData;
         onMixDataUpdated?.(mixData);
 
-        const maxDurationSec = getTrackMaxDurationSec?.() || 0;
+        const rawMaxDurationSec = getTrackMaxDurationSec?.() || 0;
+        // The player seeks to autoDjStartOffsetMs before playback, so zone times and
+        // triggerMs are absolute positions in the file. Shift the max-duration wall by
+        // the same offset so "max duration" is measured from the actual start of playback.
+        const startOffsetMs = Math.max(0, Number(currentTrack.autoDjStartOffsetMs) || 0);
+        const maxDurationSec = rawMaxDurationSec > 0 ? rawMaxDurationSec + startOffsetMs / 1000 : 0;
         const maxDurationMs = maxDurationSec > 0 ? maxDurationSec * 1000 : -1;
 
         if (!mixData) {
@@ -872,10 +945,11 @@ export function createAutoModeManager({
           
           // If max duration is set, use it as constraint
           if (maxDurationMs > 0) {
-            const triggerMs = Math.min(maxDurationMs, Math.max(
+            let triggerMs = Math.min(maxDurationMs, Math.max(
               resolvedDurationMs - 20000,
               resolvedDurationMs * 0.75
             ));
+            // No mix data → cannot check strict-block zones; keep as-is
             logger?.debug?.('autoDj: calculated fallback timing with max duration constraint', { 
               triggerMs, 
               maxDurationMs 
@@ -944,6 +1018,19 @@ export function createAutoModeManager({
             });
             triggerMs = maxDurationMs;
             reason += ' (capped by max duration)';
+
+            // Strictly advance past high-energy / drop / tension / intro zones
+            const resolvedDurMs = Math.max(currentTrack.duration || 0, getActualDurationMs?.() || 0);
+            const advancedMs = advancePastMaxDurationBlock(triggerMs, mixData, resolvedDurMs);
+            if (advancedMs !== triggerMs) {
+              logger?.info?.('autoDj: max duration trigger advanced past strict-block zone', {
+                trackName: currentTrack.name,
+                from: triggerMs,
+                to: advancedMs,
+              });
+              triggerMs = advancedMs;
+              reason += ' (advanced past strict-block zone)';
+            }
           }
 
           logger?.info?.('autoDj: calculated automix timing', {
@@ -1011,7 +1098,9 @@ export function createAutoModeManager({
         currentTrackMixData = null;
         onMixDataUpdated?.(null);
         // Fallback timing
-        const maxDurationSec = getTrackMaxDurationSec?.() || 0;
+        const rawMaxDurationSec = getTrackMaxDurationSec?.() || 0;
+        const startOffsetMs = Math.max(0, Number(currentTrack.autoDjStartOffsetMs) || 0);
+        const maxDurationSec = rawMaxDurationSec > 0 ? rawMaxDurationSec + startOffsetMs / 1000 : 0;
         const maxDurationMs = maxDurationSec > 0 ? maxDurationSec * 1000 : -1;
         
         const resolvedDurationMs = Math.max(currentTrack.duration || 0, getActualDurationMs?.() || 0);
