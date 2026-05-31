@@ -1117,6 +1117,21 @@ export function createAutoModeManager({
           artistName: nextFromFilRouge.artist,
         });
 
+        // Fetch mix data for the fil rouge track so zones are respected
+        // (same flow as for auto-DJ suggested tracks)
+        fetchMixData(
+          nextFromFilRouge.name || nextFromFilRouge.trackName,
+          nextFromFilRouge.artist || nextFromFilRouge.artistName
+        )
+          .then(mixData => {
+            nextTrackMixData = mixData;
+            const recommendedTransition = recommendTransitionType(currentTrackMixData, mixData);
+            logger?.debug?.('autoDj: fil rouge recommended transition', { type: recommendedTransition });
+          })
+          .catch(err => {
+            logger?.debug?.('autoDj: failed to prefetch fil rouge mix data', { error: err?.message });
+          });
+
         await addToQueue(nextFromFilRouge, {
           source: 'fil-rouge',
           autoDjReferenceTrackId: currentTrack.id || null,
