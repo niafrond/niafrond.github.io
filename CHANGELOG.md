@@ -1,3 +1,12 @@
+## [1.214.0](https://github.com/niafrond/niafrond.github.io/compare/v1.213.0...v1.214.0) (2026-05-31)
+
+### Features
+
+* add peek functionality for next track and implement wake lock management ([010f69b](https://github.com/niafrond/niafrond.github.io/commit/010f69b1197f5629fa82a1cfa5cbb6df22c9f0c6))
+* enhance max duration handling by incorporating track start offsets for accurate playback timing ([c768fee](https://github.com/niafrond/niafrond.github.io/commit/c768feea730d63f887ac6236b7eca525a4677905))
+* enhance zone penalty logic for max-duration targets and clean up duplicate hint display ([5e3584a](https://github.com/niafrond/niafrond.github.io/commit/5e3584a7693da6a56b1c4427832d93c7f53e0d3f))
+* fetch mix data for fil rouge tracks to enhance transition recommendations ([cde5345](https://github.com/niafrond/niafrond.github.io/commit/cde534549d52d3359e4e1ec92e239efa2c13f119))
+
 ## [1.213.0](https://github.com/niafrond/niafrond.github.io/compare/v1.212.0...v1.213.0) (2026-05-30)
 
 ### Features
