@@ -670,7 +670,10 @@ export function createAutoModeManager({
       if (!zone) return Infinity;
       const startSec = Number(zone.startSec) || 0;
       const endSec = Number(zone.endSec) || startSec;
-      if (targetSec < startSec) return startSec - targetSec;
+      // When a max-duration target is active, heavily penalise zones that start after
+      // the wall: they would always be capped to maxDurationMs anyway, giving no zone
+      // benefit. Pre-wall zones are always preferred even if farther in absolute time.
+      if (targetSec < startSec) return (startSec - targetSec) + (hasTarget ? 1000 : 0);
       if (targetSec > endSec) return targetSec - endSec;
       return 0;
     };

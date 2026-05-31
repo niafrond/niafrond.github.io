@@ -4510,8 +4510,6 @@ function prefetchNext(index) {
 
 function buildFilRougeHintHTML() {
   if (!filRougeManager.isActive()) return '';
-  // Si le morceau suivant est déjà préchargé sur le deck inactif, ne pas afficher le hint doublon.
-  if (pendingFilRougeOnInactiveDeck) return '';
   const next = filRougeManager.peekNextTrack();
   if (!next) return '';
   const artHtml = next.artUrl
