@@ -1,3 +1,9 @@
+## [1.218.0](https://github.com/niafrond/niafrond.github.io/compare/v1.217.0...v1.218.0) (2026-06-01)
+
+### Features
+
+* implement cache eviction logic for session blobs and mix data, enhance track played detection with ID variants ([4e63eed](https://github.com/niafrond/niafrond.github.io/commit/4e63eed3e43b9a4322f587cfcddcd9e5e429b1ec))
+
 ## [1.217.0](https://github.com/niafrond/niafrond.github.io/compare/v1.216.0...v1.217.0) (2026-06-01)
 
 ### Features
