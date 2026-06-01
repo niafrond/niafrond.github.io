@@ -2617,8 +2617,7 @@ function hookPlayerEvents() {
         if (autoDjFxSettings.enabled === false) {
           autoDjNextFxCountdown.hidden = true;
         } else {
-          const pending = autoModeManager.getPendingAutoFxEvents();
-          const next = pending.find((e) => e.timeMs > position);
+          const next = autoModeManager.peekNextAutoFxEvent(position);
           if (next) {
             const secLeft = Math.ceil((next.timeMs - position) / 1000);
             autoDjNextFxCountdown.textContent = `FX ${secLeft}s`;
@@ -3426,11 +3425,16 @@ function triggerAutoDjCreativeFxEvent(event) {
   showToast(`🤖 Auto FX: ${label}${suffix}`);
 }
 
+let _suggestionBtnLastKey = null;
+
 function updateSuggestionRefreshButtons() {
   const isEnabled = autoModeManager.isAutoModeEnabled();
   const hasCurrent = uiState.isPlaying && uiState.currentIndex >= 0 && Boolean(queue[uiState.currentIndex]);
   const activeDeck = getResolvedActiveDeck();
   const shouldShow = isEnabled && hasCurrent && autoSuggestionQueueSearchEnabled;
+  const cacheKey = `${shouldShow}|${activeDeck}|${autoSuggestionRefreshInProgress}`;
+  if (cacheKey === _suggestionBtnLastKey) return;
+  _suggestionBtnLastKey = cacheKey;
 
   const applyState = (button, deck) => {
     if (!button) return;
@@ -3533,16 +3537,31 @@ function updateAutoDjMarker() {
   }
 }
 
-function updatePlannedStartMarker() {
-  if (deckAAutoDjStartMarker) deckAAutoDjStartMarker.hidden = true;
-  if (deckBAutoDjStartMarker) deckBAutoDjStartMarker.hidden = true;
+let _plannedStartMarkerLastKey = null;
 
+function updatePlannedStartMarker() {
   const inactiveDeck = getResolvedInactiveDeck();
   const item = deckDisplayItems[inactiveDeck];
-  if (!item) return;
+
+  if (!item) {
+    // Only hide when something was previously shown
+    if (_plannedStartMarkerLastKey !== null) {
+      if (deckAAutoDjStartMarker) deckAAutoDjStartMarker.hidden = true;
+      if (deckBAutoDjStartMarker) deckBAutoDjStartMarker.hidden = true;
+      _plannedStartMarkerLastKey = null;
+    }
+    return;
+  }
 
   const durationMs = Number(item.duration) || (queue.find((q) => q.id === item.id)?.duration ?? 0);
   const startPositionMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
+  const cacheKey = `${inactiveDeck}|${item.id}|${startPositionMs}|${durationMs}`;
+  if (cacheKey === _plannedStartMarkerLastKey) return;
+  _plannedStartMarkerLastKey = cacheKey;
+
+  if (deckAAutoDjStartMarker) deckAAutoDjStartMarker.hidden = true;
+  if (deckBAutoDjStartMarker) deckBAutoDjStartMarker.hidden = true;
+
   if (!durationMs || startPositionMs <= 0 || startPositionMs >= durationMs) return;
 
   const pct = Math.min(100, Math.max(0, (startPositionMs / durationMs) * 100));
@@ -3559,18 +3578,12 @@ function updatePlannedStartMarker() {
  * Keyed by (trackId + effectiveMaxDurationSec + durationMs) to avoid
  * re-running findBestTransitionZone on every deckstate event.
  */
-const _maxDurMarkerCache = { key: null, markerMs: null, maxMs: null, maxExceedsDuration: null, rawLogged: false };
+const _maxDurMarkerCache = { key: null, markerMs: null, maxMs: null, maxExceedsDuration: null, rawLogged: false, renderKey: null };
 
 function updateMaxDurationMarker() {
-  if (deckAMaxDurMarker) deckAMaxDurMarker.hidden = true;
-  if (deckBMaxDurMarker) deckBMaxDurMarker.hidden = true;
-  if (deckAMaxDurRawMarker) deckAMaxDurRawMarker.hidden = true;
-  if (deckBMaxDurRawMarker) deckBMaxDurRawMarker.hidden = true;
-
   const effectiveMaxDurationSec = trackMaxDurationEnabled
     ? (uiState.isPlaying ? trackMaxDurationAppliedSec : trackMaxDurationSec)
     : 0;
-  if (effectiveMaxDurationSec <= 0) return;
 
   // Prefer the specific playing deck's duration (accurate even during crossfades and
   // for fil rouge tracks that may have duration=0 in queue metadata).
@@ -3579,7 +3592,17 @@ function updateMaxDurationMarker() {
   const durationMs = deckStateDurationMs > 0
     ? deckStateDurationMs
     : (playbackDurationMs > 0 ? playbackDurationMs : (queue[uiState.currentIndex]?.duration ?? 0));
-  if (durationMs <= 0) return;
+
+  if (effectiveMaxDurationSec <= 0 || durationMs <= 0) {
+    if (_maxDurMarkerCache.renderKey !== 'off') {
+      _maxDurMarkerCache.renderKey = 'off';
+      if (deckAMaxDurMarker) deckAMaxDurMarker.hidden = true;
+      if (deckBMaxDurMarker) deckBMaxDurMarker.hidden = true;
+      if (deckAMaxDurRawMarker) deckAMaxDurRawMarker.hidden = true;
+      if (deckBMaxDurRawMarker) deckBMaxDurRawMarker.hidden = true;
+    }
+    return;
+  }
 
   const currentItem = queue[uiState.currentIndex];
   const startOffsetMs = Math.max(0, Number(currentItem?.autoDjStartOffsetMs) || 0);
@@ -3636,6 +3659,7 @@ function updateMaxDurationMarker() {
     _maxDurMarkerCache.markerMs = markerMs;
     _maxDurMarkerCache.maxMs = maxMs;
     _maxDurMarkerCache.maxExceedsDuration = maxExceedsDuration;
+    _maxDurMarkerCache.rawLogged = false; // reset so raw marker block runs for the new key
   }
 
   // Sync trackMaxDurationAppliedSec with the final marker position (after zone adjustment)
@@ -3649,42 +3673,60 @@ function updateMaxDurationMarker() {
   }
 
   const pct = Math.min(100, (markerMs / durationMs) * 100);
-  const marker = automixTimeline.currentPlayingDeck === 'B' ? deckBMaxDurMarker : deckAMaxDurMarker;
+
+  // Compute raw marker state (user's unaltered setting, not the zone-snapped applied value)
+  const userRawMs = trackMaxDurationSec * 1000 + startOffsetMs;
+  const rawPct = !maxExceedsDuration ? Math.min(100, (userRawMs / durationMs) * 100) : -1;
+  const rawVisible = rawPct >= 0 && Math.abs(rawPct - pct) > 0.2;
+
+  // Skip all DOM writes when the display state is identical to the last render.
+  const renderKey = `${playingDeck}|${pct.toFixed(3)}|${rawVisible ? rawPct.toFixed(3) : 'off'}`;
+  if (renderKey === _maxDurMarkerCache.renderKey) return;
+  _maxDurMarkerCache.renderKey = renderKey;
+
+  // Hide the inactive deck's markers
+  const inactiveDeck = playingDeck === 'B' ? 'A' : 'B';
+  const inactiveMarker = inactiveDeck === 'A' ? deckAMaxDurMarker : deckBMaxDurMarker;
+  const inactiveRawMarker = inactiveDeck === 'A' ? deckAMaxDurRawMarker : deckBMaxDurRawMarker;
+  if (inactiveMarker) inactiveMarker.hidden = true;
+  if (inactiveRawMarker) inactiveRawMarker.hidden = true;
+
+  // Show active deck marker
+  const marker = playingDeck === 'B' ? deckBMaxDurMarker : deckAMaxDurMarker;
   if (marker) {
     marker.style.left = `${pct}%`;
     marker.hidden = false;
   }
 
-  // Raw marker: show the unaltered max-duration position (before zone/outro adjustments),
-  // only when it differs meaningfully from the adjusted position and is within the track.
-  // Skip DOM update and logDebug if nothing changed (same cache key = same inputs).
-  if (_maxDurMarkerCache.key !== cacheKey || _maxDurMarkerCache.rawLogged !== true) {
-    if (!maxExceedsDuration) {
-      const rawPct = Math.min(100, (maxMs / durationMs) * 100);
-      const rawMarker = automixTimeline.currentPlayingDeck === 'B' ? deckBMaxDurRawMarker : deckAMaxDurRawMarker;
-      const rawVisible = rawMarker && Math.abs(rawPct - pct) > 0.2;
+  // Raw marker (log once per zone-key, update DOM on render-key change)
+  const rawMarker = playingDeck === 'B' ? deckBMaxDurRawMarker : deckAMaxDurRawMarker;
+  if (!maxExceedsDuration) {
+    if (!_maxDurMarkerCache.rawLogged) {
       logDebug('maxDuration: raw marker', {
         track: currentItem?.name,
-        effectiveMaxDurationSec,
+        userSettingSec: trackMaxDurationSec,
         startOffsetSec: startOffsetMs / 1000,
-        rawMs: maxMs,
-        rawSec: maxMs / 1000,
+        rawMs: userRawMs,
+        rawSec: userRawMs / 1000,
         rawPct,
         adjustedMs: markerMs,
         adjustedSec: markerMs / 1000,
         adjustedPct: pct,
-        diffSec: (markerMs - maxMs) / 1000,
+        diffSec: (markerMs - userRawMs) / 1000,
         rawVisible,
       });
-      if (rawMarker) {
-        if (rawVisible) {
-          rawMarker.style.left = `${rawPct}%`;
-          rawMarker.hidden = false;
-        } else {
-          rawMarker.hidden = true;
-        }
+      _maxDurMarkerCache.rawLogged = true;
+    }
+    if (rawMarker) {
+      if (rawVisible) {
+        rawMarker.style.left = `${rawPct}%`;
+        rawMarker.hidden = false;
+      } else {
+        rawMarker.hidden = true;
       }
-    } else {
+    }
+  } else {
+    if (!_maxDurMarkerCache.rawLogged) {
       logDebug('maxDuration: raw marker hidden (maxExceedsDuration)', {
         track: currentItem?.name,
         effectiveMaxDurationSec,
@@ -3692,8 +3734,9 @@ function updateMaxDurationMarker() {
         adjustedSec: markerMs / 1000,
         adjustedPct: pct,
       });
+      _maxDurMarkerCache.rawLogged = true;
     }
-    _maxDurMarkerCache.rawLogged = true;
+    if (rawMarker) rawMarker.hidden = true;
   }
 }
 
@@ -4491,7 +4534,9 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     resetAutomixTimeline(automixTimeline, targetDeck);
     maxDurMarkerTriggeredForTrack = false;
     _maxDurMarkerCache.key = null;
+    _maxDurMarkerCache.renderKey = null;
     _maxDurMarkerCache.rawLogged = false;
+    _plannedStartMarkerLastKey = null;
     automixRescheduledForTrackId = null;
     applyTrackMaxDurationForCurrentPlayback();
     updateAutoDjMarker();

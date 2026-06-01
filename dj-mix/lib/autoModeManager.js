@@ -1670,6 +1670,13 @@ export function createAutoModeManager({
     getNextTrackMixData: () => nextTrackMixData,
     getPendingNextTrack: () => pendingNextTrack,
     getPendingAutoFxEvents: () => [...pendingAutoFxEvents],
+    peekNextAutoFxEvent: (afterMs) => {
+      const threshold = toFiniteNumber(afterMs, 0);
+      for (let i = 0; i < pendingAutoFxEvents.length; i++) {
+        if (pendingAutoFxEvents[i]?.timeMs > threshold) return pendingAutoFxEvents[i];
+      }
+      return null;
+    },
 
     // Zone validation
     isInAvoidZone,
