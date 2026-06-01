@@ -1185,7 +1185,12 @@ function renderFilRouge() {
             </div>
           </div>
           <div class="filrouge-actions">
-            ${idx > filRougeIndex + 1 ? `<button class="filrouge-set-current-btn" data-index="${idx}" aria-label="Sauter à ce morceau" title="Sauter ici (skip les ${idx - filRougeIndex - 1} morceau${idx - filRougeIndex - 1 > 1 ? 'x' : ''} précédents)">⏩</button>` : ''}
+            ${idx < filRougeIndex
+              ? `<button class="filrouge-set-current-btn" data-index="${idx}" aria-label="Revenir à ce morceau" title="Revenir à ce morceau">⏪</button>`
+              : idx > filRougeIndex + 1
+                ? `<button class="filrouge-set-current-btn" data-index="${idx}" aria-label="Sauter à ce morceau" title="Sauter ici (skip les ${idx - filRougeIndex - 1} morceau${idx - filRougeIndex - 1 > 1 ? 'x' : ''} précédents)">⏩</button>`
+                : ''
+            }
             <button class="filrouge-priority-add-btn" data-index="${idx}" aria-label="Ajouter à la file d'attente" title="Ajouter à la file d'attente">⏭</button>
             <button class="filrouge-remove-btn" data-type="playlist" data-index="${idx}" aria-label="Retirer">✕</button>
           </div>
@@ -2689,43 +2694,10 @@ function hookPlayerEvents() {
       autoModeManager.onTrackFinished(currentTrack);
     }
 
-    // Fil rouge: if no next track in queue, get from fil rouge
+    // Advance to next track via automix (handles queue next AND fil rouge fallback)
     const hasNextInQueue = getFollowingQueueIndex(uiState.currentIndex) >= 0;
-    if (!hasNextInQueue && filRougeManager.isActive()) {
-      const nextFromFilRouge = filRougeManager.getNextTrack();
-      if (nextFromFilRouge) {
-        logInfo('filRouge.trackend.addNext', { name: nextFromFilRouge.name });
-        const item = {
-          id: nextFromFilRouge.id || `filrouge-${Date.now()}`,
-          uri: nextFromFilRouge.persistedSourceUrl || '',
-          name: nextFromFilRouge.name || 'Inconnu',
-          artist: nextFromFilRouge.artist || 'Artiste inconnu',
-          artUrl: nextFromFilRouge.artUrl || '',
-          duration: nextFromFilRouge.duration || 0,
-          bpm: nextFromFilRouge.bpm || null,
-          genre: nextFromFilRouge.genre || '',
-          cachePath: nextFromFilRouge.cachePath || '',
-          persistedSourceUrl: nextFromFilRouge.persistedSourceUrl || '',
-          ratingKey: nextFromFilRouge.ratingKey || '',
-          stemsStatus: nextFromFilRouge.stemsStatus || '',
-          stems: nextFromFilRouge.stems || null,
-          sourceState: 'idle',
-          sourceError: null,
-          sourceMeta: null,
-          localBlobUrl: null,
-          queueSource: 'fil-rouge',
-          lastTouchedAt: Date.now(),
-        };
-        queue.push(item);
-        const nextIdx = queue.length - 1;
-        uiState.currentIndex = nextIdx;
-        uiState.currentTrackId = item.id;
-        renderQueue();
-        renderFilRouge();
-        startPlaybackForIndex(nextIdx, 'play').catch((err) => {
-          logError('filRouge.trackend.playFailed', { message: err?.message });
-        });
-      }
+    if (hasNextInQueue || filRougeManager.isActive()) {
+      autoMixBtn?.click?.();
     }
   });
 
@@ -3604,6 +3576,16 @@ function updateMaxDurationMarker() {
     }
   }
 
+  // Sync trackMaxDurationAppliedSec with the zone-snapped marker position so the actual
+  // automix trigger fires at exactly where the marker is shown. Only while playing:
+  // the applied value is reset to the raw setting on each new track/playback start anyway.
+  if (uiState.isPlaying && trackMaxDurationEnabled) {
+    const snappedAppliedSec = Math.max(0, Math.round((markerMs - startOffsetMs) / 1000));
+    if (snappedAppliedSec !== trackMaxDurationAppliedSec) {
+      trackMaxDurationAppliedSec = snappedAppliedSec;
+    }
+  }
+
   const pct = Math.min(100, (markerMs / durationMs) * 100);
   const marker = automixTimeline.currentPlayingDeck === 'B' ? deckBMaxDurMarker : deckAMaxDurMarker;
   if (marker) {
@@ -4086,9 +4068,11 @@ async function addToQueue(track, options = {}) {
         newItemId: item.id,
         newItemName: item.name,
       });
+      fetchAndStoreArtworkForItem(item, inactiveDeck).catch(() => {});
+      const replaceMixPreload = preloadMixDataForDeckItem(item, inactiveDeck);
       ensureLocalSource(item).then(async (url) => {
         if (!player || deckDisplayItems[inactiveDeck] !== item) return;
-        await preloadMixDataForDeckItem(item, inactiveDeck);
+        await replaceMixPreload.catch(() => {});
         const startMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
         await player.playOnDeck(inactiveDeck, {
           url,
@@ -4291,10 +4275,13 @@ async function startPlaybackForIndex(index, mode, options = {}) {
         setDeckItem(inactiveDeck, nextItem);
         updatePlannedStartMarker();
 
+        fetchAndStoreArtworkForItem(nextItem, inactiveDeck).catch(() => {});
+        const nextMixPreload = preloadMixDataForDeckItem(nextItem, inactiveDeck);
+
         ensureLocalSource(nextItem).then(async (nextUrl) => {
           if (!player) return;
 
-          await preloadMixDataForDeckItem(nextItem, inactiveDeck);
+          await nextMixPreload.catch(() => {});
           const nextStartPositionMs = Math.max(0, Number(nextItem.autoDjStartOffsetMs) || 0);
 
           await player.playOnDeck(inactiveDeck, {
@@ -4350,9 +4337,12 @@ async function startPlaybackForIndex(index, mode, options = {}) {
             ghostName: ghostItem.name,
           });
 
+          fetchAndStoreArtworkForItem(ghostItem, inactiveDeck).catch(() => {});
+          const ghostMixPreload = preloadMixDataForDeckItem(ghostItem, inactiveDeck);
+
           ensureLocalSource(ghostItem).then(async (ghostUrl) => {
             if (!player || pendingFilRougeOnInactiveDeck !== ghostItem) return;
-            await preloadMixDataForDeckItem(ghostItem, inactiveDeck);
+            await ghostMixPreload.catch(() => {});
             const ghostStartMs = Math.max(0, Number(ghostItem.autoDjStartOffsetMs) || 0);
             if (pendingFilRougeOnInactiveDeck !== ghostItem) return;
             await player.playOnDeck(inactiveDeck, {
@@ -4555,15 +4545,9 @@ function renderQueue() {
     onReorder: (fromIndex, targetIndex, insertAfter) => {
       reorderQueue(fromIndex, targetIndex, insertAfter);
     },
-    onActivate: async (idx) => {
-      showCrossfadeRing(true);
-      try {
-        await startPlaybackForIndex(idx, 'crossfade');
-        uiState.currentIndex = idx;
-        renderQueue();
-      } finally {
-        showCrossfadeRing(false);
-      }
+    onActivate: (idx) => {
+      uiState.deckBCueIndex = idx;
+      autoMixBtn?.click?.();
     },
     getCurrentIndex: () => uiState.currentIndex,
     isCrossfading: () => Boolean(player?.isCrossfading),
