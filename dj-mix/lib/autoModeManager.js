@@ -703,8 +703,12 @@ export function createAutoModeManager({
 
   /**
    * Find best safe transition zone in a track.
-   * - If targetSec is provided, pick zone closest to that target (max duration case).
-   * - Otherwise prefer a safe zone close to track end, but still before the end.
+   *
+   * Starting from targetSec, checks whether that point is free of any blocking zone
+   * (avoid, drop, never-miss, high-energy peak). If it is blocked, jumps to just after
+   * the end of that zone and repeats until a safe point is found or the track ends.
+   * A safe point inside a declared safeTransitionZone is returned as type 'safe';
+   * a safe point in empty space is returned as type 'clear'.
    */
   function findBestTransitionZone(mixData, options = {}) {
     if (!mixData) return null;
@@ -712,134 +716,63 @@ export function createAutoModeManager({
     const durationSec = Number(mixData.durationSec) || 0;
     const requestedTargetSec = Number(options.targetSec);
     const hasTarget = Number.isFinite(requestedTargetSec) && requestedTargetSec > 0;
-    const fallbackEndTargetSec = durationSec > 0
-      ? Math.max(0, durationSec - 8)
-      : 0;
-    const targetSec = hasTarget ? requestedTargetSec : fallbackEndTargetSec;
+    const targetSec = hasTarget
+      ? requestedTargetSec
+      : (durationSec > 0 ? Math.max(0, durationSec - 8) : 0);
 
-    const clampToZone = (valueSec, zone) => {
-      if (!zone) return valueSec;
-      const startSec = Number(zone.startSec) || 0;
-      const endSec = Number(zone.endSec) || startSec;
-      return Math.min(endSec, Math.max(startSec, valueSec));
-    };
+    // Zones that block a transition at any given point
+    const blockingZones = [
+      ...(Array.isArray(mixData.avoidTransitionZones) ? mixData.avoidTransitionZones : []),
+      ...(Array.isArray(mixData.dropZones) ? mixData.dropZones : []),
+      ...(Array.isArray(mixData.neverMissZones) ? mixData.neverMissZones : []),
+      ...(Array.isArray(mixData.peakZones) ? mixData.peakZones : []).filter((z) => {
+        const label = String(z.intensity || z.reason || '').toLowerCase();
+        return label.includes('high') || label === 'high_energy_peak';
+      }),
+    ];
 
-    const zoneDistanceToTarget = (zone) => {
-      if (!zone) return Infinity;
-      const startSec = Number(zone.startSec) || 0;
-      const endSec = Number(zone.endSec) || startSec;
-      // Distance is simply how far the target is from the zone (0 = inside the zone).
-      // Zones starting after the wall are naturally farther away by their own overshoot;
-      // the caller caps triggerMs to maxDurationMs anyway, so no extra penalty needed.
-      if (targetSec < startSec) return startSec - targetSec;
-      if (targetSec > endSec) return targetSec - endSec;
-      return 0;
-    };
-
-    // Phrase-aligned zones are preferred but not exclusively: they receive a small score
-    // bonus (treated as 5 s closer) so a non-aligned zone right at the target still wins
-    // over a phrase-aligned zone that is farther away.
-    const PHRASE_ALIGNED_BONUS_SEC = 5;
-
-    const scoreCandidateZones = (zones = [], type) => {
-      const validZones = zones.filter((zone) => {
-        if (!isValidTransitionZone(zone, mixData)) {
-          logger?.debug?.('autoDj: skipping invalid zone', {
-            type,
-            startSec: zone.startSec,
-            endSec: zone.endSec,
-            inAvoid: isInAvoidZone(zone.startSec, mixData),
-            inDrop: isInDropZone(zone.startSec, mixData),
-          });
-          return false;
-        }
-        return true;
-      });
-
-      if (validZones.length === 0) return null;
-
-      let best = null;
-      let bestScore = Infinity;
-      for (const zone of validZones) {
-        const distance = zoneDistanceToTarget(zone);
-        const score = zone.phraseAligned === true
-          ? Math.max(0, distance - PHRASE_ALIGNED_BONUS_SEC)
-          : distance;
-        if (score < bestScore) {
-          best = zone;
-          bestScore = score;
+    // Returns the endSec of whichever blocking zone contains timeSec, or null if safe.
+    const getBlockEnd = (timeSec) => {
+      for (const zone of blockingZones) {
+        if (timeSec >= zone.startSec && timeSec <= zone.endSec) {
+          return zone.endSec;
         }
       }
-
-      if (!best) return null;
-
-      return {
-        zone: best,
-        type,
-        mixData,
-        triggerSec: clampToZone(targetSec, best),
-      };
+      return null;
     };
 
-    // Prefer safeTransitionZones for AutoDJ timing.
-    const safeCandidate = scoreCandidateZones(mixData.safeTransitionZones, 'safe');
-    if (safeCandidate) return safeCandidate;
+    const MAX_ITER = 20;
+    let candidateSec = targetSec;
 
-    // If no safeTransitionZone exists, fallback to breakdown zones.
-    const breakdownCandidate = scoreCandidateZones(mixData.breakdownZones, 'breakdown');
-    if (breakdownCandidate) return breakdownCandidate;
+    for (let i = 0; i < MAX_ITER; i++) {
+      if (durationSec > 0 && candidateSec >= durationSec) break;
 
-    // Fallback: suggest transition window, avoiding problematic zones
-    if (mixData.indicators?.transitionWindowHintSec) {
-      const hint = mixData.indicators.transitionWindowHintSec;
-      const idealStart = Math.max(
-        mixData.probableSongStartSec + mixData.durationSec - hint.ideal,
-        mixData.probableSongStartSec + mixData.durationSec * 0.6
-      );
-
-      // Verify fallback zone is valid
-      const fallbackZone = { startSec: idealStart, endSec: idealStart + hint.ideal };
-      if (isValidTransitionZone(fallbackZone, mixData)) {
+      const blockEnd = getBlockEnd(candidateSec);
+      if (blockEnd === null) {
+        // candidateSec is safe — match to a declared safe zone if one covers it.
+        // safeTransitionZones, outroZones and breakdownZones are all safe landing spots.
+        const safeZonePools = [
+          ...(mixData.safeTransitionZones || []),
+          ...(mixData.outroZones || []),
+          ...(mixData.breakdownZones || []),
+        ];
+        const declaredZone = safeZonePools.find(
+          (z) => candidateSec >= z.startSec && candidateSec <= z.endSec,
+        );
+        const zone = declaredZone || { startSec: candidateSec, endSec: candidateSec };
         return {
-          zone: fallbackZone,
-          type: 'estimated',
+          zone,
+          type: declaredZone ? 'safe' : 'clear',
           mixData,
-          triggerSec: clampToZone(targetSec, fallbackZone),
+          triggerSec: candidateSec,
         };
       }
+
+      // Jump just past the blocking zone and retry
+      candidateSec = blockEnd + 0.5;
     }
 
-    // As last resort, try to find a gap between avoid/drop/never-miss zones
-    logger?.debug?.('autoDj: no valid transition zones found, attempting to find gap');
-    const allProblematicZones = [
-      ...(mixData.avoidTransitionZones || []),
-      ...(mixData.dropZones || []),
-      ...(mixData.neverMissZones || []),
-    ].sort((a, b) => a.startSec - b.startSec);
-
-    if (allProblematicZones.length > 0) {
-      // Try to find a gap before the first problematic zone
-      const firstZone = allProblematicZones[0];
-      if (firstZone.startSec > 10) {
-        const gapZone = {
-          startSec: Math.max(1, firstZone.startSec - 5),
-          endSec: Math.min(firstZone.startSec, firstZone.startSec - 1),
-        };
-        if (gapZone.endSec > gapZone.startSec) {
-          logger?.debug?.('autoDj: using gap before first problematic zone', {
-            startSec: gapZone.startSec,
-            endSec: gapZone.endSec,
-          });
-          return {
-            zone: gapZone,
-            type: 'gap',
-            mixData,
-            triggerSec: clampToZone(targetSec, gapZone),
-          };
-        }
-      }
-    }
-
+    logger?.debug?.('autoDj: no safe transition point found', { targetSec });
     return null;
   }
 
@@ -1472,7 +1405,16 @@ export function createAutoModeManager({
 
       // Find first result that hasn't been played yet and isn't in queue
       const queueSnapshot = getQueue();
-      const queueIds = new Set(queueSnapshot.map(item => item.id));
+      const queueIds = new Set(queueSnapshot.flatMap(item => [item.id, item.ratingKey, item.uri].filter(Boolean)));
+
+      // Build an exclusion fingerprint for the currently playing track.
+      // The player removes the active track from the queue during playback, so a plain
+      // queue lookup misses it — causing it to loop alternately on deck A and deck B.
+      const currentTrackId1 = currentTrack?.id || null;
+      const currentTrackId2 = currentTrack?.ratingKey || null;
+      const currentTrackId3 = currentTrack?.uri || null;
+      const currentTrackName = String(currentTrack?.name || currentTrack?.trackName || '').trim().toLowerCase();
+      const currentTrackArtist = String(currentTrack?.artist || currentTrack?.artistName || '').trim().toLowerCase();
 
       let selectedTrack = null;
       let selectedIndex = -1;
@@ -1487,12 +1429,28 @@ export function createAutoModeManager({
         const trackName = result.trackName || result.name || result.title || '';
         const artistName = result.artistName || result.artist || '';
 
-        // Skip if already played or in queue
+        // Skip if already played or in queue (checking all ID variants).
         if (isTrackPlayed(trackId) || queueIds.has(trackId)) {
-          logger?.debug?.('autoDj: skipping already-played track', {
+          logger?.debug?.('autoDj: skipping already-played or queued track', {
             trackName,
             artistName,
           });
+          continue;
+        }
+
+        // Skip if this result is the currently playing track (it may have been
+        // removed from the queue by the player, so queueIds won't catch it).
+        const resultName = trackName.trim().toLowerCase();
+        const resultArtist = artistName.trim().toLowerCase();
+        const isCurrentById =
+          (currentTrackId1 && (trackId === currentTrackId1)) ||
+          (currentTrackId2 && (trackId === currentTrackId2)) ||
+          (currentTrackId3 && (trackId === currentTrackId3));
+        const isCurrentByName =
+          currentTrackName && resultName &&
+          resultName === currentTrackName && resultArtist === currentTrackArtist;
+        if (isCurrentById || isCurrentByName) {
+          logger?.debug?.('autoDj: skipping currently playing track', { trackName, artistName });
           continue;
         }
 

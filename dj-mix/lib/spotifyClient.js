@@ -4,6 +4,7 @@ const SPOTIFY_AUTHORIZE_URL = 'https://accounts.spotify.com/authorize';
 const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token';
 const SPOTIFY_API_BASE_URL = 'https://api.spotify.com/v1';
 const SPOTIFY_SCOPES = 'playlist-read-private playlist-read-collaborative';
+const SPOTIFY_DEFAULT_CLIENT_ID = '2185f62bdf5f4d7a824aa14642484b05';
 const TOKEN_REFRESH_SKEW_MS = 60_000;
 const SPOTIFY_PLAYLIST_HISTORY_MAX = 20;
 const SPOTIFY_FETCH_MAX_RETRIES = 2;
@@ -554,7 +555,7 @@ export function createSpotifyClient(options = {}) {
   }
 
   function getStoredClientId() {
-    return String(safeGetStorage(STORAGE_KEYS.spotifyClientId) || '').trim();
+    return String(safeGetStorage(STORAGE_KEYS.spotifyClientId) || SPOTIFY_DEFAULT_CLIENT_ID).trim();
   }
 
   function rememberPlaylist(playlistId, playlistName = '') {
