@@ -1,3 +1,9 @@
+## [1.215.0](https://github.com/niafrond/niafrond.github.io/compare/v1.214.0...v1.215.0) (2026-06-01)
+
+### Features
+
+* add never miss zones for essential moments and update styling for visual distinction ([232e2fe](https://github.com/niafrond/niafrond.github.io/commit/232e2fe4b83e6d806e628a703a8803b193edb2ce))
+
 ## [1.214.0](https://github.com/niafrond/niafrond.github.io/compare/v1.213.0...v1.214.0) (2026-05-31)
 
 ### Features
