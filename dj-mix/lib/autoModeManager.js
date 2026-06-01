@@ -1675,6 +1675,7 @@ export function createAutoModeManager({
     isInAvoidZone,
     isInDropZone,
     isValidTransitionZone,
+    advancePastMaxDurationBlock,
 
     // Main functionality
     searchAndAddNextTrack,

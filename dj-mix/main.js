@@ -200,6 +200,8 @@ let trackMaxDurationSec = readTrackMaxDurationSetting();
 let trackMaxDurationEnabled = readTrackMaxDurationEnabledSetting(trackMaxDurationSec > 0);
 let trackMaxDurationAppliedSec = trackMaxDurationEnabled ? trackMaxDurationSec : 0;
 let lastTrackMaxDurationSec = trackMaxDurationSec > 0 ? trackMaxDurationSec : 120;
+/** True once the maxdur marker has fired automix for the current track (prevents double-trigger). */
+let maxDurMarkerTriggeredForTrack = false;
 let autoDjFxSettings = readAutoDjFxSettings();
 let lastAutoDjFxTriggeredAt = 0;
 let djMode = readDjModeSetting(); // 'dance' | 'music'
@@ -2641,6 +2643,23 @@ function hookPlayerEvents() {
       }
     }
 
+    // Max duration: trigger automix immediately when playback position reaches the marker,
+    // regardless of whether auto mode is enabled.
+    if (trackMaxDurationEnabled && trackMaxDurationAppliedSec > 0
+        && !maxDurMarkerTriggeredForTrack && !automixTimeline.triggeredForTrack) {
+      const _mdCurrentItem = queue[uiState.currentIndex];
+      const _mdStartOffsetMs = Math.max(0, Number(_mdCurrentItem?.autoDjStartOffsetMs) || 0);
+      const _mdThresholdMs = trackMaxDurationAppliedSec * 1000 + _mdStartOffsetMs;
+      if (position >= _mdThresholdMs) {
+        maxDurMarkerTriggeredForTrack = true;
+        logInfo('maxDuration: marker reached, triggering automix immediately', {
+          position,
+          markerThresholdMs: _mdThresholdMs,
+        });
+        autoMixBtn?.click?.();
+      }
+    }
+
     // Auto DJ: Check if it's time to trigger automix
     if (autoModeManager.isAutoModeEnabled() && shouldTriggerAutomix(automixTimeline, position)) {
       
@@ -3556,16 +3575,21 @@ function updateMaxDurationMarker() {
   // Shift the max-duration wall by the song start offset so the marker reflects
   // "X seconds from the actual start of playback" in absolute file time.
   const maxMs = effectiveMaxDurationSec * 1000 + startOffsetMs;
-  if (maxMs >= durationMs) return;
+  // If max duration exceeds the track length, place the marker at the best transition zone
+  // near the end (before the outro). Use the same zone logic as auto-DJ end-of-track.
+  const maxExceedsDuration = maxMs >= durationMs;
 
-  let markerMs = maxMs;
+  let markerMs = maxExceedsDuration ? durationMs : maxMs;
   const fallbackMixData = autoModeManager.getCurrentTrackMixData?.();
   const mixData = getTrackMixData(currentItem) || fallbackMixData || null;
 
   if (mixData && typeof autoModeManager.findBestTransitionZone === 'function') {
-    const preferredZone = autoModeManager.findBestTransitionZone(mixData, {
-      targetSec: effectiveMaxDurationSec + startOffsetMs / 1000,
-    });
+    const preferredZone = maxExceedsDuration
+      // No target → zone closest to end (end-of-track mode)
+      ? autoModeManager.findBestTransitionZone(mixData, {})
+      : autoModeManager.findBestTransitionZone(mixData, {
+          targetSec: effectiveMaxDurationSec + startOffsetMs / 1000,
+        });
 
     const zoneEndSec = Number.isFinite(Number(preferredZone?.triggerSec))
       ? Number(preferredZone.triggerSec)
@@ -3573,12 +3597,27 @@ function updateMaxDurationMarker() {
 
     if (Number.isFinite(zoneEndSec) && zoneEndSec > 0) {
       markerMs = Math.min(durationMs, zoneEndSec * 1000);
+    } else if (maxExceedsDuration) {
+      // No zone found: fallback 20s before end (same as auto-DJ default)
+      markerMs = Math.max(durationMs - 20000, durationMs * 0.75);
+    }
+  } else if (maxExceedsDuration) {
+    // No mix data: fallback 20s before end
+    markerMs = Math.max(durationMs - 20000, durationMs * 0.75);
+  }
+
+  // Before positioning, ensure the marker is not on an incompatible zone
+  // (avoid, drop, neverMiss, high-peak, intro). If it is, advance past it.
+  if (mixData && typeof autoModeManager.advancePastMaxDurationBlock === 'function') {
+    const adjustedMs = autoModeManager.advancePastMaxDurationBlock(markerMs, mixData, durationMs);
+    if (adjustedMs !== markerMs && adjustedMs < durationMs) {
+      markerMs = adjustedMs;
     }
   }
 
-  // Sync trackMaxDurationAppliedSec with the zone-snapped marker position so the actual
-  // automix trigger fires at exactly where the marker is shown. Only while playing:
-  // the applied value is reset to the raw setting on each new track/playback start anyway.
+  // Sync trackMaxDurationAppliedSec with the final marker position (after zone adjustment)
+  // so the actual automix trigger fires at exactly where the marker is shown.
+  // Only while playing: the applied value is reset to the raw setting on each new track/playback start.
   if (uiState.isPlaying && trackMaxDurationEnabled) {
     const snappedAppliedSec = Math.max(0, Math.round((markerMs - startOffsetMs) / 1000));
     if (snappedAppliedSec !== trackMaxDurationAppliedSec) {
@@ -4386,6 +4425,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     
     // Schedule automix timing for auto DJ mode and reset trigger flag
     resetAutomixTimeline(automixTimeline, targetDeck);
+    maxDurMarkerTriggeredForTrack = false;
     automixRescheduledForTrackId = null;
     applyTrackMaxDurationForCurrentPlayback();
     updateAutoDjMarker();
