@@ -741,8 +741,17 @@ export function createAutoModeManager({
       return null;
     };
 
+    // If a nearby outro zone exists (target inside it, or outro starts within 30s after target),
+    // snap candidateSec to the outro's start so the transition fires at its cleanest entry point.
+    const outroZones = Array.isArray(mixData.outroZones) ? mixData.outroZones : [];
+    const nearbyOutro = hasTarget
+      ? outroZones
+          .filter((z) => z.endSec >= targetSec && z.startSec <= targetSec + 30)
+          .sort((a, b) => Math.abs(a.startSec - targetSec) - Math.abs(b.startSec - targetSec))[0]
+      : null;
+
     const MAX_ITER = 20;
-    let candidateSec = targetSec;
+    let candidateSec = nearbyOutro ? nearbyOutro.startSec : targetSec;
 
     for (let i = 0; i < MAX_ITER; i++) {
       if (durationSec > 0 && candidateSec >= durationSec) break;
