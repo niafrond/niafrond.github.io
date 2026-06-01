@@ -611,6 +611,8 @@ const deckAAutoDjStartMarker = document.getElementById('deck-a-autodj-start-mark
 const deckBAutoDjStartMarker = document.getElementById('deck-b-autodj-start-marker');
 const deckAMaxDurMarker = document.getElementById('deck-a-maxdur-marker');
 const deckBMaxDurMarker = document.getElementById('deck-b-maxdur-marker');
+const deckAMaxDurRawMarker = document.getElementById('deck-a-maxdur-raw-marker');
+const deckBMaxDurRawMarker = document.getElementById('deck-b-maxdur-raw-marker');
 const deckAZoneLayer = document.getElementById('deck-a-zone-layer');
 const deckBZoneLayer = document.getElementById('deck-b-zone-layer');
 const crossfadeSlider = document.getElementById('crossfade-slider');
@@ -3552,9 +3554,18 @@ function updatePlannedStartMarker() {
   }
 }
 
+/**
+ * Cache for updateMaxDurationMarker zone computation.
+ * Keyed by (trackId + effectiveMaxDurationSec + durationMs) to avoid
+ * re-running findBestTransitionZone on every deckstate event.
+ */
+const _maxDurMarkerCache = { key: null, markerMs: null, maxMs: null, maxExceedsDuration: null, rawLogged: false };
+
 function updateMaxDurationMarker() {
   if (deckAMaxDurMarker) deckAMaxDurMarker.hidden = true;
   if (deckBMaxDurMarker) deckBMaxDurMarker.hidden = true;
+  if (deckAMaxDurRawMarker) deckAMaxDurRawMarker.hidden = true;
+  if (deckBMaxDurRawMarker) deckBMaxDurRawMarker.hidden = true;
 
   const effectiveMaxDurationSec = trackMaxDurationEnabled
     ? (uiState.isPlaying ? trackMaxDurationAppliedSec : trackMaxDurationSec)
@@ -3579,40 +3590,52 @@ function updateMaxDurationMarker() {
   // near the end (before the outro). Use the same zone logic as auto-DJ end-of-track.
   const maxExceedsDuration = maxMs >= durationMs;
 
-  let markerMs = maxExceedsDuration ? durationMs : maxMs;
+  // Cache key: recompute zone-snapping only when track, setting or duration changes.
+  const cacheKey = `${currentItem?.id}|${effectiveMaxDurationSec}|${durationMs}`;
   const fallbackMixData = autoModeManager.getCurrentTrackMixData?.();
   const mixData = getTrackMixData(currentItem) || fallbackMixData || null;
+  let markerMs;
+  if (_maxDurMarkerCache.key === cacheKey && _maxDurMarkerCache.markerMs !== null) {
+    markerMs = _maxDurMarkerCache.markerMs;
+  } else {
+    markerMs = maxExceedsDuration ? durationMs : maxMs;
 
-  if (mixData && typeof autoModeManager.findBestTransitionZone === 'function') {
-    const preferredZone = maxExceedsDuration
-      // No target → zone closest to end (end-of-track mode)
-      ? autoModeManager.findBestTransitionZone(mixData, {})
-      : autoModeManager.findBestTransitionZone(mixData, {
-          targetSec: effectiveMaxDurationSec + startOffsetMs / 1000,
-        });
+    if (mixData && typeof autoModeManager.findBestTransitionZone === 'function') {
+      const preferredZone = maxExceedsDuration
+        // No target → zone closest to end (end-of-track mode)
+        ? autoModeManager.findBestTransitionZone(mixData, {})
+        : autoModeManager.findBestTransitionZone(mixData, {
+            targetSec: effectiveMaxDurationSec + startOffsetMs / 1000,
+          });
 
-    const zoneEndSec = Number.isFinite(Number(preferredZone?.triggerSec))
-      ? Number(preferredZone.triggerSec)
-      : Number(preferredZone?.zone?.endSec);
+      const zoneEndSec = Number.isFinite(Number(preferredZone?.triggerSec))
+        ? Number(preferredZone.triggerSec)
+        : Number(preferredZone?.zone?.endSec);
 
-    if (Number.isFinite(zoneEndSec) && zoneEndSec > 0) {
-      markerMs = Math.min(durationMs, zoneEndSec * 1000);
+      if (Number.isFinite(zoneEndSec) && zoneEndSec > 0) {
+        markerMs = Math.min(durationMs, zoneEndSec * 1000);
+      } else if (maxExceedsDuration) {
+        // No zone found: fallback 20s before end (same as auto-DJ default)
+        markerMs = Math.max(durationMs - 20000, durationMs * 0.75);
+      }
     } else if (maxExceedsDuration) {
-      // No zone found: fallback 20s before end (same as auto-DJ default)
+      // No mix data: fallback 20s before end
       markerMs = Math.max(durationMs - 20000, durationMs * 0.75);
     }
-  } else if (maxExceedsDuration) {
-    // No mix data: fallback 20s before end
-    markerMs = Math.max(durationMs - 20000, durationMs * 0.75);
-  }
 
-  // Before positioning, ensure the marker is not on an incompatible zone
-  // (avoid, drop, neverMiss, high-peak, intro). If it is, advance past it.
-  if (mixData && typeof autoModeManager.advancePastMaxDurationBlock === 'function') {
-    const adjustedMs = autoModeManager.advancePastMaxDurationBlock(markerMs, mixData, durationMs);
-    if (adjustedMs !== markerMs && adjustedMs < durationMs) {
-      markerMs = adjustedMs;
+    // Before positioning, ensure the marker is not on an incompatible zone
+    // (avoid, drop, neverMiss, high-peak, intro). If it is, advance past it.
+    if (mixData && typeof autoModeManager.advancePastMaxDurationBlock === 'function') {
+      const adjustedMs = autoModeManager.advancePastMaxDurationBlock(markerMs, mixData, durationMs);
+      if (adjustedMs !== markerMs && adjustedMs < durationMs) {
+        markerMs = adjustedMs;
+      }
     }
+
+    _maxDurMarkerCache.key = cacheKey;
+    _maxDurMarkerCache.markerMs = markerMs;
+    _maxDurMarkerCache.maxMs = maxMs;
+    _maxDurMarkerCache.maxExceedsDuration = maxExceedsDuration;
   }
 
   // Sync trackMaxDurationAppliedSec with the final marker position (after zone adjustment)
@@ -3630,6 +3653,47 @@ function updateMaxDurationMarker() {
   if (marker) {
     marker.style.left = `${pct}%`;
     marker.hidden = false;
+  }
+
+  // Raw marker: show the unaltered max-duration position (before zone/outro adjustments),
+  // only when it differs meaningfully from the adjusted position and is within the track.
+  // Skip DOM update and logDebug if nothing changed (same cache key = same inputs).
+  if (_maxDurMarkerCache.key !== cacheKey || _maxDurMarkerCache.rawLogged !== true) {
+    if (!maxExceedsDuration) {
+      const rawPct = Math.min(100, (maxMs / durationMs) * 100);
+      const rawMarker = automixTimeline.currentPlayingDeck === 'B' ? deckBMaxDurRawMarker : deckAMaxDurRawMarker;
+      const rawVisible = rawMarker && Math.abs(rawPct - pct) > 0.2;
+      logDebug('maxDuration: raw marker', {
+        track: currentItem?.name,
+        effectiveMaxDurationSec,
+        startOffsetSec: startOffsetMs / 1000,
+        rawMs: maxMs,
+        rawSec: maxMs / 1000,
+        rawPct,
+        adjustedMs: markerMs,
+        adjustedSec: markerMs / 1000,
+        adjustedPct: pct,
+        diffSec: (markerMs - maxMs) / 1000,
+        rawVisible,
+      });
+      if (rawMarker) {
+        if (rawVisible) {
+          rawMarker.style.left = `${rawPct}%`;
+          rawMarker.hidden = false;
+        } else {
+          rawMarker.hidden = true;
+        }
+      }
+    } else {
+      logDebug('maxDuration: raw marker hidden (maxExceedsDuration)', {
+        track: currentItem?.name,
+        effectiveMaxDurationSec,
+        durationSec: durationMs / 1000,
+        adjustedSec: markerMs / 1000,
+        adjustedPct: pct,
+      });
+    }
+    _maxDurMarkerCache.rawLogged = true;
   }
 }
 
@@ -4426,6 +4490,8 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     // Schedule automix timing for auto DJ mode and reset trigger flag
     resetAutomixTimeline(automixTimeline, targetDeck);
     maxDurMarkerTriggeredForTrack = false;
+    _maxDurMarkerCache.key = null;
+    _maxDurMarkerCache.rawLogged = false;
     automixRescheduledForTrackId = null;
     applyTrackMaxDurationForCurrentPlayback();
     updateAutoDjMarker();
