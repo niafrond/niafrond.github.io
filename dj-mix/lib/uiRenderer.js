@@ -54,6 +54,12 @@ export function createDjMixRenderer(options) {
     B: null,
   };
 
+  // Tracks last-rendered state to avoid redundant DOM writes on every deckstate tick
+  const lastRenderedMeta = {
+    A: { id: undefined, mode: undefined },
+    B: { id: undefined, mode: undefined },
+  };
+
   function composeDeckMeta(title, artist) {
     const safeTitle = String(title || '').trim();
     const safeArtist = String(artist || '').trim();
@@ -166,9 +172,23 @@ export function createDjMixRenderer(options) {
     const currentIndex = getCurrentIndex();
     const deckAItem = resolveDeckMetaItem('A', deckDisplayItems, launchPreview, queue, currentIndex);
     const deckBItem = resolveDeckMetaItem('B', deckDisplayItems, launchPreview, queue, currentIndex);
+    const currentMode = getDjMode?.() ?? null;
 
-    renderDeckMetaContent(trackArtistA, deckAItem);
-    renderDeckMetaContent(trackArtistB, deckBItem);
+    const deckAId = deckAItem?.id ?? null;
+    if (deckAId !== lastRenderedMeta.A.id || currentMode !== lastRenderedMeta.A.mode) {
+      renderDeckMetaContent(trackArtistA, deckAItem);
+      if (deckATitle) deckATitle.textContent = composeDeckHeadMeta(deckAItem);
+      lastRenderedMeta.A.id = deckAId;
+      lastRenderedMeta.A.mode = currentMode;
+    }
+
+    const deckBId = deckBItem?.id ?? null;
+    if (deckBId !== lastRenderedMeta.B.id || currentMode !== lastRenderedMeta.B.mode) {
+      renderDeckMetaContent(trackArtistB, deckBItem);
+      if (deckBTitle) deckBTitle.textContent = composeDeckHeadMeta(deckBItem);
+      lastRenderedMeta.B.id = deckBId;
+      lastRenderedMeta.B.mode = currentMode;
+    }
 
     const player = getPlayer();
     const detail = player?._lastDeckState || null;
@@ -176,11 +196,8 @@ export function createDjMixRenderer(options) {
     const rateB = detail?.deckB?.playbackRate ?? 1;
     const rateAText = Math.abs(rateA - 1) > 0.005 ? `×${rateA.toFixed(2)}` : '';
     const rateBText = Math.abs(rateB - 1) > 0.005 ? `×${rateB.toFixed(2)}` : '';
-
-    if (deckATitle) deckATitle.textContent = composeDeckHeadMeta(deckAItem);
-    if (deckBTitle) deckBTitle.textContent = composeDeckHeadMeta(deckBItem);
-    if (deckABpm) deckABpm.textContent = rateAText;
-    if (deckBBpm) deckBBpm.textContent = rateBText;
+    if (deckABpm && deckABpm.textContent !== rateAText) deckABpm.textContent = rateAText;
+    if (deckBBpm && deckBBpm.textContent !== rateBText) deckBBpm.textContent = rateBText;
   }
 
   function renderSourceBadge(item) {
