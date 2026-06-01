@@ -1,3 +1,10 @@
+## [1.217.0](https://github.com/niafrond/niafrond.github.io/compare/v1.216.0...v1.217.0) (2026-06-01)
+
+### Features
+
+* implement track max duration mode and percentage settings with UI updates ([33b860e](https://github.com/niafrond/niafrond.github.io/commit/33b860ebb49a42c86eba9d411202786c58c9b781))
+* optimize deck metadata rendering to reduce redundant DOM updates ([f435f49](https://github.com/niafrond/niafrond.github.io/commit/f435f497c2fee0588fcc9bfac28ed976bd1103a1))
+
 ## [1.216.0](https://github.com/niafrond/niafrond.github.io/compare/v1.215.0...v1.216.0) (2026-06-01)
 
 ### Features
