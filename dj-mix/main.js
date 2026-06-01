@@ -3618,6 +3618,7 @@ const MIX_ZONE_CONFIG = {
   avoidTransitionZones: { label: 'À éviter', className: 'zone-avoid' },
   dropZones: { label: 'Drop', className: 'zone-drop' },
   breakdownZones: { label: 'Breakdown', className: 'zone-breakdown' },
+  neverMissZones: { label: 'Never Miss', className: 'zone-never-miss' },
 };
 
 function formatZoneTime(seconds) {
@@ -3644,6 +3645,7 @@ function renderMixZones() {
       'safeTransitionZones',
       'dropZones',
       'avoidTransitionZones',
+      'neverMissZones',
     ];
 
     for (const zoneType of zoneTypes) {
@@ -3663,10 +3665,16 @@ function renderMixZones() {
         zoneEl.className = `deck-progress-zone ${config.className}`;
         zoneEl.style.left = `${leftPct}%`;
         zoneEl.style.width = `${widthPct}%`;
-        zoneEl.title = `${config.label} ${formatZoneTime(startSec)} → ${formatZoneTime(endSec)}${zone?.reason ? ` · ${zone.reason}` : ''}${Number.isFinite(Number(zone?.score)) ? ` · score ${Number(zone.score).toFixed(3)}` : ''}`;
+        const zoneScore = Number.isFinite(Number(zone?.score)) ? Number(zone.score)
+          : Number.isFinite(Number(zone?.neverMissScore)) ? Number(zone.neverMissScore)
+          : null;
+        const zoneLabel = zone?.label ? ` · ${zone.label}` : '';
+        const zoneReason = zone?.reason && zone.reason !== zone?.label ? ` · ${zone.reason}` : '';
+        const zoneScoreTxt = zoneScore !== null ? ` · score ${zoneScore.toFixed(3)}` : '';
+        zoneEl.title = `${config.label} ${formatZoneTime(startSec)} → ${formatZoneTime(endSec)}${zoneLabel}${zoneReason}${zoneScoreTxt}`;
         zoneEl.dataset.zoneType = zoneType;
         if (zone?.reason) zoneEl.dataset.reason = zone.reason;
-        if (Number.isFinite(Number(zone?.score))) zoneEl.dataset.score = String(zone.score);
+        if (zoneScore !== null) zoneEl.dataset.score = String(zoneScore);
 
         layer.appendChild(zoneEl);
       }

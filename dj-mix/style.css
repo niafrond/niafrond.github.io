@@ -1692,6 +1692,18 @@ input {
   background: linear-gradient(180deg, rgba(96, 165, 250, 0.95), rgba(96, 165, 250, 0.45));
 }
 
+/* Never Miss Zone — essential moment (chorus, hook, climax): warm amber pulse, never transition here */
+.deck-progress-zone.zone-never-miss {
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(251, 146, 60, 0.92),
+    rgba(251, 146, 60, 0.92) 4px,
+    rgba(251, 191, 36, 0.6) 4px,
+    rgba(251, 191, 36, 0.6) 8px
+  );
+  opacity: 0.88;
+}
+
 .deck-progress-bar:hover {
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
 }

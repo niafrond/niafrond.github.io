@@ -22,6 +22,7 @@ const AUTO_MODE_HISTORY_KEY = 'dj-mix:auto-mode:history';
  * @property {Array<{startSec: number, endSec: number, score: number, reason: string}>} avoidTransitionZones
  * @property {Array<{startSec: number, endSec: number, score: number}>} dropZones
  * @property {Array<{startSec: number, endSec: number, score: number, reason: string}>} breakdownZones
+ * @property {Array<{startSec: number, endSec: number, neverMissScore: number, label: string, reason: string, source: string}>} neverMissZones
  * @property {Object} indicators
  */
 
@@ -295,8 +296,15 @@ export function createAutoModeManager({
       return best != null ? best : preferredMs;
     };
 
+    const NMZ_HARSH_TYPES = ['scratching', 'hotCues', 'sampling'];
+
     const addEvent = (type, preferredMs, reason) => {
       let resolvedMs = preferredMs;
+
+      // Skip harsh FX that would land inside a Never Miss Zone (chorus, hook, climax).
+      if (NMZ_HARSH_TYPES.includes(type) && isInNeverMissZone(resolvedMs / 1000, mixData)) {
+        return null;
+      }
 
       // Snap vocal-sensitive FX away from high-vocal moments.
       const vocalSensitiveTypes = ['scratching', 'echoDelay'];
@@ -546,6 +554,16 @@ export function createAutoModeManager({
   }
 
   /**
+   * Check if a time point is within a never-miss zone (chorus, hook, climax — must never be cut)
+   */
+  function isInNeverMissZone(timeSec, mixData) {
+    if (!mixData?.neverMissZones?.length) return false;
+    return mixData.neverMissZones.some(
+      zone => timeSec >= zone.startSec && timeSec <= zone.endSec
+    );
+  }
+
+  /**
    * Check if a time point is within a drop zone
    */
   function isInDropZone(timeSec, mixData) {
@@ -571,7 +589,12 @@ export function createAutoModeManager({
     if (isInDropZone(zone.startSec, mixData) || isInDropZone(zone.endSec, mixData)) {
       return false;
     }
-    
+
+    // Never transition during never-miss zones (choruses, hooks, climaxes)
+    if (isInNeverMissZone(zone.startSec, mixData) || isInNeverMissZone(zone.endSec, mixData)) {
+      return false;
+    }
+
     return true;
   }
 
@@ -622,6 +645,14 @@ export function createAutoModeManager({
     const probableStart = toFiniteNumber(mixData.probableSongStartSec, 0);
     if (probableStart > 0 && timeSec < probableStart) {
       return { blocked: true, zoneEndSec: probableStart };
+    }
+
+    // 5. neverMissZones — essential artistic moments (chorus, hook, climax)
+    const neverMissZones = Array.isArray(mixData.neverMissZones) ? mixData.neverMissZones : [];
+    for (const zone of neverMissZones) {
+      if (timeSec >= zone.startSec && timeSec <= zone.endSec) {
+        return { blocked: true, zoneEndSec: zone.endSec };
+      }
     }
 
     return { blocked: false };
@@ -747,11 +778,12 @@ export function createAutoModeManager({
       }
     }
 
-    // As last resort, try to find a gap between avoid/drop zones
+    // As last resort, try to find a gap between avoid/drop/never-miss zones
     logger?.debug?.('autoDj: no valid transition zones found, attempting to find gap');
     const allProblematicZones = [
       ...(mixData.avoidTransitionZones || []),
       ...(mixData.dropZones || []),
+      ...(mixData.neverMissZones || []),
     ].sort((a, b) => a.startSec - b.startSec);
 
     if (allProblematicZones.length > 0) {
@@ -1064,6 +1096,7 @@ export function createAutoModeManager({
         const allProblematicZones = [
           ...(mixData.avoidTransitionZones || []),
           ...(mixData.dropZones || []),
+          ...(mixData.neverMissZones || []),
         ].sort((a, b) => a.startSec - b.startSec);
 
         if (allProblematicZones.length > 0) {
