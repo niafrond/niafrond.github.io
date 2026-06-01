@@ -720,7 +720,7 @@ export class DJPlayer extends EventTarget {
             this.#crossfadeInterval = null;
             resolve();
           }
-        }, 16);
+        }, 30);
       });
     } finally {
       if (mode === 'echo_out_light' && !startEcho) {
@@ -992,6 +992,11 @@ export class DJPlayer extends EventTarget {
       const duration = active.duration * 1000;
       const remaining = Math.max(0, duration - position);
 
+      this.#mixFeatures?.tick(this.#active);
+
+      // Skip event emission when paused (big RAM/CPU win between tracks)
+      if (active.paused && !this.#isCrossfading) return;
+
       this.dispatchEvent(new CustomEvent('progress', {
         detail: {
           position,
@@ -1002,7 +1007,6 @@ export class DJPlayer extends EventTarget {
       }));
 
       this.#emitDeckState();
-      this.#mixFeatures?.tick(this.#active);
 
       if (!active.paused && !this.#isCrossfading && !this.#crossfadeNotified && remaining <= this.#crossfadeDuration && remaining > 0) {
         this.#crossfadeNotified = true;

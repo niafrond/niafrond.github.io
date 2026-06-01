@@ -224,6 +224,28 @@ export function createFilRougeManager() {
   }
 
   /**
+   * Remplace la playlist entière par un nouveau tableau d'items.
+   * Tente de conserver currentIndex sur le même morceau (par id) après le remplacement.
+   * @param {FilRougeItem[]} items
+   */
+  function setPlaylist(items) {
+    const prevId = playlist[currentIndex]?.id;
+    playlist = (Array.isArray(items) ? items : []).map(item => deserializeItem(serializeItem(item)));
+    if (prevId != null) {
+      const newIdx = playlist.findIndex(i => i.id === prevId);
+      if (newIdx !== -1) {
+        currentIndex = newIdx;
+      } else {
+        currentIndex = playlist.length > 0 ? Math.min(currentIndex, playlist.length - 1) : -1;
+      }
+    } else {
+      currentIndex = playlist.length > 0 ? currentIndex : -1;
+    }
+    logger.info('filRouge.setPlaylist', { playlistLength: playlist.length, currentIndex });
+    save();
+  }
+
+  /**
    * Déplace un élément de la playlist fil rouge.
    */
   function reorderPlaylist(fromIndex, toIndex) {
@@ -406,6 +428,7 @@ export function createFilRougeManager() {
     addToPriorityQueue,
     patchPlaylistItem,
     removeFromPlaylist,
+    setPlaylist,
     removeFromPriorityQueue,
     clearPlaylist,
     clearPriorityQueue,

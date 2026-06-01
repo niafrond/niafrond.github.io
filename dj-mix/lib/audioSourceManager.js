@@ -272,6 +272,8 @@ export function createAudioSourceManager(options) {
     touchQueueItem,
   } = options;
 
+  const MAX_SESSION_BLOB_CACHE_ENTRIES = 12; // Covers 2 active decks + 10 pre-fetched
+
   function getStemCacheKey(cacheKey, variant) {
     return `${cacheKey}:stem:${variant}`;
   }
@@ -284,6 +286,13 @@ export function createAudioSourceManager(options) {
       echoUrl: typeof src.echoUrl === 'string' ? src.echoUrl : '',
       distortionUrl: typeof src.distortionUrl === 'string' ? src.distortionUrl : '',
     };
+  }
+
+  function evictOldestBlobIfNeeded() {
+    if (sessionBlobCache.size > MAX_SESSION_BLOB_CACHE_ENTRIES) {
+      const oldestKey = sessionBlobCache.keys().next().value;
+      evictSessionBlobCacheEntry(sessionBlobCache, oldestKey);
+    }
   }
 
   async function resolveStemVariantUrl(cacheKey, variant, sourceUrl) {
@@ -397,6 +406,7 @@ export function createAudioSourceManager(options) {
           ...existingSession,
           stems: { ...item.localStemUrls },
         });
+        evictOldestBlobIfNeeded();
       }
 
       touchQueueItem(item);
@@ -627,6 +637,7 @@ export function createAudioSourceManager(options) {
         loudnessDb: Number.isFinite(item.loudnessDb) ? item.loudnessDb : null,
         stems: sanitizeStemSources(item.localStemUrls || item.stems),
       });
+      evictOldestBlobIfNeeded();
       item.sourceState = 'ready';
       item.sourceError = null;
       touchQueueItem(item);
@@ -655,6 +666,7 @@ export function createAudioSourceManager(options) {
         loudnessDb: Number.isFinite(item.loudnessDb) ? item.loudnessDb : null,
         stems: sanitizeStemSources(item.localStemUrls || item.stems),
       });
+      evictOldestBlobIfNeeded();
       item.sourceState = 'ready';
       item.sourceMode = 'api';
       item.sourceMeta = downloaded.sourceMeta || null;
@@ -936,6 +948,7 @@ export function createAudioSourceManager(options) {
         ...existingSession,
         stems: { ...item.localStemUrls },
       });
+      evictOldestBlobIfNeeded();
     }
 
     touchQueueItem(item);

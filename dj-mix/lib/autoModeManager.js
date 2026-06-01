@@ -64,8 +64,11 @@ export function createAutoModeManager({
   let automixTimerHandle = null;
   let pendingAutoFxEvents = [];
   let suggestionSearchEnabled = true;
+  let lastPlayedTrackIdVariants = []; // All ID variants of last played track for loop detection
+  let loopDetectionCounter = 0; // Counter to detect when same track is queued multiple times
   
   const SEARCH_COOLDOWN_MS = 5000; // Minimum time between searches
+  const MAX_MIX_DATA_CACHE_ENTRIES = 40; // Cap cache to prevent unbounded growth
   const MIX_DATA_CACHE = new Map(); // Cache mix data per track
   const AUTO_FX_LAST_WINDOW_MINUTES = 2; // X minutes mentioned by user requirement
   const AUTO_FX_MAX_IN_LAST_WINDOW = 2;
@@ -507,6 +510,10 @@ export function createAutoModeManager({
     const storedMeta = getStoredTrackMeta(trackName, artistName);
     if (storedMeta?.mixData) {
       MIX_DATA_CACHE.set(cacheKey, storedMeta.mixData);
+      // Evict oldest entry if cache exceeds MAX_MIX_DATA_CACHE_ENTRIES
+      if (MIX_DATA_CACHE.size > MAX_MIX_DATA_CACHE_ENTRIES) {
+        MIX_DATA_CACHE.delete(MIX_DATA_CACHE.keys().next().value);
+      }
       logger?.debug?.('autoDj: mix data from localStorage', { trackName, artistName });
       return storedMeta.mixData;
     }
@@ -549,6 +556,10 @@ export function createAutoModeManager({
 
       if (mixData) {
         MIX_DATA_CACHE.set(cacheKey, mixData);
+        // Evict oldest entry if cache exceeds MAX_MIX_DATA_CACHE_ENTRIES
+        if (MIX_DATA_CACHE.size > MAX_MIX_DATA_CACHE_ENTRIES) {
+          MIX_DATA_CACHE.delete(MIX_DATA_CACHE.keys().next().value);
+        }
         patchStoredTrackMeta(trackName, artistName, { mixData });
       }
 
@@ -875,21 +886,76 @@ export function createAutoModeManager({
   }
 
   /**
-   * Mark a track as played
+   * Mark a track as played - store ALL ID variants to prevent looping with different ID formats
    */
-  function markTrackAsPlayed(trackId) {
+  function markTrackAsPlayed(trackId, trackObject) {
+    // Store the primary ID
     if (trackId) {
       playHistory.add(trackId);
-      saveSettings();
-      logger?.debug?.('autoDj: track marked as played', { trackId });
     }
+    // Also store all ID variants from the track object itself
+    if (trackObject) {
+      if (trackObject.id) playHistory.add(trackObject.id);
+      if (trackObject.ratingKey) playHistory.add(trackObject.ratingKey);
+      if (trackObject.uri) playHistory.add(trackObject.uri);
+      // Store by name+artist combination too as a fallback
+      const trackName = String(trackObject.name || trackObject.trackName || '').trim().toLowerCase();
+      const artistName = String(trackObject.artist || trackObject.artistName || '').trim().toLowerCase();
+      if (trackName && artistName) {
+        playHistory.add(`${trackName}|${artistName}`);
+      }
+    }
+    saveSettings();
+    logger?.debug?.('autoDj: track marked as played with all ID variants', { trackId, trackObject });
   }
 
   /**
-   * Check if track has already been played
+   * Check if track has already been played - check all ID variants
    */
-  function isTrackPlayed(trackId) {
-    return trackId && playHistory.has(trackId);
+  function isTrackPlayed(trackId, trackObject) {
+    if (!trackId && !trackObject) return false;
+    
+    // Check primary trackId
+    if (trackId && playHistory.has(trackId)) return true;
+    
+    // Check all variants from track object
+    if (trackObject) {
+      if (trackObject.id && playHistory.has(trackObject.id)) return true;
+      if (trackObject.ratingKey && playHistory.has(trackObject.ratingKey)) return true;
+      if (trackObject.uri && playHistory.has(trackObject.uri)) return true;
+      // Check name+artist combination
+      const trackName = String(trackObject.name || trackObject.trackName || '').trim().toLowerCase();
+      const artistName = String(trackObject.artist || trackObject.artistName || '').trim().toLowerCase();
+      if (trackName && artistName && playHistory.has(`${trackName}|${artistName}`)) return true;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Check if we're about to loop on the same track - detects if current/next are same song
+   * Returns true if same track, false if different
+   */
+  function wouldCreateLoopWithCurrentTrack(resultTrack, currentTrack) {
+    if (!resultTrack || !currentTrack) return false;
+
+    // Direct ID matching
+    const resultId = resultTrack.id || resultTrack.ratingKey || resultTrack.uri;
+    const currentId = currentTrack.id || currentTrack.ratingKey || currentTrack.uri;
+    if (resultId && currentId && resultId === currentId) return true;
+
+    // Name + artist matching
+    const resultName = String(resultTrack.name || resultTrack.trackName || '').trim().toLowerCase();
+    const resultArtist = String(resultTrack.artist || resultTrack.artistName || '').trim().toLowerCase();
+    const currentName = String(currentTrack.name || currentTrack.trackName || '').trim().toLowerCase();
+    const currentArtist = String(currentTrack.artist || currentTrack.artistName || '').trim().toLowerCase();
+    
+    if (resultName && resultArtist && currentName && currentArtist &&
+        resultName === currentName && resultArtist === currentArtist) {
+      return true;
+    }
+
+    return false;
   }
 
   /**
@@ -1438,9 +1504,18 @@ export function createAutoModeManager({
         const trackName = result.trackName || result.name || result.title || '';
         const artistName = result.artistName || result.artist || '';
 
-        // Skip if already played or in queue (checking all ID variants).
-        if (isTrackPlayed(trackId) || queueIds.has(trackId)) {
-          logger?.debug?.('autoDj: skipping already-played or queued track', {
+        // Skip if already played (checking all ID variants via improved function).
+        if (isTrackPlayed(trackId, result)) {
+          logger?.debug?.('autoDj: skipping already-played track', {
+            trackName,
+            artistName,
+          });
+          continue;
+        }
+
+        // Skip if in queue
+        if (queueIds.has(trackId)) {
+          logger?.debug?.('autoDj: skipping queued track', {
             trackName,
             artistName,
           });
@@ -1460,6 +1535,30 @@ export function createAutoModeManager({
           resultName === currentTrackName && resultArtist === currentTrackArtist;
         if (isCurrentById || isCurrentByName) {
           logger?.debug?.('autoDj: skipping currently playing track', { trackName, artistName });
+          continue;
+        }
+
+        // LOOP DETECTION: Skip if this would create an infinite loop with the last played track
+        if (wouldCreateLoopWithCurrentTrack(result, { 
+          id: lastPlayedTrackIdVariants[0],
+          ratingKey: lastPlayedTrackIdVariants[1],
+          uri: lastPlayedTrackIdVariants[2],
+          name: currentTrackName,
+          artist: currentTrackArtist,
+        })) {
+          loopDetectionCounter++;
+          logger?.warn?.('autoDj: LOOP DETECTED - skipping same track again', {
+            trackName,
+            artistName,
+            loopCount: loopDetectionCounter,
+            lastPlayedVariants: lastPlayedTrackIdVariants,
+          });
+          if (loopDetectionCounter > 1) {
+            showToast?.(
+              `🔄 AutoDJ: Boucle détectée sur "${trackName}" - passage forcé au suivant`,
+              false
+            );
+          }
           continue;
         }
 
@@ -1494,6 +1593,7 @@ export function createAutoModeManager({
           autoDjStartOffsetMs: extractSuggestedStartOffsetMs(result),
         };
         selectedIndex = i;
+        loopDetectionCounter = 0; // Reset counter when we successfully select a different track
         break;
       }
 
@@ -1554,12 +1654,19 @@ export function createAutoModeManager({
     if (!finishedTrack) return;
 
     clearAutomixTimer();
-    markTrackAsPlayed(finishedTrack.id);
+    markTrackAsPlayed(finishedTrack.id, finishedTrack);
+    // Store all ID variants for loop detection
+    lastPlayedTrackIdVariants = [
+      finishedTrack.id,
+      finishedTrack.ratingKey,
+      finishedTrack.uri,
+    ].filter(Boolean);
     currentTrackMixData = null;
     onMixDataUpdated?.(null);
     pendingNextTrack = null;
     nextTrackMixData = null;
     pendingAutoFxEvents = [];
+    loopDetectionCounter = 0; // Reset counter for next track
 
     logger?.debug?.('autoDj: track finished, searching for next', {
       trackName: finishedTrack.name,
@@ -1597,6 +1704,8 @@ export function createAutoModeManager({
     pendingNextTrack = null;
     nextTrackMixData = null;
     pendingAutoFxEvents = [];
+    lastPlayedTrackIdVariants = [];
+    loopDetectionCounter = 0;
     MIX_DATA_CACHE.clear();
     autoModeEnabled = false;
     saveSettings();

@@ -1292,6 +1292,7 @@ function renderFilRouge() {
         const removed = filRougeManager.getPlaylist()[idx];
         const key = getFilRougeTrackKey(removed);
         if (key) filRougeTrackStatusByKey.delete(key);
+        addSpotifyDeletedId(removed?.id);
         filRougeManager.removeFromPlaylist(idx);
       }
       renderFilRouge();
@@ -1667,6 +1668,61 @@ async function startSpotifyPlaylistPrefetch(tracks) {
   setSpotifyStatus(summary);
 }
 
+/**
+ * Ajoute un id de morceau Spotify à la liste des suppressions manuelles
+ * persistée dans le source fil rouge. Ces morceaux ne seront pas restaurés
+ * lors des synchronisations ultérieures.
+ * @param {string|number} trackId
+ */
+function addSpotifyDeletedId(trackId) {
+  if (trackId == null) return;
+  const source = readSpotifyFilRougeSource();
+  if (!source?.playlistId) return;
+  const deleted = new Set((source.deletedIds || []).map(String));
+  deleted.add(String(trackId));
+  writeSpotifyFilRougeSource({ ...source, deletedIds: [...deleted] });
+}
+
+/**
+ * Fusionne les pistes fraîches de Spotify dans le fil rouge en cours.
+ * - Les pistes supprimées manuellement (tombstone) sont ignorées.
+ * - Les pistes déjà présentes sont conservées telles quelles (avec leur état de cache).
+ * - Les nouvelles pistes sont insérées à leur rang Spotify.
+ * @param {import('./lib/filRougeManager.js').FilRougeItem[]} freshTracks
+ * @returns {{ added: number }} statistiques de la fusion
+ */
+function mergeSpotifyTracksToFilRouge(freshTracks) {
+  const source = readSpotifyFilRougeSource();
+  const deletedIds = new Set((source?.deletedIds || []).map(String));
+  const currentPlaylist = filRougeManager.getPlaylist();
+  const currentById = new Map(currentPlaylist.map(item => [String(item.id), item]));
+
+  let added = 0;
+  const merged = [];
+
+  for (const track of freshTracks) {
+    const id = String(track.id);
+    if (deletedIds.has(id)) continue;
+
+    if (currentById.has(id)) {
+      // Conserver l'item existant (cachePath, artUrl, statuts de téléchargement…)
+      merged.push(currentById.get(id));
+    } else {
+      // Nouveau morceau ajouté sur Spotify
+      setFilRougeTrackStatus(track, {
+        downloadState: track?.cachePath || track?.persistedSourceUrl ? 'done' : 'idle',
+        stemsOk: hasStemsForTrack(track),
+      });
+      merged.push(track);
+      added++;
+    }
+  }
+
+  filRougeManager.setPlaylist(merged);
+  renderFilRouge();
+  return { added };
+}
+
 async function syncSpotifyFilRougeIfChanged(options = {}) {
   const { silent = false } = options;
   const source = readSpotifyFilRougeSource();
@@ -1680,7 +1736,7 @@ async function syncSpotifyFilRougeIfChanged(options = {}) {
     }
 
     const { tracks, fingerprint } = await spotifyClient.fetchPlaylistTracks(source.playlistId);
-    applySpotifyPlaylistToFilRouge(tracks);
+    const { added } = mergeSpotifyTracksToFilRouge(tracks);
     writeSpotifyFilRougeSource({
       ...source,
       playlistName: snapshot?.name || source.playlistName || '',
@@ -1690,7 +1746,10 @@ async function syncSpotifyFilRougeIfChanged(options = {}) {
     });
     updateSpotifyConfigUi();
     if (!silent) {
-      showToast(`Fil rouge Spotify mis à jour (${tracks.length} morceau${tracks.length > 1 ? 'x' : ''})`);
+      const msg = added > 0
+        ? `Fil rouge Spotify mis à jour (+${added} nouveau${added > 1 ? 'x' : ''})`
+        : `Fil rouge Spotify mis à jour`;
+      showToast(msg);
     }
     startSpotifyPlaylistPrefetch(tracks).catch(() => {});
     return true;
@@ -2714,7 +2773,8 @@ function hookPlayerEvents() {
       if (autoDjNextFxCountdown) {
         if (autoDjFxSettings.enabled === false) {
           autoDjNextFxCountdown.hidden = true;
-        } else {
+        } else if (!document.hidden) {
+          // Skip DOM updates when tab is hidden to save CPU
           const next = autoModeManager.peekNextAutoFxEvent(position);
           if (next) {
             const secLeft = Math.ceil((next.timeMs - position) / 1000);

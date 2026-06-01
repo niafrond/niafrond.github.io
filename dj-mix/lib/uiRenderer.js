@@ -60,6 +60,12 @@ export function createDjMixRenderer(options) {
     B: { id: undefined, mode: undefined },
   };
 
+  // Tracks last-rendered deck state to skip writes when nothing changed
+  const lastRenderedDeckState = {
+    A: { playing: undefined, volPct: undefined, fillPct: undefined, rateHidden: undefined },
+    B: { playing: undefined, volPct: undefined, fillPct: undefined, rateHidden: undefined },
+  };
+
   function composeDeckMeta(title, artist) {
     const safeTitle = String(title || '').trim();
     const safeArtist = String(artist || '').trim();
@@ -312,27 +318,59 @@ export function createDjMixRenderer(options) {
     
     updateDeckCueUI();
 
-    if (deckAVol) deckAVol.textContent = `${Math.round((detail.deckA?.volume || 0) * 100)}%`;
-    if (deckBVol) deckBVol.textContent = `${Math.round((detail.deckB?.volume || 0) * 100)}%`;
+    const volPctA = Math.round((detail.deckA?.volume || 0) * 100);
+    const volPctB = Math.round((detail.deckB?.volume || 0) * 100);
+    if (deckAVol && lastRenderedDeckState.A.volPct !== volPctA) {
+      deckAVol.textContent = `${volPctA}%`;
+      lastRenderedDeckState.A.volPct = volPctA;
+    }
+    if (deckBVol && lastRenderedDeckState.B.volPct !== volPctB) {
+      deckBVol.textContent = `${volPctB}%`;
+      lastRenderedDeckState.B.volPct = volPctB;
+    }
 
     const rateA = detail.deckA?.playbackRate ?? 1;
     const rateB = detail.deckB?.playbackRate ?? 1;
-    if (deckABpmReset) deckABpmReset.hidden = Math.abs(rateA - 1) <= 0.005;
-    if (deckBBpmReset) deckBBpmReset.hidden = Math.abs(rateB - 1) <= 0.005;
+    const rateAHidden = Math.abs(rateA - 1) <= 0.005;
+    const rateBHidden = Math.abs(rateB - 1) <= 0.005;
+    if (deckABpmReset && lastRenderedDeckState.A.rateHidden !== rateAHidden) {
+      deckABpmReset.hidden = rateAHidden;
+      lastRenderedDeckState.A.rateHidden = rateAHidden;
+    }
+    if (deckBBpmReset && lastRenderedDeckState.B.rateHidden !== rateBHidden) {
+      deckBBpmReset.hidden = rateBHidden;
+      lastRenderedDeckState.B.rateHidden = rateBHidden;
+    }
 
-    if (deckALaunchBtn) deckALaunchBtn.textContent = detail.deckA?.playing ? '⏸' : '▶';
-    if (deckBLaunchBtn) deckBLaunchBtn.textContent = detail.deckB?.playing ? '⏸' : '▶';
+    const playingA = Boolean(detail.deckA?.playing);
+    const playingB = Boolean(detail.deckB?.playing);
+    if (deckALaunchBtn && lastRenderedDeckState.A.playing !== playingA) {
+      deckALaunchBtn.textContent = playingA ? '⏸' : '▶';
+      lastRenderedDeckState.A.playing = playingA;
+    }
+    if (deckBLaunchBtn && lastRenderedDeckState.B.playing !== playingB) {
+      deckBLaunchBtn.textContent = playingB ? '⏸' : '▶';
+      lastRenderedDeckState.B.playing = playingB;
+    }
 
     const player = getPlayer();
     if (player) player._lastDeckState = detail;
 
     if (deckAFill) {
-      const pctA = detail.deckA?.durationMs > 0 ? (detail.deckA.positionMs / detail.deckA.durationMs) * 100 : 0;
-      deckAFill.style.width = `${Math.min(100, pctA)}%`;
+      const pctA = detail.deckA?.durationMs > 0 ? Math.min(100, (detail.deckA.positionMs / detail.deckA.durationMs) * 100) : 0;
+      const pctARounded = Math.round(pctA * 10) / 10; // 0.1% precision, avoids sub-pixel thrashing
+      if (lastRenderedDeckState.A.fillPct !== pctARounded) {
+        deckAFill.style.width = `${pctARounded}%`;
+        lastRenderedDeckState.A.fillPct = pctARounded;
+      }
     }
     if (deckBFill) {
-      const pctB = detail.deckB?.durationMs > 0 ? (detail.deckB.positionMs / detail.deckB.durationMs) * 100 : 0;
-      deckBFill.style.width = `${Math.min(100, pctB)}%`;
+      const pctB = detail.deckB?.durationMs > 0 ? Math.min(100, (detail.deckB.positionMs / detail.deckB.durationMs) * 100) : 0;
+      const pctBRounded = Math.round(pctB * 10) / 10;
+      if (lastRenderedDeckState.B.fillPct !== pctBRounded) {
+        deckBFill.style.width = `${pctBRounded}%`;
+        lastRenderedDeckState.B.fillPct = pctBRounded;
+      }
     }
   }
 

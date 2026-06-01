@@ -22,7 +22,7 @@ const ECHO_DELAY_S    = 0.22;
 const ECHO_FEEDBACK   = 0.28;
 const ECHO_WET_MIX    = 0.28;
 const ECHO_DRY_MIX    = 0.9;
-const STEM_SYNC_INTERVAL_MS = 1200;
+const STEM_SYNC_INTERVAL_MS = 2500;
 
 // ─── Tiny utilities ───────────────────────────────────────────────────────────
 
@@ -429,6 +429,8 @@ export class SimpleMixFeatures {
   }
 
   #resetMs(deck) {
+    // Skip redundant AudioParam scheduling when gains are already at target
+    if (this.#msState[deck].midGain === 1 && this.#msState[deck].sideGain === 1) return;
     const ms = this.#nodes(deck)?.ms;
     if (!ms) return;
     this.#setParamSmooth(ms.midGain.gain,  1);
@@ -437,6 +439,10 @@ export class SimpleMixFeatures {
   }
 
   #tickMsAdaptive(deck) {
+    // Skip FFT analysis when deck is paused – it returns zeroes anyway
+    const audio = deck === 'B' ? this.#audioB : this.#audioA;
+    if (audio?.paused) return;
+
     const fx    = this.#settings.deckFx[deck];
     const mode  = fx.vocalRemove ? 'vocalRemove' : fx.instruRemove ? 'instruRemove' : null;
     const ms    = this.#nodes(deck)?.ms;
