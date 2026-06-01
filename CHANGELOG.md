@@ -1,3 +1,15 @@
+## [1.216.0](https://github.com/niafrond/niafrond.github.io/compare/v1.215.0...v1.216.0) (2026-06-01)
+
+### Features
+
+* add peekNextAutoFxEvent function and optimize planned start marker updates ([0154857](https://github.com/niafrond/niafrond.github.io/commit/0154857cc2cba5e7403ecb8ff53713731d9883c2))
+* add raw max-duration marker for visual tracking of unaltered playback position ([c63c136](https://github.com/niafrond/niafrond.github.io/commit/c63c136cd9a428c085d3cc1bb5731b6a62b3106f))
+* enhance automix functionality and improve track navigation buttons ([cb4b161](https://github.com/niafrond/niafrond.github.io/commit/cb4b16116c79d14e4e8bb6ba6f820a23f8330f4e))
+* enhance transition logic by snapping to nearby outro zones for smoother mixes ([92e0eae](https://github.com/niafrond/niafrond.github.io/commit/92e0eaea7ab809d3bc59a753f240690cd9fa6e46))
+* enhance transition zone selection logic and improve track exclusion checks ([a55293c](https://github.com/niafrond/niafrond.github.io/commit/a55293caaf5d5e5bcb008b2bdc3b165c6abdbb2b))
+* implement max duration marker logic to trigger automix and adjust playback timing ([7bddd53](https://github.com/niafrond/niafrond.github.io/commit/7bddd53328ecae3256c7bf46b7d44f08d0d56c24))
+* implement track metadata caching and improve artwork fetching logic ([e9177b7](https://github.com/niafrond/niafrond.github.io/commit/e9177b741823ca023eed9f83a0cab7cd2f16e5d8))
+
 ## [1.215.0](https://github.com/niafrond/niafrond.github.io/compare/v1.214.0...v1.215.0) (2026-06-01)
 
 ### Features
