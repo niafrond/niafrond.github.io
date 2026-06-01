@@ -10,6 +10,12 @@
  * - Automatically triggers mix at optimal moment using waveform analysis
  */
 
+import {
+  getStoredTrackMeta,
+  invalidateStoredTrackMeta,
+  patchStoredTrackMeta,
+} from './trackMetaStorage.js';
+
 const AUTO_MODE_KEY = 'dj-mix:auto-mode:enabled';
 const AUTO_MODE_HISTORY_KEY = 'dj-mix:auto-mode:history';
 
@@ -483,15 +489,26 @@ export function createAutoModeManager({
   }
 
   /**
-   * Fetch mix analysis data from API for a track
+   * Fetch mix analysis data from API for a track.
+   * Checks localStorage first; persists the result after a successful API call.
+   * Invalidates the localStorage entry when the server returns 404 (file removed
+   * from the server cache → next download will be treated as a fresh one).
    */
   async function fetchMixData(trackName, artistName) {
     if (!trackName) return null;
 
     const cacheKey = `${trackName}|${artistName || ''}`;
     if (MIX_DATA_CACHE.has(cacheKey)) {
-      logger?.debug?.('autoDj: mix data from cache', { trackName, artistName });
+      logger?.debug?.('autoDj: mix data from memory cache', { trackName, artistName });
       return MIX_DATA_CACHE.get(cacheKey);
+    }
+
+    // Hit localStorage before making a network call
+    const storedMeta = getStoredTrackMeta(trackName, artistName);
+    if (storedMeta?.mixData) {
+      MIX_DATA_CACHE.set(cacheKey, storedMeta.mixData);
+      logger?.debug?.('autoDj: mix data from localStorage', { trackName, artistName });
+      return storedMeta.mixData;
     }
 
     try {
@@ -508,6 +525,15 @@ export function createAutoModeManager({
         headers: { 'Content-Type': 'application/json' },
       });
 
+      if (response.status === 404) {
+        // File removed from server cache – purge locally stored analysis so the
+        // next download starts clean.
+        invalidateStoredTrackMeta(trackName, artistName);
+        MIX_DATA_CACHE.delete(cacheKey);
+        logger?.debug?.('autoDj: mix data 404 – localStorage invalidated', { trackName, artistName });
+        return null;
+      }
+
       if (!response.ok) {
         apiHealthMonitor?.recordFailure();
         logger?.debug?.('autoDj: mix data fetch failed', {
@@ -523,6 +549,7 @@ export function createAutoModeManager({
 
       if (mixData) {
         MIX_DATA_CACHE.set(cacheKey, mixData);
+        patchStoredTrackMeta(trackName, artistName, { mixData });
       }
 
       logger?.debug?.('autoDj: mix data fetched', {
@@ -701,16 +728,20 @@ export function createAutoModeManager({
       if (!zone) return Infinity;
       const startSec = Number(zone.startSec) || 0;
       const endSec = Number(zone.endSec) || startSec;
-      // When a max-duration target is active, heavily penalise zones that start after
-      // the wall: they would always be capped to maxDurationMs anyway, giving no zone
-      // benefit. Pre-wall zones are always preferred even if farther in absolute time.
-      if (targetSec < startSec) return (startSec - targetSec) + (hasTarget ? 1000 : 0);
+      // Distance is simply how far the target is from the zone (0 = inside the zone).
+      // Zones starting after the wall are naturally farther away by their own overshoot;
+      // the caller caps triggerMs to maxDurationMs anyway, so no extra penalty needed.
+      if (targetSec < startSec) return startSec - targetSec;
       if (targetSec > endSec) return targetSec - endSec;
       return 0;
     };
 
+    // Phrase-aligned zones are preferred but not exclusively: they receive a small score
+    // bonus (treated as 5 s closer) so a non-aligned zone right at the target still wins
+    // over a phrase-aligned zone that is farther away.
+    const PHRASE_ALIGNED_BONUS_SEC = 5;
+
     const scoreCandidateZones = (zones = [], type) => {
-      // Separate phrase-aligned zones from non-aligned ones; prefer phrase-aligned.
       const validZones = zones.filter((zone) => {
         if (!isValidTransitionZone(zone, mixData)) {
           logger?.debug?.('autoDj: skipping invalid zone', {
@@ -727,16 +758,16 @@ export function createAutoModeManager({
 
       if (validZones.length === 0) return null;
 
-      const phraseAligned = validZones.filter((z) => z.phraseAligned === true);
-      const candidatePool = phraseAligned.length > 0 ? phraseAligned : validZones;
-
       let best = null;
-      let bestDistance = Infinity;
-      for (const zone of candidatePool) {
+      let bestScore = Infinity;
+      for (const zone of validZones) {
         const distance = zoneDistanceToTarget(zone);
-        if (distance < bestDistance) {
+        const score = zone.phraseAligned === true
+          ? Math.max(0, distance - PHRASE_ALIGNED_BONUS_SEC)
+          : distance;
+        if (score < bestScore) {
           best = zone;
-          bestDistance = distance;
+          bestScore = score;
         }
       }
 

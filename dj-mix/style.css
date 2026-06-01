@@ -1801,12 +1801,12 @@ input {
   position: absolute;
   top: 50%;
   transform: translateX(-50%) translateY(-50%);
-  width: 1px;
+  width: 5px;
   height: 200%;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(255, 107, 53, 0.5) 0px,
-    rgba(255, 107, 53, 0.5) 3px,
+    rgba(53, 248, 255, 0.5) 0px,
+    rgba(90, 53, 255, 0.5) 3px,
     transparent 3px,
     transparent 6px
   );

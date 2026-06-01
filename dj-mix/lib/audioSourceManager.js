@@ -465,10 +465,7 @@ export function createAudioSourceManager(options) {
       trackName: item.name,
       artistName: item.artist,
       searchQuery: `${item.artist} ${item.name}`,
-      title: item.name,
-      artist: item.artist,
-      id: item.id,
-      ratingKey: item.ratingKey,
+      ...(Number.isFinite(item.popularity) ? { popularity: item.popularity } : {}),
     };
 
     let res;

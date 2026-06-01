@@ -115,6 +115,7 @@ import {
   persistDjModeGenrePrefs,
 } from './lib/settingsStorage.js';
 import { DEFAULT_DOWNLOADER_API_URL, STORAGE_KEYS } from './lib/storageKeys.js';
+import { getStoredTrackMeta, patchStoredTrackMeta } from './lib/trackMetaStorage.js';
 import { DANCE_GENRE_DEFAULTS } from './lib/danceGenreConfig.js';
 import { DJ_MODES } from './lib/djModeConfig.js';
 import { createApiHealthMonitor } from './lib/apiHealthMonitor.js';
@@ -1446,10 +1447,20 @@ function applyTxtPlaylistToFilRouge(tracks) {
  */
 async function fetchFilRougeArtwork(track) {
   if (!track?.id || track.artUrl) return;
+
+  // Use stored artwork if available
+  const stored = getStoredTrackMeta(track.name, track.artist);
+  if (stored?.artworkUrl) {
+    filRougeManager.patchPlaylistItem(track.id, { artUrl: stored.artworkUrl });
+    renderFilRouge();
+    return;
+  }
+
   try {
     const results = await searchTracksViaApi(`${track.artist} ${track.name}`, 5);
     const artUrl = results[0]?.artUrl || '';
     if (artUrl) {
+      patchStoredTrackMeta(track.name, track.artist, { artworkUrl: artUrl });
       filRougeManager.patchPlaylistItem(track.id, { artUrl });
       renderFilRouge();
     }
@@ -1465,11 +1476,24 @@ async function fetchFilRougeArtwork(track) {
  */
 async function fetchAndStoreArtworkForItem(item, deck) {
   if (!item || item.artUrl) return;
+
+  // Use stored artwork if available
+  const stored = getStoredTrackMeta(item.name, item.artist);
+  if (stored?.artworkUrl) {
+    item.artUrl = stored.artworkUrl;
+    if (item.id) filRougeManager.patchPlaylistItem(item.id, { artUrl: stored.artworkUrl });
+    updateNowPlaying(item, deck ?? getFocusDeck());
+    renderQueue();
+    renderFilRouge();
+    return;
+  }
+
   try {
     const results = await searchTracksViaApi(`${item.artist} ${item.name}`, 5);
     const artUrl = results[0]?.artUrl || '';
     if (!artUrl) return;
     item.artUrl = artUrl;
+    patchStoredTrackMeta(item.name, item.artist, { artworkUrl: artUrl });
     // Sync with fil rouge if this item is tracked there
     if (item.id) {
       filRougeManager.patchPlaylistItem(item.id, { artUrl });
