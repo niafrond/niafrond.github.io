@@ -96,6 +96,8 @@ import {
   persistRamTotalMbOverrideSetting,
   persistTrackMaxDurationEnabledSetting,
   persistTrackMaxDurationSetting,
+  persistTrackMaxDurationModeSetting,
+  persistTrackMaxDurationPctSetting,
   persistTransitionModeSetting,
   readAutoSuggestionQueueSearchEnabledSetting,
   readCrossfadeSecondsSetting,
@@ -107,6 +109,8 @@ import {
   readRamTotalMbOverrideSetting,
   readTrackMaxDurationEnabledSetting,
   readTrackMaxDurationSetting,
+  readTrackMaxDurationModeSetting,
+  readTrackMaxDurationPctSetting,
   readTransitionModeSetting,
   removeQueueSetting,
   readDjModeSetting,
@@ -201,6 +205,8 @@ let trackMaxDurationSec = readTrackMaxDurationSetting();
 let trackMaxDurationEnabled = readTrackMaxDurationEnabledSetting(trackMaxDurationSec > 0);
 let trackMaxDurationAppliedSec = trackMaxDurationEnabled ? trackMaxDurationSec : 0;
 let lastTrackMaxDurationSec = trackMaxDurationSec > 0 ? trackMaxDurationSec : 120;
+let trackMaxDurationMode = readTrackMaxDurationModeSetting();
+let trackMaxDurationPct = readTrackMaxDurationPctSetting();
 /** True once the maxdur marker has fired automix for the current track (prevents double-trigger). */
 let maxDurMarkerTriggeredForTrack = false;
 let autoDjFxSettings = readAutoDjFxSettings();
@@ -495,12 +501,63 @@ function recalculateAutomixTimingIfNeeded(logEvent = 'autoDj: recalculating auto
 }
 
 function applyTrackMaxDurationForCurrentPlayback() {
-  trackMaxDurationAppliedSec = trackMaxDurationEnabled ? trackMaxDurationSec : 0;
+  if (!trackMaxDurationEnabled) {
+    trackMaxDurationAppliedSec = 0;
+    return;
+  }
+  if (trackMaxDurationMode === 'pct') {
+    // Pct mode: real value computed in updateMaxDurationMarker (has mixData).
+    // Set a non-zero sentinel so downstream code knows max-duration is active.
+    // updateMaxDurationMarker will override with the true snapped value.
+    if (trackMaxDurationAppliedSec <= 0) trackMaxDurationAppliedSec = 1;
+  } else {
+    trackMaxDurationAppliedSec = trackMaxDurationSec;
+  }
+}
+
+/**
+ * Compute the effective max-duration target (in seconds, absolute file time)
+ * from the current pct setting and the track's mix data, excluding intro and outro.
+ * Returns 0 if insufficient data.
+ * @param {object|null} mixData
+ * @param {number} durationMs  — track duration in milliseconds
+ * @returns {number}
+ */
+function computePctMaxDurationSec(mixData, durationMs) {
+  const durationSec = durationMs / 1000;
+  if (durationSec <= 0) return 0;
+
+  const introEndSec = Number(mixData?.probableSongStartSec) || 0;
+  const outroZones = Array.isArray(mixData?.outroZones) ? mixData.outroZones : [];
+  const outroStartSec = outroZones.length > 0
+    ? Math.min(...outroZones.map((z) => Number(z.startSec)))
+    : durationSec;
+
+  const effectiveDuration = Math.max(0, outroStartSec - introEndSec);
+  return introEndSec + effectiveDuration * trackMaxDurationPct / 100;
 }
 
 function updateTrackMaxDurationUI() {
+  const isPct = trackMaxDurationMode === 'pct';
+
+  if (trackMaxDurationModeBtn) {
+    trackMaxDurationModeBtn.textContent = isPct ? '%' : 'sec';
+    trackMaxDurationModeBtn.title = isPct
+      ? 'Mode pourcentage — cliquer pour passer en secondes fixes'
+      : 'Mode secondes fixes — cliquer pour passer en pourcentage (hors intro/outro)';
+  }
+  if (trackMaxDurationSecRow) {
+    trackMaxDurationSecRow.style.display = isPct ? 'none' : 'flex';
+  }
+  if (trackMaxDurationPctRow) {
+    trackMaxDurationPctRow.style.display = isPct ? 'flex' : 'none';
+  }
+
   if (trackMaxDurationInput) {
     trackMaxDurationInput.value = String(trackMaxDurationSec);
+  }
+  if (trackMaxDurationPctInput) {
+    trackMaxDurationPctInput.value = String(trackMaxDurationPct);
   }
   if (trackMaxDurationMinus) {
     trackMaxDurationMinus.disabled = false;
@@ -529,6 +586,17 @@ function applyTrackMaxDurationSetting(nextValue, logEvent) {
   logDebug(logEvent || 'trackMaxDuration: setting changed', { value });
 
   // Keep trigger and marker aligned with zone-aware automix timing.
+  recalculateAutomixTimingIfNeeded('trackMaxDuration: recalculating automix timing');
+  updateMaxDurationMarker();
+}
+
+function applyTrackMaxDurationPctSetting(nextValue, logEvent) {
+  const value = Math.max(5, Math.min(95, Number.parseInt(String(nextValue || '50'), 10) || 50));
+  trackMaxDurationPct = value;
+  persistTrackMaxDurationPctSetting(value);
+  updateTrackMaxDurationUI();
+  showToast(`Durée max: ${value}%`);
+  logDebug(logEvent || 'trackMaxDuration: pct setting changed', { value });
   recalculateAutomixTimingIfNeeded('trackMaxDuration: recalculating automix timing');
   updateMaxDurationMarker();
 }
@@ -586,6 +654,12 @@ const mixTransitionModeSelect = document.getElementById('mix-transition-mode');
 const trackMaxDurationInput = document.getElementById('track-max-duration');
 const trackMaxDurationMinus = document.getElementById('track-max-duration-minus');
 const trackMaxDurationPlus = document.getElementById('track-max-duration-plus');
+const trackMaxDurationModeBtn = document.getElementById('track-max-duration-mode-btn');
+const trackMaxDurationPctInput = document.getElementById('track-max-duration-pct');
+const trackMaxDurationPctMinus = document.getElementById('track-max-duration-pct-minus');
+const trackMaxDurationPctPlus = document.getElementById('track-max-duration-pct-plus');
+const trackMaxDurationSecRow = document.getElementById('track-max-duration-sec-row');
+const trackMaxDurationPctRow = document.getElementById('track-max-duration-pct-row');
 const mixModeRow = document.querySelector('.mix-mode-row');
 const manualLockBtn = document.getElementById('manual-lock-btn');
 const fxVisibilityBtn = document.getElementById('fx-visibility-btn');
@@ -3253,10 +3327,35 @@ trackMaxDurationInput?.addEventListener('change', () => {
   applyTrackMaxDurationSetting(trackMaxDurationInput.value, 'trackMaxDuration: setting changed');
 });
 
+trackMaxDurationModeBtn?.addEventListener('click', () => {
+  trackMaxDurationMode = trackMaxDurationMode === 'pct' ? 'sec' : 'pct';
+  persistTrackMaxDurationModeSetting(trackMaxDurationMode);
+  applyTrackMaxDurationForCurrentPlayback();
+  updateTrackMaxDurationUI();
+  const label = trackMaxDurationMode === 'pct' ? `${trackMaxDurationPct}% (hors intro/outro)` : `${trackMaxDurationSec}s`;
+  showToast(`Durée max: mode ${trackMaxDurationMode === 'pct' ? '%' : 'sec'} (${label})`);
+  recalculateAutomixTimingIfNeeded('trackMaxDuration: mode changed');
+  updateMaxDurationMarker();
+});
+
+trackMaxDurationPctInput?.addEventListener('change', () => {
+  applyTrackMaxDurationPctSetting(trackMaxDurationPctInput.value, 'trackMaxDuration: pct setting changed');
+});
+
+trackMaxDurationPctMinus?.addEventListener('click', () => {
+  const newValue = Math.max(5, trackMaxDurationPct - 5);
+  applyTrackMaxDurationPctSetting(newValue, 'trackMaxDuration: pct decreased');
+});
+
+trackMaxDurationPctPlus?.addEventListener('click', () => {
+  const newValue = Math.min(95, trackMaxDurationPct + 5);
+  applyTrackMaxDurationPctSetting(newValue, 'trackMaxDuration: pct increased');
+});
+
 trackMaxDurationToggle?.addEventListener('click', () => {
   trackMaxDurationEnabled = !trackMaxDurationEnabled;
 
-  if (trackMaxDurationEnabled && trackMaxDurationSec <= 0) {
+  if (trackMaxDurationEnabled && trackMaxDurationMode === 'sec' && trackMaxDurationSec <= 0) {
     trackMaxDurationSec = lastTrackMaxDurationSec;
     persistTrackMaxDurationSetting(trackMaxDurationSec);
   }
@@ -3264,10 +3363,12 @@ trackMaxDurationToggle?.addEventListener('click', () => {
   persistTrackMaxDurationEnabledSetting(trackMaxDurationEnabled);
   applyTrackMaxDurationForCurrentPlayback();
   updateTrackMaxDurationUI();
-  showToast(trackMaxDurationEnabled ? `Durée max: ON (${trackMaxDurationSec}s)` : 'Durée max: OFF');
+  const label = trackMaxDurationMode === 'pct' ? `${trackMaxDurationPct}%` : `${trackMaxDurationSec}s`;
+  showToast(trackMaxDurationEnabled ? `Durée max: ON (${label})` : 'Durée max: OFF');
   logDebug('trackMaxDuration: toggled', {
     enabled: trackMaxDurationEnabled,
-    value: trackMaxDurationSec,
+    mode: trackMaxDurationMode,
+    value: trackMaxDurationMode === 'pct' ? trackMaxDurationPct : trackMaxDurationSec,
   });
   recalculateAutomixTimingIfNeeded();
   updateMaxDurationMarker();
@@ -3605,10 +3706,6 @@ function updatePlannedStartMarker() {
 const _maxDurMarkerCache = { key: null, markerMs: null, maxMs: null, maxExceedsDuration: null, rawLogged: false, renderKey: null };
 
 function updateMaxDurationMarker() {
-  const effectiveMaxDurationSec = trackMaxDurationEnabled
-    ? (uiState.isPlaying ? trackMaxDurationAppliedSec : trackMaxDurationSec)
-    : 0;
-
   // Prefer the specific playing deck's duration (accurate even during crossfades and
   // for fil rouge tracks that may have duration=0 in queue metadata).
   const playingDeck = automixTimeline.currentPlayingDeck || 'A';
@@ -3616,6 +3713,23 @@ function updateMaxDurationMarker() {
   const durationMs = deckStateDurationMs > 0
     ? deckStateDurationMs
     : (playbackDurationMs > 0 ? playbackDurationMs : (queue[uiState.currentIndex]?.duration ?? 0));
+
+  const currentItem = queue[uiState.currentIndex];
+  const fallbackMixData = autoModeManager.getCurrentTrackMixData?.();
+  const mixData = getTrackMixData(currentItem) || fallbackMixData || null;
+
+  let effectiveMaxDurationSec;
+  if (!trackMaxDurationEnabled) {
+    effectiveMaxDurationSec = 0;
+  } else if (trackMaxDurationMode === 'pct') {
+    effectiveMaxDurationSec = durationMs > 0 ? computePctMaxDurationSec(mixData, durationMs) : 0;
+    // Keep trackMaxDurationAppliedSec in sync so scheduleAutomixTiming reads the right value.
+    if (effectiveMaxDurationSec > 0 && effectiveMaxDurationSec !== trackMaxDurationAppliedSec) {
+      trackMaxDurationAppliedSec = effectiveMaxDurationSec;
+    }
+  } else {
+    effectiveMaxDurationSec = uiState.isPlaying ? trackMaxDurationAppliedSec : trackMaxDurationSec;
+  }
 
   if (effectiveMaxDurationSec <= 0 || durationMs <= 0) {
     if (_maxDurMarkerCache.renderKey !== 'off') {
@@ -3628,7 +3742,6 @@ function updateMaxDurationMarker() {
     return;
   }
 
-  const currentItem = queue[uiState.currentIndex];
   const startOffsetMs = Math.max(0, Number(currentItem?.autoDjStartOffsetMs) || 0);
   // Shift the max-duration wall by the song start offset so the marker reflects
   // "X seconds from the actual start of playback" in absolute file time.
@@ -3639,8 +3752,6 @@ function updateMaxDurationMarker() {
 
   // Cache key: recompute zone-snapping only when track, setting or duration changes.
   const cacheKey = `${currentItem?.id}|${effectiveMaxDurationSec}|${durationMs}`;
-  const fallbackMixData = autoModeManager.getCurrentTrackMixData?.();
-  const mixData = getTrackMixData(currentItem) || fallbackMixData || null;
   let markerMs;
   if (_maxDurMarkerCache.key === cacheKey && _maxDurMarkerCache.markerMs !== null) {
     markerMs = _maxDurMarkerCache.markerMs;

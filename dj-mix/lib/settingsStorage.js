@@ -54,6 +54,26 @@ export function persistTrackMaxDurationEnabledSetting(enabled) {
   persistBooleanSetting(STORAGE_KEYS.trackMaxDurationEnabled, enabled);
 }
 
+export function readTrackMaxDurationModeSetting() {
+  const stored = safeGet(STORAGE_KEYS.trackMaxDurationMode);
+  return stored === 'pct' ? 'pct' : 'sec';
+}
+
+export function persistTrackMaxDurationModeSetting(mode) {
+  safeSet(STORAGE_KEYS.trackMaxDurationMode, mode === 'pct' ? 'pct' : 'sec');
+}
+
+export function readTrackMaxDurationPctSetting() {
+  const stored = safeGet(STORAGE_KEYS.trackMaxDurationPct) || '50';
+  const value = Number.parseInt(stored, 10);
+  return (value >= 5 && value <= 95) ? value : 50;
+}
+
+export function persistTrackMaxDurationPctSetting(pct) {
+  const value = Math.max(5, Math.min(95, Number.parseInt(String(pct || '50'), 10) || 50));
+  safeSet(STORAGE_KEYS.trackMaxDurationPct, String(value));
+}
+
 export function readRamFilterEnabledSetting() {
   return readBooleanSetting(STORAGE_KEYS.ramFilterEnabled, true);
 }

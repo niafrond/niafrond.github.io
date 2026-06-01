@@ -7,6 +7,8 @@ export const STORAGE_KEYS = Object.freeze({
   mixTransitionMode: 'dj-mix:transition:mode',
   trackMaxDuration: 'dj-mix:track:max-duration',
   trackMaxDurationEnabled: 'dj-mix:track:max-duration:enabled',
+  trackMaxDurationMode: 'dj-mix:track:max-duration:mode',
+  trackMaxDurationPct: 'dj-mix:track:max-duration:pct',
   ramFilterEnabled: 'dj-mix:ram-filter:enabled',
   ramTotalMbOverride: 'dj-mix:ram-filter:total-mb-override',
   autoDjFxSettings: 'dj-mix:auto-dj:fx:settings',

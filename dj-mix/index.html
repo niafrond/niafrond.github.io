@@ -181,14 +181,23 @@
           </div>
           <div class="mix-mode-row">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-              <label for="track-max-duration" style="margin: 0;">Durée max de piste (sec)</label>
-              <button id="track-max-duration-toggle" class="deck-launch-btn fx-toggle" type="button" aria-pressed="true">Durée max: ON</button>
+              <label for="track-max-duration" style="margin: 0;">Durée max de piste</label>
+              <div style="display: flex; gap: 4px;">
+                <button id="track-max-duration-mode-btn" class="crossfade-step-btn" type="button" title="Basculer entre durée fixe (sec) et pourcentage (% hors intro/outro)" style="min-width: 36px;">sec</button>
+                <button id="track-max-duration-toggle" class="deck-launch-btn fx-toggle" type="button" aria-pressed="true">Durée max: ON</button>
+              </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div id="track-max-duration-sec-row" style="display: flex; align-items: center; gap: 8px;">
               <button id="track-max-duration-minus" class="crossfade-step-btn" type="button" aria-label="Diminuer la durée max">-</button>
               <input type="number" id="track-max-duration" class="mix-mode-select" min="30" max="600" step="5" value="0" aria-label="Durée maximale de la piste en secondes (0 = aucune limite)" style="width: 60px; text-align: center;">
               <span style="font-size: 0.9em; color: #666;">sec</span>
               <button id="track-max-duration-plus" class="crossfade-step-btn" type="button" aria-label="Augmenter la durée max">+</button>
+            </div>
+            <div id="track-max-duration-pct-row" style="display: none; align-items: center; gap: 8px;">
+              <button id="track-max-duration-pct-minus" class="crossfade-step-btn" type="button" aria-label="Diminuer le pourcentage">-</button>
+              <input type="number" id="track-max-duration-pct" class="mix-mode-select" min="5" max="95" step="5" value="50" aria-label="Pourcentage de durée max hors intro et outro" style="width: 60px; text-align: center;">
+              <span style="font-size: 0.9em; color: #666;">%</span>
+              <button id="track-max-duration-pct-plus" class="crossfade-step-btn" type="button" aria-label="Augmenter le pourcentage">+</button>
             </div>
           </div>
           <div class="deck-fx-actions">
