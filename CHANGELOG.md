@@ -1,3 +1,9 @@
+## [1.218.3](https://github.com/niafrond/niafrond.github.io/compare/v1.218.2...v1.218.3) (2026-06-02)
+
+### Bug Fixes
+
+* large text ([36d0a7e](https://github.com/niafrond/niafrond.github.io/commit/36d0a7e5f25968bfabf15b8cc363875e25f96f01))
+
 ## [1.218.2](https://github.com/niafrond/niafrond.github.io/compare/v1.218.1...v1.218.2) (2026-06-02)
 
 ### Bug Fixes
