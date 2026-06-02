@@ -1,3 +1,9 @@
+## [1.218.2](https://github.com/niafrond/niafrond.github.io/compare/v1.218.1...v1.218.2) (2026-06-02)
+
+### Bug Fixes
+
+* optimisations ([ca59dc0](https://github.com/niafrond/niafrond.github.io/commit/ca59dc001b687483d5312d00bec0ee481273994b))
+
 ## [1.218.1](https://github.com/niafrond/niafrond.github.io/compare/v1.218.0...v1.218.1) (2026-06-02)
 
 ### Bug Fixes
