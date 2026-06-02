@@ -66,6 +66,9 @@ export function createAutoModeManager({
   let suggestionSearchEnabled = true;
   let lastPlayedTrackIdVariants = []; // All ID variants of last played track for loop detection
   let loopDetectionCounter = 0; // Counter to detect when same track is queued multiple times
+  // Track currently loaded on the active deck. Set synchronously when scheduleAutomixTiming is
+  // called so that onTrackFinished searches can exclude it even after it leaves the queue.
+  let currentlyPlayingTrack = null;
   
   const SEARCH_COOLDOWN_MS = 5000; // Minimum time between searches
   const MAX_MIX_DATA_CACHE_ENTRIES = 40; // Cap cache to prevent unbounded growth
@@ -987,6 +990,10 @@ export function createAutoModeManager({
   function scheduleAutomixTiming(currentTrack) {
     if (!autoModeEnabled || !currentTrack) return;
 
+    // Store synchronously so subsequent searches can exclude this track even after
+    // the player removes it from the queue upon playback start.
+    currentlyPlayingTrack = currentTrack;
+
     clearAutomixTimer();
     currentTrackMixData = null;
     pendingAutoFxEvents = [];
@@ -1538,6 +1545,30 @@ export function createAutoModeManager({
           continue;
         }
 
+        // Exclude the track currently on the active deck. When a crossfade completes the new
+        // track is removed from the queue by the player, so queueIds won't catch it and
+        // currentTrack (the finished deck) doesn't match it — causing a re-queue loop.
+        if (currentlyPlayingTrack && currentlyPlayingTrack !== currentTrack) {
+          const liveId1 = currentlyPlayingTrack.id || null;
+          const liveId2 = currentlyPlayingTrack.ratingKey || null;
+          const liveId3 = currentlyPlayingTrack.uri || null;
+          const liveName = String(currentlyPlayingTrack.name || currentlyPlayingTrack.trackName || '').trim().toLowerCase();
+          const liveArtist = String(currentlyPlayingTrack.artist || currentlyPlayingTrack.artistName || '').trim().toLowerCase();
+          const isLiveById =
+            (liveId1 && (trackId === liveId1 || result.id === liveId1 || result.ratingKey === liveId1 || result.uri === liveId1)) ||
+            (liveId2 && (trackId === liveId2 || result.id === liveId2 || result.ratingKey === liveId2 || result.uri === liveId2)) ||
+            (liveId3 && (trackId === liveId3 || result.id === liveId3 || result.ratingKey === liveId3 || result.uri === liveId3));
+          const isLiveByName = liveName && resultName === liveName && resultArtist === liveArtist;
+          if (isLiveById || isLiveByName) {
+            logger?.debug?.('autoDj: skipping currently-on-deck track (crossfade loop guard)', {
+              trackName,
+              artistName,
+              deckTrack: currentlyPlayingTrack.name,
+            });
+            continue;
+          }
+        }
+
         // LOOP DETECTION: Skip if this would create an infinite loop with the last played track
         if (wouldCreateLoopWithCurrentTrack(result, { 
           id: lastPlayedTrackIdVariants[0],
@@ -1706,6 +1737,7 @@ export function createAutoModeManager({
     pendingAutoFxEvents = [];
     lastPlayedTrackIdVariants = [];
     loopDetectionCounter = 0;
+    currentlyPlayingTrack = null;
     MIX_DATA_CACHE.clear();
     autoModeEnabled = false;
     saveSettings();
