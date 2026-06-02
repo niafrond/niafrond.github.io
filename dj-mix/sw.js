@@ -56,7 +56,7 @@ self.addEventListener('fetch', e => {
   if (!e.request.url.startsWith(self.location.origin)) return;
   
   // Ne pas intercepter les requêtes API
-  if (e.request.url.includes('/api/') || e.request.url.includes('spotify.com')) return;
+  if (e.request.url.includes('/api/')) return;
   
   e.respondWith(
     caches.match(e.request).then(res => res || fetch(e.request))
