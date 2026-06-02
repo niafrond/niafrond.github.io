@@ -4,6 +4,7 @@
   "description": "Application DJ de mixage musical avec crossfade",
   "start_url": "./",
   "display": "standalone",
+  "display_override": ["window-controls-overlay"],
   "orientation": "portrait",
   "theme_color": "#0a0a0f",
   "background_color": "#0a0a0f",
@@ -62,5 +63,7 @@
         }
       ]
     }
-  ]
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }
