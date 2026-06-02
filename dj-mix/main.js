@@ -5,6 +5,7 @@
  */
 
 import { DJPlayer } from './player.js';
+import { initServiceWorker, installPwa } from './pwa.js';
 
 // --- Wake Lock (garder l'écran allumé pendant la lecture) ---
 let wakeLock = null;
@@ -2614,6 +2615,16 @@ txtImportFilRougeBtn?.addEventListener('click', async () => {
   loadDownloaderApiConfigIntoForm();
   setupDownloaderApiConfigEvents();
   setupMediaSession();
+  initServiceWorker();
+  
+  // Setup PWA install button
+  const pwaInstallBtn = document.getElementById('btn-install-pwa');
+  if (pwaInstallBtn) {
+    pwaInstallBtn.addEventListener('click', () => {
+      installPwa();
+    });
+  }
+  
   restoreQueue();
   if (queue.length) {
     renderQueue();
