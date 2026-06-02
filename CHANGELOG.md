@@ -1,3 +1,9 @@
+## [1.218.1](https://github.com/niafrond/niafrond.github.io/compare/v1.218.0...v1.218.1) (2026-06-02)
+
+### Bug Fixes
+
+* automode ([7566da9](https://github.com/niafrond/niafrond.github.io/commit/7566da9cd91c53ba4526ce9272875247ced62396))
+
 ## [1.218.0](https://github.com/niafrond/niafrond.github.io/compare/v1.217.0...v1.218.0) (2026-06-01)
 
 ### Features
