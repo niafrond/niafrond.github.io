@@ -5,6 +5,7 @@
  */
 
 import { DJPlayer } from './player.js';
+import { initServiceWorker, installPwa } from './pwa.js';
 
 // --- Wake Lock (garder l'écran allumé pendant la lecture) ---
 let wakeLock = null;
@@ -2614,6 +2615,16 @@ txtImportFilRougeBtn?.addEventListener('click', async () => {
   loadDownloaderApiConfigIntoForm();
   setupDownloaderApiConfigEvents();
   setupMediaSession();
+  initServiceWorker();
+  
+  // Setup PWA install button
+  const pwaInstallBtn = document.getElementById('btn-install-pwa');
+  if (pwaInstallBtn) {
+    pwaInstallBtn.addEventListener('click', () => {
+      installPwa();
+    });
+  }
+  
   restoreQueue();
   if (queue.length) {
     renderQueue();
@@ -2644,7 +2655,35 @@ txtImportFilRougeBtn?.addEventListener('click', async () => {
   } catch (err) {
     showToast(`Erreur API: ${err.message}`, true);
   }
+  
+  // Handle URL parameters from shortcuts (Android Auto support)
+  handleShortcutParameters();
 })();
+
+function handleShortcutParameters() {
+  const params = new URLSearchParams(window.location.search);
+  
+  // Handle automix parameter
+  if (params.get('automix') === '1') {
+    setTimeout(() => {
+      autoMixBtn?.click();
+    }, 500);
+  }
+  
+  // Handle tab parameter
+  const tabParam = params.get('tab');
+  if (tabParam) {
+    const tabButtons = document.querySelectorAll('[data-tab]');
+    tabButtons.forEach(btn => {
+      const tabId = btn.getAttribute('data-tab');
+      if (tabId === tabParam) {
+        setTimeout(() => {
+          btn.click();
+        }, 300);
+      }
+    });
+  }
+}
 
 window.addEventListener('beforeunload', () => {
   // Flush any pending debounced queue save before unload
