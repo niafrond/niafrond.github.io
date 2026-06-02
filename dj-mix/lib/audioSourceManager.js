@@ -14,7 +14,14 @@ const logError = (event, payload) => logger.error(event, payload);
 
 export function getTrackCacheKey(track) {
   if (!track) return '';
-  return String(track.uri || track.id || `${track.artist || ''}::${track.name || track.title || ''}`);
+  // Use id or artist::name — NOT uri/persistedSourceUrl which is a session URL
+  // and differs between queue items (which set uri=persistedSourceUrl) and
+  // fil rouge playlist items (which don't have a uri field), causing cache misses.
+  const id = String(track.id || '').trim();
+  if (id) return id;
+  const artist = String(track.artist || '').trim().toLowerCase();
+  const name = String(track.name || track.title || '').trim().toLowerCase();
+  return `${artist}::${name}`;
 }
 
 export function getDirectPlayableSourceUrl(track, getDownloaderApiUrl) {
@@ -182,6 +189,40 @@ async function restorePersistedAudioBlobUrl(cacheKey, audioCacheName) {
       size: blob.size,
       audioCacheName,
     });
+    return URL.createObjectURL(blob);
+  } catch (_) {
+    return null;
+  }
+}
+
+function getArtworkCacheRequest(trackKey) {
+  const safeKey = encodeURIComponent(String(trackKey || 'unknown'));
+  return new Request(`https://dj-mix.local/cache-artwork/${safeKey}`);
+}
+
+async function persistArtworkBlob(trackKey, artUrl, cacheName) {
+  if (!trackKey || !artUrl || !('caches' in window)) return;
+  try {
+    const cache = await caches.open(cacheName);
+    if (await cache.match(getArtworkCacheRequest(trackKey))) return;
+    const res = await fetch(artUrl);
+    if (!res.ok) return;
+    const blob = await res.blob();
+    if (!blob || blob.size <= 0) return;
+    await cache.put(getArtworkCacheRequest(trackKey), new Response(blob, {
+      headers: { 'content-type': blob.type || 'image/jpeg' },
+    }));
+  } catch (_) {}
+}
+
+async function restorePersistedArtworkBlobUrl(trackKey, cacheName) {
+  if (!trackKey || !('caches' in window)) return null;
+  try {
+    const cache = await caches.open(cacheName);
+    const cached = await cache.match(getArtworkCacheRequest(trackKey));
+    if (!cached) return null;
+    const blob = await cached.blob();
+    if (!blob || blob.size <= 0) return null;
     return URL.createObjectURL(blob);
   } catch (_) {
     return null;
@@ -554,10 +595,57 @@ export function createAudioSourceManager(options) {
       hasPersistedSourceUrl: !!item?.persistedSourceUrl,
     });
     const cacheKey = getTrackCacheKey(item);
-    const cachedSource = sessionBlobCache.get(cacheKey);
+
     if (item.localBlobUrl) {
       maybeWarmStemLocalSources(item, cacheKey);
       logDebug('source.ensure.hit.itemBlob', { cacheKey, id: item?.id });
+      return item.localBlobUrl;
+    }
+
+    // Check in-memory session cache before any network probes
+    const cachedSource = sessionBlobCache.get(cacheKey);
+    if (cachedSource) {
+      item.localBlobUrl = typeof cachedSource === 'string' ? cachedSource : cachedSource.url;
+      if (Number.isFinite(cachedSource?.loudnessDb)) {
+        item.loudnessDb = cachedSource.loudnessDb;
+      }
+      if (cachedSource?.stems && typeof cachedSource.stems === 'object') {
+        item.localStemUrls = sanitizeStemSources(cachedSource.stems);
+        item.stems = { ...item.localStemUrls };
+      }
+      item.sourceState = 'ready';
+      item.sourceError = null;
+      touchQueueItem(item);
+      hydrateItemDurationFromLocalSource(item);
+      onQueueUpdated?.();
+      maybeWarmStemLocalSources(item, cacheKey);
+      logInfo('source.ensure.hit.sessionBlobCache', {
+        cacheKey,
+        id: item?.id,
+      });
+      return item.localBlobUrl;
+    }
+
+    // Check persistent Cache Storage before any network probes
+    const persistedBlobUrl = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName);
+    if (persistedBlobUrl) {
+      item.localBlobUrl = persistedBlobUrl;
+      sessionBlobCache.set(cacheKey, {
+        url: persistedBlobUrl,
+        loudnessDb: Number.isFinite(item.loudnessDb) ? item.loudnessDb : null,
+        stems: sanitizeStemSources(item.localStemUrls || item.stems),
+      });
+      evictOldestBlobIfNeeded();
+      item.sourceState = 'ready';
+      item.sourceError = null;
+      touchQueueItem(item);
+      hydrateItemDurationFromLocalSource(item);
+      onQueueUpdated?.();
+      maybeWarmStemLocalSources(item, cacheKey);
+      logInfo('source.ensure.hit.persistentCacheApi', {
+        cacheKey,
+        id: item?.id,
+      });
       return item.localBlobUrl;
     }
 
@@ -569,7 +657,6 @@ export function createAudioSourceManager(options) {
         item.sourceError = null;
         touchQueueItem(item);
         hydrateItemDurationFromLocalSource(item);
-        console.log('Using persisted source URL for item:', { cacheKey, id: item?.id, persistedSourceUrl: item.persistedSourceUrl });
         onQueueUpdated?.();
         maybeWarmStemLocalSources(item, cacheKey);
         logInfo('source.ensure.hit.persistedSourceUrl', { cacheKey, id: item?.id });
@@ -605,50 +692,6 @@ export function createAudioSourceManager(options) {
         cacheKey,
         id: item?.id,
       });
-    }
-
-    if (cachedSource) {
-      item.localBlobUrl = typeof cachedSource === 'string' ? cachedSource : cachedSource.url;
-      if (Number.isFinite(cachedSource?.loudnessDb)) {
-        item.loudnessDb = cachedSource.loudnessDb;
-      }
-      if (cachedSource?.stems && typeof cachedSource.stems === 'object') {
-        item.localStemUrls = sanitizeStemSources(cachedSource.stems);
-        item.stems = { ...item.localStemUrls };
-      }
-      item.sourceState = 'ready';
-      item.sourceError = null;
-      touchQueueItem(item);
-      hydrateItemDurationFromLocalSource(item);
-      onQueueUpdated?.();
-      maybeWarmStemLocalSources(item, cacheKey);
-      logInfo('source.ensure.hit.sessionBlobCache', {
-        cacheKey,
-        id: item?.id,
-      });
-      return item.localBlobUrl;
-    }
-
-    const persistedBlobUrl = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName);
-    if (persistedBlobUrl) {
-      item.localBlobUrl = persistedBlobUrl;
-      sessionBlobCache.set(cacheKey, {
-        url: persistedBlobUrl,
-        loudnessDb: Number.isFinite(item.loudnessDb) ? item.loudnessDb : null,
-        stems: sanitizeStemSources(item.localStemUrls || item.stems),
-      });
-      evictOldestBlobIfNeeded();
-      item.sourceState = 'ready';
-      item.sourceError = null;
-      touchQueueItem(item);
-      hydrateItemDurationFromLocalSource(item);
-      onQueueUpdated?.();
-      maybeWarmStemLocalSources(item, cacheKey);
-      logInfo('source.ensure.hit.persistentCacheApi', {
-        cacheKey,
-        id: item?.id,
-      });
-      return item.localBlobUrl;
     }
 
     item.sourceState = 'resolving';
@@ -865,16 +908,44 @@ export function createAudioSourceManager(options) {
   async function enrichStemsFromServer(item) {
     if (!item) return;
 
-    // Already have all stem variants locally in memory
+    // Already have primary stems (vocals or instrumental) in memory — nothing to fetch
     const existing = sanitizeStemSources(item.localStemUrls || item.stems);
-    if (existing.vocalsUrl && existing.instrumentalUrl && existing.echoUrl && existing.distortionUrl) return;
+    if (existing.vocalsUrl && existing.instrumentalUrl) return;
 
     // Need at least a cachePath or name to identify the track
     if (!item.cachePath && !item.name) return;
 
     const cacheKey = getTrackCacheKey(item);
 
-    // Skip persistent cache check for now - check if both stems are already in memory/session
+    // Check persistent Cache Storage before hitting the server.
+    // A track may have only 2 stems (vocals + instrumental), so we restore whatever
+    // is present and skip the server if at least one variant is found.
+    const [vocalsFromCache, instrumentalFromCache, echoFromCache, distortionFromCache] = await Promise.all([
+      existing.vocalsUrl ? Promise.resolve(existing.vocalsUrl) : restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, 'vocals'), audioCacheName).catch(() => null),
+      existing.instrumentalUrl ? Promise.resolve(existing.instrumentalUrl) : restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, 'instrumental'), audioCacheName).catch(() => null),
+      existing.echoUrl ? Promise.resolve(existing.echoUrl) : restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, 'echo'), audioCacheName).catch(() => null),
+      existing.distortionUrl ? Promise.resolve(existing.distortionUrl) : restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, 'distortion'), audioCacheName).catch(() => null),
+    ]);
+
+    if (vocalsFromCache || instrumentalFromCache || echoFromCache || distortionFromCache) {
+      item.localStemUrls = {
+        vocalsUrl: vocalsFromCache || '',
+        instrumentalUrl: instrumentalFromCache || '',
+        echoUrl: echoFromCache || '',
+        distortionUrl: distortionFromCache || '',
+      };
+      item.stems = { ...item.localStemUrls };
+      const existingSession = sessionBlobCache.get(cacheKey);
+      if (existingSession && typeof existingSession === 'object') {
+        sessionBlobCache.set(cacheKey, { ...existingSession, stems: { ...item.localStemUrls } });
+        evictOldestBlobIfNeeded();
+      }
+      touchQueueItem(item);
+      onQueueUpdated?.();
+      logInfo('stems.restored.fromPersistentCache', { cacheKey, id: item?.id });
+      return;
+    }
+
     const stemData = await fetchServerStemsStatus(item);
     if (!stemData) return;
 
@@ -1051,6 +1122,14 @@ export function createAudioSourceManager(options) {
     }
   }
 
+  function persistArtwork(item, artUrl) {
+    return persistArtworkBlob(getTrackCacheKey(item), artUrl, audioCacheName);
+  }
+
+  function restoreArtwork(item) {
+    return restorePersistedArtworkBlobUrl(getTrackCacheKey(item), audioCacheName);
+  }
+
   return {
     clearSessionBlobCache: () => clearSessionBlobCache(sessionBlobCache),
     deleteLocalCacheSong,
@@ -1058,8 +1137,10 @@ export function createAudioSourceManager(options) {
     ensureLocalSource,
     evictTrackSource,
     isTrackInLocalCache,
+    persistArtwork,
     prefetchTrackToLocalCache,
     releaseLocalBlob: (item) => releaseLocalBlob(item, touchQueueItem),
+    restoreArtwork,
     searchTracksViaApi,
   };
 }

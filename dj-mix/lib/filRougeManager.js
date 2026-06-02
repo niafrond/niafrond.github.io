@@ -97,7 +97,7 @@ export function createFilRougeManager() {
       id: item.id,
       name: item.name,
       artist: item.artist,
-      artUrl: item.artUrl || '',
+      artUrl: (item.artUrl && !String(item.artUrl).startsWith('blob:')) ? item.artUrl : '',
       duration: item.duration || 0,
       bpm: item.bpm || null,
       genre: item.genre || '',

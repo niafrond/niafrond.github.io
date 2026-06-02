@@ -1063,8 +1063,10 @@ const {
   ensureLocalSource,
   evictTrackSource,
   isTrackInLocalCache,
+  persistArtwork,
   prefetchTrackToLocalCache,
   releaseLocalBlob,
+  restoreArtwork,
   searchTracksViaApi,
 } = audioSourceManager;
 
@@ -1524,11 +1526,20 @@ function applyTxtPlaylistToFilRouge(tracks) {
 async function fetchFilRougeArtwork(track) {
   if (!track?.id || track.artUrl) return;
 
-  // Use stored artwork if available
+  // Check Cache Storage for a persisted blob first (no network)
+  const cachedBlobUrl = await restoreArtwork(track).catch(() => null);
+  if (cachedBlobUrl) {
+    filRougeManager.patchPlaylistItem(track.id, { artUrl: cachedBlobUrl });
+    renderFilRouge();
+    return;
+  }
+
+  // Use stored URL from localStorage if available
   const stored = getStoredTrackMeta(track.name, track.artist);
   if (stored?.artworkUrl) {
     filRougeManager.patchPlaylistItem(track.id, { artUrl: stored.artworkUrl });
     renderFilRouge();
+    persistArtwork(track, stored.artworkUrl).catch(() => {});
     return;
   }
 
@@ -1538,6 +1549,7 @@ async function fetchFilRougeArtwork(track) {
     if (artUrl) {
       patchStoredTrackMeta(track.name, track.artist, { artworkUrl: artUrl });
       filRougeManager.patchPlaylistItem(track.id, { artUrl });
+      persistArtwork(track, artUrl).catch(() => {});
       renderFilRouge();
     }
   } catch (_) {}
@@ -1553,7 +1565,18 @@ async function fetchFilRougeArtwork(track) {
 async function fetchAndStoreArtworkForItem(item, deck) {
   if (!item || item.artUrl) return;
 
-  // Use stored artwork if available
+  // Check Cache Storage for a persisted blob first (no network)
+  const cachedBlobUrl = await restoreArtwork(item).catch(() => null);
+  if (cachedBlobUrl) {
+    item.artUrl = cachedBlobUrl;
+    if (item.id) filRougeManager.patchPlaylistItem(item.id, { artUrl: cachedBlobUrl });
+    updateNowPlaying(item, deck ?? getFocusDeck());
+    renderQueue();
+    renderFilRouge();
+    return;
+  }
+
+  // Use stored URL from localStorage if available
   const stored = getStoredTrackMeta(item.name, item.artist);
   if (stored?.artworkUrl) {
     item.artUrl = stored.artworkUrl;
@@ -1561,6 +1584,7 @@ async function fetchAndStoreArtworkForItem(item, deck) {
     updateNowPlaying(item, deck ?? getFocusDeck());
     renderQueue();
     renderFilRouge();
+    persistArtwork(item, stored.artworkUrl).catch(() => {});
     return;
   }
 
@@ -1570,13 +1594,13 @@ async function fetchAndStoreArtworkForItem(item, deck) {
     if (!artUrl) return;
     item.artUrl = artUrl;
     patchStoredTrackMeta(item.name, item.artist, { artworkUrl: artUrl });
-    // Sync with fil rouge if this item is tracked there
     if (item.id) {
       filRougeManager.patchPlaylistItem(item.id, { artUrl });
     }
     updateNowPlaying(item, deck ?? getFocusDeck());
     renderQueue();
     renderFilRouge();
+    persistArtwork(item, artUrl).catch(() => {});
   } catch (_) {}
 }
 
@@ -1602,7 +1626,8 @@ async function startTxtPlaylistPrefetch(tracks) {
     const ok = await prefetchTrackToLocalCache(track).catch(() => false);
     if (ok) {
       cached++;
-      await enrichStemsFromServer(track).catch(() => {});
+      enrichStemsFromServer(track).catch(() => {});
+      autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
       setFilRougeTrackStatus(track, {
         downloadState: 'done',
         stemsOk: hasStemsForTrack(track),
@@ -1659,8 +1684,12 @@ async function startSpotifyPlaylistPrefetch(tracks) {
     const track = tracks[i];
     setSpotifyStatus(`Cache Spotify : ${i + 1} / ${tracks.length}…`);
     const ok = await prefetchTrackToLocalCache(track).catch(() => false);
-    if (ok) cached++;
-    else failed++;
+    if (ok) {
+      cached++;
+      autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
+    } else {
+      failed++;
+    }
   }
   if (spotifyPrefetchGeneration !== generation) return;
   const summary = failed > 0
@@ -1900,7 +1929,8 @@ async function startFilRougeStartupCacheSync() {
   for (const track of playlist) {
     const inCache = await isTrackInLocalCache(track).catch(() => false);
     if (inCache) {
-      await enrichStemsFromServer(track).catch(() => {});
+      enrichStemsFromServer(track).catch(() => {});
+      autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
       setFilRougeTrackStatus(track, {
         downloadState: 'done',
         stemsOk: hasStemsForTrack(track),
@@ -1923,7 +1953,8 @@ async function startFilRougeStartupCacheSync() {
 
     const ok = await prefetchTrackToLocalCache(track).catch(() => false);
     if (ok) {
-      await enrichStemsFromServer(track).catch(() => {});
+      enrichStemsFromServer(track).catch(() => {});
+      autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
       setFilRougeTrackStatus(track, {
         downloadState: 'done',
         stemsOk: hasStemsForTrack(track),
@@ -2059,6 +2090,18 @@ function toggleDeckFilterMode(deck, requestedMode) {
  */
 function backgroundEnrichStems(deck, item) {
   if (!item || !deck) return;
+
+  // If all stems are already loaded in memory, update deck state immediately without API
+  const existingStems = item.localStemUrls || item.stems;
+  if (existingStems?.vocalsUrl && existingStems?.instrumentalUrl) {
+    if (deckDisplayItems[deck] === item) {
+      stemsLoadedPerDeck[deck] = true;
+      updateStemButtonState(deck);
+      player?.updateDeckStems(deck, existingStems);
+    }
+    return;
+  }
+
   enqueueBackgroundTask(() => enrichStemsFromServer(item)
     .then(() => {
       // After enrichment, check if stems are now available
@@ -3196,6 +3239,14 @@ async function launchDeckFromQueue(deck, options = {}) {
         // Reapply DJ mode preset with updated BPM, and suggest genre chip
         applyDjModeFxPreset(djMode, item.bpm || null);
         suggestGenreFromCurrentTrack();
+        autoModeManager.scheduleAutomixTiming(item);
+        if (autoSuggestionQueueSearchEnabled) {
+          scheduleIdle(() => {
+            autoModeManager.searchAndAddNextTrack(item).catch((err) => {
+              logWarn('autoDj: search on launchDeckFromQueue failed', { error: err?.message });
+            });
+          }, 3000);
+        }
       } else {
         launchPreviewActive = true;
         launchPreviewArtUrl = item.artUrl || '';

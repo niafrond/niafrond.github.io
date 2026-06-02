@@ -18,7 +18,7 @@ export function saveQueueToStorage(options) {
         uri: item.uri,
         name: item.name,
         artist: item.artist,
-        artUrl: item.artUrl,
+        artUrl: (item.artUrl && !String(item.artUrl).startsWith('blob:')) ? item.artUrl : '',
         duration: item.duration,
         bpm: Number.isFinite(Number(extractTrackBpm(item))) ? Number(extractTrackBpm(item)) : null,
         genre: String(extractTrackGenre(item) || '').trim(),
