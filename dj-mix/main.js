@@ -3051,6 +3051,9 @@ autoMixBtn?.addEventListener('click', async () => {
 
   try {
     await startPlaybackForIndex(nextIndex, 'crossfade', { targetDeck: inactiveDeck });
+    uiState.deckBCueIndex = -1;
+    uiState.deckCueDeck = null;
+    updateDeckCueUI();
     renderQueue();
   } catch (err) {
     logError('automix.failed', { message: err?.message, nextIndex, inactiveDeck });
