@@ -86,7 +86,6 @@ export function createDjMixRenderer(options) {
   }
 
   function buildDanceMetaChips(item, extraClass = '') {
-    if (!isDanceMode()) return '';
     const bpm = Number(extractTrackBpm(item));
     const genre = String(extractTrackGenre(item) || '').trim();
     const bpmHtml = Number.isFinite(bpm) && bpm > 0 ? `<span class="queue-chip">${Math.round(bpm)} BPM</span>` : '';
@@ -467,6 +466,13 @@ export function createDjMixRenderer(options) {
     refreshDeckMetaDisplays();
   }
 
+  function invalidateDeckMetaCache() {
+    lastRenderedMeta.A.id = undefined;
+    lastRenderedMeta.A.mode = undefined;
+    lastRenderedMeta.B.id = undefined;
+    lastRenderedMeta.B.mode = undefined;
+  }
+
   return {
     autoMixBtn,
     buildQueueHTML,
@@ -474,6 +480,7 @@ export function createDjMixRenderer(options) {
     queueList,
     renderDeckState,
     refreshDeckMetaDisplays,
+    invalidateDeckMetaCache,
     updateNowPlaying,
     updateUpcomingArtwork,
   };

@@ -1130,6 +1130,53 @@ const { setCacheFilter, switchTab } = playlistManager;
 const filRougeManager = createFilRougeManager();
 const filRougeTrackStatusByKey = new Map();
 
+// Tracks in-flight meta fetches to avoid duplicate API calls
+const metaFetchInFlight = new Set();
+
+/**
+ * Fetches BPM and/or genre for an item that is missing them.
+ * Checks localStorage first, then falls back to the search API.
+ * Mutates item in place and triggers a re-render when data is found.
+ * @param {object} item
+ */
+async function fetchMissingMeta(item) {
+  if (!item?.name) return;
+  if (item.bpm && item.genre) return;
+  const key = String(item.id || `${item.artist}::${item.name}`);
+  if (metaFetchInFlight.has(key)) return;
+  metaFetchInFlight.add(key);
+  try {
+    // 1. Check localStorage cache
+    const stored = getStoredTrackMeta(item.name, item.artist);
+    if (stored?.bpm || stored?.genre) {
+      if (!item.bpm && stored.bpm) item.bpm = stored.bpm;
+      if (!item.genre && stored.genre) item.genre = stored.genre;
+      if (item.id) filRougeManager.patchPlaylistItem(item.id, { bpm: item.bpm, genre: item.genre });
+      uiRenderer.invalidateDeckMetaCache();
+      uiRenderer.refreshDeckMetaDisplays();
+      renderQueueDebounced();
+      return;
+    }
+    // 2. Ask the API
+    const results = await searchTracksViaApi(`${item.artist} ${item.name}`, 5);
+    const hit = results[0];
+    if (!hit) return;
+    let changed = false;
+    if (!item.bpm && hit.bpm) { item.bpm = hit.bpm; changed = true; }
+    if (!item.genre && hit.genre) { item.genre = hit.genre; changed = true; }
+    if (changed) {
+      patchStoredTrackMeta(item.name, item.artist, { bpm: item.bpm, genre: item.genre });
+      if (item.id) filRougeManager.patchPlaylistItem(item.id, { bpm: item.bpm, genre: item.genre });
+      uiRenderer.invalidateDeckMetaCache();
+      uiRenderer.refreshDeckMetaDisplays();
+      renderQueueDebounced();
+    }
+  } catch (_) {
+  } finally {
+    metaFetchInFlight.delete(key);
+  }
+}
+
 function getFilRougeTrackKey(item) {
   if (!item) return '';
   return String(item.id || item.cachePath || `${item.artist || ''}::${item.name || item.title || ''}`);
@@ -2049,6 +2096,7 @@ function setDeckItem(deck, item) {
   stemsLoadedPerDeck[safeDeck] = hasStemsInCache;
   updateStemButtonState(safeDeck);
 
+  if (item) fetchMissingMeta(item).catch(() => {});
   uiRenderer.refreshDeckMetaDisplays();
   updateDeckCueUI();
 }
@@ -4972,6 +5020,11 @@ function renderQueue() {
   saveQueueDebounced();
   uiRenderer.updateUpcomingArtwork();
   updateDeckCueUI();
+  // Fetch BPM/genre in background for visible items that are missing them
+  const visibleStart = uiState.currentIndex > 0 ? Math.max(0, uiState.currentIndex - 5) : 0;
+  queue.slice(visibleStart, visibleStart + 20).forEach((item) => {
+    if (!item.bpm || !item.genre) fetchMissingMeta(item).catch(() => {});
+  });
 
   if (!queue.length) {
     uiRenderer.queueList.innerHTML = '';
