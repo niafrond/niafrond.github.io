@@ -1174,7 +1174,6 @@ function getFilRougeTrackStatus(item) {
 // ── Fil rouge UI rendering ──────────────────────────────────────────────────
 
 function buildFilRougeDanceChips(item) {
-  if (djMode !== 'dance') return '';
   const bpm = Number(extractTrackBpm(item));
   const genre = String(extractTrackGenre(item) || '').trim();
   const bpmHtml = Number.isFinite(bpm) && bpm > 0 ? `<span class="queue-chip">${Math.round(bpm)} BPM</span>` : '';
@@ -1524,32 +1523,46 @@ function applyTxtPlaylistToFilRouge(tracks) {
  * @param {import('./lib/filRougeManager.js').FilRougeItem} track
  */
 async function fetchFilRougeArtwork(track) {
-  if (!track?.id || track.artUrl) return;
+  if (!track?.id) return;
+  const needsArt = !track.artUrl;
+  const needsMeta = !track.bpm && !track.genre;
+  if (!needsArt && !needsMeta) return;
 
   // Check Cache Storage for a persisted blob first (no network)
-  const cachedBlobUrl = await restoreArtwork(track).catch(() => null);
-  if (cachedBlobUrl) {
-    filRougeManager.patchPlaylistItem(track.id, { artUrl: cachedBlobUrl });
-    renderFilRouge();
-    return;
+  if (needsArt) {
+    const cachedBlobUrl = await restoreArtwork(track).catch(() => null);
+    if (cachedBlobUrl) {
+      filRougeManager.patchPlaylistItem(track.id, { artUrl: cachedBlobUrl });
+      renderFilRouge();
+      if (!needsMeta) return;
+    }
   }
 
   // Use stored URL from localStorage if available
   const stored = getStoredTrackMeta(track.name, track.artist);
-  if (stored?.artworkUrl) {
+  if (needsArt && stored?.artworkUrl) {
     filRougeManager.patchPlaylistItem(track.id, { artUrl: stored.artworkUrl });
-    renderFilRouge();
     persistArtwork(track, stored.artworkUrl).catch(() => {});
-    return;
+    renderFilRouge();
+    if (!needsMeta) return;
   }
 
   try {
     const results = await searchTracksViaApi(`${track.artist} ${track.name}`, 5);
-    const artUrl = results[0]?.artUrl || '';
-    if (artUrl) {
-      patchStoredTrackMeta(track.name, track.artist, { artworkUrl: artUrl });
-      filRougeManager.patchPlaylistItem(track.id, { artUrl });
-      persistArtwork(track, artUrl).catch(() => {});
+    const hit = results[0];
+    if (!hit) return;
+    const patch = {};
+    if (needsArt && hit.artUrl) {
+      patch.artUrl = hit.artUrl;
+      patchStoredTrackMeta(track.name, track.artist, { artworkUrl: hit.artUrl });
+      persistArtwork(track, hit.artUrl).catch(() => {});
+    }
+    if (needsMeta) {
+      if (hit.bpm) patch.bpm = hit.bpm;
+      if (hit.genre) patch.genre = hit.genre;
+    }
+    if (Object.keys(patch).length) {
+      filRougeManager.patchPlaylistItem(track.id, patch);
       renderFilRouge();
     }
   } catch (_) {}

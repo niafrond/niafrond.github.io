@@ -54,6 +54,20 @@
                   <span class="deck-stems-indicator" id="deck-a-stems-indicator" title="Stems chargés" hidden>🎼</span>
                   <span class="deck-vol" id="deck-a-vol">100%</span>
                 </div>
+                <div class="deck-local-fx" aria-label="Effets de la platine 1">
+                  <button id="deck-a-lowpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="Low-pass platine 1" title="Low-pass platine 1">
+                    <span class="deck-fx-emoji" aria-hidden="true">⬇</span>
+                    <span class="deck-fx-chip-label">Low-pass</span>
+                  </button>
+                  <button id="deck-a-highpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="High-pass platine 1" title="High-pass platine 1">
+                    <span class="deck-fx-emoji" aria-hidden="true">⬆</span>
+                    <span class="deck-fx-chip-label">High-pass</span>
+                  </button>
+                  <button id="deck-a-change-suggestion-btn" class="deck-fx-chip" type="button" aria-label="Changer suggestion platine 1" title="Changer suggestion AutoDJ platine 1" hidden>
+                    <span class="deck-fx-emoji" aria-hidden="true">↻</span>
+                    <span class="deck-fx-chip-label">Suggestion</span>
+                  </button>
+                </div>
                 <div class="album-art-wrapper">
                   <img id="album-art" src="" alt="" class="album-art" hidden>
                   <div class="album-art-placeholder" id="art-placeholder">🎵</div>
@@ -69,20 +83,6 @@
                   <div class="maxdur-raw-marker" id="deck-a-maxdur-raw-marker" hidden aria-hidden="true"></div>
                 </div>
                 <div id="track-artist-a" class="deck-track-artist"></div>
-                <div class="deck-local-fx" aria-label="Effets de la platine 1">
-                  <button id="deck-a-lowpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="Low-pass platine 1" title="Low-pass platine 1">
-                    <span class="deck-fx-emoji" aria-hidden="true">⬇</span>
-                    <span class="deck-fx-chip-label">Low-pass</span>
-                  </button>
-                  <button id="deck-a-highpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="High-pass platine 1" title="High-pass platine 1">
-                    <span class="deck-fx-emoji" aria-hidden="true">⬆</span>
-                    <span class="deck-fx-chip-label">High-pass</span>
-                  </button>
-                  <button id="deck-a-change-suggestion-btn" class="deck-fx-chip" type="button" aria-label="Changer suggestion platine 1" title="Changer suggestion AutoDJ platine 1" hidden>
-                    <span class="deck-fx-emoji" aria-hidden="true">↻</span>
-                    <span class="deck-fx-chip-label">Suggestion</span>
-                  </button>
-                </div>
                 <input type="range" id="deck-a-slider" min="0" max="100" value="100" hidden aria-hidden="true">
               </div>
               <div class="deck-panel" id="deck-b-panel">
@@ -91,6 +91,20 @@
                   <button class="deck-bpm-reset" id="deck-b-bpm-reset" title="Reset BPM" hidden>↺</button>
                   <span class="deck-stems-indicator" id="deck-b-stems-indicator" title="Stems chargés" hidden>🎼</span>
                   <span class="deck-vol" id="deck-b-vol">0%</span>
+                </div>
+                <div class="deck-local-fx" aria-label="Effets de la platine 2">
+                  <button id="deck-b-lowpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="Low-pass platine 2" title="Low-pass platine 2">
+                    <span class="deck-fx-emoji" aria-hidden="true">⬇</span>
+                    <span class="deck-fx-chip-label">Low-pass</span>
+                  </button>
+                  <button id="deck-b-highpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="High-pass platine 2" title="High-pass platine 2">
+                    <span class="deck-fx-emoji" aria-hidden="true">⬆</span>
+                    <span class="deck-fx-chip-label">High-pass</span>
+                  </button>
+                  <button id="deck-b-change-suggestion-btn" class="deck-fx-chip" type="button" aria-label="Changer suggestion platine 2" title="Changer suggestion AutoDJ platine 2" hidden>
+                    <span class="deck-fx-emoji" aria-hidden="true">↻</span>
+                    <span class="deck-fx-chip-label">Suggestion</span>
+                  </button>
                 </div>
                 <div class="album-art-next-wrapper">
                   <img id="next-album-art" src="" alt="" class="album-art-next" hidden>
@@ -106,30 +120,18 @@
                   <div class="maxdur-raw-marker" id="deck-b-maxdur-raw-marker" hidden aria-hidden="true"></div>
                 </div>
                 <div id="track-artist-b" class="deck-track-artist"></div>
-                <div class="deck-local-fx" aria-label="Effets de la platine 2">
-                  <button id="deck-b-lowpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="Low-pass platine 2" title="Low-pass platine 2">
-                    <span class="deck-fx-emoji" aria-hidden="true">⬇</span>
-                    <span class="deck-fx-chip-label">Low-pass</span>
-                  </button>
-                  <button id="deck-b-highpass-btn" class="deck-fx-chip" type="button" aria-pressed="false" aria-label="High-pass platine 2" title="High-pass platine 2">
-                    <span class="deck-fx-emoji" aria-hidden="true">⬆</span>
-                    <span class="deck-fx-chip-label">High-pass</span>
-                  </button>
-                  <button id="deck-b-change-suggestion-btn" class="deck-fx-chip" type="button" aria-label="Changer suggestion platine 2" title="Changer suggestion AutoDJ platine 2" hidden>
-                    <span class="deck-fx-emoji" aria-hidden="true">↻</span>
-                    <span class="deck-fx-chip-label">Suggestion</span>
-                  </button>
-                </div>
                 <input type="range" id="deck-b-slider" min="0" max="100" value="0" hidden aria-hidden="true">
               </div>
             </div>
             <span id="track-artist" hidden></span>
           </div>
           <div class="controls">
-            <button class="ctrl-btn fade-btn" id="automix-btn" title="AutoMix vers la platine inactive" aria-label="AutoMix">
-              <span>⏭</span>
+            <div class="automix-btn-wrap">
+              <button class="ctrl-btn fade-btn" id="automix-btn" title="AutoMix vers la platine inactive" aria-label="AutoMix">
+                <span>⏭</span>
+              </button>
               <span class="fade-label">AutoMix</span>
-            </button>
+            </div>
             <div class="autodj-btn-wrap">
               <button id="auto-mode-btn" class="ctrl-btn autodj-btn" type="button" aria-pressed="false" title="AutoDJ inactif: recherche et ajoute automatiquement les chansons suivantes" aria-label="AutoDJ inactif">🤖</button>
               <span id="autodj-next-fx-countdown" class="autodj-next-fx-countdown" hidden aria-hidden="true"></span>
