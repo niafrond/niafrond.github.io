@@ -756,70 +756,89 @@ export function createAudioSourceManager(options) {
     return hadLocalSource || hadSessionSource;
   }
 
-  async function searchTracksViaApi(query, limit = 25, skipCache = false) {
+  async function searchTracksRaw(query, limit = 25, skipCache = false) {
     const baseUrl = getDownloaderApiUrl();
     if (!baseUrl) throw new Error('URL API downloader manquante (Config)');
 
     if (apiHealthMonitor?.isOffline()) {
       logInfo('api.search.skipped.offline', { query });
-      return [];
+      return { tracks: [], pollToken: null };
     }
 
     logInfo('api.search.begin', { query, limit, skipCache, baseUrl });
 
     const parsed = splitItunesSearchQuery(query);
-    const searchAttempts = [
-      { term: parsed.title, artist: parsed.artist },
-      { term: cleanItunesSearchText(query), artist: '' },
-    ]
-      .map((attempt) => ({
-        term: cleanItunesSearchText(attempt.term || ''),
-        artist: cleanItunesSearchText(attempt.artist || ''),
-      }))
-      .filter((attempt, index, array) => array.findIndex((candidate) => candidate.term === attempt.term && candidate.artist === attempt.artist) === index)
-      .filter((attempt) => attempt.term);
+    const term = cleanItunesSearchText(parsed.title || '') || cleanItunesSearchText(query);
+    if (!term) return { tracks: [], pollToken: null };
 
-    let anyAttemptMade = false;
-    for (const attempt of searchAttempts) {
-      const limitParam = Number.isFinite(limit) && limit > 0 ? `&limit=${encodeURIComponent(limit)}` : '';
-      const cacheParam = skipCache ? '&nocache=1' : '';
-      const url = `${baseUrl}/api/search?term=${encodeURIComponent(attempt.term)}${attempt.artist ? `&artist=${encodeURIComponent(attempt.artist)}` : ''}${limitParam}${cacheParam}`;
-      let res;
-      try {
-        res = await fetch(url, { headers: { Accept: 'application/json' } });
-        anyAttemptMade = true;
-      } catch (err) {
-        apiHealthMonitor?.recordFailure();
-        logWarn('api.search.attempt.networkError', { term: attempt.term, error: err?.message });
-        continue;
-      }
+    const params = new URLSearchParams({ term });
+    const artist = cleanItunesSearchText(parsed.artist || '');
+    if (artist) params.set('artist', artist);
+    if (Number.isFinite(limit) && limit > 0) params.set('limit', String(limit));
+    if (skipCache) params.set('nocache', '1');
+
+    const url = `${baseUrl}/api/search?${params}`;
+    let res;
+    try {
+      res = await fetch(url, { headers: { Accept: 'application/json' } });
+    } catch (err) {
+      apiHealthMonitor?.recordFailure();
+      logWarn('api.search.networkError', { query, error: err?.message });
+      throw err;
+    }
+
+    if (!res.ok) {
+      apiHealthMonitor?.recordFailure();
+      logWarn('api.search.failed', { query, status: res.status });
+      return { tracks: [], pollToken: null };
+    }
+
+    apiHealthMonitor?.recordSuccess();
+    const data = await res.json().catch(() => null);
+    const tracks = options.normalizeApiSearchResponse(data);
+    const pollToken = typeof data?.pollToken === 'string' && data.pollToken ? data.pollToken : null;
+
+    logDebug('api.search.result', { query, count: tracks.length, hasPollToken: !!pollToken });
+    return { tracks, pollToken };
+  }
+
+  async function pollSearchResults(token) {
+    const baseUrl = getDownloaderApiUrl();
+    if (!baseUrl || !token) return { pending: true, tracks: [] };
+
+    try {
+      const res = await fetch(`${baseUrl}/api/search/poll?token=${encodeURIComponent(token)}`, {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(8000),
+      });
+
+      if (res.status === 404) return { pending: false, tracks: [] };
+
       if (!res.ok) {
         apiHealthMonitor?.recordFailure();
-        logWarn('api.search.attempt.failed', {
-          term: attempt.term,
-          artist: attempt.artist,
-          status: res.status,
-        });
-        continue;
+        return { pending: true, tracks: [] };
       }
 
-      apiHealthMonitor?.recordSuccess();
       const data = await res.json().catch(() => null);
-      const items = options.normalizeApiSearchResponse(data);
-      logDebug('api.search.attempt.result', {
-        term: attempt.term,
-        artist: attempt.artist,
-        count: items.length,
-      });
-      if (items.length) return items;
-    }
+      if (!data || data.status === 'pending') return { pending: true, tracks: [] };
 
-    if (!anyAttemptMade && searchAttempts.length > 0) {
-      // All attempts failed with network errors → already recorded failures above
+      const tracks = options.normalizeApiSearchResponse(data);
+      logDebug('api.search.poll.result', { count: tracks.length });
+      return { pending: false, tracks };
+    } catch (err) {
+      logWarn('api.search.poll.failed', { message: err?.message });
+      return { pending: true, tracks: [] };
     }
+  }
 
-    logInfo('api.search.noResults', { query });
-    return [];
+  async function searchTracksViaApi(query, limit = 25, skipCache = false) {
+    try {
+      const { tracks } = await searchTracksRaw(query, limit, skipCache);
+      return tracks;
+    } catch (err) {
+      logWarn('api.search.error', { query, message: err?.message });
+      return [];
+    }
   }
 
   /**
@@ -1138,9 +1157,11 @@ export function createAudioSourceManager(options) {
     evictTrackSource,
     isTrackInLocalCache,
     persistArtwork,
+    pollSearchResults,
     prefetchTrackToLocalCache,
     releaseLocalBlob: (item) => releaseLocalBlob(item, touchQueueItem),
     restoreArtwork,
+    searchTracksRaw,
     searchTracksViaApi,
   };
 }

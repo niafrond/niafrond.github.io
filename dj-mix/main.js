@@ -160,6 +160,7 @@ let automixRescheduledForTrackId = null;
 let lastSearchQuery = '';
 let pendingSearchAdd = false;
 let searchDebounceTimer = null;
+let currentSearchPollToken = null;
 let launchPreviewActive = false;
 let launchPreviewArtUrl = '';
 let launchPreviewTitle = '';
@@ -1065,9 +1066,11 @@ const {
   evictTrackSource,
   isTrackInLocalCache,
   persistArtwork,
+  pollSearchResults,
   prefetchTrackToLocalCache,
   releaseLocalBlob,
   restoreArtwork,
+  searchTracksRaw,
   searchTracksViaApi,
 } = audioSourceManager;
 
@@ -4333,109 +4336,158 @@ searchOverlay.addEventListener('click', (e) => {
   if (e.target === searchOverlay) closeSearch();
 });
 
+function bindSearchResults(songResults, artistResults) {
+  searchResults.querySelectorAll(‘.delete-btn’).forEach((btn) => {
+    btn.addEventListener(‘click’, (e) => {
+      e.stopPropagation();
+      const trackName = btn.dataset.trackName;
+      const artistName = btn.dataset.artistName;
+      const cachePath = btn.dataset.cachePath;
+      const track = { name: trackName, artist: artistName, cachePath };
+      btn.disabled = true;
+      btn.textContent = ‘…’;
+      deleteLocalCacheSong(track)
+        .then(() => {
+          showToast(`Supprimé : ${trackName}`);
+          btn.closest(‘.search-result-item’)?.remove();
+        })
+        .catch((err) => {
+          showToast(`Erreur suppression : ${err.message}`, true);
+          btn.disabled = false;
+          btn.textContent = ‘🗑’;
+        });
+    });
+  });
+  searchResults.querySelectorAll(‘.search-result-item’).forEach((el) => {
+    const resolveResult = () => {
+      const kind = el.dataset.kind;
+      const idx = Number(el.dataset.index);
+      return kind === ‘artist’ ? artistResults[idx] : songResults[idx];
+    };
+
+    el.querySelector(‘.play-now-btn’)?.addEventListener(‘click’, (event) => {
+      event.stopPropagation();
+      player?.activateElement();
+      const result = resolveResult();
+      if (!result || result?.isArtistResult) return;
+      if (pendingSearchAdd) return;
+
+      pendingSearchAdd = true;
+      triggerSearchFade(result)
+        .catch((err) => {
+          showToast(`API: ${err.message}`, true);
+        })
+        .finally(() => {
+          pendingSearchAdd = false;
+        });
+    });
+
+    el.addEventListener(‘click’, () => {
+      player?.activateElement();
+      const result = resolveResult();
+      if (!result) return;
+
+      if (result?.isArtistResult) {
+        searchInput.value = result.artist || result.name || ‘’;
+        searchClear.hidden = !searchInput.value;
+        lastSearchQuery = ‘’;
+        openSearch();
+        searchResults.innerHTML = ‘<div class="search-loading">Recherche API...</div>’;
+        runSearch(searchInput.value.trim());
+        return;
+      }
+
+      if (pendingSearchAdd) return;
+      pendingSearchAdd = true;
+
+      addToQueue(result)
+        .catch((err) => {
+          showToast(`API: ${err.message}`, true);
+        })
+        .finally(() => {
+          pendingSearchAdd = false;
+        });
+    });
+  });
+}
+
+function renderSearchResults(tracks, isPartial = false) {
+  const normalized = tracks
+    .map(mapApiTrackToSearchItem)
+    .filter(Boolean)
+    .sort(sortSearchResultsByPopularity);
+  const songResults = normalized.filter((track) => !track.isArtistResult);
+  const artistResults = normalized.filter((track) => track.isArtistResult);
+
+  const spinnerHtml = isPartial
+    ? ‘<div class="search-poll-spinner search-loading" style="font-size:11px;padding:3px 8px;opacity:0.7;">Recherche en cours...</div>’
+    : ‘’;
+  searchResults.innerHTML = spinnerHtml + buildSearchResultsSectionsHTML(songResults, artistResults);
+  bindSearchResults(songResults, artistResults);
+}
+
+function scheduleSearchPoll(query, token, attempt) {
+  if (attempt >= 8) return;
+  const delay = Math.min(1500 + attempt * 600, 5000);
+  setTimeout(async () => {
+    if (lastSearchQuery !== query || currentSearchPollToken !== token) return;
+    const { pending, tracks } = await pollSearchResults(token).catch(() => ({ pending: true, tracks: [] }));
+    if (lastSearchQuery !== query || currentSearchPollToken !== token) return;
+    if (!pending) {
+      currentSearchPollToken = null;
+      if (tracks?.length) {
+        logInfo(‘runSearch(): phase 2 results’, { query, count: tracks.length });
+        renderSearchResults(tracks, false);
+      } else {
+        searchResults.querySelector(‘.search-poll-spinner’)?.remove();
+        if (!searchResults.querySelector(‘.search-result-item’)) {
+          searchResults.innerHTML = ‘<div class="search-empty">Aucun résultat</div>’;
+        }
+      }
+    } else {
+      scheduleSearchPoll(query, token, attempt + 1);
+    }
+  }, delay);
+}
+
 async function runSearch(query, skipCache = false) {
-  logInfo('runSearch(): querying API', { query, skipCache });
+  logInfo(‘runSearch(): querying API’, { query, skipCache });
+  lastSearchQuery = query;
+  currentSearchPollToken = null;
+
   try {
     if (!getDownloaderApiUrl()) {
-      searchResults.innerHTML = '<div class="search-empty">Configurez l’API de téléchargement dans l’onglet Config</div>';
+      searchResults.innerHTML = ‘<div class="search-empty">Configurez l\’API de téléchargement dans l\’onglet Config</div>’;
       return;
     }
 
     if (apiHealthMonitor.isOffline()) {
-      searchResults.innerHTML = '<div class="search-empty">⚠ API hors ligne – recherche indisponible</div>';
+      searchResults.innerHTML = ‘<div class="search-empty">⚠ API hors ligne – recherche indisponible</div>’;
       return;
     }
 
-    const tracks = await searchTracksViaApi(query, 25, skipCache);
-    logInfo('runSearch(): API results', { query, count: tracks?.length || 0 });
-    if (!tracks?.length) {
-      searchResults.innerHTML = '<div class="search-empty">Aucun résultat</div>';
-      return;
+    const { tracks, pollToken } = await searchTracksRaw(query, 25, skipCache);
+    if (lastSearchQuery !== query) return;
+
+    logInfo(‘runSearch(): phase 1 results’, { query, count: tracks?.length || 0, hasPollToken: !!pollToken });
+
+    if (tracks?.length) {
+      renderSearchResults(tracks, !!pollToken);
+    } else if (pollToken) {
+      searchResults.innerHTML = ‘<div class="search-loading">Recherche en cours...</div>’;
+    } else {
+      searchResults.innerHTML = ‘<div class="search-empty">Aucun résultat</div>’;
     }
 
-    const normalized = tracks
-      .map(mapApiTrackToSearchItem)
-      .filter(Boolean)
-      .sort(sortSearchResultsByPopularity);
-    const songResults = normalized.filter((track) => !track.isArtistResult);
-    const artistResults = normalized.filter((track) => track.isArtistResult);
-
-    searchResults.innerHTML = buildSearchResultsSectionsHTML(songResults, artistResults);
-    searchResults.querySelectorAll('.delete-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const trackName = btn.dataset.trackName;
-        const artistName = btn.dataset.artistName;
-        const cachePath = btn.dataset.cachePath;
-        const track = { name: trackName, artist: artistName, cachePath };
-        btn.disabled = true;
-        btn.textContent = '…';
-        deleteLocalCacheSong(track)
-          .then(() => {
-            showToast(`Supprimé : ${trackName}`);
-            btn.closest('.search-result-item')?.remove();
-          })
-          .catch((err) => {
-            showToast(`Erreur suppression : ${err.message}`, true);
-            btn.disabled = false;
-            btn.textContent = '🗑';
-          });
-      });
-    });
-    searchResults.querySelectorAll('.search-result-item').forEach((el, i) => {
-      const resolveResult = () => {
-        const kind = el.dataset.kind;
-        const idx = Number(el.dataset.index);
-        return kind === 'artist' ? artistResults[idx] : songResults[idx];
-      };
-
-      el.querySelector('.play-now-btn')?.addEventListener('click', (event) => {
-        event.stopPropagation();
-        player?.activateElement();
-        const result = resolveResult();
-        if (!result || result?.isArtistResult) return;
-        if (pendingSearchAdd) return;
-
-        pendingSearchAdd = true;
-        triggerSearchFade(result)
-          .catch((err) => {
-            showToast(`API: ${err.message}`, true);
-          })
-          .finally(() => {
-            pendingSearchAdd = false;
-          });
-      });
-
-      el.addEventListener('click', () => {
-        player?.activateElement();
-        const result = resolveResult();
-        if (!result) return;
-
-        if (result?.isArtistResult) {
-          searchInput.value = result.artist || result.name || '';
-          searchClear.hidden = !searchInput.value;
-          lastSearchQuery = '';
-          openSearch();
-          searchResults.innerHTML = '<div class="search-loading">Recherche API...</div>';
-          runSearch(searchInput.value.trim());
-          return;
-        }
-
-        if (pendingSearchAdd) return;
-        pendingSearchAdd = true;
-
-        addToQueue(result)
-          .catch((err) => {
-            showToast(`API: ${err.message}`, true);
-          })
-          .finally(() => {
-            pendingSearchAdd = false;
-          });
-      });
-    });
+    if (pollToken) {
+      currentSearchPollToken = pollToken;
+      scheduleSearchPoll(query, pollToken, 0);
+    }
   } catch (err) {
-    logError('runSearch(): failed', { query, message: err?.message });
-    searchResults.innerHTML = `<div class="search-empty">⚠ ${escHtml(err.message)}</div>`;
+    logError(‘runSearch(): failed’, { query, message: err?.message });
+    if (lastSearchQuery === query) {
+      searchResults.innerHTML = `<div class="search-empty">⚠ ${escHtml(err.message)}</div>`;
+    }
   }
 }
 
