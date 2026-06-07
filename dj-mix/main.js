@@ -4929,6 +4929,18 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       message: err?.message,
     });
     showToast(`API: ${err.message}`, true);
+    // Flux non lisible : retirer de la file d'attente et du fil rouge, passer au suivant
+    const _failedIdx = queue.findIndex((q) => q.id === item.id);
+    if (_failedIdx >= 0) removeFromQueue(_failedIdx);
+    if (filRougeManager.isActive()) {
+      const _pq = filRougeManager.getPriorityQueue();
+      const _pqIdx = _pq.findIndex((t) => t.id === item.id);
+      if (_pqIdx >= 0) filRougeManager.removeFromPriorityQueue(_pqIdx);
+      const _pl = filRougeManager.getPlaylist();
+      const _plIdx = _pl.findIndex((t) => t.id === item.id);
+      if (_plIdx >= 0) filRougeManager.removeFromPlaylist(_plIdx);
+    }
+    setTimeout(() => autoMixBtn?.click?.(), 400);
     throw err;
   }
 }

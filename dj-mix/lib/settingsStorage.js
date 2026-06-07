@@ -152,7 +152,7 @@ export function persistAutoSuggestionQueueSearchEnabledSetting(enabled) {
 }
 
 export function readQueueLoopSetting() {
-  return readBooleanSetting(STORAGE_KEYS.queueLoop, true);
+  return readBooleanSetting(STORAGE_KEYS.queueLoop, false);
 }
 
 export function persistQueueLoopSetting(enabled) {

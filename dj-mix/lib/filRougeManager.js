@@ -46,7 +46,7 @@ export function createFilRougeManager() {
   let shuffleEnabled = false;
 
   /** Indique si la lecture boucle sur la playlist (true = reboucle en fin, false = s'arrête) */
-  let loopEnabled = true;
+  let loopEnabled = false;
 
   // ── Persistence ─────────────────────────────────────────────────────────
 

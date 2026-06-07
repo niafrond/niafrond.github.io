@@ -66,6 +66,7 @@ export function createDjFxController(options) {
     playbackRateTimers: { A: null, B: null },
     samplingAudioContext: null,
     vinylNoiseBuffer: null,
+    scratchSoundBuffer: null,
     scratch: {
       animationFrameId: null,
       deck: 'A',
@@ -232,10 +233,47 @@ export function createDjFxController(options) {
     return buffer;
   }
 
+  async function loadScratchSoundBuffer(ctx) {
+    if (runtime.scratchSoundBuffer) return runtime.scratchSoundBuffer;
+    try {
+      const url = new URL('../resources/scratch_sound.mp3', import.meta.url).href;
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const arrayBuffer = await response.arrayBuffer();
+      runtime.scratchSoundBuffer = await ctx.decodeAudioData(arrayBuffer);
+      return runtime.scratchSoundBuffer;
+    } catch (_) {
+      return null;
+    }
+  }
+
   async function playVinylNoise(intensity = 1) {
     const ctx = await getOrCreateFxAudioContext();
     if (!ctx) return;
 
+    const safeIntensity = Math.max(0.15, Math.min(2, Number(intensity) || 1));
+    const scratchBuffer = await loadScratchSoundBuffer(ctx);
+
+    if (scratchBuffer) {
+      const playDuration = 0.55 + Math.random() * 0.25;
+      const maxOffset = Math.max(0, scratchBuffer.duration - playDuration);
+      const startOffset = maxOffset > 0.01 ? Math.random() * maxOffset : 0;
+
+      const source = ctx.createBufferSource();
+      source.buffer = scratchBuffer;
+      source.playbackRate.value = 0.85 + Math.random() * 0.35;
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(safeIntensity, ctx.currentTime);
+      gain.gain.setTargetAtTime(0, ctx.currentTime + playDuration * 0.65, 0.06);
+
+      source.connect(gain);
+      gain.connect(ctx.destination);
+      source.start(ctx.currentTime, startOffset, playDuration);
+      return;
+    }
+
+    // Fallback: generated white noise
     const noiseBuffer = getOrCreateVinylNoiseBuffer(ctx);
     if (!noiseBuffer) return;
 
@@ -247,7 +285,6 @@ export function createDjFxController(options) {
     highPass.frequency.setValueAtTime(1200, ctx.currentTime);
 
     const gain = ctx.createGain();
-    const safeIntensity = Math.max(0.15, Math.min(2, Number(intensity) || 1));
     gain.gain.setValueAtTime(0.05 * safeIntensity, ctx.currentTime);
 
     noise.connect(highPass);
@@ -345,23 +382,9 @@ export function createDjFxController(options) {
     }
   }
 
-  function triggerScratchFx(deck) {
+  function triggerScratchFx() {
     if (!getPlayer()) return;
-    const safeDeck = deck === 'B' ? 'B' : 'A';
-    const state = getDeckStateForFx(safeDeck);
-    const anchorMs = Number(state?.positionMs) || 0;
-    const durationMs = Number(state?.durationMs) || 0;
-    if (anchorMs <= 0 || durationMs <= 0) return;
-
-    ensureScratchEngine(safeDeck, 760);
     playVinylNoise(1);
-
-    const velocityPattern = [1.5, -1.35, 1.16, -1.02, 0.88, -0.62, 0.48, -0.3, 0.18, 0.08, 0];
-    velocityPattern.forEach((velocity, index) => {
-      setTimeout(() => {
-        setScratchVelocity(velocity);
-      }, index * 68);
-    });
   }
 
   function resolveCueCandidatesMs(deck, durationMs) {
