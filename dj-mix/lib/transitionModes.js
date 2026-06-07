@@ -17,6 +17,16 @@ export const MIX_TRANSITION_MODES = Object.freeze([
   'volume_ducking',
   'gain_automation',
   'filter_automation',
+  'crossfade_lowpass',
+  'crossfade_highpass_in',
+  'filter_dual_sweep',
+  'echo_lowpass',
+  'bass_swap',
+  'kick_swap',
+  'beat_repeat',
+  'backspin',
+  'fake_drop',
+  'echo_freeze',
 ]);
 
 export const MIX_TRANSITION_MODE_LABELS = Object.freeze({
@@ -36,6 +46,16 @@ export const MIX_TRANSITION_MODE_LABELS = Object.freeze({
   volume_ducking: 'Volume ducking',
   gain_automation: 'Automation de gain',
   filter_automation: 'Automation de filtre',
+  crossfade_lowpass: 'Crossfade + Low-pass sortant',
+  crossfade_highpass_in: 'Crossfade + High-pass entrant',
+  filter_dual_sweep: 'Double filtre (low/high swap)',
+  echo_lowpass: 'Echo + Low-pass sortant',
+  bass_swap: 'Bass swap (échange des graves)',
+  kick_swap: 'Kick swap (échange des kicks)',
+  beat_repeat: 'Beat repeat (boucle accélérée)',
+  backspin: 'Backspin (vinyl stop)',
+  fake_drop: 'Fake drop (silence + impact)',
+  echo_freeze: 'Echo freeze (écho gelé)',
 });
 
 export const DEFAULT_TRANSITION_MODE = 'auto';
@@ -62,6 +82,16 @@ const TRANSITION_EXTRA_RAM_MB = Object.freeze({
   volume_ducking: 40,
   gain_automation: 34,
   filter_automation: 104,
+  crossfade_lowpass: 140,
+  crossfade_highpass_in: 118,
+  filter_dual_sweep: 178,
+  echo_lowpass: 216,
+  bass_swap: 175,
+  kick_swap: 145,
+  beat_repeat: 112,
+  backspin: 85,
+  fake_drop: 28,
+  echo_freeze: 195,
 });
 
 const TRANSITION_OVERLAP_MULTIPLIER = Object.freeze({
@@ -81,6 +111,16 @@ const TRANSITION_OVERLAP_MULTIPLIER = Object.freeze({
   volume_ducking: 1.06,
   gain_automation: 1.0,
   filter_automation: 1.25,
+  crossfade_lowpass: 1.18,
+  crossfade_highpass_in: 1.12,
+  filter_dual_sweep: 1.35,
+  echo_lowpass: 1.45,
+  bass_swap: 1.30,
+  kick_swap: 1.25,
+  beat_repeat: 1.20,
+  backspin: 0.95,
+  fake_drop: 0.80,
+  echo_freeze: 1.48,
 });
 
 export function getTransitionRamRequirementsMb(options = {}) {

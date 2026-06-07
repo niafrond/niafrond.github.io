@@ -241,6 +241,12 @@ export class SimpleMixFeatures {
 
     console.debug('[mixFeatures] ensureReady: creating AudioContext');
     this.#audioCtx = new Ctx();
+    // Certains navigateurs démarrent le contexte en état 'suspended' hors geste utilisateur
+    // (ex: transition automatique avec filtre). On tente le resume avant de connecter les sources
+    // pour éviter un silence lors du reroutage via createMediaElementSource.
+    if (this.#audioCtx.state === 'suspended') {
+      await this.#audioCtx.resume().catch(() => {});
+    }
     this.#nodesA   = this.#buildDeck(this.#audioA);
     this.#nodesB   = this.#buildDeck(this.#audioB);
     this.#ready    = true;

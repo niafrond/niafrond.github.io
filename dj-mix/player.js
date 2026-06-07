@@ -639,6 +639,8 @@ export class DJPlayer extends EventTarget {
 
     const liveDuration = Math.max(250, Number(this.#crossfadeDuration) || 5000);
     const startEcho = this.#mixFeatureSettings.echo;
+    const savedFromFilterMode = this.#mixFeatureSettings.deckFx?.[context.fromDeck]?.filterMode || 'off';
+    const savedToFilterMode = this.#mixFeatureSettings.deckFx?.[context.toDeck]?.filterMode || 'off';
 
     if (mode === 'echo_out_light' && !startEcho) {
       this.setMixFeatures({ echo: true });
@@ -646,12 +648,57 @@ export class DJPlayer extends EventTarget {
     if (mode === 'reverb_short_simple' && !this.#mixFeatureSettings.distortion) {
       this.setMixFeatures({ distortion: true });
     }
+    // Pour les modes qui activent un filtre Web Audio, s'assurer que l'AudioContext
+    // est créé et en cours d'exécution avant d'appeler setMixFeatures (qui est async non-awaité).
+    const NEEDS_AUDIO_CTX = new Set([
+      'crossfade_lowpass', 'crossfade_highpass_in', 'filter_dual_sweep', 'echo_lowpass',
+      'bass_swap', 'kick_swap', 'echo_freeze',
+    ]);
+    if (NEEDS_AUDIO_CTX.has(mode) && this.#mixFeatures) {
+      await this.#mixFeatures.ensureReady();
+    }
+
+    if (mode === 'crossfade_lowpass' && savedFromFilterMode !== 'lowPass') {
+      this.setMixFeatures({ deckFx: { [context.fromDeck]: { filterMode: 'lowPass' } } });
+    }
+    if (mode === 'crossfade_highpass_in' && savedToFilterMode !== 'highPass') {
+      this.setMixFeatures({ deckFx: { [context.toDeck]: { filterMode: 'highPass' } } });
+    }
+    if (mode === 'filter_dual_sweep') {
+      if (savedFromFilterMode !== 'lowPass') {
+        this.setMixFeatures({ deckFx: { [context.fromDeck]: { filterMode: 'lowPass' } } });
+      }
+      if (savedToFilterMode !== 'highPass') {
+        this.setMixFeatures({ deckFx: { [context.toDeck]: { filterMode: 'highPass' } } });
+      }
+    }
+    if (mode === 'echo_lowpass') {
+      if (!startEcho) this.setMixFeatures({ echo: true });
+      if (savedFromFilterMode !== 'lowPass') {
+        this.setMixFeatures({ deckFx: { [context.fromDeck]: { filterMode: 'lowPass' } } });
+      }
+    }
+    if (mode === 'bass_swap') {
+      if (savedFromFilterMode !== 'highPass') {
+        this.setMixFeatures({ deckFx: { [context.fromDeck]: { filterMode: 'highPass' } } });
+      }
+      if (savedToFilterMode !== 'lowPass') {
+        this.setMixFeatures({ deckFx: { [context.toDeck]: { filterMode: 'lowPass' } } });
+      }
+    }
+    if (mode === 'kick_swap' && savedFromFilterMode !== 'lowPass') {
+      this.setMixFeatures({ deckFx: { [context.fromDeck]: { filterMode: 'lowPass' } } });
+    }
+    if (mode === 'echo_freeze' && !startEcho) {
+      this.setMixFeatures({ echo: true });
+    }
 
     try {
       await new Promise((resolve) => {
         let progress = 0;
         let lastTickAt = performance.now();
         let loopAnchor = context.to.currentTime || 0;
+        let loopAnchorFrom = context.from.currentTime || 0;
 
         this.#crossfadeInterval = setInterval(() => {
           if (this.#destroyed) {
@@ -681,9 +728,37 @@ export class DJPlayer extends EventTarget {
             context.from.currentTime = Math.max(0, context.from.currentTime - 0.045);
           }
 
+          // Retire le high-pass du deck entrant à mi-transition pour laisser ouvrir le spectre
+          if ((mode === 'crossfade_highpass_in' || mode === 'filter_dual_sweep') && progress >= 0.6) {
+            if (this.#mixFeatureSettings.deckFx?.[context.toDeck]?.filterMode === 'highPass') {
+              this.setMixFeatures({ deckFx: { [context.toDeck]: { filterMode: 'off' } } });
+            }
+          }
+
+          // bass_swap : retire le lowpass du deck entrant à 50% pour ouvrir le spectre complet
+          if (mode === 'bass_swap' && progress >= 0.5) {
+            if (this.#mixFeatureSettings.deckFx?.[context.toDeck]?.filterMode === 'lowPass') {
+              this.setMixFeatures({ deckFx: { [context.toDeck]: { filterMode: 'off' } } });
+            }
+          }
+
+          // beat_repeat : boucle le deck sortant avec une longueur qui rétrécit progressivement
+          if (mode === 'beat_repeat' && progress < 0.65 && Number.isFinite(context.from.currentTime)) {
+            const loopLen = Math.max(0.1, Math.pow(1 - (progress / 0.65), 1.5));
+            if ((context.from.currentTime - loopAnchorFrom) >= loopLen) {
+              context.from.currentTime = loopAnchorFrom;
+            }
+          }
+
           if (mode === 'brake_tape_stop_simple') {
             context.from.playbackRate = Math.max(0.2, 1 - (0.85 * progress));
             context.to.playbackRate = Math.min(1, 0.9 + (0.1 * progress));
+          } else if (mode === 'backspin') {
+            // Décélération rapide jusqu'à l'arrêt complet
+            context.from.playbackRate = progress < 0.35
+              ? Math.max(0.04, 1 - Math.pow(progress / 0.35, 0.55))
+              : 0;
+            context.to.playbackRate += (1 - context.to.playbackRate) * 0.18;
           } else if (mode === 'filter_sweep_low_high' || mode === 'filter_automation') {
             context.from.playbackRate = Math.max(0.86, 1 - (0.16 * progress));
             context.to.playbackRate = Math.max(0.9, 1.08 - (0.18 * progress));
@@ -724,6 +799,25 @@ export class DJPlayer extends EventTarget {
       });
     } finally {
       if (mode === 'echo_out_light' && !startEcho) {
+        this.setMixFeatures({ echo: false });
+      }
+      if (mode === 'echo_lowpass' && !startEcho) {
+        this.setMixFeatures({ echo: false });
+      }
+      if (mode === 'crossfade_lowpass' || mode === 'filter_dual_sweep' || mode === 'echo_lowpass') {
+        this.setMixFeatures({ deckFx: { [context.fromDeck]: { filterMode: savedFromFilterMode } } });
+      }
+      if (mode === 'crossfade_highpass_in' || mode === 'filter_dual_sweep') {
+        this.setMixFeatures({ deckFx: { [context.toDeck]: { filterMode: savedToFilterMode } } });
+      }
+      if (mode === 'bass_swap') {
+        this.setMixFeatures({ deckFx: { [context.fromDeck]: { filterMode: savedFromFilterMode } } });
+        this.setMixFeatures({ deckFx: { [context.toDeck]: { filterMode: savedToFilterMode } } });
+      }
+      if (mode === 'kick_swap') {
+        this.setMixFeatures({ deckFx: { [context.fromDeck]: { filterMode: savedFromFilterMode } } });
+      }
+      if (mode === 'echo_freeze' && !startEcho) {
         this.setMixFeatures({ echo: false });
       }
       this.#smoothSetDeckPlaybackRate(context.fromDeck, 1, 160);
@@ -851,6 +945,84 @@ export class DJPlayer extends EventTarget {
           from: startBaseFrom * (1 - sweep),
           to: startBaseTo + ((1 - startBaseTo) * sweep),
         };
+      }
+      case 'crossfade_lowpass': {
+        const from = startBaseFrom * Math.cos((Math.PI / 2) * clampedT);
+        const to = startBaseTo + ((1 - startBaseTo) * Math.sin((Math.PI / 2) * clampedT));
+        return { from, to };
+      }
+      case 'crossfade_highpass_in': {
+        return { from: linearFrom, to: linearTo };
+      }
+      case 'filter_dual_sweep': {
+        const sweep = 0.5 - (0.5 * Math.cos(Math.PI * clampedT));
+        return {
+          from: startBaseFrom * (1 - sweep),
+          to: startBaseTo + ((1 - startBaseTo) * sweep),
+        };
+      }
+      case 'echo_lowpass': {
+        return {
+          from: Math.max(0.08, startBaseFrom * (1 - clampedT)),
+          to: startBaseTo + ((1 - startBaseTo) * Math.pow(clampedT, 1.08)),
+        };
+      }
+      case 'bass_swap': {
+        // fromDeck (highpass = sans basses) fade en courbe log ; toDeck (lowpass = basses d'abord) entre en miroir
+        const from = startBaseFrom * Math.cos((Math.PI / 2) * Math.pow(clampedT, 0.85));
+        const to = startBaseTo + ((1 - startBaseTo) * Math.pow(clampedT, 0.85));
+        return { from, to };
+      }
+      case 'kick_swap': {
+        // fromDeck (lowpass = kick muffled) fade en S ; toDeck entre seulement à partir de 30%
+        const sweep = 0.5 - (0.5 * Math.cos(Math.PI * clampedT));
+        const toProgress = clampedT < 0.3 ? 0 : (clampedT - 0.3) / 0.7;
+        return {
+          from: startBaseFrom * (1 - sweep),
+          to: startBaseTo + ((1 - startBaseTo) * toProgress),
+        };
+      }
+      case 'beat_repeat': {
+        // fromDeck reste au volume plein pendant la boucle (65%), puis toDeck entre en hard
+        if (clampedT < 0.65) {
+          return { from: startBaseFrom, to: startBaseTo * 0.05 };
+        }
+        const phase = (clampedT - 0.65) / 0.35;
+        return {
+          from: startBaseFrom * (1 - phase),
+          to: startBaseTo + ((1 - startBaseTo) * phase),
+        };
+      }
+      case 'backspin': {
+        // Phase 1 : fromDeck décélère et s'arrête ; Phase 2 : silence ; Phase 3 : toDeck hard entry
+        if (clampedT < 0.35) {
+          return { from: startBaseFrom * (1 - Math.pow(clampedT / 0.35, 0.65)), to: 0 };
+        }
+        if (clampedT < 0.5) {
+          return { from: 0, to: 0 };
+        }
+        return { from: 0, to: startBaseTo + ((1 - startBaseTo) * ((clampedT - 0.5) / 0.5)) };
+      }
+      case 'fake_drop': {
+        // fromDeck fade rapide → silence complet → toDeck entre avec impact brutal
+        if (clampedT < 0.35) {
+          return { from: startBaseFrom * (1 - (clampedT / 0.35)), to: 0 };
+        }
+        if (clampedT < 0.55) {
+          return { from: 0, to: 0 };
+        }
+        return {
+          from: 0,
+          to: startBaseTo + ((1 - startBaseTo) * Math.min(1, (clampedT - 0.55) / 0.12)),
+        };
+      }
+      case 'echo_freeze': {
+        // fromDeck maintenu avec plancher d'écho jusqu'à 65%, puis fade ; toDeck entre après 45%
+        const from = clampedT < 0.65
+          ? Math.max(0.12, startBaseFrom * (1 - (0.78 * clampedT)))
+          : Math.max(0, startBaseFrom * (1 - clampedT) * 2.86);
+        const toProgress = clampedT < 0.45 ? 0 : Math.pow((clampedT - 0.45) / 0.55, 0.8);
+        return { from, to: startBaseTo + ((1 - startBaseTo) * Math.min(1, toProgress)) };
       }
       default: {
         return { from: linearFrom, to: linearTo };

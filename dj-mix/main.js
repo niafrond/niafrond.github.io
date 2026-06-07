@@ -987,6 +987,7 @@ const restoreQueue = () => {
 // Debounced renderQueue for background callbacks (stem enrichment, duration hydration, etc.)
 // These fire rapidly and individually aren't urgent for UI — coalesce into one repaint.
 const renderQueueDebounced = createDebouncedFn(() => renderQueue(), 300);
+const renderFilRougeDebounced = createDebouncedFn(() => renderFilRouge(), 300);
 
 const audioSourceManager = createAudioSourceManager({
   apiHealthMonitor,
@@ -1155,6 +1156,7 @@ async function fetchMissingMeta(item) {
       uiRenderer.invalidateDeckMetaCache();
       uiRenderer.refreshDeckMetaDisplays();
       renderQueueDebounced();
+      renderFilRougeDebounced();
       return;
     }
     // 2. Ask the API
@@ -1170,6 +1172,7 @@ async function fetchMissingMeta(item) {
       uiRenderer.invalidateDeckMetaCache();
       uiRenderer.refreshDeckMetaDisplays();
       renderQueueDebounced();
+      renderFilRougeDebounced();
     }
   } catch (_) {
   } finally {
@@ -1235,6 +1238,15 @@ function renderFilRouge() {
   const playlist = filRougeManager.getPlaylist();
   const priorityQueue = filRougeManager.getPriorityQueue();
   const filRougeIndex = filRougeManager.getCurrentIndex();
+
+  // Fetch BPM/genre in background for visible items that are missing them
+  const visibleStart = filRougeIndex > 0 ? Math.max(0, filRougeIndex - 2) : 0;
+  playlist.slice(visibleStart, visibleStart + 20).forEach((item) => {
+    if (!item.bpm || !item.genre) fetchMissingMeta(item).catch(() => {});
+  });
+  priorityQueue.slice(0, 10).forEach((item) => {
+    if (!item.bpm || !item.genre) fetchMissingMeta(item).catch(() => {});
+  });
 
   if (filRougeCountEl) {
     filRougeCountEl.textContent = `${playlist.length} morceau${playlist.length > 1 ? 'x' : ''}`;
