@@ -4337,35 +4337,35 @@ searchOverlay.addEventListener('click', (e) => {
 });
 
 function bindSearchResults(songResults, artistResults) {
-  searchResults.querySelectorAll(‘.delete-btn’).forEach((btn) => {
-    btn.addEventListener(‘click’, (e) => {
+  searchResults.querySelectorAll('.delete-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const trackName = btn.dataset.trackName;
       const artistName = btn.dataset.artistName;
       const cachePath = btn.dataset.cachePath;
       const track = { name: trackName, artist: artistName, cachePath };
       btn.disabled = true;
-      btn.textContent = ‘…’;
+      btn.textContent = '…';
       deleteLocalCacheSong(track)
         .then(() => {
           showToast(`Supprimé : ${trackName}`);
-          btn.closest(‘.search-result-item’)?.remove();
+          btn.closest('.search-result-item')?.remove();
         })
         .catch((err) => {
           showToast(`Erreur suppression : ${err.message}`, true);
           btn.disabled = false;
-          btn.textContent = ‘🗑’;
+          btn.textContent = '🗑';
         });
     });
   });
-  searchResults.querySelectorAll(‘.search-result-item’).forEach((el) => {
+  searchResults.querySelectorAll('.search-result-item').forEach((el) => {
     const resolveResult = () => {
       const kind = el.dataset.kind;
       const idx = Number(el.dataset.index);
-      return kind === ‘artist’ ? artistResults[idx] : songResults[idx];
+      return kind === 'artist' ? artistResults[idx] : songResults[idx];
     };
 
-    el.querySelector(‘.play-now-btn’)?.addEventListener(‘click’, (event) => {
+    el.querySelector('.play-now-btn')?.addEventListener('click', (event) => {
       event.stopPropagation();
       player?.activateElement();
       const result = resolveResult();
@@ -4382,17 +4382,17 @@ function bindSearchResults(songResults, artistResults) {
         });
     });
 
-    el.addEventListener(‘click’, () => {
+    el.addEventListener('click', () => {
       player?.activateElement();
       const result = resolveResult();
       if (!result) return;
 
       if (result?.isArtistResult) {
-        searchInput.value = result.artist || result.name || ‘’;
+        searchInput.value = result.artist || result.name || '';
         searchClear.hidden = !searchInput.value;
-        lastSearchQuery = ‘’;
+        lastSearchQuery = '';
         openSearch();
-        searchResults.innerHTML = ‘<div class="search-loading">Recherche API...</div>’;
+        searchResults.innerHTML = '<div class="search-loading">Recherche API...</div>';
         runSearch(searchInput.value.trim());
         return;
       }
@@ -4412,16 +4412,23 @@ function bindSearchResults(songResults, artistResults) {
 }
 
 function renderSearchResults(tracks, isPartial = false) {
+  const seen = new Set();
   const normalized = tracks
     .map(mapApiTrackToSearchItem)
     .filter(Boolean)
+    .filter((track) => {
+      const key = track.id || `${track.name}|${track.artist}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
     .sort(sortSearchResultsByPopularity);
   const songResults = normalized.filter((track) => !track.isArtistResult);
   const artistResults = normalized.filter((track) => track.isArtistResult);
 
   const spinnerHtml = isPartial
-    ? ‘<div class="search-poll-spinner search-loading" style="font-size:11px;padding:3px 8px;opacity:0.7;">Recherche en cours...</div>’
-    : ‘’;
+    ? '<div class="search-poll-spinner search-loading" style="font-size:11px;padding:3px 8px;opacity:0.7;">Recherche en cours...</div>'
+    : '';
   searchResults.innerHTML = spinnerHtml + buildSearchResultsSectionsHTML(songResults, artistResults);
   bindSearchResults(songResults, artistResults);
 }
@@ -4436,12 +4443,12 @@ function scheduleSearchPoll(query, token, attempt) {
     if (!pending) {
       currentSearchPollToken = null;
       if (tracks?.length) {
-        logInfo(‘runSearch(): phase 2 results’, { query, count: tracks.length });
+        logInfo('runSearch(): phase 2 results', { query, count: tracks.length });
         renderSearchResults(tracks, false);
       } else {
-        searchResults.querySelector(‘.search-poll-spinner’)?.remove();
-        if (!searchResults.querySelector(‘.search-result-item’)) {
-          searchResults.innerHTML = ‘<div class="search-empty">Aucun résultat</div>’;
+        searchResults.querySelector('.search-poll-spinner')?.remove();
+        if (!searchResults.querySelector('.search-result-item')) {
+          searchResults.innerHTML = '<div class="search-empty">Aucun résultat</div>';
         }
       }
     } else {
@@ -4451,32 +4458,32 @@ function scheduleSearchPoll(query, token, attempt) {
 }
 
 async function runSearch(query, skipCache = false) {
-  logInfo(‘runSearch(): querying API’, { query, skipCache });
+  logInfo('runSearch(): querying API', { query, skipCache });
   lastSearchQuery = query;
   currentSearchPollToken = null;
 
   try {
     if (!getDownloaderApiUrl()) {
-      searchResults.innerHTML = ‘<div class="search-empty">Configurez l\’API de téléchargement dans l\’onglet Config</div>’;
+      searchResults.innerHTML = '<div class="search-empty">Configurez l\'API de téléchargement dans l\'onglet Config</div>';
       return;
     }
 
     if (apiHealthMonitor.isOffline()) {
-      searchResults.innerHTML = ‘<div class="search-empty">⚠ API hors ligne – recherche indisponible</div>’;
+      searchResults.innerHTML = '<div class="search-empty">⚠ API hors ligne – recherche indisponible</div>';
       return;
     }
 
     const { tracks, pollToken } = await searchTracksRaw(query, 25, skipCache);
     if (lastSearchQuery !== query) return;
 
-    logInfo(‘runSearch(): phase 1 results’, { query, count: tracks?.length || 0, hasPollToken: !!pollToken });
+    logInfo('runSearch(): phase 1 results', { query, count: tracks?.length || 0, hasPollToken: !!pollToken });
 
     if (tracks?.length) {
       renderSearchResults(tracks, !!pollToken);
     } else if (pollToken) {
-      searchResults.innerHTML = ‘<div class="search-loading">Recherche en cours...</div>’;
+      searchResults.innerHTML = '<div class="search-loading">Recherche en cours...</div>';
     } else {
-      searchResults.innerHTML = ‘<div class="search-empty">Aucun résultat</div>’;
+      searchResults.innerHTML = '<div class="search-empty">Aucun résultat</div>';
     }
 
     if (pollToken) {
@@ -4484,7 +4491,7 @@ async function runSearch(query, skipCache = false) {
       scheduleSearchPoll(query, pollToken, 0);
     }
   } catch (err) {
-    logError(‘runSearch(): failed’, { query, message: err?.message });
+    logError('runSearch(): failed', { query, message: err?.message });
     if (lastSearchQuery === query) {
       searchResults.innerHTML = `<div class="search-empty">⚠ ${escHtml(err.message)}</div>`;
     }

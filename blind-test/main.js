@@ -887,10 +887,10 @@ function handleClientMessage(data) {
         const step = handleClientMessage._step;
         if (data.playerId !== client.myId) {
           const buzzerName = client.players.find(p => p.id === data.playerId)?.name ?? '?';
-          if (step === 'artist') stepLabel.textContent = `🎤 ${buzzerName} donne l’artiste…`;
+          if (step === 'artist') stepLabel.textContent = `🎤 ${buzzerName} donne l'artiste…`;
           else if (step === 'title') stepLabel.textContent = `🎵 ${buzzerName} donne le titre…`;
-          else if (step === 'both') stepLabel.textContent = `🎶 ${buzzerName} donne l’artiste et le titre…`;
-          else stepLabel.textContent = `🎵 ${buzzerName} donne l’artiste ou le titre…`;
+          else if (step === 'both') stepLabel.textContent = `🎶 ${buzzerName} donne l'artiste et le titre…`;
+          else stepLabel.textContent = `🎵 ${buzzerName} donne l'artiste ou le titre…`;
         }
       }
       break;

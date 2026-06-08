@@ -9,7 +9,7 @@
 (Être) sur un petit nuage
 (Être/rester) en carafe
 (Everything I Do) I Do It for You
-(I Can’t Get No) Satisfaction
+(I Can't Get No) Satisfaction
 (Il ne faut pas dire : ) "Fontaine, je ne boirai pas de ton eau"
 (Il y en a) pour tout un régiment
 (I've Had) The Time of My Life
@@ -52,7 +52,7 @@
 A cappella
 À chaque jour suffit sa peine
 À cheval donné on ne regarde pas la denture
-À cœur vaillant, rien d’impossible
+À cœur vaillant, rien d'impossible
 À corps perdu
 À dater de ce jour
 À de rares exceptions près
@@ -64,7 +64,7 @@ A cappella
 À grand renfort de détails
 À grand renfort de publicité
 À hue et à dia
-À l’impossible nul n’est tenu
+À l'impossible nul n'est tenu
 À la belle étoile
 À la fleur de l'âge
 À la force du poignet
@@ -410,7 +410,7 @@ Aide à domicile
 Aide humanitaire
 Aide soignant
 Aider
-Aide-toi, le ciel t’aidera
+Aide-toi, le ciel t'aidera
 Aïeux
 Aigle
 Aigle royal
@@ -902,7 +902,7 @@ Appuyer sur la détente
 Appuyer sur l'accélérateur
 Appuyer sur le champignon
 Après
-Après l’effort, le réconfort
+Après l'effort, le réconfort
 Après la pluie, le beau temps
 Après l'effort, le réconfort
 Après mûre réflexion
@@ -1275,7 +1275,7 @@ Auguste
 Auguste Renoir
 Auguste Rodin
 Augustin Louis Cauchy
-Aujourd’hui
+Aujourd'hui
 Aumône
 Aumônier
 Aung San Suu Kyi
@@ -1919,7 +1919,7 @@ Belles promesses
 Belle-sœur
 Belzébuth
 Bémol
-Ben & Jerry’s
+Ben & Jerry's
 Ben Affleck
 Ben Hur
 Ben Stiller
@@ -2610,12 +2610,12 @@ Buzz
 Buzz Aldrin
 Buzz l'Éclair
 C dans l'air
-C’est au pied du mur qu’on voit le maçon
-C’est dans les vieux pots qu’on fait la meilleure soupe
-C’est en forgeant qu’on devient forgeron
-C’est l’hôpital qui se moque de la charité
-C’est l’occasion qui fait le larron
-C’est le bouquet !
+C'est au pied du mur qu'on voit le maçon
+C'est dans les vieux pots qu'on fait la meilleure soupe
+C'est en forgeant qu'on devient forgeron
+C'est l'hôpital qui se moque de la charité
+C'est l'occasion qui fait le larron
+C'est le bouquet !
 C++
 C-3PO
 C8
@@ -3310,7 +3310,7 @@ Chasteté
 Chat
 Chat angora
 Chat de Schrödinger
-Chat échaudé craint l’eau froide
+Chat échaudé craint l'eau froide
 Chat sauvage
 Chat siamois
 Châtaigne
@@ -3677,7 +3677,7 @@ Climat d'incertitude
 Climat d'inquiétude
 Climat d'insécurité
 Climatisation
-Clin d’œil
+Clin d'œil
 Clinique
 Clint Eastwood
 Clip
@@ -4561,7 +4561,7 @@ Cri
 Cribler de balles
 Cric
 Cricket
-Cri-Cri d’amour
+Cri-Cri d'amour
 Crier
 Crier à l'injustice
 Crier au complot
@@ -5573,7 +5573,7 @@ Donkey Kong
 Donnant donnant
 Données
 Donner
-Donner c’est donner, reprendre c’est voler
+Donner c'est donner, reprendre c'est voler
 Donner de son temps
 Donner des ailes
 Donner des gages de soumission
@@ -6085,7 +6085,7 @@ En attendant Godot
 En avoir gros sur la patate
 En avoir pour son argent
 En avoir ras le bol
-En avril, ne te découvre pas d’un fil, en mai, fais ce qu’il te plaît
+En avril, ne te découvre pas d'un fil, en mai, fais ce qu'il te plaît
 En baver
 En bonne et due forme
 En boucher un coin
@@ -9061,15 +9061,15 @@ Il faut de tout pour faire un monde
 Il faut manger pour vivre, et non vivre pour manger
 Il faut que jeunesse se passe
 Il faut sauver le soldat Ryan
-Il faut se méfier de l’eau qui dort
+Il faut se méfier de l'eau qui dort
 Il jouait du piano debout
-Il n’est pire aveugle que celui qui ne veut pas voir
-Il n’est pire sourd que celui qui ne veut pas entendre
-Il n’y a pas de fumée sans feu
-Il n’y a pas de quoi fouetter un chat
-Il n’y a pas de sot métier
-Il n’y a que la vérité qui blesse
-Il n’y a que le premier pas qui coûte
+Il n'est pire aveugle que celui qui ne veut pas voir
+Il n'est pire sourd que celui qui ne veut pas entendre
+Il n'y a pas de fumée sans feu
+Il n'y a pas de quoi fouetter un chat
+Il n'y a pas de sot métier
+Il n'y a que la vérité qui blesse
+Il n'y a que le premier pas qui coûte
 Il ne faut pas pousser mémé dans les orties
 Il n'y a pas d'amour heureux
 Il n'y a pas de petits profits
@@ -9077,7 +9077,7 @@ Il n'y a pas de quoi fouetter un chat
 Il n'y a pas le feu
 Il n'y a pas le feu au lac
 Il n'y a pas un chat
-Il n'y a que les imbéciles qui ne changent jamais d’avis
+Il n'y a que les imbéciles qui ne changent jamais d'avis
 Il Pleure dans mon Cœur
 Il pleut, il pleut, bergère
 Il tape sur des bambous
@@ -10061,20 +10061,20 @@ Kurt Wallander
 K-way
 Kyo
 L.A. Confidential
-L’amour est aveugle
-L’appétit vient en mangeant
-L’argent n’a pas d’odeur
-L’avenir appartient à ceux qui se lèvent tôt
-L’eau a coulé sous les ponts
-L’Énéide
-L’enfer est pavé de bonnes intentions
-L’espoir fait vivre
-L’exactitude est la politesse des rois
-L’habit ne fait pas le moine
-L’habitude est une seconde nature
-L’homme est un loup pour l’homme
-L’occasion fait le larron
-L’oisiveté est la mère de tous les vices
+L'amour est aveugle
+L'appétit vient en mangeant
+L'argent n'a pas d'odeur
+L'avenir appartient à ceux qui se lèvent tôt
+L'eau a coulé sous les ponts
+L'Énéide
+L'enfer est pavé de bonnes intentions
+L'espoir fait vivre
+L'exactitude est la politesse des rois
+L'habit ne fait pas le moine
+L'habitude est une seconde nature
+L'homme est un loup pour l'homme
+L'occasion fait le larron
+L'oisiveté est la mère de tous les vices
 L5
 La
 La Bamba
@@ -10097,7 +10097,7 @@ La Cage aux folles
 La Cantatrice chauve
 La Cène
 La cerise sur le gâteau
-La Ch’tite famille
+La Ch'tite famille
 La Chanson de Roland
 La charge de la preuve
 La Chartreuse de Parme
@@ -10120,7 +10120,7 @@ La comparaison s'arrête là
 La Condition humaine
 La conduite des opérations
 La conduite des réformes
-La Confession d’un enfant du siècle
+La Confession d'un enfant du siècle
 La conquête du pouvoir
 La Constance du jardinier
 La Constitution
@@ -10128,7 +10128,7 @@ La Couleur des sentiments
 La Couleur pourpre
 La course du soleil
 La Création d'Adam
-La critique est aisée mais l’art est difficile
+La critique est aisée mais l'art est difficile
 La Croisette
 La Croisière s'amuse
 La Croix
@@ -10233,7 +10233,7 @@ La Nuit étoilée
 La nuit porte conseil
 La nuit, tous les chats sont gris
 La Panthère rose
-La parole est d’argent et le silence est d’or
+La parole est d'argent et le silence est d'or
 La Peau de Chagrin
 La Peste
 La peste ou le choléra
@@ -10713,7 +10713,7 @@ Le Médecin malgré lui
 Le Meilleur des mondes
 Le meurtrier court toujours
 Le Miel et les abeilles
-Le mieux est l’ennemi du bien
+Le mieux est l'ennemi du bien
 Le Millionnaire
 Le Misanthrope
 Le Monde
@@ -10812,7 +10812,7 @@ Le Talmud
 Le Tambour
 Le Tartuffe
 Le temps presse
-Le temps, c’est de l’argent
+Le temps, c'est de l'argent
 Le tenant du titre
 Le Tombeau des lucioles
 Le torchon brûle
@@ -11043,7 +11043,7 @@ Les Oiseaux
 Les Oiseaux se cachent pour mourir
 Les outrages du temps
 Les Parapluies de Cherbourg
-Les paroles s’envolent, les écrits restent
+Les paroles s'envolent, les écrits restent
 Les Particules élémentaires
 Les Passagers du vent
 Les Pensées de Pascal
@@ -12722,7 +12722,7 @@ Munitions
 Munster
 Muppet Show
 Mur
-Mur d’escalade
+Mur d'escalade
 Mur de Berlin
 Muraille
 Mûre
@@ -13186,8 +13186,8 @@ Nuit étoilée
 Nuit noire
 Nuits blanches à Seattle
 Nul
-Nul n’est censé ignorer la loi
-Nul n’est prophète en son pays
+Nul n'est censé ignorer la loi
+Nul n'est prophète en son pays
 Numéro
 Numéro de sécurité sociale
 Numéro fétiche
@@ -13351,12 +13351,12 @@ OMS (Organisation mondiale du commerce)
 On a tout essayé
 On achève bien les chevaux
 On connaît la chanson
-On n’apprend pas à un vieux singe à faire la grimace
+On n'apprend pas à un vieux singe à faire la grimace
 On n'attrape pas des mouches avec du vinaigre
 On ne badine pas avec l'amour
-On ne fait pas d’omelette sans casser des œufs
+On ne fait pas d'omelette sans casser des œufs
 On ne peut être à la fois au four et au moulin
-On ne prête qu’aux riches
+On ne prête qu'aux riches
 On ne sait jamais
 On peut rire de tout, mais pas avec tout le monde
 Onanisme
@@ -13820,7 +13820,7 @@ Partie fine
 Partir
 Partir à la retraite
 Partir à vau l'eau
-Partir c’est mourir un peu
+Partir c'est mourir un peu
 Partir en couille
 Partir en fumée
 Partir en live
@@ -14215,7 +14215,7 @@ Peter Petrelli
 Péter plus haut que son cul
 Péter un câble
 Petit
-Petit à petit, l’oiseau fait son nid
+Petit à petit, l'oiseau fait son nid
 Petit Bateau
 Petit beurre
 Petit bonhomme de chemin
@@ -14356,7 +14356,7 @@ Pierre Gattaz
 Pierre Niney
 Pierre Paul Rubens
 Pierre philosophale
-Pierre qui roule n’amasse pas mousse
+Pierre qui roule n'amasse pas mousse
 Pierre Richard
 Pierre tombale
 Pierre-Augustin Caron de Beaumarchais
@@ -14638,7 +14638,7 @@ Point d'exclamation
 Point d'interrogation
 Point d'orgue
 Point G
-Point n’est besoin d’espérer pour entreprendre, ni de réussir pour persévérer
+Point n'est besoin d'espérer pour entreprendre, ni de réussir pour persévérer
 Point névralgique
 Point sensible
 Pointe
@@ -15397,7 +15397,7 @@ Quai
 Quai des Orfèvres
 Qualité
 Quand Harry rencontre Sally
-Quand le chat n’est pas là, les souris dansent
+Quand le chat n'est pas là, les souris dansent
 Quand le vin est tiré, il faut le boire
 Quand les poules auront des dents
 Quand on parle du loup, on en voit la queue
@@ -15455,14 +15455,14 @@ Qui dort dîne
 Qui est qui ?
 Qui est-ce ?
 Qui fait le malin, tombe dans le ravin
-Qui m’aime me suive
+Qui m'aime me suive
 Qui ne dit mot consent
-Qui ne risque rien n’a rien
-Qui ne tente rien n’a rien
-Qui paie ses dettes s’enrichit
+Qui ne risque rien n'a rien
+Qui ne tente rien n'a rien
+Qui paie ses dettes s'enrichit
 Qui peut le plus, peut le moins
-Qui s’y frotte s’y pique
-Qui se ressemble s’assemble
+Qui s'y frotte s'y pique
+Qui se ressemble s'assemble
 Qui sème le vent, récolte la tempête
 Qui trop embrasse, mal étreint
 Qui va à la chasse perd sa place
@@ -15471,10 +15471,10 @@ Qui veut la fin veut les moyens
 Qui veut la paix, prépare la guerre
 Qui veut la peau de Roger Rabbit ?
 Qui veut la peau de Roger Rabbit?
-Qui veut noyer son chien l’accuse de la rage
-Qui veut tuer son chien l’accuse de la rage
+Qui veut noyer son chien l'accuse de la rage
+Qui veut tuer son chien l'accuse de la rage
 Qui veut voyager loin ménage sa monture
-Qui vit par l’épée périra par l’épée
+Qui vit par l'épée périra par l'épée
 Qui vivra verra
 Qui vole un œuf vole un bœuf
 Quiche lorraine
@@ -16480,7 +16480,7 @@ Romantique
 Romantisme
 Romarin
 Rome
-Rome ne s’est pas faite en un jour
+Rome ne s'est pas faite en un jour
 Roméo + Juliette
 Roméo et Juliette
 Rompre
@@ -18162,10 +18162,10 @@ Tanguy
 Tanière
 Tank
 Tanner
-Tant qu’il y a de la vie, il y a de l’espoir
+Tant qu'il y a de la vie, il y a de l'espoir
 Tant qu'il y aura des hommes
-Tant va la cruche à l’eau qu’à la fin elle se casse
-Tant va la cruche à l’eau, qu’à la fin elle se brise
+Tant va la cruche à l'eau qu'à la fin elle se casse
+Tant va la cruche à l'eau, qu'à la fin elle se brise
 Tante
 Tante par alliance
 Tanzanie
@@ -18762,7 +18762,7 @@ Toussaint
 Tousser
 Tout
 Tout ce que vous avez toujours voulu savoir sur le sexe sans jamais oser le demander
-Tout ce qui brille n’est pas or
+Tout ce qui brille n'est pas or
 Tout est bien qui finit bien
 Tout est bon dans le cochon
 Tout est sous contrôle
@@ -18780,7 +18780,7 @@ Toutatis
 Toute honte bue
 Toute peine mérite salaire
 Toute première fois
-Toute vérité n’est pas bonne à dire
+Toute vérité n'est pas bonne à dire
 Toutes affaires cessantes
 Toutou
 Toux grasse
@@ -19165,7 +19165,7 @@ Un roi sans divertissement
 Un Saint-Bernard
 Un short
 Un sou est un sou
-Un tiens vaut mieux que deux tu l’auras
+Un tiens vaut mieux que deux tu l'auras
 Un tissu pied-de-poule
 Un train peut en cacher un autre
 Un tramway nommé Désir
@@ -19183,9 +19183,9 @@ Under Pressure
 Underground
 Underworld
 Une brève histoire de temps
-Une chatte n’y retrouverait pas ses petits
+Une chatte n'y retrouverait pas ses petits
 Une femme d'honneur
-Une fois n’est pas coutume
+Une fois n'est pas coutume
 Une hirondelle ne fait pas le printemps
 Une histoire vraie
 Une Journée en enfer
@@ -19423,8 +19423,8 @@ Ventilateur
 Ventilation
 Ventouse
 Ventre
-Ventre affamé n’a pas d’oreilles
-Ventre affamé n’a point d’oreilles
+Ventre affamé n'a pas d'oreilles
+Ventre affamé n'a point d'oreilles
 Ventre bedonnant
 Ventriloque
 Vénus

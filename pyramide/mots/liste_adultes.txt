@@ -31,13 +31,13 @@
 À bride abattue
 À chaque jour suffit sa peine
 À cheval donné on ne regarde pas la denture
-À cœur vaillant, rien d’impossible
+À cœur vaillant, rien d'impossible
 À corps perdu
 À fleuret moucheté
 À fond la caisse
 À fond les ballons
 À hue et à dia
-À l’impossible nul n’est tenu
+À l'impossible nul n'est tenu
 À la belle étoile
 À la fleur de l'âge
 À la guerre comme à la guerre
@@ -118,7 +118,7 @@ Ah ! vous dirai-je, maman
 Aïd el-Fitr (la Fête de la rupture)
 Aïd el-Kebir (la Grande fête)
 Aide humanitaire
-Aide-toi, le ciel t’aidera
+Aide-toi, le ciel t'aidera
 Aigle
 Aiguille
 Ail
@@ -233,7 +233,7 @@ Appeler un chat un chat
 Apple
 Apporter de l'eau à son moulin
 Appuyer sur le champignon
-Après l’effort, le réconfort
+Après l'effort, le réconfort
 Après la pluie, le beau temps
 Après l'effort, le réconfort
 Après-midi
@@ -324,7 +324,7 @@ Aubergine
 Auchan
 Audrey Hepburn
 Auguste Rodin
-Aujourd’hui
+Aujourd'hui
 Aurore polaire
 Aussitôt dit, aussitôt fait
 Austin Powers
@@ -722,12 +722,12 @@ Bulles
 Bureau
 Bus
 Buzz l'Éclair
-C’est au pied du mur qu’on voit le maçon
-C’est dans les vieux pots qu’on fait la meilleure soupe
-C’est en forgeant qu’on devient forgeron
-C’est l’hôpital qui se moque de la charité
-C’est l’occasion qui fait le larron
-C’est le bouquet !
+C'est au pied du mur qu'on voit le maçon
+C'est dans les vieux pots qu'on fait la meilleure soupe
+C'est en forgeant qu'on devient forgeron
+C'est l'hôpital qui se moque de la charité
+C'est l'occasion qui fait le larron
+C'est le bouquet !
 C-3PO
 Ça
 Ça baigne !
@@ -910,7 +910,7 @@ Chasseur
 Chassez le naturel, il revient au galop
 Chat
 Chat angora
-Chat échaudé craint l’eau froide
+Chat échaudé craint l'eau froide
 Chat sauvage
 Chat siamois
 Châtaigne
@@ -1002,7 +1002,7 @@ Clef anglaise
 Clémentine
 Cléopâtre
 Clignotant
-Clin d’œil
+Clin d'œil
 Clint Eastwood
 Cloche
 Clone
@@ -1333,7 +1333,7 @@ Don Quichotte
 Donald Duck
 Donald Trump
 Donnant donnant
-Donner c’est donner, reprendre c’est voler
+Donner c'est donner, reprendre c'est voler
 Donner des ailes
 Donner du fil à retordre
 Donner le bon Dieu sans confession
@@ -1455,7 +1455,7 @@ Empreinte digitale
 En attendant Godot
 En avoir gros sur la patate
 En avoir ras le bol
-En avril, ne te découvre pas d’un fil, en mai, fais ce qu’il te plaît
+En avril, ne te découvre pas d'un fil, en mai, fais ce qu'il te plaît
 En boucher un coin
 En deux temps trois mouvements
 En double file
@@ -2101,19 +2101,19 @@ Il faut de tout pour faire un monde
 Il faut manger pour vivre, et non vivre pour manger
 Il faut que jeunesse se passe
 Il faut sauver le soldat Ryan
-Il faut se méfier de l’eau qui dort
+Il faut se méfier de l'eau qui dort
 Il jouait du piano debout
-Il n’est pire sourd que celui qui ne veut pas entendre
-Il n’y a pas de fumée sans feu
-Il n’y a pas de quoi fouetter un chat
-Il n’y a pas de sot métier
-Il n’y a que la vérité qui blesse
-Il n’y a que le premier pas qui coûte
+Il n'est pire sourd que celui qui ne veut pas entendre
+Il n'y a pas de fumée sans feu
+Il n'y a pas de quoi fouetter un chat
+Il n'y a pas de sot métier
+Il n'y a que la vérité qui blesse
+Il n'y a que le premier pas qui coûte
 Il ne faut pas pousser mémé dans les orties
 Il n'y a pas de petits profits
 Il n'y a pas le feu au lac
 Il n'y a pas un chat
-Il n'y a que les imbéciles qui ne changent jamais d’avis
+Il n'y a que les imbéciles qui ne changent jamais d'avis
 Il Pleure dans mon Cœur
 Il pleut, il pleut, bergère
 Il tape sur des bambous
@@ -2319,19 +2319,19 @@ Ku Klux Klan
 Kung Fu Panda
 Kurt Cobain
 L.A. Confidential
-L’amour est aveugle
-L’appétit vient en mangeant
-L’argent n’a pas d’odeur
-L’avenir appartient à ceux qui se lèvent tôt
-L’eau a coulé sous les ponts
-L’enfer est pavé de bonnes intentions
-L’espoir fait vivre
-L’exactitude est la politesse des rois
-L’habit ne fait pas le moine
-L’habitude est une seconde nature
-L’homme est un loup pour l’homme
-L’occasion fait le larron
-L’oisiveté est la mère de tous les vices
+L'amour est aveugle
+L'appétit vient en mangeant
+L'argent n'a pas d'odeur
+L'avenir appartient à ceux qui se lèvent tôt
+L'eau a coulé sous les ponts
+L'enfer est pavé de bonnes intentions
+L'espoir fait vivre
+L'exactitude est la politesse des rois
+L'habit ne fait pas le moine
+L'habitude est une seconde nature
+L'homme est un loup pour l'homme
+L'occasion fait le larron
+L'oisiveté est la mère de tous les vices
 La bave du crapaud n'atteint pas la blanche colombe
 La Belle au bois dormant
 La Belle et la Bête
@@ -2347,7 +2347,7 @@ La Chèvre
 La Cité de la peur
 La Couleur des sentiments
 La Couleur pourpre
-La critique est aisée mais l’art est difficile
+La critique est aisée mais l'art est difficile
 La Croix
 La croix et la bannière
 La Défense
@@ -2399,7 +2399,7 @@ La Nuit du chasseur
 La nuit porte conseil
 La nuit, tous les chats sont gris
 La Panthère rose
-La parole est d’argent et le silence est d’or
+La parole est d'argent et le silence est d'or
 La peste ou le choléra
 La Petite Boutique des horreurs
 La Petite Maison dans la prairie
@@ -2554,7 +2554,7 @@ Le Marteau de Thor
 Le Masque de fer
 Le masque de Toutânkhamon
 Le Meilleur des mondes
-Le mieux est l’ennemi du bien
+Le mieux est l'ennemi du bien
 Le Monde
 Le Monde de Nemo
 Le Monde du Silence
@@ -2595,7 +2595,7 @@ Le Songe d'une nuit d'été
 Le sort en est jeté
 Le Spleen de Paris
 Le Tartuffe
-Le temps, c’est de l’argent
+Le temps, c'est de l'argent
 Le Tombeau des lucioles
 Le torchon brûle
 Le Tour du monde en 80 jours
@@ -2698,7 +2698,7 @@ Les Noces de Figaro
 Les Noces funèbres
 Les Oiseaux
 Les Parapluies de Cherbourg
-Les paroles s’envolent, les écrits restent
+Les paroles s'envolent, les écrits restent
 Les petits ruisseaux font les grandes rivières
 Les Pierrafeu
 Les plaisanteries les plus courtes sont les meilleures
@@ -3145,7 +3145,7 @@ Mulholland Drive
 Multicolore
 Muppet Show
 Mur
-Mur d’escalade
+Mur d'escalade
 Mur de Berlin
 Mûre
 Murena
@@ -3277,8 +3277,8 @@ Nuit
 Nuit blanche
 Nuit et brouillard
 Nuits blanches à Seattle
-Nul n’est censé ignorer la loi
-Nul n’est prophète en son pays
+Nul n'est censé ignorer la loi
+Nul n'est prophète en son pays
 Numéro de sécurité sociale
 N'y voir que du feu
 Obélix
@@ -3311,11 +3311,11 @@ Ombre
 OMS (Organisation mondiale du commerce)
 On achève bien les chevaux
 On connaît la chanson
-On n’apprend pas à un vieux singe à faire la grimace
+On n'apprend pas à un vieux singe à faire la grimace
 On n'attrape pas des mouches avec du vinaigre
-On ne fait pas d’omelette sans casser des œufs
+On ne fait pas d'omelette sans casser des œufs
 On ne peut être à la fois au four et au moulin
-On ne prête qu’aux riches
+On ne prête qu'aux riches
 On ne sait jamais
 On peut rire de tout, mais pas avec tout le monde
 Onduler de la toiture
@@ -3425,7 +3425,7 @@ Parler chiffons
 Parler dans sa barbe
 Parler pour ne rien dire
 Partir à vau l'eau
-Partir c’est mourir un peu
+Partir c'est mourir un peu
 Partir en fumée
 Partir en live
 Partir en vrille
@@ -3504,7 +3504,7 @@ Pétanque
 Péter les plombs
 Peter Pan
 Péter un câble
-Petit à petit, l’oiseau fait son nid
+Petit à petit, l'oiseau fait son nid
 Petit Bateau
 Petit joueur
 Petit Ours Brun
@@ -3549,7 +3549,7 @@ Piège en haute mer
 Pierre
 Pierre Bourdieu
 Pierre philosophale
-Pierre qui roule n’amasse pas mousse
+Pierre qui roule n'amasse pas mousse
 Pierrot le fou
 Piéton
 Pieuvre
@@ -3632,7 +3632,7 @@ Point
 Point Break
 Point d'exclamation
 Point d'interrogation
-Point n’est besoin d’espérer pour entreprendre, ni de réussir pour persévérer
+Point n'est besoin d'espérer pour entreprendre, ni de réussir pour persévérer
 Points de suspension
 Poire
 Poireau
@@ -3782,7 +3782,7 @@ Pythagore
 Qatar
 Quai
 Quand Harry rencontre Sally
-Quand le chat n’est pas là, les souris dansent
+Quand le chat n'est pas là, les souris dansent
 Quand le vin est tiré, il faut le boire
 Quand les poules auront des dents
 Quand on parle du loup, on en voit la queue
@@ -3797,12 +3797,12 @@ Queue
 Qui a bu boira
 Qui aime bien, châtie bien
 Qui dort dîne
-Qui m’aime me suive
+Qui m'aime me suive
 Qui ne dit mot consent
-Qui ne risque rien n’a rien
+Qui ne risque rien n'a rien
 Qui peut le plus, peut le moins
-Qui s’y frotte s’y pique
-Qui se ressemble s’assemble
+Qui s'y frotte s'y pique
+Qui se ressemble s'assemble
 Qui sème le vent, récolte la tempête
 Qui trop embrasse, mal étreint
 Qui va à la chasse perd sa place
@@ -3810,9 +3810,9 @@ Qui veut gagner des millions ?
 Qui veut la fin veut les moyens
 Qui veut la paix, prépare la guerre
 Qui veut la peau de Roger Rabbit ?
-Qui veut noyer son chien l’accuse de la rage
+Qui veut noyer son chien l'accuse de la rage
 Qui veut voyager loin ménage sa monture
-Qui vit par l’épée périra par l’épée
+Qui vit par l'épée périra par l'épée
 Qui vivra verra
 Qui vole un œuf vole un bœuf
 Quiche lorraine
@@ -3966,7 +3966,7 @@ Roman de gare
 Roman épistolaire
 Romantisme
 Rome
-Rome ne s’est pas faite en un jour
+Rome ne s'est pas faite en un jour
 Roméo + Juliette
 Roméo et Juliette
 Rompre le charme
@@ -4337,8 +4337,8 @@ Tambour
 Tampon
 Tandem
 Tango
-Tant qu’il y a de la vie, il y a de l’espoir
-Tant va la cruche à l’eau qu’à la fin elle se casse
+Tant qu'il y a de la vie, il y a de l'espoir
+Tant va la cruche à l'eau qu'à la fin elle se casse
 Taoïsme
 Taon
 Tapis
@@ -4503,7 +4503,7 @@ Tous les goûts sont dans la nature
 Toussaint
 Tousser
 Tout ce que vous avez toujours voulu savoir sur le sexe sans jamais oser le demander
-Tout ce qui brille n’est pas or
+Tout ce qui brille n'est pas or
 Tout est bien qui finit bien
 Tout est bon dans le cochon
 Tout feu tout flammes
@@ -4513,7 +4513,7 @@ Tout sur ma mère
 Tout travail mérite salaire
 Tout vient à point à qui sait attendre
 Toutatis
-Toute vérité n’est pas bonne à dire
+Toute vérité n'est pas bonne à dire
 Toy Story
 Toyota
 Tracteur
@@ -4610,7 +4610,7 @@ Un prophète
 Un Saint-Bernard
 Un short
 Un sou est un sou
-Un tiens vaut mieux que deux tu l’auras
+Un tiens vaut mieux que deux tu l'auras
 Un tissu pied-de-poule
 Un tramway nommé Désir
 Un truc de ouf
@@ -4620,8 +4620,8 @@ Un tête à queue
 Un, deux, trois, nous irons au bois
 Un, deux, trois, soleil
 Underworld
-Une chatte n’y retrouverait pas ses petits
-Une fois n’est pas coutume
+Une chatte n'y retrouverait pas ses petits
+Une fois n'est pas coutume
 Une hirondelle ne fait pas le printemps
 Une histoire vraie
 Une Journée en enfer
@@ -4680,7 +4680,7 @@ Vendredi 13
 Venise
 Vent
 Ventre
-Ventre affamé n’a pas d’oreilles
+Ventre affamé n'a pas d'oreilles
 Vénus
 Ver de terre
 Véranda

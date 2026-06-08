@@ -11,6 +11,8 @@ const ASSETS = [
   './player.js',
   './style.css',
   './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
   './lib/playbackMemoryPolicy.js',
   './lib/autoFadeManager.js',
   './lib/audioSourceManager.js',

@@ -205,7 +205,7 @@ describe('buildQueueHTML', () => {
     expect(html).not.toBe('');
   });
 
-  test('n’affiche que les 5 morceaux lus précédents et les grise', () => {
+  test('n'affiche que les 5 morceaux lus précédents et les grise', () => {
     const tracks = Array.from({ length: 10 }, (_, i) => makeTrack({
       id: `t${i}`,
       name: `Track ${i}`,

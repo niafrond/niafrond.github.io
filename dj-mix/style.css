@@ -2225,6 +2225,10 @@ input {
   outline: none;
 }
 
+#deck-mix-slider {
+  height: 14px;
+}
+
 .fade-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
