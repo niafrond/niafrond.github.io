@@ -28,6 +28,51 @@ function releaseWakeLock() {
     wakeLock = null;
   }
 }
+
+// --- Audio Session Keepalive (garder la notification "En cours" Android pendant la pause) ---
+// Joue un audio silencieux en boucle pour maintenir la session audio active jusqu'à 10 minutes.
+let _keepaliveAudio = null;
+let _keepaliveTimer = null;
+let _keepalivePosInterval = null;
+const KEEPALIVE_DURATION_MS = 10 * 60 * 1000;
+
+function _createSilentWavUrl() {
+  const sampleRate = 8000;
+  const numSamples = sampleRate; // 1 seconde
+  const buf = new ArrayBuffer(44 + numSamples);
+  const v = new DataView(buf);
+  const w = (off, s) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + numSamples, true);
+  w(8, 'WAVE'); w(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate, true);
+  v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+  w(36, 'data'); v.setUint32(40, numSamples, true);
+  new Uint8Array(buf, 44).fill(128); // 128 = silence en PCM 8-bit
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
+
+function startMediaKeepAlive() {
+  stopMediaKeepAlive();
+  if (!('mediaSession' in navigator)) return;
+  if (!_keepaliveAudio) {
+    _keepaliveAudio = new Audio(_createSilentWavUrl());
+    _keepaliveAudio.loop = true;
+    _keepaliveAudio.volume = 0.001; // non-zéro pour éviter les optimisations navigateur
+  }
+  _keepaliveAudio.play().catch(() => {});
+  // Rafraîchir la position toutes les 30s pour signaler l'activité à Android
+  _keepalivePosInterval = setInterval(() => updateMediaSessionPositionState(), 30_000);
+  _keepaliveTimer = setTimeout(stopMediaKeepAlive, KEEPALIVE_DURATION_MS);
+}
+
+function stopMediaKeepAlive() {
+  clearTimeout(_keepaliveTimer);
+  clearInterval(_keepalivePosInterval);
+  _keepaliveTimer = null;
+  _keepalivePosInterval = null;
+  _keepaliveAudio?.pause();
+}
 import {
   getTransitionRamRequirementsMb,
   MIX_TRANSITION_MODE_LABELS,
@@ -2905,8 +2950,10 @@ function hookPlayerEvents() {
     // Wake Lock: activer si lecture, relâcher sinon
     if (uiState.isPlaying) {
       requestWakeLock();
+      stopMediaKeepAlive(); // Lecture réelle → pas besoin du keepalive silencieux
     } else {
       releaseWakeLock();
+      startMediaKeepAlive(); // Maintenir la notification Android pendant 10 minutes max
     }
     updateMediaSessionPositionState();
     renderQueue();
