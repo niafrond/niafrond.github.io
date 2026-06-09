@@ -2339,17 +2339,25 @@ function resolveMixDataStartOffsetMs(mixData) {
   const hasPeak = Number.isFinite(firstPeakStartSec) && firstPeakStartSec > 0;
   const firstPeakScore = toFiniteNumber(firstPeakZone?.score);
 
+  const isDanceMode = djMode === 'dance';
+
   // introLooksWeak: use API's introLooksSlow if confident, else fall back to heuristics.
+  // Dance mode uses lower danceability/energy thresholds to skip intros more aggressively.
+  const introDanceabilityThreshold = isDanceMode ? 0.55 : 0.45;
+  const introEnergyThreshold = isDanceMode ? 0.5 : 0.4;
+
   const introLooksWeak = startRec != null && startRecConfidence >= 0.5
-    ? introLooksSlow || (introDanceability != null && introDanceability <= 0.45)
+    ? introLooksSlow || (introDanceability != null && introDanceability <= introDanceabilityThreshold)
     : (
-      (introDanceabilityFallback != null && introDanceabilityFallback <= 0.45)
-      || (introEnergy != null && introEnergy <= 0.4)
+      (introDanceabilityFallback != null && introDanceabilityFallback <= introDanceabilityThreshold)
+      || (introEnergy != null && introEnergy <= introEnergyThreshold)
       || (hasProbableStart && probableStartSec >= 6)
     );
 
+  // Dance mode accepts peaks closer to the intro end (4s vs 8s buffer).
+  const peakMinOffset = isDanceMode ? 4 : 8;
   const peakIsLateEnough = hasPeak
-    && firstPeakStartSec >= Math.max(10, (hasProbableStart ? probableStartSec : 0) + 8)
+    && firstPeakStartSec >= Math.max(10, (hasProbableStart ? probableStartSec : 0) + peakMinOffset)
     && (firstPeakScore == null || firstPeakScore >= 0.25);
 
   // When API says intro is slow and there's a later danceability peak, skip to it.
@@ -2361,6 +2369,29 @@ function resolveMixDataStartOffsetMs(mixData) {
   } else if (introLooksWeak && peakIsLateEnough) {
     // If intro is likely non-danceable, start from first peak to keep momentum.
     recommendedSec = Math.max(recommendedSec, firstPeakStartSec);
+  }
+
+  // Dance mode: skip intro directly to first couplet when BPM drops vs previous track,
+  // or when the backend signals a flat/ambient intro energy profile.
+  if (isDanceMode) {
+    const introBpm = toFiniteNumber(startRec?.introBpm);
+    const firstCoupletSec = toFiniteNumber(startRec?.firstCoupletSec);
+    const introEnergyProfile = startRec?.introEnergyProfile;
+
+    const currentBpm = getActiveDeckBpm() ?? 0;
+    const introBpmTooLow = introBpm != null && currentBpm > 0 && introBpm < currentBpm - 3;
+    const introProfileWeak = introEnergyProfile === 'flat' || introEnergyProfile === 'ambient';
+
+    if (introBpmTooLow || introProfileWeak) {
+      const targetSec = (firstCoupletSec != null && firstCoupletSec > 0)
+        ? firstCoupletSec
+        : hasPeak
+          ? firstPeakStartSec
+          : (probableStartSec ?? 0);
+      if (targetSec > 0) {
+        recommendedSec = Math.max(recommendedSec, targetSec);
+      }
+    }
   }
 
   if (!Number.isFinite(recommendedSec) || recommendedSec <= 0) return 0;

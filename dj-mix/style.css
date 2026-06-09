@@ -1537,7 +1537,9 @@ input {
 }
 
 .deck-panel.is-playing .album-art,
-.deck-panel.is-playing .album-art-next {
+.deck-panel.is-playing .album-art-next,
+.deck-panel.is-playing .album-art-placeholder,
+.deck-panel.is-playing .album-art-next-placeholder {
   animation: deck-spin 4.5s linear infinite;
 }
 
