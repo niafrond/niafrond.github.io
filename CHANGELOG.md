@@ -1,3 +1,10 @@
+## [1.218.9](https://github.com/niafrond/niafrond.github.io/compare/v1.218.8...v1.218.9) (2026-06-09)
+
+### Bug Fixes
+
+* animation ([5d2050e](https://github.com/niafrond/niafrond.github.io/commit/5d2050e1f97dcdf6348ce5352672d643b90c7d14))
+* djmix official music app ([4d42aaf](https://github.com/niafrond/niafrond.github.io/commit/4d42aaf103eb41d14b96817f46c4f13cecd1cfd1))
+
 ## [1.218.8](https://github.com/niafrond/niafrond.github.io/compare/v1.218.7...v1.218.8) (2026-06-08)
 
 ### Bug Fixes
