@@ -1,3 +1,9 @@
+## [1.218.10](https://github.com/niafrond/niafrond.github.io/compare/v1.218.9...v1.218.10) (2026-06-10)
+
+### Bug Fixes
+
+* search issues ([53b2436](https://github.com/niafrond/niafrond.github.io/commit/53b2436306485403df6cbe4c5944fdc7fd149a22))
+
 ## [1.218.9](https://github.com/niafrond/niafrond.github.io/compare/v1.218.8...v1.218.9) (2026-06-09)
 
 ### Bug Fixes
