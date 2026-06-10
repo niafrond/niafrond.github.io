@@ -1,3 +1,9 @@
+## [1.219.2](https://github.com/niafrond/niafrond.github.io/compare/v1.219.1...v1.219.2) (2026-06-10)
+
+### Bug Fixes
+
+* **dj-mix-android:** allow cleartext HTTP for the local downloader API ([e110ec2](https://github.com/niafrond/niafrond.github.io/commit/e110ec26693d21ddb9f7b541471e14ab31a81b39))
+
 ## [1.219.1](https://github.com/niafrond/niafrond.github.io/compare/v1.219.0...v1.219.1) (2026-06-10)
 
 ### Bug Fixes
