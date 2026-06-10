@@ -1,3 +1,9 @@
+## [1.219.1](https://github.com/niafrond/niafrond.github.io/compare/v1.219.0...v1.219.1) (2026-06-10)
+
+### Bug Fixes
+
+* **dj-mix-android:** unbox Double from PluginCall.getDouble before primitive cast ([0e68d43](https://github.com/niafrond/niafrond.github.io/commit/0e68d4339ad9a17e0cedf0a956893bce4ea8d854))
+
 ## [1.219.0](https://github.com/niafrond/niafrond.github.io/compare/v1.218.10...v1.219.0) (2026-06-10)
 
 ### Features
