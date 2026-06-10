@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.WindowManager;
+import android.webkit.WebSettings;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowCompat;
@@ -36,6 +37,19 @@ public class MainActivity extends BridgeActivity {
         applyImmersiveFullscreen();
         capturePendingCommand(getIntent());
         requestLocalNetworkAccess();
+        allowMixedContentForLocalApi();
+    }
+
+    /**
+     * La WebView Capacitor sert l'app sur https://localhost (androidScheme: "https"),
+     * donc fetch() vers l'API HTTP locale (ex. http://192.168.x.x:3000) est bloqué
+     * par la politique de "mixed content" de la WebView (MIXED_CONTENT_NEVER_ALLOW
+     * par défaut), indépendamment de usesCleartextTraffic dans le manifest.
+     * Sans ça, fetch() échoue avec "Failed to fetch" même si l'API est joignable.
+     */
+    private void allowMixedContentForLocalApi() {
+        getBridge().getWebView().getSettings()
+                .setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
     }
 
     /**
