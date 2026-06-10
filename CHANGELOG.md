@@ -1,3 +1,9 @@
+## [1.224.0](https://github.com/niafrond/niafrond.github.io/compare/v1.223.0...v1.224.0) (2026-06-10)
+
+### Features
+
+* improve artwork and metadata handling in addToFilRouge function ([5e597cf](https://github.com/niafrond/niafrond.github.io/commit/5e597cf15b90c34c81c7d34c49b56b94b5c1ae02))
+
 ## [1.223.0](https://github.com/niafrond/niafrond.github.io/compare/v1.222.0...v1.223.0) (2026-06-10)
 
 ### Features
