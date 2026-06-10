@@ -1181,6 +1181,10 @@ const filRougeTrackStatusByKey = new Map();
 
 // Tracks in-flight meta fetches to avoid duplicate API calls
 const metaFetchInFlight = new Set();
+// Tracks keys already queried via the API this session, even when no bpm/genre was
+// found, so renderQueue/renderFilRouge re-renders don't keep re-spamming /api/search
+// for tracks the API simply has no data for.
+const metaFetchAttempted = new Set();
 
 /**
  * Fetches BPM and/or genre for an item that is missing them.
@@ -1192,7 +1196,7 @@ async function fetchMissingMeta(item) {
   if (!item?.name) return;
   if (item.bpm && item.genre) return;
   const key = String(item.id || `${item.artist}::${item.name}`);
-  if (metaFetchInFlight.has(key)) return;
+  if (metaFetchInFlight.has(key) || metaFetchAttempted.has(key)) return;
   metaFetchInFlight.add(key);
   try {
     // 1. Check localStorage cache
@@ -1207,7 +1211,8 @@ async function fetchMissingMeta(item) {
       renderFilRougeDebounced();
       return;
     }
-    // 2. Ask the API
+    // 2. Ask the API (only once per track per session)
+    metaFetchAttempted.add(key);
     const results = await searchTracksViaApi(`${item.artist} ${item.name}`, 5);
     const hit = results[0];
     if (!hit) return;
