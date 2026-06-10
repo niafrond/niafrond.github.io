@@ -14,6 +14,7 @@ permissions:
 
 jobs:
   build-apk:
+    name: Build DJ Mix APK
     runs-on: ubuntu-latest
 
     env:
@@ -110,6 +111,12 @@ jobs:
           root[:] = children
 
           app = root.find('application')
+
+          # Autorise le trafic HTTP en clair : l'API de telechargement est un
+          # serveur auto-heberge sur le reseau local (ex. http://192.168.x.x:3000),
+          # bloque par defaut des targetSdk 28+.
+          if app.get(f'{{{NS}}}usesCleartextTraffic') is None:
+              app.set(f'{{{NS}}}usesCleartextTraffic', 'true')
 
           # Ajoute FileProvider si absent (mise a jour APK)
           providers = [c for c in app if c.tag == 'provider']
