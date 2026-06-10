@@ -15,6 +15,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Base64;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
@@ -56,6 +57,12 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
     private static final String PREFS_NAME = "djmix_media_session";
     private static final String PREF_QUEUE = "queue_json";
     private static final String PREF_METADATA = "metadata_json";
+
+    /** Actions des boutons de la notification, gérées directement par le service. */
+    private static final String ACTION_PLAY = "io.github.niafrond.djmix.action.PLAY";
+    private static final String ACTION_PAUSE = "io.github.niafrond.djmix.action.PAUSE";
+    private static final String ACTION_NEXT = "io.github.niafrond.djmix.action.NEXT";
+    private static final String ACTION_STOP = "io.github.niafrond.djmix.action.STOP";
 
     /** Reçoit les commandes de transport déclenchées depuis Android Auto / la notification. */
     public interface CommandListener {
@@ -106,9 +113,27 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
         restoreState();
     }
 
+    /**
+     * Les boutons de la notification ciblent directement ce service (au lieu de
+     * passer par MediaButtonReceiver) : le rebond broadcast → bind temporaire à
+     * MediaBrowserService est peu fiable et laissait play/pause/suivant inactifs
+     * sur certains appareils. MediaButtonReceiver reste utilisé pour les vrais
+     * boutons matériels (casque, Bluetooth, voiture).
+     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        MediaButtonReceiver.handleIntent(mediaSession, intent);
+        String action = intent != null ? intent.getAction() : null;
+        if (ACTION_PLAY.equals(action)) {
+            dispatch("play", null);
+        } else if (ACTION_PAUSE.equals(action)) {
+            dispatch("pause", null);
+        } else if (ACTION_NEXT.equals(action)) {
+            dispatch("next", null);
+        } else if (ACTION_STOP.equals(action)) {
+            dispatch("pause", null);
+        } else {
+            MediaButtonReceiver.handleIntent(mediaSession, intent);
+        }
         return START_STICKY;
     }
 
@@ -221,14 +246,16 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
         NotificationCompat.Action playPauseAction = playing
                 ? new NotificationCompat.Action(
                         android.R.drawable.ic_media_pause, "Pause",
-                        MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PAUSE))
+                        buildActionPendingIntent(ACTION_PAUSE, 1))
                 : new NotificationCompat.Action(
                         android.R.drawable.ic_media_play, "Lecture",
-                        MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_PLAY));
+                        buildActionPendingIntent(ACTION_PLAY, 2));
 
         NotificationCompat.Action nextAction = new NotificationCompat.Action(
                 android.R.drawable.ic_media_next, "Suivant",
-                MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT));
+                buildActionPendingIntent(ACTION_NEXT, 3));
+
+        PendingIntent stopIntent = buildActionPendingIntent(ACTION_STOP, 4);
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(description.getTitle())
@@ -236,17 +263,24 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
                 .setLargeIcon(currentArtwork)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentIntent(mediaSession.getController().getSessionActivity())
-                .setDeleteIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_STOP))
+                .setDeleteIntent(stopIntent)
                 .addAction(playPauseAction)
                 .addAction(nextAction)
                 .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                         .setMediaSession(mediaSession.getSessionToken())
                         .setShowActionsInCompactView(0, 1)
                         .setShowCancelButton(true)
-                        .setCancelButtonIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_STOP)))
+                        .setCancelButtonIntent(stopIntent))
                 .setOngoing(playing)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .build();
+    }
+
+    /** PendingIntent ciblant directement onStartCommand() avec une action de transport. */
+    private PendingIntent buildActionPendingIntent(String action, int requestCode) {
+        Intent intent = new Intent(this, MediaPlaybackService.class).setAction(action);
+        return PendingIntent.getService(this, requestCode, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     private void updateNotification() {
@@ -259,13 +293,15 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
     // ── Pochette (téléchargement asynchrone) ───────────────────────────────
 
     private void loadArtwork(String artworkUrl, MediaMetadataCompat baseMetadata) {
-        if (artworkUrl == null || !(artworkUrl.startsWith("http://") || artworkUrl.startsWith("https://"))) {
+        boolean isHttp = artworkUrl != null && (artworkUrl.startsWith("http://") || artworkUrl.startsWith("https://"));
+        boolean isDataUri = artworkUrl != null && artworkUrl.startsWith("data:");
+        if (!isHttp && !isDataUri) {
             currentArtwork = null;
             updateNotification();
             return;
         }
         ioExecutor.execute(() -> {
-            Bitmap bitmap = downloadBitmap(artworkUrl);
+            Bitmap bitmap = isDataUri ? decodeDataUri(artworkUrl) : downloadBitmap(artworkUrl);
             mainHandler.post(() -> {
                 currentArtwork = bitmap;
                 if (bitmap != null) {
@@ -277,6 +313,23 @@ public class MediaPlaybackService extends MediaBrowserServiceCompat {
                 updateNotification();
             });
         });
+    }
+
+    /**
+     * Décode une pochette encodée en data URI (ex. "data:image/jpeg;base64,...").
+     * main.js convertit les URLs blob: (fichiers locaux) sous cette forme avant de
+     * les transmettre, car les URLs blob: ne sont résolubles que dans la WebView.
+     */
+    private Bitmap decodeDataUri(String dataUri) {
+        int comma = dataUri.indexOf(',');
+        if (comma < 0) return null;
+        try {
+            byte[] bytes = Base64.decode(dataUri.substring(comma + 1), Base64.DEFAULT);
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to decode data URI artwork", e);
+            return null;
+        }
     }
 
     private Bitmap downloadBitmap(String urlStr) {

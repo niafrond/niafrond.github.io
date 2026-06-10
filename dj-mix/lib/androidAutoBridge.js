@@ -11,18 +11,41 @@ function getPlugin() {
   return window.Capacitor?.Plugins?.MediaSession || null;
 }
 
+/**
+ * Convertit une URL blob: (artwork d'un fichier local) en data URI base64.
+ * Les URLs blob: ne sont résolubles que dans la WebView : le téléchargement
+ * natif (HttpURLConnection) ne peut donc pas y accéder directement.
+ */
+async function resolveArtworkUrl(artworkUrl) {
+  const url = String(artworkUrl || '');
+  if (!url.startsWith('blob:')) return url;
+  try {
+    const blob = await (await fetch(url)).blob();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+  } catch (_) {
+    return '';
+  }
+}
+
 /** Pousse les métadonnées du morceau en cours vers la session média native. */
 export function pushNowPlaying({ id, title, artist, album, artworkUrl, durationMs } = {}) {
   const plugin = getPlugin();
   if (!plugin) return;
-  plugin.updateMetadata({
+  const base = {
     id: String(id || ''),
     title: String(title || 'DJ Mix'),
     artist: String(artist || ''),
     album: String(album || 'DJ Mix'),
-    artworkUrl: String(artworkUrl || ''),
     durationMs: Math.max(0, Number(durationMs) || 0),
-  }).catch(() => {});
+  };
+  resolveArtworkUrl(artworkUrl).then((resolvedArtworkUrl) => {
+    plugin.updateMetadata({ ...base, artworkUrl: resolvedArtworkUrl }).catch(() => {});
+  });
 }
 
 /** Pousse l'état de lecture (lecture/pause, position) vers la session média native. */
