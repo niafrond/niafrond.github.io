@@ -1,3 +1,9 @@
+## [1.223.0](https://github.com/niafrond/niafrond.github.io/compare/v1.222.0...v1.223.0) (2026-06-10)
+
+### Features
+
+* **android-auto:** add AndroidManifest.xml with media config for Android Auto ([560b6a7](https://github.com/niafrond/niafrond.github.io/commit/560b6a73d63a7ee611a3d051ac382f818c7f62ec))
+
 ## [1.222.0](https://github.com/niafrond/niafrond.github.io/compare/v1.221.0...v1.222.0) (2026-06-10)
 
 ### Features
