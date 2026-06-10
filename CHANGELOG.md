@@ -1,3 +1,9 @@
+## [1.219.0](https://github.com/niafrond/niafrond.github.io/compare/v1.218.10...v1.219.0) (2026-06-10)
+
+### Features
+
+* add Android Auto support with MediaSession and APK updater ([91c482f](https://github.com/niafrond/niafrond.github.io/commit/91c482f4461efe5006d3ab33beb5819cb3aab137))
+
 ## [1.218.10](https://github.com/niafrond/niafrond.github.io/compare/v1.218.9...v1.218.10) (2026-06-10)
 
 ### Bug Fixes
