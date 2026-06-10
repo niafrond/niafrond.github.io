@@ -88,6 +88,43 @@ Les 3 shortcuts apparaissent dans le menu Android Auto :
 - Icône 📋 pour les Playlists
 - Icône 🎵 pour la Queue
 
+## Build Android natif (Capacitor)
+
+### Configuration Android Auto — AndroidManifest.xml
+Le fichier `dj-mix-android/src/main/AndroidManifest.xml` doit être copié vers
+`dj-mix-android/android/app/src/main/AndroidManifest.xml` après `cap add android`.
+
+Il déclare la compatibilité Android Auto media obligatoire :
+```xml
+<!-- Cf. https://developer.android.com/training/cars/platforms/android-auto#media -->
+<meta-data
+    android:name="com.google.android.gms.car.application"
+    android:resource="@xml/automotive_app_desc" />
+```
+
+Et le `MediaPlaybackService` avec son intent-filter pour la navigation de médiathèque :
+```xml
+<service
+    android:name=".MediaPlaybackService"
+    android:exported="true"
+    android:foregroundServiceType="mediaPlayback">
+    <intent-filter>
+        <action android:name="android.media.browse.MediaBrowserService" />
+    </intent-filter>
+</service>
+```
+
+### Étapes de build
+```bash
+cd dj-mix-android
+npm install
+npx cap add android                        # génère android/
+cp src/main/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+cp -r src/main/java android/app/src/main/
+cp -r src/main/res  android/app/src/main/
+npm run build                              # cap sync + gradlew assembleRelease
+```
+
 ## Installation
 
 ### Sur mobile/tablette
@@ -96,8 +133,8 @@ Les 3 shortcuts apparaissent dans le menu Android Auto :
 3. OU aller dans Config → cliquer sur "📥 Installer l'application"
 
 ### Sur Android Auto
-1. Installer l'app via le mobile
-2. Android Auto détecte automatiquement l'app musicale
+1. Installer l'app via le mobile (PWA ou APK Capacitor)
+2. Android Auto détecte automatiquement l'app musicale grâce à `automotive_app_desc.xml`
 3. L'icône DJ Mix 🎚️ apparaît dans la section Musique
 4. Les shortcuts sont accessibles via le menu
 
