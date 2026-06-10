@@ -108,6 +108,19 @@ jobs:
                   el.set(ANAME, pkg)
                   children.insert(app_idx, el)
                   app_idx += 1
+
+          # Acces au reseau local (Android 16 "Local Network Protections" /
+          # futur ACCESS_LOCAL_NETWORK sur Android 17+) : necessaire pour que
+          # l'API de telechargement auto-hebergee (ex. http://192.168.x.x:3000)
+          # reste joignable si la protection est activee sur l'appareil.
+          NEARBY_PERM = 'android.permission.NEARBY_WIFI_DEVICES'
+          if NEARBY_PERM not in existing_perms:
+              el = ET.Element('uses-permission')
+              el.set(ANAME, NEARBY_PERM)
+              el.set(f'{{{NS}}}usesPermissionFlags', 'neverForLocation')
+              children.insert(app_idx, el)
+              app_idx += 1
+
           root[:] = children
 
           app = root.find('application')

@@ -1,8 +1,12 @@
 package io.github.niafrond.djmix;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.WindowManager;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -13,6 +17,8 @@ public class MainActivity extends BridgeActivity {
     public static final String EXTRA_PENDING_COMMAND = "io.github.niafrond.djmix.PENDING_COMMAND";
     public static final String EXTRA_PENDING_MEDIA_ID = "io.github.niafrond.djmix.PENDING_MEDIA_ID";
     public static final String EXTRA_PENDING_POSITION_MS = "io.github.niafrond.djmix.PENDING_POSITION_MS";
+
+    private static final int REQUEST_LOCAL_NETWORK_ACCESS = 1001;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -29,6 +35,21 @@ public class MainActivity extends BridgeActivity {
 
         applyImmersiveFullscreen();
         capturePendingCommand(getIntent());
+        requestLocalNetworkAccess();
+    }
+
+    /**
+     * Demande l'accès au réseau local (Android 16 "Local Network Protections").
+     * Nécessaire pour joindre l'API de téléchargement auto-hébergée
+     * (ex. http://192.168.x.x:3000) si la protection est active sur l'appareil.
+     */
+    private void requestLocalNetworkAccess() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.NEARBY_WIFI_DEVICES)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.NEARBY_WIFI_DEVICES},
+                    REQUEST_LOCAL_NETWORK_ACCESS);
+        }
     }
 
     @Override
