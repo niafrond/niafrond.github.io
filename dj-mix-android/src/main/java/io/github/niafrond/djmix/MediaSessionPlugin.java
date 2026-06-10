@@ -85,7 +85,7 @@ public class MediaSessionPlugin extends Plugin {
                 .putString(MediaMetadataCompat.METADATA_KEY_TITLE, call.getString("title", "DJ Mix"))
                 .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, call.getString("artist", ""))
                 .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, call.getString("album", "DJ Mix"))
-                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, (long) call.getDouble("durationMs", 0d))
+                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, call.getDouble("durationMs", 0d).longValue())
                 .build();
 
         service.updateMetadata(metadata, call.getString("artworkUrl", ""));
@@ -101,8 +101,8 @@ public class MediaSessionPlugin extends Plugin {
         }
 
         boolean playing = Boolean.TRUE.equals(call.getBoolean("playing", false));
-        long positionMs = (long) call.getDouble("positionMs", 0d);
-        float speed = (float) call.getDouble("speed", 1d);
+        long positionMs = call.getDouble("positionMs", 0d).longValue();
+        float speed = call.getDouble("speed", 1d).floatValue();
         service.updatePlaybackState(playing, positionMs, speed);
         call.resolve();
     }
