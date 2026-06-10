@@ -1,3 +1,9 @@
+## [1.220.0](https://github.com/niafrond/niafrond.github.io/compare/v1.219.2...v1.220.0) (2026-06-10)
+
+### Features
+
+* request local network access for self-hosted download API ([43781aa](https://github.com/niafrond/niafrond.github.io/commit/43781aae7658d67636dc53bdf037bea4955cf474))
+
 ## [1.219.2](https://github.com/niafrond/niafrond.github.io/compare/v1.219.1...v1.219.2) (2026-06-10)
 
 ### Bug Fixes
