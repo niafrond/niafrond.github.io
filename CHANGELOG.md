@@ -1,3 +1,9 @@
+## [1.222.0](https://github.com/niafrond/niafrond.github.io/compare/v1.221.0...v1.222.0) (2026-06-10)
+
+### Features
+
+* enhance Android Auto integration with data URI support for artwork ([a3c2ab5](https://github.com/niafrond/niafrond.github.io/commit/a3c2ab5591433cd49a1f4e6c23412826bd3a0184))
+
 ## [1.221.0](https://github.com/niafrond/niafrond.github.io/compare/v1.220.0...v1.221.0) (2026-06-10)
 
 ### Features
