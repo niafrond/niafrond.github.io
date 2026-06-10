@@ -546,7 +546,7 @@ export class DJPlayer extends EventTarget {
     const loudB = Number(nextSource?.loudnessDb);
     const diffBpm = Number.isFinite(bpmA) && Number.isFinite(bpmB) ? Math.abs(bpmA - bpmB) : null;
     const diffLoud = Number.isFinite(loudA) && Number.isFinite(loudB) ? Math.abs(loudA - loudB) : null;
-    const nextDurationMs = Number(nextSource?.durationMs);
+    const nextDurationMs = Number.isFinite(nextSource?.durationMs) ? nextSource.durationMs : null;
 
     const energyA = Number(currFeatures?.energy);
     const energyB = Number(nextFeatures?.energy);

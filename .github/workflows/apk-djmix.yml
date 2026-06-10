@@ -1,0 +1,266 @@
+name: Build DJ Mix APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+    tags: ['**']
+    paths:
+      - 'dj-mix/**'
+      - 'dj-mix-android/**'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    env:
+      KEYSTORE_PASS: ${{ secrets.DJMIX_KEYSTORE_PASSWORD || 'djmix_ci_build' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 12266719
+
+      - name: Install SDK components
+        run: |
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Install Capacitor
+        working-directory: dj-mix-android
+        run: npm install
+
+      - name: Add Android platform
+        working-directory: dj-mix-android
+        run: npx cap add android
+
+      - name: Copy web assets
+        working-directory: dj-mix-android
+        run: npx cap copy android
+
+      - name: Apply Android customizations
+        run: |
+          JAVA_DIR="dj-mix-android/android/app/src/main/java/io/github/niafrond/djmix"
+          mkdir -p "$JAVA_DIR"
+          cp dj-mix-android/src/main/java/io/github/niafrond/djmix/MainActivity.java "$JAVA_DIR/MainActivity.java"
+          cp dj-mix-android/src/main/java/io/github/niafrond/djmix/ApkUpdaterPlugin.java "$JAVA_DIR/ApkUpdaterPlugin.java"
+          cp dj-mix-android/src/main/java/io/github/niafrond/djmix/MediaPlaybackService.java "$JAVA_DIR/MediaPlaybackService.java"
+          cp dj-mix-android/src/main/java/io/github/niafrond/djmix/MediaSessionPlugin.java "$JAVA_DIR/MediaSessionPlugin.java"
+
+          # Copie file_paths.xml (FileProvider) et automotive_app_desc.xml (Android Auto)
+          XML_DIR="dj-mix-android/android/app/src/main/res/xml"
+          mkdir -p "$XML_DIR"
+          cp dj-mix-android/src/main/res/xml/file_paths.xml "$XML_DIR/file_paths.xml"
+          cp dj-mix-android/src/main/res/xml/automotive_app_desc.xml "$XML_DIR/automotive_app_desc.xml"
+
+      - name: Add androidx.media dependency
+        run: |
+          GRADLE="dj-mix-android/android/app/build.gradle"
+          sed -i '/^dependencies {/a\    implementation "androidx.media:media:1.7.0"' "$GRADLE"
+
+      - name: Patch AndroidManifest
+        env:
+          MANIFEST: dj-mix-android/android/app/src/main/AndroidManifest.xml
+        shell: python3 {0}
+        run: |
+          import os, xml.etree.ElementTree as ET
+
+          ET.register_namespace('android', 'http://schemas.android.com/apk/res/android')
+          ET.register_namespace('tools', 'http://schemas.android.com/tools')
+          manifest = os.environ['MANIFEST']
+          tree = ET.parse(manifest)
+          root = tree.getroot()
+          NS = 'http://schemas.android.com/apk/res/android'
+          ANAME = f'{{{NS}}}name'
+
+          # Ajoute les permissions requises si absentes
+          permissions = [
+              'android.permission.REQUEST_INSTALL_PACKAGES',
+              'android.permission.FOREGROUND_SERVICE',
+              'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+              'android.permission.POST_NOTIFICATIONS',
+              'android.permission.WAKE_LOCK',
+          ]
+          existing_perms = {e.get(ANAME) for e in root.findall('uses-permission')}
+          children = list(root)
+          app_idx = next(i for i, c in enumerate(children) if c.tag == 'application')
+          for pkg in permissions:
+              if pkg not in existing_perms:
+                  el = ET.Element('uses-permission')
+                  el.set(ANAME, pkg)
+                  children.insert(app_idx, el)
+                  app_idx += 1
+          root[:] = children
+
+          app = root.find('application')
+
+          # Ajoute FileProvider si absent (mise a jour APK)
+          providers = [c for c in app if c.tag == 'provider']
+          has_fp = any(c.get(ANAME) == 'androidx.core.content.FileProvider' for c in providers)
+          if not has_fp:
+              provider = ET.SubElement(app, 'provider')
+              provider.set(ANAME, 'androidx.core.content.FileProvider')
+              provider.set(f'{{{NS}}}authorities', '${applicationId}.fileprovider')
+              provider.set(f'{{{NS}}}exported', 'false')
+              provider.set(f'{{{NS}}}grantUriPermissions', 'true')
+              meta = ET.SubElement(provider, 'meta-data')
+              meta.set(ANAME, 'android.support.FILE_PROVIDER_PATHS')
+              meta.set(f'{{{NS}}}resource', '@xml/file_paths')
+
+          # Declare l'app comme application media pour Android Auto
+          metadatas = [c for c in app if c.tag == 'meta-data']
+          has_car_app = any(c.get(ANAME) == 'com.google.android.gms.car.application' for c in metadatas)
+          if not has_car_app:
+              meta = ET.SubElement(app, 'meta-data')
+              meta.set(ANAME, 'com.google.android.gms.car.application')
+              meta.set(f'{{{NS}}}resource', '@xml/automotive_app_desc')
+
+          # Service MediaBrowserServiceCompat pour Android Auto
+          services = [c for c in app if c.tag == 'service']
+          has_media_service = any(c.get(ANAME) == 'io.github.niafrond.djmix.MediaPlaybackService' for c in services)
+          if not has_media_service:
+              service = ET.SubElement(app, 'service')
+              service.set(ANAME, 'io.github.niafrond.djmix.MediaPlaybackService')
+              service.set(f'{{{NS}}}exported', 'true')
+              service.set(f'{{{NS}}}foregroundServiceType', 'mediaPlayback')
+              intent_filter = ET.SubElement(service, 'intent-filter')
+              action = ET.SubElement(intent_filter, 'action')
+              action.set(ANAME, 'android.media.browse.MediaBrowserService')
+
+          # Receiver pour les boutons media (casque, voiture, Bluetooth)
+          receivers = [c for c in app if c.tag == 'receiver']
+          has_media_receiver = any(c.get(ANAME) == 'androidx.media.session.MediaButtonReceiver' for c in receivers)
+          if not has_media_receiver:
+              receiver = ET.SubElement(app, 'receiver')
+              receiver.set(ANAME, 'androidx.media.session.MediaButtonReceiver')
+              receiver.set(f'{{{NS}}}exported', 'true')
+              intent_filter = ET.SubElement(receiver, 'intent-filter')
+              action = ET.SubElement(intent_filter, 'action')
+              action.set(ANAME, 'android.intent.action.MEDIA_BUTTON')
+
+          ET.indent(tree, space='    ')
+          tree.write(manifest, encoding='unicode', xml_declaration=True)
+
+      - name: Set app version
+        run: |
+          read -r VERSION VERSION_CODE < <(node -e "
+            const c = require('fs').readFileSync('version.js','utf8');
+            const m = c.match(/major:\s*(\d+),\s*minor:\s*(\d+),\s*patch:\s*(\d+)/);
+            const [,maj,min,pat] = m;
+            const name = maj+'.'+min+'.'+pat;
+            const code = Number(maj)*1000000 + Number(min)*1000 + Number(pat);
+            process.stdout.write(name+' '+code+'\n');
+          ")
+          GRADLE="dj-mix-android/android/app/build.gradle"
+          sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" "$GRADLE"
+          sed -i "s/versionName \"[^\"]*\"/versionName \"$VERSION\"/" "$GRADLE"
+          echo "Set versionName=$VERSION versionCode=$VERSION_CODE"
+
+      - name: Install ImageMagick
+        run: sudo apt-get install -y imagemagick
+
+      - name: Set app icons
+        run: |
+          RES="dj-mix-android/android/app/src/main/res"
+          SRC="dj-mix/icon-512.png"
+          for entry in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+            density="${entry%%:*}"
+            size="${entry##*:}"
+            convert "$SRC" -resize "${size}x${size}" "$RES/mipmap-${density}/ic_launcher.png"
+            convert "$SRC" -resize "${size}x${size}" "$RES/mipmap-${density}/ic_launcher_round.png"
+          done
+          for entry in mdpi:108 hdpi:162 xhdpi:216 xxhdpi:324 xxxhdpi:432; do
+            density="${entry%%:*}"
+            size="${entry##*:}"
+            for ext in png webp; do
+              fg="$RES/mipmap-${density}/ic_launcher_foreground.${ext}"
+              if [ -f "$fg" ]; then convert "$SRC" -resize "${size}x${size}" "$fg"; fi
+            done
+          done
+
+      - name: Accept SDK licenses
+        run: yes | sdkmanager --licenses || true
+
+      # To allow reinstalling the APK without a certificate conflict, store a
+      # persistent keystore as a base64-encoded GitHub secret named DJMIX_KEYSTORE_BASE64.
+      # Generate it once with:
+      #   keytool -genkeypair -keystore dj-mix.keystore -alias dj-mix \
+      #           -keyalg RSA -keysize 2048 -validity 10000 \
+      #           -dname "CN=DJ Mix, OU=App, O=Niafrond, L=FR, S=FR, C=FR" \
+      #           -storepass <password> -keypass <password>
+      #   base64 -w 0 dj-mix.keystore
+      # Then add the output as the DJMIX_KEYSTORE_BASE64 secret and the password as DJMIX_KEYSTORE_PASSWORD.
+      - name: Restore or generate keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.DJMIX_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > dj-mix-android/dj-mix.keystore
+            echo "Using stored keystore from secret (consistent certificate across builds)"
+          else
+            keytool -genkeypair -v \
+              -keystore dj-mix-android/dj-mix.keystore \
+              -alias dj-mix \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=DJ Mix, OU=App, O=Niafrond, L=FR, S=FR, C=FR" \
+              -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS"
+            echo "WARNING: Generated a fresh keystore -- APK cannot be installed over a previously signed build. Add DJMIX_KEYSTORE_BASE64 secret to fix this."
+          fi
+
+      - name: Build release APK
+        working-directory: dj-mix-android/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Sign APK
+        shell: bash
+        run: |
+          UNSIGNED="dj-mix-android/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          SIGNED="dj-mix-android/android/app/build/outputs/apk/release/dj-mix.apk"
+
+          export PATH="$ANDROID_SDK_ROOT/build-tools/35.0.0:$PATH"
+
+          apksigner sign \
+            --ks dj-mix-android/dj-mix.keystore \
+            --ks-key-alias dj-mix \
+            --ks-pass "pass:$KEYSTORE_PASS" \
+            --key-pass "pass:$KEYSTORE_PASS" \
+            --out "$SIGNED" \
+            "$UNSIGNED"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dj-mix-apk
+          path: dj-mix-android/android/app/build/outputs/apk/release/dj-mix.apk
+          retention-days: 30
+
+      - name: Attach APK to latest GitHub release
+        if: github.event_name != 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          APK_PATH="dj-mix-android/android/app/build/outputs/apk/release/dj-mix.apk"
+          RELEASE_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+          if [ -n "$RELEASE_TAG" ]; then
+            gh release upload "$RELEASE_TAG" "$APK_PATH#dj-mix.apk" --clobber
+            echo "APK attached to release $RELEASE_TAG"
+          else
+            echo "No release found, APK available as workflow artifact only"
+          fi

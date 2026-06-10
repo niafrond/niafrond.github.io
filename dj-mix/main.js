@@ -5,7 +5,8 @@
  */
 
 import { DJPlayer } from './player.js';
-import { initServiceWorker, installPwa } from './pwa.js';
+import { initServiceWorker, installPwa, initAutoFullscreen, initApkDownloadLink, checkApkUpdate, doApkUpdate } from './pwa.js';
+import { pushPlaybackState, pushQueue, onMediaCommand, getPendingMediaCommand } from './lib/androidAutoBridge.js';
 
 // --- Wake Lock (garder l'écran allumé pendant la lecture) ---
 let wakeLock = null;
@@ -2824,7 +2825,19 @@ txtImportFilRougeBtn?.addEventListener('click', async () => {
       installPwa();
     });
   }
-  
+
+  // APK Android : plein écran auto, lien de téléchargement, mise à jour
+  initAutoFullscreen();
+  initApkDownloadLink();
+  const apkUpdateBtn = document.getElementById('btn-apk-update');
+  if (apkUpdateBtn) {
+    apkUpdateBtn.addEventListener('click', () => {
+      doApkUpdate();
+    });
+  }
+  checkApkUpdate();
+
+
   restoreQueue();
   if (queue.length) {
     renderQueue();
@@ -2883,6 +2896,12 @@ function handleShortcutParameters() {
       }
     });
   }
+
+  // Apply any media command received from Android Auto before the WebView was ready
+  // (e.g. pressing "Play" from the car before opening the app).
+  getPendingMediaCommand().then((cmd) => {
+    if (cmd) applyMediaCommand(cmd);
+  });
 }
 
 window.addEventListener('beforeunload', () => {
@@ -2983,6 +3002,7 @@ function hookPlayerEvents() {
     if ('mediaSession' in navigator) {
       navigator.mediaSession.playbackState = uiState.isPlaying ? 'playing' : 'paused';
     }
+    pushPlaybackState({ playing: uiState.isPlaying, positionMs: playbackPositionMs });
     // Wake Lock: activer si lecture, relâcher sinon
     if (uiState.isPlaying) {
       requestWakeLock();
@@ -3254,6 +3274,33 @@ function setupMediaSession() {
   });
   navigator.mediaSession.setActionHandler('previoustrack', null);
   navigator.mediaSession.setActionHandler('nexttrack', () => autoMixBtn?.click());
+
+  // Commandes de transport relayées depuis Android Auto / la notification native.
+  onMediaCommand(applyMediaCommand);
+}
+
+/** Applique une commande de transport reçue depuis Android Auto / la notification native. */
+function applyMediaCommand(cmd) {
+  switch (cmd?.action) {
+    case 'play':
+    case 'pause': {
+      const focusDeck = getFocusDeck();
+      if (focusDeck === 'A') deckALaunchBtn?.click();
+      else deckBLaunchBtn?.click();
+      break;
+    }
+    case 'next':
+      autoMixBtn?.click();
+      break;
+    case 'seekTo':
+      player?.seekTo?.(Math.max(0, Number(cmd.positionMs) || 0), { fadeMs: 0 });
+      break;
+    case 'playFromMediaId': {
+      const idx = queue.findIndex((item) => item.id === cmd.mediaId);
+      if (idx >= 0) startPlaybackForIndex(idx, 'play');
+      break;
+    }
+  }
 }
 
 function updateMediaSessionPositionState(positionMs = playbackPositionMs, durationMs = playbackDurationMs) {
@@ -5184,6 +5231,7 @@ function buildFilRougeHintHTML() {
 
 function renderQueue() {
   saveQueueDebounced();
+  pushQueue(queue);
   uiRenderer.updateUpcomingArtwork();
   updateDeckCueUI();
   // Fetch BPM/genre in background for visible items that are missing them

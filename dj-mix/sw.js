@@ -2,13 +2,15 @@
  * sw.js — Service Worker pour DJ Mix PWA
  */
 
-const CACHE = 'djmix-v1.0.0';
+const CACHE = 'djmix-v1.218.9';
 
 const ASSETS = [
   './',
   './index.html',
   './main.js',
   './player.js',
+  './pwa.js',
+  './version.js',
   './style.css',
   './manifest.json',
   './icon-192.png',
@@ -34,6 +36,16 @@ const ASSETS = [
   './lib/queueDnD.js',
   './lib/searchUtils.js',
   './lib/transitionModes.js',
+  './lib/index.js',
+  './lib/danceGenreConfig.js',
+  './lib/djModeConfig.js',
+  './lib/apiHealthMonitor.js',
+  './lib/trackMetaStorage.js',
+  './lib/spotifyClient.js',
+  './lib/storageKeys.js',
+  './lib/mixFeatures.js',
+  './lib/settingsStorage.js',
+  './lib/androidAutoBridge.js',
 ];
 
 self.addEventListener('install', e => {

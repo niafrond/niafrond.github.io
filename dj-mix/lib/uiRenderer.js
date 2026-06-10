@@ -1,4 +1,5 @@
 import { escHtml, extractTrackBpm, extractTrackGenre, formatTime } from './searchUtils.js';
+import { pushNowPlaying } from './androidAutoBridge.js';
 
 const MAX_VISIBLE_PLAYED_TRACKS = 5;
 
@@ -434,6 +435,15 @@ export function createDjMixRenderer(options) {
         artist: safeArtist,
         album: safeAlbum,
         artwork: getMediaSessionArtwork(item),
+      });
+
+      pushNowPlaying({
+        id: item?.id,
+        title: safeTitle,
+        artist: safeArtist,
+        album: safeAlbum,
+        artworkUrl: item?.artUrl || '',
+        durationMs: item?.duration || 0,
       });
     }
 
