@@ -1,3 +1,9 @@
+## [1.221.0](https://github.com/niafrond/niafrond.github.io/compare/v1.220.0...v1.221.0) (2026-06-10)
+
+### Features
+
+* enable mixed content for local API access in WebView ([c4a7421](https://github.com/niafrond/niafrond.github.io/commit/c4a7421989a2e651c80d717c8e304afcbb27f247))
+
 ## [1.220.0](https://github.com/niafrond/niafrond.github.io/compare/v1.219.2...v1.220.0) (2026-06-10)
 
 ### Features
