@@ -316,6 +316,26 @@ describe('djPlanManager', () => {
       expect(djApiClient.fetchBatchPlan).toHaveBeenCalledWith(['a.mp3', 'b.mp3'], 'club_peak');
       expect(result).toEqual(batchResult);
     });
+
+    test('calls fetchBatchPlan even when only one item resolves to an analysed trackId', async () => {
+      const trackSummaries = [
+        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
+      ];
+      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
+      const itemB = { id: '2', name: 'Unknown Song', artist: 'Unknown Artist', djTrackId: null, djHasAnalysis: false };
+      const fr = makeFakeFilRouge([itemA, itemB]);
+      const batchResult = { globalSetScore: 0.5, reasons: [], globalComponents: null };
+      const djApiClient = makeDjApiClient({
+        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
+        fetchBatchPlan: jest.fn().mockResolvedValue(batchResult),
+      });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
+
+      const result = await mgr.computeSetQuality();
+
+      expect(djApiClient.fetchBatchPlan).toHaveBeenCalledWith(['a.mp3'], 'club_peak');
+      expect(result).toEqual(batchResult);
+    });
   });
 
   describe('set profile persistence', () => {

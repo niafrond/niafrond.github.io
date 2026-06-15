@@ -1704,10 +1704,11 @@ async function fetchFilRougeArtwork(track) {
     const hit = results[0];
     if (!hit) return;
     const patch = {};
-    if (needsArt && hit.artUrl) {
-      patch.artUrl = hit.artUrl;
-      patchStoredTrackMeta(track.name, track.artist, { artworkUrl: hit.artUrl });
-      persistArtwork(track, hit.artUrl).catch(() => {});
+    const hitArtUrl = getBestArtworkUrl(hit);
+    if (needsArt && hitArtUrl) {
+      patch.artUrl = hitArtUrl;
+      patchStoredTrackMeta(track.name, track.artist, { artworkUrl: hitArtUrl });
+      persistArtwork(track, hitArtUrl).catch(() => {});
     }
     if (needsMeta) {
       if (hit.bpm) patch.bpm = hit.bpm;
@@ -1755,7 +1756,7 @@ async function fetchAndStoreArtworkForItem(item, deck) {
 
   try {
     const results = await searchTracksViaApi(`${item.artist} ${item.name}`, 5);
-    const artUrl = results[0]?.artUrl || '';
+    const artUrl = getBestArtworkUrl(results[0]);
     if (!artUrl) return;
     item.artUrl = artUrl;
     patchStoredTrackMeta(item.name, item.artist, { artworkUrl: artUrl });
@@ -1920,9 +1921,7 @@ function mergeSpotifyTracksToFilRouge(freshTracks) {
 
   if (newIds.length) {
     const newItems = filRougeManager.getPlaylist().filter((item) => newIds.includes(String(item.id)));
-    djPlanManager.planEdgesForNewItems(newItems, { withWrap: filRougeManager.isLoopEnabled() })
-      .then(() => renderFilRouge())
-      .catch((err) => logWarn('djPlan: planEdgesForNewItems failed', { error: err?.message }));
+    runDjPlanIncrementalPass(newItems, filRougeManager.isLoopEnabled()).catch(() => {});
   }
 
   return { added };
@@ -2075,9 +2074,7 @@ function addToFilRouge(item) {
 
     const playlistItem = filRougeManager.getPlaylist().find((p) => p.id === filRougeItem.id);
     if (playlistItem) {
-      djPlanManager.planEdgesForNewItems([playlistItem], { withWrap: filRougeManager.isLoopEnabled() })
-        .then(() => renderFilRouge())
-        .catch((err) => logWarn('djPlan: planEdgesForNewItems failed', { error: err?.message }));
+      runDjPlanIncrementalPass([playlistItem], filRougeManager.isLoopEnabled()).catch(() => {});
     }
   } else {
     showToast(`Déjà dans le fil rouge`, true);
@@ -2132,6 +2129,23 @@ async function runDjPlanFullPass(reason) {
     renderFilRouge();
   } catch (err) {
     logWarn('djPlan: planAllEdges failed', { reason, error: err?.message });
+  }
+  await runDjSetQualityRefresh();
+}
+
+/**
+ * Calcule les arêtes DJ pour des morceaux ajoutés à la volée (ajout simple ou
+ * merge Spotify) via `/api/dj/transition`, puis rafraîchit le badge de qualité
+ * du set (`/api/dj/batch`) sur l'ensemble du fil rouge.
+ * @param {Array} items - nouveaux items déjà présents dans le fil rouge
+ * @param {boolean} withWrap
+ */
+async function runDjPlanIncrementalPass(items, withWrap) {
+  try {
+    await djPlanManager.planEdgesForNewItems(items, { withWrap });
+    renderFilRouge();
+  } catch (err) {
+    logWarn('djPlan: planEdgesForNewItems failed', { error: err?.message });
   }
   await runDjSetQualityRefresh();
 }

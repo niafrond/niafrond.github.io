@@ -240,7 +240,7 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, logger } 
     const trackIds = playlist
       .filter((item) => item.djTrackId && item.djHasAnalysis)
       .map((item) => item.djTrackId);
-    if (trackIds.length < 2) return null;
+    if (!trackIds.length) return null;
 
     const result = await djApiClient.fetchBatchPlan(trackIds, getSelectedSetProfile());
     if (!result) return null;
