@@ -12,10 +12,14 @@ import { createLogger } from './lib/logger.js';
 const logger = createLogger('player');
 const logDebug = (event, payload) => logger.debug(event, payload);
 const logInfo = (event, payload) => logger.info(event, payload);
+const logWarn = (event, payload) => logger.warn(event, payload);
 const logError = (event, payload) => logger.error(event, payload);
 
 // Re-export for UI/main.js
 export { MIX_TRANSITION_MODES, MIX_TRANSITION_MODE_LABELS };
+
+// Au-delà de ce délai, load()->canplay ou play() sont considérés lents (réseau/decode) et loggés en warn.
+const SLOW_AUDIO_LOAD_THRESHOLD_MS = 200;
 
 function clamp01(value) {
   return Math.max(0, Math.min(1, Number(value) || 0));
@@ -93,10 +97,24 @@ export class DJPlayer extends EventTarget {
   #trackEndNotified = false;
   #trackInterval = null;
   #crossfadeInterval = null;
-  #manualMixInterval = null;
-  #playbackRateIntervals = {
+  // Lissages volume/mix-ratio/playbackRate: rAF + progression basée sur le temps écoulé
+  // (plutôt qu'un compte de "ticks" setInterval) pour s'aligner sur le rafraîchissement
+  // écran et s'auto-corriger si des frames sont sautées (onglet en arrière-plan).
+  #manualMixRafId = null;
+  #playbackRateRafIds = {
     A: null,
     B: null,
+  };
+  // Coalesce les multiples #emitDeckState() d'une même frame en un seul dispatch 'deckstate'.
+  #emitDeckStateRafId = null;
+  // Suivi des coupures audio (event 'waiting'/'stalled') pour diagnostiquer les soubresauts de lecture.
+  #stallStartedAt = {
+    A: null,
+    B: null,
+  };
+  #underrunCounts = {
+    A: 0,
+    B: 0,
   };
   #deckMixRatio = 0;
   #transitionMode = DEFAULT_TRANSITION_MODE;
@@ -170,7 +188,7 @@ export class DJPlayer extends EventTarget {
 
     this.#startTracking();
     this.#ready = true;
-    this.#emitDeckState();
+    this.#requestEmitDeckState();
     logInfo('player.init.ready', {
       crossfadeDurationMs: this.#crossfadeDuration,
       activeDeck: this.#active,
@@ -202,7 +220,7 @@ export class DJPlayer extends EventTarget {
     this.#applyDeckBaseMix(activeDeck === 'A' ? 1 : 0, activeDeck === 'B' ? 1 : 0);
     this.#mixFeatures?.setDeckSourceMetadata(activeDeck, normalized);
     await this.#loadAndPlay(active, normalized.url);
-    this.#emitDeckState();
+    this.#requestEmitDeckState();
   }
 
   async playOnDeck(deck, source, options = {}) {
@@ -251,7 +269,7 @@ export class DJPlayer extends EventTarget {
       this.#trackEndNotified = false;
     }
 
-    this.#emitDeckState();
+    this.#requestEmitDeckState();
     logInfo('deck.load.done', {
       targetDeck,
       activeDeck: this.#active,
@@ -261,14 +279,14 @@ export class DJPlayer extends EventTarget {
   pauseDeck(deck) {
     const audio = deck === 'B' ? this.#audioB : this.#audioA;
     audio?.pause();
-    this.#emitDeckState();
+    this.#requestEmitDeckState();
   }
 
   async resumeDeck(deck) {
     const audio = deck === 'B' ? this.#audioB : this.#audioA;
     if (!audio || !audio.src) return;
     await audio.play().catch(() => {});
-    this.#emitDeckState();
+    this.#requestEmitDeckState();
   }
 
   setDeckPlaybackRate(deck, rate) {
@@ -383,7 +401,7 @@ export class DJPlayer extends EventTarget {
 
     if (instant || this.#isCrossfading || wasPaused) {
       audio.currentTime = safeTargetMs / 1000;
-      this.#emitDeckState();
+      this.#requestEmitDeckState();
       return;
     }
 
@@ -393,7 +411,7 @@ export class DJPlayer extends EventTarget {
     await this.#fadeVolume(audio, initialVolume, floorVolume, fadeMs);
     audio.currentTime = safeTargetMs / 1000;
     await this.#fadeVolume(audio, floorVolume, initialVolume, fadeMs);
-    this.#emitDeckState();
+    this.#requestEmitDeckState();
   }
 
   async crossfadeTo(source, durationOverride) {
@@ -511,7 +529,7 @@ export class DJPlayer extends EventTarget {
       this.#active = toDeck;
       this.#crossfadeNotified = false;
       this.#trackEndNotified = false;
-      this.#emitDeckState();
+      this.#requestEmitDeckState();
       logInfo('crossfade.done', {
         activeDeck: this.#active,
         fromDeck,
@@ -776,7 +794,7 @@ export class DJPlayer extends EventTarget {
             this.#applyDeckBaseMix(toBase, fromBase);
           }
 
-          this.#emitDeckState();
+          this.#requestEmitDeckState();
           this.dispatchEvent(new CustomEvent('crossfadeprogress', {
             detail: {
               fromDeck: context.fromDeck,
@@ -834,7 +852,7 @@ export class DJPlayer extends EventTarget {
       this.#applyDeckBaseMix(toBase, fromBase);
     }
 
-    this.#emitDeckState();
+    this.#requestEmitDeckState();
     this.dispatchEvent(new CustomEvent('crossfadeprogress', {
       detail: {
         fromDeck: context.fromDeck,
@@ -1038,9 +1056,22 @@ export class DJPlayer extends EventTarget {
     this.#destroyed = true;
     clearInterval(this.#trackInterval);
     clearInterval(this.#crossfadeInterval);
-    clearInterval(this.#manualMixInterval);
     this.#crossfadeInterval = null;
-    this.#manualMixInterval = null;
+
+    if (this.#manualMixRafId !== null) {
+      cancelAnimationFrame(this.#manualMixRafId);
+      this.#manualMixRafId = null;
+    }
+    for (const deck of ['A', 'B']) {
+      if (this.#playbackRateRafIds[deck] !== null) {
+        cancelAnimationFrame(this.#playbackRateRafIds[deck]);
+        this.#playbackRateRafIds[deck] = null;
+      }
+    }
+    if (this.#emitDeckStateRafId !== null) {
+      cancelAnimationFrame(this.#emitDeckStateRafId);
+      this.#emitDeckStateRafId = null;
+    }
 
     this.#mixFeatures?.destroy();
     this.#mixFeatures = null;
@@ -1070,7 +1101,15 @@ export class DJPlayer extends EventTarget {
     audio.preload = 'auto';
 
     audio.addEventListener('playing', () => {
-      this.#emitDeckState();
+      const stallStartedAt = this.#stallStartedAt[deck];
+      if (stallStartedAt !== null) {
+        this.#stallStartedAt[deck] = null;
+        logInfo('audio.underrun.recovered', {
+          deck,
+          stallDurationMs: Math.round(performance.now() - stallStartedAt),
+        });
+      }
+      this.#requestEmitDeckState();
       if ((deck === 'A' && this.#active !== 'A') || (deck === 'B' && this.#active !== 'B')) return;
       this.dispatchEvent(new CustomEvent('statechange', {
         detail: { paused: false, track: null },
@@ -1078,11 +1117,35 @@ export class DJPlayer extends EventTarget {
     });
 
     audio.addEventListener('pause', () => {
-      this.#emitDeckState();
+      this.#requestEmitDeckState();
       if ((deck === 'A' && this.#active !== 'A') || (deck === 'B' && this.#active !== 'B')) return;
       this.dispatchEvent(new CustomEvent('statechange', {
         detail: { paused: true, track: null },
       }));
+    });
+
+    // 'waiting' = lecture suspendue car le buffer est vide (underrun). Sur deck inactif,
+    // c'est normal (pas de data preloadée) ; on ne logge que le deck actif en lecture.
+    audio.addEventListener('waiting', () => {
+      if (audio.paused) return;
+      this.#stallStartedAt[deck] = performance.now();
+      this.#underrunCounts[deck] += 1;
+      logWarn('audio.underrun.waiting', {
+        deck,
+        count: this.#underrunCounts[deck],
+        positionMs: Number.isFinite(audio.currentTime) ? audio.currentTime * 1000 : 0,
+        readyState: audio.readyState,
+      });
+    });
+
+    // 'stalled' = le navigateur attend des données réseau (connexion lente/coupée).
+    audio.addEventListener('stalled', () => {
+      if (audio.paused) return;
+      logWarn('audio.underrun.stalled', {
+        deck,
+        positionMs: Number.isFinite(audio.currentTime) ? audio.currentTime * 1000 : 0,
+        readyState: audio.readyState,
+      });
     });
 
     audio.addEventListener('error', () => {
@@ -1106,7 +1169,7 @@ export class DJPlayer extends EventTarget {
     audio.currentTime = 0;
     audio.src = sourceUrl;
 
-
+    const loadStartedAt = performance.now();
     await new Promise((resolve, reject) => {
       const onCanPlay = () => {
         cleanup();
@@ -1125,11 +1188,17 @@ export class DJPlayer extends EventTarget {
       audio.addEventListener('error', onError, { once: true });
       audio.load();
     });
-    
+    const canPlayMs = performance.now() - loadStartedAt;
+
+    const playStartedAt = performance.now();
     await audio.play();
-    
-    logDebug('audio.loadAndPlay.started', {
+    const playMs = performance.now() - playStartedAt;
+
+    const isSlow = canPlayMs > SLOW_AUDIO_LOAD_THRESHOLD_MS || playMs > SLOW_AUDIO_LOAD_THRESHOLD_MS;
+    (isSlow ? logWarn : logDebug)('audio.loadAndPlay.started', {
       srcPreview: String(sourceUrl || '').slice(0, 96),
+      canPlayMs: Math.round(canPlayMs),
+      playMs: Math.round(playMs),
     });
   }
 
@@ -1138,6 +1207,7 @@ export class DJPlayer extends EventTarget {
     audio.currentTime = 0;
     audio.src = sourceUrl;
 
+    const loadStartedAt = performance.now();
     await new Promise((resolve, reject) => {
       const onCanPlay = () => { cleanup(); resolve(); };
       const onError = () => { cleanup(); reject(new Error('Flux audio API non lisible')); };
@@ -1149,8 +1219,11 @@ export class DJPlayer extends EventTarget {
       audio.addEventListener('error', onError, { once: true });
       audio.load();
     });
-    logDebug('audio.loadOnly.primed', {
+    const canPlayMs = performance.now() - loadStartedAt;
+
+    (canPlayMs > SLOW_AUDIO_LOAD_THRESHOLD_MS ? logWarn : logDebug)('audio.loadOnly.primed', {
       srcPreview: String(sourceUrl || '').slice(0, 96),
+      canPlayMs: Math.round(canPlayMs),
     });
   }
 
@@ -1178,7 +1251,7 @@ export class DJPlayer extends EventTarget {
         },
       }));
 
-      this.#emitDeckState();
+      this.#requestEmitDeckState();
 
       if (!active.paused && !this.#isCrossfading && !this.#crossfadeNotified && remaining <= this.#crossfadeDuration && remaining > 0) {
         this.#crossfadeNotified = true;
@@ -1244,109 +1317,113 @@ export class DJPlayer extends EventTarget {
     const fromRate = Math.max(0.5, Math.min(2.0, Number(audio.playbackRate) || 1));
     const intervalKey = targetDeck;
 
-    clearInterval(this.#playbackRateIntervals[intervalKey]);
-    this.#playbackRateIntervals[intervalKey] = null;
+    if (this.#playbackRateRafIds[intervalKey] !== null) {
+      cancelAnimationFrame(this.#playbackRateRafIds[intervalKey]);
+      this.#playbackRateRafIds[intervalKey] = null;
+    }
 
     if (durationMs <= 0 || Math.abs(fromRate - safeTarget) < 0.001) {
       audio.playbackRate = safeTarget;
-      this.#emitDeckState();
+      this.#requestEmitDeckState();
       return;
     }
 
     const ms = Math.max(32, Number(durationMs) || 180);
-    const steps = Math.max(1, Math.round(ms / 16));
-    let step = 0;
+    const startedAt = performance.now();
 
-    this.#playbackRateIntervals[intervalKey] = setInterval(() => {
+    const step = (now) => {
       const currentAudio = intervalKey === 'B' ? this.#audioB : this.#audioA;
       if (this.#destroyed || !currentAudio) {
-        clearInterval(this.#playbackRateIntervals[intervalKey]);
-        this.#playbackRateIntervals[intervalKey] = null;
+        this.#playbackRateRafIds[intervalKey] = null;
         return;
       }
 
-      step += 1;
-      const t = Math.min(1, step / steps);
-      const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-      currentAudio.playbackRate = fromRate + ((safeTarget - fromRate) * eased);
-      this.#emitDeckState();
-
-      if (step >= steps) {
-        clearInterval(this.#playbackRateIntervals[intervalKey]);
-        this.#playbackRateIntervals[intervalKey] = null;
+      const t = Math.min(1, (now - startedAt) / ms);
+      if (t >= 1) {
         currentAudio.playbackRate = safeTarget;
-        this.#emitDeckState();
+        this.#playbackRateRafIds[intervalKey] = null;
+      } else {
+        const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        currentAudio.playbackRate = fromRate + ((safeTarget - fromRate) * eased);
+        this.#playbackRateRafIds[intervalKey] = requestAnimationFrame(step);
       }
-    }, 16);
+      this.#requestEmitDeckState();
+    };
+
+    this.#playbackRateRafIds[intervalKey] = requestAnimationFrame(step);
   }
 
   #smoothSetDeckVolumes(targetA, targetB, durationMs) {
-    clearInterval(this.#manualMixInterval);
-    this.#manualMixInterval = null;
+    if (this.#manualMixRafId !== null) {
+      cancelAnimationFrame(this.#manualMixRafId);
+      this.#manualMixRafId = null;
+    }
 
     if (!this.#audioA || !this.#audioB) return;
 
     const fromA = this.#audioA.volume || 0;
     const fromB = this.#audioB.volume || 0;
     const ms = Math.max(16, Number(durationMs) || 140);
-    const steps = Math.max(1, Math.round(ms / 16));
-    let step = 0;
+    const startedAt = performance.now();
 
-    this.#manualMixInterval = setInterval(() => {
+    const step = (now) => {
       if (this.#destroyed || !this.#audioA || !this.#audioB) {
-        clearInterval(this.#manualMixInterval);
-        this.#manualMixInterval = null;
+        this.#manualMixRafId = null;
         return;
       }
 
-      step += 1;
-      const t = Math.min(1, step / steps);
+      const t = Math.min(1, (now - startedAt) / ms);
       const nextA = Math.max(0, Math.min(1, fromA + ((targetA - fromA) * t)));
       const nextB = Math.max(0, Math.min(1, fromB + ((targetB - fromB) * t)));
       this.#applyDeckBaseMix(nextA, nextB);
       this.#deckMixRatio = this.#mixRatioFromGains(nextA, nextB);
-      this.#emitDeckState();
+      this.#requestEmitDeckState();
 
-      if (step >= steps) {
-        clearInterval(this.#manualMixInterval);
-        this.#manualMixInterval = null;
+      if (t >= 1) {
+        this.#manualMixRafId = null;
+      } else {
+        this.#manualMixRafId = requestAnimationFrame(step);
       }
-    }, 16);
+    };
+
+    this.#manualMixRafId = requestAnimationFrame(step);
   }
 
   #smoothSetDeckMixRatio(targetRatio, durationMs) {
-    clearInterval(this.#manualMixInterval);
-    this.#manualMixInterval = null;
+    if (this.#manualMixRafId !== null) {
+      cancelAnimationFrame(this.#manualMixRafId);
+      this.#manualMixRafId = null;
+    }
 
     if (!this.#audioA || !this.#audioB) return;
 
     const fromRatio = Math.max(0, Math.min(1, Number(this.#deckMixRatio) || 0));
     const toRatio = Math.max(0, Math.min(1, Number(targetRatio) || 0));
     const ms = Math.max(16, Number(durationMs) || 140);
-    const steps = Math.max(1, Math.round(ms / 16));
-    let step = 0;
+    const startedAt = performance.now();
 
-    this.#manualMixInterval = setInterval(() => {
+    const step = (now) => {
       if (this.#destroyed || !this.#audioA || !this.#audioB) {
-        clearInterval(this.#manualMixInterval);
-        this.#manualMixInterval = null;
+        this.#manualMixRafId = null;
         return;
       }
 
-      step += 1;
-      const t = Math.min(1, step / steps);
+      const t = Math.min(1, (now - startedAt) / ms);
       const ratio = fromRatio + ((toRatio - fromRatio) * t);
       const gains = this.#equalPowerGainsFromRatio(ratio);
 
       this.#applyDeckBaseMix(gains.a, gains.b);
       this.#deckMixRatio = ratio;
-      this.#emitDeckState();
+      this.#requestEmitDeckState();
 
-      if (step >= steps) {
-        clearInterval(this.#manualMixInterval);
-        this.#manualMixInterval = null;
+      if (t >= 1) {
+        this.#manualMixRafId = null;
+      } else {
+        this.#manualMixRafId = requestAnimationFrame(step);
       }
-    }, 16);
+    };
+
+    this.#manualMixRafId = requestAnimationFrame(step);
   }
 
   #equalPowerGainsFromRatio(ratio) {
@@ -1362,6 +1439,17 @@ export class DJPlayer extends EventTarget {
     const safeB = Math.max(0, Number(gainB) || 0);
     const angle = Math.atan2(safeB, safeA);
     return Math.max(0, Math.min(1, angle / (Math.PI / 2)));
+  }
+
+  // Demande l'émission de 'deckstate' au prochain rAF. Si plusieurs lissages/loops
+  // demandent un emit pour la même frame, un seul CustomEvent est dispatché (réduit GC/UI churn).
+  #requestEmitDeckState() {
+    if (this.#emitDeckStateRafId !== null) return;
+    this.#emitDeckStateRafId = requestAnimationFrame(() => {
+      this.#emitDeckStateRafId = null;
+      if (this.#destroyed) return;
+      this.#emitDeckState();
+    });
   }
 
   #emitDeckState() {

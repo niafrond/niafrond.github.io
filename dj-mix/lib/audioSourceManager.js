@@ -4,6 +4,7 @@ import {
   extractTrackLoudnessDb,
   splitItunesSearchQuery,
 } from './searchUtils.js';
+import { appendApiToken } from './downloaderConfig.js';
 import { createLogger } from './logger.js';
 
 const logger = createLogger('audio-source');
@@ -306,6 +307,7 @@ export function createAudioSourceManager(options) {
   const {
     apiHealthMonitor,
     audioCacheName,
+    getDownloaderApiToken,
     getDownloaderApiUrl,
     onQueueUpdated,
     sessionBlobCache,
@@ -314,6 +316,15 @@ export function createAudioSourceManager(options) {
   } = options;
 
   const MAX_SESSION_BLOB_CACHE_ENTRIES = 12; // Covers 2 active decks + 10 pre-fetched
+
+  // fetch() vers l'API downloader avec ajout automatique de `token=...` (auth API).
+  // Les URLs hors API (CDN externes, blobs, etc.) sont laissées inchangées.
+  function apiFetch(url, init) {
+    const baseUrl = getDownloaderApiUrl();
+    const targetsApi = baseUrl && String(url).startsWith(baseUrl);
+    const finalUrl = targetsApi ? appendApiToken(url, getDownloaderApiToken?.()) : url;
+    return fetch(finalUrl, init);
+  }
 
   function getStemCacheKey(cacheKey, variant) {
     return `${cacheKey}:stem:${variant}`;
@@ -361,7 +372,7 @@ export function createAudioSourceManager(options) {
       if (playable) return trimmed;
     }
 
-    const res = await fetch(trimmed);
+    const res = await apiFetch(trimmed);
     if (!res.ok) throw new Error(`stem.${variant}.download.failed:${res.status}`);
     const blob = await res.blob();
     if (!blob || blob.size <= 0) throw new Error(`stem.${variant}.empty`);
@@ -388,7 +399,7 @@ export function createAudioSourceManager(options) {
       return '';
     }
 
-    const res = await fetch(`${baseUrl}/api/stems/download?${params}`, {
+    const res = await apiFetch(`${baseUrl}/api/stems/download?${params}`, {
       signal: AbortSignal.timeout(12000),
     });
 
@@ -512,6 +523,8 @@ export function createAudioSourceManager(options) {
       baseUrl,
     });
 
+    const downloadStartedAt = performance.now();
+
     const payload = {
       trackName: item.name,
       artistName: item.artist,
@@ -521,7 +534,7 @@ export function createAudioSourceManager(options) {
 
     let res;
     try {
-      res = await fetch(`${baseUrl}/api/download`, {
+      res = await apiFetch(`${baseUrl}/api/download`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -530,6 +543,8 @@ export function createAudioSourceManager(options) {
       apiHealthMonitor?.recordFailure();
       throw err;
     }
+
+    const requestMs = performance.now() - downloadStartedAt;
 
     if (!res.ok) {
       apiHealthMonitor?.recordFailure();
@@ -545,10 +560,14 @@ export function createAudioSourceManager(options) {
       const blob = await res.blob();
       if (!blob || blob.size === 0) throw new Error('Flux audio vide depuis API');
       await persistAudioBlob(getTrackCacheKey(item), blob, audioCacheName);
+      const totalMs = performance.now() - downloadStartedAt;
       logInfo('api.download.response.audioStream.ok', {
         id: item?.id,
         size: blob.size,
         contentType,
+        requestMs: Math.round(requestMs),
+        totalMs: Math.round(totalMs),
+        throughputKBps: totalMs > 0 ? Math.round((blob.size / 1024) / (totalMs / 1000)) : null,
       });
       return {
         url: URL.createObjectURL(blob),
@@ -563,7 +582,7 @@ export function createAudioSourceManager(options) {
       throw new Error('Réponse API sans URL audio');
     }
 
-    const mediaRes = await fetch(directUrl);
+    const mediaRes = await apiFetch(directUrl);
     if (!mediaRes.ok) {
       logWarn('api.download.followup.directUrl.failed', {
         id: item?.id,
@@ -577,6 +596,15 @@ export function createAudioSourceManager(options) {
       throw new Error('Audio téléchargé vide');
     }
     await persistAudioBlob(getTrackCacheKey(item), mediaBlob, audioCacheName);
+
+    const totalMs = performance.now() - downloadStartedAt;
+    logInfo('api.download.response.directUrl.ok', {
+      id: item?.id,
+      size: mediaBlob.size,
+      requestMs: Math.round(requestMs),
+      totalMs: Math.round(totalMs),
+      throughputKBps: totalMs > 0 ? Math.round((mediaBlob.size / 1024) / (totalMs / 1000)) : null,
+    });
 
     const loudnessDb = extractTrackLoudnessDb(data);
     return {
@@ -780,7 +808,7 @@ export function createAudioSourceManager(options) {
     const url = `${baseUrl}/api/search?${params}`;
     let res;
     try {
-      res = await fetch(url, { headers: { Accept: 'application/json' } });
+      res = await apiFetch(url, { headers: { Accept: 'application/json' } });
     } catch (err) {
       apiHealthMonitor?.recordFailure();
       logWarn('api.search.networkError', { query, error: err?.message });
@@ -807,7 +835,9 @@ export function createAudioSourceManager(options) {
     if (!baseUrl || !token) return { pending: true, tracks: [] };
 
     try {
-      const res = await fetch(`${baseUrl}/api/search/poll?token=${encodeURIComponent(token)}`, {
+      // Note: `token` ici est le jeton de poll renvoyé par /api/search (job de recherche),
+      // pas le token d'authentification API — apiFetch() ne l'écrasera pas (voir appendApiToken).
+      const res = await apiFetch(`${baseUrl}/api/search/poll?pollToken=${encodeURIComponent(token)}`, {
         headers: { Accept: 'application/json' },
         signal: AbortSignal.timeout(8000),
       });
@@ -862,7 +892,7 @@ export function createAudioSourceManager(options) {
 
     logDebug('api.stems.get', { id: item?.id, cachePath: item?.cachePath });
     try {
-      const res = await fetch(`${baseUrl}/api/stems?${params}`, {
+      const res = await apiFetch(`${baseUrl}/api/stems?${params}`, {
         headers: { Accept: 'application/json' },
         signal: AbortSignal.timeout(8000),
       });
@@ -897,7 +927,7 @@ export function createAudioSourceManager(options) {
 
     logDebug('api.stems.post', { id: item?.id, cachePath: item?.cachePath });
     try {
-      const res = await fetch(`${baseUrl}/api/stems`, {
+      const res = await apiFetch(`${baseUrl}/api/stems`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -1070,7 +1100,7 @@ export function createAudioSourceManager(options) {
       if (track.artist) payload.artistName = track.artist;
     }
 
-    const res = await fetch(`${baseUrl}/api/cache/files`, {
+    const res = await apiFetch(`${baseUrl}/api/cache/files`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

@@ -713,13 +713,22 @@ input {
   bottom: 0;
   z-index: 90;
   background: rgba(10, 10, 15, 0.97);
-  overflow-y: auto;
-  /* app-header (~50px) + search-bar (~56px) = ~106px */
-  padding-top: 108px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.search-overlay[hidden] {
+  display: none;
 }
 
 .search-results {
-  padding: 8px 0 24px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* search-bar height (~56px) + breathing room */
+  padding: 116px 0 24px;
 }
 
 .search-result-item {
@@ -2229,6 +2238,7 @@ input {
 
 #deck-mix-slider {
   height: 14px;
+  z-index: 1;
 }
 
 .fade-slider::-webkit-slider-thumb {

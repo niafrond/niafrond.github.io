@@ -87,6 +87,7 @@ import {
 import { createDownloaderConfigManager } from './lib/downloaderConfig.js';
 import {
   createLogger,
+  isDebugLoggingEnabled,
   setDebugLoggingEnabled,
 } from './lib/logger.js';
 import { createMixControls } from './lib/mixControls.js';
@@ -176,6 +177,7 @@ import { createSpotifyClient } from './lib/spotifyClient.js';
 import { uiState } from './lib/uiState.js';
 const QUEUE_KEY = STORAGE_KEYS.queue;
 const DOWNLOADER_API_URL_KEY = STORAGE_KEYS.downloaderApiUrl;
+const DOWNLOADER_API_TOKEN_KEY = STORAGE_KEYS.downloaderApiToken;
 const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
 const SPOTIFY_FIL_ROUGE_POLL_MS = 120000;
 const SPOTIFY_FIL_ROUGE_BACKOFF_MAX_MULTIPLIER = 32;
@@ -200,6 +202,7 @@ const queue = uiState.queue; // alias → uiState.queue
 let pendingAutoplay = false;
 let playlistLoaded = false;
 let blobCleanupTimer = null;
+let metricsLogTimer = null;
 let playbackPositionMs = 0;
 let playbackDurationMs = 0;
 let automixRescheduledForTrackId = null;
@@ -764,6 +767,7 @@ const filRougeLoopBtn = document.getElementById('filrouge-loop-btn');
 const filRougeClearBtn = document.getElementById('filrouge-clear-btn');
 
 const downloaderApiUrlInput = document.getElementById('downloader-api-url-input');
+const downloaderApiTokenInput = document.getElementById('downloader-api-token-input');
 const downloaderApiSaveBtn = document.getElementById('downloader-api-save-btn');
 const downloaderApiTestBtn = document.getElementById('downloader-api-test-btn');
 const downloaderApiStatus = document.getElementById('downloader-api-status');
@@ -849,8 +853,11 @@ const downloaderConfig = createDownloaderConfigManager({
   statusEl: downloaderApiStatus,
   storageKey: DOWNLOADER_API_URL_KEY,
   testBtn: downloaderApiTestBtn,
+  tokenInputEl: downloaderApiTokenInput,
+  tokenStorageKey: DOWNLOADER_API_TOKEN_KEY,
 });
 const {
+  getDownloaderApiToken,
   getDownloaderApiUrl,
   loadIntoForm: loadDownloaderApiConfigIntoForm,
   saveFromForm: saveDownloaderApiConfigFromForm,
@@ -859,6 +866,7 @@ const {
 } = downloaderConfig;
 
 const apiHealthMonitor = createApiHealthMonitor({
+  getDownloaderApiToken,
   getDownloaderApiUrl,
   onOffline: () => {
     logWarn('api.health.offline', {});
@@ -1039,6 +1047,7 @@ const renderFilRougeDebounced = createDebouncedFn(() => renderFilRouge(), 300);
 const audioSourceManager = createAudioSourceManager({
   apiHealthMonitor,
   audioCacheName: AUDIO_CACHE_NAME,
+  getDownloaderApiToken,
   getDownloaderApiUrl,
   normalizeApiSearchResponse,
   onQueueUpdated: () => renderQueueDebounced(),
@@ -1131,6 +1140,7 @@ const playlistManager = createPlaylistManager({
   deleteLocalCacheSong,
   escHtml,
   getCurrentIndex: () => uiState.currentIndex,
+  getDownloaderApiToken,
   getDownloaderApiUrl,
   getPlayer: () => player,
   getPlaylistLoaded: () => playlistLoaded,
@@ -2520,6 +2530,7 @@ const autoFadeManager = new AutoFadeManager({
 
 const autoModeManager = createAutoModeManager({
   apiHealthMonitor,
+  getDownloaderApiToken,
   getDownloaderApiUrl,
   getFilRougeManager: () => filRougeManager,
   getQueue: () => queue,
@@ -2848,6 +2859,7 @@ txtImportFilRougeBtn?.addEventListener('click', async () => {
     }
   }
   startBlobCleanupLoop();
+  startMetricsLoop();
   showSetupLoading(false);
 
   // Enrich artworks for persisted fil rouge items that don't have one yet.
@@ -4463,7 +4475,7 @@ searchClose?.addEventListener('click', () => {
 });
 
 searchOverlay.addEventListener('click', (e) => {
-  if (e.target === searchOverlay) closeSearch();
+  if (e.target === searchOverlay || e.target === searchResults) closeSearch();
 });
 
 function bindSearchResults(songResults, artistResults) {
@@ -4903,6 +4915,17 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       sourceMeta: item.sourceMeta,
     });
 
+    if ((mode === 'autofade' || mode === 'crossfade') && item.sourceState !== 'ready') {
+      logWarn('startPlaybackForIndex(): crossfade starting with source not ready', {
+        index,
+        mode,
+        targetDeck,
+        id: item.id,
+        name: item.name,
+        sourceState: item.sourceState,
+      });
+    }
+
     if (mode === 'autofade') {
       await player.crossfadeToDeck(targetDeck, {
         url: sourceUrl,
@@ -5188,14 +5211,18 @@ function prefetchNext(index) {
   if (index < 0) return;
   const next = queue[index];
   if (!next) return;
-  if (isLowMemoryPlaybackMode()) {
-    logDebug('prefetchNext(): skipped low-memory prefetch', {
+
+  const lowMemory = isLowMemoryPlaybackMode();
+  if (lowMemory) {
+    // En mode mémoire faible on libère tout sauf les decks actifs, mais on garde
+    // (ou ré-établit ci-dessous) la source du prochain morceau pour éviter un
+    // freeze audio en attendant son téléchargement au moment du crossfade.
+    logDebug('prefetchNext(): low-memory mode, trimming other sources but keeping next track warm', {
       index,
       id: next.id,
       name: next.name,
     });
     trimRetainedAudioSources();
-    return;
   }
   if (next.localBlobUrl) return;
 
@@ -5213,6 +5240,8 @@ function prefetchNext(index) {
     enqueueBackgroundTask(() => ensureLocalSource(next).catch(() => {
       // silent prefetch failure: user can still trigger manually and get toast
     }));
+
+    if (lowMemory) return;
 
     // Stems enrichment goes through the serialized queue too
     enqueueBackgroundTask(() => enrichStemsFromServer(next).catch(() => {}));
@@ -5354,6 +5383,32 @@ function startBlobCleanupLoop() {
 
   // Cache is intentionally kept for the whole page lifetime.
   blobCleanupTimer = null;
+}
+
+const METRICS_LOG_INTERVAL_MS = 60_000;
+
+// Photo périodique de l'usage cache/mémoire pour repérer fuites/croissance anormale
+// pendant une session de lecture longue. N'effectue rien si le mode debug est désactivé.
+function logPeriodicMetrics() {
+  if (!isDebugLoggingEnabled()) return;
+
+  const memory = performance.memory ? {
+    usedJsHeapMb: Math.round(performance.memory.usedJSHeapSize / (1024 * 1024)),
+    totalJsHeapMb: Math.round(performance.memory.totalJSHeapSize / (1024 * 1024)),
+    jsHeapLimitMb: Math.round(performance.memory.jsHeapSizeLimit / (1024 * 1024)),
+  } : null;
+
+  logInfo('metrics.periodic', {
+    queueLength: queue.length,
+    sessionBlobCacheEntries: sessionBlobCache.size,
+    lowMemoryPlaybackMode: isLowMemoryPlaybackMode(),
+    memory,
+  });
+}
+
+function startMetricsLoop() {
+  if (metricsLogTimer) clearInterval(metricsLogTimer);
+  metricsLogTimer = setInterval(logPeriodicMetrics, METRICS_LOG_INTERVAL_MS);
 }
 
 function touchQueueItem(item) {

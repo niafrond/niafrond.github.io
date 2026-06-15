@@ -1,3 +1,13 @@
+// Ajoute `token=...` aux URLs de l'API downloader. Si l'URL porte déjà un
+// paramètre `token` (ex: le jeton de poll de /api/search/poll), on ne le
+// remplace pas pour éviter d'écraser un paramètre déjà significatif.
+export function appendApiToken(url, token) {
+  if (!token) return url;
+  if (/[?&]token=/.test(url)) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}token=${encodeURIComponent(token)}`;
+}
+
 export function createDownloaderConfigManager(options) {
   const {
     defaultUrl,
@@ -6,6 +16,8 @@ export function createDownloaderConfigManager(options) {
     statusEl,
     storageKey,
     testBtn,
+    tokenInputEl,
+    tokenStorageKey,
   } = options;
 
   function setStatus(message, isError) {
@@ -18,17 +30,25 @@ export function createDownloaderConfigManager(options) {
     return (localStorage.getItem(storageKey) || defaultUrl).trim().replace(/\/$/, '');
   }
 
+  function getDownloaderApiToken() {
+    return (localStorage.getItem(tokenStorageKey) || '').trim();
+  }
+
   function loadIntoForm() {
     const url = localStorage.getItem(storageKey) || defaultUrl;
     if (!localStorage.getItem(storageKey)) {
       localStorage.setItem(storageKey, url);
     }
     if (inputEl) inputEl.value = url;
+    if (tokenInputEl) tokenInputEl.value = localStorage.getItem(tokenStorageKey) || '';
   }
 
   function saveFromForm() {
     const baseUrl = (inputEl?.value || defaultUrl).trim();
     localStorage.setItem(storageKey, baseUrl);
+    if (tokenInputEl) {
+      localStorage.setItem(tokenStorageKey, (tokenInputEl.value || '').trim());
+    }
   }
 
   function setupEvents() {
@@ -44,7 +64,8 @@ export function createDownloaderConfigManager(options) {
       try {
         const baseUrl = getDownloaderApiUrl();
         if (!baseUrl) throw new Error('URL API manquante');
-        const res = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(5000) });
+        const url = appendApiToken(`${baseUrl}/health`, getDownloaderApiToken());
+        const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         setStatus('Serveur disponible ✓', false);
       } catch (err) {
@@ -54,6 +75,7 @@ export function createDownloaderConfigManager(options) {
   }
 
   return {
+    getDownloaderApiToken,
     getDownloaderApiUrl,
     loadIntoForm,
     saveFromForm,

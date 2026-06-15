@@ -1,5 +1,6 @@
 import { createLogger } from './logger.js';
 import { extractTrackBpm, extractTrackGenre } from './searchUtils.js';
+import { appendApiToken } from './downloaderConfig.js';
 
 const logger = createLogger('playlist');
 
@@ -172,6 +173,7 @@ export function createPlaylistManager(options) {
     deleteLocalCacheSong,
     escHtml,
     getCurrentIndex,
+    getDownloaderApiToken,
     getDownloaderApiUrl,
     getPlayer,
     getPlaylistLoaded,
@@ -461,7 +463,7 @@ export function createPlaylistManager(options) {
     let pageIndex = 0;
 
     while (true) {
-      const pageUrl = `${baseUrl}/api/cache/files?limit=${pageSize}&offset=${offset}`;
+      const pageUrl = appendApiToken(`${baseUrl}/api/cache/files?limit=${pageSize}&offset=${offset}`, getDownloaderApiToken?.());
       const res = await fetch(pageUrl, { headers });
       if (!res.ok) throw new Error(`Erreur ${res.status}: ${res.statusText}`);
 

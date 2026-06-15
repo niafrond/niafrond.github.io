@@ -7,12 +7,14 @@
  *   - The monitor periodically probes `/health` until the server responds → goes back online.
  *
  * Usage:
- *   const monitor = createApiHealthMonitor({ getDownloaderApiUrl, onOffline, onOnline });
+ *   const monitor = createApiHealthMonitor({ getDownloaderApiUrl, getDownloaderApiToken, onOffline, onOnline });
  *   monitor.recordSuccess();   // call after a successful API response
  *   monitor.recordFailure();   // call after a network/fetch error
  *   monitor.isOffline();       // true while the API is unreachable
  *   monitor.destroy();         // stop timers on cleanup
  */
+
+import { appendApiToken } from './downloaderConfig.js';
 
 const FAILURE_THRESHOLD = 2;      // consecutive failures before going offline
 const PROBE_INTERVAL_MS = 15000;  // how often to re-check /health while offline
@@ -20,6 +22,7 @@ const PROBE_TIMEOUT_MS  = 5000;   // per-probe timeout
 
 export function createApiHealthMonitor({
   getDownloaderApiUrl,
+  getDownloaderApiToken,
   onOffline = () => {},
   onOnline  = () => {},
   failureThreshold = FAILURE_THRESHOLD,
@@ -69,7 +72,8 @@ export function createApiHealthMonitor({
     if (!baseUrl) return;
 
     try {
-      const res = await fetch(`${baseUrl}/health`, {
+      const url = appendApiToken(`${baseUrl}/health`, getDownloaderApiToken?.());
+      const res = await fetch(url, {
         signal: AbortSignal.timeout(probeTimeoutMs),
       });
       if (res.ok) {

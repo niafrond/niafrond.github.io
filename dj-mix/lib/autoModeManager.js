@@ -15,6 +15,7 @@ import {
   invalidateStoredTrackMeta,
   patchStoredTrackMeta,
 } from './trackMetaStorage.js';
+import { appendApiToken } from './downloaderConfig.js';
 
 const AUTO_MODE_KEY = 'dj-mix:auto-mode:enabled';
 const AUTO_MODE_HISTORY_KEY = 'dj-mix:auto-mode:history';
@@ -34,6 +35,7 @@ const AUTO_MODE_HISTORY_KEY = 'dj-mix:auto-mode:history';
 
 export function createAutoModeManager({
   apiHealthMonitor,
+  getDownloaderApiToken,
   getDownloaderApiUrl,
   getFilRougeManager,
   getQueue,
@@ -530,7 +532,7 @@ export function createAutoModeManager({
       params.append('track', trackName);
       if (artistName) params.append('artist', artistName);
 
-      const response = await fetch(`${apiUrl}/mix?${params}`, {
+      const response = await fetch(appendApiToken(`${apiUrl}/mix?${params}`, getDownloaderApiToken?.()), {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -1390,7 +1392,7 @@ export function createAutoModeManager({
 
           const suggestionPathCandidates = ['/api/suggestions', '/suggestions'];
           for (const path of suggestionPathCandidates) {
-            const suggestionUrl = `${apiUrl}${path}?${params.toString()}`;
+            const suggestionUrl = appendApiToken(`${apiUrl}${path}?${params.toString()}`, getDownloaderApiToken?.());
             let suggestionRes;
             try {
               suggestionRes = await fetch(suggestionUrl, {
