@@ -30,6 +30,18 @@ const logger = createLogger('filRouge');
  * @property {string} [ratingKey]
  * @property {string} [stemsStatus]
  * @property {Object} [stems]
+ * @property {string|null} [djTrackId] - trackId résolu côté API DJ Planner (`/api/dj/*`)
+ * @property {boolean} [djHasAnalysis] - reflète `hasFullAnalysis` du `/api/dj/tracks`
+ * @property {Object|null} [djTransition] - résultat `/api/dj/transition` vers l'item suivant
+ * @property {string|number} [djTransition.toItemId]
+ * @property {string} [djTransition.transitionType]
+ * @property {number} [djTransition.mixOutSec]
+ * @property {number} [djTransition.mixInSec]
+ * @property {number} [djTransition.recommendedBpm]
+ * @property {number} [djTransition.crossfadeDurationSec]
+ * @property {number} [djTransition.compatibilityScore]
+ * @property {string} [djTransition.decisionId]
+ * @property {number} [djTransition.computedAt]
  */
 
 export function createFilRougeManager() {
@@ -106,12 +118,18 @@ export function createFilRougeManager() {
       ratingKey: item.ratingKey || '',
       stemsStatus: item.stemsStatus || '',
       stems: item.stems || null,
+      djTrackId: item.djTrackId || null,
+      djHasAnalysis: Boolean(item.djHasAnalysis),
+      djTransition: item.djTransition || null,
     };
   }
 
   function deserializeItem(raw) {
     return {
       ...raw,
+      djTrackId: raw.djTrackId ?? null,
+      djHasAnalysis: Boolean(raw.djHasAnalysis),
+      djTransition: raw.djTransition ?? null,
       sourceState: 'idle',
       sourceError: null,
       sourceMeta: null,

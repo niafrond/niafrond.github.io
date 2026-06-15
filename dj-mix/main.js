@@ -96,8 +96,11 @@ import { createPlaylistManager } from './lib/playlistManager.js';
 import { createFilRougeManager } from './lib/filRougeManager.js';
 import { restoreQueueFromStorage, saveQueueToStorage } from './lib/queueStorage.js';
 import { createShellUi } from './lib/shellUi.js';
-import { createDjMixRenderer } from './lib/uiRenderer.js';
+import { createDjMixRenderer, renderDjSetQualityBadge, renderDjTransitionFeedback } from './lib/uiRenderer.js';
 import { createAutoModeManager } from './lib/autoModeManager.js';
+import { createDjApiClient } from './lib/djApiClient.js';
+import { createDjPlanManager } from './lib/djPlanManager.js';
+import { computeDjBpmRate } from './lib/djTransitionMapping.js';
 import { createAppState } from './lib/appState.js';
 import {
   AUTO_DJ_FX_TYPES,
@@ -765,6 +768,8 @@ const filRougePriorityListEl = document.getElementById('filrouge-priority-list')
 const filRougeShuffleBtn = document.getElementById('filrouge-shuffle-btn');
 const filRougeLoopBtn = document.getElementById('filrouge-loop-btn');
 const filRougeClearBtn = document.getElementById('filrouge-clear-btn');
+const djSetQualityBadgeEl = document.getElementById('dj-set-quality-badge');
+const djSetProfileSelectEl = document.getElementById('dj-set-profile-select');
 
 const downloaderApiUrlInput = document.getElementById('downloader-api-url-input');
 const downloaderApiTokenInput = document.getElementById('downloader-api-token-input');
@@ -1389,6 +1394,7 @@ function renderFilRouge() {
             </div>
           </div>
           <div class="filrouge-actions">
+            ${renderDjTransitionFeedback(item)}
             ${idx < filRougeIndex
               ? `<button class="filrouge-set-current-btn" data-index="${idx}" aria-label="Revenir à ce morceau" title="Revenir à ce morceau">⏪</button>`
               : idx > filRougeIndex + 1
@@ -1447,6 +1453,27 @@ function renderFilRouge() {
       filRougeManager.jumpToIndex(idx);
       renderFilRouge();
       showToast(`⏩ Fil rouge : prochain → "${item.name}"`);
+    });
+  });
+
+  document.querySelectorAll('.filrouge-dj-feedback-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const container = btn.closest('.filrouge-dj-feedback');
+      const decisionId = container?.dataset.decisionId;
+      const feedback = btn.dataset.feedback;
+      if (!decisionId || !feedback) return;
+
+      const result = await djPlanManager.submitFeedback(decisionId, feedback);
+      if (!result) {
+        showToast('Feedback DJ: échec de l\'envoi', true);
+        return;
+      }
+
+      container.querySelectorAll('.filrouge-dj-feedback-btn').forEach((b) => {
+        b.classList.toggle('is-selected', b === btn);
+      });
+      showToast(feedback === 'good' ? '👍 Merci pour le retour' : '👎 Merci pour le retour');
     });
   });
 }
@@ -1571,6 +1598,7 @@ function applySpotifyPlaylistToFilRouge(tracks) {
     filRougeManager.addToPlaylist(track);
   }
   renderFilRouge();
+  runDjPlanFullPass('spotify-import').catch(() => {});
 }
 
 /**
@@ -1637,6 +1665,7 @@ function applyTxtPlaylistToFilRouge(tracks) {
   }
   updateSpotifyConfigUi();
   renderFilRouge();
+  runDjPlanFullPass('txt-import').catch(() => {});
 }
 
 /**
@@ -1865,6 +1894,7 @@ function mergeSpotifyTracksToFilRouge(freshTracks) {
 
   let added = 0;
   const merged = [];
+  const newIds = [];
 
   for (const track of freshTracks) {
     const id = String(track.id);
@@ -1880,12 +1910,21 @@ function mergeSpotifyTracksToFilRouge(freshTracks) {
         stemsOk: hasStemsForTrack(track),
       });
       merged.push(track);
+      newIds.push(id);
       added++;
     }
   }
 
   filRougeManager.setPlaylist(merged);
   renderFilRouge();
+
+  if (newIds.length) {
+    const newItems = filRougeManager.getPlaylist().filter((item) => newIds.includes(String(item.id)));
+    djPlanManager.planEdgesForNewItems(newItems, { withWrap: filRougeManager.isLoopEnabled() })
+      .then(() => renderFilRouge())
+      .catch((err) => logWarn('djPlan: planEdgesForNewItems failed', { error: err?.message }));
+  }
+
   return { added };
 }
 
@@ -2033,6 +2072,13 @@ function addToFilRouge(item) {
       stemsOk: hasStemsForTrack(filRougeItem),
     });
     showToast(`"${filRougeItem.name}" ajouté au fil rouge`);
+
+    const playlistItem = filRougeManager.getPlaylist().find((p) => p.id === filRougeItem.id);
+    if (playlistItem) {
+      djPlanManager.planEdgesForNewItems([playlistItem], { withWrap: filRougeManager.isLoopEnabled() })
+        .then(() => renderFilRouge())
+        .catch((err) => logWarn('djPlan: planEdgesForNewItems failed', { error: err?.message }));
+    }
   } else {
     showToast(`Déjà dans le fil rouge`, true);
   }
@@ -2047,6 +2093,76 @@ function addToPriorityQueue(item) {
   addToQueue(item, { source: 'fil-rouge', showAddedToast: false });
   const name = item.name || item.trackName || item.title || 'Inconnu';
   showToast(`"${name}" → file d'attente`);
+}
+
+const DJ_SET_PROFILE_LABELS = {
+  club_peak: "Club (pic d'énergie)",
+  wedding: 'Mariage',
+  festival: 'Festival',
+  warmup: 'Mise en route',
+  afterparty: 'After-party',
+};
+
+/**
+ * Recalcule le badge de qualité du set via `/api/dj/batch` (informatif, ne
+ * réordonne/ne retire rien) pour le profil sélectionné.
+ */
+async function runDjSetQualityRefresh() {
+  try {
+    const quality = await djPlanManager.computeSetQuality();
+    renderDjSetQualityBadge(djSetQualityBadgeEl, quality);
+  } catch (err) {
+    logWarn('djPlan: computeSetQuality failed', { error: err?.message });
+    renderDjSetQualityBadge(djSetQualityBadgeEl, null);
+  }
+}
+
+/**
+ * Passe pairwise complète sur le fil rouge (`/api/dj/transition` par arête,
+ * mémoïsée), puis rafraîchit le badge de qualité du set.
+ * @param {string} reason - pour les logs (ex: 'startup', 'spotify-import')
+ */
+async function runDjPlanFullPass(reason) {
+  if (!filRougeManager.isActive()) {
+    renderDjSetQualityBadge(djSetQualityBadgeEl, null);
+    return;
+  }
+  try {
+    await djPlanManager.planAllEdges();
+    renderFilRouge();
+  } catch (err) {
+    logWarn('djPlan: planAllEdges failed', { reason, error: err?.message });
+  }
+  await runDjSetQualityRefresh();
+}
+
+/**
+ * Peuple le sélecteur de profil de set depuis `/api/dj/set-profiles`,
+ * restaure la sélection persistée et rafraîchit le badge au changement.
+ */
+async function initDjSetProfileSelect() {
+  if (!djSetProfileSelectEl) return;
+
+  const result = await djPlanManager.getSetProfiles();
+  const profiles = Array.isArray(result?.profiles) && result.profiles.length
+    ? result.profiles
+    : Object.keys(DJ_SET_PROFILE_LABELS).map((id) => ({ id }));
+
+  djSetProfileSelectEl.innerHTML = profiles.map((profile) => {
+    const id = profile?.id;
+    const label = DJ_SET_PROFILE_LABELS[id] || id;
+    return `<option value="${escHtml(id)}">${escHtml(label)}</option>`;
+  }).join('');
+
+  const selected = djPlanManager.getSelectedSetProfile();
+  if (profiles.some((p) => p.id === selected)) {
+    djSetProfileSelectEl.value = selected;
+  }
+
+  djSetProfileSelectEl.addEventListener('change', () => {
+    djPlanManager.setSelectedSetProfile(djSetProfileSelectEl.value);
+    runDjSetQualityRefresh().catch(() => {});
+  });
 }
 
 // Initial render
@@ -2442,6 +2558,40 @@ function applyMixSuggestedStartOffset(item, mixData, options = {}) {
   return true;
 }
 
+/**
+ * Applies the start offset (`mixInSec`) recommended by `/api/dj/transition`
+ * for the incoming track, taking priority over `applyMixSuggestedStartOffset`
+ * (which no-ops once `item.autoDjStartOffsetMs` is already set).
+ * @param {object} item
+ * @param {{mixInSec: number, decisionId?: string}|null} plan
+ * @returns {boolean} true if `item.autoDjStartOffsetMs` was updated
+ */
+function applyDjStartOffsetIfPlanned(item, plan) {
+  if (!item || !plan) return false;
+  if (!Number.isFinite(plan.mixInSec) || plan.mixInSec < 0) return false;
+
+  const suggestedOffsetMs = Math.round(plan.mixInSec * 1000);
+  const existingOffsetMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
+
+  const durationMs = Math.max(0, Number(item.duration) || 0);
+  const cappedOffsetMs = durationMs > 0
+    ? Math.max(0, Math.min(suggestedOffsetMs, Math.max(0, durationMs - 1000)))
+    : Math.max(0, suggestedOffsetMs);
+
+  if (cappedOffsetMs <= 0 || cappedOffsetMs === existingOffsetMs) return false;
+
+  item.autoDjStartOffsetMs = cappedOffsetMs;
+  touchQueueItem(item);
+  logInfo('djPlan: start offset applied', {
+    id: item.id,
+    name: item.name,
+    artist: item.artist,
+    startOffsetMs: cappedOffsetMs,
+    decisionId: plan.decisionId,
+  });
+  return true;
+}
+
 function preloadMixDataForDeckItem(item, deck) {
   if (!item) return;
 
@@ -2528,6 +2678,19 @@ const autoFadeManager = new AutoFadeManager({
   onEnd: () => showCrossfadeRing(false),
 });
 
+const djApiClient = createDjApiClient({
+  apiHealthMonitor,
+  getDownloaderApiToken,
+  getDownloaderApiUrl,
+  logger,
+});
+
+const djPlanManager = createDjPlanManager({
+  djApiClient,
+  getFilRougeManager: () => filRougeManager,
+  logger,
+});
+
 const autoModeManager = createAutoModeManager({
   apiHealthMonitor,
   getDownloaderApiToken,
@@ -2548,8 +2711,15 @@ const autoModeManager = createAutoModeManager({
   getCurrentBpm: getActiveDeckBpm,
   getActualDurationMs: () => playbackDurationMs,
   onAutomixTimingCalculated: (triggerMs) => {
-    setAutomixTriggerMs(automixTimeline, triggerMs);
-    logDebug('autoDj: timing calculated', { triggerMs });
+    let finalTriggerMs = triggerMs;
+    const nextFilRougeItem = filRougeManager.peekNextTrackFromAny();
+    const djPlan = djPlanManager.getDjTransitionPlan(nextFilRougeItem);
+    if (djPlan && Number.isFinite(djPlan.mixOutSec) && djPlan.mixOutSec > 0) {
+      finalTriggerMs = Math.round(djPlan.mixOutSec * 1000);
+      logDebug('djPlan: automix timing override', { triggerMs: finalTriggerMs, decisionId: djPlan.decisionId });
+    }
+    setAutomixTriggerMs(automixTimeline, finalTriggerMs);
+    logDebug('autoDj: timing calculated', { triggerMs: finalTriggerMs });
     updateAutoDjMarker();
     updateMaxDurationMarker();
   },
@@ -2874,6 +3044,10 @@ txtImportFilRougeBtn?.addEventListener('click', async () => {
 
   // Vérification et téléchargement au démarrage des morceaux du fil rouge.
   startFilRougeStartupCacheSync().catch(() => {});
+
+  // DJ Planner : sélecteur de profil de set + recalcul complet des transitions du fil rouge.
+  initDjSetProfileSelect().catch(() => {});
+  runDjPlanFullPass('startup').catch(() => {});
 
   try {
     await connectLocal();
@@ -4888,9 +5062,16 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     updateNowPlaying(item, targetDeck);
     fetchAndStoreArtworkForItem(item, targetDeck).catch(() => {});
 
+    const djPlan = djPlanManager.getDjTransitionPlan(item);
+    if (djPlan) {
+      applyDjStartOffsetIfPlanned(item, djPlan);
+    }
+
     const cachedMixData = getTrackMixData(item);
     if (cachedMixData) {
       applyMixSuggestedStartOffset(item, cachedMixData);
+      startPositionMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
+    } else if (djPlan) {
       startPositionMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
     }
 
@@ -4926,42 +5107,69 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       });
     }
 
-    if (mode === 'autofade') {
-      await player.crossfadeToDeck(targetDeck, {
-        url: sourceUrl,
-        loudnessDb: item.loudnessDb,
-        bpm: item.bpm,
-        durationMs: item.duration,
-        audioFeatures: item.audioFeatures,
-        stems: item.stems,
-      }, { startPositionMs });
-    } else if (mode === 'crossfade') {
-      await player.crossfadeToDeck(targetDeck, {
-        url: sourceUrl,
-        loudnessDb: item.loudnessDb,
-        bpm: item.bpm,
-        durationMs: item.duration,
-        audioFeatures: item.audioFeatures,
-        stems: item.stems,
-      }, { startPositionMs });
-    } else if (mode === 'switch') {
-      await player.playOnDeck(getResolvedActiveDeck(), {
-        url: sourceUrl,
-        loudnessDb: item.loudnessDb,
-        bpm: item.bpm,
-        durationMs: item.duration,
-        audioFeatures: item.audioFeatures,
-        stems: item.stems,
-      }, { makeActive: true, paused: false, startPositionMs });
-    } else {
-      await player.playOnDeck(getResolvedActiveDeck(), {
-        url: sourceUrl,
-        loudnessDb: item.loudnessDb,
-        bpm: item.bpm,
-        durationMs: item.duration,
-        audioFeatures: item.audioFeatures,
-        stems: item.stems,
-      }, { makeActive: true, paused: false, startPositionMs });
+    let djRateApplied = false;
+    if (djPlan?.recommendedBpm && mixFeatures.autoBpm) {
+      const djRate = computeDjBpmRate(djPlan.recommendedBpm, item.bpm);
+      if (djRate != null) {
+        player.setDeckPlaybackRate(targetDeck, djRate);
+        djRateApplied = true;
+        logDebug('djPlan: bpm rate applied', {
+          targetDeck, rate: djRate, recommendedBpm: djPlan.recommendedBpm, trackBpm: item.bpm,
+        });
+      }
+    }
+    if (!djRateApplied) {
+      player.resetDeckPlaybackRate(targetDeck);
+    }
+
+    const djModeOverridden = Boolean(djPlan?.mode && djPlan.mode !== selectedTransitionMode);
+    if (djModeOverridden) {
+      player.setTransitionMode(djPlan.mode);
+      logDebug('djPlan: transition mode override', { mode: djPlan.mode, decisionId: djPlan.decisionId });
+    }
+
+    try {
+      if (mode === 'autofade') {
+        await player.crossfadeToDeck(targetDeck, {
+          url: sourceUrl,
+          loudnessDb: item.loudnessDb,
+          bpm: item.bpm,
+          durationMs: item.duration,
+          audioFeatures: item.audioFeatures,
+          stems: item.stems,
+        }, { startPositionMs });
+      } else if (mode === 'crossfade') {
+        await player.crossfadeToDeck(targetDeck, {
+          url: sourceUrl,
+          loudnessDb: item.loudnessDb,
+          bpm: item.bpm,
+          durationMs: item.duration,
+          audioFeatures: item.audioFeatures,
+          stems: item.stems,
+        }, { startPositionMs });
+      } else if (mode === 'switch') {
+        await player.playOnDeck(getResolvedActiveDeck(), {
+          url: sourceUrl,
+          loudnessDb: item.loudnessDb,
+          bpm: item.bpm,
+          durationMs: item.duration,
+          audioFeatures: item.audioFeatures,
+          stems: item.stems,
+        }, { makeActive: true, paused: false, startPositionMs });
+      } else {
+        await player.playOnDeck(getResolvedActiveDeck(), {
+          url: sourceUrl,
+          loudnessDb: item.loudnessDb,
+          bpm: item.bpm,
+          durationMs: item.duration,
+          audioFeatures: item.audioFeatures,
+          stems: item.stems,
+        }, { makeActive: true, paused: false, startPositionMs });
+      }
+    } finally {
+      if (djModeOverridden) {
+        player.setTransitionMode(selectedTransitionMode);
+      }
     }
 
     if (mode === 'autofade' || mode === 'crossfade') {

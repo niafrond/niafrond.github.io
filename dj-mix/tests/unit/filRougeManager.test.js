@@ -146,4 +146,86 @@ describe('filRougeManager', () => {
       expect(mgr.getCurrentIndex()).toBe(-1);
     });
   });
+
+  describe('DJ planner fields', () => {
+    test('defaults djTrackId/djHasAnalysis/djTransition when not provided', () => {
+      const mgr = createFilRougeManager();
+      mgr.addToPlaylist({ id: '1', name: 'Song A', artist: 'A' });
+
+      const item = mgr.getPlaylist()[0];
+      expect(item.djTrackId).toBeNull();
+      expect(item.djHasAnalysis).toBe(false);
+      expect(item.djTransition).toBeNull();
+    });
+
+    test('round-trips djTrackId/djHasAnalysis/djTransition through add + persistence', () => {
+      const djTransition = {
+        toItemId: '2',
+        transitionType: 'phrase_mix',
+        mixOutSec: 12,
+        mixInSec: 3,
+        recommendedBpm: 124,
+        crossfadeDurationSec: 8,
+        compatibilityScore: 0.9,
+        decisionId: 'd1',
+        computedAt: Date.now(),
+      };
+
+      const mgr1 = createFilRougeManager();
+      mgr1.addToPlaylist({
+        id: '1',
+        name: 'Song A',
+        artist: 'A',
+        djTrackId: 'a.mp3',
+        djHasAnalysis: true,
+        djTransition,
+      });
+
+      const item1 = mgr1.getPlaylist()[0];
+      expect(item1.djTrackId).toBe('a.mp3');
+      expect(item1.djHasAnalysis).toBe(true);
+      expect(item1.djTransition).toEqual(djTransition);
+
+      // Restore from localStorage in a new instance
+      const mgr2 = createFilRougeManager();
+      const item2 = mgr2.getPlaylist()[0];
+      expect(item2.djTrackId).toBe('a.mp3');
+      expect(item2.djHasAnalysis).toBe(true);
+      expect(item2.djTransition).toEqual(djTransition);
+    });
+
+    test('patchPlaylistItem persists djTransition across instances', () => {
+      const mgr1 = createFilRougeManager();
+      mgr1.addToPlaylist({ id: '1', name: 'Song A', artist: 'A' });
+      mgr1.addToPlaylist({ id: '2', name: 'Song B', artist: 'B' });
+
+      const djTransition = { toItemId: '2', transitionType: 'long_blend', computedAt: Date.now(), decisionId: 'd2' };
+      mgr1.patchPlaylistItem('1', { djTrackId: 'a.mp3', djHasAnalysis: true, djTransition });
+
+      const mgr2 = createFilRougeManager();
+      const item = mgr2.getPlaylist().find((p) => p.id === '1');
+      expect(item.djTrackId).toBe('a.mp3');
+      expect(item.djHasAnalysis).toBe(true);
+      expect(item.djTransition).toEqual(djTransition);
+    });
+
+    test('deserializes legacy data without DJ fields to safe defaults', () => {
+      const legacyData = {
+        playlist: [
+          { id: '1', name: 'Song A', artist: 'A' },
+        ],
+        priorityQueue: [],
+        currentIndex: -1,
+        shuffleEnabled: false,
+        loopEnabled: false,
+      };
+      localStorage.setItem('dj-mix:fil-rouge', JSON.stringify(legacyData));
+
+      const mgr = createFilRougeManager();
+      const item = mgr.getPlaylist()[0];
+      expect(item.djTrackId).toBeNull();
+      expect(item.djHasAnalysis).toBe(false);
+      expect(item.djTransition).toBeNull();
+    });
+  });
 });

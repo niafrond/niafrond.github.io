@@ -495,3 +495,52 @@ export function createDjMixRenderer(options) {
     updateUpcomingArtwork,
   };
 }
+
+/**
+ * Affiche (ou masque) le badge de qualité de set basé sur `globalSetScore`
+ * renvoyé par `/api/dj/batch`. `reasons[]` est exposé en tooltip.
+ * @param {HTMLElement|null} el
+ * @param {{globalSetScore: number, reasons?: string[], globalComponents?: object|null}|null} quality
+ */
+export function renderDjSetQualityBadge(el, quality) {
+  if (!el) return;
+
+  const score = Number(quality?.globalSetScore);
+  if (!quality || !Number.isFinite(score)) {
+    el.hidden = true;
+    el.textContent = '';
+    el.removeAttribute('title');
+    return;
+  }
+
+  const pct = score <= 1 ? Math.round(score * 100) : Math.round(score);
+  el.hidden = false;
+  el.textContent = `Qualité du set : ${pct}%`;
+
+  const reasons = Array.isArray(quality.reasons) ? quality.reasons.filter(Boolean) : [];
+  if (reasons.length) {
+    el.title = reasons.join('\n');
+  } else {
+    el.removeAttribute('title');
+  }
+}
+
+/**
+ * Génère le HTML des boutons de feedback 👍/👎 pour la transition planifiée
+ * d'un item du fil rouge (`item.djTransition`). Retourne une chaîne vide si
+ * aucun `decisionId` n'est disponible (boutons masqués).
+ * @param {{djTransition?: {decisionId?: string}}|null} item
+ * @returns {string}
+ */
+export function renderDjTransitionFeedback(item) {
+  const decisionId = item?.djTransition?.decisionId;
+  if (!decisionId) return '';
+
+  const safeId = escHtml(String(decisionId));
+  return `
+    <div class="filrouge-dj-feedback" data-decision-id="${safeId}">
+      <button type="button" class="filrouge-dj-feedback-btn filrouge-dj-feedback-good" data-feedback="good" title="Bonne transition" aria-label="Bonne transition">👍</button>
+      <button type="button" class="filrouge-dj-feedback-btn filrouge-dj-feedback-bad" data-feedback="bad" title="Mauvaise transition" aria-label="Mauvaise transition">👎</button>
+    </div>
+  `.trim();
+}
