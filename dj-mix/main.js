@@ -777,7 +777,7 @@ const djPlanIndicatorEl = document.getElementById('dj-plan-indicator');
 const filRougeClearBtn = document.getElementById('filrouge-clear-btn');
 const djSetQualityBadgeEl = document.getElementById('dj-set-quality-badge');
 const djSetProfileSelectEl = document.getElementById('dj-set-profile-select');
-const djRetrainBtn = document.getElementById('dj-retrain-btn');
+const djRecalculateBtn = document.getElementById('dj-recalculate-btn');
 
 const downloaderApiUrlInput = document.getElementById('downloader-api-url-input');
 const downloaderApiTokenInput = document.getElementById('downloader-api-token-input');
@@ -2337,12 +2337,17 @@ if (djExternalPlanBtn) {
   });
 }
 
-if (djRetrainBtn) {
-  djRetrainBtn.addEventListener('click', async () => {
-    djRetrainBtn.disabled = true;
-    const ok = await djPlanManager.retrainEngine();
-    djRetrainBtn.disabled = false;
-    showToast(ok ? 'Moteur réentraîné' : 'Réentraînement : échec', !ok);
+if (djRecalculateBtn) {
+  djRecalculateBtn.addEventListener('click', async () => {
+    djRecalculateBtn.disabled = true;
+    try {
+      await runDjPlanFullPass('manual-recalculate');
+      showToast('Planning DJ recalculé');
+    } catch (err) {
+      showToast('Recalcul : échec', true);
+    } finally {
+      djRecalculateBtn.disabled = false;
+    }
   });
 }
 
@@ -3239,7 +3244,43 @@ txtImportFilRougeBtn?.addEventListener('click', async () => {
   
   // Handle URL parameters from shortcuts (Android Auto support)
   handleShortcutParameters();
+
+  initDevBuildIndicator().catch(() => {});
 })();
+
+async function initDevBuildIndicator() {
+  const h = location.hostname;
+  if (h !== 'localhost' && h !== '127.0.0.1' && !h.startsWith('192.168.') && !h.startsWith('10.')) return;
+
+  const badge = document.createElement('div');
+  badge.id = 'dev-build-badge';
+  badge.title = 'Dernier Last-Modified des JS (clic = refresh)';
+  badge.textContent = 'JS: …';
+  document.body.appendChild(badge);
+
+  const jsFiles = ['main.js', 'player.js', 'pwa.js'];
+
+  async function refresh() {
+    badge.textContent = 'JS: …';
+    const dates = await Promise.all(jsFiles.map(async (f) => {
+      try {
+        const res = await fetch(f + '?_nc=' + Date.now(), { method: 'HEAD', cache: 'no-store' });
+        const lm = res.headers.get('Last-Modified');
+        return lm ? new Date(lm) : null;
+      } catch { return null; }
+    }));
+    const valid = dates.filter(Boolean);
+    if (!valid.length) { badge.textContent = 'JS: ?'; return; }
+    const latest = valid.reduce((a, b) => (b > a ? b : a));
+    const hh = String(latest.getHours()).padStart(2, '0');
+    const mm = String(latest.getMinutes()).padStart(2, '0');
+    const ss = String(latest.getSeconds()).padStart(2, '0');
+    badge.textContent = `JS ${latest.getDate()}/${latest.getMonth() + 1} ${hh}:${mm}:${ss}`;
+  }
+
+  badge.addEventListener('click', refresh);
+  await refresh();
+}
 
 function handleShortcutParameters() {
   const params = new URLSearchParams(window.location.search);
