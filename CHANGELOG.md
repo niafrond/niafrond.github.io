@@ -1,3 +1,11 @@
+## [1.226.0](https://github.com/niafrond/niafrond.github.io/compare/v1.225.0...v1.226.0) (2026-06-16)
+
+### Features
+
+* add DJ external plan functionality with UI updates and transitions management ([f18bb64](https://github.com/niafrond/niafrond.github.io/commit/f18bb64897e28946188ef66206ca4700e57b15f9))
+* add DJ feedback and transition management features ([946d50a](https://github.com/niafrond/niafrond.github.io/commit/946d50a8fdd66c21d7f18350b89c1cff5a914a34))
+* update DJ plan manager logic to handle cases with no trackIds and improve artwork fetching ([39ccff4](https://github.com/niafrond/niafrond.github.io/commit/39ccff4cc48b10ae71d5afd39b0e5de26d8479f7))
+
 ## [1.225.0](https://github.com/niafrond/niafrond.github.io/compare/v1.224.0...v1.225.0) (2026-06-15)
 
 ### Features
