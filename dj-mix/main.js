@@ -168,6 +168,8 @@ import {
   persistDjModeSetting,
   readDjModeGenrePrefs,
   persistDjModeGenrePrefs,
+  readDjExternalPlanEnabledSetting,
+  persistDjExternalPlanEnabledSetting,
 } from './lib/settingsStorage.js';
 import { DEFAULT_DOWNLOADER_API_URL, STORAGE_KEYS } from './lib/storageKeys.js';
 import { getStoredTrackMeta, patchStoredTrackMeta } from './lib/trackMetaStorage.js';
@@ -266,6 +268,7 @@ let maxDurMarkerTriggeredForTrack = false;
 let autoDjFxSettings = readAutoDjFxSettings();
 let lastAutoDjFxTriggeredAt = 0;
 let djMode = readDjModeSetting(); // 'dance' | 'music'
+let djExternalPlanEnabled = readDjExternalPlanEnabledSetting();
 let djModeGenrePrefs = readDjModeGenrePrefs(); // string[]
 let autoSuggestionQueueSearchEnabled = readAutoSuggestionQueueSearchEnabledSetting();
 let queueLoopEnabled = readQueueLoopSetting();
@@ -738,6 +741,8 @@ const deckAAutoDjMarker = document.getElementById('deck-a-autodj-marker');
 const deckBAutoDjMarker = document.getElementById('deck-b-autodj-marker');
 const deckAAutoDjStartMarker = document.getElementById('deck-a-autodj-start-marker');
 const deckBAutoDjStartMarker = document.getElementById('deck-b-autodj-start-marker');
+const deckADjPlanZone = document.getElementById('deck-a-dj-plan-zone');
+const deckBDjPlanZone = document.getElementById('deck-b-dj-plan-zone');
 const deckAMaxDurMarker = document.getElementById('deck-a-maxdur-marker');
 const deckBMaxDurMarker = document.getElementById('deck-b-maxdur-marker');
 const deckAMaxDurRawMarker = document.getElementById('deck-a-maxdur-raw-marker');
@@ -767,6 +772,8 @@ const filRougePlaylistListEl = document.getElementById('filrouge-playlist-list')
 const filRougePriorityListEl = document.getElementById('filrouge-priority-list');
 const filRougeShuffleBtn = document.getElementById('filrouge-shuffle-btn');
 const filRougeLoopBtn = document.getElementById('filrouge-loop-btn');
+const djExternalPlanBtn = document.getElementById('dj-external-plan-btn');
+const djPlanIndicatorEl = document.getElementById('dj-plan-indicator');
 const filRougeClearBtn = document.getElementById('filrouge-clear-btn');
 const djSetQualityBadgeEl = document.getElementById('dj-set-quality-badge');
 const djSetProfileSelectEl = document.getElementById('dj-set-profile-select');
@@ -1304,6 +1311,8 @@ function buildFilRougeDanceChips(item) {
 }
 
 function renderFilRouge() {
+  updateDjPlanIndicator();
+
   const playlist = filRougeManager.getPlaylist();
   const priorityQueue = filRougeManager.getPriorityQueue();
   const filRougeIndex = filRougeManager.getCurrentIndex();
@@ -1792,7 +1801,6 @@ async function startTxtPlaylistPrefetch(tracks) {
     const ok = await prefetchTrackToLocalCache(track).catch(() => false);
     if (ok) {
       cached++;
-      enrichStemsFromServer(track).catch(() => {});
       autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
       setFilRougeTrackStatus(track, {
         downloadState: 'done',
@@ -2108,15 +2116,21 @@ async function runDjSetQualityRefresh() {
   try {
     const quality = await djPlanManager.computeSetQuality();
     renderDjSetQualityBadge(djSetQualityBadgeEl, quality);
+    updateDjPlanIndicator();
   } catch (err) {
     logWarn('djPlan: computeSetQuality failed', { error: err?.message });
     renderDjSetQualityBadge(djSetQualityBadgeEl, null);
   }
 }
 
+const scheduleDjSetQualityRefresh = createDebouncedFn(() => {
+  runDjSetQualityRefresh().catch(() => {});
+}, 1000);
+
 /**
- * Passe pairwise complète sur le fil rouge (`/api/dj/transition` par arête,
- * mémoïsée), puis rafraîchit le badge de qualité du set.
+ * Rafraîchit transitions + badge de qualité via un seul appel `/api/dj/batch`.
+ * `computeSetQuality` persiste désormais les transitions retournées par batch,
+ * ce qui rend `planAllEdges` redondant pour ce chemin.
  * @param {string} reason - pour les logs (ex: 'startup', 'spotify-import')
  */
 async function runDjPlanFullPass(reason) {
@@ -2124,13 +2138,8 @@ async function runDjPlanFullPass(reason) {
     renderDjSetQualityBadge(djSetQualityBadgeEl, null);
     return;
   }
-  try {
-    await djPlanManager.planAllEdges();
-    renderFilRouge();
-  } catch (err) {
-    logWarn('djPlan: planAllEdges failed', { reason, error: err?.message });
-  }
   await runDjSetQualityRefresh();
+  renderFilRouge();
 }
 
 /**
@@ -2179,8 +2188,121 @@ async function initDjSetProfileSelect() {
   });
 }
 
+const DJ_TRANSITION_TYPE_LABELS = {
+  phrase_mix: 'Phrase mix',
+  long_blend: 'Long blend',
+  quick_cut: 'Quick cut',
+  drop_swap: 'Drop swap',
+  echo_out: 'Echo out',
+};
+
+function updateDjPlanIndicator() {
+  if (!djPlanIndicatorEl) return;
+
+  if (!djExternalPlanEnabled) {
+    djPlanIndicatorEl.hidden = true;
+    return;
+  }
+
+  const playlist = filRougeManager.getPlaylist();
+  const currentIdx = filRougeManager.getCurrentIndex();
+  const currentItem = playlist[currentIdx];
+  const t = currentItem?.djTransition;
+
+  if (!t || !t.toItemId) {
+    djPlanIndicatorEl.hidden = true;
+    return;
+  }
+
+  const nextItem = playlist.find((p) => String(p.id) === String(t.toItemId)) || null;
+  if (!nextItem) {
+    djPlanIndicatorEl.hidden = true;
+    return;
+  }
+
+  const typeLabel = DJ_TRANSITION_TYPE_LABELS[t.transitionType] || t.transitionType || '—';
+  const scorePct = Number.isFinite(t.compatibilityScore) ? Math.round(t.compatibilityScore * 100) : null;
+  const scoreClass = scorePct === null ? '' : scorePct >= 70 ? 'is-good' : scorePct >= 50 ? 'is-ok' : 'is-low';
+  const mixOutFmt = Number.isFinite(t.mixOutSec) && t.mixOutSec > 0 ? formatZoneTime(t.mixOutSec) : null;
+  const mixInFmt = Number.isFinite(t.mixInSec) && t.mixInSec > 0 ? formatZoneTime(t.mixInSec) : null;
+  const crossfadeSec = Number.isFinite(t.crossfadeDurationSec) ? Math.round(t.crossfadeDurationSec) : null;
+  const bpm = Number.isFinite(t.recommendedBpm) && t.recommendedBpm > 0 ? Math.round(t.recommendedBpm) : null;
+  const decisionId = t.decisionId ? escHtml(String(t.decisionId)) : '';
+  const nextLabel = nextItem.artist
+    ? `${escHtml(nextItem.artist)} — ${escHtml(nextItem.name || '')}`
+    : escHtml(nextItem.name || '');
+
+  djPlanIndicatorEl.innerHTML = `
+    <div class="dj-plan-card">
+      <div class="dj-plan-card-header">
+        <span class="dj-plan-type-badge">${escHtml(typeLabel)}</span>
+        ${scorePct !== null ? `<span class="dj-plan-score ${scoreClass}" title="Score de compatibilité">${scorePct}%</span>` : ''}
+        ${decisionId ? `
+        <div class="dj-plan-card-feedback filrouge-dj-feedback" data-decision-id="${decisionId}">
+          <button type="button" class="filrouge-dj-feedback-btn" data-feedback="good" title="Bonne transition" aria-label="Bonne transition">👍</button>
+          <button type="button" class="filrouge-dj-feedback-btn" data-feedback="bad" title="Mauvaise transition" aria-label="Mauvaise transition">👎</button>
+        </div>` : ''}
+      </div>
+      <div class="dj-plan-timeline">
+        <div class="dj-plan-timeline-out">
+          <span class="dj-plan-tl-label">Sort à</span>
+          <span class="dj-plan-tl-time">${mixOutFmt ?? '--:--'}</span>
+        </div>
+        <div class="dj-plan-timeline-fade">
+          <div class="dj-plan-tl-bar"></div>
+          ${crossfadeSec !== null ? `<span class="dj-plan-tl-duration">${crossfadeSec}s de fondu</span>` : ''}
+        </div>
+        <div class="dj-plan-timeline-in">
+          <span class="dj-plan-tl-label">Entre à</span>
+          <span class="dj-plan-tl-time">${mixInFmt ?? '--:--'}</span>
+        </div>
+      </div>
+      <div class="dj-plan-card-meta">
+        ${bpm !== null ? `<span class="dj-plan-meta-bpm">BPM cible : ${bpm}</span>` : ''}
+        <span class="dj-plan-next-track">→ ${nextLabel}</span>
+      </div>
+    </div>`;
+
+  djPlanIndicatorEl.hidden = false;
+
+  djPlanIndicatorEl.querySelectorAll('.filrouge-dj-feedback-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const container = btn.closest('.filrouge-dj-feedback');
+      const dId = container?.dataset.decisionId;
+      const feedback = btn.dataset.feedback;
+      if (!dId || !feedback) return;
+      const result = await djPlanManager.submitFeedback(dId, feedback);
+      if (!result) { showToast("Feedback DJ : échec de l'envoi", true); return; }
+      djPlanIndicatorEl.querySelectorAll('.filrouge-dj-feedback-btn').forEach((b) => {
+        b.classList.toggle('is-selected', b === btn);
+      });
+      showToast(feedback === 'good' ? '👍 Merci pour le retour' : '👎 Merci pour le retour');
+    });
+  });
+}
+
+function updateDjExternalPlanUI() {
+  if (!djExternalPlanBtn) return;
+  djExternalPlanBtn.classList.toggle('is-enabled', djExternalPlanEnabled);
+  djExternalPlanBtn.setAttribute('aria-pressed', String(djExternalPlanEnabled));
+  djExternalPlanBtn.textContent = `DJ Plan: ${djExternalPlanEnabled ? 'ON' : 'OFF'}`;
+}
+
+if (djExternalPlanBtn) {
+  djExternalPlanBtn.addEventListener('click', () => {
+    djExternalPlanEnabled = !djExternalPlanEnabled;
+    persistDjExternalPlanEnabledSetting(djExternalPlanEnabled);
+    updateDjExternalPlanUI();
+    updateDjPlanZone();
+    updateDjPlanIndicator();
+    logInfo('djPlan: external plan toggled', { enabled: djExternalPlanEnabled });
+  });
+}
+
 // Initial render
 renderFilRouge();
+updateDjExternalPlanUI();
 
 /**
  * Au chargement de la page, vérifie quels morceaux du fil rouge sont déjà
@@ -2195,7 +2317,6 @@ async function startFilRougeStartupCacheSync() {
   for (const track of playlist) {
     const inCache = await isTrackInLocalCache(track).catch(() => false);
     if (inCache) {
-      enrichStemsFromServer(track).catch(() => {});
       autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
       setFilRougeTrackStatus(track, {
         downloadState: 'done',
@@ -2219,7 +2340,6 @@ async function startFilRougeStartupCacheSync() {
 
     const ok = await prefetchTrackToLocalCache(track).catch(() => false);
     if (ok) {
-      enrichStemsFromServer(track).catch(() => {});
       autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
       setFilRougeTrackStatus(track, {
         downloadState: 'done',
@@ -2702,6 +2822,7 @@ const djApiClient = createDjApiClient({
 const djPlanManager = createDjPlanManager({
   djApiClient,
   getFilRougeManager: () => filRougeManager,
+  getQueue: () => queue,
   logger,
 });
 
@@ -2727,7 +2848,7 @@ const autoModeManager = createAutoModeManager({
   onAutomixTimingCalculated: (triggerMs) => {
     let finalTriggerMs = triggerMs;
     const nextFilRougeItem = filRougeManager.peekNextTrackFromAny();
-    const djPlan = djPlanManager.getDjTransitionPlan(nextFilRougeItem);
+    const djPlan = djExternalPlanEnabled ? djPlanManager.getDjTransitionPlan(nextFilRougeItem) : null;
     if (djPlan && Number.isFinite(djPlan.mixOutSec) && djPlan.mixOutSec > 0) {
       finalTriggerMs = Math.round(djPlan.mixOutSec * 1000);
       logDebug('djPlan: automix timing override', { triggerMs: finalTriggerMs, decisionId: djPlan.decisionId });
@@ -3682,7 +3803,6 @@ async function launchDeckFromQueue(deck, options = {}) {
         paused,
       });
       trimRetainedAudioSources();
-      backgroundEnrichStems(targetDeck, item);
     } catch (err) {
       logError('launchDeckFromQueue(): failed', {
         deck: targetDeck,
@@ -4002,19 +4122,35 @@ autoBpmBtn?.addEventListener('click', () => {
 
 echoBtn?.addEventListener('click', () => {
   setMixFeatureEnabled('echo', !mixFeatures.echo);
+  if (deckDisplayItems.A) backgroundEnrichStems('A', deckDisplayItems.A);
+  if (deckDisplayItems.B) backgroundEnrichStems('B', deckDisplayItems.B);
   updateDjFxMenuUI();
 });
 
 distortionBtn?.addEventListener('click', () => {
   setMixFeatureEnabled('distortion', !mixFeatures.distortion);
+  if (deckDisplayItems.A) backgroundEnrichStems('A', deckDisplayItems.A);
+  if (deckDisplayItems.B) backgroundEnrichStems('B', deckDisplayItems.B);
   updateDjFxMenuUI();
 });
+
+// Actions DJ qui nécessitent des stems (voix/instru per-deck, echo/distorsion globaux)
+const STEM_FX_ACTIONS_FOCUS_DECK = new Set(['vocalRemove', 'instruRemove']);
+const STEM_FX_ACTIONS_BOTH_DECKS = new Set(['echoDelay', 'reverb', 'flangerPhaser']);
 
 djFxMenu?.addEventListener('click', (event) => {
   const button = event.target?.closest?.('[data-fx-action]');
   if (!button) return;
   const action = String(button.dataset.fxAction || '');
   if (!action) return;
+  if (STEM_FX_ACTIONS_FOCUS_DECK.has(action)) {
+    const deck = getFocusDeck();
+    const item = deckDisplayItems[deck];
+    if (item) backgroundEnrichStems(deck, item);
+  } else if (STEM_FX_ACTIONS_BOTH_DECKS.has(action)) {
+    if (deckDisplayItems.A) backgroundEnrichStems('A', deckDisplayItems.A);
+    if (deckDisplayItems.B) backgroundEnrichStems('B', deckDisplayItems.B);
+  }
   handleDjFxAction(action);
 });
 
@@ -4211,14 +4347,48 @@ function updateAutoDjMarker() {
   if (deckAAutoDjMarker) deckAAutoDjMarker.hidden = true;
   if (deckBAutoDjMarker) deckBAutoDjMarker.hidden = true;
 
-  if (!isEnabled || !hasTiming) return;
-
-  const pct = Math.min(100, Math.max(0, (automixTimeline.nextTriggerMs / durationMs) * 100));
-  const marker = automixTimeline.currentPlayingDeck === 'B' ? deckBAutoDjMarker : deckAAutoDjMarker;
-  if (marker) {
-    marker.style.left = `${pct}%`;
-    marker.hidden = false;
+  if (isEnabled && hasTiming) {
+    const pct = Math.min(100, Math.max(0, (automixTimeline.nextTriggerMs / durationMs) * 100));
+    const marker = automixTimeline.currentPlayingDeck === 'B' ? deckBAutoDjMarker : deckAAutoDjMarker;
+    if (marker) {
+      marker.style.left = `${pct}%`;
+      marker.hidden = false;
+    }
   }
+
+  updateDjPlanZone(durationMs);
+}
+
+function updateDjPlanZone(durationMs) {
+  if (deckADjPlanZone) deckADjPlanZone.hidden = true;
+  if (deckBDjPlanZone) deckBDjPlanZone.hidden = true;
+
+  if (!djExternalPlanEnabled) return;
+
+  const nextItem = filRougeManager.peekNextTrackFromAny?.();
+  const djPlan = djPlanManager.getDjTransitionPlan(nextItem);
+  if (!djPlan || !Number.isFinite(djPlan.mixOutSec) || djPlan.mixOutSec <= 0) return;
+  if (!Number.isFinite(djPlan.crossfadeDurationSec) || djPlan.crossfadeDurationSec <= 0) return;
+
+  const dur = durationMs > 0 ? durationMs
+    : (playbackDurationMs > 0 ? playbackDurationMs : (queue[uiState.currentIndex]?.duration ?? 0));
+  if (dur <= 0) return;
+
+  const durationSec = dur / 1000;
+  const leftPct = Math.max(0, Math.min(100, (djPlan.mixOutSec / durationSec) * 100));
+  const widthPct = Math.max(0.5, Math.min(100 - leftPct, (djPlan.crossfadeDurationSec / durationSec) * 100));
+
+  const playingDeck = automixTimeline.currentPlayingDeck || 'A';
+  const zone = playingDeck === 'B' ? deckBDjPlanZone : deckADjPlanZone;
+  if (!zone) return;
+
+  const scorePct = Math.round((djPlan.compatibilityScore ?? 0) * 100);
+  const transitionLabel = djPlan.transitionType ? ` · ${djPlan.transitionType}` : '';
+  const nextName = nextItem?.name ? ` → ${nextItem.name}` : '';
+  zone.style.left = `${leftPct}%`;
+  zone.style.width = `${widthPct}%`;
+  zone.title = `DJ Plan : crossfade ${Math.round(djPlan.crossfadeDurationSec)}s${transitionLabel} · score ${scorePct}%${nextName}`;
+  zone.hidden = false;
 }
 
 let _plannedStartMarkerLastKey = null;
@@ -4558,6 +4728,7 @@ clearQueueBtn.addEventListener('click', () => {
   }
 
   renderQueue();
+  scheduleDjSetQualityRefresh();
 });
 
 searchInput.addEventListener('input', () => {
@@ -4978,13 +5149,13 @@ async function addToQueue(track, options = {}) {
           audioFeatures: item.audioFeatures,
           stems: item.stems,
         }, { paused: true, startPositionMs: startMs });
-        backgroundEnrichStems(inactiveDeck, item);
         renderQueue();
       }).catch(() => {});
     }
   }
 
   renderQueue();
+  scheduleDjSetQualityRefresh();
 
   if (playNow && player && !player.isCrossfading && uiState.isPlaying) {
     const useFade = Boolean(preferFade);
@@ -5076,7 +5247,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     updateNowPlaying(item, targetDeck);
     fetchAndStoreArtworkForItem(item, targetDeck).catch(() => {});
 
-    const djPlan = djPlanManager.getDjTransitionPlan(item);
+    const djPlan = djExternalPlanEnabled ? djPlanManager.getDjTransitionPlan(item) : null;
     if (djPlan) {
       applyDjStartOffsetIfPlanned(item, djPlan);
     }
@@ -5236,10 +5407,6 @@ async function startPlaybackForIndex(index, mode, options = {}) {
             paused: true,
             startPositionMs: nextStartPositionMs,
           });
-          
-          // Always fetch stems from server for the next track
-          backgroundEnrichStems(inactiveDeck, nextItem);
-          
           renderQueue();
         }).catch(() => {});
       } else if (filRougeManager.isActive() && !isLowMemoryPlaybackMode()) {
@@ -5294,7 +5461,6 @@ async function startPlaybackForIndex(index, mode, options = {}) {
               audioFeatures: ghostItem.audioFeatures,
               stems: ghostItem.stems,
             }, { paused: true, startPositionMs: ghostStartMs });
-            backgroundEnrichStems(inactiveDeck, ghostItem);
             renderQueue();
           }).catch(() => {
             if (pendingFilRougeOnInactiveDeck === ghostItem) {
@@ -5323,8 +5489,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       isPlaying: uiState.isPlaying,
     });
     trimRetainedAudioSources();
-    backgroundEnrichStems(targetDeck, item);
-    
+
     // Schedule automix timing for auto DJ mode and reset trigger flag
     resetAutomixTimeline(automixTimeline, targetDeck);
     maxDurMarkerTriggeredForTrack = false;
@@ -5462,11 +5627,6 @@ function prefetchNext(index) {
     enqueueBackgroundTask(() => ensureLocalSource(next).catch(() => {
       // silent prefetch failure: user can still trigger manually and get toast
     }));
-
-    if (lowMemory) return;
-
-    // Stems enrichment goes through the serialized queue too
-    enqueueBackgroundTask(() => enrichStemsFromServer(next).catch(() => {}));
   });
 }
 
@@ -5565,6 +5725,7 @@ function removeFromQueue(idx) {
   updateDeckCueUI();
   updateCurrentIndex();
   renderQueue();
+  scheduleDjSetQualityRefresh();
 }
 
 function reorderQueue(fromIndex, targetIndex, insertAfter = false) {

@@ -1745,6 +1745,28 @@ input {
   z-index: 2;
 }
 
+/*
+ * Z-index hierarchy inside .deck-progress-bar (position: relative):
+ *   1 — .deck-progress-zones  (background analysis zones, can go under fill)
+ *   2 — .deck-progress-fill   (progress fill)
+ *   3 — .maxdur-raw-marker    (dashed ghost line, subtle)
+ *   4 — .dj-plan-zone         (crossfade window band, semi-transparent over fill)
+ *   5 — .autodj-start-marker  (cyan: mixInSec of next track)
+ *   5 — .maxdur-marker        (orange: max-duration wall)
+ *   6 — .autodj-marker        (yellow: automix trigger / mixOutSec)
+ */
+
+.dj-plan-zone {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.55), rgba(168, 85, 247, 0.45));
+  border-radius: 999px;
+  z-index: 4;
+  pointer-events: none;
+  border-left: 2px solid rgba(168, 85, 247, 0.9);
+}
+
 .autodj-marker {
   position: absolute;
   top: 50%;
@@ -1752,7 +1774,7 @@ input {
   width: 2px;
   height: 100%;
   background: #ffd700;
-  z-index: 4;
+  z-index: 6;
   pointer-events: none;
 }
 
@@ -1774,7 +1796,7 @@ input {
   width: 2px;
   height: 145%;
   background: #6ee7ff;
-  z-index: 3;
+  z-index: 5;
   pointer-events: none;
 }
 
@@ -1796,7 +1818,7 @@ input {
   width: 2px;
   height: 200%;
   background: #ff6b35;
-  z-index: 3;
+  z-index: 5;
   pointer-events: none;
 }
 
@@ -1825,7 +1847,7 @@ input {
     transparent 3px,
     transparent 6px
   );
-  z-index: 2;
+  z-index: 3;
   pointer-events: none;
 }
 
@@ -2787,6 +2809,127 @@ input {
   color: var(--text);
   font-size: 12px;
 }
+
+/* ── DJ Plan indicator ──────────────────────────────────────── */
+#dj-plan-indicator {
+  margin: 6px 12px 4px;
+}
+
+.dj-plan-card {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dj-plan-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dj-plan-type-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+  border-radius: 4px;
+  padding: 2px 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.dj-plan-score {
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-left: auto;
+}
+.dj-plan-score.is-good { color: #4ade80; }
+.dj-plan-score.is-ok   { color: #fbbf24; }
+.dj-plan-score.is-low  { color: #f87171; }
+
+.dj-plan-card-feedback {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.dj-plan-timeline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dj-plan-timeline-out,
+.dj-plan-timeline-in {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.dj-plan-tl-label {
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dj-plan-tl-time {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: #e2e8f0;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.dj-plan-timeline-fade {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.dj-plan-tl-bar {
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.8), rgba(168, 85, 247, 0.8));
+  border-radius: 999px;
+}
+
+.dj-plan-tl-duration {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.dj-plan-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.5);
+  align-items: center;
+}
+
+.dj-plan-meta-bpm {
+  flex-shrink: 0;
+}
+
+.dj-plan-next-track {
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── end DJ Plan indicator ──────────────────────────────────── */
 
 .filrouge-subtitle {
   font-size: 14px;

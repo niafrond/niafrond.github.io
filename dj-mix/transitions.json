@@ -1,0 +1,218 @@
+{
+  "djApiTransitionTypes": [
+    {
+      "type": "phrase_mix",
+      "label": "Phrase mix",
+      "description": "Transition douce entre deux phrases musicales, fondu croisé progressif",
+      "automixMode": "crossfade_logarithmic"
+    },
+    {
+      "type": "long_blend",
+      "label": "Long blend",
+      "description": "Mélange long et uniforme, chevauchement étendu",
+      "automixMode": "crossfade_linear"
+    },
+    {
+      "type": "quick_cut",
+      "label": "Quick cut",
+      "description": "Coupure franche et rapide, sans chevauchement",
+      "automixMode": "cut_transition"
+    },
+    {
+      "type": "drop_swap",
+      "label": "Drop swap",
+      "description": "Échange au drop / pic d'énergie via balayage de filtre",
+      "automixMode": "filter_sweep_low_high"
+    },
+    {
+      "type": "echo_out",
+      "label": "Echo out",
+      "description": "Sortie avec effet d'écho léger",
+      "automixMode": "echo_out_light"
+    }
+  ],
+  "automixModes": [
+    {
+      "mode": "auto",
+      "label": "Auto (meilleur)",
+      "extraRamMb": 0,
+      "overlapMultiplier": 0,
+      "djApiType": null
+    },
+    {
+      "mode": "crossfade_linear",
+      "label": "Crossfade lineaire",
+      "extraRamMb": 18,
+      "overlapMultiplier": 1.0,
+      "djApiType": "long_blend"
+    },
+    {
+      "mode": "crossfade_logarithmic",
+      "label": "Crossfade logarithmique",
+      "extraRamMb": 20,
+      "overlapMultiplier": 1.02,
+      "djApiType": "phrase_mix"
+    },
+    {
+      "mode": "fade_in_out",
+      "label": "Fade in / Fade out",
+      "extraRamMb": 24,
+      "overlapMultiplier": 1.05,
+      "djApiType": null
+    },
+    {
+      "mode": "cut_transition",
+      "label": "Cut transition",
+      "extraRamMb": 6,
+      "overlapMultiplier": 0.12,
+      "djApiType": "quick_cut"
+    },
+    {
+      "mode": "filter_sweep_low_high",
+      "label": "Filter sweep (low-pass / high-pass)",
+      "extraRamMb": 96,
+      "overlapMultiplier": 1.2,
+      "djApiType": "drop_swap"
+    },
+    {
+      "mode": "eq_transition_simple",
+      "label": "EQ transition simple",
+      "extraRamMb": 44,
+      "overlapMultiplier": 1.08,
+      "djApiType": null
+    },
+    {
+      "mode": "echo_out_light",
+      "label": "Echo out leger",
+      "extraRamMb": 128,
+      "overlapMultiplier": 1.35,
+      "djApiType": "echo_out"
+    },
+    {
+      "mode": "reverb_short_simple",
+      "label": "Reverb courte et simple",
+      "extraRamMb": 172,
+      "overlapMultiplier": 1.55,
+      "djApiType": null
+    },
+    {
+      "mode": "short_loop",
+      "label": "Loop courte",
+      "extraRamMb": 108,
+      "overlapMultiplier": 1.22,
+      "djApiType": null
+    },
+    {
+      "mode": "brake_tape_stop_simple",
+      "label": "Brake / tape stop simple",
+      "extraRamMb": 58,
+      "overlapMultiplier": 1.12,
+      "djApiType": null
+    },
+    {
+      "mode": "short_reverse",
+      "label": "Reverse court",
+      "extraRamMb": 122,
+      "overlapMultiplier": 1.24,
+      "djApiType": null
+    },
+    {
+      "mode": "sidechain_basic",
+      "label": "Sidechain basique",
+      "extraRamMb": 52,
+      "overlapMultiplier": 1.1,
+      "djApiType": null
+    },
+    {
+      "mode": "volume_ducking",
+      "label": "Volume ducking",
+      "extraRamMb": 40,
+      "overlapMultiplier": 1.06,
+      "djApiType": null
+    },
+    {
+      "mode": "gain_automation",
+      "label": "Automation de gain",
+      "extraRamMb": 34,
+      "overlapMultiplier": 1.0,
+      "djApiType": null
+    },
+    {
+      "mode": "filter_automation",
+      "label": "Automation de filtre",
+      "extraRamMb": 104,
+      "overlapMultiplier": 1.25,
+      "djApiType": null
+    },
+    {
+      "mode": "crossfade_lowpass",
+      "label": "Crossfade + Low-pass sortant",
+      "extraRamMb": 140,
+      "overlapMultiplier": 1.18,
+      "djApiType": null
+    },
+    {
+      "mode": "crossfade_highpass_in",
+      "label": "Crossfade + High-pass entrant",
+      "extraRamMb": 118,
+      "overlapMultiplier": 1.12,
+      "djApiType": null
+    },
+    {
+      "mode": "filter_dual_sweep",
+      "label": "Double filtre (low/high swap)",
+      "extraRamMb": 178,
+      "overlapMultiplier": 1.35,
+      "djApiType": null
+    },
+    {
+      "mode": "echo_lowpass",
+      "label": "Echo + Low-pass sortant",
+      "extraRamMb": 216,
+      "overlapMultiplier": 1.45,
+      "djApiType": null
+    },
+    {
+      "mode": "bass_swap",
+      "label": "Bass swap (échange des graves)",
+      "extraRamMb": 175,
+      "overlapMultiplier": 1.3,
+      "djApiType": null
+    },
+    {
+      "mode": "kick_swap",
+      "label": "Kick swap (échange des kicks)",
+      "extraRamMb": 145,
+      "overlapMultiplier": 1.25,
+      "djApiType": null
+    },
+    {
+      "mode": "beat_repeat",
+      "label": "Beat repeat (boucle accélérée)",
+      "extraRamMb": 112,
+      "overlapMultiplier": 1.2,
+      "djApiType": null
+    },
+    {
+      "mode": "backspin",
+      "label": "Backspin (vinyl stop)",
+      "extraRamMb": 85,
+      "overlapMultiplier": 0.95,
+      "djApiType": null
+    },
+    {
+      "mode": "fake_drop",
+      "label": "Fake drop (silence + impact)",
+      "extraRamMb": 28,
+      "overlapMultiplier": 0.8,
+      "djApiType": null
+    },
+    {
+      "mode": "echo_freeze",
+      "label": "Echo freeze (écho gelé)",
+      "extraRamMb": 195,
+      "overlapMultiplier": 1.48,
+      "djApiType": null
+    }
+  ]
+}

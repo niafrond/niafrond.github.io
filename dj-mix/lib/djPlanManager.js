@@ -12,7 +12,7 @@ import { mapDjTransitionTypeToMode, isDjTransitionFresh } from './djTransitionMa
 
 const DEFAULT_SET_PROFILE = 'club_peak';
 
-export function createDjPlanManager({ djApiClient, getFilRougeManager, logger } = {}) {
+export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue, logger } = {}) {
   /** @type {Array} cached `TrackSummary[]` from `/api/dj/tracks` */
   let trackSummaries = [];
   let trackSummariesLoadedAt = 0;
@@ -230,20 +230,58 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, logger } 
    */
   async function computeSetQuality() {
     const fr = filRouge();
-    if (!fr) return null;
+    const playlist = fr ? fr.getPlaylist() : [];
 
-    const playlist = fr.getPlaylist();
-    if (playlist.length < 2) return null;
-
-    await resolveTrackIdsForItems(playlist);
-
-    const trackIds = playlist
+    if (playlist.length) {
+      await resolveTrackIdsForItems(playlist);
+    }
+    const filRougeTrackIds = playlist
       .filter((item) => item.djTrackId && item.djHasAnalysis)
       .map((item) => item.djTrackId);
+
+    const queueItems = getQueue?.() || [];
+    let queueTrackIds = [];
+    if (queueItems.length) {
+      await ensureTrackSummaries();
+      queueTrackIds = queueItems
+        .map((item) => matchTrackSummary(item))
+        .filter((r) => r && r.hasFullAnalysis)
+        .map((r) => r.trackId);
+    }
+
+    const trackIds = Array.from(new Set([...queueTrackIds, ...filRougeTrackIds]));
     if (!trackIds.length) return null;
 
     const result = await djApiClient.fetchBatchPlan(trackIds, getSelectedSetProfile());
     if (!result) return null;
+
+    // Persist transition data from the batch result onto fil rouge items.
+    // The batch already contains all pairwise transitions, so we avoid
+    // separate /api/dj/transition calls for each edge.
+    if (fr && Array.isArray(result.transitions) && result.transitions.length) {
+      const byTrackId = new Map(
+        playlist.filter((i) => i.djTrackId).map((i) => [i.djTrackId, i]),
+      );
+      for (const t of result.transitions) {
+        const fromItem = byTrackId.get(t.trackA);
+        const toItem = byTrackId.get(t.trackB);
+        if (!fromItem || !toItem) continue;
+        if (isDjTransitionFresh(fromItem.djTransition, toItem.id)) continue;
+        fr.patchPlaylistItem(fromItem.id, {
+          djTransition: {
+            toItemId: toItem.id,
+            transitionType: t.transitionType,
+            mixOutSec: t.mixOutSec,
+            mixInSec: t.mixInSec,
+            recommendedBpm: t.recommendedBpm,
+            crossfadeDurationSec: t.crossfadeDurationSec,
+            compatibilityScore: t.compatibilityScore,
+            decisionId: t.decisionId,
+            computedAt: Date.now(),
+          },
+        });
+      }
+    }
 
     return {
       globalSetScore: result.globalSetScore,

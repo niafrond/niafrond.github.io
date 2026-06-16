@@ -24,6 +24,7 @@ export const STORAGE_KEYS = Object.freeze({
   spotifyFilRougeSource: 'dj-mix:spotify:fil-rouge-source',
   spotifyPlaylistHistory: 'dj-mix:spotify:playlist-history',
   djSetProfile: 'dj-mix:dj-api:set-profile',
+  djExternalPlanEnabled: 'dj-mix:dj-plan:external-enabled',
 });
 
 export const DEFAULT_DOWNLOADER_API_URL = 'http://192.168.8.149:3000';

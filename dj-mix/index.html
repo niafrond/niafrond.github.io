@@ -78,6 +78,7 @@
                 </div>
                 <div class="deck-progress-bar" id="deck-a-progress" role="button" tabindex="0" aria-label="Position platine 1">
                   <div class="deck-progress-zones" id="deck-a-zone-layer" aria-hidden="true"></div>
+                  <div class="dj-plan-zone" id="deck-a-dj-plan-zone" hidden aria-hidden="true"></div>
                   <div class="deck-progress-fill" id="deck-a-fill"></div>
                   <div class="autodj-start-marker" id="deck-a-autodj-start-marker" hidden aria-hidden="true"></div>
                   <div class="autodj-marker" id="deck-a-autodj-marker" hidden aria-hidden="true"></div>
@@ -115,6 +116,7 @@
                 </div>
                 <div class="deck-progress-bar" id="deck-b-progress" role="button" tabindex="0" aria-label="Position platine 2">
                   <div class="deck-progress-zones" id="deck-b-zone-layer" aria-hidden="true"></div>
+                  <div class="dj-plan-zone" id="deck-b-dj-plan-zone" hidden aria-hidden="true"></div>
                   <div class="deck-progress-fill" id="deck-b-fill"></div>
                   <div class="autodj-start-marker" id="deck-b-autodj-start-marker" hidden aria-hidden="true"></div>
                   <div class="autodj-marker" id="deck-b-autodj-marker" hidden aria-hidden="true"></div>
@@ -273,12 +275,14 @@
         <div class="filrouge-controls">
           <button id="filrouge-shuffle-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="false">Shuffle: OFF</button>
           <button id="filrouge-loop-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="true">Loop: ON</button>
+          <button id="dj-external-plan-btn" class="deck-launch-btn fx-toggle is-enabled" type="button" aria-pressed="true" title="DJ Plan externe : utilise les transitions calculées par l'API DJ pour le timing, le BPM et le mode de crossfade">DJ Plan: ON</button>
           <button id="filrouge-clear-btn" class="clear-btn" type="button">Vider</button>
           <label class="filrouge-profile-field" for="dj-set-profile-select">
             Profil de set
             <select id="dj-set-profile-select" class="filrouge-profile-select"></select>
           </label>
         </div>
+        <div id="dj-plan-indicator" hidden aria-live="polite"></div>
         <div class="filrouge-playlist-section">
           <h3 class="filrouge-subtitle">🎵 Playlist fil rouge</h3>
           <div id="filrouge-playlist-list" class="filrouge-list"></div>

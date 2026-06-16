@@ -119,6 +119,14 @@ export function persistCrossfadeSecondsSetting(seconds) {
   safeSet(STORAGE_KEYS.crossfadeSeconds, String(seconds));
 }
 
+export function readDjExternalPlanEnabledSetting() {
+  return readBooleanSetting(STORAGE_KEYS.djExternalPlanEnabled, true);
+}
+
+export function persistDjExternalPlanEnabledSetting(enabled) {
+  persistBooleanSetting(STORAGE_KEYS.djExternalPlanEnabled, enabled);
+}
+
 export function readDjModeSetting() {
   const stored = safeGet(STORAGE_KEYS.djMode);
   return stored === 'dance' ? 'dance' : 'music';
