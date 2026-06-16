@@ -1,3 +1,9 @@
+## [1.227.0](https://github.com/niafrond/niafrond.github.io/compare/v1.226.0...v1.227.0) (2026-06-16)
+
+### Features
+
+* implement batch processing for track prefetching to improve performance and error handling ([f6bc5ae](https://github.com/niafrond/niafrond.github.io/commit/f6bc5ae43a019e4d7b1cfeebf79ca985b41c944f))
+
 ## [1.226.0](https://github.com/niafrond/niafrond.github.io/compare/v1.225.0...v1.226.0) (2026-06-16)
 
 ### Features
