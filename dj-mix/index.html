@@ -45,7 +45,7 @@
     </div>
 
     <div class="tab-panels">
-      <div id="tab-mix" class="tab-panel active">
+      <div id="tab-mix" class="tab-panel active mix-options-collapsed">
         <div class="player-section">
           <div class="now-playing">
             <div class="deck-panels" aria-live="polite">
@@ -146,7 +146,7 @@
 
         <input type="range" id="deck-mix-slider" min="0" max="100" value="0" class="fade-slider" aria-label="Mix manuel entre platine 1 et platine 2">
 
-        <div id="deck-mix-control" class="deck-mix-control">
+        <div id="deck-mix-control" class="deck-mix-control" aria-hidden="true">
           <div class="crossfade-row">
             <span>Mix </span>
           </div>
@@ -281,6 +281,7 @@
             Profil de set
             <select id="dj-set-profile-select" class="filrouge-profile-select"></select>
           </label>
+          <button id="dj-retrain-btn" type="button" class="deck-launch-btn" title="Réentraîner le moteur de recommandation avec les feedbacks collectés">Réentraîner</button>
         </div>
         <div id="dj-plan-indicator" hidden aria-live="polite"></div>
         <div class="filrouge-playlist-section">

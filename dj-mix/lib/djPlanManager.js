@@ -149,6 +149,14 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
       const result = await djApiClient.fetchTransition(from.djTrackId, to.djTrackId);
       if (!result) continue;
 
+      if (!Number.isFinite(result.mixOutSec) || !Number.isFinite(result.mixInSec)) {
+        logger?.warn('djPlanManager: mixOutSec/mixInSec manquants dans la réponse API', {
+          fromTrackId: from.djTrackId,
+          toTrackId: to.djTrackId,
+          rawResult: result,
+        });
+      }
+
       fr.patchPlaylistItem(from.id, {
         djTransition: {
           toItemId: to.id,
@@ -228,7 +236,7 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
    * and selected set profile. Does not reorder/drop tracks.
    * @returns {Promise<{globalSetScore: number, reasons: string[], globalComponents: object|null}|null>}
    */
-  async function computeSetQuality() {
+  async function computeSetQuality({ forceRefresh = false } = {}) {
     const fr = filRouge();
     const playlist = fr ? fr.getPlaylist() : [];
 
@@ -266,7 +274,14 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
         const fromItem = byTrackId.get(t.trackA);
         const toItem = byTrackId.get(t.trackB);
         if (!fromItem || !toItem) continue;
-        if (isDjTransitionFresh(fromItem.djTransition, toItem.id)) continue;
+        if (!forceRefresh && isDjTransitionFresh(fromItem.djTransition, toItem.id)) continue;
+        if (!Number.isFinite(t.mixOutSec) || !Number.isFinite(t.mixInSec)) {
+          logger?.warn('djPlanManager: batch — mixOutSec/mixInSec manquants', {
+            trackA: t.trackA,
+            trackB: t.trackB,
+            rawTransition: t,
+          });
+        }
         fr.patchPlaylistItem(fromItem.id, {
           djTransition: {
             toItemId: toItem.id,
@@ -323,7 +338,21 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
    */
   async function setIconic(item, iconic) {
     if (!item?.djTrackId) return null;
-    return djApiClient.setIconic(item.djTrackId, iconic, item.name, item.artist);
+    const result = await djApiClient.setIconic(item.djTrackId, iconic, item.name, item.artist);
+    if (result !== null) {
+      filRouge()?.patchPlaylistItem(item.id, { djIsIconic: Boolean(iconic) });
+    }
+    return result;
+  }
+
+  /** @returns {Promise<boolean>} */
+  async function retrainEngine() {
+    return djApiClient.retrainEngine();
+  }
+
+  /** @returns {Promise<object|null>} */
+  async function fetchWeights() {
+    return djApiClient.fetchWeights();
   }
 
   /**
@@ -390,5 +419,7 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
     findDjPredecessorInFilRouge,
     getDjTransitionPlan,
     submitFeedback,
+    retrainEngine,
+    fetchWeights,
   };
 }

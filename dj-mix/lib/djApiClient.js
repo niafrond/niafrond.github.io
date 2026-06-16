@@ -85,6 +85,9 @@ export function createDjApiClient({
   async function fetchTransition(trackA, trackB) {
     if (!trackA || !trackB) return null;
     const res = await _post('/api/dj/transition', { trackA, trackB });
+    if (res.ok) {
+      logger?.warn('djApiClient.fetchTransition: réponse brute API', { trackA, trackB, data: res.data });
+    }
     return res.ok ? res.data : null;
   }
 
@@ -123,6 +126,18 @@ export function createDjApiClient({
     return res.ok ? res.data : null;
   }
 
+  /** @returns {Promise<boolean>} true if retrain was triggered */
+  async function retrainEngine() {
+    const res = await _post('/api/dj/retrain', {});
+    return res.ok;
+  }
+
+  /** @returns {Promise<object|null>} current engine weights */
+  async function fetchWeights() {
+    const res = await _get('/api/dj/weights');
+    return res.ok ? res.data : null;
+  }
+
   return {
     fetchTracks,
     fetchTrackDetail,
@@ -131,5 +146,7 @@ export function createDjApiClient({
     sendFeedback,
     setIconic,
     fetchSetProfiles,
+    retrainEngine,
+    fetchWeights,
   };
 }

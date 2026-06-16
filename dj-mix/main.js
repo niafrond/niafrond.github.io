@@ -777,6 +777,7 @@ const djPlanIndicatorEl = document.getElementById('dj-plan-indicator');
 const filRougeClearBtn = document.getElementById('filrouge-clear-btn');
 const djSetQualityBadgeEl = document.getElementById('dj-set-quality-badge');
 const djSetProfileSelectEl = document.getElementById('dj-set-profile-select');
+const djRetrainBtn = document.getElementById('dj-retrain-btn');
 
 const downloaderApiUrlInput = document.getElementById('downloader-api-url-input');
 const downloaderApiTokenInput = document.getElementById('downloader-api-token-input');
@@ -1404,6 +1405,7 @@ function renderFilRouge() {
           </div>
           <div class="filrouge-actions">
             ${renderDjTransitionFeedback(item)}
+            ${item.djTrackId ? `<button class="filrouge-iconic-btn${item.djIsIconic ? ' is-iconic' : ''}" data-item-id="${item.id}" title="${item.djIsIconic ? 'Retirer le statut iconic' : 'Marquer comme iconic (ne jamais couper)'}" aria-label="${item.djIsIconic ? 'Retirer iconic' : 'Marquer iconic'}">${item.djIsIconic ? '★' : '☆'}</button>` : ''}
             ${idx < filRougeIndex
               ? `<button class="filrouge-set-current-btn" data-index="${idx}" aria-label="Revenir à ce morceau" title="Revenir à ce morceau">⏪</button>`
               : idx > filRougeIndex + 1
@@ -1483,6 +1485,21 @@ function renderFilRouge() {
         b.classList.toggle('is-selected', b === btn);
       });
       showToast(feedback === 'good' ? '👍 Merci pour le retour' : '👎 Merci pour le retour');
+    });
+  });
+
+  document.querySelectorAll('.filrouge-iconic-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const itemId = btn.dataset.itemId;
+      const playlist = filRougeManager.getPlaylist();
+      const item = playlist.find((p) => String(p.id) === String(itemId));
+      if (!item) return;
+      const newIconic = !item.djIsIconic;
+      const result = await djPlanManager.setIconic(item, newIconic);
+      if (!result) { showToast('Iconic DJ : échec', true); return; }
+      renderFilRouge();
+      showToast(newIconic ? '★ Morceau marqué iconic' : '☆ Statut iconic retiré');
     });
   });
 }
@@ -2121,9 +2138,9 @@ const DJ_SET_PROFILE_LABELS = {
  * Recalcule le badge de qualité du set via `/api/dj/batch` (informatif, ne
  * réordonne/ne retire rien) pour le profil sélectionné.
  */
-async function runDjSetQualityRefresh() {
+async function runDjSetQualityRefresh({ forceRefresh = false } = {}) {
   try {
-    const quality = await djPlanManager.computeSetQuality();
+    const quality = await djPlanManager.computeSetQuality({ forceRefresh });
     renderDjSetQualityBadge(djSetQualityBadgeEl, quality);
     updateDjPlanIndicator();
   } catch (err) {
@@ -2193,7 +2210,7 @@ async function initDjSetProfileSelect() {
 
   djSetProfileSelectEl.addEventListener('change', () => {
     djPlanManager.setSelectedSetProfile(djSetProfileSelectEl.value);
-    runDjSetQualityRefresh().catch(() => {});
+    runDjSetQualityRefresh({ forceRefresh: true }).catch(() => {});
   });
 }
 
@@ -2214,8 +2231,19 @@ function updateDjPlanIndicator() {
   }
 
   const playlist = filRougeManager.getPlaylist();
-  const currentIdx = filRougeManager.getCurrentIndex();
-  const currentItem = playlist[currentIdx];
+
+  // Prefer the actually-playing track to survive jumpToIndex() interim state
+  const playingId = uiState.currentTrackId;
+  let currentItem = playingId
+    ? (playlist.find((p) => String(p.id) === String(playingId)) || null)
+    : null;
+
+  // Fallback: last consumed fil rouge item
+  if (!currentItem) {
+    const currentIdx = filRougeManager.getCurrentIndex();
+    currentItem = currentIdx >= 0 ? playlist[currentIdx] : null;
+  }
+
   const t = currentItem?.djTransition;
 
   if (!t || !t.toItemId) {
@@ -2306,6 +2334,15 @@ if (djExternalPlanBtn) {
     updateDjPlanZone();
     updateDjPlanIndicator();
     logInfo('djPlan: external plan toggled', { enabled: djExternalPlanEnabled });
+  });
+}
+
+if (djRetrainBtn) {
+  djRetrainBtn.addEventListener('click', async () => {
+    djRetrainBtn.disabled = true;
+    const ok = await djPlanManager.retrainEngine();
+    djRetrainBtn.disabled = false;
+    showToast(ok ? 'Moteur réentraîné' : 'Réentraînement : échec', !ok);
   });
 }
 

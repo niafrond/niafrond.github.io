@@ -1,5 +1,5 @@
 import { escHtml, extractTrackBpm, extractTrackGenre, formatTime } from './searchUtils.js';
-import { pushNowPlaying } from './androidAutoBridge.js';
+import { pushNowPlaying, resolveArtworkUrl } from './androidAutoBridge.js';
 
 const MAX_VISIBLE_PLAYED_TRACKS = 5;
 
@@ -436,6 +436,22 @@ export function createDjMixRenderer(options) {
         album: safeAlbum,
         artwork: getMediaSessionArtwork(item),
       });
+
+      // blob: URLs ne sont pas accessibles par le système Android en dehors de la WebView;
+      // résoudre en data URI de façon asynchrone pour que la notification affiche la jaquette.
+      const artUrl = item?.artUrl || '';
+      if (artUrl.startsWith('blob:')) {
+        resolveArtworkUrl(artUrl).then((resolvedUrl) => {
+          if (!resolvedUrl || !navigator.mediaSession?.metadata) return;
+          if (navigator.mediaSession.metadata.title !== safeTitle) return;
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: safeTitle,
+            artist: safeArtist,
+            album: safeAlbum,
+            artwork: [{ src: resolvedUrl, sizes: '512x512', type: 'image/jpeg' }],
+          });
+        }).catch(() => {});
+      }
 
       pushNowPlaying({
         id: item?.id,

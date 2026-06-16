@@ -1,7 +1,7 @@
 /**
  * androidAutoBridge.js — Pont JS ↔ natif (plugin Capacitor "MediaSession") pour
  * exposer la lecture DJ Mix à Android Auto via MediaBrowserServiceCompat /
- * MediaSessionCompat (voir dj-mix-android/).
+ * MediaSessionCompat.
  *
  * Sans effet en dehors d'un shell Capacitor natif (PWA / navigateur classique).
  */
@@ -16,7 +16,7 @@ function getPlugin() {
  * Les URLs blob: ne sont résolubles que dans la WebView : le téléchargement
  * natif (HttpURLConnection) ne peut donc pas y accéder directement.
  */
-async function resolveArtworkUrl(artworkUrl) {
+export async function resolveArtworkUrl(artworkUrl) {
   const url = String(artworkUrl || '');
   if (!url.startsWith('blob:')) return url;
   try {

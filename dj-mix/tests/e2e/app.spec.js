@@ -223,11 +223,11 @@ test.describe('DJ Mix IHM - structure et navigation', () => {
   test('toggle le menu mix et la visibilite FX', async ({ page }) => {
     await setupApp(page);
 
-    await expect(page.locator('#tab-mix')).not.toHaveClass(/mix-options-collapsed/);
-    await page.click('#toggle-mix-menu-btn');
     await expect(page.locator('#tab-mix')).toHaveClass(/mix-options-collapsed/);
     await page.click('#toggle-mix-menu-btn');
     await expect(page.locator('#tab-mix')).not.toHaveClass(/mix-options-collapsed/);
+    await page.click('#toggle-mix-menu-btn');
+    await expect(page.locator('#tab-mix')).toHaveClass(/mix-options-collapsed/);
 
     await expect(page.locator('#fx-visibility-btn')).toHaveAttribute('aria-expanded', 'true');
     await page.click('#fx-visibility-btn');
