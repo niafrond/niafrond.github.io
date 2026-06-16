@@ -100,6 +100,13 @@ export function createDjApiClient({
     return res.ok ? res.data : null;
   }
 
+  /** Recalcule le set pour un nouveau profil sans renvoyer la liste de tracks. */
+  async function fetchBatchPlanByProfile(profile) {
+    if (!profile) return null;
+    const res = await _post('/api/dj/batch', { profile });
+    return res.ok ? res.data : null;
+  }
+
   /** @returns {Promise<object|null>} echoed feedback, or null if unavailable (e.g. unknown decisionId) */
   async function sendFeedback(decisionId, feedback, reason, comment) {
     if (!decisionId || !feedback) return null;
@@ -143,6 +150,7 @@ export function createDjApiClient({
     fetchTrackDetail,
     fetchTransition,
     fetchBatchPlan,
+    fetchBatchPlanByProfile,
     sendFeedback,
     setIconic,
     fetchSetProfiles,

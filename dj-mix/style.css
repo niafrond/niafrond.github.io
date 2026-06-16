@@ -232,6 +232,7 @@ input {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(57px + env(safe-area-inset-bottom));
 }
 
 .tab-panel.active {
@@ -239,11 +240,13 @@ input {
 }
 
 .tab-bar {
-  flex-shrink: 0;
   display: flex;
   background: var(--surface);
   border-top: 1px solid var(--border);
-  position: relative;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 101;
   padding-bottom: env(safe-area-inset-bottom);
 }

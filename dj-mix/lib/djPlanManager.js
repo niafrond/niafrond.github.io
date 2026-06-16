@@ -305,6 +305,49 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
     };
   }
 
+  /**
+   * Recalcule le badge de qualité en envoyant uniquement le profil à `/api/dj/batch`.
+   * Utilisé lors du changement de profil depuis le sélecteur.
+   */
+  async function computeSetQualityByProfile(profile) {
+    if (!profile) return null;
+    const result = await djApiClient.fetchBatchPlanByProfile(profile);
+    if (!result) return null;
+
+    const fr = filRouge();
+    if (fr && Array.isArray(result.transitions) && result.transitions.length) {
+      const playlist = fr.getPlaylist();
+      const byTrackId = new Map(
+        playlist.filter((i) => i.djTrackId).map((i) => [i.djTrackId, i]),
+      );
+      for (const t of result.transitions) {
+        const fromItem = byTrackId.get(t.trackA);
+        const toItem = byTrackId.get(t.trackB);
+        if (!fromItem || !toItem) continue;
+        if (!Number.isFinite(t.mixOutSec) || !Number.isFinite(t.mixInSec)) continue;
+        fr.patchPlaylistItem(fromItem.id, {
+          djTransition: {
+            toItemId: toItem.id,
+            transitionType: t.transitionType,
+            mixOutSec: t.mixOutSec,
+            mixInSec: t.mixInSec,
+            recommendedBpm: t.recommendedBpm,
+            crossfadeDurationSec: t.crossfadeDurationSec,
+            compatibilityScore: t.compatibilityScore,
+            decisionId: t.decisionId,
+            computedAt: Date.now(),
+          },
+        });
+      }
+    }
+
+    return {
+      globalSetScore: result.globalSetScore,
+      reasons: result.reasons || [],
+      globalComponents: result.globalComponents || null,
+    };
+  }
+
   /** @returns {Promise<{profiles: Array, default: string}|null>} */
   async function getSetProfiles() {
     if (setProfilesCache) return setProfilesCache;
@@ -412,6 +455,7 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
     planEdgesForNewItems,
     planAllEdges,
     computeSetQuality,
+    computeSetQualityByProfile,
     getSetProfiles,
     getSelectedSetProfile,
     setSelectedSetProfile,

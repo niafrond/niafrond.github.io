@@ -2208,9 +2208,18 @@ async function initDjSetProfileSelect() {
     djSetProfileSelectEl.value = selected;
   }
 
-  djSetProfileSelectEl.addEventListener('change', () => {
-    djPlanManager.setSelectedSetProfile(djSetProfileSelectEl.value);
-    runDjSetQualityRefresh({ forceRefresh: true }).catch(() => {});
+  djSetProfileSelectEl.addEventListener('change', async () => {
+    const profile = djSetProfileSelectEl.value;
+    djPlanManager.setSelectedSetProfile(profile);
+    try {
+      const quality = await djPlanManager.computeSetQualityByProfile(profile);
+      renderDjSetQualityBadge(djSetQualityBadgeEl, quality);
+      updateDjPlanIndicator();
+      renderFilRouge();
+    } catch (err) {
+      logWarn('djPlan: computeSetQualityByProfile failed', { error: err?.message });
+      renderDjSetQualityBadge(djSetQualityBadgeEl, null);
+    }
   });
 }
 
@@ -3655,13 +3664,19 @@ function setupMediaSession() {
   if (!('mediaSession' in navigator)) return;
   navigator.mediaSession.setActionHandler('play', () => {
     const focusDeck = getFocusDeck();
-    if (focusDeck === 'A') deckALaunchBtn?.click();
-    else deckBLaunchBtn?.click();
+    const deckState = uiState.lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
+    if (deckState?.playing) return;
+    if (deckState?.hasSrc) {
+      player?.resumeDeck?.(focusDeck).catch(() => {});
+    } else {
+      if (focusDeck === 'A') deckALaunchBtn?.click();
+      else deckBLaunchBtn?.click();
+    }
   });
   navigator.mediaSession.setActionHandler('pause', () => {
     const focusDeck = getFocusDeck();
-    if (focusDeck === 'A') deckALaunchBtn?.click();
-    else deckBLaunchBtn?.click();
+    const deckState = uiState.lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
+    if (deckState?.playing) player?.pauseDeck?.(focusDeck);
   });
   navigator.mediaSession.setActionHandler('stop', () => {
     player?.pause?.();
@@ -3691,11 +3706,22 @@ function setupMediaSession() {
 /** Applique une commande de transport reçue depuis Android Auto / la notification native. */
 function applyMediaCommand(cmd) {
   switch (cmd?.action) {
-    case 'play':
+    case 'play': {
+      const focusDeck = getFocusDeck();
+      const deckState = uiState.lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
+      if (deckState?.playing) break;
+      if (deckState?.hasSrc) {
+        player?.resumeDeck?.(focusDeck).catch(() => {});
+      } else {
+        if (focusDeck === 'A') deckALaunchBtn?.click();
+        else deckBLaunchBtn?.click();
+      }
+      break;
+    }
     case 'pause': {
       const focusDeck = getFocusDeck();
-      if (focusDeck === 'A') deckALaunchBtn?.click();
-      else deckBLaunchBtn?.click();
+      const deckState = uiState.lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
+      if (deckState?.playing) player?.pauseDeck?.(focusDeck);
       break;
     }
     case 'next':
