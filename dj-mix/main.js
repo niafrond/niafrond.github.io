@@ -1789,31 +1789,33 @@ async function startTxtPlaylistPrefetch(tracks) {
   let cached = 0;
   let failed = 0;
 
-  for (let i = 0; i < tracks.length; i++) {
+  const BATCH_SIZE = 3;
+  for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
     if (spotifyPrefetchGeneration !== generation) return;
-    const track = tracks[i];
-    setFilRougeTrackStatus(track, {
-      downloadState: 'downloading',
-      stemsOk: hasStemsForTrack(track),
-    });
-    renderFilRouge();
-    setTxtPlaylistStatus(`Téléchargement serveur TXT : ${i + 1} / ${tracks.length}…`);
-    const ok = await prefetchTrackToLocalCache(track).catch(() => false);
-    if (ok) {
-      cached++;
-      autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
-      setFilRougeTrackStatus(track, {
-        downloadState: 'done',
-        stemsOk: hasStemsForTrack(track),
-      });
-    } else {
-      failed++;
-      setFilRougeTrackStatus(track, {
-        downloadState: 'error',
-        stemsOk: hasStemsForTrack(track),
-      });
+    const batch = tracks.slice(i, i + BATCH_SIZE);
+    for (const track of batch) {
+      setFilRougeTrackStatus(track, { downloadState: 'downloading', stemsOk: hasStemsForTrack(track) });
     }
-    await fetchFilRougeArtwork(track).catch(() => {});
+    setTxtPlaylistStatus(`Téléchargement serveur TXT : ${i + 1}–${Math.min(i + BATCH_SIZE, tracks.length)} / ${tracks.length}…`);
+    renderFilRouge();
+    const batchResults = await Promise.allSettled(
+      batch.map(track => prefetchTrackToLocalCache(track).catch(() => false))
+    );
+    await Promise.allSettled(
+      batchResults.map(async (result, j) => {
+        const track = batch[j];
+        const ok = result.status === 'fulfilled' && result.value;
+        if (ok) {
+          cached++;
+          autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
+          setFilRougeTrackStatus(track, { downloadState: 'done', stemsOk: hasStemsForTrack(track) });
+        } else {
+          failed++;
+          setFilRougeTrackStatus(track, { downloadState: 'error', stemsOk: hasStemsForTrack(track) });
+        }
+        await fetchFilRougeArtwork(track).catch(() => {});
+      })
+    );
     renderFilRouge();
   }
 
@@ -1853,16 +1855,23 @@ async function startSpotifyPlaylistPrefetch(tracks) {
   const generation = ++spotifyPrefetchGeneration;
   let cached = 0;
   let failed = 0;
-  for (let i = 0; i < tracks.length; i++) {
+  const BATCH_SIZE = 3;
+  for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
     if (spotifyPrefetchGeneration !== generation) return;
-    const track = tracks[i];
-    setSpotifyStatus(`Cache Spotify : ${i + 1} / ${tracks.length}…`);
-    const ok = await prefetchTrackToLocalCache(track).catch(() => false);
-    if (ok) {
-      cached++;
-      autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
-    } else {
-      failed++;
+    const batch = tracks.slice(i, i + BATCH_SIZE);
+    setSpotifyStatus(`Cache Spotify : ${i + 1}–${Math.min(i + BATCH_SIZE, tracks.length)} / ${tracks.length}…`);
+    const batchResults = await Promise.allSettled(
+      batch.map(track => prefetchTrackToLocalCache(track).catch(() => false))
+    );
+    for (let j = 0; j < batch.length; j++) {
+      const track = batch[j];
+      const ok = batchResults[j].status === 'fulfilled' && batchResults[j].value;
+      if (ok) {
+        cached++;
+        autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
+      } else {
+        failed++;
+      }
     }
   }
   if (spotifyPrefetchGeneration !== generation) return;
@@ -2326,30 +2335,31 @@ async function startFilRougeStartupCacheSync() {
   }
   renderFilRouge();
 
-  // Phase 2 : télécharger ce qui manque
-  for (const track of playlist) {
+  // Phase 2 : télécharger ce qui manque (3 en parallèle)
+  const toDownload = playlist.filter(track => {
     const key = getFilRougeTrackKey(track);
     const existing = filRougeTrackStatusByKey.get(key);
-    if (existing?.downloadState === 'done') continue;
-
-    setFilRougeTrackStatus(track, {
-      downloadState: 'downloading',
-      stemsOk: hasStemsForTrack(track),
-    });
+    return existing?.downloadState !== 'done';
+  });
+  const BATCH_SIZE = 3;
+  for (let i = 0; i < toDownload.length; i += BATCH_SIZE) {
+    const batch = toDownload.slice(i, i + BATCH_SIZE);
+    for (const track of batch) {
+      setFilRougeTrackStatus(track, { downloadState: 'downloading', stemsOk: hasStemsForTrack(track) });
+    }
     renderFilRouge();
-
-    const ok = await prefetchTrackToLocalCache(track).catch(() => false);
-    if (ok) {
-      autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
-      setFilRougeTrackStatus(track, {
-        downloadState: 'done',
-        stemsOk: hasStemsForTrack(track),
-      });
-    } else {
-      setFilRougeTrackStatus(track, {
-        downloadState: 'error',
-        stemsOk: hasStemsForTrack(track),
-      });
+    const batchResults = await Promise.allSettled(
+      batch.map(track => prefetchTrackToLocalCache(track).catch(() => false))
+    );
+    for (let j = 0; j < batch.length; j++) {
+      const track = batch[j];
+      const ok = batchResults[j].status === 'fulfilled' && batchResults[j].value;
+      if (ok) {
+        autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
+        setFilRougeTrackStatus(track, { downloadState: 'done', stemsOk: hasStemsForTrack(track) });
+      } else {
+        setFilRougeTrackStatus(track, { downloadState: 'error', stemsOk: hasStemsForTrack(track) });
+      }
     }
     renderFilRouge();
   }
