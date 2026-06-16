@@ -1,3 +1,12 @@
+## [1.228.0](https://github.com/niafrond/niafrond.github.io/compare/v1.227.0...v1.228.0) (2026-06-16)
+
+### Features
+
+* add fetchBatchPlanByProfile and computeSetQualityByProfile functions; update event listener for profile changes to compute set quality ([72edba2](https://github.com/niafrond/niafrond.github.io/commit/72edba2f04ec2369f81fe1a78d83c9e9fbb023ab))
+* enhance DJ Mix functionality with retrain engine feature and UI updates ([5ed29dc](https://github.com/niafrond/niafrond.github.io/commit/5ed29dc57e98e22e08b1ab974ed6515ef0a9d0b3))
+* remove Android-specific files and configurations for DJ Mix project ([ac72fa6](https://github.com/niafrond/niafrond.github.io/commit/ac72fa6f767b8181ae9acf80bcb2838000914f90))
+* rename retrain button to recalculate and update functionality; add dev build indicator for local testing ([d01b35c](https://github.com/niafrond/niafrond.github.io/commit/d01b35c21fc30f3dae33b9ef5c1582cfd89547e9))
+
 ## [1.227.0](https://github.com/niafrond/niafrond.github.io/compare/v1.226.0...v1.227.0) (2026-06-16)
 
 ### Features
