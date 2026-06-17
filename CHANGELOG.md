@@ -1,3 +1,10 @@
+## [1.229.0](https://github.com/niafrond/niafrond.github.io/compare/v1.228.0...v1.229.0) (2026-06-17)
+
+### Features
+
+* add refresh functionality for API Mix playlists on button click ([f07a35d](https://github.com/niafrond/niafrond.github.io/commit/f07a35d6a4bad7ae7ca7f8a8bf24874a4dcb6c5b))
+* implement DJ Plan indicator logic and UI; add playlist selection from server with refresh functionality ([69c58d6](https://github.com/niafrond/niafrond.github.io/commit/69c58d6296cc9bee422c8ffea32ed79a93f2b584))
+
 ## [1.228.0](https://github.com/niafrond/niafrond.github.io/compare/v1.227.0...v1.228.0) (2026-06-16)
 
 ### Features
