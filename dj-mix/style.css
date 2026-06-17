@@ -2846,6 +2846,27 @@ input {
   flex-shrink: 0;
 }
 
+.dj-plan-mode-badge {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.62);
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 4px;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+
+.dj-plan-fx-badge {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #f0abfc;
+  background: rgba(217, 70, 239, 0.18);
+  border-radius: 4px;
+  padding: 2px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
 .dj-plan-score {
   font-size: 0.8rem;
   font-weight: 700;

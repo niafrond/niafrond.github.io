@@ -139,6 +139,34 @@ export function createSearchController(options) {
           });
       });
 
+      el.querySelector('.add-btn')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        getPlayer()?.activateElement?.();
+        const result = resolveResult();
+        if (!result) return;
+
+        if (result?.isArtistResult) {
+          if (searchInput) searchInput.value = result.artist || result.name || '';
+          if (searchClear) searchClear.hidden = !searchInput?.value;
+          lastSearchQuery = '';
+          openSearch();
+          if (searchResults) searchResults.innerHTML = '<div class="search-loading">Recherche API...</div>';
+          runSearch(searchInput?.value?.trim() || '');
+          return;
+        }
+
+        if (pendingSearchAdd) return;
+        pendingSearchAdd = true;
+
+        addToQueue(result)
+          .catch((err) => {
+            showToast(`API: ${err.message}`, true);
+          })
+          .finally(() => {
+            pendingSearchAdd = false;
+          });
+      });
+
       el.addEventListener('click', () => {
         getPlayer()?.activateElement?.();
         const result = resolveResult();

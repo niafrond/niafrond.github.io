@@ -7,6 +7,8 @@ import {
 } from './searchUtils.js';
 import { renderDjSetQualityBadge, renderDjTransitionFeedback } from './uiRenderer.js';
 import { computeDjPlanIndicatorState } from './djPlanIndicator.js';
+import { mapDjTransitionTypeToMode } from './djTransitionMapping.js';
+import { normalizeTransitionMode, MIX_TRANSITION_MODE_LABELS } from './transitionModes.js';
 
 /**
  * Gère le fil rouge : statuts de téléchargement/stems, rendu de la liste,
@@ -128,6 +130,33 @@ export function createFilRougeController(options) {
     echo_out: 'Echo out',
   };
 
+  const FX_MODE_LABELS = {
+    filter_sweep_low_high: 'Filter sweep',
+    echo_out_light: 'Echo out',
+    reverb_short_simple: 'Reverb',
+    short_loop: 'Loop',
+    brake_tape_stop_simple: 'Brake',
+    short_reverse: 'Backspin',
+    filter_automation: 'Filter auto',
+    crossfade_lowpass: 'Low-pass',
+    crossfade_highpass_in: 'High-pass',
+    filter_dual_sweep: 'Double filtre',
+    echo_lowpass: 'Echo + LP',
+    bass_swap: 'Bass swap',
+    kick_swap: 'Kick swap',
+    beat_repeat: 'Beat repeat',
+    backspin: 'Backspin',
+    fake_drop: 'Fake drop',
+    echo_freeze: 'Echo freeze',
+  };
+
+  function resolveDjPlanMode(transition) {
+    const raw = transition.automixMode
+      ? normalizeTransitionMode(transition.automixMode)
+      : mapDjTransitionTypeToMode(transition.transitionType);
+    return raw || null;
+  }
+
   function updateDjPlanIndicator() {
     if (!djPlanIndicatorEl) return;
 
@@ -178,10 +207,16 @@ export function createFilRougeController(options) {
       ? `${escHtml(nextItem.artist)} — ${escHtml(nextItem.name || '')}`
       : escHtml(nextItem.name || '');
 
+    const resolvedMode = resolveDjPlanMode(t);
+    const modeLabel = resolvedMode ? (MIX_TRANSITION_MODE_LABELS[resolvedMode] || resolvedMode) : null;
+    const fxLabel = resolvedMode ? (FX_MODE_LABELS[resolvedMode] || null) : null;
+
     djPlanIndicatorEl.innerHTML = `
     <div class="dj-plan-card">
       <div class="dj-plan-card-header">
         <span class="dj-plan-type-badge">${escHtml(typeLabel)}</span>
+        ${modeLabel ? `<span class="dj-plan-mode-badge" title="Mode de transition">${escHtml(modeLabel)}</span>` : ''}
+        ${fxLabel ? `<span class="dj-plan-fx-badge" title="Effet appliqué">FX ${escHtml(fxLabel)}</span>` : ''}
         ${scorePct !== null ? `<span class="dj-plan-score ${scoreClass}" title="Score de compatibilité">${scorePct}%</span>` : ''}
         ${decisionId ? `
         <div class="dj-plan-card-feedback filrouge-dj-feedback" data-decision-id="${decisionId}">

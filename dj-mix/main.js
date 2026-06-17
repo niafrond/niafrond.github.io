@@ -78,6 +78,7 @@ import {
   getTransitionRamRequirementsMb,
   MIX_TRANSITION_MODE_LABELS,
   MIX_TRANSITION_MODES,
+  normalizeTransitionMode,
 } from './lib/transitionModes.js';
 import { AutoFadeManager } from './lib/autoFadeManager.js';
 import {
@@ -100,7 +101,7 @@ import { createDjMixRenderer, renderDjSetQualityBadge, renderDjTransitionFeedbac
 import { createAutoModeManager } from './lib/autoModeManager.js';
 import { createDjApiClient } from './lib/djApiClient.js';
 import { createDjPlanManager } from './lib/djPlanManager.js';
-import { computeDjBpmRate } from './lib/djTransitionMapping.js';
+import { computeDjBpmRate, mapDjTransitionTypeToMode } from './lib/djTransitionMapping.js';
 import { computeDjPlanIndicatorState } from './lib/djPlanIndicator.js';
 import { createAppState } from './lib/appState.js';
 import {
@@ -2281,6 +2282,33 @@ const DJ_TRANSITION_TYPE_LABELS = {
   echo_out: 'Echo out',
 };
 
+const FX_MODE_LABELS = {
+  filter_sweep_low_high: 'Filter sweep',
+  echo_out_light: 'Echo out',
+  reverb_short_simple: 'Reverb',
+  short_loop: 'Loop',
+  brake_tape_stop_simple: 'Brake',
+  short_reverse: 'Backspin',
+  filter_automation: 'Filter auto',
+  crossfade_lowpass: 'Low-pass',
+  crossfade_highpass_in: 'High-pass',
+  filter_dual_sweep: 'Double filtre',
+  echo_lowpass: 'Echo + LP',
+  bass_swap: 'Bass swap',
+  kick_swap: 'Kick swap',
+  beat_repeat: 'Beat repeat',
+  backspin: 'Backspin',
+  fake_drop: 'Fake drop',
+  echo_freeze: 'Echo freeze',
+};
+
+function resolveDjPlanMode(transition) {
+  const raw = transition.automixMode
+    ? normalizeTransitionMode(transition.automixMode)
+    : mapDjTransitionTypeToMode(transition.transitionType);
+  return raw || null;
+}
+
 function updateDjPlanIndicator() {
   if (!djPlanIndicatorEl) return;
 
@@ -2331,10 +2359,16 @@ function updateDjPlanIndicator() {
     ? `${escHtml(nextItem.artist)} — ${escHtml(nextItem.name || '')}`
     : escHtml(nextItem.name || '');
 
+  const resolvedMode = resolveDjPlanMode(t);
+  const modeLabel = resolvedMode ? (MIX_TRANSITION_MODE_LABELS[resolvedMode] || resolvedMode) : null;
+  const fxLabel = resolvedMode ? (FX_MODE_LABELS[resolvedMode] || null) : null;
+
   djPlanIndicatorEl.innerHTML = `
     <div class="dj-plan-card">
       <div class="dj-plan-card-header">
         <span class="dj-plan-type-badge">${escHtml(typeLabel)}</span>
+        ${modeLabel ? `<span class="dj-plan-mode-badge" title="Mode de transition">${escHtml(modeLabel)}</span>` : ''}
+        ${fxLabel ? `<span class="dj-plan-fx-badge" title="Effet appliqué">FX ${escHtml(fxLabel)}</span>` : ''}
         ${scorePct !== null ? `<span class="dj-plan-score ${scoreClass}" title="Score de compatibilité">${scorePct}%</span>` : ''}
         ${decisionId ? `
         <div class="dj-plan-card-feedback filrouge-dj-feedback" data-decision-id="${decisionId}">
@@ -5362,6 +5396,34 @@ function bindSearchResults(songResults, artistResults) {
 
       pendingSearchAdd = true;
       triggerSearchFade(result)
+        .catch((err) => {
+          showToast(`API: ${err.message}`, true);
+        })
+        .finally(() => {
+          pendingSearchAdd = false;
+        });
+    });
+
+    el.querySelector('.add-btn')?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      player?.activateElement();
+      const result = resolveResult();
+      if (!result) return;
+
+      if (result?.isArtistResult) {
+        searchInput.value = result.artist || result.name || '';
+        searchClear.hidden = !searchInput.value;
+        lastSearchQuery = '';
+        openSearch();
+        searchResults.innerHTML = '<div class="search-loading">Recherche API...</div>';
+        runSearch(searchInput.value.trim());
+        return;
+      }
+
+      if (pendingSearchAdd) return;
+      pendingSearchAdd = true;
+
+      addToQueue(result)
         .catch((err) => {
           showToast(`API: ${err.message}`, true);
         })
