@@ -142,9 +142,8 @@
             </div>
             <button class="ctrl-btn" id="toggle-mix-menu-btn" title="Afficher/cacher le menu mix" aria-label="Menu mix">🎛️</button>
           </div>
+          <input type="range" id="deck-mix-slider" min="0" max="100" value="0" class="fade-slider" aria-label="Mix manuel entre platine 1 et platine 2">
         </div>
-
-        <input type="range" id="deck-mix-slider" min="0" max="100" value="0" class="fade-slider" aria-label="Mix manuel entre platine 1 et platine 2">
 
         <div id="deck-mix-control" class="deck-mix-control" aria-hidden="true">
           <div class="crossfade-row">
@@ -254,6 +253,7 @@
         <div class="queue-section">
           <div class="queue-header">
             <h2 class="queue-title">File d'attente</h2>
+            <span id="relay-indicator" class="relay-indicator" hidden aria-live="polite"></span>
             <button id="clear-queue-btn" class="clear-btn">Vider</button>
           </div>
           <div id="queue-list" class="queue-list">
@@ -453,6 +453,28 @@
               <button id="api-mix-playlist-load-btn" class="connect-btn connect-btn--secondary" type="button">Charger dans le fil rouge</button>
             </div>
             <div id="api-mix-playlist-status" class="setup-subtitle">Sélectionnez une playlist pour pré-remplir le fil rouge depuis le serveur.</div>
+          </div>
+
+          <div class="config-block" id="relay-mode-block">
+            <div class="config-label">
+              <span>Mode Maître / Relais</span>
+            </div>
+            <div class="relay-mode-bar" role="group" aria-label="Rôle de cet appareil">
+              <button id="relay-mode-standalone-btn" class="relay-mode-btn relay-mode-btn--active" type="button" aria-pressed="true">Autonome</button>
+              <button id="relay-mode-master-btn" class="relay-mode-btn" type="button" aria-pressed="false">Maître</button>
+            </div>
+
+            <!-- Panneau Maître -->
+            <div id="relay-master-panel" hidden>
+              <div class="setup-subtitle" style="margin-top:10px;">Partagez ce QR code ou lien avec les appareils relais. Ils téléchargeront automatiquement les morceaux.</div>
+              <div id="relay-qrcode" class="relay-qrcode"></div>
+              <div id="relay-session-url" class="relay-session-url setup-subtitle" style="word-break:break-all;margin:8px 0;font-size:11px;"></div>
+              <div class="controls" style="justify-content:flex-start;gap:10px;margin-top:6px;">
+                <button id="relay-copy-link-btn" class="connect-btn connect-btn--secondary" type="button">📋 Copier le lien</button>
+              </div>
+            </div>
+
+            <div id="relay-status" class="setup-subtitle" style="margin-top:8px;">Autonome : cet appareil gère sa propre lecture.</div>
           </div>
 
           <div class="config-block">

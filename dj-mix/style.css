@@ -3237,3 +3237,226 @@ input {
   backdrop-filter: blur(4px);
   pointer-events: auto;
 }
+
+/* ── Mode Maître / Relais ──────────────────────────────── */
+.relay-mode-bar {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 0 4px;
+}
+
+.relay-mode-btn {
+  flex: 1;
+  padding: 7px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.88em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  font-weight: 500;
+  text-align: center;
+}
+
+.relay-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.relay-mode-btn--active {
+  background: var(--surface3);
+  border-color: var(--text-muted);
+  color: var(--text);
+}
+
+#relay-mode-master-btn.relay-mode-btn--active {
+  background: #1a5f4a;
+  border-color: #27ae60;
+  color: #27ae60;
+}
+
+#relay-mode-relay-btn.relay-mode-btn--active {
+  background: #1a3a5f;
+  border-color: #2980b9;
+  color: #7eb8e8;
+}
+
+.relay-qrcode {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0 6px;
+  min-height: 60px;
+}
+
+.relay-qrcode canvas,
+.relay-qrcode img {
+  border-radius: 8px;
+  border: 3px solid var(--surface3);
+}
+
+/* Indicateur dans le header de la file d'attente */
+.relay-indicator {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  margin-left: 6px;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}
+
+.relay-indicator--master {
+  background: rgba(39, 174, 96, 0.15);
+  border-color: #27ae60;
+  color: #27ae60;
+}
+
+.relay-indicator--relay {
+  background: rgba(41, 128, 185, 0.15);
+  border-color: #2980b9;
+  color: #7eb8e8;
+}
+
+/* ── Écran dédié mode Relais ───────────────────────────── */
+.relay-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: env(safe-area-inset-top, 20px) 24px env(safe-area-inset-bottom, 20px);
+  overflow: hidden;
+}
+
+.relay-screen[hidden] { display: none; }
+
+/* Header */
+.relay-screen-header {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.relay-screen-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: #7eb8e8;
+  letter-spacing: 0.04em;
+}
+
+.relay-screen-status-text {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* Pochette */
+.relay-screen-art-wrap {
+  position: relative;
+  width: min(260px, 62vw);
+  height: min(260px, 62vw);
+  flex-shrink: 0;
+}
+
+.relay-screen-art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 18px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
+}
+
+.relay-screen-art-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72px;
+  color: var(--text-dim);
+}
+
+/* Infos piste */
+.relay-screen-info {
+  text-align: center;
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.relay-screen-track {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.relay-screen-artist {
+  font-size: 15px;
+  color: var(--text-muted);
+  font-weight: 500;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.relay-screen-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 0.03em;
+}
+
+/* Barre de progression */
+.relay-screen-progress-wrap {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.relay-screen-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--surface3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.relay-screen-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.5s linear;
+}
+
+.relay-screen-times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}

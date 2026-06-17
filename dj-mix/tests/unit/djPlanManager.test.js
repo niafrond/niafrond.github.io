@@ -515,6 +515,98 @@ describe('djPlanManager', () => {
       );
       expect(transitionCalls).toHaveLength(0);
     });
+
+    test('skips a batch transition that does not match fil rouge order and fetches the correct pair individually', async () => {
+      const trackSummaries = [
+        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
+        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
+      ];
+      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
+      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
+      const fr = makeFakeFilRouge([itemA, itemB]);
+      // Batch reordered: returns B→A instead of the fil rouge order A→B
+      const batchResult = {
+        globalSetScore: 0.7, reasons: [], globalComponents: null,
+        transitions: [{ trackA: 'b.mp3', trackB: 'a.mp3', transitionType: 'quick_cut',
+          mixOutSec: 180, mixInSec: 2, recommendedBpm: 120, crossfadeDurationSec: 8,
+          compatibilityScore: 0.5, decisionId: 'batch-rev' }],
+      };
+      const transitionResult = {
+        transitionType: 'long_blend', mixOutSec: 200, mixInSec: 4,
+        recommendedBpm: 116, crossfadeDurationSec: 33, compatibilityScore: 0.68, decisionId: 'ind-123',
+      };
+      const djApiClient = makeDjApiClient({
+        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
+        fetchBatchPlan: jest.fn().mockResolvedValue(batchResult),
+        fetchTransition: jest.fn().mockResolvedValue(transitionResult),
+      });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
+
+      await mgr.computeSetQuality();
+
+      // Batch transition B→A should NOT have been applied (wrong fil rouge order)
+      const transitionCalls = fr.patchPlaylistItem.mock.calls.filter(([, p]) => 'djTransition' in p);
+      const batchCall = transitionCalls.find(([id]) => id === '2');
+      expect(batchCall).toBeUndefined();
+
+      // Individual transition A→B should have been fetched and applied
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3');
+      const indivCall = transitionCalls.find(([id]) => id === '1');
+      expect(indivCall).toBeDefined();
+      expect(indivCall[1]).toEqual(expect.objectContaining({
+        djTransition: expect.objectContaining({ toItemId: '2', decisionId: 'ind-123' }),
+      }));
+    });
+
+    test('applies matching batch transitions and fetches only reordered pairs individually', async () => {
+      const trackSummaries = [
+        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
+        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
+        { trackId: 'c.mp3', trackName: 'C', artistName: 'Z', hasFullAnalysis: true },
+      ];
+      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
+      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
+      const itemC = { id: '3', name: 'C', artist: 'Z', cachePath: 'c.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
+      const fr = makeFakeFilRouge([itemA, itemB, itemC]);
+      // Batch order: [B, A, C] → transitions B→A and A→C
+      // Fil rouge order: [A, B, C] → pairs A→B and B→C
+      // Only A→C matches both (batch and fil rouge: A is followed by... wait no)
+      // In fil rouge [A,B,C]: A→B (id 1→2), B→C (id 2→3)
+      // Batch returns: B→A (2→1) doesn't match (fil rouge A's next is B not A), A→C (1→3) doesn't match (fil rouge A's next is B not C)
+      // So both batch transitions are skipped, both A→B and B→C go to fetchTransition
+      const batchResult = {
+        globalSetScore: 0.8, reasons: [], globalComponents: null,
+        transitions: [
+          { trackA: 'b.mp3', trackB: 'a.mp3', transitionType: 'quick_cut', mixOutSec: 100, mixInSec: 1, recommendedBpm: 120, crossfadeDurationSec: 4, compatibilityScore: 0.4, decisionId: 'ba' },
+          { trackA: 'a.mp3', trackB: 'c.mp3', transitionType: 'echo_out', mixOutSec: 150, mixInSec: 3, recommendedBpm: 118, crossfadeDurationSec: 12, compatibilityScore: 0.6, decisionId: 'ac' },
+        ],
+      };
+      const djApiClient = makeDjApiClient({
+        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
+        fetchBatchPlan: jest.fn().mockResolvedValue(batchResult),
+        fetchTransition: jest.fn().mockResolvedValue({
+          transitionType: 'long_blend', mixOutSec: 200, mixInSec: 4,
+          recommendedBpm: 116, crossfadeDurationSec: 33, compatibilityScore: 0.7, decisionId: 'ind',
+        }),
+      });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
+
+      await mgr.computeSetQuality();
+
+      // Both fil rouge pairs A→B and B→C must have been fetched individually
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3');
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('b.mp3', 'c.mp3');
+      expect(djApiClient.fetchTransition).toHaveBeenCalledTimes(2);
+
+      // djTransition applied on A and B from individual calls, not the batch
+      const transitionCalls = fr.patchPlaylistItem.mock.calls.filter(([, p]) => 'djTransition' in p);
+      const callForA = transitionCalls.find(([id]) => id === '1');
+      const callForB = transitionCalls.find(([id]) => id === '2');
+      expect(callForA).toBeDefined();
+      expect(callForA[1].djTransition.toItemId).toBe('2');
+      expect(callForB).toBeDefined();
+      expect(callForB[1].djTransition.toItemId).toBe('3');
+    });
   });
 
   describe('set profile persistence', () => {

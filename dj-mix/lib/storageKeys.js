@@ -26,6 +26,9 @@ export const STORAGE_KEYS = Object.freeze({
   djSetProfile: 'dj-mix:dj-api:set-profile',
   djExternalPlanEnabled: 'dj-mix:dj-plan:external-enabled',
   djBatchPlan: 'dj-mix:dj-api:batch-plan',
+  artworkUrls: 'dj-mix:artwork-urls',
+  relayMode: 'dj-mix:relay:mode',
+  relaySessionId: 'dj-mix:relay:session-id',
 });
 
 export const DEFAULT_DOWNLOADER_API_URL = 'http://192.168.8.149:3000';

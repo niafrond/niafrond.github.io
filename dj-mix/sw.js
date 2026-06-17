@@ -2,11 +2,14 @@
  * sw.js — Service Worker pour DJ Mix PWA
  */
 
-const CACHE = 'djmix-v1.218.11';
+const CACHE = 'djmix-v1.229.1';
 
 const ASSETS = [
   './',
   './index.html',
+  './relay.html',
+  './relay.js',
+  './relay.css',
   './main.js',
   './player.js',
   './pwa.js',
@@ -75,6 +78,17 @@ self.addEventListener('fetch', e => {
 
   // Ne pas intercepter les requêtes API
   if (e.request.url.includes('/api/')) return;
+
+  // Pour les navigations (chargement de pages HTML), chercher dans le cache
+  // sans les query params : évite que la redirection "clean URL" du serveur
+  // (relay.html → relay) ne supprime les paramètres de session relay.
+  if (e.request.mode === 'navigate') {
+    const urlWithoutSearch = e.request.url.split('?')[0];
+    e.respondWith(
+      caches.match(urlWithoutSearch).then(res => res || fetch(e.request))
+    );
+    return;
+  }
 
   e.respondWith(
     caches.match(e.request).then(res => res || fetch(e.request))

@@ -63,6 +63,7 @@ describe('filRougeManager', () => {
       const mgr = createFilRougeManager();
       mgr.addToPlaylist({ id: '1', name: 'Song A', artist: 'A' });
       mgr.addToPlaylist({ id: '2', name: 'Song B', artist: 'B' });
+      mgr.setLoopEnabled(true);
 
       mgr.getNextTrack(); // Song A (index 0)
       mgr.getNextTrack(); // Song B (index 1)
@@ -105,6 +106,7 @@ describe('filRougeManager', () => {
       mgr1.addToPlaylist({ id: '1', name: 'Song A', artist: 'A' });
       mgr1.addToPlaylist({ id: '2', name: 'Song B', artist: 'B' });
       mgr1.getNextTrack(); // advance index
+      mgr1.save(); // flush debounced save immediately
 
       // Create new instance which should restore from localStorage
       const mgr2 = createFilRougeManager();
@@ -180,6 +182,7 @@ describe('filRougeManager', () => {
         djHasAnalysis: true,
         djTransition,
       });
+      mgr1.save(); // flush debounced save immediately
 
       const item1 = mgr1.getPlaylist()[0];
       expect(item1.djTrackId).toBe('a.mp3');
@@ -201,6 +204,7 @@ describe('filRougeManager', () => {
 
       const djTransition = { toItemId: '2', transitionType: 'long_blend', computedAt: Date.now(), decisionId: 'd2' };
       mgr1.patchPlaylistItem('1', { djTrackId: 'a.mp3', djHasAnalysis: true, djTransition });
+      mgr1.save(); // flush debounced save immediately
 
       const mgr2 = createFilRougeManager();
       const item = mgr2.getPlaylist().find((p) => p.id === '1');

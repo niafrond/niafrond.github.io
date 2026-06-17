@@ -175,6 +175,28 @@ export function persistQueueShuffleSetting(enabled) {
   persistBooleanSetting(STORAGE_KEYS.queueShuffle, enabled);
 }
 
+const RELAY_MODES = ['standalone', 'master', 'relay'];
+
+export function readRelayModeSetting() {
+  const stored = safeGet(STORAGE_KEYS.relayMode);
+  return RELAY_MODES.includes(stored) ? stored : 'standalone';
+}
+
+export function persistRelayModeSetting(mode) {
+  safeSet(STORAGE_KEYS.relayMode, RELAY_MODES.includes(mode) ? mode : 'standalone');
+}
+
+export function readRelaySessionIdSetting() {
+  return safeGet(STORAGE_KEYS.relaySessionId) || null;
+}
+
+export function persistRelaySessionIdSetting(sessionId) {
+  if (sessionId) safeSet(STORAGE_KEYS.relaySessionId, String(sessionId));
+  else {
+    try { localStorage.removeItem(STORAGE_KEYS.relaySessionId); } catch (_) {}
+  }
+}
+
 export function removeQueueSetting() {
   try {
     localStorage.removeItem(STORAGE_KEYS.queue);

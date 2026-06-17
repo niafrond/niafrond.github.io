@@ -1,0 +1,219 @@
+/* relay.css — Styles minimaux pour la page relais (relay.html) */
+
+:root {
+  --bg:           #0a0a0f;
+  --surface2:     #1c1c2a;
+  --surface3:     #252535;
+  --accent:       #1db954;
+  --text:         #ffffff;
+  --text-muted:   #8888aa;
+  --text-dim:     #44445a;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* ── Overlay "tap to start" (AudioContext exige un geste) ─────────────── */
+#relay-tap-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  cursor: pointer;
+  user-select: none;
+}
+
+#relay-tap-overlay .tap-badge {
+  font-size: 14px;
+  font-weight: 600;
+  color: #7eb8e8;
+  letter-spacing: 0.06em;
+}
+
+#relay-tap-overlay .tap-hint {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+#relay-tap-overlay .tap-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ── Écran principal relais ───────────────────────────────────────────── */
+.relay-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: env(safe-area-inset-top, 20px) 24px env(safe-area-inset-bottom, 20px);
+  overflow: hidden;
+}
+
+/* Header */
+.relay-screen-header {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.relay-screen-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: #7eb8e8;
+  letter-spacing: 0.04em;
+}
+
+.relay-screen-status-text {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* Pochette */
+.relay-screen-art-wrap {
+  position: relative;
+  width: min(260px, 62vw);
+  height: min(260px, 62vw);
+  flex-shrink: 0;
+}
+
+.relay-screen-art {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 18px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
+}
+
+.relay-screen-art-placeholder {
+  width: 100%; height: 100%;
+  border-radius: 18px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72px;
+  color: var(--text-dim);
+}
+
+/* Infos piste */
+.relay-screen-info {
+  text-align: center;
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.relay-screen-track {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.relay-screen-artist {
+  font-size: 15px;
+  color: var(--text-muted);
+  font-weight: 500;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.relay-screen-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 0.03em;
+}
+
+/* Barre de progression */
+.relay-screen-progress-wrap {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.relay-screen-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--surface3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.relay-screen-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.5s linear;
+}
+
+.relay-screen-times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Barre de téléchargement */
+.relay-screen-dl-wrap {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+  left: 24px; right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.relay-screen-dl-bar {
+  flex: 1;
+  height: 2px;
+  background: var(--surface3);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.relay-screen-dl-fill {
+  height: 100%;
+  background: var(--text-dim);
+  border-radius: 1px;
+  width: 0%;
+  transition: width 0.4s ease;
+}

@@ -282,16 +282,37 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
     if (!result) return null;
 
     // Persist transition data from the batch result onto fil rouge items.
-    // The batch already contains all pairwise transitions, so we avoid
-    // separate /api/dj/transition calls for each edge.
+    // The batch endpoint reorders tracks for optimal energy flow, so its transitions
+    // may not match the fil rouge's actual consecutive pairs. Only apply a batch
+    // transition when it corresponds to the real fil rouge consecutive pair; for any
+    // pair the batch reordered, call /api/dj/transition individually instead.
     if (fr && Array.isArray(result.transitions) && result.transitions.length) {
       const byTrackId = new Map(
         playlist.filter((i) => i.djTrackId).map((i) => [i.djTrackId, i]),
       );
+
+      // Map each fil rouge item to its actual consecutive next (includes loop wrap).
+      const filRougeNextMap = new Map();
+      for (let i = 0; i < playlist.length - 1; i++) {
+        filRougeNextMap.set(playlist[i].id, playlist[i + 1]);
+      }
+      if (fr.isLoopEnabled() && playlist.length > 1) {
+        filRougeNextMap.set(playlist[playlist.length - 1].id, playlist[0]);
+      }
+
+      const batchCoveredFromIds = new Set();
+
       for (const t of result.transitions) {
         const fromItem = byTrackId.get(t.trackA);
         const toItem = byTrackId.get(t.trackB);
         if (!fromItem || !toItem) continue;
+
+        // Skip transitions where the batch's toItem differs from the actual fil rouge next.
+        const actualNext = filRougeNextMap.get(fromItem.id);
+        if (!actualNext || actualNext.id !== toItem.id) continue;
+
+        batchCoveredFromIds.add(fromItem.id);
+
         if (!forceRefresh && isDjTransitionFresh(fromItem.djTransition, toItem.id)) continue;
         if (!Number.isFinite(t.mixOutSec) || !Number.isFinite(t.mixInSec)) {
           logger?.warn('djPlanManager: batch — mixOutSec/mixInSec manquants', {
@@ -315,6 +336,22 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
             computedAt: Date.now(),
           },
         });
+      }
+
+      // For fil rouge pairs the batch reordered (not covered above), call
+      // /api/dj/transition individually to get the correct transition plan.
+      const missingEdges = [];
+      for (const [fromId, toItem] of filRougeNextMap) {
+        if (batchCoveredFromIds.has(fromId)) continue;
+        const fromItem = playlist.find((p) => p.id === fromId);
+        if (!fromItem || !fromItem.djTrackId || !toItem.djTrackId) continue;
+        if (!fromItem.djHasAnalysis || !toItem.djHasAnalysis) continue;
+        if (!forceRefresh && isDjTransitionFresh(fromItem.djTransition, toItem.id)) continue;
+        missingEdges.push({ from: fromItem, to: toItem });
+      }
+
+      if (missingEdges.length > 0) {
+        await computeAndPersistEdges(missingEdges);
       }
     }
 

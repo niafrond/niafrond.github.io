@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>DJ Mix · Relais</title>
+  <link rel="icon" href="icon-192.png">
+  <link rel="stylesheet" href="relay.css">
+</head>
+<body>
+
+  <!-- Overlay "appuyer pour démarrer" — AudioContext exige un geste utilisateur -->
+  <div id="relay-tap-overlay" role="button" aria-label="Appuyer pour démarrer">
+    <span class="tap-badge">📻 RELAIS</span>
+    <span class="tap-hint">Appuyez pour démarrer</span>
+    <span class="tap-sub">Lecture synchronisée avec le maître</span>
+  </div>
+
+  <!-- Écran relais -->
+  <div id="relay-screen" class="relay-screen">
+    <div class="relay-screen-header">
+      <span class="relay-screen-badge">📻 Relais</span>
+      <span id="relay-screen-status" class="relay-screen-status-text">Connexion…</span>
+    </div>
+
+    <div class="relay-screen-art-wrap">
+      <img id="relay-screen-art" class="relay-screen-art" src="" alt="" hidden>
+    </div>
+
+    <div class="relay-screen-info">
+      <div id="relay-screen-track" class="relay-screen-track">En attente du maître…</div>
+      <div id="relay-screen-artist" class="relay-screen-artist"></div>
+      <div id="relay-screen-meta" class="relay-screen-meta"></div>
+    </div>
+
+    <div class="relay-screen-progress-wrap">
+      <div class="relay-screen-progress-bar"
+           role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+           id="relay-screen-progress-bar">
+        <div id="relay-screen-progress-fill" class="relay-screen-progress-fill"></div>
+      </div>
+      <div class="relay-screen-times">
+        <span id="relay-screen-time-cur">0:00</span>
+        <span id="relay-screen-time-total">0:00</span>
+      </div>
+    </div>
+
+    <!-- Indicateur de téléchargement en arrière-plan -->
+    <div class="relay-screen-dl-wrap">
+      <div class="relay-screen-dl-bar">
+        <div id="relay-screen-dl-fill" class="relay-screen-dl-fill"></div>
+      </div>
+      <span id="relay-screen-dl-label"></span>
+    </div>
+  </div>
+
+  <script type="module" src="relay.js"></script>
+</body>
+</html>

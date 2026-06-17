@@ -1,4 +1,4 @@
-/**
+﻿/**
  * main.js - DJ Mix app orchestrator.
  * Search: downloader API
  * Playback: temporary local Blob download + dual-deck crossfade
@@ -174,6 +174,7 @@ import {
 } from './lib/settingsStorage.js';
 import { DEFAULT_DOWNLOADER_API_URL, STORAGE_KEYS } from './lib/storageKeys.js';
 import { getStoredTrackMeta, patchStoredTrackMeta } from './lib/trackMetaStorage.js';
+import { getArtworkUrl, setArtworkUrl } from './lib/artworkUrlCache.js';
 import { DANCE_GENRE_DEFAULTS } from './lib/danceGenreConfig.js';
 import { DJ_MODES } from './lib/djModeConfig.js';
 import { createApiHealthMonitor } from './lib/apiHealthMonitor.js';
@@ -185,6 +186,8 @@ import { createFilRougeController } from './lib/filRougeController.js';
 import { createFilRougeDownloader } from './lib/filRougeDownloader.js';
 import { createDeckMarkerController } from './lib/deckMarkerController.js';
 import { createPlaybackController } from './lib/playbackController.js';
+import { createRelayModeManager } from './lib/relayModeManager.js';
+import { createRelayModeController } from './lib/relayModeController.js';
 
 import { uiState } from './lib/uiState.js';
 const QUEUE_KEY = STORAGE_KEYS.queue;
@@ -544,6 +547,9 @@ function applyTransitionModeSetting(mode, options = {}) {
   player?.setTransitionMode(safeMode);
   if (persist) persistTransitionModeSetting(safeMode);
   updateDjFxMenuUI();
+  if (relayModeManager?.getRole() === 'master') {
+    relayModeManager.schedulePush(buildRelayStateSnapshot());
+  }
 }
 
 function recalculateAutomixTimingIfNeeded(logEvent = 'autoDj: recalculating automix timing') {
@@ -816,6 +822,14 @@ const configDanceGenrePrefs = document.getElementById('config-dance-genre-prefs'
 const configDanceGenreList = document.getElementById('config-dance-genre-list');
 const debugLogsStatus = document.getElementById('debug-logs-status');
 const autoSuggestionQueueSearchStatus = document.getElementById('auto-suggestion-queue-search-status');
+const relayModeStandaloneBtn = document.getElementById('relay-mode-standalone-btn');
+const relayModeMasterBtn = document.getElementById('relay-mode-master-btn');
+const relayMasterPanel = document.getElementById('relay-master-panel');
+const relayQrcodeEl = document.getElementById('relay-qrcode');
+const relaySessionUrlEl = document.getElementById('relay-session-url');
+const relayCopyLinkBtn = document.getElementById('relay-copy-link-btn');
+const relayStatusEl = document.getElementById('relay-status');
+const relayIndicatorEl = document.getElementById('relay-indicator');
 const ramFilterEnabledToggle = document.getElementById('ram-filter-enabled-toggle');
 const ramTotalMemoryInput = document.getElementById('ram-total-memory-gb');
 const ramFilterStatus = document.getElementById('ram-filter-status');
@@ -889,6 +903,15 @@ const {
   setStatus: setDownloaderApiStatus,
   setupEvents: setupDownloaderApiConfigEvents,
 } = downloaderConfig;
+
+// ── Mode Maître / Relais ──────────────────────────────────────────────────────
+const relayModeManager = createRelayModeManager({
+  getDownloaderApiUrl,
+  getDownloaderApiToken,
+  logger,
+  onApplyRelayState: (state) => applyRelayState(state),
+  onRelayQueueItemsAvailable: (items) => _relayPrefetchItems(items),
+});
 
 const apiHealthMonitor = createApiHealthMonitor({
   getDownloaderApiToken,
@@ -1637,6 +1660,9 @@ function applySpotifyPlaylistToFilRouge(tracks) {
   }
   renderFilRouge();
   runDjPlanFullPass('spotify-import').catch(() => {});
+  if (relayModeManager?.getRole() === 'master') {
+    relayModeManager.schedulePush(buildRelayStateSnapshot());
+  }
 }
 
 /**
@@ -1704,6 +1730,9 @@ function applyTxtPlaylistToFilRouge(tracks) {
   updateSpotifyConfigUi();
   renderFilRouge();
   runDjPlanFullPass('txt-import').catch(() => {});
+  if (relayModeManager?.getRole() === 'master') {
+    relayModeManager.schedulePush(buildRelayStateSnapshot());
+  }
 }
 
 /**
@@ -1716,7 +1745,10 @@ async function fetchFilRougeArtwork(track) {
   if (!track?.id) return;
   const needsArt = !track.artUrl;
   const needsMeta = !track.bpm && !track.genre;
-  if (!needsArt && !needsMeta) return;
+  if (!needsArt && !needsMeta) {
+    if (track.artUrl) setArtworkUrl(track.name, track.artist, track.artUrl);
+    return;
+  }
 
   // Check Cache Storage for a persisted blob first (no network)
   if (needsArt) {
@@ -1728,11 +1760,11 @@ async function fetchFilRougeArtwork(track) {
     }
   }
 
-  // Use stored URL from localStorage if available
-  const stored = getStoredTrackMeta(track.name, track.artist);
-  if (needsArt && stored?.artworkUrl) {
-    filRougeManager.patchPlaylistItem(track.id, { artUrl: stored.artworkUrl });
-    persistArtwork(track, stored.artworkUrl).catch(() => {});
+  // Use artwork URL cache (in-memory + localStorage)
+  const cachedArtUrl = needsArt ? getArtworkUrl(track.name, track.artist) : null;
+  if (needsArt && cachedArtUrl) {
+    filRougeManager.patchPlaylistItem(track.id, { artUrl: cachedArtUrl });
+    persistArtwork(track, cachedArtUrl).catch(() => {});
     renderFilRouge();
     if (!needsMeta) return;
   }
@@ -1745,7 +1777,7 @@ async function fetchFilRougeArtwork(track) {
     const hitArtUrl = getBestArtworkUrl(hit);
     if (needsArt && hitArtUrl) {
       patch.artUrl = hitArtUrl;
-      patchStoredTrackMeta(track.name, track.artist, { artworkUrl: hitArtUrl });
+      setArtworkUrl(track.name, track.artist, hitArtUrl);
       persistArtwork(track, hitArtUrl).catch(() => {});
     }
     if (needsMeta) {
@@ -1767,7 +1799,11 @@ async function fetchFilRougeArtwork(track) {
  * @param {string} [deck] - deck en cours de lecture (pour rafraîchir la pochette)
  */
 async function fetchAndStoreArtworkForItem(item, deck) {
-  if (!item || item.artUrl) return;
+  if (!item) return;
+  if (item.artUrl) {
+    setArtworkUrl(item.name, item.artist, item.artUrl);
+    return;
+  }
 
   // Check Cache Storage for a persisted blob first (no network)
   const cachedBlobUrl = await restoreArtwork(item).catch(() => null);
@@ -1780,15 +1816,15 @@ async function fetchAndStoreArtworkForItem(item, deck) {
     return;
   }
 
-  // Use stored URL from localStorage if available
-  const stored = getStoredTrackMeta(item.name, item.artist);
-  if (stored?.artworkUrl) {
-    item.artUrl = stored.artworkUrl;
-    if (item.id) filRougeManager.patchPlaylistItem(item.id, { artUrl: stored.artworkUrl });
+  // Use artwork URL cache (in-memory + localStorage)
+  const cachedArtUrl = getArtworkUrl(item.name, item.artist);
+  if (cachedArtUrl) {
+    item.artUrl = cachedArtUrl;
+    if (item.id) filRougeManager.patchPlaylistItem(item.id, { artUrl: cachedArtUrl });
     updateNowPlaying(item, deck ?? getFocusDeck());
     renderQueue();
     renderFilRouge();
-    persistArtwork(item, stored.artworkUrl).catch(() => {});
+    persistArtwork(item, cachedArtUrl).catch(() => {});
     return;
   }
 
@@ -1797,7 +1833,7 @@ async function fetchAndStoreArtworkForItem(item, deck) {
     const artUrl = getBestArtworkUrl(results[0]);
     if (!artUrl) return;
     item.artUrl = artUrl;
-    patchStoredTrackMeta(item.name, item.artist, { artworkUrl: artUrl });
+    setArtworkUrl(item.name, item.artist, artUrl);
     if (item.id) {
       filRougeManager.patchPlaylistItem(item.id, { artUrl });
     }
@@ -1970,6 +2006,10 @@ function mergeSpotifyTracksToFilRouge(freshTracks) {
     runDjPlanIncrementalPass(newItems, filRougeManager.isLoopEnabled()).catch(() => {});
   }
 
+  if (relayModeManager?.getRole() === 'master') {
+    relayModeManager.schedulePush(buildRelayStateSnapshot());
+  }
+
   return { added };
 }
 
@@ -2089,6 +2129,9 @@ filRougeClearBtn?.addEventListener('click', () => {
   showToast('Fil rouge vidé');
   updateSpotifyConfigUi();
   renderFilRouge();
+  if (relayModeManager?.getRole() === 'master') {
+    relayModeManager.schedulePush(buildRelayStateSnapshot());
+  }
 });
 
 /**
@@ -2126,6 +2169,9 @@ function addToFilRouge(item) {
     showToast(`Déjà dans le fil rouge`, true);
   }
   renderFilRouge();
+  if (relayModeManager?.getRole() === 'master') {
+    relayModeManager.schedulePush(buildRelayStateSnapshot());
+  }
 }
 
 /**
@@ -2166,9 +2212,10 @@ const scheduleDjSetQualityRefresh = createDebouncedFn(() => {
 }, 1000);
 
 /**
- * Rafraîchit transitions + badge de qualité via un seul appel `/api/dj/batch`.
- * `computeSetQuality` persiste désormais les transitions retournées par batch,
- * ce qui rend `planAllEdges` redondant pour ce chemin.
+ * Rafraîchit les transitions du fil rouge puis le badge de qualité du set.
+ * Les transitions batch ne sont appliquées que si elles correspondent à l'ordre
+ * réel du fil rouge ; les paires réordonnées par le batch sont recalculées via
+ * /api/dj/transition individuellement dans computeSetQuality.
  * @param {string} reason - pour les logs (ex: 'startup', 'spotify-import')
  */
 async function runDjPlanFullPass(reason) {
@@ -2366,14 +2413,25 @@ if (djRecalculateBtn) {
 
 // ── Fil rouge : téléchargement de masse ──────────────────────────────────────
 
+const DOWNLOAD_ALL_BTN_DEFAULT_LABEL = 'Tout télécharger';
+
 const filRougeDownloader = createFilRougeDownloader({
-  getDownloaderApiUrl,
-  getDownloaderApiToken,
   prefetchTrackToLocalCache,
   setFilRougeTrackStatus,
   getFilRougeTrackStatus,
   renderFilRouge,
   showToast,
+  onProgress: (done, inProgress, total) => {
+    if (!filRougeDownloadAllBtn) return;
+    if (total === 0) {
+      filRougeDownloadAllBtn.textContent = DOWNLOAD_ALL_BTN_DEFAULT_LABEL;
+      filRougeDownloadAllBtn.disabled = false;
+    } else {
+      const inProgressPart = inProgress > 0 ? ` · ⬇ ${inProgress}` : '';
+      filRougeDownloadAllBtn.textContent = `✓ ${done}${inProgressPart} / ${total}`;
+      filRougeDownloadAllBtn.disabled = true;
+    }
+  },
 });
 
 if (filRougeDownloadAllBtn) {
@@ -2382,6 +2440,10 @@ if (filRougeDownloadAllBtn) {
     filRougeDownloader.downloadAll(tracks).catch(err => {
       showToast('Téléchargement : erreur', true);
       console.error('[filrouge] downloadAll error', err);
+      if (filRougeDownloadAllBtn) {
+        filRougeDownloadAllBtn.textContent = DOWNLOAD_ALL_BTN_DEFAULT_LABEL;
+        filRougeDownloadAllBtn.disabled = false;
+      }
     });
   });
 }
@@ -2545,6 +2607,7 @@ function setDeckItem(deck, item) {
   if (item) fetchMissingMeta(item).catch(() => {});
   uiRenderer.refreshDeckMetaDisplays();
   updateDeckCueUI();
+
 }
 
 /**
@@ -3296,6 +3359,9 @@ function setDjMode(mode) {
   uiRenderer.refreshDeckMetaDisplays();
   if (uiState.lastDeckState) renderDeckState(uiState.lastDeckState);
   logDebug('djMode: changed', { mode, bpm: getActiveDeckBpm() });
+  if (relayModeManager?.getRole() === 'master') {
+    relayModeManager.schedulePush(buildRelayStateSnapshot());
+  }
 }
 
 configDjModeDanceBtn?.addEventListener('click', () => setDjMode('dance'));
@@ -3486,6 +3552,10 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
 
   loadDownloaderApiConfigIntoForm();
   setupDownloaderApiConfigEvents();
+
+  // Initialiser le contrôleur maître/relais
+  relayController.init();
+
   setupMediaSession();
   initServiceWorker();
   
@@ -3725,6 +3795,10 @@ function hookPlayerEvents() {
     }
     updateMediaSessionPositionState();
     renderQueue();
+    // Maître : pousser l'état aux relais
+    if (relayModeManager.getRole() === 'master') {
+      relayModeManager.schedulePush(buildRelayStateSnapshot());
+    }
   });
 
   player.addEventListener('progress', ({ detail }) => {
@@ -3872,9 +3946,11 @@ function hookPlayerEvents() {
     player.addEventListener('deckstate', ({ detail }) => {
       uiState.lastDeckState = detail;
       renderDeckState(detail);
-      // Update max duration marker when the playing deck's duration becomes available
-      // (handles fil rouge tracks that have duration=0 in queue metadata).
       if (trackMaxDurationEnabled) updateMaxDurationMarker();
+      // Maître : pousser la position aux relais (toutes les ~2 s via debounce du manager)
+      if (relayModeManager.getRole() === 'master') {
+        relayModeManager.schedulePush(buildRelayStateSnapshot());
+      }
     });
 }
 
@@ -4243,6 +4319,9 @@ function setCrossfadeDurationSeconds(seconds) {
   if (player) {
     player.crossfadeDuration = safeSeconds * 1000;
     player.setAllowedTransitionModes(allowedTransitionModes);
+  }
+  if (relayModeManager?.getRole() === 'master') {
+    relayModeManager.schedulePush(buildRelayStateSnapshot());
   }
 }
 
@@ -5607,6 +5686,11 @@ async function addToQueue(track, options = {}) {
   if (showAddedToast) {
     showToast(`✔ "${item.name}" ajouté`);
   }
+
+  // Maître : notifier les relais qu'une piste a été ajoutée
+  if (relayModeManager.getRole() === 'master') {
+    relayModeManager.schedulePush(buildRelayStateSnapshot());
+  }
 }
 
 async function startPlaybackForIndex(index, mode, options = {}) {
@@ -5943,6 +6027,8 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     updateAutoDjMarker();
     updateMaxDurationMarker();
     autoModeManager.scheduleAutomixTiming(item);
+    // Maître → uploader le blob courant vers le proxy pour que les relais puissent le lire
+    uploadCurrentTrackToRelayProxy().catch(() => {});
     if (autoSuggestionQueueSearchEnabled) {
       // Defer suggestion search to idle time to avoid competing with playback startup
       scheduleIdle(() => {
@@ -6167,6 +6253,9 @@ function removeFromQueue(idx) {
   updateCurrentIndex();
   renderQueue();
   scheduleDjSetQualityRefresh();
+  if (relayModeManager?.getRole() === 'master') {
+    relayModeManager.schedulePush(buildRelayStateSnapshot());
+  }
 }
 
 function reorderQueue(fromIndex, targetIndex, insertAfter = false) {
@@ -6191,6 +6280,9 @@ function reorderQueue(fromIndex, targetIndex, insertAfter = false) {
   updateCurrentIndex();
   clearQueueDragMarkers(uiRenderer.queueList);
   renderQueue();
+  if (relayModeManager?.getRole() === 'master') {
+    relayModeManager.schedulePush(buildRelayStateSnapshot());
+  }
 }
 
 function updateCurrentIndex() {
@@ -6302,6 +6394,304 @@ updateMixFeaturesUI();
 updateDjFxMenuUI();
 fxControlsHidden = readFxControlsHiddenSetting();
 updateFxVisibilityUI();
+
+// ── Mode Maître / Relais : fonctions d'état ───────────────────────────────────
+
+/**
+ * Construit un snapshot compact de l'état courant pour le maître.
+ * Inclut la file d'attente (champs minimaux) et le fil rouge pour pré-dl côté relais.
+ */
+function buildRelayStateSnapshot() {
+  const deckState = uiState.lastDeckState;
+  const activeDeck = getResolvedActiveDeck();
+  const inactiveDeck = getOtherDeck(activeDeck);
+  // Horodatage précis de la capture des positions — les relais s'en servent pour
+  // compenser la latence réseau et retrouver la bonne position de lecture.
+  const capturedAt = Date.now();
+
+  function _deckInfo(deck) {
+    const ds = deckState?.[`deck${deck}`];
+    const item = deckDisplayItems[deck];
+    return {
+      trackId: item?.id || null,
+      positionMs: ds?.positionMs || 0,
+      volume: ds?.volume ?? (deck === activeDeck ? 1 : 0),
+    };
+  }
+
+  // Exclure les blob: URLs — elles n'existent que dans ce browser,
+  // le relais ne peut pas les télécharger depuis un autre appareil.
+  const _relayUrl = (url) => (url && !String(url).startsWith('blob:') ? url : '');
+
+  const queueItems = queue.map((item) => ({
+    id: item.id,
+    name: item.name,
+    artist: item.artist,
+    artUrl: item.artUrl || '',
+    duration: item.duration || 0,
+    bpm: item.bpm || null,
+    genre: item.genre || '',
+    persistedSourceUrl: _relayUrl(item.persistedSourceUrl),
+    uri: item.uri || '',
+  }));
+
+  // Fil rouge complet (sans limite) pour pré-dl côté relais
+  const filRougeItems = filRougeManager.isActive()
+    ? filRougeManager.getPlaylist().map((t) => ({
+        id: t.id,
+        name: t.name,
+        artist: t.artist,
+        artUrl: t.artUrl || '',
+        duration: t.duration || 0,
+        persistedSourceUrl: _relayUrl(t.persistedSourceUrl),
+        uri: t.uri || '',
+      }))
+    : [];
+
+  // État FX courant (pour que le relais applique les mêmes effets)
+  const fxState = {
+    echo:        Boolean(mixFeatures.echo),
+    distortion:  Boolean(mixFeatures.distortion),
+    autoBpm:     Boolean(mixFeatures.autoBpm),
+    filterType:  'none',  // le filtre BPM-aware n'est pas répliqué sur le relais
+    filterFreq:  0,
+    filterQ:     1,
+  };
+
+  // Événements à venir : le relais les schedule localement avec setTimeout.
+  // Évite tout spam de polling côté relais pour ces actions planifiées.
+  const upcoming = [];
+
+  if (uiState.isPlaying && playbackDurationMs > 0) {
+    const xfadeMs = (crossfadeSlider?.value || 6) * 1000;
+    const currentItem = queue[uiState.currentIndex];
+    const startOffset = Number(currentItem?.autoDjStartOffsetMs) || 0;
+    const timeToXfade = playbackDurationMs - playbackPositionMs - xfadeMs - startOffset;
+
+    // Transition à venir (automix ou transition en attente)
+    if (timeToXfade > 0 && timeToXfade < 180_000) {
+      const nextItem = queue[uiState.currentIndex + 1];
+      if (nextItem?.id) {
+        upcoming.push({
+          type: 'transition',
+          at: capturedAt + timeToXfade,
+          toTrackId: nextItem.id,
+          toTrackUrl: nextItem.persistedSourceUrl || '',
+          mode: selectedTransitionMode || 'crossfade',
+          durationMs: xfadeMs,
+        });
+      }
+    }
+
+    // Prochain événement FX auto (si le countdown est visible, l'event existe)
+    const nextFx = autoModeManager.peekNextAutoFxEvent?.(playbackPositionMs);
+    if (nextFx?.timeMs) {
+      const timeToFx = nextFx.timeMs - playbackPositionMs;
+      if (timeToFx > 0 && timeToFx < 120_000) {
+        upcoming.push({
+          type: 'fx',
+          at: capturedAt + timeToFx,
+          // On spread tout ce que l'autoModeManager retourne (timeMs, feature, enabled, etc.)
+          ...nextFx,
+          timeMs: undefined, // remplacé par `at` absolu
+        });
+      }
+    }
+  }
+
+  return {
+    currentTrackId: uiState.currentTrackId || null,
+    currentIndex: uiState.currentIndex,
+    isPlaying: Boolean(uiState.isPlaying),
+    activeDeck,
+    deckA: _deckInfo('A'),
+    deckB: _deckInfo('B'),
+    capturedAt,
+    queue: queueItems,
+    filRouge: filRougeItems,
+    transitionMode: selectedTransitionMode || 'auto',
+    crossfadeMs: (crossfadeSlider?.value || 6) * 1000,
+    djMode: djMode || 'music',
+    fx: fxState,
+    upcoming,
+  };
+}
+
+/**
+ * Maître → upload le blob audio de la piste courante vers le proxy serveur.
+ * Permet aux relais de télécharger via /api/relay/audio/:id même si
+ * persistedSourceUrl est un blob: URL inaccessible depuis un autre appareil.
+ */
+async function uploadCurrentTrackToRelayProxy() {
+  if (relayModeManager.getRole() !== 'master') return;
+  const item = queue[uiState.currentIndex];
+  if (!item?.id) return;
+  const src = item.localBlobUrl || item.persistedSourceUrl || '';
+  if (!src) return;
+  try {
+    const blob = await fetch(src).then((r) => (r.ok ? r.blob() : null)).catch(() => null);
+    if (blob) relayModeManager.uploadAudioProxy(item.id, blob).catch(() => {});
+  } catch (_) {}
+}
+
+/**
+ * Côté relais : applique un état reçu depuis le maître.
+ * Synchro de la piste et des paramètres. Pré-téléchargement déclenché séparément
+ * via onRelayQueueItemsAvailable().
+ */
+async function applyRelayState(state) {
+  if (!state || relayModeManager.getRole() !== 'relay') return;
+
+  const {
+    currentTrackId, currentIndex, isPlaying,
+    activeDeck, deckA, deckB, queue: masterQueue,
+    transitionMode, crossfadeMs, djMode: masterDjMode,
+    pushedAt,
+  } = state;
+
+  // 1. Sync des paramètres (rapide, sans effet de bord audio)
+  if (transitionMode && transitionMode !== selectedTransitionMode) {
+    selectedTransitionMode = transitionMode;
+    persistTransitionModeSetting(transitionMode);
+    if (mixTransitionModeSelect) mixTransitionModeSelect.value = transitionMode;
+  }
+
+  if (crossfadeMs && typeof crossfadeMs === 'number') {
+    const secs = Math.max(1, Math.min(30, Math.round(crossfadeMs / 1000)));
+    if (crossfadeSlider && Number(crossfadeSlider.value) !== secs) {
+      crossfadeSlider.value = String(secs);
+      persistCrossfadeSecondsSetting(secs);
+    }
+  }
+
+  // 2. Sync de la file d'attente si elle est différente
+  if (Array.isArray(masterQueue) && masterQueue.length) {
+    const masterIds = masterQueue.map((i) => i.id).join(',');
+    const localIds = queue.map((i) => i.id).join(',');
+    if (masterIds !== localIds) {
+      _rebuildQueueFromRelay(masterQueue);
+    }
+  }
+
+  // 3. Sync de la piste en cours
+  if (currentTrackId && currentTrackId !== uiState.currentTrackId && player) {
+    const targetIdx = queue.findIndex((i) => i.id === currentTrackId);
+    if (targetIdx >= 0) {
+      const activeDeckState = activeDeck === 'A' ? deckA : deckB;
+      const timecodeRef = activeDeckState?.timecodeAt || pushedAt;
+      const seekMs = activeDeckState && timecodeRef
+        ? Math.max(0, (activeDeckState.positionMs || 0) + (Date.now() - timecodeRef))
+        : 0;
+      try {
+        await startPlaybackForIndex(targetIdx, 'play', { seekMs });
+      } catch (_) {}
+    }
+  } else if (currentTrackId && currentTrackId === uiState.currentTrackId && isPlaying && player) {
+    // Même piste : corriger la dérive de position si > 5 s
+    const activeDeckState = activeDeck === 'A' ? deckA : deckB;
+    if (activeDeckState && pushedAt) {
+      const driftRef = activeDeckState.timecodeAt || pushedAt;
+      const targetMs = (activeDeckState.positionMs || 0) + (Date.now() - driftRef);
+      const drift = Math.abs(targetMs - playbackPositionMs);
+      if (drift > 5000) {
+        const deck = activeDeck || getResolvedActiveDeck();
+        player.seekDeckTo(deck, targetMs).catch(() => {});
+      }
+    }
+  }
+}
+
+/**
+ * Reconstruit la file d'attente locale à partir des items du maître.
+ * Préserve la piste actuellement en lecture si elle est présente.
+ */
+function _rebuildQueueFromRelay(masterItems) {
+  const currentId = uiState.currentTrackId;
+  // Vider sans perturber la lecture
+  for (const item of queue) {
+    if (item.id !== currentId) releaseLocalBlob(item);
+  }
+  queue.length = 0;
+  for (const raw of masterItems) {
+    queue.push({
+      id: raw.id,
+      name: raw.name || 'Titre',
+      artist: raw.artist || 'Artiste',
+      artUrl: raw.artUrl || '',
+      duration: raw.duration || 0,
+      bpm: raw.bpm || null,
+      genre: raw.genre || '',
+      persistedSourceUrl: raw.persistedSourceUrl || '',
+      uri: raw.uri || raw.persistedSourceUrl || '',
+      sourceState: 'idle',
+      sourceError: null,
+      sourceMeta: null,
+      localBlobUrl: null,
+      queueSource: 'relay',
+      autoDjReferenceTrackId: null,
+      autoDjStartOffsetMs: 0,
+      lastTouchedAt: Date.now(),
+    });
+  }
+  updateCurrentIndex();
+  renderQueue();
+}
+
+/**
+ * Côté relais : pré-télécharge tous les items reçus du maître en arrière-plan.
+ * Utilise ensureLocalSource() si disponible, sinon le proxy audio du relais.
+ */
+function _relayPrefetchItems(items) {
+  if (relayModeManager.getRole() !== 'relay' || !Array.isArray(items)) return;
+  for (const raw of items) {
+    if (!raw?.id || !raw?.persistedSourceUrl) continue;
+    // Trouver l'item dans la queue locale
+    const localItem = queue.find((i) => i.id === raw.id);
+    const target = localItem || raw;
+    if (target.localBlobUrl) continue; // déjà téléchargé
+    enqueueBackgroundTask(async () => {
+      if (target.localBlobUrl) return;
+      try {
+        await ensureLocalSource(target);
+      } catch (_) {
+        // Fallback : proxy maître
+        const proxyUrl = relayModeManager.getProxyAudioUrl(raw.id);
+        if (proxyUrl && target.persistedSourceUrl) {
+          logDebug('relay.prefetch.proxyFallback', { id: raw.id, proxyUrl });
+        }
+      }
+    });
+  }
+}
+
+// ── Initialisation du contrôleur UI relais ────────────────────────────────────
+const relayController = createRelayModeController({
+  relayModeManager,
+  showToast,
+  logInfo,
+  logWarn,
+  onRoleChanged: (role) => {
+    logInfo('relay.roleChanged', { role });
+    if (role === 'master') {
+      // Push immédiat de l'état complet quand on devient maître
+      relayModeManager.schedulePush(buildRelayStateSnapshot());
+    }
+  },
+  getDownloaderApiUrl,
+  getDownloaderApiToken,
+  setDownloaderApiUrl: (url) => {
+    if (downloaderApiUrlInput) downloaderApiUrlInput.value = url;
+    saveDownloaderApiConfigFromForm();
+  },
+  relayModeStandaloneBtn,
+  relayModeMasterBtn,
+  relayMasterPanel,
+  relayQrcodeEl,
+  relaySessionUrlEl,
+  relayCopyLinkBtn,
+  relayStatusEl,
+  relayIndicatorEl,
+});
 
 function doLogout() {
   launchPreviewArtUrl = '';

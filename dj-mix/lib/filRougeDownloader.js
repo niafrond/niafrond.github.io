@@ -1,26 +1,19 @@
-import { getTrackCacheKey } from './audioSourceManager.js';
-
-const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
-const BG_FETCH_ID = 'djmix-filrouge-dl';
-
 /**
  * @param {object} opts
- * @param {() => string} opts.getDownloaderApiUrl
- * @param {() => string} opts.getDownloaderApiToken
  * @param {(item: object) => Promise<boolean>} opts.prefetchTrackToLocalCache
  * @param {(item: object, patch: object) => void} opts.setFilRougeTrackStatus
  * @param {(item: object) => {downloadState: string}} opts.getFilRougeTrackStatus
  * @param {() => void} opts.renderFilRouge
  * @param {(msg: string, isError?: boolean) => void} opts.showToast
+ * @param {(done: number, inProgress: number, total: number) => void} [opts.onProgress]
  */
 export function createFilRougeDownloader({
-  getDownloaderApiUrl,
-  getDownloaderApiToken,
   prefetchTrackToLocalCache,
   setFilRougeTrackStatus,
   getFilRougeTrackStatus,
   renderFilRouge,
   showToast,
+  onProgress,
 }) {
   async function requestNotifPermission() {
     if (!('Notification' in window)) return false;
@@ -57,9 +50,8 @@ export function createFilRougeDownloader({
   }
 
   /**
-   * Télécharge tous les morceaux du fil rouge qui ne sont pas encore en cache.
-   * Utilise Background Fetch API si disponible (fonctionne écran éteint),
-   * sinon bascule sur un téléchargement séquentiel avec notifications SW.
+   * Télécharge les morceaux du fil rouge qui ne sont pas encore en cache,
+   * un par un en queue séquentielle.
    * @param {object[]} tracks
    */
   async function downloadAll(tracks) {
@@ -77,73 +69,22 @@ export function createFilRougeDownloader({
     await requestNotifPermission();
     const swReg = await getSwReg();
 
-    if (swReg && 'backgroundFetch' in swReg) {
-      await _downloadWithBackgroundFetch(pending, swReg);
-    } else {
-      await _downloadSequential(pending, swReg);
-    }
-  }
-
-  async function _downloadWithBackgroundFetch(tracks, reg) {
-    const baseUrl = getDownloaderApiUrl();
-    if (!baseUrl) {
-      showToast('URL API downloader non configurée', true);
-      await _downloadSequential(tracks, reg);
-      return;
-    }
-    const token = getDownloaderApiToken?.() || '';
-
-    // Annuler un éventuel BG fetch en cours
-    try {
-      const existing = await reg.backgroundFetch.get(BG_FETCH_ID);
-      if (existing) await existing.abort();
-    } catch (_) {}
-
-    const requests = tracks.map(track => {
-      const cacheKey = getTrackCacheKey(track);
-      const params = new URLSearchParams({ _ck: cacheKey });
-      if (token) params.set('token', token);
-      return new Request(`${baseUrl}/api/download?${params}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          trackName: track.name,
-          artistName: track.artist,
-          searchQuery: `${track.artist} ${track.name}`,
-          ...(Number.isFinite(track.popularity) ? { popularity: track.popularity } : {}),
-        }),
-      });
-    });
-
-    for (const track of tracks) {
-      setFilRougeTrackStatus(track, { downloadState: 'downloading' });
-    }
-    renderFilRouge();
-
-    try {
-      await reg.backgroundFetch.fetch(BG_FETCH_ID, requests, {
-        title: `DJ Mix — ${tracks.length} morceau${tracks.length > 1 ? 'x' : ''} à télécharger`,
-        icons: [{ src: './icon-192.png', sizes: '192x192', type: 'image/png' }],
-        downloadTotal: 0,
-      });
-      showToast(`Téléchargement lancé (${tracks.length} morceaux) — continue en arrière-plan`);
-    } catch (err) {
-      console.warn('[filRougeDownloader] Background Fetch non disponible, mode séquentiel', err);
-      await _downloadSequential(tracks, reg);
-    }
-  }
-
-  async function _downloadSequential(tracks, swReg) {
-    const total = tracks.length;
+    const total = pending.length;
     let done = 0;
     let failed = 0;
 
-    for (const track of tracks) {
+    console.debug('[downloadAll] start', { total, tracks: pending.map(t => `${t.artist} - ${t.name}`) });
+    onProgress?.(0, 0, total);
+
+    for (const track of pending) {
       setFilRougeTrackStatus(track, { downloadState: 'downloading' });
       renderFilRouge();
+      onProgress?.(done, 1, total);
 
+      console.debug('[downloadAll] prefetch start', { artist: track.artist, name: track.name });
       try {
         const ok = await prefetchTrackToLocalCache(track);
+        console.debug('[downloadAll] prefetch result', { artist: track.artist, name: track.name, ok });
         if (ok) {
           done++;
           setFilRougeTrackStatus(track, { downloadState: 'done' });
@@ -151,10 +92,12 @@ export function createFilRougeDownloader({
           failed++;
           setFilRougeTrackStatus(track, { downloadState: 'error' });
         }
-      } catch (_) {
+      } catch (err) {
+        console.error('[downloadAll] prefetch threw', { artist: track.artist, name: track.name, error: err?.message, err });
         failed++;
         setFilRougeTrackStatus(track, { downloadState: 'error' });
       }
+      onProgress?.(done, 0, total);
       renderFilRouge();
 
       if ((done + failed) % 5 === 0 && (done + failed) < total) {
@@ -175,6 +118,7 @@ export function createFilRougeDownloader({
       'djmix-dl-done',
       false,
     );
+    onProgress?.(done, 0, 0);
     showToast(`Téléchargement terminé : ${done}/${total}`);
   }
 
