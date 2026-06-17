@@ -9,8 +9,24 @@
 
 import { STORAGE_KEYS } from './storageKeys.js';
 import { mapDjTransitionTypeToMode, isDjTransitionFresh } from './djTransitionMapping.js';
+import { normalizeTransitionMode } from './transitionModes.js';
 
 const DEFAULT_SET_PROFILE = 'club_peak';
+
+function saveBatchPlanToStorage(result) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.djBatchPlan, JSON.stringify(result));
+  } catch (_) {}
+}
+
+function getStoredBatchPlanFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.djBatchPlan);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
 
 export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue, logger } = {}) {
   /** @type {Array} cached `TrackSummary[]` from `/api/dj/tracks` */
@@ -161,8 +177,10 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
         djTransition: {
           toItemId: to.id,
           transitionType: result.transitionType,
+          automixMode: null,
           mixOutSec: result.mixOutSec,
           mixInSec: result.mixInSec,
+          mixInSecDefined: Number.isFinite(result.mixInSec),
           recommendedBpm: result.recommendedBpm,
           crossfadeDurationSec: result.crossfadeDurationSec,
           compatibilityScore: result.compatibilityScore,
@@ -285,9 +303,11 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
         fr.patchPlaylistItem(fromItem.id, {
           djTransition: {
             toItemId: toItem.id,
-            transitionType: t.transitionType,
+            transitionType: t.djApiType || t.transitionType || null,
+            automixMode: t.automixMode || null,
             mixOutSec: t.mixOutSec,
             mixInSec: t.mixInSec,
+            mixInSecDefined: Number.isFinite(t.mixInSec),
             recommendedBpm: t.recommendedBpm,
             crossfadeDurationSec: t.crossfadeDurationSec,
             compatibilityScore: t.compatibilityScore,
@@ -298,48 +318,18 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
       }
     }
 
-    return {
-      globalSetScore: result.globalSetScore,
-      reasons: result.reasons || [],
-      globalComponents: result.globalComponents || null,
-    };
-  }
-
-  /**
-   * Recalcule le badge de qualité en envoyant uniquement le profil à `/api/dj/batch`.
-   * Utilisé lors du changement de profil depuis le sélecteur.
-   */
-  async function computeSetQualityByProfile(profile) {
-    if (!profile) return null;
-    const result = await djApiClient.fetchBatchPlanByProfile(profile);
-    if (!result) return null;
-
-    const fr = filRouge();
-    if (fr && Array.isArray(result.transitions) && result.transitions.length) {
-      const playlist = fr.getPlaylist();
+    // Appliquer l'openingCue : offset de démarrage pour le premier morceau du set.
+    if (fr && result.openingCue?.trackId && Number.isFinite(result.openingCue.timeSec)) {
       const byTrackId = new Map(
         playlist.filter((i) => i.djTrackId).map((i) => [i.djTrackId, i]),
       );
-      for (const t of result.transitions) {
-        const fromItem = byTrackId.get(t.trackA);
-        const toItem = byTrackId.get(t.trackB);
-        if (!fromItem || !toItem) continue;
-        if (!Number.isFinite(t.mixOutSec) || !Number.isFinite(t.mixInSec)) continue;
-        fr.patchPlaylistItem(fromItem.id, {
-          djTransition: {
-            toItemId: toItem.id,
-            transitionType: t.transitionType,
-            mixOutSec: t.mixOutSec,
-            mixInSec: t.mixInSec,
-            recommendedBpm: t.recommendedBpm,
-            crossfadeDurationSec: t.crossfadeDurationSec,
-            compatibilityScore: t.compatibilityScore,
-            decisionId: t.decisionId,
-            computedAt: Date.now(),
-          },
-        });
+      const openingItem = byTrackId.get(result.openingCue.trackId);
+      if (openingItem) {
+        fr.patchPlaylistItem(openingItem.id, { djOpeningCueSec: result.openingCue.timeSec });
       }
     }
+
+    saveBatchPlanToStorage(result);
 
     return {
       globalSetScore: result.globalSetScore,
@@ -415,7 +405,7 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
    * INTO `nextItem`, or `null` if none is available/fresh (caller should fall
    * back to existing heuristics).
    * @param {object} nextItem
-   * @returns {{transitionType: string, mixOutSec: number, mixInSec: number, recommendedBpm: number, crossfadeDurationSec: number, compatibilityScore: number, mode: string|null, decisionId: string}|null}
+   * @returns {{transitionType: string, automixMode: string|null, mixOutSec: number, mixInSec: number, mixInSecDefined: boolean, recommendedBpm: number, crossfadeDurationSec: number, compatibilityScore: number, mode: string|null, decisionId: string}|null}
    */
   function getDjTransitionPlan(nextItem) {
     if (!nextItem) return null;
@@ -425,16 +415,36 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
     const transition = predecessor.djTransition;
     if (!isDjTransitionFresh(transition, nextItem.id)) return null;
 
+    const automixMode = transition.automixMode || null;
     return {
       transitionType: transition.transitionType,
+      automixMode,
       mixOutSec: transition.mixOutSec,
       mixInSec: transition.mixInSec,
+      mixInSecDefined: Boolean(transition.mixInSecDefined),
       recommendedBpm: transition.recommendedBpm,
       crossfadeDurationSec: transition.crossfadeDurationSec,
       compatibilityScore: transition.compatibilityScore,
-      mode: mapDjTransitionTypeToMode(transition.transitionType),
+      mode: automixMode
+        ? normalizeTransitionMode(automixMode)
+        : mapDjTransitionTypeToMode(transition.transitionType),
       decisionId: transition.decisionId,
     };
+  }
+
+  /**
+   * Returns the opening cue start offset (ms) for a given djTrackId,
+   * from the stored batch plan. Returns 0 if not found.
+   * @param {string} djTrackId
+   * @returns {number}
+   */
+  function getOpeningCueOffsetMs(djTrackId) {
+    if (!djTrackId) return 0;
+    const plan = getStoredBatchPlanFromStorage();
+    if (!plan?.openingCue) return 0;
+    if (plan.openingCue.trackId !== djTrackId) return 0;
+    const timeSec = Number(plan.openingCue.timeSec);
+    return Number.isFinite(timeSec) && timeSec > 0 ? Math.round(timeSec * 1000) : 0;
   }
 
   /**
@@ -455,13 +465,14 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
     planEdgesForNewItems,
     planAllEdges,
     computeSetQuality,
-    computeSetQualityByProfile,
     getSetProfiles,
     getSelectedSetProfile,
     setSelectedSetProfile,
     setIconic,
     findDjPredecessorInFilRouge,
     getDjTransitionPlan,
+    getOpeningCueOffsetMs,
+    getStoredBatchPlan: getStoredBatchPlanFromStorage,
     submitFeedback,
     retrainEngine,
     fetchWeights,

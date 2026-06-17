@@ -100,12 +100,6 @@ export function createDjApiClient({
     return res.ok ? res.data : null;
   }
 
-  /** Recalcule le set pour un nouveau profil sans renvoyer la liste de tracks. */
-  async function fetchBatchPlanByProfile(profile) {
-    if (!profile) return null;
-    const res = await _post('/api/dj/batch', { profile });
-    return res.ok ? res.data : null;
-  }
 
   /** @returns {Promise<object|null>} echoed feedback, or null if unavailable (e.g. unknown decisionId) */
   async function sendFeedback(decisionId, feedback, reason, comment) {
@@ -145,16 +139,30 @@ export function createDjApiClient({
     return res.ok ? res.data : null;
   }
 
+  /** @returns {Promise<string[]>} list of playlist names (empty array on failure) */
+  async function fetchMixPlaylists() {
+    const res = await _get('/api/dj/mix-playlists');
+    return res.ok && Array.isArray(res.data?.playlists) ? res.data.playlists : [];
+  }
+
+  /** @returns {Promise<{name:string, sections:string[][]}|null>} playlist detail, or null on failure */
+  async function fetchMixPlaylistDetail(name) {
+    if (!name) return null;
+    const res = await _get('/api/dj/mix-playlists/detail', { name });
+    return res.ok ? res.data : null;
+  }
+
   return {
     fetchTracks,
     fetchTrackDetail,
     fetchTransition,
     fetchBatchPlan,
-    fetchBatchPlanByProfile,
     sendFeedback,
     setIconic,
     fetchSetProfiles,
     retrainEngine,
     fetchWeights,
+    fetchMixPlaylists,
+    fetchMixPlaylistDetail,
   };
 }

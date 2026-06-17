@@ -101,6 +101,7 @@ import { createAutoModeManager } from './lib/autoModeManager.js';
 import { createDjApiClient } from './lib/djApiClient.js';
 import { createDjPlanManager } from './lib/djPlanManager.js';
 import { computeDjBpmRate } from './lib/djTransitionMapping.js';
+import { computeDjPlanIndicatorState } from './lib/djPlanIndicator.js';
 import { createAppState } from './lib/appState.js';
 import {
   AUTO_DJ_FX_TYPES,
@@ -796,6 +797,10 @@ const txtPlaylistFileInput = document.getElementById('txt-playlist-file-input');
 const txtPlaylistTextarea = document.getElementById('txt-playlist-textarea');
 const txtImportFilRougeBtn = document.getElementById('txt-import-filrouge-btn');
 const txtPlaylistStatus = document.getElementById('txt-playlist-status');
+const apiMixPlaylistSelect = document.getElementById('api-mix-playlist-select');
+const apiMixPlaylistRefreshBtn = document.getElementById('api-mix-playlist-refresh-btn');
+const apiMixPlaylistLoadBtn = document.getElementById('api-mix-playlist-load-btn');
+const apiMixPlaylistStatus = document.getElementById('api-mix-playlist-status');
 const debugLogsToggle = document.getElementById('debug-logs-toggle');
 const autoSuggestionQueueSearchToggle = document.getElementById('auto-suggestion-queue-search-toggle');
 const configDjModeDanceBtn = document.getElementById('config-dj-mode-dance-btn');
@@ -2208,18 +2213,9 @@ async function initDjSetProfileSelect() {
     djSetProfileSelectEl.value = selected;
   }
 
-  djSetProfileSelectEl.addEventListener('change', async () => {
-    const profile = djSetProfileSelectEl.value;
-    djPlanManager.setSelectedSetProfile(profile);
-    try {
-      const quality = await djPlanManager.computeSetQualityByProfile(profile);
-      renderDjSetQualityBadge(djSetQualityBadgeEl, quality);
-      updateDjPlanIndicator();
-      renderFilRouge();
-    } catch (err) {
-      logWarn('djPlan: computeSetQualityByProfile failed', { error: err?.message });
-      renderDjSetQualityBadge(djSetQualityBadgeEl, null);
-    }
+  djSetProfileSelectEl.addEventListener('change', () => {
+    djPlanManager.setSelectedSetProfile(djSetProfileSelectEl.value);
+    runDjSetQualityRefresh({ forceRefresh: true }).catch(() => {});
   });
 }
 
@@ -2234,38 +2230,41 @@ const DJ_TRANSITION_TYPE_LABELS = {
 function updateDjPlanIndicator() {
   if (!djPlanIndicatorEl) return;
 
-  if (!djExternalPlanEnabled) {
+  const indicatorState = computeDjPlanIndicatorState({
+    enabled: djExternalPlanEnabled,
+    playlist: filRougeManager.getPlaylist(),
+    playingId: uiState.currentTrackId,
+    currentIndex: filRougeManager.getCurrentIndex(),
+  });
+
+  if (!indicatorState.visible) {
     djPlanIndicatorEl.hidden = true;
     return;
   }
 
-  const playlist = filRougeManager.getPlaylist();
+  djPlanIndicatorEl.hidden = false;
 
-  // Prefer the actually-playing track to survive jumpToIndex() interim state
-  const playingId = uiState.currentTrackId;
-  let currentItem = playingId
-    ? (playlist.find((p) => String(p.id) === String(playingId)) || null)
-    : null;
-
-  // Fallback: last consumed fil rouge item
-  if (!currentItem) {
-    const currentIdx = filRougeManager.getCurrentIndex();
-    currentItem = currentIdx >= 0 ? playlist[currentIdx] : null;
-  }
-
-  const t = currentItem?.djTransition;
-
-  if (!t || !t.toItemId) {
-    djPlanIndicatorEl.hidden = true;
+  if (indicatorState.state === 'no-track') {
+    djPlanIndicatorEl.innerHTML = `<div class="dj-plan-card dj-plan-card--pending"><span class="dj-plan-pending-msg">DJ Plan actif — aucun morceau fil rouge en cours</span></div>`;
     return;
   }
 
-  const nextItem = playlist.find((p) => String(p.id) === String(t.toItemId)) || null;
-  if (!nextItem) {
-    djPlanIndicatorEl.hidden = true;
+  if (indicatorState.state === 'no-transition') {
+    const { item } = indicatorState;
+    const trackLabel = item.artist
+      ? `${escHtml(item.artist)} — ${escHtml(item.name || '')}`
+      : escHtml(item.name || '');
+    djPlanIndicatorEl.innerHTML = `<div class="dj-plan-card dj-plan-card--pending"><span class="dj-plan-pending-msg">Transition en attente de calcul…</span><span class="dj-plan-pending-track">${trackLabel}</span></div>`;
     return;
   }
 
+  if (indicatorState.state === 'next-not-found') {
+    djPlanIndicatorEl.innerHTML = `<div class="dj-plan-card dj-plan-card--pending"><span class="dj-plan-pending-msg">Morceau suivant introuvable dans la playlist</span></div>`;
+    return;
+  }
+
+  // state === 'ready'
+  const { transition: t, nextItem } = indicatorState;
   const typeLabel = DJ_TRANSITION_TYPE_LABELS[t.transitionType] || t.transitionType || '—';
   const scorePct = Number.isFinite(t.compatibilityScore) ? Math.round(t.compatibilityScore * 100) : null;
   const scoreClass = scorePct === null ? '' : scorePct >= 70 ? 'is-good' : scorePct >= 50 ? 'is-ok' : 'is-low';
@@ -2308,8 +2307,6 @@ function updateDjPlanIndicator() {
         <span class="dj-plan-next-track">→ ${nextLabel}</span>
       </div>
     </div>`;
-
-  djPlanIndicatorEl.hidden = false;
 
   djPlanIndicatorEl.querySelectorAll('.filrouge-dj-feedback-btn').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
@@ -2796,11 +2793,18 @@ function preloadMixDataForDeckItem(item, deck) {
       if (!mixData) return;
 
       storeTrackMixData(item, mixData);
-      const startOffsetUpdated = applyMixSuggestedStartOffset(item, mixData);
-      if (startOffsetUpdated) {
-        updatePlannedStartMarker();
-        renderQueue();
+
+      // Ne pas écraser l'offset du batch plan (mixInSecDefined) avec le calcul zone-based.
+      const activePlan = djExternalPlanEnabled ? djPlanManager.getDjTransitionPlan(item) : null;
+      const hasBatchOffset = activePlan?.mixInSecDefined;
+      if (!hasBatchOffset) {
+        const startOffsetUpdated = applyMixSuggestedStartOffset(item, mixData);
+        if (startOffsetUpdated) {
+          updatePlannedStartMarker();
+          renderQueue();
+        }
       }
+
       if (deckDisplayItems[currentDeck] === item) {
         renderMixZones();
       }
@@ -3146,6 +3150,55 @@ txtImportFilRougeBtn?.addEventListener('click', async () => {
     setTxtPlaylistStatus(`Import TXT impossible: ${err.message}`, true);
     showToast(`Import TXT impossible: ${err.message}`, true);
   }
+});
+
+function setApiMixPlaylistStatus(msg, isError = false) {
+  if (!apiMixPlaylistStatus) return;
+  apiMixPlaylistStatus.textContent = msg;
+  apiMixPlaylistStatus.style.color = isError ? 'var(--error, #e55)' : '';
+}
+
+async function refreshApiMixPlaylists() {
+  if (!apiMixPlaylistSelect) return;
+  setApiMixPlaylistStatus('Chargement des playlists…');
+  const names = await djApiClient.fetchMixPlaylists();
+  const prev = apiMixPlaylistSelect.value;
+  apiMixPlaylistSelect.innerHTML = '<option value="">— Choisir une playlist —</option>';
+  for (const name of names) {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    if (name === prev) opt.selected = true;
+    apiMixPlaylistSelect.appendChild(opt);
+  }
+  if (names.length) {
+    setApiMixPlaylistStatus(`${names.length} playlist${names.length > 1 ? 's' : ''} disponible${names.length > 1 ? 's' : ''}.`);
+  } else {
+    setApiMixPlaylistStatus('Aucune playlist disponible (API hors ligne ou dossier vide).', true);
+  }
+}
+
+apiMixPlaylistRefreshBtn?.addEventListener('click', () => {
+  refreshApiMixPlaylists().catch(() => {});
+});
+
+apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
+  const name = apiMixPlaylistSelect?.value;
+  if (!name) {
+    setApiMixPlaylistStatus('Sélectionnez une playlist d\'abord.', true);
+    return;
+  }
+  setApiMixPlaylistStatus(`Chargement de « ${name} »…`);
+  const detail = await djApiClient.fetchMixPlaylistDetail(name);
+  if (!detail || !Array.isArray(detail.sections)) {
+    setApiMixPlaylistStatus(`Impossible de charger « ${name} ».`, true);
+    return;
+  }
+  const text = detail.sections.map((group) => group.join('\n')).join('\n\n');
+  if (txtPlaylistTextarea) txtPlaylistTextarea.value = text;
+  const total = detail.sections.reduce((s, g) => s + g.length, 0);
+  setApiMixPlaylistStatus(`« ${name} » chargé (${total} morceau${total > 1 ? 'x' : ''}). Cliquez sur "Importer vers fil rouge" pour l'appliquer.`);
+  switchTab('config');
 });
 
 (async function init() {
@@ -5362,20 +5415,40 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     fetchAndStoreArtworkForItem(item, targetDeck).catch(() => {});
 
     const djPlan = djExternalPlanEnabled ? djPlanManager.getDjTransitionPlan(item) : null;
-    if (djPlan) {
-      applyDjStartOffsetIfPlanned(item, djPlan);
-    }
 
-    const cachedMixData = getTrackMixData(item);
-    if (cachedMixData) {
-      applyMixSuggestedStartOffset(item, cachedMixData);
-      startPositionMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
-    } else if (djPlan) {
-      startPositionMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
+    if (djPlan?.mixInSecDefined) {
+      // Le batch plan fournit un mixInSec précis : l'utiliser directement, sans calcul zone-based.
+      startPositionMs = Math.max(0, Math.round((djPlan.mixInSec || 0) * 1000));
+      item.autoDjStartOffsetMs = startPositionMs;
+      touchQueueItem(item);
+      logInfo('djPlan: mixInSec exact appliqué', {
+        id: item.id,
+        name: item.name,
+        startOffsetMs: startPositionMs,
+        decisionId: djPlan.decisionId,
+      });
+    } else if (djExternalPlanEnabled && !djPlan) {
+      // Pas de transition planifiée : vérifier l'openingCue du batch pour ce morceau.
+      const filRougeItem = filRougeManager.getPlaylist().find((p) => String(p.id) === String(item.id));
+      if (filRougeItem?.djTrackId) {
+        const openingCueMs = djPlanManager.getOpeningCueOffsetMs(filRougeItem.djTrackId);
+        if (openingCueMs > 0) {
+          startPositionMs = openingCueMs;
+          item.autoDjStartOffsetMs = startPositionMs;
+          touchQueueItem(item);
+          logInfo('djPlan: openingCue appliqué', {
+            id: item.id,
+            name: item.name,
+            startOffsetMs: startPositionMs,
+            djTrackId: filRougeItem.djTrackId,
+          });
+        }
+      }
     }
 
     const mixPreloadPromise = preloadMixDataForDeckItem(item, targetDeck);
     if (startPositionMs <= 0) {
+      // Aucun plan DJ défini : attendre les données mix pour l'offset zone-based.
       await Promise.race([
         mixPreloadPromise,
         new Promise((resolve) => setTimeout(resolve, 700)),
@@ -5427,6 +5500,16 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       logDebug('djPlan: transition mode override', { mode: djPlan.mode, decisionId: djPlan.decisionId });
     }
 
+    // Appliquer crossfadeDurationSec du plan batch si disponible.
+    const savedCrossfadeDuration = player.crossfadeDuration;
+    const djCrossfadeMs = Number.isFinite(djPlan?.crossfadeDurationSec) && djPlan.crossfadeDurationSec > 0
+      ? Math.round(djPlan.crossfadeDurationSec * 1000)
+      : 0;
+    if (djCrossfadeMs > 0) {
+      player.crossfadeDuration = djCrossfadeMs;
+      logDebug('djPlan: crossfade duration override', { crossfadeMs: djCrossfadeMs, decisionId: djPlan.decisionId });
+    }
+
     try {
       if (mode === 'autofade') {
         await player.crossfadeToDeck(targetDeck, {
@@ -5466,6 +5549,9 @@ async function startPlaybackForIndex(index, mode, options = {}) {
         }, { makeActive: true, paused: false, startPositionMs });
       }
     } finally {
+      if (djCrossfadeMs > 0) {
+        player.crossfadeDuration = savedCrossfadeDuration;
+      }
       if (djModeOverridden) {
         player.setTransitionMode(selectedTransitionMode);
       }

@@ -439,6 +439,23 @@
 
           <div class="config-block">
             <div class="config-label">
+              <span>Playlists serveur (fil rouge)</span>
+            </div>
+            <div class="form-group">
+              <label for="api-mix-playlist-select">Choisir une playlist depuis le serveur</label>
+              <select id="api-mix-playlist-select" style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;font-size:14px;font-family:inherit;color:var(--text);width:100%;">
+                <option value="">— Choisir une playlist —</option>
+              </select>
+            </div>
+            <div class="controls" style="justify-content:flex-start; gap:10px;">
+              <button id="api-mix-playlist-refresh-btn" class="connect-btn connect-btn--secondary" type="button">Actualiser</button>
+              <button id="api-mix-playlist-load-btn" class="connect-btn connect-btn--secondary" type="button">Charger dans le fil rouge</button>
+            </div>
+            <div id="api-mix-playlist-status" class="setup-subtitle">Sélectionnez une playlist pour pré-remplir le fil rouge depuis le serveur.</div>
+          </div>
+
+          <div class="config-block">
+            <div class="config-label">
               <span>Logs console</span>
             </div>
             <label class="toggle-row" for="debug-logs-toggle">

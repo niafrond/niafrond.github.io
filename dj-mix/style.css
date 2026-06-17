@@ -2932,6 +2932,30 @@ input {
   white-space: nowrap;
 }
 
+.dj-plan-card--pending {
+  background: rgba(99, 102, 241, 0.05);
+  border-color: rgba(168, 85, 247, 0.15);
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dj-plan-pending-msg {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-style: italic;
+}
+
+.dj-plan-pending-track {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── end DJ Plan indicator ──────────────────────────────────── */
 
 .filrouge-subtitle {
