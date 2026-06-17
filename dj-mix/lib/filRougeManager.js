@@ -62,7 +62,7 @@ export function createFilRougeManager() {
 
   // ── Persistence ─────────────────────────────────────────────────────────
 
-  function save() {
+  function _saveNow() {
     try {
       const data = {
         playlist: playlist.map(serializeItem),
@@ -76,6 +76,15 @@ export function createFilRougeManager() {
     } catch (_) {
       logger.warn('filRouge.save.failed');
     }
+  }
+
+  let _saveTimer = null;
+  function scheduleSave() {
+    if (_saveTimer !== null) clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(() => {
+      _saveTimer = null;
+      _saveNow();
+    }, 400);
   }
 
   function restore() {
@@ -156,7 +165,7 @@ export function createFilRougeManager() {
     }
     playlist.push(deserializeItem(serializeItem(item)));
     logger.info('filRouge.addToPlaylist', { name: item.name, playlistLength: playlist.length });
-    save();
+    scheduleSave();
     return true;
   }
 
@@ -176,7 +185,7 @@ export function createFilRougeManager() {
     }
     priorityQueue.push(deserializeItem(serializeItem(item)));
     logger.info('filRouge.addToPriorityQueue', { name: item.name, priorityLength: priorityQueue.length });
-    save();
+    scheduleSave();
     return true;
   }
 
@@ -188,7 +197,7 @@ export function createFilRougeManager() {
     if (index < 0 || index >= priorityQueue.length) return;
     const removed = priorityQueue.splice(index, 1)[0];
     logger.info('filRouge.removeFromPriorityQueue', { name: removed?.name, priorityLength: priorityQueue.length });
-    save();
+    scheduleSave();
   }
 
   /**
@@ -197,7 +206,7 @@ export function createFilRougeManager() {
   function clearPriorityQueue() {
     priorityQueue = [];
     logger.info('filRouge.clearPriorityQueue');
-    save();
+    scheduleSave();
   }
 
   /**
@@ -214,7 +223,7 @@ export function createFilRougeManager() {
       currentIndex = Math.max(0, currentIndex - 1);
     }
     logger.info('filRouge.removeFromPlaylist', { name: removed?.name, playlistLength: playlist.length });
-    save();
+    scheduleSave();
   }
 
   /**
@@ -227,7 +236,7 @@ export function createFilRougeManager() {
     const idx = playlist.findIndex((p) => p.id === id);
     if (idx === -1) return false;
     Object.assign(playlist[idx], patch);
-    save();
+    scheduleSave();
     return true;
   }
 
@@ -238,7 +247,7 @@ export function createFilRougeManager() {
     playlist = [];
     currentIndex = -1;
     logger.info('filRouge.clearPlaylist');
-    save();
+    scheduleSave();
   }
 
   /**
@@ -260,7 +269,7 @@ export function createFilRougeManager() {
       currentIndex = playlist.length > 0 ? currentIndex : -1;
     }
     logger.info('filRouge.setPlaylist', { playlistLength: playlist.length, currentIndex });
-    save();
+    scheduleSave();
   }
 
   /**
@@ -279,7 +288,7 @@ export function createFilRougeManager() {
     } else if (fromIndex > currentIndex && toIndex <= currentIndex) {
       currentIndex += 1;
     }
-    save();
+    scheduleSave();
   }
 
   // ── Sélection du prochain morceau ──────────────────────────────────────
@@ -293,7 +302,7 @@ export function createFilRougeManager() {
   function getNextTrack() {
     if (priorityQueue.length > 0) {
       const nextPriority = priorityQueue.shift() || null;
-      save();
+      scheduleSave();
       if (!nextPriority) return null;
       logger.info('filRouge.getNextTrack.fromPriorityQueue', {
         name: nextPriority.name,
@@ -329,7 +338,7 @@ export function createFilRougeManager() {
       index: currentIndex,
       playlistLength: playlist.length,
     });
-    save();
+    scheduleSave();
     return next ? { ...next, lastTouchedAt: Date.now() } : null;
   }
 
@@ -395,7 +404,7 @@ export function createFilRougeManager() {
     if (!Number.isInteger(index)) return false;
     if (index < 0 || index >= playlist.length) return false;
     currentIndex = index;
-    save();
+    scheduleSave();
     return true;
   }
 
@@ -412,7 +421,7 @@ export function createFilRougeManager() {
     const prevIndex = currentIndex;
     currentIndex = targetIdx - 1;
     logger.info('filRouge.jumpToIndex', { targetIdx, from: prevIndex, skippedCount: targetIdx - prevIndex - 1 });
-    save();
+    scheduleSave();
     return true;
   }
 
@@ -422,7 +431,7 @@ export function createFilRougeManager() {
 
   function toggleShuffle() {
     shuffleEnabled = !shuffleEnabled;
-    save();
+    scheduleSave();
     return shuffleEnabled;
   }
 
@@ -432,7 +441,7 @@ export function createFilRougeManager() {
 
   function setLoopEnabled(value) {
     loopEnabled = Boolean(value);
-    save();
+    scheduleSave();
     return loopEnabled;
   }
 
@@ -474,7 +483,7 @@ export function createFilRougeManager() {
     setLoopEnabled,
 
     // Persistence
-    save,
+    save: _saveNow,
     restore,
   };
 }

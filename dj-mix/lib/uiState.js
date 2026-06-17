@@ -157,3 +157,43 @@ export function getCueTrack() {
   if (deckBCueIndex < 0 || deckBCueIndex >= queue.length) return null;
   return queue[deckBCueIndex] ?? null;
 }
+
+// ── Fonctions de mutation nommées ────────────────────────────────────────────
+// Les mutations directes sur uiState restent valides. Ces fonctions offrent
+// des points d'entrée nommés pour rendre les mutations traçables par grep.
+
+export function setCurrentIndex(index) {
+  uiState.currentIndex = typeof index === 'number' ? index : -1;
+}
+
+export function setCurrentTrackId(id) {
+  uiState.currentTrackId = id ?? null;
+}
+
+export function setIsPlaying(value) {
+  uiState.isPlaying = Boolean(value);
+}
+
+export function setDeckDisplayItem(deck, item) {
+  uiState.deckDisplayItems[deck === 'B' ? 'B' : 'A'] = item ?? null;
+}
+
+export function setDeckBCueIndex(index) {
+  uiState.deckBCueIndex = typeof index === 'number' ? index : -1;
+}
+
+export function setDeckCueDeck(deck) {
+  uiState.deckCueDeck = (deck === 'A' || deck === 'B') ? deck : null;
+}
+
+export function setDeckMixRatio(ratio) {
+  uiState.deckMixRatio = Number(ratio) || 0;
+}
+
+export function setPrevIsCrossfading(value) {
+  uiState.prevIsCrossfading = Boolean(value);
+}
+
+export function setLastDeckState(detail) {
+  uiState.lastDeckState = detail ?? null;
+}

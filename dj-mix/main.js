@@ -179,6 +179,12 @@ import { DJ_MODES } from './lib/djModeConfig.js';
 import { createApiHealthMonitor } from './lib/apiHealthMonitor.js';
 import { isLowMemoryPlaybackDevice } from './lib/playbackMemoryPolicy.js';
 import { createSpotifyClient } from './lib/spotifyClient.js';
+import { createSettingsController } from './lib/settingsController.js';
+import { createQueueManager } from './lib/queueManager.js';
+import { createFilRougeController } from './lib/filRougeController.js';
+import { createFilRougeDownloader } from './lib/filRougeDownloader.js';
+import { createDeckMarkerController } from './lib/deckMarkerController.js';
+import { createPlaybackController } from './lib/playbackController.js';
 
 import { uiState } from './lib/uiState.js';
 const QUEUE_KEY = STORAGE_KEYS.queue;
@@ -779,6 +785,7 @@ const filRougeClearBtn = document.getElementById('filrouge-clear-btn');
 const djSetQualityBadgeEl = document.getElementById('dj-set-quality-badge');
 const djSetProfileSelectEl = document.getElementById('dj-set-profile-select');
 const djRecalculateBtn = document.getElementById('dj-recalculate-btn');
+const filRougeDownloadAllBtn = document.getElementById('filrouge-download-all-btn');
 
 const downloaderApiUrlInput = document.getElementById('downloader-api-url-input');
 const downloaderApiTokenInput = document.getElementById('downloader-api-token-input');
@@ -2357,6 +2364,61 @@ if (djRecalculateBtn) {
   });
 }
 
+// ── Fil rouge : téléchargement de masse ──────────────────────────────────────
+
+const filRougeDownloader = createFilRougeDownloader({
+  getDownloaderApiUrl,
+  getDownloaderApiToken,
+  prefetchTrackToLocalCache,
+  setFilRougeTrackStatus,
+  getFilRougeTrackStatus,
+  renderFilRouge,
+  showToast,
+});
+
+if (filRougeDownloadAllBtn) {
+  filRougeDownloadAllBtn.addEventListener('click', () => {
+    const tracks = filRougeManager.getPlaylist();
+    filRougeDownloader.downloadAll(tracks).catch(err => {
+      showToast('Téléchargement : erreur', true);
+      console.error('[filrouge] downloadAll error', err);
+    });
+  });
+}
+
+// Mise à jour des statuts après un Background Fetch terminé par le SW
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', e => {
+    const { type, succeededKeys = [], failedKeys = [] } = e?.data || {};
+    if (type !== 'BG_FETCH_DONE' && type !== 'BG_FETCH_FAIL') return;
+
+    if (type === 'BG_FETCH_FAIL') {
+      showToast('Téléchargement arrière-plan : échec', true);
+      const playlist = filRougeManager.getPlaylist();
+      for (const track of playlist) {
+        const { downloadState } = getFilRougeTrackStatus(track);
+        if (downloadState === 'downloading') {
+          setFilRougeTrackStatus(track, { downloadState: 'error' });
+        }
+      }
+      renderFilRouge();
+      return;
+    }
+
+    const playlist = filRougeManager.getPlaylist();
+    for (const track of playlist) {
+      const key = String(track.id || `${(track.artist || '').toLowerCase()}::${(track.name || '').toLowerCase()}`);
+      if (succeededKeys.includes(key)) {
+        setFilRougeTrackStatus(track, { downloadState: 'done' });
+      } else if (failedKeys.includes(key)) {
+        setFilRougeTrackStatus(track, { downloadState: 'error' });
+      }
+    }
+    renderFilRouge();
+    showToast(`Téléchargement terminé : ${succeededKeys.length} réussi${succeededKeys.length > 1 ? 's' : ''}`);
+  });
+}
+
 // Initial render
 renderFilRouge();
 updateDjExternalPlanUI();
@@ -2939,6 +3001,184 @@ const autoModeManager = createAutoModeManager({
     });
   },
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Refactored module instances (factory pattern, dependency injection)
+// Old function bodies remain below as they are still wired to event listeners
+// and the init() function; migrate call sites incrementally.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const settingsCtrl = createSettingsController({
+  initialTransitionMode: selectedTransitionMode,
+  initialRamFilterEnabled: ramFilterEnabled,
+  initialRamTotalMbOverride: ramTotalMbOverride,
+  initialTrackMaxDurationSec: trackMaxDurationSec,
+  initialTrackMaxDurationEnabled: trackMaxDurationEnabled,
+  initialTrackMaxDurationMode: trackMaxDurationMode,
+  initialTrackMaxDurationPct: trackMaxDurationPct,
+  initialAutoSuggestionQueueSearchEnabled: autoSuggestionQueueSearchEnabled,
+  initialQueueLoopEnabled: queueLoopEnabled,
+  initialQueueShuffleEnabled: queueShuffleEnabled,
+  clampCrossfadeSeconds,
+  getCrossfadeSeconds: () => clampCrossfadeSeconds(Number(crossfadeSlider?.value) || 6),
+  getPlayer: () => player,
+  getQueue: () => queue,
+  autoModeManager,
+  getAutoDjFxSettings: () => autoDjFxSettings,
+  setDebugLogging: (v) => setDebugLoggingEnabled(v),
+  updateDjFxMenuUI,
+  updateMaxDurationMarker: () => deckMarkerCtrl?.updateMaxDurationMarker(),
+  updateSuggestionRefreshButtons,
+  trimRetainedAudioSources,
+  showToast,
+  logInfo, logDebug, logWarn,
+  trackMaxDurationInput,
+  trackMaxDurationToggle,
+  trackMaxDurationMinus,
+  trackMaxDurationPlus,
+  trackMaxDurationModeBtn,
+  trackMaxDurationPctInput,
+  trackMaxDurationSecRow,
+  trackMaxDurationPctRow,
+});
+
+const queueMgr = createQueueManager({
+  getQueueLoopEnabled: () => queueLoopEnabled,
+  getQueueShuffleEnabled: () => queueShuffleEnabled,
+  getPlayer: () => player,
+  getResolvedInactiveDeck,
+  startPlaybackForIndex: (idx, mode, opts) => playbackCtrl?.startPlaybackForIndex(idx, mode, opts),
+  setDeckItem: (deck, item) => playbackCtrl?.setDeckItem(deck, item),
+  closeSearch,
+  showCrossfadeRing,
+  showToast,
+  logInfo, logDebug,
+  fetchAndStoreArtworkForItem,
+  preloadMixDataForDeckItem,
+  ensureLocalSource,
+  renderQueue,
+  scheduleDjSetQualityRefresh: () => filRougeCtrl?.scheduleDjSetQualityRefresh(),
+  updateDeckCueUI,
+  releaseLocalBlob,
+  isLowMemoryPlaybackMode,
+  trimRetainedAudioSources,
+  getPendingFilRougeOnInactiveDeck: () => pendingFilRougeOnInactiveDeck,
+  setPendingFilRougeOnInactiveDeck: (v) => { pendingFilRougeOnInactiveDeck = v; },
+  setPendingAutoplay: (v) => { pendingAutoplay = v; },
+  scheduleIdle,
+  enqueueBackgroundTask,
+  getQueueList: () => queueList,
+});
+
+const filRougeCtrl = createFilRougeController({
+  filRougeManager,
+  djPlanManager,
+  getDjExternalPlanEnabled: () => djExternalPlanEnabled,
+  fetchMissingMeta,
+  addToQueue: (...args) => queueMgr.addToQueue(...args),
+  addSpotifyDeletedId,
+  showToast,
+  logWarn,
+  filRougeCountEl,
+  filRougePriorityCountEl,
+  filRougeShuffleBtn,
+  filRougeLoopBtn,
+  filRougePriorityListEl,
+  filRougePlaylistListEl,
+  djPlanIndicatorEl,
+  djSetQualityBadgeEl,
+  djSetProfileSelectEl,
+});
+
+const deckMarkerCtrl = createDeckMarkerController({
+  automixTimeline,
+  autoModeManager,
+  getPlaybackDurationMs: () => playbackDurationMs,
+  getQueue: () => queue,
+  getResolvedInactiveDeck,
+  getTrackMixData,
+  filRougeManager,
+  djPlanManager,
+  getDjExternalPlanEnabled: () => djExternalPlanEnabled,
+  getTrackMaxDurationEnabled: () => settingsCtrl.getTrackMaxDurationEnabled(),
+  getTrackMaxDurationSec: () => settingsCtrl.getTrackMaxDurationSec(),
+  getTrackMaxDurationAppliedSec: () => settingsCtrl.getTrackMaxDurationAppliedSec(),
+  getTrackMaxDurationMode: () => settingsCtrl.getTrackMaxDurationMode(),
+  computePctMaxDurationSec: (mixData, durationMs) => settingsCtrl.computePctMaxDurationSec(mixData, durationMs),
+  setTrackMaxDurationAppliedSec: (sec) => settingsCtrl.setTrackMaxDurationAppliedSec(sec),
+  logDebug,
+  deckAAutoDjMarker,
+  deckBAutoDjMarker,
+  deckAAutoDjStartMarker,
+  deckBAutoDjStartMarker,
+  deckADjPlanZone,
+  deckBDjPlanZone,
+  deckAMaxDurMarker,
+  deckBMaxDurMarker,
+  deckAMaxDurRawMarker,
+  deckBMaxDurRawMarker,
+  deckAProgressZones,
+  deckBProgressZones,
+});
+
+const playbackCtrl = createPlaybackController({
+  getPlayer: () => player,
+  getQueue: () => queue,
+  getDjMode: () => djMode,
+  getActiveDeckBpm,
+  getResolvedActiveDeck,
+  getResolvedInactiveDeck,
+  getFollowingQueueIndex: (...args) => queueMgr.getFollowingQueueIndex(...args),
+  touchQueueItem: (item) => queueMgr.touchQueueItem(item),
+  removeFromQueue: (idx) => queueMgr.removeFromQueue(idx),
+  prefetchNext: (idx) => queueMgr.prefetchNext(idx),
+  resolveTrackStartOffsetMs: (track) => queueMgr.resolveTrackStartOffsetMs(track),
+  preloadMixDataForDeckItem,
+  ensureLocalSource,
+  fetchAndStoreArtworkForItem,
+  enrichStemsFromServer,
+  enqueueBackgroundTask,
+  filRougeManager,
+  djPlanManager,
+  getDjExternalPlanEnabled: () => djExternalPlanEnabled,
+  autoModeManager,
+  getAutoSuggestionQueueSearchEnabled: () => autoSuggestionQueueSearchEnabled,
+  automixTimeline,
+  renderQueue,
+  renderFilRouge,
+  updateNowPlaying,
+  updatePlannedStartMarker: () => deckMarkerCtrl.updatePlannedStartMarker(),
+  updateUpcomingArtwork,
+  suggestGenreFromCurrentTrack,
+  applyDjModeFxPreset,
+  scheduleIdle,
+  trimRetainedAudioSources,
+  isLowMemoryPlaybackMode,
+  showToast,
+  logInfo, logDebug, logWarn, logError,
+  applyDeckMixRatio,
+  updateAutoDjMarker: () => deckMarkerCtrl.updateAutoDjMarker(),
+  updateMaxDurationMarker: () => deckMarkerCtrl.updateMaxDurationMarker(),
+  applyTrackMaxDurationForCurrentPlayback: () => applyTrackMaxDurationForCurrentPlayback(),
+  resetTrackCaches: () => {
+    maxDurMarkerTriggeredForTrack = false;
+    _maxDurMarkerCache.key = null;
+    _maxDurMarkerCache.renderKey = null;
+    _maxDurMarkerCache.rawLogged = false;
+    _plannedStartMarkerLastKey = null;
+    automixRescheduledForTrackId = null;
+  },
+  fetchMissingMeta,
+  refreshDeckMetaDisplays: () => uiRenderer.refreshDeckMetaDisplays(),
+  updateDeckCueUI,
+  getPendingFilRougeOnInactiveDeck: () => pendingFilRougeOnInactiveDeck,
+  setPendingFilRougeOnInactiveDeck: (v) => { pendingFilRougeOnInactiveDeck = v; },
+  deckAstemsIndicator,
+  deckBstemsIndicator,
+  autoMixBtn,
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 tabBtns.forEach((btn) => {
   btn.addEventListener('click', () => {

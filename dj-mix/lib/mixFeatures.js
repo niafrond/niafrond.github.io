@@ -9,20 +9,20 @@ export {
   normalizeTransitionMode,
 } from './transitionModes.js';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const FFT_SIZE        = 1024;
-const SMOOTH_TAU      = 0.08;   // seconds – AudioParam setTargetAtTime time-constant
-const SMOOTH_JS       = 0.34;   // lerp alpha for computeAdaptiveMidSideGains
-const ENERGY_EPSILON  = 1e-4;
-const DISTORTION_K    = 140;
-const DISTORTION_WET_MIX = 0.36;
-const DISTORTION_DRY_MIX = 0.84;
-const ECHO_DELAY_S    = 0.22;
-const ECHO_FEEDBACK   = 0.28;
-const ECHO_WET_MIX    = 0.28;
-const ECHO_DRY_MIX    = 0.9;
-const STEM_SYNC_INTERVAL_MS = 2500;
+import {
+  FFT_SIZE,
+  SMOOTH_TAU,
+  SMOOTH_JS,
+  ENERGY_EPSILON,
+  DISTORTION_K,
+  DISTORTION_WET_MIX,
+  DISTORTION_DRY_MIX,
+  ECHO_DELAY_S,
+  ECHO_FEEDBACK,
+  ECHO_WET_MIX,
+  ECHO_DRY_MIX,
+  STEM_SYNC_INTERVAL_MS,
+} from './constants.js';
 
 // ─── Tiny utilities ───────────────────────────────────────────────────────────
 

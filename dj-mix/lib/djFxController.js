@@ -1,5 +1,6 @@
 import { toDeck } from './deckHelpers.js';
 import { uiState } from './uiState.js';
+import { LOOP_CUE_REPEAT_COUNT, LOOP_CUE_INTERVAL_MS } from './constants.js';
 
 const DJ_FX_TRANSITION_MODE = Object.freeze({
   filter: 'filter_sweep_low_high',
@@ -36,8 +37,6 @@ const DJ_FX_TRANSIENT_ACTIONS = new Set([
   'sampling',
 ]);
 
-const LOOP_CUE_REPEAT_COUNT = 3;
-const LOOP_CUE_INTERVAL_MS = 1500;
 
 export function createDjFxController(options) {
   const {
