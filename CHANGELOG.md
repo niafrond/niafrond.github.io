@@ -1,3 +1,9 @@
+## [1.231.0](https://github.com/niafrond/niafrond.github.io/compare/v1.230.0...v1.231.0) (2026-06-17)
+
+### Features
+
+* refine auto transition selection logic in DJPlayer ([f4f51f6](https://github.com/niafrond/niafrond.github.io/commit/f4f51f69a946657b2e9f2321cf2d97f75bca60eb))
+
 ## [1.230.0](https://github.com/niafrond/niafrond.github.io/compare/v1.229.0...v1.230.0) (2026-06-17)
 
 ### Features
