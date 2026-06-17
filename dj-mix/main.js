@@ -3214,6 +3214,7 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
   if (spotifyClient.isConnected()) {
     refreshSpotifyPlaylistDropdown().catch(() => {});
   }
+  refreshApiMixPlaylists().catch(() => {});
 
   applyRamFilterSettings({ persist: false, announce: true });
   applyDebugLogsSetting(readDebugLogsSetting(), { persist: false });
