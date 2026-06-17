@@ -119,6 +119,7 @@ export class DJPlayer extends EventTarget {
   #deckMixRatio = 0;
   #transitionMode = DEFAULT_TRANSITION_MODE;
   #allowedTransitionModes = new Set(MIX_TRANSITION_MODES);
+  #recentAutoTransitions = [];
   #deckSourceMeta = {
     A: null,
     B: null,
@@ -583,43 +584,83 @@ export class DJPlayer extends EventTarget {
       : null;
 
     if (Number.isFinite(nextDurationMs) && nextDurationMs < 95_000) {
-      return 'cut_transition';
+      return this.#pickWeightedAutoTransition(['cut_transition']);
     }
     if (Number.isFinite(remainingMs) && remainingMs < 3_500) {
-      return 'echo_out_light';
+      return this.#pickWeightedAutoTransition(['echo_out_light', 'cut_transition', 'fade_in_out']);
     }
     if (rhythmA && rhythmB && rhythmA === rhythmB && Number.isFinite(diffBpm) && diffBpm <= 1) {
-      return 'crossfade_linear';
+      return this.#pickWeightedAutoTransition(['crossfade_linear', 'crossfade_logarithmic', 'gain_automation']);
     }
     if (Number.isFinite(diffBpm) && diffBpm <= 2 && (!Number.isFinite(diffLoud) || diffLoud <= 2)) {
-      return 'crossfade_logarithmic';
+      return this.#pickWeightedAutoTransition(['crossfade_logarithmic', 'crossfade_linear', 'gain_automation', 'crossfade_lowpass']);
     }
     if (Number.isFinite(diffEnergy) && diffEnergy >= 0.35 && Number.isFinite(energyB) && energyB < 0.4) {
-      return 'fade_in_out';
+      return this.#pickWeightedAutoTransition(['fade_in_out', 'volume_ducking', 'echo_out_light']);
     }
     if (Number.isFinite(diffDance) && diffDance >= 0.3) {
-      return 'filter_sweep_low_high';
+      return this.#pickWeightedAutoTransition(['filter_sweep_low_high', 'filter_automation', 'filter_dual_sweep']);
     }
     if (Number.isFinite(diffBpm) && diffBpm <= 6) {
-      return 'filter_automation';
+      return this.#pickWeightedAutoTransition(['filter_automation', 'eq_transition_simple', 'crossfade_lowpass', 'crossfade_highpass_in']);
     }
     if (Number.isFinite(diffEnergy) && diffEnergy >= 0.25) {
-      return 'eq_transition_simple';
+      return this.#pickWeightedAutoTransition(['eq_transition_simple', 'sidechain_basic', 'crossfade_highpass_in']);
     }
     if (Number.isFinite(diffBpm) && diffBpm <= 10) {
-      return 'sidechain_basic';
+      return this.#pickWeightedAutoTransition(['sidechain_basic', 'eq_transition_simple', 'volume_ducking']);
     }
     if (Number.isFinite(diffLoud) && diffLoud >= 5) {
-      return 'volume_ducking';
+      return this.#pickWeightedAutoTransition(['volume_ducking', 'fade_in_out', 'gain_automation']);
     }
     if (Number.isFinite(diffBpm) && diffBpm >= 20) {
-      return 'brake_tape_stop_simple';
+      return this.#pickWeightedAutoTransition(['brake_tape_stop_simple', 'backspin', 'fake_drop']);
     }
     if (Number.isFinite(danceA) && Number.isFinite(danceB) && danceA > 0.65 && danceB > 0.65) {
-      return 'short_loop';
+      return this.#pickWeightedAutoTransition(['short_loop', 'beat_repeat', 'kick_swap', 'bass_swap']);
     }
 
-    return 'gain_automation';
+    return this.#pickWeightedAutoTransition(['gain_automation', 'crossfade_linear', 'crossfade_logarithmic', 'fade_in_out']);
+  }
+
+  #pickWeightedAutoTransition(candidates) {
+    const MAX_HISTORY = 8;
+    const allowed = this.#allowedTransitionModes;
+    const eligible = candidates.filter((m) => allowed.has(m));
+    if (eligible.length === 0) return candidates[0];
+    if (eligible.length === 1) {
+      this.#recordAutoTransition(eligible[0]);
+      return eligible[0];
+    }
+
+    const recent = this.#recentAutoTransitions;
+    const weights = eligible.map((mode) => {
+      const lastIndex = recent.lastIndexOf(mode);
+      if (lastIndex === -1) return 1;
+      const recency = recent.length - lastIndex;
+      return recency <= 1 ? 0.05 : recency <= 2 ? 0.15 : recency <= 3 ? 0.35 : 0.7;
+    });
+
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+    let roll = Math.random() * totalWeight;
+    for (let i = 0; i < eligible.length; i++) {
+      roll -= weights[i];
+      if (roll <= 0) {
+        this.#recordAutoTransition(eligible[i]);
+        return eligible[i];
+      }
+    }
+
+    const pick = eligible[eligible.length - 1];
+    this.#recordAutoTransition(pick);
+    return pick;
+  }
+
+  #recordAutoTransition(mode) {
+    this.#recentAutoTransitions.push(mode);
+    if (this.#recentAutoTransitions.length > 8) {
+      this.#recentAutoTransitions.shift();
+    }
   }
 
   #resolveAllowedTransitionMode(mode) {
