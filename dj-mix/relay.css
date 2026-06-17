@@ -190,6 +190,37 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Bouton plein écran */
+.relay-fullscreen-btn {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.relay-fullscreen-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.relay-fullscreen-btn svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
 /* Barre de téléchargement */
 .relay-screen-dl-wrap {
   position: absolute;
