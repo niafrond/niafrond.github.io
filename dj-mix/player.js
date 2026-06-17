@@ -624,7 +624,6 @@ export class DJPlayer extends EventTarget {
   }
 
   #pickWeightedAutoTransition(candidates) {
-    const MAX_HISTORY = 8;
     const allowed = this.#allowedTransitionModes;
     const eligible = candidates.filter((m) => allowed.has(m));
     if (eligible.length === 0) return candidates[0];
@@ -633,25 +632,31 @@ export class DJPlayer extends EventTarget {
       return eligible[0];
     }
 
+    const cooldown = Math.max(1, Math.floor(eligible.length / 2));
     const recent = this.#recentAutoTransitions;
-    const weights = eligible.map((mode) => {
+    const recentTail = recent.slice(-cooldown);
+
+    let available = eligible.filter((m) => !recentTail.includes(m));
+    if (available.length === 0) available = eligible;
+
+    const weights = available.map((mode) => {
       const lastIndex = recent.lastIndexOf(mode);
       if (lastIndex === -1) return 1;
       const recency = recent.length - lastIndex;
-      return recency <= 1 ? 0.05 : recency <= 2 ? 0.15 : recency <= 3 ? 0.35 : 0.7;
+      return recency <= 2 ? 0.15 : recency <= 4 ? 0.5 : 0.8;
     });
 
     const totalWeight = weights.reduce((a, b) => a + b, 0);
     let roll = Math.random() * totalWeight;
-    for (let i = 0; i < eligible.length; i++) {
+    for (let i = 0; i < available.length; i++) {
       roll -= weights[i];
       if (roll <= 0) {
-        this.#recordAutoTransition(eligible[i]);
-        return eligible[i];
+        this.#recordAutoTransition(available[i]);
+        return available[i];
       }
     }
 
-    const pick = eligible[eligible.length - 1];
+    const pick = available[available.length - 1];
     this.#recordAutoTransition(pick);
     return pick;
   }
