@@ -1,3 +1,12 @@
+## [1.230.0](https://github.com/niafrond/niafrond.github.io/compare/v1.229.0...v1.230.0) (2026-06-17)
+
+### Features
+
+* add fullscreen button and functionality to relay interface ([8d2cd3c](https://github.com/niafrond/niafrond.github.io/commit/8d2cd3cc99727c74bf4478db954fbfec86cb62c8))
+* add lightweight relay player and UI enhancements ([40687fb](https://github.com/niafrond/niafrond.github.io/commit/40687fbb1f074b8e2d6fd8de3a0796fec225c91c))
+* enhance DJ plan UI with transition and FX labels; add search result handling ([5b7231c](https://github.com/niafrond/niafrond.github.io/commit/5b7231c00c1d704313104bceeecc77bab9766a6e))
+* implement weighted auto transition selection for DJPlayer ([1c0ee0b](https://github.com/niafrond/niafrond.github.io/commit/1c0ee0bae6a5b44403c56f0338de25c11f6d1f7c))
+
 ## [1.229.0](https://github.com/niafrond/niafrond.github.io/compare/v1.228.0...v1.229.0) (2026-06-17)
 
 ### Features
