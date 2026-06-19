@@ -68,6 +68,11 @@
           maxlength="40"
         >
       </div>
+
+      <label class="mode-toggle">
+        <input id="mode-wrong-word" type="checkbox">
+        <span>✍️ Mode : en cas d'erreur, Joueur 1 écrit un mot visible commençant par la lettre ratée</span>
+      </label>
     </div>
 
     <details class="card card-collapsible">
@@ -149,6 +154,15 @@
 
   <!-- Lettres déjà jouées (erreurs) -->
   <div id="wrong-letters" class="wrong-letters" aria-live="polite"></div>
+
+  <div id="wrong-word-panel" class="wrong-word-panel" hidden>
+    <div class="wrong-word-title">✍️ Tour Joueur 1</div>
+    <p id="wrong-word-instruction" class="wrong-word-instruction"></p>
+    <div class="wrong-word-input-row">
+      <input id="wrong-word-input" class="wrong-word-input" type="text" autocomplete="off" placeholder="Écrivez un mot visible…">
+      <button id="btn-validate-wrong-word" class="btn btn-primary btn-sm">Valider</button>
+    </div>
+  </div>
 
   <!-- Clavier AZERTY -->
   <div id="keyboard" class="keyboard" aria-label="Clavier">
