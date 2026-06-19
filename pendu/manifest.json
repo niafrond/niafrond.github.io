@@ -1,0 +1,18 @@
+{
+  "name": "Pendu 🪢",
+  "short_name": "Pendu",
+  "description": "Jeu de pendu à 2 joueurs — un seul téléphone, passez-le !",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0b1e2d",
+  "theme_color": "#0b1e2d",
+  "icons": [
+    {
+      "src": "../game-template/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
