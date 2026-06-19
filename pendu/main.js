@@ -254,6 +254,10 @@ function startGame() {
     hintBadge.hidden = true;
   }
 
+  // Nombre de lettres
+  const letterCount = normalWord.replace(/ /g, '').length;
+  el('game-length-label').textContent = `${letterCount} lettre${letterCount > 1 ? 's' : ''}`;
+
   showScreen('screen-game');
 }
 

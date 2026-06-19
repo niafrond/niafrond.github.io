@@ -320,6 +320,16 @@ details[open] .card-title-summary::after { content: '▲'; }
   white-space: nowrap;
 }
 
+.length-badge {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
 /* Hangman SVG */
 .hangman-wrapper {
   display: flex;
@@ -390,7 +400,6 @@ details[open] .card-title-summary::after { content: '▲'; }
   gap: 6px;
   width: 100%;
   max-width: 480px;
-  margin-top: auto;
 }
 .keyboard-row {
   display: flex;
