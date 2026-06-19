@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Pendu 🪢</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b1e2d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Pendu">
+</head>
+<body>
+
+<div id="toast" class="toast" hidden></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 1 — SAISIE DU MOT (Joueur 1)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-enter" data-screen="screen-enter">
+  <div class="page-wrapper">
+
+    <div class="setup-header-row">
+      <a href="../" class="btn btn-secondary btn-sm">← Accueil</a>
+      <div id="top-right-controls">
+        <button id="btn-theme"      class="btn-top-ctrl" title="Thème clair/sombre">🌙</button>
+        <button id="btn-fullscreen" class="btn-top-ctrl" title="Plein écran">⛶</button>
+      </div>
+    </div>
+
+    <h1 class="app-title">🪢 Pendu</h1>
+    <p class="app-subtitle">Jeu à 2 — un seul téléphone</p>
+
+    <div class="card enter-card">
+      <div class="card-title">👤 Joueur 1 — Choisissez un mot</div>
+
+      <p class="enter-hint">Entrez le mot à deviner en secret. Le joueur 2 ne doit pas voir l'écran !</p>
+
+      <div class="word-input-wrapper">
+        <input
+          id="word-input"
+          class="word-input"
+          type="password"
+          inputmode="text"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          placeholder="Votre mot…"
+          maxlength="30"
+        >
+        <button id="btn-toggle-word" class="btn-eye" title="Afficher / masquer" aria-label="Afficher le mot">👁</button>
+      </div>
+
+      <div class="hint-input-wrapper">
+        <label class="hint-label" for="hint-input">💡 Indice (facultatif)</label>
+        <input
+          id="hint-input"
+          class="hint-input"
+          type="text"
+          autocomplete="off"
+          placeholder="Ex : une ville, un animal…"
+          maxlength="40"
+        >
+      </div>
+    </div>
+
+    <details class="card card-collapsible">
+      <summary class="card-title card-title-summary">📖 Règles</summary>
+      <div>
+        <p style="font-size:0.88rem;color:var(--text-muted);line-height:1.7">
+          🎯 <strong style="color:var(--text)">Objectif</strong> : Joueur 2 doit deviner le mot lettre par lettre.<br><br>
+          ❌ <strong style="color:var(--text)">Erreurs</strong> : À chaque mauvaise lettre, un membre du pendu est dessiné.<br><br>
+          💀 <strong style="color:var(--text)">Défaite</strong> : 6 erreurs et le pendu est complet.<br><br>
+          🏆 <strong style="color:var(--text)">Victoire</strong> : Toutes les lettres trouvées avant la 6ᵉ erreur.
+        </p>
+      </div>
+    </details>
+
+    <button id="btn-install-pwa" class="btn btn-secondary w-full mb-12" hidden>
+      📲 Installer l'application
+    </button>
+
+    <div class="screen-sticky-footer">
+      <button id="btn-confirm-word" class="btn btn-primary btn-lg w-full" disabled>
+        ✅ Valider le mot
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 2 — PASSEZ LE TÉLÉPHONE
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-handoff" data-screen="screen-handoff" hidden>
+  <div class="screen-center">
+    <div class="handoff-icon">📱</div>
+    <h2 class="app-title" style="font-size:2rem;">Passez le téléphone</h2>
+    <p class="handoff-sub">Joueur 1, remettez le téléphone au Joueur 2 sans lui montrer le mot !</p>
+    <div class="handoff-divider"></div>
+    <p class="handoff-ready">Joueur 2, êtes-vous prêt·e ?</p>
+    <button id="btn-start-game" class="btn btn-primary btn-lg" style="min-width:220px;">
+      🎮 Je suis prêt·e !
+    </button>
+    <button id="btn-back-enter" class="btn btn-secondary btn-sm mt-12">
+      ← Modifier le mot
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 3 — JEU (Joueur 2)
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-game" data-screen="screen-game" hidden>
+
+  <!-- En-tête -->
+  <div class="game-header">
+    <span id="game-errors-label" class="errors-badge">0 / 6 erreurs</span>
+    <span id="game-hint-label"   class="hint-badge" hidden></span>
+  </div>
+
+  <!-- Dessin du pendu -->
+  <div class="hangman-wrapper">
+    <svg id="hangman-svg" class="hangman-svg" viewBox="0 0 200 220" xmlns="http://www.w3.org/2000/svg" aria-label="Dessin du pendu">
+      <!-- Potence (toujours visible) -->
+      <line x1="20"  y1="210" x2="180" y2="210" stroke-width="6" stroke-linecap="round"/>
+      <line x1="60"  y1="210" x2="60"  y2="20"  stroke-width="6" stroke-linecap="round"/>
+      <line x1="60"  y1="20"  x2="130" y2="20"  stroke-width="6" stroke-linecap="round"/>
+      <line x1="130" y1="20"  x2="130" y2="45"  stroke-width="6" stroke-linecap="round"/>
+      <!-- Parties du pendu (cachées) -->
+      <circle id="h-head"      cx="130" cy="62"  r="17" fill="none" stroke-width="5" class="hangman-part" hidden/>
+      <line   id="h-body"      x1="130" y1="79"  x2="130" y2="135" stroke-width="5" stroke-linecap="round" class="hangman-part" hidden/>
+      <line   id="h-arm-left"  x1="130" y1="95"  x2="100" y2="120" stroke-width="5" stroke-linecap="round" class="hangman-part" hidden/>
+      <line   id="h-arm-right" x1="130" y1="95"  x2="160" y2="120" stroke-width="5" stroke-linecap="round" class="hangman-part" hidden/>
+      <line   id="h-leg-left"  x1="130" y1="135" x2="105" y2="168" stroke-width="5" stroke-linecap="round" class="hangman-part" hidden/>
+      <line   id="h-leg-right" x1="130" y1="135" x2="155" y2="168" stroke-width="5" stroke-linecap="round" class="hangman-part" hidden/>
+    </svg>
+  </div>
+
+  <!-- Mot (blancs + lettres trouvées) -->
+  <div id="word-display" class="word-display" aria-live="polite"></div>
+
+  <!-- Lettres déjà jouées (erreurs) -->
+  <div id="wrong-letters" class="wrong-letters" aria-live="polite"></div>
+
+  <!-- Clavier AZERTY -->
+  <div id="keyboard" class="keyboard" aria-label="Clavier">
+    <div class="keyboard-row" id="kbd-row-1"></div>
+    <div class="keyboard-row" id="kbd-row-2"></div>
+    <div class="keyboard-row" id="kbd-row-3"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ÉCRAN 4 — RÉSULTAT
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="screen-result" data-screen="screen-result" hidden>
+  <div class="screen-center">
+    <div id="result-icon"  class="result-icon"></div>
+    <h2 id="result-title"  class="app-title" style="font-size:2.2rem;"></h2>
+    <p  id="result-sub"    class="result-sub"></p>
+
+    <div class="result-word-box">
+      <span class="result-word-label">Le mot était :</span>
+      <span id="result-word" class="result-word"></span>
+    </div>
+
+    <div id="result-errors" class="result-errors"></div>
+
+    <button id="btn-play-again" class="btn btn-primary btn-lg" style="min-width:220px;">
+      🔄 Nouvelle partie
+    </button>
+    <a href="../" class="btn btn-secondary mt-12" style="min-width:220px;">
+      ← Retour à l'accueil
+    </a>
+  </div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
