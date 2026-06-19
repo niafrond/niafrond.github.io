@@ -1,3 +1,9 @@
+## [1.233.0](https://github.com/niafrond/niafrond.github.io/compare/v1.232.0...v1.233.0) (2026-06-19)
+
+### Features
+
+* **pendu:** add random word button using flash-guess word lists ([1c1e19d](https://github.com/niafrond/niafrond.github.io/commit/1c1e19d163dbd5481495054ddbd12e3f33b011a5))
+
 ## [1.232.0](https://github.com/niafrond/niafrond.github.io/compare/v1.231.0...v1.232.0) (2026-06-19)
 
 ### Features
