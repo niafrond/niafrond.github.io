@@ -1,3 +1,9 @@
+## [1.232.0](https://github.com/niafrond/niafrond.github.io/compare/v1.231.0...v1.232.0) (2026-06-19)
+
+### Features
+
+* add jeu de pendu 2 joueurs (single phone) ([d7e4bf4](https://github.com/niafrond/niafrond.github.io/commit/d7e4bf436f0d000dd642565198b7ce3c45d36d89))
+
 ## [1.231.0](https://github.com/niafrond/niafrond.github.io/compare/v1.230.0...v1.231.0) (2026-06-17)
 
 ### Features
