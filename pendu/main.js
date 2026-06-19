@@ -18,6 +18,35 @@ const HANGMAN_PARTS = [
   'h-leg-right',
 ];
 
+// Catégories flash-guess disponibles pour le mot au hasard
+const RANDOM_WORD_CATEGORIES = [
+  { key: 'general_knowledge',   label: 'Culture Générale' },
+  { key: 'geography',           label: 'Géographie' },
+  { key: 'history',             label: 'Histoire' },
+  { key: 'music',               label: 'Musique' },
+  { key: 'film_and_tv',         label: 'Cinéma & TV' },
+  { key: 'sport',               label: 'Sport & Loisirs' },
+  { key: 'science',             label: 'Sciences' },
+  { key: 'arts_and_literature', label: 'Arts & Littérature' },
+  { key: 'food_and_drink',      label: 'Cuisine & Boissons' },
+  { key: 'anatomy',             label: 'Anatomie' },
+  { key: 'disney',              label: 'Disney' },
+  { key: 'cars',                label: 'Voitures' },
+  { key: 'city',                label: 'En ville' },
+  { key: 'clothing',            label: 'Vêtements' },
+  { key: 'monuments',           label: 'Monuments' },
+  { key: 'space',               label: 'Espace' },
+  { key: 'sports',              label: 'Sports' },
+  { key: 'superheroes',         label: 'Super héros' },
+  { key: 'toys',                label: 'Jouets' },
+  { key: 'weather',             label: 'Météo' },
+  { key: 'games',               label: 'Jeux' },
+  { key: 'school',              label: "À l'École" },
+  { key: 'society_and_culture', label: 'Société & Culture' },
+  { key: 'board_games',         label: 'Jeux de société' },
+  { key: 'beach',               label: 'La Plage' },
+];
+
 // ── État du jeu ─────────────────────────────────────────────────────────────
 let secretWord   = '';   // mot original (avec accents, espaces)
 let normalWord   = '';   // mot normalisé (sans accents, majuscules, pour comparaison)
@@ -273,6 +302,31 @@ function showResult(won) {
   showScreen('screen-result');
 }
 
+// ── Mot au hasard (flash-guess) ───────────────────────────────────────────────
+async function pickRandomWord() {
+  const btn = el('btn-random-word');
+  btn.disabled = true;
+  try {
+    // Choisir une catégorie aléatoire (jusqu'à 5 tentatives si fetch échoue)
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const cat = RANDOM_WORD_CATEGORIES[Math.floor(Math.random() * RANDOM_WORD_CATEGORIES.length)];
+      try {
+        const res = await fetch(`../flash-guess/words/${cat.key}.json`);
+        if (!res.ok) continue;
+        const words = await res.json();
+        if (!Array.isArray(words) || words.length === 0) continue;
+        const entry = words[Math.floor(Math.random() * words.length)];
+        if (!entry || !entry.word) continue;
+        return { word: entry.word, category: cat.label };
+      } catch (_) { /* essayer une autre catégorie */ }
+    }
+    showToast('Impossible de charger un mot. Réessayez.', 'warning');
+    return null;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
   initTheme();
@@ -291,6 +345,19 @@ function init() {
     const norm = normalize(val);
     const letters = norm.replace(/ /g, '');
     confirmBtn.disabled = letters.length < 2;
+  });
+
+  el('btn-random-word').addEventListener('click', async () => {
+    const result = await pickRandomWord();
+    if (!result) return;
+    wordInput.value = result.word;
+    wordInput.type = 'password';
+    toggleBtn.textContent = '👁';
+    // Pré-remplir l'indice avec la catégorie si l'indice est vide
+    if (!hintInput.value.trim()) hintInput.value = result.category;
+    // Déclencher la validation du bouton
+    wordInput.dispatchEvent(new Event('input'));
+    showToast(`Catégorie : ${result.category}`, 'info');
   });
 
   wordInput.addEventListener('keydown', e => {
