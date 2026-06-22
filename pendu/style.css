@@ -247,6 +247,20 @@ details[open] .card-title-summary::after { content: '▲'; }
 .hint-input:focus { border-color: var(--lagon); }
 .hint-input::placeholder { color: var(--text-muted); }
 
+.mode-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+.mode-toggle input {
+  margin-top: 3px;
+  accent-color: var(--volcan);
+}
+
 /* ─── Screen Handoff ─────────────────────────────────────────────────────── */
 .handoff-icon {
   font-size: 4rem;
@@ -390,6 +404,47 @@ details[open] .card-title-summary::after { content: '▲'; }
   text-align: center;
   max-width: 480px;
   width: 100%;
+}
+
+.wrong-word-panel {
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.wrong-word-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--warning);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.wrong-word-instruction {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+.wrong-word-input-row {
+  display: flex;
+  gap: 8px;
+}
+.wrong-word-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 9px 11px;
+  font-size: 0.95rem;
+  outline: none;
+}
+.wrong-word-input:focus {
+  border-color: var(--lagon);
 }
 
 /* Keyboard */

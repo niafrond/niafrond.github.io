@@ -54,6 +54,9 @@ let hint         = '';
 let guessed      = new Set();  // lettres normalisées devinées correctement
 let wrongLetters = new Set();  // lettres normalisées devinées incorrectement
 let gameOver     = false;
+let wrongWordModeEnabled = false;
+let wrongWordPromptOpen = false;
+let wrongWordExpectedLetter = '';
 
 // ── Utilitaires ─────────────────────────────────────────────────────────────
 function el(id) { return document.getElementById(id); }
@@ -237,6 +240,7 @@ function isWordFound() {
 // ── Clic lettre ──────────────────────────────────────────────────────────────
 function onLetterClick(letter) {
   if (gameOver) return;
+  if (wrongWordPromptOpen) return;
   if (guessed.has(letter) || wrongLetters.has(letter)) return;
 
   const isCorrect = normalWord.includes(letter);
@@ -258,8 +262,41 @@ function onLetterClick(letter) {
     if (errors >= MAX_ERRORS) {
       gameOver = true;
       setTimeout(() => showResult(false), 300);
+    } else if (wrongWordModeEnabled) {
+      openWrongWordPrompt(letter);
     }
   }
+}
+
+function openWrongWordPrompt(letter) {
+  wrongWordPromptOpen = true;
+  wrongWordExpectedLetter = letter;
+  el('wrong-word-instruction').textContent = `Lettre ratée : ${letter}. Joueur 1 doit écrire un mot visible qui commence par ${letter}.`;
+  el('wrong-word-input').value = '';
+  el('wrong-word-panel').hidden = false;
+  el('wrong-word-input').focus();
+}
+
+function closeWrongWordPrompt() {
+  wrongWordPromptOpen = false;
+  wrongWordExpectedLetter = '';
+  el('wrong-word-panel').hidden = true;
+}
+
+function validateWrongWordPrompt() {
+  if (!wrongWordPromptOpen || gameOver) return;
+  const input = el('wrong-word-input');
+  const raw = input.value.trim();
+  const norm = normalize(raw).replace(/ /g, '');
+  if (!norm) {
+    showToast('Entrez un mot.', 'warning');
+    return;
+  }
+  if (norm[0] !== wrongWordExpectedLetter) {
+    showToast(`Le mot doit commencer par ${wrongWordExpectedLetter}.`, 'warning');
+    return;
+  }
+  closeWrongWordPrompt();
 }
 
 // ── Démarrer une partie ──────────────────────────────────────────────────────
@@ -267,6 +304,7 @@ function startGame() {
   guessed.clear();
   wrongLetters.clear();
   gameOver = false;
+  closeWrongWordPrompt();
 
   resetKeyboard();
   renderHangman(0);
@@ -339,6 +377,8 @@ function init() {
   const hintInput  = el('hint-input');
   const confirmBtn = el('btn-confirm-word');
   const toggleBtn  = el('btn-toggle-word');
+  const modeToggle = el('mode-wrong-word');
+  const wrongWordInput = el('wrong-word-input');
 
   wordInput.addEventListener('input', () => {
     const val = wordInput.value.trim();
@@ -380,6 +420,7 @@ function init() {
     secretWord = raw;
     normalWord = norm;
     hint       = hintInput.value.trim();
+    wrongWordModeEnabled = modeToggle.checked;
     // Reset input
     wordInput.value  = '';
     wordInput.type   = 'password';
@@ -389,12 +430,23 @@ function init() {
     showScreen('screen-handoff');
   });
 
+  el('btn-validate-wrong-word').addEventListener('click', validateWrongWordPrompt);
+  wrongWordInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') validateWrongWordPrompt();
+  });
+
   // Écran 2 — passez le téléphone
   el('btn-start-game').addEventListener('click', startGame);
-  el('btn-back-enter').addEventListener('click', () => showScreen('screen-enter'));
+  el('btn-back-enter').addEventListener('click', () => {
+    closeWrongWordPrompt();
+    showScreen('screen-enter');
+  });
 
   // Écran 4 — résultat
-  el('btn-play-again').addEventListener('click', () => showScreen('screen-enter'));
+  el('btn-play-again').addEventListener('click', () => {
+    closeWrongWordPrompt();
+    showScreen('screen-enter');
+  });
 
   // Afficher l'écran de départ
   showScreen('screen-enter');
