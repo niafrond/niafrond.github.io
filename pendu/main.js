@@ -271,7 +271,8 @@ function onLetterClick(letter) {
 function openWrongWordPrompt(letter) {
   wrongWordPromptOpen = true;
   wrongWordExpectedLetter = letter;
-  el('wrong-word-instruction').textContent = `Lettre ratée : ${letter}. Joueur 1 doit écrire un mot visible qui commence par ${letter}.`;
+  const motIndice = hint ? `Mot indice : « ${hint} ». ` : `Lettre ratée : ${letter}. `;
+  el('wrong-word-instruction').textContent = `${motIndice}Joueur 1 doit écrire un mot visible qui commence par ${letter}.`;
   el('wrong-word-input').value = '';
   el('wrong-word-panel').hidden = false;
   el('wrong-word-input').focus();
@@ -377,7 +378,7 @@ function init() {
   const hintInput  = el('hint-input');
   const confirmBtn = el('btn-confirm-word');
   const toggleBtn  = el('btn-toggle-word');
-  const modeToggle = el('mode-wrong-word');
+  const modeToggle = el('mode-indice-pendu');
   const wrongWordInput = el('wrong-word-input');
 
   wordInput.addEventListener('input', () => {
