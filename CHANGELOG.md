@@ -1,3 +1,9 @@
+## [1.233.1](https://github.com/niafrond/niafrond.github.io/compare/v1.233.0...v1.233.1) (2026-06-23)
+
+### Bug Fixes
+
+* **pendu:** rename mode to IndicePendu and display hint word in prompt ([22b31d3](https://github.com/niafrond/niafrond.github.io/commit/22b31d3703467884d228935872624310998454c2))
+
 ## [1.233.0](https://github.com/niafrond/niafrond.github.io/compare/v1.232.0...v1.233.0) (2026-06-19)
 
 ### Features
