@@ -70,6 +70,20 @@ function normalize(str) {
     .replace(/[^A-Z ]/g, '');
 }
 
+// Normalise caractère par caractère en conservant la longueur originale.
+// Les lettres (avec accents) deviennent leur équivalent A-Z ; les autres
+// caractères (tiret, apostrophe, espace…) sont conservés tels quels.
+function normalizeWord(str) {
+  return [...str].map(c => {
+    const n = c.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    return /^[A-Z]$/.test(n) ? n : c;
+  }).join('');
+}
+
+function countLetters(normalizedWord) {
+  return [...normalizedWord].filter(c => /^[A-Z]$/.test(c)).length;
+}
+
 function showScreen(id) {
   document.querySelectorAll('[data-screen]').forEach(s => { s.hidden = true; });
   el(id).hidden = false;
@@ -165,16 +179,18 @@ function renderWordDisplay() {
   for (let i = 0; i < secretWord.length; i++) {
     const char     = secretWord[i];
     const normChar = normalWord[i];
+    const isLetter = /^[A-Z]$/.test(normChar);
 
     const slot = document.createElement('span');
     slot.className = 'word-letter';
 
-    if (char === ' ') {
+    // Caractères non-alphabétiques (espace, tiret, apostrophe…) : affichés d'emblée
+    if (!isLetter) {
       slot.classList.add('word-letter--space');
-      slot.style.minWidth = '20px';
+      if (char !== ' ') slot.style.minWidth = '';
       const charEl = document.createElement('span');
       charEl.className = 'word-letter-char';
-      charEl.textContent = ' ';
+      charEl.textContent = char;
       slot.appendChild(charEl);
       display.appendChild(slot);
       continue;
@@ -239,7 +255,7 @@ function renderWrongLetters() {
 
 // ── Vérification victoire/défaite ─────────────────────────────────────────
 function isWordFound() {
-  return [...normalWord].every(c => c === ' ' || guessed.has(c));
+  return [...normalWord].every(c => !/^[A-Z]$/.test(c) || guessed.has(c));
 }
 
 // ── Clic lettre ──────────────────────────────────────────────────────────────
@@ -331,7 +347,7 @@ function startGame() {
   }
 
   // Nombre de lettres
-  const letterCount = normalWord.replace(/ /g, '').length;
+  const letterCount = countLetters(normalWord);
   el('game-length-label').textContent = `${letterCount} lettre${letterCount > 1 ? 's' : ''}`;
 
   showScreen('screen-game');
@@ -391,9 +407,8 @@ function init() {
 
   wordInput.addEventListener('input', () => {
     const val = wordInput.value.trim();
-    const norm = normalize(val);
-    const letters = norm.replace(/ /g, '');
-    confirmBtn.disabled = letters.length < 2;
+    const letters = countLetters(normalizeWord(val));
+    confirmBtn.disabled = letters < 2;
   });
 
   el('btn-random-word').addEventListener('click', async () => {
@@ -420,9 +435,9 @@ function init() {
 
   confirmBtn.addEventListener('click', () => {
     const raw  = wordInput.value.trim();
-    const norm = normalize(raw);
-    const letters = norm.replace(/ /g, '');
-    if (letters.length < 2) {
+    const norm = normalizeWord(raw);
+    const letters = countLetters(norm);
+    if (letters < 2) {
       showToast('Le mot doit avoir au moins 2 lettres.', 'warning');
       return;
     }
