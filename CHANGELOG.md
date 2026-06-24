@@ -1,3 +1,9 @@
+## [1.234.1](https://github.com/niafrond/niafrond.github.io/compare/v1.234.0...v1.234.1) (2026-06-24)
+
+### Bug Fixes
+
+* pendu - correct multi-occurrence letters and auto-display non-alpha chars ([ccddd26](https://github.com/niafrond/niafrond.github.io/commit/ccddd268bd3b0182f69ed45ce814ce56f04987ce))
+
 ## [1.234.0](https://github.com/niafrond/niafrond.github.io/compare/v1.233.1...v1.234.0) (2026-06-24)
 
 ### Features
