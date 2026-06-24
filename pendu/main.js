@@ -53,6 +53,7 @@ let normalWord   = '';   // mot normalisé (sans accents, majuscules, pour compa
 let hint         = '';
 let guessed      = new Set();  // lettres normalisées devinées correctement
 let wrongLetters = new Set();  // lettres normalisées devinées incorrectement
+let wrongWordMap = new Map();  // lettre → mot proposé en mode IndicePendu
 let gameOver     = false;
 let wrongWordModeEnabled = false;
 let wrongWordPromptOpen = false;
@@ -229,7 +230,11 @@ function renderWrongLetters() {
     el2.textContent = '';
     return;
   }
-  el2.textContent = '✗ ' + [...wrongLetters].join(' ');
+  const items = [...wrongLetters].map(letter => {
+    const word = wrongWordMap.get(letter);
+    return word ? word.toUpperCase() : letter;
+  });
+  el2.textContent = '✗ ' + items.join(' · ');
 }
 
 // ── Vérification victoire/défaite ─────────────────────────────────────────
@@ -297,6 +302,8 @@ function validateWrongWordPrompt() {
     showToast(`Le mot doit commencer par ${wrongWordExpectedLetter}.`, 'warning');
     return;
   }
+  wrongWordMap.set(wrongWordExpectedLetter, raw.trim().toUpperCase());
+  renderWrongLetters();
   closeWrongWordPrompt();
 }
 
@@ -304,6 +311,7 @@ function validateWrongWordPrompt() {
 function startGame() {
   guessed.clear();
   wrongLetters.clear();
+  wrongWordMap.clear();
   gameOver = false;
   closeWrongWordPrompt();
 
