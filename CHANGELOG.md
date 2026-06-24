@@ -1,3 +1,9 @@
+## [1.234.0](https://github.com/niafrond/niafrond.github.io/compare/v1.233.1...v1.234.0) (2026-06-24)
+
+### Features
+
+* **pendu:** afficher le mot proposé à la place de la lettre en mode IndicePendu ([a2531fd](https://github.com/niafrond/niafrond.github.io/commit/a2531fdbd8535561334952aad91cbcb726d1cfc3))
+
 ## [1.233.1](https://github.com/niafrond/niafrond.github.io/compare/v1.233.0...v1.233.1) (2026-06-23)
 
 ### Bug Fixes
