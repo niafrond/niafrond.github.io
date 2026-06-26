@@ -1,3 +1,10 @@
+## [1.235.0](https://github.com/niafrond/niafrond.github.io/compare/v1.234.1...v1.235.0) (2026-06-26)
+
+### Features
+
+* add next track display and fingerprint control functionality ([1a4c252](https://github.com/niafrond/niafrond.github.io/commit/1a4c252945f82984a7a80b6a43ef575d15dc58cb))
+* add search functionality with overlay and action sheet ([c5ba1a2](https://github.com/niafrond/niafrond.github.io/commit/c5ba1a2bcec008e79f0515491089aa6fea31351d))
+
 ## [1.234.1](https://github.com/niafrond/niafrond.github.io/compare/v1.234.0...v1.234.1) (2026-06-24)
 
 ### Bug Fixes
