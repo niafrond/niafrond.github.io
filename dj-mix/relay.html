@@ -38,6 +38,7 @@
       <div id="relay-screen-track" class="relay-screen-track">En attente du maître…</div>
       <div id="relay-screen-artist" class="relay-screen-artist"></div>
       <div id="relay-screen-meta" class="relay-screen-meta"></div>
+      <button id="relay-fingerprint-btn" class="relay-fingerprint-btn" aria-label="Contrôle d'empreinte" title="Vérifier l'empreinte audio" hidden></button>
     </div>
 
     <div class="relay-screen-progress-wrap">
@@ -49,6 +50,17 @@
       <div class="relay-screen-times">
         <span id="relay-screen-time-cur">0:00</span>
         <span id="relay-screen-time-total">0:00</span>
+      </div>
+    </div>
+
+    <div id="relay-screen-next" class="relay-screen-next" hidden>
+      <span class="relay-screen-next-label">Suivant</span>
+      <div class="relay-screen-next-track">
+        <img id="relay-screen-next-art" class="relay-screen-next-art" src="" alt="" hidden>
+        <div class="relay-screen-next-info">
+          <span id="relay-screen-next-name" class="relay-screen-next-name"></span>
+          <span id="relay-screen-next-artist" class="relay-screen-next-artist"></span>
+        </div>
       </div>
     </div>
 
@@ -89,6 +101,19 @@
       <button id="relay-action-play-now" class="relay-action-btn relay-action-btn--primary">Lire maintenant</button>
       <button id="relay-action-play-next" class="relay-action-btn relay-action-btn--secondary">Ajouter en suivant</button>
       <button id="relay-action-cancel" class="relay-action-btn relay-action-btn--cancel">Annuler</button>
+    </div>
+  </div>
+
+  <!-- Suggestion sheet (remplacement empreinte) -->
+  <div id="relay-suggestion-sheet" class="relay-suggestion-sheet" hidden>
+    <div class="relay-suggestion-sheet-backdrop"></div>
+    <div class="relay-suggestion-sheet-content">
+      <div class="relay-suggestion-header">
+        <span class="relay-suggestion-title">Empreinte incorrecte</span>
+        <span id="relay-suggestion-sub" class="relay-suggestion-sub"></span>
+      </div>
+      <div id="relay-suggestion-list" class="relay-suggestion-list"></div>
+      <button id="relay-suggestion-cancel" class="relay-action-btn relay-action-btn--cancel">Annuler</button>
     </div>
   </div>
 

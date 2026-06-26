@@ -37,6 +37,10 @@ const progFillEl    = $id('relay-screen-progress-fill');
 const progBarEl     = $id('relay-screen-progress-bar');
 const timeCurEl     = $id('relay-screen-time-cur');
 const timeTotalEl   = $id('relay-screen-time-total');
+const nextWrapEl    = $id('relay-screen-next');
+const nextArtEl     = $id('relay-screen-next-art');
+const nextNameEl    = $id('relay-screen-next-name');
+const nextArtistEl  = $id('relay-screen-next-artist');
 const dlFillEl      = $id('relay-screen-dl-fill');
 const dlLabelEl     = $id('relay-screen-dl-label');
 const fullscreenBtn = $id('relay-fullscreen-btn');
@@ -401,37 +405,6 @@ function _stopPosTracking() {
   if (_posTimer) { clearInterval(_posTimer); _posTimer = null; }
 }
 
-// ── Correction de dérive fine (playbackRate) ────────────────────────────────
-//
-// Seuils :
-//   |drift| <  1 ms  → rien
-//   |drift| 1–10 ms  → playbackRate ±0.1% (corrige 1ms en ~1s)
-//   |drift| 10–50 ms → playbackRate ±0.5%
-//   |drift| 50–200ms → playbackRate ±2%
-//   |drift| > 200 ms → seek dur (pas de glitch audible perceptible à ce seuil)
-
-let _rateCorrectTimer = null;
-
-function _smoothCorrect(deckIdx, driftMs) {
-  const deck = _decks[deckIdx];
-  if (!deck?.audio || deck.audio.paused) return;
-  if (_rateCorrectTimer) { clearTimeout(_rateCorrectTimer); _rateCorrectTimer = null; }
-
-  const abs = Math.abs(driftMs);
-  let delta;
-  if (abs <= 10)       delta = 0.001;
-  else if (abs <= 50)  delta = 0.005;
-  else                 delta = 0.02;
-
-  const rate = driftMs > 0 ? (1 - delta) : (1 + delta);
-  const correctionDuration = abs / delta;
-  deck.audio.playbackRate = rate;
-  _rateCorrectTimer = setTimeout(() => {
-    deck.audio.playbackRate = 1.0;
-    _rateCorrectTimer = null;
-  }, Math.min(correctionDuration, 5000));
-}
-
 // ── Cache de durée par trackId ──────────────────────────────────────────────
 
 const _trackDurations = new Map();
@@ -458,6 +431,35 @@ function _updateTrack({ name, artist, artUrl, bpm, genre } = {}) {
     if (artEl)      artEl.hidden = true;
     if (artPlaceEl) artPlaceEl.hidden = false;
   }
+  if (fingerprintBtn) fingerprintBtn.hidden = !name;
+}
+
+function _updateNextTrack(state) {
+  if (!nextWrapEl) return;
+  const { currentTrackId, deckA, deckB, queue = [], filRouge = [] } = state;
+  if (!currentTrackId) { nextWrapEl.hidden = true; return; }
+
+  const nextId = deckA?.trackId === currentTrackId
+    ? deckB?.trackId
+    : deckA?.trackId;
+
+  if (!nextId || nextId === currentTrackId) {
+    nextWrapEl.hidden = true;
+    return;
+  }
+
+  const item = queue.find((i) => i.id === nextId)
+            || filRouge.find((i) => i.id === nextId);
+  if (!item) { nextWrapEl.hidden = true; return; }
+
+  if (nextArtEl) {
+    const art = item.artUrl || '';
+    if (art) { nextArtEl.src = art; nextArtEl.hidden = false; }
+    else     { nextArtEl.hidden = true; }
+  }
+  if (nextNameEl)   nextNameEl.textContent   = item.name || '';
+  if (nextArtistEl) nextArtistEl.textContent = item.artist || '';
+  nextWrapEl.hidden = false;
 }
 
 function _updateProgress(posMs, durMs) {
@@ -544,7 +546,24 @@ async function _executeScheduled(event) {
   }
 }
 
-// ── Correction de dérive autonome (toutes les 1 s, seuil < 1 ms) ───────────
+// ── Correction de dérive autonome (requestAnimationFrame, seuil < 0.5 ms) ──
+//
+// Tourne à chaque frame GPU (~4 ms à 240 Hz, ~16 ms à 60 Hz).
+// Compare audio.currentTime (hardware clock) à la position attendue
+// du maître et applique une micro-correction playbackRate en continu.
+
+let _driftRAF = null;
+let _driftCorrecting = false;
+
+function _driftLoop() {
+  _driftCheck();
+  _driftRAF = requestAnimationFrame(_driftLoop);
+}
+
+function _startDriftLoop() {
+  if (_driftRAF) return;
+  _driftRAF = requestAnimationFrame(_driftLoop);
+}
 
 function _driftCheck() {
   if (!_lastState || !_audioReady) return;
@@ -561,16 +580,29 @@ function _driftCheck() {
   const drift     = expected - actual;
   const absDrift  = Math.abs(drift);
 
-  if (absDrift < 1) return;
+  if (absDrift < 0.5) {
+    if (_driftCorrecting) {
+      deck.audio.playbackRate = 1.0;
+      _driftCorrecting = false;
+    }
+    return;
+  }
 
-  if (absDrift > 200) {
+  if (absDrift > 100) {
+    deck.audio.playbackRate = 1.0;
+    _driftCorrecting = false;
     _seekDeck(_curDeckIdx, expected);
     _startPosTracking(expected, _posDurationMs);
-  } else {
-    _smoothCorrect(_curDeckIdx, drift);
-    _posStartMs = expected;
-    _posT0 = _audioClock();
+    return;
   }
+
+  // Correction proportionnelle : plus la dérive est grande, plus on corrige vite
+  // ratio = drift / 500 → pour 1ms drift on applique ±0.002, pour 50ms → ±0.1
+  const ratio = Math.min(0.05, absDrift / 500);
+  deck.audio.playbackRate = drift > 0 ? (1 - ratio) : (1 + ratio);
+  _driftCorrecting = true;
+  _posStartMs = expected;
+  _posT0 = _audioClock();
 }
 
 // ── Polling et application de l'état ─────────────────────────────────────────
@@ -599,6 +631,8 @@ async function _poll() {
     const state = await res.json().catch(() => null);
     if (!state?.pushedAt) return;
 
+    _resyncPosition(state);
+
     const hash = _stateHash(state);
     if (hash === _lastHash) return;
     _lastHash = hash;
@@ -607,6 +641,36 @@ async function _poll() {
   } catch (err) {
     _setStatus(`Réseau : ${err.message}`);
   }
+}
+
+function _resyncPosition(state) {
+  _lastState = state;
+
+  if (!state.isPlaying || !_curTrackId) return;
+
+  const { activeDeck, deckA, deckB, capturedAt, pushedAt } = state;
+  const activeDeckState = activeDeck === 'A' ? deckA : deckB;
+  if (activeDeckState?.positionMs === undefined) return;
+
+  const now = Date.now();
+  const refTime = capturedAt || pushedAt || now;
+  const latencyMs = Math.max(0, now - refTime);
+  const target = activeDeckState.positionMs + latencyMs;
+
+  const deck = _decks[_curDeckIdx];
+  if (!deck?.audio || deck.audio.paused) return;
+
+  const current = deck.audio.currentTime * 1000;
+  const absDrift = Math.abs(target - current);
+
+  const driftInfo = absDrift < 0.5 ? ' · sync' :
+    absDrift < 10 ? ` · Δ${absDrift.toFixed(2)}ms` : ` · Δ${Math.round(absDrift)}ms`;
+  _setStatus(
+    `Maître · ${new Date(now).toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' })}${driftInfo}`
+  );
+
+  _posStartMs = target;
+  _posT0 = _audioClock();
 }
 
 async function _applyState(state) {
@@ -654,8 +718,8 @@ async function _applyState(state) {
     const actual = deck.audio.currentTime * 1000;
     const target = expected + latencyMs;
     const d = Math.abs(target - actual);
-    if (d < 1) return ' · <1ms';
-    return d < 10 ? ` · Δ${d.toFixed(1)}ms` : ` · Δ${Math.round(d)}ms`;
+    if (d < 0.5) return ' · sync';
+    return d < 10 ? ` · Δ${d.toFixed(2)}ms` : ` · Δ${Math.round(d)}ms`;
   })();
   _setStatus(
     `Maître · ${new Date(now).toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' })}${driftInfo}`
@@ -667,7 +731,10 @@ async function _applyState(state) {
   // 4. FX courant
   if (fx) _applyFx(fx);
 
-  // 4. Changement de piste
+  // 5. Prochain titre (deck opposée au currentTrackId)
+  _updateNextTrack(state);
+
+  // 6. Changement de piste
   if (currentTrackId && currentTrackId !== _curTrackId) {
     const item = queue.find((i) => i.id === currentTrackId)
               || filRouge.find((i) => i.id === currentTrackId);
@@ -741,7 +808,7 @@ async function _applyState(state) {
     if (nextItem?.persistedSourceUrl) _enqueueDownload(nextItem);
 
   } else if (currentTrackId && currentTrackId === _curTrackId) {
-    // Même piste : resynchronisation sub-milliseconde
+    // Même piste : mise à jour de la référence maître pour la boucle RAF
     if (isPlaying && refTime) {
       const activeDeckState = activeDeck === 'A' ? deckA : deckB;
       if (activeDeckState?.positionMs !== undefined) {
@@ -749,17 +816,13 @@ async function _applyState(state) {
         const deck    = _decks[_curDeckIdx];
         if (deck?.audio && !deck.audio.paused) {
           const current = deck.audio.currentTime * 1000;
-          const drift   = target - current;
-          const absDrift = Math.abs(drift);
+          const absDrift = Math.abs(target - current);
 
-          if (absDrift > 200) {
+          if (absDrift > 100) {
             _seekDeck(_curDeckIdx, target);
             _startPosTracking(target, _posDurationMs);
-          } else if (absDrift > 1) {
-            _smoothCorrect(_curDeckIdx, drift);
-            _posStartMs = target;
-            _posT0 = _audioClock();
           }
+          // Dérives < 100ms : la boucle RAF _driftCheck les corrige en continu
         }
       }
     }
@@ -840,6 +903,163 @@ function _stateHash(s) {
 }
 
 // ── Recherche de chanson ─────────────────────────────────────────────────────
+
+// ── Contrôle d'empreinte ─────────────────────────────────────────────────────
+
+const fingerprintBtn   = $id('relay-fingerprint-btn');
+const suggestionSheet  = $id('relay-suggestion-sheet');
+const suggestionSub    = $id('relay-suggestion-sub');
+const suggestionList   = $id('relay-suggestion-list');
+const suggestionCancel = $id('relay-suggestion-cancel');
+
+const _SVG_FINGERPRINT =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
+  '<path d="M3 12a9 9 0 0 1 15-6.7"/>' +
+  '<path d="M6.5 12A5.5 5.5 0 0 1 17 12"/>' +
+  '<path d="M10 12a2 2 0 0 1 4 0c0 3.5-1.5 7-3.5 9.5"/>' +
+  '<path d="M18 12c0 4-1.5 7.5-4 10.5"/>' +
+  '<path d="M6.5 12c0 4.5-1 8-3 10.5"/></svg>';
+
+if (fingerprintBtn) fingerprintBtn.innerHTML = _SVG_FINGERPRINT + ' Empreinte';
+
+let _fpCheckTrackId = null;
+
+async function _checkFingerprint() {
+  if (!_curTrackId || !API_BASE || !SESSION) return;
+  if (fingerprintBtn?.classList.contains('loading')) return;
+
+  fingerprintBtn?.classList.add('loading');
+  _fpCheckTrackId = _curTrackId;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/fingerprint/check`, {
+      method: 'POST',
+      headers: _authHeaders(),
+      body: JSON.stringify({ trackId: _curTrackId, session: SESSION }),
+    });
+    if (!res.ok) {
+      _showRelayToast('Erreur de vérification');
+      return;
+    }
+    const data = await res.json();
+
+    if (data.match) {
+      _showRelayToast('Empreinte validée');
+      return;
+    }
+
+    _showSuggestionSheet(_curTrackId, data.suggestions || []);
+  } catch {
+    _showRelayToast('Erreur réseau');
+  } finally {
+    fingerprintBtn?.classList.remove('loading');
+  }
+}
+
+function _showSuggestionSheet(trackId, suggestions) {
+  if (!suggestionSheet) return;
+  _fpCheckTrackId = trackId;
+
+  const item = (_lastState?.queue || []).find((i) => i.id === trackId)
+            || (_lastState?.filRouge || []).find((i) => i.id === trackId);
+  if (suggestionSub) {
+    suggestionSub.textContent = item
+      ? `« ${item.name || ''} » ne correspond pas au fichier audio.`
+      : 'Le fichier audio ne correspond pas au titre attendu.';
+  }
+
+  if (suggestionList) {
+    if (!suggestions.length) {
+      suggestionList.innerHTML = '<div class="relay-search-empty">Aucune suggestion disponible</div>';
+    } else {
+      suggestionList.innerHTML = suggestions.map((s, i) => {
+        const art = s.artUrl || s.artworkUrl || s.artworkUrl100 || '';
+        const name = _escHtml(s.name || s.trackName || s.title || '');
+        const artist = _escHtml(s.artist || s.artistName || '');
+        const dur = _fmtDuration(s.duration_ms || s.trackTimeMillis);
+        return `<div class="relay-suggestion-item" data-idx="${i}">` +
+          (art ? `<img class="relay-suggestion-item-art" src="${_escHtml(art)}" alt="" loading="lazy">` :
+                 `<div class="relay-suggestion-item-art"></div>`) +
+          `<div class="relay-suggestion-item-info">` +
+            `<div class="relay-suggestion-item-name">${name}</div>` +
+            `<div class="relay-suggestion-item-artist">${artist}</div>` +
+          `</div>` +
+          (dur ? `<span class="relay-suggestion-item-dur">${dur}</span>` : '') +
+          `</div>`;
+      }).join('');
+      suggestionList._suggestions = suggestions;
+    }
+  }
+
+  suggestionSheet.hidden = false;
+}
+
+function _hideSuggestionSheet() {
+  if (suggestionSheet) suggestionSheet.hidden = true;
+  _fpCheckTrackId = null;
+}
+
+async function _correctAndDownload(replacement) {
+  if (!_fpCheckTrackId || !API_BASE || !SESSION) return;
+  _hideSuggestionSheet();
+  _showRelayToast('Correction en cours…');
+
+  try {
+    const res = await fetch(`${API_BASE}/api/fingerprint/correct`, {
+      method: 'POST',
+      headers: _authHeaders(),
+      body: JSON.stringify({
+        trackId: _fpCheckTrackId,
+        replacement: _buildTrackPayload(replacement),
+        session: SESSION,
+      }),
+    });
+    if (!res.ok) {
+      _showRelayToast('Erreur de correction');
+      return;
+    }
+    const data = await res.json();
+
+    if (data.downloadUrl) {
+      _showRelayToast('Téléchargement et vérification…');
+      const dlRes = await fetch(`${API_BASE}/api/fingerprint/download`, {
+        method: 'POST',
+        headers: _authHeaders(),
+        body: JSON.stringify({
+          trackId: data.correctedTrackId || _fpCheckTrackId,
+          downloadUrl: data.downloadUrl,
+          session: SESSION,
+        }),
+      });
+      const dlData = await dlRes.ok ? await dlRes.json() : {};
+      if (dlData.verified) {
+        _showRelayToast('Titre corrigé et vérifié');
+      } else {
+        _showRelayToast('Titre corrigé — vérification en attente');
+      }
+    } else {
+      _showRelayToast('Correction enregistrée');
+    }
+  } catch {
+    _showRelayToast('Erreur réseau');
+  }
+}
+
+fingerprintBtn?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  _checkFingerprint();
+});
+
+suggestionCancel?.addEventListener('click', _hideSuggestionSheet);
+suggestionSheet?.querySelector('.relay-suggestion-sheet-backdrop')?.addEventListener('click', _hideSuggestionSheet);
+
+suggestionList?.addEventListener('click', (e) => {
+  const row = e.target.closest('.relay-suggestion-item');
+  if (!row) return;
+  const idx = Number(row.dataset.idx);
+  const suggestions = suggestionList._suggestions;
+  if (suggestions && suggestions[idx]) _correctAndDownload(suggestions[idx]);
+});
 
 const searchBtn      = $id('relay-search-btn');
 const searchOverlay  = $id('relay-search-overlay');
@@ -1123,8 +1343,8 @@ if (!SESSION) {
     // Premier poll immédiat, puis toutes les 1,5 s
     await _poll();
     setInterval(_poll, 1500);
-    // Correction de dérive locale toutes les 1 s (seuil < 1 ms)
-    setInterval(_driftCheck, 1_000);
+    // Boucle de correction de dérive à chaque frame GPU (seuil < 0.5 ms)
+    _startDriftLoop();
   };
 
   document.addEventListener('click',    _start, { once: true });
