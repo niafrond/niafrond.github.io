@@ -2912,24 +2912,50 @@ input {
   letter-spacing: -0.02em;
 }
 
-.dj-plan-timeline-fade {
+.dj-plan-fx-chips {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 4px;
   align-items: center;
-  gap: 3px;
+  justify-content: center;
+  min-width: 0;
 }
 
-.dj-plan-tl-bar {
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.8), rgba(168, 85, 247, 0.8));
-  border-radius: 999px;
+.dj-plan-fx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(217, 70, 239, 0.12);
+  border: 1px solid rgba(217, 70, 239, 0.25);
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 0.66rem;
+  line-height: 1.3;
 }
 
-.dj-plan-tl-duration {
-  font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.42);
+.dj-plan-fx-chip-label {
+  color: #f0abfc;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dj-plan-fx-chip-time {
+  color: rgba(255, 255, 255, 0.45);
+  font-family: monospace;
+  font-size: 0.62rem;
+}
+
+.dj-plan-fx-chip--empty {
+  color: rgba(255, 255, 255, 0.35);
+  font-style: italic;
+  border-color: rgba(168, 85, 247, 0.12);
+  background: rgba(168, 85, 247, 0.06);
+}
+
+.dj-plan-meta-fade {
+  flex-shrink: 0;
 }
 
 .dj-plan-card-meta {

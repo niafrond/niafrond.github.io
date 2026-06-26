@@ -29,6 +29,7 @@ import { normalizeTransitionMode, MIX_TRANSITION_MODE_LABELS } from './transitio
  * @param {HTMLElement|null} [options.filRougeLoopBtn]
  * @param {HTMLElement|null} [options.filRougePriorityListEl]
  * @param {HTMLElement|null} [options.filRougePlaylistListEl]
+ * @param {Function|null} [options.getPendingAutoFxEvents]
  * @param {HTMLElement|null} [options.djPlanIndicatorEl]
  * @param {HTMLElement|null} [options.djSetQualityBadgeEl]
  * @param {HTMLElement|null} [options.djSetProfileSelectEl]
@@ -49,6 +50,7 @@ export function createFilRougeController(options) {
     filRougeLoopBtn = null,
     filRougePriorityListEl = null,
     filRougePlaylistListEl = null,
+    getPendingAutoFxEvents = null,
     djPlanIndicatorEl = null,
     djSetQualityBadgeEl = null,
     djSetProfileSelectEl = null,
@@ -211,6 +213,17 @@ export function createFilRougeController(options) {
     const modeLabel = resolvedMode ? (MIX_TRANSITION_MODE_LABELS[resolvedMode] || resolvedMode) : null;
     const fxLabel = resolvedMode ? (FX_MODE_LABELS[resolvedMode] || null) : null;
 
+    const pendingFxEvents = (getPendingAutoFxEvents?.() || [])
+      .filter((e) => e && !e.triggered)
+      .sort((a, b) => a.timeMs - b.timeMs);
+
+    const fxChipsHtml = pendingFxEvents.length > 0
+      ? pendingFxEvents.map((e) => {
+        const timeFmt = formatZoneTime(e.timeMs / 1000);
+        return `<span class="dj-plan-fx-chip" title="${escHtml(e.reason || '')}"><span class="dj-plan-fx-chip-label">${escHtml(e.label || e.type)}</span><span class="dj-plan-fx-chip-time">${timeFmt}</span></span>`;
+      }).join('')
+      : `<span class="dj-plan-fx-chip dj-plan-fx-chip--empty">Aucun FX prévu</span>`;
+
     djPlanIndicatorEl.innerHTML = `
     <div class="dj-plan-card">
       <div class="dj-plan-card-header">
@@ -229,16 +242,14 @@ export function createFilRougeController(options) {
           <span class="dj-plan-tl-label">Sort à</span>
           <span class="dj-plan-tl-time">${mixOutFmt ?? '--:--'}</span>
         </div>
-        <div class="dj-plan-timeline-fade">
-          <div class="dj-plan-tl-bar"></div>
-          ${crossfadeSec !== null ? `<span class="dj-plan-tl-duration">${crossfadeSec}s de fondu</span>` : ''}
-        </div>
+        <div class="dj-plan-fx-chips">${fxChipsHtml}</div>
         <div class="dj-plan-timeline-in">
           <span class="dj-plan-tl-label">Entre à</span>
           <span class="dj-plan-tl-time">${mixInFmt ?? '--:--'}</span>
         </div>
       </div>
       <div class="dj-plan-card-meta">
+        ${crossfadeSec !== null ? `<span class="dj-plan-meta-fade">${crossfadeSec}s fondu</span>` : ''}
         ${bpm !== null ? `<span class="dj-plan-meta-bpm">BPM cible : ${bpm}</span>` : ''}
         <span class="dj-plan-next-track">→ ${nextLabel}</span>
       </div>
@@ -290,7 +301,16 @@ export function createFilRougeController(options) {
       renderDjSetQualityBadge(djSetQualityBadgeEl, null);
       return;
     }
-    await runDjSetQualityRefresh();
+
+    const currentIndex = filRougeManager.getCurrentIndex();
+    const playlist = filRougeManager.getPlaylist();
+    const promises = [runDjSetQualityRefresh()];
+    if (currentIndex >= 0 && currentIndex < playlist.length) {
+      promises.push(djPlanManager.planCurrentToNextTransition(playlist[currentIndex]));
+    }
+    await Promise.all(promises);
+
+    updateDjPlanIndicator();
     renderFilRouge();
   }
 

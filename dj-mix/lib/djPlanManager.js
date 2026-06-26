@@ -28,10 +28,13 @@ function getStoredBatchPlanFromStorage() {
   }
 }
 
-export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue, logger } = {}) {
+export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue, getTrackMaxDurationAppliedSec, logger } = {}) {
   /** @type {Array} cached `TrackSummary[]` from `/api/dj/tracks` */
   let trackSummaries = [];
   let trackSummariesLoadedAt = 0;
+
+  /** @type {Promise<Array>|null} in-flight ensureTrackSummaries promise for dedup */
+  let _trackSummariesInflight = null;
 
   /** @type {{profiles: Array, default: string}|null} */
   let setProfilesCache = null;
@@ -63,14 +66,17 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
    */
   async function ensureTrackSummaries({ force = false } = {}) {
     if (!force && trackSummariesLoadedAt) return trackSummaries;
-    const tracks = await djApiClient.fetchTracks();
-    if (Array.isArray(tracks) && tracks.length) {
-      trackSummaries = tracks;
-      trackSummariesLoadedAt = Date.now();
-    } else if (force) {
-      trackSummaries = [];
-    }
-    return trackSummaries;
+    if (_trackSummariesInflight) return _trackSummariesInflight;
+    _trackSummariesInflight = djApiClient.fetchTracks().then((tracks) => {
+      if (Array.isArray(tracks) && tracks.length) {
+        trackSummaries = tracks;
+        trackSummariesLoadedAt = Date.now();
+      } else if (force) {
+        trackSummaries = [];
+      }
+      return trackSummaries;
+    }).finally(() => { _trackSummariesInflight = null; });
+    return _trackSummariesInflight;
   }
 
   /**
@@ -157,12 +163,22 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
     const fr = filRouge();
     if (!fr || !Array.isArray(edges) || !edges.length) return;
 
-    for (const { from, to } of edges) {
-      if (!from || !to) continue;
-      if (isDjTransitionFresh(from.djTransition, to.id)) continue;
-      if (!from.djTrackId || !to.djTrackId || !from.djHasAnalysis || !to.djHasAnalysis) continue;
+    const maxDur = getTrackMaxDurationAppliedSec?.() || 0;
+    const maxDurOpt = maxDur > 0 ? { maxTrackDurationSec: maxDur } : undefined;
 
-      const result = await djApiClient.fetchTransition(from.djTrackId, to.djTrackId);
+    const pending = edges
+      .filter(({ from, to }) =>
+        from && to
+        && !isDjTransitionFresh(from.djTransition, to.id)
+        && from.djTrackId && to.djTrackId
+        && from.djHasAnalysis && to.djHasAnalysis)
+      .map(({ from, to }) =>
+        djApiClient.fetchTransition(from.djTrackId, to.djTrackId, maxDurOpt)
+          .then((result) => ({ from, to, result })));
+
+    const results = await Promise.all(pending);
+
+    for (const { from, to, result } of results) {
       if (!result) continue;
 
       if (!Number.isFinite(result.mixOutSec) || !Number.isFinite(result.mixInSec)) {
@@ -485,6 +501,63 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
   }
 
   /**
+   * Computes the transition from a current item to its successor in the playlist,
+   * called by the "recalculate" action. Forces fresh computation regardless of memoization.
+   * @param {object} currentItem - the currently playing item
+   * @returns {Promise<void>}
+   */
+  async function planCurrentToNextTransition(currentItem) {
+    const fr = filRouge();
+    if (!fr || !currentItem) return;
+
+    const playlist = fr.getPlaylist();
+    const currentIdx = playlist.findIndex((p) => p.id === currentItem.id);
+    if (currentIdx === -1 || currentIdx >= playlist.length - 1) return;
+
+    const nextItem = playlist[currentIdx + 1];
+    if (!nextItem) return;
+
+    await resolveTrackIdsForItems([currentItem, nextItem]);
+
+    if (!currentItem.djTrackId || !nextItem.djTrackId
+        || !currentItem.djHasAnalysis || !nextItem.djHasAnalysis) {
+      return;
+    }
+
+    const maxDur = getTrackMaxDurationAppliedSec?.() || 0;
+    const result = await djApiClient.fetchTransition(
+      currentItem.djTrackId,
+      nextItem.djTrackId,
+      maxDur > 0 ? { maxTrackDurationSec: maxDur } : undefined,
+    );
+    if (!result) return;
+
+    if (!Number.isFinite(result.mixOutSec) || !Number.isFinite(result.mixInSec)) {
+      logger?.warn('djPlanManager.planCurrentToNextTransition: mixOutSec/mixInSec manquants', {
+        fromTrackId: currentItem.djTrackId,
+        toTrackId: nextItem.djTrackId,
+        rawResult: result,
+      });
+    }
+
+    fr.patchPlaylistItem(currentItem.id, {
+      djTransition: {
+        toItemId: nextItem.id,
+        transitionType: result.transitionType,
+        automixMode: null,
+        mixOutSec: result.mixOutSec,
+        mixInSec: result.mixInSec,
+        mixInSecDefined: Number.isFinite(result.mixInSec),
+        recommendedBpm: result.recommendedBpm,
+        crossfadeDurationSec: result.crossfadeDurationSec,
+        compatibilityScore: result.compatibilityScore,
+        decisionId: result.decisionId,
+        computedAt: Date.now(),
+      },
+    });
+  }
+
+  /**
    * @param {string} decisionId
    * @param {'good'|'bad'} feedback
    * @param {string} [reason]
@@ -501,6 +574,7 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
     resolveTrackIdsForItems,
     planEdgesForNewItems,
     planAllEdges,
+    planCurrentToNextTransition,
     computeSetQuality,
     getSetProfiles,
     getSelectedSetProfile,

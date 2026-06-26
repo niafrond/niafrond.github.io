@@ -133,7 +133,7 @@ describe('djPlanManager', () => {
 
       await mgr.planEdgesForNewItems([itemB], { withWrap: false });
 
-      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3');
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3', undefined);
       expect(itemA.djTransition).toMatchObject({ toItemId: '2', transitionType: 'phrase_mix', decisionId: 'd1' });
       expect(itemA.djTransition.computedAt).toBeGreaterThan(0);
     });
@@ -165,8 +165,8 @@ describe('djPlanManager', () => {
 
       await mgr.planEdgesForNewItems([itemC], { withWrap: true });
 
-      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('b.mp3', 'c.mp3');
-      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('c.mp3', 'a.mp3');
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('b.mp3', 'c.mp3', undefined);
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('c.mp3', 'a.mp3', undefined);
       expect(itemB.djTransition).toMatchObject({ toItemId: '3' });
       expect(itemC.djTransition).toMatchObject({ toItemId: '1' });
     });
@@ -239,8 +239,8 @@ describe('djPlanManager', () => {
 
       await mgr.planAllEdges();
 
-      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3');
-      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('b.mp3', 'c.mp3');
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3', undefined);
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('b.mp3', 'c.mp3', undefined);
       expect(djApiClient.fetchTransition).not.toHaveBeenCalledWith('c.mp3', 'a.mp3');
     });
 
@@ -255,7 +255,7 @@ describe('djPlanManager', () => {
 
       await mgr.planAllEdges();
 
-      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('c.mp3', 'a.mp3');
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('c.mp3', 'a.mp3', undefined);
     });
 
     test('does nothing when the playlist has fewer than 2 items', async () => {
@@ -550,7 +550,7 @@ describe('djPlanManager', () => {
       expect(batchCall).toBeUndefined();
 
       // Individual transition A→B should have been fetched and applied
-      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3');
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3', undefined);
       const indivCall = transitionCalls.find(([id]) => id === '1');
       expect(indivCall).toBeDefined();
       expect(indivCall[1]).toEqual(expect.objectContaining({
@@ -594,8 +594,8 @@ describe('djPlanManager', () => {
       await mgr.computeSetQuality();
 
       // Both fil rouge pairs A→B and B→C must have been fetched individually
-      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3');
-      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('b.mp3', 'c.mp3');
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3', undefined);
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('b.mp3', 'c.mp3', undefined);
       expect(djApiClient.fetchTransition).toHaveBeenCalledTimes(2);
 
       // djTransition applied on A and B from individual calls, not the batch

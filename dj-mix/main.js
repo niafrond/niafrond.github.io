@@ -31,11 +31,11 @@ function releaseWakeLock() {
 }
 
 // --- Audio Session Keepalive (garder la notification "En cours" Android pendant la pause) ---
-// Joue un audio silencieux en boucle pour maintenir la session audio active jusqu'à 10 minutes.
+// Joue un audio silencieux en boucle pour maintenir la session audio active.
+// Pas de timeout : le keepalive tourne tant qu'aucune lecture réelle ne le remplace,
+// pour que les boutons physiques restent réactifs même en arrière-plan.
 let _keepaliveAudio = null;
-let _keepaliveTimer = null;
 let _keepalivePosInterval = null;
-const KEEPALIVE_DURATION_MS = 10 * 60 * 1000;
 
 function _createSilentWavUrl() {
   const sampleRate = 8000;
@@ -54,26 +54,32 @@ function _createSilentWavUrl() {
 }
 
 function startMediaKeepAlive() {
-  stopMediaKeepAlive();
+  if (_keepaliveAudio && !_keepaliveAudio.paused) return;
   if (!('mediaSession' in navigator)) return;
   if (!_keepaliveAudio) {
     _keepaliveAudio = new Audio(_createSilentWavUrl());
     _keepaliveAudio.loop = true;
-    _keepaliveAudio.volume = 0.001; // non-zéro pour éviter les optimisations navigateur
+    _keepaliveAudio.volume = 0.001;
   }
   _keepaliveAudio.play().catch(() => {});
-  // Rafraîchir la position toutes les 30s pour signaler l'activité à Android
-  _keepalivePosInterval = setInterval(() => updateMediaSessionPositionState(), 30_000);
-  _keepaliveTimer = setTimeout(stopMediaKeepAlive, KEEPALIVE_DURATION_MS);
+  if (!_keepalivePosInterval) {
+    _keepalivePosInterval = setInterval(() => updateMediaSessionPositionState(), 30_000);
+  }
 }
 
 function stopMediaKeepAlive() {
-  clearTimeout(_keepaliveTimer);
   clearInterval(_keepalivePosInterval);
-  _keepaliveTimer = null;
   _keepalivePosInterval = null;
   _keepaliveAudio?.pause();
 }
+
+// Quand le navigateur repasse au premier plan, relancer le keepalive si rien ne joue,
+// car Android/iOS peut avoir tué l'audio silencieux en arrière-plan.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !uiState.isPlaying) {
+    startMediaKeepAlive();
+  }
+});
 import {
   getTransitionRamRequirementsMb,
   MIX_TRANSITION_MODE_LABELS,
@@ -912,6 +918,16 @@ const relayModeManager = createRelayModeManager({
   logger,
   onApplyRelayState: (state) => applyRelayState(state),
   onRelayQueueItemsAvailable: (items) => _relayPrefetchItems(items),
+  onRelayCommand: (cmd) => {
+    if (cmd.type === 'addToQueue' && cmd.track) {
+      if (cmd.playNow) {
+        triggerSearchFade(cmd.track);
+      } else {
+        addToQueue(cmd.track, { showAddedToast: true });
+      }
+      showToast(`Relais : ${cmd.track?.name || 'piste'} ajoutée`);
+    }
+  },
 });
 
 const apiHealthMonitor = createApiHealthMonitor({
@@ -2224,7 +2240,16 @@ async function runDjPlanFullPass(reason) {
     renderDjSetQualityBadge(djSetQualityBadgeEl, null);
     return;
   }
-  await runDjSetQualityRefresh();
+
+  const currentIndex = filRougeManager.getCurrentIndex();
+  const playlist = filRougeManager.getPlaylist();
+  const promises = [runDjSetQualityRefresh()];
+  if (currentIndex >= 0 && currentIndex < playlist.length) {
+    promises.push(djPlanManager.planCurrentToNextTransition(playlist[currentIndex]));
+  }
+  await Promise.all(promises);
+
+  updateDjPlanIndicator();
   renderFilRouge();
 }
 
@@ -2363,6 +2388,17 @@ function updateDjPlanIndicator() {
   const modeLabel = resolvedMode ? (MIX_TRANSITION_MODE_LABELS[resolvedMode] || resolvedMode) : null;
   const fxLabel = resolvedMode ? (FX_MODE_LABELS[resolvedMode] || null) : null;
 
+  const pendingFxEvents = (autoModeManager.getPendingAutoFxEvents() || [])
+    .filter((e) => e && !e.triggered)
+    .sort((a, b) => a.timeMs - b.timeMs);
+
+  const fxChipsHtml = pendingFxEvents.length > 0
+    ? pendingFxEvents.map((e) => {
+      const timeFmt = formatZoneTime(e.timeMs / 1000);
+      return `<span class="dj-plan-fx-chip" title="${escHtml(e.reason || '')}"><span class="dj-plan-fx-chip-label">${escHtml(e.label || e.type)}</span><span class="dj-plan-fx-chip-time">${timeFmt}</span></span>`;
+    }).join('')
+    : `<span class="dj-plan-fx-chip dj-plan-fx-chip--empty">Aucun FX prévu</span>`;
+
   djPlanIndicatorEl.innerHTML = `
     <div class="dj-plan-card">
       <div class="dj-plan-card-header">
@@ -2381,16 +2417,14 @@ function updateDjPlanIndicator() {
           <span class="dj-plan-tl-label">Sort à</span>
           <span class="dj-plan-tl-time">${mixOutFmt ?? '--:--'}</span>
         </div>
-        <div class="dj-plan-timeline-fade">
-          <div class="dj-plan-tl-bar"></div>
-          ${crossfadeSec !== null ? `<span class="dj-plan-tl-duration">${crossfadeSec}s de fondu</span>` : ''}
-        </div>
+        <div class="dj-plan-fx-chips">${fxChipsHtml}</div>
         <div class="dj-plan-timeline-in">
           <span class="dj-plan-tl-label">Entre à</span>
           <span class="dj-plan-tl-time">${mixInFmt ?? '--:--'}</span>
         </div>
       </div>
       <div class="dj-plan-card-meta">
+        ${crossfadeSec !== null ? `<span class="dj-plan-meta-fade">${crossfadeSec}s fondu</span>` : ''}
         ${bpm !== null ? `<span class="dj-plan-meta-bpm">BPM cible : ${bpm}</span>` : ''}
         <span class="dj-plan-next-track">→ ${nextLabel}</span>
       </div>
@@ -2435,8 +2469,14 @@ if (djRecalculateBtn) {
   djRecalculateBtn.addEventListener('click', async () => {
     djRecalculateBtn.disabled = true;
     try {
-      await runDjPlanFullPass('manual-recalculate');
-      showToast('Planning DJ recalculé');
+      const currentIndex = filRougeManager.getCurrentIndex();
+      const playlist = filRougeManager.getPlaylist();
+      if (currentIndex >= 0 && currentIndex < playlist.length) {
+        await djPlanManager.planCurrentToNextTransition(playlist[currentIndex]);
+      }
+      updateDjPlanIndicator();
+      renderFilRouge();
+      showToast('Transition recalculée');
     } catch (err) {
       showToast('Recalcul : échec', true);
     } finally {
@@ -2515,9 +2555,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Initial render
-renderFilRouge();
-updateDjExternalPlanUI();
+// Initial render — deferred until autoModeManager is created (see below).
 
 /**
  * Au chargement de la page, vérifie quels morceaux du fil rouge sont déjà
@@ -3047,6 +3085,7 @@ const djPlanManager = createDjPlanManager({
   djApiClient,
   getFilRougeManager: () => filRougeManager,
   getQueue: () => queue,
+  getTrackMaxDurationAppliedSec: () => trackMaxDurationAppliedSec,
   logger,
 });
 
@@ -3182,6 +3221,7 @@ const filRougeCtrl = createFilRougeController({
   filRougeLoopBtn,
   filRougePriorityListEl,
   filRougePlaylistListEl,
+  getPendingAutoFxEvents: () => autoModeManager.getPendingAutoFxEvents(),
   djPlanIndicatorEl,
   djSetQualityBadgeEl,
   djSetProfileSelectEl,
@@ -3568,6 +3608,8 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
   updateTrackMaxDurationUI();
 
   autoModeManager.initialize();
+  renderFilRouge();
+  updateDjExternalPlanUI();
   updateAutoModeUI();
   updateAutoDjFxConfigUI();
   renderDjModeUI();
@@ -4105,7 +4147,60 @@ function setupMediaSession() {
 
   // Commandes de transport relayées depuis Android Auto / la notification native.
   onMediaCommand(applyMediaCommand);
+
+  // Activer le keepalive dès le setup pour que les boutons physiques fonctionnent
+  // avant le premier play (la session audio doit exister pour capter les événements).
+  startMediaKeepAlive();
 }
+
+// ── Touches média physiques (clavier / casque Bluetooth desktop) ──────────────
+// Sur desktop, les touches MediaPlayPause, MediaTrackNext etc. arrivent en
+// événements keydown et ne passent pas systématiquement par la Media Session API.
+function _handleMediaKey(focusDeck, deckState) {
+  if (deckState?.playing) {
+    player?.pauseDeck?.(focusDeck);
+  } else if (deckState?.hasSrc) {
+    player?.resumeDeck?.(focusDeck).catch(() => {});
+  } else {
+    if (focusDeck === 'A') deckALaunchBtn?.click();
+    else deckBLaunchBtn?.click();
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  const key = e.key;
+  if (!key?.startsWith('Media')) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const focusDeck = getFocusDeck();
+  const deckState = uiState.lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
+
+  switch (key) {
+    case 'MediaPlayPause':
+      _handleMediaKey(focusDeck, deckState);
+      break;
+    case 'MediaPlay':
+      if (!deckState?.playing) {
+        if (deckState?.hasSrc) player?.resumeDeck?.(focusDeck).catch(() => {});
+        else {
+          if (focusDeck === 'A') deckALaunchBtn?.click();
+          else deckBLaunchBtn?.click();
+        }
+      }
+      break;
+    case 'MediaPause':
+      if (deckState?.playing) player?.pauseDeck?.(focusDeck);
+      break;
+    case 'MediaStop':
+      player?.pause?.();
+      break;
+    case 'MediaTrackNext':
+      autoMixBtn?.click();
+      break;
+  }
+});
 
 /** Applique une commande de transport reçue depuis Android Auto / la notification native. */
 function applyMediaCommand(cmd) {
@@ -6541,6 +6636,7 @@ function buildRelayStateSnapshot() {
           toTrackUrl: nextItem.persistedSourceUrl || '',
           mode: selectedTransitionMode || 'crossfade',
           durationMs: xfadeMs,
+          toTrackDurationMs: nextItem.duration || 0,
         });
       }
     }

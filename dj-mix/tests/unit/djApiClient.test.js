@@ -46,7 +46,7 @@ describe('djApiClient', () => {
   });
 
   describe('fetchTracks', () => {
-    test('returns tracks on success and records success', async () => {
+    test('returns tracks immediately when scan returns tracks without jobId', async () => {
       const tracks = [{ trackId: 'a.mp3', trackName: 'A', artistName: 'X' }];
       global.fetch = jest.fn().mockResolvedValue(jsonResponse(200, { tracks }));
       const { client, deps } = makeClient();
@@ -55,7 +55,36 @@ describe('djApiClient', () => {
 
       expect(result).toEqual(tracks);
       expect(deps.apiHealthMonitor.recordSuccess).toHaveBeenCalledTimes(1);
-      expect(global.fetch).toHaveBeenCalledWith('http://localhost:3000/api/dj/tracks', expect.objectContaining({ method: 'GET' }));
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:3000/api/dj/tracks/scan',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+
+    test('polls scan/status when scan returns a jobId', async () => {
+      const tracks = [{ trackId: 'a.mp3', trackName: 'A', artistName: 'X' }];
+      global.fetch = jest.fn()
+        .mockResolvedValueOnce(jsonResponse(200, { jobId: 'j1' }))
+        .mockResolvedValueOnce(jsonResponse(200, { status: 'processing', progress: 0.5 }))
+        .mockResolvedValueOnce(jsonResponse(200, { status: 'done', tracks }));
+      const { client } = makeClient({ pollIntervalMs: [0] });
+
+      const result = await client.fetchTracks();
+
+      expect(result).toEqual(tracks);
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+      const statusUrl = global.fetch.mock.calls[1][0];
+      expect(statusUrl).toContain('/api/dj/tracks/scan/status');
+      expect(statusUrl).toContain('jobId=j1');
+    });
+
+    test('returns [] when poll ends with error status', async () => {
+      global.fetch = jest.fn()
+        .mockResolvedValueOnce(jsonResponse(200, { jobId: 'j1' }))
+        .mockResolvedValueOnce(jsonResponse(200, { status: 'error', error: 'analysis failed' }));
+      const { client } = makeClient({ pollIntervalMs: [0] });
+
+      expect(await client.fetchTracks()).toEqual([]);
     });
 
     test('appends the API token to the URL when provided', async () => {
@@ -65,7 +94,7 @@ describe('djApiClient', () => {
       await client.fetchTracks();
 
       const [url] = global.fetch.mock.calls[0];
-      expect(url).toBe('http://localhost:3000/api/dj/tracks?token=secret');
+      expect(url).toBe('http://localhost:3000/api/dj/tracks/scan?token=secret');
     });
 
     test('returns [] and records failure on non-ok/non-400/404 status', async () => {
@@ -83,6 +112,15 @@ describe('djApiClient', () => {
 
       expect(await client.fetchTracks()).toEqual([]);
       expect(deps.apiHealthMonitor.recordFailure).toHaveBeenCalledTimes(1);
+    });
+
+    test('returns [] when poll times out', async () => {
+      global.fetch = jest.fn()
+        .mockResolvedValueOnce(jsonResponse(200, { jobId: 'j1' }))
+        .mockResolvedValue(jsonResponse(200, { status: 'processing' }));
+      const { client } = makeClient({ pollIntervalMs: [0], pollMaxAttempts: 3 });
+
+      expect(await client.fetchTracks()).toEqual([]);
     });
   });
 
@@ -180,6 +218,32 @@ describe('djApiClient', () => {
 
       const [, init] = global.fetch.mock.calls[0];
       expect(JSON.parse(init.body)).toEqual({ tracks: ['a.mp3', 'b.mp3'] });
+    });
+
+    test('polls batch/status when batch returns a jobId', async () => {
+      const batchResult = { globalSetScore: 0.9, transitions: [] };
+      global.fetch = jest.fn()
+        .mockResolvedValueOnce(jsonResponse(200, { jobId: 'b1' }))
+        .mockResolvedValueOnce(jsonResponse(200, { status: 'pending' }))
+        .mockResolvedValueOnce(jsonResponse(200, { status: 'done', ...batchResult }));
+      const { client } = makeClient({ pollIntervalMs: [0] });
+
+      const result = await client.fetchBatchPlan(['a.mp3', 'b.mp3']);
+
+      expect(result).toEqual({ status: 'done', ...batchResult });
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+      const statusUrl = global.fetch.mock.calls[1][0];
+      expect(statusUrl).toContain('/api/dj/batch/status');
+      expect(statusUrl).toContain('jobId=b1');
+    });
+
+    test('returns null when poll ends with error status', async () => {
+      global.fetch = jest.fn()
+        .mockResolvedValueOnce(jsonResponse(200, { jobId: 'b1' }))
+        .mockResolvedValueOnce(jsonResponse(200, { status: 'error', error: 'compute failed' }));
+      const { client } = makeClient({ pollIntervalMs: [0] });
+
+      expect(await client.fetchBatchPlan(['a.mp3'])).toBeNull();
     });
   });
 
