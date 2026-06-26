@@ -523,6 +523,10 @@ export function createAutoModeManager({
       return storedMeta.mixData;
     }
 
+    const PENDING_MAX_RETRIES = 5;
+    const PENDING_BASE_DELAY_MS = 1000;
+    const PENDING_MAX_DELAY_MS = 30000;
+
     try {
       const apiUrl = getDownloaderApiUrl();
       if (!apiUrl) return null;
@@ -532,36 +536,51 @@ export function createAutoModeManager({
       params.append('track', trackName);
       if (artistName) params.append('artist', artistName);
 
-      const response = await fetch(appendApiToken(`${apiUrl}/mix?${params}`, getDownloaderApiToken?.()), {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      let data = null;
+      for (let attempt = 0; attempt <= PENDING_MAX_RETRIES; attempt++) {
+        if (attempt > 0) {
+          const delayMs = Math.min(PENDING_BASE_DELAY_MS * 2 ** (attempt - 1), PENDING_MAX_DELAY_MS);
+          logger?.debug?.('autoDj: mix analysis pending, retrying', { trackName, attempt, delayMs });
+          await new Promise(r => setTimeout(r, delayMs));
+          if (apiHealthMonitor?.isOffline()) return null;
+        }
 
-      if (response.status === 404) {
-        // File removed from server cache – purge locally stored analysis so the
-        // next download starts clean.
-        invalidateStoredTrackMeta(trackName, artistName);
-        MIX_DATA_CACHE.delete(cacheKey);
-        logger?.debug?.('autoDj: mix data 404 – localStorage invalidated', { trackName, artistName });
-        return null;
-      }
-
-      if (!response.ok) {
-        apiHealthMonitor?.recordFailure();
-        logger?.debug?.('autoDj: mix data fetch failed', {
-          status: response.status,
-          trackName,
+        const response = await fetch(appendApiToken(`${apiUrl}/mix?${params}`, getDownloaderApiToken?.()), {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
         });
+
+        if (response.status === 404) {
+          invalidateStoredTrackMeta(trackName, artistName);
+          MIX_DATA_CACHE.delete(cacheKey);
+          logger?.debug?.('autoDj: mix data 404 – localStorage invalidated', { trackName, artistName });
+          return null;
+        }
+
+        if (!response.ok) {
+          apiHealthMonitor?.recordFailure();
+          logger?.debug?.('autoDj: mix data fetch failed', {
+            status: response.status,
+            trackName,
+          });
+          return null;
+        }
+
+        apiHealthMonitor?.recordSuccess();
+        data = await response.json();
+
+        if (data?.status !== 'already_pending') break;
+      }
+
+      if (data?.status === 'already_pending') {
+        logger?.debug?.('autoDj: mix analysis still pending after retries', { trackName });
         return null;
       }
 
-      apiHealthMonitor?.recordSuccess();
-      const data = await response.json();
       const mixData = data?.mix || null;
 
       if (mixData) {
         MIX_DATA_CACHE.set(cacheKey, mixData);
-        // Evict oldest entry if cache exceeds MAX_MIX_DATA_CACHE_ENTRIES
         if (MIX_DATA_CACHE.size > MAX_MIX_DATA_CACHE_ENTRIES) {
           MIX_DATA_CACHE.delete(MIX_DATA_CACHE.keys().next().value);
         }

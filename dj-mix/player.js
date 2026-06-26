@@ -1210,28 +1210,58 @@ export class DJPlayer extends EventTarget {
  * @param {*} sourceUrl 
  */
   async #loadAndPlay(audio, sourceUrl) {
-    if(!audio.paused) return;
-    audio.pause();
+    if (!audio.paused) {
+      logWarn('audio.loadAndPlay.forcePause', {
+        srcPreview: String(audio.src || '').slice(0, 96),
+        ended: audio.ended,
+        readyState: audio.readyState,
+      });
+      audio.pause();
+    }
     audio.currentTime = 0;
     audio.src = sourceUrl;
 
     const loadStartedAt = performance.now();
     await new Promise((resolve, reject) => {
+      let settled = false;
       const onCanPlay = () => {
+        if (settled) return;
+        settled = true;
         cleanup();
         resolve();
       };
       const onError = () => {
+        if (settled) return;
+        settled = true;
         cleanup();
         reject(new Error('Flux audio API non lisible'));
       };
       const cleanup = () => {
+        clearTimeout(safetyTimer);
         audio.removeEventListener('canplay', onCanPlay);
         audio.removeEventListener('error', onError);
       };
 
       audio.addEventListener('canplay', onCanPlay, { once: true });
       audio.addEventListener('error', onError, { once: true });
+
+      const safetyTimer = setTimeout(() => {
+        if (settled) return;
+        if (audio.readyState >= 2) {
+          logWarn('audio.loadAndPlay.canPlayTimeout.readyOk', {
+            readyState: audio.readyState,
+            srcPreview: String(sourceUrl || '').slice(0, 96),
+          });
+          onCanPlay();
+        } else {
+          logError('audio.loadAndPlay.canPlayTimeout.notReady', {
+            readyState: audio.readyState,
+            srcPreview: String(sourceUrl || '').slice(0, 96),
+          });
+          onError();
+        }
+      }, 10000);
+
       audio.load();
     });
     const canPlayMs = performance.now() - loadStartedAt;
@@ -1255,14 +1285,42 @@ export class DJPlayer extends EventTarget {
 
     const loadStartedAt = performance.now();
     await new Promise((resolve, reject) => {
-      const onCanPlay = () => { cleanup(); resolve(); };
-      const onError = () => { cleanup(); reject(new Error('Flux audio API non lisible')); };
+      let settled = false;
+      const onCanPlay = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve();
+      };
+      const onError = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error('Flux audio API non lisible'));
+      };
       const cleanup = () => {
+        clearTimeout(safetyTimer);
         audio.removeEventListener('canplay', onCanPlay);
         audio.removeEventListener('error', onError);
       };
       audio.addEventListener('canplay', onCanPlay, { once: true });
       audio.addEventListener('error', onError, { once: true });
+      const safetyTimer = setTimeout(() => {
+        if (settled) return;
+        if (audio.readyState >= 2) {
+          logWarn('audio.loadOnly.canPlayTimeout.readyOk', {
+            readyState: audio.readyState,
+            srcPreview: String(sourceUrl || '').slice(0, 96),
+          });
+          onCanPlay();
+        } else {
+          logError('audio.loadOnly.canPlayTimeout.notReady', {
+            readyState: audio.readyState,
+            srcPreview: String(sourceUrl || '').slice(0, 96),
+          });
+          onError();
+        }
+      }, 10000);
       audio.load();
     });
     const canPlayMs = performance.now() - loadStartedAt;

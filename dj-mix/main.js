@@ -4030,6 +4030,89 @@ function hookPlayerEvents() {
     });
 }
 
+// ── Dead-air watchdog ───────────────────────────────────────────────────────
+// Prevents silence when a track is loaded but playback stalls (source ready
+// but audio.play() never called, crossfade flag stuck, etc.).
+let _deadAirSinceMs = 0;
+let _deadAirRecoveryInProgress = false;
+const DEAD_AIR_GRACE_MS = 2000;
+
+setInterval(() => {
+  if (!player || !player.isReady) return;
+  if (player.isCrossfading) { _deadAirSinceMs = 0; return; }
+  if (relayModeManager.getRole() === 'relay') { _deadAirSinceMs = 0; return; }
+
+  const isAutoDj = autoModeManager.isAutoModeEnabled();
+  const isMaster = relayModeManager.getRole() === 'master';
+  if (!isAutoDj && !isMaster) { _deadAirSinceMs = 0; return; }
+
+  if (queue.length === 0 && !filRougeManager.isActive()) { _deadAirSinceMs = 0; return; }
+
+  const ds = uiState.lastDeckState;
+  const deckAPlaying = ds?.deckA?.playing === true;
+  const deckBPlaying = ds?.deckB?.playing === true;
+  if (deckAPlaying || deckBPlaying) { _deadAirSinceMs = 0; return; }
+
+  const now = Date.now();
+  if (_deadAirSinceMs === 0) { _deadAirSinceMs = now; return; }
+  if (now - _deadAirSinceMs < DEAD_AIR_GRACE_MS) return;
+  if (_deadAirRecoveryInProgress) return;
+
+  _deadAirRecoveryInProgress = true;
+  _deadAirSinceMs = 0;
+
+  logWarn('deadAirWatchdog: silence detected, attempting recovery', {
+    currentIndex: uiState.currentIndex,
+    queueLength: queue.length,
+    isAutoDj,
+    isMaster,
+  });
+
+  (async () => {
+    try {
+      const hasNext = getFollowingQueueIndex(uiState.currentIndex) >= 0;
+      if (hasNext) {
+        const nextIdx = getFollowingQueueIndex(uiState.currentIndex);
+        await startPlaybackForIndex(nextIdx, 'play');
+        logInfo('deadAirWatchdog: recovered via next track', { nextIdx });
+        return;
+      }
+
+      const currentItem = queue[uiState.currentIndex];
+      if (currentItem) {
+        await startPlaybackForIndex(uiState.currentIndex, 'play');
+        logInfo('deadAirWatchdog: recovered via current track replay', { index: uiState.currentIndex });
+        return;
+      }
+
+      if (filRougeManager.isActive()) {
+        autoMixBtn?.click?.();
+        logInfo('deadAirWatchdog: recovered via fil rouge fallback');
+        return;
+      }
+
+      if (isAutoDj) {
+        const searched = await autoModeManager.searchAndAddNextTrack(
+          currentItem || { id: 'watchdog-recovery', name: '' },
+          { force: true },
+        );
+        if (searched) {
+          await new Promise((r) => setTimeout(r, 500));
+          const nextAfterSearch = getFollowingQueueIndex(uiState.currentIndex);
+          if (nextAfterSearch >= 0) {
+            await startPlaybackForIndex(nextAfterSearch, 'play');
+            logInfo('deadAirWatchdog: recovered via autodj search', { nextAfterSearch });
+          }
+        }
+      }
+    } catch (err) {
+      logError('deadAirWatchdog: recovery failed', { error: err?.message });
+    } finally {
+      _deadAirRecoveryInProgress = false;
+    }
+  })();
+}, 1000);
+
 autoMixBtn?.addEventListener('click', async () => {
   if (!player || player.isCrossfading) return;
   const hasCue = uiState.deckBCueIndex >= 0 && uiState.deckBCueIndex < queue.length;
@@ -6324,12 +6407,154 @@ function buildFilRougeHintHTML() {
   return `<div class="queue-filrouge-hint">${artHtml}<div class="queue-info"><div class="queue-filrouge-hint-label">Prochain · fil rouge</div><div class="queue-name">${escHtml(next.name || 'Inconnu')}</div><div class="queue-artist">${escHtml(next.artist || '')}</div></div></div>`;
 }
 
-function renderQueue() {
+// ── Contrôle d'empreinte ──────────────────────────────────────────────────────
+
+const _fpSheet     = document.getElementById('fp-suggestion-sheet');
+const _fpSub       = document.getElementById('fp-suggestion-sub');
+const _fpList      = document.getElementById('fp-suggestion-list');
+const _fpCancel    = document.getElementById('fp-suggestion-cancel');
+let   _fpTrackRef   = null;
+let   _fpSuggestions = [];
+
+function _fpAuthHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  const token = getDownloaderApiToken();
+  if (token) h['x-api-token'] = token;
+  return h;
+}
+
+async function _fpCheck(item, btn) {
+  const apiUrl = getDownloaderApiUrl();
+  if (!apiUrl || !item?.name) return;
+  if (btn?.classList.contains('is-checking')) return;
+  btn?.classList.add('is-checking');
+
+  try {
+    const res = await fetch(`${apiUrl}/api/fingerprint/check`, {
+      method: 'POST',
+      headers: _fpAuthHeaders(),
+      body: JSON.stringify({ artistName: item.artist || '', trackName: item.name }),
+    });
+    if (!res.ok) { showToast('Erreur de vérification', true); return; }
+    const data = await res.json();
+
+    if (data.match) {
+      showToast(`Empreinte OK : ${item.name}`);
+      return;
+    }
+    _fpShowSuggestions(item, data.suggestions || []);
+  } catch {
+    showToast('Erreur réseau', true);
+  } finally {
+    btn?.classList.remove('is-checking');
+  }
+}
+
+function _fpShowSuggestions(item, suggestions) {
+  if (!_fpSheet) return;
+  _fpTrackRef = { artistName: item.artist || '', trackName: item.name || '' };
+  _fpSuggestions = suggestions;
+
+  if (_fpSub) {
+    _fpSub.textContent = `« ${item.name || ''} » ne correspond pas au fichier audio.`;
+  }
+
+  if (_fpList) {
+    if (!suggestions.length) {
+      _fpList.innerHTML = '<div class="fp-suggestion-empty">Aucune suggestion disponible</div>';
+    } else {
+      _fpList.innerHTML = suggestions.map((s, i) => {
+        const art = escHtml(s.artUrl || s.artworkUrl || s.artworkUrl100 || '');
+        const name = escHtml(s.name || s.trackName || s.title || '');
+        const artist = escHtml(s.artist || s.artistName || '');
+        const durMs = s.duration_ms || s.trackTimeMillis || 0;
+        const dur = durMs ? `${Math.floor(durMs / 60000)}:${String(Math.floor((durMs / 1000) % 60)).padStart(2, '0')}` : '';
+        return `<div class="fp-suggestion-item" data-idx="${i}">` +
+          (art ? `<img class="fp-suggestion-item-art" src="${art}" alt="" loading="lazy">` :
+                 `<div class="fp-suggestion-item-art"></div>`) +
+          `<div class="fp-suggestion-item-info">` +
+            `<div class="fp-suggestion-item-name">${name}</div>` +
+            `<div class="fp-suggestion-item-artist">${artist}</div>` +
+          `</div>` +
+          (dur ? `<span class="fp-suggestion-item-dur">${dur}</span>` : '') +
+          `</div>`;
+      }).join('');
+    }
+  }
+
+  _fpSheet.hidden = false;
+}
+
+function _fpHideSuggestions() {
+  if (_fpSheet) _fpSheet.hidden = true;
+  _fpTrackRef = null;
+  _fpSuggestions = [];
+}
+
+async function _fpCorrectAndDownload(replacement) {
+  const trackRef = _fpTrackRef;
+  if (!trackRef) return;
+  const apiUrl = getDownloaderApiUrl();
+  if (!apiUrl) return;
+  _fpHideSuggestions();
+  showToast('Correction en cours…');
+
+  try {
+    const payload = {
+      id: replacement.id || replacement.trackId || '',
+      name: replacement.name || replacement.trackName || replacement.title || '',
+      artist: replacement.artist || replacement.artistName || '',
+      artUrl: replacement.artUrl || replacement.artworkUrl || replacement.artworkUrl100 || '',
+      duration_ms: replacement.duration_ms || replacement.trackTimeMillis || 0,
+      uri: replacement.uri || '',
+      downloadUrl: replacement.downloadUrl || replacement.persistedSourceUrl || '',
+    };
+
+    const res = await fetch(`${apiUrl}/api/fingerprint/correct`, {
+      method: 'POST',
+      headers: _fpAuthHeaders(),
+      body: JSON.stringify({ artistName: trackRef.artistName, trackName: trackRef.trackName, replacement: payload }),
+    });
+    if (!res.ok) { showToast('Erreur de correction', true); return; }
+    const data = await res.json();
+
+    if (data.downloadUrl) {
+      showToast('Téléchargement et vérification…');
+      const dlRes = await fetch(`${apiUrl}/api/fingerprint/download`, {
+        method: 'POST',
+        headers: _fpAuthHeaders(),
+        body: JSON.stringify({
+          artistName: data.correctedArtistName || trackRef.artistName,
+          trackName: data.correctedTrackName || trackRef.trackName,
+          downloadUrl: data.downloadUrl,
+        }),
+      });
+      const dlData = dlRes.ok ? await dlRes.json() : {};
+      showToast(dlData.verified ? 'Titre corrigé et vérifié' : 'Titre corrigé — vérification en attente');
+    } else {
+      showToast('Correction enregistrée');
+    }
+  } catch {
+    showToast('Erreur réseau', true);
+  }
+}
+
+_fpCancel?.addEventListener('click', _fpHideSuggestions);
+_fpSheet?.querySelector('.fp-suggestion-backdrop')?.addEventListener('click', _fpHideSuggestions);
+_fpList?.addEventListener('click', (e) => {
+  const row = e.target.closest('.fp-suggestion-item');
+  if (!row) return;
+  const idx = Number(row.dataset.idx);
+  if (_fpSuggestions[idx]) _fpCorrectAndDownload(_fpSuggestions[idx]);
+});
+
+let _renderQueueRafId = null;
+
+function _renderQueueCore() {
   saveQueueDebounced();
   pushQueue(queue);
   uiRenderer.updateUpcomingArtwork();
   updateDeckCueUI();
-  // Fetch BPM/genre in background for visible items that are missing them
   const visibleStart = uiState.currentIndex > 0 ? Math.max(0, uiState.currentIndex - 5) : 0;
   queue.slice(visibleStart, visibleStart + 20).forEach((item) => {
     if (!item.bpm || !item.genre) fetchMissingMeta(item).catch(() => {});
@@ -6391,7 +6616,23 @@ function renderQueue() {
     });
   });
 
+  uiRenderer.queueList.querySelectorAll('.queue-fp-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = Number(btn.dataset.index);
+      if (idx >= 0 && idx < queue.length) _fpCheck(queue[idx], btn);
+    });
+  });
+
   updateSuggestionRefreshButtons();
+}
+
+function renderQueue() {
+  if (_renderQueueRafId !== null) return;
+  _renderQueueRafId = requestAnimationFrame(() => {
+    _renderQueueRafId = null;
+    _renderQueueCore();
+  });
 }
 
 function removeFromQueue(idx) {
@@ -6568,7 +6809,11 @@ function buildRelayStateSnapshot() {
 
   function _deckInfo(deck) {
     const ds = deckState?.[`deck${deck}`];
-    const item = deckDisplayItems[deck];
+    let item = deckDisplayItems[deck];
+    if (!item && deck === inactiveDeck) {
+      const nextIndex = getFollowingQueueIndex(uiState.currentIndex, { wrap: false });
+      if (nextIndex >= 0) item = queue[nextIndex];
+    }
     return {
       trackId: item?.id || null,
       positionMs: ds?.positionMs || 0,

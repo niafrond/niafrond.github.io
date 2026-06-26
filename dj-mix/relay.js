@@ -431,7 +431,6 @@ function _updateTrack({ name, artist, artUrl, bpm, genre } = {}) {
     if (artEl)      artEl.hidden = true;
     if (artPlaceEl) artPlaceEl.hidden = false;
   }
-  if (fingerprintBtn) fingerprintBtn.hidden = !name;
 }
 
 function _updateNextTrack(state) {
@@ -895,6 +894,8 @@ function _stateHash(s) {
     s.activeDeck || '',
     s.transitionMode || '',
     s.crossfadeMs || 0,
+    s.deckA?.trackId || '',
+    s.deckB?.trackId || '',
     s.fx ? `${s.fx.echo ? 'e' : ''}${s.fx.distortion ? 'd' : ''}` : '',
     (s.queue || []).map((i) => i.id).join(','),
     (s.filRouge || []).length,
@@ -903,163 +904,6 @@ function _stateHash(s) {
 }
 
 // ── Recherche de chanson ─────────────────────────────────────────────────────
-
-// ── Contrôle d'empreinte ─────────────────────────────────────────────────────
-
-const fingerprintBtn   = $id('relay-fingerprint-btn');
-const suggestionSheet  = $id('relay-suggestion-sheet');
-const suggestionSub    = $id('relay-suggestion-sub');
-const suggestionList   = $id('relay-suggestion-list');
-const suggestionCancel = $id('relay-suggestion-cancel');
-
-const _SVG_FINGERPRINT =
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
-  '<path d="M3 12a9 9 0 0 1 15-6.7"/>' +
-  '<path d="M6.5 12A5.5 5.5 0 0 1 17 12"/>' +
-  '<path d="M10 12a2 2 0 0 1 4 0c0 3.5-1.5 7-3.5 9.5"/>' +
-  '<path d="M18 12c0 4-1.5 7.5-4 10.5"/>' +
-  '<path d="M6.5 12c0 4.5-1 8-3 10.5"/></svg>';
-
-if (fingerprintBtn) fingerprintBtn.innerHTML = _SVG_FINGERPRINT + ' Empreinte';
-
-let _fpCheckTrackId = null;
-
-async function _checkFingerprint() {
-  if (!_curTrackId || !API_BASE || !SESSION) return;
-  if (fingerprintBtn?.classList.contains('loading')) return;
-
-  fingerprintBtn?.classList.add('loading');
-  _fpCheckTrackId = _curTrackId;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/fingerprint/check`, {
-      method: 'POST',
-      headers: _authHeaders(),
-      body: JSON.stringify({ trackId: _curTrackId, session: SESSION }),
-    });
-    if (!res.ok) {
-      _showRelayToast('Erreur de vérification');
-      return;
-    }
-    const data = await res.json();
-
-    if (data.match) {
-      _showRelayToast('Empreinte validée');
-      return;
-    }
-
-    _showSuggestionSheet(_curTrackId, data.suggestions || []);
-  } catch {
-    _showRelayToast('Erreur réseau');
-  } finally {
-    fingerprintBtn?.classList.remove('loading');
-  }
-}
-
-function _showSuggestionSheet(trackId, suggestions) {
-  if (!suggestionSheet) return;
-  _fpCheckTrackId = trackId;
-
-  const item = (_lastState?.queue || []).find((i) => i.id === trackId)
-            || (_lastState?.filRouge || []).find((i) => i.id === trackId);
-  if (suggestionSub) {
-    suggestionSub.textContent = item
-      ? `« ${item.name || ''} » ne correspond pas au fichier audio.`
-      : 'Le fichier audio ne correspond pas au titre attendu.';
-  }
-
-  if (suggestionList) {
-    if (!suggestions.length) {
-      suggestionList.innerHTML = '<div class="relay-search-empty">Aucune suggestion disponible</div>';
-    } else {
-      suggestionList.innerHTML = suggestions.map((s, i) => {
-        const art = s.artUrl || s.artworkUrl || s.artworkUrl100 || '';
-        const name = _escHtml(s.name || s.trackName || s.title || '');
-        const artist = _escHtml(s.artist || s.artistName || '');
-        const dur = _fmtDuration(s.duration_ms || s.trackTimeMillis);
-        return `<div class="relay-suggestion-item" data-idx="${i}">` +
-          (art ? `<img class="relay-suggestion-item-art" src="${_escHtml(art)}" alt="" loading="lazy">` :
-                 `<div class="relay-suggestion-item-art"></div>`) +
-          `<div class="relay-suggestion-item-info">` +
-            `<div class="relay-suggestion-item-name">${name}</div>` +
-            `<div class="relay-suggestion-item-artist">${artist}</div>` +
-          `</div>` +
-          (dur ? `<span class="relay-suggestion-item-dur">${dur}</span>` : '') +
-          `</div>`;
-      }).join('');
-      suggestionList._suggestions = suggestions;
-    }
-  }
-
-  suggestionSheet.hidden = false;
-}
-
-function _hideSuggestionSheet() {
-  if (suggestionSheet) suggestionSheet.hidden = true;
-  _fpCheckTrackId = null;
-}
-
-async function _correctAndDownload(replacement) {
-  if (!_fpCheckTrackId || !API_BASE || !SESSION) return;
-  _hideSuggestionSheet();
-  _showRelayToast('Correction en cours…');
-
-  try {
-    const res = await fetch(`${API_BASE}/api/fingerprint/correct`, {
-      method: 'POST',
-      headers: _authHeaders(),
-      body: JSON.stringify({
-        trackId: _fpCheckTrackId,
-        replacement: _buildTrackPayload(replacement),
-        session: SESSION,
-      }),
-    });
-    if (!res.ok) {
-      _showRelayToast('Erreur de correction');
-      return;
-    }
-    const data = await res.json();
-
-    if (data.downloadUrl) {
-      _showRelayToast('Téléchargement et vérification…');
-      const dlRes = await fetch(`${API_BASE}/api/fingerprint/download`, {
-        method: 'POST',
-        headers: _authHeaders(),
-        body: JSON.stringify({
-          trackId: data.correctedTrackId || _fpCheckTrackId,
-          downloadUrl: data.downloadUrl,
-          session: SESSION,
-        }),
-      });
-      const dlData = await dlRes.ok ? await dlRes.json() : {};
-      if (dlData.verified) {
-        _showRelayToast('Titre corrigé et vérifié');
-      } else {
-        _showRelayToast('Titre corrigé — vérification en attente');
-      }
-    } else {
-      _showRelayToast('Correction enregistrée');
-    }
-  } catch {
-    _showRelayToast('Erreur réseau');
-  }
-}
-
-fingerprintBtn?.addEventListener('click', (e) => {
-  e.stopPropagation();
-  _checkFingerprint();
-});
-
-suggestionCancel?.addEventListener('click', _hideSuggestionSheet);
-suggestionSheet?.querySelector('.relay-suggestion-sheet-backdrop')?.addEventListener('click', _hideSuggestionSheet);
-
-suggestionList?.addEventListener('click', (e) => {
-  const row = e.target.closest('.relay-suggestion-item');
-  if (!row) return;
-  const idx = Number(row.dataset.idx);
-  const suggestions = suggestionList._suggestions;
-  if (suggestions && suggestions[idx]) _correctAndDownload(suggestions[idx]);
-});
 
 const searchBtn      = $id('relay-search-btn');
 const searchOverlay  = $id('relay-search-overlay');
