@@ -1,3 +1,9 @@
+## [1.236.0](https://github.com/niafrond/niafrond.github.io/compare/v1.235.0...v1.236.0) (2026-06-26)
+
+### Features
+
+* implement fingerprint control and suggestion handling in DJ Mix ([1501833](https://github.com/niafrond/niafrond.github.io/commit/1501833e5338a0eaa7ebe1dd5f664a1e7684981d))
+
 ## [1.235.0](https://github.com/niafrond/niafrond.github.io/compare/v1.234.1...v1.235.0) (2026-06-26)
 
 ### Features
