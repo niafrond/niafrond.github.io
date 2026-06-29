@@ -104,11 +104,19 @@ describe('getFilRougeTrackStatus', () => {
     expect(status.downloadState).toBe('idle');
   });
 
-  test('returns stemsOk=true when stems present', () => {
+  test('returns hasMixInfo=false by default', () => {
     const ctrl = makeController();
-    const item = { id: '1', stems: { vocalsUrl: 'url' } };
+    const item = { id: '1', name: 'T' };
     const status = ctrl.getFilRougeTrackStatus(item);
-    expect(status.stemsOk).toBe(true);
+    expect(status.hasMixInfo).toBe(false);
+  });
+
+  test('returns hasMixInfo=true when set via status', () => {
+    const ctrl = makeController();
+    const item = { id: '1', name: 'T' };
+    ctrl.setFilRougeTrackStatus(item, { hasMixInfo: true });
+    const status = ctrl.getFilRougeTrackStatus(item);
+    expect(status.hasMixInfo).toBe(true);
   });
 
   test('reflects setFilRougeTrackStatus patch', () => {
@@ -126,11 +134,11 @@ describe('setFilRougeTrackStatus', () => {
   test('merges patch without overwriting other fields', () => {
     const ctrl = makeController();
     const item = { id: 'x', name: 'T' };
-    ctrl.setFilRougeTrackStatus(item, { downloadState: 'done', stemsOk: false });
-    ctrl.setFilRougeTrackStatus(item, { stemsOk: true });
+    ctrl.setFilRougeTrackStatus(item, { downloadState: 'done', hasMixInfo: false });
+    ctrl.setFilRougeTrackStatus(item, { hasMixInfo: true });
     const status = ctrl.getFilRougeTrackStatus(item);
     expect(status.downloadState).toBe('done');
-    expect(status.stemsOk).toBe(true);
+    expect(status.hasMixInfo).toBe(true);
   });
 
   test('no-ops for item with no resolvable key', () => {
@@ -177,12 +185,12 @@ describe('addToFilRouge', () => {
     expect(status.downloadState).toBe('done');
   });
 
-  test('sets stemsOk=true when stems present', () => {
+  test('hasMixInfo defaults to false on addToFilRouge', () => {
     const fr = makeFilRougeManager();
     const ctrl = makeController({ filRougeManager: fr });
-    ctrl.addToFilRouge({ id: '1', name: 'T', stems: { vocalsUrl: 'url' } });
+    ctrl.addToFilRouge({ id: '1', name: 'T' });
     const status = ctrl.getFilRougeTrackStatus({ id: '1' });
-    expect(status.stemsOk).toBe(true);
+    expect(status.hasMixInfo).toBe(false);
   });
 
   test('no-ops for null item', () => {

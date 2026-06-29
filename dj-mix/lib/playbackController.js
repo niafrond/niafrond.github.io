@@ -305,6 +305,32 @@ export function createPlaybackController(options) {
       }
     }
 
+    // Empty intro detection: if no breakdown/drop/peak/avoidTransition zone starts
+    // before 15s, skip to the first such zone.
+    const EMPTY_INTRO_THRESHOLD_SEC = 15;
+    const allSignificantZones = [
+      ...(Array.isArray(mixData.breakdownZones) ? mixData.breakdownZones : []),
+      ...(Array.isArray(mixData.dropZones) ? mixData.dropZones : []),
+      ...(Array.isArray(mixData.peakZones) ? mixData.peakZones : []),
+      ...(Array.isArray(mixData.avoidTransitionZones) ? mixData.avoidTransitionZones : []),
+    ]
+      .filter((z) => Number.isFinite(Number(z?.startSec)) && Number(z.startSec) > 0)
+      .sort((a, b) => Number(a.startSec) - Number(b.startSec));
+
+    if (allSignificantZones.length > 0) {
+      const firstZoneStartSec = Number(allSignificantZones[0].startSec);
+      const hasZoneBeforeThreshold = allSignificantZones.some(
+        (z) => Number(z.startSec) < EMPTY_INTRO_THRESHOLD_SEC,
+      );
+      if (!hasZoneBeforeThreshold) {
+        const durationSec = toFiniteNumber(mixData.durationSec);
+        const safeLimit = durationSec != null && durationSec > 30 ? durationSec - 30 : Infinity;
+        if (firstZoneStartSec <= safeLimit) {
+          recommendedSec = Math.max(recommendedSec, firstZoneStartSec);
+        }
+      }
+    }
+
     if (!Number.isFinite(recommendedSec) || recommendedSec <= 0) return 0;
     return Math.round(recommendedSec * 1000);
   }

@@ -519,6 +519,10 @@ export class DJPlayer extends EventTarget {
         startBaseTo,
       });
 
+      if (to.paused && to.src) {
+        await to.play().catch(() => {});
+      }
+
       from.pause();
       from.currentTime = 0;
       from.src = '';

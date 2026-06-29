@@ -1,0 +1,816 @@
+# DJ-Mix — Spécifications (SDD)
+
+Ce document liste les comportements attendus de l'application, organisés par domaine fonctionnel.
+Chaque spec est formulée de manière testable (GIVEN / WHEN / THEN).
+Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
+
+---
+
+## 1. Lecture audio (Player)
+
+### 1.1 Double platine
+
+- **SPEC-1.1.1** L'application dispose de deux platines (Deck A, Deck B), chacune étant un `HTMLAudioElement`.
+- **SPEC-1.1.2** Une seule platine est active à un instant donné (propriété `#active` = `'A'` ou `'B'`).
+- **SPEC-1.1.3** GIVEN une platine active avec un morceau en cours — WHEN un crossfade se termine — THEN `#active` bascule vers l'autre platine.
+- **SPEC-1.1.4** GIVEN un crossfade qui se termine — WHEN la platine entrante est en pause — THEN la lecture est relancée automatiquement (`play()`).
+- **SPEC-1.1.5** GIVEN aucune platine active — WHEN un morceau est chargé via `play(source)` — THEN il démarre sur la platine A par défaut.
+- **SPEC-1.1.6** GIVEN un crossfade en cours — WHEN le système doit déterminer quelle platine est sortante — THEN la platine dont le volume est le plus élevé est choisie comme sortante (`volB >= volA ? 'B' : 'A'`).
+- **SPEC-1.1.7** La platine inactive prépare le morceau suivant (prefetch via `ensureLocalSource`).
+
+### 1.2 Crossfade
+
+- **SPEC-1.2.1** La durée du crossfade est réglable entre `1` et `30` secondes (clamp via `Math.max(1, Math.min(30, value))`). Défaut : `6` secondes.
+- **SPEC-1.2.2** GIVEN un morceau en lecture — WHEN le temps restant (`duration - currentTime`) atteint `crossfadeDurationMs` — THEN le crossfade démarre automatiquement. Le plancher interne est `250 ms`.
+- **SPEC-1.2.3** GIVEN un crossfade en cours — WHEN le progrès `t` avance de `0` à `1` — THEN le volume de la platine sortante décroît et celui de la platine entrante croît selon la courbe définie par le mode de transition actif.
+- **SPEC-1.2.4** GIVEN un DJ Plan avec `crossfadeDurationSec > 0` — WHEN le crossfade est déclenché pour cette transition — THEN la durée du DJ Plan remplace temporairement la durée globale.
+
+### 1.3 Modes de transition (26 modes)
+
+#### 1.3.1 Catalogue
+
+| # | Clé | Coût RAM (Mo) | Overlap | Courbe sortante | Courbe entrante |
+|---|-----|---------------|---------|-----------------|-----------------|
+| 1 | `auto` | 0 | 0 | — | — |
+| 2 | `crossfade_linear` | 18 | 1.0 | `start × (1−t)` | `start + (1−start) × t` |
+| 3 | `crossfade_logarithmic` | 20 | 1.02 | `start × cos(π/2 × t)` | `start + (1−start) × sin(π/2 × t)` |
+| 4 | `fade_in_out` | 24 | 1.05 | Fade rapide jusqu'à 52%, silence | Entrée retardée après 52% |
+| 5 | `cut_transition` | 6 | 0.12 | Coupe sèche | Entrée immédiate |
+| 6 | `filter_sweep_low_high` | 96 | 1.2 | `start × (1−√t)` + playback rate 0.86→1 | Hybride √t + linéaire, rate 1.08→0.9 |
+| 7 | `eq_transition_simple` | 44 | 1.08 | `start × (1 − 0.82×t)` | `start + (1−start) × t^1.2` |
+| 8 | `echo_out_light` | 128 | 1.35 | `max(0.06, start × (1−t))` (plancher 6%) | `start + (1−start) × t^1.05` |
+| 9 | `reverb_short_simple` | 172 | 1.55 | Soft jusqu'à 80%, puis linéaire | `t^1.3` |
+| 10 | `short_loop` | 108 | 1.22 | Linéaire | Modulé : `× (0.85 + 0.15×|sin(6πt)|)` |
+| 11 | `brake_tape_stop_simple` | 58 | 1.12 | `start × (1−t^1.6)` + décélération playback | `start + (1−start) × t^1.1` |
+| 12 | `short_reverse` | 122 | 1.24 | `start × (1−t) × (1 − 0.18×sin(7πt))` | Linéaire |
+| 13 | `sidechain_basic` | 52 | 1.1 | Linéaire | Pump : `× (1 − 0.25×max(0,sin(8πt)))` |
+| 14 | `volume_ducking` | 40 | 1.06 | Duck à 40% du progrès | Linéaire |
+| 15 | `gain_automation` | 34 | 1.0 | `start × (1 − t^1.8)` | `start + … × t^1.45` |
+| 16 | `filter_automation` | 104 | 1.25 | Cosine sweep `0.5 − 0.5×cos(πt)` | Miroir |
+| 17 | `crossfade_lowpass` | 140 | 1.18 | Log (cos) + filtre low-pass sortant | Log (sin) |
+| 18 | `crossfade_highpass_in` | 118 | 1.12 | Linéaire | Linéaire + filtre high-pass entrant |
+| 19 | `filter_dual_sweep` | 178 | 1.35 | Cosine sweep + low-pass sortant | Miroir + high-pass entrant |
+| 20 | `echo_lowpass` | 216 | 1.45 | `max(0.08, start × (1−t))` (plancher 8%) + echo + LP | `start + … × t^1.08` |
+| 21 | `bass_swap` | 175 | 1.30 | `start × cos(π/2 × t^0.85)` | `start + … × t^0.85` |
+| 22 | `kick_swap` | 145 | 1.25 | S-curve cosine | Entrée retardée à 30% : `(t−0.3)/0.7` |
+| 23 | `beat_repeat` | 112 | 1.20 | Plein jusqu'à 65%, puis phase out | Minimal (5%) jusqu'à 65%, puis entrée dure |
+| 24 | `backspin` | 85 | 0.95 | 3 phases : décél rapide (0–35%), silence (35–50%), 0 après | Entrée après 50% |
+| 25 | `fake_drop` | 28 | 0.80 | Drop rapide (0–35%), silence (35–55%) | Impact dur à 55% : `min(1, (t−0.55)/0.12)` |
+| 26 | `echo_freeze` | 195 | 1.48 | Plancher 12% gelé jusqu'à 65%, puis fade | Entrée retardée à 45% : `(t−0.45)^0.8` |
+
+#### 1.3.2 Coût RAM
+
+- **SPEC-1.3.2.1** Le coût RAM est calculé par : `extraMb + overlapMb × overlapFactor`, avec `overlapMb = (44100 × 2 × 4 × crossfadeDurationMs/1000) / (1024×1024)` ≈ 1.69 Mo/s.
+
+#### 1.3.3 Sélection automatique (`auto`)
+
+- **SPEC-1.3.3.1** GIVEN le mode `auto` — WHEN un crossfade est déclenché — THEN le système analyse les caractéristiques audio des deux morceaux et sélectionne le meilleur mode compatible avec la RAM disponible.
+- **SPEC-1.3.3.2** Arbre de décision (évalué dans l'ordre, premier match gagne) :
+  1. Morceau suivant < 95s → `cut_transition`
+  2. Temps restant < 3.5s → `[echo_out_light, cut_transition, fade_in_out]`
+  3. Même rythme + diff BPM ≤ 1 → `[crossfade_linear, crossfade_logarithmic, gain_automation]`
+  4. Diff BPM ≤ 2 + faible diff loudness → `[crossfade_logarithmic, crossfade_linear, gain_automation, crossfade_lowpass]`
+  5. Chute d'énergie majeure (diff ≥ 0.35, nouveau < 0.4) → `[fade_in_out, volume_ducking, echo_out_light]`
+  6. Diff danceability majeure (≥ 0.3) → `[filter_sweep_low_high, filter_automation, filter_dual_sweep]`
+  7. Diff BPM ≤ 6 → `[filter_automation, eq_transition_simple, crossfade_lowpass, crossfade_highpass_in]`
+  8. Diff énergie ≥ 0.25 → `[eq_transition_simple, sidechain_basic, crossfade_highpass_in]`
+  9. Diff BPM ≤ 10 → `[sidechain_basic, eq_transition_simple, volume_ducking]`
+  10. Diff loudness ≥ 5 dB → `[volume_ducking, fade_in_out, gain_automation]`
+  11. Diff BPM ≥ 20 → `[brake_tape_stop_simple, backspin, fake_drop]`
+  12. Les deux danceability > 0.65 → `[short_loop, beat_repeat, kick_swap, bass_swap]`
+  13. Fallback → `[gain_automation, crossfade_linear, crossfade_logarithmic, fade_in_out]`
+- **SPEC-1.3.3.3** GIVEN la liste de candidats — WHEN le mode est sélectionné — THEN un tirage pondéré est effectué : les modes récemment utilisés (cooldown = `ceil(eligible.length / 2)`, buffer de 8 derniers) reçoivent un poids réduit (0.15 pour les 1–2 derniers, 0.5 pour les 3–4, 0.8 pour les plus anciens).
+
+#### 1.3.4 Filtre RAM
+
+- **SPEC-1.3.4.1** GIVEN un device mobile — WHEN le filtre RAM est activé — THEN seuls les modes dont le coût ≤ budget RAM sont proposés. Budget = `max(64, totalRamMb × 0.12)`.
+- **SPEC-1.3.4.2** `auto` et `cut_transition` sont toujours autorisés (fallbacks garantis).
+- **SPEC-1.3.4.3** Estimation de la RAM totale : `navigator.deviceMemory × 1024` si disponible, sinon ≤2 cores → 1536 Mo, ≤4 → 2048, ≤6 → 3072, sinon 4096.
+- **SPEC-1.3.4.4** Le filtre RAM ne s'active que sur mobile OU si `ramTotalMbOverride > 0` (bornes : `512`–`32768`).
+
+### 1.4 Contrôle du playback
+
+- **SPEC-1.4.1** Play / Pause sont disponibles via l'UI et via Media Session API (`navigator.mediaSession.setActionHandler`).
+- **SPEC-1.4.2** GIVEN un morceau avec `startPositionMs` défini — WHEN la lecture démarre — THEN le player attend 1 seconde après le chargement puis seek à `Math.min(durationMs, startPositionMs)`.
+- **SPEC-1.4.3** Le playback rate est ajustable. Transition lissée sur `180 ms` via `requestAnimationFrame` avec easing quadratique. Plage safe : `0.5`–`2.0`.
+- **SPEC-1.4.4** `syncDecksToActive()` aligne le rate de la platine inactive sur celui de la platine active en `220 ms`.
+- **SPEC-1.4.5** GIVEN un DJ Plan avec `recommendedBpm` — WHEN le crossfade démarre — THEN le playback rate de la platine entrante est calculé via `computeDjBpmRate()`.
+
+### 1.5 Détection d'intro vide (Empty Intro Skip)
+
+- **SPEC-1.5.0.1** GIVEN un morceau avec mixData — WHEN aucune zone de type `breakdownZones`, `dropZones`, `peakZones` ou `avoidTransitionZones` ne commence avant `15` secondes — THEN le début du morceau est considéré comme une intro vide.
+- **SPEC-1.5.0.2** GIVEN une intro vide détectée — WHEN un offset de départ est calculé — THEN l'offset recommandé est la `startSec` de la première zone (parmi breakdown, drop, peak, avoidTransition), triée chronologiquement.
+- **SPEC-1.5.0.3** L'offset calculé par la détection d'intro vide participe au `Math.max` général de `resolveMixDataStartOffsetMs` — il ne peut qu'augmenter l'offset, jamais le diminuer.
+- **SPEC-1.5.0.4** GIVEN le morceau a une durée connue — WHEN l'offset calculé dépasse `durationSec − 30` — THEN l'offset est ignoré (sécurité : ne pas sauter la quasi-totalité du morceau).
+
+### 1.6 Limitation de durée (trackMaxDuration)
+
+
+#### 1.6.1 Configuration
+
+- **SPEC-1.6.1.1** Deux modes de limitation : `sec` (secondes fixes) et `pct` (pourcentage hors intro/outro).
+- **SPEC-1.6.1.2** Mode `sec` : valeur bornée `0`–`600` secondes. Défaut : `0` (désactivé).
+- **SPEC-1.6.1.3** Mode `pct` : valeur bornée `5`–`95` %. Défaut : `50` %.
+- **SPEC-1.6.1.4** Un toggle `trackMaxDurationEnabled` active/désactive la limitation indépendamment de la valeur.
+
+#### 1.6.2 Calcul en mode pourcentage
+
+- **SPEC-1.6.2.1** GIVEN un morceau avec mixData — WHEN le mode `pct` est actif — THEN la durée effective est calculée :
+  ```
+  introEndSec = mixData.probableSongStartSec || 0
+  outroStartSec = min(...mixData.outroZones.map(z => z.startSec)) || durationSec
+  effectiveDuration = max(0, outroStartSec − introEndSec)
+  résultat = introEndSec + effectiveDuration × pct / 100
+  ```
+- **SPEC-1.6.2.2** GIVEN un morceau sans mixData — WHEN le mode `pct` est actif — THEN `introEndSec = 0` et `outroStartSec = durationSec` (100% de la durée est « effective »).
+
+#### 1.6.3 Déclenchement du crossfade
+
+- **SPEC-1.6.3.1** GIVEN la limitation activée et `trackMaxDurationAppliedSec > 0` — WHEN la position de lecture atteint `trackMaxDurationAppliedSec × 1000 + autoDjStartOffsetMs` — THEN le crossfade est déclenché immédiatement via `autoMixBtn.click()`, indépendamment de l'état Auto DJ.
+- **SPEC-1.6.3.2** Le déclenchement ne se produit qu'une seule fois par morceau (guard `maxDurMarkerTriggeredForTrack`).
+- **SPEC-1.6.3.3** GIVEN l'Auto DJ activé avec mixData — WHEN la durée max est définie — THEN `findBestTransitionZone` utilise `maxDurationSec` comme `targetSec` pour trouver une zone de transition proche du point de coupure.
+- **SPEC-1.6.3.4** GIVEN le trigger calculé par zone dépasse `maxDurationMs` — THEN il est cappé à `maxDurationMs`, puis `advancePastMaxDurationBlock` vérifie que le point ne tombe pas dans une zone stricte (drop, haute énergie, neverMiss). Si c'est le cas, le trigger avance à `zoneEndSec + 500 ms`, cappé à `trackDurationMs − 10 s`.
+
+#### 1.6.4 Marqueur visuel
+
+- **SPEC-1.6.4.1** Le marqueur vert (snappé sur zone) est positionné à `(markerMs / durationMs) × 100 %`.
+- **SPEC-1.6.4.2** GIVEN la valeur utilisateur et la valeur snappée diffèrent de plus de `0.2 %` — THEN un marqueur translucide secondaire (raw) est affiché.
+- **SPEC-1.6.4.3** Quand la limitation change, `recalculateAutomixTimingIfNeeded` est appelé pour resynchroniser le timing Auto DJ.
+
+---
+
+## 2. File d'attente (Queue)
+
+### 2.1 Gestion CRUD
+
+- **SPEC-2.1.1** GIVEN un morceau valide — WHEN `addToQueue(item)` est appelé — THEN le morceau est ajouté en fin de queue avec ses métadonnées extraites (BPM, genre, stems, artwork).
+- **SPEC-2.1.2** GIVEN le morceau en cours de lecture — WHEN `removeFromQueue(index)` est appelé sur ce morceau — THEN la suppression est bloquée.
+- **SPEC-2.1.3** GIVEN un morceau retiré — WHEN il est supprimé — THEN `releaseLocalBlob()` est appelé pour libérer sa mémoire, et `deckBCueIndex` est ajusté si nécessaire.
+- **SPEC-2.1.4** Le réordonnancement se fait par drag-and-drop via `reorderQueue(fromIndex, toIndex, insertAfter)`. Le `deckBCueIndex` est mis à jour si l'item déplacé affecte l'item cué.
+- **SPEC-2.1.5** La queue est persistée dans `localStorage` sous la clé `dj-mix:queue`.
+
+### 2.2 Dédoublonnage
+
+- **SPEC-2.2.1** GIVEN un item à ajouter — WHEN un item existant dans la queue a le même `id` OU le même couple `(name, artist)` — THEN l'ajout est bloqué et un toast "Déjà dans la file" est affiché (error=true).
+- **SPEC-2.2.2** GIVEN un doublon détecté avec `playNow=true` — THEN au lieu d'ajouter, la lecture saute directement à l'item existant dans la queue.
+
+### 2.3 Modes de lecture
+
+- **SPEC-2.3.1** GIVEN le mode Loop activé et la lecture atteint le dernier morceau — WHEN le morceau suivant est demandé — THEN l'index revient à `0` (wrap via modulo : `((i % len) + len) % len`).
+- **SPEC-2.3.2** GIVEN le mode Shuffle activé — WHEN le morceau suivant est demandé — THEN un index aléatoire est choisi (`Math.random()`). Jusqu'à `20` tentatives sont effectuées pour éviter de choisir le même index. Après 20 échecs, retourne `-1` (fin de queue).
+- **SPEC-2.3.3** GIVEN Shuffle ET Loop activés — THEN Shuffle prend la priorité : un index aléatoire est choisi, le mode Loop est ignoré.
+- **SPEC-2.3.4** GIVEN `wrap=false` passé explicitement — THEN le flag Loop est ignoré même s'il est activé.
+- **SPEC-2.3.5** Les modes Loop et Shuffle sont persistés dans `localStorage` (clés `dj-mix:queue:loop`, `dj-mix:queue:shuffle`).
+
+### 2.4 Prefetch
+
+- **SPEC-2.4.1** GIVEN un morceau en lecture — WHEN la lecture démarre — THEN `prefetchNext(index)` est planifié en idle (`scheduleIdle`).
+- **SPEC-2.4.2** GIVEN l'item suivant a déjà un `localBlobUrl` — THEN le prefetch est ignoré.
+- **SPEC-2.4.3** GIVEN le mode low-memory actif — THEN `trimRetainedAudioSources()` est appelé avant le prefetch.
+- **SPEC-2.4.4** GIVEN l'item a été retiré de la queue entre la planification et l'exécution — THEN le prefetch est annulé.
+
+---
+
+## 3. Fil Rouge
+
+### 3.1 Playlist de fond
+
+- **SPEC-3.1.1** Le Fil Rouge est une playlist séparée, persistée dans `localStorage` sous la clé `dj-mix:fil-rouge`.
+- **SPEC-3.1.2** Structure persistée : `{ playlist, priorityQueue, currentIndex, shuffleEnabled, loopEnabled }`.
+- **SPEC-3.1.3** La sauvegarde est debounced à `400 ms` via `scheduleSave()`.
+- **SPEC-3.1.4** GIVEN la queue est vide — WHEN le morceau en cours se termine — THEN le Fil Rouge fournit le prochain morceau. `filRougeManager.isActive()` retourne `true` si `playlist.length > 0`.
+- **SPEC-3.1.5** Les items en `priorityQueue` sont joués avant ceux de la playlist principale.
+
+### 3.2 Gestion
+
+- **SPEC-3.2.1** Shuffle et Loop du Fil Rouge sont des flags indépendants de ceux de la queue.
+- **SPEC-3.2.2** GIVEN Shuffle FR activé — WHEN le morceau suivant est demandé — THEN un index aléatoire est choisi (pas de protection anti-répétition, contrairement à la queue).
+- **SPEC-3.2.3** GIVEN Shuffle FR désactivé et Loop FR activé — THEN la playlist avance séquentiellement avec retour à l'index 0 en fin de liste.
+- **SPEC-3.2.4** GIVEN Shuffle FR et Loop FR désactivés — THEN la lecture s'arrête en fin de playlist.
+
+### 3.3 Import
+
+#### 3.3.1 Import TXT
+
+- **SPEC-3.3.1.1** Format ligne : `"Artiste — Titre"` ou `"Artiste - Titre"` (regex : `/^(.+?)\s+(?:-|–|—)\s+(.+)$/u`).
+- **SPEC-3.3.1.2** GIVEN une ligne sans séparateur — THEN toute la ligne devient le titre, artiste = `"Artiste inconnu"`.
+- **SPEC-3.3.1.3** Les lignes vides et les commentaires sont ignorés.
+- **SPEC-3.3.1.4** ID généré : `txt-${index}-${encodeURIComponent(artist)}-${encodeURIComponent(name)}`.
+
+#### 3.3.2 Import Spotify
+
+- **SPEC-3.3.2.1** Flow : parse playlist ID → fetch snapshot (name, snapshot_id) → fetch tracks (pagination `limit=100`) → replace Fil Rouge → store source metadata → start sync loop.
+- **SPEC-3.3.2.2** Sync : poll toutes les `120 000 ms` (`SPOTIFY_FIL_ROUGE_POLL_MS`), compare `snapshot_id`. Backoff max : `× 32`.
+- **SPEC-3.3.2.3** GIVEN le snapshot_id a changé — THEN merge des nouveaux morceaux en préservant les suppressions locales.
+- **SPEC-3.3.2.4** `normalizeSpotifyPlaylistTracks()` filtre les pistes locales et les non-tracks.
+- **SPEC-3.3.2.5** `computePlaylistFingerprint()` crée un hash depuis `id:name:artist:duration`.
+
+#### 3.3.3 Import serveur
+
+- **SPEC-3.3.3.1** Endpoint : `GET /api/cache/files?limit=${pageSize}&offset=${offset}`.
+
+### 3.4 Téléchargement en arrière-plan
+
+- **SPEC-3.4.1** Téléchargement par batch de `3` morceaux en parallèle.
+- **SPEC-3.4.2** Chaque morceau passe par les états : `idle` → `downloading` → `done` | `error`.
+- **SPEC-3.4.3** L'artwork est récupéré après le téléchargement audio si disponible.
+- **SPEC-3.4.4** Le progrès est rendu après chaque batch.
+- **SPEC-3.4.5** Le téléchargement ne bloque pas la lecture en cours.
+
+### 3.5 Indicateurs de statut par morceau
+
+- **SPEC-3.5.1** Chaque morceau du Fil Rouge affiche un badge « Mix info » indiquant si les données d'analyse de mix (mixData) sont disponibles pour ce morceau. Badge `is-done` si `hasMixInfo=true`, badge `is-idle` sinon.
+- **SPEC-3.5.2** La présence de mix info est déterminée par : (a) le flag `hasMixInfo` dans le statut local, ou (b) la présence de `mixData` dans le `trackMetaStorage` (localStorage).
+- **SPEC-3.5.3** GIVEN un morceau téléchargé avec succès — WHEN `fetchMixData` retourne des données — THEN `hasMixInfo` est mis à `true` dans le statut du morceau.
+- **SPEC-3.5.4** Le Fil Rouge n'affiche PAS de badge indiquant la présence des stems. Seuls le statut de téléchargement et le statut mix info sont affichés.
+
+---
+
+## 4. Recherche
+
+### 4.1 Recherche textuelle
+
+- **SPEC-4.1.1** La recherche est déclenchée avec un debounce de `600 ms` (`SEARCH_DEBOUNCE_MS`) après la dernière frappe.
+- **SPEC-4.1.2** Endpoint : `GET /api/search?term=${term}&artist=${artist}&limit=${limit}&nocache=${skipCache}`. Limite par défaut : `25`.
+- **SPEC-4.1.3** Le texte est nettoyé via `cleanItunesSearchText()` (suppression feats, métadonnées) et séparé artiste/titre via `splitItunesSearchQuery()`.
+
+### 4.2 Polling
+
+- **SPEC-4.2.1** GIVEN la réponse contient un `pollToken` — THEN un polling est lancé sur `GET /api/search/poll?pollToken=${token}`.
+- **SPEC-4.2.2** Délais : base `1500 ms`, incrément `600 ms` par tentative, plafonné à `5000 ms`. Max `8` tentatives. Timeout par requête : `8000 ms`.
+- **SPEC-4.2.3** GIVEN `data.status === 'pending'` — THEN le polling continue. Sinon, les résultats sont retournés.
+
+### 4.3 Résultats
+
+- **SPEC-4.3.1** Les résultats sont normalisés via `mapApiTrackToSearchItem()` : id, name, artist, duration, artUrl.
+- **SPEC-4.3.2** Dédoublonnage par `id` ou clé `${name}|${artist}`.
+- **SPEC-4.3.3** Tri par popularité via `sortSearchResultsByPopularity()`.
+- **SPEC-4.3.4** Séparés en sections "Musiques" et "Artistes" dans l'UI.
+- **SPEC-4.3.5** Badges affichés : `📁` (local), `🧩` (stems disponibles).
+- **SPEC-4.3.6** Actions : "Fade" (play now avec crossfade), "+" (ajouter à la queue), `🗑` (supprimer local).
+
+---
+
+## 5. Auto DJ (AutoMode)
+
+### 5.1 Suggestions automatiques
+
+- **SPEC-5.1.1** Endpoint principal : `GET /mix?track=${trackName}&artist=${artistName}`.
+- **SPEC-5.1.2** GIVEN `data.status === 'already_pending'` — THEN retry jusqu'à `5` fois avec backoff exponentiel.
+- **SPEC-5.1.3** La réponse `data.mix` est mise en cache en mémoire (max `40` entrées) et dans `localStorage` (`trackMetaStorage`).
+- **SPEC-5.1.4** GIVEN une réponse 404 — THEN le cache pour ce morceau est invalidé.
+
+### 5.2 Exclusion de morceaux
+
+- **SPEC-5.2.1** Les morceaux déjà joués sont exclus via `playHistory` (Set persisté dans `localStorage`).
+- **SPEC-5.2.2** Les morceaux dans la queue courante sont exclus par `queueIds` (Set de tous les IDs).
+- **SPEC-5.2.3** Le morceau actuellement sur la platine active est exclu par fingerprint multi-champ : `id`, `ratingKey`, `uri`, ET `name+artist` normalisés (lowercase, trim). Ceci empêche les boucles infinies entre deux platines.
+- **SPEC-5.2.4** GIVEN un morceau fini sur deck A et un morceau en cours sur deck B — WHEN l'Auto DJ cherche le prochain morceau — THEN le morceau de deck B ne peut pas être re-queueé (même si son ID est dans un format différent, le match par name+artist le bloque).
+- **SPEC-5.2.5** `reset()` efface `currentlyPlayingTrack` pour éviter les fuites entre sessions.
+
+### 5.3 Chaîne de recherche de morceaux
+
+- **SPEC-5.3.1** Ordre de priorité :
+  1. API `/api/suggestions` — résultats triés par `similarityScore`
+  2. Fallback : `/suggestions`
+  3. Fallback : recherche plain-text `searchTracksViaApi(query)` avec `query = artist + " " + name`
+  4. Fil Rouge : `filRougeManager.getNextTrack()` si actif
+  5. Aucun résultat : la lecture s'arrête après le morceau en cours
+- **SPEC-5.3.2** GIVEN l'API est offline (`apiHealthMonitor.isOffline()`) — THEN les étapes 1–3 sont sautées, passage direct au Fil Rouge.
+
+### 5.4 Analyse de forme d'onde (MixData)
+
+- **SPEC-5.4.1** Structure MixData :
+  ```
+  {
+    durationSec, probableSongStartSec,
+    peakZones: [{ startSec, endSec, score, intensity }],
+    safeTransitionZones: [{ startSec, endSec, score, reason }],
+    avoidTransitionZones: [{ startSec, endSec, score, reason }],
+    dropZones: [{ startSec, endSec, score }],
+    breakdownZones: [{ startSec, endSec, score, reason }],
+    neverMissZones: [{ startSec, endSec, neverMissScore, label, reason, source }],
+    outroZones: [{ startSec, endSec }],
+    confidence: { transitions: 0–1 },
+    vocalPresenceProfile: [{ timeSec, value }],
+    phraseGrid: [timeSec, ...]
+  }
+  ```
+- **SPEC-5.4.2** Les zones sont utilisées comme suit :
+  | Zone | Rôle | Blocage strict |
+  |------|------|---------------|
+  | `safeTransitionZones` | Points d'atterrissage optimaux pour transition | Non |
+  | `breakdownZones` | Zones de basse énergie, bonnes pour sampling/scratching | Non (safe landing) |
+  | `peakZones` (intensity "high") | Moments haute énergie | Oui |
+  | `dropZones` | Kicks / impacts | Oui (toujours) |
+  | `avoidTransitionZones` (reason high_tension/intro) | Moments problématiques | Oui |
+  | `neverMissZones` | Chorus/hook/climax — ne jamais couper | Oui (toujours) |
+
+### 5.5 findBestTransitionZone
+
+- **SPEC-5.5.1** GIVEN un `targetSec` (ou `durationSec − 8` par défaut) — THEN :
+  1. Agréger les zones bloquantes : `avoidTransitionZones` + `dropZones` + `neverMissZones` + `peakZones` (si intensity contient "high")
+  2. Snapper sur `outroZones` si une zone est dans ±30s du target
+  3. Boucle (max `20` itérations) : si `candidateSec` est dans une zone bloquante, avancer à `zoneEnd + 0.5s` ; sinon, vérifier si dans une safe/outro/breakdown zone
+  4. Retourner `{ zone, type: 'safe'|'clear', triggerSec }` ou null si aucune zone trouvée
+
+### 5.6 Timing du crossfade Auto DJ (scheduleAutomixTiming)
+
+- **SPEC-5.6.1** GIVEN auto mode activé et un morceau en cours — WHEN `scheduleAutomixTiming(currentTrack)` est appelé — THEN :
+  1. `currentlyPlayingTrack` est stocké synchroniquement (exclusion immédiate)
+  2. Timer précédent annulé, mixData réinitialisé
+  3. Fetch de `fetchMixData(name, artist)`
+  4. `maxDurationSec` ajusté par `autoDjStartOffsetMs` : `rawMaxDurationSec + startOffsetMs/1000`
+- **SPEC-5.6.2** GIVEN pas de mixData — THEN fallback : `triggerMs = max(durationMs − 20000, durationMs × 0.75)`. Si maxDuration défini : `triggerMs = min(maxDurationMs, triggerMs)`.
+- **SPEC-5.6.3** GIVEN mixData avec confidence < `0.5` — THEN buffer de sécurité : `confidenceBufferMs = (1 − confidence) × 8000` (jusqu'à 8s d'avance pour confidence=0). Le trigger est avancé de ce buffer.
+- **SPEC-5.6.4** GIVEN un trigger zone trouvée mais dépassant maxDurationMs — THEN le trigger est cappé puis `advancePastMaxDurationBlock()` le déplace hors des zones strictes (`zoneEnd + 500 ms`, cappé à `trackDurationMs − 10 s`).
+- **SPEC-5.6.5** GIVEN aucune zone de transition trouvée et des zones problématiques existent — THEN fallback sur le gap avant la première zone problématique : `(firstZone.startSec − 2) × 1000`.
+
+### 5.7 Déclenchement effectif
+
+- **SPEC-5.7.1** GIVEN `automixTimeline.nextTriggerMs > 0` et la position atteint ce seuil — THEN `addPendingTrackToQueue()` est appelé, puis `autoMixBtn.click()`.
+- **SPEC-5.7.2** GIVEN le track pending n'est pas disponible mais le Fil Rouge est actif — THEN `autoMixBtn.click()` est appelé quand même (le fallback Fil Rouge s'active).
+- **SPEC-5.7.3** Le déclenchement est marqué une seule fois par morceau via `markAutomixTriggered(automixTimeline)`.
+
+---
+
+## 6. Auto FX (DJ FX automatiques)
+
+### 6.1 Effets disponibles (18 types)
+
+| # | Clé | Catégorie | Défaut |
+|---|-----|-----------|--------|
+| 1 | `filter` | filter | ON |
+| 2 | `lowPass` | filter | ON |
+| 3 | `highPass` | filter | ON |
+| 4 | `echoDelay` | modulation | ON |
+| 5 | `reverb` | modulation | **OFF** |
+| 6 | `flangerPhaser` | modulation | ON |
+| 7 | `roll` | beat | ON |
+| 8 | `loop` | beat | ON |
+| 9 | `beatRepeat` | beat | ON |
+| 10 | `brake` | transport | ON |
+| 11 | `backspin` | transport | ON |
+| 12 | `noise` | textural | ON |
+| 13 | `eq` | filter | ON |
+| 14 | `pitchTempo` | pitch | ON |
+| 15 | `keyShift` | pitch | ON |
+| 16 | `scratching` | scratch | ON |
+| 17 | `hotCues` | cue | **OFF** |
+| 18 | `sampling` | sample | ON |
+
+### 6.2 Déclenchement (canTriggerAutoDjFx)
+
+- **SPEC-6.2.1** Conditions vérifiées dans l'ordre :
+  1. FX globalement activé → sinon `reason: 'disabled'`
+  2. Type valide → sinon `reason: 'missing-type'`
+  3. Type dans la allowlist utilisateur → sinon `reason: 'not-allowed'`
+  4. Cooldown min-interval respecté (`elapsedMs ≥ minGapMs`) → sinon `reason: 'min-interval'`
+- **SPEC-6.2.2** Bornes d'intervalle :
+  - `minIntervalSec` : `1`–`180` s (défaut `14` s)
+  - `maxIntervalSec` : `3`–`300` s (défaut `45` s)
+  - Invariant : `minIntervalSec ≤ maxIntervalSec`
+
+### 6.3 Intervalles par mode DJ
+
+- **SPEC-6.3.1** Mode Dance : min `8` s, max `20` s.
+- **SPEC-6.3.2** Mode Music, BPM < `90` : min `40` s, max `120` s.
+- **SPEC-6.3.3** Mode Music, BPM ≥ `90` : min `20` s, max `60` s.
+
+### 6.4 Planification (buildAutoFxPlan)
+
+- **SPEC-6.4.1** Résolution de durée (cascade) : `currentTrack.duration` → `mixData.durationSec × 1000` → `maxDurationSec × 1000` → `triggerMs + 20000` → `45000`.
+- **SPEC-6.4.2** Timeline effective : `effectiveEndMs = min(durationMs, maxDurationMs)`. Timeline max : `max(12000, effectiveEndMs − 5000)`.
+- **SPEC-6.4.3** Ancrage de la transition : `triggerMs` snappé sur la grille de phrases la plus proche (fenêtre ±3.5s).
+- **SPEC-6.4.4** Événements core ancrés sur les zones :
+  - `keyShift` → safeTransitionZones, ou 45s avant transition
+  - `sampling` → breakdownZones, ou 55s avant transition
+  - `hotCues` → peakZones, ou 30s avant transition
+  - `scratching` → post-breakdown (+7s), ou 12s avant transition
+- **SPEC-6.4.5** Événements soft (ajoutés si `minGapMs ≤ 10s`) :
+  - `echoDelay` → 2×minGapMs avant transition
+  - `filter` → 1×minGapMs avant transition
+  - `reverb` → 0.6×minGapMs avant transition
+
+### 6.5 Gating NMZ et vocal
+
+- **SPEC-6.5.1** GIVEN un événement FX tombe dans une neverMissZone — WHEN le type est `scratching`, `hotCues`, ou `sampling` (types "harsh") — THEN l'événement est annulé.
+- **SPEC-6.5.2** GIVEN un événement de type vocal-sensible (`scratching`, `echoDelay`) tombe dans un moment haute-voix (`vocalPresenceProfile > 0.6`) — THEN l'événement est décalé vers un moment basse-voix dans une fenêtre de ±8s (seuil `0.45`).
+
+### 6.6 Densité (enforceAutoFxDensity)
+
+- **SPEC-6.6.1** Min-interval spacing : si deux événements sont espacés de moins de `minGapMs`, le moins prioritaire est supprimé (`AUTO_FX_PRIORITY`).
+- **SPEC-6.6.2** Max-gap cadence fill : les gaps > `maxGapMs` sont comblés par des événements de cadence cycliques (`echoDelay → filter → reverb → repeat`).
+- **SPEC-6.6.3** Tail window pruning : dans les 2 dernières minutes, max `2` événements conservés (les plus prioritaires).
+
+---
+
+## 7. Effets DJ manuels (MixFeatures)
+
+### 7.1 Stems (séparation mid-side)
+
+- **SPEC-7.1.1** Encodage : `L = (L+R) × 0.5` (mid), `R = (L−R) × 0.5` (side).
+- **SPEC-7.1.2** Gains adaptatifs calculés via `computeAdaptiveMidSideGains()` : plage `[0.1, 1]` par gain.
+- **SPEC-7.1.3** Suppression vocale : réduit `midGain` (voix centrées). Suppression instrumentale : réduit `sideGain`.
+- **SPEC-7.1.4** Lissage via `setTargetAtTime(target, now, SMOOTH_TAU=0.08)`. Intervalle de sync : `2500 ms` (`STEM_SYNC_INTERVAL_MS`).
+
+### 7.2 Echo
+
+- **SPEC-7.2.1** Delay : `0.22 s` (`ECHO_DELAY_S`). Feedback : `0.28` (`ECHO_FEEDBACK`).
+- **SPEC-7.2.2** Mix wet : `0.28` (`ECHO_WET_MIX`). Mix dry : `0.9` (`ECHO_DRY_MIX`).
+- **SPEC-7.2.3** Source optionnelle : stems vocaux via `providedStems.vocalsUrl`.
+- **SPEC-7.2.4** Playback rate et currentTime synchronisés avec l'audio principal.
+
+### 7.3 Distortion
+
+- **SPEC-7.3.1** WaveShaper avec lookup table de `44100` samples. Paramètre K : `140` (`DISTORTION_K`).
+- **SPEC-7.3.2** Oversample : `4x`. Mix wet : `0.36`, dry : `0.84`.
+
+### 7.4 Filter automation
+
+- **SPEC-7.4.1** Low-pass : fréquence `1400 Hz`, Q `0.85`.
+- **SPEC-7.4.2** High-pass : fréquence `280 Hz`, Q `0.8`.
+- **SPEC-7.4.3** Défaut : AllPass (no-op). Lissage via `setParamSmooth()`.
+
+### 7.5 Analyse audio
+
+- **SPEC-7.5.1** FFT taille `1024` (`FFT_SIZE`).
+- **SPEC-7.5.2** Énergie : RMS = `sqrt(sum(sample²) / length)`. Epsilon : `1e-4` (`ENERGY_EPSILON`).
+- **SPEC-7.5.3** Lissage JS-side : lerp α = `0.34` (`SMOOTH_JS`).
+
+---
+
+## 8. DJ Plan
+
+### 8.1 Endpoints API
+
+| Endpoint | Méthode | Rôle |
+|----------|---------|------|
+| `/api/dj/tracks/scan` | POST → poll | Récupérer les résumés de morceaux |
+| `/api/dj/tracks/detail` | GET | Analyse détaillée d'un morceau |
+| `/api/dj/transition` | POST | Calculer la transition A→B |
+| `/api/dj/batch` | POST → poll | Plan complet (tous les morceaux + score du set) |
+| `/api/dj/feedback` | POST | Soumettre un feedback de transition |
+| `/api/dj/iconic` | POST | Marquer un morceau comme iconique |
+| `/api/dj/set-profiles` | GET | Lister les profils de set disponibles |
+| `/api/dj/retrain` | POST | Relancer l'entraînement du moteur |
+| `/api/dj/weights` | GET | Récupérer les poids du moteur |
+
+### 8.2 Profils de set
+
+- **SPEC-8.2.1** Stocké dans `localStorage` sous la clé `dj-mix:dj-api:set-profile`. Défaut : `'club_peak'`.
+
+### 8.3 Résolution de morceaux
+
+- **SPEC-8.3.1** Ordre de matching : cachePath exact → cachePath basename → ratingKey → nom+artiste normalisés (insensible accents/casse).
+- **SPEC-8.3.2** Retourne `{ trackId, hasFullAnalysis }` ou `null`.
+- **SPEC-8.3.3** Les analyses sont cachées dans `localStorage` sous clé `dj-mix:track-meta:${artist}::${track}` (normalisé lowercase).
+
+### 8.4 Indicateurs visuels
+
+- **SPEC-8.4.1** GIVEN un DJ Plan avec `crossfadeDurationSec > 0` — THEN un marqueur `.dj-plan-marker` est affiché sur la timeline.
+- **SPEC-8.4.2** Titre du marqueur : `"DJ Plan: crossfade ${seconds}s${transitionLabel} · score ${scorePct}%${nextName}"`.
+
+---
+
+## 9. Mode Relais (Master / Relay)
+
+### 9.1 Session
+
+- **SPEC-9.1.1** Création : `POST /api/relay/session` (body JSON vide) → retourne `{ sessionId }`.
+- **SPEC-9.1.2** Persisté dans `localStorage` sous `dj-mix:relay:session-id`.
+- **SPEC-9.1.3** Partage par QR code (librairie qrcodejs, 200×200, correction M) ou URL.
+- **SPEC-9.1.4** Format URL : `${origin}${dir}relay?relay-session=${sessionId}&relay-api=${apiUrl}&relay-token=${apiToken}`.
+
+### 9.2 Mode Maître
+
+- **SPEC-9.2.1** État diffusé :
+  ```
+  {
+    sessionId, pushedAt,
+    currentTrackId, currentIndex, isPlaying, activeDeck,
+    deckA: { trackId, positionMs, volume },
+    deckB: { trackId, positionMs, volume },
+    queue: [{ id, name, artist, artUrl, duration, persistedSourceUrl, bpm, genre }],
+    filRouge: [{ id, name, artist, artUrl, duration, persistedSourceUrl }],
+    transitionMode, crossfadeMs, djMode
+  }
+  ```
+- **SPEC-9.2.2** Endpoint : `PUT /api/relay/state/:id`.
+- **SPEC-9.2.3** Debounce : `1000 ms` (`PUSH_DEBOUNCE_MS`).
+- **SPEC-9.2.4** Déduplication par hash : `_hashState()` exclut `positionMs` pour éviter le spam. Inclut : currentTrackId, currentIndex, isPlaying, activeDeck, transitionMode, crossfadeMs, djMode, queue IDs, FX echo/distortion.
+
+### 9.3 Mode Relais
+
+- **SPEC-9.3.1** Polling : `GET /api/relay/state/:id` toutes les `1500 ms` (`POLL_MS`). Premier poll immédiat.
+- **SPEC-9.3.2** GIVEN un nouvel état reçu — THEN `onApplyRelayState(state)` est appelé pour synchroniser morceau, position, paramètres.
+- **SPEC-9.3.3** GIVEN de nouveaux items dans queue/filRouge — THEN `onRelayQueueItemsAvailable(items)` déclenche le pré-téléchargement.
+- **SPEC-9.3.4** Polling de commandes : toutes les `2500 ms`, âge max `60 000 ms`.
+
+---
+
+## 10. Intégration Spotify
+
+### 10.1 Authentification
+
+- **SPEC-10.1.1** OAuth 2.0 Authorization Code Flow avec PKCE.
+- **SPEC-10.1.2** Verifier : `64` bytes aléatoires encodés en base64url (`86` chars).
+- **SPEC-10.1.3** Code challenge : SHA-256 via `crypto.subtle.digest('SHA-256')` (fallback JS custom). Méthode : `S256`.
+- **SPEC-10.1.4** State : `16` bytes aléatoires en base64url (`22` chars). Vérifié au retour.
+- **SPEC-10.1.5** Verifier et state stockés dans `sessionStorage` (pas localStorage).
+
+### 10.2 Token
+
+- **SPEC-10.2.1** Stocké dans `localStorage` sous `dj-mix:spotify:auth` : `{ accessToken, refreshToken, expiresAt, tokenType, scope, state }`.
+- **SPEC-10.2.2** Refresh déclenché si `(expiresAt − 60000) ≤ Date.now()` (skew de 1 minute).
+- **SPEC-10.2.3** Endpoint refresh : `POST /oauth/token` avec `grant_type='refresh_token'`.
+- **SPEC-10.2.4** `clearAuth()` supprime l'auth ET la source Fil Rouge.
+
+### 10.3 Fonctionnalités
+
+- **SPEC-10.3.1** Playlists : `GET /me/playlists?fields=items(id,name),next&limit=50` avec pagination.
+- **SPEC-10.3.2** Tracks playlist : `GET /playlists/{id}/items?fields=...&limit=100` avec pagination.
+- **SPEC-10.3.3** Retry : max `2` retries (`SPOTIFY_FETCH_MAX_RETRIES`). Backoff exponentiel (base `1000 ms`, cap `30 000 ms`, jitter). Status retry : `429`, `502`, `503`, `504`. Header `Retry-After` respecté.
+- **SPEC-10.3.4** Historique de playlists : max `20` entrées (`playlistHistoryMax`).
+
+---
+
+## 11. Gestion des sources audio
+
+### 11.1 Résolution d'URL
+
+- **SPEC-11.1.1** Cascade de candidats (premier valide gagne) :
+  1. `persistedSourceUrl`
+  2. `localBlobUrl`
+  3. `downloadUrl`
+  4. `streamUrl`
+  5. `fileUrl`
+  6. `audioUrl`
+  7. `url`
+  8. `uri`
+- **SPEC-11.1.2** Un candidat est valide si : URL `blob:` OU URL HTTP(S) de confiance.
+- **SPEC-11.1.3** Validation de confiance (`isTrustedLocalAudioUrl`) : même origine que l'app OU origine de l'API downloader avec path `/api/cache/`.
+
+### 11.2 Téléchargement
+
+- **SPEC-11.2.1** Endpoint : `POST /api/download` avec body `{ trackName, artistName, searchQuery, popularity }`.
+- **SPEC-11.2.2** Retourne un blob audio ou `{ downloadUrl }`.
+- **SPEC-11.2.3** Le blob est converti en `blob:` URL via `URL.createObjectURL(blob)`.
+
+### 11.3 Cache
+
+- **SPEC-11.3.1** Cache persistant : clé `https://dj-mix.local/cache-audio/${encodeURIComponent(cacheKey)}` dans `caches.open(audioCacheName)`.
+- **SPEC-11.3.2** Cache session (in-memory Map) : max `12` entrées (`MAX_SESSION_BLOB_CACHE_ENTRIES`). Éviction FIFO.
+- **SPEC-11.3.3** `releaseLocalBlob()` appelle `URL.revokeObjectURL()` sur les blob URLs (y compris stems).
+
+### 11.4 Garbage collector mémoire
+
+- **SPEC-11.4.1** Activé uniquement en mode low-memory : mobile ET RAM ≤ `3072` Mo (`LOW_MEMORY_PLAYBACK_MAX_RAM_MB`).
+- **SPEC-11.4.2** `trimRetainedAudioSources()` conserve uniquement : item deck A, item deck B, item preview. Tous les autres items de la queue sont évictés.
+- **SPEC-11.4.3** Déclenché : après chaque lancement de morceau, après chaque crossfade, lors d'un changement de config RAM.
+
+---
+
+## 12. Paramètres (Settings)
+
+### 12.1 Persistance
+
+- **SPEC-12.1.1** Tous les paramètres sont stockés dans `localStorage`. Les clés sont centralisées dans `STORAGE_KEYS` (objet gelé, `Object.freeze`).
+
+### 12.2 Clés de stockage
+
+| Clé | Valeur localStorage |
+|-----|---------------------|
+| queue | `dj-mix:queue` |
+| filRouge | `dj-mix:fil-rouge` |
+| crossfadeSeconds | `dj-mix:crossfade-seconds` |
+| mixTransitionMode | `dj-mix:transition:mode` |
+| trackMaxDuration | `dj-mix:track:max-duration` |
+| trackMaxDurationEnabled | `dj-mix:track:max-duration:enabled` |
+| trackMaxDurationMode | `dj-mix:track:max-duration:mode` |
+| trackMaxDurationPct | `dj-mix:track:max-duration:pct` |
+| ramFilterEnabled | `dj-mix:ram-filter:enabled` |
+| ramTotalMbOverride | `dj-mix:ram-filter:total-mb-override` |
+| autoDjFxSettings | `dj-mix:auto-dj:fx:settings` |
+| autoSuggestionQueueSearchEnabled | `dj-mix:auto-dj:suggestion-queue-search:enabled` |
+| queueLoop | `dj-mix:queue:loop` |
+| queueShuffle | `dj-mix:queue:shuffle` |
+| djMode | `dj-mix:dj-mode` |
+| djModeGenrePrefs | `dj-mix:dj-mode:genre-prefs` |
+| spotifyClientId | `dj-mix:spotify:client-id` |
+| spotifyAuth | `dj-mix:spotify:auth` |
+| spotifyFilRougeSource | `dj-mix:spotify:fil-rouge-source` |
+| spotifyPlaylistHistory | `dj-mix:spotify:playlist-history` |
+| djSetProfile | `dj-mix:dj-api:set-profile` |
+| djExternalPlanEnabled | `dj-mix:dj-plan:external-enabled` |
+| djBatchPlan | `dj-mix:dj-api:batch-plan` |
+| artworkUrls | `dj-mix:artwork-urls` |
+| relayMode | `dj-mix:relay:mode` |
+| relaySessionId | `dj-mix:relay:session-id` |
+| downloaderApiUrl | `dj-mix:downloader:api:url` |
+| downloaderApiToken | `dj-mix:downloader:api:token` |
+| fxVisibility | `dj-mix:fx:hidden` |
+| debugLogs | `dj-mix:logs:debug` |
+
+### 12.3 Paramètres avec bornes et défauts
+
+| Paramètre | Défaut | Min | Max |
+|-----------|--------|-----|-----|
+| Crossfade (s) | 6 | 1 | 30 |
+| Track Max Duration (s) | 0 | 0 | 600 |
+| Track Max Duration (%) | 50 | 5 | 95 |
+| RAM Override (Mo) | 0 | 512 | 32 768 |
+| Auto FX min interval (s) | 14 | 1 | 180 |
+| Auto FX max interval (s) | 45 | 3 | 300 |
+| Transition mode | `auto` | — | — |
+| DJ Mode | `music` | — | — |
+| DJ Set Profile | `club_peak` | — | — |
+| Downloader API URL | `http://192.168.8.149:3000` | — | — |
+
+---
+
+## 13. PWA et intégration mobile
+
+### 13.1 Service Worker
+
+- **SPEC-13.1.1** Cache nommé `djmix-v{version}`. 56+ fichiers cachés (main.js, style.css, tous les lib/*.js).
+- **SPEC-13.1.2** Exclusions : requêtes cross-origin, requêtes `/api/`, requêtes Spotify/CDN.
+- **SPEC-13.1.3** Navigation : les query params sont strippés pour permettre les paramètres relay.
+- **SPEC-13.1.4** Cache audio séparé : `dj-mix:audio-cache:v1`. Clé : `https://dj-mix.local/cache-audio/${safeKey}`.
+- **SPEC-13.1.5** Background Fetch : notification du nombre de succès/échecs.
+
+### 13.2 Installation
+
+- **SPEC-13.2.1** Installable via prompt Chrome/Edge (manifest PWA).
+- **SPEC-13.2.2** Packaging APK via Capacitor.
+
+### 13.3 Media Session API
+
+- **SPEC-13.3.1** Métadonnées exposées : `title`, `artist`, `album` (défaut "DJ Mix"), `artwork` (tableau `[{ src, sizes, type }]`).
+- **SPEC-13.3.2** GIVEN une artwork en `blob:` URL — THEN elle est convertie en data URI pour les notifications Android.
+- **SPEC-13.3.3** Actions enregistrées :
+  - `play` → resume deck ou lancement si pas de source
+  - `pause` → pause deck
+  - `seekto` → `player.seekTo(seekTime × 1000)`
+  - `nexttrack` → `autoMixBtn.click()`
+- **SPEC-13.3.4** Position mise à jour : à chaque événement progress (~300ms) + toutes les `30 s` via keepalive timer.
+
+### 13.4 Wake Lock
+
+- **SPEC-13.4.1** GIVEN un morceau en lecture — THEN `navigator.wakeLock.request('screen')` est appelé.
+- **SPEC-13.4.2** Un audio silencieux en boucle (WAV 1s, volume `0.001`) maintient la session active pendant les pauses.
+- **SPEC-13.4.3** Le wake lock est libéré sur pause (sauf keepalive actif).
+
+### 13.5 Android Auto
+
+- **SPEC-13.5.1** Shortcuts : `?automix=1` (Mix Auto), `?tab=playlists` (Playlists), `?tab=queue` (Queue).
+- **SPEC-13.5.2** Metadata push : `pushNowPlaying({ id, title, artist, album, artworkUrl, durationMs })`.
+- **SPEC-13.5.3** Playback state : `pushPlaybackState({ playing, positionMs, speed })`.
+- **SPEC-13.5.4** Queue push debounced `500 ms`.
+- **SPEC-13.5.5** Commandes média : `onMediaCommand(handler)` pour play/pause/next/seek. `getPendingMediaCommand()` pour cold-start.
+- **SPEC-13.5.6** Artwork blob → base64 data URI pour Android.
+
+### 13.6 Plein écran
+
+- **SPEC-13.6.1** `requestFullscreen({ navigationUI: 'hide' })` avec fallback webkit.
+- **SPEC-13.6.2** Auto-activation : tentative immédiate (Capacitor WebView), puis sur premier `pointerdown`.
+- **SPEC-13.6.3** Réactivation automatique sur événement `fullscreenchange`.
+
+---
+
+## 14. Interface utilisateur
+
+### 14.1 Onglets principaux
+
+- **Mix** : platines, crossfade slider, 18 raccourcis DJ FX, boutons AutoMix/AutoDJ.
+- **Fil Rouge** : playlist de fond avec contrôles shuffle/loop/DJ plan.
+- **Cache** : navigateur de morceaux téléchargés avec filtrage genre/année.
+- **Config** : 10+ sections de configuration.
+
+### 14.2 Rendu
+
+- **SPEC-14.2.1** Queue, playlists et Fil Rouge rendus dynamiquement via `uiRenderer`.
+- **SPEC-14.2.2** Drag-and-drop sur les éléments de la queue.
+- **SPEC-14.2.3** Notifications toast pour actions et erreurs.
+
+### 14.3 Localisation
+
+- **SPEC-14.3.1** L'interface est intégralement en français.
+
+---
+
+## 15. Monitoring et résilience
+
+### 15.1 Santé de l'API
+
+- **SPEC-15.1.1** `apiHealthMonitor` suit l'état online/offline. Les transitions déclenchent des callbacks.
+
+### 15.2 Logging
+
+- **SPEC-15.2.1** Logging structuré via `logger` : `debug`, `info`, `warn`. Contexte : module, action, données.
+- **SPEC-15.2.2** Mode debug activable via `dj-mix:logs:debug` dans `localStorage`.
+- **SPEC-15.2.3** Métriques loguées toutes les `60 000 ms` (`METRICS_LOG_INTERVAL_MS`).
+
+### 15.3 Tolérance aux pannes
+
+- **SPEC-15.3.1** Une panne API ne crash pas l'application. Les fonctionnalités dégradées sont signalées par toast.
+- **SPEC-15.3.2** Chaîne de fallback : API → Fil Rouge → arrêt gracieux.
+
+---
+
+## 16. Fingerprint et contrôle de boucle
+
+### 16.1 Fingerprint multi-champ
+
+- **SPEC-16.1.1** Le fingerprint d'un morceau comprend : `id`, `ratingKey`, `uri`, `name` (lowercase trim), `artist` (lowercase trim).
+- **SPEC-16.1.2** Objectif : empêcher les boucles infinies entre platines quand l'Auto DJ re-queue un morceau qui est encore sur l'autre deck.
+- **SPEC-16.1.3** GIVEN un morceau fini sur deck A — WHEN l'Auto DJ cherche le suivant — THEN le morceau encore sur deck B est exclu par match sur n'importe lequel des champs du fingerprint.
+
+### 16.2 Historique de lecture
+
+- **SPEC-16.2.1** `playHistory` stocke tous les variants d'ID du morceau joué : `[id, ratingKey, uri]` + combo `name+artist`.
+- **SPEC-16.2.2** Persisté dans `localStorage` sous `AUTO_MODE_HISTORY_KEY`.
+- **SPEC-16.2.3** `reset()` efface l'historique et le fingerprint courant.
+
+### 16.3 Affichage du morceau suivant
+
+- **SPEC-16.3.1** Le prochain morceau à jouer est affiché dans l'UI.
+- **SPEC-16.3.2** L'utilisateur peut accepter ou rejeter la suggestion.
+
+---
+
+## Architecture technique
+
+### Contraintes
+
+- Limite souple de 350 lignes par module.
+- Pattern factory pour les managers.
+- État centralisé via `uiState` (singleton).
+- Pas de framework front-end (vanilla JS + DOM).
+- Compatible ES2020+ (modules natifs).
+
+### Structure des données clés
+
+**Track / QueueItem :**
+```
+{ id, name, artist, duration, bpm, genre, loudnessDb,
+  artUrl, stems { vocal, instru },
+  persistedSourceUrl, downloadUrl, localBlobUrl,
+  queueSource, startOffsetMs, autoDjStartOffsetMs,
+  sourceState: 'idle' | 'downloading' | 'ready' | 'done' | 'error',
+  djTrackId, djHasAnalysis, djTransition,
+  ratingKey, uri }
+```
+
+**MixData (analyse waveform) :**
+```
+{ durationSec, probableSongStartSec,
+  peakZones[{ startSec, endSec, score, intensity }],
+  safeTransitionZones[{ startSec, endSec, score, reason }],
+  avoidTransitionZones[{ startSec, endSec, score, reason }],
+  dropZones[{ startSec, endSec, score }],
+  breakdownZones[{ startSec, endSec, score, reason }],
+  neverMissZones[{ startSec, endSec, neverMissScore, label, reason, source }],
+  outroZones[{ startSec, endSec }],
+  confidence: { transitions: 0–1 },
+  vocalPresenceProfile[{ timeSec, value }],
+  phraseGrid[timeSec] }
+```
+
+**RelayState :**
+```
+{ sessionId, pushedAt,
+  currentTrackId, currentIndex, isPlaying, activeDeck,
+  deckA: { trackId, positionMs, volume },
+  deckB: { trackId, positionMs, volume },
+  queue[{ id, name, artist, artUrl, duration, persistedSourceUrl, bpm, genre }],
+  filRouge[{ id, name, artist, artUrl, duration, persistedSourceUrl }],
+  transitionMode, crossfadeMs, djMode }
+```
+
+### Constantes globales
+
+```
+FFT_SIZE = 1024
+SMOOTH_TAU = 0.08
+SMOOTH_JS = 0.34
+ENERGY_EPSILON = 1e-4
+DISTORTION_K = 140
+ECHO_DELAY_S = 0.22
+ECHO_FEEDBACK = 0.28
+STEM_SYNC_INTERVAL_MS = 2500
+LOOP_CUE_REPEAT_COUNT = 3
+LOOP_CUE_INTERVAL_MS = 1500
+SEARCH_DEBOUNCE_MS = 600
+SEARCH_POLL_MAX_ATTEMPTS = 8
+SEARCH_POLL_BASE_DELAY_MS = 1500
+SEARCH_POLL_STEP_MS = 600
+SEARCH_POLL_CAP_MS = 5000
+SPOTIFY_FIL_ROUGE_POLL_MS = 120_000
+METRICS_LOG_INTERVAL_MS = 60_000
+IDLE_SCHEDULE_FALLBACK_MS = 80
+IDLE_SCHEDULE_TIMEOUT_MS = 2000
+MAX_SESSION_BLOB_CACHE_ENTRIES = 12
+LOW_MEMORY_PLAYBACK_MAX_RAM_MB = 3072
+MOBILE_TRANSITION_RAM_BUDGET_RATIO = 0.12
+```

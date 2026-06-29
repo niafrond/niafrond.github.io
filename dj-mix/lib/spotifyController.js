@@ -213,7 +213,6 @@ export function createSpotifyController(options) {
     for (const track of tracks) {
       setFilRougeTrackStatus(track, {
         downloadState: track?.cachePath || track?.persistedSourceUrl ? 'done' : 'idle',
-        stemsOk: hasStemsForTrack(track),
       });
       filRougeManager.addToPlaylist(track);
     }
@@ -240,7 +239,6 @@ export function createSpotifyController(options) {
       } else {
         setFilRougeTrackStatus(track, {
           downloadState: track?.cachePath || track?.persistedSourceUrl ? 'done' : 'idle',
-          stemsOk: hasStemsForTrack(track),
         });
         merged.push(track);
         newIds.push(id);
@@ -428,7 +426,7 @@ export function createSpotifyController(options) {
     filRougeManager.clearPriorityQueue();
     filRougeManager.clearPlaylist();
     for (const track of tracks) {
-      setFilRougeTrackStatus(track, { downloadState: 'idle', stemsOk: false });
+      setFilRougeTrackStatus(track, { downloadState: 'idle' });
       filRougeManager.addToPlaylist(track);
     }
     updateSpotifyConfigUi();
@@ -450,7 +448,7 @@ export function createSpotifyController(options) {
       if (spotifyPrefetchGeneration !== generation) return;
       const batch = tracks.slice(i, i + BATCH_SIZE);
       for (const track of batch) {
-        setFilRougeTrackStatus(track, { downloadState: 'downloading', stemsOk: hasStemsForTrack(track) });
+        setFilRougeTrackStatus(track, { downloadState: 'downloading' });
       }
       setTxtPlaylistStatus(`Téléchargement serveur TXT : ${i + 1}–${Math.min(i + BATCH_SIZE, tracks.length)} / ${tracks.length}…`);
       renderFilRouge();
@@ -463,11 +461,11 @@ export function createSpotifyController(options) {
           const ok = result.status === 'fulfilled' && result.value;
           if (ok) {
             cached++;
-            autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
-            setFilRougeTrackStatus(track, { downloadState: 'done', stemsOk: hasStemsForTrack(track) });
+            const mixData = await autoModeManager.fetchMixData(track.name, track.artist).catch(() => null);
+            setFilRougeTrackStatus(track, { downloadState: 'done', hasMixInfo: Boolean(mixData) });
           } else {
             failed++;
-            setFilRougeTrackStatus(track, { downloadState: 'error', stemsOk: hasStemsForTrack(track) });
+            setFilRougeTrackStatus(track, { downloadState: 'error' });
           }
           if (typeof fetchArtwork === 'function') {
             await fetchArtwork(track).catch(() => {});

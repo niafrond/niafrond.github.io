@@ -90,10 +90,10 @@ export function createFilRougeController(options) {
   function getFilRougeTrackStatus(item) {
     const key = getFilRougeTrackKey(item);
     const stored = key ? filRougeTrackStatusByKey.get(key) : null;
-    const stemsOk = hasStemsForTrack(item) || Boolean(stored?.stemsOk);
     const inferredDone = Boolean(item?.cachePath || item?.persistedSourceUrl);
     const downloadState = stored?.downloadState || (inferredDone ? 'done' : 'idle');
-    return { downloadState, stemsOk };
+    const hasMixInfo = Boolean(stored?.hasMixInfo);
+    return { downloadState, hasMixInfo };
   }
 
   // ── Transition time formatter (used in indicator HTML) ────────────────────────
@@ -381,7 +381,6 @@ export function createFilRougeController(options) {
     if (added) {
       setFilRougeTrackStatus(filRougeItem, {
         downloadState: filRougeItem.cachePath || filRougeItem.persistedSourceUrl ? 'done' : 'idle',
-        stemsOk: hasStemsForTrack(filRougeItem),
       });
       showToast(`"${filRougeItem.name}" ajouté au fil rouge`);
       const playlistItem = filRougeManager.getPlaylist().find((p) => p.id === filRougeItem.id);
@@ -464,8 +463,8 @@ export function createFilRougeController(options) {
             : status.downloadState === 'done' ? 'is-done'
             : status.downloadState === 'error' ? 'is-error'
             : 'is-idle';
-          const stemsLabel = status.stemsOk ? 'Stems OK' : 'Stems --';
-          const stemsClass = status.stemsOk ? 'is-done' : 'is-idle';
+          const mixInfoLabel = status.hasMixInfo ? 'Mix info ✓' : 'Mix info --';
+          const mixInfoClass = status.hasMixInfo ? 'is-done' : 'is-idle';
           return `
           <div class="filrouge-item${idx === filRougeIndex ? ' filrouge-current' : ''}" data-index="${idx}">
             <img class="filrouge-art"${item.artUrl ? ` src="${escHtml(item.artUrl)}"` : ' hidden'} alt="" loading="lazy" onerror="this.hidden=true">
@@ -477,7 +476,7 @@ export function createFilRougeController(options) {
                 ${buildFilRougeDanceChips(item)}
                 <div class="filrouge-statuses">
                   <span class="filrouge-status ${downloadClass}">${downloadLabel}</span>
-                  <span class="filrouge-status ${stemsClass}">${stemsLabel}</span>
+                  <span class="filrouge-status ${mixInfoClass}">${mixInfoLabel}</span>
                 </div>
               </div>
             </div>

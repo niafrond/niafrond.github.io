@@ -80,7 +80,7 @@ export default {
     {
       displayName: 'dj-mix-jsdom',
       testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/dj-mix/tests/unit/*.test.js'],
+      testMatch: ['<rootDir>/dj-mix/tests/unit/**/*.test.js'],
       transform: {},
     },
     // ── Mix Blind Test : logique de pairing/cache (node) ─────────────────────

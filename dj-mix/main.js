@@ -1341,12 +1341,13 @@ function setFilRougeTrackStatus(item, patch = {}) {
 function getFilRougeTrackStatus(item) {
   const key = getFilRougeTrackKey(item);
   const stored = key ? filRougeTrackStatusByKey.get(key) : null;
-  const stemsOk = hasStemsForTrack(item) || Boolean(stored?.stemsOk);
   const inferredDone = Boolean(item?.cachePath || item?.persistedSourceUrl);
   const downloadState = stored?.downloadState || (inferredDone ? 'done' : 'idle');
+  const meta = getStoredTrackMeta(item?.name, item?.artist);
+  const hasMixInfo = Boolean(stored?.hasMixInfo) || Boolean(meta?.mixData);
   return {
     downloadState,
-    stemsOk,
+    hasMixInfo,
   };
 }
 
@@ -1438,8 +1439,8 @@ function renderFilRouge() {
               : status.downloadState === 'error'
                 ? 'is-error'
                 : 'is-idle';
-          const stemsLabel = status.stemsOk ? 'Stems OK' : 'Stems --';
-          const stemsClass = status.stemsOk ? 'is-done' : 'is-idle';
+          const mixInfoLabel = status.hasMixInfo ? 'Mix info ✓' : 'Mix info --';
+          const mixInfoClass = status.hasMixInfo ? 'is-done' : 'is-idle';
           return `
         <div class="filrouge-item${idx === filRougeIndex ? ' filrouge-current' : ''}" data-index="${idx}">
           <img class="filrouge-art"${item.artUrl ? ` src="${escHtml(item.artUrl)}"` : ' hidden'} alt="" loading="lazy" onerror="this.hidden=true">
@@ -1451,7 +1452,7 @@ function renderFilRouge() {
               ${buildFilRougeDanceChips(item)}
               <div class="filrouge-statuses">
                 <span class="filrouge-status ${downloadClass}">${downloadLabel}</span>
-                <span class="filrouge-status ${stemsClass}">${stemsLabel}</span>
+                <span class="filrouge-status ${mixInfoClass}">${mixInfoLabel}</span>
               </div>
             </div>
           </div>
@@ -1671,7 +1672,6 @@ function applySpotifyPlaylistToFilRouge(tracks) {
   for (const track of tracks) {
     setFilRougeTrackStatus(track, {
       downloadState: track?.cachePath || track?.persistedSourceUrl ? 'done' : 'idle',
-      stemsOk: hasStemsForTrack(track),
     });
     filRougeManager.addToPlaylist(track);
   }
@@ -1740,7 +1740,6 @@ function applyTxtPlaylistToFilRouge(tracks) {
   for (const track of tracks) {
     setFilRougeTrackStatus(track, {
       downloadState: 'idle',
-      stemsOk: false,
     });
     filRougeManager.addToPlaylist(track);
   }
@@ -1876,7 +1875,7 @@ async function startTxtPlaylistPrefetch(tracks) {
     if (spotifyPrefetchGeneration !== generation) return;
     const batch = tracks.slice(i, i + BATCH_SIZE);
     for (const track of batch) {
-      setFilRougeTrackStatus(track, { downloadState: 'downloading', stemsOk: hasStemsForTrack(track) });
+      setFilRougeTrackStatus(track, { downloadState: 'downloading' });
     }
     setTxtPlaylistStatus(`Téléchargement serveur TXT : ${i + 1}–${Math.min(i + BATCH_SIZE, tracks.length)} / ${tracks.length}…`);
     renderFilRouge();
@@ -1889,11 +1888,11 @@ async function startTxtPlaylistPrefetch(tracks) {
         const ok = result.status === 'fulfilled' && result.value;
         if (ok) {
           cached++;
-          autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
-          setFilRougeTrackStatus(track, { downloadState: 'done', stemsOk: hasStemsForTrack(track) });
+          const mixData = await autoModeManager.fetchMixData(track.name, track.artist).catch(() => null);
+          setFilRougeTrackStatus(track, { downloadState: 'done', hasMixInfo: Boolean(mixData) });
         } else {
           failed++;
-          setFilRougeTrackStatus(track, { downloadState: 'error', stemsOk: hasStemsForTrack(track) });
+          setFilRougeTrackStatus(track, { downloadState: 'error' });
         }
         await fetchFilRougeArtwork(track).catch(() => {});
       })
@@ -2007,7 +2006,6 @@ function mergeSpotifyTracksToFilRouge(freshTracks) {
       // Nouveau morceau ajouté sur Spotify
       setFilRougeTrackStatus(track, {
         downloadState: track?.cachePath || track?.persistedSourceUrl ? 'done' : 'idle',
-        stemsOk: hasStemsForTrack(track),
       });
       merged.push(track);
       newIds.push(id);
@@ -2174,7 +2172,6 @@ function addToFilRouge(item) {
   if (added) {
     setFilRougeTrackStatus(filRougeItem, {
       downloadState: filRougeItem.cachePath || filRougeItem.persistedSourceUrl ? 'done' : 'idle',
-      stemsOk: hasStemsForTrack(filRougeItem),
     });
     showToast(`"${filRougeItem.name}" ajouté au fil rouge`);
 
@@ -2570,10 +2567,10 @@ async function startFilRougeStartupCacheSync() {
   for (const track of playlist) {
     const inCache = await isTrackInLocalCache(track).catch(() => false);
     if (inCache) {
-      autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
+      const mixData = await autoModeManager.fetchMixData(track.name, track.artist).catch(() => null);
       setFilRougeTrackStatus(track, {
         downloadState: 'done',
-        stemsOk: hasStemsForTrack(track),
+        hasMixInfo: Boolean(mixData),
       });
     }
   }
@@ -2589,7 +2586,7 @@ async function startFilRougeStartupCacheSync() {
   for (let i = 0; i < toDownload.length; i += BATCH_SIZE) {
     const batch = toDownload.slice(i, i + BATCH_SIZE);
     for (const track of batch) {
-      setFilRougeTrackStatus(track, { downloadState: 'downloading', stemsOk: hasStemsForTrack(track) });
+      setFilRougeTrackStatus(track, { downloadState: 'downloading' });
     }
     renderFilRouge();
     const batchResults = await Promise.allSettled(
@@ -2599,10 +2596,10 @@ async function startFilRougeStartupCacheSync() {
       const track = batch[j];
       const ok = batchResults[j].status === 'fulfilled' && batchResults[j].value;
       if (ok) {
-        autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
-        setFilRougeTrackStatus(track, { downloadState: 'done', stemsOk: hasStemsForTrack(track) });
+        const mixData = await autoModeManager.fetchMixData(track.name, track.artist).catch(() => null);
+        setFilRougeTrackStatus(track, { downloadState: 'done', hasMixInfo: Boolean(mixData) });
       } else {
-        setFilRougeTrackStatus(track, { downloadState: 'error', stemsOk: hasStemsForTrack(track) });
+        setFilRougeTrackStatus(track, { downloadState: 'error' });
       }
     }
     renderFilRouge();
@@ -2911,6 +2908,32 @@ function resolveMixDataStartOffsetMs(mixData) {
           : (probableStartSec ?? 0);
       if (targetSec > 0) {
         recommendedSec = Math.max(recommendedSec, targetSec);
+      }
+    }
+  }
+
+  // Empty intro detection: if no breakdown/drop/peak/avoidTransition zone starts
+  // before 15s, skip to the first such zone.
+  const EMPTY_INTRO_THRESHOLD_SEC = 15;
+  const allSignificantZones = [
+    ...(Array.isArray(mixData.breakdownZones) ? mixData.breakdownZones : []),
+    ...(Array.isArray(mixData.dropZones) ? mixData.dropZones : []),
+    ...(Array.isArray(mixData.peakZones) ? mixData.peakZones : []),
+    ...(Array.isArray(mixData.avoidTransitionZones) ? mixData.avoidTransitionZones : []),
+  ]
+    .filter((z) => Number.isFinite(Number(z?.startSec)) && Number(z.startSec) > 0)
+    .sort((a, b) => Number(a.startSec) - Number(b.startSec));
+
+  if (allSignificantZones.length > 0) {
+    const firstZoneStartSec = Number(allSignificantZones[0].startSec);
+    const hasZoneBeforeThreshold = allSignificantZones.some(
+      (z) => Number(z.startSec) < EMPTY_INTRO_THRESHOLD_SEC,
+    );
+    if (!hasZoneBeforeThreshold) {
+      const durationSec = toFiniteNumber(mixData.durationSec);
+      const safeLimit = durationSec != null && durationSec > 30 ? durationSec - 30 : Infinity;
+      if (firstZoneStartSec <= safeLimit) {
+        recommendedSec = Math.max(recommendedSec, firstZoneStartSec);
       }
     }
   }
@@ -4029,89 +4052,6 @@ function hookPlayerEvents() {
       }
     });
 }
-
-// ── Dead-air watchdog ───────────────────────────────────────────────────────
-// Prevents silence when a track is loaded but playback stalls (source ready
-// but audio.play() never called, crossfade flag stuck, etc.).
-let _deadAirSinceMs = 0;
-let _deadAirRecoveryInProgress = false;
-const DEAD_AIR_GRACE_MS = 2000;
-
-setInterval(() => {
-  if (!player || !player.isReady) return;
-  if (player.isCrossfading) { _deadAirSinceMs = 0; return; }
-  if (relayModeManager.getRole() === 'relay') { _deadAirSinceMs = 0; return; }
-
-  const isAutoDj = autoModeManager.isAutoModeEnabled();
-  const isMaster = relayModeManager.getRole() === 'master';
-  if (!isAutoDj && !isMaster) { _deadAirSinceMs = 0; return; }
-
-  if (queue.length === 0 && !filRougeManager.isActive()) { _deadAirSinceMs = 0; return; }
-
-  const ds = uiState.lastDeckState;
-  const deckAPlaying = ds?.deckA?.playing === true;
-  const deckBPlaying = ds?.deckB?.playing === true;
-  if (deckAPlaying || deckBPlaying) { _deadAirSinceMs = 0; return; }
-
-  const now = Date.now();
-  if (_deadAirSinceMs === 0) { _deadAirSinceMs = now; return; }
-  if (now - _deadAirSinceMs < DEAD_AIR_GRACE_MS) return;
-  if (_deadAirRecoveryInProgress) return;
-
-  _deadAirRecoveryInProgress = true;
-  _deadAirSinceMs = 0;
-
-  logWarn('deadAirWatchdog: silence detected, attempting recovery', {
-    currentIndex: uiState.currentIndex,
-    queueLength: queue.length,
-    isAutoDj,
-    isMaster,
-  });
-
-  (async () => {
-    try {
-      const hasNext = getFollowingQueueIndex(uiState.currentIndex) >= 0;
-      if (hasNext) {
-        const nextIdx = getFollowingQueueIndex(uiState.currentIndex);
-        await startPlaybackForIndex(nextIdx, 'play');
-        logInfo('deadAirWatchdog: recovered via next track', { nextIdx });
-        return;
-      }
-
-      const currentItem = queue[uiState.currentIndex];
-      if (currentItem) {
-        await startPlaybackForIndex(uiState.currentIndex, 'play');
-        logInfo('deadAirWatchdog: recovered via current track replay', { index: uiState.currentIndex });
-        return;
-      }
-
-      if (filRougeManager.isActive()) {
-        autoMixBtn?.click?.();
-        logInfo('deadAirWatchdog: recovered via fil rouge fallback');
-        return;
-      }
-
-      if (isAutoDj) {
-        const searched = await autoModeManager.searchAndAddNextTrack(
-          currentItem || { id: 'watchdog-recovery', name: '' },
-          { force: true },
-        );
-        if (searched) {
-          await new Promise((r) => setTimeout(r, 500));
-          const nextAfterSearch = getFollowingQueueIndex(uiState.currentIndex);
-          if (nextAfterSearch >= 0) {
-            await startPlaybackForIndex(nextAfterSearch, 'play');
-            logInfo('deadAirWatchdog: recovered via autodj search', { nextAfterSearch });
-          }
-        }
-      }
-    } catch (err) {
-      logError('deadAirWatchdog: recovery failed', { error: err?.message });
-    } finally {
-      _deadAirRecoveryInProgress = false;
-    }
-  })();
-}, 1000);
 
 autoMixBtn?.addEventListener('click', async () => {
   if (!player || player.isCrossfading) return;
