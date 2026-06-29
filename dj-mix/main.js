@@ -2468,12 +2468,23 @@ if (djRecalculateBtn) {
     try {
       const currentIndex = filRougeManager.getCurrentIndex();
       const playlist = filRougeManager.getPlaylist();
+      let result = { ok: false, reason: 'no-track' };
       if (currentIndex >= 0 && currentIndex < playlist.length) {
-        await djPlanManager.planCurrentToNextTransition(playlist[currentIndex]);
+        result = await djPlanManager.planCurrentToNextTransition(playlist[currentIndex], { force: true });
       }
       updateDjPlanIndicator();
       renderFilRouge();
-      showToast('Transition recalculée');
+      if (result.ok) {
+        showToast('Transition recalculée');
+      } else if (result.reason === 'last-track') {
+        showToast('Dernier morceau : pas de transition suivante', true);
+      } else if (result.reason === 'unresolved-tracks') {
+        showToast('Morceaux non reconnus par le DJ Planner', true);
+      } else if (result.reason === 'api-error') {
+        showToast('Erreur API lors du calcul de transition', true);
+      } else {
+        showToast('Impossible de calculer la transition', true);
+      }
     } catch (err) {
       showToast('Recalcul : échec', true);
     } finally {

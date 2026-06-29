@@ -471,6 +471,14 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-8.4.1** GIVEN un DJ Plan avec `crossfadeDurationSec > 0` — THEN un marqueur `.dj-plan-marker` est affiché sur la timeline.
 - **SPEC-8.4.2** Titre du marqueur : `"DJ Plan: crossfade ${seconds}s${transitionLabel} · score ${scorePct}%${nextName}"`.
 
+### 8.5 Recalcul de transition (bouton Recalculer)
+
+- **SPEC-8.5.1** `planCurrentToNextTransition(item, {force})` retourne `{ok: boolean, reason?: string}` indiquant si la transition a été calculée.
+- **SPEC-8.5.2** Raisons d'échec possibles : `'no-context'`, `'not-in-playlist'`, `'last-track'`, `'unresolved-tracks'`, `'missing-analysis'`, `'api-error'`.
+- **SPEC-8.5.3** GIVEN `force=true` — WHEN `djHasAnalysis` est `false` pour un ou les deux morceaux — THEN la contrainte `djHasAnalysis` est ignorée et l'appel API `/api/dj/transition` est tenté quand même.
+- **SPEC-8.5.4** GIVEN `force=true` ET `djTrackId` est `null` après résolution — THEN un re-scan des track summaries est forcé (`ensureTrackSummaries({force:true})`) avant un second essai de résolution.
+- **SPEC-8.5.5** GIVEN le bouton Recalculer cliqué — WHEN le calcul échoue — THEN un toast d'erreur spécifique à la raison est affiché (et non un toast de succès trompeur).
+
 ---
 
 ## 9. Mode Relais (Master / Relay)

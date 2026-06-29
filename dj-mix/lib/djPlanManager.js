@@ -504,24 +504,35 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
    * Computes the transition from a current item to its successor in the playlist,
    * called by the "recalculate" action. Forces fresh computation regardless of memoization.
    * @param {object} currentItem - the currently playing item
-   * @returns {Promise<void>}
+   * @param {{force?: boolean}} [options] - force=true relaxes djHasAnalysis guard and retries track resolution
+   * @returns {Promise<{ok: boolean, reason?: string}>}
    */
-  async function planCurrentToNextTransition(currentItem) {
+  async function planCurrentToNextTransition(currentItem, { force = false } = {}) {
     const fr = filRouge();
-    if (!fr || !currentItem) return;
+    if (!fr || !currentItem) return { ok: false, reason: 'no-context' };
 
     const playlist = fr.getPlaylist();
     const currentIdx = playlist.findIndex((p) => p.id === currentItem.id);
-    if (currentIdx === -1 || currentIdx >= playlist.length - 1) return;
+    if (currentIdx === -1) return { ok: false, reason: 'not-in-playlist' };
+    if (currentIdx >= playlist.length - 1) return { ok: false, reason: 'last-track' };
 
     const nextItem = playlist[currentIdx + 1];
-    if (!nextItem) return;
+    if (!nextItem) return { ok: false, reason: 'last-track' };
 
     await resolveTrackIdsForItems([currentItem, nextItem]);
 
-    if (!currentItem.djTrackId || !nextItem.djTrackId
-        || !currentItem.djHasAnalysis || !nextItem.djHasAnalysis) {
-      return;
+    if (!currentItem.djTrackId || !nextItem.djTrackId) {
+      if (force) {
+        await ensureTrackSummaries({ force: true });
+        await resolveTrackIdsForItems([currentItem, nextItem]);
+      }
+      if (!currentItem.djTrackId || !nextItem.djTrackId) {
+        return { ok: false, reason: 'unresolved-tracks' };
+      }
+    }
+
+    if (!force && (!currentItem.djHasAnalysis || !nextItem.djHasAnalysis)) {
+      return { ok: false, reason: 'missing-analysis' };
     }
 
     const maxDur = getTrackMaxDurationAppliedSec?.() || 0;
@@ -530,7 +541,7 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
       nextItem.djTrackId,
       maxDur > 0 ? { maxTrackDurationSec: maxDur } : undefined,
     );
-    if (!result) return;
+    if (!result) return { ok: false, reason: 'api-error' };
 
     if (!Number.isFinite(result.mixOutSec) || !Number.isFinite(result.mixInSec)) {
       logger?.warn('djPlanManager.planCurrentToNextTransition: mixOutSec/mixInSec manquants', {
@@ -555,6 +566,8 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
         computedAt: Date.now(),
       },
     });
+
+    return { ok: true };
   }
 
   /**

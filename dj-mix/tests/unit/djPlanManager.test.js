@@ -721,6 +721,136 @@ describe('djPlanManager', () => {
     });
   });
 
+  describe('planCurrentToNextTransition', () => {
+    test('returns {ok:false, reason:"last-track"} when current item is last', async () => {
+      const itemA = { id: '1', name: 'A', artist: 'X', djTrackId: 'a.mp3', djHasAnalysis: true };
+      const fr = makeFakeFilRouge([itemA]);
+      const djApiClient = makeDjApiClient();
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
+
+      const result = await mgr.planCurrentToNextTransition(itemA);
+
+      expect(result).toEqual({ ok: false, reason: 'last-track' });
+      expect(djApiClient.fetchTransition).not.toHaveBeenCalled();
+    });
+
+    test('returns {ok:false, reason:"unresolved-tracks"} when tracks cannot be resolved', async () => {
+      const itemA = { id: '1', name: 'A', artist: 'X', djTrackId: null, djHasAnalysis: false };
+      const itemB = { id: '2', name: 'B', artist: 'Y', djTrackId: null, djHasAnalysis: false };
+      const fr = makeFakeFilRouge([itemA, itemB]);
+      const djApiClient = makeDjApiClient({ fetchTracks: jest.fn().mockResolvedValue([]) });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
+
+      const result = await mgr.planCurrentToNextTransition(itemA, { force: true });
+
+      expect(result).toEqual({ ok: false, reason: 'unresolved-tracks' });
+    });
+
+    test('returns {ok:false, reason:"missing-analysis"} when djHasAnalysis is false and force is off', async () => {
+      const trackSummaries = [
+        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: false },
+        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: false },
+      ];
+      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
+      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false };
+      const fr = makeFakeFilRouge([itemA, itemB]);
+      const djApiClient = makeDjApiClient({ fetchTracks: jest.fn().mockResolvedValue(trackSummaries) });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
+
+      const result = await mgr.planCurrentToNextTransition(itemA);
+
+      expect(result).toEqual({ ok: false, reason: 'missing-analysis' });
+      expect(djApiClient.fetchTransition).not.toHaveBeenCalled();
+    });
+
+    test('force=true bypasses djHasAnalysis guard and calls API', async () => {
+      const trackSummaries = [
+        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: false },
+        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: false },
+      ];
+      const transitionResult = {
+        transitionType: 'phrase_mix',
+        mixOutSec: 120,
+        mixInSec: 5,
+        recommendedBpm: 128,
+        crossfadeDurationSec: 8,
+        compatibilityScore: 0.85,
+        decisionId: 'd1',
+      };
+      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
+      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false };
+      const fr = makeFakeFilRouge([itemA, itemB]);
+      const djApiClient = makeDjApiClient({
+        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
+        fetchTransition: jest.fn().mockResolvedValue(transitionResult),
+      });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
+
+      const result = await mgr.planCurrentToNextTransition(itemA, { force: true });
+
+      expect(result).toEqual({ ok: true });
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3', undefined);
+      expect(itemA.djTransition).toMatchObject({
+        toItemId: '2',
+        transitionType: 'phrase_mix',
+        mixOutSec: 120,
+        mixInSec: 5,
+      });
+    });
+
+    test('returns {ok:false, reason:"api-error"} when fetchTransition returns null', async () => {
+      const trackSummaries = [
+        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
+        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
+      ];
+      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
+      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false };
+      const fr = makeFakeFilRouge([itemA, itemB]);
+      const djApiClient = makeDjApiClient({
+        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
+        fetchTransition: jest.fn().mockResolvedValue(null),
+      });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
+
+      const result = await mgr.planCurrentToNextTransition(itemA);
+
+      expect(result).toEqual({ ok: false, reason: 'api-error' });
+    });
+
+    test('force=true retries track summaries when initial resolution fails', async () => {
+      const trackSummaries = [
+        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
+        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
+      ];
+      const transitionResult = {
+        transitionType: 'quick_cut',
+        mixOutSec: 60,
+        mixInSec: 2,
+        recommendedBpm: 130,
+        crossfadeDurationSec: 3,
+        compatibilityScore: 0.7,
+        decisionId: 'd2',
+      };
+      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
+      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false };
+      const fr = makeFakeFilRouge([itemA, itemB]);
+      let fetchTracksCallCount = 0;
+      const djApiClient = makeDjApiClient({
+        fetchTracks: jest.fn(() => {
+          fetchTracksCallCount++;
+          return Promise.resolve(fetchTracksCallCount >= 2 ? trackSummaries : []);
+        }),
+        fetchTransition: jest.fn().mockResolvedValue(transitionResult),
+      });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
+
+      const result = await mgr.planCurrentToNextTransition(itemA, { force: true });
+
+      expect(result).toEqual({ ok: true });
+      expect(fetchTracksCallCount).toBe(2);
+    });
+  });
+
   describe('submitFeedback', () => {
     test('passes through to djApiClient.sendFeedback', async () => {
       const djApiClient = makeDjApiClient({ sendFeedback: jest.fn().mockResolvedValue({ ok: true }) });
