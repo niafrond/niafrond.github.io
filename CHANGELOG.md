@@ -1,3 +1,11 @@
+## [1.237.0](https://github.com/niafrond/niafrond.github.io/compare/v1.236.0...v1.237.0) (2026-06-29)
+
+### Features
+
+* add track time display and improve caching logic for downloads ([6d849f8](https://github.com/niafrond/niafrond.github.io/commit/6d849f8f2019d13636397cddb8ccc9660376dd4f))
+* Add unit tests for Fil Rouge, Search, Auto DJ, Auto FX, and Mix Features ([7831f5f](https://github.com/niafrond/niafrond.github.io/commit/7831f5f8a77611c13397ffe73f30fd5cbb94cb40))
+* enhance transition recalculation logic and add error handling ([4356868](https://github.com/niafrond/niafrond.github.io/commit/4356868e1d13cc29cae0ee598ef2183983f870f0))
+
 ## [1.236.0](https://github.com/niafrond/niafrond.github.io/compare/v1.235.0...v1.236.0) (2026-06-26)
 
 ### Features
