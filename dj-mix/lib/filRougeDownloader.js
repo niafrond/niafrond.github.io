@@ -1,17 +1,21 @@
 /**
  * @param {object} opts
  * @param {(item: object) => Promise<boolean>} opts.prefetchTrackToLocalCache
+ * @param {(item: object) => Promise<boolean>} opts.isTrackInLocalCache
  * @param {(item: object, patch: object) => void} opts.setFilRougeTrackStatus
  * @param {(item: object) => {downloadState: string}} opts.getFilRougeTrackStatus
  * @param {() => void} opts.renderFilRouge
+ * @param {(item: object) => void} opts.renderTrackStatus
  * @param {(msg: string, isError?: boolean) => void} opts.showToast
  * @param {(done: number, inProgress: number, total: number) => void} [opts.onProgress]
  */
 export function createFilRougeDownloader({
   prefetchTrackToLocalCache,
+  isTrackInLocalCache,
   setFilRougeTrackStatus,
   getFilRougeTrackStatus,
   renderFilRouge,
+  renderTrackStatus,
   showToast,
   onProgress,
 }) {
@@ -55,14 +59,32 @@ export function createFilRougeDownloader({
    * @param {object[]} tracks
    */
   async function downloadAll(tracks) {
-    const pending = tracks.filter(t => {
+    const candidates = tracks.filter(t => {
       if (!t?.name || !t?.artist) return false;
       const { downloadState } = getFilRougeTrackStatus(t);
       return downloadState !== 'done' && downloadState !== 'downloading';
     });
 
-    if (!pending.length) {
+    if (!candidates.length) {
       showToast('Tous les morceaux sont déjà téléchargés');
+      return;
+    }
+
+    const pending = [];
+    let alreadyCached = 0;
+    for (const track of candidates) {
+      const inCache = await isTrackInLocalCache(track).catch(() => false);
+      if (inCache) {
+        alreadyCached++;
+        setFilRougeTrackStatus(track, { downloadState: 'done' });
+      } else {
+        pending.push(track);
+      }
+    }
+    if (alreadyCached > 0) renderFilRouge();
+
+    if (!pending.length) {
+      showToast(`Tous les morceaux sont déjà en cache (${alreadyCached} retrouvé${alreadyCached > 1 ? 's' : ''})`);
       return;
     }
 
@@ -78,7 +100,7 @@ export function createFilRougeDownloader({
 
     for (const track of pending) {
       setFilRougeTrackStatus(track, { downloadState: 'downloading' });
-      renderFilRouge();
+      renderTrackStatus(track);
       onProgress?.(done, 1, total);
 
       console.debug('[downloadAll] prefetch start', { artist: track.artist, name: track.name });
@@ -98,7 +120,7 @@ export function createFilRougeDownloader({
         setFilRougeTrackStatus(track, { downloadState: 'error' });
       }
       onProgress?.(done, 0, total);
-      renderFilRouge();
+      renderTrackStatus(track);
 
       if ((done + failed) % 5 === 0 && (done + failed) < total) {
         await showSwNotif(

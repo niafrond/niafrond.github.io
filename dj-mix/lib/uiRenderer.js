@@ -11,6 +11,8 @@ export function createDjMixRenderer(options) {
     deckBVol,
     deckAFill,
     deckBFill,
+    deckATime,
+    deckBTime,
     deckATitle,
     deckBTitle,
     deckABpm,
@@ -63,8 +65,8 @@ export function createDjMixRenderer(options) {
 
   // Tracks last-rendered deck state to skip writes when nothing changed
   const lastRenderedDeckState = {
-    A: { playing: undefined, volPct: undefined, fillPct: undefined, rateHidden: undefined },
-    B: { playing: undefined, volPct: undefined, fillPct: undefined, rateHidden: undefined },
+    A: { playing: undefined, volPct: undefined, fillPct: undefined, rateHidden: undefined, timeText: undefined },
+    B: { playing: undefined, volPct: undefined, fillPct: undefined, rateHidden: undefined, timeText: undefined },
   };
 
   function composeDeckMeta(title, artist) {
@@ -371,6 +373,25 @@ export function createDjMixRenderer(options) {
       if (lastRenderedDeckState.B.fillPct !== pctBRounded) {
         deckBFill.style.width = `${pctBRounded}%`;
         lastRenderedDeckState.B.fillPct = pctBRounded;
+      }
+    }
+
+    if (deckATime) {
+      const timeA = detail.deckA?.durationMs > 0
+        ? `${formatTime(detail.deckA.positionMs)} / ${formatTime(detail.deckA.durationMs)}`
+        : '';
+      if (lastRenderedDeckState.A.timeText !== timeA) {
+        deckATime.textContent = timeA;
+        lastRenderedDeckState.A.timeText = timeA;
+      }
+    }
+    if (deckBTime) {
+      const timeB = detail.deckB?.durationMs > 0
+        ? `${formatTime(detail.deckB.positionMs)} / ${formatTime(detail.deckB.durationMs)}`
+        : '';
+      if (lastRenderedDeckState.B.timeText !== timeB) {
+        deckBTime.textContent = timeB;
+        lastRenderedDeckState.B.timeText = timeB;
       }
     }
   }

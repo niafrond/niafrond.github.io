@@ -631,7 +631,15 @@ export function createAudioSourceManager(options) {
     }
 
     // Check in-memory session cache before any network probes
-    const cachedSource = sessionBlobCache.get(cacheKey);
+    let cachedSource = sessionBlobCache.get(cacheKey);
+    if (!cachedSource) {
+      const fbArtist = String(item.artist || '').trim().toLowerCase();
+      const fbName = String(item.name || item.title || '').trim().toLowerCase();
+      if (fbArtist && fbName) {
+        const fallbackKey = `${fbArtist}::${fbName}`;
+        if (fallbackKey !== cacheKey) cachedSource = sessionBlobCache.get(fallbackKey);
+      }
+    }
     if (cachedSource) {
       item.localBlobUrl = typeof cachedSource === 'string' ? cachedSource : cachedSource.url;
       if (Number.isFinite(cachedSource?.loudnessDb)) {
@@ -655,7 +663,20 @@ export function createAudioSourceManager(options) {
     }
 
     // Check persistent Cache Storage before any network probes
-    const persistedBlobUrl = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName);
+    let persistedBlobUrl = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName);
+    // Fallback: try artist::name key (covers mismatch between queue items
+    // whose id was synthesized by addToQueue and tracks downloaded under
+    // the artist::name cache key by prefetchTrackToLocalCache)
+    if (!persistedBlobUrl) {
+      const fbArtist = String(item.artist || '').trim().toLowerCase();
+      const fbName = String(item.name || item.title || '').trim().toLowerCase();
+      if (fbArtist && fbName) {
+        const fallbackKey = `${fbArtist}::${fbName}`;
+        if (fallbackKey !== cacheKey) {
+          persistedBlobUrl = await restorePersistedAudioBlobUrl(fallbackKey, audioCacheName);
+        }
+      }
+    }
     if (persistedBlobUrl) {
       item.localBlobUrl = persistedBlobUrl;
       sessionBlobCache.set(cacheKey, {
@@ -1128,10 +1149,21 @@ export function createAudioSourceManager(options) {
     if (!item?.name || !item?.artist) return false;
     const cacheKey = getTrackCacheKey(item);
     if (sessionBlobCache.has(cacheKey)) return true;
+    const fbArtist = String(item.artist || '').trim().toLowerCase();
+    const fbName = String(item.name || item.title || '').trim().toLowerCase();
+    const fallbackKey = (fbArtist && fbName) ? `${fbArtist}::${fbName}` : '';
+    if (fallbackKey && fallbackKey !== cacheKey && sessionBlobCache.has(fallbackKey)) return true;
     const persisted = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName).catch(() => null);
     if (persisted) {
       URL.revokeObjectURL(persisted);
       return true;
+    }
+    if (fallbackKey && fallbackKey !== cacheKey) {
+      const fallbackPersisted = await restorePersistedAudioBlobUrl(fallbackKey, audioCacheName).catch(() => null);
+      if (fallbackPersisted) {
+        URL.revokeObjectURL(fallbackPersisted);
+        return true;
+      }
     }
     return false;
   }

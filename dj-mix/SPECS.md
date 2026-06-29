@@ -214,8 +214,9 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-3.4.1** Téléchargement par batch de `3` morceaux en parallèle.
 - **SPEC-3.4.2** Chaque morceau passe par les états : `idle` → `downloading` → `done` | `error`.
 - **SPEC-3.4.3** L'artwork est récupéré après le téléchargement audio si disponible.
-- **SPEC-3.4.4** Le progrès est rendu après chaque batch.
+- **SPEC-3.4.4** Pendant les téléchargements, seuls les badges de statut du morceau concerné sont mis à jour dans le DOM (`renderFilRougeTrackStatus`). Le rebuild complet de la liste (`renderFilRouge`) n'est déclenché que pour les changements structurels (ajout/suppression de morceaux, fin de la phase de vérification du cache).
 - **SPEC-3.4.5** Le téléchargement ne bloque pas la lecture en cours.
+- **SPEC-3.4.6** GIVEN un morceau déjà présent dans le Cache Storage local (vérifié via `isTrackInLocalCache`) — WHEN un téléchargement de masse est lancé (Tout télécharger, import TXT, import Spotify) — THEN le morceau est marqué `done` directement sans re-téléchargement. Le compteur de progrès ne compte que les morceaux réellement à télécharger.
 
 ### 3.5 Indicateurs de statut par morceau
 
@@ -570,6 +571,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-11.3.1** Cache persistant : clé `https://dj-mix.local/cache-audio/${encodeURIComponent(cacheKey)}` dans `caches.open(audioCacheName)`.
 - **SPEC-11.3.2** Cache session (in-memory Map) : max `12` entrées (`MAX_SESSION_BLOB_CACHE_ENTRIES`). Éviction FIFO.
 - **SPEC-11.3.3** `releaseLocalBlob()` appelle `URL.revokeObjectURL()` sur les blob URLs (y compris stems).
+- **SPEC-11.3.4** Clé de cache unifiée : `addToQueue` utilise `getTrackCacheKey(track)` comme `id` de l'item queue, garantissant la même clé que le fil rouge pour le cache persistant et session. Résolution : `track.id` → sinon `artist::name` (lowercased). En défense supplémentaire, `ensureLocalSource` et `isTrackInLocalCache` tentent aussi la clé `artist::name` en fallback si la clé primaire ne matche pas.
 
 ### 11.4 Garbage collector mémoire
 
@@ -700,6 +702,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-14.2.1** Queue, playlists et Fil Rouge rendus dynamiquement via `uiRenderer`.
 - **SPEC-14.2.2** Drag-and-drop sur les éléments de la queue.
 - **SPEC-14.2.3** Notifications toast pour actions et erreurs.
+- **SPEC-14.2.4** Chaque platine affiche sous la barre de progression le temps actuel et la durée totale du morceau au format `m:ss / m:ss` (via `formatTime(positionMs) / formatTime(durationMs)`). L'affichage est masqué si aucun morceau n'est chargé (`durationMs = 0`).
 
 ### 14.3 Localisation
 

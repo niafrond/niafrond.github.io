@@ -90,6 +90,7 @@ import { AutoFadeManager } from './lib/autoFadeManager.js';
 import {
   createAudioSourceManager,
   getDirectPlayableSourceUrl,
+  getTrackCacheKey,
 } from './lib/audioSourceManager.js';
 import { createDownloaderConfigManager } from './lib/downloaderConfig.js';
 import {
@@ -713,6 +714,8 @@ const deckAProgressZones = document.getElementById('deck-a-zone-layer');
 const deckBProgressZones = document.getElementById('deck-b-zone-layer');
 const deckAFill = document.getElementById('deck-a-fill');
 const deckBFill = document.getElementById('deck-b-fill');
+const deckATime = document.getElementById('deck-a-time');
+const deckBTime = document.getElementById('deck-b-time');
 const trackArtistB = document.getElementById('track-artist-b');
 const deckATitle = document.getElementById('deck-a-title');
 const deckBTitle = document.getElementById('deck-b-title');
@@ -1131,6 +1134,7 @@ const uiRenderer = createDjMixRenderer({
   deckAFill,
   deckALaunchBtn,
   deckAPanel,
+  deckATime,
   deckATitle,
   deckAVol,
   deckBBpm,
@@ -1138,6 +1142,7 @@ const uiRenderer = createDjMixRenderer({
   deckBFill,
   deckBLaunchBtn,
   deckBPanel,
+  deckBTime,
   deckBTitle,
   deckBVol,
   emptyQueue,
@@ -1557,6 +1562,38 @@ function renderFilRouge() {
   });
 }
 
+function renderFilRougeTrackStatus(track) {
+  if (!filRougePlaylistListEl || !track) return;
+  const playlist = filRougeManager.getPlaylist();
+  const idx = playlist.findIndex(p =>
+    p.id === track.id || (p.name === track.name && p.artist === track.artist),
+  );
+  if (idx === -1) return;
+  const itemEl = filRougePlaylistListEl.querySelector(`.filrouge-item[data-index="${idx}"]`);
+  if (!itemEl) return;
+  const statusesEl = itemEl.querySelector('.filrouge-statuses');
+  if (!statusesEl) return;
+  const status = getFilRougeTrackStatus(track);
+  const downloadSpan = statusesEl.children[0];
+  if (downloadSpan) {
+    const downloadLabel = status.downloadState === 'downloading' ? 'Download en cours'
+      : status.downloadState === 'done' ? 'Download fini'
+        : status.downloadState === 'error' ? 'Download erreur'
+          : 'Download en attente';
+    const downloadClass = status.downloadState === 'downloading' ? 'is-downloading'
+      : status.downloadState === 'done' ? 'is-done'
+        : status.downloadState === 'error' ? 'is-error'
+          : 'is-idle';
+    downloadSpan.textContent = downloadLabel;
+    downloadSpan.className = `filrouge-status ${downloadClass}`;
+  }
+  const mixInfoSpan = statusesEl.children[1];
+  if (mixInfoSpan) {
+    mixInfoSpan.textContent = status.hasMixInfo ? 'Mix info ✓' : 'Mix info --';
+    mixInfoSpan.className = `filrouge-status ${status.hasMixInfo ? 'is-done' : 'is-idle'}`;
+  }
+}
+
 function readSpotifyFilRougeSource() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.spotifyFilRougeSource);
@@ -1870,15 +1907,28 @@ async function startTxtPlaylistPrefetch(tracks) {
   let cached = 0;
   let failed = 0;
 
+  const toDownload = [];
+  for (const track of tracks) {
+    const inCache = await isTrackInLocalCache(track).catch(() => false);
+    if (inCache) {
+      cached++;
+      const mixData = await autoModeManager.fetchMixData(track.name, track.artist).catch(() => null);
+      setFilRougeTrackStatus(track, { downloadState: 'done', hasMixInfo: Boolean(mixData) });
+    } else {
+      toDownload.push(track);
+    }
+  }
+  if (cached > 0) renderFilRouge();
+
   const BATCH_SIZE = 3;
-  for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
+  for (let i = 0; i < toDownload.length; i += BATCH_SIZE) {
     if (spotifyPrefetchGeneration !== generation) return;
-    const batch = tracks.slice(i, i + BATCH_SIZE);
+    const batch = toDownload.slice(i, i + BATCH_SIZE);
     for (const track of batch) {
       setFilRougeTrackStatus(track, { downloadState: 'downloading' });
+      renderFilRougeTrackStatus(track);
     }
-    setTxtPlaylistStatus(`Téléchargement serveur TXT : ${i + 1}–${Math.min(i + BATCH_SIZE, tracks.length)} / ${tracks.length}…`);
-    renderFilRouge();
+    setTxtPlaylistStatus(`Téléchargement serveur TXT : ${i + 1}–${Math.min(i + BATCH_SIZE, toDownload.length)} / ${toDownload.length}…`);
     const batchResults = await Promise.allSettled(
       batch.map(track => prefetchTrackToLocalCache(track).catch(() => false))
     );
@@ -1894,10 +1944,10 @@ async function startTxtPlaylistPrefetch(tracks) {
           failed++;
           setFilRougeTrackStatus(track, { downloadState: 'error' });
         }
+        renderFilRougeTrackStatus(track);
         await fetchFilRougeArtwork(track).catch(() => {});
       })
     );
-    renderFilRouge();
   }
 
   if (spotifyPrefetchGeneration !== generation) return;
@@ -1936,11 +1986,23 @@ async function startSpotifyPlaylistPrefetch(tracks) {
   const generation = ++spotifyPrefetchGeneration;
   let cached = 0;
   let failed = 0;
+
+  const toDownload = [];
+  for (const track of tracks) {
+    const inCache = await isTrackInLocalCache(track).catch(() => false);
+    if (inCache) {
+      cached++;
+      autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
+    } else {
+      toDownload.push(track);
+    }
+  }
+
   const BATCH_SIZE = 3;
-  for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
+  for (let i = 0; i < toDownload.length; i += BATCH_SIZE) {
     if (spotifyPrefetchGeneration !== generation) return;
-    const batch = tracks.slice(i, i + BATCH_SIZE);
-    setSpotifyStatus(`Cache Spotify : ${i + 1}–${Math.min(i + BATCH_SIZE, tracks.length)} / ${tracks.length}…`);
+    const batch = toDownload.slice(i, i + BATCH_SIZE);
+    setSpotifyStatus(`Cache Spotify : ${i + 1}–${Math.min(i + BATCH_SIZE, toDownload.length)} / ${toDownload.length}…`);
     const batchResults = await Promise.allSettled(
       batch.map(track => prefetchTrackToLocalCache(track).catch(() => false))
     );
@@ -2499,9 +2561,11 @@ const DOWNLOAD_ALL_BTN_DEFAULT_LABEL = 'Tout télécharger';
 
 const filRougeDownloader = createFilRougeDownloader({
   prefetchTrackToLocalCache,
+  isTrackInLocalCache,
   setFilRougeTrackStatus,
   getFilRougeTrackStatus,
   renderFilRouge,
+  renderTrackStatus: renderFilRougeTrackStatus,
   showToast,
   onProgress: (done, inProgress, total) => {
     if (!filRougeDownloadAllBtn) return;
@@ -2598,8 +2662,8 @@ async function startFilRougeStartupCacheSync() {
     const batch = toDownload.slice(i, i + BATCH_SIZE);
     for (const track of batch) {
       setFilRougeTrackStatus(track, { downloadState: 'downloading' });
+      renderFilRougeTrackStatus(track);
     }
-    renderFilRouge();
     const batchResults = await Promise.allSettled(
       batch.map(track => prefetchTrackToLocalCache(track).catch(() => false))
     );
@@ -2612,8 +2676,8 @@ async function startFilRougeStartupCacheSync() {
       } else {
         setFilRougeTrackStatus(track, { downloadState: 'error' });
       }
+      renderFilRougeTrackStatus(track);
     }
-    renderFilRouge();
   }
 }
 
@@ -5734,7 +5798,7 @@ async function addToQueue(track, options = {}) {
   const genre = extractTrackGenre(track);
   const suggestedStartOffsetMs = resolveTrackStartOffsetMs(track);
   const item = {
-    id: track.id || track.ratingKey || track.uri || track.name,
+    id: getTrackCacheKey(track) || track.name,
     uri: track.uri || track.downloadUrl || `api:track:${track.id || track.name}`,
     name: track.name || track.title || 'Titre API',
     artist: track.artists ? track.artists.map((a) => a.name).join(', ') : (track.artist || 'Artiste inconnu'),

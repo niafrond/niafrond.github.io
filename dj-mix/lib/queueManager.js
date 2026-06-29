@@ -8,7 +8,7 @@ import {
   extractTrackGenre,
   extractTrackLoudnessDb,
 } from './searchUtils.js';
-import { getDirectPlayableSourceUrl } from './audioSourceManager.js';
+import { getDirectPlayableSourceUrl, getTrackCacheKey } from './audioSourceManager.js';
 import { clearQueueDragMarkers } from './queueDnD.js';
 
 /**
@@ -253,7 +253,7 @@ export function createQueueManager(options) {
     const suggestedStartOffsetMs = resolveTrackStartOffsetMs(track);
 
     const item = {
-      id: track.id || track.ratingKey || track.uri || track.name,
+      id: getTrackCacheKey(track) || track.name,
       uri: track.uri || track.downloadUrl || `api:track:${track.id || track.name}`,
       name: track.name || track.title || 'Titre API',
       artist: track.artists
