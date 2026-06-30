@@ -145,6 +145,11 @@
             <button class="ctrl-btn" id="toggle-mix-menu-btn" title="Afficher/cacher le menu mix" aria-label="Menu mix">🎛️</button>
           </div>
           <input type="range" id="deck-mix-slider" min="0" max="100" value="0" class="fade-slider" aria-label="Mix manuel entre platine 1 et platine 2">
+          <div class="volume-row">
+            <button id="global-volume-btn" class="ctrl-btn" type="button" title="Mute / Unmute" aria-label="Mute" aria-pressed="false">🔊</button>
+            <input type="range" id="global-volume-slider" min="0" max="100" value="100" class="fade-slider volume-slider" aria-label="Volume global">
+            <span id="global-volume-label" class="crossfade-value">100%</span>
+          </div>
         </div>
 
         <div id="deck-mix-control" class="deck-mix-control" aria-hidden="true">

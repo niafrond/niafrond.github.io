@@ -2297,6 +2297,25 @@ input {
   box-shadow: 0 0 8px var(--fade-glow);
 }
 
+.volume-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px 2px;
+}
+
+.volume-row .ctrl-btn {
+  flex-shrink: 0;
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+}
+
+.volume-slider {
+  flex: 1;
+  height: 5px;
+}
+
 .crossfade-inline-actions {
   display: flex;
   align-items: center;

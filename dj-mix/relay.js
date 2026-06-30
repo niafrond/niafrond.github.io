@@ -1,3 +1,5 @@
+import { createRelayStreamController } from './lib/relayStreamController.js';
+
 /**
  * relay.js — Lecteur relais ultra-léger
  *
@@ -44,8 +46,15 @@ const nextArtistEl  = $id('relay-screen-next-artist');
 const dlFillEl      = $id('relay-screen-dl-fill');
 const dlLabelEl     = $id('relay-screen-dl-label');
 const fullscreenBtn = $id('relay-fullscreen-btn');
+const streamBtn     = $id('relay-stream-btn');
 
 // ── Plein écran ───────────────────────────────────────────────────────────────
+
+const _SVG_PLAY =
+  '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+
+const _SVG_STOP_STREAM =
+  '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>';
 
 const _SVG_EXPAND =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -564,6 +573,10 @@ function _startDriftLoop() {
   _driftRAF = requestAnimationFrame(_driftLoop);
 }
 
+function _stopDriftLoop() {
+  if (_driftRAF) { cancelAnimationFrame(_driftRAF); _driftRAF = null; }
+}
+
 function _driftCheck() {
   if (!_lastState || !_audioReady) return;
   const { activeDeck, capturedAt, pushedAt, isPlaying } = _lastState;
@@ -603,6 +616,39 @@ function _driftCheck() {
   _posStartMs = expected;
   _posT0 = _audioClock();
 }
+
+// ── Contrôle du flux (start / stop manuel) ───────────────────────────────────
+
+function _updateStreamBtn(active) {
+  if (!streamBtn) return;
+  streamBtn.innerHTML = active ? _SVG_STOP_STREAM : _SVG_PLAY;
+  const label = active ? 'Arrêter le flux' : 'Lancer le flux';
+  streamBtn.title = label;
+  streamBtn.setAttribute('aria-label', label);
+  streamBtn.classList.toggle('relay-stream-btn--stop', active);
+}
+
+const _streamController = createRelayStreamController({
+  onStart() {
+    // Forcer la ré-application du dernier état connu pour démarrer l'audio immédiatement
+    _lastHash = null;
+    _startDriftLoop();
+    _updateStreamBtn(true);
+    _setStatus('Connexion au maître…');
+  },
+  onStop() {
+    _stopDriftLoop();
+    _pauseAll();
+    _stopPosTracking();
+    _updateStreamBtn(false);
+    _setStatus('Flux arrêté · ▶ pour reprendre');
+  },
+});
+
+streamBtn?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  _streamController.toggle();
+});
 
 // ── Polling et application de l'état ─────────────────────────────────────────
 
@@ -645,7 +691,7 @@ async function _poll() {
 function _resyncPosition(state) {
   _lastState = state;
 
-  if (!state.isPlaying || !_curTrackId) return;
+  if (!_streamController.isActive() || !state.isPlaying || !_curTrackId) return;
 
   const { activeDeck, deckA, deckB, capturedAt, pushedAt } = state;
   const activeDeckState = activeDeck === 'A' ? deckA : deckB;
@@ -720,15 +766,16 @@ async function _applyState(state) {
     if (d < 0.5) return ' · sync';
     return d < 10 ? ` · Δ${d.toFixed(2)}ms` : ` · Δ${Math.round(d)}ms`;
   })();
-  _setStatus(
-    `Maître · ${new Date(now).toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' })}${driftInfo}`
-  );
-
-  // 3. Synchroniser les événements planifiés (transition, FX)
-  _syncScheduled(upcoming);
-
-  // 4. FX courant
-  if (fx) _applyFx(fx);
+  if (_streamController.isActive()) {
+    _setStatus(
+      `Maître · ${new Date(now).toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' })}${driftInfo}`
+    );
+    // 3. Événements planifiés et FX — audio uniquement
+    _syncScheduled(upcoming);
+    if (fx) _applyFx(fx);
+  } else {
+    _setStatus('Maître en ligne · ▶ pour écouter');
+  }
 
   // 5. Prochain titre (deck opposée au currentTrackId)
   _updateNextTrack(state);
@@ -739,39 +786,7 @@ async function _applyState(state) {
               || filRouge.find((i) => i.id === currentTrackId);
     if (!item) return;
 
-    const activeDeckState = activeDeck === 'A' ? deckA : deckB;
-    const seekMs = Math.max(0, (activeDeckState?.positionMs || 0) + latencyMs);
-
-    const blobUrl = _getBlobUrl(item);
-    if (!blobUrl) {
-      // Pas encore en cache → téléchargement prioritaire immédiat
-      _setStatus('Téléchargement…');
-      const blob = await _fetchBlobNow(item);
-      if (!blob) {
-        _setStatus('Échec téléchargement — vérifiez le réseau et l\'URL API');
-        return;
-      }
-    }
-
-    const resolvedBlob = _getBlobUrl(item);
-    if (!resolvedBlob) return;
-
-    const newDeckIdx = _deckIdxOf(activeDeck);
-
-    if (_curTrackId && transitionMode === 'crossfade') {
-      await _crossfade(newDeckIdx, resolvedBlob, seekMs, crossfadeMs);
-    } else if (_curTrackId && transitionMode === 'fade_in_out') {
-      // Même comportement que crossfade côté relais
-      await _crossfade(newDeckIdx, resolvedBlob, seekMs, crossfadeMs);
-    } else {
-      _pauseAll();
-      await _playDeck(newDeckIdx, resolvedBlob, seekMs);
-    }
-
-    _curTrackId  = currentTrackId;
-    _curDeckIdx  = newDeckIdx;
-    _activeDeckIdx = newDeckIdx;
-
+    // Affichage du titre toujours, même si le flux audio est arrêté
     _updateTrack({
       name:   item.name,
       artist: item.artist,
@@ -780,60 +795,91 @@ async function _applyState(state) {
       genre:  item.genre,
     });
 
-    // Durée de la piste en cours uniquement
-    const deckAudio = _decks[newDeckIdx]?.audio;
-    const audioDurMs = (deckAudio?.duration && isFinite(deckAudio.duration))
-      ? deckAudio.duration * 1000 : 0;
-    const metaDurMs = _trackDurations.get(currentTrackId) || (item.duration || 0);
-    const durMs = metaDurMs || audioDurMs;
-    _startPosTracking(seekMs, durMs);
+    if (_streamController.isActive()) {
+      const activeDeckState = activeDeck === 'A' ? deckA : deckB;
+      const seekMs = Math.max(0, (activeDeckState?.positionMs || 0) + latencyMs);
 
-    // Mettre à jour la durée quand le média est chargé (plus précis que les métadonnées)
-    if (deckAudio) {
-      const _onDurChange = () => {
-        if (deckAudio.duration && isFinite(deckAudio.duration) && _curTrackId === currentTrackId) {
-          const realDurMs = deckAudio.duration * 1000;
-          _posDurationMs = realDurMs;
-          _trackDurations.set(currentTrackId, realDurMs);
+      const blobUrl = _getBlobUrl(item);
+      if (!blobUrl) {
+        _setStatus('Téléchargement…');
+        const blob = await _fetchBlobNow(item);
+        if (!blob) {
+          _setStatus('Échec téléchargement — vérifiez le réseau et l\'URL API');
+          return;
         }
-        deckAudio.removeEventListener('durationchange', _onDurChange);
-      };
-      deckAudio.addEventListener('durationchange', _onDurChange);
+      }
+
+      const resolvedBlob = _getBlobUrl(item);
+      if (!resolvedBlob) return;
+
+      const newDeckIdx = _deckIdxOf(activeDeck);
+
+      if (_curTrackId && transitionMode === 'crossfade') {
+        await _crossfade(newDeckIdx, resolvedBlob, seekMs, crossfadeMs);
+      } else if (_curTrackId && transitionMode === 'fade_in_out') {
+        await _crossfade(newDeckIdx, resolvedBlob, seekMs, crossfadeMs);
+      } else {
+        _pauseAll();
+        await _playDeck(newDeckIdx, resolvedBlob, seekMs);
+      }
+
+      _curTrackId  = currentTrackId;
+      _curDeckIdx  = newDeckIdx;
+      _activeDeckIdx = newDeckIdx;
+
+      const deckAudio = _decks[newDeckIdx]?.audio;
+      const audioDurMs = (deckAudio?.duration && isFinite(deckAudio.duration))
+        ? deckAudio.duration * 1000 : 0;
+      const metaDurMs = _trackDurations.get(currentTrackId) || (item.duration || 0);
+      const durMs = metaDurMs || audioDurMs;
+      _startPosTracking(seekMs, durMs);
+
+      if (deckAudio) {
+        const _onDurChange = () => {
+          if (deckAudio.duration && isFinite(deckAudio.duration) && _curTrackId === currentTrackId) {
+            const realDurMs = deckAudio.duration * 1000;
+            _posDurationMs = realDurMs;
+            _trackDurations.set(currentTrackId, realDurMs);
+          }
+          deckAudio.removeEventListener('durationchange', _onDurChange);
+        };
+        deckAudio.addEventListener('durationchange', _onDurChange);
+      }
     }
 
-    // Pré-charger la piste suivante si présente dans la queue
+    // Pré-chargement du suivant, flux actif ou non
     const curIdx  = queue.findIndex((i) => i.id === currentTrackId);
     const nextItem = queue[curIdx + 1];
     if (nextItem?.persistedSourceUrl) _enqueueDownload(nextItem);
 
   } else if (currentTrackId && currentTrackId === _curTrackId) {
-    // Même piste : mise à jour de la référence maître pour la boucle RAF
-    if (isPlaying && refTime) {
-      const activeDeckState = activeDeck === 'A' ? deckA : deckB;
-      if (activeDeckState?.positionMs !== undefined) {
-        const target  = activeDeckState.positionMs + latencyMs;
-        const deck    = _decks[_curDeckIdx];
-        if (deck?.audio && !deck.audio.paused) {
-          const current = deck.audio.currentTime * 1000;
-          const absDrift = Math.abs(target - current);
-
-          if (absDrift > 100) {
-            _seekDeck(_curDeckIdx, target);
-            _startPosTracking(target, _posDurationMs);
+    // Même piste — correction de dérive et pause/reprise uniquement si flux actif
+    if (_streamController.isActive()) {
+      if (isPlaying && refTime) {
+        const activeDeckState = activeDeck === 'A' ? deckA : deckB;
+        if (activeDeckState?.positionMs !== undefined) {
+          const target  = activeDeckState.positionMs + latencyMs;
+          const deck    = _decks[_curDeckIdx];
+          if (deck?.audio && !deck.audio.paused) {
+            const current = deck.audio.currentTime * 1000;
+            const absDrift = Math.abs(target - current);
+            if (absDrift > 100) {
+              _seekDeck(_curDeckIdx, target);
+              _startPosTracking(target, _posDurationMs);
+            }
           }
-          // Dérives < 100ms : la boucle RAF _driftCheck les corrige en continu
         }
       }
-    }
 
-    if (!isPlaying) {
-      _pauseAll();
-      _stopPosTracking();
-    } else {
-      const deck = _decks[_curDeckIdx];
-      if (deck?.audio.paused) {
-        try { await deck.audio.play(); } catch (_) {}
-        _startPosTracking(_currentPosMs(), _posDurationMs);
+      if (!isPlaying) {
+        _pauseAll();
+        _stopPosTracking();
+      } else {
+        const deck = _decks[_curDeckIdx];
+        if (deck?.audio.paused) {
+          try { await deck.audio.play(); } catch (_) {}
+          _startPosTracking(_currentPosMs(), _posDurationMs);
+        }
       }
     }
   }
@@ -1175,7 +1221,8 @@ if (!SESSION) {
     'Scannez le QR code affiché sur l\'appareil maître.' +
     '</p>';
 } else {
-  // La lecture audio nécessite un geste utilisateur (politique navigateur).
+  // Le premier geste utilisateur initialise l'AudioContext (exigé par les navigateurs).
+  // Le flux audio lui-même ne démarre qu'après un clic sur le bouton ▶.
   let _started = false;
   const _start = async () => {
     if (_started) return;
@@ -1183,12 +1230,12 @@ if (!SESSION) {
     tapOverlay?.remove();
     await _initAudio();
     _audioReady = true;
-    _setStatus(`Session ${SESSION} · connexion…`);
-    // Premier poll immédiat, puis toutes les 1,5 s
+    _updateStreamBtn(false);
+    _setStatus('Connexion…');
+    // Le polling démarre ici pour les métadonnées et le pré-téléchargement.
+    // L'audio ne joue que si _streamController.isActive() === true.
     await _poll();
     setInterval(_poll, 1500);
-    // Boucle de correction de dérive à chaque frame GPU (seuil < 0.5 ms)
-    _startDriftLoop();
   };
 
   document.addEventListener('click',    _start, { once: true });

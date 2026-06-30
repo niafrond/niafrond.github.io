@@ -117,6 +117,8 @@ export class DJPlayer extends EventTarget {
     B: 0,
   };
   #deckMixRatio = 0;
+  #globalVolume = 1;
+  #lastBaseMix = { A: 1, B: 0 };
   #transitionMode = DEFAULT_TRANSITION_MODE;
   #allowedTransitionModes = new Set(MIX_TRANSITION_MODES);
   #recentAutoTransitions = [];
@@ -144,6 +146,12 @@ export class DJPlayer extends EventTarget {
   get isReady() { return this.#ready; }
   get activeDeck() { return this.#active; }
   get transitionMode() { return this.#transitionMode; }
+  get globalVolume() { return this.#globalVolume; }
+
+  setGlobalVolume(v) {
+    this.#globalVolume = Math.max(0, Math.min(1, Number(v) || 0));
+    this.#applyDeckBaseMix(this.#lastBaseMix.A, this.#lastBaseMix.B);
+  }
 
   static getTransitionModes() {
     return [...MIX_TRANSITION_MODES];
@@ -1665,8 +1673,11 @@ export class DJPlayer extends EventTarget {
     if (!this.#audioA || !this.#audioB) return;
     const safeA = Math.max(0, Math.min(1, Number(baseA) || 0));
     const safeB = Math.max(0, Math.min(1, Number(baseB) || 0));
+    this.#lastBaseMix.A = safeA;
+    this.#lastBaseMix.B = safeB;
     const compA = this.#getDeckCompensation('A');
     const compB = this.#getDeckCompensation('B');
+    const gv = this.#globalVolume;
 
     let nextA;
     let nextB;
@@ -1675,11 +1686,11 @@ export class DJPlayer extends EventTarget {
       // Use a shared compensation factor so the A/B ratio remains exact
       // for any slider position, including while smoothing.
       const sharedComp = Math.max(0, Math.min(compA, compB, 1));
-      nextA = Math.max(0, Math.min(1, safeA * sharedComp));
-      nextB = Math.max(0, Math.min(1, safeB * sharedComp));
+      nextA = Math.max(0, Math.min(1, safeA * sharedComp * gv));
+      nextB = Math.max(0, Math.min(1, safeB * sharedComp * gv));
     } else {
-      nextA = Math.max(0, Math.min(1, safeA * compA));
-      nextB = Math.max(0, Math.min(1, safeB * compB));
+      nextA = Math.max(0, Math.min(1, safeA * compA * gv));
+      nextB = Math.max(0, Math.min(1, safeB * compB * gv));
     }
 
     this.#audioA.volume = nextA;

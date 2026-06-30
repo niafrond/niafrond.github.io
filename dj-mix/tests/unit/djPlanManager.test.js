@@ -14,7 +14,7 @@ function makeDjApiClient(overrides = {}) {
   };
 }
 
-function makeFakeFilRouge(playlist, { loopEnabled = false } = {}) {
+function makeFakeFilRouge(playlist, { loopEnabled = false, currentIndex = -1 } = {}) {
   return {
     getPlaylist: () => playlist.slice(),
     patchPlaylistItem: jest.fn((id, patch) => {
@@ -24,6 +24,7 @@ function makeFakeFilRouge(playlist, { loopEnabled = false } = {}) {
       return true;
     }),
     isLoopEnabled: () => loopEnabled,
+    getCurrentIndex: () => currentIndex,
   };
 }
 
@@ -275,154 +276,30 @@ describe('djPlanManager', () => {
   });
 
   describe('computeSetQuality', () => {
-    test('returns null when nothing resolves to an analysed trackId (fil rouge or queue)', async () => {
+    test('SPEC-8.6.1 — returns null and skips all API calls when fil rouge has fewer than 2 items', async () => {
       const item = { id: '1', name: 'A', artist: 'X', djTrackId: null, djHasAnalysis: false };
       const fr = makeFakeFilRouge([item]);
       const djApiClient = makeDjApiClient();
-      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr, getQueue: () => [] });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
 
       expect(await mgr.computeSetQuality()).toBeNull();
       expect(djApiClient.fetchBatchPlan).not.toHaveBeenCalled();
+      expect(djApiClient.fetchTransition).not.toHaveBeenCalled();
     });
 
-    test('returns null when no items resolve to an analysed trackId', async () => {
+    test('returns null when filRougeManager is not provided', async () => {
+      const djApiClient = makeDjApiClient();
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => null });
+
+      expect(await mgr.computeSetQuality()).toBeNull();
+      expect(djApiClient.fetchTransition).not.toHaveBeenCalled();
+    });
+
+    test('SPEC-8.6.1 — skips all API calls while a fil rouge download is in progress', async () => {
       const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
       const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false };
       const fr = makeFakeFilRouge([itemA, itemB]);
       const djApiClient = makeDjApiClient({ fetchTracks: jest.fn().mockResolvedValue([]) });
-      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr, getQueue: () => [] });
-
-      expect(await mgr.computeSetQuality()).toBeNull();
-      expect(djApiClient.fetchBatchPlan).not.toHaveBeenCalled();
-    });
-
-    test('calls fetchBatchPlan from queue items when fil rouge is empty', async () => {
-      const trackSummaries = [
-        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
-        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
-      ];
-      const queueItemA = { id: 'q1', name: 'A', artist: 'X', cachePath: 'a.mp3' };
-      const queueItemB = { id: 'q2', name: 'B', artist: 'Y', cachePath: 'b.mp3' };
-      const batchResult = { globalSetScore: 0.75, reasons: ['good flow'], globalComponents: null };
-      const djApiClient = makeDjApiClient({
-        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
-        fetchBatchPlan: jest.fn().mockResolvedValue(batchResult),
-      });
-      const mgr = createDjPlanManager({
-        djApiClient,
-        getFilRougeManager: () => null,
-        getQueue: () => [queueItemA, queueItemB],
-      });
-
-      const result = await mgr.computeSetQuality();
-
-      expect(djApiClient.fetchBatchPlan).toHaveBeenCalledWith(['a.mp3', 'b.mp3'], 'club_peak');
-      expect(result).toEqual(batchResult);
-    });
-
-    test('calls fetchBatchPlan when fil rouge has 1 item but queue has resolvable items', async () => {
-      const trackSummaries = [
-        { trackId: 'q1.mp3', trackName: 'Q1', artistName: 'Z', hasFullAnalysis: true },
-        { trackId: 'q2.mp3', trackName: 'Q2', artistName: 'W', hasFullAnalysis: true },
-      ];
-      const frItem = { id: 'f1', name: 'Unknown', artist: 'Unknown', djTrackId: null, djHasAnalysis: false };
-      const fr = makeFakeFilRouge([frItem]);
-      const queueItemA = { id: 'q1', name: 'Q1', artist: 'Z', cachePath: 'q1.mp3' };
-      const queueItemB = { id: 'q2', name: 'Q2', artist: 'W', cachePath: 'q2.mp3' };
-      const batchResult = { globalSetScore: 0.6, reasons: [], globalComponents: null };
-      const djApiClient = makeDjApiClient({
-        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
-        fetchBatchPlan: jest.fn().mockResolvedValue(batchResult),
-      });
-      const mgr = createDjPlanManager({
-        djApiClient,
-        getFilRougeManager: () => fr,
-        getQueue: () => [queueItemA, queueItemB],
-      });
-
-      const result = await mgr.computeSetQuality();
-
-      expect(djApiClient.fetchBatchPlan).toHaveBeenCalledWith(['q1.mp3', 'q2.mp3'], 'club_peak');
-      expect(result).toEqual(batchResult);
-    });
-
-    test('deduplicates trackIds when a queue item resolves to the same trackId as a fil rouge item', async () => {
-      const trackSummaries = [
-        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
-        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
-      ];
-      const frItemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
-      const fr = makeFakeFilRouge([frItemA]);
-      const queueItemA = { id: 'q1', name: 'A', artist: 'X', cachePath: 'a.mp3', queueSource: 'fil-rouge' };
-      const queueItemB = { id: 'q2', name: 'B', artist: 'Y', cachePath: 'b.mp3' };
-      const batchResult = { globalSetScore: 0.8, reasons: [], globalComponents: null };
-      const djApiClient = makeDjApiClient({
-        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
-        fetchBatchPlan: jest.fn().mockResolvedValue(batchResult),
-      });
-      const mgr = createDjPlanManager({
-        djApiClient,
-        getFilRougeManager: () => fr,
-        getQueue: () => [queueItemA, queueItemB],
-      });
-
-      const result = await mgr.computeSetQuality();
-
-      expect(djApiClient.fetchBatchPlan).toHaveBeenCalledWith(['a.mp3', 'b.mp3'], 'club_peak');
-      expect(result).toEqual(batchResult);
-    });
-
-    test('works correctly when getQueue is not provided (backward compat)', async () => {
-      const trackSummaries = [
-        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
-        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
-      ];
-      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
-      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false };
-      const fr = makeFakeFilRouge([itemA, itemB]);
-      const batchResult = { globalSetScore: 0.87, reasons: ['good energy curve'], globalComponents: { energy: 0.9 } };
-      const djApiClient = makeDjApiClient({
-        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
-        fetchBatchPlan: jest.fn().mockResolvedValue(batchResult),
-      });
-      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
-
-      const result = await mgr.computeSetQuality();
-
-      expect(djApiClient.fetchBatchPlan).toHaveBeenCalledWith(['a.mp3', 'b.mp3'], 'club_peak');
-      expect(result).toEqual(batchResult);
-    });
-
-    test('calls fetchBatchPlan with resolved trackIds and the selected profile', async () => {
-      const trackSummaries = [
-        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
-        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
-      ];
-      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
-      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false };
-      const fr = makeFakeFilRouge([itemA, itemB]);
-      const batchResult = { globalSetScore: 0.87, reasons: ['good energy curve'], globalComponents: { energy: 0.9 } };
-      const djApiClient = makeDjApiClient({
-        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
-        fetchBatchPlan: jest.fn().mockResolvedValue(batchResult),
-      });
-      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
-
-      const result = await mgr.computeSetQuality();
-
-      expect(djApiClient.fetchBatchPlan).toHaveBeenCalledWith(['a.mp3', 'b.mp3'], 'club_peak');
-      expect(result).toEqual(batchResult);
-    });
-
-    test('SPEC-8.6.1 — skips the API call entirely while a fil rouge download is in progress', async () => {
-      const trackSummaries = [
-        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
-        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
-      ];
-      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
-      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false };
-      const fr = makeFakeFilRouge([itemA, itemB]);
-      const djApiClient = makeDjApiClient({ fetchTracks: jest.fn().mockResolvedValue(trackSummaries) });
       const mgr = createDjPlanManager({
         djApiClient,
         getFilRougeManager: () => fr,
@@ -434,29 +311,10 @@ describe('djPlanManager', () => {
       expect(result).toBeNull();
       expect(djApiClient.fetchTracks).not.toHaveBeenCalled();
       expect(djApiClient.fetchBatchPlan).not.toHaveBeenCalled();
+      expect(djApiClient.fetchTransition).not.toHaveBeenCalled();
     });
 
-    test('calls fetchBatchPlan even when only one item resolves to an analysed trackId', async () => {
-      const trackSummaries = [
-        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
-      ];
-      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
-      const itemB = { id: '2', name: 'Unknown Song', artist: 'Unknown Artist', djTrackId: null, djHasAnalysis: false };
-      const fr = makeFakeFilRouge([itemA, itemB]);
-      const batchResult = { globalSetScore: 0.5, reasons: [], globalComponents: null };
-      const djApiClient = makeDjApiClient({
-        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
-        fetchBatchPlan: jest.fn().mockResolvedValue(batchResult),
-      });
-      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
-
-      const result = await mgr.computeSetQuality();
-
-      expect(djApiClient.fetchBatchPlan).toHaveBeenCalledWith(['a.mp3'], 'club_peak');
-      expect(result).toEqual(batchResult);
-    });
-
-    test('persists transitions from batch result onto fil rouge items', async () => {
+    test('never calls fetchBatchPlan — uses individual fetchTransition instead', async () => {
       const trackSummaries = [
         { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
         { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
@@ -464,45 +322,90 @@ describe('djPlanManager', () => {
       const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
       const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
       const fr = makeFakeFilRouge([itemA, itemB]);
-      const batchResult = {
-        globalSetScore: 0.7,
-        reasons: [],
-        globalComponents: null,
-        transitions: [{
-          trackA: 'a.mp3',
-          trackB: 'b.mp3',
-          transitionType: 'long_blend',
-          mixOutSec: 200,
-          mixInSec: 4,
-          recommendedBpm: 116,
-          crossfadeDurationSec: 33,
-          compatibilityScore: 0.68,
-          decisionId: 'abc-123',
-        }],
-      };
+      const transitionResult = { transitionType: 'long_blend', mixOutSec: 200, mixInSec: 4,
+        recommendedBpm: 116, crossfadeDurationSec: 33, compatibilityScore: 0.68, decisionId: 'abc-123' };
       const djApiClient = makeDjApiClient({
         fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
-        fetchBatchPlan: jest.fn().mockResolvedValue(batchResult),
+        fetchTransition: jest.fn().mockResolvedValue(transitionResult),
+      });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
+
+      const result = await mgr.computeSetQuality();
+
+      expect(djApiClient.fetchBatchPlan).not.toHaveBeenCalled();
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3', undefined);
+      expect(result).toBeNull();
+    });
+
+    test('always returns null (no quality score from batch)', async () => {
+      const trackSummaries = [
+        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
+        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
+      ];
+      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
+      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
+      const fr = makeFakeFilRouge([itemA, itemB]);
+      const djApiClient = makeDjApiClient({
+        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
+        fetchTransition: jest.fn().mockResolvedValue({ transitionType: 'quick_cut', mixOutSec: 180, mixInSec: 2, recommendedBpm: 120, crossfadeDurationSec: 8, compatibilityScore: 0.5, decisionId: 'd1' }),
+      });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
+
+      expect(await mgr.computeSetQuality()).toBeNull();
+    });
+
+    test('SPEC-8.6.3 — plans individual transitions for the next consecutive fil rouge pairs', async () => {
+      const trackSummaries = [
+        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
+        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
+        { trackId: 'c.mp3', trackName: 'C', artistName: 'Z', hasFullAnalysis: true },
+      ];
+      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
+      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
+      const itemC = { id: '3', name: 'C', artist: 'Z', cachePath: 'c.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
+      const fr = makeFakeFilRouge([itemA, itemB, itemC]);
+      const djApiClient = makeDjApiClient({
+        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
+        fetchTransition: jest.fn().mockResolvedValue({ transitionType: 'long_blend', mixOutSec: 200, mixInSec: 4, recommendedBpm: 116, crossfadeDurationSec: 33, compatibilityScore: 0.7, decisionId: 'ind' }),
       });
       const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
 
       await mgr.computeSetQuality();
 
-      expect(fr.patchPlaylistItem).toHaveBeenCalledWith('1', expect.objectContaining({
-        djTransition: expect.objectContaining({
-          toItemId: '2',
-          transitionType: 'long_blend',
-          mixOutSec: 200,
-          mixInSec: 4,
-          recommendedBpm: 116,
-          crossfadeDurationSec: 33,
-          compatibilityScore: 0.68,
-          decisionId: 'abc-123',
-        }),
-      }));
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3', undefined);
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('b.mp3', 'c.mp3', undefined);
+      expect(djApiClient.fetchTransition).toHaveBeenCalledTimes(2);
+
+      const transitionCalls = fr.patchPlaylistItem.mock.calls.filter(([, p]) => 'djTransition' in p);
+      expect(transitionCalls.find(([id]) => id === '1')[1].djTransition.toItemId).toBe('2');
+      expect(transitionCalls.find(([id]) => id === '2')[1].djTransition.toItemId).toBe('3');
     });
 
-    test('skips persisting a batch transition if it is already fresh', async () => {
+    test('SPEC-8.6.4 — plans at most 10 transitions ahead from the current fil rouge index', async () => {
+      const trackSummaries = Array.from({ length: 15 }, (_, i) => ({
+        trackId: `t${i}.mp3`, trackName: `T${i}`, artistName: 'X', hasFullAnalysis: true,
+      }));
+      const items = Array.from({ length: 15 }, (_, i) => ({
+        id: String(i), name: `T${i}`, artist: 'X', cachePath: `t${i}.mp3`,
+        djTrackId: null, djHasAnalysis: false, djTransition: null,
+      }));
+      const fr = makeFakeFilRouge(items, { currentIndex: 2 });
+      const djApiClient = makeDjApiClient({
+        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
+        fetchTransition: jest.fn().mockResolvedValue({ transitionType: 'quick_cut', mixOutSec: 100, mixInSec: 1, recommendedBpm: 120, crossfadeDurationSec: 4, compatibilityScore: 0.5, decisionId: 'd' }),
+      });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
+
+      await mgr.computeSetQuality();
+
+      expect(djApiClient.fetchTransition).toHaveBeenCalledTimes(10);
+      // Starts at index 2 (t2→t3) through index 11 (t11→t12)
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('t2.mp3', 't3.mp3', undefined);
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('t11.mp3', 't12.mp3', undefined);
+      expect(djApiClient.fetchTransition).not.toHaveBeenCalledWith('t12.mp3', 't13.mp3', undefined);
+    });
+
+    test('skips a transition if it is already fresh (memoization)', async () => {
       const trackSummaries = [
         { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
         { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
@@ -513,121 +416,58 @@ describe('djPlanManager', () => {
       };
       const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false };
       const fr = makeFakeFilRouge([itemA, itemB]);
-      const batchResult = {
-        globalSetScore: 0.7,
-        reasons: [],
-        globalComponents: null,
-        transitions: [{
-          trackA: 'a.mp3', trackB: 'b.mp3', transitionType: 'long_blend',
-          mixOutSec: 200, mixInSec: 4, recommendedBpm: 116, crossfadeDurationSec: 33,
-          compatibilityScore: 0.68, decisionId: 'abc-123',
-        }],
-      };
       const djApiClient = makeDjApiClient({
         fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
-        fetchBatchPlan: jest.fn().mockResolvedValue(batchResult),
+        fetchTransition: jest.fn().mockResolvedValue({ transitionType: 'long_blend', mixOutSec: 200, mixInSec: 4, recommendedBpm: 116, crossfadeDurationSec: 33, compatibilityScore: 0.68, decisionId: 'new' }),
       });
       const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
 
       await mgr.computeSetQuality();
 
-      // patchPlaylistItem should only have been called for trackId resolution, not for djTransition
-      const transitionCalls = fr.patchPlaylistItem.mock.calls.filter(
-        ([, patch]) => 'djTransition' in patch,
-      );
+      expect(djApiClient.fetchTransition).not.toHaveBeenCalled();
+      const transitionCalls = fr.patchPlaylistItem.mock.calls.filter(([, patch]) => 'djTransition' in patch);
       expect(transitionCalls).toHaveLength(0);
     });
 
-    test('skips a batch transition that does not match fil rouge order and fetches the correct pair individually', async () => {
+    test('forceRefresh bypasses memoization and re-fetches fresh transitions', async () => {
       const trackSummaries = [
         { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
         { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
       ];
-      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
-      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
+      const itemA = {
+        id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false,
+        djTransition: { toItemId: '2', transitionType: 'quick_cut', computedAt: Date.now() },
+      };
+      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false };
       const fr = makeFakeFilRouge([itemA, itemB]);
-      // Batch reordered: returns B→A instead of the fil rouge order A→B
-      const batchResult = {
-        globalSetScore: 0.7, reasons: [], globalComponents: null,
-        transitions: [{ trackA: 'b.mp3', trackB: 'a.mp3', transitionType: 'quick_cut',
-          mixOutSec: 180, mixInSec: 2, recommendedBpm: 120, crossfadeDurationSec: 8,
-          compatibilityScore: 0.5, decisionId: 'batch-rev' }],
-      };
-      const transitionResult = {
-        transitionType: 'long_blend', mixOutSec: 200, mixInSec: 4,
-        recommendedBpm: 116, crossfadeDurationSec: 33, compatibilityScore: 0.68, decisionId: 'ind-123',
-      };
       const djApiClient = makeDjApiClient({
         fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
-        fetchBatchPlan: jest.fn().mockResolvedValue(batchResult),
-        fetchTransition: jest.fn().mockResolvedValue(transitionResult),
+        fetchTransition: jest.fn().mockResolvedValue({ transitionType: 'long_blend', mixOutSec: 200, mixInSec: 4, recommendedBpm: 116, crossfadeDurationSec: 33, compatibilityScore: 0.68, decisionId: 'forced' }),
       });
       const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
 
-      await mgr.computeSetQuality();
+      await mgr.computeSetQuality({ forceRefresh: true });
 
-      // Batch transition B→A should NOT have been applied (wrong fil rouge order)
-      const transitionCalls = fr.patchPlaylistItem.mock.calls.filter(([, p]) => 'djTransition' in p);
-      const batchCall = transitionCalls.find(([id]) => id === '2');
-      expect(batchCall).toBeUndefined();
-
-      // Individual transition A→B should have been fetched and applied
       expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3', undefined);
-      const indivCall = transitionCalls.find(([id]) => id === '1');
-      expect(indivCall).toBeDefined();
-      expect(indivCall[1]).toEqual(expect.objectContaining({
-        djTransition: expect.objectContaining({ toItemId: '2', decisionId: 'ind-123' }),
-      }));
     });
 
-    test('applies matching batch transitions and fetches only reordered pairs individually', async () => {
+    test('starts from index 0 when currentIndex is -1 (not started)', async () => {
       const trackSummaries = [
         { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
         { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
-        { trackId: 'c.mp3', trackName: 'C', artistName: 'Z', hasFullAnalysis: true },
       ];
       const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
       const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
-      const itemC = { id: '3', name: 'C', artist: 'Z', cachePath: 'c.mp3', djTrackId: null, djHasAnalysis: false, djTransition: null };
-      const fr = makeFakeFilRouge([itemA, itemB, itemC]);
-      // Batch order: [B, A, C] → transitions B→A and A→C
-      // Fil rouge order: [A, B, C] → pairs A→B and B→C
-      // Only A→C matches both (batch and fil rouge: A is followed by... wait no)
-      // In fil rouge [A,B,C]: A→B (id 1→2), B→C (id 2→3)
-      // Batch returns: B→A (2→1) doesn't match (fil rouge A's next is B not A), A→C (1→3) doesn't match (fil rouge A's next is B not C)
-      // So both batch transitions are skipped, both A→B and B→C go to fetchTransition
-      const batchResult = {
-        globalSetScore: 0.8, reasons: [], globalComponents: null,
-        transitions: [
-          { trackA: 'b.mp3', trackB: 'a.mp3', transitionType: 'quick_cut', mixOutSec: 100, mixInSec: 1, recommendedBpm: 120, crossfadeDurationSec: 4, compatibilityScore: 0.4, decisionId: 'ba' },
-          { trackA: 'a.mp3', trackB: 'c.mp3', transitionType: 'echo_out', mixOutSec: 150, mixInSec: 3, recommendedBpm: 118, crossfadeDurationSec: 12, compatibilityScore: 0.6, decisionId: 'ac' },
-        ],
-      };
+      const fr = makeFakeFilRouge([itemA, itemB], { currentIndex: -1 });
       const djApiClient = makeDjApiClient({
         fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
-        fetchBatchPlan: jest.fn().mockResolvedValue(batchResult),
-        fetchTransition: jest.fn().mockResolvedValue({
-          transitionType: 'long_blend', mixOutSec: 200, mixInSec: 4,
-          recommendedBpm: 116, crossfadeDurationSec: 33, compatibilityScore: 0.7, decisionId: 'ind',
-        }),
+        fetchTransition: jest.fn().mockResolvedValue({ transitionType: 'long_blend', mixOutSec: 200, mixInSec: 4, recommendedBpm: 116, crossfadeDurationSec: 33, compatibilityScore: 0.68, decisionId: 'd1' }),
       });
       const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr });
 
       await mgr.computeSetQuality();
 
-      // Both fil rouge pairs A→B and B→C must have been fetched individually
       expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3', undefined);
-      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('b.mp3', 'c.mp3', undefined);
-      expect(djApiClient.fetchTransition).toHaveBeenCalledTimes(2);
-
-      // djTransition applied on A and B from individual calls, not the batch
-      const transitionCalls = fr.patchPlaylistItem.mock.calls.filter(([, p]) => 'djTransition' in p);
-      const callForA = transitionCalls.find(([id]) => id === '1');
-      const callForB = transitionCalls.find(([id]) => id === '2');
-      expect(callForA).toBeDefined();
-      expect(callForA[1].djTransition.toItemId).toBe('2');
-      expect(callForB).toBeDefined();
-      expect(callForB[1].djTransition.toItemId).toBe('3');
     });
   });
 

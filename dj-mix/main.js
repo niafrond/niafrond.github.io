@@ -733,6 +733,9 @@ const deckBLaunchBtn = document.getElementById('deck-b-launch');
 const deckAChangeSuggestionBtn = document.getElementById('deck-a-change-suggestion-btn');
 const deckBChangeSuggestionBtn = document.getElementById('deck-b-change-suggestion-btn');
 const deckMixSlider = document.getElementById('deck-mix-slider');
+const globalVolumeSlider = document.getElementById('global-volume-slider');
+const globalVolumeBtn = document.getElementById('global-volume-btn');
+const globalVolumeLabel = document.getElementById('global-volume-label');
 const deckMixLabel = document.getElementById('deck-mix-label');
 const deckBCueLabel = document.getElementById('deck-b-cue-label');
 const mixTransitionModeSelect = document.getElementById('mix-transition-mode');
@@ -932,7 +935,7 @@ const relayModeManager = createRelayModeManager({
       if (cmd.playNow) {
         triggerSearchFade(cmd.track);
       } else {
-        addToQueue(cmd.track, { showAddedToast: true });
+        addToQueue(cmd.track, { showAddedToast: true, asNext: true });
       }
       showToast(`Relais : ${cmd.track?.name || 'piste'} ajoutée`);
     }
@@ -1322,7 +1325,7 @@ function getFilRougeTrackStatus(item) {
 /**
  * GIVEN un téléchargement de masse du fil rouge (démarrage, import Spotify/TXT,
  * "Tout télécharger") en cours — THEN tant qu'au moins un morceau du fil rouge
- * est à l'état `downloading`, les demandes `/api/dj/batch` sont reportées
+ * est à l'état `downloading`, les demandes `/api/dj/transition` sont reportées
  * (voir SPEC-3.4.10 et `computeSetQuality`).
  */
 function isFilRougeDownloadInProgress() {
@@ -2280,10 +2283,8 @@ const scheduleDjSetQualityRefresh = createDebouncedFn(() => {
 }, 1000);
 
 /**
- * Rafraîchit les transitions du fil rouge puis le badge de qualité du set.
- * Les transitions batch ne sont appliquées que si elles correspondent à l'ordre
- * réel du fil rouge ; les paires réordonnées par le batch sont recalculées via
- * /api/dj/transition individuellement dans computeSetQuality.
+ * Rafraîchit les 10 prochaines transitions du fil rouge via /api/dj/transition
+ * (une requête par paire, à partir de l'index courant).
  * @param {string} reason - pour les logs (ex: 'startup', 'spotify-import')
  */
 async function runDjPlanFullPass(reason) {
@@ -2309,8 +2310,8 @@ async function runDjPlanFullPass(reason) {
 
 /**
  * Calcule les arêtes DJ pour des morceaux ajoutés à la volée (ajout simple ou
- * merge Spotify) via `/api/dj/transition`, puis rafraîchit le badge de qualité
- * du set (`/api/dj/batch`) sur l'ensemble du fil rouge.
+ * merge Spotify) via `/api/dj/transition`, puis déclenche le calcul des 10
+ * prochaines transitions depuis l'index courant.
  * @param {Array} items - nouveaux items déjà présents dans le fil rouge
  * @param {boolean} withWrap
  */
@@ -3915,6 +3916,8 @@ async function connectLocal() {
   showApp();
 
   await player.init();
+  const _savedGV = parseFloat(localStorage.getItem(STORAGE_KEYS.globalVolume));
+  applyGlobalVolume(Number.isFinite(_savedGV) ? _savedGV : 1);
   startSpotifyFilRougeSyncLoop();
   logInfo('connectLocal(): player initialized', {
     crossfadeDurationMs: player.crossfadeDuration,
@@ -4632,6 +4635,46 @@ crossfadeSlowerBtn?.addEventListener('click', () => {
 deckMixSlider?.addEventListener('input', () => {
   const sliderValue = (Number(deckMixSlider.value) || 0) / 100;
   applyDeckMixRatio(sliderValue, 120);
+});
+
+// ─── Volume global ────────────────────────────────────────────────────────────
+
+let _volumeBeforeMute = 1;
+
+function applyGlobalVolume(v) {
+  const clamped = Math.max(0, Math.min(1, v));
+  if (player) player.setGlobalVolume(clamped);
+  if (globalVolumeSlider) globalVolumeSlider.value = Math.round(clamped * 100);
+  if (globalVolumeLabel) globalVolumeLabel.textContent = `${Math.round(clamped * 100)}%`;
+  if (globalVolumeBtn) {
+    const muted = clamped === 0;
+    globalVolumeBtn.textContent = muted ? '🔇' : clamped < 0.5 ? '🔉' : '🔊';
+    globalVolumeBtn.setAttribute('aria-pressed', String(muted));
+  }
+  localStorage.setItem(STORAGE_KEYS.globalVolume, String(clamped));
+}
+
+(function initGlobalVolume() {
+  const saved = parseFloat(localStorage.getItem(STORAGE_KEYS.globalVolume));
+  const initial = Number.isFinite(saved) ? saved : 1;
+  _volumeBeforeMute = initial > 0 ? initial : 1;
+  applyGlobalVolume(initial);
+})();
+
+globalVolumeSlider?.addEventListener('input', () => {
+  const v = (Number(globalVolumeSlider.value) || 0) / 100;
+  if (v > 0) _volumeBeforeMute = v;
+  applyGlobalVolume(v);
+});
+
+globalVolumeBtn?.addEventListener('click', () => {
+  const isMuted = (player?.globalVolume ?? 1) === 0;
+  if (isMuted) {
+    applyGlobalVolume(_volumeBeforeMute || 1);
+  } else {
+    _volumeBeforeMute = player?.globalVolume ?? 1;
+    applyGlobalVolume(0);
+  }
 });
 
 deckALaunchBtn?.addEventListener('click', async () => {
@@ -5827,6 +5870,7 @@ async function addToQueue(track, options = {}) {
     source = 'manual',
     autoDjReferenceTrackId = null,
     showAddedToast = true,
+    asNext = false,
   } = options;
   const artUrl = getBestArtworkUrl(track);
   const duration = getTrackDurationMs(track);
@@ -5891,10 +5935,18 @@ async function addToQueue(track, options = {}) {
     return;
   }
 
-  queue.push(item);
-  const addedIndex = queue.length - 1;
+  let addedIndex;
+  if (asNext) {
+    addedIndex = Math.min(Math.max(uiState.currentIndex + 1, 0), queue.length);
+    queue.splice(addedIndex, 0, item);
+    if (uiState.deckBCueIndex >= addedIndex) uiState.deckBCueIndex += 1;
+  } else {
+    queue.push(item);
+    addedIndex = queue.length - 1;
+  }
   logInfo('addToQueue(): item added', {
     addedIndex,
+    asNext,
     id: item.id,
     name: item.name,
     artist: item.artist,

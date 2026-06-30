@@ -493,10 +493,14 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-8.5.5** GIVEN le bouton Recalculer cliqué — WHEN le calcul échoue — THEN un toast d'erreur spécifique à la raison est affiché (et non un toast de succès trompeur).
 - **SPEC-8.5.6** Le morceau de référence pour le calcul (bouton Recalculer et passe initiale `runDjPlanFullPass`) est déterminé en priorité par `uiState.currentTrackId` (chanson en cours de lecture), avec repli sur `filRougeManager.getCurrentIndex()` si aucun morceau n'est en cours. Cela garantit que la transition calculée est toujours celle du morceau joué vers le suivant, même si l'index fil rouge a déjà avancé lors du préchargement.
 
-### 8.6 Calcul du score de qualité du set (`/api/dj/batch`)
+### 8.6 Calcul des transitions à la volée (une par une, 10 en avance)
 
-- **SPEC-8.6.1** GIVEN au moins un morceau du fil rouge est à l'état `downloading` (téléchargement de masse en cours : démarrage, import Spotify/TXT, "Tout télécharger", Background Fetch) — THEN `computeSetQuality()` retourne `null` immédiatement sans appeler `/api/dj/tracks` ni `/api/dj/batch`, pour éviter de calculer le score sur un fil rouge dont les fichiers ne sont pas encore tous en cache.
-- **SPEC-8.6.2** GIVEN un téléchargement de masse vient de se terminer (succès, échec, ou Background Fetch) — THEN `scheduleDjSetQualityRefresh()` est appelé pour redéclencher le calcul du score différé par SPEC-8.6.1.
+- **SPEC-8.6.1** GIVEN au moins un morceau du fil rouge est à l'état `downloading` (téléchargement de masse en cours : démarrage, import Spotify/TXT, "Tout télécharger", Background Fetch) — THEN `computeSetQuality()` retourne `null` immédiatement sans appeler `/api/dj/tracks` ni `/api/dj/transition`, pour éviter de calculer des transitions sur un fil rouge dont les fichiers ne sont pas encore tous en cache.
+- **SPEC-8.6.2** GIVEN un téléchargement de masse vient de se terminer (succès, échec, ou Background Fetch) — THEN `scheduleDjSetQualityRefresh()` est appelé pour redéclencher le calcul des transitions différé par SPEC-8.6.1.
+- **SPEC-8.6.3** `computeSetQuality()` planifie les transitions des paires consécutives du fil rouge via `/api/dj/transition` (une requête par paire), en commençant à l'index courant (`filRougeManager.getCurrentIndex()`). L'endpoint `/api/dj/batch` n'est plus utilisé pour les transitions.
+- **SPEC-8.6.4** `computeSetQuality()` et `planAllEdges()` ne planifient au maximum que `MAX_LOOKAHEAD_TRANSITIONS` (10) transitions en avance depuis l'index courant. Les paires au-delà de ce seuil sont ignorées jusqu'au prochain appel.
+- **SPEC-8.6.5** Quand `currentIndex` est `-1` (lecture non démarrée), le calcul commence à l'index `0`.
+- **SPEC-8.6.6** `computeSetQuality()` retourne toujours `null` (plus de `globalSetScore` issu du batch).
 
 ### 8.7 Déclenchement automix sur `mixOutSec`
 
@@ -540,6 +544,10 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-9.3.2** GIVEN un nouvel état reçu — THEN `onApplyRelayState(state)` est appelé pour synchroniser morceau, position, paramètres.
 - **SPEC-9.3.3** GIVEN de nouveaux items dans queue/filRouge — THEN `onRelayQueueItemsAvailable(items)` déclenche le pré-téléchargement.
 - **SPEC-9.3.4** Polling de commandes : toutes les `2500 ms`, âge max `60 000 ms`.
+- **SPEC-9.3.5** GIVEN une commande `addToQueue` reçue du relais (bouton « Ajouter en suivant ») — THEN la piste est insérée à l'index `currentIndex + 1` (ou `0` si aucune piste ne joue), déplaçant l'ancienne piste suivante d'un rang dans la file. `deckBCueIndex` est incrémenté si son index est ≥ à la position d'insertion.
+- **SPEC-9.3.6** GIVEN la page relais est chargée et que l'utilisateur a appuyé pour initialiser l'AudioContext — THEN : (a) le polling de métadonnées démarre immédiatement (titre en cours, pré-téléchargements) ; (b) le flux **audio** n'est PAS démarré ; (c) le bouton `▶ Lancer le flux` est affiché (`isActive() === false`).
+- **SPEC-9.3.7** GIVEN le bouton `▶ Lancer le flux` est cliqué — WHEN `isActive()` est `false` — THEN `_lastHash` est réinitialisé pour forcer la ré-application de l'état, la boucle de dérive est lancée, l'audio suit l'état maître dès le prochain tick de polling, et le bouton passe à `⏹ Arrêter le flux`.
+- **SPEC-9.3.8** GIVEN le bouton `⏹ Arrêter le flux` est cliqué — WHEN `isActive()` est `true` — THEN l'audio est mis en pause (`_pauseAll`), le suivi de position s'arrête, la boucle de dérive s'arrête ; le polling continue (le titre reste à jour) et le bouton repasse à `▶ Lancer le flux`.
 
 ---
 
@@ -646,6 +654,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 | downloaderApiToken | `dj-mix:downloader:api:token` |
 | fxVisibility | `dj-mix:fx:hidden` |
 | debugLogs | `dj-mix:logs:debug` |
+| globalVolume | `dj-mix:global-volume` |
 
 ### 12.3 Paramètres avec bornes et défauts
 
@@ -661,6 +670,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 | DJ Mode | `music` | — | — |
 | DJ Set Profile | `club_peak` | — | — |
 | Downloader API URL | `http://192.168.8.149:3000` | — | — |
+| Volume global | 1.0 | 0.0 | 1.0 |
 
 ---
 
@@ -738,6 +748,14 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 ### 14.3 Localisation
 
 - **SPEC-14.3.1** L'interface est intégralement en français.
+
+### 14.4 Volume global
+
+- **SPEC-14.4.1** Un curseur de volume global (`#global-volume-slider`, `0`–`100`) est affiché dans la section player, sous le crossfade slider de mix.
+- **SPEC-14.4.2** Un bouton mute (`#global-volume-btn`) permet de couper / rétablir le son en un clic. GIVEN volume > 0 — WHEN clic — THEN `globalVolume = 0` (icône 🔇). GIVEN volume = 0 — WHEN clic — THEN restaure le volume précédent.
+- **SPEC-14.4.3** GIVEN `globalVolume = v` — WHEN `#applyDeckBaseMix(baseA, baseB)` est appelé — THEN les volumes effectifs des platines sont `nextA × v` et `nextB × v` (`v ∈ [0, 1]`).
+- **SPEC-14.4.4** Le volume global est persisté dans `localStorage` sous la clé `dj-mix:global-volume`. Défaut : `1.0`.
+- **SPEC-14.4.5** L'icône du bouton reflète le niveau : `🔇` si `v = 0`, `🔉` si `v < 0.5`, `🔊` sinon.
 
 ---
 

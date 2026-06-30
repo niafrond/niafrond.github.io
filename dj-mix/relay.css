@@ -310,6 +310,42 @@ html, body {
   transition: width 0.4s ease;
 }
 
+/* ── Bouton lancer/arrêter le flux ──────────────────────────────────── */
+.relay-stream-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity 0.2s, transform 0.15s, background 0.2s, border-color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 16px rgba(29, 185, 84, 0.35);
+}
+
+.relay-stream-btn:active {
+  transform: scale(0.92);
+  opacity: 0.8;
+}
+
+.relay-stream-btn svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+.relay-stream-btn--stop {
+  background: var(--surface3);
+  border: 2px solid var(--text-dim);
+  color: var(--text-muted);
+  box-shadow: none;
+}
+
 /* ── Bouton recherche ───────────────────────────────────────────────── */
 .relay-search-btn {
   position: absolute;

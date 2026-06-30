@@ -242,6 +242,7 @@ export function createQueueManager(options) {
       source = 'manual',
       autoDjReferenceTrackId = null,
       showAddedToast = true,
+      asNext = false,
     } = opts;
 
     const artUrl = getBestArtworkUrl(track);
@@ -312,10 +313,17 @@ export function createQueueManager(options) {
       return;
     }
 
-    q.push(item);
-    const addedIndex = q.length - 1;
+    let addedIndex;
+    if (asNext) {
+      addedIndex = Math.min(Math.max(uiState.currentIndex + 1, 0), q.length);
+      q.splice(addedIndex, 0, item);
+      if (uiState.deckBCueIndex >= addedIndex) uiState.deckBCueIndex += 1;
+    } else {
+      q.push(item);
+      addedIndex = q.length - 1;
+    }
     logInfo?.('addToQueue(): item added', {
-      addedIndex, id: item.id, name: item.name,
+      addedIndex, asNext, id: item.id, name: item.name,
       artist: item.artist, queueLength: q.length,
     });
 
