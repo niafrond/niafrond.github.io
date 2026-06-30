@@ -2991,9 +2991,24 @@ input {
   font-size: 12px;
 }
 
+/* ── DJ Plan section (encart dans l'onglet mix, sous les decks) ── */
+.dj-plan-section {
+  padding: 6px 12px 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dj-plan-recalculate-btn {
+  align-self: flex-end;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+}
+
 /* ── DJ Plan indicator ──────────────────────────────────────── */
 #dj-plan-indicator {
-  margin: 6px 12px 4px;
+  margin: 0;
 }
 
 .dj-plan-card {

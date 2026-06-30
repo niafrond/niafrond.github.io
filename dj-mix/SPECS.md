@@ -216,6 +216,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-3.4.3** L'artwork est récupéré après le téléchargement audio si disponible.
 - **SPEC-3.4.4** Pendant les téléchargements, seuls les badges de statut du morceau concerné sont mis à jour dans le DOM (`renderFilRougeTrackStatus`). Le rebuild complet de la liste (`renderFilRouge`) n'est déclenché que pour les changements structurels (ajout/suppression de morceaux, fin de la phase de vérification du cache).
 - **SPEC-3.4.5** Le téléchargement ne bloque pas la lecture en cours.
+- **SPEC-3.4.7** Les callbacks asynchrones d'arrière-plan (récupération d'artwork, métadonnées BPM/genre, planification DJ Plan incrémentale) appellent `renderFilRougeDebounced` (300 ms) et non `renderFilRouge` directement, pour éviter les rafales de rebuild DOM qui provoquent un clignotement de la liste et rendent les boutons incliquables.
 - **SPEC-3.4.6** GIVEN un morceau déjà présent dans le Cache Storage local (vérifié via `isTrackInLocalCache`) — WHEN un téléchargement de masse est lancé (Tout télécharger, import TXT, import Spotify) — THEN le morceau est marqué `done` directement sans re-téléchargement. Le compteur de progrès ne compte que les morceaux réellement à télécharger.
 
 ### 3.5 Indicateurs de statut par morceau
@@ -471,6 +472,8 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 - **SPEC-8.4.1** GIVEN un DJ Plan avec `crossfadeDurationSec > 0` — THEN un marqueur `.dj-plan-marker` est affiché sur la timeline.
 - **SPEC-8.4.2** Titre du marqueur : `"DJ Plan: crossfade ${seconds}s${transitionLabel} · score ${scorePct}%${nextName}"`.
+- **SPEC-8.4.3** L'encart DJ Plan (`#dj-plan-section`) est affiché dans l'onglet mix/file d'attente (`#tab-mix`), sous les decks, juste avant la file d'attente.
+- **SPEC-8.4.4** `#dj-plan-section` contient : l'indicateur `#dj-plan-indicator` (état de la transition courante) et le bouton `#dj-recalculate-btn` (Recalculer). Le tout est masqué (`hidden`) quand le DJ Plan est désactivé.
 
 ### 8.5 Recalcul de transition (bouton Recalculer)
 
@@ -479,6 +482,14 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-8.5.3** GIVEN `force=true` — WHEN `djHasAnalysis` est `false` pour un ou les deux morceaux — THEN la contrainte `djHasAnalysis` est ignorée et l'appel API `/api/dj/transition` est tenté quand même.
 - **SPEC-8.5.4** GIVEN `force=true` ET `djTrackId` est `null` après résolution — THEN un re-scan des track summaries est forcé (`ensureTrackSummaries({force:true})`) avant un second essai de résolution.
 - **SPEC-8.5.5** GIVEN le bouton Recalculer cliqué — WHEN le calcul échoue — THEN un toast d'erreur spécifique à la raison est affiché (et non un toast de succès trompeur).
+- **SPEC-8.5.6** Le morceau de référence pour le calcul (bouton Recalculer et passe initiale `runDjPlanFullPass`) est déterminé en priorité par `uiState.currentTrackId` (chanson en cours de lecture), avec repli sur `filRougeManager.getCurrentIndex()` si aucun morceau n'est en cours. Cela garantit que la transition calculée est toujours celle du morceau joué vers le suivant, même si l'index fil rouge a déjà avancé lors du préchargement.
+
+### 8.6 Déclenchement automix sur `mixOutSec`
+
+- **SPEC-8.6.1** GIVEN `djExternalPlanEnabled` est `true` ET le morceau en cours (`queue[uiState.currentIndex]`) correspond à un item du fil rouge dont `djTransition.mixOutSec > 0` — WHEN la position de lecture (`currentTime`) atteint `mixOutSec` — THEN l'automix est déclenché immédiatement (`autoMixBtn.click()`), **indépendamment de l'état du mode AutoDJ** (ON ou OFF).
+- **SPEC-8.6.2** Ce déclenchement est protégé par un flag par-morceau (`djPlanMixOutTriggeredForTrack`) réinitialisé à chaque nouvelle lecture, pour éviter un double déclenchement.
+- **SPEC-8.6.3** GIVEN le mode AutoDJ est activé — WHEN le seuil `mixOutSec` est atteint — THEN `markAutomixTriggered(automixTimeline)` est aussi appelé pour empêcher que la vérification AutoDJ standard (`shouldTriggerAutomix`) ne déclenche un second automix sur le même tick.
+- **SPEC-8.6.4** Ce mécanisme est indépendant de la contrainte de durée max (`trackMaxDurationEnabled`), qui reste vérifiée séparément ; le premier seuil atteint chronologiquement déclenche l'automix.
 
 ---
 

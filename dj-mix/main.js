@@ -283,6 +283,8 @@ let trackMaxDurationMode = readTrackMaxDurationModeSetting();
 let trackMaxDurationPct = readTrackMaxDurationPctSetting();
 /** True once the maxdur marker has fired automix for the current track (prevents double-trigger). */
 let maxDurMarkerTriggeredForTrack = false;
+/** True once the DJ Plan mixOutSec marker has fired automix for the current track (prevents double-trigger). */
+let djPlanMixOutTriggeredForTrack = false;
 let autoDjFxSettings = readAutoDjFxSettings();
 let lastAutoDjFxTriggeredAt = 0;
 let djMode = readDjModeSetting(); // 'dance' | 'music'
@@ -797,6 +799,7 @@ const filRougeShuffleBtn = document.getElementById('filrouge-shuffle-btn');
 const filRougeLoopBtn = document.getElementById('filrouge-loop-btn');
 const djExternalPlanBtn = document.getElementById('dj-external-plan-btn');
 const djPlanIndicatorEl = document.getElementById('dj-plan-indicator');
+const djPlanSectionEl = document.getElementById('dj-plan-section');
 const filRougeClearBtn = document.getElementById('filrouge-clear-btn');
 const djSetQualityBadgeEl = document.getElementById('dj-set-quality-badge');
 const djSetProfileSelectEl = document.getElementById('dj-set-profile-select');
@@ -1282,16 +1285,17 @@ async function fetchMissingMeta(item) {
   try {
     // 1. Check localStorage cache
     const stored = getStoredTrackMeta(item.name, item.artist);
-    if (stored?.bpm || stored?.genre) {
-      if (!item.bpm && stored.bpm) item.bpm = stored.bpm;
-      if (!item.genre && stored.genre) item.genre = stored.genre;
+    let localChanged = false;
+    if (!item.bpm && stored?.bpm) { item.bpm = stored.bpm; localChanged = true; }
+    if (!item.genre && stored?.genre) { item.genre = stored.genre; localChanged = true; }
+    if (localChanged) {
       if (item.id) filRougeManager.patchPlaylistItem(item.id, { bpm: item.bpm, genre: item.genre });
       uiRenderer.invalidateDeckMetaCache();
       uiRenderer.refreshDeckMetaDisplays();
       renderQueueDebounced();
       renderFilRougeDebounced();
-      return;
     }
+    if (item.bpm && item.genre) return;
     // 2. Ask the API (only once per track per session)
     metaFetchAttempted.add(key);
     const results = await searchTracksViaApi(`${item.artist} ${item.name}`, 5);
@@ -1808,7 +1812,7 @@ async function fetchFilRougeArtwork(track) {
     const cachedBlobUrl = await restoreArtwork(track).catch(() => null);
     if (cachedBlobUrl) {
       filRougeManager.patchPlaylistItem(track.id, { artUrl: cachedBlobUrl });
-      renderFilRouge();
+      renderFilRougeDebounced();
       if (!needsMeta) return;
     }
   }
@@ -1818,7 +1822,7 @@ async function fetchFilRougeArtwork(track) {
   if (needsArt && cachedArtUrl) {
     filRougeManager.patchPlaylistItem(track.id, { artUrl: cachedArtUrl });
     persistArtwork(track, cachedArtUrl).catch(() => {});
-    renderFilRouge();
+    renderFilRougeDebounced();
     if (!needsMeta) return;
   }
 
@@ -1839,7 +1843,7 @@ async function fetchFilRougeArtwork(track) {
     }
     if (Object.keys(patch).length) {
       filRougeManager.patchPlaylistItem(track.id, patch);
-      renderFilRouge();
+      renderFilRougeDebounced();
     }
   } catch (_) {}
 }
@@ -1865,7 +1869,7 @@ async function fetchAndStoreArtworkForItem(item, deck) {
     if (item.id) filRougeManager.patchPlaylistItem(item.id, { artUrl: cachedBlobUrl });
     updateNowPlaying(item, deck ?? getFocusDeck());
     renderQueue();
-    renderFilRouge();
+    renderFilRougeDebounced();
     return;
   }
 
@@ -1876,7 +1880,7 @@ async function fetchAndStoreArtworkForItem(item, deck) {
     if (item.id) filRougeManager.patchPlaylistItem(item.id, { artUrl: cachedArtUrl });
     updateNowPlaying(item, deck ?? getFocusDeck());
     renderQueue();
-    renderFilRouge();
+    renderFilRougeDebounced();
     persistArtwork(item, cachedArtUrl).catch(() => {});
     return;
   }
@@ -1892,7 +1896,7 @@ async function fetchAndStoreArtworkForItem(item, deck) {
     }
     updateNowPlaying(item, deck ?? getFocusDeck());
     renderQueue();
-    renderFilRouge();
+    renderFilRougeDebounced();
     persistArtwork(item, artUrl).catch(() => {});
   } catch (_) {}
 }
@@ -1918,7 +1922,7 @@ async function startTxtPlaylistPrefetch(tracks) {
       toDownload.push(track);
     }
   }
-  if (cached > 0) renderFilRouge();
+  if (cached > 0) renderFilRougeDebounced();
 
   const BATCH_SIZE = 3;
   for (let i = 0; i < toDownload.length; i += BATCH_SIZE) {
@@ -2300,11 +2304,14 @@ async function runDjPlanFullPass(reason) {
     return;
   }
 
-  const currentIndex = filRougeManager.getCurrentIndex();
   const playlist = filRougeManager.getPlaylist();
+  const filRougeCurrentIdx = filRougeManager.getCurrentIndex();
+  const currentFilRougeItem = (uiState.currentTrackId != null
+    ? playlist.find((p) => String(p.id) === String(uiState.currentTrackId))
+    : null) ?? (filRougeCurrentIdx >= 0 ? playlist[filRougeCurrentIdx] : null);
   const promises = [runDjSetQualityRefresh()];
-  if (currentIndex >= 0 && currentIndex < playlist.length) {
-    promises.push(djPlanManager.planCurrentToNextTransition(playlist[currentIndex]));
+  if (currentFilRougeItem) {
+    promises.push(djPlanManager.planCurrentToNextTransition(currentFilRougeItem));
   }
   await Promise.all(promises);
 
@@ -2322,7 +2329,7 @@ async function runDjPlanFullPass(reason) {
 async function runDjPlanIncrementalPass(items, withWrap) {
   try {
     await djPlanManager.planEdgesForNewItems(items, { withWrap });
-    renderFilRouge();
+    renderFilRougeDebounced();
   } catch (err) {
     logWarn('djPlan: planEdgesForNewItems failed', { error: err?.message });
   }
@@ -2404,10 +2411,12 @@ function updateDjPlanIndicator() {
   });
 
   if (!indicatorState.visible) {
+    if (djPlanSectionEl) djPlanSectionEl.hidden = true;
     djPlanIndicatorEl.hidden = true;
     return;
   }
 
+  if (djPlanSectionEl) djPlanSectionEl.hidden = false;
   djPlanIndicatorEl.hidden = false;
 
   if (indicatorState.state === 'no-track') {
@@ -2528,11 +2537,14 @@ if (djRecalculateBtn) {
   djRecalculateBtn.addEventListener('click', async () => {
     djRecalculateBtn.disabled = true;
     try {
-      const currentIndex = filRougeManager.getCurrentIndex();
       const playlist = filRougeManager.getPlaylist();
+      const filRougeIdx = filRougeManager.getCurrentIndex();
+      const currentItem = (uiState.currentTrackId != null
+        ? playlist.find((p) => String(p.id) === String(uiState.currentTrackId))
+        : null) ?? (filRougeIdx >= 0 ? playlist[filRougeIdx] : null);
       let result = { ok: false, reason: 'no-track' };
-      if (currentIndex >= 0 && currentIndex < playlist.length) {
-        result = await djPlanManager.planCurrentToNextTransition(playlist[currentIndex], { force: true });
+      if (currentItem) {
+        result = await djPlanManager.planCurrentToNextTransition(currentItem, { force: true });
       }
       updateDjPlanIndicator();
       renderFilRouge();
@@ -3397,6 +3409,7 @@ const playbackCtrl = createPlaybackController({
   applyTrackMaxDurationForCurrentPlayback: () => applyTrackMaxDurationForCurrentPlayback(),
   resetTrackCaches: () => {
     maxDurMarkerTriggeredForTrack = false;
+    djPlanMixOutTriggeredForTrack = false;
     _maxDurMarkerCache.key = null;
     _maxDurMarkerCache.renderKey = null;
     _maxDurMarkerCache.rawLogged = false;
@@ -4037,6 +4050,29 @@ function hookPlayerEvents() {
           markerThresholdMs: _mdThresholdMs,
         });
         autoMixBtn?.click?.();
+      }
+    }
+
+    // DJ Plan: trigger automix exactly at mixOutSec computed by the planner for the
+    // current → next fil rouge transition, regardless of whether AutoDJ mode is enabled.
+    if (djExternalPlanEnabled && !djPlanMixOutTriggeredForTrack && !automixTimeline.triggeredForTrack) {
+      const _djCurrentItem = queue[uiState.currentIndex];
+      const _djFilRougeItem = _djCurrentItem
+        ? filRougeManager.getPlaylist().find((p) => String(p.id) === String(_djCurrentItem.id))
+        : null;
+      const _djTransition = _djFilRougeItem?.djTransition;
+      if (_djTransition && Number.isFinite(_djTransition.mixOutSec) && _djTransition.mixOutSec > 0) {
+        const _djThresholdMs = _djTransition.mixOutSec * 1000;
+        if (position >= _djThresholdMs) {
+          djPlanMixOutTriggeredForTrack = true;
+          markAutomixTriggered(automixTimeline);
+          logInfo('djPlan: mixOutSec reached, triggering automix', {
+            position,
+            mixOutSec: _djTransition.mixOutSec,
+            decisionId: _djTransition.decisionId,
+          });
+          autoMixBtn?.click?.();
+        }
       }
     }
 
@@ -6273,6 +6309,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     // Schedule automix timing for auto DJ mode and reset trigger flag
     resetAutomixTimeline(automixTimeline, targetDeck);
     maxDurMarkerTriggeredForTrack = false;
+    djPlanMixOutTriggeredForTrack = false;
     _maxDurMarkerCache.key = null;
     _maxDurMarkerCache.renderKey = null;
     _maxDurMarkerCache.rawLogged = false;
