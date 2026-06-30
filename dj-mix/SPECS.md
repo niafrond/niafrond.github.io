@@ -699,7 +699,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
   - `seekto` → `player.seekTo(seekTime × 1000)`
   - `nexttrack` → `autoMixBtn.click()`
 - **SPEC-13.3.4** Position mise à jour : à chaque événement progress (~300ms) + toutes les `30 s` via keepalive timer.
-- **SPEC-13.3.5** GIVEN un appel `updateNowPlaying(item, deck)` où `deck` n'est pas le deck en focus (ex. préchargement de l'artwork du prochain morceau sur le deck inactif) — THEN les métadonnées `navigator.mediaSession.metadata` ne sont **pas** modifiées ; seule la piste réellement audible (deck en focus) met à jour la notification système.
+- **SPEC-13.3.5** GIVEN un préchargement d'artwork sur le deck inactif (morceau suivant, ghost fil rouge, launch preview) — THEN `fetchAndStoreArtworkForItem` est appelé avec `{ skipNotification: true }` de sorte que `navigator.mediaSession.metadata` n'est pas modifié ; la notification système conserve les métadonnées de la piste réellement audible. Note : `updateNowPlaying` lui-même ne filtre pas sur le deck car lors d'un crossfade le deck entrant est encore inactif au moment où la notification est mise à jour.
 
 ### 13.4 Wake Lock
 

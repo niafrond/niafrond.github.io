@@ -365,18 +365,15 @@ describe('updateNowPlaying / notification système (mediaSession)', () => {
     expect(navigator.mediaSession.metadata.artist).toBe('DJ Focus');
   });
 
-  test("n'écrase pas la notification système avec la piste préchargée sur le deck inactif", () => {
+  test('met à jour la notification même quand deck != focusDeck (crossfade entrant)', () => {
+    // Pendant un crossfade, targetDeck est le deck inactif (ratio pas encore mis à jour).
+    // updateNowPlaying doit quand même écrire la notification — c'est fetchAndStoreArtworkForItem
+    // qui porte la responsabilité de ne pas appeler updateNowPlaying pour les préchargements.
     const playing = makeTrack({ id: 'now', name: 'Now Playing', artist: 'DJ Focus' });
-    const upcoming = makeTrack({ id: 'next', name: 'Upcoming Track', artist: 'DJ Next' });
-    const renderer = makeNowPlayingRenderer({ focusDeck: 'A', queue: [playing, upcoming] });
+    const renderer = makeNowPlayingRenderer({ focusDeck: 'A', queue: [playing] });
 
-    // La piste en cours est déjà affichée dans la notification système.
-    renderer.updateNowPlaying(playing, 'A');
-    expect(navigator.mediaSession.metadata.title).toBe('Now Playing');
-
-    // Préchargement de la pochette du prochain morceau sur le deck inactif (B) :
-    // ne doit pas modifier la notification système, qui doit rester sur la piste jouée.
-    renderer.updateNowPlaying(upcoming, 'B');
+    // Simuler un appel crossfade : deck='B' alors que focusDeck est encore 'A'.
+    renderer.updateNowPlaying(playing, 'B');
 
     expect(navigator.mediaSession.metadata.title).toBe('Now Playing');
     expect(navigator.mediaSession.metadata.artist).toBe('DJ Focus');

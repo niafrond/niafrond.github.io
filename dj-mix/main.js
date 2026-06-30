@@ -4542,7 +4542,7 @@ async function launchDeckFromQueue(deck, options = {}) {
         uiState.deckCueDeck = targetDeck;
         updateUpcomingArtwork();
         if (!item.artUrl) {
-          fetchAndStoreArtworkForItem(item, targetDeck).then(() => {
+          fetchAndStoreArtworkForItem(item, targetDeck, { skipNotification: true }).then(() => {
             if (launchPreviewItem === item) {
               launchPreviewArtUrl = item.artUrl || '';
               updateUpcomingArtwork();
@@ -5970,7 +5970,7 @@ async function addToQueue(track, options = {}) {
         newItemId: item.id,
         newItemName: item.name,
       });
-      fetchAndStoreArtworkForItem(item, inactiveDeck).catch(() => {});
+      fetchAndStoreArtworkForItem(item, inactiveDeck, { skipNotification: true }).catch(() => {});
       const replaceMixPreload = preloadMixDataForDeckItem(item, inactiveDeck);
       ensureLocalSource(item).then(async (url) => {
         if (!player || deckDisplayItems[inactiveDeck] !== item) return;
@@ -6260,7 +6260,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
         setDeckItem(inactiveDeck, nextItem);
         updatePlannedStartMarker();
 
-        fetchAndStoreArtworkForItem(nextItem, inactiveDeck).catch(() => {});
+        fetchAndStoreArtworkForItem(nextItem, inactiveDeck, { skipNotification: true }).catch(() => {});
         const nextMixPreload = preloadMixDataForDeckItem(nextItem, inactiveDeck);
 
         ensureLocalSource(nextItem).then(async (nextUrl) => {
@@ -6318,7 +6318,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
             ghostName: ghostItem.name,
           });
 
-          fetchAndStoreArtworkForItem(ghostItem, inactiveDeck).catch(() => {});
+          fetchAndStoreArtworkForItem(ghostItem, inactiveDeck, { skipNotification: true }).catch(() => {});
           const ghostMixPreload = preloadMixDataForDeckItem(ghostItem, inactiveDeck);
 
           ensureLocalSource(ghostItem).then(async (ghostUrl) => {
