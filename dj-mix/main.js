@@ -182,6 +182,7 @@ import {
 } from './lib/settingsStorage.js';
 import { DEFAULT_DOWNLOADER_API_URL, STORAGE_KEYS } from './lib/storageKeys.js';
 import { getStoredTrackMeta, patchStoredTrackMeta } from './lib/trackMetaStorage.js';
+import { createMetaFetchService } from './lib/metaFetchService.js';
 import { getArtworkUrl, setArtworkUrl } from './lib/artworkUrlCache.js';
 import { DANCE_GENRE_DEFAULTS } from './lib/danceGenreConfig.js';
 import { DJ_MODES } from './lib/djModeConfig.js';
@@ -1263,60 +1264,16 @@ const { setCacheFilter, switchTab } = playlistManager;
 const filRougeManager = createFilRougeManager();
 const filRougeTrackStatusByKey = new Map();
 
-// Tracks in-flight meta fetches to avoid duplicate API calls
-const metaFetchInFlight = new Set();
-// Tracks keys already queried via the API this session, even when no bpm/genre was
-// found, so renderQueue/renderFilRouge re-renders don't keep re-spamming /api/search
-// for tracks the API simply has no data for.
-const metaFetchAttempted = new Set();
-
-/**
- * Fetches BPM and/or genre for an item that is missing them.
- * Checks localStorage first, then falls back to the search API.
- * Mutates item in place and triggers a re-render when data is found.
- * @param {object} item
- */
-async function fetchMissingMeta(item) {
-  if (!item?.name) return;
-  if (item.bpm && item.genre) return;
-  const key = String(item.id || `${item.artist}::${item.name}`);
-  if (metaFetchInFlight.has(key) || metaFetchAttempted.has(key)) return;
-  metaFetchInFlight.add(key);
-  try {
-    // 1. Check localStorage cache
-    const stored = getStoredTrackMeta(item.name, item.artist);
-    let localChanged = false;
-    if (!item.bpm && stored?.bpm) { item.bpm = stored.bpm; localChanged = true; }
-    if (!item.genre && stored?.genre) { item.genre = stored.genre; localChanged = true; }
-    if (localChanged) {
-      if (item.id) filRougeManager.patchPlaylistItem(item.id, { bpm: item.bpm, genre: item.genre });
-      uiRenderer.invalidateDeckMetaCache();
-      uiRenderer.refreshDeckMetaDisplays();
-      renderQueueDebounced();
-      renderFilRougeDebounced();
-    }
-    if (item.bpm && item.genre) return;
-    // 2. Ask the API (only once per track per session)
-    metaFetchAttempted.add(key);
-    const results = await searchTracksViaApi(`${item.artist} ${item.name}`, 5);
-    const hit = results[0];
-    if (!hit) return;
-    let changed = false;
-    if (!item.bpm && hit.bpm) { item.bpm = hit.bpm; changed = true; }
-    if (!item.genre && hit.genre) { item.genre = hit.genre; changed = true; }
-    if (changed) {
-      patchStoredTrackMeta(item.name, item.artist, { bpm: item.bpm, genre: item.genre });
-      if (item.id) filRougeManager.patchPlaylistItem(item.id, { bpm: item.bpm, genre: item.genre });
-      uiRenderer.invalidateDeckMetaCache();
-      uiRenderer.refreshDeckMetaDisplays();
-      renderQueueDebounced();
-      renderFilRougeDebounced();
-    }
-  } catch (_) {
-  } finally {
-    metaFetchInFlight.delete(key);
-  }
-}
+const { fetchMissingMeta } = createMetaFetchService({
+  getStoredTrackMeta,
+  patchStoredTrackMeta,
+  searchTracksViaApi,
+  filRougeManager,
+  invalidateDeckMetaCache: () => uiRenderer.invalidateDeckMetaCache(),
+  refreshDeckMetaDisplays: () => uiRenderer.refreshDeckMetaDisplays(),
+  renderQueueDebounced: () => renderQueueDebounced(),
+  renderFilRougeDebounced: () => renderFilRougeDebounced(),
+});
 
 function getFilRougeTrackKey(item) {
   if (!item) return '';
