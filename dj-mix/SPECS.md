@@ -169,6 +169,13 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-2.4.3** GIVEN le mode low-memory actif — THEN `trimRetainedAudioSources()` est appelé avant le prefetch.
 - **SPEC-2.4.4** GIVEN l'item a été retiré de la queue entre la planification et l'exécution — THEN le prefetch est annulé.
 
+### 2.5 Affichage de la liste (buildQueueHTML)
+
+- **SPEC-2.5.1** Chaque item affiche 2 boutons `queue-cue` (platine 1 / platine 2, `data-deck="A"`/`"B"`) permettant de cuer le morceau sur une platine donnée (cf. handler `.queue-cue` dans `main.js`). Le bouton de la platine sur laquelle l'item cué est actif reçoit la classe `is-selected`.
+- **SPEC-2.5.2** GIVEN un item déjà chargé sur une platine (`deckDisplayItems`) — THEN le bouton `queue-cue` correspondant reçoit la classe `is-loaded-deck`, est `disabled`, et porte le titre `Déjà chargée sur platine 1` (ou `2`).
+- **SPEC-2.5.3** GIVEN un item chargé sur une seule platine — THEN un badge `queue-deck-badge` affiche `platine 1` ou `platine 2`. GIVEN le même item chargé sur les deux platines — THEN le badge affiche `DJ 1+2`.
+- **SPEC-2.5.4** Les chips BPM/genre (`queue-chip`) ne sont affichées que si `djMode === 'dance'` ; masquées en mode `music`.
+
 ---
 
 ## 3. Fil Rouge
