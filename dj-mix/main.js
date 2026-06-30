@@ -197,6 +197,8 @@ import { createDeckMarkerController } from './lib/deckMarkerController.js';
 import { createPlaybackController } from './lib/playbackController.js';
 import { createRelayModeManager } from './lib/relayModeManager.js';
 import { createRelayModeController } from './lib/relayModeController.js';
+import { computeNextBatchSize } from './lib/downloadBatchSizing.js';
+import { INITIAL_PARALLEL_DOWNLOADS } from './lib/constants.js';
 
 import { uiState } from './lib/uiState.js';
 const QUEUE_KEY = STORAGE_KEYS.queue;
@@ -1881,18 +1883,24 @@ async function startTxtPlaylistPrefetch(tracks) {
   }
   if (cached > 0) renderFilRougeDebounced();
 
-  const BATCH_SIZE = 3;
-  for (let i = 0; i < toDownload.length; i += BATCH_SIZE) {
+  let batchSize = INITIAL_PARALLEL_DOWNLOADS;
+  for (let i = 0; i < toDownload.length; ) {
     if (spotifyPrefetchGeneration !== generation) return;
-    const batch = toDownload.slice(i, i + BATCH_SIZE);
+    const batch = toDownload.slice(i, i + batchSize);
     for (const track of batch) {
       setFilRougeTrackStatus(track, { downloadState: 'downloading' });
       renderFilRougeTrackStatus(track);
     }
-    setTxtPlaylistStatus(`Téléchargement serveur TXT : ${i + 1}–${Math.min(i + BATCH_SIZE, toDownload.length)} / ${toDownload.length}…`);
+    setTxtPlaylistStatus(`Téléchargement serveur TXT : ${i + 1}–${Math.min(i + batchSize, toDownload.length)} / ${toDownload.length}…`);
+    const batchStartedAt = performance.now();
     const batchResults = await Promise.allSettled(
       batch.map(track => prefetchTrackToLocalCache(track).catch(() => false))
     );
+    batchSize = computeNextBatchSize({
+      currentSize: batchSize,
+      elapsedMs: performance.now() - batchStartedAt,
+      completedCount: batch.length,
+    });
     await Promise.allSettled(
       batchResults.map(async (result, j) => {
         const track = batch[j];
@@ -1909,6 +1917,7 @@ async function startTxtPlaylistPrefetch(tracks) {
         await fetchFilRougeArtwork(track).catch(() => {});
       })
     );
+    i += batch.length;
   }
 
   if (spotifyPrefetchGeneration !== generation) return;
@@ -1937,10 +1946,11 @@ function getSpotifyFilRougeNextDelayMs(error) {
 }
 
 /**
- * Caches all tracks from a Spotify playlist into the local API cache, one by
- * one (sequentially) to avoid flooding the device with parallel requests.
- * Each call increments a generation counter; a stale loop detects the change
- * and exits early so only the latest import is being prefetched at any time.
+ * Caches all tracks from a Spotify playlist into the local API cache, by
+ * batches downloaded in parallel (size adjusted after each batch based on
+ * observed per-track throughput, see SPEC-3.4.9). Each call increments a
+ * generation counter; a stale loop detects the change and exits early so
+ * only the latest import is being prefetched at any time.
  */
 async function startSpotifyPlaylistPrefetch(tracks) {
   if (!Array.isArray(tracks) || tracks.length === 0) return;
@@ -1959,14 +1969,20 @@ async function startSpotifyPlaylistPrefetch(tracks) {
     }
   }
 
-  const BATCH_SIZE = 3;
-  for (let i = 0; i < toDownload.length; i += BATCH_SIZE) {
+  let batchSize = INITIAL_PARALLEL_DOWNLOADS;
+  for (let i = 0; i < toDownload.length; ) {
     if (spotifyPrefetchGeneration !== generation) return;
-    const batch = toDownload.slice(i, i + BATCH_SIZE);
-    setSpotifyStatus(`Cache Spotify : ${i + 1}–${Math.min(i + BATCH_SIZE, toDownload.length)} / ${toDownload.length}…`);
+    const batch = toDownload.slice(i, i + batchSize);
+    setSpotifyStatus(`Cache Spotify : ${i + 1}–${Math.min(i + batchSize, toDownload.length)} / ${toDownload.length}…`);
+    const batchStartedAt = performance.now();
     const batchResults = await Promise.allSettled(
       batch.map(track => prefetchTrackToLocalCache(track).catch(() => false))
     );
+    batchSize = computeNextBatchSize({
+      currentSize: batchSize,
+      elapsedMs: performance.now() - batchStartedAt,
+      completedCount: batch.length,
+    });
     for (let j = 0; j < batch.length; j++) {
       const track = batch[j];
       const ok = batchResults[j].status === 'fulfilled' && batchResults[j].value;
@@ -1977,6 +1993,7 @@ async function startSpotifyPlaylistPrefetch(tracks) {
         failed++;
       }
     }
+    i += batch.length;
   }
   if (spotifyPrefetchGeneration !== generation) return;
   const summary = failed > 0
@@ -2620,22 +2637,29 @@ async function startFilRougeStartupCacheSync() {
   }
   renderFilRouge();
 
-  // Phase 2 : télécharger ce qui manque (3 en parallèle)
+  // Phase 2 : télécharger ce qui manque (taille de batch ajustée après chaque
+  // batch selon le débit observé, voir SPEC-3.4.9)
   const toDownload = playlist.filter(track => {
     const key = getFilRougeTrackKey(track);
     const existing = filRougeTrackStatusByKey.get(key);
     return existing?.downloadState !== 'done';
   });
-  const BATCH_SIZE = 3;
-  for (let i = 0; i < toDownload.length; i += BATCH_SIZE) {
-    const batch = toDownload.slice(i, i + BATCH_SIZE);
+  let batchSize = INITIAL_PARALLEL_DOWNLOADS;
+  for (let i = 0; i < toDownload.length; ) {
+    const batch = toDownload.slice(i, i + batchSize);
     for (const track of batch) {
       setFilRougeTrackStatus(track, { downloadState: 'downloading' });
       renderFilRougeTrackStatus(track);
     }
+    const batchStartedAt = performance.now();
     const batchResults = await Promise.allSettled(
       batch.map(track => prefetchTrackToLocalCache(track).catch(() => false))
     );
+    batchSize = computeNextBatchSize({
+      currentSize: batchSize,
+      elapsedMs: performance.now() - batchStartedAt,
+      completedCount: batch.length,
+    });
     for (let j = 0; j < batch.length; j++) {
       const track = batch[j];
       const ok = batchResults[j].status === 'fulfilled' && batchResults[j].value;
@@ -2647,6 +2671,7 @@ async function startFilRougeStartupCacheSync() {
       }
       renderFilRougeTrackStatus(track);
     }
+    i += batch.length;
   }
 }
 

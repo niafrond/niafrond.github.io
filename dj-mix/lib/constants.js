@@ -52,3 +52,9 @@ export const MUSIC_MODE_NORM_MAX_INTERVAL = 60;
 // ─── Scheduling helpers ───────────────────────────────────────────────────────
 export const IDLE_SCHEDULE_FALLBACK_MS = 80;
 export const IDLE_SCHEDULE_TIMEOUT_MS  = 2000;
+
+// ─── Adaptive download batching (Fil Rouge background downloads) ─────────────
+export const INITIAL_PARALLEL_DOWNLOADS   = 3;
+export const MIN_PARALLEL_DOWNLOADS       = 2;
+export const MAX_PARALLEL_DOWNLOADS       = 10;
+export const TARGET_MS_PER_TRACK_DOWNLOAD = 4000;

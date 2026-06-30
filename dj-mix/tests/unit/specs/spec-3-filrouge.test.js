@@ -1,9 +1,10 @@
 /**
  * Spec-driven tests for §3 — Fil Rouge
- * References: SPEC-3.1–3.3
+ * References: SPEC-3.1–3.4
  */
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createFilRougeManager } from '../../../lib/filRougeManager.js';
+import { computeNextBatchSize } from '../../../lib/downloadBatchSizing.js';
 
 beforeEach(() => {
   localStorage.clear();
@@ -151,5 +152,45 @@ describe('SPEC-3.3.1 — TXT import parsing', () => {
   test('no separator returns null (fallback to "Artiste inconnu")', () => {
     const match = 'Just A Song Title'.match(SEPARATOR_RE);
     expect(match).toBeNull();
+  });
+});
+
+// ── SPEC-3.4.9 — Adaptive download batch sizing ─────────────────────────────
+
+describe('SPEC-3.4.9 — Ajustement adaptatif du parallélisme de téléchargement', () => {
+  test('SPEC-3.4.9 — réduit la taille du batch quand le débit par morceau est trop faible', () => {
+    const next = computeNextBatchSize({
+      currentSize: 5,
+      elapsedMs: 30_000, // 6000 ms/morceau, au-delà des 4000 ms cibles
+      completedCount: 5,
+    });
+    expect(next).toBe(4);
+  });
+
+  test('SPEC-3.4.9 — augmente la taille du batch quand le débit par morceau est largement sous la cible', () => {
+    const next = computeNextBatchSize({
+      currentSize: 5,
+      elapsedMs: 5_000, // 1000 ms/morceau, sous la moitié des 4000 ms cibles
+      completedCount: 5,
+    });
+    expect(next).toBe(6);
+  });
+
+  test('SPEC-3.4.9 — ne descend jamais sous le plancher de 2 téléchargements parallèles', () => {
+    const next = computeNextBatchSize({
+      currentSize: 2,
+      elapsedMs: 30_000,
+      completedCount: 2,
+    });
+    expect(next).toBe(2);
+  });
+
+  test('SPEC-3.4.9 — ne dépasse jamais le plafond de 10 téléchargements parallèles', () => {
+    const next = computeNextBatchSize({
+      currentSize: 10,
+      elapsedMs: 1_000,
+      completedCount: 10,
+    });
+    expect(next).toBe(10);
   });
 });

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Déclare DJ Mix comme application média pour Android Auto / Android Automotive -->
+<automotiveApp>
+    <uses name="media"/>
+</automotiveApp>

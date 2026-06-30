@@ -211,7 +211,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 ### 3.4 Téléchargement en arrière-plan
 
-- **SPEC-3.4.1** Téléchargement par batch de `3` morceaux en parallèle.
+- **SPEC-3.4.1** Téléchargement par batch, de taille initiale `3` morceaux en parallèle (taille ensuite ajustée dynamiquement, voir SPEC-3.4.9).
 - **SPEC-3.4.2** Chaque morceau passe par les états : `idle` → `downloading` → `done` | `error`.
 - **SPEC-3.4.3** L'artwork est récupéré après le téléchargement audio si disponible.
 - **SPEC-3.4.4** Pendant les téléchargements, seuls les badges de statut du morceau concerné sont mis à jour dans le DOM (`renderFilRougeTrackStatus`). Le rebuild complet de la liste (`renderFilRouge`) n'est déclenché que pour les changements structurels (ajout/suppression de morceaux, fin de la phase de vérification du cache).
@@ -219,6 +219,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-3.4.6** GIVEN un morceau déjà présent dans le Cache Storage local (vérifié via `isTrackInLocalCache`) — WHEN un téléchargement de masse est lancé (Tout télécharger, import TXT, import Spotify) — THEN le morceau est marqué `done` directement sans re-téléchargement. Le compteur de progrès ne compte que les morceaux réellement à télécharger.
 - **SPEC-3.4.7** Les callbacks asynchrones d'arrière-plan (récupération d'artwork, métadonnées BPM/genre, planification DJ Plan incrémentale) appellent `renderFilRougeDebounced` (300 ms) et non `renderFilRouge` directement, pour éviter les rafales de rebuild DOM qui provoquent un clignotement de la liste et rendent les boutons incliquables.
 - **SPEC-3.4.8** `fetchMissingMeta(item)` ne déclenche un re-render (`renderQueueDebounced`/`renderFilRougeDebounced`) que si le BPM ou le genre de l'item a réellement changé. Si la résolution via le cache `localStorage` ne complète pas entièrement les métadonnées manquantes, l'item est marqué comme « tenté » (`metaFetchAttempted`) avant l'appel API, pour empêcher les re-renders en boucle infinie à chaque cycle de `renderFilRouge` pour les morceaux dont les métadonnées resteront durablement incomplètes.
+- **SPEC-3.4.9** GIVEN un batch de téléchargements vient de se terminer — THEN la taille du prochain batch est recalculée (`computeNextBatchSize`) à partir du temps moyen observé par morceau (`elapsedMs du batch / nombre de morceaux du batch`) : si ce temps dépasse `4000 ms`, le parallélisme est réduit de `1` (plancher `2`) ; s'il est inférieur à `2000 ms` (la moitié de la cible), il est augmenté de `1` (plafond `10`). Entre ces deux seuils, la taille reste inchangée. Objectif : éviter qu'un trop grand nombre de téléchargements simultanés ne dilue le débit disponible par morceau, tout en exploitant la bande passante restante quand elle est disponible.
 
 ### 3.5 Indicateurs de statut par morceau
 
@@ -676,6 +677,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
   - `seekto` → `player.seekTo(seekTime × 1000)`
   - `nexttrack` → `autoMixBtn.click()`
 - **SPEC-13.3.4** Position mise à jour : à chaque événement progress (~300ms) + toutes les `30 s` via keepalive timer.
+- **SPEC-13.3.5** GIVEN un appel `updateNowPlaying(item, deck)` où `deck` n'est pas le deck en focus (ex. préchargement de l'artwork du prochain morceau sur le deck inactif) — THEN les métadonnées `navigator.mediaSession.metadata` ne sont **pas** modifiées ; seule la piste réellement audible (deck en focus) met à jour la notification système.
 
 ### 13.4 Wake Lock
 
@@ -691,6 +693,11 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-13.5.4** Queue push debounced `500 ms`.
 - **SPEC-13.5.5** Commandes média : `onMediaCommand(handler)` pour play/pause/next/seek. `getPendingMediaCommand()` pour cold-start.
 - **SPEC-13.5.6** Artwork blob → base64 data URI pour Android.
+- **SPEC-13.5.7** Côté natif (`dj-mix-android/`), le plugin Capacitor `MediaSession` implémente `updateMetadata`/`updatePlaybackState`/`updateQueue`/`getPendingCommand` et émet l'événement `mediaCommand` — ces noms et la forme des payloads (mêmes clés que 13.5.2-13.5.6 : `id`, `title`, `artist`, `album`, `artworkUrl`, `durationMs`, `playing`, `positionMs`, `speed`, `items[]`, `action`, `mediaId`) sont le contrat strict entre `lib/androidAutoBridge.js` et `MediaSessionPlugin.java` ; toute évolution de l'un doit être répercutée sur l'autre dans le même changement.
+- **SPEC-13.5.8** `MediaPlaybackService` (`MediaBrowserServiceCompat` + `MediaSessionCompat`) expose la file à Android Auto et relaie les commandes de transport (boutons casque/Bluetooth/voiture, notification) vers `applyMediaCommand()` (`main.js`) avec les actions `play`/`pause`/`next`/`seekTo`/`playFromMediaId`.
+- **SPEC-13.5.9** Déclarations manifest requises pour qu'Android Auto détecte l'app : meta-data `com.google.android.gms.car.application` → `res/xml/automotive_app_desc.xml` (`<uses name="media"/>`), service `MediaPlaybackService` avec intent-filter `android.media.browse.MediaBrowserService` (`exported`, `foregroundServiceType="mediaPlayback"`), receiver `androidx.media.session.MediaButtonReceiver`. Patchées automatiquement par `.github/workflows/apk-djmix.yml` sur le manifest généré par `cap add android`.
+- **SPEC-13.5.10** Piège opérationnel : un APK construit par la CI est signé en sideload (hors Play Store). Android Auto n'affiche les apps média sideloadées que si "Sources inconnues" est activé dans les réglages développeur de l'app Android Auto sur le téléphone (triple-tap sur le numéro de version) — un manifest/service par ailleurs correct n'apparaîtra pas sans cette étape.
+- **SPEC-13.5.11** `ApkUpdaterPlugin` (plugin Capacitor `ApkUpdater`, méthode `downloadAndInstall({ url })`) télécharge la mise à jour APK via `DownloadManager` et lance l'installation via un `FileProvider` (`res/xml/file_paths.xml`) — appelé par `dj-mix/pwa.js#doApkUpdate()`, sans rapport fonctionnel avec Android Auto mais empaqueté dans le même wrapper natif.
 
 ### 13.6 Plein écran
 

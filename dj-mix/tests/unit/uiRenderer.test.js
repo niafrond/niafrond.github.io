@@ -302,3 +302,83 @@ describe('buildQueueHTML', () => {
     expect(trackArtistA.innerHTML).toContain('queue-chip');
   });
 });
+
+describe('updateNowPlaying / notification système (mediaSession)', () => {
+  function makeArtEl() {
+    return { hidden: false, src: '', onerror: null, style: {} };
+  }
+
+  function makeNowPlayingRenderer({ focusDeck = 'A', queue = [], currentIndex = 0 } = {}) {
+    return createDjMixRenderer({
+      deckAPanel: null, deckBPanel: null,
+      deckAVol: null, deckBVol: null,
+      deckAFill: null, deckBFill: null,
+      deckATitle: null, deckBTitle: null,
+      deckABpm: null, deckBBpm: null,
+      deckABpmReset: null, deckBBpmReset: null,
+      deckALaunchBtn: null, deckBLaunchBtn: null,
+      queueList: null, emptyQueue: null,
+      autoMixBtn: null,
+      albumArt: makeArtEl(), artPlaceholder: { style: {} },
+      nextAlbumArt: makeArtEl(), nextArtPlaceholder: { style: {} },
+      trackArtist: makeDomTextNode(), trackArtistA: makeDomTextNode(), trackArtistB: makeDomTextNode(),
+      getQueue: () => queue,
+      getDjMode: () => 'music',
+      getCurrentIndex: () => currentIndex,
+      getCurrentTrackId: () => queue[currentIndex]?.id ?? null,
+      getIsPlaying: () => true,
+      getDeckBCueIndex: () => -1,
+      getDeckCueDeck: () => null,
+      getDeckDisplayItems: () => ({ A: queue[0] || null, B: queue[1] || null }),
+      getInactiveDeck: () => (focusDeck === 'A' ? 'B' : 'A'),
+      getFocusDeck: () => focusDeck,
+      getLaunchPreviewState: () => ({ active: false }),
+      getPrevIsCrossfading: () => false,
+      setPrevIsCrossfading: () => {},
+      getDeckMixRatio: () => (focusDeck === 'A' ? 0 : 1),
+      setDeckMixRatio: () => {},
+      clampDeckMixRatio: (value) => value,
+      updateDeckMixUI: () => {},
+      updateDeckCueUI: () => {},
+      getPlayer: () => null,
+    });
+  }
+
+  beforeEach(() => {
+    global.MediaMetadata = function MediaMetadataStub(init) {
+      Object.assign(this, init);
+    };
+    Object.defineProperty(navigator, 'mediaSession', {
+      value: { metadata: null, setActionHandler: () => {}, setPositionState: () => {} },
+      writable: true,
+      configurable: true,
+    });
+  });
+
+  test('met à jour la notification système pour la piste du deck en focus (en cours de lecture)', () => {
+    const playing = makeTrack({ id: 'now', name: 'Now Playing', artist: 'DJ Focus' });
+    const renderer = makeNowPlayingRenderer({ focusDeck: 'A', queue: [playing] });
+
+    renderer.updateNowPlaying(playing, 'A');
+
+    expect(navigator.mediaSession.metadata.title).toBe('Now Playing');
+    expect(navigator.mediaSession.metadata.artist).toBe('DJ Focus');
+  });
+
+  test("n'écrase pas la notification système avec la piste préchargée sur le deck inactif", () => {
+    const playing = makeTrack({ id: 'now', name: 'Now Playing', artist: 'DJ Focus' });
+    const upcoming = makeTrack({ id: 'next', name: 'Upcoming Track', artist: 'DJ Next' });
+    const renderer = makeNowPlayingRenderer({ focusDeck: 'A', queue: [playing, upcoming] });
+
+    // La piste en cours est déjà affichée dans la notification système.
+    renderer.updateNowPlaying(playing, 'A');
+    expect(navigator.mediaSession.metadata.title).toBe('Now Playing');
+
+    // Préchargement de la pochette du prochain morceau sur le deck inactif (B) :
+    // ne doit pas modifier la notification système, qui doit rester sur la piste jouée.
+    renderer.updateNowPlaying(upcoming, 'B');
+
+    expect(navigator.mediaSession.metadata.title).toBe('Now Playing');
+    expect(navigator.mediaSession.metadata.artist).toBe('DJ Focus');
+  });
+});
