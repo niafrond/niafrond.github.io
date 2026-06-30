@@ -1,3 +1,11 @@
+## [1.241.0](https://github.com/niafrond/niafrond.github.io/compare/v1.240.0...v1.241.0) (2026-06-30)
+
+### Features
+
+* add volume control UI and functionality ([68181f2](https://github.com/niafrond/niafrond.github.io/commit/68181f2850552c1cc222a59568b7fb287921690d))
+* enhance artwork fetching logic with optional notification suppression ([04ffbe5](https://github.com/niafrond/niafrond.github.io/commit/04ffbe5b6faec074ddbf3328bafad06e17c2e8c9))
+* update artwork fetching logic to suppress notifications during preloading on inactive deck ([39e5326](https://github.com/niafrond/niafrond.github.io/commit/39e532669797d72791ca3122558f9353bd3c43b6))
+
 ## [1.240.0](https://github.com/niafrond/niafrond.github.io/compare/v1.239.0...v1.240.0) (2026-06-30)
 
 ### Features
