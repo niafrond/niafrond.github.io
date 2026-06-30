@@ -458,9 +458,7 @@ export function createDjMixRenderer(options) {
   }
 
   function updateNowPlaying(item, deck = getFocusDeck()) {
-    // La notification système (mediaSession) doit toujours représenter la piste
-    // réellement audible (deck focus), jamais une piste préchargée sur le deck inactif.
-    if ('mediaSession' in navigator && deck === getFocusDeck()) {
+    if ('mediaSession' in navigator) {
       const safeTitle = String(item?.name || item?.title || 'DJ Mix').trim() || 'DJ Mix';
       const safeArtist = String(item?.artist || item?.artistName || '').trim();
       const safeAlbum = String(item?.album?.name || item?.albumName || item?.collectionName || 'DJ Mix').trim() || 'DJ Mix';

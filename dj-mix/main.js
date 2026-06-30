@@ -1827,9 +1827,12 @@ async function fetchFilRougeArtwork(track) {
  * est vide, met à jour l'objet en place, synchronise le fil rouge si besoin,
  * et rafraîchit l'affichage (pochette + liste).
  * @param {object} item  - item de la file d'attente
- * @param {string} [deck] - deck en cours de lecture (pour rafraîchir la pochette)
+ * @param {string} [deck] - deck concerné (pour rafraîchir la pochette)
+ * @param {object} [opts]
+ * @param {boolean} [opts.skipNotification] - true pour les préchargements sur le deck inactif :
+ *   évite d'écraser la notification système avec la pochette d'un morceau pas encore joué.
  */
-async function fetchAndStoreArtworkForItem(item, deck) {
+async function fetchAndStoreArtworkForItem(item, deck, { skipNotification = false } = {}) {
   if (!item) return;
   if (item.artUrl) {
     setArtworkUrl(item.name, item.artist, item.artUrl);
@@ -1841,7 +1844,7 @@ async function fetchAndStoreArtworkForItem(item, deck) {
   if (cachedBlobUrl) {
     item.artUrl = cachedBlobUrl;
     if (item.id) filRougeManager.patchPlaylistItem(item.id, { artUrl: cachedBlobUrl });
-    updateNowPlaying(item, deck ?? getFocusDeck());
+    if (skipNotification) { updateUpcomingArtwork(); } else { updateNowPlaying(item, deck ?? getFocusDeck()); }
     renderQueue();
     renderFilRougeDebounced();
     return;
@@ -1852,7 +1855,7 @@ async function fetchAndStoreArtworkForItem(item, deck) {
   if (cachedArtUrl) {
     item.artUrl = cachedArtUrl;
     if (item.id) filRougeManager.patchPlaylistItem(item.id, { artUrl: cachedArtUrl });
-    updateNowPlaying(item, deck ?? getFocusDeck());
+    if (skipNotification) { updateUpcomingArtwork(); } else { updateNowPlaying(item, deck ?? getFocusDeck()); }
     renderQueue();
     renderFilRougeDebounced();
     persistArtwork(item, cachedArtUrl).catch(() => {});
@@ -1868,7 +1871,7 @@ async function fetchAndStoreArtworkForItem(item, deck) {
     if (item.id) {
       filRougeManager.patchPlaylistItem(item.id, { artUrl });
     }
-    updateNowPlaying(item, deck ?? getFocusDeck());
+    if (skipNotification) { updateUpcomingArtwork(); } else { updateNowPlaying(item, deck ?? getFocusDeck()); }
     renderQueue();
     renderFilRougeDebounced();
     persistArtwork(item, artUrl).catch(() => {});
