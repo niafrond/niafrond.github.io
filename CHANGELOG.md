@@ -1,3 +1,10 @@
+## [1.238.0](https://github.com/niafrond/niafrond.github.io/compare/v1.237.0...v1.238.0) (2026-06-30)
+
+### Features
+
+* add DJ Plan section with recalculation button and styling ([5eb14f6](https://github.com/niafrond/niafrond.github.io/commit/5eb14f6a3eb73da0e799f1a354c98d77e2e50bbd))
+* update specifications for asynchronous callbacks and metadata fetching logic ([db052c0](https://github.com/niafrond/niafrond.github.io/commit/db052c024b7a1fa1f513e37372a1203e55629a7e))
+
 ## [1.237.0](https://github.com/niafrond/niafrond.github.io/compare/v1.236.0...v1.237.0) (2026-06-29)
 
 ### Features
