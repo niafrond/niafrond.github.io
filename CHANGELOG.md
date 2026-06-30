@@ -1,3 +1,10 @@
+## [1.239.0](https://github.com/niafrond/niafrond.github.io/compare/v1.238.0...v1.239.0) (2026-06-30)
+
+### Features
+
+* add specifications for queue display and update UI rendering logic ([5c4cbe3](https://github.com/niafrond/niafrond.github.io/commit/5c4cbe302fc2c9a4d37d33898a2c0a014ed08daf))
+* **android-auto:** integrate Android Auto support with media session and adaptive download batching ([db4529a](https://github.com/niafrond/niafrond.github.io/commit/db4529a2514f3a7a3f95430305281d5520f392cd))
+
 ## [1.238.0](https://github.com/niafrond/niafrond.github.io/compare/v1.237.0...v1.238.0) (2026-06-30)
 
 ### Features
