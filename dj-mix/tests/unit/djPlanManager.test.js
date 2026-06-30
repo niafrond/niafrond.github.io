@@ -414,6 +414,28 @@ describe('djPlanManager', () => {
       expect(result).toEqual(batchResult);
     });
 
+    test('SPEC-8.6.1 — skips the API call entirely while a fil rouge download is in progress', async () => {
+      const trackSummaries = [
+        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
+        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
+      ];
+      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
+      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false };
+      const fr = makeFakeFilRouge([itemA, itemB]);
+      const djApiClient = makeDjApiClient({ fetchTracks: jest.fn().mockResolvedValue(trackSummaries) });
+      const mgr = createDjPlanManager({
+        djApiClient,
+        getFilRougeManager: () => fr,
+        isFilRougeDownloadPending: () => true,
+      });
+
+      const result = await mgr.computeSetQuality();
+
+      expect(result).toBeNull();
+      expect(djApiClient.fetchTracks).not.toHaveBeenCalled();
+      expect(djApiClient.fetchBatchPlan).not.toHaveBeenCalled();
+    });
+
     test('calls fetchBatchPlan even when only one item resolves to an analysed trackId', async () => {
       const trackSummaries = [
         { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },

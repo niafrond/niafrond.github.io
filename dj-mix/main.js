@@ -1319,6 +1319,18 @@ function getFilRougeTrackStatus(item) {
   };
 }
 
+/**
+ * GIVEN un téléchargement de masse du fil rouge (démarrage, import Spotify/TXT,
+ * "Tout télécharger") en cours — THEN tant qu'au moins un morceau du fil rouge
+ * est à l'état `downloading`, les demandes `/api/dj/batch` sont reportées
+ * (voir SPEC-3.4.10 et `computeSetQuality`).
+ */
+function isFilRougeDownloadInProgress() {
+  return filRougeManager.getPlaylist().some(
+    (track) => getFilRougeTrackStatus(track).downloadState === 'downloading'
+  );
+}
+
 // ── Fil rouge UI rendering ──────────────────────────────────────────────────
 
 function buildFilRougeDanceChips(item) {
@@ -1925,6 +1937,7 @@ async function startTxtPlaylistPrefetch(tracks) {
     ? `Import TXT : ${cached} mis en cache serveur, ${failed} échec${failed > 1 ? 's' : ''}.`
     : `Import TXT : ${cached} morceau${cached > 1 ? 'x' : ''} mis en cache serveur.`;
   setTxtPlaylistStatus(summary, failed > 0 && cached === 0);
+  scheduleDjSetQualityRefresh();
 }
 
 function stopSpotifyFilRougeSync() {
@@ -2000,6 +2013,7 @@ async function startSpotifyPlaylistPrefetch(tracks) {
     ? `Cache Spotify : ${cached} mis en cache, ${failed} échec${failed > 1 ? 's' : ''}`
     : `Cache Spotify : ${cached} morceau${cached > 1 ? 'x' : ''} mis en cache`;
   setSpotifyStatus(summary);
+  scheduleDjSetQualityRefresh();
 }
 
 /**
@@ -2569,7 +2583,9 @@ const filRougeDownloader = createFilRougeDownloader({
 if (filRougeDownloadAllBtn) {
   filRougeDownloadAllBtn.addEventListener('click', () => {
     const tracks = filRougeManager.getPlaylist();
-    filRougeDownloader.downloadAll(tracks).catch(err => {
+    filRougeDownloader.downloadAll(tracks).then(() => {
+      scheduleDjSetQualityRefresh();
+    }).catch(err => {
       showToast('Téléchargement : erreur', true);
       console.error('[filrouge] downloadAll error', err);
       if (filRougeDownloadAllBtn) {
@@ -2596,6 +2612,7 @@ if ('serviceWorker' in navigator) {
         }
       }
       renderFilRouge();
+      scheduleDjSetQualityRefresh();
       return;
     }
 
@@ -2610,6 +2627,7 @@ if ('serviceWorker' in navigator) {
     }
     renderFilRouge();
     showToast(`Téléchargement terminé : ${succeededKeys.length} réussi${succeededKeys.length > 1 ? 's' : ''}`);
+    scheduleDjSetQualityRefresh();
   });
 }
 
@@ -2673,6 +2691,7 @@ async function startFilRougeStartupCacheSync() {
     }
     i += batch.length;
   }
+  if (toDownload.length) scheduleDjSetQualityRefresh();
 }
 
 function isCacheTabActive() {
@@ -3178,6 +3197,7 @@ const djPlanManager = createDjPlanManager({
   getFilRougeManager: () => filRougeManager,
   getQueue: () => queue,
   getTrackMaxDurationAppliedSec: () => trackMaxDurationAppliedSec,
+  isFilRougeDownloadPending: () => isFilRougeDownloadInProgress(),
   logger,
 });
 

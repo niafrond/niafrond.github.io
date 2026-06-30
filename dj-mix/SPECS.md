@@ -493,12 +493,17 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-8.5.5** GIVEN le bouton Recalculer cliqué — WHEN le calcul échoue — THEN un toast d'erreur spécifique à la raison est affiché (et non un toast de succès trompeur).
 - **SPEC-8.5.6** Le morceau de référence pour le calcul (bouton Recalculer et passe initiale `runDjPlanFullPass`) est déterminé en priorité par `uiState.currentTrackId` (chanson en cours de lecture), avec repli sur `filRougeManager.getCurrentIndex()` si aucun morceau n'est en cours. Cela garantit que la transition calculée est toujours celle du morceau joué vers le suivant, même si l'index fil rouge a déjà avancé lors du préchargement.
 
-### 8.6 Déclenchement automix sur `mixOutSec`
+### 8.6 Calcul du score de qualité du set (`/api/dj/batch`)
 
-- **SPEC-8.6.1** GIVEN `djExternalPlanEnabled` est `true` ET le morceau en cours (`queue[uiState.currentIndex]`) correspond à un item du fil rouge dont `djTransition.mixOutSec > 0` — WHEN la position de lecture (`currentTime`) atteint `mixOutSec` — THEN l'automix est déclenché immédiatement (`autoMixBtn.click()`), **indépendamment de l'état du mode AutoDJ** (ON ou OFF).
-- **SPEC-8.6.2** Ce déclenchement est protégé par un flag par-morceau (`djPlanMixOutTriggeredForTrack`) réinitialisé à chaque nouvelle lecture, pour éviter un double déclenchement.
-- **SPEC-8.6.3** GIVEN le mode AutoDJ est activé — WHEN le seuil `mixOutSec` est atteint — THEN `markAutomixTriggered(automixTimeline)` est aussi appelé pour empêcher que la vérification AutoDJ standard (`shouldTriggerAutomix`) ne déclenche un second automix sur le même tick.
-- **SPEC-8.6.4** Ce mécanisme est indépendant de la contrainte de durée max (`trackMaxDurationEnabled`), qui reste vérifiée séparément ; le premier seuil atteint chronologiquement déclenche l'automix.
+- **SPEC-8.6.1** GIVEN au moins un morceau du fil rouge est à l'état `downloading` (téléchargement de masse en cours : démarrage, import Spotify/TXT, "Tout télécharger", Background Fetch) — THEN `computeSetQuality()` retourne `null` immédiatement sans appeler `/api/dj/tracks` ni `/api/dj/batch`, pour éviter de calculer le score sur un fil rouge dont les fichiers ne sont pas encore tous en cache.
+- **SPEC-8.6.2** GIVEN un téléchargement de masse vient de se terminer (succès, échec, ou Background Fetch) — THEN `scheduleDjSetQualityRefresh()` est appelé pour redéclencher le calcul du score différé par SPEC-8.6.1.
+
+### 8.7 Déclenchement automix sur `mixOutSec`
+
+- **SPEC-8.7.1** GIVEN `djExternalPlanEnabled` est `true` ET le morceau en cours (`queue[uiState.currentIndex]`) correspond à un item du fil rouge dont `djTransition.mixOutSec > 0` — WHEN la position de lecture (`currentTime`) atteint `mixOutSec` — THEN l'automix est déclenché immédiatement (`autoMixBtn.click()`), **indépendamment de l'état du mode AutoDJ** (ON ou OFF).
+- **SPEC-8.7.2** Ce déclenchement est protégé par un flag par-morceau (`djPlanMixOutTriggeredForTrack`) réinitialisé à chaque nouvelle lecture, pour éviter un double déclenchement.
+- **SPEC-8.7.3** GIVEN le mode AutoDJ est activé — WHEN le seuil `mixOutSec` est atteint — THEN `markAutomixTriggered(automixTimeline)` est aussi appelé pour empêcher que la vérification AutoDJ standard (`shouldTriggerAutomix`) ne déclenche un second automix sur le même tick.
+- **SPEC-8.7.4** Ce mécanisme est indépendant de la contrainte de durée max (`trackMaxDurationEnabled`), qui reste vérifiée séparément ; le premier seuil atteint chronologiquement déclenche l'automix.
 
 ---
 

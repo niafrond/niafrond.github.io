@@ -28,7 +28,7 @@ function getStoredBatchPlanFromStorage() {
   }
 }
 
-export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue, getTrackMaxDurationAppliedSec, logger } = {}) {
+export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue, getTrackMaxDurationAppliedSec, isFilRougeDownloadPending, logger } = {}) {
   /** @type {Array} cached `TrackSummary[]` from `/api/dj/tracks` */
   let trackSummaries = [];
   let trackSummariesLoadedAt = 0;
@@ -268,9 +268,17 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
   /**
    * Informational-only call to `/api/dj/batch` for the current fil rouge order
    * and selected set profile. Does not reorder/drop tracks.
+   * Skipped (returns `null`) while fil rouge downloads are still in progress,
+   * since `isFilRougeDownloadPending` reflects in-flight downloads that the
+   * batch plan would otherwise be computed against incomplete data for.
    * @returns {Promise<{globalSetScore: number, reasons: string[], globalComponents: object|null}|null>}
    */
   async function computeSetQuality({ forceRefresh = false } = {}) {
+    if (isFilRougeDownloadPending?.()) {
+      logger?.debug?.('djPlanManager: computeSetQuality skipped — fil rouge downloads in progress');
+      return null;
+    }
+
     const fr = filRouge();
     const playlist = fr ? fr.getPlaylist() : [];
 
