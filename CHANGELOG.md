@@ -1,3 +1,9 @@
+## [1.240.0](https://github.com/niafrond/niafrond.github.io/compare/v1.239.0...v1.240.0) (2026-06-30)
+
+### Features
+
+* add specifications for queue display and update UI rendering logic ([d75f165](https://github.com/niafrond/niafrond.github.io/commit/d75f1652dfc3cf196c3afc47b0853b013e6bff5f))
+
 ## [1.239.0](https://github.com/niafrond/niafrond.github.io/compare/v1.238.0...v1.239.0) (2026-06-30)
 
 ### Features
