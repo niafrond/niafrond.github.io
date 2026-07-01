@@ -17,6 +17,11 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.1.5** GIVEN aucune platine active — WHEN un morceau est chargé via `play(source)` — THEN il démarre sur la platine A par défaut.
 - **SPEC-1.1.6** GIVEN un crossfade en cours — WHEN le système doit déterminer quelle platine est sortante — THEN la platine dont le volume est le plus élevé est choisie comme sortante (`volB >= volA ? 'B' : 'A'`).
 - **SPEC-1.1.7** La platine inactive prépare le morceau suivant (prefetch via `ensureLocalSource`).
+- **SPEC-1.1.8** GIVEN une lecture active — WHEN la lecture démarre (`statechange` paused=false) — THEN une vérification toutes les 10 s est lancée pour s'assurer que la platine inactive a bien une piste préchargée (`deckDisplayItems[inactiveDeck] != null`).
+- **SPEC-1.1.9** GIVEN la vérification périodique active — WHEN une piste est détectée sur la platine inactive — THEN la vérification est arrêtée.
+- **SPEC-1.1.10** GIVEN la vérification périodique active — WHEN la platine active change (ex. fin de crossfade) — THEN la vérification est relancée depuis zéro avec la nouvelle platine inactive.
+- **SPEC-1.1.11** GIVEN la vérification périodique active — WHEN la lecture s'arrête (`statechange` paused=true) — THEN la vérification est annulée.
+- **SPEC-1.1.12** GIVEN la vérification périodique — WHEN le même morceau (`id` identique) est détecté sur les deux platines — THEN `deckDisplayItems[inactiveDeck]` est réinitialisé à `null` (guard anti-doublon).
 
 ### 1.2 Crossfade
 
@@ -194,6 +199,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-3.2.2** GIVEN Shuffle FR activé — WHEN le morceau suivant est demandé — THEN un index aléatoire est choisi (pas de protection anti-répétition, contrairement à la queue).
 - **SPEC-3.2.3** GIVEN Shuffle FR désactivé et Loop FR activé — THEN la playlist avance séquentiellement avec retour à l'index 0 en fin de liste.
 - **SPEC-3.2.4** GIVEN Shuffle FR et Loop FR désactivés — THEN la lecture s'arrête en fin de playlist.
+- **SPEC-3.2.5** `peekNextTrack()` retourne le prochain morceau sans avancer `currentIndex`. GIVEN Loop FR désactivé ET `currentIndex` est le dernier de la playlist — THEN `peekNextTrack()` retourne `null` (pas de wrap). GIVEN Loop FR activé — THEN retour à l'index 0.
 
 ### 3.3 Import
 
@@ -288,6 +294,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
   4. Fil Rouge : `filRougeManager.getNextTrack()` si actif
   5. Aucun résultat : la lecture s'arrête après le morceau en cours
 - **SPEC-5.3.2** GIVEN l'API est offline (`apiHealthMonitor.isOffline()`) — THEN les étapes 1–3 sont sautées, passage direct au Fil Rouge.
+- **SPEC-5.3.3** GIVEN le Fil Rouge est actif — WHEN `searchAndAddNextTrack()` détermine quel morceau ajouter — THEN `peekNextTrackFromAny()` est appelé en premier pour vérifier si le prochain morceau est déjà dans la queue, AVANT d'appeler `getNextTrack()` (qui avance l'index). Si le morceau est déjà dans la queue, `getNextTrack()` n'est PAS appelé afin d'éviter de sauter un morceau.
 
 ### 5.4 Analyse de forme d'onde (MixData)
 
@@ -692,7 +699,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 ### 13.3 Media Session API
 
 - **SPEC-13.3.1** Métadonnées exposées : `title`, `artist`, `album` (défaut "DJ Mix"), `artwork` (tableau `[{ src, sizes, type }]`).
-- **SPEC-13.3.2** GIVEN une artwork en `blob:` URL — THEN elle est convertie en data URI pour les notifications Android.
+- **SPEC-13.3.2** GIVEN une artwork avec n'importe quelle URL (`blob:`, `https://` CDN ou serveur API local) — THEN elle est téléchargée dans le renderer et convertie en data URI via `_fetchArtworkDataUri` avant d'être assignée à `navigator.mediaSession.metadata.artwork`, pour garantir que la notification système peut toujours afficher la jaquette quel que soit le contexte réseau ou le type d'URL.
 - **SPEC-13.3.3** Actions enregistrées :
   - `play` → resume deck ou lancement si pas de source
   - `pause` → pause deck
@@ -706,6 +713,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-13.4.1** GIVEN un morceau en lecture — THEN `navigator.wakeLock.request('screen')` est appelé.
 - **SPEC-13.4.2** Un audio silencieux en boucle (WAV 1s, volume `0.001`) maintient la session active pendant les pauses.
 - **SPEC-13.4.3** Le wake lock est libéré sur pause (sauf keepalive actif).
+- **SPEC-13.4.4** GIVEN `visibilitychange → visible` ET lecture en cours — THEN `wakeLock.request('screen')` est rappelé (le navigateur libère automatiquement le lock lors du passage en arrière-plan).
 
 ### 13.5 Android Auto
 
@@ -764,6 +772,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 ### 15.1 Santé de l'API
 
 - **SPEC-15.1.1** `apiHealthMonitor` suit l'état online/offline. Les transitions déclenchent des callbacks.
+- **SPEC-15.1.2** `apiHealthMonitor.probe()` déclenche une vérification immédiate de `/health`, quelle que soit l'état courant (online ou offline). Appelé sur `visibilitychange → visible` pour détecter rapidement toute perte de connexion survenue pendant que l'écran était éteint.
 
 ### 15.2 Logging
 

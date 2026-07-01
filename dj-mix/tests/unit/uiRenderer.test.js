@@ -378,4 +378,35 @@ describe('updateNowPlaying / notification système (mediaSession)', () => {
     expect(navigator.mediaSession.metadata.title).toBe('Now Playing');
     expect(navigator.mediaSession.metadata.artist).toBe('DJ Focus');
   });
+
+  test('SPEC-13.3.2 — convertit toute artUrl en data URI (blob: ou https://)', async () => {
+    const dataUri = 'data:image/jpeg;base64,ZmFrZQ==';
+    const mockBlob = { type: 'image/jpeg' };
+    const origFetch = global.fetch;
+    const origFileReader = global.FileReader;
+
+    global.fetch = async () => ({ blob: async () => mockBlob });
+    global.FileReader = class {
+      readAsDataURL() {
+        this.result = dataUri;
+        if (this.onload) this.onload();
+      }
+    };
+
+    const playing = makeTrack({ id: 'art', name: 'Art Track', artUrl: 'https://cdn.example.com/art.jpg' });
+    const renderer = makeNowPlayingRenderer({ focusDeck: 'A', queue: [playing] });
+
+    renderer.updateNowPlaying(playing, 'A');
+
+    // Attendre la résolution asynchrone
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const artwork = navigator.mediaSession.metadata?.artwork;
+    expect(Array.isArray(artwork)).toBe(true);
+    expect(artwork[0].src).toBe(dataUri);
+    expect(artwork[0].type).toBe('image/jpeg');
+
+    global.fetch = origFetch;
+    global.FileReader = origFileReader;
+  });
 });

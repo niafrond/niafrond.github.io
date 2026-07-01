@@ -98,10 +98,17 @@ export function createApiHealthMonitor({
     }
   }
 
+  // Force an immediate health check regardless of current state.
+  // Useful after a page visibility restore (screen wake) to quickly detect
+  // server availability without waiting for the next probe interval.
+  function probe() {
+    void _probe();
+  }
+
   function destroy() {
     _destroyed = true;
     _stopProbing();
   }
 
-  return { isOffline, recordSuccess, recordFailure, destroy };
+  return { isOffline, recordSuccess, recordFailure, probe, destroy };
 }

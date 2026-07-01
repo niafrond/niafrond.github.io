@@ -348,9 +348,11 @@ export function createFilRougeManager() {
    */
   function peekNextTrack() {
     if (playlist.length === 0) return null;
-    const peekIndex = shuffleEnabled
-      ? 0 // can't predict shuffle
-      : (currentIndex + 1) % playlist.length;
+    if (shuffleEnabled) return playlist[0] || null; // can't predict shuffle
+    const peekIndex = currentIndex + 1;
+    if (peekIndex >= playlist.length) {
+      return loopEnabled ? (playlist[0] || null) : null;
+    }
     return playlist[peekIndex] || null;
   }
 

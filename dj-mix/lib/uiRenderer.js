@@ -1,5 +1,20 @@
 import { escHtml, extractTrackBpm, extractTrackGenre, formatTime } from './searchUtils.js';
-import { pushNowPlaying, resolveArtworkUrl } from './androidAutoBridge.js';
+import { pushNowPlaying } from './androidAutoBridge.js';
+
+async function _fetchArtworkDataUri(url) {
+  if (!url) return '';
+  try {
+    const blob = await (await fetch(url)).blob();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return '';
+  }
+}
 
 const MAX_VISIBLE_PLAYED_TRACKS = 5;
 
@@ -469,18 +484,19 @@ export function createDjMixRenderer(options) {
         artwork: getMediaSessionArtwork(item),
       });
 
-      // blob: URLs ne sont pas accessibles par le système Android en dehors de la WebView;
-      // résoudre en data URI de façon asynchrone pour que la notification affiche la jaquette.
+      // Convertir l'artwork en data URI pour que la notification système puisse l'afficher
+      // quel que soit le type d'URL (blob: local, https:// CDN ou serveur API local).
       const artUrl = item?.artUrl || '';
-      if (artUrl.startsWith('blob:')) {
-        resolveArtworkUrl(artUrl).then((resolvedUrl) => {
+      if (artUrl) {
+        _fetchArtworkDataUri(artUrl).then((resolvedUrl) => {
           if (!resolvedUrl || !navigator.mediaSession?.metadata) return;
           if (navigator.mediaSession.metadata.title !== safeTitle) return;
+          const [, mimeType] = resolvedUrl.match(/^data:([^;]+);/) || [];
           navigator.mediaSession.metadata = new MediaMetadata({
             title: safeTitle,
             artist: safeArtist,
             album: safeAlbum,
-            artwork: [{ src: resolvedUrl, sizes: '512x512', type: 'image/jpeg' }],
+            artwork: [{ src: resolvedUrl, sizes: '512x512', type: mimeType || 'image/jpeg' }],
           });
         }).catch(() => {});
       }

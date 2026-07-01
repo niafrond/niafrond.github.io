@@ -1301,48 +1301,50 @@ export function createAutoModeManager({
 
     const filRougeManager = getFilRougeManager?.();
     if (filRougeManager?.isActive?.()) {
-      const nextFromFilRouge = filRougeManager.getNextTrack?.();
-      if (nextFromFilRouge && !isTrackAlreadyQueued(queue, nextFromFilRouge)) {
-        logger?.info?.('autoDj: using fil rouge track instead of searching', {
-          currentTrackId: currentTrack.id,
-          trackName: nextFromFilRouge.name,
-          artistName: nextFromFilRouge.artist,
-        });
-
-        // Fetch mix data for the fil rouge track so zones are respected
-        // (same flow as for auto-DJ suggested tracks)
-        fetchMixData(
-          nextFromFilRouge.name || nextFromFilRouge.trackName,
-          nextFromFilRouge.artist || nextFromFilRouge.artistName
-        )
-          .then(mixData => {
-            nextTrackMixData = mixData;
-            const recommendedTransition = recommendTransitionType(currentTrackMixData, mixData);
-            logger?.debug?.('autoDj: fil rouge recommended transition', { type: recommendedTransition });
-          })
-          .catch(err => {
-            logger?.debug?.('autoDj: failed to prefetch fil rouge mix data', { error: err?.message });
+      const peekedFromFilRouge = filRougeManager.peekNextTrackFromAny?.();
+      if (peekedFromFilRouge && !isTrackAlreadyQueued(queue, peekedFromFilRouge)) {
+        // Only advance the index now that we know the track isn't already queued
+        const nextFromFilRouge = filRougeManager.getNextTrack?.();
+        if (nextFromFilRouge) {
+          logger?.info?.('autoDj: using fil rouge track instead of searching', {
+            currentTrackId: currentTrack.id,
+            trackName: nextFromFilRouge.name,
+            artistName: nextFromFilRouge.artist,
           });
 
-        await addToQueue(nextFromFilRouge, {
-          source: 'fil-rouge',
-          autoDjReferenceTrackId: currentTrack.id || null,
-          showAddedToast: false,
-        });
+          // Fetch mix data for the fil rouge track so zones are respected
+          // (same flow as for auto-DJ suggested tracks)
+          fetchMixData(
+            nextFromFilRouge.name || nextFromFilRouge.trackName,
+            nextFromFilRouge.artist || nextFromFilRouge.artistName
+          )
+            .then(mixData => {
+              nextTrackMixData = mixData;
+              const recommendedTransition = recommendTransitionType(currentTrackMixData, mixData);
+              logger?.debug?.('autoDj: fil rouge recommended transition', { type: recommendedTransition });
+            })
+            .catch(err => {
+              logger?.debug?.('autoDj: failed to prefetch fil rouge mix data', { error: err?.message });
+            });
 
-        pendingNextTrack = nextFromFilRouge;
-        showToast?.(
-          `🎶 Fil rouge: "${nextFromFilRouge.name || nextFromFilRouge.trackName || 'morceau'}" ajouté à la queue`,
-          false
-        );
-        return true;
-      }
+          await addToQueue(nextFromFilRouge, {
+            source: 'fil-rouge',
+            autoDjReferenceTrackId: currentTrack.id || null,
+            showAddedToast: false,
+          });
 
-      if (nextFromFilRouge) {
+          pendingNextTrack = nextFromFilRouge;
+          showToast?.(
+            `🎶 Fil rouge: "${nextFromFilRouge.name || nextFromFilRouge.trackName || 'morceau'}" ajouté à la queue`,
+            false
+          );
+          return true;
+        }
+      } else if (peekedFromFilRouge) {
         logger?.debug?.('autoDj: fil rouge track already queued, skipping', {
           currentTrackId: currentTrack.id,
-          trackName: nextFromFilRouge.name,
-          artistName: nextFromFilRouge.artist,
+          trackName: peekedFromFilRouge.name,
+          artistName: peekedFromFilRouge.artist,
         });
       }
     }

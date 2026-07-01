@@ -73,11 +73,20 @@ function stopMediaKeepAlive() {
   _keepaliveAudio?.pause();
 }
 
-// Quand le navigateur repasse au premier plan, relancer le keepalive si rien ne joue,
-// car Android/iOS peut avoir tué l'audio silencieux en arrière-plan.
+// Quand le navigateur repasse au premier plan (écran rallumé ou retour de l'arrière-plan) :
+// - si lecture en cours : ré-acquérir le Wake Lock (il est libéré automatiquement par le
+//   navigateur lors du passage en arrière-plan) pour que l'écran reste allumé.
+// - sinon : relancer le keepalive audio silencieux (Android/iOS peut l'avoir tué).
+// Dans tous les cas, forcer une sonde immédiate sur le serveur local pour détecter
+// rapidement toute perte de connexion survenue pendant que l'écran était éteint.
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && !uiState.isPlaying) {
-    startMediaKeepAlive();
+  if (document.visibilityState === 'visible') {
+    if (uiState.isPlaying) {
+      requestWakeLock();
+    } else {
+      startMediaKeepAlive();
+    }
+    apiHealthMonitor.probe();
   }
 });
 import {
@@ -129,6 +138,7 @@ import {
   shouldTriggerAutomix,
 } from './lib/automixTimeline.js';
 import { getOtherDeck, toDeck } from './lib/deckHelpers.js';
+import { createInactivePreloadWatcher } from './lib/inactivePreloadWatcher.js';
 import { computeTransitionRamProfile, estimateTotalDeviceRamMb, isMobileDevice } from './lib/ramProfile.js';
 import { attachQueueDndHandlers, clearQueueDragMarkers } from './lib/queueDnD.js';
 import {
@@ -3928,6 +3938,20 @@ async function connectLocal() {
   });
 }
 
+// ── Vérification périodique du préchargement de la platine inactive ──────────
+
+const inactivePreloadWatcher = createInactivePreloadWatcher({
+  isPlaying: () => uiState.isPlaying,
+  getActiveDeck: getResolvedActiveDeck,
+  getInactiveDeck: getResolvedInactiveDeck,
+  getDeckItem: (deck) => deckDisplayItems[deck] ?? null,
+  setDeckItem,
+  logDebug,
+  logWarn,
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function hookPlayerEvents() {
   player.addEventListener('ready', async () => {
     logInfo('player.ready', { pendingAutoplay, currentIndex: uiState.currentIndex, queueLength: queue.length });
@@ -3984,9 +4008,11 @@ function hookPlayerEvents() {
     if (uiState.isPlaying) {
       requestWakeLock();
       stopMediaKeepAlive(); // Lecture réelle → pas besoin du keepalive silencieux
+      inactivePreloadWatcher.start();
     } else {
       releaseWakeLock();
       startMediaKeepAlive(); // Maintenir la notification Android pendant 10 minutes max
+      inactivePreloadWatcher.stop();
     }
     updateMediaSessionPositionState();
     renderQueue();
