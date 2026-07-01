@@ -126,6 +126,35 @@ describe('filRougeManager', () => {
       // Peek again - should still be Song A since we didn't advance
       expect(mgr.peekNextTrack().name).toBe('Song A');
     });
+
+    // SPEC-3.2.5: no wrap when loop is disabled
+    test('SPEC-3.2.5: returns null at end of playlist when loop is disabled', () => {
+      const mgr = createFilRougeManager();
+      mgr.addToPlaylist({ id: '1', name: 'Song A', artist: 'A' });
+      mgr.addToPlaylist({ id: '2', name: 'Song B', artist: 'B' });
+      mgr.setLoopEnabled(false);
+
+      // Advance to last track
+      mgr.getNextTrack(); // -> Song A (index 0)
+      mgr.getNextTrack(); // -> Song B (index 1)
+
+      // Now at last index: peek should return null, NOT wrap to Song A
+      expect(mgr.peekNextTrack()).toBeNull();
+    });
+
+    // SPEC-3.2.5: wraps to index 0 when loop is enabled
+    test('SPEC-3.2.5: wraps to first track at end of playlist when loop is enabled', () => {
+      const mgr = createFilRougeManager();
+      mgr.addToPlaylist({ id: '1', name: 'Song A', artist: 'A' });
+      mgr.addToPlaylist({ id: '2', name: 'Song B', artist: 'B' });
+      mgr.setLoopEnabled(true);
+
+      mgr.getNextTrack(); // -> Song A (index 0)
+      mgr.getNextTrack(); // -> Song B (index 1)
+
+      // At last index with loop: peek should wrap to Song A
+      expect(mgr.peekNextTrack()?.name).toBe('Song A');
+    });
   });
 
   describe('setCurrentIndex', () => {
