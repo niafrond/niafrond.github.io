@@ -515,6 +515,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-8.7.2** Ce déclenchement est protégé par un flag par-morceau (`djPlanMixOutTriggeredForTrack`) réinitialisé à chaque nouvelle lecture, pour éviter un double déclenchement.
 - **SPEC-8.7.3** GIVEN le mode AutoDJ est activé — WHEN le seuil `mixOutSec` est atteint — THEN `markAutomixTriggered(automixTimeline)` est aussi appelé pour empêcher que la vérification AutoDJ standard (`shouldTriggerAutomix`) ne déclenche un second automix sur le même tick.
 - **SPEC-8.7.4** Ce mécanisme est indépendant de la contrainte de durée max (`trackMaxDurationEnabled`), qui reste vérifiée séparément ; le premier seuil atteint chronologiquement déclenche l'automix.
+- **SPEC-8.7.5** GIVEN `djExternalPlanEnabled` est `true` ET le prochain item du fil rouge n'a pas (encore) de suggestion API (`getDjTransitionPlan` retourne `null` — suggestion non reçue ou calcul en cours) ET `trackMaxDurationAppliedSec > 0` — THEN : (a) lors du calcul du timing automix (`onAutomixTimingCalculated`), `finalTriggerMs` est remplacé par `trackMaxDurationAppliedSec × 1000` ; (b) en cours de lecture, si la position atteint `trackMaxDurationAppliedSec × 1000 + autoDjStartOffsetMs` et que le marqueur durée max (`maxDurMarkerTriggeredForTrack`) n'a pas encore tiré, l'automix est déclenché via le bloc DJ Plan (avec `markAutomixTriggered`).
 
 ---
 

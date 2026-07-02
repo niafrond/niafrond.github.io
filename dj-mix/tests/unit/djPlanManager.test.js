@@ -581,6 +581,18 @@ describe('djPlanManager', () => {
 
       expect(mgr.getDjTransitionPlan(itemB)).toBeNull();
     });
+
+    test('SPEC-8.7.5: getDjTransitionPlan returns null when predecessor is resolved but API has not yet returned a transition (still computing)', () => {
+      // itemA is fully resolved (djTrackId + djHasAnalysis) but djTransition is null
+      // because the /api/dj/transition call has not completed yet.
+      // The caller (main.js) must then fall back to trackMaxDurationAppliedSec.
+      const itemA = { id: '1', djTrackId: 'a.mp3', djHasAnalysis: true, djTransition: null };
+      const itemB = { id: '2', djTrackId: 'b.mp3', djHasAnalysis: true };
+      const fr = makeFakeFilRouge([itemA, itemB]);
+      const mgr = createDjPlanManager({ djApiClient: makeDjApiClient(), getFilRougeManager: () => fr });
+
+      expect(mgr.getDjTransitionPlan(itemB)).toBeNull();
+    });
   });
 
   describe('planCurrentToNextTransition', () => {

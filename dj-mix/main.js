@@ -3241,6 +3241,9 @@ const autoModeManager = createAutoModeManager({
     if (djPlan && Number.isFinite(djPlan.mixOutSec) && djPlan.mixOutSec > 0) {
       finalTriggerMs = Math.round(djPlan.mixOutSec * 1000);
       logDebug('djPlan: automix timing override', { triggerMs: finalTriggerMs, decisionId: djPlan.decisionId });
+    } else if (djExternalPlanEnabled && nextFilRougeItem && trackMaxDurationAppliedSec > 0) {
+      finalTriggerMs = Math.round(trackMaxDurationAppliedSec * 1000);
+      logDebug('djPlan: no suggestion yet, maxDuration fallback timing', { triggerMs: finalTriggerMs });
     }
     setAutomixTriggerMs(automixTimeline, finalTriggerMs);
     logDebug('autoDj: timing calculated', { triggerMs: finalTriggerMs });
@@ -4104,6 +4107,18 @@ function hookPlayerEvents() {
             position,
             mixOutSec: _djTransition.mixOutSec,
             decisionId: _djTransition.decisionId,
+          });
+          autoMixBtn?.click?.();
+        }
+      } else if (_djFilRougeItem && trackMaxDurationAppliedSec > 0 && !maxDurMarkerTriggeredForTrack) {
+        const _djStartOffsetMs = Math.max(0, Number(_djCurrentItem?.autoDjStartOffsetMs) || 0);
+        const _djFallbackThresholdMs = trackMaxDurationAppliedSec * 1000 + _djStartOffsetMs;
+        if (position >= _djFallbackThresholdMs) {
+          djPlanMixOutTriggeredForTrack = true;
+          markAutomixTriggered(automixTimeline);
+          logInfo('djPlan: no mixOutSec, maxDuration fallback reached, triggering automix', {
+            position,
+            maxDurationSec: trackMaxDurationAppliedSec,
           });
           autoMixBtn?.click?.();
         }
