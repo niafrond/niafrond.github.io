@@ -1,3 +1,9 @@
+## [1.243.0](https://github.com/niafrond/niafrond.github.io/compare/v1.242.0...v1.243.0) (2026-07-03)
+
+### Features
+
+* implement automatic pause on audio output change for active deck and add related tests ([6c65890](https://github.com/niafrond/niafrond.github.io/commit/6c65890fc8c57f82a7073f5717bc41382dc1c894))
+
 ## [1.242.0](https://github.com/niafrond/niafrond.github.io/compare/v1.241.0...v1.242.0) (2026-07-03)
 
 ### Features
