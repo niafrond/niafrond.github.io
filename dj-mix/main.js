@@ -4335,6 +4335,15 @@ function setupMediaSession() {
   // Activer le keepalive dès le setup pour que les boutons physiques fonctionnent
   // avant le premier play (la session audio doit exister pour capter les événements).
   startMediaKeepAlive();
+
+  // SPEC-13.3.6 — Pause automatique sur changement de sortie audio (ex. déconnexion Bluetooth).
+  if (navigator.mediaDevices) {
+    navigator.mediaDevices.addEventListener('devicechange', () => {
+      const focusDeck = getFocusDeck();
+      const deckState = uiState.lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
+      if (deckState?.playing) player?.pauseDeck?.(focusDeck);
+    });
+  }
 }
 
 // ── Touches média physiques (clavier / casque Bluetooth desktop) ──────────────
