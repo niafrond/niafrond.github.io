@@ -508,6 +508,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-8.6.4** `computeSetQuality()` et `planAllEdges()` ne planifient au maximum que `MAX_LOOKAHEAD_TRANSITIONS` (10) transitions en avance depuis l'index courant. Les paires au-delà de ce seuil sont ignorées jusqu'au prochain appel.
 - **SPEC-8.6.5** Quand `currentIndex` est `-1` (lecture non démarrée), le calcul commence à l'index `0`.
 - **SPEC-8.6.6** `computeSetQuality()` retourne toujours `null` (plus de `globalSetScore` issu du batch).
+- **SPEC-8.6.7** GIVEN un morceau commence à jouer (`startPlaybackForIndex` s'est exécuté avec succès) — THEN le callback `onTrackStarted` est déclenché, ce qui appelle `scheduleDjSetQualityRefresh()` et garantit que les transitions des au moins `MIN_UPCOMING_TRANSITIONS_GUARANTEE` = 3 prochains morceaux du fil rouge sont calculées et persistées. `computeSetQuality()` calculant jusqu'à `MAX_LOOKAHEAD_TRANSITIONS` (10) transitions depuis l'index courant avec mémoïsation, cette garantie est toujours satisfaite si les morceaux sont résolus et analysés côté serveur.
 
 ### 8.7 Déclenchement automix sur `mixOutSec`
 

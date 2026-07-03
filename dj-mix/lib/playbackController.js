@@ -58,6 +58,7 @@ import { computeDjBpmRate } from './djTransitionMapping.js';
  * @param {HTMLElement|null} [options.deckAstemsIndicator]
  * @param {HTMLElement|null} [options.deckBstemsIndicator]
  * @param {HTMLElement|null} [options.autoMixBtn]
+ * @param {(item: object, index: number) => void} [options.onTrackStarted]
  */
 export function createPlaybackController(options) {
   const {
@@ -111,6 +112,7 @@ export function createPlaybackController(options) {
     deckAstemsIndicator = null,
     deckBstemsIndicator = null,
     autoMixBtn = null,
+    onTrackStarted,
   } = options;
 
   // ── Private state ─────────────────────────────────────────────────────────────
@@ -793,6 +795,7 @@ export function createPlaybackController(options) {
       updateAutoDjMarker?.();
       updateMaxDurationMarker?.();
       autoModeManager?.scheduleAutomixTiming(item);
+      onTrackStarted?.(item, index);
       if (getAutoSuggestionQueueSearchEnabled?.()) {
         scheduleIdle?.(() => {
           autoModeManager?.searchAndAddNextTrack(item).catch((err) => {

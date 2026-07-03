@@ -3443,6 +3443,7 @@ const playbackCtrl = createPlaybackController({
   deckAstemsIndicator,
   deckBstemsIndicator,
   autoMixBtn,
+  onTrackStarted: () => filRougeCtrl?.scheduleDjSetQualityRefresh(),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

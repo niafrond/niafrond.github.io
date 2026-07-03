@@ -409,6 +409,30 @@ describe('startPlaybackForIndex error handling', () => {
     await expect(ctrl.startPlaybackForIndex(0, 'play')).rejects.toThrow();
     expect(removeFromQueue).toHaveBeenCalledWith(0);
   });
+
+  test('SPEC-8.6.7 onTrackStarted est appelé avec item et index quand la lecture démarre', async () => {
+    const onTrackStarted = jest.fn();
+    const track = makeTrack({ id: 'tr1' });
+    const ctrl = makeController({
+      onTrackStarted,
+      getQueue: jest.fn().mockReturnValue([track]),
+    });
+    await ctrl.startPlaybackForIndex(0, 'play');
+    expect(onTrackStarted).toHaveBeenCalledTimes(1);
+    expect(onTrackStarted).toHaveBeenCalledWith(expect.objectContaining({ id: 'tr1' }), 0);
+  });
+
+  test('SPEC-8.6.7 onTrackStarted n\'est pas appelé quand startPlaybackForIndex échoue', async () => {
+    const onTrackStarted = jest.fn();
+    const player = makePlayer({ playOnDeck: jest.fn().mockRejectedValue(new Error('fail')) });
+    const ctrl = makeController({
+      onTrackStarted,
+      getQueue: jest.fn().mockReturnValue([makeTrack()]),
+      getPlayer: jest.fn().mockReturnValue(player),
+    });
+    await expect(ctrl.startPlaybackForIndex(0, 'play')).rejects.toThrow();
+    expect(onTrackStarted).not.toHaveBeenCalled();
+  });
 });
 
 // ── applyMixSuggestedStartOffset ──────────────────────────────────────────────
