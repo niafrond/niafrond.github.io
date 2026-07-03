@@ -1,3 +1,12 @@
+## [1.242.0](https://github.com/niafrond/niafrond.github.io/compare/v1.241.0...v1.242.0) (2026-07-03)
+
+### Features
+
+* add fallback logic for automix timing based on track max duration and update tests for transition plan behavior ([7a203de](https://github.com/niafrond/niafrond.github.io/commit/7a203deccb5c6530de3b3934dfda3c050f73b5c4))
+* enhance fil rouge manager tests with loop behavior and peek track logic ([7baa19d](https://github.com/niafrond/niafrond.github.io/commit/7baa19d14c4c70a6879cbe211f0ad5c4ef0bdec5))
+* implement inactive preload watcher and enhance artwork handling for media session ([5e56e37](https://github.com/niafrond/niafrond.github.io/commit/5e56e372e53a8165bcbbddb23a74ab1eb56f621c))
+* implement onTrackStarted callback to trigger quality refresh on track start and add related tests ([bc7ba1d](https://github.com/niafrond/niafrond.github.io/commit/bc7ba1d223908eefd90cc07fe9dc1ba186431c97))
+
 ## [1.241.0](https://github.com/niafrond/niafrond.github.io/compare/v1.240.0...v1.241.0) (2026-06-30)
 
 ### Features
