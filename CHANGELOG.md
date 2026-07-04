@@ -1,3 +1,9 @@
+## [1.244.0](https://github.com/niafrond/niafrond.github.io/compare/v1.243.0...v1.244.0) (2026-07-04)
+
+### Features
+
+* add playlist sorting functionality with API integration and related tests ([1d58b35](https://github.com/niafrond/niafrond.github.io/commit/1d58b357f30f529ed994ada7290109c9eb70457e))
+
 ## [1.243.0](https://github.com/niafrond/niafrond.github.io/compare/v1.242.0...v1.243.0) (2026-07-03)
 
 ### Features
