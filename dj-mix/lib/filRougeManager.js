@@ -30,6 +30,8 @@ const logger = createLogger('filRouge');
  * @property {string} [ratingKey]
  * @property {string} [stemsStatus]
  * @property {Object} [stems]
+ * @property {number|null} [danceability] - dançabilité 0–1 (Spotify audio features)
+ * @property {number|null} [year] - année de sortie (ex. 2021)
  * @property {string|null} [djTrackId] - trackId résolu côté API DJ Planner (`/api/dj/*`)
  * @property {boolean} [djHasAnalysis] - reflète `hasFullAnalysis` du `/api/dj/tracks`
  * @property {Object|null} [djTransition] - résultat `/api/dj/transition` vers l'item suivant
@@ -127,6 +129,8 @@ export function createFilRougeManager() {
       ratingKey: item.ratingKey || '',
       stemsStatus: item.stemsStatus || '',
       stems: item.stems || null,
+      danceability: item.danceability ?? null,
+      year: item.year ?? null,
       djTrackId: item.djTrackId || null,
       djHasAnalysis: Boolean(item.djHasAnalysis),
       djTransition: item.djTransition || null,

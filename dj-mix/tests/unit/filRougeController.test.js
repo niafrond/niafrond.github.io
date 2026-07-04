@@ -243,3 +243,106 @@ describe('runDjPlanIncrementalPass', () => {
     expect(logWarn).toHaveBeenCalled();
   });
 });
+
+// ── sortFilRouge ──────────────────────────────────────────────────────────────
+
+describe('sortFilRouge', () => {
+  const tracks = [
+    { id: '1', name: 'A', artist: 'X', bpm: 120, danceability: 0.5, year: 2018 },
+    { id: '2', name: 'B', artist: 'Y', bpm: 140, danceability: 0.9, year: 2022 },
+    { id: '3', name: 'C', artist: 'Z', bpm: 100, danceability: 0.3, year: 2015 },
+  ];
+
+  function makeControllerWithFetch(fetchResult, fetchError = null) {
+    const fr = makeFilRougeManager(tracks);
+    fr.setPlaylist = jest.fn();
+    const getDownloaderApiUrl = jest.fn().mockReturnValue('http://api');
+    const getDownloaderApiToken = jest.fn().mockReturnValue(null);
+    const showToast = jest.fn();
+
+    global.fetch = fetchError
+      ? jest.fn().mockRejectedValue(fetchError)
+      : jest.fn().mockResolvedValue({
+          ok: true,
+          json: jest.fn().mockResolvedValue({ tracks: fetchResult }),
+        });
+
+    const ctrl = makeController({
+      filRougeManager: fr,
+      showToast,
+      getDownloaderApiUrl,
+      getDownloaderApiToken,
+    });
+    return { ctrl, fr, showToast };
+  }
+
+  test('SPEC-3.6.6: mode "original" skips API call and does not call setPlaylist', async () => {
+    const { ctrl, fr } = makeControllerWithFetch([]);
+    await ctrl.sortFilRouge('original');
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(fr.setPlaylist).not.toHaveBeenCalled();
+  });
+
+  test('SPEC-3.6.3: mode "bpm" calls POST /api/fil-rouge/sort with correct payload', async () => {
+    const sorted = [tracks[1], tracks[0], tracks[2]];
+    const { ctrl } = makeControllerWithFetch(sorted);
+    await ctrl.sortFilRouge('bpm');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://api/api/fil-rouge/sort',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"mode":"bpm"'),
+      }),
+    );
+  });
+
+  test('SPEC-3.6.3: setPlaylist is called with sorted result from API', async () => {
+    const sorted = [tracks[1], tracks[0], tracks[2]];
+    const { ctrl, fr } = makeControllerWithFetch(sorted);
+    await ctrl.sortFilRouge('danceability');
+    expect(fr.setPlaylist).toHaveBeenCalledWith(sorted);
+  });
+
+  test('SPEC-3.6.2: sort mode is persisted in localStorage', async () => {
+    const { ctrl } = makeControllerWithFetch([tracks[0]]);
+    await ctrl.sortFilRouge('year');
+    expect(localStorage.getItem('dj-mix:fil-rouge:sort')).toBe('year');
+  });
+
+  test('SPEC-3.6.5: API error shows toast and does not call setPlaylist', async () => {
+    const { ctrl, fr, showToast } = makeControllerWithFetch([], new Error('network'));
+    await ctrl.sortFilRouge('best');
+    expect(showToast).toHaveBeenCalledWith('Tri indisponible (API)', true);
+    expect(fr.setPlaylist).not.toHaveBeenCalled();
+  });
+
+  test('SPEC-3.6.5: non-ok HTTP response shows toast and does not call setPlaylist', async () => {
+    const fr = makeFilRougeManager(tracks);
+    fr.setPlaylist = jest.fn();
+    const showToast = jest.fn();
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500 });
+    const ctrl = makeController({
+      filRougeManager: fr,
+      showToast,
+      getDownloaderApiUrl: jest.fn().mockReturnValue('http://api'),
+      getDownloaderApiToken: jest.fn().mockReturnValue(null),
+    });
+    await ctrl.sortFilRouge('bpm');
+    expect(showToast).toHaveBeenCalledWith('Tri indisponible (API)', true);
+    expect(fr.setPlaylist).not.toHaveBeenCalled();
+  });
+
+  test('no-ops when playlist is empty', async () => {
+    const fr = makeFilRougeManager([]);
+    fr.setPlaylist = jest.fn();
+    global.fetch = jest.fn();
+    const ctrl = makeController({
+      filRougeManager: fr,
+      getDownloaderApiUrl: jest.fn().mockReturnValue('http://api'),
+      getDownloaderApiToken: jest.fn().mockReturnValue(null),
+    });
+    await ctrl.sortFilRouge('bpm');
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(fr.setPlaylist).not.toHaveBeenCalled();
+  });
+});

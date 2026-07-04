@@ -241,6 +241,17 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-3.5.3** GIVEN un morceau téléchargé avec succès — WHEN `fetchMixData` retourne des données — THEN `hasMixInfo` est mis à `true` dans le statut du morceau.
 - **SPEC-3.5.4** Le Fil Rouge n'affiche PAS de badge indiquant la présence des stems. Seuls le statut de téléchargement et le statut mix info sont affichés.
 
+### 3.6 Tri de la playlist
+
+- **SPEC-3.6.1** 5 modes de tri disponibles : `original` (ordre d'insertion, défaut), `bpm` (BPM décroissant), `danceability` (dançabilité décroissante), `year` (année décroissante), `best` (score composite décroissant).
+- **SPEC-3.6.2** Le mode de tri actif est persisté dans `localStorage` sous la clé `dj-mix:fil-rouge:sort`.
+- **SPEC-3.6.3** GIVEN mode ≠ `original` — WHEN l'utilisateur sélectionne un tri — THEN `POST /api/fil-rouge/sort` est appelé avec `{ tracks: FilRougeItem[], mode: string }` et la liste triée retournée par l'API remplace la playlist via `filRougeManager.setPlaylist()`.
+- **SPEC-3.6.4** Le `currentIndex` est préservé après le tri : `setPlaylist()` recherche l'`id` du morceau en cours dans le nouvel ordre.
+- **SPEC-3.6.5** GIVEN l'API répond en erreur — THEN un toast `"Tri indisponible (API)"` est affiché et la playlist reste inchangée.
+- **SPEC-3.6.6** Mode `original` — WHEN sélectionné — THEN aucun appel API n'est effectué et `renderFilRouge()` est appelé directement.
+- **SPEC-3.6.7** Mode `best` côté API : score décroissant = `danceability × 0.5 + bpm_normalisé × 0.3 + year_normalisé × 0.2`. BPM et année normalisés sur [0,1] par rapport au min/max de la playlist. Les pistes sans données reçoivent un score partiel de 0 pour les champs manquants.
+- **SPEC-3.6.8** L'API enrichit les champs `danceability` et `year` manquants dans sa réponse. Ces champs sont persistés dans `FilRougeItem` (localStorage) via `filRougeManager.setPlaylist()`.
+
 ---
 
 ## 4. Recherche

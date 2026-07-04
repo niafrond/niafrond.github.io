@@ -287,6 +287,14 @@
         <div class="filrouge-controls">
           <button id="filrouge-shuffle-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="false">Shuffle: OFF</button>
           <button id="filrouge-loop-btn" class="deck-launch-btn fx-toggle" type="button" aria-pressed="true">Loop: ON</button>
+          <label for="filrouge-sort-select" class="filrouge-sort-label">Trier :</label>
+          <select id="filrouge-sort-select" class="filrouge-sort-select">
+            <option value="original">Ordre original</option>
+            <option value="bpm">BPM ↓</option>
+            <option value="danceability">Dançabilité ↓</option>
+            <option value="year">Année ↓</option>
+            <option value="best">Meilleur (combo)</option>
+          </select>
           <button id="dj-external-plan-btn" class="deck-launch-btn fx-toggle is-enabled" type="button" aria-pressed="true" title="DJ Plan externe : utilise les transitions calculées par l'API DJ pour le timing, le BPM et le mode de crossfade">DJ Plan: ON</button>
           <button id="filrouge-clear-btn" class="clear-btn" type="button">Vider</button>
           <label class="filrouge-profile-field" for="dj-set-profile-select">

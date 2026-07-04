@@ -9,6 +9,7 @@ import { renderDjSetQualityBadge, renderDjTransitionFeedback } from './uiRendere
 import { computeDjPlanIndicatorState } from './djPlanIndicator.js';
 import { mapDjTransitionTypeToMode } from './djTransitionMapping.js';
 import { normalizeTransitionMode, MIX_TRANSITION_MODE_LABELS } from './transitionModes.js';
+import { STORAGE_KEYS } from './storageKeys.js';
 
 /**
  * Gère le fil rouge : statuts de téléchargement/stems, rendu de la liste,
@@ -54,11 +55,15 @@ export function createFilRougeController(options) {
     djPlanIndicatorEl = null,
     djSetQualityBadgeEl = null,
     djSetProfileSelectEl = null,
+    filRougeSortSelectEl = null,
+    getDownloaderApiUrl = null,
+    getDownloaderApiToken = null,
   } = options;
 
   // ── Private state ────────────────────────────────────────────────────────────
 
   const filRougeTrackStatusByKey = new Map();
+  let sortMode = localStorage.getItem(STORAGE_KEYS.filRougeSortMode) || 'original';
 
   // ── Track key and status ─────────────────────────────────────────────────────
 
@@ -393,6 +398,41 @@ export function createFilRougeController(options) {
     renderFilRouge();
   }
 
+  // ── Sort ─────────────────────────────────────────────────────────────────────
+
+  async function _apiFetchFilRougeSort(tracks, mode) {
+    const baseUrl = getDownloaderApiUrl?.();
+    if (!baseUrl) throw new Error('API URL manquante');
+    const token = getDownloaderApiToken?.();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${baseUrl}/api/fil-rouge/sort`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ tracks, mode }),
+    });
+    if (!res.ok) throw new Error(`sort API ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data.tracks) ? data.tracks : data;
+  }
+
+  async function sortFilRouge(mode) {
+    sortMode = mode;
+    localStorage.setItem(STORAGE_KEYS.filRougeSortMode, sortMode);
+    if (mode === 'original') { renderFilRouge(); return; }
+    const playlist = filRougeManager.getPlaylist();
+    if (!playlist.length) { renderFilRouge(); return; }
+    try {
+      const sorted = await _apiFetchFilRougeSort(playlist, mode);
+      if (Array.isArray(sorted) && sorted.length) {
+        filRougeManager.setPlaylist(sorted);
+      }
+    } catch (_) {
+      showToast('Tri indisponible (API)', true);
+    }
+    renderFilRouge();
+  }
+
   // ── renderFilRouge ────────────────────────────────────────────────────────────
 
   function renderFilRouge() {
@@ -425,6 +465,10 @@ export function createFilRougeController(options) {
       const on = filRougeManager.isLoopEnabled();
       filRougeLoopBtn.textContent = `Loop: ${on ? 'ON' : 'OFF'}`;
       filRougeLoopBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    if (filRougeSortSelectEl) {
+      filRougeSortSelectEl.value = sortMode;
+      filRougeSortSelectEl.onchange = (e) => sortFilRouge(e.target.value);
     }
 
     if (filRougePriorityListEl) {
@@ -577,6 +621,7 @@ export function createFilRougeController(options) {
     getFilRougeTrackStatus,
     addToFilRouge,
     renderFilRouge,
+    sortFilRouge,
     updateDjPlanIndicator,
     runDjSetQualityRefresh,
     runDjPlanFullPass,

@@ -813,6 +813,7 @@ const filRougePlaylistListEl = document.getElementById('filrouge-playlist-list')
 const filRougePriorityListEl = document.getElementById('filrouge-priority-list');
 const filRougeShuffleBtn = document.getElementById('filrouge-shuffle-btn');
 const filRougeLoopBtn = document.getElementById('filrouge-loop-btn');
+const filRougeSortSelectEl = document.getElementById('filrouge-sort-select');
 const djExternalPlanBtn = document.getElementById('dj-external-plan-btn');
 const djPlanIndicatorEl = document.getElementById('dj-plan-indicator');
 const djPlanSectionEl = document.getElementById('dj-plan-section');
@@ -1388,6 +1389,10 @@ function renderFilRouge() {
     const on = filRougeManager.isLoopEnabled();
     filRougeLoopBtn.textContent = `Loop: ${on ? 'ON' : 'OFF'}`;
     filRougeLoopBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  if (filRougeSortSelectEl) {
+    filRougeSortSelectEl.value = localStorage.getItem(STORAGE_KEYS.filRougeSortMode) || 'original';
+    filRougeSortSelectEl.onchange = (e) => filRougeCtrl?.sortFilRouge(e.target.value);
   }
 
   // Priority queue
@@ -3354,6 +3359,9 @@ const filRougeCtrl = createFilRougeController({
   djPlanIndicatorEl,
   djSetQualityBadgeEl,
   djSetProfileSelectEl,
+  filRougeSortSelectEl,
+  getDownloaderApiUrl: () => settingsCtrl.getDownloaderApiUrl(),
+  getDownloaderApiToken: () => settingsCtrl.getDownloaderApiToken(),
 });
 
 const deckMarkerCtrl = createDeckMarkerController({
