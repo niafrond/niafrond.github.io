@@ -385,7 +385,7 @@ describe('updateNowPlaying / notification système (mediaSession)', () => {
     const origFetch = global.fetch;
     const origFileReader = global.FileReader;
 
-    global.fetch = async () => ({ blob: async () => mockBlob });
+    global.fetch = async () => ({ ok: true, blob: async () => mockBlob });
     global.FileReader = class {
       readAsDataURL() {
         this.result = dataUri;

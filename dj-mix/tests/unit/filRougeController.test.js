@@ -309,6 +309,20 @@ describe('sortFilRouge', () => {
     expect(localStorage.getItem('dj-mix:fil-rouge:sort')).toBe('year');
   });
 
+  test('SPEC-3.6.9: mode "pattern" calls POST /api/fil-rouge/sort with mode "pattern"', async () => {
+    const sorted = [tracks[2], tracks[0], tracks[1]];
+    const { ctrl, fr } = makeControllerWithFetch(sorted);
+    await ctrl.sortFilRouge('pattern');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://api/api/fil-rouge/sort',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"mode":"pattern"'),
+      }),
+    );
+    expect(fr.setPlaylist).toHaveBeenCalledWith(sorted);
+  });
+
   test('SPEC-3.6.5: API error shows toast and does not call setPlaylist', async () => {
     const { ctrl, fr, showToast } = makeControllerWithFetch([], new Error('network'));
     await ctrl.sortFilRouge('best');

@@ -3360,8 +3360,8 @@ const filRougeCtrl = createFilRougeController({
   djSetQualityBadgeEl,
   djSetProfileSelectEl,
   filRougeSortSelectEl,
-  getDownloaderApiUrl: () => settingsCtrl.getDownloaderApiUrl(),
-  getDownloaderApiToken: () => settingsCtrl.getDownloaderApiToken(),
+  getDownloaderApiUrl,
+  getDownloaderApiToken,
 });
 
 const deckMarkerCtrl = createDeckMarkerController({

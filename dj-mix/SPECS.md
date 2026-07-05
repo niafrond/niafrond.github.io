@@ -243,7 +243,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 ### 3.6 Tri de la playlist
 
-- **SPEC-3.6.1** 5 modes de tri disponibles : `original` (ordre d'insertion, défaut), `bpm` (BPM décroissant), `danceability` (dançabilité décroissante), `year` (année décroissante), `best` (score composite décroissant).
+- **SPEC-3.6.1** 6 modes de tri disponibles : `original` (ordre d'insertion, défaut), `bpm` (BPM décroissant), `danceability` (dançabilité décroissante), `year` (année décroissante), `best` (score composite décroissant), `pattern` (enchaînement musical calculé par l'API).
 - **SPEC-3.6.2** Le mode de tri actif est persisté dans `localStorage` sous la clé `dj-mix:fil-rouge:sort`.
 - **SPEC-3.6.3** GIVEN mode ≠ `original` — WHEN l'utilisateur sélectionne un tri — THEN `POST /api/fil-rouge/sort` est appelé avec `{ tracks: FilRougeItem[], mode: string }` et la liste triée retournée par l'API remplace la playlist via `filRougeManager.setPlaylist()`.
 - **SPEC-3.6.4** Le `currentIndex` est préservé après le tri : `setPlaylist()` recherche l'`id` du morceau en cours dans le nouvel ordre.
@@ -251,6 +251,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-3.6.6** Mode `original` — WHEN sélectionné — THEN aucun appel API n'est effectué et `renderFilRouge()` est appelé directement.
 - **SPEC-3.6.7** Mode `best` côté API : score décroissant = `danceability × 0.5 + bpm_normalisé × 0.3 + year_normalisé × 0.2`. BPM et année normalisés sur [0,1] par rapport au min/max de la playlist. Les pistes sans données reçoivent un score partiel de 0 pour les champs manquants.
 - **SPEC-3.6.8** L'API enrichit les champs `danceability` et `year` manquants dans sa réponse. Ces champs sont persistés dans `FilRougeItem` (localStorage) via `filRougeManager.setPlaylist()`.
+- **SPEC-3.6.9** Mode `pattern` — WHEN sélectionné — THEN `POST /api/fil-rouge/sort` est appelé avec `mode: "pattern"` ; l'algorithme de tri est entièrement délégué à l'API (enchaînement musical, logique serveur).
 
 ---
 
@@ -721,6 +722,8 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-13.3.4** Position mise à jour : à chaque événement progress (~300ms) + toutes les `30 s` via keepalive timer.
 - **SPEC-13.3.5** GIVEN un préchargement d'artwork sur le deck inactif (morceau suivant, ghost fil rouge, launch preview) — THEN `fetchAndStoreArtworkForItem` est appelé avec `{ skipNotification: true }` de sorte que `navigator.mediaSession.metadata` n'est pas modifié ; la notification système conserve les métadonnées de la piste réellement audible. Note : `updateNowPlaying` lui-même ne filtre pas sur le deck car lors d'un crossfade le deck entrant est encore inactif au moment où la notification est mise à jour.
 - **SPEC-13.3.6** GIVEN `navigator.mediaDevices` disponible — WHEN un événement `devicechange` est émis (ex. déconnexion casque Bluetooth, changement de sortie audio) — THEN si le deck focus est en lecture (`deckState.playing === true`), `player.pauseDeck(focusDeck)` est appelé ; si le deck n'est pas en lecture, aucune action n'est effectuée.
+- **SPEC-13.3.7** GIVEN une artwork dont l'URL provient du CDN Apple (`mzstatic.com`) — WHEN `getMediaSessionArtwork` construit le tableau artwork — THEN l'URL est modifiée pour remplacer toute résolution `NxNbb.jpg` par `512x512bb.jpg`, afin d'obtenir une jaquette haute résolution dans la notification système.
+- **SPEC-13.3.8** GIVEN `_fetchArtworkDataUri` télécharge une URL — WHEN la réponse HTTP n'est pas OK (`!response.ok`), OU le blob a une taille < 64 octets, OU le Content-Type n'est pas `image/*` (ex. page d'erreur HTML depuis un CDN expiré) — THEN la fonction retourne `''` sans appeler FileReader, et le handler async de `updateNowPlaying` n'écrase PAS le metadata existant avec un data URI non-image.
 
 ### 13.4 Wake Lock
 

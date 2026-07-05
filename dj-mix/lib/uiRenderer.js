@@ -3,8 +3,13 @@ import { pushNowPlaying } from './androidAutoBridge.js';
 
 async function _fetchArtworkDataUri(url) {
   if (!url) return '';
+  if (url.startsWith('data:')) return url;
   try {
-    const blob = await (await fetch(url)).blob();
+    const response = await fetch(url);
+    if (!response.ok) return '';
+    const blob = await response.blob();
+    // Reject empty blobs and non-image responses (e.g. HTML error pages from expired CDN URLs)
+    if (!blob || blob.size < 64 || !blob.type.startsWith('image/')) return '';
     return await new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result || ''));
@@ -93,7 +98,11 @@ export function createDjMixRenderer(options) {
 
   function getMediaSessionArtwork(item) {
     if (item?.artUrl) {
-      return [{ src: item.artUrl, sizes: '512x512', type: 'image/jpeg' }];
+      // SPEC-13.3.7 — Upgrade Apple CDN thumbnails to 512x512 for richer media notifications
+      const src = item.artUrl.includes('mzstatic.com')
+        ? item.artUrl.replace(/\/\d+x\d+bb\.jpg$/, '/512x512bb.jpg')
+        : item.artUrl;
+      return [{ src, sizes: '512x512', type: 'image/jpeg' }];
     }
 
     return [{
@@ -492,11 +501,13 @@ export function createDjMixRenderer(options) {
           if (!resolvedUrl || !navigator.mediaSession?.metadata) return;
           if (navigator.mediaSession.metadata.title !== safeTitle) return;
           const [, mimeType] = resolvedUrl.match(/^data:([^;]+);/) || [];
+          // SPEC-13.3.8 — Reject non-image data URIs (e.g. HTML error pages) to avoid overriding a valid CDN URL
+          if (!mimeType?.startsWith('image/')) return;
           navigator.mediaSession.metadata = new MediaMetadata({
             title: safeTitle,
             artist: safeArtist,
             album: safeAlbum,
-            artwork: [{ src: resolvedUrl, sizes: '512x512', type: mimeType || 'image/jpeg' }],
+            artwork: [{ src: resolvedUrl, sizes: '512x512', type: mimeType }],
           });
         }).catch(() => {});
       }

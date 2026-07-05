@@ -427,7 +427,8 @@ export function createFilRougeController(options) {
       if (Array.isArray(sorted) && sorted.length) {
         filRougeManager.setPlaylist(sorted);
       }
-    } catch (_) {
+    } catch (err) {
+      console.error('[filRouge] sortFilRouge error:', err);
       showToast('Tri indisponible (API)', true);
     }
     renderFilRouge();
