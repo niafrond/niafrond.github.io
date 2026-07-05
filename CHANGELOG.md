@@ -1,3 +1,9 @@
+## [1.245.0](https://github.com/niafrond/niafrond.github.io/compare/v1.244.0...v1.245.0) (2026-07-05)
+
+### Features
+
+* add 'pattern' sorting mode to playlist and enhance artwork handling with API integration ([5529f5c](https://github.com/niafrond/niafrond.github.io/commit/5529f5cfaf00b1233e0fc0d2ab020ab4b5fd1d2b))
+
 ## [1.244.0](https://github.com/niafrond/niafrond.github.io/compare/v1.243.0...v1.244.0) (2026-07-04)
 
 ### Features
