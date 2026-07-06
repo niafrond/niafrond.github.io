@@ -181,6 +181,17 @@ describe('djApiClient', () => {
       expect(JSON.parse(init.body)).toEqual({ trackA: 'a.mp3', trackB: 'b.mp3' });
     });
 
+    test('passes trackA and trackB with .mp3 extension as-is (SPEC-8.5.7)', async () => {
+      global.fetch = jest.fn().mockResolvedValue(jsonResponse(200, {}));
+      const { client } = makeClient();
+
+      await client.fetchTransition('Outkast - Hey Ya!.mp3', 'Chappell Roan - Good Luck, Babe!.mp3');
+
+      const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+      expect(body.trackA).toBe('Outkast - Hey Ya!.mp3');
+      expect(body.trackB).toBe('Chappell Roan - Good Luck, Babe!.mp3');
+    });
+
     test('returns null on 404 without recording a health failure', async () => {
       global.fetch = jest.fn().mockResolvedValue(jsonResponse(404, { error: 'no analysis' }));
       const { client, deps } = makeClient();

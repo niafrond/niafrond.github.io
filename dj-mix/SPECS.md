@@ -519,6 +519,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-8.5.4** GIVEN `force=true` ET `djTrackId` est `null` après résolution — THEN un re-scan des track summaries est forcé (`ensureTrackSummaries({force:true})`) avant un second essai de résolution.
 - **SPEC-8.5.5** GIVEN le bouton Recalculer cliqué — WHEN le calcul échoue — THEN un toast d'erreur spécifique à la raison est affiché (et non un toast de succès trompeur).
 - **SPEC-8.5.6** Le morceau de référence pour le calcul (bouton Recalculer et passe initiale `runDjPlanFullPass`) est déterminé en priorité par `uiState.currentTrackId` (chanson en cours de lecture), avec repli sur `filRougeManager.getCurrentIndex()` si aucun morceau n'est en cours. Cela garantit que la transition calculée est toujours celle du morceau joué vers le suivant, même si l'index fil rouge a déjà avancé lors du préchargement.
+- **SPEC-8.5.7** Les champs `trackA` et `trackB` envoyés dans le body du POST `/api/dj/transition` sont les filenames complets incluant l'extension `.mp3` (ex : `"Outkast - Hey Ya!.mp3"`), conformément au swagger backend. `djApiClient.fetchTransition` les transmet tels quels sans modification.
 
 ### 8.6 Calcul des transitions à la volée (une par une, 10 en avance)
 

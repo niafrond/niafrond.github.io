@@ -9,7 +9,7 @@ function makeManager(overrides = {}) {
   const defaults = {
     apiHealthMonitor: { isOffline: () => false, recordSuccess: jest.fn(), recordFailure: jest.fn() },
     getDownloaderApiUrl: () => '',
-    getFilRougeManager: () => ({ isActive: () => false, getNextTrack: () => null }),
+    getFilRougeManager: () => ({ isActive: () => false, peekNextTrackFromAny: () => null, getNextTrack: () => null }),
     getQueue: () => [],
     getCurrentTrackId: () => null,
     getCurrentTrackIndex: () => 0,
@@ -148,6 +148,7 @@ describe('SPEC-5.3 — Fallback chain', () => {
     const addToQueue = jest.fn().mockResolvedValue(undefined);
     const filRougeManager = {
       isActive: () => true,
+      peekNextTrackFromAny: () => filRougeTrack,
       getNextTrack: () => filRougeTrack,
     };
 
@@ -172,7 +173,7 @@ describe('SPEC-5.3 — Fallback chain', () => {
     const searchResult = { id: 'sr-1', name: 'Search Result', artist: 'B' };
     const queue = [trackA];
     const addToQueue = jest.fn().mockResolvedValue(undefined);
-    const filRougeManager = { isActive: () => true, getNextTrack: () => frTrack };
+    const filRougeManager = { isActive: () => true, peekNextTrackFromAny: () => frTrack, getNextTrack: () => frTrack };
 
     const manager = makeManager({
       getQueue: () => queue,
