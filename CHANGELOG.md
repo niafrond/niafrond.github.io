@@ -1,3 +1,10 @@
+## [1.246.0](https://github.com/niafrond/niafrond.github.io/compare/v1.245.0...v1.246.0) (2026-07-06)
+
+### Features
+
+* add unit tests for downloadAll functionality in filRougeDownloader ([ef7eb41](https://github.com/niafrond/niafrond.github.io/commit/ef7eb412fab6503490615105e154d2cd32a94487))
+* enhance DJ effects controller and fil rouge functionality ([02c9309](https://github.com/niafrond/niafrond.github.io/commit/02c930961a75e8d40081629d0cc1d324fdfcd5ee))
+
 ## [1.245.0](https://github.com/niafrond/niafrond.github.io/compare/v1.244.0...v1.245.0) (2026-07-05)
 
 ### Features
