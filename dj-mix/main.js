@@ -1053,6 +1053,7 @@ const {
   applyAutoDjCreativeFx,
   handleDjFxAction,
   resetRuntimeState: resetDjFxRuntime,
+  triggerBeatRepeatTransitionFx,
   updateDjFxMenuUI,
 } = djFxController;
 
@@ -2586,6 +2587,7 @@ const filRougeDownloader = createFilRougeDownloader({
   renderFilRouge,
   renderTrackStatus: renderFilRougeTrackStatus,
   showToast,
+  fetchMixData: (name, artist) => autoModeManager.fetchMixData(name, artist),
   onProgress: (done, inProgress, total) => {
     if (!filRougeDownloadAllBtn) return;
     if (total === 0) {
@@ -3362,6 +3364,7 @@ const filRougeCtrl = createFilRougeController({
   filRougeSortSelectEl,
   getDownloaderApiUrl,
   getDownloaderApiToken,
+  getTrackMaxDurationAppliedSec: () => settingsCtrl.getTrackMaxDurationAppliedSec(),
 });
 
 const deckMarkerCtrl = createDeckMarkerController({
@@ -4206,6 +4209,15 @@ function hookPlayerEvents() {
     player.addEventListener('transitionmode', ({ detail }) => {
       const requestedMode = detail?.requestedMode || 'auto';
       const effectiveMode = detail?.effectiveMode || requestedMode;
+      const fromDeck = detail?.fromDeck;
+      const toDeck = detail?.toDeck;
+
+      if (effectiveMode === 'beat_repeat' && fromDeck && toDeck) {
+        const incomingBpm = Number(extractTrackBpm(deckDisplayItems[toDeck])) || 120;
+        const phaseDurationMs = (player.crossfadeDuration || 6000) * 0.65;
+        triggerBeatRepeatTransitionFx(fromDeck, toDeck, phaseDurationMs, incomingBpm);
+      }
+
       if (requestedMode !== 'auto') return;
       const label = MIX_TRANSITION_MODE_LABELS[effectiveMode] || effectiveMode;
       showToast(`AutoMix mode: ${label}`);
@@ -6088,7 +6100,10 @@ async function addToQueue(track, options = {}) {
   });
 
   // Preload mix data early so start offset recommendations are available before cue/play.
-  preloadMixDataForDeckItem(item, getResolvedInactiveDeck()).catch(() => {});
+  // After fetch, re-render the fil rouge badge so hasMixInfo reflects the new state (SPEC-3.5.5).
+  preloadMixDataForDeckItem(item, getResolvedInactiveDeck())
+    .then(() => { renderFilRougeTrackStatus(item); })
+    .catch(() => {});
 
   if (showAddedToast) {
     showToast(`✔ "${item.name}" ajouté`);
@@ -7332,16 +7347,4 @@ function doLogout() {
   updateMixFeaturesUI();
   updateDjFxMenuUI();
   updateAutoModeUI();
-  renderQueue();
-  showSetup();
-}
-
-function openSearch() {
-  searchOverlay.hidden = false;
-  if (searchClose) searchClose.hidden = false;
-}
-
-function closeSearch() {
-  searchOverlay.hidden = true;
-  if (searchClose) searchClose.hidden = true;
 }

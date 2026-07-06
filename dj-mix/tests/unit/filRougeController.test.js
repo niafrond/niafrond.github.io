@@ -16,6 +16,7 @@ function makeFilRougeManager(playlist = [], priorityQueue = []) {
     }),
     removeFromPlaylist: jest.fn((idx) => _pl.splice(idx, 1)),
     removeFromPriorityQueue: jest.fn(),
+    patchPlaylistItem: jest.fn(),
     isLoopEnabled: jest.fn(() => false),
     isShuffleEnabled: jest.fn(() => false),
     isActive: jest.fn(() => true),
@@ -253,7 +254,7 @@ describe('sortFilRouge', () => {
     { id: '3', name: 'C', artist: 'Z', bpm: 100, danceability: 0.3, year: 2015 },
   ];
 
-  function makeControllerWithFetch(fetchResult, fetchError = null) {
+  function makeControllerWithFetch(fetchResult, fetchError = null, fetchTransitions = [], extraOptions = {}) {
     const fr = makeFilRougeManager(tracks);
     fr.setPlaylist = jest.fn();
     const getDownloaderApiUrl = jest.fn().mockReturnValue('http://api');
@@ -264,7 +265,7 @@ describe('sortFilRouge', () => {
       ? jest.fn().mockRejectedValue(fetchError)
       : jest.fn().mockResolvedValue({
           ok: true,
-          json: jest.fn().mockResolvedValue({ tracks: fetchResult }),
+          json: jest.fn().mockResolvedValue({ tracks: fetchResult, transitions: fetchTransitions }),
         });
 
     const ctrl = makeController({
@@ -272,6 +273,7 @@ describe('sortFilRouge', () => {
       showToast,
       getDownloaderApiUrl,
       getDownloaderApiToken,
+      ...extraOptions,
     });
     return { ctrl, fr, showToast };
   }
@@ -296,11 +298,44 @@ describe('sortFilRouge', () => {
     );
   });
 
-  test('SPEC-3.6.3: setPlaylist is called with sorted result from API', async () => {
+  test('SPEC-3.6.3: setPlaylist is called with local items reordered per API order', async () => {
     const sorted = [tracks[1], tracks[0], tracks[2]];
     const { ctrl, fr } = makeControllerWithFetch(sorted);
     await ctrl.sortFilRouge('danceability');
     expect(fr.setPlaylist).toHaveBeenCalledWith(sorted);
+  });
+
+  test('SPEC-3.6.12: local data (cachePath, persistedSourceUrl) is preserved after sort', async () => {
+    const localTracks = [
+      { id: '1', name: 'A', artist: 'X', cachePath: '/music/a.mp3', persistedSourceUrl: 'http://api/a' },
+      { id: '2', name: 'B', artist: 'Y', cachePath: '/music/b.mp3', persistedSourceUrl: 'http://api/b' },
+      { id: '3', name: 'C', artist: 'Z', cachePath: '/music/c.mp3', persistedSourceUrl: 'http://api/c' },
+    ];
+    const fr = makeFilRougeManager(localTracks);
+    fr.setPlaylist = jest.fn();
+    const apiSorted = [
+      { id: '2', name: 'B', artist: 'Y' },
+      { id: '1', name: 'A', artist: 'X' },
+      { id: '3', name: 'C', artist: 'Z' },
+    ];
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue({ tracks: apiSorted, transitions: [] }),
+    });
+    const ctrl = makeController({
+      filRougeManager: fr,
+      getDownloaderApiUrl: jest.fn().mockReturnValue('http://api'),
+      getDownloaderApiToken: jest.fn().mockReturnValue(null),
+    });
+    await ctrl.sortFilRouge('bpm');
+    const called = fr.setPlaylist.mock.calls[0][0];
+    expect(called[0].id).toBe('2');
+    expect(called[0].cachePath).toBe('/music/b.mp3');
+    expect(called[0].persistedSourceUrl).toBe('http://api/b');
+    expect(called[1].id).toBe('1');
+    expect(called[1].cachePath).toBe('/music/a.mp3');
+    expect(called[2].id).toBe('3');
+    expect(called[2].cachePath).toBe('/music/c.mp3');
   });
 
   test('SPEC-3.6.2: sort mode is persisted in localStorage', async () => {
@@ -321,6 +356,65 @@ describe('sortFilRouge', () => {
       }),
     );
     expect(fr.setPlaylist).toHaveBeenCalledWith(sorted);
+  });
+
+  test('SPEC-3.6.10: transitions from API response are stored via patchPlaylistItem', async () => {
+    const sorted = [tracks[0], tracks[1], tracks[2]];
+    const transitions = [
+      { mixOutSec: 210, mixInSec: 3.1, automixMode: 'crossfade_logarithmic', crossfadeDurationSec: 12, compatibilityScore: 0.84 },
+      { mixOutSec: 195, mixInSec: 2.0, automixMode: 'echo_out_light', crossfadeDurationSec: 8, compatibilityScore: 0.72 },
+    ];
+    const { ctrl, fr } = makeControllerWithFetch(sorted, null, transitions);
+    await ctrl.sortFilRouge('pattern');
+    expect(fr.patchPlaylistItem).toHaveBeenCalledWith(
+      sorted[0].id,
+      expect.objectContaining({
+        djTransition: expect.objectContaining({
+          toItemId: sorted[1].id,
+          automixMode: 'crossfade_logarithmic',
+          mixOutSec: 210,
+          crossfadeDurationSec: 12,
+          compatibilityScore: 0.84,
+        }),
+      }),
+    );
+    expect(fr.patchPlaylistItem).toHaveBeenCalledWith(
+      sorted[1].id,
+      expect.objectContaining({
+        djTransition: expect.objectContaining({
+          toItemId: sorted[2].id,
+          automixMode: 'echo_out_light',
+        }),
+      }),
+    );
+  });
+
+  test('SPEC-3.6.10: null transition entries are skipped', async () => {
+    const sorted = [tracks[0], tracks[1], tracks[2]];
+    const { ctrl, fr } = makeControllerWithFetch(sorted, null, [null, { mixOutSec: 195, mixInSec: 2.0, automixMode: 'cut_transition', crossfadeDurationSec: 2, compatibilityScore: 0.5 }]);
+    await ctrl.sortFilRouge('best');
+    expect(fr.patchPlaylistItem).toHaveBeenCalledTimes(1);
+    expect(fr.patchPlaylistItem).toHaveBeenCalledWith(sorted[1].id, expect.objectContaining({ djTransition: expect.objectContaining({ automixMode: 'cut_transition' }) }));
+  });
+
+  test('SPEC-3.6.11: maxDuration is included in request body when getTrackMaxDurationAppliedSec > 0', async () => {
+    const sorted = [tracks[0]];
+    const { ctrl } = makeControllerWithFetch(sorted, null, [], {
+      getTrackMaxDurationAppliedSec: jest.fn().mockReturnValue(3600),
+    });
+    await ctrl.sortFilRouge('bpm');
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.maxDuration).toEqual({ value: 3600, unit: 's' });
+  });
+
+  test('SPEC-3.6.11: maxDuration is omitted when getTrackMaxDurationAppliedSec returns 0', async () => {
+    const sorted = [tracks[0]];
+    const { ctrl } = makeControllerWithFetch(sorted, null, [], {
+      getTrackMaxDurationAppliedSec: jest.fn().mockReturnValue(0),
+    });
+    await ctrl.sortFilRouge('bpm');
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.maxDuration).toBeUndefined();
   });
 
   test('SPEC-3.6.5: API error shows toast and does not call setPlaylist', async () => {

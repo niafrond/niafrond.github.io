@@ -60,7 +60,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 | 22 | `kick_swap` | 145 | 1.25 | S-curve cosine | Entrée retardée à 30% : `(t−0.3)/0.7` |
 | 23 | `beat_repeat` | 112 | 1.20 | Plein jusqu'à 65%, puis phase out | Minimal (5%) jusqu'à 65%, puis entrée dure |
 | 24 | `backspin` | 85 | 0.95 | 3 phases : décél rapide (0–35%), silence (35–50%), 0 après | Entrée après 50% |
-| 25 | `fake_drop` | 28 | 0.80 | Drop rapide (0–35%), silence (35–55%) | Impact dur à 55% : `min(1, (t−0.55)/0.12)` |
+| 25 | `fake_drop` | 28 | 0.80 | Drop rapide (0–35%), silence (35–45%) | Impact dur à 45% : `min(1, (t−0.45)/0.12)` |
 | 26 | `echo_freeze` | 195 | 1.48 | Plancher 12% gelé jusqu'à 65%, puis fade | Entrée retardée à 45% : `(t−0.45)^0.8` |
 
 #### 1.3.2 Coût RAM
@@ -69,22 +69,12 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 #### 1.3.3 Sélection automatique (`auto`)
 
-- **SPEC-1.3.3.1** GIVEN le mode `auto` — WHEN un crossfade est déclenché — THEN le système analyse les caractéristiques audio des deux morceaux et sélectionne le meilleur mode compatible avec la RAM disponible.
-- **SPEC-1.3.3.2** Arbre de décision (évalué dans l'ordre, premier match gagne) :
+- **SPEC-1.3.3.1** GIVEN le mode `auto` — WHEN un crossfade est déclenché — THEN le système sélectionne aléatoirement un mode parmi tous les modes autorisés (hors `auto`), en déprioritisant les modes récemment utilisés pour maximiser la variété.
+- **SPEC-1.3.3.2** Contraintes prioritaires (évaluées avant le tirage aléatoire) :
   1. Morceau suivant < 95s → `cut_transition`
   2. Temps restant < 3.5s → `[echo_out_light, cut_transition, fade_in_out]`
-  3. Même rythme + diff BPM ≤ 1 → `[crossfade_linear, crossfade_logarithmic, gain_automation]`
-  4. Diff BPM ≤ 2 + faible diff loudness → `[crossfade_logarithmic, crossfade_linear, gain_automation, crossfade_lowpass]`
-  5. Chute d'énergie majeure (diff ≥ 0.35, nouveau < 0.4) → `[fade_in_out, volume_ducking, echo_out_light]`
-  6. Diff danceability majeure (≥ 0.3) → `[filter_sweep_low_high, filter_automation, filter_dual_sweep]`
-  7. Diff BPM ≤ 6 → `[filter_automation, eq_transition_simple, crossfade_lowpass, crossfade_highpass_in]`
-  8. Diff énergie ≥ 0.25 → `[eq_transition_simple, sidechain_basic, crossfade_highpass_in]`
-  9. Diff BPM ≤ 10 → `[sidechain_basic, eq_transition_simple, volume_ducking]`
-  10. Diff loudness ≥ 5 dB → `[volume_ducking, fade_in_out, gain_automation]`
-  11. Diff BPM ≥ 20 → `[brake_tape_stop_simple, backspin, fake_drop]`
-  12. Les deux danceability > 0.65 → `[short_loop, beat_repeat, kick_swap, bass_swap]`
-  13. Fallback → `[gain_automation, crossfade_linear, crossfade_logarithmic, fade_in_out]`
-- **SPEC-1.3.3.3** GIVEN la liste de candidats — WHEN le mode est sélectionné — THEN un tirage pondéré est effectué : les modes récemment utilisés (cooldown = `ceil(eligible.length / 2)`, buffer de 8 derniers) reçoivent un poids réduit (0.15 pour les 1–2 derniers, 0.5 pour les 3–4, 0.8 pour les plus anciens).
+  3. Sinon → tirage aléatoire parmi tous les modes autorisés (sauf `auto`)
+- **SPEC-1.3.3.3** GIVEN la liste de candidats — WHEN le mode est sélectionné — THEN un tirage pondéré est effectué : les modes récemment utilisés (cooldown = `ceil(eligible.length / 2)`, buffer de 16 derniers) reçoivent un poids réduit (0.15 pour les 1–2 derniers, 0.5 pour les 3–4, 0.8 pour les plus anciens).
 
 #### 1.3.4 Filtre RAM
 
@@ -92,6 +82,14 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.3.4.2** `auto` et `cut_transition` sont toujours autorisés (fallbacks garantis).
 - **SPEC-1.3.4.3** Estimation de la RAM totale : `navigator.deviceMemory × 1024` si disponible, sinon ≤2 cores → 1536 Mo, ≤4 → 2048, ≤6 → 3072, sinon 4096.
 - **SPEC-1.3.4.4** Le filtre RAM ne s'active que sur mobile OU si `ramTotalMbOverride > 0` (bornes : `512`–`32768`).
+
+#### 1.3.5 Beat repeat synchronisé (FX live pendant la transition)
+
+- **SPEC-1.3.5.1** GIVEN le mode `beat_repeat` est sélectionné (auto ou manuel) — WHEN la transition démarre (event `transitionmode`) — THEN `triggerBeatRepeatTransitionFx` est appelé : un loop roll est déclenché immédiatement sur la platine sortante ET sur la platine entrante avec un délai de `350 ms` (pour laisser la piste entrante démarrer sa lecture).
+- **SPEC-1.3.5.2** La fenêtre de boucle (`windowMs`) est calculée à partir du BPM de la piste entrante : `windowMs = round(30 000 / BPM)` (1/8 de note). Plage : `60`–`500 ms`. BPM par défaut si inconnu : `120`.
+- **SPEC-1.3.5.3** L'intervalle de ré-ancrage (`tickMs`) est identique à `windowMs` pour créer une boucle exacte sur la division rythmique.
+- **SPEC-1.3.5.4** La durée du loop roll est `crossfadeDurationMs × 0.65` pour la platine sortante, et `(crossfadeDurationMs × 0.65) − 350 ms` pour la platine entrante (délai initial déduit).
+- **SPEC-1.3.5.5** Les deux platines utilisent le BPM de la piste entrante pour maintenir la cohérence rythmique perçue pendant la transition.
 
 ### 1.4 Contrôle du playback
 
@@ -238,20 +236,24 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 - **SPEC-3.5.1** Chaque morceau du Fil Rouge affiche un badge « Mix info » indiquant si les données d'analyse de mix (mixData) sont disponibles pour ce morceau. Badge `is-done` si `hasMixInfo=true`, badge `is-idle` sinon.
 - **SPEC-3.5.2** La présence de mix info est déterminée par : (a) le flag `hasMixInfo` dans le statut local, ou (b) la présence de `mixData` dans le `trackMetaStorage` (localStorage).
-- **SPEC-3.5.3** GIVEN un morceau téléchargé avec succès — WHEN `fetchMixData` retourne des données — THEN `hasMixInfo` est mis à `true` dans le statut du morceau.
+- **SPEC-3.5.3** GIVEN un morceau téléchargé avec succès via `downloadAll` (bouton "Tout télécharger") — WHEN `fetchMixData` retourne des données — THEN `hasMixInfo` est mis à `true` dans le statut du morceau. Ceci s'applique aussi aux morceaux déjà en cache détectés lors du même `downloadAll`.
 - **SPEC-3.5.4** Le Fil Rouge n'affiche PAS de badge indiquant la présence des stems. Seuls le statut de téléchargement et le statut mix info sont affichés.
+- **SPEC-3.5.5** GIVEN un morceau du Fil Rouge est ajouté à la file d'attente (`addToQueue`) — WHEN `preloadMixDataForDeckItem` se termine avec succès — THEN le badge « Mix info » du morceau dans le Fil Rouge est immédiatement mis à jour via `renderFilRougeTrackStatus`, reflétant la présence des mix data désormais disponibles en localStorage.
 
 ### 3.6 Tri de la playlist
 
 - **SPEC-3.6.1** 6 modes de tri disponibles : `original` (ordre d'insertion, défaut), `bpm` (BPM décroissant), `danceability` (dançabilité décroissante), `year` (année décroissante), `best` (score composite décroissant), `pattern` (enchaînement musical calculé par l'API).
 - **SPEC-3.6.2** Le mode de tri actif est persisté dans `localStorage` sous la clé `dj-mix:fil-rouge:sort`.
-- **SPEC-3.6.3** GIVEN mode ≠ `original` — WHEN l'utilisateur sélectionne un tri — THEN `POST /api/fil-rouge/sort` est appelé avec `{ tracks: FilRougeItem[], mode: string }` et la liste triée retournée par l'API remplace la playlist via `filRougeManager.setPlaylist()`.
+- **SPEC-3.6.3** GIVEN mode ≠ `original` — WHEN l'utilisateur sélectionne un tri — THEN `POST /api/fil-rouge/sort` est appelé avec `{ tracks: FilRougeItem[], mode: string }` ; l'ordre retourné par l'API est utilisé pour réordonner les items locaux (par `id`), et `filRougeManager.setPlaylist()` est appelé avec ces items locaux réordonnés. Les données locales de chaque item (`cachePath`, `persistedSourceUrl`, stems, etc.) sont préservées intégralement.
 - **SPEC-3.6.4** Le `currentIndex` est préservé après le tri : `setPlaylist()` recherche l'`id` du morceau en cours dans le nouvel ordre.
 - **SPEC-3.6.5** GIVEN l'API répond en erreur — THEN un toast `"Tri indisponible (API)"` est affiché et la playlist reste inchangée.
 - **SPEC-3.6.6** Mode `original` — WHEN sélectionné — THEN aucun appel API n'est effectué et `renderFilRouge()` est appelé directement.
 - **SPEC-3.6.7** Mode `best` côté API : score décroissant = `danceability × 0.5 + bpm_normalisé × 0.3 + year_normalisé × 0.2`. BPM et année normalisés sur [0,1] par rapport au min/max de la playlist. Les pistes sans données reçoivent un score partiel de 0 pour les champs manquants.
-- **SPEC-3.6.8** L'API enrichit les champs `danceability` et `year` manquants dans sa réponse. Ces champs sont persistés dans `FilRougeItem` (localStorage) via `filRougeManager.setPlaylist()`.
+- **SPEC-3.6.8** ~~L'API enrichit les champs `danceability` et `year` manquants dans sa réponse.~~ (Supprimé : le reorder préserve les données locales ; les champs API ne sont pas fusionnés pour éviter d'écraser les données locales — cf. SPEC-3.6.12.)
 - **SPEC-3.6.9** Mode `pattern` — WHEN sélectionné — THEN `POST /api/fil-rouge/sort` est appelé avec `mode: "pattern"` ; l'algorithme de tri est entièrement délégué à l'API (enchaînement musical, logique serveur).
+- **SPEC-3.6.10** La réponse de l'API contient un champ `transitions[]` (longueur = `tracks.length - 1`). Pour chaque entrée non-`null` à l'index `i`, les données de transition sont stockées sur `tracks[i]` via `filRougeManager.patchPlaylistItem(id, { djTransition })` avec les champs `toItemId`, `automixMode`, `mixOutSec`, `mixInSec`, `mixInSecDefined`, `crossfadeDurationSec`, `compatibilityScore`. Les entrées `null` sont ignorées.
+- **SPEC-3.6.11** Si `getTrackMaxDurationAppliedSec()` retourne une valeur > 0, le champ `maxDuration: { value: number, unit: "s" }` est inclus dans le corps de la requête. Absent sinon.
+- **SPEC-3.6.12** Le reorder via l'API préserve intégralement les données locales : les items retournés par l'API sont mappés par `id` vers les items locaux ; seul l'ordre est repris depuis l'API. Les items locaux non présents dans la réponse API sont ajoutés en fin de liste (filet de sécurité). Les champs locaux (`cachePath`, `persistedSourceUrl`, `localStemUrls`, `stems`, etc.) ne sont jamais écrasés.
 
 ---
 

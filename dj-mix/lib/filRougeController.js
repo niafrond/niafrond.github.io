@@ -58,6 +58,7 @@ export function createFilRougeController(options) {
     filRougeSortSelectEl = null,
     getDownloaderApiUrl = null,
     getDownloaderApiToken = null,
+    getTrackMaxDurationAppliedSec = null,
   } = options;
 
   // ── Private state ────────────────────────────────────────────────────────────
@@ -406,14 +407,19 @@ export function createFilRougeController(options) {
     const token = getDownloaderApiToken?.();
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    const body = { tracks, mode };
+    const appliedSec = getTrackMaxDurationAppliedSec?.() || 0;
+    if (appliedSec > 0) body.maxDuration = { value: appliedSec, unit: 's' };
     const res = await fetch(`${baseUrl}/api/fil-rouge/sort`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ tracks, mode }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(`sort API ${res.status}`);
     const data = await res.json();
-    return Array.isArray(data.tracks) ? data.tracks : data;
+    const sortedTracks = Array.isArray(data.tracks) ? data.tracks : data;
+    const transitions = Array.isArray(data.transitions) ? data.transitions : [];
+    return { tracks: sortedTracks, transitions, totalDurationSec: data.totalDurationSec ?? null };
   }
 
   async function sortFilRouge(mode) {
@@ -423,9 +429,33 @@ export function createFilRougeController(options) {
     const playlist = filRougeManager.getPlaylist();
     if (!playlist.length) { renderFilRouge(); return; }
     try {
-      const sorted = await _apiFetchFilRougeSort(playlist, mode);
+      const { tracks: sorted, transitions } = await _apiFetchFilRougeSort(playlist, mode);
       if (Array.isArray(sorted) && sorted.length) {
-        filRougeManager.setPlaylist(sorted);
+        const localById = new Map(playlist.map((item) => [String(item.id), item]));
+        const reordered = sorted.map((apiItem) => localById.get(String(apiItem.id))).filter(Boolean);
+        playlist.forEach((item) => {
+          if (!reordered.some((r) => String(r.id) === String(item.id))) reordered.push(item);
+        });
+        filRougeManager.setPlaylist(reordered);
+        for (let i = 0; i < transitions.length; i++) {
+          const t = transitions[i];
+          if (!t || !reordered[i] || !reordered[i + 1]) continue;
+          filRougeManager.patchPlaylistItem(reordered[i].id, {
+            djTransition: {
+              toItemId: reordered[i + 1].id,
+              automixMode: t.automixMode || null,
+              mixOutSec: t.mixOutSec,
+              mixInSec: t.mixInSec,
+              mixInSecDefined: Number.isFinite(t.mixInSec),
+              crossfadeDurationSec: t.crossfadeDurationSec,
+              compatibilityScore: t.compatibilityScore,
+              transitionType: null,
+              recommendedBpm: null,
+              decisionId: null,
+              computedAt: Date.now(),
+            },
+          });
+        }
       }
     } catch (err) {
       console.error('[filRouge] sortFilRouge error:', err);

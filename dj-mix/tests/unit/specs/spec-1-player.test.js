@@ -5,6 +5,7 @@
 import { jest, describe, test, expect, beforeEach } from '@jest/globals';
 import {
   MIX_TRANSITION_MODES,
+  MIX_TRANSITION_MODE_LABELS,
   getAllowedTransitionModesForRam,
   getTransitionRamRequirementMb,
   getTransitionRamRequirementsMb,
@@ -119,6 +120,140 @@ describe('SPEC-1.3.2 — RAM cost declarations', () => {
     // Non-zero modes should cost more with longer crossfade
     expect(profile20s.crossfade_linear).toBeGreaterThan(profile6s.crossfade_linear);
   });
+});
+
+// ── SPEC-1.3.3 — Auto random transition selection ───────────────────────────
+
+describe('SPEC-1.3.3 — Auto mode label', () => {
+  test('SPEC-1.3.3.1 — auto label is Auto (aléatoire)', () => {
+    expect(MIX_TRANSITION_MODE_LABELS.auto).toBe('Auto (aléatoire)');
+  });
+});
+
+describe('SPEC-1.3.3 — Auto mode selects from full pool via player', () => {
+  let mockAudios = [];
+  let origAudio;
+  let origRAF;
+  let origCAF;
+  let origAudioContext;
+
+  beforeEach(() => {
+    mockAudios = [];
+    origAudio = globalThis.Audio;
+    globalThis.Audio = function MockAudio() {
+      const listeners = {};
+      const audio = {
+        src: '', currentTime: 0, duration: 180, volume: 0, paused: true,
+        ended: false, playbackRate: 1, preload: '', readyState: 0, currentSrc: '',
+        addEventListener(event, handler, opts) {
+          if (!listeners[event]) listeners[event] = [];
+          listeners[event].push({ handler, once: opts?.once ?? false });
+        },
+        removeEventListener(event, handler) {
+          if (!listeners[event]) return;
+          listeners[event] = listeners[event].filter((e) => e.handler !== handler);
+        },
+        dispatchEvent(event) {
+          const name = typeof event === 'string' ? event : event.type;
+          const handlers = listeners[name] || [];
+          const toRemove = [];
+          for (const entry of handlers) { entry.handler(event); if (entry.once) toRemove.push(entry); }
+          for (const entry of toRemove) listeners[name] = (listeners[name] || []).filter((e) => e !== entry);
+        },
+        load() { audio.readyState = 4; queueMicrotask(() => audio.dispatchEvent(new Event('canplay'))); },
+        play() { audio.paused = false; queueMicrotask(() => audio.dispatchEvent(new Event('playing'))); return Promise.resolve(); },
+        pause() { audio.paused = true; },
+        remove() {},
+      };
+      mockAudios.push(audio);
+      return audio;
+    };
+    origRAF = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+    origCAF = globalThis.cancelAnimationFrame;
+    globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
+    origAudioContext = globalThis.AudioContext;
+    const makeNode = () => ({ connect() {}, disconnect() {} });
+    globalThis.AudioContext = class MockAudioContext {
+      state = 'running';
+      sampleRate = 44100;
+      createMediaElementSource() { return makeNode(); }
+      createGain() { return { gain: { value: 1, setTargetAtTime() {}, setValueAtTime() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {} }, ...makeNode() }; }
+      createBiquadFilter() { return { type: 'allpass', frequency: { value: 350, setTargetAtTime() {}, setValueAtTime() {} }, Q: { value: 1, setTargetAtTime() {}, setValueAtTime() {} }, ...makeNode() }; }
+      createChannelSplitter() { return makeNode(); }
+      createChannelMerger() { return makeNode(); }
+      createDelay() { return { delayTime: { value: 0 }, ...makeNode() }; }
+      createDynamicsCompressor() { return { threshold: { value: -24 }, knee: { value: 30 }, ratio: { value: 12 }, attack: { value: 0.003 }, release: { value: 0.25 }, ...makeNode() }; }
+      createWaveShaper() { return { curve: null, oversample: 'none', ...makeNode() }; }
+      createOscillator() { return { type: 'sine', frequency: { value: 440, setValueAtTime() {}, exponentialRampToValueAtTime() {} }, start() {}, stop() {}, ...makeNode() }; }
+      createConvolver() { return { buffer: null, ...makeNode() }; }
+      get destination() { return makeNode(); }
+      get currentTime() { return 0; }
+      resume() { return Promise.resolve(); }
+      close() { return Promise.resolve(); }
+    };
+  });
+
+  afterEach(() => {
+    globalThis.Audio = origAudio;
+    globalThis.requestAnimationFrame = origRAF;
+    globalThis.cancelAnimationFrame = origCAF;
+    globalThis.AudioContext = origAudioContext;
+  });
+
+  async function makePlayer() {
+    const { DJPlayer } = await import('../../../player.js');
+    const player = new DJPlayer();
+    player.crossfadeDuration = 250;
+    player.setTransitionMode('auto');
+    await player.init();
+    await new Promise((r) => setTimeout(r, 0));
+    await player.play({ url: 'blob:track-a', durationMs: 210000 });
+    await new Promise((r) => setTimeout(r, 0));
+    return player;
+  }
+
+  async function crossfadeAndGetMode(player, source) {
+    let resolvedMode = null;
+    const onMode = (e) => { resolvedMode = e.detail.effectiveMode; };
+    player.addEventListener('transitionmode', onMode, { once: true });
+    await player.crossfadeToDeck(null, source).catch(() => {});
+    await new Promise((r) => setTimeout(r, 0));
+    return resolvedMode;
+  }
+
+  test('SPEC-1.3.3.2.a — short next track (<95s) always picks cut_transition', async () => {
+    const player = await makePlayer();
+    const mode = await crossfadeAndGetMode(player, { url: 'blob:short', durationMs: 60000 });
+    expect(mode).toBe('cut_transition');
+    player.destroy?.();
+  }, 10000);
+
+  test('SPEC-1.3.3.2.c — normal next track picks from full allowed pool (not just crossfade_linear)', async () => {
+    const player = await makePlayer();
+    const seen = new Set();
+    for (let i = 0; i < 10; i++) {
+      const mode = await crossfadeAndGetMode(player, { url: `blob:track-${i}`, durationMs: 200000 });
+      if (mode) seen.add(mode);
+    }
+    expect(seen.size).toBeGreaterThanOrEqual(3);
+    player.destroy?.();
+  }, 30000);
+
+  test('SPEC-1.3.3.3 — history prevents same mode repeating consecutively too often', async () => {
+    const player = await makePlayer();
+    const modes = [];
+    for (let i = 0; i < 10; i++) {
+      const mode = await crossfadeAndGetMode(player, { url: `blob:track-${i}`, durationMs: 200000 });
+      if (mode) modes.push(mode);
+    }
+    let consecutiveSame = 0;
+    for (let i = 1; i < modes.length; i++) {
+      if (modes[i] === modes[i - 1]) consecutiveSame++;
+    }
+    expect(consecutiveSame).toBeLessThan(5);
+    player.destroy?.();
+  }, 30000);
 });
 
 // ── SPEC-1.3.4 — RAM filter ─────────────────────────────────────────────────

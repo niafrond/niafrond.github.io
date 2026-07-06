@@ -568,28 +568,7 @@ export class DJPlayer extends EventTarget {
   }
 
   #chooseAutoTransitionMode(fromDeck, nextSource) {
-    const current = this.#deckSourceMeta[fromDeck] || {};
-    const currFeatures = current.audioFeatures;
-    const nextFeatures = nextSource?.audioFeatures;
-    const bpmA = Number(currFeatures?.bpm || current.bpm);
-    const bpmB = Number(nextFeatures?.bpm || nextSource?.bpm);
-    const loudA = Number(current.loudnessDb);
-    const loudB = Number(nextSource?.loudnessDb);
-    const diffBpm = Number.isFinite(bpmA) && Number.isFinite(bpmB) ? Math.abs(bpmA - bpmB) : null;
-    const diffLoud = Number.isFinite(loudA) && Number.isFinite(loudB) ? Math.abs(loudA - loudB) : null;
     const nextDurationMs = Number.isFinite(nextSource?.durationMs) ? nextSource.durationMs : null;
-
-    const energyA = Number(currFeatures?.energy);
-    const energyB = Number(nextFeatures?.energy);
-    const diffEnergy = Number.isFinite(energyA) && Number.isFinite(energyB) ? Math.abs(energyA - energyB) : null;
-
-    const danceA = Number(currFeatures?.danceability);
-    const danceB = Number(nextFeatures?.danceability);
-    const diffDance = Number.isFinite(danceA) && Number.isFinite(danceB) ? Math.abs(danceA - danceB) : null;
-
-    const rhythmA = String(currFeatures?.rhythm || '');
-    const rhythmB = String(nextFeatures?.rhythm || '');
-
     const currentDeckAudio = fromDeck === 'B' ? this.#audioB : this.#audioA;
     const remainingMs = currentDeckAudio && Number.isFinite(currentDeckAudio.duration) && currentDeckAudio.duration > 0
       ? Math.max(0, (currentDeckAudio.duration - currentDeckAudio.currentTime) * 1000)
@@ -601,38 +580,9 @@ export class DJPlayer extends EventTarget {
     if (Number.isFinite(remainingMs) && remainingMs < 3_500) {
       return this.#pickWeightedAutoTransition(['echo_out_light', 'cut_transition', 'fade_in_out']);
     }
-    if (rhythmA && rhythmB && rhythmA === rhythmB && Number.isFinite(diffBpm) && diffBpm <= 1) {
-      return this.#pickWeightedAutoTransition(['crossfade_linear', 'crossfade_logarithmic', 'gain_automation']);
-    }
-    if (Number.isFinite(diffBpm) && diffBpm <= 2 && (!Number.isFinite(diffLoud) || diffLoud <= 2)) {
-      return this.#pickWeightedAutoTransition(['crossfade_logarithmic', 'crossfade_linear', 'gain_automation', 'crossfade_lowpass']);
-    }
-    if (Number.isFinite(diffEnergy) && diffEnergy >= 0.35 && Number.isFinite(energyB) && energyB < 0.4) {
-      return this.#pickWeightedAutoTransition(['fade_in_out', 'volume_ducking', 'echo_out_light']);
-    }
-    if (Number.isFinite(diffDance) && diffDance >= 0.3) {
-      return this.#pickWeightedAutoTransition(['filter_sweep_low_high', 'filter_automation', 'filter_dual_sweep']);
-    }
-    if (Number.isFinite(diffBpm) && diffBpm <= 6) {
-      return this.#pickWeightedAutoTransition(['filter_automation', 'eq_transition_simple', 'crossfade_lowpass', 'crossfade_highpass_in']);
-    }
-    if (Number.isFinite(diffEnergy) && diffEnergy >= 0.25) {
-      return this.#pickWeightedAutoTransition(['eq_transition_simple', 'sidechain_basic', 'crossfade_highpass_in']);
-    }
-    if (Number.isFinite(diffBpm) && diffBpm <= 10) {
-      return this.#pickWeightedAutoTransition(['sidechain_basic', 'eq_transition_simple', 'volume_ducking']);
-    }
-    if (Number.isFinite(diffLoud) && diffLoud >= 5) {
-      return this.#pickWeightedAutoTransition(['volume_ducking', 'fade_in_out', 'gain_automation']);
-    }
-    if (Number.isFinite(diffBpm) && diffBpm >= 20) {
-      return this.#pickWeightedAutoTransition(['brake_tape_stop_simple', 'backspin', 'fake_drop']);
-    }
-    if (Number.isFinite(danceA) && Number.isFinite(danceB) && danceA > 0.65 && danceB > 0.65) {
-      return this.#pickWeightedAutoTransition(['short_loop', 'beat_repeat', 'kick_swap', 'bass_swap']);
-    }
 
-    return this.#pickWeightedAutoTransition(['gain_automation', 'crossfade_linear', 'crossfade_logarithmic', 'fade_in_out']);
+    const allModes = [...this.#allowedTransitionModes].filter((m) => m !== 'auto');
+    return this.#pickWeightedAutoTransition(allModes);
   }
 
   #pickWeightedAutoTransition(candidates) {
@@ -675,7 +625,7 @@ export class DJPlayer extends EventTarget {
 
   #recordAutoTransition(mode) {
     this.#recentAutoTransitions.push(mode);
-    if (this.#recentAutoTransitions.length > 8) {
+    if (this.#recentAutoTransitions.length > 16) {
       this.#recentAutoTransitions.shift();
     }
   }

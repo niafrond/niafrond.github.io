@@ -8,6 +8,7 @@
  * @param {(item: object) => void} opts.renderTrackStatus
  * @param {(msg: string, isError?: boolean) => void} opts.showToast
  * @param {(done: number, inProgress: number, total: number) => void} [opts.onProgress]
+ * @param {(name: string, artist: string) => Promise<object|null>} [opts.fetchMixData]
  */
 export function createFilRougeDownloader({
   prefetchTrackToLocalCache,
@@ -18,6 +19,7 @@ export function createFilRougeDownloader({
   renderTrackStatus,
   showToast,
   onProgress,
+  fetchMixData,
 }) {
   async function requestNotifPermission() {
     if (!('Notification' in window)) return false;
@@ -76,7 +78,10 @@ export function createFilRougeDownloader({
       const inCache = await isTrackInLocalCache(track).catch(() => false);
       if (inCache) {
         alreadyCached++;
-        setFilRougeTrackStatus(track, { downloadState: 'done' });
+        const mixData = fetchMixData
+          ? await fetchMixData(track.name, track.artist).catch(() => null)
+          : null;
+        setFilRougeTrackStatus(track, { downloadState: 'done', hasMixInfo: Boolean(mixData) });
       } else {
         pending.push(track);
       }
@@ -109,7 +114,10 @@ export function createFilRougeDownloader({
         console.debug('[downloadAll] prefetch result', { artist: track.artist, name: track.name, ok });
         if (ok) {
           done++;
-          setFilRougeTrackStatus(track, { downloadState: 'done' });
+          const mixData = fetchMixData
+            ? await fetchMixData(track.name, track.artist).catch(() => null)
+            : null;
+          setFilRougeTrackStatus(track, { downloadState: 'done', hasMixInfo: Boolean(mixData) });
         } else {
           failed++;
           setFilRougeTrackStatus(track, { downloadState: 'error' });

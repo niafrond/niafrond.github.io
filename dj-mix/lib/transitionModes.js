@@ -30,7 +30,7 @@ export const MIX_TRANSITION_MODES = Object.freeze([
 ]);
 
 export const MIX_TRANSITION_MODE_LABELS = Object.freeze({
-  auto: 'Auto (meilleur)',
+  auto: 'Auto (aléatoire)',
   crossfade_linear: 'Crossfade lineaire',
   crossfade_logarithmic: 'Crossfade logarithmique',
   fade_in_out: 'Fade in / Fade out',
