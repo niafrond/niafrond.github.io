@@ -1,3 +1,9 @@
+## [1.248.0](https://github.com/niafrond/niafrond.github.io/compare/v1.247.0...v1.248.0) (2026-07-06)
+
+### Features
+
+* implement server tracks caching with TTL and add related tests ([c740ae2](https://github.com/niafrond/niafrond.github.io/commit/c740ae2563d47748cc08e711c68dbbae9af9032a))
+
 ## [1.247.0](https://github.com/niafrond/niafrond.github.io/compare/v1.246.0...v1.247.0) (2026-07-06)
 
 ### Features
