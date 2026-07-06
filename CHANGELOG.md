@@ -1,3 +1,10 @@
+## [1.247.0](https://github.com/niafrond/niafrond.github.io/compare/v1.246.0...v1.247.0) (2026-07-06)
+
+### Features
+
+* add search overlay functionality with open and close methods ([33239c5](https://github.com/niafrond/niafrond.github.io/commit/33239c581fa39c88f2edbb8fdb9998456f987ec1))
+* update specifications and tests for track handling in DJ functionality ([734ec37](https://github.com/niafrond/niafrond.github.io/commit/734ec37b274e09a738856e5ae70b2018269d8386))
+
 ## [1.246.0](https://github.com/niafrond/niafrond.github.io/compare/v1.245.0...v1.246.0) (2026-07-06)
 
 ### Features
