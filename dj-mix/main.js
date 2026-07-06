@@ -709,6 +709,16 @@ const searchOverlay = document.getElementById('search-overlay');
 const searchResults = document.getElementById('search-results');
 const searchIcon = document.querySelector('.search-icon');
 
+function openSearch() {
+  if (searchOverlay) searchOverlay.hidden = false;
+  if (searchClose) searchClose.hidden = false;
+}
+
+function closeSearch() {
+  if (searchOverlay) searchOverlay.hidden = true;
+  if (searchClose) searchClose.hidden = true;
+}
+
 const albumArt = document.getElementById('album-art');
 const artPlaceholder = document.getElementById('art-placeholder');
 const nextAlbumArt = document.getElementById('next-album-art');

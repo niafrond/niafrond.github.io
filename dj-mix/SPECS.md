@@ -280,6 +280,12 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-4.3.5** Badges affichés : `📁` (local), `🧩` (stems disponibles).
 - **SPEC-4.3.6** Actions : "Fade" (play now avec crossfade), "+" (ajouter à la queue), `🗑` (supprimer local).
 
+### 4.4 Overlay de recherche
+
+- **SPEC-4.4.1** `openSearch()` affiche l'overlay et le bouton fermer (`searchOverlay.hidden = false`, `searchClose.hidden = false`).
+- **SPEC-4.4.2** `closeSearch()` masque l'overlay et le bouton fermer (`searchOverlay.hidden = true`, `searchClose.hidden = true`).
+- **SPEC-4.4.3** `openSearch` et `closeSearch` sont définies dans `main.js` à partir des éléments DOM `searchOverlay` et `searchClose`.
+
 ---
 
 ## 5. Auto DJ (AutoMode)
