@@ -1,10 +1,14 @@
 import { DEFAULT_DOWNLOADER_API_URL, STORAGE_KEYS } from '../dj-mix/lib/storageKeys.js';
-import { pruneStemCacheEntries } from './game-logic.js';
+import { pruneStemCacheEntries, isServerTracksCacheFresh } from './game-logic.js';
 
 const MIX_API_URL_KEY = 'mix-blind-test:api-url';
 const META_KEY = 'mix-blind-test:stem-cache-meta';
+const SERVER_TRACKS_CACHE_KEY = 'mix-blind-test:server-tracks-cache';
+const SERVER_TRACKS_CACHE_TTL_MS = 5 * 60 * 1000;
 const CACHE_NAME = 'mix-blind-test:stems:v1';
 const CACHE_ORIGIN = 'https://mix-blind-test.local';
+const IDB_NAME = 'mix-blind-test-stems';
+const IDB_STORE = 'stems';
 
 function normalizeText(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -107,16 +111,66 @@ export class StemClient {
     }
   }
 
+  async openIdb() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async readBlobFromIdb(stemKey) {
+    if (typeof indexedDB === 'undefined') return null;
+    try {
+      const db = await this.openIdb();
+      return new Promise((resolve) => {
+        const tx = db.transaction(IDB_STORE, 'readonly');
+        const req = tx.objectStore(IDB_STORE).get(stemKey);
+        req.onsuccess = () => { db.close(); resolve(req.result ?? null); };
+        req.onerror = () => { db.close(); resolve(null); };
+      });
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async writeBlobToIdb(stemKey, blob) {
+    if (typeof indexedDB === 'undefined') return;
+    try {
+      const db = await this.openIdb();
+      await new Promise((resolve) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(blob, stemKey);
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => { db.close(); resolve(); };
+      });
+    } catch (_) { /* ignore write errors */ }
+  }
+
+  async deleteBlobFromIdb(stemKey) {
+    if (typeof indexedDB === 'undefined') return;
+    try {
+      const db = await this.openIdb();
+      await new Promise((resolve) => {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).delete(stemKey);
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => { db.close(); resolve(); };
+      });
+    } catch (_) { /* ignore delete errors */ }
+  }
+
   async pruneCache() {
-    if (!('caches' in window)) return;
-    const cache = await caches.open(CACHE_NAME);
     const { kept, evicted } = pruneStemCacheEntries(this.readMeta(), {
       maxBytes: this.maxBytes,
       maxEntries: this.maxEntries,
     });
 
+    const cache = ('caches' in globalThis) ? await caches.open(CACHE_NAME) : null;
     for (const entry of evicted) {
-      await cache.delete(this.cacheRequest(entry.key));
+      await this.deleteBlobFromIdb(entry.key);
+      if (cache) await cache.delete(this.cacheRequest(entry.key));
       this.dropObjectUrl(entry.key);
     }
 
@@ -125,7 +179,7 @@ export class StemClient {
 
   async getCachedStemObjectUrl(track, variant) {
     const stemKey = this.stemKey(track, variant);
-    if (!stemKey || !('caches' in window)) return '';
+    if (!stemKey) return '';
 
     const active = this.objectUrls.get(stemKey);
     if (active) {
@@ -133,6 +187,15 @@ export class StemClient {
       return active;
     }
 
+    const idbBlob = await this.readBlobFromIdb(stemKey);
+    if (idbBlob && idbBlob.size > 0) {
+      const objectUrl = URL.createObjectURL(idbBlob);
+      this.rememberObjectUrl(stemKey, objectUrl);
+      this.touchMeta(stemKey, idbBlob.size);
+      return objectUrl;
+    }
+
+    if (!('caches' in globalThis)) return '';
     const cache = await caches.open(CACHE_NAME);
     const match = await cache.match(this.cacheRequest(stemKey));
     if (!match) return '';
@@ -149,14 +212,17 @@ export class StemClient {
     const stemKey = this.stemKey(track, variant);
     if (!stemKey || !blob || blob.size <= 0) return '';
 
-    if ('caches' in window) {
+    await this.writeBlobToIdb(stemKey, blob);
+
+    if ('caches' in globalThis) {
       const cache = await caches.open(CACHE_NAME);
       await cache.put(this.cacheRequest(stemKey), new Response(blob, {
         headers: { 'content-type': blob.type || 'audio/mpeg' },
       }));
-      this.touchMeta(stemKey, blob.size);
-      await this.pruneCache();
     }
+
+    this.touchMeta(stemKey, blob.size);
+    await this.pruneCache();
 
     const objectUrl = URL.createObjectURL(blob);
     this.rememberObjectUrl(stemKey, objectUrl);
@@ -268,7 +334,27 @@ export class StemClient {
     throw new Error(`Les stems de "${track?.name || 'chanson inconnue'}" ne sont pas prêts`);
   }
 
-  async fetchServerCacheTracks() {
+  readServerTracksCache() {
+    const parsed = safeJsonParse(localStorage.getItem(SERVER_TRACKS_CACHE_KEY), null);
+    return isServerTracksCacheFresh(parsed, { ttlMs: SERVER_TRACKS_CACHE_TTL_MS }) ? parsed.tracks : null;
+  }
+
+  writeServerTracksCache(tracks) {
+    localStorage.setItem(SERVER_TRACKS_CACHE_KEY, JSON.stringify({
+      tracks,
+      fetchedAt: Date.now(),
+    }));
+  }
+
+  clearServerTracksCache() {
+    localStorage.removeItem(SERVER_TRACKS_CACHE_KEY);
+  }
+
+  async fetchServerCacheTracks({ forceRefresh = false } = {}) {
+    if (!forceRefresh) {
+      const cached = this.readServerTracksCache();
+      if (cached) return cached;
+    }
     if (!this.apiUrl) return [];
     try {
       const response = await fetch(`${this.apiUrl}/api/cache/files`, {
@@ -280,12 +366,14 @@ export class StemClient {
       const files = Array.isArray(data)
         ? data
         : (Array.isArray(data?.results) ? data.results : (Array.isArray(data?.files) ? data.files : []));
-      return files.map((file) => ({
+      const tracks = files.map((file) => ({
         name: normalizeText(file?.trackName || file?.name || file?.title),
         artist: normalizeText(file?.artistName || file?.artist),
         cachePath: normalizeText(file?.cachePath),
         bpm: file?.bpm,
       })).filter((track) => track.name || track.cachePath);
+      this.writeServerTracksCache(tracks);
+      return tracks;
     } catch (_) {
       return [];
     }

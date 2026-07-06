@@ -1,4 +1,4 @@
-import { chooseRoundPair, makePairKey, pickRandomTracks, pruneStemCacheEntries } from '../../game-logic.js';
+import { chooseRoundPair, isServerTracksCacheFresh, makePairKey, pickRandomTracks, pruneStemCacheEntries } from '../../game-logic.js';
 
 describe('mix-blind-test game logic', () => {
   test('chooseRoundPair selects closest BPM pair by default', () => {
@@ -65,5 +65,33 @@ describe('mix-blind-test game logic', () => {
     const tracks = [{ id: 'a' }, { id: 'b' }];
     expect(pickRandomTracks(tracks, 10, () => 0)).toHaveLength(2);
     expect(pickRandomTracks(tracks, 0, () => 0)).toHaveLength(1);
+  });
+
+  describe('isServerTracksCacheFresh', () => {
+    test('returns true for cache younger than TTL', () => {
+      const now = 1_000_000;
+      expect(isServerTracksCacheFresh({ tracks: [], fetchedAt: now - 100 }, { ttlMs: 300_000, now })).toBe(true);
+    });
+
+    test('returns false for cache older than TTL', () => {
+      const now = 1_000_000;
+      expect(isServerTracksCacheFresh({ tracks: [], fetchedAt: now - 400_000 }, { ttlMs: 300_000, now })).toBe(false);
+    });
+
+    test('returns false when fetchedAt is missing', () => {
+      const now = 1_000_000;
+      expect(isServerTracksCacheFresh({ tracks: [] }, { ttlMs: 300_000, now })).toBe(false);
+    });
+
+    test('returns false when tracks field is missing or not an array', () => {
+      const now = 1_000_000;
+      expect(isServerTracksCacheFresh({ fetchedAt: now }, { now })).toBe(false);
+      expect(isServerTracksCacheFresh({ tracks: 'bad', fetchedAt: now }, { now })).toBe(false);
+    });
+
+    test('returns false for null or undefined input', () => {
+      expect(isServerTracksCacheFresh(null)).toBe(false);
+      expect(isServerTracksCacheFresh(undefined)).toBe(false);
+    });
   });
 });

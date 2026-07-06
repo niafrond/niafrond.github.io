@@ -77,6 +77,11 @@ export function pruneStemCacheEntries(entries, { maxBytes = 180 * 1024 * 1024, m
   return { kept, evicted, totalBytes };
 }
 
+export function isServerTracksCacheFresh(cached, { ttlMs = 5 * 60 * 1000, now = Date.now() } = {}) {
+  if (!cached || !Array.isArray(cached.tracks)) return false;
+  return now - (cached.fetchedAt || 0) <= ttlMs;
+}
+
 export function pickRandomTracks(tracks, count = 1, rng = Math.random) {
   const pool = Array.isArray(tracks) ? [...tracks] : [];
   if (!pool.length) return [];
