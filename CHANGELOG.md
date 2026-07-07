@@ -1,3 +1,9 @@
+## [1.250.0](https://github.com/niafrond/niafrond.github.io/compare/v1.249.0...v1.250.0) (2026-07-07)
+
+### Features
+
+* enhance downloadAll functionality to fetch mix data for completed tracks without mix info ([bd3488c](https://github.com/niafrond/niafrond.github.io/commit/bd3488c3d5310e2d0f0932d4bdff8c4d361ee6b6))
+
 ## [1.249.0](https://github.com/niafrond/niafrond.github.io/compare/v1.248.0...v1.249.0) (2026-07-07)
 
 ### Features
