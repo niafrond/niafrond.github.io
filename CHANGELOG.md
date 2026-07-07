@@ -1,3 +1,9 @@
+## [1.249.0](https://github.com/niafrond/niafrond.github.io/compare/v1.248.0...v1.249.0) (2026-07-07)
+
+### Features
+
+* **alldebrid-fdm:** initialize project with Express server and frontend ([570447e](https://github.com/niafrond/niafrond.github.io/commit/570447e25b7db7df21cf8dd0e7ee8cb3f20cdc5e))
+
 ## [1.248.0](https://github.com/niafrond/niafrond.github.io/compare/v1.247.0...v1.248.0) (2026-07-06)
 
 ### Features
