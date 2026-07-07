@@ -1733,8 +1733,11 @@ function parseTxtPlaylist(text) {
   const tracks = [];
   const lines = String(text || '').split(/\r?\n/);
   for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
+    const rawTrimmed = line.trim();
+    if (!rawTrimmed || rawTrimmed.startsWith('#')) continue;
+    // Strip leading line numbers: "1. ", "1- ", "1) ", "1: ", or bare "1 "
+    const trimmed = rawTrimmed.replace(/^\d+(?:[.):]\s*|-\s*|\s+)/, '');
+    if (!trimmed) continue;
     let artist, name;
     // Accept "artiste - titre" with flexible whitespace and dash variants.
     const splitMatch = trimmed.match(/^(.+?)\s+(?:-|–|—)\s+(.+)$/u);

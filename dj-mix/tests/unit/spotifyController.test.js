@@ -108,6 +108,41 @@ describe('parseTxtPlaylist', () => {
     const tracks = ctrl.parseTxtPlaylist('A - B');
     expect(tracks[0].source).toBe('txt');
   });
+
+  test('strips leading "1. " line number', () => {
+    const ctrl = makeController();
+    const tracks = ctrl.parseTxtPlaylist('1. Daft Punk - Get Lucky');
+    expect(tracks[0].artist).toBe('Daft Punk');
+    expect(tracks[0].name).toBe('Get Lucky');
+  });
+
+  test('strips leading "1- " line number', () => {
+    const ctrl = makeController();
+    const tracks = ctrl.parseTxtPlaylist('2- Michael Jackson - Thriller');
+    expect(tracks[0].artist).toBe('Michael Jackson');
+    expect(tracks[0].name).toBe('Thriller');
+  });
+
+  test('strips leading bare number + space', () => {
+    const ctrl = makeController();
+    const tracks = ctrl.parseTxtPlaylist('3 Kavinsky - Nightcall');
+    expect(tracks[0].artist).toBe('Kavinsky');
+    expect(tracks[0].name).toBe('Nightcall');
+  });
+
+  test('strips leading "42) " line number', () => {
+    const ctrl = makeController();
+    const tracks = ctrl.parseTxtPlaylist('42) Artiste - Titre');
+    expect(tracks[0].artist).toBe('Artiste');
+    expect(tracks[0].name).toBe('Titre');
+  });
+
+  test('does not strip non-numbered lines', () => {
+    const ctrl = makeController();
+    const tracks = ctrl.parseTxtPlaylist('Daft Punk - Around The World');
+    expect(tracks[0].artist).toBe('Daft Punk');
+    expect(tracks[0].name).toBe('Around The World');
+  });
 });
 
 describe('addSpotifyDeletedId', () => {

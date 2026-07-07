@@ -207,6 +207,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-3.3.1.2** GIVEN une ligne sans séparateur — THEN toute la ligne devient le titre, artiste = `"Artiste inconnu"`.
 - **SPEC-3.3.1.3** Les lignes vides et les commentaires sont ignorés.
 - **SPEC-3.3.1.4** ID généré : `txt-${index}-${encodeURIComponent(artist)}-${encodeURIComponent(name)}`.
+- **SPEC-3.3.1.5** GIVEN une ligne commence par un numéro de ligne (ex. `"1. "`, `"1- "`, `"1) "`, `"3 "`) — THEN le préfixe numérique est supprimé avant le parsing artiste/titre (regex : `/^\d+(?:[.\-)]\s*|\s+)/`).
 
 #### 3.3.2 Import Spotify
 
