@@ -56,25 +56,13 @@ export function createFilRougeDownloader({
   }
 
   /**
-   * Télécharge les morceaux du fil rouge qui ne sont pas encore en cache,
-   * un par un en queue séquentielle.
-   * @param {object[]} tracks
+   * Tâche séquentielle : télécharge les pistes manquantes + fetchMixData après chaque succès.
+   * @returns {{ done: number, failed: number, total: number }}
    */
-  async function downloadAll(tracks) {
-    const candidates = tracks.filter(t => {
-      if (!t?.name || !t?.artist) return false;
-      const { downloadState } = getFilRougeTrackStatus(t);
-      return downloadState !== 'done' && downloadState !== 'downloading';
-    });
-
-    if (!candidates.length) {
-      showToast('Tous les morceaux sont déjà téléchargés');
-      return;
-    }
-
-    const pending = [];
+  async function _runDownloadTask(tracks, swReg) {
     let alreadyCached = 0;
-    for (const track of candidates) {
+    const pending = [];
+    for (const track of tracks) {
       const inCache = await isTrackInLocalCache(track).catch(() => false);
       if (inCache) {
         alreadyCached++;
@@ -88,15 +76,14 @@ export function createFilRougeDownloader({
     }
     if (alreadyCached > 0) renderFilRouge();
 
-    if (!pending.length) {
-      showToast(`Tous les morceaux sont déjà en cache (${alreadyCached} retrouvé${alreadyCached > 1 ? 's' : ''})`);
-      return;
+    const total = pending.length;
+    if (!total) {
+      if (alreadyCached > 0) {
+        showToast(`Tous les morceaux sont déjà en cache (${alreadyCached} retrouvé${alreadyCached > 1 ? 's' : ''})`);
+      }
+      return { done: 0, failed: 0, total: 0 };
     }
 
-    await requestNotifPermission();
-    const swReg = await getSwReg();
-
-    const total = pending.length;
     let done = 0;
     let failed = 0;
 
@@ -148,8 +135,65 @@ export function createFilRougeDownloader({
       'djmix-dl-done',
       false,
     );
-    onProgress?.(done, 0, 0);
-    showToast(`Téléchargement terminé : ${done}/${total}`);
+    return { done, failed, total };
+  }
+
+  /**
+   * Tâche séquentielle parallèle : met à jour les mix infos des pistes déjà téléchargées
+   * qui n'ont pas encore de mix info.
+   */
+  async function _runMixInfoTask(tracks) {
+    for (const track of tracks) {
+      try {
+        const mixData = await fetchMixData(track.name, track.artist);
+        setFilRougeTrackStatus(track, { hasMixInfo: Boolean(mixData) });
+      } catch (_) {
+        setFilRougeTrackStatus(track, { hasMixInfo: false });
+      }
+      renderTrackStatus(track);
+    }
+  }
+
+  /**
+   * Télécharge les morceaux du fil rouge qui ne sont pas encore en cache
+   * et met à jour les mix infos manquantes — deux tâches séquentielles en parallèle.
+   * @param {object[]} tracks
+   */
+  async function downloadAll(tracks) {
+    const toDownload = [];
+    const toMixInfoOnly = [];
+
+    for (const t of tracks) {
+      if (!t?.name || !t?.artist) continue;
+      const { downloadState, hasMixInfo } = getFilRougeTrackStatus(t);
+      if (downloadState === 'downloading') continue;
+      if (downloadState !== 'done') {
+        toDownload.push(t);
+      } else if (!hasMixInfo && fetchMixData) {
+        toMixInfoOnly.push(t);
+      }
+    }
+
+    if (!toDownload.length && !toMixInfoOnly.length) {
+      showToast('Tous les morceaux sont déjà téléchargés');
+      return;
+    }
+
+    await requestNotifPermission();
+    const swReg = await getSwReg();
+
+    const [dlResult] = await Promise.all([
+      _runDownloadTask(toDownload, swReg),
+      _runMixInfoTask(toMixInfoOnly),
+    ]);
+
+    const { done, total } = dlResult;
+    if (total > 0) {
+      onProgress?.(done, 0, 0);
+      showToast(`Téléchargement terminé : ${done}/${total}`);
+    } else if (!toDownload.length && toMixInfoOnly.length > 0) {
+      showToast(`Mix info mis à jour (${toMixInfoOnly.length} morceau${toMixInfoOnly.length > 1 ? 'x' : ''})`);
+    }
   }
 
   return { downloadAll };

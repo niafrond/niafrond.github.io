@@ -120,3 +120,46 @@ describe('downloadAll — cached tracks also fetch mix data (SPEC-3.5.3)', () =>
     expect(statuses.get(track.id)).toMatchObject({ downloadState: 'done', hasMixInfo: false });
   });
 });
+
+// ── SPEC-3.5.6 : downloadAll — pistes déjà done sans mix info ────────────────
+
+describe('downloadAll — done tracks missing mix info (SPEC-3.5.6)', () => {
+  test('fetches mix data for a track already done but without hasMixInfo', async () => {
+    const { downloader, mocks, statuses } = makeDownloader({
+      isTrackInLocalCache: jest.fn().mockResolvedValue(true),
+    });
+    const track = makeTrack();
+    statuses.set(track.id, { downloadState: 'done', hasMixInfo: false });
+
+    await downloader.downloadAll([track]);
+
+    expect(mocks.prefetchTrackToLocalCache).not.toHaveBeenCalled();
+    expect(mocks.fetchMixData).toHaveBeenCalledWith(track.name, track.artist);
+    expect(statuses.get(track.id)).toMatchObject({ downloadState: 'done', hasMixInfo: true });
+  });
+
+  test('skips track already done with hasMixInfo=true', async () => {
+    const { downloader, mocks, statuses } = makeDownloader();
+    const track = makeTrack();
+    statuses.set(track.id, { downloadState: 'done', hasMixInfo: true });
+
+    await downloader.downloadAll([track]);
+
+    expect(mocks.prefetchTrackToLocalCache).not.toHaveBeenCalled();
+    expect(mocks.fetchMixData).not.toHaveBeenCalled();
+    expect(mocks.showToast).toHaveBeenCalledWith('Tous les morceaux sont déjà téléchargés');
+  });
+
+  test('sets hasMixInfo=false for done-without-mix-info track when fetchMixData returns null', async () => {
+    const { downloader, mocks, statuses } = makeDownloader({
+      isTrackInLocalCache: jest.fn().mockResolvedValue(true),
+      fetchMixData: jest.fn().mockResolvedValue(null),
+    });
+    const track = makeTrack();
+    statuses.set(track.id, { downloadState: 'done', hasMixInfo: false });
+
+    await downloader.downloadAll([track]);
+
+    expect(statuses.get(track.id)).toMatchObject({ downloadState: 'done', hasMixInfo: false });
+  });
+});
