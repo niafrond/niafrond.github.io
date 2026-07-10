@@ -1,0 +1,13 @@
+{
+  "name": "plex-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web app mobile pour parcourir et regarder les films/séries d'un serveur Plex local",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1"
+  }
+}
