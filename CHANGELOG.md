@@ -1,3 +1,9 @@
+## [1.251.0](https://github.com/niafrond/niafrond.github.io/compare/v1.250.0...v1.251.0) (2026-07-10)
+
+### Features
+
+* add Plex mobile web proxy server with HLS playlist rewriting and health check endpoint ([62bd7f1](https://github.com/niafrond/niafrond.github.io/commit/62bd7f1ba5124548e9084987b9293ce2fc74dfaa))
+
 ## [1.250.0](https://github.com/niafrond/niafrond.github.io/compare/v1.249.0...v1.250.0) (2026-07-07)
 
 ### Features
