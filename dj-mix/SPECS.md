@@ -267,11 +267,10 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-4.1.2** Endpoint : `GET /api/search?term=${term}&artist=${artist}&limit=${limit}&nocache=${skipCache}`. Limite par défaut : `25`.
 - **SPEC-4.1.3** Le texte est nettoyé via `cleanItunesSearchText()` (suppression feats, métadonnées) et séparé artiste/titre via `splitItunesSearchQuery()`.
 
-### 4.2 Polling
+### 4.2 Recherche synchrone
 
-- **SPEC-4.2.1** GIVEN la réponse contient un `pollToken` — THEN un polling est lancé sur `GET /api/search/poll?pollToken=${token}`.
-- **SPEC-4.2.2** Délais : base `1500 ms`, incrément `600 ms` par tentative, plafonné à `5000 ms`. Max `8` tentatives. Timeout par requête : `8000 ms`.
-- **SPEC-4.2.3** GIVEN `data.status === 'pending'` — THEN le polling continue. Sinon, les résultats sont retournés.
+- **SPEC-4.2.1** `GET /api/search` répond de façon synchrone et complète (fusion iTunes+Deezer côté serveur) : il n'existe plus de mécanisme de polling (`/api/search/poll` et le champ `pollToken` ont été retirés de l'API). `searchTracksRaw()` retourne directement `{ tracks }`.
+- **SPEC-4.2.2** L'API expose un paramètre `stream` (booléen, `text/event-stream`) pour recevoir des snapshots progressifs, mais il n'est pas consommé par le client actuellement — la recherche reste une requête `fetch()` classique bloquante.
 
 ### 4.3 Résultats
 
@@ -899,10 +898,6 @@ STEM_SYNC_INTERVAL_MS = 2500
 LOOP_CUE_REPEAT_COUNT = 3
 LOOP_CUE_INTERVAL_MS = 1500
 SEARCH_DEBOUNCE_MS = 600
-SEARCH_POLL_MAX_ATTEMPTS = 8
-SEARCH_POLL_BASE_DELAY_MS = 1500
-SEARCH_POLL_STEP_MS = 600
-SEARCH_POLL_CAP_MS = 5000
 SPOTIFY_FIL_ROUGE_POLL_MS = 120_000
 METRICS_LOG_INTERVAL_MS = 60_000
 IDLE_SCHEDULE_FALLBACK_MS = 80

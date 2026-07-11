@@ -119,6 +119,7 @@ import { createDjApiClient } from './lib/djApiClient.js';
 import { createDjPlanManager } from './lib/djPlanManager.js';
 import { computeDjBpmRate, mapDjTransitionTypeToMode } from './lib/djTransitionMapping.js';
 import { computeDjPlanIndicatorState } from './lib/djPlanIndicator.js';
+import { parseFingerprintCheckResponse, buildFingerprintCorrectRequestBody, buildFingerprintCorrectToastMessage } from './lib/fingerprintController.js';
 import { createAppState } from './lib/appState.js';
 import {
   AUTO_DJ_FX_TYPES,
@@ -245,7 +246,6 @@ let automixRescheduledForTrackId = null;
 let lastSearchQuery = '';
 let pendingSearchAdd = false;
 let searchDebounceTimer = null;
-let currentSearchPollToken = null;
 let launchPreviewActive = false;
 let launchPreviewArtUrl = '';
 let launchPreviewTitle = '';
@@ -1222,7 +1222,6 @@ const {
   evictTrackSource,
   isTrackInLocalCache,
   persistArtwork,
-  pollSearchResults,
   prefetchTrackToLocalCache,
   releaseLocalBlob,
   restoreArtwork,
@@ -3251,7 +3250,6 @@ const autoModeManager = createAutoModeManager({
   getAutoFxMinGapMs: () => getSafeAutoDjFxMinIntervalSec(autoDjFxSettings.minIntervalSec) * 1000,
   getAutoFxMaxGapMs: () => getAutoDjFxMaxGapMs(autoDjFxSettings),
   getDjMode: () => djMode,
-  getDjModeGenrePrefs: () => djModeGenrePrefs,
   getCurrentBpm: getActiveDeckBpm,
   getActualDurationMs: () => playbackDurationMs,
   onAutomixTimingCalculated: (triggerMs) => {
@@ -5822,7 +5820,7 @@ function bindSearchResults(songResults, artistResults) {
   });
 }
 
-function renderSearchResults(tracks, isPartial = false) {
+function renderSearchResults(tracks) {
   const seen = new Set();
   const normalized = tracks
     .map(mapApiTrackToSearchItem)
@@ -5837,41 +5835,13 @@ function renderSearchResults(tracks, isPartial = false) {
   const songResults = normalized.filter((track) => !track.isArtistResult);
   const artistResults = normalized.filter((track) => track.isArtistResult);
 
-  const spinnerHtml = isPartial
-    ? '<div class="search-poll-spinner search-loading" style="font-size:11px;padding:3px 8px;opacity:0.7;">Recherche en cours...</div>'
-    : '';
-  searchResults.innerHTML = spinnerHtml + buildSearchResultsSectionsHTML(songResults, artistResults);
+  searchResults.innerHTML = buildSearchResultsSectionsHTML(songResults, artistResults);
   bindSearchResults(songResults, artistResults);
-}
-
-function scheduleSearchPoll(query, token, attempt) {
-  if (attempt >= 8) return;
-  const delay = Math.min(1500 + attempt * 600, 5000);
-  setTimeout(async () => {
-    if (lastSearchQuery !== query || currentSearchPollToken !== token) return;
-    const { pending, tracks } = await pollSearchResults(token).catch(() => ({ pending: true, tracks: [] }));
-    if (lastSearchQuery !== query || currentSearchPollToken !== token) return;
-    if (!pending) {
-      currentSearchPollToken = null;
-      if (tracks?.length) {
-        logInfo('runSearch(): phase 2 results', { query, count: tracks.length });
-        renderSearchResults(tracks, false);
-      } else {
-        searchResults.querySelector('.search-poll-spinner')?.remove();
-        if (!searchResults.querySelector('.search-result-item')) {
-          searchResults.innerHTML = '<div class="search-empty">Aucun résultat</div>';
-        }
-      }
-    } else {
-      scheduleSearchPoll(query, token, attempt + 1);
-    }
-  }, delay);
 }
 
 async function runSearch(query, skipCache = false) {
   logInfo('runSearch(): querying API', { query, skipCache });
   lastSearchQuery = query;
-  currentSearchPollToken = null;
 
   try {
     if (!getDownloaderApiUrl()) {
@@ -5884,22 +5854,15 @@ async function runSearch(query, skipCache = false) {
       return;
     }
 
-    const { tracks, pollToken } = await searchTracksRaw(query, 25, skipCache);
+    const { tracks } = await searchTracksRaw(query, 25, skipCache);
     if (lastSearchQuery !== query) return;
 
-    logInfo('runSearch(): phase 1 results', { query, count: tracks?.length || 0, hasPollToken: !!pollToken });
+    logInfo('runSearch(): results', { query, count: tracks?.length || 0 });
 
     if (tracks?.length) {
-      renderSearchResults(tracks, !!pollToken);
-    } else if (pollToken) {
-      searchResults.innerHTML = '<div class="search-loading">Recherche en cours...</div>';
+      renderSearchResults(tracks);
     } else {
       searchResults.innerHTML = '<div class="search-empty">Aucun résultat</div>';
-    }
-
-    if (pollToken) {
-      currentSearchPollToken = pollToken;
-      scheduleSearchPoll(query, pollToken, 0);
     }
   } catch (err) {
     logError('runSearch(): failed', { query, message: err?.message });
@@ -6634,11 +6597,12 @@ async function _fpCheck(item, btn) {
     if (!res.ok) { showToast('Erreur de vérification', true); return; }
     const data = await res.json();
 
-    if (data.match) {
+    const { matched, suggestions } = parseFingerprintCheckResponse(data);
+    if (matched) {
       showToast(`Empreinte OK : ${item.name}`);
       return;
     }
-    _fpShowSuggestions(item, data.suggestions || []);
+    _fpShowSuggestions(item, suggestions);
   } catch {
     showToast('Erreur réseau', true);
   } finally {
@@ -6696,40 +6660,14 @@ async function _fpCorrectAndDownload(replacement) {
   showToast('Correction en cours…');
 
   try {
-    const payload = {
-      id: replacement.id || replacement.trackId || '',
-      name: replacement.name || replacement.trackName || replacement.title || '',
-      artist: replacement.artist || replacement.artistName || '',
-      artUrl: replacement.artUrl || replacement.artworkUrl || replacement.artworkUrl100 || '',
-      duration_ms: replacement.duration_ms || replacement.trackTimeMillis || 0,
-      uri: replacement.uri || '',
-      downloadUrl: replacement.downloadUrl || replacement.persistedSourceUrl || '',
-    };
-
     const res = await fetch(`${apiUrl}/api/fingerprint/correct`, {
       method: 'POST',
       headers: _fpAuthHeaders(),
-      body: JSON.stringify({ artistName: trackRef.artistName, trackName: trackRef.trackName, replacement: payload }),
+      body: JSON.stringify(buildFingerprintCorrectRequestBody(trackRef, replacement)),
     });
     if (!res.ok) { showToast('Erreur de correction', true); return; }
     const data = await res.json();
-
-    if (data.downloadUrl) {
-      showToast('Téléchargement et vérification…');
-      const dlRes = await fetch(`${apiUrl}/api/fingerprint/download`, {
-        method: 'POST',
-        headers: _fpAuthHeaders(),
-        body: JSON.stringify({
-          artistName: data.correctedArtistName || trackRef.artistName,
-          trackName: data.correctedTrackName || trackRef.trackName,
-          downloadUrl: data.downloadUrl,
-        }),
-      });
-      const dlData = dlRes.ok ? await dlRes.json() : {};
-      showToast(dlData.verified ? 'Titre corrigé et vérifié' : 'Titre corrigé — vérification en attente');
-    } else {
-      showToast('Correction enregistrée');
-    }
+    showToast(buildFingerprintCorrectToastMessage(data));
   } catch {
     showToast('Erreur réseau', true);
   }

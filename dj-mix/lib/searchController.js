@@ -1,9 +1,5 @@
 import {
   SEARCH_DEBOUNCE_MS,
-  SEARCH_POLL_MAX_ATTEMPTS,
-  SEARCH_POLL_BASE_DELAY_MS,
-  SEARCH_POLL_STEP_MS,
-  SEARCH_POLL_CAP_MS,
 } from './constants.js';
 import {
   buildSearchResultsSectionsHTML,
@@ -14,13 +10,12 @@ import {
 import { uiState } from './uiState.js';
 
 /**
- * Gère la recherche de pistes (debounce, polling, rendu des résultats, actions).
+ * Gère la recherche de pistes (debounce, rendu des résultats, actions).
  *
  * @param {object} options
  * @param {() => string|null} options.getDownloaderApiUrl
  * @param {{ isOffline: () => boolean }} options.apiHealthMonitor
- * @param {(query: string, limit: number, skipCache: boolean) => Promise<{tracks: object[], pollToken: string|null}>} options.searchTracksRaw
- * @param {(token: string) => Promise<{pending: boolean, tracks: object[]}>} options.pollSearchResults
+ * @param {(query: string, limit: number, skipCache: boolean) => Promise<{tracks: object[]}>} options.searchTracksRaw
  * @param {(track: object) => Promise<boolean>} options.deleteLocalCacheSong
  * @param {{ isCrossfading: boolean, activateElement?: () => void }|null} options.getPlayer
  * @param {(track: object, opts?: object) => Promise<void>} options.addToQueue
@@ -48,7 +43,6 @@ export function createSearchController(options) {
     getDownloaderApiUrl,
     apiHealthMonitor,
     searchTracksRaw,
-    pollSearchResults,
     deleteLocalCacheSong,
     getPlayer,
     addToQueue,
@@ -75,7 +69,6 @@ export function createSearchController(options) {
   let lastSearchQuery = '';
   let pendingSearchAdd = false;
   let searchDebounceTimer = null;
-  let currentSearchPollToken = null;
 
   // ── UI helpers ────────────────────────────────────────────────────────────────
 
@@ -196,7 +189,7 @@ export function createSearchController(options) {
     });
   }
 
-  function renderSearchResults(tracks, isPartial = false) {
+  function renderSearchResults(tracks) {
     if (!searchResults) return;
     const seen = new Set();
     const normalized = tracks
@@ -212,37 +205,8 @@ export function createSearchController(options) {
     const songResults = normalized.filter((track) => !track.isArtistResult);
     const artistResults = normalized.filter((track) => track.isArtistResult);
 
-    const spinnerHtml = isPartial
-      ? '<div class="search-poll-spinner search-loading" style="font-size:11px;padding:3px 8px;opacity:0.7;">Recherche en cours...</div>'
-      : '';
-    searchResults.innerHTML = spinnerHtml + buildSearchResultsSectionsHTML(songResults, artistResults);
+    searchResults.innerHTML = buildSearchResultsSectionsHTML(songResults, artistResults);
     bindSearchResults(songResults, artistResults);
-  }
-
-  // ── Polling ───────────────────────────────────────────────────────────────────
-
-  function scheduleSearchPoll(query, token, attempt) {
-    if (attempt >= SEARCH_POLL_MAX_ATTEMPTS) return;
-    const delay = Math.min(SEARCH_POLL_BASE_DELAY_MS + attempt * SEARCH_POLL_STEP_MS, SEARCH_POLL_CAP_MS);
-    setTimeout(async () => {
-      if (lastSearchQuery !== query || currentSearchPollToken !== token) return;
-      const { pending, tracks } = await pollSearchResults(token).catch(() => ({ pending: true, tracks: [] }));
-      if (lastSearchQuery !== query || currentSearchPollToken !== token) return;
-      if (!pending) {
-        currentSearchPollToken = null;
-        if (tracks?.length) {
-          logInfo('runSearch(): phase 2 results', { query, count: tracks.length });
-          renderSearchResults(tracks, false);
-        } else {
-          searchResults?.querySelector('.search-poll-spinner')?.remove();
-          if (!searchResults?.querySelector('.search-result-item')) {
-            if (searchResults) searchResults.innerHTML = '<div class="search-empty">Aucun résultat</div>';
-          }
-        }
-      } else {
-        scheduleSearchPoll(query, token, attempt + 1);
-      }
-    }, delay);
   }
 
   // ── Main search ───────────────────────────────────────────────────────────────
@@ -250,7 +214,6 @@ export function createSearchController(options) {
   async function runSearch(query, skipCache = false) {
     logInfo('runSearch(): querying API', { query, skipCache });
     lastSearchQuery = query;
-    currentSearchPollToken = null;
 
     try {
       if (!getDownloaderApiUrl()) {
@@ -263,22 +226,15 @@ export function createSearchController(options) {
         return;
       }
 
-      const { tracks, pollToken } = await searchTracksRaw(query, 25, skipCache);
+      const { tracks } = await searchTracksRaw(query, 25, skipCache);
       if (lastSearchQuery !== query) return;
 
-      logInfo('runSearch(): phase 1 results', { query, count: tracks?.length || 0, hasPollToken: !!pollToken });
+      logInfo('runSearch(): results', { query, count: tracks?.length || 0 });
 
       if (tracks?.length) {
-        renderSearchResults(tracks, !!pollToken);
-      } else if (pollToken) {
-        if (searchResults) searchResults.innerHTML = '<div class="search-loading">Recherche en cours...</div>';
+        renderSearchResults(tracks);
       } else {
         if (searchResults) searchResults.innerHTML = '<div class="search-empty">Aucun résultat</div>';
-      }
-
-      if (pollToken) {
-        currentSearchPollToken = pollToken;
-        scheduleSearchPoll(query, pollToken, 0);
       }
     } catch (err) {
       logError('runSearch(): failed', { query, message: err?.message });

@@ -811,14 +811,14 @@ export function createAudioSourceManager(options) {
 
     if (apiHealthMonitor?.isOffline()) {
       logInfo('api.search.skipped.offline', { query });
-      return { tracks: [], pollToken: null };
+      return { tracks: [] };
     }
 
     logInfo('api.search.begin', { query, limit, skipCache, baseUrl });
 
     const parsed = splitItunesSearchQuery(query);
     const term = cleanItunesSearchText(parsed.title || '') || cleanItunesSearchText(query);
-    if (!term) return { tracks: [], pollToken: null };
+    if (!term) return { tracks: [] };
 
     const params = new URLSearchParams({ term });
     const artist = cleanItunesSearchText(parsed.artist || '');
@@ -839,47 +839,15 @@ export function createAudioSourceManager(options) {
     if (!res.ok) {
       apiHealthMonitor?.recordFailure();
       logWarn('api.search.failed', { query, status: res.status });
-      return { tracks: [], pollToken: null };
+      return { tracks: [] };
     }
 
     apiHealthMonitor?.recordSuccess();
     const data = await res.json().catch(() => null);
     const tracks = options.normalizeApiSearchResponse(data);
-    const pollToken = typeof data?.pollToken === 'string' && data.pollToken ? data.pollToken : null;
 
-    logDebug('api.search.result', { query, count: tracks.length, hasPollToken: !!pollToken });
-    return { tracks, pollToken };
-  }
-
-  async function pollSearchResults(token) {
-    const baseUrl = getDownloaderApiUrl();
-    if (!baseUrl || !token) return { pending: true, tracks: [] };
-
-    try {
-      // Note: `token` ici est le jeton de poll renvoyé par /api/search (job de recherche),
-      // pas le token d'authentification API — apiFetch() ne l'écrasera pas (voir appendApiToken).
-      const res = await apiFetch(`${baseUrl}/api/search/poll?pollToken=${encodeURIComponent(token)}`, {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(8000),
-      });
-
-      if (res.status === 404) return { pending: false, tracks: [] };
-
-      if (!res.ok) {
-        apiHealthMonitor?.recordFailure();
-        return { pending: true, tracks: [] };
-      }
-
-      const data = await res.json().catch(() => null);
-      if (!data || data.status === 'pending') return { pending: true, tracks: [] };
-
-      const tracks = options.normalizeApiSearchResponse(data);
-      logDebug('api.search.poll.result', { count: tracks.length });
-      return { pending: false, tracks };
-    } catch (err) {
-      logWarn('api.search.poll.failed', { message: err?.message });
-      return { pending: true, tracks: [] };
-    }
+    logDebug('api.search.result', { query, count: tracks.length });
+    return { tracks };
   }
 
   async function searchTracksViaApi(query, limit = 25, skipCache = false) {
@@ -1219,7 +1187,6 @@ export function createAudioSourceManager(options) {
     evictTrackSource,
     isTrackInLocalCache,
     persistArtwork,
-    pollSearchResults,
     prefetchTrackToLocalCache,
     releaseLocalBlob: (item) => releaseLocalBlob(item, touchQueueItem),
     restoreArtwork,

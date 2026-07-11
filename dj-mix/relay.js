@@ -973,8 +973,6 @@ const _SVG_SEARCH =
 if (searchBtn) searchBtn.innerHTML = _SVG_SEARCH;
 
 let _searchDebounce = null;
-let _searchPollToken = null;
-let _searchPollTimer = null;
 let _selectedTrack = null;
 let _toastTimer = null;
 
@@ -987,7 +985,6 @@ function _openSearch() {
 function _closeSearch() {
   if (!searchOverlay) return;
   searchOverlay.hidden = true;
-  _cancelSearchPoll();
   if (searchInput) searchInput.value = '';
   if (searchClear) searchClear.hidden = true;
   if (searchResults) searchResults.innerHTML = '';
@@ -1007,7 +1004,6 @@ function _escHtml(str) {
 
 async function _relaySearch(query) {
   if (!query || !API_BASE) return;
-  _cancelSearchPoll();
   if (searchResults) searchResults.innerHTML = '<div class="relay-search-loading">Recherche…</div>';
 
   const params = new URLSearchParams({ term: query, limit: '15' });
@@ -1024,48 +1020,9 @@ async function _relaySearch(query) {
     const data = await res.json();
     const tracks = Array.isArray(data?.tracks?.results) ? data.tracks.results : [];
     _renderSearchResults(tracks);
-
-    if (data?.pollToken) {
-      _searchPollToken = data.pollToken;
-      _startSearchPoll(query);
-    }
   } catch {
     _renderSearchEmpty('Erreur réseau');
   }
-}
-
-function _startSearchPoll(query) {
-  let attempts = 0;
-  const maxAttempts = 5;
-  const baseDelay = 1500;
-
-  _searchPollTimer = setTimeout(async function poll() {
-    if (!_searchPollToken || attempts >= maxAttempts) return;
-    attempts++;
-
-    const headers = { Accept: 'application/json' };
-    if (API_TOKEN) headers['x-api-token'] = API_TOKEN;
-
-    try {
-      const res = await fetch(
-        `${API_BASE}/api/search/poll?pollToken=${encodeURIComponent(_searchPollToken)}`,
-        { headers }
-      );
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data?.status === 'pending') {
-        _searchPollTimer = setTimeout(poll, baseDelay + attempts * 600);
-        return;
-      }
-      const tracks = Array.isArray(data?.tracks?.results) ? data.tracks.results : [];
-      if (tracks.length) _renderSearchResults(tracks);
-    } catch { /* ignore */ }
-  }, baseDelay);
-}
-
-function _cancelSearchPoll() {
-  _searchPollToken = null;
-  if (_searchPollTimer) { clearTimeout(_searchPollTimer); _searchPollTimer = null; }
 }
 
 function _renderSearchResults(tracks) {
@@ -1163,7 +1120,6 @@ searchInput?.addEventListener('input', () => {
   clearTimeout(_searchDebounce);
   if (!q) {
     if (searchResults) searchResults.innerHTML = '';
-    _cancelSearchPoll();
     return;
   }
   _searchDebounce = setTimeout(() => _relaySearch(q), 500);
@@ -1181,7 +1137,6 @@ searchClear?.addEventListener('click', () => {
   if (searchInput) searchInput.value = '';
   if (searchClear) searchClear.hidden = true;
   if (searchResults) searchResults.innerHTML = '';
-  _cancelSearchPoll();
   searchInput?.focus();
 });
 

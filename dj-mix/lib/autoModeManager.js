@@ -49,7 +49,6 @@ export function createAutoModeManager({
   getAutoFxMinGapMs,
   getAutoFxMaxGapMs,
   getDjMode,
-  getDjModeGenrePrefs,
   getCurrentBpm,
   getActualDurationMs,
   onAutomixTimingCalculated,
@@ -1222,37 +1221,6 @@ export function createAutoModeManager({
       });
   }
 
-  /**
-   * Build up to two previous-track references for suggestions API.
-   * Supports mixed payload items (title string or { track, artist } object).
-   */
-  function buildSuggestionTrackReferences(currentTrack, queue, currentIndex) {
-    if (!Array.isArray(queue) || !Number.isFinite(currentIndex) || currentIndex <= 0) {
-      return [];
-    }
-
-    const references = [];
-    const currentTrackId = currentTrack?.id || null;
-
-    for (let i = currentIndex - 1; i >= 0 && references.length < 2; i--) {
-      const item = queue[i];
-      if (!item) continue;
-
-      const itemId = item.id || item.ratingKey || item.uri || null;
-      if (currentTrackId && itemId && itemId === currentTrackId) continue;
-
-      const trackName = String(item.trackName || item.name || item.title || '').trim();
-      const artistName = String(item.artistName || item.artist || '').trim();
-      if (!trackName) continue;
-
-      references.push(artistName
-        ? { track: trackName, artist: artistName }
-        : trackName);
-    }
-
-    return references;
-  }
-
   function isTrackAlreadyQueued(queue, track) {
     if (!Array.isArray(queue) || !track) return false;
     const trackId = track.id || track.ratingKey || track.uri || null;
@@ -1385,30 +1353,17 @@ export function createAutoModeManager({
         const apiUrl = getDownloaderApiUrl();
         if (apiUrl && !apiHealthMonitor?.isOffline()) {
           const params = new URLSearchParams();
-          const previousTrackReferences = buildSuggestionTrackReferences(currentTrack, queue, currentIndex);
           if (currentTrack.name) params.append('track', currentTrack.name);
           if (currentTrack.artist) params.append('artist', currentTrack.artist);
-          if (previousTrackReferences.length > 0) {
-            params.append('tracks', JSON.stringify(previousTrackReferences));
-          }
           params.append('limit', '25');
           params.append('allowSameArtist', 'false');
 
-          // DJ Mode: send additional hints to the suggestions API
+          // DJ Mode: dance mode restricts candidates to the reference track's genre;
+          // BPM/genre-list steering happens client-side below (see djModeForFilter sort)
+          // since /api/suggestions has no bpm/genre-preference filters.
           const djMode = getDjMode?.() || 'music';
-          const currentBpm = toFiniteNumber(getCurrentBpm?.(), 0);
-          const genrePrefs = getDjModeGenrePrefs?.() || [];
-
           if (djMode === 'dance') {
-            if (currentBpm > 0) params.append('minBpm', String(Math.max(1, Math.round(currentBpm - 10))));
-            params.append('preferDanceable', 'true');
-            if (genrePrefs.length > 0) params.append('preferGenres', JSON.stringify(genrePrefs));
-          } else {
-            if (currentTrack.genre) params.append('preferGenre', currentTrack.genre);
-            if (currentTrack.artist) params.append('preferArtist', currentTrack.artist);
-            if (currentBpm > 0 && currentBpm < 90) {
-              params.append('maxBpmJump', '30');
-            }
+            params.append('sameGenreOnly', 'true');
           }
 
           const suggestionPathCandidates = ['/api/suggestions', '/suggestions'];
@@ -1456,7 +1411,6 @@ export function createAutoModeManager({
               count: results.length,
               referenceTrack: currentTrack.name,
               referenceArtist: currentTrack.artist,
-              referenceTracksCount: previousTrackReferences.length,
             });
             break;
           }
@@ -1488,10 +1442,12 @@ export function createAutoModeManager({
       const currentBpmForFilter = toFiniteNumber(getCurrentBpm?.(), 0);
 
       if (djModeForFilter === 'dance' && currentBpmForFilter > 0) {
-        // Sort by BPM descending (higher BPM first) among results that have bpm
+        // Sort by BPM descending (higher BPM first) among results that have bpm.
+        // /api/suggestions nests bpm under audioFeatures; plain-search fallback
+        // results have neither, so bA/bB stay 0 and this sort is a no-op for them.
         results = [...results].sort((a, b) => {
-          const bA = toFiniteNumber(a?.bpm, 0);
-          const bB = toFiniteNumber(b?.bpm, 0);
+          const bA = toFiniteNumber(a?.audioFeatures?.bpm ?? a?.bpm, 0);
+          const bB = toFiniteNumber(b?.audioFeatures?.bpm ?? b?.bpm, 0);
           if (bA <= 0 && bB <= 0) return 0;
           if (bA <= 0) return 1;
           if (bB <= 0) return -1;
@@ -1500,10 +1456,12 @@ export function createAutoModeManager({
       } else if (djModeForFilter === 'music') {
         // Boost same genre/artist to top
         results = [...results].sort((a, b) => {
+          const artistA = a?.artistName || a?.artist || '';
+          const artistB = b?.artistName || b?.artist || '';
           const scoreA = (a?.genre && currentTrack.genre && String(a.genre).toLowerCase() === String(currentTrack.genre).toLowerCase() ? 2 : 0)
-            + (a?.artist && currentTrack.artist && String(a.artist).toLowerCase() === String(currentTrack.artist).toLowerCase() ? 1 : 0);
+            + (artistA && currentTrack.artist && String(artistA).toLowerCase() === String(currentTrack.artist).toLowerCase() ? 1 : 0);
           const scoreB = (b?.genre && currentTrack.genre && String(b.genre).toLowerCase() === String(currentTrack.genre).toLowerCase() ? 2 : 0)
-            + (b?.artist && currentTrack.artist && String(b.artist).toLowerCase() === String(currentTrack.artist).toLowerCase() ? 1 : 0);
+            + (artistB && currentTrack.artist && String(artistB).toLowerCase() === String(currentTrack.artist).toLowerCase() ? 1 : 0);
           return scoreB - scoreA;
         });
       }

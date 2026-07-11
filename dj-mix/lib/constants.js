@@ -25,10 +25,6 @@ export const METRICS_LOG_INTERVAL_MS = 60_000;
 
 // ─── Search (searchController.js) ────────────────────────────────────────────
 export const SEARCH_DEBOUNCE_MS        = 600;
-export const SEARCH_POLL_MAX_ATTEMPTS  = 8;
-export const SEARCH_POLL_BASE_DELAY_MS = 1500;
-export const SEARCH_POLL_STEP_MS       = 600;
-export const SEARCH_POLL_CAP_MS        = 5000;
 
 // ─── Track duration limits (settingsController.js) ───────────────────────────
 export const TRACK_MAX_DURATION_MIN_SEC = 0;
