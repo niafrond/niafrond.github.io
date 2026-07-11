@@ -17,6 +17,7 @@
   <header class="topbar">
     <h1 id="pageTitle">Plex</h1>
     <button id="refreshBtn" class="icon-btn" aria-label="Actualiser">⟳</button>
+    <button id="settingsBtn" class="icon-btn" aria-label="Réglages">⚙</button>
   </header>
 
   <nav id="libraryTabs" class="tabs" hidden></nav>
@@ -43,6 +44,26 @@
   <div id="playerView" class="player" hidden>
     <video id="video" playsinline controls autoplay></video>
     <button id="closePlayerBtn" class="icon-btn player-close" aria-label="Fermer le lecteur">✕</button>
+  </div>
+
+  <div id="settingsView" class="sheet" hidden>
+    <div class="sheet-inner">
+      <button id="closeSettingsBtn" class="icon-btn sheet-close" aria-label="Fermer">✕</button>
+      <div class="detail-body">
+        <h2>Connexion à Plex</h2>
+        <p class="detail-meta">Ce token et cette adresse restent uniquement dans le navigateur de ce téléphone (localStorage) — rien n'est envoyé ailleurs qu'à plex.tv et à ton serveur.</p>
+
+        <label class="field-label" for="tokenInput">X-Plex-Token</label>
+        <input id="tokenInput" type="text" class="field-input" placeholder="Colle ton token Plex ici" autocomplete="off" autocapitalize="off" spellcheck="false">
+
+        <label class="field-label" for="serverInput">Adresse du serveur (optionnel)</label>
+        <input id="serverInput" type="text" class="field-input" placeholder="Laisser vide = détection automatique via plex.tv" autocomplete="off" autocapitalize="off" spellcheck="false">
+
+        <button id="connectBtn" class="btn-primary">Se connecter</button>
+        <button id="forgetBtn" class="btn-secondary">Oublier ce token</button>
+        <p id="settingsStatus" class="detail-meta"></p>
+      </div>
+    </div>
   </div>
 
   <script src="vendor/hls.min.js"></script>
