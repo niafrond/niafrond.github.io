@@ -1,3 +1,9 @@
+## [1.252.0](https://github.com/niafrond/niafrond.github.io/compare/v1.251.0...v1.252.0) (2026-07-11)
+
+### Features
+
+* remove polling mechanism from search functionality and update related API responses ([655b2e1](https://github.com/niafrond/niafrond.github.io/commit/655b2e168a8cb31d9ba3f1848261a755d631a8b6))
+
 ## [1.251.0](https://github.com/niafrond/niafrond.github.io/compare/v1.250.0...v1.251.0) (2026-07-10)
 
 ### Features
