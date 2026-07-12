@@ -1,3 +1,11 @@
+## [1.254.0](https://github.com/niafrond/niafrond.github.io/compare/v1.253.0...v1.254.0) (2026-07-12)
+
+### Features
+
+* Refactor filRougeDownloader to use downloadBatchManager for improved batch processing ([bebf7c0](https://github.com/niafrond/niafrond.github.io/commit/bebf7c03b6b8ec7aa0020d5bdeab217a7807b72f))
+* remove 'fake_drop' transition mode and related references; add audio continuity specifications ([d5de008](https://github.com/niafrond/niafrond.github.io/commit/d5de0087b52fa326ca4f6600c654c739b7e1cc4c))
+* remove verify_downloadbatch script to streamline download verification process ([a42a289](https://github.com/niafrond/niafrond.github.io/commit/a42a28932956d02d4f047ed9a9680d8465b38734))
+
 ## [1.253.0](https://github.com/niafrond/niafrond.github.io/compare/v1.252.0...v1.253.0) (2026-07-12)
 
 ### Features
