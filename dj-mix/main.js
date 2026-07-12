@@ -5,7 +5,7 @@
  */
 
 import { DJPlayer } from './player.js';
-import { initServiceWorker, installPwa, initAutoFullscreen, initApkDownloadLink, checkApkUpdate, doApkUpdate } from './pwa.js';
+import { initServiceWorker, installPwa, initAutoFullscreen, initApkDownloadLink, checkApkUpdate, doApkUpdate, forceUpdatePwa } from './pwa.js';
 import { pushPlaybackState, pushQueue, onMediaCommand, getPendingMediaCommand } from './lib/androidAutoBridge.js';
 
 // --- Wake Lock (garder l'écran allumé pendant la lecture) ---
@@ -3840,6 +3840,13 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
     });
   }
   checkApkUpdate();
+
+  const forceUpdateBtn = document.getElementById('btn-force-update');
+  if (forceUpdateBtn) {
+    forceUpdateBtn.addEventListener('click', () => {
+      forceUpdatePwa();
+    });
+  }
 
 
   restoreQueue();

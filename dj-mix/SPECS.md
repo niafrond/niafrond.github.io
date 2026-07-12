@@ -995,3 +995,9 @@ Moteur de téléchargement de masse pour le bouton "Tout télécharger" (`filRou
 - **SPEC-19.5.1** Aucun Blob agrégé n'est jamais construit pour plusieurs fichiers : chaque téléchargement (file interne ou Background Fetch) persiste son fichier en Cache Storage immédiatement après réception (`persistAudioBlob`, un `cache.put()` par morceau).
 - **SPEC-19.5.2** La file interne ne garde en mémoire que la tranche courante (`2` à `10` morceaux en parallèle selon SPEC-3.4.9), jamais l'intégralité d'un gros lot.
 - **SPEC-19.5.3** Côté Service Worker, `_handleBgFetchSuccess` traite les enregistrements Background Fetch par groupes de `5` en parallèle (`BG_FETCH_RECORD_CONCURRENCY`) plutôt que tous simultanément, pour éviter de charger des centaines de blobs audio en mémoire à la fois sur un gros lot.
+
+## 20. Mise à jour forcée de la PWA
+
+- **SPEC-20.1** Bouton `#btn-force-update` dans le bloc "Application PWA" de Config, toujours visible (pas de `hidden` — contrairement à `#btn-install-pwa`/`#btn-apk-update`). Au clic, appelle `forceUpdatePwa()` (`pwa.js`).
+- **SPEC-20.2** `forceUpdatePwa()` désinscrit tous les service workers actifs (`navigator.serviceWorker.getRegistrations()` + `unregister()` sur chacun) et vide tous les caches (`caches.keys()` + `caches.delete()` sur chacun), puis recharge la page (`location.reload()`) — y compris si une des étapes échoue (`try/finally`). Objectif : contourner un Service Worker resté bloqué avec l'ancien code malgré `updateViaCache: 'none'` et l'écoute de `controllerchange` (SPEC existant `initServiceWorker`).
+- **SPEC-20.3** Après le rechargement, `initServiceWorker()` réinscrit un Service Worker neuf qui retélécharge tous les `ASSETS` de `sw.js` (plus aucun cache ni SW préexistant ne peut servir une version périmée).

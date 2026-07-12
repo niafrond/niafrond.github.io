@@ -191,6 +191,36 @@ export async function doApkUpdate() {
 // ─── Service Worker ─────────────────────────────────────────────────────────
 let _reloadPending = false;
 
+/**
+ * Force la mise à jour de la PWA : désinscrit tous les service workers et
+ * vide tous les caches, puis recharge la page. Utile quand `updateViaCache:
+ * 'none'` et l'écoute normale de `controllerchange` ne suffisent pas à faire
+ * remonter du code manifestement périmé (SW bloqué en `waiting`, cache
+ * navigateur tiers, etc.).
+ */
+export async function forceUpdatePwa() {
+  const btn = document.getElementById('btn-force-update');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Mise à jour…';
+  }
+
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(reg => reg.unregister()));
+    }
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  } catch (_) {
+    // Silencieux — on recharge de toute façon
+  } finally {
+    location.reload();
+  }
+}
+
 export function initServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
