@@ -183,43 +183,72 @@ function renderWordDisplay() {
   const display = el('word-display');
   display.innerHTML = '';
 
-  for (let i = 0; i < secretWord.length; i++) {
-    const char     = secretWord[i];
-    const normChar = normalWord[i];
-    const isLetter = /^[A-Z]$/.test(normChar);
+  // Découpe le mot en segments séparés par les espaces.
+  // Chaque segment (partie du mot) est rendu dans un word-group
+  // qui ne peut pas se casser en ligne : les lettres d'un même segment
+  // restent toujours ensemble.
+  const segments = [];
+  let segStart = 0;
+  for (let i = 0; i <= secretWord.length; i++) {
+    if (i === secretWord.length || secretWord[i] === ' ') {
+      if (i > segStart) segments.push({ type: 'word', start: segStart, end: i });
+      if (i < secretWord.length) segments.push({ type: 'space' });
+      segStart = i + 1;
+    }
+  }
 
-    const slot = document.createElement('span');
-    slot.className = 'word-letter';
+  segments.forEach(seg => {
+    if (seg.type === 'space') {
+      // Séparateur invisible entre deux parties du mot
+      const spacer = document.createElement('span');
+      spacer.className = 'word-space';
+      display.appendChild(spacer);
+      return;
+    }
 
-    // Caractères non-alphabétiques (espace, tiret, apostrophe…) : affichés d'emblée
-    if (!isLetter) {
-      slot.classList.add('word-letter--space');
-      if (char !== ' ') slot.style.minWidth = '';
+    // Groupe de lettres qui restera sur une seule ligne
+    const groupEl = document.createElement('span');
+    groupEl.className = 'word-group';
+
+    for (let i = seg.start; i < seg.end; i++) {
+      const char     = secretWord[i];
+      const normChar = normalWord[i];
+      const isLetter = /^[A-Z]$/.test(normChar);
+
+      const slot = document.createElement('span');
+      slot.className = 'word-letter';
+
+      // Caractères non-alphabétiques dans le segment (tiret, apostrophe…)
+      if (!isLetter) {
+        slot.classList.add('word-letter--space');
+        const charEl = document.createElement('span');
+        charEl.className = 'word-letter-char';
+        charEl.textContent = char;
+        slot.appendChild(charEl);
+        groupEl.appendChild(slot);
+        continue;
+      }
+
       const charEl = document.createElement('span');
       charEl.className = 'word-letter-char';
-      charEl.textContent = char;
+
+      if (guessed.has(normChar)) {
+        charEl.textContent = char.toUpperCase();
+        charEl.classList.add('found');
+      } else {
+        charEl.textContent = '';
+      }
+
+      const line = document.createElement('span');
+      line.className = 'word-letter-line';
+
       slot.appendChild(charEl);
-      display.appendChild(slot);
-      continue;
+      slot.appendChild(line);
+      groupEl.appendChild(slot);
     }
 
-    const charEl = document.createElement('span');
-    charEl.className = 'word-letter-char';
-
-    if (guessed.has(normChar)) {
-      charEl.textContent = char.toUpperCase();
-      charEl.classList.add('found');
-    } else {
-      charEl.textContent = '';
-    }
-
-    const line = document.createElement('span');
-    line.className = 'word-letter-line';
-
-    slot.appendChild(charEl);
-    slot.appendChild(line);
-    display.appendChild(slot);
-  }
+    display.appendChild(groupEl);
+  });
 }
 
 // ── Pendu ────────────────────────────────────────────────────────────────────
