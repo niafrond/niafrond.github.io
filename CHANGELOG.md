@@ -1,3 +1,9 @@
+## [1.255.0](https://github.com/niafrond/niafrond.github.io/compare/v1.254.0...v1.255.0) (2026-07-12)
+
+### Features
+
+* implement forced PWA update functionality with service worker unregistration and cache clearing ([86c7aba](https://github.com/niafrond/niafrond.github.io/commit/86c7aba93ed903c80a079fc489ceeee7a28cdf67))
+
 ## [1.254.0](https://github.com/niafrond/niafrond.github.io/compare/v1.253.0...v1.254.0) (2026-07-12)
 
 ### Features
