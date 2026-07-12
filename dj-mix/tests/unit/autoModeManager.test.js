@@ -120,6 +120,88 @@ describe('autoModeManager', () => {
     expect(addToQueue).not.toHaveBeenCalled();
   });
 
+  // SPEC-5.3.4 / SPEC-5.3.5 — /api/suggestions contract after the swagger update
+  describe('/api/suggestions request params and client-side bpm sort', () => {
+    afterEach(() => {
+      delete global.fetch;
+    });
+
+    test('SPEC-5.3.4: sends only server-supported params, no removed hint params', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ results: [] }),
+      });
+      const queue = [{ id: 'current', name: 'Current Song', artist: 'Artist A', genre: 'House' }];
+      const manager = makeManager({
+        getDownloaderApiUrl: () => 'http://api',
+        getQueue: () => queue,
+        getCurrentTrackId: () => 'current',
+        getCurrentTrackIndex: () => 0,
+        getDjMode: () => 'music',
+        searchTracksViaApi: jest.fn().mockResolvedValue([]),
+      });
+
+      manager.toggleAutoMode();
+      await manager.searchAndAddNextTrack(queue[0]);
+
+      expect(global.fetch).toHaveBeenCalled();
+      const url = global.fetch.mock.calls[0][0];
+      expect(url).toContain('/api/suggestions');
+      expect(url).not.toMatch(/minBpm|preferDanceable|preferGenres|preferGenre=|preferArtist|maxBpmJump|[?&]tracks=/);
+    });
+
+    test('SPEC-5.3.4: dance mode adds sameGenreOnly=true instead of removed hint params', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ results: [] }),
+      });
+      const queue = [{ id: 'current', name: 'Current Song', artist: 'Artist A' }];
+      const manager = makeManager({
+        getDownloaderApiUrl: () => 'http://api',
+        getQueue: () => queue,
+        getCurrentTrackId: () => 'current',
+        getCurrentTrackIndex: () => 0,
+        getDjMode: () => 'dance',
+        searchTracksViaApi: jest.fn().mockResolvedValue([]),
+      });
+
+      manager.toggleAutoMode();
+      await manager.searchAndAddNextTrack(queue[0]);
+
+      const url = global.fetch.mock.calls[0][0];
+      expect(url).toContain('sameGenreOnly=true');
+    });
+
+    test('SPEC-5.3.5: dance mode sorts results by audioFeatures.bpm descending', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          results: [
+            { id: 'slow', trackName: 'Slow', artistName: 'X', audioFeatures: { bpm: 100 } },
+            { id: 'fast', trackName: 'Fast', artistName: 'Y', audioFeatures: { bpm: 140 } },
+          ],
+        }),
+      });
+      const queue = [{ id: 'current', name: 'Current Song', artist: 'Artist A' }];
+      const addToQueue = jest.fn().mockResolvedValue(undefined);
+      const manager = makeManager({
+        getDownloaderApiUrl: () => 'http://api',
+        getQueue: () => queue,
+        getCurrentTrackId: () => 'current',
+        getCurrentTrackIndex: () => 0,
+        getDjMode: () => 'dance',
+        getCurrentBpm: () => 120,
+        addToQueue,
+      });
+
+      manager.toggleAutoMode();
+      await manager.searchAndAddNextTrack(queue[0]);
+
+      expect(addToQueue).toHaveBeenCalledTimes(1);
+      expect(addToQueue.mock.calls[0][0]).toMatchObject({ id: 'fast' });
+    });
+  });
+
   describe('crossfade loop prevention', () => {
     test('excludes track currently on deck B after crossfade (matched by ID)', async () => {
       // Scenario: deck A played trackA, crossfade moved to deck B playing trackB.

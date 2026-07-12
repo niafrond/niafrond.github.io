@@ -232,6 +232,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-3.4.7** Les callbacks asynchrones d'arrière-plan (récupération d'artwork, métadonnées BPM/genre, planification DJ Plan incrémentale) appellent `renderFilRougeDebounced` (300 ms) et non `renderFilRouge` directement, pour éviter les rafales de rebuild DOM qui provoquent un clignotement de la liste et rendent les boutons incliquables.
 - **SPEC-3.4.8** `fetchMissingMeta(item)` ne déclenche un re-render (`renderQueueDebounced`/`renderFilRougeDebounced`) que si le BPM ou le genre de l'item a réellement changé. Si la résolution via le cache `localStorage` ne complète pas entièrement les métadonnées manquantes, l'item est marqué comme « tenté » (`metaFetchAttempted`) avant l'appel API, pour empêcher les re-renders en boucle infinie à chaque cycle de `renderFilRouge` pour les morceaux dont les métadonnées resteront durablement incomplètes.
 - **SPEC-3.4.9** GIVEN un batch de téléchargements vient de se terminer — THEN la taille du prochain batch est recalculée (`computeNextBatchSize`) à partir du temps moyen observé par morceau (`elapsedMs du batch / nombre de morceaux du batch`) : si ce temps dépasse `4000 ms`, le parallélisme est réduit de `1` (plancher `2`) ; s'il est inférieur à `2000 ms` (la moitié de la cible), il est augmenté de `1` (plafond `10`). Entre ces deux seuils, la taille reste inchangée. Objectif : éviter qu'un trop grand nombre de téléchargements simultanés ne dilue le débit disponible par morceau, tout en exploitant la bande passante restante quand elle est disponible.
+- **SPEC-3.4.10** GIVEN plusieurs déclencheurs de téléchargement de masse (synchronisation au chargement de la page `startFilRougeStartupCacheSync`, "Tout télécharger" `filRougeDownloader.downloadAll`, boucle de sync Spotify, import TXT) appellent `prefetchTrackToLocalCache` pour le **même morceau** (même `cacheKey`) de façon concurrente — THEN un seul téléchargement réseau est effectué : l'appel concurrent rejoint la promesse déjà en cours au lieu d'en déclencher une nouvelle. Ceci évite les téléchargements en double et les statuts (`downloadState`) incohérents (ex. `done` écrasé par `error` ou inversement selon l'ordre d'arrivée) qui se produisaient notamment juste après un rechargement de page (pendant que la synchronisation de démarrage tourne encore) ou lorsqu'un morceau met du temps à se télécharger (élargissant la fenêtre de recouvrement avec un autre déclencheur). Une fois l'appel en cours résolu (succès ou échec), un appel ultérieur relance un vrai téléchargement.
 
 ### 3.5 Indicateurs de statut par morceau
 
@@ -316,6 +317,8 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
   5. Aucun résultat : la lecture s'arrête après le morceau en cours
 - **SPEC-5.3.2** GIVEN l'API est offline (`apiHealthMonitor.isOffline()`) — THEN les étapes 1–3 sont sautées, passage direct au Fil Rouge.
 - **SPEC-5.3.3** GIVEN le Fil Rouge est actif — WHEN `searchAndAddNextTrack()` détermine quel morceau ajouter — THEN `peekNextTrackFromAny()` est appelé en premier pour vérifier si le prochain morceau est déjà dans la queue, AVANT d'appeler `getNextTrack()` (qui avance l'index). Si le morceau est déjà dans la queue, `getNextTrack()` n'est PAS appelé afin d'éviter de sauter un morceau.
+- **SPEC-5.3.4** Paramètres envoyés à `/api/suggestions` : `track`, `artist`, `limit=25`, `allowSameArtist=false`, et `sameGenreOnly=true` UNIQUEMENT en mode `dance` (l'API ne supporte pas de filtres `minBpm`/`preferGenre`/`preferArtist`/`maxBpmJump`/`tracks`). Le tri par BPM (mode `dance`) et le boost genre/artiste (mode `music`) sont appliqués côté client sur les résultats retournés.
+- **SPEC-5.3.5** GIVEN le mode `dance` et un BPM courant connu — THEN les résultats sont triés par `audioFeatures.bpm` décroissant (fallback `result.bpm` pour compatibilité). Les résultats sans BPM sont classés en dernier.
 
 ### 5.4 Analyse de forme d'onde (MixData)
 
@@ -926,3 +929,15 @@ MOBILE_TRANSITION_RAM_BUDGET_RATIO = 0.12
 - **SPEC-17.2.4** `writeBlobToIdb` et `readBlobFromIdb` et `deleteBlobFromIdb` sont des méthodes atomiques sur le store IndexedDB ; toute erreur est silencieuse (retour `null` ou no-op).
 - **SPEC-17.2.5** Les vérifications de disponibilité du Cache API utilisent `'caches' in globalThis` (compatible browser et Node) au lieu de `'caches' in window`.
 ```
+
+---
+
+## 18. Vérification d'empreinte AcoustID
+
+Logique pure (parsing réponse, construction de payload) extraite dans `lib/fingerprintController.js` ; le fetch et le rendu du bottom-sheet (`#fp-suggestion-sheet`) restent dans `main.js` (`_fpCheck`, `_fpShowSuggestions`, `_fpCorrectAndDownload`).
+
+- **SPEC-18.1.1** `_fpCheck(item)` appelle `POST /api/fingerprint/check` avec `{ trackName, artistName }`. `parseFingerprintCheckResponse(data)` lit `data.matched` (booléen) — PAS `data.match`.
+- **SPEC-18.1.2** GIVEN `data.matched === true` — THEN un toast "Empreinte OK" est affiché, aucune suggestion n'est montrée.
+- **SPEC-18.1.3** GIVEN `data.matched === false` ET `data.suggestedTrackName` présent — THEN une liste d'UNE seule suggestion `{ trackName, artistName, score, reason }` est construite (l'API ne renvoie plus un tableau `suggestions[]`).
+- **SPEC-18.1.4** `_fpCorrectAndDownload(replacement)` appelle `POST /api/fingerprint/correct` avec `buildFingerprintCorrectRequestBody(trackRef, replacement)` : `{ artistName, trackName, replacement: { trackName, artistName } }` — le payload `replacement` ne contient plus `id`/`artUrl`/`duration_ms`/`uri`/`downloadUrl`.
+- **SPEC-18.1.5** La réponse de `/correct` ne contient plus de `downloadUrl` : l'enchaînement automatique vers `POST /api/fingerprint/download` a été retiré. Le toast final est déterminé par `buildFingerprintCorrectToastMessage(data)` à partir de `data.corrected`/`data.renamed`.

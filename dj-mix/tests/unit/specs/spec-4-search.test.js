@@ -18,11 +18,8 @@ import {
 } from '../../../lib/searchUtils.js';
 import {
   SEARCH_DEBOUNCE_MS,
-  SEARCH_POLL_MAX_ATTEMPTS,
-  SEARCH_POLL_BASE_DELAY_MS,
-  SEARCH_POLL_STEP_MS,
-  SEARCH_POLL_CAP_MS,
 } from '../../../lib/constants.js';
+import * as constants from '../../../lib/constants.js';
 
 // ── SPEC-4.1 — Search constants ─────────────────────────────────────────────
 
@@ -30,31 +27,16 @@ describe('SPEC-4.1 — Search timing constants', () => {
   test('SPEC-4.1.1 — debounce is 600ms', () => {
     expect(SEARCH_DEBOUNCE_MS).toBe(600);
   });
+});
 
-  test('SPEC-4.2.2 — poll base delay is 1500ms', () => {
-    expect(SEARCH_POLL_BASE_DELAY_MS).toBe(1500);
-  });
+// ── SPEC-4.2 — Synchronous search (no more polling) ─────────────────────────
 
-  test('SPEC-4.2.2 — poll step is 600ms', () => {
-    expect(SEARCH_POLL_STEP_MS).toBe(600);
-  });
-
-  test('SPEC-4.2.2 — poll cap is 5000ms', () => {
-    expect(SEARCH_POLL_CAP_MS).toBe(5000);
-  });
-
-  test('SPEC-4.2.2 — max poll attempts is 8', () => {
-    expect(SEARCH_POLL_MAX_ATTEMPTS).toBe(8);
-  });
-
-  test('poll delay never exceeds cap', () => {
-    for (let attempt = 0; attempt < 20; attempt++) {
-      const delay = Math.min(
-        SEARCH_POLL_BASE_DELAY_MS + attempt * SEARCH_POLL_STEP_MS,
-        SEARCH_POLL_CAP_MS,
-      );
-      expect(delay).toBeLessThanOrEqual(SEARCH_POLL_CAP_MS);
-    }
+describe('SPEC-4.2 — Search is synchronous', () => {
+  test('SPEC-4.2.1 — search-poll timing constants no longer exist (API dropped /api/search/poll)', () => {
+    expect(constants.SEARCH_POLL_MAX_ATTEMPTS).toBeUndefined();
+    expect(constants.SEARCH_POLL_BASE_DELAY_MS).toBeUndefined();
+    expect(constants.SEARCH_POLL_STEP_MS).toBeUndefined();
+    expect(constants.SEARCH_POLL_CAP_MS).toBeUndefined();
   });
 });
 

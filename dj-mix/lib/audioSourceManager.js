@@ -317,6 +317,12 @@ export function createAudioSourceManager(options) {
 
   const MAX_SESSION_BLOB_CACHE_ENTRIES = 12; // Covers 2 active decks + 10 pre-fetched
 
+  // Tracks in-flight prefetchTrackToLocalCache() calls by cache key so that
+  // concurrent bulk-download drivers (startup cache sync, "Tout télécharger",
+  // Spotify sync loop, TXT import) racing on the same track share one network
+  // request instead of firing duplicate downloads with conflicting outcomes.
+  const inFlightPrefetches = new Map();
+
   // fetch() vers l'API downloader avec ajout automatique de `token=...` (auth API).
   // Les URLs hors API (CDN externes, blobs, etc.) sont laissées inchangées.
   function apiFetch(url, init) {
@@ -1153,6 +1159,22 @@ export function createAudioSourceManager(options) {
       return true;
     }
 
+    const inFlight = inFlightPrefetches.get(cacheKey);
+    if (inFlight) {
+      logDebug('prefetch.join.inFlight', { cacheKey });
+      return inFlight;
+    }
+
+    const attempt = _prefetchTrackToLocalCacheUncached(item, cacheKey);
+    inFlightPrefetches.set(cacheKey, attempt);
+    try {
+      return await attempt;
+    } finally {
+      inFlightPrefetches.delete(cacheKey);
+    }
+  }
+
+  async function _prefetchTrackToLocalCacheUncached(item, cacheKey) {
     const persisted = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName).catch(() => null);
     if (persisted) {
       URL.revokeObjectURL(persisted);
