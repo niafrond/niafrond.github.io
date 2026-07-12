@@ -1,3 +1,10 @@
+## [1.253.0](https://github.com/niafrond/niafrond.github.io/compare/v1.252.0...v1.253.0) (2026-07-12)
+
+### Features
+
+* add functionality to fetch missing mix suggestions for already downloaded tracks ([0b24d93](https://github.com/niafrond/niafrond.github.io/commit/0b24d930b744f2c9d24c6e25366c44367534087d))
+* implement concurrency handling for prefetchTrackToLocalCache to avoid duplicate downloads and improve performance ([95d6623](https://github.com/niafrond/niafrond.github.io/commit/95d66236c68acf39d03a94c82ece98707944e88a))
+
 ## [1.252.0](https://github.com/niafrond/niafrond.github.io/compare/v1.251.0...v1.252.0) (2026-07-11)
 
 ### Features
