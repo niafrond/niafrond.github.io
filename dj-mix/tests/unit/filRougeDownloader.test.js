@@ -19,6 +19,7 @@ function makeDownloader(overrides = {}) {
     renderTrackStatus: jest.fn(),
     showToast: jest.fn(),
     onProgress: jest.fn(),
+    onMixInfoProgress: jest.fn(),
     fetchMixData: jest.fn().mockResolvedValue({ probableSongStartSec: 10 }),
     ...overrides,
   };
@@ -161,5 +162,74 @@ describe('downloadAll — done tracks missing mix info (SPEC-3.5.6)', () => {
     await downloader.downloadAll([track]);
 
     expect(statuses.get(track.id)).toMatchObject({ downloadState: 'done', hasMixInfo: false });
+  });
+});
+
+// ── SPEC-3.5.7 : downloadMissingMixInfo — bouton dédié ────────────────────────
+
+describe('downloadMissingMixInfo — SPEC-3.5.7', () => {
+  test('fetches mix data for done tracks missing it and reports progress', async () => {
+    const { downloader, mocks, statuses } = makeDownloader();
+    const track = makeTrack();
+    statuses.set(track.id, { downloadState: 'done', hasMixInfo: false });
+
+    await downloader.downloadMissingMixInfo([track]);
+
+    expect(mocks.prefetchTrackToLocalCache).not.toHaveBeenCalled();
+    expect(mocks.fetchMixData).toHaveBeenCalledWith(track.name, track.artist);
+    expect(statuses.get(track.id)).toMatchObject({ hasMixInfo: true });
+    expect(mocks.onMixInfoProgress).toHaveBeenCalledWith(0, 1);
+    expect(mocks.onMixInfoProgress).toHaveBeenCalledWith(1, 1);
+    expect(mocks.onMixInfoProgress).toHaveBeenLastCalledWith(0, 0);
+    expect(mocks.showToast).toHaveBeenCalledWith('Mix info mis à jour (1 morceau)');
+  });
+
+  test('ignores tracks that are not downloaded yet', async () => {
+    const { downloader, mocks } = makeDownloader();
+    const track = makeTrack();
+    // downloadState defaults to 'idle' — never downloaded.
+
+    await downloader.downloadMissingMixInfo([track]);
+
+    expect(mocks.fetchMixData).not.toHaveBeenCalled();
+    expect(mocks.showToast).toHaveBeenCalledWith('Aucune mix info manquante');
+  });
+
+  test('ignores tracks that already have mix info', async () => {
+    const { downloader, mocks, statuses } = makeDownloader();
+    const track = makeTrack();
+    statuses.set(track.id, { downloadState: 'done', hasMixInfo: true });
+
+    await downloader.downloadMissingMixInfo([track]);
+
+    expect(mocks.fetchMixData).not.toHaveBeenCalled();
+    expect(mocks.showToast).toHaveBeenCalledWith('Aucune mix info manquante');
+  });
+
+  test('reports failures in the summary toast without breaking the batch', async () => {
+    const ok = makeTrack({ id: 'track-ok', name: 'Song OK', artist: 'Artist OK' });
+    const bad = makeTrack({ id: 'track-bad', name: 'Song Bad', artist: 'Artist Bad' });
+    const { downloader, mocks, statuses } = makeDownloader({
+      fetchMixData: jest.fn((name) => (
+        name === 'Song OK' ? Promise.resolve({ probableSongStartSec: 1 }) : Promise.reject(new Error('boom'))
+      )),
+    });
+    statuses.set(ok.id, { downloadState: 'done', hasMixInfo: false });
+    statuses.set(bad.id, { downloadState: 'done', hasMixInfo: false });
+
+    await downloader.downloadMissingMixInfo([ok, bad]);
+
+    expect(statuses.get(ok.id)).toMatchObject({ hasMixInfo: true });
+    expect(statuses.get(bad.id)).toMatchObject({ hasMixInfo: false });
+    expect(mocks.showToast).toHaveBeenCalledWith('Mix info mis à jour (1/2), 1 échec');
+  });
+
+  test('shows an error toast and does nothing when fetchMixData is unavailable', async () => {
+    const { downloader, mocks } = makeDownloader({ fetchMixData: undefined });
+    const track = makeTrack();
+
+    await downloader.downloadMissingMixInfo([track]);
+
+    expect(mocks.showToast).toHaveBeenCalledWith('Mix info indisponible', true);
   });
 });

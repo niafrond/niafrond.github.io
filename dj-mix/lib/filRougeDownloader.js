@@ -9,6 +9,7 @@
  * @param {(msg: string, isError?: boolean) => void} opts.showToast
  * @param {(done: number, inProgress: number, total: number) => void} [opts.onProgress]
  * @param {(name: string, artist: string) => Promise<object|null>} [opts.fetchMixData]
+ * @param {(done: number, total: number) => void} [opts.onMixInfoProgress]
  */
 export function createFilRougeDownloader({
   prefetchTrackToLocalCache,
@@ -20,6 +21,7 @@ export function createFilRougeDownloader({
   showToast,
   onProgress,
   fetchMixData,
+  onMixInfoProgress,
 }) {
   async function requestNotifPermission() {
     if (!('Notification' in window)) return false;
@@ -196,5 +198,58 @@ export function createFilRougeDownloader({
     }
   }
 
-  return { downloadAll };
+  /**
+   * Force la récupération des mix suggestions (mix info) manquantes pour les
+   * morceaux déjà téléchargés (`downloadState: 'done'`), sans télécharger
+   * d'audio. Utilisé par le bouton dédié quand l'auto-fetch de SPEC-3.5.6
+   * (déclenché en marge de "Tout télécharger") n'a pas suffi (échec API,
+   * mix suggestions pas encore calculées côté serveur au moment du premier
+   * essai, etc.).
+   * @param {object[]} tracks
+   */
+  async function downloadMissingMixInfo(tracks) {
+    if (!fetchMixData) {
+      showToast('Mix info indisponible', true);
+      return;
+    }
+
+    const missing = tracks.filter((t) => {
+      if (!t?.name || !t?.artist) return false;
+      const { downloadState, hasMixInfo } = getFilRougeTrackStatus(t);
+      return downloadState === 'done' && !hasMixInfo;
+    });
+
+    if (!missing.length) {
+      showToast('Aucune mix info manquante');
+      return;
+    }
+
+    const total = missing.length;
+    let done = 0;
+    let failed = 0;
+    onMixInfoProgress?.(0, total);
+
+    for (const track of missing) {
+      try {
+        const mixData = await fetchMixData(track.name, track.artist);
+        const ok = Boolean(mixData);
+        setFilRougeTrackStatus(track, { hasMixInfo: ok });
+        if (ok) done++; else failed++;
+      } catch (_) {
+        setFilRougeTrackStatus(track, { hasMixInfo: false });
+        failed++;
+      }
+      renderTrackStatus(track);
+      onMixInfoProgress?.(done + failed, total);
+    }
+
+    onMixInfoProgress?.(0, 0);
+    showToast(
+      failed > 0
+        ? `Mix info mis à jour (${done}/${total}), ${failed} échec${failed > 1 ? 's' : ''}`
+        : `Mix info mis à jour (${done} morceau${done > 1 ? 'x' : ''})`
+    );
+  }
+
+  return { downloadAll, downloadMissingMixInfo };
 }

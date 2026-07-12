@@ -242,6 +242,11 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-3.5.4** Le Fil Rouge n'affiche PAS de badge indiquant la présence des stems. Seuls le statut de téléchargement et le statut mix info sont affichés.
 - **SPEC-3.5.5** GIVEN un morceau du Fil Rouge est ajouté à la file d'attente (`addToQueue`) — WHEN `preloadMixDataForDeckItem` se termine avec succès — THEN le badge « Mix info » du morceau dans le Fil Rouge est immédiatement mis à jour via `renderFilRougeTrackStatus`, reflétant la présence des mix data désormais disponibles en localStorage.
 - **SPEC-3.5.6** GIVEN un morceau du Fil Rouge a `downloadState: 'done'` mais `hasMixInfo: false` (mix data absentes) — WHEN l'utilisateur clique sur « Tout télécharger » (`downloadAll`) — THEN `fetchMixData` est appelé pour ce morceau via une tâche séquentielle parallèle à la tâche de téléchargement audio (`_runMixInfoTask`), et `hasMixInfo` est mis à jour en conséquence, sans re-télécharger l'audio. Un toast « Mix info mis à jour (N morceau(x)) » est affiché si aucun téléchargement audio n'était nécessaire.
+- **SPEC-3.5.7** Bouton dédié « Mix suggestions manquantes » (`#filrouge-mixinfo-btn`, `filRougeDownloader.downloadMissingMixInfo`) : force un nouvel appel à `fetchMixData` (endpoint `/mix` — mix suggestions) pour tous les morceaux `downloadState: 'done'` avec `hasMixInfo: false`, sans télécharger d'audio. Permet de rattraper les mix suggestions manquées par SPEC-3.5.6 (échec API ponctuel, suggestions pas encore calculées côté serveur au moment du premier essai, etc.) sans relancer un « Tout télécharger » complet.
+  - GIVEN aucun morceau `done` sans mix info — THEN toast « Aucune mix info manquante », aucun appel API.
+  - GIVEN N morceaux traités — THEN toast « Mix info mis à jour (N morceau(x)) », ou « Mix info mis à jour (D/N), F échec(s) » si `F` échecs.
+  - Pendant l'exécution, le bouton affiche `Mix info : done / total` et est désactivé.
+  - Les boutons « Tout télécharger » et « Mix suggestions manquantes » s'excluent mutuellement : cliquer sur l'un pendant que l'autre est en cours affiche un toast d'avertissement et n'a aucun effet.
 
 ### 3.6 Tri de la playlist
 

@@ -832,6 +832,7 @@ const djSetQualityBadgeEl = document.getElementById('dj-set-quality-badge');
 const djSetProfileSelectEl = document.getElementById('dj-set-profile-select');
 const djRecalculateBtn = document.getElementById('dj-recalculate-btn');
 const filRougeDownloadAllBtn = document.getElementById('filrouge-download-all-btn');
+const filRougeMixInfoBtn = document.getElementById('filrouge-mixinfo-btn');
 
 const downloaderApiUrlInput = document.getElementById('downloader-api-url-input');
 const downloaderApiTokenInput = document.getElementById('downloader-api-token-input');
@@ -2590,6 +2591,7 @@ if (djRecalculateBtn) {
 // ── Fil rouge : téléchargement de masse ──────────────────────────────────────
 
 const DOWNLOAD_ALL_BTN_DEFAULT_LABEL = 'Tout télécharger';
+const MIX_INFO_BTN_DEFAULT_LABEL = 'Mix suggestions manquantes';
 
 const filRougeDownloader = createFilRougeDownloader({
   prefetchTrackToLocalCache,
@@ -2611,10 +2613,24 @@ const filRougeDownloader = createFilRougeDownloader({
       filRougeDownloadAllBtn.disabled = true;
     }
   },
+  onMixInfoProgress: (done, total) => {
+    if (!filRougeMixInfoBtn) return;
+    if (total === 0) {
+      filRougeMixInfoBtn.textContent = MIX_INFO_BTN_DEFAULT_LABEL;
+      filRougeMixInfoBtn.disabled = false;
+    } else {
+      filRougeMixInfoBtn.textContent = `Mix info : ${done} / ${total}`;
+      filRougeMixInfoBtn.disabled = true;
+    }
+  },
 });
 
 if (filRougeDownloadAllBtn) {
   filRougeDownloadAllBtn.addEventListener('click', () => {
+    if (filRougeMixInfoBtn?.disabled) {
+      showToast('Récupération des mix suggestions en cours', true);
+      return;
+    }
     const tracks = filRougeManager.getPlaylist();
     filRougeDownloader.downloadAll(tracks).then(() => {
       scheduleDjSetQualityRefresh();
@@ -2624,6 +2640,24 @@ if (filRougeDownloadAllBtn) {
       if (filRougeDownloadAllBtn) {
         filRougeDownloadAllBtn.textContent = DOWNLOAD_ALL_BTN_DEFAULT_LABEL;
         filRougeDownloadAllBtn.disabled = false;
+      }
+    });
+  });
+}
+
+if (filRougeMixInfoBtn) {
+  filRougeMixInfoBtn.addEventListener('click', () => {
+    if (filRougeDownloadAllBtn?.disabled) {
+      showToast('Téléchargement en cours', true);
+      return;
+    }
+    const tracks = filRougeManager.getPlaylist();
+    filRougeDownloader.downloadMissingMixInfo(tracks).catch(err => {
+      showToast('Mix suggestions : erreur', true);
+      console.error('[filrouge] downloadMissingMixInfo error', err);
+      if (filRougeMixInfoBtn) {
+        filRougeMixInfoBtn.textContent = MIX_INFO_BTN_DEFAULT_LABEL;
+        filRougeMixInfoBtn.disabled = false;
       }
     });
   });
