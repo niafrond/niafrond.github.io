@@ -85,6 +85,7 @@ function makeManager(overrides = {}) {
     getDownloaderApiUrl: jest.fn().mockReturnValue(undefined),
     getDownloaderApiToken: jest.fn().mockReturnValue(''),
     onAuthExpired: jest.fn(),
+    waitFn: jest.fn().mockResolvedValue(undefined),
     ...overrides,
   };
   delete defaults.store;
@@ -155,7 +156,7 @@ describe('downloadBatchManager', () => {
       expect(mocks.store.createBatch).not.toHaveBeenCalled();
     });
 
-    test('mixed success/failure updates counts and per-item status', async () => {
+    test('mixed success/failure updates counts and per-item status (failure retried 3x, SPEC-19.6.2)', async () => {
       const ok = makeTrack({ id: 'ok', name: 'OK', artist: 'A' });
       const bad = makeTrack({ id: 'bad', name: 'Bad', artist: 'B' });
       const { manager, mocks } = makeManager({
@@ -167,7 +168,62 @@ describe('downloadBatchManager', () => {
       expect(result).toMatchObject({ done: 1, failed: 1, total: 2 });
       const [{ batch }] = mocks.store.createBatch.mock.calls[0];
       expect(await mocks.store.getItem(`${batch.id}::ok`)).toMatchObject({ status: 'completed' });
-      expect(await mocks.store.getItem(`${batch.id}::bad`)).toMatchObject({ status: 'failed', retries: 1 });
+      // Tentative initiale + 3 retentatives = retries: 4
+      expect(await mocks.store.getItem(`${batch.id}::bad`)).toMatchObject({ status: 'failed', retries: 4 });
+      expect(mocks.waitFn.mock.calls.map(([ms]) => ms)).toEqual([2000, 4000, 8000]);
+    });
+  });
+
+  describe('retentatives avec backoff (SPEC-19.6.2)', () => {
+    test('un échec transitoire est récupéré à la première retentative', async () => {
+      const track = makeTrack();
+      const prefetch = jest.fn()
+        .mockResolvedValueOnce(false)
+        .mockResolvedValue(true);
+      const { manager, mocks } = makeManager({ prefetchTrackToLocalCache: prefetch });
+
+      const result = await manager.startBatch([track]);
+
+      expect(result).toMatchObject({ done: 1, failed: 0, total: 1 });
+      expect(prefetch).toHaveBeenCalledTimes(2);
+      expect(mocks.waitFn.mock.calls.map(([ms]) => ms)).toEqual([2000]);
+      const [{ batch }] = mocks.store.createBatch.mock.calls[0];
+      expect(await mocks.store.getItem(`${batch.id}::${track.id}`)).toMatchObject({ status: 'completed', retries: 1 });
+      expect(await mocks.store.getBatch(batch.id)).toMatchObject({ status: 'completed', completedFiles: 1, failedFiles: 0 });
+    });
+
+    test("abandonne après 3 retentatives avec backoff exponentiel 2s/4s/8s", async () => {
+      const track = makeTrack();
+      const prefetch = jest.fn().mockResolvedValue(false);
+      const { manager, mocks } = makeManager({ prefetchTrackToLocalCache: prefetch });
+
+      const result = await manager.startBatch([track]);
+
+      expect(result).toMatchObject({ done: 0, failed: 1, total: 1 });
+      expect(prefetch).toHaveBeenCalledTimes(4); // initiale + 3 retentatives
+      expect(mocks.waitFn.mock.calls.map(([ms]) => ms)).toEqual([2000, 4000, 8000]);
+      const [{ batch }] = mocks.store.createBatch.mock.calls[0];
+      expect(await mocks.store.getItem(`${batch.id}::${track.id}`)).toMatchObject({ status: 'failed', retries: 4 });
+    });
+
+    test('une expiration auth pendant une retentative arrête les vagues suivantes (SPEC-19.6.5)', async () => {
+      const track = makeTrack();
+      let calls = 0;
+      const prefetch = jest.fn((t, opts) => {
+        calls++;
+        if (calls > 1) opts?.onError?.({ status: 401 }); // la retentative tombe sur un 401
+        return Promise.resolve(false);
+      });
+      const { manager, mocks } = makeManager({ prefetchTrackToLocalCache: prefetch });
+
+      const result = await manager.startBatch([track]);
+
+      expect(result.authPaused).toBe(true);
+      expect(prefetch).toHaveBeenCalledTimes(2); // pas de 2e/3e vague
+      expect(mocks.waitFn.mock.calls.map(([ms]) => ms)).toEqual([2000]);
+      expect(mocks.onAuthExpired).toHaveBeenCalledTimes(1);
+      const [{ batch }] = mocks.store.createBatch.mock.calls[0];
+      expect(await mocks.store.getBatch(batch.id)).toMatchObject({ status: 'paused-auth' });
     });
   });
 
@@ -272,6 +328,54 @@ describe('downloadBatchManager', () => {
       expect(await store.getItem(`${batchId}::ok`)).toMatchObject({ status: 'completed' });
       expect(await store.getItem(`${batchId}::bad`)).toMatchObject({ status: 'failed' });
       expect(await store.getBatch(batchId)).toMatchObject({ status: 'completed', completedFiles: 1, failedFiles: 1 });
+    });
+
+    test('avec playlist : retente les échecs via la file interne et récupère les mix infos (SPEC-19.6.3/19.6.4)', async () => {
+      const okTrack = makeTrack({ id: 'ok', name: 'Song OK', artist: 'Artist OK' });
+      const badTrack = makeTrack({ id: 'bad', name: 'Song Bad', artist: 'Artist Bad' });
+      const prefetch = jest.fn().mockResolvedValue(true); // la retentative réussit
+      const { manager, mocks, statuses } = makeManager({ prefetchTrackToLocalCache: prefetch });
+      const store = mocks.store;
+      const batchId = 'batch-retry';
+      await store.createBatch({
+        batch: { id: batchId, status: 'running', totalFiles: 2, completedFiles: 0, failedFiles: 0, transport: 'bg-fetch' },
+        items: [
+          { id: `${batchId}::ok`, batchId, cacheKey: 'ok', status: 'downloading' },
+          { id: `${batchId}::bad`, batchId, cacheKey: 'bad', status: 'downloading' },
+        ],
+      });
+
+      await manager.recordBackgroundFetchResult(batchId, ['ok'], ['bad'], [okTrack, badTrack]);
+
+      // Seul le morceau échoué est retéléchargé, après un backoff de 2s.
+      expect(prefetch).toHaveBeenCalledTimes(1);
+      expect(prefetch).toHaveBeenCalledWith(badTrack, expect.any(Object));
+      expect(mocks.waitFn.mock.calls.map(([ms]) => ms)).toEqual([2000]);
+      // Mix info du morceau réussi via Background Fetch, en parallèle du retry.
+      expect(mocks.fetchMixData).toHaveBeenCalledWith('Song OK', 'Artist OK');
+      expect(statuses.get('ok')).toMatchObject({ hasMixInfo: true });
+      expect(await store.getItem(`${batchId}::ok`)).toMatchObject({ status: 'completed' });
+      expect(await store.getItem(`${batchId}::bad`)).toMatchObject({ status: 'completed' });
+      expect(await store.getBatch(batchId)).toMatchObject({ status: 'completed', completedFiles: 2, failedFiles: 0 });
+    });
+
+    test('avec playlist : après 3 retentatives infructueuses, le lot est finalisé avec les échecs restants', async () => {
+      const badTrack = makeTrack({ id: 'bad', name: 'Song Bad', artist: 'Artist Bad' });
+      const prefetch = jest.fn().mockResolvedValue(false);
+      const { manager, mocks } = makeManager({ prefetchTrackToLocalCache: prefetch });
+      const store = mocks.store;
+      const batchId = 'batch-retry-fail';
+      await store.createBatch({
+        batch: { id: batchId, status: 'running', totalFiles: 1, completedFiles: 0, failedFiles: 0, transport: 'bg-fetch' },
+        items: [{ id: `${batchId}::bad`, batchId, cacheKey: 'bad', status: 'downloading' }],
+      });
+
+      await manager.recordBackgroundFetchResult(batchId, [], ['bad'], [badTrack]);
+
+      expect(prefetch).toHaveBeenCalledTimes(3); // 3 retentatives (la tentative initiale était le bg-fetch)
+      expect(mocks.waitFn.mock.calls.map(([ms]) => ms)).toEqual([2000, 4000, 8000]);
+      expect(await store.getItem(`${batchId}::bad`)).toMatchObject({ status: 'failed' });
+      expect(await store.getBatch(batchId)).toMatchObject({ status: 'failed', completedFiles: 0, failedFiles: 1 });
     });
 
     test('recordBackgroundFetchFail marks every still-downloading item failed and the batch failed', async () => {

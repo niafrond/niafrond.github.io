@@ -2692,8 +2692,12 @@ if ('serviceWorker' in navigator) {
       }
     }
     renderFilRouge();
-    filRougeDownloader.recordBackgroundFetchResult?.(id, succeededKeys, failedKeys).catch(() => {});
-    showToast(`Téléchargement terminé : ${succeededKeys.length} réussi${succeededKeys.length > 1 ? 's' : ''}`);
+    // Retente les échecs (backoff x3) et récupère les mix infos des réussites
+    // en parallèle (SPEC-19.6.3/19.6.4).
+    filRougeDownloader.recordBackgroundFetchResult?.(id, succeededKeys, failedKeys, playlist).catch(() => {});
+    showToast(failedKeys.length > 0
+      ? `Téléchargement : ${succeededKeys.length} réussi${succeededKeys.length > 1 ? 's' : ''} — retentative de ${failedKeys.length} échec${failedKeys.length > 1 ? 's' : ''}…`
+      : `Téléchargement terminé : ${succeededKeys.length} réussi${succeededKeys.length > 1 ? 's' : ''}`);
     scheduleDjSetQualityRefresh();
   });
 }
@@ -4366,6 +4370,20 @@ autoMixBtn?.addEventListener('click', async () => {
   }
 });
 
+// SPEC-13.3.6 — Compte les sorties audio (`kind === 'audiooutput'`) pour détecter
+// une vraie perte de sortie (débranchement) plutôt que réagir à tout `devicechange`
+// (qui se déclenche aussi sur un ajout de périphérique ou un bruit d'énumération).
+let lastAudioOutputDeviceCount = null;
+async function countAudioOutputDevices() {
+  if (!navigator.mediaDevices?.enumerateDevices) return null;
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.filter((d) => d.kind === 'audiooutput').length;
+  } catch {
+    return null;
+  }
+}
+
 function setupMediaSession() {
   if (!('mediaSession' in navigator)) return;
   navigator.mediaSession.setActionHandler('play', () => {
@@ -4412,9 +4430,16 @@ function setupMediaSession() {
   // avant le premier play (la session audio doit exister pour capter les événements).
   startMediaKeepAlive();
 
-  // SPEC-13.3.6 — Pause automatique sur changement de sortie audio (ex. déconnexion Bluetooth).
+  // SPEC-13.3.6 — Pause automatique uniquement si une sortie audio a réellement
+  // disparu (ex. déconnexion casque Bluetooth) ; un `devicechange` qui n'enlève
+  // aucune sortie (ajout d'un périphérique, bruit d'énumération) est ignoré.
   if (navigator.mediaDevices) {
-    navigator.mediaDevices.addEventListener('devicechange', () => {
+    countAudioOutputDevices().then((count) => { lastAudioOutputDeviceCount = count; });
+    navigator.mediaDevices.addEventListener('devicechange', async () => {
+      const previousCount = lastAudioOutputDeviceCount;
+      const count = await countAudioOutputDevices();
+      lastAudioOutputDeviceCount = count;
+      if (previousCount === null || count === null || count >= previousCount) return;
       const focusDeck = getFocusDeck();
       const deckState = uiState.lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
       if (deckState?.playing) player?.pauseDeck?.(focusDeck);
@@ -6067,6 +6092,18 @@ async function addToQueue(track, options = {}) {
       ensureLocalSource(item).then(async (url) => {
         if (!player || deckDisplayItems[inactiveDeck] !== item) return;
         await replaceMixPreload.catch(() => {});
+        // SPEC-1.1.16 : re-valider la cible après la préparation asynchrone.
+        if (getResolvedInactiveDeck() !== inactiveDeck
+          || deckDisplayItems[inactiveDeck] !== item
+          || uiState.currentTrackId === item.id) {
+          logWarn('addToQueue(): stale ghost-replacement preload aborted', {
+            inactiveDeck,
+            resolvedInactiveDeck: getResolvedInactiveDeck(),
+            itemId: item.id,
+            currentTrackId: uiState.currentTrackId,
+          });
+          return;
+        }
         const startMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
         await player.playOnDeck(inactiveDeck, {
           url,
@@ -6141,7 +6178,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
   if (!item || !player) return;
   let startPositionMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
 
-  const targetDeck = options.targetDeck || ((mode === 'play' || mode === 'switch')
+  let targetDeck = options.targetDeck || ((mode === 'play' || mode === 'switch')
     ? getResolvedActiveDeck()
     : getResolvedInactiveDeck());
 
@@ -6245,6 +6282,27 @@ async function startPlaybackForIndex(index, mode, options = {}) {
         name: item.name,
         sourceState: item.sourceState,
       });
+    }
+
+    // SPEC-1.1.15 : la platine cible a pu devenir active pendant la préparation
+    // asynchrone (preload mix + ensureLocalSource). Re-cibler la platine réellement
+    // inactive pour ne jamais écraser le morceau en cours de lecture.
+    if (mode === 'autofade' || mode === 'crossfade') {
+      const currentInactiveDeck = getResolvedInactiveDeck();
+      if (targetDeck !== currentInactiveDeck) {
+        logWarn('startPlaybackForIndex(): target deck became active during preparation, retargeting', {
+          index,
+          mode,
+          staleTargetDeck: targetDeck,
+          retargetedDeck: currentInactiveDeck,
+          itemId: item.id,
+        });
+        if (deckDisplayItems[targetDeck] === item) setDeckItem(targetDeck, null);
+        targetDeck = currentInactiveDeck;
+        setDeckItem(targetDeck, item);
+        if (launchPreviewItem === item) launchPreviewDeck = targetDeck;
+        updatePlannedStartMarker();
+      }
     }
 
     let djRateApplied = false;
@@ -6362,6 +6420,20 @@ async function startPlaybackForIndex(index, mode, options = {}) {
           if (!player) return;
 
           await nextMixPreload.catch(() => {});
+          // SPEC-1.1.16 : la préparation est asynchrone (téléchargement possible) —
+          // re-valider la cible juste avant le chargement pour ne jamais toucher
+          // une platine devenue active ni dupliquer le morceau courant.
+          if (getResolvedInactiveDeck() !== inactiveDeck
+            || deckDisplayItems[inactiveDeck] !== nextItem
+            || uiState.currentTrackId === nextItem.id) {
+            logWarn('startPlaybackForIndex(): stale next-track preload aborted', {
+              inactiveDeck,
+              resolvedInactiveDeck: getResolvedInactiveDeck(),
+              nextItemId: nextItem.id,
+              currentTrackId: uiState.currentTrackId,
+            });
+            return;
+          }
           const nextStartPositionMs = Math.max(0, Number(nextItem.autoDjStartOffsetMs) || 0);
 
           await player.playOnDeck(inactiveDeck, {
@@ -6421,6 +6493,16 @@ async function startPlaybackForIndex(index, mode, options = {}) {
             await ghostMixPreload.catch(() => {});
             const ghostStartMs = Math.max(0, Number(ghostItem.autoDjStartOffsetMs) || 0);
             if (pendingFilRougeOnInactiveDeck !== ghostItem) return;
+            // SPEC-1.1.16 : re-valider la cible après la préparation asynchrone.
+            if (getResolvedInactiveDeck() !== inactiveDeck
+              || deckDisplayItems[inactiveDeck] !== ghostItem) {
+              logWarn('startPlaybackForIndex(): stale fil rouge ghost preload aborted', {
+                inactiveDeck,
+                resolvedInactiveDeck: getResolvedInactiveDeck(),
+                ghostId: ghostItem.id,
+              });
+              return;
+            }
             await player.playOnDeck(inactiveDeck, {
               url: ghostUrl,
               loudnessDb: ghostItem.loudnessDb,

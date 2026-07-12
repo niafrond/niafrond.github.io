@@ -17,6 +17,7 @@ import { createDownloadBatchManager } from './downloadBatchManager.js';
  * @param {() => string} [opts.getDownloaderApiUrl]
  * @param {() => string} [opts.getDownloaderApiToken]
  * @param {() => void} [opts.onAuthExpired]
+ * @param {(ms: number) => Promise<void>} [opts.waitFn] - injectable pour les tests (backoff des retentatives)
  */
 export function createFilRougeDownloader({
   prefetchTrackToLocalCache,
@@ -33,6 +34,7 @@ export function createFilRougeDownloader({
   getDownloaderApiUrl,
   getDownloaderApiToken,
   onAuthExpired,
+  waitFn,
 }) {
   const downloadBatchManager = createDownloadBatchManager({
     store,
@@ -47,6 +49,7 @@ export function createFilRougeDownloader({
     getDownloaderApiUrl,
     getDownloaderApiToken,
     onAuthExpired,
+    ...(waitFn ? { waitFn } : {}),
   });
 
   /**

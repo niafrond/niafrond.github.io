@@ -21,6 +21,7 @@ function makeDownloader(overrides = {}) {
     onProgress: jest.fn(),
     onMixInfoProgress: jest.fn(),
     fetchMixData: jest.fn().mockResolvedValue({ probableSongStartSec: 10 }),
+    waitFn: jest.fn().mockResolvedValue(undefined), // pas de vrai backoff en test (SPEC-19.6.2)
     ...overrides,
   };
 

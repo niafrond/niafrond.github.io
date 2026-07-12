@@ -33,6 +33,20 @@ export function createMediaSessionController(options) {
   let wakeLock = null;
   let _keepaliveAudio = null;
   let _keepalivePosInterval = null;
+  let lastAudioOutputDeviceCount = null;
+
+  // SPEC-13.3.6 — Compte les sorties audio (`kind === 'audiooutput'`) pour détecter
+  // une vraie perte de sortie (débranchement) plutôt que réagir à tout `devicechange`
+  // (qui se déclenche aussi sur un ajout de périphérique ou un bruit d'énumération).
+  async function countAudioOutputDevices() {
+    if (!navigator.mediaDevices?.enumerateDevices) return null;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      return devices.filter((d) => d.kind === 'audiooutput').length;
+    } catch {
+      return null;
+    }
+  }
 
   async function requestWakeLock() {
     try {
@@ -168,6 +182,22 @@ export function createMediaSessionController(options) {
     onMediaCommand(applyMediaCommand);
 
     startMediaKeepAlive();
+
+    // SPEC-13.3.6 — Pause automatique uniquement si une sortie audio a réellement
+    // disparu (ex. déconnexion casque Bluetooth) ; un `devicechange` qui n'enlève
+    // aucune sortie (ajout d'un périphérique, bruit d'énumération) est ignoré.
+    if (navigator.mediaDevices) {
+      countAudioOutputDevices().then((count) => { lastAudioOutputDeviceCount = count; });
+      navigator.mediaDevices.addEventListener('devicechange', async () => {
+        const previousCount = lastAudioOutputDeviceCount;
+        const count = await countAudioOutputDevices();
+        lastAudioOutputDeviceCount = count;
+        if (previousCount === null || count === null || count >= previousCount) return;
+        const focusDeck = getFocusDeck();
+        const deckState = uiState.lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
+        if (deckState?.playing) getPlayer()?.pauseDeck?.(focusDeck);
+      });
+    }
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible' && !uiState.isPlaying) {

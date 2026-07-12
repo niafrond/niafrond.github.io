@@ -239,6 +239,29 @@ export class DJPlayer extends EventTarget {
     const audio = targetDeck === 'A' ? this.#audioA : this.#audioB;
     if (!audio) return;
 
+    if (options.paused === true) {
+      // SPEC-1.1.13 : un préchargement (paused) ne doit jamais cibler la platine
+      // active en cours de lecture — sinon #loadOnly() couperait la musique.
+      if (targetDeck === this.#active && audio.src && !audio.paused) {
+        logWarn('deck.load.rejected.activePlaying', {
+          targetDeck,
+          activeDeck: this.#active,
+          srcPreview: String(normalized.url || '').slice(0, 96),
+        });
+        return;
+      }
+      // SPEC-1.1.14 : ne jamais précharger une source déjà chargée sur l'autre platine.
+      const otherDeck = targetDeck === 'A' ? 'B' : 'A';
+      if (this.#deckSourceMeta[otherDeck]?.url === normalized.url) {
+        logWarn('deck.load.rejected.duplicateSource', {
+          targetDeck,
+          otherDeck,
+          srcPreview: String(normalized.url || '').slice(0, 96),
+        });
+        return;
+      }
+    }
+
     this.#setDeckLoudness(targetDeck, normalized.loudnessDb);
     this.#deckSourceMeta[targetDeck] = normalized;
 
@@ -452,7 +475,22 @@ export class DJPlayer extends EventTarget {
 
     // Determine fade direction: load new track on target deck, fade from the other.
     // When no target is specified, fade from the dominant (louder) deck.
-    const desiredDeck = targetDeck === 'A' || targetDeck === 'B' ? targetDeck : null;
+    let desiredDeck = targetDeck === 'A' || targetDeck === 'B' ? targetDeck : null;
+    // SPEC-1.1.15 : un crossfade vers la platine active en lecture écraserait le
+    // morceau en cours (cible devenue active pendant la préparation asynchrone) —
+    // rediriger vers la platine réellement inactive.
+    if (desiredDeck === this.#active) {
+      const activeAudio = this.#activeAudio;
+      if (activeAudio && activeAudio.src && !activeAudio.paused) {
+        const redirected = desiredDeck === 'A' ? 'B' : 'A';
+        logWarn('crossfade.retargeted.activeDeck', {
+          desiredDeck,
+          redirectedDeck: redirected,
+          activeDeck: this.#active,
+        });
+        desiredDeck = redirected;
+      }
+    }
     let fromDeck, toDeck;
     if (desiredDeck) {
       toDeck = desiredDeck;
