@@ -14,7 +14,6 @@ export const AUTO_DJ_FX_CONFIG = Object.freeze({
   backspin: { label: 'Backspin / Rewind', category: 'transport' },
   noise: { label: 'Noise FX', category: 'textural' },
   eq: { label: 'EQ', category: 'filter' },
-  pitchTempo: { label: 'Pitch / Tempo', category: 'pitch' },
   keyShift: { label: 'Key Shift / Harmonic', category: 'pitch' },
   scratching: { label: 'Scratching', category: 'scratch' },
   hotCues: { label: 'Hot Cues', category: 'cue' },

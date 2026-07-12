@@ -19,7 +19,6 @@ const DJ_FX_TRANSITION_MODE = Object.freeze({
 const DJ_FX_TOGGLE_FEATURE = Object.freeze({
   echoDelay: 'echo',
   flangerPhaser: 'distortion',
-  pitchTempo: 'autoBpm',
 });
 
 const DJ_FX_TRANSIENT_ACTIONS = new Set([
@@ -727,12 +726,6 @@ export function createDjFxController(options) {
         cycleFocusedDeckFilterMode();
         applyDjFxTransition('eq', 'EQ AutoMix', true);
         break;
-      case 'pitchTempo':
-        applyTemporaryDeckPlaybackRate(focusDeck, 1.06, 2000);
-        toggleDjFxFeature('pitchTempo', 'Pitch / Tempo', () => {
-          getPlayer()?.syncDecksToActive();
-        }, true);
-        break;
       case 'keyShift':
         applyTemporaryDeckPlaybackRate(focusDeck, 1.035, 1800);
         triggerTransientDjFxAction('keyShift', 1800);
@@ -843,15 +836,6 @@ export function createDjFxController(options) {
           setDeckFilterMode('highPass', safeDeck);
           scheduleAutoDjFilterRestore(safeDeck, prevMode, 1800);
         }
-        return true;
-      case 'pitchTempo':
-        {
-          const prevAutoBpm = Boolean(getMixFeatures().autoBpm);
-          applyTemporaryDeckPlaybackRate(safeDeck, 1.06, 2000);
-          setMixFeatureEnabled('autoBpm', true);
-          scheduleAutoDjMixFeatureRestore('autoBpm', prevAutoBpm, 2000);
-        }
-        triggerTransientDjFxAction('pitchTempo', 2000);
         return true;
       case 'keyShift':
         applyTemporaryDeckPlaybackRate(safeDeck, 1.035, 1800);

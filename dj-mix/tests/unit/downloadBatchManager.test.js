@@ -1,6 +1,21 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from '@jest/globals';
 import { createDownloadBatchManager } from '../../lib/downloadBatchManager.js';
 
+// jest-environment-jsdom doesn't expose Request/Notification globals — real
+// browsers all have them. Only what showSwNotif/_dispatchBackgroundFetch
+// touch needs to exist here.
+if (typeof Request === 'undefined') {
+  global.Request = class Request {
+    constructor(url, init) {
+      this.url = String(url);
+      Object.assign(this, init);
+    }
+  };
+}
+if (typeof Notification === 'undefined') {
+  global.Notification = { permission: 'denied' };
+}
+
 function makeFakeStore() {
   const batches = new Map();
   const items = new Map();

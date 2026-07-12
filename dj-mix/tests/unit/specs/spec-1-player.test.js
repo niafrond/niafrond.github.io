@@ -65,9 +65,9 @@ beforeEach(() => {
 
 // ── SPEC-1.3 Transition modes catalogue ──────────────────────────────────────
 
-describe('SPEC-1.3.1 — 26 transition modes exist', () => {
-  test('catalogue contains exactly 26 modes', () => {
-    expect(MIX_TRANSITION_MODES).toHaveLength(26);
+describe('SPEC-1.3.1 — 25 transition modes exist', () => {
+  test('catalogue contains exactly 25 modes', () => {
+    expect(MIX_TRANSITION_MODES).toHaveLength(25);
   });
 
   test('auto is the first mode', () => {
@@ -86,7 +86,7 @@ describe('SPEC-1.3.1 — 26 transition modes exist', () => {
     'volume_ducking', 'gain_automation', 'filter_automation',
     'crossfade_lowpass', 'crossfade_highpass_in', 'filter_dual_sweep',
     'echo_lowpass', 'bass_swap', 'kick_swap', 'beat_repeat',
-    'backspin', 'fake_drop', 'echo_freeze',
+    'backspin', 'echo_freeze',
   ];
 
   test.each(expectedModes)('mode "%s" is in the catalogue', (mode) => {
@@ -254,6 +254,153 @@ describe('SPEC-1.3.3 — Auto mode selects from full pool via player', () => {
     expect(consecutiveSame).toBeLessThan(5);
     player.destroy?.();
   }, 30000);
+});
+
+// ── SPEC-1.3.6 — Aucune transition ne crée de silence ───────────────────────
+
+describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
+  let mockAudios = [];
+  let origAudio;
+  let origRAF;
+  let origCAF;
+  let origAudioContext;
+
+  beforeEach(() => {
+    mockAudios = [];
+    origAudio = globalThis.Audio;
+    globalThis.Audio = function MockAudio() {
+      const listeners = {};
+      const audio = {
+        src: '', currentTime: 0, duration: 180, volume: 0, paused: true,
+        ended: false, playbackRate: 1, preload: '', readyState: 0, currentSrc: '',
+        addEventListener(event, handler, opts) {
+          if (!listeners[event]) listeners[event] = [];
+          listeners[event].push({ handler, once: opts?.once ?? false });
+        },
+        removeEventListener(event, handler) {
+          if (!listeners[event]) return;
+          listeners[event] = listeners[event].filter((e) => e.handler !== handler);
+        },
+        dispatchEvent(event) {
+          const name = typeof event === 'string' ? event : event.type;
+          const handlers = listeners[name] || [];
+          const toRemove = [];
+          for (const entry of handlers) { entry.handler(event); if (entry.once) toRemove.push(entry); }
+          for (const entry of toRemove) listeners[name] = (listeners[name] || []).filter((e) => e !== entry);
+        },
+        load() { audio.readyState = 4; queueMicrotask(() => audio.dispatchEvent(new Event('canplay'))); },
+        play() { audio.paused = false; queueMicrotask(() => audio.dispatchEvent(new Event('playing'))); return Promise.resolve(); },
+        pause() { audio.paused = true; },
+        remove() {},
+      };
+      mockAudios.push(audio);
+      return audio;
+    };
+    origRAF = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+    origCAF = globalThis.cancelAnimationFrame;
+    globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
+    origAudioContext = globalThis.AudioContext;
+    const makeNode = () => ({ connect() {}, disconnect() {} });
+    globalThis.AudioContext = class MockAudioContext {
+      state = 'running';
+      sampleRate = 44100;
+      createMediaElementSource() { return makeNode(); }
+      createGain() { return { gain: { value: 1, setTargetAtTime() {}, setValueAtTime() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {} }, ...makeNode() }; }
+      createBiquadFilter() { return { type: 'allpass', frequency: { value: 350, setTargetAtTime() {}, setValueAtTime() {} }, Q: { value: 1, setTargetAtTime() {}, setValueAtTime() {} }, ...makeNode() }; }
+      createChannelSplitter() { return makeNode(); }
+      createChannelMerger() { return makeNode(); }
+      createDelay() { return { delayTime: { value: 0 }, ...makeNode() }; }
+      createDynamicsCompressor() { return { threshold: { value: -24 }, knee: { value: 30 }, ratio: { value: 12 }, attack: { value: 0.003 }, release: { value: 0.25 }, ...makeNode() }; }
+      createWaveShaper() { return { curve: null, oversample: 'none', ...makeNode() }; }
+      createOscillator() { return { type: 'sine', frequency: { value: 440, setValueAtTime() {}, exponentialRampToValueAtTime() {} }, start() {}, stop() {}, ...makeNode() }; }
+      createConvolver() { return { buffer: null, ...makeNode() }; }
+      get destination() { return makeNode(); }
+      get currentTime() { return 0; }
+      resume() { return Promise.resolve(); }
+      close() { return Promise.resolve(); }
+    };
+  });
+
+  afterEach(() => {
+    globalThis.Audio = origAudio;
+    globalThis.requestAnimationFrame = origRAF;
+    globalThis.cancelAnimationFrame = origCAF;
+    globalThis.AudioContext = origAudioContext;
+  });
+
+  async function makePlayer() {
+    const { DJPlayer } = await import('../../../player.js');
+    const player = new DJPlayer();
+    player.crossfadeDuration = 2000;
+    player.setTransitionMode('auto');
+    await player.init();
+    await new Promise((r) => setTimeout(r, 0));
+    await player.play({ url: 'blob:track-a', durationMs: 210000 });
+    await new Promise((r) => setTimeout(r, 0));
+    return player;
+  }
+
+  async function crossfadeWithMode(player, mode, source) {
+    player.setTransitionMode(mode);
+    const samples = [];
+    const onProgress = (e) => samples.push({
+      progress: e.detail.progress,
+      fromVolume: e.detail.fromVolume,
+      toVolume: e.detail.toVolume,
+    });
+    player.addEventListener('crossfadeprogress', onProgress);
+    await player.crossfadeToDeck(null, source).catch(() => {});
+    player.removeEventListener('crossfadeprogress', onProgress);
+    return samples;
+  }
+
+  function maxSilentStreakMs(samples, durationMs, threshold = 0.05) {
+    let maxMs = 0;
+    let streakStartProgress = null;
+    for (const s of samples) {
+      const combined = s.fromVolume + s.toVolume;
+      if (combined < threshold) {
+        if (streakStartProgress === null) streakStartProgress = s.progress;
+        maxMs = Math.max(maxMs, (s.progress - streakStartProgress) * durationMs);
+      } else {
+        streakStartProgress = null;
+      }
+    }
+    return maxMs;
+  }
+
+  test('SPEC-1.3.6.1/1.3.6.2 — fade_in_out ne crée jamais plus de 100ms de silence', async () => {
+    const player = await makePlayer();
+    const samples = await crossfadeWithMode(player, 'fade_in_out', { url: 'blob:track-b', durationMs: 200000 });
+    expect(samples.length).toBeGreaterThan(5);
+    expect(maxSilentStreakMs(samples, player.crossfadeDuration)).toBeLessThanOrEqual(100);
+    player.destroy?.();
+  }, 10000);
+
+  test('SPEC-1.3.6.1/1.3.6.3 — backspin ne crée jamais plus de 100ms de silence', async () => {
+    const player = await makePlayer();
+    const samples = await crossfadeWithMode(player, 'backspin', { url: 'blob:track-c', durationMs: 200000 });
+    expect(samples.length).toBeGreaterThan(5);
+    expect(maxSilentStreakMs(samples, player.crossfadeDuration)).toBeLessThanOrEqual(100);
+    player.destroy?.();
+  }, 10000);
+
+  test('SPEC-1.3.6.4 — brake_tape_stop_simple ne décélère plus le playbackRate', async () => {
+    const player = await makePlayer();
+    player.crossfadeDuration = 500;
+    let minRateSeen = 1;
+    const onProgress = () => {
+      for (const audio of mockAudios) {
+        minRateSeen = Math.min(minRateSeen, audio.playbackRate);
+      }
+    };
+    player.addEventListener('crossfadeprogress', onProgress);
+    await crossfadeWithMode(player, 'brake_tape_stop_simple', { url: 'blob:track-d', durationMs: 200000 });
+    player.removeEventListener('crossfadeprogress', onProgress);
+    expect(minRateSeen).toBeGreaterThan(0.99);
+    player.destroy?.();
+  }, 10000);
 });
 
 // ── SPEC-1.3.4 — RAM filter ─────────────────────────────────────────────────

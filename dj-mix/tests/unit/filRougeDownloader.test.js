@@ -41,7 +41,7 @@ describe('downloadAll — SPEC-3.5.3', () => {
 
     await downloader.downloadAll([track]);
 
-    expect(mocks.prefetchTrackToLocalCache).toHaveBeenCalledWith(track);
+    expect(mocks.prefetchTrackToLocalCache).toHaveBeenCalledWith(track, expect.any(Object));
     expect(mocks.fetchMixData).toHaveBeenCalledWith(track.name, track.artist);
     expect(statuses.get(track.id)).toMatchObject({ downloadState: 'done', hasMixInfo: true });
   });
@@ -256,6 +256,6 @@ describe('downloadMissingMixInfo — SPEC-3.5.7', () => {
     resolvePrefetch(true);
     await downloadAllPromise;
     expect(downloadAllSettled).toBe(true);
-    expect(mocks.prefetchTrackToLocalCache).toHaveBeenCalledWith(downloading);
+    expect(mocks.prefetchTrackToLocalCache).toHaveBeenCalledWith(downloading, expect.any(Object));
   });
 });

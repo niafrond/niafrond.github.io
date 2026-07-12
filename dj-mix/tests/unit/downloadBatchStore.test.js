@@ -37,6 +37,12 @@ describe('downloadBatchStore', () => {
   beforeEach(() => {
     global.indexedDB = new IDBFactory();
     global.IDBKeyRange = IDBKeyRange;
+    // jest-environment-jsdom doesn't provide structuredClone, which
+    // fake-indexeddb needs internally for put() — real browsers all have it
+    // natively, this polyfill is test-environment-only.
+    if (typeof structuredClone === 'undefined') {
+      global.structuredClone = (val) => JSON.parse(JSON.stringify(val));
+    }
   });
 
   afterEach(() => {

@@ -776,10 +776,7 @@ export class DJPlayer extends EventTarget {
             }
           }
 
-          if (mode === 'brake_tape_stop_simple') {
-            context.from.playbackRate = Math.max(0.2, 1 - (0.85 * progress));
-            context.to.playbackRate = Math.min(1, 0.9 + (0.1 * progress));
-          } else if (mode === 'backspin') {
+          if (mode === 'backspin') {
             // Décélération rapide jusqu'à l'arrêt complet
             context.from.playbackRate = progress < 0.35
               ? Math.max(0.04, 1 - Math.pow(progress / 0.35, 0.55))
@@ -890,12 +887,9 @@ export class DJPlayer extends EventTarget {
         return { from, to };
       }
       case 'fade_in_out': {
-        if (clampedT < 0.52) {
-          const phase = clampedT / 0.52;
-          return { from: startBaseFrom * (1 - phase), to: startBaseTo * 0.25 };
-        }
-        const phase = (clampedT - 0.52) / 0.48;
-        return { from: 0, to: startBaseTo + ((1 - startBaseTo) * phase) };
+        const from = startBaseFrom * Math.pow(1 - clampedT, 1.4);
+        const to = startBaseTo + ((1 - startBaseTo) * Math.pow(clampedT, 0.7));
+        return { from, to };
       }
       case 'filter_sweep_low_high': {
         const eased = Math.sqrt(clampedT);
@@ -1020,27 +1014,13 @@ export class DJPlayer extends EventTarget {
         };
       }
       case 'backspin': {
-        // Phase 1 : fromDeck décélère et s'arrête ; Phase 2 : silence ; Phase 3 : toDeck hard entry
-        if (clampedT < 0.35) {
-          return { from: startBaseFrom * (1 - Math.pow(clampedT / 0.35, 0.65)), to: 0 };
-        }
-        if (clampedT < 0.5) {
-          return { from: 0, to: 0 };
-        }
-        return { from: 0, to: startBaseTo + ((1 - startBaseTo) * ((clampedT - 0.5) / 0.5)) };
-      }
-      case 'fake_drop': {
-        // fromDeck fade rapide → silence complet → toDeck entre avec impact brutal
-        if (clampedT < 0.35) {
-          return { from: startBaseFrom * (1 - (clampedT / 0.35)), to: 0 };
-        }
-        if (clampedT < 0.55) {
-          return { from: 0, to: 0 };
-        }
-        return {
-          from: 0,
-          to: startBaseTo + ((1 - startBaseTo) * Math.min(1, (clampedT - 0.55) / 0.12)),
-        };
+        // Phase 1 : fromDeck décélère et s'arrête ; toDeck monte dès 20% pour éviter tout silence
+        const from = clampedT < 0.35
+          ? startBaseFrom * (1 - Math.pow(clampedT / 0.35, 0.65))
+          : 0;
+        const toPhase = Math.min(1, Math.max(0, (clampedT - 0.2) / 0.5));
+        const to = startBaseTo + ((1 - startBaseTo) * Math.pow(toPhase, 0.7));
+        return { from, to };
       }
       case 'echo_freeze': {
         // fromDeck maintenu avec plancher d'écho jusqu'à 65%, puis fade ; toDeck entre après 45%

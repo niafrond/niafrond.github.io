@@ -201,13 +201,6 @@
       "djApiType": null
     },
     {
-      "mode": "fake_drop",
-      "label": "Fake drop (silence + impact)",
-      "extraRamMb": 28,
-      "overlapMultiplier": 0.8,
-      "djApiType": null
-    },
-    {
       "mode": "echo_freeze",
       "label": "Echo freeze (écho gelé)",
       "extraRamMb": 195,

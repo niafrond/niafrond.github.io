@@ -2410,7 +2410,6 @@ const FX_MODE_LABELS = {
   kick_swap: 'Kick swap',
   beat_repeat: 'Beat repeat',
   backspin: 'Backspin',
-  fake_drop: 'Fake drop',
   echo_freeze: 'Echo freeze',
 };
 

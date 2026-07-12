@@ -30,17 +30,17 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-// ── SPEC-6.1 — 18 effect types ──────────────────────────────────────────────
+// ── SPEC-6.1 — 17 effect types ──────────────────────────────────────────────
 
 describe('SPEC-6.1 — Effect catalogue', () => {
-  test('exactly 18 types exist', () => {
-    expect(AUTO_DJ_FX_TYPES).toHaveLength(18);
+  test('exactly 17 types exist', () => {
+    expect(AUTO_DJ_FX_TYPES).toHaveLength(17);
   });
 
   const expectedTypes = [
     'filter', 'lowPass', 'highPass', 'echoDelay', 'reverb', 'flangerPhaser',
     'roll', 'loop', 'beatRepeat', 'brake', 'backspin', 'noise',
-    'eq', 'pitchTempo', 'keyShift', 'scratching', 'hotCues', 'sampling',
+    'eq', 'keyShift', 'scratching', 'hotCues', 'sampling',
   ];
 
   test.each(expectedTypes)('type "%s" is registered', (type) => {

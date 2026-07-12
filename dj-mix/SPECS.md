@@ -30,7 +30,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.2.3** GIVEN un crossfade en cours — WHEN le progrès `t` avance de `0` à `1` — THEN le volume de la platine sortante décroît et celui de la platine entrante croît selon la courbe définie par le mode de transition actif.
 - **SPEC-1.2.4** GIVEN un DJ Plan avec `crossfadeDurationSec > 0` — WHEN le crossfade est déclenché pour cette transition — THEN la durée du DJ Plan remplace temporairement la durée globale.
 
-### 1.3 Modes de transition (26 modes)
+### 1.3 Modes de transition (25 modes)
 
 #### 1.3.1 Catalogue
 
@@ -39,14 +39,14 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 | 1 | `auto` | 0 | 0 | — | — |
 | 2 | `crossfade_linear` | 18 | 1.0 | `start × (1−t)` | `start + (1−start) × t` |
 | 3 | `crossfade_logarithmic` | 20 | 1.02 | `start × cos(π/2 × t)` | `start + (1−start) × sin(π/2 × t)` |
-| 4 | `fade_in_out` | 24 | 1.05 | Fade rapide jusqu'à 52%, silence | Entrée retardée après 52% |
+| 4 | `fade_in_out` | 24 | 1.05 | `start × (1−t)^1.4` | `start + (1−start) × t^0.7` |
 | 5 | `cut_transition` | 6 | 0.12 | Coupe sèche | Entrée immédiate |
 | 6 | `filter_sweep_low_high` | 96 | 1.2 | `start × (1−√t)` + playback rate 0.86→1 | Hybride √t + linéaire, rate 1.08→0.9 |
 | 7 | `eq_transition_simple` | 44 | 1.08 | `start × (1 − 0.82×t)` | `start + (1−start) × t^1.2` |
 | 8 | `echo_out_light` | 128 | 1.35 | `max(0.06, start × (1−t))` (plancher 6%) | `start + (1−start) × t^1.05` |
 | 9 | `reverb_short_simple` | 172 | 1.55 | Soft jusqu'à 80%, puis linéaire | `t^1.3` |
 | 10 | `short_loop` | 108 | 1.22 | Linéaire | Modulé : `× (0.85 + 0.15×|sin(6πt)|)` |
-| 11 | `brake_tape_stop_simple` | 58 | 1.12 | `start × (1−t^1.6)` + décélération playback | `start + (1−start) × t^1.1` |
+| 11 | `brake_tape_stop_simple` | 58 | 1.12 | `start × (1−t^1.6)` | `start + (1−start) × t^1.1` |
 | 12 | `short_reverse` | 122 | 1.24 | `start × (1−t) × (1 − 0.18×sin(7πt))` | Linéaire |
 | 13 | `sidechain_basic` | 52 | 1.1 | Linéaire | Pump : `× (1 − 0.25×max(0,sin(8πt)))` |
 | 14 | `volume_ducking` | 40 | 1.06 | Duck à 40% du progrès | Linéaire |
@@ -59,9 +59,8 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 | 21 | `bass_swap` | 175 | 1.30 | `start × cos(π/2 × t^0.85)` | `start + … × t^0.85` |
 | 22 | `kick_swap` | 145 | 1.25 | S-curve cosine | Entrée retardée à 30% : `(t−0.3)/0.7` |
 | 23 | `beat_repeat` | 112 | 1.20 | Plein jusqu'à 65%, puis phase out | Minimal (5%) jusqu'à 65%, puis entrée dure |
-| 24 | `backspin` | 85 | 0.95 | 3 phases : décél rapide (0–35%), silence (35–50%), 0 après | Entrée après 50% |
-| 25 | `fake_drop` | 28 | 0.80 | Drop rapide (0–35%), silence (35–45%) | Impact dur à 45% : `min(1, (t−0.45)/0.12)` |
-| 26 | `echo_freeze` | 195 | 1.48 | Plancher 12% gelé jusqu'à 65%, puis fade | Entrée retardée à 45% : `(t−0.45)^0.8` |
+| 24 | `backspin` | 85 | 0.95 | Décélération rapide jusqu'à 35%, puis 0 | Entrée dès 20% (avant l'arrêt complet) : `((t−0.2)/0.5)^0.7` |
+| 25 | `echo_freeze` | 195 | 1.48 | Plancher 12% gelé jusqu'à 65%, puis fade | Entrée retardée à 45% : `(t−0.45)^0.8` |
 
 #### 1.3.2 Coût RAM
 
@@ -90,6 +89,13 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.3.5.3** L'intervalle de ré-ancrage (`tickMs`) est identique à `windowMs` pour créer une boucle exacte sur la division rythmique.
 - **SPEC-1.3.5.4** La durée du loop roll est `crossfadeDurationMs × 0.65` pour la platine sortante, et `(crossfadeDurationMs × 0.65) − 350 ms` pour la platine entrante (délai initial déduit).
 - **SPEC-1.3.5.5** Les deux platines utilisent le BPM de la piste entrante pour maintenir la cohérence rythmique perçue pendant la transition.
+
+#### 1.3.6 Continuité audio (pas de silence)
+
+- **SPEC-1.3.6.1** GIVEN un mode de transition autre que `cut_transition` (coupure instantanée intentionnelle) — WHEN le crossfade progresse — THEN la somme des volumes `from + to` ne doit jamais rester sous `0.05` pendant plus de `100 ms`.
+- **SPEC-1.3.6.2** GIVEN le mode `fade_in_out` — WHEN le crossfade progresse — THEN le volume entrant (`to`) commence sa montée dès `t=0` (courbe `t^0.7`, pas de palier plat initial).
+- **SPEC-1.3.6.3** GIVEN le mode `backspin` — WHEN le crossfade progresse — THEN le volume entrant (`to`) commence sa montée dès `t=0.2`, avant l'arrêt complet du deck sortant à `t=0.35`, évitant tout palier de silence total.
+- **SPEC-1.3.6.4** GIVEN le mode `brake_tape_stop_simple` — WHEN le crossfade progresse — THEN le playback rate des deux platines suit le comportement générique (retour lissé vers `1`, `+= (1 − rate) × 0.18` par tick) — ce mode n'applique plus de décélération dédiée du playback rate.
 
 ### 1.4 Contrôle du playback
 
@@ -384,7 +390,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 ## 6. Auto FX (DJ FX automatiques)
 
-### 6.1 Effets disponibles (18 types)
+### 6.1 Effets disponibles (17 types)
 
 | # | Clé | Catégorie | Défaut |
 |---|-----|-----------|--------|
@@ -401,11 +407,10 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 | 11 | `backspin` | transport | ON |
 | 12 | `noise` | textural | ON |
 | 13 | `eq` | filter | ON |
-| 14 | `pitchTempo` | pitch | ON |
-| 15 | `keyShift` | pitch | ON |
-| 16 | `scratching` | scratch | ON |
-| 17 | `hotCues` | cue | **OFF** |
-| 18 | `sampling` | sample | ON |
+| 14 | `keyShift` | pitch | ON |
+| 15 | `scratching` | scratch | ON |
+| 16 | `hotCues` | cue | **OFF** |
+| 17 | `sampling` | sample | ON |
 
 ### 6.2 Déclenchement (canTriggerAutoDjFx)
 
