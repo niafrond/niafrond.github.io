@@ -2623,6 +2623,9 @@ const filRougeDownloader = createFilRougeDownloader({
       filRougeMixInfoBtn.disabled = true;
     }
   },
+  getDownloaderApiUrl,
+  getDownloaderApiToken,
+  onAuthExpired: () => showToast('Session expirée : renouvelez le token API dans Config', true),
 });
 
 if (filRougeDownloadAllBtn) {
@@ -2647,10 +2650,6 @@ if (filRougeDownloadAllBtn) {
 
 if (filRougeMixInfoBtn) {
   filRougeMixInfoBtn.addEventListener('click', () => {
-    if (filRougeDownloadAllBtn?.disabled) {
-      showToast('Téléchargement en cours', true);
-      return;
-    }
     const tracks = filRougeManager.getPlaylist();
     filRougeDownloader.downloadMissingMixInfo(tracks).catch(err => {
       showToast('Mix suggestions : erreur', true);
@@ -2666,7 +2665,7 @@ if (filRougeMixInfoBtn) {
 // Mise à jour des statuts après un Background Fetch terminé par le SW
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', e => {
-    const { type, succeededKeys = [], failedKeys = [] } = e?.data || {};
+    const { type, id, succeededKeys = [], failedKeys = [] } = e?.data || {};
     if (type !== 'BG_FETCH_DONE' && type !== 'BG_FETCH_FAIL') return;
 
     if (type === 'BG_FETCH_FAIL') {
@@ -2679,6 +2678,7 @@ if ('serviceWorker' in navigator) {
         }
       }
       renderFilRouge();
+      filRougeDownloader.recordBackgroundFetchFail?.(id).catch(() => {});
       scheduleDjSetQualityRefresh();
       return;
     }
@@ -2693,6 +2693,7 @@ if ('serviceWorker' in navigator) {
       }
     }
     renderFilRouge();
+    filRougeDownloader.recordBackgroundFetchResult?.(id, succeededKeys, failedKeys).catch(() => {});
     showToast(`Téléchargement terminé : ${succeededKeys.length} réussi${succeededKeys.length > 1 ? 's' : ''}`);
     scheduleDjSetQualityRefresh();
   });
@@ -3867,6 +3868,10 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
 
   // Vérification et téléchargement au démarrage des morceaux du fil rouge.
   startFilRougeStartupCacheSync().catch(() => {});
+
+  // Reprise des lots de téléchargement ("Tout télécharger") interrompus lors
+  // d'une session précédente (SPEC-19.2).
+  filRougeDownloader.resumeIncompleteBatches?.(filRougeManager.getPlaylist()).catch(() => {});
 
   // DJ Planner : sélecteur de profil de set + recalcul complet des transitions du fil rouge.
   initDjSetProfileSelect().catch(() => {});

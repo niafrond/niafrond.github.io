@@ -232,4 +232,30 @@ describe('downloadMissingMixInfo — SPEC-3.5.7', () => {
 
     expect(mocks.showToast).toHaveBeenCalledWith('Mix info indisponible', true);
   });
+
+  test('runs to completion even while downloadAll is still downloading other tracks', async () => {
+    let resolvePrefetch;
+    let downloadAllSettled = false;
+    const downloading = makeTrack({ id: 'track-downloading', name: 'Song Downloading', artist: 'Artist D' });
+    const doneMissingInfo = makeTrack({ id: 'track-done', name: 'Song Done', artist: 'Artist E' });
+    const { downloader, mocks, statuses } = makeDownloader({
+      prefetchTrackToLocalCache: jest.fn(() => new Promise((resolve) => { resolvePrefetch = resolve; })),
+    });
+    statuses.set(doneMissingInfo.id, { downloadState: 'done', hasMixInfo: false });
+
+    const downloadAllPromise = downloader.downloadAll([downloading]).then((r) => { downloadAllSettled = true; return r; });
+    // Let downloadAll progress until it's blocked on prefetchTrackToLocalCache.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(resolvePrefetch).toEqual(expect.any(Function));
+
+    await downloader.downloadMissingMixInfo([doneMissingInfo]);
+
+    expect(statuses.get(doneMissingInfo.id)).toMatchObject({ hasMixInfo: true });
+    expect(downloadAllSettled).toBe(false);
+
+    resolvePrefetch(true);
+    await downloadAllPromise;
+    expect(downloadAllSettled).toBe(true);
+    expect(mocks.prefetchTrackToLocalCache).toHaveBeenCalledWith(downloading);
+  });
 });

@@ -556,7 +556,9 @@ export function createAudioSourceManager(options) {
       apiHealthMonitor?.recordFailure();
       const body = await res.text().catch(() => '');
       logWarn('api.download.response.nonOk', { status: res.status, body });
-      throw new Error(`HTTP ${res.status} ${body}`.trim());
+      const err = new Error(`HTTP ${res.status} ${body}`.trim());
+      err.status = res.status;
+      throw err;
     }
 
     apiHealthMonitor?.recordSuccess();
@@ -594,7 +596,9 @@ export function createAudioSourceManager(options) {
         id: item?.id,
         status: mediaRes.status,
       });
-      throw new Error(`Téléchargement URL API impossible (HTTP ${mediaRes.status})`);
+      const err = new Error(`Téléchargement URL API impossible (HTTP ${mediaRes.status})`);
+      err.status = mediaRes.status;
+      throw err;
     }
 
     const mediaBlob = await mediaRes.blob();
@@ -1148,7 +1152,7 @@ export function createAudioSourceManager(options) {
    * in browser Cache Storage, then immediately revokes the ephemeral blob URL.
    * Returns true on success, false if skipped or failed.
    */
-  async function prefetchTrackToLocalCache(item) {
+  async function prefetchTrackToLocalCache(item, { onError } = {}) {
     if (!item?.name || !item?.artist) return false;
     if (apiHealthMonitor?.isOffline()) return false;
 
@@ -1165,7 +1169,7 @@ export function createAudioSourceManager(options) {
       return inFlight;
     }
 
-    const attempt = _prefetchTrackToLocalCacheUncached(item, cacheKey);
+    const attempt = _prefetchTrackToLocalCacheUncached(item, cacheKey, { onError });
     inFlightPrefetches.set(cacheKey, attempt);
     try {
       return await attempt;
@@ -1174,7 +1178,7 @@ export function createAudioSourceManager(options) {
     }
   }
 
-  async function _prefetchTrackToLocalCacheUncached(item, cacheKey) {
+  async function _prefetchTrackToLocalCacheUncached(item, cacheKey, { onError } = {}) {
     const persisted = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName).catch(() => null);
     if (persisted) {
       URL.revokeObjectURL(persisted);
@@ -1189,6 +1193,7 @@ export function createAudioSourceManager(options) {
       return true;
     } catch (err) {
       logWarn('prefetch.failed', { cacheKey, name: item?.name, error: err?.message });
+      onError?.(err);
       return false;
     }
   }

@@ -2,7 +2,7 @@
  * sw.js — Service Worker pour DJ Mix PWA
  */
 
-const CACHE = 'djmix-v1.229.1';
+const CACHE = 'djmix-v1.229.2';
 
 const ASSETS = [
   './',
@@ -53,6 +53,8 @@ const ASSETS = [
   './lib/djPlanManager.js',
   './lib/djTransitionMapping.js',
   './lib/filRougeDownloader.js',
+  './lib/downloadBatchStore.js',
+  './lib/downloadBatchManager.js',
 ];
 
 self.addEventListener('install', e => {
@@ -111,6 +113,17 @@ self.addEventListener('backgroundfetchclick', e => {
   e.waitUntil(self.clients.openWindow('./'));
 });
 
+// Nombre de records traités en parallèle : évite de charger des centaines de
+// blobs audio en mémoire simultanément pour un gros lot (SPEC-19.5).
+const BG_FETCH_RECORD_CONCURRENCY = 5;
+
+async function _processRecordsInChunks(records, handler) {
+  for (let i = 0; i < records.length; i += BG_FETCH_RECORD_CONCURRENCY) {
+    const chunk = records.slice(i, i + BG_FETCH_RECORD_CONCURRENCY);
+    await Promise.all(chunk.map(handler));
+  }
+}
+
 async function _handleBgFetchSuccess(bgFetch) {
   const audioCache = await caches.open(AUDIO_CACHE);
   const records = await bgFetch.matchAll();
@@ -118,7 +131,7 @@ async function _handleBgFetchSuccess(bgFetch) {
   const succeededKeys = [];
   const failedKeys = [];
 
-  await Promise.all(records.map(async record => {
+  await _processRecordsInChunks(records, async record => {
     const url = new URL(record.request.url);
     const cacheKey = url.searchParams.get('_ck');
 
@@ -157,13 +170,13 @@ async function _handleBgFetchSuccess(bgFetch) {
     } else {
       failedKeys.push(cacheKey);
     }
-  }));
+  });
 
   const done = succeededKeys.length;
   const failed = failedKeys.length;
 
   const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
-  clients.forEach(c => c.postMessage({ type: 'BG_FETCH_DONE', succeededKeys, failedKeys }));
+  clients.forEach(c => c.postMessage({ type: 'BG_FETCH_DONE', id: bgFetch.id, succeededKeys, failedKeys }));
 
   await self.registration.showNotification('DJ Mix — Téléchargement terminé', {
     body: `${done} morceau${done > 1 ? 'x' : ''} mis en cache${failed > 0 ? ` — ${failed} échec${failed > 1 ? 's' : ''}` : ''}`,
@@ -175,7 +188,7 @@ async function _handleBgFetchSuccess(bgFetch) {
 
 async function _handleBgFetchFail(bgFetch) {
   const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
-  clients.forEach(c => c.postMessage({ type: 'BG_FETCH_FAIL' }));
+  clients.forEach(c => c.postMessage({ type: 'BG_FETCH_FAIL', id: bgFetch.id }));
 
   await self.registration.showNotification('DJ Mix — Téléchargement échoué', {
     body: 'Le téléchargement en arrière-plan a échoué.',

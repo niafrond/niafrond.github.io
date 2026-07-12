@@ -246,7 +246,8 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
   - GIVEN aucun morceau `done` sans mix info — THEN toast « Aucune mix info manquante », aucun appel API.
   - GIVEN N morceaux traités — THEN toast « Mix info mis à jour (N morceau(x)) », ou « Mix info mis à jour (D/N), F échec(s) » si `F` échecs.
   - Pendant l'exécution, le bouton affiche `Mix info : done / total` et est désactivé.
-  - Les boutons « Tout télécharger » et « Mix suggestions manquantes » s'excluent mutuellement : cliquer sur l'un pendant que l'autre est en cours affiche un toast d'avertissement et n'a aucun effet.
+  - Le bouton « Mix suggestions manquantes » peut être déclenché à tout moment, y compris pendant qu'un « Tout télécharger » est en cours : `downloadMissingMixInfo` ne touche que les morceaux `downloadState: 'done'` (jamais ceux en cours de téléchargement), et `prefetchTrackToLocalCache` déduplique déjà les téléchargements audio par clé de cache — les deux tâches peuvent donc tourner en parallèle sans conflit.
+  - À l'inverse, cliquer sur « Tout télécharger » pendant qu'une récupération manuelle de mix suggestions est en cours affiche un toast d'avertissement et n'a aucun effet.
 
 ### 3.6 Tri de la playlist
 
@@ -946,3 +947,46 @@ Logique pure (parsing réponse, construction de payload) extraite dans `lib/fing
 - **SPEC-18.1.3** GIVEN `data.matched === false` ET `data.suggestedTrackName` présent — THEN une liste d'UNE seule suggestion `{ trackName, artistName, score, reason }` est construite (l'API ne renvoie plus un tableau `suggestions[]`).
 - **SPEC-18.1.4** `_fpCorrectAndDownload(replacement)` appelle `POST /api/fingerprint/correct` avec `buildFingerprintCorrectRequestBody(trackRef, replacement)` : `{ artistName, trackName, replacement: { trackName, artistName } }` — le payload `replacement` ne contient plus `id`/`artUrl`/`duration_ms`/`uri`/`downloadUrl`.
 - **SPEC-18.1.5** La réponse de `/correct` ne contient plus de `downloadUrl` : l'enchaînement automatique vers `POST /api/fingerprint/download` a été retiré. Le toast final est déterminé par `buildFingerprintCorrectToastMessage(data)` à partir de `data.corrected`/`data.renamed`.
+
+---
+
+## 19. Téléchargement de masse persistant — "Tout télécharger" (DownloadBatch)
+
+Moteur de téléchargement de masse pour le bouton "Tout télécharger" (`filRougeDownloader.downloadAll`), extrait dans `lib/downloadBatchStore.js` (persistance IndexedDB) et `lib/downloadBatchManager.js` (orchestration). Portée limitée à ce bouton : la synchronisation au chargement de la page (`startFilRougeStartupCacheSync`), la boucle de sync Spotify et l'import TXT conservent leur propre logique de batch en mémoire, inchangée (SPEC-3.4.x).
+
+### 19.1 Schéma IndexedDB
+
+- **SPEC-19.1.1** Base `dj-mix-downloads` (version `1`), deux stores : `batches` (`keyPath: 'id'`) et `items` (`keyPath: 'id'`, index non-unique `batchId`).
+- **SPEC-19.1.2** `DownloadBatch` : `{ id, createdAt, updatedAt, status, totalFiles, completedFiles, failedFiles, transport }`. `status` ∈ `pending` (jamais utilisé — un batch est créé directement `running`) | `running` | `paused-auth` | `completed` | `failed`. `transport` ∈ `null` (avant sélection) | `'bg-fetch'` | `'internal-queue'`.
+- **SPEC-19.1.3** `DownloadItem` : `{ id, batchId, cacheKey, trackName, artistName, filename, size, status, retries, startedAt, completedAt }`. `id = \`${batchId}::${cacheKey}\`` (et non le simple `cacheKey`) pour qu'un même morceau présent dans deux lots distincts (ex. un lot `paused-auth` orphelin et un nouveau lot relancé) n'entre jamais en collision sur la clé primaire. `status` ∈ `pending` | `downloading` | `completed` | `failed`. `size` reste `null` en v1 (non exposé par `prefetchTrackToLocalCache`).
+- **SPEC-19.1.4** Toute erreur IndexedDB est silencieuse : chaque méthode de `downloadBatchStore` retourne une valeur sûre (`null`, `[]`, `0`, `false`) plutôt que de rejeter (même convention que SPEC-17.2.4). GIVEN `indexedDB` indisponible (navigateur, ou environnement de test sans polyfill) — THEN toutes les méthodes deviennent des no-op silencieux.
+- **SPEC-19.1.5** `updateItem(itemId, patch)` accepte soit un objet patch statique, soit une fonction `(existing) => patch` — utilisée pour incrémenter `retries` sans lecture préalable côté appelant.
+
+### 19.2 Reprise au démarrage de la PWA
+
+- **SPEC-19.2.1** Au démarrage, `filRougeDownloader.resumeIncompleteBatches(playlist)` est appelé (en parallèle de SPEC-3.4.x, protégé par la déduplication SPEC-3.4.10) et lit tous les `DownloadBatch` dont `status !== 'completed'`.
+- **SPEC-19.2.2** Pour chaque lot incomplet, les `DownloadItem` dont `status === 'completed'` sont ignorés (jamais re-téléchargés) ; ceux à `pending` ou `failed` sont traités de façon identique (retentative).
+- **SPEC-19.2.3** GIVEN `transport === 'bg-fetch'` ET `swReg.backgroundFetch.get(batchId)` retourne un enregistrement actif — THEN le lot n'est pas retouché : le navigateur poursuit nativement la livraison et les événements `BG_FETCH_DONE`/`BG_FETCH_FAIL` du SW mettront IndexedDB à jour à la fin (SPEC-19.3.4).
+- **SPEC-19.2.4** GIVEN un lot `bg-fetch` sans enregistrement actif (perdu suite à un redémarrage complet du navigateur, permission révoquée, etc.) — THEN ses items restants sont repris via la file interne (SPEC-19.3.2).
+- **SPEC-19.2.5** GIVEN un `DownloadItem` dont le `cacheKey` ne correspond plus à aucun morceau du Fil Rouge actuel (supprimé de la playlist depuis) — THEN il est ignoré silencieusement, sans erreur.
+
+### 19.3 Sélection du transport
+
+- **SPEC-19.3.1** GIVEN `swReg.backgroundFetch` disponible ET une URL d'API downloader configurée — THEN le lot est dispatché via `registration.backgroundFetch.fetch(batchId, requests, options)` ; chaque `Request` est un `POST {apiUrl}/api/download?_ck=<cacheKey>` (+ `token=` si configuré) avec le même corps JSON que `downloadTrackViaApi`. Le paramètre `_ck` est lu côté Service Worker (`sw.js`) pour retrouver le morceau correspondant.
+- **SPEC-19.3.2** GIVEN Background Fetch indisponible, non configuré, OU un échec synchrone au dispatch — THEN une file interne à parallélisme adaptatif est utilisée (`computeNextBatchSize`, taille initiale `3`, identique à SPEC-3.4.1/3.4.9). Chaque item passe par `pending` → `downloading` → `completed`/`failed`, écrit en IndexedDB à chaque transition en plus du statut en mémoire déjà affiché (`setFilRougeTrackStatus`/`renderTrackStatus`).
+- **SPEC-19.3.3** Un lot commence toujours par créer son `DownloadBatch` et tous ses `DownloadItem` (`status: 'pending'`) dans IndexedDB AVANT toute activité réseau — aucun état de progression n'existe uniquement en mémoire.
+- **SPEC-19.3.4** `sw.js` transmet `id: bgFetch.id` (= l'identifiant du lot) dans les messages `BG_FETCH_DONE`/`BG_FETCH_FAIL` postés à la page. `filRougeDownloader.recordBackgroundFetchResult(id, succeededKeys, failedKeys)` marque les items correspondants `completed`/`failed` dans IndexedDB ; `recordBackgroundFetchFail(id)` (pas de détail par item disponible) marque `failed` tout item encore `downloading` de ce lot.
+
+### 19.4 Expiration d'authentification
+
+- **SPEC-19.4.1** `downloadTrackViaApi` attache `err.status` (code HTTP) à l'erreur levée sur réponse non-OK. `prefetchTrackToLocalCache(item, { onError })` transmet cette erreur à l'appelant via le callback optionnel `onError`, sans changer sa valeur de retour (`boolean`).
+- **SPEC-19.4.2** GIVEN un item de la file interne échoue avec `err.status` `401` ou `403` — THEN ce n'est PAS compté comme un échec (`downloadState` remis à `idle`, pas `error` ; item IndexedDB remis à `pending`, pas `failed`) et le traitement du lot s'arrête immédiatement (les items restants du lot ne sont pas tentés).
+- **SPEC-19.4.3** Le lot passe à `status: 'paused-auth'` en IndexedDB, tous les items non encore tentés repassent à `pending` (IndexedDB) et `idle` (mémoire), et `onAuthExpired()` est appelé — câblé dans `main.js` sur `showToast('Session expirée : renouvelez le token API dans Config', true)`.
+- **SPEC-19.4.4** Reprendre : un nouveau clic sur "Tout télécharger" (après renouvellement du token dans Config) suffit — les items `pending` sont réévalués normalement par `downloadAll`, aucune action de reprise dédiée n'est nécessaire.
+- **SPEC-19.4.5** Cette détection est limitée à la file interne. Pour un lot Background Fetch, le jeton est intégré aux requêtes au moment du dispatch et ne peut pas être remplacé en cours de vol (limitation de la plateforme) : une expiration s'y manifeste comme un échec ordinaire par item dans `failedKeys` (SPEC-19.3.4), sans pause explicite du lot.
+
+### 19.5 Discipline mémoire
+
+- **SPEC-19.5.1** Aucun Blob agrégé n'est jamais construit pour plusieurs fichiers : chaque téléchargement (file interne ou Background Fetch) persiste son fichier en Cache Storage immédiatement après réception (`persistAudioBlob`, un `cache.put()` par morceau).
+- **SPEC-19.5.2** La file interne ne garde en mémoire que la tranche courante (`2` à `10` morceaux en parallèle selon SPEC-3.4.9), jamais l'intégralité d'un gros lot.
+- **SPEC-19.5.3** Côté Service Worker, `_handleBgFetchSuccess` traite les enregistrements Background Fetch par groupes de `5` en parallèle (`BG_FETCH_RECORD_CONCURRENCY`) plutôt que tous simultanément, pour éviter de charger des centaines de blobs audio en mémoire à la fois sur un gros lot.
