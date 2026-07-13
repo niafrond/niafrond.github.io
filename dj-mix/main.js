@@ -8,8 +8,12 @@ import { DJPlayer } from './player.js';
 import { initServiceWorker, installPwa, initAutoFullscreen, initApkDownloadLink, checkApkUpdate, doApkUpdate, forceUpdatePwa } from './pwa.js';
 import { pushPlaybackState, pushQueue, onMediaCommand, getPendingMediaCommand } from './lib/androidAutoBridge.js';
 
-// --- Wake Lock (garder l'écran allumé pendant la lecture) ---
+// --- Wake Lock (garder l'écran allumé pendant la lecture ou un téléchargement
+// de masse via la file interne, SPEC-19.7) ---
 let wakeLock = null;
+// Raisons actives réclamant l'écran allumé : 'playback' | 'download'. L'écran
+// n'est libéré que quand plus aucune raison n'est active.
+const wakeLockReasons = new Set();
 async function requestWakeLock() {
   try {
     if ('wakeLock' in navigator) {
@@ -27,6 +31,16 @@ function releaseWakeLock() {
   if (wakeLock) {
     wakeLock.release().catch(() => {});
     wakeLock = null;
+  }
+}
+// Active/désactive une raison de Wake Lock ; ré-évalue l'état global du lock.
+function setWakeLockReason(reason, active) {
+  if (active) wakeLockReasons.add(reason);
+  else wakeLockReasons.delete(reason);
+  if (wakeLockReasons.size > 0) {
+    requestWakeLock();
+  } else {
+    releaseWakeLock();
   }
 }
 
@@ -74,19 +88,27 @@ function stopMediaKeepAlive() {
 }
 
 // Quand le navigateur repasse au premier plan (écran rallumé ou retour de l'arrière-plan) :
-// - si lecture en cours : ré-acquérir le Wake Lock (il est libéré automatiquement par le
-//   navigateur lors du passage en arrière-plan) pour que l'écran reste allumé.
-// - sinon : relancer le keepalive audio silencieux (Android/iOS peut l'avoir tué).
+// - si une raison de Wake Lock est active (lecture ou téléchargement de masse via la file
+//   interne) : le ré-acquérir (il est libéré automatiquement par le navigateur lors du
+//   passage en arrière-plan) pour que l'écran reste allumé.
+// - sinon (pas de lecture) : relancer le keepalive audio silencieux (Android/iOS peut l'avoir tué).
 // Dans tous les cas, forcer une sonde immédiate sur le serveur local pour détecter
-// rapidement toute perte de connexion survenue pendant que l'écran était éteint.
+// rapidement toute perte de connexion survenue pendant que l'écran était éteint, et
+// reprendre tout lot de téléchargement resté bloqué par la suspension JS de l'onglet
+// pendant l'arrière-plan (SPEC-19.7.2) — seulement si aucune file interne ne tourne
+// déjà dans cet onglet, pour éviter un double traitement du même lot.
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
-    if (uiState.isPlaying) {
+    if (wakeLockReasons.size > 0) {
       requestWakeLock();
-    } else {
+    }
+    if (!uiState.isPlaying) {
       startMediaKeepAlive();
     }
     apiHealthMonitor.probe();
+    if (!filRougeDownloader.isInternalQueueRunning?.()) {
+      filRougeDownloader.resumeIncompleteBatches?.(filRougeManager.getPlaylist()).catch(() => {});
+    }
   }
 });
 import {
@@ -2625,6 +2647,9 @@ const filRougeDownloader = createFilRougeDownloader({
   getDownloaderApiUrl,
   getDownloaderApiToken,
   onAuthExpired: () => showToast('Session expirée : renouvelez le token API dans Config', true),
+  // Garde l'écran allumé pendant que la file interne dépend du JS de page pour
+  // continuer (Background Fetch n'en a pas besoin, le navigateur gère seul) — SPEC-19.7.
+  onInternalQueueActiveChange: (active) => setWakeLockReason('download', active),
 });
 
 if (filRougeDownloadAllBtn) {
@@ -4079,13 +4104,12 @@ function hookPlayerEvents() {
       navigator.mediaSession.playbackState = uiState.isPlaying ? 'playing' : 'paused';
     }
     pushPlaybackState({ playing: uiState.isPlaying, positionMs: playbackPositionMs });
-    // Wake Lock: activer si lecture, relâcher sinon
+    // Wake Lock: activer si lecture, relâcher sinon (raison 'playback', SPEC-19.7)
+    setWakeLockReason('playback', uiState.isPlaying);
     if (uiState.isPlaying) {
-      requestWakeLock();
       stopMediaKeepAlive(); // Lecture réelle → pas besoin du keepalive silencieux
       inactivePreloadWatcher.start();
     } else {
-      releaseWakeLock();
       startMediaKeepAlive(); // Maintenir la notification Android pendant 10 minutes max
       inactivePreloadWatcher.stop();
     }

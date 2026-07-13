@@ -21,6 +21,7 @@ import { appendApiToken } from './downloaderConfig.js';
  * @param {() => string} [opts.getDownloaderApiUrl]
  * @param {() => string} [opts.getDownloaderApiToken]
  * @param {() => void} [opts.onAuthExpired]
+ * @param {(active: boolean) => void} [opts.onInternalQueueActiveChange] - notifié quand la file interne démarre/s'arrête (permet à l'appelant de garder l'écran allumé, SPEC-19.7)
  * @param {(ms: number) => Promise<void>} [opts.waitFn] - injectable pour les tests (backoff des retentatives)
  */
 export function createDownloadBatchManager({
@@ -36,8 +37,32 @@ export function createDownloadBatchManager({
   getDownloaderApiUrl,
   getDownloaderApiToken,
   onAuthExpired,
+  onInternalQueueActiveChange,
   waitFn = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }) {
+  let internalQueueActiveCount = 0;
+
+  /**
+   * Enveloppe tout passage par la file interne (parallèle ou retentatives) :
+   * notifie `onInternalQueueActiveChange` sur la transition 0→1 / 1→0 d'un
+   * compteur, pour que l'appelant puisse acquérir un Wake Lock écran pendant
+   * que du JS de page doit rester actif (SPEC-19.7.1).
+   */
+  async function _withInternalQueueActive(fn) {
+    internalQueueActiveCount++;
+    if (internalQueueActiveCount === 1) onInternalQueueActiveChange?.(true);
+    try {
+      return await fn();
+    } finally {
+      internalQueueActiveCount--;
+      if (internalQueueActiveCount === 0) onInternalQueueActiveChange?.(false);
+    }
+  }
+
+  function isInternalQueueRunning() {
+    return internalQueueActiveCount > 0;
+  }
+
   async function requestNotifPermission() {
     if (!('Notification' in window)) return false;
     if (Notification.permission === 'granted') return true;
@@ -375,7 +400,9 @@ export function createDownloadBatchManager({
     }
 
     await store?.updateBatch(batchId, { transport: 'internal-queue' });
-    const result = await _runInternalQueueWithRetries({ batchId, tracks: toFetch, total, swReg });
+    const result = await _withInternalQueueActive(() => (
+      _runInternalQueueWithRetries({ batchId, tracks: toFetch, total, swReg })
+    ));
 
     if (!result.authPaused) {
       await store?.updateBatch(batchId, {
@@ -446,13 +473,13 @@ export function createDownloadBatchManager({
     const swReg = await getSwReg();
 
     const [retry] = await Promise.all([
-      _retryFailedTracks({
+      _withInternalQueueActive(() => _retryFailedTracks({
         batchId,
         failedTracks,
         total,
         doneOffset: succeededKeys.length,
         swReg,
-      }),
+      })),
       mixInfoTask,
     ]);
 
@@ -528,12 +555,14 @@ export function createDownloadBatchManager({
       for (const track of resumableTracks) setFilRougeTrackStatus(track, { downloadState: 'idle' });
       await store.updateBatch(batch.id, { transport: 'internal-queue', status: 'running', updatedAt: Date.now() });
 
-      const result = await _runInternalQueueWithRetries({
-        batchId: batch.id,
-        tracks: resumableTracks,
-        total: resumableTracks.length,
-        swReg,
-      });
+      const result = await _withInternalQueueActive(() => (
+        _runInternalQueueWithRetries({
+          batchId: batch.id,
+          tracks: resumableTracks,
+          total: resumableTracks.length,
+          swReg,
+        })
+      ));
       changed = true;
 
       if (!result.authPaused) {
@@ -554,5 +583,6 @@ export function createDownloadBatchManager({
     resumeIncompleteBatches,
     recordBackgroundFetchResult,
     recordBackgroundFetchFail,
+    isInternalQueueRunning,
   };
 }

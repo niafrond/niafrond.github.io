@@ -17,6 +17,7 @@ import { createDownloadBatchManager } from './downloadBatchManager.js';
  * @param {() => string} [opts.getDownloaderApiUrl]
  * @param {() => string} [opts.getDownloaderApiToken]
  * @param {() => void} [opts.onAuthExpired]
+ * @param {(active: boolean) => void} [opts.onInternalQueueActiveChange] - notifié quand la file interne démarre/s'arrête (Wake Lock écran, SPEC-19.7)
  * @param {(ms: number) => Promise<void>} [opts.waitFn] - injectable pour les tests (backoff des retentatives)
  */
 export function createFilRougeDownloader({
@@ -34,6 +35,7 @@ export function createFilRougeDownloader({
   getDownloaderApiUrl,
   getDownloaderApiToken,
   onAuthExpired,
+  onInternalQueueActiveChange,
   waitFn,
 }) {
   const downloadBatchManager = createDownloadBatchManager({
@@ -49,6 +51,7 @@ export function createFilRougeDownloader({
     getDownloaderApiUrl,
     getDownloaderApiToken,
     onAuthExpired,
+    onInternalQueueActiveChange,
     ...(waitFn ? { waitFn } : {}),
   });
 
@@ -172,5 +175,6 @@ export function createFilRougeDownloader({
     resumeIncompleteBatches: downloadBatchManager.resumeIncompleteBatches,
     recordBackgroundFetchResult: downloadBatchManager.recordBackgroundFetchResult,
     recordBackgroundFetchFail: downloadBatchManager.recordBackgroundFetchFail,
+    isInternalQueueRunning: downloadBatchManager.isInternalQueueRunning,
   };
 }

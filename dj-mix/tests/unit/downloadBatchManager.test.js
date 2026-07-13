@@ -477,4 +477,83 @@ describe('downloadBatchManager', () => {
       expect(await store.getItem('b1::gone')).toMatchObject({ status: 'pending' });
     });
   });
+
+  describe('onInternalQueueActiveChange / isInternalQueueRunning (SPEC-19.7)', () => {
+    test('startBatch: toggles true then false around an internal-queue run', async () => {
+      const onInternalQueueActiveChange = jest.fn();
+      const { manager } = makeManager({ onInternalQueueActiveChange });
+
+      expect(manager.isInternalQueueRunning()).toBe(false);
+      await manager.startBatch([makeTrack()]);
+
+      expect(onInternalQueueActiveChange.mock.calls).toEqual([[true], [false]]);
+      expect(manager.isInternalQueueRunning()).toBe(false);
+    });
+
+    test('startBatch: never called when the batch is fully handled by Background Fetch', async () => {
+      const bgFetchFn = jest.fn().mockResolvedValue(undefined);
+      const swReg = { backgroundFetch: { get: jest.fn().mockResolvedValue(null), fetch: bgFetchFn } };
+      mockServiceWorker(swReg);
+      const onInternalQueueActiveChange = jest.fn();
+      const { manager } = makeManager({
+        onInternalQueueActiveChange,
+        getDownloaderApiUrl: jest.fn().mockReturnValue('http://api.test'),
+      });
+
+      const result = await manager.startBatch([makeTrack()]);
+
+      expect(result.backgrounded).toBe(true);
+      expect(onInternalQueueActiveChange).not.toHaveBeenCalled();
+    });
+
+    test('recordBackgroundFetchResult: toggles around the internal-queue retry of failed keys', async () => {
+      const badTrack = makeTrack({ id: 'bad', name: 'Song Bad', artist: 'Artist Bad' });
+      const onInternalQueueActiveChange = jest.fn();
+      const { manager, mocks } = makeManager({
+        onInternalQueueActiveChange,
+        prefetchTrackToLocalCache: jest.fn().mockResolvedValue(true),
+      });
+      const store = mocks.store;
+      const batchId = 'batch-retry';
+      await store.createBatch({
+        batch: { id: batchId, status: 'running', totalFiles: 1, completedFiles: 0, failedFiles: 0, transport: 'bg-fetch' },
+        items: [{ id: `${batchId}::bad`, batchId, cacheKey: 'bad', status: 'downloading' }],
+      });
+
+      await manager.recordBackgroundFetchResult(batchId, [], ['bad'], [badTrack]);
+
+      expect(onInternalQueueActiveChange.mock.calls).toEqual([[true], [false]]);
+    });
+
+    test('resumeIncompleteBatches: toggles around resuming an internal-queue batch', async () => {
+      const track = makeTrack({ id: 'resume-me' });
+      const onInternalQueueActiveChange = jest.fn();
+      const { manager, mocks } = makeManager({ onInternalQueueActiveChange });
+      const store = mocks.store;
+      await store.createBatch({
+        batch: { id: 'b1', status: 'paused-auth', totalFiles: 1, completedFiles: 0, failedFiles: 0, transport: 'internal-queue' },
+        items: [{ id: 'b1::resume-me', batchId: 'b1', cacheKey: 'resume-me', status: 'pending' }],
+      });
+
+      await manager.resumeIncompleteBatches([track]);
+
+      expect(onInternalQueueActiveChange.mock.calls).toEqual([[true], [false]]);
+    });
+
+    test('resumeIncompleteBatches: never called when a bg-fetch batch is left alone (active registration)', async () => {
+      const swReg = { backgroundFetch: { get: jest.fn().mockResolvedValue({ id: 'b1' }) } };
+      mockServiceWorker(swReg);
+      const onInternalQueueActiveChange = jest.fn();
+      const { manager, mocks } = makeManager({ onInternalQueueActiveChange });
+      const store = mocks.store;
+      await store.createBatch({
+        batch: { id: 'b1', status: 'running', totalFiles: 1, completedFiles: 0, failedFiles: 0, transport: 'bg-fetch' },
+        items: [{ id: 'b1::still-active', batchId: 'b1', cacheKey: 'still-active', status: 'pending' }],
+      });
+
+      await manager.resumeIncompleteBatches([makeTrack({ id: 'still-active' })]);
+
+      expect(onInternalQueueActiveChange).not.toHaveBeenCalled();
+    });
+  });
 });
