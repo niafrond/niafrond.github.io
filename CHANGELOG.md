@@ -1,3 +1,10 @@
+## [1.256.0](https://github.com/niafrond/niafrond.github.io/compare/v1.255.0...v1.256.0) (2026-07-13)
+
+### Features
+
+* Add support for Wake Lock during internal queue processing and background fetch continuity ([6323317](https://github.com/niafrond/niafrond.github.io/commit/6323317ea0dd661837c8c7d4afa56d36e4ef2dbf))
+* Implement backoff retry mechanism for background fetch failures ([4dcc85b](https://github.com/niafrond/niafrond.github.io/commit/4dcc85bbd1fa5e0fd83bfe4defaa5be1f34f3e59))
+
 ## [1.255.0](https://github.com/niafrond/niafrond.github.io/compare/v1.254.0...v1.255.0) (2026-07-12)
 
 ### Features
