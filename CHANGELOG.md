@@ -1,3 +1,9 @@
+## [1.257.0](https://github.com/niafrond/niafrond.github.io/compare/v1.256.0...v1.257.0) (2026-07-13)
+
+### Features
+
+* **dj-mix:** sampling FX joue de vrais samples audio au lieu d'un oscillateur ([0cd0d84](https://github.com/niafrond/niafrond.github.io/commit/0cd0d846143a6ec4d82f3e510006e518dae48b39))
+
 ## [1.256.0](https://github.com/niafrond/niafrond.github.io/compare/v1.255.0...v1.256.0) (2026-07-13)
 
 ### Features
