@@ -460,6 +460,15 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-6.6.2** Max-gap cadence fill : les gaps > `maxGapMs` sont comblés par des événements de cadence cycliques (`echoDelay → filter → reverb → repeat`).
 - **SPEC-6.6.3** Tail window pruning : dans les 2 dernières minutes, max `2` événements conservés (les plus prioritaires).
 
+### 6.7 Rendu sonore — `sampling` (triggerSamplingFx)
+
+- **SPEC-6.7.1** L'effet `sampling` charge et joue un vrai fichier audio WAV depuis `resources/`, au lieu d'une synthèse WebAudio.
+- **SPEC-6.7.2** Fichiers disponibles : `sample_airhorn.wav`, `sample_stab.wav`, `sample_laser.wav`, `sample_siren.wav`.
+- **SPEC-6.7.3** À chaque déclenchement, un sample est choisi aléatoirement parmi les buffers chargés.
+- **SPEC-6.7.4** Les buffers sont chargés en lazy-load via `loadSamplerSoundBuffers(ctx)` et mis en cache dans `runtime.samplerSoundBuffers`.
+- **SPEC-6.7.5** Le playback rate est randomisé dans `[0.9, 1.1]` pour la variété.
+- **SPEC-6.7.6** Fallback : si aucun sample n'est disponible (erreur réseau, format non supporté), un toast d'erreur est affiché.
+
 ---
 
 ## 7. Effets DJ manuels (MixFeatures)
