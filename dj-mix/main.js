@@ -1351,14 +1351,19 @@ function setFilRougeTrackStatus(item, patch = {}) {
     ...patch,
     updatedAt: Date.now(),
   });
+  // Persist download completion to localStorage so the 'done' state survives reloads
+  // even for tracks without cachePath/persistedSourceUrl (SPEC-19.8.1).
+  if (patch.downloadState === 'done' && item?.name && item?.artist) {
+    patchStoredTrackMeta(item.name, item.artist, { downloaded: true });
+  }
 }
 
 function getFilRougeTrackStatus(item) {
   const key = getFilRougeTrackKey(item);
   const stored = key ? filRougeTrackStatusByKey.get(key) : null;
-  const inferredDone = Boolean(item?.cachePath || item?.persistedSourceUrl);
-  const downloadState = stored?.downloadState || (inferredDone ? 'done' : 'idle');
   const meta = getStoredTrackMeta(item?.name, item?.artist);
+  const inferredDone = Boolean(item?.cachePath || item?.persistedSourceUrl) || Boolean(meta?.downloaded);
+  const downloadState = stored?.downloadState || (inferredDone ? 'done' : 'idle');
   const hasMixInfo = Boolean(stored?.hasMixInfo) || Boolean(meta?.mixData);
   return {
     downloadState,
