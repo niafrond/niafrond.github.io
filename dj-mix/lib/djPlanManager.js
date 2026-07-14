@@ -12,6 +12,7 @@ import { mapDjTransitionTypeToMode, isDjTransitionFresh } from './djTransitionMa
 import { normalizeTransitionMode } from './transitionModes.js';
 
 const DEFAULT_SET_PROFILE = 'club_peak';
+const MAX_LOOKAHEAD_TRANSITIONS = 10;
 
 function saveBatchPlanToStorage(result) {
   try {
@@ -28,10 +29,13 @@ function getStoredBatchPlanFromStorage() {
   }
 }
 
-export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue, logger } = {}) {
+export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue, getTrackMaxDurationAppliedSec, isFilRougeDownloadPending, logger } = {}) {
   /** @type {Array} cached `TrackSummary[]` from `/api/dj/tracks` */
   let trackSummaries = [];
   let trackSummariesLoadedAt = 0;
+
+  /** @type {Promise<Array>|null} in-flight ensureTrackSummaries promise for dedup */
+  let _trackSummariesInflight = null;
 
   /** @type {{profiles: Array, default: string}|null} */
   let setProfilesCache = null;
@@ -63,14 +67,17 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
    */
   async function ensureTrackSummaries({ force = false } = {}) {
     if (!force && trackSummariesLoadedAt) return trackSummaries;
-    const tracks = await djApiClient.fetchTracks();
-    if (Array.isArray(tracks) && tracks.length) {
-      trackSummaries = tracks;
-      trackSummariesLoadedAt = Date.now();
-    } else if (force) {
-      trackSummaries = [];
-    }
-    return trackSummaries;
+    if (_trackSummariesInflight) return _trackSummariesInflight;
+    _trackSummariesInflight = djApiClient.fetchTracks().then((tracks) => {
+      if (Array.isArray(tracks) && tracks.length) {
+        trackSummaries = tracks;
+        trackSummariesLoadedAt = Date.now();
+      } else if (force) {
+        trackSummaries = [];
+      }
+      return trackSummaries;
+    }).finally(() => { _trackSummariesInflight = null; });
+    return _trackSummariesInflight;
   }
 
   /**
@@ -153,16 +160,26 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
    * Skips edges where either side has no resolved/analysed trackId.
    * @param {Array<{from: object, to: object}>} edges
    */
-  async function computeAndPersistEdges(edges) {
+  async function computeAndPersistEdges(edges, { forceRefresh = false } = {}) {
     const fr = filRouge();
     if (!fr || !Array.isArray(edges) || !edges.length) return;
 
-    for (const { from, to } of edges) {
-      if (!from || !to) continue;
-      if (isDjTransitionFresh(from.djTransition, to.id)) continue;
-      if (!from.djTrackId || !to.djTrackId || !from.djHasAnalysis || !to.djHasAnalysis) continue;
+    const maxDur = getTrackMaxDurationAppliedSec?.() || 0;
+    const maxDurOpt = maxDur > 0 ? { maxTrackDurationSec: maxDur } : undefined;
 
-      const result = await djApiClient.fetchTransition(from.djTrackId, to.djTrackId);
+    const pending = edges
+      .filter(({ from, to }) =>
+        from && to
+        && (forceRefresh || !isDjTransitionFresh(from.djTransition, to.id))
+        && from.djTrackId && to.djTrackId
+        && from.djHasAnalysis && to.djHasAnalysis)
+      .map(({ from, to }) =>
+        djApiClient.fetchTransition(from.djTrackId, to.djTrackId, maxDurOpt)
+          .then((result) => ({ from, to, result })));
+
+    const results = await Promise.all(pending);
+
+    for (const { from, to, result } of results) {
       if (!result) continue;
 
       if (!Number.isFinite(result.mixOutSec) || !Number.isFinite(result.mixInSec)) {
@@ -226,8 +243,9 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
   }
 
   /**
-   * Full pairwise pass over the current fil rouge order (memoized via
-   * `isDjTransitionFresh`), plus the wrap edge if looping is enabled.
+   * Plans the next MAX_LOOKAHEAD_TRANSITIONS consecutive edges from the current
+   * fil rouge index (memoized via `isDjTransitionFresh`), plus the loop-wrap
+   * edge if looping is enabled and the budget allows.
    */
   async function planAllEdges() {
     const fr = filRouge();
@@ -238,11 +256,12 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
 
     await resolveTrackIdsForItems(playlist);
 
+    const startIdx = Math.max(0, fr.getCurrentIndex?.() ?? 0);
     const edges = [];
-    for (let i = 0; i < playlist.length - 1; i += 1) {
+    for (let i = startIdx; i < playlist.length - 1 && edges.length < MAX_LOOKAHEAD_TRANSITIONS; i++) {
       edges.push({ from: playlist[i], to: playlist[i + 1] });
     }
-    if (fr.isLoopEnabled()) {
+    if (fr.isLoopEnabled() && playlist.length > 1 && edges.length < MAX_LOOKAHEAD_TRANSITIONS) {
       edges.push({ from: playlist[playlist.length - 1], to: playlist[0] });
     }
 
@@ -250,129 +269,36 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
   }
 
   /**
-   * Informational-only call to `/api/dj/batch` for the current fil rouge order
-   * and selected set profile. Does not reorder/drop tracks.
-   * @returns {Promise<{globalSetScore: number, reasons: string[], globalComponents: object|null}|null>}
+   * Plans the next MAX_LOOKAHEAD_TRANSITIONS individual transitions in the fil rouge
+   * via `/api/dj/transition` (one call per pair). No batch endpoint is used.
+   * Skipped (returns `null`) while fil rouge downloads are still in progress.
+   * @returns {Promise<null>}
    */
   async function computeSetQuality({ forceRefresh = false } = {}) {
+    if (isFilRougeDownloadPending?.()) {
+      logger?.debug?.('djPlanManager: computeSetQuality skipped — fil rouge downloads in progress');
+      return null;
+    }
+
     const fr = filRouge();
-    const playlist = fr ? fr.getPlaylist() : [];
+    if (!fr) return null;
 
-    if (playlist.length) {
-      await resolveTrackIdsForItems(playlist);
-    }
-    const filRougeTrackIds = playlist
-      .filter((item) => item.djTrackId && item.djHasAnalysis)
-      .map((item) => item.djTrackId);
+    const playlist = fr.getPlaylist();
+    if (playlist.length < 2) return null;
 
-    const queueItems = getQueue?.() || [];
-    let queueTrackIds = [];
-    if (queueItems.length) {
-      await ensureTrackSummaries();
-      queueTrackIds = queueItems
-        .map((item) => matchTrackSummary(item))
-        .filter((r) => r && r.hasFullAnalysis)
-        .map((r) => r.trackId);
+    await resolveTrackIdsForItems(playlist);
+
+    const startIdx = Math.max(0, fr.getCurrentIndex?.() ?? 0);
+    const edges = [];
+    for (let i = startIdx; i < playlist.length - 1 && edges.length < MAX_LOOKAHEAD_TRANSITIONS; i++) {
+      edges.push({ from: playlist[i], to: playlist[i + 1] });
     }
 
-    const trackIds = Array.from(new Set([...queueTrackIds, ...filRougeTrackIds]));
-    if (!trackIds.length) return null;
-
-    const result = await djApiClient.fetchBatchPlan(trackIds, getSelectedSetProfile());
-    if (!result) return null;
-
-    // Persist transition data from the batch result onto fil rouge items.
-    // The batch endpoint reorders tracks for optimal energy flow, so its transitions
-    // may not match the fil rouge's actual consecutive pairs. Only apply a batch
-    // transition when it corresponds to the real fil rouge consecutive pair; for any
-    // pair the batch reordered, call /api/dj/transition individually instead.
-    if (fr && Array.isArray(result.transitions) && result.transitions.length) {
-      const byTrackId = new Map(
-        playlist.filter((i) => i.djTrackId).map((i) => [i.djTrackId, i]),
-      );
-
-      // Map each fil rouge item to its actual consecutive next (includes loop wrap).
-      const filRougeNextMap = new Map();
-      for (let i = 0; i < playlist.length - 1; i++) {
-        filRougeNextMap.set(playlist[i].id, playlist[i + 1]);
-      }
-      if (fr.isLoopEnabled() && playlist.length > 1) {
-        filRougeNextMap.set(playlist[playlist.length - 1].id, playlist[0]);
-      }
-
-      const batchCoveredFromIds = new Set();
-
-      for (const t of result.transitions) {
-        const fromItem = byTrackId.get(t.trackA);
-        const toItem = byTrackId.get(t.trackB);
-        if (!fromItem || !toItem) continue;
-
-        // Skip transitions where the batch's toItem differs from the actual fil rouge next.
-        const actualNext = filRougeNextMap.get(fromItem.id);
-        if (!actualNext || actualNext.id !== toItem.id) continue;
-
-        batchCoveredFromIds.add(fromItem.id);
-
-        if (!forceRefresh && isDjTransitionFresh(fromItem.djTransition, toItem.id)) continue;
-        if (!Number.isFinite(t.mixOutSec) || !Number.isFinite(t.mixInSec)) {
-          logger?.warn('djPlanManager: batch — mixOutSec/mixInSec manquants', {
-            trackA: t.trackA,
-            trackB: t.trackB,
-            rawTransition: t,
-          });
-        }
-        fr.patchPlaylistItem(fromItem.id, {
-          djTransition: {
-            toItemId: toItem.id,
-            transitionType: t.djApiType || t.transitionType || null,
-            automixMode: t.automixMode || null,
-            mixOutSec: t.mixOutSec,
-            mixInSec: t.mixInSec,
-            mixInSecDefined: Number.isFinite(t.mixInSec),
-            recommendedBpm: t.recommendedBpm,
-            crossfadeDurationSec: t.crossfadeDurationSec,
-            compatibilityScore: t.compatibilityScore,
-            decisionId: t.decisionId,
-            computedAt: Date.now(),
-          },
-        });
-      }
-
-      // For fil rouge pairs the batch reordered (not covered above), call
-      // /api/dj/transition individually to get the correct transition plan.
-      const missingEdges = [];
-      for (const [fromId, toItem] of filRougeNextMap) {
-        if (batchCoveredFromIds.has(fromId)) continue;
-        const fromItem = playlist.find((p) => p.id === fromId);
-        if (!fromItem || !fromItem.djTrackId || !toItem.djTrackId) continue;
-        if (!fromItem.djHasAnalysis || !toItem.djHasAnalysis) continue;
-        if (!forceRefresh && isDjTransitionFresh(fromItem.djTransition, toItem.id)) continue;
-        missingEdges.push({ from: fromItem, to: toItem });
-      }
-
-      if (missingEdges.length > 0) {
-        await computeAndPersistEdges(missingEdges);
-      }
+    if (edges.length > 0) {
+      await computeAndPersistEdges(edges, { forceRefresh });
     }
 
-    // Appliquer l'openingCue : offset de démarrage pour le premier morceau du set.
-    if (fr && result.openingCue?.trackId && Number.isFinite(result.openingCue.timeSec)) {
-      const byTrackId = new Map(
-        playlist.filter((i) => i.djTrackId).map((i) => [i.djTrackId, i]),
-      );
-      const openingItem = byTrackId.get(result.openingCue.trackId);
-      if (openingItem) {
-        fr.patchPlaylistItem(openingItem.id, { djOpeningCueSec: result.openingCue.timeSec });
-      }
-    }
-
-    saveBatchPlanToStorage(result);
-
-    return {
-      globalSetScore: result.globalSetScore,
-      reasons: result.reasons || [],
-      globalComponents: result.globalComponents || null,
-    };
+    return null;
   }
 
   /** @returns {Promise<{profiles: Array, default: string}|null>} */
@@ -485,6 +411,76 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
   }
 
   /**
+   * Computes the transition from a current item to its successor in the playlist,
+   * called by the "recalculate" action. Forces fresh computation regardless of memoization.
+   * @param {object} currentItem - the currently playing item
+   * @param {{force?: boolean}} [options] - force=true relaxes djHasAnalysis guard and retries track resolution
+   * @returns {Promise<{ok: boolean, reason?: string}>}
+   */
+  async function planCurrentToNextTransition(currentItem, { force = false } = {}) {
+    const fr = filRouge();
+    if (!fr || !currentItem) return { ok: false, reason: 'no-context' };
+
+    const playlist = fr.getPlaylist();
+    const currentIdx = playlist.findIndex((p) => p.id === currentItem.id);
+    if (currentIdx === -1) return { ok: false, reason: 'not-in-playlist' };
+    if (currentIdx >= playlist.length - 1) return { ok: false, reason: 'last-track' };
+
+    const nextItem = playlist[currentIdx + 1];
+    if (!nextItem) return { ok: false, reason: 'last-track' };
+
+    await resolveTrackIdsForItems([currentItem, nextItem]);
+
+    if (!currentItem.djTrackId || !nextItem.djTrackId) {
+      if (force) {
+        await ensureTrackSummaries({ force: true });
+        await resolveTrackIdsForItems([currentItem, nextItem]);
+      }
+      if (!currentItem.djTrackId || !nextItem.djTrackId) {
+        return { ok: false, reason: 'unresolved-tracks' };
+      }
+    }
+
+    if (!force && (!currentItem.djHasAnalysis || !nextItem.djHasAnalysis)) {
+      return { ok: false, reason: 'missing-analysis' };
+    }
+
+    const maxDur = getTrackMaxDurationAppliedSec?.() || 0;
+    const result = await djApiClient.fetchTransition(
+      currentItem.djTrackId,
+      nextItem.djTrackId,
+      maxDur > 0 ? { maxTrackDurationSec: maxDur } : undefined,
+    );
+    if (!result) return { ok: false, reason: 'api-error' };
+
+    if (!Number.isFinite(result.mixOutSec) || !Number.isFinite(result.mixInSec)) {
+      logger?.warn('djPlanManager.planCurrentToNextTransition: mixOutSec/mixInSec manquants', {
+        fromTrackId: currentItem.djTrackId,
+        toTrackId: nextItem.djTrackId,
+        rawResult: result,
+      });
+    }
+
+    fr.patchPlaylistItem(currentItem.id, {
+      djTransition: {
+        toItemId: nextItem.id,
+        transitionType: result.transitionType,
+        automixMode: null,
+        mixOutSec: result.mixOutSec,
+        mixInSec: result.mixInSec,
+        mixInSecDefined: Number.isFinite(result.mixInSec),
+        recommendedBpm: result.recommendedBpm,
+        crossfadeDurationSec: result.crossfadeDurationSec,
+        compatibilityScore: result.compatibilityScore,
+        decisionId: result.decisionId,
+        computedAt: Date.now(),
+      },
+    });
+
+    return { ok: true };
+  }
+
+  /**
    * @param {string} decisionId
    * @param {'good'|'bad'} feedback
    * @param {string} [reason]
@@ -501,6 +497,7 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
     resolveTrackIdsForItems,
     planEdgesForNewItems,
     planAllEdges,
+    planCurrentToNextTransition,
     computeSetQuality,
     getSetProfiles,
     getSelectedSetProfile,

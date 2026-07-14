@@ -5,11 +5,15 @@
  */
 
 import { DJPlayer } from './player.js';
-import { initServiceWorker, installPwa, initAutoFullscreen, initApkDownloadLink, checkApkUpdate, doApkUpdate } from './pwa.js';
+import { initServiceWorker, installPwa, initAutoFullscreen, initApkDownloadLink, checkApkUpdate, doApkUpdate, forceUpdatePwa } from './pwa.js';
 import { pushPlaybackState, pushQueue, onMediaCommand, getPendingMediaCommand } from './lib/androidAutoBridge.js';
 
-// --- Wake Lock (garder l'écran allumé pendant la lecture) ---
+// --- Wake Lock (garder l'écran allumé pendant la lecture ou un téléchargement
+// de masse via la file interne, SPEC-19.7) ---
 let wakeLock = null;
+// Raisons actives réclamant l'écran allumé : 'playback' | 'download'. L'écran
+// n'est libéré que quand plus aucune raison n'est active.
+const wakeLockReasons = new Set();
 async function requestWakeLock() {
   try {
     if ('wakeLock' in navigator) {
@@ -29,13 +33,23 @@ function releaseWakeLock() {
     wakeLock = null;
   }
 }
+// Active/désactive une raison de Wake Lock ; ré-évalue l'état global du lock.
+function setWakeLockReason(reason, active) {
+  if (active) wakeLockReasons.add(reason);
+  else wakeLockReasons.delete(reason);
+  if (wakeLockReasons.size > 0) {
+    requestWakeLock();
+  } else {
+    releaseWakeLock();
+  }
+}
 
 // --- Audio Session Keepalive (garder la notification "En cours" Android pendant la pause) ---
-// Joue un audio silencieux en boucle pour maintenir la session audio active jusqu'à 10 minutes.
+// Joue un audio silencieux en boucle pour maintenir la session audio active.
+// Pas de timeout : le keepalive tourne tant qu'aucune lecture réelle ne le remplace,
+// pour que les boutons physiques restent réactifs même en arrière-plan.
 let _keepaliveAudio = null;
-let _keepaliveTimer = null;
 let _keepalivePosInterval = null;
-const KEEPALIVE_DURATION_MS = 10 * 60 * 1000;
 
 function _createSilentWavUrl() {
   const sampleRate = 8000;
@@ -54,26 +68,49 @@ function _createSilentWavUrl() {
 }
 
 function startMediaKeepAlive() {
-  stopMediaKeepAlive();
+  if (_keepaliveAudio && !_keepaliveAudio.paused) return;
   if (!('mediaSession' in navigator)) return;
   if (!_keepaliveAudio) {
     _keepaliveAudio = new Audio(_createSilentWavUrl());
     _keepaliveAudio.loop = true;
-    _keepaliveAudio.volume = 0.001; // non-zéro pour éviter les optimisations navigateur
+    _keepaliveAudio.volume = 0.001;
   }
   _keepaliveAudio.play().catch(() => {});
-  // Rafraîchir la position toutes les 30s pour signaler l'activité à Android
-  _keepalivePosInterval = setInterval(() => updateMediaSessionPositionState(), 30_000);
-  _keepaliveTimer = setTimeout(stopMediaKeepAlive, KEEPALIVE_DURATION_MS);
+  if (!_keepalivePosInterval) {
+    _keepalivePosInterval = setInterval(() => updateMediaSessionPositionState(), 30_000);
+  }
 }
 
 function stopMediaKeepAlive() {
-  clearTimeout(_keepaliveTimer);
   clearInterval(_keepalivePosInterval);
-  _keepaliveTimer = null;
   _keepalivePosInterval = null;
   _keepaliveAudio?.pause();
 }
+
+// Quand le navigateur repasse au premier plan (écran rallumé ou retour de l'arrière-plan) :
+// - si une raison de Wake Lock est active (lecture ou téléchargement de masse via la file
+//   interne) : le ré-acquérir (il est libéré automatiquement par le navigateur lors du
+//   passage en arrière-plan) pour que l'écran reste allumé.
+// - sinon (pas de lecture) : relancer le keepalive audio silencieux (Android/iOS peut l'avoir tué).
+// Dans tous les cas, forcer une sonde immédiate sur le serveur local pour détecter
+// rapidement toute perte de connexion survenue pendant que l'écran était éteint, et
+// reprendre tout lot de téléchargement resté bloqué par la suspension JS de l'onglet
+// pendant l'arrière-plan (SPEC-19.7.2) — seulement si aucune file interne ne tourne
+// déjà dans cet onglet, pour éviter un double traitement du même lot.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    if (wakeLockReasons.size > 0) {
+      requestWakeLock();
+    }
+    if (!uiState.isPlaying) {
+      startMediaKeepAlive();
+    }
+    apiHealthMonitor.probe();
+    if (!filRougeDownloader.isInternalQueueRunning?.()) {
+      filRougeDownloader.resumeIncompleteBatches?.(filRougeManager.getPlaylist()).catch(() => {});
+    }
+  }
+});
 import {
   getTransitionRamRequirementsMb,
   MIX_TRANSITION_MODE_LABELS,
@@ -84,6 +121,7 @@ import { AutoFadeManager } from './lib/autoFadeManager.js';
 import {
   createAudioSourceManager,
   getDirectPlayableSourceUrl,
+  getTrackCacheKey,
 } from './lib/audioSourceManager.js';
 import { createDownloaderConfigManager } from './lib/downloaderConfig.js';
 import {
@@ -103,6 +141,7 @@ import { createDjApiClient } from './lib/djApiClient.js';
 import { createDjPlanManager } from './lib/djPlanManager.js';
 import { computeDjBpmRate, mapDjTransitionTypeToMode } from './lib/djTransitionMapping.js';
 import { computeDjPlanIndicatorState } from './lib/djPlanIndicator.js';
+import { parseFingerprintCheckResponse, buildFingerprintCorrectRequestBody, buildFingerprintCorrectToastMessage } from './lib/fingerprintController.js';
 import { createAppState } from './lib/appState.js';
 import {
   AUTO_DJ_FX_TYPES,
@@ -122,6 +161,7 @@ import {
   shouldTriggerAutomix,
 } from './lib/automixTimeline.js';
 import { getOtherDeck, toDeck } from './lib/deckHelpers.js';
+import { createInactivePreloadWatcher } from './lib/inactivePreloadWatcher.js';
 import { computeTransitionRamProfile, estimateTotalDeviceRamMb, isMobileDevice } from './lib/ramProfile.js';
 import { attachQueueDndHandlers, clearQueueDragMarkers } from './lib/queueDnD.js';
 import {
@@ -175,6 +215,7 @@ import {
 } from './lib/settingsStorage.js';
 import { DEFAULT_DOWNLOADER_API_URL, STORAGE_KEYS } from './lib/storageKeys.js';
 import { getStoredTrackMeta, patchStoredTrackMeta } from './lib/trackMetaStorage.js';
+import { createMetaFetchService } from './lib/metaFetchService.js';
 import { getArtworkUrl, setArtworkUrl } from './lib/artworkUrlCache.js';
 import { DANCE_GENRE_DEFAULTS } from './lib/danceGenreConfig.js';
 import { DJ_MODES } from './lib/djModeConfig.js';
@@ -189,6 +230,8 @@ import { createDeckMarkerController } from './lib/deckMarkerController.js';
 import { createPlaybackController } from './lib/playbackController.js';
 import { createRelayModeManager } from './lib/relayModeManager.js';
 import { createRelayModeController } from './lib/relayModeController.js';
+import { computeNextBatchSize } from './lib/downloadBatchSizing.js';
+import { INITIAL_PARALLEL_DOWNLOADS } from './lib/constants.js';
 
 import { uiState } from './lib/uiState.js';
 const QUEUE_KEY = STORAGE_KEYS.queue;
@@ -225,7 +268,6 @@ let automixRescheduledForTrackId = null;
 let lastSearchQuery = '';
 let pendingSearchAdd = false;
 let searchDebounceTimer = null;
-let currentSearchPollToken = null;
 let launchPreviewActive = false;
 let launchPreviewArtUrl = '';
 let launchPreviewTitle = '';
@@ -276,6 +318,8 @@ let trackMaxDurationMode = readTrackMaxDurationModeSetting();
 let trackMaxDurationPct = readTrackMaxDurationPctSetting();
 /** True once the maxdur marker has fired automix for the current track (prevents double-trigger). */
 let maxDurMarkerTriggeredForTrack = false;
+/** True once the DJ Plan mixOutSec marker has fired automix for the current track (prevents double-trigger). */
+let djPlanMixOutTriggeredForTrack = false;
 let autoDjFxSettings = readAutoDjFxSettings();
 let lastAutoDjFxTriggeredAt = 0;
 let djMode = readDjModeSetting(); // 'dance' | 'music'
@@ -687,6 +731,16 @@ const searchOverlay = document.getElementById('search-overlay');
 const searchResults = document.getElementById('search-results');
 const searchIcon = document.querySelector('.search-icon');
 
+function openSearch() {
+  if (searchOverlay) searchOverlay.hidden = false;
+  if (searchClose) searchClose.hidden = false;
+}
+
+function closeSearch() {
+  if (searchOverlay) searchOverlay.hidden = true;
+  if (searchClose) searchClose.hidden = true;
+}
+
 const albumArt = document.getElementById('album-art');
 const artPlaceholder = document.getElementById('art-placeholder');
 const nextAlbumArt = document.getElementById('next-album-art');
@@ -707,6 +761,8 @@ const deckAProgressZones = document.getElementById('deck-a-zone-layer');
 const deckBProgressZones = document.getElementById('deck-b-zone-layer');
 const deckAFill = document.getElementById('deck-a-fill');
 const deckBFill = document.getElementById('deck-b-fill');
+const deckATime = document.getElementById('deck-a-time');
+const deckBTime = document.getElementById('deck-b-time');
 const trackArtistB = document.getElementById('track-artist-b');
 const deckATitle = document.getElementById('deck-a-title');
 const deckBTitle = document.getElementById('deck-b-title');
@@ -719,6 +775,9 @@ const deckBLaunchBtn = document.getElementById('deck-b-launch');
 const deckAChangeSuggestionBtn = document.getElementById('deck-a-change-suggestion-btn');
 const deckBChangeSuggestionBtn = document.getElementById('deck-b-change-suggestion-btn');
 const deckMixSlider = document.getElementById('deck-mix-slider');
+const globalVolumeSlider = document.getElementById('global-volume-slider');
+const globalVolumeBtn = document.getElementById('global-volume-btn');
+const globalVolumeLabel = document.getElementById('global-volume-label');
 const deckMixLabel = document.getElementById('deck-mix-label');
 const deckBCueLabel = document.getElementById('deck-b-cue-label');
 const mixTransitionModeSelect = document.getElementById('mix-transition-mode');
@@ -786,13 +845,16 @@ const filRougePlaylistListEl = document.getElementById('filrouge-playlist-list')
 const filRougePriorityListEl = document.getElementById('filrouge-priority-list');
 const filRougeShuffleBtn = document.getElementById('filrouge-shuffle-btn');
 const filRougeLoopBtn = document.getElementById('filrouge-loop-btn');
+const filRougeSortSelectEl = document.getElementById('filrouge-sort-select');
 const djExternalPlanBtn = document.getElementById('dj-external-plan-btn');
 const djPlanIndicatorEl = document.getElementById('dj-plan-indicator');
+const djPlanSectionEl = document.getElementById('dj-plan-section');
 const filRougeClearBtn = document.getElementById('filrouge-clear-btn');
 const djSetQualityBadgeEl = document.getElementById('dj-set-quality-badge');
 const djSetProfileSelectEl = document.getElementById('dj-set-profile-select');
 const djRecalculateBtn = document.getElementById('dj-recalculate-btn');
 const filRougeDownloadAllBtn = document.getElementById('filrouge-download-all-btn');
+const filRougeMixInfoBtn = document.getElementById('filrouge-mixinfo-btn');
 
 const downloaderApiUrlInput = document.getElementById('downloader-api-url-input');
 const downloaderApiTokenInput = document.getElementById('downloader-api-token-input');
@@ -912,6 +974,16 @@ const relayModeManager = createRelayModeManager({
   logger,
   onApplyRelayState: (state) => applyRelayState(state),
   onRelayQueueItemsAvailable: (items) => _relayPrefetchItems(items),
+  onRelayCommand: (cmd) => {
+    if (cmd.type === 'addToQueue' && cmd.track) {
+      if (cmd.playNow) {
+        triggerSearchFade(cmd.track);
+      } else {
+        addToQueue(cmd.track, { showAddedToast: true, asNext: true });
+      }
+      showToast(`Relais : ${cmd.track?.name || 'piste'} ajoutée`);
+    }
+  },
 });
 
 const apiHealthMonitor = createApiHealthMonitor({
@@ -1014,6 +1086,7 @@ const {
   applyAutoDjCreativeFx,
   handleDjFxAction,
   resetRuntimeState: resetDjFxRuntime,
+  triggerBeatRepeatTransitionFx,
   updateDjFxMenuUI,
 } = djFxController;
 
@@ -1115,6 +1188,7 @@ const uiRenderer = createDjMixRenderer({
   deckAFill,
   deckALaunchBtn,
   deckAPanel,
+  deckATime,
   deckATitle,
   deckAVol,
   deckBBpm,
@@ -1122,6 +1196,7 @@ const uiRenderer = createDjMixRenderer({
   deckBFill,
   deckBLaunchBtn,
   deckBPanel,
+  deckBTime,
   deckBTitle,
   deckBVol,
   emptyQueue,
@@ -1170,7 +1245,6 @@ const {
   evictTrackSource,
   isTrackInLocalCache,
   persistArtwork,
-  pollSearchResults,
   prefetchTrackToLocalCache,
   releaseLocalBlob,
   restoreArtwork,
@@ -1239,59 +1313,16 @@ const { setCacheFilter, switchTab } = playlistManager;
 const filRougeManager = createFilRougeManager();
 const filRougeTrackStatusByKey = new Map();
 
-// Tracks in-flight meta fetches to avoid duplicate API calls
-const metaFetchInFlight = new Set();
-// Tracks keys already queried via the API this session, even when no bpm/genre was
-// found, so renderQueue/renderFilRouge re-renders don't keep re-spamming /api/search
-// for tracks the API simply has no data for.
-const metaFetchAttempted = new Set();
-
-/**
- * Fetches BPM and/or genre for an item that is missing them.
- * Checks localStorage first, then falls back to the search API.
- * Mutates item in place and triggers a re-render when data is found.
- * @param {object} item
- */
-async function fetchMissingMeta(item) {
-  if (!item?.name) return;
-  if (item.bpm && item.genre) return;
-  const key = String(item.id || `${item.artist}::${item.name}`);
-  if (metaFetchInFlight.has(key) || metaFetchAttempted.has(key)) return;
-  metaFetchInFlight.add(key);
-  try {
-    // 1. Check localStorage cache
-    const stored = getStoredTrackMeta(item.name, item.artist);
-    if (stored?.bpm || stored?.genre) {
-      if (!item.bpm && stored.bpm) item.bpm = stored.bpm;
-      if (!item.genre && stored.genre) item.genre = stored.genre;
-      if (item.id) filRougeManager.patchPlaylistItem(item.id, { bpm: item.bpm, genre: item.genre });
-      uiRenderer.invalidateDeckMetaCache();
-      uiRenderer.refreshDeckMetaDisplays();
-      renderQueueDebounced();
-      renderFilRougeDebounced();
-      return;
-    }
-    // 2. Ask the API (only once per track per session)
-    metaFetchAttempted.add(key);
-    const results = await searchTracksViaApi(`${item.artist} ${item.name}`, 5);
-    const hit = results[0];
-    if (!hit) return;
-    let changed = false;
-    if (!item.bpm && hit.bpm) { item.bpm = hit.bpm; changed = true; }
-    if (!item.genre && hit.genre) { item.genre = hit.genre; changed = true; }
-    if (changed) {
-      patchStoredTrackMeta(item.name, item.artist, { bpm: item.bpm, genre: item.genre });
-      if (item.id) filRougeManager.patchPlaylistItem(item.id, { bpm: item.bpm, genre: item.genre });
-      uiRenderer.invalidateDeckMetaCache();
-      uiRenderer.refreshDeckMetaDisplays();
-      renderQueueDebounced();
-      renderFilRougeDebounced();
-    }
-  } catch (_) {
-  } finally {
-    metaFetchInFlight.delete(key);
-  }
-}
+const { fetchMissingMeta } = createMetaFetchService({
+  getStoredTrackMeta,
+  patchStoredTrackMeta,
+  searchTracksViaApi,
+  filRougeManager,
+  invalidateDeckMetaCache: () => uiRenderer.invalidateDeckMetaCache(),
+  refreshDeckMetaDisplays: () => uiRenderer.refreshDeckMetaDisplays(),
+  renderQueueDebounced: () => renderQueueDebounced(),
+  renderFilRougeDebounced: () => renderFilRougeDebounced(),
+});
 
 function getFilRougeTrackKey(item) {
   if (!item) return '';
@@ -1320,18 +1351,36 @@ function setFilRougeTrackStatus(item, patch = {}) {
     ...patch,
     updatedAt: Date.now(),
   });
+  // Persist download completion to localStorage so the 'done' state survives reloads
+  // even for tracks without cachePath/persistedSourceUrl (SPEC-19.8.1).
+  if (patch.downloadState === 'done' && item?.name && item?.artist) {
+    patchStoredTrackMeta(item.name, item.artist, { downloaded: true });
+  }
 }
 
 function getFilRougeTrackStatus(item) {
   const key = getFilRougeTrackKey(item);
   const stored = key ? filRougeTrackStatusByKey.get(key) : null;
-  const stemsOk = hasStemsForTrack(item) || Boolean(stored?.stemsOk);
-  const inferredDone = Boolean(item?.cachePath || item?.persistedSourceUrl);
+  const meta = getStoredTrackMeta(item?.name, item?.artist);
+  const inferredDone = Boolean(item?.cachePath || item?.persistedSourceUrl) || Boolean(meta?.downloaded);
   const downloadState = stored?.downloadState || (inferredDone ? 'done' : 'idle');
+  const hasMixInfo = Boolean(stored?.hasMixInfo) || Boolean(meta?.mixData);
   return {
     downloadState,
-    stemsOk,
+    hasMixInfo,
   };
+}
+
+/**
+ * GIVEN un téléchargement de masse du fil rouge (démarrage, import Spotify/TXT,
+ * "Tout télécharger") en cours — THEN tant qu'au moins un morceau du fil rouge
+ * est à l'état `downloading`, les demandes `/api/dj/transition` sont reportées
+ * (voir SPEC-3.4.10 et `computeSetQuality`).
+ */
+function isFilRougeDownloadInProgress() {
+  return filRougeManager.getPlaylist().some(
+    (track) => getFilRougeTrackStatus(track).downloadState === 'downloading'
+  );
 }
 
 // ── Fil rouge UI rendering ──────────────────────────────────────────────────
@@ -1379,6 +1428,10 @@ function renderFilRouge() {
     filRougeLoopBtn.textContent = `Loop: ${on ? 'ON' : 'OFF'}`;
     filRougeLoopBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
   }
+  if (filRougeSortSelectEl) {
+    filRougeSortSelectEl.value = localStorage.getItem(STORAGE_KEYS.filRougeSortMode) || 'original';
+    filRougeSortSelectEl.onchange = (e) => filRougeCtrl?.sortFilRouge(e.target.value);
+  }
 
   // Priority queue
   if (filRougePriorityListEl) {
@@ -1422,8 +1475,8 @@ function renderFilRouge() {
               : status.downloadState === 'error'
                 ? 'is-error'
                 : 'is-idle';
-          const stemsLabel = status.stemsOk ? 'Stems OK' : 'Stems --';
-          const stemsClass = status.stemsOk ? 'is-done' : 'is-idle';
+          const mixInfoLabel = status.hasMixInfo ? 'Mix info ✓' : 'Mix info --';
+          const mixInfoClass = status.hasMixInfo ? 'is-done' : 'is-idle';
           return `
         <div class="filrouge-item${idx === filRougeIndex ? ' filrouge-current' : ''}" data-index="${idx}">
           <img class="filrouge-art"${item.artUrl ? ` src="${escHtml(item.artUrl)}"` : ' hidden'} alt="" loading="lazy" onerror="this.hidden=true">
@@ -1435,7 +1488,7 @@ function renderFilRouge() {
               ${buildFilRougeDanceChips(item)}
               <div class="filrouge-statuses">
                 <span class="filrouge-status ${downloadClass}">${downloadLabel}</span>
-                <span class="filrouge-status ${stemsClass}">${stemsLabel}</span>
+                <span class="filrouge-status ${mixInfoClass}">${mixInfoLabel}</span>
               </div>
             </div>
           </div>
@@ -1538,6 +1591,38 @@ function renderFilRouge() {
       showToast(newIconic ? '★ Morceau marqué iconic' : '☆ Statut iconic retiré');
     });
   });
+}
+
+function renderFilRougeTrackStatus(track) {
+  if (!filRougePlaylistListEl || !track) return;
+  const playlist = filRougeManager.getPlaylist();
+  const idx = playlist.findIndex(p =>
+    p.id === track.id || (p.name === track.name && p.artist === track.artist),
+  );
+  if (idx === -1) return;
+  const itemEl = filRougePlaylistListEl.querySelector(`.filrouge-item[data-index="${idx}"]`);
+  if (!itemEl) return;
+  const statusesEl = itemEl.querySelector('.filrouge-statuses');
+  if (!statusesEl) return;
+  const status = getFilRougeTrackStatus(track);
+  const downloadSpan = statusesEl.children[0];
+  if (downloadSpan) {
+    const downloadLabel = status.downloadState === 'downloading' ? 'Download en cours'
+      : status.downloadState === 'done' ? 'Download fini'
+        : status.downloadState === 'error' ? 'Download erreur'
+          : 'Download en attente';
+    const downloadClass = status.downloadState === 'downloading' ? 'is-downloading'
+      : status.downloadState === 'done' ? 'is-done'
+        : status.downloadState === 'error' ? 'is-error'
+          : 'is-idle';
+    downloadSpan.textContent = downloadLabel;
+    downloadSpan.className = `filrouge-status ${downloadClass}`;
+  }
+  const mixInfoSpan = statusesEl.children[1];
+  if (mixInfoSpan) {
+    mixInfoSpan.textContent = status.hasMixInfo ? 'Mix info ✓' : 'Mix info --';
+    mixInfoSpan.className = `filrouge-status ${status.hasMixInfo ? 'is-done' : 'is-idle'}`;
+  }
 }
 
 function readSpotifyFilRougeSource() {
@@ -1655,7 +1740,6 @@ function applySpotifyPlaylistToFilRouge(tracks) {
   for (const track of tracks) {
     setFilRougeTrackStatus(track, {
       downloadState: track?.cachePath || track?.persistedSourceUrl ? 'done' : 'idle',
-      stemsOk: hasStemsForTrack(track),
     });
     filRougeManager.addToPlaylist(track);
   }
@@ -1676,8 +1760,11 @@ function parseTxtPlaylist(text) {
   const tracks = [];
   const lines = String(text || '').split(/\r?\n/);
   for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
+    const rawTrimmed = line.trim();
+    if (!rawTrimmed || rawTrimmed.startsWith('#')) continue;
+    // Strip leading line numbers: "1. ", "1- ", "1) ", "1: ", or bare "1 "
+    const trimmed = rawTrimmed.replace(/^\d+(?:[.):]\s*|-\s*|\s+)/, '');
+    if (!trimmed) continue;
     let artist, name;
     // Accept "artiste - titre" with flexible whitespace and dash variants.
     const splitMatch = trimmed.match(/^(.+?)\s+(?:-|–|—)\s+(.+)$/u);
@@ -1724,7 +1811,6 @@ function applyTxtPlaylistToFilRouge(tracks) {
   for (const track of tracks) {
     setFilRougeTrackStatus(track, {
       downloadState: 'idle',
-      stemsOk: false,
     });
     filRougeManager.addToPlaylist(track);
   }
@@ -1756,7 +1842,7 @@ async function fetchFilRougeArtwork(track) {
     const cachedBlobUrl = await restoreArtwork(track).catch(() => null);
     if (cachedBlobUrl) {
       filRougeManager.patchPlaylistItem(track.id, { artUrl: cachedBlobUrl });
-      renderFilRouge();
+      renderFilRougeDebounced();
       if (!needsMeta) return;
     }
   }
@@ -1766,7 +1852,7 @@ async function fetchFilRougeArtwork(track) {
   if (needsArt && cachedArtUrl) {
     filRougeManager.patchPlaylistItem(track.id, { artUrl: cachedArtUrl });
     persistArtwork(track, cachedArtUrl).catch(() => {});
-    renderFilRouge();
+    renderFilRougeDebounced();
     if (!needsMeta) return;
   }
 
@@ -1787,7 +1873,7 @@ async function fetchFilRougeArtwork(track) {
     }
     if (Object.keys(patch).length) {
       filRougeManager.patchPlaylistItem(track.id, patch);
-      renderFilRouge();
+      renderFilRougeDebounced();
     }
   } catch (_) {}
 }
@@ -1797,9 +1883,12 @@ async function fetchFilRougeArtwork(track) {
  * est vide, met à jour l'objet en place, synchronise le fil rouge si besoin,
  * et rafraîchit l'affichage (pochette + liste).
  * @param {object} item  - item de la file d'attente
- * @param {string} [deck] - deck en cours de lecture (pour rafraîchir la pochette)
+ * @param {string} [deck] - deck concerné (pour rafraîchir la pochette)
+ * @param {object} [opts]
+ * @param {boolean} [opts.skipNotification] - true pour les préchargements sur le deck inactif :
+ *   évite d'écraser la notification système avec la pochette d'un morceau pas encore joué.
  */
-async function fetchAndStoreArtworkForItem(item, deck) {
+async function fetchAndStoreArtworkForItem(item, deck, { skipNotification = false } = {}) {
   if (!item) return;
   if (item.artUrl) {
     setArtworkUrl(item.name, item.artist, item.artUrl);
@@ -1811,9 +1900,9 @@ async function fetchAndStoreArtworkForItem(item, deck) {
   if (cachedBlobUrl) {
     item.artUrl = cachedBlobUrl;
     if (item.id) filRougeManager.patchPlaylistItem(item.id, { artUrl: cachedBlobUrl });
-    updateNowPlaying(item, deck ?? getFocusDeck());
+    if (skipNotification) { updateUpcomingArtwork(); } else { updateNowPlaying(item, deck ?? getFocusDeck()); }
     renderQueue();
-    renderFilRouge();
+    renderFilRougeDebounced();
     return;
   }
 
@@ -1822,9 +1911,9 @@ async function fetchAndStoreArtworkForItem(item, deck) {
   if (cachedArtUrl) {
     item.artUrl = cachedArtUrl;
     if (item.id) filRougeManager.patchPlaylistItem(item.id, { artUrl: cachedArtUrl });
-    updateNowPlaying(item, deck ?? getFocusDeck());
+    if (skipNotification) { updateUpcomingArtwork(); } else { updateNowPlaying(item, deck ?? getFocusDeck()); }
     renderQueue();
-    renderFilRouge();
+    renderFilRougeDebounced();
     persistArtwork(item, cachedArtUrl).catch(() => {});
     return;
   }
@@ -1838,9 +1927,9 @@ async function fetchAndStoreArtworkForItem(item, deck) {
     if (item.id) {
       filRougeManager.patchPlaylistItem(item.id, { artUrl });
     }
-    updateNowPlaying(item, deck ?? getFocusDeck());
+    if (skipNotification) { updateUpcomingArtwork(); } else { updateNowPlaying(item, deck ?? getFocusDeck()); }
     renderQueue();
-    renderFilRouge();
+    renderFilRougeDebounced();
     persistArtwork(item, artUrl).catch(() => {});
   } catch (_) {}
 }
@@ -1855,34 +1944,54 @@ async function startTxtPlaylistPrefetch(tracks) {
   let cached = 0;
   let failed = 0;
 
-  const BATCH_SIZE = 3;
-  for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
-    if (spotifyPrefetchGeneration !== generation) return;
-    const batch = tracks.slice(i, i + BATCH_SIZE);
-    for (const track of batch) {
-      setFilRougeTrackStatus(track, { downloadState: 'downloading', stemsOk: hasStemsForTrack(track) });
+  const toDownload = [];
+  for (const track of tracks) {
+    const inCache = await isTrackInLocalCache(track).catch(() => false);
+    if (inCache) {
+      cached++;
+      const mixData = await autoModeManager.fetchMixData(track.name, track.artist).catch(() => null);
+      setFilRougeTrackStatus(track, { downloadState: 'done', hasMixInfo: Boolean(mixData) });
+    } else {
+      toDownload.push(track);
     }
-    setTxtPlaylistStatus(`Téléchargement serveur TXT : ${i + 1}–${Math.min(i + BATCH_SIZE, tracks.length)} / ${tracks.length}…`);
-    renderFilRouge();
+  }
+  if (cached > 0) renderFilRougeDebounced();
+
+  let batchSize = INITIAL_PARALLEL_DOWNLOADS;
+  for (let i = 0; i < toDownload.length; ) {
+    if (spotifyPrefetchGeneration !== generation) return;
+    const batch = toDownload.slice(i, i + batchSize);
+    for (const track of batch) {
+      setFilRougeTrackStatus(track, { downloadState: 'downloading' });
+      renderFilRougeTrackStatus(track);
+    }
+    setTxtPlaylistStatus(`Téléchargement serveur TXT : ${i + 1}–${Math.min(i + batchSize, toDownload.length)} / ${toDownload.length}…`);
+    const batchStartedAt = performance.now();
     const batchResults = await Promise.allSettled(
       batch.map(track => prefetchTrackToLocalCache(track).catch(() => false))
     );
+    batchSize = computeNextBatchSize({
+      currentSize: batchSize,
+      elapsedMs: performance.now() - batchStartedAt,
+      completedCount: batch.length,
+    });
     await Promise.allSettled(
       batchResults.map(async (result, j) => {
         const track = batch[j];
         const ok = result.status === 'fulfilled' && result.value;
         if (ok) {
           cached++;
-          autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
-          setFilRougeTrackStatus(track, { downloadState: 'done', stemsOk: hasStemsForTrack(track) });
+          const mixData = await autoModeManager.fetchMixData(track.name, track.artist).catch(() => null);
+          setFilRougeTrackStatus(track, { downloadState: 'done', hasMixInfo: Boolean(mixData) });
         } else {
           failed++;
-          setFilRougeTrackStatus(track, { downloadState: 'error', stemsOk: hasStemsForTrack(track) });
+          setFilRougeTrackStatus(track, { downloadState: 'error' });
         }
+        renderFilRougeTrackStatus(track);
         await fetchFilRougeArtwork(track).catch(() => {});
       })
     );
-    renderFilRouge();
+    i += batch.length;
   }
 
   if (spotifyPrefetchGeneration !== generation) return;
@@ -1890,6 +1999,7 @@ async function startTxtPlaylistPrefetch(tracks) {
     ? `Import TXT : ${cached} mis en cache serveur, ${failed} échec${failed > 1 ? 's' : ''}.`
     : `Import TXT : ${cached} morceau${cached > 1 ? 'x' : ''} mis en cache serveur.`;
   setTxtPlaylistStatus(summary, failed > 0 && cached === 0);
+  scheduleDjSetQualityRefresh();
 }
 
 function stopSpotifyFilRougeSync() {
@@ -1911,24 +2021,43 @@ function getSpotifyFilRougeNextDelayMs(error) {
 }
 
 /**
- * Caches all tracks from a Spotify playlist into the local API cache, one by
- * one (sequentially) to avoid flooding the device with parallel requests.
- * Each call increments a generation counter; a stale loop detects the change
- * and exits early so only the latest import is being prefetched at any time.
+ * Caches all tracks from a Spotify playlist into the local API cache, by
+ * batches downloaded in parallel (size adjusted after each batch based on
+ * observed per-track throughput, see SPEC-3.4.9). Each call increments a
+ * generation counter; a stale loop detects the change and exits early so
+ * only the latest import is being prefetched at any time.
  */
 async function startSpotifyPlaylistPrefetch(tracks) {
   if (!Array.isArray(tracks) || tracks.length === 0) return;
   const generation = ++spotifyPrefetchGeneration;
   let cached = 0;
   let failed = 0;
-  const BATCH_SIZE = 3;
-  for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
+
+  const toDownload = [];
+  for (const track of tracks) {
+    const inCache = await isTrackInLocalCache(track).catch(() => false);
+    if (inCache) {
+      cached++;
+      autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
+    } else {
+      toDownload.push(track);
+    }
+  }
+
+  let batchSize = INITIAL_PARALLEL_DOWNLOADS;
+  for (let i = 0; i < toDownload.length; ) {
     if (spotifyPrefetchGeneration !== generation) return;
-    const batch = tracks.slice(i, i + BATCH_SIZE);
-    setSpotifyStatus(`Cache Spotify : ${i + 1}–${Math.min(i + BATCH_SIZE, tracks.length)} / ${tracks.length}…`);
+    const batch = toDownload.slice(i, i + batchSize);
+    setSpotifyStatus(`Cache Spotify : ${i + 1}–${Math.min(i + batchSize, toDownload.length)} / ${toDownload.length}…`);
+    const batchStartedAt = performance.now();
     const batchResults = await Promise.allSettled(
       batch.map(track => prefetchTrackToLocalCache(track).catch(() => false))
     );
+    batchSize = computeNextBatchSize({
+      currentSize: batchSize,
+      elapsedMs: performance.now() - batchStartedAt,
+      completedCount: batch.length,
+    });
     for (let j = 0; j < batch.length; j++) {
       const track = batch[j];
       const ok = batchResults[j].status === 'fulfilled' && batchResults[j].value;
@@ -1939,12 +2068,14 @@ async function startSpotifyPlaylistPrefetch(tracks) {
         failed++;
       }
     }
+    i += batch.length;
   }
   if (spotifyPrefetchGeneration !== generation) return;
   const summary = failed > 0
     ? `Cache Spotify : ${cached} mis en cache, ${failed} échec${failed > 1 ? 's' : ''}`
     : `Cache Spotify : ${cached} morceau${cached > 1 ? 'x' : ''} mis en cache`;
   setSpotifyStatus(summary);
+  scheduleDjSetQualityRefresh();
 }
 
 /**
@@ -1991,7 +2122,6 @@ function mergeSpotifyTracksToFilRouge(freshTracks) {
       // Nouveau morceau ajouté sur Spotify
       setFilRougeTrackStatus(track, {
         downloadState: track?.cachePath || track?.persistedSourceUrl ? 'done' : 'idle',
-        stemsOk: hasStemsForTrack(track),
       });
       merged.push(track);
       newIds.push(id);
@@ -2158,7 +2288,6 @@ function addToFilRouge(item) {
   if (added) {
     setFilRougeTrackStatus(filRougeItem, {
       downloadState: filRougeItem.cachePath || filRougeItem.persistedSourceUrl ? 'done' : 'idle',
-      stemsOk: hasStemsForTrack(filRougeItem),
     });
     showToast(`"${filRougeItem.name}" ajouté au fil rouge`);
 
@@ -2213,10 +2342,8 @@ const scheduleDjSetQualityRefresh = createDebouncedFn(() => {
 }, 1000);
 
 /**
- * Rafraîchit les transitions du fil rouge puis le badge de qualité du set.
- * Les transitions batch ne sont appliquées que si elles correspondent à l'ordre
- * réel du fil rouge ; les paires réordonnées par le batch sont recalculées via
- * /api/dj/transition individuellement dans computeSetQuality.
+ * Rafraîchit les 10 prochaines transitions du fil rouge via /api/dj/transition
+ * (une requête par paire, à partir de l'index courant).
  * @param {string} reason - pour les logs (ex: 'startup', 'spotify-import')
  */
 async function runDjPlanFullPass(reason) {
@@ -2224,21 +2351,33 @@ async function runDjPlanFullPass(reason) {
     renderDjSetQualityBadge(djSetQualityBadgeEl, null);
     return;
   }
-  await runDjSetQualityRefresh();
+
+  const playlist = filRougeManager.getPlaylist();
+  const filRougeCurrentIdx = filRougeManager.getCurrentIndex();
+  const currentFilRougeItem = (uiState.currentTrackId != null
+    ? playlist.find((p) => String(p.id) === String(uiState.currentTrackId))
+    : null) ?? (filRougeCurrentIdx >= 0 ? playlist[filRougeCurrentIdx] : null);
+  const promises = [runDjSetQualityRefresh()];
+  if (currentFilRougeItem) {
+    promises.push(djPlanManager.planCurrentToNextTransition(currentFilRougeItem));
+  }
+  await Promise.all(promises);
+
+  updateDjPlanIndicator();
   renderFilRouge();
 }
 
 /**
  * Calcule les arêtes DJ pour des morceaux ajoutés à la volée (ajout simple ou
- * merge Spotify) via `/api/dj/transition`, puis rafraîchit le badge de qualité
- * du set (`/api/dj/batch`) sur l'ensemble du fil rouge.
+ * merge Spotify) via `/api/dj/transition`, puis déclenche le calcul des 10
+ * prochaines transitions depuis l'index courant.
  * @param {Array} items - nouveaux items déjà présents dans le fil rouge
  * @param {boolean} withWrap
  */
 async function runDjPlanIncrementalPass(items, withWrap) {
   try {
     await djPlanManager.planEdgesForNewItems(items, { withWrap });
-    renderFilRouge();
+    renderFilRougeDebounced();
   } catch (err) {
     logWarn('djPlan: planEdgesForNewItems failed', { error: err?.message });
   }
@@ -2298,7 +2437,6 @@ const FX_MODE_LABELS = {
   kick_swap: 'Kick swap',
   beat_repeat: 'Beat repeat',
   backspin: 'Backspin',
-  fake_drop: 'Fake drop',
   echo_freeze: 'Echo freeze',
 };
 
@@ -2320,10 +2458,12 @@ function updateDjPlanIndicator() {
   });
 
   if (!indicatorState.visible) {
+    if (djPlanSectionEl) djPlanSectionEl.hidden = true;
     djPlanIndicatorEl.hidden = true;
     return;
   }
 
+  if (djPlanSectionEl) djPlanSectionEl.hidden = false;
   djPlanIndicatorEl.hidden = false;
 
   if (indicatorState.state === 'no-track') {
@@ -2363,6 +2503,17 @@ function updateDjPlanIndicator() {
   const modeLabel = resolvedMode ? (MIX_TRANSITION_MODE_LABELS[resolvedMode] || resolvedMode) : null;
   const fxLabel = resolvedMode ? (FX_MODE_LABELS[resolvedMode] || null) : null;
 
+  const pendingFxEvents = (autoModeManager.getPendingAutoFxEvents() || [])
+    .filter((e) => e && !e.triggered)
+    .sort((a, b) => a.timeMs - b.timeMs);
+
+  const fxChipsHtml = pendingFxEvents.length > 0
+    ? pendingFxEvents.map((e) => {
+      const timeFmt = formatZoneTime(e.timeMs / 1000);
+      return `<span class="dj-plan-fx-chip" title="${escHtml(e.reason || '')}"><span class="dj-plan-fx-chip-label">${escHtml(e.label || e.type)}</span><span class="dj-plan-fx-chip-time">${timeFmt}</span></span>`;
+    }).join('')
+    : `<span class="dj-plan-fx-chip dj-plan-fx-chip--empty">Aucun FX prévu</span>`;
+
   djPlanIndicatorEl.innerHTML = `
     <div class="dj-plan-card">
       <div class="dj-plan-card-header">
@@ -2381,16 +2532,14 @@ function updateDjPlanIndicator() {
           <span class="dj-plan-tl-label">Sort à</span>
           <span class="dj-plan-tl-time">${mixOutFmt ?? '--:--'}</span>
         </div>
-        <div class="dj-plan-timeline-fade">
-          <div class="dj-plan-tl-bar"></div>
-          ${crossfadeSec !== null ? `<span class="dj-plan-tl-duration">${crossfadeSec}s de fondu</span>` : ''}
-        </div>
+        <div class="dj-plan-fx-chips">${fxChipsHtml}</div>
         <div class="dj-plan-timeline-in">
           <span class="dj-plan-tl-label">Entre à</span>
           <span class="dj-plan-tl-time">${mixInFmt ?? '--:--'}</span>
         </div>
       </div>
       <div class="dj-plan-card-meta">
+        ${crossfadeSec !== null ? `<span class="dj-plan-meta-fade">${crossfadeSec}s fondu</span>` : ''}
         ${bpm !== null ? `<span class="dj-plan-meta-bpm">BPM cible : ${bpm}</span>` : ''}
         <span class="dj-plan-next-track">→ ${nextLabel}</span>
       </div>
@@ -2435,8 +2584,28 @@ if (djRecalculateBtn) {
   djRecalculateBtn.addEventListener('click', async () => {
     djRecalculateBtn.disabled = true;
     try {
-      await runDjPlanFullPass('manual-recalculate');
-      showToast('Planning DJ recalculé');
+      const playlist = filRougeManager.getPlaylist();
+      const filRougeIdx = filRougeManager.getCurrentIndex();
+      const currentItem = (uiState.currentTrackId != null
+        ? playlist.find((p) => String(p.id) === String(uiState.currentTrackId))
+        : null) ?? (filRougeIdx >= 0 ? playlist[filRougeIdx] : null);
+      let result = { ok: false, reason: 'no-track' };
+      if (currentItem) {
+        result = await djPlanManager.planCurrentToNextTransition(currentItem, { force: true });
+      }
+      updateDjPlanIndicator();
+      renderFilRouge();
+      if (result.ok) {
+        showToast('Transition recalculée');
+      } else if (result.reason === 'last-track') {
+        showToast('Dernier morceau : pas de transition suivante', true);
+      } else if (result.reason === 'unresolved-tracks') {
+        showToast('Morceaux non reconnus par le DJ Planner', true);
+      } else if (result.reason === 'api-error') {
+        showToast('Erreur API lors du calcul de transition', true);
+      } else {
+        showToast('Impossible de calculer la transition', true);
+      }
     } catch (err) {
       showToast('Recalcul : échec', true);
     } finally {
@@ -2448,13 +2617,17 @@ if (djRecalculateBtn) {
 // ── Fil rouge : téléchargement de masse ──────────────────────────────────────
 
 const DOWNLOAD_ALL_BTN_DEFAULT_LABEL = 'Tout télécharger';
+const MIX_INFO_BTN_DEFAULT_LABEL = 'Mix suggestions manquantes';
 
 const filRougeDownloader = createFilRougeDownloader({
   prefetchTrackToLocalCache,
+  isTrackInLocalCache,
   setFilRougeTrackStatus,
   getFilRougeTrackStatus,
   renderFilRouge,
+  renderTrackStatus: renderFilRougeTrackStatus,
   showToast,
+  fetchMixData: (name, artist) => autoModeManager.fetchMixData(name, artist),
   onProgress: (done, inProgress, total) => {
     if (!filRougeDownloadAllBtn) return;
     if (total === 0) {
@@ -2466,12 +2639,34 @@ const filRougeDownloader = createFilRougeDownloader({
       filRougeDownloadAllBtn.disabled = true;
     }
   },
+  onMixInfoProgress: (done, total) => {
+    if (!filRougeMixInfoBtn) return;
+    if (total === 0) {
+      filRougeMixInfoBtn.textContent = MIX_INFO_BTN_DEFAULT_LABEL;
+      filRougeMixInfoBtn.disabled = false;
+    } else {
+      filRougeMixInfoBtn.textContent = `Mix info : ${done} / ${total}`;
+      filRougeMixInfoBtn.disabled = true;
+    }
+  },
+  getDownloaderApiUrl,
+  getDownloaderApiToken,
+  onAuthExpired: () => showToast('Session expirée : renouvelez le token API dans Config', true),
+  // Garde l'écran allumé pendant que la file interne dépend du JS de page pour
+  // continuer (Background Fetch n'en a pas besoin, le navigateur gère seul) — SPEC-19.7.
+  onInternalQueueActiveChange: (active) => setWakeLockReason('download', active),
 });
 
 if (filRougeDownloadAllBtn) {
   filRougeDownloadAllBtn.addEventListener('click', () => {
+    if (filRougeMixInfoBtn?.disabled) {
+      showToast('Récupération des mix suggestions en cours', true);
+      return;
+    }
     const tracks = filRougeManager.getPlaylist();
-    filRougeDownloader.downloadAll(tracks).catch(err => {
+    filRougeDownloader.downloadAll(tracks).then(() => {
+      scheduleDjSetQualityRefresh();
+    }).catch(err => {
       showToast('Téléchargement : erreur', true);
       console.error('[filrouge] downloadAll error', err);
       if (filRougeDownloadAllBtn) {
@@ -2482,10 +2677,24 @@ if (filRougeDownloadAllBtn) {
   });
 }
 
+if (filRougeMixInfoBtn) {
+  filRougeMixInfoBtn.addEventListener('click', () => {
+    const tracks = filRougeManager.getPlaylist();
+    filRougeDownloader.downloadMissingMixInfo(tracks).catch(err => {
+      showToast('Mix suggestions : erreur', true);
+      console.error('[filrouge] downloadMissingMixInfo error', err);
+      if (filRougeMixInfoBtn) {
+        filRougeMixInfoBtn.textContent = MIX_INFO_BTN_DEFAULT_LABEL;
+        filRougeMixInfoBtn.disabled = false;
+      }
+    });
+  });
+}
+
 // Mise à jour des statuts après un Background Fetch terminé par le SW
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', e => {
-    const { type, succeededKeys = [], failedKeys = [] } = e?.data || {};
+    const { type, id, succeededKeys = [], failedKeys = [] } = e?.data || {};
     if (type !== 'BG_FETCH_DONE' && type !== 'BG_FETCH_FAIL') return;
 
     if (type === 'BG_FETCH_FAIL') {
@@ -2498,6 +2707,8 @@ if ('serviceWorker' in navigator) {
         }
       }
       renderFilRouge();
+      filRougeDownloader.recordBackgroundFetchFail?.(id).catch(() => {});
+      scheduleDjSetQualityRefresh();
       return;
     }
 
@@ -2511,13 +2722,17 @@ if ('serviceWorker' in navigator) {
       }
     }
     renderFilRouge();
-    showToast(`Téléchargement terminé : ${succeededKeys.length} réussi${succeededKeys.length > 1 ? 's' : ''}`);
+    // Retente les échecs (backoff x3) et récupère les mix infos des réussites
+    // en parallèle (SPEC-19.6.3/19.6.4).
+    filRougeDownloader.recordBackgroundFetchResult?.(id, succeededKeys, failedKeys, playlist).catch(() => {});
+    showToast(failedKeys.length > 0
+      ? `Téléchargement : ${succeededKeys.length} réussi${succeededKeys.length > 1 ? 's' : ''} — retentative de ${failedKeys.length} échec${failedKeys.length > 1 ? 's' : ''}…`
+      : `Téléchargement terminé : ${succeededKeys.length} réussi${succeededKeys.length > 1 ? 's' : ''}`);
+    scheduleDjSetQualityRefresh();
   });
 }
 
-// Initial render
-renderFilRouge();
-updateDjExternalPlanUI();
+// Initial render — deferred until autoModeManager is created (see below).
 
 /**
  * Au chargement de la page, vérifie quels morceaux du fil rouge sont déjà
@@ -2532,43 +2747,52 @@ async function startFilRougeStartupCacheSync() {
   for (const track of playlist) {
     const inCache = await isTrackInLocalCache(track).catch(() => false);
     if (inCache) {
-      autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
+      const mixData = await autoModeManager.fetchMixData(track.name, track.artist).catch(() => null);
       setFilRougeTrackStatus(track, {
         downloadState: 'done',
-        stemsOk: hasStemsForTrack(track),
+        hasMixInfo: Boolean(mixData),
       });
     }
   }
   renderFilRouge();
 
-  // Phase 2 : télécharger ce qui manque (3 en parallèle)
+  // Phase 2 : télécharger ce qui manque (taille de batch ajustée après chaque
+  // batch selon le débit observé, voir SPEC-3.4.9)
   const toDownload = playlist.filter(track => {
     const key = getFilRougeTrackKey(track);
     const existing = filRougeTrackStatusByKey.get(key);
     return existing?.downloadState !== 'done';
   });
-  const BATCH_SIZE = 3;
-  for (let i = 0; i < toDownload.length; i += BATCH_SIZE) {
-    const batch = toDownload.slice(i, i + BATCH_SIZE);
+  let batchSize = INITIAL_PARALLEL_DOWNLOADS;
+  for (let i = 0; i < toDownload.length; ) {
+    const batch = toDownload.slice(i, i + batchSize);
     for (const track of batch) {
-      setFilRougeTrackStatus(track, { downloadState: 'downloading', stemsOk: hasStemsForTrack(track) });
+      setFilRougeTrackStatus(track, { downloadState: 'downloading' });
+      renderFilRougeTrackStatus(track);
     }
-    renderFilRouge();
+    const batchStartedAt = performance.now();
     const batchResults = await Promise.allSettled(
       batch.map(track => prefetchTrackToLocalCache(track).catch(() => false))
     );
+    batchSize = computeNextBatchSize({
+      currentSize: batchSize,
+      elapsedMs: performance.now() - batchStartedAt,
+      completedCount: batch.length,
+    });
     for (let j = 0; j < batch.length; j++) {
       const track = batch[j];
       const ok = batchResults[j].status === 'fulfilled' && batchResults[j].value;
       if (ok) {
-        autoModeManager.fetchMixData(track.name, track.artist).catch(() => {});
-        setFilRougeTrackStatus(track, { downloadState: 'done', stemsOk: hasStemsForTrack(track) });
+        const mixData = await autoModeManager.fetchMixData(track.name, track.artist).catch(() => null);
+        setFilRougeTrackStatus(track, { downloadState: 'done', hasMixInfo: Boolean(mixData) });
       } else {
-        setFilRougeTrackStatus(track, { downloadState: 'error', stemsOk: hasStemsForTrack(track) });
+        setFilRougeTrackStatus(track, { downloadState: 'error' });
       }
+      renderFilRougeTrackStatus(track);
     }
-    renderFilRouge();
+    i += batch.length;
   }
+  if (toDownload.length) scheduleDjSetQualityRefresh();
 }
 
 function isCacheTabActive() {
@@ -2877,6 +3101,32 @@ function resolveMixDataStartOffsetMs(mixData) {
     }
   }
 
+  // Empty intro detection: if no breakdown/drop/peak/avoidTransition zone starts
+  // before 15s, skip to the first such zone.
+  const EMPTY_INTRO_THRESHOLD_SEC = 15;
+  const allSignificantZones = [
+    ...(Array.isArray(mixData.breakdownZones) ? mixData.breakdownZones : []),
+    ...(Array.isArray(mixData.dropZones) ? mixData.dropZones : []),
+    ...(Array.isArray(mixData.peakZones) ? mixData.peakZones : []),
+    ...(Array.isArray(mixData.avoidTransitionZones) ? mixData.avoidTransitionZones : []),
+  ]
+    .filter((z) => Number.isFinite(Number(z?.startSec)) && Number(z.startSec) > 0)
+    .sort((a, b) => Number(a.startSec) - Number(b.startSec));
+
+  if (allSignificantZones.length > 0) {
+    const firstZoneStartSec = Number(allSignificantZones[0].startSec);
+    const hasZoneBeforeThreshold = allSignificantZones.some(
+      (z) => Number(z.startSec) < EMPTY_INTRO_THRESHOLD_SEC,
+    );
+    if (!hasZoneBeforeThreshold) {
+      const durationSec = toFiniteNumber(mixData.durationSec);
+      const safeLimit = durationSec != null && durationSec > 30 ? durationSec - 30 : Infinity;
+      if (firstZoneStartSec <= safeLimit) {
+        recommendedSec = Math.max(recommendedSec, firstZoneStartSec);
+      }
+    }
+  }
+
   if (!Number.isFinite(recommendedSec) || recommendedSec <= 0) return 0;
   return Math.round(recommendedSec * 1000);
 }
@@ -3047,6 +3297,8 @@ const djPlanManager = createDjPlanManager({
   djApiClient,
   getFilRougeManager: () => filRougeManager,
   getQueue: () => queue,
+  getTrackMaxDurationAppliedSec: () => trackMaxDurationAppliedSec,
+  isFilRougeDownloadPending: () => isFilRougeDownloadInProgress(),
   logger,
 });
 
@@ -3066,7 +3318,6 @@ const autoModeManager = createAutoModeManager({
   getAutoFxMinGapMs: () => getSafeAutoDjFxMinIntervalSec(autoDjFxSettings.minIntervalSec) * 1000,
   getAutoFxMaxGapMs: () => getAutoDjFxMaxGapMs(autoDjFxSettings),
   getDjMode: () => djMode,
-  getDjModeGenrePrefs: () => djModeGenrePrefs,
   getCurrentBpm: getActiveDeckBpm,
   getActualDurationMs: () => playbackDurationMs,
   onAutomixTimingCalculated: (triggerMs) => {
@@ -3076,6 +3327,9 @@ const autoModeManager = createAutoModeManager({
     if (djPlan && Number.isFinite(djPlan.mixOutSec) && djPlan.mixOutSec > 0) {
       finalTriggerMs = Math.round(djPlan.mixOutSec * 1000);
       logDebug('djPlan: automix timing override', { triggerMs: finalTriggerMs, decisionId: djPlan.decisionId });
+    } else if (djExternalPlanEnabled && nextFilRougeItem && trackMaxDurationAppliedSec > 0) {
+      finalTriggerMs = Math.round(trackMaxDurationAppliedSec * 1000);
+      logDebug('djPlan: no suggestion yet, maxDuration fallback timing', { triggerMs: finalTriggerMs });
     }
     setAutomixTriggerMs(automixTimeline, finalTriggerMs);
     logDebug('autoDj: timing calculated', { triggerMs: finalTriggerMs });
@@ -3182,9 +3436,14 @@ const filRougeCtrl = createFilRougeController({
   filRougeLoopBtn,
   filRougePriorityListEl,
   filRougePlaylistListEl,
+  getPendingAutoFxEvents: () => autoModeManager.getPendingAutoFxEvents(),
   djPlanIndicatorEl,
   djSetQualityBadgeEl,
   djSetProfileSelectEl,
+  filRougeSortSelectEl,
+  getDownloaderApiUrl,
+  getDownloaderApiToken,
+  getTrackMaxDurationAppliedSec: () => settingsCtrl.getTrackMaxDurationAppliedSec(),
 });
 
 const deckMarkerCtrl = createDeckMarkerController({
@@ -3259,6 +3518,7 @@ const playbackCtrl = createPlaybackController({
   applyTrackMaxDurationForCurrentPlayback: () => applyTrackMaxDurationForCurrentPlayback(),
   resetTrackCaches: () => {
     maxDurMarkerTriggeredForTrack = false;
+    djPlanMixOutTriggeredForTrack = false;
     _maxDurMarkerCache.key = null;
     _maxDurMarkerCache.renderKey = null;
     _maxDurMarkerCache.rawLogged = false;
@@ -3273,6 +3533,7 @@ const playbackCtrl = createPlaybackController({
   deckAstemsIndicator,
   deckBstemsIndicator,
   autoMixBtn,
+  onTrackStarted: () => filRougeCtrl?.scheduleDjSetQualityRefresh(),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3568,6 +3829,8 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
   updateTrackMaxDurationUI();
 
   autoModeManager.initialize();
+  renderFilRouge();
+  updateDjExternalPlanUI();
   updateAutoModeUI();
   updateAutoDjFxConfigUI();
   renderDjModeUI();
@@ -3612,6 +3875,13 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
   }
   checkApkUpdate();
 
+  const forceUpdateBtn = document.getElementById('btn-force-update');
+  if (forceUpdateBtn) {
+    forceUpdateBtn.addEventListener('click', () => {
+      forceUpdatePwa();
+    });
+  }
+
 
   restoreQueue();
   if (queue.length) {
@@ -3638,6 +3908,10 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
 
   // Vérification et téléchargement au démarrage des morceaux du fil rouge.
   startFilRougeStartupCacheSync().catch(() => {});
+
+  // Reprise des lots de téléchargement ("Tout télécharger") interrompus lors
+  // d'une session précédente (SPEC-19.2).
+  filRougeDownloader.resumeIncompleteBatches?.(filRougeManager.getPlaylist()).catch(() => {});
 
   // DJ Planner : sélecteur de profil de set + recalcul complet des transitions du fil rouge.
   initDjSetProfileSelect().catch(() => {});
@@ -3760,12 +4034,28 @@ async function connectLocal() {
   showApp();
 
   await player.init();
+  const _savedGV = parseFloat(localStorage.getItem(STORAGE_KEYS.globalVolume));
+  applyGlobalVolume(Number.isFinite(_savedGV) ? _savedGV : 1);
   startSpotifyFilRougeSyncLoop();
   logInfo('connectLocal(): player initialized', {
     crossfadeDurationMs: player.crossfadeDuration,
     transitionMode: selectedTransitionMode,
   });
 }
+
+// ── Vérification périodique du préchargement de la platine inactive ──────────
+
+const inactivePreloadWatcher = createInactivePreloadWatcher({
+  isPlaying: () => uiState.isPlaying,
+  getActiveDeck: getResolvedActiveDeck,
+  getInactiveDeck: getResolvedInactiveDeck,
+  getDeckItem: (deck) => deckDisplayItems[deck] ?? null,
+  setDeckItem,
+  logDebug,
+  logWarn,
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function hookPlayerEvents() {
   player.addEventListener('ready', async () => {
@@ -3819,13 +4109,14 @@ function hookPlayerEvents() {
       navigator.mediaSession.playbackState = uiState.isPlaying ? 'playing' : 'paused';
     }
     pushPlaybackState({ playing: uiState.isPlaying, positionMs: playbackPositionMs });
-    // Wake Lock: activer si lecture, relâcher sinon
+    // Wake Lock: activer si lecture, relâcher sinon (raison 'playback', SPEC-19.7)
+    setWakeLockReason('playback', uiState.isPlaying);
     if (uiState.isPlaying) {
-      requestWakeLock();
       stopMediaKeepAlive(); // Lecture réelle → pas besoin du keepalive silencieux
+      inactivePreloadWatcher.start();
     } else {
-      releaseWakeLock();
       startMediaKeepAlive(); // Maintenir la notification Android pendant 10 minutes max
+      inactivePreloadWatcher.stop();
     }
     updateMediaSessionPositionState();
     renderQueue();
@@ -3897,6 +4188,41 @@ function hookPlayerEvents() {
           markerThresholdMs: _mdThresholdMs,
         });
         autoMixBtn?.click?.();
+      }
+    }
+
+    // DJ Plan: trigger automix exactly at mixOutSec computed by the planner for the
+    // current → next fil rouge transition, regardless of whether AutoDJ mode is enabled.
+    if (djExternalPlanEnabled && !djPlanMixOutTriggeredForTrack && !automixTimeline.triggeredForTrack) {
+      const _djCurrentItem = queue[uiState.currentIndex];
+      const _djFilRougeItem = _djCurrentItem
+        ? filRougeManager.getPlaylist().find((p) => String(p.id) === String(_djCurrentItem.id))
+        : null;
+      const _djTransition = _djFilRougeItem?.djTransition;
+      if (_djTransition && Number.isFinite(_djTransition.mixOutSec) && _djTransition.mixOutSec > 0) {
+        const _djThresholdMs = _djTransition.mixOutSec * 1000;
+        if (position >= _djThresholdMs) {
+          djPlanMixOutTriggeredForTrack = true;
+          markAutomixTriggered(automixTimeline);
+          logInfo('djPlan: mixOutSec reached, triggering automix', {
+            position,
+            mixOutSec: _djTransition.mixOutSec,
+            decisionId: _djTransition.decisionId,
+          });
+          autoMixBtn?.click?.();
+        }
+      } else if (_djFilRougeItem && trackMaxDurationAppliedSec > 0 && !maxDurMarkerTriggeredForTrack) {
+        const _djStartOffsetMs = Math.max(0, Number(_djCurrentItem?.autoDjStartOffsetMs) || 0);
+        const _djFallbackThresholdMs = trackMaxDurationAppliedSec * 1000 + _djStartOffsetMs;
+        if (position >= _djFallbackThresholdMs) {
+          djPlanMixOutTriggeredForTrack = true;
+          markAutomixTriggered(automixTimeline);
+          logInfo('djPlan: no mixOutSec, maxDuration fallback reached, triggering automix', {
+            position,
+            maxDurationSec: trackMaxDurationAppliedSec,
+          });
+          autoMixBtn?.click?.();
+        }
       }
     }
 
@@ -3972,6 +4298,15 @@ function hookPlayerEvents() {
     player.addEventListener('transitionmode', ({ detail }) => {
       const requestedMode = detail?.requestedMode || 'auto';
       const effectiveMode = detail?.effectiveMode || requestedMode;
+      const fromDeck = detail?.fromDeck;
+      const toDeck = detail?.toDeck;
+
+      if (effectiveMode === 'beat_repeat' && fromDeck && toDeck) {
+        const incomingBpm = Number(extractTrackBpm(deckDisplayItems[toDeck])) || 120;
+        const phaseDurationMs = (player.crossfadeDuration || 6000) * 0.65;
+        triggerBeatRepeatTransitionFx(fromDeck, toDeck, phaseDurationMs, incomingBpm);
+      }
+
       if (requestedMode !== 'auto') return;
       const label = MIX_TRANSITION_MODE_LABELS[effectiveMode] || effectiveMode;
       showToast(`AutoMix mode: ${label}`);
@@ -4064,6 +4399,20 @@ autoMixBtn?.addEventListener('click', async () => {
   }
 });
 
+// SPEC-13.3.6 — Compte les sorties audio (`kind === 'audiooutput'`) pour détecter
+// une vraie perte de sortie (débranchement) plutôt que réagir à tout `devicechange`
+// (qui se déclenche aussi sur un ajout de périphérique ou un bruit d'énumération).
+let lastAudioOutputDeviceCount = null;
+async function countAudioOutputDevices() {
+  if (!navigator.mediaDevices?.enumerateDevices) return null;
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.filter((d) => d.kind === 'audiooutput').length;
+  } catch {
+    return null;
+  }
+}
+
 function setupMediaSession() {
   if (!('mediaSession' in navigator)) return;
   navigator.mediaSession.setActionHandler('play', () => {
@@ -4105,7 +4454,76 @@ function setupMediaSession() {
 
   // Commandes de transport relayées depuis Android Auto / la notification native.
   onMediaCommand(applyMediaCommand);
+
+  // Activer le keepalive dès le setup pour que les boutons physiques fonctionnent
+  // avant le premier play (la session audio doit exister pour capter les événements).
+  startMediaKeepAlive();
+
+  // SPEC-13.3.6 — Pause automatique uniquement si une sortie audio a réellement
+  // disparu (ex. déconnexion casque Bluetooth) ; un `devicechange` qui n'enlève
+  // aucune sortie (ajout d'un périphérique, bruit d'énumération) est ignoré.
+  if (navigator.mediaDevices) {
+    countAudioOutputDevices().then((count) => { lastAudioOutputDeviceCount = count; });
+    navigator.mediaDevices.addEventListener('devicechange', async () => {
+      const previousCount = lastAudioOutputDeviceCount;
+      const count = await countAudioOutputDevices();
+      lastAudioOutputDeviceCount = count;
+      if (previousCount === null || count === null || count >= previousCount) return;
+      const focusDeck = getFocusDeck();
+      const deckState = uiState.lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
+      if (deckState?.playing) player?.pauseDeck?.(focusDeck);
+    });
+  }
 }
+
+// ── Touches média physiques (clavier / casque Bluetooth desktop) ──────────────
+// Sur desktop, les touches MediaPlayPause, MediaTrackNext etc. arrivent en
+// événements keydown et ne passent pas systématiquement par la Media Session API.
+function _handleMediaKey(focusDeck, deckState) {
+  if (deckState?.playing) {
+    player?.pauseDeck?.(focusDeck);
+  } else if (deckState?.hasSrc) {
+    player?.resumeDeck?.(focusDeck).catch(() => {});
+  } else {
+    if (focusDeck === 'A') deckALaunchBtn?.click();
+    else deckBLaunchBtn?.click();
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  const key = e.key;
+  if (!key?.startsWith('Media')) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const focusDeck = getFocusDeck();
+  const deckState = uiState.lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
+
+  switch (key) {
+    case 'MediaPlayPause':
+      _handleMediaKey(focusDeck, deckState);
+      break;
+    case 'MediaPlay':
+      if (!deckState?.playing) {
+        if (deckState?.hasSrc) player?.resumeDeck?.(focusDeck).catch(() => {});
+        else {
+          if (focusDeck === 'A') deckALaunchBtn?.click();
+          else deckBLaunchBtn?.click();
+        }
+      }
+      break;
+    case 'MediaPause':
+      if (deckState?.playing) player?.pauseDeck?.(focusDeck);
+      break;
+    case 'MediaStop':
+      player?.pause?.();
+      break;
+    case 'MediaTrackNext':
+      autoMixBtn?.click();
+      break;
+  }
+});
 
 /** Applique une commande de transport reçue depuis Android Auto / la notification native. */
 function applyMediaCommand(cmd) {
@@ -4305,7 +4723,7 @@ async function launchDeckFromQueue(deck, options = {}) {
         uiState.deckCueDeck = targetDeck;
         updateUpcomingArtwork();
         if (!item.artUrl) {
-          fetchAndStoreArtworkForItem(item, targetDeck).then(() => {
+          fetchAndStoreArtworkForItem(item, targetDeck, { skipNotification: true }).then(() => {
             if (launchPreviewItem === item) {
               launchPreviewArtUrl = item.artUrl || '';
               updateUpcomingArtwork();
@@ -4401,6 +4819,46 @@ crossfadeSlowerBtn?.addEventListener('click', () => {
 deckMixSlider?.addEventListener('input', () => {
   const sliderValue = (Number(deckMixSlider.value) || 0) / 100;
   applyDeckMixRatio(sliderValue, 120);
+});
+
+// ─── Volume global ────────────────────────────────────────────────────────────
+
+let _volumeBeforeMute = 1;
+
+function applyGlobalVolume(v) {
+  const clamped = Math.max(0, Math.min(1, v));
+  if (player) player.setGlobalVolume(clamped);
+  if (globalVolumeSlider) globalVolumeSlider.value = Math.round(clamped * 100);
+  if (globalVolumeLabel) globalVolumeLabel.textContent = `${Math.round(clamped * 100)}%`;
+  if (globalVolumeBtn) {
+    const muted = clamped === 0;
+    globalVolumeBtn.textContent = muted ? '🔇' : clamped < 0.5 ? '🔉' : '🔊';
+    globalVolumeBtn.setAttribute('aria-pressed', String(muted));
+  }
+  localStorage.setItem(STORAGE_KEYS.globalVolume, String(clamped));
+}
+
+(function initGlobalVolume() {
+  const saved = parseFloat(localStorage.getItem(STORAGE_KEYS.globalVolume));
+  const initial = Number.isFinite(saved) ? saved : 1;
+  _volumeBeforeMute = initial > 0 ? initial : 1;
+  applyGlobalVolume(initial);
+})();
+
+globalVolumeSlider?.addEventListener('input', () => {
+  const v = (Number(globalVolumeSlider.value) || 0) / 100;
+  if (v > 0) _volumeBeforeMute = v;
+  applyGlobalVolume(v);
+});
+
+globalVolumeBtn?.addEventListener('click', () => {
+  const isMuted = (player?.globalVolume ?? 1) === 0;
+  if (isMuted) {
+    applyGlobalVolume(_volumeBeforeMute || 1);
+  } else {
+    _volumeBeforeMute = player?.globalVolume ?? 1;
+    applyGlobalVolume(0);
+  }
 });
 
 deckALaunchBtn?.addEventListener('click', async () => {
@@ -5461,7 +5919,7 @@ function bindSearchResults(songResults, artistResults) {
   });
 }
 
-function renderSearchResults(tracks, isPartial = false) {
+function renderSearchResults(tracks) {
   const seen = new Set();
   const normalized = tracks
     .map(mapApiTrackToSearchItem)
@@ -5476,41 +5934,13 @@ function renderSearchResults(tracks, isPartial = false) {
   const songResults = normalized.filter((track) => !track.isArtistResult);
   const artistResults = normalized.filter((track) => track.isArtistResult);
 
-  const spinnerHtml = isPartial
-    ? '<div class="search-poll-spinner search-loading" style="font-size:11px;padding:3px 8px;opacity:0.7;">Recherche en cours...</div>'
-    : '';
-  searchResults.innerHTML = spinnerHtml + buildSearchResultsSectionsHTML(songResults, artistResults);
+  searchResults.innerHTML = buildSearchResultsSectionsHTML(songResults, artistResults);
   bindSearchResults(songResults, artistResults);
-}
-
-function scheduleSearchPoll(query, token, attempt) {
-  if (attempt >= 8) return;
-  const delay = Math.min(1500 + attempt * 600, 5000);
-  setTimeout(async () => {
-    if (lastSearchQuery !== query || currentSearchPollToken !== token) return;
-    const { pending, tracks } = await pollSearchResults(token).catch(() => ({ pending: true, tracks: [] }));
-    if (lastSearchQuery !== query || currentSearchPollToken !== token) return;
-    if (!pending) {
-      currentSearchPollToken = null;
-      if (tracks?.length) {
-        logInfo('runSearch(): phase 2 results', { query, count: tracks.length });
-        renderSearchResults(tracks, false);
-      } else {
-        searchResults.querySelector('.search-poll-spinner')?.remove();
-        if (!searchResults.querySelector('.search-result-item')) {
-          searchResults.innerHTML = '<div class="search-empty">Aucun résultat</div>';
-        }
-      }
-    } else {
-      scheduleSearchPoll(query, token, attempt + 1);
-    }
-  }, delay);
 }
 
 async function runSearch(query, skipCache = false) {
   logInfo('runSearch(): querying API', { query, skipCache });
   lastSearchQuery = query;
-  currentSearchPollToken = null;
 
   try {
     if (!getDownloaderApiUrl()) {
@@ -5523,22 +5953,15 @@ async function runSearch(query, skipCache = false) {
       return;
     }
 
-    const { tracks, pollToken } = await searchTracksRaw(query, 25, skipCache);
+    const { tracks } = await searchTracksRaw(query, 25, skipCache);
     if (lastSearchQuery !== query) return;
 
-    logInfo('runSearch(): phase 1 results', { query, count: tracks?.length || 0, hasPollToken: !!pollToken });
+    logInfo('runSearch(): results', { query, count: tracks?.length || 0 });
 
     if (tracks?.length) {
-      renderSearchResults(tracks, !!pollToken);
-    } else if (pollToken) {
-      searchResults.innerHTML = '<div class="search-loading">Recherche en cours...</div>';
+      renderSearchResults(tracks);
     } else {
       searchResults.innerHTML = '<div class="search-empty">Aucun résultat</div>';
-    }
-
-    if (pollToken) {
-      currentSearchPollToken = pollToken;
-      scheduleSearchPoll(query, pollToken, 0);
     }
   } catch (err) {
     logError('runSearch(): failed', { query, message: err?.message });
@@ -5596,6 +6019,7 @@ async function addToQueue(track, options = {}) {
     source = 'manual',
     autoDjReferenceTrackId = null,
     showAddedToast = true,
+    asNext = false,
   } = options;
   const artUrl = getBestArtworkUrl(track);
   const duration = getTrackDurationMs(track);
@@ -5605,7 +6029,7 @@ async function addToQueue(track, options = {}) {
   const genre = extractTrackGenre(track);
   const suggestedStartOffsetMs = resolveTrackStartOffsetMs(track);
   const item = {
-    id: track.id || track.ratingKey || track.uri || track.name,
+    id: getTrackCacheKey(track) || track.name,
     uri: track.uri || track.downloadUrl || `api:track:${track.id || track.name}`,
     name: track.name || track.title || 'Titre API',
     artist: track.artists ? track.artists.map((a) => a.name).join(', ') : (track.artist || 'Artiste inconnu'),
@@ -5660,10 +6084,18 @@ async function addToQueue(track, options = {}) {
     return;
   }
 
-  queue.push(item);
-  const addedIndex = queue.length - 1;
+  let addedIndex;
+  if (asNext) {
+    addedIndex = Math.min(Math.max(uiState.currentIndex + 1, 0), queue.length);
+    queue.splice(addedIndex, 0, item);
+    if (uiState.deckBCueIndex >= addedIndex) uiState.deckBCueIndex += 1;
+  } else {
+    queue.push(item);
+    addedIndex = queue.length - 1;
+  }
   logInfo('addToQueue(): item added', {
     addedIndex,
+    asNext,
     id: item.id,
     name: item.name,
     artist: item.artist,
@@ -5684,11 +6116,23 @@ async function addToQueue(track, options = {}) {
         newItemId: item.id,
         newItemName: item.name,
       });
-      fetchAndStoreArtworkForItem(item, inactiveDeck).catch(() => {});
+      fetchAndStoreArtworkForItem(item, inactiveDeck, { skipNotification: true }).catch(() => {});
       const replaceMixPreload = preloadMixDataForDeckItem(item, inactiveDeck);
       ensureLocalSource(item).then(async (url) => {
         if (!player || deckDisplayItems[inactiveDeck] !== item) return;
         await replaceMixPreload.catch(() => {});
+        // SPEC-1.1.16 : re-valider la cible après la préparation asynchrone.
+        if (getResolvedInactiveDeck() !== inactiveDeck
+          || deckDisplayItems[inactiveDeck] !== item
+          || uiState.currentTrackId === item.id) {
+          logWarn('addToQueue(): stale ghost-replacement preload aborted', {
+            inactiveDeck,
+            resolvedInactiveDeck: getResolvedInactiveDeck(),
+            itemId: item.id,
+            currentTrackId: uiState.currentTrackId,
+          });
+          return;
+        }
         const startMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
         await player.playOnDeck(inactiveDeck, {
           url,
@@ -5743,7 +6187,10 @@ async function addToQueue(track, options = {}) {
   });
 
   // Preload mix data early so start offset recommendations are available before cue/play.
-  preloadMixDataForDeckItem(item, getResolvedInactiveDeck()).catch(() => {});
+  // After fetch, re-render the fil rouge badge so hasMixInfo reflects the new state (SPEC-3.5.5).
+  preloadMixDataForDeckItem(item, getResolvedInactiveDeck())
+    .then(() => { renderFilRougeTrackStatus(item); })
+    .catch(() => {});
 
   if (showAddedToast) {
     showToast(`✔ "${item.name}" ajouté`);
@@ -5760,7 +6207,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
   if (!item || !player) return;
   let startPositionMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
 
-  const targetDeck = options.targetDeck || ((mode === 'play' || mode === 'switch')
+  let targetDeck = options.targetDeck || ((mode === 'play' || mode === 'switch')
     ? getResolvedActiveDeck()
     : getResolvedInactiveDeck());
 
@@ -5864,6 +6311,27 @@ async function startPlaybackForIndex(index, mode, options = {}) {
         name: item.name,
         sourceState: item.sourceState,
       });
+    }
+
+    // SPEC-1.1.15 : la platine cible a pu devenir active pendant la préparation
+    // asynchrone (preload mix + ensureLocalSource). Re-cibler la platine réellement
+    // inactive pour ne jamais écraser le morceau en cours de lecture.
+    if (mode === 'autofade' || mode === 'crossfade') {
+      const currentInactiveDeck = getResolvedInactiveDeck();
+      if (targetDeck !== currentInactiveDeck) {
+        logWarn('startPlaybackForIndex(): target deck became active during preparation, retargeting', {
+          index,
+          mode,
+          staleTargetDeck: targetDeck,
+          retargetedDeck: currentInactiveDeck,
+          itemId: item.id,
+        });
+        if (deckDisplayItems[targetDeck] === item) setDeckItem(targetDeck, null);
+        targetDeck = currentInactiveDeck;
+        setDeckItem(targetDeck, item);
+        if (launchPreviewItem === item) launchPreviewDeck = targetDeck;
+        updatePlannedStartMarker();
+      }
     }
 
     let djRateApplied = false;
@@ -5974,13 +6442,27 @@ async function startPlaybackForIndex(index, mode, options = {}) {
         setDeckItem(inactiveDeck, nextItem);
         updatePlannedStartMarker();
 
-        fetchAndStoreArtworkForItem(nextItem, inactiveDeck).catch(() => {});
+        fetchAndStoreArtworkForItem(nextItem, inactiveDeck, { skipNotification: true }).catch(() => {});
         const nextMixPreload = preloadMixDataForDeckItem(nextItem, inactiveDeck);
 
         ensureLocalSource(nextItem).then(async (nextUrl) => {
           if (!player) return;
 
           await nextMixPreload.catch(() => {});
+          // SPEC-1.1.16 : la préparation est asynchrone (téléchargement possible) —
+          // re-valider la cible juste avant le chargement pour ne jamais toucher
+          // une platine devenue active ni dupliquer le morceau courant.
+          if (getResolvedInactiveDeck() !== inactiveDeck
+            || deckDisplayItems[inactiveDeck] !== nextItem
+            || uiState.currentTrackId === nextItem.id) {
+            logWarn('startPlaybackForIndex(): stale next-track preload aborted', {
+              inactiveDeck,
+              resolvedInactiveDeck: getResolvedInactiveDeck(),
+              nextItemId: nextItem.id,
+              currentTrackId: uiState.currentTrackId,
+            });
+            return;
+          }
           const nextStartPositionMs = Math.max(0, Number(nextItem.autoDjStartOffsetMs) || 0);
 
           await player.playOnDeck(inactiveDeck, {
@@ -6032,7 +6514,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
             ghostName: ghostItem.name,
           });
 
-          fetchAndStoreArtworkForItem(ghostItem, inactiveDeck).catch(() => {});
+          fetchAndStoreArtworkForItem(ghostItem, inactiveDeck, { skipNotification: true }).catch(() => {});
           const ghostMixPreload = preloadMixDataForDeckItem(ghostItem, inactiveDeck);
 
           ensureLocalSource(ghostItem).then(async (ghostUrl) => {
@@ -6040,6 +6522,16 @@ async function startPlaybackForIndex(index, mode, options = {}) {
             await ghostMixPreload.catch(() => {});
             const ghostStartMs = Math.max(0, Number(ghostItem.autoDjStartOffsetMs) || 0);
             if (pendingFilRougeOnInactiveDeck !== ghostItem) return;
+            // SPEC-1.1.16 : re-valider la cible après la préparation asynchrone.
+            if (getResolvedInactiveDeck() !== inactiveDeck
+              || deckDisplayItems[inactiveDeck] !== ghostItem) {
+              logWarn('startPlaybackForIndex(): stale fil rouge ghost preload aborted', {
+                inactiveDeck,
+                resolvedInactiveDeck: getResolvedInactiveDeck(),
+                ghostId: ghostItem.id,
+              });
+              return;
+            }
             await player.playOnDeck(inactiveDeck, {
               url: ghostUrl,
               loudnessDb: ghostItem.loudnessDb,
@@ -6080,6 +6572,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     // Schedule automix timing for auto DJ mode and reset trigger flag
     resetAutomixTimeline(automixTimeline, targetDeck);
     maxDurMarkerTriggeredForTrack = false;
+    djPlanMixOutTriggeredForTrack = false;
     _maxDurMarkerCache.key = null;
     _maxDurMarkerCache.renderKey = null;
     _maxDurMarkerCache.rawLogged = false;
@@ -6229,12 +6722,129 @@ function buildFilRougeHintHTML() {
   return `<div class="queue-filrouge-hint">${artHtml}<div class="queue-info"><div class="queue-filrouge-hint-label">Prochain · fil rouge</div><div class="queue-name">${escHtml(next.name || 'Inconnu')}</div><div class="queue-artist">${escHtml(next.artist || '')}</div></div></div>`;
 }
 
-function renderQueue() {
+// ── Contrôle d'empreinte ──────────────────────────────────────────────────────
+
+const _fpSheet     = document.getElementById('fp-suggestion-sheet');
+const _fpSub       = document.getElementById('fp-suggestion-sub');
+const _fpList      = document.getElementById('fp-suggestion-list');
+const _fpCancel    = document.getElementById('fp-suggestion-cancel');
+let   _fpTrackRef   = null;
+let   _fpSuggestions = [];
+
+function _fpAuthHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  const token = getDownloaderApiToken();
+  if (token) h['x-api-token'] = token;
+  return h;
+}
+
+async function _fpCheck(item, btn) {
+  const apiUrl = getDownloaderApiUrl();
+  if (!apiUrl || !item?.name) return;
+  if (btn?.classList.contains('is-checking')) return;
+  btn?.classList.add('is-checking');
+
+  try {
+    const res = await fetch(`${apiUrl}/api/fingerprint/check`, {
+      method: 'POST',
+      headers: _fpAuthHeaders(),
+      body: JSON.stringify({ artistName: item.artist || '', trackName: item.name }),
+    });
+    if (!res.ok) { showToast('Erreur de vérification', true); return; }
+    const data = await res.json();
+
+    const { matched, suggestions } = parseFingerprintCheckResponse(data);
+    if (matched) {
+      showToast(`Empreinte OK : ${item.name}`);
+      return;
+    }
+    _fpShowSuggestions(item, suggestions);
+  } catch {
+    showToast('Erreur réseau', true);
+  } finally {
+    btn?.classList.remove('is-checking');
+  }
+}
+
+function _fpShowSuggestions(item, suggestions) {
+  if (!_fpSheet) return;
+  _fpTrackRef = { artistName: item.artist || '', trackName: item.name || '' };
+  _fpSuggestions = suggestions;
+
+  if (_fpSub) {
+    _fpSub.textContent = `« ${item.name || ''} » ne correspond pas au fichier audio.`;
+  }
+
+  if (_fpList) {
+    if (!suggestions.length) {
+      _fpList.innerHTML = '<div class="fp-suggestion-empty">Aucune suggestion disponible</div>';
+    } else {
+      _fpList.innerHTML = suggestions.map((s, i) => {
+        const art = escHtml(s.artUrl || s.artworkUrl || s.artworkUrl100 || '');
+        const name = escHtml(s.name || s.trackName || s.title || '');
+        const artist = escHtml(s.artist || s.artistName || '');
+        const durMs = s.duration_ms || s.trackTimeMillis || 0;
+        const dur = durMs ? `${Math.floor(durMs / 60000)}:${String(Math.floor((durMs / 1000) % 60)).padStart(2, '0')}` : '';
+        return `<div class="fp-suggestion-item" data-idx="${i}">` +
+          (art ? `<img class="fp-suggestion-item-art" src="${art}" alt="" loading="lazy">` :
+                 `<div class="fp-suggestion-item-art"></div>`) +
+          `<div class="fp-suggestion-item-info">` +
+            `<div class="fp-suggestion-item-name">${name}</div>` +
+            `<div class="fp-suggestion-item-artist">${artist}</div>` +
+          `</div>` +
+          (dur ? `<span class="fp-suggestion-item-dur">${dur}</span>` : '') +
+          `</div>`;
+      }).join('');
+    }
+  }
+
+  _fpSheet.hidden = false;
+}
+
+function _fpHideSuggestions() {
+  if (_fpSheet) _fpSheet.hidden = true;
+  _fpTrackRef = null;
+  _fpSuggestions = [];
+}
+
+async function _fpCorrectAndDownload(replacement) {
+  const trackRef = _fpTrackRef;
+  if (!trackRef) return;
+  const apiUrl = getDownloaderApiUrl();
+  if (!apiUrl) return;
+  _fpHideSuggestions();
+  showToast('Correction en cours…');
+
+  try {
+    const res = await fetch(`${apiUrl}/api/fingerprint/correct`, {
+      method: 'POST',
+      headers: _fpAuthHeaders(),
+      body: JSON.stringify(buildFingerprintCorrectRequestBody(trackRef, replacement)),
+    });
+    if (!res.ok) { showToast('Erreur de correction', true); return; }
+    const data = await res.json();
+    showToast(buildFingerprintCorrectToastMessage(data));
+  } catch {
+    showToast('Erreur réseau', true);
+  }
+}
+
+_fpCancel?.addEventListener('click', _fpHideSuggestions);
+_fpSheet?.querySelector('.fp-suggestion-backdrop')?.addEventListener('click', _fpHideSuggestions);
+_fpList?.addEventListener('click', (e) => {
+  const row = e.target.closest('.fp-suggestion-item');
+  if (!row) return;
+  const idx = Number(row.dataset.idx);
+  if (_fpSuggestions[idx]) _fpCorrectAndDownload(_fpSuggestions[idx]);
+});
+
+let _renderQueueRafId = null;
+
+function _renderQueueCore() {
   saveQueueDebounced();
   pushQueue(queue);
   uiRenderer.updateUpcomingArtwork();
   updateDeckCueUI();
-  // Fetch BPM/genre in background for visible items that are missing them
   const visibleStart = uiState.currentIndex > 0 ? Math.max(0, uiState.currentIndex - 5) : 0;
   queue.slice(visibleStart, visibleStart + 20).forEach((item) => {
     if (!item.bpm || !item.genre) fetchMissingMeta(item).catch(() => {});
@@ -6296,7 +6906,23 @@ function renderQueue() {
     });
   });
 
+  uiRenderer.queueList.querySelectorAll('.queue-fp-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = Number(btn.dataset.index);
+      if (idx >= 0 && idx < queue.length) _fpCheck(queue[idx], btn);
+    });
+  });
+
   updateSuggestionRefreshButtons();
+}
+
+function renderQueue() {
+  if (_renderQueueRafId !== null) return;
+  _renderQueueRafId = requestAnimationFrame(() => {
+    _renderQueueRafId = null;
+    _renderQueueCore();
+  });
 }
 
 function removeFromQueue(idx) {
@@ -6473,7 +7099,11 @@ function buildRelayStateSnapshot() {
 
   function _deckInfo(deck) {
     const ds = deckState?.[`deck${deck}`];
-    const item = deckDisplayItems[deck];
+    let item = deckDisplayItems[deck];
+    if (!item && deck === inactiveDeck) {
+      const nextIndex = getFollowingQueueIndex(uiState.currentIndex, { wrap: false });
+      if (nextIndex >= 0) item = queue[nextIndex];
+    }
     return {
       trackId: item?.id || null,
       positionMs: ds?.positionMs || 0,
@@ -6541,6 +7171,7 @@ function buildRelayStateSnapshot() {
           toTrackUrl: nextItem.persistedSourceUrl || '',
           mode: selectedTransitionMode || 'crossfade',
           durationMs: xfadeMs,
+          toTrackDurationMs: nextItem.duration || 0,
         });
       }
     }
@@ -6823,16 +7454,4 @@ function doLogout() {
   updateMixFeaturesUI();
   updateDjFxMenuUI();
   updateAutoModeUI();
-  renderQueue();
-  showSetup();
-}
-
-function openSearch() {
-  searchOverlay.hidden = false;
-  if (searchClose) searchClose.hidden = false;
-}
-
-function closeSearch() {
-  searchOverlay.hidden = true;
-  if (searchClose) searchClose.hidden = true;
 }

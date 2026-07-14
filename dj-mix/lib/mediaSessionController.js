@@ -1,4 +1,3 @@
-import { KEEPALIVE_DURATION_MS } from './constants.js';
 import { uiState } from './uiState.js';
 
 /**
@@ -33,8 +32,21 @@ export function createMediaSessionController(options) {
 
   let wakeLock = null;
   let _keepaliveAudio = null;
-  let _keepaliveTimer = null;
   let _keepalivePosInterval = null;
+  let lastAudioOutputDeviceCount = null;
+
+  // SPEC-13.3.6 — Compte les sorties audio (`kind === 'audiooutput'`) pour détecter
+  // une vraie perte de sortie (débranchement) plutôt que réagir à tout `devicechange`
+  // (qui se déclenche aussi sur un ajout de périphérique ou un bruit d'énumération).
+  async function countAudioOutputDevices() {
+    if (!navigator.mediaDevices?.enumerateDevices) return null;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      return devices.filter((d) => d.kind === 'audiooutput').length;
+    } catch {
+      return null;
+    }
+  }
 
   async function requestWakeLock() {
     try {
@@ -73,7 +85,7 @@ export function createMediaSessionController(options) {
   }
 
   function startMediaKeepAlive() {
-    stopMediaKeepAlive();
+    if (_keepaliveAudio && !_keepaliveAudio.paused) return;
     if (!('mediaSession' in navigator)) return;
     if (!_keepaliveAudio) {
       _keepaliveAudio = new Audio(_createSilentWavUrl());
@@ -81,14 +93,13 @@ export function createMediaSessionController(options) {
       _keepaliveAudio.volume = 0.001;
     }
     _keepaliveAudio.play().catch(() => {});
-    _keepalivePosInterval = setInterval(() => updateMediaSessionPositionState(), 30_000);
-    _keepaliveTimer = setTimeout(stopMediaKeepAlive, KEEPALIVE_DURATION_MS);
+    if (!_keepalivePosInterval) {
+      _keepalivePosInterval = setInterval(() => updateMediaSessionPositionState(), 30_000);
+    }
   }
 
   function stopMediaKeepAlive() {
-    clearTimeout(_keepaliveTimer);
     clearInterval(_keepalivePosInterval);
-    _keepaliveTimer = null;
     _keepalivePosInterval = null;
     _keepaliveAudio?.pause();
   }
@@ -169,6 +180,72 @@ export function createMediaSessionController(options) {
     navigator.mediaSession.setActionHandler('nexttrack', () => autoMixBtn?.click());
 
     onMediaCommand(applyMediaCommand);
+
+    startMediaKeepAlive();
+
+    // SPEC-13.3.6 — Pause automatique uniquement si une sortie audio a réellement
+    // disparu (ex. déconnexion casque Bluetooth) ; un `devicechange` qui n'enlève
+    // aucune sortie (ajout d'un périphérique, bruit d'énumération) est ignoré.
+    if (navigator.mediaDevices) {
+      countAudioOutputDevices().then((count) => { lastAudioOutputDeviceCount = count; });
+      navigator.mediaDevices.addEventListener('devicechange', async () => {
+        const previousCount = lastAudioOutputDeviceCount;
+        const count = await countAudioOutputDevices();
+        lastAudioOutputDeviceCount = count;
+        if (previousCount === null || count === null || count >= previousCount) return;
+        const focusDeck = getFocusDeck();
+        const deckState = uiState.lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
+        if (deckState?.playing) getPlayer()?.pauseDeck?.(focusDeck);
+      });
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && !uiState.isPlaying) {
+        startMediaKeepAlive();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      const key = e.key;
+      if (!key?.startsWith('Media')) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const focusDeck = getFocusDeck();
+      const deckState = uiState.lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
+
+      switch (key) {
+        case 'MediaPlayPause':
+          if (deckState?.playing) {
+            getPlayer()?.pauseDeck?.(focusDeck);
+          } else if (deckState?.hasSrc) {
+            getPlayer()?.resumeDeck?.(focusDeck).catch(() => {});
+          } else {
+            if (focusDeck === 'A') deckALaunchBtn?.click();
+            else deckBLaunchBtn?.click();
+          }
+          break;
+        case 'MediaPlay':
+          if (!deckState?.playing) {
+            if (deckState?.hasSrc) getPlayer()?.resumeDeck?.(focusDeck).catch(() => {});
+            else {
+              if (focusDeck === 'A') deckALaunchBtn?.click();
+              else deckBLaunchBtn?.click();
+            }
+          }
+          break;
+        case 'MediaPause':
+          if (deckState?.playing) getPlayer()?.pauseDeck?.(focusDeck);
+          break;
+        case 'MediaStop':
+          getPlayer()?.pause?.();
+          break;
+        case 'MediaTrackNext':
+          autoMixBtn?.click();
+          break;
+      }
+    });
   }
 
   function updateMediaSessionPositionState(positionMs, durationMs) {

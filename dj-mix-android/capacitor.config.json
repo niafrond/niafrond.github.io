@@ -1,0 +1,13 @@
+{
+  "appId": "io.github.niafrond.djmix",
+  "appName": "DJ Mix",
+  "webDir": "../dj-mix",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true
+    }
+  }
+}

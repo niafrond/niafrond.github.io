@@ -49,7 +49,6 @@ export function createAutoModeManager({
   getAutoFxMinGapMs,
   getAutoFxMaxGapMs,
   getDjMode,
-  getDjModeGenrePrefs,
   getCurrentBpm,
   getActualDurationMs,
   onAutomixTimingCalculated,
@@ -523,6 +522,10 @@ export function createAutoModeManager({
       return storedMeta.mixData;
     }
 
+    const PENDING_MAX_RETRIES = 5;
+    const PENDING_BASE_DELAY_MS = 1000;
+    const PENDING_MAX_DELAY_MS = 30000;
+
     try {
       const apiUrl = getDownloaderApiUrl();
       if (!apiUrl) return null;
@@ -532,36 +535,51 @@ export function createAutoModeManager({
       params.append('track', trackName);
       if (artistName) params.append('artist', artistName);
 
-      const response = await fetch(appendApiToken(`${apiUrl}/mix?${params}`, getDownloaderApiToken?.()), {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      let data = null;
+      for (let attempt = 0; attempt <= PENDING_MAX_RETRIES; attempt++) {
+        if (attempt > 0) {
+          const delayMs = Math.min(PENDING_BASE_DELAY_MS * 2 ** (attempt - 1), PENDING_MAX_DELAY_MS);
+          logger?.debug?.('autoDj: mix analysis pending, retrying', { trackName, attempt, delayMs });
+          await new Promise(r => setTimeout(r, delayMs));
+          if (apiHealthMonitor?.isOffline()) return null;
+        }
 
-      if (response.status === 404) {
-        // File removed from server cache – purge locally stored analysis so the
-        // next download starts clean.
-        invalidateStoredTrackMeta(trackName, artistName);
-        MIX_DATA_CACHE.delete(cacheKey);
-        logger?.debug?.('autoDj: mix data 404 – localStorage invalidated', { trackName, artistName });
-        return null;
-      }
-
-      if (!response.ok) {
-        apiHealthMonitor?.recordFailure();
-        logger?.debug?.('autoDj: mix data fetch failed', {
-          status: response.status,
-          trackName,
+        const response = await fetch(appendApiToken(`${apiUrl}/mix?${params}`, getDownloaderApiToken?.()), {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
         });
+
+        if (response.status === 404) {
+          invalidateStoredTrackMeta(trackName, artistName);
+          MIX_DATA_CACHE.delete(cacheKey);
+          logger?.debug?.('autoDj: mix data 404 – localStorage invalidated', { trackName, artistName });
+          return null;
+        }
+
+        if (!response.ok) {
+          apiHealthMonitor?.recordFailure();
+          logger?.debug?.('autoDj: mix data fetch failed', {
+            status: response.status,
+            trackName,
+          });
+          return null;
+        }
+
+        apiHealthMonitor?.recordSuccess();
+        data = await response.json();
+
+        if (data?.status !== 'already_pending') break;
+      }
+
+      if (data?.status === 'already_pending') {
+        logger?.debug?.('autoDj: mix analysis still pending after retries', { trackName });
         return null;
       }
 
-      apiHealthMonitor?.recordSuccess();
-      const data = await response.json();
       const mixData = data?.mix || null;
 
       if (mixData) {
         MIX_DATA_CACHE.set(cacheKey, mixData);
-        // Evict oldest entry if cache exceeds MAX_MIX_DATA_CACHE_ENTRIES
         if (MIX_DATA_CACHE.size > MAX_MIX_DATA_CACHE_ENTRIES) {
           MIX_DATA_CACHE.delete(MIX_DATA_CACHE.keys().next().value);
         }
@@ -1203,37 +1221,6 @@ export function createAutoModeManager({
       });
   }
 
-  /**
-   * Build up to two previous-track references for suggestions API.
-   * Supports mixed payload items (title string or { track, artist } object).
-   */
-  function buildSuggestionTrackReferences(currentTrack, queue, currentIndex) {
-    if (!Array.isArray(queue) || !Number.isFinite(currentIndex) || currentIndex <= 0) {
-      return [];
-    }
-
-    const references = [];
-    const currentTrackId = currentTrack?.id || null;
-
-    for (let i = currentIndex - 1; i >= 0 && references.length < 2; i--) {
-      const item = queue[i];
-      if (!item) continue;
-
-      const itemId = item.id || item.ratingKey || item.uri || null;
-      if (currentTrackId && itemId && itemId === currentTrackId) continue;
-
-      const trackName = String(item.trackName || item.name || item.title || '').trim();
-      const artistName = String(item.artistName || item.artist || '').trim();
-      if (!trackName) continue;
-
-      references.push(artistName
-        ? { track: trackName, artist: artistName }
-        : trackName);
-    }
-
-    return references;
-  }
-
   function isTrackAlreadyQueued(queue, track) {
     if (!Array.isArray(queue) || !track) return false;
     const trackId = track.id || track.ratingKey || track.uri || null;
@@ -1282,48 +1269,50 @@ export function createAutoModeManager({
 
     const filRougeManager = getFilRougeManager?.();
     if (filRougeManager?.isActive?.()) {
-      const nextFromFilRouge = filRougeManager.getNextTrack?.();
-      if (nextFromFilRouge && !isTrackAlreadyQueued(queue, nextFromFilRouge)) {
-        logger?.info?.('autoDj: using fil rouge track instead of searching', {
-          currentTrackId: currentTrack.id,
-          trackName: nextFromFilRouge.name,
-          artistName: nextFromFilRouge.artist,
-        });
-
-        // Fetch mix data for the fil rouge track so zones are respected
-        // (same flow as for auto-DJ suggested tracks)
-        fetchMixData(
-          nextFromFilRouge.name || nextFromFilRouge.trackName,
-          nextFromFilRouge.artist || nextFromFilRouge.artistName
-        )
-          .then(mixData => {
-            nextTrackMixData = mixData;
-            const recommendedTransition = recommendTransitionType(currentTrackMixData, mixData);
-            logger?.debug?.('autoDj: fil rouge recommended transition', { type: recommendedTransition });
-          })
-          .catch(err => {
-            logger?.debug?.('autoDj: failed to prefetch fil rouge mix data', { error: err?.message });
+      const peekedFromFilRouge = filRougeManager.peekNextTrackFromAny?.();
+      if (peekedFromFilRouge && !isTrackAlreadyQueued(queue, peekedFromFilRouge)) {
+        // Only advance the index now that we know the track isn't already queued
+        const nextFromFilRouge = filRougeManager.getNextTrack?.();
+        if (nextFromFilRouge) {
+          logger?.info?.('autoDj: using fil rouge track instead of searching', {
+            currentTrackId: currentTrack.id,
+            trackName: nextFromFilRouge.name,
+            artistName: nextFromFilRouge.artist,
           });
 
-        await addToQueue(nextFromFilRouge, {
-          source: 'fil-rouge',
-          autoDjReferenceTrackId: currentTrack.id || null,
-          showAddedToast: false,
-        });
+          // Fetch mix data for the fil rouge track so zones are respected
+          // (same flow as for auto-DJ suggested tracks)
+          fetchMixData(
+            nextFromFilRouge.name || nextFromFilRouge.trackName,
+            nextFromFilRouge.artist || nextFromFilRouge.artistName
+          )
+            .then(mixData => {
+              nextTrackMixData = mixData;
+              const recommendedTransition = recommendTransitionType(currentTrackMixData, mixData);
+              logger?.debug?.('autoDj: fil rouge recommended transition', { type: recommendedTransition });
+            })
+            .catch(err => {
+              logger?.debug?.('autoDj: failed to prefetch fil rouge mix data', { error: err?.message });
+            });
 
-        pendingNextTrack = nextFromFilRouge;
-        showToast?.(
-          `🎶 Fil rouge: "${nextFromFilRouge.name || nextFromFilRouge.trackName || 'morceau'}" ajouté à la queue`,
-          false
-        );
-        return true;
-      }
+          await addToQueue(nextFromFilRouge, {
+            source: 'fil-rouge',
+            autoDjReferenceTrackId: currentTrack.id || null,
+            showAddedToast: false,
+          });
 
-      if (nextFromFilRouge) {
+          pendingNextTrack = nextFromFilRouge;
+          showToast?.(
+            `🎶 Fil rouge: "${nextFromFilRouge.name || nextFromFilRouge.trackName || 'morceau'}" ajouté à la queue`,
+            false
+          );
+          return true;
+        }
+      } else if (peekedFromFilRouge) {
         logger?.debug?.('autoDj: fil rouge track already queued, skipping', {
           currentTrackId: currentTrack.id,
-          trackName: nextFromFilRouge.name,
-          artistName: nextFromFilRouge.artist,
+          trackName: peekedFromFilRouge.name,
+          artistName: peekedFromFilRouge.artist,
         });
       }
     }
@@ -1364,30 +1353,17 @@ export function createAutoModeManager({
         const apiUrl = getDownloaderApiUrl();
         if (apiUrl && !apiHealthMonitor?.isOffline()) {
           const params = new URLSearchParams();
-          const previousTrackReferences = buildSuggestionTrackReferences(currentTrack, queue, currentIndex);
           if (currentTrack.name) params.append('track', currentTrack.name);
           if (currentTrack.artist) params.append('artist', currentTrack.artist);
-          if (previousTrackReferences.length > 0) {
-            params.append('tracks', JSON.stringify(previousTrackReferences));
-          }
           params.append('limit', '25');
           params.append('allowSameArtist', 'false');
 
-          // DJ Mode: send additional hints to the suggestions API
+          // DJ Mode: dance mode restricts candidates to the reference track's genre;
+          // BPM/genre-list steering happens client-side below (see djModeForFilter sort)
+          // since /api/suggestions has no bpm/genre-preference filters.
           const djMode = getDjMode?.() || 'music';
-          const currentBpm = toFiniteNumber(getCurrentBpm?.(), 0);
-          const genrePrefs = getDjModeGenrePrefs?.() || [];
-
           if (djMode === 'dance') {
-            if (currentBpm > 0) params.append('minBpm', String(Math.max(1, Math.round(currentBpm - 10))));
-            params.append('preferDanceable', 'true');
-            if (genrePrefs.length > 0) params.append('preferGenres', JSON.stringify(genrePrefs));
-          } else {
-            if (currentTrack.genre) params.append('preferGenre', currentTrack.genre);
-            if (currentTrack.artist) params.append('preferArtist', currentTrack.artist);
-            if (currentBpm > 0 && currentBpm < 90) {
-              params.append('maxBpmJump', '30');
-            }
+            params.append('sameGenreOnly', 'true');
           }
 
           const suggestionPathCandidates = ['/api/suggestions', '/suggestions'];
@@ -1435,7 +1411,6 @@ export function createAutoModeManager({
               count: results.length,
               referenceTrack: currentTrack.name,
               referenceArtist: currentTrack.artist,
-              referenceTracksCount: previousTrackReferences.length,
             });
             break;
           }
@@ -1467,10 +1442,12 @@ export function createAutoModeManager({
       const currentBpmForFilter = toFiniteNumber(getCurrentBpm?.(), 0);
 
       if (djModeForFilter === 'dance' && currentBpmForFilter > 0) {
-        // Sort by BPM descending (higher BPM first) among results that have bpm
+        // Sort by BPM descending (higher BPM first) among results that have bpm.
+        // /api/suggestions nests bpm under audioFeatures; plain-search fallback
+        // results have neither, so bA/bB stay 0 and this sort is a no-op for them.
         results = [...results].sort((a, b) => {
-          const bA = toFiniteNumber(a?.bpm, 0);
-          const bB = toFiniteNumber(b?.bpm, 0);
+          const bA = toFiniteNumber(a?.audioFeatures?.bpm ?? a?.bpm, 0);
+          const bB = toFiniteNumber(b?.audioFeatures?.bpm ?? b?.bpm, 0);
           if (bA <= 0 && bB <= 0) return 0;
           if (bA <= 0) return 1;
           if (bB <= 0) return -1;
@@ -1479,10 +1456,12 @@ export function createAutoModeManager({
       } else if (djModeForFilter === 'music') {
         // Boost same genre/artist to top
         results = [...results].sort((a, b) => {
+          const artistA = a?.artistName || a?.artist || '';
+          const artistB = b?.artistName || b?.artist || '';
           const scoreA = (a?.genre && currentTrack.genre && String(a.genre).toLowerCase() === String(currentTrack.genre).toLowerCase() ? 2 : 0)
-            + (a?.artist && currentTrack.artist && String(a.artist).toLowerCase() === String(currentTrack.artist).toLowerCase() ? 1 : 0);
+            + (artistA && currentTrack.artist && String(artistA).toLowerCase() === String(currentTrack.artist).toLowerCase() ? 1 : 0);
           const scoreB = (b?.genre && currentTrack.genre && String(b.genre).toLowerCase() === String(currentTrack.genre).toLowerCase() ? 2 : 0)
-            + (b?.artist && currentTrack.artist && String(b.artist).toLowerCase() === String(currentTrack.artist).toLowerCase() ? 1 : 0);
+            + (artistB && currentTrack.artist && String(artistB).toLowerCase() === String(currentTrack.artist).toLowerCase() ? 1 : 0);
           return scoreB - scoreA;
         });
       }

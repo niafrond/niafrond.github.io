@@ -89,7 +89,7 @@ export function createRelayModeController({
     const params = new URLSearchParams({ 'relay-session': sessionId });
     if (apiUrl)   params.set('relay-api',   apiUrl);
     if (apiToken) params.set('relay-token', apiToken);
-    return `${origin}${dir}relay.html?${params.toString()}`;
+    return `${origin}${dir}relay?${params.toString()}`;
   }
 
   async function _renderQrCode(url) {

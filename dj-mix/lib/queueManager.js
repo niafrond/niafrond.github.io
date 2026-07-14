@@ -8,7 +8,7 @@ import {
   extractTrackGenre,
   extractTrackLoudnessDb,
 } from './searchUtils.js';
-import { getDirectPlayableSourceUrl } from './audioSourceManager.js';
+import { getDirectPlayableSourceUrl, getTrackCacheKey } from './audioSourceManager.js';
 import { clearQueueDragMarkers } from './queueDnD.js';
 
 /**
@@ -242,6 +242,7 @@ export function createQueueManager(options) {
       source = 'manual',
       autoDjReferenceTrackId = null,
       showAddedToast = true,
+      asNext = false,
     } = opts;
 
     const artUrl = getBestArtworkUrl(track);
@@ -253,7 +254,7 @@ export function createQueueManager(options) {
     const suggestedStartOffsetMs = resolveTrackStartOffsetMs(track);
 
     const item = {
-      id: track.id || track.ratingKey || track.uri || track.name,
+      id: getTrackCacheKey(track) || track.name,
       uri: track.uri || track.downloadUrl || `api:track:${track.id || track.name}`,
       name: track.name || track.title || 'Titre API',
       artist: track.artists
@@ -312,10 +313,17 @@ export function createQueueManager(options) {
       return;
     }
 
-    q.push(item);
-    const addedIndex = q.length - 1;
+    let addedIndex;
+    if (asNext) {
+      addedIndex = Math.min(Math.max(uiState.currentIndex + 1, 0), q.length);
+      q.splice(addedIndex, 0, item);
+      if (uiState.deckBCueIndex >= addedIndex) uiState.deckBCueIndex += 1;
+    } else {
+      q.push(item);
+      addedIndex = q.length - 1;
+    }
     logInfo?.('addToQueue(): item added', {
-      addedIndex, id: item.id, name: item.name,
+      addedIndex, asNext, id: item.id, name: item.name,
       artist: item.artist, queueLength: q.length,
     });
 
@@ -334,6 +342,17 @@ export function createQueueManager(options) {
           const player = getPlayer?.();
           if (!player || uiState.deckDisplayItems[inactiveDeck] !== item) return;
           await replaceMixPreload?.catch(() => {});
+          // SPEC-1.1.16 : re-valider la cible après la préparation asynchrone —
+          // la platine visée a pu devenir active, l'item réassigné, ou le morceau
+          // être devenu le morceau courant (doublon sur les deux platines).
+          if (getResolvedInactiveDeck?.() !== inactiveDeck
+            || uiState.deckDisplayItems[inactiveDeck] !== item
+            || uiState.currentTrackId === item.id) {
+            logInfo?.('addToQueue(): stale ghost-replacement preload aborted', {
+              inactiveDeck, itemId: item.id, currentTrackId: uiState.currentTrackId,
+            });
+            return;
+          }
           const startMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
           await player.playOnDeck(inactiveDeck, {
             url,

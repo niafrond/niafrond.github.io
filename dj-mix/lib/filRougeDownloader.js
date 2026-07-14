@@ -1,126 +1,180 @@
+import { createDownloadBatchStore } from './downloadBatchStore.js';
+import { createDownloadBatchManager } from './downloadBatchManager.js';
+
 /**
  * @param {object} opts
- * @param {(item: object) => Promise<boolean>} opts.prefetchTrackToLocalCache
+ * @param {(item: object, opts?: {onError?: (err: Error) => void}) => Promise<boolean>} opts.prefetchTrackToLocalCache
+ * @param {(item: object) => Promise<boolean>} opts.isTrackInLocalCache
  * @param {(item: object, patch: object) => void} opts.setFilRougeTrackStatus
  * @param {(item: object) => {downloadState: string}} opts.getFilRougeTrackStatus
  * @param {() => void} opts.renderFilRouge
+ * @param {(item: object) => void} opts.renderTrackStatus
  * @param {(msg: string, isError?: boolean) => void} opts.showToast
  * @param {(done: number, inProgress: number, total: number) => void} [opts.onProgress]
+ * @param {(name: string, artist: string) => Promise<object|null>} [opts.fetchMixData]
+ * @param {(done: number, total: number) => void} [opts.onMixInfoProgress]
+ * @param {ReturnType<import('./downloadBatchStore.js').createDownloadBatchStore>} [opts.store]
+ * @param {() => string} [opts.getDownloaderApiUrl]
+ * @param {() => string} [opts.getDownloaderApiToken]
+ * @param {() => void} [opts.onAuthExpired]
+ * @param {(active: boolean) => void} [opts.onInternalQueueActiveChange] - notifié quand la file interne démarre/s'arrête (Wake Lock écran, SPEC-19.7)
+ * @param {(ms: number) => Promise<void>} [opts.waitFn] - injectable pour les tests (backoff des retentatives)
  */
 export function createFilRougeDownloader({
   prefetchTrackToLocalCache,
+  isTrackInLocalCache,
   setFilRougeTrackStatus,
   getFilRougeTrackStatus,
   renderFilRouge,
+  renderTrackStatus,
   showToast,
   onProgress,
+  fetchMixData,
+  onMixInfoProgress,
+  store = createDownloadBatchStore(),
+  getDownloaderApiUrl,
+  getDownloaderApiToken,
+  onAuthExpired,
+  onInternalQueueActiveChange,
+  waitFn,
 }) {
-  async function requestNotifPermission() {
-    if (!('Notification' in window)) return false;
-    if (Notification.permission === 'granted') return true;
-    if (Notification.permission === 'denied') return false;
-    try {
-      return (await Notification.requestPermission()) === 'granted';
-    } catch (_) {
-      return false;
-    }
-  }
+  const downloadBatchManager = createDownloadBatchManager({
+    store,
+    prefetchTrackToLocalCache,
+    isTrackInLocalCache,
+    fetchMixData,
+    setFilRougeTrackStatus,
+    renderFilRouge,
+    renderTrackStatus,
+    showToast,
+    onProgress,
+    getDownloaderApiUrl,
+    getDownloaderApiToken,
+    onAuthExpired,
+    onInternalQueueActiveChange,
+    ...(waitFn ? { waitFn } : {}),
+  });
 
-  async function getSwReg() {
-    if (!('serviceWorker' in navigator)) return null;
-    try {
-      return await navigator.serviceWorker.ready;
-    } catch (_) {
-      return null;
+  /**
+   * Tâche séquentielle parallèle : met à jour les mix infos des pistes déjà téléchargées
+   * qui n'ont pas encore de mix info.
+   */
+  async function _runMixInfoTask(tracks) {
+    for (const track of tracks) {
+      try {
+        const mixData = await fetchMixData(track.name, track.artist);
+        setFilRougeTrackStatus(track, { hasMixInfo: Boolean(mixData) });
+      } catch (_) {
+        setFilRougeTrackStatus(track, { hasMixInfo: false });
+      }
+      renderTrackStatus(track);
     }
-  }
-
-  async function showSwNotif(reg, title, body, tag = 'djmix-dl', silent = false) {
-    if (!reg || Notification.permission !== 'granted') return;
-    try {
-      await reg.showNotification(title, {
-        body,
-        icon: './icon-192.png',
-        badge: './icon-192.png',
-        tag,
-        silent,
-        renotify: true,
-      });
-    } catch (_) {}
   }
 
   /**
-   * Télécharge les morceaux du fil rouge qui ne sont pas encore en cache,
-   * un par un en queue séquentielle.
+   * Télécharge les morceaux du fil rouge qui ne sont pas encore en cache
+   * (via le moteur de lot persistant, SPEC-19.x) et met à jour les mix infos
+   * manquantes — deux tâches en parallèle.
    * @param {object[]} tracks
    */
   async function downloadAll(tracks) {
-    const pending = tracks.filter(t => {
-      if (!t?.name || !t?.artist) return false;
-      const { downloadState } = getFilRougeTrackStatus(t);
-      return downloadState !== 'done' && downloadState !== 'downloading';
-    });
+    const toDownload = [];
+    const toMixInfoOnly = [];
 
-    if (!pending.length) {
+    for (const t of tracks) {
+      if (!t?.name || !t?.artist) continue;
+      const { downloadState, hasMixInfo } = getFilRougeTrackStatus(t);
+      if (downloadState === 'downloading') continue;
+      if (downloadState !== 'done') {
+        toDownload.push(t);
+      } else if (!hasMixInfo && fetchMixData) {
+        toMixInfoOnly.push(t);
+      }
+    }
+
+    if (!toDownload.length && !toMixInfoOnly.length) {
       showToast('Tous les morceaux sont déjà téléchargés');
       return;
     }
 
-    await requestNotifPermission();
-    const swReg = await getSwReg();
+    const [dlResult] = await Promise.all([
+      downloadBatchManager.startBatch(toDownload),
+      _runMixInfoTask(toMixInfoOnly),
+    ]);
 
-    const total = pending.length;
-    let done = 0;
-    let failed = 0;
-
-    console.debug('[downloadAll] start', { total, tracks: pending.map(t => `${t.artist} - ${t.name}`) });
-    onProgress?.(0, 0, total);
-
-    for (const track of pending) {
-      setFilRougeTrackStatus(track, { downloadState: 'downloading' });
-      renderFilRouge();
-      onProgress?.(done, 1, total);
-
-      console.debug('[downloadAll] prefetch start', { artist: track.artist, name: track.name });
-      try {
-        const ok = await prefetchTrackToLocalCache(track);
-        console.debug('[downloadAll] prefetch result', { artist: track.artist, name: track.name, ok });
-        if (ok) {
-          done++;
-          setFilRougeTrackStatus(track, { downloadState: 'done' });
-        } else {
-          failed++;
-          setFilRougeTrackStatus(track, { downloadState: 'error' });
-        }
-      } catch (err) {
-        console.error('[downloadAll] prefetch threw', { artist: track.artist, name: track.name, error: err?.message, err });
-        failed++;
-        setFilRougeTrackStatus(track, { downloadState: 'error' });
-      }
-      onProgress?.(done, 0, total);
-      renderFilRouge();
-
-      if ((done + failed) % 5 === 0 && (done + failed) < total) {
-        await showSwNotif(
-          swReg,
-          'DJ Mix — Téléchargement en cours',
-          `${done + failed} / ${total} morceaux`,
-          'djmix-dl-progress',
-          true,
-        );
-      }
+    if (dlResult.backgrounded || dlResult.authPaused) {
+      // Toasts already shown inside the manager (dispatch confirmation /
+      // onAuthExpired) — nothing further to report here.
+      return;
     }
 
-    await showSwNotif(
-      swReg,
-      'DJ Mix — Téléchargement terminé',
-      `${done} réussi${done > 1 ? 's' : ''}${failed > 0 ? ` — ${failed} échec${failed > 1 ? 's' : ''}` : ''}`,
-      'djmix-dl-done',
-      false,
-    );
-    onProgress?.(done, 0, 0);
-    showToast(`Téléchargement terminé : ${done}/${total}`);
+    const { done, total } = dlResult;
+    if (total > 0) {
+      showToast(`Téléchargement terminé : ${done}/${total}`);
+    } else if (!toDownload.length && toMixInfoOnly.length > 0) {
+      showToast(`Mix info mis à jour (${toMixInfoOnly.length} morceau${toMixInfoOnly.length > 1 ? 'x' : ''})`);
+    }
   }
 
-  return { downloadAll };
+  /**
+   * Force la récupération des mix suggestions (mix info) manquantes pour les
+   * morceaux déjà téléchargés (`downloadState: 'done'`), sans télécharger
+   * d'audio. Utilisé par le bouton dédié quand l'auto-fetch de SPEC-3.5.6
+   * (déclenché en marge de "Tout télécharger") n'a pas suffi (échec API,
+   * mix suggestions pas encore calculées côté serveur au moment du premier
+   * essai, etc.).
+   * @param {object[]} tracks
+   */
+  async function downloadMissingMixInfo(tracks) {
+    if (!fetchMixData) {
+      showToast('Mix info indisponible', true);
+      return;
+    }
+
+    const missing = tracks.filter((t) => {
+      if (!t?.name || !t?.artist) return false;
+      const { downloadState, hasMixInfo } = getFilRougeTrackStatus(t);
+      return downloadState === 'done' && !hasMixInfo;
+    });
+
+    if (!missing.length) {
+      showToast('Aucune mix info manquante');
+      return;
+    }
+
+    const total = missing.length;
+    let done = 0;
+    let failed = 0;
+    onMixInfoProgress?.(0, total);
+
+    for (const track of missing) {
+      try {
+        const mixData = await fetchMixData(track.name, track.artist);
+        const ok = Boolean(mixData);
+        setFilRougeTrackStatus(track, { hasMixInfo: ok });
+        if (ok) done++; else failed++;
+      } catch (_) {
+        setFilRougeTrackStatus(track, { hasMixInfo: false });
+        failed++;
+      }
+      renderTrackStatus(track);
+      onMixInfoProgress?.(done + failed, total);
+    }
+
+    onMixInfoProgress?.(0, 0);
+    showToast(
+      failed > 0
+        ? `Mix info mis à jour (${done}/${total}), ${failed} échec${failed > 1 ? 's' : ''}`
+        : `Mix info mis à jour (${done} morceau${done > 1 ? 'x' : ''})`
+    );
+  }
+
+  return {
+    downloadAll,
+    downloadMissingMixInfo,
+    resumeIncompleteBatches: downloadBatchManager.resumeIncompleteBatches,
+    recordBackgroundFetchResult: downloadBatchManager.recordBackgroundFetchResult,
+    recordBackgroundFetchFail: downloadBatchManager.recordBackgroundFetchFail,
+    isInternalQueueRunning: downloadBatchManager.isInternalQueueRunning,
+  };
 }

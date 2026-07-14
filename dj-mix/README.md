@@ -47,7 +47,6 @@
 | `kick_swap` | Kick swap (echange des kicks) | 145 | 1.25 |
 | `beat_repeat` | Beat repeat (boucle acceleree) | 112 | 1.20 |
 | `backspin` | Backspin (vinyl stop) | 85 | 0.95 |
-| `fake_drop` | Fake drop (silence + impact) | 28 | 0.80 |
 | `echo_freeze` | Echo freeze (echo gele) | 195 | 1.48 |
 
 ## DJ FX
@@ -69,7 +68,6 @@
 | `backspin` | Backspin (recul rapide + acceleration) | 1200 | Transient |
 | `noise` | Bruit vinyle + sample synthetique | 800 | Transient |
 | `eq` | Cycle EQ + transition AutoMix | — | Toggle |
-| `pitchTempo` | Pitch / Tempo (+6%, sync decks) | 2000 | Toggle |
 | `keyShift` | Key shift (+3.5% temporaire) | 1800 | Transient |
 | `scratching` | Son de scratch vinyle | 450 | Transient |
 | `hotCues` | Saut au prochain hot cue du deck | 450 | Transient |

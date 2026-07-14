@@ -302,3 +302,111 @@ describe('buildQueueHTML', () => {
     expect(trackArtistA.innerHTML).toContain('queue-chip');
   });
 });
+
+describe('updateNowPlaying / notification système (mediaSession)', () => {
+  function makeArtEl() {
+    return { hidden: false, src: '', onerror: null, style: {} };
+  }
+
+  function makeNowPlayingRenderer({ focusDeck = 'A', queue = [], currentIndex = 0 } = {}) {
+    return createDjMixRenderer({
+      deckAPanel: null, deckBPanel: null,
+      deckAVol: null, deckBVol: null,
+      deckAFill: null, deckBFill: null,
+      deckATitle: null, deckBTitle: null,
+      deckABpm: null, deckBBpm: null,
+      deckABpmReset: null, deckBBpmReset: null,
+      deckALaunchBtn: null, deckBLaunchBtn: null,
+      queueList: null, emptyQueue: null,
+      autoMixBtn: null,
+      albumArt: makeArtEl(), artPlaceholder: { style: {} },
+      nextAlbumArt: makeArtEl(), nextArtPlaceholder: { style: {} },
+      trackArtist: makeDomTextNode(), trackArtistA: makeDomTextNode(), trackArtistB: makeDomTextNode(),
+      getQueue: () => queue,
+      getDjMode: () => 'music',
+      getCurrentIndex: () => currentIndex,
+      getCurrentTrackId: () => queue[currentIndex]?.id ?? null,
+      getIsPlaying: () => true,
+      getDeckBCueIndex: () => -1,
+      getDeckCueDeck: () => null,
+      getDeckDisplayItems: () => ({ A: queue[0] || null, B: queue[1] || null }),
+      getInactiveDeck: () => (focusDeck === 'A' ? 'B' : 'A'),
+      getFocusDeck: () => focusDeck,
+      getLaunchPreviewState: () => ({ active: false }),
+      getPrevIsCrossfading: () => false,
+      setPrevIsCrossfading: () => {},
+      getDeckMixRatio: () => (focusDeck === 'A' ? 0 : 1),
+      setDeckMixRatio: () => {},
+      clampDeckMixRatio: (value) => value,
+      updateDeckMixUI: () => {},
+      updateDeckCueUI: () => {},
+      getPlayer: () => null,
+    });
+  }
+
+  beforeEach(() => {
+    global.MediaMetadata = function MediaMetadataStub(init) {
+      Object.assign(this, init);
+    };
+    Object.defineProperty(navigator, 'mediaSession', {
+      value: { metadata: null, setActionHandler: () => {}, setPositionState: () => {} },
+      writable: true,
+      configurable: true,
+    });
+  });
+
+  test('met à jour la notification système pour la piste du deck en focus (en cours de lecture)', () => {
+    const playing = makeTrack({ id: 'now', name: 'Now Playing', artist: 'DJ Focus' });
+    const renderer = makeNowPlayingRenderer({ focusDeck: 'A', queue: [playing] });
+
+    renderer.updateNowPlaying(playing, 'A');
+
+    expect(navigator.mediaSession.metadata.title).toBe('Now Playing');
+    expect(navigator.mediaSession.metadata.artist).toBe('DJ Focus');
+  });
+
+  test('met à jour la notification même quand deck != focusDeck (crossfade entrant)', () => {
+    // Pendant un crossfade, targetDeck est le deck inactif (ratio pas encore mis à jour).
+    // updateNowPlaying doit quand même écrire la notification — c'est fetchAndStoreArtworkForItem
+    // qui porte la responsabilité de ne pas appeler updateNowPlaying pour les préchargements.
+    const playing = makeTrack({ id: 'now', name: 'Now Playing', artist: 'DJ Focus' });
+    const renderer = makeNowPlayingRenderer({ focusDeck: 'A', queue: [playing] });
+
+    // Simuler un appel crossfade : deck='B' alors que focusDeck est encore 'A'.
+    renderer.updateNowPlaying(playing, 'B');
+
+    expect(navigator.mediaSession.metadata.title).toBe('Now Playing');
+    expect(navigator.mediaSession.metadata.artist).toBe('DJ Focus');
+  });
+
+  test('SPEC-13.3.2 — convertit toute artUrl en data URI (blob: ou https://)', async () => {
+    const dataUri = 'data:image/jpeg;base64,ZmFrZQ==';
+    const mockBlob = { type: 'image/jpeg' };
+    const origFetch = global.fetch;
+    const origFileReader = global.FileReader;
+
+    global.fetch = async () => ({ ok: true, blob: async () => mockBlob });
+    global.FileReader = class {
+      readAsDataURL() {
+        this.result = dataUri;
+        if (this.onload) this.onload();
+      }
+    };
+
+    const playing = makeTrack({ id: 'art', name: 'Art Track', artUrl: 'https://cdn.example.com/art.jpg' });
+    const renderer = makeNowPlayingRenderer({ focusDeck: 'A', queue: [playing] });
+
+    renderer.updateNowPlaying(playing, 'A');
+
+    // Attendre la résolution asynchrone
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const artwork = navigator.mediaSession.metadata?.artwork;
+    expect(Array.isArray(artwork)).toBe(true);
+    expect(artwork[0].src).toBe(dataUri);
+    expect(artwork[0].type).toBe('image/jpeg');
+
+    global.fetch = origFetch;
+    global.FileReader = origFileReader;
+  });
+});

@@ -6,8 +6,7 @@ function makeController(overrides = {}) {
   return createSearchController({
     getDownloaderApiUrl: jest.fn().mockReturnValue('http://api'),
     apiHealthMonitor: { isOffline: jest.fn().mockReturnValue(false) },
-    searchTracksRaw: jest.fn().mockResolvedValue({ tracks: [], pollToken: null }),
-    pollSearchResults: jest.fn().mockResolvedValue({ pending: false, tracks: [] }),
+    searchTracksRaw: jest.fn().mockResolvedValue({ tracks: [] }),
     deleteLocalCacheSong: jest.fn().mockResolvedValue(undefined),
     getPlayer: jest.fn().mockReturnValue({ isCrossfading: false }),
     addToQueue: jest.fn().mockResolvedValue(undefined),
@@ -61,14 +60,14 @@ describe('runSearch', () => {
   });
 
   test('calls searchTracksRaw with query and limit', async () => {
-    const searchTracksRaw = jest.fn().mockResolvedValue({ tracks: [], pollToken: null });
+    const searchTracksRaw = jest.fn().mockResolvedValue({ tracks: [] });
     const ctrl = makeController({ searchTracksRaw });
     await ctrl.runSearch('madonna');
     expect(searchTracksRaw).toHaveBeenCalledWith('madonna', 25, false);
   });
 
   test('skipCache=true is forwarded', async () => {
-    const searchTracksRaw = jest.fn().mockResolvedValue({ tracks: [], pollToken: null });
+    const searchTracksRaw = jest.fn().mockResolvedValue({ tracks: [] });
     const ctrl = makeController({ searchTracksRaw });
     await ctrl.runSearch('madonna', true);
     expect(searchTracksRaw).toHaveBeenCalledWith('madonna', 25, true);

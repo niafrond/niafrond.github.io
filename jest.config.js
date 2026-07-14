@@ -80,14 +80,21 @@ export default {
     {
       displayName: 'dj-mix-jsdom',
       testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/dj-mix/tests/unit/*.test.js'],
+      testMatch: ['<rootDir>/dj-mix/tests/unit/**/*.test.js'],
       transform: {},
     },
     // ── Mix Blind Test : logique de pairing/cache (node) ─────────────────────
     {
       displayName: 'mix-blind-test-node',
       testEnvironment: 'node',
-      testMatch: ['<rootDir>/mix-blind-test/tests/unit/*.test.js'],
+      testMatch: ['<rootDir>/mix-blind-test/tests/unit/game-logic.test.js'],
+      transform: {},
+    },
+    // ── Mix Blind Test : StemClient IndexedDB blob store (node + fake-indexeddb)
+    {
+      displayName: 'mix-blind-test-idb',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/mix-blind-test/tests/unit/stem-client.test.js'],
       transform: {},
     },
   ],

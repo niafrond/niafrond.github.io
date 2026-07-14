@@ -37,13 +37,17 @@ export function createRelayModeManager({
   logger,
   onApplyRelayState,           // (state) => void
   onRelayQueueItemsAvailable,  // (items[]) => void — pour déclencher le pré-dl
+  onRelayCommand,              // (cmd) => void — commande envoyée par un relais
 } = {}) {
   const POLL_MS = 1500;
   const PUSH_DEBOUNCE_MS = 1000;
+  const CMD_POLL_MS = 2500;
+  const CMD_MAX_AGE_MS = 60_000;
 
   let _role = 'standalone';  // 'standalone' | 'master' | 'relay'
   let _sessionId = null;
   let _pollTimer = null;
+  let _cmdPollTimer = null;
   let _pushDebounceTimer = null;
   let _pendingState = null;
   let _lastStateHash = null;
@@ -131,9 +135,9 @@ export function createRelayModeManager({
     const base = _base();
     if (!base) return false;
     try {
-      const res = await fetch(`${base}/api/relay/audio/${encodeURIComponent(trackId)}`, {
+      const res = await fetch(`${base}/api/relay/audio/${_sessionId}/${trackId}`, {
         method: 'POST',
-        headers: { 'x-api-token': getDownloaderApiToken?.() || '', 'x-relay-session': _sessionId },
+        headers: { 'x-api-token': getDownloaderApiToken?.() || '' },
         body: blob,
       });
       return res.ok;
@@ -154,7 +158,31 @@ export function createRelayModeManager({
     if (!base) return null;
     const token = getDownloaderApiToken?.();
     const qs = token ? `?x-api-token=${encodeURIComponent(token)}` : '';
-    return `${base}/api/relay/audio/${encodeURIComponent(trackId)}${qs}`;
+    return `${base}/api/relay/audio/${_sessionId}/${trackId}${qs}`;
+  }
+
+  // ── Maître : polling des commandes relais ──────────────────────────────────
+
+  async function _pollCommands() {
+    if (_role !== 'master' || !_sessionId || !onRelayCommand) return;
+    const data = await _fetch(`/api/relay/commands/${_sessionId}`);
+    if (!data?.commands?.length) return;
+    const now = Date.now();
+    for (const cmd of data.commands) {
+      if (cmd.requestedAt && now - cmd.requestedAt > CMD_MAX_AGE_MS) continue;
+      try { onRelayCommand(cmd); } catch (err) {
+        logger?.warn('relay.command.handlerError', { type: cmd.type, err: err?.message });
+      }
+    }
+  }
+
+  function _startCmdPoll() {
+    _stopCmdPoll();
+    _cmdPollTimer = setInterval(_pollCommands, CMD_POLL_MS);
+  }
+
+  function _stopCmdPoll() {
+    if (_cmdPollTimer) { clearInterval(_cmdPollTimer); _cmdPollTimer = null; }
   }
 
   // ── Relais : polling ───────────────────────────────────────────────────────
@@ -192,6 +220,7 @@ export function createRelayModeManager({
     if (sessionId) _sessionId = sessionId;
     _lastStateHash = null;
     _stopPoll();
+    _startCmdPoll();
     logger?.info('relay.startAsMaster', { sessionId: _sessionId });
   }
 
@@ -205,6 +234,7 @@ export function createRelayModeManager({
 
   function setStandalone() {
     _stopPoll();
+    _stopCmdPoll();
     if (_pushDebounceTimer) { clearTimeout(_pushDebounceTimer); _pushDebounceTimer = null; }
     _role = 'standalone';
     _sessionId = null;

@@ -114,6 +114,62 @@ describe('addToQueue queueSource', () => {
   });
 });
 
+// ── addToQueue — asNext (SPEC-9.3.5) ─────────────────────────────────────────
+
+describe('addToQueue asNext', () => {
+  test('inserts at currentIndex+1 when something is playing', async () => {
+    uiState.queue = [makeTrack({ id: 'curr' }), makeTrack({ id: 'old-next' })];
+    uiState.currentIndex = 0;
+    uiState.currentTrackId = 'curr';
+    uiState.isPlaying = true;
+    const mgr = makeManager();
+    await mgr.addToQueue(makeTrack({ id: 'new-next', name: 'New Next', artist: 'X' }), { asNext: true });
+    expect(uiState.queue).toHaveLength(3);
+    expect(uiState.queue[1].id).toBe('new-next');
+    expect(uiState.queue[2].id).toBe('old-next');
+  });
+
+  test('inserts at index 0 when nothing is playing (currentIndex === -1)', async () => {
+    uiState.queue = [makeTrack({ id: 'a' })];
+    uiState.currentIndex = -1;
+    const mgr = makeManager();
+    await mgr.addToQueue(makeTrack({ id: 'new', name: 'New', artist: 'Y' }), { asNext: true });
+    expect(uiState.queue[0].id).toBe('new');
+    expect(uiState.queue[1].id).toBe('a');
+  });
+
+  test('appends to end when asNext is false (default)', async () => {
+    uiState.queue = [makeTrack({ id: 'curr' }), makeTrack({ id: 'second' })];
+    uiState.currentIndex = 0;
+    uiState.currentTrackId = 'curr';
+    const mgr = makeManager();
+    await mgr.addToQueue(makeTrack({ id: 'last', name: 'Last', artist: 'Z' }));
+    expect(uiState.queue[2].id).toBe('last');
+  });
+
+  test('increments deckBCueIndex when it is at the insertion point', async () => {
+    uiState.queue = [makeTrack({ id: 'curr' }), makeTrack({ id: 'cued' })];
+    uiState.currentIndex = 0;
+    uiState.currentTrackId = 'curr';
+    uiState.deckBCueIndex = 1;
+    const mgr = makeManager();
+    await mgr.addToQueue(makeTrack({ id: 'inserted', name: 'Ins', artist: 'I' }), { asNext: true });
+    expect(uiState.queue[1].id).toBe('inserted');
+    expect(uiState.queue[2].id).toBe('cued');
+    expect(uiState.deckBCueIndex).toBe(2);
+  });
+
+  test('does not change deckBCueIndex when cue is before insertion point', async () => {
+    uiState.queue = [makeTrack({ id: 'cued' }), makeTrack({ id: 'curr' }), makeTrack({ id: 'third' })];
+    uiState.currentIndex = 1;
+    uiState.currentTrackId = 'curr';
+    uiState.deckBCueIndex = 0;
+    const mgr = makeManager();
+    await mgr.addToQueue(makeTrack({ id: 'new', name: 'New', artist: 'N' }), { asNext: true });
+    expect(uiState.deckBCueIndex).toBe(0);
+  });
+});
+
 // ── removeFromQueue ───────────────────────────────────────────────────────────
 
 describe('removeFromQueue', () => {

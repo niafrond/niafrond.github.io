@@ -135,6 +135,63 @@ describe('apiHealthMonitor', () => {
     delete global.fetch;
   });
 
+  // SPEC-15.1.2
+  test('probe() triggers an immediate fetch to /health when offline', async () => {
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true });
+    global.fetch = fetchMock;
+
+    const onOnline = jest.fn();
+    const monitor = createApiHealthMonitor({
+      getDownloaderApiUrl: () => 'http://localhost:3000',
+      onOnline,
+      failureThreshold: 1,
+      probeIntervalMs: 60000,
+    });
+
+    monitor.recordFailure();
+    expect(monitor.isOffline()).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    monitor.probe();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3000/health',
+      expect.objectContaining({}),
+    );
+    expect(monitor.isOffline()).toBe(false);
+    expect(onOnline).toHaveBeenCalledTimes(1);
+
+    monitor.destroy();
+    delete global.fetch;
+  });
+
+  // SPEC-15.1.2
+  test('probe() triggers an immediate fetch to /health even when online', async () => {
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true });
+    global.fetch = fetchMock;
+
+    const monitor = createApiHealthMonitor({
+      getDownloaderApiUrl: () => 'http://localhost:3000',
+      probeIntervalMs: 60000,
+    });
+
+    expect(monitor.isOffline()).toBe(false);
+
+    monitor.probe();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3000/health',
+      expect.objectContaining({}),
+    );
+
+    monitor.destroy();
+    delete global.fetch;
+  });
+
   test('destroy stops probing', () => {
     const onOnline = jest.fn();
     const fetchMock = jest.fn().mockResolvedValue({ ok: true });

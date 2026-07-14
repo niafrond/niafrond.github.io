@@ -58,6 +58,7 @@ import { computeDjBpmRate } from './djTransitionMapping.js';
  * @param {HTMLElement|null} [options.deckAstemsIndicator]
  * @param {HTMLElement|null} [options.deckBstemsIndicator]
  * @param {HTMLElement|null} [options.autoMixBtn]
+ * @param {(item: object, index: number) => void} [options.onTrackStarted]
  */
 export function createPlaybackController(options) {
   const {
@@ -111,6 +112,7 @@ export function createPlaybackController(options) {
     deckAstemsIndicator = null,
     deckBstemsIndicator = null,
     autoMixBtn = null,
+    onTrackStarted,
   } = options;
 
   // ── Private state ─────────────────────────────────────────────────────────────
@@ -302,6 +304,32 @@ export function createPlaybackController(options) {
             ? firstPeakStartSec
             : (probableStartSec ?? 0);
         if (targetSec > 0) recommendedSec = Math.max(recommendedSec, targetSec);
+      }
+    }
+
+    // Empty intro detection: if no breakdown/drop/peak/avoidTransition zone starts
+    // before 15s, skip to the first such zone.
+    const EMPTY_INTRO_THRESHOLD_SEC = 15;
+    const allSignificantZones = [
+      ...(Array.isArray(mixData.breakdownZones) ? mixData.breakdownZones : []),
+      ...(Array.isArray(mixData.dropZones) ? mixData.dropZones : []),
+      ...(Array.isArray(mixData.peakZones) ? mixData.peakZones : []),
+      ...(Array.isArray(mixData.avoidTransitionZones) ? mixData.avoidTransitionZones : []),
+    ]
+      .filter((z) => Number.isFinite(Number(z?.startSec)) && Number(z.startSec) > 0)
+      .sort((a, b) => Number(a.startSec) - Number(b.startSec));
+
+    if (allSignificantZones.length > 0) {
+      const firstZoneStartSec = Number(allSignificantZones[0].startSec);
+      const hasZoneBeforeThreshold = allSignificantZones.some(
+        (z) => Number(z.startSec) < EMPTY_INTRO_THRESHOLD_SEC,
+      );
+      if (!hasZoneBeforeThreshold) {
+        const durationSec = toFiniteNumber(mixData.durationSec);
+        const safeLimit = durationSec != null && durationSec > 30 ? durationSec - 30 : Infinity;
+        if (firstZoneStartSec <= safeLimit) {
+          recommendedSec = Math.max(recommendedSec, firstZoneStartSec);
+        }
       }
     }
 
@@ -767,6 +795,7 @@ export function createPlaybackController(options) {
       updateAutoDjMarker?.();
       updateMaxDurationMarker?.();
       autoModeManager?.scheduleAutomixTiming(item);
+      onTrackStarted?.(item, index);
       if (getAutoSuggestionQueueSearchEnabled?.()) {
         scheduleIdle?.(() => {
           autoModeManager?.searchAndAddNextTrack(item).catch((err) => {

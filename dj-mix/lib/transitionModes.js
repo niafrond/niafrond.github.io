@@ -25,12 +25,11 @@ export const MIX_TRANSITION_MODES = Object.freeze([
   'kick_swap',
   'beat_repeat',
   'backspin',
-  'fake_drop',
   'echo_freeze',
 ]);
 
 export const MIX_TRANSITION_MODE_LABELS = Object.freeze({
-  auto: 'Auto (meilleur)',
+  auto: 'Auto (aléatoire)',
   crossfade_linear: 'Crossfade lineaire',
   crossfade_logarithmic: 'Crossfade logarithmique',
   fade_in_out: 'Fade in / Fade out',
@@ -54,7 +53,6 @@ export const MIX_TRANSITION_MODE_LABELS = Object.freeze({
   kick_swap: 'Kick swap (échange des kicks)',
   beat_repeat: 'Beat repeat (boucle accélérée)',
   backspin: 'Backspin (vinyl stop)',
-  fake_drop: 'Fake drop (silence + impact)',
   echo_freeze: 'Echo freeze (écho gelé)',
 });
 
@@ -90,7 +88,6 @@ const TRANSITION_EXTRA_RAM_MB = Object.freeze({
   kick_swap: 145,
   beat_repeat: 112,
   backspin: 85,
-  fake_drop: 28,
   echo_freeze: 195,
 });
 
@@ -119,7 +116,6 @@ const TRANSITION_OVERLAP_MULTIPLIER = Object.freeze({
   kick_swap: 1.25,
   beat_repeat: 1.20,
   backspin: 0.95,
-  fake_drop: 0.80,
   echo_freeze: 1.48,
 });
 

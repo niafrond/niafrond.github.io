@@ -1,3 +1,163 @@
+## [1.258.0](https://github.com/niafrond/niafrond.github.io/compare/v1.257.0...v1.258.0) (2026-07-14)
+
+### Features
+
+* **dj-mix:** persist download state to localStorage, preserve audio cache on PWA update ([2e597e0](https://github.com/niafrond/niafrond.github.io/commit/2e597e0ef267c3e7dc307cc6d5756f12878c052d))
+
+## [1.257.0](https://github.com/niafrond/niafrond.github.io/compare/v1.256.0...v1.257.0) (2026-07-13)
+
+### Features
+
+* **dj-mix:** sampling FX joue de vrais samples audio au lieu d'un oscillateur ([0cd0d84](https://github.com/niafrond/niafrond.github.io/commit/0cd0d846143a6ec4d82f3e510006e518dae48b39))
+
+## [1.256.0](https://github.com/niafrond/niafrond.github.io/compare/v1.255.0...v1.256.0) (2026-07-13)
+
+### Features
+
+* Add support for Wake Lock during internal queue processing and background fetch continuity ([6323317](https://github.com/niafrond/niafrond.github.io/commit/6323317ea0dd661837c8c7d4afa56d36e4ef2dbf))
+* Implement backoff retry mechanism for background fetch failures ([4dcc85b](https://github.com/niafrond/niafrond.github.io/commit/4dcc85bbd1fa5e0fd83bfe4defaa5be1f34f3e59))
+
+## [1.255.0](https://github.com/niafrond/niafrond.github.io/compare/v1.254.0...v1.255.0) (2026-07-12)
+
+### Features
+
+* implement forced PWA update functionality with service worker unregistration and cache clearing ([86c7aba](https://github.com/niafrond/niafrond.github.io/commit/86c7aba93ed903c80a079fc489ceeee7a28cdf67))
+
+## [1.254.0](https://github.com/niafrond/niafrond.github.io/compare/v1.253.0...v1.254.0) (2026-07-12)
+
+### Features
+
+* Refactor filRougeDownloader to use downloadBatchManager for improved batch processing ([bebf7c0](https://github.com/niafrond/niafrond.github.io/commit/bebf7c03b6b8ec7aa0020d5bdeab217a7807b72f))
+* remove 'fake_drop' transition mode and related references; add audio continuity specifications ([d5de008](https://github.com/niafrond/niafrond.github.io/commit/d5de0087b52fa326ca4f6600c654c739b7e1cc4c))
+* remove verify_downloadbatch script to streamline download verification process ([a42a289](https://github.com/niafrond/niafrond.github.io/commit/a42a28932956d02d4f047ed9a9680d8465b38734))
+
+## [1.253.0](https://github.com/niafrond/niafrond.github.io/compare/v1.252.0...v1.253.0) (2026-07-12)
+
+### Features
+
+* add functionality to fetch missing mix suggestions for already downloaded tracks ([0b24d93](https://github.com/niafrond/niafrond.github.io/commit/0b24d930b744f2c9d24c6e25366c44367534087d))
+* implement concurrency handling for prefetchTrackToLocalCache to avoid duplicate downloads and improve performance ([95d6623](https://github.com/niafrond/niafrond.github.io/commit/95d66236c68acf39d03a94c82ece98707944e88a))
+
+## [1.252.0](https://github.com/niafrond/niafrond.github.io/compare/v1.251.0...v1.252.0) (2026-07-11)
+
+### Features
+
+* remove polling mechanism from search functionality and update related API responses ([655b2e1](https://github.com/niafrond/niafrond.github.io/commit/655b2e168a8cb31d9ba3f1848261a755d631a8b6))
+
+## [1.251.0](https://github.com/niafrond/niafrond.github.io/compare/v1.250.0...v1.251.0) (2026-07-10)
+
+### Features
+
+* add Plex mobile web proxy server with HLS playlist rewriting and health check endpoint ([62bd7f1](https://github.com/niafrond/niafrond.github.io/commit/62bd7f1ba5124548e9084987b9293ce2fc74dfaa))
+
+## [1.250.0](https://github.com/niafrond/niafrond.github.io/compare/v1.249.0...v1.250.0) (2026-07-07)
+
+### Features
+
+* enhance downloadAll functionality to fetch mix data for completed tracks without mix info ([bd3488c](https://github.com/niafrond/niafrond.github.io/commit/bd3488c3d5310e2d0f0932d4bdff8c4d361ee6b6))
+
+## [1.249.0](https://github.com/niafrond/niafrond.github.io/compare/v1.248.0...v1.249.0) (2026-07-07)
+
+### Features
+
+* **alldebrid-fdm:** initialize project with Express server and frontend ([570447e](https://github.com/niafrond/niafrond.github.io/commit/570447e25b7db7df21cf8dd0e7ee8cb3f20cdc5e))
+
+## [1.248.0](https://github.com/niafrond/niafrond.github.io/compare/v1.247.0...v1.248.0) (2026-07-06)
+
+### Features
+
+* implement server tracks caching with TTL and add related tests ([c740ae2](https://github.com/niafrond/niafrond.github.io/commit/c740ae2563d47748cc08e711c68dbbae9af9032a))
+
+## [1.247.0](https://github.com/niafrond/niafrond.github.io/compare/v1.246.0...v1.247.0) (2026-07-06)
+
+### Features
+
+* add search overlay functionality with open and close methods ([33239c5](https://github.com/niafrond/niafrond.github.io/commit/33239c581fa39c88f2edbb8fdb9998456f987ec1))
+* update specifications and tests for track handling in DJ functionality ([734ec37](https://github.com/niafrond/niafrond.github.io/commit/734ec37b274e09a738856e5ae70b2018269d8386))
+
+## [1.246.0](https://github.com/niafrond/niafrond.github.io/compare/v1.245.0...v1.246.0) (2026-07-06)
+
+### Features
+
+* add unit tests for downloadAll functionality in filRougeDownloader ([ef7eb41](https://github.com/niafrond/niafrond.github.io/commit/ef7eb412fab6503490615105e154d2cd32a94487))
+* enhance DJ effects controller and fil rouge functionality ([02c9309](https://github.com/niafrond/niafrond.github.io/commit/02c930961a75e8d40081629d0cc1d324fdfcd5ee))
+
+## [1.245.0](https://github.com/niafrond/niafrond.github.io/compare/v1.244.0...v1.245.0) (2026-07-05)
+
+### Features
+
+* add 'pattern' sorting mode to playlist and enhance artwork handling with API integration ([5529f5c](https://github.com/niafrond/niafrond.github.io/commit/5529f5cfaf00b1233e0fc0d2ab020ab4b5fd1d2b))
+
+## [1.244.0](https://github.com/niafrond/niafrond.github.io/compare/v1.243.0...v1.244.0) (2026-07-04)
+
+### Features
+
+* add playlist sorting functionality with API integration and related tests ([1d58b35](https://github.com/niafrond/niafrond.github.io/commit/1d58b357f30f529ed994ada7290109c9eb70457e))
+
+## [1.243.0](https://github.com/niafrond/niafrond.github.io/compare/v1.242.0...v1.243.0) (2026-07-03)
+
+### Features
+
+* implement automatic pause on audio output change for active deck and add related tests ([6c65890](https://github.com/niafrond/niafrond.github.io/commit/6c65890fc8c57f82a7073f5717bc41382dc1c894))
+
+## [1.242.0](https://github.com/niafrond/niafrond.github.io/compare/v1.241.0...v1.242.0) (2026-07-03)
+
+### Features
+
+* add fallback logic for automix timing based on track max duration and update tests for transition plan behavior ([7a203de](https://github.com/niafrond/niafrond.github.io/commit/7a203deccb5c6530de3b3934dfda3c050f73b5c4))
+* enhance fil rouge manager tests with loop behavior and peek track logic ([7baa19d](https://github.com/niafrond/niafrond.github.io/commit/7baa19d14c4c70a6879cbe211f0ad5c4ef0bdec5))
+* implement inactive preload watcher and enhance artwork handling for media session ([5e56e37](https://github.com/niafrond/niafrond.github.io/commit/5e56e372e53a8165bcbbddb23a74ab1eb56f621c))
+* implement onTrackStarted callback to trigger quality refresh on track start and add related tests ([bc7ba1d](https://github.com/niafrond/niafrond.github.io/commit/bc7ba1d223908eefd90cc07fe9dc1ba186431c97))
+
+## [1.241.0](https://github.com/niafrond/niafrond.github.io/compare/v1.240.0...v1.241.0) (2026-06-30)
+
+### Features
+
+* add volume control UI and functionality ([68181f2](https://github.com/niafrond/niafrond.github.io/commit/68181f2850552c1cc222a59568b7fb287921690d))
+* enhance artwork fetching logic with optional notification suppression ([04ffbe5](https://github.com/niafrond/niafrond.github.io/commit/04ffbe5b6faec074ddbf3328bafad06e17c2e8c9))
+* update artwork fetching logic to suppress notifications during preloading on inactive deck ([39e5326](https://github.com/niafrond/niafrond.github.io/commit/39e532669797d72791ca3122558f9353bd3c43b6))
+
+## [1.240.0](https://github.com/niafrond/niafrond.github.io/compare/v1.239.0...v1.240.0) (2026-06-30)
+
+### Features
+
+* add specifications for queue display and update UI rendering logic ([d75f165](https://github.com/niafrond/niafrond.github.io/commit/d75f1652dfc3cf196c3afc47b0853b013e6bff5f))
+
+## [1.239.0](https://github.com/niafrond/niafrond.github.io/compare/v1.238.0...v1.239.0) (2026-06-30)
+
+### Features
+
+* add specifications for queue display and update UI rendering logic ([5c4cbe3](https://github.com/niafrond/niafrond.github.io/commit/5c4cbe302fc2c9a4d37d33898a2c0a014ed08daf))
+* **android-auto:** integrate Android Auto support with media session and adaptive download batching ([db4529a](https://github.com/niafrond/niafrond.github.io/commit/db4529a2514f3a7a3f95430305281d5520f392cd))
+
+## [1.238.0](https://github.com/niafrond/niafrond.github.io/compare/v1.237.0...v1.238.0) (2026-06-30)
+
+### Features
+
+* add DJ Plan section with recalculation button and styling ([5eb14f6](https://github.com/niafrond/niafrond.github.io/commit/5eb14f6a3eb73da0e799f1a354c98d77e2e50bbd))
+* update specifications for asynchronous callbacks and metadata fetching logic ([db052c0](https://github.com/niafrond/niafrond.github.io/commit/db052c024b7a1fa1f513e37372a1203e55629a7e))
+
+## [1.237.0](https://github.com/niafrond/niafrond.github.io/compare/v1.236.0...v1.237.0) (2026-06-29)
+
+### Features
+
+* add track time display and improve caching logic for downloads ([6d849f8](https://github.com/niafrond/niafrond.github.io/commit/6d849f8f2019d13636397cddb8ccc9660376dd4f))
+* Add unit tests for Fil Rouge, Search, Auto DJ, Auto FX, and Mix Features ([7831f5f](https://github.com/niafrond/niafrond.github.io/commit/7831f5f8a77611c13397ffe73f30fd5cbb94cb40))
+* enhance transition recalculation logic and add error handling ([4356868](https://github.com/niafrond/niafrond.github.io/commit/4356868e1d13cc29cae0ee598ef2183983f870f0))
+
+## [1.236.0](https://github.com/niafrond/niafrond.github.io/compare/v1.235.0...v1.236.0) (2026-06-26)
+
+### Features
+
+* implement fingerprint control and suggestion handling in DJ Mix ([1501833](https://github.com/niafrond/niafrond.github.io/commit/1501833e5338a0eaa7ebe1dd5f664a1e7684981d))
+
+## [1.235.0](https://github.com/niafrond/niafrond.github.io/compare/v1.234.1...v1.235.0) (2026-06-26)
+
+### Features
+
+* add next track display and fingerprint control functionality ([1a4c252](https://github.com/niafrond/niafrond.github.io/commit/1a4c252945f82984a7a80b6a43ef575d15dc58cb))
+* add search functionality with overlay and action sheet ([c5ba1a2](https://github.com/niafrond/niafrond.github.io/commit/c5ba1a2bcec008e79f0515491089aa6fea31351d))
+
 ## [1.234.1](https://github.com/niafrond/niafrond.github.io/compare/v1.234.0...v1.234.1) (2026-06-24)
 
 ### Bug Fixes

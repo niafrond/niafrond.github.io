@@ -1,6 +1,6 @@
 // Ajoute `token=...` aux URLs de l'API downloader. Si l'URL porte déjà un
-// paramètre `token` (ex: le jeton de poll de /api/search/poll), on ne le
-// remplace pas pour éviter d'écraser un paramètre déjà significatif.
+// paramètre `token`, on ne le remplace pas pour éviter d'écraser un
+// paramètre déjà significatif.
 export function appendApiToken(url, token) {
   if (!token) return url;
   if (/[?&]token=/.test(url)) return url;

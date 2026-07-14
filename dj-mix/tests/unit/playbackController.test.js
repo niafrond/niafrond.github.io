@@ -220,6 +220,69 @@ describe('resolveMixDataStartOffsetMs', () => {
     };
     expect(ctrl.resolveMixDataStartOffsetMs(mixData)).toBe(20_000);
   });
+
+  test('empty intro: skips to first zone when no zones before 15s', () => {
+    const ctrl = makeController();
+    const mixData = {
+      durationSec: 240,
+      breakdownZones: [{ startSec: 30, endSec: 45, score: 0.6 }],
+      dropZones: [],
+      peakZones: [],
+      avoidTransitionZones: [],
+    };
+    expect(ctrl.resolveMixDataStartOffsetMs(mixData)).toBe(30_000);
+  });
+
+  test('empty intro: no skip when a zone exists before 15s', () => {
+    const ctrl = makeController();
+    const mixData = {
+      durationSec: 240,
+      breakdownZones: [{ startSec: 10, endSec: 20, score: 0.5 }],
+      dropZones: [{ startSec: 50, endSec: 55, score: 0.8 }],
+      peakZones: [],
+      avoidTransitionZones: [],
+    };
+    expect(ctrl.resolveMixDataStartOffsetMs(mixData)).toBe(0);
+  });
+
+  test('empty intro: ignores offset that would skip near end of track', () => {
+    const ctrl = makeController();
+    const mixData = {
+      durationSec: 50,
+      breakdownZones: [],
+      dropZones: [],
+      peakZones: [{ startSec: 25, endSec: 30, score: 0.5 }],
+      avoidTransitionZones: [],
+    };
+    // 25 > durationSec - 30 = 20 → ignored
+    expect(ctrl.resolveMixDataStartOffsetMs(mixData)).toBe(0);
+  });
+
+  test('empty intro: picks earliest zone across all types', () => {
+    const ctrl = makeController();
+    const mixData = {
+      durationSec: 300,
+      breakdownZones: [{ startSec: 40, endSec: 50, score: 0.5 }],
+      dropZones: [{ startSec: 25, endSec: 30, score: 0.9 }],
+      peakZones: [{ startSec: 60, endSec: 70, score: 0.7 }],
+      avoidTransitionZones: [{ startSec: 20, endSec: 22, score: 0.3, reason: 'high_tension' }],
+    };
+    expect(ctrl.resolveMixDataStartOffsetMs(mixData)).toBe(20_000);
+  });
+
+  test('empty intro: does not reduce an already higher offset', () => {
+    const ctrl = makeController();
+    const mixData = {
+      durationSec: 300,
+      recommendedSongStartSec: 50,
+      breakdownZones: [{ startSec: 30, endSec: 40, score: 0.5 }],
+      dropZones: [],
+      peakZones: [],
+      avoidTransitionZones: [],
+    };
+    // recommendedSongStartSec=50 > firstZone=30 → keeps 50
+    expect(ctrl.resolveMixDataStartOffsetMs(mixData)).toBe(50_000);
+  });
 });
 
 // ── applyDjStartOffsetIfPlanned ───────────────────────────────────────────────
@@ -345,6 +408,30 @@ describe('startPlaybackForIndex error handling', () => {
     });
     await expect(ctrl.startPlaybackForIndex(0, 'play')).rejects.toThrow();
     expect(removeFromQueue).toHaveBeenCalledWith(0);
+  });
+
+  test('SPEC-8.6.7 onTrackStarted est appelé avec item et index quand la lecture démarre', async () => {
+    const onTrackStarted = jest.fn();
+    const track = makeTrack({ id: 'tr1' });
+    const ctrl = makeController({
+      onTrackStarted,
+      getQueue: jest.fn().mockReturnValue([track]),
+    });
+    await ctrl.startPlaybackForIndex(0, 'play');
+    expect(onTrackStarted).toHaveBeenCalledTimes(1);
+    expect(onTrackStarted).toHaveBeenCalledWith(expect.objectContaining({ id: 'tr1' }), 0);
+  });
+
+  test('SPEC-8.6.7 onTrackStarted n\'est pas appelé quand startPlaybackForIndex échoue', async () => {
+    const onTrackStarted = jest.fn();
+    const player = makePlayer({ playOnDeck: jest.fn().mockRejectedValue(new Error('fail')) });
+    const ctrl = makeController({
+      onTrackStarted,
+      getQueue: jest.fn().mockReturnValue([makeTrack()]),
+      getPlayer: jest.fn().mockReturnValue(player),
+    });
+    await expect(ctrl.startPlaybackForIndex(0, 'play')).rejects.toThrow();
+    expect(onTrackStarted).not.toHaveBeenCalled();
   });
 });
 

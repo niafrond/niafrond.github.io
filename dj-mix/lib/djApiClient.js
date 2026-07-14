@@ -19,7 +19,11 @@ export function createDjApiClient({
   getDownloaderApiToken,
   getDownloaderApiUrl,
   logger,
+  pollIntervalMs = [500, 1000, 2000, 5000],
+  pollMaxAttempts = 60,
 } = {}) {
+  const REQUEST_TIMEOUT_MS = 15_000;
+
   async function _request(path, { method = 'GET', params, body } = {}) {
     try {
       const apiUrl = getDownloaderApiUrl?.();
@@ -33,10 +37,18 @@ export function createDjApiClient({
       }
       url = appendApiToken(url, getDownloaderApiToken?.());
 
-      const init = { method, headers: { 'Content-Type': 'application/json' } };
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+      const init = { method, headers: { 'Content-Type': 'application/json' }, signal: controller.signal };
       if (body !== undefined) init.body = JSON.stringify(body);
 
-      const response = await fetch(url, init);
+      let response;
+      try {
+        response = await fetch(url, init);
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (response.status === 400 || response.status === 404) {
         const data = await response.json().catch(() => null);
@@ -68,10 +80,39 @@ export function createDjApiClient({
     return _request(path, { method: 'POST', body });
   }
 
+  function _delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async function _pollJob(statusPath, jobId) {
+    for (let attempt = 0; attempt < pollMaxAttempts; attempt++) {
+      const intervalIdx = Math.min(attempt, pollIntervalMs.length - 1);
+      await _delay(pollIntervalMs[intervalIdx]);
+
+      const res = await _get(statusPath, { jobId });
+      if (!res.ok) return { ok: false, status: res.status, data: null };
+
+      const { status } = res.data || {};
+      if (status === 'done') return { ok: true, status: res.status, data: res.data };
+      if (status === 'error') return { ok: false, status: res.status, data: res.data };
+      // "pending" / "processing" → keep polling
+    }
+    logger?.warn?.('djApi.poll.timeout', { statusPath, jobId, attempts: pollMaxAttempts });
+    return { ok: false, status: 0, data: null };
+  }
+
+  async function _postAndPoll(submitPath, statusPath, body) {
+    const res = await _post(submitPath, body);
+    if (!res.ok) return res;
+    if (res.data?.jobId) return _pollJob(statusPath, res.data.jobId);
+    return res;
+  }
+
   /** @returns {Promise<Array>} TrackSummary[] (empty array on failure) */
   async function fetchTracks() {
-    const res = await _get('/api/dj/tracks');
-    return res.ok && Array.isArray(res.data?.tracks) ? res.data.tracks : [];
+    const res = await _postAndPoll('/api/dj/tracks/scan', '/api/dj/tracks/scan/status', {});
+    const tracks = res.data?.tracks;
+    return res.ok && Array.isArray(tracks) ? tracks : [];
   }
 
   /** @returns {Promise<object|null>} TrackAnalysis, or null if unavailable (400/404/offline) */
@@ -82,9 +123,11 @@ export function createDjApiClient({
   }
 
   /** @returns {Promise<object|null>} transition recommendation, or null if unavailable */
-  async function fetchTransition(trackA, trackB) {
+  async function fetchTransition(trackA, trackB, { maxTrackDurationSec } = {}) {
     if (!trackA || !trackB) return null;
-    const res = await _post('/api/dj/transition', { trackA, trackB });
+    const body = { trackA, trackB };
+    if (maxTrackDurationSec > 0) body.maxTrackDurationSec = maxTrackDurationSec;
+    const res = await _post('/api/dj/transition', body);
     if (res.ok) {
       logger?.warn('djApiClient.fetchTransition: réponse brute API', { trackA, trackB, data: res.data });
     }
@@ -96,7 +139,7 @@ export function createDjApiClient({
     if (!Array.isArray(tracks) || !tracks.length) return null;
     const body = { tracks };
     if (profile) body.profile = profile;
-    const res = await _post('/api/dj/batch', body);
+    const res = await _postAndPoll('/api/dj/batch', '/api/dj/batch/status', body);
     return res.ok ? res.data : null;
   }
 

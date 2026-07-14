@@ -32,15 +32,18 @@ describe('autoModeManager', () => {
     jest.restoreAllMocks();
   });
 
-  test('skips a fil rouge track already in queue and falls back to suggestions', async () => {
+  // SPEC-5.3.3: peek before consuming — already-queued track must NOT advance the fil rouge index
+  test('SPEC-5.3.3: skips a fil rouge track already in queue WITHOUT advancing index, falls back to suggestions', async () => {
     const queue = [{ id: 'current', name: 'Current Song', artist: 'Artist A' }];
     const addToQueue = jest.fn().mockResolvedValue(undefined);
     const searchTracksViaApi = jest.fn().mockResolvedValue([
       { id: 'suggestion-1', name: 'Suggestion Song', artist: 'Artist B' },
     ]);
+    const getNextTrack = jest.fn().mockReturnValue({ id: 'fr-1', name: 'Current Song', artist: 'Artist A' });
     const filRougeManager = {
       isActive: () => true,
-      getNextTrack: () => ({ id: 'fr-1', name: 'Current Song', artist: 'Artist A' }),
+      peekNextTrackFromAny: () => ({ id: 'fr-1', name: 'Current Song', artist: 'Artist A' }),
+      getNextTrack,
     };
 
     const manager = makeManager({
@@ -56,9 +59,40 @@ describe('autoModeManager', () => {
     const added = await manager.searchAndAddNextTrack(queue[0]);
 
     expect(added).toBe(true);
+    // getNextTrack must NOT have been called — index must not advance for a skipped track
+    expect(getNextTrack).not.toHaveBeenCalled();
     expect(addToQueue).toHaveBeenCalledTimes(1);
     expect(addToQueue.mock.calls[0][0]).toMatchObject({ id: 'suggestion-1', name: 'Suggestion Song', artist: 'Artist B' });
     expect(searchTracksViaApi).toHaveBeenCalledTimes(1);
+  });
+
+  // SPEC-5.3.3: when peeked track is NOT in queue, getNextTrack() IS called and track is added
+  test('SPEC-5.3.3: adds fil rouge track and advances index only when track is not yet queued', async () => {
+    const queue = [{ id: 'current', name: 'Current Song', artist: 'Artist A' }];
+    const addToQueue = jest.fn().mockResolvedValue(undefined);
+    const nextTrack = { id: 'fr-2', name: 'Next Song', artist: 'Artist B' };
+    const getNextTrack = jest.fn().mockReturnValue(nextTrack);
+    const filRougeManager = {
+      isActive: () => true,
+      peekNextTrackFromAny: () => nextTrack,
+      getNextTrack,
+    };
+
+    const manager = makeManager({
+      getFilRougeManager: () => filRougeManager,
+      getQueue: () => queue,
+      getCurrentTrackId: () => 'current',
+      getCurrentTrackIndex: () => 0,
+      addToQueue,
+    });
+
+    manager.toggleAutoMode();
+    const added = await manager.searchAndAddNextTrack(queue[0]);
+
+    expect(added).toBe(true);
+    expect(getNextTrack).toHaveBeenCalledTimes(1);
+    expect(addToQueue).toHaveBeenCalledTimes(1);
+    expect(addToQueue.mock.calls[0][0]).toMatchObject({ id: 'fr-2', name: 'Next Song' });
   });
 
   test('skips queued suggestion search when disabled', async () => {
@@ -84,6 +118,88 @@ describe('autoModeManager', () => {
     expect(added).toBe(false);
     expect(searchTracksViaApi).not.toHaveBeenCalled();
     expect(addToQueue).not.toHaveBeenCalled();
+  });
+
+  // SPEC-5.3.4 / SPEC-5.3.5 — /api/suggestions contract after the swagger update
+  describe('/api/suggestions request params and client-side bpm sort', () => {
+    afterEach(() => {
+      delete global.fetch;
+    });
+
+    test('SPEC-5.3.4: sends only server-supported params, no removed hint params', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ results: [] }),
+      });
+      const queue = [{ id: 'current', name: 'Current Song', artist: 'Artist A', genre: 'House' }];
+      const manager = makeManager({
+        getDownloaderApiUrl: () => 'http://api',
+        getQueue: () => queue,
+        getCurrentTrackId: () => 'current',
+        getCurrentTrackIndex: () => 0,
+        getDjMode: () => 'music',
+        searchTracksViaApi: jest.fn().mockResolvedValue([]),
+      });
+
+      manager.toggleAutoMode();
+      await manager.searchAndAddNextTrack(queue[0]);
+
+      expect(global.fetch).toHaveBeenCalled();
+      const url = global.fetch.mock.calls[0][0];
+      expect(url).toContain('/api/suggestions');
+      expect(url).not.toMatch(/minBpm|preferDanceable|preferGenres|preferGenre=|preferArtist|maxBpmJump|[?&]tracks=/);
+    });
+
+    test('SPEC-5.3.4: dance mode adds sameGenreOnly=true instead of removed hint params', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ results: [] }),
+      });
+      const queue = [{ id: 'current', name: 'Current Song', artist: 'Artist A' }];
+      const manager = makeManager({
+        getDownloaderApiUrl: () => 'http://api',
+        getQueue: () => queue,
+        getCurrentTrackId: () => 'current',
+        getCurrentTrackIndex: () => 0,
+        getDjMode: () => 'dance',
+        searchTracksViaApi: jest.fn().mockResolvedValue([]),
+      });
+
+      manager.toggleAutoMode();
+      await manager.searchAndAddNextTrack(queue[0]);
+
+      const url = global.fetch.mock.calls[0][0];
+      expect(url).toContain('sameGenreOnly=true');
+    });
+
+    test('SPEC-5.3.5: dance mode sorts results by audioFeatures.bpm descending', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          results: [
+            { id: 'slow', trackName: 'Slow', artistName: 'X', audioFeatures: { bpm: 100 } },
+            { id: 'fast', trackName: 'Fast', artistName: 'Y', audioFeatures: { bpm: 140 } },
+          ],
+        }),
+      });
+      const queue = [{ id: 'current', name: 'Current Song', artist: 'Artist A' }];
+      const addToQueue = jest.fn().mockResolvedValue(undefined);
+      const manager = makeManager({
+        getDownloaderApiUrl: () => 'http://api',
+        getQueue: () => queue,
+        getCurrentTrackId: () => 'current',
+        getCurrentTrackIndex: () => 0,
+        getDjMode: () => 'dance',
+        getCurrentBpm: () => 120,
+        addToQueue,
+      });
+
+      manager.toggleAutoMode();
+      await manager.searchAndAddNextTrack(queue[0]);
+
+      expect(addToQueue).toHaveBeenCalledTimes(1);
+      expect(addToQueue.mock.calls[0][0]).toMatchObject({ id: 'fast' });
+    });
   });
 
   describe('crossfade loop prevention', () => {

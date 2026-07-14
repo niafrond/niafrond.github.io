@@ -25,10 +25,6 @@ export const METRICS_LOG_INTERVAL_MS = 60_000;
 
 // ─── Search (searchController.js) ────────────────────────────────────────────
 export const SEARCH_DEBOUNCE_MS        = 600;
-export const SEARCH_POLL_MAX_ATTEMPTS  = 8;
-export const SEARCH_POLL_BASE_DELAY_MS = 1500;
-export const SEARCH_POLL_STEP_MS       = 600;
-export const SEARCH_POLL_CAP_MS        = 5000;
 
 // ─── Track duration limits (settingsController.js) ───────────────────────────
 export const TRACK_MAX_DURATION_MIN_SEC = 0;
@@ -52,3 +48,13 @@ export const MUSIC_MODE_NORM_MAX_INTERVAL = 60;
 // ─── Scheduling helpers ───────────────────────────────────────────────────────
 export const IDLE_SCHEDULE_FALLBACK_MS = 80;
 export const IDLE_SCHEDULE_TIMEOUT_MS  = 2000;
+
+// ─── Adaptive download batching (Fil Rouge background downloads) ─────────────
+export const INITIAL_PARALLEL_DOWNLOADS   = 3;
+export const MIN_PARALLEL_DOWNLOADS       = 2;
+export const MAX_PARALLEL_DOWNLOADS       = 10;
+export const TARGET_MS_PER_TRACK_DOWNLOAD = 4000;
+
+// ─── Download retry policy (downloadBatchManager.js, SPEC-19.6) ──────────────
+export const MAX_DOWNLOAD_RETRY_ATTEMPTS     = 3;
+export const DOWNLOAD_RETRY_BACKOFF_BASE_MS  = 2000; // 2s, 4s, 8s (base · 2^(n−1))

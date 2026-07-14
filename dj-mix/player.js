@@ -117,6 +117,8 @@ export class DJPlayer extends EventTarget {
     B: 0,
   };
   #deckMixRatio = 0;
+  #globalVolume = 1;
+  #lastBaseMix = { A: 1, B: 0 };
   #transitionMode = DEFAULT_TRANSITION_MODE;
   #allowedTransitionModes = new Set(MIX_TRANSITION_MODES);
   #recentAutoTransitions = [];
@@ -144,6 +146,12 @@ export class DJPlayer extends EventTarget {
   get isReady() { return this.#ready; }
   get activeDeck() { return this.#active; }
   get transitionMode() { return this.#transitionMode; }
+  get globalVolume() { return this.#globalVolume; }
+
+  setGlobalVolume(v) {
+    this.#globalVolume = Math.max(0, Math.min(1, Number(v) || 0));
+    this.#applyDeckBaseMix(this.#lastBaseMix.A, this.#lastBaseMix.B);
+  }
 
   static getTransitionModes() {
     return [...MIX_TRANSITION_MODES];
@@ -230,6 +238,29 @@ export class DJPlayer extends EventTarget {
     const targetDeck = deck === 'B' ? 'B' : 'A';
     const audio = targetDeck === 'A' ? this.#audioA : this.#audioB;
     if (!audio) return;
+
+    if (options.paused === true) {
+      // SPEC-1.1.13 : un préchargement (paused) ne doit jamais cibler la platine
+      // active en cours de lecture — sinon #loadOnly() couperait la musique.
+      if (targetDeck === this.#active && audio.src && !audio.paused) {
+        logWarn('deck.load.rejected.activePlaying', {
+          targetDeck,
+          activeDeck: this.#active,
+          srcPreview: String(normalized.url || '').slice(0, 96),
+        });
+        return;
+      }
+      // SPEC-1.1.14 : ne jamais précharger une source déjà chargée sur l'autre platine.
+      const otherDeck = targetDeck === 'A' ? 'B' : 'A';
+      if (this.#deckSourceMeta[otherDeck]?.url === normalized.url) {
+        logWarn('deck.load.rejected.duplicateSource', {
+          targetDeck,
+          otherDeck,
+          srcPreview: String(normalized.url || '').slice(0, 96),
+        });
+        return;
+      }
+    }
 
     this.#setDeckLoudness(targetDeck, normalized.loudnessDb);
     this.#deckSourceMeta[targetDeck] = normalized;
@@ -444,7 +475,22 @@ export class DJPlayer extends EventTarget {
 
     // Determine fade direction: load new track on target deck, fade from the other.
     // When no target is specified, fade from the dominant (louder) deck.
-    const desiredDeck = targetDeck === 'A' || targetDeck === 'B' ? targetDeck : null;
+    let desiredDeck = targetDeck === 'A' || targetDeck === 'B' ? targetDeck : null;
+    // SPEC-1.1.15 : un crossfade vers la platine active en lecture écraserait le
+    // morceau en cours (cible devenue active pendant la préparation asynchrone) —
+    // rediriger vers la platine réellement inactive.
+    if (desiredDeck === this.#active) {
+      const activeAudio = this.#activeAudio;
+      if (activeAudio && activeAudio.src && !activeAudio.paused) {
+        const redirected = desiredDeck === 'A' ? 'B' : 'A';
+        logWarn('crossfade.retargeted.activeDeck', {
+          desiredDeck,
+          redirectedDeck: redirected,
+          activeDeck: this.#active,
+        });
+        desiredDeck = redirected;
+      }
+    }
     let fromDeck, toDeck;
     if (desiredDeck) {
       toDeck = desiredDeck;
@@ -519,6 +565,10 @@ export class DJPlayer extends EventTarget {
         startBaseTo,
       });
 
+      if (to.paused && to.src) {
+        await to.play().catch(() => {});
+      }
+
       from.pause();
       from.currentTime = 0;
       from.src = '';
@@ -556,28 +606,7 @@ export class DJPlayer extends EventTarget {
   }
 
   #chooseAutoTransitionMode(fromDeck, nextSource) {
-    const current = this.#deckSourceMeta[fromDeck] || {};
-    const currFeatures = current.audioFeatures;
-    const nextFeatures = nextSource?.audioFeatures;
-    const bpmA = Number(currFeatures?.bpm || current.bpm);
-    const bpmB = Number(nextFeatures?.bpm || nextSource?.bpm);
-    const loudA = Number(current.loudnessDb);
-    const loudB = Number(nextSource?.loudnessDb);
-    const diffBpm = Number.isFinite(bpmA) && Number.isFinite(bpmB) ? Math.abs(bpmA - bpmB) : null;
-    const diffLoud = Number.isFinite(loudA) && Number.isFinite(loudB) ? Math.abs(loudA - loudB) : null;
     const nextDurationMs = Number.isFinite(nextSource?.durationMs) ? nextSource.durationMs : null;
-
-    const energyA = Number(currFeatures?.energy);
-    const energyB = Number(nextFeatures?.energy);
-    const diffEnergy = Number.isFinite(energyA) && Number.isFinite(energyB) ? Math.abs(energyA - energyB) : null;
-
-    const danceA = Number(currFeatures?.danceability);
-    const danceB = Number(nextFeatures?.danceability);
-    const diffDance = Number.isFinite(danceA) && Number.isFinite(danceB) ? Math.abs(danceA - danceB) : null;
-
-    const rhythmA = String(currFeatures?.rhythm || '');
-    const rhythmB = String(nextFeatures?.rhythm || '');
-
     const currentDeckAudio = fromDeck === 'B' ? this.#audioB : this.#audioA;
     const remainingMs = currentDeckAudio && Number.isFinite(currentDeckAudio.duration) && currentDeckAudio.duration > 0
       ? Math.max(0, (currentDeckAudio.duration - currentDeckAudio.currentTime) * 1000)
@@ -589,38 +618,9 @@ export class DJPlayer extends EventTarget {
     if (Number.isFinite(remainingMs) && remainingMs < 3_500) {
       return this.#pickWeightedAutoTransition(['echo_out_light', 'cut_transition', 'fade_in_out']);
     }
-    if (rhythmA && rhythmB && rhythmA === rhythmB && Number.isFinite(diffBpm) && diffBpm <= 1) {
-      return this.#pickWeightedAutoTransition(['crossfade_linear', 'crossfade_logarithmic', 'gain_automation']);
-    }
-    if (Number.isFinite(diffBpm) && diffBpm <= 2 && (!Number.isFinite(diffLoud) || diffLoud <= 2)) {
-      return this.#pickWeightedAutoTransition(['crossfade_logarithmic', 'crossfade_linear', 'gain_automation', 'crossfade_lowpass']);
-    }
-    if (Number.isFinite(diffEnergy) && diffEnergy >= 0.35 && Number.isFinite(energyB) && energyB < 0.4) {
-      return this.#pickWeightedAutoTransition(['fade_in_out', 'volume_ducking', 'echo_out_light']);
-    }
-    if (Number.isFinite(diffDance) && diffDance >= 0.3) {
-      return this.#pickWeightedAutoTransition(['filter_sweep_low_high', 'filter_automation', 'filter_dual_sweep']);
-    }
-    if (Number.isFinite(diffBpm) && diffBpm <= 6) {
-      return this.#pickWeightedAutoTransition(['filter_automation', 'eq_transition_simple', 'crossfade_lowpass', 'crossfade_highpass_in']);
-    }
-    if (Number.isFinite(diffEnergy) && diffEnergy >= 0.25) {
-      return this.#pickWeightedAutoTransition(['eq_transition_simple', 'sidechain_basic', 'crossfade_highpass_in']);
-    }
-    if (Number.isFinite(diffBpm) && diffBpm <= 10) {
-      return this.#pickWeightedAutoTransition(['sidechain_basic', 'eq_transition_simple', 'volume_ducking']);
-    }
-    if (Number.isFinite(diffLoud) && diffLoud >= 5) {
-      return this.#pickWeightedAutoTransition(['volume_ducking', 'fade_in_out', 'gain_automation']);
-    }
-    if (Number.isFinite(diffBpm) && diffBpm >= 20) {
-      return this.#pickWeightedAutoTransition(['brake_tape_stop_simple', 'backspin', 'fake_drop']);
-    }
-    if (Number.isFinite(danceA) && Number.isFinite(danceB) && danceA > 0.65 && danceB > 0.65) {
-      return this.#pickWeightedAutoTransition(['short_loop', 'beat_repeat', 'kick_swap', 'bass_swap']);
-    }
 
-    return this.#pickWeightedAutoTransition(['gain_automation', 'crossfade_linear', 'crossfade_logarithmic', 'fade_in_out']);
+    const allModes = [...this.#allowedTransitionModes].filter((m) => m !== 'auto');
+    return this.#pickWeightedAutoTransition(allModes);
   }
 
   #pickWeightedAutoTransition(candidates) {
@@ -663,7 +663,7 @@ export class DJPlayer extends EventTarget {
 
   #recordAutoTransition(mode) {
     this.#recentAutoTransitions.push(mode);
-    if (this.#recentAutoTransitions.length > 8) {
+    if (this.#recentAutoTransitions.length > 16) {
       this.#recentAutoTransitions.shift();
     }
   }
@@ -814,10 +814,7 @@ export class DJPlayer extends EventTarget {
             }
           }
 
-          if (mode === 'brake_tape_stop_simple') {
-            context.from.playbackRate = Math.max(0.2, 1 - (0.85 * progress));
-            context.to.playbackRate = Math.min(1, 0.9 + (0.1 * progress));
-          } else if (mode === 'backspin') {
+          if (mode === 'backspin') {
             // Décélération rapide jusqu'à l'arrêt complet
             context.from.playbackRate = progress < 0.35
               ? Math.max(0.04, 1 - Math.pow(progress / 0.35, 0.55))
@@ -928,12 +925,9 @@ export class DJPlayer extends EventTarget {
         return { from, to };
       }
       case 'fade_in_out': {
-        if (clampedT < 0.52) {
-          const phase = clampedT / 0.52;
-          return { from: startBaseFrom * (1 - phase), to: startBaseTo * 0.25 };
-        }
-        const phase = (clampedT - 0.52) / 0.48;
-        return { from: 0, to: startBaseTo + ((1 - startBaseTo) * phase) };
+        const from = startBaseFrom * Math.pow(1 - clampedT, 1.4);
+        const to = startBaseTo + ((1 - startBaseTo) * Math.pow(clampedT, 0.7));
+        return { from, to };
       }
       case 'filter_sweep_low_high': {
         const eased = Math.sqrt(clampedT);
@@ -1058,27 +1052,13 @@ export class DJPlayer extends EventTarget {
         };
       }
       case 'backspin': {
-        // Phase 1 : fromDeck décélère et s'arrête ; Phase 2 : silence ; Phase 3 : toDeck hard entry
-        if (clampedT < 0.35) {
-          return { from: startBaseFrom * (1 - Math.pow(clampedT / 0.35, 0.65)), to: 0 };
-        }
-        if (clampedT < 0.5) {
-          return { from: 0, to: 0 };
-        }
-        return { from: 0, to: startBaseTo + ((1 - startBaseTo) * ((clampedT - 0.5) / 0.5)) };
-      }
-      case 'fake_drop': {
-        // fromDeck fade rapide → silence complet → toDeck entre avec impact brutal
-        if (clampedT < 0.35) {
-          return { from: startBaseFrom * (1 - (clampedT / 0.35)), to: 0 };
-        }
-        if (clampedT < 0.55) {
-          return { from: 0, to: 0 };
-        }
-        return {
-          from: 0,
-          to: startBaseTo + ((1 - startBaseTo) * Math.min(1, (clampedT - 0.55) / 0.12)),
-        };
+        // Phase 1 : fromDeck décélère et s'arrête ; toDeck monte dès 20% pour éviter tout silence
+        const from = clampedT < 0.35
+          ? startBaseFrom * (1 - Math.pow(clampedT / 0.35, 0.65))
+          : 0;
+        const toPhase = Math.min(1, Math.max(0, (clampedT - 0.2) / 0.5));
+        const to = startBaseTo + ((1 - startBaseTo) * Math.pow(toPhase, 0.7));
+        return { from, to };
       }
       case 'echo_freeze': {
         // fromDeck maintenu avec plancher d'écho jusqu'à 65%, puis fade ; toDeck entre après 45%
@@ -1210,28 +1190,58 @@ export class DJPlayer extends EventTarget {
  * @param {*} sourceUrl 
  */
   async #loadAndPlay(audio, sourceUrl) {
-    if(!audio.paused) return;
-    audio.pause();
+    if (!audio.paused) {
+      logWarn('audio.loadAndPlay.forcePause', {
+        srcPreview: String(audio.src || '').slice(0, 96),
+        ended: audio.ended,
+        readyState: audio.readyState,
+      });
+      audio.pause();
+    }
     audio.currentTime = 0;
     audio.src = sourceUrl;
 
     const loadStartedAt = performance.now();
     await new Promise((resolve, reject) => {
+      let settled = false;
       const onCanPlay = () => {
+        if (settled) return;
+        settled = true;
         cleanup();
         resolve();
       };
       const onError = () => {
+        if (settled) return;
+        settled = true;
         cleanup();
         reject(new Error('Flux audio API non lisible'));
       };
       const cleanup = () => {
+        clearTimeout(safetyTimer);
         audio.removeEventListener('canplay', onCanPlay);
         audio.removeEventListener('error', onError);
       };
 
       audio.addEventListener('canplay', onCanPlay, { once: true });
       audio.addEventListener('error', onError, { once: true });
+
+      const safetyTimer = setTimeout(() => {
+        if (settled) return;
+        if (audio.readyState >= 2) {
+          logWarn('audio.loadAndPlay.canPlayTimeout.readyOk', {
+            readyState: audio.readyState,
+            srcPreview: String(sourceUrl || '').slice(0, 96),
+          });
+          onCanPlay();
+        } else {
+          logError('audio.loadAndPlay.canPlayTimeout.notReady', {
+            readyState: audio.readyState,
+            srcPreview: String(sourceUrl || '').slice(0, 96),
+          });
+          onError();
+        }
+      }, 10000);
+
       audio.load();
     });
     const canPlayMs = performance.now() - loadStartedAt;
@@ -1255,14 +1265,42 @@ export class DJPlayer extends EventTarget {
 
     const loadStartedAt = performance.now();
     await new Promise((resolve, reject) => {
-      const onCanPlay = () => { cleanup(); resolve(); };
-      const onError = () => { cleanup(); reject(new Error('Flux audio API non lisible')); };
+      let settled = false;
+      const onCanPlay = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve();
+      };
+      const onError = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error('Flux audio API non lisible'));
+      };
       const cleanup = () => {
+        clearTimeout(safetyTimer);
         audio.removeEventListener('canplay', onCanPlay);
         audio.removeEventListener('error', onError);
       };
       audio.addEventListener('canplay', onCanPlay, { once: true });
       audio.addEventListener('error', onError, { once: true });
+      const safetyTimer = setTimeout(() => {
+        if (settled) return;
+        if (audio.readyState >= 2) {
+          logWarn('audio.loadOnly.canPlayTimeout.readyOk', {
+            readyState: audio.readyState,
+            srcPreview: String(sourceUrl || '').slice(0, 96),
+          });
+          onCanPlay();
+        } else {
+          logError('audio.loadOnly.canPlayTimeout.notReady', {
+            readyState: audio.readyState,
+            srcPreview: String(sourceUrl || '').slice(0, 96),
+          });
+          onError();
+        }
+      }, 10000);
       audio.load();
     });
     const canPlayMs = performance.now() - loadStartedAt;
@@ -1603,8 +1641,11 @@ export class DJPlayer extends EventTarget {
     if (!this.#audioA || !this.#audioB) return;
     const safeA = Math.max(0, Math.min(1, Number(baseA) || 0));
     const safeB = Math.max(0, Math.min(1, Number(baseB) || 0));
+    this.#lastBaseMix.A = safeA;
+    this.#lastBaseMix.B = safeB;
     const compA = this.#getDeckCompensation('A');
     const compB = this.#getDeckCompensation('B');
+    const gv = this.#globalVolume;
 
     let nextA;
     let nextB;
@@ -1613,11 +1654,11 @@ export class DJPlayer extends EventTarget {
       // Use a shared compensation factor so the A/B ratio remains exact
       // for any slider position, including while smoothing.
       const sharedComp = Math.max(0, Math.min(compA, compB, 1));
-      nextA = Math.max(0, Math.min(1, safeA * sharedComp));
-      nextB = Math.max(0, Math.min(1, safeB * sharedComp));
+      nextA = Math.max(0, Math.min(1, safeA * sharedComp * gv));
+      nextB = Math.max(0, Math.min(1, safeB * sharedComp * gv));
     } else {
-      nextA = Math.max(0, Math.min(1, safeA * compA));
-      nextB = Math.max(0, Math.min(1, safeB * compB));
+      nextA = Math.max(0, Math.min(1, safeA * compA * gv));
+      nextB = Math.max(0, Math.min(1, safeB * compB * gv));
     }
 
     this.#audioA.volume = nextA;

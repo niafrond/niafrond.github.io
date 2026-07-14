@@ -1,5 +1,25 @@
 import { escHtml, extractTrackBpm, extractTrackGenre, formatTime } from './searchUtils.js';
-import { pushNowPlaying, resolveArtworkUrl } from './androidAutoBridge.js';
+import { pushNowPlaying } from './androidAutoBridge.js';
+
+async function _fetchArtworkDataUri(url) {
+  if (!url) return '';
+  if (url.startsWith('data:')) return url;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return '';
+    const blob = await response.blob();
+    // Reject empty blobs and non-image responses (e.g. HTML error pages from expired CDN URLs)
+    if (!blob || blob.size < 64 || !blob.type.startsWith('image/')) return '';
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return '';
+  }
+}
 
 const MAX_VISIBLE_PLAYED_TRACKS = 5;
 
@@ -11,6 +31,8 @@ export function createDjMixRenderer(options) {
     deckBVol,
     deckAFill,
     deckBFill,
+    deckATime,
+    deckBTime,
     deckATitle,
     deckBTitle,
     deckABpm,
@@ -63,8 +85,8 @@ export function createDjMixRenderer(options) {
 
   // Tracks last-rendered deck state to skip writes when nothing changed
   const lastRenderedDeckState = {
-    A: { playing: undefined, volPct: undefined, fillPct: undefined, rateHidden: undefined },
-    B: { playing: undefined, volPct: undefined, fillPct: undefined, rateHidden: undefined },
+    A: { playing: undefined, volPct: undefined, fillPct: undefined, rateHidden: undefined, timeText: undefined },
+    B: { playing: undefined, volPct: undefined, fillPct: undefined, rateHidden: undefined, timeText: undefined },
   };
 
   function composeDeckMeta(title, artist) {
@@ -76,7 +98,11 @@ export function createDjMixRenderer(options) {
 
   function getMediaSessionArtwork(item) {
     if (item?.artUrl) {
-      return [{ src: item.artUrl, sizes: '512x512', type: 'image/jpeg' }];
+      // SPEC-13.3.7 — Upgrade Apple CDN thumbnails to 512x512 for richer media notifications
+      const src = item.artUrl.includes('mzstatic.com')
+        ? item.artUrl.replace(/\/\d+x\d+bb\.jpg$/, '/512x512bb.jpg')
+        : item.artUrl;
+      return [{ src, sizes: '512x512', type: 'image/jpeg' }];
     }
 
     return [{
@@ -259,10 +285,17 @@ export function createDjMixRenderer(options) {
       const cueBSelected = deckBCueIndex === i && deckCueDeck === 'B';
       const cueAClass = `queue-cue${cueASelected ? ' is-selected' : ''}${cueALoaded ? ' is-loaded-deck' : ''}`;
       const cueBClass = `queue-cue${cueBSelected ? ' is-selected' : ''}${cueBLoaded ? ' is-loaded-deck' : ''}`;
-      const cueADisabled = 'disabled aria-disabled="true"';
-      const cueBDisabled = 'disabled aria-disabled="true"';
-      const metaChips = buildDanceMetaChips(item);
+      const cueADisabled = cueALoaded ? ' disabled aria-disabled="true" title="Déjà chargée sur platine 1"' : '';
+      const cueBDisabled = cueBLoaded ? ' disabled aria-disabled="true" title="Déjà chargée sur platine 2"' : '';
+      const metaChips = isDanceMode() ? buildDanceMetaChips(item) : '';
       const sourceBadge = renderSourceBadge(item);
+      const deckBadge = loadedDeck === 'AB'
+        ? '<span class="queue-deck-badge">DJ 1+2</span>'
+        : loadedDeck === 'A'
+          ? '<span class="queue-deck-badge">platine 1</span>'
+          : loadedDeck === 'B'
+            ? '<span class="queue-deck-badge">platine 2</span>'
+            : '';
 
       return `
       <div class="${cls}" data-index="${i}" role="button" tabindex="0" draggable="true">
@@ -272,11 +305,15 @@ export function createDjMixRenderer(options) {
           <div class="queue-name-wrap">
             <div class="queue-name">${escHtml(item.name)}</div>
             ${sourceBadge}
+            ${deckBadge}
           </div>
           <div class="queue-artist">${escHtml(item.artist)}</div>
           ${metaChips}
         </div>
         <div class="queue-actions">
+          <button class="${cueAClass}" data-index="${i}" data-deck="A"${cueADisabled} aria-label="Cue platine 1">1</button>
+          <button class="${cueBClass}" data-index="${i}" data-deck="B"${cueBDisabled} aria-label="Cue platine 2">2</button>
+          <button class="queue-fp-btn" data-index="${i}" aria-label="Contrôle empreinte" title="Contrôle empreinte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></button>
           <button class="queue-remove" data-index="${i}" aria-label="Retirer">✕</button>
         </div>
       </div>`;
@@ -372,6 +409,25 @@ export function createDjMixRenderer(options) {
         lastRenderedDeckState.B.fillPct = pctBRounded;
       }
     }
+
+    if (deckATime) {
+      const timeA = detail.deckA?.durationMs > 0
+        ? `${formatTime(detail.deckA.positionMs)} / ${formatTime(detail.deckA.durationMs)}`
+        : '';
+      if (lastRenderedDeckState.A.timeText !== timeA) {
+        deckATime.textContent = timeA;
+        lastRenderedDeckState.A.timeText = timeA;
+      }
+    }
+    if (deckBTime) {
+      const timeB = detail.deckB?.durationMs > 0
+        ? `${formatTime(detail.deckB.positionMs)} / ${formatTime(detail.deckB.durationMs)}`
+        : '';
+      if (lastRenderedDeckState.B.timeText !== timeB) {
+        deckBTime.textContent = timeB;
+        lastRenderedDeckState.B.timeText = timeB;
+      }
+    }
   }
 
   function updateUpcomingArtwork() {
@@ -437,18 +493,21 @@ export function createDjMixRenderer(options) {
         artwork: getMediaSessionArtwork(item),
       });
 
-      // blob: URLs ne sont pas accessibles par le système Android en dehors de la WebView;
-      // résoudre en data URI de façon asynchrone pour que la notification affiche la jaquette.
+      // Convertir l'artwork en data URI pour que la notification système puisse l'afficher
+      // quel que soit le type d'URL (blob: local, https:// CDN ou serveur API local).
       const artUrl = item?.artUrl || '';
-      if (artUrl.startsWith('blob:')) {
-        resolveArtworkUrl(artUrl).then((resolvedUrl) => {
+      if (artUrl) {
+        _fetchArtworkDataUri(artUrl).then((resolvedUrl) => {
           if (!resolvedUrl || !navigator.mediaSession?.metadata) return;
           if (navigator.mediaSession.metadata.title !== safeTitle) return;
+          const [, mimeType] = resolvedUrl.match(/^data:([^;]+);/) || [];
+          // SPEC-13.3.8 — Reject non-image data URIs (e.g. HTML error pages) to avoid overriding a valid CDN URL
+          if (!mimeType?.startsWith('image/')) return;
           navigator.mediaSession.metadata = new MediaMetadata({
             title: safeTitle,
             artist: safeArtist,
             album: safeAlbum,
-            artwork: [{ src: resolvedUrl, sizes: '512x512', type: 'image/jpeg' }],
+            artwork: [{ src: resolvedUrl, sizes: '512x512', type: mimeType }],
           });
         }).catch(() => {});
       }

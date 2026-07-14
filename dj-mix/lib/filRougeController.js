@@ -9,6 +9,7 @@ import { renderDjSetQualityBadge, renderDjTransitionFeedback } from './uiRendere
 import { computeDjPlanIndicatorState } from './djPlanIndicator.js';
 import { mapDjTransitionTypeToMode } from './djTransitionMapping.js';
 import { normalizeTransitionMode, MIX_TRANSITION_MODE_LABELS } from './transitionModes.js';
+import { STORAGE_KEYS } from './storageKeys.js';
 
 /**
  * Gère le fil rouge : statuts de téléchargement/stems, rendu de la liste,
@@ -29,6 +30,7 @@ import { normalizeTransitionMode, MIX_TRANSITION_MODE_LABELS } from './transitio
  * @param {HTMLElement|null} [options.filRougeLoopBtn]
  * @param {HTMLElement|null} [options.filRougePriorityListEl]
  * @param {HTMLElement|null} [options.filRougePlaylistListEl]
+ * @param {Function|null} [options.getPendingAutoFxEvents]
  * @param {HTMLElement|null} [options.djPlanIndicatorEl]
  * @param {HTMLElement|null} [options.djSetQualityBadgeEl]
  * @param {HTMLElement|null} [options.djSetProfileSelectEl]
@@ -49,14 +51,20 @@ export function createFilRougeController(options) {
     filRougeLoopBtn = null,
     filRougePriorityListEl = null,
     filRougePlaylistListEl = null,
+    getPendingAutoFxEvents = null,
     djPlanIndicatorEl = null,
     djSetQualityBadgeEl = null,
     djSetProfileSelectEl = null,
+    filRougeSortSelectEl = null,
+    getDownloaderApiUrl = null,
+    getDownloaderApiToken = null,
+    getTrackMaxDurationAppliedSec = null,
   } = options;
 
   // ── Private state ────────────────────────────────────────────────────────────
 
   const filRougeTrackStatusByKey = new Map();
+  let sortMode = localStorage.getItem(STORAGE_KEYS.filRougeSortMode) || 'original';
 
   // ── Track key and status ─────────────────────────────────────────────────────
 
@@ -88,10 +96,10 @@ export function createFilRougeController(options) {
   function getFilRougeTrackStatus(item) {
     const key = getFilRougeTrackKey(item);
     const stored = key ? filRougeTrackStatusByKey.get(key) : null;
-    const stemsOk = hasStemsForTrack(item) || Boolean(stored?.stemsOk);
     const inferredDone = Boolean(item?.cachePath || item?.persistedSourceUrl);
     const downloadState = stored?.downloadState || (inferredDone ? 'done' : 'idle');
-    return { downloadState, stemsOk };
+    const hasMixInfo = Boolean(stored?.hasMixInfo);
+    return { downloadState, hasMixInfo };
   }
 
   // ── Transition time formatter (used in indicator HTML) ────────────────────────
@@ -146,7 +154,6 @@ export function createFilRougeController(options) {
     kick_swap: 'Kick swap',
     beat_repeat: 'Beat repeat',
     backspin: 'Backspin',
-    fake_drop: 'Fake drop',
     echo_freeze: 'Echo freeze',
   };
 
@@ -211,6 +218,17 @@ export function createFilRougeController(options) {
     const modeLabel = resolvedMode ? (MIX_TRANSITION_MODE_LABELS[resolvedMode] || resolvedMode) : null;
     const fxLabel = resolvedMode ? (FX_MODE_LABELS[resolvedMode] || null) : null;
 
+    const pendingFxEvents = (getPendingAutoFxEvents?.() || [])
+      .filter((e) => e && !e.triggered)
+      .sort((a, b) => a.timeMs - b.timeMs);
+
+    const fxChipsHtml = pendingFxEvents.length > 0
+      ? pendingFxEvents.map((e) => {
+        const timeFmt = formatZoneTime(e.timeMs / 1000);
+        return `<span class="dj-plan-fx-chip" title="${escHtml(e.reason || '')}"><span class="dj-plan-fx-chip-label">${escHtml(e.label || e.type)}</span><span class="dj-plan-fx-chip-time">${timeFmt}</span></span>`;
+      }).join('')
+      : `<span class="dj-plan-fx-chip dj-plan-fx-chip--empty">Aucun FX prévu</span>`;
+
     djPlanIndicatorEl.innerHTML = `
     <div class="dj-plan-card">
       <div class="dj-plan-card-header">
@@ -229,16 +247,14 @@ export function createFilRougeController(options) {
           <span class="dj-plan-tl-label">Sort à</span>
           <span class="dj-plan-tl-time">${mixOutFmt ?? '--:--'}</span>
         </div>
-        <div class="dj-plan-timeline-fade">
-          <div class="dj-plan-tl-bar"></div>
-          ${crossfadeSec !== null ? `<span class="dj-plan-tl-duration">${crossfadeSec}s de fondu</span>` : ''}
-        </div>
+        <div class="dj-plan-fx-chips">${fxChipsHtml}</div>
         <div class="dj-plan-timeline-in">
           <span class="dj-plan-tl-label">Entre à</span>
           <span class="dj-plan-tl-time">${mixInFmt ?? '--:--'}</span>
         </div>
       </div>
       <div class="dj-plan-card-meta">
+        ${crossfadeSec !== null ? `<span class="dj-plan-meta-fade">${crossfadeSec}s fondu</span>` : ''}
         ${bpm !== null ? `<span class="dj-plan-meta-bpm">BPM cible : ${bpm}</span>` : ''}
         <span class="dj-plan-next-track">→ ${nextLabel}</span>
       </div>
@@ -290,7 +306,16 @@ export function createFilRougeController(options) {
       renderDjSetQualityBadge(djSetQualityBadgeEl, null);
       return;
     }
-    await runDjSetQualityRefresh();
+
+    const currentIndex = filRougeManager.getCurrentIndex();
+    const playlist = filRougeManager.getPlaylist();
+    const promises = [runDjSetQualityRefresh()];
+    if (currentIndex >= 0 && currentIndex < playlist.length) {
+      promises.push(djPlanManager.planCurrentToNextTransition(playlist[currentIndex]));
+    }
+    await Promise.all(promises);
+
+    updateDjPlanIndicator();
     renderFilRouge();
   }
 
@@ -361,7 +386,6 @@ export function createFilRougeController(options) {
     if (added) {
       setFilRougeTrackStatus(filRougeItem, {
         downloadState: filRougeItem.cachePath || filRougeItem.persistedSourceUrl ? 'done' : 'idle',
-        stemsOk: hasStemsForTrack(filRougeItem),
       });
       showToast(`"${filRougeItem.name}" ajouté au fil rouge`);
       const playlistItem = filRougeManager.getPlaylist().find((p) => p.id === filRougeItem.id);
@@ -370,6 +394,71 @@ export function createFilRougeController(options) {
       }
     } else {
       showToast(`Déjà dans le fil rouge`, true);
+    }
+    renderFilRouge();
+  }
+
+  // ── Sort ─────────────────────────────────────────────────────────────────────
+
+  async function _apiFetchFilRougeSort(tracks, mode) {
+    const baseUrl = getDownloaderApiUrl?.();
+    if (!baseUrl) throw new Error('API URL manquante');
+    const token = getDownloaderApiToken?.();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const body = { tracks, mode };
+    const appliedSec = getTrackMaxDurationAppliedSec?.() || 0;
+    if (appliedSec > 0) body.maxDuration = { value: appliedSec, unit: 's' };
+    const res = await fetch(`${baseUrl}/api/fil-rouge/sort`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`sort API ${res.status}`);
+    const data = await res.json();
+    const sortedTracks = Array.isArray(data.tracks) ? data.tracks : data;
+    const transitions = Array.isArray(data.transitions) ? data.transitions : [];
+    return { tracks: sortedTracks, transitions, totalDurationSec: data.totalDurationSec ?? null };
+  }
+
+  async function sortFilRouge(mode) {
+    sortMode = mode;
+    localStorage.setItem(STORAGE_KEYS.filRougeSortMode, sortMode);
+    if (mode === 'original') { renderFilRouge(); return; }
+    const playlist = filRougeManager.getPlaylist();
+    if (!playlist.length) { renderFilRouge(); return; }
+    try {
+      const { tracks: sorted, transitions } = await _apiFetchFilRougeSort(playlist, mode);
+      if (Array.isArray(sorted) && sorted.length) {
+        const localById = new Map(playlist.map((item) => [String(item.id), item]));
+        const reordered = sorted.map((apiItem) => localById.get(String(apiItem.id))).filter(Boolean);
+        playlist.forEach((item) => {
+          if (!reordered.some((r) => String(r.id) === String(item.id))) reordered.push(item);
+        });
+        filRougeManager.setPlaylist(reordered);
+        for (let i = 0; i < transitions.length; i++) {
+          const t = transitions[i];
+          if (!t || !reordered[i] || !reordered[i + 1]) continue;
+          filRougeManager.patchPlaylistItem(reordered[i].id, {
+            djTransition: {
+              toItemId: reordered[i + 1].id,
+              automixMode: t.automixMode || null,
+              mixOutSec: t.mixOutSec,
+              mixInSec: t.mixInSec,
+              mixInSecDefined: Number.isFinite(t.mixInSec),
+              crossfadeDurationSec: t.crossfadeDurationSec,
+              compatibilityScore: t.compatibilityScore,
+              transitionType: null,
+              recommendedBpm: null,
+              decisionId: null,
+              computedAt: Date.now(),
+            },
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[filRouge] sortFilRouge error:', err);
+      showToast('Tri indisponible (API)', true);
     }
     renderFilRouge();
   }
@@ -406,6 +495,10 @@ export function createFilRougeController(options) {
       const on = filRougeManager.isLoopEnabled();
       filRougeLoopBtn.textContent = `Loop: ${on ? 'ON' : 'OFF'}`;
       filRougeLoopBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    if (filRougeSortSelectEl) {
+      filRougeSortSelectEl.value = sortMode;
+      filRougeSortSelectEl.onchange = (e) => sortFilRouge(e.target.value);
     }
 
     if (filRougePriorityListEl) {
@@ -444,8 +537,8 @@ export function createFilRougeController(options) {
             : status.downloadState === 'done' ? 'is-done'
             : status.downloadState === 'error' ? 'is-error'
             : 'is-idle';
-          const stemsLabel = status.stemsOk ? 'Stems OK' : 'Stems --';
-          const stemsClass = status.stemsOk ? 'is-done' : 'is-idle';
+          const mixInfoLabel = status.hasMixInfo ? 'Mix info ✓' : 'Mix info --';
+          const mixInfoClass = status.hasMixInfo ? 'is-done' : 'is-idle';
           return `
           <div class="filrouge-item${idx === filRougeIndex ? ' filrouge-current' : ''}" data-index="${idx}">
             <img class="filrouge-art"${item.artUrl ? ` src="${escHtml(item.artUrl)}"` : ' hidden'} alt="" loading="lazy" onerror="this.hidden=true">
@@ -457,7 +550,7 @@ export function createFilRougeController(options) {
                 ${buildFilRougeDanceChips(item)}
                 <div class="filrouge-statuses">
                   <span class="filrouge-status ${downloadClass}">${downloadLabel}</span>
-                  <span class="filrouge-status ${stemsClass}">${stemsLabel}</span>
+                  <span class="filrouge-status ${mixInfoClass}">${mixInfoLabel}</span>
                 </div>
               </div>
             </div>
@@ -558,6 +651,7 @@ export function createFilRougeController(options) {
     getFilRougeTrackStatus,
     addToFilRouge,
     renderFilRouge,
+    sortFilRouge,
     updateDjPlanIndicator,
     runDjSetQualityRefresh,
     runDjPlanFullPass,

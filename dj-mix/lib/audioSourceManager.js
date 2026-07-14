@@ -317,6 +317,12 @@ export function createAudioSourceManager(options) {
 
   const MAX_SESSION_BLOB_CACHE_ENTRIES = 12; // Covers 2 active decks + 10 pre-fetched
 
+  // Tracks in-flight prefetchTrackToLocalCache() calls by cache key so that
+  // concurrent bulk-download drivers (startup cache sync, "Tout télécharger",
+  // Spotify sync loop, TXT import) racing on the same track share one network
+  // request instead of firing duplicate downloads with conflicting outcomes.
+  const inFlightPrefetches = new Map();
+
   // fetch() vers l'API downloader avec ajout automatique de `token=...` (auth API).
   // Les URLs hors API (CDN externes, blobs, etc.) sont laissées inchangées.
   function apiFetch(url, init) {
@@ -550,7 +556,9 @@ export function createAudioSourceManager(options) {
       apiHealthMonitor?.recordFailure();
       const body = await res.text().catch(() => '');
       logWarn('api.download.response.nonOk', { status: res.status, body });
-      throw new Error(`HTTP ${res.status} ${body}`.trim());
+      const err = new Error(`HTTP ${res.status} ${body}`.trim());
+      err.status = res.status;
+      throw err;
     }
 
     apiHealthMonitor?.recordSuccess();
@@ -588,7 +596,9 @@ export function createAudioSourceManager(options) {
         id: item?.id,
         status: mediaRes.status,
       });
-      throw new Error(`Téléchargement URL API impossible (HTTP ${mediaRes.status})`);
+      const err = new Error(`Téléchargement URL API impossible (HTTP ${mediaRes.status})`);
+      err.status = mediaRes.status;
+      throw err;
     }
 
     const mediaBlob = await mediaRes.blob();
@@ -631,7 +641,15 @@ export function createAudioSourceManager(options) {
     }
 
     // Check in-memory session cache before any network probes
-    const cachedSource = sessionBlobCache.get(cacheKey);
+    let cachedSource = sessionBlobCache.get(cacheKey);
+    if (!cachedSource) {
+      const fbArtist = String(item.artist || '').trim().toLowerCase();
+      const fbName = String(item.name || item.title || '').trim().toLowerCase();
+      if (fbArtist && fbName) {
+        const fallbackKey = `${fbArtist}::${fbName}`;
+        if (fallbackKey !== cacheKey) cachedSource = sessionBlobCache.get(fallbackKey);
+      }
+    }
     if (cachedSource) {
       item.localBlobUrl = typeof cachedSource === 'string' ? cachedSource : cachedSource.url;
       if (Number.isFinite(cachedSource?.loudnessDb)) {
@@ -655,7 +673,20 @@ export function createAudioSourceManager(options) {
     }
 
     // Check persistent Cache Storage before any network probes
-    const persistedBlobUrl = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName);
+    let persistedBlobUrl = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName);
+    // Fallback: try artist::name key (covers mismatch between queue items
+    // whose id was synthesized by addToQueue and tracks downloaded under
+    // the artist::name cache key by prefetchTrackToLocalCache)
+    if (!persistedBlobUrl) {
+      const fbArtist = String(item.artist || '').trim().toLowerCase();
+      const fbName = String(item.name || item.title || '').trim().toLowerCase();
+      if (fbArtist && fbName) {
+        const fallbackKey = `${fbArtist}::${fbName}`;
+        if (fallbackKey !== cacheKey) {
+          persistedBlobUrl = await restorePersistedAudioBlobUrl(fallbackKey, audioCacheName);
+        }
+      }
+    }
     if (persistedBlobUrl) {
       item.localBlobUrl = persistedBlobUrl;
       sessionBlobCache.set(cacheKey, {
@@ -790,14 +821,14 @@ export function createAudioSourceManager(options) {
 
     if (apiHealthMonitor?.isOffline()) {
       logInfo('api.search.skipped.offline', { query });
-      return { tracks: [], pollToken: null };
+      return { tracks: [] };
     }
 
     logInfo('api.search.begin', { query, limit, skipCache, baseUrl });
 
     const parsed = splitItunesSearchQuery(query);
     const term = cleanItunesSearchText(parsed.title || '') || cleanItunesSearchText(query);
-    if (!term) return { tracks: [], pollToken: null };
+    if (!term) return { tracks: [] };
 
     const params = new URLSearchParams({ term });
     const artist = cleanItunesSearchText(parsed.artist || '');
@@ -818,47 +849,15 @@ export function createAudioSourceManager(options) {
     if (!res.ok) {
       apiHealthMonitor?.recordFailure();
       logWarn('api.search.failed', { query, status: res.status });
-      return { tracks: [], pollToken: null };
+      return { tracks: [] };
     }
 
     apiHealthMonitor?.recordSuccess();
     const data = await res.json().catch(() => null);
     const tracks = options.normalizeApiSearchResponse(data);
-    const pollToken = typeof data?.pollToken === 'string' && data.pollToken ? data.pollToken : null;
 
-    logDebug('api.search.result', { query, count: tracks.length, hasPollToken: !!pollToken });
-    return { tracks, pollToken };
-  }
-
-  async function pollSearchResults(token) {
-    const baseUrl = getDownloaderApiUrl();
-    if (!baseUrl || !token) return { pending: true, tracks: [] };
-
-    try {
-      // Note: `token` ici est le jeton de poll renvoyé par /api/search (job de recherche),
-      // pas le token d'authentification API — apiFetch() ne l'écrasera pas (voir appendApiToken).
-      const res = await apiFetch(`${baseUrl}/api/search/poll?pollToken=${encodeURIComponent(token)}`, {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(8000),
-      });
-
-      if (res.status === 404) return { pending: false, tracks: [] };
-
-      if (!res.ok) {
-        apiHealthMonitor?.recordFailure();
-        return { pending: true, tracks: [] };
-      }
-
-      const data = await res.json().catch(() => null);
-      if (!data || data.status === 'pending') return { pending: true, tracks: [] };
-
-      const tracks = options.normalizeApiSearchResponse(data);
-      logDebug('api.search.poll.result', { count: tracks.length });
-      return { pending: false, tracks };
-    } catch (err) {
-      logWarn('api.search.poll.failed', { message: err?.message });
-      return { pending: true, tracks: [] };
-    }
+    logDebug('api.search.result', { query, count: tracks.length });
+    return { tracks };
   }
 
   async function searchTracksViaApi(query, limit = 25, skipCache = false) {
@@ -1128,10 +1127,21 @@ export function createAudioSourceManager(options) {
     if (!item?.name || !item?.artist) return false;
     const cacheKey = getTrackCacheKey(item);
     if (sessionBlobCache.has(cacheKey)) return true;
+    const fbArtist = String(item.artist || '').trim().toLowerCase();
+    const fbName = String(item.name || item.title || '').trim().toLowerCase();
+    const fallbackKey = (fbArtist && fbName) ? `${fbArtist}::${fbName}` : '';
+    if (fallbackKey && fallbackKey !== cacheKey && sessionBlobCache.has(fallbackKey)) return true;
     const persisted = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName).catch(() => null);
     if (persisted) {
       URL.revokeObjectURL(persisted);
       return true;
+    }
+    if (fallbackKey && fallbackKey !== cacheKey) {
+      const fallbackPersisted = await restorePersistedAudioBlobUrl(fallbackKey, audioCacheName).catch(() => null);
+      if (fallbackPersisted) {
+        URL.revokeObjectURL(fallbackPersisted);
+        return true;
+      }
     }
     return false;
   }
@@ -1142,7 +1152,7 @@ export function createAudioSourceManager(options) {
    * in browser Cache Storage, then immediately revokes the ephemeral blob URL.
    * Returns true on success, false if skipped or failed.
    */
-  async function prefetchTrackToLocalCache(item) {
+  async function prefetchTrackToLocalCache(item, { onError } = {}) {
     if (!item?.name || !item?.artist) return false;
     if (apiHealthMonitor?.isOffline()) return false;
 
@@ -1153,6 +1163,22 @@ export function createAudioSourceManager(options) {
       return true;
     }
 
+    const inFlight = inFlightPrefetches.get(cacheKey);
+    if (inFlight) {
+      logDebug('prefetch.join.inFlight', { cacheKey });
+      return inFlight;
+    }
+
+    const attempt = _prefetchTrackToLocalCacheUncached(item, cacheKey, { onError });
+    inFlightPrefetches.set(cacheKey, attempt);
+    try {
+      return await attempt;
+    } finally {
+      inFlightPrefetches.delete(cacheKey);
+    }
+  }
+
+  async function _prefetchTrackToLocalCacheUncached(item, cacheKey, { onError } = {}) {
     const persisted = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName).catch(() => null);
     if (persisted) {
       URL.revokeObjectURL(persisted);
@@ -1167,6 +1193,7 @@ export function createAudioSourceManager(options) {
       return true;
     } catch (err) {
       logWarn('prefetch.failed', { cacheKey, name: item?.name, error: err?.message });
+      onError?.(err);
       return false;
     }
   }
@@ -1187,7 +1214,6 @@ export function createAudioSourceManager(options) {
     evictTrackSource,
     isTrackInLocalCache,
     persistArtwork,
-    pollSearchResults,
     prefetchTrackToLocalCache,
     releaseLocalBlob: (item) => releaseLocalBlob(item, touchQueueItem),
     restoreArtwork,

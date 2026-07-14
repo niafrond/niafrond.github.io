@@ -19,7 +19,6 @@ const DJ_FX_TRANSITION_MODE = Object.freeze({
 const DJ_FX_TOGGLE_FEATURE = Object.freeze({
   echoDelay: 'echo',
   flangerPhaser: 'distortion',
-  pitchTempo: 'autoBpm',
 });
 
 const DJ_FX_TRANSIENT_ACTIONS = new Set([
@@ -60,12 +59,20 @@ export function createDjFxController(options) {
     transitionModeLabels,
   } = options;
 
+  const SAMPLER_SOUND_URLS = [
+    new URL('../resources/sample_airhorn.wav', import.meta.url).href,
+    new URL('../resources/sample_stab.wav', import.meta.url).href,
+    new URL('../resources/sample_laser.wav', import.meta.url).href,
+    new URL('../resources/sample_siren.wav', import.meta.url).href,
+  ];
+
   const runtime = {
     loopTimers: { A: null, B: null },
     playbackRateTimers: { A: null, B: null },
     samplingAudioContext: null,
     vinylNoiseBuffer: null,
     scratchSoundBuffer: null,
+    samplerSoundBuffers: null,
     scratch: {
       animationFrameId: null,
       deck: 'A',
@@ -152,8 +159,8 @@ export function createDjFxController(options) {
     if (!player) return;
     const safeDeck = deck === 'B' ? 'B' : 'A';
     const state = getDeckStateForFx(safeDeck);
-    const anchorMs = Number(state?.positionMs) || 0;
-    const durationMs = Number(state?.durationMs) || 0;
+    const anchorMs = 'anchorMs' in options ? Number(options.anchorMs) : (Number(state?.positionMs) || 0);
+    const durationMs = 'durationMs' in options ? Number(options.durationMs) : (Number(state?.durationMs) || 0);
     if (anchorMs <= 0 || durationMs <= 0) return;
 
     const windowMs = Math.max(90, Number(options.windowMs) || 220);
@@ -244,6 +251,27 @@ export function createDjFxController(options) {
     } catch (_) {
       return null;
     }
+  }
+
+  async function loadSamplerSoundBuffers(ctx) {
+    if (runtime.samplerSoundBuffers) return runtime.samplerSoundBuffers;
+    const buffers = await Promise.all(
+      SAMPLER_SOUND_URLS.map(async (url) => {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) return null;
+          const arrayBuffer = await response.arrayBuffer();
+          return ctx.decodeAudioData(arrayBuffer);
+        } catch (_) {
+          return null;
+        }
+      }),
+    );
+    const valid = buffers.filter(Boolean);
+    if (valid.length > 0) {
+      runtime.samplerSoundBuffers = valid;
+    }
+    return runtime.samplerSoundBuffers || null;
   }
 
   async function playVinylNoise(intensity = 1) {
@@ -480,31 +508,26 @@ export function createDjFxController(options) {
         return;
       }
 
-      const now = ctx.currentTime + 0.01;
-      const osc = ctx.createOscillator();
-      const filter = ctx.createBiquadFilter();
+      const buffers = await loadSamplerSoundBuffers(ctx);
+      if (!buffers || buffers.length === 0) {
+        showToast('Sampling indisponible: samples introuvables.', true);
+        return;
+      }
+
+      const buffer = buffers[Math.floor(Math.random() * buffers.length)];
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.playbackRate.value = 0.9 + Math.random() * 0.2;
+
       const gain = ctx.createGain();
-
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(220, now);
-      osc.frequency.exponentialRampToValueAtTime(980, now + 0.22);
-      osc.frequency.exponentialRampToValueAtTime(640, now + 0.52);
-
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(2100, now);
-      filter.Q.setValueAtTime(4.6, now);
-
+      const now = ctx.currentTime + 0.01;
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.16, now + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.055, now + 0.18);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.58);
+      gain.gain.exponentialRampToValueAtTime(0.85, now + 0.02);
+      gain.gain.setTargetAtTime(0, now + buffer.duration * 0.7, 0.08);
 
-      osc.connect(filter);
-      filter.connect(gain);
+      source.connect(gain);
       gain.connect(ctx.destination);
-
-      osc.start(now);
-      osc.stop(now + 0.62);
+      source.start(now);
     } catch (err) {
       showToast(`Sampling indisponible: ${err?.message || 'erreur audio'}`, true);
     }
@@ -727,12 +750,6 @@ export function createDjFxController(options) {
         cycleFocusedDeckFilterMode();
         applyDjFxTransition('eq', 'EQ AutoMix', true);
         break;
-      case 'pitchTempo':
-        applyTemporaryDeckPlaybackRate(focusDeck, 1.06, 2000);
-        toggleDjFxFeature('pitchTempo', 'Pitch / Tempo', () => {
-          getPlayer()?.syncDecksToActive();
-        }, true);
-        break;
       case 'keyShift':
         applyTemporaryDeckPlaybackRate(focusDeck, 1.035, 1800);
         triggerTransientDjFxAction('keyShift', 1800);
@@ -844,15 +861,6 @@ export function createDjFxController(options) {
           scheduleAutoDjFilterRestore(safeDeck, prevMode, 1800);
         }
         return true;
-      case 'pitchTempo':
-        {
-          const prevAutoBpm = Boolean(getMixFeatures().autoBpm);
-          applyTemporaryDeckPlaybackRate(safeDeck, 1.06, 2000);
-          setMixFeatureEnabled('autoBpm', true);
-          scheduleAutoDjMixFeatureRestore('autoBpm', prevAutoBpm, 2000);
-        }
-        triggerTransientDjFxAction('pitchTempo', 2000);
-        return true;
       case 'keyShift':
         applyTemporaryDeckPlaybackRate(safeDeck, 1.035, 1800);
         triggerTransientDjFxAction('keyShift', 1800);
@@ -877,6 +885,35 @@ export function createDjFxController(options) {
       default:
         return false;
     }
+  }
+
+  function triggerBeatRepeatTransitionFx(outgoingDeck, incomingDeck, phaseDurationMs, bpm) {
+    const safeBpm = Math.max(60, Math.min(220, Number(bpm) || 120));
+    const eighthNoteMs = Math.round(30000 / safeBpm);
+    const windowMs = Math.max(60, Math.min(500, eighthNoteMs));
+    const tickMs = windowMs;
+    const totalMs = Math.max(500, Math.round(Number(phaseDurationMs) || 3900));
+    const safeOut = outgoingDeck === 'B' ? 'B' : 'A';
+    const safeIn = incomingDeck === 'B' ? 'B' : 'A';
+
+    triggerLoopRoll(safeOut, { windowMs, totalMs, tickMs, instantSeek: true });
+
+    setTimeout(() => {
+      const state = getDeckStateForFx(safeIn);
+      const currentPos = Number(state?.positionMs) || 0;
+      const currentDur = Number(state?.durationMs) || 0;
+      if (currentDur > 0) {
+        const anchorMs = Math.max(windowMs, currentPos);
+        triggerLoopRoll(safeIn, {
+          windowMs,
+          totalMs: Math.max(200, totalMs - 350),
+          tickMs,
+          instantSeek: true,
+          anchorMs,
+          durationMs: currentDur,
+        });
+      }
+    }, 350);
   }
 
   function resetRuntimeState() {
@@ -911,6 +948,7 @@ export function createDjFxController(options) {
     applyAutoDjCreativeFx,
     handleDjFxAction,
     resetRuntimeState,
+    triggerBeatRepeatTransitionFx,
     updateDjFxMenuUI,
   };
 }

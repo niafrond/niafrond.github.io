@@ -157,6 +157,67 @@ html, body {
   letter-spacing: 0.03em;
 }
 
+/* Prochain titre */
+.relay-screen-next {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 340px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.relay-screen-next-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.relay-screen-next-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.relay-screen-next-art {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--surface3);
+  flex-shrink: 0;
+}
+
+.relay-screen-next-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.relay-screen-next-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.relay-screen-next-artist {
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Barre de progression */
 .relay-screen-progress-wrap {
   width: 100%;
@@ -247,4 +308,348 @@ html, body {
   border-radius: 1px;
   width: 0%;
   transition: width 0.4s ease;
+}
+
+/* ── Bouton lancer/arrêter le flux ──────────────────────────────────── */
+.relay-stream-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity 0.2s, transform 0.15s, background 0.2s, border-color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 16px rgba(29, 185, 84, 0.35);
+}
+
+.relay-stream-btn:active {
+  transform: scale(0.92);
+  opacity: 0.8;
+}
+
+.relay-stream-btn svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+.relay-stream-btn--stop {
+  background: var(--surface3);
+  border: 2px solid var(--text-dim);
+  color: var(--text-muted);
+  box-shadow: none;
+}
+
+/* ── Bouton recherche ───────────────────────────────────────────────── */
+.relay-search-btn {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  right: 54px;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.relay-search-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.relay-search-btn svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+/* ── Overlay recherche ──────────────────────────────────────────────── */
+.relay-search-overlay[hidden],
+.relay-action-sheet[hidden],
+.relay-toast[hidden] { display: none; }
+
+.relay-search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.relay-search-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px 10px;
+  background: var(--surface2);
+  flex-shrink: 0;
+}
+
+.relay-search-back,
+.relay-search-clear {
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.relay-search-back:hover,
+.relay-search-clear:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.relay-search-back svg,
+.relay-search-clear svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.relay-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  background: var(--surface3);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.relay-search-input::placeholder {
+  color: var(--text-dim);
+}
+
+.relay-search-input:focus {
+  border-color: var(--accent);
+}
+
+/* ── Résultats de recherche ─────────────────────────────────────────── */
+.relay-search-results {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 0;
+}
+
+.relay-search-empty {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 48px 24px;
+  font-size: 14px;
+}
+
+.relay-search-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.relay-search-result:active {
+  background: var(--surface2);
+}
+
+.relay-search-result-art {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--surface3);
+  flex-shrink: 0;
+}
+
+.relay-search-result-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.relay-search-result-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.relay-search-result-artist {
+  font-size: 13px;
+  color: var(--text-muted);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.relay-search-result-dur {
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.relay-search-loading {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 24px;
+  font-size: 13px;
+}
+
+/* ── Action sheet ───────────────────────────────────────────────────── */
+.relay-action-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 9600;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.relay-action-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.relay-action-sheet-content {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface2);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.relay-action-sheet-track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--surface3);
+  margin-bottom: 4px;
+}
+
+.relay-action-art {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--surface3);
+  flex-shrink: 0;
+}
+
+.relay-action-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.relay-action-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.relay-action-artist {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.relay-action-btn {
+  width: 100%;
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.relay-action-btn:active {
+  opacity: 0.7;
+}
+
+.relay-action-btn--primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.relay-action-btn--secondary {
+  background: var(--surface3);
+  color: var(--text);
+}
+
+.relay-action-btn--cancel {
+  background: transparent;
+  color: var(--text-muted);
+  height: 40px;
+  font-size: 14px;
+}
+
+/* ── Toast ──────────────────────────────────────────────────────────── */
+.relay-toast {
+  position: fixed;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9700;
+  background: var(--surface2);
+  color: var(--text);
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.relay-toast.visible {
+  opacity: 1;
 }
