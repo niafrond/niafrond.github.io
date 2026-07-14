@@ -45,7 +45,7 @@ describe('SPEC-20.2 — forceUpdatePwa() désinscrit les SW et vide les caches',
     delete window.caches;
   });
 
-  test('désinscrit tous les service workers et supprime tous les caches, puis termine sans exception', async () => {
+  test('désinscrit tous les service workers et supprime les caches applicatifs, puis termine sans exception', async () => {
     const reg1 = { unregister: jest.fn().mockResolvedValue(true) };
     const reg2 = { unregister: jest.fn().mockResolvedValue(true) };
     Object.defineProperty(navigator, 'serviceWorker', {
@@ -63,6 +63,23 @@ describe('SPEC-20.2 — forceUpdatePwa() désinscrit les SW et vide les caches',
     expect(deleteCache).toHaveBeenCalledWith('cache-a');
     expect(deleteCache).toHaveBeenCalledWith('cache-b');
     expect(btn.disabled).toBe(true);
+  });
+
+  test('préserve le cache audio dj-mix:audio-cache:v1 lors de la mise à jour (SPEC-20.2)', async () => {
+    Object.defineProperty(navigator, 'serviceWorker', {
+      value: { getRegistrations: jest.fn().mockResolvedValue([]) },
+      configurable: true,
+    });
+    const deleteCache = jest.fn().mockResolvedValue(true);
+    window.caches = {
+      keys: jest.fn().mockResolvedValue(['djmix-v1.0.0', 'dj-mix:audio-cache:v1']),
+      delete: deleteCache,
+    };
+
+    await expect(forceUpdatePwa()).resolves.toBeUndefined();
+
+    expect(deleteCache).toHaveBeenCalledWith('djmix-v1.0.0');
+    expect(deleteCache).not.toHaveBeenCalledWith('dj-mix:audio-cache:v1');
   });
 
   test("termine sans exception même si la désinscription échoue", async () => {
