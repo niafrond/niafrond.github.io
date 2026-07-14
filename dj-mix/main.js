@@ -2655,6 +2655,7 @@ const filRougeDownloader = createFilRougeDownloader({
   // Garde l'écran allumé pendant que la file interne dépend du JS de page pour
   // continuer (Background Fetch n'en a pas besoin, le navigateur gère seul) — SPEC-19.7.
   onInternalQueueActiveChange: (active) => setWakeLockReason('download', active),
+  apiHealthMonitor,
 });
 
 if (filRougeDownloadAllBtn) {
