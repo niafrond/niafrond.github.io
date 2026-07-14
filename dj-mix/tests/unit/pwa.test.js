@@ -107,20 +107,3 @@ describe('SPEC-20.3 — Après rechargement, un Service Worker neuf retéléchar
     expect(swSource).toContain("cache: 'reload'");
   });
 });
-
-describe('SPEC-19.6.1 — backgroundfetchfail moissonne les réponses déjà reçues', () => {
-  test('_handleBgFetchFail réutilise _harvestBgFetchRecords et poste BG_FETCH_DONE avec le détail par clé', () => {
-    const swSource = readFileSync(join(DJ_MIX_DIR, 'sw.js'), 'utf8');
-    const failHandler = swSource.slice(swSource.indexOf('async function _handleBgFetchFail'));
-    expect(failHandler).toContain('_harvestBgFetchRecords(bgFetch)');
-    expect(failHandler).toContain("type: 'BG_FETCH_DONE'");
-    // BG_FETCH_FAIL reste le repli si la moisson elle-même échoue.
-    expect(failHandler).toContain("type: 'BG_FETCH_FAIL'");
-  });
-
-  test('les deux handlers success/fail partagent la même moisson (blobs mis en cache une seule fois)', () => {
-    const swSource = readFileSync(join(DJ_MIX_DIR, 'sw.js'), 'utf8');
-    expect(swSource.match(/audioCache\.put\(/g)).toHaveLength(1);
-    expect(swSource).toContain('async function _harvestBgFetchRecords');
-  });
-});

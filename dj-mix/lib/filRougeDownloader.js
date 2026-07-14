@@ -14,8 +14,6 @@ import { createDownloadBatchManager } from './downloadBatchManager.js';
  * @param {(name: string, artist: string) => Promise<object|null>} [opts.fetchMixData]
  * @param {(done: number, total: number) => void} [opts.onMixInfoProgress]
  * @param {ReturnType<import('./downloadBatchStore.js').createDownloadBatchStore>} [opts.store]
- * @param {() => string} [opts.getDownloaderApiUrl]
- * @param {() => string} [opts.getDownloaderApiToken]
  * @param {() => void} [opts.onAuthExpired]
  * @param {(active: boolean) => void} [opts.onInternalQueueActiveChange] - notifié quand la file interne démarre/s'arrête (Wake Lock écran, SPEC-19.7)
  * @param {object} [opts.apiHealthMonitor] - moniteur de santé API, réinitialisé avant les retries
@@ -33,8 +31,6 @@ export function createFilRougeDownloader({
   fetchMixData,
   onMixInfoProgress,
   store = createDownloadBatchStore(),
-  getDownloaderApiUrl,
-  getDownloaderApiToken,
   onAuthExpired,
   onInternalQueueActiveChange,
   apiHealthMonitor,
@@ -50,8 +46,6 @@ export function createFilRougeDownloader({
     renderTrackStatus,
     showToast,
     onProgress,
-    getDownloaderApiUrl,
-    getDownloaderApiToken,
     onAuthExpired,
     onInternalQueueActiveChange,
     apiHealthMonitor,
@@ -105,9 +99,8 @@ export function createFilRougeDownloader({
       _runMixInfoTask(toMixInfoOnly),
     ]);
 
-    if (dlResult.backgrounded || dlResult.authPaused) {
-      // Toasts already shown inside the manager (dispatch confirmation /
-      // onAuthExpired) — nothing further to report here.
+    if (dlResult.authPaused) {
+      // Toast already shown inside the manager (onAuthExpired) — nothing further to report here.
       return;
     }
 
@@ -176,8 +169,6 @@ export function createFilRougeDownloader({
     downloadAll,
     downloadMissingMixInfo,
     resumeIncompleteBatches: downloadBatchManager.resumeIncompleteBatches,
-    recordBackgroundFetchResult: downloadBatchManager.recordBackgroundFetchResult,
-    recordBackgroundFetchFail: downloadBatchManager.recordBackgroundFetchFail,
     isInternalQueueRunning: downloadBatchManager.isInternalQueueRunning,
   };
 }
