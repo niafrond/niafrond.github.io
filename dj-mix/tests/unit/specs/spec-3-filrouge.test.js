@@ -164,7 +164,7 @@ describe('SPEC-3.4.9 — Ajustement adaptatif du parallélisme de téléchargeme
       elapsedMs: 30_000, // 6000 ms/morceau, au-delà des 4000 ms cibles
       completedCount: 5,
     });
-    expect(next).toBe(4);
+    expect(next).toBe(3);
   });
 
   test('SPEC-3.4.9 — augmente la taille du batch quand le débit par morceau est largement sous la cible', () => {
@@ -173,7 +173,7 @@ describe('SPEC-3.4.9 — Ajustement adaptatif du parallélisme de téléchargeme
       elapsedMs: 5_000, // 1000 ms/morceau, sous la moitié des 4000 ms cibles
       completedCount: 5,
     });
-    expect(next).toBe(6);
+    expect(next).toBe(7);
   });
 
   test('SPEC-3.4.9 — ne descend jamais sous le plancher de 2 téléchargements parallèles', () => {
@@ -185,12 +185,12 @@ describe('SPEC-3.4.9 — Ajustement adaptatif du parallélisme de téléchargeme
     expect(next).toBe(2);
   });
 
-  test('SPEC-3.4.9 — ne dépasse jamais le plafond de 10 téléchargements parallèles', () => {
+  test('SPEC-3.4.9 — ne dépasse jamais le plafond de 20 téléchargements parallèles', () => {
     const next = computeNextBatchSize({
-      currentSize: 10,
+      currentSize: 20,
       elapsedMs: 1_000,
-      completedCount: 10,
+      completedCount: 20,
     });
-    expect(next).toBe(10);
+    expect(next).toBe(20);
   });
 });

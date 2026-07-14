@@ -50,9 +50,9 @@ export const IDLE_SCHEDULE_FALLBACK_MS = 80;
 export const IDLE_SCHEDULE_TIMEOUT_MS  = 2000;
 
 // ─── Adaptive download batching (Fil Rouge background downloads) ─────────────
-export const INITIAL_PARALLEL_DOWNLOADS   = 3;
+export const INITIAL_PARALLEL_DOWNLOADS   = 6;
 export const MIN_PARALLEL_DOWNLOADS       = 2;
-export const MAX_PARALLEL_DOWNLOADS       = 10;
+export const MAX_PARALLEL_DOWNLOADS       = 20;
 export const TARGET_MS_PER_TRACK_DOWNLOAD = 4000;
 
 // ─── Download retry policy (downloadBatchManager.js, SPEC-19.6) ──────────────

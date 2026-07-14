@@ -18,6 +18,7 @@ import { createDownloadBatchManager } from './downloadBatchManager.js';
  * @param {() => string} [opts.getDownloaderApiToken]
  * @param {() => void} [opts.onAuthExpired]
  * @param {(active: boolean) => void} [opts.onInternalQueueActiveChange] - notifié quand la file interne démarre/s'arrête (Wake Lock écran, SPEC-19.7)
+ * @param {object} [opts.apiHealthMonitor] - moniteur de santé API, réinitialisé avant les retries
  * @param {(ms: number) => Promise<void>} [opts.waitFn] - injectable pour les tests (backoff des retentatives)
  */
 export function createFilRougeDownloader({
@@ -36,6 +37,7 @@ export function createFilRougeDownloader({
   getDownloaderApiToken,
   onAuthExpired,
   onInternalQueueActiveChange,
+  apiHealthMonitor,
   waitFn,
 }) {
   const downloadBatchManager = createDownloadBatchManager({
@@ -52,6 +54,7 @@ export function createFilRougeDownloader({
     getDownloaderApiToken,
     onAuthExpired,
     onInternalQueueActiveChange,
+    apiHealthMonitor,
     ...(waitFn ? { waitFn } : {}),
   });
 

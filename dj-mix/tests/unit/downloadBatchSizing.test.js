@@ -16,13 +16,13 @@ describe('computeNextBatchSize (SPEC-3.4.9)', () => {
     expect(next).toBe(5);
   });
 
-  test('decreases by 1 when per-track time exceeds the target', () => {
+  test('decreases when per-track time exceeds the target', () => {
     const next = computeNextBatchSize({
       currentSize: 5,
       elapsedMs: (TARGET_MS_PER_TRACK_DOWNLOAD + 1000) * 5,
       completedCount: 5,
     });
-    expect(next).toBe(4);
+    expect(next).toBe(3);
   });
 
   test('does not decrease below MIN_PARALLEL_DOWNLOADS', () => {
@@ -34,13 +34,22 @@ describe('computeNextBatchSize (SPEC-3.4.9)', () => {
     expect(next).toBe(MIN_PARALLEL_DOWNLOADS);
   });
 
-  test('increases by 1 when per-track time is well under the target', () => {
+  test('increases by 2 when per-track time is under half the target', () => {
     const next = computeNextBatchSize({
       currentSize: 5,
       elapsedMs: (TARGET_MS_PER_TRACK_DOWNLOAD / 2 - 100) * 5,
       completedCount: 5,
     });
-    expect(next).toBe(6);
+    expect(next).toBe(7);
+  });
+
+  test('increases by 4 when per-track time is very fast (under quarter of target)', () => {
+    const next = computeNextBatchSize({
+      currentSize: 5,
+      elapsedMs: (TARGET_MS_PER_TRACK_DOWNLOAD / 4 - 100) * 5,
+      completedCount: 5,
+    });
+    expect(next).toBe(9);
   });
 
   test('does not increase above MAX_PARALLEL_DOWNLOADS', () => {

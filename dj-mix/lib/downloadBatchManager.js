@@ -2,6 +2,7 @@ import { getTrackCacheKey } from './audioSourceManager.js';
 import { computeNextBatchSize } from './downloadBatchSizing.js';
 import {
   INITIAL_PARALLEL_DOWNLOADS,
+  MAX_PARALLEL_DOWNLOADS,
   MAX_DOWNLOAD_RETRY_ATTEMPTS,
   DOWNLOAD_RETRY_BACKOFF_BASE_MS,
 } from './constants.js';
@@ -22,6 +23,7 @@ import { appendApiToken } from './downloaderConfig.js';
  * @param {() => string} [opts.getDownloaderApiToken]
  * @param {() => void} [opts.onAuthExpired]
  * @param {(active: boolean) => void} [opts.onInternalQueueActiveChange] - notifié quand la file interne démarre/s'arrête (permet à l'appelant de garder l'écran allumé, SPEC-19.7)
+ * @param {object} [opts.apiHealthMonitor] - si fourni, le moniteur est réinitialisé avant chaque vague de retentatives
  * @param {(ms: number) => Promise<void>} [opts.waitFn] - injectable pour les tests (backoff des retentatives)
  */
 export function createDownloadBatchManager({
@@ -38,6 +40,7 @@ export function createDownloadBatchManager({
   getDownloaderApiToken,
   onAuthExpired,
   onInternalQueueActiveChange,
+  apiHealthMonitor,
   waitFn = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }) {
   let internalQueueActiveCount = 0;
@@ -158,109 +161,156 @@ export function createDownloadBatchManager({
   }
 
   /**
-   * Adaptive-parallel internal download queue (fallback when Background
-   * Fetch is unavailable, or resuming items left over from a previous
-   * internal-queue run). Every item transition is written to IndexedDB
-   * immediately alongside the existing in-memory status callbacks.
+   * Sliding-window internal download pool (fallback when Background Fetch is
+   * unavailable, or resuming items left over from a previous run). Keeps
+   * `concurrency` downloads active at all times — a new download starts as
+   * soon as any one finishes, eliminating idle gaps between batches.
+   *
+   * Adaptive concurrency: every `ADJUST_WINDOW` completions we measure the
+   * average per-track time and adjust `concurrency` via computeNextBatchSize.
    */
   async function _runInternalQueueLoop({ batchId, tracks, total, swReg, doneOffset = 0 }) {
-    let batchSize = INITIAL_PARALLEL_DOWNLOADS;
+    let concurrency = INITIAL_PARALLEL_DOWNLOADS;
     let done = 0;
     let failed = 0;
     const failedTracks = [];
-    let i = 0;
     let lastNotifiedAt = 0;
+    let authPaused = false;
 
-    while (i < tracks.length) {
-      const slice = tracks.slice(i, i + batchSize);
-      const itemIds = slice.map((track) => itemRowId(batchId, getTrackCacheKey(track)));
+    // Sliding-window adaptive tracking
+    const ADJUST_WINDOW = Math.max(3, INITIAL_PARALLEL_DOWNLOADS);
+    let windowStart = performance.now();
+    let windowCompletions = 0;
 
-      for (const track of slice) {
-        setFilRougeTrackStatus(track, { downloadState: 'downloading' });
-        renderTrackStatus(track);
-      }
-      await store?.updateItems(itemIds, { status: 'downloading', startedAt: Date.now() });
+    let idx = 0;
+    let activeCount = 0;
 
-      const startedAt = performance.now();
-      const authFailedFlags = slice.map(() => false);
-      const results = await Promise.allSettled(
-        slice.map((track, j) => prefetchTrackToLocalCache(track, {
-          onError: (err) => {
-            if (err?.status === 401 || err?.status === 403) authFailedFlags[j] = true;
-          },
-        }))
-      );
-      batchSize = computeNextBatchSize({
-        currentSize: batchSize,
-        elapsedMs: performance.now() - startedAt,
-        completedCount: slice.length,
-      });
-
-      for (let j = 0; j < slice.length; j++) {
-        const track = slice[j];
-        const ok = results[j].status === 'fulfilled' && results[j].value;
-        const id = itemIds[j];
-        if (ok) {
-          done++;
-          const mixData = fetchMixData
-            ? await fetchMixData(track.name, track.artist).catch(() => null)
-            : null;
-          setFilRougeTrackStatus(track, { downloadState: 'done', hasMixInfo: Boolean(mixData) });
-          await store?.updateItem(id, { status: 'completed', completedAt: Date.now() });
-        } else if (authFailedFlags[j]) {
-          // Not the track's fault — leave it retryable, don't count as failed.
-          setFilRougeTrackStatus(track, { downloadState: 'idle' });
-          await store?.updateItem(id, { status: 'pending' });
-        } else {
-          failed++;
-          failedTracks.push(track);
-          setFilRougeTrackStatus(track, { downloadState: 'error' });
-          await store?.updateItem(id, (existing) => ({
-            status: 'failed',
-            retries: (existing?.retries ?? 0) + 1,
-          }));
+    await new Promise((resolveAll) => {
+      function maybeNotify() {
+        const processed = done + failed;
+        if (processed - lastNotifiedAt >= 5 && processed < total) {
+          showSwNotif(
+            swReg,
+            'DJ Mix — Téléchargement en cours',
+            `${doneOffset + processed} / ${total} morceaux`,
+            'djmix-dl-progress',
+            true,
+          );
+          lastNotifiedAt = processed;
         }
-        renderTrackStatus(track);
-        onProgress?.(doneOffset + done, 0, total);
       }
 
-      i += slice.length;
-
-      if (authFailedFlags.some(Boolean)) {
-        const remaining = tracks.slice(i);
-        const remainingIds = remaining.map((track) => itemRowId(batchId, getTrackCacheKey(track)));
-        for (const track of remaining) setFilRougeTrackStatus(track, { downloadState: 'idle' });
-        await store?.updateItems(remainingIds, { status: 'pending' });
-        await store?.updateBatch(batchId, {
-          status: 'paused-auth',
-          updatedAt: Date.now(),
-          completedFiles: doneOffset + done,
-          failedFiles: failed,
-        });
-        onAuthExpired?.();
-        return { done, failed, failedTracks, authPaused: true };
+      function maybeDone() {
+        if (idx >= tracks.length && activeCount === 0) {
+          resolveAll();
+          return true;
+        }
+        if (authPaused && activeCount === 0) {
+          resolveAll();
+          return true;
+        }
+        return false;
       }
 
-      if (done + failed - lastNotifiedAt >= 5 && (done + failed) < total) {
-        await showSwNotif(
-          swReg,
-          'DJ Mix — Téléchargement en cours',
-          `${doneOffset + done + failed} / ${total} morceaux`,
-          'djmix-dl-progress',
-          true,
-        );
-        lastNotifiedAt = done + failed;
+      function adjustConcurrency() {
+        windowCompletions++;
+        if (windowCompletions >= ADJUST_WINDOW) {
+          const elapsed = performance.now() - windowStart;
+          concurrency = computeNextBatchSize({
+            currentSize: concurrency,
+            elapsedMs: elapsed,
+            completedCount: windowCompletions,
+          });
+          windowStart = performance.now();
+          windowCompletions = 0;
+        }
       }
-    }
 
-    return { done, failed, failedTracks, authPaused: false };
+      function startNext() {
+        while (activeCount < concurrency && idx < tracks.length && !authPaused) {
+          const track = tracks[idx];
+          idx++;
+          activeCount++;
+
+          const cacheKey = getTrackCacheKey(track);
+          const itemId = itemRowId(batchId, cacheKey);
+
+          setFilRougeTrackStatus(track, { downloadState: 'downloading' });
+          renderTrackStatus(track);
+          store?.updateItem(itemId, { status: 'downloading', startedAt: Date.now() });
+
+          let trackAuthFailed = false;
+          prefetchTrackToLocalCache(track, {
+            onError: (err) => {
+              if (err?.status === 401 || err?.status === 403) trackAuthFailed = true;
+            },
+          }).then((ok) => {
+            activeCount--;
+
+            if (ok) {
+              done++;
+              adjustConcurrency();
+              setFilRougeTrackStatus(track, { downloadState: 'done', hasMixInfo: false });
+              store?.updateItem(itemId, { status: 'completed', completedAt: Date.now() });
+              // Non-blocking mix info fetch — don't hold up the pool
+              if (fetchMixData) {
+                fetchMixData(track.name, track.artist).catch(() => null).then((mixData) => {
+                  setFilRougeTrackStatus(track, { hasMixInfo: Boolean(mixData) });
+                  renderTrackStatus(track);
+                });
+              }
+            } else if (trackAuthFailed) {
+              if (!authPaused) {
+                authPaused = true;
+                // Mark remaining un-started tracks as idle/pending (once)
+                const remaining = tracks.slice(idx);
+                const remainingIds = remaining.map((t) => itemRowId(batchId, getTrackCacheKey(t)));
+                for (const t of remaining) setFilRougeTrackStatus(t, { downloadState: 'idle' });
+                store?.updateItems(remainingIds, { status: 'pending' });
+                store?.updateBatch(batchId, {
+                  status: 'paused-auth',
+                  updatedAt: Date.now(),
+                  completedFiles: doneOffset + done,
+                  failedFiles: failed,
+                });
+                onAuthExpired?.();
+              }
+              setFilRougeTrackStatus(track, { downloadState: 'idle' });
+              store?.updateItem(itemId, { status: 'pending' });
+            } else {
+              failed++;
+              adjustConcurrency();
+              failedTracks.push(track);
+              setFilRougeTrackStatus(track, { downloadState: 'error' });
+              store?.updateItem(itemId, (existing) => ({
+                status: 'failed',
+                retries: (existing?.retries ?? 0) + 1,
+              }));
+            }
+            renderTrackStatus(track);
+            onProgress?.(doneOffset + done, activeCount, total);
+            maybeNotify();
+
+            if (!maybeDone()) {
+              if (!authPaused) startNext();
+            }
+          });
+        }
+        maybeDone();
+      }
+
+      startNext();
+    });
+
+    return { done, failed, failedTracks, authPaused };
   }
 
   /**
    * Retente les morceaux échoués jusqu'à MAX_DOWNLOAD_RETRY_ATTEMPTS fois via
    * la file interne, avec backoff exponentiel (base · 2^(n−1) : 2s, 4s, 8s)
-   * avant chaque vague (SPEC-19.6.2). S'arrête dès que tout est récupéré ou
-   * qu'une pause auth survient.
+   * avant chaque vague (SPEC-19.6.2). Réinitialise le moniteur de santé API
+   * avant chaque tentative pour éviter que l'état offline bloque les retries.
+   * S'arrête dès que tout est récupéré ou qu'une pause auth survient.
    */
   async function _retryFailedTracks({ batchId, failedTracks, total, doneOffset = 0, swReg }) {
     let done = 0;
@@ -269,6 +319,8 @@ export function createDownloadBatchManager({
 
     for (let attempt = 1; attempt <= MAX_DOWNLOAD_RETRY_ATTEMPTS && remaining.length && !authPaused; attempt++) {
       await waitFn(DOWNLOAD_RETRY_BACKOFF_BASE_MS * 2 ** (attempt - 1));
+      // Reset health monitor so retries actually reach the network
+      apiHealthMonitor?.recordSuccess();
       const result = await _runInternalQueueLoop({
         batchId,
         tracks: remaining,
