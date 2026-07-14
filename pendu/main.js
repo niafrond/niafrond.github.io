@@ -70,6 +70,13 @@ function normalize(str) {
     .replace(/[^A-Z ]/g, '');
 }
 
+// Développe les ligatures qui ne se décomposent pas via NFD (œ→oe, æ→ae…)
+function expandLigatures(str) {
+  return str
+    .replace(/Œ/g, 'OE').replace(/œ/g, 'oe')
+    .replace(/Æ/g, 'AE').replace(/æ/g, 'ae');
+}
+
 // Normalise caractère par caractère en conservant la longueur originale.
 // Les lettres (avec accents) deviennent leur équivalent A-Z ; les autres
 // caractères (tiret, apostrophe, espace…) sont conservés tels quels.
@@ -406,7 +413,7 @@ function init() {
   const wrongWordInput = el('wrong-word-input');
 
   wordInput.addEventListener('input', () => {
-    const val = wordInput.value.trim();
+    const val = expandLigatures(wordInput.value.trim());
     const letters = countLetters(normalizeWord(val));
     confirmBtn.disabled = letters < 2;
   });
@@ -434,7 +441,7 @@ function init() {
   });
 
   confirmBtn.addEventListener('click', () => {
-    const raw  = wordInput.value.trim();
+    const raw  = expandLigatures(wordInput.value.trim());
     const norm = normalizeWord(raw);
     const letters = countLetters(norm);
     if (letters < 2) {
