@@ -1,3 +1,9 @@
+## [1.258.0](https://github.com/niafrond/niafrond.github.io/compare/v1.257.0...v1.258.0) (2026-07-14)
+
+### Features
+
+* **dj-mix:** persist download state to localStorage, preserve audio cache on PWA update ([2e597e0](https://github.com/niafrond/niafrond.github.io/commit/2e597e0ef267c3e7dc307cc6d5756f12878c052d))
+
 ## [1.257.0](https://github.com/niafrond/niafrond.github.io/compare/v1.256.0...v1.257.0) (2026-07-13)
 
 ### Features
