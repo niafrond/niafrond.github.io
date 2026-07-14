@@ -1,3 +1,9 @@
+## [1.259.0](https://github.com/niafrond/niafrond.github.io/compare/v1.258.2...v1.259.0) (2026-07-14)
+
+### Features
+
+* **dj-mix:** optimize download batch - sliding window pool, higher parallelism, fix first-download failures ([4131b2a](https://github.com/niafrond/niafrond.github.io/commit/4131b2a560b23110dbb1537a7bd88ba8c9967d50))
+
 ## [1.258.2](https://github.com/niafrond/niafrond.github.io/compare/v1.258.1...v1.258.2) (2026-07-14)
 
 ### Bug Fixes
