@@ -8,8 +8,12 @@ import { DJPlayer } from './player.js';
 import { initServiceWorker, installPwa, initAutoFullscreen, initApkDownloadLink, checkApkUpdate, doApkUpdate, forceUpdatePwa } from './pwa.js';
 import { pushPlaybackState, pushQueue, onMediaCommand, getPendingMediaCommand } from './lib/androidAutoBridge.js';
 
-// --- Wake Lock (garder l'écran allumé pendant la lecture) ---
+// --- Wake Lock (garder l'écran allumé pendant la lecture ou un téléchargement
+// de masse via la file interne, SPEC-19.7) ---
 let wakeLock = null;
+// Raisons actives réclamant l'écran allumé : 'playback' | 'download'. L'écran
+// n'est libéré que quand plus aucune raison n'est active.
+const wakeLockReasons = new Set();
 async function requestWakeLock() {
   try {
     if ('wakeLock' in navigator) {
@@ -27,6 +31,16 @@ function releaseWakeLock() {
   if (wakeLock) {
     wakeLock.release().catch(() => {});
     wakeLock = null;
+  }
+}
+// Active/désactive une raison de Wake Lock ; ré-évalue l'état global du lock.
+function setWakeLockReason(reason, active) {
+  if (active) wakeLockReasons.add(reason);
+  else wakeLockReasons.delete(reason);
+  if (wakeLockReasons.size > 0) {
+    requestWakeLock();
+  } else {
+    releaseWakeLock();
   }
 }
 
@@ -74,19 +88,27 @@ function stopMediaKeepAlive() {
 }
 
 // Quand le navigateur repasse au premier plan (écran rallumé ou retour de l'arrière-plan) :
-// - si lecture en cours : ré-acquérir le Wake Lock (il est libéré automatiquement par le
-//   navigateur lors du passage en arrière-plan) pour que l'écran reste allumé.
-// - sinon : relancer le keepalive audio silencieux (Android/iOS peut l'avoir tué).
+// - si une raison de Wake Lock est active (lecture ou téléchargement de masse via la file
+//   interne) : le ré-acquérir (il est libéré automatiquement par le navigateur lors du
+//   passage en arrière-plan) pour que l'écran reste allumé.
+// - sinon (pas de lecture) : relancer le keepalive audio silencieux (Android/iOS peut l'avoir tué).
 // Dans tous les cas, forcer une sonde immédiate sur le serveur local pour détecter
-// rapidement toute perte de connexion survenue pendant que l'écran était éteint.
+// rapidement toute perte de connexion survenue pendant que l'écran était éteint, et
+// reprendre tout lot de téléchargement resté bloqué par la suspension JS de l'onglet
+// pendant l'arrière-plan (SPEC-19.7.2) — seulement si aucune file interne ne tourne
+// déjà dans cet onglet, pour éviter un double traitement du même lot.
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
-    if (uiState.isPlaying) {
+    if (wakeLockReasons.size > 0) {
       requestWakeLock();
-    } else {
+    }
+    if (!uiState.isPlaying) {
       startMediaKeepAlive();
     }
     apiHealthMonitor.probe();
+    if (!filRougeDownloader.isInternalQueueRunning?.()) {
+      filRougeDownloader.resumeIncompleteBatches?.(filRougeManager.getPlaylist()).catch(() => {});
+    }
   }
 });
 import {
@@ -1329,14 +1351,19 @@ function setFilRougeTrackStatus(item, patch = {}) {
     ...patch,
     updatedAt: Date.now(),
   });
+  // Persist download completion to localStorage so the 'done' state survives reloads
+  // even for tracks without cachePath/persistedSourceUrl (SPEC-19.8.1).
+  if (patch.downloadState === 'done' && item?.name && item?.artist) {
+    patchStoredTrackMeta(item.name, item.artist, { downloaded: true });
+  }
 }
 
 function getFilRougeTrackStatus(item) {
   const key = getFilRougeTrackKey(item);
   const stored = key ? filRougeTrackStatusByKey.get(key) : null;
-  const inferredDone = Boolean(item?.cachePath || item?.persistedSourceUrl);
-  const downloadState = stored?.downloadState || (inferredDone ? 'done' : 'idle');
   const meta = getStoredTrackMeta(item?.name, item?.artist);
+  const inferredDone = Boolean(item?.cachePath || item?.persistedSourceUrl) || Boolean(meta?.downloaded);
+  const downloadState = stored?.downloadState || (inferredDone ? 'done' : 'idle');
   const hasMixInfo = Boolean(stored?.hasMixInfo) || Boolean(meta?.mixData);
   return {
     downloadState,
@@ -2625,6 +2652,9 @@ const filRougeDownloader = createFilRougeDownloader({
   getDownloaderApiUrl,
   getDownloaderApiToken,
   onAuthExpired: () => showToast('Session expirée : renouvelez le token API dans Config', true),
+  // Garde l'écran allumé pendant que la file interne dépend du JS de page pour
+  // continuer (Background Fetch n'en a pas besoin, le navigateur gère seul) — SPEC-19.7.
+  onInternalQueueActiveChange: (active) => setWakeLockReason('download', active),
 });
 
 if (filRougeDownloadAllBtn) {
@@ -2692,8 +2722,12 @@ if ('serviceWorker' in navigator) {
       }
     }
     renderFilRouge();
-    filRougeDownloader.recordBackgroundFetchResult?.(id, succeededKeys, failedKeys).catch(() => {});
-    showToast(`Téléchargement terminé : ${succeededKeys.length} réussi${succeededKeys.length > 1 ? 's' : ''}`);
+    // Retente les échecs (backoff x3) et récupère les mix infos des réussites
+    // en parallèle (SPEC-19.6.3/19.6.4).
+    filRougeDownloader.recordBackgroundFetchResult?.(id, succeededKeys, failedKeys, playlist).catch(() => {});
+    showToast(failedKeys.length > 0
+      ? `Téléchargement : ${succeededKeys.length} réussi${succeededKeys.length > 1 ? 's' : ''} — retentative de ${failedKeys.length} échec${failedKeys.length > 1 ? 's' : ''}…`
+      : `Téléchargement terminé : ${succeededKeys.length} réussi${succeededKeys.length > 1 ? 's' : ''}`);
     scheduleDjSetQualityRefresh();
   });
 }
@@ -4075,13 +4109,12 @@ function hookPlayerEvents() {
       navigator.mediaSession.playbackState = uiState.isPlaying ? 'playing' : 'paused';
     }
     pushPlaybackState({ playing: uiState.isPlaying, positionMs: playbackPositionMs });
-    // Wake Lock: activer si lecture, relâcher sinon
+    // Wake Lock: activer si lecture, relâcher sinon (raison 'playback', SPEC-19.7)
+    setWakeLockReason('playback', uiState.isPlaying);
     if (uiState.isPlaying) {
-      requestWakeLock();
       stopMediaKeepAlive(); // Lecture réelle → pas besoin du keepalive silencieux
       inactivePreloadWatcher.start();
     } else {
-      releaseWakeLock();
       startMediaKeepAlive(); // Maintenir la notification Android pendant 10 minutes max
       inactivePreloadWatcher.stop();
     }
@@ -4366,6 +4399,20 @@ autoMixBtn?.addEventListener('click', async () => {
   }
 });
 
+// SPEC-13.3.6 — Compte les sorties audio (`kind === 'audiooutput'`) pour détecter
+// une vraie perte de sortie (débranchement) plutôt que réagir à tout `devicechange`
+// (qui se déclenche aussi sur un ajout de périphérique ou un bruit d'énumération).
+let lastAudioOutputDeviceCount = null;
+async function countAudioOutputDevices() {
+  if (!navigator.mediaDevices?.enumerateDevices) return null;
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.filter((d) => d.kind === 'audiooutput').length;
+  } catch {
+    return null;
+  }
+}
+
 function setupMediaSession() {
   if (!('mediaSession' in navigator)) return;
   navigator.mediaSession.setActionHandler('play', () => {
@@ -4412,9 +4459,16 @@ function setupMediaSession() {
   // avant le premier play (la session audio doit exister pour capter les événements).
   startMediaKeepAlive();
 
-  // SPEC-13.3.6 — Pause automatique sur changement de sortie audio (ex. déconnexion Bluetooth).
+  // SPEC-13.3.6 — Pause automatique uniquement si une sortie audio a réellement
+  // disparu (ex. déconnexion casque Bluetooth) ; un `devicechange` qui n'enlève
+  // aucune sortie (ajout d'un périphérique, bruit d'énumération) est ignoré.
   if (navigator.mediaDevices) {
-    navigator.mediaDevices.addEventListener('devicechange', () => {
+    countAudioOutputDevices().then((count) => { lastAudioOutputDeviceCount = count; });
+    navigator.mediaDevices.addEventListener('devicechange', async () => {
+      const previousCount = lastAudioOutputDeviceCount;
+      const count = await countAudioOutputDevices();
+      lastAudioOutputDeviceCount = count;
+      if (previousCount === null || count === null || count >= previousCount) return;
       const focusDeck = getFocusDeck();
       const deckState = uiState.lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
       if (deckState?.playing) player?.pauseDeck?.(focusDeck);
@@ -6067,6 +6121,18 @@ async function addToQueue(track, options = {}) {
       ensureLocalSource(item).then(async (url) => {
         if (!player || deckDisplayItems[inactiveDeck] !== item) return;
         await replaceMixPreload.catch(() => {});
+        // SPEC-1.1.16 : re-valider la cible après la préparation asynchrone.
+        if (getResolvedInactiveDeck() !== inactiveDeck
+          || deckDisplayItems[inactiveDeck] !== item
+          || uiState.currentTrackId === item.id) {
+          logWarn('addToQueue(): stale ghost-replacement preload aborted', {
+            inactiveDeck,
+            resolvedInactiveDeck: getResolvedInactiveDeck(),
+            itemId: item.id,
+            currentTrackId: uiState.currentTrackId,
+          });
+          return;
+        }
         const startMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
         await player.playOnDeck(inactiveDeck, {
           url,
@@ -6141,7 +6207,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
   if (!item || !player) return;
   let startPositionMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
 
-  const targetDeck = options.targetDeck || ((mode === 'play' || mode === 'switch')
+  let targetDeck = options.targetDeck || ((mode === 'play' || mode === 'switch')
     ? getResolvedActiveDeck()
     : getResolvedInactiveDeck());
 
@@ -6245,6 +6311,27 @@ async function startPlaybackForIndex(index, mode, options = {}) {
         name: item.name,
         sourceState: item.sourceState,
       });
+    }
+
+    // SPEC-1.1.15 : la platine cible a pu devenir active pendant la préparation
+    // asynchrone (preload mix + ensureLocalSource). Re-cibler la platine réellement
+    // inactive pour ne jamais écraser le morceau en cours de lecture.
+    if (mode === 'autofade' || mode === 'crossfade') {
+      const currentInactiveDeck = getResolvedInactiveDeck();
+      if (targetDeck !== currentInactiveDeck) {
+        logWarn('startPlaybackForIndex(): target deck became active during preparation, retargeting', {
+          index,
+          mode,
+          staleTargetDeck: targetDeck,
+          retargetedDeck: currentInactiveDeck,
+          itemId: item.id,
+        });
+        if (deckDisplayItems[targetDeck] === item) setDeckItem(targetDeck, null);
+        targetDeck = currentInactiveDeck;
+        setDeckItem(targetDeck, item);
+        if (launchPreviewItem === item) launchPreviewDeck = targetDeck;
+        updatePlannedStartMarker();
+      }
     }
 
     let djRateApplied = false;
@@ -6362,6 +6449,20 @@ async function startPlaybackForIndex(index, mode, options = {}) {
           if (!player) return;
 
           await nextMixPreload.catch(() => {});
+          // SPEC-1.1.16 : la préparation est asynchrone (téléchargement possible) —
+          // re-valider la cible juste avant le chargement pour ne jamais toucher
+          // une platine devenue active ni dupliquer le morceau courant.
+          if (getResolvedInactiveDeck() !== inactiveDeck
+            || deckDisplayItems[inactiveDeck] !== nextItem
+            || uiState.currentTrackId === nextItem.id) {
+            logWarn('startPlaybackForIndex(): stale next-track preload aborted', {
+              inactiveDeck,
+              resolvedInactiveDeck: getResolvedInactiveDeck(),
+              nextItemId: nextItem.id,
+              currentTrackId: uiState.currentTrackId,
+            });
+            return;
+          }
           const nextStartPositionMs = Math.max(0, Number(nextItem.autoDjStartOffsetMs) || 0);
 
           await player.playOnDeck(inactiveDeck, {
@@ -6421,6 +6522,16 @@ async function startPlaybackForIndex(index, mode, options = {}) {
             await ghostMixPreload.catch(() => {});
             const ghostStartMs = Math.max(0, Number(ghostItem.autoDjStartOffsetMs) || 0);
             if (pendingFilRougeOnInactiveDeck !== ghostItem) return;
+            // SPEC-1.1.16 : re-valider la cible après la préparation asynchrone.
+            if (getResolvedInactiveDeck() !== inactiveDeck
+              || deckDisplayItems[inactiveDeck] !== ghostItem) {
+              logWarn('startPlaybackForIndex(): stale fil rouge ghost preload aborted', {
+                inactiveDeck,
+                resolvedInactiveDeck: getResolvedInactiveDeck(),
+                ghostId: ghostItem.id,
+              });
+              return;
+            }
             await player.playOnDeck(inactiveDeck, {
               url: ghostUrl,
               loudnessDb: ghostItem.loudnessDb,

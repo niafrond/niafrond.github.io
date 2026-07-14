@@ -191,12 +191,21 @@ export async function doApkUpdate() {
 // ─── Service Worker ─────────────────────────────────────────────────────────
 let _reloadPending = false;
 
+// Cache audio des pistes téléchargées — doit être préservé lors d'une mise à
+// jour forcée (SPEC-20.2) pour éviter de perdre tous les morceaux déjà
+// téléchargés. Doit rester synchronisé avec la constante AUDIO_CACHE de sw.js.
+const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
+
 /**
  * Force la mise à jour de la PWA : désinscrit tous les service workers et
- * vide tous les caches, puis recharge la page. Utile quand `updateViaCache:
- * 'none'` et l'écoute normale de `controllerchange` ne suffisent pas à faire
- * remonter du code manifestement périmé (SW bloqué en `waiting`, cache
- * navigateur tiers, etc.).
+ * vide les caches d'assets applicatifs (SW), puis recharge la page. Utile
+ * quand `updateViaCache: 'none'` et l'écoute normale de `controllerchange`
+ * ne suffisent pas à faire remonter du code manifestement périmé (SW bloqué
+ * en `waiting`, cache navigateur tiers, etc.).
+ *
+ * Le cache audio des morceaux téléchargés (`dj-mix:audio-cache:v1`) est
+ * intentionnellement préservé pour ne pas obliger l'utilisateur à tout
+ * re-télécharger après une mise à jour (SPEC-20.2).
  */
 export async function forceUpdatePwa() {
   const btn = document.getElementById('btn-force-update');
@@ -212,7 +221,8 @@ export async function forceUpdatePwa() {
     }
     if ('caches' in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.map(k => caches.delete(k)));
+      // Preserve the audio cache so downloaded tracks survive the update.
+      await Promise.all(keys.filter(k => k !== AUDIO_CACHE_NAME).map(k => caches.delete(k)));
     }
   } catch (_) {
     // Silencieux — on recharge de toute façon

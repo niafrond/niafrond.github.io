@@ -124,7 +124,11 @@ async function _processRecordsInChunks(records, handler) {
   }
 }
 
-async function _handleBgFetchSuccess(bgFetch) {
+// Lit tous les enregistrements d'une registration Background Fetch, met en
+// cache les blobs des réponses OK et classe chaque clé `_ck` en réussite ou
+// échec. Utilisable aussi depuis `backgroundfetchfail` : les réponses déjà
+// reçues y restent lisibles via matchAll() (SPEC-19.6.1).
+async function _harvestBgFetchRecords(bgFetch) {
   const audioCache = await caches.open(AUDIO_CACHE);
   const records = await bgFetch.matchAll();
 
@@ -172,6 +176,11 @@ async function _handleBgFetchSuccess(bgFetch) {
     }
   });
 
+  return { succeededKeys, failedKeys };
+}
+
+async function _handleBgFetchSuccess(bgFetch) {
+  const { succeededKeys, failedKeys } = await _harvestBgFetchRecords(bgFetch);
   const done = succeededKeys.length;
   const failed = failedKeys.length;
 
@@ -186,8 +195,36 @@ async function _handleBgFetchSuccess(bgFetch) {
   });
 }
 
+// Une seule réponse non-2xx suffit à faire échouer TOUTE la registration
+// Background Fetch (`failureReason: 'bad-status'`). Les réponses déjà reçues
+// restent pourtant lisibles ici : on les moissonne comme en succès pour ne
+// perdre aucun morceau, et seules les vraies erreurs partent en `failedKeys`
+// (retentées ensuite par la page, SPEC-19.6).
 async function _handleBgFetchFail(bgFetch) {
+  let harvest = null;
+  try { harvest = await _harvestBgFetchRecords(bgFetch); } catch (_) {}
+
   const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+
+  if (harvest && (harvest.succeededKeys.length || harvest.failedKeys.length)) {
+    const done = harvest.succeededKeys.length;
+    const failed = harvest.failedKeys.length;
+    clients.forEach(c => c.postMessage({
+      type: 'BG_FETCH_DONE',
+      id: bgFetch.id,
+      succeededKeys: harvest.succeededKeys,
+      failedKeys: harvest.failedKeys,
+    }));
+
+    await self.registration.showNotification('DJ Mix — Téléchargement interrompu', {
+      body: `${done} morceau${done > 1 ? 'x' : ''} mis en cache — ${failed} à retenter`,
+      icon: './icon-192.png',
+      badge: './icon-192.png',
+      tag: 'djmix-dl-done',
+    });
+    return;
+  }
+
   clients.forEach(c => c.postMessage({ type: 'BG_FETCH_FAIL', id: bgFetch.id }));
 
   await self.registration.showNotification('DJ Mix — Téléchargement échoué', {

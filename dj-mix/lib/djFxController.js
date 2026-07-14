@@ -59,12 +59,20 @@ export function createDjFxController(options) {
     transitionModeLabels,
   } = options;
 
+  const SAMPLER_SOUND_URLS = [
+    new URL('../resources/sample_airhorn.wav', import.meta.url).href,
+    new URL('../resources/sample_stab.wav', import.meta.url).href,
+    new URL('../resources/sample_laser.wav', import.meta.url).href,
+    new URL('../resources/sample_siren.wav', import.meta.url).href,
+  ];
+
   const runtime = {
     loopTimers: { A: null, B: null },
     playbackRateTimers: { A: null, B: null },
     samplingAudioContext: null,
     vinylNoiseBuffer: null,
     scratchSoundBuffer: null,
+    samplerSoundBuffers: null,
     scratch: {
       animationFrameId: null,
       deck: 'A',
@@ -243,6 +251,27 @@ export function createDjFxController(options) {
     } catch (_) {
       return null;
     }
+  }
+
+  async function loadSamplerSoundBuffers(ctx) {
+    if (runtime.samplerSoundBuffers) return runtime.samplerSoundBuffers;
+    const buffers = await Promise.all(
+      SAMPLER_SOUND_URLS.map(async (url) => {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) return null;
+          const arrayBuffer = await response.arrayBuffer();
+          return ctx.decodeAudioData(arrayBuffer);
+        } catch (_) {
+          return null;
+        }
+      }),
+    );
+    const valid = buffers.filter(Boolean);
+    if (valid.length > 0) {
+      runtime.samplerSoundBuffers = valid;
+    }
+    return runtime.samplerSoundBuffers || null;
   }
 
   async function playVinylNoise(intensity = 1) {
@@ -479,31 +508,26 @@ export function createDjFxController(options) {
         return;
       }
 
-      const now = ctx.currentTime + 0.01;
-      const osc = ctx.createOscillator();
-      const filter = ctx.createBiquadFilter();
+      const buffers = await loadSamplerSoundBuffers(ctx);
+      if (!buffers || buffers.length === 0) {
+        showToast('Sampling indisponible: samples introuvables.', true);
+        return;
+      }
+
+      const buffer = buffers[Math.floor(Math.random() * buffers.length)];
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.playbackRate.value = 0.9 + Math.random() * 0.2;
+
       const gain = ctx.createGain();
-
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(220, now);
-      osc.frequency.exponentialRampToValueAtTime(980, now + 0.22);
-      osc.frequency.exponentialRampToValueAtTime(640, now + 0.52);
-
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(2100, now);
-      filter.Q.setValueAtTime(4.6, now);
-
+      const now = ctx.currentTime + 0.01;
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.16, now + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.055, now + 0.18);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.58);
+      gain.gain.exponentialRampToValueAtTime(0.85, now + 0.02);
+      gain.gain.setTargetAtTime(0, now + buffer.duration * 0.7, 0.08);
 
-      osc.connect(filter);
-      filter.connect(gain);
+      source.connect(gain);
       gain.connect(ctx.destination);
-
-      osc.start(now);
-      osc.stop(now + 0.62);
+      source.start(now);
     } catch (err) {
       showToast(`Sampling indisponible: ${err?.message || 'erreur audio'}`, true);
     }

@@ -54,3 +54,7 @@ export const INITIAL_PARALLEL_DOWNLOADS   = 3;
 export const MIN_PARALLEL_DOWNLOADS       = 2;
 export const MAX_PARALLEL_DOWNLOADS       = 10;
 export const TARGET_MS_PER_TRACK_DOWNLOAD = 4000;
+
+// ─── Download retry policy (downloadBatchManager.js, SPEC-19.6) ──────────────
+export const MAX_DOWNLOAD_RETRY_ATTEMPTS     = 3;
+export const DOWNLOAD_RETRY_BACKOFF_BASE_MS  = 2000; // 2s, 4s, 8s (base · 2^(n−1))

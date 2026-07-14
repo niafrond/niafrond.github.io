@@ -257,37 +257,31 @@ describe('djFxController triggerBeatRepeatTransitionFx', () => {
 describe('djFxController sampling', () => {
   const originalAudioContext = window.AudioContext;
   const originalWebkitAudioContext = window.webkitAudioContext;
+  const originalFetch = global.fetch;
 
   afterEach(() => {
     window.AudioContext = originalAudioContext;
     window.webkitAudioContext = originalWebkitAudioContext;
+    global.fetch = originalFetch;
   });
 
   test('waits for AudioContext resume before starting the sampling one-shot', async () => {
     let resolveResume;
-    const osc = {
+    const source = {
       connect: jest.fn(),
-      frequency: {
-        setValueAtTime: jest.fn(),
-        exponentialRampToValueAtTime: jest.fn(),
-      },
       start: jest.fn(),
-      stop: jest.fn(),
-      type: 'sine',
-    };
-    const filter = {
-      connect: jest.fn(),
-      frequency: { setValueAtTime: jest.fn() },
-      Q: { setValueAtTime: jest.fn() },
-      type: 'lowpass',
+      playbackRate: { value: 1 },
+      buffer: null,
     };
     const gain = {
       connect: jest.fn(),
       gain: {
         setValueAtTime: jest.fn(),
         exponentialRampToValueAtTime: jest.fn(),
+        setTargetAtTime: jest.fn(),
       },
     };
+    const fakeDecodedBuffer = { duration: 0.5 };
 
     class FakeAudioContext {
       constructor() {
@@ -305,18 +299,23 @@ describe('djFxController sampling', () => {
         });
       }
 
-      createOscillator() {
-        return osc;
-      }
-
-      createBiquadFilter() {
-        return filter;
+      createBufferSource() {
+        return source;
       }
 
       createGain() {
         return gain;
       }
+
+      decodeAudioData() {
+        return Promise.resolve(fakeDecodedBuffer);
+      }
     }
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
+    });
 
     window.AudioContext = FakeAudioContext;
     window.webkitAudioContext = undefined;
@@ -324,15 +323,15 @@ describe('djFxController sampling', () => {
     const controller = createController();
     controller.handleDjFxAction('sampling');
 
-    expect(osc.start).not.toHaveBeenCalled();
-    expect(osc.stop).not.toHaveBeenCalled();
+    expect(source.start).not.toHaveBeenCalled();
 
     resolveResume();
-    await Promise.resolve();
-    await Promise.resolve();
+    // flush resume + fetch + decodeAudioData promises
+    for (let i = 0; i < 10; i += 1) {
+      await Promise.resolve();
+    }
 
-    expect(osc.start).toHaveBeenCalledWith(4.01);
-    expect(osc.stop).toHaveBeenCalledWith(4.63);
+    expect(source.start).toHaveBeenCalled();
     expect(gain.connect).toHaveBeenCalledWith(expect.objectContaining({ nodeType: 'destination' }));
   });
 });

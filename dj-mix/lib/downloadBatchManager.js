@@ -1,6 +1,10 @@
 import { getTrackCacheKey } from './audioSourceManager.js';
 import { computeNextBatchSize } from './downloadBatchSizing.js';
-import { INITIAL_PARALLEL_DOWNLOADS } from './constants.js';
+import {
+  INITIAL_PARALLEL_DOWNLOADS,
+  MAX_DOWNLOAD_RETRY_ATTEMPTS,
+  DOWNLOAD_RETRY_BACKOFF_BASE_MS,
+} from './constants.js';
 import { appendApiToken } from './downloaderConfig.js';
 
 /**
@@ -17,6 +21,8 @@ import { appendApiToken } from './downloaderConfig.js';
  * @param {() => string} [opts.getDownloaderApiUrl]
  * @param {() => string} [opts.getDownloaderApiToken]
  * @param {() => void} [opts.onAuthExpired]
+ * @param {(active: boolean) => void} [opts.onInternalQueueActiveChange] - notifié quand la file interne démarre/s'arrête (permet à l'appelant de garder l'écran allumé, SPEC-19.7)
+ * @param {(ms: number) => Promise<void>} [opts.waitFn] - injectable pour les tests (backoff des retentatives)
  */
 export function createDownloadBatchManager({
   store,
@@ -31,7 +37,32 @@ export function createDownloadBatchManager({
   getDownloaderApiUrl,
   getDownloaderApiToken,
   onAuthExpired,
+  onInternalQueueActiveChange,
+  waitFn = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }) {
+  let internalQueueActiveCount = 0;
+
+  /**
+   * Enveloppe tout passage par la file interne (parallèle ou retentatives) :
+   * notifie `onInternalQueueActiveChange` sur la transition 0→1 / 1→0 d'un
+   * compteur, pour que l'appelant puisse acquérir un Wake Lock écran pendant
+   * que du JS de page doit rester actif (SPEC-19.7.1).
+   */
+  async function _withInternalQueueActive(fn) {
+    internalQueueActiveCount++;
+    if (internalQueueActiveCount === 1) onInternalQueueActiveChange?.(true);
+    try {
+      return await fn();
+    } finally {
+      internalQueueActiveCount--;
+      if (internalQueueActiveCount === 0) onInternalQueueActiveChange?.(false);
+    }
+  }
+
+  function isInternalQueueRunning() {
+    return internalQueueActiveCount > 0;
+  }
+
   async function requestNotifPermission() {
     if (!('Notification' in window)) return false;
     if (Notification.permission === 'granted') return true;
@@ -132,10 +163,11 @@ export function createDownloadBatchManager({
    * internal-queue run). Every item transition is written to IndexedDB
    * immediately alongside the existing in-memory status callbacks.
    */
-  async function _runInternalQueueLoop({ batchId, tracks, total, swReg }) {
+  async function _runInternalQueueLoop({ batchId, tracks, total, swReg, doneOffset = 0 }) {
     let batchSize = INITIAL_PARALLEL_DOWNLOADS;
     let done = 0;
     let failed = 0;
+    const failedTracks = [];
     let i = 0;
     let lastNotifiedAt = 0;
 
@@ -181,6 +213,7 @@ export function createDownloadBatchManager({
           await store?.updateItem(id, { status: 'pending' });
         } else {
           failed++;
+          failedTracks.push(track);
           setFilRougeTrackStatus(track, { downloadState: 'error' });
           await store?.updateItem(id, (existing) => ({
             status: 'failed',
@@ -188,7 +221,7 @@ export function createDownloadBatchManager({
           }));
         }
         renderTrackStatus(track);
-        onProgress?.(done, 0, total);
+        onProgress?.(doneOffset + done, 0, total);
       }
 
       i += slice.length;
@@ -201,18 +234,18 @@ export function createDownloadBatchManager({
         await store?.updateBatch(batchId, {
           status: 'paused-auth',
           updatedAt: Date.now(),
-          completedFiles: done,
+          completedFiles: doneOffset + done,
           failedFiles: failed,
         });
         onAuthExpired?.();
-        return { done, failed, authPaused: true };
+        return { done, failed, failedTracks, authPaused: true };
       }
 
       if (done + failed - lastNotifiedAt >= 5 && (done + failed) < total) {
         await showSwNotif(
           swReg,
           'DJ Mix — Téléchargement en cours',
-          `${done + failed} / ${total} morceaux`,
+          `${doneOffset + done + failed} / ${total} morceaux`,
           'djmix-dl-progress',
           true,
         );
@@ -220,7 +253,74 @@ export function createDownloadBatchManager({
       }
     }
 
-    return { done, failed, authPaused: false };
+    return { done, failed, failedTracks, authPaused: false };
+  }
+
+  /**
+   * Retente les morceaux échoués jusqu'à MAX_DOWNLOAD_RETRY_ATTEMPTS fois via
+   * la file interne, avec backoff exponentiel (base · 2^(n−1) : 2s, 4s, 8s)
+   * avant chaque vague (SPEC-19.6.2). S'arrête dès que tout est récupéré ou
+   * qu'une pause auth survient.
+   */
+  async function _retryFailedTracks({ batchId, failedTracks, total, doneOffset = 0, swReg }) {
+    let done = 0;
+    let remaining = failedTracks;
+    let authPaused = false;
+
+    for (let attempt = 1; attempt <= MAX_DOWNLOAD_RETRY_ATTEMPTS && remaining.length && !authPaused; attempt++) {
+      await waitFn(DOWNLOAD_RETRY_BACKOFF_BASE_MS * 2 ** (attempt - 1));
+      const result = await _runInternalQueueLoop({
+        batchId,
+        tracks: remaining,
+        total,
+        swReg,
+        doneOffset: doneOffset + done,
+      });
+      done += result.done;
+      remaining = result.failedTracks;
+      authPaused = result.authPaused;
+    }
+
+    return { done, failedTracks: remaining, authPaused };
+  }
+
+  /**
+   * Passe initial de la file interne puis retentatives avec backoff des
+   * morceaux échoués. Retourne les compteurs consolidés post-retentatives.
+   */
+  async function _runInternalQueueWithRetries({ batchId, tracks, total, swReg }) {
+    const first = await _runInternalQueueLoop({ batchId, tracks, total, swReg });
+    if (first.authPaused || !first.failedTracks.length) {
+      return { done: first.done, failed: first.failed, authPaused: first.authPaused };
+    }
+
+    const retry = await _retryFailedTracks({
+      batchId,
+      failedTracks: first.failedTracks,
+      total,
+      doneOffset: first.done,
+      swReg,
+    });
+
+    return {
+      done: first.done + retry.done,
+      failed: retry.failedTracks.length,
+      authPaused: retry.authPaused,
+    };
+  }
+
+  /**
+   * Récupère les mix infos des morceaux fraîchement mis en cache (Background
+   * Fetch réussi) et positionne `hasMixInfo` — même comportement que la file
+   * interne après un téléchargement réussi (SPEC-19.6.4).
+   */
+  async function _fetchMixInfoForTracks(tracks) {
+    if (!fetchMixData) return;
+    for (const track of tracks) {
+      const mixData = await fetchMixData(track.name, track.artist).catch(() => null);
+      setFilRougeTrackStatus(track, { hasMixInfo: Boolean(mixData) });
+      renderTrackStatus(track);
+    }
   }
 
   /**
@@ -300,7 +400,9 @@ export function createDownloadBatchManager({
     }
 
     await store?.updateBatch(batchId, { transport: 'internal-queue' });
-    const result = await _runInternalQueueLoop({ batchId, tracks: toFetch, total, swReg });
+    const result = await _withInternalQueueActive(() => (
+      _runInternalQueueWithRetries({ batchId, tracks: toFetch, total, swReg })
+    ));
 
     if (!result.authPaused) {
       await store?.updateBatch(batchId, {
@@ -325,8 +427,12 @@ export function createDownloadBatchManager({
    * Applies a Background Fetch result (from the SW's `BG_FETCH_DONE`
    * message) to IndexedDB. `succeededKeys`/`failedKeys` are cache keys
    * (matching the `_ck` param sw.js reads off each request).
+   *
+   * Avec `playlist`, les clés échouées sont retentées via la file interne
+   * (backoff exponentiel, SPEC-19.6.3) pendant que les mix infos des
+   * morceaux réussis sont récupérées en parallèle (SPEC-19.6.4).
    */
-  async function recordBackgroundFetchResult(batchId, succeededKeys = [], failedKeys = []) {
+  async function recordBackgroundFetchResult(batchId, succeededKeys = [], failedKeys = [], playlist = []) {
     if (!batchId || !store) return;
     const now = Date.now();
     await store.updateItems(
@@ -337,12 +443,66 @@ export function createDownloadBatchManager({
       failedKeys.map((ck) => itemRowId(batchId, ck)),
       { status: 'failed' },
     );
+
+    const byCacheKey = new Map(
+      (Array.isArray(playlist) ? playlist : []).map((t) => [getTrackCacheKey(t), t]),
+    );
+    const succeededTracks = succeededKeys.map((ck) => byCacheKey.get(ck)).filter(Boolean);
+    const failedTracks = failedKeys.map((ck) => byCacheKey.get(ck)).filter(Boolean);
+
+    const mixInfoTask = _fetchMixInfoForTracks(succeededTracks);
+
+    if (!failedTracks.length) {
+      await store.updateBatch(batchId, {
+        status: (failedKeys.length && !succeededKeys.length) ? 'failed' : 'completed',
+        completedFiles: succeededKeys.length,
+        failedFiles: failedKeys.length,
+        updatedAt: now,
+      });
+      await mixInfoTask;
+      return;
+    }
+
+    // Les échecs retrouvés dans le fil rouge repartent via la file interne.
     await store.updateBatch(batchId, {
-      status: (failedKeys.length && !succeededKeys.length) ? 'failed' : 'completed',
-      completedFiles: succeededKeys.length,
-      failedFiles: failedKeys.length,
+      status: 'running',
+      transport: 'internal-queue',
       updatedAt: now,
     });
+    const total = succeededKeys.length + failedKeys.length;
+    const swReg = await getSwReg();
+
+    const [retry] = await Promise.all([
+      _withInternalQueueActive(() => _retryFailedTracks({
+        batchId,
+        failedTracks,
+        total,
+        doneOffset: succeededKeys.length,
+        swReg,
+      })),
+      mixInfoTask,
+    ]);
+
+    if (retry.authPaused) return; // batch déjà passé en paused-auth dans la boucle
+
+    // Les clés échouées sans morceau correspondant dans le fil rouge actuel
+    // restent comptées en échec (non retentables).
+    const unresolvedFailed = failedKeys.length - failedTracks.length;
+    const completedFiles = succeededKeys.length + retry.done;
+    const failedFiles = retry.failedTracks.length + unresolvedFailed;
+    await store.updateBatch(batchId, {
+      status: (failedFiles && !completedFiles) ? 'failed' : 'completed',
+      completedFiles,
+      failedFiles,
+      updatedAt: Date.now(),
+    });
+    showToast(
+      failedFiles > 0
+        ? `Retentatives terminées : ${retry.done} récupéré${retry.done > 1 ? 's' : ''} — ${failedFiles} échec${failedFiles > 1 ? 's' : ''}`
+        : `Retentatives terminées : ${retry.done} morceau${retry.done > 1 ? 'x' : ''} récupéré${retry.done > 1 ? 's' : ''}`,
+      failedFiles > 0,
+    );
+    renderFilRouge();
   }
 
   /**
@@ -395,12 +555,14 @@ export function createDownloadBatchManager({
       for (const track of resumableTracks) setFilRougeTrackStatus(track, { downloadState: 'idle' });
       await store.updateBatch(batch.id, { transport: 'internal-queue', status: 'running', updatedAt: Date.now() });
 
-      const result = await _runInternalQueueLoop({
-        batchId: batch.id,
-        tracks: resumableTracks,
-        total: resumableTracks.length,
-        swReg,
-      });
+      const result = await _withInternalQueueActive(() => (
+        _runInternalQueueWithRetries({
+          batchId: batch.id,
+          tracks: resumableTracks,
+          total: resumableTracks.length,
+          swReg,
+        })
+      ));
       changed = true;
 
       if (!result.authPaused) {
@@ -421,5 +583,6 @@ export function createDownloadBatchManager({
     resumeIncompleteBatches,
     recordBackgroundFetchResult,
     recordBackgroundFetchFail,
+    isInternalQueueRunning,
   };
 }

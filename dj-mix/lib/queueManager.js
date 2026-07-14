@@ -342,6 +342,17 @@ export function createQueueManager(options) {
           const player = getPlayer?.();
           if (!player || uiState.deckDisplayItems[inactiveDeck] !== item) return;
           await replaceMixPreload?.catch(() => {});
+          // SPEC-1.1.16 : re-valider la cible après la préparation asynchrone —
+          // la platine visée a pu devenir active, l'item réassigné, ou le morceau
+          // être devenu le morceau courant (doublon sur les deux platines).
+          if (getResolvedInactiveDeck?.() !== inactiveDeck
+            || uiState.deckDisplayItems[inactiveDeck] !== item
+            || uiState.currentTrackId === item.id) {
+            logInfo?.('addToQueue(): stale ghost-replacement preload aborted', {
+              inactiveDeck, itemId: item.id, currentTrackId: uiState.currentTrackId,
+            });
+            return;
+          }
           const startMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
           await player.playOnDeck(inactiveDeck, {
             url,

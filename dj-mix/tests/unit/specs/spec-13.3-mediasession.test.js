@@ -4,66 +4,128 @@
  */
 import { jest, describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 
-// ── SPEC-13.3.6 — devicechange pause la platine active ───────────────────────
+// ── SPEC-13.3.6 — devicechange pause la platine active si une sortie audio a disparu ─
 
-describe('SPEC-13.3.6 — devicechange pause la platine focus si en lecture', () => {
+describe('SPEC-13.3.6 — devicechange pause la platine focus uniquement si une sortie audio a disparu', () => {
   // Helper qui reproduit la logique du handler enregistré dans main.js::setupMediaSession()
-  function makeDeviceChangeHandler({ player, getFocusDeck, lastDeckState }) {
-    return () => {
+  function makeDeviceChangeHandler({ player, getFocusDeck, lastDeckState, enumerateDevices, initialCount = null }) {
+    let lastAudioOutputDeviceCount = initialCount;
+    async function countAudioOutputDevices() {
+      const devices = await enumerateDevices();
+      return devices.filter((d) => d.kind === 'audiooutput').length;
+    }
+    return async () => {
+      const previousCount = lastAudioOutputDeviceCount;
+      const count = await countAudioOutputDevices();
+      lastAudioOutputDeviceCount = count;
+      if (previousCount === null || count === null || count >= previousCount) return;
       const focusDeck = getFocusDeck();
       const deckState = lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
       if (deckState?.playing) player?.pauseDeck?.(focusDeck);
     };
   }
 
-  test('GIVEN deck A en lecture WHEN devicechange THEN pauseDeck("A") est appelé', () => {
+  test('GIVEN une sortie audio en moins (déconnexion réelle) ET deck A en lecture WHEN devicechange THEN pauseDeck("A") est appelé', async () => {
     const pauseDeck = jest.fn();
     const handler = makeDeviceChangeHandler({
       player: { pauseDeck },
       getFocusDeck: () => 'A',
       lastDeckState: { deckA: { playing: true }, deckB: { playing: false } },
+      enumerateDevices: async () => [{ kind: 'audiooutput' }],
+      initialCount: 2,
     });
 
-    handler();
+    await handler();
 
     expect(pauseDeck).toHaveBeenCalledWith('A');
   });
 
-  test('GIVEN deck B en lecture WHEN devicechange THEN pauseDeck("B") est appelé', () => {
+  test('GIVEN une sortie audio en moins ET deck B en lecture WHEN devicechange THEN pauseDeck("B") est appelé', async () => {
     const pauseDeck = jest.fn();
     const handler = makeDeviceChangeHandler({
       player: { pauseDeck },
       getFocusDeck: () => 'B',
       lastDeckState: { deckA: { playing: false }, deckB: { playing: true } },
+      enumerateDevices: async () => [{ kind: 'audiooutput' }],
+      initialCount: 2,
     });
 
-    handler();
+    await handler();
 
     expect(pauseDeck).toHaveBeenCalledWith('B');
   });
 
-  test('GIVEN deck focus non actif WHEN devicechange THEN aucune pause', () => {
+  test('GIVEN le nombre de sorties audio est inchangé (ex. ajout d\'une entrée, bruit d\'énumération) WHEN devicechange THEN aucune pause même si le deck focus est en lecture', async () => {
+    const pauseDeck = jest.fn();
+    const handler = makeDeviceChangeHandler({
+      player: { pauseDeck },
+      getFocusDeck: () => 'A',
+      lastDeckState: { deckA: { playing: true }, deckB: { playing: false } },
+      enumerateDevices: async () => [{ kind: 'audiooutput' }, { kind: 'audiooutput' }],
+      initialCount: 2,
+    });
+
+    await handler();
+
+    expect(pauseDeck).not.toHaveBeenCalled();
+  });
+
+  test('GIVEN le nombre de sorties audio augmente (ex. nouveau haut-parleur Bluetooth) WHEN devicechange THEN aucune pause', async () => {
+    const pauseDeck = jest.fn();
+    const handler = makeDeviceChangeHandler({
+      player: { pauseDeck },
+      getFocusDeck: () => 'A',
+      lastDeckState: { deckA: { playing: true }, deckB: { playing: false } },
+      enumerateDevices: async () => [{ kind: 'audiooutput' }, { kind: 'audiooutput' }, { kind: 'audiooutput' }],
+      initialCount: 2,
+    });
+
+    await handler();
+
+    expect(pauseDeck).not.toHaveBeenCalled();
+  });
+
+  test('GIVEN deck focus non actif WHEN devicechange avec perte de sortie audio THEN aucune pause', async () => {
     const pauseDeck = jest.fn();
     const handler = makeDeviceChangeHandler({
       player: { pauseDeck },
       getFocusDeck: () => 'A',
       lastDeckState: { deckA: { playing: false }, deckB: { playing: false } },
+      enumerateDevices: async () => [{ kind: 'audiooutput' }],
+      initialCount: 2,
     });
 
-    handler();
+    await handler();
 
     expect(pauseDeck).not.toHaveBeenCalled();
   });
 
-  test('GIVEN aucun état deck connu WHEN devicechange THEN aucune erreur ni pause', () => {
+  test('GIVEN aucun compte de référence initial (première énumération) WHEN devicechange THEN aucune pause', async () => {
+    const pauseDeck = jest.fn();
+    const handler = makeDeviceChangeHandler({
+      player: { pauseDeck },
+      getFocusDeck: () => 'A',
+      lastDeckState: { deckA: { playing: true } },
+      enumerateDevices: async () => [{ kind: 'audiooutput' }],
+      initialCount: null,
+    });
+
+    await handler();
+
+    expect(pauseDeck).not.toHaveBeenCalled();
+  });
+
+  test('GIVEN aucun état deck connu WHEN devicechange avec perte de sortie THEN aucune erreur ni pause', async () => {
     const pauseDeck = jest.fn();
     const handler = makeDeviceChangeHandler({
       player: { pauseDeck },
       getFocusDeck: () => 'A',
       lastDeckState: null,
+      enumerateDevices: async () => [{ kind: 'audiooutput' }],
+      initialCount: 2,
     });
 
-    expect(() => handler()).not.toThrow();
+    await expect(handler()).resolves.not.toThrow();
     expect(pauseDeck).not.toHaveBeenCalled();
   });
 
@@ -71,6 +133,7 @@ describe('SPEC-13.3.6 — devicechange pause la platine focus si en lecture', ()
     const listeners = {};
     const mediaDevicesMock = {
       addEventListener: jest.fn((event, fn) => { listeners[event] = fn; }),
+      enumerateDevices: jest.fn(async () => []),
     };
 
     const origMediaDevices = Object.getOwnPropertyDescriptor(navigator, 'mediaDevices');
@@ -85,7 +148,13 @@ describe('SPEC-13.3.6 — devicechange pause la platine focus si en lecture', ()
       const pauseDeck = jest.fn();
       const getFocusDeck = () => 'A';
       const lastDeckState = { deckA: { playing: true } };
-      navigator.mediaDevices.addEventListener('devicechange', () => {
+      let lastAudioOutputDeviceCount = null;
+      navigator.mediaDevices.addEventListener('devicechange', async () => {
+        const previousCount = lastAudioOutputDeviceCount;
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const count = devices.filter((d) => d.kind === 'audiooutput').length;
+        lastAudioOutputDeviceCount = count;
+        if (previousCount === null || count === null || count >= previousCount) return;
         const focusDeck = getFocusDeck();
         const deckState = lastDeckState?.[focusDeck === 'A' ? 'deckA' : 'deckB'];
         if (deckState?.playing) pauseDeck(focusDeck);

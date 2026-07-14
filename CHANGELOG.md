@@ -1,3 +1,29 @@
+## [1.258.1](https://github.com/niafrond/niafrond.github.io/compare/v1.258.0...v1.258.1) (2026-07-14)
+
+### Bug Fixes
+
+* Merge pull request [#363](https://github.com/niafrond/niafrond.github.io/issues/363) from niafrond/copilot/pendu-mots-au-hasard ([8c28ff8](https://github.com/niafrond/niafrond.github.io/commit/8c28ff8948b7012092f37aacb3bc165896fabd10))
+* **pendu:** handle œ/æ ligatures in random word mode ([a38fd41](https://github.com/niafrond/niafrond.github.io/commit/a38fd41e2bc4584099ffede49c59859dffdf25c8))
+
+## [1.258.0](https://github.com/niafrond/niafrond.github.io/compare/v1.257.0...v1.258.0) (2026-07-14)
+
+### Features
+
+* **dj-mix:** persist download state to localStorage, preserve audio cache on PWA update ([2e597e0](https://github.com/niafrond/niafrond.github.io/commit/2e597e0ef267c3e7dc307cc6d5756f12878c052d))
+
+## [1.257.0](https://github.com/niafrond/niafrond.github.io/compare/v1.256.0...v1.257.0) (2026-07-13)
+
+### Features
+
+* **dj-mix:** sampling FX joue de vrais samples audio au lieu d'un oscillateur ([0cd0d84](https://github.com/niafrond/niafrond.github.io/commit/0cd0d846143a6ec4d82f3e510006e518dae48b39))
+
+## [1.256.0](https://github.com/niafrond/niafrond.github.io/compare/v1.255.0...v1.256.0) (2026-07-13)
+
+### Features
+
+* Add support for Wake Lock during internal queue processing and background fetch continuity ([6323317](https://github.com/niafrond/niafrond.github.io/commit/6323317ea0dd661837c8c7d4afa56d36e4ef2dbf))
+* Implement backoff retry mechanism for background fetch failures ([4dcc85b](https://github.com/niafrond/niafrond.github.io/commit/4dcc85bbd1fa5e0fd83bfe4defaa5be1f34f3e59))
+
 ## [1.255.0](https://github.com/niafrond/niafrond.github.io/compare/v1.254.0...v1.255.0) (2026-07-12)
 
 ### Features

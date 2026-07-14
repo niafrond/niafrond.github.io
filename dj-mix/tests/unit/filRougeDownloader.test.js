@@ -21,6 +21,7 @@ function makeDownloader(overrides = {}) {
     onProgress: jest.fn(),
     onMixInfoProgress: jest.fn(),
     fetchMixData: jest.fn().mockResolvedValue({ probableSongStartSec: 10 }),
+    waitFn: jest.fn().mockResolvedValue(undefined), // pas de vrai backoff en test (SPEC-19.6.2)
     ...overrides,
   };
 
@@ -257,5 +258,21 @@ describe('downloadMissingMixInfo — SPEC-3.5.7', () => {
     await downloadAllPromise;
     expect(downloadAllSettled).toBe(true);
     expect(mocks.prefetchTrackToLocalCache).toHaveBeenCalledWith(downloading, expect.any(Object));
+  });
+});
+
+// ── SPEC-19.7 : continuité écran éteint / arrière-plan (Wake Lock) ───────────
+
+describe('onInternalQueueActiveChange / isInternalQueueRunning passthrough (SPEC-19.7)', () => {
+  test('forwards onInternalQueueActiveChange to the batch manager and exposes isInternalQueueRunning', async () => {
+    const onInternalQueueActiveChange = jest.fn();
+    const { downloader } = makeDownloader({ onInternalQueueActiveChange });
+    const track = makeTrack();
+
+    expect(downloader.isInternalQueueRunning()).toBe(false);
+    await downloader.downloadAll([track]);
+
+    expect(onInternalQueueActiveChange.mock.calls).toEqual([[true], [false]]);
+    expect(downloader.isInternalQueueRunning()).toBe(false);
   });
 });
