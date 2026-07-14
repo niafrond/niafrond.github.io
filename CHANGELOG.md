@@ -1,3 +1,16 @@
+## [1.258.2](https://github.com/niafrond/niafrond.github.io/compare/v1.258.1...v1.258.2) (2026-07-14)
+
+### Bug Fixes
+
+* **pendu:** group word parts to prevent letter orphaning on wrap ([f93a3cd](https://github.com/niafrond/niafrond.github.io/commit/f93a3cd05ff1ffa99874bfdf7c2b23be184ac26f))
+
+## [1.258.1](https://github.com/niafrond/niafrond.github.io/compare/v1.258.0...v1.258.1) (2026-07-14)
+
+### Bug Fixes
+
+* Merge pull request [#363](https://github.com/niafrond/niafrond.github.io/issues/363) from niafrond/copilot/pendu-mots-au-hasard ([8c28ff8](https://github.com/niafrond/niafrond.github.io/commit/8c28ff8948b7012092f37aacb3bc165896fabd10))
+* **pendu:** handle œ/æ ligatures in random word mode ([a38fd41](https://github.com/niafrond/niafrond.github.io/commit/a38fd41e2bc4584099ffede49c59859dffdf25c8))
+
 ## [1.258.0](https://github.com/niafrond/niafrond.github.io/compare/v1.257.0...v1.258.0) (2026-07-14)
 
 ### Features

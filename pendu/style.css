@@ -365,10 +365,23 @@ details[open] .card-title-summary::after { content: '▲'; }
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 6px 10px;
+  align-items: flex-end;
+  gap: 6px 16px;
   max-width: 480px;
   width: 100%;
   padding: 0 8px;
+}
+/* Groupe de lettres d'une même partie (entre espaces) : reste sur une seule ligne */
+.word-group {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  gap: 0 6px;
+}
+/* Séparateur invisible entre parties du mot (espace original) */
+.word-space {
+  width: 10px;
+  flex-shrink: 0;
 }
 .word-letter {
   display: flex;
