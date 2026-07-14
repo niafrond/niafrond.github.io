@@ -2649,11 +2649,9 @@ const filRougeDownloader = createFilRougeDownloader({
       filRougeMixInfoBtn.disabled = true;
     }
   },
-  getDownloaderApiUrl,
-  getDownloaderApiToken,
   onAuthExpired: () => showToast('Session expirée : renouvelez le token API dans Config', true),
   // Garde l'écran allumé pendant que la file interne dépend du JS de page pour
-  // continuer (Background Fetch n'en a pas besoin, le navigateur gère seul) — SPEC-19.7.
+  // continuer — SPEC-19.7.
   onInternalQueueActiveChange: (active) => setWakeLockReason('download', active),
   apiHealthMonitor,
 });
@@ -2689,47 +2687,6 @@ if (filRougeMixInfoBtn) {
         filRougeMixInfoBtn.disabled = false;
       }
     });
-  });
-}
-
-// Mise à jour des statuts après un Background Fetch terminé par le SW
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.addEventListener('message', e => {
-    const { type, id, succeededKeys = [], failedKeys = [] } = e?.data || {};
-    if (type !== 'BG_FETCH_DONE' && type !== 'BG_FETCH_FAIL') return;
-
-    if (type === 'BG_FETCH_FAIL') {
-      showToast('Téléchargement arrière-plan : échec', true);
-      const playlist = filRougeManager.getPlaylist();
-      for (const track of playlist) {
-        const { downloadState } = getFilRougeTrackStatus(track);
-        if (downloadState === 'downloading') {
-          setFilRougeTrackStatus(track, { downloadState: 'error' });
-        }
-      }
-      renderFilRouge();
-      filRougeDownloader.recordBackgroundFetchFail?.(id).catch(() => {});
-      scheduleDjSetQualityRefresh();
-      return;
-    }
-
-    const playlist = filRougeManager.getPlaylist();
-    for (const track of playlist) {
-      const key = String(track.id || `${(track.artist || '').toLowerCase()}::${(track.name || '').toLowerCase()}`);
-      if (succeededKeys.includes(key)) {
-        setFilRougeTrackStatus(track, { downloadState: 'done' });
-      } else if (failedKeys.includes(key)) {
-        setFilRougeTrackStatus(track, { downloadState: 'error' });
-      }
-    }
-    renderFilRouge();
-    // Retente les échecs (backoff x3) et récupère les mix infos des réussites
-    // en parallèle (SPEC-19.6.3/19.6.4).
-    filRougeDownloader.recordBackgroundFetchResult?.(id, succeededKeys, failedKeys, playlist).catch(() => {});
-    showToast(failedKeys.length > 0
-      ? `Téléchargement : ${succeededKeys.length} réussi${succeededKeys.length > 1 ? 's' : ''} — retentative de ${failedKeys.length} échec${failedKeys.length > 1 ? 's' : ''}…`
-      : `Téléchargement terminé : ${succeededKeys.length} réussi${succeededKeys.length > 1 ? 's' : ''}`);
-    scheduleDjSetQualityRefresh();
   });
 }
 
