@@ -1,3 +1,9 @@
+## [1.258.2](https://github.com/niafrond/niafrond.github.io/compare/v1.258.1...v1.258.2) (2026-07-14)
+
+### Bug Fixes
+
+* **pendu:** group word parts to prevent letter orphaning on wrap ([f93a3cd](https://github.com/niafrond/niafrond.github.io/commit/f93a3cd05ff1ffa99874bfdf7c2b23be184ac26f))
+
 ## [1.258.1](https://github.com/niafrond/niafrond.github.io/compare/v1.258.0...v1.258.1) (2026-07-14)
 
 ### Bug Fixes
