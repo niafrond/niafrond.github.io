@@ -3,6 +3,7 @@
  */
 
 import { getVersion } from './version.js';
+import { isMobileDevice } from './lib/ramProfile.js';
 
 // ─── Installation PWA ──────────────────────────────────────────────────────
 let _pwaInstallPrompt = null;
@@ -64,6 +65,10 @@ export function toggleFullscreen() {
 // Dans un WebView Capacitor (APK), requestFullscreen() est autorisé sans geste
 // utilisateur préalable, ce qui permet un plein écran immédiat et permanent.
 export function initAutoFullscreen() {
+  // Sur un navigateur desktop, on laisse l'utilisateur passer en plein écran
+  // manuellement (bouton dédié) plutôt que de forcer le mode immersif.
+  if (!isCapacitor() && !isMobileDevice()) return;
+
   // Tentative immédiate : fonctionne sans geste dans un WebView Capacitor.
   // Dans un navigateur, l'appel sera bloqué silencieusement si aucun geste
   // n'a encore eu lieu ; le fallback pointerdown prend alors le relais.

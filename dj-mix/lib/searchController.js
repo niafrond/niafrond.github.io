@@ -151,7 +151,7 @@ export function createSearchController(options) {
         if (pendingSearchAdd) return;
         pendingSearchAdd = true;
 
-        addToQueue(result)
+        addToQueue(result, { asNext: true })
           .catch((err) => {
             showToast(`API: ${err.message}`, true);
           })
@@ -178,7 +178,7 @@ export function createSearchController(options) {
         if (pendingSearchAdd) return;
         pendingSearchAdd = true;
 
-        addToQueue(result)
+        addToQueue(result, { asNext: true })
           .catch((err) => {
             showToast(`API: ${err.message}`, true);
           })

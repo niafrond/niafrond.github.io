@@ -244,6 +244,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-3.4.9** La concurrence du pool est recalculée (`computeNextBatchSize`) toutes les N complétions à partir du temps moyen observé par morceau : si ce temps dépasse `4000 ms`, la concurrence est réduite de `2` (plancher `2`) ; si elle est inférieure à `1000 ms` (le quart de la cible), elle est augmentée de `4` ; si elle est inférieure à `2000 ms` (la moitié de la cible), elle est augmentée de `2` (plafond `20`). Entre ces seuils, la concurrence reste inchangée. Objectif : atteindre le débit max très rapidement tout en se retirant vite si la bande passante sature.
 - **SPEC-3.4.9.1** La récupération des mix infos (`fetchMixData`) après chaque téléchargement réussi est non-bloquante (fire-and-forget) : elle ne retarde pas le lancement du téléchargement suivant dans le pool. `hasMixInfo` est initialisé à `false` dès le succès du download, puis mis à jour de manière asynchrone quand la réponse de `fetchMixData` arrive.
 - **SPEC-3.4.10** GIVEN plusieurs déclencheurs de téléchargement de masse (synchronisation au chargement de la page `startFilRougeStartupCacheSync`, "Tout télécharger" `filRougeDownloader.downloadAll`, boucle de sync Spotify, import TXT) appellent `prefetchTrackToLocalCache` pour le **même morceau** (même `cacheKey`) de façon concurrente — THEN un seul téléchargement réseau est effectué : l'appel concurrent rejoint la promesse déjà en cours au lieu d'en déclencher une nouvelle. Ceci évite les téléchargements en double et les statuts (`downloadState`) incohérents (ex. `done` écrasé par `error` ou inversement selon l'ordre d'arrivée) qui se produisaient notamment juste après un rechargement de page (pendant que la synchronisation de démarrage tourne encore) ou lorsqu'un morceau met du temps à se télécharger (élargissant la fenêtre de recouvrement avec un autre déclencheur). Une fois l'appel en cours résolu (succès ou échec), un appel ultérieur relance un vrai téléchargement.
+- **SPEC-3.4.11** GIVEN le Fil Rouge contient au moins un morceau dont `downloadState` n'est ni `done` ni `downloading` (titre manquant) — WHEN un nouveau titre démarre effectivement sur une platine (fin réussie de `startPlaybackForIndex`, à chaque changement de titre lecture) — THEN `filRougeDownloader.downloadAll()` est déclenché automatiquement, comme un clic sur "Tout télécharger" (`maybeAutoDownloadMissingFilRouge`, exposé via `filRougeDownloader.hasMissingDownloads()`). Ce déclenchement est ignoré si un lot de téléchargement est déjà en cours (`isInternalQueueRunning()`) ou si le bouton mix info est désactivé (récupération de mix info déjà en cours), pour éviter les déclenchements concurrents.
 
 ### 3.5 Indicateurs de statut par morceau
 
@@ -298,6 +299,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-4.3.4** Séparés en sections "Musiques" et "Artistes" dans l'UI.
 - **SPEC-4.3.5** Badges affichés : `📁` (local), `🧩` (stems disponibles).
 - **SPEC-4.3.6** Actions : "Fade" (play now avec crossfade), "+" (ajouter à la queue), `🗑` (supprimer local).
+- **SPEC-4.3.7** GIVEN le bouton "+" cliqué sur un résultat de recherche — THEN `addToQueue(track, { asNext: true })` est appelé : la piste est insérée à `currentIndex + 1` (ou `0` si aucune piste ne joue), ce qui **concatène** — l'ancienne piste "suivante" est décalée d'un rang, pas remplacée (mêmes règles que SPEC-9.3.5). Le bouton "Fade" reste inchangé : il lance la lecture immédiate (`triggerSearchFade` → `addToQueue(track, { playNow: true })` si rien ne joue, sinon précharge la platine inactive et déclenche l'AutoMix).
 
 ### 4.4 Overlay de recherche
 
@@ -463,8 +465,8 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 ### 6.7 Rendu sonore — `sampling` (triggerSamplingFx)
 
-- **SPEC-6.7.1** L'effet `sampling` charge et joue un vrai fichier audio WAV depuis `resources/`, au lieu d'une synthèse WebAudio.
-- **SPEC-6.7.2** Fichiers disponibles : `sample_airhorn.wav`, `sample_stab.wav`, `sample_laser.wav`, `sample_siren.wav`.
+- **SPEC-6.7.1** L'effet `sampling` charge et joue un vrai enregistrement audio (MP3) depuis `resources/`, au lieu d'une synthèse WebAudio.
+- **SPEC-6.7.2** Fichiers disponibles : `sample_airhorn.mp3`, `sample_stab.mp3`, `sample_laser.mp3`, `sample_siren.mp3` (vrais sons échantillonnés, cf. `resources/CREDITS.md` pour les sources et licences).
 - **SPEC-6.7.3** À chaque déclenchement, un sample est choisi aléatoirement parmi les buffers chargés.
 - **SPEC-6.7.4** Les buffers sont chargés en lazy-load via `loadSamplerSoundBuffers(ctx)` et mis en cache dans `runtime.samplerSoundBuffers`.
 - **SPEC-6.7.5** Le playback rate est randomisé dans `[0.9, 1.1]` pour la variété.
@@ -789,6 +791,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-13.6.1** `requestFullscreen({ navigationUI: 'hide' })` avec fallback webkit.
 - **SPEC-13.6.2** Auto-activation : tentative immédiate (Capacitor WebView), puis sur premier `pointerdown`.
 - **SPEC-13.6.3** Réactivation automatique sur événement `fullscreenchange`.
+- **SPEC-13.6.4** L'auto-activation (13.6.2/13.6.3) ne s'applique qu'en WebView Capacitor ou sur mobile (`isMobileDevice()` de `lib/ramProfile.js`) ; sur un navigateur desktop, `initAutoFullscreen()` ne tente aucun passage en plein écran automatique (l'utilisateur garde la main via `toggleFullscreen()`).
 
 ---
 

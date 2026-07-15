@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { jest, describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { forceUpdatePwa } from '../../pwa.js';
+import { forceUpdatePwa, initAutoFullscreen } from '../../pwa.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DJ_MIX_DIR = join(__dirname, '..', '..');
@@ -93,6 +93,56 @@ describe('SPEC-20.2 — forceUpdatePwa() désinscrit les SW et vide les caches',
 
   test('termine sans exception sans API serviceWorker/caches disponibles', async () => {
     await expect(forceUpdatePwa()).resolves.toBeUndefined();
+  });
+});
+
+describe('SPEC-13.6.4 — initAutoFullscreen() ne force le plein écran que sur mobile/Capacitor', () => {
+  let uaSpy;
+  let requestFullscreenSpy;
+
+  beforeEach(() => {
+    document.documentElement.requestFullscreen = jest.fn().mockResolvedValue(undefined);
+    requestFullscreenSpy = document.documentElement.requestFullscreen;
+    window.matchMedia = jest.fn().mockReturnValue({ matches: false });
+  });
+
+  afterEach(() => {
+    delete document.documentElement.requestFullscreen;
+    uaSpy?.mockRestore();
+    delete window.matchMedia;
+    delete window.Capacitor;
+  });
+
+  test("sur navigateur desktop, ne tente aucun passage en plein écran automatique", () => {
+    uaSpy = jest.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36'
+    );
+
+    initAutoFullscreen();
+    document.dispatchEvent(new Event('pointerdown'));
+
+    expect(requestFullscreenSpy).not.toHaveBeenCalled();
+  });
+
+  test('sur navigateur mobile (UA Android), tente le passage en plein écran', () => {
+    uaSpy = jest.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(
+      'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36'
+    );
+
+    initAutoFullscreen();
+
+    expect(requestFullscreenSpy).toHaveBeenCalledWith({ navigationUI: 'hide' });
+  });
+
+  test('dans une WebView Capacitor (desktop UA ou non), tente le passage en plein écran', () => {
+    uaSpy = jest.spyOn(window.navigator, 'userAgent', 'get').mockReturnValue(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36'
+    );
+    window.Capacitor = {};
+
+    initAutoFullscreen();
+
+    expect(requestFullscreenSpy).toHaveBeenCalledWith({ navigationUI: 'hide' });
   });
 });
 

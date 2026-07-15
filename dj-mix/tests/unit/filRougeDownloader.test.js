@@ -276,3 +276,39 @@ describe('onInternalQueueActiveChange / isInternalQueueRunning passthrough (SPEC
     expect(downloader.isInternalQueueRunning()).toBe(false);
   });
 });
+
+// ── SPEC-3.4.11 : hasMissingDownloads ─────────────────────────────────────────
+
+describe('hasMissingDownloads — SPEC-3.4.11', () => {
+  test('returns false when playlist is empty', () => {
+    const { downloader } = makeDownloader();
+    expect(downloader.hasMissingDownloads([])).toBe(false);
+  });
+
+  test('returns true when a track is idle', () => {
+    const { downloader } = makeDownloader();
+    const track = makeTrack();
+    expect(downloader.hasMissingDownloads([track])).toBe(true);
+  });
+
+  test('returns true when a track is in error state', () => {
+    const { downloader, mocks } = makeDownloader();
+    const track = makeTrack();
+    mocks.setFilRougeTrackStatus(track, { downloadState: 'error' });
+    expect(downloader.hasMissingDownloads([track])).toBe(true);
+  });
+
+  test('returns false when every track is done or downloading', () => {
+    const { downloader, mocks } = makeDownloader();
+    const done = makeTrack({ id: 'track-1' });
+    const downloading = makeTrack({ id: 'track-2', name: 'Song B' });
+    mocks.setFilRougeTrackStatus(done, { downloadState: 'done' });
+    mocks.setFilRougeTrackStatus(downloading, { downloadState: 'downloading' });
+    expect(downloader.hasMissingDownloads([done, downloading])).toBe(false);
+  });
+
+  test('ignores tracks without a name or artist', () => {
+    const { downloader } = makeDownloader();
+    expect(downloader.hasMissingDownloads([{ id: 'no-meta' }])).toBe(false);
+  });
+});

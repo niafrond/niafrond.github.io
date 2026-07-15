@@ -72,7 +72,7 @@
 | `scratching` | Son de scratch vinyle | 450 | Transient |
 | `hotCues` | Saut au prochain hot cue du deck | 450 | Transient |
 | `loopCue` | Loop cue (retour au cue precedent, repete N fois) | ~3400 | Transient |
-| `sampling` | Sample synthetique (oscillateur square) | 500 | Transient |
+| `sampling` | Sample audio reel (airhorn/stab/laser/siren) | 500 | Transient |
 
 ## Regle de taille module
 

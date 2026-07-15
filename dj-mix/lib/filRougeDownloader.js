@@ -69,6 +69,21 @@ export function createFilRougeDownloader({
   }
 
   /**
+   * GIVEN au moins un morceau du fil rouge dont downloadState n'est ni
+   * 'done' ni 'downloading' — THEN retourne true (SPEC-3.4.11). Utilisé pour
+   * décider s'il faut déclencher automatiquement `downloadAll`.
+   * @param {object[]} tracks
+   * @returns {boolean}
+   */
+  function hasMissingDownloads(tracks) {
+    return (tracks || []).some((t) => {
+      if (!t?.name || !t?.artist) return false;
+      const { downloadState } = getFilRougeTrackStatus(t);
+      return downloadState !== 'done' && downloadState !== 'downloading';
+    });
+  }
+
+  /**
    * Télécharge les morceaux du fil rouge qui ne sont pas encore en cache
    * (via le moteur de lot persistant, SPEC-19.x) et met à jour les mix infos
    * manquantes — deux tâches en parallèle.
@@ -168,6 +183,7 @@ export function createFilRougeDownloader({
   return {
     downloadAll,
     downloadMissingMixInfo,
+    hasMissingDownloads,
     resumeIncompleteBatches: downloadBatchManager.resumeIncompleteBatches,
     isInternalQueueRunning: downloadBatchManager.isInternalQueueRunning,
   };

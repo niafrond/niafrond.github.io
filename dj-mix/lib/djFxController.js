@@ -60,10 +60,10 @@ export function createDjFxController(options) {
   } = options;
 
   const SAMPLER_SOUND_URLS = [
-    new URL('../resources/sample_airhorn.wav', import.meta.url).href,
-    new URL('../resources/sample_stab.wav', import.meta.url).href,
-    new URL('../resources/sample_laser.wav', import.meta.url).href,
-    new URL('../resources/sample_siren.wav', import.meta.url).href,
+    new URL('../resources/sample_airhorn.mp3', import.meta.url).href,
+    new URL('../resources/sample_stab.mp3', import.meta.url).href,
+    new URL('../resources/sample_laser.mp3', import.meta.url).href,
+    new URL('../resources/sample_siren.mp3', import.meta.url).href,
   ];
 
   const runtime = {

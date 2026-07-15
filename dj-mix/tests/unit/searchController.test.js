@@ -135,6 +135,39 @@ describe('triggerSearchFade', () => {
   });
 });
 
+describe('search result buttons (SPEC-4.3.6, SPEC-4.3.7)', () => {
+  function renderOneResult(overrides = {}) {
+    const searchResults = document.createElement('div');
+    const addToQueue = jest.fn().mockResolvedValue(undefined);
+    const ctrl = makeController({ searchResults, addToQueue, ...overrides });
+    ctrl.renderSearchResults([{ title: 'Song', artist: 'Artist', id: 'song-1', duration_ms: 1000 }]);
+    return { searchResults, addToQueue, ctrl };
+  }
+
+  test('"+" button adds the track as next in queue (asNext: true)', () => {
+    const { searchResults, addToQueue } = renderOneResult();
+    searchResults.querySelector('.add-btn').dispatchEvent(new Event('click', { bubbles: true }));
+    expect(addToQueue).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'song-1' }),
+      expect.objectContaining({ asNext: true }),
+    );
+  });
+
+  test('"Fade" button plays the track immediately via triggerSearchFade, not addToQueue asNext', async () => {
+    uiState.isPlaying = false;
+    const { searchResults, addToQueue } = renderOneResult({
+      getPlayer: jest.fn().mockReturnValue({ isCrossfading: false, activateElement: jest.fn() }),
+    });
+    searchResults.querySelector('.play-now-btn').dispatchEvent(new Event('click', { bubbles: true }));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(addToQueue).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'song-1' }),
+      expect.objectContaining({ playNow: true }),
+    );
+  });
+});
+
 describe('openSearch / closeSearch', () => {
   test('openSearch shows overlay', () => {
     const overlay = { hidden: true };

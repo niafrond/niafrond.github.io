@@ -2690,6 +2690,25 @@ if (filRougeMixInfoBtn) {
   });
 }
 
+/**
+ * SPEC-3.4.11 : à chaque changement de titre effectif sur une platine, si le
+ * fil rouge contient au moins un morceau non téléchargé, relance "Tout
+ * télécharger" automatiquement (même chemin que le clic bouton). Ignoré si
+ * un lot de téléchargement ou une récupération de mix info est déjà en cours,
+ * pour éviter les déclenchements concurrents.
+ */
+function maybeAutoDownloadMissingFilRouge() {
+  if (filRougeMixInfoBtn?.disabled) return;
+  if (filRougeDownloader.isInternalQueueRunning?.()) return;
+  const tracks = filRougeManager.getPlaylist();
+  if (!filRougeDownloader.hasMissingDownloads(tracks)) return;
+  filRougeDownloader.downloadAll(tracks).then(() => {
+    scheduleDjSetQualityRefresh();
+  }).catch(err => {
+    console.error('[filrouge] auto downloadAll error', err);
+  });
+}
+
 // Initial render — deferred until autoModeManager is created (see below).
 
 /**
@@ -5839,7 +5858,7 @@ function bindSearchResults(songResults, artistResults) {
       if (pendingSearchAdd) return;
       pendingSearchAdd = true;
 
-      addToQueue(result)
+      addToQueue(result, { asNext: true })
         .catch((err) => {
           showToast(`API: ${err.message}`, true);
         })
@@ -5866,7 +5885,7 @@ function bindSearchResults(songResults, artistResults) {
       if (pendingSearchAdd) return;
       pendingSearchAdd = true;
 
-      addToQueue(result)
+      addToQueue(result, { asNext: true })
         .catch((err) => {
           showToast(`API: ${err.message}`, true);
         })
@@ -6542,6 +6561,8 @@ async function startPlaybackForIndex(index, mode, options = {}) {
     autoModeManager.scheduleAutomixTiming(item);
     // Maître → uploader le blob courant vers le proxy pour que les relais puissent le lire
     uploadCurrentTrackToRelayProxy().catch(() => {});
+    // SPEC-3.4.11 : nouveau titre effectivement démarré sur une platine.
+    maybeAutoDownloadMissingFilRouge();
     if (autoSuggestionQueueSearchEnabled) {
       // Defer suggestion search to idle time to avoid competing with playback startup
       scheduleIdle(() => {
