@@ -1,3 +1,9 @@
+## [1.260.0](https://github.com/niafrond/niafrond.github.io/compare/v1.259.0...v1.260.0) (2026-07-15)
+
+### Features
+
+* Remove Scrum Poker application files including HTML, JavaScript, CSS, manifest, and peer networking logic. ([ceac5ee](https://github.com/niafrond/niafrond.github.io/commit/ceac5eef93bcd1366dd9ee7d9cf384ba2a4e501a))
+
 ## [1.259.0](https://github.com/niafrond/niafrond.github.io/compare/v1.258.2...v1.259.0) (2026-07-14)
 
 ### Features
