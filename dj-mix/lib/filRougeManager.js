@@ -13,6 +13,7 @@
 
 import { createLogger } from './logger.js';
 import { STORAGE_KEYS } from './storageKeys.js';
+import { createTrackStore } from './trackStore.js';
 
 const logger = createLogger('filRouge');
 
@@ -46,7 +47,17 @@ const logger = createLogger('filRouge');
  * @property {number} [djTransition.computedAt]
  */
 
-export function createFilRougeManager() {
+/**
+ * @param {object} [options]
+ * @param {ReturnType<typeof import('./trackStore.js').createTrackStore>} [options.trackStore]
+ *   Registre partagé des morceaux (cf. SPECS.md §2.6). Si non fourni, cette instance
+ *   crée et possède son propre trackStore (utile pour les tests) — dans ce cas elle
+ *   se charge aussi de le restaurer depuis localStorage.
+ */
+export function createFilRougeManager(options = {}) {
+  const ownsTrackStore = !options.trackStore;
+  const trackStore = options.trackStore || createTrackStore();
+
   /** @type {FilRougeItem[]} */
   let playlist = [];
 
@@ -67,8 +78,8 @@ export function createFilRougeManager() {
   function _saveNow() {
     try {
       const data = {
-        playlist: playlist.map(serializeItem),
-        priorityQueue: priorityQueue.map(serializeItem),
+        playlist: playlist.map((item) => item.id),
+        priorityQueue: priorityQueue.map((item) => item.id),
         currentIndex,
         shuffleEnabled,
         loopEnabled,
@@ -89,16 +100,30 @@ export function createFilRougeManager() {
     }, 400);
   }
 
+  /**
+   * Résout un item persisté — soit une simple référence `id` (nouveau format
+   * allégé), soit un item complet à l'ancien format riche — via le trackStore
+   * partagé, qui absorbe indifféremment les deux formats (SPEC-2.6.7).
+   */
+  function resolveStoredItem(raw) {
+    if (typeof raw === 'string') return trackStore.getOrCreate({ id: raw });
+    return trackStore.getOrCreate(raw);
+  }
+
   function restore() {
+    // Ne restaure le trackStore que si cette instance le possède : un trackStore
+    // injecté (partagé avec la Queue) est déjà restauré par son propriétaire —
+    // le refaire ici écraserait des enregistrements pas encore flush (debounce).
+    if (ownsTrackStore) trackStore.restore();
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.filRouge);
       if (!raw) return;
       const data = JSON.parse(raw);
       if (Array.isArray(data.playlist)) {
-        playlist = data.playlist.map(deserializeItem);
+        playlist = data.playlist.map(resolveStoredItem);
       }
       if (Array.isArray(data.priorityQueue)) {
-        priorityQueue = data.priorityQueue.map(deserializeItem);
+        priorityQueue = data.priorityQueue.map(resolveStoredItem);
       }
       if (typeof data.currentIndex === 'number') {
         currentIndex = data.currentIndex;
@@ -113,42 +138,6 @@ export function createFilRougeManager() {
     } catch (_) {
       logger.warn('filRouge.restore.failed');
     }
-  }
-
-  function serializeItem(item) {
-    return {
-      id: item.id,
-      name: item.name,
-      artist: item.artist,
-      artUrl: (item.artUrl && !String(item.artUrl).startsWith('blob:')) ? item.artUrl : '',
-      duration: item.duration || 0,
-      bpm: item.bpm || null,
-      genre: item.genre || '',
-      cachePath: item.cachePath || '',
-      persistedSourceUrl: item.persistedSourceUrl || '',
-      ratingKey: item.ratingKey || '',
-      stemsStatus: item.stemsStatus || '',
-      stems: item.stems || null,
-      danceability: item.danceability ?? null,
-      year: item.year ?? null,
-      djTrackId: item.djTrackId || null,
-      djHasAnalysis: Boolean(item.djHasAnalysis),
-      djTransition: item.djTransition || null,
-    };
-  }
-
-  function deserializeItem(raw) {
-    return {
-      ...raw,
-      djTrackId: raw.djTrackId ?? null,
-      djHasAnalysis: Boolean(raw.djHasAnalysis),
-      djTransition: raw.djTransition ?? null,
-      sourceState: 'idle',
-      sourceError: null,
-      sourceMeta: null,
-      localBlobUrl: null,
-      lastTouchedAt: Date.now(),
-    };
   }
 
   // ── Playlist fil rouge ──────────────────────────────────────────────────
@@ -167,7 +156,7 @@ export function createFilRougeManager() {
       logger.debug('filRouge.addToPlaylist.duplicate', { name: item.name });
       return false;
     }
-    playlist.push(deserializeItem(serializeItem(item)));
+    playlist.push(trackStore.getOrCreate(item));
     logger.info('filRouge.addToPlaylist', { name: item.name, playlistLength: playlist.length });
     scheduleSave();
     return true;
@@ -187,7 +176,7 @@ export function createFilRougeManager() {
       logger.debug('filRouge.addToPriorityQueue.duplicate', { name: item.name });
       return false;
     }
-    priorityQueue.push(deserializeItem(serializeItem(item)));
+    priorityQueue.push(trackStore.getOrCreate(item));
     logger.info('filRouge.addToPriorityQueue', { name: item.name, priorityLength: priorityQueue.length });
     scheduleSave();
     return true;
@@ -239,8 +228,11 @@ export function createFilRougeManager() {
   function patchPlaylistItem(id, patch) {
     const idx = playlist.findIndex((p) => p.id === id);
     if (idx === -1) return false;
-    Object.assign(playlist[idx], patch);
-    scheduleSave();
+    // Mutation via trackStore.patch (pas Object.assign direct) : la playlist
+    // référence désormais l'enregistrement partagé — cela suffit à rendre le
+    // correctif visible depuis la Queue si le morceau y est aussi présent, ET
+    // à déclencher la persistence du trackStore (dj-mix:tracks).
+    trackStore.patch(id, patch);
     return true;
   }
 
@@ -261,7 +253,7 @@ export function createFilRougeManager() {
    */
   function setPlaylist(items) {
     const prevId = playlist[currentIndex]?.id;
-    playlist = (Array.isArray(items) ? items : []).map(item => deserializeItem(serializeItem(item)));
+    playlist = (Array.isArray(items) ? items : []).map((item) => trackStore.getOrCreate(item));
     if (prevId != null) {
       const newIdx = playlist.findIndex(i => i.id === prevId);
       if (newIdx !== -1) {
@@ -312,7 +304,8 @@ export function createFilRougeManager() {
         name: nextPriority.name,
         priorityLength: priorityQueue.length,
       });
-      return { ...nextPriority, lastTouchedAt: Date.now() };
+      nextPriority.lastTouchedAt = Date.now();
+      return nextPriority;
     }
 
     if (playlist.length === 0) {
@@ -343,7 +336,9 @@ export function createFilRougeManager() {
       playlistLength: playlist.length,
     });
     scheduleSave();
-    return next ? { ...next, lastTouchedAt: Date.now() } : null;
+    if (!next) return null;
+    next.lastTouchedAt = Date.now();
+    return next;
   }
 
   /**
@@ -367,7 +362,8 @@ export function createFilRougeManager() {
    */
   function peekNextTrackFromAny() {
     if (priorityQueue.length > 0) {
-      return { ...priorityQueue[0], lastTouchedAt: Date.now() };
+      priorityQueue[0].lastTouchedAt = Date.now();
+      return priorityQueue[0];
     }
     return peekNextTrack();
   }
@@ -489,7 +485,7 @@ export function createFilRougeManager() {
     setLoopEnabled,
 
     // Persistence
-    save: _saveNow,
+    save: () => { _saveNow(); trackStore.save(); },
     restore,
   };
 }

@@ -195,8 +195,18 @@ export function createRelayModeManager({
     if (hash === _lastStateHash) return;
     _lastStateHash = hash;
 
-    // Notifier les nouveaux items queue / fil rouge pour pré-dl
-    const allItems = [...(state.queue || []), ...(state.filRouge || [])];
+    // Notifier les nouveaux items queue / fil rouge pour pré-dl. Un même morceau
+    // peut désormais légitimement figurer dans les deux listes côté maître
+    // (trackStore partagé, cf. SPECS.md §2.6) — dédoublonné par id pour éviter
+    // un double pré-téléchargement côté relais (SPEC-9.3.3.1).
+    const seenIds = new Set();
+    const allItems = [...(state.queue || []), ...(state.filRouge || [])].filter((item) => {
+      const id = item?.id;
+      if (id == null) return true;
+      if (seenIds.has(id)) return false;
+      seenIds.add(id);
+      return true;
+    });
     if (allItems.length) onRelayQueueItemsAvailable?.(allItems);
 
     onApplyRelayState?.(state);

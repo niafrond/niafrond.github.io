@@ -6,7 +6,7 @@ function makeDeps(overrides = {}) {
     getStoredTrackMeta: jest.fn().mockReturnValue(null),
     patchStoredTrackMeta: jest.fn(),
     searchTracksViaApi: jest.fn().mockResolvedValue([]),
-    filRougeManager: { patchPlaylistItem: jest.fn() },
+    trackStore: { patch: jest.fn() },
     invalidateDeckMetaCache: jest.fn(),
     refreshDeckMetaDisplays: jest.fn(),
     renderQueueDebounced: jest.fn(),
@@ -44,7 +44,7 @@ describe('metaFetchService', () => {
     expect(item.genre).toBe('Techno');
     expect(deps.renderQueueDebounced).toHaveBeenCalledTimes(1);
     expect(deps.renderFilRougeDebounced).toHaveBeenCalledTimes(1);
-    expect(deps.filRougeManager.patchPlaylistItem).toHaveBeenCalledWith('a', { bpm: 128, genre: 'Techno' });
+    expect(deps.trackStore.patch).toHaveBeenCalledWith('a', { bpm: 128, genre: 'Techno' });
     // Already complete after the cache hit, no need to call the API.
     expect(deps.searchTracksViaApi).not.toHaveBeenCalled();
   });

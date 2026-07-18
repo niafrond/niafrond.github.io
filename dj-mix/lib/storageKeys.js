@@ -1,6 +1,7 @@
 export const STORAGE_KEYS = Object.freeze({
   queue: 'dj-mix:queue',
   filRouge: 'dj-mix:fil-rouge',
+  tracks: 'dj-mix:tracks',
   downloaderApiUrl: 'dj-mix:downloader:api:url',
   downloaderApiToken: 'dj-mix:downloader:api:token',
   fxVisibility: 'dj-mix:fx:hidden',

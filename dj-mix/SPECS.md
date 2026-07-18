@@ -160,7 +160,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-2.1.2** GIVEN le morceau en cours de lecture — WHEN `removeFromQueue(index)` est appelé sur ce morceau — THEN la suppression est bloquée.
 - **SPEC-2.1.3** GIVEN un morceau retiré — WHEN il est supprimé — THEN `releaseLocalBlob()` est appelé pour libérer sa mémoire, et `deckBCueIndex` est ajusté si nécessaire.
 - **SPEC-2.1.4** Le réordonnancement se fait par drag-and-drop via `reorderQueue(fromIndex, toIndex, insertAfter)`. Le `deckBCueIndex` est mis à jour si l'item déplacé affecte l'item cué.
-- **SPEC-2.1.5** La queue est persistée dans `localStorage` sous la clé `dj-mix:queue`.
+- **SPEC-2.1.5** La queue est persistée dans `localStorage` sous la clé `dj-mix:queue`, au format allégé `{ index, items: [{id, queueSource, autoDjReferenceTrackId, autoDjStartOffsetMs}] }` — les métadonnées du morceau (nom, artiste, bpm, artwork, etc.) sont résolues via le trackStore partagé (cf. §2.6), pas dupliquées ici.
 
 ### 2.2 Dédoublonnage
 
@@ -189,17 +189,29 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-2.5.3** GIVEN un item chargé sur une seule platine — THEN un badge `queue-deck-badge` affiche `platine 1` ou `platine 2`. GIVEN le même item chargé sur les deux platines — THEN le badge affiche `DJ 1+2`.
 - **SPEC-2.5.4** Les chips BPM/genre (`queue-chip`) ne sont affichées que si `djMode === 'dance'` ; masquées en mode `music`.
 
+### 2.6 Stockage partagé des morceaux (trackStore)
+
+- **SPEC-2.6.1** GIVEN un morceau ajouté à la Queue OU au Fil Rouge — WHEN il est résolu via `trackStore.getOrCreate(track)` (`lib/trackStore.js`) — THEN une instance JS canonique unique est créée (ou réutilisée si un morceau de même `id` — résolu via `getTrackCacheKey`, cf. `lib/audioSourceManager.js` — existe déjà), partagée par toute liste qui référence ce morceau. Un morceau peut légitimement être présent à la fois dans la Queue et le Fil Rouge : dans ce cas, les deux listes référencent le MÊME objet, pas deux copies indépendantes.
+- **SPEC-2.6.2** GIVEN un morceau déjà connu du trackStore — WHEN `getOrCreate` est appelé avec des champs supplémentaires — THEN ces champs sont fusionnés dans l'enregistrement existant ; un champ entrant vide/nul/zéro ne remplace jamais un champ déjà renseigné (ex. un `artUrl` déjà résolu n'est pas écrasé par un ajout ultérieur sans artwork).
+- **SPEC-2.6.3** GIVEN un champ de morceau (bpm, genre, artUrl, stems, cachePath, djTrackId, djHasAnalysis, djTransition, djIsIconic, etc.) — WHEN il est modifié via `trackStore.patch(id, fields)` (utilisé par `metaFetchService`, la récupération d'artwork, `filRougeManager.patchPlaylistItem`) — THEN la mutation est visible immédiatement depuis la Queue ET le Fil Rouge si le morceau est présent dans les deux, sans appel de synchronisation manuel entre les deux listes.
+- **SPEC-2.6.4** Champs persistés (liste blanche) : `id, uri, name, artist, artUrl, duration, bpm, genre, loudnessDb, audioFeatures, cachePath, ratingKey, persistedSourceUrl, stemsStatus, stems, danceability, year, djTrackId, djHasAnalysis, djTransition, djIsIconic`. Persisté sous la clé `dj-mix:tracks`, sauvegarde debounced à `400 ms`.
+- **SPEC-2.6.5** Champs runtime, jamais persistés, réinitialisés à la restauration : `sourceState, sourceError, sourceMeta, localBlobUrl, localStemUrls, lastTouchedAt`. Un `getOrCreate` sur un enregistrement déjà existant NE réinitialise PAS ces champs, pour ne pas jeter un cache déjà préchargé (ex. morceau du Fil Rouge préchargé en ghost sur la platine inactive, puis effectivement ajouté à la Queue).
+- **SPEC-2.6.6** Champs "locaux à la liste" gérés par la Queue elle-même, absents du trackStore : `queueSource`, `autoDjReferenceTrackId`, `autoDjStartOffsetMs`.
+- **SPEC-2.6.7** GIVEN un enregistrement persisté `dj-mix:queue`/`dj-mix:fil-rouge` au format antérieur (contenant les métadonnées complètes au lieu d'une simple référence `id`) — WHEN il est restauré après mise à jour de l'application — THEN ses champs sont capturés dans le trackStore via `getOrCreate` plutôt que perdus ; la restauration tolère indifféremment l'ancien format riche et le nouveau format allégé.
+- **SPEC-2.6.8** GIVEN un morceau n'est plus référencé par aucune liste (Queue, playlist Fil Rouge, priorityQueue Fil Rouge) — WHEN un balayage périodique (`trackStore.pruneUnreferenced`, toutes les `10 min` après un premier passage au démarrage) s'exécute — THEN son enregistrement est retiré du trackStore, pour éviter une croissance illimitée de `dj-mix:tracks`.
+
 ---
 
 ## 3. Fil Rouge
 
 ### 3.1 Playlist de fond
 
-- **SPEC-3.1.1** Le Fil Rouge est une playlist séparée, persistée dans `localStorage` sous la clé `dj-mix:fil-rouge`.
-- **SPEC-3.1.2** Structure persistée : `{ playlist, priorityQueue, currentIndex, shuffleEnabled, loopEnabled }`.
+- **SPEC-3.1.1** Le Fil Rouge est une playlist séparée, persistée dans `localStorage` sous la clé `dj-mix:fil-rouge`, au format allégé `{ playlist: [ids...], priorityQueue: [ids...], currentIndex, shuffleEnabled, loopEnabled }` — les métadonnées de chaque morceau sont résolues via le trackStore partagé avec la Queue (cf. §2.6).
+- **SPEC-3.1.2** Structure persistée : `{ playlist, priorityQueue, currentIndex, shuffleEnabled, loopEnabled }`, `playlist`/`priorityQueue` étant des tableaux d'`id` (pas d'objets morceau complets).
 - **SPEC-3.1.3** La sauvegarde est debounced à `400 ms` via `scheduleSave()`.
 - **SPEC-3.1.4** GIVEN la queue est vide — WHEN le morceau en cours se termine — THEN le Fil Rouge fournit le prochain morceau. `filRougeManager.isActive()` retourne `true` si `playlist.length > 0`.
 - **SPEC-3.1.5** Les items en `priorityQueue` sont joués avant ceux de la playlist principale.
+- **SPEC-3.1.6** GIVEN `djPlanManager` marque un morceau comme iconique (`djIsIconic`) via `patchPlaylistItem` — THEN ce champ est persisté (bug historique corrigé : il était absent de la liste blanche de sérialisation du Fil Rouge avant l'introduction du trackStore partagé, et donc silencieusement perdu à chaque sauvegarde/rechargement).
 
 ### 3.2 Gestion
 
@@ -605,6 +617,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-9.3.1** Polling : `GET /api/relay/state/:id` toutes les `1500 ms` (`POLL_MS`). Premier poll immédiat.
 - **SPEC-9.3.2** GIVEN un nouvel état reçu — THEN `onApplyRelayState(state)` est appelé pour synchroniser morceau, position, paramètres.
 - **SPEC-9.3.3** GIVEN de nouveaux items dans queue/filRouge — THEN `onRelayQueueItemsAvailable(items)` déclenche le pré-téléchargement.
+- **SPEC-9.3.3.1** GIVEN un morceau présent à la fois dans `queue` et `filRouge` de l'état relais reçu (trackStore partagé côté maître, cf. SPEC-2.6.1) — WHEN les items sont transmis à `onRelayQueueItemsAvailable` — THEN il n'est signalé qu'une seule fois (déduplication par `id`), évitant un double pré-téléchargement côté relais.
 - **SPEC-9.3.4** Polling de commandes : toutes les `2500 ms`, âge max `60 000 ms`.
 - **SPEC-9.3.5** GIVEN une commande `addToQueue` reçue du relais (bouton « Ajouter en suivant ») — THEN la piste est insérée à l'index `currentIndex + 1` (ou `0` si aucune piste ne joue), déplaçant l'ancienne piste suivante d'un rang dans la file. `deckBCueIndex` est incrémenté si son index est ≥ à la position d'insertion.
 - **SPEC-9.3.6** GIVEN la page relais est chargée et que l'utilisateur a appuyé pour initialiser l'AudioContext — THEN : (a) le polling de métadonnées démarre immédiatement (titre en cours, pré-téléchargements) ; (b) le flux **audio** n'est PAS démarré ; (c) le bouton `▶ Lancer le flux` est affiché (`isActive() === false`).
@@ -688,6 +701,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 |-----|---------------------|
 | queue | `dj-mix:queue` |
 | filRouge | `dj-mix:fil-rouge` |
+| tracks | `dj-mix:tracks` |
 | crossfadeSeconds | `dj-mix:crossfade-seconds` |
 | mixTransitionMode | `dj-mix:transition:mode` |
 | trackMaxDuration | `dj-mix:track:max-duration` |
@@ -880,14 +894,16 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 ### Structure des données clés
 
-**Track / QueueItem :**
+**Track / QueueItem :** ces objets sont désormais des instances partagées entre la
+Queue et le Fil Rouge (`lib/trackStore.js`, cf. SPEC-2.6) — un même morceau présent
+dans les deux listes référence le même objet, pas une copie.
 ```
 { id, name, artist, duration, bpm, genre, loudnessDb,
   artUrl, stems { vocal, instru },
   persistedSourceUrl, downloadUrl, localBlobUrl,
   queueSource, startOffsetMs, autoDjStartOffsetMs,
   sourceState: 'idle' | 'downloading' | 'ready' | 'done' | 'error',
-  djTrackId, djHasAnalysis, djTransition,
+  djTrackId, djHasAnalysis, djTransition, djIsIconic,
   ratingKey, uri }
 ```
 

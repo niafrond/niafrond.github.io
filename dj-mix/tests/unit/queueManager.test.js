@@ -1,5 +1,7 @@
 import { jest, describe, test, expect, beforeEach } from '@jest/globals';
 import { createQueueManager } from '../../lib/queueManager.js';
+import { createFilRougeManager } from '../../lib/filRougeManager.js';
+import { createTrackStore } from '../../lib/trackStore.js';
 import { uiState } from '../../lib/uiState.js';
 
 function makeManager(overrides = {}) {
@@ -361,5 +363,56 @@ describe('resolveTrackStartOffsetMs', () => {
   test('returns 0 for null', () => {
     const mgr = makeManager();
     expect(mgr.resolveTrackStartOffsetMs(null)).toBe(0);
+  });
+});
+
+// ── addToQueue — trackStore sharing (SPEC-2.6) ───────────────────────────────
+
+describe('addToQueue trackStore sharing', () => {
+  test('a track added to the queue and to the fil rouge shares the same object reference', async () => {
+    const trackStore = createTrackStore();
+    const mgr = makeManager({ trackStore });
+    const filRouge = createFilRougeManager({ trackStore });
+
+    await mgr.addToQueue(makeTrack({ id: 'shared', name: 'Shared Song', artist: 'S' }));
+    filRouge.addToPlaylist({ id: 'shared', name: 'Shared Song', artist: 'S' });
+
+    expect(uiState.queue[0]).toBe(filRouge.getPlaylist()[0]);
+  });
+
+  test('a mutation on the shared track is visible from both the queue and the fil rouge', async () => {
+    const trackStore = createTrackStore();
+    const mgr = makeManager({ trackStore });
+    const filRouge = createFilRougeManager({ trackStore });
+
+    await mgr.addToQueue(makeTrack({ id: 'shared', name: 'Shared Song', artist: 'S' }));
+    filRouge.addToPlaylist({ id: 'shared', name: 'Shared Song', artist: 'S' });
+
+    trackStore.patch('shared', { artUrl: 'http://x/art.png' });
+
+    expect(uiState.queue[0].artUrl).toBe('http://x/art.png');
+    expect(filRouge.getPlaylist()[0].artUrl).toBe('http://x/art.png');
+  });
+
+  test('a rejected duplicate add does not clobber the existing item queueSource', async () => {
+    const mgr = makeManager();
+    await mgr.addToQueue(makeTrack({ id: 'x' }), { source: 'manual' });
+    await mgr.addToQueue(makeTrack({ id: 'x' }), { source: 'auto-dj', autoDjReferenceTrackId: 'ref' });
+    expect(uiState.queue).toHaveLength(1);
+    expect(uiState.queue[0].queueSource).toBe('manual');
+    expect(uiState.queue[0].autoDjReferenceTrackId).toBeNull();
+  });
+
+  test('calls renderFilRougeTrackStatus and pushRelayStateIfMaster after a successful add (SPEC-3.5.5)', async () => {
+    const renderFilRougeTrackStatus = jest.fn();
+    const pushRelayStateIfMaster = jest.fn();
+    const mgr = makeManager({ renderFilRougeTrackStatus, pushRelayStateIfMaster });
+    await mgr.addToQueue(makeTrack());
+    expect(pushRelayStateIfMaster).toHaveBeenCalled();
+    // preloadMixDataForDeckItem resolves asynchronously (mocked via mockResolvedValue) —
+    // flush the microtask queue before asserting the chained callback ran.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(renderFilRougeTrackStatus).toHaveBeenCalledWith(expect.objectContaining({ id: 'track-1' }));
   });
 });

@@ -1,4 +1,5 @@
 import { createFilRougeManager } from '../../lib/filRougeManager.js';
+import { createTrackStore } from '../../lib/trackStore.js';
 
 beforeEach(() => {
   localStorage.clear();
@@ -259,6 +260,61 @@ describe('filRougeManager', () => {
       expect(item.djTrackId).toBeNull();
       expect(item.djHasAnalysis).toBe(false);
       expect(item.djTransition).toBeNull();
+    });
+  });
+
+  describe('trackStore sharing (SPEC-2.6)', () => {
+    test('addToPlaylist shares the same object reference as the trackStore record', () => {
+      const trackStore = createTrackStore();
+      const mgr = createFilRougeManager({ trackStore });
+      mgr.addToPlaylist({ id: '1', name: 'Song A', artist: 'A' });
+      expect(mgr.getPlaylist()[0]).toBe(trackStore.get('1'));
+    });
+
+    test('a mutation made elsewhere via trackStore.patch is visible from the playlist', () => {
+      const trackStore = createTrackStore();
+      const mgr = createFilRougeManager({ trackStore });
+      mgr.addToPlaylist({ id: '1', name: 'Song A', artist: 'A' });
+      trackStore.patch('1', { artUrl: 'http://x/art.png' });
+      expect(mgr.getPlaylist()[0].artUrl).toBe('http://x/art.png');
+    });
+
+    test('patchPlaylistItem persistence survives a fresh trackStore restore (djIsIconic regression)', () => {
+      const trackStore = createTrackStore();
+      const mgr = createFilRougeManager({ trackStore });
+      mgr.addToPlaylist({ id: '1', name: 'Song A', artist: 'A' });
+      mgr.patchPlaylistItem('1', { djIsIconic: true });
+      trackStore.save();
+
+      const freshStore = createTrackStore();
+      freshStore.restore();
+      expect(freshStore.get('1').djIsIconic).toBe(true);
+    });
+
+    test('an injected trackStore is not re-restored by filRougeManager (would clobber unflushed records)', () => {
+      const trackStore = createTrackStore();
+      trackStore.getOrCreate({ id: 'pre-existing', name: 'Pre', artist: 'P' });
+      const mgr = createFilRougeManager({ trackStore });
+      expect(mgr.getPlaylist()).toHaveLength(0);
+      expect(trackStore.get('pre-existing')).not.toBeNull();
+    });
+  });
+
+  describe('getNextTrack / peekNextTrackFromAny return live references', () => {
+    test('getNextTrack returns the exact playlist object (not a copy)', () => {
+      const mgr = createFilRougeManager();
+      mgr.addToPlaylist({ id: '1', name: 'Song A', artist: 'A' });
+      mgr.addToPlaylist({ id: '2', name: 'Song B', artist: 'B' });
+
+      const next = mgr.getNextTrack();
+      expect(next).toBe(mgr.getPlaylist()[0]);
+    });
+
+    test('peekNextTrackFromAny returns the exact priority-queue object (not a copy)', () => {
+      const mgr = createFilRougeManager();
+      mgr.addToPriorityQueue({ id: '1', name: 'Song A', artist: 'A' });
+      const peeked = mgr.peekNextTrackFromAny();
+      expect(peeked).toBe(mgr.getPriorityQueue()[0]);
     });
   });
 });

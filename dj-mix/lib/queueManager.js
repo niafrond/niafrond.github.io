@@ -10,6 +10,7 @@ import {
 } from './searchUtils.js';
 import { getDirectPlayableSourceUrl, getTrackCacheKey } from './audioSourceManager.js';
 import { clearQueueDragMarkers } from './queueDnD.js';
+import { createTrackStore } from './trackStore.js';
 
 /**
  * Gère la file d'attente : ajout, suppression, réordonnancement, index courant
@@ -42,6 +43,11 @@ import { clearQueueDragMarkers } from './queueDnD.js';
  * @param {(fn: Function, timeout?: number) => void} options.scheduleIdle
  * @param {(fn: Function) => void} options.enqueueBackgroundTask
  * @param {() => HTMLElement|null} options.getQueueList
+ * @param {ReturnType<typeof import('./trackStore.js').createTrackStore>} [options.trackStore]
+ *   Registre partagé des morceaux (cf. SPECS.md §2.6). Si non fourni, cette instance
+ *   crée et possède son propre trackStore (utile pour les tests).
+ * @param {(item: object) => void} [options.renderFilRougeTrackStatus] - SPEC-3.5.5
+ * @param {() => void} [options.pushRelayStateIfMaster]
  */
 export function createQueueManager(options) {
   const {
@@ -71,6 +77,9 @@ export function createQueueManager(options) {
     scheduleIdle,
     enqueueBackgroundTask,
     getQueueList,
+    trackStore = createTrackStore(),
+    renderFilRougeTrackStatus,
+    pushRelayStateIfMaster,
   } = options;
 
   // ── Utility: resolve start offset from a raw API track ───────────────────────
@@ -253,7 +262,10 @@ export function createQueueManager(options) {
     const genre = extractTrackGenre(track);
     const suggestedStartOffsetMs = resolveTrackStartOffsetMs(track);
 
-    const item = {
+    // Résolu (ou créé) via le trackStore partagé : si ce morceau existe déjà
+    // ailleurs (Fil Rouge, autre entrée de queue), on récupère la MÊME
+    // référence — pas une copie divergente (cf. SPECS.md §2.6).
+    const item = trackStore.getOrCreate({
       id: getTrackCacheKey(track) || track.name,
       uri: track.uri || track.downloadUrl || `api:track:${track.id || track.name}`,
       name: track.name || track.title || 'Titre API',
@@ -273,15 +285,7 @@ export function createQueueManager(options) {
         distortionUrl: stems.distortionUrl,
       },
       persistedSourceUrl: getDirectPlayableSourceUrl(track),
-      sourceState: 'idle',
-      sourceError: null,
-      sourceMeta: null,
-      localBlobUrl: null,
-      queueSource: source,
-      autoDjReferenceTrackId: source === 'auto-dj' ? (autoDjReferenceTrackId || null) : null,
-      autoDjStartOffsetMs: suggestedStartOffsetMs,
-      lastTouchedAt: Date.now(),
-    };
+    });
 
     const q = uiState.queue;
     const isDuplicate = q.some(
@@ -313,6 +317,14 @@ export function createQueueManager(options) {
       return;
     }
 
+    // Champs "locaux à la queue" : assignés seulement une fois l'ajout confirmé
+    // (jamais avant le check de doublon ci-dessus, pour ne pas corrompre la
+    // provenance d'une entrée déjà présente lors d'une tentative de ré-ajout).
+    item.queueSource = source;
+    item.autoDjReferenceTrackId = source === 'auto-dj' ? (autoDjReferenceTrackId || null) : null;
+    item.autoDjStartOffsetMs = suggestedStartOffsetMs;
+    item.lastTouchedAt = Date.now();
+
     let addedIndex;
     if (asNext) {
       addedIndex = Math.min(Math.max(uiState.currentIndex + 1, 0), q.length);
@@ -336,7 +348,7 @@ export function createQueueManager(options) {
         logInfo?.('addToQueue(): replacing fil rouge ghost on inactive deck', {
           inactiveDeck, newItemId: item.id, newItemName: item.name,
         });
-        fetchAndStoreArtworkForItem?.(item, inactiveDeck).catch(() => {});
+        fetchAndStoreArtworkForItem?.(item, inactiveDeck, { skipNotification: true }).catch(() => {});
         const replaceMixPreload = preloadMixDataForDeckItem?.(item, inactiveDeck);
         ensureLocalSource?.(item).then(async (url) => {
           const player = getPlayer?.();
@@ -402,12 +414,22 @@ export function createQueueManager(options) {
       renderQueue?.();
     }
 
+    // Warm cache immédiatement à l'ajout pour une lecture instantanée plus tard.
     ensureLocalSource?.(item).catch(() => {});
-    preloadMixDataForDeckItem?.(item, getResolvedInactiveDeck?.()).catch(() => {});
+
+    // Précharge les mix data tôt pour que les recommandations de start offset soient
+    // dispo avant le cue/play. Une fois résolu, rafraîchit le badge Fil Rouge pour
+    // refléter la présence des mix data désormais en localStorage (SPEC-3.5.5).
+    preloadMixDataForDeckItem?.(item, getResolvedInactiveDeck?.())
+      .then(() => { renderFilRougeTrackStatus?.(item); })
+      .catch(() => {});
 
     if (showAddedToast) {
       showToast?.(`✔ "${item.name}" ajouté`);
     }
+
+    // Maître : notifier les relais qu'une piste a été ajoutée.
+    pushRelayStateIfMaster?.();
   }
 
   return {

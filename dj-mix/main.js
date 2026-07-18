@@ -133,6 +133,7 @@ import { createMixControls } from './lib/mixControls.js';
 import { createDjFxController } from './lib/djFxController.js';
 import { createPlaylistManager } from './lib/playlistManager.js';
 import { createFilRougeManager } from './lib/filRougeManager.js';
+import { createTrackStore } from './lib/trackStore.js';
 import { restoreQueueFromStorage, saveQueueToStorage } from './lib/queueStorage.js';
 import { createShellUi } from './lib/shellUi.js';
 import { createDjMixRenderer, renderDjSetQualityBadge, renderDjTransitionFeedback } from './lib/uiRenderer.js';
@@ -1167,7 +1168,7 @@ const saveQueueDebounced = createDebouncedFn(saveQueue, 1500);
 
 const restoreQueue = () => {
   logInfo('restoreQueue(): loading queue from storage');
-  const restored = restoreQueueFromStorage(QUEUE_KEY);
+  const restored = restoreQueueFromStorage(QUEUE_KEY, trackStore);
   if (!restored?.items?.length) {
     logInfo('restoreQueue(): no stored queue found');
     return;
@@ -1336,14 +1337,34 @@ const playlistManager = createPlaylistManager({
 
 const { setCacheFilter, switchTab } = playlistManager;
 
-const filRougeManager = createFilRougeManager();
+// Registre partagé des morceaux (cf. SPECS.md §2.6) : la Queue et le Fil Rouge
+// référencent les mêmes objets track — plus de copies divergentes entre les deux
+// listes. Doit être restauré AVANT le Fil Rouge et la Queue (qui résolvent leurs
+// ids persistés à travers ce store).
+const trackStore = createTrackStore();
+trackStore.restore();
+
+const filRougeManager = createFilRougeManager({ trackStore });
 const filRougeTrackStatusByKey = new Map();
+
+/**
+ * Purge du trackStore tout morceau qui n'est plus référencé par la Queue ni
+ * par le Fil Rouge (playlist + priorityQueue). SPEC-2.6.8.
+ */
+function sweepTrackStore() {
+  const referencedIds = new Set([
+    ...queue.map((item) => item.id),
+    ...filRougeManager.getPlaylist().map((item) => item.id),
+    ...filRougeManager.getPriorityQueue().map((item) => item.id),
+  ]);
+  trackStore.pruneUnreferenced(referencedIds);
+}
 
 const { fetchMissingMeta } = createMetaFetchService({
   getStoredTrackMeta,
   patchStoredTrackMeta,
   searchTracksViaApi,
-  filRougeManager,
+  trackStore,
   invalidateDeckMetaCache: () => uiRenderer.invalidateDeckMetaCache(),
   refreshDeckMetaDisplays: () => uiRenderer.refreshDeckMetaDisplays(),
   renderQueueDebounced: () => renderQueueDebounced(),
@@ -1867,7 +1888,7 @@ async function fetchFilRougeArtwork(track) {
   if (needsArt) {
     const cachedBlobUrl = await restoreArtwork(track).catch(() => null);
     if (cachedBlobUrl) {
-      filRougeManager.patchPlaylistItem(track.id, { artUrl: cachedBlobUrl });
+      trackStore.patch(track.id, { artUrl: cachedBlobUrl });
       renderFilRougeDebounced();
       if (!needsMeta) return;
     }
@@ -1876,7 +1897,7 @@ async function fetchFilRougeArtwork(track) {
   // Use artwork URL cache (in-memory + localStorage)
   const cachedArtUrl = needsArt ? getArtworkUrl(track.name, track.artist) : null;
   if (needsArt && cachedArtUrl) {
-    filRougeManager.patchPlaylistItem(track.id, { artUrl: cachedArtUrl });
+    trackStore.patch(track.id, { artUrl: cachedArtUrl });
     persistArtwork(track, cachedArtUrl).catch(() => {});
     renderFilRougeDebounced();
     if (!needsMeta) return;
@@ -1898,7 +1919,7 @@ async function fetchFilRougeArtwork(track) {
       if (hit.genre) patch.genre = hit.genre;
     }
     if (Object.keys(patch).length) {
-      filRougeManager.patchPlaylistItem(track.id, patch);
+      trackStore.patch(track.id, patch);
       renderFilRougeDebounced();
     }
   } catch (_) {}
@@ -1925,7 +1946,7 @@ async function fetchAndStoreArtworkForItem(item, deck, { skipNotification = fals
   const cachedBlobUrl = await restoreArtwork(item).catch(() => null);
   if (cachedBlobUrl) {
     item.artUrl = cachedBlobUrl;
-    if (item.id) filRougeManager.patchPlaylistItem(item.id, { artUrl: cachedBlobUrl });
+    if (item.id) trackStore.patch(item.id, { artUrl: cachedBlobUrl });
     if (skipNotification) { updateUpcomingArtwork(); } else { updateNowPlaying(item, deck ?? getFocusDeck()); }
     renderQueue();
     renderFilRougeDebounced();
@@ -1936,7 +1957,7 @@ async function fetchAndStoreArtworkForItem(item, deck, { skipNotification = fals
   const cachedArtUrl = getArtworkUrl(item.name, item.artist);
   if (cachedArtUrl) {
     item.artUrl = cachedArtUrl;
-    if (item.id) filRougeManager.patchPlaylistItem(item.id, { artUrl: cachedArtUrl });
+    if (item.id) trackStore.patch(item.id, { artUrl: cachedArtUrl });
     if (skipNotification) { updateUpcomingArtwork(); } else { updateNowPlaying(item, deck ?? getFocusDeck()); }
     renderQueue();
     renderFilRougeDebounced();
@@ -1951,7 +1972,7 @@ async function fetchAndStoreArtworkForItem(item, deck, { skipNotification = fals
     item.artUrl = artUrl;
     setArtworkUrl(item.name, item.artist, artUrl);
     if (item.id) {
-      filRougeManager.patchPlaylistItem(item.id, { artUrl });
+      trackStore.patch(item.id, { artUrl });
     }
     if (skipNotification) { updateUpcomingArtwork(); } else { updateNowPlaying(item, deck ?? getFocusDeck()); }
     renderQueue();
@@ -2296,7 +2317,9 @@ filRougeClearBtn?.addEventListener('click', () => {
  */
 function addToFilRouge(item) {
   if (!item) return;
-  const filRougeItem = {
+  // Résolu (ou créé) via le trackStore partagé (cf. SPECS.md §2.6) au lieu d'une
+  // copie manuelle : si ce morceau est déjà dans la Queue, on récupère la MÊME référence.
+  const filRougeItem = trackStore.getOrCreate({
     id: item.id || item.cachePath || `fr-${Date.now()}`,
     name: item.name || item.trackName || item.title || 'Inconnu',
     artist: item.artist || item.artistName || 'Artiste inconnu',
@@ -2309,7 +2332,7 @@ function addToFilRouge(item) {
     ratingKey: item.ratingKey || '',
     stemsStatus: item.stemsStatus || '',
     stems: item.stems || null,
-  };
+  });
   const added = filRougeManager.addToPlaylist(filRougeItem);
   if (added) {
     setFilRougeTrackStatus(filRougeItem, {
@@ -3422,6 +3445,13 @@ const queueMgr = createQueueManager({
   scheduleIdle,
   enqueueBackgroundTask,
   getQueueList: () => queueList,
+  trackStore,
+  renderFilRougeTrackStatus,
+  pushRelayStateIfMaster: () => {
+    if (relayModeManager.getRole() === 'master') {
+      relayModeManager.schedulePush(buildRelayStateSnapshot());
+    }
+  },
 });
 
 const filRougeCtrl = createFilRougeController({
@@ -3900,6 +3930,12 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
   startMetricsLoop();
   showSetupLoading(false);
 
+  // Le trackStore ne se réduit jamais tout seul (cf. SPECS.md SPEC-2.6.8) : purge
+  // périodique des morceaux qui ne sont plus référencés par aucune liste, pour
+  // éviter une croissance illimitée de dj-mix:tracks.
+  sweepTrackStore();
+  setInterval(sweepTrackStore, 10 * 60 * 1000);
+
   // Enrich artworks for persisted fil rouge items that don't have one yet.
   const filRougeItemsWithoutArt = filRougeManager.getPlaylist().filter((t) => !t.artUrl);
   if (filRougeItemsWithoutArt.length) {
@@ -4075,30 +4111,14 @@ function hookPlayerEvents() {
       pendingAutoplay = false;
       const nextFromFilRouge = filRougeManager.getNextTrack();
       if (nextFromFilRouge) {
-        const filRougeItem = {
-          id: nextFromFilRouge.id || `filrouge-${Date.now()}`,
-          uri: nextFromFilRouge.persistedSourceUrl || '',
-          name: nextFromFilRouge.name || 'Inconnu',
-          artist: nextFromFilRouge.artist || 'Artiste inconnu',
-          artUrl: nextFromFilRouge.artUrl || '',
-          duration: nextFromFilRouge.duration || 0,
-          bpm: nextFromFilRouge.bpm || null,
-          genre: nextFromFilRouge.genre || '',
-          cachePath: nextFromFilRouge.cachePath || '',
-          persistedSourceUrl: nextFromFilRouge.persistedSourceUrl || '',
-          ratingKey: nextFromFilRouge.ratingKey || '',
-          stemsStatus: nextFromFilRouge.stemsStatus || '',
-          stems: nextFromFilRouge.stems || null,
-          sourceState: 'idle',
-          sourceError: null,
-          sourceMeta: null,
-          localBlobUrl: null,
-          queueSource: 'fil-rouge',
-          lastTouchedAt: Date.now(),
-        };
-        queue.push(filRougeItem);
+        // Référence partagée du trackStore : réutilisée telle quelle (pas de copie)
+        // pour que le cache/état préchargé éventuel reste valable (cf. SPECS.md §2.6).
+        nextFromFilRouge.uri = nextFromFilRouge.uri || nextFromFilRouge.persistedSourceUrl || '';
+        nextFromFilRouge.queueSource = 'fil-rouge';
+        nextFromFilRouge.lastTouchedAt = Date.now();
+        queue.push(nextFromFilRouge);
         uiState.currentIndex = 0;
-        uiState.currentTrackId = filRougeItem.id;
+        uiState.currentTrackId = nextFromFilRouge.id;
         renderQueue();
         renderFilRouge();
         await startPlaybackForIndex(0, 'play');
@@ -4347,28 +4367,12 @@ autoMixBtn?.addEventListener('click', async () => {
   if (nextIndex < 0 && filRougeManager.isActive()) {
     const nextFromFilRouge = filRougeManager.getNextTrack();
     if (nextFromFilRouge) {
-      const item = {
-        id: nextFromFilRouge.id || `filrouge-${Date.now()}`,
-        uri: nextFromFilRouge.persistedSourceUrl || '',
-        name: nextFromFilRouge.name || 'Inconnu',
-        artist: nextFromFilRouge.artist || 'Artiste inconnu',
-        artUrl: nextFromFilRouge.artUrl || '',
-        duration: nextFromFilRouge.duration || 0,
-        bpm: nextFromFilRouge.bpm || null,
-        genre: nextFromFilRouge.genre || '',
-        cachePath: nextFromFilRouge.cachePath || '',
-        persistedSourceUrl: nextFromFilRouge.persistedSourceUrl || '',
-        ratingKey: nextFromFilRouge.ratingKey || '',
-        stemsStatus: nextFromFilRouge.stemsStatus || '',
-        stems: nextFromFilRouge.stems || null,
-        sourceState: 'idle',
-        sourceError: null,
-        sourceMeta: null,
-        localBlobUrl: null,
-        queueSource: 'fil-rouge',
-        lastTouchedAt: Date.now(),
-      };
-      queue.push(item);
+      // Référence partagée du trackStore : réutilisée telle quelle (pas de copie)
+      // pour que le cache/état préchargé éventuel reste valable (cf. SPECS.md §2.6).
+      nextFromFilRouge.uri = nextFromFilRouge.uri || nextFromFilRouge.persistedSourceUrl || '';
+      nextFromFilRouge.queueSource = 'fil-rouge';
+      nextFromFilRouge.lastTouchedAt = Date.now();
+      queue.push(nextFromFilRouge);
       nextIndex = queue.length - 1;
       renderFilRouge();
     }
@@ -4608,30 +4612,14 @@ async function launchDeckFromQueue(deck, options = {}) {
     if (filRougeManager.isActive()) {
       const nextFromFilRouge = filRougeManager.getNextTrack();
       if (nextFromFilRouge) {
-        const filRougeItem = {
-          id: nextFromFilRouge.id || `filrouge-${Date.now()}`,
-          uri: nextFromFilRouge.persistedSourceUrl || '',
-          name: nextFromFilRouge.name || 'Inconnu',
-          artist: nextFromFilRouge.artist || 'Artiste inconnu',
-          artUrl: nextFromFilRouge.artUrl || '',
-          duration: nextFromFilRouge.duration || 0,
-          bpm: nextFromFilRouge.bpm || null,
-          genre: nextFromFilRouge.genre || '',
-          cachePath: nextFromFilRouge.cachePath || '',
-          persistedSourceUrl: nextFromFilRouge.persistedSourceUrl || '',
-          ratingKey: nextFromFilRouge.ratingKey || '',
-          stemsStatus: nextFromFilRouge.stemsStatus || '',
-          stems: nextFromFilRouge.stems || null,
-          sourceState: 'idle',
-          sourceError: null,
-          sourceMeta: null,
-          localBlobUrl: null,
-          queueSource: 'fil-rouge',
-          lastTouchedAt: Date.now(),
-        };
-        queue.push(filRougeItem);
+        // Référence partagée du trackStore : réutilisée telle quelle (pas de copie)
+        // pour que le cache/état préchargé éventuel reste valable (cf. SPECS.md §2.6).
+        nextFromFilRouge.uri = nextFromFilRouge.uri || nextFromFilRouge.persistedSourceUrl || '';
+        nextFromFilRouge.queueSource = 'fil-rouge';
+        nextFromFilRouge.lastTouchedAt = Date.now();
+        queue.push(nextFromFilRouge);
         uiState.currentIndex = 0;
-        uiState.currentTrackId = filRougeItem.id;
+        uiState.currentTrackId = nextFromFilRouge.id;
         renderQueue();
         renderFilRouge();
       }
@@ -6048,7 +6036,10 @@ async function addToQueue(track, options = {}) {
   const bpm = extractTrackBpm({ ...track, audioFeatures });
   const genre = extractTrackGenre(track);
   const suggestedStartOffsetMs = resolveTrackStartOffsetMs(track);
-  const item = {
+  // Résolu (ou créé) via le trackStore partagé : si ce morceau existe déjà
+  // ailleurs (Fil Rouge, autre entrée de queue), on récupère la MÊME référence
+  // — pas une copie divergente (cf. SPECS.md §2.6).
+  const item = trackStore.getOrCreate({
     id: getTrackCacheKey(track) || track.name,
     uri: track.uri || track.downloadUrl || `api:track:${track.id || track.name}`,
     name: track.name || track.title || 'Titre API',
@@ -6066,15 +6057,7 @@ async function addToQueue(track, options = {}) {
       distortionUrl: stems.distortionUrl,
     },
     persistedSourceUrl: getDirectPlayableSourceUrl(track),
-    sourceState: 'idle',
-    sourceError: null,
-    sourceMeta: null,
-    localBlobUrl: null,
-    queueSource: source,
-    autoDjReferenceTrackId: source === 'auto-dj' ? (autoDjReferenceTrackId || null) : null,
-    autoDjStartOffsetMs: suggestedStartOffsetMs,
-    lastTouchedAt: Date.now(),
-  };
+  });
 
   const isDuplicate = queue.some(
     (q) => q.id === item.id || (q.name === item.name && q.artist === item.artist)
@@ -6103,6 +6086,14 @@ async function addToQueue(track, options = {}) {
 
     return;
   }
+
+  // Champs "locaux à la queue" : assignés seulement une fois l'ajout confirmé
+  // (jamais avant le check de doublon ci-dessus, pour ne pas corrompre la
+  // provenance d'une entrée déjà présente lors d'une tentative de ré-ajout).
+  item.queueSource = source;
+  item.autoDjReferenceTrackId = source === 'auto-dj' ? (autoDjReferenceTrackId || null) : null;
+  item.autoDjStartOffsetMs = suggestedStartOffsetMs;
+  item.lastTouchedAt = Date.now();
 
   let addedIndex;
   if (asNext) {
@@ -6503,27 +6494,13 @@ async function startPlaybackForIndex(index, mode, options = {}) {
         // précharger le prochain morceau fil rouge sur le deck inactif (via peek, sans avancer l'index).
         const peekedFilRouge = filRougeManager.peekNextTrackFromAny();
         if (peekedFilRouge) {
-          const ghostItem = {
-            id: peekedFilRouge.id || `filrouge-ghost-${Date.now()}`,
-            uri: peekedFilRouge.persistedSourceUrl || '',
-            name: peekedFilRouge.name || 'Inconnu',
-            artist: peekedFilRouge.artist || 'Artiste inconnu',
-            artUrl: peekedFilRouge.artUrl || '',
-            duration: peekedFilRouge.duration || 0,
-            bpm: peekedFilRouge.bpm || null,
-            genre: peekedFilRouge.genre || '',
-            cachePath: peekedFilRouge.cachePath || '',
-            persistedSourceUrl: peekedFilRouge.persistedSourceUrl || '',
-            ratingKey: peekedFilRouge.ratingKey || '',
-            stemsStatus: peekedFilRouge.stemsStatus || '',
-            stems: peekedFilRouge.stems || null,
-            sourceState: 'idle',
-            sourceError: null,
-            sourceMeta: null,
-            localBlobUrl: null,
-            queueSource: 'fil-rouge',
-            lastTouchedAt: Date.now(),
-          };
+          // Référence partagée du trackStore réutilisée directement (pas de copie
+          // "ghost" jetable) : si l'utilisateur commit ce morceau plus tard, le
+          // préchargement fait ici (sourceState/localBlobUrl) n'est pas perdu
+          // (cf. SPECS.md §2.6). Le badge de statut Fil Rouge n'est pas piloté par
+          // ces champs runtime, donc les muter avant "confirmation" n'affecte pas l'UI.
+          const ghostItem = peekedFilRouge;
+          ghostItem.uri = ghostItem.uri || ghostItem.persistedSourceUrl || '';
           setDeckItem(inactiveDeck, ghostItem);
           pendingFilRougeOnInactiveDeck = ghostItem;
           updatePlannedStartMarker();

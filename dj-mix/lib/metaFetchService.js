@@ -11,7 +11,7 @@
  * @param {(name: string, artist?: string) => {bpm?: string|number, genre?: string}|null} deps.getStoredTrackMeta
  * @param {(name: string, artist: string|undefined, patch: object) => void} deps.patchStoredTrackMeta
  * @param {(query: string, limit?: number) => Promise<Array<object>>} deps.searchTracksViaApi
- * @param {{ patchPlaylistItem: (id: string, patch: object) => void }} [deps.filRougeManager]
+ * @param {{ patch: (id: string, fields: object) => boolean }} [deps.trackStore] - registre partagé (cf. SPECS.md §2.6)
  * @param {() => void} [deps.invalidateDeckMetaCache]
  * @param {() => void} [deps.refreshDeckMetaDisplays]
  * @param {() => void} [deps.renderQueueDebounced]
@@ -21,7 +21,7 @@ export function createMetaFetchService({
   getStoredTrackMeta,
   patchStoredTrackMeta,
   searchTracksViaApi,
-  filRougeManager,
+  trackStore,
   invalidateDeckMetaCache,
   refreshDeckMetaDisplays,
   renderQueueDebounced,
@@ -35,7 +35,10 @@ export function createMetaFetchService({
   const metaFetchAttempted = new Set();
 
   function notifyChanged(item) {
-    if (item.id) filRougeManager?.patchPlaylistItem(item.id, { bpm: item.bpm, genre: item.genre });
+    // Le morceau (qu'il vienne de la Queue ou du Fil Rouge) EST l'enregistrement
+    // partagé du trackStore — cette mutation est donc déjà visible des deux côtés ;
+    // on la route par trackStore.patch() uniquement pour déclencher sa persistence.
+    if (item.id) trackStore?.patch(item.id, { bpm: item.bpm, genre: item.genre });
     invalidateDeckMetaCache?.();
     refreshDeckMetaDisplays?.();
     renderQueueDebounced?.();

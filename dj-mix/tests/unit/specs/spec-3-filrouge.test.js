@@ -4,6 +4,7 @@
  */
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createFilRougeManager } from '../../../lib/filRougeManager.js';
+import { createTrackStore } from '../../../lib/trackStore.js';
 import { computeNextBatchSize } from '../../../lib/downloadBatchSizing.js';
 
 beforeEach(() => {
@@ -73,6 +74,27 @@ describe('SPEC-3.1 — Fil Rouge basics', () => {
     mgr.clearPlaylist();
     expect(mgr.getPlaylistLength()).toBe(0);
     expect(mgr.isActive()).toBe(false);
+  });
+
+  test('SPEC-3.1.1/3.1.2 — persists the playlist as a thin id-list, not full track objects', () => {
+    const mgr = createFilRougeManager();
+    mgr.addToPlaylist(makeTrack({ id: '1', name: 'Song A' }));
+    mgr.save();
+    const raw = JSON.parse(localStorage.getItem('dj-mix:fil-rouge'));
+    expect(raw.playlist).toEqual(['1']);
+    expect(raw.playlist[0]).not.toHaveProperty('name');
+  });
+
+  test('SPEC-3.1.6 — djIsIconic (patched via patchPlaylistItem) survives a save/restore cycle', () => {
+    const trackStore = createTrackStore();
+    const mgr = createFilRougeManager({ trackStore });
+    mgr.addToPlaylist({ id: '1', name: 'Song A', artist: 'A' });
+    mgr.patchPlaylistItem('1', { djIsIconic: true });
+    mgr.save();
+
+    const freshStore = createTrackStore();
+    freshStore.restore();
+    expect(freshStore.get('1').djIsIconic).toBe(true);
   });
 });
 

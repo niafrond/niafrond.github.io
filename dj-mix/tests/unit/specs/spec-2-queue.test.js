@@ -1,9 +1,11 @@
 /**
  * Spec-driven tests for §2 — File d'attente (Queue)
- * References: SPEC-2.1–2.4
+ * References: SPEC-2.1–2.6
  */
 import { jest, describe, test, expect, beforeEach } from '@jest/globals';
 import { createQueueManager } from '../../../lib/queueManager.js';
+import { createFilRougeManager } from '../../../lib/filRougeManager.js';
+import { createTrackStore } from '../../../lib/trackStore.js';
 import { uiState } from '../../../lib/uiState.js';
 
 function makeManager(overrides = {}) {
@@ -223,5 +225,52 @@ describe('SPEC-2.1 — queueSource metadata', () => {
     const mgr = makeManager();
     await mgr.addToQueue(makeTrack(), { source: 'manual', autoDjReferenceTrackId: 'ref' });
     expect(uiState.queue[0].autoDjReferenceTrackId).toBeNull();
+  });
+});
+
+// ── SPEC-2.6 — Stockage partagé des morceaux (trackStore) ───────────────────
+
+describe('SPEC-2.6 — trackStore sharing', () => {
+  test('SPEC-2.6.1 — a track added to both the queue and the fil rouge is the same object', async () => {
+    const trackStore = createTrackStore();
+    const mgr = makeManager({ trackStore });
+    const filRouge = createFilRougeManager({ trackStore });
+
+    await mgr.addToQueue(makeTrack({ id: 'shared', name: 'Song', artist: 'A' }));
+    filRouge.addToPlaylist({ id: 'shared', name: 'Song', artist: 'A' });
+
+    expect(uiState.queue[0]).toBe(filRouge.getPlaylist()[0]);
+  });
+
+  test('SPEC-2.6.2 — merging does not clobber an already-resolved field with an empty incoming one', async () => {
+    const trackStore = createTrackStore();
+    const mgr = makeManager({ trackStore });
+    await mgr.addToQueue(makeTrack({ id: 'shared', bpm: 128, artUrl: 'http://x/art.png' }));
+    // Re-add the same track (e.g. re-triggered from a search result) without bpm/art resolved yet.
+    await mgr.addToQueue(makeTrack({ id: 'shared', bpm: 0, artUrl: '' }));
+    expect(uiState.queue[0].bpm).toBe(128);
+    expect(uiState.queue[0].artUrl).toBe('http://x/art.png');
+  });
+
+  test('SPEC-2.6.3 — a trackStore.patch mutation is visible from the queue without manual sync', async () => {
+    const trackStore = createTrackStore();
+    const mgr = makeManager({ trackStore });
+    await mgr.addToQueue(makeTrack({ id: 'shared' }));
+    trackStore.patch('shared', { bpm: 140, genre: 'Techno' });
+    expect(uiState.queue[0].bpm).toBe(140);
+    expect(uiState.queue[0].genre).toBe('Techno');
+  });
+
+  test('SPEC-2.6.5 — getOrCreate does not reset runtime fields on an already-warmed track', async () => {
+    const trackStore = createTrackStore();
+    const mgr = makeManager({ trackStore });
+    await mgr.addToQueue(makeTrack({ id: 'shared' }));
+    uiState.queue[0].sourceState = 'ready';
+    uiState.queue[0].localBlobUrl = 'blob:warm';
+
+    // Re-adding the same track (duplicate, rejected) must not discard the warm cache.
+    await mgr.addToQueue(makeTrack({ id: 'shared' }));
+    expect(uiState.queue[0].sourceState).toBe('ready');
+    expect(uiState.queue[0].localBlobUrl).toBe('blob:warm');
   });
 });

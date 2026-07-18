@@ -1,7 +1,18 @@
 import { createLogger } from './logger.js';
-import { extractTrackBpm, extractTrackGenre } from './searchUtils.js';
 
 const logger = createLogger('storage');
+
+// Champs "locaux à la liste" : décrivent pourquoi/comment un morceau est
+// dans la queue, pas le morceau lui-même. Le reste des métadonnées vit dans
+// le trackStore partagé (lib/trackStore.js, cf. SPECS.md §2.6).
+function pickListLocalFields(item) {
+  return {
+    id: item.id,
+    queueSource: item.queueSource || 'manual',
+    autoDjReferenceTrackId: item.autoDjReferenceTrackId ?? null,
+    autoDjStartOffsetMs: Number(item.autoDjStartOffsetMs) || 0,
+  };
+}
 
 export function saveQueueToStorage(options) {
   const {
@@ -13,21 +24,7 @@ export function saveQueueToStorage(options) {
   try {
     const serialized = {
       index: currentIndex,
-      items: queue.map((item) => ({
-        id: item.id,
-        uri: item.uri,
-        name: item.name,
-        artist: item.artist,
-        artUrl: (item.artUrl && !String(item.artUrl).startsWith('blob:')) ? item.artUrl : '',
-        duration: item.duration,
-        bpm: Number.isFinite(Number(extractTrackBpm(item))) ? Number(extractTrackBpm(item)) : null,
-        genre: String(extractTrackGenre(item) || '').trim(),
-        loudnessDb: Number.isFinite(item.loudnessDb) ? item.loudnessDb : null,
-        cachePath: item.cachePath || '',
-        ratingKey: item.ratingKey || '',
-        persistedSourceUrl: item.persistedSourceUrl || '',
-        sourceState: typeof item.sourceState === 'string' ? item.sourceState : 'idle',
-      })),
+      items: queue.map(pickListLocalFields),
     };
     localStorage.setItem(storageKey, JSON.stringify(serialized));
     logger.debug('queue.save.success', {
@@ -43,7 +40,16 @@ export function saveQueueToStorage(options) {
   }
 }
 
-export function restoreQueueFromStorage(storageKey) {
+/**
+ * Restaure la queue depuis localStorage. Résout chaque item (référence
+ * `{id, ...}` au format allégé, ou item complet à l'ancien format riche) via
+ * `trackStore.getOrCreate()` — cette étape absorbe indifféremment les deux
+ * formats : un item riche persisté par une version antérieure de l'app
+ * alimente le trackStore au lieu d'être perdu (cf. SPECS.md SPEC-2.6.7).
+ * @param {string} storageKey
+ * @param {{ getOrCreate: (raw: object) => object }} trackStore
+ */
+export function restoreQueueFromStorage(storageKey, trackStore) {
   try {
     const raw = localStorage.getItem(storageKey);
     if (!raw) {
@@ -57,19 +63,13 @@ export function restoreQueueFromStorage(storageKey) {
       return null;
     }
 
-    const items = parsed.items.map((item) => ({
-      ...item,
-      bpm: Number.isFinite(Number(item.bpm)) ? Number(item.bpm) : null,
-      genre: String(item.genre || '').trim(),
-      sourceState: typeof item.sourceState === 'string' ? item.sourceState : 'idle',
-      sourceError: null,
-      sourceMeta: null,
-      localBlobUrl: null,
-      cachePath: item.cachePath || '',
-      loudnessDb: Number.isFinite(Number(item.loudnessDb)) ? Number(item.loudnessDb) : null,
-      persistedSourceUrl: item.persistedSourceUrl || '',
-      lastTouchedAt: Date.now(),
-    }));
+    const items = parsed.items.map((rawItem) => {
+      const track = trackStore.getOrCreate(rawItem);
+      track.queueSource = rawItem.queueSource || 'manual';
+      track.autoDjReferenceTrackId = rawItem.autoDjReferenceTrackId ?? null;
+      track.autoDjStartOffsetMs = Number(rawItem.autoDjStartOffsetMs) || 0;
+      return track;
+    });
 
     const index = typeof parsed.index === 'number' ? Math.max(0, parsed.index) : 0;
     logger.info('queue.restore.success', {
