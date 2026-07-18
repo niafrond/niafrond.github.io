@@ -19,7 +19,6 @@ const DJ_FX_TRANSITION_MODE = Object.freeze({
 
 const DJ_FX_TOGGLE_FEATURE = Object.freeze({
   echoDelay: 'echo',
-  flangerPhaser: 'distortion',
 });
 
 const DJ_FX_TRANSIENT_ACTIONS = new Set([
@@ -562,23 +561,6 @@ export function createDjFxController(options) {
     }, 48);
   }
 
-  function triggerFlangerPhaserFx(deck) {
-    if (!getPlayer()) return;
-    const safeDeck = deck === 'B' ? 'B' : 'A';
-    const startedAt = Date.now();
-    const totalMs = 1500;
-    const timer = setInterval(() => {
-      const elapsed = Date.now() - startedAt;
-      const phase = elapsed / 85;
-      const rate = 1 + (Math.sin(phase) * 0.06);
-      getPlayer()?.setDeckPlaybackRate(safeDeck, rate);
-      if (elapsed >= totalMs) {
-        clearInterval(timer);
-        getPlayer()?.resetDeckPlaybackRate(safeDeck);
-      }
-    }, 70);
-  }
-
   function triggerNoiseFx() {
     void playVinylNoise(1.35);
     void triggerSamplingFx();
@@ -730,10 +712,6 @@ export function createDjFxController(options) {
           updateDjFxMenuUI();
         }, 1200);
         break;
-      case 'flangerPhaser':
-        triggerFlangerPhaserFx(focusDeck);
-        toggleDjFxFeature('flangerPhaser', 'Flanger / Phaser', undefined, true);
-        break;
       case 'roll':
         triggerLoopRoll(focusDeck, { windowMs: 220, totalMs: 1100, tickMs: 105 });
         triggerTransientDjFxAction('roll', 1000);
@@ -832,15 +810,6 @@ export function createDjFxController(options) {
           scheduleAutoDjMixFeatureRestore('distortion', prevDistortion, 1200);
         }
         triggerTransientDjFxAction('reverb', 1200);
-        return true;
-      case 'flangerPhaser':
-        {
-          const prevDistortion = Boolean(getMixFeatures().distortion);
-          setMixFeatureEnabled('distortion', true);
-          scheduleAutoDjMixFeatureRestore('distortion', prevDistortion, 1600);
-        }
-        triggerFlangerPhaserFx(safeDeck);
-        triggerTransientDjFxAction('flangerPhaser', 1600);
         return true;
       case 'roll':
         triggerLoopRoll(safeDeck, { windowMs: 220, totalMs: 1100, tickMs: 105 });

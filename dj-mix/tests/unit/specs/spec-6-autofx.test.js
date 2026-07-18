@@ -33,18 +33,22 @@ beforeEach(() => {
 // ── SPEC-6.1 — 17 effect types ──────────────────────────────────────────────
 
 describe('SPEC-6.1 — Effect catalogue', () => {
-  test('exactly 17 types exist', () => {
-    expect(AUTO_DJ_FX_TYPES).toHaveLength(17);
+  test('exactly 16 types exist', () => {
+    expect(AUTO_DJ_FX_TYPES).toHaveLength(16);
   });
 
   const expectedTypes = [
-    'filter', 'lowPass', 'highPass', 'echoDelay', 'reverb', 'flangerPhaser',
+    'filter', 'lowPass', 'highPass', 'echoDelay', 'reverb',
     'roll', 'loop', 'beatRepeat', 'brake', 'backspin', 'noise',
     'eq', 'keyShift', 'scratching', 'hotCues', 'sampling',
   ];
 
   test.each(expectedTypes)('type "%s" is registered', (type) => {
     expect(AUTO_DJ_FX_TYPES).toContain(type);
+  });
+
+  test('flangerPhaser is removed (no longer a registered type)', () => {
+    expect(AUTO_DJ_FX_TYPES).not.toContain('flangerPhaser');
   });
 
   test('each type has a config entry', () => {

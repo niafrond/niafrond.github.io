@@ -6,7 +6,6 @@ export const AUTO_DJ_FX_CONFIG = Object.freeze({
   highPass: { label: 'High-pass', category: 'filter' },
   echoDelay: { label: 'Echo / Delay', category: 'modulation' },
   reverb: { label: 'Reverb', category: 'modulation' },
-  flangerPhaser: { label: 'Flanger / Phaser', category: 'modulation' },
   roll: { label: 'Roll / Loop', category: 'beat' },
   loop: { label: 'Loop', category: 'beat' },
   beatRepeat: { label: 'Beat Repeat', category: 'beat' },

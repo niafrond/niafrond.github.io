@@ -397,7 +397,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 ## 6. Auto FX (DJ FX automatiques)
 
-### 6.1 Effets disponibles (17 types)
+### 6.1 Effets disponibles (16 types)
 
 | # | Clé | Catégorie | Défaut |
 |---|-----|-----------|--------|
@@ -406,18 +406,17 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 | 3 | `highPass` | filter | ON |
 | 4 | `echoDelay` | modulation | ON |
 | 5 | `reverb` | modulation | **OFF** |
-| 6 | `flangerPhaser` | modulation | ON |
-| 7 | `roll` | beat | ON |
-| 8 | `loop` | beat | ON |
-| 9 | `beatRepeat` | beat | ON |
-| 10 | `brake` | transport | ON |
-| 11 | `backspin` | transport | ON |
-| 12 | `noise` | textural | ON |
-| 13 | `eq` | filter | ON |
-| 14 | `keyShift` | pitch | ON |
-| 15 | `scratching` | scratch | ON |
-| 16 | `hotCues` | cue | **OFF** |
-| 17 | `sampling` | sample | ON |
+| 6 | `roll` | beat | ON |
+| 7 | `loop` | beat | ON |
+| 8 | `beatRepeat` | beat | ON |
+| 9 | `brake` | transport | ON |
+| 10 | `backspin` | transport | ON |
+| 11 | `noise` | textural | ON |
+| 12 | `eq` | filter | ON |
+| 13 | `keyShift` | pitch | ON |
+| 14 | `scratching` | scratch | ON |
+| 15 | `hotCues` | cue | **OFF** |
+| 16 | `sampling` | sample | ON |
 
 ### 6.2 Déclenchement (canTriggerAutoDjFx)
 

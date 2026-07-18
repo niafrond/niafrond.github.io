@@ -5135,7 +5135,7 @@ distortionBtn?.addEventListener('click', () => {
 
 // Actions DJ qui nécessitent des stems (voix/instru per-deck, echo/distorsion globaux)
 const STEM_FX_ACTIONS_FOCUS_DECK = new Set(['vocalRemove', 'instruRemove']);
-const STEM_FX_ACTIONS_BOTH_DECKS = new Set(['echoDelay', 'reverb', 'flangerPhaser']);
+const STEM_FX_ACTIONS_BOTH_DECKS = new Set(['echoDelay', 'reverb']);
 
 djFxMenu?.addEventListener('click', (event) => {
   const button = event.target?.closest?.('[data-fx-action]');

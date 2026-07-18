@@ -60,7 +60,6 @@
 | `instruRemove` | Suppression de l'instrumental (stems) | — | Toggle |
 | `echoDelay` | Echo / Delay on/off | 1200 | Toggle |
 | `reverb` | Reverb courte (echo + distortion temporaires) | 1200 | Transient |
-| `flangerPhaser` | Flanger / Phaser (oscillation du playback rate) | 1500 | Toggle |
 | `roll` | Loop roll courte (220 ms, boucle rapide) | 1000 | Transient |
 | `loop` | Loop longue (520 ms, boucle etendue) | 2600 | Transient |
 | `beatRepeat` | Beat repeat (140 ms, seek instantane) | 900 | Transient |
