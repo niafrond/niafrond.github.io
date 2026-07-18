@@ -1,3 +1,9 @@
+## [1.262.0](https://github.com/niafrond/niafrond.github.io/compare/v1.261.0...v1.262.0) (2026-07-18)
+
+### Features
+
+* implement shared trackStore for queue and fil rouge management ([62652d0](https://github.com/niafrond/niafrond.github.io/commit/62652d01b4ba2f13cc8a1b2421a1059953ec41be))
+
 ## [1.261.0](https://github.com/niafrond/niafrond.github.io/compare/v1.260.0...v1.261.0) (2026-07-18)
 
 ### Features
