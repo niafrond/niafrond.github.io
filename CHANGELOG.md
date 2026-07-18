@@ -1,3 +1,10 @@
+## [1.261.0](https://github.com/niafrond/niafrond.github.io/compare/v1.260.0...v1.261.0) (2026-07-18)
+
+### Features
+
+* Implement individual sample activation for sampling effects and update settings management ([efb94f4](https://github.com/niafrond/niafrond.github.io/commit/efb94f4b6943631391cad1bba30da5c766fd07ac))
+* Remove Flanger/Phaser effect from the DJ FX catalogue and update related documentation and tests ([6d8355a](https://github.com/niafrond/niafrond.github.io/commit/6d8355a2a7b48c30716c5a5cb4a1ce24be5b79fa))
+
 ## [1.260.0](https://github.com/niafrond/niafrond.github.io/compare/v1.259.0...v1.260.0) (2026-07-15)
 
 ### Features
