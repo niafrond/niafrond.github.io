@@ -1,6 +1,7 @@
 import { toDeck } from './deckHelpers.js';
 import { uiState } from './uiState.js';
 import { LOOP_CUE_REPEAT_COUNT, LOOP_CUE_INTERVAL_MS } from './constants.js';
+import { isSamplerSoundAllowed } from './samplerSoundsManager.js';
 
 const DJ_FX_TRANSITION_MODE = Object.freeze({
   filter: 'filter_sweep_low_high',
@@ -51,6 +52,7 @@ export function createDjFxController(options) {
     getNextTrackMixData,
     getPlayer,
     getQueue,
+    getSamplerSoundsSettings,
     getSelectedTransitionMode,
     getTrackMixData,
     setMixFeatureEnabled,
@@ -59,11 +61,11 @@ export function createDjFxController(options) {
     transitionModeLabels,
   } = options;
 
-  const SAMPLER_SOUND_URLS = [
-    new URL('../resources/sample_airhorn.mp3', import.meta.url).href,
-    new URL('../resources/sample_stab.mp3', import.meta.url).href,
-    new URL('../resources/sample_laser.mp3', import.meta.url).href,
-    new URL('../resources/sample_siren.mp3', import.meta.url).href,
+  const SAMPLER_SOUNDS = [
+    { id: 'airhorn', url: new URL('../resources/sample_airhorn.mp3', import.meta.url).href },
+    { id: 'stab', url: new URL('../resources/sample_stab.mp3', import.meta.url).href },
+    { id: 'laser', url: new URL('../resources/sample_laser.mp3', import.meta.url).href },
+    { id: 'siren', url: new URL('../resources/sample_siren.mp3', import.meta.url).href },
   ];
 
   const runtime = {
@@ -255,19 +257,20 @@ export function createDjFxController(options) {
 
   async function loadSamplerSoundBuffers(ctx) {
     if (runtime.samplerSoundBuffers) return runtime.samplerSoundBuffers;
-    const buffers = await Promise.all(
-      SAMPLER_SOUND_URLS.map(async (url) => {
+    const entries = await Promise.all(
+      SAMPLER_SOUNDS.map(async ({ id, url }) => {
         try {
           const response = await fetch(url);
           if (!response.ok) return null;
           const arrayBuffer = await response.arrayBuffer();
-          return ctx.decodeAudioData(arrayBuffer);
+          const buffer = await ctx.decodeAudioData(arrayBuffer);
+          return { id, buffer };
         } catch (_) {
           return null;
         }
       }),
     );
-    const valid = buffers.filter(Boolean);
+    const valid = entries.filter(Boolean);
     if (valid.length > 0) {
       runtime.samplerSoundBuffers = valid;
     }
@@ -514,7 +517,16 @@ export function createDjFxController(options) {
         return;
       }
 
-      const buffer = buffers[Math.floor(Math.random() * buffers.length)];
+      const settings = typeof getSamplerSoundsSettings === 'function' ? getSamplerSoundsSettings() : null;
+      const allowedBuffers = settings
+        ? buffers.filter((entry) => isSamplerSoundAllowed(settings, entry.id))
+        : buffers;
+      if (allowedBuffers.length === 0) {
+        showToast('Sampling indisponible: aucun sample autorise.', true);
+        return;
+      }
+
+      const { buffer } = allowedBuffers[Math.floor(Math.random() * allowedBuffers.length)];
       const source = ctx.createBufferSource();
       source.buffer = buffer;
       source.playbackRate.value = 0.9 + Math.random() * 0.2;

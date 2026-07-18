@@ -471,6 +471,8 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-6.7.4** Les buffers sont chargés en lazy-load via `loadSamplerSoundBuffers(ctx)` et mis en cache dans `runtime.samplerSoundBuffers`.
 - **SPEC-6.7.5** Le playback rate est randomisé dans `[0.9, 1.1]` pour la variété.
 - **SPEC-6.7.6** Fallback : si aucun sample n'est disponible (erreur réseau, format non supporté), un toast d'erreur est affiché.
+- **SPEC-6.7.7** Chaque sample (`airhorn`, `stab`, `laser`, `siren`) peut être activé/désactivé individuellement dans la config (`resources/CREDITS.md` liste les sons ; `lib/samplerSoundsManager.js` gère les settings, persistés sous la clé `dj-mix:sampling:sounds:settings`). Tous activés par défaut.
+- **SPEC-6.7.8** `triggerSamplingFx` ne pioche que parmi les samples chargés ET autorisés. Si tous les samples autorisés sont désactivés, un toast d'erreur "aucun sample autorise" est affiché sans jouer de son.
 
 ---
 
@@ -696,6 +698,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 | ramFilterEnabled | `dj-mix:ram-filter:enabled` |
 | ramTotalMbOverride | `dj-mix:ram-filter:total-mb-override` |
 | autoDjFxSettings | `dj-mix:auto-dj:fx:settings` |
+| samplerSoundsSettings | `dj-mix:sampling:sounds:settings` |
 | autoSuggestionQueueSearchEnabled | `dj-mix:auto-dj:suggestion-queue-search:enabled` |
 | queueLoop | `dj-mix:queue:loop` |
 | queueShuffle | `dj-mix:queue:shuffle` |

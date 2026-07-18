@@ -155,6 +155,12 @@ import {
   readAutoDjFxSettings,
 } from './lib/autoDjFxManager.js';
 import {
+  SAMPLER_SOUND_CONFIG,
+  isSamplerSoundAllowed,
+  persistSamplerSoundsSettings,
+  readSamplerSoundsSettings,
+} from './lib/samplerSoundsManager.js';
+import {
   markAutomixTriggered,
   resetAutomixTimeline,
   setAutomixTriggerMs,
@@ -321,6 +327,7 @@ let maxDurMarkerTriggeredForTrack = false;
 /** True once the DJ Plan mixOutSec marker has fired automix for the current track (prevents double-trigger). */
 let djPlanMixOutTriggeredForTrack = false;
 let autoDjFxSettings = readAutoDjFxSettings();
+let samplerSoundsSettings = readSamplerSoundsSettings();
 let lastAutoDjFxTriggeredAt = 0;
 let djMode = readDjModeSetting(); // 'dance' | 'music'
 let djExternalPlanEnabled = readDjExternalPlanEnabledSetting();
@@ -376,6 +383,22 @@ function updateAutoDjFxConfigUI() {
 
   if (autoDjFxStatus) {
     autoDjFxStatus.textContent = getAutoDjFxStatusText(autoDjFxSettings);
+  }
+}
+
+function updateSamplerSoundsConfigUI() {
+  for (const toggleEl of samplerSoundToggleEls) {
+    const id = String(toggleEl.dataset.samplerSoundId || '');
+    toggleEl.checked = isSamplerSoundAllowed(samplerSoundsSettings, id);
+  }
+
+  if (samplerSoundsStatus) {
+    const total = Object.keys(SAMPLER_SOUND_CONFIG).length;
+    const allowedCount = Object.keys(SAMPLER_SOUND_CONFIG).reduce(
+      (count, id) => count + (isSamplerSoundAllowed(samplerSoundsSettings, id) ? 1 : 0),
+      0,
+    );
+    samplerSoundsStatus.textContent = `Samples: ${allowedCount}/${total} autorises.`;
   }
 }
 
@@ -904,6 +927,8 @@ const autoDjFxMinIntervalInput = document.getElementById('auto-dj-fx-min-interva
 const autoDjFxMaxIntervalInput = document.getElementById('auto-dj-fx-max-interval-input');
 const autoDjFxEnabledBtn = document.getElementById('auto-dj-fx-enabled-btn');
 const autoDjFxToggleEls = Array.from(document.querySelectorAll('[data-auto-fx-type]'));
+const samplerSoundsStatus = document.getElementById('sampler-sounds-status');
+const samplerSoundToggleEls = Array.from(document.querySelectorAll('[data-sampler-sound-id]'));
 
 const tabBtns = document.querySelectorAll('.tab-bar-btn');
 const tabPanels = {
@@ -1072,6 +1097,7 @@ const djFxController = createDjFxController({
   getNextTrackMixData: () => autoModeManager.getNextTrackMixData?.(),
   getPlayer: () => player,
   getQueue: () => queue,
+  getSamplerSoundsSettings: () => samplerSoundsSettings,
   getSelectedTransitionMode: () => selectedTransitionMode,
   getTrackMixData,
   setMixFeatureEnabled,
@@ -3810,6 +3836,7 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
   updateDjExternalPlanUI();
   updateAutoModeUI();
   updateAutoDjFxConfigUI();
+  updateSamplerSoundsConfigUI();
   renderDjModeUI();
   startSpotifyFilRougeSyncLoop();
 
@@ -4955,6 +4982,22 @@ for (const toggleEl of autoDjFxToggleEls) {
     };
     persistAutoDjFxSettings(autoDjFxSettings);
     updateAutoDjFxConfigUI();
+  });
+}
+
+for (const toggleEl of samplerSoundToggleEls) {
+  toggleEl.addEventListener('change', () => {
+    const id = String(toggleEl.dataset.samplerSoundId || '');
+    if (!id) return;
+    samplerSoundsSettings = {
+      ...samplerSoundsSettings,
+      allowed: {
+        ...samplerSoundsSettings.allowed,
+        [id]: Boolean(toggleEl.checked),
+      },
+    };
+    persistSamplerSoundsSettings(samplerSoundsSettings);
+    updateSamplerSoundsConfigUI();
   });
 }
 
