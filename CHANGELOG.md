@@ -1,3 +1,13 @@
+## [2.0.0](https://github.com/niafrond/niafrond.github.io/compare/v1.263.0...v2.0.0) (2026-07-19)
+
+### ⚠ BREAKING CHANGES
+
+* enhance DJ mix functionality with new sampling effects and local path database
+
+### Features
+
+* enhance DJ mix functionality with new sampling effects and local path database ([c53d157](https://github.com/niafrond/niafrond.github.io/commit/c53d1573366354a543b664765477eac4c801cb6a))
+
 ## [1.263.0](https://github.com/niafrond/niafrond.github.io/compare/v1.262.0...v1.263.0) (2026-07-19)
 
 ### Features
