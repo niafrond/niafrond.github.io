@@ -1,3 +1,9 @@
+## [1.263.0](https://github.com/niafrond/niafrond.github.io/compare/v1.262.0...v1.263.0) (2026-07-19)
+
+### Features
+
+* implement audio CDN support for streaming and downloading tracks ([33c5293](https://github.com/niafrond/niafrond.github.io/commit/33c529382d2ae9300edb9d304735250d19e35bc0))
+
 ## [1.262.0](https://github.com/niafrond/niafrond.github.io/compare/v1.261.0...v1.262.0) (2026-07-18)
 
 ### Features
