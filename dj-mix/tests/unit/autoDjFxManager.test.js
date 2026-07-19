@@ -19,6 +19,11 @@ describe('autoDjFxManager', () => {
     expect(Object.keys(settings.allowed)).toEqual(expect.arrayContaining(AUTO_DJ_FX_TYPES));
   });
 
+  test('Auto DJ FX is disabled by default (was too noisy)', () => {
+    const settings = normalizeAutoDjFxSettings({});
+    expect(settings.enabled).toBe(false);
+  });
+
   test('read/persist roundtrip settings', () => {
     const next = normalizeAutoDjFxSettings({
       allowed: { echoDelay: false },
@@ -34,7 +39,7 @@ describe('autoDjFxManager', () => {
   });
 
   test('canTriggerAutoDjFx enforces min interval', () => {
-    const settings = normalizeAutoDjFxSettings({ minIntervalSec: 10, maxIntervalSec: 20 });
+    const settings = normalizeAutoDjFxSettings({ enabled: true, minIntervalSec: 10, maxIntervalSec: 20 });
     const first = canTriggerAutoDjFx({ type: 'echoDelay' }, settings, 0, 1000);
     expect(first.allowed).toBe(true);
 

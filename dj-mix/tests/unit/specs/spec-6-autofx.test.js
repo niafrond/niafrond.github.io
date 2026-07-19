@@ -85,37 +85,44 @@ describe('SPEC-6.2 — canTriggerAutoDjFx', () => {
   });
 
   test('SPEC-6.2.1 — rejects missing type', () => {
-    const settings = normalizeAutoDjFxSettings({});
+    const settings = normalizeAutoDjFxSettings({ enabled: true });
     const result = canTriggerAutoDjFx({}, settings, 0, 5000);
     expect(result.allowed).toBe(false);
     expect(result.reason).toBe('missing-type');
   });
 
   test('SPEC-6.2.1 — rejects disallowed type', () => {
-    const settings = normalizeAutoDjFxSettings({ allowed: { echoDelay: false } });
+    const settings = normalizeAutoDjFxSettings({ enabled: true, allowed: { echoDelay: false } });
     const result = canTriggerAutoDjFx({ type: 'echoDelay' }, settings, 0, 5000);
     expect(result.allowed).toBe(false);
     expect(result.reason).toBe('not-allowed');
   });
 
   test('SPEC-6.2.1 — rejects when min-interval not elapsed', () => {
-    const settings = normalizeAutoDjFxSettings({ minIntervalSec: 10 });
+    const settings = normalizeAutoDjFxSettings({ enabled: true, minIntervalSec: 10 });
     const result = canTriggerAutoDjFx({ type: 'filter' }, settings, 1000, 5000);
     expect(result.allowed).toBe(false);
     expect(result.reason).toBe('min-interval');
   });
 
   test('SPEC-6.2.1 — allows when all conditions met', () => {
-    const settings = normalizeAutoDjFxSettings({ minIntervalSec: 5 });
+    const settings = normalizeAutoDjFxSettings({ enabled: true, minIntervalSec: 5 });
     const result = canTriggerAutoDjFx({ type: 'filter' }, settings, 0, 10_000);
     expect(result.allowed).toBe(true);
     expect(result.reason).toBe('ok');
   });
 
   test('allows first trigger when lastTriggeredAtMs is 0', () => {
-    const settings = normalizeAutoDjFxSettings({ minIntervalSec: 10 });
+    const settings = normalizeAutoDjFxSettings({ enabled: true, minIntervalSec: 10 });
     const result = canTriggerAutoDjFx({ type: 'filter' }, settings, 0, 1000);
     expect(result.allowed).toBe(true);
+  });
+
+  test('SPEC-6.2.1bis — disabled by default (enabled not specified)', () => {
+    const settings = normalizeAutoDjFxSettings({ minIntervalSec: 5 });
+    const result = canTriggerAutoDjFx({ type: 'filter' }, settings, 0, 10_000);
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toBe('disabled');
   });
 });
 

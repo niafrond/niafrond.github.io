@@ -76,7 +76,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.3.3.2** Contraintes prioritaires (évaluées avant le tirage aléatoire) :
   1. Morceau suivant < 95s → `cut_transition`
   2. Temps restant < 3.5s → `[echo_out_light, cut_transition, fade_in_out]`
-  3. Sinon → tirage aléatoire parmi tous les modes autorisés (sauf `auto`)
+  3. Sinon → tirage aléatoire parmi tous les modes autorisés (sauf `auto` et `reverb_short_simple`, désactivé — cf. SPEC-1.3.7)
 - **SPEC-1.3.3.3** GIVEN la liste de candidats — WHEN le mode est sélectionné — THEN un tirage pondéré est effectué : les modes récemment utilisés (cooldown = `ceil(eligible.length / 2)`, buffer de 16 derniers) reçoivent un poids réduit (0.15 pour les 1–2 derniers, 0.5 pour les 3–4, 0.8 pour les plus anciens).
 
 #### 1.3.4 Filtre RAM
@@ -100,6 +100,13 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.3.6.2** GIVEN le mode `fade_in_out` — WHEN le crossfade progresse — THEN le volume entrant (`to`) commence sa montée dès `t=0` (courbe `t^0.7`, pas de palier plat initial).
 - **SPEC-1.3.6.3** GIVEN le mode `backspin` — WHEN le crossfade progresse — THEN le volume entrant (`to`) commence sa montée dès `t=0.2`, avant l'arrêt complet du deck sortant à `t=0.35`, évitant tout palier de silence total.
 - **SPEC-1.3.6.4** GIVEN le mode `brake_tape_stop_simple` — WHEN le crossfade progresse — THEN le playback rate des deux platines suit le comportement générique (retour lissé vers `1`, `+= (1 − rate) × 0.18` par tick) — ce mode n'applique plus de décélération dédiée du playback rate.
+
+#### 1.3.7 Mode `reverb_short_simple` désactivé
+
+- **SPEC-1.3.7.1** Le mode `reverb_short_simple` produisait un son jugé insupportable (queue de réverb simulée via l'effet distortion) et est désactivé : il reste implémenté dans le catalogue (RAM, courbes, `switch`) mais n'est plus jamais choisi.
+- **SPEC-1.3.7.2** GIVEN le mode `auto` — WHEN un mode est tiré au sort — THEN `reverb_short_simple` est exclu du pool (`#chooseAutoTransitionMode`), même s'il figure dans `allowedTransitionModes`.
+- **SPEC-1.3.7.3** GIVEN le sélecteur manuel "Mode AutoMix" — THEN l'option `reverb_short_simple` n'est plus proposée dans le `<select>`.
+- **SPEC-1.3.7.4** `reverb_short_simple` est retiré de `allowedTransitionModes` côté `main.js` (`DISABLED_TRANSITION_MODES`), donc même une valeur persistée (ancien réglage) retombe sur `auto` via `getSafeAllowedTransitionMode` / `#resolveAllowedTransitionMode`.
 
 ### 1.4 Contrôle du playback
 
@@ -409,6 +416,10 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 ## 6. Auto FX (DJ FX automatiques)
 
+### 6.0 Activation globale
+
+- **SPEC-6.0.1** Le toggle global `enabled` de l'Auto DJ FX ("Robot FX") est **OFF par défaut** (`normalizeAutoDjFxSettings` sans `enabled` fourni). Les FX auto déclenchées pendant le mix (filter, echo, brake, backspin, etc.) rendaient le son insupportable en combinaison avec la transition reverb ; désactivées par défaut. L'utilisateur peut les réactiver via le bouton "AutoFX: OFF/ON".
+
 ### 6.1 Effets disponibles (16 types)
 
 | # | Clé | Catégorie | Défaut |
@@ -484,6 +495,8 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-6.7.6** Fallback : si aucun sample n'est disponible (erreur réseau, format non supporté), un toast d'erreur est affiché.
 - **SPEC-6.7.7** Chaque sample (`airhorn`, `stab`, `laser`, `siren`) peut être activé/désactivé individuellement dans la config (`resources/CREDITS.md` liste les sons ; `lib/samplerSoundsManager.js` gère les settings, persistés sous la clé `dj-mix:sampling:sounds:settings`). Tous activés par défaut.
 - **SPEC-6.7.8** `triggerSamplingFx` ne pioche que parmi les samples chargés ET autorisés. Si tous les samples autorisés sont désactivés, un toast d'erreur "aucun sample autorise" est affiché sans jouer de son.
+- **SPEC-6.7.9** Dans le menu "FX DJ (raccourcis)", le sampling manuel n'est plus un bouton unique tirant un son au hasard : un bouton dédié est affiché par sample (`samplingAirhorn`, `samplingStab`, `samplingLaser`, `samplingSiren`), chacun jouant systématiquement le sample correspondant via `triggerSamplingFx(soundId)`. Si le sample demandé n'est pas autorisé (cf. SPEC-6.7.7), un toast d'erreur dédié est affiché sans jouer de son.
+- **SPEC-6.7.10** Le déclenchement automatique par l'AutoDJ (type `sampling`, cf. 6.1/6.4) conserve le tirage aléatoire parmi les samples autorisés (`triggerSamplingFx()` sans argument) ; seuls les boutons manuels du menu FX DJ sont désormais nommés par sample.
 
 ---
 
@@ -677,6 +690,8 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-11.2.4** `getDownloaderCdnUrl` : si l'utilisateur a configuré une URL CDN explicite (`localStorage`, clé `dj-mix:downloader:cdn:url`), elle est utilisée telle quelle ; sinon elle est dérivée automatiquement de l'URL de l'API en remplaçant le port par `3002` (même host).
 - **SPEC-11.2.5** Le téléchargement d'un stem (`GET /api/stems/download?stem=...`) cible le CDN quand `item.cachePath` est connu (le CDN ne supporte pas la résolution par nom) ; sinon il retombe sur l'API principale, qui supporte encore la résolution par `trackName`/`artistName`.
 - **SPEC-11.2.6** GIVEN un téléchargement résolu via l'étape 1 (orchestration) — WHEN la réponse contient un `cachePath` — THEN `item.cachePath` est mis à jour sur l'item (queue ou prefetch) avant de poursuivre, afin qu'un futur appel pour le même item bénéficie du raccourci SPEC-11.2.0 sans repasser par l'API principale.
+- **SPEC-11.2.7** GIVEN `item.cachePath` inconnu — THEN avant l'étape 1 (orchestration), l'item est recherché dans la DB locale de paths (`trackPathDb`, cf. §11.5) via sa cache key (`id`, sinon `artist::name`, avec repli identique à SPEC-11.1.x) — si une correspondance existe, l'étape 1 est court-circuitée exactement comme SPEC-11.2.0 (streaming CDN direct), sans aucun appel réseau vers l'API principale.
+- **SPEC-11.2.8** GIVEN l'étape 1 (orchestration) résout un `cachePath` — THEN, en plus de la mise à jour de l'item (SPEC-11.2.6), la DB locale de paths est mise à jour (`trackPathDb.set(cacheKey, cachePath)`), pour que le raccourci SPEC-11.2.7 s'applique dès le prochain morceau partageant la même clé — y compris après un rechargement de page ou dans une autre session du navigateur.
 
 ### 11.3 Cache
 
@@ -690,6 +705,13 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-11.4.1** Activé uniquement en mode low-memory : mobile ET RAM ≤ `3072` Mo (`LOW_MEMORY_PLAYBACK_MAX_RAM_MB`).
 - **SPEC-11.4.2** `trimRetainedAudioSources()` conserve uniquement : item deck A, item deck B, item preview. Tous les autres items de la queue sont évictés.
 - **SPEC-11.4.3** Déclenché : après chaque lancement de morceau, après chaque crossfade, lors d'un changement de config RAM.
+
+### 11.5 DB locale de paths (trackPathDb)
+
+- **SPEC-11.5.1** `lib/trackPathDb.js` expose une map clé → `cachePath` minimaliste (aucune autre métadonnée : pas d'artwork, `audioFeatures`, `mixSuggestions`, etc.), persistée dans `localStorage` sous la clé `dj-mix:track-paths` (`STORAGE_KEYS.trackPaths`), avec écriture debounced à `400 ms` pour absorber les écritures en rafale d'une synchro en masse.
+- **SPEC-11.5.2** Clé = `id` du morceau serveur si présent, sinon `artistName::trackName` normalisé (minuscule, trim) — même convention que `getTrackCacheKey` (SPEC-11.3.4).
+- **SPEC-11.5.3** Au démarrage de l'application, `audioSourceManager.syncTrackPathDbFromCacheIndex()` pagine `GET /api/cache/files` (`200` par page) et n'extrait que la `cachePath` (+ clé) de chaque entrée — le reste de la réponse est ignoré, pour garder la DB locale minuscule et les lookups synchrones. Cette synchro est lancée avant `startFilRougeStartupCacheSync` (fire-and-forget, ne bloque pas le reste de l'initialisation ; les échecs réseau sont silencieux).
+- **SPEC-11.5.4** GIVEN un morceau absent à la fois de `item.cachePath` et de la DB locale de paths — THEN la résolution retombe sur l'étape 1 d'orchestration (`POST /api/download`, SPEC-11.2.1), qui interroge le serveur (cache index, dossier local, ou téléchargement YouTube) ; le `cachePath` résolu met à jour la DB locale au passage (SPEC-11.2.8) pour les résolutions futures, y compris pour d'autres morceaux partageant la même clé.
 
 ---
 

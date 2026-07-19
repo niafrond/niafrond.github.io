@@ -67,7 +67,7 @@ export function normalizeAutoDjFxSettings(raw) {
   );
 
   return {
-    enabled: raw?.enabled !== undefined ? Boolean(raw.enabled) : true,
+    enabled: raw?.enabled !== undefined ? Boolean(raw.enabled) : false,
     allowed,
     minIntervalSec: intervals.minIntervalSec,
     maxIntervalSec: intervals.maxIntervalSec,

@@ -254,6 +254,17 @@ describe('SPEC-1.3.3 — Auto mode selects from full pool via player', () => {
     expect(consecutiveSame).toBeLessThan(5);
     player.destroy?.();
   }, 30000);
+
+  test('SPEC-1.3.3.2.d — reverb_short_simple is never auto-picked (disabled, harsh sound)', async () => {
+    const player = await makePlayer();
+    const seen = new Set();
+    for (let i = 0; i < 15; i++) {
+      const mode = await crossfadeAndGetMode(player, { url: `blob:track-${i}`, durationMs: 200000 });
+      if (mode) seen.add(mode);
+    }
+    expect(seen.has('reverb_short_simple')).toBe(false);
+    player.destroy?.();
+  }, 30000);
 });
 
 // ── SPEC-1.3.6 — Aucune transition ne crée de silence ───────────────────────

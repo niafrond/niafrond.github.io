@@ -314,6 +314,7 @@ export function createAudioSourceManager(options) {
     sessionBlobCache,
     shouldWarmStems,
     touchQueueItem,
+    trackPathDb,
   } = options;
 
   const MAX_SESSION_BLOB_CACHE_ENTRIES = 12; // Covers 2 active decks + 10 pre-fetched
@@ -605,6 +606,27 @@ export function createAudioSourceManager(options) {
       return streamCachedTrackFromCdn(item, item.cachePath, downloadStartedAt);
     }
 
+    // Not resolved on the item itself: consult the local path DB (paths-only,
+    // synced from GET /api/cache/files at startup and topped up below after
+    // every fresh orchestration resolve) before hitting the network at all.
+    const cacheKey = getTrackCacheKey(item);
+    let dbCachePath = trackPathDb?.get(cacheKey) || '';
+    if (!dbCachePath) {
+      const fbArtist = String(item?.artist || '').trim().toLowerCase();
+      const fbName = String(item?.name || item?.title || '').trim().toLowerCase();
+      const fallbackKey = (fbArtist && fbName) ? `${fbArtist}::${fbName}` : '';
+      if (fallbackKey && fallbackKey !== cacheKey) dbCachePath = trackPathDb?.get(fallbackKey) || '';
+    }
+    if (dbCachePath) {
+      item.cachePath = dbCachePath;
+      logInfo('api.download.pathDb.directStream', {
+        id: item?.id,
+        name: item?.name,
+        cachePath: dbCachePath,
+      });
+      return streamCachedTrackFromCdn(item, dbCachePath, downloadStartedAt);
+    }
+
     const baseUrl = getDownloaderApiUrl();
     if (!baseUrl) {
       throw new Error('URL API downloader manquante (Config)');
@@ -659,6 +681,8 @@ export function createAudioSourceManager(options) {
     if (!cachePath) {
       throw new Error('Réponse API sans cachePath');
     }
+
+    trackPathDb?.set(cacheKey, cachePath);
 
     return streamCachedTrackFromCdn(item, cachePath, downloadStartedAt, {
       requestMs,
@@ -1253,6 +1277,61 @@ export function createAudioSourceManager(options) {
     return restorePersistedArtworkBlobUrl(getTrackCacheKey(item), audioCacheName);
   }
 
+  /**
+   * Paginates GET /api/cache/files and stores only {key -> cachePath} in the
+   * local path DB (lib/trackPathDb.js), so future resolutions can skip
+   * POST /api/download entirely for tracks the server already has cached —
+   * even on a fresh browser session with an empty Cache Storage. Safe to call
+   * repeatedly (e.g. on every app startup): existing entries are only
+   * overwritten when the path actually changed.
+   */
+  async function syncTrackPathDbFromCacheIndex({ pageSize = 200 } = {}) {
+    if (!trackPathDb) return { synced: 0 };
+    const baseUrl = getDownloaderApiUrl();
+    if (!baseUrl) return { synced: 0 };
+    if (apiHealthMonitor?.isOffline()) return { synced: 0 };
+
+    let offset = 0;
+    let synced = 0;
+    try {
+      while (true) {
+        const res = await apiFetch(`${baseUrl}/api/cache/files?limit=${pageSize}&offset=${offset}`, {
+          headers: { Accept: 'application/json' },
+        });
+        if (!res.ok) {
+          logWarn('pathDb.sync.nonOk', { status: res.status, offset });
+          break;
+        }
+        const data = await res.json().catch(() => null);
+        const results = Array.isArray(data?.results) ? data.results : [];
+        if (!results.length) break;
+
+        const entries = [];
+        for (const record of results) {
+          if (!record?.cachePath) continue;
+          const id = String(record.id || '').trim();
+          let key = id;
+          if (!key) {
+            const artist = String(record.artistName || '').trim().toLowerCase();
+            const name = String(record.trackName || '').trim().toLowerCase();
+            if (artist && name) key = `${artist}::${name}`;
+          }
+          if (key) entries.push([key, record.cachePath]);
+        }
+        trackPathDb.bulkSet(entries);
+        synced += entries.length;
+
+        offset += results.length;
+        if (!data?.hasMore) break;
+      }
+      logInfo('pathDb.sync.done', { synced, dbSize: trackPathDb.size() });
+      return { synced };
+    } catch (err) {
+      logWarn('pathDb.sync.failed', { message: err?.message, synced });
+      return { synced };
+    }
+  }
+
   return {
     clearSessionBlobCache: () => clearSessionBlobCache(sessionBlobCache),
     deleteLocalCacheSong,
@@ -1261,6 +1340,7 @@ export function createAudioSourceManager(options) {
     evictTrackSource,
     isTrackInLocalCache,
     persistArtwork,
+    syncTrackPathDbFromCacheIndex,
     prefetchTrackToLocalCache,
     releaseLocalBlob: (item) => releaseLocalBlob(item, touchQueueItem),
     restoreArtwork,

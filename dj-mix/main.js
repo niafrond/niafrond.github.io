@@ -123,6 +123,7 @@ import {
   getDirectPlayableSourceUrl,
   getTrackCacheKey,
 } from './lib/audioSourceManager.js';
+import { createTrackPathDb } from './lib/trackPathDb.js';
 import { createDownloaderConfigManager } from './lib/downloaderConfig.js';
 import {
   createLogger,
@@ -315,7 +316,10 @@ const deckDisplayItems = uiState.deckDisplayItems; // alias → uiState.deckDisp
 let selectedTransitionMode = readTransitionModeSetting(MIX_TRANSITION_MODES);
 let ramFilterEnabled = readRamFilterEnabledSetting();
 let ramTotalMbOverride = readRamTotalMbOverrideSetting();
-let allowedTransitionModes = [...MIX_TRANSITION_MODES];
+// Reverb transition tail sounded harsh/unbearable in practice — kept in the catalogue
+// (RAM tables, switch-case) but excluded from selection everywhere.
+const DISABLED_TRANSITION_MODES = ['reverb_short_simple'];
+let allowedTransitionModes = MIX_TRANSITION_MODES.filter((m) => !DISABLED_TRANSITION_MODES.includes(m));
 let transitionRamRequirementsMb = getTransitionRamRequirementsMb();
 let transitionRamCapability = null;
 let trackMaxDurationSec = readTrackMaxDurationSetting();
@@ -506,7 +510,7 @@ function applyTransitionCapabilitiesForDevice(options = {}) {
     ramTotalMbOverride,
     crossfadeDurationMs: clampCrossfadeSeconds(crossfadeSlider?.value || readCrossfadeSecondsSetting(6)) * 1000,
   });
-  allowedTransitionModes = profile.allowedTransitionModes;
+  allowedTransitionModes = profile.allowedTransitionModes.filter((m) => !DISABLED_TRANSITION_MODES.includes(m));
   transitionRamCapability = profile.capability;
   const disabledModes = transitionRamCapability?.disabledModes || [];
   const totalRamMb = transitionRamCapability?.totalRamMb || 0;
@@ -1199,6 +1203,8 @@ const restoreQueue = () => {
 const renderQueueDebounced = createDebouncedFn(() => renderQueue(), 300);
 const renderFilRougeDebounced = createDebouncedFn(() => renderFilRouge(), 300);
 
+const trackPathDb = createTrackPathDb({ storageKey: STORAGE_KEYS.trackPaths });
+
 const audioSourceManager = createAudioSourceManager({
   apiHealthMonitor,
   audioCacheName: AUDIO_CACHE_NAME,
@@ -1210,6 +1216,7 @@ const audioSourceManager = createAudioSourceManager({
   sessionBlobCache,
   shouldWarmStems: (item) => !isLowMemoryPlaybackMode() || deckDisplayItems.A === item || deckDisplayItems.B === item,
   touchQueueItem,
+  trackPathDb,
 });
 
 const uiRenderer = createDjMixRenderer({
@@ -3953,8 +3960,14 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
     })().catch(() => {});
   }
 
-  // Vérification et téléchargement au démarrage des morceaux du fil rouge.
-  startFilRougeStartupCacheSync().catch(() => {});
+  // Synchronise la DB locale de paths (id/artist::name -> cachePath) depuis
+  // l'index serveur avant la vérification du fil rouge, pour que les morceaux
+  // déjà en cache serveur (mais absents du Cache Storage de ce navigateur)
+  // sautent directement au streaming CDN au lieu de repasser par
+  // POST /api/download (SPEC-11.2.7).
+  audioSourceManager.syncTrackPathDbFromCacheIndex()
+    .catch(() => {})
+    .then(() => startFilRougeStartupCacheSync().catch(() => {}));
 
   // Reprise des lots de téléchargement ("Tout télécharger") interrompus lors
   // d'une session précédente (SPEC-19.2).

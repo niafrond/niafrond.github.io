@@ -34,7 +34,18 @@ const DJ_FX_TRANSIENT_ACTIONS = new Set([
   'hotCues',
   'loopCue',
   'sampling',
+  'samplingAirhorn',
+  'samplingStab',
+  'samplingLaser',
+  'samplingSiren',
 ]);
+
+const SAMPLING_BUTTON_SOUND_ID = Object.freeze({
+  samplingAirhorn: 'airhorn',
+  samplingStab: 'stab',
+  samplingLaser: 'laser',
+  samplingSiren: 'siren',
+});
 
 
 export function createDjFxController(options) {
@@ -502,7 +513,7 @@ export function createDjFxController(options) {
     return true;
   }
 
-  async function triggerSamplingFx() {
+  async function triggerSamplingFx(soundId) {
     try {
       const ctx = await getOrCreateFxAudioContext();
       if (!ctx) {
@@ -525,7 +536,18 @@ export function createDjFxController(options) {
         return;
       }
 
-      const { buffer } = allowedBuffers[Math.floor(Math.random() * allowedBuffers.length)];
+      let chosen;
+      if (soundId) {
+        chosen = allowedBuffers.find((entry) => entry.id === soundId);
+        if (!chosen) {
+          showToast(`Sampling indisponible: sample "${soundId}" non autorise.`, true);
+          return;
+        }
+      } else {
+        chosen = allowedBuffers[Math.floor(Math.random() * allowedBuffers.length)];
+      }
+
+      const { buffer } = chosen;
       const source = ctx.createBufferSource();
       source.buffer = buffer;
       source.playbackRate.value = 0.9 + Math.random() * 0.2;
@@ -762,6 +784,13 @@ export function createDjFxController(options) {
       case 'sampling':
         void triggerSamplingFx();
         triggerTransientDjFxAction('sampling', 500);
+        break;
+      case 'samplingAirhorn':
+      case 'samplingStab':
+      case 'samplingLaser':
+      case 'samplingSiren':
+        void triggerSamplingFx(SAMPLING_BUTTON_SOUND_ID[action]);
+        triggerTransientDjFxAction(action, 500);
         break;
       default:
         break;

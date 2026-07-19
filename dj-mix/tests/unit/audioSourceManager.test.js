@@ -1,6 +1,17 @@
 import { jest, describe, test, expect } from '@jest/globals';
 import { createAudioSourceManager } from '../../lib/audioSourceManager.js';
 
+function makeFakeTrackPathDb(initial = {}) {
+  const paths = { ...initial };
+  return {
+    get: jest.fn((key) => paths[key] || ''),
+    set: jest.fn((key, cachePath) => { if (key && cachePath) paths[key] = cachePath; }),
+    bulkSet: jest.fn((entries) => { for (const [key, cachePath] of entries) if (key && cachePath) paths[key] = cachePath; }),
+    clear: jest.fn(() => { for (const key of Object.keys(paths)) delete paths[key]; }),
+    size: jest.fn(() => Object.keys(paths).length),
+  };
+}
+
 describe('audioSourceManager', () => {
   test('evictTrackSource clears local and session blob references', () => {
     const sessionBlobCache = new Map([
@@ -88,7 +99,7 @@ describe('audioSourceManager', () => {
       });
     }
 
-    function makeManager() {
+    function makeManager(overrides = {}) {
       return createAudioSourceManager({
         apiHealthMonitor: null,
         audioCacheName: 'dj-mix:test',
@@ -98,6 +109,7 @@ describe('audioSourceManager', () => {
         onQueueUpdated: jest.fn(),
         sessionBlobCache: new Map(),
         touchQueueItem: jest.fn(),
+        ...overrides,
       });
     }
 
@@ -229,6 +241,118 @@ describe('audioSourceManager', () => {
       await manager.prefetchTrackToLocalCache(item);
 
       expect(item.cachePath).toBe('/cache/track.mp3');
+    });
+
+    // SPEC-11.2.7: when item.cachePath is unknown but the local path DB
+    // (synced from GET /api/cache/files at startup) already has an entry for
+    // this track's cache key, orchestration must be skipped just like the
+    // SPEC-11.2.0 shortcut — no POST /api/download at all.
+    test('skips orchestration and streams directly from the CDN when the local path DB has an entry', async () => {
+      URL.createObjectURL = jest.fn(() => 'blob:fake');
+      URL.revokeObjectURL = jest.fn();
+      const fetchMock = makeFetchMock();
+      global.fetch = fetchMock;
+
+      const trackPathDb = makeFakeTrackPathDb({ 'db-track': '/cache/from-db.mp3' });
+      const manager = makeManager({ trackPathDb });
+      const item = { id: 'db-track', name: 'DB Track', artist: 'DB Artist' };
+
+      const result = await manager.prefetchTrackToLocalCache(item);
+
+      expect(result).toBe(true);
+      expect(item.cachePath).toBe('/cache/from-db.mp3');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock.mock.calls[0][0]).toBe('http://cdn.test/api/stream?cachePath=%2Fcache%2Ffrom-db.mp3');
+    });
+
+    // SPEC-11.2.8: once orchestration resolves a fresh cachePath, the local
+    // path DB is updated too (not just the item), so a *different* item
+    // sharing the same cache key benefits from the SPEC-11.2.7 shortcut
+    // without ever calling POST /api/download for it.
+    test('writes the resolved cachePath into the local path DB after orchestration', async () => {
+      URL.createObjectURL = jest.fn(() => 'blob:fake');
+      URL.revokeObjectURL = jest.fn();
+      const fetchMock = makeFetchMock();
+      global.fetch = fetchMock;
+
+      const trackPathDb = makeFakeTrackPathDb();
+      const manager = makeManager({ trackPathDb });
+      const item = { id: 'new-track', name: 'New Track', artist: 'New Artist' };
+
+      await manager.prefetchTrackToLocalCache(item);
+
+      expect(trackPathDb.set).toHaveBeenCalledWith('new-track', '/cache/track.mp3');
+      expect(trackPathDb.get('new-track')).toBe('/cache/track.mp3');
+    });
+  });
+
+  describe('syncTrackPathDbFromCacheIndex', () => {
+    const originalFetch = global.fetch;
+
+    afterEach(() => {
+      global.fetch = originalFetch;
+    });
+
+    function makeCacheFilesPage(results, hasMore) {
+      return { ok: true, json: async () => ({ count: 3, hasMore, results }) };
+    }
+
+    // SPEC-11.5.3: only cachePath (+ key) is extracted from each server
+    // record — the rest of the /api/cache/files payload (artwork, audio
+    // features, mix suggestions, ...) must never reach the local path DB.
+    test('paginates the cache index and stores only key -> cachePath pairs', async () => {
+      const fetchMock = jest.fn()
+        .mockResolvedValueOnce(makeCacheFilesPage([
+          { id: 'srv-1', trackName: 'A', artistName: 'Artist A', cachePath: '/mnt/e/AudioDB/a.mp3', artworkUrl: 'http://art/a.jpg' },
+          { id: 'srv-2', trackName: 'B', artistName: 'Artist B', cachePath: '/mnt/e/AudioDB/b.mp3', audioFeatures: { bpm: 120 } },
+        ], true))
+        .mockResolvedValueOnce(makeCacheFilesPage([
+          { id: '', trackName: 'C', artistName: 'Artist C', cachePath: '/mnt/e/AudioDB/c.mp3' },
+        ], false));
+      global.fetch = fetchMock;
+
+      const trackPathDb = makeFakeTrackPathDb();
+      const manager = createAudioSourceManager({
+        apiHealthMonitor: null,
+        audioCacheName: 'dj-mix:test',
+        getDownloaderApiUrl: () => 'http://api.test',
+        getDownloaderApiToken: () => '',
+        onQueueUpdated: jest.fn(),
+        sessionBlobCache: new Map(),
+        touchQueueItem: jest.fn(),
+        trackPathDb,
+      });
+
+      const result = await manager.syncTrackPathDbFromCacheIndex();
+
+      expect(result.synced).toBe(3);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls[0][0]).toBe('http://api.test/api/cache/files?limit=200&offset=0');
+      expect(fetchMock.mock.calls[1][0]).toBe('http://api.test/api/cache/files?limit=200&offset=2');
+      expect(trackPathDb.get('srv-1')).toBe('/mnt/e/AudioDB/a.mp3');
+      expect(trackPathDb.get('srv-2')).toBe('/mnt/e/AudioDB/b.mp3');
+      // id was blank on the 3rd record: falls back to artist::name, same
+      // convention as getTrackCacheKey.
+      expect(trackPathDb.get('artist c::c')).toBe('/mnt/e/AudioDB/c.mp3');
+    });
+
+    test('is a no-op without a configured trackPathDb', async () => {
+      const fetchMock = jest.fn();
+      global.fetch = fetchMock;
+
+      const manager = createAudioSourceManager({
+        apiHealthMonitor: null,
+        audioCacheName: 'dj-mix:test',
+        getDownloaderApiUrl: () => 'http://api.test',
+        onQueueUpdated: jest.fn(),
+        sessionBlobCache: new Map(),
+        touchQueueItem: jest.fn(),
+      });
+
+      const result = await manager.syncTrackPathDbFromCacheIndex();
+
+      expect(result).toEqual({ synced: 0 });
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 });

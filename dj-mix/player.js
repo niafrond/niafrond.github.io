@@ -619,7 +619,7 @@ export class DJPlayer extends EventTarget {
       return this.#pickWeightedAutoTransition(['echo_out_light', 'cut_transition', 'fade_in_out']);
     }
 
-    const allModes = [...this.#allowedTransitionModes].filter((m) => m !== 'auto');
+    const allModes = [...this.#allowedTransitionModes].filter((m) => m !== 'auto' && m !== 'reverb_short_simple');
     return this.#pickWeightedAutoTransition(allModes);
   }
 

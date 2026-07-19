@@ -34,6 +34,7 @@ export const STORAGE_KEYS = Object.freeze({
   relaySessionId: 'dj-mix:relay:session-id',
   globalVolume: 'dj-mix:global-volume',
   filRougeSortMode: 'dj-mix:fil-rouge:sort',
+  trackPaths: 'dj-mix:track-paths',
 });
 
 export const DEFAULT_DOWNLOADER_API_URL = 'http://192.168.8.149:3000';
