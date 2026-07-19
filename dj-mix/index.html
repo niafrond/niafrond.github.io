@@ -401,11 +401,15 @@
               <label for="downloader-api-token-input">Token API</label>
               <input type="password" id="downloader-api-token-input" placeholder="Token d'authentification" autocomplete="off" spellcheck="false">
             </div>
+            <div class="form-group">
+              <label for="downloader-cdn-url-input">URL CDN audio (streaming)</label>
+              <input type="text" id="downloader-cdn-url-input" value="http://192.168.8.149:3002" placeholder="http://192.168.8.149:3002" autocomplete="off" spellcheck="false">
+            </div>
             <div class="controls" style="justify-content:flex-start; gap:10px;">
               <button id="downloader-api-save-btn" class="connect-btn connect-btn--secondary" type="button">Sauver l'API</button>
               <button id="downloader-api-test-btn" class="connect-btn connect-btn--secondary" type="button">Tester l'API</button>
             </div>
-            <div id="downloader-api-status" class="setup-subtitle">Configurez l'API pour activer la recherche et le téléchargement local temporaire.</div>
+            <div id="downloader-api-status" class="setup-subtitle">Configurez l'API pour activer la recherche et le téléchargement local temporaire. Le streaming audio ("URL CDN") utilise un process indépendant qui reste joignable même quand l'API principale est occupée.</div>
           </div>
 
           <div class="config-block">

@@ -670,9 +670,13 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 ### 11.2 Téléchargement
 
-- **SPEC-11.2.1** Endpoint : `POST /api/download` avec body `{ trackName, artistName, searchQuery, popularity }`.
-- **SPEC-11.2.2** Retourne un blob audio ou `{ downloadUrl }`.
-- **SPEC-11.2.3** Le blob est converti en `blob:` URL via `URL.createObjectURL(blob)`.
+- **SPEC-11.2.0** GIVEN `item.cachePath` déjà connu (piste déjà téléchargée dans une session précédente, ou listée depuis l'index de cache local) — THEN `POST /api/download` (étape 1, API principale) n'est **jamais appelé** : le téléchargement va directement à l'étape 2 (streaming CDN via `cachePath`). Seule une piste dont le `cachePath` est encore inconnu déclenche l'orchestration sur l'API principale.
+- **SPEC-11.2.1** Étape 1 (orchestration, uniquement si `cachePath` inconnu) : `POST /api/download` avec body `{ trackName, artistName, searchQuery, popularity }`, sur l'API principale (`getDownloaderApiUrl`). Ne renvoie jamais d'octets audio — toujours du JSON contenant `cachePath` (+ métadonnées de la piste).
+- **SPEC-11.2.2** GIVEN la réponse JSON de l'étape 1 sans champ `cachePath` — THEN une erreur est levée (`Réponse API sans cachePath`), sans tenter d'étape 2.
+- **SPEC-11.2.3** Étape 2 (octets) : `GET /api/stream?cachePath=<cachePath>` sur le serveur CDN audio indépendant (`getDownloaderCdnUrl`, process séparé `audioCdnServer.js`, port par défaut `3002`), qui reste joignable même si l'API principale est occupée par une tâche longue. Le blob résultant est converti en `blob:` URL via `URL.createObjectURL(blob)`.
+- **SPEC-11.2.4** `getDownloaderCdnUrl` : si l'utilisateur a configuré une URL CDN explicite (`localStorage`, clé `dj-mix:downloader:cdn:url`), elle est utilisée telle quelle ; sinon elle est dérivée automatiquement de l'URL de l'API en remplaçant le port par `3002` (même host).
+- **SPEC-11.2.5** Le téléchargement d'un stem (`GET /api/stems/download?stem=...`) cible le CDN quand `item.cachePath` est connu (le CDN ne supporte pas la résolution par nom) ; sinon il retombe sur l'API principale, qui supporte encore la résolution par `trackName`/`artistName`.
+- **SPEC-11.2.6** GIVEN un téléchargement résolu via l'étape 1 (orchestration) — WHEN la réponse contient un `cachePath` — THEN `item.cachePath` est mis à jour sur l'item (queue ou prefetch) avant de poursuivre, afin qu'un futur appel pour le même item bénéficie du raccourci SPEC-11.2.0 sans repasser par l'API principale.
 
 ### 11.3 Cache
 

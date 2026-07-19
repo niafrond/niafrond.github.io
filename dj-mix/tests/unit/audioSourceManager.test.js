@@ -61,13 +61,31 @@ describe('audioSourceManager', () => {
     const originalCreateObjectURL = URL.createObjectURL;
     const originalRevokeObjectURL = URL.revokeObjectURL;
 
-    function makeAudioResponse() {
+    // POST /api/download is orchestration-only and always returns JSON with
+    // a cachePath — never audio bytes directly (see SPEC-11.2.1).
+    function makeDownloadJsonResponse(cachePath = '/cache/track.mp3') {
+      return {
+        ok: true,
+        json: async () => ({ cachePath, cacheState: 'MISS' }),
+      };
+    }
+
+    // GET /api/stream on the CDN serves the actual bytes (SPEC-11.2.3).
+    function makeStreamResponse() {
       const blob = new Blob(['audio-bytes'], { type: 'audio/mpeg' });
       return {
         ok: true,
-        headers: { get: () => 'audio/mpeg' },
         blob: async () => blob,
       };
+    }
+
+    // Routes each call to the right canned response based on whether it's
+    // the orchestration POST or the CDN stream GET.
+    function makeFetchMock() {
+      return jest.fn((url, init) => {
+        if (init?.method === 'POST') return Promise.resolve(makeDownloadJsonResponse());
+        return Promise.resolve(makeStreamResponse());
+      });
     }
 
     function makeManager() {
@@ -76,6 +94,7 @@ describe('audioSourceManager', () => {
         audioCacheName: 'dj-mix:test',
         getDownloaderApiUrl: () => 'http://api.test',
         getDownloaderApiToken: () => '',
+        getDownloaderCdnUrl: () => 'http://cdn.test',
         onQueueUpdated: jest.fn(),
         sessionBlobCache: new Map(),
         touchQueueItem: jest.fn(),
@@ -99,7 +118,7 @@ describe('audioSourceManager', () => {
     test('concurrent calls for the same track share a single network request', async () => {
       URL.createObjectURL = jest.fn(() => 'blob:fake');
       URL.revokeObjectURL = jest.fn();
-      const fetchMock = jest.fn().mockResolvedValue(makeAudioResponse());
+      const fetchMock = makeFetchMock();
       global.fetch = fetchMock;
 
       const manager = makeManager();
@@ -112,13 +131,16 @@ describe('audioSourceManager', () => {
 
       expect(a).toBe(true);
       expect(b).toBe(true);
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      // One shared download = one orchestration POST + one CDN stream GET.
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls[0][0]).toBe('http://api.test/api/download');
+      expect(fetchMock.mock.calls[1][0]).toBe('http://cdn.test/api/stream?cachePath=%2Fcache%2Ftrack.mp3');
     });
 
     test('concurrent calls for different tracks each trigger their own request', async () => {
       URL.createObjectURL = jest.fn(() => 'blob:fake');
       URL.revokeObjectURL = jest.fn();
-      const fetchMock = jest.fn().mockResolvedValue(makeAudioResponse());
+      const fetchMock = makeFetchMock();
       global.fetch = fetchMock;
 
       const manager = makeManager();
@@ -130,7 +152,7 @@ describe('audioSourceManager', () => {
         manager.prefetchTrackToLocalCache(trackB),
       ]);
 
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(4);
     });
 
     // A struggling/failing download must not permanently block retries: once
@@ -141,7 +163,8 @@ describe('audioSourceManager', () => {
       URL.revokeObjectURL = jest.fn();
       const fetchMock = jest.fn()
         .mockResolvedValueOnce({ ok: false, status: 500, text: async () => 'boom' })
-        .mockResolvedValueOnce(makeAudioResponse());
+        .mockResolvedValueOnce(makeDownloadJsonResponse())
+        .mockResolvedValueOnce(makeStreamResponse());
       global.fetch = fetchMock;
 
       const manager = makeManager();
@@ -152,7 +175,60 @@ describe('audioSourceManager', () => {
 
       expect(first).toBe(false);
       expect(second).toBe(true);
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    // SPEC-11.2.2: a download response without cachePath must fail loudly
+    // rather than silently proceeding to stream from an undefined path.
+    test('download fails when the orchestration response has no cachePath', async () => {
+      const fetchMock = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+      global.fetch = fetchMock;
+
+      const manager = makeManager();
+      const item = { id: 'no-cachepath', name: 'No CachePath', artist: 'Nobody' };
+
+      const result = await manager.prefetchTrackToLocalCache(item);
+
+      expect(result).toBe(false);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    // SPEC-11.2.0: a known cachePath (previous download, or listed from the
+    // library/cache index) must skip the orchestration POST on the main API
+    // entirely — the whole point of the CDN split is that playback of
+    // already-cached tracks keeps working even while the main API is busy.
+    test('skips orchestration and streams directly from the CDN when cachePath is already known', async () => {
+      URL.createObjectURL = jest.fn(() => 'blob:fake');
+      URL.revokeObjectURL = jest.fn();
+      const fetchMock = makeFetchMock();
+      global.fetch = fetchMock;
+
+      const manager = makeManager();
+      const item = { id: 'known-track', name: 'Known Track', artist: 'Known Artist', cachePath: '/cache/known-track.mp3' };
+
+      const result = await manager.prefetchTrackToLocalCache(item);
+
+      expect(result).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock.mock.calls[0][0]).toBe('http://cdn.test/api/stream?cachePath=%2Fcache%2Fknown-track.mp3');
+    });
+
+    // SPEC-11.2.6: once orchestration resolves a cachePath, it's written back
+    // onto the item so a later call for the same item takes the SPEC-11.2.0
+    // shortcut instead of re-orchestrating on the main API.
+    test('patches item.cachePath after resolving a track via orchestration', async () => {
+      URL.createObjectURL = jest.fn(() => 'blob:fake');
+      URL.revokeObjectURL = jest.fn();
+      const fetchMock = makeFetchMock();
+      global.fetch = fetchMock;
+
+      const manager = makeManager();
+      const item = { id: 'fresh-track', name: 'Fresh Track', artist: 'Fresh Artist' };
+
+      expect(item.cachePath).toBeUndefined();
+      await manager.prefetchTrackToLocalCache(item);
+
+      expect(item.cachePath).toBe('/cache/track.mp3');
     });
   });
 });

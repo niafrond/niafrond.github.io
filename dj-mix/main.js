@@ -220,7 +220,7 @@ import {
   readDjExternalPlanEnabledSetting,
   persistDjExternalPlanEnabledSetting,
 } from './lib/settingsStorage.js';
-import { DEFAULT_DOWNLOADER_API_URL, STORAGE_KEYS } from './lib/storageKeys.js';
+import { DEFAULT_DOWNLOADER_API_URL, DEFAULT_DOWNLOADER_CDN_URL, STORAGE_KEYS } from './lib/storageKeys.js';
 import { getStoredTrackMeta, patchStoredTrackMeta } from './lib/trackMetaStorage.js';
 import { createMetaFetchService } from './lib/metaFetchService.js';
 import { getArtworkUrl, setArtworkUrl } from './lib/artworkUrlCache.js';
@@ -244,6 +244,7 @@ import { uiState } from './lib/uiState.js';
 const QUEUE_KEY = STORAGE_KEYS.queue;
 const DOWNLOADER_API_URL_KEY = STORAGE_KEYS.downloaderApiUrl;
 const DOWNLOADER_API_TOKEN_KEY = STORAGE_KEYS.downloaderApiToken;
+const DOWNLOADER_CDN_URL_KEY = STORAGE_KEYS.downloaderCdnUrl;
 const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
 const SPOTIFY_FIL_ROUGE_POLL_MS = 120000;
 const SPOTIFY_FIL_ROUGE_BACKOFF_MAX_MULTIPLIER = 32;
@@ -882,6 +883,7 @@ const filRougeMixInfoBtn = document.getElementById('filrouge-mixinfo-btn');
 
 const downloaderApiUrlInput = document.getElementById('downloader-api-url-input');
 const downloaderApiTokenInput = document.getElementById('downloader-api-token-input');
+const downloaderCdnUrlInput = document.getElementById('downloader-cdn-url-input');
 const downloaderApiSaveBtn = document.getElementById('downloader-api-save-btn');
 const downloaderApiTestBtn = document.getElementById('downloader-api-test-btn');
 const downloaderApiStatus = document.getElementById('downloader-api-status');
@@ -975,6 +977,9 @@ function setApiOfflineBadgeVisible(visible) {
 }
 
 const downloaderConfig = createDownloaderConfigManager({
+  cdnDefaultUrl: DEFAULT_DOWNLOADER_CDN_URL,
+  cdnInputEl: downloaderCdnUrlInput,
+  cdnStorageKey: DOWNLOADER_CDN_URL_KEY,
   defaultUrl: DEFAULT_DOWNLOADER_API_URL,
   inputEl: downloaderApiUrlInput,
   saveBtn: downloaderApiSaveBtn,
@@ -987,6 +992,7 @@ const downloaderConfig = createDownloaderConfigManager({
 const {
   getDownloaderApiToken,
   getDownloaderApiUrl,
+  getDownloaderCdnUrl,
   loadIntoForm: loadDownloaderApiConfigIntoForm,
   saveFromForm: saveDownloaderApiConfigFromForm,
   setStatus: setDownloaderApiStatus,
@@ -1198,6 +1204,7 @@ const audioSourceManager = createAudioSourceManager({
   audioCacheName: AUDIO_CACHE_NAME,
   getDownloaderApiToken,
   getDownloaderApiUrl,
+  getDownloaderCdnUrl,
   normalizeApiSearchResponse,
   onQueueUpdated: () => renderQueueDebounced(),
   sessionBlobCache,

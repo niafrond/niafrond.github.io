@@ -309,6 +309,7 @@ export function createAudioSourceManager(options) {
     audioCacheName,
     getDownloaderApiToken,
     getDownloaderApiUrl,
+    getDownloaderCdnUrl,
     onQueueUpdated,
     sessionBlobCache,
     shouldWarmStems,
@@ -329,6 +330,22 @@ export function createAudioSourceManager(options) {
     const baseUrl = getDownloaderApiUrl();
     const targetsApi = baseUrl && String(url).startsWith(baseUrl);
     const finalUrl = targetsApi ? appendApiToken(url, getDownloaderApiToken?.()) : url;
+    return fetch(finalUrl, init);
+  }
+
+  // Base URL of the standalone audio CDN (audioCdnServer.js) that serves the
+  // actual audio bytes (GET /api/stream, /api/stems/download) independently
+  // of the main API. Falls back to the API base URL when no CDN is configured
+  // (routes are kept there temporarily during the migration).
+  function getCdnBaseUrl() {
+    return getDownloaderCdnUrl?.() || getDownloaderApiUrl();
+  }
+
+  // Same token auth as apiFetch, but targeting the CDN base URL.
+  function cdnFetch(url, init) {
+    const baseUrl = getCdnBaseUrl();
+    const targetsCdn = baseUrl && String(url).startsWith(baseUrl);
+    const finalUrl = targetsCdn ? appendApiToken(url, getDownloaderApiToken?.()) : url;
     return fetch(finalUrl, init);
   }
 
@@ -387,8 +404,6 @@ export function createAudioSourceManager(options) {
   }
 
   async function downloadStemVariantViaApi(item, cacheKey, variant) {
-    const baseUrl = getDownloaderApiUrl();
-    if (!baseUrl) return '';
     if (!cacheKey) return '';
 
     const persisted = await restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, variant), audioCacheName);
@@ -396,8 +411,13 @@ export function createAudioSourceManager(options) {
 
     const params = new URLSearchParams();
     params.set('stem', variant);
+    // The CDN only supports cachePath-based lookup (no trackName/artistName
+    // fallback), so prefer it when a cachePath is known; otherwise fall back
+    // to the main API, which still resolves by name.
+    let useCdn = false;
     if (item?.cachePath) {
       params.set('cachePath', item.cachePath);
+      useCdn = true;
     } else if (item?.name) {
       params.set('trackName', item.name);
       if (item.artist) params.set('artistName', item.artist);
@@ -405,7 +425,11 @@ export function createAudioSourceManager(options) {
       return '';
     }
 
-    const res = await apiFetch(`${baseUrl}/api/stems/download?${params}`, {
+    const baseUrl = useCdn ? getCdnBaseUrl() : getDownloaderApiUrl();
+    if (!baseUrl) return '';
+    const fetcher = useCdn ? cdnFetch : apiFetch;
+
+    const res = await fetcher(`${baseUrl}/api/stems/download?${params}`, {
       signal: AbortSignal.timeout(12000),
     });
 
@@ -512,14 +536,78 @@ export function createAudioSourceManager(options) {
     void warmStemLocalSources(item, cacheKey);
   }
 
+  // Fetches the actual audio bytes for an already-resolved cachePath from the
+  // standalone CDN and persists them locally. Shared by the cachePath-first
+  // shortcut and the post-orchestration follow-up below.
+  async function streamCachedTrackFromCdn(item, cachePath, downloadStartedAt, extra = {}) {
+    const cdnBaseUrl = getCdnBaseUrl();
+    if (!cdnBaseUrl) {
+      throw new Error('URL CDN audio manquante (Config)');
+    }
+    const streamUrl = `${cdnBaseUrl}/api/stream?cachePath=${encodeURIComponent(cachePath)}`;
+
+    const mediaRes = await cdnFetch(streamUrl);
+    if (!mediaRes.ok) {
+      logWarn('api.download.stream.failed', {
+        id: item?.id,
+        status: mediaRes.status,
+      });
+      const err = new Error(`Téléchargement audio impossible (HTTP ${mediaRes.status})`);
+      err.status = mediaRes.status;
+      throw err;
+    }
+
+    const mediaBlob = await mediaRes.blob();
+    if (!mediaBlob || mediaBlob.size === 0) {
+      throw new Error('Audio téléchargé vide');
+    }
+    await persistAudioBlob(getTrackCacheKey(item), mediaBlob, audioCacheName);
+
+    const totalMs = performance.now() - downloadStartedAt;
+    logInfo('api.download.response.ok', {
+      id: item?.id,
+      size: mediaBlob.size,
+      cacheState: extra.cacheState,
+      requestMs: extra.requestMs != null ? Math.round(extra.requestMs) : null,
+      totalMs: Math.round(totalMs),
+      throughputKBps: totalMs > 0 ? Math.round((mediaBlob.size / 1024) / (totalMs / 1000)) : null,
+    });
+
+    const loudnessDb = Number.isFinite(extra.loudnessDb)
+      ? extra.loudnessDb
+      : (Number.isFinite(item?.loudnessDb) ? item.loudnessDb : null);
+    return {
+      url: URL.createObjectURL(mediaBlob),
+      loudnessDb,
+      sourceMeta: cachePath,
+      cachePath,
+    };
+  }
+
   async function downloadTrackViaApi(item) {
+    if (apiHealthMonitor?.isOffline()) {
+      throw new Error('API hors ligne – téléchargement impossible');
+    }
+
+    const downloadStartedAt = performance.now();
+
+    // Already know where the file lives (previously downloaded, or listed
+    // from the library/cache index with a cachePath): skip the orchestration
+    // POST on the main API entirely and go straight to the CDN, which stays
+    // reachable even while the main API is busy with a long-running
+    // download/search task.
+    if (item?.cachePath) {
+      logInfo('api.download.cdn.directStream', {
+        id: item?.id,
+        name: item?.name,
+        cachePath: item.cachePath,
+      });
+      return streamCachedTrackFromCdn(item, item.cachePath, downloadStartedAt);
+    }
+
     const baseUrl = getDownloaderApiUrl();
     if (!baseUrl) {
       throw new Error('URL API downloader manquante (Config)');
-    }
-
-    if (apiHealthMonitor?.isOffline()) {
-      throw new Error('API hors ligne – téléchargement impossible');
     }
 
     logInfo('api.download.request', {
@@ -528,8 +616,6 @@ export function createAudioSourceManager(options) {
       artist: item?.artist,
       baseUrl,
     });
-
-    const downloadStartedAt = performance.now();
 
     const payload = {
       trackName: item.name,
@@ -563,65 +649,22 @@ export function createAudioSourceManager(options) {
 
     apiHealthMonitor?.recordSuccess();
 
-    const contentType = (res.headers.get('content-type') || '').toLowerCase();
-    if (contentType.includes('audio') || contentType.includes('octet-stream')) {
-      const blob = await res.blob();
-      if (!blob || blob.size === 0) throw new Error('Flux audio vide depuis API');
-      await persistAudioBlob(getTrackCacheKey(item), blob, audioCacheName);
-      const totalMs = performance.now() - downloadStartedAt;
-      logInfo('api.download.response.audioStream.ok', {
-        id: item?.id,
-        size: blob.size,
-        contentType,
-        requestMs: Math.round(requestMs),
-        totalMs: Math.round(totalMs),
-        throughputKBps: totalMs > 0 ? Math.round((blob.size / 1024) / (totalMs / 1000)) : null,
-      });
-      return {
-        url: URL.createObjectURL(blob),
-        loudnessDb: Number.isFinite(item.loudnessDb) ? item.loudnessDb : null,
-        sourceMeta: 'audio-stream',
-      };
-    }
-
+    // POST /api/download is orchestration-only and never streams audio bytes
+    // itself: it returns JSON metadata including the resolved cachePath. The
+    // bytes are fetched separately from the standalone audio CDN so playback
+    // stays available even while a long-running download/search task is in
+    // flight on the main API.
     const data = await res.json().catch(() => null);
-    const directUrl = data?.downloadUrl || data?.url || data?.fileUrl || data?.audioUrl;
-    if (!directUrl) {
-      throw new Error('Réponse API sans URL audio');
+    const cachePath = data?.cachePath;
+    if (!cachePath) {
+      throw new Error('Réponse API sans cachePath');
     }
 
-    const mediaRes = await apiFetch(directUrl);
-    if (!mediaRes.ok) {
-      logWarn('api.download.followup.directUrl.failed', {
-        id: item?.id,
-        status: mediaRes.status,
-      });
-      const err = new Error(`Téléchargement URL API impossible (HTTP ${mediaRes.status})`);
-      err.status = mediaRes.status;
-      throw err;
-    }
-
-    const mediaBlob = await mediaRes.blob();
-    if (!mediaBlob || mediaBlob.size === 0) {
-      throw new Error('Audio téléchargé vide');
-    }
-    await persistAudioBlob(getTrackCacheKey(item), mediaBlob, audioCacheName);
-
-    const totalMs = performance.now() - downloadStartedAt;
-    logInfo('api.download.response.directUrl.ok', {
-      id: item?.id,
-      size: mediaBlob.size,
-      requestMs: Math.round(requestMs),
-      totalMs: Math.round(totalMs),
-      throughputKBps: totalMs > 0 ? Math.round((mediaBlob.size / 1024) / (totalMs / 1000)) : null,
+    return streamCachedTrackFromCdn(item, cachePath, downloadStartedAt, {
+      requestMs,
+      cacheState: data?.cacheState,
+      loudnessDb: extractTrackLoudnessDb(data),
     });
-
-    const loudnessDb = extractTrackLoudnessDb(data);
-    return {
-      url: URL.createObjectURL(mediaBlob),
-      loudnessDb: Number.isFinite(loudnessDb) ? loudnessDb : (Number.isFinite(item.loudnessDb) ? item.loudnessDb : null),
-      sourceMeta: data?.source || data?.provider || data?.cachePath || '',
-    };
   }
 
   async function ensureLocalSource(item) {
@@ -760,6 +803,9 @@ export function createAudioSourceManager(options) {
     try {
       const downloaded = await downloadTrackViaApi(item);
       item.localBlobUrl = downloaded.url;
+      if (downloaded.cachePath) {
+        item.cachePath = downloaded.cachePath;
+      }
       if (Number.isFinite(downloaded.loudnessDb)) {
         item.loudnessDb = downloaded.loudnessDb;
       }
@@ -1188,6 +1234,7 @@ export function createAudioSourceManager(options) {
 
     try {
       const result = await downloadTrackViaApi(item);
+      if (result?.cachePath) item.cachePath = result.cachePath;
       if (result?.url) URL.revokeObjectURL(result.url);
       logInfo('prefetch.success', { cacheKey, name: item.name, artist: item.artist });
       return true;
