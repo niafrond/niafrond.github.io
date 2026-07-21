@@ -4,7 +4,7 @@
  * Playback: temporary local Blob download + dual-deck crossfade
  */
 
-import { DJPlayer } from './player.js';
+import { DJPlayer, BEAT_REPEAT_MAX_LOOP_MS } from './player.js';
 import { initServiceWorker, installPwa, initAutoFullscreen, initApkDownloadLink, checkApkUpdate, doApkUpdate, forceUpdatePwa } from './pwa.js';
 import { pushPlaybackState, pushQueue, onMediaCommand, getPendingMediaCommand } from './lib/androidAutoBridge.js';
 
@@ -199,6 +199,8 @@ import {
   persistTrackMaxDurationModeSetting,
   persistTrackMaxDurationPctSetting,
   persistTransitionModeSetting,
+  readDisabledTransitionModesSetting,
+  persistDisabledTransitionModesSetting,
   readAutoSuggestionQueueSearchEnabledSetting,
   readCrossfadeSecondsSetting,
   readDebugLogsSetting,
@@ -319,7 +321,11 @@ let ramTotalMbOverride = readRamTotalMbOverrideSetting();
 // Reverb transition tail sounded harsh/unbearable in practice — kept in the catalogue
 // (RAM tables, switch-case) but excluded from selection everywhere.
 const DISABLED_TRANSITION_MODES = ['reverb_short_simple'];
-let allowedTransitionModes = MIX_TRANSITION_MODES.filter((m) => !DISABLED_TRANSITION_MODES.includes(m));
+// Modes désactivés manuellement par l'utilisateur depuis le menu de config.
+// 'auto' et 'cut_transition' restent toujours disponibles (fallbacks garantis).
+let userDisabledTransitionModes = readDisabledTransitionModesSetting(MIX_TRANSITION_MODES)
+  .filter((m) => m !== 'auto' && m !== 'cut_transition');
+let allowedTransitionModes = MIX_TRANSITION_MODES.filter((m) => !DISABLED_TRANSITION_MODES.includes(m) && !userDisabledTransitionModes.includes(m));
 let transitionRamRequirementsMb = getTransitionRamRequirementsMb();
 let transitionRamCapability = null;
 let trackMaxDurationSec = readTrackMaxDurationSetting();
@@ -510,7 +516,9 @@ function applyTransitionCapabilitiesForDevice(options = {}) {
     ramTotalMbOverride,
     crossfadeDurationMs: clampCrossfadeSeconds(crossfadeSlider?.value || readCrossfadeSecondsSetting(6)) * 1000,
   });
-  allowedTransitionModes = profile.allowedTransitionModes.filter((m) => !DISABLED_TRANSITION_MODES.includes(m));
+  allowedTransitionModes = profile.allowedTransitionModes.filter(
+    (m) => !DISABLED_TRANSITION_MODES.includes(m) && !userDisabledTransitionModes.includes(m),
+  );
   transitionRamCapability = profile.capability;
   const disabledModes = transitionRamCapability?.disabledModes || [];
   const totalRamMb = transitionRamCapability?.totalRamMb || 0;
@@ -586,6 +594,52 @@ function updateRamFilterConfigUI() {
 function updateQueueModeConfigUI() {
   if (queueLoopToggle) queueLoopToggle.checked = queueLoopEnabled;
   if (queueShuffleToggle) queueShuffleToggle.checked = queueShuffleEnabled;
+}
+
+// 'auto' et 'cut_transition' sont des fallbacks garantis : pas de case à décocher pour eux.
+function renderTransitionModesDisableConfigUI() {
+  if (!transitionModesDisableList) return;
+  const disabledSet = new Set(userDisabledTransitionModes);
+  transitionModesDisableList.innerHTML = '';
+  for (const mode of MIX_TRANSITION_MODES) {
+    if (mode === 'auto' || mode === 'cut_transition' || DISABLED_TRANSITION_MODES.includes(mode)) continue;
+    const label = MIX_TRANSITION_MODE_LABELS[mode] || mode;
+    const row = document.createElement('label');
+    row.className = 'toggle-row';
+    row.setAttribute('for', `transition-mode-disable-${mode}`);
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.className = 'toggle-input';
+    input.id = `transition-mode-disable-${mode}`;
+    input.dataset.mode = mode;
+    input.checked = !disabledSet.has(mode);
+    const slider = document.createElement('span');
+    slider.className = 'toggle-slider';
+    slider.setAttribute('aria-hidden', 'true');
+    const text = document.createElement('span');
+    text.className = 'toggle-label';
+    text.textContent = label;
+    row.append(input, slider, text);
+    transitionModesDisableList.appendChild(row);
+  }
+}
+
+function toggleUserDisabledTransitionMode(mode, enabled) {
+  if (mode === 'auto' || mode === 'cut_transition') return;
+  const isCurrentlyDisabled = userDisabledTransitionModes.includes(mode);
+  if (enabled === !isCurrentlyDisabled) return;
+  userDisabledTransitionModes = enabled
+    ? userDisabledTransitionModes.filter((m) => m !== mode)
+    : [...userDisabledTransitionModes, mode];
+  persistDisabledTransitionModesSetting(userDisabledTransitionModes);
+  applyTransitionCapabilitiesForDevice({ announce: false });
+  if (player) player.setAllowedTransitionModes(allowedTransitionModes);
+
+  const safeMode = getSafeAllowedTransitionMode(selectedTransitionMode);
+  if (safeMode !== selectedTransitionMode) {
+    applyTransitionModeSetting(safeMode, { persist: true });
+    showToast(`Mode AutoMix ajuste: ${MIX_TRANSITION_MODE_LABELS[safeMode] || safeMode}`);
+  }
 }
 
 function applyRamFilterSettings(options = {}) {
@@ -929,6 +983,7 @@ const relayIncomingNextBadgeEl = document.getElementById('relay-incoming-next-ba
 const ramFilterEnabledToggle = document.getElementById('ram-filter-enabled-toggle');
 const ramTotalMemoryInput = document.getElementById('ram-total-memory-gb');
 const ramFilterStatus = document.getElementById('ram-filter-status');
+const transitionModesDisableList = document.getElementById('transition-modes-disable-list');
 const queueLoopToggle = document.getElementById('queue-loop-toggle');
 const queueShuffleToggle = document.getElementById('queue-shuffle-toggle');
 const djFxRow = document.querySelector('.dj-fx-row');
@@ -3908,6 +3963,7 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
   }
   refreshApiMixPlaylists().catch(() => {});
 
+  renderTransitionModesDisableConfigUI();
   applyRamFilterSettings({ persist: false, announce: true });
   applyDebugLogsSetting(readDebugLogsSetting(), { persist: false });
   applyTransitionModeSetting(selectedTransitionMode, { persist: false });
@@ -4384,7 +4440,7 @@ function hookPlayerEvents() {
 
       if (effectiveMode === 'beat_repeat' && fromDeck && toDeck) {
         const incomingBpm = Number(extractTrackBpm(deckDisplayItems[toDeck])) || 120;
-        const phaseDurationMs = (player.crossfadeDuration || 6000) * 0.65;
+        const phaseDurationMs = Math.min(BEAT_REPEAT_MAX_LOOP_MS, player.crossfadeDuration || 6000);
         triggerBeatRepeatTransitionFx(fromDeck, toDeck, phaseDurationMs, incomingBpm);
       }
 
@@ -4942,6 +4998,13 @@ mixTransitionModeSelect?.addEventListener('change', () => {
   applyTransitionModeSetting(nextMode, { persist: true });
   const label = MIX_TRANSITION_MODE_LABELS[selectedTransitionMode] || selectedTransitionMode;
   showToast(`Mode AutoMix: ${label}`);
+});
+
+transitionModesDisableList?.addEventListener('change', (event) => {
+  const target = event.target;
+  const mode = target?.dataset?.mode;
+  if (!mode) return;
+  toggleUserDisabledTransitionMode(mode, Boolean(target.checked));
 });
 
 ramFilterEnabledToggle?.addEventListener('change', () => {

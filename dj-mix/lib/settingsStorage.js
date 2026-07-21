@@ -35,6 +35,23 @@ export function persistTransitionModeSetting(mode) {
   safeSet(STORAGE_KEYS.mixTransitionMode, String(mode || 'auto'));
 }
 
+export function readDisabledTransitionModesSetting(validModes) {
+  try {
+    const raw = safeGet(STORAGE_KEYS.disabledTransitionModes);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const valid = Array.isArray(validModes) ? validModes : null;
+    return parsed.filter((mode) => typeof mode === 'string' && (!valid || valid.includes(mode)));
+  } catch (_) {
+    return [];
+  }
+}
+
+export function persistDisabledTransitionModesSetting(modes) {
+  safeSet(STORAGE_KEYS.disabledTransitionModes, JSON.stringify(Array.isArray(modes) ? modes : []));
+}
+
 export function readTrackMaxDurationSetting() {
   const stored = safeGet(STORAGE_KEYS.trackMaxDuration) || '0';
   const value = Number.parseInt(stored, 10);

@@ -21,6 +21,9 @@ export { MIX_TRANSITION_MODES, MIX_TRANSITION_MODE_LABELS };
 // Au-delà de ce délai, load()->canplay ou play() sont considérés lents (réseau/decode) et loggés en warn.
 const SLOW_AUDIO_LOAD_THRESHOLD_MS = 200;
 
+// beat_repeat ne doit jamais boucler plus de 5s : passé ce délai, coupure sèche (cut) vers le morceau entrant.
+export const BEAT_REPEAT_MAX_LOOP_MS = 5000;
+
 function clamp01(value) {
   return Math.max(0, Math.min(1, Number(value) || 0));
 }
@@ -702,6 +705,7 @@ export class DJPlayer extends EventTarget {
     }
 
     const liveDuration = Math.max(250, Number(this.#crossfadeDuration) || 5000);
+    const beatRepeatCutoffMs = mode === 'beat_repeat' ? Math.min(BEAT_REPEAT_MAX_LOOP_MS, liveDuration) : null;
     const startEcho = this.#mixFeatureSettings.echo;
     const savedFromFilterMode = this.#mixFeatureSettings.deckFx?.[context.fromDeck]?.filterMode || 'off';
     const savedToFilterMode = this.#mixFeatureSettings.deckFx?.[context.toDeck]?.filterMode || 'off';
@@ -777,6 +781,31 @@ export class DJPlayer extends EventTarget {
           lastTickAt = now;
           progress = Math.min(1, progress + (elapsedMs / liveDuration));
 
+          if (mode === 'beat_repeat' && (progress * liveDuration) >= beatRepeatCutoffMs) {
+            clearInterval(this.#crossfadeInterval);
+            this.#crossfadeInterval = null;
+            if (context.fromDeck === 'A') {
+              this.#applyDeckBaseMix(0, 1);
+            } else {
+              this.#applyDeckBaseMix(1, 0);
+            }
+            this.#requestEmitDeckState();
+            this.dispatchEvent(new CustomEvent('crossfadeprogress', {
+              detail: {
+                fromDeck: context.fromDeck,
+                fromVolume: 0,
+                toVolume: 1,
+                toPosition: Number.isFinite(context.to.currentTime) ? context.to.currentTime * 1000 : 0,
+                toDuration: Number.isFinite(context.to.duration) && context.to.duration > 0 ? context.to.duration * 1000 : 0,
+                durationMs: beatRepeatCutoffMs,
+                progress: 1,
+                mode,
+              },
+            }));
+            resolve();
+            return;
+          }
+
           const levels = this.#computeTransitionLevels(mode, progress, context.startBaseFrom, context.startBaseTo);
           let fromBase = levels.from;
           let toBase = levels.to;
@@ -807,8 +836,10 @@ export class DJPlayer extends EventTarget {
           }
 
           // beat_repeat : boucle le deck sortant avec une longueur qui rétrécit progressivement
-          if (mode === 'beat_repeat' && progress < 0.65 && Number.isFinite(context.from.currentTime)) {
-            const loopLen = Math.max(0.1, Math.pow(1 - (progress / 0.65), 1.5));
+          // jusqu'au hard cut (cf. BEAT_REPEAT_MAX_LOOP_MS), au lieu d'une fraction fixe de liveDuration.
+          if (mode === 'beat_repeat' && Number.isFinite(context.from.currentTime)) {
+            const cutoffProgress = beatRepeatCutoffMs / liveDuration;
+            const loopLen = Math.max(0.1, Math.pow(1 - (progress / cutoffProgress), 1.5));
             if ((context.from.currentTime - loopAnchorFrom) >= loopLen) {
               context.from.currentTime = loopAnchorFrom;
             }
@@ -1041,15 +1072,9 @@ export class DJPlayer extends EventTarget {
         };
       }
       case 'beat_repeat': {
-        // fromDeck reste au volume plein pendant la boucle (65%), puis toDeck entre en hard
-        if (clampedT < 0.65) {
-          return { from: startBaseFrom, to: startBaseTo * 0.05 };
-        }
-        const phase = (clampedT - 0.65) / 0.35;
-        return {
-          from: startBaseFrom * (1 - phase),
-          to: startBaseTo + ((1 - startBaseTo) * phase),
-        };
+        // fromDeck reste au volume plein pendant toute la boucle ; le hard cut final est
+        // déclenché directement dans le tick (cf. BEAT_REPEAT_MAX_LOOP_MS), pas ici.
+        return { from: startBaseFrom, to: startBaseTo * 0.05 };
       }
       case 'backspin': {
         // Phase 1 : fromDeck décélère et s'arrête ; toDeck monte dès 20% pour éviter tout silence

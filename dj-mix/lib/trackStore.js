@@ -43,6 +43,10 @@ function runtimeDefaults() {
   };
 }
 
+function isDeadPersistedArtUrl(value) {
+  return typeof value === 'string' && value.startsWith('blob:');
+}
+
 function isFilled(value) {
   if (value === null || value === undefined || value === '') return false;
   if (typeof value === 'boolean') return value === true;
@@ -121,7 +125,15 @@ export function createTrackStore() {
       const serialized = {};
       for (const [id, record] of records) {
         const picked = {};
-        for (const field of TRACK_FIELDS) picked[field] = record[field];
+        for (const field of TRACK_FIELDS) {
+          // blob: URLs are revoked when the document that created them
+          // unloads, so persisting one just bricks the artwork on next
+          // launch (truthy but dead) instead of letting it re-resolve from
+          // the artwork cache/CDN. Drop it; the remote URL gets re-fetched.
+          picked[field] = field === 'artUrl' && isDeadPersistedArtUrl(record.artUrl)
+            ? ''
+            : record[field];
+        }
         serialized[id] = picked;
       }
       localStorage.setItem(STORAGE_KEYS.tracks, JSON.stringify(serialized));
@@ -139,6 +151,10 @@ export function createTrackStore() {
       if (!parsed || typeof parsed !== 'object') return;
       records.clear();
       for (const [id, data] of Object.entries(parsed)) {
+        // Defensive cleanup for data persisted before the save()-side guard
+        // above existed: any blob: artUrl already sitting in localStorage is
+        // guaranteed stale (previous-session document), so clear it here too.
+        if (isDeadPersistedArtUrl(data?.artUrl)) data.artUrl = '';
         records.set(id, createRecordFrom(data, id));
       }
       logger.info('trackStore.restore.success', { size: records.size });

@@ -151,6 +151,38 @@ describe('trackStore', () => {
       store2.restore();
       expect(store2.get('1').djIsIconic).toBe(true);
     });
+
+    test('save() strips a blob: artUrl instead of persisting it (regression: stale blob URLs blocked artwork re-download)', () => {
+      const store = createTrackStore();
+      const track = store.getOrCreate({ id: '1', name: 'Song A', artist: 'A' });
+      store.patch('1', { artUrl: 'blob:https://example.com/abcd-1234' });
+      store.save();
+
+      const raw = JSON.parse(localStorage.getItem('dj-mix:tracks'));
+      expect(raw['1'].artUrl).toBe('');
+      // in-memory value for the current session is left untouched
+      expect(track.artUrl).toBe('blob:https://example.com/abcd-1234');
+    });
+
+    test('restore() clears a stale blob: artUrl already sitting in localStorage (regression: pre-fix data)', () => {
+      localStorage.setItem('dj-mix:tracks', JSON.stringify({
+        1: { id: '1', name: 'Song A', artist: 'A', artUrl: 'blob:https://example.com/dead' },
+      }));
+
+      const store = createTrackStore();
+      store.restore();
+      expect(store.get('1').artUrl).toBe('');
+    });
+
+    test('a non-blob artUrl (remote CDN URL) survives a save/restore cycle', () => {
+      const store1 = createTrackStore();
+      store1.getOrCreate({ id: '1', name: 'Song A', artist: 'A', artUrl: 'https://cdn.example.com/art.jpg' });
+      store1.save();
+
+      const store2 = createTrackStore();
+      store2.restore();
+      expect(store2.get('1').artUrl).toBe('https://cdn.example.com/art.jpg');
+    });
   });
 
   describe('pruneUnreferenced', () => {

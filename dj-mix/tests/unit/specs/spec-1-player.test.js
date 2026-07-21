@@ -18,6 +18,7 @@ import {
   markAutomixTriggered,
 } from '../../../lib/automixTimeline.js';
 import { createSettingsController } from '../../../lib/settingsController.js';
+import { BEAT_REPEAT_MAX_LOOP_MS } from '../../../player.js';
 import { uiState } from '../../../lib/uiState.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -410,6 +411,43 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     await crossfadeWithMode(player, 'brake_tape_stop_simple', { url: 'blob:track-d', durationMs: 200000 });
     player.removeEventListener('crossfadeprogress', onProgress);
     expect(minRateSeen).toBeGreaterThan(0.99);
+    player.destroy?.();
+  }, 10000);
+
+  test('SPEC-1.3.8.1/.2 — beat_repeat est plafonné à BEAT_REPEAT_MAX_LOOP_MS puis termine par un cut', async () => {
+    const player = await makePlayer();
+    player.crossfadeDuration = 8000; // bien au-delà du plafond de 5s
+    const startedAt = Date.now();
+    const samples = await crossfadeWithMode(player, 'beat_repeat', { url: 'blob:track-e', durationMs: 200000 });
+    const elapsedMs = Date.now() - startedAt;
+
+    // La transition ne doit jamais s'étendre jusqu'à la durée de crossfade configurée (8s).
+    expect(elapsedMs).toBeLessThan(BEAT_REPEAT_MAX_LOOP_MS + 1500);
+
+    expect(samples.length).toBeGreaterThan(3);
+    const last = samples[samples.length - 1];
+    // Coupure sèche : dernier échantillon = cut complet, pas un fondu progressif.
+    expect(last.progress).toBe(1);
+    expect(last.fromVolume).toBe(0);
+    expect(last.toVolume).toBe(1);
+
+    // Juste avant le cut, on est encore dans la boucle (deck sortant quasi plein, entrant quasi muet) :
+    // pas de phase de fondu intermédiaire comme avant.
+    const secondLast = samples[samples.length - 2];
+    expect(secondLast.fromVolume).toBeGreaterThan(0.5);
+    expect(secondLast.toVolume).toBeLessThan(0.2);
+
+    player.destroy?.();
+  }, 12000);
+
+  test('SPEC-1.3.8.3 — beat_repeat avec un crossfade court (≤5s) utilise toute la durée configurée', async () => {
+    const player = await makePlayer();
+    player.crossfadeDuration = 2000;
+    const samples = await crossfadeWithMode(player, 'beat_repeat', { url: 'blob:track-f', durationMs: 200000 });
+    const last = samples[samples.length - 1];
+    expect(last.progress).toBe(1);
+    expect(last.fromVolume).toBe(0);
+    expect(last.toVolume).toBe(1);
     player.destroy?.();
   }, 10000);
 });

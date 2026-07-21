@@ -8,6 +8,7 @@ export const STORAGE_KEYS = Object.freeze({
   fxVisibility: 'dj-mix:fx:hidden',
   debugLogs: 'dj-mix:logs:debug',
   mixTransitionMode: 'dj-mix:transition:mode',
+  disabledTransitionModes: 'dj-mix:transition:disabled-modes',
   trackMaxDuration: 'dj-mix:track:max-duration',
   trackMaxDurationEnabled: 'dj-mix:track:max-duration:enabled',
   trackMaxDurationMode: 'dj-mix:track:max-duration:mode',

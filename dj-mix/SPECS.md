@@ -62,7 +62,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 | 20 | `echo_lowpass` | 216 | 1.45 | `max(0.08, start × (1−t))` (plancher 8%) + echo + LP | `start + … × t^1.08` |
 | 21 | `bass_swap` | 175 | 1.30 | `start × cos(π/2 × t^0.85)` | `start + … × t^0.85` |
 | 22 | `kick_swap` | 145 | 1.25 | S-curve cosine | Entrée retardée à 30% : `(t−0.3)/0.7` |
-| 23 | `beat_repeat` | 112 | 1.20 | Plein jusqu'à 65%, puis phase out | Minimal (5%) jusqu'à 65%, puis entrée dure |
+| 23 | `beat_repeat` | 112 | 1.20 | Plein pendant toute la boucle (max `5s`), puis coupure sèche | Minimal (5%) pendant la boucle, puis entrée immédiate (cut) |
 | 24 | `backspin` | 85 | 0.95 | Décélération rapide jusqu'à 35%, puis 0 | Entrée dès 20% (avant l'arrêt complet) : `((t−0.2)/0.5)^0.7` |
 | 25 | `echo_freeze` | 195 | 1.48 | Plancher 12% gelé jusqu'à 65%, puis fade | Entrée retardée à 45% : `(t−0.45)^0.8` |
 
@@ -91,7 +91,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.3.5.1** GIVEN le mode `beat_repeat` est sélectionné (auto ou manuel) — WHEN la transition démarre (event `transitionmode`) — THEN `triggerBeatRepeatTransitionFx` est appelé : un loop roll est déclenché immédiatement sur la platine sortante ET sur la platine entrante avec un délai de `350 ms` (pour laisser la piste entrante démarrer sa lecture).
 - **SPEC-1.3.5.2** La fenêtre de boucle (`windowMs`) est calculée à partir du BPM de la piste entrante : `windowMs = round(30 000 / BPM)` (1/8 de note). Plage : `60`–`500 ms`. BPM par défaut si inconnu : `120`.
 - **SPEC-1.3.5.3** L'intervalle de ré-ancrage (`tickMs`) est identique à `windowMs` pour créer une boucle exacte sur la division rythmique.
-- **SPEC-1.3.5.4** La durée du loop roll est `crossfadeDurationMs × 0.65` pour la platine sortante, et `(crossfadeDurationMs × 0.65) − 350 ms` pour la platine entrante (délai initial déduit).
+- **SPEC-1.3.5.4** La durée du loop roll est `min(BEAT_REPEAT_MAX_LOOP_MS, crossfadeDurationMs)` pour la platine sortante (cf. SPEC-1.3.8), et cette même valeur `− 350 ms` pour la platine entrante (délai initial déduit).
 - **SPEC-1.3.5.5** Les deux platines utilisent le BPM de la piste entrante pour maintenir la cohérence rythmique perçue pendant la transition.
 
 #### 1.3.6 Continuité audio (pas de silence)
@@ -107,6 +107,14 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.3.7.2** GIVEN le mode `auto` — WHEN un mode est tiré au sort — THEN `reverb_short_simple` est exclu du pool (`#chooseAutoTransitionMode`), même s'il figure dans `allowedTransitionModes`.
 - **SPEC-1.3.7.3** GIVEN le sélecteur manuel "Mode AutoMix" — THEN l'option `reverb_short_simple` n'est plus proposée dans le `<select>`.
 - **SPEC-1.3.7.4** `reverb_short_simple` est retiré de `allowedTransitionModes` côté `main.js` (`DISABLED_TRANSITION_MODES`), donc même une valeur persistée (ancien réglage) retombe sur `auto` via `getSafeAllowedTransitionMode` / `#resolveAllowedTransitionMode`.
+
+#### 1.3.8 Mode `beat_repeat` plafonné à 5s + coupure sèche
+
+- **SPEC-1.3.8.1** GIVEN le mode `beat_repeat` — WHEN la transition démarre — THEN la boucle du deck sortant ne dure jamais plus de `BEAT_REPEAT_MAX_LOOP_MS` = `5000 ms`, même si la durée de crossfade configurée est plus longue (`beatRepeatCutoffMs = min(5000, liveDuration)`).
+- **SPEC-1.3.8.2** GIVEN la boucle `beat_repeat` qui atteint `beatRepeatCutoffMs` — THEN la transition se termine immédiatement par une coupure sèche (deck sortant → `0`, deck entrant → `1` en un seul tick), et non par un fondu progressif comme c'était le cas auparavant (phase `0.65`→`1`, supprimée).
+- **SPEC-1.3.8.3** GIVEN une durée de crossfade configurée ≤ `5000 ms` — THEN `beat_repeat` n'est pas raccourci davantage : la boucle occupe toute la durée configurée avant la coupure.
+- **SPEC-1.3.8.4** La longueur de boucle qui rétrécit progressivement (cf. catalogue #23) est recalculée sur la fraction `progress / (beatRepeatCutoffMs / liveDuration)` plutôt que sur une fraction fixe de `0.65`, afin de rester cohérente quelle que soit la durée réellement plafonnée.
+- **SPEC-1.3.8.5** Le FX `triggerBeatRepeatTransitionFx` (SPEC-1.3.5) utilise la même borne : `phaseDurationMs = min(BEAT_REPEAT_MAX_LOOP_MS, crossfadeDurationMs)`.
 
 ### 1.4 Contrôle du playback
 
@@ -207,6 +215,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-2.6.6** Champs "locaux à la liste" gérés par la Queue elle-même, absents du trackStore : `queueSource`, `autoDjReferenceTrackId`, `autoDjStartOffsetMs`.
 - **SPEC-2.6.7** GIVEN un enregistrement persisté `dj-mix:queue`/`dj-mix:fil-rouge` au format antérieur (contenant les métadonnées complètes au lieu d'une simple référence `id`) — WHEN il est restauré après mise à jour de l'application — THEN ses champs sont capturés dans le trackStore via `getOrCreate` plutôt que perdus ; la restauration tolère indifféremment l'ancien format riche et le nouveau format allégé.
 - **SPEC-2.6.8** GIVEN un morceau n'est plus référencé par aucune liste (Queue, playlist Fil Rouge, priorityQueue Fil Rouge) — WHEN un balayage périodique (`trackStore.pruneUnreferenced`, toutes les `10 min` après un premier passage au démarrage) s'exécute — THEN son enregistrement est retiré du trackStore, pour éviter une croissance illimitée de `dj-mix:tracks`.
+- **SPEC-2.6.9** GIVEN un `artUrl` de type `blob:` (URL objet issue de `restoreArtwork`/Cache Storage, révoquée dès que le document qui l'a créée se décharge) — WHEN `trackStore.save()` sérialise l'enregistrement, OU `trackStore.restore()` charge une entrée déjà persistée avec un tel `artUrl` — THEN ce champ est vidé (`''`) plutôt que persisté/restauré tel quel, afin que le code appelant (`fetchAndStoreArtworkForItem`/`fetchFilRougeArtwork`) le traite comme « artwork manquant » et le retélécharge (Cache Storage → cache d'URLs artwork → API/CDN) au lieu d'afficher une pochette cassée indéfiniment. La valeur en mémoire (session en cours) n'est pas altérée, seule la copie persistée l'est.
 
 ---
 
@@ -850,6 +859,7 @@ des files "incoming" (§9.4) en temps réel, sans polling réseau : le maître l
 | tracks | `dj-mix:tracks` |
 | crossfadeSeconds | `dj-mix:crossfade-seconds` |
 | mixTransitionMode | `dj-mix:transition:mode` |
+| disabledTransitionModes | `dj-mix:transition:disabled-modes` |
 | trackMaxDuration | `dj-mix:track:max-duration` |
 | trackMaxDurationEnabled | `dj-mix:track:max-duration:enabled` |
 | trackMaxDurationMode | `dj-mix:track:max-duration:mode` |
@@ -895,12 +905,19 @@ des files "incoming" (§9.4) en temps réel, sans polling réseau : le maître l
 | Downloader API URL | `http://192.168.8.149:3000` | — | — |
 | Volume global | 1.0 | 0.0 | 1.0 |
 
-### 12.4 Vider le cache local
+### 12.4 Désactivation manuelle des modes de transition
 
-- **SPEC-12.4.1** `clearLocalCache()` (`lib/settingsController.js`) est appelée par le bouton `#clear-cache-btn`. GIVEN la Cache Storage API disponible (`'caches' in window`) — THEN le cache `AUDIO_CACHE_NAME` est supprimé via `caches.delete()`, le cache mémoire (`sessionBlobCache`) est vidé, et le toast `Cache local vidé` est affiché.
-- **SPEC-12.4.2** GIVEN la Cache Storage API absente de `window` (contexte non sécurisé : accès à l'app via IP LAN — `192.168.x.x`/`10.x.x.x` — en HTTP plutôt que via `localhost`/`127.0.0.1`/HTTPS) — THEN `clearLocalCache()` ne bloque pas sur une erreur : le cache mémoire est vidé quand même, et un toast informatif `Cache mémoire vidé — Cache API indisponible (connexion non sécurisée : utilisez localhost ou HTTPS)` est affiché (sans style d'erreur).
-- **SPEC-12.4.3** GIVEN la Cache Storage API absente alors que le contexte est déjà sécurisé (`isSecureContext === true`, navigateur/plateforme sans support) — THEN le toast n'inclut pas la précision « connexion non sécurisée ».
-- **SPEC-12.4.4** GIVEN une erreur levée pendant `caches.delete()` — THEN un toast d'erreur `Erreur suppression cache: <message>` est affiché.
+- **SPEC-12.4.1** Le menu de config affiche une case à cocher par mode de transition (bloc « Transitions de mix »), à l'exception de `auto`, `cut_transition` (fallbacks garantis, jamais proposés) et des modes déjà désactivés en dur (`reverb_short_simple`, cf. SPEC-1.3.7).
+- **SPEC-12.4.2** GIVEN une case décochée par l'utilisateur — THEN le mode correspondant est ajouté à `userDisabledTransitionModes`, persisté (`dj-mix:transition:disabled-modes`, JSON), et retiré de `allowedTransitionModes` : il n'est plus proposé dans le sélecteur manuel « Mode AutoMix » ni tiré au sort en mode `auto`.
+- **SPEC-12.4.3** GIVEN le mode de transition actuellement sélectionné qui devient désactivé — THEN le réglage retombe automatiquement sur un mode autorisé via `getSafeAllowedTransitionMode` (repli sur `auto` si disponible), avec un toast de confirmation.
+- **SPEC-12.4.4** La désactivation manuelle se cumule avec le filtre RAM (SPEC-1.3.4) : un mode est disponible seulement s'il n'est exclu ni par le budget RAM, ni par `DISABLED_TRANSITION_MODES`, ni par `userDisabledTransitionModes`.
+
+### 12.5 Vider le cache local
+
+- **SPEC-12.5.1** `clearLocalCache()` (`lib/settingsController.js`) est appelée par le bouton `#clear-cache-btn`. GIVEN la Cache Storage API disponible (`'caches' in window`) — THEN le cache `AUDIO_CACHE_NAME` est supprimé via `caches.delete()`, le cache mémoire (`sessionBlobCache`) est vidé, et le toast `Cache local vidé` est affiché.
+- **SPEC-12.5.2** GIVEN la Cache Storage API absente de `window` (contexte non sécurisé : accès à l'app via IP LAN — `192.168.x.x`/`10.x.x.x` — en HTTP plutôt que via `localhost`/`127.0.0.1`/HTTPS) — THEN `clearLocalCache()` ne bloque pas sur une erreur : le cache mémoire est vidé quand même, et un toast informatif `Cache mémoire vidé — Cache API indisponible (connexion non sécurisée : utilisez localhost ou HTTPS)` est affiché (sans style d'erreur).
+- **SPEC-12.5.3** GIVEN la Cache Storage API absente alors que le contexte est déjà sécurisé (`isSecureContext === true`, navigateur/plateforme sans support) — THEN le toast n'inclut pas la précision « connexion non sécurisée ».
+- **SPEC-12.5.4** GIVEN une erreur levée pendant `caches.delete()` — THEN un toast d'erreur `Erreur suppression cache: <message>` est affiché.
 
 ---
 

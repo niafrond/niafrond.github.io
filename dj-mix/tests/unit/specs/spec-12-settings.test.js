@@ -19,7 +19,10 @@ import {
   persistTrackMaxDurationSetting,
   persistTrackMaxDurationEnabledSetting,
   persistRamTotalMbOverrideSetting,
+  readDisabledTransitionModesSetting,
+  persistDisabledTransitionModesSetting,
 } from '../../../lib/settingsStorage.js';
+import { MIX_TRANSITION_MODES } from '../../../lib/transitionModes.js';
 import {
   TRACK_MAX_DURATION_MIN_SEC,
   TRACK_MAX_DURATION_MAX_SEC,
@@ -44,7 +47,7 @@ describe('SPEC-12.1 — Storage keys centralized', () => {
     'queue', 'filRouge', 'crossfadeSeconds', 'mixTransitionMode',
     'trackMaxDuration', 'trackMaxDurationEnabled', 'trackMaxDurationMode',
     'trackMaxDurationPct', 'ramFilterEnabled', 'ramTotalMbOverride',
-    'autoDjFxSettings', 'queueLoop', 'queueShuffle',
+    'autoDjFxSettings', 'queueLoop', 'queueShuffle', 'disabledTransitionModes',
     'djMode', 'djModeGenrePrefs',
     'spotifyClientId', 'spotifyAuth', 'spotifyFilRougeSource',
     'relayMode', 'relayMasterId',
@@ -113,6 +116,10 @@ describe('SPEC-12.3 — Default values', () => {
   test('queue shuffle default: false', () => {
     expect(readQueueShuffleSetting()).toBe(false);
   });
+
+  test('disabled transition modes default: empty array', () => {
+    expect(readDisabledTransitionModesSetting(MIX_TRANSITION_MODES)).toEqual([]);
+  });
 });
 
 // ── SPEC-12.3 — Persistence roundtrip ──────────────────────────────────────
@@ -145,5 +152,20 @@ describe('SPEC-12.3 — Persistence roundtrip', () => {
 
     persistRamTotalMbOverrideSetting(4096);
     expect(readRamTotalMbOverrideSetting()).toBe(4096); // in range
+  });
+
+  test('disabled transition modes persist/read roundtrip', () => {
+    persistDisabledTransitionModesSetting(['beat_repeat', 'backspin']);
+    expect(readDisabledTransitionModesSetting(MIX_TRANSITION_MODES)).toEqual(['beat_repeat', 'backspin']);
+  });
+
+  test('disabled transition modes: unknown/invalid modes are filtered out on read', () => {
+    persistDisabledTransitionModesSetting(['beat_repeat', 'not_a_real_mode', 42]);
+    expect(readDisabledTransitionModesSetting(MIX_TRANSITION_MODES)).toEqual(['beat_repeat']);
+  });
+
+  test('disabled transition modes: corrupted storage value falls back to empty array', () => {
+    localStorage.setItem(STORAGE_KEYS.disabledTransitionModes, '{not json');
+    expect(readDisabledTransitionModesSetting(MIX_TRANSITION_MODES)).toEqual([]);
   });
 });
