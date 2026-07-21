@@ -4,7 +4,7 @@
  * Playback: temporary local Blob download + dual-deck crossfade
  */
 
-import { DJPlayer, BEAT_REPEAT_MAX_LOOP_MS } from './player.js';
+import { DJPlayer, BEAT_REPEAT_MAX_LOOP_MS, BEAT_REPEAT_OVERLAP_MS } from './player.js';
 import { initServiceWorker, installPwa, initAutoFullscreen, initApkDownloadLink, checkApkUpdate, doApkUpdate, forceUpdatePwa } from './pwa.js';
 import { pushPlaybackState, pushQueue, onMediaCommand, getPendingMediaCommand } from './lib/androidAutoBridge.js';
 
@@ -4440,7 +4440,11 @@ function hookPlayerEvents() {
 
       if (effectiveMode === 'beat_repeat' && fromDeck && toDeck) {
         const incomingBpm = Number(extractTrackBpm(deckDisplayItems[toDeck])) || 120;
-        const phaseDurationMs = Math.min(BEAT_REPEAT_MAX_LOOP_MS, player.crossfadeDuration || 6000);
+        const beatRepeatTotalMs = Math.min(BEAT_REPEAT_MAX_LOOP_MS, player.crossfadeDuration || 6000);
+        const beatRepeatOverlapMs = Math.min(BEAT_REPEAT_OVERLAP_MS, beatRepeatTotalMs);
+        // Le stutter FX ne couvre que la phase bouclée : il s'arrête quand la superposition
+        // finale (overlap volume, cf. player.js) démarre, pour rester synchronisé.
+        const phaseDurationMs = beatRepeatTotalMs - beatRepeatOverlapMs;
         triggerBeatRepeatTransitionFx(fromDeck, toDeck, phaseDurationMs, incomingBpm);
       }
 
@@ -4460,7 +4464,7 @@ function hookPlayerEvents() {
     });
 }
 
-autoMixBtn?.addEventListener('click', async () => {
+async function performAutoMix() {
   if (!player || player.isCrossfading) return;
   const hasCue = uiState.deckBCueIndex >= 0 && uiState.deckBCueIndex < queue.length;
   const inactiveDeck = hasCue && (uiState.deckCueDeck === 'A' || uiState.deckCueDeck === 'B')
@@ -4518,7 +4522,9 @@ autoMixBtn?.addEventListener('click', async () => {
   } finally {
     showCrossfadeRing(false);
   }
-});
+}
+
+autoMixBtn?.addEventListener('click', performAutoMix);
 
 // SPEC-13.3.6 — Compte les sorties audio (`kind === 'audiooutput'`) pour détecter
 // une vraie perte de sortie (débranchement) plutôt que réagir à tout `devicechange`
@@ -6125,7 +6131,13 @@ async function triggerSearchFade(track) {
 
   await launchDeckFromQueue(inactiveDeck, { paused: true, useCue: true });
   showToast(`Platine ${deckToPlatineLabel(inactiveDeck)} prechargee, AutoMix...`);
-  autoMixBtn?.click();
+  // Appel direct (pas autoMixBtn.click()) : le bouton peut encore être `disabled`
+  // ici — son état n'est remis à jour qu'au prochain rAF planifié par renderQueue()
+  // (cf. addToQueue ci-dessus), qui n'a pas forcément eu le temps de s'exécuter,
+  // surtout quand la piste est déjà en cache local (cas du relais : prefetchTrackToLocalCache
+  // a déjà téléchargé la piste AVANT cet appel, donc launchDeckFromQueue résout très vite).
+  // .click() sur un bouton disabled ne déclenche silencieusement aucun listener.
+  await performAutoMix();
   closeSearch();
 }
 

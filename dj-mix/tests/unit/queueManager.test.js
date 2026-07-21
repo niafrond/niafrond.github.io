@@ -172,6 +172,31 @@ describe('addToQueue asNext', () => {
   });
 });
 
+// ── addToQueue — playNow position (SPEC-4.3.8) ───────────────────────────────
+
+describe('addToQueue playNow position', () => {
+  test('inserts at currentIndex+1, not at the end of the queue', async () => {
+    uiState.queue = [makeTrack({ id: 'curr' }), makeTrack({ id: 'old-next' })];
+    uiState.currentIndex = 0;
+    uiState.currentTrackId = 'curr';
+    uiState.isPlaying = true;
+    const mgr = makeManager();
+    await mgr.addToQueue(makeTrack({ id: 'now-track', name: 'Now', artist: 'X' }), { playNow: true });
+    expect(uiState.queue).toHaveLength(3);
+    expect(uiState.queue[1].id).toBe('now-track');
+    expect(uiState.queue[2].id).toBe('old-next');
+  });
+
+  test('inserts at index 0 when nothing is playing (currentIndex === -1)', async () => {
+    uiState.queue = [makeTrack({ id: 'a' })];
+    uiState.currentIndex = -1;
+    const mgr = makeManager();
+    await mgr.addToQueue(makeTrack({ id: 'now-track', name: 'Now', artist: 'Y' }), { playNow: true });
+    expect(uiState.queue[0].id).toBe('now-track');
+    expect(uiState.queue[1].id).toBe('a');
+  });
+});
+
 // ── removeFromQueue ───────────────────────────────────────────────────────────
 
 describe('removeFromQueue', () => {

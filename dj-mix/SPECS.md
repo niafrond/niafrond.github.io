@@ -62,7 +62,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 | 20 | `echo_lowpass` | 216 | 1.45 | `max(0.08, start × (1−t))` (plancher 8%) + echo + LP | `start + … × t^1.08` |
 | 21 | `bass_swap` | 175 | 1.30 | `start × cos(π/2 × t^0.85)` | `start + … × t^0.85` |
 | 22 | `kick_swap` | 145 | 1.25 | S-curve cosine | Entrée retardée à 30% : `(t−0.3)/0.7` |
-| 23 | `beat_repeat` | 112 | 1.20 | Plein pendant toute la boucle (max `5s`), puis coupure sèche | Minimal (5%) pendant la boucle, puis entrée immédiate (cut) |
+| 23 | `beat_repeat` | 112 | 1.20 | Plein pendant la boucle (max `5s` au total), puis superposition (fade) sur les 2 dernières secondes | Minimal (5%) pendant la boucle, puis superposition avec le deck sortant sur les 2 dernières secondes |
 | 24 | `backspin` | 85 | 0.95 | Décélération rapide jusqu'à 35%, puis 0 | Entrée dès 20% (avant l'arrêt complet) : `((t−0.2)/0.5)^0.7` |
 | 25 | `echo_freeze` | 195 | 1.48 | Plancher 12% gelé jusqu'à 65%, puis fade | Entrée retardée à 45% : `(t−0.45)^0.8` |
 
@@ -108,13 +108,14 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.3.7.3** GIVEN le sélecteur manuel "Mode AutoMix" — THEN l'option `reverb_short_simple` n'est plus proposée dans le `<select>`.
 - **SPEC-1.3.7.4** `reverb_short_simple` est retiré de `allowedTransitionModes` côté `main.js` (`DISABLED_TRANSITION_MODES`), donc même une valeur persistée (ancien réglage) retombe sur `auto` via `getSafeAllowedTransitionMode` / `#resolveAllowedTransitionMode`.
 
-#### 1.3.8 Mode `beat_repeat` plafonné à 5s + coupure sèche
+#### 1.3.8 Mode `beat_repeat` plafonné à 5s + superposition finale
 
-- **SPEC-1.3.8.1** GIVEN le mode `beat_repeat` — WHEN la transition démarre — THEN la boucle du deck sortant ne dure jamais plus de `BEAT_REPEAT_MAX_LOOP_MS` = `5000 ms`, même si la durée de crossfade configurée est plus longue (`beatRepeatCutoffMs = min(5000, liveDuration)`).
-- **SPEC-1.3.8.2** GIVEN la boucle `beat_repeat` qui atteint `beatRepeatCutoffMs` — THEN la transition se termine immédiatement par une coupure sèche (deck sortant → `0`, deck entrant → `1` en un seul tick), et non par un fondu progressif comme c'était le cas auparavant (phase `0.65`→`1`, supprimée).
-- **SPEC-1.3.8.3** GIVEN une durée de crossfade configurée ≤ `5000 ms` — THEN `beat_repeat` n'est pas raccourci davantage : la boucle occupe toute la durée configurée avant la coupure.
-- **SPEC-1.3.8.4** La boucle se décompose en étapes successives (`BEAT_REPEAT_STAGE_DURATION_FRACTIONS = [0.40, 0.25, 0.20, 0.15]`, qui somme à `1`) : une première boucle plus longue, puis des boucles de plus en plus courtes (`BEAT_REPEAT_STAGE_LOOP_SECONDS = [1.0, 0.5, 0.25, 0.125]`, divisée par 2 à chaque étape). La durée de chaque étape est `fraction × beatRepeatCutoffMs`, et les deux tableaux (durées + longueurs de boucle) sont mis à l'échelle par `beatRepeatCutoffMs / BEAT_REPEAT_MAX_LOOP_MS` si le budget est réduit (crossfade court). Le cumul des durées d'étapes est donc toujours exactement égal à `beatRepeatCutoffMs`.
-- **SPEC-1.3.8.5** Le FX `triggerBeatRepeatTransitionFx` (SPEC-1.3.5) utilise la même borne : `phaseDurationMs = min(BEAT_REPEAT_MAX_LOOP_MS, crossfadeDurationMs)`.
+- **SPEC-1.3.8.1** GIVEN le mode `beat_repeat` — WHEN la transition démarre — THEN elle ne dure jamais plus de `BEAT_REPEAT_MAX_LOOP_MS` = `5000 ms` au total (boucle + superposition finale), même si la durée de crossfade configurée est plus longue (`beatRepeatCutoffMs = min(5000, liveDuration)`).
+- **SPEC-1.3.8.2** GIVEN une durée de crossfade configurée ≤ `5000 ms` — THEN `beat_repeat` n'est pas raccourci davantage : le budget total (boucle + superposition) occupe toute la durée configurée.
+- **SPEC-1.3.8.3** Les `BEAT_REPEAT_OVERLAP_MS` = `2000 ms` dernières millisecondes du budget total (`beatRepeatOverlapMs = min(2000, beatRepeatCutoffMs)`) ne sont plus consacrées à la boucle : le deck sortant et le deck entrant s'y superposent (fade croisé linéaire, `from: startBaseFrom × (1 − overlapProgress)`, `to: startBaseTo + (1 − startBaseTo) × overlapProgress`), et non une coupure sèche (cut) comme dans une itération précédente de cette spec.
+- **SPEC-1.3.8.4** La phase bouclée (le budget total moins `beatRepeatOverlapMs`, soit `beatRepeatLoopPhaseMs`) se décompose en étapes successives (`BEAT_REPEAT_STAGE_DURATION_FRACTIONS = [0.40, 0.25, 0.20, 0.15]`, qui somme à `1`) : une première boucle qui dure plus longtemps, puis des boucles de plus en plus courtes. La durée de chaque étape est `fraction × beatRepeatLoopPhaseMs` : le cumul des durées d'étapes est donc toujours exactement égal à `beatRepeatLoopPhaseMs`, quel que soit le BPM.
+- **SPEC-1.3.8.5** GIVEN les 4 étapes — THEN leur longueur de boucle est calée sur le tempo de la piste entrante plutôt que sur une durée fixe : `BEAT_REPEAT_STAGE_BEATS = [4, 2, 1, 0.5]` temps (1 mesure, 1/2 mesure, 1 temps, 1/2 temps) × `60 / bpm`. Le BPM utilisé est celui de la piste entrante (`normalized.bpm` résolu dans `#normalizeSource`, avec repli sur `audioFeatures.bpm`/`tempo`), clampé entre `60` et `220` (défaut `120` si indisponible).
+- **SPEC-1.3.8.6** Le FX `triggerBeatRepeatTransitionFx` (SPEC-1.3.5) ne couvre que la phase bouclée : `phaseDurationMs = min(BEAT_REPEAT_MAX_LOOP_MS, crossfadeDurationMs) − BEAT_REPEAT_OVERLAP_MS`, avec le même calcul de BPM entrant (`extractTrackBpm`) — le stutter FX s'arrête exactement quand la superposition volume démarre, les deux effets restant synchronisés sur le même tempo.
 
 ### 1.4 Contrôle du playback
 
@@ -738,6 +739,23 @@ staging côté maître, câblé dans `main.js` en lieu et place de l'ancien trai
   `relay.incoming.now.downloadFailed`, `relay.incoming.next.rejected`,
   `relay.incoming.next.downloadFailed`) afin d'identifier l'appareil à l'origine d'une
   commande sans authentification ni fingerprinting côté serveur.
+- **SPEC-9.4.12** `triggerSearchFade()` déclenche l'AutoMix via un appel direct à
+  `performAutoMix()` (fonction extraite du listener `click` du bouton AutoMix), **pas**
+  via `autoMixBtn.click()`. Raison : `autoMixBtn.disabled` n'est remis à jour qu'au
+  prochain `requestAnimationFrame` planifié par `renderQueue()` (cf. `_renderQueueRafId`),
+  qui n'a pas forcément eu lieu au moment de l'appel — en particulier pour « Lire
+  maintenant » depuis le relais, où `prefetchTrackToLocalCache()` a déjà téléchargé la
+  piste avant `triggerSearchFade()`, donc `launchDeckFromQueue()` résout quasi
+  instantanément (cache local) au lieu d'attendre un vrai téléchargement réseau — ce qui
+  laissait le bouton encore `disabled` (car `queue.length` venait tout juste de passer de
+  `1` à `2`) au moment du `.click()`, qui ne déclenche alors silencieusement aucun
+  listener (comportement standard des boutons `disabled` dans le DOM). Symptôme observé :
+  la piste apparaissait bien dans la file mais l'AutoMix ne se déclenchait pas. Corrigé en
+  appelant directement `performAutoMix()`, indépendamment de l'état `disabled` du bouton.
+  **Non couvert par un test unitaire** : `triggerSearchFade`/`performAutoMix` vivent dans
+  `main.js` (pas dans `lib/`) et ne sont importés par aucun fichier de test existant (même
+  lacune préexistante que SPEC-4.3.7/4.3.8, `tests/unit/specs/spec-4-search.test.js` n'a
+  aucune couverture de `triggerSearchFade`).
 
 ### 9.5 Retour visuel côté maître (files "incoming")
 

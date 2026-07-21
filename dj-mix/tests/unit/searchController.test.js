@@ -121,17 +121,37 @@ describe('triggerSearchFade', () => {
     uiState.queue = [{ id: 'existing', name: 'Existing', artist: 'X' }];
     const launchDeckFromQueue = jest.fn().mockResolvedValue(undefined);
     const autoMixBtnEl = { click: jest.fn() };
+    const addToQueue = jest.fn().mockImplementation(async (track) => {
+      uiState.queue.push({ ...track });
+    });
     const ctrl = makeController({
       getPlayer: jest.fn().mockReturnValue({ isCrossfading: false }),
-      addToQueue: jest.fn().mockImplementation(async (track) => {
-        uiState.queue.push({ ...track });
-      }),
+      addToQueue,
       launchDeckFromQueue,
       autoMixBtn: autoMixBtnEl,
     });
     await ctrl.triggerSearchFade({ id: 'new-track', name: 'New', artist: 'Y' });
     expect(launchDeckFromQueue).toHaveBeenCalled();
     expect(autoMixBtnEl.click).toHaveBeenCalled();
+  });
+
+  test('SPEC-4.3.8 — inserts as next (right below the current title), not appended at the end', async () => {
+    uiState.isPlaying = true;
+    uiState.queue = [{ id: 'existing', name: 'Existing', artist: 'X' }];
+    const addToQueue = jest.fn().mockImplementation(async (track) => {
+      uiState.queue.push({ ...track });
+    });
+    const ctrl = makeController({
+      getPlayer: jest.fn().mockReturnValue({ isCrossfading: false }),
+      addToQueue,
+      launchDeckFromQueue: jest.fn().mockResolvedValue(undefined),
+      autoMixBtn: { click: jest.fn() },
+    });
+    await ctrl.triggerSearchFade({ id: 'new-track', name: 'New', artist: 'Y' });
+    expect(addToQueue).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'new-track' }),
+      expect.objectContaining({ asNext: true }),
+    );
   });
 });
 

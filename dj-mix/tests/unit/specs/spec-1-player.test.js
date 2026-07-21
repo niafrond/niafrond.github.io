@@ -18,7 +18,11 @@ import {
   markAutomixTriggered,
 } from '../../../lib/automixTimeline.js';
 import { createSettingsController } from '../../../lib/settingsController.js';
-import { BEAT_REPEAT_MAX_LOOP_MS } from '../../../player.js';
+import {
+  BEAT_REPEAT_MAX_LOOP_MS,
+  getBeatRepeatStageLoopSeconds,
+  getSafeBeatRepeatBpm,
+} from '../../../player.js';
 import { uiState } from '../../../lib/uiState.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -414,7 +418,7 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     player.destroy?.();
   }, 10000);
 
-  test('SPEC-1.3.8.1/.2 — beat_repeat est plafonné à BEAT_REPEAT_MAX_LOOP_MS puis termine par un cut', async () => {
+  test('SPEC-1.3.8.1/.3 — beat_repeat est plafonné à BEAT_REPEAT_MAX_LOOP_MS et termine par une superposition (pas un cut)', async () => {
     const player = await makePlayer();
     player.crossfadeDuration = 8000; // bien au-delà du plafond de 5s
     const startedAt = Date.now();
@@ -424,23 +428,25 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     // La transition ne doit jamais s'étendre jusqu'à la durée de crossfade configurée (8s).
     expect(elapsedMs).toBeLessThan(BEAT_REPEAT_MAX_LOOP_MS + 1500);
 
-    expect(samples.length).toBeGreaterThan(3);
+    expect(samples.length).toBeGreaterThan(10);
     const last = samples[samples.length - 1];
-    // Coupure sèche : dernier échantillon = cut complet, pas un fondu progressif.
     expect(last.progress).toBe(1);
     expect(last.fromVolume).toBe(0);
     expect(last.toVolume).toBe(1);
 
-    // Juste avant le cut, on est encore dans la boucle (deck sortant quasi plein, entrant quasi muet) :
-    // pas de phase de fondu intermédiaire comme avant.
-    const secondLast = samples[samples.length - 2];
-    expect(secondLast.fromVolume).toBeGreaterThan(0.5);
-    expect(secondLast.toVolume).toBeLessThan(0.2);
+    // La fin doit être une superposition progressive (overlap), pas un saut instantané :
+    // il doit exister plusieurs échantillons où les deux decks sont simultanément bien audibles.
+    const overlappingSamples = samples.filter((s) => s.fromVolume > 0.15 && s.toVolume > 0.15);
+    expect(overlappingSamples.length).toBeGreaterThan(3);
+
+    // Avant l'overlap, on est encore dans la phase bouclée : le deck entrant reste quasi muet.
+    const firstQuarter = samples.slice(0, Math.floor(samples.length / 4));
+    expect(firstQuarter.every((s) => s.toVolume < 0.1)).toBe(true);
 
     player.destroy?.();
   }, 12000);
 
-  test('SPEC-1.3.8.3 — beat_repeat avec un crossfade court (≤5s) utilise toute la durée configurée', async () => {
+  test('SPEC-1.3.8.2 — beat_repeat avec un crossfade court (≤5s) utilise toute la durée configurée et termine à volume plein', async () => {
     const player = await makePlayer();
     player.crossfadeDuration = 2000;
     const samples = await crossfadeWithMode(player, 'beat_repeat', { url: 'blob:track-f', durationMs: 200000 });
@@ -450,6 +456,61 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     expect(last.toVolume).toBe(1);
     player.destroy?.();
   }, 10000);
+});
+
+// ── SPEC-1.3.8 — beat_repeat BPM-matched staged loop (pure helpers) ─────────
+
+describe('SPEC-1.3.8.5 — getSafeBeatRepeatBpm', () => {
+  test('clamps out-of-range BPM to [60, 220]', () => {
+    expect(getSafeBeatRepeatBpm(30)).toBe(60);
+    expect(getSafeBeatRepeatBpm(400)).toBe(220);
+  });
+
+  test('passes through valid BPM unchanged', () => {
+    expect(getSafeBeatRepeatBpm(128)).toBe(128);
+  });
+
+  test('falls back to 120 for missing/invalid BPM', () => {
+    expect(getSafeBeatRepeatBpm(undefined)).toBe(120);
+    expect(getSafeBeatRepeatBpm(null)).toBe(120);
+    expect(getSafeBeatRepeatBpm(0)).toBe(120);
+    expect(getSafeBeatRepeatBpm(NaN)).toBe(120);
+  });
+});
+
+describe('SPEC-1.3.8.4/.5 — getBeatRepeatStageLoopSeconds', () => {
+  test('at 120 BPM, stages start on a full bar and halve down to a half-beat', () => {
+    const cutoffMs = 5000;
+    // secondsPerBeat = 0.5s @ 120 BPM. Stage boundaries: 2000 / 3250 / 4250 / 5000ms.
+    expect(getBeatRepeatStageLoopSeconds(0, cutoffMs, 120)).toBeCloseTo(2.0, 5); // 4 beats
+    expect(getBeatRepeatStageLoopSeconds(1999, cutoffMs, 120)).toBeCloseTo(2.0, 5);
+    expect(getBeatRepeatStageLoopSeconds(2001, cutoffMs, 120)).toBeCloseTo(1.0, 5); // 2 beats
+    expect(getBeatRepeatStageLoopSeconds(3251, cutoffMs, 120)).toBeCloseTo(0.5, 5); // 1 beat
+    expect(getBeatRepeatStageLoopSeconds(4251, cutoffMs, 120)).toBeCloseTo(0.25, 5); // 1/2 beat
+    expect(getBeatRepeatStageLoopSeconds(cutoffMs, cutoffMs, 120)).toBeCloseTo(0.25, 5); // last stage
+  });
+
+  test('the first stage is strictly longer than the last (starts long, then decreases)', () => {
+    const cutoffMs = 5000;
+    const first = getBeatRepeatStageLoopSeconds(0, cutoffMs, 128);
+    const last = getBeatRepeatStageLoopSeconds(cutoffMs - 1, cutoffMs, 128);
+    expect(first).toBeGreaterThan(last);
+  });
+
+  test('loop length scales with BPM: a faster song gets shorter loop segments', () => {
+    const cutoffMs = 5000;
+    const slow = getBeatRepeatStageLoopSeconds(0, cutoffMs, 60);
+    const fast = getBeatRepeatStageLoopSeconds(0, cutoffMs, 180);
+    expect(fast).toBeLessThan(slow);
+  });
+
+  test('stage boundaries scale with the total cutoff (shorter crossfade → shorter stages, same BPM ratio)', () => {
+    const bpm = 120;
+    const shortCutoffMs = 2000;
+    // Stage 1 boundary is 40% of the cutoff: at 45% we should already be in stage 2 (1 beat = 0.5s).
+    const stage2Loop = getBeatRepeatStageLoopSeconds(shortCutoffMs * 0.45, shortCutoffMs, bpm);
+    expect(stage2Loop).toBeCloseTo(1.0, 5); // 2 beats @ 120bpm — stage index 1, independent of cutoffMs
+  });
 });
 
 // ── SPEC-1.3.4 — RAM filter ─────────────────────────────────────────────────

@@ -21,29 +21,47 @@ export { MIX_TRANSITION_MODES, MIX_TRANSITION_MODE_LABELS };
 // Au-delà de ce délai, load()->canplay ou play() sont considérés lents (réseau/decode) et loggés en warn.
 const SLOW_AUDIO_LOAD_THRESHOLD_MS = 200;
 
-// beat_repeat ne doit jamais boucler plus de 5s au total : passé ce délai, coupure sèche (cut) vers le morceau entrant.
+// beat_repeat ne doit jamais durer plus de 5s au total (boucle + superposition finale).
 export const BEAT_REPEAT_MAX_LOOP_MS = 5000;
 
-// Étapes successives du beat_repeat : d'abord une boucle longue, puis des boucles de plus
-// en plus courtes (division par 2 à chaque étape). BEAT_REPEAT_STAGE_DURATION_FRACTIONS
-// répartit le budget total (BEAT_REPEAT_MAX_LOOP_MS, ou moins si le crossfade est plus court)
-// entre les étapes et somme à 1 : le cumul des étapes fait donc toujours exactement ce budget.
-const BEAT_REPEAT_STAGE_DURATION_FRACTIONS = [0.40, 0.25, 0.20, 0.15];
-const BEAT_REPEAT_STAGE_LOOP_SECONDS = [1.0, 0.5, 0.25, 0.125];
+// Les BEAT_REPEAT_OVERLAP_MS dernières ms du budget total ne sont pas dédiées à la boucle :
+// le deck sortant et entrant s'y superposent (crossfade) au lieu d'un cut sec.
+export const BEAT_REPEAT_OVERLAP_MS = 2000;
 
-// Longueur de boucle (en secondes de piste) pour l'étape active, à l'instant `elapsedMs`
-// écoulé depuis le début du beat_repeat, sur un budget total de `cutoffMs`.
-function getBeatRepeatStageLoopSeconds(elapsedMs, cutoffMs) {
-  const scale = cutoffMs / BEAT_REPEAT_MAX_LOOP_MS;
+// Étapes successives de la phase bouclée (avant la superposition finale) : d'abord une
+// boucle longue (1 mesure) qui dure un peu plus longtemps, puis des boucles de plus en plus
+// courtes (division par 2 à chaque étape, jusqu'à la demi-noire).
+// BEAT_REPEAT_STAGE_DURATION_FRACTIONS répartit le budget de la phase bouclée (le budget
+// total moins BEAT_REPEAT_OVERLAP_MS) entre les étapes et somme à 1 : le cumul des étapes
+// fait donc toujours exactement ce budget, quel que soit le BPM.
+const BEAT_REPEAT_STAGE_DURATION_FRACTIONS = [0.40, 0.25, 0.20, 0.15];
+// Longueur de chaque étape en temps (noires), pour rester synchronisée avec le BPM de la
+// piste entrante : 1 mesure, 1/2 mesure, 1 temps, 1/2 temps.
+const BEAT_REPEAT_STAGE_BEATS = [4, 2, 1, 0.5];
+const BEAT_REPEAT_DEFAULT_BPM = 120;
+const BEAT_REPEAT_MIN_BPM = 60;
+const BEAT_REPEAT_MAX_BPM = 220;
+
+export function getSafeBeatRepeatBpm(bpm) {
+  const value = Number(bpm);
+  if (!Number.isFinite(value) || value <= 0) return BEAT_REPEAT_DEFAULT_BPM;
+  return Math.max(BEAT_REPEAT_MIN_BPM, Math.min(BEAT_REPEAT_MAX_BPM, value));
+}
+
+// Longueur de boucle (en secondes de piste), calée sur le BPM de la piste entrante, pour
+// l'étape active à l'instant `elapsedMs` écoulé depuis le début du beat_repeat, sur un
+// budget total de `cutoffMs`.
+export function getBeatRepeatStageLoopSeconds(elapsedMs, cutoffMs, bpm) {
+  const secondsPerBeat = 60 / getSafeBeatRepeatBpm(bpm);
   let boundaryMs = 0;
   for (let i = 0; i < BEAT_REPEAT_STAGE_DURATION_FRACTIONS.length; i++) {
     boundaryMs += BEAT_REPEAT_STAGE_DURATION_FRACTIONS[i] * cutoffMs;
     const isLastStage = i === BEAT_REPEAT_STAGE_DURATION_FRACTIONS.length - 1;
     if (elapsedMs < boundaryMs || isLastStage) {
-      return Math.max(0.05, BEAT_REPEAT_STAGE_LOOP_SECONDS[i] * scale);
+      return Math.max(0.05, BEAT_REPEAT_STAGE_BEATS[i] * secondsPerBeat);
     }
   }
-  return Math.max(0.05, BEAT_REPEAT_STAGE_LOOP_SECONDS[BEAT_REPEAT_STAGE_LOOP_SECONDS.length - 1] * scale);
+  return Math.max(0.05, BEAT_REPEAT_STAGE_BEATS[BEAT_REPEAT_STAGE_BEATS.length - 1] * secondsPerBeat);
 }
 
 function clamp01(value) {
@@ -588,6 +606,7 @@ export class DJPlayer extends EventTarget {
         to,
         startBaseFrom,
         startBaseTo,
+        incomingBpm: normalized.bpm,
       });
 
       if (to.paused && to.src) {
@@ -728,6 +747,8 @@ export class DJPlayer extends EventTarget {
 
     const liveDuration = Math.max(250, Number(this.#crossfadeDuration) || 5000);
     const beatRepeatCutoffMs = mode === 'beat_repeat' ? Math.min(BEAT_REPEAT_MAX_LOOP_MS, liveDuration) : null;
+    const beatRepeatOverlapMs = mode === 'beat_repeat' ? Math.min(BEAT_REPEAT_OVERLAP_MS, beatRepeatCutoffMs) : null;
+    const beatRepeatLoopPhaseMs = mode === 'beat_repeat' ? beatRepeatCutoffMs - beatRepeatOverlapMs : null;
     const startEcho = this.#mixFeatureSettings.echo;
     const savedFromFilterMode = this.#mixFeatureSettings.deckFx?.[context.fromDeck]?.filterMode || 'off';
     const savedToFilterMode = this.#mixFeatureSettings.deckFx?.[context.toDeck]?.filterMode || 'off';
@@ -803,30 +824,7 @@ export class DJPlayer extends EventTarget {
           lastTickAt = now;
           progress = Math.min(1, progress + (elapsedMs / liveDuration));
 
-          if (mode === 'beat_repeat' && (progress * liveDuration) >= beatRepeatCutoffMs) {
-            clearInterval(this.#crossfadeInterval);
-            this.#crossfadeInterval = null;
-            if (context.fromDeck === 'A') {
-              this.#applyDeckBaseMix(0, 1);
-            } else {
-              this.#applyDeckBaseMix(1, 0);
-            }
-            this.#requestEmitDeckState();
-            this.dispatchEvent(new CustomEvent('crossfadeprogress', {
-              detail: {
-                fromDeck: context.fromDeck,
-                fromVolume: 0,
-                toVolume: 1,
-                toPosition: Number.isFinite(context.to.currentTime) ? context.to.currentTime * 1000 : 0,
-                toDuration: Number.isFinite(context.to.duration) && context.to.duration > 0 ? context.to.duration * 1000 : 0,
-                durationMs: beatRepeatCutoffMs,
-                progress: 1,
-                mode,
-              },
-            }));
-            resolve();
-            return;
-          }
+          let beatRepeatFinished = false;
 
           const levels = this.#computeTransitionLevels(mode, progress, context.startBaseFrom, context.startBaseTo);
           let fromBase = levels.from;
@@ -858,11 +856,24 @@ export class DJPlayer extends EventTarget {
           }
 
           // beat_repeat : boucle le deck sortant par étapes (d'abord une boucle longue, puis de
-          // plus en plus courtes) jusqu'au hard cut (cf. BEAT_REPEAT_MAX_LOOP_MS / getBeatRepeatStageLoopSeconds).
-          if (mode === 'beat_repeat' && Number.isFinite(context.from.currentTime)) {
-            const loopLen = getBeatRepeatStageLoopSeconds(progress * liveDuration, beatRepeatCutoffMs);
-            if ((context.from.currentTime - loopAnchorFrom) >= loopLen) {
-              context.from.currentTime = loopAnchorFrom;
+          // plus en plus courtes, cf. getBeatRepeatStageLoopSeconds), puis superposition (overlap)
+          // avec le deck entrant sur les BEAT_REPEAT_OVERLAP_MS dernières ms, au lieu d'un cut sec.
+          if (mode === 'beat_repeat') {
+            const elapsedMs = progress * liveDuration;
+            if (elapsedMs < beatRepeatLoopPhaseMs) {
+              if (Number.isFinite(context.from.currentTime)) {
+                const loopLen = getBeatRepeatStageLoopSeconds(elapsedMs, beatRepeatLoopPhaseMs, context.incomingBpm);
+                if ((context.from.currentTime - loopAnchorFrom) >= loopLen) {
+                  context.from.currentTime = loopAnchorFrom;
+                }
+              }
+            } else {
+              const overlapProgress = beatRepeatOverlapMs > 0
+                ? clamp01((elapsedMs - beatRepeatLoopPhaseMs) / beatRepeatOverlapMs)
+                : 1;
+              fromBase = context.startBaseFrom * (1 - overlapProgress);
+              toBase = context.startBaseTo + ((1 - context.startBaseTo) * overlapProgress);
+              if (elapsedMs >= beatRepeatCutoffMs) beatRepeatFinished = true;
             }
           }
 
@@ -897,13 +908,13 @@ export class DJPlayer extends EventTarget {
               toVolume: toBase,
               toPosition: Number.isFinite(context.to.currentTime) ? context.to.currentTime * 1000 : 0,
               toDuration: Number.isFinite(context.to.duration) && context.to.duration > 0 ? context.to.duration * 1000 : 0,
-              durationMs: liveDuration,
-              progress,
+              durationMs: beatRepeatFinished ? beatRepeatCutoffMs : liveDuration,
+              progress: beatRepeatFinished ? 1 : progress,
               mode,
             },
           }));
 
-          if (progress >= 1) {
+          if (progress >= 1 || beatRepeatFinished) {
             clearInterval(this.#crossfadeInterval);
             this.#crossfadeInterval = null;
             resolve();
@@ -1093,8 +1104,8 @@ export class DJPlayer extends EventTarget {
         };
       }
       case 'beat_repeat': {
-        // fromDeck reste au volume plein pendant toute la boucle ; le hard cut final est
-        // déclenché directement dans le tick (cf. BEAT_REPEAT_MAX_LOOP_MS), pas ici.
+        // fromDeck reste au volume plein pendant la phase bouclée ; la superposition finale
+        // (overlap) est calculée et appliquée directement dans le tick (cf. BEAT_REPEAT_OVERLAP_MS).
         return { from: startBaseFrom, to: startBaseTo * 0.05 };
       }
       case 'backspin': {
@@ -1627,12 +1638,14 @@ export class DJPlayer extends EventTarget {
     if (source && typeof source === 'object') {
       const url = String(source.url || source.sourceUrl || source.src || '');
       const loudness = Number(source.loudnessDb);
-      const bpm = Number(source.bpm);
-      const durationMs = Number(source.durationMs);
-      const startPositionMs = Number(source.startPositionMs);
       const audioFeatures = source.audioFeatures && typeof source.audioFeatures === 'object'
         ? source.audioFeatures
         : null;
+      // Le BPM peut n'être renseigné que sur audioFeatures selon l'appelant (cf. main.js) :
+      // on retombe dessus si source.bpm/tempo est absent.
+      const bpm = Number(source.bpm) || Number(source.tempo) || Number(audioFeatures?.bpm);
+      const durationMs = Number(source.durationMs);
+      const startPositionMs = Number(source.startPositionMs);
       const stems = {
         vocalsUrl: typeof source?.stems?.vocalsUrl === 'string' ? source.stems.vocalsUrl : '',
         instrumentalUrl: typeof source?.stems?.instrumentalUrl === 'string' ? source.stems.instrumentalUrl : '',
