@@ -6727,6 +6727,27 @@ function buildFilRougeHintHTML() {
   return `<div class="queue-filrouge-hint">${artHtml}<div class="queue-info"><div class="queue-filrouge-hint-label">Prochain · fil rouge</div><div class="queue-name">${escHtml(next.name || 'Inconnu')}</div><div class="queue-artist">${escHtml(next.artist || '')}</div></div></div>`;
 }
 
+// ── Actualiser mix data ──────────────────────────────────────────────────────
+
+async function _refreshQueueMixData(item, btn) {
+  if (!item?.name) return;
+  if (btn?.classList.contains('is-checking')) return;
+  btn?.classList.add('is-checking');
+
+  try {
+    const mixData = await autoModeManager.refreshMixData(item.name, item.artist);
+    if (mixData) {
+      showToast(`Mix data actualisées : ${item.name}`);
+    } else {
+      showToast('Aucune donnée de mix disponible', true);
+    }
+  } catch {
+    showToast('Erreur réseau', true);
+  } finally {
+    btn?.classList.remove('is-checking');
+  }
+}
+
 // ── Contrôle d'empreinte ──────────────────────────────────────────────────────
 
 const _fpSheet     = document.getElementById('fp-suggestion-sheet');
@@ -6911,11 +6932,11 @@ function _renderQueueCore() {
     });
   });
 
-  uiRenderer.queueList.querySelectorAll('.queue-fp-btn').forEach((btn) => {
+  uiRenderer.queueList.querySelectorAll('.queue-refresh-mix-btn').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const idx = Number(btn.dataset.index);
-      if (idx >= 0 && idx < queue.length) _fpCheck(queue[idx], btn);
+      if (idx >= 0 && idx < queue.length) _refreshQueueMixData(queue[idx], btn);
     });
   });
 

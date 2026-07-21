@@ -604,6 +604,18 @@ export function createAutoModeManager({
   }
 
   /**
+   * Force-refresh mix analysis data for a track, bypassing the memory and
+   * localStorage caches (used by the queue's "Actualiser mix data" button).
+   */
+  async function refreshMixData(trackName, artistName) {
+    if (!trackName) return null;
+    const cacheKey = `${trackName}|${artistName || ''}`;
+    MIX_DATA_CACHE.delete(cacheKey);
+    invalidateStoredTrackMeta(trackName, artistName);
+    return fetchMixData(trackName, artistName);
+  }
+
+  /**
    * Check if a time point is within an avoid transition zone
    */
   function isInAvoidZone(timeSec, mixData) {
@@ -1813,6 +1825,7 @@ export function createAutoModeManager({
     isSuggestionSearchEnabled,
     setSuggestionSearchEnabled,
     fetchMixData,
+    refreshMixData,
     findBestTransitionZone,
     recommendTransitionType,
 

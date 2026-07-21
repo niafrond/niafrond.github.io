@@ -313,7 +313,7 @@ export function createDjMixRenderer(options) {
         <div class="queue-actions">
           <button class="${cueAClass}" data-index="${i}" data-deck="A"${cueADisabled} aria-label="Cue platine 1">1</button>
           <button class="${cueBClass}" data-index="${i}" data-deck="B"${cueBDisabled} aria-label="Cue platine 2">2</button>
-          <button class="queue-fp-btn" data-index="${i}" aria-label="Contrôle empreinte" title="Contrôle empreinte"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></button>
+          <button class="queue-refresh-mix-btn" data-index="${i}" aria-label="Actualiser mix data" title="Actualiser mix data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
           <button class="queue-remove" data-index="${i}" aria-label="Retirer">✕</button>
         </div>
       </div>`;

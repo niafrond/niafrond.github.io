@@ -2723,7 +2723,7 @@ input {
   color: #f87171;
 }
 
-.queue-fp-btn {
+.queue-refresh-mix-btn {
   color: var(--text-dim);
   padding: 5px;
   flex-shrink: 0;
@@ -2735,24 +2735,24 @@ input {
   justify-content: center;
 }
 
-.queue-fp-btn svg {
+.queue-refresh-mix-btn svg {
   width: 16px;
   height: 16px;
   display: block;
 }
 
-.queue-fp-btn:active,
-.queue-fp-btn:hover {
+.queue-refresh-mix-btn:active,
+.queue-refresh-mix-btn:hover {
   background: rgba(29, 185, 84, 0.15);
   color: var(--accent);
 }
 
-.queue-fp-btn.is-checking {
+.queue-refresh-mix-btn.is-checking {
   pointer-events: none;
   opacity: 0.5;
 }
 
-.queue-fp-btn.is-checking svg {
+.queue-refresh-mix-btn.is-checking svg {
   animation: spin 0.7s linear infinite;
 }
 
