@@ -205,6 +205,47 @@ describe('relayIncomingQueue', () => {
     expect(rq.getStatus()).toEqual({ nowPending: false, nextCount: 0, nextMax: 10 });
   });
 
+  test('SPEC-9.4.11 — deviceId est propagé au logger sur rejet "now" et "next"', () => {
+    const logger = { info: jest.fn(), warn: jest.fn() };
+    const rq = createRelayIncomingQueue({
+      prefetchTrackToLocalCache: jest.fn(() => new Promise(() => {})),
+      addToQueue: jest.fn(),
+      triggerSearchFade: jest.fn(),
+      getCurrentIndex: () => 0,
+      logger,
+      maxNextSlots: 1,
+    });
+
+    rq.handleCommand({ type: 'addToQueue', playNow: true, track: { name: 'A' }, deviceId: 'DEV001' });
+    rq.handleCommand({ type: 'addToQueue', playNow: true, track: { name: 'B' }, deviceId: 'DEV002' });
+    expect(logger.info).toHaveBeenCalledWith('relay.incoming.now.rejected', { name: 'B', deviceId: 'DEV002' });
+
+    rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'C' }, deviceId: 'DEV003' });
+    rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'D' }, deviceId: 'DEV004' });
+    expect(logger.info).toHaveBeenCalledWith('relay.incoming.next.rejected', { name: 'D', deviceId: 'DEV004', count: 1 });
+  });
+
+  test('SPEC-9.4.11 — deviceId est propagé au logger sur échec de téléchargement', () => {
+    const logger = { info: jest.fn(), warn: jest.fn() };
+    const prefetchTrackToLocalCache = jest.fn((track, { onError } = {}) => {
+      onError?.(new Error('boom'));
+      return Promise.resolve(false);
+    });
+    const rq = createRelayIncomingQueue({
+      prefetchTrackToLocalCache,
+      addToQueue: jest.fn(),
+      triggerSearchFade: jest.fn(),
+      getCurrentIndex: () => 0,
+      logger,
+    });
+
+    rq.handleCommand({ type: 'addToQueue', playNow: true, track: { name: 'A' }, deviceId: 'DEV001' });
+    expect(logger.warn).toHaveBeenCalledWith('relay.incoming.now.downloadFailed', { name: 'A', deviceId: 'DEV001', err: 'boom' });
+
+    rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'B' }, deviceId: 'DEV002' });
+    expect(logger.warn).toHaveBeenCalledWith('relay.incoming.next.downloadFailed', { name: 'B', deviceId: 'DEV002', err: 'boom' });
+  });
+
   test('une commande d\'un autre type ou sans piste est ignorée', () => {
     const prefetchTrackToLocalCache = jest.fn();
     const rq = createRelayIncomingQueue({

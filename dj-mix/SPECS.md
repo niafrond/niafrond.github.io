@@ -607,6 +607,11 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-9.1.2** Persisté dans `localStorage` sous `dj-mix:relay:session-id`.
 - **SPEC-9.1.3** Partage par QR code (librairie qrcodejs, 200×200, correction M) ou URL.
 - **SPEC-9.1.4** Format URL : `${origin}${dir}relay?relay-session=${sessionId}&relay-api=${apiUrl}&relay-token=${apiToken}`.
+- **SPEC-9.1.5** Le relais léger (`relay.js`) génère un identifiant d'appareil court (6
+  caractères alphanumériques, `Math.random().toString(36)` — pas un hash des
+  caractéristiques du device) au premier chargement, persisté dans `localStorage` sous
+  `dj-mix:relay:device-id` et réutilisé tel quel à chaque session suivante (permanent).
+  Envoyé dans `cmd.deviceId` sur chaque commande (`POST /api/relay/commands/:sessionId`).
 
 ### 9.2 Mode Maître
 
@@ -705,6 +710,11 @@ staging côté maître, câblé dans `main.js` en lieu et place de l'ancien trai
   devient injoignable — THEN l'affichage précédent est conservé (pas de flicker) jusqu'à
   `3` échecs de poll consécutifs (`RELAY_MASTER_STALE_AFTER`, ~4.5 s à 1500 ms/poll) ; au-delà,
   retour à l'affichage « En attente du maître… ».
+- **SPEC-9.4.11** `cmd.deviceId` (cf. SPEC-9.1.5) est propagé par `relayIncomingQueue`
+  jusque dans les entrées de log (`relay.incoming.now.rejected`,
+  `relay.incoming.now.downloadFailed`, `relay.incoming.next.rejected`,
+  `relay.incoming.next.downloadFailed`) afin d'identifier l'appareil à l'origine d'une
+  commande sans authentification ni fingerprinting côté serveur.
 
 ---
 

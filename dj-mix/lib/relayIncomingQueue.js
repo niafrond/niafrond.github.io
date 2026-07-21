@@ -45,21 +45,21 @@ export function createRelayIncomingQueue({
   function handleCommand(cmd) {
     if (!cmd || cmd.type !== 'addToQueue' || !cmd.track) return;
     if (cmd.playNow) {
-      _handleNow(cmd.track);
+      _handleNow(cmd.track, cmd.deviceId);
     } else {
-      _handleNext(cmd.track);
+      _handleNext(cmd.track, cmd.deviceId);
     }
   }
 
-  function _handleNow(track) {
+  function _handleNow(track, deviceId) {
     if (_nowSlot) {
-      logger?.info('relay.incoming.now.rejected', { name: track?.name });
+      logger?.info('relay.incoming.now.rejected', { name: track?.name, deviceId });
       return;
     }
-    _nowSlot = { track };
+    _nowSlot = { track, deviceId };
     prefetchTrackToLocalCache(track, {
       onError: (err) => {
-        logger?.warn('relay.incoming.now.downloadFailed', { name: track?.name, err: err?.message });
+        logger?.warn('relay.incoming.now.downloadFailed', { name: track?.name, deviceId, err: err?.message });
         _nowSlot = null;
       },
     }).then((ok) => {
@@ -73,16 +73,16 @@ export function createRelayIncomingQueue({
     });
   }
 
-  function _handleNext(track) {
+  function _handleNext(track, deviceId) {
     if (_nextSlots.length >= maxNextSlots) {
-      logger?.info('relay.incoming.next.rejected', { name: track?.name, count: _nextSlots.length });
+      logger?.info('relay.incoming.next.rejected', { name: track?.name, deviceId, count: _nextSlots.length });
       return;
     }
-    const slot = { track, ready: false, failed: false };
+    const slot = { track, deviceId, ready: false, failed: false };
     _nextSlots.push(slot);
     prefetchTrackToLocalCache(track, {
       onError: (err) => {
-        logger?.warn('relay.incoming.next.downloadFailed', { name: track?.name, err: err?.message });
+        logger?.warn('relay.incoming.next.downloadFailed', { name: track?.name, deviceId, err: err?.message });
         slot.failed = true;
         _drainNext();
       },

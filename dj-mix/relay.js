@@ -26,6 +26,21 @@ const API_BASE  = (_p.get('relay-api') || '').replace(/\/+$/, '');
 // Token priorité : transmis dans l'URL par le maître (relay-token), sinon localStorage du relais
 const API_TOKEN = _p.get('relay-token') || localStorage.getItem('dj-mix:downloader:api:token') || '';
 
+// Identifiant court, unique et permanent de cet appareil relais (pas un hash des
+// caractéristiques du device — juste un aléa généré une fois puis persisté), pour
+// attribuer les commandes envoyées au maître sans dépendre du fingerprinting.
+function _getDeviceId() {
+  const KEY = 'dj-mix:relay:device-id';
+  let id = null;
+  try { id = localStorage.getItem(KEY); } catch (_) { /* ignore */ }
+  if (!id) {
+    id = Math.random().toString(36).slice(2, 8).toUpperCase();
+    try { localStorage.setItem(KEY, id); } catch (_) { /* ignore */ }
+  }
+  return id;
+}
+const DEVICE_ID = _getDeviceId();
+
 // ── Références DOM ────────────────────────────────────────────────────────────
 
 const $id = (id) => document.getElementById(id);
@@ -428,6 +443,7 @@ function _buildTrackPayload(track) {
 async function _sendRelayCommand(cmd) {
   if (!API_BASE || !SESSION) return;
   cmd.requestedAt = Date.now();
+  cmd.deviceId = DEVICE_ID;
   try {
     await fetch(`${API_BASE}/api/relay/commands/${SESSION}`, {
       method: 'POST',
