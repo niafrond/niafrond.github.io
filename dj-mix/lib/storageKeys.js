@@ -31,7 +31,7 @@ export const STORAGE_KEYS = Object.freeze({
   djBatchPlan: 'dj-mix:dj-api:batch-plan',
   artworkUrls: 'dj-mix:artwork-urls',
   relayMode: 'dj-mix:relay:mode',
-  relaySessionId: 'dj-mix:relay:session-id',
+  relayMasterId: 'dj-mix:relay:master-id',
   globalVolume: 'dj-mix:global-volume',
   filRougeSortMode: 'dj-mix:fil-rouge:sort',
   trackPaths: 'dj-mix:track-paths',

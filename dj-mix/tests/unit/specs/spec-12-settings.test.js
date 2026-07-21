@@ -47,7 +47,7 @@ describe('SPEC-12.1 — Storage keys centralized', () => {
     'autoDjFxSettings', 'queueLoop', 'queueShuffle',
     'djMode', 'djModeGenrePrefs',
     'spotifyClientId', 'spotifyAuth', 'spotifyFilRougeSource',
-    'relayMode', 'relaySessionId',
+    'relayMode', 'relayMasterId',
   ];
 
   test.each(requiredKeys)('key "%s" exists', (key) => {

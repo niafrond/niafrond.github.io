@@ -3,15 +3,18 @@
  *
  * Responsabilités (maître uniquement — le relais utilise relay.html) :
  *  - Gérer les boutons Autonome / Maître
- *  - Générer et afficher le QR code + lien de session
- *  - Si ?relay-session= dans l'URL sur index.html, rediriger vers relay.html
+ *  - Générer et afficher le QR code + lien vers ce maître
+ *  - Si ?relay-master= dans l'URL sur index.html, rediriger vers relay.html
+ *
+ * Pas de « session » créée côté serveur : l'appareil maître a un identifiant
+ * court, unique et permanent (généré une fois, conservé en localStorage), qui
+ * ne change pas d'un rafraîchissement à l'autre. Voir getOrCreateRelayMasterId().
  */
 
 import {
+  getOrCreateRelayMasterId,
   persistRelayModeSetting,
-  persistRelaySessionIdSetting,
   readRelayModeSetting,
-  readRelaySessionIdSetting,
 } from './settingsStorage.js';
 
 export function createRelayModeController({
@@ -28,7 +31,7 @@ export function createRelayModeController({
   relayModeMasterBtn,
   relayMasterPanel,
   relayQrcodeEl,
-  relaySessionUrlEl,
+  relayMasterUrlEl,
   relayCopyLinkBtn,
   relayStatusEl,
   relayIndicatorEl,
@@ -38,39 +41,26 @@ export function createRelayModeController({
 
   // ── Changement de rôle ────────────────────────────────────────────────────
 
-  async function _activateMaster() {
+  function _activateMaster() {
     _setButtonsActive('master');
     _showPanel('master');
-    _updateStatus('Création de la session…');
 
-    let sessionId = relayModeManager.getSessionId();
-    if (!sessionId) {
-      sessionId = await relayModeManager.createSession();
-    }
-
-    if (!sessionId) {
-      showToast('Impossible de créer la session maître (API indisponible ?)', true);
-      _activateStandalone();
-      return;
-    }
-
-    relayModeManager.startAsMaster(sessionId);
+    const masterId = getOrCreateRelayMasterId();
+    relayModeManager.startAsMaster(masterId);
     persistRelayModeSetting('master');
-    persistRelaySessionIdSetting(sessionId);
 
-    const url = _buildRelayUrl(sessionId);
-    if (relaySessionUrlEl) relaySessionUrlEl.textContent = url;
+    const url = _buildRelayUrl(masterId);
+    if (relayMasterUrlEl) relayMasterUrlEl.textContent = url;
     _renderQrCode(url);
-    _updateStatus(`Session maître active · ID : ${sessionId}`);
+    _updateStatus(`Cet appareil est le maître · ID : ${masterId}`);
     _updateIndicator('master');
     onRoleChanged?.('master');
-    logInfo('relay.master.activated', { sessionId });
+    logInfo('relay.master.activated', { masterId });
   }
 
   function _activateStandalone() {
     relayModeManager.setStandalone();
     persistRelayModeSetting('standalone');
-    persistRelaySessionIdSetting(null);
     _setButtonsActive('standalone');
     _showPanel('standalone');
     _updateStatus('Autonome : cet appareil gère sa propre lecture.');
@@ -81,12 +71,12 @@ export function createRelayModeController({
 
   // ── QR code ───────────────────────────────────────────────────────────────
 
-  function _buildRelayUrl(sessionId) {
+  function _buildRelayUrl(masterId) {
     const apiUrl   = getDownloaderApiUrl?.() || '';
     const apiToken = getDownloaderApiToken?.() || '';
     const origin = window.location.origin;
     const dir = window.location.pathname.replace(/\/[^/]*$/, '/');
-    const params = new URLSearchParams({ 'relay-session': sessionId });
+    const params = new URLSearchParams({ 'relay-master': masterId });
     if (apiUrl)   params.set('relay-api',   apiUrl);
     if (apiToken) params.set('relay-token', apiToken);
     return `${origin}${dir}relay?${params.toString()}`;
@@ -170,25 +160,18 @@ export function createRelayModeController({
     });
 
     relayCopyLinkBtn?.addEventListener('click', () => {
-      const url = relaySessionUrlEl?.textContent;
+      const url = relayMasterUrlEl?.textContent;
       if (!url) return;
       navigator.clipboard?.writeText(url)
         .then(() => showToast('Lien copié !'))
         .catch(() => showToast('Impossible de copier', true));
     });
 
-    // Restaurer le rôle sauvegardé (uniquement maître ou autonome)
-    const savedRole    = readRelayModeSetting();
-    const savedSession = readRelaySessionIdSetting();
-    if (savedRole === 'master' && savedSession) {
-      relayModeManager.startAsMaster(savedSession);
-      _setButtonsActive('master');
-      _showPanel('master');
-      const url = _buildRelayUrl(savedSession);
-      if (relaySessionUrlEl) relaySessionUrlEl.textContent = url;
-      _renderQrCode(url);
-      _updateStatus(`Session maître active · ID : ${savedSession}`);
-      _updateIndicator('master');
+    // Restaurer le rôle sauvegardé (uniquement maître ou autonome) — l'ID maître
+    // étant permanent (getOrCreateRelayMasterId), pas besoin de le re-persister ici.
+    const savedRole = readRelayModeSetting();
+    if (savedRole === 'master') {
+      _activateMaster();
     } else {
       _activateStandalone();
     }

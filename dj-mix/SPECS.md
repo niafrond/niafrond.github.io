@@ -601,24 +601,37 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 ## 9. Mode Relais (Master / Relay)
 
-### 9.1 Session
+### 9.1 Identité du maître (pas de « session » serveur)
 
-- **SPEC-9.1.1** Création : `POST /api/relay/session` (body JSON vide) → retourne `{ sessionId }`.
-- **SPEC-9.1.2** Persisté dans `localStorage` sous `dj-mix:relay:session-id`.
+Il n'y a pas de session créée côté serveur : le maître est identifié par CET appareil,
+via un identifiant permanent qu'il génère lui-même. Le serveur ne fait qu'auto-créer
+l'entrée correspondante au premier `PUT /api/relay/state/:id` (aucun appel
+`POST /api/relay/session` n'est effectué).
+
+- **SPEC-9.1.1** `getOrCreateRelayMasterId()` (`lib/settingsStorage.js`) génère un
+  identifiant court (6 caractères alphanumériques, `Math.random().toString(36)` — pas
+  un hash des caractéristiques de l'appareil) au premier passage en mode Maître, et le
+  persiste dans `localStorage` sous `dj-mix:relay:master-id`.
+- **SPEC-9.1.2** Cet identifiant est permanent : il ne change jamais d'un
+  rafraîchissement à l'autre, et n'est PAS effacé quand l'appareil repasse en mode
+  Autonome (`_activateStandalone()` ne touche pas `dj-mix:relay:master-id`) — seul
+  `dj-mix:relay:mode` (le rôle courant) est réinitialisé.
 - **SPEC-9.1.3** Partage par QR code (librairie qrcodejs, 200×200, correction M) ou URL.
-- **SPEC-9.1.4** Format URL : `${origin}${dir}relay?relay-session=${sessionId}&relay-api=${apiUrl}&relay-token=${apiToken}`.
-- **SPEC-9.1.5** Le relais léger (`relay.js`) génère un identifiant d'appareil court (6
-  caractères alphanumériques, `Math.random().toString(36)` — pas un hash des
+- **SPEC-9.1.4** Format URL : `${origin}${dir}relay?relay-master=${masterId}&relay-api=${apiUrl}&relay-token=${apiToken}`.
+- **SPEC-9.1.5** Le relais léger (`relay.js`) génère lui aussi un identifiant d'appareil
+  court (6 caractères alphanumériques, `Math.random().toString(36)` — pas un hash des
   caractéristiques du device) au premier chargement, persisté dans `localStorage` sous
-  `dj-mix:relay:device-id` et réutilisé tel quel à chaque session suivante (permanent).
-  Envoyé dans `cmd.deviceId` sur chaque commande (`POST /api/relay/commands/:sessionId`).
+  `dj-mix:relay:device-id` (clé distincte de `dj-mix:relay:master-id` pour éviter toute
+  collision si un même appareil ouvre à la fois `index.html` en maître et `relay.html`
+  en relais) et réutilisé tel quel indéfiniment. Envoyé dans `cmd.deviceId` sur chaque
+  commande (`POST /api/relay/commands/:masterId`).
 
 ### 9.2 Mode Maître
 
 - **SPEC-9.2.1** État diffusé :
   ```
   {
-    sessionId, pushedAt,
+    pushedAt,
     currentTrackId, currentIndex, isPlaying, activeDeck,
     deckA: { trackId, positionMs, volume },
     deckB: { trackId, positionMs, volume },
@@ -715,6 +728,34 @@ staging côté maître, câblé dans `main.js` en lieu et place de l'ancien trai
   `relay.incoming.now.downloadFailed`, `relay.incoming.next.rejected`,
   `relay.incoming.next.downloadFailed`) afin d'identifier l'appareil à l'origine d'une
   commande sans authentification ni fingerprinting côté serveur.
+
+### 9.5 Retour visuel côté maître (files "incoming")
+
+Panneau affiché dans `#relay-master-panel` (`index.html`, sous le QR code) montrant l'état
+des files "incoming" (§9.4) en temps réel, sans polling réseau : le maître lit son propre
+`relayIncomingQueue` directement en mémoire.
+
+- **SPEC-9.5.1** `relayIncomingQueue.getStatus()` expose, en plus de
+  `nowPending`/`nextCount`/`nextMax` (SPEC-9.4.7), le détail des pistes en cours :
+  `now: { name, artist, artUrl, deviceId } | null` (slot « Lire maintenant », `null` si
+  libre) et `next: [{ name, artist, artUrl, deviceId, ready }]` (slots « Ajouter en
+  suivant », dans l'ordre FIFO de soumission ; `ready: true` une fois le téléchargement
+  résolu mais pas encore committé — slot pas encore en tête de file).
+- **SPEC-9.5.2** `createRelayIncomingQueue({ onChange })` : callback optionnel invoqué à
+  chaque mutation d'un slot (acceptation, téléchargement résolu/échoué, commit) —
+  permet un rendu immédiat côté UI sans dépendre du polling `buildRelayStateSnapshot()`.
+- **SPEC-9.5.3** `main.js` câble `onChange: renderRelayIncomingPanel`, qui relit
+  `getStatus()` et met à jour :
+  - `#relay-incoming-now` : ligne piste (jaquette, titre, artiste) avec un indicateur
+    de chargement animé si `now` est renseigné, sinon « Aucune demande ».
+  - `#relay-incoming-next-badge` : compteur `nextCount/nextMax`.
+  - `#relay-incoming-next-list` : une ligne par entrée de `next[]` (même gabarit),
+    avec un ✓ si `ready === true`, sinon l'indicateur de chargement ; « Aucune piste en
+    attente » si la liste est vide.
+- **SPEC-9.5.4** Ce panneau n'est visible que côté maître (imbriqué dans
+  `#relay-master-panel`, déjà masqué en mode Autonome/Relais par
+  `relayModeController._showPanel()`) ; aucune requête réseau supplémentaire n'est
+  déclenchée pour l'afficher.
 
 ---
 
@@ -831,7 +872,7 @@ staging côté maître, câblé dans `main.js` en lieu et place de l'ancien trai
 | djBatchPlan | `dj-mix:dj-api:batch-plan` |
 | artworkUrls | `dj-mix:artwork-urls` |
 | relayMode | `dj-mix:relay:mode` |
-| relaySessionId | `dj-mix:relay:session-id` |
+| relayMasterId | `dj-mix:relay:master-id` |
 | downloaderApiUrl | `dj-mix:downloader:api:url` |
 | downloaderApiToken | `dj-mix:downloader:api:token` |
 | fxVisibility | `dj-mix:fx:hidden` |
@@ -1036,7 +1077,7 @@ dans les deux listes référence le même objet, pas une copie.
 
 **RelayState :**
 ```
-{ sessionId, pushedAt,
+{ pushedAt,
   currentTrackId, currentIndex, isPlaying, activeDeck,
   deckA: { trackId, positionMs, volume },
   deckB: { trackId, positionMs, volume },

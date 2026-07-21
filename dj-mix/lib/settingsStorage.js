@@ -186,15 +186,16 @@ export function persistRelayModeSetting(mode) {
   safeSet(STORAGE_KEYS.relayMode, RELAY_MODES.includes(mode) ? mode : 'standalone');
 }
 
-export function readRelaySessionIdSetting() {
-  return safeGet(STORAGE_KEYS.relaySessionId) || null;
-}
-
-export function persistRelaySessionIdSetting(sessionId) {
-  if (sessionId) safeSet(STORAGE_KEYS.relaySessionId, String(sessionId));
-  else {
-    try { localStorage.removeItem(STORAGE_KEYS.relaySessionId); } catch (_) {}
-  }
+// Identifiant court, unique et permanent de CET appareil en tant que maître relais
+// (pas une session serveur éphémère : un simple aléa généré une fois et conservé
+// tant que le storage n'est pas vidé). Pas de fonction de suppression : redevenir
+// « autonome » ne doit pas faire perdre l'identité de l'appareil.
+export function getOrCreateRelayMasterId() {
+  const existing = safeGet(STORAGE_KEYS.relayMasterId);
+  if (existing) return existing;
+  const id = Math.random().toString(36).slice(2, 8).toUpperCase();
+  safeSet(STORAGE_KEYS.relayMasterId, id);
+  return id;
 }
 
 export function removeQueueSetting() {

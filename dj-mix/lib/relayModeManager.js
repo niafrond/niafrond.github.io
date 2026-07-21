@@ -1,9 +1,13 @@
 /**
  * relayModeManager.js — Synchronisation maître/relais
  *
+ * Il n'y a pas de « session » créée côté serveur : l'ID utilisé pour router les
+ * appels (`:id` ci-dessous) est un identifiant permanent généré et conservé par
+ * l'appareil maître lui-même (cf. relayModeController.js) — le serveur ne fait
+ * qu'auto-créer l'entrée correspondante au premier PUT.
+ *
  * Architecture :
- *   Maître   →  POST /api/relay/session                 → obtient un sessionId
- *            →  PUT  /api/relay/state/:id               → publie l'état courant
+ *   Maître   →  PUT  /api/relay/state/:id               → publie l'état courant (auto-crée)
  *            →  POST /api/relay/audio/:trackId          → upload l'audio local (fallback P2P)
  *
  *   Relais   →  GET  /api/relay/state/:id  (polling)    → lit l'état du maître
@@ -20,7 +24,7 @@
  *
  * Format de l'état synchronisé :
  * {
- *   sessionId, pushedAt,
+ *   pushedAt,
  *   currentTrackId, currentIndex, isPlaying,
  *   activeDeck,
  *   deckA: { trackId, positionMs, volume },
@@ -45,7 +49,7 @@ export function createRelayModeManager({
   const CMD_MAX_AGE_MS = 60_000;
 
   let _role = 'standalone';  // 'standalone' | 'master' | 'relay'
-  let _sessionId = null;
+  let _masterId = null;
   let _pollTimer = null;
   let _cmdPollTimer = null;
   let _pushDebounceTimer = null;
@@ -79,23 +83,10 @@ export function createRelayModeManager({
     }
   }
 
-  // ── Maître : gestion de session ────────────────────────────────────────────
-
-  async function createSession() {
-    const data = await _fetch('/api/relay/session', { method: 'POST', body: JSON.stringify({}) });
-    if (data?.sessionId) {
-      _sessionId = data.sessionId;
-      logger?.info('relay.session.created', { sessionId: _sessionId });
-      return _sessionId;
-    }
-    logger?.warn('relay.session.createFailed');
-    return null;
-  }
-
   // ── Maître : publication de l'état ────────────────────────────────────────
 
   function schedulePush(state) {
-    if (_role !== 'master' || !_sessionId) return;
+    if (_role !== 'master' || !_masterId) return;
     _pendingState = state;
     if (_pushDebounceTimer) return;
     _pushDebounceTimer = setTimeout(_flushPush, PUSH_DEBOUNCE_MS);
@@ -103,7 +94,7 @@ export function createRelayModeManager({
 
   async function _flushPush() {
     _pushDebounceTimer = null;
-    if (!_pendingState || _role !== 'master' || !_sessionId) return;
+    if (!_pendingState || _role !== 'master' || !_masterId) return;
     const payload = { ..._pendingState, pushedAt: Date.now() };
     _pendingState = null;
     const hash = _hashState(payload);
@@ -112,7 +103,7 @@ export function createRelayModeManager({
     const base = _base();
     if (!base) return;
     try {
-      await fetch(`${base}/api/relay/state/${_sessionId}`, {
+      await fetch(`${base}/api/relay/state/${_masterId}`, {
         method: 'PUT',
         headers: _headers(),
         body: JSON.stringify(payload),
@@ -131,11 +122,11 @@ export function createRelayModeManager({
    * @param {Blob} blob
    */
   async function uploadAudioProxy(trackId, blob) {
-    if (_role !== 'master' || !_sessionId || !trackId || !blob) return false;
+    if (_role !== 'master' || !_masterId || !trackId || !blob) return false;
     const base = _base();
     if (!base) return false;
     try {
-      const res = await fetch(`${base}/api/relay/audio/${_sessionId}/${trackId}`, {
+      const res = await fetch(`${base}/api/relay/audio/${_masterId}/${trackId}`, {
         method: 'POST',
         headers: { 'x-api-token': getDownloaderApiToken?.() || '' },
         body: blob,
@@ -153,19 +144,19 @@ export function createRelayModeManager({
    * @returns {string|null}
    */
   function getProxyAudioUrl(trackId) {
-    if (!trackId || !_sessionId) return null;
+    if (!trackId || !_masterId) return null;
     const base = _base();
     if (!base) return null;
     const token = getDownloaderApiToken?.();
     const qs = token ? `?x-api-token=${encodeURIComponent(token)}` : '';
-    return `${base}/api/relay/audio/${_sessionId}/${trackId}${qs}`;
+    return `${base}/api/relay/audio/${_masterId}/${trackId}${qs}`;
   }
 
   // ── Maître : polling des commandes relais ──────────────────────────────────
 
   async function _pollCommands() {
-    if (_role !== 'master' || !_sessionId || !onRelayCommand) return;
-    const data = await _fetch(`/api/relay/commands/${_sessionId}`);
+    if (_role !== 'master' || !_masterId || !onRelayCommand) return;
+    const data = await _fetch(`/api/relay/commands/${_masterId}`);
     if (!data?.commands?.length) return;
     const now = Date.now();
     for (const cmd of data.commands) {
@@ -188,8 +179,8 @@ export function createRelayModeManager({
   // ── Relais : polling ───────────────────────────────────────────────────────
 
   async function _poll() {
-    if (_role !== 'relay' || !_sessionId) return;
-    const state = await _fetch(`/api/relay/state/${_sessionId}`);
+    if (_role !== 'relay' || !_masterId) return;
+    const state = await _fetch(`/api/relay/state/${_masterId}`);
     if (!state?.pushedAt) return;
     const hash = _hashState(state);
     if (hash === _lastStateHash) return;
@@ -225,21 +216,21 @@ export function createRelayModeManager({
 
   // ── API publique ──────────────────────────────────────────────────────────
 
-  function startAsMaster(sessionId) {
+  function startAsMaster(masterId) {
     _role = 'master';
-    if (sessionId) _sessionId = sessionId;
+    if (masterId) _masterId = masterId;
     _lastStateHash = null;
     _stopPoll();
     _startCmdPoll();
-    logger?.info('relay.startAsMaster', { sessionId: _sessionId });
+    logger?.info('relay.startAsMaster', { masterId: _masterId });
   }
 
-  function startAsRelay(sessionId) {
+  function startAsRelay(masterId) {
     _role = 'relay';
-    _sessionId = sessionId;
+    _masterId = masterId;
     _lastStateHash = null;
     _startPoll();
-    logger?.info('relay.startAsRelay', { sessionId });
+    logger?.info('relay.startAsRelay', { masterId });
   }
 
   function setStandalone() {
@@ -247,14 +238,14 @@ export function createRelayModeManager({
     _stopCmdPoll();
     if (_pushDebounceTimer) { clearTimeout(_pushDebounceTimer); _pushDebounceTimer = null; }
     _role = 'standalone';
-    _sessionId = null;
+    _masterId = null;
     _lastStateHash = null;
     _pendingState = null;
     logger?.info('relay.setStandalone');
   }
 
   function getRole() { return _role; }
-  function getSessionId() { return _sessionId; }
+  function getMasterId() { return _masterId; }
 
   // ── Utilitaires ────────────────────────────────────────────────────────────
 
@@ -280,7 +271,6 @@ export function createRelayModeManager({
   }
 
   return {
-    createSession,
     schedulePush,
     uploadAudioProxy,
     getProxyAudioUrl,
@@ -288,6 +278,6 @@ export function createRelayModeManager({
     startAsRelay,
     setStandalone,
     getRole,
-    getSessionId,
+    getMasterId,
   };
 }

@@ -919,10 +919,13 @@ const relayModeStandaloneBtn = document.getElementById('relay-mode-standalone-bt
 const relayModeMasterBtn = document.getElementById('relay-mode-master-btn');
 const relayMasterPanel = document.getElementById('relay-master-panel');
 const relayQrcodeEl = document.getElementById('relay-qrcode');
-const relaySessionUrlEl = document.getElementById('relay-session-url');
+const relayMasterUrlEl = document.getElementById('relay-master-url');
 const relayCopyLinkBtn = document.getElementById('relay-copy-link-btn');
 const relayStatusEl = document.getElementById('relay-status');
 const relayIndicatorEl = document.getElementById('relay-indicator');
+const relayIncomingNowEl = document.getElementById('relay-incoming-now');
+const relayIncomingNextListEl = document.getElementById('relay-incoming-next-list');
+const relayIncomingNextBadgeEl = document.getElementById('relay-incoming-next-badge');
 const ramFilterEnabledToggle = document.getElementById('ram-filter-enabled-toggle');
 const ramTotalMemoryInput = document.getElementById('ram-total-memory-gb');
 const ramFilterStatus = document.getElementById('ram-filter-status');
@@ -1284,6 +1287,44 @@ const {
   searchTracksViaApi,
 } = audioSourceManager;
 
+/**
+ * Retour visuel maître sur les files "incoming" du relais (cf. SPECS.md §9.5) :
+ * rendu immédiat (pas de polling) via le callback onChange() de relayIncomingQueue.
+ */
+function _relayIncomingTrackRow(track, { ready = false } = {}) {
+  const art = track.artUrl
+    ? `<img class="relay-incoming-item-art" src="${escHtml(track.artUrl)}" alt="" loading="lazy">`
+    : `<div class="relay-incoming-item-art"></div>`;
+  const status = ready
+    ? '<span class="relay-incoming-item-status relay-incoming-item-status--ready" title="Prêt, en attente de son tour">✓</span>'
+    : '<span class="relay-incoming-item-status relay-incoming-item-status--loading" title="Téléchargement…"></span>';
+  return `<div class="relay-incoming-item">${art}` +
+    `<div class="relay-incoming-item-info">` +
+    `<span class="relay-incoming-item-name">${escHtml(track.name || 'Piste')}</span>` +
+    `<span class="relay-incoming-item-artist">${escHtml(track.artist || '')}</span>` +
+    `</div>${status}</div>`;
+}
+
+function renderRelayIncomingPanel() {
+  const status = relayIncomingQueue.getStatus();
+
+  if (relayIncomingNowEl) {
+    relayIncomingNowEl.innerHTML = status.now
+      ? _relayIncomingTrackRow(status.now)
+      : '<span class="relay-incoming-placeholder">Aucune demande</span>';
+  }
+
+  if (relayIncomingNextBadgeEl) {
+    relayIncomingNextBadgeEl.textContent = `${status.nextCount}/${status.nextMax}`;
+  }
+
+  if (relayIncomingNextListEl) {
+    relayIncomingNextListEl.innerHTML = status.next.length
+      ? status.next.map((t) => _relayIncomingTrackRow(t, { ready: t.ready })).join('')
+      : '<span class="relay-incoming-placeholder">Aucune piste en attente</span>';
+  }
+}
+
 // File "incoming" pour les commandes reçues du relais léger (relay.js) : une
 // piste n'apparaît dans la file d'attente qu'une fois téléchargée (cf. SPECS.md §9.4).
 const relayIncomingQueue = createRelayIncomingQueue({
@@ -1293,6 +1334,7 @@ const relayIncomingQueue = createRelayIncomingQueue({
   getCurrentIndex: () => uiState.currentIndex,
   showToast,
   logger,
+  onChange: renderRelayIncomingPanel,
 });
 
 const playlistManager = createPlaylistManager({
@@ -7290,7 +7332,7 @@ const relayController = createRelayModeController({
   relayModeMasterBtn,
   relayMasterPanel,
   relayQrcodeEl,
-  relaySessionUrlEl,
+  relayMasterUrlEl,
   relayCopyLinkBtn,
   relayStatusEl,
   relayIndicatorEl,

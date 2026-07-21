@@ -11,7 +11,7 @@ import { getUnreadQueue } from './lib/relayQueueView.js';
  * recherche pour alimenter sa file d'attente.
  *
  * Responsabilités :
- *   1. Lire ?relay-session= et ?relay-api= depuis l'URL
+ *   1. Lire ?relay-master= et ?relay-api= depuis l'URL
  *   2. Polling de l'état maître toutes les 1,5 s (dès le chargement de la page)
  *   3. Afficher jaquette / titre / artiste / progression (interpolée par horloge murale)
  *   4. Afficher la file d'attente non lue du maître
@@ -21,7 +21,7 @@ import { getUnreadQueue } from './lib/relayQueueView.js';
 // ── Paramètres URL ────────────────────────────────────────────────────────────
 
 const _p        = new URLSearchParams(location.search);
-const SESSION   = _p.get('relay-session');
+const MASTER_ID = _p.get('relay-master');
 const API_BASE  = (_p.get('relay-api') || '').replace(/\/+$/, '');
 // Token priorité : transmis dans l'URL par le maître (relay-token), sinon localStorage du relais
 const API_TOKEN = _p.get('relay-token') || localStorage.getItem('dj-mix:downloader:api:token') || '';
@@ -219,7 +219,7 @@ function _authHeaders() {
 
 async function _poll() {
   try {
-    const res = await fetch(`${API_BASE}/api/relay/state/${SESSION}`, {
+    const res = await fetch(`${API_BASE}/api/relay/state/${MASTER_ID}`, {
       headers: _authHeaders(),
     });
     if (!res.ok) { _registerPollFailure(); return; }
@@ -441,11 +441,11 @@ function _buildTrackPayload(track) {
 }
 
 async function _sendRelayCommand(cmd) {
-  if (!API_BASE || !SESSION) return;
+  if (!API_BASE || !MASTER_ID) return;
   cmd.requestedAt = Date.now();
   cmd.deviceId = DEVICE_ID;
   try {
-    await fetch(`${API_BASE}/api/relay/commands/${SESSION}`, {
+    await fetch(`${API_BASE}/api/relay/commands/${MASTER_ID}`, {
       method: 'POST',
       headers: _authHeaders(),
       body: JSON.stringify(cmd),
@@ -525,10 +525,10 @@ actionSheet?.querySelector('.relay-action-sheet-backdrop')?.addEventListener('cl
 
 // ── Démarrage ─────────────────────────────────────────────────────────────────
 
-if (!SESSION) {
+if (!MASTER_ID) {
   document.body.innerHTML =
     '<p style="color:#8888aa;padding:32px;font-family:sans-serif">' +
-    'Paramètre <code>relay-session</code> manquant dans l\'URL.<br>' +
+    'Paramètre <code>relay-master</code> manquant dans l\'URL.<br>' +
     'Scannez le QR code affiché sur l\'appareil maître.' +
     '</p>';
 } else {

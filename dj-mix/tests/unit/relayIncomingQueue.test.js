@@ -38,7 +38,9 @@ describe('relayIncomingQueue', () => {
     for (let i = 0; i < 10; i++) {
       rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: `t${i}` } });
     }
-    expect(rq.getStatus()).toEqual({ nowPending: false, nextCount: 10, nextMax: 10 });
+    expect(rq.getStatus().nowPending).toBe(false);
+    expect(rq.getStatus().nextCount).toBe(10);
+    expect(rq.getStatus().nextMax).toBe(10);
 
     rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'overflow' } });
     expect(rq.getStatus().nextCount).toBe(10);
@@ -56,7 +58,9 @@ describe('relayIncomingQueue', () => {
     rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'a' } });
     rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'b' } });
     rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'c' } });
-    expect(rq.getStatus()).toEqual({ nowPending: false, nextCount: 2, nextMax: 2 });
+    expect(rq.getStatus().nowPending).toBe(false);
+    expect(rq.getStatus().nextCount).toBe(2);
+    expect(rq.getStatus().nextMax).toBe(2);
   });
 
   test('SPEC-9.4.3 — la piste n\'est ajoutée à la file qu\'une fois le téléchargement résolu', async () => {
@@ -193,16 +197,98 @@ describe('relayIncomingQueue', () => {
       getCurrentIndex: () => 0,
     });
 
-    expect(rq.getStatus()).toEqual({ nowPending: false, nextCount: 0, nextMax: 10 });
+    expect(rq.getStatus()).toEqual({ nowPending: false, nextCount: 0, nextMax: 10, now: null, next: [] });
 
     rq.handleCommand({ type: 'addToQueue', playNow: true, track: { name: 'now', playNowMarker: true } });
     rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'next' } });
-    expect(rq.getStatus()).toEqual({ nowPending: true, nextCount: 1, nextMax: 10 });
+    expect(rq.getStatus()).toEqual({
+      nowPending: true,
+      nextCount: 1,
+      nextMax: 10,
+      now: { name: 'now', artist: '', artUrl: '', deviceId: null },
+      next: [{ name: 'next', artist: '', artUrl: '', deviceId: null, ready: false }],
+    });
 
     dNow.resolve(true);
     dNext.resolve(true);
     await flush();
-    expect(rq.getStatus()).toEqual({ nowPending: false, nextCount: 0, nextMax: 10 });
+    expect(rq.getStatus()).toEqual({ nowPending: false, nextCount: 0, nextMax: 10, now: null, next: [] });
+  });
+
+  test('SPEC-9.5.1 — getStatus() expose le détail de la piste "now" en cours de téléchargement', () => {
+    const rq = createRelayIncomingQueue({
+      prefetchTrackToLocalCache: jest.fn(() => new Promise(() => {})),
+      addToQueue: jest.fn(),
+      triggerSearchFade: jest.fn(),
+      getCurrentIndex: () => 0,
+    });
+
+    rq.handleCommand({
+      type: 'addToQueue',
+      playNow: true,
+      deviceId: 'DEV001',
+      track: { name: 'A', artist: 'Artist A', artUrl: 'http://x/a.jpg' },
+    });
+
+    expect(rq.getStatus().now).toEqual({
+      name: 'A',
+      artist: 'Artist A',
+      artUrl: 'http://x/a.jpg',
+      deviceId: 'DEV001',
+    });
+  });
+
+  test('SPEC-9.5.1 — getStatus() expose le détail des pistes "next", avec ready=true une fois téléchargées mais pas encore committées', async () => {
+    const d1 = deferred();
+    const d2 = deferred();
+    const prefetchTrackToLocalCache = jest.fn((track) => (track.name === 'first' ? d1.promise : d2.promise));
+    const rq = createRelayIncomingQueue({
+      prefetchTrackToLocalCache,
+      addToQueue: jest.fn(),
+      triggerSearchFade: jest.fn(),
+      getCurrentIndex: () => 0,
+    });
+
+    rq.handleCommand({ type: 'addToQueue', playNow: false, deviceId: 'DEV001', track: { name: 'first', artist: 'A1' } });
+    rq.handleCommand({ type: 'addToQueue', playNow: false, deviceId: 'DEV002', track: { name: 'second', artist: 'A2' } });
+
+    // "second" finit son téléchargement en premier mais n'est pas en tête de file :
+    // reste visible avec ready:true tant que "first" n'a pas résolu.
+    d2.resolve(true);
+    await flush();
+    expect(rq.getStatus().next).toEqual([
+      { name: 'first', artist: 'A1', artUrl: '', deviceId: 'DEV001', ready: false },
+      { name: 'second', artist: 'A2', artUrl: '', deviceId: 'DEV002', ready: true },
+    ]);
+
+    d1.resolve(true);
+    await flush();
+    expect(rq.getStatus().next).toEqual([]);
+  });
+
+  test('SPEC-9.5.2 — onChange() est appelé à chaque mutation (now et next)', async () => {
+    const dNow = deferred();
+    const dNext = deferred();
+    const onChange = jest.fn();
+    const prefetchTrackToLocalCache = jest.fn((track) => (track.playNowMarker ? dNow.promise : dNext.promise));
+    const rq = createRelayIncomingQueue({
+      prefetchTrackToLocalCache,
+      addToQueue: jest.fn(),
+      triggerSearchFade: jest.fn(),
+      getCurrentIndex: () => 0,
+      onChange,
+    });
+
+    rq.handleCommand({ type: 'addToQueue', playNow: true, track: { name: 'now', playNowMarker: true } });
+    expect(onChange).toHaveBeenCalledTimes(1);
+
+    rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'next' } });
+    expect(onChange).toHaveBeenCalledTimes(2);
+
+    dNow.resolve(true);
+    dNext.resolve(true);
+    await flush();
+    expect(onChange).toHaveBeenCalledTimes(4);
   });
 
   test('SPEC-9.4.11 — deviceId est propagé au logger sur rejet "now" et "next"', () => {
@@ -260,6 +346,6 @@ describe('relayIncomingQueue', () => {
     rq.handleCommand(null);
 
     expect(prefetchTrackToLocalCache).not.toHaveBeenCalled();
-    expect(rq.getStatus()).toEqual({ nowPending: false, nextCount: 0, nextMax: 10 });
+    expect(rq.getStatus()).toEqual({ nowPending: false, nextCount: 0, nextMax: 10, now: null, next: [] });
   });
 });
