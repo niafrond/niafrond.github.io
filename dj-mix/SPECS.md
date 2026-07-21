@@ -634,9 +634,28 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-9.3.3.1** GIVEN un morceau présent à la fois dans `queue` et `filRouge` de l'état relais reçu (trackStore partagé côté maître, cf. SPEC-2.6.1) — WHEN les items sont transmis à `onRelayQueueItemsAvailable` — THEN il n'est signalé qu'une seule fois (déduplication par `id`), évitant un double pré-téléchargement côté relais.
 - **SPEC-9.3.4** Polling de commandes : toutes les `2500 ms`, âge max `60 000 ms`.
 - **SPEC-9.3.5** GIVEN une commande `addToQueue` reçue du relais (boutons « Lire maintenant » / « Ajouter en suivant ») — THEN elle est déléguée à la file "incoming" (`relayIncomingQueue`, cf. §9.4) plutôt que traitée immédiatement : la piste n'est insérée dans la file d'attente qu'une fois téléchargée.
-- **SPEC-9.3.6** GIVEN la page relais est chargée et que l'utilisateur a appuyé pour initialiser l'AudioContext — THEN : (a) le polling de métadonnées démarre immédiatement (titre en cours, pré-téléchargements) ; (b) le flux **audio** n'est PAS démarré ; (c) le bouton `▶ Lancer le flux` est affiché (`isActive() === false`).
-- **SPEC-9.3.7** GIVEN le bouton `▶ Lancer le flux` est cliqué — WHEN `isActive()` est `false` — THEN `_lastHash` est réinitialisé pour forcer la ré-application de l'état, la boucle de dérive est lancée, l'audio suit l'état maître dès le prochain tick de polling, et le bouton passe à `⏹ Arrêter le flux`.
-- **SPEC-9.3.8** GIVEN le bouton `⏹ Arrêter le flux` est cliqué — WHEN `isActive()` est `true` — THEN l'audio est mis en pause (`_pauseAll`), le suivi de position s'arrête, la boucle de dérive s'arrête ; le polling continue (le titre reste à jour) et le bouton repasse à `▶ Lancer le flux`.
+- ~~**SPEC-9.3.6 (ancien)** GIVEN la page relais est chargée et que l'utilisateur a appuyé pour initialiser l'AudioContext — THEN : (a) le polling de métadonnées démarre immédiatement ; (b) le flux audio n'est PAS démarré ; (c) le bouton `▶ Lancer le flux` est affiché.~~
+- ~~**SPEC-9.3.7 (ancien)** GIVEN le bouton `▶ Lancer le flux` est cliqué — THEN l'audio suit l'état maître (moteur `AudioContext` local, decks, crossfade, correction de dérive).~~
+- ~~**SPEC-9.3.8 (ancien)** GIVEN le bouton `⏹ Arrêter le flux` est cliqué — THEN l'audio local est mis en pause.~~
+  (Supprimé : le relais léger n'a plus de lecture audio locale — seul le maître joue le
+  son. Tout le moteur audio (`AudioContext`, decks, crossfade, filtre/écho/distortion,
+  téléchargement/cache des fichiers audio, correction de dérive par
+  `requestAnimationFrame`, événements planifiés `upcoming`) ainsi que
+  `lib/relayStreamController.js` ont été retirés. Remplacé par SPEC-9.3.6 à 9.3.8
+  ci-dessous.)
+- **SPEC-9.3.6** Le relais léger (`relay.js`) ne télécharge ni ne met en cache aucun
+  fichier audio, et n'initialise aucun `AudioContext`. Le polling de métadonnées démarre
+  immédiatement au chargement de la page — aucun geste utilisateur n'est requis.
+- **SPEC-9.3.7** L'écran relais n'affiche aucune mention "relais" ni aucun texte de
+  statut de connexion — uniquement jaquette, titre/artiste en cours, progression et
+  file d'attente. La progression est interpolée côté client par horloge murale
+  (`Date.now()`) à partir de `positionMs`/`capturedAt` reçus du maître, recalée à
+  chaque poll (1500 ms), et non par une horloge audio locale (aucune lecture audio sur
+  le relais).
+- **SPEC-9.3.8** La file d'attente affichée (`#relay-screen-queue-list`) provient de
+  `state.queue` tronqué après `currentIndex` (`getUnreadQueue()`,
+  `lib/relayQueueView.js`) ; affichage informatif seulement (pas d'action au tap),
+  remplace l'ancien aperçu à un seul titre (`#relay-screen-next`).
 
 ### 9.4 File "incoming" (Lire maintenant / Ajouter en suivant)
 

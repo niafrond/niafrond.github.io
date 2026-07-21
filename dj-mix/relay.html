@@ -13,20 +13,8 @@
 </head>
 <body>
 
-  <!-- Overlay "appuyer pour démarrer" — AudioContext exige un geste utilisateur -->
-  <div id="relay-tap-overlay" role="button" aria-label="Appuyer pour démarrer">
-    <span class="tap-badge">📻 RELAIS</span>
-    <span class="tap-hint">Appuyez pour démarrer</span>
-    <span class="tap-sub">Lecture synchronisée avec le maître</span>
-  </div>
-
   <!-- Écran relais -->
   <div id="relay-screen" class="relay-screen">
-    <div class="relay-screen-header">
-      <span class="relay-screen-badge">📻 Relais</span>
-      <span id="relay-screen-status" class="relay-screen-status-text">Connexion…</span>
-    </div>
-
     <button id="relay-search-btn" class="relay-search-btn" aria-label="Rechercher" title="Rechercher"></button>
     <button id="relay-fullscreen-btn" class="relay-fullscreen-btn" aria-label="Plein écran" title="Plein écran"></button>
 
@@ -40,8 +28,6 @@
       <div id="relay-screen-meta" class="relay-screen-meta"></div>
     </div>
 
-    <button id="relay-stream-btn" class="relay-stream-btn" aria-label="Lancer le flux" title="Lancer le flux"></button>
-
     <div class="relay-screen-progress-wrap">
       <div class="relay-screen-progress-bar"
            role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
@@ -54,23 +40,9 @@
       </div>
     </div>
 
-    <div id="relay-screen-next" class="relay-screen-next" hidden>
-      <span class="relay-screen-next-label">Suivant</span>
-      <div class="relay-screen-next-track">
-        <img id="relay-screen-next-art" class="relay-screen-next-art" src="" alt="" hidden>
-        <div class="relay-screen-next-info">
-          <span id="relay-screen-next-name" class="relay-screen-next-name"></span>
-          <span id="relay-screen-next-artist" class="relay-screen-next-artist"></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Indicateur de téléchargement en arrière-plan -->
-    <div class="relay-screen-dl-wrap">
-      <div class="relay-screen-dl-bar">
-        <div id="relay-screen-dl-fill" class="relay-screen-dl-fill"></div>
-      </div>
-      <span id="relay-screen-dl-label"></span>
+    <div id="relay-screen-queue" class="relay-screen-queue-wrap" hidden>
+      <span class="relay-screen-queue-label">File d'attente</span>
+      <div id="relay-screen-queue-list" class="relay-screen-queue-list"></div>
     </div>
   </div>
 

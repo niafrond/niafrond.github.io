@@ -22,39 +22,6 @@ html, body {
   touch-action: manipulation;
 }
 
-/* ── Overlay "tap to start" (AudioContext exige un geste) ─────────────── */
-#relay-tap-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 16px;
-  cursor: pointer;
-  user-select: none;
-}
-
-#relay-tap-overlay .tap-badge {
-  font-size: 14px;
-  font-weight: 600;
-  color: #7eb8e8;
-  letter-spacing: 0.06em;
-}
-
-#relay-tap-overlay .tap-hint {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-#relay-tap-overlay .tap-sub {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
 /* ── Écran principal relais ───────────────────────────────────────────── */
 .relay-screen {
   position: fixed;
@@ -64,42 +31,16 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 20px;
-  padding: env(safe-area-inset-top, 20px) 24px env(safe-area-inset-bottom, 20px);
+  gap: 16px;
+  padding: calc(env(safe-area-inset-top, 0px) + 20px) 24px env(safe-area-inset-bottom, 16px);
   overflow: hidden;
-}
-
-/* Header */
-.relay-screen-header {
-  position: absolute;
-  top: calc(env(safe-area-inset-top, 0px) + 14px);
-  left: 0; right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.relay-screen-badge {
-  font-size: 13px;
-  font-weight: 600;
-  color: #7eb8e8;
-  letter-spacing: 0.04em;
-}
-
-.relay-screen-status-text {
-  font-size: 12px;
-  color: var(--text-dim);
 }
 
 /* Pochette */
 .relay-screen-art-wrap {
   position: relative;
-  width: min(260px, 62vw);
-  height: min(260px, 62vw);
+  width: min(180px, 40vw);
+  height: min(180px, 40vw);
   flex-shrink: 0;
 }
 
@@ -126,6 +67,7 @@ html, body {
   text-align: center;
   width: 100%;
   max-width: 340px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -157,71 +99,11 @@ html, body {
   letter-spacing: 0.03em;
 }
 
-/* Prochain titre */
-.relay-screen-next {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-  max-width: 340px;
-  padding: 10px 12px;
-  background: var(--surface2);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.relay-screen-next-label {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--accent);
-}
-
-.relay-screen-next-track {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.relay-screen-next-art {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  object-fit: cover;
-  background: var(--surface3);
-  flex-shrink: 0;
-}
-
-.relay-screen-next-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.relay-screen-next-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.relay-screen-next-artist {
-  font-size: 12px;
-  color: var(--text-dim);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* Barre de progression */
 .relay-screen-progress-wrap {
   width: 100%;
   max-width: 340px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -251,114 +133,92 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Bouton plein écran */
-.relay-fullscreen-btn {
-  position: absolute;
-  top: calc(env(safe-area-inset-top, 0px) + 10px);
-  right: 14px;
-  width: 36px;
-  height: 36px;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s, background 0.2s;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.relay-fullscreen-btn:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.relay-fullscreen-btn svg {
-  width: 20px;
-  height: 20px;
-  display: block;
-}
-
-/* Barre de téléchargement */
-.relay-screen-dl-wrap {
-  position: absolute;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
-  left: 24px; right: 24px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: var(--text-dim);
-}
-
-.relay-screen-dl-bar {
+/* ── File d'attente du maître (titres non lus) ─────────────────────── */
+.relay-screen-queue-wrap {
+  width: 100%;
+  max-width: 340px;
   flex: 1;
-  height: 2px;
-  background: var(--surface3);
-  border-radius: 1px;
-  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.relay-screen-dl-fill {
-  height: 100%;
-  background: var(--text-dim);
-  border-radius: 1px;
-  width: 0%;
-  transition: width 0.4s ease;
+.relay-screen-queue-wrap[hidden] { display: none; }
+
+.relay-screen-queue-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
-/* ── Bouton lancer/arrêter le flux ──────────────────────────────────── */
-.relay-stream-btn {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--accent);
-  border: none;
-  color: #fff;
-  cursor: pointer;
+.relay-screen-queue-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.relay-screen-queue-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: opacity 0.2s, transform 0.15s, background 0.2s, border-color 0.2s;
-  -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 4px 16px rgba(29, 185, 84, 0.35);
+  gap: 10px;
+  padding: 6px 4px;
+  min-width: 0;
 }
 
-.relay-stream-btn:active {
-  transform: scale(0.92);
-  opacity: 0.8;
-}
-
-.relay-stream-btn svg {
-  width: 28px;
-  height: 28px;
-  display: block;
-}
-
-.relay-stream-btn--stop {
+.relay-screen-queue-item-art {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
   background: var(--surface3);
-  border: 2px solid var(--text-dim);
-  color: var(--text-muted);
-  box-shadow: none;
+  flex-shrink: 0;
 }
 
-/* ── Bouton recherche ───────────────────────────────────────────────── */
+.relay-screen-queue-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.relay-screen-queue-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.relay-screen-queue-item-artist {
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Boutons plein écran / recherche ────────────────────────────────── */
+.relay-fullscreen-btn,
 .relay-search-btn {
   position: absolute;
   top: calc(env(safe-area-inset-top, 0px) + 10px);
-  right: 54px;
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   background: none;
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
+  padding: 10px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -366,14 +226,19 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
+.relay-fullscreen-btn { right: 14px; }
+.relay-search-btn     { right: 66px; }
+
+.relay-fullscreen-btn:hover,
 .relay-search-btn:hover {
   color: var(--text);
   background: rgba(255, 255, 255, 0.08);
 }
 
+.relay-fullscreen-btn svg,
 .relay-search-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   display: block;
 }
 
