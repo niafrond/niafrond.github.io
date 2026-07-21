@@ -1,3 +1,9 @@
+## [2.6.0](https://github.com/niafrond/niafrond.github.io/compare/v2.5.0...v2.6.0) (2026-07-21)
+
+### Features
+
+* Add relay server URL derivation and integrate into relay mode management ([38fe6c5](https://github.com/niafrond/niafrond.github.io/commit/38fe6c5c027b23e8e8c6866edd6d9b117af8749c))
+
 ## [2.5.0](https://github.com/niafrond/niafrond.github.io/compare/v2.4.0...v2.5.0) (2026-07-21)
 
 ### Features
