@@ -1,3 +1,9 @@
+## [2.3.0](https://github.com/niafrond/niafrond.github.io/compare/v2.2.0...v2.3.0) (2026-07-21)
+
+### Features
+
+* Implement device ID tracking in relay commands and update logging for rejections and failures ([4a41c8b](https://github.com/niafrond/niafrond.github.io/commit/4a41c8b6dd05fe583b7912196bb2b078b2ed5345))
+
 ## [2.2.0](https://github.com/niafrond/niafrond.github.io/compare/v2.1.0...v2.2.0) (2026-07-21)
 
 ### Features
