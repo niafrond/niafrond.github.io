@@ -1055,6 +1055,7 @@ const {
   getDownloaderApiToken,
   getDownloaderApiUrl,
   getDownloaderCdnUrl,
+  getDownloaderRelayUrl,
   loadIntoForm: loadDownloaderApiConfigIntoForm,
   saveFromForm: saveDownloaderApiConfigFromForm,
   setStatus: setDownloaderApiStatus,
@@ -1062,8 +1063,10 @@ const {
 } = downloaderConfig;
 
 // ── Mode Maître / Relais ──────────────────────────────────────────────────────
+// getDownloaderRelayUrl : le serveur relay est un process autonome (port 3003),
+// détaché de l'API principale (getDownloaderApiUrl) — cf. lib/downloaderConfig.js.
 const relayModeManager = createRelayModeManager({
-  getDownloaderApiUrl,
+  getDownloaderRelayUrl,
   getDownloaderApiToken,
   logger,
   onApplyRelayState: (state) => applyRelayState(state),
@@ -7398,6 +7401,7 @@ const relayController = createRelayModeController({
     }
   },
   getDownloaderApiUrl,
+  getDownloaderRelayUrl,
   getDownloaderApiToken,
   setDownloaderApiUrl: (url) => {
     if (downloaderApiUrlInput) downloaderApiUrlInput.value = url;

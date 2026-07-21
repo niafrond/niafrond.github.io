@@ -6,6 +6,11 @@
  * l'appareil maître lui-même (cf. relayModeController.js) — le serveur ne fait
  * qu'auto-créer l'entrée correspondante au premier PUT.
  *
+ * Le serveur relay est un process autonome, détaché de l'API principale
+ * (port 3003 par défaut) — voir getDownloaderRelayUrl / deriveRelayUrlFromApiUrl
+ * dans lib/downloaderConfig.js. Toutes les requêtes de ce module ciblent ce
+ * process, jamais l'API principale (`getDownloaderApiUrl`).
+ *
  * Architecture :
  *   Maître   →  PUT  /api/relay/state/:id               → publie l'état courant (auto-crée)
  *            →  POST /api/relay/audio/:trackId          → upload l'audio local (fallback P2P)
@@ -36,7 +41,7 @@
  */
 
 export function createRelayModeManager({
-  getDownloaderApiUrl,
+  getDownloaderRelayUrl,
   getDownloaderApiToken,
   logger,
   onApplyRelayState,           // (state) => void
@@ -58,7 +63,7 @@ export function createRelayModeManager({
 
   // ── Couche HTTP ────────────────────────────────────────────────────────────
 
-  function _base() { return getDownloaderApiUrl?.() || null; }
+  function _base() { return getDownloaderRelayUrl?.() || null; }
 
   function _headers(extra = {}) {
     const token = getDownloaderApiToken?.();

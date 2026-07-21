@@ -11,7 +11,9 @@ import { getUnreadQueue } from './lib/relayQueueView.js';
  * recherche pour alimenter sa file d'attente.
  *
  * Responsabilités :
- *   1. Lire ?relay-master= et ?relay-api= depuis l'URL
+ *   1. Lire ?relay-master=, ?relay-api= et ?relay-relay= depuis l'URL — relay-api
+ *      cible l'API principale (recherche), relay-relay le process relay autonome
+ *      (état, commandes), détaché de l'API principale depuis juillet 2026 (port 3003).
  *   2. Polling de l'état maître toutes les 1,5 s (dès le chargement de la page)
  *   3. Afficher jaquette / titre / artiste / progression (interpolée par horloge murale)
  *   4. Afficher la file d'attente non lue du maître
@@ -22,7 +24,10 @@ import { getUnreadQueue } from './lib/relayQueueView.js';
 
 const _p        = new URLSearchParams(location.search);
 const MASTER_ID = _p.get('relay-master');
-const API_BASE  = (_p.get('relay-api') || '').replace(/\/+$/, '');
+const API_BASE   = (_p.get('relay-api') || '').replace(/\/+$/, '');
+// Process relay autonome (état/commandes), détaché de l'API principale — se replie
+// sur API_BASE si absent (lien généré par une version antérieure du maître).
+const RELAY_BASE = (_p.get('relay-relay') || API_BASE).replace(/\/+$/, '');
 // Token priorité : transmis dans l'URL par le maître (relay-token), sinon localStorage du relais
 const API_TOKEN = _p.get('relay-token') || localStorage.getItem('dj-mix:downloader:api:token') || '';
 
@@ -219,7 +224,7 @@ function _authHeaders() {
 
 async function _poll() {
   try {
-    const res = await fetch(`${API_BASE}/api/relay/state/${MASTER_ID}`, {
+    const res = await fetch(`${RELAY_BASE}/api/relay/state/${MASTER_ID}`, {
       headers: _authHeaders(),
     });
     if (!res.ok) { _registerPollFailure(); return; }
@@ -441,11 +446,11 @@ function _buildTrackPayload(track) {
 }
 
 async function _sendRelayCommand(cmd) {
-  if (!API_BASE || !MASTER_ID) return;
+  if (!RELAY_BASE || !MASTER_ID) return;
   cmd.requestedAt = Date.now();
   cmd.deviceId = DEVICE_ID;
   try {
-    await fetch(`${API_BASE}/api/relay/commands/${MASTER_ID}`, {
+    await fetch(`${RELAY_BASE}/api/relay/commands/${MASTER_ID}`, {
       method: 'POST',
       headers: _authHeaders(),
       body: JSON.stringify(cmd),

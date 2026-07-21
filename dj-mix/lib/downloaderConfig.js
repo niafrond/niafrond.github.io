@@ -20,6 +20,20 @@ export function deriveCdnUrlFromApiUrl(apiUrl) {
   }
 }
 
+// Derives the relay server's base URL from the API base URL by swapping the
+// port to 3003. The relay server (Maître/Relais sync) is a standalone process
+// detached from the main API, so it can't be reached through the API's own
+// base URL — see lib/relayModeManager.js.
+export function deriveRelayUrlFromApiUrl(apiUrl) {
+  try {
+    const url = new URL(apiUrl);
+    url.port = '3003';
+    return url.toString().replace(/\/$/, '');
+  } catch (_) {
+    return apiUrl;
+  }
+}
+
 export function createDownloaderConfigManager(options) {
   const {
     cdnDefaultUrl,
@@ -59,6 +73,14 @@ export function createDownloaderConfigManager(options) {
     const apiUrl = getDownloaderApiUrl();
     if (apiUrl) return deriveCdnUrlFromApiUrl(apiUrl);
     return (cdnDefaultUrl || '').trim().replace(/\/$/, '');
+  }
+
+  // No override storage: unlike the CDN URL, the relay server's address is
+  // always derived from the API URL (port 3003), following it if it changes
+  // at runtime (e.g. relay mode syncing a master's API URL onto a relay client).
+  function getDownloaderRelayUrl() {
+    const apiUrl = getDownloaderApiUrl();
+    return apiUrl ? deriveRelayUrlFromApiUrl(apiUrl) : '';
   }
 
   function loadIntoForm() {
@@ -109,6 +131,7 @@ export function createDownloaderConfigManager(options) {
     getDownloaderApiToken,
     getDownloaderApiUrl,
     getDownloaderCdnUrl,
+    getDownloaderRelayUrl,
     loadIntoForm,
     saveFromForm,
     setStatus,

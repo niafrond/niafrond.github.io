@@ -24,6 +24,7 @@ export function createRelayModeController({
   logWarn,
   onRoleChanged,
   getDownloaderApiUrl,
+  getDownloaderRelayUrl,
   getDownloaderApiToken,
   setDownloaderApiUrl,
   // DOM — config maître uniquement
@@ -73,11 +74,13 @@ export function createRelayModeController({
 
   function _buildRelayUrl(masterId) {
     const apiUrl   = getDownloaderApiUrl?.() || '';
+    const relayUrl = getDownloaderRelayUrl?.() || '';
     const apiToken = getDownloaderApiToken?.() || '';
     const origin = window.location.origin;
     const dir = window.location.pathname.replace(/\/[^/]*$/, '/');
     const params = new URLSearchParams({ 'relay-master': masterId });
     if (apiUrl)   params.set('relay-api',   apiUrl);
+    if (relayUrl) params.set('relay-relay', relayUrl);
     if (apiToken) params.set('relay-token', apiToken);
     return `${origin}${dir}relay?${params.toString()}`;
   }

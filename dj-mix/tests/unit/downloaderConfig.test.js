@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from '@jest/globals';
-import { createDownloaderConfigManager, deriveCdnUrlFromApiUrl } from '../../lib/downloaderConfig.js';
+import { createDownloaderConfigManager, deriveCdnUrlFromApiUrl, deriveRelayUrlFromApiUrl } from '../../lib/downloaderConfig.js';
 
 describe('downloaderConfig', () => {
   beforeEach(() => {
@@ -53,6 +53,39 @@ describe('downloaderConfig', () => {
       });
 
       expect(manager.getDownloaderCdnUrl()).toBe('http://192.168.8.149:3002');
+    });
+  });
+
+  describe('deriveRelayUrlFromApiUrl', () => {
+    test('swaps the port to 3003, keeping host/protocol', () => {
+      expect(deriveRelayUrlFromApiUrl('http://192.168.8.149:3000')).toBe('http://192.168.8.149:3003');
+    });
+
+    test('returns the input unchanged when it is not a valid URL', () => {
+      expect(deriveRelayUrlFromApiUrl('not-a-url')).toBe('not-a-url');
+    });
+  });
+
+  describe('getDownloaderRelayUrl', () => {
+    // No override storage for the relay URL: it always tracks the current API
+    // URL (port 3003), unlike the CDN URL which can be pinned independently.
+    test('derives from the current API URL', () => {
+      localStorage.setItem('api-key', 'http://relay-master.local:3000');
+      const manager = createDownloaderConfigManager({
+        defaultUrl: 'http://192.168.8.149:3000',
+        storageKey: 'api-key',
+      });
+
+      expect(manager.getDownloaderRelayUrl()).toBe('http://relay-master.local:3003');
+    });
+
+    test('returns an empty string when no API URL is configured', () => {
+      const manager = createDownloaderConfigManager({
+        defaultUrl: '',
+        storageKey: 'api-key',
+      });
+
+      expect(manager.getDownloaderRelayUrl()).toBe('');
     });
   });
 
