@@ -2,10 +2,10 @@
 // It mirrors root /version.js so that Capacitor (webDir: flash-guess) can bundle it.
 export const SITE_SEMVER = {
   major: 2,
-  minor: 1,
+  minor: 2,
   patch: 0,
   prerelease: '',
-  buildDate: '2026-07-21T12:21:57.845Z',
+  buildDate: '2026-07-21T14:23:31.829Z',
 };
 
 export function getVersion() {

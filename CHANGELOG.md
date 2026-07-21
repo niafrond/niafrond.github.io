@@ -1,3 +1,9 @@
+## [2.2.0](https://github.com/niafrond/niafrond.github.io/compare/v2.1.0...v2.2.0) (2026-07-21)
+
+### Features
+
+* Add unit tests for relayQueueView and remove relayStreamController tests ([4c52fb2](https://github.com/niafrond/niafrond.github.io/commit/4c52fb2b17174d3ad1b3e560c2c406b99988bbdf))
+
 ## [2.1.0](https://github.com/niafrond/niafrond.github.io/compare/v2.0.0...v2.1.0) (2026-07-21)
 
 ### Features
