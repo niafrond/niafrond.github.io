@@ -326,7 +326,7 @@ export function createQueueManager(options) {
     item.lastTouchedAt = Date.now();
 
     let addedIndex;
-    if (asNext) {
+    if (asNext || playNow) {
       addedIndex = Math.min(Math.max(uiState.currentIndex + 1, 0), q.length);
       q.splice(addedIndex, 0, item);
       if (uiState.deckBCueIndex >= addedIndex) uiState.deckBCueIndex += 1;

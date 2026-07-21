@@ -6111,7 +6111,7 @@ async function triggerSearchFade(track) {
 
   let targetIndex = getQueueIndexForTrack(track);
   if (targetIndex < 0) {
-    await addToQueue(track);
+    await addToQueue(track, { asNext: true });
     targetIndex = getQueueIndexForTrack(track);
   }
 
@@ -6206,7 +6206,7 @@ async function addToQueue(track, options = {}) {
   item.lastTouchedAt = Date.now();
 
   let addedIndex;
-  if (asNext) {
+  if (asNext || playNow) {
     addedIndex = Math.min(Math.max(uiState.currentIndex + 1 + insertOffset, 0), queue.length);
     queue.splice(addedIndex, 0, item);
     if (uiState.deckBCueIndex >= addedIndex) uiState.deckBCueIndex += 1;

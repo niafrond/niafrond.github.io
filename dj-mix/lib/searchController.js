@@ -271,7 +271,7 @@ export function createSearchController(options) {
 
     let targetIndex = getQueueIndexForTrack(track);
     if (targetIndex < 0) {
-      await addToQueue(track);
+      await addToQueue(track, { asNext: true });
       targetIndex = getQueueIndexForTrack(track);
     }
 

@@ -21,8 +21,30 @@ export { MIX_TRANSITION_MODES, MIX_TRANSITION_MODE_LABELS };
 // Au-delà de ce délai, load()->canplay ou play() sont considérés lents (réseau/decode) et loggés en warn.
 const SLOW_AUDIO_LOAD_THRESHOLD_MS = 200;
 
-// beat_repeat ne doit jamais boucler plus de 5s : passé ce délai, coupure sèche (cut) vers le morceau entrant.
+// beat_repeat ne doit jamais boucler plus de 5s au total : passé ce délai, coupure sèche (cut) vers le morceau entrant.
 export const BEAT_REPEAT_MAX_LOOP_MS = 5000;
+
+// Étapes successives du beat_repeat : d'abord une boucle longue, puis des boucles de plus
+// en plus courtes (division par 2 à chaque étape). BEAT_REPEAT_STAGE_DURATION_FRACTIONS
+// répartit le budget total (BEAT_REPEAT_MAX_LOOP_MS, ou moins si le crossfade est plus court)
+// entre les étapes et somme à 1 : le cumul des étapes fait donc toujours exactement ce budget.
+const BEAT_REPEAT_STAGE_DURATION_FRACTIONS = [0.40, 0.25, 0.20, 0.15];
+const BEAT_REPEAT_STAGE_LOOP_SECONDS = [1.0, 0.5, 0.25, 0.125];
+
+// Longueur de boucle (en secondes de piste) pour l'étape active, à l'instant `elapsedMs`
+// écoulé depuis le début du beat_repeat, sur un budget total de `cutoffMs`.
+function getBeatRepeatStageLoopSeconds(elapsedMs, cutoffMs) {
+  const scale = cutoffMs / BEAT_REPEAT_MAX_LOOP_MS;
+  let boundaryMs = 0;
+  for (let i = 0; i < BEAT_REPEAT_STAGE_DURATION_FRACTIONS.length; i++) {
+    boundaryMs += BEAT_REPEAT_STAGE_DURATION_FRACTIONS[i] * cutoffMs;
+    const isLastStage = i === BEAT_REPEAT_STAGE_DURATION_FRACTIONS.length - 1;
+    if (elapsedMs < boundaryMs || isLastStage) {
+      return Math.max(0.05, BEAT_REPEAT_STAGE_LOOP_SECONDS[i] * scale);
+    }
+  }
+  return Math.max(0.05, BEAT_REPEAT_STAGE_LOOP_SECONDS[BEAT_REPEAT_STAGE_LOOP_SECONDS.length - 1] * scale);
+}
 
 function clamp01(value) {
   return Math.max(0, Math.min(1, Number(value) || 0));
@@ -835,11 +857,10 @@ export class DJPlayer extends EventTarget {
             }
           }
 
-          // beat_repeat : boucle le deck sortant avec une longueur qui rétrécit progressivement
-          // jusqu'au hard cut (cf. BEAT_REPEAT_MAX_LOOP_MS), au lieu d'une fraction fixe de liveDuration.
+          // beat_repeat : boucle le deck sortant par étapes (d'abord une boucle longue, puis de
+          // plus en plus courtes) jusqu'au hard cut (cf. BEAT_REPEAT_MAX_LOOP_MS / getBeatRepeatStageLoopSeconds).
           if (mode === 'beat_repeat' && Number.isFinite(context.from.currentTime)) {
-            const cutoffProgress = beatRepeatCutoffMs / liveDuration;
-            const loopLen = Math.max(0.1, Math.pow(1 - (progress / cutoffProgress), 1.5));
+            const loopLen = getBeatRepeatStageLoopSeconds(progress * liveDuration, beatRepeatCutoffMs);
             if ((context.from.currentTime - loopAnchorFrom) >= loopLen) {
               context.from.currentTime = loopAnchorFrom;
             }
