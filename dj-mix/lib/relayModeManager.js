@@ -274,6 +274,8 @@ export function createRelayModeManager({
       s.fx?.distortion ? 'd' : '',
       (s.queue || []).map((i) => i.id).join(','),
       (s.upcoming || []).map((e) => `${e.type}:${Math.round(e.at / 1000)}`).join(';'),
+      s.relayIncoming?.nowPending ? '1' : '0',
+      s.relayIncoming?.nextCount ?? 0,
     ].join('|');
   }
 

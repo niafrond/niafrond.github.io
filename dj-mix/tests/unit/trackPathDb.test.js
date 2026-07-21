@@ -39,8 +39,7 @@ describe('trackPathDb', () => {
     expect(db.size()).toBe(0);
   });
 
-  // SPEC-11.5.1: writes are debounced (400ms) rather than synchronous, so a
-  // bulk sync of a large library doesn't hammer localStorage on every entry.
+  // SPEC-11.5.1: writes are debounced (400ms) rather than synchronous.
   test('persists to storage debounced, not synchronously', () => {
     const storage = makeMemoryStorage();
     const setItemSpy = jest.spyOn(storage, 'setItem');
@@ -52,39 +51,6 @@ describe('trackPathDb', () => {
     jest.advanceTimersByTime(400);
     expect(setItemSpy).toHaveBeenCalledTimes(1);
     expect(JSON.parse(setItemSpy.mock.calls[0][1])).toEqual({ 'track-1': '/mnt/e/AudioDB/track-1.mp3' });
-  });
-
-  test('bulkSet coalesces multiple entries into a single debounced write', () => {
-    const storage = makeMemoryStorage();
-    const setItemSpy = jest.spyOn(storage, 'setItem');
-    const db = createTrackPathDb({ storageKey: 'test:paths', storage });
-
-    const changed = db.bulkSet([
-      ['track-1', '/mnt/e/AudioDB/track-1.mp3'],
-      ['track-2', '/mnt/e/AudioDB/track-2.mp3'],
-      ['', '/mnt/e/AudioDB/ignored.mp3'],
-    ]);
-
-    expect(changed).toBe(true);
-    jest.advanceTimersByTime(400);
-    expect(setItemSpy).toHaveBeenCalledTimes(1);
-    expect(db.get('track-1')).toBe('/mnt/e/AudioDB/track-1.mp3');
-    expect(db.get('track-2')).toBe('/mnt/e/AudioDB/track-2.mp3');
-    expect(db.size()).toBe(2);
-  });
-
-  test('bulkSet is a no-op (no scheduled write) when nothing actually changed', () => {
-    const storage = makeMemoryStorage();
-    const db = createTrackPathDb({ storageKey: 'test:paths', storage });
-    db.bulkSet([['track-1', '/mnt/e/AudioDB/track-1.mp3']]);
-    jest.advanceTimersByTime(400);
-
-    const setItemSpy = jest.spyOn(storage, 'setItem');
-    const changed = db.bulkSet([['track-1', '/mnt/e/AudioDB/track-1.mp3']]);
-
-    expect(changed).toBe(false);
-    jest.advanceTimersByTime(400);
-    expect(setItemSpy).not.toHaveBeenCalled();
   });
 
   test('loads existing entries from storage on creation', () => {

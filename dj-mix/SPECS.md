@@ -632,10 +632,59 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-9.3.3** GIVEN de nouveaux items dans queue/filRouge — THEN `onRelayQueueItemsAvailable(items)` déclenche le pré-téléchargement.
 - **SPEC-9.3.3.1** GIVEN un morceau présent à la fois dans `queue` et `filRouge` de l'état relais reçu (trackStore partagé côté maître, cf. SPEC-2.6.1) — WHEN les items sont transmis à `onRelayQueueItemsAvailable` — THEN il n'est signalé qu'une seule fois (déduplication par `id`), évitant un double pré-téléchargement côté relais.
 - **SPEC-9.3.4** Polling de commandes : toutes les `2500 ms`, âge max `60 000 ms`.
-- **SPEC-9.3.5** GIVEN une commande `addToQueue` reçue du relais (bouton « Ajouter en suivant ») — THEN la piste est insérée à l'index `currentIndex + 1` (ou `0` si aucune piste ne joue), déplaçant l'ancienne piste suivante d'un rang dans la file. `deckBCueIndex` est incrémenté si son index est ≥ à la position d'insertion.
+- **SPEC-9.3.5** GIVEN une commande `addToQueue` reçue du relais (boutons « Lire maintenant » / « Ajouter en suivant ») — THEN elle est déléguée à la file "incoming" (`relayIncomingQueue`, cf. §9.4) plutôt que traitée immédiatement : la piste n'est insérée dans la file d'attente qu'une fois téléchargée.
 - **SPEC-9.3.6** GIVEN la page relais est chargée et que l'utilisateur a appuyé pour initialiser l'AudioContext — THEN : (a) le polling de métadonnées démarre immédiatement (titre en cours, pré-téléchargements) ; (b) le flux **audio** n'est PAS démarré ; (c) le bouton `▶ Lancer le flux` est affiché (`isActive() === false`).
 - **SPEC-9.3.7** GIVEN le bouton `▶ Lancer le flux` est cliqué — WHEN `isActive()` est `false` — THEN `_lastHash` est réinitialisé pour forcer la ré-application de l'état, la boucle de dérive est lancée, l'audio suit l'état maître dès le prochain tick de polling, et le bouton passe à `⏹ Arrêter le flux`.
 - **SPEC-9.3.8** GIVEN le bouton `⏹ Arrêter le flux` est cliqué — WHEN `isActive()` est `true` — THEN l'audio est mis en pause (`_pauseAll`), le suivi de position s'arrête, la boucle de dérive s'arrête ; le polling continue (le titre reste à jour) et le bouton repasse à `▶ Lancer le flux`.
+
+### 9.4 File "incoming" (Lire maintenant / Ajouter en suivant)
+
+Une commande `addToQueue` reçue du relais léger ne doit pas apparaître dans la file d'attente
+avant d'avoir été téléchargée. `lib/relayIncomingQueue.js` (`createRelayIncomingQueue`) gère ce
+staging côté maître, câblé dans `main.js` en lieu et place de l'ancien traitement synchrone
+(`onRelayCommand`).
+
+- **SPEC-9.4.1** « Lire maintenant » (`cmd.playNow === true`) dispose d'un slot unique. GIVEN le
+  slot déjà occupé — WHEN une nouvelle commande « Lire maintenant » arrive — THEN elle est
+  ignorée (log uniquement, aucune commande envoyée en retour au relais).
+- **SPEC-9.4.2** « Ajouter en suivant » dispose de `10` slots (`RELAY_INCOMING_NEXT_MAX_SLOTS`).
+  GIVEN les `10` slots déjà occupés — WHEN une 11e commande arrive — THEN elle est ignorée (log
+  uniquement).
+- **SPEC-9.4.3** GIVEN une commande acceptée (slot libre) — THEN `prefetchTrackToLocalCache(cmd.track)`
+  est lancé en arrière-plan ; la piste n'est ajoutée à la file d'attente (`addToQueue`) qu'une
+  fois ce téléchargement résolu avec succès. Un échec (`onError` ou résultat `false`) libère le
+  slot silencieusement — la piste n'apparaît jamais dans la file, aucun toast d'erreur.
+- **SPEC-9.4.4** GIVEN plusieurs slots « Ajouter en suivant » soumis dans un ordre donné — WHEN
+  leurs téléchargements se terminent dans un ordre différent — THEN l'insertion dans la file
+  respecte strictement l'ordre de soumission (FIFO) : le 1er slot soumis atterrit juste après la
+  piste en cours, le 2e juste après lui, etc. Un slot prêt mais pas encore en tête de la file
+  interne reste en attente (non committé) jusqu'à ce que tous les slots précédents aient été
+  committés ou aient échoué.
+- **SPEC-9.4.5** Implémentation du FIFO : `addToQueue()` accepte un paramètre optionnel
+  `insertOffset` (défaut `0`, aucun changement pour les autres appelants) utilisé uniquement
+  dans la branche `asNext` : insertion à `currentIndex + 1 + insertOffset` au lieu de
+  `currentIndex + 1`. `relayIncomingQueue` maintient un compteur incrémenté à chaque commit,
+  remis à `0` dès que `currentIndex` change depuis le dernier commit.
+- **SPEC-9.4.6** GIVEN un slot « Lire maintenant » téléchargé avec succès — THEN le slot est
+  libéré puis `triggerSearchFade(cmd.track)` est appelé (insertion + cue sur la platine inactive
+  + déclenchement automix immédiat, comportement identique à SPEC-4.3.7). « Lire maintenant »
+  est toujours prioritaire : il s'insère devant les morceaux « Ajouter en suivant » déjà commités.
+- **SPEC-9.4.7** L'état diffusé par `buildRelayStateSnapshot()` inclut `relayIncoming: { nowPending, nextCount, nextMax }`.
+  Ces 3 champs doivent être inclus dans les 3 hash de dédoublonnage existants (`_hashState()` dans
+  `lib/relayModeManager.js`, utilisé par le maître ET le relais applicatif complet, ET `_stateHash()`
+  local à `relay.js`) — sinon un changement de ces seuls champs ne se propage pas (piège déjà
+  rencontré, cf. mémoire de session).
+- **SPEC-9.4.8** GIVEN le relais léger (`relay.js`) — WHEN une piste est sélectionnée (action
+  sheet) — THEN tant qu'aucune réponse fiable du maître n'a été reçue (`_relayIncomingKnown === false`),
+  les boutons « Lire maintenant » et « Ajouter en suivant » restent masqués et un message
+  « En attente du maître… » (`#relay-action-waiting`) est affiché à la place.
+- **SPEC-9.4.9** GIVEN une info fiable reçue — THEN « Lire maintenant » est masqué si
+  `relayIncoming.nowPending === true` ; « Ajouter en suivant » est désactivé (libellé « File
+  pleine (N/10) ») si `relayIncoming.nextCount >= relayIncoming.nextMax`.
+- **SPEC-9.4.10** GIVEN une info déjà connue (`_relayIncomingKnown === true`) — WHEN le maître
+  devient injoignable — THEN l'affichage précédent est conservé (pas de flicker) jusqu'à
+  `3` échecs de poll consécutifs (`RELAY_MASTER_STALE_AFTER`, ~4.5 s à 1500 ms/poll) ; au-delà,
+  retour à l'affichage « En attente du maître… ».
 
 ---
 
@@ -708,9 +757,9 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 ### 11.5 DB locale de paths (trackPathDb)
 
-- **SPEC-11.5.1** `lib/trackPathDb.js` expose une map clé → `cachePath` minimaliste (aucune autre métadonnée : pas d'artwork, `audioFeatures`, `mixSuggestions`, etc.), persistée dans `localStorage` sous la clé `dj-mix:track-paths` (`STORAGE_KEYS.trackPaths`), avec écriture debounced à `400 ms` pour absorber les écritures en rafale d'une synchro en masse.
+- **SPEC-11.5.1** `lib/trackPathDb.js` expose une map clé → `cachePath` minimaliste (aucune autre métadonnée : pas d'artwork, `audioFeatures`, `mixSuggestions`, etc.), persistée dans `localStorage` sous la clé `dj-mix:track-paths` (`STORAGE_KEYS.trackPaths`), avec écriture debounced à `400 ms`.
 - **SPEC-11.5.2** Clé = `id` du morceau serveur si présent, sinon `artistName::trackName` normalisé (minuscule, trim) — même convention que `getTrackCacheKey` (SPEC-11.3.4).
-- **SPEC-11.5.3** Au démarrage de l'application, `audioSourceManager.syncTrackPathDbFromCacheIndex()` pagine `GET /api/cache/files` (`200` par page) et n'extrait que la `cachePath` (+ clé) de chaque entrée — le reste de la réponse est ignoré, pour garder la DB locale minuscule et les lookups synchrones. Cette synchro est lancée avant `startFilRougeStartupCacheSync` (fire-and-forget, ne bloque pas le reste de l'initialisation ; les échecs réseau sont silencieux).
+- **SPEC-11.5.3** ~~Au démarrage de l'application, `audioSourceManager.syncTrackPathDbFromCacheIndex()` paginait `GET /api/cache/files` pour pré-remplir la DB locale avec l'intégralité des titres et chemins connus du serveur.~~ (Supprimé : fonctionnalité de synchro en masse retirée — la DB locale de paths ne se remplit plus qu'au fil de l'eau, morceau par morceau, via SPEC-11.2.8.)
 - **SPEC-11.5.4** GIVEN un morceau absent à la fois de `item.cachePath` et de la DB locale de paths — THEN la résolution retombe sur l'étape 1 d'orchestration (`POST /api/download`, SPEC-11.2.1), qui interroge le serveur (cache index, dossier local, ou téléchargement YouTube) ; le `cachePath` résolu met à jour la DB locale au passage (SPEC-11.2.8) pour les résolutions futures, y compris pour d'autres morceaux partageant la même clé.
 
 ---
@@ -774,6 +823,13 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 | DJ Set Profile | `club_peak` | — | — |
 | Downloader API URL | `http://192.168.8.149:3000` | — | — |
 | Volume global | 1.0 | 0.0 | 1.0 |
+
+### 12.4 Vider le cache local
+
+- **SPEC-12.4.1** `clearLocalCache()` (`lib/settingsController.js`) est appelée par le bouton `#clear-cache-btn`. GIVEN la Cache Storage API disponible (`'caches' in window`) — THEN le cache `AUDIO_CACHE_NAME` est supprimé via `caches.delete()`, le cache mémoire (`sessionBlobCache`) est vidé, et le toast `Cache local vidé` est affiché.
+- **SPEC-12.4.2** GIVEN la Cache Storage API absente de `window` (contexte non sécurisé : accès à l'app via IP LAN — `192.168.x.x`/`10.x.x.x` — en HTTP plutôt que via `localhost`/`127.0.0.1`/HTTPS) — THEN `clearLocalCache()` ne bloque pas sur une erreur : le cache mémoire est vidé quand même, et un toast informatif `Cache mémoire vidé — Cache API indisponible (connexion non sécurisée : utilisez localhost ou HTTPS)` est affiché (sans style d'erreur).
+- **SPEC-12.4.3** GIVEN la Cache Storage API absente alors que le contexte est déjà sécurisé (`isSecureContext === true`, navigateur/plateforme sans support) — THEN le toast n'inclut pas la précision « connexion non sécurisée ».
+- **SPEC-12.4.4** GIVEN une erreur levée pendant `caches.delete()` — THEN un toast d'erreur `Erreur suppression cache: <message>` est affiché.
 
 ---
 

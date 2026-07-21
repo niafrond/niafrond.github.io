@@ -27,6 +27,52 @@ import {
 } from './constants.js';
 
 /**
+ * Vide le cache audio persistant (Cache Storage API) et le cache mémoire (session
+ * blobs). Le Cache Storage n'existe que dans un contexte sécurisé (HTTPS, ou
+ * localhost/127.0.0.1) : en test via IP LAN (192.168.x.x, 10.x.x.x) en HTTP il est
+ * absent de `window`, donc on ne bloque pas sur une erreur mais on vide au moins le
+ * cache mémoire, avec un message qui explique pourquoi le cache persistant n'a pas
+ * pu être vidé.
+ *
+ * @param {object} options
+ * @param {{keys: () => Promise<string[]>, delete: (name: string) => Promise<boolean>}|null} options.cachesApi
+ * @param {string} options.audioCacheName
+ * @param {() => void} options.clearSessionBlobCache
+ * @param {boolean} options.isSecureContext
+ * @param {(msg: string, isError?: boolean) => void} options.showToast
+ */
+export async function clearLocalCache({
+  cachesApi,
+  audioCacheName,
+  clearSessionBlobCache,
+  isSecureContext,
+  showToast,
+}) {
+  const cacheApiAvailable = Boolean(cachesApi);
+
+  try {
+    if (cacheApiAvailable) {
+      const cacheNames = await cachesApi.keys();
+      const audioCaches = cacheNames.filter((name) => name === audioCacheName);
+      for (const cacheName of audioCaches) {
+        await cachesApi.delete(cacheName);
+      }
+    }
+
+    clearSessionBlobCache();
+
+    if (cacheApiAvailable) {
+      showToast('Cache local vidé');
+    } else {
+      const hint = isSecureContext ? '' : ' (connexion non sécurisée : utilisez localhost ou HTTPS)';
+      showToast(`Cache mémoire vidé — Cache API indisponible${hint}`);
+    }
+  } catch (err) {
+    showToast(`Erreur suppression cache: ${err.message}`, true);
+  }
+}
+
+/**
  * Gère tous les réglages utilisateur : transition mode, RAM filter, durée max,
  * crossfade, debug logs, auto-suggestion, boucle/shuffle.
  *

@@ -1,5 +1,5 @@
 import { jest, describe, test, expect, beforeEach } from '@jest/globals';
-import { createSettingsController } from '../../lib/settingsController.js';
+import { createSettingsController, clearLocalCache } from '../../lib/settingsController.js';
 import { uiState } from '../../lib/uiState.js';
 
 function makeController(overrides = {}) {
@@ -313,5 +313,83 @@ describe('setQueueLoopEnabled / setQueueShuffleEnabled', () => {
     const ctrl = makeController({ initialQueueShuffleEnabled: false });
     ctrl.setQueueShuffleEnabled(true);
     expect(ctrl.getQueueShuffleEnabled()).toBe(true);
+  });
+});
+
+// ── clearLocalCache ─────────────────────────────────────────────────────────────
+
+describe('clearLocalCache', () => {
+  test('deletes the audio cache and clears session blobs when Cache Storage is available', async () => {
+    const cachesApi = {
+      keys: jest.fn().mockResolvedValue(['dj-mix:audio-cache:v1', 'other-cache']),
+      delete: jest.fn().mockResolvedValue(true),
+    };
+    const clearSessionBlobCache = jest.fn();
+    const showToast = jest.fn();
+
+    await clearLocalCache({
+      cachesApi,
+      audioCacheName: 'dj-mix:audio-cache:v1',
+      clearSessionBlobCache,
+      isSecureContext: true,
+      showToast,
+    });
+
+    expect(cachesApi.delete).toHaveBeenCalledWith('dj-mix:audio-cache:v1');
+    expect(cachesApi.delete).not.toHaveBeenCalledWith('other-cache');
+    expect(clearSessionBlobCache).toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith('Cache local vidé');
+  });
+
+  test('clears session blobs and shows an insecure-context hint when Cache Storage is unavailable (e.g. LAN IP over HTTP)', async () => {
+    const clearSessionBlobCache = jest.fn();
+    const showToast = jest.fn();
+
+    await clearLocalCache({
+      cachesApi: null,
+      audioCacheName: 'dj-mix:audio-cache:v1',
+      clearSessionBlobCache,
+      isSecureContext: false,
+      showToast,
+    });
+
+    expect(clearSessionBlobCache).toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith(expect.stringContaining('Cache API indisponible'));
+    expect(showToast).toHaveBeenCalledWith(expect.stringContaining('non sécurisée'));
+    expect(showToast.mock.calls[0][1]).not.toBe(true);
+  });
+
+  test('shows only the unavailability message (no insecure-context hint) when secure but unsupported', async () => {
+    const showToast = jest.fn();
+
+    await clearLocalCache({
+      cachesApi: null,
+      audioCacheName: 'dj-mix:audio-cache:v1',
+      clearSessionBlobCache: jest.fn(),
+      isSecureContext: true,
+      showToast,
+    });
+
+    const [message] = showToast.mock.calls[0];
+    expect(message).toContain('Cache API indisponible');
+    expect(message).not.toContain('non sécurisée');
+  });
+
+  test('shows an error toast when caches.delete rejects', async () => {
+    const cachesApi = {
+      keys: jest.fn().mockResolvedValue(['dj-mix:audio-cache:v1']),
+      delete: jest.fn().mockRejectedValue(new Error('boom')),
+    };
+    const showToast = jest.fn();
+
+    await clearLocalCache({
+      cachesApi,
+      audioCacheName: 'dj-mix:audio-cache:v1',
+      clearSessionBlobCache: jest.fn(),
+      isSecureContext: true,
+      showToast,
+    });
+
+    expect(showToast).toHaveBeenCalledWith('Erreur suppression cache: boom', true);
   });
 });

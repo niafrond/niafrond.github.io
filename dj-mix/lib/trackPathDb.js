@@ -52,19 +52,6 @@ export function createTrackPathDb({ storageKey, storage } = {}) {
     scheduleSave();
   }
 
-  function bulkSet(entries) {
-    let changed = false;
-    for (const [key, cachePath] of entries) {
-      if (!key || !cachePath) continue;
-      if (paths[key] !== cachePath) {
-        paths[key] = cachePath;
-        changed = true;
-      }
-    }
-    if (changed) scheduleSave();
-    return changed;
-  }
-
   function clear() {
     paths = {};
     scheduleSave();
@@ -74,5 +61,5 @@ export function createTrackPathDb({ storageKey, storage } = {}) {
     return Object.keys(paths).length;
   }
 
-  return { get, set, bulkSet, clear, size };
+  return { get, set, clear, size };
 }

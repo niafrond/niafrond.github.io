@@ -230,7 +230,7 @@ import { DJ_MODES } from './lib/djModeConfig.js';
 import { createApiHealthMonitor } from './lib/apiHealthMonitor.js';
 import { isLowMemoryPlaybackDevice } from './lib/playbackMemoryPolicy.js';
 import { createSpotifyClient } from './lib/spotifyClient.js';
-import { createSettingsController } from './lib/settingsController.js';
+import { createSettingsController, clearLocalCache } from './lib/settingsController.js';
 import { createQueueManager } from './lib/queueManager.js';
 import { createFilRougeController } from './lib/filRougeController.js';
 import { createFilRougeDownloader } from './lib/filRougeDownloader.js';
@@ -238,6 +238,7 @@ import { createDeckMarkerController } from './lib/deckMarkerController.js';
 import { createPlaybackController } from './lib/playbackController.js';
 import { createRelayModeManager } from './lib/relayModeManager.js';
 import { createRelayModeController } from './lib/relayModeController.js';
+import { createRelayIncomingQueue } from './lib/relayIncomingQueue.js';
 import { computeNextBatchSize } from './lib/downloadBatchSizing.js';
 import { INITIAL_PARALLEL_DOWNLOADS } from './lib/constants.js';
 
@@ -1010,16 +1011,7 @@ const relayModeManager = createRelayModeManager({
   logger,
   onApplyRelayState: (state) => applyRelayState(state),
   onRelayQueueItemsAvailable: (items) => _relayPrefetchItems(items),
-  onRelayCommand: (cmd) => {
-    if (cmd.type === 'addToQueue' && cmd.track) {
-      if (cmd.playNow) {
-        triggerSearchFade(cmd.track);
-      } else {
-        addToQueue(cmd.track, { showAddedToast: true, asNext: true });
-      }
-      showToast(`Relais : ${cmd.track?.name || 'piste'} ajoutée`);
-    }
-  },
+  onRelayCommand: (cmd) => relayIncomingQueue.handleCommand(cmd),
 });
 
 const apiHealthMonitor = createApiHealthMonitor({
@@ -1292,6 +1284,17 @@ const {
   searchTracksRaw,
   searchTracksViaApi,
 } = audioSourceManager;
+
+// File "incoming" pour les commandes reçues du relais léger (relay.js) : une
+// piste n'apparaît dans la file d'attente qu'une fois téléchargée (cf. SPECS.md §9.4).
+const relayIncomingQueue = createRelayIncomingQueue({
+  prefetchTrackToLocalCache,
+  addToQueue,
+  triggerSearchFade,
+  getCurrentIndex: () => uiState.currentIndex,
+  showToast,
+  logger,
+});
 
 const playlistManager = createPlaylistManager({
   addToFilRouge: (file) => addToFilRouge(file),
@@ -3960,14 +3963,7 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
     })().catch(() => {});
   }
 
-  // Synchronise la DB locale de paths (id/artist::name -> cachePath) depuis
-  // l'index serveur avant la vérification du fil rouge, pour que les morceaux
-  // déjà en cache serveur (mais absents du Cache Storage de ce navigateur)
-  // sautent directement au streaming CDN au lieu de repasser par
-  // POST /api/download (SPEC-11.2.7).
-  audioSourceManager.syncTrackPathDbFromCacheIndex()
-    .catch(() => {})
-    .then(() => startFilRougeStartupCacheSync().catch(() => {}));
+  startFilRougeStartupCacheSync().catch(() => {});
 
   // Reprise des lots de téléchargement ("Tout télécharger") interrompus lors
   // d'une session précédente (SPEC-19.2).
@@ -4605,25 +4601,14 @@ function updateMediaSessionPositionState(positionMs = playbackPositionMs, durati
   }
 }
 
-clearCacheBtn?.addEventListener('click', async () => {
-  if (!('caches' in window)) {
-    showToast('Cache API non disponible', true);
-    return;
-  }
-  
-  try {
-    const cacheNames = await caches.keys();
-    const audioCaches = cacheNames.filter(name => name === AUDIO_CACHE_NAME);
-    
-    for (const cacheName of audioCaches) {
-      await caches.delete(cacheName);
-    }
-    
-    sessionBlobCache.clear();
-    showToast('Cache local vidé');
-  } catch (err) {
-    showToast(`Erreur suppression cache: ${err.message}`, true);
-  }
+clearCacheBtn?.addEventListener('click', () => {
+  clearLocalCache({
+    cachesApi: ('caches' in window) ? caches : null,
+    audioCacheName: AUDIO_CACHE_NAME,
+    clearSessionBlobCache,
+    isSecureContext: window.isSecureContext,
+    showToast,
+  });
 });
 
 async function launchDeckFromQueue(deck, options = {}) {
@@ -6048,6 +6033,7 @@ async function addToQueue(track, options = {}) {
     autoDjReferenceTrackId = null,
     showAddedToast = true,
     asNext = false,
+    insertOffset = 0,
   } = options;
   const artUrl = getBestArtworkUrl(track);
   const duration = getTrackDurationMs(track);
@@ -6117,7 +6103,7 @@ async function addToQueue(track, options = {}) {
 
   let addedIndex;
   if (asNext) {
-    addedIndex = Math.min(Math.max(uiState.currentIndex + 1, 0), queue.length);
+    addedIndex = Math.min(Math.max(uiState.currentIndex + 1 + insertOffset, 0), queue.length);
     queue.splice(addedIndex, 0, item);
     if (uiState.deckBCueIndex >= addedIndex) uiState.deckBCueIndex += 1;
   } else {
@@ -7226,6 +7212,7 @@ function buildRelayStateSnapshot() {
     djMode: djMode || 'music',
     fx: fxState,
     upcoming,
+    relayIncoming: relayIncomingQueue.getStatus(),
   };
 }
 

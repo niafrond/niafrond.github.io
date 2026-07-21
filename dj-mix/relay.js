@@ -657,6 +657,23 @@ let _curTrackId    = null;
 let _curDeckIdx    = 0;
 let _audioReady    = false;
 
+// ── File "incoming" (Lire maintenant / Ajouter en suivant) ───────────────────
+// Tant qu'aucune réponse fiable du maître n'a été reçue (ou après une perte de
+// connexion prolongée), on ne sait pas si les slots sont disponibles : les
+// boutons restent masqués et « En attente du maître… » est affiché à la place.
+const RELAY_MASTER_STALE_AFTER = 3; // échecs consécutifs (~4.5 s à 1500 ms/poll)
+let _relayIncomingKnown  = false;
+let _lastRelayIncoming   = null;
+let _consecutiveFailures = 0;
+
+function _registerPollFailure() {
+  _consecutiveFailures += 1;
+  if (_consecutiveFailures >= RELAY_MASTER_STALE_AFTER && _relayIncomingKnown) {
+    _relayIncomingKnown = false;
+    _updateActionSheetVisibility();
+  }
+}
+
 function _authHeaders() {
   const h = { 'Content-Type': 'application/json' };
   if (API_TOKEN) h['x-api-token'] = API_TOKEN;
@@ -671,6 +688,7 @@ async function _poll() {
     });
     if (!res.ok) {
       _setStatus('Maître hors ligne…');
+      _registerPollFailure();
       return;
     }
     const state = await res.json().catch(() => null);
@@ -685,11 +703,19 @@ async function _poll() {
     await _applyState(state);
   } catch (err) {
     _setStatus(`Réseau : ${err.message}`);
+    _registerPollFailure();
   }
 }
 
 function _resyncPosition(state) {
   _lastState = state;
+
+  // Rafraîchi à chaque poll réussi, indépendamment du hash de dédoublonnage
+  // (nextCount peut évoluer sans que le reste de l'état bouge).
+  _consecutiveFailures = 0;
+  _relayIncomingKnown = true;
+  _lastRelayIncoming = state.relayIncoming || { nowPending: false, nextCount: 0, nextMax: 0 };
+  _updateActionSheetVisibility();
 
   if (!_streamController.isActive() || !state.isPlaying || !_curTrackId) return;
 
@@ -946,6 +972,8 @@ function _stateHash(s) {
     (s.queue || []).map((i) => i.id).join(','),
     (s.filRouge || []).length,
     (s.upcoming || []).map((e) => `${e.type}:${Math.round(e.at / 1000)}`).join(';'),
+    s.relayIncoming?.nowPending ? '1' : '0',
+    s.relayIncoming?.nextCount ?? 0,
   ].join('|');
 }
 
@@ -961,6 +989,7 @@ const actionSheet    = $id('relay-action-sheet');
 const actionArt      = $id('relay-action-art');
 const actionName     = $id('relay-action-name');
 const actionArtist   = $id('relay-action-artist');
+const actionWaiting  = $id('relay-action-waiting');
 const playNowBtn     = $id('relay-action-play-now');
 const playNextBtn    = $id('relay-action-play-next');
 const actionCancel   = $id('relay-action-cancel');
@@ -1066,6 +1095,33 @@ function _showActionSheet(track) {
   if (actionName) actionName.textContent = track.name || track.trackName || track.title || '';
   if (actionArtist) actionArtist.textContent = track.artist || track.artistName || '';
   actionSheet.hidden = false;
+  _updateActionSheetVisibility();
+}
+
+/**
+ * Affiche/masque « Lire maintenant » et « Ajouter en suivant » selon l'état des
+ * files "incoming" du maître (cf. SPECS.md §9.4). Tant qu'aucune info fiable
+ * n'a été reçue, affiche « En attente du maître… » à la place des boutons.
+ */
+function _updateActionSheetVisibility() {
+  if (!actionWaiting || !playNowBtn || !playNextBtn) return;
+
+  if (!_relayIncomingKnown) {
+    actionWaiting.hidden = false;
+    playNowBtn.hidden = true;
+    playNextBtn.hidden = true;
+    return;
+  }
+
+  actionWaiting.hidden = true;
+  playNowBtn.hidden = Boolean(_lastRelayIncoming?.nowPending);
+
+  const nextCount = _lastRelayIncoming?.nextCount ?? 0;
+  const nextMax = _lastRelayIncoming?.nextMax ?? Infinity;
+  const full = nextCount >= nextMax;
+  playNextBtn.hidden = false;
+  playNextBtn.disabled = full;
+  playNextBtn.textContent = full ? `File pleine (${nextCount}/${nextMax})` : 'Ajouter en suivant';
 }
 
 function _hideActionSheet() {
