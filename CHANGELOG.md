@@ -1,3 +1,10 @@
+## [2.5.0](https://github.com/niafrond/niafrond.github.io/compare/v2.4.0...v2.5.0) (2026-07-21)
+
+### Features
+
+* Enhance beat_repeat functionality with progressive loop lengths and update queue management for immediate track insertion ([8568e40](https://github.com/niafrond/niafrond.github.io/commit/8568e40c7cc08cc6c02a0ef1a68dad7fc74824de))
+* Update beat_repeat functionality to include final overlap phase and adjust related specifications ([8219516](https://github.com/niafrond/niafrond.github.io/commit/82195164dc1620ef29f52fe782af623303530f2e))
+
 ## [2.4.0](https://github.com/niafrond/niafrond.github.io/compare/v2.3.0...v2.4.0) (2026-07-21)
 
 ### Features
