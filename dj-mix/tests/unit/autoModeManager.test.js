@@ -323,4 +323,47 @@ describe('autoModeManager', () => {
       expect(addToQueue.mock.calls[0][0]).toMatchObject({ id: 'track-b' });
     });
   });
+
+  // SPEC-2.5.5: "Actualiser mix data" queue button — refreshMixData bypasses caches
+  describe('refreshMixData', () => {
+    test('SPEC-2.5.5: bypasses the memory/localStorage cache and re-fetches fresh mix data', async () => {
+      const fetchMock = jest.fn()
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ mix: { durationSec: 180 } }) })
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ mix: { durationSec: 200 } }) });
+      global.fetch = fetchMock;
+
+      const manager = makeManager({ getDownloaderApiUrl: () => 'http://api.test' });
+
+      const first = await manager.fetchMixData('Track', 'Artist');
+      expect(first).toEqual({ durationSec: 180 });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      // Second call is served from cache — no extra network call
+      const cached = await manager.fetchMixData('Track', 'Artist');
+      expect(cached).toEqual({ durationSec: 180 });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      // refreshMixData invalidates the cache and hits the network again
+      const refreshed = await manager.refreshMixData('Track', 'Artist');
+      expect(refreshed).toEqual({ durationSec: 200 });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      // Subsequent fetchMixData calls are now served from the refreshed cache entry
+      const afterRefresh = await manager.fetchMixData('Track', 'Artist');
+      expect(afterRefresh).toEqual({ durationSec: 200 });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    test('SPEC-2.5.5: returns null without a network call when trackName is missing', async () => {
+      const fetchMock = jest.fn();
+      global.fetch = fetchMock;
+
+      const manager = makeManager({ getDownloaderApiUrl: () => 'http://api.test' });
+
+      const result = await manager.refreshMixData('', 'Artist');
+
+      expect(result).toBeNull();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
 });

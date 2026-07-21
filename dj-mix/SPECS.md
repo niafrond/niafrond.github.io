@@ -195,6 +195,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-2.5.2** GIVEN un item déjà chargé sur une platine (`deckDisplayItems`) — THEN le bouton `queue-cue` correspondant reçoit la classe `is-loaded-deck`, est `disabled`, et porte le titre `Déjà chargée sur platine 1` (ou `2`).
 - **SPEC-2.5.3** GIVEN un item chargé sur une seule platine — THEN un badge `queue-deck-badge` affiche `platine 1` ou `platine 2`. GIVEN le même item chargé sur les deux platines — THEN le badge affiche `DJ 1+2`.
 - **SPEC-2.5.4** Les chips BPM/genre (`queue-chip`) ne sont affichées que si `djMode === 'dance'` ; masquées en mode `music`.
+- **SPEC-2.5.5** Chaque item affiche un bouton `.queue-refresh-mix-btn` (« Actualiser mix data ») — WHEN cliqué — THEN `_refreshQueueMixData(item, btn)` (`main.js`) appelle `autoModeManager.refreshMixData(item.name, item.artist)`, qui invalide le cache mémoire (`MIX_DATA_CACHE`) ET l'entrée `localStorage` (`invalidateStoredTrackMeta`) avant de redéléguer à `fetchMixData` pour forcer un appel réseau frais à `GET {apiUrl}/mix`. Le bouton reçoit la classe `is-checking` (spinner) pendant l'appel. GIVEN une réponse avec des données de mix — THEN un toast `Mix data actualisées : <nom>` est affiché ; GIVEN `null` (404, échec réseau, ou API indisponible) — THEN un toast d'erreur `Aucune donnée de mix disponible` (ou `Erreur réseau` en cas d'exception) est affiché. Ce bouton remplace l'ancien bouton « Contrôle empreinte » (cf. §18, supprimé).
 
 ### 2.6 Stockage partagé des morceaux (trackStore)
 
@@ -1060,15 +1061,9 @@ MOBILE_TRANSITION_RAM_BUDGET_RATIO = 0.12
 
 ---
 
-## 18. Vérification d'empreinte AcoustID
+## 18. ~~Vérification d'empreinte AcoustID~~ (Supprimé)
 
-Logique pure (parsing réponse, construction de payload) extraite dans `lib/fingerprintController.js` ; le fetch et le rendu du bottom-sheet (`#fp-suggestion-sheet`) restent dans `main.js` (`_fpCheck`, `_fpShowSuggestions`, `_fpCorrectAndDownload`).
-
-- **SPEC-18.1.1** `_fpCheck(item)` appelle `POST /api/fingerprint/check` avec `{ trackName, artistName }`. `parseFingerprintCheckResponse(data)` lit `data.matched` (booléen) — PAS `data.match`.
-- **SPEC-18.1.2** GIVEN `data.matched === true` — THEN un toast "Empreinte OK" est affiché, aucune suggestion n'est montrée.
-- **SPEC-18.1.3** GIVEN `data.matched === false` ET `data.suggestedTrackName` présent — THEN une liste d'UNE seule suggestion `{ trackName, artistName, score, reason }` est construite (l'API ne renvoie plus un tableau `suggestions[]`).
-- **SPEC-18.1.4** `_fpCorrectAndDownload(replacement)` appelle `POST /api/fingerprint/correct` avec `buildFingerprintCorrectRequestBody(trackRef, replacement)` : `{ artistName, trackName, replacement: { trackName, artistName } }` — le payload `replacement` ne contient plus `id`/`artUrl`/`duration_ms`/`uri`/`downloadUrl`.
-- **SPEC-18.1.5** La réponse de `/correct` ne contient plus de `downloadUrl` : l'enchaînement automatique vers `POST /api/fingerprint/download` a été retiré. Le toast final est déterminé par `buildFingerprintCorrectToastMessage(data)` à partir de `data.corrected`/`data.renamed`.
+~~Logique pure (parsing réponse, construction de payload) extraite dans `lib/fingerprintController.js` ; le fetch et le rendu du bottom-sheet (`#fp-suggestion-sheet`) restaient dans `main.js` (`_fpCheck`, `_fpShowSuggestions`, `_fpCorrectAndDownload`).~~ (Supprimé : le bouton `.queue-fp-btn` de la file d'attente, son unique point d'entrée, a été remplacé par le bouton "Actualiser mix data" (§2, `.queue-refresh-mix-btn`). `lib/fingerprintController.js`, le bottom-sheet `#fp-suggestion-sheet` et toute la logique associée ont été retirés — plus aucun appel à `POST /api/fingerprint/check` ou `POST /api/fingerprint/correct` depuis le front.)
 
 ---
 

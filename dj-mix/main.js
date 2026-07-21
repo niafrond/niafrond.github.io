@@ -143,7 +143,6 @@ import { createDjApiClient } from './lib/djApiClient.js';
 import { createDjPlanManager } from './lib/djPlanManager.js';
 import { computeDjBpmRate, mapDjTransitionTypeToMode } from './lib/djTransitionMapping.js';
 import { computeDjPlanIndicatorState } from './lib/djPlanIndicator.js';
-import { parseFingerprintCheckResponse, buildFingerprintCorrectRequestBody, buildFingerprintCorrectToastMessage } from './lib/fingerprintController.js';
 import { createAppState } from './lib/appState.js';
 import {
   AUTO_DJ_FX_TYPES,
@@ -6747,122 +6746,6 @@ async function _refreshQueueMixData(item, btn) {
     btn?.classList.remove('is-checking');
   }
 }
-
-// ── Contrôle d'empreinte ──────────────────────────────────────────────────────
-
-const _fpSheet     = document.getElementById('fp-suggestion-sheet');
-const _fpSub       = document.getElementById('fp-suggestion-sub');
-const _fpList      = document.getElementById('fp-suggestion-list');
-const _fpCancel    = document.getElementById('fp-suggestion-cancel');
-let   _fpTrackRef   = null;
-let   _fpSuggestions = [];
-
-function _fpAuthHeaders() {
-  const h = { 'Content-Type': 'application/json' };
-  const token = getDownloaderApiToken();
-  if (token) h['x-api-token'] = token;
-  return h;
-}
-
-async function _fpCheck(item, btn) {
-  const apiUrl = getDownloaderApiUrl();
-  if (!apiUrl || !item?.name) return;
-  if (btn?.classList.contains('is-checking')) return;
-  btn?.classList.add('is-checking');
-
-  try {
-    const res = await fetch(`${apiUrl}/api/fingerprint/check`, {
-      method: 'POST',
-      headers: _fpAuthHeaders(),
-      body: JSON.stringify({ artistName: item.artist || '', trackName: item.name }),
-    });
-    if (!res.ok) { showToast('Erreur de vérification', true); return; }
-    const data = await res.json();
-
-    const { matched, suggestions } = parseFingerprintCheckResponse(data);
-    if (matched) {
-      showToast(`Empreinte OK : ${item.name}`);
-      return;
-    }
-    _fpShowSuggestions(item, suggestions);
-  } catch {
-    showToast('Erreur réseau', true);
-  } finally {
-    btn?.classList.remove('is-checking');
-  }
-}
-
-function _fpShowSuggestions(item, suggestions) {
-  if (!_fpSheet) return;
-  _fpTrackRef = { artistName: item.artist || '', trackName: item.name || '' };
-  _fpSuggestions = suggestions;
-
-  if (_fpSub) {
-    _fpSub.textContent = `« ${item.name || ''} » ne correspond pas au fichier audio.`;
-  }
-
-  if (_fpList) {
-    if (!suggestions.length) {
-      _fpList.innerHTML = '<div class="fp-suggestion-empty">Aucune suggestion disponible</div>';
-    } else {
-      _fpList.innerHTML = suggestions.map((s, i) => {
-        const art = escHtml(s.artUrl || s.artworkUrl || s.artworkUrl100 || '');
-        const name = escHtml(s.name || s.trackName || s.title || '');
-        const artist = escHtml(s.artist || s.artistName || '');
-        const durMs = s.duration_ms || s.trackTimeMillis || 0;
-        const dur = durMs ? `${Math.floor(durMs / 60000)}:${String(Math.floor((durMs / 1000) % 60)).padStart(2, '0')}` : '';
-        return `<div class="fp-suggestion-item" data-idx="${i}">` +
-          (art ? `<img class="fp-suggestion-item-art" src="${art}" alt="" loading="lazy">` :
-                 `<div class="fp-suggestion-item-art"></div>`) +
-          `<div class="fp-suggestion-item-info">` +
-            `<div class="fp-suggestion-item-name">${name}</div>` +
-            `<div class="fp-suggestion-item-artist">${artist}</div>` +
-          `</div>` +
-          (dur ? `<span class="fp-suggestion-item-dur">${dur}</span>` : '') +
-          `</div>`;
-      }).join('');
-    }
-  }
-
-  _fpSheet.hidden = false;
-}
-
-function _fpHideSuggestions() {
-  if (_fpSheet) _fpSheet.hidden = true;
-  _fpTrackRef = null;
-  _fpSuggestions = [];
-}
-
-async function _fpCorrectAndDownload(replacement) {
-  const trackRef = _fpTrackRef;
-  if (!trackRef) return;
-  const apiUrl = getDownloaderApiUrl();
-  if (!apiUrl) return;
-  _fpHideSuggestions();
-  showToast('Correction en cours…');
-
-  try {
-    const res = await fetch(`${apiUrl}/api/fingerprint/correct`, {
-      method: 'POST',
-      headers: _fpAuthHeaders(),
-      body: JSON.stringify(buildFingerprintCorrectRequestBody(trackRef, replacement)),
-    });
-    if (!res.ok) { showToast('Erreur de correction', true); return; }
-    const data = await res.json();
-    showToast(buildFingerprintCorrectToastMessage(data));
-  } catch {
-    showToast('Erreur réseau', true);
-  }
-}
-
-_fpCancel?.addEventListener('click', _fpHideSuggestions);
-_fpSheet?.querySelector('.fp-suggestion-backdrop')?.addEventListener('click', _fpHideSuggestions);
-_fpList?.addEventListener('click', (e) => {
-  const row = e.target.closest('.fp-suggestion-item');
-  if (!row) return;
-  const idx = Number(row.dataset.idx);
-  if (_fpSuggestions[idx]) _fpCorrectAndDownload(_fpSuggestions[idx]);
-});
 
 let _renderQueueRafId = null;
 
