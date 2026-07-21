@@ -1,3 +1,10 @@
+## [2.4.0](https://github.com/niafrond/niafrond.github.io/compare/v2.3.0...v2.4.0) (2026-07-21)
+
+### Features
+
+* Implement user-configurable transition mode disabling and enforce limits on beat_repeat duration ([b00260e](https://github.com/niafrond/niafrond.github.io/commit/b00260e61a65d6fa1a416f9daa08352950e16eb5))
+* Refactor relay mode management to eliminate server-side session creation ([bf54c3d](https://github.com/niafrond/niafrond.github.io/commit/bf54c3d77461c00b9774df3a027f77d0d9855544))
+
 ## [2.3.0](https://github.com/niafrond/niafrond.github.io/compare/v2.2.0...v2.3.0) (2026-07-21)
 
 ### Features
