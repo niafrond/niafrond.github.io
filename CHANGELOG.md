@@ -1,3 +1,11 @@
+## [2.1.0](https://github.com/niafrond/niafrond.github.io/compare/v2.0.0...v2.1.0) (2026-07-21)
+
+### Features
+
+* add refresh functionality for mix data in the queue ([201046c](https://github.com/niafrond/niafrond.github.io/commit/201046c4caad6e34251ef3223a3085c16ffc8a3c))
+* implement relay incoming queue for track management ([c9383ff](https://github.com/niafrond/niafrond.github.io/commit/c9383ff1b1bf2a1f727bb0bca0faa3a740f292bb))
+* remove fingerprint verification feature and replace with refresh mix data functionality ([54b3ed2](https://github.com/niafrond/niafrond.github.io/commit/54b3ed269c018aad066442a32e06bb9e5199ee66))
+
 ## [2.0.0](https://github.com/niafrond/niafrond.github.io/compare/v1.263.0...v2.0.0) (2026-07-19)
 
 ### ⚠ BREAKING CHANGES
