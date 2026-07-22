@@ -1,3 +1,9 @@
+## [2.7.0](https://github.com/niafrond/niafrond.github.io/compare/v2.6.0...v2.7.0) (2026-07-22)
+
+### Features
+
+* **dj-mix:** move relay incoming indicators into the queue and show next fil rouge track on relay ([69927cf](https://github.com/niafrond/niafrond.github.io/commit/69927cff235d1d6940bb335363604bda09cee73a))
+
 ## [2.6.0](https://github.com/niafrond/niafrond.github.io/compare/v2.5.0...v2.6.0) (2026-07-21)
 
 ### Features
