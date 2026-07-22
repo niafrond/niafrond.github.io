@@ -206,6 +206,79 @@ html, body {
   text-overflow: ellipsis;
 }
 
+/* ── Placeholders "incoming" (Lire maintenant / Ajouter ensuite) ──────
+   Pistes demandées depuis un relais mais pas encore téléchargées par le
+   maître (cf. SPEC-9.4/9.5/9.6 dans dj-mix/SPECS.md) — même teinte que côté
+   maître : ambre pour l'imminent, bleu pour la file. */
+.relay-screen-queue-item--incoming-now,
+.relay-screen-queue-item--incoming-next {
+  border-radius: 8px;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.relay-screen-queue-item--incoming-now { background: rgba(245, 158, 11, 0.14); }
+.relay-screen-queue-item--incoming-next { background: rgba(41, 128, 185, 0.14); }
+
+.relay-screen-queue-item-status {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.relay-screen-queue-item-status.is-loading {
+  border: 2px solid var(--border);
+  border-top-color: #f59e0b;
+  border-radius: 50%;
+  animation: relay-screen-incoming-spin 0.8s linear infinite;
+}
+
+.relay-screen-queue-item--incoming-next .relay-screen-queue-item-status.is-loading {
+  border-top-color: #2980b9;
+}
+
+.relay-screen-queue-item-status.is-ready {
+  border-radius: 50%;
+  background: #27ae60;
+}
+
+@keyframes relay-screen-incoming-spin {
+  to { transform: rotate(360deg); }
+}
+
+.relay-screen-queue-item-tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 1px 5px;
+  border-radius: 6px;
+  vertical-align: middle;
+}
+
+.relay-screen-queue-item-tag--now {
+  background: #f59e0b;
+  color: #1a1300;
+}
+
+.relay-screen-queue-item-tag--next {
+  background: #2980b9;
+  color: #eaf4fc;
+}
+
+/* ── Prochain morceau du Fil Rouge ─────────────────────────────────── */
+.relay-screen-filrouge-wrap {
+  width: 100%;
+  max-width: 340px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.relay-screen-filrouge-wrap[hidden] { display: none; }
+
 /* ── Boutons plein écran / recherche ────────────────────────────────── */
 .relay-fullscreen-btn,
 .relay-search-btn {

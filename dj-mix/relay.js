@@ -61,6 +61,8 @@ const timeCurEl     = $id('relay-screen-time-cur');
 const timeTotalEl   = $id('relay-screen-time-total');
 const queueWrapEl   = $id('relay-screen-queue');
 const queueListEl   = $id('relay-screen-queue-list');
+const filRougeWrapEl = $id('relay-screen-filrouge');
+const filRougeItemEl = $id('relay-screen-filrouge-item');
 const fullscreenBtn = $id('relay-fullscreen-btn');
 
 // ── Plein écran ───────────────────────────────────────────────────────────────
@@ -128,16 +130,47 @@ function _updateTrack({ name, artist, artUrl, bpm, genre } = {}) {
 
 // ── File d'attente non lue du maître ─────────────────────────────────────────
 
+/**
+ * Ligne de piste demandée par un relais (« Lire maintenant » / « Ajouter en
+ * suivant ») mais pas encore téléchargée par le maître, donc pas encore un
+ * vrai item de `state.queue` — cf. SPEC-9.4/9.5/9.6. Réutilise le gabarit
+ * `.relay-screen-queue-item` avec un modificateur de teinte pour la distinguer
+ * des titres déjà en file.
+ */
+function _incomingRowHTML(track, kind, ready = false) {
+  const art = track?.artUrl
+    ? `<img class="relay-screen-queue-item-art" src="${_escHtml(track.artUrl)}" alt="" loading="lazy">`
+    : `<div class="relay-screen-queue-item-art"></div>`;
+  const statusClass = kind === 'next' && ready ? 'is-ready' : 'is-loading';
+  const tag = kind === 'now' ? 'Lire maintenant' : 'Ajouter ensuite';
+  return `<div class="relay-screen-queue-item relay-screen-queue-item--incoming-${kind}">` +
+    `<div class="relay-screen-queue-item-status ${statusClass}"></div>` +
+    art +
+    `<div class="relay-screen-queue-item-info">` +
+    `<span class="relay-screen-queue-item-name">${_escHtml(track?.name || 'Piste')}` +
+    ` <span class="relay-screen-queue-item-tag relay-screen-queue-item-tag--${kind}">${tag}</span></span>` +
+    `<span class="relay-screen-queue-item-artist">${_escHtml(track?.artist || '')}</span>` +
+    `</div></div>`;
+}
+
 function _updateQueueList(state) {
   if (!queueListEl || !queueWrapEl) return;
   const items = getUnreadQueue(state);
-  if (!items.length) {
+  const incoming = state.relayIncoming || null;
+
+  const placeholders = [];
+  if (incoming?.now) placeholders.push(_incomingRowHTML(incoming.now, 'now'));
+  for (const nextTrack of incoming?.next || []) {
+    placeholders.push(_incomingRowHTML(nextTrack, 'next', nextTrack.ready));
+  }
+
+  if (!items.length && !placeholders.length) {
     queueWrapEl.hidden = true;
     queueListEl.innerHTML = '';
     return;
   }
   queueWrapEl.hidden = false;
-  queueListEl.innerHTML = items.map((item) => {
+  const realRows = items.map((item) => {
     const art = item.artUrl
       ? `<img class="relay-screen-queue-item-art" src="${_escHtml(item.artUrl)}" alt="" loading="lazy">`
       : `<div class="relay-screen-queue-item-art"></div>`;
@@ -146,7 +179,29 @@ function _updateQueueList(state) {
       `<span class="relay-screen-queue-item-name">${_escHtml(item.name)}</span>` +
       `<span class="relay-screen-queue-item-artist">${_escHtml(item.artist)}</span>` +
       `</div></div>`;
-  }).join('');
+  });
+  queueListEl.innerHTML = placeholders.join('') + realRows.join('');
+}
+
+// ── Prochain morceau du Fil Rouge (SPEC-9.6) ─────────────────────────────────
+
+function _updateFilRougeNext(state) {
+  if (!filRougeWrapEl || !filRougeItemEl) return;
+  const next = state.filRougeNext || null;
+  if (!next) {
+    filRougeWrapEl.hidden = true;
+    filRougeItemEl.innerHTML = '';
+    return;
+  }
+  filRougeWrapEl.hidden = false;
+  const art = next.artUrl
+    ? `<img class="relay-screen-queue-item-art" src="${_escHtml(next.artUrl)}" alt="" loading="lazy">`
+    : `<div class="relay-screen-queue-item-art"></div>`;
+  filRougeItemEl.innerHTML = `${art}` +
+    `<div class="relay-screen-queue-item-info">` +
+    `<span class="relay-screen-queue-item-name">${_escHtml(next.name)}</span>` +
+    `<span class="relay-screen-queue-item-artist">${_escHtml(next.artist)}</span>` +
+    `</div>`;
 }
 
 // ── Progression (interpolation par horloge murale, pas de lecture audio locale) ─
@@ -238,6 +293,11 @@ async function _poll() {
     _lastRelayIncoming = state.relayIncoming || { nowPending: false, nextCount: 0, nextMax: 0 };
     _updateActionSheetVisibility();
     _refreshPosition(state);
+    // Ces deux rendus tournent à chaque poll réussi, indépendamment du hash de
+    // dédoublonnage ci-dessous : les slots "incoming" (ready) et le fil rouge
+    // "à suivre" peuvent changer sans que currentTrackId/queue changent.
+    _updateQueueList(state);
+    _updateFilRougeNext(state);
 
     const hash = _stateHash(state);
     if (hash === _lastHash) return;
@@ -256,8 +316,6 @@ function _applyState(state) {
   for (const item of [...queue, ...filRouge]) {
     if (item.id && item.duration) _trackDurations.set(item.id, item.duration);
   }
-
-  _updateQueueList(state);
 
   if (currentTrackId && currentTrackId !== _curTrackId) {
     const item = queue.find((i) => i.id === currentTrackId)

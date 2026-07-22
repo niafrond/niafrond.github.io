@@ -628,7 +628,8 @@ l'entrée correspondante au premier `PUT /api/relay/state/:id` (aucun appel
   Autonome (`_activateStandalone()` ne touche pas `dj-mix:relay:master-id`) — seul
   `dj-mix:relay:mode` (le rôle courant) est réinitialisé.
 - **SPEC-9.1.3** Partage par QR code (librairie qrcodejs, 200×200, correction M) ou URL.
-- **SPEC-9.1.4** Format URL : `${origin}${dir}relay?relay-master=${masterId}&relay-api=${apiUrl}&relay-token=${apiToken}`.
+- **SPEC-9.1.4** Format URL : `${origin}${dir}relay?relay-master=${masterId}&relay-api=${apiUrl}&relay-relay=${relayUrl}&relay-token=${apiToken}`. `relay-api` cible l'API principale (recherche, `/api/search`) ; `relay-relay` cible le process relay autonome (état/commandes, cf. SPEC-9.1.6). Si `relay-relay` est absent (lien généré par une version antérieure), `relay.js` retombe sur `relay-api`.
+- **SPEC-9.1.6** Le serveur relay (`/api/relay/*`) est un process autonome, détaché de l'API principale (port `3003` par défaut, ex-port `3000` partagé avec l'API avant juillet 2026). `getDownloaderRelayUrl()` (`lib/downloaderConfig.js`) dérive systématiquement cette URL depuis `getDownloaderApiUrl()` en remplaçant le port par `3003` (même host) — pas de configuration séparée en `localStorage`, contrairement à l'URL CDN (SPEC-11.2.4). `lib/relayModeManager.js` (maître ET relais applicatif complet) l'utilise pour toutes ses requêtes `/api/relay/*` (état, commandes, audio proxifié) ; `relay.js` (relais léger) l'utilise via le paramètre `relay-relay` pour l'état et les commandes, mais garde `relay-api` pour `/api/search`.
 - **SPEC-9.1.5** Le relais léger (`relay.js`) génère lui aussi un identifiant d'appareil
   court (6 caractères alphanumériques, `Math.random().toString(36)` — pas un hash des
   caractéristiques du device) au premier chargement, persisté dans `localStorage` sous
@@ -651,13 +652,13 @@ l'entrée correspondante au premier `PUT /api/relay/state/:id` (aucun appel
     transitionMode, crossfadeMs, djMode
   }
   ```
-- **SPEC-9.2.2** Endpoint : `PUT /api/relay/state/:id`.
+- **SPEC-9.2.2** Endpoint : `PUT /api/relay/state/:id` sur le serveur relay autonome (SPEC-9.1.6), pas l'API principale.
 - **SPEC-9.2.3** Debounce : `1000 ms` (`PUSH_DEBOUNCE_MS`).
 - **SPEC-9.2.4** Déduplication par hash : `_hashState()` exclut `positionMs` pour éviter le spam. Inclut : currentTrackId, currentIndex, isPlaying, activeDeck, transitionMode, crossfadeMs, djMode, queue IDs, FX echo/distortion.
 
 ### 9.3 Mode Relais
 
-- **SPEC-9.3.1** Polling : `GET /api/relay/state/:id` toutes les `1500 ms` (`POLL_MS`). Premier poll immédiat.
+- **SPEC-9.3.1** Polling : `GET /api/relay/state/:id` (serveur relay autonome, SPEC-9.1.6) toutes les `1500 ms` (`POLL_MS`). Premier poll immédiat.
 - **SPEC-9.3.2** GIVEN un nouvel état reçu — THEN `onApplyRelayState(state)` est appelé pour synchroniser morceau, position, paramètres.
 - **SPEC-9.3.3** GIVEN de nouveaux items dans queue/filRouge — THEN `onRelayQueueItemsAvailable(items)` déclenche le pré-téléchargement.
 - **SPEC-9.3.3.1** GIVEN un morceau présent à la fois dans `queue` et `filRouge` de l'état relais reçu (trackStore partagé côté maître, cf. SPEC-2.6.1) — WHEN les items sont transmis à `onRelayQueueItemsAvailable` — THEN il n'est signalé qu'une seule fois (déduplication par `id`), évitant un double pré-téléchargement côté relais.
@@ -757,11 +758,12 @@ staging côté maître, câblé dans `main.js` en lieu et place de l'ancien trai
   lacune préexistante que SPEC-4.3.7/4.3.8, `tests/unit/specs/spec-4-search.test.js` n'a
   aucune couverture de `triggerSearchFade`).
 
-### 9.5 Retour visuel côté maître (files "incoming")
+### 9.5 Retour visuel côté maître (files "incoming"), directement dans la file d'attente
 
-Panneau affiché dans `#relay-master-panel` (`index.html`, sous le QR code) montrant l'état
-des files "incoming" (§9.4) en temps réel, sans polling réseau : le maître lit son propre
-`relayIncomingQueue` directement en mémoire.
+Le retour visuel sur l'état des files "incoming" (§9.4) est intégré à la file d'attente
+principale (`#queue-list`) plutôt qu'affiché dans un panneau séparé sous le QR code — le
+DJ regarde sa file, pas l'écran de partage du lien relais. Sans polling réseau : le maître
+lit son propre `relayIncomingQueue` directement en mémoire.
 
 - **SPEC-9.5.1** `relayIncomingQueue.getStatus()` expose, en plus de
   `nowPending`/`nextCount`/`nextMax` (SPEC-9.4.7), le détail des pistes en cours :
@@ -772,18 +774,57 @@ des files "incoming" (§9.4) en temps réel, sans polling réseau : le maître l
 - **SPEC-9.5.2** `createRelayIncomingQueue({ onChange })` : callback optionnel invoqué à
   chaque mutation d'un slot (acceptation, téléchargement résolu/échoué, commit) —
   permet un rendu immédiat côté UI sans dépendre du polling `buildRelayStateSnapshot()`.
-- **SPEC-9.5.3** `main.js` câble `onChange: renderRelayIncomingPanel`, qui relit
-  `getStatus()` et met à jour :
-  - `#relay-incoming-now` : ligne piste (jaquette, titre, artiste) avec un indicateur
-    de chargement animé si `now` est renseigné, sinon « Aucune demande ».
-  - `#relay-incoming-next-badge` : compteur `nextCount/nextMax`.
-  - `#relay-incoming-next-list` : une ligne par entrée de `next[]` (même gabarit),
-    avec un ✓ si `ready === true`, sinon l'indicateur de chargement ; « Aucune piste en
-    attente » si la liste est vide.
-- **SPEC-9.5.4** Ce panneau n'est visible que côté maître (imbriqué dans
-  `#relay-master-panel`, déjà masqué en mode Autonome/Relais par
-  `relayModeController._showPanel()`) ; aucune requête réseau supplémentaire n'est
-  déclenchée pour l'afficher.
+  `main.js` câble `onChange: () => renderQueue()` : toute mutation d'un slot redéclenche
+  un rendu de la file d'attente.
+- **SPEC-9.5.3** `lib/uiRenderer.js` (`buildQueueHTML`, option `getRelayIncomingStatus`)
+  insère une ligne `.queue-incoming-row` par piste en attente, positionnée juste après la
+  ligne `.queue-item.is-current` (ou en tête de liste si aucune piste n'est en cours,
+  `currentIndex < 0`) : d'abord le slot « Lire maintenant » s'il est occupé
+  (`.queue-incoming-row--now`), puis les slots « Ajouter en suivant » dans l'ordre FIFO
+  (`.queue-incoming-row--next`). Chaque ligne affiche la jaquette, le titre, l'artiste, une
+  étiquette (« Lire maintenant » / « Ajouter ensuite ») et un indicateur de chargement
+  animé — remplacé par un ✓ (`.queue-incoming-status--ready`) pour un slot « Ajouter en
+  suivant » dont le téléchargement est résolu mais pas encore en tête de file. Ces lignes
+  n'ont pas de `data-index` ni la classe `.queue-item` : elles ne sont donc jamais
+  ciblées par les handlers de clic/drag-and-drop de la file (`lib/queueDnD.js`), qui lisent
+  `data-index` sur tout `.queue-item` — un item factice sans index casserait
+  `reorderQueue`/`removeFromQueue` (`splice` avec un index `NaN`).
+- **SPEC-9.5.4** Une teinte distincte marque chaque type de ligne : ambre
+  (`var(--fade)`, cohérent avec `.queue-item.is-crossfading`) pour « Lire maintenant »
+  (lecture imminente), bleu (`#2980b9`, cohérent avec `.relay-indicator--relay`) pour
+  « Ajouter en suivant » (simple mise en file).
+- **SPEC-9.5.5** GIVEN une ligne « incoming » affichée après l'item courant — WHEN la
+  piste en cours change (`currentIndex` avance) avant la fin du téléchargement — THEN la
+  ligne se repositionne automatiquement au rendu suivant juste après le nouvel item
+  courant, car sa position est recalculée à chaque appel de `buildQueueHTML` à partir de
+  `currentIndex` en direct, jamais mémorisée.
+
+### 9.6 Retour visuel côté relais léger (files "incoming" et Fil Rouge à venir)
+
+- **SPEC-9.6.1** L'état diffusé par `buildRelayStateSnapshot()` (§9.2.1) inclut
+  `filRougeNext: { id, name, artist, artUrl } | null`, résolu via
+  `filRougeManager.peekNextTrackFromAny()` (file prioritaire d'abord, puis playlist) —
+  le morceau qui démarrerait si la file d'attente se vidait (cf. SPEC-3.1.4). `null` si le
+  Fil Rouge est inactif ou ne peut pas déterminer de prochain morceau (shuffle sans loop en
+  fin de playlist).
+- **SPEC-9.6.2** `lib/relayModeManager.js#_hashState()` inclut l'`id` de `filRougeNext`
+  ainsi qu'un condensé de l'état `ready` de chaque slot « Ajouter en suivant »
+  (`relayIncoming.next[].ready`) — sans quoi une piste qui passe `ready:true` sans que
+  `nextCount`/`nowPending` changent ne serait jamais republiée vers les relais (cf. le
+  piège des 3 hash de dédoublonnage documenté en mémoire de session, déjà rencontré pour
+  `relayIncomingNowPending`).
+- **SPEC-9.6.3** `relay.js` affiche les mêmes placeholders « Lire maintenant »/« Ajouter en
+  suivant » que le maître (SPEC-9.5.3/9.5.4), en tête de `#relay-screen-queue-list`, avant
+  les titres réels de `getUnreadQueue()`. Ce rendu (`_updateQueueList`) tourne à chaque
+  poll réussi, indépendamment du hash léger `_stateHash()` local à `relay.js` (qui ne gate
+  que la mise à jour piste/position) — `nextCount`, l'état `ready` et la position peuvent
+  changer sans que le reste de l'état bouge.
+- **SPEC-9.6.4** GIVEN `state.filRougeNext` non nul — THEN un bloc `#relay-screen-filrouge`
+  affiche « Fil rouge — à suivre » avec la jaquette, le titre et l'artiste du prochain
+  morceau, indépendamment de l'état de la file d'attente (visible même si `#relay-screen-queue`
+  est masqué faute d'items). GIVEN `filRougeNext` nul — THEN le bloc est masqué.
+- **SPEC-9.6.5** Ce rendu est purement informatif (comme SPEC-9.3.8) : aucune action au tap,
+  aucune requête réseau supplémentaire déclenchée pour l'afficher.
 
 ---
 

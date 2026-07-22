@@ -36,7 +36,9 @@
  *   deckB: { trackId, positionMs, volume },
  *   queue: [{ id, name, artist, artUrl, duration, persistedSourceUrl, bpm, genre }],
  *   filRouge: [{ id, name, artist, artUrl, duration, persistedSourceUrl }],
- *   transitionMode, crossfadeMs, djMode
+ *   filRougeNext: { id, name, artist, artUrl } | null,
+ *   transitionMode, crossfadeMs, djMode,
+ *   relayIncoming: { nowPending, nextCount, nextMax, now, next: [{..., ready}] },
  * }
  */
 
@@ -272,6 +274,8 @@ export function createRelayModeManager({
       (s.upcoming || []).map((e) => `${e.type}:${Math.round(e.at / 1000)}`).join(';'),
       s.relayIncoming?.nowPending ? '1' : '0',
       s.relayIncoming?.nextCount ?? 0,
+      (s.relayIncoming?.next || []).map((n) => (n.ready ? '1' : '0')).join(''),
+      s.filRougeNext?.id || '',
     ].join('|');
   }
 

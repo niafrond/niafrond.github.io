@@ -70,6 +70,7 @@ export function createDjMixRenderer(options) {
     updateDeckMixUI,
     updateDeckCueUI,
     getPlayer,
+    getRelayIncomingStatus,
   } = options;
 
   const lastDeckMetaItems = {
@@ -243,6 +244,34 @@ export function createDjMixRenderer(options) {
     return html;
   }
 
+  /**
+   * Ligne d'aperçu pour une piste en cours de téléchargement via la file
+   * "incoming" du relais (SPEC-9.4/9.5) — pas encore un vrai item de queue,
+   * donc pas de data-index ni de classe `queue-item` (évite tout branchement
+   * accidentel des handlers drag/drop ou clic de `queueDnD.js`, qui lisent
+   * `el.dataset.index` sur tout `.queue-item`).
+   */
+  function _buildIncomingQueueRow(track, kind, ready = false) {
+    const art = track?.artUrl
+      ? `<img class="queue-incoming-art" src="${escHtml(track.artUrl)}" alt="" loading="lazy">`
+      : `<div class="queue-incoming-art"></div>`;
+    const statusClass = kind === 'next' && ready
+      ? 'queue-incoming-status--ready'
+      : 'queue-incoming-status--loading';
+    const statusTitle = kind === 'next' && ready ? 'Prêt, en attente de son tour' : 'Téléchargement…';
+    const tag = kind === 'now' ? 'Lire maintenant' : 'Ajouter ensuite';
+    return `<div class="queue-incoming-row queue-incoming-row--${kind}">` +
+      `<div class="queue-incoming-status ${statusClass}" title="${statusTitle}"></div>` +
+      art +
+      `<div class="queue-incoming-info">` +
+      `<div class="queue-incoming-name-wrap">` +
+      `<span class="queue-incoming-name">${escHtml(track?.name || 'Piste')}</span>` +
+      `<span class="queue-incoming-tag queue-incoming-tag--${kind}">${tag}</span>` +
+      `</div>` +
+      `<div class="queue-incoming-artist">${escHtml(track?.artist || '')}</div>` +
+      `</div></div>`;
+  }
+
   function buildQueueHTML() {
     const queue = getQueue();
     const currentIndex = getCurrentIndex();
@@ -264,7 +293,7 @@ export function createDjMixRenderer(options) {
       loadedDeckByTrackId.set(deckBId, existing ? 'AB' : 'B');
     }
 
-    return queue.slice(visibleStartIndex).map((item, offset) => {
+    const rows = queue.slice(visibleStartIndex).map((item, offset) => {
       const i = visibleStartIndex + offset;
       const isCurrent = i === currentIndex || (currentIndex < 0 && item.id === currentTrackId);
       const isPlayed = currentIndex > 0 && i < currentIndex;
@@ -317,7 +346,20 @@ export function createDjMixRenderer(options) {
           <button class="queue-remove" data-index="${i}" aria-label="Retirer">✕</button>
         </div>
       </div>`;
-    }).join('');
+    });
+
+    const incoming = getRelayIncomingStatus?.();
+    if (incoming && (incoming.now || incoming.next?.length)) {
+      const placeholders = [];
+      if (incoming.now) placeholders.push(_buildIncomingQueueRow(incoming.now, 'now'));
+      for (const nextTrack of incoming.next || []) {
+        placeholders.push(_buildIncomingQueueRow(nextTrack, 'next', nextTrack.ready));
+      }
+      const insertAt = currentIndex >= visibleStartIndex ? (currentIndex - visibleStartIndex) + 1 : 0;
+      rows.splice(insertAt, 0, ...placeholders);
+    }
+
+    return rows.join('');
   }
 
   function renderDeckState(detail) {

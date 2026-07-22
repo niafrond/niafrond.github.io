@@ -977,9 +977,6 @@ const relayMasterUrlEl = document.getElementById('relay-master-url');
 const relayCopyLinkBtn = document.getElementById('relay-copy-link-btn');
 const relayStatusEl = document.getElementById('relay-status');
 const relayIndicatorEl = document.getElementById('relay-indicator');
-const relayIncomingNowEl = document.getElementById('relay-incoming-now');
-const relayIncomingNextListEl = document.getElementById('relay-incoming-next-list');
-const relayIncomingNextBadgeEl = document.getElementById('relay-incoming-next-badge');
 const ramFilterEnabledToggle = document.getElementById('ram-filter-enabled-toggle');
 const ramTotalMemoryInput = document.getElementById('ram-total-memory-gb');
 const ramFilterStatus = document.getElementById('ram-filter-status');
@@ -1314,6 +1311,7 @@ const uiRenderer = createDjMixRenderer({
   getPlayer: () => player,
   getPrevIsCrossfading: () => uiState.prevIsCrossfading,
   getQueue: () => queue,
+  getRelayIncomingStatus: () => relayIncomingQueue.getStatus(),
   nextAlbumArt,
   nextArtPlaceholder,
   queueList,
@@ -1345,46 +1343,11 @@ const {
   searchTracksViaApi,
 } = audioSourceManager;
 
-/**
- * Retour visuel maître sur les files "incoming" du relais (cf. SPECS.md §9.5) :
- * rendu immédiat (pas de polling) via le callback onChange() de relayIncomingQueue.
- */
-function _relayIncomingTrackRow(track, { ready = false } = {}) {
-  const art = track.artUrl
-    ? `<img class="relay-incoming-item-art" src="${escHtml(track.artUrl)}" alt="" loading="lazy">`
-    : `<div class="relay-incoming-item-art"></div>`;
-  const status = ready
-    ? '<span class="relay-incoming-item-status relay-incoming-item-status--ready" title="Prêt, en attente de son tour">✓</span>'
-    : '<span class="relay-incoming-item-status relay-incoming-item-status--loading" title="Téléchargement…"></span>';
-  return `<div class="relay-incoming-item">${art}` +
-    `<div class="relay-incoming-item-info">` +
-    `<span class="relay-incoming-item-name">${escHtml(track.name || 'Piste')}</span>` +
-    `<span class="relay-incoming-item-artist">${escHtml(track.artist || '')}</span>` +
-    `</div>${status}</div>`;
-}
-
-function renderRelayIncomingPanel() {
-  const status = relayIncomingQueue.getStatus();
-
-  if (relayIncomingNowEl) {
-    relayIncomingNowEl.innerHTML = status.now
-      ? _relayIncomingTrackRow(status.now)
-      : '<span class="relay-incoming-placeholder">Aucune demande</span>';
-  }
-
-  if (relayIncomingNextBadgeEl) {
-    relayIncomingNextBadgeEl.textContent = `${status.nextCount}/${status.nextMax}`;
-  }
-
-  if (relayIncomingNextListEl) {
-    relayIncomingNextListEl.innerHTML = status.next.length
-      ? status.next.map((t) => _relayIncomingTrackRow(t, { ready: t.ready })).join('')
-      : '<span class="relay-incoming-placeholder">Aucune piste en attente</span>';
-  }
-}
-
 // File "incoming" pour les commandes reçues du relais léger (relay.js) : une
 // piste n'apparaît dans la file d'attente qu'une fois téléchargée (cf. SPECS.md §9.4).
+// Retour visuel (SPEC-9.5) : directement dans la file d'attente (buildQueueHTML,
+// cf. lib/uiRenderer.js), pas dans un panneau séparé — onChange() redéclenche donc
+// un rendu de la file à chaque mutation d'un slot (acceptation, ready, commit).
 const relayIncomingQueue = createRelayIncomingQueue({
   prefetchTrackToLocalCache,
   addToQueue,
@@ -1392,7 +1355,7 @@ const relayIncomingQueue = createRelayIncomingQueue({
   getCurrentIndex: () => uiState.currentIndex,
   showToast,
   logger,
-  onChange: renderRelayIncomingPanel,
+  onChange: () => renderQueue(),
 });
 
 const playlistManager = createPlaylistManager({
@@ -7169,6 +7132,16 @@ function buildRelayStateSnapshot() {
       }))
     : [];
 
+  // Prochain morceau du Fil Rouge (priorité, puis playlist) — affiché sur l'écran
+  // relais même quand la file d'attente n'a rien après la piste en cours (cf. SPECS.md §9.6).
+  const filRougeNextTrack = filRougeManager.peekNextTrackFromAny();
+  const filRougeNext = filRougeNextTrack ? {
+    id: filRougeNextTrack.id,
+    name: filRougeNextTrack.name,
+    artist: filRougeNextTrack.artist,
+    artUrl: filRougeNextTrack.artUrl || '',
+  } : null;
+
   // État FX courant (pour que le relais applique les mêmes effets)
   const fxState = {
     echo:        Boolean(mixFeatures.echo),
@@ -7231,6 +7204,7 @@ function buildRelayStateSnapshot() {
     capturedAt,
     queue: queueItems,
     filRouge: filRougeItems,
+    filRougeNext,
     transitionMode: selectedTransitionMode || 'auto',
     crossfadeMs: (crossfadeSlider?.value || 6) * 1000,
     djMode: djMode || 'music',

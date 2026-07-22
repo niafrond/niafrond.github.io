@@ -3465,122 +3465,138 @@ input {
   color: #7eb8e8;
 }
 
-/* ── Panneau files "incoming" du relais (retour visuel maître) ─ */
-.relay-incoming-panel {
-  margin-top: 14px;
+/* ── Placeholders "incoming" du relais, affichés dans la file d'attente ─
+   (SPEC-9.5) : une piste demandée par un relais léger avant même d'être
+   téléchargée, directement dans #queue-list avec une teinte dédiée pour la
+   distinguer d'un item réel — ambre pour « Lire maintenant » (imminent),
+   bleu pour « Ajouter ensuite » (en file). Repositionné à chaque rendu juste
+   après l'item courant : si la piste en cours change avant la fin du
+   téléchargement, la ligne suit automatiquement. */
+.queue-incoming-row {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  position: relative;
+  user-select: none;
 }
 
-.relay-incoming-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.queue-incoming-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
 }
 
-.relay-incoming-label {
+.queue-incoming-row--now {
+  background: var(--fade-dim);
+}
+
+.queue-incoming-row--now::before {
+  background: var(--fade);
+}
+
+.queue-incoming-row--next {
+  background: rgba(41, 128, 185, 0.1);
+}
+
+.queue-incoming-row--next::before {
+  background: #2980b9;
+}
+
+.queue-incoming-status {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.queue-incoming-status--loading {
+  border: 2px solid var(--border);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: queue-incoming-spin 0.8s linear infinite;
+}
+
+.queue-incoming-row--now .queue-incoming-status--loading { color: var(--fade); }
+.queue-incoming-row--next .queue-incoming-status--loading { color: #2980b9; }
+
+.queue-incoming-status--ready {
+  color: #27ae60;
+}
+
+.queue-incoming-status--ready::after {
+  content: '✓';
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@keyframes queue-incoming-spin {
+  to { transform: rotate(360deg); }
+}
+
+.queue-incoming-art {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface2);
+  opacity: 0.75;
+}
+
+.queue-incoming-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.queue-incoming-name-wrap {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  min-width: 0;
 }
 
-.relay-incoming-badge {
+.queue-incoming-name {
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.queue-incoming-tag {
+  flex-shrink: 0;
   font-size: 10px;
   font-weight: 600;
   padding: 1px 6px;
   border-radius: 8px;
-  background: var(--surface3);
-  color: var(--text-muted);
-  letter-spacing: 0;
-  text-transform: none;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.relay-incoming-now,
-.relay-incoming-next-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.queue-incoming-tag--now {
+  background: var(--fade);
+  color: #1a1300;
 }
 
-.relay-incoming-placeholder {
-  font-size: 11px;
-  color: var(--text-muted);
-  font-style: italic;
-  padding: 4px 0;
+.queue-incoming-tag--next {
+  background: #2980b9;
+  color: #eaf4fc;
 }
 
-.relay-incoming-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 6px;
-  border-radius: 8px;
-  background: var(--surface3);
-}
-
-.relay-incoming-item-art {
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
-  object-fit: cover;
-  background: var(--surface2);
-  flex-shrink: 0;
-}
-
-.relay-incoming-item-info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
-}
-
-.relay-incoming-item-name {
-  font-size: 11.5px;
-  font-weight: 500;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.relay-incoming-item-artist {
-  font-size: 10.5px;
+.queue-incoming-artist {
+  font-size: 12px;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.relay-incoming-item-status {
-  flex-shrink: 0;
-  width: 14px;
-  height: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-}
-
-.relay-incoming-item-status--loading {
-  border: 2px solid var(--border);
-  border-top-color: #27ae60;
-  border-radius: 50%;
-  animation: relay-incoming-spin 0.8s linear infinite;
-}
-
-.relay-incoming-item-status--ready {
-  color: #27ae60;
-  font-weight: 700;
-}
-
-@keyframes relay-incoming-spin {
-  to { transform: rotate(360deg); }
 }
 
 /* ── Écran dédié mode Relais ───────────────────────────── */

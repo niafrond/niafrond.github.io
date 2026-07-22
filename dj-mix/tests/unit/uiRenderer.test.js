@@ -37,6 +37,7 @@ function makeRenderer({
   deckCueDeck = null,
   deckDisplayItems = { A: null, B: null },
   djMode = 'music',
+  relayIncomingStatus = null,
 } = {}) {
   return createDjMixRenderer({
     // DOM elements — null, buildQueueHTML ne les touche pas
@@ -75,6 +76,7 @@ function makeRenderer({
     updateDeckMixUI: () => {},
     updateDeckCueUI: () => {},
     getPlayer: () => null,
+    getRelayIncomingStatus: () => relayIncomingStatus,
   });
 }
 
@@ -300,6 +302,135 @@ describe('buildQueueHTML', () => {
     renderer.refreshDeckMetaDisplays();
     expect(trackArtistA.innerHTML).toContain('House');
     expect(trackArtistA.innerHTML).toContain('queue-chip');
+  });
+});
+
+describe('buildQueueHTML — file "incoming" du relais (SPEC-9.5)', () => {
+  test('aucune ligne incoming quand getRelayIncomingStatus ne renvoie rien', () => {
+    const tracks = [makeTrack({ id: 't1' })];
+    const { buildQueueHTML } = makeRenderer({ queue: tracks, relayIncomingStatus: null });
+    const html = buildQueueHTML();
+    expect(html).not.toContain('queue-incoming-row');
+  });
+
+  test('slot "Lire maintenant" inséré juste après l\'item courant, teinte --now', () => {
+    const tracks = [makeTrack({ id: 't1' }), makeTrack({ id: 't2' })];
+    const { buildQueueHTML } = makeRenderer({
+      queue: tracks,
+      currentTrackId: 't1',
+      currentIndexOverride: 0,
+      relayIncomingStatus: {
+        now: { name: 'Incoming Now', artist: 'DJ X', artUrl: '' },
+        next: [],
+      },
+    });
+    const html = buildQueueHTML();
+    // Ordre : item courant (index 0) → ligne incoming "now" → item suivant (index 1)
+    const currentPos = html.indexOf('data-index="0"');
+    const incomingPos = html.indexOf('queue-incoming-row--now');
+    const nextPos = html.indexOf('data-index="1"');
+    expect(currentPos).toBeGreaterThanOrEqual(0);
+    expect(incomingPos).toBeGreaterThan(currentPos);
+    expect(nextPos).toBeGreaterThan(incomingPos);
+    expect(html).toContain('Incoming Now');
+    expect(html).toContain('Lire maintenant');
+  });
+
+  test('slots "Ajouter en suivant" affichés dans l\'ordre FIFO, teinte --next', () => {
+    const tracks = [makeTrack({ id: 't1' })];
+    const { buildQueueHTML } = makeRenderer({
+      queue: tracks,
+      currentTrackId: 't1',
+      currentIndexOverride: 0,
+      relayIncomingStatus: {
+        now: null,
+        next: [
+          { name: 'First', artist: 'A1', artUrl: '', ready: false },
+          { name: 'Second', artist: 'A2', artUrl: '', ready: true },
+        ],
+      },
+    });
+    const html = buildQueueHTML();
+    expect(html.indexOf('First')).toBeLessThan(html.indexOf('Second'));
+    expect(html).toContain('queue-incoming-row--next');
+    expect(html).toContain('Ajouter ensuite');
+  });
+
+  test('slot "next" ready=true affiche le statut --ready (pas --loading)', () => {
+    const tracks = [makeTrack({ id: 't1' })];
+    const { buildQueueHTML } = makeRenderer({
+      queue: tracks,
+      currentTrackId: 't1',
+      currentIndexOverride: 0,
+      relayIncomingStatus: {
+        now: null,
+        next: [{ name: 'Ready track', artist: '', artUrl: '', ready: true }],
+      },
+    });
+    const html = buildQueueHTML();
+    expect(html).toContain('queue-incoming-status--ready');
+    expect(html).not.toContain('queue-incoming-status--loading');
+  });
+
+  test('les lignes incoming n\'ont ni data-index ni la classe queue-item (pas de branchement DnD)', () => {
+    const tracks = [makeTrack({ id: 't1' })];
+    const { buildQueueHTML } = makeRenderer({
+      queue: tracks,
+      currentTrackId: 't1',
+      currentIndexOverride: 0,
+      relayIncomingStatus: {
+        now: { name: 'Incoming', artist: '', artUrl: '' },
+        next: [],
+      },
+    });
+    const html = buildQueueHTML();
+    const incomingBlock = html.slice(html.indexOf('queue-incoming-row--now'));
+    const incomingRowHtml = incomingBlock.slice(0, incomingBlock.indexOf('</div></div>') + 12);
+    expect(incomingRowHtml).not.toContain('data-index');
+    expect(incomingRowHtml).not.toMatch(/class="[^"]*\bqueue-item\b/);
+  });
+
+  test('placeholders en tête de liste quand aucune piste n\'est en cours (currentIndex < 0)', () => {
+    const tracks = [makeTrack({ id: 't1' }), makeTrack({ id: 't2' })];
+    const { buildQueueHTML } = makeRenderer({
+      queue: tracks,
+      currentTrackId: null,
+      currentIndexOverride: -1,
+      relayIncomingStatus: {
+        now: { name: 'Incoming', artist: '', artUrl: '' },
+        next: [],
+      },
+    });
+    const html = buildQueueHTML();
+    expect(html.indexOf('queue-incoming-row--now')).toBeLessThan(html.indexOf('data-index="0"'));
+  });
+
+  test('SPEC-9.5.5 — la ligne incoming se repositionne quand currentIndex avance entre deux rendus', () => {
+    const tracks = [makeTrack({ id: 't1' }), makeTrack({ id: 't2' }), makeTrack({ id: 't3' })];
+    const relayIncomingStatus = {
+      now: null,
+      next: [{ name: 'Pending', artist: '', artUrl: '', ready: false }],
+    };
+    const { buildQueueHTML } = makeRenderer({
+      queue: tracks,
+      currentTrackId: 't1',
+      currentIndexOverride: 0,
+      relayIncomingStatus,
+    });
+    const htmlBefore = buildQueueHTML();
+    expect(htmlBefore.indexOf('data-index="0"')).toBeLessThan(htmlBefore.indexOf('queue-incoming-row--next'));
+    expect(htmlBefore.indexOf('queue-incoming-row--next')).toBeLessThan(htmlBefore.indexOf('data-index="1"'));
+
+    // La piste courante avance (t1 → t2) sans que le slot "next" ait fini de télécharger.
+    const { buildQueueHTML: buildQueueHTMLAfter } = makeRenderer({
+      queue: tracks,
+      currentTrackId: 't2',
+      currentIndexOverride: 1,
+      relayIncomingStatus,
+    });
+    const htmlAfter = buildQueueHTMLAfter();
+    expect(htmlAfter.indexOf('data-index="1"')).toBeLessThan(htmlAfter.indexOf('queue-incoming-row--next'));
+    expect(htmlAfter.indexOf('queue-incoming-row--next')).toBeLessThan(htmlAfter.indexOf('data-index="2"'));
   });
 });
 
