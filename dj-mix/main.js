@@ -1350,6 +1350,11 @@ const {
 // un rendu de la file à chaque mutation d'un slot (acceptation, ready, commit).
 const relayIncomingQueue = createRelayIncomingQueue({
   prefetchTrackToLocalCache,
+  // Lancée en parallèle du téléchargement audio (cf. relayIncomingQueue.js) pour que
+  // les données de mix soient déjà en cache (autoModeManager.MIX_DATA_CACHE) au moment
+  // où triggerSearchFade() déclenche startPlaybackForIndex() — sinon ce dernier attend
+  // jusqu'à 700 ms un fetchMixData() qui n'a même pas encore démarré.
+  prefetchMixData: (track) => autoModeManager.fetchMixData(track.name, track.artist),
   addToQueue,
   triggerSearchFade,
   getCurrentIndex: () => uiState.currentIndex,

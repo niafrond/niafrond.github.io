@@ -962,7 +962,7 @@ lit son propre `relayIncomingQueue` directement en mémoire.
 | Transition mode | `auto` | — | — |
 | DJ Mode | `music` | — | — |
 | DJ Set Profile | `club_peak` | — | — |
-| Downloader API URL | `http://192.168.8.149:3000` | — | — |
+| Downloader API URL | `http://vision:3000` | — | — |
 | Volume global | 1.0 | 0.0 | 1.0 |
 
 ### 12.4 Désactivation manuelle des modes de transition

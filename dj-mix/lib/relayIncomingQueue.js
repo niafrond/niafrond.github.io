@@ -25,6 +25,7 @@ const RELAY_INCOMING_NEXT_MAX_SLOTS = 10;
 
 export function createRelayIncomingQueue({
   prefetchTrackToLocalCache,
+  prefetchMixData,
   addToQueue,
   triggerSearchFade,
   getCurrentIndex,
@@ -74,6 +75,11 @@ export function createRelayIncomingQueue({
     }
     _nowSlot = { track, deviceId };
     onChange?.();
+    // Lancée en parallèle du téléchargement audio, sans attendre son résultat : les
+    // données de mix (offset de démarrage zone-based) ne sont sinon récupérées qu'au
+    // lancement de la lecture (startPlaybackForIndex), ce qui ajoute un délai perceptible
+    // (jusqu'à 700 ms, cf. main.js) même quand l'audio est déjà en cache local.
+    Promise.resolve(prefetchMixData?.(track)).catch(() => {});
     prefetchTrackToLocalCache(track, {
       onError: (err) => {
         logger?.warn('relay.incoming.now.downloadFailed', { name: track?.name, deviceId, err: err?.message });
@@ -100,6 +106,7 @@ export function createRelayIncomingQueue({
     const slot = { track, deviceId, ready: false, failed: false };
     _nextSlots.push(slot);
     onChange?.();
+    Promise.resolve(prefetchMixData?.(track)).catch(() => {});
     prefetchTrackToLocalCache(track, {
       onError: (err) => {
         logger?.warn('relay.incoming.next.downloadFailed', { name: track?.name, deviceId, err: err?.message });

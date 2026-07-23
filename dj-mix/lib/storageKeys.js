@@ -38,9 +38,9 @@ export const STORAGE_KEYS = Object.freeze({
   trackPaths: 'dj-mix:track-paths',
 });
 
-export const DEFAULT_DOWNLOADER_API_URL = 'http://192.168.8.149:3000';
+export const DEFAULT_DOWNLOADER_API_URL = 'http://vision:3000';
 // Audio CDN: standalone process (audioCdnServer.js, AUDIO_CDN_PORT) that serves
 // GET /api/stream and /api/stems/download independently of the main API, so
 // playback keeps working even while the main API is busy with a long-running
 // download/search task. Same host as the API by default, different port.
-export const DEFAULT_DOWNLOADER_CDN_URL = 'http://192.168.8.149:3002';
+export const DEFAULT_DOWNLOADER_CDN_URL = 'http://vision:3002';

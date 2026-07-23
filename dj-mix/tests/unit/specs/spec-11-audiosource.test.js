@@ -46,7 +46,7 @@ describe('SPEC-11.1.1 — URL resolution cascade', () => {
 // ── SPEC-11.1.3 — Trust validation ─────────────────────────────────────────
 
 describe('SPEC-11.1.3 — isTrustedLocalAudioUrl', () => {
-  const getUrl = () => 'http://192.168.8.149:3000';
+  const getUrl = () => 'http://vision:3000';
 
   test('trusts same-origin URLs', () => {
     // jsdom uses http://localhost by default
@@ -55,7 +55,7 @@ describe('SPEC-11.1.3 — isTrustedLocalAudioUrl', () => {
 
   test('trusts downloader API URLs with /api/cache/ path', () => {
     expect(isTrustedLocalAudioUrl(
-      'http://192.168.8.149:3000/api/cache/song.mp3',
+      'http://vision:3000/api/cache/song.mp3',
       getUrl,
     )).toBe(true);
   });
@@ -66,7 +66,7 @@ describe('SPEC-11.1.3 — isTrustedLocalAudioUrl', () => {
 
   test('rejects downloader origin without /api/cache/ path', () => {
     expect(isTrustedLocalAudioUrl(
-      'http://192.168.8.149:3000/other/path.mp3',
+      'http://vision:3000/other/path.mp3',
       getUrl,
     )).toBe(false);
   });

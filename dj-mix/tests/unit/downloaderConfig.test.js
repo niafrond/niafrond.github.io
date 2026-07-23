@@ -8,7 +8,7 @@ describe('downloaderConfig', () => {
 
   describe('deriveCdnUrlFromApiUrl', () => {
     test('swaps the port to 3002, keeping host/protocol', () => {
-      expect(deriveCdnUrlFromApiUrl('http://192.168.8.149:3000')).toBe('http://192.168.8.149:3002');
+      expect(deriveCdnUrlFromApiUrl('http://vision:3000')).toBe('http://vision:3002');
     });
 
     test('returns the input unchanged when it is not a valid URL', () => {
@@ -20,9 +20,9 @@ describe('downloaderConfig', () => {
     test('uses the explicitly stored CDN URL when set', () => {
       localStorage.setItem('cdn-key', 'http://custom-cdn.local:9000');
       const manager = createDownloaderConfigManager({
-        cdnDefaultUrl: 'http://192.168.8.149:3002',
+        cdnDefaultUrl: 'http://vision:3002',
         cdnStorageKey: 'cdn-key',
-        defaultUrl: 'http://192.168.8.149:3000',
+        defaultUrl: 'http://vision:3000',
         storageKey: 'api-key',
       });
 
@@ -35,9 +35,9 @@ describe('downloaderConfig', () => {
     test('derives from the current API URL when no CDN URL is stored', () => {
       localStorage.setItem('api-key', 'http://relay-master.local:3000');
       const manager = createDownloaderConfigManager({
-        cdnDefaultUrl: 'http://192.168.8.149:3002',
+        cdnDefaultUrl: 'http://vision:3002',
         cdnStorageKey: 'cdn-key',
-        defaultUrl: 'http://192.168.8.149:3000',
+        defaultUrl: 'http://vision:3000',
         storageKey: 'api-key',
       });
 
@@ -46,19 +46,19 @@ describe('downloaderConfig', () => {
 
     test('falls back to cdnDefaultUrl when neither CDN nor API URL are configured', () => {
       const manager = createDownloaderConfigManager({
-        cdnDefaultUrl: 'http://192.168.8.149:3002',
+        cdnDefaultUrl: 'http://vision:3002',
         cdnStorageKey: 'cdn-key',
         defaultUrl: '',
         storageKey: 'api-key',
       });
 
-      expect(manager.getDownloaderCdnUrl()).toBe('http://192.168.8.149:3002');
+      expect(manager.getDownloaderCdnUrl()).toBe('http://vision:3002');
     });
   });
 
   describe('deriveRelayUrlFromApiUrl', () => {
     test('swaps the port to 3003, keeping host/protocol', () => {
-      expect(deriveRelayUrlFromApiUrl('http://192.168.8.149:3000')).toBe('http://192.168.8.149:3003');
+      expect(deriveRelayUrlFromApiUrl('http://vision:3000')).toBe('http://vision:3003');
     });
 
     test('returns the input unchanged when it is not a valid URL', () => {
@@ -72,7 +72,7 @@ describe('downloaderConfig', () => {
     test('derives from the current API URL', () => {
       localStorage.setItem('api-key', 'http://relay-master.local:3000');
       const manager = createDownloaderConfigManager({
-        defaultUrl: 'http://192.168.8.149:3000',
+        defaultUrl: 'http://vision:3000',
         storageKey: 'api-key',
       });
 
@@ -95,8 +95,8 @@ describe('downloaderConfig', () => {
       const manager = createDownloaderConfigManager({
         cdnInputEl,
         cdnStorageKey: 'cdn-key',
-        defaultUrl: 'http://192.168.8.149:3000',
-        inputEl: { value: 'http://192.168.8.149:3000' },
+        defaultUrl: 'http://vision:3000',
+        inputEl: { value: 'http://vision:3000' },
         storageKey: 'api-key',
       });
 

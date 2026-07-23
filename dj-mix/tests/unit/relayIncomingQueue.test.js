@@ -332,6 +332,54 @@ describe('relayIncomingQueue', () => {
     expect(logger.warn).toHaveBeenCalledWith('relay.incoming.next.downloadFailed', { name: 'B', deviceId: 'DEV002', err: 'boom' });
   });
 
+  test('SPEC-9.4.13 — prefetchMixData() est lancé en parallèle du téléchargement audio, pour "now" et "next"', () => {
+    const prefetchMixData = jest.fn(() => new Promise(() => {}));
+    const rq = createRelayIncomingQueue({
+      prefetchTrackToLocalCache: jest.fn(() => new Promise(() => {})),
+      prefetchMixData,
+      addToQueue: jest.fn(),
+      triggerSearchFade: jest.fn(),
+      getCurrentIndex: () => 0,
+    });
+
+    rq.handleCommand({ type: 'addToQueue', playNow: true, track: { name: 'A', artist: 'Art' } });
+    expect(prefetchMixData).toHaveBeenCalledWith({ name: 'A', artist: 'Art' });
+
+    rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'B', artist: 'Art2' } });
+    expect(prefetchMixData).toHaveBeenCalledWith({ name: 'B', artist: 'Art2' });
+  });
+
+  test('SPEC-9.4.13 — un échec de prefetchMixData() ne bloque ni ne rejette la commande', async () => {
+    const addToQueue = jest.fn();
+    const rq = createRelayIncomingQueue({
+      prefetchTrackToLocalCache: jest.fn(() => Promise.resolve(true)),
+      prefetchMixData: jest.fn(() => Promise.reject(new Error('mix data unavailable'))),
+      addToQueue,
+      triggerSearchFade: jest.fn(),
+      getCurrentIndex: () => 0,
+    });
+
+    rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'A' } });
+    await flush();
+
+    expect(addToQueue).toHaveBeenCalledTimes(1);
+  });
+
+  test('prefetchMixData omis (non fourni) : le prefetch audio fonctionne normalement', async () => {
+    const addToQueue = jest.fn();
+    const rq = createRelayIncomingQueue({
+      prefetchTrackToLocalCache: jest.fn(() => Promise.resolve(true)),
+      addToQueue,
+      triggerSearchFade: jest.fn(),
+      getCurrentIndex: () => 0,
+    });
+
+    rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'A' } });
+    await flush();
+
+    expect(addToQueue).toHaveBeenCalledTimes(1);
+  });
+
   test('une commande d\'un autre type ou sans piste est ignorée', () => {
     const prefetchTrackToLocalCache = jest.fn();
     const rq = createRelayIncomingQueue({
