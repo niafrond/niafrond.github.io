@@ -284,4 +284,115 @@ describe('audioSourceManager', () => {
       expect(trackPathDb.get('new-track')).toBe('/cache/track.mp3');
     });
   });
+
+  describe('SPEC-13.3.9 — artwork CDN upgrade', () => {
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    const originalFetch = global.fetch;
+
+    afterEach(() => {
+      URL.createObjectURL = originalCreateObjectURL;
+      URL.revokeObjectURL = originalRevokeObjectURL;
+      global.fetch = originalFetch;
+    });
+
+    // POST /api/download's JSON body carries whatever artworkUrl the backend
+    // resolved: either a `/api/artwork?cachePath=...` CDN reference (mirrored
+    // from iTunes/Deezer, see artworkCache.js on the API server) or, if that
+    // mirroring failed, the original raw third-party URL unchanged.
+    function makeFetchMock(artworkUrl) {
+      return jest.fn((url, init) => {
+        if (init?.method === 'POST') {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ cachePath: '/cache/track.mp3', cacheState: 'MISS', artworkUrl }),
+          });
+        }
+        return Promise.resolve({ ok: true, blob: async () => new Blob(['audio-bytes'], { type: 'audio/mpeg' }) });
+      });
+    }
+
+    function makeManager(overrides = {}) {
+      return createAudioSourceManager({
+        apiHealthMonitor: null,
+        audioCacheName: 'dj-mix:test',
+        getDownloaderApiUrl: () => 'http://api.test',
+        getDownloaderApiToken: () => 'tok',
+        getDownloaderCdnUrl: () => 'http://cdn.test',
+        onQueueUpdated: jest.fn(),
+        sessionBlobCache: new Map(),
+        touchQueueItem: jest.fn(),
+        ...overrides,
+      });
+    }
+
+    // Third-party artwork CDNs (mzstatic.com, dzcdn.net) don't send
+    // Access-Control-Allow-Origin: an <img> tag can still render them, but
+    // neither fetch() (SPEC-13.3.2's data URI conversion) nor Android's own
+    // Media Session artwork decode can read them, so the system notification
+    // falls back to the app icon instead of the real cover.
+    test('ensureLocalSource replaces a raw third-party artUrl with the CORS-safe CDN reference and persists it', async () => {
+      URL.createObjectURL = jest.fn(() => 'blob:fake');
+      URL.revokeObjectURL = jest.fn();
+      global.fetch = makeFetchMock('/api/artwork?cachePath=%2Fart%2Fabc.jpg');
+
+      const persistArtUrl = jest.fn();
+      const manager = makeManager({ persistArtUrl });
+      const item = {
+        id: 'track-cors',
+        name: 'Lebanese Blonde',
+        artist: 'Thievery Corporation',
+        artUrl: 'https://e-cdns-images.dzcdn.net/images/cover/xxx/500x500.jpg',
+        duration: 1000,
+      };
+
+      await manager.ensureLocalSource(item);
+
+      const expectedUrl = 'http://cdn.test/api/artwork?cachePath=%2Fart%2Fabc.jpg&token=tok';
+      expect(item.artUrl).toBe(expectedUrl);
+      expect(persistArtUrl).toHaveBeenCalledWith('track-cors', expectedUrl);
+    });
+
+    test('ensureLocalSource leaves item.artUrl untouched when the backend could not mirror the artwork', async () => {
+      URL.createObjectURL = jest.fn(() => 'blob:fake');
+      URL.revokeObjectURL = jest.fn();
+      const rawUrl = 'https://e-cdns-images.dzcdn.net/images/cover/xxx/500x500.jpg';
+      global.fetch = makeFetchMock(rawUrl);
+
+      const persistArtUrl = jest.fn();
+      const manager = makeManager({ persistArtUrl });
+      const item = { id: 'track-fallback', name: 'Track', artist: 'Artist', artUrl: rawUrl, duration: 1000 };
+
+      await manager.ensureLocalSource(item);
+
+      expect(item.artUrl).toBe(rawUrl);
+      expect(persistArtUrl).not.toHaveBeenCalled();
+    });
+
+    // Once a track has a known cachePath (from a prior download or a bulk
+    // prefetch), ensureLocalSource() takes the direct-to-CDN shortcut and
+    // never calls POST /api/download again — so prefetchTrackToLocalCache
+    // must apply the same upgrade, or a "Tout télécharger"-only track never
+    // gets it before it's actually played.
+    test('prefetchTrackToLocalCache applies the same artwork upgrade for tracks not yet playing', async () => {
+      URL.createObjectURL = jest.fn(() => 'blob:fake');
+      URL.revokeObjectURL = jest.fn();
+      global.fetch = makeFetchMock('/api/artwork?cachePath=%2Fart%2Fabc.jpg');
+
+      const persistArtUrl = jest.fn();
+      const manager = makeManager({ persistArtUrl, getDownloaderApiToken: () => '' });
+      const item = {
+        id: 'prefetch-track',
+        name: 'Prefetch Track',
+        artist: 'Prefetch Artist',
+        artUrl: 'https://is1-ssl.mzstatic.com/image/thumb/xxx/512x512bb.jpg',
+      };
+
+      await manager.prefetchTrackToLocalCache(item);
+
+      const expectedUrl = 'http://cdn.test/api/artwork?cachePath=%2Fart%2Fabc.jpg';
+      expect(item.artUrl).toBe(expectedUrl);
+      expect(persistArtUrl).toHaveBeenCalledWith('prefetch-track', expectedUrl);
+    });
+  });
 });

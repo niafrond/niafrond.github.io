@@ -1262,6 +1262,7 @@ const audioSourceManager = createAudioSourceManager({
   getDownloaderCdnUrl,
   normalizeApiSearchResponse,
   onQueueUpdated: () => renderQueueDebounced(),
+  persistArtUrl: (id, artUrl) => { if (id) trackStore.patch(id, { artUrl }); },
   sessionBlobCache,
   shouldWarmStems: (item) => !isLowMemoryPlaybackMode() || deckDisplayItems.A === item || deckDisplayItems.B === item,
   touchQueueItem,
@@ -6396,6 +6397,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
 
     updatePlannedStartMarker();
 
+    const artUrlBeforeSource = item.artUrl;
     const sourceUrl = await ensureLocalSource(item);
     logDebug('startPlaybackForIndex(): source resolved', {
       index,
@@ -6405,6 +6407,14 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       sourceState: item.sourceState,
       sourceMeta: item.sourceMeta,
     });
+
+    // SPEC-13.3.9 — updateNowPlaying() was already called above with whatever
+    // artUrl the item had at the time (often a raw iTunes/Deezer URL Media
+    // Session can't decode); ensureLocalSource() may have just upgraded it to
+    // our own CORS-enabled CDN reference, so refresh the notification artwork.
+    if (item.artUrl && item.artUrl !== artUrlBeforeSource) {
+      updateNowPlaying(item, targetDeck);
+    }
 
     if ((mode === 'autofade' || mode === 'crossfade') && item.sourceState !== 'ready') {
       logWarn('startPlaybackForIndex(): crossfade starting with source not ready', {

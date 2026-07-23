@@ -311,6 +311,7 @@ export function createAudioSourceManager(options) {
     getDownloaderApiUrl,
     getDownloaderCdnUrl,
     onQueueUpdated,
+    persistArtUrl,
     sessionBlobCache,
     shouldWarmStems,
     touchQueueItem,
@@ -540,6 +541,21 @@ export function createAudioSourceManager(options) {
   // Fetches the actual audio bytes for an already-resolved cachePath from the
   // standalone CDN and persists them locally. Shared by the cachePath-first
   // shortcut and the post-orchestration follow-up below.
+  // SPEC-13.3.9 — Resolves a `/api/artwork?cachePath=...` reference (returned
+  // by POST /api/download once the backend has mirrored the iTunes/Deezer
+  // artwork onto its own CDN, see artworkCache.js) into an absolute, token-
+  // authenticated URL. Third-party CDNs (mzstatic.com, dzcdn.net) generally
+  // don't send Access-Control-Allow-Origin, so `fetch()` (used to build the
+  // Media Session data URI) and Android's own artwork decode both fail
+  // silently on them; our own CDN sends permissive CORS, so routing artwork
+  // through it is required for the system notification to show the real cover.
+  function resolveCdnArtworkUrl(artworkRef) {
+    if (typeof artworkRef !== 'string' || !artworkRef.startsWith('/api/artwork')) return '';
+    const cdnBaseUrl = getCdnBaseUrl();
+    if (!cdnBaseUrl) return '';
+    return appendApiToken(`${cdnBaseUrl}${artworkRef}`, getDownloaderApiToken?.());
+  }
+
   async function streamCachedTrackFromCdn(item, cachePath, downloadStartedAt, extra = {}) {
     const cdnBaseUrl = getCdnBaseUrl();
     if (!cdnBaseUrl) {
@@ -582,6 +598,7 @@ export function createAudioSourceManager(options) {
       loudnessDb,
       sourceMeta: cachePath,
       cachePath,
+      artworkUrl: extra.artworkUrl || '',
     };
   }
 
@@ -688,6 +705,7 @@ export function createAudioSourceManager(options) {
       requestMs,
       cacheState: data?.cacheState,
       loudnessDb: extractTrackLoudnessDb(data),
+      artworkUrl: resolveCdnArtworkUrl(data?.artworkUrl),
     });
   }
 
@@ -832,6 +850,12 @@ export function createAudioSourceManager(options) {
       }
       if (Number.isFinite(downloaded.loudnessDb)) {
         item.loudnessDb = downloaded.loudnessDb;
+      }
+      // SPEC-13.3.9 — Replace the raw iTunes/Deezer artwork URL with our own
+      // CORS-enabled CDN reference so Media Session can actually decode it.
+      if (downloaded.artworkUrl && downloaded.artworkUrl !== item.artUrl) {
+        item.artUrl = downloaded.artworkUrl;
+        persistArtUrl?.(item.id, downloaded.artworkUrl);
       }
       sessionBlobCache.set(cacheKey, {
         url: item.localBlobUrl,
@@ -1259,6 +1283,14 @@ export function createAudioSourceManager(options) {
     try {
       const result = await downloadTrackViaApi(item);
       if (result?.cachePath) item.cachePath = result.cachePath;
+      // SPEC-13.3.9 — applied here too: once a track is prefetched (e.g. "Tout
+      // télécharger"), ensureLocalSource() will later hit the item.cachePath
+      // fast path and never call downloadTrackViaApi again, so this is the
+      // only chance to pick up the CORS-safe CDN artwork reference.
+      if (result?.artworkUrl && result.artworkUrl !== item.artUrl) {
+        item.artUrl = result.artworkUrl;
+        persistArtUrl?.(item.id, result.artworkUrl);
+      }
       if (result?.url) URL.revokeObjectURL(result.url);
       logInfo('prefetch.success', { cacheKey, name: item.name, artist: item.artist });
       return true;
