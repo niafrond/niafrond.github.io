@@ -1,3 +1,9 @@
+## [2.8.0](https://github.com/niafrond/niafrond.github.io/compare/v2.7.0...v2.8.0) (2026-07-23)
+
+### Features
+
+* Update downloader API and CDN URLs to use 'vision' hostname ([9f14ea1](https://github.com/niafrond/niafrond.github.io/commit/9f14ea15ba132d78adefa15fcf50ff06479fc019))
+
 ## [2.7.0](https://github.com/niafrond/niafrond.github.io/compare/v2.6.0...v2.7.0) (2026-07-22)
 
 ### Features
