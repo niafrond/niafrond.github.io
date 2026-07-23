@@ -41,6 +41,9 @@ function _getDeviceId() {
   if (!id) {
     id = Math.random().toString(36).slice(2, 8).toUpperCase();
     try { localStorage.setItem(KEY, id); } catch (_) { /* ignore */ }
+    // Best-effort : réduit le risque que le navigateur purge ce localStorage si
+    // l'appareil relais reste inactif plusieurs jours (cf. getOrCreateRelayMasterId).
+    try { navigator.storage?.persist?.(); } catch (_) { /* ignore */ }
   }
   return id;
 }

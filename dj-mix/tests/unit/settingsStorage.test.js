@@ -1,4 +1,6 @@
+import { jest } from '@jest/globals';
 import {
+  getOrCreateRelayMasterId,
   persistRamTotalMbOverrideSetting,
   persistTrackMaxDurationSetting,
   persistTrackMaxDurationEnabledSetting,
@@ -11,6 +13,34 @@ import { STORAGE_KEYS } from '../../lib/storageKeys.js';
 describe('settingsStorage', () => {
   beforeEach(() => {
     localStorage.clear();
+  });
+
+  describe('getOrCreateRelayMasterId', () => {
+    test('generates an id once and reuses it across calls (survives reload)', () => {
+      const id = getOrCreateRelayMasterId();
+      expect(id).toMatch(/^[0-9A-Z]{6}$/);
+      expect(getOrCreateRelayMasterId()).toBe(id);
+      expect(localStorage.getItem(STORAGE_KEYS.relayMasterId)).toBe(id);
+    });
+
+    test('requests persistent storage on first generation to reduce eviction risk', () => {
+      const persist = jest.fn();
+      navigator.storage = { persist };
+
+      getOrCreateRelayMasterId();
+      expect(persist).toHaveBeenCalledTimes(1);
+
+      persist.mockClear();
+      getOrCreateRelayMasterId();
+      expect(persist).not.toHaveBeenCalled();
+
+      delete navigator.storage;
+    });
+
+    test('does not throw when navigator.storage is unavailable', () => {
+      delete navigator.storage;
+      expect(() => getOrCreateRelayMasterId()).not.toThrow();
+    });
   });
 
   test('track max duration read/write handles bounds', () => {

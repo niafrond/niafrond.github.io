@@ -637,6 +637,14 @@ l'entrée correspondante au premier `PUT /api/relay/state/:id` (aucun appel
   collision si un même appareil ouvre à la fois `index.html` en maître et `relay.html`
   en relais) et réutilisé tel quel indéfiniment. Envoyé dans `cmd.deviceId` sur chaque
   commande (`POST /api/relay/commands/:masterId`).
+- **SPEC-9.1.7** Lors de la première génération de l'ID (maître `getOrCreateRelayMasterId()`
+  ou relais léger `_getDeviceId()` dans `relay.js`), un appel best-effort à
+  `navigator.storage.persist()` est effectué (aucune garantie ni prompt selon les
+  navigateurs) pour réduire le risque que le navigateur purge le `localStorage` d'un
+  appareil resté inactif plusieurs jours (ex. purge ITP de Safari après 7 jours
+  d'inactivité, éviction sous pression de stockage) — sans quoi l'ID redeviendrait
+  aléatoire à la prochaine génération, cassant la permanence visée par SPEC-9.1.2.
+  N'est appelé qu'à la création (pas à chaque lecture) pour éviter les appels redondants.
 
 ### 9.2 Mode Maître
 
@@ -757,6 +765,33 @@ staging côté maître, câblé dans `main.js` en lieu et place de l'ancien trai
   `main.js` (pas dans `lib/`) et ne sont importés par aucun fichier de test existant (même
   lacune préexistante que SPEC-4.3.7/4.3.8, `tests/unit/specs/spec-4-search.test.js` n'a
   aucune couverture de `triggerSearchFade`).
+- **SPEC-9.4.13** GIVEN une commande acceptée (« Lire maintenant » ou « Ajouter en
+  suivant ») — THEN `prefetchMixData(cmd.track)` (câblé dans `main.js` sur
+  `autoModeManager.fetchMixData(track.name, track.artist)`) est lancé en parallèle de
+  `prefetchTrackToLocalCache()`, en tâche de fond (erreur ignorée, résultat non attendu).
+  Raison : sans cet appel anticipé, `startPlaybackForIndex()` (`main.js`) ne déclenche son
+  propre `fetchMixData()` (nécessaire au calcul de l'offset de démarrage zone-based) qu'au
+  moment de lancer la lecture, et attend jusqu'à `700 ms` (`Promise.race` avec un
+  `setTimeout`) sa résolution — un délai perceptible à chaque « Lire maintenant » demandé
+  depuis le relais, même quand l'audio est déjà en cache local (`prefetchTrackToLocalCache`
+  ayant déjà téléchargé la piste). Avec le prefetch anticipé, `fetchMixData()` est déjà
+  résolu (ou en cours, avec un net avantage de tête) et servi depuis le cache mémoire
+  (`MIX_DATA_CACHE`, `lib/autoModeManager.js`) au moment de `startPlaybackForIndex()`, ce
+  qui élimine la majeure partie de l'attente. `createRelayIncomingQueue({ prefetchMixData })`
+  accepte cette dépendance optionnelle (omise : comportement inchangé, cf. tests).
+- **SPEC-9.4.14** GIVEN deux commandes « Ajouter en suivant » soumises par des appareils
+  différents à des instants différents (`cmd.requestedAt`, horodatage posé par
+  `relay.js` au moment du clic, ex. `Date.now()`) — WHEN elles arrivent au maître dans
+  un ordre différent de leur `requestedAt` (latence réseau, lot de commandes récupéré
+  en une seule fois par `GET /api/relay/commands/:sessionId`) — THEN `relayIncomingQueue`
+  les réordonne par `requestedAt` croissant avant tout commit : une commande envoyée
+  à 3h20 ne passe jamais devant une commande envoyée à 3h15, même si elle arrive ou
+  termine son téléchargement en premier. Implémentation : `_nextSlots` est maintenu
+  trié par insertion (`_insertSortedNext`, tri stable — à `requestedAt` égal, l'ordre
+  d'arrivée est conservé) ; le commit FIFO (SPEC-9.4.4/9.4.5) s'applique ensuite sur ce
+  tableau trié. GIVEN une commande sans `requestedAt` (relais ancienne version) — THEN
+  elle est traitée comme soumise à l'instant présent (`Date.now()` au moment du
+  traitement côté maître).
 
 ### 9.5 Retour visuel côté maître (files "incoming"), directement dans la file d'attente
 

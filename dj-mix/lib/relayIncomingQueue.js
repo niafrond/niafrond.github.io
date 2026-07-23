@@ -8,10 +8,16 @@
  *              tant que le slot est occupé. Une fois téléchargée, la piste est
  *              jouée immédiatement via triggerSearchFade() (insertion + automix).
  *   - "next" : jusqu'à `maxNextSlots` slots (« Ajouter en suivant »), committés en
- *              FIFO strict — le 1er slot soumis atterrit juste après la piste en
- *              cours, le 2e juste après lui, quel que soit l'ordre réel de fin de
- *              téléchargement (addToQueue({asNext:true}) empile en LIFO par
- *              défaut, d'où le compteur insertOffset ci-dessous).
+ *              ordre chronologique de soumission (`cmd.requestedAt`, horodatage posé
+ *              par le relais léger au moment du clic) — pas l'ordre d'arrivée réseau
+ *              sur le maître, qui peut différer (polling par lot, latence variable
+ *              d'un appareil à l'autre) : une commande envoyée à 3h20 ne doit jamais
+ *              passer devant une commande envoyée à 3h15 même si elle arrive/termine
+ *              son téléchargement avant. `_nextSlots` est maintenu trié par
+ *              `requestedAt` croissant à l'insertion (cf. `_insertSortedNext`), et le
+ *              commit reste FIFO strict sur ce tableau trié, quel que soit l'ordre
+ *              réel de fin de téléchargement (addToQueue({asNext:true}) empile en
+ *              LIFO par défaut, d'où le compteur insertOffset ci-dessous).
  *
  * Un échec de téléchargement libère le slot silencieusement : la piste n'apparaît
  * jamais dans la file, aucun toast d'erreur (pas de canal vers le relais).
@@ -64,7 +70,7 @@ export function createRelayIncomingQueue({
     if (cmd.playNow) {
       _handleNow(cmd.track, cmd.deviceId);
     } else {
-      _handleNext(cmd.track, cmd.deviceId);
+      _handleNext(cmd.track, cmd.deviceId, cmd.requestedAt);
     }
   }
 
@@ -98,13 +104,15 @@ export function createRelayIncomingQueue({
     });
   }
 
-  function _handleNext(track, deviceId) {
+  function _handleNext(track, deviceId, requestedAt) {
     if (_nextSlots.length >= maxNextSlots) {
       logger?.info('relay.incoming.next.rejected', { name: track?.name, deviceId, count: _nextSlots.length });
       return;
     }
-    const slot = { track, deviceId, ready: false, failed: false };
-    _nextSlots.push(slot);
+    // Pas d'horodatage fourni (ancien relais, champ manquant) : on le traite comme
+    // "à l'instant" pour ne pas bloquer indéfiniment derrière des slots déjà présents.
+    const slot = { track, deviceId, requestedAt: requestedAt ?? Date.now(), ready: false, failed: false };
+    _insertSortedNext(slot);
     onChange?.();
     Promise.resolve(prefetchMixData?.(track)).catch(() => {});
     prefetchTrackToLocalCache(track, {
@@ -119,6 +127,15 @@ export function createRelayIncomingQueue({
       slot.failed = !ok;
       _drainNext();
     });
+  }
+
+  // Insertion triée par `requestedAt` croissant (stable : à égalité, conserve l'ordre
+  // d'arrivée). Garantit qu'un slot soumis plus tôt (ex. 3h15) reste toujours devant
+  // un slot soumis plus tard (ex. 3h20), quel que soit l'ordre d'arrivée réseau.
+  function _insertSortedNext(slot) {
+    let i = _nextSlots.length;
+    while (i > 0 && _nextSlots[i - 1].requestedAt > slot.requestedAt) i--;
+    _nextSlots.splice(i, 0, slot);
   }
 
   function _drainNext() {

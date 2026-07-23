@@ -138,6 +138,73 @@ describe('relayIncomingQueue', () => {
     );
   });
 
+  test('SPEC-9.4.14 — une commande "next" arrivée en second est réordonnée devant si son requestedAt est plus ancien', async () => {
+    const d1 = deferred();
+    const d2 = deferred();
+    const addToQueue = jest.fn();
+    const prefetchTrackToLocalCache = jest.fn((track) => (track.name === 'late-arrival-early-request' ? d1.promise : d2.promise));
+    const rq = createRelayIncomingQueue({
+      prefetchTrackToLocalCache,
+      addToQueue,
+      triggerSearchFade: jest.fn(),
+      getCurrentIndex: () => 0,
+    });
+
+    // "3h20" arrive au maître EN PREMIER (ex. réseau plus rapide) mais a été
+    // envoyée par le relais APRÈS "3h15" (requestedAt plus tardif).
+    rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'sent-3h20' }, requestedAt: 1000 * 60 * 60 * 3 + 1000 * 60 * 20 });
+    rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'late-arrival-early-request' }, requestedAt: 1000 * 60 * 60 * 3 + 1000 * 60 * 15 });
+
+    // Les deux téléchargements se terminent en même temps.
+    d1.resolve(true);
+    d2.resolve(true);
+    await flush();
+
+    expect(addToQueue).toHaveBeenNthCalledWith(
+      1,
+      { name: 'late-arrival-early-request' },
+      expect.objectContaining({ asNext: true, insertOffset: 0 })
+    );
+    expect(addToQueue).toHaveBeenNthCalledWith(
+      2,
+      { name: 'sent-3h20' },
+      expect.objectContaining({ asNext: true, insertOffset: 1 })
+    );
+  });
+
+  test('SPEC-9.4.14 — requestedAt manquant est traité comme "maintenant" sans faire planter le tri', async () => {
+    const d1 = deferred();
+    const d2 = deferred();
+    const addToQueue = jest.fn();
+    const prefetchTrackToLocalCache = jest.fn((track) => (track.name === 'with-timestamp' ? d1.promise : d2.promise));
+    const rq = createRelayIncomingQueue({
+      prefetchTrackToLocalCache,
+      addToQueue,
+      triggerSearchFade: jest.fn(),
+      getCurrentIndex: () => 0,
+    });
+
+    rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'with-timestamp' }, requestedAt: 100 });
+    rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'no-timestamp' } });
+
+    d1.resolve(true);
+    d2.resolve(true);
+    await flush();
+
+    // requestedAt: 100 est bien plus ancien que Date.now() au moment du fallback,
+    // donc reste en tête même si sa commande a été soumise en premier ici aussi.
+    expect(addToQueue).toHaveBeenNthCalledWith(
+      1,
+      { name: 'with-timestamp' },
+      expect.objectContaining({ asNext: true, insertOffset: 0 })
+    );
+    expect(addToQueue).toHaveBeenNthCalledWith(
+      2,
+      { name: 'no-timestamp' },
+      expect.objectContaining({ asNext: true, insertOffset: 1 })
+    );
+  });
+
   test('SPEC-9.4.5 — le compteur insertOffset se remet à 0 si currentIndex change entre deux commits', async () => {
     const d1 = deferred();
     const d2 = deferred();

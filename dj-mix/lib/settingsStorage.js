@@ -203,6 +203,19 @@ export function persistRelayModeSetting(mode) {
   safeSet(STORAGE_KEYS.relayMode, RELAY_MODES.includes(mode) ? mode : 'standalone');
 }
 
+// Demande au navigateur de rendre le storage de cette origine « persistant » (best-effort,
+// aucune garantie ni prompt selon les navigateurs) pour réduire le risque que le
+// localStorage d'un appareil maître resté inactif plusieurs jours soit purgé (ex. purge
+// ITP de Safari après 7 jours d'inactivité, éviction sous pression de stockage) — l'ID
+// maître redeviendrait sinon aléatoire à la prochaine génération.
+function _requestPersistentStorage() {
+  try {
+    navigator.storage?.persist?.();
+  } catch (_) {
+    // ignore — best effort
+  }
+}
+
 // Identifiant court, unique et permanent de CET appareil en tant que maître relais
 // (pas une session serveur éphémère : un simple aléa généré une fois et conservé
 // tant que le storage n'est pas vidé). Pas de fonction de suppression : redevenir
@@ -212,6 +225,7 @@ export function getOrCreateRelayMasterId() {
   if (existing) return existing;
   const id = Math.random().toString(36).slice(2, 8).toUpperCase();
   safeSet(STORAGE_KEYS.relayMasterId, id);
+  _requestPersistentStorage();
   return id;
 }
 
