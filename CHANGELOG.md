@@ -1,3 +1,9 @@
+## [2.10.0](https://github.com/niafrond/niafrond.github.io/compare/v2.9.0...v2.10.0) (2026-07-23)
+
+### Features
+
+* Implement artwork URL upgrade to use CORS-enabled CDN references and persist changes ([3c65ec2](https://github.com/niafrond/niafrond.github.io/commit/3c65ec20d6160f9e0e7f385e75af22ed488908c9))
+
 ## [2.9.0](https://github.com/niafrond/niafrond.github.io/compare/v2.8.0...v2.9.0) (2026-07-23)
 
 ### Features
