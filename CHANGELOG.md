@@ -1,3 +1,9 @@
+## [2.9.0](https://github.com/niafrond/niafrond.github.io/compare/v2.8.0...v2.9.0) (2026-07-23)
+
+### Features
+
+* Enhance relay functionality with persistent storage requests and command reordering ([72f4dc8](https://github.com/niafrond/niafrond.github.io/commit/72f4dc8a628fa093179e1dc1ae7c90b61cf75859))
+
 ## [2.8.0](https://github.com/niafrond/niafrond.github.io/compare/v2.7.0...v2.8.0) (2026-07-23)
 
 ### Features
