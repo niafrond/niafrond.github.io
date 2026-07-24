@@ -1,3 +1,9 @@
+## [2.11.1](https://github.com/niafrond/niafrond.github.io/compare/v2.11.0...v2.11.1) (2026-07-24)
+
+### Bug Fixes
+
+* **dj-mix:** ship service worker cache bumps so installed PWAs actually receive updates ([e15511b](https://github.com/niafrond/niafrond.github.io/commit/e15511b541d5d8b84bbcac39eb12a6db8cd2242f))
+
 ## [2.11.0](https://github.com/niafrond/niafrond.github.io/compare/v2.10.0...v2.11.0) (2026-07-24)
 
 ### Features
