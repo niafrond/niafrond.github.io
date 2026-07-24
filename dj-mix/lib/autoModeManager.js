@@ -1294,12 +1294,17 @@ export function createAutoModeManager({
 
           // Fetch mix data for the fil rouge track so zones are respected
           // (same flow as for auto-DJ suggested tracks)
+          // Clear the previous "next track" mix data immediately so its zones aren't
+          // shown on this new track while the fetch is in flight.
+          nextTrackMixData = null;
+          onMixDataUpdated?.(null);
           fetchMixData(
             nextFromFilRouge.name || nextFromFilRouge.trackName,
             nextFromFilRouge.artist || nextFromFilRouge.artistName
           )
             .then(mixData => {
               nextTrackMixData = mixData;
+              onMixDataUpdated?.(mixData);
               const recommendedTransition = recommendTransitionType(currentTrackMixData, mixData);
               logger?.debug?.('autoDj: fil rouge recommended transition', { type: recommendedTransition });
             })
@@ -1629,12 +1634,17 @@ export function createAutoModeManager({
         });
 
         // Fetch mix data for the recommended track
+        // Clear the previous "next track" mix data immediately so its zones aren't
+        // shown on this new track while the fetch is in flight.
+        nextTrackMixData = null;
+        onMixDataUpdated?.(null);
         fetchMixData(
           selectedTrack.trackName || selectedTrack.name,
           selectedTrack.artistName || selectedTrack.artist
         )
           .then(mixData => {
             nextTrackMixData = mixData;
+            onMixDataUpdated?.(mixData);
             const recommendedTransition = recommendTransitionType(
               currentTrackMixData,
               mixData

@@ -326,6 +326,12 @@ export function createAudioSourceManager(options) {
   // request instead of firing duplicate downloads with conflicting outcomes.
   const inFlightPrefetches = new Map();
 
+  // SPEC-13.3.10 — Cache keys for which a background artwork refresh (see
+  // maybeRefreshStuckArtwork below) has already been attempted this session,
+  // so a track stuck on a raw third-party artUrl doesn't fire a POST
+  // /api/download on every single play.
+  const artworkRefreshAttempted = new Set();
+
   // fetch() vers l'API downloader avec ajout automatique de `token=...` (auth API).
   // Les URLs hors API (CDN externes, blobs, etc.) sont laissées inchangées.
   function apiFetch(url, init) {
@@ -602,6 +608,51 @@ export function createAudioSourceManager(options) {
     };
   }
 
+  // SPEC-13.3.10 — item.cachePath direct-stream shortcuts (below) never call
+  // POST /api/download, so a track resolved before the backend started mirroring
+  // artwork onto its own CDN (or before its own lazy-mirroring fix,
+  // ensureMirroredArtworkUrl in script.js) stays stuck on a raw iTunes/Deezer
+  // artUrl forever — CORS-blocked for Media Session even though it renders fine
+  // in an <img> tag. Detect that and kick off a background, fire-and-forget
+  // metadata refresh so it self-heals on next play instead of requiring the
+  // track to be deleted and re-downloaded.
+  function isStuckRemoteArtworkUrl(url) {
+    return typeof url === 'string' && /^https?:\/\//i.test(url) && !url.includes('/api/artwork');
+  }
+
+  async function refreshStuckArtworkInBackground(item) {
+    const baseUrl = getDownloaderApiUrl();
+    if (!baseUrl) return;
+    const res = await apiFetch(`${baseUrl}/api/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        trackName: item.name,
+        artistName: item.artist,
+        searchQuery: `${item.artist} ${item.name}`,
+      }),
+    });
+    if (!res.ok) return;
+    const data = await res.json().catch(() => null);
+    const resolved = resolveCdnArtworkUrl(data?.artworkUrl);
+    if (resolved && resolved !== item.artUrl) {
+      item.artUrl = resolved;
+      persistArtUrl?.(item.id, resolved);
+      onQueueUpdated?.();
+    }
+  }
+
+  function maybeRefreshStuckArtwork(item) {
+    if (!isStuckRemoteArtworkUrl(item?.artUrl)) return;
+    if (apiHealthMonitor?.isOffline()) return;
+    const cacheKey = getTrackCacheKey(item);
+    if (artworkRefreshAttempted.has(cacheKey)) return;
+    artworkRefreshAttempted.add(cacheKey);
+    refreshStuckArtworkInBackground(item).catch(() => {
+      artworkRefreshAttempted.delete(cacheKey);
+    });
+  }
+
   async function downloadTrackViaApi(item) {
     if (apiHealthMonitor?.isOffline()) {
       throw new Error('API hors ligne – téléchargement impossible');
@@ -620,6 +671,7 @@ export function createAudioSourceManager(options) {
         name: item?.name,
         cachePath: item.cachePath,
       });
+      maybeRefreshStuckArtwork(item);
       return streamCachedTrackFromCdn(item, item.cachePath, downloadStartedAt);
     }
 
@@ -641,6 +693,7 @@ export function createAudioSourceManager(options) {
         name: item?.name,
         cachePath: dbCachePath,
       });
+      maybeRefreshStuckArtwork(item);
       return streamCachedTrackFromCdn(item, dbCachePath, downloadStartedAt);
     }
 

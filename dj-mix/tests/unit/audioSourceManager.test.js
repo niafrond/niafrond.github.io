@@ -395,4 +395,137 @@ describe('audioSourceManager', () => {
       expect(persistArtUrl).toHaveBeenCalledWith('prefetch-track', expectedUrl);
     });
   });
+
+  describe('SPEC-13.3.10 — background artwork refresh for already-cached tracks', () => {
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    const originalFetch = global.fetch;
+
+    afterEach(() => {
+      URL.createObjectURL = originalCreateObjectURL;
+      URL.revokeObjectURL = originalRevokeObjectURL;
+      global.fetch = originalFetch;
+    });
+
+    // item.cachePath already known → downloadTrackViaApi's direct-to-CDN shortcut
+    // never calls POST /api/download on its own, so a track resolved before
+    // SPEC-13.3.9 existed (or before the backend's own lazy-mirroring fix landed)
+    // would otherwise stay stuck on a CORS-blocked raw artUrl forever.
+    function makeFetchMock(artworkUrl) {
+      return jest.fn((url, init) => {
+        if (init?.method === 'POST') {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ cachePath: '/cache/known.mp3', cacheState: 'HIT', artworkUrl }),
+          });
+        }
+        return Promise.resolve({ ok: true, blob: async () => new Blob(['audio-bytes'], { type: 'audio/mpeg' }) });
+      });
+    }
+
+    function flushMicrotasks() {
+      return new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    function makeManager(overrides = {}) {
+      return createAudioSourceManager({
+        apiHealthMonitor: null,
+        audioCacheName: 'dj-mix:test',
+        getDownloaderApiUrl: () => 'http://api.test',
+        getDownloaderApiToken: () => '',
+        getDownloaderCdnUrl: () => 'http://cdn.test',
+        onQueueUpdated: jest.fn(),
+        persistArtUrl: jest.fn(),
+        sessionBlobCache: new Map(),
+        touchQueueItem: jest.fn(),
+        ...overrides,
+      });
+    }
+
+    test('a known-cachePath track with a stuck raw artUrl fires a background metadata-only refresh, without delaying playback', async () => {
+      URL.createObjectURL = jest.fn(() => 'blob:fake');
+      URL.revokeObjectURL = jest.fn();
+      const fetchMock = makeFetchMock('/api/artwork?cachePath=%2Fart%2Ffixed.jpg');
+      global.fetch = fetchMock;
+
+      const persistArtUrl = jest.fn();
+      const manager = makeManager({ persistArtUrl });
+      const item = {
+        id: 'stuck-track',
+        name: 'Stuck Track',
+        artist: 'Stuck Artist',
+        cachePath: '/cache/known.mp3',
+        artUrl: 'https://e-cdns-images.dzcdn.net/images/cover/xxx/500x500.jpg',
+        duration: 1000,
+      };
+
+      const localSource = await manager.ensureLocalSource(item);
+
+      // Played immediately via the direct CDN stream — the artwork refresh (fired
+      // first, but fire-and-forget) must not have blocked it.
+      expect(localSource).toBe('blob:fake');
+      expect(fetchMock.mock.calls[0][1]?.method).toBe('POST');
+      expect(fetchMock.mock.calls[1][1]?.method).toBeUndefined(); // GET /api/stream
+
+      await flushMicrotasks();
+
+      const expectedUrl = 'http://cdn.test/api/artwork?cachePath=%2Fart%2Ffixed.jpg';
+      expect(item.artUrl).toBe(expectedUrl);
+      expect(persistArtUrl).toHaveBeenCalledWith('stuck-track', expectedUrl);
+    });
+
+    test('does not retry the background refresh on a later play within the same session once attempted', async () => {
+      URL.createObjectURL = jest.fn(() => 'blob:fake');
+      URL.revokeObjectURL = jest.fn();
+      const rawUrl = 'https://e-cdns-images.dzcdn.net/images/cover/xxx/500x500.jpg';
+      // Backend still hasn't mirrored it (keeps echoing the same raw URL) —
+      // isolates the session dedup guard from the "already fixed" natural exit.
+      const fetchMock = makeFetchMock(rawUrl);
+      global.fetch = fetchMock;
+
+      const manager = makeManager();
+      const item = {
+        id: 'still-stuck-track',
+        name: 'Still Stuck',
+        artist: 'Still Stuck Artist',
+        cachePath: '/cache/known.mp3',
+        artUrl: rawUrl,
+        duration: 1000,
+      };
+
+      await manager.ensureLocalSource(item);
+      await flushMicrotasks();
+      await manager.ensureLocalSource(item);
+      await flushMicrotasks();
+
+      const postCalls = fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST');
+      expect(postCalls).toHaveLength(1);
+    });
+
+    test('does not fire a background refresh when artUrl already points at our own CDN', async () => {
+      URL.createObjectURL = jest.fn(() => 'blob:fake');
+      URL.revokeObjectURL = jest.fn();
+      const fetchMock = jest.fn(() => Promise.resolve({
+        ok: true,
+        blob: async () => new Blob(['audio-bytes'], { type: 'audio/mpeg' }),
+      }));
+      global.fetch = fetchMock;
+
+      const manager = makeManager();
+      const item = {
+        id: 'fine-track',
+        name: 'Fine Track',
+        artist: 'Fine Artist',
+        cachePath: '/cache/known.mp3',
+        artUrl: 'http://cdn.test/api/artwork?cachePath=%2Fart%2Fok.jpg',
+        duration: 1000,
+      };
+
+      await manager.ensureLocalSource(item);
+      await flushMicrotasks();
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock.mock.calls[0][1]?.method).toBeUndefined();
+    });
+  });
 });

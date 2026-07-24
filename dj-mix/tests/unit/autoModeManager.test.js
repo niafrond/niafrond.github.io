@@ -95,6 +95,79 @@ describe('autoModeManager', () => {
     expect(addToQueue.mock.calls[0][0]).toMatchObject({ id: 'fr-2', name: 'Next Song' });
   });
 
+  // SPEC-5.1.5: nextTrackMixData must not leak zones from a previously-selected
+  // "next track" onto a newly-selected one while its mix fetch is still pending.
+  describe('SPEC-5.1.5: next-track mix data does not leak stale zones across selections', () => {
+    const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+    test('resets nextTrackMixData to null (and notifies) before the new fetch resolves', async () => {
+      const trackA = { id: 'track-a', name: 'Song A', artist: 'Artist A' };
+      const trackB = { id: 'track-b', name: 'Song B', artist: 'Artist B' };
+      const trackC = { id: 'track-c', name: 'Song C', artist: 'Artist C' };
+
+      const queue = [trackA];
+      const addToQueue = jest.fn().mockResolvedValue(undefined);
+      const onMixDataUpdated = jest.fn();
+
+      let resolveMixB;
+      let resolveMixC;
+      const mixBPromise = new Promise((resolve) => { resolveMixB = resolve; });
+      const mixCPromise = new Promise((resolve) => { resolveMixC = resolve; });
+
+      const fetchMock = jest.fn((url) => {
+        const u = String(url);
+        if (u.includes('artist=Artist+B')) return mixBPromise;
+        if (u.includes('artist=Artist+C')) return mixCPromise;
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({ mix: null }) });
+      });
+      global.fetch = fetchMock;
+
+      let peeked = trackB;
+      let nextReturn = trackB;
+      const filRougeManager = {
+        isActive: () => true,
+        peekNextTrackFromAny: () => peeked,
+        getNextTrack: () => nextReturn,
+      };
+
+      const manager = makeManager({
+        getDownloaderApiUrl: () => 'http://api.test',
+        getFilRougeManager: () => filRougeManager,
+        getQueue: () => queue,
+        getCurrentTrackId: () => trackA.id,
+        getCurrentTrackIndex: () => 0,
+        addToQueue,
+        onMixDataUpdated,
+      });
+
+      manager.toggleAutoMode();
+
+      // First search selects trackB and starts (but doesn't finish) fetching its mix data.
+      await manager.searchAndAddNextTrack(trackA);
+      expect(manager.getNextTrackMixData()).toBeNull();
+
+      // Resolve trackB's mix fetch — it becomes the current "next track" zones.
+      resolveMixB({ ok: true, status: 200, json: async () => ({ mix: { durationSec: 200 } }) });
+      await flush(); await flush(); await flush();
+      expect(manager.getNextTrackMixData()).toEqual({ durationSec: 200 });
+      onMixDataUpdated.mockClear();
+
+      // A second search now selects trackC instead, while trackC's mix fetch is still pending.
+      peeked = trackC;
+      nextReturn = trackC;
+      await manager.searchAndAddNextTrack(trackA);
+
+      // trackB's zones must already be cleared — not left showing on trackC.
+      expect(manager.getNextTrackMixData()).toBeNull();
+      expect(onMixDataUpdated).toHaveBeenCalledWith(null);
+
+      // Once trackC's fetch resolves, its own (correct) mix data takes over.
+      resolveMixC({ ok: true, status: 200, json: async () => ({ mix: { durationSec: 150 } }) });
+      await flush(); await flush(); await flush();
+      expect(manager.getNextTrackMixData()).toEqual({ durationSec: 150 });
+    });
+  });
+
   test('skips queued suggestion search when disabled', async () => {
     const queue = [{ id: 'current', name: 'Current Song', artist: 'Artist A' }];
     const addToQueue = jest.fn().mockResolvedValue(undefined);
