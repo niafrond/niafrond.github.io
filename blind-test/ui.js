@@ -252,9 +252,16 @@ export function renderGamePhase(phase, data, isHost) {
       if (data.currentSong) {
         setText('round-end-title', data.currentSong.title);
         setText('round-end-artist', data.currentSong.artist);
-        // Thumbnail YouTube
         const thumb = el('round-end-thumb');
-        if (thumb) thumb.src = `https://img.youtube.com/vi/${data.currentSong.videoId}/mqdefault.jpg`;
+        if (thumb) {
+          if (data.currentSong.artUrl) {
+            thumb.src = data.currentSong.artUrl;
+            thumb.style.visibility = 'visible';
+          } else {
+            thumb.removeAttribute('src');
+            thumb.style.visibility = 'hidden';
+          }
+        }
       }
       {
         const errEl = el('round-end-playback-error');
@@ -435,7 +442,7 @@ export function renderAnswerFormatSelector(selectedFormat, onChange) {
 
 // ─── Utilitaire sécurité ──────────────────────────────────────────────────────
 
-function escapeHtml(str) {
+export function escapeHtml(str) {
   if (!str) return '';
   return String(str)
     .replace(/&/g, '&amp;')

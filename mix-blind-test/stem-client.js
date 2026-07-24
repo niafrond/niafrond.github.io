@@ -1,4 +1,5 @@
 import { DEFAULT_DOWNLOADER_API_URL, STORAGE_KEYS } from '../dj-mix/lib/storageKeys.js';
+import { appendApiToken } from '../dj-mix/lib/downloaderConfig.js';
 import { pruneStemCacheEntries, isServerTracksCacheFresh } from './game-logic.js';
 
 const MIX_API_URL_KEY = 'mix-blind-test:api-url';
@@ -39,9 +40,23 @@ function createTimeoutSignal(ms) {
 }
 
 export class StemClient {
-  constructor({ maxBytes, maxEntries } = {}) {
-    const storedApi = localStorage.getItem(MIX_API_URL_KEY) || localStorage.getItem(STORAGE_KEYS.downloaderApiUrl);
-    this.apiUrl = normalizeApiUrl(storedApi || DEFAULT_DOWNLOADER_API_URL);
+  /**
+   * @param {object} [options]
+   * @param {number} [options.maxBytes]
+   * @param {number} [options.maxEntries]
+   * @param {Function} [options.getDownloaderApiUrl] — injecté par dj-mix/lib/downloaderConfig.js
+   *   (createDownloaderConfigManager). Sans injection, retombe sur l'ancien comportement
+   *   autonome (localStorage direct) pour rester testable/instanciable seul.
+   * @param {Function} [options.getDownloaderApiToken]
+   * @param {object} [options.apiHealthMonitor] — dj-mix/lib/apiHealthMonitor.js (recordSuccess/recordFailure/isOffline)
+   */
+  constructor({ maxBytes, maxEntries, getDownloaderApiUrl, getDownloaderApiToken, apiHealthMonitor } = {}) {
+    this._getDownloaderApiUrl = getDownloaderApiUrl || (() => {
+      const stored = localStorage.getItem(MIX_API_URL_KEY) || localStorage.getItem(STORAGE_KEYS.downloaderApiUrl);
+      return normalizeApiUrl(stored || DEFAULT_DOWNLOADER_API_URL);
+    });
+    this._getDownloaderApiToken = getDownloaderApiToken || (() => '');
+    this._apiHealthMonitor = apiHealthMonitor || null;
     this.maxBytes = Number(maxBytes) || 180 * 1024 * 1024;
     this.maxEntries = Number(maxEntries) || 24;
     this.maxObjectUrls = 6;
@@ -50,12 +65,20 @@ export class StemClient {
   }
 
   getApiUrl() {
-    return this.apiUrl;
+    return this._getDownloaderApiUrl();
   }
 
+  /** @deprecated conservé pour compat — préférer createDownloaderConfigManager (dj-mix/lib/downloaderConfig.js). */
   setApiUrl(url) {
-    this.apiUrl = normalizeApiUrl(url);
-    localStorage.setItem(MIX_API_URL_KEY, this.apiUrl);
+    localStorage.setItem(MIX_API_URL_KEY, normalizeApiUrl(url));
+  }
+
+  _apiUrl() {
+    return normalizeApiUrl(this._getDownloaderApiUrl());
+  }
+
+  _appendToken(url) {
+    return appendApiToken(url, this._getDownloaderApiToken());
   }
 
   trackIdentifier(track) {
@@ -243,50 +266,61 @@ export class StemClient {
 
   async fetchStemsStatus(track) {
     const params = this.buildTrackParams(track);
-    if (!params.toString() || !this.apiUrl) return null;
+    const apiUrl = this._apiUrl();
+    if (!params.toString() || !apiUrl) return null;
     try {
-      const response = await fetch(`${this.apiUrl}/api/stems?${params}`, {
+      const response = await fetch(this._appendToken(`${apiUrl}/api/stems?${params}`), {
         headers: { Accept: 'application/json' },
         signal: createTimeoutSignal(9000),
       });
       if (response.status === 404) return null;
-      if (!response.ok) return null;
+      if (!response.ok) { this._apiHealthMonitor?.recordFailure(); return null; }
+      this._apiHealthMonitor?.recordSuccess();
       return await response.json();
     } catch (_) {
+      this._apiHealthMonitor?.recordFailure();
       return null;
     }
   }
 
   async triggerStemGeneration(track) {
     const params = this.buildTrackParams(track);
-    if (!params.toString() || !this.apiUrl) return false;
+    const apiUrl = this._apiUrl();
+    if (!params.toString() || !apiUrl) return false;
 
     const payload = Object.fromEntries(params.entries());
     try {
-      const response = await fetch(`${this.apiUrl}/api/stems`, {
+      const response = await fetch(this._appendToken(`${apiUrl}/api/stems`), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
         signal: createTimeoutSignal(10000),
       });
-      return response.ok || response.status === 409;
+      const ok = response.ok || response.status === 409;
+      if (ok) this._apiHealthMonitor?.recordSuccess();
+      else this._apiHealthMonitor?.recordFailure();
+      return ok;
     } catch (_) {
+      this._apiHealthMonitor?.recordFailure();
       return false;
     }
   }
 
   async downloadStem(track, variant) {
     const params = this.buildTrackParams(track);
-    if (!params.toString() || !this.apiUrl) throw new Error('Chanson non identifiable pour les stems');
+    const apiUrl = this._apiUrl();
+    if (!params.toString() || !apiUrl) throw new Error('Chanson non identifiable pour les stems');
 
     params.set('stem', variant);
-    const response = await fetch(`${this.apiUrl}/api/stems/download?${params}`, {
+    const response = await fetch(this._appendToken(`${apiUrl}/api/stems/download?${params}`), {
       signal: createTimeoutSignal(15000),
     });
 
     if (!response.ok) {
+      this._apiHealthMonitor?.recordFailure();
       throw new Error(`Téléchargement ${variant} impossible (${response.status})`);
     }
+    this._apiHealthMonitor?.recordSuccess();
 
     const blob = await response.blob();
     if (!blob || blob.size <= 0) {
@@ -299,7 +333,7 @@ export class StemClient {
     const cached = await this.getCachedStemObjectUrl(track, variant);
     if (cached) return cached;
 
-    if (!this.apiUrl) throw new Error('URL du serveur manquante');
+    if (!this._apiUrl()) throw new Error('URL du serveur manquante');
     const variantsLabel = variant === 'vocals' ? 'voix' : 'instru';
 
     for (let attempt = 0; attempt < 6; attempt += 1) {
@@ -355,13 +389,15 @@ export class StemClient {
       const cached = this.readServerTracksCache();
       if (cached) return cached;
     }
-    if (!this.apiUrl) return [];
+    const apiUrl = this._apiUrl();
+    if (!apiUrl) return [];
     try {
-      const response = await fetch(`${this.apiUrl}/api/cache/files`, {
+      const response = await fetch(this._appendToken(`${apiUrl}/api/cache/files`), {
         headers: { Accept: 'application/json' },
         signal: createTimeoutSignal(9000),
       });
-      if (!response.ok) return [];
+      if (!response.ok) { this._apiHealthMonitor?.recordFailure(); return []; }
+      this._apiHealthMonitor?.recordSuccess();
       const data = await response.json();
       const files = Array.isArray(data)
         ? data
@@ -375,6 +411,7 @@ export class StemClient {
       this.writeServerTracksCache(tracks);
       return tracks;
     } catch (_) {
+      this._apiHealthMonitor?.recordFailure();
       return [];
     }
   }

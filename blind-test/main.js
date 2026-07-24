@@ -4,11 +4,14 @@
  * Rôles :
  *  1. Détecter si l'on est HOST (pas de ?host=) ou CLIENT (?host=PEER_ID)
  *  2. Gérer la navigation entre écrans
- *  3. Connecter peer.js ↔ game.js ↔ ui.js ↔ youtube.js
+ *  3. Connecter peer.js ↔ game.js ↔ ui.js ↔ audioSource.js
  */
 
 import { BlindTestPeer } from './peer.js';
-import { YouTubePlayer, probeEndpoints, quickCheckCachedEndpoint, getInstanceCaches, getPreferredAudioSource, setInstanceCaches } from './youtube.js';
+import {
+  LocalAudioPlayer, initApiConfigUI, apiHealthMonitor, checkApiHealth,
+  getBroadcastConfig, applyBroadcastConfig, searchTracks,
+} from './audioSource.js';
 import { GameEngine } from './game.js';
 import { MSG, PHASE, MODE, TIMER, ANSWER_FORMAT, ANSWER_PROMPTS } from './constants.js';
 import { getMatch3Version, getMatch3BuildDate } from '../match3-quest/version.js';
@@ -16,15 +19,14 @@ import {
   showOnly, show, hide, renderShareLink, renderLobbyPlayers,
   renderScoreboard, renderJokers, renderGamePhase, renderPlaylist,
   renderModeSelector, renderAnswerFormatSelector, renderFinalResults, flashBuzz,
-  startTimerBar, stopTimerBar, highlightCorrectChoice,
+  startTimerBar, stopTimerBar, highlightCorrectChoice, escapeHtml,
 } from './ui.js';
 import {
   loadPlaylist, savePlaylist, addSong, removeSong, moveSong, fetchYouTubePlaylist, mergeSongs,
-  extractVideoId, fetchVideoTitle, lookupSongMetadata, enrichWithMusicMetadata, fetchArtistAlternatives,
+  enrichWithMusicMetadata,
   exportPlaylistJSON, importPlaylistJSON,
   BUILTIN_PLAYLISTS, listSavedPlaylists, saveNamedPlaylist, loadNamedPlaylist, deleteNamedPlaylist,
   ERAS, filterByEras,
-  getVideoCache, setVideoCache,
 } from './playlist.js';
 
 // ─── État local (client + host) ───────────────────────────────────────────────
@@ -37,7 +39,7 @@ function generateSessionId() {
 }
 
 const peer = new BlindTestPeer();
-let yt = null; // YouTubePlayer, créé après init DOM
+let yt = null; // LocalAudioPlayer, créé après init DOM
 
 // État client (pas host)
 const client = {
@@ -109,51 +111,43 @@ function _updateStartButton(players = []) {
   btn.disabled = !(_probeReady && allReady);
 }
 
-function _showItunesLoader(msg = '🎵 Correction iTunes…') {
-  const el = document.getElementById('overlay-itunes');
-  const msgEl = document.getElementById('overlay-itunes-msg');
+function _showLoader(msg = '🔎 Recherche en cours…') {
+  const el = document.getElementById('overlay-search');
+  const msgEl = document.getElementById('overlay-search-msg');
   if (msgEl) msgEl.textContent = msg;
   if (el) el.style.display = 'flex';
 }
-function _hideItunesLoader() {
-  const el = document.getElementById('overlay-itunes');
+function _hideLoader() {
+  const el = document.getElementById('overlay-search');
   if (el) el.style.display = 'none';
 }
 async function initHostUI() {
   showOnly('screen-host-setup');
 
-  // Lance le test des endpoints dès l'affichage de l'écran de configuration,
+  // Config API du serveur downloader (mêmes mécaniques que dj-mix)
+  initApiConfigUI({
+    inputEl: document.getElementById('downloader-api-url-input'),
+    tokenInputEl: document.getElementById('downloader-api-token-input'),
+    cdnInputEl: document.getElementById('downloader-cdn-url-input'),
+    saveBtn: document.getElementById('downloader-api-save-btn'),
+    testBtn: document.getElementById('downloader-api-test-btn'),
+    statusEl: document.getElementById('downloader-api-status'),
+  });
+
+  // Lance le diagnostic API dès l'affichage de l'écran de configuration,
   // bien avant que l'hôte clique sur "Créer la partie".
   // La promesse est réutilisée dans le lobby pour ne pas retester.
   const elSetupProbe = document.getElementById('probe-status-setup');
-  const _probePromise = (async () => {
-    // Vérification rapide de l'endpoint en cache
-    const quick = await quickCheckCachedEndpoint('dQw4w9WgXcQ');
-    if (quick) {
+  if (elSetupProbe) elSetupProbe.textContent = '🔄 Test du serveur API en cours…';
+  const _probePromise = checkApiHealth()
+    .then((online) => {
       if (elSetupProbe) {
-        elSetupProbe.textContent = `✅ ${quick.source} OK (cache)`;
-        elSetupProbe.style.color = 'var(--success, #22c55e)';
+        elSetupProbe.textContent = online ? '✅ Serveur API joignable' : '❌ Serveur API injoignable — vérifiez la configuration ci-dessus';
+        elSetupProbe.style.color = online ? 'var(--success, #22c55e)' : 'var(--error, #ef4444)';
       }
-      return quick;
-    }
-    // Pas de cache valide → test complet de tous les endpoints
-    return probeEndpoints('dQw4w9WgXcQ', ({ source, total }) => {
-      if (!elSetupProbe) return;
-      if (source === 'piped-fetched') {
-        elSetupProbe.textContent = `🔄 Test de ${total} instances Piped + Invidious + cobalt…`;
-      }
-    }).then((result) => {
-      if (elSetupProbe) {
-        const c = result.cobalt ? '✅ cobalt' : '❌ cobalt';
-        const p = result.pipedWorking > 0 ? `✅ ${result.pipedWorking} Piped` : '❌ Piped';
-        const inv = result.invidiousWorking > 0 ? `✅ ${result.invidiousWorking} Invidious` : '❌ Invidious';
-        const ok = result.cobalt || result.pipedWorking > 0 || result.invidiousWorking > 0;
-        elSetupProbe.innerHTML = `${c} · ${p} · ${inv}`;
-        elSetupProbe.style.color = ok ? 'var(--success, #22c55e)' : 'var(--error, #ef4444)';
-      }
-      return result;
-    });
-  })().catch(() => null);
+      return online;
+    })
+    .catch(() => false);
 
   // Playlist
   let playlist = loadPlaylist();
@@ -169,96 +163,60 @@ async function initHostUI() {
     ];
   }
 
-  // Formulaire ajout chanson — résolution titre/artiste via oEmbed + iTunes
-  const addForm = document.getElementById('add-song-form');
-  const addSongStatus = document.getElementById('add-song-status');
-  const addSongError = document.getElementById('add-song-error');
-  if (addForm) {
-    const songUrlInput = document.getElementById('song-url');
+  // Formulaire ajout chanson — recherche via /api/search (dj-mix)
+  const searchForm = document.getElementById('search-song-form');
+  const searchInput = document.getElementById('search-song-input');
+  const searchResultsEl = document.getElementById('search-song-results');
+  const searchStatus = document.getElementById('search-song-status');
 
-    addForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const url = songUrlInput.value.trim();
-      const videoId = extractVideoId(url);
-      if (!videoId) {
-        if (addSongError) addSongError.textContent = 'URL YouTube invalide.';
-        return;
-      }
-      if (addSongError) addSongError.textContent = '';
-      const submitBtn = addForm.querySelector('button[type=submit]');
-      if (submitBtn) submitBtn.disabled = true;
-
-      // Court-circuit : videoId déjà enrichi dans le cache iTunes
-      const vidCached = getVideoCache(videoId);
-      if (vidCached) {
-        if (addSongStatus) { addSongStatus.textContent = `✅ "${vidCached.title}" — ${vidCached.artist} (cache)`; addSongStatus.style.color = 'var(--success, #22c55e)'; }
+  function renderSearchResults(results) {
+    if (!searchResultsEl) return;
+    if (!results.length) {
+      searchResultsEl.innerHTML = '';
+      return;
+    }
+    searchResultsEl.innerHTML = results.map((r, i) => `
+      <li class="search-result-item" data-index="${i}">
+        <span>${escapeHtml(r.title)} — ${escapeHtml(r.artist)}${r.year ? ` (${r.year})` : ''}</span>
+        <button type="button" class="btn btn-sm btn-success" data-add="${i}">+ Ajouter</button>
+      </li>
+    `).join('');
+    searchResultsEl.querySelectorAll('[data-add]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const r = results[Number(btn.dataset.add)];
         try {
-          playlist = addSong(playlist, { url, title: vidCached.title, artist: vidCached.artist, year: vidCached.year, genre: vidCached.genre, alternatives: vidCached.alternatives });
+          playlist = addSong(playlist, r);
           renderPlaylist(playlist, ...playlistCallbacks());
-          addForm.reset();
-          setTimeout(() => { if (addSongStatus) addSongStatus.textContent = ''; }, 3000);
+          if (searchStatus) searchStatus.textContent = `✅ "${r.title}" ajouté`;
+          searchResultsEl.innerHTML = '';
+          searchForm?.reset();
         } catch (err) {
-          if (addSongError) addSongError.textContent = err.message;
-          if (addSongStatus) addSongStatus.textContent = '';
-        } finally {
-          if (submitBtn) submitBtn.disabled = false;
+          if (searchStatus) searchStatus.textContent = `❌ ${err.message}`;
+        }
+      });
+    });
+  }
+
+  if (searchForm) {
+    searchForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const term = searchInput?.value.trim();
+      if (!term) return;
+      if (searchStatus) { searchStatus.textContent = '🔎 Recherche…'; searchStatus.style.color = 'var(--text-muted)'; }
+      if (searchResultsEl) searchResultsEl.innerHTML = '';
+
+      const results = await searchTracks(term, { limit: 10 });
+      if (!results.length) {
+        if (searchStatus) {
+          searchStatus.textContent = apiHealthMonitor.isOffline()
+            ? '❌ Serveur API injoignable.'
+            : '😕 Aucun résultat.';
+          searchStatus.style.color = 'var(--error, #ef4444)';
         }
         return;
       }
-
-      if (addSongStatus) { addSongStatus.textContent = '🔄 Récupération du titre…'; addSongStatus.style.color = 'var(--text-muted)'; }
-
-      const rawTitle = await fetchVideoTitle(videoId);
-      let title, artist, year = null, genre = null;
-
-      if (rawTitle) {
-        if (addSongStatus) { addSongStatus.textContent = '🎵 Correction iTunes…'; addSongStatus.style.color = 'var(--text-muted)'; }
-        _showItunesLoader('🎵 Correction iTunes…');
-        const meta = await lookupSongMetadata(rawTitle, null);
-        if (meta) {
-          title = meta.title;
-          artist = meta.artist;
-          year = meta.year ?? null;
-          genre = meta.genre ?? null;
-          if (addSongStatus) { addSongStatus.textContent = `✅ "${title}" — ${artist}`; addSongStatus.style.color = 'var(--success, #22c55e)'; }
-        } else {
-          // Repli : découpage sur " - "
-          const parts = rawTitle.split(/ - (.+)/);
-          if (parts.length >= 2) {
-            title = parts[1].trim();
-            artist = parts[0].trim();
-            if (addSongStatus) { addSongStatus.textContent = `⚠️ "${title}" — ${artist} (iTunes sans résultat)`; addSongStatus.style.color = 'var(--warning, #f59e0b)'; }
-          } else {
-            // Impossible de déterminer l'artiste → on bloque l'ajout
-            _hideItunesLoader();
-            if (addSongStatus) { addSongStatus.textContent = '❌ Impossible d\'identifier l\'artiste. Vérifiez la vidéo.'; addSongStatus.style.color = 'var(--error, #ef4444)'; }
-            if (submitBtn) submitBtn.disabled = false;
-            return;
-          }
-        }
-        if (addSongStatus) { addSongStatus.textContent = '🔍 Recherche des alternatives…'; addSongStatus.style.color = 'var(--text-muted)'; }
-        _showItunesLoader('🔍 Recherche des alternatives…');
-      } else {
-        if (addSongStatus) { addSongStatus.textContent = '❌ Impossible de récupérer le titre (vidéo privée ou indisponible).'; addSongStatus.style.color = 'var(--error, #ef4444)'; }
-        if (submitBtn) submitBtn.disabled = false;
-        return;
-      }
-
-      const alternatives = await fetchArtistAlternatives(artist, title).catch(() => []);
-      _hideItunesLoader();
-      setVideoCache(videoId, { title, artist, year, genre, alternatives });
-
-      try {
-        playlist = addSong(playlist, { url, title, artist, year, genre, alternatives });
-        renderPlaylist(playlist, ...playlistCallbacks());
-        addForm.reset();
-        setTimeout(() => { if (addSongStatus) addSongStatus.textContent = ''; }, 3000);
-      } catch (err) {
-        if (addSongError) addSongError.textContent = err.message;
-        if (addSongStatus) addSongStatus.textContent = '';
-      } finally {
-        if (submitBtn) submitBtn.disabled = false;
-      }
+      if (searchStatus) { searchStatus.textContent = `${results.length} résultat(s) — cliquez pour ajouter`; searchStatus.style.color = 'var(--text-muted)'; }
+      renderSearchResults(results);
     });
   }
 
@@ -277,14 +235,14 @@ async function initHostUI() {
         const songs = await fetchYouTubePlaylist(url, (loaded) => {
           importStatus.textContent = `⏳ ${loaded} chanson(s) chargée(s)…`;
         });
-        importStatus.textContent = `🎵 Correction iTunes (0/${songs.length})…`;
-        _showItunesLoader(`🎵 Correction iTunes (0/${songs.length})…`);
+        importStatus.textContent = `🔎 Résolution des morceaux (0/${songs.length})…`;
+        _showLoader(`🔎 Résolution des morceaux (0/${songs.length})…`);
         const enriched = await enrichWithMusicMetadata(songs, (curr, total) => {
-          const msg = `🎵 Correction iTunes (${curr}/${total})…`;
+          const msg = `🔎 Résolution des morceaux (${curr}/${total})…`;
           importStatus.textContent = msg;
-          _showItunesLoader(msg);
+          _showLoader(msg);
         });
-        _hideItunesLoader();
+        _hideLoader();
         const { updated, added, skipped } = mergeSongs(playlist, enriched);
         playlist = updated;
         renderPlaylist(playlist, ...playlistCallbacks());
@@ -293,7 +251,7 @@ async function initHostUI() {
         if (skipped > 0) msg.push(`(${skipped} déjà présentes, ignorées)`);
         importStatus.textContent = msg.join(' ');
       } catch (err) {
-        _hideItunesLoader();
+        _hideLoader();
         importStatus.textContent = '❌ ' + err.message;
       } finally {
         btnImport.disabled = false;
@@ -464,9 +422,9 @@ async function initHostUI() {
     const hostName = savedHostName || prompt('Votre nom (hôte) :') || 'Hôte';
     if (!savedHostName) localStorage.setItem('blind-test-host-name', hostName);
 
-    // YouTube — caché : blind test = son uniquement, pas besoin de voir la vidéo
-    yt = new YouTubePlayer('yt-player-host', { hidden: true });
-    yt.init(); // ne pas await — l'IFrame s'init en arrière-plan
+    // Lecteur audio local (son uniquement, pas de vidéo)
+    yt = new LocalAudioPlayer();
+    yt.init(); // ne pas await — s'initialise en arrière-plan
 
     engine = new GameEngine(peer, yt, onHostStateChange);
     engine.addPlayer('__host__', hostName);
@@ -488,11 +446,8 @@ async function initHostUI() {
 
     // Bouton démarrer
     document.getElementById('btn-start-game')?.addEventListener('click', () => {
-      const { piped, invidious } = getInstanceCaches();
       engine.startGame(hostMode, _activePlaylist, {
-        pipedInstances: piped,
-        invidiousInstances: invidious,
-        preferredAudioSource: getPreferredAudioSource(),
+        downloaderConfig: getBroadcastConfig(),
         answerFormat: hostAnswerFormat,
       });
     });
@@ -511,29 +466,17 @@ async function initHostUI() {
       return; // Pas besoin de relancer le diagnostic réseau
     }
 
-    // ── Diagnostic des endpoints audio ─────────────────────────────────────────
+    // ── Diagnostic du serveur API ────────────────────────────────────────────
     // Le test a démarré en arrière-plan dès l'écran de configuration.
     // On attend juste que la promesse se termine (peut être déjà résolue).
     const elProbe = document.getElementById('probe-status');
-    if (elProbe) elProbe.textContent = '🔄 Test des endpoints en cours…';
+    if (elProbe) elProbe.textContent = '🔄 Test du serveur API en cours…';
 
     try {
-      const result = await _probePromise;
-      const { cobalt, pipedWorking, pipedTotal, invidiousWorking, invidiousTotal }
-        = result ?? { cobalt: false, pipedWorking: 0, pipedTotal: 0, invidiousWorking: 0, invidiousTotal: 0 };
-
+      const online = await _probePromise;
       if (elProbe) {
-        if (result?._quick) {
-          elProbe.textContent = `✅ ${result.source} OK (cache)`;
-          elProbe.style.color = '';
-        } else {
-          const c = cobalt ? '✅ cobalt.tools' : '❌ cobalt.tools';
-          const p = pipedWorking > 0 ? `✅ ${pipedWorking}/${pipedTotal} Piped` : `❌ 0/${pipedTotal} Piped`;
-          const inv = invidiousWorking > 0 ? `✅ ${invidiousWorking}/${invidiousTotal} Invidious` : `❌ 0/${invidiousTotal} Invidious`;
-          elProbe.innerHTML = `${c} &nbsp;·&nbsp; ${p} &nbsp;·&nbsp; ${inv}`;
-          const ok = cobalt || pipedWorking > 0 || invidiousWorking > 0;
-          elProbe.style.color = ok ? '' : 'var(--error, #ef4444)';
-        }
+        elProbe.textContent = online ? '✅ Serveur API joignable' : '❌ Serveur API injoignable';
+        elProbe.style.color = online ? '' : 'var(--error, #ef4444)';
       }
     } catch {
       if (elProbe) elProbe.textContent = '⚠️ Erreur lors du diagnostic réseau';
@@ -675,8 +618,8 @@ function initClientUI() {
 
     showOnly('screen-lobby-player');
 
-    // YouTube caché (sync audio)
-    yt = new YouTubePlayer('yt-player-client', { hidden: true });
+    // Lecteur audio local (sync audio)
+    yt = new LocalAudioPlayer();
     await yt.init();
 
     // Bouton Prêt
@@ -797,8 +740,8 @@ function handleClientMessage(data) {
       client.mode = data.mode;
       client.answerFormat = data.answerFormat ?? ANSWER_FORMAT.ARTIST_THEN_TITLE;
       client._gameCache = { playlist: data.playlist ?? [], shuffled: data.shuffled ?? [] };
-      if (data.pipedInstances?.length || data.invidiousInstances?.length || data.preferredAudioSource) {
-        setInstanceCaches(data.pipedInstances ?? [], data.invidiousInstances ?? [], data.preferredAudioSource ?? null);
+      if (data.downloaderConfig) {
+        applyBroadcastConfig(data.downloaderConfig);
       }
       showOnly('screen-game-client');
       break;
@@ -806,7 +749,7 @@ function handleClientMessage(data) {
 
     case MSG.JOKER_WINDOW: {
       client.phase = PHASE.JOKER_WINDOW;
-      if (data.videoId) yt?.prefetch(data.videoId).catch(() => {});
+      if (data.cachePath) yt?.prefetch(data.cachePath).catch(() => {});
       showOnly('screen-game-client');
       renderGamePhase(PHASE.JOKER_WINDOW, { jokerWindowRemaining: data.remainingS }, false);
       const meJw = client.players.find(p => p.id === client.myId);
@@ -816,7 +759,7 @@ function handleClientMessage(data) {
 
     case 'COUNTDOWN': {
       client.phase = PHASE.COUNTDOWN;
-      if (data.videoId) yt?.prefetch(data.videoId).catch(() => {});
+      if (data.cachePath) yt?.prefetch(data.cachePath).catch(() => {});
       showOnly('screen-game-client');
       renderGamePhase(PHASE.COUNTDOWN, { countdown: data.count }, false);
       const me2 = client.players.find(p => p.id === client.myId);
@@ -837,7 +780,7 @@ function handleClientMessage(data) {
       // Mettre à jour currentSong dès maintenant (utile pour le snapshot si le host se déconnecte)
       client.currentSong = client._gameCache.shuffled[client.currentRound - 1] ?? client.currentSong;
 
-      yt.load(data.videoId, data.startAt ?? 0);
+      yt.load(data.cachePath, data.startAt ?? 0);
 
       const me = client.players.find(p => p.id === client.myId);
       renderGamePhase(PHASE.PLAYING, {
@@ -1010,7 +953,7 @@ function handleClientMessage(data) {
     case MSG.ROUND_END: {
       client.phase = PHASE.ROUND_END;
       stopTimerBar();
-      client.currentSong = { videoId: data.videoId, title: data.title, artist: data.artist };
+      client.currentSong = { title: data.title, artist: data.artist, artUrl: data.artUrl || '' };
       renderGamePhase(PHASE.ROUND_END, {
         currentSong: client.currentSong,
         playbackError: data.playbackError ?? null,

@@ -1,10 +1,42 @@
 import { chooseRoundPair, makePairKey, pickRandomTracks } from './game-logic.js';
 import { StemClient } from './stem-client.js';
+import { createDownloaderConfigManager } from '../dj-mix/lib/downloaderConfig.js';
+import { createApiHealthMonitor } from '../dj-mix/lib/apiHealthMonitor.js';
+import { createTrackStore } from '../dj-mix/lib/trackStore.js';
+import { getTrackCacheKey } from '../dj-mix/lib/audioSourceManager.js';
+import { DEFAULT_DOWNLOADER_API_URL, STORAGE_KEYS } from '../dj-mix/lib/storageKeys.js';
 
 const TRACKS_KEY = 'mix-blind-test:tracks';
 const SCORE_KEY = 'mix-blind-test:scores';
 
-const stemClient = new StemClient();
+const trackStore = createTrackStore();
+trackStore.restore();
+
+const downloaderConfig = createDownloaderConfigManager({
+  defaultUrl: DEFAULT_DOWNLOADER_API_URL,
+  storageKey: STORAGE_KEYS.downloaderApiUrl,
+  tokenStorageKey: STORAGE_KEYS.downloaderApiToken,
+  cdnStorageKey: STORAGE_KEYS.downloaderCdnUrl,
+  inputEl: document.getElementById('api-url'),
+  tokenInputEl: document.getElementById('api-token'),
+  cdnInputEl: document.getElementById('api-cdn-url'),
+  saveBtn: document.getElementById('btn-save-api'),
+  testBtn: document.getElementById('btn-test-api'),
+  statusEl: document.getElementById('api-status'),
+});
+
+const apiHealthMonitor = createApiHealthMonitor({
+  getDownloaderApiUrl: downloaderConfig.getDownloaderApiUrl,
+  getDownloaderApiToken: downloaderConfig.getDownloaderApiToken,
+  onOffline: () => updateStatus('Serveur API hors ligne.', true),
+  onOnline: () => updateStatus('Serveur API de retour en ligne ✓', false),
+});
+
+const stemClient = new StemClient({
+  getDownloaderApiUrl: downloaderConfig.getDownloaderApiUrl,
+  getDownloaderApiToken: downloaderConfig.getDownloaderApiToken,
+  apiHealthMonitor,
+});
 
 const state = {
   tracks: loadTracks(),
@@ -22,8 +54,6 @@ const refs = {
   btnGoGame: document.getElementById('btn-go-game'),
   btnBackSetup: document.getElementById('btn-back-setup'),
   setupStatus: document.getElementById('setup-status'),
-  apiUrl: document.getElementById('api-url'),
-  btnSaveApi: document.getElementById('btn-save-api'),
   songForm: document.getElementById('song-form'),
   btnImportDjMix: document.getElementById('btn-import-dj-mix'),
   btnAddRandomDjMix: document.getElementById('btn-add-random-dj-mix'),
@@ -165,12 +195,22 @@ function normalizeTrack(raw, options = {}) {
   const cachePath = String(raw?.cachePath || '').trim();
   const bpm = Number(raw?.bpm);
   const rawId = String(raw?.id || '').trim();
+  const normalizedBpm = Number.isFinite(bpm) && bpm > 0 ? Math.round(bpm) : null;
+
+  // Registre partagé avec dj-mix (mêmes mécaniques que dj-mix/lib/queueManager.js) :
+  // une piste déjà connue (artwork/bpm/cachePath renseignés côté dj-mix) apparaît
+  // identique ici, et inversement ce qu'on apprend ici lui profite.
+  const storeKey = getTrackCacheKey({ artist, name });
+  const shared = storeKey
+    ? trackStore.getOrCreate({ id: storeKey, name, artist, cachePath, bpm: normalizedBpm })
+    : null;
+
   return {
     id: rawId || (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`),
-    name,
-    artist,
-    cachePath,
-    bpm: Number.isFinite(bpm) && bpm > 0 ? Math.round(bpm) : null,
+    name: shared?.name || name,
+    artist: shared?.artist || artist,
+    cachePath: shared?.cachePath || cachePath,
+    bpm: Number.isFinite(shared?.bpm) && shared.bpm > 0 ? Math.round(shared.bpm) : normalizedBpm,
   };
 }
 
@@ -584,11 +624,8 @@ function wireSongForm() {
 }
 
 function initApiConfig() {
-  refs.apiUrl.value = stemClient.getApiUrl();
-  refs.btnSaveApi.addEventListener('click', () => {
-    stemClient.setApiUrl(refs.apiUrl.value);
-    updateStatus('URL du serveur sauvegardée.');
-  });
+  downloaderConfig.loadIntoForm();
+  downloaderConfig.setupEvents();
 }
 
 function startNewGameSession() {

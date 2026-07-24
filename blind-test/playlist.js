@@ -2,42 +2,20 @@
  * playlist.js — Gestion de la playlist de l'hôte
  *
  * Stockage : localStorage['blind-test-playlist'] = JSON.stringify(Song[])
- * Song : { id, videoId, title, artist, year: number|null, genre: string|null, alternatives: [] }
+ * Song : { id, title, artist, year: number|null, genre: string|null, alternatives: [], cachePath?, artUrl? }
+ *
+ * L'audio et les métadonnées passent par les mêmes mécaniques que dj-mix
+ * (recherche/téléchargement via le serveur downloader local, voir
+ * `./audioSource.js`) — il n'y a plus de `videoId` YouTube stocké sur un
+ * morceau. L'import de playlist YouTube (scraping, ci-dessous) reste
+ * disponible pour peupler rapidement une liste de titres/artistes, mais le
+ * `videoId` scrappé est jeté dès que le morceau est enrichi.
  */
 
-import { fuzzyMatch, normalize } from './fuzzy.js';
+import { searchTracks } from './audioSource.js';
 
 const STORAGE_KEY = 'blind-test-playlist';
 const SAVED_KEY   = 'blind-test-saved-playlists';
-
-/**
- * Extrait le videoId depuis une URL YouTube de différents formats :
- * - https://www.youtube.com/watch?v=XXXXXXXXXXX
- * - https://youtu.be/XXXXXXXXXXX
- * - https://www.youtube.com/embed/XXXXXXXXXXX
- * - https://youtube.com/shorts/XXXXXXXXXXX
- */
-export function extractVideoId(url) {
-  if (!url) return null;
-  try {
-    const u = new URL(url.trim());
-    if (u.hostname === 'youtu.be') {
-      return u.pathname.slice(1).split('?')[0] || null;
-    }
-    if (u.hostname.includes('youtube.com')) {
-      const v = u.searchParams.get('v');
-      if (v) return v;
-      // /embed/ ou /shorts/
-      const m = u.pathname.match(/\/(embed|shorts|v)\/([^/?&]+)/);
-      if (m) return m[2];
-    }
-  } catch {
-    // Si ce n'est pas une URL valide, tente le match direct (videoId brut)
-    const m = url.trim().match(/^[a-zA-Z0-9_-]{11}$/);
-    if (m) return url.trim();
-  }
-  return null;
-}
 
 export function loadPlaylist() {
   try {
@@ -56,18 +34,19 @@ export function savePlaylist(songs) {
   }
 }
 
-export function addSong(songs, { url, title, artist, year, genre, alternatives }) {
-  const videoId = extractVideoId(url);
-  if (!videoId) throw new Error('URL YouTube invalide');
+export function addSong(songs, { title, artist, year, genre, alternatives, cachePath, artUrl }) {
+  const cleanTitle = (title || '').trim();
+  if (!cleanTitle) throw new Error('Titre de chanson requis');
 
   const song = {
     id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-    videoId,
-    title: (title || 'Titre inconnu').trim(),
+    title: cleanTitle,
     artist: (artist || '?').trim(),
     year: year ?? null,
     genre: genre ?? null,
     alternatives: alternatives || [],
+    cachePath: cachePath || '',
+    artUrl: artUrl || '',
   };
   const updated = [...songs, song];
   savePlaylist(updated);
@@ -104,6 +83,11 @@ export function shufflePlaylist(songs) {
 }
 
 // ─── Import depuis une playlist YouTube (Innertube API) ──────────────────────
+//
+// Scraping pur (aucun serveur requis) pour peupler rapidement une liste de
+// candidats {videoId, title, artist} à partir d'une URL de playlist YouTube.
+// Le videoId n'est utilisé que pendant le scraping/l'enrichissement ci-dessous
+// et n'est jamais persisté sur un morceau de la playlist finale.
 
 /**
  * Extrait le playlistId depuis une URL YouTube playlist.
@@ -443,120 +427,53 @@ export async function fetchYouTubePlaylist(playlistUrl, onProgress) {
   return songs;
 }
 
+/** Clé d'identité d'un morceau (déduplication) : titre+artiste normalisés — plus de videoId. */
+function songIdentityKey(song) {
+  const title = String(song?.title || '').trim().toLowerCase();
+  const artist = String(song?.artist || '').trim().toLowerCase();
+  return `${title}::${artist}`;
+}
+
 /**
- * Ajoute les chansons importées dans la playlist existante (déduplique par videoId).
+ * Ajoute les chansons importées dans la playlist existante (déduplique par titre+artiste).
  */
 export function mergeSongs(existing, imported) {
-  const existingIds = new Set(existing.map(s => s.videoId));
+  const existingKeys = new Set(existing.map(songIdentityKey));
   const news = imported
-    .filter(s => !existingIds.has(s.videoId))
+    .filter(s => !existingKeys.has(songIdentityKey(s)))
     .map(s => ({
       id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-      videoId: s.videoId,
       title: s.title,
       artist: s.artist,
+      year: s.year ?? null,
+      genre: s.genre ?? null,
       alternatives: s.alternatives || [],
+      cachePath: s.cachePath || '',
+      artUrl: s.artUrl || '',
     }));
   const updated = [...existing, ...news];
   savePlaylist(updated);
   return { updated, added: news.length, skipped: imported.length - news.length };
 }
 
-// ─── Enrichissement via iTunes Search API ────────────────────────────────────
-
-const ITUNES_SEARCH    = 'https://itunes.apple.com/search';
-const ITUNES_CACHE_KEY = 'blind-test-itunes-cache';
-const ITUNES_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 1 semaine en ms
-
-function _cacheLoad() {
-  try { return JSON.parse(localStorage.getItem(ITUNES_CACHE_KEY) || '{}'); } catch { return {}; }
-}
-function _cacheSave(store) {
-  try { localStorage.setItem(ITUNES_CACHE_KEY, JSON.stringify(store)); } catch { /* quota */ }
-}
-function _cacheGet(key) {
-  const store = _cacheLoad();
-  const entry = store[key];
-  if (!entry) return undefined;
-  if (Date.now() - entry.ts > ITUNES_CACHE_TTL) return undefined; // expiré
-  return entry.data;
-}
-function _cacheSet(key, data) {
-  const store = _cacheLoad();
-  store[key] = { data, ts: Date.now() };
-  // Purge des entrées expirées à chaque écriture pour limiter la taille
-  const now = Date.now();
-  for (const k of Object.keys(store)) {
-    if (now - store[k].ts > ITUNES_CACHE_TTL) delete store[k];
-  }
-  _cacheSave(store);
-}
-
-/** Retourne les métadonnées complètes d'un videoId depuis le cache, ou null. */
-export function getVideoCache(videoId) {
-  const v = _cacheGet(`vid:${videoId}`);
-  return v !== undefined ? v : null;
-}
-/** Stocke les métadonnées complètes d'un videoId dans le cache. */
-export function setVideoCache(videoId, data) {
-  _cacheSet(`vid:${videoId}`, data);
-}
+// ─── Enrichissement via la recherche du serveur downloader (mêmes mécaniques que dj-mix) ─
 
 /**
- * fetch avec retry infini sur 429 (Too Many Requests).
- * Attend le délai indiqué par Retry-After (ou un backoff exponentiel) avant de réessayer.
- * @param {string} url
+ * Cherche les métadonnées canoniques d'un morceau via `/api/search` (iTunes/Deezer,
+ * côté serveur downloader local — voir audioSource.js). Retourne le meilleur résultat
+ * ou null si la recherche échoue/l'API est hors ligne.
+ * @param {string} title
+ * @param {string} [artist]
+ * @returns {Promise<{title, artist, year, genre, artUrl, cachePath}|null>}
  */
-async function itunesFetch(url) {
-  let delay = 1000;
-  while (delay<=60000) {
-    const resp = await fetch(url).catch((error) => {
-      console.error(`iTunes API fetch error for ${url}:`, error);
-      if (error.message.includes('429')) {
-        return { status: 429, headers: new Headers({ 'Retry-After': '1' }) };
-      }
-      if (error.message.includes('Failed to fetch')) {
-        return { status: 429, headers: new Headers({ 'Retry-After': '5' }) };
-      }
-    });
-    console.log(`iTunes API response: ${resp.status} for ${url}`);
-    if (resp.status !== 429) return resp;
-    const wait = delay;
-    await new Promise(r => setTimeout(r, wait));
-    delay *= 2;
-    console.log(`iTunes API rate limit hit, retrying in ${wait / 1000}s...`);
-  }
+export async function lookupSongMetadata(title, artist) {
+  const query = artist && artist !== '?' ? `${artist} ${title}` : title;
+  const results = await searchTracks(query, { limit: 5 }).catch(() => []);
+  return results[0] ?? null;
 }
 
 /**
- * Récupère le titre d'une vidéo YouTube via l'API oEmbed (sans clé API).
- * @param {string} videoId
- * @returns {Promise<string|null>}
- */
-export async function fetchVideoTitle(videoId) {
-  const url = `https://www.youtube.com/oembed?url=${encodeURIComponent('https://www.youtube.com/watch?v=' + videoId)}&format=json`;
-  let delay = 1000;
-  for (;;) {
-    try {
-      const resp = await fetch(url);
-      if (resp.status === 429) {
-        const retryAfter = parseInt(resp.headers.get('Retry-After') || '0', 10);
-        const wait = retryAfter > 0 ? retryAfter * 1000 : delay;
-        await new Promise(r => setTimeout(r, wait));
-        delay *= 2;
-        continue;
-      }
-      if (!resp.ok) return null;
-      const data = await resp.json();
-      return data.title ?? null;
-    } catch {
-      return null;
-    }
-  }
-}
-
-/**
- * Récupère jusqu'à 3 autres chansons du même artiste via iTunes Search,
+ * Récupère jusqu'à 3 autres chansons du même artiste via la recherche du serveur,
  * en excluant le titre de la chanson elle-même.
  * @param {string} artist
  * @param {string} excludeTitle
@@ -564,186 +481,21 @@ export async function fetchVideoTitle(videoId) {
  */
 export async function fetchArtistAlternatives(artist, excludeTitle) {
   if (!artist || artist === '?') return [];
-  const cacheKey = `alt:${artist.toLowerCase()}`;
-  const cached = _cacheGet(cacheKey);
-  if (cached !== undefined) {
-    // Applique le filtre excludeTitle sur le résultat mis en cache
-    const excl = excludeTitle.toLowerCase();
-    return cached.filter(r => r.title.toLowerCase() !== excl);
-  }
-  try {
-    const url = `${ITUNES_SEARCH}?term=${encodeURIComponent(artist)}&entity=song&limit=10&country=FR`;
-    const resp = await itunesFetch(url);
-    if (!resp.ok) return [];
-    const data = await resp.json();
-    // Stocke toutes les pistes (sans filtre) pour réutilisation
-    const all = (data.results || [])
-      .filter(r => r.trackName && r.artistName)
-      .slice(0, 10)
-      .map(r => ({ title: r.trackName, artist: r.artistName }));
-    _cacheSet(cacheKey, all);
-    const excl = excludeTitle.toLowerCase();
-    return all.filter(r => r.title.toLowerCase() !== excl).slice(0, 3);
-  } catch {
-    return [];
-  }
-}
-
-function cleanItunesSearchText(text) {
-  return String(text || '')
-    .replace(/\s*[\[(][^\])\n]*[\])\n]/g, '')
-    .replace(/\s*[-–|]\s*(Official|Audio|Lyrics?|Video|HD|HQ|4K|Live|Karaoke|Cover|Clip).*/i, '')
-    .replace(/\s+(feat\.?|ft\.?)\s+.+$/i, '')
-    .trim();
-}
-
-function splitYouTubeTitle(rawTitle) {
-  const cleaned = cleanItunesSearchText(rawTitle);
-  const separators = [' - ', ' – ', ' — ', ' | ', ': '];
-  for (const separator of separators) {
-    const parts = cleaned.split(separator);
-    if (parts.length >= 2) {
-      return {
-        artist: parts[0].trim(),
-        title: parts.slice(1).join(separator).trim(),
-      };
-    }
-  }
-  return { artist: '', title: cleaned };
-}
-
-function isItunesCandidateMatchingVideo(hit, youtubeTitle, expectedArtist = '') {
-  if (!hit?.trackName || !youtubeTitle) return false;
-
-  const normalizedVideoTitle = normalize(youtubeTitle);
-  const normalizedTrackName = normalize(hit.trackName);
-  const normalizedArtistName = normalize(hit.artistName || '');
-  const normalizedExpectedArtist = normalize(expectedArtist || '');
-
-  const titleMatches = fuzzyMatch(hit.trackName, youtubeTitle)
-    || fuzzyMatch(youtubeTitle, hit.trackName)
-    || normalizedVideoTitle.includes(normalizedTrackName);
-  if (!titleMatches) return false;
-
-  if (!normalizedExpectedArtist) return true;
-  return fuzzyMatch(hit.artistName, expectedArtist)
-    || normalizedVideoTitle.includes(normalizedArtistName)
-    || normalizedArtistName.includes(normalizedExpectedArtist)
-    || normalizedExpectedArtist.includes(normalizedArtistName);
-}
-
-function pickBestItunesResult(results, youtubeTitle, expectedArtist = '') {
-  const normalizedExpectedArtist = normalize(expectedArtist || '');
-  const candidates = (results || []).filter(hit => isItunesCandidateMatchingVideo(hit, youtubeTitle, expectedArtist));
-  if (!candidates.length) return null;
-  if (!normalizedExpectedArtist) return candidates[0];
-
-  return candidates.sort((a, b) => {
-    const aExact = normalize(a.artistName || '') === normalizedExpectedArtist ? 1 : 0;
-    const bExact = normalize(b.artistName || '') === normalizedExpectedArtist ? 1 : 0;
-    return bExact - aExact;
-  })[0];
+  const results = await searchTracks(artist, { limit: 10 }).catch(() => []);
+  const excl = String(excludeTitle || '').toLowerCase();
+  return results
+    .filter(r => r.title.toLowerCase() !== excl)
+    .slice(0, 3)
+    .map(r => ({ title: r.title, artist: r.artist }));
 }
 
 /**
- * Cherche les métadonnées canoniques d'une chanson via l'API iTunes Search.
- * Retourne { title, artist } si un résultat est trouvé, null sinon.
- * @param {string} title — titre brut (peut être le titre de la vidéo YouTube)
- * @param {string} [artist] — artiste brut (facultatif)
- * @returns {Promise<{title: string, artist: string}|null>}
- */
-export async function lookupSongMetadata(title, artist) {
-  const parsed = splitYouTubeTitle(title);
-  const cleanTitle = cleanItunesSearchText(parsed.title || title);
-  // Supprime "VEVO", "- Topic", etc. dans l'artiste
-  const cleanArtist = (artist && artist !== '?'
-    ? artist
-    : parsed.artist).replace(/\s*(VEVO|-\s*Topic|Official)$/i, '').trim();
-
-  const term = cleanArtist ? `${cleanArtist} ${cleanTitle}` : cleanTitle;
-  if (!term) return null;
-
-  const cacheKey = `meta:${term.toLowerCase()}`;
-  const cached = _cacheGet(cacheKey);
-  if (cached !== undefined) return cached; // null signifie "pas de résultat", c'est valide
-
-  // Vérifie le cache artiste avant tout appel réseau
-  if (cleanArtist) {
-    const artistKey = `artist-songs:${cleanArtist.toLowerCase()}`;
-    const artistSongs = _cacheGet(artistKey);
-    if (artistSongs) {
-      const normalizedTitle = cleanTitle.toLowerCase();
-      const match = artistSongs.find(s => s.title.toLowerCase() === normalizedTitle) ?? null;
-      if (match) {
-        _cacheSet(cacheKey, match);
-        return match;
-      }
-      // L'artiste est connu mais ce titre n'y figure pas → appel spécifique ci-dessous
-    }
-  }
-
-  try {
-    const searchTerms = [
-      cleanArtist ? `${cleanArtist} ${cleanTitle}` : '',
-      cleanTitle,
-      cleanArtist ? `${cleanTitle} ${cleanArtist}` : '',
-      cleanItunesSearchText(title),
-    ].filter(Boolean).filter((value, index, arr) => arr.indexOf(value) === index);
-
-    let hit = null;
-    let data = null;
-    for (const searchTerm of searchTerms) {
-      const url = `${ITUNES_SEARCH}?term=${encodeURIComponent(searchTerm)}&entity=song&limit=25&country=FR`;
-      const resp = await itunesFetch(url);
-      if (!resp?.ok) continue;
-      data = await resp.json();
-      hit = pickBestItunesResult(data.results, cleanTitle, cleanArtist);
-      if (hit) break;
-    }
-
-    if (!hit || !data) { _cacheSet(cacheKey, null); return null; }
-
-    const year = hit.releaseDate ? parseInt(hit.releaseDate.slice(0, 4), 10) : null;
-    const result = {
-      title: hit.trackName,
-      artist: hit.artistName,
-      year: Number.isFinite(year) ? year : null,
-      genre: hit.primaryGenreName ?? null,
-    };
-    _cacheSet(cacheKey, result);
-
-    // Alimente le cache artiste avec tous les résultats retournés
-    if (cleanArtist) {
-      const artistKey = `artist-songs:${cleanArtist.toLowerCase()}`;
-      const existing = _cacheGet(artistKey) || [];
-      const titleSet = new Set(existing.map(s => s.title.toLowerCase()));
-      for (const r of (data.results || [])) {
-        if (!r.trackName || !r.artistName) continue;
-        if (titleSet.has(r.trackName.toLowerCase())) continue;
-        const y = r.releaseDate ? parseInt(r.releaseDate.slice(0, 4), 10) : null;
-        existing.push({
-          title: r.trackName,
-          artist: r.artistName,
-          year: Number.isFinite(y) ? y : null,
-          genre: r.primaryGenreName ?? null,
-        });
-        titleSet.add(r.trackName.toLowerCase());
-      }
-      _cacheSet(artistKey, existing);
-    }
-
-    return result;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Enrichit une liste de chansons avec les métadonnées iTunes (par lots de 5).
- * Pour chaque chanson, récupère aussi jusqu'à 3 alternatives du même artiste.
+ * Enrichit une liste de chansons {videoId, title, artist} (issues du scraping YouTube)
+ * avec les métadonnées de la recherche serveur (par lots de 5). Le videoId est jeté :
+ * il ne sert qu'au scraping, jamais stocké sur le morceau final.
  * @param {Array<{videoId, title, artist}>} songs
  * @param {Function} [onProgress] — callback(current, total)
- * @returns {Promise<Array<{videoId, title, artist, alternatives}>>}
+ * @returns {Promise<Array<{title, artist, year, genre, artUrl, alternatives}>>}
  */
 export async function enrichWithMusicMetadata(songs, onProgress) {
   const BATCH = 5;
@@ -754,31 +506,23 @@ export async function enrichWithMusicMetadata(songs, onProgress) {
     const batch = songs.slice(i, i + BATCH);
     const enriched = await Promise.all(
       batch.map(async s => {
-        // Court-circuit : videoId déjà enrichi
-        const vidCached = getVideoCache(s.videoId);
-        if (vidCached) return { fromVideoCache: true, ...vidCached };
-
-        let meta = await lookupSongMetadata(s.title, s.artist).catch(() => null);
-        if (meta && !isItunesCandidateMatchingVideo({ trackName: meta.title, artistName: meta.artist }, s.title, s.artist)) {
-          meta = await lookupSongMetadata(s.title, null).catch(() => null);
-        }
-        const resolvedTitle = meta ? meta.title : s.title;
-        const resolvedArtist = meta ? meta.artist : s.artist;
+        const meta = await lookupSongMetadata(s.title, s.artist).catch(() => null);
+        const resolvedTitle = meta?.title || s.title;
+        const resolvedArtist = meta?.artist || s.artist;
         const alternatives = await fetchArtistAlternatives(resolvedArtist, resolvedTitle).catch(() => []);
-        const enrichedData = {
+        return {
           title: resolvedTitle,
           artist: resolvedArtist,
           year: meta?.year ?? s.year ?? null,
           genre: meta?.genre ?? s.genre ?? null,
+          artUrl: meta?.artUrl || '',
           alternatives,
         };
-        setVideoCache(s.videoId, enrichedData);
-        return enrichedData;
       })
     );
     for (let j = 0; j < batch.length; j++) {
-      const { fromVideoCache: _, ...enrichedData } = enriched[j];
-      results[i + j] = { ...songs[i + j], ...enrichedData };
+      const { videoId: _discard, ...rest } = { ...songs[i + j], ...enriched[j] };
+      results[i + j] = rest;
       onProgress?.(++completed, songs.length);
     }
     if (i + BATCH < songs.length) await new Promise(r => setTimeout(r, 250));
@@ -836,11 +580,15 @@ export function generateFourChoices(currentSong, allSongs) {
 }
 
 // ─── Export / Import JSON ─────────────────────────────────────────────────────
+//
+// Le format volontairement PAS de cachePath/artUrl : ces champs sont propres
+// au serveur downloader d'un hôte donné. Une playlist exportée/importée est
+// systématiquement ré-résolue (recherche + téléchargement paresseux) sur le
+// serveur de l'hôte qui l'importe.
 
 export function exportPlaylistJSON(songs) {
   const normalized = songs.map(s => ({
     id: s.id,
-    videoId: s.videoId,
     title: s.title,
     artist: s.artist,
     year: s.year ?? null,
@@ -855,15 +603,16 @@ export function importPlaylistJSON(jsonString) {
   try { parsed = JSON.parse(jsonString); } catch { throw new Error('Fichier JSON invalide.'); }
   if (!Array.isArray(parsed)) throw new Error('Le JSON doit contenir un tableau de chansons.');
   return parsed
-    .filter(s => s && typeof s.videoId === 'string' && s.videoId.length > 0)
+    .filter(s => s && typeof s.title === 'string' && s.title.trim().length > 0)
     .map(s => ({
       id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-      videoId: String(s.videoId).trim(),
-      title: (s.title || 'Titre inconnu').trim(),
-      artist: (s.artist || '?').trim(),
+      title: String(s.title).trim(),
+      artist: (s.artist || '?').toString().trim(),
       year: Number.isFinite(Number(s.year)) && Number(s.year) > 0 ? Number(s.year) : null,
       genre: s.genre ? String(s.genre).trim() : null,
       alternatives: Array.isArray(s.alternatives) ? s.alternatives : [],
+      cachePath: '',
+      artUrl: '',
     }));
 }
 
@@ -874,53 +623,53 @@ export const BUILTIN_PLAYLISTS = [
     id: 'builtin-intl',
     name: '🌍 International',
     songs: [
-      { videoId: 'dQw4w9WgXcQ', title: 'Never Gonna Give You Up', artist: 'Rick Astley', year: 1987, genre: 'Pop' },
-      { videoId: 'hTWKbfoikeg', title: 'Smells Like Teen Spirit', artist: 'Nirvana', year: 1991, genre: 'Rock' },
-      { videoId: 'rYEDA3JcQqw', title: 'Rolling in the Deep', artist: 'Adele', year: 2010, genre: 'Pop' },
-      { videoId: 'OPf0YbXqDm0', title: 'Uptown Funk', artist: 'Mark Ronson ft. Bruno Mars', year: 2014, genre: 'Funk' },
-      { videoId: 'CevxZvSJLk8', title: 'Roar', artist: 'Katy Perry', year: 2013, genre: 'Pop' },
-      { videoId: '09R8_2nJtjg', title: 'Sugar', artist: 'Maroon 5', year: 2014, genre: 'Pop' },
-      { videoId: 'SlPhMPnQ58k', title: 'Shape of You', artist: 'Ed Sheeran', year: 2017, genre: 'Pop' },
-      { videoId: 'kXYiU_JCYtU', title: 'Numb', artist: 'Linkin Park', year: 2003, genre: 'Rock' },
-      { videoId: 'qeMFqkcPYcg', title: "Don't Stop Me Now", artist: 'Queen', year: 1978, genre: 'Rock' },
-      { videoId: 'fJ9rUzIMcZQ', title: 'Bohemian Rhapsody', artist: 'Queen', year: 1975, genre: 'Rock' },
-      { videoId: '_Yhyp-_hX2s', title: 'Happy', artist: 'Pharrell Williams', year: 2013, genre: 'Pop' },
-      { videoId: 'UrIiLvg58SY', title: 'Moves Like Jagger', artist: 'Maroon 5', year: 2011, genre: 'Pop' },
-      { videoId: 'PT2_F-1esPk', title: 'Umbrella', artist: 'Rihanna', year: 2007, genre: 'Pop' },
-      { videoId: '7PCkvCPvDXk', title: 'Titanium', artist: 'David Guetta ft. Sia', year: 2011, genre: 'Electronic' },
-      { videoId: 'KUmZp8pR1uc', title: 'Blinding Lights', artist: 'The Weeknd', year: 2019, genre: 'Synth-pop' },
-      { videoId: 'H7HmzwI67ec', title: 'Sweet Child O\u2019 Mine', artist: "Guns N' Roses", year: 1987, genre: 'Rock' },
-      { videoId: 'FTQbiNvZqaY', title: "I Will Always Love You", artist: 'Whitney Houston', year: 1992, genre: 'Pop' },
-      { videoId: 'RBumgq5yVrA', title: 'Somebody That I Used to Know', artist: 'Gotye ft. Kimbra', year: 2011, genre: 'Indie Pop' },
-      { videoId: '2Vv-BfVoq4g', title: 'Perfect', artist: 'Ed Sheeran', year: 2017, genre: 'Pop' },
-      { videoId: 'YQHsXMglC9A', title: 'Hello', artist: 'Adele', year: 2015, genre: 'Pop' },
-    ].map(s => ({ ...s, id: `builtin-intl-${s.videoId}`, alternatives: [] })),
+      { title: 'Never Gonna Give You Up', artist: 'Rick Astley', year: 1987, genre: 'Pop' },
+      { title: 'Smells Like Teen Spirit', artist: 'Nirvana', year: 1991, genre: 'Rock' },
+      { title: 'Rolling in the Deep', artist: 'Adele', year: 2010, genre: 'Pop' },
+      { title: 'Uptown Funk', artist: 'Mark Ronson ft. Bruno Mars', year: 2014, genre: 'Funk' },
+      { title: 'Roar', artist: 'Katy Perry', year: 2013, genre: 'Pop' },
+      { title: 'Sugar', artist: 'Maroon 5', year: 2014, genre: 'Pop' },
+      { title: 'Shape of You', artist: 'Ed Sheeran', year: 2017, genre: 'Pop' },
+      { title: 'Numb', artist: 'Linkin Park', year: 2003, genre: 'Rock' },
+      { title: "Don't Stop Me Now", artist: 'Queen', year: 1978, genre: 'Rock' },
+      { title: 'Bohemian Rhapsody', artist: 'Queen', year: 1975, genre: 'Rock' },
+      { title: 'Happy', artist: 'Pharrell Williams', year: 2013, genre: 'Pop' },
+      { title: 'Moves Like Jagger', artist: 'Maroon 5', year: 2011, genre: 'Pop' },
+      { title: 'Umbrella', artist: 'Rihanna', year: 2007, genre: 'Pop' },
+      { title: 'Titanium', artist: 'David Guetta ft. Sia', year: 2011, genre: 'Electronic' },
+      { title: 'Blinding Lights', artist: 'The Weeknd', year: 2019, genre: 'Synth-pop' },
+      { title: 'Sweet Child O’ Mine', artist: "Guns N' Roses", year: 1987, genre: 'Rock' },
+      { title: "I Will Always Love You", artist: 'Whitney Houston', year: 1992, genre: 'Pop' },
+      { title: 'Somebody That I Used to Know', artist: 'Gotye ft. Kimbra', year: 2011, genre: 'Indie Pop' },
+      { title: 'Perfect', artist: 'Ed Sheeran', year: 2017, genre: 'Pop' },
+      { title: 'Hello', artist: 'Adele', year: 2015, genre: 'Pop' },
+    ].map((s, i) => ({ ...s, id: `builtin-intl-${i}`, alternatives: [], cachePath: '', artUrl: '' })),
   },
   {
     id: 'builtin-fr',
     name: '🇫🇷 Variétés françaises',
     songs: [
-      { videoId: 'NuF-dO90Peg', title: 'La Bohème', artist: 'Charles Aznavour', year: 1965, genre: 'Chanson française' },
-      { videoId: 'KId6eABLMsc', title: 'Non, je ne regrette rien', artist: 'Édith Piaf', year: 1960, genre: 'Chanson française' },
-      { videoId: 'oBpNiAMgqsI', title: 'Ces soirées-là', artist: 'Yannick', year: 2000, genre: 'Pop' },
-      { videoId: 'p43A5NGbDXE', title: 'L\u2019envie d\u2019aimer', artist: 'Les Enfoirés / Daniel Lévi', year: 2001, genre: 'Pop' },
-      { videoId: 'UqrXNGmqaE8', title: 'Le Sud', artist: 'Nino Ferrer', year: 1975, genre: 'Chanson française' },
-      { videoId: 'sQRcBh6SBkQ', title: 'Bella Vita', artist: 'Keen\u2019V', year: 2012, genre: 'Pop' },
-      { videoId: 'xIaPlbZqFAA', title: "Tombé pour elle", artist: 'Francis Cabrel', year: 1987, genre: 'Chanson française' },
-      { videoId: '3q73hxSWbWE', title: 'Je l\'aime à mourir', artist: 'Francis Cabrel', year: 1979, genre: 'Chanson française' },
-      { videoId: 'nQSD6KbexDo', title: 'Alexandrie Alexandra', artist: 'Claude François', year: 1977, genre: 'Chanson française' },
-      { videoId: 'HwZkSiKcJV8', title: 'Les Champs-Élysées', artist: 'Joe Dassin', year: 1969, genre: 'Chanson française' },
-      { videoId: '0yAjRRW3JGY', title: 'Comment te dire adieu', artist: 'Françoise Hardy', year: 1968, genre: 'Chanson française' },
-      { videoId: 'n3bGDFtPsFw', title: 'Et si tu n\'existais pas', artist: 'Joe Dassin', year: 1975, genre: 'Chanson française' },
-      { videoId: 'bEjVVFWoRhM', title: 'Partir un jour', artist: 'Indochine', year: 1987, genre: 'New Wave' },
-      { videoId: 'oBWL6eLNmIM', title: 'Lemon Incest', artist: 'Serge Gainsbourg & Charlotte Gainsbourg', year: 1984, genre: 'Chanson française' },
-      { videoId: 'VpmTg3NJu1I', title: 'Le Pénitencier', artist: 'Johnny Hallyday', year: 1964, genre: 'Rock' },
-      { videoId: 'MrCPMsIrnSQ', title: "L'Aziza", artist: 'Daniel Balavoine', year: 1985, genre: 'Pop' },
-      { videoId: 'wMzFHX4HhGg', title: "Il venait d'avoir 18 ans", artist: 'Dalida', year: 1973, genre: 'Chanson française' },
-      { videoId: 'nxMl8bOLUps', title: 'Voyage voyage', artist: 'Desireless', year: 1986, genre: 'Synthpop' },
-      { videoId: 'ZmVMzLqt08w', title: 'Foule sentimentale', artist: 'Alain Souchon', year: 1993, genre: 'Chanson française' },
-      { videoId: 'nRCHzCVMFH8', title: "Quelque chose de Tennessee", artist: 'Johnny Hallyday', year: 1985, genre: 'Rock' },
-    ].map(s => ({ ...s, id: `builtin-fr-${s.videoId}`, alternatives: [] })),
+      { title: 'La Bohème', artist: 'Charles Aznavour', year: 1965, genre: 'Chanson française' },
+      { title: 'Non, je ne regrette rien', artist: 'Édith Piaf', year: 1960, genre: 'Chanson française' },
+      { title: 'Ces soirées-là', artist: 'Yannick', year: 2000, genre: 'Pop' },
+      { title: 'L’envie d’aimer', artist: 'Les Enfoirés / Daniel Lévi', year: 2001, genre: 'Pop' },
+      { title: 'Le Sud', artist: 'Nino Ferrer', year: 1975, genre: 'Chanson française' },
+      { title: 'Bella Vita', artist: 'Keen’V', year: 2012, genre: 'Pop' },
+      { title: "Tombé pour elle", artist: 'Francis Cabrel', year: 1987, genre: 'Chanson française' },
+      { title: 'Je l\'aime à mourir', artist: 'Francis Cabrel', year: 1979, genre: 'Chanson française' },
+      { title: 'Alexandrie Alexandra', artist: 'Claude François', year: 1977, genre: 'Chanson française' },
+      { title: 'Les Champs-Élysées', artist: 'Joe Dassin', year: 1969, genre: 'Chanson française' },
+      { title: 'Comment te dire adieu', artist: 'Françoise Hardy', year: 1968, genre: 'Chanson française' },
+      { title: 'Et si tu n\'existais pas', artist: 'Joe Dassin', year: 1975, genre: 'Chanson française' },
+      { title: 'Partir un jour', artist: 'Indochine', year: 1987, genre: 'New Wave' },
+      { title: 'Lemon Incest', artist: 'Serge Gainsbourg & Charlotte Gainsbourg', year: 1984, genre: 'Chanson française' },
+      { title: 'Le Pénitencier', artist: 'Johnny Hallyday', year: 1964, genre: 'Rock' },
+      { title: "L'Aziza", artist: 'Daniel Balavoine', year: 1985, genre: 'Pop' },
+      { title: "Il venait d'avoir 18 ans", artist: 'Dalida', year: 1973, genre: 'Chanson française' },
+      { title: 'Voyage voyage', artist: 'Desireless', year: 1986, genre: 'Synthpop' },
+      { title: 'Foule sentimentale', artist: 'Alain Souchon', year: 1993, genre: 'Chanson française' },
+      { title: "Quelque chose de Tennessee", artist: 'Johnny Hallyday', year: 1985, genre: 'Rock' },
+    ].map((s, i) => ({ ...s, id: `builtin-fr-${i}`, alternatives: [], cachePath: '', artUrl: '' })),
   },
 ];
 

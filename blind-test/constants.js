@@ -10,8 +10,8 @@ export const MSG = {
 
   // Host → All (broadcast)
   PLAYER_LIST: 'PLAYER_LIST',     // { players[] }
-  GAME_START: 'GAME_START',       // { mode, playlist[], jokerConfig }
-  PLAY_SONG: 'PLAY_SONG',         // { videoId, roundIndex, startAt }
+  GAME_START: 'GAME_START',       // { mode, playlist[], answerFormat, shuffled[], downloaderConfig? }
+  PLAY_SONG: 'PLAY_SONG',         // { cachePath, startAt, choices?, remainingMs }
   STOP_MUSIC: 'STOP_MUSIC',
   RESUME_MUSIC: 'RESUME_MUSIC',
   ANSWER_STEP: 'ANSWER_STEP',   // { step: 'artist'|'title', playerId, artistCorrect? }
@@ -20,7 +20,7 @@ export const MSG = {
   WRONG_CHOICE: 'WRONG_CHOICE',   // { playerId, choice, scores, eliminatedChoices }
   SCORES_UPDATE: 'SCORES_UPDATE', // { scores: { [id]: number } }
   JOKER_EFFECT: 'JOKER_EFFECT',   // { type, fromId, targetId }
-  ROUND_END: 'ROUND_END',         // { videoId, title, artist }
+  ROUND_END: 'ROUND_END',         // { title, artist, artUrl? }
   GAME_OVER: 'GAME_OVER',         // { finalScores[] }
   PING: 'PING',
   PONG: 'PONG',
@@ -109,7 +109,7 @@ export const TIMER = {
   PLAY_DURATION: 30000,  // 30s de lecture max avant skip
   ANSWER_DURATION: 15000, // 15s pour répondre après buzz
   ROUND_END_DELAY: 3000, // 3s d'affichage de la réponse avant round suivant
-  SYNC_OFFSET: 600,      // Décalage estimé de latence pour sync YouTube (ms)
+  SYNC_OFFSET: 600,      // Décalage estimé de latence réseau/streaming pour la sync audio (ms)
   COUNTDOWN: 3,          // 3-2-1 avant lecture
   JOKER_WINDOW: 5,       // Secondes pour décider d'un joker avant la chanson
 };

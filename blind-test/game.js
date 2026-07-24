@@ -15,11 +15,12 @@ import { MSG, PHASE, MODE, SCORE, TIMER, JOKER, GAME_SONGS, ANSWER_FORMAT } from
 import { validateArtist, validateTitle, validateAnswer, validateBothAnswer } from './fuzzy.js';
 import { shufflePlaylist, generateFourChoices } from './playlist.js';
 import { applyJoker, computeCorrectScore, computeWrongScore, initialJokers } from './joker.js';
+import { getSongKey, ensureDownloaded } from './audioSource.js';
 
 export class GameEngine {
   /**
    * @param {import('./peer.js').BlindTestPeer} peer
-   * @param {import('./youtube.js').YouTubePlayer} yt
+   * @param {import('./audioSource.js').LocalAudioPlayer} yt
    * @param {Function} onStateChange — appelé à chaque changement de phase/scores
    */
   constructor(peer, yt, onStateChange) {
@@ -49,18 +50,19 @@ export class GameEngine {
     this._roundEndTimer = null;
     this._jokerWindowInterval = null;
     this._playSongStartedAt = null; // timestamp Date.now() quand la chanson démarre réellement
+    this._resolvedCachePath = null; // cachePath du morceau courant, connu dès que le téléchargement aboutit
 
     // En mode relay : avance automatiquement au round suivant sans clic "Suivant"
     this.autoAdvance = false;
 
     // Archive des données joueurs en cas de déconnexion temporaire
     this._playerArchive = {};
-    // Caches d'instances audio (transmis aux clients qui rejoignent)
-    this._instanceCaches = {};
+    // Config API downloader diffusée au GAME_START (transmise aux clients qui rejoignent)
+    this._downloaderConfig = null;
     // Joueur ayant correctement répondu sur l'artiste (attend le titre)
     this._artistScoredPlayer = null;
 
-    // Si une vidéo est indisponible à l'embarquement, on passe au round suivant
+    // Si un morceau est indisponible (téléchargement/streaming en échec), on passe au round suivant
     this.yt.addEventListener('error', (evt) => {
       if (this.state.phase === PHASE.PLAYING || this.state.phase === PHASE.COUNTDOWN) {
         const reason = evt?.detail?.reason || 'Lecture audio impossible sur cette chanson';
@@ -159,8 +161,8 @@ export class GameEngine {
 
   // ─── Démarrage ───────────────────────────────────────────────────────────
 
-  startGame(mode, playlist, { pipedInstances = [], invidiousInstances = [], preferredAudioSource = null, answerFormat = ANSWER_FORMAT.ARTIST_THEN_TITLE } = {}) {
-    this._instanceCaches = { pipedInstances, invidiousInstances, preferredAudioSource };
+  startGame(mode, playlist, { downloaderConfig = null, answerFormat = ANSWER_FORMAT.ARTIST_THEN_TITLE } = {}) {
+    this._downloaderConfig = downloaderConfig;
     this.state.mode = mode;
     this.state.answerFormat = answerFormat;
     this.state.playlist = playlist;
@@ -171,9 +173,7 @@ export class GameEngine {
     this.peer.broadcast({
       type: MSG.GAME_START, mode, playlist, answerFormat,
       shuffled: this.state.shuffled,
-      ...(pipedInstances.length     && { pipedInstances }),
-      ...(invidiousInstances.length && { invidiousInstances }),
-      ...(preferredAudioSource && { preferredAudioSource }),
+      ...(downloaderConfig && { downloaderConfig }),
     });
     this._nextRound();
   }
@@ -194,26 +194,44 @@ export class GameEngine {
     }
 
     this.state.currentSong = this.state.shuffled[this.state.currentRound];
+    // cachePath résolu paresseusement par _prefetchCurrentSong ; diffusé aux
+    // clients dès qu'il est connu pour qu'ils puissent pré-charger l'audio
+    // avant PLAY_SONG (le fallback artist::name n'est pas streamable en soi).
+    this._resolvedCachePath = null;
 
     // Fenêtre joker : 5s pour décider avant que la chanson commence
     this.state.phase = PHASE.JOKER_WINDOW;
     let windowCount = TIMER.JOKER_WINDOW;
     this.state.jokerWindowRemaining = windowCount;
-    this.yt.prefetch(this.state.currentSong.videoId).catch(() => {});
+    this._prefetchCurrentSong();
     this.onStateChange({ ...this.state });
-    this.peer.broadcast({ type: MSG.JOKER_WINDOW, remainingS: windowCount, videoId: this.state.currentSong.videoId });
+    this.peer.broadcast({ type: MSG.JOKER_WINDOW, remainingS: windowCount });
 
     this._jokerWindowInterval = setInterval(() => {
       windowCount--;
       this.state.jokerWindowRemaining = windowCount;
       this.onStateChange({ ...this.state });
-      this.peer.broadcast({ type: MSG.JOKER_WINDOW, remainingS: windowCount, videoId: this.state.currentSong.videoId });
+      this.peer.broadcast({
+        type: MSG.JOKER_WINDOW, remainingS: windowCount,
+        ...(this._resolvedCachePath && { cachePath: this._resolvedCachePath }),
+      });
       if (windowCount <= 0) {
         clearInterval(this._jokerWindowInterval);
         this._jokerWindowInterval = null;
         this._startCountdown();
       }
     }, 1000);
+  }
+
+  /** Télécharge (si besoin) puis pré-charge le morceau courant — jamais bloquant, erreurs avalées ici. */
+  _prefetchCurrentSong() {
+    const song = this.state.currentSong;
+    ensureDownloaded(song)
+      .catch(() => {})
+      .finally(() => {
+        this._resolvedCachePath = getSongKey(song);
+        this.yt.prefetch(this._resolvedCachePath).catch(() => {});
+      });
   }
 
   _startCountdown() {
@@ -225,14 +243,20 @@ export class GameEngine {
     }
 
     let count = TIMER.COUNTDOWN;
-    this.yt.prefetch(this.state.currentSong.videoId).catch(() => {});
+    this._prefetchCurrentSong();
     this.onStateChange({ ...this.state, countdown: count });
-    this.peer.broadcast({ type: 'COUNTDOWN', count, videoId: this.state.currentSong.videoId });
+    this.peer.broadcast({
+      type: 'COUNTDOWN', count,
+      ...(this._resolvedCachePath && { cachePath: this._resolvedCachePath }),
+    });
 
     const tick = setInterval(() => {
       count--;
       this.onStateChange({ ...this.state, countdown: count });
-      this.peer.broadcast({ type: 'COUNTDOWN', count, videoId: this.state.currentSong.videoId });
+      this.peer.broadcast({
+        type: 'COUNTDOWN', count,
+        ...(this._resolvedCachePath && { cachePath: this._resolvedCachePath }),
+      });
       if (count <= 0) {
         clearInterval(tick);
         this._playSong();
@@ -246,7 +270,7 @@ export class GameEngine {
     this.state.playbackError = null;
 
     // L'host joue localement
-    this.yt.load(song.videoId, 'middle');
+    this.yt.load(getSongKey(song), 'middle');
 
     // Les clients reçoivent l'instruction de jouer (avec offset de sync)
     const startAt = 'middle';
@@ -255,7 +279,7 @@ export class GameEngine {
     setTimeout(() => {
       this._playSongStartedAt = Date.now();
       this.peer.broadcast({
-        type: MSG.PLAY_SONG, videoId: song.videoId, startAt, choices,
+        type: MSG.PLAY_SONG, cachePath: getSongKey(song), startAt, choices,
         remainingMs: TIMER.PLAY_DURATION,
       });
       this.onStateChange({ ...this.state });
@@ -275,9 +299,9 @@ export class GameEngine {
     const song = this.state.currentSong;
     this.peer.broadcast({
       type: MSG.ROUND_END,
-      videoId: song.videoId,
       title: song.title,
       artist: song.artist,
+      artUrl: song.artUrl || '',
       ...(this.state.playbackError && { playbackError: this.state.playbackError }),
     });
     this.onStateChange({ ...this.state });
@@ -358,7 +382,7 @@ export class GameEngine {
         return;
       }
       if (endRound) {
-        this.peer.broadcast({ type: MSG.ROUND_END, videoId: song.videoId, title: song.title, artist: song.artist });
+        this.peer.broadcast({ type: MSG.ROUND_END, title: song.title, artist: song.artist, artUrl: song.artUrl || '' });
         this.state.phase = PHASE.ROUND_END;
         this.onStateChange({ ...this.state });
         this._afterRoundEnd();
@@ -539,7 +563,7 @@ export class GameEngine {
       this.state._lastResult = { correct: true, answer: choiceText, playerId: peerId };
       this.onStateChange({ ...this.state });
       setTimeout(() => {
-        this.peer.broadcast({ type: MSG.ROUND_END, videoId: song.videoId, title: song.title, artist: song.artist });
+        this.peer.broadcast({ type: MSG.ROUND_END, title: song.title, artist: song.artist, artUrl: song.artUrl || '' });
         this.state.phase = PHASE.ROUND_END;
         this.onStateChange({ ...this.state });
         this._afterRoundEnd();
@@ -668,15 +692,12 @@ export class GameEngine {
 
   /** Synchronise l'état complet de la partie vers un joueur spécifique (reconnexion / arrivée tardive) */
   _sendGameStateTo(peerId) {
-    const { pipedInstances = [], invidiousInstances = [], preferredAudioSource = null } = this._instanceCaches;
     this.peer.sendTo(peerId, {
       type: MSG.GAME_START,
       mode: this.state.mode,
       answerFormat: this.state.answerFormat,
       playlist: this.state.playlist,
-      ...(pipedInstances.length     && { pipedInstances }),
-      ...(invidiousInstances.length && { invidiousInstances }),
-      ...(preferredAudioSource && { preferredAudioSource }),
+      ...(this._downloaderConfig && { downloaderConfig: this._downloaderConfig }),
     });
     const phase = this.state.phase;
     const song  = this.state.currentSong;
@@ -692,7 +713,7 @@ export class GameEngine {
       const remainingMs = Math.max(0, TIMER.PLAY_DURATION - elapsed);
       this.peer.sendTo(peerId, {
         type: MSG.PLAY_SONG,
-        videoId: song.videoId,
+        cachePath: getSongKey(song),
         startAt: currentTime,
         remainingMs,
         choices: this.state.choices,
@@ -707,9 +728,9 @@ export class GameEngine {
     } else if (phase === PHASE.ANSWER_RESULT || phase === PHASE.ROUND_END) {
       this.peer.sendTo(peerId, {
         type: MSG.ROUND_END,
-        videoId: song.videoId,
         title: song.title,
         artist: song.artist,
+        artUrl: song.artUrl || '',
         ...(this.state.playbackError && { playbackError: this.state.playbackError }),
       });
     }

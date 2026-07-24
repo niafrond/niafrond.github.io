@@ -40,6 +40,28 @@
       <div id="answer-format-selector"></div>
     </div>
 
+    <!-- Config serveur API (mêmes mécaniques que dj-mix) -->
+    <div class="card mb-16">
+      <div class="card-title">🔌 Serveur API (recherche + téléchargement)</div>
+      <div class="form-group" style="margin-bottom:8px;">
+        <label for="downloader-api-url-input">URL de l'API</label>
+        <input id="downloader-api-url-input" class="input" type="url" placeholder="http://vision:3000">
+      </div>
+      <div class="form-group" style="margin-bottom:8px;">
+        <label for="downloader-api-token-input">Token (optionnel)</label>
+        <input id="downloader-api-token-input" class="input" type="password" placeholder="Token API">
+      </div>
+      <div class="form-group" style="margin-bottom:8px;">
+        <label for="downloader-cdn-url-input">URL du CDN (optionnel, déduite de l'API sinon)</label>
+        <input id="downloader-cdn-url-input" class="input" type="url" placeholder="http://vision:3002">
+      </div>
+      <div class="form-row" style="gap:8px;">
+        <button id="downloader-api-save-btn" type="button" class="btn btn-primary">💾 Sauver</button>
+        <button id="downloader-api-test-btn" type="button" class="btn">🔍 Tester</button>
+      </div>
+      <p id="downloader-api-status" style="font-size:0.83rem; min-height:18px; margin-top:6px; color:var(--text-muted);"></p>
+    </div>
+
     <!-- Playlists sauvegardées -->
     <div class="card mb-16">
       <div class="card-title">💾 Playlists sauvegardées</div>
@@ -51,12 +73,12 @@
 
     <!-- Playlist -->
     <div class="card mb-16">
-      <div class="card-title">🎶 Playlist YouTube <span id="playlist-count" style="color:var(--text-muted);font-weight:400;font-size:0.85rem;"></span></div>
+      <div class="card-title">🎶 Playlist <span id="playlist-count" style="color:var(--text-muted);font-weight:400;font-size:0.85rem;"></span></div>
 
-      <!-- Import depuis une playlist YouTube -->
+      <!-- Import depuis une playlist YouTube (scraping, sans serveur — métadonnées résolues ensuite via l'API) -->
       <div style="margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border);">
         <div class="form-group" style="margin-bottom:8px;">
-          <label for="yt-playlist-url">Importer une playlist YouTube</label>
+          <label for="yt-playlist-url">Importer une playlist YouTube (titres/artistes uniquement)</label>
           <div class="form-row" style="flex-wrap:nowrap; gap:8px;">
             <input id="yt-playlist-url" class="input" type="url"
               placeholder="https://www.youtube.com/playlist?list=PL…">
@@ -68,18 +90,18 @@
         <p id="import-playlist-status" style="font-size:0.83rem; min-height:18px; color:var(--text-muted);"></p>
       </div>
 
-      <!-- Formulaire ajout -->
-      <form id="add-song-form">
+      <!-- Formulaire ajout par recherche -->
+      <form id="search-song-form">
         <div class="form-group">
-          <label for="song-url">URL YouTube</label>
+          <label for="search-song-input">Rechercher un morceau</label>
           <div class="form-row" style="flex-wrap:nowrap; gap:8px;">
-            <input id="song-url" class="input" type="url" placeholder="https://www.youtube.com/watch?v=…" required>
-            <button type="submit" class="btn btn-success" style="white-space:nowrap;">+ Ajouter</button>
+            <input id="search-song-input" class="input" type="text" placeholder="Titre, artiste…" required>
+            <button type="submit" class="btn btn-success" style="white-space:nowrap;">🔎 Chercher</button>
           </div>
-          <p id="add-song-status" style="font-size:0.83rem; min-height:18px; margin-top:4px; color:var(--text-muted);"></p>
+          <p id="search-song-status" style="font-size:0.83rem; min-height:18px; margin-top:4px; color:var(--text-muted);"></p>
         </div>
-        <p id="add-song-error" class="error-text"></p>
       </form>
+      <ul id="search-song-results" class="mt-8"></ul>
 
       <!-- Liste -->
       <ul id="playlist-list" class="mt-16"></ul>
@@ -108,7 +130,7 @@
 
     <!-- Créer la partie -->
     <div style="text-align:center; margin-top:24px;">
-      <p id="probe-status-setup" style="font-size:0.82rem; color:var(--text-muted); margin-bottom:10px;">🔄 Test des endpoints audio en cours…</p>
+      <p id="probe-status-setup" style="font-size:0.82rem; color:var(--text-muted); margin-bottom:10px;">🔄 Test du serveur API en cours…</p>
       <button id="btn-create-game" class="btn btn-primary btn-lg">
         🚀 Créer la partie
       </button>
@@ -141,7 +163,7 @@
     <div>
       <!-- Diagnostic audio -->
       <div class="card mb-16" id="probe-card">
-        <div class="card-title" style="font-size:0.85rem; margin-bottom:6px;">🔍 Diagnostic audio</div>
+        <div class="card-title" style="font-size:0.85rem; margin-bottom:6px;">🔍 Diagnostic serveur API</div>
         <div id="probe-status" style="font-size:0.82rem; color:var(--text-muted);">En attente…</div>
       </div>
 
@@ -389,16 +411,13 @@
   <p style="font-size:0.9rem; color:rgba(255,255,255,.65);">La partie sera restaurée automatiquement.</p>
 </div>
 
-<!-- Overlay iTunes loader -->
-<div id="overlay-itunes" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:1100; align-items:center; justify-content:center; flex-direction:column; gap:16px; text-align:center; padding:24px;">
+<!-- Overlay de recherche/résolution des morceaux -->
+<div id="overlay-search" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:1100; align-items:center; justify-content:center; flex-direction:column; gap:16px; text-align:center; padding:24px;">
   <div style="width:48px;height:48px;border:5px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;"></div>
-  <p id="overlay-itunes-msg" style="font-size:1.05rem;font-weight:600;color:#fff;margin:0;">🎵 Correction iTunes…</p>
+  <p id="overlay-search-msg" style="font-size:1.05rem;font-weight:600;color:#fff;margin:0;">🔎 Recherche en cours…</p>
   <p style="font-size:0.82rem;color:rgba(255,255,255,.6);margin:0;">Merci de patienter</p>
 </div>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-
-<!-- YouTube client : div permanent hors écrans (évite les conflits d'ID) -->
-<div id="yt-player-client" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true"></div>
 
 <!-- Module ES6 principal -->
 <script type="module" src="main.js"></script>

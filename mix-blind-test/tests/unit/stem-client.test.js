@@ -102,3 +102,53 @@ describe('StemClient — IndexedDB blob store', () => {
     expect(await client.readBlobFromIdb(key2)).not.toBeNull();
   });
 });
+
+describe('StemClient — config injectée (dj-mix downloaderConfig/apiHealthMonitor)', () => {
+  test('sans injection, retombe sur le comportement autonome (localStorage) pour rester instanciable seul', () => {
+    const client = new StemClient();
+    expect(client.getApiUrl()).toBe('http://vision:3000');
+  });
+
+  test('getApiUrl() délègue au getter injecté', () => {
+    const client = new StemClient({ getDownloaderApiUrl: () => 'http://192.168.1.50:3000' });
+    expect(client.getApiUrl()).toBe('http://192.168.1.50:3000');
+  });
+
+  test('fetchStemsStatus ajoute le token à la requête', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ status: 'ready' }) });
+    const client = new StemClient({
+      getDownloaderApiUrl: () => 'http://vision:3000',
+      getDownloaderApiToken: () => 'secret-token',
+    });
+    await client.fetchStemsStatus({ name: 'Song', artist: 'Artist' });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('token=secret-token'),
+      expect.any(Object)
+    );
+  });
+
+  test('fetchStemsStatus notifie apiHealthMonitor.recordSuccess sur succès', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ status: 'ready' }) });
+    const apiHealthMonitor = { recordSuccess: jest.fn(), recordFailure: jest.fn() };
+    const client = new StemClient({ getDownloaderApiUrl: () => 'http://vision:3000', apiHealthMonitor });
+    await client.fetchStemsStatus({ name: 'Song', artist: 'Artist' });
+    expect(apiHealthMonitor.recordSuccess).toHaveBeenCalled();
+    expect(apiHealthMonitor.recordFailure).not.toHaveBeenCalled();
+  });
+
+  test('fetchServerCacheTracks notifie apiHealthMonitor.recordFailure sur échec réseau', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new Error('network down'));
+    const apiHealthMonitor = { recordSuccess: jest.fn(), recordFailure: jest.fn() };
+    const client = new StemClient({ getDownloaderApiUrl: () => 'http://vision:3000', apiHealthMonitor });
+    const tracks = await client.fetchServerCacheTracks({ forceRefresh: true });
+    expect(tracks).toEqual([]);
+    expect(apiHealthMonitor.recordFailure).toHaveBeenCalled();
+  });
+
+  test('triggerStemGeneration traite HTTP 409 comme un succès (génération déjà en cours)', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 409 });
+    const client = new StemClient({ getDownloaderApiUrl: () => 'http://vision:3000' });
+    const launched = await client.triggerStemGeneration({ name: 'Song', artist: 'Artist' });
+    expect(launched).toBe(true);
+  });
+});

@@ -18,8 +18,14 @@
         <h2>Configuration API & bibliothèque</h2>
         <div class="inline">
           <input id="api-url" type="url" placeholder="http://192.168.x.x:3000" aria-label="URL API stems">
-          <button id="btn-save-api" class="btn">Sauver</button>
+          <input id="api-token" type="password" placeholder="Token (optionnel)" aria-label="Token API">
         </div>
+        <div class="inline">
+          <input id="api-cdn-url" type="url" placeholder="URL CDN (optionnel)" aria-label="URL CDN">
+          <button id="btn-save-api" class="btn">Sauver</button>
+          <button id="btn-test-api" class="btn" type="button">Tester</button>
+        </div>
+        <p id="api-status" class="status"></p>
         <small>Utilise les endpoints <code>/api/stems</code> et <code>/api/stems/download</code>.</small>
       </section>
 

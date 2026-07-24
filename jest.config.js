@@ -69,11 +69,14 @@ export default {
       ],
       transform: {},
     },
-    // ── Blind-test : playlist (jsdom pour localStorage) ───────────────────────
+    // ── Blind-test : playlist + audioSource (jsdom pour localStorage) ─────────
     {
       displayName: 'blind-test-jsdom',
       testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/blind-test/tests/unit/playlist.test.js'],
+      testMatch: [
+        '<rootDir>/blind-test/tests/unit/playlist.test.js',
+        '<rootDir>/blind-test/tests/unit/audioSource.test.js',
+      ],
       transform: {},
     },
     // ── DJ Mix : player + mixFeatures (jsdom pour Audio / AudioContext) ────────

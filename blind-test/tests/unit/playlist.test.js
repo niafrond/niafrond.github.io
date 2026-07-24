@@ -1,10 +1,14 @@
 /**
  * playlist.test.js — Tests unitaires pour blind-test/playlist.js
- * (fonctions pures uniquement — pas de fetch/localStorage)
+ * (fonctions pures uniquement — pas de fetch réseau, localStorage mocké)
+ *
+ * Note : lookupSongMetadata/fetchArtistAlternatives/enrichWithMusicMetadata
+ * appellent audioSource.searchTracks (réseau) et ne sont volontairement pas
+ * couverts ici, comme c'était déjà le cas pour l'équivalent iTunes avant ce
+ * refactor.
  */
 
 import {
-  extractVideoId,
   extractPlaylistId,
   addSong,
   removeSong,
@@ -15,39 +19,6 @@ import {
   exportPlaylistJSON,
   importPlaylistJSON,
 } from '../../playlist.js';
-
-// ─── extractVideoId ──────────────────────────────────────────────────────────
-
-describe('extractVideoId', () => {
-  test('retourne null pour une entrée vide', () => {
-    expect(extractVideoId('')).toBeNull();
-    expect(extractVideoId(null)).toBeNull();
-  });
-
-  test('extrait depuis youtube.com/watch?v=', () => {
-    expect(extractVideoId('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
-  });
-
-  test('extrait depuis youtu.be/', () => {
-    expect(extractVideoId('https://youtu.be/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
-  });
-
-  test('extrait depuis /embed/', () => {
-    expect(extractVideoId('https://www.youtube.com/embed/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
-  });
-
-  test('extrait depuis /shorts/', () => {
-    expect(extractVideoId('https://www.youtube.com/shorts/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
-  });
-
-  test('accepte un videoId brut (11 chars)', () => {
-    expect(extractVideoId('dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
-  });
-
-  test('retourne null pour une URL non-YouTube', () => {
-    expect(extractVideoId('https://vimeo.com/12345')).toBeNull();
-  });
-});
 
 // ─── extractPlaylistId ───────────────────────────────────────────────────────
 
@@ -94,30 +65,33 @@ beforeAll(() => {
 beforeEach(() => localStorageMock.clear());
 
 describe('addSong', () => {
-  test('ajoute une chanson avec videoId extrait', () => {
+  test('ajoute une chanson avec les métadonnées fournies', () => {
     const updated = addSong([], {
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
       title: 'Never Gonna Give You Up',
       artist: 'Rick Astley',
+      year: 1987,
+      genre: 'Pop',
     });
     expect(updated.length).toBe(1);
-    expect(updated[0].videoId).toBe('dQw4w9WgXcQ');
     expect(updated[0].title).toBe('Never Gonna Give You Up');
     expect(updated[0].artist).toBe('Rick Astley');
+    expect(updated[0].year).toBe(1987);
+    expect(updated[0]).not.toHaveProperty('videoId');
   });
 
-  test('lève une erreur si l\'URL est invalide', () => {
-    expect(() => addSong([], { url: 'invalid', title: 'T', artist: 'A' })).toThrow();
+  test('lève une erreur si le titre est vide', () => {
+    expect(() => addSong([], { title: '', artist: 'A' })).toThrow();
   });
 
-  test('utilise des valeurs par défaut si title/artist sont absents', () => {
-    const updated = addSong([], {
-      url: 'https://youtu.be/dQw4w9WgXcQ',
-      title: '',
-      artist: '',
-    });
-    expect(updated[0].title).toBe('Titre inconnu');
+  test('utilise une valeur par défaut si artist est absent', () => {
+    const updated = addSong([], { title: 'Some Track' });
     expect(updated[0].artist).toBe('?');
+  });
+
+  test('conserve cachePath/artUrl si fournis (résultat de recherche déjà résolu)', () => {
+    const updated = addSong([], { title: 'T', artist: 'A', cachePath: '/cache/x.mp3', artUrl: 'https://img/x.jpg' });
+    expect(updated[0].cachePath).toBe('/cache/x.mp3');
+    expect(updated[0].artUrl).toBe('https://img/x.jpg');
   });
 });
 
@@ -126,8 +100,8 @@ describe('addSong', () => {
 describe('removeSong', () => {
   test('supprime la chanson avec l\'id donné', () => {
     const songs = [
-      { id: '1', videoId: 'aaa', title: 'A', artist: 'X' },
-      { id: '2', videoId: 'bbb', title: 'B', artist: 'Y' },
+      { id: '1', title: 'A', artist: 'X' },
+      { id: '2', title: 'B', artist: 'Y' },
     ];
     const updated = removeSong(songs, '1');
     expect(updated.length).toBe(1);
@@ -135,7 +109,7 @@ describe('removeSong', () => {
   });
 
   test('ne modifie pas si l\'id est introuvable', () => {
-    const songs = [{ id: '1', videoId: 'aaa', title: 'A', artist: 'X' }];
+    const songs = [{ id: '1', title: 'A', artist: 'X' }];
     const updated = removeSong(songs, 'unknown');
     expect(updated.length).toBe(1);
   });
@@ -145,9 +119,9 @@ describe('removeSong', () => {
 
 describe('moveSong', () => {
   const songs = [
-    { id: '1', videoId: 'a', title: 'A', artist: 'X' },
-    { id: '2', videoId: 'b', title: 'B', artist: 'Y' },
-    { id: '3', videoId: 'c', title: 'C', artist: 'Z' },
+    { id: '1', title: 'A', artist: 'X' },
+    { id: '2', title: 'B', artist: 'Y' },
+    { id: '3', title: 'C', artist: 'Z' },
   ];
 
   test('déplace vers le haut', () => {
@@ -182,19 +156,19 @@ describe('moveSong', () => {
 
 describe('shufflePlaylist', () => {
   test('retourne un tableau de même longueur', () => {
-    const songs = [1, 2, 3, 4, 5].map(i => ({ id: String(i), videoId: `v${i}`, title: `T${i}`, artist: 'A' }));
+    const songs = [1, 2, 3, 4, 5].map(i => ({ id: String(i), title: `T${i}`, artist: 'A' }));
     expect(shufflePlaylist(songs).length).toBe(5);
   });
 
   test('contient les mêmes éléments', () => {
-    const songs = [1, 2, 3].map(i => ({ id: String(i), videoId: `v${i}`, title: `T${i}`, artist: 'A' }));
+    const songs = [1, 2, 3].map(i => ({ id: String(i), title: `T${i}`, artist: 'A' }));
     const shuffled = shufflePlaylist(songs);
     const ids = shuffled.map(s => s.id).sort();
     expect(ids).toEqual(['1', '2', '3']);
   });
 
   test('ne modifie pas le tableau source', () => {
-    const songs = [{ id: '1', videoId: 'v1', title: 'T', artist: 'A' }];
+    const songs = [{ id: '1', title: 'T', artist: 'A' }];
     const first = songs[0];
     shufflePlaylist(songs);
     expect(songs[0]).toBe(first);
@@ -205,7 +179,7 @@ describe('shufflePlaylist', () => {
 
 describe('generateFourChoices', () => {
   function makeSong(id, title, artist) {
-    return { id, videoId: `v${id}`, title, artist, alternatives: [] };
+    return { id, title, artist, alternatives: [] };
   }
 
   const playlist = [
@@ -244,17 +218,17 @@ describe('generateFourChoices', () => {
 
 describe('mergeSongs', () => {
   test('ajoute les nouvelles chansons', () => {
-    const existing = [{ id: '1', videoId: 'v1', title: 'A', artist: 'X', alternatives: [] }];
-    const imported = [{ videoId: 'v2', title: 'B', artist: 'Y' }];
+    const existing = [{ id: '1', title: 'A', artist: 'X', alternatives: [] }];
+    const imported = [{ title: 'B', artist: 'Y' }];
     const { updated, added, skipped } = mergeSongs(existing, imported);
     expect(updated.length).toBe(2);
     expect(added).toBe(1);
     expect(skipped).toBe(0);
   });
 
-  test('déduplique par videoId', () => {
-    const existing = [{ id: '1', videoId: 'v1', title: 'A', artist: 'X', alternatives: [] }];
-    const imported = [{ videoId: 'v1', title: 'A', artist: 'X' }];
+  test('déduplique par titre+artiste (insensible à la casse)', () => {
+    const existing = [{ id: '1', title: 'A Song', artist: 'X Artist', alternatives: [] }];
+    const imported = [{ title: 'a song', artist: 'x artist' }];
     const { updated, added, skipped } = mergeSongs(existing, imported);
     expect(updated.length).toBe(1);
     expect(added).toBe(0);
@@ -266,8 +240,8 @@ describe('mergeSongs', () => {
 
 describe('exportPlaylistJSON / importPlaylistJSON', () => {
   const songs = [
-    { id: '1', videoId: 'v1', title: 'Song A', artist: 'Artist A', year: 2020, genre: 'Pop', alternatives: [] },
-    { id: '2', videoId: 'v2', title: 'Song B', artist: 'Artist B', year: null, genre: null, alternatives: [] },
+    { id: '1', title: 'Song A', artist: 'Artist A', year: 2020, genre: 'Pop', alternatives: [], cachePath: '/cache/a.mp3', artUrl: 'https://img/a.jpg' },
+    { id: '2', title: 'Song B', artist: 'Artist B', year: null, genre: null, alternatives: [] },
   ];
 
   test('export produit un JSON valide', () => {
@@ -275,18 +249,25 @@ describe('exportPlaylistJSON / importPlaylistJSON', () => {
     expect(() => JSON.parse(json)).not.toThrow();
   });
 
+  test('export ne contient pas cachePath/artUrl (propres au serveur de l\'hôte)', () => {
+    const json = exportPlaylistJSON(songs);
+    const parsed = JSON.parse(json);
+    expect(parsed[0]).not.toHaveProperty('cachePath');
+    expect(parsed[0]).not.toHaveProperty('artUrl');
+  });
+
   test('import récupère les mêmes chansons', () => {
     const json = exportPlaylistJSON(songs);
     const imported = importPlaylistJSON(json);
     expect(imported.length).toBe(2);
-    expect(imported[0].videoId).toBe('v1');
-    expect(imported[1].videoId).toBe('v2');
+    expect(imported[0].title).toBe('Song A');
+    expect(imported[1].title).toBe('Song B');
   });
 
-  test('import filtre les chansons sans videoId', () => {
+  test('import filtre les chansons sans titre', () => {
     const json = JSON.stringify([
-      { videoId: 'v1', title: 'A', artist: 'B' },
-      { title: 'No Video', artist: 'C' },
+      { title: 'A', artist: 'B' },
+      { artist: 'C' },
     ]);
     const imported = importPlaylistJSON(json);
     expect(imported.length).toBe(1);
