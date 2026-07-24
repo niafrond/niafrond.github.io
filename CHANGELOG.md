@@ -1,3 +1,10 @@
+## [2.11.0](https://github.com/niafrond/niafrond.github.io/compare/v2.10.0...v2.11.0) (2026-07-24)
+
+### Features
+
+* Implement background artwork refresh for cached tracks and prevent stale zone leakage in next track selections ([5be2cd6](https://github.com/niafrond/niafrond.github.io/commit/5be2cd6f545fdf871b79636f59e772b37d6e8b74))
+* update UI for round end display and add audio source handling ([07cf17e](https://github.com/niafrond/niafrond.github.io/commit/07cf17e37e0e578a9afdb7245e73b8897654aabc))
+
 ## [2.10.0](https://github.com/niafrond/niafrond.github.io/compare/v2.9.0...v2.10.0) (2026-07-23)
 
 ### Features
