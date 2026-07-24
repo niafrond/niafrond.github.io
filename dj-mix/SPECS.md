@@ -1015,6 +1015,13 @@ lit son propre `relayIncomingQueue` directement en mémoire.
 - **SPEC-12.5.3** GIVEN la Cache Storage API absente alors que le contexte est déjà sécurisé (`isSecureContext === true`, navigateur/plateforme sans support) — THEN le toast n'inclut pas la précision « connexion non sécurisée ».
 - **SPEC-12.5.4** GIVEN une erreur levée pendant `caches.delete()` — THEN un toast d'erreur `Erreur suppression cache: <message>` est affiché.
 
+### 12.6 Test de connexion API downloader (contenu mixte)
+
+- **SPEC-12.6.1** `isLikelyMixedContentBlock(err, baseUrl, isSecureContext)` (`lib/downloaderConfig.js`) détecte le blocage navigateur « contenu mixte » : GIVEN une erreur `TypeError: Failed to fetch`, une `baseUrl` en `http://` sur un hôte non local (ni `localhost`, ni `127.0.0.1`, ni `[::1]`), ET `isSecureContext === true` (page courante en HTTPS, ex. déploiement GitHub Pages ou PWA installée ; passé explicitement par l'appelant via `window.isSecureContext`, même pattern que `clearLocalCache()` en 12.5) — THEN la fonction retourne `true`.
+- **SPEC-12.6.2** GIVEN l'URL API est `localhost`/`127.0.0.1`, OU l'URL API est en `https://`, OU l'erreur n'est pas un `TypeError: Failed to fetch`, OU `isSecureContext` est faux — THEN `isLikelyMixedContentBlock` retourne `false`.
+- **SPEC-12.6.3** `describeApiTestError(err, baseUrl, isSecureContext)` retourne un message explicite (« Bloqué par le navigateur (contenu mixte)… ») quand `isLikelyMixedContentBlock` est vrai, sinon retourne `err.message` tel quel.
+- **SPEC-12.6.4** Le bouton « Tester » du panneau de config (`testBtn` dans `createDownloaderConfigManager`) appelle `describeApiTestError(err, getDownloaderApiUrl(), window.isSecureContext)` pour construire le toast `Serveur indisponible: <message>`, évitant d'afficher un simple « Failed to fetch » indiscernable d'un serveur réellement injoignable quand la vraie cause est le blocage HTTPS→HTTP du navigateur.
+
 ---
 
 ## 13. PWA et intégration mobile

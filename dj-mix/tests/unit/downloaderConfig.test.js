@@ -1,9 +1,57 @@
 import { beforeEach, describe, expect, test } from '@jest/globals';
-import { createDownloaderConfigManager, deriveCdnUrlFromApiUrl, deriveRelayUrlFromApiUrl } from '../../lib/downloaderConfig.js';
+import {
+  createDownloaderConfigManager,
+  deriveCdnUrlFromApiUrl,
+  deriveRelayUrlFromApiUrl,
+  describeApiTestError,
+  isLikelyMixedContentBlock,
+} from '../../lib/downloaderConfig.js';
 
 describe('downloaderConfig', () => {
   beforeEach(() => {
     localStorage.clear();
+  });
+
+  describe('isLikelyMixedContentBlock', () => {
+    test('detects a "Failed to fetch" against a plain-http LAN host from a secure page', () => {
+      const err = new TypeError('Failed to fetch');
+      expect(isLikelyMixedContentBlock(err, 'http://vision:3000', true)).toBe(true);
+    });
+
+    test('does not trigger for localhost/127.0.0.1 targets (no mixed-content rule there)', () => {
+      const err = new TypeError('Failed to fetch');
+      expect(isLikelyMixedContentBlock(err, 'http://localhost:3000', true)).toBe(false);
+      expect(isLikelyMixedContentBlock(err, 'http://127.0.0.1:3000', true)).toBe(false);
+    });
+
+    test('does not trigger for an https API URL', () => {
+      const err = new TypeError('Failed to fetch');
+      expect(isLikelyMixedContentBlock(err, 'https://vision:3000', true)).toBe(false);
+    });
+
+    test('does not trigger for an unrelated error message', () => {
+      const err = new Error('HTTP 500');
+      expect(isLikelyMixedContentBlock(err, 'http://vision:3000', true)).toBe(false);
+    });
+
+    test('does not trigger when the page itself is not a secure context', () => {
+      const err = new TypeError('Failed to fetch');
+      expect(isLikelyMixedContentBlock(err, 'http://vision:3000', false)).toBe(false);
+    });
+  });
+
+  describe('describeApiTestError', () => {
+    test('explains the mixed-content block instead of the raw "Failed to fetch"', () => {
+      const err = new TypeError('Failed to fetch');
+      const message = describeApiTestError(err, 'http://vision:3000', true);
+      expect(message).toContain('contenu mixte');
+      expect(message).toContain('http://vision:3000');
+    });
+
+    test('falls back to the raw error message otherwise', () => {
+      const err = new Error('HTTP 500');
+      expect(describeApiTestError(err, 'http://vision:3000', true)).toBe('HTTP 500');
+    });
   });
 
   describe('deriveCdnUrlFromApiUrl', () => {

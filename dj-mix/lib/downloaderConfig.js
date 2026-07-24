@@ -15,18 +15,19 @@ export function appendApiToken(url, token) {
 // Browsers silently block that fetch as "mixed active content" and surface it
 // as a generic `TypeError: Failed to fetch`, indistinguishable from a genuinely
 // unreachable server — this lets the UI tell them apart and explain the real
-// cause instead of just "Failed to fetch".
-export function isLikelyMixedContentBlock(err, baseUrl) {
+// cause instead of just "Failed to fetch". `isSecureContext` is passed in
+// explicitly (rather than read from `window` inline) to stay testable, same
+// pattern as `clearLocalCache()` in settingsController.js.
+export function isLikelyMixedContentBlock(err, baseUrl, isSecureContext) {
   const isFailedToFetch = err instanceof TypeError && /failed to fetch/i.test(err?.message || '');
   const isInsecureNonLocalTarget = /^http:\/\/(?!localhost|127\.0\.0\.1|\[::1\])/i.test(String(baseUrl || ''));
-  const pageIsSecure = typeof window !== 'undefined' && window.isSecureContext;
-  return isFailedToFetch && isInsecureNonLocalTarget && pageIsSecure;
+  return Boolean(isFailedToFetch && isInsecureNonLocalTarget && isSecureContext);
 }
 
 // Turns a raw fetch error into a message the user can act on, adding the
 // mixed-content explanation when it applies (see isLikelyMixedContentBlock).
-export function describeApiTestError(err, baseUrl) {
-  if (isLikelyMixedContentBlock(err, baseUrl)) {
+export function describeApiTestError(err, baseUrl, isSecureContext) {
+  if (isLikelyMixedContentBlock(err, baseUrl, isSecureContext)) {
     return 'Bloqué par le navigateur (contenu mixte) : cette page est chargée en HTTPS, elle ne peut pas '
       + `contacter ${baseUrl} en http://. Servez l'API en HTTPS, ou utilisez une copie locale de l'app ouverte en http://.`;
   }
@@ -147,7 +148,7 @@ export function createDownloaderConfigManager(options) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         setStatus('Serveur disponible ✓', false);
       } catch (err) {
-        setStatus(`Serveur indisponible: ${describeApiTestError(err, getDownloaderApiUrl())}`, true);
+        setStatus(`Serveur indisponible: ${describeApiTestError(err, getDownloaderApiUrl(), window.isSecureContext)}`, true);
       }
     });
   }
