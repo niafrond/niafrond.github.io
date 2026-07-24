@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test artwork Media Session</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #111; color: #eee; margin: 0; padding: 16px; }
+    h1 { font-size: 1.1rem; }
+    button { display: block; width: 100%; margin: 8px 0; padding: 14px; font-size: 1rem; border-radius: 8px; border: none; background: #2d6cdf; color: white; text-align: left; }
+    button:disabled { background: #444; }
+    #log { margin-top: 16px; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; background: #000; padding: 8px; border-radius: 8px; min-height: 120px; }
+    .hint { color: #aaa; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <h1>🎨 Test artwork Media Session</h1>
+  <p class="hint">1. Tape « Démarrer l'audio ». 2. Tape un test. 3. Ouvre la barre de notifications et regarde si la pochette s'affiche. Le titre de la notification indique le test en cours.</p>
+
+  <button id="start">▶️ Démarrer l'audio (obligatoire d'abord)</button>
+  <button class="t" data-test="A" disabled>Test A — URL https publique (mzstatic/Apple)</button>
+  <button class="t" data-test="B" disabled>Test B — URL http://vision:3002 (CDN local)</button>
+  <button class="t" data-test="C" disabled>Test C — data URI (fetch du CDN puis base64)</button>
+  <button class="t" data-test="D" disabled>Test D — SVG fallback actuel (emoji 🎚️)</button>
+  <button class="t" data-test="E" disabled>Test E — même origine https (icon-512.png)</button>
+
+  <div id="log">journal…</div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    function log(msg) {
+      logEl.textContent += '\n' + msg;
+      console.log('[artwork-test]', msg);
+    }
+
+    const MZSTATIC = 'https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/0a/90/59/0a905907-f9ef-83e3-4877-b82708ed8121/00792755853351_Cover.jpg/512x512bb.jpg';
+    const VISION = 'http://vision:3002/api/artwork?cachePath=%2Fmnt%2Fe%2FAudioDB%2Fartwork%2Fc99310a6cccedf85bc1e8294a4db87d509e8c264.jpg';
+    const SVG = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 512 512%27%3E%3Crect width=%27512%27 height=%27512%27 rx=%27100%27 fill=%270a0a0f%27/%3E%3Ctext x=%27256%27 y=%27340%27 text-anchor=%27middle%27 font-size=%27300%27%3E%F0%9F%8E%9A%EF%B8%8F%3C/text%3E%3C/svg%3E';
+    const SAME_ORIGIN = new URL('./icon-512.png', location.href).href;
+
+    // Silent 1s WAV, same technique as the app's keepalive.
+    function silentWavUrl() {
+      const sr = 8000, n = sr;
+      const buf = new ArrayBuffer(44 + n);
+      const v = new DataView(buf);
+      const w = (off, s) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
+      w(0, 'RIFF'); v.setUint32(4, 36 + n, true); w(8, 'WAVE'); w(12, 'fmt ');
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, sr, true); v.setUint32(28, sr, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+      w(36, 'data'); v.setUint32(40, n, true);
+      new Uint8Array(buf, 44).fill(128);
+      return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+    }
+
+    let audio = null;
+
+    function setMeta(testName, artwork) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: 'TEST ' + testName,
+        artist: 'artwork-test',
+        album: 'DJ Mix debug',
+        artwork,
+      });
+      navigator.mediaSession.playbackState = 'playing';
+      log('Test ' + testName + ' → metadata posée. Regarde la notification.');
+    }
+
+    document.getElementById('start').addEventListener('click', async () => {
+      if (!('mediaSession' in navigator)) { log('❌ mediaSession non supporté'); return; }
+      audio = new Audio(silentWavUrl());
+      audio.loop = true;
+      audio.volume = 0.01;
+      try {
+        await audio.play();
+        log('✅ audio démarré, Media Session active');
+        document.querySelectorAll('.t').forEach((b) => { b.disabled = false; });
+      } catch (e) {
+        log('❌ échec lecture audio: ' + e.message);
+      }
+    });
+
+    async function fetchDataUri(url) {
+      const res = await fetch(url);
+      log('fetch CDN: HTTP ' + res.status + ' type=' + res.headers.get('content-type'));
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const blob = await res.blob();
+      log('blob: ' + blob.size + ' octets, ' + blob.type);
+      return await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = () => reject(r.error);
+        r.readAsDataURL(blob);
+      });
+    }
+
+    document.querySelectorAll('.t').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const test = btn.dataset.test;
+        try {
+          if (test === 'A') setMeta('A (mzstatic https)', [{ src: MZSTATIC, sizes: '512x512', type: 'image/jpeg' }]);
+          if (test === 'B') setMeta('B (vision http)', [{ src: VISION, sizes: '512x512', type: 'image/jpeg' }]);
+          if (test === 'C') {
+            const uri = await fetchDataUri(VISION);
+            log('data URI: ' + uri.length + ' caractères');
+            setMeta('C (data URI)', [{ src: uri, sizes: '512x512', type: 'image/jpeg' }]);
+          }
+          if (test === 'D') setMeta('D (SVG fallback)', [{ src: SVG, sizes: '512x512', type: 'image/svg+xml' }]);
+          if (test === 'E') setMeta('E (même origine)', [{ src: SAME_ORIGIN, sizes: '512x512', type: 'image/png' }]);
+        } catch (e) {
+          log('❌ Test ' + test + ': ' + e.message);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

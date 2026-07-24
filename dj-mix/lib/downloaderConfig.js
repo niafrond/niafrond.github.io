@@ -8,6 +8,31 @@ export function appendApiToken(url, token) {
   return `${url}${separator}token=${encodeURIComponent(token)}`;
 }
 
+// Detects the classic "mixed content" browser block: the app itself is loaded
+// in a secure context (HTTPS — e.g. the GitHub Pages deployment — or the
+// installed/service-worker-controlled PWA) while the configured downloader
+// API URL is plain HTTP on a non-localhost host (e.g. `http://vision:3000`).
+// Browsers silently block that fetch as "mixed active content" and surface it
+// as a generic `TypeError: Failed to fetch`, indistinguishable from a genuinely
+// unreachable server — this lets the UI tell them apart and explain the real
+// cause instead of just "Failed to fetch".
+export function isLikelyMixedContentBlock(err, baseUrl) {
+  const isFailedToFetch = err instanceof TypeError && /failed to fetch/i.test(err?.message || '');
+  const isInsecureNonLocalTarget = /^http:\/\/(?!localhost|127\.0\.0\.1|\[::1\])/i.test(String(baseUrl || ''));
+  const pageIsSecure = typeof window !== 'undefined' && window.isSecureContext;
+  return isFailedToFetch && isInsecureNonLocalTarget && pageIsSecure;
+}
+
+// Turns a raw fetch error into a message the user can act on, adding the
+// mixed-content explanation when it applies (see isLikelyMixedContentBlock).
+export function describeApiTestError(err, baseUrl) {
+  if (isLikelyMixedContentBlock(err, baseUrl)) {
+    return 'Bloqué par le navigateur (contenu mixte) : cette page est chargée en HTTPS, elle ne peut pas '
+      + `contacter ${baseUrl} en http://. Servez l'API en HTTPS, ou utilisez une copie locale de l'app ouverte en http://.`;
+  }
+  return err?.message || String(err);
+}
+
 // Derives a CDN base URL from the API base URL by swapping the port to 3002,
 // used as the CDN's default when the user hasn't explicitly configured one.
 export function deriveCdnUrlFromApiUrl(apiUrl) {
@@ -122,7 +147,7 @@ export function createDownloaderConfigManager(options) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         setStatus('Serveur disponible ✓', false);
       } catch (err) {
-        setStatus(`Serveur indisponible: ${err.message}`, true);
+        setStatus(`Serveur indisponible: ${describeApiTestError(err, getDownloaderApiUrl())}`, true);
       }
     });
   }
