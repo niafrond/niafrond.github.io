@@ -1262,7 +1262,19 @@ const audioSourceManager = createAudioSourceManager({
   getDownloaderCdnUrl,
   normalizeApiSearchResponse,
   onQueueUpdated: () => renderQueueDebounced(),
-  persistArtUrl: (id, artUrl) => { if (id) trackStore.patch(id, { artUrl }); },
+  persistArtUrl: (id, artUrl) => {
+    if (!id) return;
+    trackStore.patch(id, { artUrl });
+    // SPEC-13.3.10 — le refresh d'artwork en tâche de fond se termine après le
+    // démarrage de la lecture : si la piste corrigée est celle en cours, mettre
+    // à jour la notification Media Session tout de suite plutôt qu'à la
+    // prochaine lecture du morceau.
+    if (uiState.currentTrackId === id) {
+      const focusDeck = getFocusDeck();
+      const deckItem = deckDisplayItems[focusDeck];
+      if (deckItem?.id === id) updateNowPlaying(deckItem, focusDeck);
+    }
+  },
   sessionBlobCache,
   shouldWarmStems: (item) => !isLowMemoryPlaybackMode() || deckDisplayItems.A === item || deckDisplayItems.B === item,
   touchQueueItem,
