@@ -1,3 +1,9 @@
+## [2.12.0](https://github.com/niafrond/niafrond.github.io/compare/v2.11.1...v2.12.0) (2026-07-24)
+
+### Features
+
+* **dj-mix:** add mixed content detection and error handling for API downloader ([998f137](https://github.com/niafrond/niafrond.github.io/commit/998f13775376e830f5a421bc4868ce350369679b))
+
 ## [2.11.1](https://github.com/niafrond/niafrond.github.io/compare/v2.11.0...v2.11.1) (2026-07-24)
 
 ### Bug Fixes
