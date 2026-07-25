@@ -4763,6 +4763,22 @@ async function launchDeckFromQueue(deck, options = {}) {
       setDeckItem(targetDeck, item);
       updatePlannedStartMarker();
       const sourceUrl = await ensureLocalSource(item);
+
+      // SPEC-1.1.17 : preloadMixDataForDeckItem/ensureLocalSource sont asynchrones
+      // (téléchargement possible) — la platine visée a pu entretemps devenir active
+      // en jouant déjà ce morceau (via un vrai crossfade concurrent). Abandonner pour
+      // ne jamais recharger/mettre en pause un morceau déjà en cours de lecture réelle.
+      if (deckDisplayItems[targetDeck] !== item || uiState.currentTrackId === item.id) {
+        logWarn('launchDeckFromQueue(): stale deck target aborted', {
+          deck: targetDeck,
+          targetIndex,
+          itemId: item.id,
+          itemName: item.name,
+          currentTrackId: uiState.currentTrackId,
+        });
+        return;
+      }
+
       const isFocusDeck = targetDeck === getResolvedActiveDeck();
       const paused = typeof options.paused === 'boolean' ? options.paused : !isFocusDeck;
       await player.playOnDeck(targetDeck, {

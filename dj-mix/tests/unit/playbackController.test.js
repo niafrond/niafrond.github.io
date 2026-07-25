@@ -461,3 +461,256 @@ describe('applyMixSuggestedStartOffset', () => {
     expect(item.autoDjStartOffsetMs).toBe(12_000);
   });
 });
+
+// ── launchDeckFromQueue — SPEC-1.1.17 stale deck target aborted ──────────────
+//
+// Bug d'origine (rapporté : "des fois la même chanson est lue deux fois de
+// suite" en mode AutoDJ) : preloadMixDataForDeckItem/ensureLocalSource sont
+// asynchrones (téléchargement possible). Si, pendant cette attente, la platine
+// visée devient active en jouant déjà cet item (via un vrai crossfade
+// concurrent, ex. déclenché par l'automix pendant qu'un cue/rafraîchissement
+// de suggestion AutoDJ est en préparation), l'ancien code rechargeait quand
+// même l'audio depuis son offset de départ sur cette platine — l'auditeur
+// entendait le morceau réellement en cours "sauter" en arrière, perçu comme
+// une répétition.
+
+function deferredPromise() {
+  let resolve;
+  const promise = new Promise((r) => { resolve = r; });
+  return { promise, resolve };
+}
+
+const tick = () => new Promise((r) => setTimeout(r, 0));
+
+describe('launchDeckFromQueue — SPEC-1.1.17 stale deck target aborted', () => {
+  function makeQueueAndController(overrides = {}) {
+    const nextTrack = makeTrack({ id: 'next-1' });
+    const player = makePlayer();
+    const ctrl = makeController({
+      getQueue: jest.fn().mockReturnValue([makeTrack({ id: 'current' }), nextTrack]),
+      getPlayer: jest.fn().mockReturnValue(player),
+      getResolvedInactiveDeck: jest.fn().mockReturnValue('B'),
+      getResolvedActiveDeck: jest.fn().mockReturnValue('A'),
+      getFollowingQueueIndex: jest.fn().mockReturnValue(1),
+      ...overrides,
+    });
+    uiState.currentIndex = 0;
+    uiState.currentTrackId = 'current';
+    return { ctrl, player, nextTrack };
+  }
+
+  test('control: playOnDeck fires when the deck still shows the item after preparation', async () => {
+    const { ctrl, player, nextTrack } = makeQueueAndController();
+
+    await ctrl.launchDeckFromQueue('B');
+
+    expect(player.playOnDeck).toHaveBeenCalledWith(
+      'B',
+      expect.objectContaining({ url: 'blob:fake' }),
+      expect.objectContaining({ paused: true }),
+    );
+    expect(uiState.deckDisplayItems.B).toBe(nextTrack);
+  });
+
+  test('aborts when the deck item was reassigned during preparation', async () => {
+    const { promise, resolve } = deferredPromise();
+    const { ctrl, player } = makeQueueAndController({
+      ensureLocalSource: jest.fn().mockReturnValue(promise),
+    });
+
+    const launchPromise = ctrl.launchDeckFromQueue('B');
+    await tick();
+    // A concurrent real transition claims deck B for a different item while
+    // ensureLocalSource() is still resolving.
+    uiState.deckDisplayItems.B = makeTrack({ id: 'someone-else' });
+    resolve('blob:fake');
+    await launchPromise;
+
+    expect(player.playOnDeck).not.toHaveBeenCalled();
+  });
+
+  test('aborts when the item already became the current track during preparation', async () => {
+    const { promise, resolve } = deferredPromise();
+    const { ctrl, player } = makeQueueAndController({
+      ensureLocalSource: jest.fn().mockReturnValue(promise),
+    });
+
+    const launchPromise = ctrl.launchDeckFromQueue('B');
+    await tick();
+    // A concurrent real crossfade already promoted this item to the current track.
+    uiState.currentTrackId = 'next-1';
+    resolve('blob:fake');
+    await launchPromise;
+
+    expect(player.playOnDeck).not.toHaveBeenCalled();
+  });
+
+  test('logs a warning when aborting a stale target', async () => {
+    const { promise, resolve } = deferredPromise();
+    const logWarn = jest.fn();
+    const { ctrl } = makeQueueAndController({
+      ensureLocalSource: jest.fn().mockReturnValue(promise),
+      logWarn,
+    });
+
+    const launchPromise = ctrl.launchDeckFromQueue('B');
+    await tick();
+    uiState.currentTrackId = 'next-1';
+    resolve('blob:fake');
+    await launchPromise;
+
+    expect(logWarn).toHaveBeenCalledWith(
+      'launchDeckFromQueue(): stale deck target aborted',
+      expect.objectContaining({ deck: 'B', itemId: 'next-1' }),
+    );
+  });
+});
+
+// ── startPlaybackForIndex — SPEC-1.1.16 parity for the "prepare inactive deck
+//    with next track" and fil rouge ghost preloads ───────────────────────────
+//
+// These two async preloads already had the SPEC-1.1.16 stale-preload guard in
+// main.js's own copy of startPlaybackForIndex but were missing it here — a
+// drift between the two not-yet-consolidated implementations (see the
+// project's dj-mix refactoring notes). Fixed to bring lib/playbackController.js
+// to parity.
+
+describe('startPlaybackForIndex — SPEC-1.1.16 stale next-track preload aborted', () => {
+  function makeCrossfadeController(overrides = {}) {
+    const currentTrack = makeTrack({ id: 'now-playing' });
+    const upcomingTrack = makeTrack({ id: 'up-next' });
+    const player = makePlayer();
+    const ctrl = makeController({
+      getQueue: jest.fn().mockReturnValue([currentTrack, upcomingTrack]),
+      getPlayer: jest.fn().mockReturnValue(player),
+      getResolvedActiveDeck: jest.fn().mockReturnValue('A'),
+      getResolvedInactiveDeck: jest.fn().mockReturnValue('B'),
+      getFollowingQueueIndex: jest.fn().mockReturnValue(1),
+      ...overrides,
+    });
+    return { ctrl, player, currentTrack, upcomingTrack };
+  }
+
+  test('control: playOnDeck preloads the inactive deck when nothing changes meanwhile', async () => {
+    const { ctrl, player, upcomingTrack } = makeCrossfadeController();
+
+    await ctrl.startPlaybackForIndex(0, 'crossfade');
+    await tick();
+
+    expect(player.playOnDeck).toHaveBeenCalledWith(
+      'B',
+      expect.objectContaining({ url: 'blob:fake' }),
+      expect.objectContaining({ paused: true }),
+    );
+    expect(uiState.deckDisplayItems.B).toBe(upcomingTrack);
+  });
+
+  test('aborts when the inactive deck became active on this same item meanwhile', async () => {
+    const { promise, resolve } = deferredPromise();
+    const { ctrl, player } = makeCrossfadeController({
+      ensureLocalSource: jest.fn()
+        .mockResolvedValueOnce('blob:current') // ensureLocalSource(currentTrack) inside the crossfade itself
+        .mockReturnValueOnce(promise), // ensureLocalSource(upcomingTrack) inside the background preload
+    });
+
+    await ctrl.startPlaybackForIndex(0, 'crossfade');
+    // A second, real transition finishes and promotes the "upcoming" track to
+    // current on deck B while its own background preload is still in flight.
+    uiState.currentTrackId = 'up-next';
+    resolve('blob:fake');
+    await tick();
+
+    expect(player.playOnDeck).not.toHaveBeenCalledWith(
+      'B',
+      expect.anything(),
+      expect.objectContaining({ paused: true }),
+    );
+  });
+
+  test('aborts when the deck role flips (deck B becomes the resolved active deck) meanwhile', async () => {
+    const { promise, resolve } = deferredPromise();
+    let resolvedInactiveDeck = 'B';
+    const { ctrl, player } = makeCrossfadeController({
+      getResolvedInactiveDeck: jest.fn(() => resolvedInactiveDeck),
+      ensureLocalSource: jest.fn()
+        .mockResolvedValueOnce('blob:current')
+        .mockReturnValueOnce(promise),
+    });
+
+    await ctrl.startPlaybackForIndex(0, 'crossfade');
+    resolvedInactiveDeck = 'A';
+    resolve('blob:fake');
+    await tick();
+
+    expect(player.playOnDeck).not.toHaveBeenCalledWith(
+      'B',
+      expect.anything(),
+      expect.objectContaining({ paused: true }),
+    );
+  });
+});
+
+describe('startPlaybackForIndex — SPEC-1.1.16 stale fil rouge ghost preload aborted', () => {
+  function makeGhostController(overrides = {}) {
+    const currentTrack = makeTrack({ id: 'now-playing' });
+    const ghostSource = { id: 'ghost-1', name: 'Ghost', artist: 'FilRouge', duration: 180_000 };
+    const player = makePlayer();
+    let pendingGhost = null;
+    const filRougeManager = {
+      isActive: jest.fn().mockReturnValue(true),
+      peekNextTrackFromAny: jest.fn().mockReturnValue(ghostSource),
+      getNextTrack: jest.fn().mockReturnValue(null),
+      getPlaylist: jest.fn().mockReturnValue([]),
+      getPriorityQueue: jest.fn().mockReturnValue([]),
+      removeFromPriorityQueue: jest.fn(),
+      removeFromPlaylist: jest.fn(),
+    };
+    const ctrl = makeController({
+      getQueue: jest.fn().mockReturnValue([currentTrack]), // no next queue item -> ghost branch
+      getPlayer: jest.fn().mockReturnValue(player),
+      getResolvedActiveDeck: jest.fn().mockReturnValue('A'),
+      getResolvedInactiveDeck: jest.fn().mockReturnValue('B'),
+      getFollowingQueueIndex: jest.fn().mockReturnValue(-1),
+      filRougeManager,
+      getPendingFilRougeOnInactiveDeck: jest.fn(() => pendingGhost),
+      setPendingFilRougeOnInactiveDeck: jest.fn((v) => { pendingGhost = v; }),
+      ...overrides,
+    });
+    return { ctrl, player, currentTrack, filRougeManager };
+  }
+
+  test('control: playOnDeck preloads the ghost when nothing changes meanwhile', async () => {
+    const { ctrl, player } = makeGhostController();
+
+    await ctrl.startPlaybackForIndex(0, 'crossfade');
+    await tick();
+
+    expect(player.playOnDeck).toHaveBeenCalledWith(
+      'B',
+      expect.objectContaining({ url: 'blob:fake' }),
+      expect.objectContaining({ paused: true }),
+    );
+  });
+
+  test('aborts when the deck role flips (deck B becomes active) meanwhile', async () => {
+    const { promise, resolve } = deferredPromise();
+    let resolvedInactiveDeck = 'B';
+    const { ctrl, player } = makeGhostController({
+      getResolvedInactiveDeck: jest.fn(() => resolvedInactiveDeck),
+      ensureLocalSource: jest.fn()
+        .mockResolvedValueOnce('blob:current')
+        .mockReturnValueOnce(promise),
+    });
+
+    await ctrl.startPlaybackForIndex(0, 'crossfade');
+    resolvedInactiveDeck = 'A';
+    resolve('blob:ghost');
+    await tick();
+
+    expect(player.playOnDeck).not.toHaveBeenCalledWith(
+      'B',
+      expect.anything(),
+      expect.objectContaining({ paused: true }),
+    );
+  });
+});

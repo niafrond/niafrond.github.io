@@ -491,6 +491,22 @@ export function createPlaybackController(options) {
       setDeckItem(targetDeck, item);
       updatePlannedStartMarker?.();
       const sourceUrl = await ensureLocalSource?.(item);
+
+      // SPEC-1.1.17 : preloadMixDataForDeckItem/ensureLocalSource sont asynchrones
+      // (téléchargement possible) — la platine visée a pu entretemps devenir active
+      // en jouant déjà ce morceau (via un vrai crossfade concurrent). Abandonner pour
+      // ne jamais recharger/mettre en pause un morceau déjà en cours de lecture réelle.
+      if (uiState.deckDisplayItems[targetDeck] !== item || uiState.currentTrackId === item.id) {
+        logWarn?.('launchDeckFromQueue(): stale deck target aborted', {
+          deck: targetDeck,
+          targetIndex,
+          itemId: item.id,
+          itemName: item.name,
+          currentTrackId: uiState.currentTrackId,
+        });
+        return;
+      }
+
       const isFocusDeck = targetDeck === getResolvedActiveDeck?.();
       const paused = typeof opts.paused === 'boolean' ? opts.paused : !isFocusDeck;
       await player.playOnDeck(targetDeck, {
@@ -708,6 +724,20 @@ export function createPlaybackController(options) {
           ensureLocalSource?.(nextItem).then(async (nextUrl) => {
             if (!getPlayer?.()) return;
             await nextMixPreload?.catch(() => {});
+            // SPEC-1.1.16 : la préparation est asynchrone (téléchargement possible) —
+            // re-valider la cible juste avant le chargement pour ne jamais toucher
+            // une platine devenue active ni dupliquer le morceau courant.
+            if (getResolvedInactiveDeck?.() !== inactiveDeck
+              || uiState.deckDisplayItems[inactiveDeck] !== nextItem
+              || uiState.currentTrackId === nextItem.id) {
+              logWarn?.('startPlaybackForIndex(): stale next-track preload aborted', {
+                inactiveDeck,
+                resolvedInactiveDeck: getResolvedInactiveDeck?.(),
+                nextItemId: nextItem.id,
+                currentTrackId: uiState.currentTrackId,
+              });
+              return;
+            }
             const nextStartPositionMs = Math.max(0, Number(nextItem.autoDjStartOffsetMs) || 0);
             await getPlayer?.()?.playOnDeck(inactiveDeck, {
               url: nextUrl,
@@ -755,7 +785,17 @@ export function createPlaybackController(options) {
               if (!getPlayer?.() || getPendingFilRougeOnInactiveDeck?.() !== ghostItem) return;
               await ghostMixPreload?.catch(() => {});
               const ghostStartMs = Math.max(0, Number(ghostItem.autoDjStartOffsetMs) || 0);
-              if (getPendingFilRougeOnInactiveDeck?.() !== ghostItem) return;
+              // SPEC-1.1.16 : re-valider la cible après la préparation asynchrone.
+              if (getPendingFilRougeOnInactiveDeck?.() !== ghostItem
+                || getResolvedInactiveDeck?.() !== inactiveDeck
+                || uiState.deckDisplayItems[inactiveDeck] !== ghostItem) {
+                logWarn?.('startPlaybackForIndex(): stale fil rouge ghost preload aborted', {
+                  inactiveDeck,
+                  resolvedInactiveDeck: getResolvedInactiveDeck?.(),
+                  ghostId: ghostItem.id,
+                });
+                return;
+              }
               await getPlayer?.()?.playOnDeck(inactiveDeck, {
                 url: ghostUrl,
                 loudnessDb: ghostItem.loudnessDb,
