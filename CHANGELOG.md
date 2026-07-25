@@ -1,3 +1,9 @@
+## [2.13.0](https://github.com/niafrond/niafrond.github.io/compare/v2.12.0...v2.13.0) (2026-07-25)
+
+### Features
+
+* **playback:** implement stale target checks for deck playback to prevent audio interruptions ([df32e93](https://github.com/niafrond/niafrond.github.io/commit/df32e9313cd63f67e9413a03380fcf0ade75cb3c))
+
 ## [2.12.0](https://github.com/niafrond/niafrond.github.io/compare/v2.11.1...v2.12.0) (2026-07-24)
 
 ### Features
