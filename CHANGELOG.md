@@ -1,3 +1,9 @@
+## [2.14.0](https://github.com/niafrond/niafrond.github.io/compare/v2.13.0...v2.14.0) (2026-07-25)
+
+### Features
+
+* update API and CDN URLs to use port 8080 for consistency across configurations ([a441997](https://github.com/niafrond/niafrond.github.io/commit/a441997da5ec9b9e259695164be05299a6122f3c))
+
 ## [2.13.0](https://github.com/niafrond/niafrond.github.io/compare/v2.12.0...v2.13.0) (2026-07-25)
 
 ### Features
