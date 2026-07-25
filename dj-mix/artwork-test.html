@@ -19,7 +19,7 @@
 
   <button id="start">▶️ Démarrer l'audio (obligatoire d'abord)</button>
   <button class="t" data-test="A" disabled>Test A — URL https publique (mzstatic/Apple)</button>
-  <button class="t" data-test="B" disabled>Test B — URL http://vision:3002 (CDN local)</button>
+  <button class="t" data-test="B" disabled>Test B — URL http://vision:8080 (CDN local)</button>
   <button class="t" data-test="C" disabled>Test C — data URI (fetch du CDN puis base64)</button>
   <button class="t" data-test="D" disabled>Test D — SVG fallback actuel (emoji 🎚️)</button>
   <button class="t" data-test="E" disabled>Test E — même origine https (icon-512.png)</button>
@@ -34,7 +34,7 @@
     }
 
     const MZSTATIC = 'https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/0a/90/59/0a905907-f9ef-83e3-4877-b82708ed8121/00792755853351_Cover.jpg/512x512bb.jpg';
-    const VISION = 'http://vision:3002/api/artwork?cachePath=%2Fmnt%2Fe%2FAudioDB%2Fartwork%2Fc99310a6cccedf85bc1e8294a4db87d509e8c264.jpg';
+    const VISION = 'http://vision:8080/api/artwork?cachePath=%2Fmnt%2Fe%2FAudioDB%2Fartwork%2Fc99310a6cccedf85bc1e8294a4db87d509e8c264.jpg';
     const SVG = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 512 512%27%3E%3Crect width=%27512%27 height=%27512%27 rx=%27100%27 fill=%270a0a0f%27/%3E%3Ctext x=%27256%27 y=%27340%27 text-anchor=%27middle%27 font-size=%27300%27%3E%F0%9F%8E%9A%EF%B8%8F%3C/text%3E%3C/svg%3E';
     const SAME_ORIGIN = new URL('./icon-512.png', location.href).href;
 

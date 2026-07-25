@@ -13,7 +13,9 @@ import { getUnreadQueue } from './lib/relayQueueView.js';
  * Responsabilités :
  *   1. Lire ?relay-master=, ?relay-api= et ?relay-relay= depuis l'URL — relay-api
  *      cible l'API principale (recherche), relay-relay le process relay autonome
- *      (état, commandes), détaché de l'API principale depuis juillet 2026 (port 3003).
+ *      (état, commandes), détaché de l'API principale depuis juillet 2026 mais
+ *      reachable derrière la même URL de base via le reverse proxy (routage
+ *      par chemin /api/relay/...).
  *   2. Polling de l'état maître toutes les 1,5 s (dès le chargement de la page)
  *   3. Afficher jaquette / titre / artiste / progression (interpolée par horloge murale)
  *   4. Afficher la file d'attente non lue du maître

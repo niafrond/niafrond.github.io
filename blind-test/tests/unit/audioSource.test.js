@@ -21,32 +21,32 @@ afterAll(() => {
 
 describe('config API (url/token/CDN)', () => {
   test('URL par défaut si rien en storage', () => {
-    expect(audioSource.getDownloaderApiUrl()).toBe('http://vision:3000');
+    expect(audioSource.getDownloaderApiUrl()).toBe('http://vision:8080');
   });
 
   test('applyBroadcastConfig persiste la config reçue de l\'hôte', () => {
-    audioSource.applyBroadcastConfig({ apiUrl: 'http://192.168.1.10:3000', cdnUrl: 'http://192.168.1.10:3002', apiToken: 'tok123' });
-    expect(audioSource.getDownloaderApiUrl()).toBe('http://192.168.1.10:3000');
-    expect(audioSource.getDownloaderCdnUrl()).toBe('http://192.168.1.10:3002');
+    audioSource.applyBroadcastConfig({ apiUrl: 'http://192.168.1.10:8080', cdnUrl: 'http://192.168.1.10:8080', apiToken: 'tok123' });
+    expect(audioSource.getDownloaderApiUrl()).toBe('http://192.168.1.10:8080');
+    expect(audioSource.getDownloaderCdnUrl()).toBe('http://192.168.1.10:8080');
     expect(audioSource.getDownloaderApiToken()).toBe('tok123');
   });
 
   test('applyBroadcastConfig ignore un payload sans apiUrl', () => {
     audioSource.applyBroadcastConfig({});
-    expect(audioSource.getDownloaderApiUrl()).toBe('http://vision:3000');
+    expect(audioSource.getDownloaderApiUrl()).toBe('http://vision:8080');
   });
 
   test('getBroadcastConfig retourne la config courante (URL par défaut incluse)', () => {
     expect(audioSource.getBroadcastConfig()).toEqual({
-      apiUrl: 'http://vision:3000',
+      apiUrl: 'http://vision:8080',
       cdnUrl: expect.any(String),
       apiToken: '',
     });
   });
 
-  test('getDownloaderCdnUrl dérive du port 3002 si non configurée', () => {
-    audioSource.applyBroadcastConfig({ apiUrl: 'http://10.0.0.5:3000' });
-    expect(audioSource.getDownloaderCdnUrl()).toBe('http://10.0.0.5:3002');
+  test('getDownloaderCdnUrl dérive de la même base URL que l\'API si non configurée (reverse proxy unique)', () => {
+    audioSource.applyBroadcastConfig({ apiUrl: 'http://10.0.0.5:8080' });
+    expect(audioSource.getDownloaderCdnUrl()).toBe('http://10.0.0.5:8080');
   });
 });
 

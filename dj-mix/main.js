@@ -1060,8 +1060,10 @@ const {
 } = downloaderConfig;
 
 // ── Mode Maître / Relais ──────────────────────────────────────────────────────
-// getDownloaderRelayUrl : le serveur relay est un process autonome (port 3003),
-// détaché de l'API principale (getDownloaderApiUrl) — cf. lib/downloaderConfig.js.
+// getDownloaderRelayUrl : le serveur relay est un process autonome, détaché de
+// l'API principale (getDownloaderApiUrl), mais reachable derrière la même URL
+// de base via le reverse proxy (routage par chemin /api/relay/...) — cf.
+// lib/downloaderConfig.js.
 const relayModeManager = createRelayModeManager({
   getDownloaderRelayUrl,
   getDownloaderApiToken,

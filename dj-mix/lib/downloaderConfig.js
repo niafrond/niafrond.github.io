@@ -34,30 +34,21 @@ export function describeApiTestError(err, baseUrl, isSecureContext) {
   return err?.message || String(err);
 }
 
-// Derives a CDN base URL from the API base URL by swapping the port to 3002,
-// used as the CDN's default when the user hasn't explicitly configured one.
+// Derives a CDN base URL from the API base URL, used as the CDN's default
+// when the user hasn't explicitly configured one. The CDN is a standalone
+// process behind the same reverse-proxy base URL as the API — nginx routes
+// by path (/api/stream, /api/stems/download), not by port — so it's simply
+// the same URL.
 export function deriveCdnUrlFromApiUrl(apiUrl) {
-  try {
-    const url = new URL(apiUrl);
-    url.port = '3002';
-    return url.toString().replace(/\/$/, '');
-  } catch (_) {
-    return apiUrl;
-  }
+  return String(apiUrl || '').replace(/\/$/, '');
 }
 
-// Derives the relay server's base URL from the API base URL by swapping the
-// port to 3003. The relay server (Maître/Relais sync) is a standalone process
-// detached from the main API, so it can't be reached through the API's own
-// base URL — see lib/relayModeManager.js.
+// Derives the relay server's base URL from the API base URL. The relay
+// server (Maître/Relais sync, see lib/relayModeManager.js) is a standalone
+// process, reachable behind the same reverse-proxy base URL as the API —
+// nginx routes /api/relay/... to it by path, not by port.
 export function deriveRelayUrlFromApiUrl(apiUrl) {
-  try {
-    const url = new URL(apiUrl);
-    url.port = '3003';
-    return url.toString().replace(/\/$/, '');
-  } catch (_) {
-    return apiUrl;
-  }
+  return String(apiUrl || '').replace(/\/$/, '');
 }
 
 export function createDownloaderConfigManager(options) {

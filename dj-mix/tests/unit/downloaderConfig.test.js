@@ -55,8 +55,8 @@ describe('downloaderConfig', () => {
   });
 
   describe('deriveCdnUrlFromApiUrl', () => {
-    test('swaps the port to 3002, keeping host/protocol', () => {
-      expect(deriveCdnUrlFromApiUrl('http://vision:3000')).toBe('http://vision:3002');
+    test('returns the same base URL (reverse proxy routes by path, not by port)', () => {
+      expect(deriveCdnUrlFromApiUrl('http://vision:8080')).toBe('http://vision:8080');
     });
 
     test('returns the input unchanged when it is not a valid URL', () => {
@@ -68,9 +68,9 @@ describe('downloaderConfig', () => {
     test('uses the explicitly stored CDN URL when set', () => {
       localStorage.setItem('cdn-key', 'http://custom-cdn.local:9000');
       const manager = createDownloaderConfigManager({
-        cdnDefaultUrl: 'http://vision:3002',
+        cdnDefaultUrl: 'http://vision:8080',
         cdnStorageKey: 'cdn-key',
-        defaultUrl: 'http://vision:3000',
+        defaultUrl: 'http://vision:8080',
         storageKey: 'api-key',
       });
 
@@ -81,32 +81,32 @@ describe('downloaderConfig', () => {
     // static default, so it follows the API URL when it changes at runtime
     // (e.g. relay mode syncing a master's API URL onto a relay client).
     test('derives from the current API URL when no CDN URL is stored', () => {
-      localStorage.setItem('api-key', 'http://relay-master.local:3000');
+      localStorage.setItem('api-key', 'http://relay-master.local:8080');
       const manager = createDownloaderConfigManager({
-        cdnDefaultUrl: 'http://vision:3002',
+        cdnDefaultUrl: 'http://vision:8080',
         cdnStorageKey: 'cdn-key',
-        defaultUrl: 'http://vision:3000',
+        defaultUrl: 'http://vision:8080',
         storageKey: 'api-key',
       });
 
-      expect(manager.getDownloaderCdnUrl()).toBe('http://relay-master.local:3002');
+      expect(manager.getDownloaderCdnUrl()).toBe('http://relay-master.local:8080');
     });
 
     test('falls back to cdnDefaultUrl when neither CDN nor API URL are configured', () => {
       const manager = createDownloaderConfigManager({
-        cdnDefaultUrl: 'http://vision:3002',
+        cdnDefaultUrl: 'http://vision:8080',
         cdnStorageKey: 'cdn-key',
         defaultUrl: '',
         storageKey: 'api-key',
       });
 
-      expect(manager.getDownloaderCdnUrl()).toBe('http://vision:3002');
+      expect(manager.getDownloaderCdnUrl()).toBe('http://vision:8080');
     });
   });
 
   describe('deriveRelayUrlFromApiUrl', () => {
-    test('swaps the port to 3003, keeping host/protocol', () => {
-      expect(deriveRelayUrlFromApiUrl('http://vision:3000')).toBe('http://vision:3003');
+    test('returns the same base URL (reverse proxy routes by path, not by port)', () => {
+      expect(deriveRelayUrlFromApiUrl('http://vision:8080')).toBe('http://vision:8080');
     });
 
     test('returns the input unchanged when it is not a valid URL', () => {
@@ -116,15 +116,15 @@ describe('downloaderConfig', () => {
 
   describe('getDownloaderRelayUrl', () => {
     // No override storage for the relay URL: it always tracks the current API
-    // URL (port 3003), unlike the CDN URL which can be pinned independently.
+    // URL, unlike the CDN URL which can be pinned independently.
     test('derives from the current API URL', () => {
-      localStorage.setItem('api-key', 'http://relay-master.local:3000');
+      localStorage.setItem('api-key', 'http://relay-master.local:8080');
       const manager = createDownloaderConfigManager({
-        defaultUrl: 'http://vision:3000',
+        defaultUrl: 'http://vision:8080',
         storageKey: 'api-key',
       });
 
-      expect(manager.getDownloaderRelayUrl()).toBe('http://relay-master.local:3003');
+      expect(manager.getDownloaderRelayUrl()).toBe('http://relay-master.local:8080');
     });
 
     test('returns an empty string when no API URL is configured', () => {

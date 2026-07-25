@@ -6,8 +6,9 @@
  * l'appareil maître lui-même (cf. relayModeController.js) — le serveur ne fait
  * qu'auto-créer l'entrée correspondante au premier PUT.
  *
- * Le serveur relay est un process autonome, détaché de l'API principale
- * (port 3003 par défaut) — voir getDownloaderRelayUrl / deriveRelayUrlFromApiUrl
+ * Le serveur relay est un process autonome, détaché de l'API principale mais
+ * reachable derrière la même URL de base via le reverse proxy (routage par
+ * chemin, pas par port) — voir getDownloaderRelayUrl / deriveRelayUrlFromApiUrl
  * dans lib/downloaderConfig.js. Toutes les requêtes de ce module ciblent ce
  * process, jamais l'API principale (`getDownloaderApiUrl`).
  *

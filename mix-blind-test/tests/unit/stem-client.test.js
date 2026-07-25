@@ -106,7 +106,7 @@ describe('StemClient — IndexedDB blob store', () => {
 describe('StemClient — config injectée (dj-mix downloaderConfig/apiHealthMonitor)', () => {
   test('sans injection, retombe sur le comportement autonome (localStorage) pour rester instanciable seul', () => {
     const client = new StemClient();
-    expect(client.getApiUrl()).toBe('http://vision:3000');
+    expect(client.getApiUrl()).toBe('http://vision:8080');
   });
 
   test('getApiUrl() délègue au getter injecté', () => {
