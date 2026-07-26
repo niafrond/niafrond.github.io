@@ -1176,7 +1176,7 @@ lit son propre `relayIncomingQueue` directement en mémoire.
 | Transition mode | `auto` | — | — |
 | DJ Mode | `music` | — | — |
 | DJ Set Profile | `club_peak` | — | — |
-| Downloader API URL | `http://vision:8080` | — | — |
+| Downloader API URL | `https://vision:8443` | — | — |
 | Volume global | 1.0 | 0.0 | 1.0 |
 
 ### 12.4 Désactivation manuelle des modes de transition
