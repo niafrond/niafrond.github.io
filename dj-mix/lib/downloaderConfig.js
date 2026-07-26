@@ -60,6 +60,18 @@ export function deriveRelayUrlFromApiUrl(apiUrl) {
 export function deriveDjPlannerUrlFromApiUrl(apiUrl) {
   return `${String(apiUrl || '').replace(/\/$/, '')}/api/dj-planner`;
 }
+// Resolves a `/api/artwork?cachePath=...` reference — the convention the
+// backend rewrites a track's artworkUrl to once it has mirrored the external
+// (iTunes/Deezer) image onto its own CDN disk cache (see swagger `getArtwork`,
+// tag Streaming) — into an absolute, token-authenticated CDN URL. Returns ''
+// for anything else (already-absolute remote URLs, empty/missing values, or
+// no CDN base configured), so callers can tell "nothing to resolve" apart
+// from "resolved to this URL".
+export function resolveCdnArtworkUrl(artworkRef, cdnBaseUrl, token) {
+  if (typeof artworkRef !== 'string' || !artworkRef.startsWith('/api/artwork')) return '';
+  if (!cdnBaseUrl) return '';
+  return appendApiToken(`${cdnBaseUrl}${artworkRef}`, token);
+}
 
 export function createDownloaderConfigManager(options) {
   const {

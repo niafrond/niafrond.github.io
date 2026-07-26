@@ -6,6 +6,7 @@ import {
   deriveRelayUrlFromApiUrl,
   describeApiTestError,
   isLikelyMixedContentBlock,
+  resolveCdnArtworkUrl,
 } from '../../lib/downloaderConfig.js';
 
 describe('downloaderConfig', () => {
@@ -102,6 +103,27 @@ describe('downloaderConfig', () => {
       });
 
       expect(manager.getDownloaderCdnUrl()).toBe('http://vision:8080');
+    });
+  });
+
+  describe('resolveCdnArtworkUrl', () => {
+    // SPEC-13.3.9 — regression test: a bare `/api/artwork?cachePath=...`
+    // reference must be prefixed with the CDN base URL (+ token) before it
+    // reaches an <img src>, or the browser resolves it against the app's own
+    // origin (e.g. the GitHub Pages deployment) instead of the CDN, 404-ing.
+    test('prefixes a /api/artwork reference with the CDN base URL and token', () => {
+      const url = resolveCdnArtworkUrl('/api/artwork?cachePath=%2Fmnt%2Fart.jpg', 'http://vision:3002', 'secret');
+      expect(url).toBe('http://vision:3002/api/artwork?cachePath=%2Fmnt%2Fart.jpg&token=secret');
+    });
+
+    test('returns empty string when no CDN base URL is available', () => {
+      expect(resolveCdnArtworkUrl('/api/artwork?cachePath=%2Fmnt%2Fart.jpg', '', 'secret')).toBe('');
+    });
+
+    test('returns empty string for an already-absolute or empty artwork ref (nothing to resolve)', () => {
+      expect(resolveCdnArtworkUrl('https://mzstatic.com/art.jpg', 'http://vision:3002', 'secret')).toBe('');
+      expect(resolveCdnArtworkUrl('', 'http://vision:3002', 'secret')).toBe('');
+      expect(resolveCdnArtworkUrl(undefined, 'http://vision:3002', 'secret')).toBe('');
     });
   });
 

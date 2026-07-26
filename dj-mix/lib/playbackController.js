@@ -701,7 +701,7 @@ export function createPlaybackController(options) {
         if (djModeOverridden) player.setTransitionMode(player._previousTransitionMode ?? 'auto');
       }
 
-      // SPEC-1.1.18 : crossfadeToDeck() renvoie false si un autre crossfade était déjà en
+      // SPEC-1.2.5 : crossfadeToDeck() renvoie false si un autre crossfade était déjà en
       // cours — aucune piste n'a alors réellement changé sur les platines. Ne jamais
       // synchroniser uiState/la file sur un morceau qui n'est pas devenu audible.
       if ((mode === 'autofade' || mode === 'crossfade') && crossfadePerformed === false) {

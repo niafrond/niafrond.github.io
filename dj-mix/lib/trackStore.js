@@ -44,7 +44,13 @@ function runtimeDefaults() {
 }
 
 function isDeadPersistedArtUrl(value) {
-  return typeof value === 'string' && value.startsWith('blob:');
+  if (typeof value !== 'string') return false;
+  // blob: is a per-document URL, revoked on unload (see below). A bare
+  // `/api/artwork?cachePath=...` (SPEC-13.3.9) is the CDN-relative reference
+  // as returned by the backend, before being prefixed with the CDN base URL —
+  // some call sites persisted it unresolved; left as-is it resolves against
+  // this app's own origin on next load and 404s, so treat it as dead too.
+  return value.startsWith('blob:') || value.startsWith('/api/artwork');
 }
 
 function isFilled(value) {

@@ -3,6 +3,7 @@ import {
   extractCacheGenres,
   extractCacheYear,
   filterCacheFiles,
+  resolveCacheFileArtUrl,
 } from '../../lib/playlistManager.js';
 
 describe('playlistManager cache filters', () => {
@@ -54,5 +55,32 @@ describe('playlistManager cache filters', () => {
     expect(filterCacheFiles(files, { year: '2021' })).toEqual([files[2]]);
     expect(filterCacheFiles(files, { stemsOnly: true })).toEqual([files[0]]);
     expect(filterCacheFiles(files, { query: 'groove', genre: 'Rythme: groove' })).toEqual([files[1]]);
+  });
+});
+
+describe('resolveCacheFileArtUrl', () => {
+  // SPEC-13.3.9 — regression test: GET /api/cache/files can return an
+  // artworkUrl still shaped as a bare `/api/artwork?cachePath=...` reference,
+  // which must be prefixed with the CDN base URL (+ token) before it's used
+  // as an <img src>, or it resolves against the app's own origin and 404s.
+  test('prefixes a bare /api/artwork reference with the CDN base URL and token', () => {
+    const file = { artworkUrl: '/api/artwork?cachePath=%2Fmnt%2Fart.jpg' };
+    expect(resolveCacheFileArtUrl(file, 'http://vision:3002', 'secret'))
+      .toBe('http://vision:3002/api/artwork?cachePath=%2Fmnt%2Fart.jpg&token=secret');
+  });
+
+  test('leaves an already-absolute artworkUrl (iTunes/Deezer) untouched', () => {
+    const file = { artworkUrl: 'https://mzstatic.com/art.jpg' };
+    expect(resolveCacheFileArtUrl(file, 'http://vision:3002', 'secret')).toBe('https://mzstatic.com/art.jpg');
+  });
+
+  test('falls back to file.artUrl when artworkUrl is absent', () => {
+    const file = { artUrl: 'https://cdn.example.com/art.jpg' };
+    expect(resolveCacheFileArtUrl(file, 'http://vision:3002', 'secret')).toBe('https://cdn.example.com/art.jpg');
+  });
+
+  test('returns empty string when a bare reference cannot be resolved (no CDN URL configured)', () => {
+    const file = { artworkUrl: '/api/artwork?cachePath=%2Fmnt%2Fart.jpg' };
+    expect(resolveCacheFileArtUrl(file, '', 'secret')).toBe('');
   });
 });
