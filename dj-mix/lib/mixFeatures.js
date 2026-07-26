@@ -22,11 +22,22 @@ import {
   ECHO_WET_MIX,
   ECHO_DRY_MIX,
   STEM_SYNC_INTERVAL_MS,
+  ELEMENT_MUTE_RAMP_SEC,
 } from './constants.js';
 
 // ─── Tiny utilities ───────────────────────────────────────────────────────────
 
 function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+// Nominal cadence of the caller's tracking interval (player.js #startTracking, setInterval(..., 300)).
+// Background tabs get that setInterval throttled by the browser (down to ~1 tick/s or less), which
+// would otherwise starve the per-tick autoBpm easing below and leave playbackRate stuck away from
+// its target for as long as the app stays backgrounded. Scaling the easing factor by the real
+// elapsed time since the last tick keeps convergence tied to wall-clock time instead of tick count.
+export const AUTO_BPM_TICK_MS = 300;
+export function timeCorrectedEase(perTickFactor, elapsedMs) {
+  return 1 - Math.pow(1 - perTickFactor, Math.max(0, elapsedMs) / AUTO_BPM_TICK_MS);
+}
 
 
 // ─── Distortion curve (computed once, reused for every deck) ─────────────────
@@ -220,6 +231,7 @@ export class SimpleMixFeatures {
     B: { originalSrc: '', appliedSrc: '', stemMode: null, token: 0, processing: false, providedStems: { vocalsUrl: '', instrumentalUrl: '', echoUrl: '', distortionUrl: '' } },
   };
   #lastStemSyncAt = 0;
+  #lastAutoBpmTickAt = 0;
 
   // Smoothed gain state tracked on the JS side (for adaptive computation only)
   #msState = {
@@ -268,6 +280,47 @@ export class SimpleMixFeatures {
     this.#apply();
   }
 
+  // Ramp continu de l'intensité de l'écho (0-1) sans repasser par #apply() / le swap de stem
+  // audio (qui force un reseek) : utilisé par beat_repeat pour un écho qui croît progressivement
+  // pendant ses 2 dernières étapes, tick après tick, sans provoquer de glitch de lecture.
+  setEchoIntensity(value) {
+    if (!this.#ready || !this.#settings.echo) return;
+    const intensity = clamp(Number(value) || 0, 0, 1);
+    for (const deck of ['A', 'B']) {
+      const nodes = this.#nodes(deck);
+      if (!nodes) continue;
+      this.#setParamSmooth(nodes.wet.gain, ECHO_WET_MIX * intensity);
+    }
+  }
+
+  /** Shared AudioContext, once ensureReady() has run (null before that). Lets beat_repeat's
+   * BeatRepeatEngine schedule its own AudioBufferSourceNodes against the same clock/graph. */
+  getAudioContext() {
+    return this.#audioCtx;
+  }
+
+  /** The per-deck convergence bus (sourceBus) that both the normal HTMLAudioElement path and a
+   * temporary buffer-source loop feed into, so the loop gets the same echo/distortion/tone-filter
+   * chain as normal playback. Null before ensureReady(). */
+  getDeckInputBus(deck) {
+    return this.#nodes(deck)?.sourceBus ?? null;
+  }
+
+  /** Mutes (0) or restores (1) the HTMLAudioElement's contribution to sourceBus, independent of
+   * #apply()/setEnabled() (which must never touch this — it can be called mid-effect by
+   * setMixFeatures({echo/deckFx}) toggles that beat_repeat itself issues for its FX stages, and
+   * resetting elementGain there would un-mute the element while the buffer loop is still playing,
+   * causing double audio). Uses a much shorter ramp than SMOOTH_TAU since loop stages can be ~17ms. */
+  setDeckElementGain(deck, value) {
+    if (!this.#ready) return;
+    const nodes = this.#nodes(deck);
+    if (!nodes) return;
+    const target = clamp(Number(value) || 0, 0, 1);
+    const t = this.#audioCtx.currentTime;
+    nodes.elementGain.gain.cancelScheduledValues(t);
+    nodes.elementGain.gain.setTargetAtTime(target, t, ELEMENT_MUTE_RAMP_SEC);
+  }
+
   setDeckSourceMetadata(deck, source) {
     console.debug('[mixFeatures] setDeckSourceMetadata: deck=%s url=%s stems=%o', deck, source?.url, source?.stems);
     const d = deck === 'B' ? 'B' : 'A';
@@ -300,18 +353,20 @@ export class SimpleMixFeatures {
     if (!this.#ready) return;
 
     const { autoBpm } = this.#settings;
+    const now = Date.now();
 
     if (autoBpm && !this.#audioA.paused && !this.#audioB.paused) {
       const active   = activeDeck === 'B' ? this.#audioB : this.#audioA;
       const inactive = activeDeck === 'B' ? this.#audioA : this.#audioB;
 
+      const elapsedMs = this.#lastAutoBpmTickAt > 0 ? now - this.#lastAutoBpmTickAt : AUTO_BPM_TICK_MS;
       const delta      = active.currentTime - inactive.currentTime;
       const targetRate = clamp(1 + delta * 0.02, 0.94, 1.06);
-      inactive.playbackRate += (targetRate - inactive.playbackRate) * 0.2;
-      active.playbackRate   += (1 - active.playbackRate) * 0.1;
+      inactive.playbackRate += (targetRate - inactive.playbackRate) * timeCorrectedEase(0.2, elapsedMs);
+      active.playbackRate   += (1 - active.playbackRate) * timeCorrectedEase(0.1, elapsedMs);
     }
+    this.#lastAutoBpmTickAt = now;
 
-    const now = Date.now();
     if (now - this.#lastStemSyncAt >= STEM_SYNC_INTERVAL_MS) {
       this.#lastStemSyncAt = now;
       void this.#syncAllDeckStemModes(false);
@@ -360,6 +415,12 @@ export class SimpleMixFeatures {
     const ctx = this.#audioCtx;
 
     const source  = ctx.createMediaElementSource(audioEl);
+    // elementGain: mute switch for the HTMLAudioElement path, used while beat_repeat's
+    // AudioBufferSourceNode-based loop engine drives sourceBus instead (see setDeckElementGain).
+    const elementGain = ctx.createGain(); elementGain.gain.value = 1;
+    // sourceBus: shared convergence point so both the normal element path AND a temporary
+    // buffer-source loop can feed the same downstream echo/distortion/tone-filter chain.
+    const sourceBus = ctx.createGain(); sourceBus.gain.value = 1;
     const preGain = ctx.createGain();
     const echoBaseSend = ctx.createGain();    echoBaseSend.gain.value = 1;
     const echoStemSend = ctx.createGain();    echoStemSend.gain.value = 0;
@@ -387,9 +448,11 @@ export class SimpleMixFeatures {
     toneFilter.Q.value = 0.7;
 
     // ── Graph ────────────────────────────────────────────────────────────────
-    source.connect(preGain);
-    source.connect(echoBaseSend);
-    source.connect(distBaseSend);
+    source.connect(elementGain);
+    elementGain.connect(sourceBus);
+    sourceBus.connect(preGain);
+    sourceBus.connect(echoBaseSend);
+    sourceBus.connect(distBaseSend);
 
     preGain.connect(dry);
     echoBaseSend.connect(delay);
@@ -408,6 +471,8 @@ export class SimpleMixFeatures {
     ms.output.connect(ctx.destination);
 
     return {
+      elementGain,
+      sourceBus,
       wet,
       dry,
       distWet,

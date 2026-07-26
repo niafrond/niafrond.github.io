@@ -5,6 +5,8 @@
  * ce qui corrige le bug de progression figée à 0:01.
  */
 
+import { jest } from '@jest/globals';
+
 // ─── Mock AudioContext ────────────────────────────────────────────────────────
 
 let audioCtxConstructorCalls = 0;
@@ -85,7 +87,12 @@ function makeAudioEl() {
 
 // ─── Import ───────────────────────────────────────────────────────────────────
 
-import { SimpleMixFeatures, computeAdaptiveMidSideGains } from '../../lib/mixFeatures.js';
+import {
+  SimpleMixFeatures,
+  computeAdaptiveMidSideGains,
+  AUTO_BPM_TICK_MS,
+  timeCorrectedEase,
+} from '../../lib/mixFeatures.js';
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
@@ -215,6 +222,57 @@ describe('SimpleMixFeatures — tick() without AudioContext', () => {
 
     // inactive deck (B) should have its playbackRate adjusted
     expect(audioB.playbackRate).not.toBe(1);
+  });
+
+  test('SPEC-7.6.2 — tick() converges faster toward target after a long real-time gap between calls (background-throttling immunity)', async () => {
+    const audioA = { ...makeAudioEl(), paused: false, currentTime: 1.0, playbackRate: 1 };
+    const audioB = { ...makeAudioEl(), paused: false, currentTime: 1.5, playbackRate: 1 };
+    const features = new SimpleMixFeatures(audioA, audioB);
+    await features.setEnabled({ autoBpm: true });
+
+    const dateNowSpy = jest.spyOn(Date, 'now');
+
+    // First tick establishes the baseline timestamp (elapsedMs falls back to the nominal tick).
+    dateNowSpy.mockReturnValue(1_000_000);
+    features.tick('A');
+    const rateAfterNominalTick = audioB.playbackRate;
+
+    // Reset and simulate a throttled setInterval: the next call only fires after a much longer
+    // real-world gap than the nominal 300ms cadence (e.g. tab backgrounded for 10s).
+    audioB.playbackRate = 1;
+    dateNowSpy.mockReturnValue(1_000_000 + AUTO_BPM_TICK_MS);
+    features.tick('A'); // re-baseline #lastAutoBpmTickAt at the nominal cadence
+    audioB.playbackRate = 1;
+    dateNowSpy.mockReturnValue(1_000_000 + AUTO_BPM_TICK_MS + 10_000);
+    features.tick('A');
+    const rateAfterThrottledGap = audioB.playbackRate;
+
+    // Convergence toward the target should be at least as strong after a 10s real gap as after a
+    // single nominal 300ms tick — a naive per-call (not time-corrected) easing would apply the
+    // exact same small nudge regardless of the gap, leaving the deck's tempo stuck off-target for
+    // the whole duration the app stays backgrounded.
+    const targetDeltaAfterNominal = Math.abs(rateAfterNominalTick - 1);
+    const targetDeltaAfterThrottled = Math.abs(rateAfterThrottledGap - 1);
+    expect(targetDeltaAfterThrottled).toBeGreaterThanOrEqual(targetDeltaAfterNominal);
+
+    dateNowSpy.mockRestore();
+  });
+});
+
+describe('SPEC-7.6.1 — timeCorrectedEase (autoBpm easing immune to setInterval throttling)', () => {
+  test('at the nominal tick duration (300ms), reproduces the original per-tick factor exactly', () => {
+    expect(timeCorrectedEase(0.2, AUTO_BPM_TICK_MS)).toBeCloseTo(0.2, 10);
+    expect(timeCorrectedEase(0.1, AUTO_BPM_TICK_MS)).toBeCloseTo(0.1, 10);
+  });
+
+  test('a much longer elapsed time (background throttling) yields a larger easing factor, not a smaller one', () => {
+    const nominal = timeCorrectedEase(0.2, AUTO_BPM_TICK_MS);
+    const throttled = timeCorrectedEase(0.2, AUTO_BPM_TICK_MS * 40); // e.g. ~1 tick/12s
+    expect(throttled).toBeGreaterThan(nominal);
+  });
+
+  test('a zero elapsed time produces no movement toward the target', () => {
+    expect(timeCorrectedEase(0.2, 0)).toBe(0);
   });
 });
 

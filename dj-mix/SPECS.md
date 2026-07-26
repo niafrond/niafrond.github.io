@@ -64,7 +64,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 | 20 | `echo_lowpass` | 216 | 1.45 | `max(0.08, start × (1−t))` (plancher 8%) + echo + LP | `start + … × t^1.08` |
 | 21 | `bass_swap` | 175 | 1.30 | `start × cos(π/2 × t^0.85)` | `start + … × t^0.85` |
 | 22 | `kick_swap` | 145 | 1.25 | S-curve cosine | Entrée retardée à 30% : `(t−0.3)/0.7` |
-| 23 | `beat_repeat` | 112 | 1.20 | Plein pendant la boucle (max `5s` au total), puis superposition (fade) sur les 2 dernières secondes | Minimal (5%) pendant la boucle, puis superposition avec le deck sortant sur les 2 dernières secondes |
+| 23 | `beat_repeat` | 112 | 1.20 | Plein pendant le loop (2 répétitions par palier, `8→1/16` temps, plancher absolu), puis superposition (fade) sur la mesure suivante | Minimal (5%) pendant le loop, puis superposition avec le deck sortant sur la mesure suivante |
 | 24 | `backspin` | 85 | 0.95 | Décélération rapide jusqu'à 35%, puis 0 | Entrée dès 20% (avant l'arrêt complet) : `((t−0.2)/0.5)^0.7` |
 | 25 | `echo_freeze` | 195 | 1.48 | Plancher 12% gelé jusqu'à 65%, puis fade | Entrée retardée à 45% : `(t−0.45)^0.8` |
 
@@ -93,7 +93,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.3.5.1** GIVEN le mode `beat_repeat` est sélectionné (auto ou manuel) — WHEN la transition démarre (event `transitionmode`) — THEN `triggerBeatRepeatTransitionFx` est appelé : un loop roll est déclenché immédiatement sur la platine sortante ET sur la platine entrante avec un délai de `350 ms` (pour laisser la piste entrante démarrer sa lecture).
 - **SPEC-1.3.5.2** La fenêtre de boucle (`windowMs`) est calculée à partir du BPM de la piste entrante : `windowMs = round(30 000 / BPM)` (1/8 de note). Plage : `60`–`500 ms`. BPM par défaut si inconnu : `120`.
 - **SPEC-1.3.5.3** L'intervalle de ré-ancrage (`tickMs`) est identique à `windowMs` pour créer une boucle exacte sur la division rythmique.
-- **SPEC-1.3.5.4** La durée du loop roll est `min(BEAT_REPEAT_MAX_LOOP_MS, crossfadeDurationMs)` pour la platine sortante (cf. SPEC-1.3.8), et cette même valeur `− 350 ms` pour la platine entrante (délai initial déduit).
+- **SPEC-1.3.5.4** La durée du loop roll est `computeBeatRepeatLoopPhaseMs(incomingBpm)` (durée de la phase bouclée du raccourcissement progressif, cf. SPEC-1.3.8) pour la platine sortante, et cette même valeur `− 350 ms` pour la platine entrante (délai initial déduit).
 - **SPEC-1.3.5.5** Les deux platines utilisent le BPM de la piste entrante pour maintenir la cohérence rythmique perçue pendant la transition.
 
 #### 1.3.6 Continuité audio (pas de silence)
@@ -101,7 +101,8 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.3.6.1** GIVEN un mode de transition autre que `cut_transition` (coupure instantanée intentionnelle) — WHEN le crossfade progresse — THEN la somme des volumes `from + to` ne doit jamais rester sous `0.05` pendant plus de `100 ms`, garantie qui couvre à plus forte raison l'exigence produit "aucune transition ne doit créer de silence supérieur à 500 ms". Cette garantie est vérifiée automatiquement pour les 23 modes de transition non-`cut_transition` (hors `auto`, qui délègue toujours à un mode concret).
 - **SPEC-1.3.6.2** GIVEN le mode `fade_in_out` — WHEN le crossfade progresse — THEN le volume entrant (`to`) commence sa montée dès `t=0` (courbe `t^0.7`, pas de palier plat initial).
 - **SPEC-1.3.6.3** GIVEN le mode `backspin` — WHEN le crossfade progresse — THEN le volume entrant (`to`) commence sa montée dès `t=0.2`, avant l'arrêt complet du deck sortant à `t=0.35`, évitant tout palier de silence total.
-- **SPEC-1.3.6.4** GIVEN le mode `brake_tape_stop_simple` — WHEN le crossfade progresse — THEN le playback rate des deux platines suit le comportement générique (retour lissé vers `1`, `+= (1 − rate) × 0.18` par tick) — ce mode n'applique plus de décélération dédiée du playback rate.
+- **SPEC-1.3.6.4** GIVEN le mode `brake_tape_stop_simple` — WHEN le crossfade progresse — THEN le playback rate des deux platines suit le comportement générique (retour lissé vers `1`) — ce mode n'applique plus de décélération dédiée du playback rate.
+- **SPEC-1.3.6.5** GIVEN le lissage générique du playback rate pendant une transition (`+= (1 − rate) × 0.18` par tick nominal de `30 ms`) — WHEN l'onglet/l'app passe en arrière-plan pendant qu'une transition est en cours — THEN le facteur `0.18` est corrigé par le temps réellement écoulé depuis le tick précédent (`timeCorrectedRateEase(0.18, elapsedMs)`, équivalent à `1 − (1 − 0.18)^(elapsedMs/30)`) plutôt qu'appliqué tel quel à chaque appel de `setInterval`. Sans cette correction, le throttling des `setInterval` en arrière-plan (navigateur réduisant la cadence des ticks, parfois à ~1/s) ralentit artificiellement la convergence du playback rate vers sa cible, laissant le tempo d'une platine décalé (perçu comme un BPM qui diminue doucement) tant que l'app reste en arrière-plan ; au retour au premier plan, les ticks reprennent leur cadence normale et le rate rattrape sa cible en une fraction de seconde, ce qui donnait l'impression d'une "correction" brutale. Bug corrigé le 2026-07-27.
 
 #### 1.3.7 Mode `reverb_short_simple` désactivé
 
@@ -110,14 +111,24 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.3.7.3** GIVEN le sélecteur manuel "Mode AutoMix" — THEN l'option `reverb_short_simple` n'est plus proposée dans le `<select>`.
 - **SPEC-1.3.7.4** `reverb_short_simple` est retiré de `allowedTransitionModes` côté `main.js` (`DISABLED_TRANSITION_MODES`), donc même une valeur persistée (ancien réglage) retombe sur `auto` via `getSafeAllowedTransitionMode` / `#resolveAllowedTransitionMode`.
 
-#### 1.3.8 Mode `beat_repeat` plafonné à 5s + superposition finale
+#### 1.3.8 Mode `beat_repeat` : raccourcissement progressif (2 répétitions par palier, division par 2, lancement sur la mesure suivante)
 
-- **SPEC-1.3.8.1** GIVEN le mode `beat_repeat` — WHEN la transition démarre — THEN elle ne dure jamais plus de `BEAT_REPEAT_MAX_LOOP_MS` = `5000 ms` au total (boucle + superposition finale), même si la durée de crossfade configurée est plus longue (`beatRepeatCutoffMs = min(5000, liveDuration)`).
-- **SPEC-1.3.8.2** GIVEN une durée de crossfade configurée ≤ `5000 ms` — THEN `beat_repeat` n'est pas raccourci davantage : le budget total (boucle + superposition) occupe toute la durée configurée.
-- **SPEC-1.3.8.3** Les `BEAT_REPEAT_OVERLAP_MS` = `2000 ms` dernières millisecondes du budget total (`beatRepeatOverlapMs = min(2000, beatRepeatCutoffMs)`) ne sont plus consacrées à la boucle : le deck sortant et le deck entrant s'y superposent (fade croisé linéaire, `from: startBaseFrom × (1 − overlapProgress)`, `to: startBaseTo + (1 − startBaseTo) × overlapProgress`), et non une coupure sèche (cut) comme dans une itération précédente de cette spec.
-- **SPEC-1.3.8.4** La phase bouclée (le budget total moins `beatRepeatOverlapMs`, soit `beatRepeatLoopPhaseMs`) se décompose en étapes successives (`BEAT_REPEAT_STAGE_DURATION_FRACTIONS = [0.40, 0.25, 0.20, 0.15]`, qui somme à `1`) : une première boucle qui dure plus longtemps, puis des boucles de plus en plus courtes. La durée de chaque étape est `fraction × beatRepeatLoopPhaseMs` : le cumul des durées d'étapes est donc toujours exactement égal à `beatRepeatLoopPhaseMs`, quel que soit le BPM.
-- **SPEC-1.3.8.5** GIVEN les 4 étapes — THEN leur longueur de boucle est calée sur le tempo de la piste entrante plutôt que sur une durée fixe : `BEAT_REPEAT_STAGE_BEATS = [4, 2, 1, 0.5]` temps (1 mesure, 1/2 mesure, 1 temps, 1/2 temps) × `60 / bpm`. Le BPM utilisé est celui de la piste entrante (`normalized.bpm` résolu dans `#normalizeSource`, avec repli sur `audioFeatures.bpm`/`tempo`), clampé entre `60` et `220` (défaut `120` si indisponible).
-- **SPEC-1.3.8.6** Le FX `triggerBeatRepeatTransitionFx` (SPEC-1.3.5) ne couvre que la phase bouclée : `phaseDurationMs = min(BEAT_REPEAT_MAX_LOOP_MS, crossfadeDurationMs) − BEAT_REPEAT_OVERLAP_MS`, avec le même calcul de BPM entrant (`extractTrackBpm`) — le stutter FX s'arrête exactement quand la superposition volume démarre, les deux effets restant synchronisés sur le même tempo.
+Implémentation stricte d'un algorithme fourni littéralement par l'utilisateur (capture d'un loop aligné sur la grille rythmique, longueur initiale configurable avec repli selon le temps restant, 2 répétitions par palier puis division par 2 jusqu'à un plancher absolu de `1/16` temps, lancement du morceau B sur la mesure suivante). Moteur dédié : `lib/beatRepeatEngine.js` (fonctions pures) + `BeatRepeatEngine` (scheduling Web Audio), orchestré depuis `DJPlayer#runBeatRepeatTransition` dans `player.js`.
+
+- **SPEC-1.3.8.1** GIVEN le mode `beat_repeat` — WHEN la transition démarre — THEN un point d'ancrage aligné sur la grille rythmique est calculé (`computeLoopAnchorSeconds`) : la position courante du deck sortant est arrondie au temps le plus proche (`secondsPerBeat` dérivé du BPM **du deck sortant**, `getSafeBeatRepeatBpm`, clampé `60`–`220`, défaut `120`), en supposant la phase zéro au début de la piste. **Limite assumée** : aucune détection de grille/downbeat réelle n'existe dans l'application (seul un BPM scalaire par piste), donc cet ancrage peut être mesurablement décalé sur une piste avec intro/pickup note — reste strictement meilleur que l'absence totale de calage d'une itération précédente de cette spec.
+- **SPEC-1.3.8.2** GIVEN l'ancrage calculé — THEN la longueur initiale du loop est déterminée par `chooseInitialLoopBeats(remainingBeats, desiredInitialBeats)` : `desiredInitialBeats` = `player.beatRepeatInitialBeats` (configurable, défaut `BEAT_REPEAT_DEFAULT_INITIAL_BEATS` = `8` temps) ; si moins de `8` temps restent avant la fin de la piste sortante (`remainingBeats = (duration − currentTime) / secondsPerBeat` du deck sortant), la longueur initiale retombe à `4` temps (`BEAT_REPEAT_FALLBACK_INITIAL_BEATS`) ; jamais moins de `2` temps (`BEAT_REPEAT_MIN_INITIAL_BEATS`).
+- **SPEC-1.3.8.3** GIVEN la longueur initiale choisie — THEN elle est divisée par 2 successivement jusqu'à un plancher **absolu** de `1/16` temps (`BEAT_REPEAT_FLOOR_BEATS`, indépendant de la longueur initiale — `buildBeatRepeatStageBeats`) : pour `8` temps initiaux, la séquence est `8 → 4 → 2 → 1 → 1/2 → 1/4 → 1/8 → 1/16` (8 paliers) ; pour `4` temps, `4 → 2 → 1 → 1/2 → 1/4 → 1/8 → 1/16` (7 paliers) ; pour `2` temps, `2 → 1 → 1/2 → 1/4 → 1/8 → 1/16` (6 paliers) — une longueur initiale plus courte produit moins de paliers, pas une séquence rééchelonnée.
+- **SPEC-1.3.8.4** GIVEN un palier autre que le dernier — THEN il est joué pendant exactement **2 répétitions complètes** de sa propre longueur avant de passer au palier suivant (moitié de la longueur) — mise en œuvre littérale de « repeat the current loop twice, divide the loop length by 2 ». La durée réelle (ms) de chaque répétition est dérivée du BPM du deck sortant (`secondsPerBeat = 60 / bpm`), donc phase-lockée sur le tempo.
+- **SPEC-1.3.8.5** GIVEN le dernier palier (longueur minimale `1/16` temps) atteint — THEN il ne se raccourcit plus : il continue de tourner à cette longueur jusqu'à la prochaine limite de mesure (`computeBeatRepeatLaunchBeats`, premier multiple de `BEAT_REPEAT_BEATS_PER_BAR` = `4` temps strictement postérieur à la somme de tous les paliers × 2, garantissant que le dernier palier a bien joué ses 2 répétitions obligatoires), point auquel le morceau B est lancé et le bouclage est désactivé — mise en œuvre littérale de « on the next bar boundary after the final reduction: disable the loop, start the next track ».
+- **SPEC-1.3.8.6** Le bouclage lui-même est mis en œuvre par un moteur Web Audio dédié (`BeatRepeatEngine#run`) : le morceau sortant est décodé transitoirement (`AudioContext#decodeAudioData` sur son `blob:` URL déjà local), et seule une petite fenêtre autour de l'ancrage est retenue en mémoire (proportionnelle à la longueur initiale du loop, pas au morceau entier — évite un coût RAM de plusieurs dizaines de Mo par transition). Chaque palier a son propre `AudioBufferSourceNode` (`loop = true`, `loopStart` fixe à l'ancrage, `loopEnd` qui se raccourcit à chaque palier), avec tous les instants de départ/arrêt calculés une seule fois à l'avance contre l'horloge de l'`AudioContext` (`ctx.currentTime`) plutôt que par une scrutation réactive (`setInterval`) — c'est ce qui garantit la lecture **sample-accurate**, le **phase-lock au BPM**, et le **déterminisme temporel** exigés, et ce qui rend impossible un changement de longueur de loop en plein milieu d'un temps (un changement n'a lieu qu'à un multiple exact de la longueur du palier courant).
+- **SPEC-1.3.8.7** GIVEN un changement de longueur de loop (passage d'un palier au suivant) — THEN un fondu enchaîné court (`computeCrossfadeWindowSec`, proportionnel à la longueur du palier concerné, borné `3 ms`–`12 ms`) est appliqué entre les deux `AudioBufferSourceNode` pour éviter tout clic — mise en œuvre littérale de « apply short crossfades when changing loop length to prevent clicks ».
+- **SPEC-1.3.8.8** Les points de boucle (`loopStart`/`loopEnd`) sont ajustés au plus proche passage par zéro dans le buffer décodé (recherche `± 5 ms`) — technique standard de bouclage Web Audio sans clic, complémentaire (et non substituable) au fondu enchaîné de SPEC-1.3.8.7.
+- **SPEC-1.3.8.9** GIVEN les `BEAT_REPEAT_FX_STAGE_COUNT` = `2` derniers paliers (les plus courts, `1/8` et `1/16` temps par défaut) — THEN un filtre high-pass est appliqué sur le deck sortant (`deckFx.filterMode = 'highPass'`) et l'écho est activé avec une intensité qui croît linéairement de `0` à `1` sur la durée cumulée de ces 2 paliers (`SimpleMixFeatures#setEchoIntensity`, ramp continu sans re-seek du stem audio) — ni le filtre ni l'écho ne sont actifs pendant les paliers précédents. Ces deux effets sont explicitement optionnels dans la spécification d'origine ; ils restent implémentés ici car peu coûteux et cohérents avec la « tension rythmique croissante » recherchée.
+- **SPEC-1.3.8.10** GIVEN la limite de mesure atteinte — THEN le deck entrant est amené au volume plein via une superposition (fondu croisé linéaire) de `BEAT_REPEAT_LAUNCH_OVERLAP_MS` = `300 ms` sur le volume des deux platines (`from: startBaseFrom × (1 − overlapProgress)`, `to: startBaseTo + (1 − startBaseTo) × overlapProgress`) ; le moteur `BeatRepeatEngine` du deck sortant s'arrête indépendamment (fondu propre géré par SPEC-1.3.8.7/1.3.8.8).
+- **SPEC-1.3.8.11** Pendant toute la phase bouclée, la contribution du `HTMLAudioElement` du deck sortant au graphe Web Audio est coupée (`SimpleMixFeatures#setDeckElementGain(deck, 0)`, ramp `ELEMENT_MUTE_RAMP_SEC` = `8 ms`) pour que seul le moteur `BeatRepeatEngine` soit audible sur ce deck, évitant toute double lecture ; elle est restaurée (`= 1`) une fois la transition terminée ou interrompue.
+- **SPEC-1.3.8.12** GIVEN la transition `beat_repeat` terminée OU interrompue — THEN le filtre high-pass du deck sortant est restauré à sa valeur précédente, l'écho est désactivé s'il n'était pas déjà actif avant la transition, son intensité est remise à `1`, et le moteur `BeatRepeatEngine` est arrêté (idempotent, sûr même s'il n'avait jamais démarré).
+- **SPEC-1.3.8.13** La durée totale de `beat_repeat` n'est pas dérivée de la durée de crossfade configurée par l'utilisateur : elle est entièrement dérivée du BPM du deck sortant et de la grille de mesures (`computeBeatRepeatLoopPhaseMs(bpm, initialBeats) + BEAT_REPEAT_LAUNCH_OVERLAP_MS`).
+- **SPEC-1.3.8.14** Le FX décoratif `triggerBeatRepeatTransitionFx` (SPEC-1.3.5) reste calculé depuis le BPM de la piste **entrante** (`incomingBpm`, pour compatibilité avec son mécanisme existant), ce qui peut légèrement diverger de la durée réelle du moteur `BeatRepeatEngine` (calculée depuis le BPM de la piste **sortante**, et depuis la longueur initiale réellement choisie après le repli de SPEC-1.3.8.2) — divergence assumée et non bloquante : ce FX est une texture décorative superposée (`lib/djFxController.js`), pas le mécanisme audio réel de la boucle.
 
 #### 1.3.9 Mode `short_loop` plafonné à 3 répétitions
 
@@ -555,6 +566,11 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-7.5.2** Énergie : RMS = `sqrt(sum(sample²) / length)`. Epsilon : `1e-4` (`ENERGY_EPSILON`).
 - **SPEC-7.5.3** Lissage JS-side : lerp α = `0.34` (`SMOOTH_JS`).
 
+### 7.6 Auto BPM (synchronisation tempo continue)
+
+- **SPEC-7.6.1** GIVEN le réglage `autoBpm` actif ET les deux platines en lecture — WHEN `SimpleMixFeatures#tick(activeDeck)` est appelé (depuis `#trackInterval` de `player.js`, `setInterval(..., 300)`) — THEN la platine inactive est ramenée vers `targetRate = clamp(1 + delta × 0.02, 0.94, 1.06)` (`delta` = écart de `currentTime` entre platine active et inactive) et la platine active est ramenée vers `1`, chacune via un lissage exponentiel dont le facteur par tick nominal (`300 ms`) est `0.2` (inactive) / `0.1` (active).
+- **SPEC-7.6.2** GIVEN l'appel de `tick()` — THEN le facteur de lissage est corrigé par le temps réellement écoulé depuis l'appel précédent (`timeCorrectedEase(perTickFactor, elapsedMs)`, équivalent à `1 − (1 − perTickFactor)^(elapsedMs/300)`) plutôt qu'appliqué tel quel à chaque appel. Sans cette correction, le throttling du `setInterval` de `#trackInterval` en arrière-plan (navigateur réduisant la cadence des ticks) ralentit artificiellement la convergence des `playbackRate` vers leur cible, laissant le tempo d'une platine décalé (perçu comme un BPM qui diminue doucement) tant que l'app reste en arrière-plan ; au retour au premier plan, la cadence normale reprend et le rate rattrape sa cible en une fraction de seconde. Bug corrigé le 2026-07-27.
+
 ---
 
 ## 8. DJ Plan
@@ -802,6 +818,16 @@ staging côté maître, câblé dans `main.js` en lieu et place de l'ancien trai
   tableau trié. GIVEN une commande sans `requestedAt` (relais ancienne version) — THEN
   elle est traitée comme soumise à l'instant présent (`Date.now()` au moment du
   traitement côté maître).
+- **SPEC-9.4.15** Le téléchargement lancé par SPEC-9.4.3 (`prefetchTrackToLocalCache` →
+  `downloadTrackViaApi`, `POST /api/download`) n'est **jamais** soumis à un timeout
+  (pas de `AbortSignal.timeout`/`signal` sur cet appel `fetch`, contrairement à
+  `/api/stems/*` ou au health-probe de `apiHealthMonitor.js`) et le slot occupé
+  (« now » ou « next ») n'est **jamais** libéré/retiré par expiration d'une durée : seul
+  un échec réel (`onError` appelé, ou la promesse résolue à `false`) libère le slot
+  (SPEC-9.4.3). Raison : un ajout via relais peut légitimement prendre longtemps
+  (réseau du relais, résolution/téléchargement côté serveur pour une piste jamais
+  téléchargée) ; couper l'attente avec un timeout ferait disparaître la piste alors que
+  l'utilisateur l'attend toujours, sans qu'aucun échec réel ne se soit produit.
 
 ### 9.5 Retour visuel côté maître (files "incoming"), directement dans la file d'attente
 
@@ -1105,6 +1131,8 @@ lit son propre `relayIncomingQueue` directement en mémoire.
 - **Fil Rouge** : playlist de fond avec contrôles shuffle/loop/DJ plan.
 - **Cache** : navigateur de morceaux téléchargés avec filtrage genre/année.
 - **Config** : 10+ sections de configuration.
+- **SPEC-14.1.2** Aucun bouton local (Low-pass / High-pass / Suggestion AutoDJ) n'est affiché au-dessus des platines. Les filtres low-pass/high-pass restent pilotables via les modes de transition AutoMix (`filter_sweep_low_high`, etc.) et le menu FX DJ ; le renouvellement de suggestion AutoDJ reste piloté par `refreshAutoSuggestionForCurrentTrack()` en arrière-plan.
+- **SPEC-14.1.3** GIVEN un clic/tap sur la carte d'une platine (hors bouton, curseur, ou barre de progression) — WHEN la platine est en lecture — THEN elle se met en pause ; WHEN elle est en pause avec une source chargée — THEN elle reprend ; WHEN elle n'a pas de source chargée — THEN le morceau suivant de la file y est lancé. Ce comportement est indépendant du pourcentage de volume ou de la position de la platine dans le mix global (crossfade).
 
 ### 14.2 Rendu
 
@@ -1112,6 +1140,8 @@ lit son propre `relayIncomingQueue` directement en mémoire.
 - **SPEC-14.2.2** Drag-and-drop sur les éléments de la queue.
 - **SPEC-14.2.3** Notifications toast pour actions et erreurs.
 - **SPEC-14.2.4** Chaque platine affiche sous la barre de progression le temps actuel et la durée totale du morceau au format `m:ss / m:ss` (via `formatTime(positionMs) / formatTime(durationMs)`). L'affichage est masqué si aucun morceau n'est chargé (`durationMs = 0`).
+- **SPEC-14.2.5** GIVEN le menu mix est réduit (classe `mix-options-collapsed` sur `#tab-mix`) — WHEN `#dj-plan-section` serait autrement visible — THEN il reste masqué. Il redevient visible dès que le menu mix est déplié, selon son propre état (`updateDjPlanIndicator()`).
+- **SPEC-14.2.6** Le titre du morceau (`.deck-track-title`) s'affiche sur une seule ligne, avec ellipsis si trop long, sur toute la largeur de la carte platine. Le nom de l'artiste (`.deck-track-artist-name`) s'affiche en dessous, dans une police plus petite, également sur une seule ligne. La troncature s'adapte à la largeur réelle de la platine (`.deck-panel` a `min-width: 0`, requis car c'est un item de grille CSS — sans quoi un titre long empêcherait la colonne de rétrécir et l'ellipsis ne s'appliquerait jamais).
 
 ### 14.3 Localisation
 
@@ -1119,7 +1149,7 @@ lit son propre `relayIncomingQueue` directement en mémoire.
 
 ### 14.4 Volume global
 
-- **SPEC-14.4.1** Un curseur de volume global (`#global-volume-slider`, `0`–`100`) est affiché dans la section player, sous le crossfade slider de mix.
+- **SPEC-14.4.1** Un curseur de volume global (`#global-volume-slider`, `0`–`100`) est affiché dans la section player, sur la même ligne que le bouton « Afficher/cacher le menu mix » (`#toggle-mix-menu-btn`), au-dessus du crossfade slider de mix.
 - **SPEC-14.4.2** Un bouton mute (`#global-volume-btn`) permet de couper / rétablir le son en un clic. GIVEN volume > 0 — WHEN clic — THEN `globalVolume = 0` (icône 🔇). GIVEN volume = 0 — WHEN clic — THEN restaure le volume précédent.
 - **SPEC-14.4.3** GIVEN `globalVolume = v` — WHEN `#applyDeckBaseMix(baseA, baseB)` est appelé — THEN les volumes effectifs des platines sont `nextA × v` et `nextB × v` (`v ∈ [0, 1]`).
 - **SPEC-14.4.4** Le volume global est persisté dans `localStorage` sous la clé `dj-mix:global-volume`. Défaut : `1.0`.

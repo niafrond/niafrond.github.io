@@ -7,6 +7,21 @@ import {
 import {
   SimpleMixFeatures,
 } from './lib/mixFeatures.js';
+import {
+  BEAT_REPEAT_DEFAULT_INITIAL_BEATS,
+  BEAT_REPEAT_FALLBACK_INITIAL_BEATS,
+  BEAT_REPEAT_MIN_INITIAL_BEATS,
+  BEAT_REPEAT_BEATS_PER_BAR,
+  BEAT_REPEAT_FX_STAGE_COUNT,
+  BEAT_REPEAT_LAUNCH_OVERLAP_MS,
+  getSafeBeatRepeatBpm,
+  chooseInitialLoopBeats,
+  buildBeatRepeatStageBeats,
+  computeBeatRepeatLaunchBeats,
+  computeBeatRepeatLoopPhaseMs,
+  computeLoopAnchorSeconds,
+  BeatRepeatEngine,
+} from './lib/beatRepeatEngine.js';
 import { createLogger } from './lib/logger.js';
 
 const logger = createLogger('player');
@@ -20,13 +35,6 @@ export { MIX_TRANSITION_MODES, MIX_TRANSITION_MODE_LABELS };
 
 // Au-delà de ce délai, load()->canplay ou play() sont considérés lents (réseau/decode) et loggés en warn.
 const SLOW_AUDIO_LOAD_THRESHOLD_MS = 200;
-
-// beat_repeat ne doit jamais durer plus de 5s au total (boucle + superposition finale).
-export const BEAT_REPEAT_MAX_LOOP_MS = 5000;
-
-// Les BEAT_REPEAT_OVERLAP_MS dernières ms du budget total ne sont pas dédiées à la boucle :
-// le deck sortant et entrant s'y superposent (crossfade) au lieu d'un cut sec.
-export const BEAT_REPEAT_OVERLAP_MS = 2000;
 
 // short_loop ne doit jamais ré-ancrer la piste entrante plus de SHORT_LOOP_MAX_REPEATS fois :
 // au-delà, la lecture continue normalement (sans nouveau seek arrière) même si progress < 0.45.
@@ -42,44 +50,34 @@ export function shouldResetShortLoop(currentDeckTimeSec, loopAnchorSec, repeatCo
   return (currentDeckTimeSec - loopAnchorSec) > SHORT_LOOP_LENGTH_SEC;
 }
 
-// Étapes successives de la phase bouclée (avant la superposition finale) : d'abord une
-// boucle longue (1 mesure) qui dure un peu plus longtemps, puis des boucles de plus en plus
-// courtes (division par 2 à chaque étape, jusqu'à la demi-noire).
-// BEAT_REPEAT_STAGE_DURATION_FRACTIONS répartit le budget de la phase bouclée (le budget
-// total moins BEAT_REPEAT_OVERLAP_MS) entre les étapes et somme à 1 : le cumul des étapes
-// fait donc toujours exactement ce budget, quel que soit le BPM.
-const BEAT_REPEAT_STAGE_DURATION_FRACTIONS = [0.40, 0.25, 0.20, 0.15];
-// Longueur de chaque étape en temps (noires), pour rester synchronisée avec le BPM de la
-// piste entrante : 1 mesure, 1/2 mesure, 1 temps, 1/2 temps.
-const BEAT_REPEAT_STAGE_BEATS = [4, 2, 1, 0.5];
-const BEAT_REPEAT_DEFAULT_BPM = 120;
-const BEAT_REPEAT_MIN_BPM = 60;
-const BEAT_REPEAT_MAX_BPM = 220;
-
-export function getSafeBeatRepeatBpm(bpm) {
-  const value = Number(bpm);
-  if (!Number.isFinite(value) || value <= 0) return BEAT_REPEAT_DEFAULT_BPM;
-  return Math.max(BEAT_REPEAT_MIN_BPM, Math.min(BEAT_REPEAT_MAX_BPM, value));
-}
-
-// Longueur de boucle (en secondes de piste), calée sur le BPM de la piste entrante, pour
-// l'étape active à l'instant `elapsedMs` écoulé depuis le début du beat_repeat, sur un
-// budget total de `cutoffMs`.
-export function getBeatRepeatStageLoopSeconds(elapsedMs, cutoffMs, bpm) {
-  const secondsPerBeat = 60 / getSafeBeatRepeatBpm(bpm);
-  let boundaryMs = 0;
-  for (let i = 0; i < BEAT_REPEAT_STAGE_DURATION_FRACTIONS.length; i++) {
-    boundaryMs += BEAT_REPEAT_STAGE_DURATION_FRACTIONS[i] * cutoffMs;
-    const isLastStage = i === BEAT_REPEAT_STAGE_DURATION_FRACTIONS.length - 1;
-    if (elapsedMs < boundaryMs || isLastStage) {
-      return Math.max(0.05, BEAT_REPEAT_STAGE_BEATS[i] * secondsPerBeat);
-    }
-  }
-  return Math.max(0.05, BEAT_REPEAT_STAGE_BEATS[BEAT_REPEAT_STAGE_BEATS.length - 1] * secondsPerBeat);
-}
+// Re-export for main.js's decorative stutter-FX sync + tests.
+export {
+  BEAT_REPEAT_DEFAULT_INITIAL_BEATS,
+  BEAT_REPEAT_FALLBACK_INITIAL_BEATS,
+  BEAT_REPEAT_MIN_INITIAL_BEATS,
+  BEAT_REPEAT_BEATS_PER_BAR,
+  BEAT_REPEAT_FX_STAGE_COUNT,
+  BEAT_REPEAT_LAUNCH_OVERLAP_MS,
+  getSafeBeatRepeatBpm,
+  chooseInitialLoopBeats,
+  buildBeatRepeatStageBeats,
+  computeBeatRepeatLaunchBeats,
+  computeBeatRepeatLoopPhaseMs,
+};
 
 function clamp01(value) {
   return Math.max(0, Math.min(1, Number(value) || 0));
+}
+
+// Nominal cadence of the crossfade tick loop (see #crossfadeInterval's setInterval(..., 30)).
+// Background tabs get their setInterval throttled by the browser (sometimes to ~1 tick/s or
+// less), which would otherwise starve the per-tick playbackRate easing below and leave a deck's
+// tempo stuck away from its target for the whole time the app stays backgrounded. Scaling the
+// easing factor by the real elapsed time since the last tick keeps convergence tied to wall-clock
+// time instead of tick count, so it lands on the same curve regardless of throttling.
+export const CROSSFADE_RATE_EASE_TICK_MS = 30;
+export function timeCorrectedRateEase(perTickFactor, elapsedMs) {
+  return 1 - Math.pow(1 - perTickFactor, Math.max(0, elapsedMs) / CROSSFADE_RATE_EASE_TICK_MS);
 }
 
 function createDefaultDeckFx() {
@@ -149,6 +147,11 @@ export class DJPlayer extends EventTarget {
   };
   #active = 'A';
   #crossfadeDuration = 12000;
+  // Longueur initiale (en temps) du loop capturé par le mode beat_repeat avant raccourcissement
+  // progressif — configurable indépendamment de crossfadeDuration (SPEC-1.3.8). C'est la
+  // valeur "souhaitée" ; le runway réel avant fin de piste peut la réduire (step 2).
+  #beatRepeatInitialBeats = BEAT_REPEAT_DEFAULT_INITIAL_BEATS;
+  #beatRepeatEngine = new BeatRepeatEngine();
   #isCrossfading = false;
   #crossfadeNotified = false;
   #trackEndNotified = false;
@@ -197,6 +200,12 @@ export class DJPlayer extends EventTarget {
   set crossfadeDuration(ms) {
     this.#crossfadeDuration = Math.max(250, Number(ms) || 5000);
     this.#crossfadeNotified = false;
+  }
+
+  get beatRepeatInitialBeats() { return this.#beatRepeatInitialBeats; }
+  set beatRepeatInitialBeats(beats) {
+    const value = Number(beats);
+    this.#beatRepeatInitialBeats = Number.isFinite(value) && value > 0 ? value : BEAT_REPEAT_DEFAULT_INITIAL_BEATS;
   }
 
   get isCrossfading() { return this.#isCrossfading; }
@@ -766,11 +775,12 @@ export class DJPlayer extends EventTarget {
       this.#runCutTransition(context);
       return;
     }
+    if (mode === 'beat_repeat') {
+      await this.#runBeatRepeatTransition(context);
+      return;
+    }
 
     const liveDuration = Math.max(250, Number(this.#crossfadeDuration) || 5000);
-    const beatRepeatCutoffMs = mode === 'beat_repeat' ? Math.min(BEAT_REPEAT_MAX_LOOP_MS, liveDuration) : null;
-    const beatRepeatOverlapMs = mode === 'beat_repeat' ? Math.min(BEAT_REPEAT_OVERLAP_MS, beatRepeatCutoffMs) : null;
-    const beatRepeatLoopPhaseMs = mode === 'beat_repeat' ? beatRepeatCutoffMs - beatRepeatOverlapMs : null;
     const startEcho = this.#mixFeatureSettings.echo;
     const savedFromFilterMode = this.#mixFeatureSettings.deckFx?.[context.fromDeck]?.filterMode || 'off';
     const savedToFilterMode = this.#mixFeatureSettings.deckFx?.[context.toDeck]?.filterMode || 'off';
@@ -831,7 +841,6 @@ export class DJPlayer extends EventTarget {
         let progress = 0;
         let lastTickAt = performance.now();
         let loopAnchor = context.to.currentTime || 0;
-        let loopAnchorFrom = context.from.currentTime || 0;
         let shortLoopRepeatCount = 0;
 
         this.#crossfadeInterval = setInterval(() => {
@@ -846,8 +855,6 @@ export class DJPlayer extends EventTarget {
           const elapsedMs = Math.max(0, now - lastTickAt);
           lastTickAt = now;
           progress = Math.min(1, progress + (elapsedMs / liveDuration));
-
-          let beatRepeatFinished = false;
 
           const levels = this.#computeTransitionLevels(mode, progress, context.startBaseFrom, context.startBaseTo);
           let fromBase = levels.from;
@@ -877,40 +884,19 @@ export class DJPlayer extends EventTarget {
             }
           }
 
-          // beat_repeat : boucle le deck sortant par étapes (d'abord une boucle longue, puis de
-          // plus en plus courtes, cf. getBeatRepeatStageLoopSeconds), puis superposition (overlap)
-          // avec le deck entrant sur les BEAT_REPEAT_OVERLAP_MS dernières ms, au lieu d'un cut sec.
-          if (mode === 'beat_repeat') {
-            const elapsedMs = progress * liveDuration;
-            if (elapsedMs < beatRepeatLoopPhaseMs) {
-              if (Number.isFinite(context.from.currentTime)) {
-                const loopLen = getBeatRepeatStageLoopSeconds(elapsedMs, beatRepeatLoopPhaseMs, context.incomingBpm);
-                if ((context.from.currentTime - loopAnchorFrom) >= loopLen) {
-                  context.from.currentTime = loopAnchorFrom;
-                }
-              }
-            } else {
-              const overlapProgress = beatRepeatOverlapMs > 0
-                ? clamp01((elapsedMs - beatRepeatLoopPhaseMs) / beatRepeatOverlapMs)
-                : 1;
-              fromBase = context.startBaseFrom * (1 - overlapProgress);
-              toBase = context.startBaseTo + ((1 - context.startBaseTo) * overlapProgress);
-              if (elapsedMs >= beatRepeatCutoffMs) beatRepeatFinished = true;
-            }
-          }
-
           if (mode === 'backspin') {
             // Décélération rapide jusqu'à l'arrêt complet
             context.from.playbackRate = progress < 0.35
               ? Math.max(0.04, 1 - Math.pow(progress / 0.35, 0.55))
               : 0;
-            context.to.playbackRate += (1 - context.to.playbackRate) * 0.18;
+            context.to.playbackRate += (1 - context.to.playbackRate) * timeCorrectedRateEase(0.18, elapsedMs);
           } else if (mode === 'filter_sweep_low_high' || mode === 'filter_automation') {
             context.from.playbackRate = Math.max(0.86, 1 - (0.16 * progress));
             context.to.playbackRate = Math.max(0.9, 1.08 - (0.18 * progress));
           } else {
-            context.from.playbackRate += (1 - context.from.playbackRate) * 0.18;
-            context.to.playbackRate += (1 - context.to.playbackRate) * 0.18;
+            const rateEase = timeCorrectedRateEase(0.18, elapsedMs);
+            context.from.playbackRate += (1 - context.from.playbackRate) * rateEase;
+            context.to.playbackRate += (1 - context.to.playbackRate) * rateEase;
           }
 
           fromBase = clamp01(fromBase);
@@ -930,13 +916,13 @@ export class DJPlayer extends EventTarget {
               toVolume: toBase,
               toPosition: Number.isFinite(context.to.currentTime) ? context.to.currentTime * 1000 : 0,
               toDuration: Number.isFinite(context.to.duration) && context.to.duration > 0 ? context.to.duration * 1000 : 0,
-              durationMs: beatRepeatFinished ? beatRepeatCutoffMs : liveDuration,
-              progress: beatRepeatFinished ? 1 : progress,
+              durationMs: liveDuration,
+              progress,
               mode,
             },
           }));
 
-          if (progress >= 1 || beatRepeatFinished) {
+          if (progress >= 1) {
             clearInterval(this.#crossfadeInterval);
             this.#crossfadeInterval = null;
             resolve();
@@ -966,6 +952,155 @@ export class DJPlayer extends EventTarget {
       if (mode === 'echo_freeze' && !startEcho) {
         this.setMixFeatures({ echo: false });
       }
+      this.#smoothSetDeckPlaybackRate(context.fromDeck, 1, 160);
+      this.#smoothSetDeckPlaybackRate(context.toDeck, 1, 220);
+    }
+  }
+
+  // beat_repeat: capture a beat-grid-aligned loop on the outgoing deck via BeatRepeatEngine
+  // (sample-accurate, AudioContext-clock-scheduled — see lib/beatRepeatEngine.js) and hand off
+  // to Track B on the next bar boundary. Bypasses the generic #runTransitionMode tick loop
+  // entirely for the loop mechanics themselves; only reuses its general shape (30ms poll) for
+  // wall-clock UI progress events, FX nudges (high-pass/echo on the last 2 stages), and the
+  // final deck-to-deck volume handoff — never for the loop scheduling, which is computed once
+  // up front against the audio clock (SPEC-1.3.5/SPEC-1.3.8).
+  async #runBeatRepeatTransition(context) {
+    // Corrected from an earlier version of this effect, which incorrectly used the *incoming*
+    // deck's BPM: the loop is chopped out of the *outgoing* deck's own buffer, so its rhythmic
+    // grid is the outgoing track's own BPM.
+    const fromBpm = getSafeBeatRepeatBpm(this.#deckSourceMeta[context.fromDeck]?.bpm);
+    const secondsPerBeat = 60 / fromBpm;
+
+    const durationSec = Number.isFinite(context.from.duration) && context.from.duration > 0
+      ? context.from.duration
+      : null;
+    const currentTimeSec = Number.isFinite(context.from.currentTime) ? context.from.currentTime : 0;
+    const remainingBeats = durationSec !== null
+      ? Math.max(0, durationSec - currentTimeSec) / secondsPerBeat
+      : Infinity;
+
+    // Step 2: default 8 beats, 4 if runway is short, never below 2.
+    const initialBeats = chooseInitialLoopBeats(remainingBeats, this.#beatRepeatInitialBeats);
+    // Steps 3-5: halve every 2 repetitions down to the absolute 1/16-beat floor.
+    const stageBeats = buildBeatRepeatStageBeats(initialBeats);
+    // Step 8: next bar boundary after the final (floor) stage's mandatory 2 repetitions.
+    const launchBeats = computeBeatRepeatLaunchBeats(stageBeats);
+    const launchMs = launchBeats * secondsPerBeat * 1000;
+    const totalMs = launchMs + BEAT_REPEAT_LAUNCH_OVERLAP_MS;
+
+    // Step 1: beat-grid-aligned anchor, defensively pulled back so the loop window never reads
+    // past the track's own end.
+    const windowSec = initialBeats * secondsPerBeat;
+    let anchorSec = computeLoopAnchorSeconds(currentTimeSec, secondsPerBeat);
+    if (durationSec !== null) {
+      anchorSec = Math.min(anchorSec, Math.max(0, durationSec - windowSec));
+    }
+
+    const startEcho = this.#mixFeatureSettings.echo;
+    const savedFromFilterMode = this.#mixFeatureSettings.deckFx?.[context.fromDeck]?.filterMode || 'off';
+
+    await this.#mixFeatures?.ensureReady?.();
+    const ctx = this.#mixFeatures?.getAudioContext?.();
+    const destinationBus = this.#mixFeatures?.getDeckInputBus?.(context.fromDeck);
+    const sourceUrl = this.#deckSourceMeta[context.fromDeck]?.url;
+
+    let engineStarted = false;
+
+    try {
+      if (ctx && destinationBus && sourceUrl) {
+        const audioBuffer = await this.#beatRepeatEngine.prepare(ctx, sourceUrl, anchorSec, windowSec);
+        this.#mixFeatures.setDeckElementGain(context.fromDeck, 0);
+        this.#beatRepeatEngine.run({ ctx, destinationBus, audioBuffer, stageBeats, secondsPerBeat, launchBeats });
+        engineStarted = true;
+      }
+
+      await new Promise((resolve) => {
+        let progress = 0;
+        let lastTickAt = performance.now();
+
+        this.#crossfadeInterval = setInterval(() => {
+          if (this.#destroyed) {
+            clearInterval(this.#crossfadeInterval);
+            this.#crossfadeInterval = null;
+            resolve();
+            return;
+          }
+
+          const now = performance.now();
+          const tickElapsedMs = Math.max(0, now - lastTickAt);
+          lastTickAt = now;
+          progress = Math.min(1, progress + (tickElapsedMs / totalMs));
+
+          const levels = this.#computeTransitionLevels('beat_repeat', progress, context.startBaseFrom, context.startBaseTo);
+          let fromBase = levels.from;
+          let toBase = levels.to;
+
+          const elapsedMs = progress * totalMs;
+          let finished = false;
+
+          if (elapsedMs < launchMs) {
+            // Last BEAT_REPEAT_FX_STAGE_COUNT stages (shortest): high-pass on the outgoing
+            // deck + echo ramping 0->1 across their combined duration.
+            const elapsedBeats = (elapsedMs / 1000) / secondsPerBeat;
+            const fxStageStartIndex = Math.max(0, stageBeats.length - BEAT_REPEAT_FX_STAGE_COUNT);
+            const fxPhaseStartBeats = stageBeats
+              .slice(0, fxStageStartIndex)
+              .reduce((sum, beats) => sum + (beats * 2), 0);
+            if (elapsedBeats >= fxPhaseStartBeats) {
+              if (savedFromFilterMode !== 'highPass') {
+                this.setMixFeatures({ deckFx: { [context.fromDeck]: { filterMode: 'highPass' } } });
+              }
+              if (!startEcho) this.setMixFeatures({ echo: true });
+              const fxPhaseTotalBeats = Math.max(0.001, launchBeats - fxPhaseStartBeats);
+              const echoIntensity = clamp01((elapsedBeats - fxPhaseStartBeats) / fxPhaseTotalBeats);
+              this.#mixFeatures?.setEchoIntensity?.(echoIntensity);
+            }
+          } else {
+            // Bar boundary reached: hand off to Track B via the deck-to-deck volume crossfade.
+            const overlapProgress = clamp01((elapsedMs - launchMs) / BEAT_REPEAT_LAUNCH_OVERLAP_MS);
+            fromBase = context.startBaseFrom * (1 - overlapProgress);
+            toBase = context.startBaseTo + ((1 - context.startBaseTo) * overlapProgress);
+            if (elapsedMs >= totalMs) finished = true;
+          }
+
+          fromBase = clamp01(fromBase);
+          toBase = clamp01(toBase);
+
+          if (context.fromDeck === 'A') {
+            this.#applyDeckBaseMix(fromBase, toBase);
+          } else {
+            this.#applyDeckBaseMix(toBase, fromBase);
+          }
+
+          this.#requestEmitDeckState();
+          this.dispatchEvent(new CustomEvent('crossfadeprogress', {
+            detail: {
+              fromDeck: context.fromDeck,
+              fromVolume: fromBase,
+              toVolume: toBase,
+              toPosition: Number.isFinite(context.to.currentTime) ? context.to.currentTime * 1000 : 0,
+              toDuration: Number.isFinite(context.to.duration) && context.to.duration > 0 ? context.to.duration * 1000 : 0,
+              durationMs: totalMs,
+              progress: finished ? 1 : progress,
+              mode: 'beat_repeat',
+            },
+          }));
+
+          if (progress >= 1 || finished) {
+            clearInterval(this.#crossfadeInterval);
+            this.#crossfadeInterval = null;
+            resolve();
+          }
+        }, 30);
+      });
+    } finally {
+      this.#beatRepeatEngine.stop();
+      if (engineStarted) {
+        this.#mixFeatures?.setDeckElementGain(context.fromDeck, 1);
+      }
+      this.#mixFeatures?.setEchoIntensity?.(1);
+      if (!startEcho) this.setMixFeatures({ echo: false });
+      this.setMixFeatures({ deckFx: { [context.fromDeck]: { filterMode: savedFromFilterMode } } });
       this.#smoothSetDeckPlaybackRate(context.fromDeck, 1, 160);
       this.#smoothSetDeckPlaybackRate(context.toDeck, 1, 220);
     }
@@ -1127,7 +1262,7 @@ export class DJPlayer extends EventTarget {
       }
       case 'beat_repeat': {
         // fromDeck reste au volume plein pendant la phase bouclée ; la superposition finale
-        // (overlap) est calculée et appliquée directement dans le tick (cf. BEAT_REPEAT_OVERLAP_MS).
+        // (overlap) est calculée et appliquée directement dans le tick (cf. BEAT_REPEAT_LAUNCH_OVERLAP_MS).
         return { from: startBaseFrom, to: startBaseTo * 0.05 };
       }
       case 'backspin': {
@@ -1162,6 +1297,7 @@ export class DJPlayer extends EventTarget {
     clearInterval(this.#trackInterval);
     clearInterval(this.#crossfadeInterval);
     this.#crossfadeInterval = null;
+    this.#beatRepeatEngine?.stop();
 
     if (this.#manualMixRafId !== null) {
       cancelAnimationFrame(this.#manualMixRafId);
