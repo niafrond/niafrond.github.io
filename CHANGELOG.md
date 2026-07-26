@@ -1,3 +1,9 @@
+## [2.18.0](https://github.com/niafrond/niafrond.github.io/compare/v2.17.0...v2.18.0) (2026-07-26)
+
+### Features
+
+* **tests:** enhance unit tests for mix features and UI layout ([5c827eb](https://github.com/niafrond/niafrond.github.io/commit/5c827ebf634d56cd595c29133637f250b65bf713))
+
 ## [2.17.0](https://github.com/niafrond/niafrond.github.io/compare/v2.16.0...v2.17.0) (2026-07-26)
 
 ### Features
