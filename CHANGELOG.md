@@ -1,3 +1,9 @@
+## [2.17.0](https://github.com/niafrond/niafrond.github.io/compare/v2.16.0...v2.17.0) (2026-07-26)
+
+### Features
+
+* update track download status check to use getFilRougeTrackStatus for improved accuracy ([5fb48ff](https://github.com/niafrond/niafrond.github.io/commit/5fb48fffeb1c7edd88a079aec37e6ba8d1ef8553))
+
 ## [2.16.0](https://github.com/niafrond/niafrond.github.io/compare/v2.15.0...v2.16.0) (2026-07-26)
 
 ### Features
