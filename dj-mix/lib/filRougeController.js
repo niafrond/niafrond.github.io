@@ -5,7 +5,7 @@ import {
   extractTrackBpm,
   extractTrackGenre,
 } from './searchUtils.js';
-import { renderDjSetQualityBadge, renderDjTransitionFeedback } from './uiRenderer.js';
+import { renderDjTransitionFeedback } from './uiRenderer.js';
 import { computeDjPlanIndicatorState } from './djPlanIndicator.js';
 import { mapDjTransitionTypeToMode } from './djTransitionMapping.js';
 import { normalizeTransitionMode, MIX_TRANSITION_MODE_LABELS } from './transitionModes.js';
@@ -34,7 +34,6 @@ import { STORAGE_KEYS } from './storageKeys.js';
  * @param {Function|null} [options.getPendingAutoFxEvents]
  * @param {HTMLElement|null} [options.djPlanIndicatorEl]
  * @param {HTMLElement|null} [options.djSetQualityBadgeEl]
- * @param {HTMLElement|null} [options.djSetProfileSelectEl]
  */
 export function createFilRougeController(options) {
   const {
@@ -55,8 +54,8 @@ export function createFilRougeController(options) {
     filRougePlaylistListEl = null,
     getPendingAutoFxEvents = null,
     djPlanIndicatorEl = null,
+    djPlanSectionEl = null,
     djSetQualityBadgeEl = null,
-    djSetProfileSelectEl = null,
     filRougeSortSelectEl = null,
     getDownloaderApiUrl = null,
     getDownloaderApiToken = null,
@@ -213,6 +212,163 @@ export function createFilRougeController(options) {
     </div>`;
   }
 
+  // ── dj-planner observed-transition badge (GET /v1/transitions/observed) ──────
+  // Indépendant du bloc mix-decision ci-dessus (endpoint distinct, cf. §4 du
+  // spec front) : "observed:false" est une réponse normale, jamais affichée
+  // comme un échec (règle §6).
+
+  function renderObservedTransitionHtml(observed) {
+    if (!observed) return '';
+    return observed.observed
+      ? `<span class="dj-planner-observed dj-planner-observed--yes" title="Enchaînement déjà joué par des DJ réels">🎧 déjà joué par ${(observed.djs || []).length} DJ (${observed.occurrence_count}×)</span>`
+      : `<span class="dj-planner-observed dj-planner-observed--no" title="Aucune trace de cet enchaînement dans l'historique des DJ">pas encore observé</span>`;
+  }
+
+  // ── dj-planner style progressions panel (GET /v1/styles/{style}/progressions) ──
+  // Remplace l'ancien sélecteur "Profil de set" (`#dj-set-profile-select`) —
+  // constaté mort côté legacy : sa valeur n'était jamais lue par aucun calcul
+  // de transition (le batch /api/dj/batch qui l'utilisait a été retiré, §8.6.3).
+
+  function renderStyleProgressionsHtml(response) {
+    const labels = response?.associated_labels || [];
+    const progressions = response?.recurring_progressions || [];
+    const labelsHtml = labels.length
+      ? `<div class="dj-planner-progressions-labels">${labels.map((l) => `<span class="queue-chip">${escHtml(l)}</span>`).join('')}</div>`
+      : '';
+    if (!progressions.length) {
+      return `${labelsHtml}<p class="dj-planner-progressions-empty">Aucune progression récurrente connue pour ce style.</p>`;
+    }
+    const itemsHtml = progressions.map((p) => `
+      <li class="dj-planner-progression-item">
+        <span class="dj-planner-progression-sequence">${(p.track_sequence || []).map((t) => escHtml(t)).join(' → ')}</span>
+        <span class="dj-planner-progression-meta">${p.occurrence_count}× · ${(p.example_djs || []).length} DJ</span>
+      </li>`).join('');
+    return `${labelsHtml}<ul class="dj-planner-progressions-list">${itemsHtml}</ul>`;
+  }
+
+  function initDjPlannerStylePanel(styleInputEl, styleBtnEl, panelEl) {
+    if (!styleInputEl || !styleBtnEl || !panelEl) return;
+    styleBtnEl.addEventListener('click', async () => {
+      const style = (styleInputEl.value || '').trim();
+      if (!style) { showToast('Entrez un style (ex. house, techno...)', true); return; }
+      if (!djPlannerManager) { showToast('dj-planner indisponible', true); return; }
+      panelEl.hidden = false;
+      panelEl.innerHTML = '<p class="dj-planner-progressions-empty">Recherche en cours…</p>';
+      const result = await djPlannerManager.getStyleProgressions(style);
+      panelEl.innerHTML = result
+        ? renderStyleProgressionsHtml(result)
+        : '<p class="dj-planner-progressions-empty">dj-planner indisponible, ou aucune donnée pour ce style.</p>';
+    });
+  }
+
+  // ── dj-planner playlist optimization (POST /v1/playlist-plans, PATCH .../{id}) ──
+  // Remplace le badge "qualité de set" mort (`#dj-set-quality-badge`) — constaté
+  // toujours masqué depuis le retrait de /api/dj/batch (SPEC-8.6.6 :
+  // computeSetQuality() ne retourne plus jamais de globalSetScore).
+
+  let _currentPlaylistPlanId = null;
+  let _playlistPlanLockedPositions = [];
+
+  function renderPlaylistPlanHtml(plan) {
+    const trackCount = (plan.ordered_track_ids || []).length;
+    const climaxCount = (plan.climax_positions || []).length;
+    const flagged = plan.flagged_tracks || [];
+
+    const flaggedHtml = flagged.length
+      ? `<ul class="dj-planner-plan-flagged">${flagged.map((f) => `<li>⚠ ${escHtml(f.track_id)} — ${escHtml(f.reason)}</li>`).join('')}</ul>`
+      : '';
+
+    const trackListHtml = (plan.ordered_track_ids || []).map((trackId, idx) => {
+      const locked = _playlistPlanLockedPositions.some((lp) => lp.track_id === trackId);
+      return `
+      <li class="dj-planner-plan-track${locked ? ' is-locked' : ''}">
+        <span class="dj-planner-plan-track-pos">${idx + 1}</span>
+        <span class="dj-planner-plan-track-id">${escHtml(trackId)}</span>
+        <button type="button" class="dj-planner-plan-lock-btn" data-track-id="${escHtml(trackId)}" data-position="${idx}" title="${locked ? 'Déverrouiller cette position' : 'Verrouiller cette position et réoptimiser'}">${locked ? '🔒' : '🔓'}</button>
+      </li>`;
+    }).join('');
+
+    return `
+    <div class="dj-planner-plan-summary">
+      <span class="dj-planner-badge">dj-planner</span>
+      <span>${trackCount} morceau${trackCount > 1 ? 'x' : ''}</span>
+      ${climaxCount ? `<span>${climaxCount} pic${climaxCount > 1 ? 's' : ''} d'énergie</span>` : ''}
+      ${flagged.length ? `<span class="dj-planner-plan-flagged-count">⚠ ${flagged.length} signalé${flagged.length > 1 ? 's' : ''}</span>` : ''}
+    </div>
+    ${flaggedHtml}
+    <ol class="dj-planner-plan-tracklist">${trackListHtml}</ol>`;
+  }
+
+  function _resolvedFilRougeDjTrackIds() {
+    return filRougeManager.getPlaylist().filter((it) => it.djTrackId).map((it) => it.djTrackId);
+  }
+
+  // Repurposes the old (dead since the /api/dj/batch retirement, SPEC-8.6.6)
+  // `#dj-set-quality-badge` slot to show a one-line dj-planner plan summary.
+  function _updateSetQualityBadgeForPlan(plan) {
+    if (!djSetQualityBadgeEl) return;
+    if (!plan) { djSetQualityBadgeEl.hidden = true; return; }
+    const trackCount = (plan.ordered_track_ids || []).length;
+    const flaggedCount = (plan.flagged_tracks || []).length;
+    djSetQualityBadgeEl.hidden = false;
+    djSetQualityBadgeEl.textContent = flaggedCount
+      ? `Plan dj-planner : ${trackCount} pistes, ${flaggedCount} signalée${flaggedCount > 1 ? 's' : ''}`
+      : `Plan dj-planner : ${trackCount} pistes`;
+  }
+
+  async function optimizePlaylistViaDjPlanner(panelEl) {
+    if (!djPlannerManager) { showToast('dj-planner indisponible', true); return null; }
+    const trackIds = _resolvedFilRougeDjTrackIds();
+    if (trackIds.length < 2) { showToast('Pas assez de morceaux résolus pour optimiser via dj-planner', true); return null; }
+
+    _currentPlaylistPlanId = null;
+    _playlistPlanLockedPositions = [];
+    if (panelEl) { panelEl.hidden = false; panelEl.innerHTML = '<p class="dj-planner-progressions-empty">Optimisation en cours…</p>'; }
+
+    const plan = await djPlannerManager.createPlaylistPlan(trackIds);
+    if (!plan) {
+      if (panelEl) panelEl.innerHTML = '<p class="dj-planner-progressions-empty">dj-planner indisponible ou échec de l\'optimisation.</p>';
+      _updateSetQualityBadgeForPlan(null);
+      return null;
+    }
+    _currentPlaylistPlanId = plan.id;
+    if (panelEl) panelEl.innerHTML = renderPlaylistPlanHtml(plan);
+    _updateSetQualityBadgeForPlan(plan);
+    return plan;
+  }
+
+  async function _reoptimizePlaylistPlan(panelEl) {
+    if (!djPlannerManager || !_currentPlaylistPlanId) return null;
+    const trackIds = _resolvedFilRougeDjTrackIds();
+    if (panelEl) panelEl.innerHTML = '<p class="dj-planner-progressions-empty">Réoptimisation en cours…</p>';
+    const plan = await djPlannerManager.updatePlaylistPlan(_currentPlaylistPlanId, trackIds, { lockedPositions: _playlistPlanLockedPositions });
+    if (!plan) {
+      if (panelEl) panelEl.innerHTML = '<p class="dj-planner-progressions-empty">Échec de la réoptimisation.</p>';
+      return null;
+    }
+    if (panelEl) panelEl.innerHTML = renderPlaylistPlanHtml(plan);
+    _updateSetQualityBadgeForPlan(plan);
+    return plan;
+  }
+
+  function initDjPlannerPlanPanel(optimizeBtnEl, panelEl) {
+    if (!optimizeBtnEl || !panelEl) return;
+    optimizeBtnEl.addEventListener('click', () => { optimizePlaylistViaDjPlanner(panelEl); });
+    panelEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.dj-planner-plan-lock-btn');
+      if (!btn) return;
+      const trackId = btn.dataset.trackId;
+      const position = Number(btn.dataset.position);
+      const idx = _playlistPlanLockedPositions.findIndex((lp) => lp.track_id === trackId);
+      if (idx >= 0) {
+        _playlistPlanLockedPositions.splice(idx, 1);
+      } else {
+        _playlistPlanLockedPositions.push({ track_id: trackId, position });
+      }
+      _reoptimizePlaylistPlan(panelEl);
+    });
+  }
+
   function updateDjPlanIndicator() {
     if (!djPlanIndicatorEl) return;
 
@@ -224,10 +380,12 @@ export function createFilRougeController(options) {
     });
 
     if (!indicatorState.visible) {
+      if (djPlanSectionEl) djPlanSectionEl.hidden = true;
       djPlanIndicatorEl.hidden = true;
       return;
     }
 
+    if (djPlanSectionEl) djPlanSectionEl.hidden = false;
     djPlanIndicatorEl.hidden = false;
 
     if (indicatorState.state === 'no-track') {
@@ -284,6 +442,12 @@ export function createFilRougeController(options) {
     }
     const plannerHtml = renderPlannerDecisionHtml(plannerDecision);
 
+    const observedTransition = djPlannerManager?.getObservedTransition(item, nextItem) ?? null;
+    if (!observedTransition && djPlannerManager) {
+      djPlannerManager.planObservedTransitionForEdge(item, nextItem).then((d) => { if (d) updateDjPlanIndicator(); });
+    }
+    const observedHtml = renderObservedTransitionHtml(observedTransition);
+
     djPlanIndicatorEl.innerHTML = `
     <div class="dj-plan-card">
       <div class="dj-plan-card-header">
@@ -314,6 +478,7 @@ export function createFilRougeController(options) {
         <span class="dj-plan-next-track">→ ${nextLabel}</span>
       </div>
       ${plannerHtml}
+      ${observedHtml}
     </div>`;
 
     djPlanIndicatorEl.querySelectorAll('.filrouge-dj-feedback-btn').forEach((btn) => {
@@ -346,12 +511,14 @@ export function createFilRougeController(options) {
 
   async function runDjSetQualityRefresh({ forceRefresh = false } = {}) {
     try {
-      const quality = await djPlanManager.computeSetQuality({ forceRefresh });
-      renderDjSetQualityBadge(djSetQualityBadgeEl, quality);
+      // computeSetQuality() always resolves to null since /api/dj/batch was
+      // retired (SPEC-8.6.6) — djSetQualityBadgeEl is now exclusively owned
+      // by the dj-planner plan summary (_updateSetQualityBadgeForPlan), so it
+      // is deliberately not touched here anymore.
+      await djPlanManager.computeSetQuality({ forceRefresh });
       updateDjPlanIndicator();
     } catch (err) {
       logWarn('djPlan: computeSetQuality failed', { error: err?.message });
-      renderDjSetQualityBadge(djSetQualityBadgeEl, null);
     }
   }
 
@@ -359,7 +526,6 @@ export function createFilRougeController(options) {
 
   async function runDjPlanFullPass(reason) {
     if (!filRougeManager.isActive()) {
-      renderDjSetQualityBadge(djSetQualityBadgeEl, null);
       return;
     }
 
@@ -383,41 +549,6 @@ export function createFilRougeController(options) {
       logWarn('djPlan: planEdgesForNewItems failed', { error: err?.message });
     }
     await runDjSetQualityRefresh();
-  }
-
-  // ── Profile select ────────────────────────────────────────────────────────────
-
-  const DJ_SET_PROFILE_LABELS = {
-    club_peak: "Club (pic d'énergie)",
-    wedding: 'Mariage',
-    festival: 'Festival',
-    warmup: 'Mise en route',
-    afterparty: 'After-party',
-  };
-
-  async function initDjSetProfileSelect() {
-    if (!djSetProfileSelectEl) return;
-
-    const result = await djPlanManager.getSetProfiles();
-    const profiles = Array.isArray(result?.profiles) && result.profiles.length
-      ? result.profiles
-      : Object.keys(DJ_SET_PROFILE_LABELS).map((id) => ({ id }));
-
-    djSetProfileSelectEl.innerHTML = profiles.map((profile) => {
-      const id = profile?.id;
-      const label = DJ_SET_PROFILE_LABELS[id] || id;
-      return `<option value="${escHtml(id)}">${escHtml(label)}</option>`;
-    }).join('');
-
-    const selected = djPlanManager.getSelectedSetProfile();
-    if (profiles.some((p) => p.id === selected)) {
-      djSetProfileSelectEl.value = selected;
-    }
-
-    djSetProfileSelectEl.addEventListener('change', () => {
-      djPlanManager.setSelectedSetProfile(djSetProfileSelectEl.value);
-      runDjSetQualityRefresh({ forceRefresh: true }).catch(() => {});
-    });
   }
 
   // ── addToFilRouge ─────────────────────────────────────────────────────────────
@@ -713,6 +844,8 @@ export function createFilRougeController(options) {
     runDjPlanFullPass,
     runDjPlanIncrementalPass,
     scheduleDjSetQualityRefresh,
-    initDjSetProfileSelect,
+    initDjPlannerStylePanel,
+    initDjPlannerPlanPanel,
+    optimizePlaylistViaDjPlanner,
   };
 }

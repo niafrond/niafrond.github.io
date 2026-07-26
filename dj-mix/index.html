@@ -297,13 +297,19 @@
           </select>
           <button id="dj-external-plan-btn" class="deck-launch-btn fx-toggle is-enabled" type="button" aria-pressed="true" title="DJ Plan externe : utilise les transitions calculées par l'API DJ pour le timing, le BPM et le mode de crossfade">DJ Plan: ON</button>
           <button id="filrouge-clear-btn" class="clear-btn" type="button">Vider</button>
-          <label class="filrouge-profile-field" for="dj-set-profile-select">
-            Profil de set
-            <select id="dj-set-profile-select" class="filrouge-profile-select"></select>
-          </label>
           <button id="filrouge-download-all-btn" type="button" class="deck-launch-btn" title="Télécharger tous les morceaux en arrière-plan (fonctionne écran éteint)">Tout télécharger</button>
           <button id="filrouge-mixinfo-btn" type="button" class="deck-launch-btn" title="Forcer la récupération des mix suggestions manquantes pour les morceaux déjà téléchargés">Mix suggestions manquantes</button>
         </div>
+        <div class="filrouge-controls filrouge-controls--djplanner">
+          <label class="filrouge-profile-field" for="dj-planner-style-input">
+            Style
+            <input type="text" id="dj-planner-style-input" class="filrouge-profile-select" placeholder="house, techno, disco..." autocomplete="off" spellcheck="false">
+          </label>
+          <button id="dj-planner-style-btn" type="button" class="deck-launch-btn" title="Idées de progression pour ce style (dj-planner)">Idées de progression</button>
+          <button id="dj-planner-optimize-btn" type="button" class="deck-launch-btn" title="Optimiser l'ordre du fil rouge via dj-planner (POST /v1/playlist-plans)">Optimiser via dj-planner</button>
+        </div>
+        <div id="dj-planner-progressions-panel" class="dj-planner-panel" hidden></div>
+        <div id="dj-planner-plan-panel" class="dj-planner-panel" hidden></div>
         <div class="filrouge-playlist-section">
           <h3 class="filrouge-subtitle">🎵 Playlist fil rouge</h3>
           <div id="filrouge-playlist-list" class="filrouge-list"></div>
@@ -484,6 +490,28 @@
               <button id="api-mix-playlist-load-btn" class="connect-btn connect-btn--secondary" type="button">Charger dans le fil rouge</button>
             </div>
             <div id="api-mix-playlist-status" class="setup-subtitle">Sélectionnez une playlist pour pré-remplir le fil rouge depuis le serveur.</div>
+          </div>
+
+          <div class="config-block" id="dj-planner-history-block">
+            <div class="config-label">
+              <span>Historique personnel (dj-planner)</span>
+            </div>
+            <div class="form-group">
+              <label for="dj-planner-history-dj-name">Nom de DJ</label>
+              <input type="text" id="dj-planner-history-dj-name" placeholder="Votre nom de DJ" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="form-group">
+              <label for="dj-planner-history-textarea">Morceaux joués (artiste - titre, un par ligne)</label>
+              <textarea id="dj-planner-history-textarea" rows="5" placeholder="Daft Punk - Around The World&#10;Michael Jackson - Thriller&#10;..." autocomplete="off" spellcheck="false" style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:14px;font-family:inherit;resize:vertical;color:var(--text);"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="dj-planner-history-event">Événement (optionnel)</label>
+              <input type="text" id="dj-planner-history-event" placeholder="Ex. Warehouse Party" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="controls" style="justify-content:flex-start; gap:10px;">
+              <button id="dj-planner-history-import-btn" class="connect-btn connect-btn--secondary" type="button">Importer l'historique</button>
+            </div>
+            <div id="dj-planner-history-status" class="setup-subtitle">Importe vos sets déjà joués pour enrichir les preuves d'usage réel de dj-planner (nécessite un backend dj-planner joignable).</div>
           </div>
 
           <div class="config-block" id="relay-mode-block">

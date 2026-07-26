@@ -3174,6 +3174,157 @@ input {
   padding: 2px 6px;
 }
 
+.dj-planner-observed {
+  display: inline-block;
+  font-size: 0.66rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.dj-planner-observed--yes {
+  color: #4ade80;
+  font-weight: 600;
+  background: rgba(74, 222, 128, 0.12);
+}
+
+.dj-planner-observed--no {
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+/* dj-planner: style progressions panel + playlist-plan panel (fil rouge tab) */
+.filrouge-controls--djplanner {
+  margin-top: 8px;
+}
+
+.dj-planner-panel {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(6, 182, 212, 0.06);
+  border: 1px solid rgba(6, 182, 212, 0.18);
+  font-size: 0.8rem;
+}
+
+.dj-planner-progressions-empty {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+.dj-planner-progressions-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.dj-planner-progressions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dj-planner-progression-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(6, 182, 212, 0.12);
+}
+
+.dj-planner-progression-item:last-child {
+  border-bottom: none;
+}
+
+.dj-planner-progression-sequence {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+
+.dj-planner-progression-meta {
+  color: #67e8f9;
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+
+.dj-planner-plan-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 8px;
+}
+
+.dj-planner-plan-flagged-count {
+  color: #fbbf24;
+}
+
+.dj-planner-plan-flagged {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  color: #fca5a5;
+  font-size: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dj-planner-plan-tracklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dj-planner-plan-track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+.dj-planner-plan-track.is-locked {
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.dj-planner-plan-track-pos {
+  color: rgba(255, 255, 255, 0.4);
+  font-family: monospace;
+  font-size: 0.72rem;
+  width: 1.6em;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.dj-planner-plan-track-id {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.dj-planner-plan-lock-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+
 .dj-plan-pending-track {
   font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.65);

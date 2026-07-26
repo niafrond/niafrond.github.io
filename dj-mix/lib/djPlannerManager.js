@@ -1,7 +1,8 @@
 // djPlannerManager.js — Orchestrates the `dj-planner` backend (`/v1/*`, see
 // lib/djPlannerClient.js) for the fil rouge: on-demand mix-decision between
 // the current track and its successor ("Est-ce que ces deux morceaux se
-// mixent ?", dj-mix/frontend-integration.md §4).
+// mixent ?"), observed-transition evidence, style progressions, playlist
+// optimization and personal-history import (dj-mix/frontend-integration.md §4).
 //
 // Per §2, features depending on dj-planner MUST be silently disabled while
 // the backend is unreachable — `ensureAvailability()` gates every call and
@@ -40,14 +41,14 @@ export function createDjPlannerManager({ djPlannerClient, getFilRougeManager, lo
   }
 
   /**
-   * @param {object|null|undefined} decision - a stored `item.plannerDecision`
+   * @param {object|null|undefined} record - a stored `item.plannerDecision`/`item.observedTransition`
    * @param {string|number|null|undefined} toItemId
    * @returns {boolean}
    */
-  function isDecisionFresh(decision, toItemId) {
-    if (!decision || toItemId == null) return false;
-    if (String(decision.toItemId) !== String(toItemId)) return false;
-    const computedAt = Number(decision.computedAt);
+  function isDecisionFresh(record, toItemId) {
+    if (!record || toItemId == null) return false;
+    if (String(record.toItemId) !== String(toItemId)) return false;
+    const computedAt = Number(record.computedAt);
     if (!Number.isFinite(computedAt)) return false;
     return (Date.now() - computedAt) <= MAX_DECISION_AGE_MS;
   }
@@ -88,10 +89,100 @@ export function createDjPlannerManager({ djPlannerClient, getFilRougeManager, lo
     return decision;
   }
 
+  /**
+   * Pure sync getter: the memoized `ObservedTransitionResponse` for the edge
+   * fromItem -> toItem, or `null` if not yet computed/stale.
+   * @returns {object|null}
+   */
+  function getObservedTransition(fromItem, toItem) {
+    if (!fromItem || !toItem) return null;
+    return isDecisionFresh(fromItem.observedTransition, toItem.id) ? fromItem.observedTransition : null;
+  }
+
+  /**
+   * Computes (or returns the already-fresh) "has this transition already been
+   * played by real DJs" evidence for the edge fromItem -> toItem
+   * (`GET /v1/transitions/observed`), and persists it on
+   * `fromItem.observedTransition`. `observed:false` is a normal result, not a
+   * failure — it is cached and returned like any other successful response.
+   * @param {object} fromItem
+   * @param {object} toItem
+   * @param {{forceRefresh?: boolean}} [options]
+   * @returns {Promise<object|null>} `null` only on unavailable/unresolved/API failure
+   */
+  async function planObservedTransitionForEdge(fromItem, toItem, { forceRefresh = false } = {}) {
+    if (!fromItem || !toItem || !fromItem.djTrackId || !toItem.djTrackId) return null;
+    if (!forceRefresh && isDecisionFresh(fromItem.observedTransition, toItem.id)) return fromItem.observedTransition;
+
+    const available = await ensureAvailability();
+    if (!available) return null;
+
+    const res = await djPlannerClient.fetchObservedTransition(fromItem.djTrackId, toItem.djTrackId);
+    if (!res.ok || !res.data) return null;
+
+    const observed = { ...res.data, toItemId: toItem.id, computedAt: Date.now() };
+    filRouge()?.patchPlaylistItem(fromItem.id, { observedTransition: observed });
+    return observed;
+  }
+
+  /**
+   * @param {string} style
+   * @returns {Promise<object|null>} `StyleProgressionsResponse`, or `null` if unavailable/failed
+   */
+  async function getStyleProgressions(style) {
+    if (!style) return null;
+    const available = await ensureAvailability();
+    if (!available) return null;
+    const res = await djPlannerClient.fetchStyleProgressions(style);
+    return res.ok ? res.data : null;
+  }
+
+  /**
+   * @param {string[]} trackIds
+   * @param {{lockedPositions?: Array, allowException?: boolean}} [options]
+   * @returns {Promise<object|null>} `PlaylistPlan`, or `null` if unavailable/failed
+   */
+  async function createPlaylistPlan(trackIds, options) {
+    const available = await ensureAvailability();
+    if (!available) return null;
+    const res = await djPlannerClient.createPlaylistPlan(trackIds, options);
+    return res.ok ? res.data : null;
+  }
+
+  /**
+   * @param {string} planId
+   * @param {string[]} trackIds
+   * @param {{lockedPositions?: Array, allowException?: boolean}} [options]
+   * @returns {Promise<object|null>} `PlaylistPlan`, or `null` if unavailable/failed
+   */
+  async function updatePlaylistPlan(planId, trackIds, options) {
+    const available = await ensureAvailability();
+    if (!available) return null;
+    const res = await djPlannerClient.updatePlaylistPlan(planId, trackIds, options);
+    return res.ok ? res.data : null;
+  }
+
+  /**
+   * @param {{djName: string, entries: Array, event?: string, date?: string, sourceUrl?: string}} payload
+   * @returns {Promise<object|null>} `PersonalHistoryImportResponse`, or `null` if unavailable/failed
+   */
+  async function importPersonalHistory(payload) {
+    const available = await ensureAvailability();
+    if (!available) return null;
+    const res = await djPlannerClient.importPersonalHistory(payload);
+    return res.ok ? res.data : null;
+  }
+
   return {
     ensureAvailability,
     isAvailable,
     getMixDecision,
     planMixDecisionForEdge,
+    getObservedTransition,
+    planObservedTransitionForEdge,
+    getStyleProgressions,
+    createPlaylistPlan,
+    updatePlaylistPlan,
+    importPersonalHistory,
   };
 }

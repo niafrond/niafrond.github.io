@@ -137,14 +137,13 @@ import { createFilRougeManager } from './lib/filRougeManager.js';
 import { createTrackStore } from './lib/trackStore.js';
 import { restoreQueueFromStorage, saveQueueToStorage } from './lib/queueStorage.js';
 import { createShellUi } from './lib/shellUi.js';
-import { createDjMixRenderer, renderDjSetQualityBadge, renderDjTransitionFeedback } from './lib/uiRenderer.js';
+import { createDjMixRenderer, renderDjTransitionFeedback } from './lib/uiRenderer.js';
 import { createAutoModeManager } from './lib/autoModeManager.js';
 import { createDjApiClient } from './lib/djApiClient.js';
 import { createDjPlanManager } from './lib/djPlanManager.js';
 import { createDjPlannerClient } from './lib/djPlannerClient.js';
 import { createDjPlannerManager } from './lib/djPlannerManager.js';
-import { computeDjBpmRate, mapDjTransitionTypeToMode } from './lib/djTransitionMapping.js';
-import { computeDjPlanIndicatorState } from './lib/djPlanIndicator.js';
+import { computeDjBpmRate } from './lib/djTransitionMapping.js';
 import { createAppState } from './lib/appState.js';
 import {
   AUTO_DJ_FX_TYPES,
@@ -936,10 +935,19 @@ const djPlanIndicatorEl = document.getElementById('dj-plan-indicator');
 const djPlanSectionEl = document.getElementById('dj-plan-section');
 const filRougeClearBtn = document.getElementById('filrouge-clear-btn');
 const djSetQualityBadgeEl = document.getElementById('dj-set-quality-badge');
-const djSetProfileSelectEl = document.getElementById('dj-set-profile-select');
 const djRecalculateBtn = document.getElementById('dj-recalculate-btn');
 const filRougeDownloadAllBtn = document.getElementById('filrouge-download-all-btn');
 const filRougeMixInfoBtn = document.getElementById('filrouge-mixinfo-btn');
+const djPlannerStyleInputEl = document.getElementById('dj-planner-style-input');
+const djPlannerStyleBtnEl = document.getElementById('dj-planner-style-btn');
+const djPlannerProgressionsPanelEl = document.getElementById('dj-planner-progressions-panel');
+const djPlannerOptimizeBtnEl = document.getElementById('dj-planner-optimize-btn');
+const djPlannerPlanPanelEl = document.getElementById('dj-planner-plan-panel');
+const djPlannerHistoryDjNameInput = document.getElementById('dj-planner-history-dj-name');
+const djPlannerHistoryTextarea = document.getElementById('dj-planner-history-textarea');
+const djPlannerHistoryEventInput = document.getElementById('dj-planner-history-event');
+const djPlannerHistoryImportBtn = document.getElementById('dj-planner-history-import-btn');
+const djPlannerHistoryStatusEl = document.getElementById('dj-planner-history-status');
 
 const downloaderApiUrlInput = document.getElementById('downloader-api-url-input');
 const downloaderApiTokenInput = document.getElementById('downloader-api-token-input');
@@ -2465,26 +2473,20 @@ function addToPriorityQueue(item) {
   showToast(`"${name}" → file d'attente`);
 }
 
-const DJ_SET_PROFILE_LABELS = {
-  club_peak: "Club (pic d'énergie)",
-  wedding: 'Mariage',
-  festival: 'Festival',
-  warmup: 'Mise en route',
-  afterparty: 'After-party',
-};
-
 /**
- * Recalcule le badge de qualité du set via `/api/dj/batch` (informatif, ne
- * réordonne/ne retire rien) pour le profil sélectionné.
+ * Recalcule les transitions à la volée du fil rouge (`/api/dj/transition`,
+ * SPEC-8.6). `computeSetQuality()` ne retourne plus jamais de score global
+ * depuis le retrait de `/api/dj/batch` (SPEC-8.6.6) — `djSetQualityBadgeEl`
+ * n'est donc plus touché ici : il est désormais exclusivement piloté par le
+ * résumé de plan dj-planner (`filRougeCtrl`'s `_updateSetQualityBadgeForPlan`,
+ * SPEC-8.8).
  */
 async function runDjSetQualityRefresh({ forceRefresh = false } = {}) {
   try {
-    const quality = await djPlanManager.computeSetQuality({ forceRefresh });
-    renderDjSetQualityBadge(djSetQualityBadgeEl, quality);
+    await djPlanManager.computeSetQuality({ forceRefresh });
     updateDjPlanIndicator();
   } catch (err) {
     logWarn('djPlan: computeSetQuality failed', { error: err?.message });
-    renderDjSetQualityBadge(djSetQualityBadgeEl, null);
   }
 }
 
@@ -2499,7 +2501,6 @@ const scheduleDjSetQualityRefresh = createDebouncedFn(() => {
  */
 async function runDjPlanFullPass(reason) {
   if (!filRougeManager.isActive()) {
-    renderDjSetQualityBadge(djSetQualityBadgeEl, null);
     return;
   }
 
@@ -2535,182 +2536,15 @@ async function runDjPlanIncrementalPass(items, withWrap) {
   await runDjSetQualityRefresh();
 }
 
-/**
- * Peuple le sélecteur de profil de set depuis `/api/dj/set-profiles`,
- * restaure la sélection persistée et rafraîchit le badge au changement.
- */
-async function initDjSetProfileSelect() {
-  if (!djSetProfileSelectEl) return;
 
-  const result = await djPlanManager.getSetProfiles();
-  const profiles = Array.isArray(result?.profiles) && result.profiles.length
-    ? result.profiles
-    : Object.keys(DJ_SET_PROFILE_LABELS).map((id) => ({ id }));
-
-  djSetProfileSelectEl.innerHTML = profiles.map((profile) => {
-    const id = profile?.id;
-    const label = DJ_SET_PROFILE_LABELS[id] || id;
-    return `<option value="${escHtml(id)}">${escHtml(label)}</option>`;
-  }).join('');
-
-  const selected = djPlanManager.getSelectedSetProfile();
-  if (profiles.some((p) => p.id === selected)) {
-    djSetProfileSelectEl.value = selected;
-  }
-
-  djSetProfileSelectEl.addEventListener('change', () => {
-    djPlanManager.setSelectedSetProfile(djSetProfileSelectEl.value);
-    runDjSetQualityRefresh({ forceRefresh: true }).catch(() => {});
-  });
-}
-
-const DJ_TRANSITION_TYPE_LABELS = {
-  phrase_mix: 'Phrase mix',
-  long_blend: 'Long blend',
-  quick_cut: 'Quick cut',
-  drop_swap: 'Drop swap',
-  echo_out: 'Echo out',
-};
-
-const FX_MODE_LABELS = {
-  filter_sweep_low_high: 'Filter sweep',
-  echo_out_light: 'Echo out',
-  reverb_short_simple: 'Reverb',
-  short_loop: 'Loop',
-  brake_tape_stop_simple: 'Brake',
-  short_reverse: 'Backspin',
-  filter_automation: 'Filter auto',
-  crossfade_lowpass: 'Low-pass',
-  crossfade_highpass_in: 'High-pass',
-  filter_dual_sweep: 'Double filtre',
-  echo_lowpass: 'Echo + LP',
-  bass_swap: 'Bass swap',
-  kick_swap: 'Kick swap',
-  beat_repeat: 'Beat repeat',
-  backspin: 'Backspin',
-  echo_freeze: 'Echo freeze',
-};
-
-function resolveDjPlanMode(transition) {
-  const raw = transition.automixMode
-    ? normalizeTransitionMode(transition.automixMode)
-    : mapDjTransitionTypeToMode(transition.transitionType);
-  return raw || null;
-}
-
+// Délègue entièrement à filRougeCtrl.updateDjPlanIndicator() (lib/filRougeController.js),
+// seule implémentation à jour (bloc dj-planner additif, SPEC-8.8). Anciennement une copie
+// intégrale de cette même fonction avait divergé ici (duplication non intentionnelle),
+// laissant le bloc dj-planner invisible dans l'app réelle malgré son câblage — voir mémoire
+// projet pour le détail. Le nom de fonction/hoisting est conservé pour ne pas avoir à
+// toucher les ~5 sites d'appel existants.
 function updateDjPlanIndicator() {
-  if (!djPlanIndicatorEl) return;
-
-  const indicatorState = computeDjPlanIndicatorState({
-    enabled: djExternalPlanEnabled,
-    playlist: filRougeManager.getPlaylist(),
-    playingId: uiState.currentTrackId,
-    currentIndex: filRougeManager.getCurrentIndex(),
-  });
-
-  if (!indicatorState.visible) {
-    if (djPlanSectionEl) djPlanSectionEl.hidden = true;
-    djPlanIndicatorEl.hidden = true;
-    return;
-  }
-
-  if (djPlanSectionEl) djPlanSectionEl.hidden = false;
-  djPlanIndicatorEl.hidden = false;
-
-  if (indicatorState.state === 'no-track') {
-    djPlanIndicatorEl.innerHTML = `<div class="dj-plan-card dj-plan-card--pending"><span class="dj-plan-pending-msg">DJ Plan actif — aucun morceau fil rouge en cours</span></div>`;
-    return;
-  }
-
-  if (indicatorState.state === 'no-transition') {
-    const { item } = indicatorState;
-    const trackLabel = item.artist
-      ? `${escHtml(item.artist)} — ${escHtml(item.name || '')}`
-      : escHtml(item.name || '');
-    djPlanIndicatorEl.innerHTML = `<div class="dj-plan-card dj-plan-card--pending"><span class="dj-plan-pending-msg">Transition en attente de calcul…</span><span class="dj-plan-pending-track">${trackLabel}</span></div>`;
-    return;
-  }
-
-  if (indicatorState.state === 'next-not-found') {
-    djPlanIndicatorEl.innerHTML = `<div class="dj-plan-card dj-plan-card--pending"><span class="dj-plan-pending-msg">Morceau suivant introuvable dans la playlist</span></div>`;
-    return;
-  }
-
-  // state === 'ready'
-  const { transition: t, nextItem } = indicatorState;
-  const typeLabel = DJ_TRANSITION_TYPE_LABELS[t.transitionType] || t.transitionType || '—';
-  const scorePct = Number.isFinite(t.compatibilityScore) ? Math.round(t.compatibilityScore * 100) : null;
-  const scoreClass = scorePct === null ? '' : scorePct >= 70 ? 'is-good' : scorePct >= 50 ? 'is-ok' : 'is-low';
-  const mixOutFmt = Number.isFinite(t.mixOutSec) && t.mixOutSec > 0 ? formatZoneTime(t.mixOutSec) : null;
-  const mixInFmt = Number.isFinite(t.mixInSec) && t.mixInSec > 0 ? formatZoneTime(t.mixInSec) : null;
-  const crossfadeSec = Number.isFinite(t.crossfadeDurationSec) ? Math.round(t.crossfadeDurationSec) : null;
-  const bpm = Number.isFinite(t.recommendedBpm) && t.recommendedBpm > 0 ? Math.round(t.recommendedBpm) : null;
-  const decisionId = t.decisionId ? escHtml(String(t.decisionId)) : '';
-  const nextLabel = nextItem.artist
-    ? `${escHtml(nextItem.artist)} — ${escHtml(nextItem.name || '')}`
-    : escHtml(nextItem.name || '');
-
-  const resolvedMode = resolveDjPlanMode(t);
-  const modeLabel = resolvedMode ? (MIX_TRANSITION_MODE_LABELS[resolvedMode] || resolvedMode) : null;
-  const fxLabel = resolvedMode ? (FX_MODE_LABELS[resolvedMode] || null) : null;
-
-  const pendingFxEvents = (autoModeManager.getPendingAutoFxEvents() || [])
-    .filter((e) => e && !e.triggered)
-    .sort((a, b) => a.timeMs - b.timeMs);
-
-  const fxChipsHtml = pendingFxEvents.length > 0
-    ? pendingFxEvents.map((e) => {
-      const timeFmt = formatZoneTime(e.timeMs / 1000);
-      return `<span class="dj-plan-fx-chip" title="${escHtml(e.reason || '')}"><span class="dj-plan-fx-chip-label">${escHtml(e.label || e.type)}</span><span class="dj-plan-fx-chip-time">${timeFmt}</span></span>`;
-    }).join('')
-    : `<span class="dj-plan-fx-chip dj-plan-fx-chip--empty">Aucun FX prévu</span>`;
-
-  djPlanIndicatorEl.innerHTML = `
-    <div class="dj-plan-card">
-      <div class="dj-plan-card-header">
-        <span class="dj-plan-type-badge">${escHtml(typeLabel)}</span>
-        ${modeLabel ? `<span class="dj-plan-mode-badge" title="Mode de transition">${escHtml(modeLabel)}</span>` : ''}
-        ${fxLabel ? `<span class="dj-plan-fx-badge" title="Effet appliqué">FX ${escHtml(fxLabel)}</span>` : ''}
-        ${scorePct !== null ? `<span class="dj-plan-score ${scoreClass}" title="Score de compatibilité">${scorePct}%</span>` : ''}
-        ${decisionId ? `
-        <div class="dj-plan-card-feedback filrouge-dj-feedback" data-decision-id="${decisionId}">
-          <button type="button" class="filrouge-dj-feedback-btn" data-feedback="good" title="Bonne transition" aria-label="Bonne transition">👍</button>
-          <button type="button" class="filrouge-dj-feedback-btn" data-feedback="bad" title="Mauvaise transition" aria-label="Mauvaise transition">👎</button>
-        </div>` : ''}
-      </div>
-      <div class="dj-plan-timeline">
-        <div class="dj-plan-timeline-out">
-          <span class="dj-plan-tl-label">Sort à</span>
-          <span class="dj-plan-tl-time">${mixOutFmt ?? '--:--'}</span>
-        </div>
-        <div class="dj-plan-fx-chips">${fxChipsHtml}</div>
-        <div class="dj-plan-timeline-in">
-          <span class="dj-plan-tl-label">Entre à</span>
-          <span class="dj-plan-tl-time">${mixInFmt ?? '--:--'}</span>
-        </div>
-      </div>
-      <div class="dj-plan-card-meta">
-        ${crossfadeSec !== null ? `<span class="dj-plan-meta-fade">${crossfadeSec}s fondu</span>` : ''}
-        ${bpm !== null ? `<span class="dj-plan-meta-bpm">BPM cible : ${bpm}</span>` : ''}
-        <span class="dj-plan-next-track">→ ${nextLabel}</span>
-      </div>
-    </div>`;
-
-  djPlanIndicatorEl.querySelectorAll('.filrouge-dj-feedback-btn').forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const container = btn.closest('.filrouge-dj-feedback');
-      const dId = container?.dataset.decisionId;
-      const feedback = btn.dataset.feedback;
-      if (!dId || !feedback) return;
-      const result = await djPlanManager.submitFeedback(dId, feedback);
-      if (!result) { showToast("Feedback DJ : échec de l'envoi", true); return; }
-      djPlanIndicatorEl.querySelectorAll('.filrouge-dj-feedback-btn').forEach((b) => {
-        b.classList.toggle('is-selected', b === btn);
-      });
-      showToast(feedback === 'good' ? '👍 Merci pour le retour' : '👎 Merci pour le retour');
-    });
-  });
+  filRougeCtrl?.updateDjPlanIndicator();
 }
 
 function updateDjExternalPlanUI() {
@@ -3591,8 +3425,8 @@ const filRougeCtrl = createFilRougeController({
   filRougePlaylistListEl,
   getPendingAutoFxEvents: () => autoModeManager.getPendingAutoFxEvents(),
   djPlanIndicatorEl,
+  djPlanSectionEl,
   djSetQualityBadgeEl,
-  djSetProfileSelectEl,
   filRougeSortSelectEl,
   getDownloaderApiUrl,
   getDownloaderApiToken,
@@ -3955,6 +3789,43 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
   switchTab('config');
 });
 
+// dj-planner : import d'historique personnel (POST /v1/personal-history/import).
+// Réutilise le même format "artiste - titre" (une ligne par morceau) que
+// l'import TXT fil rouge (parseTxtPlaylist), mais construit des
+// PersonalHistoryEntry (artist/title) au lieu d'items de fil rouge.
+function setDjPlannerHistoryStatus(msg, isError = false) {
+  if (!djPlannerHistoryStatusEl) return;
+  djPlannerHistoryStatusEl.textContent = msg;
+  djPlannerHistoryStatusEl.style.color = isError ? 'var(--error, #e55)' : '';
+}
+
+djPlannerHistoryImportBtn?.addEventListener('click', async () => {
+  const djName = (djPlannerHistoryDjNameInput?.value || '').trim();
+  if (!djName) {
+    setDjPlannerHistoryStatus('Entrez votre nom de DJ.', true);
+    return;
+  }
+  const tracks = parseTxtPlaylist(djPlannerHistoryTextarea?.value || '');
+  if (!tracks.length) {
+    setDjPlannerHistoryStatus('Aucun morceau trouvé. Vérifiez le format (artiste - titre).', true);
+    return;
+  }
+  const entries = tracks.map((t) => ({ artist: t.artist, title: t.name }));
+  const event = (djPlannerHistoryEventInput?.value || '').trim() || undefined;
+
+  setDjPlannerHistoryStatus('Import en cours…');
+  const result = await djPlannerManager.importPersonalHistory({ djName, entries, event });
+  if (!result) {
+    setDjPlannerHistoryStatus('Import impossible (dj-planner indisponible).', true);
+    showToast('Import historique dj-planner impossible', true);
+    return;
+  }
+  setDjPlannerHistoryStatus(
+    `Import réussi : ${result.tracks_recognized} reconnu(s), ${result.tracks_unmatched} non apparié(s), ${result.transitions_added} transition(s) ajoutée(s).`,
+  );
+  showToast('Historique dj-planner importé');
+});
+
 (async function init() {
   if (spotifyClientIdInput) {
     spotifyClientIdInput.value = spotifyClient.getStoredClientId();
@@ -4073,9 +3944,12 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
   // d'une session précédente (SPEC-19.2).
   filRougeDownloader.resumeIncompleteBatches?.(filRougeManager.getPlaylist()).catch(() => {});
 
-  // DJ Planner : sélecteur de profil de set + recalcul complet des transitions du fil rouge.
-  initDjSetProfileSelect().catch(() => {});
+  // DJ Planner (legacy /api/dj/*) : recalcul complet des transitions du fil rouge.
   runDjPlanFullPass('startup').catch(() => {});
+
+  // dj-planner (nouveau backend /v1/*) : panneau style/progressions + optimisation playlist.
+  filRougeCtrl.initDjPlannerStylePanel(djPlannerStyleInputEl, djPlannerStyleBtnEl, djPlannerProgressionsPanelEl);
+  filRougeCtrl.initDjPlannerPlanPanel(djPlannerOptimizeBtnEl, djPlannerPlanPanelEl);
 
   try {
     await connectLocal();
