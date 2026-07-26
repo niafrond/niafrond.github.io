@@ -1,3 +1,15 @@
+## [2.16.0](https://github.com/niafrond/niafrond.github.io/compare/v2.15.0...v2.16.0) (2026-07-26)
+
+### Features
+
+* enhance artwork URL resolution and add regression tests for CDN integration ([ab59f65](https://github.com/niafrond/niafrond.github.io/commit/ab59f65f9283d9c8232c478c899b750cfaef5a69))
+* update downloader API and CDN URLs to use HTTPS on port 8443 for improved security ([3b93acf](https://github.com/niafrond/niafrond.github.io/commit/3b93acf067fff553622204f77c2d28315cca6584))
+* update downloader API and CDN URLs to use local IP for consistency across configurations ([9a93a0d](https://github.com/niafrond/niafrond.github.io/commit/9a93a0deda6bc46f225f136c4b796cd5655ad3ed))
+
+### Bug Fixes
+
+* **dj-mix:** guard against concurrent crossfade race in playback ([c6dd60f](https://github.com/niafrond/niafrond.github.io/commit/c6dd60fd6f1c6b702d08ba17e23433adf484d747))
+
 ## [2.15.0](https://github.com/niafrond/niafrond.github.io/compare/v2.14.0...v2.15.0) (2026-07-26)
 
 ### Features
