@@ -57,7 +57,7 @@ describe('downloaderConfig', () => {
 
   describe('deriveCdnUrlFromApiUrl', () => {
     test('returns the same base URL (reverse proxy routes by path, not by port)', () => {
-      expect(deriveCdnUrlFromApiUrl('https://vision:8443')).toBe('https://vision:8443');
+      expect(deriveCdnUrlFromApiUrl('https://192.168.8.149:8443')).toBe('https://192.168.8.149:8443');
     });
 
     test('returns the input unchanged when it is not a valid URL', () => {
@@ -69,9 +69,9 @@ describe('downloaderConfig', () => {
     test('uses the explicitly stored CDN URL when set', () => {
       localStorage.setItem('cdn-key', 'http://custom-cdn.local:9000');
       const manager = createDownloaderConfigManager({
-        cdnDefaultUrl: 'https://vision:8443',
+        cdnDefaultUrl: 'https://192.168.8.149:8443',
         cdnStorageKey: 'cdn-key',
-        defaultUrl: 'https://vision:8443',
+        defaultUrl: 'https://192.168.8.149:8443',
         storageKey: 'api-key',
       });
 
@@ -84,9 +84,9 @@ describe('downloaderConfig', () => {
     test('derives from the current API URL when no CDN URL is stored', () => {
       localStorage.setItem('api-key', 'http://relay-master.local:8080');
       const manager = createDownloaderConfigManager({
-        cdnDefaultUrl: 'https://vision:8443',
+        cdnDefaultUrl: 'https://192.168.8.149:8443',
         cdnStorageKey: 'cdn-key',
-        defaultUrl: 'https://vision:8443',
+        defaultUrl: 'https://192.168.8.149:8443',
         storageKey: 'api-key',
       });
 
@@ -95,13 +95,13 @@ describe('downloaderConfig', () => {
 
     test('falls back to cdnDefaultUrl when neither CDN nor API URL are configured', () => {
       const manager = createDownloaderConfigManager({
-        cdnDefaultUrl: 'https://vision:8443',
+        cdnDefaultUrl: 'https://192.168.8.149:8443',
         cdnStorageKey: 'cdn-key',
         defaultUrl: '',
         storageKey: 'api-key',
       });
 
-      expect(manager.getDownloaderCdnUrl()).toBe('https://vision:8443');
+      expect(manager.getDownloaderCdnUrl()).toBe('https://192.168.8.149:8443');
     });
   });
 
@@ -128,7 +128,7 @@ describe('downloaderConfig', () => {
 
   describe('deriveRelayUrlFromApiUrl', () => {
     test('returns the same base URL (reverse proxy routes by path, not by port)', () => {
-      expect(deriveRelayUrlFromApiUrl('https://vision:8443')).toBe('https://vision:8443');
+      expect(deriveRelayUrlFromApiUrl('https://192.168.8.149:8443')).toBe('https://192.168.8.149:8443');
     });
 
     test('returns the input unchanged when it is not a valid URL', () => {
@@ -142,7 +142,7 @@ describe('downloaderConfig', () => {
     test('derives from the current API URL', () => {
       localStorage.setItem('api-key', 'http://relay-master.local:8080');
       const manager = createDownloaderConfigManager({
-        defaultUrl: 'https://vision:8443',
+        defaultUrl: 'https://192.168.8.149:8443',
         storageKey: 'api-key',
       });
 
