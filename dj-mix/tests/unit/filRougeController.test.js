@@ -454,3 +454,158 @@ describe('sortFilRouge', () => {
     expect(fr.setPlaylist).not.toHaveBeenCalled();
   });
 });
+
+// ── updateDjPlanIndicator — dj-planner block (SPEC-8.8, additif) ────────────
+
+describe('updateDjPlanIndicator — dj-planner block', () => {
+  function makeEdgeItems() {
+    const current = {
+      id: 1,
+      name: 'Track A',
+      artist: 'Artist A',
+      djTrackId: 'a.mp3',
+      djTransition: {
+        toItemId: 2,
+        transitionType: 'phrase_mix',
+        mixOutSec: 10,
+        mixInSec: 5,
+        crossfadeDurationSec: 6,
+        compatibilityScore: 0.8,
+        decisionId: 'd1',
+        computedAt: Date.now(),
+      },
+    };
+    const next = { id: 2, name: 'Track B', artist: 'Artist B', djTrackId: 'b.mp3' };
+    return [current, next];
+  }
+
+  test('renders confidence/mode/evidence for a compatible decision', () => {
+    const [current, next] = makeEdgeItems();
+    current.plannerDecision = {
+      compatible: true,
+      confidence: 0.83,
+      transition_type: 'crossfade_linear',
+      evidence: { type: 'observed_transition', occurrence_count: 5, djs: ['DJ X', 'DJ Y'] },
+      toItemId: 2,
+      computedAt: Date.now(),
+    };
+    const fr = makeFilRougeManager([current, next]);
+    uiState.currentTrackId = 1;
+    const djPlanIndicatorEl = document.createElement('div');
+    const djPlannerManager = {
+      getMixDecision: jest.fn().mockReturnValue(current.plannerDecision),
+      planMixDecisionForEdge: jest.fn(),
+    };
+    const ctrl = makeController({
+      filRougeManager: fr,
+      djPlannerManager,
+      djPlanIndicatorEl,
+      getDjExternalPlanEnabled: jest.fn().mockReturnValue(true),
+    });
+
+    ctrl.updateDjPlanIndicator();
+
+    expect(djPlanIndicatorEl.querySelector('.dj-planner-badge')).not.toBeNull();
+    expect(djPlanIndicatorEl.querySelector('.dj-planner-confidence').textContent).toBe('83%');
+    expect(djPlanIndicatorEl.querySelector('.dj-planner-evidence--observed').textContent).toContain('5');
+    expect(djPlannerManager.planMixDecisionForEdge).not.toHaveBeenCalled();
+  });
+
+  test('renders blocking_dimensions + explanation for an incompatible decision, distinct from a compatible card', () => {
+    const [current, next] = makeEdgeItems();
+    current.plannerDecision = {
+      compatible: false,
+      blocking_dimensions: ['harmonic', 'energy'],
+      explanation: 'Clé et énergie incompatibles',
+      toItemId: 2,
+      computedAt: Date.now(),
+    };
+    const fr = makeFilRougeManager([current, next]);
+    uiState.currentTrackId = 1;
+    const djPlanIndicatorEl = document.createElement('div');
+    const djPlannerManager = {
+      getMixDecision: jest.fn().mockReturnValue(current.plannerDecision),
+      planMixDecisionForEdge: jest.fn(),
+    };
+    const ctrl = makeController({
+      filRougeManager: fr,
+      djPlannerManager,
+      djPlanIndicatorEl,
+      getDjExternalPlanEnabled: jest.fn().mockReturnValue(true),
+    });
+
+    ctrl.updateDjPlanIndicator();
+
+    expect(djPlanIndicatorEl.querySelector('.dj-planner-block--incompatible')).not.toBeNull();
+    expect(djPlanIndicatorEl.querySelector('.dj-planner-blocking-dims').textContent).toBe('harmonique, énergie');
+    expect(djPlanIndicatorEl.querySelector('.dj-planner-explanation').textContent).toBe('Clé et énergie incompatibles');
+    expect(djPlanIndicatorEl.querySelector('.dj-planner-confidence')).toBeNull();
+  });
+
+  test('renders a distinct badge for status=deliberate_exception', () => {
+    const [current, next] = makeEdgeItems();
+    current.plannerDecision = {
+      compatible: true,
+      confidence: 0.6,
+      status: 'deliberate_exception',
+      toItemId: 2,
+      computedAt: Date.now(),
+    };
+    const fr = makeFilRougeManager([current, next]);
+    uiState.currentTrackId = 1;
+    const djPlanIndicatorEl = document.createElement('div');
+    const djPlannerManager = {
+      getMixDecision: jest.fn().mockReturnValue(current.plannerDecision),
+      planMixDecisionForEdge: jest.fn(),
+    };
+    const ctrl = makeController({
+      filRougeManager: fr,
+      djPlannerManager,
+      djPlanIndicatorEl,
+      getDjExternalPlanEnabled: jest.fn().mockReturnValue(true),
+    });
+
+    ctrl.updateDjPlanIndicator();
+
+    expect(djPlanIndicatorEl.querySelector('.dj-planner-block--exception')).not.toBeNull();
+    expect(djPlanIndicatorEl.querySelector('.dj-planner-exception-badge')).not.toBeNull();
+  });
+
+  test('triggers planMixDecisionForEdge when no fresh decision is memoized yet, and renders no dj-planner block meanwhile', () => {
+    const [current, next] = makeEdgeItems();
+    const fr = makeFilRougeManager([current, next]);
+    uiState.currentTrackId = 1;
+    const djPlanIndicatorEl = document.createElement('div');
+    const djPlannerManager = {
+      getMixDecision: jest.fn().mockReturnValue(null),
+      planMixDecisionForEdge: jest.fn().mockResolvedValue(null),
+    };
+    const ctrl = makeController({
+      filRougeManager: fr,
+      djPlannerManager,
+      djPlanIndicatorEl,
+      getDjExternalPlanEnabled: jest.fn().mockReturnValue(true),
+    });
+
+    ctrl.updateDjPlanIndicator();
+
+    expect(djPlannerManager.planMixDecisionForEdge).toHaveBeenCalledWith(current, next);
+    expect(djPlanIndicatorEl.querySelector('.dj-planner-block')).toBeNull();
+  });
+
+  test('renders the legacy card without a dj-planner block when djPlannerManager is not provided', () => {
+    const [current, next] = makeEdgeItems();
+    const fr = makeFilRougeManager([current, next]);
+    uiState.currentTrackId = 1;
+    const djPlanIndicatorEl = document.createElement('div');
+    const ctrl = makeController({
+      filRougeManager: fr,
+      djPlanIndicatorEl,
+      getDjExternalPlanEnabled: jest.fn().mockReturnValue(true),
+    });
+
+    expect(() => ctrl.updateDjPlanIndicator()).not.toThrow();
+    expect(djPlanIndicatorEl.querySelector('.dj-plan-card')).not.toBeNull();
+    expect(djPlanIndicatorEl.querySelector('.dj-planner-block')).toBeNull();
+  });
+});

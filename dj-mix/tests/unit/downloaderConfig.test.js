@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from '@jest/globals';
 import {
   createDownloaderConfigManager,
   deriveCdnUrlFromApiUrl,
+  deriveDjPlannerUrlFromApiUrl,
   deriveRelayUrlFromApiUrl,
   describeApiTestError,
   isLikelyMixedContentBlock,
@@ -134,6 +135,37 @@ describe('downloaderConfig', () => {
       });
 
       expect(manager.getDownloaderRelayUrl()).toBe('');
+    });
+  });
+
+  describe('deriveDjPlannerUrlFromApiUrl', () => {
+    test('appends /api/dj-planner to the API base URL (reverse proxy routes by path)', () => {
+      expect(deriveDjPlannerUrlFromApiUrl('http://vision:8080')).toBe('http://vision:8080/api/dj-planner');
+    });
+
+    test('strips a trailing slash from the API URL before appending', () => {
+      expect(deriveDjPlannerUrlFromApiUrl('http://vision:8080/')).toBe('http://vision:8080/api/dj-planner');
+    });
+  });
+
+  describe('getDjPlannerUrl', () => {
+    test('derives from the current API URL', () => {
+      localStorage.setItem('api-key', 'http://127.0.0.1:8080');
+      const manager = createDownloaderConfigManager({
+        defaultUrl: 'http://vision:8080',
+        storageKey: 'api-key',
+      });
+
+      expect(manager.getDjPlannerUrl()).toBe('http://127.0.0.1:8080/api/dj-planner');
+    });
+
+    test('returns an empty string when no API URL is configured', () => {
+      const manager = createDownloaderConfigManager({
+        defaultUrl: '',
+        storageKey: 'api-key',
+      });
+
+      expect(manager.getDjPlannerUrl()).toBe('');
     });
   });
 

@@ -51,6 +51,16 @@ export function deriveRelayUrlFromApiUrl(apiUrl) {
   return String(apiUrl || '').replace(/\/$/, '');
 }
 
+// Derives the dj-planner base URL from the API base URL. `dj-planner`
+// (see lib/djPlannerClient.js) is a separate local FastAPI backend, but
+// reachable behind the same reverse-proxy base URL as the downloader API —
+// nginx routes /api/dj-planner/... to it by path, not by port. No override
+// storage (same rationale as deriveRelayUrlFromApiUrl): it always follows
+// the API URL if it changes at runtime.
+export function deriveDjPlannerUrlFromApiUrl(apiUrl) {
+  return `${String(apiUrl || '').replace(/\/$/, '')}/api/dj-planner`;
+}
+
 export function createDownloaderConfigManager(options) {
   const {
     cdnDefaultUrl,
@@ -98,6 +108,12 @@ export function createDownloaderConfigManager(options) {
   function getDownloaderRelayUrl() {
     const apiUrl = getDownloaderApiUrl();
     return apiUrl ? deriveRelayUrlFromApiUrl(apiUrl) : '';
+  }
+
+  // Same derive-only pattern as getDownloaderRelayUrl (no override storage).
+  function getDjPlannerUrl() {
+    const apiUrl = getDownloaderApiUrl();
+    return apiUrl ? deriveDjPlannerUrlFromApiUrl(apiUrl) : '';
   }
 
   function loadIntoForm() {
@@ -149,6 +165,7 @@ export function createDownloaderConfigManager(options) {
     getDownloaderApiUrl,
     getDownloaderCdnUrl,
     getDownloaderRelayUrl,
+    getDjPlannerUrl,
     loadIntoForm,
     saveFromForm,
     setStatus,

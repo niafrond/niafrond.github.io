@@ -1,0 +1,97 @@
+// djPlannerManager.js — Orchestrates the `dj-planner` backend (`/v1/*`, see
+// lib/djPlannerClient.js) for the fil rouge: on-demand mix-decision between
+// the current track and its successor ("Est-ce que ces deux morceaux se
+// mixent ?", dj-mix/frontend-integration.md §4).
+//
+// Per §2, features depending on dj-planner MUST be silently disabled while
+// the backend is unreachable — `ensureAvailability()` gates every call and
+// caches the result briefly so a down backend isn't re-probed on every
+// render tick.
+//
+// Track IDs: reuses the `djTrackId` already resolved onto each fil rouge
+// item by the legacy `djPlanManager` (via `/api/dj/tracks`) — both backends
+// read the same local audio library, so the same filename-based id applies.
+
+const AVAILABILITY_RECHECK_MS = 30_000;
+const MAX_DECISION_AGE_MS = 24 * 60 * 60 * 1000;
+
+export function createDjPlannerManager({ djPlannerClient, getFilRougeManager, logger } = {}) {
+  let _available = null; // null = not yet probed
+  let _availabilityCheckedAt = 0;
+
+  function filRouge() {
+    return getFilRougeManager?.();
+  }
+
+  /** @returns {Promise<boolean>} */
+  async function ensureAvailability() {
+    if (_available !== null && (Date.now() - _availabilityCheckedAt) < AVAILABILITY_RECHECK_MS) {
+      return _available;
+    }
+    _available = await djPlannerClient.checkHealth();
+    _availabilityCheckedAt = Date.now();
+    if (!_available) logger?.debug?.('djPlannerManager: backend unreachable, features disabled');
+    return _available;
+  }
+
+  /** @returns {boolean} last known availability, without probing (`false` until the first `ensureAvailability()`) */
+  function isAvailable() {
+    return _available === true;
+  }
+
+  /**
+   * @param {object|null|undefined} decision - a stored `item.plannerDecision`
+   * @param {string|number|null|undefined} toItemId
+   * @returns {boolean}
+   */
+  function isDecisionFresh(decision, toItemId) {
+    if (!decision || toItemId == null) return false;
+    if (String(decision.toItemId) !== String(toItemId)) return false;
+    const computedAt = Number(decision.computedAt);
+    if (!Number.isFinite(computedAt)) return false;
+    return (Date.now() - computedAt) <= MAX_DECISION_AGE_MS;
+  }
+
+  /**
+   * Pure sync getter: the memoized dj-planner decision for the edge
+   * fromItem -> toItem, or `null` if not yet computed/stale (caller should
+   * then call `planMixDecisionForEdge` to trigger computation).
+   * @returns {object|null} raw `MixDecision`/`IncompatibleMixDecision` (+ `toItemId`/`computedAt`)
+   */
+  function getMixDecision(fromItem, toItem) {
+    if (!fromItem || !toItem) return null;
+    return isDecisionFresh(fromItem.plannerDecision, toItem.id) ? fromItem.plannerDecision : null;
+  }
+
+  /**
+   * Computes (or returns the already-fresh) dj-planner mix decision for the
+   * edge fromItem -> toItem, and persists it on `fromItem.plannerDecision`.
+   * Resolves to `null` if unavailable, unresolved trackIds, or API failure —
+   * callers should fall back to the existing heuristics / legacy djPlanManager.
+   * @param {object} fromItem
+   * @param {object} toItem
+   * @param {{forceRefresh?: boolean}} [options]
+   * @returns {Promise<object|null>}
+   */
+  async function planMixDecisionForEdge(fromItem, toItem, { forceRefresh = false } = {}) {
+    if (!fromItem || !toItem || !fromItem.djTrackId || !toItem.djTrackId) return null;
+    if (!forceRefresh && isDecisionFresh(fromItem.plannerDecision, toItem.id)) return fromItem.plannerDecision;
+
+    const available = await ensureAvailability();
+    if (!available) return null;
+
+    const res = await djPlannerClient.createMixDecision(fromItem.djTrackId, toItem.djTrackId);
+    if (!res.ok || !res.data) return null;
+
+    const decision = { ...res.data, toItemId: toItem.id, computedAt: Date.now() };
+    filRouge()?.patchPlaylistItem(fromItem.id, { plannerDecision: decision });
+    return decision;
+  }
+
+  return {
+    ensureAvailability,
+    isAvailable,
+    getMixDecision,
+    planMixDecisionForEdge,
+  };
+}

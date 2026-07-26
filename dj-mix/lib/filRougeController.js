@@ -18,6 +18,7 @@ import { STORAGE_KEYS } from './storageKeys.js';
  * @param {object} options
  * @param {object} options.filRougeManager
  * @param {object} options.djPlanManager
+ * @param {object|null} [options.djPlannerManager] - nouveau backend dj-planner (/v1/*), additif, cf. frontend-integration.md
  * @param {() => boolean} options.getDjExternalPlanEnabled
  * @param {(item: object) => Promise<void>} options.fetchMissingMeta
  * @param {(item: object, opts?: object) => Promise<void>} options.addToQueue
@@ -39,6 +40,7 @@ export function createFilRougeController(options) {
   const {
     filRougeManager,
     djPlanManager,
+    djPlannerManager = null,
     getDjExternalPlanEnabled,
     fetchMissingMeta,
     addToQueue,
@@ -164,6 +166,53 @@ export function createFilRougeController(options) {
     return raw || null;
   }
 
+  // ── dj-planner mix-decision block (nouveau backend /v1/*, additif) ───────────
+  // Purement informatif : n'affecte pas mixOutSec/mixInSec/automix, qui restent
+  // pilotés par le djTransition existant. Cf. frontend-integration.md §5 pour
+  // les règles d'affichage (confidence toujours visible, incompatible avec
+  // blocking_dimensions+explanation, exception délibérée distincte, evidence
+  // distinguée d'une simple compatibilité audio).
+
+  const BLOCKING_DIMENSION_LABELS = {
+    harmonic: 'harmonique',
+    energy: 'énergie',
+    structural: 'structurel',
+    frequency: 'fréquentiel',
+  };
+
+  function renderPlannerDecisionHtml(decision) {
+    if (!decision) return '';
+
+    if (decision.compatible === false) {
+      const dims = (decision.blocking_dimensions || [])
+        .map((d) => BLOCKING_DIMENSION_LABELS[d] || d)
+        .join(', ');
+      return `
+      <div class="dj-planner-block dj-planner-block--incompatible">
+        <span class="dj-planner-badge dj-planner-badge--incompatible">dj-planner : incompatible</span>
+        ${dims ? `<span class="dj-planner-blocking-dims">${escHtml(dims)}</span>` : ''}
+        ${decision.explanation ? `<p class="dj-planner-explanation">${escHtml(decision.explanation)}</p>` : ''}
+      </div>`;
+    }
+
+    const confidencePct = Number.isFinite(decision.confidence) ? Math.round(decision.confidence * 100) : null;
+    const modeLabel = MIX_TRANSITION_MODE_LABELS[decision.transition_type] || decision.transition_type || '—';
+    const isException = decision.status === 'deliberate_exception';
+    const evidence = decision.evidence;
+    const evidenceHtml = evidence?.type === 'observed_transition'
+      ? `<span class="dj-planner-evidence dj-planner-evidence--observed" title="Enchaînement déjà joué par des DJ réels">✓ joué ${evidence.occurrence_count}× (${(evidence.djs || []).length} DJ)</span>`
+      : `<span class="dj-planner-evidence dj-planner-evidence--audio" title="Compatibilité déduite de l'analyse audio locale, jamais observée en set réel">analyse audio seule</span>`;
+
+    return `
+    <div class="dj-planner-block${isException ? ' dj-planner-block--exception' : ''}">
+      <span class="dj-planner-badge">dj-planner</span>
+      ${isException ? `<span class="dj-planner-exception-badge" title="Exception délibérée demandée par le DJ">⚠ exception délibérée</span>` : ''}
+      <span class="dj-planner-mode">${escHtml(modeLabel)}</span>
+      ${confidencePct !== null ? `<span class="dj-planner-confidence" title="Confiance">${confidencePct}%</span>` : ''}
+      ${evidenceHtml}
+    </div>`;
+  }
+
   function updateDjPlanIndicator() {
     if (!djPlanIndicatorEl) return;
 
@@ -201,7 +250,7 @@ export function createFilRougeController(options) {
     }
 
     // state === 'ready'
-    const { transition: t, nextItem } = indicatorState;
+    const { item, transition: t, nextItem } = indicatorState;
     const typeLabel = DJ_TRANSITION_TYPE_LABELS[t.transitionType] || t.transitionType || '—';
     const scorePct = Number.isFinite(t.compatibilityScore) ? Math.round(t.compatibilityScore * 100) : null;
     const scoreClass = scorePct === null ? '' : scorePct >= 70 ? 'is-good' : scorePct >= 50 ? 'is-ok' : 'is-low';
@@ -228,6 +277,12 @@ export function createFilRougeController(options) {
         return `<span class="dj-plan-fx-chip" title="${escHtml(e.reason || '')}"><span class="dj-plan-fx-chip-label">${escHtml(e.label || e.type)}</span><span class="dj-plan-fx-chip-time">${timeFmt}</span></span>`;
       }).join('')
       : `<span class="dj-plan-fx-chip dj-plan-fx-chip--empty">Aucun FX prévu</span>`;
+
+    const plannerDecision = djPlannerManager?.getMixDecision(item, nextItem) ?? null;
+    if (!plannerDecision && djPlannerManager) {
+      djPlannerManager.planMixDecisionForEdge(item, nextItem).then((d) => { if (d) updateDjPlanIndicator(); });
+    }
+    const plannerHtml = renderPlannerDecisionHtml(plannerDecision);
 
     djPlanIndicatorEl.innerHTML = `
     <div class="dj-plan-card">
@@ -258,6 +313,7 @@ export function createFilRougeController(options) {
         ${bpm !== null ? `<span class="dj-plan-meta-bpm">BPM cible : ${bpm}</span>` : ''}
         <span class="dj-plan-next-track">→ ${nextLabel}</span>
       </div>
+      ${plannerHtml}
     </div>`;
 
     djPlanIndicatorEl.querySelectorAll('.filrouge-dj-feedback-btn').forEach((btn) => {

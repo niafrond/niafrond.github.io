@@ -141,6 +141,8 @@ import { createDjMixRenderer, renderDjSetQualityBadge, renderDjTransitionFeedbac
 import { createAutoModeManager } from './lib/autoModeManager.js';
 import { createDjApiClient } from './lib/djApiClient.js';
 import { createDjPlanManager } from './lib/djPlanManager.js';
+import { createDjPlannerClient } from './lib/djPlannerClient.js';
+import { createDjPlannerManager } from './lib/djPlannerManager.js';
 import { computeDjBpmRate, mapDjTransitionTypeToMode } from './lib/djTransitionMapping.js';
 import { computeDjPlanIndicatorState } from './lib/djPlanIndicator.js';
 import { createAppState } from './lib/appState.js';
@@ -1053,6 +1055,7 @@ const {
   getDownloaderApiUrl,
   getDownloaderCdnUrl,
   getDownloaderRelayUrl,
+  getDjPlannerUrl,
   loadIntoForm: loadDownloaderApiConfigIntoForm,
   saveFromForm: saveDownloaderApiConfigFromForm,
   setStatus: setDownloaderApiStatus,
@@ -3427,6 +3430,23 @@ const djPlanManager = createDjPlanManager({
   logger,
 });
 
+// ── dj-planner (nouveau backend /v1/*, cf. frontend-integration.md) ──────────
+// Service séparé, joignable derrière la même URL de base que l'API downloader
+// (routage nginx par chemin /api/dj-planner/..., cf. getDjPlannerUrl). Pas
+// d'authentification (§2) : aucun token envoyé. Réutilise le djTrackId déjà
+// résolu par djPlanManager (même bibliothèque audio locale) plutôt que de
+// refaire une résolution de trackId dédiée.
+const djPlannerClient = createDjPlannerClient({
+  getDjPlannerUrl,
+  logger,
+});
+
+const djPlannerManager = createDjPlannerManager({
+  djPlannerClient,
+  getFilRougeManager: () => filRougeManager,
+  logger,
+});
+
 const autoModeManager = createAutoModeManager({
   apiHealthMonitor,
   getDownloaderApiToken,
@@ -3556,6 +3576,7 @@ const queueMgr = createQueueManager({
 const filRougeCtrl = createFilRougeController({
   filRougeManager,
   djPlanManager,
+  djPlannerManager,
   getDjExternalPlanEnabled: () => djExternalPlanEnabled,
   fetchMissingMeta,
   addToQueue: (...args) => queueMgr.addToQueue(...args),

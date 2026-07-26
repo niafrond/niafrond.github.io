@@ -615,6 +615,65 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-8.7.4** Ce mécanisme est indépendant de la contrainte de durée max (`trackMaxDurationEnabled`), qui reste vérifiée séparément ; le premier seuil atteint chronologiquement déclenche l'automix.
 - **SPEC-8.7.5** GIVEN `djExternalPlanEnabled` est `true` ET le prochain item du fil rouge n'a pas (encore) de suggestion API (`getDjTransitionPlan` retourne `null` — suggestion non reçue ou calcul en cours) ET `trackMaxDurationAppliedSec > 0` — THEN : (a) lors du calcul du timing automix (`onAutomixTimingCalculated`), `finalTriggerMs` est remplacé par `trackMaxDurationAppliedSec × 1000` ; (b) en cours de lecture, si la position atteint `trackMaxDurationAppliedSec × 1000 + autoDjStartOffsetMs` et que le marqueur durée max (`maxDurMarkerTriggeredForTrack`) n'a pas encore tiré, l'automix est déclenché via le bloc DJ Plan (avec `markAutomixTriggered`).
 
+### 8.8 dj-planner — nouveau backend `/v1/*` (additif)
+
+Intégration du backend séparé `dj-planner` décrit dans `dj-mix/frontend-integration.md` (moteur de
+décisions de mix, plans de playlist, preuves d'usage réel — distinct du moteur `/api/dj/*` couvert
+par §8.1–8.7, qui reste inchangé et continue seul à piloter `mixOutSec`/`mixInSec`/l'automix).
+
+- **SPEC-8.8.1** `dj-planner` est joignable derrière la même URL de base que l'API downloader,
+  routé par chemin (`/api/dj-planner/...`), et non par port séparé —
+  `deriveDjPlannerUrlFromApiUrl(apiUrl)` (`lib/downloaderConfig.js`) dérive son URL en ajoutant
+  `/api/dj-planner` à `getDownloaderApiUrl()`. Pas de stockage d'override séparé (même pattern que
+  `getDownloaderRelayUrl`) : l'URL suit automatiquement l'API si elle change à l'exécution.
+- **SPEC-8.8.2** `lib/djPlannerClient.js` (`createDjPlannerClient`) est un client HTTP minimal pour
+  les 6 endpoints `/v1/*` (`mix-decisions`, `playlist-plans` POST/PATCH,
+  `transitions/observed`, `styles/{style}/progressions`, `personal-history/import`) + `checkHealth()`.
+  Aucune authentification n'est envoyée (pas de token, pas de credentials cross-origin). `422` est
+  traité comme une réponse métier normale (validation/aucune décision possible), pas comme une
+  panne ; toute autre erreur HTTP ou réseau retourne `{ok:false, status, data:null}` sans jamais
+  lever d'exception.
+- **SPEC-8.8.3** `lib/djPlannerManager.js` (`createDjPlannerManager`) gate tout appel derrière
+  `ensureAvailability()` : sonde `GET /health` (timeout 2s), met le résultat en cache `30s`, et
+  désactive silencieusement les fonctionnalités dépendantes si injoignable (aucun blocage, aucun
+  toast — le back-end `dj-planner` est un composant optionnel par DJ, non installé par défaut).
+- **SPEC-8.8.4** Réutilise le `djTrackId` déjà résolu par le moteur `/api/dj/*` existant
+  (`item.djTrackId`, résolu via `/api/dj/tracks`) comme identifiant de morceau pour `dj-planner` —
+  les deux backends lisent la même bibliothèque audio locale du DJ, donc la même convention de
+  nommage (fichier `.mp3` relatif) s'applique aux deux.
+- **SPEC-8.8.5** GIVEN le DJ Plan (§8.4) affiche la transition courant→suivant du fil rouge en état
+  `ready` — THEN `djPlannerManager.getMixDecision(item, nextItem)` est lu de façon synchrone
+  (mémoïsé sur `item.plannerDecision`, `toItemId`+`computedAt`, fraîcheur `24h` — même schéma que
+  `isDjTransitionFresh`) ; si absent/périmé, `planMixDecisionForEdge(item, nextItem)` est déclenché
+  en arrière-plan (`POST /v1/mix-decisions`) et un nouveau rendu (`updateDjPlanIndicator()`) est
+  demandé une fois la décision persistée — sans boucle de re-déclenchement, puisque le prochain
+  rendu retrouve la décision fraîche via le getter synchrone.
+- **SPEC-8.8.6** Ce bloc est purement informatif, additionnel au `dj-plan-card` existant : il
+  n'influence jamais `mixOutSec`/`mixInSec`/le déclenchement automix, qui restent entièrement
+  pilotés par `djTransition` (§8.5–8.7).
+- **SPEC-8.8.7** Règles d'affichage non négociables (`frontend-integration.md` §5), implémentées
+  dans `renderPlannerDecisionHtml` (`lib/filRougeController.js`) :
+  1. `confidence` est toujours affiché pour une décision compatible (jamais masqué).
+  2. `compatible=false` (`IncompatibleMixDecision`) affiche toujours `blocking_dimensions`
+     (traduits : harmonique/énergie/structurel/fréquentiel) et `explanation`, jamais un simple
+     badge "incompatible" sans détail — rendu dans un bloc visuellement distinct
+     (`.dj-planner-block--incompatible`, palette rouge).
+  3. `status="deliberate_exception"` est visuellement distinct (`.dj-planner-block--exception`,
+     badge dédié) — n'apparaît en pratique jamais dans ce flux, `planMixDecisionForEdge` n'envoyant
+     jamais `allow_exception:true` par défaut (aucune UI ne permet encore de le demander).
+  4. `evidence.type` distingue visuellement `observed_transition` (occurrence_count + nombre de DJ,
+     couleur verte) d'`audio_compatibility` (« analyse audio seule », gris) — jamais fusionnés dans
+     un texte générique.
+  5. Le catalogue `transition_type` retourné par `dj-planner` est le même que
+     `MIX_TRANSITION_MODES` (`lib/transitionModes.js`) — réutilise directement
+     `MIX_TRANSITION_MODE_LABELS`, aucune table de correspondance séparée nécessaire.
+- **SPEC-8.8.8** Hors périmètre de cette passe (client prêt, non câblé à un écran) :
+  `createPlaylistPlan`/`updatePlaylistPlan` (plan de set à partir d'une crate importée),
+  `fetchObservedTransition` (badge "X DJ ont déjà joué cet enchaînement"),
+  `fetchStyleProgressions` (panneau "idées de progression"), `importPersonalHistory` (import
+  d'historique de sets). Les 4 méthodes existent sur `djPlannerClient` (testées), prêtes à être
+  câblées à un écran dans une passe ultérieure.
+
 ---
 
 ## 9. Mode Relais (Master / Relay)
