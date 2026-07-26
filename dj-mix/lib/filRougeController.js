@@ -201,7 +201,7 @@ export function createFilRougeController(options) {
     }
 
     // state === 'ready'
-    const { transition: t, nextItem } = indicatorState;
+    const { item, transition: t, nextItem } = indicatorState;
     const typeLabel = DJ_TRANSITION_TYPE_LABELS[t.transitionType] || t.transitionType || '—';
     const scorePct = Number.isFinite(t.compatibilityScore) ? Math.round(t.compatibilityScore * 100) : null;
     const scoreClass = scorePct === null ? '' : scorePct >= 70 ? 'is-good' : scorePct >= 50 ? 'is-ok' : 'is-low';

@@ -174,6 +174,28 @@ describe('trackStore', () => {
       expect(store.get('1').artUrl).toBe('');
     });
 
+    test('save() strips an unresolved /api/artwork artUrl instead of persisting it (regression: SPEC-13.3.9, resolves against the wrong origin on next load)', () => {
+      const store = createTrackStore();
+      const track = store.getOrCreate({ id: '1', name: 'Song A', artist: 'A' });
+      store.patch('1', { artUrl: '/api/artwork?cachePath=%2Fmnt%2Fart.jpg' });
+      store.save();
+
+      const raw = JSON.parse(localStorage.getItem('dj-mix:tracks'));
+      expect(raw['1'].artUrl).toBe('');
+      // in-memory value for the current session is left untouched
+      expect(track.artUrl).toBe('/api/artwork?cachePath=%2Fmnt%2Fart.jpg');
+    });
+
+    test('restore() clears a stale unresolved /api/artwork artUrl already sitting in localStorage (regression: pre-fix data)', () => {
+      localStorage.setItem('dj-mix:tracks', JSON.stringify({
+        1: { id: '1', name: 'Song A', artist: 'A', artUrl: '/api/artwork?cachePath=%2Fmnt%2Fdead.jpg' },
+      }));
+
+      const store = createTrackStore();
+      store.restore();
+      expect(store.get('1').artUrl).toBe('');
+    });
+
     test('a non-blob artUrl (remote CDN URL) survives a save/restore cycle', () => {
       const store1 = createTrackStore();
       store1.getOrCreate({ id: '1', name: 'Song A', artist: 'A', artUrl: 'https://cdn.example.com/art.jpg' });

@@ -1,8 +1,23 @@
 import { createLogger } from './logger.js';
 import { extractTrackBpm, extractTrackGenre } from './searchUtils.js';
-import { appendApiToken } from './downloaderConfig.js';
+import { appendApiToken, resolveCdnArtworkUrl } from './downloaderConfig.js';
 
 const logger = createLogger('playlist');
+
+// SPEC-13.3.9 — file.artworkUrl coming from GET /api/cache/files may be a
+// raw `/api/artwork?cachePath=...` reference (see swagger `getArtwork`):
+// relative to the CDN, not to this app's own origin. Left unresolved, an
+// <img src> built from it resolves against the page's own host instead
+// (e.g. the GitHub Pages deployment) and 404s. Only rewrite that shape;
+// an already-absolute artUrl/artworkUrl (iTunes/Deezer, or a previously
+// resolved CDN URL) passes through untouched.
+export function resolveCacheFileArtUrl(file, cdnBaseUrl, token) {
+  const raw = file?.artworkUrl || file?.artUrl || '';
+  if (typeof raw === 'string' && raw.startsWith('/api/artwork')) {
+    return resolveCdnArtworkUrl(raw, cdnBaseUrl, token) || '';
+  }
+  return raw;
+}
 
 function hasAvailableStems(file) {
   if (!file || typeof file !== 'object') return false;
@@ -175,6 +190,7 @@ export function createPlaylistManager(options) {
     getCurrentIndex,
     getDownloaderApiToken,
     getDownloaderApiUrl,
+    getDownloaderCdnUrl,
     getPlayer,
     getPlaylistLoaded,
     getQueue,
@@ -399,7 +415,7 @@ export function createPlaylistManager(options) {
       id: file.id || file.cachePath || file.path || `cache-${Date.now()}`,
       name: file.trackName || file.name || file.title || 'Inconnu',
       artist: file.artistName || file.artist || 'Artiste inconnu',
-      artUrl: file.artworkUrl || file.artUrl || '',
+      artUrl: resolveCacheFileArtUrl(file, getDownloaderCdnUrl?.() || getDownloaderApiUrl?.() || '', getDownloaderApiToken?.()),
       duration: file.duration || 0,
       bpm: extractTrackBpm(file),
       genre: extractTrackGenre(file),

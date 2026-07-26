@@ -4,7 +4,7 @@ import {
   extractTrackLoudnessDb,
   splitItunesSearchQuery,
 } from './searchUtils.js';
-import { appendApiToken } from './downloaderConfig.js';
+import { appendApiToken, resolveCdnArtworkUrl as resolveCdnArtworkRef } from './downloaderConfig.js';
 import { createLogger } from './logger.js';
 
 const logger = createLogger('audio-source');
@@ -556,10 +556,7 @@ export function createAudioSourceManager(options) {
   // silently on them; our own CDN sends permissive CORS, so routing artwork
   // through it is required for the system notification to show the real cover.
   function resolveCdnArtworkUrl(artworkRef) {
-    if (typeof artworkRef !== 'string' || !artworkRef.startsWith('/api/artwork')) return '';
-    const cdnBaseUrl = getCdnBaseUrl();
-    if (!cdnBaseUrl) return '';
-    return appendApiToken(`${cdnBaseUrl}${artworkRef}`, getDownloaderApiToken?.());
+    return resolveCdnArtworkRef(artworkRef, getCdnBaseUrl(), getDownloaderApiToken?.());
   }
 
   async function streamCachedTrackFromCdn(item, cachePath, downloadStartedAt, extra = {}) {

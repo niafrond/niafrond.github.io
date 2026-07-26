@@ -132,7 +132,7 @@ import {
 } from './lib/logger.js';
 import { createMixControls } from './lib/mixControls.js';
 import { createDjFxController } from './lib/djFxController.js';
-import { createPlaylistManager } from './lib/playlistManager.js';
+import { createPlaylistManager, resolveCacheFileArtUrl } from './lib/playlistManager.js';
 import { createFilRougeManager } from './lib/filRougeManager.js';
 import { createTrackStore } from './lib/trackStore.js';
 import { restoreQueueFromStorage, saveQueueToStorage } from './lib/queueStorage.js';
@@ -1391,6 +1391,7 @@ const playlistManager = createPlaylistManager({
   getCurrentIndex: () => uiState.currentIndex,
   getDownloaderApiToken,
   getDownloaderApiUrl,
+  getDownloaderCdnUrl,
   getPlayer: () => player,
   getPlaylistLoaded: () => playlistLoaded,
   getQueue: () => queue,
@@ -1415,7 +1416,7 @@ const playlistManager = createPlaylistManager({
       uri: file.url || file.localUrl || file.streamUrl || file.path || '',
       name: file.trackName || file.name || file.title || 'Inconnu',
       artist: file.artistName || file.artist || 'Artiste inconnu',
-      artUrl: file.artworkUrl || file.artUrl || '',
+      artUrl: resolveCacheFileArtUrl(file, getDownloaderCdnUrl?.() || getDownloaderApiUrl?.() || '', getDownloaderApiToken?.()),
       duration: Number(file.duration) || 0,
       bpm: file.bpm || file.tempo || null,
       loudnessDb: Number(file.loudnessDb),
@@ -6559,7 +6560,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       }
     }
 
-    // SPEC-1.1.18 : crossfadeToDeck() renvoie false quand un autre crossfade était déjà
+    // SPEC-1.2.5 : crossfadeToDeck() renvoie false quand un autre crossfade était déjà
     // en cours (déclencheurs automix concurrents — timer crossfadeready ET trackend/fil
     // rouge par ex.) — dans ce cas AUCUNE piste n'a réellement changé sur les platines :
     // ne jamais faire croire à uiState/à la file qu'un nouveau morceau est devenu actif,
