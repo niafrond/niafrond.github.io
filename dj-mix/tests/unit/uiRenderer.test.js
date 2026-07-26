@@ -303,6 +303,49 @@ describe('buildQueueHTML', () => {
     expect(trackArtistA.innerHTML).toContain('House');
     expect(trackArtistA.innerHTML).toContain('queue-chip');
   });
+
+  test('titre et artiste sont rendus dans des blocs séparés (SPEC-14.2.6)', () => {
+    const track = makeTrack({ name: 'Titre Test', artist: 'Artiste Test', genre: null, bpm: null });
+    const trackArtistA = makeDomTextNode();
+    const renderer = createDjMixRenderer({
+      deckAPanel: null, deckBPanel: null,
+      deckAVol: null, deckBVol: null,
+      deckAFill: null, deckBFill: null,
+      deckATitle: null, deckBTitle: null,
+      deckABpm: null, deckBBpm: null,
+      deckABpmReset: null, deckBBpmReset: null,
+      deckALaunchBtn: null, deckBLaunchBtn: null,
+      queueList: null, emptyQueue: null,
+      autoMixBtn: null,
+      albumArt: null, artPlaceholder: { style: { display: '' } },
+      nextAlbumArt: null, nextArtPlaceholder: { style: { display: '' } },
+      trackArtist: null, trackArtistA, trackArtistB: makeDomTextNode(),
+      getQueue: () => [track],
+      getDjMode: () => 'music',
+      getCurrentIndex: () => 0,
+      getCurrentTrackId: () => null,
+      getIsPlaying: () => false,
+      getDeckBCueIndex: () => -1,
+      getDeckCueDeck: () => null,
+      getDeckDisplayItems: () => ({ A: track, B: null }),
+      getInactiveDeck: () => 'B',
+      getFocusDeck: () => 'A',
+      getLaunchPreviewState: () => ({ active: false }),
+      getPrevIsCrossfading: () => false,
+      setPrevIsCrossfading: () => {},
+      getDeckMixRatio: () => 0,
+      setDeckMixRatio: () => {},
+      clampDeckMixRatio: (value) => value,
+      updateDeckMixUI: () => {},
+      updateDeckCueUI: () => {},
+      getPlayer: () => null,
+    });
+
+    renderer.refreshDeckMetaDisplays();
+    expect(trackArtistA.innerHTML).toContain('<div class="deck-track-title">Titre Test</div>');
+    expect(trackArtistA.innerHTML).toContain('<div class="deck-track-artist-name">Artiste Test</div>');
+    expect(trackArtistA.innerHTML).not.toContain(' • ');
+  });
 });
 
 describe('buildQueueHTML — file "incoming" du relais (SPEC-9.5)', () => {

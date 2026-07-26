@@ -4,7 +4,7 @@
  * Playback: temporary local Blob download + dual-deck crossfade
  */
 
-import { DJPlayer, BEAT_REPEAT_MAX_LOOP_MS, BEAT_REPEAT_OVERLAP_MS } from './player.js';
+import { DJPlayer, computeBeatRepeatLoopPhaseMs } from './player.js';
 import { initServiceWorker, installPwa, initAutoFullscreen, initApkDownloadLink, checkApkUpdate, doApkUpdate, forceUpdatePwa } from './pwa.js';
 import { pushPlaybackState, pushQueue, onMediaCommand, getPendingMediaCommand } from './lib/androidAutoBridge.js';
 
@@ -4323,11 +4323,10 @@ function hookPlayerEvents() {
 
       if (effectiveMode === 'beat_repeat' && fromDeck && toDeck) {
         const incomingBpm = Number(extractTrackBpm(deckDisplayItems[toDeck])) || 120;
-        const beatRepeatTotalMs = Math.min(BEAT_REPEAT_MAX_LOOP_MS, player.crossfadeDuration || 6000);
-        const beatRepeatOverlapMs = Math.min(BEAT_REPEAT_OVERLAP_MS, beatRepeatTotalMs);
         // Le stutter FX ne couvre que la phase bouclée : il s'arrête quand la superposition
-        // finale (overlap volume, cf. player.js) démarre, pour rester synchronisé.
-        const phaseDurationMs = beatRepeatTotalMs - beatRepeatOverlapMs;
+        // finale (overlap volume, cf. player.js) démarre sur la prochaine mesure, pour rester
+        // synchronisé avec le raccourcissement progressif du loop.
+        const phaseDurationMs = computeBeatRepeatLoopPhaseMs(incomingBpm, player.beatRepeatInitialBeats);
         triggerBeatRepeatTransitionFx(fromDeck, toDeck, phaseDurationMs, incomingBpm);
       }
 
@@ -4860,28 +4859,31 @@ globalVolumeBtn?.addEventListener('click', () => {
   }
 });
 
-deckALaunchBtn?.addEventListener('click', async () => {
+async function handleDeckLaunchClick(deck) {
   if (!player) return;
   const lastDetail = uiState.lastDeckState;
-  if (lastDetail?.deckA?.playing) {
-    player.pauseDeck('A');
-  } else if (lastDetail?.deckA?.hasSrc) {
-    await player.resumeDeck('A').catch((err) => showToast(`Erreur: ${err.message}`, true));
+  const deckDetail = deck === 'B' ? lastDetail?.deckB : lastDetail?.deckA;
+  if (deckDetail?.playing) {
+    player.pauseDeck(deck);
+  } else if (deckDetail?.hasSrc) {
+    await player.resumeDeck(deck).catch((err) => showToast(`Erreur: ${err.message}`, true));
   } else {
-    await launchDeckFromQueue('A', { paused: false }).catch((err) => showToast(`Erreur: ${err.message}`, true));
+    await launchDeckFromQueue(deck, { paused: false }).catch((err) => showToast(`Erreur: ${err.message}`, true));
   }
-});
+}
 
-deckBLaunchBtn?.addEventListener('click', async () => {
-  if (!player) return;
-  const lastDetail = uiState.lastDeckState;
-  if (lastDetail?.deckB?.playing) {
-    player.pauseDeck('B');
-  } else if (lastDetail?.deckB?.hasSrc) {
-    await player.resumeDeck('B').catch((err) => showToast(`Erreur: ${err.message}`, true));
-  } else {
-    await launchDeckFromQueue('B', { paused: false }).catch((err) => showToast(`Erreur: ${err.message}`, true));
-  }
+deckALaunchBtn?.addEventListener('click', () => handleDeckLaunchClick('A'));
+deckBLaunchBtn?.addEventListener('click', () => handleDeckLaunchClick('B'));
+
+// Élargit la zone cliquable de lancement/pause à toute la carte platine (pas seulement
+// le petit bouton ▶ au survol), sauf sur les éléments interactifs enfants (seek, slider, reset BPM).
+deckAPanel?.addEventListener('click', (event) => {
+  if (event.target.closest('button, input, [role="button"], .deck-progress-bar')) return;
+  handleDeckLaunchClick('A');
+});
+deckBPanel?.addEventListener('click', (event) => {
+  if (event.target.closest('button, input, [role="button"], .deck-progress-bar')) return;
+  handleDeckLaunchClick('B');
 });
 
 deckABpmReset?.addEventListener('click', () => { player?.resetDeckPlaybackRate('A'); });

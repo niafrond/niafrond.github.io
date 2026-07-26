@@ -127,13 +127,12 @@ export function createDjMixRenderer(options) {
 
   function renderDeckMetaContent(target, item, fallbackTitle = '', fallbackArtist = '') {
     if (!target) return;
-    const mainLabel = item
-      ? composeDeckMeta(item?.name || '', item?.artist || '')
-      : composeDeckMeta(fallbackTitle, fallbackArtist);
+    const title = String((item ? item?.name : fallbackTitle) || '').trim();
+    const artist = String((item ? item?.artist : fallbackArtist) || '').trim();
     const chipsHtml = item ? buildDanceMetaChips(item, 'deck-chips') : '';
-    target.innerHTML = mainLabel
-      ? `<div class="deck-track-main">${escHtml(mainLabel)}</div>${chipsHtml}`
-      : chipsHtml;
+    const titleHtml = title ? `<div class="deck-track-title">${escHtml(title)}</div>` : '';
+    const artistHtml = artist ? `<div class="deck-track-artist-name">${escHtml(artist)}</div>` : '';
+    target.innerHTML = (titleHtml || artistHtml) ? `${titleHtml}${artistHtml}${chipsHtml}` : chipsHtml;
   }
 
   function isDanceMode() {

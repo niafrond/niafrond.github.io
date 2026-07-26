@@ -148,6 +148,27 @@ describe('audioSourceManager', () => {
       expect(fetchMock.mock.calls[1][0]).toBe('http://cdn.test/api/stream?cachePath=%2Fcache%2Ftrack.mp3');
     });
 
+    // SPEC-9.4.15: a relay-triggered add can legitimately take a long time
+    // (relay network hop, server-side resolve/download for a track never
+    // fetched before). Unlike /api/stems/* or the health probe, the
+    // orchestration POST must never carry an AbortSignal.timeout — a timeout
+    // would silently drop the track the user is still waiting for.
+    test('the orchestration POST /api/download carries no AbortSignal.timeout', async () => {
+      URL.createObjectURL = jest.fn(() => 'blob:fake');
+      URL.revokeObjectURL = jest.fn();
+      const fetchMock = makeFetchMock();
+      global.fetch = fetchMock;
+
+      const manager = makeManager();
+      const item = { id: 'slow-track', name: 'Slow Track', artist: 'Slow Artist' };
+
+      await manager.prefetchTrackToLocalCache(item);
+
+      const [url, init] = fetchMock.mock.calls[0];
+      expect(url).toBe('http://api.test/api/download');
+      expect(init?.signal).toBeUndefined();
+    });
+
     test('concurrent calls for different tracks each trigger their own request', async () => {
       URL.createObjectURL = jest.fn(() => 'blob:fake');
       URL.revokeObjectURL = jest.fn();

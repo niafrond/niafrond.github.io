@@ -19,11 +19,12 @@ import {
 } from '../../../lib/automixTimeline.js';
 import { createSettingsController } from '../../../lib/settingsController.js';
 import {
-  BEAT_REPEAT_MAX_LOOP_MS,
-  getBeatRepeatStageLoopSeconds,
-  getSafeBeatRepeatBpm,
+  BEAT_REPEAT_LAUNCH_OVERLAP_MS,
+  computeBeatRepeatLoopPhaseMs,
   SHORT_LOOP_MAX_REPEATS,
   shouldResetShortLoop,
+  CROSSFADE_RATE_EASE_TICK_MS,
+  timeCorrectedRateEase,
 } from '../../../player.js';
 import { uiState } from '../../../lib/uiState.js';
 
@@ -143,6 +144,7 @@ describe('SPEC-1.3.3 — Auto mode selects from full pool via player', () => {
   let origRAF;
   let origCAF;
   let origAudioContext;
+  let origFetch;
 
   beforeEach(() => {
     mockAudios = [];
@@ -180,6 +182,8 @@ describe('SPEC-1.3.3 — Auto mode selects from full pool via player', () => {
     origCAF = globalThis.cancelAnimationFrame;
     globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
     origAudioContext = globalThis.AudioContext;
+    origFetch = globalThis.fetch;
+    globalThis.fetch = () => Promise.resolve({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) });
     const makeNode = () => ({ connect() {}, disconnect() {} });
     const makeParam = (value) => ({
       value,
@@ -203,6 +207,18 @@ describe('SPEC-1.3.3 — Auto mode selects from full pool via player', () => {
       createOscillator() { return { type: 'sine', frequency: { value: 440, setValueAtTime() {}, exponentialRampToValueAtTime() {} }, start() {}, stop() {}, ...makeNode() }; }
       createConvolver() { return { buffer: null, ...makeNode() }; }
       createAnalyser() { return { fftSize: 2048, ...makeNode() }; }
+      createBuffer(channels, length, sampleRate) {
+        const data = Array.from({ length: channels }, () => new Float32Array(length));
+        return { sampleRate, length, numberOfChannels: channels, getChannelData: (ch) => data[ch] };
+      }
+      createBufferSource() {
+        return { buffer: null, loop: false, loopStart: 0, loopEnd: 0, start() {}, stop() {}, ...makeNode() };
+      }
+      decodeAudioData() {
+        // beat_repeat's BeatRepeatEngine: enough fake samples (250s @ 1000Hz) to cover any
+        // initialBeats/BPM combination used in these tests.
+        return Promise.resolve(this.createBuffer(2, 250_000, 1000));
+      }
       get destination() { return makeNode(); }
       get currentTime() { return 0; }
       resume() { return Promise.resolve(); }
@@ -215,6 +231,7 @@ describe('SPEC-1.3.3 — Auto mode selects from full pool via player', () => {
     globalThis.requestAnimationFrame = origRAF;
     globalThis.cancelAnimationFrame = origCAF;
     globalThis.AudioContext = origAudioContext;
+    globalThis.fetch = origFetch;
   });
 
   async function makePlayer() {
@@ -291,6 +308,7 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
   let origRAF;
   let origCAF;
   let origAudioContext;
+  let origFetch;
 
   beforeEach(() => {
     mockAudios = [];
@@ -328,6 +346,8 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     origCAF = globalThis.cancelAnimationFrame;
     globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
     origAudioContext = globalThis.AudioContext;
+    origFetch = globalThis.fetch;
+    globalThis.fetch = () => Promise.resolve({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) });
     const makeNode = () => ({ connect() {}, disconnect() {} });
     const makeParam = (value) => ({
       value,
@@ -351,6 +371,18 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
       createOscillator() { return { type: 'sine', frequency: { value: 440, setValueAtTime() {}, exponentialRampToValueAtTime() {} }, start() {}, stop() {}, ...makeNode() }; }
       createConvolver() { return { buffer: null, ...makeNode() }; }
       createAnalyser() { return { fftSize: 2048, ...makeNode() }; }
+      createBuffer(channels, length, sampleRate) {
+        const data = Array.from({ length: channels }, () => new Float32Array(length));
+        return { sampleRate, length, numberOfChannels: channels, getChannelData: (ch) => data[ch] };
+      }
+      createBufferSource() {
+        return { buffer: null, loop: false, loopStart: 0, loopEnd: 0, start() {}, stop() {}, ...makeNode() };
+      }
+      decodeAudioData() {
+        // beat_repeat's BeatRepeatEngine: enough fake samples (250s @ 1000Hz) to cover any
+        // initialBeats/BPM combination used in these tests.
+        return Promise.resolve(this.createBuffer(2, 250_000, 1000));
+      }
       get destination() { return makeNode(); }
       get currentTime() { return 0; }
       resume() { return Promise.resolve(); }
@@ -363,16 +395,17 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     globalThis.requestAnimationFrame = origRAF;
     globalThis.cancelAnimationFrame = origCAF;
     globalThis.AudioContext = origAudioContext;
+    globalThis.fetch = origFetch;
   });
 
-  async function makePlayer() {
+  async function makePlayer(initialSourceOverrides = {}) {
     const { DJPlayer } = await import('../../../player.js');
     const player = new DJPlayer();
     player.crossfadeDuration = 2000;
     player.setTransitionMode('auto');
     await player.init();
     await new Promise((r) => setTimeout(r, 0));
-    await player.play({ url: 'blob:track-a', durationMs: 210000 });
+    await player.play({ url: 'blob:track-a', durationMs: 210000, ...initialSourceOverrides });
     await new Promise((r) => setTimeout(r, 0));
     return player;
   }
@@ -428,12 +461,15 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     'SPEC-1.3.6.1 — %s ne crée jamais plus de 500ms de silence',
     async (mode) => {
       const player = await makePlayer();
+      // beat_repeat ignore player.crossfadeDuration (sa durée dérive du BPM/de la grille de
+      // mesures, cf. SPEC-1.3.8.13) et dure ~16.3s au BPM/longueur de loop par défaut — un peu
+      // de marge est nécessaire par rapport aux autres modes (qui utilisent bien crossfadeDuration).
       const samples = await crossfadeWithMode(player, mode, { url: `blob:track-${mode}`, durationMs: 200000 });
       expect(samples.length).toBeGreaterThan(5);
       expect(maxSilentStreakMs(samples, player.crossfadeDuration, 0.05)).toBeLessThanOrEqual(500);
       player.destroy?.();
     },
-    10000,
+    20000,
   );
 
   test('SPEC-1.3.6.4 — brake_tape_stop_simple ne décélère plus le playbackRate', async () => {
@@ -452,15 +488,55 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     player.destroy?.();
   }, 10000);
 
-  test('SPEC-1.3.8.1/.3 — beat_repeat est plafonné à BEAT_REPEAT_MAX_LOOP_MS et termine par une superposition (pas un cut)', async () => {
-    const player = await makePlayer();
-    player.crossfadeDuration = 8000; // bien au-delà du plafond de 5s
+  describe('SPEC-1.3.6.5 — timeCorrectedRateEase (playback rate immune au throttling en arrière-plan)', () => {
+    test('à un tick nominal (30ms), retombe exactement sur le facteur par-tick d\'origine', () => {
+      expect(timeCorrectedRateEase(0.18, CROSSFADE_RATE_EASE_TICK_MS)).toBeCloseTo(0.18, 10);
+    });
+
+    test('un tick beaucoup plus long (throttling arrière-plan) converge davantage vers la cible, pas moins', () => {
+      const nominal = timeCorrectedRateEase(0.18, CROSSFADE_RATE_EASE_TICK_MS);
+      const throttled = timeCorrectedRateEase(0.18, CROSSFADE_RATE_EASE_TICK_MS * 30); // ~1 tick/s
+      expect(throttled).toBeGreaterThan(nominal);
+    });
+
+    test('appliquer N ticks nominaux vs. un seul tick regroupant le même temps total donne la même valeur finale', () => {
+      const target = 1;
+      let stepByStep = 0.7; // valeur de départ arbitraire, ex. playbackRate initial
+      const nTicks = 10;
+      for (let i = 0; i < nTicks; i++) {
+        stepByStep += (target - stepByStep) * timeCorrectedRateEase(0.18, CROSSFADE_RATE_EASE_TICK_MS);
+      }
+
+      let collapsed = 0.7;
+      collapsed += (target - collapsed) * timeCorrectedRateEase(0.18, CROSSFADE_RATE_EASE_TICK_MS * nTicks);
+
+      expect(collapsed).toBeCloseTo(stepByStep, 10);
+    });
+
+    test('un temps écoulé nul ne fait pas bouger le playback rate (pas de saut au premier tick après un throttling extrême)', () => {
+      expect(timeCorrectedRateEase(0.18, 0)).toBe(0);
+    });
+  });
+
+  test('SPEC-1.3.8.5/.8/.14 — beat_repeat ignore la durée de crossfade configurée et utilise le BPM du deck SORTANT (pas entrant)', async () => {
+    // Deck sortant (deck A, via makePlayer) à 200 BPM ; deck entrant volontairement à un BPM
+    // très différent (60) pour vérifier que seul le BPM sortant pilote la durée réelle
+    // (SPEC-1.3.8.14 — correction par rapport à une itération précédente qui utilisait à tort
+    // le BPM entrant pour ce calcul).
+    const outgoingBpm = 200;
+    const player = await makePlayer({ bpm: outgoingBpm });
+    player.crossfadeDuration = 500; // largement inférieur à la durée réelle attendue
+    player.beatRepeatInitialBeats = 2; // loop court pour que le test reste rapide
+    const expectedTotalMs = computeBeatRepeatLoopPhaseMs(outgoingBpm, 2) + BEAT_REPEAT_LAUNCH_OVERLAP_MS;
+
     const startedAt = Date.now();
-    const samples = await crossfadeWithMode(player, 'beat_repeat', { url: 'blob:track-e', durationMs: 200000 });
+    const samples = await crossfadeWithMode(player, 'beat_repeat', { url: 'blob:track-e', durationMs: 200000, bpm: 60 });
     const elapsedMs = Date.now() - startedAt;
 
-    // La transition ne doit jamais s'étendre jusqu'à la durée de crossfade configurée (8s).
-    expect(elapsedMs).toBeLessThan(BEAT_REPEAT_MAX_LOOP_MS + 1500);
+    // La transition doit durer environ expectedTotalMs (dérivé du BPM sortant), pas les 500ms
+    // configurés, et pas la durée qu'un BPM entrant de 60 aurait donnée (bien plus long).
+    expect(elapsedMs).toBeGreaterThan(expectedTotalMs * 0.6);
+    expect(elapsedMs).toBeLessThan(expectedTotalMs + 2000);
 
     expect(samples.length).toBeGreaterThan(10);
     const last = samples[samples.length - 1];
@@ -468,21 +544,24 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     expect(last.fromVolume).toBe(0);
     expect(last.toVolume).toBe(1);
 
-    // La fin doit être une superposition progressive (overlap), pas un saut instantané :
-    // il doit exister plusieurs échantillons où les deux decks sont simultanément bien audibles.
+    // La fin doit être une superposition progressive (overlap), pas un saut instantané : il
+    // doit exister au moins un échantillon où les deux decks sont simultanément bien audibles
+    // (seuil bas car le test utilise un BPM élevé/loop court pour rester rapide : la fenêtre de
+    // superposition de BEAT_REPEAT_LAUNCH_OVERLAP_MS ne couvre alors que quelques ticks de 30ms,
+    // sensible à la gigue de l'horloge réelle).
     const overlappingSamples = samples.filter((s) => s.fromVolume > 0.15 && s.toVolume > 0.15);
-    expect(overlappingSamples.length).toBeGreaterThan(3);
+    expect(overlappingSamples.length).toBeGreaterThan(0);
 
     // Avant l'overlap, on est encore dans la phase bouclée : le deck entrant reste quasi muet.
     const firstQuarter = samples.slice(0, Math.floor(samples.length / 4));
     expect(firstQuarter.every((s) => s.toVolume < 0.1)).toBe(true);
 
     player.destroy?.();
-  }, 12000);
+  }, 10000);
 
-  test('SPEC-1.3.8.2 — beat_repeat avec un crossfade court (≤5s) utilise toute la durée configurée et termine à volume plein', async () => {
-    const player = await makePlayer();
-    player.crossfadeDuration = 2000;
+  test('SPEC-1.3.8.5 — beat_repeat termine toujours à volume plein sur le deck entrant', async () => {
+    const player = await makePlayer({ bpm: 200 });
+    player.beatRepeatInitialBeats = 2; // loop court pour que le test reste rapide
     const samples = await crossfadeWithMode(player, 'beat_repeat', { url: 'blob:track-f', durationMs: 200000 });
     const last = samples[samples.length - 1];
     expect(last.progress).toBe(1);
@@ -490,62 +569,34 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     expect(last.toVolume).toBe(1);
     player.destroy?.();
   }, 10000);
-});
 
-// ── SPEC-1.3.8 — beat_repeat BPM-matched staged loop (pure helpers) ─────────
-
-describe('SPEC-1.3.8.5 — getSafeBeatRepeatBpm', () => {
-  test('clamps out-of-range BPM to [60, 220]', () => {
-    expect(getSafeBeatRepeatBpm(30)).toBe(60);
-    expect(getSafeBeatRepeatBpm(400)).toBe(220);
-  });
-
-  test('passes through valid BPM unchanged', () => {
-    expect(getSafeBeatRepeatBpm(128)).toBe(128);
-  });
-
-  test('falls back to 120 for missing/invalid BPM', () => {
-    expect(getSafeBeatRepeatBpm(undefined)).toBe(120);
-    expect(getSafeBeatRepeatBpm(null)).toBe(120);
-    expect(getSafeBeatRepeatBpm(0)).toBe(120);
-    expect(getSafeBeatRepeatBpm(NaN)).toBe(120);
-  });
-});
-
-describe('SPEC-1.3.8.4/.5 — getBeatRepeatStageLoopSeconds', () => {
-  test('at 120 BPM, stages start on a full bar and halve down to a half-beat', () => {
-    const cutoffMs = 5000;
-    // secondsPerBeat = 0.5s @ 120 BPM. Stage boundaries: 2000 / 3250 / 4250 / 5000ms.
-    expect(getBeatRepeatStageLoopSeconds(0, cutoffMs, 120)).toBeCloseTo(2.0, 5); // 4 beats
-    expect(getBeatRepeatStageLoopSeconds(1999, cutoffMs, 120)).toBeCloseTo(2.0, 5);
-    expect(getBeatRepeatStageLoopSeconds(2001, cutoffMs, 120)).toBeCloseTo(1.0, 5); // 2 beats
-    expect(getBeatRepeatStageLoopSeconds(3251, cutoffMs, 120)).toBeCloseTo(0.5, 5); // 1 beat
-    expect(getBeatRepeatStageLoopSeconds(4251, cutoffMs, 120)).toBeCloseTo(0.25, 5); // 1/2 beat
-    expect(getBeatRepeatStageLoopSeconds(cutoffMs, cutoffMs, 120)).toBeCloseTo(0.25, 5); // last stage
-  });
-
-  test('the first stage is strictly longer than the last (starts long, then decreases)', () => {
-    const cutoffMs = 5000;
-    const first = getBeatRepeatStageLoopSeconds(0, cutoffMs, 128);
-    const last = getBeatRepeatStageLoopSeconds(cutoffMs - 1, cutoffMs, 128);
-    expect(first).toBeGreaterThan(last);
-  });
-
-  test('loop length scales with BPM: a faster song gets shorter loop segments', () => {
-    const cutoffMs = 5000;
-    const slow = getBeatRepeatStageLoopSeconds(0, cutoffMs, 60);
-    const fast = getBeatRepeatStageLoopSeconds(0, cutoffMs, 180);
-    expect(fast).toBeLessThan(slow);
-  });
-
-  test('stage boundaries scale with the total cutoff (shorter crossfade → shorter stages, same BPM ratio)', () => {
+  test('SPEC-1.3.8.2 — beat_repeat retombe sur une longueur initiale plus courte quand peu de temps reste avant la fin du deck sortant', async () => {
+    const player = await makePlayer();
+    // Deck sortant (mockAudios[0]) presque terminé : 3s de marge à 120 BPM (0.5s/temps) = 6
+    // temps restants, < 8 → repli attendu sur 4 temps (SPEC-1.3.8.2).
+    mockAudios[0].duration = 3;
     const bpm = 120;
-    const shortCutoffMs = 2000;
-    // Stage 1 boundary is 40% of the cutoff: at 45% we should already be in stage 2 (1 beat = 0.5s).
-    const stage2Loop = getBeatRepeatStageLoopSeconds(shortCutoffMs * 0.45, shortCutoffMs, bpm);
-    expect(stage2Loop).toBeCloseTo(1.0, 5); // 2 beats @ 120bpm — stage index 1, independent of cutoffMs
-  });
+    const expectedTotalMs = computeBeatRepeatLoopPhaseMs(bpm, 4) + BEAT_REPEAT_LAUNCH_OVERLAP_MS;
+
+    const startedAt = Date.now();
+    const samples = await crossfadeWithMode(player, 'beat_repeat', { url: 'blob:track-g', durationMs: 200000 });
+    const elapsedMs = Date.now() - startedAt;
+
+    // La durée réelle doit correspondre au repli sur 4 temps, pas aux 8 temps par défaut
+    // (qui donneraient une durée totale très différente) — preuve indirecte que le repli a eu lieu.
+    expect(elapsedMs).toBeGreaterThan(expectedTotalMs * 0.6);
+    expect(elapsedMs).toBeLessThan(expectedTotalMs + 2000);
+
+    const last = samples[samples.length - 1];
+    expect(last.progress).toBe(1);
+    expect(last.toVolume).toBe(1);
+    player.destroy?.();
+  }, 15000);
 });
+
+// beat_repeat's pure algorithm (stage sequence, launch-beat math, BPM clamping, runway
+// fallback, crossfade windows) is unit-tested in isolation in
+// tests/unit/beatRepeatEngine.test.js — see SPEC-1.3.8.1 through SPEC-1.3.8.14.
 
 // ── SPEC-1.3.9 — short_loop capped at 3 repeats (pure helper) ───────────────
 
