@@ -424,9 +424,15 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
     const playlist = fr.getPlaylist();
     const currentIdx = playlist.findIndex((p) => p.id === currentItem.id);
     if (currentIdx === -1) return { ok: false, reason: 'not-in-playlist' };
-    if (currentIdx >= playlist.length - 1) return { ok: false, reason: 'last-track' };
 
-    const nextItem = playlist[currentIdx + 1];
+    // Le morceau réellement joué ensuite est celui de la file d'attente (getQueue),
+    // pas forcément playlist[currentIdx + 1] : la file peut diverger de l'ordre du
+    // fil rouge (ajout manuel entre les deux, plusieurs morceaux déjà enchaînés,
+    // etc.). On ne retombe sur l'ordre brut du fil rouge que si le morceau courant
+    // n'est pas trouvé dans la file (ex: passe initiale avant le début de lecture).
+    const queue = getQueue?.() || [];
+    const queueIdx = queue.findIndex((q) => q.id === currentItem.id);
+    const nextItem = (queueIdx >= 0 ? queue[queueIdx + 1] : null) || playlist[currentIdx + 1] || null;
     if (!nextItem) return { ok: false, reason: 'last-track' };
 
     await resolveTrackIdsForItems([currentItem, nextItem]);
