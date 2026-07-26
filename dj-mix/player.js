@@ -28,6 +28,20 @@ export const BEAT_REPEAT_MAX_LOOP_MS = 5000;
 // le deck sortant et entrant s'y superposent (crossfade) au lieu d'un cut sec.
 export const BEAT_REPEAT_OVERLAP_MS = 2000;
 
+// short_loop ne doit jamais ré-ancrer la piste entrante plus de SHORT_LOOP_MAX_REPEATS fois :
+// au-delà, la lecture continue normalement (sans nouveau seek arrière) même si progress < 0.45.
+export const SHORT_LOOP_MAX_REPEATS = 3;
+const SHORT_LOOP_LENGTH_SEC = 0.85;
+
+// GIVEN la piste entrante en cours de bouclage (short_loop) — WHEN elle dépasse
+// SHORT_LOOP_LENGTH_SEC depuis loopAnchorSec — THEN elle doit être ré-ancrée, sauf si
+// SHORT_LOOP_MAX_REPEATS répétitions ont déjà eu lieu.
+export function shouldResetShortLoop(currentDeckTimeSec, loopAnchorSec, repeatCount) {
+  if (repeatCount >= SHORT_LOOP_MAX_REPEATS) return false;
+  if (!Number.isFinite(currentDeckTimeSec)) return false;
+  return (currentDeckTimeSec - loopAnchorSec) > SHORT_LOOP_LENGTH_SEC;
+}
+
 // Étapes successives de la phase bouclée (avant la superposition finale) : d'abord une
 // boucle longue (1 mesure) qui dure un peu plus longtemps, puis des boucles de plus en plus
 // courtes (division par 2 à chaque étape, jusqu'à la demi-noire).
@@ -810,6 +824,7 @@ export class DJPlayer extends EventTarget {
         let lastTickAt = performance.now();
         let loopAnchor = context.to.currentTime || 0;
         let loopAnchorFrom = context.from.currentTime || 0;
+        let shortLoopRepeatCount = 0;
 
         this.#crossfadeInterval = setInterval(() => {
           if (this.#destroyed) {
@@ -830,11 +845,10 @@ export class DJPlayer extends EventTarget {
           let fromBase = levels.from;
           let toBase = levels.to;
 
-          if (mode === 'short_loop' && progress < 0.45 && Number.isFinite(context.to.currentTime)) {
-            const loopLen = 0.85;
-            if ((context.to.currentTime - loopAnchor) > loopLen) {
-              context.to.currentTime = loopAnchor;
-            }
+          if (mode === 'short_loop' && progress < 0.45
+            && shouldResetShortLoop(context.to.currentTime, loopAnchor, shortLoopRepeatCount)) {
+            context.to.currentTime = loopAnchor;
+            shortLoopRepeatCount += 1;
           }
 
           if (mode === 'short_reverse' && progress < 0.18 && Number.isFinite(context.from.currentTime) && context.from.currentTime > 0.18) {

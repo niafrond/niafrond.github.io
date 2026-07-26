@@ -97,7 +97,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 #### 1.3.6 Continuité audio (pas de silence)
 
-- **SPEC-1.3.6.1** GIVEN un mode de transition autre que `cut_transition` (coupure instantanée intentionnelle) — WHEN le crossfade progresse — THEN la somme des volumes `from + to` ne doit jamais rester sous `0.05` pendant plus de `100 ms`.
+- **SPEC-1.3.6.1** GIVEN un mode de transition autre que `cut_transition` (coupure instantanée intentionnelle) — WHEN le crossfade progresse — THEN la somme des volumes `from + to` ne doit jamais rester sous `0.05` pendant plus de `100 ms`, garantie qui couvre à plus forte raison l'exigence produit "aucune transition ne doit créer de silence supérieur à 500 ms". Cette garantie est vérifiée automatiquement pour les 23 modes de transition non-`cut_transition` (hors `auto`, qui délègue toujours à un mode concret).
 - **SPEC-1.3.6.2** GIVEN le mode `fade_in_out` — WHEN le crossfade progresse — THEN le volume entrant (`to`) commence sa montée dès `t=0` (courbe `t^0.7`, pas de palier plat initial).
 - **SPEC-1.3.6.3** GIVEN le mode `backspin` — WHEN le crossfade progresse — THEN le volume entrant (`to`) commence sa montée dès `t=0.2`, avant l'arrêt complet du deck sortant à `t=0.35`, évitant tout palier de silence total.
 - **SPEC-1.3.6.4** GIVEN le mode `brake_tape_stop_simple` — WHEN le crossfade progresse — THEN le playback rate des deux platines suit le comportement générique (retour lissé vers `1`, `+= (1 − rate) × 0.18` par tick) — ce mode n'applique plus de décélération dédiée du playback rate.
@@ -117,6 +117,11 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.3.8.4** La phase bouclée (le budget total moins `beatRepeatOverlapMs`, soit `beatRepeatLoopPhaseMs`) se décompose en étapes successives (`BEAT_REPEAT_STAGE_DURATION_FRACTIONS = [0.40, 0.25, 0.20, 0.15]`, qui somme à `1`) : une première boucle qui dure plus longtemps, puis des boucles de plus en plus courtes. La durée de chaque étape est `fraction × beatRepeatLoopPhaseMs` : le cumul des durées d'étapes est donc toujours exactement égal à `beatRepeatLoopPhaseMs`, quel que soit le BPM.
 - **SPEC-1.3.8.5** GIVEN les 4 étapes — THEN leur longueur de boucle est calée sur le tempo de la piste entrante plutôt que sur une durée fixe : `BEAT_REPEAT_STAGE_BEATS = [4, 2, 1, 0.5]` temps (1 mesure, 1/2 mesure, 1 temps, 1/2 temps) × `60 / bpm`. Le BPM utilisé est celui de la piste entrante (`normalized.bpm` résolu dans `#normalizeSource`, avec repli sur `audioFeatures.bpm`/`tempo`), clampé entre `60` et `220` (défaut `120` si indisponible).
 - **SPEC-1.3.8.6** Le FX `triggerBeatRepeatTransitionFx` (SPEC-1.3.5) ne couvre que la phase bouclée : `phaseDurationMs = min(BEAT_REPEAT_MAX_LOOP_MS, crossfadeDurationMs) − BEAT_REPEAT_OVERLAP_MS`, avec le même calcul de BPM entrant (`extractTrackBpm`) — le stutter FX s'arrête exactement quand la superposition volume démarre, les deux effets restant synchronisés sur le même tempo.
+
+#### 1.3.9 Mode `short_loop` plafonné à 3 répétitions
+
+- **SPEC-1.3.9.1** GIVEN le mode `short_loop` — WHEN la piste entrante dépasse `SHORT_LOOP_LENGTH_SEC` (`0.85 s`) depuis son point de ré-ancrage (`loopAnchor`) et que `progress < 0.45` — THEN elle est ré-ancrée à `loopAnchor` (`shouldResetShortLoop`), mais au maximum `SHORT_LOOP_MAX_REPEATS` = `3` fois : au-delà, la lecture continue normalement sans nouveau seek arrière, même si `progress` reste `< 0.45`.
+- **SPEC-1.3.9.2** Le compteur de répétitions (`shortLoopRepeatCount`) est réinitialisé à chaque nouvelle transition (variable locale à `#runTransitionMode`), donc chaque `short_loop` dispose bien de ses 3 répétitions.
 
 ### 1.4 Contrôle du playback
 

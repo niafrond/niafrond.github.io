@@ -22,6 +22,8 @@ import {
   BEAT_REPEAT_MAX_LOOP_MS,
   getBeatRepeatStageLoopSeconds,
   getSafeBeatRepeatBpm,
+  SHORT_LOOP_MAX_REPEATS,
+  shouldResetShortLoop,
 } from '../../../player.js';
 import { uiState } from '../../../lib/uiState.js';
 
@@ -179,19 +181,28 @@ describe('SPEC-1.3.3 — Auto mode selects from full pool via player', () => {
     globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
     origAudioContext = globalThis.AudioContext;
     const makeNode = () => ({ connect() {}, disconnect() {} });
+    const makeParam = (value) => ({
+      value,
+      setTargetAtTime() {},
+      setValueAtTime() {},
+      exponentialRampToValueAtTime() {},
+      linearRampToValueAtTime() {},
+      cancelScheduledValues() {},
+    });
     globalThis.AudioContext = class MockAudioContext {
       state = 'running';
       sampleRate = 44100;
       createMediaElementSource() { return makeNode(); }
-      createGain() { return { gain: { value: 1, setTargetAtTime() {}, setValueAtTime() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {} }, ...makeNode() }; }
-      createBiquadFilter() { return { type: 'allpass', frequency: { value: 350, setTargetAtTime() {}, setValueAtTime() {} }, Q: { value: 1, setTargetAtTime() {}, setValueAtTime() {} }, ...makeNode() }; }
+      createGain() { return { gain: makeParam(1), ...makeNode() }; }
+      createBiquadFilter() { return { type: 'allpass', frequency: makeParam(350), Q: makeParam(1), ...makeNode() }; }
       createChannelSplitter() { return makeNode(); }
       createChannelMerger() { return makeNode(); }
-      createDelay() { return { delayTime: { value: 0 }, ...makeNode() }; }
+      createDelay() { return { delayTime: makeParam(0), ...makeNode() }; }
       createDynamicsCompressor() { return { threshold: { value: -24 }, knee: { value: 30 }, ratio: { value: 12 }, attack: { value: 0.003 }, release: { value: 0.25 }, ...makeNode() }; }
       createWaveShaper() { return { curve: null, oversample: 'none', ...makeNode() }; }
       createOscillator() { return { type: 'sine', frequency: { value: 440, setValueAtTime() {}, exponentialRampToValueAtTime() {} }, start() {}, stop() {}, ...makeNode() }; }
       createConvolver() { return { buffer: null, ...makeNode() }; }
+      createAnalyser() { return { fftSize: 2048, ...makeNode() }; }
       get destination() { return makeNode(); }
       get currentTime() { return 0; }
       resume() { return Promise.resolve(); }
@@ -318,19 +329,28 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
     origAudioContext = globalThis.AudioContext;
     const makeNode = () => ({ connect() {}, disconnect() {} });
+    const makeParam = (value) => ({
+      value,
+      setTargetAtTime() {},
+      setValueAtTime() {},
+      exponentialRampToValueAtTime() {},
+      linearRampToValueAtTime() {},
+      cancelScheduledValues() {},
+    });
     globalThis.AudioContext = class MockAudioContext {
       state = 'running';
       sampleRate = 44100;
       createMediaElementSource() { return makeNode(); }
-      createGain() { return { gain: { value: 1, setTargetAtTime() {}, setValueAtTime() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {} }, ...makeNode() }; }
-      createBiquadFilter() { return { type: 'allpass', frequency: { value: 350, setTargetAtTime() {}, setValueAtTime() {} }, Q: { value: 1, setTargetAtTime() {}, setValueAtTime() {} }, ...makeNode() }; }
+      createGain() { return { gain: makeParam(1), ...makeNode() }; }
+      createBiquadFilter() { return { type: 'allpass', frequency: makeParam(350), Q: makeParam(1), ...makeNode() }; }
       createChannelSplitter() { return makeNode(); }
       createChannelMerger() { return makeNode(); }
-      createDelay() { return { delayTime: { value: 0 }, ...makeNode() }; }
+      createDelay() { return { delayTime: makeParam(0), ...makeNode() }; }
       createDynamicsCompressor() { return { threshold: { value: -24 }, knee: { value: 30 }, ratio: { value: 12 }, attack: { value: 0.003 }, release: { value: 0.25 }, ...makeNode() }; }
       createWaveShaper() { return { curve: null, oversample: 'none', ...makeNode() }; }
       createOscillator() { return { type: 'sine', frequency: { value: 440, setValueAtTime() {}, exponentialRampToValueAtTime() {} }, start() {}, stop() {}, ...makeNode() }; }
       createConvolver() { return { buffer: null, ...makeNode() }; }
+      createAnalyser() { return { fftSize: 2048, ...makeNode() }; }
       get destination() { return makeNode(); }
       get currentTime() { return 0; }
       resume() { return Promise.resolve(); }
@@ -401,6 +421,20 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     expect(maxSilentStreakMs(samples, player.crossfadeDuration)).toBeLessThanOrEqual(100);
     player.destroy?.();
   }, 10000);
+
+  const allNonCutModes = MIX_TRANSITION_MODES.filter((m) => m !== 'auto' && m !== 'cut_transition');
+
+  test.each(allNonCutModes)(
+    'SPEC-1.3.6.1 — %s ne crée jamais plus de 500ms de silence',
+    async (mode) => {
+      const player = await makePlayer();
+      const samples = await crossfadeWithMode(player, mode, { url: `blob:track-${mode}`, durationMs: 200000 });
+      expect(samples.length).toBeGreaterThan(5);
+      expect(maxSilentStreakMs(samples, player.crossfadeDuration, 0.05)).toBeLessThanOrEqual(500);
+      player.destroy?.();
+    },
+    10000,
+  );
 
   test('SPEC-1.3.6.4 — brake_tape_stop_simple ne décélère plus le playbackRate', async () => {
     const player = await makePlayer();
@@ -510,6 +544,42 @@ describe('SPEC-1.3.8.4/.5 — getBeatRepeatStageLoopSeconds', () => {
     // Stage 1 boundary is 40% of the cutoff: at 45% we should already be in stage 2 (1 beat = 0.5s).
     const stage2Loop = getBeatRepeatStageLoopSeconds(shortCutoffMs * 0.45, shortCutoffMs, bpm);
     expect(stage2Loop).toBeCloseTo(1.0, 5); // 2 beats @ 120bpm — stage index 1, independent of cutoffMs
+  });
+});
+
+// ── SPEC-1.3.9 — short_loop capped at 3 repeats (pure helper) ───────────────
+
+describe('SPEC-1.3.9 — shouldResetShortLoop', () => {
+  test('SPEC-1.3.9.1 — resets once the loop window (0.85s) is exceeded, under the repeat cap', () => {
+    expect(shouldResetShortLoop(0.9, 0, 0)).toBe(true);
+    expect(shouldResetShortLoop(0.8, 0, 0)).toBe(false);
+  });
+
+  test('SPEC-1.3.9.1 — stops resetting once SHORT_LOOP_MAX_REPEATS repeats have already happened', () => {
+    expect(SHORT_LOOP_MAX_REPEATS).toBe(3);
+    expect(shouldResetShortLoop(10, 0, SHORT_LOOP_MAX_REPEATS)).toBe(false);
+    expect(shouldResetShortLoop(10, 0, SHORT_LOOP_MAX_REPEATS - 1)).toBe(true);
+  });
+
+  test('SPEC-1.3.9.1 — never resets on a non-finite currentTime', () => {
+    expect(shouldResetShortLoop(NaN, 0, 0)).toBe(false);
+    expect(shouldResetShortLoop(Infinity, 0, 0)).toBe(false);
+  });
+
+  test('SPEC-1.3.9.2 — simulating a full transition never exceeds SHORT_LOOP_MAX_REPEATS resets', () => {
+    // Simulates ticks where the incoming deck advances in real time (playbackRate ~1) between
+    // resets, mirroring what #runTransitionMode does over the course of a short_loop transition.
+    let repeatCount = 0;
+    let loopAnchor = 0;
+    let currentTime = 0;
+    for (let tick = 0; tick < 200; tick++) {
+      currentTime += 0.03; // ~30ms ticks, matching the real crossfade interval
+      if (shouldResetShortLoop(currentTime, loopAnchor, repeatCount)) {
+        currentTime = loopAnchor;
+        repeatCount += 1;
+      }
+    }
+    expect(repeatCount).toBeLessThanOrEqual(SHORT_LOOP_MAX_REPEATS);
   });
 });
 
