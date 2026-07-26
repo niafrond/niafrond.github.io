@@ -1,3 +1,9 @@
+## [2.15.0](https://github.com/niafrond/niafrond.github.io/compare/v2.14.0...v2.15.0) (2026-07-26)
+
+### Features
+
+* **short_loop:** implement capped short loop functionality with repeat limit and reset logic ([77f5bc5](https://github.com/niafrond/niafrond.github.io/commit/77f5bc55afed28264c4b8d3a28e286245148f848))
+
 ## [2.14.0](https://github.com/niafrond/niafrond.github.io/compare/v2.13.0...v2.14.0) (2026-07-25)
 
 ### Features
