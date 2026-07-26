@@ -687,9 +687,10 @@ export function createPlaybackController(options) {
         stems: item.stems,
       };
 
+      let crossfadePerformed = true;
       try {
         if (mode === 'autofade' || mode === 'crossfade') {
-          await player.crossfadeToDeck(targetDeck, trackPayload, { startPositionMs });
+          crossfadePerformed = await player.crossfadeToDeck(targetDeck, trackPayload, { startPositionMs });
         } else if (mode === 'switch') {
           await player.playOnDeck(getResolvedActiveDeck?.(), trackPayload, { makeActive: true, paused: false, startPositionMs });
         } else {
@@ -698,6 +699,18 @@ export function createPlaybackController(options) {
       } finally {
         if (djCrossfadeMs > 0) player.crossfadeDuration = savedCrossfadeDuration;
         if (djModeOverridden) player.setTransitionMode(player._previousTransitionMode ?? 'auto');
+      }
+
+      // SPEC-1.1.18 : crossfadeToDeck() renvoie false si un autre crossfade était déjà en
+      // cours — aucune piste n'a alors réellement changé sur les platines. Ne jamais
+      // synchroniser uiState/la file sur un morceau qui n'est pas devenu audible.
+      if ((mode === 'autofade' || mode === 'crossfade') && crossfadePerformed === false) {
+        logWarn?.('startPlaybackForIndex(): crossfade skipped, another crossfade already in progress', {
+          index, mode, targetDeck, itemId: item.id, itemName: item.name,
+        });
+        _clearLaunchPreview();
+        renderQueue?.();
+        return;
       }
 
       uiState.currentIndex = index;

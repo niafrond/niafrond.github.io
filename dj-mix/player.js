@@ -508,7 +508,14 @@ export class DJPlayer extends EventTarget {
   }
 
   async crossfadeToDeck(targetDeck, source, durationOverride) {
-    if (this.#isCrossfading) return;
+    // Un crossfade déjà en cours (déclenché par un autre chemin — timer automix,
+    // clic manuel...) doit rejeter silencieusement cet appel concurrent SANS que
+    // l'appelant ne croie que la transition a eu lieu : cf. startPlaybackForIndex()
+    // qui n'actualise uiState.currentTrackId que si cette valeur de retour est true.
+    if (this.#isCrossfading) {
+      logWarn('crossfade.rejected.alreadyCrossfading', { targetDeck });
+      return false;
+    }
     const normalized = this.#normalizeSource(source);
     if (!normalized.url) throw new Error('Source audio manquante pour le crossfade');
 
@@ -644,6 +651,7 @@ export class DJPlayer extends EventTarget {
         fromDeck,
         toDeck,
       });
+      return true;
     } catch (err) {
       to.pause();
       to.currentTime = 0;

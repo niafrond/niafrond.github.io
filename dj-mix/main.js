@@ -3234,6 +3234,8 @@ function scrollMixControlIntoView() {
 const autoFadeManager = new AutoFadeManager({
   getQueueLength: () => queue.length,
   getCurrentIndex: () => uiState.currentIndex,
+  getQueueLoopEnabled: () => queueLoopEnabled,
+  isPlayerCrossfading: () => Boolean(player?.isCrossfading),
   isLocked: () => manualMixLock,
   onSkipLocked: () => showToast('Auto-fade verrouille (mix manuel)'),
   onStart: () => {
@@ -6405,9 +6407,10 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       logDebug('djPlan: crossfade duration override', { crossfadeMs: djCrossfadeMs, decisionId: djPlan.decisionId });
     }
 
+    let crossfadePerformed = true;
     try {
       if (mode === 'autofade') {
-        await player.crossfadeToDeck(targetDeck, {
+        crossfadePerformed = await player.crossfadeToDeck(targetDeck, {
           url: sourceUrl,
           loudnessDb: item.loudnessDb,
           bpm: item.bpm,
@@ -6416,7 +6419,7 @@ async function startPlaybackForIndex(index, mode, options = {}) {
           stems: item.stems,
         }, { startPositionMs });
       } else if (mode === 'crossfade') {
-        await player.crossfadeToDeck(targetDeck, {
+        crossfadePerformed = await player.crossfadeToDeck(targetDeck, {
           url: sourceUrl,
           loudnessDb: item.loudnessDb,
           bpm: item.bpm,
@@ -6450,6 +6453,25 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       if (djModeOverridden) {
         player.setTransitionMode(selectedTransitionMode);
       }
+    }
+
+    // SPEC-1.1.18 : crossfadeToDeck() renvoie false quand un autre crossfade était déjà
+    // en cours (déclencheurs automix concurrents — timer crossfadeready ET trackend/fil
+    // rouge par ex.) — dans ce cas AUCUNE piste n'a réellement changé sur les platines :
+    // ne jamais faire croire à uiState/à la file qu'un nouveau morceau est devenu actif,
+    // sous peine d'afficher un titre différent de celui réellement audible.
+    if ((mode === 'autofade' || mode === 'crossfade') && crossfadePerformed === false) {
+      logWarn('startPlaybackForIndex(): crossfade skipped, another crossfade already in progress', {
+        index, mode, targetDeck, itemId: item.id, itemName: item.name,
+      });
+      launchPreviewActive = false;
+      launchPreviewArtUrl = '';
+      launchPreviewTitle = '';
+      launchPreviewArtist = '';
+      launchPreviewDeck = null;
+      launchPreviewItem = null;
+      renderQueue();
+      return;
     }
 
     if (mode === 'autofade' || mode === 'crossfade') {
