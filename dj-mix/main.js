@@ -2722,9 +2722,7 @@ async function startFilRougeStartupCacheSync() {
   // Phase 2 : télécharger ce qui manque (taille de batch ajustée après chaque
   // batch selon le débit observé, voir SPEC-3.4.9)
   const toDownload = playlist.filter(track => {
-    const key = getFilRougeTrackKey(track);
-    const existing = filRougeTrackStatusByKey.get(key);
-    return existing?.downloadState !== 'done';
+    return getFilRougeTrackStatus(track).downloadState !== 'done';
   });
   let batchSize = INITIAL_PARALLEL_DOWNLOADS;
   for (let i = 0; i < toDownload.length; ) {
