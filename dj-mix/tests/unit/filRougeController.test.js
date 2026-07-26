@@ -617,3 +617,189 @@ describe('updateDjPlanIndicator — dj-planner block', () => {
     expect(djPlanIndicatorEl.querySelector('.dj-planner-block')).toBeNull();
   });
 });
+
+// ── initDjPlannerStylePanel (fetchStyleProgressions, SPEC-8.8) ──────────────
+
+describe('initDjPlannerStylePanel', () => {
+  function setup(djPlannerManager) {
+    const styleInputEl = document.createElement('input');
+    const styleBtnEl = document.createElement('button');
+    const panelEl = document.createElement('div');
+    panelEl.hidden = true;
+    const showToast = jest.fn();
+    const ctrl = makeController({ djPlannerManager, showToast });
+    ctrl.initDjPlannerStylePanel(styleInputEl, styleBtnEl, panelEl);
+    return { styleInputEl, styleBtnEl, panelEl, showToast };
+  }
+
+  test('shows a toast and does not call the manager when the style input is empty', async () => {
+    const djPlannerManager = { getStyleProgressions: jest.fn() };
+    const { styleBtnEl, showToast } = setup(djPlannerManager);
+
+    styleBtnEl.click();
+    await Promise.resolve();
+
+    expect(showToast).toHaveBeenCalledWith(expect.stringContaining('style'), true);
+    expect(djPlannerManager.getStyleProgressions).not.toHaveBeenCalled();
+  });
+
+  test('shows a toast when djPlannerManager is not provided', async () => {
+    const { styleInputEl, styleBtnEl, showToast } = setup(null);
+    styleInputEl.value = 'house';
+
+    styleBtnEl.click();
+    await Promise.resolve();
+
+    expect(showToast).toHaveBeenCalledWith(expect.stringContaining('indisponible'), true);
+  });
+
+  test('renders recurring progressions and associated labels on success', async () => {
+    const response = {
+      style: 'house',
+      associated_labels: ['deep', 'tech'],
+      recurring_progressions: [
+        { track_sequence: ['a.mp3', 'b.mp3'], occurrence_count: 4, example_djs: ['DJ X', 'DJ Y'] },
+      ],
+    };
+    const djPlannerManager = { getStyleProgressions: jest.fn().mockResolvedValue(response) };
+    const { styleInputEl, styleBtnEl, panelEl } = setup(djPlannerManager);
+    styleInputEl.value = 'house';
+
+    styleBtnEl.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(djPlannerManager.getStyleProgressions).toHaveBeenCalledWith('house');
+    expect(panelEl.hidden).toBe(false);
+    expect(panelEl.querySelectorAll('.queue-chip').length).toBe(2);
+    expect(panelEl.querySelector('.dj-planner-progression-sequence').textContent).toBe('a.mp3 → b.mp3');
+    expect(panelEl.querySelector('.dj-planner-progression-meta').textContent).toContain('4');
+  });
+
+  test('shows an empty-state message when the manager resolves to null', async () => {
+    const djPlannerManager = { getStyleProgressions: jest.fn().mockResolvedValue(null) };
+    const { styleInputEl, styleBtnEl, panelEl } = setup(djPlannerManager);
+    styleInputEl.value = 'house';
+
+    styleBtnEl.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(panelEl.querySelector('.dj-planner-progressions-empty')).not.toBeNull();
+  });
+});
+
+// ── optimizePlaylistViaDjPlanner / initDjPlannerPlanPanel (playlist-plans, SPEC-8.8) ──
+
+describe('optimizePlaylistViaDjPlanner', () => {
+  test('shows a toast and returns null when djPlannerManager is not provided', async () => {
+    const showToast = jest.fn();
+    const ctrl = makeController({ showToast });
+
+    const result = await ctrl.optimizePlaylistViaDjPlanner(document.createElement('div'));
+
+    expect(result).toBeNull();
+    expect(showToast).toHaveBeenCalledWith(expect.stringContaining('indisponible'), true);
+  });
+
+  test('shows a toast and returns null when fewer than 2 tracks have a resolved djTrackId', async () => {
+    const fr = makeFilRougeManager([{ id: 1, djTrackId: 'a.mp3' }, { id: 2 }]);
+    const djPlannerManager = { createPlaylistPlan: jest.fn() };
+    const showToast = jest.fn();
+    const ctrl = makeController({ filRougeManager: fr, djPlannerManager, showToast });
+
+    const result = await ctrl.optimizePlaylistViaDjPlanner(document.createElement('div'));
+
+    expect(result).toBeNull();
+    expect(djPlannerManager.createPlaylistPlan).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith(expect.stringContaining('Pas assez'), true);
+  });
+
+  test('creates a plan from the resolved djTrackIds and renders the summary/tracklist', async () => {
+    const fr = makeFilRougeManager([
+      { id: 1, djTrackId: 'a.mp3' },
+      { id: 2, djTrackId: 'b.mp3' },
+      { id: 3 }, // unresolved, excluded
+    ]);
+    const plan = {
+      id: 'plan-1',
+      ordered_track_ids: ['b.mp3', 'a.mp3'],
+      transitions: [],
+      energy_curve: [],
+      climax_positions: [1],
+      flagged_tracks: [],
+    };
+    const djPlannerManager = { createPlaylistPlan: jest.fn().mockResolvedValue(plan) };
+    const panelEl = document.createElement('div');
+    panelEl.hidden = true;
+    const ctrl = makeController({ filRougeManager: fr, djPlannerManager });
+
+    const result = await ctrl.optimizePlaylistViaDjPlanner(panelEl);
+
+    expect(djPlannerManager.createPlaylistPlan).toHaveBeenCalledWith(['a.mp3', 'b.mp3']);
+    expect(result).toEqual(plan);
+    expect(panelEl.hidden).toBe(false);
+    expect(panelEl.querySelectorAll('.dj-planner-plan-track').length).toBe(2);
+    expect(panelEl.textContent).toContain('2 morceaux');
+  });
+
+  test('renders flagged tracks distinctly and shows a failure message when the API call fails', async () => {
+    const fr = makeFilRougeManager([{ id: 1, djTrackId: 'a.mp3' }, { id: 2, djTrackId: 'b.mp3' }]);
+    const djPlannerManager = { createPlaylistPlan: jest.fn().mockResolvedValue(null) };
+    const panelEl = document.createElement('div');
+    const ctrl = makeController({ filRougeManager: fr, djPlannerManager });
+
+    const result = await ctrl.optimizePlaylistViaDjPlanner(panelEl);
+
+    expect(result).toBeNull();
+    expect(panelEl.querySelector('.dj-planner-progressions-empty')).not.toBeNull();
+  });
+});
+
+describe('initDjPlannerPlanPanel', () => {
+  test('clicking the optimize button triggers optimizePlaylistViaDjPlanner', async () => {
+    const fr = makeFilRougeManager([{ id: 1, djTrackId: 'a.mp3' }, { id: 2, djTrackId: 'b.mp3' }]);
+    const plan = { id: 'plan-1', ordered_track_ids: ['a.mp3', 'b.mp3'], transitions: [], energy_curve: [], flagged_tracks: [] };
+    const djPlannerManager = { createPlaylistPlan: jest.fn().mockResolvedValue(plan), updatePlaylistPlan: jest.fn() };
+    const ctrl = makeController({ filRougeManager: fr, djPlannerManager });
+    const optimizeBtnEl = document.createElement('button');
+    const panelEl = document.createElement('div');
+    ctrl.initDjPlannerPlanPanel(optimizeBtnEl, panelEl);
+
+    optimizeBtnEl.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(djPlannerManager.createPlaylistPlan).toHaveBeenCalledWith(['a.mp3', 'b.mp3']);
+    expect(panelEl.querySelectorAll('.dj-planner-plan-track').length).toBe(2);
+  });
+
+  test('clicking a lock button toggles the lock and re-optimizes via updatePlaylistPlan', async () => {
+    const fr = makeFilRougeManager([{ id: 1, djTrackId: 'a.mp3' }, { id: 2, djTrackId: 'b.mp3' }]);
+    const plan = { id: 'plan-1', ordered_track_ids: ['a.mp3', 'b.mp3'], transitions: [], energy_curve: [], flagged_tracks: [] };
+    const reoptimizedPlan = { ...plan, ordered_track_ids: ['a.mp3', 'b.mp3'] };
+    const djPlannerManager = {
+      createPlaylistPlan: jest.fn().mockResolvedValue(plan),
+      updatePlaylistPlan: jest.fn().mockResolvedValue(reoptimizedPlan),
+    };
+    const ctrl = makeController({ filRougeManager: fr, djPlannerManager });
+    const optimizeBtnEl = document.createElement('button');
+    const panelEl = document.createElement('div');
+    ctrl.initDjPlannerPlanPanel(optimizeBtnEl, panelEl);
+
+    optimizeBtnEl.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const lockBtn = panelEl.querySelector('.dj-planner-plan-lock-btn');
+    lockBtn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(djPlannerManager.updatePlaylistPlan).toHaveBeenCalledWith(
+      'plan-1',
+      ['a.mp3', 'b.mp3'],
+      { lockedPositions: [{ track_id: 'a.mp3', position: 0 }] },
+    );
+  });
+});

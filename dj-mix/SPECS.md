@@ -667,12 +667,111 @@ par §8.1–8.7, qui reste inchangé et continue seul à piloter `mixOutSec`/`mi
   5. Le catalogue `transition_type` retourné par `dj-planner` est le même que
      `MIX_TRANSITION_MODES` (`lib/transitionModes.js`) — réutilise directement
      `MIX_TRANSITION_MODE_LABELS`, aucune table de correspondance séparée nécessaire.
-- **SPEC-8.8.8** Hors périmètre de cette passe (client prêt, non câblé à un écran) :
-  `createPlaylistPlan`/`updatePlaylistPlan` (plan de set à partir d'une crate importée),
-  `fetchObservedTransition` (badge "X DJ ont déjà joué cet enchaînement"),
-  `fetchStyleProgressions` (panneau "idées de progression"), `importPersonalHistory` (import
-  d'historique de sets). Les 4 méthodes existent sur `djPlannerClient` (testées), prêtes à être
-  câblées à un écran dans une passe ultérieure.
+- **SPEC-8.8.8** *(Historique)* Les 4 endpoints restants (`createPlaylistPlan`/`updatePlaylistPlan`,
+  `fetchObservedTransition`, `fetchStyleProgressions`, `importPersonalHistory`) n'étaient, à l'issue
+  de la passe initiale, câblés qu'au niveau du client (`djPlannerClient`, testés) — sans écran. Ils
+  sont désormais tous câblés à l'écran fil rouge, cf. SPEC-8.8.9–8.8.13 ci-dessous.
+
+### 8.8.9 Bug de duplication corrigé : `updateDjPlanIndicator` invisible dans l'app réelle
+
+- **SPEC-8.8.9.1** `main.js` possédait sa **propre copie complète** de `updateDjPlanIndicator`
+  (copie fidèle de la version pré-dj-planner), distincte de celle de
+  `lib/filRougeController.js` (seule version à jour, contenant le bloc dj-planner de SPEC-8.8.5).
+  Les ~5 sites d'appel de `main.js` (`renderFilRouge`, `runDjSetQualityRefresh`,
+  `djExternalPlanBtn`/`djRecalculateBtn` handlers) résolvaient tous — par hoisting de fonction —
+  vers **la copie de `main.js`**, jamais celle de `filRougeController.js`. Résultat : le bloc
+  dj-planner (mix-decision + observed-transition) n'était en pratique jamais rendu dans
+  l'application réelle, malgré un câblage et des tests corrects au niveau du module.
+- **SPEC-8.8.9.2** Fix : `main.js`'s `updateDjPlanIndicator` est désormais un simple délégateur
+  (`function updateDjPlanIndicator() { filRougeCtrl?.updateDjPlanIndicator(); }`), le nom de
+  fonction étant conservé pour que les sites d'appel existants (hoisting) continuent de fonctionner
+  sans modification. `lib/filRougeController.js`'s `updateDjPlanIndicator` gagne la gestion de
+  `djPlanSectionEl.hidden` (auparavant seulement gérée côté `main.js`) pour ne perdre aucun
+  comportement lors de la consolidation.
+- **SPEC-8.8.9.3** Duplication connue restant **non résolue** (hors périmètre de cette passe,
+  risque de régression plus élevé car ces fonctions ont des effets de bord au-delà du rendu) :
+  `runDjSetQualityRefresh`/`scheduleDjSetQualityRefresh`/`runDjPlanFullPass`/
+  `runDjPlanIncrementalPass` existent en double dans `main.js` (copie live pour ~15 sites d'appel)
+  et `lib/filRougeController.js` (copie live seulement pour 2 sites, via
+  `filRougeCtrl.scheduleDjSetQualityRefresh()`). Un écart comportemental existe entre les deux
+  copies de `runDjPlanFullPass` : celle de `main.js` résout le morceau de référence en priorité par
+  `uiState.currentTrackId` (conforme SPEC-8.5.6), celle de `lib/filRougeController.js` utilise
+  uniquement `getCurrentIndex()`. Les deux copies ont été neutralisées pour `djSetQualityBadgeEl`
+  (retrait des appels `renderDjSetQualityBadge`, devenus morts et en conflit avec SPEC-8.8.12),
+  mais pas fusionnées.
+
+### 8.8.10 Badge "déjà observé" (`GET /v1/transitions/observed`)
+
+- **SPEC-8.8.10.1** GIVEN le DJ Plan affiche la transition courant→suivant en état `ready` — THEN
+  `djPlannerManager.getObservedTransition(item, nextItem)` est lu de façon synchrone (mémoïsé sur
+  `item.observedTransition`, même schéma de fraîcheur que SPEC-8.8.5) ; si absent/périmé,
+  `planObservedTransitionForEdge(item, nextItem)` est déclenché en arrière-plan et un nouveau rendu
+  est demandé une fois persisté.
+- **SPEC-8.8.10.2** Badge indépendant du bloc mix-decision (endpoint distinct) :
+  `renderObservedTransitionHtml` (`lib/filRougeController.js`) affiche « 🎧 déjà joué par N DJ
+  (M×) » (`.dj-planner-observed--yes`, vert) si `observed:true`, ou « pas encore observé »
+  (`.dj-planner-observed--no`, gris/italique) si `observed:false` — jamais affiché comme un échec
+  (règle §6 du spec front).
+
+### 8.8.11 Panneau "idées de progression" par style (`GET /v1/styles/{style}/progressions`)
+
+- **SPEC-8.8.11.1** Remplace l'ancien sélecteur "Profil de set" (`#dj-set-profile-select`),
+  constaté 100% mort : sa valeur (`dj-mix:dj-api:set-profile`) n'était lue par aucun calcul de
+  transition depuis le retrait de `/api/dj/batch` (le seul appelant de `profile`, SPEC-8.6.3).
+- **SPEC-8.8.11.2** Nouveaux éléments dans l'onglet Fil rouge : `#dj-planner-style-input` (texte
+  libre — aucun endpoint ne liste les styles valides, contrairement à l'ancien
+  `/api/dj/set-profiles` à énumération fixe) et `#dj-planner-style-btn`.
+- **SPEC-8.8.11.3** GIVEN le champ style est vide — WHEN le bouton est cliqué — THEN un toast
+  d'erreur est affiché, aucun appel API. GIVEN `djPlannerManager` absent — THEN toast
+  "indisponible", aucun appel.
+- **SPEC-8.8.11.4** GIVEN un style renseigné — THEN `#dj-planner-progressions-panel` est démasqué et
+  affiche un état "Recherche en cours…", puis soit la liste des `recurring_progressions`
+  (séquence de morceaux, `occurrence_count`, nombre de DJ) et `associated_labels` (chips), soit un
+  message vide si aucune progression connue ou si l'API échoue/est indisponible.
+
+### 8.8.12 Optimisation de playlist (`POST /v1/playlist-plans`, `PATCH .../{plan_id}`)
+
+- **SPEC-8.8.12.1** Remplace le badge "qualité de set" (`#dj-set-quality-badge`), constaté toujours
+  masqué depuis le retrait de `/api/dj/batch` (`computeSetQuality()` ne retourne plus jamais de
+  `globalSetScore`, SPEC-8.6.6) : les 3 appels `renderDjSetQualityBadge(el, null)` (dans
+  `runDjSetQualityRefresh`/`runDjPlanFullPass`, `main.js` ET `lib/filRougeController.js`) ont été
+  retirés — sans ce retrait, ils auraient masqué le résumé de plan dj-planner ci-dessous à chaque
+  rafraîchissement de qualité (même élément DOM partagé).
+- **SPEC-8.8.12.2** Nouveau bouton `#dj-planner-optimize-btn` (onglet Fil rouge) :
+  `optimizePlaylistViaDjPlanner()` (`lib/filRougeController.js`) résout les `djTrackId` de tous les
+  items du fil rouge (ignore les non-résolus), affiche un toast d'erreur si moins de 2 morceaux
+  résolus, sinon appelle `createPlaylistPlan(trackIds)`. Le `plan.id` retourné est conservé
+  (state du plan en cours, remis à zéro à chaque nouvelle optimisation).
+- **SPEC-8.8.12.3** `#dj-planner-plan-panel` affiche : un résumé (nombre de morceaux, nombre de pics
+  d'énergie `climax_positions`, nombre de morceaux signalés), la liste `flagged_tracks` (raison
+  affichée, présentée comme un signalement à traiter — jamais comme une erreur d'import, le
+  morceau restant dans le fil rouge), puis la liste ordonnée `ordered_track_ids` avec un bouton
+  verrou (🔓/🔒) par morceau.
+- **SPEC-8.8.12.4** GIVEN un plan existant (`_currentPlaylistPlanId` non nul) — WHEN le bouton
+  verrou d'un morceau est cliqué — THEN sa position est ajoutée/retirée de
+  `_playlistPlanLockedPositions`, et `updatePlaylistPlan(planId, trackIds, {lockedPositions})` est
+  appelé immédiatement (réoptimisation), le panneau étant re-rendu avec le nouveau plan.
+- **SPEC-8.8.12.5** `#dj-set-quality-badge` est désormais exclusivement piloté par
+  `_updateSetQualityBadgeForPlan(plan)` : affiche "Plan dj-planner : N pistes[, M signalée(s)]"
+  après chaque création/réoptimisation réussie ; masqué si aucun plan ou en cas d'échec.
+- **SPEC-8.8.12.6** Échec (création ou réoptimisation) : message d'échec affiché dans le panneau,
+  aucune exception levée, le fil rouge réel n'est jamais modifié par cette fonctionnalité (purement
+  un plan consultatif — appliquer l'ordre proposé au fil rouge réel est hors périmètre de cette
+  passe).
+
+### 8.8.13 Import d'historique personnel (`POST /v1/personal-history/import`)
+
+- **SPEC-8.8.13.1** Nouveau bloc `#dj-planner-history-block` dans l'onglet Config, à la suite des
+  autres blocs d'import (Spotify, TXT, playlists serveur) : nom de DJ (obligatoire), zone de texte
+  "artiste - titre" (réutilise `parseTxtPlaylist`, même format que SPEC-3.3.1.1, mais produit des
+  `PersonalHistoryEntry` `{artist, title}` plutôt que des items de fil rouge), événement (optionnel).
+- **SPEC-8.8.13.2** GIVEN le nom de DJ est vide OU aucun morceau n'est reconnu dans le texte — THEN
+  un message d'erreur est affiché, aucun appel API.
+- **SPEC-8.8.13.3** GIVEN l'import réussit — THEN le résumé retourné (`tracks_recognized`,
+  `tracks_unmatched`, `transitions_added`) est affiché tel quel, sans reformulation laissant croire
+  à un import garanti complet (règle du spec front, écran "fonctionnalité de fond").
+- **SPEC-8.8.13.4** GIVEN `djPlannerManager.importPersonalHistory` retourne `null`
+  (indisponible/échec) — THEN un message et un toast d'erreur générique sont affichés.
 
 ---
 
