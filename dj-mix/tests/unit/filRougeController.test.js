@@ -495,6 +495,8 @@ describe('updateDjPlanIndicator — dj-planner block', () => {
     const djPlannerManager = {
       getMixDecision: jest.fn().mockReturnValue(current.plannerDecision),
       planMixDecisionForEdge: jest.fn(),
+      getObservedTransition: jest.fn().mockReturnValue(null),
+      planObservedTransitionForEdge: jest.fn().mockResolvedValue(null),
     };
     const ctrl = makeController({
       filRougeManager: fr,
@@ -526,6 +528,8 @@ describe('updateDjPlanIndicator — dj-planner block', () => {
     const djPlannerManager = {
       getMixDecision: jest.fn().mockReturnValue(current.plannerDecision),
       planMixDecisionForEdge: jest.fn(),
+      getObservedTransition: jest.fn().mockReturnValue(null),
+      planObservedTransitionForEdge: jest.fn().mockResolvedValue(null),
     };
     const ctrl = makeController({
       filRougeManager: fr,
@@ -557,6 +561,8 @@ describe('updateDjPlanIndicator — dj-planner block', () => {
     const djPlannerManager = {
       getMixDecision: jest.fn().mockReturnValue(current.plannerDecision),
       planMixDecisionForEdge: jest.fn(),
+      getObservedTransition: jest.fn().mockReturnValue(null),
+      planObservedTransitionForEdge: jest.fn().mockResolvedValue(null),
     };
     const ctrl = makeController({
       filRougeManager: fr,
@@ -579,6 +585,8 @@ describe('updateDjPlanIndicator — dj-planner block', () => {
     const djPlannerManager = {
       getMixDecision: jest.fn().mockReturnValue(null),
       planMixDecisionForEdge: jest.fn().mockResolvedValue(null),
+      getObservedTransition: jest.fn().mockReturnValue(null),
+      planObservedTransitionForEdge: jest.fn().mockResolvedValue(null),
     };
     const ctrl = makeController({
       filRougeManager: fr,
