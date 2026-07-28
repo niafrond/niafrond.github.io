@@ -1,4 +1,4 @@
-import { jest, describe, test, expect } from '@jest/globals';
+import { jest, describe, test, expect, afterEach } from '@jest/globals';
 import { createAudioSourceManager } from '../../lib/audioSourceManager.js';
 
 function makeFakeTrackPathDb(initial = {}) {
@@ -547,6 +547,182 @@ describe('audioSourceManager', () => {
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock.mock.calls[0][1]?.method).toBeUndefined();
+    });
+  });
+
+  describe('SPEC-13.3.12 — handleArtworkLoadError (dead /api/artwork cachePath, 404)', () => {
+    const originalFetch = global.fetch;
+
+    afterEach(() => {
+      global.fetch = originalFetch;
+    });
+
+    function makeManager(overrides = {}) {
+      return createAudioSourceManager({
+        apiHealthMonitor: null,
+        audioCacheName: 'dj-mix:test',
+        getDownloaderApiUrl: () => 'http://api.test',
+        getDownloaderApiToken: () => '',
+        getDownloaderCdnUrl: () => 'http://cdn.test',
+        onQueueUpdated: jest.fn(),
+        persistArtUrl: jest.fn(),
+        sessionBlobCache: new Map(),
+        touchQueueItem: jest.fn(),
+        ...overrides,
+      });
+    }
+
+    function flushMicrotasks() {
+      return new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    test('re-resolves and persists a fresh artwork reference when the current one 404s', async () => {
+      const fetchMock = jest.fn(() => Promise.resolve({
+        ok: true,
+        json: async () => ({ artworkUrl: '/api/artwork?cachePath=%2Fart%2Ffresh.jpg' }),
+      }));
+      global.fetch = fetchMock;
+
+      const persistArtUrl = jest.fn();
+      const manager = makeManager({ persistArtUrl });
+      const item = {
+        id: 'dead-artwork-track',
+        name: 'Dead Artwork Track',
+        artist: 'Some Artist',
+        artUrl: 'http://cdn.test/api/artwork?cachePath=%2Fmnt%2Fe%2FAudioDB%2Fartwork%2Fdead.jpg',
+      };
+
+      manager.handleArtworkLoadError(item);
+      await flushMicrotasks();
+
+      expect(fetchMock).toHaveBeenCalledWith('http://api.test/api/download', expect.objectContaining({ method: 'POST' }));
+      const expectedUrl = 'http://cdn.test/api/artwork?cachePath=%2Fart%2Ffresh.jpg';
+      expect(item.artUrl).toBe(expectedUrl);
+      expect(persistArtUrl).toHaveBeenCalledWith('dead-artwork-track', expectedUrl);
+    });
+
+    test('does not fire for an artUrl that is not our own /api/artwork CDN reference', () => {
+      const fetchMock = jest.fn();
+      global.fetch = fetchMock;
+
+      const manager = makeManager();
+      manager.handleArtworkLoadError({
+        id: 'raw-track',
+        name: 'Raw Track',
+        artist: 'Raw Artist',
+        artUrl: 'https://e-cdns-images.dzcdn.net/images/cover/xxx/500x500.jpg',
+      });
+
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    test('only attempts the self-heal once per track per session', async () => {
+      const fetchMock = jest.fn(() => Promise.resolve({
+        ok: true,
+        json: async () => ({ artworkUrl: '/api/artwork?cachePath=%2Fart%2Ffresh.jpg' }),
+      }));
+      global.fetch = fetchMock;
+
+      const manager = makeManager();
+      const item = {
+        id: 'repeat-404-track',
+        name: 'Repeat 404 Track',
+        artist: 'Some Artist',
+        artUrl: 'http://cdn.test/api/artwork?cachePath=%2Fmnt%2Fdead.jpg',
+      };
+
+      manager.handleArtworkLoadError(item);
+      await flushMicrotasks();
+      manager.handleArtworkLoadError(item);
+      await flushMicrotasks();
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    test('does not fire while the API health monitor reports offline', () => {
+      const fetchMock = jest.fn();
+      global.fetch = fetchMock;
+
+      const manager = makeManager({ apiHealthMonitor: { isOffline: () => true } });
+      manager.handleArtworkLoadError({
+        id: 'offline-track',
+        name: 'Offline Track',
+        artist: 'Some Artist',
+        artUrl: 'http://cdn.test/api/artwork?cachePath=%2Fmnt%2Fdead.jpg',
+      });
+
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  // SPEC-11.3.5 — bug d'origine : après un rechargement de page avec l'API
+  // downloader hors ligne, une piste déjà jouée/téléchargée (persistedSourceUrl
+  // restauré depuis une session précédente) déclenchait quand même une tentative
+  // de re-téléchargement, car canLoadAudioSource() (qui charge l'URL via un
+  // élément <audio>) échouait simplement parce que le serveur local était
+  // injoignable — pas parce que la piste n'était pas en cache.
+  describe('SPEC-11.3.5 — ensureLocalSource trusts known sources while the API is offline', () => {
+    const originalFetch = global.fetch;
+
+    afterEach(() => {
+      global.fetch = originalFetch;
+    });
+
+    test('returns item.persistedSourceUrl without probing the network or attempting a re-download', async () => {
+      const fetchMock = jest.fn();
+      global.fetch = fetchMock;
+
+      const manager = createAudioSourceManager({
+        apiHealthMonitor: { isOffline: () => true },
+        audioCacheName: 'dj-mix:test-offline',
+        getDownloaderApiUrl: () => 'http://api.test',
+        getDownloaderApiToken: () => '',
+        onQueueUpdated: jest.fn(),
+        sessionBlobCache: new Map(),
+        touchQueueItem: jest.fn(),
+      });
+
+      const item = {
+        id: 'already-local-track',
+        name: 'Already Local',
+        artist: 'Someone',
+        persistedSourceUrl: 'http://api.test/api/cache/already-local.mp3',
+      };
+
+      const source = await manager.ensureLocalSource(item);
+
+      expect(source).toBe('http://api.test/api/cache/already-local.mp3');
+      expect(item.sourceState).toBe('ready');
+      expect(item.sourceError).toBeNull();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    test('returns the direct playable URI without probing the network when offline', async () => {
+      const fetchMock = jest.fn();
+      global.fetch = fetchMock;
+
+      const manager = createAudioSourceManager({
+        apiHealthMonitor: { isOffline: () => true },
+        audioCacheName: 'dj-mix:test-offline',
+        getDownloaderApiUrl: () => 'http://api.test',
+        getDownloaderApiToken: () => '',
+        onQueueUpdated: jest.fn(),
+        sessionBlobCache: new Map(),
+        touchQueueItem: jest.fn(),
+      });
+
+      const item = {
+        id: 'already-local-track-2',
+        name: 'Already Local Two',
+        artist: 'Someone',
+        uri: 'http://api.test/api/cache/already-local-2.mp3',
+      };
+
+      const source = await manager.ensureLocalSource(item);
+
+      expect(source).toBe('http://api.test/api/cache/already-local-2.mp3');
+      expect(item.sourceState).toBe('ready');
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 });

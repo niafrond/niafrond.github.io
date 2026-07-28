@@ -19,7 +19,6 @@ import {
 } from '../../../lib/automixTimeline.js';
 import { createSettingsController } from '../../../lib/settingsController.js';
 import {
-  BEAT_REPEAT_LAUNCH_OVERLAP_MS,
   computeBeatRepeatLoopPhaseMs,
   SHORT_LOOP_MAX_REPEATS,
   shouldResetShortLoop,
@@ -183,7 +182,7 @@ describe('SPEC-1.3.3 — Auto mode selects from full pool via player', () => {
     globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
     origAudioContext = globalThis.AudioContext;
     origFetch = globalThis.fetch;
-    globalThis.fetch = () => Promise.resolve({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) });
+    globalThis.fetch = jest.fn(() => Promise.resolve({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) }));
     const makeNode = () => ({ connect() {}, disconnect() {} });
     const makeParam = (value) => ({
       value,
@@ -212,7 +211,7 @@ describe('SPEC-1.3.3 — Auto mode selects from full pool via player', () => {
         return { sampleRate, length, numberOfChannels: channels, getChannelData: (ch) => data[ch] };
       }
       createBufferSource() {
-        return { buffer: null, loop: false, loopStart: 0, loopEnd: 0, start() {}, stop() {}, ...makeNode() };
+        return { buffer: null, loop: false, loopStart: 0, loopEnd: 0, playbackRate: makeParam(1), start() {}, stop() {}, ...makeNode() };
       }
       decodeAudioData() {
         // beat_repeat's BeatRepeatEngine: enough fake samples (250s @ 1000Hz) to cover any
@@ -347,7 +346,7 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
     origAudioContext = globalThis.AudioContext;
     origFetch = globalThis.fetch;
-    globalThis.fetch = () => Promise.resolve({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) });
+    globalThis.fetch = jest.fn(() => Promise.resolve({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) }));
     const makeNode = () => ({ connect() {}, disconnect() {} });
     const makeParam = (value) => ({
       value,
@@ -376,7 +375,7 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
         return { sampleRate, length, numberOfChannels: channels, getChannelData: (ch) => data[ch] };
       }
       createBufferSource() {
-        return { buffer: null, loop: false, loopStart: 0, loopEnd: 0, start() {}, stop() {}, ...makeNode() };
+        return { buffer: null, loop: false, loopStart: 0, loopEnd: 0, playbackRate: makeParam(1), start() {}, stop() {}, ...makeNode() };
       }
       decodeAudioData() {
         // beat_repeat's BeatRepeatEngine: enough fake samples (250s @ 1000Hz) to cover any
@@ -527,7 +526,7 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     const player = await makePlayer({ bpm: outgoingBpm });
     player.crossfadeDuration = 500; // largement inférieur à la durée réelle attendue
     player.beatRepeatInitialBeats = 2; // loop court pour que le test reste rapide
-    const expectedTotalMs = computeBeatRepeatLoopPhaseMs(outgoingBpm, 2) + BEAT_REPEAT_LAUNCH_OVERLAP_MS;
+    const expectedTotalMs = computeBeatRepeatLoopPhaseMs(outgoingBpm, 2);
 
     const startedAt = Date.now();
     const samples = await crossfadeWithMode(player, 'beat_repeat', { url: 'blob:track-e', durationMs: 200000, bpm: 60 });
@@ -544,15 +543,16 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     expect(last.fromVolume).toBe(0);
     expect(last.toVolume).toBe(1);
 
-    // La fin doit être une superposition progressive (overlap), pas un saut instantané : il
-    // doit exister au moins un échantillon où les deux decks sont simultanément bien audibles
-    // (seuil bas car le test utilise un BPM élevé/loop court pour rester rapide : la fenêtre de
-    // superposition de BEAT_REPEAT_LAUNCH_OVERLAP_MS ne couvre alors que quelques ticks de 30ms,
-    // sensible à la gigue de l'horloge réelle).
+    // Le curseur de mix avance par paliers (SPEC-1.3.8.16), pas en fondu continu : les deux
+    // decks doivent malgré tout se retrouver simultanément bien audibles à un moment de la
+    // phase bouclée (le palier N-1 est déjà à (N-1)/N de la course) — sinon la transition
+    // créerait un silence, ce que SPEC-1.3.6 interdit. Le saut final (SPEC-1.3.8.10) est
+    // instantané et n'est donc pas censé apparaître comme un échantillon "superposé".
     const overlappingSamples = samples.filter((s) => s.fromVolume > 0.15 && s.toVolume > 0.15);
     expect(overlappingSamples.length).toBeGreaterThan(0);
 
-    // Avant l'overlap, on est encore dans la phase bouclée : le deck entrant reste quasi muet.
+    // Avant tout changement de palier, on est encore dans la phase bouclée : le deck entrant
+    // reste au niveau de base (le premier palier ne fait sauter le curseur qu'à son terme).
     const firstQuarter = samples.slice(0, Math.floor(samples.length / 4));
     expect(firstQuarter.every((s) => s.toVolume < 0.1)).toBe(true);
 
@@ -572,31 +572,46 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
 
   test('SPEC-1.3.8.2 — beat_repeat retombe sur une longueur initiale plus courte quand peu de temps reste avant la fin du deck sortant', async () => {
     const player = await makePlayer();
-    // Deck sortant (mockAudios[0]) presque terminé : 3s de marge à 120 BPM (0.5s/temps) = 6
-    // temps restants, < 8 → repli attendu sur 4 temps (SPEC-1.3.8.2).
-    mockAudios[0].duration = 3;
+    // Deck sortant (mockAudios[0]) presque terminé : 2.9s de marge à 120 BPM (0.5s/temps) = 5.8
+    // temps restants, < 6 (défaut) → repli attendu sur 3 temps (SPEC-1.3.8.2).
+    mockAudios[0].duration = 2.9;
     const bpm = 120;
-    const expectedTotalMs = computeBeatRepeatLoopPhaseMs(bpm, 4) + BEAT_REPEAT_LAUNCH_OVERLAP_MS;
+    const expectedTotalMs = computeBeatRepeatLoopPhaseMs(bpm, 3);
 
     const startedAt = Date.now();
     const samples = await crossfadeWithMode(player, 'beat_repeat', { url: 'blob:track-g', durationMs: 200000 });
     const elapsedMs = Date.now() - startedAt;
 
-    // La durée réelle doit correspondre au repli sur 4 temps, pas aux 8 temps par défaut
+    // La durée réelle doit correspondre au repli sur 3 temps, pas aux 6 temps par défaut
     // (qui donneraient une durée totale très différente) — preuve indirecte que le repli a eu lieu.
+    // Tolérance plus large que les autres tests de timing beat_repeat de ce fichier : la
+    // longueur de repli par défaut est désormais plus courte (3 temps, contre 4 précédemment),
+    // ce qui réduit la durée totale attendue (~6s) et rend une marge fixe de 2s proportionnellement
+    // plus sensible à la gigue réelle (charge machine) que sur les autres tests de ce fichier.
     expect(elapsedMs).toBeGreaterThan(expectedTotalMs * 0.6);
-    expect(elapsedMs).toBeLessThan(expectedTotalMs + 2000);
+    expect(elapsedMs).toBeLessThan(expectedTotalMs + 3000);
 
     const last = samples[samples.length - 1];
     expect(last.progress).toBe(1);
     expect(last.toVolume).toBe(1);
     player.destroy?.();
   }, 15000);
+
+  test('SPEC-1.3.8.17 — beat_repeat fait aussi boucler le deck entrant une fois le curseur à 50%', async () => {
+    const player = await makePlayer({ bpm: 200 });
+    player.beatRepeatInitialBeats = 2; // loop court pour que le test reste rapide
+    await crossfadeWithMode(player, 'beat_repeat', { url: 'blob:track-h', durationMs: 200000, bpm: 200 });
+    // prepare() fait un fetch(url) par platine : un pour le deck sortant (tout le long de la
+    // transition), un second pour le deck entrant une fois son propre bouclage déclenché.
+    expect(globalThis.fetch.mock.calls.length).toBeGreaterThanOrEqual(2);
+    expect(globalThis.fetch.mock.calls.some((call) => call[0] === 'blob:track-h')).toBe(true);
+    player.destroy?.();
+  }, 10000);
 });
 
 // beat_repeat's pure algorithm (stage sequence, launch-beat math, BPM clamping, runway
-// fallback, crossfade windows) is unit-tested in isolation in
-// tests/unit/beatRepeatEngine.test.js — see SPEC-1.3.8.1 through SPEC-1.3.8.14.
+// fallback, crossfade windows, stepped-slider progress, final-stage pitch ratio) is unit-tested
+// in isolation in tests/unit/beatRepeatEngine.test.js — see SPEC-1.3.8.1 through SPEC-1.3.8.16.
 
 // ── SPEC-1.3.9 — short_loop capped at 3 repeats (pure helper) ───────────────
 

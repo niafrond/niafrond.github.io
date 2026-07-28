@@ -105,10 +105,34 @@ export function createApiHealthMonitor({
     void _probe();
   }
 
+  // One-shot check meant to run at page load, before any playback/download
+  // attempt: unlike recordFailure() (which needs `failureThreshold` misses
+  // before flipping state), a single failed /health call here goes straight
+  // to offline so a stale reload doesn't spend its first attempts trying to
+  // reach a server that's already known to be down.
+  async function checkNow() {
+    const baseUrl = getDownloaderApiUrl?.();
+    if (!baseUrl) return;
+
+    try {
+      const url = appendApiToken(`${baseUrl}/health`, getDownloaderApiToken?.());
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(probeTimeoutMs),
+      });
+      if (res.ok) {
+        recordSuccess();
+      } else {
+        _goOffline();
+      }
+    } catch (_) {
+      _goOffline();
+    }
+  }
+
   function destroy() {
     _destroyed = true;
     _stopProbing();
   }
 
-  return { isOffline, recordSuccess, recordFailure, probe, destroy };
+  return { isOffline, recordSuccess, recordFailure, probe, checkNow, destroy };
 }

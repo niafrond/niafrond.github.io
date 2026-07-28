@@ -639,8 +639,7 @@ export function createAudioSourceManager(options) {
     }
   }
 
-  function maybeRefreshStuckArtwork(item) {
-    if (!isStuckRemoteArtworkUrl(item?.artUrl)) return;
+  function attemptArtworkSelfHeal(item) {
     if (apiHealthMonitor?.isOffline()) return;
     const cacheKey = getTrackCacheKey(item);
     if (artworkRefreshAttempted.has(cacheKey)) return;
@@ -648,6 +647,25 @@ export function createAudioSourceManager(options) {
     refreshStuckArtworkInBackground(item).catch(() => {
       artworkRefreshAttempted.delete(cacheKey);
     });
+  }
+
+  function maybeRefreshStuckArtwork(item) {
+    if (!isStuckRemoteArtworkUrl(item?.artUrl)) return;
+    attemptArtworkSelfHeal(item);
+  }
+
+  // SPEC-13.3.12 — GET /api/artwork?cachePath=... 404s when the mirrored file
+  // has been evicted from the CDN's disk cache (cleanup job, disk pressure…)
+  // even though the track's artUrl still references it — a broken image
+  // forever otherwise. The UI (uiRenderer) calls this on <img> onerror and on
+  // a failed Media Session artwork fetch; it reuses the same POST
+  // /api/download self-heal as the stuck-raw-URL case above, which re-resolves
+  // the artwork from the origin (iTunes/Deezer) and re-mirrors it to disk,
+  // handing back a fresh /api/artwork reference that gets persisted over the
+  // dead one.
+  function handleArtworkLoadError(item) {
+    if (!item || typeof item.artUrl !== 'string' || !item.artUrl.includes('/api/artwork')) return;
+    attemptArtworkSelfHeal(item);
   }
 
   async function downloadTrackViaApi(item) {
@@ -844,7 +862,11 @@ export function createAudioSourceManager(options) {
     }
 
     if (item.persistedSourceUrl) {
-      const isPlayable = await canLoadAudioSource(item.persistedSourceUrl);
+      // While the downloader API is known offline, a failed playability probe
+      // just means the local server can't be reached right now — not that the
+      // track needs re-downloading. Trust the previously-known URL instead of
+      // discarding it and falling through to a (doomed) API download.
+      const isPlayable = apiHealthMonitor?.isOffline() || await canLoadAudioSource(item.persistedSourceUrl);
       if (isPlayable) {
         item.localBlobUrl = item.persistedSourceUrl;
         item.sourceState = 'ready';
@@ -865,7 +887,7 @@ export function createAudioSourceManager(options) {
 
     const directFromUri = getDirectPlayableSourceUrl(item, getDownloaderApiUrl);
     if (directFromUri) {
-      const isPlayable = await canLoadAudioSource(directFromUri);
+      const isPlayable = apiHealthMonitor?.isOffline() || await canLoadAudioSource(directFromUri);
       if (isPlayable) {
         item.persistedSourceUrl = directFromUri;
         item.localBlobUrl = directFromUri;
@@ -1365,6 +1387,7 @@ export function createAudioSourceManager(options) {
     enrichStemsFromServer,
     ensureLocalSource,
     evictTrackSource,
+    handleArtworkLoadError,
     isTrackInLocalCache,
     persistArtwork,
     prefetchTrackToLocalCache,

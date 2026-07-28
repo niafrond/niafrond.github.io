@@ -71,6 +71,7 @@ export function createDjMixRenderer(options) {
     updateDeckCueUI,
     getPlayer,
     getRelayIncomingStatus,
+    onArtworkLoadFailed,
   } = options;
 
   const lastDeckMetaItems = {
@@ -372,7 +373,13 @@ export function createDjMixRenderer(options) {
 
     if (getPrevIsCrossfading() && !detail.isCrossfading) {
       const clearedDeck = focusedDeck === 'A' ? 'B' : 'A';
-      deckDisplayItems[clearedDeck] = null;
+      const clearedDeckHasSrc = clearedDeck === 'A' ? detail.deckA?.hasSrc : detail.deckB?.hasSrc;
+      // Une transition annulée manuellement (mix-slider bougé, cf. SPEC-1.2.6) laisse les deux
+      // platines chargées : ne vider l'item affiché que si la platine sortante a vraiment été
+      // libérée (fin de crossfade normale), pas juste parce que isCrossfading est retombé à false.
+      if (!clearedDeckHasSrc) {
+        deckDisplayItems[clearedDeck] = null;
+      }
     }
     setPrevIsCrossfading(detail.isCrossfading);
 
@@ -509,6 +516,7 @@ export function createDjMixRenderer(options) {
       inactiveArt.onerror = () => {
         inactiveArt.hidden = true;
         inactivePlaceholder.style.display = '';
+        if (artUrl.includes('/api/artwork')) onArtworkLoadFailed?.(displayItem);
       };
       inactiveArt.src = artUrl;
       inactiveArt.hidden = false;
@@ -539,7 +547,15 @@ export function createDjMixRenderer(options) {
       const artUrl = item?.artUrl || '';
       if (artUrl) {
         _fetchArtworkDataUri(artUrl).then((resolvedUrl) => {
-          if (!resolvedUrl || !navigator.mediaSession?.metadata) return;
+          if (!resolvedUrl) {
+            // SPEC-13.3.12 — a mirrored artwork file can be evicted from the
+            // CDN's disk cache while the DB still references it (404 on
+            // /api/artwork?cachePath=...); trigger the background self-heal
+            // rather than leaving the dead reference in place forever.
+            if (artUrl.includes('/api/artwork')) onArtworkLoadFailed?.(item);
+            return;
+          }
+          if (!navigator.mediaSession?.metadata) return;
           if (navigator.mediaSession.metadata.title !== safeTitle) return;
           const [, mimeType] = resolvedUrl.match(/^data:([^;]+);/) || [];
           // SPEC-13.3.8 — Reject non-image data URIs (e.g. HTML error pages) to avoid overriding a valid CDN URL
@@ -570,6 +586,7 @@ export function createDjMixRenderer(options) {
       focusArt.onerror = () => {
         focusArt.hidden = true;
         focusPlaceholder.style.display = '';
+        if (item.artUrl.includes('/api/artwork')) onArtworkLoadFailed?.(item);
       };
       focusArt.src = item.artUrl;
       focusArt.hidden = false;

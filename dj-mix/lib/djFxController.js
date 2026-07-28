@@ -897,35 +897,6 @@ export function createDjFxController(options) {
     }
   }
 
-  function triggerBeatRepeatTransitionFx(outgoingDeck, incomingDeck, phaseDurationMs, bpm) {
-    const safeBpm = Math.max(60, Math.min(220, Number(bpm) || 120));
-    const eighthNoteMs = Math.round(30000 / safeBpm);
-    const windowMs = Math.max(60, Math.min(500, eighthNoteMs));
-    const tickMs = windowMs;
-    const totalMs = Math.max(500, Math.round(Number(phaseDurationMs) || 3900));
-    const safeOut = outgoingDeck === 'B' ? 'B' : 'A';
-    const safeIn = incomingDeck === 'B' ? 'B' : 'A';
-
-    triggerLoopRoll(safeOut, { windowMs, totalMs, tickMs, instantSeek: true });
-
-    setTimeout(() => {
-      const state = getDeckStateForFx(safeIn);
-      const currentPos = Number(state?.positionMs) || 0;
-      const currentDur = Number(state?.durationMs) || 0;
-      if (currentDur > 0) {
-        const anchorMs = Math.max(windowMs, currentPos);
-        triggerLoopRoll(safeIn, {
-          windowMs,
-          totalMs: Math.max(200, totalMs - 350),
-          tickMs,
-          instantSeek: true,
-          anchorMs,
-          durationMs: currentDur,
-        });
-      }
-    }, 350);
-  }
-
   function resetRuntimeState() {
     stopScratchEngine(false);
 
@@ -958,7 +929,6 @@ export function createDjFxController(options) {
     applyAutoDjCreativeFx,
     handleDjFxAction,
     resetRuntimeState,
-    triggerBeatRepeatTransitionFx,
     updateDjFxMenuUI,
   };
 }

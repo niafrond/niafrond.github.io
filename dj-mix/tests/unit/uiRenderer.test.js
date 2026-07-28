@@ -5,6 +5,7 @@
  * par buildQueueHTML dans les différents états de la file d'attente.
  */
 
+import { jest } from '@jest/globals';
 import { createDjMixRenderer } from '../../lib/uiRenderer.js';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -482,8 +483,10 @@ describe('updateNowPlaying / notification système (mediaSession)', () => {
     return { hidden: false, src: '', onerror: null, style: {} };
   }
 
-  function makeNowPlayingRenderer({ focusDeck = 'A', queue = [], currentIndex = 0 } = {}) {
-    return createDjMixRenderer({
+  function makeNowPlayingRenderer({ focusDeck = 'A', queue = [], currentIndex = 0, onArtworkLoadFailed } = {}) {
+    const albumArt = makeArtEl();
+    const nextAlbumArt = makeArtEl();
+    const renderer = createDjMixRenderer({
       deckAPanel: null, deckBPanel: null,
       deckAVol: null, deckBVol: null,
       deckAFill: null, deckBFill: null,
@@ -493,8 +496,8 @@ describe('updateNowPlaying / notification système (mediaSession)', () => {
       deckALaunchBtn: null, deckBLaunchBtn: null,
       queueList: null, emptyQueue: null,
       autoMixBtn: null,
-      albumArt: makeArtEl(), artPlaceholder: { style: {} },
-      nextAlbumArt: makeArtEl(), nextArtPlaceholder: { style: {} },
+      albumArt, artPlaceholder: { style: {} },
+      nextAlbumArt, nextArtPlaceholder: { style: {} },
       trackArtist: makeDomTextNode(), trackArtistA: makeDomTextNode(), trackArtistB: makeDomTextNode(),
       getQueue: () => queue,
       getDjMode: () => 'music',
@@ -515,7 +518,10 @@ describe('updateNowPlaying / notification système (mediaSession)', () => {
       updateDeckMixUI: () => {},
       updateDeckCueUI: () => {},
       getPlayer: () => null,
+      onArtworkLoadFailed,
     });
+    renderer.__test__albumArt = albumArt;
+    return renderer;
   }
 
   beforeEach(() => {
@@ -582,5 +588,170 @@ describe('updateNowPlaying / notification système (mediaSession)', () => {
 
     global.fetch = origFetch;
     global.FileReader = origFileReader;
+  });
+
+  test('SPEC-13.3.12 — signale un artwork /api/artwork mort (fetch échoué) au callback onArtworkLoadFailed', async () => {
+    const origFetch = global.fetch;
+    global.fetch = async () => ({ ok: false });
+
+    const onArtworkLoadFailed = jest.fn();
+    const playing = makeTrack({
+      id: 'dead-art',
+      name: 'Dead Art Track',
+      artUrl: 'http://cdn.test/api/artwork?cachePath=%2Fart%2Fdead.jpg',
+    });
+    const renderer = makeNowPlayingRenderer({ focusDeck: 'A', queue: [playing], onArtworkLoadFailed });
+
+    renderer.updateNowPlaying(playing, 'A');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(onArtworkLoadFailed).toHaveBeenCalledWith(playing);
+
+    global.fetch = origFetch;
+  });
+
+  test('SPEC-13.3.12 — ne signale pas un échec pour une artUrl qui n\'est pas notre propre CDN', async () => {
+    const origFetch = global.fetch;
+    global.fetch = async () => ({ ok: false });
+
+    const onArtworkLoadFailed = jest.fn();
+    const playing = makeTrack({
+      id: 'raw-art',
+      name: 'Raw Art Track',
+      artUrl: 'https://e-cdns-images.dzcdn.net/images/cover/xxx/500x500.jpg',
+    });
+    const renderer = makeNowPlayingRenderer({ focusDeck: 'A', queue: [playing], onArtworkLoadFailed });
+
+    renderer.updateNowPlaying(playing, 'A');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(onArtworkLoadFailed).not.toHaveBeenCalled();
+
+    global.fetch = origFetch;
+  });
+
+  test('SPEC-13.3.12 — le onerror de l\'<img> du deck en focus signale un artwork /api/artwork mort', async () => {
+    const origFetch = global.fetch;
+    global.fetch = async () => ({ ok: true, blob: async () => ({ type: 'image/jpeg', size: 100 }) });
+
+    const onArtworkLoadFailed = jest.fn();
+    const playing = makeTrack({
+      id: 'dead-art-img',
+      name: 'Dead Art Img Track',
+      artUrl: 'http://cdn.test/api/artwork?cachePath=%2Fart%2Fdead.jpg',
+    });
+    const renderer = makeNowPlayingRenderer({ focusDeck: 'A', queue: [playing], onArtworkLoadFailed });
+
+    renderer.updateNowPlaying(playing, 'A');
+    // Simule l'échec réel du chargement de l'image dans le <deck-art> (le <img>
+    // affiche bien la balise mais le navigateur reçoit un 404 sur le fichier).
+    renderer.__test__albumArt.onerror();
+
+    expect(onArtworkLoadFailed).toHaveBeenCalledWith(playing);
+
+    global.fetch = origFetch;
+  });
+
+  test('SPEC-13.3.12 — le onerror de l\'<img> ne signale pas un artwork qui n\'est pas sur notre CDN', () => {
+    const onArtworkLoadFailed = jest.fn();
+    const playing = makeTrack({
+      id: 'raw-art-img',
+      name: 'Raw Art Img Track',
+      artUrl: 'https://e-cdns-images.dzcdn.net/images/cover/xxx/500x500.jpg',
+    });
+    const renderer = makeNowPlayingRenderer({ focusDeck: 'A', queue: [playing], onArtworkLoadFailed });
+
+    renderer.updateNowPlaying(playing, 'A');
+    renderer.__test__albumArt.onerror();
+
+    expect(onArtworkLoadFailed).not.toHaveBeenCalled();
+  });
+});
+
+describe('renderDeckState — SPEC-1.2.6.2 (pas de handoff sur transition annulée)', () => {
+  function makeDeckStateRenderer({ deckDisplayItems }) {
+    let prevIsCrossfading = false;
+    return {
+      deckDisplayItems,
+      renderer: createDjMixRenderer({
+        deckAPanel: null, deckBPanel: null,
+        deckAVol: null, deckBVol: null,
+        deckAFill: null, deckBFill: null,
+        deckATitle: null, deckBTitle: null,
+        deckABpm: null, deckBBpm: null,
+        deckABpmReset: null, deckBBpmReset: null,
+        deckALaunchBtn: null, deckBLaunchBtn: null,
+        queueList: null, emptyQueue: null,
+        autoMixBtn: null,
+        albumArt: null, artPlaceholder: null,
+        nextAlbumArt: null, nextArtPlaceholder: null,
+        trackArtist: null, trackArtistA: null, trackArtistB: null,
+        getQueue: () => [],
+        getDjMode: () => 'music',
+        getCurrentIndex: () => -1,
+        getCurrentTrackId: () => null,
+        getIsPlaying: () => true,
+        getDeckBCueIndex: () => -1,
+        getDeckCueDeck: () => null,
+        getDeckDisplayItems: () => deckDisplayItems,
+        getInactiveDeck: () => 'B',
+        getFocusDeck: () => 'A',
+        getLaunchPreviewState: () => ({ active: false }),
+        getPrevIsCrossfading: () => prevIsCrossfading,
+        setPrevIsCrossfading: (value) => { prevIsCrossfading = value; },
+        getDeckMixRatio: () => 0,
+        setDeckMixRatio: () => {},
+        clampDeckMixRatio: (v) => v,
+        updateDeckMixUI: () => {},
+        updateDeckCueUI: () => {},
+        getPlayer: () => null,
+      }),
+    };
+  }
+
+  test('transition annulée (les deux platines gardent hasSrc: true) — deckDisplayItems non vidé', () => {
+    const trackB = makeTrack({ id: 't-b' });
+    const { renderer, deckDisplayItems } = makeDeckStateRenderer({
+      deckDisplayItems: { A: makeTrack({ id: 't-a' }), B: trackB },
+    });
+
+    // Ouvre la fenêtre "en cours de crossfade"
+    renderer.renderDeckState({
+      isCrossfading: true,
+      deckA: { playing: true, volume: 0.6, hasSrc: true },
+      deckB: { playing: true, volume: 0.4, hasSrc: true },
+    });
+
+    // La transition est annulée par l'utilisateur : isCrossfading retombe à false, mais les
+    // deux platines ont toujours une source chargée (contrairement à une fin de crossfade normale).
+    renderer.renderDeckState({
+      isCrossfading: false,
+      deckA: { playing: true, volume: 0.6, hasSrc: true },
+      deckB: { playing: true, volume: 0.4, hasSrc: true },
+    });
+
+    expect(deckDisplayItems.B).toBe(trackB);
+  });
+
+  test('fin de crossfade normale (platine sortante libérée, hasSrc: false) — deckDisplayItems bien vidé', () => {
+    const trackB = makeTrack({ id: 't-b' });
+    const { renderer, deckDisplayItems } = makeDeckStateRenderer({
+      deckDisplayItems: { A: makeTrack({ id: 't-a' }), B: trackB },
+    });
+
+    renderer.renderDeckState({
+      isCrossfading: true,
+      deckA: { playing: true, volume: 0.6, hasSrc: true },
+      deckB: { playing: true, volume: 0.4, hasSrc: true },
+    });
+
+    // Fin normale : la platine B (non focus, volume le plus bas) a été vidée par crossfadeToDeck().
+    renderer.renderDeckState({
+      isCrossfading: false,
+      deckA: { playing: true, volume: 1, hasSrc: true },
+      deckB: { playing: false, volume: 0, hasSrc: false },
+    });
+
+    expect(deckDisplayItems.B).toBeNull();
   });
 });

@@ -4,7 +4,7 @@
  * Playback: temporary local Blob download + dual-deck crossfade
  */
 
-import { DJPlayer, computeBeatRepeatLoopPhaseMs } from './player.js';
+import { DJPlayer } from './player.js';
 import { initServiceWorker, installPwa, initAutoFullscreen, initApkDownloadLink, checkApkUpdate, doApkUpdate, forceUpdatePwa } from './pwa.js';
 import { pushPlaybackState, pushQueue, onMediaCommand, getPendingMediaCommand } from './lib/androidAutoBridge.js';
 
@@ -1174,7 +1174,6 @@ const {
   applyAutoDjCreativeFx,
   handleDjFxAction,
   resetRuntimeState: resetDjFxRuntime,
-  triggerBeatRepeatTransitionFx,
   updateDjFxMenuUI,
 } = djFxController;
 
@@ -1329,6 +1328,7 @@ const uiRenderer = createDjMixRenderer({
   getRelayIncomingStatus: () => relayIncomingQueue.getStatus(),
   nextAlbumArt,
   nextArtPlaceholder,
+  onArtworkLoadFailed: (item) => audioSourceManager.handleArtworkLoadError(item),
   queueList,
   setDeckMixRatio: (value) => {
     uiState.deckMixRatio = value;
@@ -3936,6 +3936,13 @@ apiMixPlaylistLoadBtn?.addEventListener('click', async () => {
 });
 
 (async function init() {
+  // Détecte l'état de l'API downloader dès le chargement de la page, avant toute
+  // tentative de lecture/téléchargement : sans ça, le moniteur suppose l'API en
+  // ligne jusqu'à accumuler des échecs réels, et une piste déjà en cache local
+  // subit une tentative de re-téléchargement inutile juste après un reload hors
+  // ligne (voir ensureLocalSource dans audioSourceManager.js).
+  apiHealthMonitor.checkNow().catch(() => {});
+
   if (spotifyClientIdInput) {
     spotifyClientIdInput.value = spotifyClient.getStoredClientId();
   }
@@ -4422,21 +4429,14 @@ function hookPlayerEvents() {
     player.addEventListener('transitionmode', ({ detail }) => {
       const requestedMode = detail?.requestedMode || 'auto';
       const effectiveMode = detail?.effectiveMode || requestedMode;
-      const fromDeck = detail?.fromDeck;
-      const toDeck = detail?.toDeck;
-
-      if (effectiveMode === 'beat_repeat' && fromDeck && toDeck) {
-        const incomingBpm = Number(extractTrackBpm(deckDisplayItems[toDeck])) || 120;
-        // Le stutter FX ne couvre que la phase bouclée : il s'arrête quand la superposition
-        // finale (overlap volume, cf. player.js) démarre sur la prochaine mesure, pour rester
-        // synchronisé avec le raccourcissement progressif du loop.
-        const phaseDurationMs = computeBeatRepeatLoopPhaseMs(incomingBpm, player.beatRepeatInitialBeats);
-        triggerBeatRepeatTransitionFx(fromDeck, toDeck, phaseDurationMs, incomingBpm);
-      }
 
       if (requestedMode !== 'auto') return;
       const label = MIX_TRANSITION_MODE_LABELS[effectiveMode] || effectiveMode;
       showToast(`AutoMix mode: ${label}`);
+    });
+
+    player.addEventListener('transitioncancelled', () => {
+      showToast('Transition annulée — mix manuel repris');
     });
 
     player.addEventListener('deckstate', ({ detail }) => {
@@ -6765,10 +6765,13 @@ async function startPlaybackForIndex(index, mode, options = {}) {
       message: err?.message,
     });
     showToast(`API: ${err.message}`, true);
-    // Flux non lisible : retirer de la file d'attente et du fil rouge, passer au suivant
+    // Flux non lisible : retirer de la file d'attente, passer au suivant.
     const _failedIdx = queue.findIndex((q) => q.id === item.id);
     if (_failedIdx >= 0) removeFromQueue(_failedIdx);
-    if (filRougeManager.isActive()) {
+    // Une panne API est transitoire : le morceau n'est pas retiré du fil rouge
+    // dans ce cas (il redeviendra téléchargeable une fois l'API revenue), contrairement
+    // à un échec réel (piste introuvable/corrompue) qui, lui, justifie un retrait.
+    if (!apiHealthMonitor.isOffline() && filRougeManager.isActive()) {
       const _pq = filRougeManager.getPriorityQueue();
       const _pqIdx = _pq.findIndex((t) => t.id === item.id);
       if (_pqIdx >= 0) filRougeManager.removeFromPriorityQueue(_pqIdx);

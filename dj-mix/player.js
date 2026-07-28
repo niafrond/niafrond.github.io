@@ -13,13 +13,16 @@ import {
   BEAT_REPEAT_MIN_INITIAL_BEATS,
   BEAT_REPEAT_BEATS_PER_BAR,
   BEAT_REPEAT_FX_STAGE_COUNT,
-  BEAT_REPEAT_LAUNCH_OVERLAP_MS,
   getSafeBeatRepeatBpm,
   chooseInitialLoopBeats,
   buildBeatRepeatStageBeats,
   computeBeatRepeatLaunchBeats,
   computeBeatRepeatLoopPhaseMs,
   computeLoopAnchorSeconds,
+  computeBeatRepeatStepProgress,
+  computeBeatRepeatFinalStagePitchRatio,
+  computeBeatRepeatHalfStageIndex,
+  computeBeatRepeatElapsedBeatsAtStageStart,
   BeatRepeatEngine,
 } from './lib/beatRepeatEngine.js';
 import { createLogger } from './lib/logger.js';
@@ -57,7 +60,6 @@ export {
   BEAT_REPEAT_MIN_INITIAL_BEATS,
   BEAT_REPEAT_BEATS_PER_BAR,
   BEAT_REPEAT_FX_STAGE_COUNT,
-  BEAT_REPEAT_LAUNCH_OVERLAP_MS,
   getSafeBeatRepeatBpm,
   chooseInitialLoopBeats,
   buildBeatRepeatStageBeats,
@@ -152,11 +154,23 @@ export class DJPlayer extends EventTarget {
   // valeur "souhaitée" ; le runway réel avant fin de piste peut la réduire (step 2).
   #beatRepeatInitialBeats = BEAT_REPEAT_DEFAULT_INITIAL_BEATS;
   #beatRepeatEngine = new BeatRepeatEngine();
+  // Runs only for the tail of the transition (see #startBeatRepeatIncomingLoop) so the incoming
+  // deck is also audibly stuttering by the time of the final cut, instead of sitting silent
+  // under the outgoing deck's loop for the whole phase.
+  #beatRepeatEngineIncoming = new BeatRepeatEngine();
   #isCrossfading = false;
   #crossfadeNotified = false;
   #trackEndNotified = false;
   #trackInterval = null;
   #crossfadeInterval = null;
+  // Callback qui résout immédiatement la Promise de #runTransitionMode/#runBeatRepeatTransition
+  // en cours, posé le temps que dure la transition — permet à cancelActiveTransition() de
+  // l'interrompre proprement sans dupliquer la logique de nettoyage des `finally` existants.
+  #crossfadeFinishFn = null;
+  // Distingue une fin de transition normale d'une annulation manuelle (slider de mix bougé
+  // par l'utilisateur pendant une transition auto) : crossfadeToDeck() saute alors le handoff
+  // définitif (pause/clear de la platine sortante) pour laisser les deux platines audibles.
+  #crossfadeCancelledByUser = false;
   // Lissages volume/mix-ratio/playbackRate: rAF + progression basée sur le temps écoulé
   // (plutôt qu'un compte de "ticks" setInterval) pour s'aligner sur le rafraîchissement
   // écran et s'auto-corriger si des frames sont sautées (onglet en arrière-plan).
@@ -398,7 +412,27 @@ export class DJPlayer extends EventTarget {
 
   setDeckMixRatio(ratio, transitionMs = 140) {
     const safeRatio = Math.max(0, Math.min(1, Number(ratio) || 0));
+    this.cancelActiveTransition();
     this.#smoothSetDeckMixRatio(safeRatio, transitionMs);
+  }
+
+  // Donne la main à l'utilisateur sur une transition auto (AutoMix/beat_repeat) en cours :
+  // bouger le mix-slider pendant une transition l'interrompt immédiatement au lieu de se battre
+  // avec elle pour le contrôle du volume des platines. Les deux platines restent chargées et
+  // audibles (aucun handoff définitif), l'utilisateur reprend le mix à la main via le slider.
+  cancelActiveTransition() {
+    if (!this.#isCrossfading || typeof this.#crossfadeFinishFn !== 'function') return false;
+
+    this.#crossfadeCancelledByUser = true;
+    const finish = this.#crossfadeFinishFn;
+    this.#crossfadeFinishFn = null;
+    if (this.#crossfadeInterval) {
+      clearInterval(this.#crossfadeInterval);
+      this.#crossfadeInterval = null;
+    }
+    logInfo('crossfade.cancelled.manualOverride', {});
+    finish();
+    return true;
   }
 
   setDeckVolumes(volumeA, volumeB, transitionMs = 100) {
@@ -639,6 +673,18 @@ export class DJPlayer extends EventTarget {
         incomingBpm: normalized.bpm,
       });
 
+      if (this.#crossfadeCancelledByUser) {
+        // L'utilisateur a bougé le mix-slider pendant la transition : pas de handoff définitif,
+        // les deux platines restent chargées et audibles sous son contrôle manuel.
+        this.#crossfadeCancelledByUser = false;
+        this.dispatchEvent(new CustomEvent('transitioncancelled', {
+          detail: { fromDeck, toDeck, mode: effectiveMode },
+        }));
+        this.#requestEmitDeckState();
+        logInfo('crossfade.cancelled', { fromDeck, toDeck, mode: effectiveMode });
+        return false;
+      }
+
       if (to.paused && to.src) {
         await to.play().catch(() => {});
       }
@@ -838,6 +884,12 @@ export class DJPlayer extends EventTarget {
 
     try {
       await new Promise((resolve) => {
+        const finishTransition = () => {
+          this.#crossfadeFinishFn = null;
+          resolve();
+        };
+        this.#crossfadeFinishFn = finishTransition;
+
         let progress = 0;
         let lastTickAt = performance.now();
         let loopAnchor = context.to.currentTime || 0;
@@ -847,7 +899,7 @@ export class DJPlayer extends EventTarget {
           if (this.#destroyed) {
             clearInterval(this.#crossfadeInterval);
             this.#crossfadeInterval = null;
-            resolve();
+            finishTransition();
             return;
           }
 
@@ -925,7 +977,7 @@ export class DJPlayer extends EventTarget {
           if (progress >= 1) {
             clearInterval(this.#crossfadeInterval);
             this.#crossfadeInterval = null;
-            resolve();
+            finishTransition();
           }
         }, 30);
       });
@@ -962,14 +1014,66 @@ export class DJPlayer extends EventTarget {
   // to Track B on the next bar boundary. Bypasses the generic #runTransitionMode tick loop
   // entirely for the loop mechanics themselves; only reuses its general shape (30ms poll) for
   // wall-clock UI progress events, FX nudges (high-pass/echo on the last 2 stages), and the
-  // final deck-to-deck volume handoff — never for the loop scheduling, which is computed once
-  // up front against the audio clock (SPEC-1.3.5/SPEC-1.3.8).
+  // stepped crossfader — never for the loop scheduling, which is computed once up front against
+  // the audio clock (SPEC-1.3.5/SPEC-1.3.8).
+  //
+  // Waits for the live playhead to actually reach the beat-grid anchor before switching to the
+  // loop engine (see #waitForBeatRepeatAnchor): starting the loop engine's audio content
+  // immediately, regardless of where the live element actually is, made the anchor step
+  // perceptible as a jerk/skip rather than the intended inaudible snap.
+  async #waitForBeatRepeatAnchor(context, anchorSec) {
+    await new Promise((resolve) => {
+      const check = () => {
+        if (this.#destroyed) { resolve(); return; }
+        const current = Number.isFinite(context.from.currentTime) ? context.from.currentTime : anchorSec;
+        if (current >= anchorSec) { resolve(); return; }
+        setTimeout(check, 15);
+      };
+      check();
+    });
+  }
+
+  // Incoming deck only joins the stutter for the tail of the transition (from the moment the
+  // stepped crossfader reaches 50%, cf. #runBeatRepeatTransition's halfStageIndex) — it's fresh,
+  // unfamiliar content to the listener, so unlike #waitForBeatRepeatAnchor for the outgoing
+  // deck, no beat-grid wait is applied here: capturing "wherever it currently is" is an
+  // acceptable, much simpler trade-off for a brief tail window on a track nobody has a reference
+  // point for yet.
+  async #startBeatRepeatIncomingLoop(context, { ctx, secondsPerBeat, remainingStageBeats, remainingLaunchBeats, cutoverState }) {
+    const destinationBus = this.#mixFeatures?.getDeckInputBus?.(context.toDeck);
+    const sourceUrl = this.#deckSourceMeta[context.toDeck]?.url;
+    if (!ctx || !destinationBus || !sourceUrl) return false;
+
+    const windowSec = remainingStageBeats[0] * secondsPerBeat;
+    const durationSec = Number.isFinite(context.to.duration) && context.to.duration > 0 ? context.to.duration : null;
+    const currentTimeSec = Number.isFinite(context.to.currentTime) ? context.to.currentTime : 0;
+    let anchorSec = currentTimeSec;
+    if (durationSec !== null) {
+      anchorSec = Math.min(anchorSec, Math.max(0, durationSec - windowSec));
+    }
+
+    const audioBuffer = await this.#beatRepeatEngineIncoming.prepare(ctx, sourceUrl, anchorSec, windowSec);
+    // Decode can take long enough that the bar-boundary cut has already happened by the time it
+    // resolves — in that case skip muting/running entirely rather than starting a loop just to
+    // immediately tear it back down, which would delay restoring the incoming deck's own gain.
+    if (this.#destroyed || cutoverState.reached) return false;
+    this.#mixFeatures.setDeckElementGain(context.toDeck, 0);
+    this.#beatRepeatEngineIncoming.run({
+      ctx, destinationBus, audioBuffer, stageBeats: remainingStageBeats, secondsPerBeat, launchBeats: remainingLaunchBeats,
+    });
+    return true;
+  }
+
   async #runBeatRepeatTransition(context) {
     // Corrected from an earlier version of this effect, which incorrectly used the *incoming*
     // deck's BPM: the loop is chopped out of the *outgoing* deck's own buffer, so its rhythmic
     // grid is the outgoing track's own BPM.
     const fromBpm = getSafeBeatRepeatBpm(this.#deckSourceMeta[context.fromDeck]?.bpm);
     const secondsPerBeat = 60 / fromBpm;
+    // Final-stage tempo bend target: the incoming deck's own BPM, so the last stutters lead
+    // into Track B's tempo instead of an instant tempo cut (SPEC-1.3.8.15).
+    const toBpm = getSafeBeatRepeatBpm(this.#deckSourceMeta[context.toDeck]?.bpm);
+    const finalStagePitchRatio = computeBeatRepeatFinalStagePitchRatio(fromBpm, toBpm);
 
     const durationSec = Number.isFinite(context.from.duration) && context.from.duration > 0
       ? context.from.duration
@@ -979,17 +1083,26 @@ export class DJPlayer extends EventTarget {
       ? Math.max(0, durationSec - currentTimeSec) / secondsPerBeat
       : Infinity;
 
-    // Step 2: default 8 beats, 4 if runway is short, never below 2.
+    // Step 2: default beats (configurable, see BEAT_REPEAT_DEFAULT_INITIAL_BEATS), half if
+    // runway is short, never below 2.
     const initialBeats = chooseInitialLoopBeats(remainingBeats, this.#beatRepeatInitialBeats);
     // Steps 3-5: halve every 2 repetitions down to the absolute 1/16-beat floor.
     const stageBeats = buildBeatRepeatStageBeats(initialBeats);
     // Step 8: next bar boundary after the final (floor) stage's mandatory 2 repetitions.
     const launchBeats = computeBeatRepeatLaunchBeats(stageBeats);
     const launchMs = launchBeats * secondsPerBeat * 1000;
-    const totalMs = launchMs + BEAT_REPEAT_LAUNCH_OVERLAP_MS;
+    const totalMs = launchMs;
 
-    // Step 1: beat-grid-aligned anchor, defensively pulled back so the loop window never reads
-    // past the track's own end.
+    // SPEC-1.3.5.5: the incoming deck joins the stutter once the stepped crossfader (SPEC-
+    // 1.3.8.16) reaches 50% — it reuses the outgoing deck's own remaining stages/timing so both
+    // decks land on the shared bar-boundary cut together.
+    const incomingHalfStageIndex = computeBeatRepeatHalfStageIndex(stageBeats.length);
+    const incomingElapsedBeatsThreshold = computeBeatRepeatElapsedBeatsAtStageStart(stageBeats, incomingHalfStageIndex);
+    const incomingRemainingStageBeats = stageBeats.slice(incomingHalfStageIndex);
+    const incomingRemainingLaunchBeats = launchBeats - incomingElapsedBeatsThreshold;
+
+    // Step 1: beat-grid-aligned anchor (next beat at/after the live playhead — never behind
+    // it), defensively pulled back so the loop window never reads past the track's own end.
     const windowSec = initialBeats * secondsPerBeat;
     let anchorSec = computeLoopAnchorSeconds(currentTimeSec, secondsPerBeat);
     if (durationSec !== null) {
@@ -1005,16 +1118,32 @@ export class DJPlayer extends EventTarget {
     const sourceUrl = this.#deckSourceMeta[context.fromDeck]?.url;
 
     let engineStarted = false;
+    let incomingLoopPromise = null;
+    let incomingEngineStarted = false;
+    const cutoverState = { reached: false };
 
     try {
       if (ctx && destinationBus && sourceUrl) {
-        const audioBuffer = await this.#beatRepeatEngine.prepare(ctx, sourceUrl, anchorSec, windowSec);
+        // Decode runs in parallel with the wait so the buffer is ready the instant the live
+        // playhead reaches the anchor — waiting first and only then decoding would let the
+        // playhead drift past the anchor again during the decode itself.
+        const preparePromise = this.#beatRepeatEngine.prepare(ctx, sourceUrl, anchorSec, windowSec);
+        await this.#waitForBeatRepeatAnchor(context, anchorSec);
+        const audioBuffer = await preparePromise;
         this.#mixFeatures.setDeckElementGain(context.fromDeck, 0);
-        this.#beatRepeatEngine.run({ ctx, destinationBus, audioBuffer, stageBeats, secondsPerBeat, launchBeats });
+        this.#beatRepeatEngine.run({
+          ctx, destinationBus, audioBuffer, stageBeats, secondsPerBeat, launchBeats, finalStagePitchRatio,
+        });
         engineStarted = true;
       }
 
       await new Promise((resolve) => {
+        const finishTransition = () => {
+          this.#crossfadeFinishFn = null;
+          resolve();
+        };
+        this.#crossfadeFinishFn = finishTransition;
+
         let progress = 0;
         let lastTickAt = performance.now();
 
@@ -1022,7 +1151,7 @@ export class DJPlayer extends EventTarget {
           if (this.#destroyed) {
             clearInterval(this.#crossfadeInterval);
             this.#crossfadeInterval = null;
-            resolve();
+            finishTransition();
             return;
           }
 
@@ -1031,17 +1160,33 @@ export class DJPlayer extends EventTarget {
           lastTickAt = now;
           progress = Math.min(1, progress + (tickElapsedMs / totalMs));
 
-          const levels = this.#computeTransitionLevels('beat_repeat', progress, context.startBaseFrom, context.startBaseTo);
-          let fromBase = levels.from;
-          let toBase = levels.to;
-
           const elapsedMs = progress * totalMs;
+          let fromBase;
+          let toBase;
           let finished = false;
 
           if (elapsedMs < launchMs) {
+            // Mix slider moves in one discrete jump per stage (not a continuous ramp) — an
+            // equal 1/N share of the way to the incoming deck per stage change, matching the
+            // audible stutter's own staircase rather than smoothing over it (SPEC-1.3.8.16).
+            const elapsedBeats = (elapsedMs / 1000) / secondsPerBeat;
+            const stepT = computeBeatRepeatStepProgress(stageBeats, elapsedBeats);
+            const levels = this.#computeTransitionLevels('beat_repeat', stepT, context.startBaseFrom, context.startBaseTo);
+            fromBase = levels.from;
+            toBase = levels.to;
+
+            if (!incomingLoopPromise && elapsedBeats >= incomingElapsedBeatsThreshold) {
+              incomingLoopPromise = this.#startBeatRepeatIncomingLoop(context, {
+                ctx,
+                secondsPerBeat,
+                remainingStageBeats: incomingRemainingStageBeats,
+                remainingLaunchBeats: incomingRemainingLaunchBeats,
+                cutoverState,
+              }).then((started) => { incomingEngineStarted = started; }).catch(() => {});
+            }
+
             // Last BEAT_REPEAT_FX_STAGE_COUNT stages (shortest): high-pass on the outgoing
             // deck + echo ramping 0->1 across their combined duration.
-            const elapsedBeats = (elapsedMs / 1000) / secondsPerBeat;
             const fxStageStartIndex = Math.max(0, stageBeats.length - BEAT_REPEAT_FX_STAGE_COUNT);
             const fxPhaseStartBeats = stageBeats
               .slice(0, fxStageStartIndex)
@@ -1056,11 +1201,12 @@ export class DJPlayer extends EventTarget {
               this.#mixFeatures?.setEchoIntensity?.(echoIntensity);
             }
           } else {
-            // Bar boundary reached: hand off to Track B via the deck-to-deck volume crossfade.
-            const overlapProgress = clamp01((elapsedMs - launchMs) / BEAT_REPEAT_LAUNCH_OVERLAP_MS);
-            fromBase = context.startBaseFrom * (1 - overlapProgress);
-            toBase = context.startBaseTo + ((1 - context.startBaseTo) * overlapProgress);
-            if (elapsedMs >= totalMs) finished = true;
+            // Bar boundary reached: instant cut to Track B (the final step of the staircase),
+            // consistent with the stutter aesthetic rather than a smoothed-over handoff.
+            cutoverState.reached = true;
+            fromBase = 0;
+            toBase = 1;
+            finished = true;
           }
 
           fromBase = clamp01(fromBase);
@@ -1089,14 +1235,19 @@ export class DJPlayer extends EventTarget {
           if (progress >= 1 || finished) {
             clearInterval(this.#crossfadeInterval);
             this.#crossfadeInterval = null;
-            resolve();
+            finishTransition();
           }
         }, 30);
       });
     } finally {
+      if (incomingLoopPromise) await incomingLoopPromise;
       this.#beatRepeatEngine.stop();
+      this.#beatRepeatEngineIncoming.stop();
       if (engineStarted) {
         this.#mixFeatures?.setDeckElementGain(context.fromDeck, 1);
+      }
+      if (incomingEngineStarted) {
+        this.#mixFeatures?.setDeckElementGain(context.toDeck, 1);
       }
       this.#mixFeatures?.setEchoIntensity?.(1);
       if (!startEcho) this.setMixFeatures({ echo: false });
@@ -1261,9 +1412,11 @@ export class DJPlayer extends EventTarget {
         };
       }
       case 'beat_repeat': {
-        // fromDeck reste au volume plein pendant la phase bouclée ; la superposition finale
-        // (overlap) est calculée et appliquée directement dans le tick (cf. BEAT_REPEAT_LAUNCH_OVERLAP_MS).
-        return { from: startBaseFrom, to: startBaseTo * 0.05 };
+        // `t` here is a stage-quantized step (computeBeatRepeatStepProgress), not continuous
+        // time — the plain linear curve applied to a stepped t already produces the intended
+        // staircase crossfader. The final bar-boundary handoff is a separate instant cut
+        // (fromBase=0/toBase=1), applied directly in the tick, not through this curve.
+        return { from: linearFrom, to: linearTo };
       }
       case 'backspin': {
         // Phase 1 : fromDeck décélère et s'arrête ; toDeck monte dès 20% pour éviter tout silence
@@ -1298,6 +1451,7 @@ export class DJPlayer extends EventTarget {
     clearInterval(this.#crossfadeInterval);
     this.#crossfadeInterval = null;
     this.#beatRepeatEngine?.stop();
+    this.#beatRepeatEngineIncoming?.stop();
 
     if (this.#manualMixRafId !== null) {
       cancelAnimationFrame(this.#manualMixRafId);

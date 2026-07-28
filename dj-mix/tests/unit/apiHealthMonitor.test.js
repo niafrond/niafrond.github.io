@@ -192,6 +192,49 @@ describe('apiHealthMonitor', () => {
     delete global.fetch;
   });
 
+  // SPEC-15.1.3
+  test('checkNow() goes offline immediately on a single failed /health call, without waiting for the failure threshold', async () => {
+    const fetchMock = jest.fn().mockRejectedValue(new Error('connection refused'));
+    global.fetch = fetchMock;
+
+    const onOffline = jest.fn();
+    const monitor = createApiHealthMonitor({
+      getDownloaderApiUrl: () => 'http://localhost:3000',
+      onOffline,
+      failureThreshold: 2,
+    });
+
+    expect(monitor.isOffline()).toBe(false);
+    await monitor.checkNow();
+
+    expect(monitor.isOffline()).toBe(true);
+    expect(onOffline).toHaveBeenCalledTimes(1);
+
+    monitor.destroy();
+    delete global.fetch;
+  });
+
+  // SPEC-15.1.3
+  test('checkNow() stays online when /health responds ok', async () => {
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true });
+    global.fetch = fetchMock;
+
+    const monitor = createApiHealthMonitor({
+      getDownloaderApiUrl: () => 'http://localhost:3000',
+    });
+
+    await monitor.checkNow();
+
+    expect(monitor.isOffline()).toBe(false);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3000/health',
+      expect.objectContaining({}),
+    );
+
+    monitor.destroy();
+    delete global.fetch;
+  });
+
   test('destroy stops probing', () => {
     const onOnline = jest.fn();
     const fetchMock = jest.fn().mockResolvedValue({ ok: true });
