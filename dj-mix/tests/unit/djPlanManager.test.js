@@ -14,11 +14,21 @@ function makeDjApiClient(overrides = {}) {
   };
 }
 
-function makeFakeFilRouge(playlist, { loopEnabled = false, currentIndex = -1 } = {}) {
+function makeFakeFilRouge(playlist, { loopEnabled = false, currentIndex = -1, extraTrackableItems = [] } = {}) {
+  // Mimics the shared trackStore: patchTrackById can reach any known item
+  // (fil rouge playlist or queue-only), unlike patchPlaylistItem which only
+  // finds items currently sitting in `playlist`.
+  const allKnownItems = [...playlist, ...extraTrackableItems];
   return {
     getPlaylist: () => playlist.slice(),
     patchPlaylistItem: jest.fn((id, patch) => {
       const item = playlist.find((p) => p.id === id);
+      if (!item) return false;
+      Object.assign(item, patch);
+      return true;
+    }),
+    patchTrackById: jest.fn((id, patch) => {
+      const item = allKnownItems.find((p) => p.id === id);
       if (!item) return false;
       Object.assign(item, patch);
       return true;
@@ -45,7 +55,7 @@ describe('djPlanManager', () => {
 
       expect(item.djTrackId).toBe('/music/a.mp3');
       expect(item.djHasAnalysis).toBe(true);
-      expect(fr.patchPlaylistItem).toHaveBeenCalledWith('1', { djTrackId: '/music/a.mp3', djHasAnalysis: true });
+      expect(fr.patchTrackById).toHaveBeenCalledWith('1', { djTrackId: '/music/a.mp3', djHasAnalysis: true });
     });
 
     test('resolves via basename of cachePath when the full path does not match', async () => {
@@ -95,7 +105,7 @@ describe('djPlanManager', () => {
       await mgr.resolveTrackIdsForItems([item]);
 
       expect(item.djTrackId).toBeNull();
-      expect(fr.patchPlaylistItem).not.toHaveBeenCalled();
+      expect(fr.patchTrackById).not.toHaveBeenCalled();
     });
   });
 
@@ -722,6 +732,104 @@ describe('djPlanManager', () => {
 
       expect(result).toEqual({ ok: true });
       expect(fetchTracksCallCount).toBe(2);
+    });
+
+    test('prefers the queue\'s next track over the fil rouge playlist order when it diverges', async () => {
+      const trackSummaries = [
+        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
+        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
+        { trackId: 'c.mp3', trackName: 'C', artistName: 'Z', hasFullAnalysis: true },
+      ];
+      const transitionResult = {
+        transitionType: 'phrase_mix',
+        mixOutSec: 100,
+        mixInSec: 4,
+        recommendedBpm: 126,
+        crossfadeDurationSec: 6,
+        compatibilityScore: 0.9,
+        decisionId: 'd3',
+      };
+      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
+      const itemBInFilRouge = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false };
+      const itemCInQueue = { id: '3', name: 'C', artist: 'Z', cachePath: 'c.mp3', djTrackId: null, djHasAnalysis: false };
+      // Fil rouge order says A -> B, but the actual playback queue says A -> C
+      // (e.g. a track was manually inserted between them). itemCInQueue lives
+      // only in the queue, not the fil rouge playlist (extraTrackableItems
+      // mimics the shared trackStore record it'd have there in production).
+      const fr = makeFakeFilRouge([itemA, itemBInFilRouge], { extraTrackableItems: [itemCInQueue] });
+      const queue = [itemA, itemCInQueue];
+      const djApiClient = makeDjApiClient({
+        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
+        fetchTransition: jest.fn().mockResolvedValue(transitionResult),
+      });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr, getQueue: () => queue });
+
+      const result = await mgr.planCurrentToNextTransition(itemA);
+
+      expect(result).toEqual({ ok: true });
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'c.mp3', undefined);
+      expect(itemA.djTransition.toItemId).toBe('3');
+    });
+
+    test('computes the transition against the queue successor even when current item is last in the fil rouge playlist', async () => {
+      const trackSummaries = [
+        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
+        { trackId: 'c.mp3', trackName: 'C', artistName: 'Z', hasFullAnalysis: true },
+      ];
+      const transitionResult = {
+        transitionType: 'quick_cut',
+        mixOutSec: 50,
+        mixInSec: 2,
+        recommendedBpm: 130,
+        crossfadeDurationSec: 3,
+        compatibilityScore: 0.6,
+        decisionId: 'd4',
+      };
+      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
+      const itemCInQueue = { id: '3', name: 'C', artist: 'Z', cachePath: 'c.mp3', djTrackId: null, djHasAnalysis: false };
+      // itemA is the last (and only) fil rouge item, but the queue still has a
+      // track playing after it (e.g. manually queued, not part of the fil rouge crate).
+      const fr = makeFakeFilRouge([itemA], { extraTrackableItems: [itemCInQueue] });
+      const queue = [itemA, itemCInQueue];
+      const djApiClient = makeDjApiClient({
+        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
+        fetchTransition: jest.fn().mockResolvedValue(transitionResult),
+      });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr, getQueue: () => queue });
+
+      const result = await mgr.planCurrentToNextTransition(itemA);
+
+      expect(result).toEqual({ ok: true });
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'c.mp3', undefined);
+    });
+
+    test('falls back to the fil rouge playlist order when current item is not present in the queue', async () => {
+      const trackSummaries = [
+        { trackId: 'a.mp3', trackName: 'A', artistName: 'X', hasFullAnalysis: true },
+        { trackId: 'b.mp3', trackName: 'B', artistName: 'Y', hasFullAnalysis: true },
+      ];
+      const transitionResult = {
+        transitionType: 'phrase_mix',
+        mixOutSec: 90,
+        mixInSec: 3,
+        recommendedBpm: 124,
+        crossfadeDurationSec: 5,
+        compatibilityScore: 0.75,
+        decisionId: 'd5',
+      };
+      const itemA = { id: '1', name: 'A', artist: 'X', cachePath: 'a.mp3', djTrackId: null, djHasAnalysis: false };
+      const itemB = { id: '2', name: 'B', artist: 'Y', cachePath: 'b.mp3', djTrackId: null, djHasAnalysis: false };
+      const fr = makeFakeFilRouge([itemA, itemB]);
+      const djApiClient = makeDjApiClient({
+        fetchTracks: jest.fn().mockResolvedValue(trackSummaries),
+        fetchTransition: jest.fn().mockResolvedValue(transitionResult),
+      });
+      const mgr = createDjPlanManager({ djApiClient, getFilRougeManager: () => fr, getQueue: () => [] });
+
+      const result = await mgr.planCurrentToNextTransition(itemA);
+
+      expect(result).toEqual({ ok: true });
+      expect(djApiClient.fetchTransition).toHaveBeenCalledWith('a.mp3', 'b.mp3', undefined);
     });
   });
 

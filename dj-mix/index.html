@@ -303,7 +303,9 @@
         <div class="filrouge-controls filrouge-controls--djplanner">
           <label class="filrouge-profile-field" for="dj-planner-style-input">
             Style
-            <input type="text" id="dj-planner-style-input" class="filrouge-profile-select" placeholder="house, techno, disco..." autocomplete="off" spellcheck="false">
+            <select id="dj-planner-style-input" class="filrouge-profile-select">
+              <option value="">— Choisir un style —</option>
+            </select>
           </label>
           <button id="dj-planner-style-btn" type="button" class="deck-launch-btn" title="Idées de progression pour ce style (dj-planner)">Idées de progression</button>
           <button id="dj-planner-optimize-btn" type="button" class="deck-launch-btn" title="Optimiser l'ordre du fil rouge via dj-planner (POST /v1/playlist-plans)">Optimiser via dj-planner</button>

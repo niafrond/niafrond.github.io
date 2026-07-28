@@ -218,4 +218,57 @@ describe('computeDjPlanIndicatorState', () => {
       expect(result.state).toBe('no-track');
     });
   });
+
+  describe('nextItem resolution across the fil rouge playlist and the queue', () => {
+    test('ready: resolves nextItem from the queue when absent from the playlist', () => {
+      const t = makeTransition('99');
+      const item = makeItem(1, { djTransition: t });
+      const queueOnlyNext = makeItem(99);
+      const result = computeDjPlanIndicatorState({
+        enabled: true,
+        playlist: [item],
+        queue: [item, queueOnlyNext],
+        playingId: '1',
+        currentIndex: 0,
+      });
+      expect(result.state).toBe('ready');
+      expect(result.nextItem).toBe(queueOnlyNext);
+    });
+
+    test('playlist match takes priority over a same-id queue match', () => {
+      const t = makeTransition('2');
+      const item = makeItem(1, { djTransition: t });
+      const nextInPlaylist = makeItem(2, { name: 'From playlist' });
+      const nextInQueue = makeItem(2, { name: 'From queue' });
+      const result = computeDjPlanIndicatorState({
+        enabled: true,
+        playlist: [item, nextInPlaylist],
+        queue: [item, nextInQueue],
+        playingId: '1',
+        currentIndex: 0,
+      });
+      expect(result.state).toBe('ready');
+      expect(result.nextItem).toBe(nextInPlaylist);
+    });
+
+    test('next-not-found: toItemId missing from both the playlist and the queue', () => {
+      const t = makeTransition('999');
+      const item = makeItem(1, { djTransition: t });
+      const result = computeDjPlanIndicatorState({
+        enabled: true,
+        playlist: [item],
+        queue: [item],
+        playingId: '1',
+        currentIndex: 0,
+      });
+      expect(result.state).toBe('next-not-found');
+    });
+
+    test('queue defaults to an empty array when omitted (backward compatible)', () => {
+      const t = makeTransition('999');
+      const item = makeItem(1, { djTransition: t });
+      const result = computeDjPlanIndicatorState({ enabled: true, playlist: [item], playingId: '1', currentIndex: 0 });
+      expect(result.state).toBe('next-not-found');
+    });
+  });
 });

@@ -233,6 +233,20 @@ describe('djPlannerClient', () => {
     });
   });
 
+  describe('fetchAvailableStyles', () => {
+    test('gets /v1/styles', async () => {
+      const response = { styles: ['house', 'techno', 'disco'] };
+      global.fetch = jest.fn().mockResolvedValue(jsonResponse(200, response));
+      const { client } = makeClient();
+
+      const result = await client.fetchAvailableStyles();
+
+      expect(result).toEqual({ ok: true, status: 200, data: response });
+      const [url] = global.fetch.mock.calls[0];
+      expect(url).toBe('http://vision:8080/api/dj-planner/v1/styles');
+    });
+  });
+
   describe('importPersonalHistory', () => {
     test('posts dj_name/entries and optional event/date/source_url', async () => {
       const response = { set_id: 'set-1', tracks_recognized: 2, tracks_unmatched: 0, transitions_added: 1 };

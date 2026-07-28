@@ -15,10 +15,13 @@
 
 const AVAILABILITY_RECHECK_MS = 30_000;
 const MAX_DECISION_AGE_MS = 24 * 60 * 60 * 1000;
+const STYLES_CACHE_MS = 5 * 60 * 1000;
 
 export function createDjPlannerManager({ djPlannerClient, getFilRougeManager, logger } = {}) {
   let _available = null; // null = not yet probed
   let _availabilityCheckedAt = 0;
+  let _stylesCache = null;
+  let _stylesCachedAt = 0;
 
   function filRouge() {
     return getFilRougeManager?.();
@@ -138,6 +141,22 @@ export function createDjPlannerManager({ djPlannerClient, getFilRougeManager, lo
   }
 
   /**
+   * Cached for `STYLES_CACHE_MS` since the available style list rarely changes
+   * mid-session — avoids re-fetching every time the style panel is opened.
+   * @returns {Promise<string[]>} list of available styles, empty if unavailable/failed
+   */
+  async function getAvailableStyles() {
+    if (_stylesCache && (Date.now() - _stylesCachedAt) < STYLES_CACHE_MS) return _stylesCache;
+    const available = await ensureAvailability();
+    if (!available) return [];
+    const res = await djPlannerClient.fetchAvailableStyles();
+    const styles = res.ok && Array.isArray(res.data?.styles) ? res.data.styles : [];
+    _stylesCache = styles;
+    _stylesCachedAt = Date.now();
+    return styles;
+  }
+
+  /**
    * @param {string[]} trackIds
    * @param {{lockedPositions?: Array, allowException?: boolean}} [options]
    * @returns {Promise<object|null>} `PlaylistPlan`, or `null` if unavailable/failed
@@ -181,6 +200,7 @@ export function createDjPlannerManager({ djPlannerClient, getFilRougeManager, lo
     getObservedTransition,
     planObservedTransitionForEdge,
     getStyleProgressions,
+    getAvailableStyles,
     createPlaylistPlan,
     updatePlaylistPlan,
     importPersonalHistory,

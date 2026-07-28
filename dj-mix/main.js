@@ -3431,6 +3431,7 @@ const filRougeCtrl = createFilRougeController({
   getDownloaderApiUrl,
   getDownloaderApiToken,
   getTrackMaxDurationAppliedSec: () => settingsCtrl.getTrackMaxDurationAppliedSec(),
+  getQueue: () => queue,
 });
 
 const deckMarkerCtrl = createDeckMarkerController({

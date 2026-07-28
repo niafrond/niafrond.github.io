@@ -616,13 +616,86 @@ describe('updateDjPlanIndicator — dj-planner block', () => {
     expect(djPlanIndicatorEl.querySelector('.dj-plan-card')).not.toBeNull();
     expect(djPlanIndicatorEl.querySelector('.dj-planner-block')).toBeNull();
   });
+
+  test('renders "ready" using the queue\'s next item when it is absent from the fil rouge playlist (SPEC-8.5.8)', () => {
+    const current = {
+      id: 1,
+      name: 'Track A',
+      artist: 'Artist A',
+      djTrackId: 'a.mp3',
+      djTransition: {
+        toItemId: 99,
+        transitionType: 'phrase_mix',
+        mixOutSec: 10,
+        mixInSec: 5,
+        crossfadeDurationSec: 6,
+        compatibilityScore: 0.8,
+        decisionId: 'd1',
+        computedAt: Date.now(),
+      },
+    };
+    const queueOnlyNext = { id: 99, name: 'Track Q', artist: 'Artist Q', djTrackId: 'q.mp3' };
+    // The fil rouge playlist only contains `current` — the real next track was
+    // queued manually and never made it into the fil rouge playlist.
+    const fr = makeFilRougeManager([current]);
+    uiState.currentTrackId = 1;
+    const djPlanIndicatorEl = document.createElement('div');
+    const ctrl = makeController({
+      filRougeManager: fr,
+      djPlanIndicatorEl,
+      getDjExternalPlanEnabled: jest.fn().mockReturnValue(true),
+      getQueue: jest.fn().mockReturnValue([current, queueOnlyNext]),
+    });
+
+    ctrl.updateDjPlanIndicator();
+
+    expect(djPlanIndicatorEl.querySelector('.dj-plan-card')).not.toBeNull();
+    expect(djPlanIndicatorEl.querySelector('.dj-plan-card--pending')).toBeNull();
+    expect(djPlanIndicatorEl.textContent).not.toContain('introuvable');
+  });
+
+  test('shows "next-not-found" when the next item is absent from both the fil rouge playlist and the queue', () => {
+    const current = {
+      id: 1,
+      name: 'Track A',
+      artist: 'Artist A',
+      djTrackId: 'a.mp3',
+      djTransition: {
+        toItemId: 99,
+        transitionType: 'phrase_mix',
+        mixOutSec: 10,
+        mixInSec: 5,
+        crossfadeDurationSec: 6,
+        compatibilityScore: 0.8,
+        decisionId: 'd1',
+        computedAt: Date.now(),
+      },
+    };
+    const fr = makeFilRougeManager([current]);
+    uiState.currentTrackId = 1;
+    const djPlanIndicatorEl = document.createElement('div');
+    const ctrl = makeController({
+      filRougeManager: fr,
+      djPlanIndicatorEl,
+      getDjExternalPlanEnabled: jest.fn().mockReturnValue(true),
+      getQueue: jest.fn().mockReturnValue([current]),
+    });
+
+    ctrl.updateDjPlanIndicator();
+
+    expect(djPlanIndicatorEl.textContent).toContain('introuvable');
+  });
 });
 
 // ── initDjPlannerStylePanel (fetchStyleProgressions, SPEC-8.8) ──────────────
 
 describe('initDjPlannerStylePanel', () => {
   function setup(djPlannerManager) {
-    const styleInputEl = document.createElement('input');
+    const styleInputEl = document.createElement('select');
+    const placeholderOpt = document.createElement('option');
+    placeholderOpt.value = '';
+    placeholderOpt.textContent = '— Choisir un style —';
+    styleInputEl.appendChild(placeholderOpt);
     const styleBtnEl = document.createElement('button');
     const panelEl = document.createElement('div');
     panelEl.hidden = true;
@@ -630,6 +703,15 @@ describe('initDjPlannerStylePanel', () => {
     const ctrl = makeController({ djPlannerManager, showToast });
     ctrl.initDjPlannerStylePanel(styleInputEl, styleBtnEl, panelEl);
     return { styleInputEl, styleBtnEl, panelEl, showToast };
+  }
+
+  // <select>.value is a no-op without a matching <option> (unlike <input>) —
+  // tests that need a selected style must add it first.
+  function selectStyle(styleInputEl, value) {
+    const opt = document.createElement('option');
+    opt.value = value;
+    styleInputEl.appendChild(opt);
+    styleInputEl.value = value;
   }
 
   test('shows a toast and does not call the manager when the style input is empty', async () => {
@@ -643,9 +725,40 @@ describe('initDjPlannerStylePanel', () => {
     expect(djPlannerManager.getStyleProgressions).not.toHaveBeenCalled();
   });
 
+  test('populates the <select> with the available styles on init', async () => {
+    const djPlannerManager = {
+      getStyleProgressions: jest.fn(),
+      getAvailableStyles: jest.fn().mockResolvedValue(['house', 'techno']),
+    };
+    const { styleInputEl } = setup(djPlannerManager);
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const values = Array.from(styleInputEl.options).map((o) => o.value);
+    expect(values).toEqual(['', 'house', 'techno']);
+  });
+
+  test('leaves only the placeholder option when getAvailableStyles resolves empty', async () => {
+    const djPlannerManager = {
+      getStyleProgressions: jest.fn(),
+      getAvailableStyles: jest.fn().mockResolvedValue([]),
+    };
+    const { styleInputEl } = setup(djPlannerManager);
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(styleInputEl.options.length).toBe(1);
+  });
+
+  test('does not throw when djPlannerManager has no getAvailableStyles (not provided)', () => {
+    expect(() => setup(null)).not.toThrow();
+  });
+
   test('shows a toast when djPlannerManager is not provided', async () => {
     const { styleInputEl, styleBtnEl, showToast } = setup(null);
-    styleInputEl.value = 'house';
+    selectStyle(styleInputEl, 'house');
 
     styleBtnEl.click();
     await Promise.resolve();
@@ -663,7 +776,7 @@ describe('initDjPlannerStylePanel', () => {
     };
     const djPlannerManager = { getStyleProgressions: jest.fn().mockResolvedValue(response) };
     const { styleInputEl, styleBtnEl, panelEl } = setup(djPlannerManager);
-    styleInputEl.value = 'house';
+    selectStyle(styleInputEl, 'house');
 
     styleBtnEl.click();
     await Promise.resolve();
@@ -679,7 +792,7 @@ describe('initDjPlannerStylePanel', () => {
   test('shows an empty-state message when the manager resolves to null', async () => {
     const djPlannerManager = { getStyleProgressions: jest.fn().mockResolvedValue(null) };
     const { styleInputEl, styleBtnEl, panelEl } = setup(djPlannerManager);
-    styleInputEl.value = 'house';
+    selectStyle(styleInputEl, 'house');
 
     styleBtnEl.click();
     await Promise.resolve();

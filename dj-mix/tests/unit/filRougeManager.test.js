@@ -298,6 +298,33 @@ describe('filRougeManager', () => {
       expect(mgr.getPlaylist()).toHaveLength(0);
       expect(trackStore.get('pre-existing')).not.toBeNull();
     });
+
+    test('patchTrackById patches a record that only lives in the queue, not the fil rouge playlist', () => {
+      const trackStore = createTrackStore();
+      const mgr = createFilRougeManager({ trackStore });
+      // Simulates a track added to the queue (getOrCreate) that never joined
+      // the fil rouge playlist — patchPlaylistItem could not reach it.
+      trackStore.getOrCreate({ id: 'queue-only', name: 'Song Q', artist: 'Q' });
+
+      const patched = mgr.patchTrackById('queue-only', { djTrackId: 'q.mp3', djHasAnalysis: true });
+
+      expect(patched).toBe(true);
+      expect(trackStore.get('queue-only').djTrackId).toBe('q.mp3');
+    });
+
+    test('patchPlaylistItem returns false for a queue-only track, unlike patchTrackById', () => {
+      const trackStore = createTrackStore();
+      const mgr = createFilRougeManager({ trackStore });
+      trackStore.getOrCreate({ id: 'queue-only', name: 'Song Q', artist: 'Q' });
+
+      expect(mgr.patchPlaylistItem('queue-only', { djTrackId: 'q.mp3' })).toBe(false);
+      expect(trackStore.get('queue-only').djTrackId).toBeNull();
+    });
+
+    test('patchTrackById returns false for an id with no trackStore record at all', () => {
+      const mgr = createFilRougeManager({ trackStore: createTrackStore() });
+      expect(mgr.patchTrackById('unknown', { djTrackId: 'x.mp3' })).toBe(false);
+    });
   });
 
   describe('getNextTrack / peekNextTrackFromAny return live references', () => {

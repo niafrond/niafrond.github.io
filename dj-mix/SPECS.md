@@ -223,6 +223,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-2.6.7** GIVEN un enregistrement persisté `dj-mix:queue`/`dj-mix:fil-rouge` au format antérieur (contenant les métadonnées complètes au lieu d'une simple référence `id`) — WHEN il est restauré après mise à jour de l'application — THEN ses champs sont capturés dans le trackStore via `getOrCreate` plutôt que perdus ; la restauration tolère indifféremment l'ancien format riche et le nouveau format allégé.
 - **SPEC-2.6.8** GIVEN un morceau n'est plus référencé par aucune liste (Queue, playlist Fil Rouge, priorityQueue Fil Rouge) — WHEN un balayage périodique (`trackStore.pruneUnreferenced`, toutes les `10 min` après un premier passage au démarrage) s'exécute — THEN son enregistrement est retiré du trackStore, pour éviter une croissance illimitée de `dj-mix:tracks`.
 - **SPEC-2.6.9** GIVEN un `artUrl` de type `blob:` (URL objet issue de `restoreArtwork`/Cache Storage, révoquée dès que le document qui l'a créée se décharge) — WHEN `trackStore.save()` sérialise l'enregistrement, OU `trackStore.restore()` charge une entrée déjà persistée avec un tel `artUrl` — THEN ce champ est vidé (`''`) plutôt que persisté/restauré tel quel, afin que le code appelant (`fetchAndStoreArtworkForItem`/`fetchFilRougeArtwork`) le traite comme « artwork manquant » et le retélécharge (Cache Storage → cache d'URLs artwork → API/CDN) au lieu d'afficher une pochette cassée indéfiniment. La valeur en mémoire (session en cours) n'est pas altérée, seule la copie persistée l'est.
+- **SPEC-2.6.10** `filRougeManager.patchTrackById(id, patch)` patche l'enregistrement `id` du trackStore partagé directement (`trackStore.patch`), sans vérifier son appartenance à la playlist fil rouge — contrairement à `patchPlaylistItem(id, patch)`, qui retourne `false` (no-op) si `id` n'est pas dans `playlist`, même si un enregistrement existe par ailleurs dans le trackStore (ex. morceau présent uniquement dans la Queue). Utilisé par `djPlanManager.resolveTrackIdsForItems` (SPEC-8.5.9) pour résoudre `djTrackId`/`djHasAnalysis` sur un morceau suivant queue-only.
 
 ---
 
@@ -596,6 +597,9 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-8.5.5** GIVEN le bouton Recalculer cliqué — WHEN le calcul échoue — THEN un toast d'erreur spécifique à la raison est affiché (et non un toast de succès trompeur).
 - **SPEC-8.5.6** Le morceau de référence pour le calcul (bouton Recalculer et passe initiale `runDjPlanFullPass`) est déterminé en priorité par `uiState.currentTrackId` (chanson en cours de lecture), avec repli sur `filRougeManager.getCurrentIndex()` si aucun morceau n'est en cours. Cela garantit que la transition calculée est toujours celle du morceau joué vers le suivant, même si l'index fil rouge a déjà avancé lors du préchargement.
 - **SPEC-8.5.7** Les champs `trackA` et `trackB` envoyés dans le body du POST `/api/dj/transition` sont les filenames complets incluant l'extension `.mp3` (ex : `"Outkast - Hey Ya!.mp3"`), conformément au swagger backend. `djApiClient.fetchTransition` les transmet tels quels sans modification.
+- **SPEC-8.5.8** `planCurrentToNextTransition` détermine le morceau suivant réel en priorité via la file d'attente (`getQueue()`) : si `currentItem` s'y trouve, le morceau suivant est `queue[queueIdx + 1]` (si présent), sinon on retombe sur `playlist[currentIdx + 1]` (ordre brut du fil rouge). Ceci couvre le cas où la file d'attente diverge de l'ordre du fil rouge (ajout manuel entre deux morceaux, morceaux déjà enchaînés, etc.) — la suggestion de mix porte alors sur le morceau réellement joué ensuite, qu'il appartienne ou non au fil rouge. `currentItem` doit néanmoins toujours appartenir au fil rouge (raison `'not-in-playlist'` sinon) ; seul le morceau *suivant* peut être queue-only.
+- **SPEC-8.5.9** Le morceau suivant résolu par SPEC-8.5.8 peut donc être absent de la playlist fil rouge (queue-only) : `resolveTrackIdsForItems` persiste alors `djTrackId`/`djHasAnalysis` via `filRougeManager.patchTrackById(id, patch)` — qui patche l'enregistrement du trackStore partagé (Queue et Fil Rouge) sans exiger l'appartenance à la playlist fil rouge — plutôt que via `patchPlaylistItem(id, patch)`, qui retourne silencieusement `false` (no-op) si l'id n'est pas dans `playlist`. Sans ce changement, la résolution de trackId d'un morceau suivant queue-only échouait systématiquement (`'unresolved-tracks'`).
+- **SPEC-8.5.10** `computeDjPlanIndicatorState` (`lib/djPlanIndicator.js`) résout `nextItem` (via `djTransition.toItemId`) en cherchant d'abord dans la playlist fil rouge, puis dans la file d'attente (`queue`, paramètre optionnel par défaut `[]`) si absent de la première. Ceci évite un état `next-not-found` trompeur (« Morceau suivant introuvable dans la playlist ») pour une transition pourtant valide calculée par SPEC-8.5.8/8.5.9 vers un morceau queue-only. `filRougeController.js` passe `getQueue()` à cet appel (`createFilRougeController({ getQueue, ... })`).
 
 ### 8.6 Calcul des transitions à la volée (une par une, 10 en avance)
 
@@ -718,16 +722,23 @@ par §8.1–8.7, qui reste inchangé et continue seul à piloter `mixOutSec`/`mi
 - **SPEC-8.8.11.1** Remplace l'ancien sélecteur "Profil de set" (`#dj-set-profile-select`),
   constaté 100% mort : sa valeur (`dj-mix:dj-api:set-profile`) n'était lue par aucun calcul de
   transition depuis le retrait de `/api/dj/batch` (le seul appelant de `profile`, SPEC-8.6.3).
-- **SPEC-8.8.11.2** Nouveaux éléments dans l'onglet Fil rouge : `#dj-planner-style-input` (texte
-  libre — aucun endpoint ne liste les styles valides, contrairement à l'ancien
-  `/api/dj/set-profiles` à énumération fixe) et `#dj-planner-style-btn`.
-- **SPEC-8.8.11.3** GIVEN le champ style est vide — WHEN le bouton est cliqué — THEN un toast
-  d'erreur est affiché, aucun appel API. GIVEN `djPlannerManager` absent — THEN toast
-  "indisponible", aucun appel.
+- **SPEC-8.8.11.2** Nouveaux éléments dans l'onglet Fil rouge : `#dj-planner-style-input`
+  (`<select>`, une seule option statique `""` = « — Choisir un style — ») et `#dj-planner-style-btn`.
+- **SPEC-8.8.11.3** GIVEN le champ style est vide (ou l'option placeholder est sélectionnée) —
+  WHEN le bouton est cliqué — THEN un toast d'erreur est affiché, aucun appel API. GIVEN
+  `djPlannerManager` absent — THEN toast "indisponible", aucun appel.
 - **SPEC-8.8.11.4** GIVEN un style renseigné — THEN `#dj-planner-progressions-panel` est démasqué et
   affiche un état "Recherche en cours…", puis soit la liste des `recurring_progressions`
   (séquence de morceaux, `occurrence_count`, nombre de DJ) et `associated_labels` (chips), soit un
   message vide si aucune progression connue ou si l'API échoue/est indisponible.
+- **SPEC-8.8.11.5** `initDjPlannerStylePanel` peuple `#dj-planner-style-input` au démarrage via
+  `djPlannerManager.getAvailableStyles()` (`GET /v1/styles`, résultat `{styles: string[]}`) —
+  endpoint apparu après la rédaction de SPEC-8.8.11.1/8.8.11.2 (qui décrivaient un champ texte
+  libre faute d'énumération disponible côté API à l'époque). `getAvailableStyles()`
+  (`djPlannerManager.js`) est caché en mémoire `STYLES_CACHE_MS` (5 min) pour éviter un
+  ré-appel à chaque ouverture du panneau. Si l'API est indisponible ou renvoie une liste vide, le
+  `<select>` ne conserve que l'option placeholder — dégradation silencieuse, cohérente avec le
+  reste de l'intégration dj-planner (§2 : jamais d'échec bloquant).
 
 ### 8.8.12 Optimisation de playlist (`POST /v1/playlist-plans`, `PATCH .../{plan_id}`)
 

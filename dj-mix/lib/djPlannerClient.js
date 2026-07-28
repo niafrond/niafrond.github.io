@@ -138,6 +138,13 @@ export function createDjPlannerClient({ getDjPlannerUrl, healthMonitor, logger }
   }
 
   /**
+   * @returns {Promise<{ok:boolean, status:number, data:(object|null)}>} `data` is an `AvailableStylesResponse` (`{styles: string[]}`)
+   */
+  function fetchAvailableStyles() {
+    return _get('/v1/styles');
+  }
+
+  /**
    * @returns {Promise<{ok:boolean, status:number, data:(object|null)}>} `data` is a `PersonalHistoryImportResponse`
    */
   function importPersonalHistory({ djName, entries, event, date, sourceUrl } = {}) {
@@ -156,6 +163,7 @@ export function createDjPlannerClient({ getDjPlannerUrl, healthMonitor, logger }
     updatePlaylistPlan,
     fetchObservedTransition,
     fetchStyleProgressions,
+    fetchAvailableStyles,
     importPersonalHistory,
   };
 }

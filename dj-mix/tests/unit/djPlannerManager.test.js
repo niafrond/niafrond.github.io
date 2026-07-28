@@ -252,6 +252,49 @@ describe('djPlannerManager', () => {
     });
   });
 
+  describe('getAvailableStyles', () => {
+    test('returns an empty array when the backend is unavailable', async () => {
+      const client = { checkHealth: jest.fn().mockResolvedValue(false), fetchAvailableStyles: jest.fn() };
+      const { manager } = makeManager({ djPlannerClient: client });
+
+      expect(await manager.getAvailableStyles()).toEqual([]);
+      expect(client.fetchAvailableStyles).not.toHaveBeenCalled();
+    });
+
+    test('returns the styles list on success', async () => {
+      const client = {
+        checkHealth: jest.fn().mockResolvedValue(true),
+        fetchAvailableStyles: jest.fn().mockResolvedValue({ ok: true, status: 200, data: { styles: ['house', 'techno'] } }),
+      };
+      const { manager } = makeManager({ djPlannerClient: client });
+
+      expect(await manager.getAvailableStyles()).toEqual(['house', 'techno']);
+    });
+
+    test('returns an empty array when the response has no styles field', async () => {
+      const client = {
+        checkHealth: jest.fn().mockResolvedValue(true),
+        fetchAvailableStyles: jest.fn().mockResolvedValue({ ok: false, status: 500, data: null }),
+      };
+      const { manager } = makeManager({ djPlannerClient: client });
+
+      expect(await manager.getAvailableStyles()).toEqual([]);
+    });
+
+    test('caches the result and does not re-fetch on a second call', async () => {
+      const client = {
+        checkHealth: jest.fn().mockResolvedValue(true),
+        fetchAvailableStyles: jest.fn().mockResolvedValue({ ok: true, status: 200, data: { styles: ['house'] } }),
+      };
+      const { manager } = makeManager({ djPlannerClient: client });
+
+      await manager.getAvailableStyles();
+      await manager.getAvailableStyles();
+
+      expect(client.fetchAvailableStyles).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('createPlaylistPlan / updatePlaylistPlan', () => {
     test('createPlaylistPlan returns null when the backend is unavailable', async () => {
       const client = { checkHealth: jest.fn().mockResolvedValue(false), createPlaylistPlan: jest.fn() };

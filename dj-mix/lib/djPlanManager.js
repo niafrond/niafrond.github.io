@@ -129,7 +129,11 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
 
   /**
    * Resolves trackIds for a batch of items and persists `djTrackId`/`djHasAnalysis`
-   * on each (via `patchPlaylistItem`, only when changed).
+   * on each (via `patchTrackById`, only when changed). Uses `patchTrackById` rather
+   * than `patchPlaylistItem` because `items` may include a track that only lives in
+   * the playback queue (not the fil rouge playlist) — e.g. the real next-up track
+   * resolved by `planCurrentToNextTransition` via `getQueue`. Both still resolve to
+   * the same shared trackStore record, so `patchPlaylistItem` would silently no-op.
    * @param {Array} items
    * @returns {Promise<Map<string|number, {trackId: string, hasFullAnalysis: boolean}|null>>}
    */
@@ -147,7 +151,7 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
       const nextDjTrackId = resolution ? resolution.trackId : null;
       const nextDjHasAnalysis = resolution ? Boolean(resolution.hasFullAnalysis) : false;
       if (item.djTrackId !== nextDjTrackId || Boolean(item.djHasAnalysis) !== nextDjHasAnalysis) {
-        fr?.patchPlaylistItem(item.id, { djTrackId: nextDjTrackId, djHasAnalysis: nextDjHasAnalysis });
+        fr?.patchTrackById(item.id, { djTrackId: nextDjTrackId, djHasAnalysis: nextDjHasAnalysis });
       }
     }
 
@@ -411,9 +415,11 @@ export function createDjPlanManager({ djApiClient, getFilRougeManager, getQueue,
   }
 
   /**
-   * Computes the transition from a current item to its successor in the playlist,
-   * called by the "recalculate" action. Forces fresh computation regardless of memoization.
-   * @param {object} currentItem - the currently playing item
+   * Computes the transition from a current item to its real successor — the next
+   * track in the playback queue when it diverges from the fil rouge playlist order,
+   * otherwise the fil rouge successor. Called by the "recalculate" action. Forces
+   * fresh computation regardless of memoization.
+   * @param {object} currentItem - the currently playing item (must be a fil rouge playlist item)
    * @param {{force?: boolean}} [options] - force=true relaxes djHasAnalysis guard and retries track resolution
    * @returns {Promise<{ok: boolean, reason?: string}>}
    */

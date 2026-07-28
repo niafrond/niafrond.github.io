@@ -60,6 +60,7 @@ export function createFilRougeController(options) {
     getDownloaderApiUrl = null,
     getDownloaderApiToken = null,
     getTrackMaxDurationAppliedSec = null,
+    getQueue = null,
   } = options;
 
   // ── Private state ────────────────────────────────────────────────────────────
@@ -246,11 +247,27 @@ export function createFilRougeController(options) {
     return `${labelsHtml}<ul class="dj-planner-progressions-list">${itemsHtml}</ul>`;
   }
 
+  function populateDjPlannerStyleOptions(styleSelectEl) {
+    if (!styleSelectEl || !djPlannerManager?.getAvailableStyles) return;
+    djPlannerManager.getAvailableStyles().then((styles) => {
+      if (!Array.isArray(styles) || !styles.length) return;
+      const previousValue = styleSelectEl.value;
+      styles.forEach((style) => {
+        const opt = document.createElement('option');
+        opt.value = style;
+        opt.textContent = style;
+        styleSelectEl.appendChild(opt);
+      });
+      if (previousValue) styleSelectEl.value = previousValue;
+    });
+  }
+
   function initDjPlannerStylePanel(styleInputEl, styleBtnEl, panelEl) {
     if (!styleInputEl || !styleBtnEl || !panelEl) return;
+    populateDjPlannerStyleOptions(styleInputEl);
     styleBtnEl.addEventListener('click', async () => {
       const style = (styleInputEl.value || '').trim();
-      if (!style) { showToast('Entrez un style (ex. house, techno...)', true); return; }
+      if (!style) { showToast('Choisissez un style', true); return; }
       if (!djPlannerManager) { showToast('dj-planner indisponible', true); return; }
       panelEl.hidden = false;
       panelEl.innerHTML = '<p class="dj-planner-progressions-empty">Recherche en cours…</p>';
@@ -375,6 +392,7 @@ export function createFilRougeController(options) {
     const indicatorState = computeDjPlanIndicatorState({
       enabled: getDjExternalPlanEnabled(),
       playlist: filRougeManager.getPlaylist(),
+      queue: getQueue?.() || [],
       playingId: uiState.currentTrackId,
       currentIndex: filRougeManager.getCurrentIndex(),
     });

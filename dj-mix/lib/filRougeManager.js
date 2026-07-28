@@ -237,6 +237,20 @@ export function createFilRougeManager(options = {}) {
   }
 
   /**
+   * Met à jour des champs d'un morceau du trackStore partagé, qu'il soit
+   * actuellement dans la playlist fil rouge ou non (ex: uniquement dans la
+   * file d'attente). Contrairement à `patchPlaylistItem`, ne vérifie pas
+   * l'appartenance à `playlist` — seule l'existence de l'enregistrement dans
+   * le trackStore partagé (Queue et Fil Rouge) est requise.
+   * @param {string|number} id
+   * @param {Partial<FilRougeItem>} patch
+   * @returns {boolean} true si l'enregistrement existait et a été modifié
+   */
+  function patchTrackById(id, patch) {
+    return trackStore.patch(id, patch);
+  }
+
+  /**
    * Vide la playlist fil rouge.
    */
   function clearPlaylist() {
@@ -456,6 +470,7 @@ export function createFilRougeManager(options = {}) {
     addToPlaylist,
     addToPriorityQueue,
     patchPlaylistItem,
+    patchTrackById,
     removeFromPlaylist,
     setPlaylist,
     removeFromPriorityQueue,
