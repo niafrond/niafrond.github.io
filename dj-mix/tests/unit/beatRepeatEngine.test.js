@@ -1,6 +1,6 @@
 /**
  * beatRepeatEngine.test.js — Tests unitaires pour dj-mix/lib/beatRepeatEngine.js
- * Références SPEC-1.3.8.1 à SPEC-1.3.8.14 (dj-mix/SPECS.md).
+ * Références SPEC-1.3.8.1 à SPEC-1.3.8.17 (dj-mix/SPECS.md).
  */
 import { jest, describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import {
@@ -498,6 +498,38 @@ describe('BeatRepeatEngine', () => {
       expect(node.playbackRate.setValueAtTime).not.toHaveBeenCalled();
       expect(node.playbackRate.linearRampToValueAtTime).not.toHaveBeenCalled();
     });
+  });
+
+  test('SPEC-1.3.8.17 — run() defaults t0 to ctx.currentTime + lead, and returns it', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) });
+    const { ctx, bufferSourceNodes } = makeFakeContext({ currentTime: 100 });
+    const engine = new BeatRepeatEngine();
+    const audioBuffer = await engine.prepare(ctx, 'blob:track', 0, 1);
+    const stageBeats = buildBeatRepeatStageBeats(2);
+    const launchBeats = computeBeatRepeatLaunchBeats(stageBeats);
+
+    const result = engine.run({ ctx, destinationBus: { connect: jest.fn() }, audioBuffer, stageBeats, secondsPerBeat: 0.5, launchBeats });
+
+    expect(result.t0).toBeCloseTo(100.05, 6); // ctx.currentTime (100) + SCHEDULE_LEAD_SEC (0.05)
+    expect(bufferSourceNodes[0].start.mock.calls[0][0]).toBeCloseTo(result.t0, 6);
+  });
+
+  test('SPEC-1.3.8.17 — run() pins stage 0 to an explicit startAt instead of ctx.currentTime + lead', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) });
+    const { ctx, bufferSourceNodes } = makeFakeContext({ currentTime: 100 });
+    const engine = new BeatRepeatEngine();
+    const audioBuffer = await engine.prepare(ctx, 'blob:track', 0, 1);
+    const stageBeats = buildBeatRepeatStageBeats(2);
+    const launchBeats = computeBeatRepeatLaunchBeats(stageBeats);
+
+    // Phase-locking the incoming deck's loop (SPEC-1.3.8.17) to an outgoing engine's own t0 +
+    // offset needs this to be honored exactly, independent of ctx.currentTime at call time.
+    const result = engine.run({
+      ctx, destinationBus: { connect: jest.fn() }, audioBuffer, stageBeats, secondsPerBeat: 0.5, launchBeats, startAt: 250,
+    });
+
+    expect(result.t0).toBe(250);
+    expect(bufferSourceNodes[0].start.mock.calls[0][0]).toBeCloseTo(250, 6);
   });
 
   test('stop() is idempotent and safe before run(), and hard-cancels active nodes', async () => {

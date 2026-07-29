@@ -2878,12 +2878,26 @@ async function startFilRougeStartupCacheSync() {
         downloadState: 'done',
         hasMixInfo: Boolean(mixData),
       });
+    } else if (getFilRougeTrackStatus(track).downloadState === 'done') {
+      // Le morceau était marqué "done" (cachePath serveur connu, ou flag
+      // localStorage d'une session précédente) mais n'est plus retrouvable dans
+      // le cache local du navigateur (Cache Storage vidée, quota dépassé...) :
+      // refléter l'état réel plutôt que d'afficher "Download fini" pour une
+      // piste qui redemandera en fait un téléchargement réseau à la lecture.
+      setFilRougeTrackStatus(track, { downloadState: 'idle' });
     }
   }
   renderFilRouge();
 
   // Phase 2 : télécharger ce qui manque (taille de batch ajustée après chaque
-  // batch selon le débit observé, voir SPEC-3.4.9)
+  // batch selon le débit observé, voir SPEC-3.4.9). Sauté entièrement si l'API
+  // est déjà connue hors ligne : inutile de faire clignoter chaque morceau en
+  // "downloading" puis "erreur" pour une tentative qu'on sait vouée à échouer
+  // (cf. SPEC-15.1.3 checkNow() au tout début de init()) — ils resteront "idle"
+  // et seront repris automatiquement (resumeIncompleteBatches / prochain reload)
+  // une fois l'API de retour.
+  if (apiHealthMonitor.isOffline()) return;
+
   const toDownload = playlist.filter(track => {
     return getFilRougeTrackStatus(track).downloadState !== 'done';
   });
@@ -2910,11 +2924,16 @@ async function startFilRougeStartupCacheSync() {
         const mixData = await autoModeManager.fetchMixData(track.name, track.artist).catch(() => null);
         setFilRougeTrackStatus(track, { downloadState: 'done', hasMixInfo: Boolean(mixData) });
       } else {
-        setFilRougeTrackStatus(track, { downloadState: 'error' });
+        // Une panne API détectée en cours de batch n'est pas une erreur du
+        // morceau lui-même : le laisser "idle" (repris automatiquement plus
+        // tard) plutôt que "erreur", qui laisserait croire à un problème
+        // permanent avec cette piste précise.
+        setFilRougeTrackStatus(track, { downloadState: apiHealthMonitor.isOffline() ? 'idle' : 'error' });
       }
       renderFilRougeTrackStatus(track);
     }
     i += batch.length;
+    if (apiHealthMonitor.isOffline()) break;
   }
   if (toDownload.length) scheduleDjSetQualityRefresh();
 }
@@ -3667,6 +3686,7 @@ const playbackCtrl = createPlaybackController({
   deckBstemsIndicator,
   autoMixBtn,
   onTrackStarted: () => filRougeCtrl?.scheduleDjSetQualityRefresh(),
+  apiHealthMonitor,
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

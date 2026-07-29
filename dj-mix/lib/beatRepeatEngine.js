@@ -252,12 +252,16 @@ export class BeatRepeatEngine {
    * length mid-beat" holds by construction since a change only ever happens at an exact
    * multiple of the *current* stage's own beat length. `finalStagePitchRatio` (default 1, no
    * bend) ramps the last stage's own playbackRate toward the incoming track's tempo — see
-   * computeBeatRepeatFinalStagePitchRatio.
+   * computeBeatRepeatFinalStagePitchRatio. `startAt` (optional) pins stage 0's start to an
+   * explicit ctx-time instant instead of "now + lead" — used to phase-lock a second engine
+   * (the incoming deck's tail loop, SPEC-1.3.8.17) to a moment already scheduled by a first
+   * engine's own timeline, rather than starting it fresh whenever its own prepare() happens to
+   * resolve.
    */
-  run({ ctx, destinationBus, audioBuffer, stageBeats, secondsPerBeat, launchBeats, finalStagePitchRatio = 1 }) {
+  run({ ctx, destinationBus, audioBuffer, stageBeats, secondsPerBeat, launchBeats, finalStagePitchRatio = 1, startAt: explicitStartAt }) {
     this.stop();
     const timeline = computeStageTimeline(stageBeats, secondsPerBeat);
-    const t0 = ctx.currentTime + SCHEDULE_LEAD_SEC;
+    const t0 = Number.isFinite(explicitStartAt) ? explicitStartAt : ctx.currentTime + SCHEDULE_LEAD_SEC;
     const sampleRate = audioBuffer.sampleRate;
     const channelData = audioBuffer.getChannelData(0);
 
@@ -306,7 +310,7 @@ export class BeatRepeatEngine {
     }
 
     this.#activeNodes = active;
-    return { stop: () => this.stop() };
+    return { stop: () => this.stop(), t0 };
   }
 
   /** Idempotent hard-cancel — safe to call before run() or multiple times. */

@@ -1033,17 +1033,19 @@ export class DJPlayer extends EventTarget {
     });
   }
 
-  // Incoming deck only joins the stutter for the tail of the transition (from the moment the
-  // stepped crossfader reaches 50%, cf. #runBeatRepeatTransition's halfStageIndex) — it's fresh,
-  // unfamiliar content to the listener, so unlike #waitForBeatRepeatAnchor for the outgoing
-  // deck, no beat-grid wait is applied here: capturing "wherever it currently is" is an
-  // acceptable, much simpler trade-off for a brief tail window on a track nobody has a reference
-  // point for yet.
-  async #startBeatRepeatIncomingLoop(context, { ctx, secondsPerBeat, remainingStageBeats, remainingLaunchBeats, cutoverState }) {
-    const destinationBus = this.#mixFeatures?.getDeckInputBus?.(context.toDeck);
-    const sourceUrl = this.#deckSourceMeta[context.toDeck]?.url;
-    if (!ctx || !destinationBus || !sourceUrl) return false;
-
+  // Incoming deck joins the stutter for the tail of the transition, phase-locked to the exact
+  // same ctx-time instant the outgoing deck's own timeline reaches the halfway stage (SPEC-
+  // 1.3.8.17) — both decks are then genuinely IN THE SAME LOOP STATE from that instant through
+  // to the shared bar-boundary cut, not just "also looping on some independent schedule".
+  // Scheduled up front against the AudioContext clock (via BeatRepeatEngine#run's `startAt`),
+  // matching how the outgoing deck's own stages are scheduled (SPEC-1.3.8.6) — not a reactive
+  // tick-loop check, which would let decode latency desync the two decks' stage boundaries.
+  //
+  // It's fresh, unfamiliar content to the listener, so unlike #waitForBeatRepeatAnchor for the
+  // outgoing deck, no beat-grid wait is applied to *where* the loop is captured from: capturing
+  // "wherever it currently is" is an acceptable, much simpler trade-off — nobody has a reference
+  // point for what B "should" sound like yet, only for exactly *when* the stutter changes pace.
+  async #scheduleBeatRepeatIncomingLoop(context, { ctx, destinationBus, sourceUrl, secondsPerBeat, remainingStageBeats, remainingLaunchBeats, startAt, cutoverState }) {
     const windowSec = remainingStageBeats[0] * secondsPerBeat;
     const durationSec = Number.isFinite(context.to.duration) && context.to.duration > 0 ? context.to.duration : null;
     const currentTimeSec = Number.isFinite(context.to.currentTime) ? context.to.currentTime : 0;
@@ -1053,15 +1055,26 @@ export class DJPlayer extends EventTarget {
     }
 
     const audioBuffer = await this.#beatRepeatEngineIncoming.prepare(ctx, sourceUrl, anchorSec, windowSec);
-    // Decode can take long enough that the bar-boundary cut has already happened by the time it
-    // resolves — in that case skip muting/running entirely rather than starting a loop just to
-    // immediately tear it back down, which would delay restoring the incoming deck's own gain.
     if (this.#destroyed || cutoverState.reached) return false;
-    this.#mixFeatures.setDeckElementGain(context.toDeck, 0);
+
     this.#beatRepeatEngineIncoming.run({
-      ctx, destinationBus, audioBuffer, stageBeats: remainingStageBeats, secondsPerBeat, launchBeats: remainingLaunchBeats,
+      ctx, destinationBus, audioBuffer, stageBeats: remainingStageBeats, secondsPerBeat, launchBeats: remainingLaunchBeats, startAt,
     });
-    return true;
+
+    // Mute the incoming deck's own live element exactly when its scheduled loop content actually
+    // starts producing sound — muting any earlier leaves a silent gap (nothing audible yet),
+    // muting later doubles up live playback under the already-started loop.
+    const muteDelayMs = Math.max(0, (startAt - ctx.currentTime) * 1000);
+    return new Promise((resolve) => {
+      cutoverState.incomingMuteResolve = resolve;
+      cutoverState.incomingMuteTimeoutId = setTimeout(() => {
+        cutoverState.incomingMuteTimeoutId = null;
+        cutoverState.incomingMuteResolve = null;
+        if (this.#destroyed || cutoverState.reached) { resolve(false); return; }
+        this.#mixFeatures.setDeckElementGain(context.toDeck, 0);
+        resolve(true);
+      }, muteDelayMs);
+    });
   }
 
   async #runBeatRepeatTransition(context) {
@@ -1131,10 +1144,29 @@ export class DJPlayer extends EventTarget {
         await this.#waitForBeatRepeatAnchor(context, anchorSec);
         const audioBuffer = await preparePromise;
         this.#mixFeatures.setDeckElementGain(context.fromDeck, 0);
-        this.#beatRepeatEngine.run({
+        const { t0 } = this.#beatRepeatEngine.run({
           ctx, destinationBus, audioBuffer, stageBeats, secondsPerBeat, launchBeats, finalStagePitchRatio,
         });
         engineStarted = true;
+
+        // Kick off the incoming deck's mirrored tail loop right away, scheduled against this
+        // same t0 (SPEC-1.3.8.17) — not a reactive tick-loop check — so it's phase-locked to the
+        // exact instant the outgoing timeline reaches its own halfway stage, however long its
+        // own decode takes.
+        const toDestinationBus = this.#mixFeatures?.getDeckInputBus?.(context.toDeck);
+        const toSourceUrl = this.#deckSourceMeta[context.toDeck]?.url;
+        if (toDestinationBus && toSourceUrl) {
+          incomingLoopPromise = this.#scheduleBeatRepeatIncomingLoop(context, {
+            ctx,
+            destinationBus: toDestinationBus,
+            sourceUrl: toSourceUrl,
+            secondsPerBeat,
+            remainingStageBeats: incomingRemainingStageBeats,
+            remainingLaunchBeats: incomingRemainingLaunchBeats,
+            startAt: t0 + (incomingElapsedBeatsThreshold * secondsPerBeat),
+            cutoverState,
+          }).then((started) => { incomingEngineStarted = started; }).catch(() => {});
+        }
       }
 
       await new Promise((resolve) => {
@@ -1174,16 +1206,6 @@ export class DJPlayer extends EventTarget {
             const levels = this.#computeTransitionLevels('beat_repeat', stepT, context.startBaseFrom, context.startBaseTo);
             fromBase = levels.from;
             toBase = levels.to;
-
-            if (!incomingLoopPromise && elapsedBeats >= incomingElapsedBeatsThreshold) {
-              incomingLoopPromise = this.#startBeatRepeatIncomingLoop(context, {
-                ctx,
-                secondsPerBeat,
-                remainingStageBeats: incomingRemainingStageBeats,
-                remainingLaunchBeats: incomingRemainingLaunchBeats,
-                cutoverState,
-              }).then((started) => { incomingEngineStarted = started; }).catch(() => {});
-            }
 
             // Last BEAT_REPEAT_FX_STAGE_COUNT stages (shortest): high-pass on the outgoing
             // deck + echo ramping 0->1 across their combined duration.
@@ -1240,6 +1262,15 @@ export class DJPlayer extends EventTarget {
         }, 30);
       });
     } finally {
+      // If the transition ended (destroyed, or interrupted) before the incoming loop's own
+      // scheduled mute instant arrived, cancel it and force-resolve rather than leaving
+      // `await incomingLoopPromise` blocked on a setTimeout that may be seconds away.
+      if (cutoverState.incomingMuteTimeoutId) {
+        clearTimeout(cutoverState.incomingMuteTimeoutId);
+        cutoverState.incomingMuteTimeoutId = null;
+        cutoverState.incomingMuteResolve?.(false);
+        cutoverState.incomingMuteResolve = null;
+      }
       if (incomingLoopPromise) await incomingLoopPromise;
       this.#beatRepeatEngine.stop();
       this.#beatRepeatEngineIncoming.stop();

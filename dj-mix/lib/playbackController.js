@@ -59,6 +59,8 @@ import { computeDjBpmRate } from './djTransitionMapping.js';
  * @param {HTMLElement|null} [options.deckBstemsIndicator]
  * @param {HTMLElement|null} [options.autoMixBtn]
  * @param {(item: object, index: number) => void} [options.onTrackStarted]
+ * @param {{ isOffline: () => boolean }} [options.apiHealthMonitor] - si hors ligne au moment
+ *   d'un échec de lecture, le morceau n'est pas retiré du Fil Rouge (panne transitoire).
  */
 export function createPlaybackController(options) {
   const {
@@ -113,6 +115,7 @@ export function createPlaybackController(options) {
     deckBstemsIndicator = null,
     autoMixBtn = null,
     onTrackStarted,
+    apiHealthMonitor = null,
   } = options;
 
   // ── Private state ─────────────────────────────────────────────────────────────
@@ -868,7 +871,10 @@ export function createPlaybackController(options) {
 
       const failedIdx = queue.findIndex((q) => q.id === item.id);
       if (failedIdx >= 0) removeFromQueue?.(failedIdx);
-      if (filRougeManager?.isActive()) {
+      // Une panne API est transitoire : le morceau n'est pas retiré du fil rouge
+      // dans ce cas (il redeviendra téléchargeable une fois l'API revenue), contrairement
+      // à un échec réel (piste introuvable/corrompue) qui, lui, justifie un retrait.
+      if (!apiHealthMonitor?.isOffline() && filRougeManager?.isActive()) {
         const pq = filRougeManager.getPriorityQueue();
         const pqIdx = pq.findIndex((t) => t.id === item.id);
         if (pqIdx >= 0) filRougeManager.removeFromPriorityQueue(pqIdx);

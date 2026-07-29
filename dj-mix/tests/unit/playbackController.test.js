@@ -433,6 +433,64 @@ describe('startPlaybackForIndex error handling', () => {
     await expect(ctrl.startPlaybackForIndex(0, 'play')).rejects.toThrow();
     expect(onTrackStarted).not.toHaveBeenCalled();
   });
+
+  // SPEC-1.2.7 — bug d'origine : une panne API transitoire (piste réellement
+  // téléchargée mais serveur local injoignable) faisait perdre le morceau du
+  // Fil Rouge en plus de son échec de lecture ponctuel.
+  test('SPEC-1.2.7 removes a failed track from the Fil Rouge playlist/priority queue when the API is online', async () => {
+    const removeFromPlaylist = jest.fn();
+    const removeFromPriorityQueue = jest.fn();
+    const track = makeTrack({ id: 'bad' });
+    const player = makePlayer({ playOnDeck: jest.fn().mockRejectedValue(new Error('not found')) });
+    const ctrl = makeController({
+      getQueue: jest.fn().mockReturnValue([track]),
+      getPlayer: jest.fn().mockReturnValue(player),
+      apiHealthMonitor: { isOffline: () => false },
+      filRougeManager: {
+        isActive: jest.fn().mockReturnValue(true),
+        getNextTrack: jest.fn().mockReturnValue(null),
+        peekNextTrackFromAny: jest.fn().mockReturnValue(null),
+        getPlaylist: jest.fn().mockReturnValue([track]),
+        getPriorityQueue: jest.fn().mockReturnValue([track]),
+        removeFromPriorityQueue,
+        removeFromPlaylist,
+      },
+    });
+    await expect(ctrl.startPlaybackForIndex(0, 'play')).rejects.toThrow();
+    expect(removeFromPriorityQueue).toHaveBeenCalledWith(0);
+    expect(removeFromPlaylist).toHaveBeenCalledWith(0);
+  });
+
+  test('SPEC-1.2.7 does not remove a failed track from the Fil Rouge playlist/priority queue while the API is offline', async () => {
+    const removeFromPlaylist = jest.fn();
+    const removeFromPriorityQueue = jest.fn();
+    const removeFromQueue = jest.fn();
+    const track = makeTrack({ id: 'bad' });
+    const player = makePlayer({
+      playOnDeck: jest.fn().mockRejectedValue(new Error('API hors ligne – téléchargement impossible')),
+    });
+    const ctrl = makeController({
+      getQueue: jest.fn().mockReturnValue([track]),
+      getPlayer: jest.fn().mockReturnValue(player),
+      removeFromQueue,
+      apiHealthMonitor: { isOffline: () => true },
+      filRougeManager: {
+        isActive: jest.fn().mockReturnValue(true),
+        getNextTrack: jest.fn().mockReturnValue(null),
+        peekNextTrackFromAny: jest.fn().mockReturnValue(null),
+        getPlaylist: jest.fn().mockReturnValue([track]),
+        getPriorityQueue: jest.fn().mockReturnValue([track]),
+        removeFromPriorityQueue,
+        removeFromPlaylist,
+      },
+    });
+    await expect(ctrl.startPlaybackForIndex(0, 'play')).rejects.toThrow();
+    // Toujours retiré de la file d'attente de lecture éphémère...
+    expect(removeFromQueue).toHaveBeenCalledWith(0);
+    // ...mais jamais du Fil Rouge tant que l'échec est dû à une panne API.
+    expect(removeFromPriorityQueue).not.toHaveBeenCalled();
+    expect(removeFromPlaylist).not.toHaveBeenCalled();
+  });
 });
 
 // ── applyMixSuggestedStartOffset ──────────────────────────────────────────────
