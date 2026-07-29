@@ -1,3 +1,9 @@
+## [2.20.0](https://github.com/niafrond/niafrond.github.io/compare/v2.19.0...v2.20.0) (2026-07-29)
+
+### Features
+
+* update ASSETS list in sw.js to include all lib/*.js modules for offline availability ([9e4f9e3](https://github.com/niafrond/niafrond.github.io/commit/9e4f9e30c7e346d7eabfd935baf11d753b8dcd52))
+
 ## [2.19.0](https://github.com/niafrond/niafrond.github.io/compare/v2.18.0...v2.19.0) (2026-07-29)
 
 ### Features
