@@ -127,11 +127,9 @@ export class DJPlayer extends EventTarget {
   #active = 'A';
   #crossfadeDuration = 12000;
   // Progressive Loop Morph (beat_repeat, SPEC-1.3.8 / lib/loopmorph.md): outgoing deck's 8-phase
-  // engine (phases 1-7's loop segments, one continuous up-front schedule).
+  // engine (phases 1-7's loop segments, one continuous up-front schedule). The incoming deck has
+  // no engine of its own (2026-07-29 feedback) — it just plays normally the whole time.
   #loopMorphEngineOutgoing = new LoopMorphEngine();
-  // Incoming deck's own single 1/16-beat loop segment (phase 6 "Enable identical 1/16 loop"
-  // through the end of phase 7) — silent (elementGain 0) until it takes over in phase 8.
-  #loopMorphEngineIncoming = new LoopMorphEngine();
   #isCrossfading = false;
   #crossfadeNotified = false;
   #trackEndNotified = false;
@@ -1001,12 +999,14 @@ export class DJPlayer extends EventTarget {
     const fromBpm = getSafeLoopMorphBpm(this.#deckSourceMeta[context.fromDeck]?.bpm);
     const secondsPerBeat = 60 / fromBpm;
     const toBpm = getSafeLoopMorphBpm(this.#deckSourceMeta[context.toDeck]?.bpm);
-    // Phase 6 "Synchronize BPM": the INCOMING deck syncs to the outgoing deck's current tempo
-    // (opposite direction from this session's earlier beat_repeat iterations, where the outgoing
-    // deck bent toward the incoming one) — Phase 8 "Restore original tempo if Sync was
-    // temporary" reverts it once the incoming deck takes over (handled in `finally` below, same
-    // as every other transition mode's cleanup).
-    const bpmSyncRatio = computeLoopMorphBpmSyncRatio(fromBpm, toBpm);
+    // Phases 7-8 (2026-07-29 feedback): the incoming deck plays normally, at its own native
+    // tempo — no BPM bend on it at all. Instead the OUTGOING deck's own still-running loop
+    // retunes to the incoming deck's tempo once phase 7 starts, so the tiny stutter loop already
+    // sounds like "the beat of the other song" by the time the incoming deck's real audio fades
+    // in on top of it (LoopMorphEngine#scheduleFinalSegmentRateChange, called after the outgoing
+    // engine starts, below). The loop node is discarded when it stops (phase 8), so this bend is
+    // inherently temporary — no restore step needed, unlike a real deck's playbackRate.
+    const deck1RetuneRatio = computeLoopMorphBpmSyncRatio(toBpm, fromBpm);
 
     // Total duration is pinned to player.crossfadeDuration (confirmed with user, not a
     // beat_repeat-specific setting) — phases 1-5's literal-repeat duration (2,2,2,2,4 reps) is
@@ -1032,8 +1032,6 @@ export class DJPlayer extends EventTarget {
     const ctx = this.#mixFeatures?.getAudioContext?.();
     const destinationBus = this.#mixFeatures?.getDeckInputBus?.(context.fromDeck);
     const sourceUrl = this.#deckSourceMeta[context.fromDeck]?.url;
-    const toDestinationBus = this.#mixFeatures?.getDeckInputBus?.(context.toDeck);
-    const toSourceUrl = this.#deckSourceMeta[context.toDeck]?.url;
 
     if (!ctx || !destinationBus || !sourceUrl || !this.#mixFeatures) {
       // Progressive Loop Morph fundamentally needs mixFeatures' preGain/filter graph — there is
@@ -1044,7 +1042,6 @@ export class DJPlayer extends EventTarget {
     }
 
     let engineStarted = false;
-    let incomingEngineStarted = false;
     let phase6Triggered = false;
     let phase8Triggered = false;
 
@@ -1057,9 +1054,9 @@ export class DJPlayer extends EventTarget {
     if (context.to) context.to.volume = 1;
     // Deck2 "Loaded, Stopped, Gain=0%" (INITIAL STATE): can't literally pause() it — it's
     // already loaded+playing by the time this runs, per crossfadeToDeck's own pre-load flow
-    // (shared by every transition mode) — silence via the existing element mute achieves the
-    // same listener-facing result.
-    this.#mixFeatures.setDeckElementGain(context.toDeck, 0);
+    // (shared by every transition mode). Deck2 plays normally the whole time now (no loop
+    // substitute), so silence comes purely from preGain below — no need to also mute its
+    // elementGain (that switch stays reserved for the outgoing deck's own loop-vs-real handoff).
     this.#mixFeatures.setDeckGain(context.toDeck, 0);
     this.#mixFeatures.setDeckGain(context.fromDeck, 1);
 
@@ -1076,6 +1073,12 @@ export class DJPlayer extends EventTarget {
         ({ t0 } = this.#loopMorphEngineOutgoing.run({
           ctx, destinationBus, audioBuffer, segments: timeline.deck1Segments,
         }));
+        // Retune the loop to the incoming deck's tempo the instant phase 7 starts (see
+        // deck1RetuneRatio comment above) — scheduled up front against the same AudioContext
+        // clock as the rest of this node's own timeline, not a reactive per-tick decision.
+        this.#loopMorphEngineOutgoing.scheduleFinalSegmentRateChange(
+          t0 + timeline.phase7StartSec, deck1RetuneRatio,
+        );
         engineStarted = true;
       } catch { /* decode failed — gain/filter/echo automation below still runs, just silent */ }
 
@@ -1116,45 +1119,30 @@ export class DJPlayer extends EventTarget {
             this.#mixFeatures?.setEchoIntensity?.(state.echoPct, context.fromDeck);
           }
 
-          // Phase 6 one-time actions: sync deck2's tempo, compute a bar-aligned anchor/seek, and
-          // start its own identical 1/16 loop — scheduled against t0 + the exact instant deck1's
-          // own timeline enters phase 6 (SPEC-1.3.8.6-style up-front scheduling), triggered once
-          // via this guard rather than a reactive per-tick decision.
+          // Phase 6 one-time action: "Seek to transition cue" — bar-align deck2's own playhead so
+          // the fade-in that follows (phases 7-8) reveals the intended part of the track. Deck2
+          // is otherwise untouched: it keeps playing normally, at its own native tempo, the whole
+          // time (2026-07-29 feedback) — only the outgoing deck's loop bends (deck1RetuneRatio,
+          // scheduled up front above).
           if (!phase6Triggered && elapsedSec >= timeline.phase6StartSec) {
             phase6Triggered = true;
-            this.#smoothSetDeckPlaybackRate(context.toDeck, bpmSyncRatio, 180);
-            if (toDestinationBus && toSourceUrl) {
-              try {
-                const toSecondsPerBeat = 60 / toBpm;
-                const toCurrentTimeSec = Number.isFinite(context.to.currentTime) ? context.to.currentTime : 0;
-                const toDurationSec = Number.isFinite(context.to.duration) && context.to.duration > 0 ? context.to.duration : null;
-                const toWindowSec = timeline.deck2Segment.lengthSec;
-                let toAnchorSec = computeLoopMorphAnchorSeconds(toCurrentTimeSec, toSecondsPerBeat, LOOP_MORPH_BEATS_PER_BAR);
-                if (toDurationSec !== null) {
-                  toAnchorSec = Math.min(toAnchorSec, Math.max(0, toDurationSec - toWindowSec));
-                }
-                context.to.currentTime = toAnchorSec;
-                const toAudioBuffer = await this.#loopMorphEngineIncoming.prepare(ctx, toSourceUrl, toAnchorSec, toWindowSec);
-                if (!this.#destroyed) {
-                  this.#loopMorphEngineIncoming.run({
-                    ctx, destinationBus: toDestinationBus, audioBuffer: toAudioBuffer,
-                    segments: [timeline.deck2Segment], playbackRate: bpmSyncRatio,
-                    startAt: t0 + timeline.phase6StartSec,
-                  });
-                  incomingEngineStarted = true;
-                }
-              } catch { /* deck2's own loop is a decorative texture, not required to complete */ }
+            const toSecondsPerBeat = 60 / toBpm;
+            const toCurrentTimeSec = Number.isFinite(context.to.currentTime) ? context.to.currentTime : 0;
+            const toDurationSec = Number.isFinite(context.to.duration) && context.to.duration > 0 ? context.to.duration : null;
+            let toAnchorSec = computeLoopMorphAnchorSeconds(toCurrentTimeSec, toSecondsPerBeat, LOOP_MORPH_BEATS_PER_BAR);
+            if (toDurationSec !== null) {
+              toAnchorSec = Math.min(toAnchorSec, toDurationSec);
             }
+            context.to.currentTime = toAnchorSec;
           }
 
-          // Phase 8 one-time action: both engines' loops have already stopped naturally by this
-          // point (their own up-front schedule ends exactly at phase8StartSec) — un-mute both
-          // elements so deck1's real (near-silent) tail and deck2's real (now dominant)
-          // unlooped playback take over from the buffer engines.
+          // Phase 8 one-time action: the outgoing engine's loop has already stopped naturally by
+          // this point (its own up-front schedule ends exactly at phase8StartSec) — un-mute
+          // deck1's element so its real (near-silent) tail takes over from the buffer engine.
+          // Deck2's element was never muted (it's been playing normally throughout).
           if (!phase8Triggered && elapsedSec >= timeline.phase8StartSec) {
             phase8Triggered = true;
             this.#mixFeatures.setDeckElementGain(context.fromDeck, 1);
-            this.#mixFeatures.setDeckElementGain(context.toDeck, 1);
           }
 
           const finished = progress >= 1;
@@ -1187,12 +1175,8 @@ export class DJPlayer extends EventTarget {
       });
     } finally {
       this.#loopMorphEngineOutgoing.stop();
-      this.#loopMorphEngineIncoming.stop();
       if (engineStarted) {
         this.#mixFeatures.setDeckElementGain(context.fromDeck, 1);
-      }
-      if (incomingEngineStarted) {
-        this.#mixFeatures.setDeckElementGain(context.toDeck, 1);
       }
       // Reset the internal deck-gain node (preGain) and filter sweep to neutral so they don't
       // silently affect future normal (crossfader-driven) playback.
@@ -1401,7 +1385,6 @@ export class DJPlayer extends EventTarget {
     clearInterval(this.#crossfadeInterval);
     this.#crossfadeInterval = null;
     this.#loopMorphEngineOutgoing?.stop();
-    this.#loopMorphEngineIncoming?.stop();
 
     if (this.#manualMixRafId !== null) {
       cancelAnimationFrame(this.#manualMixRafId);

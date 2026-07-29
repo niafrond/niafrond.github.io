@@ -169,8 +169,19 @@ async function persistAudioBlob(cacheKey, blob, audioCacheName) {
       type: blob.type || 'audio/mpeg',
       audioCacheName,
     });
-  } catch (_) {
-    // persistent cache is best effort only
+  } catch (err) {
+    // Best effort only (playback already has its blob URL regardless), but a
+    // silent failure here (e.g. QuotaExceededError once many tracks pile up)
+    // is otherwise indistinguishable from a normal cache miss on next reload —
+    // log it so that scenario is diagnosable instead of just "redownloads
+    // forever" with no trace.
+    logWarn('cache.persist.blob.failed', {
+      cacheKey,
+      size: blob?.size,
+      audioCacheName,
+      errorName: err?.name,
+      message: err?.message,
+    });
   }
 }
 
@@ -182,7 +193,10 @@ async function restorePersistedAudioBlobUrl(cacheKey, audioCacheName) {
     const cache = await caches.open(audioCacheName);
     const req = getPersistentAudioCacheRequest(cacheKey);
     const cached = await cache.match(req);
-    if (!cached) return null;
+    if (!cached) {
+      logDebug('cache.restore.persisted.miss', { cacheKey, audioCacheName });
+      return null;
+    }
     const blob = await cached.blob();
     if (!blob || blob.size <= 0) return null;
     logInfo('cache.restore.persisted.hit', {
@@ -191,7 +205,17 @@ async function restorePersistedAudioBlobUrl(cacheKey, audioCacheName) {
       audioCacheName,
     });
     return URL.createObjectURL(blob);
-  } catch (_) {
+  } catch (err) {
+    // Distinguishes a genuine cache miss (above, expected/silent) from a
+    // Cache Storage API failure (caches.open/match throwing — e.g. blocked in
+    // Private Browsing, storage partitioning) which otherwise looked
+    // identical from the caller's perspective and left no trace to diagnose.
+    logWarn('cache.restore.persisted.error', {
+      cacheKey,
+      audioCacheName,
+      errorName: err?.name,
+      message: err?.message,
+    });
     return null;
   }
 }

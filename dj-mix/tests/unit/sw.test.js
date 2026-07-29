@@ -1,5 +1,9 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'node:url';
+import { jest, describe, test, expect } from '@jest/globals';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // sw.js est un script de Service Worker classique (pas un module ES) : on
 // charge son code source et on l'exécute dans un scope `self`/`caches`

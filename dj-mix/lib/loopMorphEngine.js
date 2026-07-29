@@ -35,22 +35,24 @@ function clamp01(value) {
   return Math.max(0, Math.min(1, Number(value) || 0));
 }
 
-// Phases 1-5 (loopmorph.md): loop length halves each phase, held for a LITERAL repeat count —
-// not stretched to equalize phase durations (confirmed with user: "répétitions littérales
-// prioritaires"). Their real duration is whatever the outgoing deck's BPM produces.
+// Phases 1-5 (loopmorph.md): loop length shrinks phase over phase (phase 4→5 holds instead of
+// halving again — a deliberate compression of the original spec's timing), held for a LITERAL
+// repeat count — not stretched to equalize phase durations (confirmed with user: "répétitions
+// littérales prioritaires"). Their real duration is whatever the outgoing deck's BPM produces.
 const MAIN_PHASES = [
   { lengthBeats: 4, reps: 2 },     // Phase 1
   { lengthBeats: 2, reps: 2 },     // Phase 2
   { lengthBeats: 1, reps: 2 },     // Phase 3
-  { lengthBeats: 0.5, reps: 2 },     // Phase 4
-  { lengthBeats: 0.25, reps: 4 },   // Phase 5
+  { lengthBeats: 0.5, reps: 1 },     // Phase 4
+  { lengthBeats: 0.5, reps: 1 },   // Phase 5
 ];
 
-// Phase 6's own 4 subdivisions (loopmorph.md PHASE 6: "1/2 → 1/4 → 1/8 → 1/16 ... repeat each
-// subdivision enough times to create acceleration") — each stretched to occupy an equal share of
-// phase 6's own allotted duration (computeLoopMorphTimeline), same "fill a time slice" mechanic
-// used for beat_repeat's earlier tail-overlap iteration this session.
-const PHASE6_SUBDIVISION_BEATS = [0.25, 0.125, 0.06, LOOP_MORPH_FLOOR_BEATS];
+// Phase 6's own 4 subdivisions (loopmorph.md PHASE 6, revised: hold at 1/4 beat three times, then
+// drop straight to the floor — a compressed version of the original "1/2 → 1/4 → 1/8 → 1/16"
+// smooth halving) — each stretched to occupy an equal share of phase 6's own allotted duration
+// (computeLoopMorphTimeline), same "fill a time slice" mechanic used for beat_repeat's earlier
+// tail-overlap iteration this session.
+const PHASE6_SUBDIVISION_BEATS = [0.25, 0.25, 0.25, LOOP_MORPH_FLOOR_BEATS];
 
 // Automation values in effect at the END of each phase (index 0 = loopmorph.md's INITIAL STATE,
 // i.e. the start of phase 1; index N = end of phase N / start of phase N+1; index 8 = END
@@ -262,6 +264,21 @@ const ZERO_CROSSING_SEARCH_SEC = 0.005; // standard seamless-loop technique: nud
 const SCHEDULE_LEAD_SEC = 0.05; // headroom so the very first start() isn't scheduled in the past
 const DECODE_WINDOW_MARGIN_SEC = 0.25;
 
+// 2026-07-29 feedback: a raw audio buffer looped continuously at a fast rate doesn't read as
+// rhythmic drumming, it reads as a chaotic buzz/drone — once the loop cycle gets short enough
+// (roughly sub-200ms, crossing from "audible individual repeats" into "audio-rate texture"),
+// simply looping it with one flat sustained gain is wavetable synthesis, not a beat repeat. Loop
+// cycles below this threshold (phase 6's fast subdivisions) get re-attacked and decayed EVERY
+// cycle instead of one flat sustain, so each repeat reads as a discrete percussive hit. Phases
+// 1-5's longer loops (musical phrase-length repeats) are left alone — they already sound like
+// clear rhythmic repeats of real content without any extra shaping.
+const PERCUSSIVE_GATE_THRESHOLD_SEC = 0.2;
+const PERCUSSIVE_GATE_DECAY_FRACTION = 0.55; // fraction of each cycle spent decaying — the rest
+// is a near-silent gap before the next hit's attack, which is what separates hits instead of
+// smearing them into a tone.
+const PERCUSSIVE_GATE_FLOOR = 0.08; // exponentialRampToValueAtTime needs a nonzero target; also
+// leaves a faint tail between hits rather than a dead silence that could itself click.
+
 function findNearestZeroCrossingIndex(channelData, sampleIndex, sampleRate, searchSec) {
   if (!channelData || !channelData.length) return Math.max(0, sampleIndex);
   const searchSamples = Math.max(1, Math.round(searchSec * sampleRate));
@@ -318,7 +335,9 @@ export class LoopMorphEngine {
    * single-entry array wrapping deck2Segment) — loopStart is fixed at 0 (the retained window's
    * own start == the anchor) for every segment, loopEnd shrinks per segment. `playbackRate`
    * (default 1) is applied uniformly to every node — the incoming deck's BPM-sync ratio
-   * (computeLoopMorphBpmSyncRatio), a fixed setup value, not a ramp.
+   * (computeLoopMorphBpmSyncRatio), a fixed setup value, not a ramp. Each segment's gain envelope
+   * is either one flat sustain (long loops) or a per-cycle percussive gate (short loops, below
+   * PERCUSSIVE_GATE_THRESHOLD_SEC) — see the constants above.
    */
   run({ ctx, destinationBus, audioBuffer, segments, playbackRate = 1, startAt: explicitStartAt }) {
     this.stop();
@@ -355,7 +374,22 @@ export class LoopMorphEngine {
       const gainNode = ctx.createGain();
       gainNode.gain.setValueAtTime(0, startAt);
       gainNode.gain.linearRampToValueAtTime(1, startAt + fadeInWindow);
-      gainNode.gain.setValueAtTime(1, Math.max(startAt + fadeInWindow, stopAt - fadeOutWindow));
+
+      const sustainStart = startAt + fadeInWindow;
+      const sustainEnd = Math.max(sustainStart, stopAt - fadeOutWindow);
+      if (segment.lengthSec > 0 && segment.lengthSec < PERCUSSIVE_GATE_THRESHOLD_SEC && sustainEnd > sustainStart) {
+        // Percussive gate: re-attack + decay every cycle instead of one flat sustain.
+        const cycleCount = Math.max(1, Math.round((sustainEnd - sustainStart) / segment.lengthSec));
+        const actualCycleSec = (sustainEnd - sustainStart) / cycleCount;
+        const decaySec = actualCycleSec * PERCUSSIVE_GATE_DECAY_FRACTION;
+        for (let c = 0; c < cycleCount; c++) {
+          const cycleStart = sustainStart + (c * actualCycleSec);
+          gainNode.gain.setValueAtTime(1, cycleStart);
+          gainNode.gain.exponentialRampToValueAtTime(PERCUSSIVE_GATE_FLOOR, cycleStart + decaySec);
+        }
+      } else {
+        gainNode.gain.setValueAtTime(1, sustainEnd);
+      }
       gainNode.gain.linearRampToValueAtTime(0, stopAt);
 
       node.connect(gainNode);
@@ -368,6 +402,21 @@ export class LoopMorphEngine {
 
     this.#activeNodes = active;
     return { stop: () => this.stop(), t0 };
+  }
+
+  /**
+   * Retunes the LAST scheduled segment's node to a new playbackRate at an absolute AudioContext
+   * time, via a second `setValueAtTime` on the already-running node's own AudioParam — no new
+   * node, no restart. Used so the outgoing deck's still-playing final loop segment (which spans
+   * phase 6 through phase 7, one continuous buffer per SPEC-1.3.8.21) can snap to the incoming
+   * deck's tempo partway through its own run, once phase 7 starts (2026-07-29 feedback: the tiny
+   * loop should sound like "the beat of the other song", not the outgoing deck's own tempo).
+   * No-op if run() hasn't scheduled anything yet.
+   */
+  scheduleFinalSegmentRateChange(atTime, rate) {
+    const last = this.#activeNodes[this.#activeNodes.length - 1];
+    if (!last) return;
+    last.node.playbackRate.setValueAtTime(rate, atTime);
   }
 
   /** Idempotent hard-cancel — safe to call before run() or multiple times. */

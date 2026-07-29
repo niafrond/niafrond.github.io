@@ -44,16 +44,16 @@ describe('computeLoopMorphTimeline', () => {
     expect(LOOP_MORPH_PHASE_COUNT).toBe(8);
   });
 
-  test('phases 1-5 use literal repeat counts (2,2,2,2,4), not stretched to fit totalDurationSec', () => {
+  test('phases 1-5 use literal repeat counts (2,2,2,1,1), not stretched to fit totalDurationSec', () => {
     const secondsPerBeat = 0.5; // 120 BPM
-    // Phase 1: 2 reps x 8 beats x 0.5s/beat = 8s; Phase 5: 4 reps x 0.5 beats x 0.5s/beat = 1s —
+    // Phase 1: 2 reps x 4 beats x 0.5s/beat = 4s; Phase 5: 1 rep x 0.5 beats x 0.5s/beat = 0.25s —
     // both fixed by BPM alone, regardless of totalDurationSec (SPEC-1.3.8.4).
     const timelineShort = computeLoopMorphTimeline(secondsPerBeat, 1); // 1s target, way too short
     const timelineLong = computeLoopMorphTimeline(secondsPerBeat, 60); // 60s target, way more than needed
-    expect(timelineShort.phases[0].durationSec).toBeCloseTo(8, 6);
-    expect(timelineShort.phases[4].durationSec).toBeCloseTo(1, 6);
-    expect(timelineLong.phases[0].durationSec).toBeCloseTo(8, 6);
-    expect(timelineLong.phases[4].durationSec).toBeCloseTo(1, 6);
+    expect(timelineShort.phases[0].durationSec).toBeCloseTo(4, 6);
+    expect(timelineShort.phases[4].durationSec).toBeCloseTo(0.25, 6);
+    expect(timelineLong.phases[0].durationSec).toBeCloseTo(4, 6);
+    expect(timelineLong.phases[4].durationSec).toBeCloseTo(0.25, 6);
   });
 
   test('phases 6-8 absorb whatever real time remains after phases 1-5, split evenly', () => {
@@ -61,7 +61,7 @@ describe('computeLoopMorphTimeline', () => {
     const totalDurationSec = 30;
     const timeline = computeLoopMorphTimeline(secondsPerBeat, totalDurationSec);
     const mainTotalSec = timeline.phases.slice(0, 5).reduce((s, p) => s + p.durationSec, 0);
-    expect(mainTotalSec).toBeCloseTo(16, 6);
+    expect(mainTotalSec).toBeCloseTo(7.5, 6);
     const remainingSec = totalDurationSec - mainTotalSec;
     // Phase 6's duration is realized (rounded reps), so only approximately 1/3 of the remainder.
     expect(timeline.phases[6].durationSec).toBeCloseTo(remainingSec / 3, 1); // phase 7 (index 6): exact 1/3
@@ -78,7 +78,7 @@ describe('computeLoopMorphTimeline', () => {
 
   test('phases 7+8 (the actual overlap window) are guaranteed at least LOOP_MORPH_MIN_OVERLAP_SEC combined, even when crossfadeDuration leaves no room for it', () => {
     expect(LOOP_MORPH_MIN_OVERLAP_SEC).toBe(2);
-    const secondsPerBeat = 0.5; // 120 BPM: phases 1-5 alone already take 16s
+    const secondsPerBeat = 0.5; // 120 BPM: phases 1-5 alone already take 7.5s
     const timeline = computeLoopMorphTimeline(secondsPerBeat, 12); // typical default crossfadeDuration (12s) — shorter than phases 1-5 alone
     const overlapSec = timeline.phases[6].durationSec + timeline.phases[7].durationSec;
     expect(overlapSec).toBeGreaterThanOrEqual(LOOP_MORPH_MIN_OVERLAP_SEC - 1e-6);
@@ -89,11 +89,11 @@ describe('computeLoopMorphTimeline', () => {
     expect(timeline.phases[6].durationSec).toBeCloseTo(timeline.phases[7].durationSec, 6);
   });
 
-  test('deck1Segments: 5 main segments (2 reps each except phase 5) + phase 6\'s 4 subdivisions, last one extended through phase 7', () => {
+  test('deck1Segments: 5 main segments (2 reps each except phases 4-5, 1 rep) + phase 6\'s 4 subdivisions, last one extended through phase 7', () => {
     const secondsPerBeat = 0.5;
     const timeline = computeLoopMorphTimeline(secondsPerBeat, 20);
     expect(timeline.deck1Segments).toHaveLength(9);
-    expect(timeline.deck1Segments.map((s) => s.lengthBeats)).toEqual([8, 4, 2, 1, 0.5, 0.5, 0.25, 0.125, LOOP_MORPH_FLOOR_BEATS]);
+    expect(timeline.deck1Segments.map((s) => s.lengthBeats)).toEqual([4, 2, 1, 0.5, 0.5, 0.25, 0.25, 0.25, LOOP_MORPH_FLOOR_BEATS]);
     expect(timeline.deck1Segments[8].isFinal).toBe(true);
     expect(timeline.deck1Segments.slice(0, 8).every((s) => s.isFinal === false)).toBe(true);
     // Startsare monotonic and continuous (each segment starts exactly where the previous ends).
@@ -212,7 +212,7 @@ describe('computeLoopMorphAnchorSeconds', () => {
 // ── computeLoopMorphBpmSyncRatio ─────────────────────────────────────────────
 
 describe('computeLoopMorphBpmSyncRatio', () => {
-  test('ratio is outgoing (fromBpm) over incoming (toBpm) — incoming syncs TO outgoing', () => {
+  test('ratio is the first BPM over the second — generic (a, b) => a/b, direction is the caller\'s choice', () => {
     expect(computeLoopMorphBpmSyncRatio(140, 120)).toBeCloseTo(140 / 120, 6);
     expect(computeLoopMorphBpmSyncRatio(120, 140)).toBeCloseTo(120 / 140, 6);
   });
@@ -283,6 +283,7 @@ describe('LoopMorphEngine', () => {
           gain: {
             setValueAtTime: jest.fn(),
             linearRampToValueAtTime: jest.fn(),
+            exponentialRampToValueAtTime: jest.fn(),
           },
           connect: jest.fn(),
           disconnect: jest.fn(),
@@ -328,14 +329,70 @@ describe('LoopMorphEngine', () => {
     const t0 = 100.05; // ctx.currentTime + SCHEDULE_LEAD_SEC
     expect(startArgs[0]).toBeCloseTo(t0, 6);
 
-    // Each stage's gain ramps in from 0 and out to 0.
+    // Every stage's gain ramps in from 0 and out to 0, regardless of gating below.
     gainNodes.forEach((node) => {
-      expect(node.gain.setValueAtTime).toHaveBeenCalledTimes(2);
       expect(node.gain.linearRampToValueAtTime).toHaveBeenCalledTimes(2);
       expect(node.gain.setValueAtTime.mock.calls[0][0]).toBe(0);
       expect(node.gain.linearRampToValueAtTime.mock.calls[0][0]).toBe(1);
       expect(node.gain.linearRampToValueAtTime.mock.calls[1][0]).toBe(0);
     });
+    // Segments at/above PERCUSSIVE_GATE_THRESHOLD_SEC (0.2s) get one flat sustain (2 setValueAtTime
+    // calls total: initial 0, then the pre-fade-out anchor at 1). Segments below it (phase 6's
+    // fast subdivisions, lengthSec 0.125/0.125/0.125/0.03125 here) get re-attacked every cycle
+    // instead — many more setValueAtTime calls, plus an exponentialRampToValueAtTime decay per
+    // cycle (2026-07-29 feedback: a fast raw loop otherwise reads as a buzz, not rhythmic hits).
+    timeline.deck1Segments.forEach((segment, i) => {
+      const node = gainNodes[i];
+      if (segment.lengthSec < 0.2) {
+        expect(node.gain.setValueAtTime.mock.calls.length).toBeGreaterThan(2);
+        expect(node.gain.exponentialRampToValueAtTime).toHaveBeenCalled();
+      } else {
+        expect(node.gain.setValueAtTime).toHaveBeenCalledTimes(2);
+        expect(node.gain.exponentialRampToValueAtTime).not.toHaveBeenCalled();
+      }
+    });
+  });
+
+  test('run() gates a fast loop (< 0.2s) into evenly-spaced attack/decay cycles instead of one flat sustain', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) });
+    const { ctx, gainNodes } = makeFakeContext({ currentTime: 0 });
+    const engine = new LoopMorphEngine();
+    const audioBuffer = await engine.prepare(ctx, 'blob:track', 0, 1);
+    // A single 0.1s-cycle segment lasting 1s: comfortably below the 0.2s gate threshold.
+    const segments = [{ lengthBeats: 1, lengthSec: 0.1, startSec: 0, durationSec: 1 }];
+
+    engine.run({ ctx, destinationBus: { connect: jest.fn() }, audioBuffer, segments, startAt: 100 });
+
+    const [node] = gainNodes;
+    // First call is the segment's own opening fade-in-from-0 anchor, not a cycle attack.
+    expect(node.gain.setValueAtTime.mock.calls[0]).toEqual([0, 100]);
+    const cycleAttacks = node.gain.setValueAtTime.mock.calls.slice(1).map((call) => call[0]);
+    expect(cycleAttacks.every((value) => value === 1)).toBe(true);
+    expect(cycleAttacks.length).toBeGreaterThanOrEqual(8); // ~1s / 0.1s cycles, minus the fades' share
+    // Every attack is paired with a decay down to the floor, never straight to silence.
+    expect(node.gain.exponentialRampToValueAtTime.mock.calls.length).toBe(cycleAttacks.length);
+    node.gain.exponentialRampToValueAtTime.mock.calls.forEach((call) => {
+      expect(call[0]).toBeCloseTo(0.08, 6);
+    });
+    // Attack times are strictly increasing (each cycle starts after the previous one's attack).
+    const attackTimes = node.gain.setValueAtTime.mock.calls.slice(1).map((call) => call[1]);
+    for (let i = 0; i < attackTimes.length - 1; i++) {
+      expect(attackTimes[i]).toBeLessThan(attackTimes[i + 1]);
+    }
+  });
+
+  test('run() leaves a loop at/above the 0.2s gate threshold as one flat sustain (no gating)', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) });
+    const { ctx, gainNodes } = makeFakeContext({ currentTime: 0 });
+    const engine = new LoopMorphEngine();
+    const audioBuffer = await engine.prepare(ctx, 'blob:track', 0, 2);
+    const segments = [{ lengthBeats: 1, lengthSec: 0.25, startSec: 0, durationSec: 1 }];
+
+    engine.run({ ctx, destinationBus: { connect: jest.fn() }, audioBuffer, segments, startAt: 100 });
+
+    const [node] = gainNodes;
+    expect(node.gain.setValueAtTime).toHaveBeenCalledTimes(2);
+    expect(node.gain.exponentialRampToValueAtTime).not.toHaveBeenCalled();
   });
 
   test('run() pins stage 0 to an explicit startAt, and returns the t0 actually used', async () => {
@@ -373,6 +430,29 @@ describe('LoopMorphEngine', () => {
     engine.run({ ctx, destinationBus: { connect: jest.fn() }, audioBuffer, segments });
 
     expect(bufferSourceNodes[0].playbackRate.setValueAtTime).not.toHaveBeenCalled();
+  });
+
+  test('scheduleFinalSegmentRateChange() retunes only the LAST scheduled node\'s playbackRate, via a second setValueAtTime (no new node)', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) });
+    const { ctx, bufferSourceNodes } = makeFakeContext();
+    const engine = new LoopMorphEngine();
+    const audioBuffer = await engine.prepare(ctx, 'blob:track', 0, 1);
+    const segments = [
+      { lengthBeats: 1, lengthSec: 0.5, startSec: 0, durationSec: 2 },
+      { lengthBeats: 0.0625, lengthSec: 0.03125, startSec: 2, durationSec: 2 },
+    ];
+
+    engine.run({ ctx, destinationBus: { connect: jest.fn() }, audioBuffer, segments });
+    engine.scheduleFinalSegmentRateChange(150, 1.2);
+
+    expect(bufferSourceNodes).toHaveLength(2);
+    expect(bufferSourceNodes[0].playbackRate.setValueAtTime).not.toHaveBeenCalled();
+    expect(bufferSourceNodes[1].playbackRate.setValueAtTime).toHaveBeenCalledWith(1.2, 150);
+  });
+
+  test('scheduleFinalSegmentRateChange() is a safe no-op before run() has scheduled anything', () => {
+    const engine = new LoopMorphEngine();
+    expect(() => engine.scheduleFinalSegmentRateChange(150, 1.2)).not.toThrow();
   });
 
   test('stop() is idempotent and safe before run(), and hard-cancels active nodes', async () => {

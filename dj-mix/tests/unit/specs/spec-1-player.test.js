@@ -564,13 +564,15 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     player.destroy?.();
   }, 20000);
 
-  test('SPEC-1.3.8.18 — beat_repeat fait aussi boucler le deck entrant (phase 6, "identical 1/16 loop")', async () => {
+  test('SPEC-1.3.8.24 — beat_repeat ne décode/boucle que le deck SORTANT ; le deck entrant joue normalement (2026-07-29)', async () => {
+    const fetchCallsBefore = globalThis.fetch.mock.calls.length;
     const player = await makePlayer({ bpm: 220 });
     await crossfadeWithMode(player, 'beat_repeat', { url: 'blob:track-h', durationMs: 200000, bpm: 220 });
-    // prepare() fait un fetch(url) par platine : un pour le deck sortant (dès le début), un
-    // second pour le deck entrant une fois la phase 6 déclenchée.
-    expect(globalThis.fetch.mock.calls.length).toBeGreaterThanOrEqual(2);
-    expect(globalThis.fetch.mock.calls.some((call) => call[0] === 'blob:track-h')).toBe(true);
+    // prepare() fait un fetch(url) — un seul, pour le deck sortant : le deck entrant n'a plus de
+    // moteur de bouclage propre (SPEC-1.3.8.22/.24), donc pas de second fetch pour 'blob:track-h'.
+    const newFetchCalls = globalThis.fetch.mock.calls.slice(fetchCallsBefore);
+    expect(newFetchCalls.length).toBe(1);
+    expect(newFetchCalls.some((call) => call[0] === 'blob:track-h')).toBe(false);
     player.destroy?.();
   }, 20000);
 });
