@@ -65,10 +65,18 @@ self.addEventListener('install', e => {
   );
 });
 
+// Ne purger que les anciennes versions du cache d'app shell (préfixe
+// `djmix-v`) — le cache audio persistant (`dj-mix:audio-cache:v1`, voir
+// audioSourceManager.js) et tout autre cache utilisent un espace de nommage
+// différent et doivent survivre à chaque mise à jour du Service Worker
+// (SPEC-20.2), sinon le fil rouge et la file d'attente perdent leurs
+// morceaux téléchargés à chaque activation (nouvelle version déployée).
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      Promise.all(
+        keys.filter(k => k.startsWith('djmix-v') && k !== CACHE).map(k => caches.delete(k))
+      )
     )
   );
   self.clients.claim();

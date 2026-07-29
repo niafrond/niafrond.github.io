@@ -23,6 +23,8 @@ import {
   ECHO_DRY_MIX,
   STEM_SYNC_INTERVAL_MS,
   ELEMENT_MUTE_RAMP_SEC,
+  LOOP_MORPH_FILTER_MIN_HZ,
+  LOOP_MORPH_FILTER_MAX_HZ,
 } from './constants.js';
 
 // ─── Tiny utilities ───────────────────────────────────────────────────────────
@@ -281,13 +283,16 @@ export class SimpleMixFeatures {
   }
 
   // Ramp continu de l'intensité de l'écho (0-1) sans repasser par #apply() / le swap de stem
-  // audio (qui force un reseek) : utilisé par beat_repeat pour un écho qui croît progressivement
-  // pendant ses 2 dernières étapes, tick après tick, sans provoquer de glitch de lecture.
-  setEchoIntensity(value) {
+  // audio (qui force un reseek) : utilisé par beat_repeat (Progressive Loop Morph) pour un écho
+  // qui croît progressivement, tick après tick, sans provoquer de glitch de lecture. `deck`
+  // optionnel cible une seule platine (loop-morph n'anime que la platine sortante) ; omis,
+  // applique aux deux (comportement historique, préservé pour les appelants existants).
+  setEchoIntensity(value, deck) {
     if (!this.#ready || !this.#settings.echo) return;
     const intensity = clamp(Number(value) || 0, 0, 1);
-    for (const deck of ['A', 'B']) {
-      const nodes = this.#nodes(deck);
+    const decks = deck === 'A' || deck === 'B' ? [deck] : ['A', 'B'];
+    for (const d of decks) {
+      const nodes = this.#nodes(d);
       if (!nodes) continue;
       this.#setParamSmooth(nodes.wet.gain, ECHO_WET_MIX * intensity);
     }
@@ -319,6 +324,41 @@ export class SimpleMixFeatures {
     const t = this.#audioCtx.currentTime;
     nodes.elementGain.gain.cancelScheduledValues(t);
     nodes.elementGain.gain.setTargetAtTime(target, t, ELEMENT_MUTE_RAMP_SEC);
+  }
+
+  /** Loop-morph (beat_repeat) internal deck gain (0-1), independent of the crossfader-driven
+   * HTMLAudioElement.volume (#applyDeckBaseMix in player.js) — automates the previously-unused
+   * `preGain` node instead. Set directly (no #setParamSmooth/SMOOTH_TAU layer): the caller already
+   * supplies a continuously-interpolated curve at ~30ms cadence, so an extra smoothing pass would
+   * only lag behind it. */
+  setDeckGain(deck, value) {
+    if (!this.#ready) return;
+    const nodes = this.#nodes(deck);
+    if (!nodes) return;
+    const target = clamp(Number(value) || 0, 0, 1);
+    nodes.preGain.gain.setValueAtTime(target, this.#audioCtx.currentTime);
+  }
+
+  /** Loop-morph continuous high-pass sweep (0-1), independent of the discrete `deckFx.filterMode`
+   * used by other transition modes (#applyDeckToneFilter) — this reuses the same shared
+   * `toneFilter` node but drives its frequency directly on a continuous curve instead of jumping
+   * between fixed presets. Exponential interpolation from LOOP_MORPH_FILTER_MIN_HZ (near-bypass)
+   * up to LOOP_MORPH_FILTER_MAX_HZ (matches #applyDeckToneFilter's own 'highPass' target, kept as
+   * the "100%" reference for aesthetic consistency). Whichever of this or `deckFx.filterMode` was
+   * set last wins — callers must not mix the two on the same deck within one transition. */
+  setDeckFilterSweep(deck, pct) {
+    if (!this.#ready) return;
+    const nodes = this.#nodes(deck);
+    if (!nodes) return;
+    const intensity = clamp(Number(pct) || 0, 0, 1);
+    const filter = nodes.toneFilter;
+    const t = this.#audioCtx.currentTime;
+    filter.type = intensity > 0 ? 'highpass' : 'allpass';
+    filter.frequency.setValueAtTime(
+      LOOP_MORPH_FILTER_MIN_HZ * (LOOP_MORPH_FILTER_MAX_HZ / LOOP_MORPH_FILTER_MIN_HZ) ** intensity,
+      t,
+    );
+    filter.Q.setValueAtTime(0.8, t);
   }
 
   setDeckSourceMetadata(deck, source) {
@@ -421,7 +461,12 @@ export class SimpleMixFeatures {
     // sourceBus: shared convergence point so both the normal element path AND a temporary
     // buffer-source loop can feed the same downstream echo/distortion/tone-filter chain.
     const sourceBus = ctx.createGain(); sourceBus.gain.value = 1;
-    const preGain = ctx.createGain();
+    // preGain: dry-path-only gain (feeds `dry`, upstream of echo/dist sends which branch off
+    // sourceBus directly) — unused until loop-morph's setDeckGain, which automates it
+    // independently of the crossfader-driven HTMLAudioElement.volume (see #applyDeckBaseMix in
+    // player.js). Letting the echo send bypass this means a deck's echo tail can keep ringing
+    // while its dry signal is faded down via this node.
+    const preGain = ctx.createGain(); preGain.gain.value = 1;
     const echoBaseSend = ctx.createGain();    echoBaseSend.gain.value = 1;
     const echoStemSend = ctx.createGain();    echoStemSend.gain.value = 0;
     const distBaseSend = ctx.createGain();    distBaseSend.gain.value = 0;
@@ -473,6 +518,7 @@ export class SimpleMixFeatures {
     return {
       elementGain,
       sourceBus,
+      preGain,
       wet,
       dry,
       distWet,

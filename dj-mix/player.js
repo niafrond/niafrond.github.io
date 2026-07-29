@@ -8,23 +8,14 @@ import {
   SimpleMixFeatures,
 } from './lib/mixFeatures.js';
 import {
-  BEAT_REPEAT_DEFAULT_INITIAL_BEATS,
-  BEAT_REPEAT_FALLBACK_INITIAL_BEATS,
-  BEAT_REPEAT_MIN_INITIAL_BEATS,
-  BEAT_REPEAT_BEATS_PER_BAR,
-  BEAT_REPEAT_FX_STAGE_COUNT,
-  getSafeBeatRepeatBpm,
-  chooseInitialLoopBeats,
-  buildBeatRepeatStageBeats,
-  computeBeatRepeatLaunchBeats,
-  computeBeatRepeatLoopPhaseMs,
-  computeLoopAnchorSeconds,
-  computeBeatRepeatStepProgress,
-  computeBeatRepeatFinalStagePitchRatio,
-  computeBeatRepeatHalfStageIndex,
-  computeBeatRepeatElapsedBeatsAtStageStart,
-  BeatRepeatEngine,
-} from './lib/beatRepeatEngine.js';
+  LOOP_MORPH_BEATS_PER_BAR,
+  getSafeLoopMorphBpm,
+  computeLoopMorphTimeline,
+  computeLoopMorphStateAtElapsed,
+  computeLoopMorphAnchorSeconds,
+  computeLoopMorphBpmSyncRatio,
+  LoopMorphEngine,
+} from './lib/loopMorphEngine.js';
 import { createLogger } from './lib/logger.js';
 
 const logger = createLogger('player');
@@ -52,20 +43,6 @@ export function shouldResetShortLoop(currentDeckTimeSec, loopAnchorSec, repeatCo
   if (!Number.isFinite(currentDeckTimeSec)) return false;
   return (currentDeckTimeSec - loopAnchorSec) > SHORT_LOOP_LENGTH_SEC;
 }
-
-// Re-export for main.js's decorative stutter-FX sync + tests.
-export {
-  BEAT_REPEAT_DEFAULT_INITIAL_BEATS,
-  BEAT_REPEAT_FALLBACK_INITIAL_BEATS,
-  BEAT_REPEAT_MIN_INITIAL_BEATS,
-  BEAT_REPEAT_BEATS_PER_BAR,
-  BEAT_REPEAT_FX_STAGE_COUNT,
-  getSafeBeatRepeatBpm,
-  chooseInitialLoopBeats,
-  buildBeatRepeatStageBeats,
-  computeBeatRepeatLaunchBeats,
-  computeBeatRepeatLoopPhaseMs,
-};
 
 function clamp01(value) {
   return Math.max(0, Math.min(1, Number(value) || 0));
@@ -149,15 +126,12 @@ export class DJPlayer extends EventTarget {
   };
   #active = 'A';
   #crossfadeDuration = 12000;
-  // Longueur initiale (en temps) du loop capturé par le mode beat_repeat avant raccourcissement
-  // progressif — configurable indépendamment de crossfadeDuration (SPEC-1.3.8). C'est la
-  // valeur "souhaitée" ; le runway réel avant fin de piste peut la réduire (step 2).
-  #beatRepeatInitialBeats = BEAT_REPEAT_DEFAULT_INITIAL_BEATS;
-  #beatRepeatEngine = new BeatRepeatEngine();
-  // Runs only for the tail of the transition (see #startBeatRepeatIncomingLoop) so the incoming
-  // deck is also audibly stuttering by the time of the final cut, instead of sitting silent
-  // under the outgoing deck's loop for the whole phase.
-  #beatRepeatEngineIncoming = new BeatRepeatEngine();
+  // Progressive Loop Morph (beat_repeat, SPEC-1.3.8 / lib/loopmorph.md): outgoing deck's 8-phase
+  // engine (phases 1-7's loop segments, one continuous up-front schedule).
+  #loopMorphEngineOutgoing = new LoopMorphEngine();
+  // Incoming deck's own single 1/16-beat loop segment (phase 6 "Enable identical 1/16 loop"
+  // through the end of phase 7) — silent (elementGain 0) until it takes over in phase 8.
+  #loopMorphEngineIncoming = new LoopMorphEngine();
   #isCrossfading = false;
   #crossfadeNotified = false;
   #trackEndNotified = false;
@@ -214,12 +188,6 @@ export class DJPlayer extends EventTarget {
   set crossfadeDuration(ms) {
     this.#crossfadeDuration = Math.max(250, Number(ms) || 5000);
     this.#crossfadeNotified = false;
-  }
-
-  get beatRepeatInitialBeats() { return this.#beatRepeatInitialBeats; }
-  set beatRepeatInitialBeats(beats) {
-    const value = Number(beats);
-    this.#beatRepeatInitialBeats = Number.isFinite(value) && value > 0 ? value : BEAT_REPEAT_DEFAULT_INITIAL_BEATS;
   }
 
   get isCrossfading() { return this.#isCrossfading; }
@@ -1009,19 +977,12 @@ export class DJPlayer extends EventTarget {
     }
   }
 
-  // beat_repeat: capture a beat-grid-aligned loop on the outgoing deck via BeatRepeatEngine
-  // (sample-accurate, AudioContext-clock-scheduled — see lib/beatRepeatEngine.js) and hand off
-  // to Track B on the next bar boundary. Bypasses the generic #runTransitionMode tick loop
-  // entirely for the loop mechanics themselves; only reuses its general shape (30ms poll) for
-  // wall-clock UI progress events, FX nudges (high-pass/echo on the last 2 stages), and the
-  // stepped crossfader — never for the loop scheduling, which is computed once up front against
-  // the audio clock (SPEC-1.3.5/SPEC-1.3.8).
-  //
-  // Waits for the live playhead to actually reach the beat-grid anchor before switching to the
-  // loop engine (see #waitForBeatRepeatAnchor): starting the loop engine's audio content
-  // immediately, regardless of where the live element actually is, made the anchor step
-  // perceptible as a jerk/skip rather than the intended inaudible snap.
-  async #waitForBeatRepeatAnchor(context, anchorSec) {
+  // Progressive Loop Morph (beat_repeat, SPEC-1.3.8 / lib/loopmorph.md): an 8-phase state
+  // machine. Waits for the live playhead to actually reach the beat-grid anchor before switching
+  // to the loop engine — starting the loop engine's audio content immediately, regardless of
+  // where the live element actually is, made the anchor step perceptible as a jerk/skip rather
+  // than the intended inaudible snap.
+  async #waitForLoopMorphAnchor(context, anchorSec) {
     await new Promise((resolve) => {
       const check = () => {
         if (this.#destroyed) { resolve(); return; }
@@ -1033,91 +994,33 @@ export class DJPlayer extends EventTarget {
     });
   }
 
-  // Incoming deck joins the stutter for the tail of the transition, phase-locked to the exact
-  // same ctx-time instant the outgoing deck's own timeline reaches the halfway stage (SPEC-
-  // 1.3.8.17) — both decks are then genuinely IN THE SAME LOOP STATE from that instant through
-  // to the shared bar-boundary cut, not just "also looping on some independent schedule".
-  // Scheduled up front against the AudioContext clock (via BeatRepeatEngine#run's `startAt`),
-  // matching how the outgoing deck's own stages are scheduled (SPEC-1.3.8.6) — not a reactive
-  // tick-loop check, which would let decode latency desync the two decks' stage boundaries.
-  //
-  // It's fresh, unfamiliar content to the listener, so unlike #waitForBeatRepeatAnchor for the
-  // outgoing deck, no beat-grid wait is applied to *where* the loop is captured from: capturing
-  // "wherever it currently is" is an acceptable, much simpler trade-off — nobody has a reference
-  // point for what B "should" sound like yet, only for exactly *when* the stutter changes pace.
-  async #scheduleBeatRepeatIncomingLoop(context, { ctx, destinationBus, sourceUrl, secondsPerBeat, remainingStageBeats, remainingLaunchBeats, startAt, cutoverState }) {
-    const windowSec = remainingStageBeats[0] * secondsPerBeat;
-    const durationSec = Number.isFinite(context.to.duration) && context.to.duration > 0 ? context.to.duration : null;
-    const currentTimeSec = Number.isFinite(context.to.currentTime) ? context.to.currentTime : 0;
-    let anchorSec = currentTimeSec;
-    if (durationSec !== null) {
-      anchorSec = Math.min(anchorSec, Math.max(0, durationSec - windowSec));
-    }
-
-    const audioBuffer = await this.#beatRepeatEngineIncoming.prepare(ctx, sourceUrl, anchorSec, windowSec);
-    if (this.#destroyed || cutoverState.reached) return false;
-
-    this.#beatRepeatEngineIncoming.run({
-      ctx, destinationBus, audioBuffer, stageBeats: remainingStageBeats, secondsPerBeat, launchBeats: remainingLaunchBeats, startAt,
-    });
-
-    // Mute the incoming deck's own live element exactly when its scheduled loop content actually
-    // starts producing sound — muting any earlier leaves a silent gap (nothing audible yet),
-    // muting later doubles up live playback under the already-started loop.
-    const muteDelayMs = Math.max(0, (startAt - ctx.currentTime) * 1000);
-    return new Promise((resolve) => {
-      cutoverState.incomingMuteResolve = resolve;
-      cutoverState.incomingMuteTimeoutId = setTimeout(() => {
-        cutoverState.incomingMuteTimeoutId = null;
-        cutoverState.incomingMuteResolve = null;
-        if (this.#destroyed || cutoverState.reached) { resolve(false); return; }
-        this.#mixFeatures.setDeckElementGain(context.toDeck, 0);
-        resolve(true);
-      }, muteDelayMs);
-    });
-  }
-
   async #runBeatRepeatTransition(context) {
-    // Corrected from an earlier version of this effect, which incorrectly used the *incoming*
-    // deck's BPM: the loop is chopped out of the *outgoing* deck's own buffer, so its rhythmic
+    // loopmorph.md's "Deck1"/"Deck2" map onto context.fromDeck (outgoing) / context.toDeck
+    // (incoming) — the loop is captured from the OUTGOING deck's own buffer, so its rhythmic
     // grid is the outgoing track's own BPM.
-    const fromBpm = getSafeBeatRepeatBpm(this.#deckSourceMeta[context.fromDeck]?.bpm);
+    const fromBpm = getSafeLoopMorphBpm(this.#deckSourceMeta[context.fromDeck]?.bpm);
     const secondsPerBeat = 60 / fromBpm;
-    // Final-stage tempo bend target: the incoming deck's own BPM, so the last stutters lead
-    // into Track B's tempo instead of an instant tempo cut (SPEC-1.3.8.15).
-    const toBpm = getSafeBeatRepeatBpm(this.#deckSourceMeta[context.toDeck]?.bpm);
-    const finalStagePitchRatio = computeBeatRepeatFinalStagePitchRatio(fromBpm, toBpm);
+    const toBpm = getSafeLoopMorphBpm(this.#deckSourceMeta[context.toDeck]?.bpm);
+    // Phase 6 "Synchronize BPM": the INCOMING deck syncs to the outgoing deck's current tempo
+    // (opposite direction from this session's earlier beat_repeat iterations, where the outgoing
+    // deck bent toward the incoming one) — Phase 8 "Restore original tempo if Sync was
+    // temporary" reverts it once the incoming deck takes over (handled in `finally` below, same
+    // as every other transition mode's cleanup).
+    const bpmSyncRatio = computeLoopMorphBpmSyncRatio(fromBpm, toBpm);
+
+    // Total duration is pinned to player.crossfadeDuration (confirmed with user, not a
+    // beat_repeat-specific setting) — phases 1-5's literal-repeat duration (2,2,2,2,4 reps) is
+    // subtracted from it; the remainder splits across phases 6/7/8.
+    const timeline = computeLoopMorphTimeline(secondsPerBeat, this.#crossfadeDuration / 1000);
 
     const durationSec = Number.isFinite(context.from.duration) && context.from.duration > 0
       ? context.from.duration
       : null;
     const currentTimeSec = Number.isFinite(context.from.currentTime) ? context.from.currentTime : 0;
-    const remainingBeats = durationSec !== null
-      ? Math.max(0, durationSec - currentTimeSec) / secondsPerBeat
-      : Infinity;
-
-    // Step 2: default beats (configurable, see BEAT_REPEAT_DEFAULT_INITIAL_BEATS), half if
-    // runway is short, never below 2.
-    const initialBeats = chooseInitialLoopBeats(remainingBeats, this.#beatRepeatInitialBeats);
-    // Steps 3-5: halve every 2 repetitions down to the absolute 1/16-beat floor.
-    const stageBeats = buildBeatRepeatStageBeats(initialBeats);
-    // Step 8: next bar boundary after the final (floor) stage's mandatory 2 repetitions.
-    const launchBeats = computeBeatRepeatLaunchBeats(stageBeats);
-    const launchMs = launchBeats * secondsPerBeat * 1000;
-    const totalMs = launchMs;
-
-    // SPEC-1.3.5.5: the incoming deck joins the stutter once the stepped crossfader (SPEC-
-    // 1.3.8.16) reaches 50% — it reuses the outgoing deck's own remaining stages/timing so both
-    // decks land on the shared bar-boundary cut together.
-    const incomingHalfStageIndex = computeBeatRepeatHalfStageIndex(stageBeats.length);
-    const incomingElapsedBeatsThreshold = computeBeatRepeatElapsedBeatsAtStageStart(stageBeats, incomingHalfStageIndex);
-    const incomingRemainingStageBeats = stageBeats.slice(incomingHalfStageIndex);
-    const incomingRemainingLaunchBeats = launchBeats - incomingElapsedBeatsThreshold;
-
-    // Step 1: beat-grid-aligned anchor (next beat at/after the live playhead — never behind
-    // it), defensively pulled back so the loop window never reads past the track's own end.
-    const windowSec = initialBeats * secondsPerBeat;
-    let anchorSec = computeLoopAnchorSeconds(currentTimeSec, secondsPerBeat);
+    // "Loop boundaries must always align to the beat grid": next beat at/after the live
+    // playhead — never behind it (a backward anchor would replay already-heard content).
+    const windowSec = timeline.deck1Segments[0].lengthSec;
+    let anchorSec = computeLoopMorphAnchorSeconds(currentTimeSec, secondsPerBeat, 1);
     if (durationSec !== null) {
       anchorSec = Math.min(anchorSec, Math.max(0, durationSec - windowSec));
     }
@@ -1129,45 +1032,52 @@ export class DJPlayer extends EventTarget {
     const ctx = this.#mixFeatures?.getAudioContext?.();
     const destinationBus = this.#mixFeatures?.getDeckInputBus?.(context.fromDeck);
     const sourceUrl = this.#deckSourceMeta[context.fromDeck]?.url;
+    const toDestinationBus = this.#mixFeatures?.getDeckInputBus?.(context.toDeck);
+    const toSourceUrl = this.#deckSourceMeta[context.toDeck]?.url;
+
+    if (!ctx || !destinationBus || !sourceUrl || !this.#mixFeatures) {
+      // Progressive Loop Morph fundamentally needs mixFeatures' preGain/filter graph — there is
+      // no HTMLAudioElement-only equivalent of "crossfader stays put, only internal gain moves".
+      // Degrade to a plain instant handoff rather than producing no mixing at all.
+      if (context.fromDeck === 'A') this.#applyDeckBaseMix(0, 1); else this.#applyDeckBaseMix(1, 0);
+      return;
+    }
 
     let engineStarted = false;
-    let incomingLoopPromise = null;
     let incomingEngineStarted = false;
-    const cutoverState = { reached: false };
+    let phase6Triggered = false;
+    let phase8Triggered = false;
+
+    // "The user crossfader remains unchanged; only internal deck gains are automated": freeze
+    // both decks' crossfader-driven HTMLAudioElement.volume at 1 for the whole transition
+    // (#applyDeckBaseMix is never called in the tick below) so every perceived level change
+    // comes from mixFeatures#setDeckGain (the previously-unused preGain node) instead. Restored
+    // to normal crossfader-driven behavior in `finally`.
+    if (context.from) context.from.volume = 1;
+    if (context.to) context.to.volume = 1;
+    // Deck2 "Loaded, Stopped, Gain=0%" (INITIAL STATE): can't literally pause() it — it's
+    // already loaded+playing by the time this runs, per crossfadeToDeck's own pre-load flow
+    // (shared by every transition mode) — silence via the existing element mute achieves the
+    // same listener-facing result.
+    this.#mixFeatures.setDeckElementGain(context.toDeck, 0);
+    this.#mixFeatures.setDeckGain(context.toDeck, 0);
+    this.#mixFeatures.setDeckGain(context.fromDeck, 1);
 
     try {
-      if (ctx && destinationBus && sourceUrl) {
-        // Decode runs in parallel with the wait so the buffer is ready the instant the live
-        // playhead reaches the anchor — waiting first and only then decoding would let the
-        // playhead drift past the anchor again during the decode itself.
-        const preparePromise = this.#beatRepeatEngine.prepare(ctx, sourceUrl, anchorSec, windowSec);
-        await this.#waitForBeatRepeatAnchor(context, anchorSec);
+      // Decode runs in parallel with the wait so the buffer is ready the instant the live
+      // playhead reaches the anchor — waiting first and only then decoding would let the
+      // playhead drift past the anchor again during the decode itself.
+      const preparePromise = this.#loopMorphEngineOutgoing.prepare(ctx, sourceUrl, anchorSec, windowSec);
+      await this.#waitForLoopMorphAnchor(context, anchorSec);
+      let t0 = ctx.currentTime;
+      try {
         const audioBuffer = await preparePromise;
         this.#mixFeatures.setDeckElementGain(context.fromDeck, 0);
-        const { t0 } = this.#beatRepeatEngine.run({
-          ctx, destinationBus, audioBuffer, stageBeats, secondsPerBeat, launchBeats, finalStagePitchRatio,
-        });
+        ({ t0 } = this.#loopMorphEngineOutgoing.run({
+          ctx, destinationBus, audioBuffer, segments: timeline.deck1Segments,
+        }));
         engineStarted = true;
-
-        // Kick off the incoming deck's mirrored tail loop right away, scheduled against this
-        // same t0 (SPEC-1.3.8.17) — not a reactive tick-loop check — so it's phase-locked to the
-        // exact instant the outgoing timeline reaches its own halfway stage, however long its
-        // own decode takes.
-        const toDestinationBus = this.#mixFeatures?.getDeckInputBus?.(context.toDeck);
-        const toSourceUrl = this.#deckSourceMeta[context.toDeck]?.url;
-        if (toDestinationBus && toSourceUrl) {
-          incomingLoopPromise = this.#scheduleBeatRepeatIncomingLoop(context, {
-            ctx,
-            destinationBus: toDestinationBus,
-            sourceUrl: toSourceUrl,
-            secondsPerBeat,
-            remainingStageBeats: incomingRemainingStageBeats,
-            remainingLaunchBeats: incomingRemainingLaunchBeats,
-            startAt: t0 + (incomingElapsedBeatsThreshold * secondsPerBeat),
-            cutoverState,
-          }).then((started) => { incomingEngineStarted = started; }).catch(() => {});
-        }
-      }
+      } catch { /* decode failed — gain/filter/echo automation below still runs, just silent */ }
 
       await new Promise((resolve) => {
         const finishTransition = () => {
@@ -1179,7 +1089,7 @@ export class DJPlayer extends EventTarget {
         let progress = 0;
         let lastTickAt = performance.now();
 
-        this.#crossfadeInterval = setInterval(() => {
+        this.#crossfadeInterval = setInterval(async () => {
           if (this.#destroyed) {
             clearInterval(this.#crossfadeInterval);
             this.#crossfadeInterval = null;
@@ -1190,55 +1100,66 @@ export class DJPlayer extends EventTarget {
           const now = performance.now();
           const tickElapsedMs = Math.max(0, now - lastTickAt);
           lastTickAt = now;
-          progress = Math.min(1, progress + (tickElapsedMs / totalMs));
+          progress = Math.min(1, progress + (tickElapsedMs / (timeline.totalSec * 1000)));
+          const elapsedSec = progress * timeline.totalSec;
 
-          const elapsedMs = progress * totalMs;
-          let fromBase;
-          let toBase;
-          let finished = false;
+          // THE STATE MACHINE: one generic lookup+interpolation call drives every automated
+          // parameter — no per-phase branching (SPEC-1.3.8.18).
+          const state = computeLoopMorphStateAtElapsed(timeline, elapsedSec);
 
-          if (elapsedMs < launchMs) {
-            // Mix slider moves in one discrete jump per stage (not a continuous ramp) — an
-            // equal 1/N share of the way to the incoming deck per stage change, matching the
-            // audible stutter's own staircase rather than smoothing over it (SPEC-1.3.8.16).
-            const elapsedBeats = (elapsedMs / 1000) / secondsPerBeat;
-            const stepT = computeBeatRepeatStepProgress(stageBeats, elapsedBeats);
-            const levels = this.#computeTransitionLevels('beat_repeat', stepT, context.startBaseFrom, context.startBaseTo);
-            fromBase = levels.from;
-            toBase = levels.to;
+          this.#mixFeatures.setDeckGain(context.fromDeck, state.deck1Gain);
+          this.#mixFeatures.setDeckGain(context.toDeck, state.deck2Gain);
+          this.#mixFeatures.setDeckFilterSweep(context.fromDeck, state.hpFilterPct);
+          this.#mixFeatures.setDeckFilterSweep(context.toDeck, state.deck2FilterPct);
+          if (state.echoPct > 0) {
+            if (!startEcho) this.setMixFeatures({ echo: true });
+            this.#mixFeatures?.setEchoIntensity?.(state.echoPct, context.fromDeck);
+          }
 
-            // Last BEAT_REPEAT_FX_STAGE_COUNT stages (shortest): high-pass on the outgoing
-            // deck + echo ramping 0->1 across their combined duration.
-            const fxStageStartIndex = Math.max(0, stageBeats.length - BEAT_REPEAT_FX_STAGE_COUNT);
-            const fxPhaseStartBeats = stageBeats
-              .slice(0, fxStageStartIndex)
-              .reduce((sum, beats) => sum + (beats * 2), 0);
-            if (elapsedBeats >= fxPhaseStartBeats) {
-              if (savedFromFilterMode !== 'highPass') {
-                this.setMixFeatures({ deckFx: { [context.fromDeck]: { filterMode: 'highPass' } } });
-              }
-              if (!startEcho) this.setMixFeatures({ echo: true });
-              const fxPhaseTotalBeats = Math.max(0.001, launchBeats - fxPhaseStartBeats);
-              const echoIntensity = clamp01((elapsedBeats - fxPhaseStartBeats) / fxPhaseTotalBeats);
-              this.#mixFeatures?.setEchoIntensity?.(echoIntensity);
+          // Phase 6 one-time actions: sync deck2's tempo, compute a bar-aligned anchor/seek, and
+          // start its own identical 1/16 loop — scheduled against t0 + the exact instant deck1's
+          // own timeline enters phase 6 (SPEC-1.3.8.6-style up-front scheduling), triggered once
+          // via this guard rather than a reactive per-tick decision.
+          if (!phase6Triggered && elapsedSec >= timeline.phase6StartSec) {
+            phase6Triggered = true;
+            this.#smoothSetDeckPlaybackRate(context.toDeck, bpmSyncRatio, 180);
+            if (toDestinationBus && toSourceUrl) {
+              try {
+                const toSecondsPerBeat = 60 / toBpm;
+                const toCurrentTimeSec = Number.isFinite(context.to.currentTime) ? context.to.currentTime : 0;
+                const toDurationSec = Number.isFinite(context.to.duration) && context.to.duration > 0 ? context.to.duration : null;
+                const toWindowSec = timeline.deck2Segment.lengthSec;
+                let toAnchorSec = computeLoopMorphAnchorSeconds(toCurrentTimeSec, toSecondsPerBeat, LOOP_MORPH_BEATS_PER_BAR);
+                if (toDurationSec !== null) {
+                  toAnchorSec = Math.min(toAnchorSec, Math.max(0, toDurationSec - toWindowSec));
+                }
+                context.to.currentTime = toAnchorSec;
+                const toAudioBuffer = await this.#loopMorphEngineIncoming.prepare(ctx, toSourceUrl, toAnchorSec, toWindowSec);
+                if (!this.#destroyed) {
+                  this.#loopMorphEngineIncoming.run({
+                    ctx, destinationBus: toDestinationBus, audioBuffer: toAudioBuffer,
+                    segments: [timeline.deck2Segment], playbackRate: bpmSyncRatio,
+                    startAt: t0 + timeline.phase6StartSec,
+                  });
+                  incomingEngineStarted = true;
+                }
+              } catch { /* deck2's own loop is a decorative texture, not required to complete */ }
             }
-          } else {
-            // Bar boundary reached: instant cut to Track B (the final step of the staircase),
-            // consistent with the stutter aesthetic rather than a smoothed-over handoff.
-            cutoverState.reached = true;
-            fromBase = 0;
-            toBase = 1;
-            finished = true;
           }
 
-          fromBase = clamp01(fromBase);
-          toBase = clamp01(toBase);
-
-          if (context.fromDeck === 'A') {
-            this.#applyDeckBaseMix(fromBase, toBase);
-          } else {
-            this.#applyDeckBaseMix(toBase, fromBase);
+          // Phase 8 one-time action: both engines' loops have already stopped naturally by this
+          // point (their own up-front schedule ends exactly at phase8StartSec) — un-mute both
+          // elements so deck1's real (near-silent) tail and deck2's real (now dominant)
+          // unlooped playback take over from the buffer engines.
+          if (!phase8Triggered && elapsedSec >= timeline.phase8StartSec) {
+            phase8Triggered = true;
+            this.#mixFeatures.setDeckElementGain(context.fromDeck, 1);
+            this.#mixFeatures.setDeckElementGain(context.toDeck, 1);
           }
+
+          const finished = progress >= 1;
+          const fromBase = clamp01(state.deck1Gain);
+          const toBase = clamp01(state.deck2Gain);
 
           this.#requestEmitDeckState();
           this.dispatchEvent(new CustomEvent('crossfadeprogress', {
@@ -1248,41 +1169,46 @@ export class DJPlayer extends EventTarget {
               toVolume: toBase,
               toPosition: Number.isFinite(context.to.currentTime) ? context.to.currentTime * 1000 : 0,
               toDuration: Number.isFinite(context.to.duration) && context.to.duration > 0 ? context.to.duration * 1000 : 0,
-              durationMs: totalMs,
+              durationMs: timeline.totalSec * 1000,
               progress: finished ? 1 : progress,
               mode: 'beat_repeat',
             },
           }));
 
-          if (progress >= 1 || finished) {
+          if (finished) {
             clearInterval(this.#crossfadeInterval);
             this.#crossfadeInterval = null;
-            finishTransition();
+            // Phase 8 "Continue playback silently for 200 ms" (deck1) before the transition
+            // resolves — crossfadeToDeck's own cleanup pauses/resets deck1 immediately once this
+            // promise resolves, so the silence has to happen here, before that.
+            setTimeout(finishTransition, 200);
           }
         }, 30);
       });
     } finally {
-      // If the transition ended (destroyed, or interrupted) before the incoming loop's own
-      // scheduled mute instant arrived, cancel it and force-resolve rather than leaving
-      // `await incomingLoopPromise` blocked on a setTimeout that may be seconds away.
-      if (cutoverState.incomingMuteTimeoutId) {
-        clearTimeout(cutoverState.incomingMuteTimeoutId);
-        cutoverState.incomingMuteTimeoutId = null;
-        cutoverState.incomingMuteResolve?.(false);
-        cutoverState.incomingMuteResolve = null;
-      }
-      if (incomingLoopPromise) await incomingLoopPromise;
-      this.#beatRepeatEngine.stop();
-      this.#beatRepeatEngineIncoming.stop();
+      this.#loopMorphEngineOutgoing.stop();
+      this.#loopMorphEngineIncoming.stop();
       if (engineStarted) {
-        this.#mixFeatures?.setDeckElementGain(context.fromDeck, 1);
+        this.#mixFeatures.setDeckElementGain(context.fromDeck, 1);
       }
       if (incomingEngineStarted) {
-        this.#mixFeatures?.setDeckElementGain(context.toDeck, 1);
+        this.#mixFeatures.setDeckElementGain(context.toDeck, 1);
       }
-      this.#mixFeatures?.setEchoIntensity?.(1);
+      // Reset the internal deck-gain node (preGain) and filter sweep to neutral so they don't
+      // silently affect future normal (crossfader-driven) playback.
+      this.#mixFeatures.setDeckGain(context.fromDeck, 1);
+      this.#mixFeatures.setDeckGain(context.toDeck, 1);
+      this.#mixFeatures.setDeckFilterSweep(context.fromDeck, 0);
+      this.#mixFeatures.setDeckFilterSweep(context.toDeck, 0);
+      this.#mixFeatures?.setEchoIntensity?.(1, context.fromDeck);
       if (!startEcho) this.setMixFeatures({ echo: false });
       this.setMixFeatures({ deckFx: { [context.fromDeck]: { filterMode: savedFromFilterMode } } });
+      // Skip forcing the crossfader-driven levels if the user grabbed manual control mid-
+      // transition (cancelActiveTransition) — they're already driving #smoothSetDeckMixRatio,
+      // forcing (0,1) here would fight them.
+      if (!this.#crossfadeCancelledByUser) {
+        if (context.fromDeck === 'A') this.#applyDeckBaseMix(0, 1); else this.#applyDeckBaseMix(1, 0);
+      }
       this.#smoothSetDeckPlaybackRate(context.fromDeck, 1, 160);
       this.#smoothSetDeckPlaybackRate(context.toDeck, 1, 220);
     }
@@ -1442,13 +1368,6 @@ export class DJPlayer extends EventTarget {
           to: startBaseTo + ((1 - startBaseTo) * toProgress),
         };
       }
-      case 'beat_repeat': {
-        // `t` here is a stage-quantized step (computeBeatRepeatStepProgress), not continuous
-        // time — the plain linear curve applied to a stepped t already produces the intended
-        // staircase crossfader. The final bar-boundary handoff is a separate instant cut
-        // (fromBase=0/toBase=1), applied directly in the tick, not through this curve.
-        return { from: linearFrom, to: linearTo };
-      }
       case 'backspin': {
         // Phase 1 : fromDeck décélère et s'arrête ; toDeck monte dès 20% pour éviter tout silence
         const from = clampedT < 0.35
@@ -1481,8 +1400,8 @@ export class DJPlayer extends EventTarget {
     clearInterval(this.#trackInterval);
     clearInterval(this.#crossfadeInterval);
     this.#crossfadeInterval = null;
-    this.#beatRepeatEngine?.stop();
-    this.#beatRepeatEngineIncoming?.stop();
+    this.#loopMorphEngineOutgoing?.stop();
+    this.#loopMorphEngineIncoming?.stop();
 
     if (this.#manualMixRafId !== null) {
       cancelAnimationFrame(this.#manualMixRafId);

@@ -14,6 +14,11 @@ export const STEM_SYNC_INTERVAL_MS = 2500;
 // AudioParam setTargetAtTime time-constant (s) for the beat_repeat element-mute switch —
 // much shorter than SMOOTH_TAU (80ms) because a 1/16-beat loop stage can be as short as ~17ms.
 export const ELEMENT_MUTE_RAMP_SEC = 0.008;
+// Progressive Loop Morph (beat_repeat) continuous high-pass sweep endpoints (Hz) — 0% is
+// near-bypass, 100% matches #applyDeckToneFilter's existing binary 'highPass' target (280Hz),
+// kept as the reference point for aesthetic consistency with the rest of the app.
+export const LOOP_MORPH_FILTER_MIN_HZ = 20;
+export const LOOP_MORPH_FILTER_MAX_HZ = 280;
 
 // ─── DJ FX controller (djFxController.js) ────────────────────────────────────
 export const LOOP_CUE_REPEAT_COUNT = 3;
