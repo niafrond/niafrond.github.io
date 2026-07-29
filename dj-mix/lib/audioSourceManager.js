@@ -6,6 +6,7 @@ import {
 } from './searchUtils.js';
 import { appendApiToken, resolveCdnArtworkUrl as resolveCdnArtworkRef } from './downloaderConfig.js';
 import { createLogger } from './logger.js';
+import { createBlobStore } from './blobStore.js';
 
 const logger = createLogger('audio-source');
 const logDebug = (event, payload) => logger.debug(event, payload);
@@ -145,113 +146,57 @@ export function readAudioDurationMs(sourceUrl) {
   });
 }
 
-function getPersistentAudioCacheRequest(cacheKey) {
-  const safeKey = encodeURIComponent(String(cacheKey || 'unknown'));
-  return new Request(`https://dj-mix.local/cache-audio/${safeKey}`);
-}
+// Persisted via IndexedDB (lib/blobStore.js), not the Cache Storage API:
+// `window.caches` only exists in secure contexts (HTTPS, or `localhost`
+// specifically) and is silently absent when the app is accessed over a plain
+// HTTP LAN IP (e.g. from a phone on the same network) — this app's real
+// deployment mode. `indexedDB` has no such restriction.
 
-async function persistAudioBlob(cacheKey, blob, audioCacheName) {
+async function persistAudioBlob(cacheKey, blob, blobStore) {
   if (!cacheKey || !blob || blob.size <= 0) return;
-  if (!('caches' in window)) return;
-
-  try {
-    const cache = await caches.open(audioCacheName);
-    const req = getPersistentAudioCacheRequest(cacheKey);
-    const res = new Response(blob, {
-      headers: {
-        'content-type': blob.type || 'audio/mpeg',
-      },
-    });
-    await cache.put(req, res);
-    logDebug('cache.persist.blob', {
-      cacheKey,
-      size: blob.size,
-      type: blob.type || 'audio/mpeg',
-      audioCacheName,
-    });
-  } catch (err) {
+  const ok = await blobStore.putBlob('audio', cacheKey, blob);
+  if (ok) {
+    logDebug('blob.persist.audio', { cacheKey, size: blob.size, type: blob.type || 'audio/mpeg' });
+  } else {
     // Best effort only (playback already has its blob URL regardless), but a
-    // silent failure here (e.g. QuotaExceededError once many tracks pile up)
-    // is otherwise indistinguishable from a normal cache miss on next reload —
-    // log it so that scenario is diagnosable instead of just "redownloads
-    // forever" with no trace.
-    logWarn('cache.persist.blob.failed', {
-      cacheKey,
-      size: blob?.size,
-      audioCacheName,
-      errorName: err?.name,
-      message: err?.message,
-    });
+    // silent failure here is otherwise indistinguishable from a normal cache
+    // miss on next reload — log it so that scenario is diagnosable instead of
+    // just "redownloads forever" with no trace.
+    logWarn('blob.persist.audio.failed', { cacheKey, size: blob?.size });
   }
 }
 
-async function restorePersistedAudioBlobUrl(cacheKey, audioCacheName) {
+async function restorePersistedAudioBlobUrl(cacheKey, blobStore) {
   if (!cacheKey) return null;
-  if (!('caches' in window)) return null;
-
-  try {
-    const cache = await caches.open(audioCacheName);
-    const req = getPersistentAudioCacheRequest(cacheKey);
-    const cached = await cache.match(req);
-    if (!cached) {
-      logDebug('cache.restore.persisted.miss', { cacheKey, audioCacheName });
-      return null;
-    }
-    const blob = await cached.blob();
-    if (!blob || blob.size <= 0) return null;
-    logInfo('cache.restore.persisted.hit', {
-      cacheKey,
-      size: blob.size,
-      audioCacheName,
-    });
-    return URL.createObjectURL(blob);
-  } catch (err) {
-    // Distinguishes a genuine cache miss (above, expected/silent) from a
-    // Cache Storage API failure (caches.open/match throwing — e.g. blocked in
-    // Private Browsing, storage partitioning) which otherwise looked
-    // identical from the caller's perspective and left no trace to diagnose.
-    logWarn('cache.restore.persisted.error', {
-      cacheKey,
-      audioCacheName,
-      errorName: err?.name,
-      message: err?.message,
-    });
+  const blob = await blobStore.getBlob('audio', cacheKey);
+  if (!blob) {
+    logDebug('blob.restore.audio.miss', { cacheKey });
     return null;
   }
+  logInfo('blob.restore.audio.hit', { cacheKey, size: blob.size });
+  return URL.createObjectURL(blob);
 }
 
-function getArtworkCacheRequest(trackKey) {
-  const safeKey = encodeURIComponent(String(trackKey || 'unknown'));
-  return new Request(`https://dj-mix.local/cache-artwork/${safeKey}`);
-}
-
-async function persistArtworkBlob(trackKey, artUrl, cacheName) {
-  if (!trackKey || !artUrl || !('caches' in window)) return;
+async function persistArtworkBlob(trackKey, artUrl, blobStore) {
+  if (!trackKey || !artUrl) return;
   try {
-    const cache = await caches.open(cacheName);
-    if (await cache.match(getArtworkCacheRequest(trackKey))) return;
+    const existing = await blobStore.getBlob('artwork', trackKey);
+    if (existing) return;
     const res = await fetch(artUrl);
     if (!res.ok) return;
     const blob = await res.blob();
     if (!blob || blob.size <= 0) return;
-    await cache.put(getArtworkCacheRequest(trackKey), new Response(blob, {
-      headers: { 'content-type': blob.type || 'image/jpeg' },
-    }));
-  } catch (_) {}
+    await blobStore.putBlob('artwork', trackKey, blob);
+  } catch (_) {
+    // Best effort only — artwork keeps rendering from its remote/CDN URL.
+  }
 }
 
-async function restorePersistedArtworkBlobUrl(trackKey, cacheName) {
-  if (!trackKey || !('caches' in window)) return null;
-  try {
-    const cache = await caches.open(cacheName);
-    const cached = await cache.match(getArtworkCacheRequest(trackKey));
-    if (!cached) return null;
-    const blob = await cached.blob();
-    if (!blob || blob.size <= 0) return null;
-    return URL.createObjectURL(blob);
-  } catch (_) {
-    return null;
-  }
+async function restorePersistedArtworkBlobUrl(trackKey, blobStore) {
+  if (!trackKey) return null;
+  const blob = await blobStore.getBlob('artwork', trackKey);
+  if (!blob) return null;
+  return URL.createObjectURL(blob);
 }
 
 export function releaseLocalBlob(item, touchQueueItem) {
@@ -330,7 +275,10 @@ export function clearSessionBlobCache(sessionBlobCache) {
 export function createAudioSourceManager(options) {
   const {
     apiHealthMonitor,
-    audioCacheName,
+    // `audioCacheName` is a legacy option, no longer used: local persistence
+    // now lives in IndexedDB (lib/blobStore.js), not Cache Storage. Kept
+    // accepted-but-ignored so existing call sites don't need to change.
+    blobStore = createBlobStore(),
     getDownloaderApiToken,
     getDownloaderApiUrl,
     getDownloaderCdnUrl,

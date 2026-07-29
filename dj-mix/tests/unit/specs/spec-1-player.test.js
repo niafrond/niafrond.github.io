@@ -564,6 +564,21 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     player.destroy?.();
   }, 20000);
 
+  test('SPEC-1.3.8.38 — beat_repeat active l\'écho UNE SEULE fois, pas à chaque tick (2026-07-29, régression)', async () => {
+    // Bug: `startEcho` était un instantané figé avant la transition ; le tick (toutes les ~30ms)
+    // le comparait à lui-même et rappelait `setMixFeatures({ echo: true })` en boucle tant que
+    // echoPct > 0 (phases 6-8), chaque appel déclenchant `#apply()` — qui remet à plat
+    // instantanément (pas de rampe) le mix wet/dry des DEUX platines et met en pause l'éventuel
+    // stem audio — d'où un grésillement/stutter perceptible. `echoEnabled` doit maintenant
+    // garder l'état localement et ne déclencher l'appel qu'une fois.
+    const player = await makePlayer({ bpm: 220 });
+    const setMixFeaturesSpy = jest.spyOn(player, 'setMixFeatures');
+    await crossfadeWithMode(player, 'beat_repeat', { url: 'blob:track-echo', durationMs: 200000, bpm: 220 });
+    const echoOnCalls = setMixFeaturesSpy.mock.calls.filter((call) => call[0]?.echo === true);
+    expect(echoOnCalls.length).toBe(1);
+    player.destroy?.();
+  }, 20000);
+
   test('SPEC-1.3.8.24 — beat_repeat ne décode/boucle que le deck SORTANT ; le deck entrant joue normalement (2026-07-29)', async () => {
     const fetchCallsBefore = globalThis.fetch.mock.calls.length;
     const player = await makePlayer({ bpm: 220 });

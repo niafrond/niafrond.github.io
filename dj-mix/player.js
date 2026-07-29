@@ -1044,6 +1044,13 @@ export class DJPlayer extends EventTarget {
     let engineStarted = false;
     let phase6Triggered = false;
     let phase8Triggered = false;
+    // Tracks whether we've already turned echo on THIS transition — `startEcho` below is a
+    // one-time snapshot of the state *before* the transition started, not live state, so using
+    // it alone as the tick's guard re-fires setMixFeatures({ echo: true }) (and its #apply(),
+    // which hard-resets both decks' wet/dry/echo gains + pauses stem audio) on every ~30ms tick
+    // for the whole back half of the transition — the actual cause of a "grésillement/stutter"
+    // artifact reported 2026-07-29, confirmed by a flood of [mixFeatures] apply logs.
+    let echoEnabled = startEcho;
 
     // "The user crossfader remains unchanged; only internal deck gains are automated": freeze
     // both decks' crossfader-driven HTMLAudioElement.volume at 1 for the whole transition
@@ -1115,7 +1122,7 @@ export class DJPlayer extends EventTarget {
           this.#mixFeatures.setDeckFilterSweep(context.fromDeck, state.hpFilterPct);
           this.#mixFeatures.setDeckFilterSweep(context.toDeck, state.deck2FilterPct);
           if (state.echoPct > 0) {
-            if (!startEcho) this.setMixFeatures({ echo: true });
+            if (!echoEnabled) { this.setMixFeatures({ echo: true }); echoEnabled = true; }
             this.#mixFeatures?.setEchoIntensity?.(state.echoPct, context.fromDeck);
           }
 
