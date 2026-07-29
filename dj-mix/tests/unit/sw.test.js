@@ -32,6 +32,23 @@ function loadServiceWorker() {
   return { listeners, fakeSelf, fakeCaches, currentCache };
 }
 
+describe('SPEC-20.5 — la liste ASSETS de sw.js précache tous les modules lib/', () => {
+  test('chaque fichier lib/*.js existe dans ASSETS (sinon PWA offline cassée après ajout d\'un module)', () => {
+    const swSource = fs.readFileSync(path.join(__dirname, '../../sw.js'), 'utf8');
+    const assetsMatch = swSource.match(/const ASSETS = \[([\s\S]*?)\];/);
+    expect(assetsMatch).toBeTruthy();
+    const assets = [...assetsMatch[1].matchAll(/'([^']+)'/g)].map(m => m[1]);
+
+    const libDir = path.join(__dirname, '../../lib');
+    const libFiles = fs.readdirSync(libDir)
+      .filter(f => f.endsWith('.js'))
+      .map(f => `./lib/${f}`);
+
+    const missing = libFiles.filter(f => !assets.includes(f));
+    expect(missing).toEqual([]);
+  });
+});
+
 describe('SPEC-20.4 — activate() du Service Worker ne purge que les anciennes versions du cache app-shell', () => {
   test('supprime les anciens caches "djmix-v*" mais préserve le cache audio persistant et tout autre cache', async () => {
     const { listeners, fakeSelf, fakeCaches, currentCache } = loadServiceWorker();
