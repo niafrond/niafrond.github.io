@@ -1,3 +1,12 @@
+## [2.19.0](https://github.com/niafrond/niafrond.github.io/compare/v2.18.0...v2.19.0) (2026-07-29)
+
+### Features
+
+* Add unit tests for LoopMorphEngine and update player specs ([8d1cc22](https://github.com/niafrond/niafrond.github.io/commit/8d1cc22d16771be5ee614bcd5960e4088847f2ce))
+* enhance track handling during API failures to prevent loss from Fil Rouge playlist ([58b3123](https://github.com/niafrond/niafrond.github.io/commit/58b31238f102580a78bb3194dae688c288e3081a))
+* implement artwork persistence logic and integrate with audio source manager ([46c42ae](https://github.com/niafrond/niafrond.github.io/commit/46c42ae6f381f95d382fc5e1a48bbe7f922f199c))
+* Implement IndexedDB-based blob storage for audio and artwork, replacing Cache Storage API ([9074006](https://github.com/niafrond/niafrond.github.io/commit/9074006d8b13593155ba3fc7e6c03abad50aaacd))
+
 ## [2.18.0](https://github.com/niafrond/niafrond.github.io/compare/v2.17.0...v2.18.0) (2026-07-26)
 
 ### Features
