@@ -196,9 +196,15 @@ export async function doApkUpdate() {
 // ─── Service Worker ─────────────────────────────────────────────────────────
 let _reloadPending = false;
 
-// Cache audio des pistes téléchargées — doit être préservé lors d'une mise à
-// jour forcée (SPEC-20.2) pour éviter de perdre tous les morceaux déjà
-// téléchargés. Doit rester synchronisé avec la constante AUDIO_CACHE de sw.js.
+// SPEC-13.1.4 — les morceaux téléchargés (audio + artwork) sont persistés en
+// IndexedDB (`dj-mix-blobs`, lib/blobStore.js), pas dans le Cache Storage du
+// Service Worker : IndexedDB n'a pas besoin de contexte sécurisé (fonctionne
+// en HTTP simple sur IP LAN, contrairement à `window.caches`) et n'est de
+// toute façon jamais touché ici (`caches.delete()` ci-dessous ne peut pas
+// l'affecter). `AUDIO_CACHE_NAME` ne désigne plus que l'ancien bucket Cache
+// Storage (`dj-mix:audio-cache:v1`) — conservé uniquement en nettoyage de
+// compatibilité pour les rares utilisateurs HTTPS ayant d'anciennes entrées ;
+// vide, l'y toucher ou non n'a aucune conséquence.
 const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
 
 /**
@@ -208,9 +214,9 @@ const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
  * ne suffisent pas à faire remonter du code manifestement périmé (SW bloqué
  * en `waiting`, cache navigateur tiers, etc.).
  *
- * Le cache audio des morceaux téléchargés (`dj-mix:audio-cache:v1`) est
- * intentionnellement préservé pour ne pas obliger l'utilisateur à tout
- * re-télécharger après une mise à jour (SPEC-20.2).
+ * N'affecte jamais les morceaux téléchargés (IndexedDB, voir plus haut) — rien
+ * à préserver explicitement ici pour ça. L'ancien bucket Cache Storage
+ * `dj-mix:audio-cache:v1` (legacy) est quand même épargné par précaution.
  */
 export async function forceUpdatePwa() {
   const btn = document.getElementById('btn-force-update');
@@ -226,7 +232,7 @@ export async function forceUpdatePwa() {
     }
     if ('caches' in window) {
       const keys = await caches.keys();
-      // Preserve the audio cache so downloaded tracks survive the update.
+      // Preserve the legacy audio cache bucket, just in case.
       await Promise.all(keys.filter(k => k !== AUDIO_CACHE_NAME).map(k => caches.delete(k)));
     }
   } catch (_) {

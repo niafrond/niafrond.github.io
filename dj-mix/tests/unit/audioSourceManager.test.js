@@ -545,8 +545,13 @@ describe('audioSourceManager', () => {
       await manager.ensureLocalSource(item);
       await flushMicrotasks();
 
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(fetchMock.mock.calls[0][1]?.method).toBeUndefined();
+      // 2 calls expected: the audio stream, and the artwork-bytes persist
+      // (both plain GETs) — neither is the POST /api/download background
+      // refresh this test guards against (SPEC-13.3.10).
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      for (const call of fetchMock.mock.calls) {
+        expect(call[1]?.method).toBeUndefined();
+      }
     });
   });
 
@@ -723,6 +728,144 @@ describe('audioSourceManager', () => {
       expect(source).toBe('http://api.test/api/cache/already-local-2.mp3');
       expect(item.sourceState).toBe('ready');
       expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  // SPEC-13.1.4 / SPEC-13.3.9 — local persistence moved from the Cache Storage
+  // API (window.caches, unavailable over a plain-HTTP LAN IP — an insecure
+  // context — which is this app's real deployment mode) to an IndexedDB-backed
+  // blobStore (lib/blobStore.js). These tests inject a small in-memory fake
+  // blobStore (rather than a real IndexedDB, already covered by
+  // tests/unit/blobStore.test.js) to verify audioSourceManager actually reads
+  // and writes through it on every download.
+  describe('SPEC-13.1.4 / SPEC-13.3.9 — blobStore-backed local persistence (audio + artwork)', () => {
+    const originalFetch = global.fetch;
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+
+    afterEach(() => {
+      global.fetch = originalFetch;
+      URL.createObjectURL = originalCreateObjectURL;
+      URL.revokeObjectURL = originalRevokeObjectURL;
+    });
+
+    function makeFakeBlobStore() {
+      const store = { audio: new Map(), artwork: new Map() };
+      return {
+        getBlob: jest.fn(async (kind, key) => store[kind]?.get(key) || null),
+        putBlob: jest.fn(async (kind, key, blob) => { store[kind].set(key, blob); return true; }),
+        deleteBlob: jest.fn(async (kind, key) => { store[kind]?.delete(key); return true; }),
+        clearKind: jest.fn(async (kind) => { store[kind]?.clear(); return true; }),
+        clearAll: jest.fn(async () => { store.audio.clear(); store.artwork.clear(); return true; }),
+        _store: store,
+      };
+    }
+
+    const ART_URL = 'http://cdn.test/api/artwork?cachePath=%2Fart%2Fok.jpg';
+
+    function makeFetchMock() {
+      return jest.fn((url) => {
+        if (String(url).includes('/api/stream')) {
+          return Promise.resolve({ ok: true, blob: async () => new Blob(['audio-bytes'], { type: 'audio/mpeg' }) });
+        }
+        if (String(url) === ART_URL) {
+          return Promise.resolve({ ok: true, blob: async () => new Blob(['art-bytes'], { type: 'image/jpeg' }) });
+        }
+        return Promise.resolve({ ok: false, status: 404 });
+      });
+    }
+
+    function makeManager(blobStore, overrides = {}) {
+      return createAudioSourceManager({
+        apiHealthMonitor: null,
+        blobStore,
+        getDownloaderApiUrl: () => 'http://api.test',
+        getDownloaderApiToken: () => '',
+        getDownloaderCdnUrl: () => 'http://cdn.test',
+        onQueueUpdated: jest.fn(),
+        persistArtUrl: jest.fn(),
+        sessionBlobCache: new Map(),
+        touchQueueItem: jest.fn(),
+        ...overrides,
+      });
+    }
+
+    test('persists both audio and artwork bytes on download, even when cachePath (and artUrl) were already known — direct regression test for the "fil rouge dit déjà téléchargé mais retélécharge" bug', async () => {
+      URL.createObjectURL = jest.fn(() => 'blob:fake');
+      URL.revokeObjectURL = jest.fn();
+      const fetchMock = makeFetchMock();
+      global.fetch = fetchMock;
+
+      const blobStore = makeFakeBlobStore();
+      const manager = makeManager(blobStore);
+      const item = {
+        id: 'known-track',
+        name: 'Known Track',
+        artist: 'Known Artist',
+        cachePath: '/cache/known.mp3', // already known — takes the direct-CDN-stream shortcut
+        artUrl: ART_URL, // already known — previously meant persistArtwork() never ran at all
+        duration: 1000,
+      };
+
+      await manager.ensureLocalSource(item);
+
+      expect(blobStore.putBlob).toHaveBeenCalledWith('audio', 'known-track', expect.any(Blob));
+      expect(blobStore.putBlob).toHaveBeenCalledWith('artwork', 'known-track', expect.any(Blob));
+      expect(blobStore._store.audio.get('known-track')?.type).toBe('audio/mpeg');
+      expect(blobStore._store.artwork.get('known-track')?.type).toBe('image/jpeg');
+    });
+
+    test('a later ensureLocalSource() for the same track (fresh manager/session, shared blobStore) restores from the store instead of re-fetching', async () => {
+      URL.createObjectURL = jest.fn(() => 'blob:fake');
+      URL.revokeObjectURL = jest.fn();
+      const blobStore = makeFakeBlobStore();
+
+      // Session 1: real download, populates the shared blobStore.
+      global.fetch = makeFetchMock();
+      const manager1 = makeManager(blobStore);
+      const item1 = {
+        id: 'repeat-track', name: 'Repeat Track', artist: 'Someone',
+        cachePath: '/cache/repeat.mp3', artUrl: ART_URL, duration: 1000,
+      };
+      await manager1.ensureLocalSource(item1);
+
+      // Session 2: fresh manager (fresh in-memory sessionBlobCache, exactly
+      // like a page reload), same underlying persisted blobStore. Must not
+      // hit the network again.
+      const fetchMock2 = jest.fn();
+      global.fetch = fetchMock2;
+      const manager2 = makeManager(blobStore);
+      const item2 = {
+        id: 'repeat-track', name: 'Repeat Track', artist: 'Someone',
+        cachePath: '/cache/repeat.mp3', artUrl: ART_URL, duration: 1000,
+      };
+      const source = await manager2.ensureLocalSource(item2);
+
+      expect(source).toBe('blob:fake');
+      expect(fetchMock2).not.toHaveBeenCalled();
+    });
+
+    test('deleteLocalCacheSong evicts both the audio and artwork blobs from the store', async () => {
+      const blobStore = makeFakeBlobStore();
+      await blobStore.putBlob('audio', 'del-track', new Blob(['a'], { type: 'audio/mpeg' }));
+      await blobStore.putBlob('artwork', 'del-track', new Blob(['b'], { type: 'image/jpeg' }));
+
+      global.fetch = jest.fn(() => Promise.resolve({ ok: true }));
+      const manager = makeManager(blobStore);
+
+      await manager.deleteLocalCacheSong({ id: 'del-track', name: 'Del Track', artist: 'Someone', cachePath: '/cache/del.mp3' });
+
+      expect(blobStore.deleteBlob).toHaveBeenCalledWith('audio', 'del-track');
+      expect(blobStore.deleteBlob).toHaveBeenCalledWith('artwork', 'del-track');
+      expect(blobStore._store.audio.has('del-track')).toBe(false);
+      expect(blobStore._store.artwork.has('del-track')).toBe(false);
+    });
+
+    test('clearAllPersistedBlobs() delegates to blobStore.clearAll()', async () => {
+      const blobStore = makeFakeBlobStore();
+      const manager = makeManager(blobStore);
+      await manager.clearAllPersistedBlobs();
+      expect(blobStore.clearAll).toHaveBeenCalledTimes(1);
     });
   });
 });

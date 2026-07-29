@@ -319,60 +319,52 @@ describe('setQueueLoopEnabled / setQueueShuffleEnabled', () => {
 // ── clearLocalCache ─────────────────────────────────────────────────────────────
 
 describe('clearLocalCache', () => {
-  test('deletes the audio cache and clears session blobs when Cache Storage is available', async () => {
+  test('clears the IndexedDB blob store and session blobs, and deletes the legacy audio cache when Cache Storage is available', async () => {
     const cachesApi = {
       keys: jest.fn().mockResolvedValue(['dj-mix:audio-cache:v1', 'other-cache']),
       delete: jest.fn().mockResolvedValue(true),
     };
+    const clearPersistedBlobs = jest.fn().mockResolvedValue(undefined);
     const clearSessionBlobCache = jest.fn();
     const showToast = jest.fn();
 
     await clearLocalCache({
       cachesApi,
       audioCacheName: 'dj-mix:audio-cache:v1',
+      clearPersistedBlobs,
       clearSessionBlobCache,
       isSecureContext: true,
       showToast,
     });
 
+    expect(clearPersistedBlobs).toHaveBeenCalledTimes(1);
     expect(cachesApi.delete).toHaveBeenCalledWith('dj-mix:audio-cache:v1');
     expect(cachesApi.delete).not.toHaveBeenCalledWith('other-cache');
     expect(clearSessionBlobCache).toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith('Cache local vidé');
   });
 
-  test('clears session blobs and shows an insecure-context hint when Cache Storage is unavailable (e.g. LAN IP over HTTP)', async () => {
+  // IndexedDB (unlike the legacy Cache Storage API it replaces) has no
+  // secure-context requirement, so clearing local persistence must succeed
+  // even over a plain-HTTP LAN IP where `window.caches` is absent entirely —
+  // this is the exact deployment mode that motivated the IndexedDB move.
+  test('clears the IndexedDB blob store and session blobs even when Cache Storage/cachesApi is entirely unavailable (e.g. LAN IP over HTTP)', async () => {
+    const clearPersistedBlobs = jest.fn().mockResolvedValue(undefined);
     const clearSessionBlobCache = jest.fn();
     const showToast = jest.fn();
 
     await clearLocalCache({
       cachesApi: null,
       audioCacheName: 'dj-mix:audio-cache:v1',
+      clearPersistedBlobs,
       clearSessionBlobCache,
       isSecureContext: false,
       showToast,
     });
 
+    expect(clearPersistedBlobs).toHaveBeenCalledTimes(1);
     expect(clearSessionBlobCache).toHaveBeenCalled();
-    expect(showToast).toHaveBeenCalledWith(expect.stringContaining('Cache API indisponible'));
-    expect(showToast).toHaveBeenCalledWith(expect.stringContaining('non sécurisée'));
-    expect(showToast.mock.calls[0][1]).not.toBe(true);
-  });
-
-  test('shows only the unavailability message (no insecure-context hint) when secure but unsupported', async () => {
-    const showToast = jest.fn();
-
-    await clearLocalCache({
-      cachesApi: null,
-      audioCacheName: 'dj-mix:audio-cache:v1',
-      clearSessionBlobCache: jest.fn(),
-      isSecureContext: true,
-      showToast,
-    });
-
-    const [message] = showToast.mock.calls[0];
-    expect(message).toContain('Cache API indisponible');
-    expect(message).not.toContain('non sécurisée');
+    expect(showToast).toHaveBeenCalledWith('Cache local vidé');
   });
 
   test('shows an error toast when caches.delete rejects', async () => {
@@ -385,11 +377,27 @@ describe('clearLocalCache', () => {
     await clearLocalCache({
       cachesApi,
       audioCacheName: 'dj-mix:audio-cache:v1',
+      clearPersistedBlobs: jest.fn().mockResolvedValue(undefined),
       clearSessionBlobCache: jest.fn(),
       isSecureContext: true,
       showToast,
     });
 
     expect(showToast).toHaveBeenCalledWith('Erreur suppression cache: boom', true);
+  });
+
+  test('shows an error toast when clearPersistedBlobs rejects', async () => {
+    const showToast = jest.fn();
+
+    await clearLocalCache({
+      cachesApi: null,
+      audioCacheName: 'dj-mix:audio-cache:v1',
+      clearPersistedBlobs: jest.fn().mockRejectedValue(new Error('idb boom')),
+      clearSessionBlobCache: jest.fn(),
+      isSecureContext: true,
+      showToast,
+    });
+
+    expect(showToast).toHaveBeenCalledWith('Erreur suppression cache: idb boom', true);
   });
 });

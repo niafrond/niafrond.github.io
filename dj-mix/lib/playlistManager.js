@@ -194,6 +194,7 @@ export function createPlaylistManager(options) {
     getPlayer,
     getPlaylistLoaded,
     getQueue,
+    persistArtwork,
     playlistListEl,
     renderQueue,
     saveQueue,
@@ -432,6 +433,11 @@ export function createPlaylistManager(options) {
         instrumental: instrumentalSource,
       },
     };
+
+    // Cache-tab artwork otherwise only ever resolves to a live /api/artwork
+    // (or CDN) URL — persist the bytes locally too so re-adding/re-rendering
+    // this track doesn't re-fetch it every time (SPEC-13.3.9).
+    if (item.artUrl && persistArtwork) Promise.resolve(persistArtwork(item, item.artUrl)).catch(() => {});
 
     const isDuplicateCacheFile = queue.some(
       (q) => q.id === item.id || (q.name === item.name && q.artist === item.artist)

@@ -367,7 +367,7 @@ export function createAudioSourceManager(options) {
       }
     }
 
-    const cachedUrl = await restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, variant), audioCacheName);
+    const cachedUrl = await restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, variant), blobStore);
     if (cachedUrl) return cachedUrl;
 
     if (isTrustedLocalAudioUrl(trimmed, getDownloaderApiUrl)) {
@@ -379,14 +379,14 @@ export function createAudioSourceManager(options) {
     if (!res.ok) throw new Error(`stem.${variant}.download.failed:${res.status}`);
     const blob = await res.blob();
     if (!blob || blob.size <= 0) throw new Error(`stem.${variant}.empty`);
-    await persistAudioBlob(getStemCacheKey(cacheKey, variant), blob, audioCacheName);
+    await persistAudioBlob(getStemCacheKey(cacheKey, variant), blob, blobStore);
     return URL.createObjectURL(blob);
   }
 
   async function downloadStemVariantViaApi(item, cacheKey, variant) {
     if (!cacheKey) return '';
 
-    const persisted = await restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, variant), audioCacheName);
+    const persisted = await restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, variant), blobStore);
     if (persisted) return persisted;
 
     const params = new URLSearchParams();
@@ -421,7 +421,7 @@ export function createAudioSourceManager(options) {
 
     const blob = await res.blob();
     if (!blob || blob.size <= 0) throw new Error(`stem.${variant}.download.api.empty`);
-    await persistAudioBlob(getStemCacheKey(cacheKey, variant), blob, audioCacheName);
+    await persistAudioBlob(getStemCacheKey(cacheKey, variant), blob, blobStore);
     return URL.createObjectURL(blob);
   }
 
@@ -553,7 +553,13 @@ export function createAudioSourceManager(options) {
     if (!mediaBlob || mediaBlob.size === 0) {
       throw new Error('Audio téléchargé vide');
     }
-    await persistAudioBlob(getTrackCacheKey(item), mediaBlob, audioCacheName);
+    await persistAudioBlob(getTrackCacheKey(item), mediaBlob, blobStore);
+    // Persist artwork bytes on every track download, not just the narrow
+    // "item had no artUrl at all yet" case handled elsewhere — this is the
+    // single choke point every download path (cachePath shortcut, path-DB
+    // shortcut, full orchestration) funnels through.
+    const artworkUrlToPersist = extra.artworkUrl || item?.artUrl;
+    if (artworkUrlToPersist) persistArtwork(item, artworkUrlToPersist).catch(() => {});
 
     const totalMs = performance.now() - downloadStartedAt;
     logInfo('api.download.response.ok', {
@@ -797,8 +803,8 @@ export function createAudioSourceManager(options) {
       return item.localBlobUrl;
     }
 
-    // Check persistent Cache Storage before any network probes
-    let persistedBlobUrl = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName);
+    // Check the persistent IndexedDB blob store before any network probes
+    let persistedBlobUrl = await restorePersistedAudioBlobUrl(cacheKey, blobStore);
     // Fallback: try artist::name key (covers mismatch between queue items
     // whose id was synthesized by addToQueue and tracks downloaded under
     // the artist::name cache key by prefetchTrackToLocalCache)
@@ -808,7 +814,7 @@ export function createAudioSourceManager(options) {
       if (fbArtist && fbName) {
         const fallbackKey = `${fbArtist}::${fbName}`;
         if (fallbackKey !== cacheKey) {
-          persistedBlobUrl = await restorePersistedAudioBlobUrl(fallbackKey, audioCacheName);
+          persistedBlobUrl = await restorePersistedAudioBlobUrl(fallbackKey, blobStore);
         }
       }
     }
@@ -1103,14 +1109,14 @@ export function createAudioSourceManager(options) {
 
     const cacheKey = getTrackCacheKey(item);
 
-    // Check persistent Cache Storage before hitting the server.
+    // Check the persistent IndexedDB blob store before hitting the server.
     // A track may have only 2 stems (vocals + instrumental), so we restore whatever
     // is present and skip the server if at least one variant is found.
     const [vocalsFromCache, instrumentalFromCache, echoFromCache, distortionFromCache] = await Promise.all([
-      existing.vocalsUrl ? Promise.resolve(existing.vocalsUrl) : restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, 'vocals'), audioCacheName).catch(() => null),
-      existing.instrumentalUrl ? Promise.resolve(existing.instrumentalUrl) : restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, 'instrumental'), audioCacheName).catch(() => null),
-      existing.echoUrl ? Promise.resolve(existing.echoUrl) : restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, 'echo'), audioCacheName).catch(() => null),
-      existing.distortionUrl ? Promise.resolve(existing.distortionUrl) : restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, 'distortion'), audioCacheName).catch(() => null),
+      existing.vocalsUrl ? Promise.resolve(existing.vocalsUrl) : restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, 'vocals'), blobStore).catch(() => null),
+      existing.instrumentalUrl ? Promise.resolve(existing.instrumentalUrl) : restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, 'instrumental'), blobStore).catch(() => null),
+      existing.echoUrl ? Promise.resolve(existing.echoUrl) : restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, 'echo'), blobStore).catch(() => null),
+      existing.distortionUrl ? Promise.resolve(existing.distortionUrl) : restorePersistedAudioBlobUrl(getStemCacheKey(cacheKey, 'distortion'), blobStore).catch(() => null),
     ]);
 
     if (vocalsFromCache || instrumentalFromCache || echoFromCache || distortionFromCache) {
@@ -1254,11 +1260,18 @@ export function createAudioSourceManager(options) {
       artist: track?.artist,
       cachePath: track?.cachePath,
     });
+
+    // Server-side delete doesn't imply the local blob is gone — evict it too
+    // so a later play doesn't briefly resolve to a stale local copy of a
+    // track the user just asked to delete.
+    const cacheKey = getTrackCacheKey(track);
+    await blobStore.deleteBlob('audio', cacheKey);
+    await blobStore.deleteBlob('artwork', cacheKey);
   }
 
   /**
-   * Checks whether a track is already stored in the local browser Cache Storage
-   * (or in the in-memory session blob cache).  Does NOT trigger any download.
+   * Checks whether a track is already stored locally (IndexedDB blob store,
+   * or in the in-memory session blob cache). Does NOT trigger any download.
    * Returns true if the track is cached, false otherwise.
    */
   async function isTrackInLocalCache(item) {
@@ -1269,13 +1282,13 @@ export function createAudioSourceManager(options) {
     const fbName = String(item.name || item.title || '').trim().toLowerCase();
     const fallbackKey = (fbArtist && fbName) ? `${fbArtist}::${fbName}` : '';
     if (fallbackKey && fallbackKey !== cacheKey && sessionBlobCache.has(fallbackKey)) return true;
-    const persisted = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName).catch(() => null);
+    const persisted = await restorePersistedAudioBlobUrl(cacheKey, blobStore).catch(() => null);
     if (persisted) {
       URL.revokeObjectURL(persisted);
       return true;
     }
     if (fallbackKey && fallbackKey !== cacheKey) {
-      const fallbackPersisted = await restorePersistedAudioBlobUrl(fallbackKey, audioCacheName).catch(() => null);
+      const fallbackPersisted = await restorePersistedAudioBlobUrl(fallbackKey, blobStore).catch(() => null);
       if (fallbackPersisted) {
         URL.revokeObjectURL(fallbackPersisted);
         return true;
@@ -1287,7 +1300,8 @@ export function createAudioSourceManager(options) {
   /**
    * Pre-fetches a track into the local cache without affecting item state.
    * Downloads via the API (which stores it server-side) and persists the blob
-   * in browser Cache Storage, then immediately revokes the ephemeral blob URL.
+   * in the local IndexedDB blob store, then immediately revokes the ephemeral
+   * blob URL.
    * Returns true on success, false if skipped or failed.
    */
   async function prefetchTrackToLocalCache(item, { onError } = {}) {
@@ -1317,7 +1331,7 @@ export function createAudioSourceManager(options) {
   }
 
   async function _prefetchTrackToLocalCacheUncached(item, cacheKey, { onError } = {}) {
-    const persisted = await restorePersistedAudioBlobUrl(cacheKey, audioCacheName).catch(() => null);
+    const persisted = await restorePersistedAudioBlobUrl(cacheKey, blobStore).catch(() => null);
     if (persisted) {
       URL.revokeObjectURL(persisted);
       logDebug('prefetch.skip.persisted', { cacheKey });
@@ -1346,14 +1360,15 @@ export function createAudioSourceManager(options) {
   }
 
   function persistArtwork(item, artUrl) {
-    return persistArtworkBlob(getTrackCacheKey(item), artUrl, audioCacheName);
+    return persistArtworkBlob(getTrackCacheKey(item), artUrl, blobStore);
   }
 
   function restoreArtwork(item) {
-    return restorePersistedArtworkBlobUrl(getTrackCacheKey(item), audioCacheName);
+    return restorePersistedArtworkBlobUrl(getTrackCacheKey(item), blobStore);
   }
 
   return {
+    clearAllPersistedBlobs: () => blobStore.clearAll(),
     clearSessionBlobCache: () => clearSessionBlobCache(sessionBlobCache),
     deleteLocalCacheSong,
     enrichStemsFromServer,

@@ -27,16 +27,19 @@ import {
 } from './constants.js';
 
 /**
- * Vide le cache audio persistant (Cache Storage API) et le cache mémoire (session
- * blobs). Le Cache Storage n'existe que dans un contexte sécurisé (HTTPS, ou
- * localhost/127.0.0.1) : en test via IP LAN (192.168.x.x, 10.x.x.x) en HTTP il est
- * absent de `window`, donc on ne bloque pas sur une erreur mais on vide au moins le
- * cache mémoire, avec un message qui explique pourquoi le cache persistant n'a pas
- * pu être vidé.
+ * Vide le cache local persistant (audio + artwork, IndexedDB via
+ * lib/blobStore.js — SPEC-13.1.4) et le cache mémoire (session blobs).
+ * IndexedDB n'a pas besoin de contexte sécurisé, contrairement à l'ancien
+ * mécanisme Cache Storage (`window.caches`, absent en HTTP simple sur IP LAN,
+ * ex. 192.168.x.x) qu'il remplace — ce nettoyage-ci ne peut donc plus échouer
+ * pour cette raison. On tente quand même de vider l'ancien bucket Cache
+ * Storage s'il existe (utilisateurs HTTPS ayant d'anciennes entrées), sans
+ * bloquer sur son absence.
  *
  * @param {object} options
  * @param {{keys: () => Promise<string[]>, delete: (name: string) => Promise<boolean>}|null} options.cachesApi
  * @param {string} options.audioCacheName
+ * @param {() => Promise<void>} options.clearPersistedBlobs
  * @param {() => void} options.clearSessionBlobCache
  * @param {boolean} options.isSecureContext
  * @param {(msg: string, isError?: boolean) => void} options.showToast
@@ -44,14 +47,15 @@ import {
 export async function clearLocalCache({
   cachesApi,
   audioCacheName,
+  clearPersistedBlobs,
   clearSessionBlobCache,
   isSecureContext,
   showToast,
 }) {
-  const cacheApiAvailable = Boolean(cachesApi);
-
   try {
-    if (cacheApiAvailable) {
+    await clearPersistedBlobs?.();
+
+    if (cachesApi) {
       const cacheNames = await cachesApi.keys();
       const audioCaches = cacheNames.filter((name) => name === audioCacheName);
       for (const cacheName of audioCaches) {
@@ -60,13 +64,7 @@ export async function clearLocalCache({
     }
 
     clearSessionBlobCache();
-
-    if (cacheApiAvailable) {
-      showToast('Cache local vidé');
-    } else {
-      const hint = isSecureContext ? '' : ' (connexion non sécurisée : utilisez localhost ou HTTPS)';
-      showToast(`Cache mémoire vidé — Cache API indisponible${hint}`);
-    }
+    showToast('Cache local vidé');
   } catch (err) {
     showToast(`Erreur suppression cache: ${err.message}`, true);
   }

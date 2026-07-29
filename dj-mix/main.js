@@ -134,6 +134,7 @@ import { createMixControls } from './lib/mixControls.js';
 import { createDjFxController } from './lib/djFxController.js';
 import { createPlaylistManager, resolveCacheFileArtUrl } from './lib/playlistManager.js';
 import { createFilRougeManager } from './lib/filRougeManager.js';
+import { resolveArtworkForItem } from './lib/artworkPersistence.js';
 import { createTrackStore } from './lib/trackStore.js';
 import { restoreQueueFromStorage, saveQueueToStorage } from './lib/queueStorage.js';
 import { createShellUi } from './lib/shellUi.js';
@@ -1395,6 +1396,7 @@ const playlistManager = createPlaylistManager({
   getPlayer: () => player,
   getPlaylistLoaded: () => playlistLoaded,
   getQueue: () => queue,
+  persistArtwork,
   playlistListEl,
   renderQueue,
   saveQueue,
@@ -1977,22 +1979,20 @@ function applyTxtPlaylistToFilRouge(tracks) {
  */
 async function fetchFilRougeArtwork(track) {
   if (!track?.id) return;
-  const needsArt = !track.artUrl;
   const needsMeta = !track.bpm && !track.genre;
-  if (!needsArt && !needsMeta) {
-    if (track.artUrl) setArtworkUrl(track.name, track.artist, track.artUrl);
-    return;
-  }
 
-  // Check Cache Storage for a persisted blob first (no network)
-  if (needsArt) {
-    const cachedBlobUrl = await restoreArtwork(track).catch(() => null);
-    if (cachedBlobUrl) {
-      trackStore.patch(track.id, { artUrl: cachedBlobUrl });
-      renderFilRougeDebounced();
-      if (!needsMeta) return;
-    }
+  // Toujours vérifier le blob local d'abord, même si une artUrl distante est
+  // déjà connue (sinon persistArtwork() n'est presque jamais atteint et
+  // chaque affichage retélécharge l'image — SPEC-13.3.9).
+  const { localBlobUrl, remoteArtUrl } = await resolveArtworkForItem(track, { restoreArtwork, persistArtwork });
+  if (localBlobUrl) {
+    trackStore.patch(track.id, { artUrl: localBlobUrl });
+    renderFilRougeDebounced();
+  } else if (remoteArtUrl) {
+    setArtworkUrl(track.name, track.artist, remoteArtUrl);
   }
+  const needsArt = !localBlobUrl && !remoteArtUrl;
+  if (!needsArt && !needsMeta) return;
 
   // Use artwork URL cache (in-memory + localStorage)
   const cachedArtUrl = needsArt ? getArtworkUrl(track.name, track.artist) : null;
@@ -2037,19 +2037,21 @@ async function fetchFilRougeArtwork(track) {
  */
 async function fetchAndStoreArtworkForItem(item, deck, { skipNotification = false } = {}) {
   if (!item) return;
-  if (item.artUrl) {
-    setArtworkUrl(item.name, item.artist, item.artUrl);
-    return;
-  }
 
-  // Check Cache Storage for a persisted blob first (no network)
-  const cachedBlobUrl = await restoreArtwork(item).catch(() => null);
-  if (cachedBlobUrl) {
-    item.artUrl = cachedBlobUrl;
-    if (item.id) trackStore.patch(item.id, { artUrl: cachedBlobUrl });
+  // Toujours vérifier le blob local d'abord, même si une artUrl distante est
+  // déjà connue (sinon persistArtwork() n'est presque jamais atteint et
+  // chaque affichage retélécharge l'image — SPEC-13.3.9).
+  const { localBlobUrl, remoteArtUrl } = await resolveArtworkForItem(item, { restoreArtwork, persistArtwork });
+  if (localBlobUrl) {
+    item.artUrl = localBlobUrl;
+    if (item.id) trackStore.patch(item.id, { artUrl: localBlobUrl });
     if (skipNotification) { updateUpcomingArtwork(); } else { updateNowPlaying(item, deck ?? getFocusDeck()); }
     renderQueue();
     renderFilRougeDebounced();
+    return;
+  }
+  if (remoteArtUrl) {
+    setArtworkUrl(item.name, item.artist, remoteArtUrl);
     return;
   }
 
@@ -4714,6 +4716,7 @@ clearCacheBtn?.addEventListener('click', () => {
   clearLocalCache({
     cachesApi: ('caches' in window) ? caches : null,
     audioCacheName: AUDIO_CACHE_NAME,
+    clearPersistedBlobs: audioSourceManager.clearAllPersistedBlobs,
     clearSessionBlobCache,
     isSecureContext: window.isSecureContext,
     showToast,
