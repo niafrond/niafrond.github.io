@@ -206,7 +206,7 @@ html, body {
   text-overflow: ellipsis;
 }
 
-/* ── Placeholders "incoming" (Lire maintenant / Ajouter ensuite) ──────
+/* ── Placeholders "incoming" (Lire maintenant / Bientot) ──────
    Pistes demandées depuis un relais mais pas encore téléchargées par le
    maître (cf. SPEC-9.4/9.5/9.6 dans dj-mix/SPECS.md) — même teinte que côté
    maître : ambre pour l'imminent, bleu pour la file. */

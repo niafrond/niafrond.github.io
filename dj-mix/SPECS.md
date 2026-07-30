@@ -747,14 +747,16 @@ staging côté maître, câblé dans `main.js` en lieu et place de l'ancien trai
   uniquement).
 - **SPEC-9.4.3** GIVEN une commande acceptée (slot libre) — THEN `prefetchTrackToLocalCache(cmd.track)`
   est lancé en arrière-plan ; la piste n'est ajoutée à la file d'attente (`addToQueue`) qu'une
-  fois ce téléchargement résolu avec succès. Un échec (`onError` ou résultat `false`) libère le
-  slot silencieusement — la piste n'apparaît jamais dans la file, aucun toast d'erreur.
+  fois ce téléchargement résolu avec succès. Pour un slot « Ajouter en suivant », un échec
+  (`onError` ou résultat `false`) ne retire plus la piste : le slot est conservé et un retry
+  automatique est planifié `10 minutes` plus tard (`RELAY_INCOMING_NEXT_RETRY_DELAY_MS = 600000`).
+  Aucun toast d'erreur n'est affiché.
 - **SPEC-9.4.4** GIVEN plusieurs slots « Ajouter en suivant » soumis dans un ordre donné — WHEN
   leurs téléchargements se terminent dans un ordre différent — THEN l'insertion dans la file
   respecte strictement l'ordre de soumission (FIFO) : le 1er slot soumis atterrit juste après la
   piste en cours, le 2e juste après lui, etc. Un slot prêt mais pas encore en tête de la file
   interne reste en attente (non committé) jusqu'à ce que tous les slots précédents aient été
-  committés ou aient échoué.
+  committés.
 - **SPEC-9.4.5** Implémentation du FIFO : `addToQueue()` accepte un paramètre optionnel
   `insertOffset` (défaut `0`, aucun changement pour les autres appelants) utilisé uniquement
   dans la branche `asNext` : insertion à `currentIndex + 1 + insertOffset` au lieu de
@@ -830,15 +832,16 @@ staging côté maître, câblé dans `main.js` en lieu et place de l'ancien trai
   elle est traitée comme soumise à l'instant présent (`Date.now()` au moment du
   traitement côté maître).
 - **SPEC-9.4.15** Le téléchargement lancé par SPEC-9.4.3 (`prefetchTrackToLocalCache` →
-  `downloadTrackViaApi`, `POST /api/download`) n'est **jamais** soumis à un timeout
-  (pas de `AbortSignal.timeout`/`signal` sur cet appel `fetch`, contrairement à
-  `/api/stems/*` ou au health-probe de `apiHealthMonitor.js`) et le slot occupé
-  (« now » ou « next ») n'est **jamais** libéré/retiré par expiration d'une durée : seul
-  un échec réel (`onError` appelé, ou la promesse résolue à `false`) libère le slot
-  (SPEC-9.4.3). Raison : un ajout via relais peut légitimement prendre longtemps
-  (réseau du relais, résolution/téléchargement côté serveur pour une piste jamais
-  téléchargée) ; couper l'attente avec un timeout ferait disparaître la piste alors que
-  l'utilisateur l'attend toujours, sans qu'aucun échec réel ne se soit produit.
+  `downloadTrackViaApi`, `POST /api/download`) est désormais protégé par un timeout de
+  `DOWNLOAD_REQUEST_TIMEOUT_MS` (20 s) et un seul retry automatique
+  (`DOWNLOAD_REQUEST_MAX_ATTEMPTS` = 2) si la requête reste bloquée. Un timeout n'est
+  donc pas traité comme un succès, mais comme une tentative ratée qui déclenche un
+  second essai immédiat côté couche download. Pour un slot « Ajouter en suivant »,
+  si ce cycle échoue malgré tout, le slot reste en file et un nouveau retry est
+  programmé 10 minutes plus tard (SPEC-9.4.3). Raison : un ajout via
+  relais peut légitimement prendre longtemps (réseau du relais, résolution/téléchargement
+  côté serveur pour une piste jamais téléchargée), mais un blocage de plus de 20 s doit
+  être récupéré automatiquement sans laisser la piste « figée » sans retour.
 
 ### 9.5 Retour visuel côté maître (files "incoming"), directement dans la file d'attente
 
@@ -864,7 +867,7 @@ lit son propre `relayIncomingQueue` directement en mémoire.
   `currentIndex < 0`) : d'abord le slot « Lire maintenant » s'il est occupé
   (`.queue-incoming-row--now`), puis les slots « Ajouter en suivant » dans l'ordre FIFO
   (`.queue-incoming-row--next`). Chaque ligne affiche la jaquette, le titre, l'artiste, une
-  étiquette (« Lire maintenant » / « Ajouter ensuite ») et un indicateur de chargement
+  étiquette (« Lire maintenant » / « Bientot ») et un indicateur de chargement
   animé — remplacé par un ✓ (`.queue-incoming-status--ready`) pour un slot « Ajouter en
   suivant » dont le téléchargement est résolu mais pas encore en tête de file. Ces lignes
   n'ont pas de `data-index` ni la classe `.queue-item` : elles ne sont donc jamais

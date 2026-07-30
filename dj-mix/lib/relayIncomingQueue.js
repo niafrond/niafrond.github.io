@@ -19,8 +19,9 @@
  *              réel de fin de téléchargement (addToQueue({asNext:true}) empile en
  *              LIFO par défaut, d'où le compteur insertOffset ci-dessous).
  *
- * Un échec de téléchargement libère le slot silencieusement : la piste n'apparaît
- * jamais dans la file, aucun toast d'erreur (pas de canal vers le relais).
+ * Un échec de téléchargement d'un slot "next" ne le retire pas : un retry est
+ * planifié automatiquement après 10 minutes, sans toast d'erreur (pas de canal
+ * vers le relais).
  *
  * Retour visuel côté maître (cf. SPECS.md §9.5) : `getStatus()` expose aussi le détail
  * des pistes en cours (`now`, `next[]`), et `onChange()` est appelé à chaque mutation
@@ -28,6 +29,7 @@
  */
 
 const RELAY_INCOMING_NEXT_MAX_SLOTS = 10;
+const RELAY_INCOMING_NEXT_RETRY_DELAY_MS = 10 * 60 * 1000;
 
 export function createRelayIncomingQueue({
   prefetchTrackToLocalCache,
@@ -39,9 +41,10 @@ export function createRelayIncomingQueue({
   logger,
   onChange,
   maxNextSlots = RELAY_INCOMING_NEXT_MAX_SLOTS,
+  nextRetryDelayMs = RELAY_INCOMING_NEXT_RETRY_DELAY_MS,
 } = {}) {
   let _nowSlot = null; // { track, deviceId } | null
-  let _nextSlots = [];  // [{ track, deviceId, ready, failed }]
+  let _nextSlots = [];  // [{ track, deviceId, ready, inFlight, retryAt, retryTimer }]
 
   let _lastCommitIndex = null;
   let _insertedSinceIndexChange = 0;
@@ -111,21 +114,66 @@ export function createRelayIncomingQueue({
     }
     // Pas d'horodatage fourni (ancien relais, champ manquant) : on le traite comme
     // "à l'instant" pour ne pas bloquer indéfiniment derrière des slots déjà présents.
-    const slot = { track, deviceId, requestedAt: requestedAt ?? Date.now(), ready: false, failed: false };
+    const slot = {
+      track,
+      deviceId,
+      requestedAt: requestedAt ?? Date.now(),
+      ready: false,
+      inFlight: false,
+      retryAt: null,
+      retryTimer: null,
+    };
     _insertSortedNext(slot);
     onChange?.();
     Promise.resolve(prefetchMixData?.(track)).catch(() => {});
-    prefetchTrackToLocalCache(track, {
+    _startNextDownload(slot);
+  }
+
+  function _scheduleNextRetry(slot, err) {
+    if (!_nextSlots.includes(slot) || slot.ready) return;
+    if (slot.retryTimer) return;
+    slot.inFlight = false;
+    slot.retryAt = Date.now() + nextRetryDelayMs;
+    logger?.warn('relay.incoming.next.downloadFailed', {
+      name: slot.track?.name,
+      deviceId: slot.deviceId,
+      err: err?.message,
+      retryInMs: nextRetryDelayMs,
+    });
+    slot.retryTimer = setTimeout(() => {
+      slot.retryTimer = null;
+      slot.retryAt = null;
+      if (!_nextSlots.includes(slot) || slot.ready) return;
+      _startNextDownload(slot);
+    }, nextRetryDelayMs);
+    _drainNext();
+  }
+
+  function _startNextDownload(slot) {
+    if (slot.inFlight || slot.ready) return;
+    slot.inFlight = true;
+    let failureHandled = false;
+    prefetchTrackToLocalCache(slot.track, {
       onError: (err) => {
-        logger?.warn('relay.incoming.next.downloadFailed', { name: track?.name, deviceId, err: err?.message });
-        slot.failed = true;
-        _drainNext();
+        if (failureHandled) return;
+        failureHandled = true;
+        _scheduleNextRetry(slot, err);
       },
     }).then((ok) => {
-      if (slot.failed) return; // déjà traité par onError
-      slot.ready = ok;
-      slot.failed = !ok;
-      _drainNext();
+      slot.inFlight = false;
+      if (ok) {
+        slot.ready = true;
+        _drainNext();
+        return;
+      }
+      if (failureHandled) return;
+      failureHandled = true;
+      _scheduleNextRetry(slot);
+    }).catch((err) => {
+      slot.inFlight = false;
+      if (failureHandled) return;
+      failureHandled = true;
+      _scheduleNextRetry(slot, err);
     });
   }
 
@@ -139,9 +187,12 @@ export function createRelayIncomingQueue({
   }
 
   function _drainNext() {
-    while (_nextSlots.length && (_nextSlots[0].ready || _nextSlots[0].failed)) {
+    while (_nextSlots.length && _nextSlots[0].ready) {
       const slot = _nextSlots.shift();
-      if (slot.failed) continue;
+      if (slot.retryTimer) {
+        clearTimeout(slot.retryTimer);
+        slot.retryTimer = null;
+      }
       _commitNext(slot.track);
     }
     // Toujours notifié, même sans commit : un slot peut passer "ready" (✓) sans

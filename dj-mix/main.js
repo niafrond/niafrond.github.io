@@ -140,6 +140,7 @@ import { restoreQueueFromStorage, saveQueueToStorage } from './lib/queueStorage.
 import { createShellUi } from './lib/shellUi.js';
 import { createDjMixRenderer, renderDjSetQualityBadge, renderDjTransitionFeedback } from './lib/uiRenderer.js';
 import { createAutoModeManager } from './lib/autoModeManager.js';
+import { refreshQueueTrack } from './lib/trackRefresh.js';
 import { createDjApiClient } from './lib/djApiClient.js';
 import { createDjPlanManager } from './lib/djPlanManager.js';
 import { computeDjBpmRate, mapDjTransitionTypeToMode } from './lib/djTransitionMapping.js';
@@ -6911,11 +6912,18 @@ async function _refreshQueueMixData(item, btn) {
   btn?.classList.add('is-checking');
 
   try {
-    const mixData = await autoModeManager.refreshMixData(item.name, item.artist);
-    if (mixData) {
-      showToast(`Mix data actualisées : ${item.name}`);
+    const refreshed = await refreshQueueTrack(item, {
+      refreshMixData: (trackName, artistName) => autoModeManager.refreshMixData(trackName, artistName),
+      evictTrackSource: (track, options) => evictTrackSource(track, options),
+      deleteLocalCacheSong: (track) => deleteLocalCacheSong(track),
+      ensureLocalSource: (track) => ensureLocalSource(track),
+    });
+
+    if (refreshed) {
+      showToast(`Piste rafraîchie : ${item.name}`);
+      renderQueue();
     } else {
-      showToast('Aucune donnée de mix disponible', true);
+      showToast('Aucune mise à jour disponible', true);
     }
   } catch {
     showToast('Erreur réseau', true);

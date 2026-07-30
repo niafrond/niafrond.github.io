@@ -82,24 +82,70 @@ describe('relayIncomingQueue', () => {
     expect(rq.getStatus().nextCount).toBe(0);
   });
 
-  test('SPEC-9.4.3 — un échec de téléchargement libère le slot sans ajouter la piste', async () => {
-    const addToQueue = jest.fn();
-    const prefetchTrackToLocalCache = jest.fn((track, { onError } = {}) => {
-      onError?.(new Error('download failed'));
-      return Promise.resolve(false);
-    });
-    const rq = createRelayIncomingQueue({
-      prefetchTrackToLocalCache,
-      addToQueue,
-      triggerSearchFade: jest.fn(),
-      getCurrentIndex: () => 0,
-    });
+  test('SPEC-9.4.3 — un échec de téléchargement "next" conserve le slot sans ajouter la piste', async () => {
+    jest.useFakeTimers();
+    try {
+      const addToQueue = jest.fn();
+      const prefetchTrackToLocalCache = jest.fn((track, { onError } = {}) => {
+        onError?.(new Error('download failed'));
+        return Promise.resolve(false);
+      });
+      const rq = createRelayIncomingQueue({
+        prefetchTrackToLocalCache,
+        addToQueue,
+        triggerSearchFade: jest.fn(),
+        getCurrentIndex: () => 0,
+      });
 
-    rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'A' } });
-    await flush();
+      rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'A' } });
+      await flush();
 
-    expect(addToQueue).not.toHaveBeenCalled();
-    expect(rq.getStatus().nextCount).toBe(0);
+      expect(addToQueue).not.toHaveBeenCalled();
+      expect(rq.getStatus().nextCount).toBe(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test('SPEC-9.4.3 — un slot "next" en échec est retenté après 10 minutes', async () => {
+    jest.useFakeTimers();
+    try {
+      const addToQueue = jest.fn();
+      let attempts = 0;
+      const prefetchTrackToLocalCache = jest.fn((track, { onError } = {}) => {
+        attempts += 1;
+        if (attempts === 1) {
+          onError?.(new Error('download failed'));
+          return Promise.resolve(false);
+        }
+        return Promise.resolve(true);
+      });
+      const rq = createRelayIncomingQueue({
+        prefetchTrackToLocalCache,
+        addToQueue,
+        triggerSearchFade: jest.fn(),
+        getCurrentIndex: () => 0,
+      });
+
+      rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'A' } });
+      await flush();
+
+      expect(prefetchTrackToLocalCache).toHaveBeenCalledTimes(1);
+      expect(addToQueue).not.toHaveBeenCalled();
+      expect(rq.getStatus().nextCount).toBe(1);
+
+      jest.advanceTimersByTime(10 * 60 * 1000 - 1);
+      await flush();
+      expect(prefetchTrackToLocalCache).toHaveBeenCalledTimes(1);
+
+      jest.advanceTimersByTime(1);
+      await flush();
+      expect(prefetchTrackToLocalCache).toHaveBeenCalledTimes(2);
+      expect(addToQueue).toHaveBeenCalledTimes(1);
+      expect(rq.getStatus().nextCount).toBe(0);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   test('SPEC-9.4.4/9.4.5 — FIFO strict sur "next" même si les téléchargements finissent dans le désordre', async () => {
@@ -379,24 +425,32 @@ describe('relayIncomingQueue', () => {
   });
 
   test('SPEC-9.4.11 — deviceId est propagé au logger sur échec de téléchargement', () => {
-    const logger = { info: jest.fn(), warn: jest.fn() };
-    const prefetchTrackToLocalCache = jest.fn((track, { onError } = {}) => {
-      onError?.(new Error('boom'));
-      return Promise.resolve(false);
-    });
-    const rq = createRelayIncomingQueue({
-      prefetchTrackToLocalCache,
-      addToQueue: jest.fn(),
-      triggerSearchFade: jest.fn(),
-      getCurrentIndex: () => 0,
-      logger,
-    });
+    jest.useFakeTimers();
+    try {
+      const logger = { info: jest.fn(), warn: jest.fn() };
+      const prefetchTrackToLocalCache = jest.fn((track, { onError } = {}) => {
+        onError?.(new Error('boom'));
+        return Promise.resolve(false);
+      });
+      const rq = createRelayIncomingQueue({
+        prefetchTrackToLocalCache,
+        addToQueue: jest.fn(),
+        triggerSearchFade: jest.fn(),
+        getCurrentIndex: () => 0,
+        logger,
+      });
 
-    rq.handleCommand({ type: 'addToQueue', playNow: true, track: { name: 'A' }, deviceId: 'DEV001' });
-    expect(logger.warn).toHaveBeenCalledWith('relay.incoming.now.downloadFailed', { name: 'A', deviceId: 'DEV001', err: 'boom' });
+      rq.handleCommand({ type: 'addToQueue', playNow: true, track: { name: 'A' }, deviceId: 'DEV001' });
+      expect(logger.warn).toHaveBeenCalledWith('relay.incoming.now.downloadFailed', { name: 'A', deviceId: 'DEV001', err: 'boom' });
 
-    rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'B' }, deviceId: 'DEV002' });
-    expect(logger.warn).toHaveBeenCalledWith('relay.incoming.next.downloadFailed', { name: 'B', deviceId: 'DEV002', err: 'boom' });
+      rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'B' }, deviceId: 'DEV002' });
+      expect(logger.warn).toHaveBeenCalledWith(
+        'relay.incoming.next.downloadFailed',
+        expect.objectContaining({ name: 'B', deviceId: 'DEV002', err: 'boom' })
+      );
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   test('SPEC-9.4.13 — prefetchMixData() est lancé en parallèle du téléchargement audio, pour "now" et "next"', () => {

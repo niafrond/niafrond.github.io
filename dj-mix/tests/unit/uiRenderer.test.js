@@ -397,7 +397,7 @@ describe('buildQueueHTML — file "incoming" du relais (SPEC-9.5)', () => {
     const html = buildQueueHTML();
     expect(html.indexOf('First')).toBeLessThan(html.indexOf('Second'));
     expect(html).toContain('queue-incoming-row--next');
-    expect(html).toContain('Ajouter ensuite');
+    expect(html).toContain('Bientot');
   });
 
   test('slot "next" ready=true affiche le statut --ready (pas --loading)', () => {

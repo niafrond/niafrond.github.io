@@ -259,7 +259,7 @@ export function createDjMixRenderer(options) {
       ? 'queue-incoming-status--ready'
       : 'queue-incoming-status--loading';
     const statusTitle = kind === 'next' && ready ? 'Prêt, en attente de son tour' : 'Téléchargement…';
-    const tag = kind === 'now' ? 'Lire maintenant' : 'Ajouter ensuite';
+    const tag = kind === 'now' ? 'Lire maintenant' : 'Bientôt';
     return `<div class="queue-incoming-row queue-incoming-row--${kind}">` +
       `<div class="queue-incoming-status ${statusClass}" title="${statusTitle}"></div>` +
       art +
@@ -342,7 +342,7 @@ export function createDjMixRenderer(options) {
         <div class="queue-actions">
           <button class="${cueAClass}" data-index="${i}" data-deck="A"${cueADisabled} aria-label="Cue platine 1">1</button>
           <button class="${cueBClass}" data-index="${i}" data-deck="B"${cueBDisabled} aria-label="Cue platine 2">2</button>
-          <button class="queue-refresh-mix-btn" data-index="${i}" aria-label="Actualiser mix data" title="Actualiser mix data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
+          <button class="queue-refresh-mix-btn" data-index="${i}" aria-label="Rafraichir la piste" title="Rafraichir la piste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
           <button class="queue-remove" data-index="${i}" aria-label="Retirer">✕</button>
         </div>
       </div>`;

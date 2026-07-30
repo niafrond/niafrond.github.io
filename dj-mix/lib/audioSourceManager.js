@@ -7,6 +7,10 @@ import {
 import { appendApiToken, resolveCdnArtworkUrl as resolveCdnArtworkRef } from './downloaderConfig.js';
 import { createLogger } from './logger.js';
 import { createBlobStore } from './blobStore.js';
+import {
+  DOWNLOAD_REQUEST_MAX_ATTEMPTS,
+  DOWNLOAD_REQUEST_TIMEOUT_MS,
+} from './constants.js';
 
 const logger = createLogger('audio-source');
 const logDebug = (event, payload) => logger.debug(event, payload);
@@ -652,6 +656,8 @@ export function createAudioSourceManager(options) {
     }
 
     const downloadStartedAt = performance.now();
+    const timeoutMs = DOWNLOAD_REQUEST_TIMEOUT_MS;
+    const maxAttempts = DOWNLOAD_REQUEST_MAX_ATTEMPTS;
 
     // Already know where the file lives (previously downloaded, or listed
     // from the library/cache index with a cachePath): skip the orchestration
@@ -709,50 +715,73 @@ export function createAudioSourceManager(options) {
       ...(Number.isFinite(item.popularity) ? { popularity: item.popularity } : {}),
     };
 
-    let res;
-    try {
-      res = await apiFetch(`${baseUrl}/api/download`, {
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const requestPromise = apiFetch(`${baseUrl}/api/download`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-    } catch (err) {
-      apiHealthMonitor?.recordFailure();
-      throw err;
+
+      try {
+        const res = await Promise.race([
+          requestPromise,
+          new Promise((_, reject) => {
+            setTimeout(() => reject(Object.assign(new Error('Download request timed out'), { name: 'TimeoutError' })), timeoutMs);
+          }),
+        ]);
+
+        const requestMs = performance.now() - downloadStartedAt;
+
+        if (!res.ok) {
+          apiHealthMonitor?.recordFailure();
+          const body = await res.text().catch(() => '');
+          logWarn('api.download.response.nonOk', { status: res.status, body });
+          const err = new Error(`HTTP ${res.status} ${body}`.trim());
+          err.status = res.status;
+          throw err;
+        }
+
+        apiHealthMonitor?.recordSuccess();
+
+        // POST /api/download is orchestration-only and never streams audio bytes
+        // itself: it returns JSON metadata including the resolved cachePath. The
+        // bytes are fetched separately from the standalone audio CDN so playback
+        // stays available even while a long-running download/search task is in
+        // flight on the main API.
+        const data = await res.json().catch(() => null);
+        const cachePath = data?.cachePath;
+        if (!cachePath) {
+          throw new Error('Réponse API sans cachePath');
+        }
+
+        trackPathDb?.set(cacheKey, cachePath);
+
+        return streamCachedTrackFromCdn(item, cachePath, downloadStartedAt, {
+          requestMs,
+          cacheState: data?.cacheState,
+          loudnessDb: extractTrackLoudnessDb(data),
+          artworkUrl: resolveCdnArtworkUrl(data?.artworkUrl),
+        });
+      } catch (err) {
+        const timedOut = err?.name === 'TimeoutError';
+        if (timedOut && attempt < maxAttempts) {
+          lastError = err;
+          logWarn('api.download.request.timedOut.retrying', {
+            id: item?.id,
+            attempt,
+            timeoutMs,
+            name: item?.name,
+          });
+          continue;
+        }
+        apiHealthMonitor?.recordFailure();
+        throw err;
+      }
     }
 
-    const requestMs = performance.now() - downloadStartedAt;
-
-    if (!res.ok) {
-      apiHealthMonitor?.recordFailure();
-      const body = await res.text().catch(() => '');
-      logWarn('api.download.response.nonOk', { status: res.status, body });
-      const err = new Error(`HTTP ${res.status} ${body}`.trim());
-      err.status = res.status;
-      throw err;
-    }
-
-    apiHealthMonitor?.recordSuccess();
-
-    // POST /api/download is orchestration-only and never streams audio bytes
-    // itself: it returns JSON metadata including the resolved cachePath. The
-    // bytes are fetched separately from the standalone audio CDN so playback
-    // stays available even while a long-running download/search task is in
-    // flight on the main API.
-    const data = await res.json().catch(() => null);
-    const cachePath = data?.cachePath;
-    if (!cachePath) {
-      throw new Error('Réponse API sans cachePath');
-    }
-
-    trackPathDb?.set(cacheKey, cachePath);
-
-    return streamCachedTrackFromCdn(item, cachePath, downloadStartedAt, {
-      requestMs,
-      cacheState: data?.cacheState,
-      loudnessDb: extractTrackLoudnessDb(data),
-      artworkUrl: resolveCdnArtworkUrl(data?.artworkUrl),
-    });
+    throw lastError || new Error('Téléchargement audio impossible');
   }
 
   async function ensureLocalSource(item) {

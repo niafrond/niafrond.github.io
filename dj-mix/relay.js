@@ -147,7 +147,7 @@ function _incomingRowHTML(track, kind, ready = false) {
     ? `<img class="relay-screen-queue-item-art" src="${_escHtml(track.artUrl)}" alt="" loading="lazy">`
     : `<div class="relay-screen-queue-item-art"></div>`;
   const statusClass = kind === 'next' && ready ? 'is-ready' : 'is-loading';
-  const tag = kind === 'now' ? 'Lire maintenant' : 'Ajouter ensuite';
+  const tag = kind === 'now' ? 'Lire maintenant' : 'Bientôt';
   return `<div class="relay-screen-queue-item relay-screen-queue-item--incoming-${kind}">` +
     `<div class="relay-screen-queue-item-status ${statusClass}"></div>` +
     art +

@@ -3491,7 +3491,7 @@ input {
    (SPEC-9.5) : une piste demandée par un relais léger avant même d'être
    téléchargée, directement dans #queue-list avec une teinte dédiée pour la
    distinguer d'un item réel — ambre pour « Lire maintenant » (imminent),
-   bleu pour « Ajouter ensuite » (en file). Repositionné à chaque rendu juste
+   bleu pour «Bientot » (en file). Repositionné à chaque rendu juste
    après l'item courant : si la piste en cours change avant la fin du
    téléchargement, la ligne suit automatiquement. */
 .queue-incoming-row {

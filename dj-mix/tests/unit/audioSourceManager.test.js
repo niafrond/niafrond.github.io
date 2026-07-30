@@ -225,6 +225,37 @@ describe('audioSourceManager', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
+    test('retries a stalled orchestration download after 20s timeout', async () => {
+      jest.useFakeTimers();
+      try {
+        URL.createObjectURL = jest.fn(() => 'blob:fake');
+        URL.revokeObjectURL = jest.fn();
+
+        const fetchMock = jest.fn((url, init) => {
+          if (init?.method === 'POST') {
+            if (fetchMock.mock.calls.filter(([, postInit]) => postInit?.method === 'POST').length === 1) {
+              return new Promise(() => {});
+            }
+            return Promise.resolve({ ok: true, json: async () => ({ cachePath: '/cache/retried.mp3', cacheState: 'MISS' }) });
+          }
+          return Promise.resolve({ ok: true, blob: async () => new Blob(['audio-bytes'], { type: 'audio/mpeg' }) });
+        });
+        global.fetch = fetchMock;
+
+        const manager = makeManager();
+        const item = { id: 'timeout-track', name: 'Timeout Track', artist: 'Timeout Artist' };
+
+        const pending = manager.prefetchTrackToLocalCache(item);
+        jest.advanceTimersByTime(20000);
+        await Promise.resolve();
+
+        expect(fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST')).toHaveLength(2);
+        await pending;
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
     // SPEC-11.2.0: a known cachePath (previous download, or listed from the
     // library/cache index) must skip the orchestration POST on the main API
     // entirely — the whole point of the CDN split is that playback of
