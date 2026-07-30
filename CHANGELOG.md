@@ -1,3 +1,9 @@
+## [2.22.0](https://github.com/niafrond/niafrond.github.io/compare/v2.21.0...v2.22.0) (2026-07-30)
+
+### Features
+
+* implement artwork URL resolution for relay and add caching logic ([8477d10](https://github.com/niafrond/niafrond.github.io/commit/8477d104c016edcb3d3cb5bfedeb3f399813268c))
+
 ## [2.21.0](https://github.com/niafrond/niafrond.github.io/compare/v2.20.0...v2.21.0) (2026-07-30)
 
 ### Features
