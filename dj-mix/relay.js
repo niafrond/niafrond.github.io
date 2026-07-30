@@ -1,4 +1,6 @@
 import { getUnreadQueue } from './lib/relayQueueView.js';
+import { resolveArtworkUrlForRelay } from './lib/downloaderConfig.js';
+import { resolveRelayArtworkUrl } from './lib/relayArtworkResolver.js';
 
 /**
  * relay.js — Écran relais léger
@@ -115,6 +117,14 @@ function _fmt(ms) {
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
 }
 
+async function _resolveRelayArtUrl(item, artUrl) {
+  const resolved = await resolveRelayArtworkUrl(item, artUrl, {
+    cdnBaseUrl: API_BASE,
+    token: API_TOKEN,
+  });
+  return resolved || resolveArtworkUrlForRelay(artUrl, API_BASE, API_TOKEN);
+}
+
 function _updateTrack({ name, artist, artUrl, bpm, genre } = {}) {
   if (trackEl)  trackEl.textContent  = name   || 'En attente du maître…';
   if (artistEl) artistEl.textContent = artist || '';
@@ -125,8 +135,15 @@ function _updateTrack({ name, artist, artUrl, bpm, genre } = {}) {
     metaEl.textContent = parts.join(' · ');
   }
   if (artUrl) {
-    if (artEl)      { artEl.src = artUrl; artEl.hidden = false; }
-    if (artPlaceEl) artPlaceEl.hidden = true;
+    _resolveRelayArtUrl(null, artUrl).then((resolvedArtUrl) => {
+      if (resolvedArtUrl) {
+        if (artEl)      { artEl.src = resolvedArtUrl; artEl.hidden = false; }
+        if (artPlaceEl) artPlaceEl.hidden = true;
+      } else {
+        if (artEl)      artEl.hidden = true;
+        if (artPlaceEl) artPlaceEl.hidden = false;
+      }
+    });
   } else {
     if (artEl)      artEl.hidden = true;
     if (artPlaceEl) artPlaceEl.hidden = false;
@@ -142,9 +159,10 @@ function _updateTrack({ name, artist, artUrl, bpm, genre } = {}) {
  * `.relay-screen-queue-item` avec un modificateur de teinte pour la distinguer
  * des titres déjà en file.
  */
-function _incomingRowHTML(track, kind, ready = false) {
+async function _incomingRowHTML(track, kind, ready = false) {
+  const artUrl = await _resolveRelayArtUrl(track, track?.artUrl);
   const art = track?.artUrl
-    ? `<img class="relay-screen-queue-item-art" src="${_escHtml(track.artUrl)}" alt="" loading="lazy">`
+    ? `<img class="relay-screen-queue-item-art" src="${_escHtml(artUrl)}" alt="" loading="lazy">`
     : `<div class="relay-screen-queue-item-art"></div>`;
   const statusClass = kind === 'next' && ready ? 'is-ready' : 'is-loading';
   const tag = kind === 'now' ? 'Lire maintenant' : 'Bientôt';
@@ -158,15 +176,15 @@ function _incomingRowHTML(track, kind, ready = false) {
     `</div></div>`;
 }
 
-function _updateQueueList(state) {
+async function _updateQueueList(state) {
   if (!queueListEl || !queueWrapEl) return;
   const items = getUnreadQueue(state);
   const incoming = state.relayIncoming || null;
 
   const placeholders = [];
-  if (incoming?.now) placeholders.push(_incomingRowHTML(incoming.now, 'now'));
+  if (incoming?.now) placeholders.push(await _incomingRowHTML(incoming.now, 'now'));
   for (const nextTrack of incoming?.next || []) {
-    placeholders.push(_incomingRowHTML(nextTrack, 'next', nextTrack.ready));
+    placeholders.push(await _incomingRowHTML(nextTrack, 'next', nextTrack.ready));
   }
 
   if (!items.length && !placeholders.length) {
@@ -175,22 +193,24 @@ function _updateQueueList(state) {
     return;
   }
   queueWrapEl.hidden = false;
-  const realRows = items.map((item) => {
+  const realRows = [];
+  for (const item of items) {
+    const artUrl = await _resolveRelayArtUrl(item, item.artUrl);
     const art = item.artUrl
-      ? `<img class="relay-screen-queue-item-art" src="${_escHtml(item.artUrl)}" alt="" loading="lazy">`
+      ? `<img class="relay-screen-queue-item-art" src="${_escHtml(artUrl)}" alt="" loading="lazy">`
       : `<div class="relay-screen-queue-item-art"></div>`;
-    return `<div class="relay-screen-queue-item">${art}` +
+    realRows.push(`<div class="relay-screen-queue-item">${art}` +
       `<div class="relay-screen-queue-item-info">` +
       `<span class="relay-screen-queue-item-name">${_escHtml(item.name)}</span>` +
       `<span class="relay-screen-queue-item-artist">${_escHtml(item.artist)}</span>` +
-      `</div></div>`;
-  });
+      `</div></div>`);
+  }
   queueListEl.innerHTML = placeholders.join('') + realRows.join('');
 }
 
 // ── Prochain morceau du Fil Rouge (SPEC-9.6) ─────────────────────────────────
 
-function _updateFilRougeNext(state) {
+async function _updateFilRougeNext(state) {
   if (!filRougeWrapEl || !filRougeItemEl) return;
   const next = state.filRougeNext || null;
   if (!next) {
@@ -199,8 +219,9 @@ function _updateFilRougeNext(state) {
     return;
   }
   filRougeWrapEl.hidden = false;
+  const artUrl = await _resolveRelayArtUrl(next, next.artUrl);
   const art = next.artUrl
-    ? `<img class="relay-screen-queue-item-art" src="${_escHtml(next.artUrl)}" alt="" loading="lazy">`
+    ? `<img class="relay-screen-queue-item-art" src="${_escHtml(artUrl)}" alt="" loading="lazy">`
     : `<div class="relay-screen-queue-item-art"></div>`;
   filRougeItemEl.innerHTML = `${art}` +
     `<div class="relay-screen-queue-item-info">` +

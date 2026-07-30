@@ -124,7 +124,7 @@ import {
   getTrackCacheKey,
 } from './lib/audioSourceManager.js';
 import { createTrackPathDb } from './lib/trackPathDb.js';
-import { createDownloaderConfigManager } from './lib/downloaderConfig.js';
+import { createDownloaderConfigManager, resolveArtworkUrlForRelay } from './lib/downloaderConfig.js';
 import {
   createLogger,
   isDebugLoggingEnabled,
@@ -7220,12 +7220,14 @@ function buildRelayStateSnapshot() {
   // Exclure les blob: URLs — elles n'existent que dans ce browser,
   // le relais ne peut pas les télécharger depuis un autre appareil.
   const _relayUrl = (url) => (url && !String(url).startsWith('blob:') ? url : '');
+  const cdnBaseUrl = getDownloaderCdnUrl?.() || getDownloaderApiUrl?.() || '';
+  const relayToken = getDownloaderApiToken?.() || '';
 
   const queueItems = queue.map((item) => ({
     id: item.id,
     name: item.name,
     artist: item.artist,
-    artUrl: item.artUrl || '',
+    artUrl: resolveArtworkUrlForRelay(item.artUrl || '', cdnBaseUrl, relayToken),
     duration: item.duration || 0,
     bpm: item.bpm || null,
     genre: item.genre || '',
@@ -7239,7 +7241,7 @@ function buildRelayStateSnapshot() {
         id: t.id,
         name: t.name,
         artist: t.artist,
-        artUrl: t.artUrl || '',
+        artUrl: resolveArtworkUrlForRelay(t.artUrl || '', cdnBaseUrl, relayToken),
         duration: t.duration || 0,
         persistedSourceUrl: _relayUrl(t.persistedSourceUrl),
         uri: t.uri || '',
@@ -7253,7 +7255,7 @@ function buildRelayStateSnapshot() {
     id: filRougeNextTrack.id,
     name: filRougeNextTrack.name,
     artist: filRougeNextTrack.artist,
-    artUrl: filRougeNextTrack.artUrl || '',
+    artUrl: resolveArtworkUrlForRelay(filRougeNextTrack.artUrl || '', cdnBaseUrl, relayToken),
   } : null;
 
   // État FX courant (pour que le relais applique les mêmes effets)
@@ -7428,7 +7430,7 @@ function _rebuildQueueFromRelay(masterItems) {
       id: raw.id,
       name: raw.name || 'Titre',
       artist: raw.artist || 'Artiste',
-      artUrl: raw.artUrl || '',
+      artUrl: resolveArtworkUrlForRelay(raw.artUrl || '', getDownloaderCdnUrl?.() || getDownloaderApiUrl?.() || '', getDownloaderApiToken?.() || ''),
       duration: raw.duration || 0,
       bpm: raw.bpm || null,
       genre: raw.genre || '',

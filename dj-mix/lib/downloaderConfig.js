@@ -64,6 +64,14 @@ export function resolveCdnArtworkUrl(artworkRef, cdnBaseUrl, token) {
   return appendApiToken(`${cdnBaseUrl}${artworkRef}`, token);
 }
 
+export function resolveArtworkUrlForRelay(artworkRef, cdnBaseUrl, token) {
+  if (typeof artworkRef !== 'string' || !artworkRef.trim()) return '';
+  if (artworkRef.startsWith('blob:')) return '';
+  const resolvedCdnUrl = resolveCdnArtworkUrl(artworkRef, cdnBaseUrl, token);
+  if (resolvedCdnUrl) return resolvedCdnUrl;
+  return artworkRef;
+}
+
 export function createDownloaderConfigManager(options) {
   const {
     cdnDefaultUrl,

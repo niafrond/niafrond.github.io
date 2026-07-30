@@ -5,6 +5,7 @@ import {
   deriveRelayUrlFromApiUrl,
   describeApiTestError,
   isLikelyMixedContentBlock,
+  resolveArtworkUrlForRelay,
   resolveCdnArtworkUrl,
 } from '../../lib/downloaderConfig.js';
 
@@ -123,6 +124,18 @@ describe('downloaderConfig', () => {
       expect(resolveCdnArtworkUrl('https://mzstatic.com/art.jpg', 'http://vision:3002', 'secret')).toBe('');
       expect(resolveCdnArtworkUrl('', 'http://vision:3002', 'secret')).toBe('');
       expect(resolveCdnArtworkUrl(undefined, 'http://vision:3002', 'secret')).toBe('');
+    });
+  });
+
+  describe('resolveArtworkUrlForRelay', () => {
+    test('replaces a CDN artwork reference with an absolute CDN URL for relay rendering', () => {
+      const url = resolveArtworkUrlForRelay('/api/artwork?cachePath=%2Fmnt%2Fart.jpg', 'http://vision:3002', 'secret');
+      expect(url).toBe('http://vision:3002/api/artwork?cachePath=%2Fmnt%2Fart.jpg&token=secret');
+    });
+
+    test('preserves already-absolute artwork URLs and strips blob URLs', () => {
+      expect(resolveArtworkUrlForRelay('https://mzstatic.com/art.jpg', 'http://vision:3002', 'secret')).toBe('https://mzstatic.com/art.jpg');
+      expect(resolveArtworkUrlForRelay('blob:local-art', 'http://vision:3002', 'secret')).toBe('');
     });
   });
 
