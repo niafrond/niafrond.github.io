@@ -1,3 +1,9 @@
+## [2.23.0](https://github.com/niafrond/niafrond.github.io/compare/v2.22.0...v2.23.0) (2026-07-30)
+
+### Features
+
+* synchronize playback signals and improve wake lock management during transitions ([61d2467](https://github.com/niafrond/niafrond.github.io/commit/61d2467c26d87aab5a0c3f3b407fc61afda53114))
+
 ## [2.22.0](https://github.com/niafrond/niafrond.github.io/compare/v2.21.0...v2.22.0) (2026-07-30)
 
 ### Features
