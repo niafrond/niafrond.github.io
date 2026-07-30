@@ -486,6 +486,24 @@ describe('relayIncomingQueue', () => {
     expect(addToQueue).toHaveBeenCalledTimes(1);
   });
 
+  test('commits relay tracks with a queueDate derived from requestedAt', async () => {
+    const addToQueue = jest.fn();
+    const rq = createRelayIncomingQueue({
+      prefetchTrackToLocalCache: jest.fn(() => Promise.resolve(true)),
+      addToQueue,
+      triggerSearchFade: jest.fn(),
+      getCurrentIndex: () => 0,
+    });
+
+    rq.handleCommand({ type: 'addToQueue', playNow: false, track: { name: 'A' }, requestedAt: 1_500 });
+    await flush();
+
+    expect(addToQueue).toHaveBeenCalledWith(
+      { name: 'A' },
+      expect.objectContaining({ source: 'relay', queueDate: 1_500 })
+    );
+  });
+
   test('prefetchMixData omis (non fourni) : le prefetch audio fonctionne normalement', async () => {
     const addToQueue = jest.fn();
     const rq = createRelayIncomingQueue({

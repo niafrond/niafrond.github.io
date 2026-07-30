@@ -316,63 +316,6 @@
         <div class="config-section">
           <div class="config-block">
             <div class="config-label">
-              <span class="fade-wave">〜〜</span>
-              <span>Crossfade</span>
-              <span id="crossfade-value" class="crossfade-value">6s</span>
-            </div>
-            <input type="range" id="crossfade-slider" min="1" max="30" value="6" class="fade-slider" aria-label="Durée du crossfade">
-          </div>
-
-          <div class="config-block">
-            <div class="config-label">
-              <span>File d'attente</span>
-            </div>
-            <label class="toggle-row" for="queue-loop-toggle">
-              <input type="checkbox" id="queue-loop-toggle" class="toggle-input" checked>
-              <span class="toggle-slider" aria-hidden="true"></span>
-              <span class="toggle-label">Répéter (Loop)</span>
-            </label>
-            <label class="toggle-row" for="queue-shuffle-toggle">
-              <input type="checkbox" id="queue-shuffle-toggle" class="toggle-input">
-              <span class="toggle-slider" aria-hidden="true"></span>
-              <span class="toggle-label">Aléatoire (Shuffle)</span>
-            </label>
-          </div>
-
-          <div class="config-block">
-            <div class="config-label">
-              <span>Filtre RAM transitions</span>
-            </div>
-            <label class="toggle-row" for="ram-filter-enabled-toggle">
-              <input type="checkbox" id="ram-filter-enabled-toggle" class="toggle-input" checked>
-              <span class="toggle-slider" aria-hidden="true"></span>
-              <span class="toggle-label">Activer le filtre RAM</span>
-            </label>
-            <div class="form-group">
-              <label for="ram-total-memory-gb">RAM totale cible (Go, 0 = auto)</label>
-              <input
-                type="number"
-                id="ram-total-memory-gb"
-                min="0"
-                max="32"
-                step="0.5"
-                value="0"
-                aria-label="RAM totale cible pour le filtre de transitions"
-              >
-            </div>
-            <div id="ram-filter-status" class="setup-subtitle">Filtre RAM actif.</div>
-          </div>
-
-          <div class="config-block">
-            <div class="config-label">
-              <span>Transitions de mix</span>
-            </div>
-            <div class="setup-subtitle">Décochez une transition pour l'exclure du mode Auto et du sélecteur manuel.</div>
-            <div id="transition-modes-disable-list" class="transition-modes-disable-list"></div>
-          </div>
-
-          <div class="config-block">
-            <div class="config-label">
               <span>API de téléchargement</span>
             </div>
             <div class="form-group">
@@ -383,15 +326,11 @@
               <label for="downloader-api-token-input">Token API</label>
               <input type="password" id="downloader-api-token-input" placeholder="Token d'authentification" autocomplete="off" spellcheck="false">
             </div>
-            <div class="form-group">
-              <label for="downloader-cdn-url-input">URL CDN audio (streaming)</label>
-              <input type="text" id="downloader-cdn-url-input" value="https://192.168.8.149:8443" placeholder="https://192.168.8.149:8443" autocomplete="off" spellcheck="false">
-            </div>
             <div class="controls" style="justify-content:flex-start; gap:10px;">
               <button id="downloader-api-save-btn" class="connect-btn connect-btn--secondary" type="button">Sauver l'API</button>
               <button id="downloader-api-test-btn" class="connect-btn connect-btn--secondary" type="button">Tester l'API</button>
             </div>
-            <div id="downloader-api-status" class="setup-subtitle">Configurez l'API pour activer la recherche et le téléchargement local temporaire. Le streaming audio ("URL CDN") utilise un process indépendant qui reste joignable même quand l'API principale est occupée.</div>
+            <div id="downloader-api-status" class="setup-subtitle">Configurez l'API pour activer la recherche et le téléchargement local temporaire. Le streaming audio et le relais utilisent automatiquement cette même URL.</div>
           </div>
 
           <div class="config-block">
@@ -478,6 +417,54 @@
             </div>
 
             <div id="relay-status" class="setup-subtitle" style="margin-top:8px;">Autonome : cet appareil gère sa propre lecture.</div>
+          </div>
+
+          <div class="config-block">
+            <div class="config-label">
+              <span>File d'attente</span>
+            </div>
+            <label class="toggle-row" for="queue-loop-toggle">
+              <input type="checkbox" id="queue-loop-toggle" class="toggle-input" checked>
+              <span class="toggle-slider" aria-hidden="true"></span>
+              <span class="toggle-label">Répéter (Loop)</span>
+            </label>
+            <label class="toggle-row" for="queue-shuffle-toggle">
+              <input type="checkbox" id="queue-shuffle-toggle" class="toggle-input">
+              <span class="toggle-slider" aria-hidden="true"></span>
+              <span class="toggle-label">Aléatoire (Shuffle)</span>
+            </label>
+          </div>
+
+          <div class="config-block">
+            <div class="config-label">
+              <span>Filtre RAM transitions</span>
+            </div>
+            <label class="toggle-row" for="ram-filter-enabled-toggle">
+              <input type="checkbox" id="ram-filter-enabled-toggle" class="toggle-input" checked>
+              <span class="toggle-slider" aria-hidden="true"></span>
+              <span class="toggle-label">Activer le filtre RAM</span>
+            </label>
+            <div class="form-group">
+              <label for="ram-total-memory-gb">RAM totale cible (Go, 0 = auto)</label>
+              <input
+                type="number"
+                id="ram-total-memory-gb"
+                min="0"
+                max="32"
+                step="0.5"
+                value="0"
+                aria-label="RAM totale cible pour le filtre de transitions"
+              >
+            </div>
+            <div id="ram-filter-status" class="setup-subtitle">Filtre RAM actif.</div>
+          </div>
+
+          <div class="config-block">
+            <div class="config-label">
+              <span>Transitions de mix</span>
+            </div>
+            <div class="setup-subtitle">Décochez une transition pour l'exclure du mode Auto et du sélecteur manuel.</div>
+            <div id="transition-modes-disable-list" class="transition-modes-disable-list"></div>
           </div>
 
           <div class="config-block">

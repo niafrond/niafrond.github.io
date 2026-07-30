@@ -210,6 +210,8 @@ export function createRelayIncomingQueue({
       showAddedToast: true,
       asNext: true,
       insertOffset: _insertedSinceIndexChange,
+      source: 'relay',
+      queueDate: track?.queueDate ?? Date.now(),
     });
     _insertedSinceIndexChange += 1;
     showToast?.(`Relais : ${track.name || 'piste'} ajoutée`);

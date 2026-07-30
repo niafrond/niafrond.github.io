@@ -255,9 +255,8 @@ test.describe('DJ Mix IHM - configuration', () => {
   test('met a jour le crossfade et le mode de transition', async ({ page }) => {
     await setupApp(page);
 
-    await page.locator('.tab-bar-btn[data-tab="config"]').click();
-    await page.fill('#crossfade-slider', '12');
-    await expect(page.locator('#crossfade-value')).toContainText('12s');
+    await page.fill('#crossfade-slider-mix', '12');
+    await expect(page.locator('#crossfade-value-mix')).toContainText('12s');
 
     await page.selectOption('#mix-transition-mode', 'cut_transition');
     await expect(page.locator('#mix-transition-mode')).toHaveValue('cut_transition');

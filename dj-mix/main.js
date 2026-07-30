@@ -249,7 +249,6 @@ import { uiState } from './lib/uiState.js';
 const QUEUE_KEY = STORAGE_KEYS.queue;
 const DOWNLOADER_API_URL_KEY = STORAGE_KEYS.downloaderApiUrl;
 const DOWNLOADER_API_TOKEN_KEY = STORAGE_KEYS.downloaderApiToken;
-const DOWNLOADER_CDN_URL_KEY = STORAGE_KEYS.downloaderCdnUrl;
 const AUDIO_CACHE_NAME = 'dj-mix:audio-cache:v1';
 const SPOTIFY_FIL_ROUGE_POLL_MS = 120000;
 const SPOTIFY_FIL_ROUGE_BACKOFF_MAX_MULTIPLIER = 32;
@@ -289,6 +288,7 @@ let launchPreviewDeck = null;
 let launchPreviewItem = null;
 let manualMixLock = false;
 let autoSuggestionRefreshInProgress = false;
+let _suggestionBtnLastKey = null;
 const deckMixDataByTrackId = new Map();
 let spotifySyncTimer = null;
 let spotifySyncInFlight = false;
@@ -943,7 +943,6 @@ const filRougeMixInfoBtn = document.getElementById('filrouge-mixinfo-btn');
 
 const downloaderApiUrlInput = document.getElementById('downloader-api-url-input');
 const downloaderApiTokenInput = document.getElementById('downloader-api-token-input');
-const downloaderCdnUrlInput = document.getElementById('downloader-cdn-url-input');
 const downloaderApiSaveBtn = document.getElementById('downloader-api-save-btn');
 const downloaderApiTestBtn = document.getElementById('downloader-api-test-btn');
 const downloaderApiStatus = document.getElementById('downloader-api-status');
@@ -1039,8 +1038,6 @@ function setApiOfflineBadgeVisible(visible) {
 
 const downloaderConfig = createDownloaderConfigManager({
   cdnDefaultUrl: DEFAULT_DOWNLOADER_CDN_URL,
-  cdnInputEl: downloaderCdnUrlInput,
-  cdnStorageKey: DOWNLOADER_CDN_URL_KEY,
   defaultUrl: DEFAULT_DOWNLOADER_API_URL,
   inputEl: downloaderApiUrlInput,
   saveBtn: downloaderApiSaveBtn,
@@ -4192,9 +4189,9 @@ async function connectLocal() {
   player?.destroy();
   player = new DJPlayer();
   const savedCrossfadeVal = readCrossfadeSecondsSetting(6);
-  crossfadeSlider.value = savedCrossfadeVal;
+  if (crossfadeSlider) crossfadeSlider.value = savedCrossfadeVal;
   if (crossfadeSliderMix) crossfadeSliderMix.value = savedCrossfadeVal;
-  player.crossfadeDuration = clampCrossfadeSeconds(crossfadeSlider.value) * 1000;
+  player.crossfadeDuration = clampCrossfadeSeconds(savedCrossfadeVal) * 1000;
   updateCrossfadeControlUI(clampCrossfadeSeconds(savedCrossfadeVal));
   player.setAllowedTransitionModes(allowedTransitionModes);
   player.setTransitionMode(selectedTransitionMode);
@@ -4878,9 +4875,9 @@ async function launchDeckFromQueue(deck, options = {}) {
 
 function updateCrossfadeControlUI(seconds) {
   const safeSeconds = clampCrossfadeSeconds(seconds);
-  crossfadeSlider.value = String(safeSeconds);
+  if (crossfadeSlider) crossfadeSlider.value = String(safeSeconds);
   if (crossfadeSliderMix) crossfadeSliderMix.value = String(safeSeconds);
-  crossfadeValue.textContent = `${safeSeconds}s`;
+  if (crossfadeValue) crossfadeValue.textContent = `${safeSeconds}s`;
   if (crossfadeValueMix) crossfadeValueMix.textContent = `${safeSeconds}s`;
   if (crossfadeFasterBtn) crossfadeFasterBtn.disabled = safeSeconds <= 1;
   if (crossfadeSlowerBtn) crossfadeSlowerBtn.disabled = safeSeconds >= 30;
@@ -4906,12 +4903,12 @@ function setCrossfadeDurationSeconds(seconds) {
 // Initialize crossfade slider from localStorage
 const savedCrossfade = readCrossfadeSecondsSetting(null);
 if (savedCrossfade) {
-  crossfadeSlider.value = savedCrossfade;
+  if (crossfadeSlider) crossfadeSlider.value = savedCrossfade;
   if (crossfadeSliderMix) crossfadeSliderMix.value = savedCrossfade;
   setCrossfadeDurationSeconds(savedCrossfade);
 }
 
-crossfadeSlider.addEventListener('input', () => {
+crossfadeSlider?.addEventListener('input', () => {
   setCrossfadeDurationSeconds(crossfadeSlider.value);
 });
 
@@ -4933,12 +4930,12 @@ queueShuffleToggle?.addEventListener('change', () => {
 });
 
 crossfadeFasterBtn?.addEventListener('click', () => {
-  const sourceValue = crossfadeSliderMix?.value || crossfadeSlider.value;
+  const sourceValue = crossfadeSliderMix?.value || crossfadeSlider?.value || readCrossfadeSecondsSetting(6);
   setCrossfadeDurationSeconds(Number(sourceValue) - 1);
 });
 
 crossfadeSlowerBtn?.addEventListener('click', () => {
-  const sourceValue = crossfadeSliderMix?.value || crossfadeSlider.value;
+  const sourceValue = crossfadeSliderMix?.value || crossfadeSlider?.value || readCrossfadeSecondsSetting(6);
   setCrossfadeDurationSeconds(Number(sourceValue) + 1);
 });
 
@@ -5375,8 +5372,6 @@ function triggerAutoDjCreativeFxEvent(event) {
   const suffix = reason ? ` (${reason})` : '';
   showToast(`🤖 Auto FX: ${label}${suffix}`);
 }
-
-let _suggestionBtnLastKey = null;
 
 function updateSuggestionRefreshButtons() {
   const isEnabled = autoModeManager.isAutoModeEnabled();
@@ -6179,6 +6174,7 @@ async function addToQueue(track, options = {}) {
     showAddedToast = true,
     asNext = false,
     insertOffset = 0,
+    queueDate = null,
   } = options;
   const artUrl = getBestArtworkUrl(track);
   const duration = getTrackDurationMs(track);
@@ -6246,8 +6242,24 @@ async function addToQueue(track, options = {}) {
   item.autoDjStartOffsetMs = suggestedStartOffsetMs;
   item.lastTouchedAt = Date.now();
 
+  const normalizedQueueDate = Number.isFinite(Number(queueDate)) ? Number(queueDate) : null;
+  item.queueDate = source === 'relay'
+    ? (normalizedQueueDate ?? Date.now())
+    : (normalizedQueueDate ?? null);
+
   let addedIndex;
-  if (asNext || playNow) {
+  if (source === 'relay' && Number.isFinite(Number(item.queueDate))) {
+    const targetDate = Number(item.queueDate);
+    let insertIndex = 0;
+    for (const existing of queue) {
+      const existingDate = Number(existing.queueDate);
+      if (Number.isFinite(existingDate) && existingDate > targetDate) break;
+      insertIndex += 1;
+    }
+    addedIndex = Math.min(insertIndex, queue.length);
+    queue.splice(addedIndex, 0, item);
+    if (uiState.deckBCueIndex >= addedIndex) uiState.deckBCueIndex += 1;
+  } else if (asNext || playNow) {
     addedIndex = Math.min(Math.max(uiState.currentIndex + 1 + insertOffset, 0), queue.length);
     queue.splice(addedIndex, 0, item);
     if (uiState.deckBCueIndex >= addedIndex) uiState.deckBCueIndex += 1;
@@ -7168,7 +7180,7 @@ async function seekDeckFromProgressEvent(deck, event) {
   });
 }
 
-updateCrossfadeControlUI(crossfadeSlider.value);
+updateCrossfadeControlUI(crossfadeSliderMix?.value || crossfadeSlider?.value || readCrossfadeSecondsSetting(6));
 updateDeckMixUI(uiState.deckMixRatio);
 updateManualLockUI();
 updateDeckCueUI();
@@ -7357,9 +7369,9 @@ async function applyRelayState(state) {
 
   if (crossfadeMs && typeof crossfadeMs === 'number') {
     const secs = Math.max(1, Math.min(30, Math.round(crossfadeMs / 1000)));
-    if (crossfadeSlider && Number(crossfadeSlider.value) !== secs) {
-      crossfadeSlider.value = String(secs);
-      persistCrossfadeSecondsSetting(secs);
+    const currentSecs = Number(crossfadeSliderMix?.value || crossfadeSlider?.value || readCrossfadeSecondsSetting(6));
+    if (currentSecs !== secs) {
+      setCrossfadeDurationSeconds(secs);
     }
   }
 

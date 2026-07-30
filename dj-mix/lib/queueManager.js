@@ -252,6 +252,7 @@ export function createQueueManager(options) {
       autoDjReferenceTrackId = null,
       showAddedToast = true,
       asNext = false,
+      queueDate = null,
     } = opts;
 
     const artUrl = getBestArtworkUrl(track);
@@ -325,8 +326,24 @@ export function createQueueManager(options) {
     item.autoDjStartOffsetMs = suggestedStartOffsetMs;
     item.lastTouchedAt = Date.now();
 
+    const normalizedQueueDate = Number.isFinite(Number(queueDate)) ? Number(queueDate) : null;
+    item.queueDate = source === 'relay'
+      ? (normalizedQueueDate ?? Date.now())
+      : (normalizedQueueDate ?? null);
+
     let addedIndex;
-    if (asNext || playNow) {
+    if (source === 'relay' && Number.isFinite(Number(item.queueDate))) {
+      const targetDate = Number(item.queueDate);
+      let insertIndex = 0;
+      for (const existing of q) {
+        const existingDate = Number(existing.queueDate);
+        if (Number.isFinite(existingDate) && existingDate > targetDate) break;
+        insertIndex += 1;
+      }
+      addedIndex = Math.min(insertIndex, q.length);
+      q.splice(addedIndex, 0, item);
+      if (uiState.deckBCueIndex >= addedIndex) uiState.deckBCueIndex += 1;
+    } else if (asNext || playNow) {
       addedIndex = Math.min(Math.max(uiState.currentIndex + 1, 0), q.length);
       q.splice(addedIndex, 0, item);
       if (uiState.deckBCueIndex >= addedIndex) uiState.deckBCueIndex += 1;

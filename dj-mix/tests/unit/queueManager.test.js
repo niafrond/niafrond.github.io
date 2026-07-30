@@ -187,6 +187,46 @@ describe('addToQueue playNow position', () => {
     expect(uiState.queue[2].id).toBe('old-next');
   });
 
+  test('inserts relay tracks after items with lower queueDate', async () => {
+    uiState.queue = [
+      makeTrack({ id: 'older', name: 'Older', artist: 'A' }),
+      makeTrack({ id: 'newer', name: 'Newer', artist: 'A' }),
+    ];
+    uiState.queue[0].queueDate = 1_000;
+    uiState.queue[1].queueDate = 3_000;
+    uiState.currentIndex = 0;
+    uiState.currentTrackId = 'older';
+    const mgr = makeManager();
+
+    await mgr.addToQueue(makeTrack({ id: 'relay-mid', name: 'Relay Mid', artist: 'A' }), {
+      source: 'relay',
+      queueDate: 2_000,
+    });
+
+    expect(uiState.queue.map((item) => item.id)).toEqual(['older', 'relay-mid', 'newer']);
+    expect(uiState.queue[1].queueDate).toBe(2_000);
+  });
+
+  test('inserts relay tracks by scanning the full queue even when existing items have no queueDate', async () => {
+    uiState.queue = [
+      makeTrack({ id: 'older', name: 'Older', artist: 'A' }),
+      makeTrack({ id: 'manual', name: 'Manual', artist: 'A' }),
+      makeTrack({ id: 'newer', name: 'Newer', artist: 'A' }),
+    ];
+    uiState.queue[0].queueDate = 1_000;
+    uiState.queue[2].queueDate = 3_000;
+    uiState.currentIndex = 0;
+    uiState.currentTrackId = 'older';
+    const mgr = makeManager();
+
+    await mgr.addToQueue(makeTrack({ id: 'relay-mid', name: 'Relay Mid', artist: 'A' }), {
+      source: 'relay',
+      queueDate: 2_000,
+    });
+
+    expect(uiState.queue.map((item) => item.id)).toEqual(['older', 'manual', 'relay-mid', 'newer']);
+  });
+
   test('inserts at index 0 when nothing is playing (currentIndex === -1)', async () => {
     uiState.queue = [makeTrack({ id: 'a' })];
     uiState.currentIndex = -1;

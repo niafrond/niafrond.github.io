@@ -378,6 +378,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-5.1.3** La réponse `data.mix` est mise en cache en mémoire (max `40` entrées) et dans `localStorage` (`trackMetaStorage`).
 - **SPEC-5.1.4** GIVEN une réponse 404 — THEN le cache pour ce morceau est invalidé.
 - **SPEC-5.1.5** GIVEN un nouveau morceau "suivant" est sélectionné (Fil Rouge ou suggestion Auto DJ) — WHEN la recherche de mix data pour ce morceau démarre — THEN `nextTrackMixData` est immédiatement remis à `null` (et `onMixDataUpdated(null)` déclenché) AVANT l'appel réseau, afin que les zones de mix de l'ancien "prochain morceau" ne restent pas affichées sur le nouveau pendant que le fetch est en cours. `onMixDataUpdated(mixData)` est aussi appelé dès que le fetch se résout, pour rafraîchir l'affichage sans attendre que le morceau devienne le morceau courant.
+- **SPEC-5.1.6** L'initialisation de l'onglet Config ne doit jamais planter quand `applyAutoSuggestionQueueSearchSetting()` est appelé pendant `init()` : `updateSuggestionRefreshButtons()` doit pouvoir s'exécuter avant les handlers de fin de fichier sans dépendre d'une variable en zone morte temporelle (TDZ).
 
 ### 5.2 Exclusion de morceaux
 
@@ -666,7 +667,7 @@ l'entrée correspondante au premier `PUT /api/relay/state/:id` (aucun appel
   `dj-mix:relay:mode` (le rôle courant) est réinitialisé.
 - **SPEC-9.1.3** Partage par QR code (librairie qrcodejs, 200×200, correction M) ou URL.
 - **SPEC-9.1.4** Format URL : `${origin}${dir}relay?relay-master=${masterId}&relay-api=${apiUrl}&relay-relay=${relayUrl}&relay-token=${apiToken}`. `relay-api` cible l'API principale (recherche, `/api/search`) ; `relay-relay` cible le process relay autonome (état/commandes, cf. SPEC-9.1.6), reachable derrière la même URL de base que l'API via le reverse proxy (routage par chemin `/api/relay/...`, pas par port). Si `relay-relay` est absent (lien généré par une version antérieure), `relay.js` retombe sur `relay-api`.
-- **SPEC-9.1.6** Le serveur relay (`/api/relay/*`) est un process autonome, détaché de l'API principale (process séparé depuis juillet 2026, initialement sur un port dédié), mais reachable derrière la même URL de base que l'API via un reverse proxy nginx qui route par chemin plutôt que par port. `getDownloaderRelayUrl()` (`lib/downloaderConfig.js`) dérive systématiquement cette URL depuis `getDownloaderApiUrl()` — même base URL (`deriveRelayUrlFromApiUrl`) — pas de configuration séparée en `localStorage`, contrairement à l'URL CDN (SPEC-11.2.4). `lib/relayModeManager.js` (maître ET relais applicatif complet) l'utilise pour toutes ses requêtes `/api/relay/*` (état, commandes, audio proxifié) ; `relay.js` (relais léger) l'utilise via le paramètre `relay-relay` pour l'état et les commandes, mais garde `relay-api` pour `/api/search`.
+- **SPEC-9.1.6** Le serveur relay (`/api/relay/*`) est un process autonome, détaché de l'API principale (process séparé depuis juillet 2026, initialement sur un port dédié), mais reachable derrière la même URL de base que l'API via un reverse proxy nginx qui route par chemin plutôt que par port. `getDownloaderRelayUrl()` (`lib/downloaderConfig.js`) dérive systématiquement cette URL depuis `getDownloaderApiUrl()` — même base URL (`deriveRelayUrlFromApiUrl`) — sans configuration séparée côté UI/config. `lib/relayModeManager.js` (maître ET relais applicatif complet) l'utilise pour toutes ses requêtes `/api/relay/*` (état, commandes, audio proxifié) ; `relay.js` (relais léger) l'utilise via le paramètre `relay-relay` pour l'état et les commandes, mais garde `relay-api` pour `/api/search`.
 - **SPEC-9.1.5** Le relais léger (`relay.js`) génère lui aussi un identifiant d'appareil
   court (6 caractères alphanumériques, `Math.random().toString(36)` — pas un hash des
   caractéristiques du device) au premier chargement, persisté dans `localStorage` sous
@@ -762,6 +763,11 @@ staging côté maître, câblé dans `main.js` en lieu et place de l'ancien trai
   dans la branche `asNext` : insertion à `currentIndex + 1 + insertOffset` au lieu de
   `currentIndex + 1`. `relayIncomingQueue` maintient un compteur incrémenté à chaque commit,
   remis à `0` dès que `currentIndex` change depuis le dernier commit.
+  Pour les pistes ajoutées depuis le relais, `addToQueue()` compare aussi la valeur interne
+  `queueDate` de la piste à celles de toute la file actuelle : l'élément est inséré après
+  toutes les pistes ayant une date inférieure (ou aucune date) et avant celles ayant une date
+  supérieure, ce qui garantit un ordre stable même si aucune piste n'est affichée comme venant
+  du relais.
 - **SPEC-9.4.6** GIVEN un slot « Lire maintenant » téléchargé avec succès — THEN le slot est
   libéré puis `triggerSearchFade(cmd.track)` est appelé (insertion + cue sur la platine inactive
   + déclenchement automix immédiat, comportement identique à SPEC-4.3.7). « Lire maintenant »
@@ -961,7 +967,7 @@ lit son propre `relayIncomingQueue` directement en mémoire.
 - **SPEC-11.2.1** Étape 1 (orchestration, uniquement si `cachePath` inconnu) : `POST /api/download` avec body `{ trackName, artistName, searchQuery, popularity }`, sur l'API principale (`getDownloaderApiUrl`). Ne renvoie jamais d'octets audio — toujours du JSON contenant `cachePath` (+ métadonnées de la piste).
 - **SPEC-11.2.2** GIVEN la réponse JSON de l'étape 1 sans champ `cachePath` — THEN une erreur est levée (`Réponse API sans cachePath`), sans tenter d'étape 2.
 - **SPEC-11.2.3** Étape 2 (octets) : `GET /api/stream?cachePath=<cachePath>` sur le serveur CDN audio indépendant (`getDownloaderCdnUrl`, process séparé `audioCdnServer.js`), qui reste joignable même si l'API principale est occupée par une tâche longue. Reachable derrière la même URL de base que l'API via le reverse proxy (routage par chemin, pas par port). Le blob résultant est converti en `blob:` URL via `URL.createObjectURL(blob)`.
-- **SPEC-11.2.4** `getDownloaderCdnUrl` : si l'utilisateur a configuré une URL CDN explicite (`localStorage`, clé `dj-mix:downloader:cdn:url`), elle est utilisée telle quelle ; sinon elle est dérivée automatiquement de l'URL de l'API, identique à celle-ci (`deriveCdnUrlFromApiUrl`, même base URL — le reverse proxy route CDN et API par chemin sur le même port).
+- **SPEC-11.2.4** `getDownloaderCdnUrl` est dérivée de l'URL API courante (`getDownloaderApiUrl`, via `deriveCdnUrlFromApiUrl`) quand aucune surcharge CDN n'est fournie par l'appelant ; dans l'écran de configuration principal (`index.html`), il n'y a plus de champ CDN distinct, l'URL API fait foi pour l'API, le CDN et le relay (routage par chemin via le reverse proxy).
 - **SPEC-11.2.5** Le téléchargement d'un stem (`GET /api/stems/download?stem=...`) cible le CDN quand `item.cachePath` est connu (le CDN ne supporte pas la résolution par nom) ; sinon il retombe sur l'API principale, qui supporte encore la résolution par `trackName`/`artistName`.
 - **SPEC-11.2.6** GIVEN un téléchargement résolu via l'étape 1 (orchestration) — WHEN la réponse contient un `cachePath` — THEN `item.cachePath` est mis à jour sur l'item (queue ou prefetch) avant de poursuivre, afin qu'un futur appel pour le même item bénéficie du raccourci SPEC-11.2.0 sans repasser par l'API principale.
 - **SPEC-11.2.7** GIVEN `item.cachePath` inconnu — THEN avant l'étape 1 (orchestration), l'item est recherché dans la DB locale de paths (`trackPathDb`, cf. §11.5) via sa cache key (`id`, sinon `artist::name`, avec repli identique à SPEC-11.1.x) — si une correspondance existe, l'étape 1 est court-circuitée exactement comme SPEC-11.2.0 (streaming CDN direct), sans aucun appel réseau vers l'API principale.
@@ -1147,6 +1153,9 @@ lit son propre `relayIncomingQueue` directement en mémoire.
 - **Fil Rouge** : playlist de fond avec contrôles shuffle/loop/DJ plan.
 - **Cache** : navigateur de morceaux téléchargés avec filtrage genre/année.
 - **Config** : 10+ sections de configuration.
+- **SPEC-14.1.1** Ordre de tête de l'onglet Config : (1) API de téléchargement, (2) choix du fil rouge (Spotify, TXT, playlists serveur), (3) mode Maître/Relais.
+- **SPEC-14.1.1.1** L'onglet Config n'affiche plus de slider crossfade dédié ; le réglage crossfade reste dans l'onglet Mix (`#crossfade-slider-mix`).
+- **SPEC-14.1.1.2** Le code d'initialisation ne doit jamais supposer la présence du slider crossfade Config (`#crossfade-slider`) ni de son label (`#crossfade-value`) : toutes les liaisons événementielles et synchronisations crossfade doivent tolérer ces nœuds absents et utiliser le slider Mix comme fallback.
 - **SPEC-14.1.2** Aucun bouton local (Low-pass / High-pass / Suggestion AutoDJ) n'est affiché au-dessus des platines. Les filtres low-pass/high-pass restent pilotables via les modes de transition AutoMix (`filter_sweep_low_high`, etc.) et le menu FX DJ ; le renouvellement de suggestion AutoDJ reste piloté par `refreshAutoSuggestionForCurrentTrack()` en arrière-plan.
 - **SPEC-14.1.3** GIVEN un clic/tap sur la carte d'une platine (hors bouton, curseur, ou barre de progression) — WHEN la platine est en lecture — THEN elle se met en pause ; WHEN elle est en pause avec une source chargée — THEN elle reprend ; WHEN elle n'a pas de source chargée — THEN le morceau suivant de la file y est lancé. Ce comportement est indépendant du pourcentage de volume ou de la position de la platine dans le mix global (crossfade).
 
