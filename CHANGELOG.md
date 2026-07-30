@@ -1,3 +1,10 @@
+## [2.21.0](https://github.com/niafrond/niafrond.github.io/compare/v2.20.0...v2.21.0) (2026-07-30)
+
+### Features
+
+* enhance queue management for relay tracks with queueDate handling and update configuration UI ([9bee0f5](https://github.com/niafrond/niafrond.github.io/commit/9bee0f5a1faffbf282656df4e1849c866483c17a))
+* implement download retry logic with timeout for audio tracks and update UI labels ([9632c9e](https://github.com/niafrond/niafrond.github.io/commit/9632c9e87902000fcb9cedeeec468835c54d1adb))
+
 ## [2.20.0](https://github.com/niafrond/niafrond.github.io/compare/v2.19.0...v2.20.0) (2026-07-29)
 
 ### Features
