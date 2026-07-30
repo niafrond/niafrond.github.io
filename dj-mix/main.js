@@ -4225,6 +4225,42 @@ const inactivePreloadWatcher = createInactivePreloadWatcher({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function hookPlayerEvents() {
+  const getAnyDeckPlaying = () => Boolean(
+    uiState.lastDeckState?.deckA?.playing
+    || uiState.lastDeckState?.deckB?.playing
+    || uiState.isPlaying,
+  );
+
+  const syncPlaybackSignals = (isPlaying, source) => {
+    const nextPlaying = Boolean(isPlaying);
+    const prevPlaying = Boolean(uiState.isPlaying);
+
+    uiState.isPlaying = nextPlaying;
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = nextPlaying ? 'playing' : 'paused';
+    }
+    pushPlaybackState({ playing: nextPlaying, positionMs: playbackPositionMs });
+    // Wake Lock: activer si lecture, relâcher sinon (raison 'playback', SPEC-19.7)
+    setWakeLockReason('playback', nextPlaying);
+
+    if (nextPlaying) {
+      stopMediaKeepAlive(); // Lecture réelle → pas besoin du keepalive silencieux
+      inactivePreloadWatcher.start();
+    } else {
+      startMediaKeepAlive(); // Maintenir la notification Android pendant la pause
+      inactivePreloadWatcher.stop();
+    }
+
+    if (prevPlaying !== nextPlaying) {
+      logDebug('playback.signal.sync', { source, prevPlaying, nextPlaying });
+      renderQueue();
+      // Maître : pousser l'état aux relais
+      if (relayModeManager.getRole() === 'master') {
+        relayModeManager.schedulePush(buildRelayStateSnapshot());
+      }
+    }
+  };
+
   player.addEventListener('ready', async () => {
     logInfo('player.ready', { pendingAutoplay, currentIndex: uiState.currentIndex, queueLength: queue.length });
     // showToast('Platines locales prêtes');
@@ -4255,26 +4291,9 @@ function hookPlayerEvents() {
 
   player.addEventListener('statechange', ({ detail }) => {
     logDebug('player.statechange', detail);
-    uiState.isPlaying = !detail.paused;
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.playbackState = uiState.isPlaying ? 'playing' : 'paused';
-    }
-    pushPlaybackState({ playing: uiState.isPlaying, positionMs: playbackPositionMs });
-    // Wake Lock: activer si lecture, relâcher sinon (raison 'playback', SPEC-19.7)
-    setWakeLockReason('playback', uiState.isPlaying);
-    if (uiState.isPlaying) {
-      stopMediaKeepAlive(); // Lecture réelle → pas besoin du keepalive silencieux
-      inactivePreloadWatcher.start();
-    } else {
-      startMediaKeepAlive(); // Maintenir la notification Android pendant 10 minutes max
-      inactivePreloadWatcher.stop();
-    }
+    // Signal primaire: l'évènement statechange.
+    syncPlaybackSignals(!detail.paused, 'statechange');
     updateMediaSessionPositionState();
-    renderQueue();
-    // Maître : pousser l'état aux relais
-    if (relayModeManager.getRole() === 'master') {
-      relayModeManager.schedulePush(buildRelayStateSnapshot());
-    }
   });
 
   player.addEventListener('progress', ({ detail }) => {
@@ -4284,6 +4303,9 @@ function hookPlayerEvents() {
     playbackPositionMs = position;
     playbackDurationMs = duration;
     updateMediaSessionPositionState(position, duration);
+    // Signal continu: republier l'état de lecture sur chaque tick de progression,
+    // en le déduisant des deux decks si disponible.
+    pushPlaybackState({ playing: getAnyDeckPlaying(), positionMs: position });
 
     if (autoModeManager.isAutoModeEnabled()) {
       const dueAutoFxEvents = autoModeManager.consumeReadyAutoFxEvents(position, {
@@ -4420,9 +4442,8 @@ function hookPlayerEvents() {
 
   player.addEventListener('trackend', () => {
     logInfo('player.trackend');
-    uiState.isPlaying = false;
+    syncPlaybackSignals(false, 'trackend');
     showCrossfadeRing(false);
-    renderQueue();
     
     // Trigger auto mode search on track end
     const currentTrack = queue[uiState.currentIndex];
@@ -4461,6 +4482,8 @@ function hookPlayerEvents() {
 
     player.addEventListener('deckstate', ({ detail }) => {
       uiState.lastDeckState = detail;
+      // Signal d'autorité: tant qu'au moins un deck tourne, la lecture est active.
+      syncPlaybackSignals(Boolean(detail?.deckA?.playing || detail?.deckB?.playing), 'deckstate');
       renderDeckState(detail);
       if (trackMaxDurationEnabled) updateMaxDurationMarker();
       // Maître : pousser la position aux relais (toutes les ~2 s via debounce du manager)

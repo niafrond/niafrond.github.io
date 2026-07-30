@@ -655,6 +655,11 @@ export class DJPlayer extends EventTarget {
         await to.play().catch(() => {});
       }
 
+      // Bascule d'abord la platine active vers l'entrante : cela évite que le
+      // `pause` de l'ancienne active émette un faux `statechange(paused=true)`
+      // alors qu'un média joue encore (impact wake lock / session média).
+      this.#active = toDeck;
+
       from.pause();
       from.currentTime = 0;
       from.src = '';
@@ -663,7 +668,6 @@ export class DJPlayer extends EventTarget {
       this.#setDeckLoudness(fromDeck, null);
       this.#deckSourceMeta[fromDeck] = null;
 
-      this.#active = toDeck;
       this.#crossfadeNotified = false;
       this.#trackEndNotified = false;
       this.#requestEmitDeckState();

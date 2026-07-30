@@ -44,6 +44,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.2.6.3** GIVEN une transition annulée manuellement — THEN `crossfadeToDeck()` retourne `false` (même convention que SPEC-1.2.5 : les appelants n'avancent pas `uiState.currentTrackId`/la file, puisqu'aucun morceau n'est réellement devenu actif) et l'évènement `transitioncancelled` (`{ fromDeck, toDeck, mode }`) est émis — câblé dans `main.js` sur un toast « Transition annulée — mix manuel repris ».
 - **SPEC-1.2.6.4** `cancelActiveTransition()` est un no-op sûr (renvoie `false`) si aucune transition n'est en cours, ou si l'appel survient avant que la boucle de progression n'ait démarré (ex. pendant le chargement réseau de la piste entrante) ou après qu'elle soit déjà résolue — évite les doubles résolutions de Promise sur des appels répétés (glissement continu du slider).
 - **SPEC-1.2.6.5** `renderDeckState` (`lib/uiRenderer.js`) ne vide `deckDisplayItems[clearedDeck]` sur un retour de `isCrossfading` à `false` que si la platine concernée n'a effectivement plus de source (`detail.deckX.hasSrc === false`) — et non plus sur le seul basculement `true → false` de `isCrossfading`. Sans cette garde, une transition annulée manuellement (SPEC-1.2.6.1–3, les deux platines restant chargées) ferait disparaître à tort la piste/pochette affichée sur la platine sortante alors qu'elle continue de jouer.
+- **SPEC-1.2.6.6** GIVEN une transition qui se termine normalement — WHEN la platine sortante est arrêtée — THEN `#active` doit être basculé vers la platine entrante **avant** le `pause()` de la sortante. Cela évite qu'un `statechange(paused=true)` transitoire soit émis alors qu'un deck continue de jouer (signal lecture, wake lock écran, Media Session).
 
 ### 1.3 Modes de transition (25 modes)
 
@@ -1122,12 +1123,14 @@ lit son propre `relayIncomingQueue` directement en mémoire.
 - **SPEC-13.4.2** Un audio silencieux en boucle (WAV 1s, volume `0.001`) maintient la session active pendant les pauses.
 - **SPEC-13.4.3** Le wake lock est libéré sur pause (sauf keepalive actif).
 - **SPEC-13.4.4** GIVEN `visibilitychange → visible` ET lecture en cours — THEN `wakeLock.request('screen')` est rappelé (le navigateur libère automatiquement le lock lors du passage en arrière-plan).
+- **SPEC-13.4.5** Le signal de lecture ne dépend pas uniquement de `statechange` : il est recalé depuis `deckstate` avec la règle `playing = deckA.playing || deckB.playing`. Tant qu'au moins une platine tourne, la raison Wake Lock `playback` reste active.
 
 ### 13.5 Android Auto
 
 - **SPEC-13.5.1** Shortcuts : `?automix=1` (Mix Auto), `?tab=playlists` (Playlists), `?tab=queue` (Queue).
 - **SPEC-13.5.2** Metadata push : `pushNowPlaying({ id, title, artist, album, artworkUrl, durationMs })`.
 - **SPEC-13.5.3** Playback state : `pushPlaybackState({ playing, positionMs, speed })`.
+- **SPEC-13.5.3.b** `pushPlaybackState` est aussi republié en continu sur chaque tick `progress` (position courante), avec `playing` dérivé de l'état réel des deux decks (`deckA.playing || deckB.playing`) pour garder un signal "média en cours" permanent tant qu'un disque tourne.
 - **SPEC-13.5.4** Queue push debounced `500 ms`.
 - **SPEC-13.5.5** Commandes média : `onMediaCommand(handler)` pour play/pause/next/seek. `getPendingMediaCommand()` pour cold-start.
 - **SPEC-13.5.6** Artwork blob → base64 data URI pour Android.
