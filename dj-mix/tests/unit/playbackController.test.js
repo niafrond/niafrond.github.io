@@ -283,6 +283,15 @@ describe('resolveMixDataStartOffsetMs', () => {
     // recommendedSongStartSec=50 > firstZone=30 → keeps 50
     expect(ctrl.resolveMixDataStartOffsetMs(mixData)).toBe(50_000);
   });
+
+  test('ignores recommendation beyond half track duration when duration is known in mixData', () => {
+    const ctrl = makeController();
+    const mixData = {
+      durationSec: 200,
+      recommendedSongStartSec: 120,
+    };
+    expect(ctrl.resolveMixDataStartOffsetMs(mixData)).toBe(0);
+  });
 });
 
 // ── applyDjStartOffsetIfPlanned ───────────────────────────────────────────────
@@ -517,6 +526,14 @@ describe('applyMixSuggestedStartOffset', () => {
     const item = makeTrack({ autoDjStartOffsetMs: 5_000 });
     ctrl.applyMixSuggestedStartOffset(item, { probableSongStartSec: 12 }, { overrideExisting: true });
     expect(item.autoDjStartOffsetMs).toBe(12_000);
+  });
+
+  test('ignores recommendation beyond half track duration based on item.duration', () => {
+    const ctrl = makeController();
+    const item = makeTrack({ autoDjStartOffsetMs: 0, duration: 120_000 });
+    const result = ctrl.applyMixSuggestedStartOffset(item, { probableSongStartSec: 70 });
+    expect(result).toBe(false);
+    expect(item.autoDjStartOffsetMs).toBe(0);
   });
 });
 

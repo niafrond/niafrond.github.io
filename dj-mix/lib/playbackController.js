@@ -336,6 +336,11 @@ export function createPlaybackController(options) {
       }
     }
 
+    const durationSec = toFiniteNumber(mixData.durationSec);
+    if (durationSec != null && durationSec > 0 && recommendedSec > durationSec * 0.5) {
+      return 0;
+    }
+
     if (!Number.isFinite(recommendedSec) || recommendedSec <= 0) return 0;
     return Math.round(recommendedSec * 1000);
   }
@@ -353,6 +358,8 @@ export function createPlaybackController(options) {
     if (suggestedOffsetMs <= 0) return false;
 
     const durationMs = Math.max(0, Number(item.duration) || 0);
+    if (durationMs > 0 && suggestedOffsetMs > durationMs * 0.5) return false;
+
     const cappedOffsetMs = durationMs > 0
       ? Math.max(0, Math.min(suggestedOffsetMs, Math.max(0, durationMs - 1000)))
       : Math.max(0, suggestedOffsetMs);

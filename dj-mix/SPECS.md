@@ -159,6 +159,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.5.0.2** GIVEN une intro vide détectée — WHEN un offset de départ est calculé — THEN l'offset recommandé est la `startSec` de la première zone (parmi breakdown, drop, peak, avoidTransition), triée chronologiquement.
 - **SPEC-1.5.0.3** L'offset calculé par la détection d'intro vide participe au `Math.max` général de `resolveMixDataStartOffsetMs` — il ne peut qu'augmenter l'offset, jamais le diminuer.
 - **SPEC-1.5.0.4** GIVEN le morceau a une durée connue — WHEN l'offset calculé dépasse `durationSec − 30` — THEN l'offset est ignoré (sécurité : ne pas sauter la quasi-totalité du morceau).
+- **SPEC-1.5.0.5** GIVEN une recommandation de départ issue des mix data — WHEN l'offset calculé dépasse `50 %` de la durée du morceau — THEN la recommandation est ignorée et le morceau démarre au début (`0 ms`).
 
 ### 1.6 Limitation de durée (trackMaxDuration)
 

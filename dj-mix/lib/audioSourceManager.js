@@ -8,8 +8,7 @@ import { appendApiToken, resolveCdnArtworkUrl as resolveCdnArtworkRef } from './
 import { createLogger } from './logger.js';
 import { createBlobStore } from './blobStore.js';
 import {
-  DOWNLOAD_REQUEST_MAX_ATTEMPTS,
-  DOWNLOAD_REQUEST_TIMEOUT_MS,
+  CDN_STREAM_TIMEOUT_MS,
 } from './constants.js';
 
 const logger = createLogger('audio-source');
@@ -542,7 +541,19 @@ export function createAudioSourceManager(options) {
     }
     const streamUrl = `${cdnBaseUrl}/api/stream?cachePath=${encodeURIComponent(cachePath)}`;
 
-    const mediaRes = await cdnFetch(streamUrl);
+    const streamAbort = new AbortController();
+    const streamTimeoutHandle = setTimeout(() => streamAbort.abort(), CDN_STREAM_TIMEOUT_MS);
+    let mediaRes;
+    try {
+      mediaRes = await cdnFetch(streamUrl, { signal: streamAbort.signal });
+    } catch (fetchErr) {
+      clearTimeout(streamTimeoutHandle);
+      const err = streamAbort.signal.aborted
+        ? Object.assign(new Error('Stream CDN timeout (audio bytes)'), { name: 'TimeoutError' })
+        : fetchErr;
+      throw err;
+    }
+    clearTimeout(streamTimeoutHandle);
     if (!mediaRes.ok) {
       logWarn('api.download.stream.failed', {
         id: item?.id,
@@ -657,8 +668,7 @@ export function createAudioSourceManager(options) {
     }
 
     const downloadStartedAt = performance.now();
-    const timeoutMs = DOWNLOAD_REQUEST_TIMEOUT_MS;
-    const maxAttempts = DOWNLOAD_REQUEST_MAX_ATTEMPTS;
+    const cacheKey = getTrackCacheKey(item);
 
     // Already know where the file lives (previously downloaded, or listed
     // from the library/cache index with a cachePath): skip the orchestration
@@ -679,7 +689,6 @@ export function createAudioSourceManager(options) {
     // synced from GET /api/cache/files at startup and topped up below after
     // every fresh orchestration resolve) before hitting the network at all.
     if (!forceFreshResolve) {
-      const cacheKey = getTrackCacheKey(item);
       let dbCachePath = trackPathDb?.get(cacheKey) || '';
       if (!dbCachePath) {
         const fbArtist = String(item?.artist || '').trim().toLowerCase();
@@ -718,73 +727,49 @@ export function createAudioSourceManager(options) {
       ...(Number.isFinite(item.popularity) ? { popularity: item.popularity } : {}),
     };
 
-    let lastError = null;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const requestPromise = apiFetch(`${baseUrl}/api/download`, {
+    // Pas de timeout sur ce POST : yt-dlp peut prendre plusieurs minutes.
+    // Le retry se gère au niveau downloadBatchManager (_runInternalQueueWithRetries).
+    let res;
+    try {
+      res = await apiFetch(`${baseUrl}/api/download`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
-      try {
-        const res = await Promise.race([
-          requestPromise,
-          new Promise((_, reject) => {
-            setTimeout(() => reject(Object.assign(new Error('Download request timed out'), { name: 'TimeoutError' })), timeoutMs);
-          }),
-        ]);
-
-        const requestMs = performance.now() - downloadStartedAt;
-
-        if (!res.ok) {
-          apiHealthMonitor?.recordFailure();
-          const body = await res.text().catch(() => '');
-          logWarn('api.download.response.nonOk', { status: res.status, body });
-          const err = new Error(`HTTP ${res.status} ${body}`.trim());
-          err.status = res.status;
-          throw err;
-        }
-
-        apiHealthMonitor?.recordSuccess();
-
-        // POST /api/download is orchestration-only and never streams audio bytes
-        // itself: it returns JSON metadata including the resolved cachePath. The
-        // bytes are fetched separately from the standalone audio CDN so playback
-        // stays available even while a long-running download/search task is in
-        // flight on the main API.
-        const data = await res.json().catch(() => null);
-        const cachePath = data?.cachePath;
-        if (!cachePath) {
-          throw new Error('Réponse API sans cachePath');
-        }
-
-        trackPathDb?.set(cacheKey, cachePath);
-
-        return streamCachedTrackFromCdn(item, cachePath, downloadStartedAt, {
-          requestMs,
-          cacheState: data?.cacheState,
-          loudnessDb: extractTrackLoudnessDb(data),
-          artworkUrl: resolveCdnArtworkUrl(data?.artworkUrl),
-        });
-      } catch (err) {
-        const timedOut = err?.name === 'TimeoutError';
-        if (timedOut && attempt < maxAttempts) {
-          lastError = err;
-          logWarn('api.download.request.timedOut.retrying', {
-            id: item?.id,
-            attempt,
-            timeoutMs,
-            name: item?.name,
-          });
-          continue;
-        }
-        apiHealthMonitor?.recordFailure();
-        throw err;
-      }
+    } catch (err) {
+      apiHealthMonitor?.recordFailure();
+      throw err;
     }
 
-    throw lastError || new Error('Téléchargement audio impossible');
+    const requestMs = performance.now() - downloadStartedAt;
+
+    if (!res.ok) {
+      apiHealthMonitor?.recordFailure();
+      const body = await res.text().catch(() => '');
+      logWarn('api.download.response.nonOk', { status: res.status, body });
+      const err = new Error(`HTTP ${res.status} ${body}`.trim());
+      err.status = res.status;
+      throw err;
+    }
+
+    apiHealthMonitor?.recordSuccess();
+
+    // POST /api/download est orchestration-only : il retourne du JSON (cachePath).
+    // Les bytes audio sont récupérés séparément depuis le CDN audio.
+    const data = await res.json().catch(() => null);
+    const cachePath = data?.cachePath;
+    if (!cachePath) {
+      throw new Error('Réponse API sans cachePath');
+    }
+
+    trackPathDb?.set(cacheKey, cachePath);
+
+    return streamCachedTrackFromCdn(item, cachePath, downloadStartedAt, {
+      requestMs,
+      cacheState: data?.cacheState,
+      loudnessDb: extractTrackLoudnessDb(data),
+      artworkUrl: resolveCdnArtworkUrl(data?.artworkUrl),
+    });
   }
 
   async function ensureLocalSource(item, options = {}) {
