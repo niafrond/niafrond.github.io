@@ -1,3 +1,9 @@
+## [2.25.0](https://github.com/niafrond/niafrond.github.io/compare/v2.24.0...v2.25.0) (2026-07-31)
+
+### Features
+
+* update sample_airhorn.mp3 with new audio file ([481613f](https://github.com/niafrond/niafrond.github.io/commit/481613fae9d260546dbe2be4555d761358cd41a3))
+
 ## [2.24.0](https://github.com/niafrond/niafrond.github.io/compare/v2.23.0...v2.24.0) (2026-07-31)
 
 ### Features
