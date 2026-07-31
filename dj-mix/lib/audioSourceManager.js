@@ -650,7 +650,8 @@ export function createAudioSourceManager(options) {
     attemptArtworkSelfHeal(item);
   }
 
-  async function downloadTrackViaApi(item) {
+  async function downloadTrackViaApi(item, options = {}) {
+    const { forceFreshResolve = false } = options;
     if (apiHealthMonitor?.isOffline()) {
       throw new Error('API hors ligne – téléchargement impossible');
     }
@@ -664,7 +665,7 @@ export function createAudioSourceManager(options) {
     // POST on the main API entirely and go straight to the CDN, which stays
     // reachable even while the main API is busy with a long-running
     // download/search task.
-    if (item?.cachePath) {
+    if (!forceFreshResolve && item?.cachePath) {
       logInfo('api.download.cdn.directStream', {
         id: item?.id,
         name: item?.name,
@@ -677,23 +678,25 @@ export function createAudioSourceManager(options) {
     // Not resolved on the item itself: consult the local path DB (paths-only,
     // synced from GET /api/cache/files at startup and topped up below after
     // every fresh orchestration resolve) before hitting the network at all.
-    const cacheKey = getTrackCacheKey(item);
-    let dbCachePath = trackPathDb?.get(cacheKey) || '';
-    if (!dbCachePath) {
-      const fbArtist = String(item?.artist || '').trim().toLowerCase();
-      const fbName = String(item?.name || item?.title || '').trim().toLowerCase();
-      const fallbackKey = (fbArtist && fbName) ? `${fbArtist}::${fbName}` : '';
-      if (fallbackKey && fallbackKey !== cacheKey) dbCachePath = trackPathDb?.get(fallbackKey) || '';
-    }
-    if (dbCachePath) {
-      item.cachePath = dbCachePath;
-      logInfo('api.download.pathDb.directStream', {
-        id: item?.id,
-        name: item?.name,
-        cachePath: dbCachePath,
-      });
-      maybeRefreshStuckArtwork(item);
-      return streamCachedTrackFromCdn(item, dbCachePath, downloadStartedAt);
+    if (!forceFreshResolve) {
+      const cacheKey = getTrackCacheKey(item);
+      let dbCachePath = trackPathDb?.get(cacheKey) || '';
+      if (!dbCachePath) {
+        const fbArtist = String(item?.artist || '').trim().toLowerCase();
+        const fbName = String(item?.name || item?.title || '').trim().toLowerCase();
+        const fallbackKey = (fbArtist && fbName) ? `${fbArtist}::${fbName}` : '';
+        if (fallbackKey && fallbackKey !== cacheKey) dbCachePath = trackPathDb?.get(fallbackKey) || '';
+      }
+      if (dbCachePath) {
+        item.cachePath = dbCachePath;
+        logInfo('api.download.pathDb.directStream', {
+          id: item?.id,
+          name: item?.name,
+          cachePath: dbCachePath,
+        });
+        maybeRefreshStuckArtwork(item);
+        return streamCachedTrackFromCdn(item, dbCachePath, downloadStartedAt);
+      }
     }
 
     const baseUrl = getDownloaderApiUrl();
@@ -784,7 +787,8 @@ export function createAudioSourceManager(options) {
     throw lastError || new Error('Téléchargement audio impossible');
   }
 
-  async function ensureLocalSource(item) {
+  async function ensureLocalSource(item, options = {}) {
+    const { forceFreshResolve = false } = options;
     logInfo('source.ensure.begin', {
       id: item?.id,
       name: item?.name,
@@ -794,20 +798,23 @@ export function createAudioSourceManager(options) {
     });
     const cacheKey = getTrackCacheKey(item);
 
-    if (item.localBlobUrl) {
+    if (!forceFreshResolve && item.localBlobUrl) {
       maybeWarmStemLocalSources(item, cacheKey);
       logDebug('source.ensure.hit.itemBlob', { cacheKey, id: item?.id });
       return item.localBlobUrl;
     }
 
     // Check in-memory session cache before any network probes
-    let cachedSource = sessionBlobCache.get(cacheKey);
-    if (!cachedSource) {
-      const fbArtist = String(item.artist || '').trim().toLowerCase();
-      const fbName = String(item.name || item.title || '').trim().toLowerCase();
-      if (fbArtist && fbName) {
-        const fallbackKey = `${fbArtist}::${fbName}`;
-        if (fallbackKey !== cacheKey) cachedSource = sessionBlobCache.get(fallbackKey);
+    let cachedSource = null;
+    if (!forceFreshResolve) {
+      cachedSource = sessionBlobCache.get(cacheKey);
+      if (!cachedSource) {
+        const fbArtist = String(item.artist || '').trim().toLowerCase();
+        const fbName = String(item.name || item.title || '').trim().toLowerCase();
+        if (fbArtist && fbName) {
+          const fallbackKey = `${fbArtist}::${fbName}`;
+          if (fallbackKey !== cacheKey) cachedSource = sessionBlobCache.get(fallbackKey);
+        }
       }
     }
     if (cachedSource) {
@@ -833,17 +840,20 @@ export function createAudioSourceManager(options) {
     }
 
     // Check the persistent IndexedDB blob store before any network probes
-    let persistedBlobUrl = await restorePersistedAudioBlobUrl(cacheKey, blobStore);
-    // Fallback: try artist::name key (covers mismatch between queue items
-    // whose id was synthesized by addToQueue and tracks downloaded under
-    // the artist::name cache key by prefetchTrackToLocalCache)
-    if (!persistedBlobUrl) {
-      const fbArtist = String(item.artist || '').trim().toLowerCase();
-      const fbName = String(item.name || item.title || '').trim().toLowerCase();
-      if (fbArtist && fbName) {
-        const fallbackKey = `${fbArtist}::${fbName}`;
-        if (fallbackKey !== cacheKey) {
-          persistedBlobUrl = await restorePersistedAudioBlobUrl(fallbackKey, blobStore);
+    let persistedBlobUrl = null;
+    if (!forceFreshResolve) {
+      persistedBlobUrl = await restorePersistedAudioBlobUrl(cacheKey, blobStore);
+      // Fallback: try artist::name key (covers mismatch between queue items
+      // whose id was synthesized by addToQueue and tracks downloaded under
+      // the artist::name cache key by prefetchTrackToLocalCache)
+      if (!persistedBlobUrl) {
+        const fbArtist = String(item.artist || '').trim().toLowerCase();
+        const fbName = String(item.name || item.title || '').trim().toLowerCase();
+        if (fbArtist && fbName) {
+          const fallbackKey = `${fbArtist}::${fbName}`;
+          if (fallbackKey !== cacheKey) {
+            persistedBlobUrl = await restorePersistedAudioBlobUrl(fallbackKey, blobStore);
+          }
         }
       }
     }
@@ -868,7 +878,7 @@ export function createAudioSourceManager(options) {
       return item.localBlobUrl;
     }
 
-    if (item.persistedSourceUrl) {
+    if (!forceFreshResolve && item.persistedSourceUrl) {
       // While the downloader API is known offline, a failed playability probe
       // just means the local server can't be reached right now — not that the
       // track needs re-downloading. Trust the previously-known URL instead of
@@ -892,7 +902,7 @@ export function createAudioSourceManager(options) {
       item.persistedSourceUrl = '';
     }
 
-    const directFromUri = getDirectPlayableSourceUrl(item, getDownloaderApiUrl);
+    const directFromUri = forceFreshResolve ? '' : getDirectPlayableSourceUrl(item, getDownloaderApiUrl);
     if (directFromUri) {
       const isPlayable = apiHealthMonitor?.isOffline() || await canLoadAudioSource(directFromUri);
       if (isPlayable) {
@@ -922,7 +932,7 @@ export function createAudioSourceManager(options) {
     onQueueUpdated?.();
 
     try {
-      const downloaded = await downloadTrackViaApi(item);
+      const downloaded = await downloadTrackViaApi(item, { forceFreshResolve });
       item.localBlobUrl = downloaded.url;
       if (downloaded.cachePath) {
         item.cachePath = downloaded.cachePath;

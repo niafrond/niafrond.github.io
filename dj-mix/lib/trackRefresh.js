@@ -11,12 +11,23 @@ export async function refreshQueueTrack(item, deps = {}) {
   await refreshMixData(item.name, item.artist).catch(() => null);
   evictTrackSource?.(item, { notify: true });
 
+  // Keep delete identifiers before clearing local routing hints.
+  const deleteTarget = {
+    cachePath: item.cachePath || '',
+    name: item.name || '',
+    artist: item.artist || '',
+  };
+
+  // Force a fresh orchestration resolve instead of reusing stale local hints.
+  item.cachePath = '';
+  item.persistedSourceUrl = '';
+
   try {
-    await deleteLocalCacheSong?.(item);
+    await deleteLocalCacheSong?.(deleteTarget);
   } catch {
     // Best effort: the UI should still attempt a fresh download from the API.
   }
 
-  await ensureLocalSource(item);
+  await ensureLocalSource(item, { forceFreshResolve: true });
   return true;
 }

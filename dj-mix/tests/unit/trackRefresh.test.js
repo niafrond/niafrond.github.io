@@ -3,7 +3,12 @@ import { refreshQueueTrack } from '../../lib/trackRefresh.js';
 
 describe('refreshQueueTrack', () => {
   test('refreshes mix data, evicts local source, and re-downloads the track', async () => {
-    const item = { name: 'Track', artist: 'Artist' };
+    const item = {
+      name: 'Track',
+      artist: 'Artist',
+      cachePath: '/cache/old.mp3',
+      persistedSourceUrl: 'blob:old',
+    };
     const refreshMixData = jest.fn().mockResolvedValue({ durationSec: 180 });
     const evictTrackSource = jest.fn();
     const deleteLocalCacheSong = jest.fn().mockResolvedValue(undefined);
@@ -19,7 +24,13 @@ describe('refreshQueueTrack', () => {
     expect(result).toBe(true);
     expect(refreshMixData).toHaveBeenCalledWith('Track', 'Artist');
     expect(evictTrackSource).toHaveBeenCalledWith(item, { notify: true });
-    expect(deleteLocalCacheSong).toHaveBeenCalledWith(item);
-    expect(ensureLocalSource).toHaveBeenCalledWith(item);
+    expect(deleteLocalCacheSong).toHaveBeenCalledWith({
+      cachePath: '/cache/old.mp3',
+      name: 'Track',
+      artist: 'Artist',
+    });
+    expect(item.cachePath).toBe('');
+    expect(item.persistedSourceUrl).toBe('');
+    expect(ensureLocalSource).toHaveBeenCalledWith(item, { forceFreshResolve: true });
   });
 });
