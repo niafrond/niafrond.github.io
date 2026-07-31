@@ -1,3 +1,9 @@
+## [2.26.0](https://github.com/niafrond/niafrond.github.io/compare/v2.25.0...v2.26.0) (2026-07-31)
+
+### Features
+
+* add duration-based offset handling for mix data recommendations ([49c1620](https://github.com/niafrond/niafrond.github.io/commit/49c16202211468f82efd2418e8d106987ab52fec))
+
 ## [2.25.0](https://github.com/niafrond/niafrond.github.io/compare/v2.24.0...v2.25.0) (2026-07-31)
 
 ### Features
