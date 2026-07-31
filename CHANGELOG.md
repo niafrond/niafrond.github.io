@@ -1,3 +1,9 @@
+## [2.24.0](https://github.com/niafrond/niafrond.github.io/compare/v2.23.0...v2.24.0) (2026-07-31)
+
+### Features
+
+* implement force fresh resolve for track downloads and refresh logic ([56a1391](https://github.com/niafrond/niafrond.github.io/commit/56a13914f7529d0456aa463efb6586fa388fa311))
+
 ## [2.23.0](https://github.com/niafrond/niafrond.github.io/compare/v2.22.0...v2.23.0) (2026-07-30)
 
 ### Features
