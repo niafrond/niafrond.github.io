@@ -1,3 +1,9 @@
+## [2.26.1](https://github.com/niafrond/niafrond.github.io/compare/v2.26.0...v2.26.1) (2026-08-01)
+
+### Bug Fixes
+
+* artwork ([67fa5ce](https://github.com/niafrond/niafrond.github.io/commit/67fa5ce459e29cee467f3a379806b6c4092849d9))
+
 ## [2.26.0](https://github.com/niafrond/niafrond.github.io/compare/v2.25.0...v2.26.0) (2026-07-31)
 
 ### Features
