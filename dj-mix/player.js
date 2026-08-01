@@ -16,6 +16,7 @@ import {
   computeLoopMorphBpmSyncRatio,
   LoopMorphEngine,
 } from './lib/loopMorphEngine.js';
+import { prepareReversedWindow, ReverseGrainEngine } from './lib/reverseEngine.js';
 import { createLogger } from './lib/logger.js';
 
 const logger = createLogger('player');
@@ -130,6 +131,9 @@ export class DJPlayer extends EventTarget {
   // engine (phases 1-7's loop segments, one continuous up-front schedule). The incoming deck has
   // no engine of its own (2026-07-29 feedback) — it just plays normally the whole time.
   #loopMorphEngineOutgoing = new LoopMorphEngine();
+  // Genuine reversed-audio grain (SPEC-1.3.6.6, short_reverse transition + backspin FX trigger,
+  // lib/reverseEngine.js) — replaces the previous repeated-hard-seek approach.
+  #reverseGrainEngine = new ReverseGrainEngine();
   #isCrossfading = false;
   #crossfadeNotified = false;
   #trackEndNotified = false;
@@ -374,6 +378,53 @@ export class DJPlayer extends EventTarget {
 
   resetDeckPlaybackRate(deck) {
     this.setDeckPlaybackRate(deck, 1.0);
+  }
+
+  /**
+   * Genuine reversed-audio grain (SPEC-1.3.6.6): decodes the `durationMs` immediately preceding
+   * the deck's current position, reverses its samples (lib/reverseEngine.js), and plays that
+   * through the same Web Audio graph as normal playback (mixFeatures' sourceBus — so it gets the
+   * same echo/distortion/filter chain) while the live HTMLAudioElement is muted at the Web Audio
+   * level (`setDeckElementGain`, 0). Once the grain finishes, the live element (which kept
+   * advancing in real time underneath, inaudibly) is snapped back to the exact position it was at
+   * when triggered and unmuted — so this is a self-contained "reverse blip" that doesn't otherwise
+   * disturb playback position or transition timing math elsewhere. No-op if mixFeatures/Web Audio
+   * isn't available, the deck has no loaded source, or decode fails — callers don't need a
+   * fallback, the previous (jerky) seek-based approach is simply not attempted anymore.
+   */
+  async playReverseGrain(deck, { durationMs = 550 } = {}) {
+    const targetDeck = deck === 'B' ? 'B' : 'A';
+    const audio = targetDeck === 'B' ? this.#audioB : this.#audioA;
+    if (!audio || this.#destroyed) return;
+
+    await this.#mixFeatures?.ensureReady?.();
+    const ctx = this.#mixFeatures?.getAudioContext?.();
+    const destinationBus = this.#mixFeatures?.getDeckInputBus?.(targetDeck);
+    const sourceUrl = this.#deckSourceMeta[targetDeck]?.url;
+    if (!ctx || !destinationBus || !sourceUrl) return;
+
+    const anchorSec = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+    const windowSec = Math.max(0.08, (Number(durationMs) || 550) / 1000);
+    if (anchorSec <= 0.05) return;
+
+    let audioBuffer;
+    try {
+      audioBuffer = await prepareReversedWindow(ctx, sourceUrl, anchorSec, windowSec);
+    } catch {
+      return;
+    }
+    // Deck may have loaded a different track while the decode was in flight.
+    if (this.#destroyed || this.#deckSourceMeta[targetDeck]?.url !== sourceUrl) return;
+
+    this.#mixFeatures.setDeckElementGain(targetDeck, 0);
+    const { durationSec } = this.#reverseGrainEngine.run({ ctx, destinationBus, audioBuffer });
+
+    await new Promise((resolve) => setTimeout(resolve, durationSec * 1000));
+
+    this.#reverseGrainEngine.stop();
+    if (this.#destroyed || this.#deckSourceMeta[targetDeck]?.url !== sourceUrl) return;
+    audio.currentTime = anchorSec;
+    this.#mixFeatures.setDeckElementGain(targetDeck, 1);
   }
 
   setDeckMixRatio(ratio, transitionMs = 140) {
@@ -851,6 +902,15 @@ export class DJPlayer extends EventTarget {
     if (mode === 'echo_freeze' && !startEcho) {
       this.setMixFeatures({ echo: true });
     }
+    if (mode === 'short_reverse') {
+      // SPEC-1.3.6.6: a genuine reversed-audio grain covering the first ~18% of the transition
+      // (the wobble window computeTransitionLevels's 'short_reverse' curve targets), fired once
+      // up front rather than re-evaluated per tick — it manages its own mute/restore/timing via
+      // playReverseGrain, independent of this transition's own volume-envelope tick loop below.
+      this.playReverseGrain(context.fromDeck, {
+        durationMs: Math.min(600, Math.max(180, liveDuration * 0.18)),
+      }).catch(() => {});
+    }
 
     try {
       await new Promise((resolve) => {
@@ -886,10 +946,6 @@ export class DJPlayer extends EventTarget {
             && shouldResetShortLoop(context.to.currentTime, loopAnchor, shortLoopRepeatCount)) {
             context.to.currentTime = loopAnchor;
             shortLoopRepeatCount += 1;
-          }
-
-          if (mode === 'short_reverse' && progress < 0.18 && Number.isFinite(context.from.currentTime) && context.from.currentTime > 0.18) {
-            context.from.currentTime = Math.max(0, context.from.currentTime - 0.045);
           }
 
           // Retire le high-pass du deck entrant à mi-transition pour laisser ouvrir le spectre
@@ -1396,6 +1452,7 @@ export class DJPlayer extends EventTarget {
     clearInterval(this.#crossfadeInterval);
     this.#crossfadeInterval = null;
     this.#loopMorphEngineOutgoing?.stop();
+    this.#reverseGrainEngine?.stop();
 
     if (this.#manualMixRafId !== null) {
       cancelAnimationFrame(this.#manualMixRafId);

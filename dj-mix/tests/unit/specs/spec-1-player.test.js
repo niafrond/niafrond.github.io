@@ -496,6 +496,28 @@ describe('SPEC-1.3.6 — Aucune transition ne crée de silence', () => {
     player.destroy?.();
   }, 10000);
 
+  test('SPEC-1.3.6.6 — short_reverse joue un vrai grain audio inversé (decode + reverse), pas des sauts répétés de currentTime', async () => {
+    const player = await makePlayer();
+    // Simule la platine sortante en cours de lecture (les mocks n'avancent pas currentTime tout
+    // seuls) : playReverseGrain a besoin d'une position > 0 pour décoder une fenêtre avant elle.
+    mockAudios[0].currentTime = 5;
+    const fetchCallsBefore = globalThis.fetch.mock.calls.length;
+    const currentTimeSamples = [];
+    const onProgress = () => currentTimeSamples.push(mockAudios[0].currentTime);
+    player.addEventListener('crossfadeprogress', onProgress);
+
+    await crossfadeWithMode(player, 'short_reverse', { url: 'blob:track-i', durationMs: 200000 });
+    player.removeEventListener('crossfadeprogress', onProgress);
+
+    const newFetchCalls = globalThis.fetch.mock.calls.slice(fetchCallsBefore);
+    expect(newFetchCalls.some((call) => call[0] === 'blob:track-a')).toBe(true);
+    // playReverseGrain ne touche plus jamais currentTime par petits pas répétés pendant le tick
+    // (l'ancien hack) : la seule valeur vue tout du long est l'ancre de départ, jusqu'au reset
+    // final (0) du handoff normal de fin de transition (crossfadeToDeck).
+    expect(currentTimeSamples.every((v) => v === 5 || v === 0)).toBe(true);
+    player.destroy?.();
+  }, 10000);
+
   describe('SPEC-1.3.6.5 — timeCorrectedRateEase (playback rate immune au throttling en arrière-plan)', () => {
     test('à un tick nominal (30ms), retombe exactement sur le facteur par-tick d\'origine', () => {
       expect(timeCorrectedRateEase(0.18, CROSSFADE_RATE_EASE_TICK_MS)).toBeCloseTo(0.18, 10);

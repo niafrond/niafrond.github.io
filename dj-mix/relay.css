@@ -453,6 +453,16 @@ html, body {
   text-overflow: ellipsis;
 }
 
+.relay-search-result-local-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  font-size: 11px;
+  opacity: 0.9;
+  filter: saturate(0.9);
+}
+
 .relay-search-result-dur {
   font-size: 12px;
   color: var(--text-dim);

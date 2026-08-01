@@ -201,19 +201,20 @@ export function createDjFxController(options) {
   }
 
   function triggerBackspinFx(deck) {
-    if (!getPlayer()) return;
+    const player = getPlayer();
+    if (!player) return;
     const safeDeck = deck === 'B' ? 'B' : 'A';
     const state = getDeckStateForFx(safeDeck);
     const anchorMs = Number(state?.positionMs) || 0;
     if (anchorMs <= 200) return;
 
+    // A genuine reversed-audio grain (lib/reverseEngine.js, SPEC-1.3.6.6) — replaces the previous
+    // chain of 8 hard hundred-ms-ish HTMLAudioElement.currentTime jumps (audible as a stutter, not
+    // a rewind) with real sample-reversed playback. The pitch-up flourish is kept: it's what makes
+    // the release, right after the grain hands back to live playback, sound like the record
+    // physically catching back up to speed.
     applyTemporaryDeckPlaybackRate(safeDeck, 1.18, 640);
-    for (let i = 0; i < 8; i += 1) {
-      const targetMs = Math.max(0, anchorMs - ((i + 1) * 90));
-      setTimeout(() => {
-        getPlayer()?.seekDeckTo(safeDeck, targetMs, { instant: true }).catch(() => {});
-      }, i * 66);
-    }
+    player.playReverseGrain(safeDeck, { durationMs: 640 }).catch(() => {});
   }
 
   async function getOrCreateFxAudioContext() {

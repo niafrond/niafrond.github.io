@@ -1,6 +1,7 @@
 import { getUnreadQueue } from './lib/relayQueueView.js';
 import { resolveArtworkUrlForRelay } from './lib/downloaderConfig.js';
 import { resolveRelayArtworkUrl } from './lib/relayArtworkResolver.js';
+import { isLocalTrackResult } from './lib/searchUtils.js';
 
 /**
  * relay.js — Écran relais léger
@@ -450,15 +451,23 @@ function _renderSearchResults(tracks) {
   }
 
   searchResults.innerHTML = tracks.map((t, i) => {
-    const art = t.artUrl || t.artworkUrl || t.artworkUrl100 || '';
+    // L'API renvoie une référence relative (`/api/artwork?cachePath=...`) pour
+    // les morceaux déjà en cache serveur (isLocal/cached) — sans passer par
+    // resolveArtworkUrlForRelay, ce chemin relatif se résout contre l'origine
+    // de la page relais (pas l'API) et casse l'image (SPEC-9.7.1).
+    const rawArt = t.artUrl || t.artworkUrl || t.artworkUrl100 || '';
+    const art = resolveArtworkUrlForRelay(rawArt, API_BASE, API_TOKEN) || rawArt;
     const name = _escHtml(t.name || t.trackName || t.title || '');
     const artist = _escHtml(t.artist || t.artistName || '');
     const dur = _fmtDuration(t.duration_ms || t.trackTimeMillis);
+    const localBadge = isLocalTrackResult(t)
+      ? '<span class="relay-search-result-local-badge" title="Disponible localement sur le serveur">📁</span>'
+      : '';
     return `<div class="relay-search-result" data-idx="${i}">` +
       (art ? `<img class="relay-search-result-art" src="${_escHtml(art)}" alt="" loading="lazy">` :
              `<div class="relay-search-result-art"></div>`) +
       `<div class="relay-search-result-info">` +
-        `<div class="relay-search-result-name">${name}</div>` +
+        `<div class="relay-search-result-name">${name} ${localBadge}</div>` +
         `<div class="relay-search-result-artist">${artist}</div>` +
       `</div>` +
       (dur ? `<span class="relay-search-result-dur">${dur}</span>` : '') +
@@ -475,7 +484,8 @@ function _renderSearchEmpty(msg) {
 function _showActionSheet(track) {
   if (!actionSheet || !track) return;
   _selectedTrack = track;
-  const art = track.artUrl || track.artworkUrl100 || '';
+  const rawArt = track.artUrl || track.artworkUrl || track.artworkUrl100 || '';
+  const art = resolveArtworkUrlForRelay(rawArt, API_BASE, API_TOKEN) || rawArt;
   if (actionArt) {
     actionArt.src = art;
     actionArt.hidden = !art;
@@ -518,11 +528,12 @@ function _hideActionSheet() {
 }
 
 function _buildTrackPayload(track) {
+  const rawArt = track.artUrl || track.artworkUrl || track.artworkUrl100 || '';
   return {
     id: track.id || track.trackId || '',
     name: track.name || track.trackName || track.title || '',
     artist: track.artist || track.artistName || '',
-    artUrl: track.artUrl || track.artworkUrl || track.artworkUrl100 || '',
+    artUrl: resolveArtworkUrlForRelay(rawArt, API_BASE, API_TOKEN) || rawArt,
     duration_ms: track.duration_ms || track.trackTimeMillis || 0,
     uri: track.uri || '',
     downloadUrl: track.downloadUrl || track.persistedSourceUrl || '',

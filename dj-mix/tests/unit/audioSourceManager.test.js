@@ -898,5 +898,85 @@ describe('audioSourceManager', () => {
       await manager.clearAllPersistedBlobs();
       expect(blobStore.clearAll).toHaveBeenCalledTimes(1);
     });
+
+    describe('redownloadTrackAndWait', () => {
+      function makeCacheFilesResponse(entry) {
+        return {
+          ok: true,
+          json: async () => ({ count: entry ? 1 : 0, hasMore: false, results: entry ? [entry] : [] }),
+        };
+      }
+
+      test('queues the redownload via POST /api/cache/redownload-tracks, then resolves true once cachedAt moves on poll', async () => {
+        const blobStore = makeFakeBlobStore();
+        let filesCallCount = 0;
+        const fetchMock = jest.fn((url, init) => {
+          if (String(url).includes('/api/cache/redownload-tracks')) {
+            expect(init.method).toBe('POST');
+            expect(JSON.parse(init.body)).toEqual({
+              tracks: [{ trackName: 'Track', artistName: 'Artist', cachePath: '/cache/old.mp3' }],
+            });
+            return Promise.resolve({ ok: true, json: async () => ({ queued: 1 }) });
+          }
+          if (String(url).includes('/api/cache/files')) {
+            filesCallCount += 1;
+            // First call (baseline, before POST) sees the stale entry; the
+            // poll only reports the fresh one from the 2nd call onward.
+            const cachedAt = filesCallCount === 1 ? '2026-01-01T00:00:00.000Z' : '2026-01-02T00:00:00.000Z';
+            return Promise.resolve(makeCacheFilesResponse({
+              trackName: 'Track', artistName: 'Artist', cachePath: '/cache/old.mp3', cachedAt,
+            }));
+          }
+          return Promise.resolve({ ok: false, status: 404 });
+        });
+        global.fetch = fetchMock;
+        const manager = makeManager(blobStore);
+        const track = { name: 'Track', artist: 'Artist', cachePath: '/cache/old.mp3' };
+
+        const result = await manager.redownloadTrackAndWait(track, { pollIntervalMs: 1, pollTimeoutMs: 100 });
+
+        expect(result).toBe(true);
+        expect(filesCallCount).toBeGreaterThanOrEqual(2);
+      });
+
+      test('resolves false without polling when the server queues nothing', async () => {
+        const blobStore = makeFakeBlobStore();
+        const fetchMock = jest.fn((url) => {
+          if (String(url).includes('/api/cache/redownload-tracks')) {
+            return Promise.resolve({ ok: true, json: async () => ({ queued: 0 }) });
+          }
+          return Promise.resolve(makeCacheFilesResponse(null));
+        });
+        global.fetch = fetchMock;
+        const manager = makeManager(blobStore);
+        const track = { name: 'Track', artist: 'Artist', cachePath: '/cache/old.mp3' };
+
+        const result = await manager.redownloadTrackAndWait(track, { pollIntervalMs: 1, pollTimeoutMs: 100 });
+
+        expect(result).toBe(false);
+      });
+
+      test('resolves false when the cache entry never picks up a fresh cachedAt before the timeout', async () => {
+        const blobStore = makeFakeBlobStore();
+        const fetchMock = jest.fn((url) => {
+          if (String(url).includes('/api/cache/redownload-tracks')) {
+            return Promise.resolve({ ok: true, json: async () => ({ queued: 1 }) });
+          }
+          if (String(url).includes('/api/cache/files')) {
+            return Promise.resolve(makeCacheFilesResponse({
+              trackName: 'Track', artistName: 'Artist', cachePath: '/cache/old.mp3', cachedAt: '2026-01-01T00:00:00.000Z',
+            }));
+          }
+          return Promise.resolve({ ok: false, status: 404 });
+        });
+        global.fetch = fetchMock;
+        const manager = makeManager(blobStore);
+        const track = { name: 'Track', artist: 'Artist', cachePath: '/cache/old.mp3' };
+
+        const result = await manager.redownloadTrackAndWait(track, { pollIntervalMs: 1, pollTimeoutMs: 10 });
+
+        expect(result).toBe(false);
+      });
+    });
   });
 });

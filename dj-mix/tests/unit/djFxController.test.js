@@ -1,5 +1,6 @@
 import { jest, describe, test, expect, afterEach, beforeEach } from '@jest/globals';
 import { createDjFxController } from '../../lib/djFxController.js';
+import { uiState } from '../../lib/uiState.js';
 
 function createController(overrides = {}) {
   return createDjFxController({
@@ -354,5 +355,46 @@ describe('djFxController per-sample buttons', () => {
 
     expect(source.start).not.toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith(expect.stringContaining('non autorise'), true);
+  });
+});
+
+// SPEC-1.3.6.6 — le FX manuel/auto 'backspin' joue un vrai grain audio inversé
+// (player.playReverseGrain, lib/reverseEngine.js) au lieu de l'ancienne chaîne de 8 seeks durs
+// sur HTMLAudioElement.currentTime (audible comme une saccade plutôt qu'un rewind fluide).
+describe('djFxController backspin', () => {
+  afterEach(() => {
+    uiState.lastDeckState = null;
+  });
+
+  test('handleDjFxAction("backspin") plays a genuine reversed grain on the focused deck, no raw seeks', () => {
+    const player = {
+      playReverseGrain: jest.fn().mockResolvedValue(undefined),
+      setDeckPlaybackRate: jest.fn(),
+      resetDeckPlaybackRate: jest.fn(),
+      seekDeckTo: jest.fn(),
+    };
+    uiState.lastDeckState = { deckA: { positionMs: 5000 }, deckB: { positionMs: 0 } };
+
+    const controller = createController({ getPlayer: () => player, getDeckMixRatio: () => 0 });
+    controller.handleDjFxAction('backspin');
+
+    expect(player.playReverseGrain).toHaveBeenCalledWith('A', { durationMs: 640 });
+    expect(player.setDeckPlaybackRate).toHaveBeenCalledWith('A', 1.18);
+    expect(player.seekDeckTo).not.toHaveBeenCalled();
+  });
+
+  test('handleDjFxAction("backspin") is a no-op near the very start of the track', () => {
+    const player = {
+      playReverseGrain: jest.fn(),
+      setDeckPlaybackRate: jest.fn(),
+      resetDeckPlaybackRate: jest.fn(),
+    };
+    uiState.lastDeckState = { deckA: { positionMs: 100 }, deckB: { positionMs: 0 } };
+
+    const controller = createController({ getPlayer: () => player, getDeckMixRatio: () => 0 });
+    controller.handleDjFxAction('backspin');
+
+    expect(player.playReverseGrain).not.toHaveBeenCalled();
+    expect(player.setDeckPlaybackRate).not.toHaveBeenCalled();
   });
 });

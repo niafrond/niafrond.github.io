@@ -17,6 +17,28 @@ const logInfo = (event, payload) => logger.info(event, payload);
 const logWarn = (event, payload) => logger.warn(event, payload);
 const logError = (event, payload) => logger.error(event, payload);
 
+const REDOWNLOAD_POLL_INTERVAL_MS = 4000;
+const REDOWNLOAD_POLL_TIMEOUT_MS = 5 * 60 * 1000;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// A redownload-tracks entry is matched by cachePath when known (authoritative:
+// two different tracks never share a cachePath), else by normalized
+// trackName+artistName — the only identifiers the manual-redownload endpoint
+// accepts when a track has no cachePath yet (e.g. a ghost queue item).
+function matchesCacheEntry(track, entry) {
+  if (!entry) return false;
+  if (track?.cachePath && entry.cachePath && track.cachePath === entry.cachePath) return true;
+  const trackName = String(track?.name || '').trim().toLowerCase();
+  if (!trackName) return false;
+  const trackArtist = String(track?.artist || '').trim().toLowerCase();
+  const entryName = String(entry.trackName || '').trim().toLowerCase();
+  const entryArtist = String(entry.artistName || '').trim().toLowerCase();
+  return trackName === entryName && trackArtist === entryArtist;
+}
+
 export function getTrackCacheKey(track) {
   if (!track) return '';
   // Use id or artist::name — NOT uri/persistedSourceUrl which is a session URL
@@ -1293,6 +1315,82 @@ export function createAudioSourceManager(options) {
     await blobStore.deleteBlob('artwork', cacheKey);
   }
 
+  async function findCacheEntry(track, baseUrl) {
+    const res = await apiFetch(`${baseUrl}/api/cache/files?limit=0`);
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    const results = Array.isArray(data?.results) ? data.results : [];
+    return results.find((entry) => matchesCacheEntry(track, entry)) || null;
+  }
+
+  /**
+   * Manual "redownload this track" action (queue's "Rafraîchir la piste"
+   * button): forces a fresh yt-dlp fetch via `POST /api/cache/redownload-tracks`,
+   * which replaces the cached MP3 in place while preserving the library entry's
+   * other metadata (artwork, genre, release date...) — unlike delete+re-download,
+   * which loses it. That endpoint only enqueues a background job, so this waits
+   * (polling `GET /api/cache/files` for the entry's `cachedAt` to move past its
+   * pre-call value) until the fresh file is actually in place before resolving.
+   * Returns true once confirmed done, false on timeout or if nothing got queued.
+   */
+  async function redownloadTrackAndWait(track, options = {}) {
+    const {
+      pollIntervalMs = REDOWNLOAD_POLL_INTERVAL_MS,
+      pollTimeoutMs = REDOWNLOAD_POLL_TIMEOUT_MS,
+    } = options;
+    const baseUrl = getDownloaderApiUrl();
+    if (!baseUrl) throw new Error('URL API downloader manquante (Config)');
+
+    logInfo('api.cache.redownload.request', {
+      name: track?.name,
+      artist: track?.artist,
+      cachePath: track?.cachePath,
+    });
+
+    const baselineEntry = await findCacheEntry(track, baseUrl).catch(() => null);
+    const baselineCachedAt = baselineEntry?.cachedAt || null;
+
+    const payload = {
+      tracks: [{
+        trackName: track.name,
+        ...(track.artist ? { artistName: track.artist } : {}),
+        ...(track.cachePath ? { cachePath: track.cachePath } : {}),
+      }],
+    };
+
+    const res = await apiFetch(`${baseUrl}/api/cache/redownload-tracks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      logWarn('api.cache.redownload.response.nonOk', { status: res.status, body });
+      throw new Error(`HTTP ${res.status} ${body}`.trim());
+    }
+
+    const queuedData = await res.json().catch(() => ({}));
+    if (!queuedData?.queued) {
+      logWarn('api.cache.redownload.notQueued', { name: track?.name, response: queuedData });
+      return false;
+    }
+
+    const deadline = Date.now() + pollTimeoutMs;
+    while (Date.now() < deadline) {
+      await sleep(pollIntervalMs);
+      const entry = await findCacheEntry(track, baseUrl).catch(() => null);
+      if (entry?.cachedAt && entry.cachedAt !== baselineCachedAt) {
+        if (entry.cachePath) track.cachePath = entry.cachePath;
+        logInfo('api.cache.redownload.success', { name: track?.name, cachePath: entry.cachePath });
+        return true;
+      }
+    }
+
+    logWarn('api.cache.redownload.timeout', { name: track?.name });
+    return false;
+  }
+
   /**
    * Checks whether a track is already stored locally (IndexedDB blob store,
    * or in the in-memory session blob cache). Does NOT trigger any download.
@@ -1402,6 +1500,7 @@ export function createAudioSourceManager(options) {
     isTrackInLocalCache,
     persistArtwork,
     prefetchTrackToLocalCache,
+    redownloadTrackAndWait,
     releaseLocalBlob: (item) => releaseLocalBlob(item, touchQueueItem),
     restoreArtwork,
     searchTracksRaw,

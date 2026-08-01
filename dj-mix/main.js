@@ -1351,6 +1351,7 @@ const {
   isTrackInLocalCache,
   persistArtwork,
   prefetchTrackToLocalCache,
+  redownloadTrackAndWait,
   releaseLocalBlob,
   restoreArtwork,
   searchTracksRaw,
@@ -6957,26 +6958,32 @@ function buildFilRougeHintHTML() {
   return `<div class="queue-filrouge-hint">${artHtml}<div class="queue-info"><div class="queue-filrouge-hint-label">Prochain · fil rouge</div><div class="queue-name">${escHtml(next.name || 'Inconnu')}</div><div class="queue-artist">${escHtml(next.artist || '')}</div></div></div>`;
 }
 
-// ── Actualiser mix data ──────────────────────────────────────────────────────
+// ── Rafraîchir la piste (redownload) ─────────────────────────────────────────
 
-async function _refreshQueueMixData(item, btn) {
+async function _refreshQueueTrack(item, btn) {
   if (!item?.name) return;
   if (btn?.classList.contains('is-checking')) return;
   btn?.classList.add('is-checking');
 
   try {
     const refreshed = await refreshQueueTrack(item, {
-      refreshMixData: (trackName, artistName) => autoModeManager.refreshMixData(trackName, artistName),
+      redownloadTrack: (track) => redownloadTrackAndWait(track),
       evictTrackSource: (track, options) => evictTrackSource(track, options),
-      deleteLocalCacheSong: (track) => deleteLocalCacheSong(track),
       ensureLocalSource: (track) => ensureLocalSource(track),
     });
 
     if (refreshed) {
       showToast(`Piste rafraîchie : ${item.name}`);
       renderQueue();
+
+      // SPEC-2.5.6: if this exact track is still the one currently playing
+      // once the redownload lands, relaunch it so the freshly downloaded
+      // file is what's actually heard instead of the stale in-memory audio.
+      if (uiState.currentTrackId === item.id && uiState.isPlaying) {
+        await startPlaybackForIndex(uiState.currentIndex, 'play');
+      }
     } else {
-      showToast('Aucune mise à jour disponible', true);
+      showToast('Échec du rafraîchissement', true);
     }
   } catch {
     showToast('Erreur réseau', true);
@@ -7057,7 +7064,7 @@ function _renderQueueCore() {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const idx = Number(btn.dataset.index);
-      if (idx >= 0 && idx < queue.length) _refreshQueueMixData(queue[idx], btn);
+      if (idx >= 0 && idx < queue.length) _refreshQueueTrack(queue[idx], btn);
     });
   });
 
