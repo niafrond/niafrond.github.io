@@ -1983,11 +1983,16 @@ async function fetchFilRougeArtwork(track) {
   // déjà connue (sinon persistArtwork() n'est presque jamais atteint et
   // chaque affichage retélécharge l'image — SPEC-13.3.9).
   const { localBlobUrl, remoteArtUrl } = await resolveArtworkForItem(track, { restoreArtwork, persistArtwork });
+  // Toujours mémoriser l'URL distante quand elle est connue, même si un blob
+  // local existe aussi — sinon le relais (qui ne peut pas utiliser de blob:
+  // URL, propre à ce navigateur) perd toute trace de l'artwork pour ce morceau
+  // dès que `artUrl` est réécrit en blob: local (cf. buildRelayStateSnapshot).
+  if (remoteArtUrl) {
+    setArtworkUrl(track.name, track.artist, remoteArtUrl);
+  }
   if (localBlobUrl) {
     trackStore.patch(track.id, { artUrl: localBlobUrl });
     renderFilRougeDebounced();
-  } else if (remoteArtUrl) {
-    setArtworkUrl(track.name, track.artist, remoteArtUrl);
   }
   const needsArt = !localBlobUrl && !remoteArtUrl;
   if (!needsArt && !needsMeta) return;
@@ -2040,6 +2045,13 @@ async function fetchAndStoreArtworkForItem(item, deck, { skipNotification = fals
   // déjà connue (sinon persistArtwork() n'est presque jamais atteint et
   // chaque affichage retélécharge l'image — SPEC-13.3.9).
   const { localBlobUrl, remoteArtUrl } = await resolveArtworkForItem(item, { restoreArtwork, persistArtwork });
+  // Toujours mémoriser l'URL distante quand elle est connue, même si un blob
+  // local existe aussi — sinon le relais (qui ne peut pas utiliser de blob:
+  // URL, propre à ce navigateur) perd toute trace de l'artwork pour ce morceau
+  // dès que `artUrl` est réécrit en blob: local (cf. buildRelayStateSnapshot).
+  if (remoteArtUrl) {
+    setArtworkUrl(item.name, item.artist, remoteArtUrl);
+  }
   if (localBlobUrl) {
     item.artUrl = localBlobUrl;
     if (item.id) trackStore.patch(item.id, { artUrl: localBlobUrl });
@@ -2049,7 +2061,6 @@ async function fetchAndStoreArtworkForItem(item, deck, { skipNotification = fals
     return;
   }
   if (remoteArtUrl) {
-    setArtworkUrl(item.name, item.artist, remoteArtUrl);
     return;
   }
 
@@ -7253,11 +7264,22 @@ function buildRelayStateSnapshot() {
   const cdnBaseUrl = getDownloaderCdnUrl?.() || getDownloaderApiUrl?.() || '';
   const relayToken = getDownloaderApiToken?.() || '';
 
+  // `item.artUrl` est réécrit en blob: local dès que l'artwork est mise en
+  // cache pour l'affichage du maître (fetchAndStoreArtworkForItem/
+  // fetchFilRougeArtwork) — resolveArtworkUrlForRelay renvoie alors ''. On se
+  // rabat sur la dernière URL distante connue pour ce titre (artworkUrlCache,
+  // mémorisée à part précisément pour ce cas), sinon l'artwork reste
+  // invisible côté relais pour tout morceau déjà mis en cache localement.
+  const _relayArtUrl = (t) =>
+    resolveArtworkUrlForRelay(t.artUrl || '', cdnBaseUrl, relayToken)
+      || getArtworkUrl(t.name, t.artist)
+      || '';
+
   const queueItems = queue.map((item) => ({
     id: item.id,
     name: item.name,
     artist: item.artist,
-    artUrl: resolveArtworkUrlForRelay(item.artUrl || '', cdnBaseUrl, relayToken),
+    artUrl: _relayArtUrl(item),
     duration: item.duration || 0,
     bpm: item.bpm || null,
     genre: item.genre || '',
@@ -7271,7 +7293,7 @@ function buildRelayStateSnapshot() {
         id: t.id,
         name: t.name,
         artist: t.artist,
-        artUrl: resolveArtworkUrlForRelay(t.artUrl || '', cdnBaseUrl, relayToken),
+        artUrl: _relayArtUrl(t),
         duration: t.duration || 0,
         persistedSourceUrl: _relayUrl(t.persistedSourceUrl),
         uri: t.uri || '',
@@ -7285,7 +7307,7 @@ function buildRelayStateSnapshot() {
     id: filRougeNextTrack.id,
     name: filRougeNextTrack.name,
     artist: filRougeNextTrack.artist,
-    artUrl: resolveArtworkUrlForRelay(filRougeNextTrack.artUrl || '', cdnBaseUrl, relayToken),
+    artUrl: _relayArtUrl(filRougeNextTrack),
   } : null;
 
   // État FX courant (pour que le relais applique les mêmes effets)
