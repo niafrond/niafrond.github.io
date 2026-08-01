@@ -1,3 +1,9 @@
+## [2.27.0](https://github.com/niafrond/niafrond.github.io/compare/v2.26.1...v2.27.0) (2026-08-01)
+
+### Features
+
+* new reverse + api redownload ([4aa536d](https://github.com/niafrond/niafrond.github.io/commit/4aa536d78c42c43b2db28cd35c83155f6df435bc))
+
 ## [2.26.1](https://github.com/niafrond/niafrond.github.io/compare/v2.26.0...v2.26.1) (2026-08-01)
 
 ### Bug Fixes
