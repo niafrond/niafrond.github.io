@@ -1,3 +1,9 @@
+## [2.29.0](https://github.com/niafrond/niafrond.github.io/compare/v2.28.0...v2.29.0) (2026-08-03)
+
+### Features
+
+* relay time ([af0ceef](https://github.com/niafrond/niafrond.github.io/commit/af0ceef60351208ef0696b45c6166cbeedb30ab8))
+
 ## [2.28.0](https://github.com/niafrond/niafrond.github.io/compare/v2.27.0...v2.28.0) (2026-08-03)
 
 ### Features
