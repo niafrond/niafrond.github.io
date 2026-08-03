@@ -1,3 +1,9 @@
+## [2.28.0](https://github.com/niafrond/niafrond.github.io/compare/v2.27.0...v2.28.0) (2026-08-03)
+
+### Features
+
+* reverse ([de19dc9](https://github.com/niafrond/niafrond.github.io/commit/de19dc93ae792cca7a5ae1af5f4a06e488e3c1d1))
+
 ## [2.27.0](https://github.com/niafrond/niafrond.github.io/compare/v2.26.1...v2.27.0) (2026-08-01)
 
 ### Features
