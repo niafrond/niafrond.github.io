@@ -944,6 +944,15 @@ lit son propre `relayIncomingQueue` directement en mémoire.
   ou équivalent) — THEN une petite pastille (`📁`, `.relay-search-result-local-badge`) est
   affichée à côté du nom dans `#relay-search-results`, à l'identique du badge
   `.result-local-badge` déjà utilisé côté maître (`lib/searchUtils.js#buildResultHTML`).
+- **SPEC-9.7.3** La recherche du relais léger (`relay.js`, `#relay-search-input`, saisie clavier
+  hors touche Entrée) est débouncée à `900 ms` avant d'appeler `_relaySearch()` (donc `GET
+  /api/search` sur l'API principale) — volontairement plus long que `SEARCH_DEBOUNCE_MS`
+  (`600 ms`, SPEC-4.1.1) utilisé côté recherche maître, pour limiter les appels API depuis
+  l'écran relais. Un appui sur Entrée court-circuite le debounce et lance la recherche
+  immédiatement (comportement inchangé). Comme le reste de `relay.js`, ce chemin n'est pas
+  importé par la suite de tests (fichier point d'entrée DOM, cf. précédent noté dans
+  [[project_relay_mode]] pour `triggerSearchFade`/`performAutoMix`) ; vérifié par lecture de
+  code uniquement.
 
 ---
 

@@ -578,7 +578,7 @@ searchInput?.addEventListener('input', () => {
     if (searchResults) searchResults.innerHTML = '';
     return;
   }
-  _searchDebounce = setTimeout(() => _relaySearch(q), 500);
+  _searchDebounce = setTimeout(() => _relaySearch(q), 900);
 });
 
 searchInput?.addEventListener('keydown', (e) => {
