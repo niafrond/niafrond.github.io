@@ -66,6 +66,7 @@ const ASSETS = [
   './lib/relayModeController.js',
   './lib/relayModeManager.js',
   './lib/relayQueueView.js',
+  './lib/reverseEngine.js',
   './lib/samplerSoundsManager.js',
   './lib/searchController.js',
   './lib/searchUtils.js',
