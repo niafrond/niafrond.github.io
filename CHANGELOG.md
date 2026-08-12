@@ -1,3 +1,13 @@
+## [2.30.0](https://github.com/niafrond/niafrond.github.io/compare/v2.29.0...v2.30.0) (2026-08-12)
+
+### Features
+
+* Add extend play feature with UI prompt and timer adjustments ([44b8553](https://github.com/niafrond/niafrond.github.io/commit/44b855310634849300217a27f087fd98f7ab7466))
+* add UI rendering functions for theme management and gameplay screens ([4aa7286](https://github.com/niafrond/niafrond.github.io/commit/4aa7286253556f6872b1e32c5113b95f71a7b60d))
+* Enhance theme picker with dynamic color assignment for theme cards ([632f729](https://github.com/niafrond/niafrond.github.io/commit/632f729aa6ed7340ad3c54a99b4d6667214b9dca))
+* theme ([f8cf23b](https://github.com/niafrond/niafrond.github.io/commit/f8cf23bd30bbca7c75711e52de01ac04cb844e53))
+* Update themes.json with new themes and song details ([96c17f7](https://github.com/niafrond/niafrond.github.io/commit/96c17f79a1657049254e0df899da4397f3c40067))
+
 ## [2.29.0](https://github.com/niafrond/niafrond.github.io/compare/v2.28.0...v2.29.0) (2026-08-03)
 
 ### Features
