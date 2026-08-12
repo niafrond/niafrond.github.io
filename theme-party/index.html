@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thème 🎉</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f59e0b">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     ÉCRAN : ACCUEIL
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="screen-home" data-screen="screen-home" class="screen-center">
+  <h1 class="app-title">🎉 Thème</h1>
+  <p class="app-subtitle">Un blind-test à thèmes, un seul téléphone qui circule</p>
+  <button id="btn-launch-game" class="btn btn-primary btn-xl" type="button">🎉 Lancer une partie</button>
+  <button id="btn-open-setup" class="btn btn-sm" type="button">⚙️ Configuration</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     ÉCRAN : ATELIER (créer/éditer les thèmes, config API)
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="screen-setup" data-screen="screen-setup" class="hidden">
+  <div class="page">
+    <header class="app-header">
+      <h1 class="app-title">🎉 Thème</h1>
+      <p class="app-subtitle">Créez vos thèmes (7 pistes + 2 indices)</p>
+    </header>
+
+    <section class="card">
+      <h2 class="card-title">🔌 Serveur API (recherche + téléchargement)</h2>
+      <div class="form-row">
+        <input id="api-url-input" class="input" type="url" placeholder="http://vision:8080" aria-label="URL API">
+        <input id="api-token-input" class="input" type="password" placeholder="Token (optionnel)" aria-label="Token API">
+      </div>
+      <div class="form-row">
+        <input id="api-cdn-input" class="input" type="url" placeholder="URL CDN (optionnel)" aria-label="URL CDN">
+        <button id="btn-api-save" class="btn" type="button">💾 Sauver</button>
+        <button id="btn-api-test" class="btn" type="button">🔍 Tester</button>
+      </div>
+      <p id="api-status" class="status"></p>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">🎵 Thèmes <span id="theme-count" class="text-muted"></span></h2>
+      <div id="theme-list" class="theme-list"></div>
+      <div class="form-row">
+        <button id="btn-new-theme" class="btn btn-primary" type="button">+ Nouveau thème</button>
+        <label class="btn file-btn">
+          📥 Importer un thème JSON
+          <input id="import-theme-file" type="file" accept=".json" hidden>
+        </label>
+      </div>
+      <div class="form-row">
+        <button id="btn-load-seed-themes" class="btn" type="button">📦 Charger les thèmes fournis (mix-blind-test)</button>
+      </div>
+      <p id="theme-list-status" class="status"></p>
+    </section>
+
+    <section id="theme-editor" class="card hidden">
+      <h2 class="card-title">✏️ Éditer le thème</h2>
+      <input id="theme-name-input" class="input" placeholder="Nom du thème (ex : Animaux)" aria-label="Nom du thème">
+      <input id="theme-consigne-input" class="input" placeholder="Consigne (ex : il faut donner le nom de la créature cachée)" aria-label="Consigne du thème">
+
+      <div class="form-row">
+        <input id="track-search-input" class="input" placeholder="Rechercher un morceau (titre, artiste…)" aria-label="Recherche de piste">
+        <button id="btn-track-search" class="btn" type="button">🔎 Chercher</button>
+      </div>
+      <p id="track-search-status" class="status"></p>
+      <ul id="track-search-results" class="search-results"></ul>
+
+      <h3 class="card-subtitle">Pistes (<span id="theme-track-count">0</span>/7)</h3>
+      <ul id="theme-tracks" class="track-list"></ul>
+
+      <div class="form-row">
+        <button id="btn-export-theme" class="btn" type="button">📤 Exporter JSON</button>
+        <button id="btn-close-editor" class="btn btn-primary" type="button">✔️ Terminer</button>
+      </div>
+    </section>
+
+    <div class="center-actions">
+      <button id="btn-back-home-from-setup" class="btn btn-primary btn-lg" type="button">← Retour à l'accueil</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     ÉCRAN : CHOIX DU THÈME
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="screen-picker" data-screen="screen-picker" class="screen-center hidden">
+  <h1 class="app-title">🎉 Choisissez un thème</h1>
+  <div id="theme-cards" class="theme-cards"></div>
+  <p id="picker-empty-msg" class="empty-msg hidden">Plus de thème disponible, bravo ! 🎊</p>
+  <button id="btn-abandon-game" class="btn btn-sm" type="button">🏠 Abandonner la partie</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     ÉCRAN : MANCHE (lecture des 7 pistes)
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="screen-round" data-screen="screen-round" class="hidden">
+  <div class="round-page">
+    <h1 id="round-theme-name" class="theme-title"></h1>
+    <p id="round-theme-consigne" class="consigne-text hidden"></p>
+
+    <div id="disc-carousel" class="disc-carousel" aria-label="Progression du thème"></div>
+
+    <section class="indices-card">
+      <h2 class="indices-title">INDICES</h2>
+      <div class="indice-row">
+        <span class="indice-num">1</span>
+        <span id="hint1-text" class="indice-text indice-hidden">?</span>
+      </div>
+      <div class="indice-row">
+        <span class="indice-num">2</span>
+        <span id="hint2-text" class="indice-text indice-hidden">?</span>
+      </div>
+    </section>
+
+    <button id="btn-reveal" class="btn reveal-btn" type="button">👁 Dévoiler réponse</button>
+    <p id="reveal-answer-text" class="reveal-answer hidden"></p>
+    <p id="round-error-text" class="reveal-answer error hidden"></p>
+
+    <div class="player-controls">
+      <div class="progress-ring-wrap">
+        <svg class="progress-ring" viewBox="0 0 100 100">
+          <circle class="progress-ring-bg" cx="50" cy="50" r="45"></circle>
+          <circle id="progress-ring-fg" class="progress-ring-fg" cx="50" cy="50" r="45"></circle>
+        </svg>
+        <button id="btn-play-pause" class="play-pause-btn" type="button" aria-label="Lecture / Pause">▶</button>
+      </div>
+      <a id="btn-next" href="#" class="next-link">Suivant →</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     ÉCRAN : FIN DE SET
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="screen-set-end" data-screen="screen-set-end" class="screen-center hidden">
+  <h1 class="app-title">🏆 Thème terminé !</h1>
+  <p id="set-end-theme-name" class="theme-title"></p>
+  <p class="text-muted">Comptez vos cartes de score !</p>
+  <button id="btn-continue" class="btn btn-primary btn-lg" type="button">Continuer →</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     ÉCRAN : FIN DE PARTIE (tous les thèmes du pool ont été joués)
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="screen-game-over" data-screen="screen-game-over" class="screen-center hidden">
+  <h1 class="app-title">🏁 Partie terminée !</h1>
+  <p class="text-muted">Comptez les cartes "7" pour désigner l'équipe gagnante.</p>
+  <button id="btn-back-home-from-game-over" class="btn btn-primary btn-lg" type="button">🏠 Retour à l'accueil</button>
+</div>
+
+<div id="theme-party-version" class="version-badge" aria-label="Version"></div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>

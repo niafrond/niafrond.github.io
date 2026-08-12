@@ -100,5 +100,22 @@ export default {
       testMatch: ['<rootDir>/mix-blind-test/tests/unit/stem-client.test.js'],
       transform: {},
     },
+    // ── Thème (party) : roundTimer (node, pas de DOM) ────────────────────────
+    {
+      displayName: 'theme-party-node',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/theme-party/tests/unit/roundTimer.test.js'],
+      transform: {},
+    },
+    // ── Thème (party) : themes + audioSource (jsdom pour localStorage) ──────
+    {
+      displayName: 'theme-party-jsdom',
+      testEnvironment: 'jsdom',
+      testMatch: [
+        '<rootDir>/theme-party/tests/unit/themes.test.js',
+        '<rootDir>/theme-party/tests/unit/audioSource.test.js',
+      ],
+      transform: {},
+    },
   ],
 };

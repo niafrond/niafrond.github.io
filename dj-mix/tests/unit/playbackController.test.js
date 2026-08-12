@@ -316,11 +316,20 @@ describe('applyDjStartOffsetIfPlanned', () => {
     expect(ctrl.applyDjStartOffsetIfPlanned(item, { mixInSec: 10 })).toBe(false);
   });
 
-  test('caps offsetMs to durationMs - 1000', () => {
+  test('caps offsetMs to durationMs - 1000 when under the 50% threshold', () => {
+    const ctrl = makeController();
+    // Sub-2s duration keeps `duration - 1000` below the 50% mark, exercising the cap branch.
+    const item = makeTrack({ autoDjStartOffsetMs: 0, duration: 1_800 });
+    ctrl.applyDjStartOffsetIfPlanned(item, { mixInSec: 0.9 }); // 900ms, under 50% of 1800ms
+    expect(item.autoDjStartOffsetMs).toBe(800); // 1800 - 1000
+  });
+
+  test('rejects offset beyond 50% of track duration and leaves it unset', () => {
     const ctrl = makeController();
     const item = makeTrack({ autoDjStartOffsetMs: 0, duration: 60_000 });
-    ctrl.applyDjStartOffsetIfPlanned(item, { mixInSec: 70 }); // 70s > 60s track
-    expect(item.autoDjStartOffsetMs).toBe(59_000); // 60000 - 1000
+    const changed = ctrl.applyDjStartOffsetIfPlanned(item, { mixInSec: 70 }); // 70s > 50% of 60s track
+    expect(changed).toBe(false);
+    expect(item.autoDjStartOffsetMs).toBe(0);
   });
 });
 

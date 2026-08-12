@@ -3337,6 +3337,8 @@ function applyDjStartOffsetIfPlanned(item, plan) {
   const existingOffsetMs = Math.max(0, Number(item.autoDjStartOffsetMs) || 0);
 
   const durationMs = Math.max(0, Number(item.duration) || 0);
+  if (durationMs > 0 && suggestedOffsetMs > durationMs * 0.5) return false;
+
   const cappedOffsetMs = durationMs > 0
     ? Math.max(0, Math.min(suggestedOffsetMs, Math.max(0, durationMs - 1000)))
     : Math.max(0, suggestedOffsetMs);

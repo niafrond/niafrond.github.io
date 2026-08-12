@@ -338,7 +338,7 @@ function renderPendingRound() {
       refs.nowPlaying.textContent = '🧩 Combinaison prête (non lancée)';
     }
   } else if (!state.playing) {
-    refs.revealAnswer.textContent = 'Préparez une combinaison pour l'afficher au game master.';
+    refs.revealAnswer.textContent = "Préparez une combinaison pour l'afficher au game master.";
     refs.nowPlaying.textContent = '⏸️ Aucun mix en cours';
   }
 }

@@ -164,6 +164,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 - **SPEC-1.5.0.3** L'offset calculé par la détection d'intro vide participe au `Math.max` général de `resolveMixDataStartOffsetMs` — il ne peut qu'augmenter l'offset, jamais le diminuer.
 - **SPEC-1.5.0.4** GIVEN le morceau a une durée connue — WHEN l'offset calculé dépasse `durationSec − 30` — THEN l'offset est ignoré (sécurité : ne pas sauter la quasi-totalité du morceau).
 - **SPEC-1.5.0.5** GIVEN une recommandation de départ issue des mix data — WHEN l'offset calculé dépasse `50 %` de la durée du morceau — THEN la recommandation est ignorée et le morceau démarre au début (`0 ms`).
+- **SPEC-1.5.0.6** GIVEN un offset de départ proposé par le DJ Plan externe (`plan.mixInSec` via `applyDjStartOffsetIfPlanned`) — WHEN cet offset dépasse `50 %` de la durée du morceau (`item.duration`) — THEN il est rejeté (`false`, `item.autoDjStartOffsetMs` non modifié) plutôt que d'être simplement plafonné à `durationMs − 1000`. Avant ce correctif, un `mixInSec` aberrant (ex. proche de la fin du morceau) était appliqué presque tel quel via le plafonnement, faisant démarrer la piste quasiment à sa fin au lieu de `0 ms`. Implémenté dans main.js et `lib/playbackController.js`.
 
 ### 1.6 Limitation de durée (trackMaxDuration)
 
