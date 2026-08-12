@@ -378,6 +378,14 @@ body {
 .transport-btn:active:not(:disabled) { transform: translateY(0) scale(0.95); }
 .transport-btn:disabled { opacity: 0.3; cursor: default; }
 
+.extend-prompt {
+  margin-top: 4px;
+  border: 1px dashed color-mix(in srgb, var(--c-yellow) 55%, var(--border));
+  color: var(--c-yellow);
+  background: rgba(254, 205, 79, 0.08);
+}
+.extend-prompt:hover { border-style: solid; border-color: var(--c-yellow); background: rgba(254, 205, 79, 0.16); }
+
 .progress-ring-wrap { position: relative; width: 108px; height: 108px; }
 .progress-ring { width: 100%; height: 100%; transform: rotate(-90deg); }
 .progress-ring-bg, .progress-ring-fg {

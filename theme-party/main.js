@@ -74,6 +74,7 @@ const refs = {
   btnPlayPause: document.getElementById('btn-play-pause'),
   btnPrev: document.getElementById('btn-prev'),
   btnNext: document.getElementById('btn-next'),
+  btnExtendPlay: document.getElementById('btn-extend-play'),
 
   setEndThemeName: document.getElementById('set-end-theme-name'),
   btnContinue: document.getElementById('btn-continue'),
@@ -98,6 +99,7 @@ let revealed = false;
 let revealTimeoutHandle = null;
 let roundActive = false;
 let rafHandle = null;
+let extendedPlayMax = TIMER.PLAY_MAX; // repoussé de EXTEND_STEP à chaque "+15s" (intro trop longue)
 
 const player = new LocalAudioPlayer();
 player.init();
@@ -431,6 +433,7 @@ function startTrack() {
   clearRevealTimeout();
   revealed = false;
   roundActive = true;
+  extendedPlayMax = TIMER.PLAY_MAX;
   saveCurrentTrackIndex(currentTrackIndex);
 
   const track = currentTheme.tracks[currentTrackIndex];
@@ -442,6 +445,7 @@ function startTrack() {
   ui.renderRoundError(refs.roundErrorText, '');
   ui.renderProgressRing(refs.progressRingFg, 0);
   ui.renderPlayPause(refs.btnPlayPause, false);
+  ui.renderExtendPrompt(refs.btnExtendPlay, false);
   refs.btnPrev.disabled = currentTrackIndex === 0;
 
   // Prépare la piste (téléchargement + résolution de la source) sans la
@@ -466,20 +470,34 @@ async function loadCurrentTrack() {
 function onAnimationFrame() {
   if (!roundActive) return;
   const elapsedMs = player.getCurrentTime() * 1000;
-  const next = advanceHintReveal(hintState, elapsedMs, TIMER);
+  // PLAY_MAX peut être repoussé par extendPlayback() (voir plus bas) : on ne
+  // passe donc pas TIMER tel quel, pour que HINT_1/HINT_2 restent fixes tout
+  // en laissant le plafond de lecture évoluer piste par piste.
+  const timings = { HINT_1: TIMER.HINT_1, HINT_2: TIMER.HINT_2, PLAY_MAX: extendedPlayMax };
+  const next = advanceHintReveal(hintState, elapsedMs, timings);
   if (next.changed) {
     hintState = next;
     const track = currentTheme.tracks[currentTrackIndex];
     ui.renderHints(refs.hint1Text, refs.hint2Text, track, hintState);
     if (next.stopped) player.pause();
   }
-  ui.renderProgressRing(refs.progressRingFg, elapsedMs / TIMER.PLAY_MAX);
+  // Affiché dès qu'on approche le plafond (EXTEND_LEAD avant), pas seulement
+  // une fois la lecture coupée : le DJ peut prolonger avant la coupure.
+  ui.renderExtendPrompt(refs.btnExtendPlay, elapsedMs >= extendedPlayMax - TIMER.EXTEND_LEAD);
+  ui.renderProgressRing(refs.progressRingFg, elapsedMs / extendedPlayMax);
   rafHandle = requestAnimationFrame(onAnimationFrame);
 }
 
 refs.btnPlayPause.addEventListener('click', () => {
   if (player.getState() === 1) player.pause();
   else player.play();
+});
+
+refs.btnExtendPlay.addEventListener('click', () => {
+  extendedPlayMax += TIMER.EXTEND_STEP;
+  hintState = { ...hintState, stopped: false };
+  ui.renderExtendPrompt(refs.btnExtendPlay, false);
+  player.play();
 });
 
 function clearRevealTimeout() {

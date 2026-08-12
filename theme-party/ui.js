@@ -161,6 +161,11 @@ export function renderRoundError(el, message) {
   if (message) el.textContent = message;
 }
 
+/** Affiche/masque le bouton "+15s" proposé au DJ quand la piste atteint le plafond de lecture. */
+export function renderExtendPrompt(el, visible) {
+  el.classList.toggle('hidden', !visible);
+}
+
 // ─── Fin de Set ────────────────────────────────────────────────────────────────
 
 export function renderSetEnd(el, themeName) {

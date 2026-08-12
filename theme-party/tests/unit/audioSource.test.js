@@ -195,4 +195,33 @@ describe('LocalAudioPlayer', () => {
 
     await loadPromise;
   });
+
+  // jsdom n'implémente pas URL.createObjectURL : on le stub pour que
+  // resolveBlobUrl() aboutisse et que load() atteigne bien `audio.src`/`play()`
+  // (sans ce stub, load() tomberait toujours dans son catch et ces deux
+  // lignes ne seraient jamais exécutées, quel que soit `autoplay`).
+  test('load() lance la lecture par défaut (autoplay implicite)', async () => {
+    global.fetch.mockResolvedValueOnce({ ok: true, blob: async () => new Blob(['x']) });
+    global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
+    const player = new audioSource.LocalAudioPlayer();
+    await player.init();
+    const playSpy = jest.spyOn(player._audio, 'play').mockResolvedValue();
+
+    await player.load('/cache/autoplay-track.mp3');
+
+    expect(playSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('load(key, { autoplay: false }) prépare la piste sans la lancer — c\'est le DJ qui décide quand jouer', async () => {
+    global.fetch.mockResolvedValueOnce({ ok: true, blob: async () => new Blob(['x']) });
+    global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
+    const player = new audioSource.LocalAudioPlayer();
+    await player.init();
+    const playSpy = jest.spyOn(player._audio, 'play').mockResolvedValue();
+
+    await player.load('/cache/manual-track.mp3', { autoplay: false });
+
+    expect(playSpy).not.toHaveBeenCalled();
+    expect(player._audio.src).toContain('blob:mock-url');
+  });
 });

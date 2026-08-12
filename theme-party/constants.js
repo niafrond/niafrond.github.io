@@ -16,6 +16,8 @@ export const TIMER = {
   HINT_1: 10000,          // 1er indice révélé à 10s
   HINT_2: 20000,          // 2e indice révélé à 20s
   REVEAL_DURATION: 5000,  // la réponse dévoilée se recache après 5s
+  EXTEND_STEP: 15000,     // secondes ajoutées à chaque clic sur "+15s" (intro trop longue)
+  EXTEND_LEAD: 10000,     // le bouton "+15s" apparaît 10s avant le plafond, pas seulement une fois atteint
 };
 
 export const THEME_TRACK_COUNT = 7;   // pistes par thème (un Set complet)
