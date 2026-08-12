@@ -89,13 +89,15 @@ export function renderLaunchButton(btnEl, hasActiveGame) {
 
 // ─── Picker de thème ──────────────────────────────────────────────────────────
 
+const THEME_CARD_COLOR_COUNT = 7;
+
 export function renderThemePicker(container, emptyMsgEl, themes, onPick) {
   container.innerHTML = '';
   emptyMsgEl.classList.toggle('hidden', themes.length > 0);
-  themes.forEach((theme) => {
+  themes.forEach((theme, index) => {
     const card = document.createElement('button');
     card.type = 'button';
-    card.className = 'theme-card';
+    card.className = `theme-card theme-card--${index % THEME_CARD_COLOR_COUNT}`;
     card.innerHTML = `<span class="theme-card-name">${escapeHtml(theme.name)}</span>`
       + (theme.consigne ? `<span class="theme-card-consigne">${escapeHtml(theme.consigne)}</span>` : '');
     card.addEventListener('click', () => onPick(theme.id));

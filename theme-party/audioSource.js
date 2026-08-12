@@ -161,7 +161,7 @@ function resolveArtworkUrl(artworkUrl) {
 }
 
 // Le picker précharge en tâche de fond toutes les pistes du pool restant
-// (voir main.js) pendant que la lecture directe (loadAndPlayCurrentTrack)
+// (voir main.js) pendant que la lecture directe (loadCurrentTrack)
 // peut réclamer la même piste au même instant si le Set démarre avant que
 // la file de préchargement ne l'ait atteinte. Sans garde, ces deux appels
 // concurrents déclenchaient chacun leur propre POST /api/download pour la
@@ -368,16 +368,24 @@ export class LocalAudioPlayer extends EventTarget {
     return Promise.resolve();
   }
 
-  async load(key) {
+  async load(key, { autoplay = true } = {}) {
     if (!this._ready || !this._audio) return;
     this._currentKey = key;
     const audio = this._audio;
+
+    // Remet currentTime à 0 tout de suite (synchrone), avant même de résoudre
+    // la nouvelle source : resolveBlobUrl est async, et pendant cette attente
+    // getCurrentTime() renverrait sinon encore la position de l'ancienne
+    // piste — la boucle RAF de main.js lirait un temps déjà > HINT_1/HINT_2
+    // et révélerait les deux indices instantanément au clic sur "Suivant".
+    audio.pause();
+    audio.currentTime = 0;
 
     try {
       const url = await resolveBlobUrl(key);
       if (this._currentKey !== key) return;
       audio.src = url;
-      audio.play().catch(() => {});
+      if (autoplay) audio.play().catch(() => {});
     } catch (error) {
       console.error('[Audio] Aucune source disponible pour', key, error);
       this.dispatchEvent(new CustomEvent('error', {

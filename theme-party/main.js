@@ -72,6 +72,7 @@ const refs = {
   roundErrorText: document.getElementById('round-error-text'),
   progressRingFg: document.getElementById('progress-ring-fg'),
   btnPlayPause: document.getElementById('btn-play-pause'),
+  btnPrev: document.getElementById('btn-prev'),
   btnNext: document.getElementById('btn-next'),
 
   setEndThemeName: document.getElementById('set-end-theme-name'),
@@ -94,6 +95,7 @@ let currentTheme = null;
 let currentTrackIndex = 0;
 let hintState = createHintRevealState();
 let revealed = false;
+let revealTimeoutHandle = null;
 let roundActive = false;
 let rafHandle = null;
 
@@ -129,7 +131,7 @@ function enqueuePrefetch(tracks) {
  * Appelé au lancement d'un Set (startSet) : sans ça, ces pistes restaient
  * coincées derrière celles des autres thèmes du pool (encore non choisis)
  * dans la file "un morceau à la fois", si bien que la lecture directe
- * (loadAndPlayCurrentTrack) devait parfois retélécharger elle-même une piste
+ * (loadCurrentTrack) devait parfois retélécharger elle-même une piste
  * du Set en cours faute d'avoir été préchargée à temps — c'est-à-dire
  * rappeler l'API pendant que la partie est en cours. La piste en cours de
  * téléchargement (déjà retirée de la file par runPrefetchQueue) n'est pas
@@ -426,6 +428,7 @@ function startSet(themeId) {
 
 function startTrack() {
   hintState = resetHintReveal();
+  clearRevealTimeout();
   revealed = false;
   roundActive = true;
   saveCurrentTrackIndex(currentTrackIndex);
@@ -439,19 +442,22 @@ function startTrack() {
   ui.renderRoundError(refs.roundErrorText, '');
   ui.renderProgressRing(refs.progressRingFg, 0);
   ui.renderPlayPause(refs.btnPlayPause, false);
+  refs.btnPrev.disabled = currentTrackIndex === 0;
 
-  loadAndPlayCurrentTrack();
+  // Prépare la piste (téléchargement + résolution de la source) sans la
+  // lancer : c'est le DJ qui décide du moment via le bouton play, pas l'app.
+  loadCurrentTrack();
   if (rafHandle) cancelAnimationFrame(rafHandle);
   rafHandle = requestAnimationFrame(onAnimationFrame);
 }
 
-async function loadAndPlayCurrentTrack() {
+async function loadCurrentTrack() {
   const track = currentTheme.tracks[currentTrackIndex];
   try {
     const hadCachePath = Boolean(track.cachePath);
     await ensureDownloaded(track);
     if (!hadCachePath && track.cachePath) saveThemes(themes);
-    await player.load(getSongKey(track));
+    await player.load(getSongKey(track), { autoplay: false });
   } catch (err) {
     ui.renderRoundError(refs.roundErrorText, err.message || 'Lecture impossible.');
   }
@@ -476,16 +482,44 @@ refs.btnPlayPause.addEventListener('click', () => {
   else player.play();
 });
 
+function clearRevealTimeout() {
+  if (revealTimeoutHandle) {
+    clearTimeout(revealTimeoutHandle);
+    revealTimeoutHandle = null;
+  }
+}
+
 refs.btnReveal.addEventListener('click', () => {
+  clearRevealTimeout();
   revealed = !revealed;
   const track = currentTheme.tracks[currentTrackIndex];
   ui.renderRevealAnswer(refs.revealAnswerText, track, revealed);
+
+  // La réponse dévoilée se recache toute seule après REVEAL_DURATION, pour
+  // qu'elle ne reste pas affichée à l'écran pendant que le téléphone circule.
+  if (revealed) {
+    revealTimeoutHandle = setTimeout(() => {
+      revealTimeoutHandle = null;
+      revealed = false;
+      ui.renderRevealAnswer(refs.revealAnswerText, track, false);
+    }, TIMER.REVEAL_DURATION);
+  }
 });
 
-refs.btnNext.addEventListener('click', (e) => {
-  e.preventDefault();
+refs.btnPrev.addEventListener('click', () => {
+  goToPreviousTrack();
+});
+
+refs.btnNext.addEventListener('click', () => {
   goToNextTrack();
 });
+
+function goToPreviousTrack() {
+  if (currentTrackIndex === 0) return;
+  player.pause();
+  currentTrackIndex -= 1;
+  startTrack();
+}
 
 function goToNextTrack() {
   player.pause();
@@ -500,6 +534,7 @@ function goToNextTrack() {
 function goToSetEnd() {
   roundActive = false;
   if (rafHandle) cancelAnimationFrame(rafHandle);
+  clearRevealTimeout();
   player.pause();
 
   sessionPlayedIds = markThemePlayed(sessionPlayedIds, currentTheme.id);

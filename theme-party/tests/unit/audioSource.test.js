@@ -178,3 +178,21 @@ describe('prefetchAudio', () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('LocalAudioPlayer', () => {
+  test('load() remet getCurrentTime() à 0 immédiatement (avant la résolution async de la nouvelle source), pour ne pas révéler les indices de la piste précédente', async () => {
+    global.fetch.mockResolvedValueOnce({ ok: true, blob: async () => new Blob(['x']) });
+    const player = new audioSource.LocalAudioPlayer();
+    await player.init();
+    player._audio.currentTime = 27; // simule une piste précédente déjà bien avancée (indices révélés)
+
+    const loadPromise = player.load('/cache/next-track.mp3');
+    // resolveBlobUrl est async (cache-miss jsdom → fetch mocké) : au moment de
+    // cet appel synchrone, la promesse n'est pas encore résolue, donc si
+    // load() ne remettait pas currentTime à 0 tout de suite, on lirait
+    // encore ici la position de l'ancienne piste.
+    expect(player.getCurrentTime()).toBe(0);
+
+    await loadPromise;
+  });
+});

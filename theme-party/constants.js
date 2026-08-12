@@ -12,9 +12,10 @@ export const SCREEN = {
 
 // ─── Timers (ms) ──────────────────────────────────────────────────────────────
 export const TIMER = {
-  PLAY_MAX: 45000,  // 45s de lecture max par piste
-  HINT_1: 10000,    // 1er indice révélé à 10s
-  HINT_2: 20000,    // 2e indice révélé à 20s
+  PLAY_MAX: 45000,        // 45s de lecture max par piste
+  HINT_1: 10000,          // 1er indice révélé à 10s
+  HINT_2: 20000,          // 2e indice révélé à 20s
+  REVEAL_DURATION: 5000,  // la réponse dévoilée se recache après 5s
 };
 
 export const THEME_TRACK_COUNT = 7;   // pistes par thème (un Set complet)

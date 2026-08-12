@@ -4,8 +4,8 @@
   "description": "Blind test musical à thèmes, un seul téléphone qui circule entre les joueurs",
   "start_url": "/theme-party/",
   "display": "standalone",
-  "background_color": "#10172a",
-  "theme_color": "#f59e0b",
+  "background_color": "#00132e",
+  "theme_color": "#001f46",
   "icons": [
     {
       "src": "icon.svg",
