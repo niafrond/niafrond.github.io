@@ -1,3 +1,9 @@
+## [2.31.0](https://github.com/niafrond/niafrond.github.io/compare/v2.30.0...v2.31.0) (2026-08-12)
+
+### Features
+
+* theme ([3c8e239](https://github.com/niafrond/niafrond.github.io/commit/3c8e239265e2f373fa0bab7cb32fabe743599738))
+
 ## [2.30.0](https://github.com/niafrond/niafrond.github.io/compare/v2.29.0...v2.30.0) (2026-08-12)
 
 ### Features
