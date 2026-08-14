@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Karaoké Playlist</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-border: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --primary: #22c55e;
+      --primary-hover: #16a34a;
+      --danger: #ef4444;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f8fafc;
+        --panel: #ffffff;
+        --panel-border: #e5e7eb;
+        --text: #111827;
+        --muted: #4b5563;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px 16px 48px;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: 1.8rem; }
+    .subtitle { margin: 0 0 16px; color: var(--muted); }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+    }
+    .stack { display: grid; gap: 12px; }
+    label { font-size: 0.92rem; font-weight: 600; }
+    input {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--panel-border);
+      padding: 10px 12px;
+      background: transparent;
+      color: inherit;
+      font-size: 0.98rem;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary { background: var(--primary); color: #06220f; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--panel-border);
+    }
+    .status { margin-top: 10px; color: var(--muted); min-height: 1.2em; }
+    .status.error { color: var(--danger); }
+    .results { margin-top: 18px; display: grid; gap: 10px; }
+    .item {
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 132px 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+    .thumb {
+      width: 132px;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      border-radius: 8px;
+      display: block;
+      background: #000;
+    }
+    .meta h2 { margin: 0 0 6px; font-size: 1rem; }
+    .meta p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    .add-btn {
+      background: #ef4444;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .add-btn:hover { background: #dc2626; }
+    .hint { margin-top: 16px; color: var(--muted); font-size: 0.86rem; line-height: 1.5; }
+    @media (max-width: 740px) {
+      .item { grid-template-columns: 1fr; }
+      .thumb { width: 100%; }
+      .add-btn { justify-self: start; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>🎤 Karaoke Playlist</h1>
+    <p class="subtitle">Recherche YouTube suffixée automatiquement avec « karaoké » et ajout direct à une playlist fixe.</p>
+
+    <section class="panel stack">
+      <div>
+        <label for="api-key">Clé API YouTube Data v3</label>
+        <input id="api-key" type="password" placeholder="AIza..." autocomplete="off">
+      </div>
+
+      <div>
+        <label for="query">Titre à rechercher</label>
+        <input id="query" type="text" placeholder="Ex: Céline Dion - Pour que tu m'aimes encore">
+      </div>
+
+      <div class="actions">
+        <button id="search-btn" class="btn-primary" type="button">Rechercher</button>
+        <button id="open-playlist-btn" class="btn-ghost" type="button">Ouvrir la playlist</button>
+      </div>
+      <p id="status" class="status"></p>
+    </section>
+
+    <section id="results" class="results" aria-live="polite"></section>
+    <p class="hint">
+      Les vidéos ne sont jamais lues dans cette app. Chaque résultat propose uniquement un bouton d’ajout vers la playlist prédéfinie.
+    </p>
+  </main>
+
+  <script>
+    const API_KEY_STORAGE = 'karaoke_playlist_youtube_api_key';
+    const PLAYLIST_ID = 'PLLQS1xvNdx2M';
+    const PLAYLIST_JCT = '8ED-qvYfP3bT5JC23breQw';
+    const PLAYLIST_BASE_URL = `https://www.youtube.com/playlist?list=${PLAYLIST_ID}&jct=${PLAYLIST_JCT}`;
+
+    const apiKeyInput = document.getElementById('api-key');
+    const queryInput = document.getElementById('query');
+    const searchBtn = document.getElementById('search-btn');
+    const openPlaylistBtn = document.getElementById('open-playlist-btn');
+    const resultsEl = document.getElementById('results');
+    const statusEl = document.getElementById('status');
+
+    apiKeyInput.value = localStorage.getItem(API_KEY_STORAGE) || '';
+
+    function setStatus(message, isError = false) {
+      statusEl.textContent = message;
+      statusEl.classList.toggle('error', isError);
+    }
+
+    function buildSearchQuery(rawQuery) {
+      return `${rawQuery.trim()} karaoké`;
+    }
+
+    function clearResults() {
+      resultsEl.innerHTML = '';
+    }
+
+    function renderResults(items) {
+      clearResults();
+      if (!items.length) {
+        setStatus('Aucun résultat.');
+        return;
+      }
+      setStatus(`${items.length} résultat(s) trouvé(s).`);
+      const fragment = document.createDocumentFragment();
+      for (const item of items) {
+        const videoId = item?.id?.videoId;
+        if (!videoId) continue;
+        const title = item?.snippet?.title || 'Titre inconnu';
+        const channel = item?.snippet?.channelTitle || 'Chaîne inconnue';
+        const thumb = item?.snippet?.thumbnails?.medium?.url || item?.snippet?.thumbnails?.default?.url || '';
+        const addUrl = `${PLAYLIST_BASE_URL}&v=${encodeURIComponent(videoId)}`;
+
+        const card = document.createElement('article');
+        card.className = 'item';
+        const image = document.createElement('img');
+        image.className = 'thumb';
+        image.src = thumb;
+        image.alt = '';
+
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        const titleEl = document.createElement('h2');
+        titleEl.textContent = title;
+        const channelEl = document.createElement('p');
+        channelEl.textContent = channel;
+        meta.append(titleEl, channelEl);
+
+        const addLink = document.createElement('a');
+        addLink.className = 'add-btn';
+        addLink.href = addUrl;
+        addLink.target = '_blank';
+        addLink.rel = 'noopener noreferrer';
+        addLink.textContent = 'Ajouter à la playlist';
+
+        card.append(image, meta, addLink);
+        fragment.appendChild(card);
+      }
+      resultsEl.appendChild(fragment);
+    }
+
+    async function searchYoutube() {
+      const apiKey = apiKeyInput.value.trim();
+      const query = queryInput.value.trim();
+      if (!apiKey) {
+        setStatus('Renseigne une clé API YouTube.', true);
+        return;
+      }
+      if (!query) {
+        setStatus('Saisis un titre à rechercher.', true);
+        return;
+      }
+
+      localStorage.setItem(API_KEY_STORAGE, apiKey);
+      clearResults();
+      setStatus('Recherche en cours…');
+      searchBtn.disabled = true;
+
+      try {
+        const finalQuery = buildSearchQuery(query);
+        const url = new URL('https://www.googleapis.com/youtube/v3/search');
+        url.searchParams.set('part', 'snippet');
+        url.searchParams.set('type', 'video');
+        url.searchParams.set('maxResults', '12');
+        url.searchParams.set('q', finalQuery);
+        url.searchParams.set('key', apiKey);
+
+        const response = await fetch(url.toString());
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        renderResults(Array.isArray(data.items) ? data.items : []);
+      } catch (error) {
+        setStatus(`Erreur de recherche (${error.message}).`, true);
+      } finally {
+        searchBtn.disabled = false;
+      }
+    }
+
+    searchBtn.addEventListener('click', searchYoutube);
+    queryInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') searchYoutube();
+    });
+    openPlaylistBtn.addEventListener('click', () => {
+      window.open(PLAYLIST_BASE_URL, '_blank', 'noopener,noreferrer');
+    });
+  </script>
+</body>
+</html>
