@@ -4,6 +4,10 @@ Ce document liste les comportements attendus de l'application, organisés par do
 Chaque spec est formulée de manière testable (GIVEN / WHEN / THEN).
 Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
+## Journal de session
+
+- 2026-08-14 : ajout de la mini-app `karaoke-playlist/` dans le portail principal (`/index.html`) et la documentation racine (`README.md`) pour la recherche YouTube suffixée « karaoké » avec ajout à playlist prédéfinie.
+
 ---
 
 ## 1. Lecture audio (Player)
