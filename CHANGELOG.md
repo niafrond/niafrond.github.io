@@ -1,3 +1,9 @@
+## [2.33.0](https://github.com/niafrond/niafrond.github.io/compare/v2.32.0...v2.33.0) (2026-08-14)
+
+### Features
+
+* **karaoke-playlist:** switch to YouTube API key + OAuth add flow ([2d79465](https://github.com/niafrond/niafrond.github.io/commit/2d79465f9697285e1837975f69c6cd8dc016e67f))
+
 ## [2.32.0](https://github.com/niafrond/niafrond.github.io/compare/v2.31.0...v2.32.0) (2026-08-14)
 
 ### Features
