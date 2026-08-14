@@ -1,3 +1,9 @@
+## [2.32.0](https://github.com/niafrond/niafrond.github.io/compare/v2.31.0...v2.32.0) (2026-08-14)
+
+### Features
+
+* add karaoke playlist helper app ([743a443](https://github.com/niafrond/niafrond.github.io/commit/743a4434eda45dc013dadb9c6646b2468eeb97a2))
+
 ## [2.31.0](https://github.com/niafrond/niafrond.github.io/compare/v2.30.0...v2.31.0) (2026-08-12)
 
 ### Features
