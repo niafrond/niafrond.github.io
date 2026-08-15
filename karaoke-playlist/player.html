@@ -60,7 +60,7 @@
     <h1>🎶 En attente</h1>
   </div>
 
-  <script src="state.js"></script>
+  <script src="/karaoke-playlist/state.js"></script>
   <script>
     const startOverlay = document.getElementById('start-overlay');
     const startBtn = document.getElementById('start-btn');
@@ -70,6 +70,31 @@
     let ytReady = false;
     let started = false;
     let loadedQueueItemId = null;
+    let stallTimer = null;
+
+    // Pour certaines vidéos, YouTube reste bloqué en boucle de retry interne
+    // (essais successifs de plusieurs clients internes) sans jamais déclencher
+    // onError côté API JS — la file resterait alors bloquée indéfiniment sur
+    // cette chanson. Ce filet de sécurité saute la chanson si la lecture n'a
+    // toujours pas démarré après STALL_TIMEOUT_MS. Le minuteur est désarmé dès
+    // que l'état PLAYING est atteint (voir onPlayerStateChange) : sans ça, il
+    // finit toujours par se déclencher et coupe même les vidéos qui jouent
+    // normalement — c'est exactement le bug de la version précédente.
+    const STALL_TIMEOUT_MS = 15000;
+
+    function clearStallTimer() {
+      if (stallTimer) {
+        clearTimeout(stallTimer);
+        stallTimer = null;
+      }
+    }
+
+    function armStallTimer(trackId) {
+      clearStallTimer();
+      stallTimer = setTimeout(() => {
+        if (loadedQueueItemId === trackId) advanceQueue();
+      }, STALL_TIMEOUT_MS);
+    }
 
     function currentTrack() {
       const state = KaraokeState.load();
@@ -98,6 +123,7 @@
       if (ytPlayer && ytReady) {
         ytPlayer.loadVideoById(track.videoId);
         disableCaptions();
+        armStallTimer(track.id);
       }
     }
 
@@ -120,6 +146,7 @@
     // (ex. "Passer" cliqué juste avant), ce ENDED devient un no-op au lieu de
     // faire avancer la file une deuxième fois.
     function advanceQueue() {
+      clearStallTimer();
       KaraokeState.removeIfCurrent(loadedQueueItemId);
       syncToQueue();
     }
@@ -131,6 +158,7 @@
     }
 
     function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.PLAYING) clearStallTimer();
       if (event.data === YT.PlayerState.ENDED) advanceQueue();
     }
 

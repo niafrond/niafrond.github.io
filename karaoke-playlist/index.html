@@ -283,7 +283,7 @@
     <span class="chevron">▲</span>
   </button>
 
-  <script src="state.js"></script>
+  <script src="/karaoke-playlist/state.js"></script>
   <script>
     const API_KEY_STORAGE = 'karaoke_playlist_youtube_api_key';
 
@@ -581,7 +581,7 @@
     closeQueueBtn.addEventListener('click', () => { queueOverlay.hidden = true; });
     nowPlayingBar.addEventListener('click', toggleQueueOverlay);
     openPlayerBtn.addEventListener('click', () => {
-      window.open('player.html', 'karaoke-player');
+      window.open('/karaoke-playlist/player.html', 'karaoke-player');
     });
 
     searchForm.addEventListener('submit', (event) => {
