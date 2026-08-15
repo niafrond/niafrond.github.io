@@ -1,3 +1,9 @@
+## [2.34.0](https://github.com/niafrond/niafrond.github.io/compare/v2.33.0...v2.34.0) (2026-08-15)
+
+### Features
+
+* enhance karaoke application with dual-screen support and improved UI ([5c84e2e](https://github.com/niafrond/niafrond.github.io/commit/5c84e2e2503260791151111469c56fe5ff4bfaf7))
+
 ## [2.33.0](https://github.com/niafrond/niafrond.github.io/compare/v2.32.0...v2.33.0) (2026-08-14)
 
 ### Features
