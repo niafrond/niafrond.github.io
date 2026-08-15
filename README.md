@@ -15,7 +15,7 @@ Collection de mini-applications web en HTML/CSS/JavaScript, accessibles sur [nia
 | 📱 [Switch Enfants](lavevaisselle/) | App mobile pour gérer les tours, avec historique local et capture photo |
 | 📷 [QR Scanner](qrcode-scanner/) | Scanner QR code 100% hors ligne, historique local |
 | 📝 [Générateur de recette](generateur-recette.html) | Extraction et formatage de recettes depuis texte ou URL |
-| 🎤 [Karaoke Playlist](karaoke-playlist/) | Recherche YouTube suffixée « karaoké » et ajout direct à une playlist prédéfinie |
+| 🎤 [Karaoke Playlist](karaoke-playlist/) | App deux écrans (vidéo plein écran + contrôle style Karafun) pour piloter une soirée karaoké via YouTube |
 
 ## Notes
 
