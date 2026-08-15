@@ -1,3 +1,9 @@
+## [2.34.1](https://github.com/niafrond/niafrond.github.io/compare/v2.34.0...v2.34.1) (2026-08-15)
+
+### Bug Fixes
+
+* **karaoke-playlist:** restore stall timer functionality and fix path issues ([999e9ce](https://github.com/niafrond/niafrond.github.io/commit/999e9ce7603f46a2ee00a161e5ef701a143ce77a))
+
 ## [2.34.0](https://github.com/niafrond/niafrond.github.io/compare/v2.33.0...v2.34.0) (2026-08-15)
 
 ### Features
