@@ -3,595 +3,308 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Karaoké — Écran de contrôle</title>
+  <title>Karaoké — Écran maître</title>
   <style>
-    :root {
-      color-scheme: light dark;
-      --bg: #0f172a;
-      --panel: #111827;
-      --panel-border: #1f2937;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --primary: #22c55e;
-      --primary-hover: #16a34a;
-      --danger: #ef4444;
-      --bar-height: 76px;
-    }
-    @media (prefers-color-scheme: light) {
-      :root {
-        --bg: #f8fafc;
-        --panel: #ffffff;
-        --panel-border: #e5e7eb;
-        --text: #111827;
-        --muted: #4b5563;
-      }
-    }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
+    html, body {
       margin: 0;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
     }
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 16px;
-      flex-wrap: wrap;
-    }
-    .topbar h1 { margin: 0; font-size: 1.4rem; }
-    .home {
-      padding: 0 16px calc(var(--bar-height) + 24px);
-      max-width: 700px;
-      margin: 0 auto;
-    }
-    button {
-      border: 0;
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-weight: 700;
-      cursor: pointer;
-      font-size: 0.95rem;
-    }
-    .btn-primary { background: var(--primary); color: #06220f; }
-    .btn-primary:hover { background: var(--primary-hover); }
-    .btn-ghost {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--panel-border);
-    }
-    .icon-btn { padding: 8px 12px; }
-    input {
-      width: 100%;
-      border-radius: 10px;
-      border: 1px solid var(--panel-border);
-      padding: 10px 12px;
-      background: transparent;
-      color: inherit;
-      font-size: 0.98rem;
-    }
-    label { font-size: 0.92rem; font-weight: 600; }
-    .stack { display: grid; gap: 12px; }
-    .status { margin-top: 10px; color: var(--muted); min-height: 1.2em; }
-    .status.error { color: var(--danger); }
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      border-radius: 14px;
-      padding: 16px;
-    }
-
-    /* ── Overlays (recherche / file d'attente) ─────────────────────────── */
-    .overlay-panel {
+    #player {
       position: fixed;
       inset: 0;
-      bottom: var(--bar-height);
-      background: var(--bg);
-      z-index: 20;
-      display: flex;
-      flex-direction: column;
-      padding: 16px;
-      overflow-y: auto;
-    }
-    .overlay-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-    .overlay-header h2 { margin: 0; font-size: 1.2rem; }
-
-    /* ── Écran de recherche : grande barre mise en avant ───────────────── */
-    .api-key-panel { margin-top: 16px; }
-    .search-hero {
-      max-width: 640px;
-      margin: 20px auto 4px;
-      padding: 0 8px;
-      text-align: center;
-    }
-    .search-hero-title {
-      margin: 0 0 20px;
-      font-size: 1.5rem;
-    }
-    .search-bar-big {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--panel);
-      border: 2px solid var(--panel-border);
-      border-radius: 999px;
-      padding: 6px 6px 6px 22px;
-    }
-    .search-bar-big:focus-within { border-color: var(--primary); }
-    .search-bar-big input {
-      flex: 1;
-      border: 0;
-      background: transparent;
-      color: inherit;
-      font-size: 1.15rem;
-      padding: 16px 4px;
-      min-width: 0;
-    }
-    .search-bar-big input:focus { outline: none; }
-    .search-submit-btn {
-      border-radius: 999px;
-      padding: 16px 26px;
-      font-size: 1.02rem;
-      background: var(--primary);
-      color: #06220f;
-      white-space: nowrap;
-    }
-    .search-submit-btn:hover { background: var(--primary-hover); }
-    @media (max-width: 520px) {
-      .search-bar-big { flex-wrap: wrap; border-radius: 20px; padding: 12px; }
-      .search-bar-big input { width: 100%; padding: 10px 6px; }
-      .search-submit-btn { width: 100%; }
-    }
-    .results { margin-top: 16px; display: grid; gap: 10px; }
-    .item {
-      border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      padding: 12px;
-      display: grid;
-      grid-template-columns: 100px 1fr auto;
-      gap: 12px;
-      align-items: center;
-      background: var(--panel);
-    }
-    .item.current { border-color: var(--primary); }
-    .thumb {
-      width: 100px;
-      aspect-ratio: 16/9;
-      object-fit: cover;
-      border-radius: 8px;
-      display: block;
+      width: 100vw;
+      height: 100vh;
       background: #000;
+      object-fit: contain;
     }
-    .meta h3 { margin: 0 0 4px; font-size: 0.98rem; }
-    .meta p { margin: 0; color: var(--muted); font-size: 0.85rem; }
-    .badge-current {
-      display: inline-block;
-      margin-bottom: 4px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--primary);
-    }
-    .add-btn, .remove-btn {
-      color: #fff;
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 0.85rem;
-      white-space: nowrap;
-      border: 0;
-    }
-    .add-btn { background: var(--primary); color: #06220f; }
-    .add-btn:hover { background: var(--primary-hover); }
-    .remove-btn { background: var(--danger); }
-    .remove-btn:hover { background: #dc2626; }
-    .empty-hint { color: var(--muted); font-size: 0.9rem; margin-top: 8px; }
-    @media (max-width: 640px) {
-      .item { grid-template-columns: 1fr; }
-      .thumb { width: 100%; }
-    }
-
-    /* ── Barre "en cours de lecture" (style Karafun) ───────────────────── */
-    .now-playing-bar {
+    .overlay {
       position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: var(--bar-height);
-      background: var(--panel);
-      border-top: 1px solid var(--panel-border);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 0 16px;
-      text-align: left;
-      z-index: 10;
-    }
-    .now-playing-thumb {
-      width: 52px;
-      height: 52px;
-      object-fit: cover;
-      border-radius: 8px;
-      background: #000;
-    }
-    .now-playing-meta {
-      flex: 1;
-      min-width: 0;
+      inset: 0;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      text-align: center;
+      background: #000;
+      color: #e5e7eb;
+      z-index: 10;
+      padding: 24px;
     }
-    .now-playing-meta span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    #now-playing-title { font-weight: 700; }
-    .now-playing-sub { color: var(--muted); font-size: 0.82rem; }
-    .chevron { color: var(--muted); font-size: 1.1rem; }
+    .overlay h1 { font-size: 2rem; margin: 0; }
+    #start-btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 18px 32px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      background: #22c55e;
+      color: #06220f;
+      cursor: pointer;
+    }
+    #start-btn:hover { background: #16a34a; }
+
+    /* ── QR code invités : petit panneau discret, toujours visible ─────── */
+    #qr-panel {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 20;
+      background: rgba(17, 24, 39, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+      color: #e5e7eb;
+      font-size: 0.78rem;
+      line-height: 1.3;
+    }
+    #qr-code { background: #fff; padding: 8px; border-radius: 8px; line-height: 0; }
+    #qr-code img, #qr-code canvas { display: block; width: 120px; height: 120px; }
+    #qr-panel p { margin: 8px 0 0; max-width: 140px; }
+    #qr-session-id { margin-top: 6px; font-size: 0.65rem; color: #9ca3af; word-break: break-all; user-select: all; }
+
+    /* ── Réglages (URL/token serveur) : discret, coin opposé au QR ─────── */
+    #settings-btn {
+      position: fixed;
+      left: 16px;
+      top: 16px;
+      z-index: 20;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(17, 24, 39, 0.7);
+      color: #e5e7eb;
+      font-size: 1.05rem;
+      cursor: pointer;
+      opacity: 0.55;
+    }
+    #settings-btn:hover { opacity: 1; }
+    #settings-panel {
+      position: fixed;
+      left: 16px;
+      top: 60px;
+      z-index: 25;
+      width: min(320px, calc(100vw - 32px));
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 16px;
+      color: #e5e7eb;
+    }
+    #settings-panel label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 4px; }
+    #settings-panel input {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.04);
+      color: inherit;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+    #settings-panel .actions { display: flex; gap: 8px; }
+    #settings-panel button {
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    #settings-save-btn { background: #22c55e; color: #06220f; }
+    #settings-close-btn { background: transparent; color: #e5e7eb; border: 1px solid rgba(255, 255, 255, 0.18) !important; }
+    #settings-status { margin: 10px 0 0; font-size: 0.78rem; color: #9ca3af; }
 
     [hidden] { display: none !important; }
   </style>
 </head>
 <body>
-  <header class="topbar">
+  <video id="player" playsinline></video>
+
+  <div id="start-overlay" class="overlay">
     <h1>🎤 Karaoké</h1>
-    <button id="open-player-btn" class="btn-ghost" type="button">🖥️ Ouvrir l'écran vidéo</button>
-  </header>
+    <button id="start-btn" type="button">Démarrer</button>
+  </div>
 
-  <main class="home">
-    <div id="api-key-panel" class="panel stack api-key-panel" hidden>
-      <div>
-        <label for="api-key-input">Clé API YouTube Data v3</label>
-        <input id="api-key-input" type="password" placeholder="AIza..." autocomplete="off" spellcheck="false">
-      </div>
-      <div>
-        <button id="api-key-save-btn" class="btn-primary" type="button">Enregistrer</button>
-      </div>
-      <p id="api-key-status" class="status"></p>
+  <div id="waiting-overlay" class="overlay" hidden>
+    <h1>🎶 En attente</h1>
+  </div>
+
+  <div id="qr-panel" hidden>
+    <div id="qr-code"></div>
+    <p>Scanne pour ajouter une chanson</p>
+    <div id="qr-session-id"></div>
+  </div>
+
+  <button id="settings-btn" type="button" aria-label="Réglages serveur">⚙️</button>
+  <div id="settings-panel" hidden>
+    <label for="settings-cdn-url-input">URL du serveur (streaming vidéo)</label>
+    <input id="settings-cdn-url-input" type="text" placeholder="https://192.168.8.149:8443" autocomplete="off" spellcheck="false">
+    <label for="settings-token-input">Token API</label>
+    <input id="settings-token-input" type="password" autocomplete="off" spellcheck="false">
+    <div class="actions">
+      <button id="settings-save-btn" type="button">Enregistrer</button>
+      <button id="settings-close-btn" type="button">Fermer</button>
     </div>
+    <p id="settings-status"></p>
+  </div>
 
-    <form id="search-form" class="search-hero">
-      <h2 class="search-hero-title">🔍 Quelle chanson veux-tu ajouter ?</h2>
-      <div class="search-bar-big">
-        <input id="query" type="text" placeholder="Ex: Céline Dion - Pour que tu m'aimes encore" autocomplete="off" autofocus>
-        <button id="search-btn" class="search-submit-btn" type="submit">Rechercher</button>
-      </div>
-    </form>
-    <p id="status" class="status"></p>
-    <div id="results" class="results" aria-live="polite"></div>
-  </main>
-
-  <section id="queue-overlay" class="overlay-panel" hidden>
-    <div class="overlay-header">
-      <h2>File d'attente</h2>
-      <button id="close-queue-btn" class="btn-ghost icon-btn" type="button">✕</button>
-    </div>
-    <div id="queue-list" class="results"></div>
-    <p id="queue-empty" class="empty-hint">File d'attente vide.</p>
-  </section>
-
-  <button id="now-playing-bar" class="now-playing-bar" type="button">
-    <img id="now-playing-thumb" class="now-playing-thumb" alt="" hidden>
-    <div class="now-playing-meta">
-      <span id="now-playing-title">Aucune chanson en cours</span>
-      <span id="now-playing-sub" class="now-playing-sub"></span>
-    </div>
-    <span class="chevron">▲</span>
-  </button>
-
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="/karaoke-playlist/state.js"></script>
-  <script>
-    const API_KEY_STORAGE = 'karaoke_playlist_youtube_api_key';
+  <script src="/karaoke-playlist/server-config.js"></script>
+  <script type="module">
+    import { watchQueue, removeQueueItem } from '/karaoke-playlist/karaoke-api.js';
 
-    const queueOverlay = document.getElementById('queue-overlay');
-    const closeQueueBtn = document.getElementById('close-queue-btn');
-    const nowPlayingBar = document.getElementById('now-playing-bar');
-    const nowPlayingThumb = document.getElementById('now-playing-thumb');
-    const nowPlayingTitle = document.getElementById('now-playing-title');
-    const nowPlayingSub = document.getElementById('now-playing-sub');
-    const openPlayerBtn = document.getElementById('open-player-btn');
+    const startOverlay = document.getElementById('start-overlay');
+    const startBtn = document.getElementById('start-btn');
+    const waitingOverlay = document.getElementById('waiting-overlay');
+    const videoEl = document.getElementById('player');
 
-    const searchForm = document.getElementById('search-form');
-    const queryInput = document.getElementById('query');
-    const searchBtn = document.getElementById('search-btn');
-    const resultsEl = document.getElementById('results');
-    const statusEl = document.getElementById('status');
-    const queueListEl = document.getElementById('queue-list');
-    const queueEmptyEl = document.getElementById('queue-empty');
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsPanel = document.getElementById('settings-panel');
+    const settingsCloseBtn = document.getElementById('settings-close-btn');
+    const settingsSaveBtn = document.getElementById('settings-save-btn');
+    const settingsCdnUrlInput = document.getElementById('settings-cdn-url-input');
+    const settingsTokenInput = document.getElementById('settings-token-input');
+    const settingsStatusEl = document.getElementById('settings-status');
 
-    const apiKeyPanel = document.getElementById('api-key-panel');
-    const apiKeyInput = document.getElementById('api-key-input');
-    const apiKeySaveBtn = document.getElementById('api-key-save-btn');
-    const apiKeyStatusEl = document.getElementById('api-key-status');
+    let started = false;
+    let loadedQueueItemId = null;
+    let stallTimer = null;
+    let latestQueue = [];
 
-    function getYoutubeApiKey() {
-      return (localStorage.getItem(API_KEY_STORAGE) || '').trim();
+    // ── Réglages (URL/token) ────────────────────────────────────────────
+    function openSettings() {
+      settingsCdnUrlInput.value = KaraokeServerConfig.getApiUrl();
+      settingsTokenInput.value = KaraokeServerConfig.getToken();
+      settingsStatusEl.textContent = '';
+      settingsPanel.hidden = false;
     }
 
-    function showApiKeyPanel(message = '', isError = false) {
-      apiKeyInput.value = getYoutubeApiKey();
-      apiKeyPanel.hidden = false;
-      apiKeyStatusEl.textContent = message;
-      apiKeyStatusEl.classList.toggle('error', isError);
-    }
-
-    function hideApiKeyPanel() {
-      apiKeyPanel.hidden = true;
-    }
-
-    // 400/403 ne signifient pas forcément une clé invalide (ex: quotaExceeded
-    // est un 403 mais la clé est parfaitement valide) — on n'inspecte le champ
-    // reason/message de l'erreur que pour les cas réellement liés à la clé.
-    function isApiKeyRelatedError(status, body) {
-      if (status !== 400 && status !== 403) return false;
-      const reason = String(body?.error?.errors?.[0]?.reason || '').toLowerCase();
-      const message = String(body?.error?.message || '').toLowerCase();
-      if (reason.includes('key')) return true;
-      return message.includes('api key');
-    }
-
-    apiKeySaveBtn.addEventListener('click', () => {
-      const key = apiKeyInput.value.trim();
-      if (!key) {
-        apiKeyStatusEl.textContent = 'Saisis une clé API.';
-        apiKeyStatusEl.classList.add('error');
-        return;
-      }
-      localStorage.setItem(API_KEY_STORAGE, key);
-      hideApiKeyPanel();
+    settingsBtn.addEventListener('click', () => {
+      settingsPanel.hidden ? openSettings() : (settingsPanel.hidden = true);
+    });
+    settingsCloseBtn.addEventListener('click', () => { settingsPanel.hidden = true; });
+    settingsSaveBtn.addEventListener('click', () => {
+      localStorage.setItem('karaoke_playlist_server_api_url', settingsCdnUrlInput.value.trim());
+      localStorage.setItem('karaoke_playlist_server_token', settingsTokenInput.value.trim());
+      settingsStatusEl.textContent = 'Enregistré ✓';
     });
 
-    function setStatus(message, isError = false) {
-      statusEl.textContent = message;
-      statusEl.classList.toggle('error', isError);
+    if (!KaraokeServerConfig.isConfigured()) openSettings();
+
+    // Filet de sécurité : si le flux ne démarre jamais (fichier manquant côté
+    // serveur, réseau instable) sans jamais déclencher l'event 'error', la
+    // file resterait bloquée indéfiniment sur cette chanson. Désarmé dès que
+    // la lecture démarre réellement (event 'playing') — sans ça il finirait
+    // par couper même les vidéos qui jouent normalement.
+    const STALL_TIMEOUT_MS = 15000;
+
+    function clearStallTimer() {
+      if (stallTimer) {
+        clearTimeout(stallTimer);
+        stallTimer = null;
+      }
     }
 
-    function buildSearchQuery(rawQuery) {
-      return `${rawQuery.trim()} karaoké`;
+    function armStallTimer(trackId) {
+      clearStallTimer();
+      stallTimer = setTimeout(() => {
+        if (loadedQueueItemId === trackId) advanceQueue();
+      }, STALL_TIMEOUT_MS);
     }
 
-    // Après un ajout à la file, on revient à l'écran de recherche vierge
-    // plutôt que de laisser les résultats de la recherche précédente affichés.
-    function resetSearch() {
-      queryInput.value = '';
-      resultsEl.innerHTML = '';
-      setStatus('');
-      queryInput.focus();
+    function showWaiting() {
+      waitingOverlay.hidden = false;
     }
 
-    function thumbUrlFor(videoId) {
-      return `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+    function hideWaiting() {
+      waitingOverlay.hidden = true;
     }
 
-    // L'API YouTube Data v3 renvoie les titres HTML-échappés (ex: "&#39;"
-    // pour une apostrophe) — sans décodage, ces entités s'affichent telles
-    // quelles puisqu'on utilise textContent (volontairement, pour éviter
-    // toute injection). Décoder via un <textarea> est sûr : son contenu
-    // n'est jamais interprété comme des balises/scripts.
-    function decodeHtmlEntities(str) {
-      const el = document.createElement('textarea');
-      el.innerHTML = str;
-      return el.value;
+    function streamUrlFor(cachePath) {
+      const cdnUrl = KaraokeServerConfig.getCdnUrl();
+      const url = new URL(`${cdnUrl}/api/video/stream`);
+      url.searchParams.set('cachePath', cachePath);
+      return KaraokeServerConfig.withToken(url.toString());
     }
 
-    function downgradeThumb(imgEl) {
-      imgEl.addEventListener('error', () => {
-        if (imgEl.dataset.fallback) return;
-        imgEl.dataset.fallback = '1';
-        imgEl.src = imgEl.src.replace('/mqdefault.jpg', '/hqdefault.jpg');
-      }, { once: true });
+    function playTrack(track) {
+      loadedQueueItemId = track.id;
+      hideWaiting();
+      videoEl.src = streamUrlFor(track.cachePath);
+      videoEl.play().catch(() => {});
+      armStallTimer(track.id);
     }
 
-    function renderResults(items) {
-      resultsEl.innerHTML = '';
-      if (!items.length) {
-        setStatus('Aucun résultat.');
+    // Recale l'écran maître sur la tête de file courante : démarre une
+    // nouvelle vidéo si la tête de file a changé (ajout, skip ou suppression
+    // faits depuis n'importe quel écran invité), sinon ne touche à rien.
+    function syncToQueue() {
+      const track = latestQueue[0] || null;
+      if (!track) {
+        loadedQueueItemId = null;
+        showWaiting();
         return;
       }
-      setStatus(`${items.length} résultat(s) trouvé(s).`);
-      const fragment = document.createDocumentFragment();
-      for (const item of items) {
-        const videoId = item?.id?.videoId;
-        if (!videoId) continue;
-        const title = decodeHtmlEntities(item?.snippet?.title || 'Titre inconnu');
-        const channel = decodeHtmlEntities(item?.snippet?.channelTitle || 'Chaîne inconnue');
-        const thumb = item?.snippet?.thumbnails?.medium?.url || item?.snippet?.thumbnails?.default?.url || thumbUrlFor(videoId);
-
-        const card = document.createElement('article');
-        card.className = 'item';
-        const image = document.createElement('img');
-        image.className = 'thumb';
-        image.src = thumb;
-        image.alt = '';
-        downgradeThumb(image);
-
-        const meta = document.createElement('div');
-        meta.className = 'meta';
-        const titleEl = document.createElement('h3');
-        titleEl.textContent = title;
-        const channelEl = document.createElement('p');
-        channelEl.textContent = channel;
-        meta.append(titleEl, channelEl);
-
-        const addBtn = document.createElement('button');
-        addBtn.className = 'add-btn';
-        addBtn.type = 'button';
-        addBtn.textContent = 'Ajouter';
-        addBtn.addEventListener('click', () => {
-          KaraokeState.addTrack({ videoId, title, channel, thumb });
-          renderQueueUI(KaraokeState.load());
-          resetSearch();
-        });
-
-        card.append(image, meta, addBtn);
-        fragment.appendChild(card);
-      }
-      resultsEl.appendChild(fragment);
+      if (track.id === loadedQueueItemId) return;
+      playTrack(track);
     }
 
-    // Le endpoint search.list ne dit pas si une vidéo peut être intégrée
-    // (embed) — beaucoup de chaînes karaoké (ex: Sing King) désactivent
-    // l'intégration pour forcer les vues sur youtube.com, ce qui la rend
-    // injouable dans notre lecteur (elle reste bloquée en erreur/boucle).
-    // Un appel groupé à videos.list?part=status donne `embeddable` par
-    // vidéo ; en cas d'échec de cet appel, on n'exclut rien plutôt que de
-    // casser toute la recherche pour un souci secondaire.
-    async function filterEmbeddable(items, apiKey) {
-      const videoIds = items.map((item) => item?.id?.videoId).filter(Boolean);
-      if (!videoIds.length) return items;
-
-      try {
-        const url = new URL('https://www.googleapis.com/youtube/v3/videos');
-        url.searchParams.set('part', 'status');
-        url.searchParams.set('id', videoIds.join(','));
-        url.searchParams.set('key', apiKey);
-
-        const response = await fetch(url.toString());
-        if (!response.ok) return items;
-
-        const data = await response.json();
-        const embeddableIds = new Set(
-          (Array.isArray(data.items) ? data.items : [])
-            .filter((video) => video?.status?.embeddable !== false)
-            .map((video) => video.id)
-        );
-        return items.filter((item) => embeddableIds.has(item?.id?.videoId));
-      } catch (_) {
-        return items;
-      }
+    // Retire la chanson qui vient de se terminer. deleteDoc est idempotent
+    // (aucune erreur si déjà retirée par un invité entre-temps) : plus besoin
+    // de vérifier "est-ce toujours la tête de file" comme du temps où la file
+    // vivait en localStorage sur un seul PC.
+    function advanceQueue() {
+      clearStallTimer();
+      if (loadedQueueItemId) removeQueueItem(sessionId, loadedQueueItemId);
+      syncToQueue();
     }
 
-    async function searchKaraoke() {
-      const apiKey = getYoutubeApiKey();
-      const query = queryInput.value.trim();
-      if (!apiKey) {
-        showApiKeyPanel('Renseigne une clé API YouTube pour rechercher.', true);
-        return;
-      }
-      if (!query) {
-        setStatus('Saisis un titre à rechercher.', true);
-        return;
-      }
+    videoEl.addEventListener('playing', clearStallTimer);
+    videoEl.addEventListener('ended', advanceQueue);
+    videoEl.addEventListener('error', () => {
+      // Fichier manquant/évincé du cache serveur, ou flux inaccessible : on
+      // passe à la suivante plutôt que de rester bloqué.
+      advanceQueue();
+    });
 
-      resultsEl.innerHTML = '';
-      setStatus('Recherche en cours…');
-      searchBtn.disabled = true;
+    startBtn.addEventListener('click', () => {
+      if (started) return;
+      started = true;
+      startOverlay.hidden = true;
+      showWaiting();
+      syncToQueue();
+    });
 
-      try {
-        const finalQuery = buildSearchQuery(query);
-        const url = new URL('https://www.googleapis.com/youtube/v3/search');
-        url.searchParams.set('part', 'snippet');
-        url.searchParams.set('type', 'video');
-        url.searchParams.set('maxResults', '12');
-        url.searchParams.set('q', finalQuery);
-        url.searchParams.set('key', apiKey);
+    const sessionId = KaraokeState.getSessionId();
 
-        const response = await fetch(url.toString());
-        if (!response.ok) {
-          const body = await response.json().catch(() => null);
-          if (isApiKeyRelatedError(response.status, body)) {
-            showApiKeyPanel(body?.error?.message || `Clé API refusée (HTTP ${response.status}).`, true);
-            setStatus('');
-            return;
-          }
-          throw new Error(body?.error?.message || `HTTP ${response.status}`);
-        }
-        const data = await response.json();
-        const items = Array.isArray(data.items) ? data.items : [];
-        renderResults(await filterEmbeddable(items, apiKey));
-        hideApiKeyPanel();
-      } catch (error) {
-        setStatus(`Erreur de recherche (${error.message}).`, true);
-      } finally {
-        searchBtn.disabled = false;
-      }
-    }
-
-    // ── File d'attente ──────────────────────────────────────────────────
-    function renderQueueUI(state) {
-      const queue = state.queue;
-
-      if (queue.length) {
-        const current = queue[0];
-        nowPlayingTitle.textContent = current.title;
-        nowPlayingSub.textContent = current.channel || '';
-        if (current.thumb) {
-          nowPlayingThumb.src = current.thumb;
-          nowPlayingThumb.hidden = false;
-        } else {
-          nowPlayingThumb.hidden = true;
-        }
-      } else {
-        nowPlayingTitle.textContent = 'Aucune chanson en cours';
-        nowPlayingSub.textContent = '';
-        nowPlayingThumb.hidden = true;
-      }
-
-      queueListEl.innerHTML = '';
-      queueEmptyEl.style.display = queue.length ? 'none' : 'block';
-
-      const fragment = document.createDocumentFragment();
-      queue.forEach((track, index) => {
-        const card = document.createElement('article');
-        card.className = 'item' + (index === 0 ? ' current' : '');
-
-        const image = document.createElement('img');
-        image.className = 'thumb';
-        image.src = track.thumb || thumbUrlFor(track.videoId);
-        image.alt = '';
-        downgradeThumb(image);
-
-        const meta = document.createElement('div');
-        meta.className = 'meta';
-        if (index === 0) {
-          const badge = document.createElement('span');
-          badge.className = 'badge-current';
-          badge.textContent = '▶ EN COURS';
-          meta.appendChild(badge);
-        }
-        const titleEl = document.createElement('h3');
-        titleEl.textContent = track.title;
-        const channelEl = document.createElement('p');
-        channelEl.textContent = track.channel || '';
-        meta.append(titleEl, channelEl);
-
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-btn';
-        removeBtn.type = 'button';
-        removeBtn.textContent = index === 0 ? 'Passer' : 'Retirer';
-        removeBtn.addEventListener('click', () => {
-          renderQueueUI(KaraokeState.removeTrack(track.id));
-        });
-
-        card.append(image, meta, removeBtn);
-        fragment.appendChild(card);
+    // QR code invités : encode l'URL de l'écran invité pour la session en
+    // cours. Affiché seulement si "qrcodejs" a bien chargé (CDN externe) —
+    // un échec de chargement ne doit pas casser le lecteur.
+    if (typeof QRCode !== 'undefined') {
+      const qrPanel = document.getElementById('qr-panel');
+      const guestUrl = `${location.origin}/karaoke-playlist/guest.html?session=${encodeURIComponent(sessionId)}`;
+      new QRCode(document.getElementById('qr-code'), {
+        text: guestUrl,
+        width: 120,
+        height: 120,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
       });
-      queueListEl.appendChild(fragment);
+      document.getElementById('qr-session-id').textContent = sessionId;
+      qrPanel.hidden = false;
     }
 
-    // ── File d'attente (overlay) ──────────────────────────────────────────
-    function toggleQueueOverlay() {
-      queueOverlay.hidden = !queueOverlay.hidden;
-    }
-
-    closeQueueBtn.addEventListener('click', () => { queueOverlay.hidden = true; });
-    nowPlayingBar.addEventListener('click', toggleQueueOverlay);
-    openPlayerBtn.addEventListener('click', () => {
-      window.open('/karaoke-playlist/player.html', 'karaoke-player');
+    watchQueue(sessionId, (items) => {
+      latestQueue = items;
+      if (started) syncToQueue();
     });
-
-    searchForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      searchKaraoke();
-    });
-
-    if (getYoutubeApiKey()) hideApiKeyPanel(); else showApiKeyPanel();
-    KaraokeState.subscribe(renderQueueUI);
-    renderQueueUI(KaraokeState.load());
   </script>
 </body>
 </html>
