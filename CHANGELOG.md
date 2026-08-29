@@ -1,3 +1,9 @@
+## [2.35.0](https://github.com/niafrond/niafrond.github.io/compare/v2.34.1...v2.35.0) (2026-08-29)
+
+### Features
+
+* Refactor karaoke playlist application to use server-side queue management and remove local storage dependencies ([439bcee](https://github.com/niafrond/niafrond.github.io/commit/439bceec5851e76a866c3b2572aa9288c5bff10f))
+
 ## [2.34.1](https://github.com/niafrond/niafrond.github.io/compare/v2.34.0...v2.34.1) (2026-08-15)
 
 ### Bug Fixes
