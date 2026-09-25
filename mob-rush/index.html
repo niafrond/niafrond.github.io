@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Mob Rush</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#101a33">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mob Rush">
+</head>
+<body>
+
+<!-- ═══ MENU ═══════════════════════════════════════════════════════════════ -->
+<section id="screen-menu" class="screen">
+  <div class="menu-inner">
+    <a href="../" id="btn-home" class="link-home">← Accueil</a>
+    <h1 class="logo">Mob<span>Rush</span></h1>
+    <p class="tagline">Tire, multiplie, submerge la base adverse.</p>
+
+    <button id="btn-play" class="btn btn-primary btn-big">▶ Niveau <span id="play-level">1</span></button>
+
+    <h2 class="section-title">Niveaux</h2>
+    <div id="level-grid" class="level-grid"></div>
+
+    <div class="settings">
+      <label class="toggle"><input type="checkbox" id="opt-sound" checked> Son</label>
+      <label class="toggle"><input type="checkbox" id="opt-vibrate" checked> Vibration</label>
+    </div>
+
+    <p class="promise">Pas de pièces, pas d'améliorations à acheter, pas d'énergie, pas de pub.<br>Uniquement ton adresse.</p>
+
+    <details class="help">
+      <summary>Comment jouer</summary>
+      <ul>
+        <li>Garde le doigt appuyé pour tirer, glisse pour déplacer le canon.</li>
+        <li>Les portes <b class="c-mul">×2 ×3…</b> multiplient les unités qui les traversent ; évite les <b class="c-div">÷2</b>.</li>
+        <li>Les unités rouges qui atteignent ton canon lui font perdre des cœurs.</li>
+        <li>Chaque tir charge le <b>champion</b> : une unité géante qui se démultiplie dans les portes.</li>
+        <li>Détruis la base ennemie pour gagner. ★★★ si ton canon n'a subi aucun dégât.</li>
+      </ul>
+    </details>
+
+    <button id="btn-reset" class="btn btn-ghost btn-sm">Réinitialiser la progression</button>
+  </div>
+</section>
+
+<!-- ═══ JEU ════════════════════════════════════════════════════════════════ -->
+<section id="screen-game" class="screen" hidden>
+  <canvas id="canvas"></canvas>
+
+  <div class="hud-top">
+    <button id="btn-pause" class="hud-btn" aria-label="Pause">⏸</button>
+    <div id="hud-level" class="hud-level">Niveau 1</div>
+    <div id="hud-hearts" class="hud-hearts"></div>
+  </div>
+
+  <button id="btn-champion" class="champion" aria-label="Lancer le champion" disabled>
+    <svg viewBox="0 0 64 64" class="champion-ring" aria-hidden="true">
+      <circle cx="32" cy="32" r="28" class="ring-bg"/>
+      <circle cx="32" cy="32" r="28" class="ring-fg" id="champion-ring"/>
+    </svg>
+    <span class="champion-icon">🦾</span>
+  </button>
+
+  <!-- Overlay pause / fin -->
+  <div id="overlay" class="overlay" hidden>
+    <div class="overlay-card">
+      <h2 id="overlay-title">Pause</h2>
+      <div id="overlay-stars" class="stars"></div>
+      <p id="overlay-stats" class="overlay-stats"></p>
+      <div class="overlay-actions">
+        <button id="btn-next" class="btn btn-primary">Niveau suivant ▶</button>
+        <button id="btn-resume" class="btn btn-primary">Reprendre</button>
+        <button id="btn-retry" class="btn btn-secondary">↻ Rejouer</button>
+        <button id="btn-menu" class="btn btn-ghost">Menu</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>

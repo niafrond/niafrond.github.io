@@ -1,0 +1,13 @@
+{
+  "appId": "io.github.niafrond.mobrush",
+  "appName": "Mob Rush",
+  "webDir": "../mob-rush",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true
+    }
+  }
+}
