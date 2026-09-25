@@ -117,5 +117,12 @@ export default {
       ],
       transform: {},
     },
+    // ── Mob Rush : moteur de jeu (node, pas de DOM) ──────────────────────────
+    {
+      displayName: 'mob-rush-node',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/mob-rush/tests/unit/**/*.test.js'],
+      transform: {},
+    },
   ],
 };
