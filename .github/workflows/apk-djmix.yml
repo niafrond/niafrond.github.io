@@ -196,7 +196,10 @@ jobs:
           echo "Set versionName=$VERSION versionCode=$VERSION_CODE"
 
       - name: Install ImageMagick
-        run: sudo apt-get install -y imagemagick
+        run: |
+          command -v convert && exit 0
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends imagemagick
 
       - name: Set app icons
         run: |
