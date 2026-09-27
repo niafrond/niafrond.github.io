@@ -21,7 +21,7 @@ afterAll(() => {
 
 describe('config API (url/token/CDN)', () => {
   test('URL par défaut si rien en storage', () => {
-    expect(audioSource.getDownloaderApiUrl()).toBe('http://vision:8080');
+    expect(audioSource.getDownloaderApiUrl()).toBe('https://192.168.8.149:8443');
   });
 
   test('applyBroadcastConfig persiste la config reçue de l\'hôte', () => {
@@ -33,12 +33,12 @@ describe('config API (url/token/CDN)', () => {
 
   test('applyBroadcastConfig ignore un payload sans apiUrl', () => {
     audioSource.applyBroadcastConfig({});
-    expect(audioSource.getDownloaderApiUrl()).toBe('http://vision:8080');
+    expect(audioSource.getDownloaderApiUrl()).toBe('https://192.168.8.149:8443');
   });
 
   test('getBroadcastConfig retourne la config courante (URL par défaut incluse)', () => {
     expect(audioSource.getBroadcastConfig()).toEqual({
-      apiUrl: 'http://vision:8080',
+      apiUrl: 'https://192.168.8.149:8443',
       cdnUrl: expect.any(String),
       apiToken: '',
     });

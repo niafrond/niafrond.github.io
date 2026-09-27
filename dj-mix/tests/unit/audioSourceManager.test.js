@@ -225,32 +225,24 @@ describe('audioSourceManager', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    test('retries a stalled orchestration download after 20s timeout', async () => {
+    // The orchestration POST intentionally has no timeout of its own (yt-dlp
+    // can legitimately take several minutes) — retry for a genuinely failed
+    // request is handled one level up, by downloadBatchManager's own
+    // retry-with-backoff (SPEC-19.6.1). A merely slow request must never be
+    // aborted or duplicated with a second POST while still in flight.
+    test('does not retry or abort the orchestration download while it is still in flight, however long it takes', async () => {
       jest.useFakeTimers();
       try {
-        URL.createObjectURL = jest.fn(() => 'blob:fake');
-        URL.revokeObjectURL = jest.fn();
-
-        const fetchMock = jest.fn((url, init) => {
-          if (init?.method === 'POST') {
-            if (fetchMock.mock.calls.filter(([, postInit]) => postInit?.method === 'POST').length === 1) {
-              return new Promise(() => {});
-            }
-            return Promise.resolve({ ok: true, json: async () => ({ cachePath: '/cache/retried.mp3', cacheState: 'MISS' }) });
-          }
-          return Promise.resolve({ ok: true, blob: async () => new Blob(['audio-bytes'], { type: 'audio/mpeg' }) });
-        });
+        const fetchMock = jest.fn(() => new Promise(() => {}));
         global.fetch = fetchMock;
 
         const manager = makeManager();
-        const item = { id: 'timeout-track', name: 'Timeout Track', artist: 'Timeout Artist' };
+        const item = { id: 'slow-track', name: 'Slow Track', artist: 'Slow Artist' };
 
-        const pending = manager.prefetchTrackToLocalCache(item);
-        jest.advanceTimersByTime(20000);
-        await Promise.resolve();
+        manager.prefetchTrackToLocalCache(item);
+        await jest.advanceTimersByTimeAsync(5 * 60 * 1000);
 
-        expect(fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST')).toHaveLength(2);
-        await pending;
+        expect(fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST')).toHaveLength(1);
       } finally {
         jest.useRealTimers();
       }

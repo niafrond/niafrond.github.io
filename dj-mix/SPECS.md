@@ -888,17 +888,24 @@ staging côté maître, câblé dans `main.js` en lieu et place de l'ancien trai
   tableau trié. GIVEN une commande sans `requestedAt` (relais ancienne version) — THEN
   elle est traitée comme soumise à l'instant présent (`Date.now()` au moment du
   traitement côté maître).
-- **SPEC-9.4.15** Le téléchargement lancé par SPEC-9.4.3 (`prefetchTrackToLocalCache` →
-  `downloadTrackViaApi`, `POST /api/download`) est désormais protégé par un timeout de
-  `DOWNLOAD_REQUEST_TIMEOUT_MS` (20 s) et un seul retry automatique
-  (`DOWNLOAD_REQUEST_MAX_ATTEMPTS` = 2) si la requête reste bloquée. Un timeout n'est
-  donc pas traité comme un succès, mais comme une tentative ratée qui déclenche un
-  second essai immédiat côté couche download. Pour un slot « Ajouter en suivant »,
-  si ce cycle échoue malgré tout, le slot reste en file et un nouveau retry est
-  programmé 10 minutes plus tard (SPEC-9.4.3). Raison : un ajout via
-  relais peut légitimement prendre longtemps (réseau du relais, résolution/téléchargement
-  côté serveur pour une piste jamais téléchargée), mais un blocage de plus de 20 s doit
-  être récupéré automatiquement sans laisser la piste « figée » sans retour.
+- **SPEC-9.4.14.1** BUG CORRIGÉ : le `queueDate` transmis à `addToQueue()` lors du commit
+  d'un slot « Ajouter en suivant » (SPEC-9.4.5) doit être le `requestedAt` du slot (horodatage
+  de soumission par le relais), pas l'instant du commit (`Date.now()`) — `_commitNext` reçoit
+  désormais le `slot` complet (et non plus seulement `slot.track`) pour y accéder. Sans ce
+  correctif, deux pistes soumises loin l'une de l'autre mais téléchargées/commitées à quelques
+  millisecondes d'écart se voyaient attribuer un `queueDate` quasi identique (heure de commit),
+  ce qui pouvait perturber l'ordre stable décrit en SPEC-9.4.5 en cas de re-tri ultérieur de la
+  file par date. Test : `tests/unit/relayIncomingQueue.test.js`.
+- **SPEC-9.4.15** Le POST d'orchestration lancé par SPEC-9.4.3 (`prefetchTrackToLocalCache` →
+  `downloadTrackViaApi`, `POST /api/download`) n'a volontairement **aucun timeout ni retry
+  qui lui soit propre** : `yt-dlp` peut légitimement prendre plusieurs minutes à résoudre une
+  piste jamais téléchargée, et un timeout court (l'ancien `DOWNLOAD_REQUEST_TIMEOUT_MS` = 20 s,
+  retiré) abandonnait/dupliquait à tort des requêtes simplement lentes. Une requête qui échoue
+  réellement (réponse HTTP non-OK, erreur réseau) est en revanche gérée au niveau supérieur :
+  pour le lot interne du fil rouge, par `downloadBatchManager` (SPEC-19.6.1, retry avec backoff
+  exponentiel) ; pour un slot relais « Ajouter en suivant », par le retry automatique 10 minutes
+  plus tard de SPEC-9.4.3. Seule l'étape de streaming des octets audio depuis le CDN
+  (`streamCachedTrackFromCdn`) reste bornée par un timeout (`CDN_STREAM_TIMEOUT_MS`, 2 min).
 
 ### 9.5 Retour visuel côté maître (files "incoming"), directement dans la file d'attente
 

@@ -193,14 +193,15 @@ export function createRelayIncomingQueue({
         clearTimeout(slot.retryTimer);
         slot.retryTimer = null;
       }
-      _commitNext(slot.track);
+      _commitNext(slot);
     }
     // Toujours notifié, même sans commit : un slot peut passer "ready" (✓) sans
     // être en tête de file (slot précédent encore en téléchargement).
     onChange?.();
   }
 
-  function _commitNext(track) {
+  function _commitNext(slot) {
+    const track = slot.track;
     const currentIndex = getCurrentIndex?.();
     if (currentIndex !== _lastCommitIndex) {
       _lastCommitIndex = currentIndex;
@@ -211,7 +212,7 @@ export function createRelayIncomingQueue({
       asNext: true,
       insertOffset: _insertedSinceIndexChange,
       source: 'relay',
-      queueDate: track?.queueDate ?? Date.now(),
+      queueDate: slot.requestedAt,
     });
     _insertedSinceIndexChange += 1;
     showToast?.(`Relais : ${track.name || 'piste'} ajoutée`);
