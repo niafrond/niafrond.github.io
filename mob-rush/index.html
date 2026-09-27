@@ -31,7 +31,30 @@
       <label class="toggle"><input type="checkbox" id="opt-vibrate" checked> Vibration</label>
     </div>
 
-    <p class="promise">Pas de pièces, pas d'améliorations à acheter, pas d'énergie, pas de pub.<br>Uniquement ton adresse.</p>
+    <p class="promise">Pas de pièces, pas d'achats, pas d'énergie, pas de pub.<br>Les compétences, armes et héros se débloquent en jouant bien — jamais en payant ni en grindant.</p>
+
+    <div id="skill-points" class="skill-points">0 compétence disponible</div>
+
+    <details class="help">
+      <summary>⭐ Niveaux bonus <span class="hint">(optionnels)</span></summary>
+      <p class="bonus-intro">Pas besoin de les finir pour avancer : plus durs que la progression normale, ils deviennent faisables une fois que tu as gagné assez de compétences dans le jeu principal. Chacun rapporte une arme ou un héros unique, une seule fois.</p>
+      <div id="bonus-grid" class="level-grid bonus-grid"></div>
+    </details>
+
+    <details class="help">
+      <summary>🎯 Compétences <span class="hint">(arbre RPG)</span></summary>
+      <p class="bonus-intro">Une compétence par niveau réussi pour la première fois, une de plus si tu obtiens ★★★ pour la première fois. Rejouer un niveau déjà validé n'en rapporte plus.</p>
+      <div id="skill-list" class="skill-list"></div>
+    </details>
+
+    <details class="help">
+      <summary>🛠 Arsenal <span class="hint">(armes &amp; héros)</span></summary>
+      <p class="bonus-intro">Choisis l'arme et le héros équipés pour ta prochaine partie, parmi ceux débloqués via les niveaux bonus.</p>
+      <h3 class="arsenal-title">Armes</h3>
+      <div id="arsenal-weapons" class="arsenal-list"></div>
+      <h3 class="arsenal-title">Héros</h3>
+      <div id="arsenal-heroes" class="arsenal-list"></div>
+    </details>
 
     <details class="help">
       <summary>Comment jouer</summary>
@@ -72,6 +95,7 @@
       <h2 id="overlay-title">Pause</h2>
       <div id="overlay-stars" class="stars"></div>
       <p id="overlay-stats" class="overlay-stats"></p>
+      <p id="overlay-reward" class="overlay-reward"></p>
       <div class="overlay-actions">
         <button id="btn-next" class="btn btn-primary">Niveau suivant ▶</button>
         <button id="btn-resume" class="btn btn-primary">Reprendre</button>
