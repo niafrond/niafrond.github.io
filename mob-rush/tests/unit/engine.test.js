@@ -102,6 +102,80 @@ test('constantes cohérentes', () => {
   expect(BASE.y).toBeLessThan(CANNON_Y);
 });
 
+describe('Couloirs : les rangées sans porte ouverte forment un mur', () => {
+  test('une unité mal alignée est bloquée puis déviée vers le couloir ouvert', () => {
+    const cfg = {
+      ...generateLevel(1),
+      gates: [{ id: 0, x: 50, y: 400, w: 40, h: 14, op: { type: 'mul', n: 2 }, vx: 0, minX: 50, maxX: 50 }],
+      spawnInterval: 1e9, waveEvery: 1e9,
+    };
+    const g = createGame(cfg);
+    g.blue.push({ x: 300, y: 410, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    // Sans mur, cette unité (loin de la porte) la traverserait sans effet.
+    run(g, 0.05, {});
+    expect(g.blue).toHaveLength(1);
+    expect(g.blue[0].mask & 1).toBe(0);
+    expect(g.blue[0].y).toBeGreaterThanOrEqual(400);
+    // Laissée courir, elle est déviée dans le couloir et finit par passer la porte
+    // (on s'arrête dès que ça arrive, avant qu'elle n'atteigne la base).
+    let passed = false;
+    for (let t = 0; t < 3 && g.status === 'playing' && !passed; t += DT) {
+      step(g, DT, {});
+      g.events.length = 0;
+      passed = g.blue.some(u => u.mask & 1);
+    }
+    expect(passed).toBe(true);
+    expect(g.blue.length).toBeGreaterThan(1);
+  });
+
+  test('une unité déjà alignée passe normalement, sans être bloquée', () => {
+    const cfg = {
+      ...generateLevel(1),
+      gates: [{ id: 0, x: W / 2, y: 400, w: 200, h: 14, op: { type: 'mul', n: 2 }, vx: 0, minX: 0, maxX: W }],
+      spawnInterval: 1e9, waveEvery: 1e9,
+    };
+    const g = createGame(cfg);
+    g.blue.push({ x: W / 2, y: 410, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    run(g, 0.2, {});
+    expect(g.blue).toHaveLength(2);
+    expect(g.blue.every(u => u.mask & 1)).toBe(true);
+  });
+});
+
+describe('Séquence de châteaux (mini-châteaux puis grand château final)', () => {
+  test('un niveau simple (peu avancé) n’a qu’un seul château', () => {
+    const lvl = generateLevel(1);
+    expect(lvl.castles).toEqual([lvl.baseHp]);
+  });
+
+  test('un niveau avancé a plusieurs châteaux, dont un dernier plus gros, dont la somme fait le total', () => {
+    const lvl = generateLevel(10);
+    expect(lvl.castles.length).toBeGreaterThan(1);
+    expect(lvl.castles.reduce((a, b) => a + b, 0)).toBe(lvl.baseHp);
+    expect(lvl.castles[lvl.castles.length - 1]).toBeGreaterThan(lvl.castles[0]);
+  });
+
+  test('détruire un mini-château fait progresser castleIndex sans terminer le niveau', () => {
+    const cfg = { ...generateLevel(1), castles: [10, 10, 50], baseHp: 70, gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const g = createGame(cfg);
+    g.blue.push({ x: BASE.x, y: BASE.y, vx: 0, vy: 0, hp: 15, r: 5, mask: 0, champ: false });
+    step(g, DT, {});
+    expect(g.castleIndex).toBe(1);
+    expect(g.castleHp).toBe(5);
+    expect(g.status).toBe('playing');
+    expect(g.events.some(e => e.type === 'castleDown' && e.index === 1 && e.final === false)).toBe(true);
+  });
+
+  test('détruire le dernier château termine le niveau', () => {
+    const cfg = { ...generateLevel(1), castles: [10, 30], baseHp: 40, gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const g = createGame(cfg);
+    g.blue.push({ x: BASE.x, y: BASE.y, vx: 0, vy: 0, hp: 40, r: 5, mask: 0, champ: false });
+    step(g, DT, {});
+    expect(g.status).toBe('won');
+    expect(g.events.some(e => e.type === 'castleDown' && e.final === true)).toBe(true);
+  });
+});
+
 describe('RPG : compétences, armes, héros', () => {
   test('sans loadout, le comportement est identique au canon standard', () => {
     const g = createGame(generateLevel(1));

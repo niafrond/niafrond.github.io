@@ -103,6 +103,21 @@ export function mulberry32(seed) {
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
+// ─── Séquence de châteaux ────────────────────────────────────────────────────
+// La base n'est pas une seule barre de vie géante : elle est découpée en
+// mini-châteaux successifs puis un grand château final, pour que le joueur
+// voie une vraie progression (jalons, célébrations) plutôt qu'un écran figé.
+function splitCastles(totalHp, level) {
+  const count = Math.min(4, 1 + Math.floor((level - 1) / 3));
+  if (count === 1) return [totalHp];
+  const finalHp = Math.round(totalHp * 0.4);
+  const rest = totalHp - finalHp;
+  const each = Math.round(rest / (count - 1));
+  const minis = Array(count - 1).fill(each);
+  minis[0] += rest - each * (count - 1); // absorbe l'arrondi
+  return [...minis, finalHp];
+}
+
 // ─── Génération de niveau ────────────────────────────────────────────────────
 /**
  * Génère la configuration d'un niveau (déterministe : même numéro → même niveau).
@@ -151,10 +166,13 @@ export function generateLevel(n) {
   const bestChain = rowsY.reduce((acc, y) =>
     acc * Math.max(1, ...gates.filter(g => g.y === y && g.op.type === 'mul').map(g => g.op.n)), 1);
 
+  const baseHp = Math.round((T.BASE_HP_0 + T.BASE_HP_K * Math.min(bestChain, T.CHAIN_CAP)) * (1 + level * T.LEVEL_K));
+
   return {
     level,
     bestChain,
-    baseHp: Math.round((T.BASE_HP_0 + T.BASE_HP_K * Math.min(bestChain, T.CHAIN_CAP)) * (1 + level * T.LEVEL_K)),
+    baseHp,
+    castles: splitCastles(baseHp, level),
     cannonHp: 10,
     spawnInterval: Math.max(T.SPAWN_MIN, T.SPAWN_0 - level * T.SPAWN_K),
     spawnGroup: 1 + Math.floor(level / T.GROUP_EVERY),
@@ -175,16 +193,33 @@ export function generateLevel(n) {
 export function generateBonusLevel(index) {
   const idx = Math.max(1, Math.floor(index));
   const layout = generateLevel(idx * BONUS_EVERY + 3);
+  const baseHp = Math.round(layout.baseHp * 1.6);
   return {
     ...layout,
     level: layout.level,
     bonus: true,
     bonusIndex: idx,
-    baseHp: Math.round(layout.baseHp * 1.6),
+    baseHp,
+    castles: splitCastles(baseHp, layout.level),
     spawnInterval: Math.max(T.SPAWN_MIN, layout.spawnInterval * 0.75),
     waveSize: Math.round(layout.waveSize * 1.4),
     seed: layout.seed + 500000,
   };
+}
+
+// Regroupe les portes par rangée (même y). Sert à détecter les « murs » :
+// tout ce qui, sur une rangée, n'est couvert par aucune porte.
+function groupRows(gates) {
+  const map = new Map();
+  for (const gt of gates) {
+    if (!map.has(gt.y)) map.set(gt.y, []);
+    map.get(gt.y).push(gt.id);
+  }
+  return [...map.entries()].map(([y, gateIds]) => ({
+    y: Number(y),
+    gateIds,
+    mask: gateIds.reduce((m, id) => m | (1 << id), 0),
+  }));
 }
 
 // ─── État de partie ──────────────────────────────────────────────────────────
@@ -201,6 +236,8 @@ export function createGame(levelConfig, loadout) {
     cannonHp: cannonHpMax,
     cannonHpMax,
     baseHp: levelConfig.baseHp,
+    castleIndex: 0,
+    castleHp: levelConfig.castles[0],
     fireRate: FIRE_RATE * ld.fireRateMul,
     championCharge: Math.max(5, Math.round(CHAMPION_CHARGE * ld.chargeMul)),
     fireAcc: 0,
@@ -208,6 +245,7 @@ export function createGame(levelConfig, loadout) {
     spawnAcc: 0,
     waveAcc: 0,
     gates: levelConfig.gates.map(g => ({ ...g, op: { ...g.op }, flash: 0 })),
+    rows: groupRows(levelConfig.gates),
     blue: [],
     red: [],
     events: [],
@@ -237,6 +275,19 @@ export function starsFor(g) {
   if (g.status !== 'won') return 0;
   const ratio = g.cannonHp / g.cannonHpMax;
   return ratio >= 1 ? 3 : ratio >= 0.5 ? 2 : 1;
+}
+
+// Applique des dégâts à la base, en faisant progresser la séquence de
+// châteaux (le trop-plein d'un château détruit passe au suivant).
+function applyBaseDamage(g, dmg) {
+  g.baseHp -= dmg;
+  g.castleHp -= dmg;
+  while (g.castleHp <= 0 && g.castleIndex < g.cfg.castles.length - 1) {
+    const overflow = -g.castleHp;
+    g.castleIndex++;
+    g.castleHp = g.cfg.castles[g.castleIndex] - overflow;
+    g.events.push({ type: 'castleDown', index: g.castleIndex, final: g.castleIndex === g.cfg.castles.length - 1 });
+  }
 }
 
 /**
@@ -315,29 +366,40 @@ export function step(g, dt, input = {}) {
     u.x = clamp(u.x + u.vx * dt, u.r, W - u.r);
     u.y += u.vy * dt;
 
-    for (const gate of g.gates) {
-      const bit = 1 << gate.id;
-      if (u.mask & bit) continue;
-      if (prevY > gate.y && u.y <= gate.y && Math.abs(u.x - gate.x) <= gate.w / 2) {
-        u.mask |= bit;
-        gate.flash = 0.15;
-        g.stats.gateHits++;
-        if (gate.op.type === 'mul') {
-          const clones = u.champ
-            ? (gate.op.n - 1) * g.loadout.hero.cloneMul + g.loadout.championCloneBonus
-            : gate.op.n - 1;
-          for (let k = 0; k < clones; k++) {
-            if (g.blue.length + newBlue.length >= MAX_BLUE) break;
-            const c = makeBlue(clamp(u.x + (g.rng() - 0.5) * gate.w * 0.8, 5, W - 5), gate.y - 2 - g.rng() * 8, u.mask);
-            c.vx = (g.rng() - 0.5) * 50;
-            newBlue.push(c);
-          }
-          g.events.push({ type: 'gate', x: u.x, y: gate.y });
-        } else if (gate.op.type === 'div') {
-          if (g.loadout.ignoreDiv) { /* survit à la porte ÷ */ }
-          else if (u.champ) u.hp = Math.max(1, Math.ceil(u.hp / gate.op.n));
-          else if (g.rng() < (1 - 1 / gate.op.n) * (1 - g.loadout.divResist)) u.hp = 0;
+    for (const row of g.rows) {
+      if (u.mask & row.mask) continue;
+      if (!(prevY > row.y && u.y <= row.y)) continue;
+      const gate = row.gateIds.map(id => g.gates[id]).find(gt => Math.abs(u.x - gt.x) <= gt.w / 2);
+      if (!gate) {
+        // Mur : aucune porte ouverte ici. Bloque la progression et dévie
+        // l'unité vers le couloir ouvert le plus proche — impossible de
+        // franchir une rangée sans passer par un multiplicateur/diviseur.
+        u.y = row.y + 0.5;
+        const nearest = row.gateIds
+          .map(id => g.gates[id])
+          .reduce((a, b) => (Math.abs(b.x - u.x) < Math.abs(a.x - u.x) ? b : a));
+        const want = clamp((nearest.x - u.x) * 3, -140, 140);
+        u.vx += (want - u.vx) * Math.min(1, dt * 6);
+        continue;
+      }
+      u.mask |= 1 << gate.id;
+      gate.flash = 0.15;
+      g.stats.gateHits++;
+      if (gate.op.type === 'mul') {
+        const clones = u.champ
+          ? (gate.op.n - 1) * g.loadout.hero.cloneMul + g.loadout.championCloneBonus
+          : gate.op.n - 1;
+        for (let k = 0; k < clones; k++) {
+          if (g.blue.length + newBlue.length >= MAX_BLUE) break;
+          const c = makeBlue(clamp(u.x + (g.rng() - 0.5) * gate.w * 0.8, 5, W - 5), gate.y - 2 - g.rng() * 8, u.mask);
+          c.vx = (g.rng() - 0.5) * 50;
+          newBlue.push(c);
         }
+        g.events.push({ type: 'gate', x: u.x, y: gate.y });
+      } else if (gate.op.type === 'div') {
+        if (g.loadout.ignoreDiv) { /* survit à la porte ÷ */ }
+        else if (u.champ) u.hp = Math.max(1, Math.ceil(u.hp / gate.op.n));
+        else if (g.rng() < (1 - 1 / gate.op.n) * (1 - g.loadout.divResist)) u.hp = 0;
       }
     }
   }
@@ -358,7 +420,7 @@ export function step(g, dt, input = {}) {
   for (const u of g.blue) {
     if (u.hp <= 0) continue;
     if (u.y - u.r <= baseBottom && Math.abs(u.x - BASE.x) <= BASE.w / 2 + u.r) {
-      g.baseHp -= u.hp;
+      applyBaseDamage(g, u.hp);
       g.events.push({ type: 'baseHit', x: u.x, y: baseBottom, big: u.champ });
       u.hp = 0;
     } else if (u.y < -20) {
