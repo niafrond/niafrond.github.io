@@ -40,6 +40,8 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: 12266719
+          # Le paquet 'tools' par défaut n'existe plus dans le SDK récent
+          packages: 'platform-tools'
 
       - name: Install SDK components
         run: |
