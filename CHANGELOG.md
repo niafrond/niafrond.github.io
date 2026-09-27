@@ -1,3 +1,9 @@
+## [2.36.1](https://github.com/niafrond/niafrond.github.io/compare/v2.36.0...v2.36.1) (2026-09-27)
+
+### Bug Fixes
+
+* repair broken unit tests and scope CI to changed folders ([10c55a4](https://github.com/niafrond/niafrond.github.io/commit/10c55a4dfbdb6b0f52121a9041f15d3748e9c622))
+
 ## [2.36.0](https://github.com/niafrond/niafrond.github.io/compare/v2.35.0...v2.36.0) (2026-09-27)
 
 ### Features
