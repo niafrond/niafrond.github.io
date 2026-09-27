@@ -259,8 +259,15 @@ export function generateRandomEnemy(playerLevel, _allSpells, allWeaponsArg = all
     return buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg);
 }
 
-export function generateEnemyChoices(playerLevel, count = 4, allWeaponsArg = allWeapons, playerMaxHp = null){
-    const catalog = [...loadEnemyCatalogSync()];
+export function generateEnemyChoices(playerLevel, count = 4, allWeaponsArg = allWeapons, playerMaxHp = null, allowedTemplateIds = null){
+    const fullCatalog = loadEnemyCatalogSync();
+    const zoneCatalog = Array.isArray(allowedTemplateIds) && allowedTemplateIds.length > 0
+        ? fullCatalog.filter(template => allowedTemplateIds.includes(template.id))
+        : fullCatalog;
+    // Garde-fou : si la zone ne correspond à aucun gabarit connu, on retombe sur le catalogue complet.
+    const sourceCatalog = zoneCatalog.length > 0 ? zoneCatalog : fullCatalog;
+
+    const catalog = [...sourceCatalog];
     const choices = [];
     const normalMaxLevel = playerLevel + 1;
 
@@ -276,14 +283,14 @@ export function generateEnemyChoices(playerLevel, count = 4, allWeaponsArg = all
     if(choices.length > 0 && Math.random() < 0.08){
         const idx = Math.floor(Math.random() * choices.length);
         const boostedLevel = playerLevel + 6;
-        const template = loadEnemyCatalogSync().find(t => t.id === choices[idx].templateId);
+        const template = fullCatalog.find(t => t.id === choices[idx].templateId);
         const boosted = buildEnemyFromTemplate(template, boostedLevel, allWeaponsArg);
         boosted.isOverleveledChoice = true;
         choices[idx] = boosted;
     }
 
     // Ennemi facile garanti : niveau réduit de 2 (minimum 1)
-    const easyTemplate = pickRandom(loadEnemyCatalogSync());
+    const easyTemplate = pickRandom(sourceCatalog);
     const easyLevel = Math.max(1, playerLevel - 2);
     const easyEnemy = buildEnemyFromTemplate(easyTemplate, easyLevel, allWeaponsArg);
 
