@@ -1,12 +1,13 @@
 import { generateBoard, renderBoard } from "./board.js";
-import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab } from "./game.js";
-import { getAllClasses, playerClasses } from "./classes.js";
+import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon } from "./game.js";
+import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { getRandomPlayerName } from "./playerNames.js";
 import { createBossEnemyForTier, generateEnemyChoices } from "./enemies.js";
 import { calculateXPGain } from "./experience.js";
 import { initializeAudioUI, playSfx, primeAudioFromGesture } from "./sound.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate } from "./version.js";
+import { worldZones } from "./worldMap.js";
 
 // initialisation de la partie
 console.log('Main.js loaded');
@@ -127,6 +128,8 @@ function showClassSelection() {
             player.attributes[attr] += classData.startingStats[attr];
         });
         log(`✨ ${player.name}, vous êtes maintenant ${classData.emoji} ${classData.name} !`);
+        // Le joueur ne doit jamais commencer un combat sans arme équipée
+        grantStartingWeapon(classData.startingWeaponId || DEFAULT_STARTING_WEAPON_ID);
         updateAvailableSpells();
         saveUpdate();
 
@@ -158,6 +161,9 @@ function showClassSelection() {
     };
     
     document.getElementById('skip-class').onclick = () => {
+        // Même sans classe, le joueur doit disposer d'une arme pour se défendre
+        grantStartingWeapon(DEFAULT_STARTING_WEAPON_ID);
+        saveUpdate();
         modal.classList.remove('active');
     };
     
@@ -170,11 +176,12 @@ function init() {
     const boardElement = document.getElementById('board');
     console.log('Board element:', boardElement);
     
-    const showEnemySelection = () => {
+    const showEnemySelection = (zone = null) => {
         playSfx('uiClick');
         const modal = document.getElementById('enemy-modal');
         const container = document.getElementById('enemy-selection');
         const rerollBtn = document.getElementById('reroll-enemies-btn');
+        const backToMapBtn = document.getElementById('back-to-worldmap-btn');
         if(!modal || !container || !rerollBtn) {
             // fallback sans modal
             startNewCombat();
@@ -184,8 +191,19 @@ function init() {
             return;
         }
 
+        const titleEl = document.getElementById('enemy-modal-title');
+        const subtitleEl = document.getElementById('enemy-modal-subtitle');
+        if(titleEl) {
+            titleEl.textContent = zone ? `${zone.emoji} ${zone.name}` : 'Choisissez votre adversaire';
+        }
+        if(subtitleEl) {
+            subtitleEl.textContent = zone
+                ? `${zone.description} 4 ennemis vous sont proposés, plus un adversaire affaibli. Tous les 5 niveaux, un boss peut apparaître.`
+                : '4 ennemis vous sont proposés, plus un adversaire affaibli pour commencer en douceur. Tous les 5 niveaux, un boss apparaît et reste proposé tant qu\'il n\'est pas vaincu.';
+        }
+
         const renderChoices = () => {
-            const enemies = generateEnemyChoices(player.level, 4, undefined, player.maxHp);
+            const enemies = generateEnemyChoices(player.level, 4, undefined, player.maxHp, zone?.templateIds || null);
             const pendingBoss = ensurePendingBossForSelection();
             if(pendingBoss) {
                 enemies.unshift({ ...pendingBoss });
@@ -235,14 +253,72 @@ function init() {
         };
 
         rerollBtn.onclick = () => renderChoices();
+        if(backToMapBtn) {
+            backToMapBtn.onclick = () => {
+                modal.classList.remove('active');
+                showWorldMap();
+            };
+        }
         renderChoices();
         modal.classList.add('active');
     };
 
-    // Gestionnaire du bouton "Nouveau Combat"
+    // Affiche la carte du monde : le joueur explore une zone à la fois, peut la
+    // quitter à tout moment (adversaire trop dur) et y revenir plus tard une fois
+    // plus fort, sans jamais perdre l'accès à une zone déjà débloquée.
+    const showWorldMap = () => {
+        playSfx('uiClick');
+        const modal = document.getElementById('worldmap-modal');
+        const container = document.getElementById('worldmap-selection');
+        if(!modal || !container) {
+            // fallback : pas de carte disponible, on propose directement un adversaire
+            showEnemySelection(null);
+            return;
+        }
+
+        const grid = document.createElement('div');
+        grid.className = 'worldmap-grid';
+
+        worldZones.forEach(zone => {
+            const unlocked = player.level >= zone.unlockLevel;
+            const visited = player.worldMap?.visitedZoneIds?.includes(zone.id);
+            const card = document.createElement('div');
+            card.className = `worldmap-card${unlocked ? '' : ' locked'}${visited ? ' visited' : ''}`;
+            card.innerHTML = `
+                <div class="worldmap-emoji">${unlocked ? zone.emoji : '🔒'}</div>
+                <div class="worldmap-name">${zone.name}</div>
+                <div class="worldmap-desc">${unlocked ? zone.description : `Se débloque au niveau ${zone.unlockLevel}.`}</div>
+                ${unlocked && visited ? '<div class="worldmap-visited">✅ Déjà explorée</div>' : ''}
+                ${!unlocked ? `<div class="worldmap-lock">🔒 Niveau ${zone.unlockLevel} requis</div>` : ''}
+            `;
+
+            if(unlocked) {
+                card.onclick = () => {
+                    modal.classList.remove('active');
+                    if(!player.worldMap) {
+                        player.worldMap = { currentZoneId: null, visitedZoneIds: [] };
+                    }
+                    player.worldMap.currentZoneId = zone.id;
+                    if(!player.worldMap.visitedZoneIds.includes(zone.id)) {
+                        player.worldMap.visitedZoneIds.push(zone.id);
+                    }
+                    saveUpdate();
+                    showEnemySelection(zone);
+                };
+            }
+
+            grid.appendChild(card);
+        });
+
+        container.innerHTML = '';
+        container.appendChild(grid);
+        modal.classList.add('active');
+    };
+
+    // Gestionnaire du bouton "Nouveau Combat" : ouvre d'abord la carte du monde
     document.getElementById('new-combat-btn').addEventListener('click',()=>{
         primeAudioFromGesture();
-        showEnemySelection();
+        showWorldMap();
     });
 
     const soundToggleButton = document.getElementById('sound-toggle-btn');
@@ -256,6 +332,12 @@ function init() {
 
     // Rendre startTutorial accessible globalement (pour bouton HTML inline)
     window.startTutorial = startTutorial;
+
+    // Garde-fou : une sauvegarde existante (créée avant cette règle) peut avoir
+    // une classe déjà choisie mais aucune arme équipée. On corrige silencieusement.
+    if(player.class) {
+        grantStartingWeapon(playerClasses[player.class]?.startingWeaponId || DEFAULT_STARTING_WEAPON_ID);
+    }
 
     // Ne pas créer d'ennemi ni de board au démarrage
     // Juste initialiser les sorts et armes disponibles

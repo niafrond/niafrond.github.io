@@ -417,8 +417,29 @@ export let player = {
     unspentLevelPoints: 0, // points d'attribut a depenser apres les gains de niveaux
     gold: 0,  // pièces d'or accumulées
     defeatedBossTiers: [], // paliers de boss déjà nettoyés (5, 10, 15, ...)
-    pendingBoss: null // boss imposé tant qu'il n'est pas vaincu
+    pendingBoss: null, // boss imposé tant qu'il n'est pas vaincu
+    worldMap: { currentZoneId: null, visitedZoneIds: [] } // progression sur la carte du monde
 };
+
+// Équipe automatiquement une arme de départ si le joueur n'en a encore aucune.
+// Appelé à la création du personnage (choix de classe) et comme garde-fou
+// pour les sauvegardes existantes créées avant l'introduction de cette règle.
+export function grantStartingWeapon(weaponId){
+    if(player.equippedWeapon) return null;
+    if(Array.isArray(player.weapons) && player.weapons.length > 0) return null;
+
+    const weapon = getWeaponById(weaponId) || allWeapons.find(w => w.minLevel <= player.level) || allWeapons[0];
+    if(!weapon) return null;
+
+    if(!player.weapons) player.weapons = [];
+    if(!player.weapons.some(w => w.id === weapon.id)) {
+        player.weapons.push(weapon);
+    }
+    player.equippedWeapon = weapon;
+    updateAvailableWeapons();
+    log(`🗡️ Vous recevez votre arme de départ : ${weapon.name}.`);
+    return weapon;
+}
 
 // tour actuel
 export let currentTurn = 'player';
@@ -850,6 +871,10 @@ export function loadGameData() {
             player.pendingBoss = loaded.pendingBoss && loaded.pendingBoss.enemy
                 ? loaded.pendingBoss
                 : null;
+            player.worldMap = {
+                currentZoneId: loaded.worldMap?.currentZoneId ?? null,
+                visitedZoneIds: Array.isArray(loaded.worldMap?.visitedZoneIds) ? loaded.worldMap.visitedZoneIds : []
+            };
             clampManaToCaps(player);
             console.log('💾 Données du joueur chargées depuis le localStorage');
             if (player.class) {

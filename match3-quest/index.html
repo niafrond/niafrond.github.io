@@ -133,14 +133,24 @@
     </div>
 </div>
 
+<!-- Modal de la carte du monde -->
+<div id="worldmap-modal" class="modal">
+    <div class="modal-content">
+        <h2>🗺️ Carte du Monde</h2>
+        <p>Choisissez une zone à explorer. Une zone reste toujours accessible : si un adversaire y est trop dur, revenez-y plus tard une fois plus fort.</p>
+        <div id="worldmap-selection"></div>
+    </div>
+</div>
+
 <!-- Modal de sélection d'ennemi -->
 <div id="enemy-modal" class="modal">
     <div class="modal-content">
-        <h2>Choisissez votre adversaire</h2>
-        <p>4 ennemis vous sont proposés, plus un adversaire affaibli pour commencer en douceur. Tous les 5 niveaux, un boss apparaît et reste proposé tant qu'il n'est pas vaincu.</p>
+        <h2 id="enemy-modal-title">Choisissez votre adversaire</h2>
+        <p id="enemy-modal-subtitle">4 ennemis vous sont proposés, plus un adversaire affaibli pour commencer en douceur. Tous les 5 niveaux, un boss apparaît et reste proposé tant qu'il n'est pas vaincu.</p>
         <div id="enemy-selection"></div>
         <div class="modal-actions">
             <button class="secondary" id="reroll-enemies-btn">Relancer les ennemis</button>
+            <button class="secondary" id="back-to-worldmap-btn">🗺️ Retour à la carte</button>
         </div>
     </div>
 </div>
