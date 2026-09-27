@@ -6,6 +6,7 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 ## Journal de session
 
+- 2026-09-27 : correction CI `Build Mob Rush APK` — mise à jour de `android-actions/setup-android` de `v3` vers `v4` dans `.github/workflows/apk-mobrush.yml` (v4 n'essaie plus d'installer le package SDK obsolète `tools`, cause du crash `sdkmanager ... failed with exit code 1`).
 - 2026-08-14 : ajout de la mini-app `karaoke-playlist/` dans le portail principal (`/index.html`) et la documentation racine (`README.md`) pour la recherche YouTube suffixée « karaoké » avec ajout à playlist prédéfinie.
 - 2026-08-15 : refonte de `karaoke-playlist/` en app deux écrans — `player.html` (lecture YouTube plein écran via IFrame API, autoplay débloqué par un premier clic) et `index.html` (écran de contrôle façon Karafun : barre "en cours" en bas, file d'attente en tapant dessus, bouton recherche flottant). La file d'attente n'est plus une vraie playlist YouTube (suppression de l'OAuth Google et de `PLAYLIST_ID`) mais un état local partagé entre les deux fenêtres via `state.js` (BroadcastChannel + localStorage), pensé pour deux fenêtres du même navigateur déplacées sur deux écrans physiques.
 - 2026-08-15 : refonte de l'écran de recherche de `karaoke-playlist/index.html` — grande barre de recherche en pilule (`.search-bar-big`) mise en avant avec un titre hero ("Quelle chanson veux-tu ajouter ?") au lieu du petit champ + bouton alignés sous un en-tête générique, pour que la page se lise immédiatement comme un écran de recherche.
