@@ -1,3 +1,16 @@
+## [2.36.0](https://github.com/niafrond/niafrond.github.io/compare/v2.35.0...v2.36.0) (2026-09-27)
+
+### Features
+
+* **match3-quest:** grant a default weapon on new game and add explorable world map ([0e3a979](https://github.com/niafrond/niafrond.github.io/commit/0e3a9792f954ec6196720bd1ee5fc666f469f15f))
+* **mob-rush:** add Mob Rush arcade game with Android APK build ([2314c20](https://github.com/niafrond/niafrond.github.io/commit/2314c2079531aede3bfe92c59f4c4d50bc72d061))
+
+### Bug Fixes
+
+* **ci:** refresh apt index before installing ImageMagick ([a22de1e](https://github.com/niafrond/niafrond.github.io/commit/a22de1e510f2022dd9a810d87fbfbe86828d1f90))
+* **ci:** stop setup-android from installing the removed 'tools' package ([4a2aa89](https://github.com/niafrond/niafrond.github.io/commit/4a2aa897073a26372d3bc48f74895ce24db51106))
+* **ci:** use setup-android v4 for Mob Rush APK build ([cb8f7ac](https://github.com/niafrond/niafrond.github.io/commit/cb8f7ace9c1ed515e2804e05e3f1562b63be520f))
+
 ## [2.35.0](https://github.com/niafrond/niafrond.github.io/compare/v2.34.1...v2.35.0) (2026-08-29)
 
 ### Features
