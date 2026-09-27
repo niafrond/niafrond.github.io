@@ -1,6 +1,7 @@
 import {
   W, CANNON_Y, BASE, CHAMPION_CHARGE, MAX_BLUE,
   generateLevel, createGame, step, canLaunchChampion, starsFor,
+  generateBonusLevel, bonusRewardFor, bonusUnlockLevel, BONUS_EVERY,
 } from '../../engine.js';
 
 const DT = 1 / 60;
@@ -99,4 +100,62 @@ describe('step', () => {
 
 test('constantes cohérentes', () => {
   expect(BASE.y).toBeLessThan(CANNON_Y);
+});
+
+describe('RPG : compétences, armes, héros', () => {
+  test('sans loadout, le comportement est identique au canon standard', () => {
+    const g = createGame(generateLevel(1));
+    expect(g.fireRate).toBe(9);
+    expect(g.championCharge).toBe(CHAMPION_CHARGE);
+    expect(g.cannonHpMax).toBe(g.cfg.cannonHp);
+  });
+
+  test('les compétences modifient la cadence, la charge et les PV de canon', () => {
+    const g = createGame(generateLevel(1), { perks: ['cadence', 'charge', 'blindage'] });
+    expect(g.fireRate).toBeCloseTo(9 * 1.15);
+    expect(g.championCharge).toBeLessThan(CHAMPION_CHARGE);
+    expect(g.cannonHpMax).toBe(g.cfg.cannonHp + 2);
+    expect(g.cannonHp).toBe(g.cannonHpMax);
+  });
+
+  test('l’arme perforante fait ignorer les portes ÷', () => {
+    const cfg = {
+      ...generateLevel(1),
+      gates: [{ id: 0, x: W / 2, y: 400, w: 200, h: 14, op: { type: 'div', n: 2 }, vx: 0, minX: 0, maxX: W }],
+      spawnInterval: 1e9, waveEvery: 1e9,
+    };
+    const g = createGame(cfg, { weapon: 'perforant' });
+    g.blue.push({ x: W / 2, y: 410, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    run(g, 0.2, {});
+    expect(g.blue).toHaveLength(1);
+    expect(g.blue[0].hp).toBe(1);
+  });
+
+  test('un héros au bonus de clonage démultiplie plus le champion dans une porte ×', () => {
+    const cfg = {
+      ...generateLevel(1),
+      gates: [{ id: 0, x: W / 2, y: 400, w: 200, h: 14, op: { type: 'mul', n: 3 }, vx: 0, minX: 0, maxX: W }],
+      spawnInterval: 1e9, waveEvery: 1e9,
+    };
+    const standard = createGame(cfg, { hero: 'champion' });
+    standard.blue.push({ x: W / 2, y: 410, vx: 0, vy: -170, hp: 25, r: 13, mask: 0, champ: true });
+    run(standard, 0.2, {});
+    const colosse = createGame(cfg, { hero: 'colosse' });
+    colosse.blue.push({ x: W / 2, y: 410, vx: 0, vy: -170, hp: 45, r: 13, mask: 0, champ: true });
+    run(colosse, 0.2, {});
+    expect(colosse.blue.length).toBeLessThan(standard.blue.length);
+  });
+
+  test('generateBonusLevel est déterministe et plus dur que le niveau principal équivalent', () => {
+    expect(generateBonusLevel(2)).toEqual(generateBonusLevel(2));
+    const bonus = generateBonusLevel(2);
+    const main = generateLevel(bonusUnlockLevel(2));
+    expect(bonus.baseHp).toBeGreaterThan(main.baseHp);
+    expect(bonus.bonus).toBe(true);
+  });
+
+  test('bonusRewardFor renvoie une récompense stable par index', () => {
+    expect(bonusRewardFor(1)).toEqual(bonusRewardFor(1));
+    expect(bonusUnlockLevel(1)).toBe(BONUS_EVERY);
+  });
 });

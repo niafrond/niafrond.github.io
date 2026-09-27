@@ -3,15 +3,24 @@
  */
 
 import {
-  W, H, CANNON_Y, BASE, CHAMPION_CHARGE,
+  W, H, CANNON_Y, BASE,
   generateLevel, createGame, step, canLaunchChampion, starsFor,
+  PERKS, WEAPONS, HEROES,
+  generateBonusLevel, bonusRewardFor, bonusUnlockLevel, BONUS_EVERY,
 } from './engine.js';
 
 // ─── Progression (localStorage) ──────────────────────────────────────────────
 const STORE_KEY = 'mobrush.v1';
 
 function loadSave() {
-  const def = { unlocked: 1, stars: {}, sound: true, vibrate: true };
+  const def = {
+    unlocked: 1, stars: {}, sound: true, vibrate: true,
+    // RPG : rien ne s'achète, tout se gagne en jouant.
+    skillPoints: 0, skills: {}, claimed: {},
+    unlockedWeapons: ['standard'], unlockedHeroes: ['champion'],
+    equip: { weapon: 'standard', hero: 'champion' },
+    bonusStars: {}, bonusClaimed: {},
+  };
   try {
     return { ...def, ...JSON.parse(localStorage.getItem(STORE_KEY) || '{}') };
   } catch {
@@ -22,6 +31,9 @@ function persist() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(save)); } catch { /* stockage indisponible */ }
 }
 const save = loadSave();
+function currentLoadout() {
+  return { weapon: save.equip.weapon, hero: save.equip.hero, perks: Object.keys(save.skills) };
+}
 
 // ─── DOM ─────────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -90,6 +102,82 @@ function renderMenu() {
   }
   $('opt-sound').checked = save.sound;
   $('opt-vibrate').checked = save.vibrate;
+  renderBonusGrid();
+  renderSkillList();
+  renderArsenal();
+}
+
+function renderBonusGrid() {
+  const grid = $('bonus-grid');
+  grid.innerHTML = '';
+  const total = Math.max(2, Math.ceil(save.unlocked / BONUS_EVERY) + 1);
+  for (let i = 1; i <= total; i++) {
+    const need = bonusUnlockLevel(i);
+    const unlocked = save.unlocked >= need;
+    const claimed = !!save.bonusClaimed[i];
+    const reward = bonusRewardFor(i);
+    const table = reward.type === 'weapon' ? WEAPONS : HEROES;
+    const b = document.createElement('button');
+    b.className = 'level-btn bonus-btn' + (claimed ? ' claimed' : '');
+    b.disabled = !unlocked;
+    const s = save.bonusStars[i] || 0;
+    const rewardLabel = claimed ? `✓ ${table[reward.id].name}`
+      : unlocked ? `🎁 ${table[reward.id].name}`
+      : `🔒 niv. ${need}`;
+    b.innerHTML = `<span>${i}</span><span class="lv-stars">${'★'.repeat(s)}</span><span class="bonus-reward">${rewardLabel}</span>`;
+    b.addEventListener('click', () => startBonus(i));
+    grid.appendChild(b);
+  }
+}
+
+function renderSkillList() {
+  const n = save.skillPoints;
+  $('skill-points').textContent = `${n} compétence${n === 1 ? '' : 's'} disponible${n === 1 ? '' : 's'}`;
+  const list = $('skill-list');
+  list.innerHTML = '';
+  for (const perk of Object.values(PERKS)) {
+    const owned = !!save.skills[perk.id];
+    const row = document.createElement('div');
+    row.className = 'skill-row' + (owned ? ' owned' : '');
+    row.innerHTML = `<div class="skill-info"><b>${perk.name}</b><span>${perk.desc}</span></div>` +
+      (owned
+        ? `<span class="skill-owned">✓ Acquis</span>`
+        : `<button class="btn btn-secondary btn-sm skill-buy" data-id="${perk.id}" ${save.skillPoints < perk.cost ? 'disabled' : ''}>Débloquer (${perk.cost})</button>`);
+    list.appendChild(row);
+  }
+  list.querySelectorAll('.skill-buy').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const perk = PERKS[btn.dataset.id];
+      if (!perk || save.skills[perk.id] || save.skillPoints < perk.cost) return;
+      save.skillPoints -= perk.cost;
+      save.skills[perk.id] = true;
+      persist();
+      renderSkillList();
+    });
+  });
+}
+
+function renderArsenal() {
+  renderArsenalGroup('arsenal-weapons', WEAPONS, save.unlockedWeapons, save.equip.weapon,
+    id => { save.equip.weapon = id; persist(); renderArsenal(); });
+  renderArsenalGroup('arsenal-heroes', HEROES, save.unlockedHeroes, save.equip.hero,
+    id => { save.equip.hero = id; persist(); renderArsenal(); });
+}
+function renderArsenalGroup(elId, table, unlockedIds, equippedId, onSelect) {
+  const el = $(elId);
+  el.innerHTML = '';
+  for (const id of Object.keys(table)) {
+    const item = table[id];
+    const unlocked = unlockedIds.includes(id);
+    const btn = document.createElement('button');
+    btn.className = 'arsenal-item' + (equippedId === id ? ' equipped' : '') + (!unlocked ? ' locked' : '');
+    btn.disabled = !unlocked;
+    btn.innerHTML = unlocked
+      ? `<b>${item.name}</b><span>${item.desc}</span>`
+      : `<b>🔒 ???</b><span>À débloquer via un niveau bonus.</span>`;
+    if (unlocked) btn.addEventListener('click', () => onSelect(id));
+    el.appendChild(btn);
+  }
 }
 
 $('btn-play').addEventListener('click', () => startLevel(save.unlocked));
@@ -99,12 +187,21 @@ $('btn-reset').addEventListener('click', () => {
   if (!confirm('Effacer toute la progression ?')) return;
   save.unlocked = 1;
   save.stars = {};
+  save.claimed = {};
+  save.skillPoints = 0;
+  save.skills = {};
+  save.unlockedWeapons = ['standard'];
+  save.unlockedHeroes = ['champion'];
+  save.equip = { weapon: 'standard', hero: 'champion' };
+  save.bonusStars = {};
+  save.bonusClaimed = {};
   persist();
   renderMenu();
 });
 
 // ─── Partie ──────────────────────────────────────────────────────────────────
 let game = null;
+let currentBonusIndex = null;
 let paused = false;
 let rafId = 0;
 let lastT = 0;
@@ -113,8 +210,8 @@ let floaters = [];
 let shake = 0;
 const input = { firing: false, targetX: null, champion: false };
 
-function startLevel(n) {
-  game = createGame(generateLevel(n));
+function beginGame(cfg, label) {
+  game = createGame(cfg, currentLoadout());
   particles = [];
   floaters = [];
   shake = 0;
@@ -125,12 +222,20 @@ function startLevel(n) {
   screenMenu.hidden = true;
   screenGame.hidden = false;
   overlay.hidden = true;
-  $('hud-level').textContent = `Niveau ${n}`;
+  $('hud-level').textContent = label;
   resize();
   updateHud();
   cancelAnimationFrame(rafId);
   lastT = performance.now();
   rafId = requestAnimationFrame(loop);
+}
+function startLevel(n) {
+  currentBonusIndex = null;
+  beginGame(generateLevel(n), `Niveau ${n}`);
+}
+function startBonus(idx) {
+  currentBonusIndex = idx;
+  beginGame(generateBonusLevel(idx), `Bonus ${idx}`);
 }
 
 function showMenu() {
@@ -157,9 +262,10 @@ function showOverlay(kind) {
   overlay.hidden = false;
   const lvl = game.cfg.level;
   $('btn-resume').hidden = kind !== 'pause';
-  $('btn-next').hidden = kind !== 'won';
+  $('btn-next').hidden = kind !== 'won' || currentBonusIndex != null;
   $('overlay-stars').innerHTML = '';
   $('overlay-stats').textContent = '';
+  $('overlay-reward').textContent = '';
   if (kind === 'pause') {
     $('overlay-title').textContent = 'Pause';
     return;
@@ -172,17 +278,43 @@ function showOverlay(kind) {
     const s = starsFor(game);
     $('overlay-title').textContent = 'Victoire !';
     $('overlay-stars').innerHTML = [1, 2, 3].map(i => `<span class="${i <= s ? '' : 'off'}">★</span>`).join('');
-    save.stars[lvl] = Math.max(save.stars[lvl] || 0, s);
-    save.unlocked = Math.max(save.unlocked, lvl + 1);
+    if (currentBonusIndex != null) {
+      $('overlay-reward').textContent = claimBonusReward(currentBonusIndex, s);
+    } else {
+      $('overlay-reward').textContent = claimLevelReward(lvl, s);
+      save.unlocked = Math.max(save.unlocked, lvl + 1);
+    }
     persist();
+    renderMenu();
   } else {
     $('overlay-title').textContent = 'Défaite';
   }
 }
 
+// Récompenses RPG : uniquement à la première réussite d'un niveau (ou au
+// premier ★★★), jamais en rejouant — le skill débloque, pas le grind.
+function claimLevelReward(lvl, stars) {
+  let gained = 0;
+  if (!save.claimed[lvl]) { save.claimed[lvl] = true; gained += 1; }
+  const prevStars = save.stars[lvl] || 0;
+  if (stars === 3 && prevStars < 3) gained += 1;
+  save.stars[lvl] = Math.max(prevStars, stars);
+  save.skillPoints += gained;
+  return gained ? `+${gained} compétence${gained > 1 ? 's' : ''} !` : '';
+}
+function claimBonusReward(idx, stars) {
+  save.bonusStars[idx] = Math.max(save.bonusStars[idx] || 0, stars);
+  if (save.bonusClaimed[idx]) return '';
+  save.bonusClaimed[idx] = true;
+  const reward = bonusRewardFor(idx);
+  if (reward.type === 'weapon') { save.unlockedWeapons.push(reward.id); return `🎁 Nouvelle arme : ${WEAPONS[reward.id].name} !`; }
+  save.unlockedHeroes.push(reward.id);
+  return `🎁 Nouveau héros : ${HEROES[reward.id].name} !`;
+}
+
 $('btn-pause').addEventListener('click', pause);
 $('btn-resume').addEventListener('click', resume);
-$('btn-retry').addEventListener('click', () => startLevel(game.cfg.level));
+$('btn-retry').addEventListener('click', () => (currentBonusIndex != null ? startBonus(currentBonusIndex) : startLevel(game.cfg.level)));
 $('btn-next').addEventListener('click', () => startLevel(game.cfg.level + 1));
 $('btn-menu').addEventListener('click', showMenu);
 document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
@@ -321,9 +453,9 @@ function updateFx(dt) {
 let lastHearts = '';
 function updateHud() {
   const full = Math.max(0, game.cannonHp);
-  const hearts = '❤️'.repeat(full) + '🖤'.repeat(game.cfg.cannonHp - full);
+  const hearts = '❤️'.repeat(full) + '🖤'.repeat(game.cannonHpMax - full);
   if (hearts !== lastHearts) { $('hud-hearts').textContent = hearts; lastHearts = hearts; }
-  const pct = game.charge / CHAMPION_CHARGE;
+  const pct = game.charge / game.championCharge;
   championRing.style.strokeDashoffset = String(176 * (1 - pct));
   const ready = canLaunchChampion(game);
   championBtn.classList.toggle('ready', ready);

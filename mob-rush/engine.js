@@ -30,6 +30,65 @@ export const T = {
   WAVE_0: 8, WAVE_K: 2.5, RAMP: 40,
 };
 
+// ─── RPG : compétences, armes, héros ────────────────────────────────────────
+// Tout se débloque en jouant (niveaux réussis, niveaux bonus) — rien ne
+// s'achète, rien ne s'obtient plus vite en rejouant un niveau déjà validé.
+export const PERKS = {
+  cadence:  { id: 'cadence',  name: 'Cadence renforcée', desc: '+15% de vitesse de tir.', cost: 2, fireRateMul: 1.15 },
+  charge:   { id: 'charge',   name: 'Charge rapide', desc: 'Le champion se charge 20% plus vite.', cost: 2, chargeMul: 0.8 },
+  blindage: { id: 'blindage', name: 'Blindage', desc: '+2 PV de canon.', cost: 2, cannonHpBonus: 2 },
+  perce:    { id: 'perce',    name: 'Tir perforant', desc: 'Les unités résistent mieux aux portes ÷.', cost: 3, divResist: 0.5 },
+  renfort:  { id: 'renfort',  name: 'Renfort', desc: 'Le champion démultiplie encore plus dans les portes.', cost: 3, championCloneBonus: 1 },
+};
+
+export const WEAPONS = {
+  standard:  { id: 'standard',  name: 'Canon standard', desc: 'Tir simple et fiable.' },
+  rafale:    { id: 'rafale',    name: 'Rafale', desc: '+25% de vitesse de tir.', fireRateMul: 1.25 },
+  perforant: { id: 'perforant', name: 'Perforant', desc: 'Les tirs ignorent les portes ÷.', ignoreDiv: true },
+};
+
+export const HEROES = {
+  champion:  { id: 'champion',  name: 'Champion', desc: 'Unité géante équilibrée.', hp: 25, speedMul: 1, cloneMul: 4 },
+  colosse:   { id: 'colosse',   name: 'Colosse', desc: 'Beaucoup plus de PV, un peu plus lent.', hp: 45, speedMul: 0.75, cloneMul: 3 },
+  eclaireur: { id: 'eclaireur', name: 'Éclaireur', desc: 'Fragile mais ignore les portes ÷.', hp: 12, speedMul: 1.3, cloneMul: 4, ignoreDiv: true },
+};
+
+export const DEFAULT_LOADOUT = { weapon: 'standard', hero: 'champion', perks: [] };
+
+function resolveLoadout(loadout) {
+  const weapon = (loadout && WEAPONS[loadout.weapon]) || WEAPONS.standard;
+  const hero = (loadout && HEROES[loadout.hero]) || HEROES.champion;
+  const perks = ((loadout && loadout.perks) || []).map(id => PERKS[id]).filter(Boolean);
+  const sum = key => perks.reduce((a, p) => a + (p[key] || 0), 0);
+  return {
+    weapon, hero,
+    fireRateMul: (weapon.fireRateMul || 1) * perks.reduce((a, p) => a * (p.fireRateMul || 1), 1),
+    chargeMul: perks.reduce((a, p) => a * (p.chargeMul || 1), 1),
+    cannonHpBonus: sum('cannonHpBonus'),
+    divResist: Math.min(0.9, sum('divResist')),
+    championCloneBonus: sum('championCloneBonus'),
+    ignoreDiv: !!(weapon.ignoreDiv || hero.ignoreDiv),
+  };
+}
+
+// ─── Niveaux bonus (optionnels, plus durs, récompenses RPG) ─────────────────
+// Se débloquent tous les BONUS_EVERY niveaux principaux réussis. Jamais requis
+// pour progresser dans le jeu principal ; deviennent faisables une fois qu'on
+// a accumulé assez de compétences/héros/armes en jouant les niveaux normaux.
+export const BONUS_EVERY = 5;
+export const BONUS_REWARDS = [
+  { type: 'weapon', id: 'rafale' },
+  { type: 'hero', id: 'colosse' },
+  { type: 'weapon', id: 'perforant' },
+  { type: 'hero', id: 'eclaireur' },
+];
+export function bonusRewardFor(index) {
+  return BONUS_REWARDS[(Math.max(1, Math.floor(index)) - 1) % BONUS_REWARDS.length];
+}
+export function bonusUnlockLevel(index) {
+  return Math.max(1, Math.floor(index)) * BONUS_EVERY;
+}
+
 // ─── RNG déterministe ────────────────────────────────────────────────────────
 export function mulberry32(seed) {
   let a = seed >>> 0;
@@ -107,16 +166,43 @@ export function generateLevel(n) {
   };
 }
 
+/**
+ * Génère un niveau bonus (déterministe, jamais requis pour progresser).
+ * Réutilise la mise en page de portes d'un niveau "virtuel" avancé, mais avec
+ * une base et des vagues nettement plus dures que la progression normale à
+ * cet endroit du jeu : ils se battent avec les compétences/armes/héros gagnés.
+ */
+export function generateBonusLevel(index) {
+  const idx = Math.max(1, Math.floor(index));
+  const layout = generateLevel(idx * BONUS_EVERY + 3);
+  return {
+    ...layout,
+    level: layout.level,
+    bonus: true,
+    bonusIndex: idx,
+    baseHp: Math.round(layout.baseHp * 1.6),
+    spawnInterval: Math.max(T.SPAWN_MIN, layout.spawnInterval * 0.75),
+    waveSize: Math.round(layout.waveSize * 1.4),
+    seed: layout.seed + 500000,
+  };
+}
+
 // ─── État de partie ──────────────────────────────────────────────────────────
-export function createGame(levelConfig) {
+export function createGame(levelConfig, loadout) {
+  const ld = resolveLoadout(loadout);
+  const cannonHpMax = levelConfig.cannonHp + ld.cannonHpBonus;
   return {
     cfg: levelConfig,
+    loadout: ld,
     rng: mulberry32(levelConfig.seed),
     time: 0,
     status: 'playing',           // 'playing' | 'won' | 'lost'
     cannonX: W / 2,
-    cannonHp: levelConfig.cannonHp,
+    cannonHp: cannonHpMax,
+    cannonHpMax,
     baseHp: levelConfig.baseHp,
+    fireRate: FIRE_RATE * ld.fireRateMul,
+    championCharge: Math.max(5, Math.round(CHAMPION_CHARGE * ld.chargeMul)),
     fireAcc: 0,
     charge: 0,
     spawnAcc: 0,
@@ -129,9 +215,9 @@ export function createGame(levelConfig) {
   };
 }
 
-function makeBlue(x, y, mask, champ = false) {
+function makeBlue(x, y, mask, champ = false, hero = HEROES.champion) {
   return champ
-    ? { x, y, vx: 0, vy: -CHAMP_SPEED, hp: 25, r: 13, mask, champ: true }
+    ? { x, y, vx: 0, vy: -CHAMP_SPEED * hero.speedMul, hp: hero.hp, r: 13, mask, champ: true }
     : { x, y, vx: 0, vy: -BLUE_SPEED, hp: 1, r: 5, mask, champ: false };
 }
 
@@ -144,12 +230,12 @@ function spawnRed(g, brute) {
 }
 
 export function canLaunchChampion(g) {
-  return g.status === 'playing' && g.charge >= CHAMPION_CHARGE;
+  return g.status === 'playing' && g.charge >= g.championCharge;
 }
 
 export function starsFor(g) {
   if (g.status !== 'won') return 0;
-  const ratio = g.cannonHp / g.cfg.cannonHp;
+  const ratio = g.cannonHp / g.cannonHpMax;
   return ratio >= 1 ? 3 : ratio >= 0.5 ? 2 : 1;
 }
 
@@ -172,7 +258,7 @@ export function step(g, dt, input = {}) {
 
   // Tir
   if (input.firing) {
-    g.fireAcc += dt * FIRE_RATE;
+    g.fireAcc += dt * g.fireRate;
     while (g.fireAcc >= 1) {
       g.fireAcc -= 1;
       if (g.blue.length < MAX_BLUE) {
@@ -180,7 +266,7 @@ export function step(g, dt, input = {}) {
         u.vx = (g.rng() - 0.5) * 24;
         g.blue.push(u);
         g.stats.shots++;
-        g.charge = Math.min(CHAMPION_CHARGE, g.charge + 1);
+        g.charge = Math.min(g.championCharge, g.charge + 1);
       }
     }
   } else {
@@ -188,7 +274,7 @@ export function step(g, dt, input = {}) {
   }
 
   if (input.champion && canLaunchChampion(g)) {
-    g.blue.push(makeBlue(g.cannonX, CANNON_Y - 26, 0, true));
+    g.blue.push(makeBlue(g.cannonX, CANNON_Y - 26, 0, true, g.loadout.hero));
     g.charge = 0;
     g.events.push({ type: 'champion', x: g.cannonX, y: CANNON_Y - 26 });
   }
@@ -237,7 +323,9 @@ export function step(g, dt, input = {}) {
         gate.flash = 0.15;
         g.stats.gateHits++;
         if (gate.op.type === 'mul') {
-          const clones = u.champ ? (gate.op.n - 1) * 4 : gate.op.n - 1;
+          const clones = u.champ
+            ? (gate.op.n - 1) * g.loadout.hero.cloneMul + g.loadout.championCloneBonus
+            : gate.op.n - 1;
           for (let k = 0; k < clones; k++) {
             if (g.blue.length + newBlue.length >= MAX_BLUE) break;
             const c = makeBlue(clamp(u.x + (g.rng() - 0.5) * gate.w * 0.8, 5, W - 5), gate.y - 2 - g.rng() * 8, u.mask);
@@ -246,8 +334,9 @@ export function step(g, dt, input = {}) {
           }
           g.events.push({ type: 'gate', x: u.x, y: gate.y });
         } else if (gate.op.type === 'div') {
-          if (u.champ) u.hp = Math.max(1, Math.ceil(u.hp / gate.op.n));
-          else if (g.rng() < 1 - 1 / gate.op.n) u.hp = 0;
+          if (g.loadout.ignoreDiv) { /* survit à la porte ÷ */ }
+          else if (u.champ) u.hp = Math.max(1, Math.ceil(u.hp / gate.op.n));
+          else if (g.rng() < (1 - 1 / gate.op.n) * (1 - g.loadout.divResist)) u.hp = 0;
         }
       }
     }
