@@ -223,6 +223,8 @@ function beginGame(cfg, label) {
   screenGame.hidden = false;
   overlay.hidden = true;
   $('hud-level').textContent = label;
+  lastHearts = '';
+  lastCastleIndex = -1;
   resize();
   updateHud();
   cancelAnimationFrame(rafId);
@@ -399,6 +401,13 @@ function handleEvents() {
         burst(ev.x, ev.y, ev.big ? 20 : 3, '#3fa9ff');
         if (ev.big) { shake = 0.3; buzz(40); }
         break;
+      case 'castleDown':
+        sfx(ev.final ? 'win' : 'base');
+        buzz(ev.final ? [30, 40, 30] : 50);
+        burst(BASE.x, BASE.y, ev.final ? 40 : 24, '#ffc93c');
+        shake = ev.final ? 0.4 : 0.3;
+        floaters.push({ x: W / 2, y: 150, t: 1.1, text: ev.final ? 'CHÂTEAU FINAL !' : 'CHÂTEAU DÉTRUIT !', color: '#ffc93c', big: true });
+        break;
       case 'cannonHit':
         sfx('hurt');
         burst(ev.x, ev.y, 10, '#ff4d5e');
@@ -451,6 +460,7 @@ function updateFx(dt) {
 }
 
 let lastHearts = '';
+let lastCastleIndex = -1;
 function updateHud() {
   const full = Math.max(0, game.cannonHp);
   const hearts = '❤️'.repeat(full) + '🖤'.repeat(game.cannonHpMax - full);
@@ -460,6 +470,32 @@ function updateHud() {
   const ready = canLaunchChampion(game);
   championBtn.classList.toggle('ready', ready);
   championBtn.disabled = !ready;
+  if (game.castleIndex !== lastCastleIndex) {
+    lastCastleIndex = game.castleIndex;
+    const castles = game.cfg.castles;
+    $('hud-castles').innerHTML = castles.map((_, i) => {
+      const icon = i === castles.length - 1 ? '👑' : '🏰';
+      const cls = i < game.castleIndex ? 'done' : i === game.castleIndex ? 'current' : '';
+      return `<span class="pip ${cls}">${icon}</span>`;
+    }).join('');
+  }
+}
+
+// Segments « mur » d'une rangée : tout ce que ne couvrent pas ses portes
+// ouvertes (en positions actuelles, portes mobiles comprises).
+function wallSegments(row, gates) {
+  const openings = row.gateIds
+    .map(id => gates[id])
+    .map(gt => [gt.x - gt.w / 2, gt.x + gt.w / 2])
+    .sort((a, b) => a[0] - b[0]);
+  const walls = [];
+  let cursor = 0;
+  for (const [start, end] of openings) {
+    if (start > cursor) walls.push([cursor, start]);
+    cursor = Math.max(cursor, end);
+  }
+  if (cursor < W) walls.push([cursor, W]);
+  return walls;
 }
 
 function roundRect(x, y, w, h, r) {
@@ -490,30 +526,73 @@ function draw() {
   ctx.lineWidth = 1;
   for (let y = 40; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
 
-  // Base ennemie
-  const bx = BASE.x - BASE.w / 2;
-  const by = BASE.y - BASE.h / 2;
+  // Château actuel : un mini-château pour chaque étape intermédiaire, un
+  // grand château pour la dernière — la progression se voit, pas juste une
+  // seule barre de vie qui grignote à l'infini sur un décor figé.
+  const castles = game.cfg.castles;
+  const isFinalCastle = game.castleIndex === castles.length - 1;
+  const scale = isFinalCastle ? 1.15 : 0.7;
+  const castleW = BASE.w * scale;
+  const castleH = BASE.h * scale;
+  const castleBottom = BASE.y + BASE.h / 2;
+  const bx = BASE.x - castleW / 2;
+  const by = castleBottom - castleH;
   ctx.fillStyle = '#7a1b2a';
-  roundRect(bx, by, BASE.w, BASE.h, 10);
+  roundRect(bx, by, castleW, castleH, 10);
   ctx.fill();
   ctx.fillStyle = '#b82a3f';
-  for (let i = 0; i < 5; i++) ctx.fillRect(bx + 6 + i * (BASE.w - 12) / 5, by - 8, (BASE.w - 12) / 5 - 6, 10);
+  const merlons = isFinalCastle ? 5 : 3;
+  for (let i = 0; i < merlons; i++) ctx.fillRect(bx + 6 + i * (castleW - 12) / merlons, by - 8, (castleW - 12) / merlons - 6, 10);
   ctx.fillStyle = '#2a0a12';
-  roundRect(BASE.x - 16, by + BASE.h - 24, 32, 24, 8);
+  roundRect(BASE.x - castleW * 0.12, castleBottom - castleH * 0.42, castleW * 0.24, castleH * 0.42, 8);
   ctx.fill();
-  // Barre de vie de la base
-  const hpPct = game.baseHp / game.cfg.baseHp;
+  if (isFinalCastle) {
+    ctx.fillStyle = '#ffc93c';
+    ctx.beginPath();
+    ctx.moveTo(BASE.x, by - 22);
+    ctx.lineTo(BASE.x - 7, by - 9);
+    ctx.lineTo(BASE.x + 7, by - 9);
+    ctx.closePath();
+    ctx.fill();
+  }
+  // Barre de vie du château courant (pas le total du niveau)
+  const castleMax = castles[game.castleIndex];
+  const hpPct = Math.max(0, Math.min(1, game.castleHp / castleMax));
+  const barY = castleBottom + 6;
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  roundRect(bx, by + BASE.h + 6, BASE.w, 10, 5);
+  roundRect(BASE.x - BASE.w / 2, barY, BASE.w, 10, 5);
   ctx.fill();
   ctx.fillStyle = hpPct > 0.3 ? '#ff4d5e' : '#ffc93c';
-  roundRect(bx, by + BASE.h + 6, BASE.w * hpPct, 10, 5);
+  roundRect(BASE.x - BASE.w / 2, barY, BASE.w * hpPct, 10, 5);
   ctx.fill();
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 12px system-ui, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(String(Math.ceil(game.baseHp)), BASE.x, BASE.y);
+  ctx.fillText(String(Math.max(0, Math.ceil(game.castleHp))), BASE.x, BASE.y);
+
+  // Murs : tout ce qu'aucune porte ne couvre sur une rangée. Impossible de
+  // les traverser — ils forcent à viser un couloir ouvert (une porte).
+  ctx.strokeStyle = 'rgba(255,193,7,0.35)';
+  ctx.lineWidth = 3;
+  for (const row of game.rows) {
+    for (const [start, end] of wallSegments(row, game.gates)) {
+      if (end - start < 2) continue;
+      const wy = row.y - 16;
+      roundRect(start, wy, end - start, 30, 4);
+      ctx.fillStyle = '#2b2b35';
+      ctx.fill();
+      ctx.save();
+      ctx.clip();
+      for (let sx = start - 30; sx < end; sx += 10) {
+        ctx.beginPath();
+        ctx.moveTo(sx, wy + 30);
+        ctx.lineTo(sx + 30, wy);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
 
   // Portes
   for (const gate of game.gates) {
