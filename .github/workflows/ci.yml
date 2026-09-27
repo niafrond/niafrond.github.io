@@ -18,6 +18,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Detect changed folders
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            quiz:
+              - 'quiz/**'
+            flash-guess:
+              - 'flash-guess/**'
+            pyramide:
+              - 'pyramide/**'
+            taboo:
+              - 'taboo/**'
+            geo-party:
+              - 'geo-party/**'
+            blind-test:
+              - 'blind-test/**'
+            dj-mix:
+              - 'dj-mix/**'
+            mix-blind-test:
+              - 'mix-blind-test/**'
+            theme-party:
+              - 'theme-party/**'
+            mob-rush:
+              - 'mob-rush/**'
+            shared:
+              - 'jest.config.js'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/ci.yml'
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -30,8 +61,55 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run tests
-        run: npm test
+      - name: Run unit tests for changed folders
+        env:
+          NODE_OPTIONS: --experimental-vm-modules
+          FILTER_QUIZ: ${{ steps.filter.outputs.quiz }}
+          FILTER_FLASH_GUESS: ${{ steps.filter.outputs.flash-guess }}
+          FILTER_PYRAMIDE: ${{ steps.filter.outputs.pyramide }}
+          FILTER_TABOO: ${{ steps.filter.outputs.taboo }}
+          FILTER_GEO_PARTY: ${{ steps.filter.outputs.geo-party }}
+          FILTER_BLIND_TEST: ${{ steps.filter.outputs.blind-test }}
+          FILTER_DJ_MIX: ${{ steps.filter.outputs.dj-mix }}
+          FILTER_MIX_BLIND_TEST: ${{ steps.filter.outputs.mix-blind-test }}
+          FILTER_THEME_PARTY: ${{ steps.filter.outputs.theme-party }}
+          FILTER_MOB_RUSH: ${{ steps.filter.outputs.mob-rush }}
+          FILTER_SHARED: ${{ steps.filter.outputs.shared }}
+        run: |
+          if [ "$FILTER_SHARED" = "true" ]; then
+            echo "Fichier partagé (jest.config.js / package.json / workflow) modifié : exécution de toute la suite."
+            npx jest
+            exit 0
+          fi
+
+          PROJECTS=()
+
+          [ "$FILTER_QUIZ" = "true" ] && PROJECTS+=(unit-node unit-jsdom)
+          [ "$FILTER_FLASH_GUESS" = "true" ] && PROJECTS+=(fg-node fg-jsdom)
+          [ "$FILTER_PYRAMIDE" = "true" ] && PROJECTS+=(pyramide-words)
+          [ "$FILTER_TABOO" = "true" ] && PROJECTS+=(taboo-jsdom)
+          [ "$FILTER_GEO_PARTY" = "true" ] && PROJECTS+=(geo-party-node)
+          [ "$FILTER_BLIND_TEST" = "true" ] && PROJECTS+=(blind-test-node blind-test-jsdom)
+          [ "$FILTER_MIX_BLIND_TEST" = "true" ] && PROJECTS+=(mix-blind-test-node mix-blind-test-idb)
+          [ "$FILTER_THEME_PARTY" = "true" ] && PROJECTS+=(theme-party-node theme-party-jsdom)
+          [ "$FILTER_MOB_RUSH" = "true" ] && PROJECTS+=(mob-rush-node)
+
+          # blind-test/, mix-blind-test/ et theme-party/ importent directement des
+          # modules de dj-mix/lib (config downloader, trackStore, audioSourceManager...) :
+          # une modification de dj-mix/ doit aussi relancer leurs suites, pas seulement
+          # la sienne (voir dj-mix/lib/storageKeys.js consommé par les trois).
+          if [ "$FILTER_DJ_MIX" = "true" ]; then
+            PROJECTS+=(dj-mix-jsdom blind-test-node blind-test-jsdom mix-blind-test-node mix-blind-test-idb theme-party-node theme-party-jsdom)
+          fi
+
+          if [ ${#PROJECTS[@]} -eq 0 ]; then
+            echo "Aucun dossier testé n'a été modifié : tests unitaires ignorés."
+            exit 0
+          fi
+
+          mapfile -t UNIQUE_PROJECTS < <(printf '%s\n' "${PROJECTS[@]}" | sort -u)
+          echo "Projets Jest exécutés : ${UNIQUE_PROJECTS[*]}"
+          npx jest --selectProjects "${UNIQUE_PROJECTS[@]}"
 
   build-apk:
     name: Flash Guess APK

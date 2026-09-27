@@ -1,10 +1,21 @@
 import { beforeEach, describe, expect, test, jest } from '@jest/globals';
+import { IDBFactory } from 'fake-indexeddb';
 import { createBlobStore } from '../../lib/blobStore.js';
 import { resolveRelayArtworkUrl } from '../../lib/relayArtworkResolver.js';
 
 describe('relayArtworkResolver', () => {
   beforeEach(() => {
     jest.restoreAllMocks();
+    // jsdom fournit ni indexedDB ni structuredClone — cf. blobStore.test.js.
+    global.indexedDB = new IDBFactory();
+    if (typeof structuredClone === 'undefined') {
+      global.structuredClone = (val) => {
+        if (val instanceof Blob) return new Blob([val], { type: val.type });
+        return JSON.parse(JSON.stringify(val));
+      };
+    }
+    // jsdom ne fournit pas non plus URL.createObjectURL.
+    URL.createObjectURL = jest.fn(() => `blob:${Math.random()}`);
   });
 
   test('reuses a locally cached artwork blob before falling back to a remote URL', async () => {

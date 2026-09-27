@@ -66,6 +66,4 @@ export const TARGET_MS_PER_TRACK_DOWNLOAD = 4000;
 // ─── Download retry policy (downloadBatchManager.js, SPEC-19.6) ──────────────
 export const MAX_DOWNLOAD_RETRY_ATTEMPTS     = 3;
 export const DOWNLOAD_RETRY_BACKOFF_BASE_MS  = 2000; // 2s, 4s, 8s (base · 2^(n−1))
-export const DOWNLOAD_REQUEST_TIMEOUT_MS     = 20_000;
-export const DOWNLOAD_REQUEST_MAX_ATTEMPTS   = 60;
 export const CDN_STREAM_TIMEOUT_MS           = 120_000; // 2 min max pour servir un MP3 local
