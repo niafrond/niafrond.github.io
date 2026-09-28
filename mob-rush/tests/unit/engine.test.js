@@ -1,5 +1,5 @@
 import {
-  W, CANNON_Y, BASE, CHAMPION_CHARGE, MAX_BLUE,
+  W, CANNON_Y, BASE, CHAMPION_CHARGE, MAX_BLUE, ROW_FRONT,
   generateLevel, createGame, step, canLaunchChampion, starsFor,
   generateBonusLevel, bonusRewardFor, bonusUnlockLevel, BONUS_EVERY,
   PERKS, perkLevel, perkUpgradeCost,
@@ -43,11 +43,11 @@ describe('step', () => {
     cfg.spawnInterval = 1e9;
     cfg.waveEvery = 1e9;
     const g = createGame(cfg);
-    g.blue.push({ x: W / 2, y: 410, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
-    run(g, 0.2, {});
+    g.blue.push({ x: W / 2, y: 450, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    run(g, 0.35, {});
     expect(g.blue).toHaveLength(3);
     expect(g.blue.every(u => u.mask & 1)).toBe(true);
-    run(g, 0.2, {});
+    run(g, 0.35, {});
     expect(g.blue).toHaveLength(3);
   });
 
@@ -111,7 +111,7 @@ describe('Couloirs : les rangées sans porte ouverte forment un mur', () => {
       spawnInterval: 1e9, waveEvery: 1e9,
     };
     const g = createGame(cfg);
-    g.blue.push({ x: 300, y: 410, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    g.blue.push({ x: 300, y: 450, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
     // Sans mur, cette unité (loin de la porte) la traverserait sans effet.
     run(g, 0.05, {});
     expect(g.blue).toHaveLength(1);
@@ -129,6 +129,27 @@ describe('Couloirs : les rangées sans porte ouverte forment un mur', () => {
     expect(g.blue.length).toBeGreaterThan(1);
   });
 
+  test('une unité bloquée par un mur bute contre sa surface au lieu de s’enfoncer dedans', () => {
+    const cfg = {
+      ...generateLevel(1),
+      gates: [{ id: 0, x: 50, y: 400, w: 40, h: 14, op: { type: 'mul', n: 2 }, vx: 0, minX: 50, maxX: 50 }],
+      spawnInterval: 1e9, waveEvery: 1e9,
+    };
+    const g = createGame(cfg);
+    // Loin du couloir ouvert (x=300 vs porte en x=50), et loin au sud de la
+    // rangée pour laisser le temps à la collision de s'enclencher.
+    g.blue.push({ x: 300, y: 470, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    for (let t = 0; t < 0.3; t += DT) {
+      step(g, DT, {});
+      g.events.length = 0;
+      // À aucun instant l'unité ne doit franchir la surface avant du mur
+      // (elle glisse dessus, jamais à travers ni dedans).
+      expect(g.blue[0].y).toBeGreaterThanOrEqual(400 + ROW_FRONT + 5 - 0.001);
+    }
+    // Elle vient se coller pile contre la surface, pas plus loin.
+    expect(g.blue[0].y).toBeCloseTo(400 + ROW_FRONT + 5, 5);
+  });
+
   test('une unité déjà alignée passe normalement, sans être bloquée', () => {
     const cfg = {
       ...generateLevel(1),
@@ -136,8 +157,8 @@ describe('Couloirs : les rangées sans porte ouverte forment un mur', () => {
       spawnInterval: 1e9, waveEvery: 1e9,
     };
     const g = createGame(cfg);
-    g.blue.push({ x: W / 2, y: 410, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
-    run(g, 0.2, {});
+    g.blue.push({ x: W / 2, y: 450, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    run(g, 0.35, {});
     expect(g.blue).toHaveLength(2);
     expect(g.blue.every(u => u.mask & 1)).toBe(true);
   });
@@ -247,8 +268,8 @@ describe('RPG : compétences, armes, héros', () => {
       spawnInterval: 1e9, waveEvery: 1e9,
     };
     const g = createGame(cfg, { weapon: 'perforant' });
-    g.blue.push({ x: W / 2, y: 410, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
-    run(g, 0.2, {});
+    g.blue.push({ x: W / 2, y: 450, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    run(g, 0.35, {});
     expect(g.blue).toHaveLength(1);
     expect(g.blue[0].hp).toBe(1);
   });
@@ -260,11 +281,11 @@ describe('RPG : compétences, armes, héros', () => {
       spawnInterval: 1e9, waveEvery: 1e9,
     };
     const standard = createGame(cfg, { hero: 'champion' });
-    standard.blue.push({ x: W / 2, y: 410, vx: 0, vy: -170, hp: 25, r: 13, mask: 0, champ: true });
-    run(standard, 0.2, {});
+    standard.blue.push({ x: W / 2, y: 450, vx: 0, vy: -170, hp: 25, r: 13, mask: 0, champ: true });
+    run(standard, 0.35, {});
     const colosse = createGame(cfg, { hero: 'colosse' });
-    colosse.blue.push({ x: W / 2, y: 410, vx: 0, vy: -170, hp: 45, r: 13, mask: 0, champ: true });
-    run(colosse, 0.2, {});
+    colosse.blue.push({ x: W / 2, y: 450, vx: 0, vy: -170, hp: 45, r: 13, mask: 0, champ: true });
+    run(colosse, 0.35, {});
     expect(colosse.blue.length).toBeLessThan(standard.blue.length);
   });
 

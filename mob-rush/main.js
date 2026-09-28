@@ -534,6 +534,15 @@ function roundRect(x, y, w, h, r) {
 // ─── Style manga : traits d'encre épais, visages chibi, effets « impact » ────
 const INK = '#1c1030';
 
+// Une palette de fond par mini-château (cyclée par index) — le décor entier
+// change avec le terrain, pas seulement les portes.
+const BG_PALETTES = [
+  ['#3a1f3d', '#1d2c55', '#16306a'], // violet nocturne
+  ['#3a2a1f', '#55371d', '#6a4416'], // ambre crépuscule
+  ['#1f3a24', '#1d5545', '#166a5a'], // vert toxique
+  ['#3a1f24', '#551d2c', '#6a1633'], // écarlate (château final)
+];
+
 function inkStroke(width = 2, color = INK) {
   ctx.strokeStyle = color;
   ctx.lineWidth = width;
@@ -563,6 +572,33 @@ function chibiFace(x, y, r, mood) {
     ctx.beginPath(); ctx.ellipse(x - r * 0.62, y + r * 0.22, r * 0.18, r * 0.11, 0, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(x + r * 0.62, y + r * 0.22, r * 0.18, r * 0.11, 0, 0, Math.PI * 2); ctx.fill();
   }
+}
+
+// Petits bras et jambes façon bonhomme-bâton, pour donner un aspect
+// humanoïde aux unités (au lieu de simples billes) — animés par une phase
+// de marche dérivée du temps et de la position (chaque unité se balance à
+// son propre rythme sans état supplémentaire à stocker dessus).
+function limbs(x, y, r, color, phase) {
+  const swing = Math.sin(phase);
+  ctx.strokeStyle = color;
+  ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(1.4, r * 0.24);
+  const legLen = r * 0.85;
+  const legSpread = r * 0.3 * swing;
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.4, y + r * 0.5);
+  ctx.lineTo(x - r * 0.4 + legSpread, y + r * 0.5 + legLen);
+  ctx.moveTo(x + r * 0.4, y + r * 0.5);
+  ctx.lineTo(x + r * 0.4 - legSpread, y + r * 0.5 + legLen);
+  ctx.stroke();
+  const armLen = r * 0.7;
+  const armSwing = r * 0.35 * -swing;
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.75, y - r * 0.1);
+  ctx.lineTo(x - r * 0.95 - armSwing * 0.3, y - r * 0.1 + armLen);
+  ctx.moveTo(x + r * 0.75, y - r * 0.1);
+  ctx.lineTo(x + r * 0.95 + armSwing * 0.3, y - r * 0.1 + armLen);
+  ctx.stroke();
 }
 
 // Rayons de vitesse façon manga (impact « BOUM »), pour les gros événements
@@ -619,11 +655,13 @@ function draw() {
   if (shake > 0) { sx = (Math.random() - 0.5) * 8 * shake / 0.3; sy = (Math.random() - 0.5) * 8 * shake / 0.3; }
   ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, (view.ox + sx) * dpr, (view.oy + sy) * dpr);
 
-  // Terrain
+  // Terrain — le fond change de palette à chaque changement d'écran (chaque
+  // mini-château détruit fait basculer sur un nouveau terrain, cf. engine.js).
+  const [bg0, bg1, bg2] = BG_PALETTES[game.castleIndex % BG_PALETTES.length];
   const grd = ctx.createLinearGradient(0, 0, 0, H);
-  grd.addColorStop(0, '#3a1f3d');
-  grd.addColorStop(0.35, '#1d2c55');
-  grd.addColorStop(1, '#16306a');
+  grd.addColorStop(0, bg0);
+  grd.addColorStop(0.35, bg1);
+  grd.addColorStop(1, bg2);
   ctx.fillStyle = grd;
   roundRect(0, 0, W, H, 18);
   ctx.fill();
@@ -723,13 +761,15 @@ function draw() {
     shoutText(good ? `×${gate.op.n}` : `÷${gate.op.n}`, gate.x, gate.y + 1, 20, '#fff');
   }
 
-  // Unités rouges — petits vilains manga, cornes et sourcils pour les brutes.
+  // Unités rouges — petits vilains manga (bras/jambes humanoïdes), cornes et
+  // sourcils pour les brutes.
   ctx.fillStyle = '#ff4d5e';
   for (const e of game.red) {
     ctx.beginPath();
     ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
     ctx.fill();
     inkStroke(1.5);
+    limbs(e.x, e.y, e.r, '#c81f38', game.time * 9 + e.x * 0.15 + e.y * 0.05);
   }
   for (const e of game.red) {
     if (!e.brute) continue;
@@ -746,8 +786,8 @@ function draw() {
     chibiFace(e.x, e.y + e.r * 0.1, e.r * 0.85, 'angry');
   }
 
-  // Unités bleues — petites billes rondes à l'encre épaisse, le champion a
-  // un vrai minois chibi avec bandeau de héros.
+  // Unités bleues — petites billes rondes à l'encre épaisse avec bras/jambes
+  // humanoïdes, le champion a un vrai minois chibi avec bandeau de héros.
   ctx.fillStyle = '#3fa9ff';
   for (const u of game.blue) {
     if (u.champ) continue;
@@ -755,6 +795,7 @@ function draw() {
     ctx.arc(u.x, u.y, u.r, 0, Math.PI * 2);
     ctx.fill();
     inkStroke(1.2);
+    limbs(u.x, u.y, u.r, '#0f6fb8', game.time * 9 + u.x * 0.15 + u.y * 0.05);
   }
   for (const u of game.blue) {
     if (!u.champ) continue;
@@ -766,6 +807,7 @@ function draw() {
     ctx.strokeStyle = '#3fa9ff';
     ctx.lineWidth = 2;
     ctx.stroke();
+    limbs(u.x, u.y, u.r, '#c98a0b', game.time * 7 + u.x * 0.15 + u.y * 0.05);
     ctx.fillStyle = '#ff4d5e';
     roundRect(u.x - u.r, u.y - u.r * 0.55, u.r * 2, u.r * 0.42, 3);
     ctx.fill();
