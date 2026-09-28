@@ -169,6 +169,8 @@ html, body {
 .skill-info { display: flex; flex-direction: column; gap: 2px; text-align: left; }
 .skill-info b { font-size: 14px; }
 .skill-info span { font-size: 12px; color: var(--muted); }
+.skill-lvl { font-size: 11px; font-weight: 600; color: var(--gold); }
+.skill-next { color: var(--green) !important; }
 .skill-owned { color: var(--green); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .skill-buy { white-space: nowrap; }
 

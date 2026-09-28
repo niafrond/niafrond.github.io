@@ -16,10 +16,12 @@ export const BASE = { x: W / 2, y: 64, w: 130, h: 56 };
 export const MAX_BLUE = 650;
 export const FIRE_RATE = 9;            // tirs / seconde
 export const CHAMPION_CHARGE = 40;     // tirs nécessaires pour charger le champion
-const BLUE_SPEED = 170;
-const CHAMP_SPEED = 105;
-const RED_SPEED = 62;
-const BRUTE_SPEED = 42;
+// Vitesses ralenties (vs. 170/105/62/42 à l'origine) pour que l'action reste
+// lisible à l'œil et laisse le temps de choisir une vraie stratégie de visée.
+const BLUE_SPEED = 108;
+const CHAMP_SPEED = 68;
+const RED_SPEED = 40;
+const BRUTE_SPEED = 27;
 const CANNON_SPEED = 900;
 const GATE_H = 14;
 
@@ -33,13 +35,58 @@ export const T = {
 // ─── RPG : compétences, armes, héros ────────────────────────────────────────
 // Tout se débloque en jouant (niveaux réussis, niveaux bonus) — rien ne
 // s'achète, rien ne s'obtient plus vite en rejouant un niveau déjà validé.
+// Les compétences sont évolutives : chaque palier coûte plus cher et
+// renforce un peu plus l'effet, jusqu'à `maxLevel`.
 export const PERKS = {
-  cadence:  { id: 'cadence',  name: 'Cadence renforcée', desc: '+15% de vitesse de tir.', cost: 2, fireRateMul: 1.15 },
-  charge:   { id: 'charge',   name: 'Charge rapide', desc: 'Le champion se charge 20% plus vite.', cost: 2, chargeMul: 0.8 },
-  blindage: { id: 'blindage', name: 'Blindage', desc: '+2 PV de canon.', cost: 2, cannonHpBonus: 2 },
-  perce:    { id: 'perce',    name: 'Tir perforant', desc: 'Les unités résistent mieux aux portes ÷.', cost: 3, divResist: 0.5 },
-  renfort:  { id: 'renfort',  name: 'Renfort', desc: 'Le champion démultiplie encore plus dans les portes.', cost: 3, championCloneBonus: 1 },
+  cadence: {
+    id: 'cadence', name: 'Cadence renforcée', maxLevel: 3, costPerLevel: [2, 3, 4],
+    perLevel: { fireRateMul: 0.1 },
+    format: v => `+${Math.round(v * 100)}% de vitesse de tir`,
+  },
+  charge: {
+    id: 'charge', name: 'Charge rapide', maxLevel: 3, costPerLevel: [2, 3, 4],
+    perLevel: { chargeReduction: 0.15 },
+    format: v => `Champion ${Math.round(v * 100)}% plus rapide à charger`,
+  },
+  blindage: {
+    id: 'blindage', name: 'Blindage', maxLevel: 3, costPerLevel: [2, 3, 4],
+    perLevel: { cannonHpBonus: 2 },
+    format: v => `+${v} PV de canon`,
+  },
+  perce: {
+    id: 'perce', name: 'Tir perforant', maxLevel: 3, costPerLevel: [3, 4, 5],
+    perLevel: { divResist: 0.2 },
+    format: v => `${Math.round(v * 100)}% de résistance aux portes ÷`,
+  },
+  renfort: {
+    id: 'renfort', name: 'Renfort', maxLevel: 3, costPerLevel: [3, 4, 5],
+    perLevel: { championCloneBonus: 1 },
+    format: v => `+${v} clone(s) de champion dans les portes ×`,
+  },
 };
+
+// Niveau actuel d'une compétence, borné à [0, maxLevel].
+export function perkLevel(levels, id) {
+  const perk = PERKS[id];
+  if (!perk) return 0;
+  const lvl = Math.floor((levels && levels[id]) || 0);
+  return clamp(lvl, 0, perk.maxLevel);
+}
+
+// Coût pour passer une compétence de son niveau actuel au suivant (undefined
+// si déjà au niveau max).
+export function perkUpgradeCost(id, currentLevel) {
+  const perk = PERKS[id];
+  if (!perk || currentLevel >= perk.maxLevel) return undefined;
+  return perk.costPerLevel[currentLevel];
+}
+
+// Valeur totale accumulée d'une stat de compétence pour un niveau donné
+// (ex : perkStatAt('cadence', 'fireRateMul', 2) → 0.2).
+export function perkStatAt(id, key, level) {
+  const perk = PERKS[id];
+  return ((perk && perk.perLevel[key]) || 0) * level;
+}
 
 export const WEAPONS = {
   standard:  { id: 'standard',  name: 'Canon standard', desc: 'Tir simple et fiable.' },
@@ -53,17 +100,19 @@ export const HEROES = {
   eclaireur: { id: 'eclaireur', name: 'Éclaireur', desc: 'Fragile mais ignore les portes ÷.', hp: 12, speedMul: 1.3, cloneMul: 4, ignoreDiv: true },
 };
 
-export const DEFAULT_LOADOUT = { weapon: 'standard', hero: 'champion', perks: [] };
+export const DEFAULT_LOADOUT = { weapon: 'standard', hero: 'champion', perks: {} };
 
+// `loadout.perks` est une map { perkId: niveau } — les compétences sont
+// évolutives, chaque niveau accumule son effet (voir `perkStatAt`).
 function resolveLoadout(loadout) {
   const weapon = (loadout && WEAPONS[loadout.weapon]) || WEAPONS.standard;
   const hero = (loadout && HEROES[loadout.hero]) || HEROES.champion;
-  const perks = ((loadout && loadout.perks) || []).map(id => PERKS[id]).filter(Boolean);
-  const sum = key => perks.reduce((a, p) => a + (p[key] || 0), 0);
+  const levels = (loadout && loadout.perks) || {};
+  const sum = key => Object.keys(PERKS).reduce((a, id) => a + perkStatAt(id, key, perkLevel(levels, id)), 0);
   return {
     weapon, hero,
-    fireRateMul: (weapon.fireRateMul || 1) * perks.reduce((a, p) => a * (p.fireRateMul || 1), 1),
-    chargeMul: perks.reduce((a, p) => a * (p.chargeMul || 1), 1),
+    fireRateMul: (weapon.fireRateMul || 1) * (1 + sum('fireRateMul')),
+    chargeMul: clamp(1 - sum('chargeReduction'), 0.25, 1),
     cannonHpBonus: sum('cannonHpBonus'),
     divResist: Math.min(0.9, sum('divResist')),
     championCloneBonus: sum('championCloneBonus'),
@@ -107,8 +156,12 @@ const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 // La base n'est pas une seule barre de vie géante : elle est découpée en
 // mini-châteaux successifs puis un grand château final, pour que le joueur
 // voie une vraie progression (jalons, célébrations) plutôt qu'un écran figé.
+function castleCount(level) {
+  return Math.min(4, 1 + Math.floor((level - 1) / 3));
+}
+
 function splitCastles(totalHp, level) {
-  const count = Math.min(4, 1 + Math.floor((level - 1) / 3));
+  const count = castleCount(level);
   if (count === 1) return [totalHp];
   const finalHp = Math.round(totalHp * 0.4);
   const rest = totalHp - finalHp;
@@ -118,13 +171,11 @@ function splitCastles(totalHp, level) {
   return [...minis, finalHp];
 }
 
-// ─── Génération de niveau ────────────────────────────────────────────────────
-/**
- * Génère la configuration d'un niveau (déterministe : même numéro → même niveau).
- */
-export function generateLevel(n) {
-  const level = Math.max(1, Math.floor(n));
-  const rng = mulberry32(level * 9973 + 17);
+// Génère la disposition des portes d'un terrain (une rangée de murs percés
+// de couloirs) pour un niveau donné, à partir d'un générateur aléatoire fourni
+// par l'appelant — permet de produire plusieurs terrains distincts pour un
+// même niveau (un par mini-château) sans dupliquer cette logique.
+function generateGateLayout(rng, level) {
   const pick = arr => arr[Math.floor(rng() * arr.length)];
 
   const rows = 2 + Math.min(2, Math.floor((level - 1) / 4));
@@ -159,12 +210,38 @@ export function generateLevel(n) {
     if (g.minX > g.maxX) { const m = (g.minX + g.maxX) / 2; g.minX = g.maxX = m; g.vx = 0; }
     g.x = clamp(g.x, g.minX, g.maxX);
   }
+  return gates;
+}
 
-  // PV de la base proportionnels au meilleur enchaînement de portes possible,
-  // pour que les niveaux à gros multiplicateurs ne se gagnent pas en 5 secondes.
+function bestChainOf(gates) {
   const rowsY = [...new Set(gates.map(g => g.y))];
-  const bestChain = rowsY.reduce((acc, y) =>
+  return rowsY.reduce((acc, y) =>
     acc * Math.max(1, ...gates.filter(g => g.y === y && g.op.type === 'mul').map(g => g.op.n)), 1);
+}
+
+// ─── Génération de niveau ────────────────────────────────────────────────────
+/**
+ * Génère la configuration d'un niveau (déterministe : même numéro → même niveau).
+ *
+ * Chaque mini-château a son propre terrain (disposition de portes) : le
+ * décor change à chaque fois qu'un château tombe, pour forcer à réévaluer sa
+ * stratégie de visée plutôt que de rejouer le même couloir en boucle.
+ */
+export function generateLevel(n) {
+  const level = Math.max(1, Math.floor(n));
+  const rng = mulberry32(level * 9973 + 17);
+  const gates = generateGateLayout(rng, level);
+
+  // PV de la base proportionnels au meilleur enchaînement de portes possible
+  // (le plus dur parmi tous les terrains du niveau), pour que les niveaux à
+  // gros multiplicateurs ne se gagnent pas en 5 secondes.
+  const count = castleCount(level);
+  const terrains = [gates];
+  for (let i = 1; i < count; i++) {
+    const trng = mulberry32(level * 9973 + 17 + i * 104729 + 13);
+    terrains.push(generateGateLayout(trng, level));
+  }
+  const bestChain = Math.max(...terrains.map(bestChainOf));
 
   const baseHp = Math.round((T.BASE_HP_0 + T.BASE_HP_K * Math.min(bestChain, T.CHAIN_CAP)) * (1 + level * T.LEVEL_K));
 
@@ -181,6 +258,7 @@ export function generateLevel(n) {
     bruteChance: level >= 4 ? Math.min(0.22, (level - 3) * 0.025) : 0,
     seed: level * 7919 + 3,
     gates,
+    terrains,
   };
 }
 
@@ -277,8 +355,20 @@ export function starsFor(g) {
   return ratio >= 1 ? 3 : ratio >= 0.5 ? 2 : 1;
 }
 
+// Remplace le terrain actif (portes + rangées) par celui du château courant.
+// Les unités bleues déjà en jeu perdent la mémoire des portes franchies : le
+// nouveau terrain n'a pas les mêmes identifiants de portes, et surtout pas
+// forcément aux mêmes endroits — elles doivent re-choisir un couloir.
+function swapTerrain(g, gates) {
+  g.gates = gates.map(gt => ({ ...gt, op: { ...gt.op }, flash: 0 }));
+  g.rows = groupRows(gates);
+  for (const u of g.blue) u.mask = 0;
+}
+
 // Applique des dégâts à la base, en faisant progresser la séquence de
-// châteaux (le trop-plein d'un château détruit passe au suivant).
+// châteaux (le trop-plein d'un château détruit passe au suivant). Chaque
+// mini-château franchi change aussi la configuration du terrain (portes),
+// pour obliger à revoir sa stratégie de visée à chaque étape.
 function applyBaseDamage(g, dmg) {
   g.baseHp -= dmg;
   g.castleHp -= dmg;
@@ -286,7 +376,13 @@ function applyBaseDamage(g, dmg) {
     const overflow = -g.castleHp;
     g.castleIndex++;
     g.castleHp = g.cfg.castles[g.castleIndex] - overflow;
-    g.events.push({ type: 'castleDown', index: g.castleIndex, final: g.castleIndex === g.cfg.castles.length - 1 });
+    const terrain = g.cfg.terrains && g.cfg.terrains[g.castleIndex];
+    if (terrain) swapTerrain(g, terrain);
+    g.events.push({
+      type: 'castleDown', index: g.castleIndex,
+      final: g.castleIndex === g.cfg.castles.length - 1,
+      terrainChanged: !!terrain,
+    });
   }
 }
 
