@@ -6,7 +6,9 @@ import {
   evaluateAlarms, applySnooze, clearSnooze, runtimeToObject, runtimeFromObject,
   nextOccurrence, getNextAlarmOccurrence,
 } from './scheduler.js';
-import { generateProblem, suggestedProblemsCount, DIFFICULTY_LABELS } from './math-challenge.js';
+import {
+  generateProblem, suggestedProblemsCount, DIFFICULTY_LABELS, DIFFICULTY_ORDER,
+} from './math-challenge.js';
 import { startAlarmSound, stopAlarmSound } from './sound.js';
 import { formatAlarmSchedule, formatClock, formatCountdown } from './ui.js';
 import { installPwa, initServiceWorker } from './pwa.js';
@@ -158,34 +160,48 @@ function openEdit(id) {
     chip.classList.toggle('active', days.includes(Number(chip.dataset.day)));
   });
 
-  const difficulty = alarm ? alarm.difficulty : 'easy';
-  setDifficultyUi(difficulty, { suggestCount: !alarm });
+  const difficulty = alarm ? alarm.difficulty : 'veryEasy';
+  setDifficultySlider(difficulty, { suggestCount: !alarm });
   setProblemsCount(alarm ? alarm.problemsCount : suggestedProblemsCount(difficulty));
 
   showScreen('edit');
 }
 
-function setDifficultyUi(difficulty, { suggestCount = false } = {}) {
-  document.querySelectorAll('#difficulty-picker .segment').forEach(seg => {
-    seg.classList.toggle('active', seg.dataset.difficulty === difficulty);
-  });
-  const hints = {
-    easy: 'Calculs simples : additions à un chiffre.',
-    medium: 'Calculs à deux chiffres : additions ou soustractions.',
-    hard: 'Calculs plus corsés : grands nombres ou tables de multiplication.',
-  };
-  el('difficulty-hint').textContent = hints[difficulty] || '';
+// ── Difficulté (slider à 5 crans, façon Alarm Clock Xtreme) ──────────────
+const difficultySlider = el('difficulty-slider');
+const difficultyCurrentLabel = el('difficulty-current-label');
+const difficultyExampleValue = el('difficulty-example-value');
+
+function setDifficultySlider(difficulty, { suggestCount = false } = {}) {
+  const index = Math.max(0, DIFFICULTY_ORDER.indexOf(difficulty));
+  difficultySlider.value = String(index);
+  difficultyCurrentLabel.textContent = DIFFICULTY_LABELS[DIFFICULTY_ORDER[index]];
+  regenerateDifficultyExample();
 
   // Pour une NOUVELLE alarme, suggère un nombre de calculs adapté à la
   // difficulté choisie — mais ne touche jamais au réglage d'une alarme
   // existante déjà personnalisée par l'utilisateur.
-  if (suggestCount) setProblemsCount(suggestedProblemsCount(difficulty));
+  if (suggestCount) setProblemsCount(suggestedProblemsCount(DIFFICULTY_ORDER[index]));
+}
+
+function regenerateDifficultyExample() {
+  const { text } = generateProblem(getSelectedDifficulty());
+  difficultyExampleValue.textContent = text;
 }
 
 function getSelectedDifficulty() {
-  const active = document.querySelector('#difficulty-picker .segment.active');
-  return active ? active.dataset.difficulty : 'easy';
+  return DIFFICULTY_ORDER[Number(difficultySlider.value)] || 'veryEasy';
 }
+
+difficultySlider.addEventListener('input', () => {
+  difficultyCurrentLabel.textContent = DIFFICULTY_LABELS[getSelectedDifficulty()];
+  regenerateDifficultyExample();
+});
+difficultySlider.addEventListener('change', () => {
+  // Alarme existante : ne pas re-suggérer. Nouvelle alarme : suggère le
+  // nombre de calculs adapté, une fois le glissement terminé.
+  if (editingId === null) setProblemsCount(suggestedProblemsCount(getSelectedDifficulty()));
+});
 
 function getSelectedDays() {
   return [...document.querySelectorAll('#days-picker .day-chip.active')].map(c => Number(c.dataset.day));
@@ -467,9 +483,6 @@ el('btn-install-pwa').addEventListener('click', installPwa);
 
 document.querySelectorAll('#days-picker .day-chip').forEach(chip => {
   chip.addEventListener('click', () => chip.classList.toggle('active'));
-});
-document.querySelectorAll('#difficulty-picker .segment').forEach(seg => {
-  seg.addEventListener('click', () => setDifficultyUi(seg.dataset.difficulty, { suggestCount: editingId === null }));
 });
 
 el('btn-challenge-validate').addEventListener('click', validateChallengeAnswer);

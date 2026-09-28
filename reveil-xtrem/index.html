@@ -91,12 +91,15 @@
 
     <div class="card">
       <span class="field-label">Difficulté du calcul pour désactiver</span>
-      <div id="difficulty-picker" class="segmented">
-        <button type="button" class="segment" data-difficulty="easy">Facile</button>
-        <button type="button" class="segment" data-difficulty="medium">Moyen</button>
-        <button type="button" class="segment" data-difficulty="hard">Difficile</button>
+      <div id="difficulty-current-label" class="difficulty-current-label">Facile</div>
+      <input type="range" id="difficulty-slider" class="difficulty-slider" min="0" max="4" step="1" value="1">
+      <div class="difficulty-ticks" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
       </div>
-      <p class="field-hint" id="difficulty-hint"></p>
+      <div class="difficulty-example">
+        <span class="difficulty-example-label">Exemple :</span>
+        <div id="difficulty-example-value" class="difficulty-example-value"></div>
+      </div>
     </div>
 
     <div class="card">

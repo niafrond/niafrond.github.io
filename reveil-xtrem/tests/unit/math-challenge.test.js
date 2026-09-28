@@ -1,13 +1,15 @@
-import { generateProblem, suggestedProblemsCount, SUGGESTED_PROBLEMS_COUNT } from '../../math-challenge.js';
+import {
+  generateProblem, suggestedProblemsCount, SUGGESTED_PROBLEMS_COUNT, DIFFICULTY_ORDER,
+} from '../../math-challenge.js';
 
 function evalProblem(text) {
   // eslint-disable-next-line no-new-func
-  return Function(`"use strict"; return (${text.replace('×', '*').replace('−', '-')});`)();
+  return Function(`"use strict"; return (${text.replace(/×/g, '*').replace(/−/g, '-')});`)();
 }
 
 describe('generateProblem', () => {
   test('la réponse fournie correspond bien au calcul énoncé, pour chaque difficulté', () => {
-    for (const difficulty of ['easy', 'medium', 'hard']) {
+    for (const difficulty of DIFFICULTY_ORDER) {
       for (let i = 0; i < 100; i++) {
         const { text, answer } = generateProblem(difficulty);
         expect(evalProblem(text)).toBe(answer);
@@ -15,9 +17,9 @@ describe('generateProblem', () => {
     }
   });
 
-  test('easy reste à un chiffre (0-9) de chaque côté', () => {
+  test('veryEasy reste à un chiffre (0-9) de chaque côté', () => {
     for (let i = 0; i < 50; i++) {
-      const { text } = generateProblem('easy');
+      const { text } = generateProblem('veryEasy');
       const [a, , b] = text.split(' ');
       expect(Number(a)).toBeGreaterThanOrEqual(0);
       expect(Number(a)).toBeLessThanOrEqual(9);
@@ -26,8 +28,36 @@ describe('generateProblem', () => {
     }
   });
 
-  test('une soustraction ne donne jamais un résultat négatif', () => {
-    for (const difficulty of ['easy', 'medium', 'hard']) {
+  test('easy combine un nombre à deux chiffres (10-20) et un à un chiffre (1-9)', () => {
+    for (let i = 0; i < 50; i++) {
+      const { text } = generateProblem('easy');
+      const [a, , b] = text.split(' ');
+      expect(Number(a)).toBeGreaterThanOrEqual(10);
+      expect(Number(a)).toBeLessThanOrEqual(20);
+      expect(Number(b)).toBeGreaterThanOrEqual(1);
+      expect(Number(b)).toBeLessThanOrEqual(9);
+    }
+  });
+
+  test('hard enchaîne trois nombres (ex. "112 − 62 − 27")', () => {
+    for (let i = 0; i < 50; i++) {
+      const { text } = generateProblem('hard');
+      const numbers = text.match(/\d+/g);
+      expect(numbers).toHaveLength(3);
+      expect(Number(numbers[0])).toBeGreaterThanOrEqual(100);
+      expect(Number(numbers[0])).toBeLessThanOrEqual(199);
+    }
+  });
+
+  test('veryHard combine une multiplication et une soustraction (ex. "9 × 31 − 264")', () => {
+    for (let i = 0; i < 50; i++) {
+      const { text } = generateProblem('veryHard');
+      expect(text).toMatch(/^\d+ × \d+ − \d+$/);
+    }
+  });
+
+  test('une soustraction ne donne jamais un résultat négatif, quelle que soit la difficulté', () => {
+    for (const difficulty of DIFFICULTY_ORDER) {
       for (let i = 0; i < 100; i++) {
         const { text, answer } = generateProblem(difficulty);
         if (text.includes('−')) expect(answer).toBeGreaterThanOrEqual(0);
@@ -35,7 +65,7 @@ describe('generateProblem', () => {
     }
   });
 
-  test('une difficulté inconnue retombe sur le comportement easy', () => {
+  test('une difficulté inconnue retombe sur le comportement veryEasy (le plus simple)', () => {
     const { text } = generateProblem('nope');
     expect(text).toMatch(/^\d [+−] \d$/);
   });
@@ -43,16 +73,18 @@ describe('generateProblem', () => {
 
 describe('suggestedProblemsCount', () => {
   test('suggère un nombre croissant avec la difficulté, ajustable ensuite par l\'utilisateur', () => {
+    expect(suggestedProblemsCount('veryEasy')).toBe(1);
     expect(suggestedProblemsCount('easy')).toBe(1);
     expect(suggestedProblemsCount('medium')).toBe(2);
-    expect(suggestedProblemsCount('hard')).toBe(3);
+    expect(suggestedProblemsCount('hard')).toBe(2);
+    expect(suggestedProblemsCount('veryHard')).toBe(3);
   });
 
   test('correspond à la table SUGGESTED_PROBLEMS_COUNT', () => {
-    expect(suggestedProblemsCount('hard')).toBe(SUGGESTED_PROBLEMS_COUNT.hard);
+    expect(suggestedProblemsCount('veryHard')).toBe(SUGGESTED_PROBLEMS_COUNT.veryHard);
   });
 
-  test('une difficulté inconnue retombe sur la suggestion easy', () => {
-    expect(suggestedProblemsCount('nope')).toBe(SUGGESTED_PROBLEMS_COUNT.easy);
+  test('une difficulté inconnue retombe sur la suggestion veryEasy', () => {
+    expect(suggestedProblemsCount('nope')).toBe(SUGGESTED_PROBLEMS_COUNT.veryEasy);
   });
 });

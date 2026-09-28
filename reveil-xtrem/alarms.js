@@ -3,7 +3,7 @@
 const ALARMS_KEY = 'reveil-xtrem:alarms:v1';
 const RUNTIME_KEY = 'reveil-xtrem:runtime:v1';
 
-export const DIFFICULTIES = ['easy', 'medium', 'hard'];
+export const DIFFICULTIES = ['veryEasy', 'easy', 'medium', 'hard', 'veryHard'];
 export const DEFAULT_SNOOZE_MINUTES = 9;
 export const DEFAULT_PROBLEMS_COUNT = 3;
 export const MIN_PROBLEMS_COUNT = 1;
@@ -41,7 +41,7 @@ export function createAlarm({ time, label, days, difficulty, snoozeMinutes, prob
     label: (label && label.trim()) || 'Alarme',
     days: Array.isArray(days) ? [...days].sort() : [],
     enabled: true,
-    difficulty: DIFFICULTIES.includes(difficulty) ? difficulty : 'easy',
+    difficulty: DIFFICULTIES.includes(difficulty) ? difficulty : 'veryEasy',
     // Le nombre de calculs est réglable indépendamment de la difficulté (qui
     // ne contrôle que le type/la taille des nombres, voir math-challenge.js).
     problemsCount: clampProblemsCount(problemsCount ?? DEFAULT_PROBLEMS_COUNT),
