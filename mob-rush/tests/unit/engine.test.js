@@ -1,6 +1,6 @@
 import {
   W, CANNON_Y, BASE, CHAMPION_CHARGE, MAX_BLUE, ROW_FRONT, T,
-  generateLevel, createGame, step, canLaunchChampion, starsFor, xpFor, mobilityFor,
+  generateLevel, createGame, step, canLaunchChampion, starsFor, xpFor, mobilityFor, isGateOpen,
   generateBonusLevel, bonusRefLevel, bonusXpReward, BONUS_EVERY,
   PERKS, WEAPONS, HEROES, perkLevel, perkUpgradeCost,
 } from '../../engine.js';
@@ -180,6 +180,100 @@ describe('Couloirs : les rangées sans porte ouverte forment un mur', () => {
     run(g, 0.35, {});
     expect(g.blue).toHaveLength(2);
     expect(g.blue.every(u => u.mask & 1)).toBe(true);
+  });
+});
+
+describe('Portes originales : verrouillées (sacrifice) et pulsées (intervalle)', () => {
+  test('isGateOpen : normale toujours ouverte, verrouillée selon locked, pulsée selon active', () => {
+    expect(isGateOpen({ kind: 'normal' })).toBe(true);
+    expect(isGateOpen({ kind: 'lock', locked: true })).toBe(false);
+    expect(isGateOpen({ kind: 'lock', locked: false })).toBe(true);
+    expect(isGateOpen({ kind: 'pulse', active: true })).toBe(true);
+    expect(isGateOpen({ kind: 'pulse', active: false })).toBe(false);
+  });
+
+  test('une porte verrouillée sacrifie les unités jusqu’à céder, puis émet gateUnlocked et reste ouverte', () => {
+    const cfg = {
+      ...generateLevel(1),
+      gates: [{ id: 0, x: W / 2, y: 400, w: 200, h: 14, op: { type: 'mul', n: 3 }, vx: 0, minX: 0, maxX: W, kind: 'lock', locked: true, hits: 0, lockHits: 2 }],
+      spawnInterval: 1e9, waveEvery: 1e9,
+    };
+    const g = createGame(cfg);
+    g.blue.push({ x: W / 2, y: 450, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    let unlocked = null;
+    for (let t = 0; t < 0.35 && !unlocked; t += DT) {
+      step(g, DT, {});
+      unlocked = g.events.find(e => e.type === 'gateUnlocked') || null;
+      g.events.length = 0;
+    }
+    // lockHits=2 : un seul sacrifice ne suffit pas encore.
+    expect(unlocked).toBeNull();
+    expect(g.gates[0].locked).toBe(true);
+    expect(g.gates[0].hits).toBe(1);
+    expect(g.blue).toHaveLength(0); // l'unité s'est sacrifiée contre le mur
+
+    g.blue.push({ x: W / 2, y: 450, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    for (let t = 0; t < 0.35 && !unlocked; t += DT) {
+      step(g, DT, {});
+      unlocked = g.events.find(e => e.type === 'gateUnlocked') || null;
+      g.events.length = 0;
+    }
+    expect(unlocked).not.toBeNull();
+    expect(g.gates[0].locked).toBe(false);
+  });
+
+  test('une fois déverrouillée, la porte se comporte comme une porte × normale', () => {
+    const cfg = {
+      ...generateLevel(1),
+      gates: [{ id: 0, x: W / 2, y: 400, w: 200, h: 14, op: { type: 'mul', n: 3 }, vx: 0, minX: 0, maxX: W, kind: 'lock', locked: false, hits: 2, lockHits: 2 }],
+      spawnInterval: 1e9, waveEvery: 1e9,
+    };
+    const g = createGame(cfg);
+    g.blue.push({ x: W / 2, y: 450, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    run(g, 0.35, {});
+    expect(g.blue).toHaveLength(3);
+    expect(g.blue.every(u => u.mask & 1)).toBe(true);
+  });
+
+  test('une porte pulsée bloque pendant sa phase fermée et laisse passer une fois rouverte', () => {
+    const cfg = {
+      ...generateLevel(1),
+      gates: [{ id: 0, x: W / 2, y: 400, w: 200, h: 14, op: { type: 'mul', n: 2 }, vx: 0, minX: 0, maxX: W, kind: 'pulse', pulseOn: 1, pulseOff: 1, pulseT: 1, active: false }],
+      spawnInterval: 1e9, waveEvery: 1e9,
+    };
+    const g = createGame(cfg);
+    g.blue.push({ x: W / 2, y: 450, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    // Phase fermée initiale : l'unité vient buter contre le mur et attend.
+    run(g, 0.3, {});
+    expect(g.blue).toHaveLength(1);
+    expect(g.blue[0].mask & 1).toBe(0);
+
+    // Un cycle complet plus tard (pulseOn+pulseOff=2s), une phase ouverte a
+    // forcément eu lieu : l'unité qui attendait contre le mur en a profité.
+    run(g, 2.2, {});
+    expect(g.blue.some(u => u.mask & 1)).toBe(true);
+  });
+
+  test('les portes verrouillées/pulsées n’apparaissent que sur des portes ×, jamais ÷', () => {
+    for (let n = 4; n <= 25; n++) {
+      for (const g of generateLevel(n).gates) {
+        if (g.kind === 'lock' || g.kind === 'pulse') expect(g.op.type).toBe('mul');
+      }
+    }
+  });
+
+  test('au plus une porte spéciale par rangée', () => {
+    for (let n = 4; n <= 25; n++) {
+      const byY = new Map();
+      for (const g of generateLevel(n).gates) {
+        if (!byY.has(g.y)) byY.set(g.y, []);
+        byY.get(g.y).push(g);
+      }
+      for (const row of byY.values()) {
+        const specials = row.filter(g => g.kind === 'lock' || g.kind === 'pulse').length;
+        expect(specials).toBeLessThanOrEqual(1);
+      }
+    }
   });
 });
 
