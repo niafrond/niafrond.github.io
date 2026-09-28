@@ -24,6 +24,14 @@ const RED_SPEED = 40;
 const BRUTE_SPEED = 27;
 const CANNON_SPEED = 900;
 const GATE_H = 14;
+// ─── Mur d'affrontement (SPECS.md §4) ────────────────────────────────────
+// Une vague peut se matérialiser en « mur » : une formation compacte de
+// rouges alignée sur (presque) toute la largeur du terrain, qui bloque
+// physiquement toute unité bleue tant qu'il en reste un membre vivant devant
+// elle — au lieu du simple échange de dégâts au contact des autres rouges.
+const WALL_SPAN = 0.82;       // fraction de W occupée par la formation
+const WALL_Y_JITTER = 18;     // variation verticale pour un alignement organique
+const WALL_BLOCK_WIDTH = 26;  // bande horizontale de blocage autour d'une unité bleue
 // Décalage vers le bas (donc vers le joueur) du bord « avant » d'une rangée
 // de portes/murs par rapport à `row.y`/`gate.y` — doit rester synchronisé
 // avec la bande de 30px dessinée par main.js (de row.y-16 à row.y+14).
@@ -337,6 +345,10 @@ export function generateLevel(n, difficulty = 0) {
     waveEvery: Math.max(6, 12 - level * 0.3),
     waveSize: Math.round((T.WAVE_0 + Math.floor(level * T.WAVE_K)) * diffMul),
     bruteChance: Math.min(0.4, (level >= 4 ? Math.min(0.22, (level - 3) * 0.025) : 0) * diffMul + diff * 0.05),
+    // Nombre de murs d'affrontement (SPEC-4.2.4) à vaincre pendant la
+    // traversée de chaque château du niveau, avant de retomber sur un flux
+    // de vagues classique (non bloquant) jusqu'au château suivant.
+    wallsPerCastle: clamp(1 + Math.floor(level / 5), 1, 3),
     seed: level * 7919 + 3,
     gates,
     terrains,
@@ -411,6 +423,9 @@ export function createGame(levelConfig, loadout) {
     rows: groupRows(levelConfig.gates),
     blue: [],
     red: [],
+    walls: [],
+    nextWallId: 0,
+    wallsSpawnedThisCastle: 0,
     events: [],
     boss: null,
     stats: { shots: 0, kills: 0, peak: 0, gateHits: 0, moveDist: 0 },
@@ -423,12 +438,43 @@ function makeBlue(x, y, mask, champ = false, hero = HEROES.champion, shotHp = 1)
     : { x, y, vx: 0, vy: -BLUE_SPEED, hp: shotHp, r: 5, mask, champ: false };
 }
 
-function spawnRed(g, brute) {
-  const x = BASE.x + (g.rng() - 0.5) * (BASE.w - 20);
-  const y = BASE.y + BASE.h / 2 + 6;
-  g.red.push(brute
+// Crée une unité rouge à une position donnée ; `wallId`, si fourni, la
+// rattache à un mur d'affrontement (SPEC-4.2). Le décompte des membres
+// vivants d'un mur est recalculé en fin de step() (une seule source de
+// vérité), donc seul `total` (jamais décrémenté) est tenu à jour ici.
+function spawnRedAt(g, x, y, brute, wallId = null) {
+  const unit = brute
     ? { x, y, vx: 0, vy: BRUTE_SPEED, hp: 6, r: 10, brute: true }
-    : { x, y, vx: 0, vy: RED_SPEED, hp: 1, r: 5, brute: false });
+    : { x, y, vx: 0, vy: RED_SPEED, hp: 1, r: 5, brute: false };
+  if (wallId != null) {
+    unit.wallId = wallId;
+    const wall = g.walls.find(w => w.id === wallId);
+    if (wall) wall.total++;
+  }
+  g.red.push(unit);
+}
+
+// `wallId` rattache un spawn du flux continu à un mur déjà actif
+// (SPEC-4.2.3) — sinon position classique, bande étroite sous la base.
+function spawnRed(g, brute, wallId = null) {
+  const x = wallId != null
+    ? clamp(BASE.x + (g.rng() - 0.5) * W * WALL_SPAN, 10, W - 10)
+    : BASE.x + (g.rng() - 0.5) * (BASE.w - 20);
+  const y = BASE.y + BASE.h / 2 + 6;
+  spawnRedAt(g, x, y, brute, wallId);
+}
+
+// Génère un mur d'affrontement complet : `size` rouges alignés sur
+// `WALL_SPAN` de la largeur du terrain, avec un léger jitter vertical pour un
+// rendu organique plutôt qu'une ligne parfaitement droite (SPEC-4.2.2).
+function spawnWall(g, size, bruteChance) {
+  const id = g.nextWallId++;
+  g.walls.push({ id, total: 0, alive: 0, cleared: false });
+  for (let i = 0; i < size; i++) {
+    const x = clamp(BASE.x + (g.rng() - 0.5) * W * WALL_SPAN, 10, W - 10);
+    const y = BASE.y + BASE.h / 2 + 6 + (g.rng() - 0.5) * WALL_Y_JITTER;
+    spawnRedAt(g, x, y, g.rng() < bruteChance, id);
+  }
 }
 
 export function canLaunchChampion(g) {
@@ -468,6 +514,7 @@ function swapTerrain(g, gates) {
   g.gates = gates.map(gt => ({ ...gt, op: { ...gt.op }, flash: 0 }));
   g.rows = groupRows(gates);
   for (const u of g.blue) u.mask = 0;
+  g.wallsSpawnedThisCastle = 0;
 }
 
 // Applique des dégâts à la base, en faisant progresser la séquence de
@@ -548,16 +595,34 @@ export function step(g, dt, input = {}) {
   const waveSize = bossActive ? g.cfg.waveSize * 2 : g.cfg.waveSize;
   const bruteChance = bossActive ? Math.min(0.6, g.cfg.bruteChance * 2 + 0.15) : g.cfg.bruteChance;
 
+  // Un seul mur actif (non vaincu) à la fois (SPEC-4.2.3) — le flux continu
+  // comme les vagues suivantes le renforcent plutôt que d'en ouvrir un autre.
+  const activeWall = g.walls.find(w => !w.cleared);
+
   g.spawnAcc += dt * (1 + g.time / T.RAMP);   // la pression monte avec le temps
   while (g.spawnAcc >= spawnInterval) {
     g.spawnAcc -= spawnInterval;
-    for (let i = 0; i < spawnGroup; i++) spawnRed(g, g.rng() < bruteChance);
+    for (let i = 0; i < spawnGroup; i++) spawnRed(g, g.rng() < bruteChance, activeWall ? activeWall.id : null);
   }
   g.waveAcc += dt;
   if (g.waveAcc >= waveEvery) {
     g.waveAcc = 0;
-    for (let i = 0; i < waveSize; i++) spawnRed(g, g.rng() < bruteChance);
-    g.events.push({ type: 'wave', boss: bossActive });
+    // Une vague se matérialise en mur bloquant (SPEC-4.2) tant que le quota
+    // de murs du château courant n'est pas atteint ; le combat de boss
+    // (après la chute du dernier château — plus rien à protéger) reste un
+    // flux classique non bloquant.
+    let wallish = false;
+    if (activeWall) {
+      for (let i = 0; i < waveSize; i++) spawnRed(g, g.rng() < bruteChance, activeWall.id);
+      wallish = true;
+    } else if (!bossActive && g.wallsSpawnedThisCastle < g.cfg.wallsPerCastle) {
+      spawnWall(g, waveSize, bruteChance);
+      g.wallsSpawnedThisCastle++;
+      wallish = true;
+    } else {
+      for (let i = 0; i < waveSize; i++) spawnRed(g, g.rng() < bruteChance);
+    }
+    g.events.push({ type: 'wave', boss: bossActive, wall: wallish });
     if (bossActive) g.boss.wavesLeft = Math.max(0, g.boss.wavesLeft - 1);
   }
 
@@ -580,6 +645,11 @@ export function step(g, dt, input = {}) {
   }
 
   // Unités bleues
+  // Rouges de mur encore vivants (au plus un mur actif à la fois, cf.
+  // `activeWall` plus haut) — bloquent physiquement la progression, contrairement
+  // aux rouges « libres » qui ne font qu'échanger des dégâts au contact
+  // (resolveCombat, plus bas).
+  const blockingReds = g.walls.some(w => !w.cleared) ? g.red.filter(e => e.hp > 0 && e.wallId != null) : [];
   const newBlue = [];
   for (const u of g.blue) {
     const prevY = u.y;
@@ -592,6 +662,23 @@ export function step(g, dt, input = {}) {
     }
     u.x = clamp(u.x + u.vx * dt, u.r, W - u.r);
     u.y += u.vy * dt;
+
+    // Mur d'affrontement (SPEC-4.3) : le rouge de mur vivant le plus proche,
+    // encore devant l'unité au moment où elle l'atteint, l'arrête net — pas
+    // de couloir à trouver comme pour un mur de porte, juste un arrêt tant
+    // qu'il est vivant (aucune exemption pour le champion, SPEC-4.3.4).
+    if (blockingReds.length) {
+      let blocker = null;
+      for (const e of blockingReds) {
+        if (e.y > prevY) continue; // déjà dépassé avant ce mouvement
+        if (Math.abs(e.x - u.x) > WALL_BLOCK_WIDTH) continue;
+        if (!blocker || e.y > blocker.y) blocker = e;
+      }
+      if (blocker) {
+        const stopY = blocker.y + blocker.r + u.r;
+        if (u.y < stopY) u.y = stopY;
+      }
+    }
 
     for (const row of g.rows) {
       if (u.mask & row.mask) continue;
@@ -694,6 +781,25 @@ export function step(g, dt, input = {}) {
   g.blue = g.blue.filter(u => u.hp > 0);
   g.red = g.red.filter(e => e.hp > 0);
   if (g.blue.length > g.stats.peak) g.stats.peak = g.blue.length;
+
+  // Survivants par mur + bascule « vaincu » (SPEC-4.3.3) — une seule passe en
+  // O(reds) plutôt qu'un compteur incrémental, qui se désynchroniserait entre
+  // les deux façons dont un rouge peut mourir (combat de proximité, contact
+  // avec le canon).
+  if (g.walls.length) {
+    const aliveByWall = new Map();
+    for (const e of g.red) {
+      if (e.wallId != null) aliveByWall.set(e.wallId, (aliveByWall.get(e.wallId) || 0) + 1);
+    }
+    for (const w of g.walls) {
+      if (w.cleared) continue;
+      w.alive = aliveByWall.get(w.id) || 0;
+      if (w.alive === 0) {
+        w.cleared = true;
+        g.events.push({ type: 'wallCleared', id: w.id });
+      }
+    }
+  }
 
   // Le canon peut tomber à tout moment, y compris pendant le combat de
   // boss — vérifié en priorité pour ne jamais être masqué par baseHp<=0
