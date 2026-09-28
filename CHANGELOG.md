@@ -1,3 +1,10 @@
+## [2.42.0](https://github.com/niafrond/niafrond.github.io/compare/v2.41.0...v2.42.0) (2026-09-28)
+
+### Features
+
+* **reveil-xtrem-android:** vraies alarmes natives via AlarmManager + permissions ([3f129d8](https://github.com/niafrond/niafrond.github.io/commit/3f129d8772506294999d2587697a780bcac6dae3))
+* **reveil-xtrem:** ajoute un réveil façon Alarm Clock Xtreme ([8f53c45](https://github.com/niafrond/niafrond.github.io/commit/8f53c4548dda5af86513fc3a22f25c7c5e9ae01d))
+
 ## [2.41.0](https://github.com/niafrond/niafrond.github.io/compare/v2.40.0...v2.41.0) (2026-09-28)
 
 ### Features
