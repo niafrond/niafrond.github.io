@@ -124,5 +124,12 @@ export default {
       testMatch: ['<rootDir>/mob-rush/tests/unit/**/*.test.js'],
       transform: {},
     },
+    // ── Réveil Xtrem : scheduler, calculs, formatage (node, pas de DOM) ──────
+    {
+      displayName: 'reveil-xtrem-node',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/reveil-xtrem/tests/unit/**/*.test.js'],
+      transform: {},
+    },
   ],
 };

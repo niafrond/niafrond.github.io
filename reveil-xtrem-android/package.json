@@ -1,0 +1,17 @@
+{
+  "name": "reveil-xtrem-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Android wrapper for Réveil Xtrem PWA (Capacitor)",
+  "scripts": {
+    "build": "npm run sync && cd android && ./gradlew assembleRelease",
+    "sync": "npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/core": "^8.3.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.3.1"
+  }
+}

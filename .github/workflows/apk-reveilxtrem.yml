@@ -1,0 +1,192 @@
+name: Build Réveil Xtrem APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+    tags: ['**']
+    paths:
+      - 'reveil-xtrem/**'
+      - 'reveil-xtrem-android/**'
+      - '.github/workflows/apk-reveilxtrem.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build Réveil Xtrem APK
+    runs-on: ubuntu-latest
+
+    env:
+      KEYSTORE_PASS: ${{ secrets.REVEILXTREM_KEYSTORE_PASSWORD || 'reveilxtrem_ci_build' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          cmdline-tools-version: 12266719
+          # Le paquet 'tools' par défaut n'existe plus dans le SDK récent
+          packages: 'platform-tools'
+
+      - name: Install SDK components
+        run: |
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Install Capacitor
+        working-directory: reveil-xtrem-android
+        run: npm install
+
+      - name: Add Android platform
+        working-directory: reveil-xtrem-android
+        run: npx cap add android
+
+      - name: Copy web assets
+        working-directory: reveil-xtrem-android
+        run: |
+          npx cap copy android
+          # Les tests unitaires n'ont rien à faire dans l'APK
+          rm -rf android/app/src/main/assets/public/tests
+
+      - name: Apply Android customizations
+        run: |
+          JAVA_DIR="reveil-xtrem-android/android/app/src/main/java/io/github/niafrond/reveilxtrem"
+          mkdir -p "$JAVA_DIR"
+          cp reveil-xtrem-android/src/main/java/io/github/niafrond/reveilxtrem/MainActivity.java "$JAVA_DIR/MainActivity.java"
+
+      - name: Lock portrait orientation
+        env:
+          MANIFEST: reveil-xtrem-android/android/app/src/main/AndroidManifest.xml
+        shell: python3 {0}
+        run: |
+          import os, xml.etree.ElementTree as ET
+
+          ET.register_namespace('android', 'http://schemas.android.com/apk/res/android')
+          ET.register_namespace('tools', 'http://schemas.android.com/tools')
+          manifest = os.environ['MANIFEST']
+          tree = ET.parse(manifest)
+          NS = 'http://schemas.android.com/apk/res/android'
+          for act in tree.getroot().iter('activity'):
+              act.set(f'{{{NS}}}screenOrientation', 'portrait')
+          ET.indent(tree, space='    ')
+          tree.write(manifest, encoding='unicode', xml_declaration=True)
+
+      - name: Set app version
+        run: |
+          read -r VERSION VERSION_CODE < <(node -e "
+            const c = require('fs').readFileSync('version.js','utf8');
+            const m = c.match(/major:\s*(\d+),\s*minor:\s*(\d+),\s*patch:\s*(\d+)/);
+            const [,maj,min,pat] = m;
+            const name = maj+'.'+min+'.'+pat;
+            const code = Number(maj)*1000000 + Number(min)*1000 + Number(pat);
+            process.stdout.write(name+' '+code+'\n');
+          ")
+          GRADLE="reveil-xtrem-android/android/app/build.gradle"
+          sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" "$GRADLE"
+          sed -i "s/versionName \"[^\"]*\"/versionName \"$VERSION\"/" "$GRADLE"
+          echo "Set versionName=$VERSION versionCode=$VERSION_CODE"
+
+      - name: Install ImageMagick
+        run: |
+          command -v convert && exit 0
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends imagemagick
+
+      - name: Set app icons
+        run: |
+          RES="reveil-xtrem-android/android/app/src/main/res"
+          SRC="reveil-xtrem/icon-512.png"
+          for entry in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+            density="${entry%%:*}"
+            size="${entry##*:}"
+            convert "$SRC" -resize "${size}x${size}" "$RES/mipmap-${density}/ic_launcher.png"
+            convert "$SRC" -resize "${size}x${size}" "$RES/mipmap-${density}/ic_launcher_round.png"
+          done
+          for entry in mdpi:108 hdpi:162 xhdpi:216 xxhdpi:324 xxxhdpi:432; do
+            density="${entry%%:*}"
+            size="${entry##*:}"
+            for ext in png webp; do
+              fg="$RES/mipmap-${density}/ic_launcher_foreground.${ext}"
+              if [ -f "$fg" ]; then convert "$SRC" -resize "${size}x${size}" "$fg"; fi
+            done
+          done
+
+      - name: Accept SDK licenses
+        run: yes | sdkmanager --licenses || true
+
+      # Pour pouvoir réinstaller l'APK par-dessus une version précédente, stocker un
+      # keystore persistant en secret REVEILXTREM_KEYSTORE_BASE64 (+ REVEILXTREM_KEYSTORE_PASSWORD) :
+      #   keytool -genkeypair -keystore reveil-xtrem.keystore -alias reveil-xtrem \
+      #           -keyalg RSA -keysize 2048 -validity 10000 \
+      #           -dname "CN=Reveil Xtrem, OU=App, O=Niafrond, L=FR, S=FR, C=FR" \
+      #           -storepass <password> -keypass <password>
+      #   base64 -w 0 reveil-xtrem.keystore
+      - name: Restore or generate keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.REVEILXTREM_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > reveil-xtrem-android/reveil-xtrem.keystore
+            echo "Using stored keystore from secret"
+          else
+            keytool -genkeypair -v \
+              -keystore reveil-xtrem-android/reveil-xtrem.keystore \
+              -alias reveil-xtrem \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Reveil Xtrem, OU=App, O=Niafrond, L=FR, S=FR, C=FR" \
+              -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS"
+            echo "WARNING: fresh keystore generated -- add REVEILXTREM_KEYSTORE_BASE64 secret for consistent signing."
+          fi
+
+      - name: Build release APK
+        working-directory: reveil-xtrem-android/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Sign APK
+        shell: bash
+        run: |
+          UNSIGNED="reveil-xtrem-android/android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          SIGNED="reveil-xtrem-android/android/app/build/outputs/apk/release/reveil-xtrem.apk"
+          export PATH="$ANDROID_SDK_ROOT/build-tools/35.0.0:$PATH"
+          apksigner sign \
+            --ks reveil-xtrem-android/reveil-xtrem.keystore \
+            --ks-key-alias reveil-xtrem \
+            --ks-pass "pass:$KEYSTORE_PASS" \
+            --key-pass "pass:$KEYSTORE_PASS" \
+            --out "$SIGNED" \
+            "$UNSIGNED"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: reveil-xtrem-apk
+          path: reveil-xtrem-android/android/app/build/outputs/apk/release/reveil-xtrem.apk
+          retention-days: 30
+
+      - name: Attach APK to latest GitHub release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          APK_PATH="reveil-xtrem-android/android/app/build/outputs/apk/release/reveil-xtrem.apk"
+          RELEASE_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+          if [ -n "$RELEASE_TAG" ]; then
+            gh release upload "$RELEASE_TAG" "$APK_PATH#reveil-xtrem.apk" --clobber
+            echo "APK attached to release $RELEASE_TAG"
+          else
+            echo "No release found, APK available as workflow artifact only"
+          fi
