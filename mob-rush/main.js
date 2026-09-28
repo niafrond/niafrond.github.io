@@ -4,7 +4,7 @@
 
 import {
   W, H, CANNON_Y, BASE,
-  generateLevel, createGame, step, canLaunchChampion, starsFor, xpFor, mobilityFor,
+  generateLevel, createGame, step, canLaunchChampion, starsFor, xpFor, mobilityFor, isGateOpen,
   PERKS, WEAPONS, HEROES, perkLevel, perkUpgradeCost, perkStatAt,
   generateBonusLevel, bonusRefLevel, bonusXpReward, BONUS_EVERY,
 } from './engine.js';
@@ -493,6 +493,24 @@ function handleEvents() {
         sfx('gate');
         if (floaters.length < 30) floaters.push({ x: ev.x, y: ev.y - 10, t: 0.6, text: '+', color: '#3ddc84' });
         break;
+      case 'gateHit':
+        sfx('kill');
+        burst(ev.x, ev.y, 5, '#a55adc');
+        if (floaters.length < 30) floaters.push({ x: ev.x, y: ev.y - 10, t: 0.5, text: `${ev.hits}/${ev.need}`, color: '#a55adc' });
+        break;
+      case 'gateUnlocked':
+        sfx('champion');
+        buzz(40);
+        burst(ev.x, ev.y, 16, '#a55adc', true);
+        addRays(ev.x, ev.y, '#a55adc', 10, 40);
+        floaters.push({ x: ev.x, y: ev.y - 16, t: 0.9, text: 'DÉVERROUILLÉE !', color: '#a55adc', big: false });
+        break;
+      case 'gateOpen':
+        // Signal discret : la porte pulsée vient de se rouvrir, il faut se
+        // dépêcher d'y envoyer des unités avant qu'elle ne se referme.
+        sfx('gate');
+        burst(ev.x, ev.y, 4, '#ffc93c');
+        break;
       case 'kill':
         sfx('kill');
         burst(ev.x, ev.y, ev.big ? 14 : 4, '#ff4d5e');
@@ -611,10 +629,12 @@ function updateHud() {
 }
 
 // Segments « mur » d'une rangée : tout ce que ne couvrent pas ses portes
-// ouvertes (en positions actuelles, portes mobiles comprises).
+// ouvertes (en positions actuelles, portes mobiles comprises) — une porte
+// verrouillée ou pulsée hors phase compte comme fermée, donc comme un mur.
 function wallSegments(row, gates) {
   const openings = row.gateIds
     .map(id => gates[id])
+    .filter(isGateOpen)
     .map(gt => [gt.x - gt.w / 2, gt.x + gt.w / 2])
     .sort((a, b) => a[0] - b[0]);
   const walls = [];
@@ -864,8 +884,28 @@ function draw() {
     }
   }
 
-  // Portes
+  // Portes — verrouillée (violet, compteur de sacrifices) ou pulsée fermée
+  // (bleu glacé, sablier) se dessinent comme un mur spécial plutôt qu'un
+  // couloir ouvert ; une fois ouvertes, elles redeviennent des portes ×/÷
+  // classiques (la pulsée garde un liseré pointillé doré pour rappeler
+  // qu'elle va se refermer).
   for (const gate of game.gates) {
+    if (gate.kind === 'lock' && gate.locked) {
+      ctx.fillStyle = `rgba(150,90,220,${0.32 + gate.flash * 3})`;
+      roundRect(gate.x - gate.w / 2, gate.y - 16, gate.w, 30, 6);
+      ctx.fill();
+      inkStroke(2.5, 'rgb(150,90,220)');
+      shoutText(`🔒${gate.hits}/${gate.lockHits}`, gate.x, gate.y + 1, 14, '#fff');
+      continue;
+    }
+    if (gate.kind === 'pulse' && !gate.active) {
+      ctx.fillStyle = 'rgba(90,150,220,0.32)';
+      roundRect(gate.x - gate.w / 2, gate.y - 16, gate.w, 30, 6);
+      ctx.fill();
+      inkStroke(2.5, 'rgb(90,150,220)');
+      shoutText('⏳', gate.x, gate.y + 1, 18, '#fff');
+      continue;
+    }
     const good = gate.op.type === 'mul';
     const col = good ? '61,220,132' : '255,77,94';
     ctx.fillStyle = `rgba(${col},${0.28 + gate.flash * 3})`;
@@ -873,6 +913,14 @@ function draw() {
     ctx.fill();
     inkStroke(2.5, `rgb(${col})`);
     shoutText(good ? `×${gate.op.n}` : `÷${gate.op.n}`, gate.x, gate.y + 1, 20, '#fff');
+    if (gate.kind === 'pulse') {
+      ctx.strokeStyle = 'rgba(255,201,60,0.8)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      roundRect(gate.x - gate.w / 2 - 3, gate.y - 19, gate.w + 6, 36, 8);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
   }
 
   // Unités rouges — petits vilains manga (bras/jambes humanoïdes), cornes et

@@ -195,6 +195,23 @@ function splitCastles(totalHp, level) {
 // de couloirs) pour un niveau donné, à partir d'un générateur aléatoire fourni
 // par l'appelant — permet de produire plusieurs terrains distincts pour un
 // même niveau (un par mini-château) sans dupliquer cette logique.
+// Une porte × peut, à partir d'un certain niveau, être autre chose qu'un
+// simple couloir ouvert :
+//  - 'lock'  : fermée (agit comme un mur) tant que `lockHits` unités ne s'y
+//              sont pas sacrifiées pour la faire céder, puis reste ouverte
+//              en permanence pour le reste du terrain.
+//  - 'pulse' : bascule ouverte/fermée sur un cycle — il faut viser au bon
+//              moment plutôt que de compter sur un couloir toujours dispo.
+// Une seule porte spéciale par rangée à deux couloirs (l'autre reste
+// classique, pour toujours garder un second angle d'attaque) ; sur une
+// rangée à un seul couloir, c'est tout le mur qui porte la mécanique.
+function rollGateKind(rng, level, rowHasSpecial) {
+  if (rowHasSpecial) return 'normal';
+  if (level >= 5 && rng() < 0.2) return 'lock';
+  if (level >= 4 && rng() < 0.2) return 'pulse';
+  return 'normal';
+}
+
 function generateGateLayout(rng, level) {
   const pick = arr => arr[Math.floor(rng() * arr.length)];
 
@@ -207,6 +224,7 @@ function generateGateLayout(rng, level) {
     const y = rows === 1 ? (top + bottom) / 2 : bottom - (r * (bottom - top)) / (rows - 1);
     const twoGates = level >= 2 && rng() < 0.55;
     const slots = twoGates ? [W * 0.27, W * 0.73] : [W * (0.3 + rng() * 0.4)];
+    let rowHasSpecial = false;
 
     slots.forEach((x, i) => {
       let op;
@@ -222,7 +240,31 @@ function generateGateLayout(rng, level) {
       // Couloir de déplacement : tout le terrain, ou une moitié si deux portes sur la rangée
       const laneL = twoGates && i === 1 ? W / 2 : 0;
       const laneR = twoGates && i === 0 ? W / 2 : W;
-      gates.push({ id: gates.length, x, y, w, h: GATE_H, op, vx, minX: laneL + w / 2 + 4, maxX: laneR - w / 2 - 4 });
+      const gate = { id: gates.length, x, y, w, h: GATE_H, op, vx, minX: laneL + w / 2 + 4, maxX: laneR - w / 2 - 4, kind: 'normal' };
+
+      // Seules les portes × (pas ÷) peuvent être verrouillées/pulsées — une
+      // porte ÷ porte déjà sa propre tension (l'éviter), pas besoin d'en
+      // rajouter une couche.
+      if (op.type === 'mul') {
+        const kind = rollGateKind(rng, level, rowHasSpecial);
+        if (kind === 'lock') {
+          rowHasSpecial = true;
+          gate.kind = 'lock';
+          gate.locked = true;
+          gate.hits = 0;
+          gate.lockHits = 2 + Math.floor(rng() * 3); // 2 à 4 unités à sacrifier
+        } else if (kind === 'pulse') {
+          rowHasSpecial = true;
+          gate.kind = 'pulse';
+          gate.pulseOn = 1.4 + rng() * 1.2;
+          gate.pulseOff = 1.0 + rng() * 1.4;
+          // Phase de départ aléatoire : toutes les portes pulsées d'un
+          // terrain ne basculent pas en même temps.
+          gate.pulseT = rng() * (gate.pulseOn + gate.pulseOff);
+          gate.active = gate.pulseT < gate.pulseOn;
+        }
+      }
+      gates.push(gate);
     });
   }
   // Garantit minX <= maxX
@@ -231,6 +273,15 @@ function generateGateLayout(rng, level) {
     g.x = clamp(g.x, g.minX, g.maxX);
   }
   return gates;
+}
+
+// Une porte est « ouverte » (franchissable) si c'est une porte classique,
+// une porte verrouillée déjà déverrouillée, ou une porte pulsée en phase
+// active. Sert à la fois à la collision (engine) et au rendu (main.js).
+export function isGateOpen(gate) {
+  if (gate.kind === 'lock') return !gate.locked;
+  if (gate.kind === 'pulse') return !!gate.active;
+  return true;
 }
 
 function bestChainOf(gates) {
@@ -510,9 +561,18 @@ export function step(g, dt, input = {}) {
     if (bossActive) g.boss.wavesLeft = Math.max(0, g.boss.wavesLeft - 1);
   }
 
-  // Portes mobiles
+  // Portes mobiles + portes pulsées (ouvertes/fermées en alternance)
   for (const gate of g.gates) {
     if (gate.flash > 0) gate.flash = Math.max(0, gate.flash - dt);
+    if (gate.kind === 'pulse') {
+      const cycle = gate.pulseOn + gate.pulseOff;
+      gate.pulseT = (gate.pulseT + dt) % cycle;
+      const active = gate.pulseT < gate.pulseOn;
+      if (active !== gate.active) {
+        gate.active = active;
+        g.events.push({ type: active ? 'gateOpen' : 'gateClose', x: gate.x, y: gate.y });
+      }
+    }
     if (!gate.vx) continue;
     gate.x += gate.vx * dt;
     if (gate.x < gate.minX) { gate.x = gate.minX; gate.vx = Math.abs(gate.vx); }
@@ -547,11 +607,28 @@ export function step(g, dt, input = {}) {
       // traversé.
       const stopY = row.y + ROW_FRONT + u.r;
       if (!(prevY >= stopY && u.y <= stopY)) continue;
-      const gate = row.gateIds.map(id => g.gates[id]).find(gt => Math.abs(u.x - gt.x) <= gt.w / 2);
+      const aligned = row.gateIds.map(id => g.gates[id]).find(gt => Math.abs(u.x - gt.x) <= gt.w / 2);
+      if (aligned && aligned.kind === 'lock' && aligned.locked) {
+        // Porte verrouillée : l'unité se sacrifie contre le mur pour le
+        // faire céder un peu plus. Une fois assez de sacrifices, la porte
+        // s'ouvre pour de bon (jusqu'au prochain changement de terrain).
+        aligned.hits++;
+        aligned.flash = 0.15;
+        if (aligned.hits >= aligned.lockHits) {
+          aligned.locked = false;
+          g.events.push({ type: 'gateUnlocked', x: aligned.x, y: aligned.y });
+        } else {
+          g.events.push({ type: 'gateHit', x: u.x, y: aligned.y, hits: aligned.hits, need: aligned.lockHits });
+        }
+        u.hp = 0;
+        break;
+      }
+      const gate = aligned && isGateOpen(aligned) ? aligned : null;
       if (!gate) {
-        // Mur : aucune porte ouverte ici. Collision : l'unité vient buter
-        // contre la surface (jamais à travers) et glisse horizontalement le
-        // long du mur vers le couloir ouvert le plus proche.
+        // Mur (ou porte fermée/pulsée hors phase) : collision, l'unité
+        // vient buter contre la surface (jamais à travers) et glisse
+        // horizontalement le long du mur vers le couloir ouvert le plus
+        // proche — ou attend qu'une porte pulsée se rouvre.
         u.y = stopY;
         const nearest = row.gateIds
           .map(id => g.gates[id])
