@@ -4,13 +4,13 @@ import {
 
 function evalProblem(text) {
   // eslint-disable-next-line no-new-func
-  return Function(`"use strict"; return (${text.replace(/×/g, '*').replace(/−/g, '-')});`)();
+  return Function(`"use strict"; return (${text.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-')});`)();
 }
 
 describe('generateProblem', () => {
   test('la réponse fournie correspond bien au calcul énoncé, pour chaque difficulté', () => {
     for (const difficulty of DIFFICULTY_ORDER) {
-      for (let i = 0; i < 100; i++) {
+      for (let i = 0; i < 200; i++) {
         const { text, answer } = generateProblem(difficulty);
         expect(evalProblem(text)).toBe(answer);
       }
@@ -39,21 +39,63 @@ describe('generateProblem', () => {
     }
   });
 
-  test('hard enchaîne trois nombres (ex. "112 − 62 − 27")', () => {
-    for (let i = 0; i < 50; i++) {
-      const { text } = generateProblem('hard');
-      const numbers = text.match(/\d+/g);
-      expect(numbers).toHaveLength(3);
-      expect(Number(numbers[0])).toBeGreaterThanOrEqual(100);
-      expect(Number(numbers[0])).toBeLessThanOrEqual(199);
+  test('veryEasy et easy restent purement additifs (jamais de × ni de ÷)', () => {
+    for (const difficulty of ['veryEasy', 'easy']) {
+      for (let i = 0; i < 100; i++) {
+        const { text } = generateProblem(difficulty);
+        expect(text).not.toMatch(/[×÷]/);
+      }
     }
   });
 
-  test('veryHard combine une multiplication et une soustraction (ex. "9 × 31 − 264")', () => {
-    for (let i = 0; i < 50; i++) {
-      const { text } = generateProblem('veryHard');
-      expect(text).toMatch(/^\d+ × \d+ − \d+$/);
+  test('à partir de moyen, multiplications et divisions apparaissent bien (pas seulement +/−)', () => {
+    for (const difficulty of ['medium', 'hard', 'veryHard']) {
+      const seenOps = new Set();
+      for (let i = 0; i < 200; i++) {
+        const { text } = generateProblem(difficulty);
+        if (text.includes('×')) seenOps.add('×');
+        if (text.includes('÷')) seenOps.add('÷');
+      }
+      expect(seenOps.has('×')).toBe(true);
+      expect(seenOps.has('÷')).toBe(true);
     }
+  });
+
+  test('une division tombe toujours juste (quotient entier, ex. "84 ÷ 7")', () => {
+    let foundDivision = false;
+    for (const difficulty of ['medium', 'hard', 'veryHard']) {
+      for (let i = 0; i < 200; i++) {
+        const { text, answer } = generateProblem(difficulty);
+        if (!text.includes('÷')) continue;
+        foundDivision = true;
+        expect(text).toMatch(/^\d+ ÷ \d+$/);
+        expect(Number.isInteger(answer)).toBe(true);
+      }
+    }
+    expect(foundDivision).toBe(true);
+  });
+
+  test('hard peut enchaîner trois nombres (ex. "112 − 62 − 27")', () => {
+    let foundChain = false;
+    for (let i = 0; i < 200; i++) {
+      const { text } = generateProblem('hard');
+      const numbers = text.match(/\d+/g);
+      if (numbers.length !== 3) continue;
+      foundChain = true;
+      expect(Number(numbers[0])).toBeGreaterThanOrEqual(100);
+      expect(Number(numbers[0])).toBeLessThanOrEqual(199);
+    }
+    expect(foundChain).toBe(true);
+  });
+
+  test('veryHard peut combiner une multiplication et une soustraction (ex. "9 × 31 − 264")', () => {
+    let foundComposite = false;
+    for (let i = 0; i < 200; i++) {
+      const { text } = generateProblem('veryHard');
+      if (!/^\d+ × \d+ − \d+$/.test(text)) continue;
+      foundComposite = true;
+    }
+    expect(foundComposite).toBe(true);
   });
 
   test('une soustraction ne donne jamais un résultat négatif, quelle que soit la difficulté', () => {
