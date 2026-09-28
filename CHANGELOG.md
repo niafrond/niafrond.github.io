@@ -1,3 +1,10 @@
+## [2.38.0](https://github.com/niafrond/niafrond.github.io/compare/v2.37.0...v2.38.0) (2026-09-28)
+
+### Features
+
+* **mob-rush:** couloirs obligatoires et séquence de mini-châteaux ([b1b6b28](https://github.com/niafrond/niafrond.github.io/commit/b1b6b28a7cdaabd6d4cd72a026d6da90922f3779)), closes [#hud-castles](https://github.com/niafrond/niafrond.github.io/issues/hud-castles)
+* **mob-rush:** habillage anime/manga (chibi, encre épaisse, effets impact) ([6aa65c1](https://github.com/niafrond/niafrond.github.io/commit/6aa65c129470c5b06a82e524fbeeac1fb4e41545))
+
 ## [2.37.0](https://github.com/niafrond/niafrond.github.io/compare/v2.36.1...v2.37.0) (2026-09-27)
 
 ### Features
