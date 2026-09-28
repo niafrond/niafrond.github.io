@@ -1,5 +1,6 @@
 import {
   minuteKey, matchesSchedule, evaluateAlarms, applySnooze, clearSnooze,
+  nextOccurrence, getNextAlarmOccurrence,
 } from '../../scheduler.js';
 
 function alarm(overrides = {}) {
@@ -98,5 +99,71 @@ describe('evaluateAlarms', () => {
     const alarms = [alarm({ id: 'a1' }), alarm({ id: 'a2' })];
     const { ringing } = evaluateAlarms(alarms, now, new Map());
     expect(ringing.sort()).toEqual(['a1', 'a2']);
+  });
+});
+
+describe('nextOccurrence', () => {
+  test('alarme ponctuelle dont l\'heure n\'est pas encore passée aujourd\'hui', () => {
+    const now = new Date(2026, 8, 28, 6, 0); // lundi 06:00
+    const a = alarm({ time: '07:30', days: [] });
+    const next = nextOccurrence(a, now);
+    expect(next.toISOString().slice(0, 16)).toBe(new Date(2026, 8, 28, 7, 30).toISOString().slice(0, 16));
+  });
+
+  test('alarme ponctuelle dont l\'heure est déjà passée aujourd\'hui -> demain', () => {
+    const now = new Date(2026, 8, 28, 8, 0); // lundi 08:00, alarme à 07:30 déjà passée
+    const a = alarm({ time: '07:30', days: [] });
+    const next = nextOccurrence(a, now);
+    expect(next.getDate()).toBe(29); // mardi
+  });
+
+  test('l\'occurrence est strictement future : à l\'instant pile, on saute au jour suivant valide', () => {
+    const now = new Date(2026, 8, 28, 7, 30, 0); // lundi 07:30:00 pile
+    const a = alarm({ time: '07:30', days: [] });
+    const next = nextOccurrence(a, now);
+    expect(next.getTime()).toBeGreaterThan(now.getTime());
+    expect(next.getDate()).toBe(29);
+  });
+
+  test('alarme récurrente : trouve le prochain jour listé', () => {
+    const now = new Date(2026, 8, 28, 10, 0); // lundi 10:00
+    const a = alarm({ time: '07:30', days: [3, 5] }); // mercredi, vendredi
+    const next = nextOccurrence(a, now);
+    expect(next.getDay()).toBe(3);
+    expect(next.getDate()).toBe(30); // mercredi 30 septembre
+  });
+});
+
+describe('getNextAlarmOccurrence', () => {
+  test('choisit l\'alarme activée dont l\'occurrence est la plus proche', () => {
+    const now = new Date(2026, 8, 28, 6, 0);
+    const alarms = [
+      alarm({ id: 'late', time: '09:00', days: [] }),
+      alarm({ id: 'soon', time: '07:00', days: [] }),
+    ];
+    const result = getNextAlarmOccurrence(alarms, now);
+    expect(result.alarm.id).toBe('soon');
+  });
+
+  test('ignore les alarmes désactivées', () => {
+    const now = new Date(2026, 8, 28, 6, 0);
+    const alarms = [alarm({ id: 'off', time: '07:00', enabled: false, days: [] })];
+    expect(getNextAlarmOccurrence(alarms, now)).toBeNull();
+  });
+
+  test('un snooze en cours prime sur l\'horaire normal, même s\'il est plus proche', () => {
+    const now = new Date(2026, 8, 28, 6, 0);
+    const alarms = [alarm({ id: 'a1', time: '09:00', days: [] })];
+    const runtime = applySnooze(new Map(), 'a1', now, 5); // snoozeUntil = 06:05
+    const result = getNextAlarmOccurrence(alarms, now, runtime);
+    expect(result.at.getTime()).toBe(now.getTime() + 5 * 60000);
+  });
+
+  test('skipNext décale la prochaine occurrence affichée à celle d\'après', () => {
+    const now = new Date(2026, 8, 28, 6, 0);
+    const alarms = [alarm({ id: 'a1', time: '07:00', days: [1, 2, 3, 4, 5], skipNext: true })];
+    const result = getNextAlarmOccurrence(alarms, now);
+    // sautée lundi 7h -> prochaine réelle mardi 7h
+    expect(result.at.getDate()).toBe(29);
   });
 });

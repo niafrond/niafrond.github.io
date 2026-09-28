@@ -1,6 +1,13 @@
 // Génération des calculs aléatoires à résoudre pour désactiver une alarme.
+//
+// Le nombre de calculs à résoudre (alarm.problemsCount, voir alarms.js) est
+// réglable indépendamment de la difficulté : la difficulté ne contrôle que
+// le type/la taille des nombres de CHAQUE calcul (ci-dessous), pas combien
+// il faut en résoudre.
 
-export const PROBLEMS_REQUIRED = { easy: 1, medium: 1, hard: 3 };
+// Suggestion affichée/pré-remplie dans l'écran d'édition quand on choisit une
+// difficulté pour une NOUVELLE alarme — l'utilisateur reste libre de l'ajuster.
+export const SUGGESTED_PROBLEMS_COUNT = { easy: 1, medium: 2, hard: 3 };
 
 export const DIFFICULTY_LABELS = {
   easy: 'Facile',
@@ -45,6 +52,6 @@ export function generateProblem(difficulty) {
   }
 }
 
-export function problemsRequired(difficulty) {
-  return PROBLEMS_REQUIRED[difficulty] ?? PROBLEMS_REQUIRED.easy;
+export function suggestedProblemsCount(difficulty) {
+  return SUGGESTED_PROBLEMS_COUNT[difficulty] ?? SUGGESTED_PROBLEMS_COUNT.easy;
 }

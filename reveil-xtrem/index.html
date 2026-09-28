@@ -17,15 +17,26 @@
 
 <!-- ═══════════════════════ ÉCRAN LISTE — accueil ═══════════════════════ -->
 <div id="screen-home" data-screen="screen-home">
-  <div class="page-wrapper">
-    <div class="home-header">
-      <a href="../" class="btn btn-secondary btn-sm">← Accueil</a>
-      <h1 class="app-title">⏰ Réveil Xtrem</h1>
-      <span class="header-spacer"></span>
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="home-header">
+        <a href="../" class="btn btn-ghost btn-sm">← Accueil</a>
+        <span class="header-spacer"></span>
+      </div>
+      <div class="hero-title">⏰ Réveil Xtrem</div>
+      <div id="clock-now" class="clock-now"></div>
+
+      <div id="next-alarm-hero" class="next-alarm-hero" hidden>
+        <span class="next-alarm-icon">⏰</span>
+        <div class="next-alarm-text">
+          <div id="next-alarm-countdown" class="next-alarm-countdown"></div>
+          <div id="next-alarm-detail" class="next-alarm-detail"></div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div id="clock-now" class="clock-now"></div>
-
+  <div class="page-wrapper page-wrapper--tight-top">
     <div id="permissions-banner" class="card permissions-banner" hidden>
       <p class="permissions-banner-title">⚠️ Autorisations nécessaires pour un réveil fiable</p>
       <div id="permissions-list"></div>
@@ -86,6 +97,16 @@
         <button type="button" class="segment" data-difficulty="hard">Difficile</button>
       </div>
       <p class="field-hint" id="difficulty-hint"></p>
+    </div>
+
+    <div class="card">
+      <span class="field-label">Nombre de calculs à résoudre</span>
+      <div class="stepper">
+        <button type="button" id="btn-count-minus" class="stepper-btn" aria-label="Moins de calculs">−</button>
+        <span id="count-value" class="stepper-value">3</span>
+        <button type="button" id="btn-count-plus" class="stepper-btn" aria-label="Plus de calculs">+</button>
+      </div>
+      <p class="field-hint" id="count-hint"></p>
     </div>
 
     <div class="card">

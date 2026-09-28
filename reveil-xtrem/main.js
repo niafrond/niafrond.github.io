@@ -1,13 +1,14 @@
 import {
   loadAlarms, saveAlarms, createAlarm, upsertAlarm, removeAlarm, patchAlarm,
-  loadRuntime, saveRuntime,
+  loadRuntime, saveRuntime, clampProblemsCount, MIN_PROBLEMS_COUNT, MAX_PROBLEMS_COUNT,
 } from './alarms.js';
 import {
   evaluateAlarms, applySnooze, clearSnooze, runtimeToObject, runtimeFromObject,
+  nextOccurrence, getNextAlarmOccurrence,
 } from './scheduler.js';
-import { generateProblem, problemsRequired, DIFFICULTY_LABELS } from './math-challenge.js';
+import { generateProblem, suggestedProblemsCount, DIFFICULTY_LABELS } from './math-challenge.js';
 import { startAlarmSound, stopAlarmSound } from './sound.js';
-import { formatDaysShort, formatClock } from './ui.js';
+import { formatAlarmSchedule, formatClock, formatCountdown } from './ui.js';
 import { installPwa, initServiceWorker } from './pwa.js';
 import {
   isNativePlatform, syncNativeAlarms, nativeSnooze, nativeDismiss,
@@ -32,6 +33,9 @@ const screens = {
 const clockNow = el('clock-now');
 const alarmList = el('alarm-list');
 const alarmEmptyState = el('alarm-empty-state');
+const nextAlarmHero = el('next-alarm-hero');
+const nextAlarmCountdown = el('next-alarm-countdown');
+const nextAlarmDetail = el('next-alarm-detail');
 
 function showScreen(name) {
   for (const s of Object.values(screens)) s.hidden = true;
@@ -55,23 +59,25 @@ function showToast(message) {
 }
 
 // ── Rendu liste ─────────────────────────────────────────────────────────
-function renderAlarmList() {
+function renderAlarmList(now = new Date()) {
   alarmList.innerHTML = '';
   const sorted = [...alarms].sort((a, b) => a.time.localeCompare(b.time));
   alarmEmptyState.hidden = sorted.length > 0;
 
   for (const alarm of sorted) {
     const rt = runtimeMap.get(alarm.id);
+    const nextAt = alarm.enabled ? nextOccurrence(alarm, now) : null;
     const card = document.createElement('div');
     card.className = 'alarm-card' + (alarm.enabled ? '' : ' disabled') + (rt && rt.snoozeUntil ? ' snoozing' : '');
     card.dataset.id = alarm.id;
 
     card.innerHTML = `
       <div class="alarm-card-top">
+        <span class="alarm-status-icon">${alarm.enabled ? '⏰' : '🔕'}</span>
         <div class="alarm-time">${alarm.time}</div>
         <div class="alarm-meta">
           <div class="alarm-label"></div>
-          <div class="alarm-days">${formatDaysShort(alarm.days)}${rt && rt.snoozeUntil ? ' · 💤 reporté' : ''}</div>
+          <div class="alarm-days">${formatAlarmSchedule(alarm, nextAt, now)}${rt && rt.snoozeUntil ? ' · 💤 reporté' : ''}</div>
         </div>
         <label class="switch">
           <input type="checkbox" class="alarm-toggle" ${alarm.enabled ? 'checked' : ''}>
@@ -80,6 +86,7 @@ function renderAlarmList() {
       </div>
       <div class="alarm-card-bottom">
         <span class="badge difficulty-${alarm.difficulty}">${DIFFICULTY_LABELS[alarm.difficulty]}</span>
+        <span class="badge count-badge">×${alarm.problemsCount}</span>
         <span class="alarm-card-spacer"></span>
         <button type="button" class="icon-btn btn-skip-next ${alarm.skipNext ? 'active' : ''}">⏭ Passer</button>
       </div>
@@ -101,11 +108,29 @@ function renderAlarmList() {
   }
 }
 
+function updateNextAlarmHero(now = new Date()) {
+  const next = getNextAlarmOccurrence(alarms, now, runtimeMap);
+  if (!next) {
+    nextAlarmHero.hidden = true;
+    return;
+  }
+  nextAlarmCountdown.textContent = `Sonne dans ${formatCountdown(next.at.getTime() - now.getTime())}`;
+  const hh = String(next.at.getHours()).padStart(2, '0');
+  const mm = String(next.at.getMinutes()).padStart(2, '0');
+  nextAlarmDetail.textContent = `${next.alarm.label} · ${hh}:${mm}`;
+  nextAlarmHero.hidden = false;
+}
+
+function refreshHome(now = new Date()) {
+  renderAlarmList(now);
+  updateNextAlarmHero(now);
+}
+
 function toggleEnabled(id, enabled) {
   alarms = patchAlarm(alarms, id, { enabled });
   persistAlarms();
   showToast(enabled ? 'Alarme activée' : 'Alarme désactivée');
-  renderAlarmList();
+  refreshHome();
 }
 
 function toggleSkipNext(id) {
@@ -114,7 +139,7 @@ function toggleSkipNext(id) {
   alarms = patchAlarm(alarms, id, { skipNext: !alarm.skipNext });
   persistAlarms();
   showToast(!alarm.skipNext ? 'La prochaine sonnerie sera sautée' : 'Sonnerie rétablie');
-  renderAlarmList();
+  refreshHome();
 }
 
 // ── Écran édition ───────────────────────────────────────────────────────
@@ -134,21 +159,27 @@ function openEdit(id) {
   });
 
   const difficulty = alarm ? alarm.difficulty : 'easy';
-  setDifficultyUi(difficulty);
+  setDifficultyUi(difficulty, { suggestCount: !alarm });
+  setProblemsCount(alarm ? alarm.problemsCount : suggestedProblemsCount(difficulty));
 
   showScreen('edit');
 }
 
-function setDifficultyUi(difficulty) {
+function setDifficultyUi(difficulty, { suggestCount = false } = {}) {
   document.querySelectorAll('#difficulty-picker .segment').forEach(seg => {
     seg.classList.toggle('active', seg.dataset.difficulty === difficulty);
   });
   const hints = {
-    easy: '1 addition simple à résoudre.',
-    medium: '1 calcul (addition ou soustraction) à deux chiffres.',
-    hard: '3 calculs d’affilée (dont des multiplications) — une erreur remet le compteur à zéro !',
+    easy: 'Calculs simples : additions à un chiffre.',
+    medium: 'Calculs à deux chiffres : additions ou soustractions.',
+    hard: 'Calculs plus corsés : grands nombres ou tables de multiplication.',
   };
   el('difficulty-hint').textContent = hints[difficulty] || '';
+
+  // Pour une NOUVELLE alarme, suggère un nombre de calculs adapté à la
+  // difficulté choisie — mais ne touche jamais au réglage d'une alarme
+  // existante déjà personnalisée par l'utilisateur.
+  if (suggestCount) setProblemsCount(suggestedProblemsCount(difficulty));
 }
 
 function getSelectedDifficulty() {
@@ -160,23 +191,47 @@ function getSelectedDays() {
   return [...document.querySelectorAll('#days-picker .day-chip.active')].map(c => Number(c.dataset.day));
 }
 
+// ── Nombre de calculs (stepper, indépendant de la difficulté) ────────────
+const countValueEl = el('count-value');
+const countHintEl = el('count-hint');
+
+function setProblemsCount(value) {
+  const clamped = clampProblemsCount(value);
+  countValueEl.textContent = String(clamped);
+  el('btn-count-minus').disabled = clamped <= MIN_PROBLEMS_COUNT;
+  el('btn-count-plus').disabled = clamped >= MAX_PROBLEMS_COUNT;
+  countHintEl.textContent = clamped > 1
+    ? `${clamped} calculs à résoudre d'affilée — une erreur remet le compteur à zéro.`
+    : '1 seul calcul à résoudre.';
+}
+
+function getSelectedProblemsCount() {
+  return clampProblemsCount(countValueEl.textContent);
+}
+
+el('btn-count-minus').addEventListener('click', () => setProblemsCount(getSelectedProblemsCount() - 1));
+el('btn-count-plus').addEventListener('click', () => setProblemsCount(getSelectedProblemsCount() + 1));
+
 function saveAlarmFromForm() {
   const time = el('input-time').value || '07:00';
   const label = el('input-label').value;
   const days = getSelectedDays();
   const difficulty = getSelectedDifficulty();
+  const problemsCount = getSelectedProblemsCount();
   const snoozeMinutes = Number(el('input-snooze').value) || 9;
 
   if (editingId) {
-    alarms = patchAlarm(alarms, editingId, { time, label: label.trim() || 'Alarme', days, difficulty, snoozeMinutes });
+    alarms = patchAlarm(alarms, editingId, {
+      time, label: label.trim() || 'Alarme', days, difficulty, problemsCount, snoozeMinutes,
+    });
   } else {
-    const alarm = createAlarm({ time, label, days, difficulty, snoozeMinutes });
+    const alarm = createAlarm({ time, label, days, difficulty, problemsCount, snoozeMinutes });
     alarms = upsertAlarm(alarms, alarm);
   }
   persistAlarms();
   showToast('Alarme enregistrée');
   showScreen('home');
-  renderAlarmList();
+  refreshHome();
 }
 
 function deleteCurrentAlarm() {
@@ -187,13 +242,14 @@ function deleteCurrentAlarm() {
   persistRuntime();
   showToast('Alarme supprimée');
   showScreen('home');
-  renderAlarmList();
+  refreshHome();
 }
 
 // ── Boucle de vérification ──────────────────────────────────────────────
 function tick() {
   const now = new Date();
   clockNow.textContent = formatClock(now);
+  if (screens.home.hidden === false) updateNextAlarmHero(now);
 
   // Sous le wrapper Android, AlarmManager (programmé via AlarmScheduler natif)
   // déclenche réellement les alarmes — y compris appli fermée. La détection
@@ -211,13 +267,13 @@ function tick() {
       alarms = patchAlarm(alarms, id, { skipNext: false, ...(isOneTime ? { enabled: false } : {}) });
     }
     persistAlarms();
-    renderAlarmList();
+    renderAlarmList(now);
   }
 
   if (ringing.length > 0) {
     for (const id of ringing) if (!ringQueue.includes(id)) ringQueue.push(id);
     persistRuntime();
-    renderAlarmList();
+    renderAlarmList(now);
   }
 
   if (!currentRing && ringQueue.length > 0) {
@@ -240,7 +296,7 @@ function startRing(alarmId) {
   const alarm = alarms.find(a => a.id === alarmId);
   if (!alarm) return;
 
-  currentRing = { alarmId, solved: 0, required: problemsRequired(alarm.difficulty), problem: null };
+  currentRing = { alarmId, solved: 0, required: clampProblemsCount(alarm.problemsCount ?? 1), problem: null };
   el('ring-label').textContent = alarm.label;
   nextChallengeProblem();
   startAlarmSound();
@@ -305,7 +361,7 @@ function dismissCurrentRing() {
 
   currentRing = null;
   showScreen('home');
-  renderAlarmList();
+  refreshHome();
 
   if (ringQueue.length > 0) {
     startRing(ringQueue.shift());
@@ -324,7 +380,7 @@ function snoozeCurrentRing() {
 
   currentRing = null;
   showScreen('home');
-  renderAlarmList();
+  refreshHome();
   showToast(`Reporté de ${minutes} min`);
 
   if (ringQueue.length > 0) {
@@ -390,7 +446,7 @@ async function initNative() {
       alarms = patchAlarm(alarms, id, patch);
     }
     saveAlarms(alarms);
-    renderAlarmList();
+    refreshHome();
   }
 
   syncNativeAlarms(alarms);
@@ -404,7 +460,7 @@ async function initNative() {
 
 // ── Écouteurs ───────────────────────────────────────────────────────────
 el('btn-add-alarm').addEventListener('click', () => openEdit(null));
-el('btn-edit-cancel').addEventListener('click', () => { showScreen('home'); renderAlarmList(); });
+el('btn-edit-cancel').addEventListener('click', () => { showScreen('home'); refreshHome(); });
 el('btn-save-alarm').addEventListener('click', saveAlarmFromForm);
 el('btn-delete-alarm').addEventListener('click', deleteCurrentAlarm);
 el('btn-install-pwa').addEventListener('click', installPwa);
@@ -413,7 +469,7 @@ document.querySelectorAll('#days-picker .day-chip').forEach(chip => {
   chip.addEventListener('click', () => chip.classList.toggle('active'));
 });
 document.querySelectorAll('#difficulty-picker .segment').forEach(seg => {
-  seg.addEventListener('click', () => setDifficultyUi(seg.dataset.difficulty));
+  seg.addEventListener('click', () => setDifficultyUi(seg.dataset.difficulty, { suggestCount: editingId === null }));
 });
 
 el('btn-challenge-validate').addEventListener('click', validateChallengeAnswer);
@@ -423,7 +479,7 @@ el('challenge-answer').addEventListener('keydown', e => {
 el('btn-snooze').addEventListener('click', snoozeCurrentRing);
 
 // ── Démarrage ───────────────────────────────────────────────────────────
-renderAlarmList();
+refreshHome();
 showScreen('home');
 setInterval(tick, 1000);
 setInterval(updateRingClock, 1000);

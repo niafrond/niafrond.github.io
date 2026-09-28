@@ -1,4 +1,4 @@
-import { generateProblem, problemsRequired, PROBLEMS_REQUIRED } from '../../math-challenge.js';
+import { generateProblem, suggestedProblemsCount, SUGGESTED_PROBLEMS_COUNT } from '../../math-challenge.js';
 
 function evalProblem(text) {
   // eslint-disable-next-line no-new-func
@@ -41,14 +41,18 @@ describe('generateProblem', () => {
   });
 });
 
-describe('problemsRequired', () => {
-  test('hard exige 3 calculs réussis d\'affilée, easy/medium un seul', () => {
-    expect(problemsRequired('easy')).toBe(1);
-    expect(problemsRequired('medium')).toBe(1);
-    expect(problemsRequired('hard')).toBe(3);
+describe('suggestedProblemsCount', () => {
+  test('suggère un nombre croissant avec la difficulté, ajustable ensuite par l\'utilisateur', () => {
+    expect(suggestedProblemsCount('easy')).toBe(1);
+    expect(suggestedProblemsCount('medium')).toBe(2);
+    expect(suggestedProblemsCount('hard')).toBe(3);
   });
 
-  test('correspond à la table PROBLEMS_REQUIRED', () => {
-    expect(problemsRequired('hard')).toBe(PROBLEMS_REQUIRED.hard);
+  test('correspond à la table SUGGESTED_PROBLEMS_COUNT', () => {
+    expect(suggestedProblemsCount('hard')).toBe(SUGGESTED_PROBLEMS_COUNT.hard);
+  });
+
+  test('une difficulté inconnue retombe sur la suggestion easy', () => {
+    expect(suggestedProblemsCount('nope')).toBe(SUGGESTED_PROBLEMS_COUNT.easy);
   });
 });

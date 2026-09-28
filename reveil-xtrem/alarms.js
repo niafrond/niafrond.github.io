@@ -5,6 +5,15 @@ const RUNTIME_KEY = 'reveil-xtrem:runtime:v1';
 
 export const DIFFICULTIES = ['easy', 'medium', 'hard'];
 export const DEFAULT_SNOOZE_MINUTES = 9;
+export const DEFAULT_PROBLEMS_COUNT = 3;
+export const MIN_PROBLEMS_COUNT = 1;
+export const MAX_PROBLEMS_COUNT = 10;
+
+export function clampProblemsCount(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return DEFAULT_PROBLEMS_COUNT;
+  return Math.min(MAX_PROBLEMS_COUNT, Math.max(MIN_PROBLEMS_COUNT, n));
+}
 
 function genId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -25,7 +34,7 @@ export function saveAlarms(alarms) {
   localStorage.setItem(ALARMS_KEY, JSON.stringify(alarms));
 }
 
-export function createAlarm({ time, label, days, difficulty, snoozeMinutes }) {
+export function createAlarm({ time, label, days, difficulty, snoozeMinutes, problemsCount }) {
   return {
     id: genId(),
     time,
@@ -33,6 +42,9 @@ export function createAlarm({ time, label, days, difficulty, snoozeMinutes }) {
     days: Array.isArray(days) ? [...days].sort() : [],
     enabled: true,
     difficulty: DIFFICULTIES.includes(difficulty) ? difficulty : 'easy',
+    // Le nombre de calculs est réglable indépendamment de la difficulté (qui
+    // ne contrôle que le type/la taille des nombres, voir math-challenge.js).
+    problemsCount: clampProblemsCount(problemsCount ?? DEFAULT_PROBLEMS_COUNT),
     snoozeMinutes: Number.isFinite(snoozeMinutes) && snoozeMinutes > 0 ? snoozeMinutes : DEFAULT_SNOOZE_MINUTES,
     skipNext: false,
     createdAt: Date.now(),
