@@ -1,3 +1,9 @@
+## [2.39.0](https://github.com/niafrond/niafrond.github.io/compare/v2.38.0...v2.39.0) (2026-09-28)
+
+### Features
+
+* **mob-rush:** ralentit les unités, compétences évolutives et terrain par château ([a681e53](https://github.com/niafrond/niafrond.github.io/commit/a681e53d59086f98297b503167097b97b1fc1c0d))
+
 ## [2.38.0](https://github.com/niafrond/niafrond.github.io/compare/v2.37.0...v2.38.0) (2026-09-28)
 
 ### Features
