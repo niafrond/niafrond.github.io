@@ -10,6 +10,7 @@ const ASSETS = [
   './sound.js',
   './ui.js',
   './pwa.js',
+  './native-bridge.js',
   './style.css',
   './manifest.json',
   './icon.svg',

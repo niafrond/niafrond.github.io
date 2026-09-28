@@ -73,6 +73,28 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
   margin: 4px 0;
 }
 
+.permissions-banner {
+  border-color: var(--gold);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.permissions-banner-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+.permission-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.permission-row-text { flex: 1; min-width: 0; }
+.permission-row-label { font-size: 0.88rem; font-weight: 600; }
+.permission-row-reason { font-size: 0.78rem; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.permission-row .btn { flex: none; }
+
 .alarm-empty-state {
   text-align: center;
   color: var(--muted);

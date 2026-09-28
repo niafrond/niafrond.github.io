@@ -9,6 +9,11 @@ import { generateProblem, problemsRequired, DIFFICULTY_LABELS } from './math-cha
 import { startAlarmSound, stopAlarmSound } from './sound.js';
 import { formatDaysShort, formatClock } from './ui.js';
 import { installPwa, initServiceWorker } from './pwa.js';
+import {
+  isNativePlatform, syncNativeAlarms, nativeSnooze, nativeDismiss,
+  consumeNativePendingUpdates, getNativePendingRingId, onNativeRing,
+  listPermissionKeys, permissionInfo, checkPermission, requestPermission,
+} from './native-bridge.js';
 
 // ── État ────────────────────────────────────────────────────────────────
 let alarms = loadAlarms();
@@ -33,7 +38,10 @@ function showScreen(name) {
   screens[name].hidden = false;
 }
 
-function persistAlarms() { saveAlarms(alarms); }
+function persistAlarms() {
+  saveAlarms(alarms);
+  syncNativeAlarms(alarms); // no-op hors wrapper Capacitor
+}
 function persistRuntime() { saveRuntime(runtimeToObject(runtimeMap)); }
 
 // ── Toast ───────────────────────────────────────────────────────────────
@@ -187,6 +195,11 @@ function tick() {
   const now = new Date();
   clockNow.textContent = formatClock(now);
 
+  // Sous le wrapper Android, AlarmManager (programmé via AlarmScheduler natif)
+  // déclenche réellement les alarmes — y compris appli fermée. La détection
+  // JS ci-dessous ne servirait qu'à sonner une deuxième fois en double.
+  if (isNativePlatform()) return;
+
   const { ringing, skipConsumed, nextRuntime } = evaluateAlarms(alarms, now, runtimeMap);
   runtimeMap = nextRuntime;
 
@@ -213,6 +226,16 @@ function tick() {
 }
 
 // ── Écran sonnerie ──────────────────────────────────────────────────────
+
+/** Point d'entrée pour une sonnerie déclenchée côté natif (event/cold start). */
+function triggerNativeRing(alarmId) {
+  if (currentRing) {
+    if (!ringQueue.includes(alarmId)) ringQueue.push(alarmId);
+    return;
+  }
+  startRing(alarmId);
+}
+
 function startRing(alarmId) {
   const alarm = alarms.find(a => a.id === alarmId);
   if (!alarm) return;
@@ -271,6 +294,7 @@ function dismissCurrentRing() {
   const { alarmId } = currentRing;
   const alarm = alarms.find(a => a.id === alarmId);
   stopAlarmSound();
+  nativeDismiss(alarmId); // no-op hors wrapper Capacitor
   runtimeMap = clearSnooze(runtimeMap, alarmId);
 
   if (alarm && (!alarm.days || alarm.days.length === 0)) {
@@ -292,18 +316,90 @@ function snoozeCurrentRing() {
   if (!currentRing) return;
   const { alarmId } = currentRing;
   const alarm = alarms.find(a => a.id === alarmId);
+  const minutes = alarm ? alarm.snoozeMinutes : 9;
   stopAlarmSound();
-  runtimeMap = applySnooze(runtimeMap, alarmId, new Date(), alarm ? alarm.snoozeMinutes : 9);
+  nativeSnooze(alarmId, minutes); // no-op hors wrapper Capacitor
+  runtimeMap = applySnooze(runtimeMap, alarmId, new Date(), minutes);
   persistRuntime();
 
   currentRing = null;
   showScreen('home');
   renderAlarmList();
-  showToast(`Reporté de ${alarm ? alarm.snoozeMinutes : 9} min`);
+  showToast(`Reporté de ${minutes} min`);
 
   if (ringQueue.length > 0) {
     startRing(ringQueue.shift());
   }
+}
+
+// ── Bannière des autorisations système (uniquement sous Capacitor) ───────
+const permissionsBanner = el('permissions-banner');
+const permissionsList = el('permissions-list');
+
+async function refreshPermissionsBanner() {
+  if (!isNativePlatform()) {
+    permissionsBanner.hidden = true;
+    return;
+  }
+
+  const missing = [];
+  for (const key of listPermissionKeys()) {
+    if (!(await checkPermission(key))) missing.push(key);
+  }
+
+  if (missing.length === 0) {
+    permissionsBanner.hidden = true;
+    return;
+  }
+
+  permissionsList.innerHTML = '';
+  for (const key of missing) {
+    const info = permissionInfo(key);
+    const row = document.createElement('div');
+    row.className = 'permission-row';
+    row.innerHTML = `
+      <div class="permission-row-text">
+        <div class="permission-row-label">${info.label}</div>
+        <div class="permission-row-reason">${info.reason}</div>
+      </div>
+      <button type="button" class="btn btn-primary btn-sm">Autoriser</button>
+    `;
+    row.querySelector('button').addEventListener('click', async () => {
+      await requestPermission(key);
+      // Ces réglages ouvrent un écran système ; on réévalue au retour sur l'appli
+      // (voir le listener 'visibilitychange' plus bas) plutôt qu'ici.
+    });
+    permissionsList.appendChild(row);
+  }
+  permissionsBanner.hidden = false;
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') refreshPermissionsBanner();
+});
+
+// ── Démarrage natif (Capacitor uniquement — no-op sur la PWA web) ────────
+async function initNative() {
+  if (!isNativePlatform()) return;
+
+  // Applique les changements décidés côté natif pendant que l'appli était fermée
+  // (skipNext consommé, alarme ponctuelle désactivée après sonnerie).
+  const updates = await consumeNativePendingUpdates();
+  if (Object.keys(updates).length > 0) {
+    for (const [id, patch] of Object.entries(updates)) {
+      alarms = patchAlarm(alarms, id, patch);
+    }
+    saveAlarms(alarms);
+    renderAlarmList();
+  }
+
+  syncNativeAlarms(alarms);
+  onNativeRing(triggerNativeRing);
+
+  const pendingId = await getNativePendingRingId();
+  if (pendingId) triggerNativeRing(pendingId);
+
+  await refreshPermissionsBanner();
 }
 
 // ── Écouteurs ───────────────────────────────────────────────────────────
@@ -338,3 +434,4 @@ if (typeof Notification !== 'undefined' && Notification.permission === 'default'
 }
 
 initServiceWorker(() => currentRing != null);
+initNative();
