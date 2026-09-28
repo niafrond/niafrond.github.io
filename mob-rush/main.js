@@ -207,14 +207,18 @@ let rafId = 0;
 let lastT = 0;
 let particles = [];
 let floaters = [];
+let rays = [];
 let shake = 0;
+let flash = 0;
 const input = { firing: false, targetX: null, champion: false };
 
 function beginGame(cfg, label) {
   game = createGame(cfg, currentLoadout());
   particles = [];
   floaters = [];
+  rays = [];
   shake = 0;
+  flash = 0;
   paused = false;
   input.firing = false;
   input.targetX = null;
@@ -404,8 +408,10 @@ function handleEvents() {
       case 'castleDown':
         sfx(ev.final ? 'win' : 'base');
         buzz(ev.final ? [30, 40, 30] : 50);
-        burst(BASE.x, BASE.y, ev.final ? 40 : 24, '#ffc93c');
+        burst(BASE.x, BASE.y, ev.final ? 40 : 24, '#ffc93c', true);
+        addRays(BASE.x, BASE.y, '#ffc93c', ev.final ? 16 : 10, ev.final ? 70 : 45);
         shake = ev.final ? 0.4 : 0.3;
+        if (ev.final) flash = 1;
         floaters.push({ x: W / 2, y: 150, t: 1.1, text: ev.final ? 'CHÂTEAU FINAL !' : 'CHÂTEAU DÉTRUIT !', color: '#ffc93c', big: true });
         break;
       case 'cannonHit':
@@ -417,6 +423,7 @@ function handleEvents() {
       case 'champion':
         sfx('champion');
         buzz(30);
+        addRays(ev.x, ev.y, '#ffc93c', 10, 45);
         break;
       case 'wave':
         floaters.push({ x: W / 2, y: 150, t: 1.2, text: 'VAGUE !', color: '#ff4d5e', big: true });
@@ -424,7 +431,9 @@ function handleEvents() {
       case 'won':
         sfx('win');
         buzz([40, 60, 40]);
-        burst(BASE.x, BASE.y, 60, '#ffc93c');
+        burst(BASE.x, BASE.y, 60, '#ffc93c', true);
+        addRays(BASE.x, BASE.y, '#ffc93c', 20, 90);
+        flash = 1;
         setTimeout(() => game && showOverlay('won'), 700);
         break;
       case 'lost':
@@ -437,11 +446,11 @@ function handleEvents() {
   game.events.length = 0;
 }
 
-function burst(x, y, n, color) {
+function burst(x, y, n, color, star = false) {
   for (let i = 0; i < n && particles.length < 400; i++) {
     const a = Math.random() * Math.PI * 2;
     const s = 40 + Math.random() * 120;
-    particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0.35 + Math.random() * 0.3, color });
+    particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0.35 + Math.random() * 0.3, color, star });
   }
 }
 
@@ -456,7 +465,10 @@ function updateFx(dt) {
   particles = particles.filter(p => p.t > 0);
   for (const f of floaters) { f.y -= 30 * dt; f.t -= dt; }
   floaters = floaters.filter(f => f.t > 0);
+  for (const r of rays) r.t -= dt;
+  rays = rays.filter(r => r.t > 0);
   if (shake > 0) shake = Math.max(0, shake - dt);
+  if (flash > 0) flash = Math.max(0, flash - dt * 2.5);
 }
 
 let lastHearts = '';
@@ -503,6 +515,83 @@ function roundRect(x, y, w, h, r) {
   ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h);
 }
 
+// ─── Style manga : traits d'encre épais, visages chibi, effets « impact » ────
+const INK = '#1c1030';
+
+function inkStroke(width = 2, color = INK) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.stroke();
+}
+
+// Petit visage chibi (yeux ronds + joues) pour les unités héroïques.
+function chibiFace(x, y, r, mood) {
+  const eyeR = r * 0.22;
+  const dx = r * 0.34;
+  const dy = -r * 0.08;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(x - dx, y + dy, eyeR, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + dx, y + dy, eyeR, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = INK;
+  const pupilR = eyeR * 0.55;
+  ctx.beginPath(); ctx.arc(x - dx + pupilR * 0.3, y + dy, pupilR, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + dx + pupilR * 0.3, y + dy, pupilR, 0, Math.PI * 2); ctx.fill();
+  if (mood === 'angry') {
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = Math.max(1, r * 0.12);
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x - dx - eyeR, y + dy - eyeR * 1.6); ctx.lineTo(x - dx + eyeR * 0.4, y + dy - eyeR * 0.6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + dx + eyeR, y + dy - eyeR * 1.6); ctx.lineTo(x + dx - eyeR * 0.4, y + dy - eyeR * 0.6); ctx.stroke();
+  } else {
+    ctx.fillStyle = 'rgba(255,90,120,.55)';
+    ctx.beginPath(); ctx.ellipse(x - r * 0.62, y + r * 0.22, r * 0.18, r * 0.11, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x + r * 0.62, y + r * 0.22, r * 0.18, r * 0.11, 0, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+// Rayons de vitesse façon manga (impact « BOUM »), pour les gros événements
+// (champion lancé, château détruit, victoire).
+function addRays(x, y, color, n = 10, len = 40) {
+  const list = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + Math.random() * 0.3;
+    list.push({ a, len: len * (0.6 + Math.random() * 0.6), w: 2 + Math.random() * 2 });
+  }
+  rays.push({ x, y, color, list, t: 0.35, dur: 0.35 });
+}
+function drawRays() {
+  for (const r of rays) {
+    ctx.globalAlpha = Math.max(0, r.t / r.dur);
+    ctx.strokeStyle = r.color;
+    ctx.lineCap = 'round';
+    for (const ray of r.list) {
+      ctx.lineWidth = ray.w;
+      ctx.beginPath();
+      ctx.moveTo(r.x + Math.cos(ray.a) * ray.len * 0.3, r.y + Math.sin(ray.a) * ray.len * 0.3);
+      ctx.lineTo(r.x + Math.cos(ray.a) * ray.len, r.y + Math.sin(ray.a) * ray.len);
+      ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Texte façon bulle de bande dessinée : contour d'encre épais + remplissage.
+function shoutText(text, x, y, size, fill, rotate = 0) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotate);
+  ctx.font = `${size}px "Bangers", "Baloo 2", system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = Math.max(3, size * 0.14);
+  ctx.strokeText(text, 0, 0);
+  ctx.fillStyle = fill;
+  ctx.fillText(text, 0, 0);
+  ctx.restore();
+}
+
 function draw() {
   const cw = canvas.width;
   const ch = canvas.height;
@@ -540,12 +629,20 @@ function draw() {
   ctx.fillStyle = '#7a1b2a';
   roundRect(bx, by, castleW, castleH, 10);
   ctx.fill();
+  inkStroke(3);
   ctx.fillStyle = '#b82a3f';
   const merlons = isFinalCastle ? 5 : 3;
-  for (let i = 0; i < merlons; i++) ctx.fillRect(bx + 6 + i * (castleW - 12) / merlons, by - 8, (castleW - 12) / merlons - 6, 10);
+  for (let i = 0; i < merlons; i++) {
+    const mx = bx + 6 + i * (castleW - 12) / merlons;
+    const mw = (castleW - 12) / merlons - 6;
+    ctx.fillRect(mx, by - 8, mw, 10);
+    ctx.strokeRect(mx, by - 8, mw, 10);
+  }
   ctx.fillStyle = '#2a0a12';
   roundRect(BASE.x - castleW * 0.12, castleBottom - castleH * 0.42, castleW * 0.24, castleH * 0.42, 8);
   ctx.fill();
+  inkStroke(2);
+  // Grands yeux pétillants sur le château final, pour un côté « boss manga ».
   if (isFinalCastle) {
     ctx.fillStyle = '#ffc93c';
     ctx.beginPath();
@@ -554,6 +651,8 @@ function draw() {
     ctx.lineTo(BASE.x + 7, by - 9);
     ctx.closePath();
     ctx.fill();
+    inkStroke(2);
+    chibiFace(BASE.x, by + castleH * 0.4, castleW * 0.22, 'angry');
   }
   // Barre de vie du château courant (pas le total du niveau)
   const castleMax = castles[game.castleIndex];
@@ -566,15 +665,13 @@ function draw() {
   roundRect(BASE.x - BASE.w / 2, barY, BASE.w * hpPct, 10, 5);
   ctx.fill();
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold 12px system-ui, sans-serif';
+  ctx.font = 'bold 12px "Baloo 2", system-ui, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(String(Math.max(0, Math.ceil(game.castleHp))), BASE.x, BASE.y);
 
   // Murs : tout ce qu'aucune porte ne couvre sur une rangée. Impossible de
   // les traverser — ils forcent à viser un couloir ouvert (une porte).
-  ctx.strokeStyle = 'rgba(255,193,7,0.35)';
-  ctx.lineWidth = 3;
   for (const row of game.rows) {
     for (const [start, end] of wallSegments(row, game.gates)) {
       if (end - start < 2) continue;
@@ -582,8 +679,13 @@ function draw() {
       roundRect(start, wy, end - start, 30, 4);
       ctx.fillStyle = '#2b2b35';
       ctx.fill();
+      inkStroke(2);
       ctx.save();
+      ctx.beginPath();
+      roundRect(start, wy, end - start, 30, 4);
       ctx.clip();
+      ctx.strokeStyle = 'rgba(255,193,7,0.35)';
+      ctx.lineWidth = 3;
       for (let sx = start - 30; sx < end; sx += 10) {
         ctx.beginPath();
         ctx.moveTo(sx, wy + 30);
@@ -601,37 +703,42 @@ function draw() {
     ctx.fillStyle = `rgba(${col},${0.28 + gate.flash * 3})`;
     roundRect(gate.x - gate.w / 2, gate.y - 16, gate.w, 30, 6);
     ctx.fill();
-    ctx.strokeStyle = `rgb(${col})`;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 17px system-ui, sans-serif';
-    ctx.fillText(good ? `×${gate.op.n}` : `÷${gate.op.n}`, gate.x, gate.y);
+    inkStroke(2.5, `rgb(${col})`);
+    shoutText(good ? `×${gate.op.n}` : `÷${gate.op.n}`, gate.x, gate.y + 1, 20, '#fff');
   }
 
-  // Unités rouges
+  // Unités rouges — petits vilains manga, cornes et sourcils pour les brutes.
   ctx.fillStyle = '#ff4d5e';
   for (const e of game.red) {
     ctx.beginPath();
     ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
     ctx.fill();
+    inkStroke(1.5);
   }
-  ctx.strokeStyle = '#ffd0d5';
-  ctx.lineWidth = 2;
   for (const e of game.red) {
     if (!e.brute) continue;
-    ctx.beginPath();
-    ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.fillStyle = '#7a1030';
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(e.x + s * e.r * 0.5, e.y - e.r * 0.6);
+      ctx.lineTo(e.x + s * e.r * 1.1, e.y - e.r * 1.3);
+      ctx.lineTo(e.x + s * e.r * 0.15, e.y - e.r * 0.85);
+      ctx.closePath();
+      ctx.fill();
+      inkStroke(1.2);
+    }
+    chibiFace(e.x, e.y + e.r * 0.1, e.r * 0.85, 'angry');
   }
 
-  // Unités bleues
+  // Unités bleues — petites billes rondes à l'encre épaisse, le champion a
+  // un vrai minois chibi avec bandeau de héros.
   ctx.fillStyle = '#3fa9ff';
   for (const u of game.blue) {
     if (u.champ) continue;
     ctx.beginPath();
     ctx.arc(u.x, u.y, u.r, 0, Math.PI * 2);
     ctx.fill();
+    inkStroke(1.2);
   }
   for (const u of game.blue) {
     if (!u.champ) continue;
@@ -639,26 +746,36 @@ function draw() {
     ctx.beginPath();
     ctx.arc(u.x, u.y, u.r, 0, Math.PI * 2);
     ctx.fill();
+    inkStroke(2.5, INK);
     ctx.strokeStyle = '#3fa9ff';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
     ctx.stroke();
+    ctx.fillStyle = '#ff4d5e';
+    roundRect(u.x - u.r, u.y - u.r * 0.55, u.r * 2, u.r * 0.42, 3);
+    ctx.fill();
+    chibiFace(u.x, u.y + u.r * 0.15, u.r * 0.8, 'happy');
     ctx.fillStyle = '#04213d';
-    ctx.font = 'bold 11px system-ui, sans-serif';
-    ctx.fillText(String(u.hp), u.x, u.y + 1);
+    ctx.font = 'bold 10px "Baloo 2", system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(u.hp), u.x, u.y + u.r * 0.85);
   }
 
-  // Canon
+  // Canon — petit mecha avec de grands yeux, pour rester dans le ton chibi.
   const cx = game.cannonX;
   ctx.fillStyle = 'rgba(63,169,255,0.12)';
   ctx.fillRect(cx - 1, BASE.y + BASE.h, 2, CANNON_Y - BASE.y - BASE.h - 30);
   ctx.fillStyle = '#0a5c9e';
   roundRect(cx - 8, CANNON_Y - 34, 16, 26, 4);
   ctx.fill();
+  inkStroke(2);
   ctx.fillStyle = '#3fa9ff';
   ctx.beginPath();
   ctx.arc(cx, CANNON_Y, 20, Math.PI, 0);
   ctx.fill();
+  inkStroke(2);
   ctx.fillRect(cx - 26, CANNON_Y, 52, 12);
+  ctx.strokeRect(cx - 26, CANNON_Y, 52, 12);
+  chibiFace(cx, CANNON_Y - 14, 11, 'happy');
   ctx.strokeStyle = 'rgba(255,77,94,0.35)';
   ctx.setLineDash([6, 6]);
   ctx.beginPath();
@@ -668,25 +785,52 @@ function draw() {
   ctx.setLineDash([]);
 
   // Effets
+  drawRays();
   for (const p of particles) {
     ctx.globalAlpha = Math.min(1, p.t * 3);
-    ctx.fillStyle = p.color;
-    ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+    if (p.star) {
+      drawStar(p.x, p.y, 4 + p.t * 4, p.color);
+    } else {
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+    }
   }
+  ctx.globalAlpha = 1;
   for (const f of floaters) {
     ctx.globalAlpha = Math.min(1, f.t * 2);
-    ctx.fillStyle = f.color;
-    ctx.font = `900 ${f.big ? 32 : 14}px system-ui, sans-serif`;
-    ctx.fillText(f.text, f.x, f.y);
+    shoutText(f.text, f.x, f.y, f.big ? 30 : 15, f.color, f.big ? -0.03 : 0);
   }
   ctx.globalAlpha = 1;
 
+  // Éclair de flash sur les gros impacts (château détruit, victoire…)
+  if (flash > 0) {
+    ctx.globalAlpha = Math.min(0.6, flash);
+    ctx.fillStyle = '#fff';
+    roundRect(0, 0, W, H, 18);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
   // Compteur d'armée
   ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.font = 'bold 12px system-ui, sans-serif';
+  ctx.font = 'bold 12px "Baloo 2", system-ui, sans-serif';
   ctx.textAlign = 'left';
   ctx.fillText(`🔵 ${game.blue.length}`, 8, CANNON_Y + 30);
   ctx.textAlign = 'center';
+}
+
+function drawStar(x, y, r, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = (Math.PI / 5) * i - Math.PI / 2;
+    const rad = i % 2 === 0 ? r : r * 0.45;
+    const px = x + Math.cos(a) * rad;
+    const py = y + Math.sin(a) * rad;
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
 }
 
 // ─── Démarrage ───────────────────────────────────────────────────────────────
