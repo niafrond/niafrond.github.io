@@ -1,3 +1,9 @@
+## [2.40.0](https://github.com/niafrond/niafrond.github.io/compare/v2.39.0...v2.40.0) (2026-09-28)
+
+### Features
+
+* **mob-rush:** fond dynamique, mobs humanoïdes et collision de murs ([207c545](https://github.com/niafrond/niafrond.github.io/commit/207c545e495702144001a4ace419d88fafdac3de))
+
 ## [2.39.0](https://github.com/niafrond/niafrond.github.io/compare/v2.38.0...v2.39.0) (2026-09-28)
 
 ### Features
