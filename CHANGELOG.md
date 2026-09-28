@@ -1,3 +1,9 @@
+## [2.37.0](https://github.com/niafrond/niafrond.github.io/compare/v2.36.1...v2.37.0) (2026-09-27)
+
+### Features
+
+* **mob-rush:** ajoute une couche RPG débloquée par le skill, pas l'argent ([7b9d52e](https://github.com/niafrond/niafrond.github.io/commit/7b9d52e67c6ac3c966dd6278466632fe200bdb3b))
+
 ## [2.36.1](https://github.com/niafrond/niafrond.github.io/compare/v2.36.0...v2.36.1) (2026-09-27)
 
 ### Bug Fixes
