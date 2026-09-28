@@ -66,7 +66,94 @@ jobs:
         run: |
           JAVA_DIR="reveil-xtrem-android/android/app/src/main/java/io/github/niafrond/reveilxtrem"
           mkdir -p "$JAVA_DIR"
-          cp reveil-xtrem-android/src/main/java/io/github/niafrond/reveilxtrem/MainActivity.java "$JAVA_DIR/MainActivity.java"
+          for f in MainActivity AlarmSchedulerPlugin AlarmStore AlarmMath AlarmActions \
+                   AlarmReceiver AlarmRingService SnoozeReceiver BootReceiver; do
+            cp "reveil-xtrem-android/src/main/java/io/github/niafrond/reveilxtrem/$f.java" "$JAVA_DIR/$f.java"
+          done
+
+          DRAWABLE_DIR="reveil-xtrem-android/android/app/src/main/res/drawable"
+          mkdir -p "$DRAWABLE_DIR"
+          cp reveil-xtrem-android/src/main/res/drawable/ic_stat_alarm.xml "$DRAWABLE_DIR/ic_stat_alarm.xml"
+
+      - name: Patch AndroidManifest (alarmes, notifications, redémarrage)
+        env:
+          MANIFEST: reveil-xtrem-android/android/app/src/main/AndroidManifest.xml
+          PKG: io.github.niafrond.reveilxtrem
+        shell: python3 {0}
+        run: |
+          import os, xml.etree.ElementTree as ET
+
+          ET.register_namespace('android', 'http://schemas.android.com/apk/res/android')
+          ET.register_namespace('tools', 'http://schemas.android.com/tools')
+          manifest = os.environ['MANIFEST']
+          pkg = os.environ['PKG']
+          tree = ET.parse(manifest)
+          root = tree.getroot()
+          NS = 'http://schemas.android.com/apk/res/android'
+          A = lambda name: f'{{{NS}}}{name}'
+
+          # ── Permissions ──
+          perms = [
+              'android.permission.SCHEDULE_EXACT_ALARM',
+              'android.permission.POST_NOTIFICATIONS',
+              'android.permission.RECEIVE_BOOT_COMPLETED',
+              'android.permission.WAKE_LOCK',
+              'android.permission.VIBRATE',
+              'android.permission.FOREGROUND_SERVICE',
+              'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+              'android.permission.USE_FULL_SCREEN_INTENT',
+              'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS',
+          ]
+          existing_perms = {e.get(A('name')) for e in root.findall('uses-permission')}
+          children = list(root)
+          app_idx = next(i for i, c in enumerate(children) if c.tag == 'application')
+          inserted = 0
+          for p in perms:
+              if p in existing_perms:
+                  continue
+              el = ET.Element('uses-permission')
+              el.set(A('name'), p)
+              children.insert(app_idx + inserted, el)
+              inserted += 1
+          root[:] = children
+          app = root.find('application')
+
+          # ── Receivers / Service ──
+          def has_component(tag, name):
+              return any(c.tag == tag and c.get(A('name')) == name for c in app)
+
+          if not has_component('receiver', f'{pkg}.AlarmReceiver'):
+              r = ET.SubElement(app, 'receiver')
+              r.set(A('name'), f'{pkg}.AlarmReceiver')
+              r.set(A('exported'), 'false')
+
+          if not has_component('receiver', f'{pkg}.SnoozeReceiver'):
+              r = ET.SubElement(app, 'receiver')
+              r.set(A('name'), f'{pkg}.SnoozeReceiver')
+              r.set(A('exported'), 'false')
+
+          if not has_component('receiver', f'{pkg}.BootReceiver'):
+              r = ET.SubElement(app, 'receiver')
+              r.set(A('name'), f'{pkg}.BootReceiver')
+              # exported=true car BOOT_COMPLETED est envoyé par le système (hors du package) ;
+              # c'est une action protégée que seul le système peut émettre, donc pas besoin
+              # d'un android:permission sur le receiver lui-même (le <uses-permission>
+              # RECEIVE_BOOT_COMPLETED déclaré plus haut suffit côté app).
+              r.set(A('exported'), 'true')
+              filt = ET.SubElement(r, 'intent-filter')
+              a1 = ET.SubElement(filt, 'action')
+              a1.set(A('name'), 'android.intent.action.BOOT_COMPLETED')
+              a2 = ET.SubElement(filt, 'action')
+              a2.set(A('name'), 'android.intent.action.QUICKBOOT_POWERON')
+
+          if not has_component('service', f'{pkg}.AlarmRingService'):
+              s = ET.SubElement(app, 'service')
+              s.set(A('name'), f'{pkg}.AlarmRingService')
+              s.set(A('exported'), 'false')
+              s.set(A('foregroundServiceType'), 'mediaPlayback')
+
+          ET.indent(tree, space='    ')
+          tree.write(manifest, encoding='unicode', xml_declaration=True)
 
       - name: Lock portrait orientation
         env:
