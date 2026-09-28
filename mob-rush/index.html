@@ -34,25 +34,37 @@
       <label class="toggle"><input type="checkbox" id="opt-vibrate" checked> Vibration</label>
     </div>
 
-    <p class="promise">Pas de pièces, pas d'achats, pas d'énergie, pas de pub.<br>Les compétences, armes et héros se débloquent en jouant bien — jamais en payant ni en grindant.</p>
+    <p class="promise">Pas de vrais achats, pas de pub. La boutique s'achète avec l'XP gagnée en jouant (même en cas de défaite) — jamais avec de l'argent réel.</p>
 
-    <div id="skill-points" class="skill-points">0 compétence disponible</div>
+    <div class="currency-row">
+      <div id="skill-points" class="skill-points">0 compétence disponible</div>
+      <div id="xp-points" class="xp-points">0 XP</div>
+    </div>
 
     <details class="help">
-      <summary>⭐ Niveaux bonus <span class="hint">(optionnels)</span></summary>
-      <p class="bonus-intro">Pas besoin de les finir pour avancer : plus durs que la progression normale, ils deviennent faisables une fois que tu as gagné assez de compétences dans le jeu principal. Chacun rapporte une arme ou un héros unique, une seule fois.</p>
+      <summary>⭐ Niveaux bonus <span class="hint">(jouables à tout moment, très durs)</span></summary>
+      <p class="bonus-intro">Toujours accessibles, sans condition — mais nettement plus durs qu'un niveau normal du même palier. Chacun rapporte un gros bonus d'XP la première fois qu'il est gagné.</p>
       <div id="bonus-grid" class="level-grid bonus-grid"></div>
     </details>
 
     <details class="help">
-      <summary>🎯 Compétences <span class="hint">(arbre RPG)</span></summary>
-      <p class="bonus-intro">Une compétence par niveau réussi pour la première fois, une de plus si tu obtiens ★★★ pour la première fois. Rejouer un niveau déjà validé n'en rapporte plus.</p>
+      <summary>🎯 Compétences <span class="hint">(arbre RPG évolutif)</span></summary>
+      <p class="bonus-intro">Une compétence par niveau réussi pour la première fois, une de plus si tu obtiens ★★★ pour la première fois. Chaque compétence a plusieurs niveaux. Rejouer un niveau déjà validé n'en rapporte plus.</p>
       <div id="skill-list" class="skill-list"></div>
     </details>
 
     <details class="help">
-      <summary>🛠 Arsenal <span class="hint">(armes &amp; héros)</span></summary>
-      <p class="bonus-intro">Choisis l'arme et le héros équipés pour ta prochaine partie, parmi ceux débloqués via les niveaux bonus.</p>
+      <summary>🛒 Boutique <span class="hint">(armes &amp; héros contre XP)</span></summary>
+      <p class="bonus-intro">Dépense l'XP gagnée en jouant (victoire ou défaite) pour débloquer des armes et héros plus puissants.</p>
+      <h3 class="arsenal-title">Armes</h3>
+      <div id="shop-weapons" class="skill-list"></div>
+      <h3 class="arsenal-title">Héros</h3>
+      <div id="shop-heroes" class="skill-list"></div>
+    </details>
+
+    <details class="help">
+      <summary>🛠 Arsenal <span class="hint">(équiper armes &amp; héros)</span></summary>
+      <p class="bonus-intro">Choisis l'arme et le héros équipés pour ta prochaine partie, parmi ceux débloqués à la boutique.</p>
       <h3 class="arsenal-title">Armes</h3>
       <div id="arsenal-weapons" class="arsenal-list"></div>
       <h3 class="arsenal-title">Héros</h3>
@@ -65,9 +77,13 @@
         <li>Garde le doigt appuyé pour tirer, glisse pour déplacer le canon.</li>
         <li>Chaque rangée est un mur avec un ou deux couloirs ouverts (les portes) : impossible de passer sans viser l'un d'eux.</li>
         <li>Les portes <b class="c-mul">×2 ×3…</b> multiplient les unités qui les traversent ; évite les <b class="c-div">÷2</b> en visant l'autre couloir.</li>
+        <li>Une porte 🔒 est verrouillée : il faut lui sacrifier plusieurs unités pour la faire céder, une fois pour toutes.</li>
+        <li>Une porte ⏳ pulse : elle s'ouvre et se referme à intervalle — vise-la au bon moment.</li>
         <li>Les unités rouges qui atteignent ton canon lui font perdre des cœurs.</li>
         <li>Chaque tir charge le <b>champion</b> : une unité géante qui se démultiplie dans les portes.</li>
-        <li>La base est une suite de mini-châteaux 🏰 puis un grand château final 👑 : détruis-les un par un pour gagner. ★★★ si ton canon n'a subi aucun dégât.</li>
+        <li>Un niveau se décompose en 2 à 4 phases (mini-châteaux 🏰 puis un grand château final 👑) : détruis-les l'un après l'autre pour gagner. ★★★ si ton canon n'a subi aucun dégât.</li>
+        <li>Une fois le dernier château détruit, un <b>combat de boss</b> envoie des vagues d'ennemis deux fois plus dures avant que le niveau ne soit vraiment gagné.</li>
+        <li>Même en cas de défaite, tu gagnes de l'XP selon ta progression — rien n'est jamais perdu.</li>
       </ul>
     </details>
 
@@ -85,6 +101,7 @@
     <div id="hud-hearts" class="hud-hearts"></div>
   </div>
   <div id="hud-castles" class="hud-castles"></div>
+  <div id="hud-boss" class="hud-boss" hidden></div>
 
   <button id="btn-champion" class="champion" aria-label="Lancer le champion" disabled>
     <svg viewBox="0 0 64 64" class="champion-ring" aria-hidden="true">

@@ -1,8 +1,8 @@
 import {
-  W, CANNON_Y, BASE, CHAMPION_CHARGE, MAX_BLUE, ROW_FRONT,
-  generateLevel, createGame, step, canLaunchChampion, starsFor,
-  generateBonusLevel, bonusRewardFor, bonusUnlockLevel, BONUS_EVERY,
-  PERKS, perkLevel, perkUpgradeCost,
+  W, CANNON_Y, BASE, CHAMPION_CHARGE, MAX_BLUE, ROW_FRONT, T,
+  generateLevel, createGame, step, canLaunchChampion, starsFor, xpFor, mobilityFor, isGateOpen,
+  generateBonusLevel, bonusRefLevel, bonusXpReward, BONUS_EVERY,
+  PERKS, WEAPONS, HEROES, perkLevel, perkUpgradeCost,
 } from '../../engine.js';
 
 const DT = 1 / 60;
@@ -33,6 +33,23 @@ describe('generateLevel', () => {
   test('la difficulté augmente', () => {
     expect(generateLevel(20).spawnInterval).toBeLessThan(generateLevel(1).spawnInterval);
     expect(generateLevel(20).baseHp).toBeGreaterThan(generateLevel(1).baseHp);
+  });
+
+  test('chaque niveau se décompose en 2 à 4 phases, jamais moins ni plus', () => {
+    for (let n = 1; n <= 30; n++) {
+      const count = generateLevel(n).castles.length;
+      expect(count).toBeGreaterThanOrEqual(2);
+      expect(count).toBeLessThanOrEqual(4);
+    }
+  });
+
+  test('la difficulté adaptative augmente la pression ennemie sans changer le terrain', () => {
+    const base = generateLevel(5, 0);
+    const hard = generateLevel(5, 1);
+    expect(hard.waveSize).toBeGreaterThan(base.waveSize);
+    expect(hard.spawnGroup).toBeGreaterThanOrEqual(base.spawnGroup);
+    expect(hard.gates).toEqual(base.gates);
+    expect(hard.castles).toEqual(base.castles);
   });
 });
 
@@ -89,10 +106,12 @@ describe('step', () => {
     expect(starsFor(g)).toBe(0);
   });
 
-  test('le niveau 1 se gagne en tirant sur la meilleure porte', () => {
+  test('le niveau 1 se gagne en tirant sur la meilleure porte (même à travers un changement de terrain et le boss)', () => {
     const g = createGame(generateLevel(1));
-    const best = [...g.gates].sort((a, b) => b.y - a.y)[0];
-    run(g, 120, gg => ({ firing: true, targetX: best.x, champion: true }));
+    run(g, 200, gg => {
+      const best = [...gg.gates].sort((a, b) => b.y - a.y)[0];
+      return { firing: true, targetX: best.x, champion: true };
+    });
     expect(g.status).toBe('won');
     expect(g.baseHp).toBe(0);
     expect(starsFor(g)).toBeGreaterThanOrEqual(1);
@@ -164,10 +183,105 @@ describe('Couloirs : les rangées sans porte ouverte forment un mur', () => {
   });
 });
 
-describe('Séquence de châteaux (mini-châteaux puis grand château final)', () => {
-  test('un niveau simple (peu avancé) n’a qu’un seul château', () => {
+describe('Portes originales : verrouillées (sacrifice) et pulsées (intervalle)', () => {
+  test('isGateOpen : normale toujours ouverte, verrouillée selon locked, pulsée selon active', () => {
+    expect(isGateOpen({ kind: 'normal' })).toBe(true);
+    expect(isGateOpen({ kind: 'lock', locked: true })).toBe(false);
+    expect(isGateOpen({ kind: 'lock', locked: false })).toBe(true);
+    expect(isGateOpen({ kind: 'pulse', active: true })).toBe(true);
+    expect(isGateOpen({ kind: 'pulse', active: false })).toBe(false);
+  });
+
+  test('une porte verrouillée sacrifie les unités jusqu’à céder, puis émet gateUnlocked et reste ouverte', () => {
+    const cfg = {
+      ...generateLevel(1),
+      gates: [{ id: 0, x: W / 2, y: 400, w: 200, h: 14, op: { type: 'mul', n: 3 }, vx: 0, minX: 0, maxX: W, kind: 'lock', locked: true, hits: 0, lockHits: 2 }],
+      spawnInterval: 1e9, waveEvery: 1e9,
+    };
+    const g = createGame(cfg);
+    g.blue.push({ x: W / 2, y: 450, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    let unlocked = null;
+    for (let t = 0; t < 0.35 && !unlocked; t += DT) {
+      step(g, DT, {});
+      unlocked = g.events.find(e => e.type === 'gateUnlocked') || null;
+      g.events.length = 0;
+    }
+    // lockHits=2 : un seul sacrifice ne suffit pas encore.
+    expect(unlocked).toBeNull();
+    expect(g.gates[0].locked).toBe(true);
+    expect(g.gates[0].hits).toBe(1);
+    expect(g.blue).toHaveLength(0); // l'unité s'est sacrifiée contre le mur
+
+    g.blue.push({ x: W / 2, y: 450, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    for (let t = 0; t < 0.35 && !unlocked; t += DT) {
+      step(g, DT, {});
+      unlocked = g.events.find(e => e.type === 'gateUnlocked') || null;
+      g.events.length = 0;
+    }
+    expect(unlocked).not.toBeNull();
+    expect(g.gates[0].locked).toBe(false);
+  });
+
+  test('une fois déverrouillée, la porte se comporte comme une porte × normale', () => {
+    const cfg = {
+      ...generateLevel(1),
+      gates: [{ id: 0, x: W / 2, y: 400, w: 200, h: 14, op: { type: 'mul', n: 3 }, vx: 0, minX: 0, maxX: W, kind: 'lock', locked: false, hits: 2, lockHits: 2 }],
+      spawnInterval: 1e9, waveEvery: 1e9,
+    };
+    const g = createGame(cfg);
+    g.blue.push({ x: W / 2, y: 450, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    run(g, 0.35, {});
+    expect(g.blue).toHaveLength(3);
+    expect(g.blue.every(u => u.mask & 1)).toBe(true);
+  });
+
+  test('une porte pulsée bloque pendant sa phase fermée et laisse passer une fois rouverte', () => {
+    const cfg = {
+      ...generateLevel(1),
+      gates: [{ id: 0, x: W / 2, y: 400, w: 200, h: 14, op: { type: 'mul', n: 2 }, vx: 0, minX: 0, maxX: W, kind: 'pulse', pulseOn: 1, pulseOff: 1, pulseT: 1, active: false }],
+      spawnInterval: 1e9, waveEvery: 1e9,
+    };
+    const g = createGame(cfg);
+    g.blue.push({ x: W / 2, y: 450, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    // Phase fermée initiale : l'unité vient buter contre le mur et attend.
+    run(g, 0.3, {});
+    expect(g.blue).toHaveLength(1);
+    expect(g.blue[0].mask & 1).toBe(0);
+
+    // Un cycle complet plus tard (pulseOn+pulseOff=2s), une phase ouverte a
+    // forcément eu lieu : l'unité qui attendait contre le mur en a profité.
+    run(g, 2.2, {});
+    expect(g.blue.some(u => u.mask & 1)).toBe(true);
+  });
+
+  test('les portes verrouillées/pulsées n’apparaissent que sur des portes ×, jamais ÷', () => {
+    for (let n = 4; n <= 25; n++) {
+      for (const g of generateLevel(n).gates) {
+        if (g.kind === 'lock' || g.kind === 'pulse') expect(g.op.type).toBe('mul');
+      }
+    }
+  });
+
+  test('au plus une porte spéciale par rangée', () => {
+    for (let n = 4; n <= 25; n++) {
+      const byY = new Map();
+      for (const g of generateLevel(n).gates) {
+        if (!byY.has(g.y)) byY.set(g.y, []);
+        byY.get(g.y).push(g);
+      }
+      for (const row of byY.values()) {
+        const specials = row.filter(g => g.kind === 'lock' || g.kind === 'pulse').length;
+        expect(specials).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+});
+
+describe('Séquence de châteaux (2 à 4 phases, puis un grand château final)', () => {
+  test('même le niveau 1 se décompose en au moins deux phases', () => {
     const lvl = generateLevel(1);
-    expect(lvl.castles).toEqual([lvl.baseHp]);
+    expect(lvl.castles.length).toBeGreaterThanOrEqual(2);
+    expect(lvl.castles.reduce((a, b) => a + b, 0)).toBe(lvl.baseHp);
   });
 
   test('un niveau avancé a plusieurs châteaux, dont un dernier plus gros, dont la somme fait le total', () => {
@@ -186,15 +300,6 @@ describe('Séquence de châteaux (mini-châteaux puis grand château final)', ()
     expect(g.castleHp).toBe(5);
     expect(g.status).toBe('playing');
     expect(g.events.some(e => e.type === 'castleDown' && e.index === 1 && e.final === false)).toBe(true);
-  });
-
-  test('détruire le dernier château termine le niveau', () => {
-    const cfg = { ...generateLevel(1), castles: [10, 30], baseHp: 40, gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
-    const g = createGame(cfg);
-    g.blue.push({ x: BASE.x, y: BASE.y, vx: 0, vy: 0, hp: 40, r: 5, mask: 0, champ: false });
-    step(g, DT, {});
-    expect(g.status).toBe('won');
-    expect(g.events.some(e => e.type === 'castleDown' && e.final === true)).toBe(true);
   });
 
   test('un niveau avancé a un terrain distinct par mini-château', () => {
@@ -230,6 +335,89 @@ describe('Séquence de châteaux (mini-châteaux puis grand château final)', ()
     step(g, DT, {});
     expect(g.castleIndex).toBe(1);
     expect(flying.mask).toBe(0);
+  });
+});
+
+describe('Combat de boss (après le dernier château)', () => {
+  test('détruire le dernier château démarre un combat de boss, sans terminer le niveau', () => {
+    const cfg = { ...generateLevel(1), castles: [10, 30], baseHp: 40, gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const g = createGame(cfg);
+    g.blue.push({ x: BASE.x, y: BASE.y, vx: 0, vy: 0, hp: 40, r: 5, mask: 0, champ: false });
+    step(g, DT, {});
+    expect(g.baseHp).toBe(0);
+    expect(g.status).toBe('playing');
+    expect(g.boss).toEqual({ wavesLeft: T.BOSS_WAVES, wavesTotal: T.BOSS_WAVES });
+    expect(g.events.some(e => e.type === 'bossStart' && e.wavesTotal === T.BOSS_WAVES)).toBe(true);
+    expect(g.events.some(e => e.type === 'won')).toBe(false);
+  });
+
+  test('survivre aux vagues de boss termine enfin le niveau', () => {
+    const cfg = { ...generateLevel(1), castles: [10, 30], baseHp: 40, gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const g = createGame(cfg);
+    g.blue.push({ x: BASE.x, y: BASE.y, vx: 0, vy: 0, hp: 40, r: 5, mask: 0, champ: false });
+    step(g, DT, {}); // détruit le dernier château, démarre le boss
+    expect(g.status).toBe('playing');
+    g.boss.wavesLeft = 0; // simule les vagues de boss survécues
+    step(g, DT, {});
+    expect(g.status).toBe('won');
+    expect(g.events.some(e => e.type === 'won')).toBe(true);
+  });
+
+  test('le canon peut quand même tomber pendant le combat de boss', () => {
+    const cfg = { ...generateLevel(1), castles: [10, 30], baseHp: 40, gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const g = createGame(cfg);
+    g.boss = { wavesLeft: 2, wavesTotal: 3 };
+    g.baseHp = 0;
+    g.cannonHp = 0;
+    step(g, DT, {});
+    expect(g.status).toBe('lost');
+  });
+
+  test('un combat de boss double la taille des vagues d’ennemis', () => {
+    const cfg = { ...generateLevel(1), castles: [10, 30], baseHp: 40, gates: [], spawnInterval: 1e9, waveEvery: 1e9, waveSize: 4, bruteChance: 0 };
+    const normal = createGame(cfg);
+    normal.waveAcc = normal.cfg.waveEvery; // force le déclenchement immédiat
+    step(normal, DT, {});
+    const normalCount = normal.red.length;
+    expect(normalCount).toBeGreaterThan(0);
+
+    const boss = createGame(cfg);
+    boss.boss = { wavesLeft: 3, wavesTotal: 3 };
+    boss.waveAcc = boss.cfg.waveEvery;
+    step(boss, DT, {});
+    expect(boss.red.length).toBe(normalCount * 2);
+  });
+});
+
+describe('Progression : XP et difficulté adaptative', () => {
+  test('xpFor récompense la progression même en cas de défaite', () => {
+    const g = createGame(generateLevel(5));
+    g.castleIndex = 1;
+    g.stats.kills = 20;
+    g.status = 'lost';
+    expect(xpFor(g)).toBeGreaterThan(0);
+  });
+
+  test('xpFor donne un bonus supplémentaire à la victoire', () => {
+    const g = createGame(generateLevel(5));
+    g.castleIndex = 1;
+    g.stats.kills = 20;
+    g.status = 'playing';
+    const lost = xpFor({ ...g, status: 'lost' });
+    const won = xpFor({ ...g, status: 'won' });
+    expect(won).toBeGreaterThan(lost);
+  });
+
+  test('un joueur qui ne bouge jamais le canon a une mobilité nulle', () => {
+    const g = createGame(generateLevel(1));
+    run(g, 1, { firing: true });
+    expect(mobilityFor(g)).toBe(0);
+  });
+
+  test('mobilityFor mesure le déplacement moyen du canon par seconde', () => {
+    const g = createGame(generateLevel(1));
+    run(g, 1, { targetX: 0 });
+    expect(mobilityFor(g)).toBeGreaterThan(0);
   });
 });
 
@@ -274,6 +462,36 @@ describe('RPG : compétences, armes, héros', () => {
     expect(g.blue[0].hp).toBe(1);
   });
 
+  test('le canon lourd tire des unités qui encaissent plusieurs PV', () => {
+    const cfg = { ...generateLevel(1), gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const g = createGame(cfg, { weapon: 'lourd' });
+    run(g, 0.3, { firing: true, targetX: W / 2 });
+    expect(g.blue.length).toBeGreaterThan(0);
+    expect(g.blue.every(u => u.hp === WEAPONS.lourd.shotHp)).toBe(true);
+  });
+
+  test('le canon jumeau tire toujours un nombre pair d’unités par cadence', () => {
+    const cfg = { ...generateLevel(1), gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const g = createGame(cfg, { weapon: 'jumeau' });
+    run(g, 0.3, { firing: true, targetX: W / 2 });
+    expect(g.blue.length).toBeGreaterThan(0);
+    expect(g.blue.length % 2).toBe(0);
+  });
+
+  test('le héros gardien accorde des PV de canon supplémentaires', () => {
+    const g = createGame(generateLevel(1), { hero: 'gardien' });
+    expect(g.cannonHpMax).toBe(g.cfg.cannonHp + HEROES.gardien.cannonHpBonus);
+  });
+
+  test('la sentinelle charge le champion plus vite par tir', () => {
+    const cfg = { ...generateLevel(1), gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const std = createGame(cfg, { hero: 'champion' });
+    run(std, 0.2, { firing: true, targetX: W / 2 });
+    const sent = createGame(cfg, { hero: 'sentinelle' });
+    run(sent, 0.2, { firing: true, targetX: W / 2 });
+    expect(sent.charge).toBeGreaterThan(std.charge);
+  });
+
   test('un héros au bonus de clonage démultiplie plus le champion dans une porte ×', () => {
     const cfg = {
       ...generateLevel(1),
@@ -289,16 +507,16 @@ describe('RPG : compétences, armes, héros', () => {
     expect(colosse.blue.length).toBeLessThan(standard.blue.length);
   });
 
-  test('generateBonusLevel est déterministe et plus dur que le niveau principal équivalent', () => {
+  test('generateBonusLevel est déterministe, toujours plus dur que le niveau principal équivalent', () => {
     expect(generateBonusLevel(2)).toEqual(generateBonusLevel(2));
     const bonus = generateBonusLevel(2);
-    const main = generateLevel(bonusUnlockLevel(2));
+    const main = generateLevel(bonusRefLevel(2));
     expect(bonus.baseHp).toBeGreaterThan(main.baseHp);
     expect(bonus.bonus).toBe(true);
   });
 
-  test('bonusRewardFor renvoie une récompense stable par index', () => {
-    expect(bonusRewardFor(1)).toEqual(bonusRewardFor(1));
-    expect(bonusUnlockLevel(1)).toBe(BONUS_EVERY);
+  test('bonusXpReward augmente avec le palier, bonusRefLevel est stable', () => {
+    expect(bonusXpReward(2)).toBeGreaterThan(bonusXpReward(1));
+    expect(bonusRefLevel(1)).toBe(BONUS_EVERY);
   });
 });
