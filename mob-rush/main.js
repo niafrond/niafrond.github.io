@@ -4,10 +4,18 @@
 
 import {
   W, H, CANNON_Y, BASE,
-  generateLevel, createGame, step, canLaunchChampion, starsFor,
+  generateLevel, createGame, step, canLaunchChampion, starsFor, xpFor, mobilityFor,
   PERKS, WEAPONS, HEROES, perkLevel, perkUpgradeCost, perkStatAt,
-  generateBonusLevel, bonusRewardFor, bonusUnlockLevel, BONUS_EVERY,
+  generateBonusLevel, bonusRefLevel, bonusXpReward, BONUS_EVERY,
 } from './engine.js';
+
+// Seuil de mobilité (px/s de déplacement du canon) en dessous duquel on
+// considère que le joueur « bourrine » sans viser — durcit le niveau
+// suivant plutôt que de laisser une stratégie purement statique fonctionner
+// indéfiniment (cf. difficulty dans generateLevel).
+const TURTLE_MOBILITY = 18;
+const DIFFICULTY_STEP_UP = 0.15;
+const DIFFICULTY_STEP_DOWN = 0.08;
 
 // ─── Progression (localStorage) ──────────────────────────────────────────────
 const STORE_KEY = 'mobrush.v1';
@@ -15,8 +23,13 @@ const STORE_KEY = 'mobrush.v1';
 function loadSave() {
   const def = {
     unlocked: 1, stars: {}, sound: true, vibrate: true,
-    // RPG : rien ne s'achète, tout se gagne en jouant.
+    // RPG : compétences gagnées en jouant, armes/héros achetés à la
+    // boutique avec l'XP gagnée en jouant (victoire ou défaite).
     skillPoints: 0, skills: {}, claimed: {},
+    xp: 0,
+    // Difficulté adaptative (0..1) : monte si le joueur ne bouge jamais le
+    // canon (bourrinage statique), redescend sinon. Cf. mobilityFor.
+    difficulty: 0,
     unlockedWeapons: ['standard'], unlockedHeroes: ['champion'],
     equip: { weapon: 'standard', hero: 'champion' },
     bonusStars: {}, bonusClaimed: {},
@@ -93,12 +106,21 @@ function buzz(ms) {
 }
 
 // ─── Menu ────────────────────────────────────────────────────────────────────
+// Liste de niveaux infinie (générée à la volée, cf. generateLevel) : on
+// n'affiche jamais tout l'historique, seulement une fenêtre glissante autour
+// du niveau courant (les niveaux déjà validés plus anciens restent
+// accessibles via « Rejouer » en fin de partie, mais disparaissent de cette
+// liste au fur et à mesure qu'on avance).
+const LEVEL_STRIP_BACK = 2;
+const LEVEL_STRIP_AHEAD = 3;
+
 function renderMenu() {
   $('play-level').textContent = save.unlocked;
   const grid = $('level-grid');
   grid.innerHTML = '';
-  const total = Math.max(20, Math.ceil((save.unlocked + 5) / 5) * 5);
-  for (let i = 1; i <= total; i++) {
+  const from = Math.max(1, save.unlocked - LEVEL_STRIP_BACK);
+  const to = save.unlocked + LEVEL_STRIP_AHEAD;
+  for (let i = from; i <= to; i++) {
     const b = document.createElement('button');
     b.className = 'level-btn' + (i === save.unlocked ? ' current' : '');
     b.disabled = i > save.unlocked;
@@ -109,32 +131,63 @@ function renderMenu() {
   }
   $('opt-sound').checked = save.sound;
   $('opt-vibrate').checked = save.vibrate;
+  $('xp-points').textContent = `${save.xp} XP`;
   renderBonusGrid();
   renderSkillList();
+  renderShop();
   renderArsenal();
 }
 
+// Niveaux bonus : toujours tous jouables (jamais verrouillés), la liste
+// s'allonge simplement avec la progression pour proposer des paliers de
+// plus en plus durs.
 function renderBonusGrid() {
   const grid = $('bonus-grid');
   grid.innerHTML = '';
-  const total = Math.max(2, Math.ceil(save.unlocked / BONUS_EVERY) + 1);
+  const total = Math.max(10, Math.ceil(save.unlocked / BONUS_EVERY) + 3);
   for (let i = 1; i <= total; i++) {
-    const need = bonusUnlockLevel(i);
-    const unlocked = save.unlocked >= need;
     const claimed = !!save.bonusClaimed[i];
-    const reward = bonusRewardFor(i);
-    const table = reward.type === 'weapon' ? WEAPONS : HEROES;
     const b = document.createElement('button');
     b.className = 'level-btn bonus-btn' + (claimed ? ' claimed' : '');
-    b.disabled = !unlocked;
     const s = save.bonusStars[i] || 0;
-    const rewardLabel = claimed ? `✓ ${table[reward.id].name}`
-      : unlocked ? `🎁 ${table[reward.id].name}`
-      : `🔒 niv. ${need}`;
+    const rewardLabel = claimed ? `✓ +${bonusXpReward(i)} XP` : `🎁 +${bonusXpReward(i)} XP`;
     b.innerHTML = `<span>${i}</span><span class="lv-stars">${'★'.repeat(s)}</span><span class="bonus-reward">${rewardLabel}</span>`;
+    b.title = `Difficulté ≈ niveau ${bonusRefLevel(i)}`;
     b.addEventListener('click', () => startBonus(i));
     grid.appendChild(b);
   }
+}
+
+// Boutique : dépense l'XP gagnée en jouant (victoire ou défaite) pour
+// débloquer des armes/héros — remplace l'ancien déblocage automatique via
+// les niveaux bonus.
+function renderShop() {
+  renderShopGroup('shop-weapons', WEAPONS, save.unlockedWeapons,
+    id => { save.xp -= WEAPONS[id].xpCost; save.unlockedWeapons.push(id); persist(); renderMenu(); });
+  renderShopGroup('shop-heroes', HEROES, save.unlockedHeroes,
+    id => { save.xp -= HEROES[id].xpCost; save.unlockedHeroes.push(id); persist(); renderMenu(); });
+}
+function renderShopGroup(elId, table, unlockedIds, onBuy) {
+  const list = $(elId);
+  list.innerHTML = '';
+  for (const item of Object.values(table)) {
+    if (!item.xpCost) continue; // les items de départ (standard/champion) ne sont pas en vente
+    const owned = unlockedIds.includes(item.id);
+    const row = document.createElement('div');
+    row.className = 'skill-row' + (owned ? ' owned' : '');
+    row.innerHTML = `<div class="skill-info"><b>${item.name}</b><span>${item.desc}</span></div>` +
+      (owned
+        ? `<span class="shop-owned">✓ Possédé</span>`
+        : `<button class="btn btn-secondary btn-sm shop-buy" data-id="${item.id}" ${save.xp < item.xpCost ? 'disabled' : ''}>Acheter (${item.xpCost} XP)</button>`);
+    list.appendChild(row);
+  }
+  list.querySelectorAll('.shop-buy').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = table[btn.dataset.id];
+      if (!item || unlockedIds.includes(item.id) || save.xp < item.xpCost) return;
+      onBuy(item.id);
+    });
+  });
 }
 
 function renderSkillList() {
@@ -189,7 +242,7 @@ function renderArsenalGroup(elId, table, unlockedIds, equippedId, onSelect) {
     btn.disabled = !unlocked;
     btn.innerHTML = unlocked
       ? `<b>${item.name}</b><span>${item.desc}</span>`
-      : `<b>🔒 ???</b><span>À débloquer via un niveau bonus.</span>`;
+      : `<b>🔒 ${item.name}</b><span>À débloquer à la boutique (${item.xpCost} XP).</span>`;
     if (unlocked) btn.addEventListener('click', () => onSelect(id));
     el.appendChild(btn);
   }
@@ -205,6 +258,8 @@ $('btn-reset').addEventListener('click', () => {
   save.claimed = {};
   save.skillPoints = 0;
   save.skills = {};
+  save.xp = 0;
+  save.difficulty = 0;
   save.unlockedWeapons = ['standard'];
   save.unlockedHeroes = ['champion'];
   save.equip = { weapon: 'standard', hero: 'champion' };
@@ -225,6 +280,13 @@ let floaters = [];
 let rays = [];
 let shake = 0;
 let flash = 0;
+// « Montée » de phase : effet de parallaxe (le fond et le premier plan se
+// décalent à des vitesses différentes puis reviennent en place) joué à
+// chaque mini-château détruit, pour donner l'impression de monter à la
+// phase suivante — sans jamais afficher d'écran « terminé » entre les
+// phases (cf. handleEvents, castleDown).
+let climbT = 0;
+const CLIMB_DURATION = 0.7;
 const input = { firing: false, targetX: null, champion: false };
 
 function beginGame(cfg, label) {
@@ -234,6 +296,7 @@ function beginGame(cfg, label) {
   rays = [];
   shake = 0;
   flash = 0;
+  climbT = 0;
   paused = false;
   input.firing = false;
   input.targetX = null;
@@ -252,7 +315,7 @@ function beginGame(cfg, label) {
 }
 function startLevel(n) {
   currentBonusIndex = null;
-  beginGame(generateLevel(n), `Niveau ${n}`);
+  beginGame(generateLevel(n, save.difficulty || 0), `Niveau ${n}`);
 }
 function startBonus(idx) {
   currentBonusIndex = idx;
@@ -279,6 +342,8 @@ function resume() {
   lastT = performance.now();
 }
 
+const clampDifficulty = v => Math.max(0, Math.min(1, v));
+
 function showOverlay(kind) {
   overlay.hidden = false;
   const lvl = game.cfg.level;
@@ -295,21 +360,38 @@ function showOverlay(kind) {
   $('overlay-stats').innerHTML =
     `Temps : ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}<br>` +
     `Ennemis éliminés : ${game.stats.kills}<br>Armée max : ${game.stats.peak} unités`;
+
+  // XP gagnée qu'on gagne OU qu'on perde, proportionnelle à ce qui a été
+  // accompli — la progression (boutique) n'est jamais bloquée par un échec.
+  const gainedXp = xpFor(game);
+  save.xp += gainedXp;
+  const rewards = gainedXp ? [`+${gainedXp} XP`] : [];
+
+  // Difficulté adaptative : seulement sur la progression principale (les
+  // niveaux bonus sont déjà volontairement très durs en permanence).
+  if (currentBonusIndex == null) {
+    const turtling = mobilityFor(game) < TURTLE_MOBILITY;
+    save.difficulty = clampDifficulty((save.difficulty || 0) + (turtling ? DIFFICULTY_STEP_UP : -DIFFICULTY_STEP_DOWN));
+  }
+
   if (kind === 'won') {
     const s = starsFor(game);
     $('overlay-title').textContent = 'Victoire !';
     $('overlay-stars').innerHTML = [1, 2, 3].map(i => `<span class="${i <= s ? '' : 'off'}">★</span>`).join('');
     if (currentBonusIndex != null) {
-      $('overlay-reward').textContent = claimBonusReward(currentBonusIndex, s);
+      const r = claimBonusReward(currentBonusIndex, s);
+      if (r) rewards.push(r);
     } else {
-      $('overlay-reward').textContent = claimLevelReward(lvl, s);
+      const r = claimLevelReward(lvl, s);
+      if (r) rewards.push(r);
       save.unlocked = Math.max(save.unlocked, lvl + 1);
     }
-    persist();
-    renderMenu();
   } else {
     $('overlay-title').textContent = 'Défaite';
   }
+  $('overlay-reward').textContent = rewards.join('  ·  ');
+  persist();
+  renderMenu();
 }
 
 // Récompenses RPG : uniquement à la première réussite d'un niveau (ou au
@@ -323,14 +405,14 @@ function claimLevelReward(lvl, stars) {
   save.skillPoints += gained;
   return gained ? `+${gained} compétence${gained > 1 ? 's' : ''} !` : '';
 }
+// Bonus d'XP à la première victoire sur un palier de niveau bonus donné.
 function claimBonusReward(idx, stars) {
   save.bonusStars[idx] = Math.max(save.bonusStars[idx] || 0, stars);
   if (save.bonusClaimed[idx]) return '';
   save.bonusClaimed[idx] = true;
-  const reward = bonusRewardFor(idx);
-  if (reward.type === 'weapon') { save.unlockedWeapons.push(reward.id); return `🎁 Nouvelle arme : ${WEAPONS[reward.id].name} !`; }
-  save.unlockedHeroes.push(reward.id);
-  return `🎁 Nouveau héros : ${HEROES[reward.id].name} !`;
+  const bonus = bonusXpReward(idx);
+  save.xp += bonus;
+  return `🎁 +${bonus} XP bonus !`;
 }
 
 $('btn-pause').addEventListener('click', pause);
@@ -427,6 +509,9 @@ function handleEvents() {
         addRays(BASE.x, BASE.y, '#ffc93c', ev.final ? 16 : 10, ev.final ? 70 : 45);
         shake = ev.final ? 0.4 : 0.3;
         if (ev.final) flash = 1;
+        // Jamais d'écran « terminé » entre deux phases : juste un effet de
+        // montée (parallaxe, cf. draw) et on enchaîne directement.
+        if (!ev.final) climbT = 1;
         floaters.push({ x: W / 2, y: 150, t: 1.1, text: ev.final ? 'CHÂTEAU FINAL !' : 'CHÂTEAU DÉTRUIT !', color: '#ffc93c', big: true });
         if (ev.terrainChanged) floaters.push({ x: W / 2, y: 185, t: 1.3, text: 'TERRAIN MODIFIÉ !', color: '#3fa9ff', big: false });
         break;
@@ -441,8 +526,16 @@ function handleEvents() {
         buzz(30);
         addRays(ev.x, ev.y, '#ffc93c', 10, 45);
         break;
+      case 'bossStart':
+        sfx('base');
+        buzz([60, 40, 60, 40, 90]);
+        shake = 0.4;
+        floaters.push({ x: W / 2, y: 150, t: 1.4, text: 'COMBAT DE BOSS !', color: '#ff4d5e', big: true });
+        break;
       case 'wave':
-        floaters.push({ x: W / 2, y: 150, t: 1.2, text: 'VAGUE !', color: '#ff4d5e', big: true });
+        floaters.push(ev.boss
+          ? { x: W / 2, y: 150, t: 1.2, text: 'VAGUE DE BOSS !', color: '#ff4d5e', big: true }
+          : { x: W / 2, y: 150, t: 1.2, text: 'VAGUE !', color: '#ff4d5e', big: true });
         break;
       case 'won':
         sfx('win');
@@ -485,6 +578,7 @@ function updateFx(dt) {
   rays = rays.filter(r => r.t > 0);
   if (shake > 0) shake = Math.max(0, shake - dt);
   if (flash > 0) flash = Math.max(0, flash - dt * 2.5);
+  if (climbT > 0) climbT = Math.max(0, climbT - dt / CLIMB_DURATION);
 }
 
 let lastHearts = '';
@@ -506,6 +600,13 @@ function updateHud() {
       const cls = i < game.castleIndex ? 'done' : i === game.castleIndex ? 'current' : '';
       return `<span class="pip ${cls}">${icon}</span>`;
     }).join('');
+  }
+  const bossEl = $('hud-boss');
+  if (game.boss) {
+    bossEl.hidden = false;
+    bossEl.textContent = `⚔ BOSS — vague ${game.boss.wavesTotal - game.boss.wavesLeft}/${game.boss.wavesTotal}`;
+  } else if (!bossEl.hidden) {
+    bossEl.hidden = true;
   }
 }
 
@@ -653,7 +754,16 @@ function draw() {
 
   let sx = 0, sy = 0;
   if (shake > 0) { sx = (Math.random() - 0.5) * 8 * shake / 0.3; sy = (Math.random() - 0.5) * 8 * shake / 0.3; }
-  ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, (view.ox + sx) * dpr, (view.oy + sy) * dpr);
+
+  // Effet de « montée » entre deux phases (pas d'écran terminé, juste une
+  // parallaxe) : le fond, plus loin, se décale moins que le premier plan —
+  // l'ensemble part en douceur puis revient à sa place, comme si on venait
+  // de grimper d'un étage.
+  const climbEase = climbT * climbT * (3 - 2 * climbT); // smoothstep
+  const climbBg = climbEase * 9;
+  const climbFg = climbEase * 24;
+
+  ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, (view.ox + sx) * dpr, (view.oy + sy + climbBg) * dpr);
 
   // Terrain — le fond change de palette à chaque changement d'écran (chaque
   // mini-château détruit fait basculer sur un nouveau terrain, cf. engine.js).
@@ -668,6 +778,10 @@ function draw() {
   ctx.strokeStyle = 'rgba(255,255,255,0.05)';
   ctx.lineWidth = 1;
   for (let y = 40; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+  // Premier plan (château, murs, portes, unités, canon…) : décalage plus
+  // marqué que le fond, pour créer la profondeur de la parallaxe.
+  ctx.setTransform(view.scale * dpr, 0, 0, view.scale * dpr, (view.ox + sx) * dpr, (view.oy + sy + climbFg) * dpr);
 
   // Château actuel : un mini-château pour chaque étape intermédiaire, un
   // grand château pour la dernière — la progression se voit, pas juste une
