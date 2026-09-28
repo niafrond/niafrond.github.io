@@ -1,3 +1,10 @@
+## [2.41.0](https://github.com/niafrond/niafrond.github.io/compare/v2.40.0...v2.41.0) (2026-09-28)
+
+### Features
+
+* **mob-rush:** portes verrouillées (sacrifice) et pulsées (intervalle) ([7a6a288](https://github.com/niafrond/niafrond.github.io/commit/7a6a2886258b36016c1e2ba565f9fa43aa9034b1))
+* **mob-rush:** progression roguelite — phases, boss, XP, boutique, difficulté adaptative ([b2b462c](https://github.com/niafrond/niafrond.github.io/commit/b2b462c4e991fcd13f37c2b7821818c8ed307229))
+
 ## [2.40.0](https://github.com/niafrond/niafrond.github.io/compare/v2.39.0...v2.40.0) (2026-09-28)
 
 ### Features
