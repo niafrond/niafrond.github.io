@@ -24,6 +24,10 @@ const RED_SPEED = 40;
 const BRUTE_SPEED = 27;
 const CANNON_SPEED = 900;
 const GATE_H = 14;
+// Décalage vers le bas (donc vers le joueur) du bord « avant » d'une rangée
+// de portes/murs par rapport à `row.y`/`gate.y` — doit rester synchronisé
+// avec la bande de 30px dessinée par main.js (de row.y-16 à row.y+14).
+export const ROW_FRONT = 14;
 
 // Équilibrage (réglé par simulation d'un bot sur les niveaux 1–30)
 export const T = {
@@ -464,13 +468,24 @@ export function step(g, dt, input = {}) {
 
     for (const row of g.rows) {
       if (u.mask & row.mask) continue;
-      if (!(prevY > row.y && u.y <= row.y)) continue;
+      // Bord « avant » du mur/de la porte tel que dessiné (bande de 30px,
+      // de row.y-16 à row.y+14) : le premier bord rencontré par une unité
+      // qui monte. La ligne d'arrêt tient compte du rayon de l'unité pour
+      // qu'elle vienne buter pile contre la surface, sans jamais s'enfoncer
+      // dedans (sinon elle se retrouve visuellement à l'intérieur du mur).
+      // On exige que l'unité ait effectivement approché par le sud (prevY
+      // au niveau ou au-delà de la ligne d'arrêt) : une unité placée
+      // directement au nord de la rangée (ex. déjà à la base) ne doit pas
+      // se faire téléporter en arrière contre un mur qu'elle n'a jamais
+      // traversé.
+      const stopY = row.y + ROW_FRONT + u.r;
+      if (!(prevY >= stopY && u.y <= stopY)) continue;
       const gate = row.gateIds.map(id => g.gates[id]).find(gt => Math.abs(u.x - gt.x) <= gt.w / 2);
       if (!gate) {
-        // Mur : aucune porte ouverte ici. Bloque la progression et dévie
-        // l'unité vers le couloir ouvert le plus proche — impossible de
-        // franchir une rangée sans passer par un multiplicateur/diviseur.
-        u.y = row.y + 0.5;
+        // Mur : aucune porte ouverte ici. Collision : l'unité vient buter
+        // contre la surface (jamais à travers) et glisse horizontalement le
+        // long du mur vers le couloir ouvert le plus proche.
+        u.y = stopY;
         const nearest = row.gateIds
           .map(id => g.gates[id])
           .reduce((a, b) => (Math.abs(b.x - u.x) < Math.abs(a.x - u.x) ? b : a));
