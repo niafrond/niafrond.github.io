@@ -2,6 +2,7 @@ import {
   W, CANNON_Y, BASE, CHAMPION_CHARGE, MAX_BLUE,
   generateLevel, createGame, step, canLaunchChampion, starsFor,
   generateBonusLevel, bonusRewardFor, bonusUnlockLevel, BONUS_EVERY,
+  PERKS, perkLevel, perkUpgradeCost,
 } from '../../engine.js';
 
 const DT = 1 / 60;
@@ -174,6 +175,41 @@ describe('Séquence de châteaux (mini-châteaux puis grand château final)', ()
     expect(g.status).toBe('won');
     expect(g.events.some(e => e.type === 'castleDown' && e.final === true)).toBe(true);
   });
+
+  test('un niveau avancé a un terrain distinct par mini-château', () => {
+    const lvl = generateLevel(10);
+    expect(lvl.terrains.length).toBe(lvl.castles.length);
+    // Les terrains ont des identifiants de portes propres (0..k-1 chacun),
+    // mais leurs dispositions ne sont pas toutes identiques.
+    const layouts = lvl.terrains.map(t => JSON.stringify(t.map(({ x, y, op }) => [x, y, op])));
+    expect(new Set(layouts).size).toBeGreaterThan(1);
+  });
+
+  test('détruire un mini-château change la configuration du terrain (portes)', () => {
+    const lvl = generateLevel(10);
+    const g = createGame(lvl);
+    const initialGates = JSON.stringify(g.gates.map(({ x, y, op }) => [x, y, op]));
+    // Force la destruction du premier mini-château.
+    g.blue.push({ x: BASE.x, y: BASE.y, vx: 0, vy: 0, hp: g.castleHp, r: 5, mask: 0, champ: false });
+    step(g, DT, {});
+    expect(g.castleIndex).toBe(1);
+    const ev = g.events.find(e => e.type === 'castleDown' && e.index === 1);
+    expect(ev.terrainChanged).toBe(true);
+    const newGates = JSON.stringify(g.gates.map(({ x, y, op }) => [x, y, op]));
+    expect(newGates).not.toBe(initialGates);
+    expect(newGates).toBe(JSON.stringify(lvl.terrains[1].map(({ x, y, op }) => [x, y, op])));
+  });
+
+  test('les unités déjà en jeu perdent leur progression de portes au changement de terrain', () => {
+    const lvl = generateLevel(10);
+    const g = createGame(lvl);
+    const flying = { x: BASE.x, y: 350, vx: 0, vy: 0, hp: 1, r: 5, mask: 0b111, champ: false };
+    g.blue.push(flying);
+    g.blue.push({ x: BASE.x, y: BASE.y, vx: 0, vy: 0, hp: g.castleHp, r: 5, mask: 0, champ: false });
+    step(g, DT, {});
+    expect(g.castleIndex).toBe(1);
+    expect(flying.mask).toBe(0);
+  });
 });
 
 describe('RPG : compétences, armes, héros', () => {
@@ -185,11 +221,23 @@ describe('RPG : compétences, armes, héros', () => {
   });
 
   test('les compétences modifient la cadence, la charge et les PV de canon', () => {
-    const g = createGame(generateLevel(1), { perks: ['cadence', 'charge', 'blindage'] });
-    expect(g.fireRate).toBeCloseTo(9 * 1.15);
+    const g = createGame(generateLevel(1), { perks: { cadence: 1, charge: 1, blindage: 1 } });
+    expect(g.fireRate).toBeCloseTo(9 * 1.1);
     expect(g.championCharge).toBeLessThan(CHAMPION_CHARGE);
     expect(g.cannonHpMax).toBe(g.cfg.cannonHp + 2);
     expect(g.cannonHp).toBe(g.cannonHpMax);
+  });
+
+  test('les compétences sont évolutives : un niveau plus élevé renforce l’effet', () => {
+    const lvl1 = createGame(generateLevel(1), { perks: { cadence: 1 } });
+    const lvl3 = createGame(generateLevel(1), { perks: { cadence: 3 } });
+    expect(lvl3.fireRate).toBeGreaterThan(lvl1.fireRate);
+    expect(perkLevel({ cadence: 3 }, 'cadence')).toBe(3);
+    // Le niveau est plafonné à maxLevel même si la sauvegarde en dit plus.
+    expect(perkLevel({ cadence: 99 }, 'cadence')).toBe(PERKS.cadence.maxLevel);
+    // Plus de niveau disponible une fois au maximum.
+    expect(perkUpgradeCost('cadence', PERKS.cadence.maxLevel)).toBeUndefined();
+    expect(perkUpgradeCost('cadence', 0)).toBe(PERKS.cadence.costPerLevel[0]);
   });
 
   test('l’arme perforante fait ignorer les portes ÷', () => {

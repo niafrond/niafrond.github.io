@@ -5,7 +5,7 @@
 import {
   W, H, CANNON_Y, BASE,
   generateLevel, createGame, step, canLaunchChampion, starsFor,
-  PERKS, WEAPONS, HEROES,
+  PERKS, WEAPONS, HEROES, perkLevel, perkUpgradeCost, perkStatAt,
   generateBonusLevel, bonusRewardFor, bonusUnlockLevel, BONUS_EVERY,
 } from './engine.js';
 
@@ -22,7 +22,14 @@ function loadSave() {
     bonusStars: {}, bonusClaimed: {},
   };
   try {
-    return { ...def, ...JSON.parse(localStorage.getItem(STORE_KEY) || '{}') };
+    const merged = { ...def, ...JSON.parse(localStorage.getItem(STORE_KEY) || '{}') };
+    // Migration : les compétences étaient de simples booléens (acquise ou
+    // non) avant de devenir évolutives (niveau 0..maxLevel) — une compétence
+    // déjà acquise repart au niveau 1, pas au niveau max.
+    merged.skills = Object.fromEntries(
+      Object.entries(merged.skills || {}).map(([id, v]) => [id, typeof v === 'boolean' ? (v ? 1 : 0) : v])
+    );
+    return merged;
   } catch {
     return def;
   }
@@ -32,7 +39,7 @@ function persist() {
 }
 const save = loadSave();
 function currentLoadout() {
-  return { weapon: save.equip.weapon, hero: save.equip.hero, perks: Object.keys(save.skills) };
+  return { weapon: save.equip.weapon, hero: save.equip.hero, perks: save.skills };
 }
 
 // ─── DOM ─────────────────────────────────────────────────────────────────────
@@ -136,21 +143,29 @@ function renderSkillList() {
   const list = $('skill-list');
   list.innerHTML = '';
   for (const perk of Object.values(PERKS)) {
-    const owned = !!save.skills[perk.id];
+    const lvl = perkLevel(save.skills, perk.id);
+    const maxed = lvl >= perk.maxLevel;
+    const cost = perkUpgradeCost(perk.id, lvl);
+    const currentDesc = lvl > 0 ? perk.format(perkStatAt(perk.id, Object.keys(perk.perLevel)[0], lvl)) : 'Pas encore acquise.';
+    const nextDesc = maxed ? '' : `<span class="skill-next">Niveau ${lvl + 1} : ${perk.format(perkStatAt(perk.id, Object.keys(perk.perLevel)[0], lvl + 1))}</span>`;
     const row = document.createElement('div');
-    row.className = 'skill-row' + (owned ? ' owned' : '');
-    row.innerHTML = `<div class="skill-info"><b>${perk.name}</b><span>${perk.desc}</span></div>` +
-      (owned
-        ? `<span class="skill-owned">✓ Acquis</span>`
-        : `<button class="btn btn-secondary btn-sm skill-buy" data-id="${perk.id}" ${save.skillPoints < perk.cost ? 'disabled' : ''}>Débloquer (${perk.cost})</button>`);
+    row.className = 'skill-row' + (maxed ? ' owned' : '');
+    row.innerHTML =
+      `<div class="skill-info"><b>${perk.name} <span class="skill-lvl">niv. ${lvl}/${perk.maxLevel}</span></b>` +
+      `<span>${currentDesc}</span>${nextDesc}</div>` +
+      (maxed
+        ? `<span class="skill-owned">✓ Max</span>`
+        : `<button class="btn btn-secondary btn-sm skill-buy" data-id="${perk.id}" ${save.skillPoints < cost ? 'disabled' : ''}>${lvl === 0 ? 'Débloquer' : 'Améliorer'} (${cost})</button>`);
     list.appendChild(row);
   }
   list.querySelectorAll('.skill-buy').forEach(btn => {
     btn.addEventListener('click', () => {
       const perk = PERKS[btn.dataset.id];
-      if (!perk || save.skills[perk.id] || save.skillPoints < perk.cost) return;
-      save.skillPoints -= perk.cost;
-      save.skills[perk.id] = true;
+      const lvl = perkLevel(save.skills, perk.id);
+      const cost = perkUpgradeCost(perk.id, lvl);
+      if (!perk || cost === undefined || save.skillPoints < cost) return;
+      save.skillPoints -= cost;
+      save.skills[perk.id] = lvl + 1;
       persist();
       renderSkillList();
     });
@@ -413,6 +428,7 @@ function handleEvents() {
         shake = ev.final ? 0.4 : 0.3;
         if (ev.final) flash = 1;
         floaters.push({ x: W / 2, y: 150, t: 1.1, text: ev.final ? 'CHÂTEAU FINAL !' : 'CHÂTEAU DÉTRUIT !', color: '#ffc93c', big: true });
+        if (ev.terrainChanged) floaters.push({ x: W / 2, y: 185, t: 1.3, text: 'TERRAIN MODIFIÉ !', color: '#3fa9ff', big: false });
         break;
       case 'cannonHit':
         sfx('hurt');
