@@ -1,0 +1,13 @@
+{
+  "appId": "io.github.niafrond.reveilxtrem",
+  "appName": "Réveil Xtrem",
+  "webDir": "../reveil-xtrem",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true
+    }
+  }
+}

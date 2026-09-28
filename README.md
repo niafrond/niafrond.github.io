@@ -17,6 +17,7 @@ Collection de mini-applications web en HTML/CSS/JavaScript, accessibles sur [nia
 | 📷 [QR Scanner](qrcode-scanner/) | Scanner QR code 100% hors ligne, historique local |
 | 📝 [Générateur de recette](generateur-recette.html) | Extraction et formatage de recettes depuis texte ou URL |
 | 🎤 [Karaoke Playlist](karaoke-playlist/) | App deux écrans (vidéo plein écran + contrôle style Karafun) pour piloter une soirée karaoké via YouTube |
+| ⏰ [Réveil Xtrem](reveil-xtrem/) | Réveil façon Alarm Clock Xtreme — alarmes nommées et répétables, snooze, "passer la prochaine", calcul aléatoire (facile/moyen/difficile) obligatoire pour désactiver. APK Android via `reveil-xtrem-android/` |
 
 ## Notes
 

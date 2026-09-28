@@ -1,0 +1,340 @@
+import {
+  loadAlarms, saveAlarms, createAlarm, upsertAlarm, removeAlarm, patchAlarm,
+  loadRuntime, saveRuntime,
+} from './alarms.js';
+import {
+  evaluateAlarms, applySnooze, clearSnooze, runtimeToObject, runtimeFromObject,
+} from './scheduler.js';
+import { generateProblem, problemsRequired, DIFFICULTY_LABELS } from './math-challenge.js';
+import { startAlarmSound, stopAlarmSound } from './sound.js';
+import { formatDaysShort, formatClock } from './ui.js';
+import { installPwa, initServiceWorker } from './pwa.js';
+
+// ── État ────────────────────────────────────────────────────────────────
+let alarms = loadAlarms();
+let runtimeMap = runtimeFromObject(loadRuntime());
+let editingId = null;
+const ringQueue = [];
+let currentRing = null; // { alarmId, solved, required, problem }
+
+// ── Réfs DOM ────────────────────────────────────────────────────────────
+const el = id => document.getElementById(id);
+const screens = {
+  home: el('screen-home'),
+  edit: el('screen-edit'),
+  ring: el('screen-ring'),
+};
+const clockNow = el('clock-now');
+const alarmList = el('alarm-list');
+const alarmEmptyState = el('alarm-empty-state');
+
+function showScreen(name) {
+  for (const s of Object.values(screens)) s.hidden = true;
+  screens[name].hidden = false;
+}
+
+function persistAlarms() { saveAlarms(alarms); }
+function persistRuntime() { saveRuntime(runtimeToObject(runtimeMap)); }
+
+// ── Toast ───────────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(message) {
+  const toast = el('toast');
+  toast.textContent = message;
+  toast.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.hidden = true; }, 2600);
+}
+
+// ── Rendu liste ─────────────────────────────────────────────────────────
+function renderAlarmList() {
+  alarmList.innerHTML = '';
+  const sorted = [...alarms].sort((a, b) => a.time.localeCompare(b.time));
+  alarmEmptyState.hidden = sorted.length > 0;
+
+  for (const alarm of sorted) {
+    const rt = runtimeMap.get(alarm.id);
+    const card = document.createElement('div');
+    card.className = 'alarm-card' + (alarm.enabled ? '' : ' disabled') + (rt && rt.snoozeUntil ? ' snoozing' : '');
+    card.dataset.id = alarm.id;
+
+    card.innerHTML = `
+      <div class="alarm-card-top">
+        <div class="alarm-time">${alarm.time}</div>
+        <div class="alarm-meta">
+          <div class="alarm-label"></div>
+          <div class="alarm-days">${formatDaysShort(alarm.days)}${rt && rt.snoozeUntil ? ' · 💤 reporté' : ''}</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" class="alarm-toggle" ${alarm.enabled ? 'checked' : ''}>
+          <span class="switch-track"></span>
+        </label>
+      </div>
+      <div class="alarm-card-bottom">
+        <span class="badge difficulty-${alarm.difficulty}">${DIFFICULTY_LABELS[alarm.difficulty]}</span>
+        <span class="alarm-card-spacer"></span>
+        <button type="button" class="icon-btn btn-skip-next ${alarm.skipNext ? 'active' : ''}">⏭ Passer</button>
+      </div>
+    `;
+    card.querySelector('.alarm-label').textContent = alarm.label;
+
+    card.querySelector('.alarm-toggle').addEventListener('click', e => e.stopPropagation());
+    card.querySelector('.alarm-toggle').addEventListener('change', e => {
+      e.stopPropagation();
+      toggleEnabled(alarm.id, e.target.checked);
+    });
+    card.querySelector('.btn-skip-next').addEventListener('click', e => {
+      e.stopPropagation();
+      toggleSkipNext(alarm.id);
+    });
+    card.addEventListener('click', () => openEdit(alarm.id));
+
+    alarmList.appendChild(card);
+  }
+}
+
+function toggleEnabled(id, enabled) {
+  alarms = patchAlarm(alarms, id, { enabled });
+  persistAlarms();
+  showToast(enabled ? 'Alarme activée' : 'Alarme désactivée');
+  renderAlarmList();
+}
+
+function toggleSkipNext(id) {
+  const alarm = alarms.find(a => a.id === id);
+  if (!alarm) return;
+  alarms = patchAlarm(alarms, id, { skipNext: !alarm.skipNext });
+  persistAlarms();
+  showToast(!alarm.skipNext ? 'La prochaine sonnerie sera sautée' : 'Sonnerie rétablie');
+  renderAlarmList();
+}
+
+// ── Écran édition ───────────────────────────────────────────────────────
+function openEdit(id) {
+  editingId = id;
+  const alarm = id ? alarms.find(a => a.id === id) : null;
+
+  el('edit-title').textContent = alarm ? "Modifier l'alarme" : 'Nouvelle alarme';
+  el('input-time').value = alarm ? alarm.time : '07:00';
+  el('input-label').value = alarm ? alarm.label : '';
+  el('input-snooze').value = alarm ? alarm.snoozeMinutes : 9;
+  el('btn-delete-alarm').hidden = !alarm;
+
+  const days = alarm ? alarm.days : [];
+  document.querySelectorAll('#days-picker .day-chip').forEach(chip => {
+    chip.classList.toggle('active', days.includes(Number(chip.dataset.day)));
+  });
+
+  const difficulty = alarm ? alarm.difficulty : 'easy';
+  setDifficultyUi(difficulty);
+
+  showScreen('edit');
+}
+
+function setDifficultyUi(difficulty) {
+  document.querySelectorAll('#difficulty-picker .segment').forEach(seg => {
+    seg.classList.toggle('active', seg.dataset.difficulty === difficulty);
+  });
+  const hints = {
+    easy: '1 addition simple à résoudre.',
+    medium: '1 calcul (addition ou soustraction) à deux chiffres.',
+    hard: '3 calculs d’affilée (dont des multiplications) — une erreur remet le compteur à zéro !',
+  };
+  el('difficulty-hint').textContent = hints[difficulty] || '';
+}
+
+function getSelectedDifficulty() {
+  const active = document.querySelector('#difficulty-picker .segment.active');
+  return active ? active.dataset.difficulty : 'easy';
+}
+
+function getSelectedDays() {
+  return [...document.querySelectorAll('#days-picker .day-chip.active')].map(c => Number(c.dataset.day));
+}
+
+function saveAlarmFromForm() {
+  const time = el('input-time').value || '07:00';
+  const label = el('input-label').value;
+  const days = getSelectedDays();
+  const difficulty = getSelectedDifficulty();
+  const snoozeMinutes = Number(el('input-snooze').value) || 9;
+
+  if (editingId) {
+    alarms = patchAlarm(alarms, editingId, { time, label: label.trim() || 'Alarme', days, difficulty, snoozeMinutes });
+  } else {
+    const alarm = createAlarm({ time, label, days, difficulty, snoozeMinutes });
+    alarms = upsertAlarm(alarms, alarm);
+  }
+  persistAlarms();
+  showToast('Alarme enregistrée');
+  showScreen('home');
+  renderAlarmList();
+}
+
+function deleteCurrentAlarm() {
+  if (!editingId) return;
+  alarms = removeAlarm(alarms, editingId);
+  runtimeMap.delete(editingId);
+  persistAlarms();
+  persistRuntime();
+  showToast('Alarme supprimée');
+  showScreen('home');
+  renderAlarmList();
+}
+
+// ── Boucle de vérification ──────────────────────────────────────────────
+function tick() {
+  const now = new Date();
+  clockNow.textContent = formatClock(now);
+
+  const { ringing, skipConsumed, nextRuntime } = evaluateAlarms(alarms, now, runtimeMap);
+  runtimeMap = nextRuntime;
+
+  if (skipConsumed.length > 0) {
+    for (const id of skipConsumed) {
+      const alarm = alarms.find(a => a.id === id);
+      if (!alarm) continue;
+      const isOneTime = !alarm.days || alarm.days.length === 0;
+      alarms = patchAlarm(alarms, id, { skipNext: false, ...(isOneTime ? { enabled: false } : {}) });
+    }
+    persistAlarms();
+    renderAlarmList();
+  }
+
+  if (ringing.length > 0) {
+    for (const id of ringing) if (!ringQueue.includes(id)) ringQueue.push(id);
+    persistRuntime();
+    renderAlarmList();
+  }
+
+  if (!currentRing && ringQueue.length > 0) {
+    startRing(ringQueue.shift());
+  }
+}
+
+// ── Écran sonnerie ──────────────────────────────────────────────────────
+function startRing(alarmId) {
+  const alarm = alarms.find(a => a.id === alarmId);
+  if (!alarm) return;
+
+  currentRing = { alarmId, solved: 0, required: problemsRequired(alarm.difficulty), problem: null };
+  el('ring-label').textContent = alarm.label;
+  nextChallengeProblem();
+  startAlarmSound();
+  showScreen('ring');
+}
+
+function nextChallengeProblem({ resetError = true } = {}) {
+  const alarm = alarms.find(a => a.id === currentRing.alarmId);
+  currentRing.problem = generateProblem(alarm.difficulty);
+  el('challenge-problem').textContent = currentRing.problem.text;
+  el('challenge-answer').value = '';
+  if (resetError) el('challenge-error').hidden = true;
+
+  const progressEl = el('challenge-progress');
+  if (currentRing.required > 1) {
+    progressEl.hidden = false;
+    progressEl.textContent = `Question ${currentRing.solved + 1} / ${currentRing.required}`;
+  } else {
+    progressEl.hidden = true;
+  }
+}
+
+function updateRingClock() {
+  if (currentRing) el('ring-time').textContent = formatClock(new Date());
+}
+
+function validateChallengeAnswer() {
+  if (!currentRing) return;
+  const value = Number(el('challenge-answer').value);
+  if (Number.isNaN(value) || value !== currentRing.problem.answer) {
+    currentRing.solved = 0;
+    el('challenge-error').hidden = false;
+    const input = el('challenge-answer');
+    input.classList.remove('shake');
+    void input.offsetWidth;
+    input.classList.add('shake');
+    nextChallengeProblem({ resetError: false });
+    return;
+  }
+
+  currentRing.solved += 1;
+  if (currentRing.solved >= currentRing.required) {
+    dismissCurrentRing();
+  } else {
+    nextChallengeProblem();
+  }
+}
+
+function dismissCurrentRing() {
+  if (!currentRing) return;
+  const { alarmId } = currentRing;
+  const alarm = alarms.find(a => a.id === alarmId);
+  stopAlarmSound();
+  runtimeMap = clearSnooze(runtimeMap, alarmId);
+
+  if (alarm && (!alarm.days || alarm.days.length === 0)) {
+    alarms = patchAlarm(alarms, alarmId, { enabled: false });
+    persistAlarms();
+  }
+  persistRuntime();
+
+  currentRing = null;
+  showScreen('home');
+  renderAlarmList();
+
+  if (ringQueue.length > 0) {
+    startRing(ringQueue.shift());
+  }
+}
+
+function snoozeCurrentRing() {
+  if (!currentRing) return;
+  const { alarmId } = currentRing;
+  const alarm = alarms.find(a => a.id === alarmId);
+  stopAlarmSound();
+  runtimeMap = applySnooze(runtimeMap, alarmId, new Date(), alarm ? alarm.snoozeMinutes : 9);
+  persistRuntime();
+
+  currentRing = null;
+  showScreen('home');
+  renderAlarmList();
+  showToast(`Reporté de ${alarm ? alarm.snoozeMinutes : 9} min`);
+
+  if (ringQueue.length > 0) {
+    startRing(ringQueue.shift());
+  }
+}
+
+// ── Écouteurs ───────────────────────────────────────────────────────────
+el('btn-add-alarm').addEventListener('click', () => openEdit(null));
+el('btn-edit-cancel').addEventListener('click', () => { showScreen('home'); renderAlarmList(); });
+el('btn-save-alarm').addEventListener('click', saveAlarmFromForm);
+el('btn-delete-alarm').addEventListener('click', deleteCurrentAlarm);
+el('btn-install-pwa').addEventListener('click', installPwa);
+
+document.querySelectorAll('#days-picker .day-chip').forEach(chip => {
+  chip.addEventListener('click', () => chip.classList.toggle('active'));
+});
+document.querySelectorAll('#difficulty-picker .segment').forEach(seg => {
+  seg.addEventListener('click', () => setDifficultyUi(seg.dataset.difficulty));
+});
+
+el('btn-challenge-validate').addEventListener('click', validateChallengeAnswer);
+el('challenge-answer').addEventListener('keydown', e => {
+  if (e.key === 'Enter') validateChallengeAnswer();
+});
+el('btn-snooze').addEventListener('click', snoozeCurrentRing);
+
+// ── Démarrage ───────────────────────────────────────────────────────────
+renderAlarmList();
+showScreen('home');
+setInterval(tick, 1000);
+setInterval(updateRingClock, 1000);
+tick();
+
+if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+  Notification.requestPermission().catch(() => {});
+}
+
+initServiceWorker(() => currentRing != null);

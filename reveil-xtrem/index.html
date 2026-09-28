@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Réveil Xtrem ⏰</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a1030">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Réveil Xtrem">
+</head>
+<body>
+
+<div id="toast" class="toast" hidden></div>
+
+<!-- ═══════════════════════ ÉCRAN LISTE — accueil ═══════════════════════ -->
+<div id="screen-home" data-screen="screen-home">
+  <div class="page-wrapper">
+    <div class="home-header">
+      <a href="../" class="btn btn-secondary btn-sm">← Accueil</a>
+      <h1 class="app-title">⏰ Réveil Xtrem</h1>
+      <span class="header-spacer"></span>
+    </div>
+
+    <div id="clock-now" class="clock-now"></div>
+
+    <div id="alarm-empty-state" class="alarm-empty-state">
+      <span class="alarm-empty-icon">😴</span>
+      <p>Aucune alarme programmée.<br>Appuyez sur + pour en créer une.</p>
+    </div>
+
+    <div id="alarm-list" class="alarm-list"></div>
+
+    <button id="btn-install-pwa" class="btn btn-secondary w-full" hidden>
+      📲 Installer l'application
+    </button>
+  </div>
+
+  <button id="btn-add-alarm" class="fab" aria-label="Ajouter une alarme">＋</button>
+</div>
+
+<!-- ═══════════════════════ ÉCRAN ÉDITION — créer / modifier ═══════════════════════ -->
+<div id="screen-edit" data-screen="screen-edit" hidden>
+  <div class="page-wrapper">
+    <div class="edit-header">
+      <button id="btn-edit-cancel" class="btn btn-secondary btn-sm">← Annuler</button>
+      <h2 id="edit-title" class="edit-title">Nouvelle alarme</h2>
+      <span class="header-spacer"></span>
+    </div>
+
+    <div class="card time-picker-card">
+      <input type="time" id="input-time" class="time-input" value="07:00">
+    </div>
+
+    <div class="card">
+      <label class="field-label" for="input-label">Nom de l'alarme</label>
+      <input type="text" id="input-label" class="input" maxlength="30" placeholder="Ex. Réveil boulot">
+    </div>
+
+    <div class="card">
+      <span class="field-label">Répétition</span>
+      <div id="days-picker" class="days-picker">
+        <button type="button" class="day-chip" data-day="1">L</button>
+        <button type="button" class="day-chip" data-day="2">M</button>
+        <button type="button" class="day-chip" data-day="3">M</button>
+        <button type="button" class="day-chip" data-day="4">J</button>
+        <button type="button" class="day-chip" data-day="5">V</button>
+        <button type="button" class="day-chip" data-day="6">S</button>
+        <button type="button" class="day-chip" data-day="0">D</button>
+      </div>
+      <p class="field-hint">Aucun jour sélectionné = alarme unique (se désactive après avoir sonné).</p>
+    </div>
+
+    <div class="card">
+      <span class="field-label">Difficulté du calcul pour désactiver</span>
+      <div id="difficulty-picker" class="segmented">
+        <button type="button" class="segment" data-difficulty="easy">Facile</button>
+        <button type="button" class="segment" data-difficulty="medium">Moyen</button>
+        <button type="button" class="segment" data-difficulty="hard">Difficile</button>
+      </div>
+      <p class="field-hint" id="difficulty-hint"></p>
+    </div>
+
+    <div class="card">
+      <label class="field-label" for="input-snooze">Durée du snooze (minutes)</label>
+      <input type="number" id="input-snooze" class="input" min="1" max="30" value="9">
+    </div>
+
+    <div class="edit-actions">
+      <button id="btn-delete-alarm" class="btn btn-danger" hidden>🗑 Supprimer</button>
+      <button id="btn-save-alarm" class="btn btn-primary w-full">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ ÉCRAN SONNERIE ═══════════════════════ -->
+<div id="screen-ring" data-screen="screen-ring" hidden>
+  <div class="ring-inner">
+    <div id="ring-time" class="ring-time"></div>
+    <div id="ring-label" class="ring-label"></div>
+
+    <div class="challenge-card">
+      <div id="challenge-progress" class="challenge-progress" hidden></div>
+      <div id="challenge-problem" class="challenge-problem">? + ?</div>
+      <input id="challenge-answer" class="challenge-answer" type="number" inputmode="numeric" autocomplete="off" placeholder="Réponse">
+      <div id="challenge-error" class="challenge-error" hidden>Faux, réessayez !</div>
+      <button id="btn-challenge-validate" class="btn btn-primary w-full">Valider</button>
+    </div>
+
+    <button id="btn-snooze" class="btn btn-secondary btn-lg w-full">💤 Snooze</button>
+  </div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>

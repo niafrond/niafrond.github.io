@@ -43,6 +43,8 @@ jobs:
               - 'theme-party/**'
             mob-rush:
               - 'mob-rush/**'
+            reveil-xtrem:
+              - 'reveil-xtrem/**'
             shared:
               - 'jest.config.js'
               - 'package.json'
@@ -74,6 +76,7 @@ jobs:
           FILTER_MIX_BLIND_TEST: ${{ steps.filter.outputs.mix-blind-test }}
           FILTER_THEME_PARTY: ${{ steps.filter.outputs.theme-party }}
           FILTER_MOB_RUSH: ${{ steps.filter.outputs.mob-rush }}
+          FILTER_REVEIL_XTREM: ${{ steps.filter.outputs.reveil-xtrem }}
           FILTER_SHARED: ${{ steps.filter.outputs.shared }}
         run: |
           if [ "$FILTER_SHARED" = "true" ]; then
@@ -93,6 +96,7 @@ jobs:
           [ "$FILTER_MIX_BLIND_TEST" = "true" ] && PROJECTS+=(mix-blind-test-node mix-blind-test-idb)
           [ "$FILTER_THEME_PARTY" = "true" ] && PROJECTS+=(theme-party-node theme-party-jsdom)
           [ "$FILTER_MOB_RUSH" = "true" ] && PROJECTS+=(mob-rush-node)
+          [ "$FILTER_REVEIL_XTREM" = "true" ] && PROJECTS+=(reveil-xtrem-node)
 
           # blind-test/, mix-blind-test/ et theme-party/ importent directement des
           # modules de dj-mix/lib (config downloader, trackStore, audioSourceManager...) :
