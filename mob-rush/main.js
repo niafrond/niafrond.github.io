@@ -553,7 +553,18 @@ function handleEvents() {
       case 'wave':
         floaters.push(ev.boss
           ? { x: W / 2, y: 150, t: 1.2, text: 'VAGUE DE BOSS !', color: '#ff4d5e', big: true }
-          : { x: W / 2, y: 150, t: 1.2, text: 'VAGUE !', color: '#ff4d5e', big: true });
+          : ev.wall
+            ? { x: W / 2, y: 150, t: 1.2, text: 'MUR ENNEMI !', color: '#ffc93c', big: true }
+            : { x: W / 2, y: 150, t: 1.2, text: 'VAGUE !', color: '#ff4d5e', big: true });
+        break;
+      case 'wallCleared':
+        // Bascule « affrontement gagné → dégâts au château à nouveau
+        // possibles » (SPEC-4.4.2) : feedback distinct de castleDown, qui
+        // marque lui la chute d'un château, pas celle d'un mur ennemi.
+        sfx('champion');
+        buzz(30);
+        burst(BASE.x, 250, 14, '#ffc93c', true);
+        floaters.push({ x: W / 2, y: 250, t: 1.0, text: 'MUR VAINCU !', color: '#3ddc84', big: false });
         break;
       case 'won':
         sfx('win');
@@ -625,6 +636,16 @@ function updateHud() {
     bossEl.textContent = `⚔ BOSS — vague ${game.boss.wavesTotal - game.boss.wavesLeft}/${game.boss.wavesTotal}`;
   } else if (!bossEl.hidden) {
     bossEl.hidden = true;
+  }
+  // Mur d'affrontement actif (SPEC-4.4.1) — indique pourquoi la progression
+  // est stoppée malgré des tirs actifs, tant qu'il reste des rouges du mur.
+  const wallEl = $('hud-wall');
+  const activeWall = game.walls.find(w => !w.cleared);
+  if (activeWall) {
+    wallEl.hidden = false;
+    wallEl.textContent = `🛡 MUR ENNEMI — ${activeWall.alive} restant${activeWall.alive > 1 ? 's' : ''}`;
+  } else if (!wallEl.hidden) {
+    wallEl.hidden = true;
   }
 }
 
@@ -921,6 +942,17 @@ function draw() {
       ctx.stroke();
       ctx.setLineDash([]);
     }
+  }
+
+  // Halo doré sous les rouges d'un mur d'affrontement (SPEC-4.4) : lisible
+  // comme une formation qui bloque, pas comme de simples rouges isolés.
+  for (const e of game.red) {
+    if (e.wallId == null) continue;
+    ctx.strokeStyle = 'rgba(255,201,60,0.65)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.r + 3, 0, Math.PI * 2);
+    ctx.stroke();
   }
 
   // Unités rouges — petits vilains manga (bras/jambes humanoïdes), cornes et

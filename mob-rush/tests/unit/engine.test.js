@@ -338,6 +338,104 @@ describe('Séquence de châteaux (2 à 4 phases, puis un grand château final)',
   });
 });
 
+describe('Mur d’affrontement (SPECS.md §4)', () => {
+  test('un rouge de mur vivant bloque physiquement une unité bleue : elle ne dépasse jamais un mur qu’elle ne peut vaincre', () => {
+    // Sans porte ni mur de terrain (`gates: []`), seul le mur d’affrontement
+    // peut empêcher l’unité d’atteindre la base — un test isolé de la
+    // mécanique, indépendant des portes.
+    const cfg = { ...generateLevel(1), gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const g = createGame(cfg);
+    g.walls.push({ id: 0, total: 1, alive: 1, cleared: false });
+    g.red.push({ x: BASE.x, y: 250, vx: 0, vy: 0, hp: 99, r: 5, brute: false, wallId: 0 });
+    g.blue.push({ x: BASE.x, y: 400, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    run(g, 2, {});
+    expect(g.blue).toHaveLength(0);            // consommée au contact du mur
+    expect(g.baseHp).toBe(cfg.baseHp);          // jamais atteint la base
+    expect(g.walls[0].cleared).toBe(false);     // le rouge de mur (99 PV) a survécu
+  });
+
+  test('le blocage s’applique aussi à un champion à PV élevés (aucune exemption)', () => {
+    const cfg = { ...generateLevel(1), gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const g = createGame(cfg);
+    g.walls.push({ id: 0, total: 1, alive: 1, cleared: false });
+    g.red.push({ x: BASE.x, y: 250, vx: 0, vy: 0, hp: 99, r: 5, brute: false, wallId: 0 });
+    g.blue.push({ x: BASE.x, y: 400, vx: 0, vy: -68, hp: 25, r: 13, mask: 0, champ: true });
+    run(g, 3, {});
+    expect(g.baseHp).toBe(cfg.baseHp);
+  });
+
+  test('la mort du dernier membre d’un mur émet wallCleared et lève le blocage', () => {
+    const cfg = { ...generateLevel(1), gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const g = createGame(cfg);
+    g.walls.push({ id: 0, total: 1, alive: 1, cleared: false });
+    g.red.push({ x: BASE.x, y: 250, vx: 0, vy: 0, hp: 1, r: 5, brute: false, wallId: 0 });
+    g.blue.push({ x: BASE.x, y: 250, vx: 0, vy: -170, hp: 2, r: 5, mask: 0, champ: false });
+    step(g, DT, {});
+    expect(g.events.some(e => e.type === 'wallCleared' && e.id === 0)).toBe(true);
+    expect(g.walls[0].cleared).toBe(true);
+    expect(g.walls[0].alive).toBe(0);
+    expect(g.blue).toHaveLength(1);
+    expect(g.blue[0].hp).toBe(1); // a survécu au combat, libre de continuer vers la base
+  });
+
+  test('une vague crée un mur bloquant tant que le quota de murs du château n’est pas atteint', () => {
+    const cfg = { ...generateLevel(1), gates: [], spawnInterval: 1e9, waveEvery: 1, waveSize: 6, wallsPerCastle: 1 };
+    const g = createGame(cfg);
+    let sawWallWave = false;
+    for (let t = 0; t < 1.05; t += DT) {
+      step(g, DT, {});
+      if (g.events.some(e => e.type === 'wave' && e.wall === true)) sawWallWave = true;
+      g.events.length = 0;
+    }
+    expect(sawWallWave).toBe(true);
+    expect(g.walls).toHaveLength(1);
+    expect(g.walls[0].cleared).toBe(false);
+    expect(g.red).toHaveLength(6);
+    expect(g.red.every(e => e.wallId === 0)).toBe(true);
+  });
+
+  test('au-delà du quota de murs du château, une vague redevient un flux classique non bloquant', () => {
+    const cfg = { ...generateLevel(1), gates: [], spawnInterval: 1e9, waveEvery: 1, waveSize: 3, wallsPerCastle: 1 };
+    const g = createGame(cfg);
+    g.wallsSpawnedThisCastle = 1; // quota déjà atteint pour ce château
+    run(g, 1.05, {});
+    expect(g.walls).toHaveLength(0);
+    expect(g.red).toHaveLength(3);
+    expect(g.red.every(e => e.wallId === undefined)).toBe(true);
+  });
+
+  test('le flux continu rejoint le mur actif plutôt que d’en ouvrir un second', () => {
+    const cfg = { ...generateLevel(1), gates: [], waveEvery: 1e9, spawnInterval: 0.1, spawnGroup: 1 };
+    const g = createGame(cfg);
+    g.walls.push({ id: 0, total: 1, alive: 1, cleared: false });
+    g.red.push({ x: BASE.x, y: 250, vx: 0, vy: 0, hp: 1, r: 5, brute: false, wallId: 0 });
+    run(g, 0.5, {});
+    expect(g.red.length).toBeGreaterThan(1);
+    expect(g.red.every(e => e.wallId === 0)).toBe(true);
+    expect(g.walls).toHaveLength(1); // toujours un seul mur, jamais un second
+  });
+
+  test('changer de château (mini-château détruit) réinitialise le quota de murs', () => {
+    const cfg = { ...generateLevel(1), castles: [10, 10, 50], baseHp: 70, gates: [], spawnInterval: 1e9, waveEvery: 1e9, wallsPerCastle: 2 };
+    const g = createGame(cfg);
+    g.wallsSpawnedThisCastle = 2;
+    g.blue.push({ x: BASE.x, y: BASE.y, vx: 0, vy: 0, hp: 15, r: 5, mask: 0, champ: false });
+    step(g, DT, {});
+    expect(g.castleIndex).toBe(1);
+    expect(g.wallsSpawnedThisCastle).toBe(0);
+  });
+
+  test('wallsPerCastle est borné entre 1 et 3 et croît avec le niveau', () => {
+    expect(generateLevel(1).wallsPerCastle).toBe(1);
+    expect(generateLevel(6).wallsPerCastle).toBeGreaterThan(generateLevel(1).wallsPerCastle);
+    for (let n = 1; n <= 40; n++) {
+      const w = generateLevel(n).wallsPerCastle;
+      expect(w).toBeGreaterThanOrEqual(1);
+      expect(w).toBeLessThanOrEqual(3);
+    }
+  });
+});
+
 describe('Combat de boss (après le dernier château)', () => {
   test('détruire le dernier château démarre un combat de boss, sans terminer le niveau', () => {
     const cfg = { ...generateLevel(1), castles: [10, 30], baseHp: 40, gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
