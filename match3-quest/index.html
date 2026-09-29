@@ -145,7 +145,7 @@
 <div class="game-container">    
     <!-- Onglets -->
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('combat')">⚔️ Combat</button>
+        <button class="tab-btn active" onclick="switchTab('combat')">🗺️ Jeu</button>
         <button class="tab-btn" onclick="switchTab('weapons')">🎒 Inventaire</button>
         <button class="tab-btn" onclick="switchTab('spells')">✨ Sorts</button>
         <button class="tab-btn" onclick="switchTab('boutique')">🛒 Boutique</button>
@@ -154,30 +154,29 @@
     
     <!-- Onglet Combat -->
     <div id="tab-combat" class="tab-panel active">
-        <!-- Phase d'exploration : carte isométrique -->
+        <!-- Phase d'exploration : carte plein écran en vue du dessus -->
         <div id="explore-container" style="display: none;">
+            <canvas id="explore-canvas" aria-label="Carte d'exploration"></canvas>
             <div class="explore-hud">
-                <div class="explore-title"></div>
+                <div class="explore-hud-main">
+                    <div class="explore-title"></div>
+                    <div class="explore-objective"></div>
+                </div>
                 <div class="explore-hud-buttons">
-                    <button type="button" data-explore="journal" title="Journal de quêtes (J)">📜 Journal</button>
-                    <button type="button" data-explore="map" title="Carte du monde">🗺️ Carte</button>
+                    <button type="button" data-explore="journal" title="Journal de quêtes (J)">📜<span> Journal</span></button>
+                    <button type="button" data-explore="map" title="Carte du monde">🗺️<span> Carte</span></button>
+                    <button type="button" data-explore="menu" title="Inventaire, sorts, boutique, stats">🎒<span> Menu</span></button>
                 </div>
             </div>
-            <div class="explore-objective"></div>
-            <div class="explore-stage">
-                <canvas id="explore-canvas" width="816" height="496" aria-label="Carte d'exploration"></canvas>
-                <div class="explore-toast" role="status" aria-live="polite"></div>
-                <div class="explore-dialog" role="dialog" aria-live="polite"></div>
+            <div class="explore-toast" role="status" aria-live="polite"></div>
+            <div class="explore-dialog" role="dialog" aria-live="polite"></div>
+            <div class="explore-dpad" aria-label="Déplacement">
+                <button type="button" data-dir="up" aria-label="Haut">⬆️</button>
+                <button type="button" data-dir="left" aria-label="Gauche">⬅️</button>
+                <button type="button" data-dir="down" aria-label="Bas">⬇️</button>
+                <button type="button" data-dir="right" aria-label="Droite">➡️</button>
             </div>
-            <div class="explore-controls">
-                <div class="explore-dpad" aria-label="Déplacement">
-                    <button type="button" data-dir="up" aria-label="Haut">⬆️</button>
-                    <button type="button" data-dir="left" aria-label="Gauche">⬅️</button>
-                    <button type="button" data-dir="down" aria-label="Bas">⬇️</button>
-                    <button type="button" data-dir="right" aria-label="Droite">➡️</button>
-                </div>
-                <p class="explore-help">Flèches ou ZQSD pour vous déplacer · Entrée pour parler · Contournez les ennemis : le halo rouge est leur zone de vigilance.</p>
-            </div>
+            <p class="explore-help">Flèches ou ZQSD : se déplacer · Entrée : parler · J : journal · Le halo rouge est la zone de vigilance d'un ennemi : contournez-le pour l'éviter.</p>
         </div>
         <div class="stats-container">
             <div id="player-stats"></div>
