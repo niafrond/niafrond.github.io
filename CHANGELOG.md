@@ -1,3 +1,9 @@
+## [2.45.0](https://github.com/niafrond/niafrond.github.io/compare/v2.44.0...v2.45.0) (2026-09-29)
+
+### Features
+
+* **match3-quest:** carte du monde illustrée façon overworld Mario ([affbfab](https://github.com/niafrond/niafrond.github.io/commit/affbfab997217ef23e95241e3aa9d0ad8c22a5fc))
+
 ## [2.44.0](https://github.com/niafrond/niafrond.github.io/compare/v2.43.0...v2.44.0) (2026-09-29)
 
 ### Features

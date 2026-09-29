@@ -8,6 +8,7 @@ import { initializeAudioUI, playSfx, primeAudioFromGesture } from "./sound.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate } from "./version.js";
 import { worldZones } from "./worldMap.js";
+import { mountWorldMap } from "./worldMapView.js";
 
 // initialisation de la partie
 console.log('Main.js loaded');
@@ -276,42 +277,22 @@ function init() {
             return;
         }
 
-        const grid = document.createElement('div');
-        grid.className = 'worldmap-grid';
-
-        worldZones.forEach(zone => {
-            const unlocked = player.level >= zone.unlockLevel;
-            const visited = player.worldMap?.visitedZoneIds?.includes(zone.id);
-            const card = document.createElement('div');
-            card.className = `worldmap-card${unlocked ? '' : ' locked'}${visited ? ' visited' : ''}`;
-            card.innerHTML = `
-                <div class="worldmap-emoji">${unlocked ? zone.emoji : '🔒'}</div>
-                <div class="worldmap-name">${zone.name}</div>
-                <div class="worldmap-desc">${unlocked ? zone.description : `Se débloque au niveau ${zone.unlockLevel}.`}</div>
-                ${unlocked && visited ? '<div class="worldmap-visited">✅ Déjà explorée</div>' : ''}
-                ${!unlocked ? `<div class="worldmap-lock">🔒 Niveau ${zone.unlockLevel} requis</div>` : ''}
-            `;
-
-            if(unlocked) {
-                card.onclick = () => {
-                    modal.classList.remove('active');
-                    if(!player.worldMap) {
-                        player.worldMap = { currentZoneId: null, visitedZoneIds: [] };
-                    }
-                    player.worldMap.currentZoneId = zone.id;
-                    if(!player.worldMap.visitedZoneIds.includes(zone.id)) {
-                        player.worldMap.visitedZoneIds.push(zone.id);
-                    }
-                    saveUpdate();
-                    showEnemySelection(zone);
-                };
+        mountWorldMap(container, worldZones, {
+            level: player.level,
+            visitedIds: player.worldMap?.visitedZoneIds || [],
+            currentId: player.worldMap?.currentZoneId || null
+        }, zone => {
+            modal.classList.remove('active');
+            if(!player.worldMap) {
+                player.worldMap = { currentZoneId: null, visitedZoneIds: [] };
             }
-
-            grid.appendChild(card);
+            player.worldMap.currentZoneId = zone.id;
+            if(!player.worldMap.visitedZoneIds.includes(zone.id)) {
+                player.worldMap.visitedZoneIds.push(zone.id);
+            }
+            saveUpdate();
+            showEnemySelection(zone);
         });
-
-        container.innerHTML = '';
-        container.appendChild(grid);
         modal.classList.add('active');
     };
 

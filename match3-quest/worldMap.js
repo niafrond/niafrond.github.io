@@ -3,9 +3,12 @@
 // afin de donner une identité thématique à l'exploration. Une zone reste toujours
 // accessible une fois débloquée : le joueur peut la quitter (adversaire trop dur,
 // simple choix) et y revenir plus tard, par exemple une fois monté en niveau.
+// `map` = position du noeud sur la carte illustrée (viewBox 820x600, cf. worldMapView.js) ;
+// l'ordre du tableau est celui du chemin qui relie les zones.
 export const worldZones = [
     {
         id: 'forest',
+        map: { x: 130, y: 470 },
         name: 'Forêt Sylvestre',
         emoji: '🌲',
         unlockLevel: 1,
@@ -14,6 +17,7 @@ export const worldZones = [
     },
     {
         id: 'ruins',
+        map: { x: 330, y: 490 },
         name: 'Ruines Antiques',
         emoji: '🏛️',
         unlockLevel: 1,
@@ -22,6 +26,7 @@ export const worldZones = [
     },
     {
         id: 'warcamp',
+        map: { x: 540, y: 450 },
         name: 'Camp de Guerre',
         emoji: '🪓',
         unlockLevel: 4,
@@ -30,6 +35,7 @@ export const worldZones = [
     },
     {
         id: 'desert',
+        map: { x: 690, y: 320 },
         name: 'Désert Ardent',
         emoji: '🏜️',
         unlockLevel: 7,
@@ -38,6 +44,7 @@ export const worldZones = [
     },
     {
         id: 'frozen',
+        map: { x: 480, y: 230 },
         name: 'Terres Gelées',
         emoji: '❄️',
         unlockLevel: 10,
@@ -46,6 +53,7 @@ export const worldZones = [
     },
     {
         id: 'abyss',
+        map: { x: 210, y: 150 },
         name: 'Abysses Interdites',
         emoji: '🌊',
         unlockLevel: 13,
