@@ -436,6 +436,41 @@ describe('Mur d’affrontement (SPECS.md §4)', () => {
   });
 });
 
+describe('Engagement généralisé (SPECS.md §5)', () => {
+  test('un rouge isolé (hors mur) bloque aussi une unité bleue : elle doit d’abord le tuer avant d’atteindre la base', () => {
+    // Rouge "libre" : ni wallId, ni entrée dans g.walls — seule la portée
+    // d'engagement généralisée (§5) peut donc expliquer un blocage ici.
+    const cfg = { ...generateLevel(1), gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const g = createGame(cfg);
+    g.red.push({ x: BASE.x, y: 250, vx: 0, vy: 0, hp: 99, r: 5, brute: false });
+    g.blue.push({ x: BASE.x, y: 300, vx: 0, vy: -170, hp: 1, r: 5, mask: 0, champ: false });
+    run(g, 2, {});
+    expect(g.blue).toHaveLength(0);      // consommée au contact du rouge isolé
+    expect(g.baseHp).toBe(cfg.baseHp);   // jamais atteint la base
+  });
+
+  test('une unité bleue cible activement le rouge vivant le plus proche plutôt que le centre du château', () => {
+    const cfg = { ...generateLevel(1), gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const g = createGame(cfg);
+    // Rouge décalé sur le côté mais à portée (ENGAGE_RANGE) : sans ciblage
+    // actif, l'unité (alignée avec BASE.x, y >= 300) n'aurait aucune raison
+    // de dévier de sa trajectoire.
+    g.red.push({ x: BASE.x - 60, y: 260, vx: 0, vy: 0, hp: 99, r: 5, brute: false });
+    g.blue.push({ x: BASE.x, y: 300, vx: 0, vy: -20, hp: 1, r: 5, mask: 0, champ: false });
+    step(g, DT, {});
+    expect(g.blue[0].vx).toBeLessThan(0); // dévie vers la gauche, en direction du rouge
+  });
+
+  test('sans cible à portée, le comportement par défaut (pilotage vers le château) reprend', () => {
+    const cfg = { ...generateLevel(1), gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const g = createGame(cfg);
+    // Aucun rouge sur le terrain : rien à engager.
+    g.blue.push({ x: BASE.x - 60, y: 200, vx: 0, vy: -20, hp: 1, r: 5, mask: 0, champ: false });
+    step(g, DT, {});
+    expect(g.blue[0].vx).toBeGreaterThan(0); // se recentre vers BASE.x (à droite)
+  });
+});
+
 describe('Combat de boss (après le dernier château)', () => {
   test('détruire le dernier château démarre un combat de boss, sans terminer le niveau', () => {
     const cfg = { ...generateLevel(1), castles: [10, 30], baseHp: 40, gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
