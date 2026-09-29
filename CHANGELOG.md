@@ -1,3 +1,9 @@
+## [2.46.0](https://github.com/niafrond/niafrond.github.io/compare/v2.45.0...v2.46.0) (2026-09-29)
+
+### Features
+
+* **mob-rush:** rouges bloquées par murs/portes, obstacles visuels, mur plafonné ([2d642d2](https://github.com/niafrond/niafrond.github.io/commit/2d642d25767f3c31c6ed49f9b1423398c954d874))
+
 ## [2.45.0](https://github.com/niafrond/niafrond.github.io/compare/v2.44.0...v2.45.0) (2026-09-29)
 
 ### Features
