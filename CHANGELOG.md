@@ -1,3 +1,9 @@
+## [2.44.0](https://github.com/niafrond/niafrond.github.io/compare/v2.43.0...v2.44.0) (2026-09-29)
+
+### Features
+
+* **mob-rush:** généralise le blocage à tout rouge, ciblage actif ([ed2f421](https://github.com/niafrond/niafrond.github.io/commit/ed2f4213de55c10762a7fdc1ae118bd8d35d80e0))
+
 ## [2.43.0](https://github.com/niafrond/niafrond.github.io/compare/v2.42.0...v2.43.0) (2026-09-29)
 
 ### Features
