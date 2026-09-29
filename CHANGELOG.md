@@ -1,3 +1,20 @@
+## [2.47.0](https://github.com/niafrond/niafrond.github.io/compare/v2.46.0...v2.47.0) (2026-09-29)
+
+### Features
+
+* **reveil-xtrem-android:** vraies alarmes natives via AlarmManager + permissions ([e6e753a](https://github.com/niafrond/niafrond.github.io/commit/e6e753a16fd87c57985746fd183777e7bd5361b4))
+* **reveil-xtrem:** 5 niveaux de difficulté calqués sur Alarm Clock Xtreme ([147514b](https://github.com/niafrond/niafrond.github.io/commit/147514b42fc4daf56f0e131e1fe194a62f86d248))
+* **reveil-xtrem:** ajoute un réveil façon Alarm Clock Xtreme ([0245e38](https://github.com/niafrond/niafrond.github.io/commit/0245e38bfc16b5958669ece6d0ffdf8783f6d7c4))
+* **reveil-xtrem:** lien de téléchargement APK sur la version web ([99e4617](https://github.com/niafrond/niafrond.github.io/commit/99e4617cbd5e7337fd7c07455baa6445129cd3ce))
+* **reveil-xtrem:** multiplications et divisions à partir de "moyen" ([25a953c](https://github.com/niafrond/niafrond.github.io/commit/25a953c201a4f34e344ff9e35571bb645ef02ba4))
+* **reveil-xtrem:** nombre de calculs réglable + UI repensée ([9cc89ee](https://github.com/niafrond/niafrond.github.io/commit/9cc89ee7be6d214ef3145782f7d36ef20e466824)), closes [scheduler.js#getNextAlarmOccurrence](https://github.com/niafrond/scheduler.js/issues/getNextAlarmOccurrence)
+* **reveil-xtrem:** plein écran+focus, validation auto, sonneries, palette violette ([f8b3c16](https://github.com/niafrond/niafrond.github.io/commit/f8b3c164b72dd50f026fc749aa55b5ae5de044ae))
+* **reveil-xtrem:** sonnerie via le sélecteur système Android ([3e51071](https://github.com/niafrond/niafrond.github.io/commit/3e5107126d0e68fa0ad41f14dfe4b4c713402abf))
+
+### Bug Fixes
+
+* **reveil-xtrem:** réserve la division au niveau difficile et au-delà ([bed5429](https://github.com/niafrond/niafrond.github.io/commit/bed5429e7cb6a56ed0a0e9bd5c91de3670644d99))
+
 ## [2.46.0](https://github.com/niafrond/niafrond.github.io/compare/v2.45.0...v2.46.0) (2026-09-29)
 
 ### Features
