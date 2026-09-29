@@ -1,3 +1,9 @@
+## [2.43.0](https://github.com/niafrond/niafrond.github.io/compare/v2.42.0...v2.43.0) (2026-09-29)
+
+### Features
+
+* **mob-rush:** mur d'affrontement bloquant physiquement avant le château ([b2e5a7d](https://github.com/niafrond/niafrond.github.io/commit/b2e5a7df2a098570be1fb5af9881e7895c684e96)), closes [#hud-wall](https://github.com/niafrond/niafrond.github.io/issues/hud-wall)
+
 ## [2.42.0](https://github.com/niafrond/niafrond.github.io/compare/v2.41.0...v2.42.0) (2026-09-28)
 
 ### Features
