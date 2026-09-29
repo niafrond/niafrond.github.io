@@ -1,3 +1,11 @@
+## [2.48.0](https://github.com/niafrond/niafrond.github.io/compare/v2.47.0...v2.48.0) (2026-09-29)
+
+### Features
+
+* **match3-quest:** carte du monde illustrée façon overworld Mario ([303eb4a](https://github.com/niafrond/niafrond.github.io/commit/303eb4ac37ebef58fb765fab25f26a56386ce260))
+* **match3-quest:** répartition fixe des tuiles 75% gemmes / 17% gants / 7% crânes ([1ef9b5e](https://github.com/niafrond/niafrond.github.io/commit/1ef9b5e689a45278ed9e1142feecc284326ec3db))
+* **match3-quest:** répartition fixe des tuiles 75% gemmes / 17% gants / 7% crânes ([ba638fd](https://github.com/niafrond/niafrond.github.io/commit/ba638fd515bfd82b43f7a98c771c325556ad47e1))
+
 ## [2.47.0](https://github.com/niafrond/niafrond.github.io/compare/v2.46.0...v2.47.0) (2026-09-29)
 
 ### Features
