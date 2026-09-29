@@ -1,18 +1,18 @@
-// Phase d'exploration : rendu isométrique (canvas), saisie clavier / pavé tactile,
-// dialogues de PNJ, journal de quêtes. La logique est dans exploration.js, les données
+// Phase d'exploration : carte plein écran en vue du dessus (canvas), saisie clavier / pavé
+// tactile, dialogues de PNJ, journal de quêtes. La logique est dans exploration.js, les données
 // (cartes, histoire) dans story.js.
 //
-// Repère : x augmente vers le bas-droite de l'écran, y vers le bas-gauche. Les touches sont
-// donc : ↑ = haut-droite, → = bas-droite, ↓ = bas-gauche, ← = haut-gauche.
+// Repère : x vers la droite, y vers le bas ; ↑ ↓ ← → déplacent d'une tuile dans ce sens.
+// L'écran de carte est affiché en entier (taille de tuile adaptée) ; si la fenêtre est trop
+// petite pour garder des tuiles lisibles, la caméra suit le héros.
 
 import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
 
-const TW = 64;          // largeur d'une tuile (losange)
-const TH = 32;          // hauteur d'une tuile
-const DEPTH = 22;       // épaisseur de la falaise sous l'île
-const PAD_X = 24;
-const PAD_TOP = 78;     // marge haute : sprites et bandeaux dépassent au-dessus de la carte
+const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
+const MAX_TILE = 96;
+const HUD_TOP = 64;     // bandeau du haut (titre, objectif, boutons)
+const HUD_BOTTOM = 8;
 const MOVE_DELAY_MS = 150;
 
 const DIRECTIONS = {
@@ -59,6 +59,7 @@ const hash = (x, y) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 
  *  onSave()                   sauvegarde la partie
  *  onRegionVisited(regionId)  région découverte
  *  onOpenMap()                ouvre la carte du monde
+ *  onOpenMenu()               ouvre le menu (inventaire, sorts, boutique, stats)
  */
 export function createExplorationView(cfg) {
     const { root, canvas } = cfg;
@@ -70,6 +71,7 @@ export function createExplorationView(cfg) {
         toast: root.querySelector('.explore-toast'),
         journalBtn: root.querySelector('[data-explore="journal"]'),
         mapBtn: root.querySelector('[data-explore="map"]'),
+        menuBtn: root.querySelector('[data-explore="menu"]'),
         dpad: root.querySelectorAll('[data-dir]')
     };
 
@@ -122,7 +124,7 @@ export function createExplorationView(cfg) {
 
     const isDialogOpen = () => dialogQueue.length > 0;
     // La carte n'est « jouable » que si elle est réellement affichée (onglet Combat actif) et sans modal par-dessus.
-    const isOnScreen = () => root.offsetParent !== null;
+    const isOnScreen = () => root.getClientRects().length > 0;
     const isModalOpen = () => Boolean(document.querySelector('.modal.active'))
         || document.getElementById('levelup-modal')?.style.display === 'flex';
     const isBlocked = () => isDialogOpen() || inCombat || Boolean(journalEl) || !isOnScreen() || isModalOpen();
@@ -329,6 +331,7 @@ export function createExplorationView(cfg) {
         els.dialog?.addEventListener('click', advanceDialog);
         els.journalBtn?.addEventListener('click', showJournal);
         els.mapBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMap?.(); });
+        els.menuBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMenu?.(); });
     }
 
     // ── Boucle de rendu ────────────────────────────────────────────────────
@@ -358,173 +361,159 @@ export function createExplorationView(cfg) {
         rafId = requestAnimationFrame(frame);
     }
 
-    function layout(screen) {
-        const width = (screen.w + screen.h) * TW / 2 + PAD_X * 2;
-        const height = (screen.w + screen.h) * TH / 2 + DEPTH + PAD_TOP;
-        return { width, height, ox: PAD_X + screen.h * TW / 2, oy: PAD_TOP };
-    }
-
     function draw(now) {
         const screen = X.currentScreen(session);
         const biome = BIOMES[screen.biome] || BIOMES.forest;
-        const L = layout(screen);
         const dpr = Math.min(2, window.devicePixelRatio || 1);
-        if (canvas.width !== Math.round(L.width * dpr) || canvas.height !== Math.round(L.height * dpr)) {
-            canvas.width = Math.round(L.width * dpr);
-            canvas.height = Math.round(L.height * dpr);
+        const vw = Math.max(1, canvas.clientWidth);
+        const vh = Math.max(1, canvas.clientHeight);
+        if (canvas.width !== Math.round(vw * dpr) || canvas.height !== Math.round(vh * dpr)) {
+            canvas.width = Math.round(vw * dpr);
+            canvas.height = Math.round(vh * dpr);
         }
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        const sky = ctx.createLinearGradient(0, 0, 0, L.height);
+        // fond
+        const sky = ctx.createLinearGradient(0, 0, 0, vh);
         sky.addColorStop(0, biome.sky[0]);
         sky.addColorStop(1, biome.sky[1]);
         ctx.fillStyle = sky;
-        ctx.fillRect(0, 0, L.width, L.height);
+        ctx.fillRect(0, 0, vw, vh);
 
-        const P = (x, y) => ({ x: L.ox + (x - y) * TW / 2, y: L.oy + (x + y) * TH / 2 });
+        // taille de tuile et caméra
+        const availH = Math.max(1, vh - HUD_TOP - HUD_BOTTOM);
+        const tile = Math.max(MIN_TILE, Math.min(MAX_TILE, Math.floor(Math.min(vw / screen.w, availH / screen.h))));
+        const mapW = tile * screen.w;
+        const mapH = tile * screen.h;
+        const follow = (size, avail, offset, pos) =>
+            size <= avail ? offset + (avail - size) / 2
+                : offset + Math.min(0, Math.max(avail - size, avail / 2 - (pos + 0.5) * tile));
+        const ox = follow(mapW, vw, 0, vis.px);
+        const oy = follow(mapH, availH, HUD_TOP, vis.py);
+        const P = (x, y) => ({ x: ox + x * tile, y: oy + y * tile });
+
         const level = cfg.getPlayerLevel();
         const aura = X.getAuraTiles(session);
         const pulse = 0.5 + 0.5 * Math.sin(now / 320);
-
-        const diamond = (x, y, fill, inset = 0) => {
-            const t = P(x, y), r = P(x + 1, y), b = P(x + 1, y + 1), l = P(x, y + 1);
-            ctx.beginPath();
-            ctx.moveTo(t.x, t.y + inset);
-            ctx.lineTo(r.x - inset * 2, r.y);
-            ctx.lineTo(b.x, b.y - inset);
-            ctx.lineTo(l.x + inset * 2, l.y);
-            ctx.closePath();
-            ctx.fillStyle = fill;
-            ctx.fill();
-        };
         const inRects = (rects, x, y) => rects.some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
+        const cell = (x, y, fill, inset = 0) => {
+            const p = P(x, y);
+            ctx.fillStyle = fill;
+            ctx.fillRect(p.x + inset, p.y + inset, tile - inset * 2, tile - inset * 2);
+        };
 
-        // 1. Sol, falaises, chemins, liquides, zones de vigilance
-        for (let s = 0; s <= screen.w + screen.h - 2; s++) {
+        // 1. Sol, chemins, liquides, zones de vigilance
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.35)';
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = biome.cliff;
+        ctx.fillRect(ox - 4, oy - 4, mapW + 8, mapH + 8);
+        ctx.restore();
+        for (let y = 0; y < screen.h; y++) {
             for (let x = 0; x < screen.w; x++) {
-                const y = s - x;
-                if (y < 0 || y >= screen.h) continue;
-                const liquid = inRects(screen.liquids, x, y);
-                const isPath = inRects(screen.paths, x, y);
-                // faces de falaise sur le bord bas de l'île
-                if (x === screen.w - 1) {
-                    const r = P(x + 1, y), b = P(x + 1, y + 1);
-                    ctx.beginPath();
-                    ctx.moveTo(r.x, r.y); ctx.lineTo(b.x, b.y); ctx.lineTo(b.x, b.y + DEPTH); ctx.lineTo(r.x, r.y + DEPTH);
-                    ctx.closePath();
-                    ctx.fillStyle = shade(biome.cliff, -25);
-                    ctx.fill();
-                }
-                if (y === screen.h - 1) {
-                    const b = P(x + 1, y + 1), l = P(x, y + 1);
-                    ctx.beginPath();
-                    ctx.moveTo(l.x, l.y); ctx.lineTo(b.x, b.y); ctx.lineTo(b.x, b.y + DEPTH); ctx.lineTo(l.x, l.y + DEPTH);
-                    ctx.closePath();
-                    ctx.fillStyle = biome.cliff;
-                    ctx.fill();
-                }
-                if (liquid) {
-                    diamond(x, y, biome.liquid);
+                if (inRects(screen.liquids, x, y)) {
+                    cell(x, y, biome.liquid);
                     const shimmer = 0.10 + 0.10 * Math.sin(now / 500 + x * 1.7 + y * 1.1);
-                    diamond(x, y, `rgba(255,255,255,${shimmer.toFixed(3)})`, 3);
+                    cell(x, y, `rgba(255,255,255,${shimmer.toFixed(3)})`, tile * 0.08);
                 } else {
-                    diamond(x, y, isPath ? biome.path : ((x + y) % 2 ? biome.a : biome.b));
+                    const isPath = inRects(screen.paths, x, y);
+                    cell(x, y, isPath ? biome.path : ((x + y) % 2 ? biome.a : biome.b));
                 }
-                if (aura.has(`${x},${y}`) && !liquid) {
-                    diamond(x, y, `rgba(220,38,38,${(0.14 + 0.10 * pulse).toFixed(3)})`);
+                if (aura.has(`${x},${y}`) && !inRects(screen.liquids, x, y)) {
+                    cell(x, y, `rgba(220,38,38,${(0.16 + 0.12 * pulse).toFixed(3)})`);
                 }
             }
         }
-
         // contour des zones de vigilance (lecture claire de « où ne pas passer »)
         ctx.lineWidth = 1.5;
         ctx.strokeStyle = `rgba(220,38,38,${(0.35 + 0.25 * pulse).toFixed(3)})`;
         aura.forEach(key => {
             const [x, y] = key.split(',').map(Number);
             if (inRects(screen.liquids, x, y)) return;
-            const t = P(x, y), r = P(x + 1, y), b = P(x + 1, y + 1), l = P(x, y + 1);
-            ctx.beginPath();
-            ctx.moveTo(t.x, t.y); ctx.lineTo(r.x, r.y); ctx.lineTo(b.x, b.y); ctx.lineTo(l.x, l.y); ctx.closePath();
-            ctx.stroke();
+            const p = P(x, y);
+            ctx.strokeRect(p.x + 0.75, p.y + 0.75, tile - 1.5, tile - 1.5);
         });
 
-        // sorties
+        // sorties : case lumineuse, flèche vers le bord de la carte, nom de la destination
         screen.exits.forEach(ex => {
             const minLevel = REGION_UNLOCK_LEVEL[session.screens[ex.to].region] || 1;
             const gated = level < minLevel;
-            diamond(ex.x, ex.y, `rgba(255,236,150,${(0.55 + 0.35 * pulse).toFixed(3)})`);
-            diamond(ex.x, ex.y, 'rgba(255,255,255,0.45)', 6);
+            cell(ex.x, ex.y, `rgba(255,236,150,${(0.6 + 0.3 * pulse).toFixed(3)})`);
+            cell(ex.x, ex.y, 'rgba(255,255,255,0.45)', tile * 0.16);
             const c = P(ex.x + 0.5, ex.y + 0.5);
+            const arrow = ex.x === 0 ? '◀' : ex.x === screen.w - 1 ? '▶' : ex.y === 0 ? '▲' : '▼';
             ctx.fillStyle = '#5a3e1b';
-            ctx.font = '18px system-ui, sans-serif';
+            ctx.font = `${Math.round(tile * 0.42)}px system-ui, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('➜', c.x, c.y);
-            drawLabel(c.x, c.y - 30 - pulse * 3, gated ? `🌫️ ${ex.label} (niv. ${minLevel})` : ex.label,
-                gated ? '#e5e7eb' : '#fff8e1', '#5a3e1b');
+            ctx.fillText(arrow, c.x, c.y);
+            const labelY = ex.y === 0 ? c.y + tile * 0.75 : c.y - tile * 0.75;
+            drawLabel(c.x, labelY, gated ? `🌫️ ${ex.label} (niv. ${minLevel})` : ex.label,
+                gated ? '#e5e7eb' : '#fff8e1', '#5a3e1b', Math.max(10, Math.round(tile * 0.17)));
         });
 
-        // 2. Objets triés en profondeur
+        // 2. Décors, PNJ, coffres, ennemis, héros (du haut vers le bas de l'écran)
         const items = [];
         for (let x = 0; x < screen.w; x++) {
             for (let y = 0; y < screen.h; y++) {
-                if (inRects(screen.obstacles, x, y)) items.push({ depth: x + y + 0.5, kind: 'block', x, y });
+                if (inRects(screen.obstacles, x, y)) items.push({ depth: y, kind: 'block', x, y });
             }
         }
-        screen.npcs.forEach(n => items.push({ depth: n.x + n.y + 0.5, kind: 'npc', n, x: n.x, y: n.y }));
-        screen.chests.forEach(c => items.push({ depth: c.x + c.y + 0.5, kind: 'chest', c, x: c.x, y: c.y }));
+        screen.npcs.forEach(n => items.push({ depth: n.y + 0.1, kind: 'npc', n, x: n.x, y: n.y }));
+        screen.chests.forEach(c => items.push({ depth: c.y + 0.1, kind: 'chest', c, x: c.x, y: c.y }));
         X.aliveEnemies(session).forEach(e => {
             const v = vis.enemies[e.def.id] || e;
-            items.push({ depth: v.x + v.y + 0.6, kind: 'enemy', e, x: v.x, y: v.y });
+            items.push({ depth: v.y + 0.2, kind: 'enemy', e, x: v.x, y: v.y });
         });
-        items.push({ depth: vis.px + vis.py + 0.65, kind: 'player', x: vis.px, y: vis.py });
+        items.push({ depth: vis.py + 0.3, kind: 'player', x: vis.px, y: vis.py });
         items.sort((a, b) => a.depth - b.depth);
 
+        const labelSize = Math.max(10, Math.round(tile * 0.17));
         items.forEach(it => {
             const c = P(it.x + 0.5, it.y + 0.5);
             switch (it.kind) {
                 case 'block': {
-                    diamond(it.x, it.y, shade(biome.cliff, 10));
+                    cell(it.x, it.y, shade(biome.cliff, 10));
                     const emoji = biome.decor[Math.floor(hash(it.x, it.y) * biome.decor.length)];
-                    drawShadow(c.x, c.y + 4, 15, 6);
-                    drawEmoji(emoji, c.x, c.y - 6, 40);
+                    drawShadow(c.x, c.y + tile * 0.3, tile * 0.32, tile * 0.11);
+                    drawEmoji(emoji, c.x, c.y, tile * 0.85);
                     break;
                 }
                 case 'npc': {
-                    drawShadow(c.x, c.y + 5, 13, 5);
-                    drawEmoji(it.n.emoji, c.x, c.y - 8, 34);
+                    drawShadow(c.x, c.y + tile * 0.32, tile * 0.28, tile * 0.1);
+                    drawEmoji(it.n.emoji, c.x, c.y, tile * 0.75);
                     const marker = X.npcMarker(session, it.n.id);
-                    if (marker) drawEmoji(marker, c.x, c.y - 42 - 4 * Math.abs(Math.sin(now / 300)), 22);
-                    drawLabel(c.x, c.y + 20, it.n.name, '#fff8e1', '#5a3e1b', 11);
+                    if (marker) drawEmoji(marker, c.x, c.y - tile * 0.62 - 4 * Math.abs(Math.sin(now / 300)), tile * 0.4);
+                    drawLabel(c.x, c.y + tile * 0.55, it.n.name, '#fff8e1', '#5a3e1b', labelSize);
                     break;
                 }
                 case 'chest': {
                     const opened = session.data.openedChests.includes(it.c.id);
-                    drawShadow(c.x, c.y + 5, 13, 5);
-                    drawEmoji(opened ? '📭' : '🎁', c.x, c.y - 6, 30);
+                    drawShadow(c.x, c.y + tile * 0.3, tile * 0.28, tile * 0.1);
+                    drawEmoji(opened ? '📭' : '🎁', c.x, c.y, tile * 0.65);
                     break;
                 }
                 case 'enemy': {
                     const def = it.e.def;
                     const boss = Boolean(def.boss);
                     const lvl = X.enemyLevel(def, level);
-                    drawShadow(c.x, c.y + 5, boss ? 20 : 14, boss ? 8 : 5);
-                    drawEmoji(def.emoji, c.x, c.y - (boss ? 12 : 8), boss ? 50 : 36);
-                    if (boss) drawEmoji('👑', c.x, c.y - 52 - 3 * Math.abs(Math.sin(now / 350)), 22);
+                    drawShadow(c.x, c.y + tile * 0.32, tile * (boss ? 0.42 : 0.3), tile * 0.1);
+                    drawEmoji(def.emoji, c.x, c.y, tile * (boss ? 1.0 : 0.78));
+                    if (boss) drawEmoji('👑', c.x, c.y - tile * 0.72 - 3 * Math.abs(Math.sin(now / 350)), tile * 0.4);
                     const color = lvl > level ? '#dc2626' : lvl < level ? '#16a34a' : '#ca8a04';
-                    drawLabel(c.x, c.y + (boss ? 24 : 20), `${boss ? '☠ ' : ''}Nv ${lvl}`, '#ffffff', color, 11);
+                    drawLabel(c.x, c.y + tile * (boss ? 0.68 : 0.56), `${boss ? '☠ ' : ''}Nv ${lvl}`, '#ffffff', color, labelSize);
                     break;
                 }
                 case 'player': {
                     const moving = Math.hypot(session.data.x - vis.px, session.data.y - vis.py) > 0.05;
-                    const hop = moving ? -5 * Math.abs(Math.sin(now / 70)) : -1.5 * Math.sin(now / 400);
-                    drawShadow(c.x, c.y + 5, 13, 5);
+                    const hop = moving ? -tile * 0.08 * Math.abs(Math.sin(now / 70)) : 0;
+                    drawShadow(c.x, c.y + tile * 0.32, tile * 0.28, tile * 0.1);
                     ctx.beginPath();
-                    ctx.ellipse(c.x, c.y + 3, 15, 7, 0, 0, Math.PI * 2);
+                    ctx.arc(c.x, c.y, tile * 0.4, 0, Math.PI * 2);
                     ctx.strokeStyle = '#facc15';
-                    ctx.lineWidth = 2.5;
+                    ctx.lineWidth = 3;
                     ctx.stroke();
-                    drawEmoji(cfg.getHero().emoji, c.x, c.y - 9 + hop, 36);
+                    drawEmoji(cfg.getHero().emoji, c.x, c.y + hop, tile * 0.76);
                     break;
                 }
                 default:

@@ -173,7 +173,8 @@ function init() {
                 player.worldMap.visitedZoneIds.push(regionId);
             }
         },
-        onOpenMap: () => showWorldMap()
+        onOpenMap: () => showWorldMap(),
+        onOpenMenu: () => window.switchTab('weapons')
     });
     exploration.init();
 
