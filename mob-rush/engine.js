@@ -26,12 +26,18 @@ const CANNON_SPEED = 900;
 const GATE_H = 14;
 // ─── Mur d'affrontement (SPECS.md §4) ────────────────────────────────────
 // Une vague peut se matérialiser en « mur » : une formation compacte de
-// rouges alignée sur (presque) toute la largeur du terrain, qui bloque
-// physiquement toute unité bleue tant qu'il en reste un membre vivant devant
-// elle — au lieu du simple échange de dégâts au contact des autres rouges.
+// rouges alignée sur (presque) toute la largeur du terrain, qui se traduit
+// par une forte concentration de cibles pour la règle d'engagement ci-dessous
+// — au lieu du simple échange de dégâts au contact des autres rouges.
 const WALL_SPAN = 0.82;       // fraction de W occupée par la formation
 const WALL_Y_JITTER = 18;     // variation verticale pour un alignement organique
-const WALL_BLOCK_WIDTH = 26;  // bande horizontale de blocage autour d'une unité bleue
+// ─── Engagement (SPECS.md §4bis) ─────────────────────────────────────────
+// Toute unité bleue doit d'abord viser et tuer le rouge vivant le plus
+// proche (encore devant elle) avant de pouvoir reprendre sa route vers le
+// château — plus seulement les rouges d'un mur de vague : n'importe quel
+// rouge encore en vie force l'engagement tant qu'il est à portée.
+const ENGAGE_RANGE = 130;              // portée de détection d'une cible
+const ENGAGE_RANGE2 = ENGAGE_RANGE * ENGAGE_RANGE;
 // Décalage vers le bas (donc vers le joueur) du bord « avant » d'une rangée
 // de portes/murs par rapport à `row.y`/`gate.y` — doit rester synchronisé
 // avec la bande de 30px dessinée par main.js (de row.y-16 à row.y+14).
@@ -645,16 +651,30 @@ export function step(g, dt, input = {}) {
   }
 
   // Unités bleues
-  // Rouges de mur encore vivants (au plus un mur actif à la fois, cf.
-  // `activeWall` plus haut) — bloquent physiquement la progression, contrairement
-  // aux rouges « libres » qui ne font qu'échanger des dégâts au contact
-  // (resolveCombat, plus bas).
-  const blockingReds = g.walls.some(w => !w.cleared) ? g.red.filter(e => e.hp > 0 && e.wallId != null) : [];
+  // Rouges encore vivants, candidats à l'engagement (SPEC-4bis) — n'importe
+  // lequel, pas seulement ceux d'un mur de vague : une unité bleue doit
+  // d'abord viser et tuer le rouge vivant le plus proche avant de pouvoir
+  // reprendre sa route vers le château.
+  const liveReds = g.red.filter(e => e.hp > 0);
   const newBlue = [];
   for (const u of g.blue) {
     const prevY = u.y;
-    if (u.y < 300) {
-      const dx = BASE.x - u.x;
+
+    // Cible : le rouge vivant le plus proche encore devant l'unité (pas déjà
+    // dépassé, sans quoi elle ferait demi-tour) et à portée `ENGAGE_RANGE` —
+    // à défaut de cible, la base redevient l'objectif par défaut.
+    let target = null;
+    let bestD2 = ENGAGE_RANGE2;
+    for (const e of liveReds) {
+      if (e.y > prevY) continue;
+      const dx = e.x - u.x;
+      const dy = e.y - u.y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < bestD2) { bestD2 = d2; target = e; }
+    }
+
+    if (target || u.y < 300) {
+      const dx = (target ? target.x : BASE.x) - u.x;
       const want = Math.sign(dx) * Math.min(Math.abs(dx) * 2.2, 150);
       u.vx += (want - u.vx) * Math.min(1, dt * 5);
     } else {
@@ -663,21 +683,12 @@ export function step(g, dt, input = {}) {
     u.x = clamp(u.x + u.vx * dt, u.r, W - u.r);
     u.y += u.vy * dt;
 
-    // Mur d'affrontement (SPEC-4.3) : le rouge de mur vivant le plus proche,
-    // encore devant l'unité au moment où elle l'atteint, l'arrête net — pas
-    // de couloir à trouver comme pour un mur de porte, juste un arrêt tant
-    // qu'il est vivant (aucune exemption pour le champion, SPEC-4.3.4).
-    if (blockingReds.length) {
-      let blocker = null;
-      for (const e of blockingReds) {
-        if (e.y > prevY) continue; // déjà dépassé avant ce mouvement
-        if (Math.abs(e.x - u.x) > WALL_BLOCK_WIDTH) continue;
-        if (!blocker || e.y > blocker.y) blocker = e;
-      }
-      if (blocker) {
-        const stopY = blocker.y + blocker.r + u.r;
-        if (u.y < stopY) u.y = stopY;
-      }
+    // Engagement (SPEC-4bis) : tant que sa cible est vivante, l'unité ne
+    // peut jamais la dépasser — arrêt net, pas de couloir à trouver comme
+    // pour un mur de porte (aucune exemption pour le champion, SPEC-4.3.4).
+    if (target) {
+      const stopY = target.y + target.r + u.r;
+      if (u.y < stopY) u.y = stopY;
     }
 
     for (const row of g.rows) {
