@@ -19,3 +19,37 @@ export function formatClock(date) {
   const s = String(date.getSeconds()).padStart(2, '0');
   return `${h}:${m}:${s}`;
 }
+
+function sameCalendarDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+/**
+ * Libellé de répétition affiché sur une carte d'alarme. Pour une alarme
+ * ponctuelle (`days` vide), affiche "Aujourd'hui"/"Demain" quand on connaît
+ * sa prochaine occurrence (`nextAt`), sinon retombe sur `formatDaysShort`.
+ */
+export function formatAlarmSchedule(alarm, nextAt, now) {
+  if (alarm.days && alarm.days.length > 0) return formatDaysShort(alarm.days);
+  if (!nextAt) return formatDaysShort(alarm.days);
+
+  if (sameCalendarDay(nextAt, now)) return "Aujourd'hui";
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (sameCalendarDay(nextAt, tomorrow)) return 'Demain';
+  return formatDaysShort(alarm.days);
+}
+
+/** Ex. formatCountdown(5*3600000 + 50*60000) -> "5 h 50 min" */
+export function formatCountdown(ms) {
+  const totalMinutes = Math.max(0, Math.round(ms / 60000));
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+
+  const parts = [];
+  if (days > 0) parts.push(`${days} j`);
+  if (days > 0 || hours > 0) parts.push(`${hours} h`);
+  parts.push(`${minutes} min`);
+  return parts.join(' ');
+}

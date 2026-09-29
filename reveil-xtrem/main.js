@@ -1,18 +1,25 @@
 import {
   loadAlarms, saveAlarms, createAlarm, upsertAlarm, removeAlarm, patchAlarm,
-  loadRuntime, saveRuntime,
+  loadRuntime, saveRuntime, clampProblemsCount, MIN_PROBLEMS_COUNT, MAX_PROBLEMS_COUNT,
 } from './alarms.js';
 import {
   evaluateAlarms, applySnooze, clearSnooze, runtimeToObject, runtimeFromObject,
+  nextOccurrence, getNextAlarmOccurrence,
 } from './scheduler.js';
-import { generateProblem, problemsRequired, DIFFICULTY_LABELS } from './math-challenge.js';
-import { startAlarmSound, stopAlarmSound } from './sound.js';
-import { formatDaysShort, formatClock } from './ui.js';
-import { installPwa, initServiceWorker } from './pwa.js';
+import {
+  generateProblem, suggestedProblemsCount, DIFFICULTY_LABELS, DIFFICULTY_ORDER,
+} from './math-challenge.js';
+import { startAlarmSound, stopAlarmSound, previewSound, DEFAULT_SOUND_ID } from './sound.js';
+import { formatAlarmSchedule, formatClock, formatCountdown } from './ui.js';
+import {
+  installPwa, initServiceWorker, initApkDownloadLink,
+  requestRingFullscreen, exitRingFullscreen, notifyRingIfHidden,
+} from './pwa.js';
 import {
   isNativePlatform, syncNativeAlarms, nativeSnooze, nativeDismiss,
   consumeNativePendingUpdates, getNativePendingRingId, onNativeRing,
   listPermissionKeys, permissionInfo, checkPermission, requestPermission,
+  nativePickRingtone, nativeRingtoneTitle,
 } from './native-bridge.js';
 
 // ── État ────────────────────────────────────────────────────────────────
@@ -32,6 +39,9 @@ const screens = {
 const clockNow = el('clock-now');
 const alarmList = el('alarm-list');
 const alarmEmptyState = el('alarm-empty-state');
+const nextAlarmHero = el('next-alarm-hero');
+const nextAlarmCountdown = el('next-alarm-countdown');
+const nextAlarmDetail = el('next-alarm-detail');
 
 function showScreen(name) {
   for (const s of Object.values(screens)) s.hidden = true;
@@ -55,23 +65,25 @@ function showToast(message) {
 }
 
 // ── Rendu liste ─────────────────────────────────────────────────────────
-function renderAlarmList() {
+function renderAlarmList(now = new Date()) {
   alarmList.innerHTML = '';
   const sorted = [...alarms].sort((a, b) => a.time.localeCompare(b.time));
   alarmEmptyState.hidden = sorted.length > 0;
 
   for (const alarm of sorted) {
     const rt = runtimeMap.get(alarm.id);
+    const nextAt = alarm.enabled ? nextOccurrence(alarm, now) : null;
     const card = document.createElement('div');
     card.className = 'alarm-card' + (alarm.enabled ? '' : ' disabled') + (rt && rt.snoozeUntil ? ' snoozing' : '');
     card.dataset.id = alarm.id;
 
     card.innerHTML = `
       <div class="alarm-card-top">
+        <span class="alarm-status-icon">${alarm.enabled ? '⏰' : '🔕'}</span>
         <div class="alarm-time">${alarm.time}</div>
         <div class="alarm-meta">
           <div class="alarm-label"></div>
-          <div class="alarm-days">${formatDaysShort(alarm.days)}${rt && rt.snoozeUntil ? ' · 💤 reporté' : ''}</div>
+          <div class="alarm-days">${formatAlarmSchedule(alarm, nextAt, now)}${rt && rt.snoozeUntil ? ' · 💤 reporté' : ''}</div>
         </div>
         <label class="switch">
           <input type="checkbox" class="alarm-toggle" ${alarm.enabled ? 'checked' : ''}>
@@ -80,6 +92,7 @@ function renderAlarmList() {
       </div>
       <div class="alarm-card-bottom">
         <span class="badge difficulty-${alarm.difficulty}">${DIFFICULTY_LABELS[alarm.difficulty]}</span>
+        <span class="badge count-badge">×${alarm.problemsCount}</span>
         <span class="alarm-card-spacer"></span>
         <button type="button" class="icon-btn btn-skip-next ${alarm.skipNext ? 'active' : ''}">⏭ Passer</button>
       </div>
@@ -101,11 +114,29 @@ function renderAlarmList() {
   }
 }
 
+function updateNextAlarmHero(now = new Date()) {
+  const next = getNextAlarmOccurrence(alarms, now, runtimeMap);
+  if (!next) {
+    nextAlarmHero.hidden = true;
+    return;
+  }
+  nextAlarmCountdown.textContent = `Sonne dans ${formatCountdown(next.at.getTime() - now.getTime())}`;
+  const hh = String(next.at.getHours()).padStart(2, '0');
+  const mm = String(next.at.getMinutes()).padStart(2, '0');
+  nextAlarmDetail.textContent = `${next.alarm.label} · ${hh}:${mm}`;
+  nextAlarmHero.hidden = false;
+}
+
+function refreshHome(now = new Date()) {
+  renderAlarmList(now);
+  updateNextAlarmHero(now);
+}
+
 function toggleEnabled(id, enabled) {
   alarms = patchAlarm(alarms, id, { enabled });
   persistAlarms();
   showToast(enabled ? 'Alarme activée' : 'Alarme désactivée');
-  renderAlarmList();
+  refreshHome();
 }
 
 function toggleSkipNext(id) {
@@ -114,7 +145,7 @@ function toggleSkipNext(id) {
   alarms = patchAlarm(alarms, id, { skipNext: !alarm.skipNext });
   persistAlarms();
   showToast(!alarm.skipNext ? 'La prochaine sonnerie sera sautée' : 'Sonnerie rétablie');
-  renderAlarmList();
+  refreshHome();
 }
 
 // ── Écran édition ───────────────────────────────────────────────────────
@@ -133,50 +164,160 @@ function openEdit(id) {
     chip.classList.toggle('active', days.includes(Number(chip.dataset.day)));
   });
 
-  const difficulty = alarm ? alarm.difficulty : 'easy';
-  setDifficultyUi(difficulty);
+  const difficulty = alarm ? alarm.difficulty : 'veryEasy';
+  setDifficultySlider(difficulty, { suggestCount: !alarm });
+  setProblemsCount(alarm ? alarm.problemsCount : suggestedProblemsCount(difficulty));
+  setSelectedSound(alarm ? alarm.sound : DEFAULT_SOUND_ID);
 
   showScreen('edit');
 }
 
-function setDifficultyUi(difficulty) {
-  document.querySelectorAll('#difficulty-picker .segment').forEach(seg => {
-    seg.classList.toggle('active', seg.dataset.difficulty === difficulty);
-  });
-  const hints = {
-    easy: '1 addition simple à résoudre.',
-    medium: '1 calcul (addition ou soustraction) à deux chiffres.',
-    hard: '3 calculs d’affilée (dont des multiplications) — une erreur remet le compteur à zéro !',
-  };
-  el('difficulty-hint').textContent = hints[difficulty] || '';
+// ── Difficulté (slider à 5 crans, façon Alarm Clock Xtreme) ──────────────
+const difficultySlider = el('difficulty-slider');
+const difficultyCurrentLabel = el('difficulty-current-label');
+const difficultyExampleValue = el('difficulty-example-value');
+
+function setDifficultySlider(difficulty, { suggestCount = false } = {}) {
+  const index = Math.max(0, DIFFICULTY_ORDER.indexOf(difficulty));
+  difficultySlider.value = String(index);
+  difficultyCurrentLabel.textContent = DIFFICULTY_LABELS[DIFFICULTY_ORDER[index]];
+  regenerateDifficultyExample();
+
+  // Pour une NOUVELLE alarme, suggère un nombre de calculs adapté à la
+  // difficulté choisie — mais ne touche jamais au réglage d'une alarme
+  // existante déjà personnalisée par l'utilisateur.
+  if (suggestCount) setProblemsCount(suggestedProblemsCount(DIFFICULTY_ORDER[index]));
+}
+
+function regenerateDifficultyExample() {
+  const { text } = generateProblem(getSelectedDifficulty());
+  difficultyExampleValue.textContent = text;
 }
 
 function getSelectedDifficulty() {
-  const active = document.querySelector('#difficulty-picker .segment.active');
-  return active ? active.dataset.difficulty : 'easy';
+  return DIFFICULTY_ORDER[Number(difficultySlider.value)] || 'veryEasy';
 }
+
+difficultySlider.addEventListener('input', () => {
+  difficultyCurrentLabel.textContent = DIFFICULTY_LABELS[getSelectedDifficulty()];
+  regenerateDifficultyExample();
+});
+difficultySlider.addEventListener('change', () => {
+  // Alarme existante : ne pas re-suggérer. Nouvelle alarme : suggère le
+  // nombre de calculs adapté, une fois le glissement terminé.
+  if (editingId === null) setProblemsCount(suggestedProblemsCount(getSelectedDifficulty()));
+});
 
 function getSelectedDays() {
   return [...document.querySelectorAll('#days-picker .day-chip.active')].map(c => Number(c.dataset.day));
 }
+
+// ── Nombre de calculs (stepper, indépendant de la difficulté) ────────────
+const countValueEl = el('count-value');
+const countHintEl = el('count-hint');
+
+function setProblemsCount(value) {
+  const clamped = clampProblemsCount(value);
+  countValueEl.textContent = String(clamped);
+  el('btn-count-minus').disabled = clamped <= MIN_PROBLEMS_COUNT;
+  el('btn-count-plus').disabled = clamped >= MAX_PROBLEMS_COUNT;
+  countHintEl.textContent = clamped > 1
+    ? `${clamped} calculs à résoudre d'affilée — une erreur remet le compteur à zéro.`
+    : '1 seul calcul à résoudre.';
+}
+
+function getSelectedProblemsCount() {
+  return clampProblemsCount(countValueEl.textContent);
+}
+
+el('btn-count-minus').addEventListener('click', () => setProblemsCount(getSelectedProblemsCount() - 1));
+el('btn-count-plus').addEventListener('click', () => setProblemsCount(getSelectedProblemsCount() + 1));
+
+// ── Sonnerie (propre à chaque alarme) ─────────────────────────────────────
+// Sous Capacitor, on laisse le sélecteur système Android (RingtoneManager)
+// choisir parmi les sonneries/musiques réelles de l'appareil plutôt qu'un
+// jeu limité de sonneries synthétisées — cf. sound.js. Sur la version
+// web pure, il n'existe pas de sélecteur système accessible depuis un
+// navigateur : on garde les sonneries Web Audio en repli.
+let selectedNativeSoundUri = '';
+
+function isUriSound(value) {
+  return typeof value === 'string' && value.includes('://');
+}
+
+function initSoundPickerMode() {
+  const native = isNativePlatform();
+  const picker = el('sound-picker');
+  const nativeBtn = el('btn-pick-native-ringtone');
+  const hint = el('sound-hint');
+  if (picker) picker.hidden = native;
+  if (nativeBtn) nativeBtn.hidden = !native;
+  if (hint) {
+    hint.textContent = native
+      ? 'Ouvre le sélecteur de sonneries du téléphone : choisissez ce que vous voulez.'
+      : "Touchez une sonnerie pour l'écouter et la choisir.";
+  }
+}
+
+async function updateNativeRingtoneLabel() {
+  const label = el('native-ringtone-label');
+  if (!label) return;
+  const title = await nativeRingtoneTitle(selectedNativeSoundUri);
+  label.textContent = title || 'Sonnerie par défaut';
+}
+
+function setSelectedSound(soundValue) {
+  if (isNativePlatform()) {
+    selectedNativeSoundUri = isUriSound(soundValue) ? soundValue : '';
+    updateNativeRingtoneLabel();
+    return;
+  }
+  document.querySelectorAll('#sound-picker .sound-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.sound === soundValue);
+  });
+}
+
+function getSelectedSound() {
+  if (isNativePlatform()) return selectedNativeSoundUri;
+  const active = document.querySelector('#sound-picker .sound-chip.active');
+  return active ? active.dataset.sound : DEFAULT_SOUND_ID;
+}
+
+document.querySelectorAll('#sound-picker .sound-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    setSelectedSound(chip.dataset.sound);
+    previewSound(chip.dataset.sound);
+  });
+});
+
+el('btn-pick-native-ringtone').addEventListener('click', async () => {
+  const result = await nativePickRingtone(selectedNativeSoundUri);
+  if (!result) return;
+  selectedNativeSoundUri = result.uri || '';
+  el('native-ringtone-label').textContent = result.title || 'Sonnerie par défaut';
+});
 
 function saveAlarmFromForm() {
   const time = el('input-time').value || '07:00';
   const label = el('input-label').value;
   const days = getSelectedDays();
   const difficulty = getSelectedDifficulty();
+  const problemsCount = getSelectedProblemsCount();
+  const sound = getSelectedSound();
   const snoozeMinutes = Number(el('input-snooze').value) || 9;
 
   if (editingId) {
-    alarms = patchAlarm(alarms, editingId, { time, label: label.trim() || 'Alarme', days, difficulty, snoozeMinutes });
+    alarms = patchAlarm(alarms, editingId, {
+      time, label: label.trim() || 'Alarme', days, difficulty, problemsCount, sound, snoozeMinutes,
+    });
   } else {
-    const alarm = createAlarm({ time, label, days, difficulty, snoozeMinutes });
+    const alarm = createAlarm({ time, label, days, difficulty, problemsCount, sound, snoozeMinutes });
     alarms = upsertAlarm(alarms, alarm);
   }
   persistAlarms();
   showToast('Alarme enregistrée');
   showScreen('home');
-  renderAlarmList();
+  refreshHome();
 }
 
 function deleteCurrentAlarm() {
@@ -187,13 +328,14 @@ function deleteCurrentAlarm() {
   persistRuntime();
   showToast('Alarme supprimée');
   showScreen('home');
-  renderAlarmList();
+  refreshHome();
 }
 
 // ── Boucle de vérification ──────────────────────────────────────────────
 function tick() {
   const now = new Date();
   clockNow.textContent = formatClock(now);
+  if (screens.home.hidden === false) updateNextAlarmHero(now);
 
   // Sous le wrapper Android, AlarmManager (programmé via AlarmScheduler natif)
   // déclenche réellement les alarmes — y compris appli fermée. La détection
@@ -211,13 +353,13 @@ function tick() {
       alarms = patchAlarm(alarms, id, { skipNext: false, ...(isOneTime ? { enabled: false } : {}) });
     }
     persistAlarms();
-    renderAlarmList();
+    renderAlarmList(now);
   }
 
   if (ringing.length > 0) {
     for (const id of ringing) if (!ringQueue.includes(id)) ringQueue.push(id);
     persistRuntime();
-    renderAlarmList();
+    renderAlarmList(now);
   }
 
   if (!currentRing && ringQueue.length > 0) {
@@ -240,11 +382,20 @@ function startRing(alarmId) {
   const alarm = alarms.find(a => a.id === alarmId);
   if (!alarm) return;
 
-  currentRing = { alarmId, solved: 0, required: problemsRequired(alarm.difficulty), problem: null };
+  currentRing = { alarmId, solved: 0, required: clampProblemsCount(alarm.problemsCount ?? 1), problem: null };
   el('ring-label').textContent = alarm.label;
   nextChallengeProblem();
-  startAlarmSound();
+  // Sous Capacitor, la sonnerie système (choisie via RingtoneManager) est déjà
+  // jouée par le service natif au niveau OS — un second son synthétisé côté
+  // JS ferait doublon. Sur le web pur, c'est la seule sonnerie disponible.
+  if (!isNativePlatform()) startAlarmSound(alarm.sound);
   showScreen('ring');
+
+  // Une alarme doit être impossible à rater : plein écran + tentative de
+  // reprendre le focus si l'onglet tournait en arrière-plan.
+  requestRingFullscreen();
+  notifyRingIfHidden(`⏰ ${alarm.label}`, "Résolvez le calcul pour désactiver l'alarme.");
+  window.focus();
 }
 
 function nextChallengeProblem({ resetError = true } = {}) {
@@ -305,10 +456,12 @@ function dismissCurrentRing() {
 
   currentRing = null;
   showScreen('home');
-  renderAlarmList();
+  refreshHome();
 
   if (ringQueue.length > 0) {
     startRing(ringQueue.shift());
+  } else {
+    exitRingFullscreen();
   }
 }
 
@@ -324,11 +477,13 @@ function snoozeCurrentRing() {
 
   currentRing = null;
   showScreen('home');
-  renderAlarmList();
+  refreshHome();
   showToast(`Reporté de ${minutes} min`);
 
   if (ringQueue.length > 0) {
     startRing(ringQueue.shift());
+  } else {
+    exitRingFullscreen();
   }
 }
 
@@ -390,7 +545,7 @@ async function initNative() {
       alarms = patchAlarm(alarms, id, patch);
     }
     saveAlarms(alarms);
-    renderAlarmList();
+    refreshHome();
   }
 
   syncNativeAlarms(alarms);
@@ -404,7 +559,7 @@ async function initNative() {
 
 // ── Écouteurs ───────────────────────────────────────────────────────────
 el('btn-add-alarm').addEventListener('click', () => openEdit(null));
-el('btn-edit-cancel').addEventListener('click', () => { showScreen('home'); renderAlarmList(); });
+el('btn-edit-cancel').addEventListener('click', () => { showScreen('home'); refreshHome(); });
 el('btn-save-alarm').addEventListener('click', saveAlarmFromForm);
 el('btn-delete-alarm').addEventListener('click', deleteCurrentAlarm);
 el('btn-install-pwa').addEventListener('click', installPwa);
@@ -412,18 +567,24 @@ el('btn-install-pwa').addEventListener('click', installPwa);
 document.querySelectorAll('#days-picker .day-chip').forEach(chip => {
   chip.addEventListener('click', () => chip.classList.toggle('active'));
 });
-document.querySelectorAll('#difficulty-picker .segment').forEach(seg => {
-  seg.addEventListener('click', () => setDifficultyUi(seg.dataset.difficulty));
-});
 
 el('btn-challenge-validate').addEventListener('click', validateChallengeAnswer);
 el('challenge-answer').addEventListener('keydown', e => {
   if (e.key === 'Enter') validateChallengeAnswer();
 });
+// Valide automatiquement dès que la réponse tapée est la bonne, sans
+// attendre un clic sur "Valider" — la réponse ne peut jamais matcher par
+// erreur en cours de frappe puisqu'un seul calcul (donc une seule réponse)
+// est affiché à la fois.
+el('challenge-answer').addEventListener('input', () => {
+  if (!currentRing) return;
+  const value = Number(el('challenge-answer').value);
+  if (!Number.isNaN(value) && value === currentRing.problem.answer) validateChallengeAnswer();
+});
 el('btn-snooze').addEventListener('click', snoozeCurrentRing);
 
 // ── Démarrage ───────────────────────────────────────────────────────────
-renderAlarmList();
+refreshHome();
 showScreen('home');
 setInterval(tick, 1000);
 setInterval(updateRingClock, 1000);
@@ -434,4 +595,6 @@ if (typeof Notification !== 'undefined' && Notification.permission === 'default'
 }
 
 initServiceWorker(() => currentRing != null);
+initApkDownloadLink();
+initSoundPickerMode();
 initNative();

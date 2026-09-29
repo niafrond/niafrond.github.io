@@ -2,14 +2,18 @@ package io.github.niafrond.reveilxtrem;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.AlarmManager;
 import android.content.Context;
 import android.content.Intent;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.PowerManager;
 import android.provider.Settings;
 
+import androidx.activity.result.ActivityResult;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.getcapacitor.JSArray;
@@ -17,6 +21,7 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
@@ -112,6 +117,71 @@ public class AlarmSchedulerPlugin extends Plugin {
     public void dismiss(PluginCall call) {
         AlarmRingService.stop(getContext());
         call.resolve();
+    }
+
+    // ── Sonnerie : sélecteur système Android ────────────────────────────
+    // L'utilisateur choisit une sonnerie parmi celles (et les musiques)
+    // réellement installées sur son appareil, plutôt qu'un jeu limité de
+    // sonneries embarquées dans l'appli.
+
+    @PluginMethod
+    public void pickRingtone(PluginCall call) {
+        String currentUri = call.getString("uri");
+        Intent intent = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
+        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM);
+        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true);
+        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false);
+        Uri defaultUri = RingtoneManager.getActualDefaultRingtoneUri(getContext(), RingtoneManager.TYPE_ALARM);
+        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI, defaultUri);
+        if (currentUri != null && !currentUri.isEmpty()) {
+            try {
+                intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Uri.parse(currentUri));
+            } catch (Exception e) {
+                // URI stockée invalide (sonnerie supprimée depuis) : le sélecteur s'ouvre sans présélection.
+            }
+        }
+        startActivityForResult(call, intent, "pickRingtoneResult");
+    }
+
+    @ActivityCallback
+    private void pickRingtoneResult(PluginCall call, ActivityResult result) {
+        if (call == null) return;
+        JSObject ret = new JSObject();
+        Uri picked = null;
+        if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+            picked = result.getData().getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
+        }
+        // Pas d'URI choisie (annulé, ou "Sonnerie par défaut" sélectionnée) : on
+        // retombe sur '' — l'alarme utilisera la sonnerie d'alarme par défaut du système.
+        ret.put("uri", picked != null ? picked.toString() : "");
+        ret.put("title", picked != null ? ringtoneTitleFor(picked) : null);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void ringtoneTitle(PluginCall call) {
+        String uriStr = call.getString("uri");
+        JSObject ret = new JSObject();
+        String title = null;
+        try {
+            Uri uri = (uriStr != null && !uriStr.isEmpty())
+                    ? Uri.parse(uriStr)
+                    : RingtoneManager.getActualDefaultRingtoneUri(getContext(), RingtoneManager.TYPE_ALARM);
+            if (uri != null) title = ringtoneTitleFor(uri);
+        } catch (Exception e) {
+            // URI invalide/sonnerie supprimée depuis son choix : titre indisponible, non bloquant.
+        }
+        ret.put("title", title);
+        call.resolve(ret);
+    }
+
+    private String ringtoneTitleFor(Uri uri) {
+        try {
+            Ringtone ringtone = RingtoneManager.getRingtone(getContext(), uri);
+            return ringtone != null ? ringtone.getTitle(getContext()) : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @PluginMethod

@@ -74,6 +74,59 @@ export function evaluateAlarms(alarms, now, runtimeMap) {
   return { ringing, skipConsumed, nextRuntime };
 }
 
+/**
+ * Prochaine Date (strictement après `fromDate`) à laquelle l'horaire de
+ * l'alarme correspond, en respectant `days` si non vide. Ne tient PAS
+ * compte de `enabled`/`skipNext` — c'est le rôle de l'appelant
+ * (getNextAlarmOccurrence) de les combiner.
+ */
+export function nextOccurrence(alarm, fromDate) {
+  const [h, m] = alarm.time.split(':').map(Number);
+  const base = new Date(fromDate);
+  base.setSeconds(0, 0);
+
+  for (let offset = 0; offset < 8; offset++) {
+    const candidate = new Date(base);
+    candidate.setDate(candidate.getDate() + offset);
+    candidate.setHours(h, m, 0, 0);
+
+    if (candidate.getTime() <= fromDate.getTime()) continue; // doit être strictement futur
+
+    if (!alarm.days || alarm.days.length === 0 || alarm.days.includes(candidate.getDay())) {
+      return candidate;
+    }
+  }
+  return null; // ne devrait pas arriver si `days` couvre au moins un jour
+}
+
+/**
+ * Trouve, parmi toutes les alarmes activées, celle qui sonnera le plus tôt
+ * — pour l'affichage "Prochaine alarme dans …" de l'écran d'accueil.
+ * Prend en compte un snooze en cours (prioritaire sur l'horaire normal) et
+ * `skipNext` (l'occurrence sautée n'est pas candidate, on cherche la suivante).
+ *
+ * @returns {{alarm: object, at: Date} | null}
+ */
+export function getNextAlarmOccurrence(alarms, now, runtimeMap = new Map()) {
+  let best = null;
+  for (const alarm of alarms) {
+    if (!alarm.enabled) continue;
+    const rt = runtimeMap.get(alarm.id);
+
+    let at;
+    if (rt && rt.snoozeUntil != null) {
+      at = new Date(rt.snoozeUntil);
+    } else {
+      at = nextOccurrence(alarm, now);
+      if (at && alarm.skipNext) at = nextOccurrence(alarm, at);
+    }
+    if (!at) continue;
+
+    if (!best || at.getTime() < best.at.getTime()) best = { alarm, at };
+  }
+  return best;
+}
+
 // Programme un snooze : la prochaine alarme sonnera dans `minutes` minutes.
 export function applySnooze(runtimeMap, alarmId, now, minutes) {
   const next = new Map(runtimeMap);

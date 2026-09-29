@@ -6,7 +6,7 @@
   <title>Réveil Xtrem ⏰</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1a1030">
+  <meta name="theme-color" content="#170f2e">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Réveil Xtrem">
@@ -17,15 +17,26 @@
 
 <!-- ═══════════════════════ ÉCRAN LISTE — accueil ═══════════════════════ -->
 <div id="screen-home" data-screen="screen-home">
-  <div class="page-wrapper">
-    <div class="home-header">
-      <a href="../" class="btn btn-secondary btn-sm">← Accueil</a>
-      <h1 class="app-title">⏰ Réveil Xtrem</h1>
-      <span class="header-spacer"></span>
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="home-header">
+        <a href="../" class="btn btn-ghost btn-sm">← Accueil</a>
+        <span class="header-spacer"></span>
+      </div>
+      <div class="hero-title">⏰ Réveil Xtrem</div>
+      <div id="clock-now" class="clock-now"></div>
+
+      <div id="next-alarm-hero" class="next-alarm-hero" hidden>
+        <span class="next-alarm-icon">⏰</span>
+        <div class="next-alarm-text">
+          <div id="next-alarm-countdown" class="next-alarm-countdown"></div>
+          <div id="next-alarm-detail" class="next-alarm-detail"></div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div id="clock-now" class="clock-now"></div>
-
+  <div class="page-wrapper page-wrapper--tight-top">
     <div id="permissions-banner" class="card permissions-banner" hidden>
       <p class="permissions-banner-title">⚠️ Autorisations nécessaires pour un réveil fiable</p>
       <div id="permissions-list"></div>
@@ -41,6 +52,13 @@
     <button id="btn-install-pwa" class="btn btn-secondary w-full" hidden>
       📲 Installer l'application
     </button>
+    <a id="btn-download-apk"
+       href="https://github.com/niafrond/niafrond.github.io/releases/latest/download/reveil-xtrem.apk"
+       class="btn btn-secondary w-full"
+       download
+       hidden>
+      🤖 Télécharger l'APK Android
+    </a>
   </div>
 
   <button id="btn-add-alarm" class="fab" aria-label="Ajouter une alarme">＋</button>
@@ -80,12 +98,40 @@
 
     <div class="card">
       <span class="field-label">Difficulté du calcul pour désactiver</span>
-      <div id="difficulty-picker" class="segmented">
-        <button type="button" class="segment" data-difficulty="easy">Facile</button>
-        <button type="button" class="segment" data-difficulty="medium">Moyen</button>
-        <button type="button" class="segment" data-difficulty="hard">Difficile</button>
+      <div id="difficulty-current-label" class="difficulty-current-label">Facile</div>
+      <input type="range" id="difficulty-slider" class="difficulty-slider" min="0" max="4" step="1" value="1">
+      <div class="difficulty-ticks" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
       </div>
-      <p class="field-hint" id="difficulty-hint"></p>
+      <div class="difficulty-example">
+        <span class="difficulty-example-label">Exemple :</span>
+        <div id="difficulty-example-value" class="difficulty-example-value"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="field-label">Nombre de calculs à résoudre</span>
+      <div class="stepper">
+        <button type="button" id="btn-count-minus" class="stepper-btn" aria-label="Moins de calculs">−</button>
+        <span id="count-value" class="stepper-value">3</span>
+        <button type="button" id="btn-count-plus" class="stepper-btn" aria-label="Plus de calculs">+</button>
+      </div>
+      <p class="field-hint" id="count-hint"></p>
+    </div>
+
+    <div class="card">
+      <span class="field-label">Sonnerie</span>
+      <div id="sound-picker" class="sound-picker">
+        <button type="button" class="sound-chip" data-sound="classic">🔔 Classique</button>
+        <button type="button" class="sound-chip" data-sound="digital">⏱️ Digital</button>
+        <button type="button" class="sound-chip" data-sound="siren">🚨 Sirène</button>
+        <button type="button" class="sound-chip" data-sound="chime">🎐 Carillon</button>
+        <button type="button" class="sound-chip" data-sound="gentle">🌙 Douceur</button>
+      </div>
+      <button type="button" id="btn-pick-native-ringtone" class="btn btn-secondary w-full" hidden>
+        🔔 <span id="native-ringtone-label">Sonnerie par défaut</span>
+      </button>
+      <p class="field-hint" id="sound-hint">Touchez une sonnerie pour l'écouter et la choisir.</p>
     </div>
 
     <div class="card">

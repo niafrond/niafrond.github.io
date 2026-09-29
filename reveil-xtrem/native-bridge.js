@@ -42,6 +42,34 @@ export async function nativeDismiss(alarmId) {
   } catch {}
 }
 
+// ── Sonnerie : sélecteur système Android (RingtoneManager) ───────────────
+// L'utilisateur choisit parmi ses propres sonneries/musiques via le menu
+// système natif plutôt qu'un choix limité de sonneries synthétisées.
+
+/** Ouvre le sélecteur système de sonneries ; retourne l'URI choisie (ou '' pour "par défaut") et son titre, ou null si annulé/indisponible. */
+export async function nativePickRingtone(currentUri) {
+  const plugin = getPlugin();
+  if (!plugin) return null;
+  try {
+    const { uri, title } = await plugin.pickRingtone({ uri: currentUri || '' });
+    return { uri: uri || '', title: title || null };
+  } catch {
+    return null;
+  }
+}
+
+/** Résout le titre affichable d'une sonnerie déjà choisie (ou de la sonnerie par défaut si uri est vide), sans ouvrir le sélecteur. */
+export async function nativeRingtoneTitle(uri) {
+  const plugin = getPlugin();
+  if (!plugin) return null;
+  try {
+    const { title } = await plugin.ringtoneTitle({ uri: uri || '' });
+    return title || null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Applique côté JS les changements décidés côté natif pendant que l'appli
  * n'était pas ouverte (skipNext consommé, alarme ponctuelle désactivée après

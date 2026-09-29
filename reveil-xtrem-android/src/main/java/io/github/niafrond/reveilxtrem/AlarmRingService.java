@@ -29,7 +29,9 @@ import androidx.core.app.ServiceCompat;
  */
 public class AlarmRingService extends Service {
 
-    static final String CHANNEL_ID = "reveilxtrem_alarm";
+    private static final String CHANNEL_ID_PREFIX = "reveilxtrem_alarm_";
+    private static final String CHANNEL_ID_DEFAULT = CHANNEL_ID_PREFIX + "default";
+    private static final long[] VIBRATION_PATTERN = {0, 400, 200, 400, 200, 400, 200, 400};
     private static final int NOTIF_ID = 4201;
 
     private PowerManager.WakeLock wakeLock;
@@ -44,12 +46,16 @@ public class AlarmRingService extends Service {
         String alarmId = intent.getStringExtra(AlarmReceiver.EXTRA_ALARM_ID);
         String label = intent.getStringExtra(AlarmReceiver.EXTRA_LABEL);
         int snoozeMinutes = intent.getIntExtra(AlarmReceiver.EXTRA_SNOOZE_MINUTES, 9);
+        // URI d'une sonnerie choisie via le sélecteur système, ou '' (et toute
+        // valeur qui n'est pas une URI, ex. un ancien id de sonnerie web) pour
+        // la sonnerie d'alarme par défaut du système — voir ensureChannel().
+        String soundUri = intent.getStringExtra(AlarmReceiver.EXTRA_SOUND);
 
-        ensureChannel();
+        String channelId = ensureChannel(soundUri);
         // ServiceCompat gère elle-même les différences d'API selon la version (le type de
         // service au premier plan n'existe qu'à partir de l'API 29) — un appel direct à
         // Service#startForeground(int, Notification, int) planterait sur les appareils plus anciens.
-        ServiceCompat.startForeground(this, NOTIF_ID, buildNotification(alarmId, label, snoozeMinutes),
+        ServiceCompat.startForeground(this, NOTIF_ID, buildNotification(alarmId, label, snoozeMinutes, channelId),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
 
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -61,7 +67,7 @@ public class AlarmRingService extends Service {
         return START_NOT_STICKY;
     }
 
-    private Notification buildNotification(String alarmId, String label, int snoozeMinutes) {
+    private Notification buildNotification(String alarmId, String label, int snoozeMinutes, String channelId) {
         Intent activityIntent = new Intent(this, MainActivity.class);
         activityIntent.putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId);
         activityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
@@ -80,7 +86,7 @@ public class AlarmRingService extends Service {
 
         String title = (label == null || label.isEmpty()) ? "Alarme" : label;
 
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
+        return new NotificationCompat.Builder(this, channelId)
                 .setSmallIcon(R.drawable.ic_stat_alarm)
                 .setContentTitle("⏰ " + title)
                 .setContentText("Ouvrez l'app et résolvez le calcul pour désactiver")
@@ -95,29 +101,52 @@ public class AlarmRingService extends Service {
                 .build();
     }
 
-    private void ensureChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+    // Le son d'un NotificationChannel est figé à sa création (Android ne permet pas
+    // de le changer ensuite) — un canal distinct par sonnerie choisie (URI issue du
+    // sélecteur système, voir AlarmSchedulerPlugin#pickRingtone) est donc créé à la
+    // demande. Retourne l'id du canal effectivement utilisé.
+    private String ensureChannel(String soundUri) {
+        String channelId = (soundUri != null && !soundUri.isEmpty())
+                ? CHANNEL_ID_PREFIX + safeHash(soundUri)
+                : CHANNEL_ID_DEFAULT;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return channelId;
         NotificationManager nm = getSystemService(NotificationManager.class);
-        if (nm == null || nm.getNotificationChannel(CHANNEL_ID) != null) return;
+        if (nm == null || nm.getNotificationChannel(channelId) != null) return channelId;
 
         NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID, "Alarme", NotificationManager.IMPORTANCE_HIGH);
+                channelId, "Alarme", NotificationManager.IMPORTANCE_HIGH);
         channel.setDescription("Sonnerie du réveil");
         channel.enableVibration(true);
-        channel.setVibrationPattern(new long[]{0, 400, 200, 400, 200, 400, 200, 400});
+        channel.setVibrationPattern(VIBRATION_PATTERN);
         channel.enableLights(true);
         channel.setBypassDnd(true);
         channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
 
-        Uri alarmSound = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM);
-        if (alarmSound == null) alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+        Uri sound = resolveSoundUri(soundUri);
         AudioAttributes attrs = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_ALARM)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build();
-        channel.setSound(alarmSound, attrs);
+        channel.setSound(sound, attrs);
 
         nm.createNotificationChannel(channel);
+        return channelId;
+    }
+
+    // Une valeur non vide sans schéma d'URI (ex. un ancien id de sonnerie web
+    // "classic" d'avant le sélecteur système) n'est pas une URI valide : on
+    // retombe alors sur la sonnerie d'alarme par défaut du système, un repli sûr.
+    private Uri resolveSoundUri(String soundUri) {
+        if (soundUri != null && !soundUri.isEmpty() && soundUri.contains("://")) {
+            try {
+                return Uri.parse(soundUri);
+            } catch (Exception e) {
+                // URI invalide (sonnerie supprimée depuis son choix) : repli par défaut ci-dessous.
+            }
+        }
+        Uri fallback = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM);
+        if (fallback == null) fallback = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+        return fallback;
     }
 
     private static int safeHash(String s) {
