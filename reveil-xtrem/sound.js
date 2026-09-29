@@ -1,5 +1,9 @@
 // Sonneries d'alarme générées via Web Audio (pas de fichier audio à charger,
-// fonctionne hors-ligne dans la PWA comme dans le wrapper Android).
+// fonctionne hors-ligne). Repli pour la version web pure : un navigateur n'a
+// pas accès aux sonneries système. Sous Capacitor, l'utilisateur choisit
+// directement une sonnerie réelle de l'appareil via le sélecteur système
+// (voir native-bridge.js#nativePickRingtone) — ce module n'est alors plus
+// utilisé pour la sonnerie elle-même.
 
 export const SOUND_PRESETS = [
   { id: 'classic', label: '🔔 Classique' },

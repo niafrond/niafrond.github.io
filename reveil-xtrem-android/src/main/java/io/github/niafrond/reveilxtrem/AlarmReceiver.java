@@ -104,7 +104,13 @@ public class AlarmReceiver extends BroadcastReceiver {
         svc.putExtra(EXTRA_LABEL, alarm.optString("label", "Alarme"));
         svc.putExtra(EXTRA_DIFFICULTY, alarm.optString("difficulty", "easy"));
         svc.putExtra(EXTRA_SNOOZE_MINUTES, alarm.optInt("snoozeMinutes", 9));
-        svc.putExtra(EXTRA_SOUND, alarm.optString("sound", "classic"));
+        // 'sound' est l'URI d'une sonnerie choisie via le sélecteur système
+        // (RingtoneManager), ou '' pour la sonnerie d'alarme par défaut du
+        // système — voir AlarmSchedulerPlugin#pickRingtone. Une ancienne
+        // valeur d'avant ce sélecteur (id de sonnerie web, ex. "classic")
+        // n'est pas une URI valide : AlarmRingService retombe alors sur la
+        // sonnerie par défaut, ce qui reste un comportement sûr.
+        svc.putExtra(EXTRA_SOUND, alarm.optString("sound", ""));
         ContextCompat.startForegroundService(context, svc);
     }
 }

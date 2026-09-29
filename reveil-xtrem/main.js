@@ -19,6 +19,7 @@ import {
   isNativePlatform, syncNativeAlarms, nativeSnooze, nativeDismiss,
   consumeNativePendingUpdates, getNativePendingRingId, onNativeRing,
   listPermissionKeys, permissionInfo, checkPermission, requestPermission,
+  nativePickRingtone, nativeRingtoneTitle,
 } from './native-bridge.js';
 
 // ── État ────────────────────────────────────────────────────────────────
@@ -233,13 +234,51 @@ el('btn-count-minus').addEventListener('click', () => setProblemsCount(getSelect
 el('btn-count-plus').addEventListener('click', () => setProblemsCount(getSelectedProblemsCount() + 1));
 
 // ── Sonnerie (propre à chaque alarme) ─────────────────────────────────────
-function setSelectedSound(soundId) {
+// Sous Capacitor, on laisse le sélecteur système Android (RingtoneManager)
+// choisir parmi les sonneries/musiques réelles de l'appareil plutôt qu'un
+// jeu limité de sonneries synthétisées — cf. sound.js. Sur la version
+// web pure, il n'existe pas de sélecteur système accessible depuis un
+// navigateur : on garde les sonneries Web Audio en repli.
+let selectedNativeSoundUri = '';
+
+function isUriSound(value) {
+  return typeof value === 'string' && value.includes('://');
+}
+
+function initSoundPickerMode() {
+  const native = isNativePlatform();
+  const picker = el('sound-picker');
+  const nativeBtn = el('btn-pick-native-ringtone');
+  const hint = el('sound-hint');
+  if (picker) picker.hidden = native;
+  if (nativeBtn) nativeBtn.hidden = !native;
+  if (hint) {
+    hint.textContent = native
+      ? 'Ouvre le sélecteur de sonneries du téléphone : choisissez ce que vous voulez.'
+      : "Touchez une sonnerie pour l'écouter et la choisir.";
+  }
+}
+
+async function updateNativeRingtoneLabel() {
+  const label = el('native-ringtone-label');
+  if (!label) return;
+  const title = await nativeRingtoneTitle(selectedNativeSoundUri);
+  label.textContent = title || 'Sonnerie par défaut';
+}
+
+function setSelectedSound(soundValue) {
+  if (isNativePlatform()) {
+    selectedNativeSoundUri = isUriSound(soundValue) ? soundValue : '';
+    updateNativeRingtoneLabel();
+    return;
+  }
   document.querySelectorAll('#sound-picker .sound-chip').forEach(chip => {
-    chip.classList.toggle('active', chip.dataset.sound === soundId);
+    chip.classList.toggle('active', chip.dataset.sound === soundValue);
   });
 }
 
 function getSelectedSound() {
+  if (isNativePlatform()) return selectedNativeSoundUri;
   const active = document.querySelector('#sound-picker .sound-chip.active');
   return active ? active.dataset.sound : DEFAULT_SOUND_ID;
 }
@@ -249,6 +288,13 @@ document.querySelectorAll('#sound-picker .sound-chip').forEach(chip => {
     setSelectedSound(chip.dataset.sound);
     previewSound(chip.dataset.sound);
   });
+});
+
+el('btn-pick-native-ringtone').addEventListener('click', async () => {
+  const result = await nativePickRingtone(selectedNativeSoundUri);
+  if (!result) return;
+  selectedNativeSoundUri = result.uri || '';
+  el('native-ringtone-label').textContent = result.title || 'Sonnerie par défaut';
 });
 
 function saveAlarmFromForm() {
@@ -339,7 +385,10 @@ function startRing(alarmId) {
   currentRing = { alarmId, solved: 0, required: clampProblemsCount(alarm.problemsCount ?? 1), problem: null };
   el('ring-label').textContent = alarm.label;
   nextChallengeProblem();
-  startAlarmSound(alarm.sound);
+  // Sous Capacitor, la sonnerie système (choisie via RingtoneManager) est déjà
+  // jouée par le service natif au niveau OS — un second son synthétisé côté
+  // JS ferait doublon. Sur le web pur, c'est la seule sonnerie disponible.
+  if (!isNativePlatform()) startAlarmSound(alarm.sound);
   showScreen('ring');
 
   // Une alarme doit être impossible à rater : plein écran + tentative de
@@ -547,4 +596,5 @@ if (typeof Notification !== 'undefined' && Notification.permission === 'default'
 
 initServiceWorker(() => currentRing != null);
 initApkDownloadLink();
+initSoundPickerMode();
 initNative();

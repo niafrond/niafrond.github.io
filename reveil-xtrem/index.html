@@ -128,7 +128,10 @@
         <button type="button" class="sound-chip" data-sound="chime">🎐 Carillon</button>
         <button type="button" class="sound-chip" data-sound="gentle">🌙 Douceur</button>
       </div>
-      <p class="field-hint">Touchez une sonnerie pour l'écouter et la choisir.</p>
+      <button type="button" id="btn-pick-native-ringtone" class="btn btn-secondary w-full" hidden>
+        🔔 <span id="native-ringtone-label">Sonnerie par défaut</span>
+      </button>
+      <p class="field-hint" id="sound-hint">Touchez une sonnerie pour l'écouter et la choisir.</p>
     </div>
 
     <div class="card">

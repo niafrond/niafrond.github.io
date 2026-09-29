@@ -2,14 +2,21 @@ import { createAlarm, clampProblemsCount, DIFFICULTIES } from '../../alarms.js';
 import { SOUND_PRESETS, DEFAULT_SOUND_ID } from '../../sound.js';
 
 describe('createAlarm', () => {
-  test('retient la sonnerie demandée quand elle existe', () => {
-    const alarm = createAlarm({ time: '07:00', sound: 'siren' });
-    expect(alarm.sound).toBe('siren');
+  test('retient la sonnerie demandée (id web ou URI native)', () => {
+    expect(createAlarm({ time: '07:00', sound: 'siren' }).sound).toBe('siren');
+    // Une alarme native stocke l'URI choisie via le sélecteur système Android
+    // (RingtoneManager) — toute chaîne est donc acceptée, pas seulement les
+    // ids de sonnerie web connus. Voir native-bridge.js#nativePickRingtone.
+    expect(createAlarm({ time: '07:00', sound: 'content://media/internal/audio/media/17' }).sound)
+      .toBe('content://media/internal/audio/media/17');
+    // '' = sonnerie par défaut du système (choix explicite côté natif), à
+    // distinguer d'une valeur absente : elle est conservée telle quelle.
+    expect(createAlarm({ time: '07:00', sound: '' }).sound).toBe('');
   });
 
-  test('retombe sur la sonnerie par défaut si absente ou inconnue', () => {
+  test('retombe sur la sonnerie par défaut si le champ est absent', () => {
     expect(createAlarm({ time: '07:00' }).sound).toBe(DEFAULT_SOUND_ID);
-    expect(createAlarm({ time: '07:00', sound: 'nope' }).sound).toBe(DEFAULT_SOUND_ID);
+    expect(createAlarm({ time: '07:00', sound: undefined }).sound).toBe(DEFAULT_SOUND_ID);
   });
 
   test('accepte chacune des sonneries proposées dans sound.js', () => {
