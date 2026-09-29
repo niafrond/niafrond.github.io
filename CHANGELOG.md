@@ -1,3 +1,10 @@
+## [2.49.0](https://github.com/niafrond/niafrond.github.io/compare/v2.48.0...v2.49.0) (2026-09-29)
+
+### Features
+
+* **match3-quest:** histoire étoffée, quêtes secondaires, dialogues évolutifs ([80d817a](https://github.com/niafrond/niafrond.github.io/commit/80d817a11c0179d9dcde0ed9225f2c15138be854))
+* **match3-quest:** refonte en deux phases, exploration isométrique et combat ([6236ab6](https://github.com/niafrond/niafrond.github.io/commit/6236ab638149fcb4204f3a74ff9a6b6636afd411))
+
 ## [2.48.0](https://github.com/niafrond/niafrond.github.io/compare/v2.47.0...v2.48.0) (2026-09-29)
 
 ### Features
