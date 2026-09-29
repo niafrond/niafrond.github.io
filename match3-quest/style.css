@@ -1457,74 +1457,99 @@ progress.enemy-bar::-webkit-progress-value {
     font-weight: bold;
 }
 
-.worldmap-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 10px;
-    margin-top: 12px;
+/* Carte du monde (style overworld) — rendu par worldMapView.js */
+.worldmap-modal-content {
+    max-width: 860px;
+    padding: 12px;
 }
 
-.worldmap-card {
-    border: 2px solid #d8dee6;
-    border-radius: 10px;
-    padding: 12px 10px;
-    background: #fbfdff;
-    cursor: pointer;
+.wm-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 68vh;
+    border-radius: 12px;
+    border: 3px solid #5a3e1b;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.25);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+.wm-sea-a { stop-color: #4fc3f7; }
+.wm-sea-b { stop-color: #1e88e5; }
+.wm-wave { fill: none; stroke: rgba(255, 255, 255, 0.55); stroke-width: 2.2; stroke-linecap: round; }
+.wm-shallows { fill: none; stroke: rgba(255, 255, 255, 0.55); }
+.wm-shallows circle { fill: rgba(255, 255, 255, 0.55); stroke: rgba(255, 255, 255, 0.55); stroke-width: 16; }
+.wm-shallows path { stroke-width: 186; stroke-linecap: round; stroke-linejoin: round; }
+.wm-cliff { fill: #a8692f; stroke: #a8692f; }
+.wm-cliff path { fill: none; }
+.wm-grass { fill: #74c94f; stroke: #74c94f; }
+.wm-grass path { fill: none; }
+
+.wm-biome-blob { stroke: rgba(0, 0, 0, 0.18); stroke-width: 3; }
+.wm-biome.locked { filter: grayscale(0.75) brightness(0.85); }
+.wm-fog { fill: rgba(30, 40, 60, 0.35); }
+
+.wm-road path { fill: none; stroke-linecap: round; }
+.wm-road-edge { stroke: #7a5230; stroke-width: 13; }
+.wm-road-fill { stroke: #f6e0a8; stroke-width: 8; }
+.wm-road-dots { stroke: #fff; stroke-width: 3; stroke-dasharray: 0.1 12; }
+.wm-road.locked { opacity: 0.45; filter: grayscale(1); }
+
+.wm-node { cursor: pointer; outline: none; }
+.wm-node-inner { transition: transform 0.15s ease; transform-box: fill-box; transform-origin: center; }
+.wm-node:hover .wm-node-inner,
+.wm-node:focus-visible .wm-node-inner { transform: scale(1.12); }
+.wm-node:focus-visible .wm-node-dot { stroke: #fff; stroke-width: 4; }
+.wm-node.locked { cursor: not-allowed; }
+.wm-node-shadow { fill: rgba(0, 0, 0, 0.3); }
+.wm-node-dot { stroke: #2b1b17; stroke-width: 3; }
+.wm-node.new .wm-node-dot { fill: #e63946; }
+.wm-node.visited .wm-node-dot { fill: #f4c430; }
+.wm-node.locked .wm-node-dot { fill: #8b95a1; }
+.wm-node-shine { fill: rgba(255, 255, 255, 0.45); }
+.wm-node-icon { font-size: 26px; pointer-events: none; }
+.wm-node-badge { font-size: 18px; pointer-events: none; }
+.wm-pulse { fill: none; stroke: #fff; stroke-width: 3; transform-box: fill-box; transform-origin: center; animation: wm-pulse 1.6s ease-out infinite; }
+.wm-banner { fill: #fff8e1; stroke: #5a3e1b; stroke-width: 2.5; }
+.wm-banner-text { font-size: 13px; font-weight: bold; fill: #3b2a20; pointer-events: none; }
+.wm-lvl { fill: #3b2a20; }
+.wm-lvl-text { font-size: 11px; font-weight: bold; fill: #ffd166; pointer-events: none; }
+.wm-hero { font-size: 30px; pointer-events: none; animation: wm-hop 0.9s ease-in-out infinite; }
+
+.wm-cloud ellipse { fill: rgba(255, 255, 255, 0.9); }
+.wm-cloud { animation: wm-drift 40s linear infinite alternate; }
+.wm-cloud.c2 { animation-duration: 55s; }
+.wm-cloud.c3 { animation-duration: 48s; }
+
+.wm-caption {
+    margin-top: 8px;
+    min-height: 2.6em;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #fff8e1;
+    border: 2px solid #5a3e1b;
+    color: #3b2a20;
+    font-size: 0.85em;
+    line-height: 1.3;
     text-align: center;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.worldmap-card:hover {
-    transform: translateY(-2px);
-    border-color: #2c7be5;
-    box-shadow: 0 4px 10px rgba(28, 71, 126, 0.15);
+@keyframes wm-pulse {
+    0% { transform: scale(0.9); opacity: 0.9; }
+    100% { transform: scale(1.7); opacity: 0; }
 }
-
-.worldmap-card.locked {
-    cursor: not-allowed;
-    opacity: 0.6;
-    background: #f2f2f2;
+@keyframes wm-hop {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
 }
-
-.worldmap-card.locked:hover {
-    transform: none;
-    box-shadow: none;
-    border-color: #d8dee6;
+@keyframes wm-drift {
+    from { transform: translateX(-30px); }
+    to { transform: translateX(60px); }
 }
-
-.worldmap-card.visited {
-    border-color: #27ae60;
-}
-
-.worldmap-emoji {
-    font-size: 32px;
-    margin-bottom: 4px;
-}
-
-.worldmap-name {
-    font-weight: bold;
-    margin-bottom: 4px;
-    color: #1f2d3d;
-}
-
-.worldmap-desc {
-    font-size: 0.8em;
-    color: #58677a;
-    line-height: 1.25;
-}
-
-.worldmap-visited {
-    margin-top: 6px;
-    font-size: 0.8em;
-    color: #1e8449;
-    font-weight: bold;
-}
-
-.worldmap-lock {
-    margin-top: 6px;
-    font-size: 0.8em;
-    color: #b02323;
-    font-weight: bold;
+@media (prefers-reduced-motion: reduce) {
+    .wm-pulse, .wm-hero, .wm-cloud { animation: none; }
 }
 
 .modal-actions {
@@ -1812,7 +1837,6 @@ body.dark-mode .enemy-spell-item,
 body.dark-mode .modal-content,
 body.dark-mode .class-card,
 body.dark-mode .enemy-card,
-body.dark-mode .worldmap-card,
 body.dark-mode .attribute-card,
 body.dark-mode .inventory-slot-empty {
     background: #1d2530;
@@ -1820,9 +1844,13 @@ body.dark-mode .inventory-slot-empty {
     color: #dbe4ef;
 }
 
-body.dark-mode .worldmap-card.locked {
-    background: #161c24;
-}
+body.dark-mode .wm-sea-a { stop-color: #1b4f8a; }
+body.dark-mode .wm-sea-b { stop-color: #0b2a52; }
+body.dark-mode .wm-wave { stroke: rgba(255, 255, 255, 0.25); }
+body.dark-mode .wm-shallows circle { fill: rgba(120, 180, 255, 0.25); stroke: rgba(120, 180, 255, 0.25); }
+body.dark-mode .wm-shallows { stroke: rgba(120, 180, 255, 0.25); }
+body.dark-mode .wm-cloud ellipse { fill: rgba(220, 230, 245, 0.45); }
+body.dark-mode .wm-caption { background: #2b2a1f; border-color: #6b5a30; color: #f0e6c8; }
 
 body.dark-mode #board {
     background: #283341;
@@ -1835,7 +1863,6 @@ body.dark-mode .item-description,
 body.dark-mode .shop-subtitle,
 body.dark-mode .class-description,
 body.dark-mode .enemy-card .enemy-meta,
-body.dark-mode .worldmap-desc,
 body.dark-mode .stat-effect {
     color: #a9b7c8;
 }
@@ -1844,7 +1871,6 @@ body.dark-mode .weapon-name,
 body.dark-mode .item-name,
 body.dark-mode .class-name,
 body.dark-mode .enemy-card .enemy-name,
-body.dark-mode .worldmap-name,
 body.dark-mode .attr-name,
 body.dark-mode .stats-section h3,
 body.dark-mode .modal-content h2 {
