@@ -31,6 +31,11 @@ const GATE_H = 14;
 // — au lieu du simple échange de dégâts au contact des autres rouges.
 const WALL_SPAN = 0.82;       // fraction de W occupée par la formation
 const WALL_Y_JITTER = 18;     // variation verticale pour un alignement organique
+// Borne dure sur la taille d'un mur : le flux continu (SPEC-4.2.3) cesse de
+// le renforcer une fois `total` atteint, pour qu'un mur mal géré par le
+// joueur ne grossisse jamais à l'infini — il reste bloquant tant qu'il n'est
+// pas vaincu, mais ses renforts suivants redeviennent des rouges libres.
+const WALL_MAX_MEMBERS = 40;
 // ─── Engagement (SPECS.md §4bis) ─────────────────────────────────────────
 // Toute unité bleue doit d'abord viser et tuer le rouge vivant le plus
 // proche (encore devant elle) avant de pouvoir reprendre sa route vers le
@@ -42,6 +47,10 @@ const ENGAGE_RANGE2 = ENGAGE_RANGE * ENGAGE_RANGE;
 // de portes/murs par rapport à `row.y`/`gate.y` — doit rester synchronisé
 // avec la bande de 30px dessinée par main.js (de row.y-16 à row.y+14).
 export const ROW_FRONT = 14;
+// Décalage vers le haut (donc vers la base), symétrique de ROW_FRONT : bord
+// « arrière » de la même bande de 30px, celui que rencontrent en premier les
+// unités rouges qui descendent depuis la base (SPEC-6, engine.js).
+export const ROW_BACK = 16;
 
 // Équilibrage (réglé par simulation d'un bot sur les niveaux 1–30)
 export const T = {
@@ -476,6 +485,7 @@ function spawnRed(g, brute, wallId = null) {
 function spawnWall(g, size, bruteChance) {
   const id = g.nextWallId++;
   g.walls.push({ id, total: 0, alive: 0, cleared: false });
+  size = Math.min(size, WALL_MAX_MEMBERS);
   for (let i = 0; i < size; i++) {
     const x = clamp(BASE.x + (g.rng() - 0.5) * W * WALL_SPAN, 10, W - 10);
     const y = BASE.y + BASE.h / 2 + 6 + (g.rng() - 0.5) * WALL_Y_JITTER;
@@ -601,14 +611,21 @@ export function step(g, dt, input = {}) {
   const waveSize = bossActive ? g.cfg.waveSize * 2 : g.cfg.waveSize;
   const bruteChance = bossActive ? Math.min(0.6, g.cfg.bruteChance * 2 + 0.15) : g.cfg.bruteChance;
 
-  // Un seul mur actif (non vaincu) à la fois (SPEC-4.2.3) — le flux continu
-  // comme les vagues suivantes le renforcent plutôt que d'en ouvrir un autre.
-  const activeWall = g.walls.find(w => !w.cleared);
+  // Un seul mur actif (non vaincu, pas encore au plafond) à la fois
+  // (SPEC-4.2.3) — le flux continu comme les vagues suivantes le renforcent
+  // plutôt que d'en ouvrir un autre, jusqu'à WALL_MAX_MEMBERS.
+  const activeWall = g.walls.find(w => !w.cleared && w.total < WALL_MAX_MEMBERS);
 
   g.spawnAcc += dt * (1 + g.time / T.RAMP);   // la pression monte avec le temps
   while (g.spawnAcc >= spawnInterval) {
     g.spawnAcc -= spawnInterval;
-    for (let i = 0; i < spawnGroup; i++) spawnRed(g, g.rng() < bruteChance, activeWall ? activeWall.id : null);
+    for (let i = 0; i < spawnGroup; i++) {
+      // Recontrôlé à chaque unité (pas une seule fois par frame) : `total`
+      // change en direct à chaque spawnRedAt, donc le plafond est respecté
+      // même si plusieurs salves du flux continu tombent sur la même frame.
+      const joinId = activeWall && activeWall.total < WALL_MAX_MEMBERS ? activeWall.id : null;
+      spawnRed(g, g.rng() < bruteChance, joinId);
+    }
   }
   g.waveAcc += dt;
   if (g.waveAcc >= waveEvery) {
@@ -619,7 +636,13 @@ export function step(g, dt, input = {}) {
     // flux classique non bloquant.
     let wallish = false;
     if (activeWall) {
-      for (let i = 0; i < waveSize; i++) spawnRed(g, g.rng() < bruteChance, activeWall.id);
+      // Ne rejoint le mur que jusqu'au plafond (WALL_MAX_MEMBERS) — le
+      // surplus d'une grosse vague redevient des rouges libres plutôt que
+      // de faire dépasser la borne dure en un seul coup.
+      const room = Math.max(0, WALL_MAX_MEMBERS - activeWall.total);
+      const join = Math.min(waveSize, room);
+      for (let i = 0; i < join; i++) spawnRed(g, g.rng() < bruteChance, activeWall.id);
+      for (let i = join; i < waveSize; i++) spawnRed(g, g.rng() < bruteChance);
       wallish = true;
     } else if (!bossActive && g.wallsSpawnedThisCastle < g.cfg.wallsPerCastle) {
       spawnWall(g, waveSize, bruteChance);
@@ -758,12 +781,41 @@ export function step(g, dt, input = {}) {
   }
   if (newBlue.length) g.blue.push(...newBlue);
 
-  // Unités rouges
+  // Unités rouges — bloquées par les mêmes murs que les bleues (SPEC-6) :
+  // un mur plein (aucune porte) les arrête, elles glissent vers l'emplacement
+  // de porte le plus proche. Contrairement aux bleues, elles ignorent l'état
+  // ouvert/fermé des portes spéciales (verrouillée 🔒, pulsée ⏳) — ces
+  // mécaniques de timing/sacrifice sont un défi réservé au joueur, jamais à
+  // l'IA ennemie : n'importe quel emplacement de porte reste un couloir
+  // franchissable pour un rouge, sinon une porte verrouillée qu'aucun bleu ne
+  // vient jamais déverrouiller bloquerait des rouges pour toujours (elles ne
+  // doivent jamais rester à attendre un état qu'elles ne contrôlent pas — cf.
+  // journal de session). Franchir une porte n'a par ailleurs aucun effet pour
+  // elles (pas de clonage ×n, pas de PV perdus ÷n).
   for (const e of g.red) {
+    const prevY = e.y;
     const want = clamp((g.cannonX - e.x) * 0.35, -35, 35);
     e.vx += (want - e.vx) * Math.min(1, dt * 2);
     e.x = clamp(e.x + e.vx * dt, e.r, W - e.r);
     e.y += e.vy * dt;
+
+    for (const row of g.rows) {
+      // Bord « arrière » (nord) de la bande de 30px : le premier bord
+      // rencontré par une unité qui descend depuis la base — symétrique du
+      // traitement des bleues plus haut (stopY/ROW_FRONT).
+      const stopY = row.y - ROW_BACK - e.r;
+      if (!(prevY <= stopY && e.y >= stopY)) continue;
+      const aligned = row.gateIds.map(id => g.gates[id]).find(gt => Math.abs(e.x - gt.x) <= gt.w / 2);
+      if (aligned) continue; // n'importe quel emplacement de porte : passage libre
+      // Mur plein : collision, glisse vers l'emplacement de porte le plus
+      // proche de cette rangée (jamais bloquée éternellement).
+      e.y = stopY;
+      const nearest = row.gateIds
+        .map(id => g.gates[id])
+        .reduce((a, b) => (Math.abs(b.x - e.x) < Math.abs(a.x - e.x) ? b : a));
+      const wantSlide = clamp((nearest.x - e.x) * 3, -140, 140);
+      e.vx += (wantSlide - e.vx) * Math.min(1, dt * 6);
+    }
   }
 
   resolveCombat(g);

@@ -1,5 +1,5 @@
 import {
-  W, CANNON_Y, BASE, CHAMPION_CHARGE, MAX_BLUE, ROW_FRONT, T,
+  W, CANNON_Y, BASE, CHAMPION_CHARGE, MAX_BLUE, ROW_FRONT, ROW_BACK, T,
   generateLevel, createGame, step, canLaunchChampion, starsFor, xpFor, mobilityFor, isGateOpen,
   generateBonusLevel, bonusRefLevel, bonusXpReward, BONUS_EVERY,
   PERKS, WEAPONS, HEROES, perkLevel, perkUpgradeCost,
@@ -468,6 +468,66 @@ describe('Engagement généralisé (SPECS.md §5)', () => {
     g.blue.push({ x: BASE.x - 60, y: 200, vx: 0, vy: -20, hp: 1, r: 5, mask: 0, champ: false });
     step(g, DT, {});
     expect(g.blue[0].vx).toBeGreaterThan(0); // se recentre vers BASE.x (à droite)
+  });
+});
+
+describe('Rouges bloqués par les murs/portes (SPECS.md §6)', () => {
+  test('un rouge non aligné glisse vers la porte la plus proche au contact d’un mur plein', () => {
+    const cfg = generateLevel(1);
+    cfg.gates = [{ id: 0, x: W - 40, y: 300, w: 60, h: 14, op: { type: 'mul', n: 2 }, vx: 0, minX: W - 40, maxX: W - 40 }];
+    cfg.spawnInterval = 1e9;
+    cfg.waveEvery = 1e9;
+    const g = createGame(cfg);
+    // Juste au bord de la bande de blocage (row.y - ROW_BACK - r), loin de
+    // la porte (à droite) : rien ne devrait le laisser passer tout droit.
+    g.red.push({ x: 60, y: 300 - ROW_BACK - 5, vx: 0, vy: 40, hp: 1, r: 5, brute: false });
+    step(g, DT, {});
+    expect(g.red[0].vx).toBeGreaterThan(0);              // glisse vers la droite, vers la porte
+    expect(g.red[0].y).toBeLessThanOrEqual(300 - ROW_BACK - 5 + 0.01); // n'a pas traversé le mur
+  });
+
+  test('sans mur ni porte sur son chemin, un rouge isolé continue normalement vers le canon', () => {
+    const cfg = { ...generateLevel(1), gates: [], spawnInterval: 1e9, waveEvery: 1e9 };
+    const g = createGame(cfg);
+    g.red.push({ x: BASE.x, y: 250, vx: 0, vy: 40, hp: 1, r: 5, brute: false });
+    run(g, 2, {});
+    expect(g.red[0].y).toBeGreaterThan(250 + 40); // a bien progressé vers le canon
+  });
+
+  test('un rouge franchit librement une porte verrouillée encore fermée (le sacrifice reste réservé aux bleues)', () => {
+    const cfg = generateLevel(1);
+    cfg.gates = [{
+      id: 0, x: W / 2, y: 300, w: 200, h: 14, op: { type: 'mul', n: 2 }, vx: 0, minX: W / 2, maxX: W / 2,
+      kind: 'lock', locked: true, hits: 0, lockHits: 3,
+    }];
+    cfg.spawnInterval = 1e9;
+    cfg.waveEvery = 1e9;
+    const g = createGame(cfg);
+    g.red.push({ x: W / 2, y: 250, vx: 0, vy: 40, hp: 1, r: 5, brute: false });
+    run(g, 2, {});
+    expect(g.red[0].y).toBeGreaterThan(300);   // a bien franchi la rangée malgré le verrou
+    expect(g.gates[0].locked).toBe(true);      // la porte reste verrouillée : aucun sacrifice déclenché
+  });
+
+  test('le niveau 1 reste gagnable en tirant sur la meilleure porte, rouges bloqués par les murs compris', () => {
+    // Non-régression : SPEC-6 ne doit jamais empêcher les rouges d'atteindre
+    // le canon quand le joueur ne défend pas (ex. cul-de-sac verrouillé sans
+    // aucun bleu envoyé pour le déverrouiller).
+    const g = createGame(generateLevel(5));
+    run(g, 300, {});
+    expect(g.status).toBe('lost');
+  });
+});
+
+describe('Le mur d’affrontement ne grossit jamais à l’infini', () => {
+  test('un mur cesse d’être renforcé une fois son plafond atteint (WALL_MAX_MEMBERS = 40)', () => {
+    const cfg = { ...generateLevel(1), gates: [], spawnInterval: 0.05, spawnGroup: 3, waveEvery: 1e9 };
+    const g = createGame(cfg);
+    g.walls.push({ id: 0, total: 1, alive: 1, cleared: false });
+    g.red.push({ x: BASE.x, y: 250, vx: 0, vy: 0, hp: 1e9, r: 5, brute: false, wallId: 0 });
+    run(g, 10, {});
+    expect(g.walls[0].total).toBeLessThanOrEqual(40);
+    expect(g.walls[0].cleared).toBe(false); // toujours bloquant, juste plus renforcé
   });
 });
 
