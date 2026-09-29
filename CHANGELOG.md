@@ -1,3 +1,23 @@
+## [2.43.0](https://github.com/niafrond/niafrond.github.io/compare/v2.42.0...v2.43.0) (2026-09-29)
+
+### Features
+
+* **mob-rush:** mur d'affrontement bloquant physiquement avant le château ([b2e5a7d](https://github.com/niafrond/niafrond.github.io/commit/b2e5a7df2a098570be1fb5af9881e7895c684e96)), closes [#hud-wall](https://github.com/niafrond/niafrond.github.io/issues/hud-wall)
+
+## [2.42.0](https://github.com/niafrond/niafrond.github.io/compare/v2.41.0...v2.42.0) (2026-09-28)
+
+### Features
+
+* **reveil-xtrem-android:** vraies alarmes natives via AlarmManager + permissions ([3f129d8](https://github.com/niafrond/niafrond.github.io/commit/3f129d8772506294999d2587697a780bcac6dae3))
+* **reveil-xtrem:** ajoute un réveil façon Alarm Clock Xtreme ([8f53c45](https://github.com/niafrond/niafrond.github.io/commit/8f53c4548dda5af86513fc3a22f25c7c5e9ae01d))
+
+## [2.41.0](https://github.com/niafrond/niafrond.github.io/compare/v2.40.0...v2.41.0) (2026-09-28)
+
+### Features
+
+* **mob-rush:** portes verrouillées (sacrifice) et pulsées (intervalle) ([7a6a288](https://github.com/niafrond/niafrond.github.io/commit/7a6a2886258b36016c1e2ba565f9fa43aa9034b1))
+* **mob-rush:** progression roguelite — phases, boss, XP, boutique, difficulté adaptative ([b2b462c](https://github.com/niafrond/niafrond.github.io/commit/b2b462c4e991fcd13f37c2b7821818c8ed307229))
+
 ## [2.40.0](https://github.com/niafrond/niafrond.github.io/compare/v2.39.0...v2.40.0) (2026-09-28)
 
 ### Features

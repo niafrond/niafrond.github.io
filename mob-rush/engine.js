@@ -24,6 +24,14 @@ const RED_SPEED = 40;
 const BRUTE_SPEED = 27;
 const CANNON_SPEED = 900;
 const GATE_H = 14;
+// ─── Mur d'affrontement (SPECS.md §4) ────────────────────────────────────
+// Une vague peut se matérialiser en « mur » : une formation compacte de
+// rouges alignée sur (presque) toute la largeur du terrain, qui bloque
+// physiquement toute unité bleue tant qu'il en reste un membre vivant devant
+// elle — au lieu du simple échange de dégâts au contact des autres rouges.
+const WALL_SPAN = 0.82;       // fraction de W occupée par la formation
+const WALL_Y_JITTER = 18;     // variation verticale pour un alignement organique
+const WALL_BLOCK_WIDTH = 26;  // bande horizontale de blocage autour d'une unité bleue
 // Décalage vers le bas (donc vers le joueur) du bord « avant » d'une rangée
 // de portes/murs par rapport à `row.y`/`gate.y` — doit rester synchronisé
 // avec la bande de 30px dessinée par main.js (de row.y-16 à row.y+14).
@@ -34,6 +42,8 @@ export const T = {
   BASE_HP_0: 200, BASE_HP_K: 75, CHAIN_CAP: 140, LEVEL_K: 0.02,
   SPAWN_0: 0.8, SPAWN_K: 0.02, SPAWN_MIN: 0.25, GROUP_EVERY: 4,
   WAVE_0: 8, WAVE_K: 2.5, RAMP: 40,
+  BOSS_WAVES: 3,          // vagues intensifiées à survivre après le dernier château
+  DIFFICULTY_MAX: 1,      // borne du multiplicateur de difficulté adaptative
 };
 
 // ─── RPG : compétences, armes, héros ────────────────────────────────────────
@@ -92,16 +102,29 @@ export function perkStatAt(id, key, level) {
   return ((perk && perk.perLevel[key]) || 0) * level;
 }
 
+// `shotHp` : PV des tirs normaux (non-champion), 1 par défaut — un tir plus
+// « lourd » encaisse plusieurs unités rouges faibles avant de tomber.
+// `multishot` : nombre de tirs simultanés par cadence, 1 par défaut.
 export const WEAPONS = {
   standard:  { id: 'standard',  name: 'Canon standard', desc: 'Tir simple et fiable.' },
-  rafale:    { id: 'rafale',    name: 'Rafale', desc: '+25% de vitesse de tir.', fireRateMul: 1.25 },
-  perforant: { id: 'perforant', name: 'Perforant', desc: 'Les tirs ignorent les portes ÷.', ignoreDiv: true },
+  rafale:    { id: 'rafale',    name: 'Rafale', desc: '+25% de vitesse de tir.', fireRateMul: 1.25, xpCost: 80 },
+  perforant: { id: 'perforant', name: 'Perforant', desc: 'Les tirs ignorent les portes ÷.', ignoreDiv: true, xpCost: 120 },
+  lourd:     { id: 'lourd',     name: 'Canon lourd', desc: 'Tir lent mais 3 PV par unité tirée.', fireRateMul: 0.65, shotHp: 3, xpCost: 150 },
+  gatling:   { id: 'gatling',   name: 'Gatling', desc: '+70% de vitesse de tir.', fireRateMul: 1.7, xpCost: 180 },
+  jumeau:    { id: 'jumeau',    name: 'Canon jumeau', desc: 'Deux tirs à chaque cadence.', multishot: 2, fireRateMul: 0.85, xpCost: 220 },
+  sniper:    { id: 'sniper',    name: 'Sniper', desc: 'Très lent, 2 PV par tir, ignore les portes ÷.', fireRateMul: 0.45, shotHp: 2, ignoreDiv: true, xpCost: 260 },
 };
 
+// `cannonHpBonus` : PV de canon supplémentaires apportés par le héros.
+// `chargeGainMul` : multiplie la charge du champion gagnée à chaque tir.
 export const HEROES = {
-  champion:  { id: 'champion',  name: 'Champion', desc: 'Unité géante équilibrée.', hp: 25, speedMul: 1, cloneMul: 4 },
-  colosse:   { id: 'colosse',   name: 'Colosse', desc: 'Beaucoup plus de PV, un peu plus lent.', hp: 45, speedMul: 0.75, cloneMul: 3 },
-  eclaireur: { id: 'eclaireur', name: 'Éclaireur', desc: 'Fragile mais ignore les portes ÷.', hp: 12, speedMul: 1.3, cloneMul: 4, ignoreDiv: true },
+  champion:   { id: 'champion',   name: 'Champion', desc: 'Unité géante équilibrée.', hp: 25, speedMul: 1, cloneMul: 4 },
+  colosse:    { id: 'colosse',    name: 'Colosse', desc: 'Beaucoup plus de PV, un peu plus lent.', hp: 45, speedMul: 0.75, cloneMul: 3, xpCost: 100 },
+  eclaireur:  { id: 'eclaireur',  name: 'Éclaireur', desc: 'Fragile mais ignore les portes ÷.', hp: 12, speedMul: 1.3, cloneMul: 4, ignoreDiv: true, xpCost: 100 },
+  gardien:    { id: 'gardien',    name: 'Gardien', desc: 'Robuste, +4 PV de canon.', hp: 30, speedMul: 0.85, cloneMul: 3, cannonHpBonus: 4, xpCost: 140 },
+  berserker:  { id: 'berserker',  name: 'Berserker', desc: 'Très fragile, clonage massif dans les portes ×.', hp: 16, speedMul: 1.2, cloneMul: 5, xpCost: 180 },
+  sentinelle: { id: 'sentinelle', name: 'Sentinelle', desc: 'Charge le champion 50% plus vite.', hp: 20, speedMul: 1, cloneMul: 4, chargeGainMul: 1.5, xpCost: 180 },
+  titan:      { id: 'titan',      name: 'Titan', desc: 'Immense tank, +6 PV de canon.', hp: 70, speedMul: 0.55, cloneMul: 3, cannonHpBonus: 6, xpCost: 220 },
 };
 
 export const DEFAULT_LOADOUT = { weapon: 'standard', hero: 'champion', perks: {} };
@@ -117,29 +140,29 @@ function resolveLoadout(loadout) {
     weapon, hero,
     fireRateMul: (weapon.fireRateMul || 1) * (1 + sum('fireRateMul')),
     chargeMul: clamp(1 - sum('chargeReduction'), 0.25, 1),
-    cannonHpBonus: sum('cannonHpBonus'),
+    cannonHpBonus: sum('cannonHpBonus') + (hero.cannonHpBonus || 0),
     divResist: Math.min(0.9, sum('divResist')),
     championCloneBonus: sum('championCloneBonus'),
     ignoreDiv: !!(weapon.ignoreDiv || hero.ignoreDiv),
+    shotHp: weapon.shotHp || 1,
+    multishot: weapon.multishot || 1,
+    chargeGainMul: hero.chargeGainMul || 1,
   };
 }
 
-// ─── Niveaux bonus (optionnels, plus durs, récompenses RPG) ─────────────────
-// Se débloquent tous les BONUS_EVERY niveaux principaux réussis. Jamais requis
-// pour progresser dans le jeu principal ; deviennent faisables une fois qu'on
-// a accumulé assez de compétences/héros/armes en jouant les niveaux normaux.
+// ─── Niveaux bonus (optionnels, toujours jouables, très durs) ───────────────
+// Jamais requis pour progresser dans le jeu principal, jamais verrouillés :
+// faisables à tout moment, mais nettement plus durs qu'un niveau normal du
+// même palier — la récompense est un gros bonus d'XP (dépensable à la
+// boutique), pas un déblocage direct d'arme/héros.
 export const BONUS_EVERY = 5;
-export const BONUS_REWARDS = [
-  { type: 'weapon', id: 'rafale' },
-  { type: 'hero', id: 'colosse' },
-  { type: 'weapon', id: 'perforant' },
-  { type: 'hero', id: 'eclaireur' },
-];
-export function bonusRewardFor(index) {
-  return BONUS_REWARDS[(Math.max(1, Math.floor(index)) - 1) % BONUS_REWARDS.length];
-}
-export function bonusUnlockLevel(index) {
+// Niveau principal « équivalent » représenté par un palier de bonus donné
+// (purement indicatif pour l'affichage — ne verrouille plus rien).
+export function bonusRefLevel(index) {
   return Math.max(1, Math.floor(index)) * BONUS_EVERY;
+}
+export function bonusXpReward(index) {
+  return 100 + Math.max(1, Math.floor(index)) * 40;
 }
 
 // ─── RNG déterministe ────────────────────────────────────────────────────────
@@ -158,10 +181,11 @@ const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
 // ─── Séquence de châteaux ────────────────────────────────────────────────────
 // La base n'est pas une seule barre de vie géante : elle est découpée en
-// mini-châteaux successifs puis un grand château final, pour que le joueur
-// voie une vraie progression (jalons, célébrations) plutôt qu'un écran figé.
+// 2 à 4 phases (mini-châteaux successifs puis un grand château final), pour
+// que le joueur voie une vraie progression (jalons, célébrations) plutôt
+// qu'un écran figé — jamais un seul château géant, même au niveau 1.
 function castleCount(level) {
-  return Math.min(4, 1 + Math.floor((level - 1) / 3));
+  return clamp(2 + Math.floor((level - 1) / 3), 2, 4);
 }
 
 function splitCastles(totalHp, level) {
@@ -179,6 +203,23 @@ function splitCastles(totalHp, level) {
 // de couloirs) pour un niveau donné, à partir d'un générateur aléatoire fourni
 // par l'appelant — permet de produire plusieurs terrains distincts pour un
 // même niveau (un par mini-château) sans dupliquer cette logique.
+// Une porte × peut, à partir d'un certain niveau, être autre chose qu'un
+// simple couloir ouvert :
+//  - 'lock'  : fermée (agit comme un mur) tant que `lockHits` unités ne s'y
+//              sont pas sacrifiées pour la faire céder, puis reste ouverte
+//              en permanence pour le reste du terrain.
+//  - 'pulse' : bascule ouverte/fermée sur un cycle — il faut viser au bon
+//              moment plutôt que de compter sur un couloir toujours dispo.
+// Une seule porte spéciale par rangée à deux couloirs (l'autre reste
+// classique, pour toujours garder un second angle d'attaque) ; sur une
+// rangée à un seul couloir, c'est tout le mur qui porte la mécanique.
+function rollGateKind(rng, level, rowHasSpecial) {
+  if (rowHasSpecial) return 'normal';
+  if (level >= 5 && rng() < 0.2) return 'lock';
+  if (level >= 4 && rng() < 0.2) return 'pulse';
+  return 'normal';
+}
+
 function generateGateLayout(rng, level) {
   const pick = arr => arr[Math.floor(rng() * arr.length)];
 
@@ -191,6 +232,7 @@ function generateGateLayout(rng, level) {
     const y = rows === 1 ? (top + bottom) / 2 : bottom - (r * (bottom - top)) / (rows - 1);
     const twoGates = level >= 2 && rng() < 0.55;
     const slots = twoGates ? [W * 0.27, W * 0.73] : [W * (0.3 + rng() * 0.4)];
+    let rowHasSpecial = false;
 
     slots.forEach((x, i) => {
       let op;
@@ -206,7 +248,31 @@ function generateGateLayout(rng, level) {
       // Couloir de déplacement : tout le terrain, ou une moitié si deux portes sur la rangée
       const laneL = twoGates && i === 1 ? W / 2 : 0;
       const laneR = twoGates && i === 0 ? W / 2 : W;
-      gates.push({ id: gates.length, x, y, w, h: GATE_H, op, vx, minX: laneL + w / 2 + 4, maxX: laneR - w / 2 - 4 });
+      const gate = { id: gates.length, x, y, w, h: GATE_H, op, vx, minX: laneL + w / 2 + 4, maxX: laneR - w / 2 - 4, kind: 'normal' };
+
+      // Seules les portes × (pas ÷) peuvent être verrouillées/pulsées — une
+      // porte ÷ porte déjà sa propre tension (l'éviter), pas besoin d'en
+      // rajouter une couche.
+      if (op.type === 'mul') {
+        const kind = rollGateKind(rng, level, rowHasSpecial);
+        if (kind === 'lock') {
+          rowHasSpecial = true;
+          gate.kind = 'lock';
+          gate.locked = true;
+          gate.hits = 0;
+          gate.lockHits = 2 + Math.floor(rng() * 3); // 2 à 4 unités à sacrifier
+        } else if (kind === 'pulse') {
+          rowHasSpecial = true;
+          gate.kind = 'pulse';
+          gate.pulseOn = 1.4 + rng() * 1.2;
+          gate.pulseOff = 1.0 + rng() * 1.4;
+          // Phase de départ aléatoire : toutes les portes pulsées d'un
+          // terrain ne basculent pas en même temps.
+          gate.pulseT = rng() * (gate.pulseOn + gate.pulseOff);
+          gate.active = gate.pulseT < gate.pulseOn;
+        }
+      }
+      gates.push(gate);
     });
   }
   // Garantit minX <= maxX
@@ -217,6 +283,15 @@ function generateGateLayout(rng, level) {
   return gates;
 }
 
+// Une porte est « ouverte » (franchissable) si c'est une porte classique,
+// une porte verrouillée déjà déverrouillée, ou une porte pulsée en phase
+// active. Sert à la fois à la collision (engine) et au rendu (main.js).
+export function isGateOpen(gate) {
+  if (gate.kind === 'lock') return !gate.locked;
+  if (gate.kind === 'pulse') return !!gate.active;
+  return true;
+}
+
 function bestChainOf(gates) {
   const rowsY = [...new Set(gates.map(g => g.y))];
   return rowsY.reduce((acc, y) =>
@@ -225,14 +300,22 @@ function bestChainOf(gates) {
 
 // ─── Génération de niveau ────────────────────────────────────────────────────
 /**
- * Génère la configuration d'un niveau (déterministe : même numéro → même niveau).
+ * Génère la configuration d'un niveau (déterministe : mêmes n/difficulty →
+ * même niveau).
  *
  * Chaque mini-château a son propre terrain (disposition de portes) : le
  * décor change à chaque fois qu'un château tombe, pour forcer à réévaluer sa
  * stratégie de visée plutôt que de rejouer le même couloir en boucle.
+ *
+ * `difficulty` (0..T.DIFFICULTY_MAX) est un multiplicateur adaptatif tenu à
+ * jour par l'appelant (cf. mobilityFor) : un joueur qui gagne sans jamais
+ * déplacer le canon (pure cadence, aucune visée) durcit ses niveaux suivants
+ * (plus d'ennemis, plus de brutes) plutôt que de pouvoir « bourriner »
+ * indéfiniment avec la même stratégie statique.
  */
-export function generateLevel(n) {
+export function generateLevel(n, difficulty = 0) {
   const level = Math.max(1, Math.floor(n));
+  const diff = clamp(difficulty, 0, T.DIFFICULTY_MAX);
   const rng = mulberry32(level * 9973 + 17);
   const gates = generateGateLayout(rng, level);
 
@@ -248,18 +331,24 @@ export function generateLevel(n) {
   const bestChain = Math.max(...terrains.map(bestChainOf));
 
   const baseHp = Math.round((T.BASE_HP_0 + T.BASE_HP_K * Math.min(bestChain, T.CHAIN_CAP)) * (1 + level * T.LEVEL_K));
+  const diffMul = 1 + diff * 0.6; // jusqu'à +60% de pression à difficulté max
 
   return {
     level,
+    difficulty: diff,
     bestChain,
     baseHp,
     castles: splitCastles(baseHp, level),
     cannonHp: 10,
     spawnInterval: Math.max(T.SPAWN_MIN, T.SPAWN_0 - level * T.SPAWN_K),
-    spawnGroup: 1 + Math.floor(level / T.GROUP_EVERY),
+    spawnGroup: Math.max(1, Math.round((1 + Math.floor(level / T.GROUP_EVERY)) * diffMul)),
     waveEvery: Math.max(6, 12 - level * 0.3),
-    waveSize: T.WAVE_0 + Math.floor(level * T.WAVE_K),
-    bruteChance: level >= 4 ? Math.min(0.22, (level - 3) * 0.025) : 0,
+    waveSize: Math.round((T.WAVE_0 + Math.floor(level * T.WAVE_K)) * diffMul),
+    bruteChance: Math.min(0.4, (level >= 4 ? Math.min(0.22, (level - 3) * 0.025) : 0) * diffMul + diff * 0.05),
+    // Nombre de murs d'affrontement (SPEC-4.2.4) à vaincre pendant la
+    // traversée de chaque château du niveau, avant de retomber sur un flux
+    // de vagues classique (non bloquant) jusqu'au château suivant.
+    wallsPerCastle: clamp(1 + Math.floor(level / 5), 1, 3),
     seed: level * 7919 + 3,
     gates,
     terrains,
@@ -267,15 +356,17 @@ export function generateLevel(n) {
 }
 
 /**
- * Génère un niveau bonus (déterministe, jamais requis pour progresser).
- * Réutilise la mise en page de portes d'un niveau "virtuel" avancé, mais avec
- * une base et des vagues nettement plus dures que la progression normale à
- * cet endroit du jeu : ils se battent avec les compétences/armes/héros gagnés.
+ * Génère un niveau bonus (déterministe, jamais requis pour progresser,
+ * jamais verrouillé — faisable à tout moment). Réutilise la mise en page de
+ * portes d'un niveau "virtuel" avancé, mais toujours nettement plus dur que
+ * la progression normale à cet endroit du jeu, quelle que soit la
+ * difficulté adaptative du joueur (jamais adouci) : ils se battent avec les
+ * compétences/armes/héros déjà gagnés, récompensés par un gros bonus d'XP.
  */
 export function generateBonusLevel(index) {
   const idx = Math.max(1, Math.floor(index));
   const layout = generateLevel(idx * BONUS_EVERY + 3);
-  const baseHp = Math.round(layout.baseHp * 1.6);
+  const baseHp = Math.round(layout.baseHp * 2.2);
   return {
     ...layout,
     level: layout.level,
@@ -283,8 +374,10 @@ export function generateBonusLevel(index) {
     bonusIndex: idx,
     baseHp,
     castles: splitCastles(baseHp, layout.level),
-    spawnInterval: Math.max(T.SPAWN_MIN, layout.spawnInterval * 0.75),
-    waveSize: Math.round(layout.waveSize * 1.4),
+    spawnInterval: Math.max(T.SPAWN_MIN, layout.spawnInterval * 0.6),
+    spawnGroup: Math.round(layout.spawnGroup * 1.5),
+    waveSize: Math.round(layout.waveSize * 1.8),
+    bruteChance: Math.min(0.45, layout.bruteChance * 1.8 + 0.1),
     seed: layout.seed + 500000,
   };
 }
@@ -330,23 +423,58 @@ export function createGame(levelConfig, loadout) {
     rows: groupRows(levelConfig.gates),
     blue: [],
     red: [],
+    walls: [],
+    nextWallId: 0,
+    wallsSpawnedThisCastle: 0,
     events: [],
-    stats: { shots: 0, kills: 0, peak: 0, gateHits: 0 },
+    boss: null,
+    stats: { shots: 0, kills: 0, peak: 0, gateHits: 0, moveDist: 0 },
   };
 }
 
-function makeBlue(x, y, mask, champ = false, hero = HEROES.champion) {
+function makeBlue(x, y, mask, champ = false, hero = HEROES.champion, shotHp = 1) {
   return champ
     ? { x, y, vx: 0, vy: -CHAMP_SPEED * hero.speedMul, hp: hero.hp, r: 13, mask, champ: true }
-    : { x, y, vx: 0, vy: -BLUE_SPEED, hp: 1, r: 5, mask, champ: false };
+    : { x, y, vx: 0, vy: -BLUE_SPEED, hp: shotHp, r: 5, mask, champ: false };
 }
 
-function spawnRed(g, brute) {
-  const x = BASE.x + (g.rng() - 0.5) * (BASE.w - 20);
-  const y = BASE.y + BASE.h / 2 + 6;
-  g.red.push(brute
+// Crée une unité rouge à une position donnée ; `wallId`, si fourni, la
+// rattache à un mur d'affrontement (SPEC-4.2). Le décompte des membres
+// vivants d'un mur est recalculé en fin de step() (une seule source de
+// vérité), donc seul `total` (jamais décrémenté) est tenu à jour ici.
+function spawnRedAt(g, x, y, brute, wallId = null) {
+  const unit = brute
     ? { x, y, vx: 0, vy: BRUTE_SPEED, hp: 6, r: 10, brute: true }
-    : { x, y, vx: 0, vy: RED_SPEED, hp: 1, r: 5, brute: false });
+    : { x, y, vx: 0, vy: RED_SPEED, hp: 1, r: 5, brute: false };
+  if (wallId != null) {
+    unit.wallId = wallId;
+    const wall = g.walls.find(w => w.id === wallId);
+    if (wall) wall.total++;
+  }
+  g.red.push(unit);
+}
+
+// `wallId` rattache un spawn du flux continu à un mur déjà actif
+// (SPEC-4.2.3) — sinon position classique, bande étroite sous la base.
+function spawnRed(g, brute, wallId = null) {
+  const x = wallId != null
+    ? clamp(BASE.x + (g.rng() - 0.5) * W * WALL_SPAN, 10, W - 10)
+    : BASE.x + (g.rng() - 0.5) * (BASE.w - 20);
+  const y = BASE.y + BASE.h / 2 + 6;
+  spawnRedAt(g, x, y, brute, wallId);
+}
+
+// Génère un mur d'affrontement complet : `size` rouges alignés sur
+// `WALL_SPAN` de la largeur du terrain, avec un léger jitter vertical pour un
+// rendu organique plutôt qu'une ligne parfaitement droite (SPEC-4.2.2).
+function spawnWall(g, size, bruteChance) {
+  const id = g.nextWallId++;
+  g.walls.push({ id, total: 0, alive: 0, cleared: false });
+  for (let i = 0; i < size; i++) {
+    const x = clamp(BASE.x + (g.rng() - 0.5) * W * WALL_SPAN, 10, W - 10);
+    const y = BASE.y + BASE.h / 2 + 6 + (g.rng() - 0.5) * WALL_Y_JITTER;
+    spawnRedAt(g, x, y, g.rng() < bruteChance, id);
+  }
 }
 
 export function canLaunchChampion(g) {
@@ -359,6 +487,25 @@ export function starsFor(g) {
   return ratio >= 1 ? 3 : ratio >= 0.5 ? 2 : 1;
 }
 
+// XP gagnée pour une partie, qu'elle soit gagnée OU perdue — la progression
+// (armes/héros via la boutique) avance même sur un échec, proportionnelle à
+// ce qui a été accompli (châteaux détruits, ennemis tués, vagues de boss
+// survécues), avec un bonus à la victoire.
+export function xpFor(g) {
+  const castleXp = g.castleIndex * 8;
+  const killXp = Math.floor(g.stats.kills / 4);
+  const bossXp = g.boss ? (g.boss.wavesTotal - g.boss.wavesLeft) * 15 : 0;
+  const winBonus = g.status === 'won' ? 30 : 0;
+  return castleXp + killXp + bossXp + winBonus;
+}
+
+// Détecte un joueur qui « bourrine » sans bouger le canon (peu ou pas de
+// visée) — sert à durcir le niveau suivant plutôt que de laisser une
+// stratégie purement statique fonctionner indéfiniment.
+export function mobilityFor(g) {
+  return g.time > 0 ? g.stats.moveDist / g.time : 0;
+}
+
 // Remplace le terrain actif (portes + rangées) par celui du château courant.
 // Les unités bleues déjà en jeu perdent la mémoire des portes franchies : le
 // nouveau terrain n'a pas les mêmes identifiants de portes, et surtout pas
@@ -367,6 +514,7 @@ function swapTerrain(g, gates) {
   g.gates = gates.map(gt => ({ ...gt, op: { ...gt.op }, flash: 0 }));
   g.rows = groupRows(gates);
   for (const u of g.blue) u.mask = 0;
+  g.wallsSpawnedThisCastle = 0;
 }
 
 // Applique des dégâts à la base, en faisant progresser la séquence de
@@ -404,7 +552,12 @@ export function step(g, dt, input = {}) {
     const tx = clamp(input.targetX, CANNON_MIN_X, CANNON_MAX_X);
     const d = tx - g.cannonX;
     const maxMove = CANNON_SPEED * dt;
-    g.cannonX += Math.abs(d) <= maxMove ? d : Math.sign(d) * maxMove;
+    const applied = Math.abs(d) <= maxMove ? d : Math.sign(d) * maxMove;
+    g.cannonX += applied;
+    // Distance parcourue par le canon — sert à détecter un joueur qui
+    // « bourrine » sans jamais bouger, pour adapter la difficulté du
+    // niveau suivant (cf. mobilityFor/generateLevel).
+    g.stats.moveDist += Math.abs(applied);
   }
 
   // Tir
@@ -412,13 +565,14 @@ export function step(g, dt, input = {}) {
     g.fireAcc += dt * g.fireRate;
     while (g.fireAcc >= 1) {
       g.fireAcc -= 1;
-      if (g.blue.length < MAX_BLUE) {
-        const u = makeBlue(g.cannonX + (g.rng() - 0.5) * 6, CANNON_Y - 22, 0);
+      for (let s = 0; s < g.loadout.multishot; s++) {
+        if (g.blue.length >= MAX_BLUE) break;
+        const u = makeBlue(g.cannonX + (g.rng() - 0.5) * 10, CANNON_Y - 22, 0, false, g.loadout.hero, g.loadout.shotHp);
         u.vx = (g.rng() - 0.5) * 24;
         g.blue.push(u);
         g.stats.shots++;
-        g.charge = Math.min(g.championCharge, g.charge + 1);
       }
+      g.charge = Math.min(g.championCharge, g.charge + g.loadout.chargeGainMul);
     }
   } else {
     g.fireAcc = Math.min(g.fireAcc, 0.99);
@@ -430,22 +584,60 @@ export function step(g, dt, input = {}) {
     g.events.push({ type: 'champion', x: g.cannonX, y: CANNON_Y - 26 });
   }
 
-  // Ennemis
+  // Ennemis — combat de boss : une fois le dernier château détruit, une
+  // salve de vagues deux fois plus dures (quantité doublée, plus de brutes)
+  // avant de valider la victoire. Pas un sprite unique : la difficulté de
+  // fin de niveau, via les mêmes vagues que le reste du niveau.
+  const bossActive = !!g.boss;
+  const spawnInterval = bossActive ? g.cfg.spawnInterval * 0.5 : g.cfg.spawnInterval;
+  const spawnGroup = bossActive ? g.cfg.spawnGroup * 2 : g.cfg.spawnGroup;
+  const waveEvery = bossActive ? g.cfg.waveEvery * 0.5 : g.cfg.waveEvery;
+  const waveSize = bossActive ? g.cfg.waveSize * 2 : g.cfg.waveSize;
+  const bruteChance = bossActive ? Math.min(0.6, g.cfg.bruteChance * 2 + 0.15) : g.cfg.bruteChance;
+
+  // Un seul mur actif (non vaincu) à la fois (SPEC-4.2.3) — le flux continu
+  // comme les vagues suivantes le renforcent plutôt que d'en ouvrir un autre.
+  const activeWall = g.walls.find(w => !w.cleared);
+
   g.spawnAcc += dt * (1 + g.time / T.RAMP);   // la pression monte avec le temps
-  while (g.spawnAcc >= g.cfg.spawnInterval) {
-    g.spawnAcc -= g.cfg.spawnInterval;
-    for (let i = 0; i < g.cfg.spawnGroup; i++) spawnRed(g, g.rng() < g.cfg.bruteChance);
+  while (g.spawnAcc >= spawnInterval) {
+    g.spawnAcc -= spawnInterval;
+    for (let i = 0; i < spawnGroup; i++) spawnRed(g, g.rng() < bruteChance, activeWall ? activeWall.id : null);
   }
   g.waveAcc += dt;
-  if (g.waveAcc >= g.cfg.waveEvery) {
+  if (g.waveAcc >= waveEvery) {
     g.waveAcc = 0;
-    for (let i = 0; i < g.cfg.waveSize; i++) spawnRed(g, false);
-    g.events.push({ type: 'wave' });
+    // Une vague se matérialise en mur bloquant (SPEC-4.2) tant que le quota
+    // de murs du château courant n'est pas atteint ; le combat de boss
+    // (après la chute du dernier château — plus rien à protéger) reste un
+    // flux classique non bloquant.
+    let wallish = false;
+    if (activeWall) {
+      for (let i = 0; i < waveSize; i++) spawnRed(g, g.rng() < bruteChance, activeWall.id);
+      wallish = true;
+    } else if (!bossActive && g.wallsSpawnedThisCastle < g.cfg.wallsPerCastle) {
+      spawnWall(g, waveSize, bruteChance);
+      g.wallsSpawnedThisCastle++;
+      wallish = true;
+    } else {
+      for (let i = 0; i < waveSize; i++) spawnRed(g, g.rng() < bruteChance);
+    }
+    g.events.push({ type: 'wave', boss: bossActive, wall: wallish });
+    if (bossActive) g.boss.wavesLeft = Math.max(0, g.boss.wavesLeft - 1);
   }
 
-  // Portes mobiles
+  // Portes mobiles + portes pulsées (ouvertes/fermées en alternance)
   for (const gate of g.gates) {
     if (gate.flash > 0) gate.flash = Math.max(0, gate.flash - dt);
+    if (gate.kind === 'pulse') {
+      const cycle = gate.pulseOn + gate.pulseOff;
+      gate.pulseT = (gate.pulseT + dt) % cycle;
+      const active = gate.pulseT < gate.pulseOn;
+      if (active !== gate.active) {
+        gate.active = active;
+        g.events.push({ type: active ? 'gateOpen' : 'gateClose', x: gate.x, y: gate.y });
+      }
+    }
     if (!gate.vx) continue;
     gate.x += gate.vx * dt;
     if (gate.x < gate.minX) { gate.x = gate.minX; gate.vx = Math.abs(gate.vx); }
@@ -453,6 +645,11 @@ export function step(g, dt, input = {}) {
   }
 
   // Unités bleues
+  // Rouges de mur encore vivants (au plus un mur actif à la fois, cf.
+  // `activeWall` plus haut) — bloquent physiquement la progression, contrairement
+  // aux rouges « libres » qui ne font qu'échanger des dégâts au contact
+  // (resolveCombat, plus bas).
+  const blockingReds = g.walls.some(w => !w.cleared) ? g.red.filter(e => e.hp > 0 && e.wallId != null) : [];
   const newBlue = [];
   for (const u of g.blue) {
     const prevY = u.y;
@@ -465,6 +662,23 @@ export function step(g, dt, input = {}) {
     }
     u.x = clamp(u.x + u.vx * dt, u.r, W - u.r);
     u.y += u.vy * dt;
+
+    // Mur d'affrontement (SPEC-4.3) : le rouge de mur vivant le plus proche,
+    // encore devant l'unité au moment où elle l'atteint, l'arrête net — pas
+    // de couloir à trouver comme pour un mur de porte, juste un arrêt tant
+    // qu'il est vivant (aucune exemption pour le champion, SPEC-4.3.4).
+    if (blockingReds.length) {
+      let blocker = null;
+      for (const e of blockingReds) {
+        if (e.y > prevY) continue; // déjà dépassé avant ce mouvement
+        if (Math.abs(e.x - u.x) > WALL_BLOCK_WIDTH) continue;
+        if (!blocker || e.y > blocker.y) blocker = e;
+      }
+      if (blocker) {
+        const stopY = blocker.y + blocker.r + u.r;
+        if (u.y < stopY) u.y = stopY;
+      }
+    }
 
     for (const row of g.rows) {
       if (u.mask & row.mask) continue;
@@ -480,11 +694,28 @@ export function step(g, dt, input = {}) {
       // traversé.
       const stopY = row.y + ROW_FRONT + u.r;
       if (!(prevY >= stopY && u.y <= stopY)) continue;
-      const gate = row.gateIds.map(id => g.gates[id]).find(gt => Math.abs(u.x - gt.x) <= gt.w / 2);
+      const aligned = row.gateIds.map(id => g.gates[id]).find(gt => Math.abs(u.x - gt.x) <= gt.w / 2);
+      if (aligned && aligned.kind === 'lock' && aligned.locked) {
+        // Porte verrouillée : l'unité se sacrifie contre le mur pour le
+        // faire céder un peu plus. Une fois assez de sacrifices, la porte
+        // s'ouvre pour de bon (jusqu'au prochain changement de terrain).
+        aligned.hits++;
+        aligned.flash = 0.15;
+        if (aligned.hits >= aligned.lockHits) {
+          aligned.locked = false;
+          g.events.push({ type: 'gateUnlocked', x: aligned.x, y: aligned.y });
+        } else {
+          g.events.push({ type: 'gateHit', x: u.x, y: aligned.y, hits: aligned.hits, need: aligned.lockHits });
+        }
+        u.hp = 0;
+        break;
+      }
+      const gate = aligned && isGateOpen(aligned) ? aligned : null;
       if (!gate) {
-        // Mur : aucune porte ouverte ici. Collision : l'unité vient buter
-        // contre la surface (jamais à travers) et glisse horizontalement le
-        // long du mur vers le couloir ouvert le plus proche.
+        // Mur (ou porte fermée/pulsée hors phase) : collision, l'unité
+        // vient buter contre la surface (jamais à travers) et glisse
+        // horizontalement le long du mur vers le couloir ouvert le plus
+        // proche — ou attend qu'une porte pulsée se rouvre.
         u.y = stopY;
         const nearest = row.gateIds
           .map(id => g.gates[id])
@@ -551,14 +782,43 @@ export function step(g, dt, input = {}) {
   g.red = g.red.filter(e => e.hp > 0);
   if (g.blue.length > g.stats.peak) g.stats.peak = g.blue.length;
 
-  if (g.baseHp <= 0) {
-    g.baseHp = 0;
-    g.status = 'won';
-    g.events.push({ type: 'won' });
-  } else if (g.cannonHp <= 0) {
+  // Survivants par mur + bascule « vaincu » (SPEC-4.3.3) — une seule passe en
+  // O(reds) plutôt qu'un compteur incrémental, qui se désynchroniserait entre
+  // les deux façons dont un rouge peut mourir (combat de proximité, contact
+  // avec le canon).
+  if (g.walls.length) {
+    const aliveByWall = new Map();
+    for (const e of g.red) {
+      if (e.wallId != null) aliveByWall.set(e.wallId, (aliveByWall.get(e.wallId) || 0) + 1);
+    }
+    for (const w of g.walls) {
+      if (w.cleared) continue;
+      w.alive = aliveByWall.get(w.id) || 0;
+      if (w.alive === 0) {
+        w.cleared = true;
+        g.events.push({ type: 'wallCleared', id: w.id });
+      }
+    }
+  }
+
+  // Le canon peut tomber à tout moment, y compris pendant le combat de
+  // boss — vérifié en priorité pour ne jamais être masqué par baseHp<=0
+  // (resté vrai en continu une fois le dernier château détruit).
+  if (g.cannonHp <= 0) {
     g.cannonHp = 0;
     g.status = 'lost';
     g.events.push({ type: 'lost' });
+  } else if (g.baseHp <= 0) {
+    g.baseHp = 0;
+    if (!g.boss) {
+      // Dernier château tout juste détruit : le niveau ne se termine pas
+      // encore, un combat de boss (vagues renforcées) doit être survécu.
+      g.boss = { wavesLeft: T.BOSS_WAVES, wavesTotal: T.BOSS_WAVES };
+      g.events.push({ type: 'bossStart', wavesTotal: T.BOSS_WAVES });
+    } else if (g.boss.wavesLeft <= 0) {
+      g.status = 'won';
+      g.events.push({ type: 'won' });
+    }
   }
   return g;
 }
