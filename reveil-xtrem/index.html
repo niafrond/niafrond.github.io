@@ -137,6 +137,7 @@
     <div class="card">
       <label class="field-label" for="input-snooze">Temps entre les rappels (minutes)</label>
       <input type="number" id="input-snooze" class="input" min="1" max="30" value="9">
+      <p class="field-hint">Utilisé pour le bouton Snooze de la notification (hors appli) — dans l'appli, la durée est demandée à chaque rappel.</p>
     </div>
 
     <div class="card">
@@ -182,12 +183,22 @@
     <div id="ring-time" class="ring-time"></div>
     <div id="ring-label" class="ring-label"></div>
 
-    <div class="challenge-card">
+    <div id="challenge-card" class="challenge-card">
       <div id="challenge-progress" class="challenge-progress" hidden></div>
       <div id="challenge-problem" class="challenge-problem">? + ?</div>
       <input id="challenge-answer" class="challenge-answer" type="number" inputmode="numeric" autocomplete="off" placeholder="Réponse">
       <div id="challenge-error" class="challenge-error" hidden>Faux, réessayez !</div>
       <button id="btn-challenge-validate" class="btn btn-primary w-full">Valider</button>
+    </div>
+
+    <!-- Demandée à chaque rappel, sans valeur par défaut : remplace le
+         calcul le temps de choisir, sans jamais quitter l'écran plein écran. -->
+    <div id="snooze-prompt-card" class="challenge-card" hidden>
+      <div class="challenge-problem">💤 Combien de minutes ?</div>
+      <input id="snooze-minutes-input" class="challenge-answer" type="number" inputmode="numeric" min="1" max="180" autocomplete="off" placeholder="Minutes">
+      <div id="snooze-prompt-error" class="challenge-error" hidden>Entrez un nombre de minutes (1 à 180).</div>
+      <button id="btn-snooze-confirm" class="btn btn-primary w-full">Reporter</button>
+      <button id="btn-snooze-cancel" class="btn btn-secondary w-full">Annuler</button>
     </div>
 
     <button id="btn-snooze" class="btn btn-secondary btn-lg w-full">💤 Snooze</button>

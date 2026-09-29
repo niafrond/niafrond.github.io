@@ -1,11 +1,11 @@
 import {
   loadAlarms, saveAlarms, createAlarm, upsertAlarm, removeAlarm, patchAlarm,
-  loadRuntime, saveRuntime, clampProblemsCount, MIN_PROBLEMS_COUNT, MAX_PROBLEMS_COUNT, DEFAULT_SNOOZE_MINUTES,
+  loadRuntime, saveRuntime, clampProblemsCount, MIN_PROBLEMS_COUNT, MAX_PROBLEMS_COUNT,
   clampSnoozeLimit, MIN_SNOOZE_LIMIT, MAX_SNOOZE_LIMIT, DEFAULT_SNOOZE_LIMIT,
   clampSnoozeDecreaseMinutes, MIN_SNOOZE_DECREASE_MINUTES, MAX_SNOOZE_DECREASE_MINUTES,
   DEFAULT_SNOOZE_DECREASE_MINUTES,
   clampAutoDismissMinutes, MIN_AUTO_DISMISS_MINUTES, MAX_AUTO_DISMISS_MINUTES, DEFAULT_AUTO_DISMISS_MINUTES,
-  effectiveSnoozeMinutes, canSnoozeAgain,
+  canSnoozeAgain,
 } from './alarms.js';
 import {
   evaluateAlarms, applySnooze, clearSnooze, runtimeToObject, runtimeFromObject,
@@ -446,6 +446,7 @@ function startRing(alarmId) {
   currentRing = { alarmId, solved: 0, required: clampProblemsCount(alarm.problemsCount ?? 1), problem: null, autoDismissTimer: null };
   el('ring-label').textContent = alarm.label;
   nextChallengeProblem();
+  closeSnoozePrompt();
   updateSnoozeButton(alarm);
   // Sous Capacitor, la sonnerie système (choisie via RingtoneManager) est déjà
   // jouée par le service natif au niveau OS — un second son synthétisé côté
@@ -549,7 +550,58 @@ function dismissCurrentRing() {
   }
 }
 
-function snoozeCurrentRing() {
+// ── Report (snooze) : durée demandée à chaque rappel, sans valeur par
+// défaut — jamais une durée silencieusement présumée. Le petit encart
+// remplace le calcul SANS jamais quitter l'écran de sonnerie plein écran
+// (voir requestRingFullscreen) ni faire apparaître de toast/dialogue.
+const MIN_SNOOZE_PROMPT_MINUTES = 1;
+const MAX_SNOOZE_PROMPT_MINUTES = 180;
+const challengeCardEl = el('challenge-card');
+const snoozePromptCardEl = el('snooze-prompt-card');
+const snoozeMinutesInputEl = el('snooze-minutes-input');
+const snoozePromptErrorEl = el('snooze-prompt-error');
+
+function openSnoozePrompt() {
+  if (!currentRing) return;
+  challengeCardEl.hidden = true;
+  el('btn-snooze').hidden = true;
+  snoozePromptErrorEl.hidden = true;
+  snoozeMinutesInputEl.value = ''; // jamais de valeur par défaut
+  snoozePromptCardEl.hidden = false;
+  snoozeMinutesInputEl.focus();
+}
+
+function closeSnoozePrompt() {
+  snoozePromptCardEl.hidden = true;
+  challengeCardEl.hidden = false;
+  if (currentRing) updateSnoozeButton(alarms.find(a => a.id === currentRing.alarmId));
+}
+
+function readSnoozePromptMinutes() {
+  const value = Number(snoozeMinutesInputEl.value);
+  if (!Number.isFinite(value) || !Number.isInteger(value) || value < MIN_SNOOZE_PROMPT_MINUTES) return null;
+  return Math.min(MAX_SNOOZE_PROMPT_MINUTES, value);
+}
+
+function confirmSnoozeFromPrompt() {
+  const minutes = readSnoozePromptMinutes();
+  if (minutes === null) {
+    snoozePromptErrorEl.hidden = false;
+    snoozeMinutesInputEl.classList.remove('shake');
+    void snoozeMinutesInputEl.offsetWidth;
+    snoozeMinutesInputEl.classList.add('shake');
+    return;
+  }
+  snoozeCurrentRing(minutes);
+}
+
+el('btn-snooze-cancel').addEventListener('click', closeSnoozePrompt);
+el('btn-snooze-confirm').addEventListener('click', confirmSnoozeFromPrompt);
+snoozeMinutesInputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmSnoozeFromPrompt();
+});
+
+function snoozeCurrentRing(minutes) {
   if (!currentRing) return;
   const { alarmId } = currentRing;
   const alarm = alarms.find(a => a.id === alarmId);
@@ -557,7 +609,6 @@ function snoozeCurrentRing() {
   // Garde-fou : le bouton est normalement déjà caché une fois la limite atteinte.
   if (alarm && !canSnoozeAgain(alarm, priorSnoozeCount)) return;
   clearTimeout(currentRing.autoDismissTimer);
-  const minutes = alarm ? effectiveSnoozeMinutes(alarm, priorSnoozeCount) : DEFAULT_SNOOZE_MINUTES;
   stopAlarmSound();
   runtimeMap = applySnooze(runtimeMap, alarmId, new Date(), minutes);
   const newSnoozeCount = (runtimeMap.get(alarmId) && runtimeMap.get(alarmId).snoozeCount) || priorSnoozeCount + 1;
@@ -670,7 +721,7 @@ el('challenge-answer').addEventListener('input', () => {
   const value = Number(el('challenge-answer').value);
   if (!Number.isNaN(value) && value === currentRing.problem.answer) validateChallengeAnswer();
 });
-el('btn-snooze').addEventListener('click', snoozeCurrentRing);
+el('btn-snooze').addEventListener('click', openSnoozePrompt);
 
 // ── Démarrage ───────────────────────────────────────────────────────────
 refreshHome();
