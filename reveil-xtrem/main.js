@@ -1,11 +1,11 @@
 import {
   loadAlarms, saveAlarms, createAlarm, upsertAlarm, removeAlarm, patchAlarm,
-  loadRuntime, saveRuntime, clampProblemsCount, MIN_PROBLEMS_COUNT, MAX_PROBLEMS_COUNT,
+  loadRuntime, saveRuntime, clampProblemsCount, MIN_PROBLEMS_COUNT, MAX_PROBLEMS_COUNT, DEFAULT_SNOOZE_MINUTES,
   clampSnoozeLimit, MIN_SNOOZE_LIMIT, MAX_SNOOZE_LIMIT, DEFAULT_SNOOZE_LIMIT,
   clampSnoozeDecreaseMinutes, MIN_SNOOZE_DECREASE_MINUTES, MAX_SNOOZE_DECREASE_MINUTES,
   DEFAULT_SNOOZE_DECREASE_MINUTES,
   clampAutoDismissMinutes, MIN_AUTO_DISMISS_MINUTES, MAX_AUTO_DISMISS_MINUTES, DEFAULT_AUTO_DISMISS_MINUTES,
-  canSnoozeAgain,
+  effectiveSnoozeMinutes, canSnoozeAgain,
 } from './alarms.js';
 import {
   evaluateAlarms, applySnooze, clearSnooze, runtimeToObject, runtimeFromObject,
@@ -161,7 +161,10 @@ function openEdit(id) {
   el('edit-title').textContent = alarm ? "Modifier l'alarme" : 'Nouvelle alarme';
   el('input-time').value = alarm ? alarm.time : '07:00';
   el('input-label').value = alarm ? alarm.label : '';
-  el('input-snooze').value = alarm ? alarm.snoozeMinutes : 9;
+  // Pas de valeur par défaut : une nouvelle alarme force l'utilisateur à
+  // choisir explicitement sa durée de rappel (voir saveAlarmFromForm).
+  el('input-snooze').value = alarm ? alarm.snoozeMinutes : '';
+  el('input-snooze-error').hidden = true;
   el('btn-delete-alarm').hidden = !alarm;
 
   const days = alarm ? alarm.days : [];
@@ -351,14 +354,38 @@ el('btn-pick-native-ringtone').addEventListener('click', async () => {
   el('native-ringtone-label').textContent = result.title || 'Sonnerie par défaut';
 });
 
+// GIVEN #input-snooze vide ou invalide — THEN retourne null (aucun repli
+// silencieux) : saveAlarmFromForm doit bloquer l'enregistrement plutôt que
+// de deviner une valeur, cette durée ne pouvant plus être changée après
+// coup pendant que l'alarme sonne (voir snoozeCurrentRing).
+function readSnoozeMinutesInput() {
+  const value = Number(el('input-snooze').value);
+  if (!Number.isFinite(value) || !Number.isInteger(value) || value < 1) return null;
+  return value;
+}
+
+function showSnoozeMinutesError() {
+  const input = el('input-snooze');
+  el('input-snooze-error').hidden = false;
+  input.classList.remove('shake');
+  void input.offsetWidth;
+  input.classList.add('shake');
+  input.focus();
+}
+
 function saveAlarmFromForm() {
+  const snoozeMinutes = readSnoozeMinutesInput();
+  if (snoozeMinutes === null) {
+    showSnoozeMinutesError();
+    return;
+  }
+
   const time = el('input-time').value || '07:00';
   const label = el('input-label').value;
   const days = getSelectedDays();
   const difficulty = getSelectedDifficulty();
   const problemsCount = getSelectedProblemsCount();
   const sound = getSelectedSound();
-  const snoozeMinutes = Number(el('input-snooze').value) || 9;
   const snoozeLimit = snoozeLimitStepper.get();
   const snoozeDecreaseMinutes = snoozeDecreaseStepper.get();
   const autoDismissMinutes = autoDismissStepper.get();
@@ -446,7 +473,6 @@ function startRing(alarmId) {
   currentRing = { alarmId, solved: 0, required: clampProblemsCount(alarm.problemsCount ?? 1), problem: null, autoDismissTimer: null };
   el('ring-label').textContent = alarm.label;
   nextChallengeProblem();
-  closeSnoozePrompt();
   updateSnoozeButton(alarm);
   // Sous Capacitor, la sonnerie système (choisie via RingtoneManager) est déjà
   // jouée par le service natif au niveau OS — un second son synthétisé côté
@@ -524,6 +550,12 @@ function validateChallengeAnswer() {
   }
 }
 
+/** Tire un nouveau calcul (même difficulté) sans compter comme une erreur — la progression n'est pas affectée. */
+function rerollChallengeProblem() {
+  if (!currentRing) return;
+  nextChallengeProblem();
+}
+
 function dismissCurrentRing() {
   if (!currentRing) return;
   clearTimeout(currentRing.autoDismissTimer);
@@ -550,58 +582,10 @@ function dismissCurrentRing() {
   }
 }
 
-// ── Report (snooze) : durée demandée à chaque rappel, sans valeur par
-// défaut — jamais une durée silencieusement présumée. Le petit encart
-// remplace le calcul SANS jamais quitter l'écran de sonnerie plein écran
-// (voir requestRingFullscreen) ni faire apparaître de toast/dialogue.
-const MIN_SNOOZE_PROMPT_MINUTES = 1;
-const MAX_SNOOZE_PROMPT_MINUTES = 180;
-const challengeCardEl = el('challenge-card');
-const snoozePromptCardEl = el('snooze-prompt-card');
-const snoozeMinutesInputEl = el('snooze-minutes-input');
-const snoozePromptErrorEl = el('snooze-prompt-error');
-
-function openSnoozePrompt() {
-  if (!currentRing) return;
-  challengeCardEl.hidden = true;
-  el('btn-snooze').hidden = true;
-  snoozePromptErrorEl.hidden = true;
-  snoozeMinutesInputEl.value = ''; // jamais de valeur par défaut
-  snoozePromptCardEl.hidden = false;
-  snoozeMinutesInputEl.focus();
-}
-
-function closeSnoozePrompt() {
-  snoozePromptCardEl.hidden = true;
-  challengeCardEl.hidden = false;
-  if (currentRing) updateSnoozeButton(alarms.find(a => a.id === currentRing.alarmId));
-}
-
-function readSnoozePromptMinutes() {
-  const value = Number(snoozeMinutesInputEl.value);
-  if (!Number.isFinite(value) || !Number.isInteger(value) || value < MIN_SNOOZE_PROMPT_MINUTES) return null;
-  return Math.min(MAX_SNOOZE_PROMPT_MINUTES, value);
-}
-
-function confirmSnoozeFromPrompt() {
-  const minutes = readSnoozePromptMinutes();
-  if (minutes === null) {
-    snoozePromptErrorEl.hidden = false;
-    snoozeMinutesInputEl.classList.remove('shake');
-    void snoozeMinutesInputEl.offsetWidth;
-    snoozeMinutesInputEl.classList.add('shake');
-    return;
-  }
-  snoozeCurrentRing(minutes);
-}
-
-el('btn-snooze-cancel').addEventListener('click', closeSnoozePrompt);
-el('btn-snooze-confirm').addEventListener('click', confirmSnoozeFromPrompt);
-snoozeMinutesInputEl.addEventListener('keydown', e => {
-  if (e.key === 'Enter') confirmSnoozeFromPrompt();
-});
-
-function snoozeCurrentRing(minutes) {
+// ── Report (snooze) : durée fixée dans les réglages de l'alarme (voir
+// #input-snooze/saveAlarmFromForm) — ne se redéfinit jamais pendant la
+// sonnerie, le bouton applique directement la durée déjà configurée.
+function snoozeCurrentRing() {
   if (!currentRing) return;
   const { alarmId } = currentRing;
   const alarm = alarms.find(a => a.id === alarmId);
@@ -609,6 +593,7 @@ function snoozeCurrentRing(minutes) {
   // Garde-fou : le bouton est normalement déjà caché une fois la limite atteinte.
   if (alarm && !canSnoozeAgain(alarm, priorSnoozeCount)) return;
   clearTimeout(currentRing.autoDismissTimer);
+  const minutes = alarm ? effectiveSnoozeMinutes(alarm, priorSnoozeCount) : DEFAULT_SNOOZE_MINUTES;
   stopAlarmSound();
   runtimeMap = applySnooze(runtimeMap, alarmId, new Date(), minutes);
   const newSnoozeCount = (runtimeMap.get(alarmId) && runtimeMap.get(alarmId).snoozeCount) || priorSnoozeCount + 1;
@@ -701,6 +686,7 @@ async function initNative() {
 el('btn-add-alarm').addEventListener('click', () => openEdit(null));
 el('btn-edit-cancel').addEventListener('click', () => { showScreen('home'); refreshHome(); });
 el('btn-save-alarm').addEventListener('click', saveAlarmFromForm);
+el('input-snooze').addEventListener('input', () => { el('input-snooze-error').hidden = true; });
 el('btn-delete-alarm').addEventListener('click', deleteCurrentAlarm);
 el('btn-install-pwa').addEventListener('click', installPwa);
 
@@ -721,7 +707,8 @@ el('challenge-answer').addEventListener('input', () => {
   const value = Number(el('challenge-answer').value);
   if (!Number.isNaN(value) && value === currentRing.problem.answer) validateChallengeAnswer();
 });
-el('btn-snooze').addEventListener('click', openSnoozePrompt);
+el('btn-snooze').addEventListener('click', snoozeCurrentRing);
+el('btn-challenge-reroll').addEventListener('click', rerollChallengeProblem);
 
 // ── Démarrage ───────────────────────────────────────────────────────────
 refreshHome();
