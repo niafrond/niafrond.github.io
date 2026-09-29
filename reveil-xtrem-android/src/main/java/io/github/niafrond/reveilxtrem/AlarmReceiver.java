@@ -32,6 +32,7 @@ public class AlarmReceiver extends BroadcastReceiver {
     public static final String EXTRA_LABEL = "label";
     public static final String EXTRA_DIFFICULTY = "difficulty";
     public static final String EXTRA_SNOOZE_MINUTES = "snoozeMinutes";
+    public static final String EXTRA_SOUND = "sound";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -103,6 +104,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         svc.putExtra(EXTRA_LABEL, alarm.optString("label", "Alarme"));
         svc.putExtra(EXTRA_DIFFICULTY, alarm.optString("difficulty", "easy"));
         svc.putExtra(EXTRA_SNOOZE_MINUTES, alarm.optInt("snoozeMinutes", 9));
+        svc.putExtra(EXTRA_SOUND, alarm.optString("sound", "classic"));
         ContextCompat.startForegroundService(context, svc);
     }
 }

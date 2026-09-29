@@ -29,7 +29,8 @@ import androidx.core.app.ServiceCompat;
  */
 public class AlarmRingService extends Service {
 
-    static final String CHANNEL_ID = "reveilxtrem_alarm";
+    private static final String CHANNEL_ID_PREFIX = "reveilxtrem_alarm_";
+    private static final String DEFAULT_SOUND_ID = "classic";
     private static final int NOTIF_ID = 4201;
 
     private PowerManager.WakeLock wakeLock;
@@ -44,12 +45,14 @@ public class AlarmRingService extends Service {
         String alarmId = intent.getStringExtra(AlarmReceiver.EXTRA_ALARM_ID);
         String label = intent.getStringExtra(AlarmReceiver.EXTRA_LABEL);
         int snoozeMinutes = intent.getIntExtra(AlarmReceiver.EXTRA_SNOOZE_MINUTES, 9);
+        String soundId = intent.getStringExtra(AlarmReceiver.EXTRA_SOUND);
+        if (soundId == null) soundId = DEFAULT_SOUND_ID;
 
-        ensureChannel();
+        ensureChannel(soundId);
         // ServiceCompat gère elle-même les différences d'API selon la version (le type de
         // service au premier plan n'existe qu'à partir de l'API 29) — un appel direct à
         // Service#startForeground(int, Notification, int) planterait sur les appareils plus anciens.
-        ServiceCompat.startForeground(this, NOTIF_ID, buildNotification(alarmId, label, snoozeMinutes),
+        ServiceCompat.startForeground(this, NOTIF_ID, buildNotification(alarmId, label, snoozeMinutes, soundId),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
 
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -61,7 +64,7 @@ public class AlarmRingService extends Service {
         return START_NOT_STICKY;
     }
 
-    private Notification buildNotification(String alarmId, String label, int snoozeMinutes) {
+    private Notification buildNotification(String alarmId, String label, int snoozeMinutes, String soundId) {
         Intent activityIntent = new Intent(this, MainActivity.class);
         activityIntent.putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId);
         activityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
@@ -80,7 +83,7 @@ public class AlarmRingService extends Service {
 
         String title = (label == null || label.isEmpty()) ? "Alarme" : label;
 
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
+        return new NotificationCompat.Builder(this, channelIdFor(soundId))
                 .setSmallIcon(R.drawable.ic_stat_alarm)
                 .setContentTitle("⏰ " + title)
                 .setContentText("Ouvrez l'app et résolvez le calcul pour désactiver")
@@ -95,29 +98,72 @@ public class AlarmRingService extends Service {
                 .build();
     }
 
-    private void ensureChannel() {
+    // Le son d'un NotificationChannel est figé à sa création (Android ne permet pas
+    // de le changer ensuite) — un canal distinct par sonnerie choisie est donc créé
+    // à la demande, chacun avec un son et un motif de vibration différents. Faute de
+    // fichiers audio embarqués, chaque sonnerie web (sound.js#SOUND_PRESETS) est
+    // reliée à l'une des 3 catégories de son système réellement disponibles ; la
+    // vibration distincte par sonnerie renforce la différenciation perçue même
+    // quand deux sonneries partagent la même catégorie système.
+    private void ensureChannel(String soundId) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager nm = getSystemService(NotificationManager.class);
-        if (nm == null || nm.getNotificationChannel(CHANNEL_ID) != null) return;
+        String channelId = channelIdFor(soundId);
+        if (nm == null || nm.getNotificationChannel(channelId) != null) return;
 
         NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID, "Alarme", NotificationManager.IMPORTANCE_HIGH);
+                channelId, "Alarme (" + soundId + ")", NotificationManager.IMPORTANCE_HIGH);
         channel.setDescription("Sonnerie du réveil");
         channel.enableVibration(true);
-        channel.setVibrationPattern(new long[]{0, 400, 200, 400, 200, 400, 200, 400});
+        channel.setVibrationPattern(vibrationPatternFor(soundId));
         channel.enableLights(true);
         channel.setBypassDnd(true);
         channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
 
-        Uri alarmSound = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM);
-        if (alarmSound == null) alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+        int ringtoneType = ringtoneTypeFor(soundId);
+        Uri sound = RingtoneManager.getActualDefaultRingtoneUri(this, ringtoneType);
+        if (sound == null) sound = RingtoneManager.getDefaultUri(ringtoneType);
         AudioAttributes attrs = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_ALARM)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build();
-        channel.setSound(alarmSound, attrs);
+        channel.setSound(sound, attrs);
 
         nm.createNotificationChannel(channel);
+    }
+
+    private static String channelIdFor(String soundId) {
+        return CHANNEL_ID_PREFIX + soundId;
+    }
+
+    private static long[] vibrationPatternFor(String soundId) {
+        switch (soundId) {
+            case "digital":
+                return new long[]{0, 120, 80, 120, 80, 120, 80, 120, 80, 120};
+            case "siren":
+                return new long[]{0, 600, 100, 600, 100, 600};
+            case "chime":
+                return new long[]{0, 250, 400, 250};
+            case "gentle":
+                return new long[]{0, 200, 600, 200};
+            case "classic":
+            default:
+                return new long[]{0, 400, 200, 400, 200, 400, 200, 400};
+        }
+    }
+
+    private static int ringtoneTypeFor(String soundId) {
+        switch (soundId) {
+            case "siren":
+                return RingtoneManager.TYPE_RINGTONE;
+            case "chime":
+            case "gentle":
+                return RingtoneManager.TYPE_NOTIFICATION;
+            case "classic":
+            case "digital":
+            default:
+                return RingtoneManager.TYPE_ALARM;
+        }
     }
 
     private static int safeHash(String s) {

@@ -1,5 +1,9 @@
 // Stockage local des alarmes et de leur état d'exécution (snooze, dernier déclenchement).
 
+import { SOUND_PRESETS, DEFAULT_SOUND_ID } from './sound.js';
+
+const SOUND_IDS = SOUND_PRESETS.map(p => p.id);
+
 const ALARMS_KEY = 'reveil-xtrem:alarms:v1';
 const RUNTIME_KEY = 'reveil-xtrem:runtime:v1';
 
@@ -34,7 +38,7 @@ export function saveAlarms(alarms) {
   localStorage.setItem(ALARMS_KEY, JSON.stringify(alarms));
 }
 
-export function createAlarm({ time, label, days, difficulty, snoozeMinutes, problemsCount }) {
+export function createAlarm({ time, label, days, difficulty, snoozeMinutes, problemsCount, sound }) {
   return {
     id: genId(),
     time,
@@ -46,6 +50,8 @@ export function createAlarm({ time, label, days, difficulty, snoozeMinutes, prob
     // ne contrôle que le type/la taille des nombres, voir math-challenge.js).
     problemsCount: clampProblemsCount(problemsCount ?? DEFAULT_PROBLEMS_COUNT),
     snoozeMinutes: Number.isFinite(snoozeMinutes) && snoozeMinutes > 0 ? snoozeMinutes : DEFAULT_SNOOZE_MINUTES,
+    // Sonnerie propre à chaque alarme (voir sound.js#SOUND_PRESETS).
+    sound: SOUND_IDS.includes(sound) ? sound : DEFAULT_SOUND_ID,
     skipNext: false,
     createdAt: Date.now(),
   };

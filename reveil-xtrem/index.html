@@ -6,7 +6,7 @@
   <title>Réveil Xtrem ⏰</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1a1030">
+  <meta name="theme-color" content="#170f2e">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Réveil Xtrem">
@@ -110,6 +110,18 @@
         <button type="button" id="btn-count-plus" class="stepper-btn" aria-label="Plus de calculs">+</button>
       </div>
       <p class="field-hint" id="count-hint"></p>
+    </div>
+
+    <div class="card">
+      <span class="field-label">Sonnerie</span>
+      <div id="sound-picker" class="sound-picker">
+        <button type="button" class="sound-chip" data-sound="classic">🔔 Classique</button>
+        <button type="button" class="sound-chip" data-sound="digital">⏱️ Digital</button>
+        <button type="button" class="sound-chip" data-sound="siren">🚨 Sirène</button>
+        <button type="button" class="sound-chip" data-sound="chime">🎐 Carillon</button>
+        <button type="button" class="sound-chip" data-sound="gentle">🌙 Douceur</button>
+      </div>
+      <p class="field-hint">Touchez une sonnerie pour l'écouter et la choisir.</p>
     </div>
 
     <div class="card">

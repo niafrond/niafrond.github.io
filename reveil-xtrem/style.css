@@ -1,12 +1,12 @@
 :root {
-  --bg: #1a1030;
-  --bg2: #26184a;
-  --card: #241a44;
-  --card-border: #3a2a66;
-  --text: #f4f1ff;
-  --muted: #a89bd1;
-  --accent: #ff5d73;
-  --accent-ink: #4a0d18;
+  --bg: #170f2e;
+  --bg2: #251a4a;
+  --card: #2a1c52;
+  --card-border: #4a2f8a;
+  --text: #f3eeff;
+  --muted: #b3a3d9;
+  --accent: #8b5cf6;
+  --accent-ink: #2a1150;
   --gold: #ffd24c;
   --green: #3ddc84;
   --danger: #ff4d5e;
@@ -64,7 +64,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 
 /* ─── Home ────────────────────────────────────────────────────────────── */
 .hero {
-  background: linear-gradient(165deg, #ff5d73 0%, #7a3a6a 45%, var(--bg) 85%);
+  background: linear-gradient(165deg, #a855f7 0%, #5b2f9e 45%, var(--bg) 85%);
   border-radius: 0 0 28px 28px;
   color: #fff;
 }
@@ -209,9 +209,11 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
   background: var(--bg2);
   color: var(--muted);
 }
-.badge.difficulty-easy { color: var(--green); }
+.badge.difficulty-veryEasy { color: var(--green); }
+.badge.difficulty-easy { color: #5eead4; }
 .badge.difficulty-medium { color: var(--gold); }
-.badge.difficulty-hard { color: var(--danger); }
+.badge.difficulty-hard { color: #ff9d4d; }
+.badge.difficulty-veryHard { color: var(--danger); }
 .badge.count-badge { color: var(--muted); }
 
 .icon-btn {
@@ -378,16 +380,30 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
   color: var(--gold);
 }
 
+.sound-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.sound-chip {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--card-border);
+  background: var(--bg2);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+.sound-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
 .edit-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
 
-/* ─── Sonnerie ────────────────────────────────────────────────────────── */
+/* ─── Écran de sonnerie ───────────────────────────────────────────────── */
 #screen-ring {
-  background: radial-gradient(ellipse at top, #3a1a2e, var(--bg) 70%);
+  background: radial-gradient(ellipse at top, #4a1f7a, var(--bg) 70%);
   animation: ring-pulse 1s ease-in-out infinite;
 }
 @keyframes ring-pulse {
   0%, 100% { background-color: var(--bg); }
-  50% { background-color: #2a0d18; }
+  50% { background-color: #3a1868; }
 }
 .ring-inner {
   max-width: 480px;

@@ -9,9 +9,11 @@ import {
 import {
   generateProblem, suggestedProblemsCount, DIFFICULTY_LABELS, DIFFICULTY_ORDER,
 } from './math-challenge.js';
-import { startAlarmSound, stopAlarmSound } from './sound.js';
+import { startAlarmSound, stopAlarmSound, previewSound, DEFAULT_SOUND_ID } from './sound.js';
 import { formatAlarmSchedule, formatClock, formatCountdown } from './ui.js';
-import { installPwa, initServiceWorker } from './pwa.js';
+import {
+  installPwa, initServiceWorker, requestRingFullscreen, exitRingFullscreen, notifyRingIfHidden,
+} from './pwa.js';
 import {
   isNativePlatform, syncNativeAlarms, nativeSnooze, nativeDismiss,
   consumeNativePendingUpdates, getNativePendingRingId, onNativeRing,
@@ -163,6 +165,7 @@ function openEdit(id) {
   const difficulty = alarm ? alarm.difficulty : 'veryEasy';
   setDifficultySlider(difficulty, { suggestCount: !alarm });
   setProblemsCount(alarm ? alarm.problemsCount : suggestedProblemsCount(difficulty));
+  setSelectedSound(alarm ? alarm.sound : DEFAULT_SOUND_ID);
 
   showScreen('edit');
 }
@@ -228,20 +231,40 @@ function getSelectedProblemsCount() {
 el('btn-count-minus').addEventListener('click', () => setProblemsCount(getSelectedProblemsCount() - 1));
 el('btn-count-plus').addEventListener('click', () => setProblemsCount(getSelectedProblemsCount() + 1));
 
+// ── Sonnerie (propre à chaque alarme) ─────────────────────────────────────
+function setSelectedSound(soundId) {
+  document.querySelectorAll('#sound-picker .sound-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.sound === soundId);
+  });
+}
+
+function getSelectedSound() {
+  const active = document.querySelector('#sound-picker .sound-chip.active');
+  return active ? active.dataset.sound : DEFAULT_SOUND_ID;
+}
+
+document.querySelectorAll('#sound-picker .sound-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    setSelectedSound(chip.dataset.sound);
+    previewSound(chip.dataset.sound);
+  });
+});
+
 function saveAlarmFromForm() {
   const time = el('input-time').value || '07:00';
   const label = el('input-label').value;
   const days = getSelectedDays();
   const difficulty = getSelectedDifficulty();
   const problemsCount = getSelectedProblemsCount();
+  const sound = getSelectedSound();
   const snoozeMinutes = Number(el('input-snooze').value) || 9;
 
   if (editingId) {
     alarms = patchAlarm(alarms, editingId, {
-      time, label: label.trim() || 'Alarme', days, difficulty, problemsCount, snoozeMinutes,
+      time, label: label.trim() || 'Alarme', days, difficulty, problemsCount, sound, snoozeMinutes,
     });
   } else {
-    const alarm = createAlarm({ time, label, days, difficulty, problemsCount, snoozeMinutes });
+    const alarm = createAlarm({ time, label, days, difficulty, problemsCount, sound, snoozeMinutes });
     alarms = upsertAlarm(alarms, alarm);
   }
   persistAlarms();
@@ -315,8 +338,14 @@ function startRing(alarmId) {
   currentRing = { alarmId, solved: 0, required: clampProblemsCount(alarm.problemsCount ?? 1), problem: null };
   el('ring-label').textContent = alarm.label;
   nextChallengeProblem();
-  startAlarmSound();
+  startAlarmSound(alarm.sound);
   showScreen('ring');
+
+  // Une alarme doit être impossible à rater : plein écran + tentative de
+  // reprendre le focus si l'onglet tournait en arrière-plan.
+  requestRingFullscreen();
+  notifyRingIfHidden(`⏰ ${alarm.label}`, "Résolvez le calcul pour désactiver l'alarme.");
+  window.focus();
 }
 
 function nextChallengeProblem({ resetError = true } = {}) {
@@ -381,6 +410,8 @@ function dismissCurrentRing() {
 
   if (ringQueue.length > 0) {
     startRing(ringQueue.shift());
+  } else {
+    exitRingFullscreen();
   }
 }
 
@@ -401,6 +432,8 @@ function snoozeCurrentRing() {
 
   if (ringQueue.length > 0) {
     startRing(ringQueue.shift());
+  } else {
+    exitRingFullscreen();
   }
 }
 
@@ -488,6 +521,15 @@ document.querySelectorAll('#days-picker .day-chip').forEach(chip => {
 el('btn-challenge-validate').addEventListener('click', validateChallengeAnswer);
 el('challenge-answer').addEventListener('keydown', e => {
   if (e.key === 'Enter') validateChallengeAnswer();
+});
+// Valide automatiquement dès que la réponse tapée est la bonne, sans
+// attendre un clic sur "Valider" — la réponse ne peut jamais matcher par
+// erreur en cours de frappe puisqu'un seul calcul (donc une seule réponse)
+// est affiché à la fois.
+el('challenge-answer').addEventListener('input', () => {
+  if (!currentRing) return;
+  const value = Number(el('challenge-answer').value);
+  if (!Number.isNaN(value) && value === currentRing.problem.answer) validateChallengeAnswer();
 });
 el('btn-snooze').addEventListener('click', snoozeCurrentRing);
 
