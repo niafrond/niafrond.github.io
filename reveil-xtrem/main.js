@@ -12,7 +12,8 @@ import {
 import { startAlarmSound, stopAlarmSound, previewSound, DEFAULT_SOUND_ID } from './sound.js';
 import { formatAlarmSchedule, formatClock, formatCountdown } from './ui.js';
 import {
-  installPwa, initServiceWorker, requestRingFullscreen, exitRingFullscreen, notifyRingIfHidden,
+  installPwa, initServiceWorker, initApkDownloadLink,
+  requestRingFullscreen, exitRingFullscreen, notifyRingIfHidden,
 } from './pwa.js';
 import {
   isNativePlatform, syncNativeAlarms, nativeSnooze, nativeDismiss,
@@ -545,4 +546,5 @@ if (typeof Notification !== 'undefined' && Notification.permission === 'default'
 }
 
 initServiceWorker(() => currentRing != null);
+initApkDownloadLink();
 initNative();

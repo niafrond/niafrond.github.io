@@ -26,6 +26,24 @@ export async function installPwa() {
   }
 }
 
+// ─── Lien téléchargement APK Android ────────────────────────────────────────
+// Visible uniquement depuis un navigateur Android (pas iOS/desktop, où
+// l'APK est inutile) et seulement sur la version web — inutile de proposer
+// de télécharger l'APK depuis l'intérieur de l'APK lui-même.
+function isCapacitor() {
+  return !!(window.Capacitor);
+}
+
+function isAndroidBrowser() {
+  return /Android/i.test(navigator.userAgent) && !isCapacitor();
+}
+
+export function initApkDownloadLink() {
+  if (!isAndroidBrowser()) return;
+  const link = document.getElementById('btn-download-apk');
+  if (link) link.hidden = false;
+}
+
 // ─── Plein écran + focus forcés à la sonnerie ──────────────────────────────
 // Une alarme doit être impossible à rater : plein écran (masque barre
 // d'adresse/barres système) et tentative de reprendre le focus si l'onglet
