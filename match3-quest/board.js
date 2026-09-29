@@ -45,14 +45,14 @@ const SKULL_ATTACK_BONUS_CAP = 6;
 const MIN_INITIAL_POSSIBLE_MOVES = 8;
 const MAX_BOARD_GENERATION_ATTEMPTS = 120;
 
-const BOARD_DROP_PROFILES = {
-    starter: { skullProb: 0.10, combatProb: 0.015, jokerProb: 0.0025 },
-    advanced: { skullProb: 0.16, combatProb: 0.04, jokerProb: 0.0035 }
-};
-
-const SKULL_PROB_INVERSE_NUMERATOR = 0.40;
-const SKULL_PROB_MIN = 0.08;
-const SKULL_PROB_MAX = 0.20;
+// Répartition FIXE des tuiles, identique pour le plateau initial et pour chaque
+// nouvelle ligne qui tombe après un match : ~75 % gemmes, 17 % gants (⚔️), 7 % crânes.
+// Le reste (~1 %) est absorbé par les gemmes (dont le joker, très rare).
+const BOARD_DROP_PROBABILITIES = Object.freeze({
+    skullProb: 0.07,
+    combatProb: 0.17,
+    jokerProb: 0.0035
+});
 
 function getOuterBlockSize(element){
     if(!element) return 0;
@@ -207,16 +207,7 @@ function refreshTargetingHighlights(){
 }
 
 function computeSpecialTileProbabilities(){
-    const hasWeaponsOrSpells = player.availableWeapons.length > 0 || player.availableSpells.length > 0;
-    const baseProfile = hasWeaponsOrSpells ? BOARD_DROP_PROFILES.advanced : BOARD_DROP_PROFILES.starter;
-    const spellCount = Math.max(0, player.availableSpells.length || 0);
-    const inverseSkullProb = SKULL_PROB_INVERSE_NUMERATOR / (spellCount + 2);
-    const skullProb = Math.min(SKULL_PROB_MAX, Math.max(SKULL_PROB_MIN, inverseSkullProb));
-
-    return {
-        ...baseProfile,
-        skullProb
-    };
+    return { ...BOARD_DROP_PROBABILITIES };
 }
 
 function refreshBoardDropProbabilities(){
