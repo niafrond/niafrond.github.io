@@ -28,7 +28,7 @@ export function matchesSchedule(alarm, date) {
  *
  * @param {Array} alarms - alarmes persistées (enabled, skipNext, days, time...)
  * @param {Date} now
- * @param {Map<string, {lastFiredKey: string|null, snoozeUntil: number|null}>} runtimeMap
+ * @param {Map<string, {lastFiredKey: string|null, snoozeUntil: number|null, snoozeCount: number}>} runtimeMap
  * @returns {{ ringing: string[], skipConsumed: string[], nextRuntime: Map }}
  *   - ringing : ids des alarmes qui doivent sonner maintenant
  *   - skipConsumed : ids des alarmes dont le "passer la prochaine" vient
@@ -55,7 +55,10 @@ export function evaluateAlarms(alarms, now, runtimeMap) {
     if (rt.snoozeUntil != null) {
       if (now.getTime() >= rt.snoozeUntil) {
         ringing.push(alarm.id);
-        nextRuntime.set(alarm.id, { lastFiredKey: key, snoozeUntil: null });
+        // Conserve `snoozeCount` (et tout futur champ de rt) : seul le snooze
+        // en cours est consommé, pas le compteur de rappels déjà utilisés
+        // pour cette occurrence (voir alarms.js#canSnoozeAgain/main.js#updateSnoozeButton).
+        nextRuntime.set(alarm.id, { ...rt, lastFiredKey: key, snoozeUntil: null });
       }
       continue;
     }
@@ -128,18 +131,22 @@ export function getNextAlarmOccurrence(alarms, now, runtimeMap = new Map()) {
 }
 
 // Programme un snooze : la prochaine alarme sonnera dans `minutes` minutes.
+// Incrémente `snoozeCount` (nombre de rappels déjà utilisés pour l'occurrence
+// en cours), consommé par alarms.js#effectiveSnoozeMinutes/canSnoozeAgain.
 export function applySnooze(runtimeMap, alarmId, now, minutes) {
   const next = new Map(runtimeMap);
-  const rt = runtimeMap.get(alarmId) || { lastFiredKey: null, snoozeUntil: null };
-  next.set(alarmId, { ...rt, snoozeUntil: now.getTime() + minutes * 60000 });
+  const rt = runtimeMap.get(alarmId) || { lastFiredKey: null, snoozeUntil: null, snoozeCount: 0 };
+  next.set(alarmId, { ...rt, snoozeUntil: now.getTime() + minutes * 60000, snoozeCount: (rt.snoozeCount || 0) + 1 });
   return next;
 }
 
-// Annule un snooze en cours (ex. l'utilisateur résout le calcul directement).
+// Annule un snooze en cours (ex. l'utilisateur résout le calcul directement,
+// ou l'arrêt automatique de la sonnerie se déclenche) et remet `snoozeCount`
+// à zéro : la prochaine occurrence repart avec son plein quota de rappels.
 export function clearSnooze(runtimeMap, alarmId) {
   const next = new Map(runtimeMap);
-  const rt = runtimeMap.get(alarmId) || { lastFiredKey: null, snoozeUntil: null };
-  next.set(alarmId, { ...rt, snoozeUntil: null });
+  const rt = runtimeMap.get(alarmId) || { lastFiredKey: null, snoozeUntil: null, snoozeCount: 0 };
+  next.set(alarmId, { ...rt, snoozeUntil: null, snoozeCount: 0 });
   return next;
 }
 

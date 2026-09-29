@@ -109,7 +109,10 @@ public class AlarmSchedulerPlugin extends Plugin {
             return;
         }
         int minutes = call.getInt("minutes", 9);
-        AlarmActions.snooze(getContext(), id, minutes);
+        // Nombre de rappels utilisés APRÈS ce snooze (voir native-bridge.js#nativeSnooze) —
+        // porté par le prochain déclenchement pour rester correct même appli fermée ensuite.
+        int snoozeCount = call.getInt("snoozeCount", 0);
+        AlarmActions.snooze(getContext(), id, minutes, snoozeCount);
         call.resolve();
     }
 

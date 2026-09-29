@@ -33,11 +33,21 @@ public class AlarmReceiver extends BroadcastReceiver {
     public static final String EXTRA_DIFFICULTY = "difficulty";
     public static final String EXTRA_SNOOZE_MINUTES = "snoozeMinutes";
     public static final String EXTRA_SOUND = "sound";
+    // Nombre de rappels déjà utilisés pour l'occurrence en cours — voyage
+    // dans la chaîne d'intents AlarmManager (pas de stockage séparé) : une
+    // occurrence fraîche (isSnooze=false) ne le porte jamais (0 implicite),
+    // et chaque snooze programme le suivant avec le compte déjà incrémenté
+    // (voir AlarmActions#snooze, AlarmRingService, SnoozeReceiver).
+    public static final String EXTRA_SNOOZE_COUNT = "snoozeCount";
+    public static final String EXTRA_SNOOZE_LIMIT = "snoozeLimit";
+    public static final String EXTRA_SNOOZE_DECREASE_MINUTES = "snoozeDecreaseMinutes";
+    public static final String EXTRA_AUTO_DISMISS_MINUTES = "autoDismissMinutes";
 
     @Override
     public void onReceive(Context context, Intent intent) {
         String alarmId = intent.getStringExtra(EXTRA_ALARM_ID);
         boolean isSnooze = intent.getBooleanExtra(EXTRA_IS_SNOOZE, false);
+        int snoozeCount = intent.getIntExtra(EXTRA_SNOOZE_COUNT, 0);
         if (alarmId == null) return;
 
         PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
@@ -74,7 +84,7 @@ public class AlarmReceiver extends BroadcastReceiver {
                 AlarmStore.saveAlarms(context, alarms);
             }
 
-            startRingService(context, alarmId, alarm);
+            startRingService(context, alarmId, alarm, snoozeCount);
         } catch (JSONException e) {
             Log.e(TAG, "Traitement de l'alarme " + alarmId + " impossible", e);
         } finally {
@@ -98,7 +108,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         AlarmStore.saveAlarms(context, alarms);
     }
 
-    private void startRingService(Context context, String alarmId, JSONObject alarm) {
+    private void startRingService(Context context, String alarmId, JSONObject alarm, int snoozeCount) {
         Intent svc = new Intent(context, AlarmRingService.class);
         svc.putExtra(EXTRA_ALARM_ID, alarmId);
         svc.putExtra(EXTRA_LABEL, alarm.optString("label", "Alarme"));
@@ -111,6 +121,12 @@ public class AlarmReceiver extends BroadcastReceiver {
         // n'est pas une URI valide : AlarmRingService retombe alors sur la
         // sonnerie par défaut, ce qui reste un comportement sûr.
         svc.putExtra(EXTRA_SOUND, alarm.optString("sound", ""));
+        // Réglages avancés façon Alarm Clock Xtreme (0 = illimité/jamais,
+        // comportement historique) — voir reveil-xtrem/alarms.js pour le pendant JS.
+        svc.putExtra(EXTRA_SNOOZE_LIMIT, alarm.optInt("snoozeLimit", 0));
+        svc.putExtra(EXTRA_SNOOZE_DECREASE_MINUTES, alarm.optInt("snoozeDecreaseMinutes", 0));
+        svc.putExtra(EXTRA_AUTO_DISMISS_MINUTES, alarm.optInt("autoDismissMinutes", 0));
+        svc.putExtra(EXTRA_SNOOZE_COUNT, snoozeCount);
         ContextCompat.startForegroundService(context, svc);
     }
 }

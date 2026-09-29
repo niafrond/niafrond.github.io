@@ -1,6 +1,11 @@
 import {
   loadAlarms, saveAlarms, createAlarm, upsertAlarm, removeAlarm, patchAlarm,
-  loadRuntime, saveRuntime, clampProblemsCount, MIN_PROBLEMS_COUNT, MAX_PROBLEMS_COUNT,
+  loadRuntime, saveRuntime, clampProblemsCount, MIN_PROBLEMS_COUNT, MAX_PROBLEMS_COUNT, DEFAULT_SNOOZE_MINUTES,
+  clampSnoozeLimit, MIN_SNOOZE_LIMIT, MAX_SNOOZE_LIMIT, DEFAULT_SNOOZE_LIMIT,
+  clampSnoozeDecreaseMinutes, MIN_SNOOZE_DECREASE_MINUTES, MAX_SNOOZE_DECREASE_MINUTES,
+  DEFAULT_SNOOZE_DECREASE_MINUTES,
+  clampAutoDismissMinutes, MIN_AUTO_DISMISS_MINUTES, MAX_AUTO_DISMISS_MINUTES, DEFAULT_AUTO_DISMISS_MINUTES,
+  effectiveSnoozeMinutes, canSnoozeAgain,
 } from './alarms.js';
 import {
   evaluateAlarms, applySnooze, clearSnooze, runtimeToObject, runtimeFromObject,
@@ -168,6 +173,9 @@ function openEdit(id) {
   setDifficultySlider(difficulty, { suggestCount: !alarm });
   setProblemsCount(alarm ? alarm.problemsCount : suggestedProblemsCount(difficulty));
   setSelectedSound(alarm ? alarm.sound : DEFAULT_SOUND_ID);
+  snoozeLimitStepper.set(alarm ? alarm.snoozeLimit : DEFAULT_SNOOZE_LIMIT);
+  snoozeDecreaseStepper.set(alarm ? alarm.snoozeDecreaseMinutes : DEFAULT_SNOOZE_DECREASE_MINUTES);
+  autoDismissStepper.set(alarm ? alarm.autoDismissMinutes : DEFAULT_AUTO_DISMISS_MINUTES);
 
   showScreen('edit');
 }
@@ -232,6 +240,52 @@ function getSelectedProblemsCount() {
 
 el('btn-count-minus').addEventListener('click', () => setProblemsCount(getSelectedProblemsCount() - 1));
 el('btn-count-plus').addEventListener('click', () => setProblemsCount(getSelectedProblemsCount() + 1));
+
+// ── Rappels (snooze) : limite, réduction progressive, arrêt auto ─────────
+// Trois steppers façon Alarm Clock Xtreme (écrans "Rappel"/"Ignorer") :
+// nombre de rappels autorisés, minutes retranchées à chaque rappel, délai
+// avant arrêt automatique de la sonnerie si personne ne résout le calcul.
+// `0` a un libellé dédié ("Illimité"/"Jamais") plutôt qu'un nombre brut.
+function wireLabeledStepper({ valueId, minusId, plusId, clamp, min, max, formatLabel }) {
+  const valueEl = el(valueId);
+  const minusEl = el(minusId);
+  const plusEl = el(plusId);
+
+  function set(value) {
+    const clamped = clamp(value);
+    valueEl.dataset.value = String(clamped);
+    valueEl.textContent = formatLabel(clamped);
+    minusEl.disabled = clamped <= min;
+    plusEl.disabled = clamped >= max;
+  }
+
+  function get() {
+    return clamp(valueEl.dataset.value);
+  }
+
+  minusEl.addEventListener('click', () => set(get() - 1));
+  plusEl.addEventListener('click', () => set(get() + 1));
+
+  return { set, get };
+}
+
+const snoozeLimitStepper = wireLabeledStepper({
+  valueId: 'snoozelimit-value', minusId: 'btn-snoozelimit-minus', plusId: 'btn-snoozelimit-plus',
+  clamp: clampSnoozeLimit, min: MIN_SNOOZE_LIMIT, max: MAX_SNOOZE_LIMIT,
+  formatLabel: v => (v === 0 ? 'Illimité' : String(v)),
+});
+
+const snoozeDecreaseStepper = wireLabeledStepper({
+  valueId: 'snoozedecrease-value', minusId: 'btn-snoozedecrease-minus', plusId: 'btn-snoozedecrease-plus',
+  clamp: clampSnoozeDecreaseMinutes, min: MIN_SNOOZE_DECREASE_MINUTES, max: MAX_SNOOZE_DECREASE_MINUTES,
+  formatLabel: v => (v === 0 ? 'Jamais' : `${v} min`),
+});
+
+const autoDismissStepper = wireLabeledStepper({
+  valueId: 'autodismiss-value', minusId: 'btn-autodismiss-minus', plusId: 'btn-autodismiss-plus',
+  clamp: clampAutoDismissMinutes, min: MIN_AUTO_DISMISS_MINUTES, max: MAX_AUTO_DISMISS_MINUTES,
+  formatLabel: v => (v === 0 ? 'Jamais' : `${v} min`),
+});
 
 // ── Sonnerie (propre à chaque alarme) ─────────────────────────────────────
 // Sous Capacitor, on laisse le sélecteur système Android (RingtoneManager)
@@ -305,13 +359,20 @@ function saveAlarmFromForm() {
   const problemsCount = getSelectedProblemsCount();
   const sound = getSelectedSound();
   const snoozeMinutes = Number(el('input-snooze').value) || 9;
+  const snoozeLimit = snoozeLimitStepper.get();
+  const snoozeDecreaseMinutes = snoozeDecreaseStepper.get();
+  const autoDismissMinutes = autoDismissStepper.get();
 
   if (editingId) {
     alarms = patchAlarm(alarms, editingId, {
       time, label: label.trim() || 'Alarme', days, difficulty, problemsCount, sound, snoozeMinutes,
+      snoozeLimit, snoozeDecreaseMinutes, autoDismissMinutes,
     });
   } else {
-    const alarm = createAlarm({ time, label, days, difficulty, problemsCount, sound, snoozeMinutes });
+    const alarm = createAlarm({
+      time, label, days, difficulty, problemsCount, sound, snoozeMinutes,
+      snoozeLimit, snoozeDecreaseMinutes, autoDismissMinutes,
+    });
     alarms = upsertAlarm(alarms, alarm);
   }
   persistAlarms();
@@ -382,9 +443,10 @@ function startRing(alarmId) {
   const alarm = alarms.find(a => a.id === alarmId);
   if (!alarm) return;
 
-  currentRing = { alarmId, solved: 0, required: clampProblemsCount(alarm.problemsCount ?? 1), problem: null };
+  currentRing = { alarmId, solved: 0, required: clampProblemsCount(alarm.problemsCount ?? 1), problem: null, autoDismissTimer: null };
   el('ring-label').textContent = alarm.label;
   nextChallengeProblem();
+  updateSnoozeButton(alarm);
   // Sous Capacitor, la sonnerie système (choisie via RingtoneManager) est déjà
   // jouée par le service natif au niveau OS — un second son synthétisé côté
   // JS ferait doublon. Sur le web pur, c'est la seule sonnerie disponible.
@@ -396,6 +458,27 @@ function startRing(alarmId) {
   requestRingFullscreen();
   notifyRingIfHidden(`⏰ ${alarm.label}`, "Résolvez le calcul pour désactiver l'alarme.");
   window.focus();
+
+  // Arrêt automatique : si personne ne résout le calcul dans le délai réglé,
+  // la sonnerie s'arrête seule (0 = jamais, comportement historique).
+  if (alarm.autoDismissMinutes > 0) {
+    currentRing.autoDismissTimer = setTimeout(dismissCurrentRing, alarm.autoDismissMinutes * 60000);
+  }
+}
+
+/** Affiche/masque le bouton Snooze et son décompte selon la limite de rappels de l'alarme. */
+function updateSnoozeButton(alarm) {
+  const rt = runtimeMap.get(alarm.id);
+  const priorSnoozeCount = (rt && rt.snoozeCount) || 0;
+  const btn = el('btn-snooze');
+  const allowed = canSnoozeAgain(alarm, priorSnoozeCount);
+  btn.hidden = !allowed;
+  if (allowed && alarm.snoozeLimit > 0) {
+    const remaining = alarm.snoozeLimit - priorSnoozeCount;
+    btn.textContent = `💤 Snooze (${remaining} restant${remaining > 1 ? 's' : ''})`;
+  } else {
+    btn.textContent = '💤 Snooze';
+  }
 }
 
 function nextChallengeProblem({ resetError = true } = {}) {
@@ -442,6 +525,7 @@ function validateChallengeAnswer() {
 
 function dismissCurrentRing() {
   if (!currentRing) return;
+  clearTimeout(currentRing.autoDismissTimer);
   const { alarmId } = currentRing;
   const alarm = alarms.find(a => a.id === alarmId);
   stopAlarmSound();
@@ -469,10 +553,15 @@ function snoozeCurrentRing() {
   if (!currentRing) return;
   const { alarmId } = currentRing;
   const alarm = alarms.find(a => a.id === alarmId);
-  const minutes = alarm ? alarm.snoozeMinutes : 9;
+  const priorSnoozeCount = (runtimeMap.get(alarmId) && runtimeMap.get(alarmId).snoozeCount) || 0;
+  // Garde-fou : le bouton est normalement déjà caché une fois la limite atteinte.
+  if (alarm && !canSnoozeAgain(alarm, priorSnoozeCount)) return;
+  clearTimeout(currentRing.autoDismissTimer);
+  const minutes = alarm ? effectiveSnoozeMinutes(alarm, priorSnoozeCount) : DEFAULT_SNOOZE_MINUTES;
   stopAlarmSound();
-  nativeSnooze(alarmId, minutes); // no-op hors wrapper Capacitor
   runtimeMap = applySnooze(runtimeMap, alarmId, new Date(), minutes);
+  const newSnoozeCount = (runtimeMap.get(alarmId) && runtimeMap.get(alarmId).snoozeCount) || priorSnoozeCount + 1;
+  nativeSnooze(alarmId, minutes, newSnoozeCount); // no-op hors wrapper Capacitor
   persistRuntime();
 
   currentRing = null;

@@ -135,8 +135,38 @@
     </div>
 
     <div class="card">
-      <label class="field-label" for="input-snooze">Durée du snooze (minutes)</label>
+      <label class="field-label" for="input-snooze">Temps entre les rappels (minutes)</label>
       <input type="number" id="input-snooze" class="input" min="1" max="30" value="9">
+    </div>
+
+    <div class="card">
+      <span class="field-label">Nombre limite de rappels</span>
+      <div class="stepper">
+        <button type="button" id="btn-snoozelimit-minus" class="stepper-btn" aria-label="Moins de rappels">−</button>
+        <span id="snoozelimit-value" class="stepper-value">Illimité</span>
+        <button type="button" id="btn-snoozelimit-plus" class="stepper-btn" aria-label="Plus de rappels">+</button>
+      </div>
+      <p class="field-hint">Combien de fois l'alarme peut être reportée avant de forcer la résolution du calcul (illimité par défaut).</p>
+    </div>
+
+    <div class="card">
+      <span class="field-label">Réduire graduellement le temps entre chaque rappel</span>
+      <div class="stepper">
+        <button type="button" id="btn-snoozedecrease-minus" class="stepper-btn" aria-label="Moins de réduction">−</button>
+        <span id="snoozedecrease-value" class="stepper-value">Jamais</span>
+        <button type="button" id="btn-snoozedecrease-plus" class="stepper-btn" aria-label="Plus de réduction">+</button>
+      </div>
+      <p class="field-hint">Minutes retranchées à chaque nouveau rappel (jamais sous 1 minute).</p>
+    </div>
+
+    <div class="card">
+      <span class="field-label">Arrêter automatiquement la sonnerie</span>
+      <div class="stepper">
+        <button type="button" id="btn-autodismiss-minus" class="stepper-btn" aria-label="Moins de délai">−</button>
+        <span id="autodismiss-value" class="stepper-value">Jamais</span>
+        <button type="button" id="btn-autodismiss-plus" class="stepper-btn" aria-label="Plus de délai">+</button>
+      </div>
+      <p class="field-hint">Si personne ne résout le calcul, la sonnerie s'arrête seule après ce délai (jamais par défaut).</p>
     </div>
 
     <div class="edit-actions">

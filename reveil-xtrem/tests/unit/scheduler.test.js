@@ -80,6 +80,16 @@ describe('evaluateAlarms', () => {
     expect(nextRuntime.get('a1').snoozeUntil).toBeNull();
   });
 
+  test('GIVEN une alarme snoozée — WHEN elle resonne — THEN snoozeCount déjà accumulé est conservé (pas remis à zéro)', () => {
+    // Régression : evaluateAlarms reconstruisait l'entrée runtime sans
+    // repartir de `rt`, perdant snoozeCount à chaque réveil d'un snooze.
+    const now = new Date(2026, 8, 28, 7, 40, 0);
+    const runtime = applySnooze(new Map(), 'a1', new Date(2026, 8, 28, 7, 30), 9); // snoozeCount: 1
+    const alarms = [alarm()];
+    const { nextRuntime } = evaluateAlarms(alarms, now, runtime);
+    expect(nextRuntime.get('a1').snoozeCount).toBe(1);
+  });
+
   test('GIVEN une alarme snoozée — WHEN l\'heure de snooze n\'est pas encore atteinte — THEN elle ne sonne pas', () => {
     const now = new Date(2026, 8, 28, 7, 32, 0);
     const runtime = applySnooze(new Map(), 'a1', new Date(2026, 8, 28, 7, 30), 9); // snoozeUntil = 7:39
@@ -92,6 +102,19 @@ describe('evaluateAlarms', () => {
     const runtime = applySnooze(new Map(), 'a1', new Date(2026, 8, 28, 7, 30), 9);
     const cleared = clearSnooze(runtime, 'a1');
     expect(cleared.get('a1').snoozeUntil).toBeNull();
+  });
+
+  test('applySnooze incrémente snoozeCount à chaque rappel', () => {
+    let runtime = applySnooze(new Map(), 'a1', new Date(2026, 8, 28, 7, 30), 9);
+    expect(runtime.get('a1').snoozeCount).toBe(1);
+    runtime = applySnooze(runtime, 'a1', new Date(2026, 8, 28, 7, 39), 9);
+    expect(runtime.get('a1').snoozeCount).toBe(2);
+  });
+
+  test('clearSnooze remet snoozeCount à zéro', () => {
+    const runtime = applySnooze(new Map(), 'a1', new Date(2026, 8, 28, 7, 30), 9);
+    const cleared = clearSnooze(runtime, 'a1');
+    expect(cleared.get('a1').snoozeCount).toBe(0);
   });
 
   test('deux alarmes qui sonnent à la même minute sont toutes les deux détectées', () => {

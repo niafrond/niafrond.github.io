@@ -12,7 +12,9 @@ import android.media.AudioAttributes;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.PowerManager;
 
 import androidx.core.app.NotificationCompat;
@@ -35,6 +37,8 @@ public class AlarmRingService extends Service {
     private static final int NOTIF_ID = 4201;
 
     private PowerManager.WakeLock wakeLock;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable autoDismissRunnable;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -50,12 +54,21 @@ public class AlarmRingService extends Service {
         // valeur qui n'est pas une URI, ex. un ancien id de sonnerie web) pour
         // la sonnerie d'alarme par défaut du système — voir ensureChannel().
         String soundUri = intent.getStringExtra(AlarmReceiver.EXTRA_SOUND);
+        // Réglages avancés façon Alarm Clock Xtreme (0 = illimité/jamais) —
+        // voir reveil-xtrem/alarms.js pour le pendant JS (effectiveSnoozeMinutes/canSnoozeAgain).
+        int snoozeLimit = intent.getIntExtra(AlarmReceiver.EXTRA_SNOOZE_LIMIT, 0);
+        int snoozeDecreaseMinutes = intent.getIntExtra(AlarmReceiver.EXTRA_SNOOZE_DECREASE_MINUTES, 0);
+        int autoDismissMinutes = intent.getIntExtra(AlarmReceiver.EXTRA_AUTO_DISMISS_MINUTES, 0);
+        int snoozeCount = intent.getIntExtra(AlarmReceiver.EXTRA_SNOOZE_COUNT, 0);
 
         String channelId = ensureChannel(soundUri);
+        boolean canSnooze = snoozeLimit <= 0 || snoozeCount < snoozeLimit;
+        int effectiveSnoozeMinutes = Math.max(1, snoozeMinutes - snoozeDecreaseMinutes * snoozeCount);
         // ServiceCompat gère elle-même les différences d'API selon la version (le type de
         // service au premier plan n'existe qu'à partir de l'API 29) — un appel direct à
         // Service#startForeground(int, Notification, int) planterait sur les appareils plus anciens.
-        ServiceCompat.startForeground(this, NOTIF_ID, buildNotification(alarmId, label, snoozeMinutes, channelId),
+        ServiceCompat.startForeground(this, NOTIF_ID,
+                buildNotification(alarmId, label, effectiveSnoozeMinutes, snoozeCount, canSnooze, channelId),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
 
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -64,10 +77,21 @@ public class AlarmRingService extends Service {
             wakeLock.acquire(10 * 60 * 1000L); // plafond de sécurité 10 min
         }
 
+        // Arrêt automatique : si personne ne résout le calcul dans le délai réglé,
+        // la sonnerie s'arrête seule (0 = jamais, comportement historique).
+        if (autoDismissRunnable != null) handler.removeCallbacks(autoDismissRunnable);
+        if (autoDismissMinutes > 0) {
+            autoDismissRunnable = () -> stop(getApplicationContext());
+            handler.postDelayed(autoDismissRunnable, autoDismissMinutes * 60_000L);
+        } else {
+            autoDismissRunnable = null;
+        }
+
         return START_NOT_STICKY;
     }
 
-    private Notification buildNotification(String alarmId, String label, int snoozeMinutes, String channelId) {
+    private Notification buildNotification(String alarmId, String label, int effectiveSnoozeMinutes,
+            int snoozeCount, boolean canSnooze, String channelId) {
         Intent activityIntent = new Intent(this, MainActivity.class);
         activityIntent.putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId);
         activityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
@@ -78,15 +102,9 @@ public class AlarmRingService extends Service {
         PendingIntent fullScreenPI = PendingIntent.getActivity(
                 this, safeHash(alarmId), activityIntent, piFlags);
 
-        Intent snoozeIntent = new Intent(this, SnoozeReceiver.class);
-        snoozeIntent.putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId);
-        snoozeIntent.putExtra(AlarmReceiver.EXTRA_SNOOZE_MINUTES, snoozeMinutes);
-        PendingIntent snoozePI = PendingIntent.getBroadcast(
-                this, safeHash(alarmId) + 1, snoozeIntent, piFlags);
-
         String title = (label == null || label.isEmpty()) ? "Alarme" : label;
 
-        return new NotificationCompat.Builder(this, channelId)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
                 .setSmallIcon(R.drawable.ic_stat_alarm)
                 .setContentTitle("⏰ " + title)
                 .setContentText("Ouvrez l'app et résolvez le calcul pour désactiver")
@@ -96,9 +114,21 @@ public class AlarmRingService extends Service {
                 .setAutoCancel(false)
                 .setFullScreenIntent(fullScreenPI, true)
                 .setContentIntent(fullScreenPI)
-                .addAction(0, "💤 Snooze " + snoozeMinutes + " min", snoozePI)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .build();
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+
+        // Bouton "Snooze" absent une fois la limite de rappels atteinte — force alors
+        // à ouvrir l'appli et résoudre le calcul, comme le veut la limite réglée.
+        if (canSnooze) {
+            Intent snoozeIntent = new Intent(this, SnoozeReceiver.class);
+            snoozeIntent.putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId);
+            snoozeIntent.putExtra(AlarmReceiver.EXTRA_SNOOZE_MINUTES, effectiveSnoozeMinutes);
+            snoozeIntent.putExtra(AlarmReceiver.EXTRA_SNOOZE_COUNT, snoozeCount + 1);
+            PendingIntent snoozePI = PendingIntent.getBroadcast(
+                    this, safeHash(alarmId) + 1, snoozeIntent, piFlags);
+            builder.addAction(0, "💤 Snooze " + effectiveSnoozeMinutes + " min", snoozePI);
+        }
+
+        return builder.build();
     }
 
     // Le son d'un NotificationChannel est figé à sa création (Android ne permet pas
@@ -156,6 +186,10 @@ public class AlarmRingService extends Service {
     @Override
     public void onDestroy() {
         if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+        if (autoDismissRunnable != null) {
+            handler.removeCallbacks(autoDismissRunnable);
+            autoDismissRunnable = null;
+        }
         super.onDestroy();
     }
 
