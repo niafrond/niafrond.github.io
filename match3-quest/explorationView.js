@@ -177,7 +177,7 @@ export function createExplorationView(cfg) {
         events.forEach(ev => {
             if (ev.type === 'questStarted') {
                 if (!spoken.has(ev.quest.id)) openDialog({ ...NARRATOR, title: `Nouvelle quête : ${ev.quest.title}` }, ev.lines);
-                toast(`📜 Nouvelle quête : ${ev.quest.title}`);
+                toast(`📜 Nouvelle quête${ev.quest.side ? ' secondaire' : ''} : ${ev.quest.title}`);
             } else if (ev.type === 'questCompleted') {
                 if (!spoken.has(ev.quest.id)) openDialog({ ...NARRATOR, title: ev.quest.chapter }, ev.lines);
                 if (!ev.paid) gold += ev.gold || 0;
@@ -272,6 +272,8 @@ export function createExplorationView(cfg) {
                 syncVisual(true);
                 refreshHud();
                 toast(`📍 ${screen.name}`, 2200);
+                // Première visite : petit texte d'ambiance du Narrateur.
+                if (res.firstVisit && res.arrival?.length) openDialog({ ...NARRATOR, title: screen.name }, res.arrival);
                 cfg.onSave();
                 break;
             }

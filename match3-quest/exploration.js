@@ -188,8 +188,12 @@ export function tryMove(session, dx, dy, ctx = {}) {
             return { type: 'exitBlocked', minLevel, label: exit.label, regionName: target.name };
         }
         const from = screen.id;
+        const firstVisit = !session.data.visitedScreens.includes(exit.to);
         enterScreen(session, exit.to, exit.arrive);
-        return { type: 'transition', from, to: exit.to };
+        const res = { type: 'transition', from, to: exit.to, firstVisit };
+        // Texte du Narrateur affiché seulement à la toute première visite de l'écran.
+        if (firstVisit && target.arrival?.length) res.arrival = target.arrival;
+        return res;
     }
 
     session.data.x = nx;
@@ -317,6 +321,26 @@ export function resetAfterDefeat(session) {
     session.rt.grace = GRACE_MOVES + 1;
 }
 
+// Une condition d'avancement est remplie si l'id désigne une quête terminée, un ennemi
+// vaincu ou un coffre ouvert. Un tableau d'ids exige que toutes soient remplies.
+export function progressReached(session, cond) {
+    if (Array.isArray(cond)) return cond.length > 0 && cond.every(c => progressReached(session, c));
+    if (typeof cond !== 'string' || !cond) return false;
+    return session.data.quests[cond] === 'done'
+        || session.data.defeated.includes(cond)
+        || session.data.openedChests.includes(cond);
+}
+
+// Répliques d'ambiance d'un PNJ : la dernière entrée de `talk` dont la condition `whenDone`
+// est remplie l'emporte ; sinon `idle`.
+export function npcAmbientLines(session, npc) {
+    let lines = npc.idle;
+    (Array.isArray(npc.talk) ? npc.talk : []).forEach(entry => {
+        if (entry?.lines?.length && progressReached(session, entry.whenDone)) lines = entry.lines;
+    });
+    return lines;
+}
+
 export function talkToNpc(session, npcId) {
     const screen = currentScreen(session);
     const npc = screen.npcs.find(n => n.id === npcId);
@@ -337,7 +361,7 @@ export function talkToNpc(session, npcId) {
     }
     const active = withStatus.find(q => (q.status === 'active' || q.status === 'ready') && q.quest.hint?.length);
     if (active) return { type: 'dialog', npc, lines: active.quest.hint, events: [] };
-    return { type: 'dialog', npc, lines: npc.idle, events: [] };
+    return { type: 'dialog', npc, lines: npcAmbientLines(session, npc), events: [] };
 }
 
 export function openChest(session, chestId) {
