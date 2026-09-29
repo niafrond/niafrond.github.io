@@ -1,3 +1,9 @@
+## [2.50.0](https://github.com/niafrond/niafrond.github.io/compare/v2.49.0...v2.50.0) (2026-09-29)
+
+### Features
+
+* **match3-quest:** exploration plein écran en vue du dessus ([389bd6e](https://github.com/niafrond/niafrond.github.io/commit/389bd6e05a0b511bee219ea293991727339685f5))
+
 ## [2.49.0](https://github.com/niafrond/niafrond.github.io/compare/v2.48.0...v2.49.0) (2026-09-29)
 
 ### Features
