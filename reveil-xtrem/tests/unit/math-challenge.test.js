@@ -48,22 +48,27 @@ describe('generateProblem', () => {
     }
   });
 
-  test('à partir de moyen, multiplications et divisions apparaissent bien (pas seulement +/−)', () => {
+  test('à partir de moyen, la multiplication apparaît bien (pas seulement +/−)', () => {
     for (const difficulty of ['medium', 'hard', 'veryHard']) {
       const seenOps = new Set();
       for (let i = 0; i < 200; i++) {
         const { text } = generateProblem(difficulty);
         if (text.includes('×')) seenOps.add('×');
-        if (text.includes('÷')) seenOps.add('÷');
       }
       expect(seenOps.has('×')).toBe(true);
-      expect(seenOps.has('÷')).toBe(true);
     }
   });
 
-  test('une division tombe toujours juste (quotient entier, ex. "84 ÷ 7")', () => {
-    let foundDivision = false;
-    for (const difficulty of ['medium', 'hard', 'veryHard']) {
+  test('medium ne produit jamais de division (réservée à "difficile" et au-delà)', () => {
+    for (let i = 0; i < 200; i++) {
+      const { text } = generateProblem('medium');
+      expect(text).not.toMatch(/÷/);
+    }
+  });
+
+  test('à partir de difficile, la division apparaît et tombe toujours juste (ex. "84 ÷ 7")', () => {
+    for (const difficulty of ['hard', 'veryHard']) {
+      let foundDivision = false;
       for (let i = 0; i < 200; i++) {
         const { text, answer } = generateProblem(difficulty);
         if (!text.includes('÷')) continue;
@@ -71,8 +76,8 @@ describe('generateProblem', () => {
         expect(text).toMatch(/^\d+ ÷ \d+$/);
         expect(Number.isInteger(answer)).toBe(true);
       }
+      expect(foundDivision).toBe(true);
     }
-    expect(foundDivision).toBe(true);
   });
 
   test('hard peut enchaîner trois nombres (ex. "112 − 62 − 27")', () => {

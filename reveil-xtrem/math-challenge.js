@@ -6,8 +6,8 @@
 // difficulté ne contrôle que le type/la taille des nombres de CHAQUE calcul
 // (ci-dessous), pas combien il faut en résoudre.
 //
-// Multiplications et divisions n'apparaissent qu'à partir de "moyen" — les
-// deux premiers niveaux (très facile, facile) restent purement additifs.
+// Multiplications à partir de "moyen", divisions à partir de "difficile" —
+// les deux premiers niveaux (très facile, facile) restent purement additifs.
 
 // Ordre d'affichage sur le slider de l'écran d'édition (index 0 = le plus facile).
 export const DIFFICULTY_ORDER = ['veryEasy', 'easy', 'medium', 'hard', 'veryHard'];
@@ -88,8 +88,8 @@ function multiplyThenSubtract() {
  * GIVEN une difficulté — WHEN un problème est demandé — THEN :
  * - veryEasy : addition/soustraction à un chiffre (0-9), ex. "6 − 2"
  * - easy     : un nombre à deux chiffres (10-20) et un à un chiffre (1-9), ex. "15 − 8"
- * - medium   : addition/soustraction (10-50/10-50) OU multiplication (3-9 × 4-12)
- *              OU division exacte (diviseur 3-9, quotient 3-12), ex. "36 − 19" / "7 × 9" / "84 ÷ 7"
+ * - medium   : addition/soustraction (10-50/10-50) OU multiplication (3-9 × 4-12),
+ *              ex. "36 − 19" / "7 × 9" (pas de division avant "difficile")
  * - hard     : trois nombres enchaînés (100-199 puis deux fois 10-99) OU
  *              multiplication (6-15 × 6-20) OU division exacte (diviseur 4-15, quotient 6-20),
  *              ex. "112 − 62 − 27" / "13 × 17" / "195 ÷ 13"
@@ -105,7 +105,6 @@ export function generateProblem(difficulty) {
       return pick([
         () => addOrSub(10, 50, 10, 50),
         () => multiply(3, 9, 4, 12),
-        () => divide(3, 9, 3, 12),
       ]);
     case 'hard':
       return pick([
