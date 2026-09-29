@@ -814,8 +814,11 @@ progress.enemy-bar::-webkit-progress-value {
     padding-top: 4px;
     margin-bottom: 12px;
     border-bottom: 2px solid #ddd;
+    overflow-x: auto; /* 5 onglets : défilement plutôt que d'élargir la page sur petit écran */
 }
 .tab-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
     background: none;
     border: none;
     padding: 8px 16px;
@@ -1380,82 +1383,224 @@ progress.enemy-bar::-webkit-progress-value {
     line-height: 1.2;
 }
 
-.enemy-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 10px;
-    margin-top: 12px;
+/* ── Phase d'exploration (carte isométrique) — rendu par explorationView.js ─────────── */
+#explore-container {
+    width: 100%;
+    max-width: 860px;
+    margin: 0 auto;
 }
 
-.enemy-card {
-    border: 2px solid #d8dee6;
-    border-radius: 10px;
-    padding: 10px;
-    background: #fbfdff;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.enemy-card:hover {
-    transform: translateY(-2px);
-    border-color: #2c7be5;
-    box-shadow: 0 4px 10px rgba(28, 71, 126, 0.15);
-}
-
-.enemy-card.danger {
-    border-color: #d63031;
-    background: #fff5f5;
-}
-
-.enemy-card .enemy-name {
-    font-weight: bold;
-    margin-bottom: 5px;
-    color: #1f2d3d;
-}
-
-.enemy-card .enemy-meta {
-    font-size: 0.85em;
-    color: #58677a;
+.explore-hud {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     margin-bottom: 6px;
 }
 
-.enemy-card .enemy-xp {
-    font-size: 0.88em;
+.explore-title {
     font-weight: bold;
-    color: #1f7a3b;
+    font-size: 1.05em;
+    color: #3b2a20;
 }
 
-.enemy-card.danger .enemy-xp {
-    color: #b02323;
+.explore-hud-buttons {
+    display: flex;
+    gap: 6px;
 }
 
-.enemy-card .enemy-warning {
-    margin-top: 6px;
-    font-size: 0.8em;
-    color: #b02323;
+.explore-hud-buttons button {
+    padding: 5px 10px;
+    font-size: 0.85em;
+}
+
+.explore-objective {
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    background: #fff8e1;
+    border: 2px solid #5a3e1b;
+    color: #3b2a20;
+    font-size: 0.85em;
+    line-height: 1.3;
+}
+
+.explore-stage {
+    position: relative;
+    border-radius: 12px;
+    border: 3px solid #5a3e1b;
+    overflow: hidden;
+    background: #0f1724;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#explore-canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 62vh;
+    margin: 0 auto;
+    object-fit: contain;
+}
+
+.explore-toast {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translate(-50%, -12px);
+    max-width: 92%;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(30, 20, 10, 0.9);
+    color: #fff8e1;
+    font-size: 0.85em;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.explore-toast.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.explore-dialog {
+    display: none;
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 3px solid #5a3e1b;
+    background: #fff8e1;
+    color: #3b2a20;
+    cursor: pointer;
+}
+
+.explore-dialog.visible {
+    display: flex;
+}
+
+.explore-dialog-portrait {
+    font-size: 2.4em;
+    line-height: 1;
+}
+
+.explore-dialog-name {
     font-weight: bold;
+    margin-bottom: 4px;
 }
 
-.enemy-card.easy {
-    border-color: #27ae60;
-    background: #f0fff5;
+.explore-dialog-name span {
+    font-weight: normal;
+    opacity: 0.7;
+    font-size: 0.85em;
 }
 
-.enemy-card.easy:hover {
-    border-color: #1e8449;
-    box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2);
+.explore-dialog-text {
+    font-size: 0.92em;
+    line-height: 1.35;
 }
 
-.enemy-card.easy .enemy-xp {
-    color: #1a6632;
-}
-
-.enemy-card .enemy-easy {
+.explore-dialog-next {
     margin-top: 6px;
+    text-align: right;
     font-size: 0.8em;
+    font-weight: bold;
+    color: #a8692f;
+}
+
+.explore-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.explore-dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 52px);
+    grid-template-rows: repeat(2, 46px);
+    gap: 4px;
+    touch-action: none;
+}
+
+.explore-dpad button {
+    padding: 0;
+    font-size: 1.3em;
+    touch-action: none;
+}
+
+.explore-dpad [data-dir="up"] { grid-column: 2; grid-row: 1; }
+.explore-dpad [data-dir="left"] { grid-column: 1; grid-row: 2; }
+.explore-dpad [data-dir="down"] { grid-column: 2; grid-row: 2; }
+.explore-dpad [data-dir="right"] { grid-column: 3; grid-row: 2; }
+
+.explore-help {
+    margin: 0;
+    font-size: 0.75em;
+    color: #58677a;
+    text-align: center;
+    line-height: 1.3;
+}
+
+.explore-journal {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.explore-journal-card {
+    width: 100%;
+    max-width: 560px;
+    max-height: 90%;
+    overflow-y: auto;
+    padding: 14px;
+    border-radius: 12px;
+    border: 3px solid #5a3e1b;
+    background: #fff8e1;
+    color: #3b2a20;
+}
+
+.explore-journal-card h3 {
+    margin: 0 0 8px;
+    text-align: center;
+}
+
+.explore-journal-end {
+    text-align: center;
+    font-weight: bold;
     color: #1e8449;
-    font-weight: bold;
 }
+
+.explore-quest {
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 2px solid #d9c9a3;
+    background: #fffdf5;
+}
+
+.explore-quest.done { opacity: 0.6; }
+.explore-quest.ready { border-color: #27ae60; }
+.explore-quest.active { border-color: #d68910; }
+.explore-quest-head { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9em; }
+.explore-quest-chapter { font-size: 0.75em; opacity: 0.7; margin-bottom: 4px; }
+.explore-quest ul { list-style: none; margin: 0; padding: 0; font-size: 0.85em; }
+.explore-quest li.done { text-decoration: line-through; opacity: 0.7; }
+
+body.dark-mode .explore-help { color: #a9b7c8; }
 
 /* Carte du monde (style overworld) — rendu par worldMapView.js */
 .worldmap-modal-content {
@@ -1836,7 +1981,6 @@ body.dark-mode .spell-item,
 body.dark-mode .enemy-spell-item,
 body.dark-mode .modal-content,
 body.dark-mode .class-card,
-body.dark-mode .enemy-card,
 body.dark-mode .attribute-card,
 body.dark-mode .inventory-slot-empty {
     background: #1d2530;
@@ -1862,7 +2006,6 @@ body.dark-mode .weapon-stats,
 body.dark-mode .item-description,
 body.dark-mode .shop-subtitle,
 body.dark-mode .class-description,
-body.dark-mode .enemy-card .enemy-meta,
 body.dark-mode .stat-effect {
     color: #a9b7c8;
 }
@@ -1870,7 +2013,6 @@ body.dark-mode .stat-effect {
 body.dark-mode .weapon-name,
 body.dark-mode .item-name,
 body.dark-mode .class-name,
-body.dark-mode .enemy-card .enemy-name,
 body.dark-mode .attr-name,
 body.dark-mode .stats-section h3,
 body.dark-mode .modal-content h2 {

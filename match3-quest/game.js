@@ -418,7 +418,8 @@ export let player = {
     gold: 0,  // pièces d'or accumulées
     defeatedBossTiers: [], // paliers de boss déjà nettoyés (5, 10, 15, ...)
     pendingBoss: null, // boss imposé tant qu'il n'est pas vaincu
-    worldMap: { currentZoneId: null, visitedZoneIds: [] } // progression sur la carte du monde
+    worldMap: { currentZoneId: null, visitedZoneIds: [] }, // régions découvertes (carte du monde)
+    exploration: null // progression sur la carte d'exploration (voir exploration.js), créée au premier lancement
 };
 
 // Équipe automatiquement une arme de départ si le joueur n'en a encore aucune.
@@ -569,6 +570,10 @@ function showCombatResultScreen(isVictory){
     screen.classList.add('active');
 }
 
+// Points d'accroche de la phase d'exploration : onVictory est appelé dès la victoire (avant la
+// sauvegarde), onEnd quand l'écran de résultat s'affiche (victoire, défaite ou abandon).
+export const combatHooks = { onVictory: null, onEnd: null };
+
 function finalizeCombatEndUI(isVictory){
     showCombatResultScreen(isVictory);
 
@@ -603,10 +608,11 @@ function finalizeCombatEndUI(isVictory){
     }
 
     if(isVictory) {
-        log(`⚔️ Cliquez sur "Nouveau Combat" pour continuer ou modifiez vos sorts/armes.`);
+        log(`🗺️ Cliquez sur "Retour à l'exploration" pour continuer ou modifiez vos sorts/armes.`);
     } else {
-        log("⚔️ Cliquez sur \"Nouveau Combat\" pour recommencer.");
+        log("🗺️ Cliquez sur \"Retour à l'exploration\" : vous reprenez vos esprits à l'entrée de la zone.");
     }
+    combatHooks.onEnd?.(isVictory);
 }
 
 function showEndCombatAnimation(isVictory, options = {}){
@@ -737,6 +743,7 @@ export function handlePlayerDeath(){
 export function startNewCombat(selectedEnemy = null){
     playSfx('uiClick');
     gameState.combatState = 'active';
+    window.dispatchEvent(new Event('match3:combat-start'));
     ensureCombatUsableActiveItem();
     resetCombatRewards();
     hideCombatResultScreen();
@@ -875,6 +882,9 @@ export function loadGameData() {
                 currentZoneId: loaded.worldMap?.currentZoneId ?? null,
                 visitedZoneIds: Array.isArray(loaded.worldMap?.visitedZoneIds) ? loaded.worldMap.visitedZoneIds : []
             };
+            player.exploration = loaded.exploration && typeof loaded.exploration === 'object'
+                ? loaded.exploration
+                : null;
             clampManaToCaps(player);
             console.log('💾 Données du joueur chargées depuis le localStorage');
             if (player.class) {
@@ -2005,6 +2015,7 @@ export function handleEnemyDefeated(){
         log(`👑 Boss du palier ${bossTier} vaincu !`);
     }
 
+    combatHooks.onVictory?.();
     saveUpdate();
     
     // Marquer le combat comme terminé

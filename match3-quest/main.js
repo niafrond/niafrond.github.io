@@ -1,14 +1,15 @@
 import { generateBoard, renderBoard } from "./board.js";
-import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon } from "./game.js";
+import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, combatHooks } from "./game.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { getRandomPlayerName } from "./playerNames.js";
-import { createBossEnemyForTier, generateEnemyChoices } from "./enemies.js";
-import { calculateXPGain } from "./experience.js";
+import { createMapEnemy } from "./enemies.js";
 import { initializeAudioUI, playSfx, primeAudioFromGesture } from "./sound.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate } from "./version.js";
 import { worldZones } from "./worldMap.js";
 import { mountWorldMap } from "./worldMapView.js";
+import { createExplorationView } from "./explorationView.js";
+import { REGION_ENTRY_SCREEN } from "./story.js";
 
 // initialisation de la partie
 console.log('Main.js loaded');
@@ -46,33 +47,6 @@ function initializeThemeUI(toggleButton){
     toggleButton.addEventListener('click', () => {
         setThemeMode(!document.body.classList.contains('dark-mode'), toggleButton);
     });
-}
-
-function getBossTierForLevel(level) {
-    const safeLevel = Math.max(1, Math.floor(level || 1));
-    if(safeLevel < 5 || safeLevel % 5 !== 0) return null;
-    return safeLevel;
-}
-
-function ensurePendingBossForSelection() {
-    if(player.pendingBoss?.enemy) {
-        return player.pendingBoss.enemy;
-    }
-
-    const tier = getBossTierForLevel(player.level);
-    if(!tier) return null;
-
-    const defeatedTiers = Array.isArray(player.defeatedBossTiers) ? player.defeatedBossTiers : [];
-    if(defeatedTiers.includes(tier)) return null;
-
-    const bossEnemy = createBossEnemyForTier(tier);
-    player.pendingBoss = {
-        tier,
-        enemy: bossEnemy
-    };
-    saveUpdate();
-    log(`👑 Un boss vous attend au palier ${tier} ! Il restera proposé jusqu'à sa défaite.`);
-    return bossEnemy;
 }
 
 // Afficher le modal de sélection de classe au démarrage si pas de classe
@@ -155,9 +129,11 @@ function showClassSelection() {
             };
             document.getElementById('tutorial-inline-no').onclick = () => {
                 modal.classList.remove('active');
+                window.dispatchEvent(new Event('match3:enter-exploration'));
             };
         } else {
             modal.classList.remove('active');
+            window.dispatchEvent(new Event('match3:enter-exploration'));
         }
     };
     
@@ -166,6 +142,7 @@ function showClassSelection() {
         grantStartingWeapon(DEFAULT_STARTING_WEAPON_ID);
         saveUpdate();
         modal.classList.remove('active');
+        window.dispatchEvent(new Event('match3:enter-exploration'));
     };
     
     modal.classList.add('active');
@@ -177,129 +154,101 @@ function init() {
     const boardElement = document.getElementById('board');
     console.log('Board element:', boardElement);
     
-    const showEnemySelection = (zone = null) => {
-        playSfx('uiClick');
-        const modal = document.getElementById('enemy-modal');
-        const container = document.getElementById('enemy-selection');
-        const rerollBtn = document.getElementById('reroll-enemies-btn');
-        const backToMapBtn = document.getElementById('back-to-worldmap-btn');
-        if(!modal || !container || !rerollBtn) {
-            // fallback sans modal
-            startNewCombat();
-            generateBoard();
-            renderBoard();
-            updateStats();
-            return;
-        }
-
-        const titleEl = document.getElementById('enemy-modal-title');
-        const subtitleEl = document.getElementById('enemy-modal-subtitle');
-        if(titleEl) {
-            titleEl.textContent = zone ? `${zone.emoji} ${zone.name}` : 'Choisissez votre adversaire';
-        }
-        if(subtitleEl) {
-            subtitleEl.textContent = zone
-                ? `${zone.description} 4 ennemis vous sont proposés, plus un adversaire affaibli. Tous les 5 niveaux, un boss peut apparaître.`
-                : '4 ennemis vous sont proposés, plus un adversaire affaibli pour commencer en douceur. Tous les 5 niveaux, un boss apparaît et reste proposé tant qu\'il n\'est pas vaincu.';
-        }
-
-        const renderChoices = () => {
-            const enemies = generateEnemyChoices(player.level, 4, undefined, player.maxHp, zone?.templateIds || null);
-            const pendingBoss = ensurePendingBossForSelection();
-            if(pendingBoss) {
-                enemies.unshift({ ...pendingBoss });
+    // ── Phases du jeu : exploration (carte isométrique) ⇄ combat (puzzle) ──────────
+    const exploreRoot = document.getElementById('explore-container');
+    const exploration = createExplorationView({
+        root: exploreRoot,
+        canvas: document.getElementById('explore-canvas'),
+        getSaved: () => player.exploration,
+        setSaved: data => { player.exploration = data; },
+        getHero: () => ({ emoji: playerClasses[player.class]?.emoji || '🧙', name: player.name }),
+        getPlayerLevel: () => player.level,
+        onEncounter: encounter => startEncounterCombat(encounter),
+        onGold: amount => { player.gold = (player.gold || 0) + amount; },
+        onSave: () => saveUpdate(),
+        onRegionVisited: regionId => {
+            if(!player.worldMap) player.worldMap = { currentZoneId: null, visitedZoneIds: [] };
+            player.worldMap.currentZoneId = regionId;
+            if(!player.worldMap.visitedZoneIds.includes(regionId)) {
+                player.worldMap.visitedZoneIds.push(regionId);
             }
-            const grid = document.createElement('div');
-            grid.className = 'enemy-grid';
+        },
+        onOpenMap: () => showWorldMap()
+    });
+    exploration.init();
 
-            enemies.forEach(enemyChoice => {
-                const card = document.createElement('div');
-                card.className = `enemy-card${enemyChoice.isOverleveledChoice ? ' danger' : ''}${enemyChoice.isEasyChoice ? ' easy' : ''}${enemyChoice.isBoss ? ' boss' : ''}`;
-                const xpGain = calculateXPGain(enemyChoice, player.level);
-
-                card.innerHTML = `
-                    <div class="enemy-name">${enemyChoice.raceEmoji} ${enemyChoice.name}</div>
-                    <div class="enemy-meta">Niveau ${enemyChoice.level} • HP ${enemyChoice.maxHp} • Atk ${enemyChoice.attack} • Def ${enemyChoice.defense || 0}</div>
-                    <div class="enemy-xp">XP estimée: ${xpGain}</div>
-                    ${enemyChoice.isBoss ? `<div class="enemy-warning">👑 Boss de palier ${enemyChoice.bossTier}</div>` : ''}
-                    ${enemyChoice.isOverleveledChoice ? '<div class="enemy-warning">⚠️ Ennemi trop fort (+6 niveaux)</div>' : ''}
-                    ${enemyChoice.isEasyChoice ? '<div class="enemy-easy">⬇️ Ennemi affaibli (facile)</div>' : ''}
-                `;
-
-                card.onclick = () => {
-                    modal.classList.remove('active');
-
-                    // Basculer vers l'onglet combat
-                    document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
-                    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-                    document.getElementById('tab-combat').classList.add('active');
-                    document.querySelectorAll('.tab-btn')[0].classList.add('active');
-
-                    // Afficher les éléments de combat
-                    document.querySelector('.stats-container').style.display = 'flex';
-                    document.getElementById('board').style.display = 'grid';
-                    document.getElementById('spells-container').style.display = 'flex';
-
-                    startNewCombat(enemyChoice);
-                    generateBoard();
-                    renderBoard();
-                    updateStats();
-                };
-
-                grid.appendChild(card);
-            });
-
-            container.innerHTML = '';
-            container.appendChild(grid);
-        };
-
-        rerollBtn.onclick = () => renderChoices();
-        if(backToMapBtn) {
-            backToMapBtn.onclick = () => {
-                modal.classList.remove('active');
-                showWorldMap();
-            };
-        }
-        renderChoices();
-        modal.classList.add('active');
+    const setCombatUiVisible = visible => {
+        document.querySelector('.stats-container').style.display = visible ? 'flex' : 'none';
+        document.getElementById('board').style.display = visible ? 'grid' : 'none';
+        document.getElementById('spells-container').style.display = visible ? 'flex' : 'none';
     };
 
-    // Affiche la carte du monde : le joueur explore une zone à la fois, peut la
-    // quitter à tout moment (adversaire trop dur) et y revenir plus tard une fois
-    // plus fort, sans jamais perdre l'accès à une zone déjà débloquée.
+    const activateCombatTab = () => {
+        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('tab-combat').classList.add('active');
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    };
+
+    // Phase exploration : on affiche la carte, plus de plateau ni de bouton de combat.
+    const enterExploration = () => {
+        document.getElementById('worldmap-modal')?.classList.remove('active');
+        document.getElementById('battle-result-screen')?.classList.remove('active');
+        setCombatUiVisible(false);
+        const newCombatBtn = document.getElementById('new-combat-btn');
+        if(newCombatBtn) newCombatBtn.style.display = 'none';
+        const abandonBtn = document.getElementById('abandon-combat-btn');
+        if(abandonBtn) abandonBtn.style.display = 'none';
+        const tabs = document.querySelector('.tabs');
+        if(tabs) tabs.style.display = 'flex';
+        activateCombatTab();
+        exploration.show();
+    };
+
+    // Phase combat : lancée par une rencontre sur la carte (l'ennemi vient du décor de la zone).
+    const startEncounterCombat = encounter => {
+        playSfx('uiClick');
+        exploration.hide();
+        activateCombatTab();
+        setCombatUiVisible(true);
+        startNewCombat(createMapEnemy(encounter));
+        generateBoard();
+        renderBoard();
+        updateStats();
+    };
+
+    combatHooks.onVictory = () => exploration.onCombatVictory();
+    combatHooks.onEnd = isVictory => exploration.onCombatEnd(isVictory);
+    window.addEventListener('match3:enter-exploration', enterExploration);
+    // Tout combat (y compris le tutoriel) masque la carte.
+    window.addEventListener('match3:combat-start', () => exploration.hide());
+
+    // Carte du monde : vue d'ensemble des régions, téléportation vers celles déjà découvertes.
     const showWorldMap = () => {
         playSfx('uiClick');
         const modal = document.getElementById('worldmap-modal');
         const container = document.getElementById('worldmap-selection');
-        if(!modal || !container) {
-            // fallback : pas de carte disponible, on propose directement un adversaire
-            showEnemySelection(null);
-            return;
-        }
-
+        if(!modal || !container) return;
         mountWorldMap(container, worldZones, {
             level: player.level,
             visitedIds: player.worldMap?.visitedZoneIds || [],
-            currentId: player.worldMap?.currentZoneId || null
+            currentId: exploration.getCurrentRegion(),
+            requireVisit: true
         }, zone => {
             modal.classList.remove('active');
-            if(!player.worldMap) {
-                player.worldMap = { currentZoneId: null, visitedZoneIds: [] };
-            }
-            player.worldMap.currentZoneId = zone.id;
-            if(!player.worldMap.visitedZoneIds.includes(zone.id)) {
-                player.worldMap.visitedZoneIds.push(zone.id);
-            }
-            saveUpdate();
-            showEnemySelection(zone);
+            const screenId = REGION_ENTRY_SCREEN[zone.id];
+            if(screenId) exploration.teleportToScreen(screenId);
         });
         modal.classList.add('active');
     };
+    document.getElementById('worldmap-close-btn')?.addEventListener('click', () => {
+        document.getElementById('worldmap-modal')?.classList.remove('active');
+    });
 
-    // Gestionnaire du bouton "Nouveau Combat" : ouvre d'abord la carte du monde
+    // Après un combat : le bouton ramène sur la carte d'exploration.
     document.getElementById('new-combat-btn').addEventListener('click',()=>{
         primeAudioFromGesture();
-        showWorldMap();
+        enterExploration();
     });
 
     const soundToggleButton = document.getElementById('sound-toggle-btn');
@@ -329,30 +278,14 @@ function init() {
     updatePlayerStatsTab();
     updateInventoryTab();
     
-    // Cacher les éléments de combat au démarrage
-    document.querySelector('.stats-container').style.display = 'none';
-    document.getElementById('board').style.display = 'none';
-    document.getElementById('spells-container').style.display = 'none';
-    
-    // Au démarrage, afficher le bouton "Nouveau Combat" et cacher le bouton "Abandonner"
-    const newCombatBtn = document.getElementById('new-combat-btn');
-    if(newCombatBtn) {
-        newCombatBtn.style.display = 'block';
-    }
-    
-    const abandonBtn = document.getElementById('abandon-combat-btn');
-    if(abandonBtn) {
-        abandonBtn.style.display = 'none';
-    }
-    
-    // Afficher les onglets au démarrage
-    const tabs = document.querySelector('.tabs');
-    if(tabs) {
-        tabs.style.display = 'flex';
-    }
-    
-    // Afficher la sélection de classe si nécessaire
+    // Au démarrage : plus de plateau, pas de bouton « Retour à l'exploration » ni « Abandonner »
+    // (la phase d'exploration est l'état par défaut du jeu).
+    setCombatUiVisible(false);
+    // Afficher la sélection de classe si nécessaire ; sinon on reprend l'exploration là où on l'avait laissée.
     showClassSelection();
+    if(player.class) {
+        enterExploration();
+    }
     
     // Rendre la fonction clearSaveData accessible globalement pour le bouton
     window.clearPlayerSave = clearSaveData;

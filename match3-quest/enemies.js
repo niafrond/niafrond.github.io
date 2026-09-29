@@ -220,15 +220,9 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
     };
 }
 
-export function createBossEnemyForTier(tierLevel, allWeaponsArg = allWeapons, preferredTemplateId = null){
-    const safeTier = Math.max(5, Math.floor(tierLevel || 5));
-    const template = pickBossTemplate(preferredTemplateId) || pickRandom(loadEnemyCatalogSync());
-    const bossLevel = safeTier + 2;
-    const boss = buildEnemyFromTemplate(template, bossLevel, allWeaponsArg);
-
+// Renforce un ennemi pour en faire un boss (PV, attaque, défense, butin).
+function applyBossScaling(boss, template){
     boss.isBoss = true;
-    boss.bossTier = safeTier;
-    boss.name = `Boss ${boss.name}`;
     boss.maxHp = Math.max(1, Math.floor(boss.maxHp * 1.75));
     boss.hp = boss.maxHp;
     boss.attack = Math.max(1, Math.floor(boss.attack * 1.35));
@@ -241,8 +235,37 @@ export function createBossEnemyForTier(tierLevel, allWeaponsArg = allWeapons, pr
         dropChance: Math.max(0.8, toNumberOrDefault(template?.dropProfile?.dropChance, 0.6)),
         weaponChance: Math.max(0.35, toNumberOrDefault(template?.dropProfile?.weaponChance, 0.3))
     };
+    return boss;
+}
+
+export function createBossEnemyForTier(tierLevel, allWeaponsArg = allWeapons, preferredTemplateId = null){
+    const safeTier = Math.max(5, Math.floor(tierLevel || 5));
+    const template = pickBossTemplate(preferredTemplateId) || pickRandom(loadEnemyCatalogSync());
+    const bossLevel = safeTier + 2;
+    const boss = buildEnemyFromTemplate(template, bossLevel, allWeaponsArg);
+
+    applyBossScaling(boss, template);
+    boss.bossTier = safeTier;
+    boss.name = `Boss ${boss.name}`;
 
     return boss;
+}
+
+// Ennemi rencontré sur la carte d'exploration (voir exploration.js > encounterFor) :
+// { templateId, level, boss?: { name, level } } → ennemi prêt pour startNewCombat.
+export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
+    const catalog = loadEnemyCatalogSync();
+    const template = catalog.find(t => t.id === encounter?.templateId) || pickRandom(catalog);
+    const level = Math.max(1, Math.floor(encounter?.level || 1));
+    const enemyEntity = buildEnemyFromTemplate(template, level, allWeaponsArg);
+
+    if(encounter?.boss){
+        applyBossScaling(enemyEntity, template);
+        enemyEntity.bossTier = level;
+        enemyEntity.name = encounter.boss.name || `Boss ${enemyEntity.name}`;
+    }
+    enemyEntity.mapEnemyId = encounter?.enemyId || null;
+    return enemyEntity;
 }
 
 export function generateRandomEnemy(playerLevel, _allSpells, allWeaponsArg = allWeapons){

@@ -19,6 +19,8 @@ Toutes les informations du joueur sont sauvegardées, notamment :
 - 🎯 **Points de combat** : Progression dans le combat actuel
 - 💫 **Aptitudes** : Compétences spéciales acquises
 - 🌟 **Effets de statut** : Buffs/debuffs actifs
+- 🗺️ **Régions découvertes** (`worldMap.visitedZoneIds`) : sert à la carte du monde
+- 🧭 **Exploration** (`exploration`) : écran et position du héros, ennemis vaincus (`defeated`), coffres ouverts, état des quêtes (`quests`), écrans visités, prologue vu, fin de l'histoire (`ended`)
 
 ## Sauvegarde automatique
 
