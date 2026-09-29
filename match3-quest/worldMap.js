@@ -1,10 +1,8 @@
-// Carte du monde : zones d'exploration liées au niveau du joueur.
-// Chaque zone regroupe un sous-ensemble de gabarits d'ennemis (voir enemies.catalog.json)
-// afin de donner une identité thématique à l'exploration. Une zone reste toujours
-// accessible une fois débloquée : le joueur peut la quitter (adversaire trop dur,
-// simple choix) et y revenir plus tard, par exemple une fois monté en niveau.
-// `map` = position du noeud sur la carte illustrée (viewBox 820x600, cf. worldMapView.js) ;
-// l'ordre du tableau est celui du chemin qui relie les zones.
+// Régions du monde. Chaque région regroupe un ou plusieurs écrans d'exploration (voir story.js) et
+// donne son identité thématique au jeu ; `unlockLevel` doit rester aligné sur REGION_UNLOCK_LEVEL.
+// Cette liste alimente la carte du monde illustrée (worldMapView.js), vue d'ensemble depuis laquelle on
+// peut rejoindre les régions déjà découvertes. `map` = position du noeud (viewBox 820x600) ; l'ordre du
+// tableau est celui du chemin qui relie les régions. `templateIds` : gabarits d'ennemis de la région.
 export const worldZones = [
     {
         id: 'forest',

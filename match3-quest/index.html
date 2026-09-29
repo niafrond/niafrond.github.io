@@ -138,19 +138,7 @@
     <div class="modal-content worldmap-modal-content">
         <h2>🗺️ Carte du Monde</h2>
         <div id="worldmap-selection"></div>
-    </div>
-</div>
-
-<!-- Modal de sélection d'ennemi -->
-<div id="enemy-modal" class="modal">
-    <div class="modal-content">
-        <h2 id="enemy-modal-title">Choisissez votre adversaire</h2>
-        <p id="enemy-modal-subtitle">4 ennemis vous sont proposés, plus un adversaire affaibli pour commencer en douceur. Tous les 5 niveaux, un boss apparaît et reste proposé tant qu'il n'est pas vaincu.</p>
-        <div id="enemy-selection"></div>
-        <div class="modal-actions">
-            <button class="secondary" id="reroll-enemies-btn">Relancer les ennemis</button>
-            <button class="secondary" id="back-to-worldmap-btn">🗺️ Retour à la carte</button>
-        </div>
+        <div class="modal-actions"><button class="secondary" id="worldmap-close-btn">Fermer</button></div>
     </div>
 </div>
 
@@ -166,6 +154,31 @@
     
     <!-- Onglet Combat -->
     <div id="tab-combat" class="tab-panel active">
+        <!-- Phase d'exploration : carte isométrique -->
+        <div id="explore-container" style="display: none;">
+            <div class="explore-hud">
+                <div class="explore-title"></div>
+                <div class="explore-hud-buttons">
+                    <button type="button" data-explore="journal" title="Journal de quêtes (J)">📜 Journal</button>
+                    <button type="button" data-explore="map" title="Carte du monde">🗺️ Carte</button>
+                </div>
+            </div>
+            <div class="explore-objective"></div>
+            <div class="explore-stage">
+                <canvas id="explore-canvas" width="816" height="496" aria-label="Carte d'exploration"></canvas>
+                <div class="explore-toast" role="status" aria-live="polite"></div>
+                <div class="explore-dialog" role="dialog" aria-live="polite"></div>
+            </div>
+            <div class="explore-controls">
+                <div class="explore-dpad" aria-label="Déplacement">
+                    <button type="button" data-dir="up" aria-label="Haut">⬆️</button>
+                    <button type="button" data-dir="left" aria-label="Gauche">⬅️</button>
+                    <button type="button" data-dir="down" aria-label="Bas">⬇️</button>
+                    <button type="button" data-dir="right" aria-label="Droite">➡️</button>
+                </div>
+                <p class="explore-help">Flèches ou ZQSD pour vous déplacer · Entrée pour parler · Contournez les ennemis : le halo rouge est leur zone de vigilance.</p>
+            </div>
+        </div>
         <div class="stats-container">
             <div id="player-stats"></div>
             <div id="enemy-stats"></div>
@@ -236,7 +249,7 @@
     
     <!-- Boutons de contrôle du combat -->
     <div id="combat-controls" style="text-align: center; margin: 10px 0;">
-        <button id="new-combat-btn"  style="margin-left: 10px;">⚔️ Nouveau Combat</button>
+        <button id="new-combat-btn"  style="margin-left: 10px; display: none;">🗺️ Retour à l'exploration</button>
         <button id="abandon-combat-btn" style="margin-left: 10px; background-color: #d32f2f;">🏳️ Abandonner</button>
         <button id="sound-toggle-btn">🔊</button>
         <button id="dark-mode-toggle-btn" aria-pressed="false" title="Activer ou désactiver le mode sombre">🌙</button>

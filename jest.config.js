@@ -124,6 +124,13 @@ export default {
       testMatch: ['<rootDir>/mob-rush/tests/unit/**/*.test.js'],
       transform: {},
     },
+    // ── Match3-Quest : moteur d'exploration + histoire (node, pas de DOM) ────
+    {
+      displayName: 'match3-quest-node',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/match3-quest/tests/unit/**/*.test.js'],
+      transform: {},
+    },
     // ── Réveil Xtrem : scheduler, calculs, formatage (node, pas de DOM) ──────
     {
       displayName: 'reveil-xtrem-node',
