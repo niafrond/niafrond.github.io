@@ -4,7 +4,7 @@ import {
     createSession, tryMove, tick, isTerrainBlocked, buildRoute, aliveEnemies, entityAt, getAuraTiles,
     markEnemyDefeated, talkToNpc, npcAmbientLines, progressReached, openChest, questStatus, checkAutoQuests, currentObjectiveText,
     encounterFor, enemyLevel, enterScreen, teleportToScreen, resetAfterDefeat,
-    AGGRO_RADIUS, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN
+    AGGRO_RADIUS, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN, findPath
 } from '../../exploration.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
@@ -625,5 +625,136 @@ describe('texte d\'arrivée', () => {
 
     test('les écrans d\'exploration (hors village) ont un texte d\'arrivée non vide', () => {
         screens.filter(s => s.id !== START_SCREEN).forEach(s => expect(s.arrival.length).toBeGreaterThan(0));
+    });
+});
+
+describe('déplacement au clic (findPath)', () => {
+    const at = (screenId, x, y) => { const s = createSession({ screenId, x, y }); s.rt.grace = 0; return s; };
+
+    // Rejoue un chemin avec tryMove, comme le fait la vue, et retourne le dernier résultat.
+    function walk(s, path) {
+        let last = null;
+        for (const step of path) {
+            last = tryMove(s, step.x - s.data.x, step.y - s.data.y, { playerLevel: 20 });
+            if (last.type !== 'moved') break;
+        }
+        return last;
+    }
+
+    test('destination = position : chemin vide', () => {
+        expect(findPath(at('village', 2, 4), 2, 4)).toEqual([]);
+    });
+
+    test('chemin le plus court en ligne droite, sans diagonale', () => {
+        const path = findPath(at('village', 2, 4), 5, 4);
+        expect(path).toEqual([{ x: 3, y: 4 }, { x: 4, y: 4 }, { x: 5, y: 4 }]);
+        const s = at('village', 2, 4);
+        expect(walk(s, findPath(s, 5, 4))).toEqual({ type: 'moved' });
+        expect([s.data.x, s.data.y]).toEqual([5, 4]);
+    });
+
+    test('contourne les obstacles', () => {
+        // maison en (2..4, 1..2) : de (1,1) à (5,1), il faut passer par-dessus ou par-dessous
+        const s = at('village', 1, 1);
+        const path = findPath(s, 5, 1);
+        expect(path).not.toBeNull();
+        expect(path.length).toBeGreaterThan(4);
+        path.forEach(p => expect(isTerrainBlocked(SCREENS.village, p.x, p.y)).toBe(false));
+        expect(walk(s, path)).toEqual({ type: 'moved' });
+        expect([s.data.x, s.data.y]).toEqual([5, 1]);
+    });
+
+    test('destination invalide : obstacle, hors carte ou non entière', () => {
+        const s = at('village', 2, 4);
+        expect(findPath(s, 2, 2)).toBeNull();   // maison
+        expect(findPath(s, -1, 4)).toBeNull();
+        expect(findPath(s, 14, 4)).toBeNull();
+        expect(findPath(s, 3.5, 4)).toBeNull();
+    });
+
+    test('destination isolée : null', () => {
+        // Aldric est encerclé : sa tuile est atteignable mais celles qui l\'entourent sont occupées
+        const s = at('ruins', 1, 7);
+        s.rt.grace = 0;
+        expect(findPath(s, 7, 4)).toBeNull();
+    });
+
+    test('vers un PNJ : le chemin finit sur sa tuile et la dernière étape ouvre le dialogue', () => {
+        const s = at('village', 2, 4);
+        const path = findPath(s, 6, 3);
+        expect(path[path.length - 1]).toEqual({ x: 6, y: 3 });
+        expect(walk(s, path)).toEqual({ type: 'talk', npcId: 'maelle' });
+        expect([s.data.x, s.data.y]).not.toEqual([6, 3]);
+    });
+
+    test('vers un coffre : la dernière étape l\'ouvre', () => {
+        const s = at('desert', 12, 3); // hors de la zone de vigilance de Solarion (10,3)
+        s.rt.grace = 0;
+        const path = findPath(s, 12, 1);
+        expect(path).not.toBeNull();
+        expect(walk(s, path)).toEqual({ type: 'chest', chestId: 'sun_chest' });
+    });
+
+    test('un PNJ ou un coffre n\'est jamais un point de passage', () => {
+        const s = at('village', 5, 3);
+        // Maëlle est en (6,3) : aller de (5,3) à (7,3) impose de la contourner
+        const path = findPath(s, 7, 3);
+        expect(path.some(p => p.x === 6 && p.y === 3)).toBe(false);
+        expect(path.length).toBe(4);
+    });
+
+    test('vers un ennemi : la dernière étape lance le combat', () => {
+        const s = at('forest', 1, 4);
+        const path = findPath(s, 5, 3);
+        expect(path[path.length - 1]).toEqual({ x: 5, y: 3 });
+        expect(walk(s, path)).toMatchObject({ type: 'combat', enemyId: 'forest_gob' });
+    });
+
+    test('un ennemi n\'est jamais traversé', () => {
+        const s = at('forest', 1, 4);
+        const path = findPath(s, 12, 4);
+        s.rt.enemies && aliveEnemies(s).forEach(e => expect(path.some(p => p.x === e.x && p.y === e.y)).toBe(false));
+    });
+
+    test('prend toujours le plus court chemin, même à travers la zone de vigilance d\'un ennemi', () => {
+        const screens = {
+            t: {
+                id: 't', region: 'forest', name: 'T', biome: 'forest', w: 7, h: 5, spawn: { x: 0, y: 2 },
+                obstacles: [], liquids: [], paths: [], exits: [], npcs: [], chests: [],
+                enemies: [{ id: 'g', templateId: 'goblin_saboteur', emoji: 'g', name: 'g', kind: 'sentinel', x: 3, y: 1, offset: 0 }]
+            }
+        };
+        const s = createSession({ screenId: 't', x: 0, y: 2 }, screens, []);
+        s.rt.grace = 0;
+        const path = findPath(s, 6, 2);
+        // ligne droite (6 pas) alors qu'un détour existerait : le trajet ne cherche pas à éviter l'ennemi
+        expect(path).toHaveLength(6);
+        expect(path.every(p => p.y === 2)).toBe(true);
+        // et le parcours réveille bien l'ennemi (zone de vigilance atteinte)
+        expect(walk(s, path)).toEqual({ type: 'combat', enemyId: 'g' });
+    });
+
+    test('la longueur du chemin est minimale (Manhattan quand la voie est libre)', () => {
+        const s = at('village', 1, 5);
+        const path = findPath(s, 12, 3);
+        expect(path).toHaveLength(Math.abs(12 - 1) + Math.abs(3 - 5));
+    });
+
+    test('une sortie n\'est franchie que si c\'est la destination', () => {
+        const s = at('village', 12, 3);
+        const toExit = findPath(s, 13, 4);
+        expect(toExit[toExit.length - 1]).toEqual({ x: 13, y: 4 });
+        expect(walk(s, toExit)).toMatchObject({ type: 'transition', to: 'forest' });
+        // aller à côté de la sortie ne fait pas changer d\'écran
+        const s2 = at('village', 12, 3);
+        walk(s2, findPath(s2, 12, 5));
+        expect(s2.data.screenId).toBe('village');
+    });
+
+    test('la sortie bloquée par le niveau ne fait pas changer d\'écran', () => {
+        const s = at('ruins', 12, 4);
+        const path = findPath(s, 13, 4);
+        expect(tryMove(s, 1, 0, { playerLevel: 1 }).type).toBe('exitBlocked');
+        expect(path).toEqual([{ x: 13, y: 4 }]);
     });
 });

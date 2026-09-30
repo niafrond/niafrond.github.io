@@ -2,7 +2,10 @@
 // tactile, dialogues de PNJ, journal de quêtes. La logique est dans exploration.js, les données
 // (cartes, histoire) dans story.js.
 //
-// Repère : x vers la droite, y vers le bas ; ↑ ↓ ← → déplacent d'une tuile dans ce sens.
+// Déplacement : un clic / toucher sur la carte envoie le héros à l'endroit visé par le plus court
+// chemin (recalculé à chaque pas, sans chercher à éviter les ennemis). Cliquer sur un PNJ, un
+// coffre ou un ennemi y mène et déclenche l'interaction. Le clavier (↑ ↓ ← → / ZQSD) reste disponible.
+// Repère : x vers la droite, y vers le bas.
 // L'écran de carte est affiché en entier (taille de tuile adaptée) ; si la fenêtre est trop
 // petite pour garder des tuiles lisibles, la caméra suit le héros.
 
@@ -14,6 +17,8 @@ const MAX_TILE = 96;
 const HUD_TOP = 64;     // bandeau du haut (titre, objectif, boutons)
 const HUD_BOTTOM = 8;
 const MOVE_DELAY_MS = 150;
+const BATTLE_TRANSITION_MS = 1700;   // durée de l'animation d'entrée en combat
+const BATTLE_STRIPS = 10;
 
 const DIRECTIONS = {
     up: { dx: 0, dy: -1 },
@@ -71,8 +76,7 @@ export function createExplorationView(cfg) {
         toast: root.querySelector('.explore-toast'),
         journalBtn: root.querySelector('[data-explore="journal"]'),
         mapBtn: root.querySelector('[data-explore="map"]'),
-        menuBtn: root.querySelector('[data-explore="menu"]'),
-        dpad: root.querySelectorAll('[data-dir]')
+        menuBtn: root.querySelector('[data-explore="menu"]')
     };
 
     let session = null;
@@ -80,12 +84,16 @@ export function createExplorationView(cfg) {
     let rafId = null;
     let lastFrame = 0;
     let held = null;
+    let walk = null;          // déplacement au clic en cours : { tx, ty, path }
+    let cam = { ox: 0, oy: 0, tile: 1 };
     let lastMoveAt = 0;
     let dialogQueue = [];
     let dialogIndex = 0;
     let toastTimer = null;
     let journalEl = null;
     let inCombat = false;
+    let battleTransitionEl = null;
+    let battleTransitionTimer = null;
     const vis = { px: 0, py: 0, enemies: {}, bob: 0 };
 
     // ── Session ────────────────────────────────────────────────────────────
@@ -235,14 +243,47 @@ export function createExplorationView(cfg) {
     }
 
     // ── Actions ────────────────────────────────────────────────────────────
+    // Animation « à la Pokémon » : éclairs blancs, volets noirs qui se referment en alternance,
+    // puis le nom de l'adversaire. Le combat démarre à la fin (les saisies sont bloquées entre-temps).
+    function playBattleTransition(enc, done) {
+        removeBattleTransition();
+        const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        const overlay = document.createElement('div');
+        overlay.className = `battle-transition${reduced ? ' reduced' : ''}`;
+        overlay.innerHTML = `
+            <div class="bt-strips">${Array.from({ length: BATTLE_STRIPS }, (_, i) =>
+                `<div class="bt-strip ${i % 2 ? 'from-right' : 'from-left'}" style="--i:${i}"></div>`).join('')}</div>
+            <div class="bt-flash"></div>
+            <div class="bt-title">
+                <div class="bt-emoji">${escapeHtml(enc.emoji || '⚔️')}</div>
+                <div class="bt-name">${escapeHtml(enc.boss?.name || enc.name)}</div>
+                <div class="bt-level">${enc.boss ? '👑 Boss · ' : ''}Niveau ${enc.level}</div>
+            </div>`;
+        root.appendChild(overlay);
+        battleTransitionEl = overlay;
+        battleTransitionTimer = setTimeout(() => {
+            battleTransitionTimer = null;
+            done();
+        }, reduced ? 500 : BATTLE_TRANSITION_MS);
+    }
+
+    function removeBattleTransition() {
+        clearTimeout(battleTransitionTimer);
+        battleTransitionTimer = null;
+        battleTransitionEl?.remove();
+        battleTransitionEl = null;
+    }
+
     function startEncounter(enemyId) {
+        if (inCombat) return;
         const enc = X.encounterFor(session, enemyId, cfg.getPlayerLevel());
         if (!enc) return;
         session.rt.pendingEnemyId = enemyId;
         held = null;
+        walk = null;
         inCombat = true;
         cfg.onSave();
-        cfg.onEncounter(enc);
+        playBattleTransition(enc, () => cfg.onEncounter(enc));
     }
 
     function handleResult(res) {
@@ -292,6 +333,47 @@ export function createExplorationView(cfg) {
         lastMoveAt = performance.now();
     }
 
+    // ── Déplacement au clic ────────────────────────────────────────────────
+    function tileFromEvent(ev) {
+        const rect = canvas.getBoundingClientRect();
+        const px = ev.clientX - rect.left;
+        const py = ev.clientY - rect.top;
+        return { x: Math.floor((px - cam.ox) / cam.tile), y: Math.floor((py - cam.oy) / cam.tile) };
+    }
+
+    function onCanvasPointerDown(ev) {
+        if (!active || isBlocked()) return;
+        ev.preventDefault();
+        const { x, y } = tileFromEvent(ev);
+        const path = X.findPath(session, x, y);
+        if (path === null) {
+            walk = null;
+            toast('🚫 Impossible d\'aller là.', 1600);
+            return;
+        }
+        if (path.length === 0) return;
+        held = null;
+        walk = { tx: x, ty: y, path };
+    }
+
+    // Un pas vers la destination ; le chemin est recalculé à chaque pas (patrouilles, ennemis vaincus…).
+    function walkStep() {
+        const path = X.findPath(session, walk.tx, walk.ty);
+        if (!path || path.length === 0) { walk = null; return; }
+        walk.path = path;
+        const next = path[0];
+        const dx = next.x - session.data.x;
+        const dy = next.y - session.data.y;
+        const res = X.tryMove(session, dx, dy, { playerLevel: cfg.getPlayerLevel() });
+        lastMoveAt = performance.now();
+        if (res.type !== 'moved') {
+            walk = null;            // interaction, combat, changement d'écran, obstacle ou brume
+            handleResult(res);
+        } else if (session.data.x === walk.tx && session.data.y === walk.ty) {
+            walk = null;
+        }
+    }
+
     // ── Saisie ─────────────────────────────────────────────────────────────
     function onKeyDown(ev) {
         if (!active || !isOnScreen() || isModalOpen()) return;
@@ -306,6 +388,7 @@ export function createExplorationView(cfg) {
         if (!dir) return;
         ev.preventDefault();
         if (ev.repeat) return;
+        walk = null;
         held = dir;
         if (performance.now() - lastMoveAt >= MOVE_DELAY_MS) doMove(dir);
     }
@@ -318,16 +401,8 @@ export function createExplorationView(cfg) {
     function bindControls() {
         window.addEventListener('keydown', onKeyDown);
         window.addEventListener('keyup', onKeyUp);
-        els.dpad.forEach(btn => {
-            const dir = btn.dataset.dir;
-            const start = ev => { ev.preventDefault(); held = dir; doMove(dir); };
-            const stop = () => { if (held === dir) held = null; };
-            btn.addEventListener('pointerdown', start);
-            btn.addEventListener('pointerup', stop);
-            btn.addEventListener('pointerleave', stop);
-            btn.addEventListener('pointercancel', stop);
-            btn.addEventListener('contextmenu', ev => ev.preventDefault());
-        });
+        canvas.addEventListener('pointerdown', onCanvasPointerDown);
+        canvas.addEventListener('contextmenu', ev => ev.preventDefault());
         els.dialog?.addEventListener('click', advanceDialog);
         els.journalBtn?.addEventListener('click', showJournal);
         els.mapBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMap?.(); });
@@ -341,6 +416,8 @@ export function createExplorationView(cfg) {
         lastFrame = now;
 
         if (held && !isBlocked() && now - lastMoveAt >= MOVE_DELAY_MS) doMove(held);
+        else if (walk && !isBlocked() && now - lastMoveAt >= MOVE_DELAY_MS) walkStep();
+        if (walk && isBlocked()) walk = null;
         if (!isBlocked()) {
             const events = X.tick(session, dt);
             const hit = events.find(e => e.type === 'combat');
@@ -390,6 +467,7 @@ export function createExplorationView(cfg) {
                 : offset + Math.min(0, Math.max(avail - size, avail / 2 - (pos + 0.5) * tile));
         const ox = follow(mapW, vw, 0, vis.px);
         const oy = follow(mapH, availH, HUD_TOP, vis.py);
+        cam = { ox, oy, tile };
         const P = (x, y) => ({ x: ox + x * tile, y: oy + y * tile });
 
         const level = cfg.getPlayerLevel();
@@ -433,6 +511,23 @@ export function createExplorationView(cfg) {
             const p = P(x, y);
             ctx.strokeRect(p.x + 0.75, p.y + 0.75, tile - 1.5, tile - 1.5);
         });
+
+        // trajet du déplacement au clic : points le long du chemin et cercle sur la destination
+        if (walk && walk.path?.length) {
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            walk.path.slice(0, -1).forEach(step => {
+                const c = P(step.x + 0.5, step.y + 0.5);
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, Math.max(3, tile * 0.07), 0, Math.PI * 2);
+                ctx.fill();
+            });
+            const t = P(walk.tx + 0.5, walk.ty + 0.5);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = `rgba(255,255,255,${(0.6 + 0.4 * pulse).toFixed(3)})`;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, tile * (0.28 + 0.06 * pulse), 0, Math.PI * 2);
+            ctx.stroke();
+        }
 
         // sorties : case lumineuse, flèche vers le bord de la carte, nom de la destination
         screen.exits.forEach(ex => {
@@ -572,6 +667,7 @@ export function createExplorationView(cfg) {
 
         show() {
             ensureSession();
+            removeBattleTransition();
             root.style.display = 'block';
             inCombat = false;
             active = true;
@@ -593,6 +689,7 @@ export function createExplorationView(cfg) {
             if (rafId) cancelAnimationFrame(rafId);
             rafId = null;
             root.style.display = 'none';
+            removeBattleTransition();
             closeJournal();
         },
 
