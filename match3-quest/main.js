@@ -10,6 +10,7 @@ import { worldZones } from "./worldMap.js";
 import { mountWorldMap } from "./worldMapView.js";
 import { createExplorationView } from "./explorationView.js";
 import { REGION_ENTRY_SCREEN } from "./story.js";
+import { heroSprite, spriteUri } from "./sprites/index.js";
 
 // initialisation de la partie
 console.log('Main.js loaded');
@@ -161,7 +162,7 @@ function init() {
         canvas: document.getElementById('explore-canvas'),
         getSaved: () => player.exploration,
         setSaved: data => { player.exploration = data; },
-        getHero: () => ({ emoji: playerClasses[player.class]?.emoji || '🧙', name: player.name }),
+        getHero: () => ({ classId: player.class, emoji: playerClasses[player.class]?.emoji || '🧙', name: player.name }),
         getPlayerLevel: () => player.level,
         onEncounter: encounter => startEncounterCombat(encounter),
         onGold: amount => { player.gold = (player.gold || 0) + amount; },
@@ -234,6 +235,7 @@ function init() {
             level: player.level,
             visitedIds: player.worldMap?.visitedZoneIds || [],
             currentId: exploration.getCurrentRegion(),
+            heroUri: spriteUri(heroSprite(player.class)),
             requireVisit: true
         }, zone => {
             modal.classList.remove('active');

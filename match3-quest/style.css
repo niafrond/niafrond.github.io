@@ -1396,6 +1396,7 @@ progress.enemy-bar::-webkit-progress-value {
 }
 
 #explore-canvas {
+    cursor: pointer;
     position: absolute;
     inset: 0;
     width: 100%;
@@ -1501,15 +1502,16 @@ progress.enemy-bar::-webkit-progress-value {
     z-index: 3;
 }
 
-/* pendant un dialogue, le pavé tactile laisse la place à la boîte de texte */
-.explore-dialog.visible ~ .explore-dpad,
-.explore-dialog.visible ~ .explore-help {
-    display: none;
-}
-
 .explore-dialog-portrait {
     font-size: 2.4em;
     line-height: 1;
+    flex-shrink: 0;
+}
+
+.explore-dialog-portrait img {
+    display: block;
+    width: 72px;
+    height: 72px;
 }
 
 .explore-dialog-name {
@@ -1536,28 +1538,10 @@ progress.enemy-bar::-webkit-progress-value {
     color: #a8692f;
 }
 
-.explore-dpad {
-    position: absolute;
-    right: 12px;
-    bottom: 16px;
-    display: grid;
-    grid-template-columns: repeat(3, 58px);
-    grid-template-rows: repeat(2, 52px);
-    gap: 5px;
-    touch-action: none;
-    opacity: 0.85;
+/* pendant un dialogue, l'aide laisse la place à la boîte de texte */
+.explore-dialog.visible ~ .explore-help {
+    display: none;
 }
-
-.explore-dpad button {
-    padding: 0;
-    font-size: 1.4em;
-    touch-action: none;
-}
-
-.explore-dpad [data-dir="up"] { grid-column: 2; grid-row: 1; }
-.explore-dpad [data-dir="left"] { grid-column: 1; grid-row: 2; }
-.explore-dpad [data-dir="down"] { grid-column: 2; grid-row: 2; }
-.explore-dpad [data-dir="right"] { grid-column: 3; grid-row: 2; }
 
 .explore-help {
     position: absolute;
@@ -1576,10 +1560,7 @@ progress.enemy-bar::-webkit-progress-value {
     pointer-events: none;
 }
 
-/* Clavier + souris : pas de pavé tactile, on garde l'aide. Écran tactile : pavé, pas d'aide. */
-@media (hover: hover) and (pointer: fine) {
-    .explore-dpad { display: none; }
-}
+/* Écran tactile : pas de place pour l'aide clavier. */
 @media (hover: none), (pointer: coarse) {
     .explore-help { display: none; }
 }
@@ -1587,6 +1568,83 @@ progress.enemy-bar::-webkit-progress-value {
     .explore-hud-buttons button span { display: none; }
     .explore-title { font-size: 0.8em; }
 }
+
+/* Transition d'entrée en combat (à la Pokémon) */
+.battle-transition {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    overflow: hidden;
+    pointer-events: all;
+}
+
+.bt-strips {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.bt-strip {
+    flex: 1;
+    background: #000;
+    transform: translateX(-101%);
+    animation: bt-slide 0.55s cubic-bezier(0.6, 0, 0.3, 1) forwards;
+    animation-delay: calc(0.62s + var(--i) * 0.045s);
+}
+
+.bt-strip.from-right {
+    transform: translateX(101%);
+    animation-name: bt-slide-right;
+}
+
+.bt-flash {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    animation: bt-flash 0.62s steps(1, end) forwards;
+}
+
+.bt-title {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #fff;
+    text-align: center;
+    text-shadow: 0 2px 8px #000;
+    opacity: 0;
+    animation: bt-title 0.5s ease-out 1.15s forwards;
+}
+
+.bt-emoji { font-size: 4.5em; line-height: 1; animation: bt-pop 0.5s ease-out 1.15s both; }
+.bt-sprite { display: block; width: min(220px, 40vw); height: min(220px, 40vw); filter: drop-shadow(0 6px 10px rgba(0,0,0,0.6)); }
+.bt-name { font-size: 1.6em; font-weight: bold; }
+.bt-level { font-size: 1em; opacity: 0.85; }
+
+.battle-transition.reduced .bt-strip,
+.battle-transition.reduced .bt-flash,
+.battle-transition.reduced .bt-emoji { animation: none; }
+.battle-transition.reduced .bt-strip { transform: none; }
+.battle-transition.reduced .bt-title { animation: none; opacity: 1; }
+
+@keyframes bt-slide { to { transform: translateX(0); } }
+@keyframes bt-slide-right { from { transform: translateX(101%); } to { transform: translateX(0); } }
+@keyframes bt-flash {
+    0% { opacity: 0.95; }
+    10% { opacity: 0; }
+    25% { opacity: 0.95; }
+    35% { opacity: 0; }
+    50% { opacity: 0.95; }
+    62% { opacity: 0; }
+    100% { opacity: 0; }
+}
+@keyframes bt-title { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+@keyframes bt-pop { from { transform: scale(0.3) rotate(-15deg); } to { transform: scale(1) rotate(0); } }
 
 .explore-journal {
     position: absolute;

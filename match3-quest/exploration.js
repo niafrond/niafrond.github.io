@@ -236,6 +236,56 @@ function stepPatrols(session) {
     });
 }
 
+// ── Déplacement au clic : recherche de chemin ───────────────────────────────
+
+// Plus court chemin (parcours en largeur, déplacements en croix) de la position du héros jusqu'à
+// (tx, ty). Retourne la liste des tuiles à parcourir (première étape → destination), [] si on y est
+// déjà, ou null si la destination est inaccessible.
+//  - obstacles, liquides, PNJ, coffres et ennemis vivants bloquent le passage ;
+//  - une destination occupée (PNJ, coffre, ennemi) reste valide : la dernière étape déclenche
+//    l'interaction (dialogue, ouverture, combat) ;
+//  - les sorties ne se traversent pas en route : elles ne sont franchies que si elles sont la destination.
+// Le trajet ne cherche PAS à éviter les zones de vigilance : c'est toujours le plus court.
+export function findPath(session, tx, ty) {
+    const screen = currentScreen(session);
+    const start = { x: session.data.x, y: session.data.y };
+    if (!Number.isInteger(tx) || !Number.isInteger(ty)) return null;
+    if (tx < 0 || ty < 0 || tx >= screen.w || ty >= screen.h) return null;
+    if (isTerrainBlocked(screen, tx, ty)) return null;
+    if (tx === start.x && ty === start.y) return [];
+
+    const key = (x, y) => y * screen.w + x;
+    const occupied = new Set();
+    screen.npcs.forEach(n => occupied.add(key(n.x, n.y)));
+    screen.chests.forEach(c => occupied.add(key(c.x, c.y)));
+    aliveEnemies(session).forEach(e => occupied.add(key(e.x, e.y)));
+    const exits = new Set(screen.exits.map(e => key(e.x, e.y)));
+    const startKey = key(start.x, start.y);
+    const target = key(tx, ty);
+
+    const prev = new Map([[startKey, null]]);
+    const queue = [start];
+    while (queue.length && !prev.has(target)) {
+        const cur = queue.shift();
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const nx = cur.x + dx, ny = cur.y + dy;
+            if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || isTerrainBlocked(screen, nx, ny)) continue;
+            const nKey = key(nx, ny);
+            if (prev.has(nKey)) continue;
+            prev.set(nKey, key(cur.x, cur.y));
+            // une case occupée ou une sortie n'est jamais un point de passage (seulement une destination)
+            if (nKey !== target && (occupied.has(nKey) || exits.has(nKey))) continue;
+            queue.push({ x: nx, y: ny });
+        }
+    }
+    if (!prev.has(target)) return null;
+    const path = [];
+    for (let k = target; k !== startKey; k = prev.get(k)) {
+        path.push({ x: k % screen.w, y: Math.floor(k / screen.w) });
+    }
+    return path.reverse();
+}
+
 export function enemyLevel(def, playerLevel) {
     const lvl = Math.max(1, Math.floor(playerLevel || 1));
     if (def.boss) return Math.max(def.boss.level, lvl);
