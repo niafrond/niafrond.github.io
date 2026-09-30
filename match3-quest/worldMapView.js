@@ -94,7 +94,7 @@ function seaWaves() {
 
 /**
  * @param {Array} zones  worldZones (avec .map {x,y}), dans l'ordre du chemin
- * @param {{level:number, visitedIds:string[], currentId:string|null}} state
+ * @param {{level:number, visitedIds:string[], currentId:string|null, heroUri?:string, requireVisit?:boolean}} state
  */
 export function buildWorldMapSvg(zones, state) {
     const level = Math.max(1, Math.floor(state?.level || 1));
@@ -153,7 +153,9 @@ export function buildWorldMapSvg(zones, state) {
                 <text class="wm-banner-text" y="47" text-anchor="middle">${name}</text>
                 ${unlocked ? '' : `<rect class="wm-lvl" x="-34" y="58" width="68" height="18" rx="9"/><text class="wm-lvl-text" y="71" text-anchor="middle">${level >= zone.unlockLevel ? '???' : `Niv. ${zone.unlockLevel}`}</text>`}
             </g>
-            ${current ? '<text class="wm-hero" y="-38" text-anchor="middle">🧙</text>' : ''}
+            ${current ? (state.heroUri
+                ? `<image class="wm-hero" href="${state.heroUri}" x="-24" y="-84" width="48" height="48"/>`
+                : '<text class="wm-hero" y="-38" text-anchor="middle">🧙</text>') : ''}
         </g>`;
     }).join('');
 

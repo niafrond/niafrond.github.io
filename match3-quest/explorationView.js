@@ -11,6 +11,7 @@
 
 import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
+import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, preloadSprites } from './sprites/index.js';
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
@@ -57,7 +58,7 @@ const hash = (x, y) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 
  * @param {object} cfg
  *  root, canvas               éléments du DOM
  *  getSaved()/setSaved(data)  lecture / écriture de player.exploration
- *  getHero()                  { emoji, name } du personnage
+ *  getHero()                  { classId, emoji, name } du personnage
  *  getPlayerLevel()           niveau courant
  *  onEncounter(encounter)     lance le combat
  *  onGold(amount)             crédite de l'or
@@ -150,7 +151,9 @@ export function createExplorationView(cfg) {
         const last = dialogIndex >= entry.lines.length - 1 && dialogQueue.length === 1;
         const speaker = entry.speaker || {};
         box.innerHTML = `
-            <div class="explore-dialog-portrait">${speaker.emoji || '📜'}</div>
+            <div class="explore-dialog-portrait">${speaker.sprite
+                ? `<img alt="" src="${spriteUri(speaker.sprite)}">`
+                : (speaker.emoji || '📜')}</div>
             <div class="explore-dialog-body">
                 <div class="explore-dialog-name">${escapeHtml(speaker.name || '')}${speaker.title ? ` <span>— ${escapeHtml(speaker.title)}</span>` : ''}</div>
                 <div class="explore-dialog-text">${escapeHtml(text)}</div>
@@ -255,7 +258,9 @@ export function createExplorationView(cfg) {
                 `<div class="bt-strip ${i % 2 ? 'from-right' : 'from-left'}" style="--i:${i}"></div>`).join('')}</div>
             <div class="bt-flash"></div>
             <div class="bt-title">
-                <div class="bt-emoji">${escapeHtml(enc.emoji || '⚔️')}</div>
+                <div class="bt-emoji">${enemySprite(enc.enemyId, enc.templateId)
+                    ? `<img class="bt-sprite" alt="" src="${spriteUri(enemySprite(enc.enemyId, enc.templateId))}">`
+                    : escapeHtml(enc.emoji || '⚔️')}</div>
                 <div class="bt-name">${escapeHtml(enc.boss?.name || enc.name)}</div>
                 <div class="bt-level">${enc.boss ? '👑 Boss · ' : ''}Niveau ${enc.level}</div>
             </div>`;
@@ -296,7 +301,7 @@ export function createExplorationView(cfg) {
                 const talk = X.talkToNpc(session, res.npcId);
                 if (!talk) break;
                 const spoken = eventsSpoken(talk.events);
-                openDialog({ emoji: talk.npc.emoji, name: talk.npc.name, title: talk.npc.title }, talk.lines,
+                openDialog({ emoji: talk.npc.emoji, sprite: npcSprite(talk.npc.id), name: talk.npc.name, title: talk.npc.title }, talk.lines,
                     () => processEvents(talk.events, spoken));
                 break;
             }
@@ -575,46 +580,103 @@ export function createExplorationView(cfg) {
                     break;
                 }
                 case 'npc': {
-                    drawShadow(c.x, c.y + tile * 0.32, tile * 0.28, tile * 0.1);
-                    drawEmoji(it.n.emoji, c.x, c.y, tile * 0.75);
+                    const feet = c.y + tile * 0.4;
+                    drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
+                    const bob = Math.sin(now / 520 + it.x * 1.3) * tile * 0.012;
+                    if (!drawSprite(npcSprite(it.n.id), c.x, feet + bob, tile * 1.02)) drawEmoji(it.n.emoji, c.x, c.y, tile * 0.75);
                     const marker = X.npcMarker(session, it.n.id);
-                    if (marker) drawEmoji(marker, c.x, c.y - tile * 0.62 - 4 * Math.abs(Math.sin(now / 300)), tile * 0.4);
+                    if (marker) drawMarker(c.x, c.y - tile * 0.72 - 4 * Math.abs(Math.sin(now / 300)), marker === '❓' ? '?' : '!', tile);
                     drawLabel(c.x, c.y + tile * 0.55, it.n.name, '#fff8e1', '#5a3e1b', labelSize);
                     break;
                 }
                 case 'chest': {
                     const opened = session.data.openedChests.includes(it.c.id);
-                    drawShadow(c.x, c.y + tile * 0.3, tile * 0.28, tile * 0.1);
-                    drawEmoji(opened ? '📭' : '🎁', c.x, c.y, tile * 0.65);
+                    const feet = c.y + tile * 0.36;
+                    drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
+                    if (!drawSprite(chestSprite(opened), c.x, feet, tile * 0.85)) drawEmoji(opened ? '📭' : '🎁', c.x, c.y, tile * 0.65);
                     break;
                 }
                 case 'enemy': {
                     const def = it.e.def;
                     const boss = Boolean(def.boss);
                     const lvl = X.enemyLevel(def, level);
-                    drawShadow(c.x, c.y + tile * 0.32, tile * (boss ? 0.42 : 0.3), tile * 0.1);
-                    drawEmoji(def.emoji, c.x, c.y, tile * (boss ? 1.0 : 0.78));
-                    if (boss) drawEmoji('👑', c.x, c.y - tile * 0.72 - 3 * Math.abs(Math.sin(now / 350)), tile * 0.4);
+                    const size = tile * (boss ? 1.55 : 1.08);
+                    const feet = c.y + tile * 0.4;
+                    drawShadow(c.x, feet, tile * (boss ? 0.46 : 0.3), tile * 0.1);
+                    const bob = Math.sin(now / 430 + it.x * 2.1 + it.y) * tile * 0.015;
+                    if (!drawSprite(enemySprite(def.id, def.templateId), c.x, feet + bob, size)) {
+                        drawEmoji(def.emoji, c.x, c.y, tile * (boss ? 1.0 : 0.78));
+                    }
+                    if (boss) drawCrown(c.x, feet - size * 0.98 - 3 * Math.abs(Math.sin(now / 350)), tile * 0.42);
                     const color = lvl > level ? '#dc2626' : lvl < level ? '#16a34a' : '#ca8a04';
-                    drawLabel(c.x, c.y + tile * (boss ? 0.68 : 0.56), `${boss ? '☠ ' : ''}Nv ${lvl}`, '#ffffff', color, labelSize);
+                    drawLabel(c.x, c.y + tile * (boss ? 0.68 : 0.58), `${boss ? '☠ ' : ''}Nv ${lvl}`, '#ffffff', color, labelSize);
                     break;
                 }
                 case 'player': {
                     const moving = Math.hypot(session.data.x - vis.px, session.data.y - vis.py) > 0.05;
-                    const hop = moving ? -tile * 0.08 * Math.abs(Math.sin(now / 70)) : 0;
-                    drawShadow(c.x, c.y + tile * 0.32, tile * 0.28, tile * 0.1);
+                    const hop = moving ? -tile * 0.08 * Math.abs(Math.sin(now / 70)) : Math.sin(now / 500) * tile * 0.01;
+                    const feet = c.y + tile * 0.4;
+                    drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
                     ctx.beginPath();
-                    ctx.arc(c.x, c.y, tile * 0.4, 0, Math.PI * 2);
+                    ctx.ellipse(c.x, feet - tile * 0.02, tile * 0.36, tile * 0.13, 0, 0, Math.PI * 2);
                     ctx.strokeStyle = '#facc15';
                     ctx.lineWidth = 3;
                     ctx.stroke();
-                    drawEmoji(cfg.getHero().emoji, c.x, c.y + hop, tile * 0.76);
+                    const hero = cfg.getHero();
+                    if (!drawSprite(heroSprite(hero.classId), c.x, feet + hop, tile * 1.06)) drawEmoji(hero.emoji, c.x, c.y + hop, tile * 0.76);
                     break;
                 }
                 default:
                     break;
             }
         });
+    }
+
+    // Dessine un sprite SVG (pieds vers le bas du cadre) centré sur cx, dont les pieds sont posés en feetY.
+    // Retourne false tant que l'image n'est pas chargée (ou s'il n'y a pas de sprite).
+    function drawSprite(svg, cx, feetY, size) {
+        if (!svg) return false;
+        const img = spriteImage(svg);
+        if (!img.complete || !img.naturalWidth) return true; // en cours de chargement : on n'affiche pas l'emoji
+        ctx.drawImage(img, cx - size / 2, feetY - size * 0.92, size, size);
+        return true;
+    }
+
+    // Pastille de quête au-dessus d'un PNJ : « ! » (quête à prendre) ou « ? » (à rendre).
+    function drawMarker(x, y, char, tile) {
+        const r = tile * 0.17;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = char === '?' ? '#38bdf8' : '#facc15';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#2b1b17';
+        ctx.stroke();
+        ctx.fillStyle = '#2b1b17';
+        ctx.font = `bold ${Math.round(r * 1.5)}px system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(char, x, y + r * 0.08);
+    }
+
+    // Petite couronne dorée au-dessus des boss.
+    function drawCrown(x, y, w) {
+        const h = w * 0.7;
+        ctx.beginPath();
+        ctx.moveTo(x - w / 2, y + h / 2);
+        ctx.lineTo(x - w / 2, y - h / 4);
+        ctx.lineTo(x - w / 4, y + h / 12);
+        ctx.lineTo(x, y - h / 2);
+        ctx.lineTo(x + w / 4, y + h / 12);
+        ctx.lineTo(x + w / 2, y - h / 4);
+        ctx.lineTo(x + w / 2, y + h / 2);
+        ctx.closePath();
+        ctx.fillStyle = '#facc15';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#2b1b17';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
     }
 
     function drawShadow(x, y, rx, ry) {
@@ -660,6 +722,7 @@ export function createExplorationView(cfg) {
 
     return {
         init() {
+            preloadSprites();
             ensureSession();
             bindControls();
             cfg.onRegionVisited?.(X.currentScreen(session).region);

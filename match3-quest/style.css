@@ -1505,6 +1505,13 @@ progress.enemy-bar::-webkit-progress-value {
 .explore-dialog-portrait {
     font-size: 2.4em;
     line-height: 1;
+    flex-shrink: 0;
+}
+
+.explore-dialog-portrait img {
+    display: block;
+    width: 72px;
+    height: 72px;
 }
 
 .explore-dialog-name {
@@ -1615,6 +1622,7 @@ progress.enemy-bar::-webkit-progress-value {
 }
 
 .bt-emoji { font-size: 4.5em; line-height: 1; animation: bt-pop 0.5s ease-out 1.15s both; }
+.bt-sprite { display: block; width: min(220px, 40vw); height: min(220px, 40vw); filter: drop-shadow(0 6px 10px rgba(0,0,0,0.6)); }
 .bt-name { font-size: 1.6em; font-weight: bold; }
 .bt-level { font-size: 1em; opacity: 0.85; }
 
