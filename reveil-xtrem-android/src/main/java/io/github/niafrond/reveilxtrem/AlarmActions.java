@@ -8,8 +8,10 @@ import android.os.Build;
 
 /**
  * Actions natives partagées (programmer/annuler/reporter une alarme via
- * AlarmManager), utilisées par AlarmSchedulerPlugin, AlarmReceiver,
- * SnoozeReceiver et BootReceiver.
+ * AlarmManager), utilisées par AlarmSchedulerPlugin, AlarmReceiver et
+ * BootReceiver. Le report (snooze) n'est déclenchable que depuis l'appli
+ * (AlarmSchedulerPlugin#snooze, appelé par l'écran de sonnerie) — la
+ * notification système n'offre aucune action rapide équivalente.
  */
 final class AlarmActions {
 
@@ -22,8 +24,8 @@ final class AlarmActions {
     /**
      * @param snoozeCount nombre de rappels déjà utilisés pour l'occurrence en cours —
      *   n'a de sens que pour `isSnooze=true` (une occurrence fraîche démarre toujours à 0) ;
-     *   voyage jusqu'à AlarmReceiver/AlarmRingService/SnoozeReceiver via l'intent
-     *   plutôt que par un stockage séparé (voir AlarmReceiver#EXTRA_SNOOZE_COUNT).
+     *   voyage jusqu'à AlarmReceiver via l'intent plutôt que par un stockage
+     *   séparé (voir AlarmReceiver#EXTRA_SNOOZE_COUNT).
      */
     static void scheduleExact(Context context, String alarmId, long atMillis, boolean isSnooze, int snoozeCount) {
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);

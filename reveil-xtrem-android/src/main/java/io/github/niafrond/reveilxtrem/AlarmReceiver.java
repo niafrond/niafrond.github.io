@@ -36,8 +36,8 @@ public class AlarmReceiver extends BroadcastReceiver {
     // Nombre de rappels déjà utilisés pour l'occurrence en cours — voyage
     // dans la chaîne d'intents AlarmManager (pas de stockage séparé) : une
     // occurrence fraîche (isSnooze=false) ne le porte jamais (0 implicite),
-    // et chaque snooze programme le suivant avec le compte déjà incrémenté
-    // (voir AlarmActions#snooze, AlarmRingService, SnoozeReceiver).
+    // et chaque snooze (déclenché depuis l'appli — voir AlarmActions#snooze)
+    // programme le suivant avec le compte déjà incrémenté.
     public static final String EXTRA_SNOOZE_COUNT = "snoozeCount";
     public static final String EXTRA_SNOOZE_LIMIT = "snoozeLimit";
     public static final String EXTRA_SNOOZE_DECREASE_MINUTES = "snoozeDecreaseMinutes";
