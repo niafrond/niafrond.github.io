@@ -1,3 +1,11 @@
+## [2.51.0](https://github.com/niafrond/niafrond.github.io/compare/v2.50.0...v2.51.0) (2026-09-30)
+
+### Features
+
+* **match3-quest:** déplacement au clic (plus court chemin) et transition de combat façon Pokémon ([1d78197](https://github.com/niafrond/niafrond.github.io/commit/1d78197572255387182df94a461946bb5a4e1576))
+* **match3-quest:** version finale des sprites d'ennemis du lot 2 ([0883010](https://github.com/niafrond/niafrond.github.io/commit/08830103df645c591e18d593547a8b3bc0f40d08))
+* **match3-quest:** vrais sprites SVG pour héros, PNJ, coffres et ennemis ([d1cc669](https://github.com/niafrond/niafrond.github.io/commit/d1cc6690318b73c62302033b18a69f9280c0029d))
+
 ## [2.50.0](https://github.com/niafrond/niafrond.github.io/compare/v2.49.0...v2.50.0) (2026-09-29)
 
 ### Features
