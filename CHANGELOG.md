@@ -1,3 +1,15 @@
+## [2.52.0](https://github.com/niafrond/niafrond.github.io/compare/v2.51.0...v2.52.0) (2026-10-01)
+
+### Features
+
+* **reveil-xtrem:** durée du snooze demandée à chaque rappel, sans défaut ([a576308](https://github.com/niafrond/niafrond.github.io/commit/a5763082296d96659c89afd06b3e56f618777717))
+* **reveil-xtrem:** limite de rappels, réduction progressive, arrêt auto ([6356bf7](https://github.com/niafrond/niafrond.github.io/commit/6356bf71c68cb9fe717158fa49cc9acea8c629a1))
+
+### Bug Fixes
+
+* **reveil-xtrem:** retire le bouton Snooze de la notification système ([a5940f7](https://github.com/niafrond/niafrond.github.io/commit/a5940f7b292058cb91e8ea06b52754ff1a05cd1e))
+* **reveil-xtrem:** snooze fixé dans les réglages, ajout "changer de calcul" ([0460465](https://github.com/niafrond/niafrond.github.io/commit/046046551c25e36032ca975c87aefa774944ca60)), closes [#input-snooze](https://github.com/niafrond/niafrond.github.io/issues/input-snooze)
+
 ## [2.51.0](https://github.com/niafrond/niafrond.github.io/compare/v2.50.0...v2.51.0) (2026-09-30)
 
 ### Features
