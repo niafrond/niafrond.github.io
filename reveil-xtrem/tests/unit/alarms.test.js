@@ -1,4 +1,8 @@
-import { createAlarm, clampProblemsCount, DIFFICULTIES } from '../../alarms.js';
+import {
+  createAlarm, clampProblemsCount, DIFFICULTIES,
+  clampSnoozeLimit, clampSnoozeDecreaseMinutes, clampAutoDismissMinutes,
+  effectiveSnoozeMinutes, canSnoozeAgain,
+} from '../../alarms.js';
 import { SOUND_PRESETS, DEFAULT_SOUND_ID } from '../../sound.js';
 
 describe('createAlarm', () => {
@@ -33,6 +37,82 @@ describe('createAlarm', () => {
     for (const difficulty of DIFFICULTIES) {
       expect(createAlarm({ time: '07:00', difficulty }).difficulty).toBe(difficulty);
     }
+  });
+
+  test('réglages de rappel par défaut : illimité, sans réduction, sans arrêt auto', () => {
+    const alarm = createAlarm({ time: '07:00' });
+    expect(alarm.snoozeLimit).toBe(0);
+    expect(alarm.snoozeDecreaseMinutes).toBe(0);
+    expect(alarm.autoDismissMinutes).toBe(0);
+  });
+
+  test('retient les réglages de rappel demandés', () => {
+    const alarm = createAlarm({ time: '07:00', snoozeLimit: 3, snoozeDecreaseMinutes: 2, autoDismissMinutes: 5 });
+    expect(alarm.snoozeLimit).toBe(3);
+    expect(alarm.snoozeDecreaseMinutes).toBe(2);
+    expect(alarm.autoDismissMinutes).toBe(5);
+  });
+});
+
+describe('clampSnoozeLimit', () => {
+  test('borne entre 0 (illimité) et 10', () => {
+    expect(clampSnoozeLimit(-5)).toBe(0);
+    expect(clampSnoozeLimit(42)).toBe(10);
+    expect(clampSnoozeLimit(3)).toBe(3);
+  });
+
+  test('retombe sur 0 (illimité) si non numérique', () => {
+    expect(clampSnoozeLimit('nope')).toBe(0);
+  });
+});
+
+describe('clampSnoozeDecreaseMinutes', () => {
+  test('borne entre 0 et 15', () => {
+    expect(clampSnoozeDecreaseMinutes(-5)).toBe(0);
+    expect(clampSnoozeDecreaseMinutes(42)).toBe(15);
+  });
+});
+
+describe('clampAutoDismissMinutes', () => {
+  test('borne entre 0 (jamais) et 30', () => {
+    expect(clampAutoDismissMinutes(-5)).toBe(0);
+    expect(clampAutoDismissMinutes(99)).toBe(30);
+  });
+});
+
+describe('effectiveSnoozeMinutes', () => {
+  test('sans réduction réglée, l\'intervalle reste constant à chaque rappel', () => {
+    const alarm = { snoozeMinutes: 10, snoozeDecreaseMinutes: 0 };
+    expect(effectiveSnoozeMinutes(alarm, 0)).toBe(10);
+    expect(effectiveSnoozeMinutes(alarm, 3)).toBe(10);
+  });
+
+  test('avec réduction réglée, l\'intervalle diminue à chaque rappel déjà utilisé', () => {
+    const alarm = { snoozeMinutes: 10, snoozeDecreaseMinutes: 2 };
+    expect(effectiveSnoozeMinutes(alarm, 0)).toBe(10); // 1er rappel
+    expect(effectiveSnoozeMinutes(alarm, 1)).toBe(8); // 2e rappel
+    expect(effectiveSnoozeMinutes(alarm, 2)).toBe(6); // 3e rappel
+  });
+
+  test('ne descend jamais sous 1 minute même avec une forte réduction cumulée', () => {
+    const alarm = { snoozeMinutes: 10, snoozeDecreaseMinutes: 4 };
+    expect(effectiveSnoozeMinutes(alarm, 5)).toBe(1);
+  });
+});
+
+describe('canSnoozeAgain', () => {
+  test('illimité (0) : toujours autorisé', () => {
+    const alarm = { snoozeLimit: 0 };
+    expect(canSnoozeAgain(alarm, 0)).toBe(true);
+    expect(canSnoozeAgain(alarm, 50)).toBe(true);
+  });
+
+  test('limité : autorisé tant que le quota n\'est pas atteint', () => {
+    const alarm = { snoozeLimit: 2 };
+    expect(canSnoozeAgain(alarm, 0)).toBe(true);
+    expect(canSnoozeAgain(alarm, 1)).toBe(true);
+    expect(canSnoozeAgain(alarm, 2)).toBe(false);
+    expect(canSnoozeAgain(alarm, 3)).toBe(false);
   });
 });
 

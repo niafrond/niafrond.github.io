@@ -135,8 +135,40 @@
     </div>
 
     <div class="card">
-      <label class="field-label" for="input-snooze">Durée du snooze (minutes)</label>
-      <input type="number" id="input-snooze" class="input" min="1" max="30" value="9">
+      <label class="field-label" for="input-snooze">Temps entre les rappels (minutes)</label>
+      <input type="number" id="input-snooze" class="input" min="1" max="30" placeholder="Ex. 9" required>
+      <p class="field-hint">Obligatoire, sans valeur par défaut — cette durée est fixée ici et ne peut plus être changée quand l'alarme sonne.</p>
+      <p id="input-snooze-error" class="field-error" hidden>Entrez un nombre de minutes (1 à 30).</p>
+    </div>
+
+    <div class="card">
+      <span class="field-label">Nombre limite de rappels</span>
+      <div class="stepper">
+        <button type="button" id="btn-snoozelimit-minus" class="stepper-btn" aria-label="Moins de rappels">−</button>
+        <span id="snoozelimit-value" class="stepper-value">Illimité</span>
+        <button type="button" id="btn-snoozelimit-plus" class="stepper-btn" aria-label="Plus de rappels">+</button>
+      </div>
+      <p class="field-hint">Combien de fois l'alarme peut être reportée avant de forcer la résolution du calcul (illimité par défaut).</p>
+    </div>
+
+    <div class="card">
+      <span class="field-label">Réduire graduellement le temps entre chaque rappel</span>
+      <div class="stepper">
+        <button type="button" id="btn-snoozedecrease-minus" class="stepper-btn" aria-label="Moins de réduction">−</button>
+        <span id="snoozedecrease-value" class="stepper-value">Jamais</span>
+        <button type="button" id="btn-snoozedecrease-plus" class="stepper-btn" aria-label="Plus de réduction">+</button>
+      </div>
+      <p class="field-hint">Minutes retranchées à chaque nouveau rappel (jamais sous 1 minute).</p>
+    </div>
+
+    <div class="card">
+      <span class="field-label">Arrêter automatiquement la sonnerie</span>
+      <div class="stepper">
+        <button type="button" id="btn-autodismiss-minus" class="stepper-btn" aria-label="Moins de délai">−</button>
+        <span id="autodismiss-value" class="stepper-value">Jamais</span>
+        <button type="button" id="btn-autodismiss-plus" class="stepper-btn" aria-label="Plus de délai">+</button>
+      </div>
+      <p class="field-hint">Si personne ne résout le calcul, la sonnerie s'arrête seule après ce délai (jamais par défaut).</p>
     </div>
 
     <div class="edit-actions">
@@ -158,6 +190,7 @@
       <input id="challenge-answer" class="challenge-answer" type="number" inputmode="numeric" autocomplete="off" placeholder="Réponse">
       <div id="challenge-error" class="challenge-error" hidden>Faux, réessayez !</div>
       <button id="btn-challenge-validate" class="btn btn-primary w-full">Valider</button>
+      <button id="btn-challenge-reroll" type="button" class="btn btn-secondary w-full">🔄 Changer de calcul</button>
     </div>
 
     <button id="btn-snooze" class="btn btn-secondary btn-lg w-full">💤 Snooze</button>

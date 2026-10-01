@@ -26,11 +26,19 @@ export async function syncNativeAlarms(alarms) {
   }
 }
 
-export async function nativeSnooze(alarmId, minutes) {
+/**
+ * `snoozeCount` = nombre de rappels déjà utilisés pour cette occurrence
+ * APRÈS ce snooze (donc `priorSnoozeCount + 1`) — permet au natif de
+ * reprogrammer avec le bon décompte pour le prochain rappel (limite,
+ * intervalle dégressif) même si l'appli est ensuite fermée. Voir
+ * AlarmRingService.java (source de vérité côté natif quand l'appli est en
+ * arrière-plan) et scheduler.js#applySnooze (source de vérité côté JS).
+ */
+export async function nativeSnooze(alarmId, minutes, snoozeCount) {
   const plugin = getPlugin();
   if (!plugin) return;
   try {
-    await plugin.snooze({ id: alarmId, minutes });
+    await plugin.snooze({ id: alarmId, minutes, snoozeCount });
   } catch {}
 }
 
