@@ -1,3 +1,24 @@
+## [2.51.0](https://github.com/niafrond/niafrond.github.io/compare/v2.50.0...v2.51.0) (2026-09-30)
+
+### Features
+
+* **match3-quest:** déplacement au clic (plus court chemin) et transition de combat façon Pokémon ([1d78197](https://github.com/niafrond/niafrond.github.io/commit/1d78197572255387182df94a461946bb5a4e1576))
+* **match3-quest:** version finale des sprites d'ennemis du lot 2 ([0883010](https://github.com/niafrond/niafrond.github.io/commit/08830103df645c591e18d593547a8b3bc0f40d08))
+* **match3-quest:** vrais sprites SVG pour héros, PNJ, coffres et ennemis ([d1cc669](https://github.com/niafrond/niafrond.github.io/commit/d1cc6690318b73c62302033b18a69f9280c0029d))
+
+## [2.50.0](https://github.com/niafrond/niafrond.github.io/compare/v2.49.0...v2.50.0) (2026-09-29)
+
+### Features
+
+* **match3-quest:** exploration plein écran en vue du dessus ([389bd6e](https://github.com/niafrond/niafrond.github.io/commit/389bd6e05a0b511bee219ea293991727339685f5))
+
+## [2.49.0](https://github.com/niafrond/niafrond.github.io/compare/v2.48.0...v2.49.0) (2026-09-29)
+
+### Features
+
+* **match3-quest:** histoire étoffée, quêtes secondaires, dialogues évolutifs ([80d817a](https://github.com/niafrond/niafrond.github.io/commit/80d817a11c0179d9dcde0ed9225f2c15138be854))
+* **match3-quest:** refonte en deux phases, exploration isométrique et combat ([6236ab6](https://github.com/niafrond/niafrond.github.io/commit/6236ab638149fcb4204f3a74ff9a6b6636afd411))
+
 ## [2.48.0](https://github.com/niafrond/niafrond.github.io/compare/v2.47.0...v2.48.0) (2026-09-29)
 
 ### Features

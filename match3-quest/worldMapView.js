@@ -94,13 +94,14 @@ function seaWaves() {
 
 /**
  * @param {Array} zones  worldZones (avec .map {x,y}), dans l'ordre du chemin
- * @param {{level:number, visitedIds:string[], currentId:string|null}} state
+ * @param {{level:number, visitedIds:string[], currentId:string|null, heroUri?:string, requireVisit?:boolean}} state
  */
 export function buildWorldMapSvg(zones, state) {
     const level = Math.max(1, Math.floor(state?.level || 1));
     const visitedIds = state?.visitedIds || [];
     const currentId = state?.currentId || null;
-    const isUnlocked = z => level >= z.unlockLevel;
+    // requireVisit : en exploration, une région ne se rejoint que si on l'a déjà découverte à pied.
+    const isUnlocked = z => level >= z.unlockLevel && (!state.requireVisit || visitedIds.includes(z.id));
     const points = zones.map(z => z.map);
 
     const roadD = landPath(points);
@@ -150,9 +151,11 @@ export function buildWorldMapSvg(zones, state) {
                 ${state === 'visited' ? '<text class="wm-node-badge" x="19" y="-14" text-anchor="middle">⭐</text>' : ''}
                 <rect class="wm-banner" x="${-bannerW / 2}" y="32" width="${bannerW}" height="22" rx="8"/>
                 <text class="wm-banner-text" y="47" text-anchor="middle">${name}</text>
-                ${unlocked ? '' : `<rect class="wm-lvl" x="-34" y="58" width="68" height="18" rx="9"/><text class="wm-lvl-text" y="71" text-anchor="middle">Niv. ${zone.unlockLevel}</text>`}
+                ${unlocked ? '' : `<rect class="wm-lvl" x="-34" y="58" width="68" height="18" rx="9"/><text class="wm-lvl-text" y="71" text-anchor="middle">${level >= zone.unlockLevel ? '???' : `Niv. ${zone.unlockLevel}`}</text>`}
             </g>
-            ${current ? '<text class="wm-hero" y="-38" text-anchor="middle">🧙</text>' : ''}
+            ${current ? (state.heroUri
+                ? `<image class="wm-hero" href="${state.heroUri}" x="-24" y="-84" width="48" height="48"/>`
+                : '<text class="wm-hero" y="-38" text-anchor="middle">🧙</text>') : ''}
         </g>`;
     }).join('');
 
@@ -187,7 +190,7 @@ export function buildWorldMapSvg(zones, state) {
 </svg>`;
 }
 
-const DEFAULT_CAPTION = 'Touchez une zone pour l\'explorer. Une zone débloquée reste toujours accessible.';
+const DEFAULT_CAPTION = 'Touchez une région découverte pour vous y rendre.';
 
 /**
  * Insère la carte dans `container` et branche les interactions.
@@ -196,19 +199,23 @@ const DEFAULT_CAPTION = 'Touchez une zone pour l\'explorer. Une zone débloquée
 export function mountWorldMap(container, zones, state, onSelect) {
     container.innerHTML = `${buildWorldMapSvg(zones, state)}<div class="wm-caption" aria-live="polite"></div>`;
     const caption = container.querySelector('.wm-caption');
+    const isSelectable = zone => state.level >= zone.unlockLevel && (!state.requireVisit || (state.visitedIds || []).includes(zone.id));
     const setCaption = (zone) => {
         if (!zone) { caption.textContent = DEFAULT_CAPTION; return; }
-        const unlocked = state.level >= zone.unlockLevel;
-        caption.textContent = unlocked
-            ? `${zone.emoji} ${zone.name} — ${zone.description}`
-            : `🔒 ${zone.name} — se débloque au niveau ${zone.unlockLevel}.`;
+        if (isSelectable(zone)) {
+            caption.textContent = `${zone.emoji} ${zone.name} — ${zone.description}`;
+        } else if (state.level >= zone.unlockLevel) {
+            caption.textContent = `❔ ${zone.name} — région inexplorée : trouvez le chemin à pied pour la découvrir.`;
+        } else {
+            caption.textContent = `🔒 ${zone.name} — se débloque au niveau ${zone.unlockLevel}.`;
+        }
     };
     setCaption(null);
 
     container.querySelectorAll('.wm-node').forEach(node => {
         const zone = zones.find(z => z.id === node.dataset.zone);
         if (!zone) return;
-        const activate = () => { if (state.level >= zone.unlockLevel) onSelect(zone); else setCaption(zone); };
+        const activate = () => { if (isSelectable(zone)) onSelect(zone); else setCaption(zone); };
         node.addEventListener('click', activate);
         node.addEventListener('keydown', e => {
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
