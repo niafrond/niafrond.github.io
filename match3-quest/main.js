@@ -2,7 +2,7 @@ import { generateBoard, renderBoard } from "./board.js";
 import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, combatHooks } from "./game.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy } from "./enemies.js";
-import { playTitleScreen } from "./cinematics.js";
+import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
 import { initializeAudioUI, playSfx, primeAudioFromGesture } from "./sound.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate } from "./version.js";
@@ -110,35 +110,11 @@ function showClassSelection() {
         updateAvailableSpells();
         saveUpdate();
 
-        if(!hasTutorialBeenCompleted()) {
-            // Proposer le tutoriel en ligne dans la même modal
-            container.innerHTML = `
-                <div style="text-align:center; padding: 16px 0 8px;">
-                    <div style="font-size:3rem; margin-bottom:10px;">📚</div>
-                    <h3 style="margin:0 0 8px;">Voulez-vous lancer le tutoriel ?</h3>
-                    <p style="color:#666; font-size:0.88rem; margin:0 0 20px;">
-                        Il vous guidera pas à pas : déplacer des tuiles, faire des matchs de soleils,<br>générer du mana et lancer un sort.
-                    </p>
-                    <div class="modal-actions">
-                        <button class="primary" id="tutorial-inline-yes">✅ Oui, lancer le tutoriel</button>
-                        <button class="secondary" id="tutorial-inline-no">❌ Non merci</button>
-                    </div>
-                </div>
-            `;
-            document.getElementById('tutorial-inline-yes').onclick = () => {
-                modal.classList.remove('active');
-                startTutorial();
-            };
-            document.getElementById('tutorial-inline-no').onclick = () => {
-                modal.classList.remove('active');
-                window.dispatchEvent(new Event('match3:enter-exploration'));
-            };
-        } else {
-            modal.classList.remove('active');
-            window.dispatchEvent(new Event('match3:enter-exploration'));
-        }
+        // Nouvelle partie : pas de question, le tutoriel est le duel contre Fengmeng.
+        modal.classList.remove('active');
+        window.dispatchEvent(new Event('match3:start-tutorial-duel'));
     };
-    
+
     document.getElementById('skip-class').onclick = () => {
         // Même sans classe, le joueur doit disposer d'une arme pour se défendre
         grantStartingWeapon(DEFAULT_STARTING_WEAPON_ID);
@@ -214,6 +190,11 @@ function init() {
         exploration.hide();
         activateCombatTab();
         setCombatUiVisible(true);
+        if(encounter.tutorial) {
+            // Duel d'entraînement contre Fengmeng : combat guidé pas à pas (voir tutorial.js)
+            startTutorial({ enemy: createMapEnemy(encounter) });
+            return;
+        }
         startNewCombat(createMapEnemy(encounter));
         generateBoard();
         renderBoard();
@@ -223,6 +204,11 @@ function init() {
     combatHooks.onVictory = () => exploration.onCombatVictory();
     combatHooks.onEnd = isVictory => exploration.onCombatEnd(isVictory);
     window.addEventListener('match3:enter-exploration', enterExploration);
+    // Nouvelle partie, classe choisie : on enchaîne directement sur le duel-tutoriel contre Fengmeng.
+    window.addEventListener('match3:start-tutorial-duel', () => {
+        enterExploration();
+        exploration.startTutorialDuel('fengmeng_1');
+    });
     // Tout combat (y compris le tutoriel) masque la carte.
     window.addEventListener('match3:combat-start', () => exploration.hide());
 
@@ -299,7 +285,10 @@ function init() {
     // Écran de démarrage (portrait animé) avant la sélection de classe / la reprise ; ignoré par les navigateurs
     // pilotés par des tests automatisés (sauf ?title=1).
     const skipTitle = navigator.webdriver && !/[?&]title=1/.test(location.search);
-    (skipTitle ? Promise.resolve() : playTitleScreen()).then(() => {
+    // Nouvelle partie (aucune classe choisie) : prologue animé, puis choix de la classe et tutoriel.
+    (skipTitle ? Promise.resolve() : playTitleScreen())
+        .then(() => (!skipTitle && !player.class ? playPrologueAnimation() : undefined))
+        .then(() => {
         showClassSelection();
         if(player.class) {
             enterExploration();

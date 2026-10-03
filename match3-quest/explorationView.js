@@ -12,7 +12,7 @@
 import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
 import { playSfx } from './sound.js';
-import { playEndingAnimation, playBossDialogue } from './cinematics.js';
+import { playEndingAnimation, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, preloadSprites } from './sprites/index.js';
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
@@ -333,10 +333,11 @@ export function createExplorationView(cfg) {
         battleTransitionEl = null;
     }
 
-    function startEncounter(enemyId) {
+    function startEncounter(enemyId, opts = {}) {
         if (inCombat) return;
         const enc = X.encounterFor(session, enemyId, cfg.getPlayerLevel());
         if (!enc) return;
+        if (opts.tutorial) enc.tutorial = true;
         session.rt.pendingEnemyId = enemyId;
         held = null;
         walk = null;
@@ -849,7 +850,8 @@ export function createExplorationView(cfg) {
             if (!rafId) rafId = requestAnimationFrame(frame);
             if (X.needsIntro(session)) {
                 const lines = X.markIntroSeen(session);
-                openDialog({ emoji: '📜', name: STORY_TITLE, title: 'Prologue' }, lines, () => { cfg.onSave(); });
+                // Le prologue a déjà été raconté par l'animation de nouvelle partie : pas de texte à dérouler en plus.
+                if (!prologueAnimationPlayed()) openDialog({ emoji: '📜', name: STORY_TITLE, title: 'Prologue' }, lines, () => { cfg.onSave(); });
                 cfg.onSave();
             }
             applyQueuedEvents();
@@ -886,6 +888,12 @@ export function createExplorationView(cfg) {
             session.rt.pendingEnemyId = null;
             syncVisual(true);
             cfg.onSave();
+        },
+
+        // Nouvelle partie : le duel d'entraînement contre Fengmeng sert de tutoriel guidé.
+        startTutorialDuel(enemyId = 'fengmeng_1') {
+            ensureSession();
+            startEncounter(enemyId, { tutorial: true });
         },
 
         teleportToScreen(screenId) {

@@ -157,8 +157,11 @@ export function proposeTutorial(onDecline) {
 /**
  * Démarre le tutoriel (combat guidé étape par étape).
  */
-export function startTutorial() {
+let _duelEnemy = null;
+
+export function startTutorial(opts = {}) {
     if (_active) return;
+    _duelEnemy = opts.enemy || null;
     _active = true;
     _step = 1;
     tutorialCallbacks.useDumbAI = true;
@@ -240,14 +243,24 @@ function _startTutorialCombat() {
         const { startNewCombat, updateStats, createSpellButtons, log } = gameModule;
 
         // Démarrer le combat contre le mannequin
-        startNewCombat(TUTORIAL_ENEMY);
+        let enemy = TUTORIAL_ENEMY;
+        if (_duelEnemy) {
+            // Duel contre un vrai adversaire (Fengmeng) : on garde son identité mais on l'adoucit pour apprendre.
+            enemy = Object.assign(_duelEnemy, {
+                hp: Math.min(_duelEnemy.hp, 40), maxHp: Math.min(_duelEnemy.maxHp, 40),
+                attack: Math.min(_duelEnemy.attack, 4), defense: 0,
+                spells: [], abilities: [], useDumbAI: true, isTutorialEnemy: true
+            });
+            _duelEnemy = null;
+        }
+        startNewCombat(enemy);
 
         import('./board.js').then(boardModule => {
             boardModule.generateBoard();
             boardModule.renderBoard();
             updateStats();
             createSpellButtons();
-            log('📚 Tutoriel démarré à l\'école de Hou Yi ! Suivez les instructions dans le panneau en bas à droite.');
+            log('📚 Duel d\'entraînement ! Suivez les instructions dans le panneau en bas à droite.');
         });
 
         // Afficher les éléments de combat et basculer sur l'onglet combat
