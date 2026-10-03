@@ -12,7 +12,6 @@ import {
 import { playSfx } from "./sound.js";
 import {
     JOKER_TILE,
-    JOKER_SYMBOL,
     isJokerTile,
     shouldCreateJokerFromMatchLength,
     pickRandomNonJokerIndex,
@@ -40,13 +39,31 @@ let boardSettledCallbacks = [];
 let boardResizeListenersAttached = false;
 let boardResizeObserver = null;
 
+// Les tuiles sont des dessins (gâteaux de lune, soleil ardent, flèche : voir retro.css et sprites/tiles/) :
+// plus de glyphe emoji dans la case, seulement une infobulle qui rappelle le rôle de la tuile.
+const TILE_LABELS = {
+    red: 'Gâteau de lune au haricot rouge',
+    blue: 'Gâteau de lune peau de neige',
+    green: 'Gâteau de lune au thé matcha',
+    yellow: 'Gâteau de lune au jaune d\'œuf salé',
+    purple: 'Gâteau de lune au taro',
+    skull: 'Soleil ardent : dégâts',
+    combat: 'Flèche : points de combat',
+    joker: 'Pleine lune : joker'
+};
+
+function paintTileGlyph(el, tile){
+    el.textContent = '';
+    el.title = TILE_LABELS[isJokerTile(tile) ? 'joker' : tile] || '';
+}
+
 const SKULL_ATTACK_BONUS_DIVISOR = 10;
 const SKULL_ATTACK_BONUS_CAP = 6;
 const MIN_INITIAL_POSSIBLE_MOVES = 8;
 const MAX_BOARD_GENERATION_ATTEMPTS = 120;
 
 // Répartition FIXE des tuiles, identique pour le plateau initial et pour chaque
-// nouvelle ligne qui tombe après un match : ~75 % gemmes, 17 % gants (⚔️), 7 % crânes.
+// nouvelle ligne qui tombe après un match : ~75 % gâteaux de lune, 17 % flèches, 7 % soleils.
 // Le reste (~1 %) est absorbé par les gemmes (dont le joker, très rare).
 const BOARD_DROP_PROBABILITIES = Object.freeze({
     skullProb: 0.07,
@@ -387,10 +404,7 @@ export function regenerateBoard(){
                 tiles[i].style.opacity = '1';
                 tiles[i].style.transform = 'scale(1)';
                 tiles[i].className = `tile ${board[i]}`;
-                if(board[i] === 'skull') tiles[i].textContent = '💀';
-                else if(board[i] === 'combat') tiles[i].textContent = '⚔️';
-                else if(isJokerTile(board[i])) tiles[i].textContent = JOKER_SYMBOL;
-                else tiles[i].textContent = '';
+                paintTileGlyph(tiles[i], board[i]);
             }
             renderBoard();
         }, 400);
@@ -534,10 +548,7 @@ export function renderBoard(skipCleanup = false){
             tiles[i].className = `tile ${t}`;
             existingClasses.forEach(c => tiles[i].classList.add(c));
         }
-        tiles[i].textContent = '';
-        if(t==='skull') tiles[i].textContent='💀';
-        else if(t==='combat') tiles[i].textContent='⚔️';
-        else if(isJokerTile(t)) tiles[i].textContent = JOKER_SYMBOL;
+        paintTileGlyph(tiles[i], t);
     }
     refreshTargetingHighlights();
 }
@@ -599,7 +610,7 @@ export function checkMatches(forceFullBoard = false){
             if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
         } else if(info.type==='combat'){
             currentPlayer.combatPoints += info.len;
-            log(`⚔️ +${info.len} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+            log(`🏹 +${info.len} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
             // Bonus de tour pour 4+ épées
             if(info.len>=4){ 
                 addBonusTurn(currentPlayer);
@@ -632,15 +643,15 @@ export function checkMatches(forceFullBoard = false){
                 dmg = clampEnemyAttackDamage(dmg, enemy);
             }
             applyDamage(opponent, dmg);
-            log(`💀 Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}`);
+            log(`☀️ Match ${info.len} soleils : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}`);
             // Bonus de tour pour 4+ crânes
             if(info.len>=4){ 
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
-                log(`🎁 Match de ${info.len} crânes : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+                log(`🎁 Match de ${info.len} soleils : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 const isPlayer = currentTurn === 'player';
                 showCombatAnimation(
-                    { icon: '🎁', title: 'TOUR BONUS !', damage: `Match de ${info.len} crânes`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
+                    { icon: '🎁', title: 'TOUR BONUS !', damage: `Match de ${info.len} soleils`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
                     isPlayer
                 );
             }
@@ -846,9 +857,9 @@ export function highlightCombo(indices, info){
         if(info.type==='color'){
             log(`✨ Combo ${info.color} x${info.len}` + (info.len>=4?" (bonus)":""));
         } else if(info.type==='combat'){
-            log(`⚔️ Combo points de combat x${info.len}`);
+            log(`🏹 Combo points de combat x${info.len}`);
         } else if(info.type==='skull'){
-            log(`💀 Combo crânes x${info.len}`);
+            log(`☀️ Combo soleils x${info.len}`);
         }
     } else {
         log(`✨ Combo ${board[indices[0]]}!`);

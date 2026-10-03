@@ -1,7 +1,6 @@
 import { generateBoard, renderBoard } from "./board.js";
 import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, combatHooks } from "./game.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
-import { getRandomPlayerName } from "./playerNames.js";
 import { createMapEnemy } from "./enemies.js";
 import { initializeAudioUI, playSfx, primeAudioFromGesture } from "./sound.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
@@ -97,7 +96,8 @@ function showClassSelection() {
             return;
         }
         player.class = selectedClass;
-        player.name = getRandomPlayerName(selectedClass);
+        // Le joueur est toujours Hou Yi, l'archer divin ; la classe choisie est sa manière de combattre.
+        player.name = 'Hou Yi';
         const classData = playerClasses[selectedClass];
         // Appliquer les stats de départ de la classe
         Object.keys(classData.startingStats).forEach(attr => {
@@ -116,7 +116,7 @@ function showClassSelection() {
                     <div style="font-size:3rem; margin-bottom:10px;">📚</div>
                     <h3 style="margin:0 0 8px;">Voulez-vous lancer le tutoriel ?</h3>
                     <p style="color:#666; font-size:0.88rem; margin:0 0 20px;">
-                        Il vous guidera pas à pas : déplacer des tuiles, faire des matchs de crânes,<br>générer du mana et lancer un sort.
+                        Il vous guidera pas à pas : déplacer des tuiles, faire des matchs de soleils,<br>générer du mana et lancer un sort.
                     </p>
                     <div class="modal-actions">
                         <button class="primary" id="tutorial-inline-yes">✅ Oui, lancer le tutoriel</button>

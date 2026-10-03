@@ -11,33 +11,33 @@ import {
 export const playerClasses = {
     sorcerer: {
         id: 'sorcerer',
-        name: 'Sorcier',
-        emoji: '🧙',
-        description: 'Maître des arcanes, manipule le mana et les éléments',
+        name: 'Maître taoïste',
+        emoji: '☯️',
+        description: 'Hou Yi sur la voie du Tao : talismans, qi et éléments au service de son arc',
         startingStats: { intelligence: 2, stamina: 0 },
         startingWeaponId: 'wooden_staff'
     },
     assassin: {
         id: 'assassin',
-        name: 'Assassin',
-        emoji: '🗡️',
-        description: 'Expert en attaques furtives et rapides',
+        name: 'Archer céleste',
+        emoji: '🏹',
+        description: 'Hou Yi, l\'archer divin : tirs rapides, flèches précises et coups furtifs',
         startingStats: { agility: 2, strength: 1 },
         startingWeaponId: 'bronze_dagger'
     },
     templar: {
         id: 'templar',
-        name: 'Templier',
+        name: 'Garde impérial',
         emoji: '🛡️',
-        description: 'Gardien défensif avec une grande résilience',
+        description: 'Hou Yi en armure laquée, rempart de l\'empire à la résilience sans faille',
         startingStats: { stamina: 2, morale: 1 },
         startingWeaponId: 'rusty_sword'
     },
     barbarian: {
         id: 'barbarian',
-        name: 'Barbare',
+        name: 'Guerrier des steppes',
         emoji: '🪓',
-        description: 'Guerrier brutal avec une force dévastatrice',
+        description: 'Hou Yi en fourrures, guerrier du Nord à la force dévastatrice',
         startingStats: { strength: 3 },
         startingWeaponId: 'wood_axe'
     }

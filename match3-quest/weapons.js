@@ -12,133 +12,133 @@ export const WeaponType = {
 
 // Définition de toutes les armes disponibles dans le jeu
 export const allWeapons = [
-    // === ÉPÉES ===
+    // === SABRES ET ÉPÉES ===
     {
         id: "rusty_sword",
-        name: "Épée Rouillée",
+        name: "Sabre Dao Rouillé",
         type: WeaponType.SWORD,
         damage: 10,
         actionPoints: 3,
         minLevel: 1,
-        description: "Une vieille épée rouillée mais toujours fonctionnelle"
+        description: "Un vieux sabre dao rouillé mais toujours tranchant"
     },
     {
         id: "iron_sword",
-        name: "Épée de Fer",
+        name: "Sabre Dao de Fer",
         type: WeaponType.SWORD,
         damage: 20,
         actionPoints: 4,
         minLevel: 3,
-        description: "Une épée solide en fer forgé"
+        description: "Un sabre dao solide en fer forgé"
     },
     {
         id: "steel_sword",
-        name: "Épée d'Acier",
+        name: "Épée Jian d'Acier",
         type: WeaponType.SWORD,
         damage: 35,
         actionPoints: 5,
         minLevel: 7,
-        description: "Une épée d'acier trempé, aiguisée avec précision"
+        description: "Une épée jian d'acier trempé, fine et précise"
     },
     {
         id: "dragon_sword",
-        name: "Épée du Dragon",
+        name: "Jian du Dragon-Long",
         type: WeaponType.SWORD,
         damage: 60,
         actionPoints: 6,
         minLevel: 12,
-        description: "Une épée légendaire forgée dans le souffle d'un dragon"
+        description: "Une épée légendaire forgée dans le souffle d'un dragon-long"
     },
     {
         id: "excalibur",
-        name: "Excalibur",
+        name: "Épée Xuanyuan",
         type: WeaponType.SWORD,
         damage: 100,
         actionPoints: 7,
         minLevel: 18,
-        description: "L'épée mythique des rois, brillante d'une lumière divine"
+        description: "L'épée mythique de l'Empereur Jaune, brillante d'une lumière divine"
     },
 
-    // === HACHES ===
+    // === HACHES ET HALLEBARDES ===
     {
         id: "wood_axe",
-        name: "Hache de Bois",
+        name: "Hachette de Bûcheron",
         type: WeaponType.AXE,
         damage: 15,
         actionPoints: 4,
         minLevel: 1,
-        description: "Une hache simple utilisée pour couper du bois... et des ennemis"
+        description: "Une hachette simple utilisée pour couper le bambou... et les ennemis"
     },
     {
         id: "battle_axe",
-        name: "Hache de Guerre",
+        name: "Hache des Steppes",
         type: WeaponType.AXE,
         damage: 30,
         actionPoints: 5,
         minLevel: 5,
-        description: "Une lourde hache de bataille à deux mains"
+        description: "Une lourde hache de bataille à deux mains, prisée des cavaliers du Nord"
     },
     {
         id: "great_axe",
-        name: "Grande Hache",
+        name: "Guandao de Guerre",
         type: WeaponType.AXE,
         damage: 50,
         actionPoints: 6,
         minLevel: 10,
-        description: "Une hache massive qui peut fendre un ennemi en deux"
+        description: "Une hallebarde à large lame courbe qui peut fendre un ennemi en deux"
     },
     {
         id: "executioner_axe",
-        name: "Hache du Bourreau",
+        name: "Hache du Bourreau Impérial",
         type: WeaponType.AXE,
         damage: 80,
         actionPoints: 7,
         minLevel: 15,
-        description: "Une hache terrifiante qui inspire la peur dans le cœur des ennemis"
+        description: "Une hache terrifiante qui glace le sang des ennemis"
     },
 
-    // === DAGUES ===
+    // === POIGNARDS ===
     {
         id: "bronze_dagger",
-        name: "Dague de Bronze",
+        name: "Poignard de Bronze",
         type: WeaponType.DAGGER,
         damage: 8,
         actionPoints: 2,
         minLevel: 1,
-        description: "Une dague légère et rapide"
+        description: "Un poignard de bronze léger et rapide"
     },
     {
         id: "silver_dagger",
-        name: "Dague d'Argent",
+        name: "Poignard d'Argent",
         type: WeaponType.DAGGER,
         damage: 15,
         actionPoints: 2,
         minLevel: 4,
-        description: "Une dague élégante en argent pur"
+        description: "Un poignard élégant en argent pur"
     },
     {
         id: "poisoned_dagger",
-        name: "Dague Empoisonnée",
+        name: "Poignard Empoisonné",
         type: WeaponType.DAGGER,
         damage: 25,
         actionPoints: 3,
         minLevel: 8,
-        description: "Une dague enduite d'un poison mortel"
+        description: "Un poignard enduit d'un venin mortel"
     },
     {
         id: "shadow_blade",
-        name: "Lame d'Ombre",
+        name: "Lame du Voile Noir",
         type: WeaponType.DAGGER,
         damage: 45,
         actionPoints: 3,
         minLevel: 13,
-        description: "Une dague forgée dans les ténèbres, presque invisible"
+        description: "Un poignard forgé dans les ténèbres, presque invisible"
     },
 
     // === MASSES ===
     {
         id: "club",
-        name: "Gourdin",
+        name: "Gourdin de Bois Dur",
         type: WeaponType.MACE,
         damage: 12,
         actionPoints: 3,
@@ -147,7 +147,7 @@ export const allWeapons = [
     },
     {
         id: "mace",
-        name: "Masse d'Armes",
+        name: "Masse à Pointes",
         type: WeaponType.MACE,
         damage: 25,
         actionPoints: 4,
@@ -156,7 +156,7 @@ export const allWeapons = [
     },
     {
         id: "war_hammer",
-        name: "Marteau de Guerre",
+        name: "Marteau de Forge",
         type: WeaponType.MACE,
         damage: 45,
         actionPoints: 5,
@@ -165,83 +165,83 @@ export const allWeapons = [
     },
     {
         id: "thor_hammer",
-        name: "Mjölnir",
+        name: "Marteau de Lei Gong",
         type: WeaponType.MACE,
         damage: 75,
         actionPoints: 6,
         minLevel: 16,
-        description: "Le légendaire marteau de Thor, chargé d'énergie électrique"
+        description: "Le marteau du Seigneur du Tonnerre, chargé d'énergie électrique"
     },
 
     // === ARCS ===
     {
         id: "short_bow",
-        name: "Arc Court",
+        name: "Arc Court de Pêcher",
         type: WeaponType.BOW,
         damage: 10,
         actionPoints: 2,
         minLevel: 2,
-        description: "Un petit arc pour les débutants"
+        description: "Un petit arc en bois de pêcher, qui chasse les mauvais esprits"
     },
     {
         id: "long_bow",
-        name: "Arc Long",
+        name: "Arc Long de Bambou",
         type: WeaponType.BOW,
         damage: 20,
         actionPoints: 3,
         minLevel: 5,
-        description: "Un arc long avec une portée impressionnante"
+        description: "Un arc long de bambou avec une portée impressionnante"
     },
     {
         id: "composite_bow",
-        name: "Arc Composite",
+        name: "Arc Composite de Corne",
         type: WeaponType.BOW,
         damage: 35,
         actionPoints: 4,
         minLevel: 9,
-        description: "Un arc composite puissant et précis"
+        description: "Un arc de corne et de tendon, puissant et précis"
     },
     {
         id: "elven_bow",
-        name: "Arc Elfique",
+        name: "Arc Rouge Céleste",
         type: WeaponType.BOW,
         damage: 55,
         actionPoints: 4,
         minLevel: 14,
-        description: "Un arc elfique magnifique qui ne manque jamais sa cible"
+        description: "Le grand arc rouge de l'archer divin, qui ne manque jamais sa cible"
     },
 
     // === BÂTONS ===
     {
         id: "wooden_staff",
-        name: "Bâton de Bois",
+        name: "Bâton de Bambou",
         type: WeaponType.STAFF,
         damage: 8,
         actionPoints: 2,
         minLevel: 1,
-        description: "Un simple bâton en bois"
+        description: "Un simple bâton de bambou"
     },
     {
         id: "magic_staff",
-        name: "Bâton Magique",
+        name: "Bâton à Talisman",
         type: WeaponType.STAFF,
         damage: 18,
         actionPoints: 3,
         minLevel: 4,
-        description: "Un bâton imprégné d'énergie magique"
+        description: "Un bâton orné d'un talisman, imprégné de qi"
     },
     {
         id: "archmage_staff",
-        name: "Bâton d'Archimage",
+        name: "Bâton du Maître Taoïste",
         type: WeaponType.STAFF,
         damage: 40,
         actionPoints: 4,
         minLevel: 10,
-        description: "Le bâton d'un archimage, pulsant de pouvoir"
+        description: "Le bâton d'un grand maître taoïste, pulsant de pouvoir"
     },
     {
         id: "staff_of_power",
-        name: "Bâton de Puissance",
+        name: "Bâton de l'Immortel",
         type: WeaponType.STAFF,
         damage: 65,
         actionPoints: 5,

@@ -2,77 +2,77 @@
   "allSpells": [
     {
       "id": "fireball",
-      "name": "Boule de Feu",
+      "name": "Souffle du Dragon de Feu",
       "color": "red",
       "type": "damage",
       "cost": 10,
       "dmg": 25,
       "minLevel": 1,
-      "description": "Lance une boule de feu qui inflige 25 dégâts"
+      "description": "Le dragon de feu souffle sur l'ennemi et inflige 25 dégâts"
     },
     {
       "id": "flameStrike",
-      "name": "Frappe de Flammes",
+      "name": "Frappe du Phénix",
       "color": "red",
       "type": "damage",
       "cost": 20,
       "dmg": 50,
       "minLevel": 5,
-      "description": "Une frappe enflammée qui inflige 50 dégâts"
+      "description": "Un coup de flammes de phénix qui inflige 50 dégâts"
     },
     {
       "id": "inferno",
-      "name": "Inferno",
+      "name": "Brasier du Fourneau Céleste",
       "color": "red",
       "type": "damage",
       "cost": 35,
       "dmg": 80,
       "minLevel": 10,
-      "description": "Un brasier infernal qui inflige 80 dégâts"
+      "description": "Un brasier digne du fourneau des immortels qui inflige 80 dégâts"
     },
     {
       "id": "meteor",
-      "name": "Météore",
+      "name": "Étoile Filante",
       "color": "red",
       "type": "damage",
       "cost": 50,
       "dmg": 120,
       "minLevel": 15,
-      "description": "Invoque un météore dévastateur qui inflige 120 dégâts"
+      "description": "Invoque une étoile filante dévastatrice qui inflige 120 dégâts"
     },
     {
       "id": "ice",
-      "name": "Glace",
+      "name": "Éclats de Givre",
       "color": "blue",
       "type": "damage",
       "cost": 12,
       "dmg": 30,
       "minLevel": 1,
-      "description": "Projette des éclats de glace qui infligent 30 dégâts"
+      "description": "Projette des éclats de givre qui infligent 30 dégâts"
     },
     {
       "id": "frostNova",
-      "name": "Nova de Glace",
+      "name": "Vague du Roi-Dragon",
       "color": "blue",
       "type": "damage",
       "cost": 22,
       "dmg": 55,
       "minLevel": 5,
-      "description": "Une explosion glaciale qui inflige 55 dégâts"
+      "description": "Une vague glaciale du Roi-Dragon de la Mer Orientale qui inflige 55 dégâts"
     },
     {
       "id": "blizzard",
-      "name": "Blizzard",
+      "name": "Tempête de Neige du Nord",
       "color": "blue",
       "type": "damage",
       "cost": 38,
       "dmg": 85,
       "minLevel": 10,
-      "description": "Déchaîne une tempête de glace qui inflige 85 dégâts"
+      "description": "Déchaîne une tempête de neige qui inflige 85 dégâts"
     },
     {
       "id": "iceAge",
-      "name": "Ère de Glace",
+      "name": "Grand Gel du Kunlun",
       "color": "blue",
       "type": "damage",
       "cost": 55,
@@ -82,57 +82,57 @@
     },
     {
       "id": "heal",
-      "name": "Soin",
+      "name": "Talisman de Jade",
       "color": "green",
       "type": "heal",
       "cost": 8,
       "heal": 20,
       "minLevel": 1,
-      "description": "Restaure 20 points de vie"
+      "description": "Un talisman de jade qui restaure 20 points de vie"
     },
     {
       "id": "greatHeal",
-      "name": "Grand Soin",
+      "name": "Rosée Céleste",
       "color": "green",
       "type": "heal",
       "cost": 18,
       "heal": 45,
       "minLevel": 5,
-      "description": "Restaure 45 points de vie"
+      "description": "Une rosée tombée du ciel qui restaure 45 points de vie"
     },
     {
       "id": "revitalize",
-      "name": "Revitalisation",
+      "name": "Circulation du Qi",
       "color": "green",
       "type": "heal",
       "cost": 30,
       "heal": 75,
       "minLevel": 10,
-      "description": "Revitalise le corps et restaure 75 points de vie"
+      "description": "Fait circuler le qi, revitalise le corps et restaure 75 points de vie"
     },
     {
       "id": "miracle",
-      "name": "Miracle",
+      "name": "Bénédiction de la Lune",
       "color": "green",
       "type": "heal",
       "cost": 45,
       "heal": 110,
       "minLevel": 15,
-      "description": "Un miracle divin qui restaure 110 points de vie"
+      "description": "Une bénédiction de Chang'e qui restaure 110 points de vie"
     },
     {
       "id": "bolt",
-      "name": "Éclair",
+      "name": "Éclair de Lei Gong",
       "color": "yellow",
       "type": "damage",
       "cost": 15,
       "dmg": 35,
       "minLevel": 1,
-      "description": "Projette un éclair qui inflige 35 dégâts"
+      "description": "Le Seigneur du Tonnerre lance un éclair qui inflige 35 dégâts"
     },
     {
       "id": "thunderBolt",
-      "name": "Foudre",
+      "name": "Foudre des Monts du Tonnerre",
       "color": "yellow",
       "type": "damage",
       "cost": 25,
@@ -142,31 +142,31 @@
     },
     {
       "id": "lightningStorm",
-      "name": "Tempête de Foudre",
+      "name": "Orage des Cent Éclairs",
       "color": "yellow",
       "type": "damage",
       "cost": 40,
       "dmg": 90,
       "minLevel": 10,
-      "description": "Une tempête électrique qui inflige 90 dégâts"
+      "description": "Un orage électrique qui inflige 90 dégâts"
     },
     {
       "id": "stormOfGods",
-      "name": "Tempête Divine",
+      "name": "Tribulation Céleste",
       "color": "yellow",
       "type": "damage",
       "cost": 60,
       "dmg": 140,
       "minLevel": 15,
-      "description": "La colère des dieux qui inflige 140 dégâts"
+      "description": "La colère du Ciel qui frappe pour 140 dégâts"
     }
   ],
   "sorcererSpells": [
     {
       "id": "mageStrike",
-      "name": "Frappe du Mage",
+      "name": "Frappe du Maître Taoïste",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "red": 3,
         "blue": 5
@@ -178,22 +178,22 @@
     },
     {
       "id": "wildMana",
-      "name": "Mana Sauvage",
+      "name": "Qi Sauvage",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "blue": 5,
         "green": 5
       },
       "minLevel": 3,
       "effect": "createJoker",
-      "description": "Transforme une gemme en wildcard x2 ou augmente le multiplicateur d'une wildcard (+2, max x7)"
+      "description": "Transforme un gâteau de lune en pleine lune (joker x2) ou augmente le multiplicateur d'un joker (+2, max x7)"
     },
     {
       "id": "shadowCurse",
-      "name": "Malédiction d'Ombre",
+      "name": "Talisman de Scellement",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "purple": 4
       },
@@ -204,33 +204,33 @@
     },
     {
       "id": "darkChannels",
-      "name": "Canaux Sombres",
+      "name": "Méridiens Obscurs",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "purple": 6
       },
       "minLevel": 5,
       "effect": "destroyColor",
-      "description": "Choisir une couleur → toutes les gemmes de cette couleur sont détruites et donnent leur mana"
+      "description": "Choisir une couleur → tous les gâteaux de lune de cette couleur sont détruits et donnent leur mana"
     },
     {
       "id": "flameBolts",
-      "name": "Projectiles de Flamme",
+      "name": "Talismans Enflammés",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "red": 5
       },
       "minLevel": 5,
       "effect": "yellowBolts",
-      "description": "Tire 1 projectile de 5 dégâts pour chaque 5 mana jaune, puis vide le mana jaune"
+      "description": "Tire 1 talisman de feu de 5 dégâts pour chaque 5 mana jaune, puis vide le mana jaune"
     },
     {
       "id": "iceShield",
-      "name": "Bouclier de Glace",
+      "name": "Barrière de Givre",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "blue": 8
       },
@@ -240,9 +240,9 @@
     },
     {
       "id": "flameblade",
-      "name": "Lame de Feu",
+      "name": "Lame de Feu Pourpre",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "red": 6
       },
@@ -252,9 +252,9 @@
     },
     {
       "id": "weakness",
-      "name": "Faiblesse",
+      "name": "Sceau d'Affaiblissement",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "purple": 5
       },
@@ -266,9 +266,9 @@
     },
     {
       "id": "handOfIce",
-      "name": "Main de Glace",
+      "name": "Paume de Givre",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "blue": 7
       },
@@ -279,21 +279,21 @@
     },
     {
       "id": "fingerOfDeath",
-      "name": "Doigt de Mort",
+      "name": "Doigt Solaire",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "purple": 8
       },
       "minLevel": 7,
       "effect": "createSkull",
-      "description": "Transforme une gemme en skull +5 (attaque forte)"
+      "description": "Transforme un gâteau de lune en soleil ardent +5 (attaque forte)"
     },
     {
       "id": "chasm",
-      "name": "Abîme",
+      "name": "Fissure du Fleuve Jaune",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "red": 10,
         "blue": 10
@@ -304,9 +304,9 @@
     },
     {
       "id": "stoneskin",
-      "name": "Peau de Pierre",
+      "name": "Peau de Jade",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "green": 8
       },
@@ -318,9 +318,9 @@
     },
     {
       "id": "strength",
-      "name": "Force",
+      "name": "Force du Tigre",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "red": 6
       },
@@ -332,22 +332,22 @@
     },
     {
       "id": "fireball",
-      "name": "Boule de Feu",
+      "name": "Sphère de Flammes",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "red": 8
       },
       "minLevel": 8,
       "effect": "fireballArea",
       "dmg": 15,
-      "description": "Détruit une zone 3×3 de gemmes et inflige 15 dégâts"
+      "description": "Détruit une zone 3×3 de gâteaux de lune et inflige 15 dégâts"
     },
     {
       "id": "mirrorShield",
-      "name": "Bouclier Miroir",
+      "name": "Miroir de Bronze",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "blue": 10
       },
@@ -359,9 +359,9 @@
     },
     {
       "id": "manaSiphon",
-      "name": "Siphon de Mana",
+      "name": "Aspiration du Qi",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "purple": 7
       },
@@ -372,9 +372,9 @@
     },
     {
       "id": "manaBlast",
-      "name": "Explosion de Mana",
+      "name": "Explosion des Cinq Éléments",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "red": 15,
         "blue": 15,
@@ -383,15 +383,15 @@
       },
       "minLevel": 15,
       "dmg": 150,
-      "description": "Grosse attaque consommant beaucoup de mana"
+      "description": "Grande attaque des cinq éléments consommant beaucoup de mana"
     }
   ],
   "assassinSpells": [
     {
       "id": "sneakAttack",
-      "name": "Attaque Sournoise",
+      "name": "Tir Furtif",
       "class": "assassin",
-      "emoji": "🗡️",
+      "emoji": "🏹",
       "cost": {
         "blue": 5
       },
@@ -402,22 +402,22 @@
     },
     {
       "id": "swiftStrike",
-      "name": "Frappe Rapide",
+      "name": "Tir Rapide",
       "class": "assassin",
-      "emoji": "🗡️",
+      "emoji": "🏹",
       "cost": {
         "yellow": 8,
         "red": 4
       },
       "minLevel": 3,
       "effect": "yellowToPurple",
-      "description": "Transforme toutes les gemmes jaunes en violettes et inflige 1 dégât par gemme convertie"
+      "description": "Transforme tous les gâteaux de lune jaunes en violets et inflige 1 dégât par gâteau converti"
     },
     {
       "id": "confuse",
-      "name": "Confusion",
+      "name": "Flèche de Brume",
       "class": "assassin",
-      "emoji": "🗡️",
+      "emoji": "🏹",
       "cost": {
         "blue": 5,
         "green": 6
@@ -429,9 +429,9 @@
     },
     {
       "id": "stealth",
-      "name": "Furtivité",
+      "name": "Voile de Brume",
       "class": "assassin",
-      "emoji": "🗡️",
+      "emoji": "🏹",
       "cost": {
         "purple": 6
       },
@@ -441,9 +441,9 @@
     },
     {
       "id": "poisonBlade",
-      "name": "Lame Empoisonnée",
+      "name": "Flèche Empoisonnée",
       "class": "assassin",
-      "emoji": "🗡️",
+      "emoji": "🏹",
       "cost": {
         "green": 6
       },
@@ -455,22 +455,22 @@
     },
     {
       "id": "shadowStrike",
-      "name": "Frappe de l'Ombre",
+      "name": "Flèche d'Ombre",
       "class": "assassin",
-      "emoji": "🗡️",
+      "emoji": "🏹",
       "cost": {
         "red": 4,
         "purple": 8
       },
       "minLevel": 10,
       "effect": "destroyPurple",
-      "description": "Détruit toutes les gemmes violettes et inflige 2 dégâts par gemme détruite"
+      "description": "Détruit tous les gâteaux de lune violets et inflige 2 dégâts par gâteau détruit"
     },
     {
       "id": "dualShot",
-      "name": "Double Tir",
+      "name": "Flèches Jumelles",
       "class": "assassin",
-      "emoji": "🗡️",
+      "emoji": "🏹",
       "cost": {
         "red": 16,
         "blue": 16,
@@ -485,7 +485,7 @@
   "templarSpells": [
     {
       "id": "defensiveWall",
-      "name": "Mur Défensif",
+      "name": "Muraille Impériale",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -494,11 +494,11 @@
       },
       "minLevel": 1,
       "effect": "purpleToDefense",
-      "description": "Détruit toutes les gemmes violettes → +5 défense par gemme"
+      "description": "Détruit tous les gâteaux de lune violets → +5 défense par gâteau"
     },
     {
       "id": "shieldBash",
-      "name": "Coup de Bouclier",
+      "name": "Coup de Bouclier Rond",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -511,7 +511,7 @@
     },
     {
       "id": "focus",
-      "name": "Concentration",
+      "name": "Concentration du Qi",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -520,11 +520,11 @@
       },
       "minLevel": 4,
       "effect": "createActionGem",
-      "description": "Transforme une gemme en Action Gem"
+      "description": "Transforme un gâteau de lune en flèche (point d'action)"
     },
     {
       "id": "intimidate",
-      "name": "Intimidation",
+      "name": "Regard Impérial",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -533,11 +533,11 @@
       "minLevel": 5,
       "effect": "stealCP",
       "cpSteal": 5,
-      "description": "Vole 5 Action Points à l'ennemi"
+      "description": "Vole 5 points d'action à l'ennemi"
     },
     {
       "id": "rush",
-      "name": "Charge",
+      "name": "Charge de Cavalerie",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -550,7 +550,7 @@
     },
     {
       "id": "counterAttack",
-      "name": "Contre-Attaque",
+      "name": "Riposte du Garde",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -564,7 +564,7 @@
     },
     {
       "id": "reinforce",
-      "name": "Renforcement",
+      "name": "Renfort des Troupes",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -573,11 +573,11 @@
       "minLevel": 9,
       "effect": "destroyActionGemHeal",
       "healPerGem": 10,
-      "description": "Détruit les Action Gems et soigne de 10 PV par gemme"
+      "description": "Détruit les flèches d'action et soigne de 10 PV par flèche"
     },
     {
       "id": "barrier",
-      "name": "Barrière",
+      "name": "Rempart de Jade",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -591,7 +591,7 @@
     },
     {
       "id": "divinePower",
-      "name": "Puissance Divine",
+      "name": "Mandat du Ciel",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -603,7 +603,7 @@
     },
     {
       "id": "holdTheLine",
-      "name": "Tenir la Ligne",
+      "name": "Formation de la Tortue",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -616,7 +616,7 @@
     },
     {
       "id": "heavensWrath",
-      "name": "Colère Céleste",
+      "name": "Courroux du Ciel",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -625,13 +625,13 @@
       "minLevel": 14,
       "effect": "explodeActionGems",
       "dmgPerGem": 8,
-      "description": "Explosion de toutes les Action Gems infligeant 8 dégâts par gemme"
+      "description": "Explosion de toutes les flèches d'action infligeant 8 dégâts par flèche"
     }
   ],
   "barbarianSpells": [
     {
       "id": "enrage",
-      "name": "Rage",
+      "name": "Fureur des Steppes",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -646,7 +646,7 @@
     },
     {
       "id": "cleave",
-      "name": "Entaille",
+      "name": "Entaille de la Horde",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -655,7 +655,7 @@
       },
       "minLevel": 3,
       "effect": "yellowDamage",
-      "description": "Inflige 1 dégât par gemme jaune, puis détruit les jaunes"
+      "description": "Inflige 1 dégât par gâteau de lune jaune, puis détruit les jaunes"
     },
     {
       "id": "throwAxe",
@@ -669,11 +669,11 @@
       "minLevel": 5,
       "effect": "skullBonus",
       "baseDmg": 4,
-      "description": "4 dégâts +1 par skull présent"
+      "description": "4 dégâts +1 par soleil présent"
     },
     {
       "id": "bloodlust",
-      "name": "Soif de Sang",
+      "name": "Soif de Bataille",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -688,7 +688,7 @@
     },
     {
       "id": "summonTempest",
-      "name": "Invoquer la Tempête",
+      "name": "Appel du Vent Céleste",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -703,7 +703,7 @@
     },
     {
       "id": "berserkerRage",
-      "name": "Rage Berserker",
+      "name": "Fureur du Loup des Steppes",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -712,11 +712,11 @@
       },
       "minLevel": 10,
       "effect": "redToSkulls",
-      "description": "Transforme les gemmes rouges en skulls"
+      "description": "Transforme les gâteaux de lune rouges en soleils ardents"
     },
     {
       "id": "singingBlades",
-      "name": "Lames Chantantes",
+      "name": "Flèches Sifflantes",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -731,7 +731,7 @@
     },
     {
       "id": "deathbringer",
-      "name": "Porte-Mort",
+      "name": "Porte-Soleil",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -742,11 +742,11 @@
       },
       "minLevel": 14,
       "effect": "redToSkullsHalf",
-      "description": "Crée des skulls = ½ du mana rouge possédé"
+      "description": "Crée des soleils ardents = ½ du mana rouge possédé"
     },
     {
       "id": "revenant",
-      "name": "Revenant",
+      "name": "Esprit des Ancêtres",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -756,15 +756,15 @@
       },
       "minLevel": 15,
       "effect": "doubleBattle",
-      "description": "Double la stat Battle pour le combat"
+      "description": "Double les points d'action (flèches) pour le combat"
     }
   ],
   "allClassSpells": [
     {
       "id": "mageStrike",
-      "name": "Frappe du Mage",
+      "name": "Frappe du Maître Taoïste",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "red": 3,
         "blue": 5
@@ -776,22 +776,22 @@
     },
     {
       "id": "wildMana",
-      "name": "Mana Sauvage",
+      "name": "Qi Sauvage",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "blue": 5,
         "green": 5
       },
       "minLevel": 3,
       "effect": "createJoker",
-      "description": "Transforme une gemme en wildcard x2 ou augmente le multiplicateur d'une wildcard (+2, max x7)"
+      "description": "Transforme un gâteau de lune en pleine lune (joker x2) ou augmente le multiplicateur d'un joker (+2, max x7)"
     },
     {
       "id": "shadowCurse",
-      "name": "Malédiction d'Ombre",
+      "name": "Talisman de Scellement",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "purple": 4
       },
@@ -802,33 +802,33 @@
     },
     {
       "id": "darkChannels",
-      "name": "Canaux Sombres",
+      "name": "Méridiens Obscurs",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "purple": 6
       },
       "minLevel": 5,
       "effect": "destroyColor",
-      "description": "Choisir une couleur → toutes les gemmes de cette couleur sont détruites et donnent leur mana"
+      "description": "Choisir une couleur → tous les gâteaux de lune de cette couleur sont détruits et donnent leur mana"
     },
     {
       "id": "flameBolts",
-      "name": "Projectiles de Flamme",
+      "name": "Talismans Enflammés",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "red": 5
       },
       "minLevel": 5,
       "effect": "yellowBolts",
-      "description": "Tire 1 projectile de 5 dégâts pour chaque 5 mana jaune, puis vide le mana jaune"
+      "description": "Tire 1 talisman de feu de 5 dégâts pour chaque 5 mana jaune, puis vide le mana jaune"
     },
     {
       "id": "iceShield",
-      "name": "Bouclier de Glace",
+      "name": "Barrière de Givre",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "blue": 8
       },
@@ -838,9 +838,9 @@
     },
     {
       "id": "flameblade",
-      "name": "Lame de Feu",
+      "name": "Lame de Feu Pourpre",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "red": 6
       },
@@ -850,9 +850,9 @@
     },
     {
       "id": "weakness",
-      "name": "Faiblesse",
+      "name": "Sceau d'Affaiblissement",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "purple": 5
       },
@@ -864,9 +864,9 @@
     },
     {
       "id": "handOfIce",
-      "name": "Main de Glace",
+      "name": "Paume de Givre",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "blue": 7
       },
@@ -877,21 +877,21 @@
     },
     {
       "id": "fingerOfDeath",
-      "name": "Doigt de Mort",
+      "name": "Doigt Solaire",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "purple": 8
       },
       "minLevel": 7,
       "effect": "createSkull",
-      "description": "Transforme une gemme en skull +5 (attaque forte)"
+      "description": "Transforme un gâteau de lune en soleil ardent +5 (attaque forte)"
     },
     {
       "id": "chasm",
-      "name": "Abîme",
+      "name": "Fissure du Fleuve Jaune",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "red": 10,
         "blue": 10
@@ -902,9 +902,9 @@
     },
     {
       "id": "stoneskin",
-      "name": "Peau de Pierre",
+      "name": "Peau de Jade",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "green": 8
       },
@@ -916,9 +916,9 @@
     },
     {
       "id": "strength",
-      "name": "Force",
+      "name": "Force du Tigre",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "red": 6
       },
@@ -930,22 +930,22 @@
     },
     {
       "id": "fireball",
-      "name": "Boule de Feu",
+      "name": "Sphère de Flammes",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "red": 8
       },
       "minLevel": 8,
       "effect": "fireballArea",
       "dmg": 15,
-      "description": "Détruit une zone 3×3 de gemmes et inflige 15 dégâts"
+      "description": "Détruit une zone 3×3 de gâteaux de lune et inflige 15 dégâts"
     },
     {
       "id": "mirrorShield",
-      "name": "Bouclier Miroir",
+      "name": "Miroir de Bronze",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "blue": 10
       },
@@ -957,9 +957,9 @@
     },
     {
       "id": "manaSiphon",
-      "name": "Siphon de Mana",
+      "name": "Aspiration du Qi",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "purple": 7
       },
@@ -970,9 +970,9 @@
     },
     {
       "id": "manaBlast",
-      "name": "Explosion de Mana",
+      "name": "Explosion des Cinq Éléments",
       "class": "sorcerer",
-      "emoji": "🧙",
+      "emoji": "☯️",
       "cost": {
         "red": 15,
         "blue": 15,
@@ -981,13 +981,13 @@
       },
       "minLevel": 15,
       "dmg": 150,
-      "description": "Grosse attaque consommant beaucoup de mana"
+      "description": "Grande attaque des cinq éléments consommant beaucoup de mana"
     },
     {
       "id": "sneakAttack",
-      "name": "Attaque Sournoise",
+      "name": "Tir Furtif",
       "class": "assassin",
-      "emoji": "🗡️",
+      "emoji": "🏹",
       "cost": {
         "blue": 5
       },
@@ -998,22 +998,22 @@
     },
     {
       "id": "swiftStrike",
-      "name": "Frappe Rapide",
+      "name": "Tir Rapide",
       "class": "assassin",
-      "emoji": "🗡️",
+      "emoji": "🏹",
       "cost": {
         "yellow": 8,
         "red": 4
       },
       "minLevel": 3,
       "effect": "yellowToPurple",
-      "description": "Transforme toutes les gemmes jaunes en violettes et inflige 1 dégât par gemme convertie"
+      "description": "Transforme tous les gâteaux de lune jaunes en violets et inflige 1 dégât par gâteau converti"
     },
     {
       "id": "confuse",
-      "name": "Confusion",
+      "name": "Flèche de Brume",
       "class": "assassin",
-      "emoji": "🗡️",
+      "emoji": "🏹",
       "cost": {
         "blue": 5,
         "green": 6
@@ -1025,9 +1025,9 @@
     },
     {
       "id": "stealth",
-      "name": "Furtivité",
+      "name": "Voile de Brume",
       "class": "assassin",
-      "emoji": "🗡️",
+      "emoji": "🏹",
       "cost": {
         "purple": 6
       },
@@ -1037,9 +1037,9 @@
     },
     {
       "id": "poisonBlade",
-      "name": "Lame Empoisonnée",
+      "name": "Flèche Empoisonnée",
       "class": "assassin",
-      "emoji": "🗡️",
+      "emoji": "🏹",
       "cost": {
         "green": 6
       },
@@ -1051,22 +1051,22 @@
     },
     {
       "id": "shadowStrike",
-      "name": "Frappe de l'Ombre",
+      "name": "Flèche d'Ombre",
       "class": "assassin",
-      "emoji": "🗡️",
+      "emoji": "🏹",
       "cost": {
         "red": 4,
         "purple": 8
       },
       "minLevel": 10,
       "effect": "destroyPurple",
-      "description": "Détruit toutes les gemmes violettes et inflige 2 dégâts par gemme détruite"
+      "description": "Détruit tous les gâteaux de lune violets et inflige 2 dégâts par gâteau détruit"
     },
     {
       "id": "dualShot",
-      "name": "Double Tir",
+      "name": "Flèches Jumelles",
       "class": "assassin",
-      "emoji": "🗡️",
+      "emoji": "🏹",
       "cost": {
         "red": 16,
         "blue": 16,
@@ -1079,7 +1079,7 @@
     },
     {
       "id": "defensiveWall",
-      "name": "Mur Défensif",
+      "name": "Muraille Impériale",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -1088,11 +1088,11 @@
       },
       "minLevel": 1,
       "effect": "purpleToDefense",
-      "description": "Détruit toutes les gemmes violettes → +5 défense par gemme"
+      "description": "Détruit tous les gâteaux de lune violets → +5 défense par gâteau"
     },
     {
       "id": "shieldBash",
-      "name": "Coup de Bouclier",
+      "name": "Coup de Bouclier Rond",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -1105,7 +1105,7 @@
     },
     {
       "id": "focus",
-      "name": "Concentration",
+      "name": "Concentration du Qi",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -1114,11 +1114,11 @@
       },
       "minLevel": 4,
       "effect": "createActionGem",
-      "description": "Transforme une gemme en Action Gem"
+      "description": "Transforme un gâteau de lune en flèche (point d'action)"
     },
     {
       "id": "intimidate",
-      "name": "Intimidation",
+      "name": "Regard Impérial",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -1127,11 +1127,11 @@
       "minLevel": 5,
       "effect": "stealCP",
       "cpSteal": 5,
-      "description": "Vole 5 Action Points à l'ennemi"
+      "description": "Vole 5 points d'action à l'ennemi"
     },
     {
       "id": "rush",
-      "name": "Charge",
+      "name": "Charge de Cavalerie",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -1144,7 +1144,7 @@
     },
     {
       "id": "counterAttack",
-      "name": "Contre-Attaque",
+      "name": "Riposte du Garde",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -1158,7 +1158,7 @@
     },
     {
       "id": "reinforce",
-      "name": "Renforcement",
+      "name": "Renfort des Troupes",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -1167,11 +1167,11 @@
       "minLevel": 9,
       "effect": "destroyActionGemHeal",
       "healPerGem": 10,
-      "description": "Détruit les Action Gems et soigne de 10 PV par gemme"
+      "description": "Détruit les flèches d'action et soigne de 10 PV par flèche"
     },
     {
       "id": "barrier",
-      "name": "Barrière",
+      "name": "Rempart de Jade",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -1185,7 +1185,7 @@
     },
     {
       "id": "divinePower",
-      "name": "Puissance Divine",
+      "name": "Mandat du Ciel",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -1197,7 +1197,7 @@
     },
     {
       "id": "holdTheLine",
-      "name": "Tenir la Ligne",
+      "name": "Formation de la Tortue",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -1210,7 +1210,7 @@
     },
     {
       "id": "heavensWrath",
-      "name": "Colère Céleste",
+      "name": "Courroux du Ciel",
       "class": "templar",
       "emoji": "🛡️",
       "cost": {
@@ -1219,11 +1219,11 @@
       "minLevel": 14,
       "effect": "explodeActionGems",
       "dmgPerGem": 8,
-      "description": "Explosion de toutes les Action Gems infligeant 8 dégâts par gemme"
+      "description": "Explosion de toutes les flèches d'action infligeant 8 dégâts par flèche"
     },
     {
       "id": "enrage",
-      "name": "Rage",
+      "name": "Fureur des Steppes",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -1238,7 +1238,7 @@
     },
     {
       "id": "cleave",
-      "name": "Entaille",
+      "name": "Entaille de la Horde",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -1247,7 +1247,7 @@
       },
       "minLevel": 3,
       "effect": "yellowDamage",
-      "description": "Inflige 1 dégât par gemme jaune, puis détruit les jaunes"
+      "description": "Inflige 1 dégât par gâteau de lune jaune, puis détruit les jaunes"
     },
     {
       "id": "throwAxe",
@@ -1261,11 +1261,11 @@
       "minLevel": 5,
       "effect": "skullBonus",
       "baseDmg": 4,
-      "description": "4 dégâts +1 par skull présent"
+      "description": "4 dégâts +1 par soleil présent"
     },
     {
       "id": "bloodlust",
-      "name": "Soif de Sang",
+      "name": "Soif de Bataille",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -1280,7 +1280,7 @@
     },
     {
       "id": "summonTempest",
-      "name": "Invoquer la Tempête",
+      "name": "Appel du Vent Céleste",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -1295,7 +1295,7 @@
     },
     {
       "id": "berserkerRage",
-      "name": "Rage Berserker",
+      "name": "Fureur du Loup des Steppes",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -1304,11 +1304,11 @@
       },
       "minLevel": 10,
       "effect": "redToSkulls",
-      "description": "Transforme les gemmes rouges en skulls"
+      "description": "Transforme les gâteaux de lune rouges en soleils ardents"
     },
     {
       "id": "singingBlades",
-      "name": "Lames Chantantes",
+      "name": "Flèches Sifflantes",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -1323,7 +1323,7 @@
     },
     {
       "id": "deathbringer",
-      "name": "Porte-Mort",
+      "name": "Porte-Soleil",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -1334,11 +1334,11 @@
       },
       "minLevel": 14,
       "effect": "redToSkullsHalf",
-      "description": "Crée des skulls = ½ du mana rouge possédé"
+      "description": "Crée des soleils ardents = ½ du mana rouge possédé"
     },
     {
       "id": "revenant",
-      "name": "Revenant",
+      "name": "Esprit des Ancêtres",
       "class": "barbarian",
       "emoji": "🪓",
       "cost": {
@@ -1348,7 +1348,7 @@
       },
       "minLevel": 15,
       "effect": "doubleBattle",
-      "description": "Double la stat Battle pour le combat"
+      "description": "Double les points d'action (flèches) pour le combat"
     }
   ]
 }

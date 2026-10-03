@@ -2,73 +2,73 @@
 
 // Bibliothèque de tous les objets disponibles
 export const allItems = [
-    // Potions (niveau 1+)
-    {id:"healthPotion", name:"Potion de Soin", type:"consumable", minLevel:1, rarity:"common", actionPoints:1,
+    // Élixirs, pilules et tisanes (niveau 1+)
+    {id:"healthPotion", name:"Élixir de Vie", type:"consumable", minLevel:1, rarity:"common", actionPoints:1,
      description:"Restaure 30 HP", effect:{heal:30}},
-    {id:"manaPotion", name:"Potion de Mana", type:"consumable", minLevel:1, rarity:"common", actionPoints:1,
+    {id:"manaPotion", name:"Pilule de Qi", type:"consumable", minLevel:1, rarity:"common", actionPoints:1,
      description:"Restaure 15 mana de chaque couleur", effect:{mana:15}},
-    {id:"strengthPotion", name:"Potion de Force", type:"consumable", minLevel:3, rarity:"uncommon", actionPoints:2,
+    {id:"strengthPotion", name:"Pilule de Vigueur", type:"consumable", minLevel:3, rarity:"uncommon", actionPoints:2,
      description:"Augmente l'attaque de 10 pour ce combat", effect:{tempAttack:10}},
     
-    // Potions avancées (niveau 5+)
-    {id:"greaterHealthPotion", name:"Grande Potion de Soin", type:"consumable", minLevel:5, rarity:"uncommon", actionPoints:2,
+    // Préparations avancées (niveau 5+)
+    {id:"greaterHealthPotion", name:"Grand Élixir de Vie", type:"consumable", minLevel:5, rarity:"uncommon", actionPoints:2,
      description:"Restaure 60 HP", effect:{heal:60}},
-    {id:"greaterManaPotion", name:"Grande Potion de Mana", type:"consumable", minLevel:5, rarity:"uncommon", actionPoints:2,
+    {id:"greaterManaPotion", name:"Grande Pilule de Qi", type:"consumable", minLevel:5, rarity:"uncommon", actionPoints:2,
      description:"Restaure 25 mana de chaque couleur", effect:{mana:25}},
-    {id:"defensePotion", name:"Potion de Défense", type:"consumable", minLevel:6, rarity:"uncommon", actionPoints:2,
+    {id:"defensePotion", name:"Talisman de Garde", type:"consumable", minLevel:6, rarity:"uncommon", actionPoints:2,
      description:"Augmente la défense de 15 pour ce combat", effect:{tempDefense:15}},
     
-    // Potions rares (niveau 10+)
-    {id:"elixirOfPower", name:"Élixir de Puissance", type:"consumable", minLevel:10, rarity:"rare", actionPoints:3,
+    // Préparations rares (niveau 10+)
+    {id:"elixirOfPower", name:"Élixir du Dragon et du Tigre", type:"consumable", minLevel:10, rarity:"rare", actionPoints:3,
      description:"Augmente attaque et défense de 15 pour ce combat", effect:{tempAttack:15, tempDefense:15}},
-    {id:"phoenixFeather", name:"Plume de Phénix", type:"consumable", minLevel:12, rarity:"rare", actionPoints:1,
+    {id:"phoenixFeather", name:"Plume de Fenghuang", type:"consumable", minLevel:12, rarity:"rare", actionPoints:1,
      description:"Ressuscite avec 50% HP si vous mourrez (1 utilisation)", effect:{revive:0.5}},
     
-    // Artefacts permanents (niveau 8+)
-    {id:"ringOfVitality", name:"Anneau de Vitalité", type:"artifact", minLevel:8, rarity:"rare",
+    // Reliques permanentes (niveau 8+)
+    {id:"ringOfVitality", name:"Bracelet de Jade Vital", type:"artifact", minLevel:8, rarity:"rare",
      description:"Augmente HP max de 25 (permanent)", effect:{permMaxHp:25}},
-    {id:"amuletOfPower", name:"Amulette de Pouvoir", type:"artifact", minLevel:10, rarity:"rare",
+    {id:"amuletOfPower", name:"Amulette du Tigre Blanc", type:"artifact", minLevel:10, rarity:"rare",
      description:"Augmente attaque de 5 (permanent)", effect:{permAttack:5}},
-    {id:"shieldCharm", name:"Charme de Protection", type:"artifact", minLevel:12, rarity:"rare",
+    {id:"shieldCharm", name:"Charme de la Tortue Noire", type:"artifact", minLevel:12, rarity:"rare",
      description:"Augmente défense de 5 (permanent)", effect:{permDefense:5}},
     
     // Objets légendaires (niveau 15+)
-    {id:"crownOfTheArchmage", name:"Couronne de l'Archimage", type:"artifact", minLevel:15, rarity:"legendary",
+    {id:"crownOfTheArchmage", name:"Couronne de Perles de l'Immortel", type:"artifact", minLevel:15, rarity:"legendary",
      description:"Augmente mana max de 20 (permanent)", effect:{permMaxMana:20}},
-    {id:"dragonHeart", name:"Cœur de Dragon", type:"artifact", minLevel:17, rarity:"legendary",
+    {id:"dragonHeart", name:"Perle du Dragon", type:"artifact", minLevel:17, rarity:"legendary",
      description:"Augmente HP max de 50 et attaque de 10 (permanent)", effect:{permMaxHp:50, permAttack:10}},
 
-     {id:"ringOfPrecision", name:"Anneau de Précision", type:"artifact", minLevel:9, rarity:"rare",
+     {id:"ringOfPrecision", name:"Bague d'Archer en Jade", type:"artifact", minLevel:9, rarity:"rare",
  description:"Augmente les chances de critique de 5% (permanent)", effect:{permCritChance:5}},
 
-{id:"bootsOfSwiftness", name:"Bottes de Célérité", type:"artifact", minLevel:11, rarity:"rare",
+{id:"bootsOfSwiftness", name:"Sandales du Vent Léger", type:"artifact", minLevel:11, rarity:"rare",
  description:"Commence chaque combat avec +1 point d'action", effect:{permStartActionPoints:1}},
 
-{id:"orbOfWisdom", name:"Orbe de Sagesse", type:"artifact", minLevel:12, rarity:"rare",
+{id:"orbOfWisdom", name:"Orbe de Jade de Sagesse", type:"artifact", minLevel:12, rarity:"rare",
  description:"Augmente mana max de 10 (permanent)", effect:{permMaxMana:10}},
- {id:"timeWarpPotion", name:"Potion de Distorsion Temporelle", type:"consumable", minLevel:11, rarity:"rare", actionPoints:2,
+ {id:"timeWarpPotion", name:"Pilule du Temps Suspendu", type:"consumable", minLevel:11, rarity:"rare", actionPoints:2,
  description:"Jouez immédiatement un tour supplémentaire", effect:{extraTurn:1}},
 
-{id:"vampiricPotion", name:"Potion Vampirique", type:"consumable", minLevel:10, rarity:"rare", actionPoints:2,
+{id:"vampiricPotion", name:"Vin Écarlate du Dragon", type:"consumable", minLevel:10, rarity:"rare", actionPoints:2,
  description:"Vous récupérez 30% des dégâts infligés en HP pour ce combat", effect:{lifesteal:0.3}},
 
-{id:"arcaneSurgePotion", name:"Potion de Déferlement Arcanique", type:"consumable", minLevel:12, rarity:"rare", actionPoints:3,
+{id:"arcaneSurgePotion", name:"Élixir de Déferlement du Qi", type:"consumable", minLevel:12, rarity:"rare", actionPoints:3,
  description:"Double le mana gagné pendant 3 tours", effect:{manaMultiplier:2, duration:3}},
- {id:"berserkPotion", name:"Potion de Berserk", type:"consumable", minLevel:6, rarity:"uncommon", actionPoints:2,
+ {id:"berserkPotion", name:"Vin de la Fureur", type:"consumable", minLevel:6, rarity:"uncommon", actionPoints:2,
  description:"Augmente attaque de 20 mais réduit défense de 10 pour ce combat", effect:{tempAttack:20, tempDefense:-10}},
 
-{id:"clarityPotion", name:"Potion de Clarté", type:"consumable", minLevel:5, rarity:"uncommon", actionPoints:1,
+{id:"clarityPotion", name:"Thé de Clarté d'Esprit", type:"consumable", minLevel:5, rarity:"uncommon", actionPoints:1,
  description:"Restaure 40 mana d'une couleur aléatoire", effect:{randomMana:40}},
 
-{id:"stoneSkinPotion", name:"Potion de Peau de Pierre", type:"consumable", minLevel:7, rarity:"uncommon", actionPoints:2,
+{id:"stoneSkinPotion", name:"Pilule de Peau de Bronze", type:"consumable", minLevel:7, rarity:"uncommon", actionPoints:2,
  description:"Réduit les dégâts subis de 20% pendant ce combat", effect:{damageReduction:0.2}},
- {id:"focusPotion", name:"Potion de Concentration", type:"consumable", minLevel:2, rarity:"common", actionPoints:1,
+ {id:"focusPotion", name:"Infusion de Concentration", type:"consumable", minLevel:2, rarity:"common", actionPoints:1,
  description:"Augmente les chances de critique de 10% pour ce combat", effect:{critChance:10}},
 
-{id:"swiftPotion", name:"Potion de Rapidité", type:"consumable", minLevel:2, rarity:"common", actionPoints:1,
+{id:"swiftPotion", name:"Pilule de Célérité", type:"consumable", minLevel:2, rarity:"common", actionPoints:1,
  description:"Accorde 1 point d'action supplémentaire ce tour", effect:{gainActionPoints:1}},
 
-{id:"regenPotion", name:"Potion de Régénération", type:"consumable", minLevel:3, rarity:"common", actionPoints:2,
+{id:"regenPotion", name:"Gourde de Tisane Médicinale", type:"consumable", minLevel:3, rarity:"common", actionPoints:2,
  description:"Restaure 10 HP par tour pendant 3 tours", effect:{regen:10, duration:3}},
 ];
 
@@ -143,7 +143,7 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     
     // Les artefacts ne peuvent pas être utilisés (ils sont automatiques)
     if(item.type === "artifact") {
-        return {success: false, message: "Les artefacts sont déjà équipés automatiquement"};
+        return {success: false, message: "Les reliques sont déjà portées automatiquement"};
     }
     
     // Appliquer l'effet de l'objet
@@ -176,7 +176,7 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     }
     if(item.effect.gainActionPoints) {
         player.combatPoints = (player.combatPoints || 0) + item.effect.gainActionPoints;
-        message += `⚔️ Vous gagnez ${item.effect.gainActionPoints} point(s) d'action. `;
+        message += `🏹 Vous gagnez ${item.effect.gainActionPoints} point(s) d'action. `;
     }
     if(item.effect.extraTurn) {
         const extraTurns = Math.max(1, Math.floor(item.effect.extraTurn));

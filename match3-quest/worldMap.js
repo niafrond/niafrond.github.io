@@ -1,62 +1,99 @@
-// Régions du monde. Chaque région regroupe un ou plusieurs écrans d'exploration (voir story.js) et
-// donne son identité thématique au jeu ; `unlockLevel` doit rester aligné sur REGION_UNLOCK_LEVEL.
-// Cette liste alimente la carte du monde illustrée (worldMapView.js), vue d'ensemble depuis laquelle on
-// peut rejoindre les régions déjà découvertes. `map` = position du noeud (viewBox 820x600) ; l'ordre du
-// tableau est celui du chemin qui relie les régions. `templateIds` : gabarits d'ennemis de la région.
+// Régions du monde de « Hou Yi et les Dix Soleils » (voir UNIVERS.md). Chaque région correspond à un écran
+// d'exploration du même identifiant (story.js) et à un Soleil-Boss. `unlockLevel` reste aligné sur
+// REGION_UNLOCK_LEVEL (story.js). Cette liste alimente la carte du monde illustrée (worldMapView.js), vue
+// d'ensemble depuis laquelle on peut rejoindre les régions déjà découvertes.
+// `map` = position du noeud (viewBox 820x600) ; l'ordre du tableau est celui du chemin qui relie les régions.
+// `shortName` = libellé court des étiquettes de la carte.
 export const worldZones = [
     {
-        id: 'forest',
-        map: { x: 130, y: 470 },
-        name: 'Forêt Sylvestre',
-        emoji: '🌲',
+        id: 'rizieres',
+        map: { x: 100, y: 490 },
+        name: 'Rizières Desséchées',
+        shortName: 'Rizières',
+        emoji: '🌾',
         unlockLevel: 1,
-        description: "Une forêt paisible où rôdent gobelins et esprits gardiens. Idéale pour s'entraîner.",
-        templateIds: ['forest_guardian', 'fungal_horror', 'goblin_saboteur', 'moon_priestess']
+        description: "Chez Hou Yi : les rizières brûlent sous le Soleil Ardent. C'est ici que l'aventure commence."
     },
     {
-        id: 'ruins',
-        map: { x: 330, y: 490 },
-        name: 'Ruines Antiques',
-        emoji: '🏛️',
-        unlockLevel: 1,
-        description: "Les vestiges d'une civilisation oubliée, gardés par des érudits et des mort-vivants.",
-        templateIds: ['temple_warden', 'arcane_scholar', 'iron_gladiator', 'crypt_lich', 'bone_reaver']
+        id: 'fleuve',
+        map: { x: 260, y: 505 },
+        name: 'Lit du Fleuve Jaune',
+        shortName: 'Fleuve Jaune',
+        emoji: '💧',
+        unlockLevel: 2,
+        description: "Le grand fleuve s'est tari : le Soleil des Eaux Taries a laissé un lit de boue craquelée."
     },
     {
-        id: 'warcamp',
-        map: { x: 540, y: 450 },
-        name: 'Camp de Guerre',
-        emoji: '🪓',
-        unlockLevel: 4,
-        description: "Le repaire des hordes orques et de leurs alliés les plus retors.",
-        templateIds: ['orc_warmaster', 'shadow_assassin', 'plague_doctor', 'storm_knight']
+        id: 'bambous',
+        map: { x: 420, y: 490 },
+        name: 'Forêt de Bambous Calcinée',
+        shortName: 'Bambous',
+        emoji: '🎋',
+        unlockLevel: 3,
+        description: "Les bambous sont en cendres. Le Soleil de Cendres règne sur les ruines du temple."
     },
     {
-        id: 'desert',
-        map: { x: 690, y: 320 },
-        name: 'Désert Ardent',
+        id: 'gobi',
+        map: { x: 580, y: 505 },
+        name: 'Désert de Gobi',
+        shortName: 'Gobi',
         emoji: '🏜️',
+        unlockLevel: 5,
+        description: "Mirages et dunes : le Soleil des Mirages se cache parmi ses doubles."
+    },
+    {
+        id: 'tonnerre',
+        map: { x: 725, y: 395 },
+        name: 'Monts du Tonnerre',
+        shortName: 'Tonnerre',
+        emoji: '⛈️',
         unlockLevel: 7,
-        description: "Une mer de sable brûlante gardée par des colosses et des créatures de lave.",
-        templateIds: ['sand_colossus', 'lava_behemoth', 'ember_dragon', 'sun_paladin']
+        description: "Des pics noirs que les orages fouettent sans cesse, domaine du Soleil des Orages."
     },
     {
-        id: 'frozen',
-        map: { x: 480, y: 230 },
-        name: 'Terres Gelées',
-        emoji: '❄️',
-        unlockLevel: 10,
-        description: "Des étendues glacées hantées par des géants et des dragons de givre.",
-        templateIds: ['frost_dragon', 'ice_witch', 'storm_wyrm', 'war_troll']
+        id: 'volcan',
+        map: { x: 585, y: 290 },
+        name: 'Gorges du Volcan',
+        shortName: 'Volcan',
+        emoji: '🌋',
+        unlockLevel: 9,
+        description: "La roche fond dans les gorges du Soleil de Magma. Fengmeng vous y attend peut-être."
     },
     {
-        id: 'abyss',
-        map: { x: 210, y: 150 },
-        name: 'Abysses Interdites',
+        id: 'fauves',
+        map: { x: 430, y: 300 },
+        name: 'Plaine des Fauves',
+        shortName: 'Fauves',
+        emoji: '🐅',
+        unlockLevel: 11,
+        description: "Les bêtes sont devenues folles sous le Soleil des Bêtes Folles : des meutes embrasées."
+    },
+    {
+        id: 'mer',
+        map: { x: 275, y: 290 },
+        name: 'Rivage de la Mer Orientale',
+        shortName: "Mer d'Orient",
         emoji: '🌊',
         unlockLevel: 13,
-        description: "Les profondeurs oubliées, domaine des créatures les plus dangereuses.",
-        templateIds: ['deep_sea_serpent', 'void_vampire', 'crystal_sage']
+        description: "La mer fume et se retire devant le Soleil des Marées. Le Roi-Dragon implore de l'aide."
+    },
+    {
+        id: 'fusang',
+        map: { x: 160, y: 175 },
+        name: 'Cime du Fusang',
+        shortName: 'Fusang',
+        emoji: '🌳',
+        unlockLevel: 15,
+        description: "Le sommet de l'arbre où les soleils reposent : le Soleil Lâche s'y cache derrière le dernier soleil."
+    },
+    {
+        id: 'lune',
+        map: { x: 335, y: 85 },
+        name: 'Pic de la Lune',
+        shortName: 'Lune',
+        emoji: '🌕',
+        unlockLevel: 16,
+        description: "Là où Chang'e s'envole sous la pleine lune. Le dernier combat, puis l'offrande."
     }
 ];
 

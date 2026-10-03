@@ -3,17 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Match Quest</title>
+<title>Hou Yi et les Dix Soleils</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="retro.css">
+<link rel="preload" href="fonts/pixelify-sans-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/pixelify-sans-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="manifest" href="manifest.json">
 </head>
-<body>
+<body class="rt">
 <!-- Modal de proposition du tutoriel -->
 <div id="tutorial-proposal-modal" class="modal">
     <div class="modal-content" style="max-width:420px;">
         <h2>📚 Tutoriel</h2>
         <p>Voulez-vous faire le tutoriel ?</p>
-        <p style="font-size:0.9rem;color:#666;">Il vous guidera pas à pas à travers les mécaniques du jeu : déplacements, matchs de crânes, génération de mana et sorts.</p>
+        <p style="font-size:0.9rem;color:#666;">L'école de Hou Yi vous guidera pas à pas : déplacements, soleils ardents à frapper, gâteaux de lune à aligner pour générer du mana, et sorts.</p>
         <div class="modal-actions">
             <button class="primary" id="tutorial-proposal-yes">✅ Oui, lancer le tutoriel</button>
             <button class="secondary" id="tutorial-proposal-no">❌ Non, je connais déjà</button>
@@ -40,8 +43,8 @@
 <!-- Modal de sélection de classe -->
 <div id="class-modal" class="modal">
     <div class="modal-content">
-        <h2>Choisissez votre classe</h2>
-        <p>Votre classe détermine les sorts spéciaux disponibles</p>
+        <h2>Choisissez le style de Hou Yi</h2>
+        <p>Votre style détermine les techniques spéciales disponibles</p>
         <div id="class-selection"></div>
     </div>
 </div>
@@ -62,11 +65,11 @@
                     <p><strong>Augmente les dégâts physiques</strong></p>
                     <ul>
                         <li>+2 dégâts par point</li>
-                        <li>Améliore les crânes et armes</li>
+                        <li>Améliore les soleils frappés et les armes</li>
                         <li>Sorts basés sur l'attaque</li>
                         <li>🔴 +1 mana rouge initial, +2 cap</li>
                     </ul>
-                    <p class="attr-classes">🪓 Barbarian • 🗡️ Assassin</p>
+                    <p class="attr-classes">🪓 Guerrier des steppes • 🏹 Archer céleste</p>
                 </div>
             </div>
             
@@ -81,7 +84,7 @@
                         <li>Améliore sorts défensifs</li>
                         <li>🟡 +1 mana jaune initial, +2 cap</li>
                     </ul>
-                    <p class="attr-classes">🛡️ Templar • Tanks</p>
+                    <p class="attr-classes">🛡️ Garde impérial • Remparts</p>
                 </div>
             </div>
             
@@ -96,7 +99,7 @@
                         <li>Coups critiques</li>
                         <li>🔵 +1 mana bleu initial, +2 cap</li>
                     </ul>
-                    <p class="attr-classes">🗡️ Assassin • Critiques</p>
+                    <p class="attr-classes">🏹 Archer céleste • Critiques</p>
                 </div>
             </div>
             
@@ -111,7 +114,7 @@
                         <li>Combat prolongé</li>
                         <li>🟢 +1 mana vert initial, +2 cap</li>
                     </ul>
-                    <p class="attr-classes">Toutes classes</p>
+                    <p class="attr-classes">Tous les styles</p>
                 </div>
             </div>
             
@@ -126,7 +129,7 @@
                         <li>Prolonge buffs</li>
                         <li>🟣 +1 mana violet initial, +2 cap</li>
                     </ul>
-                    <p class="attr-classes">🛡️ Templar • 🪓 Barbarian</p>
+                    <p class="attr-classes">🛡️ Garde impérial • 🪓 Guerrier des steppes</p>
                 </div>
             </div>
         </div>
@@ -136,7 +139,7 @@
 <!-- Modal de la carte du monde -->
 <div id="worldmap-modal" class="modal">
     <div class="modal-content worldmap-modal-content">
-        <h2>🗺️ Carte du Monde</h2>
+        <h2>🗺️ Carte des Régions</h2>
         <div id="worldmap-selection"></div>
         <div class="modal-actions"><button class="secondary" id="worldmap-close-btn">Fermer</button></div>
     </div>
@@ -170,7 +173,7 @@
             </div>
             <div class="explore-toast" role="status" aria-live="polite"></div>
             <div class="explore-dialog" role="dialog" aria-live="polite"></div>
-            <p class="explore-help">Cliquez (ou touchez) la carte pour vous y rendre · Un PNJ, un coffre ou un ennemi : allez à son contact · Clavier : flèches ou ZQSD · Entrée : dialogue · J : journal · Le halo rouge est la zone de vigilance d'un ennemi : l'approcher lance le combat.</p>
+            <p class="explore-help">Cliquez (ou touchez) la carte pour vous y rendre · Un PNJ, un coffre ou un ennemi : allez à son contact · Clavier : flèches ou ZQSD · Entrée : dialogue · J : journal · Le halo rouge est la zone de vigilance d'un ennemi (yaoguai, bête ou soleil) : l'approcher lance le combat.</p>
         </div>
         <div class="stats-container">
             <div id="player-stats"></div>
@@ -212,7 +215,7 @@
     <div id="tab-weapons" class="tab-panel">
         <h2>Inventaire</h2>
         <h3>Armes</h3>
-        <p>Équipez une arme pour l'utiliser en combat. Chaque arme a des dégâts et un coût en points d'action différents.</p>
+        <p>Équipez une arme pour l'utiliser en combat. Chaque arme a des dégâts (soleils ☀️) et un coût en flèches 🏹 (points d'action) différents.</p>
         <div id="equipped-weapon"></div>
         <h3>Armes disponibles</h3>
         <div id="available-weapons-list"></div>
@@ -226,7 +229,7 @@
             <h2>🛒 Boutique</h2>
             <div class="shop-gold-display">💰 Or disponible : <strong id="shop-gold">0</strong></div>
         </div>
-        <p class="shop-subtitle">Achetez armes et objets selon votre niveau.</p>
+        <p class="shop-subtitle">Achetez armes, élixirs et reliques selon votre niveau.</p>
         <div id="shop-content"></div>
     </div>
 

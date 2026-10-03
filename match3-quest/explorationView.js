@@ -36,15 +36,18 @@ const KEY_TO_DIR = {
 };
 
 // Palette de chaque biome : sol (damier), chemin, falaise, liquide, ciel, décors des obstacles.
+// Les 10 biomes de la légende de Hou Yi (voir UNIVERS.md §6).
 const BIOMES = {
-    village: { a: '#8fd16a', b: '#84c760', path: '#e8d3a0', cliff: '#a8692f', liquid: '#3b8fdd', sky: ['#9ad7f5', '#e8f7ff'], decor: ['🏠', '🏡', '🌳'] },
-    forest: { a: '#4fa85a', b: '#469d51', path: '#b98c5a', cliff: '#6b4a2b', liquid: '#3b8fdd', sky: ['#7fc8a0', '#d9f2dc'], decor: ['🌲', '🌳', '🌲'] },
-    den: { a: '#7a6a55', b: '#716150', path: '#5c4d3b', cliff: '#3e3226', liquid: '#3b8fdd', sky: ['#4a3f35', '#8a7a66'], decor: ['🪨', '🍄', '🪨'] },
-    ruins: { a: '#a9ad9a', b: '#9fa390', path: '#c9c2a8', cliff: '#6f7364', liquid: '#3b8fdd', sky: ['#b6c4d8', '#eef2f7'], decor: ['🏛️', '🧱', '🪨'] },
-    warcamp: { a: '#b08256', b: '#a67a50', path: '#d3a76e', cliff: '#5e4029', liquid: '#3b8fdd', sky: ['#d98b6a', '#f6d7b8'], decor: ['⛺', '🪵', '🪨'] },
-    desert: { a: '#ecd394', b: '#e4c988', path: '#f5e3b3', cliff: '#b18a45', liquid: '#3b8fdd', sky: ['#f6c56b', '#fdf0cf'], decor: ['🌵', '🪨', '🌵'] },
-    frozen: { a: '#e4f1fa', b: '#d8e9f5', path: '#bcd7ea', cliff: '#8fb4cf', liquid: '#5bb0e0', sky: ['#a9d3ee', '#f2faff'], decor: ['🌲', '🧊', '🌲'] },
-    abyss: { a: '#5b4a7c', b: '#54446f', path: '#7b68a0', cliff: '#2e2445', liquid: '#1a1030', sky: ['#1a1030', '#3a2a5c'], decor: ['💎', '🪨', '💎'] }
+    paddy: { a: '#a8d672', b: '#9ecb68', path: '#e6d29a', cliff: '#8a6a3a', liquid: '#6ab7c9', sky: ['#bfe3f5', '#f4f9e8'], decor: ['🌾', '🏮', '🛖'] },
+    riverbed: { a: '#c9a46b', b: '#c09b62', path: '#d9bd8a', cliff: '#7a5a35', liquid: '#7d6b4a', sky: ['#e3b878', '#f7e6c6'], decor: ['🪨', '🌾', '🪨'] },
+    bamboo: { a: '#8a9684', b: '#808c7a', path: '#b8b09a', cliff: '#4a4f46', liquid: '#4f5f5a', sky: ['#9aa59a', '#d8dbd0'], decor: ['🎋', '🔥', '🎋'] },
+    gobi: { a: '#efdfb2', b: '#e8d6a4', path: '#f7ecc8', cliff: '#bf9c58', liquid: '#78c0c8', sky: ['#f8d98a', '#fff6dc'], decor: ['🌵', '🪨', '🌵'] },
+    storm: { a: '#7d7690', b: '#746d88', path: '#a39cb8', cliff: '#3f3a54', liquid: '#4a5fa8', sky: ['#3b3558', '#7a73a0'], decor: ['⛰️', '🌩️', '⛰️'] },
+    volcano: { a: '#3b3438', b: '#352e32', path: '#5a4a48', cliff: '#1d1719', liquid: '#ff5a1f', sky: ['#2a1010', '#7a2a14'], decor: ['🌋', '🪨', '🌋'] },
+    savanna: { a: '#d8c06a', b: '#cfb75f', path: '#ead89a', cliff: '#8a6c2e', liquid: '#4a8fb8', sky: ['#f4c26a', '#fde9bd'], decor: ['🌾', '🪨', '🌾'] },
+    coast: { a: '#e6d7b0', b: '#dccda6', path: '#f0e4c4', cliff: '#8a7650', liquid: '#1d5fa8', sky: ['#7ec4ec', '#e6f5fb'], decor: ['🌊', '🪨', '🌊'] },
+    fusang: { a: '#f0dc8c', b: '#e8d27e', path: '#fff0b0', cliff: '#b88a2a', liquid: '#e8b830', sky: ['#fde6a6', '#fffbea'], decor: ['🌳', '🏮', '🌳'] },
+    moon: { a: '#c9cde8', b: '#bec3e0', path: '#e4e6f4', cliff: '#3a3f78', liquid: '#6f86d8', sky: ['#171a4a', '#3b3f86'], decor: ['🌕', '🏮', '🌕'] }
 };
 
 const shade = (hex, amt) => {
@@ -62,7 +65,7 @@ const hash = (x, y) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 
  *  getPlayerLevel()           niveau courant
  *  onEncounter(encounter)     lance le combat
  *  onGold(amount)             crédite de l'or
- *  onSave()                   sauvegarde la partie
+ *  onSave()                   sauvegarde la partie (aussi après une Nouvelle Partie +)
  *  onRegionVisited(regionId)  région découverte
  *  onOpenMap()                ouvre la carte du monde
  *  onOpenMenu()               ouvre le menu (inventaire, sorts, boutique, stats)
@@ -86,7 +89,7 @@ export function createExplorationView(cfg) {
     let lastFrame = 0;
     let held = null;
     let walk = null;          // déplacement au clic en cours : { tx, ty, path }
-    let cam = { ox: 0, oy: 0, tile: 1 };
+    let cam = { ox: 0, oy: 0, tile: 1, vw: 0 };
     let lastMoveAt = 0;
     let dialogQueue = [];
     let dialogIndex = 0;
@@ -119,7 +122,8 @@ export function createExplorationView(cfg) {
     // ── Interface ──────────────────────────────────────────────────────────
     function refreshHud() {
         const screen = X.currentScreen(session);
-        if (els.title) els.title.textContent = `📍 ${screen.name}`;
+        const plus = session.data.ngPlus > 0 ? ` · 🌕 NG+${session.data.ngPlus}` : '';
+        if (els.title) els.title.textContent = `📍 ${screen.name}${plus}`;
         if (els.objective) els.objective.textContent = X.currentObjectiveText(session);
     }
 
@@ -184,21 +188,39 @@ export function createExplorationView(cfg) {
 
     const NARRATOR = { emoji: '📜', name: 'Narrateur' };
 
+    // Locuteur d'une scène (`defeatScene.speaker`) : sprite de PNJ ou d'ennemi, emoji de repli sinon.
+    function sceneSpeaker(sp = {}) {
+        const npcDef = sp.npc
+            ? Object.values(session.screens).flatMap(sc => sc.npcs).find(n => n.id === sp.npc)
+            : null;
+        const enemyDef = sp.enemy ? session.rt.enemyIndex[sp.enemy]?.def : null;
+        const sprite = sp.npc ? npcSprite(sp.npc) : sp.enemy ? enemySprite(enemyDef?.spriteKey || sp.enemy, enemyDef?.templateId) : null;
+        return {
+            name: sp.name || NARRATOR.name,
+            title: sp.title,
+            sprite,
+            emoji: sp.emoji || npcDef?.emoji || enemyDef?.emoji || NARRATOR.emoji
+        };
+    }
+
     // Traite les événements d'histoire. `spoken` : quêtes dont le texte vient d'être dit par un PNJ.
     function processEvents(events, spoken = new Set()) {
         let gold = 0;
         events.forEach(ev => {
-            if (ev.type === 'questStarted') {
+            if (ev.type === 'scene') {
+                openDialog(sceneSpeaker(ev.speaker), ev.lines);
+            } else if (ev.type === 'questStarted') {
                 if (!spoken.has(ev.quest.id)) openDialog({ ...NARRATOR, title: `Nouvelle quête : ${ev.quest.title}` }, ev.lines);
                 toast(`📜 Nouvelle quête${ev.quest.side ? ' secondaire' : ''} : ${ev.quest.title}`);
             } else if (ev.type === 'questCompleted') {
                 if (!spoken.has(ev.quest.id)) openDialog({ ...NARRATOR, title: ev.quest.chapter }, ev.lines);
                 if (!ev.paid) gold += ev.gold || 0;
                 const frag = ev.reward?.fragment ? ` · 🧩 ${ev.reward.fragment}` : '';
-                toast(`✅ Quête terminée : ${ev.quest.title} — 💰 +${ev.gold || 0}${frag}`, 5000);
+                const plus = ev.ended ? ' · 🌕 Nouvelle Partie + débloquée (journal)' : '';
+                toast(`✅ Quête terminée : ${ev.quest.title} — 💰 +${ev.gold || 0}${frag}${plus}`, ev.ended ? 8000 : 5000);
             } else if (ev.type === 'chestOpened') {
                 if (!ev.paid) gold += ev.gold || 0;
-                toast(`🎁 ${ev.chest.label || 'Coffre'} ouvert ! 💰 +${ev.gold}`);
+                toast(`${ev.chest.openText || `🎁 ${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` 💰 +${ev.gold}` : ''}`);
             }
         });
         if (gold > 0) cfg.onGold(gold);
@@ -219,7 +241,7 @@ export function createExplorationView(cfg) {
         journalEl.innerHTML = `
             <div class="explore-journal-card">
                 <h3>📜 ${escapeHtml(STORY_TITLE)}</h3>
-                ${session.data.ended ? '<p class="explore-journal-end">🏆 La Couronne est reconstituée !</p>' : ''}
+                ${session.data.ended ? '<p class="explore-journal-end">🌕 La légende est achevée !</p>' : ''}
                 <div class="explore-journal-list">
                 ${entries.length === 0 ? '<p>Aucune quête pour l\'instant. Parlez aux villageois.</p>' : entries.map(e => `
                     <div class="explore-quest ${e.status}">
@@ -228,9 +250,11 @@ export function createExplorationView(cfg) {
                         ${e.status === 'available' ? '' : `<ul>${e.objectives.map(o => `<li class="${o.done ? 'done' : ''}">${o.done ? '☑' : '☐'} ${escapeHtml(o.text)}</li>`).join('')}</ul>`}
                     </div>`).join('')}
                 </div>
+                ${session.data.ended ? '<button type="button" class="primary explore-journal-ngplus">🌕 Nouvelle Partie +</button>' : ''}
                 <button type="button" class="primary explore-journal-close">Fermer</button>
             </div>`;
         journalEl.addEventListener('click', ev => {
+            if (ev.target.closest('.explore-journal-ngplus')) { confirmNewGamePlus(); return; }
             if (ev.target === journalEl || ev.target.closest('.explore-journal-close')) closeJournal();
         });
         root.appendChild(journalEl);
@@ -239,6 +263,26 @@ export function createExplorationView(cfg) {
     function closeJournal() {
         journalEl?.remove();
         journalEl = null;
+    }
+
+    // Nouvelle Partie + : l'histoire repart de zéro (le niveau et l'équipement du joueur sont conservés),
+    // les adversaires sont plus coriaces. Confirmation demandée, puis sauvegarde.
+    function confirmNewGamePlus() {
+        const ok = window.confirm('Commencer une Nouvelle Partie + ?\n\nL\'histoire repart des Rizières Desséchées : quêtes, soleils et coffres sont remis à zéro, '
+            + 'mais votre niveau et votre équipement sont conservés. Les ennemis seront plus puissants.');
+        if (!ok) return;
+        if (!X.startNewGamePlus(session)) return;
+        closeJournal();
+        session.rt.queuedEvents = [];
+        session.rt.pendingEnemyId = null;
+        held = null;
+        walk = null;
+        vis.enemies = {};
+        syncVisual(true);
+        refreshHud();
+        cfg.onRegionVisited?.(X.currentScreen(session).region);
+        cfg.onSave();
+        toast(`🌕 Nouvelle Partie + ${session.data.ngPlus} : les soleils se lèvent de nouveau…`, 5000);
     }
 
     function escapeHtml(str) {
@@ -258,8 +302,8 @@ export function createExplorationView(cfg) {
                 `<div class="bt-strip ${i % 2 ? 'from-right' : 'from-left'}" style="--i:${i}"></div>`).join('')}</div>
             <div class="bt-flash"></div>
             <div class="bt-title">
-                <div class="bt-emoji">${enemySprite(enc.enemyId, enc.templateId)
-                    ? `<img class="bt-sprite" alt="" src="${spriteUri(enemySprite(enc.enemyId, enc.templateId))}">`
+                <div class="bt-emoji">${enemySprite(enc.spriteKey || enc.enemyId, enc.templateId)
+                    ? `<img class="bt-sprite" alt="" src="${spriteUri(enemySprite(enc.spriteKey || enc.enemyId, enc.templateId))}">`
                     : escapeHtml(enc.emoji || '⚔️')}</div>
                 <div class="bt-name">${escapeHtml(enc.boss?.name || enc.name)}</div>
                 <div class="bt-level">${enc.boss ? '👑 Boss · ' : ''}Niveau ${enc.level}</div>
@@ -310,8 +354,21 @@ export function createExplorationView(cfg) {
                 if (chest) processEvents(chest.events);
                 break;
             }
+            case 'illusion':
+                // Mirage : aucun combat, il se dissipe ; l'état a changé, on sauvegarde.
+                held = null;
+                walk = null;
+                openDialog({ ...NARRATOR, emoji: '✨', title: 'Mirage' }, res.lines);
+                cfg.onSave();
+                break;
+            case 'shielded':
+                held = null;
+                walk = null;
+                openDialog({ ...NARRATOR, emoji: '🛡️', title: 'Un bouclier de flammes' }, res.lines);
+                break;
             case 'exitBlocked':
-                toast(`🌫️ Une brume magique bloque la route vers ${res.regionName} — niveau ${res.minLevel} requis.`, 4200);
+                if (res.reason === 'quest') toast(`🔒 ${res.message}`, 4500);
+                else toast(`🌫️ Une brume magique bloque la route vers ${res.regionName} — niveau ${res.minLevel} requis.`, 4200);
                 break;
             case 'transition': {
                 const screen = X.currentScreen(session);
@@ -427,6 +484,7 @@ export function createExplorationView(cfg) {
             const events = X.tick(session, dt);
             const hit = events.find(e => e.type === 'combat');
             if (hit) startEncounter(hit.enemyId);
+            else events.forEach(ev => handleResult(ev));
         }
 
         const k = Math.min(1, dt / 95);
@@ -445,7 +503,7 @@ export function createExplorationView(cfg) {
 
     function draw(now) {
         const screen = X.currentScreen(session);
-        const biome = BIOMES[screen.biome] || BIOMES.forest;
+        const biome = BIOMES[screen.biome] || BIOMES.paddy;
         const dpr = Math.min(2, window.devicePixelRatio || 1);
         const vw = Math.max(1, canvas.clientWidth);
         const vh = Math.max(1, canvas.clientHeight);
@@ -472,7 +530,7 @@ export function createExplorationView(cfg) {
                 : offset + Math.min(0, Math.max(avail - size, avail / 2 - (pos + 0.5) * tile));
         const ox = follow(mapW, vw, 0, vis.px);
         const oy = follow(mapH, availH, HUD_TOP, vis.py);
-        cam = { ox, oy, tile };
+        cam = { ox, oy, tile, vw };
         const P = (x, y) => ({ x: ox + x * tile, y: oy + y * tile });
 
         const level = cfg.getPlayerLevel();
@@ -537,19 +595,21 @@ export function createExplorationView(cfg) {
         // sorties : case lumineuse, flèche vers le bord de la carte, nom de la destination
         screen.exits.forEach(ex => {
             const minLevel = REGION_UNLOCK_LEVEL[session.screens[ex.to].region] || 1;
-            const gated = level < minLevel;
-            cell(ex.x, ex.y, `rgba(255,236,150,${(0.6 + 0.3 * pulse).toFixed(3)})`);
+            const locked = X.isExitLocked(session, ex);
+            const gated = locked || level < minLevel;
+            cell(ex.x, ex.y, locked ? `rgba(200,200,210,${(0.5 + 0.2 * pulse).toFixed(3)})` : `rgba(255,236,150,${(0.6 + 0.3 * pulse).toFixed(3)})`);
             cell(ex.x, ex.y, 'rgba(255,255,255,0.45)', tile * 0.16);
             const c = P(ex.x + 0.5, ex.y + 0.5);
-            const arrow = ex.x === 0 ? '◀' : ex.x === screen.w - 1 ? '▶' : ex.y === 0 ? '▲' : '▼';
+            const arrow = locked ? '🔒' : ex.x === 0 ? '◀' : ex.x === screen.w - 1 ? '▶' : ex.y === 0 ? '▲' : '▼';
             ctx.fillStyle = '#5a3e1b';
             ctx.font = `${Math.round(tile * 0.42)}px system-ui, sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(arrow, c.x, c.y);
             const labelY = ex.y === 0 ? c.y + tile * 0.75 : c.y - tile * 0.75;
-            drawLabel(c.x, labelY, gated ? `🌫️ ${ex.label} (niv. ${minLevel})` : ex.label,
-                gated ? '#e5e7eb' : '#fff8e1', '#5a3e1b', Math.max(10, Math.round(tile * 0.17)));
+            const labelText = locked ? `🔒 ${ex.label}` : gated ? `🌫️ ${ex.label} (niv. ${minLevel})` : ex.label;
+            drawLabel(c.x, labelY, labelText,
+                gated ? '#e5e7eb' : '#fff8e1', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
         });
 
         // 2. Décors, PNJ, coffres, ennemis, héros (du haut vers le bas de l'écran)
@@ -559,8 +619,8 @@ export function createExplorationView(cfg) {
                 if (inRects(screen.obstacles, x, y)) items.push({ depth: y, kind: 'block', x, y });
             }
         }
-        screen.npcs.forEach(n => items.push({ depth: n.y + 0.1, kind: 'npc', n, x: n.x, y: n.y }));
-        screen.chests.forEach(c => items.push({ depth: c.y + 0.1, kind: 'chest', c, x: c.x, y: c.y }));
+        X.visibleNpcs(session).forEach(n => items.push({ depth: n.y + 0.1, kind: 'npc', n, x: n.x, y: n.y }));
+        X.visibleChests(session).forEach(c => items.push({ depth: c.y + 0.1, kind: 'chest', c, x: c.x, y: c.y }));
         X.aliveEnemies(session).forEach(e => {
             const v = vis.enemies[e.def.id] || e;
             items.push({ depth: v.y + 0.2, kind: 'enemy', e, x: v.x, y: v.y });
@@ -568,7 +628,7 @@ export function createExplorationView(cfg) {
         items.push({ depth: vis.py + 0.3, kind: 'player', x: vis.px, y: vis.py });
         items.sort((a, b) => a.depth - b.depth);
 
-        const labelSize = Math.max(10, Math.round(tile * 0.17));
+        const labelSize = Math.max(11, Math.round(tile * 0.2));
         items.forEach(it => {
             const c = P(it.x + 0.5, it.y + 0.5);
             switch (it.kind) {
@@ -593,23 +653,57 @@ export function createExplorationView(cfg) {
                     const opened = session.data.openedChests.includes(it.c.id);
                     const feet = c.y + tile * 0.36;
                     drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
-                    if (!drawSprite(chestSprite(opened), c.x, feet, tile * 0.85)) drawEmoji(opened ? '📭' : '🎁', c.x, c.y, tile * 0.65);
+                    if (it.c.emojiOnly) {
+                        // autel, etc. : décor en emoji (pas de sprite de coffre)
+                        const glow = opened ? 0.25 : 0.55 + 0.25 * Math.sin(now / 400);
+                        ctx.beginPath();
+                        ctx.ellipse(c.x, feet - tile * 0.04, tile * 0.42, tile * 0.15, 0, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(255,248,200,${glow.toFixed(3)})`;
+                        ctx.fill();
+                        drawEmoji(opened ? (it.c.emojiOpened || '🏮') : (it.c.emoji || '🌕'), c.x, c.y - tile * 0.05, tile * 0.8);
+                    } else if (!drawSprite(chestSprite(opened), c.x, feet, tile * 0.85)) {
+                        drawEmoji(opened ? '📭' : (it.c.emoji || '🎁'), c.x, c.y, tile * 0.65);
+                    }
                     break;
                 }
                 case 'enemy': {
                     const def = it.e.def;
+                    const illusion = Boolean(def.illusion);
                     const boss = Boolean(def.boss);
-                    const lvl = X.enemyLevel(def, level);
-                    const size = tile * (boss ? 1.55 : 1.08);
+                    const big = boss || illusion;       // un mirage copie la silhouette du vrai soleil
+                    const shielded = X.isShielded(session, def);
+                    const lvl = X.enemyLevel(def, level, session.data.ngPlus);
+                    const size = tile * (big ? 1.55 : 1.08);
                     const feet = c.y + tile * 0.4;
-                    drawShadow(c.x, feet, tile * (boss ? 0.46 : 0.3), tile * 0.1);
+                    // Indice des mirages : ils scintillent, n'ont ni ombre au sol ni étiquette de niveau.
+                    if (!illusion) drawShadow(c.x, feet, tile * (boss ? 0.46 : 0.3), tile * 0.1);
                     const bob = Math.sin(now / 430 + it.x * 2.1 + it.y) * tile * 0.015;
-                    if (!drawSprite(enemySprite(def.id, def.templateId), c.x, feet + bob, size)) {
-                        drawEmoji(def.emoji, c.x, c.y, tile * (boss ? 1.0 : 0.78));
+                    ctx.save();
+                    if (illusion) ctx.globalAlpha = 0.4 + 0.45 * (0.5 + 0.5 * Math.sin(now / 170 + it.x * 3.1 + it.y * 1.7));
+                    if (!drawSprite(enemySprite(def.spriteKey || def.id, def.templateId), c.x, feet + bob, size)) {
+                        drawEmoji(def.emoji, c.x, c.y, tile * (big ? 1.0 : 0.78));
                     }
-                    if (boss) drawCrown(c.x, feet - size * 0.98 - 3 * Math.abs(Math.sin(now / 350)), tile * 0.42);
-                    const color = lvl > level ? '#dc2626' : lvl < level ? '#16a34a' : '#ca8a04';
-                    drawLabel(c.x, c.y + tile * (boss ? 0.68 : 0.58), `${boss ? '☠ ' : ''}Nv ${lvl}`, '#ffffff', color, labelSize);
+                    ctx.restore();
+                    if (shielded) {
+                        // bouclier de flammes tant que la meute n'est pas abattue
+                        ctx.beginPath();
+                        ctx.arc(c.x, feet - size * 0.42, size * 0.56, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(255,150,60,${(0.12 + 0.08 * pulse).toFixed(3)})`;
+                        ctx.fill();
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = `rgba(255,200,90,${(0.55 + 0.3 * pulse).toFixed(3)})`;
+                        ctx.stroke();
+                    }
+                    if (big) {
+                        ctx.save();
+                        if (illusion) ctx.globalAlpha = 0.5;
+                        drawCrown(c.x, feet - size * 0.98 - 3 * Math.abs(Math.sin(now / 350)), tile * 0.42);
+                        ctx.restore();
+                    }
+                    if (!illusion) {
+                        const color = lvl > level ? '#dc2626' : lvl < level ? '#16a34a' : '#ca8a04';
+                        drawLabel(c.x, c.y + tile * (boss ? 0.68 : 0.58), `${shielded ? '🛡 ' : boss ? '☠ ' : ''}Nv ${lvl}`, '#ffffff', color, labelSize);
+                    }
                     break;
                 }
                 case 'player': {
@@ -653,7 +747,7 @@ export function createExplorationView(cfg) {
         ctx.strokeStyle = '#2b1b17';
         ctx.stroke();
         ctx.fillStyle = '#2b1b17';
-        ctx.font = `bold ${Math.round(r * 1.5)}px system-ui, sans-serif`;
+        ctx.font = `700 ${Math.round(r * 1.6)}px 'Rt Digits', 'Pixelify Sans', ui-monospace, monospace`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(char, x, y + r * 0.08);
@@ -695,9 +789,11 @@ export function createExplorationView(cfg) {
     }
 
     function drawLabel(x, y, text, bg, fg, size = 12) {
-        ctx.font = `bold ${size}px system-ui, sans-serif`;
-        const w = ctx.measureText(text).width + 12;
-        const h = size + 7;
+        ctx.font = `700 ${size}px 'Rt Digits', 'Pixelify Sans', ui-monospace, monospace`;
+        const w = ctx.measureText(text).width + 14;
+        const h = size + 8;
+        // reste dans le cadre : une étiquette près du bord (sortie) ne doit pas être coupée
+        if (cam.vw > w) x = Math.min(Math.max(x, w / 2 + 4), cam.vw - w / 2 - 4);
         ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(x - w / 2, y - h / 2, w, h, 6);
         else ctx.rect(x - w / 2, y - h / 2, w, h);
@@ -723,6 +819,9 @@ export function createExplorationView(cfg) {
     return {
         init() {
             preloadSprites();
+            // police pixel des étiquettes dessinées sur le canvas (chargée à la demande par le navigateur)
+            document.fonts?.load("700 14px 'Pixelify Sans'");
+            document.fonts?.load("700 14px 'Rt Digits'", '0123456789');
             ensureSession();
             bindControls();
             cfg.onRegionVisited?.(X.currentScreen(session).region);

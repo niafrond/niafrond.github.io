@@ -5,17 +5,21 @@
 
 export const MAP_WIDTH = 820;
 export const MAP_HEIGHT = 600;
-const LAND_PATH_WIDTH = 170;
-const LAND_NODE_RADIUS = 100;
-const BIOME_RADIUS = 86;
+const LAND_PATH_WIDTH = 120;
+const LAND_NODE_RADIUS = 74;
+const BIOME_RADIUS = 62;
 
 const BIOMES = {
-    forest:  { fill: '#3a9d4f', deco: ['tree', 'tree', 'tree', 'tree', 'tree', 'tree', 'bush', 'bush', 'rock'] },
-    ruins:   { fill: '#a9b0a0', deco: ['pillar', 'pillar', 'pillar', 'pillarBroken', 'pillarBroken', 'rock', 'rock', 'tree'] },
-    warcamp: { fill: '#b5794a', deco: ['tent', 'tent', 'tent', 'flag', 'flag', 'rock', 'rock', 'mountain'] },
-    desert:  { fill: '#e8cf8a', deco: ['cactus', 'cactus', 'cactus', 'pyramid', 'pyramid', 'rock', 'rock'] },
-    frozen:  { fill: '#e3f0f9', deco: ['pine', 'pine', 'pine', 'pine', 'pine', 'iceMountain', 'iceMountain', 'rock'] },
-    abyss:   { fill: '#5b4a7c', deco: ['crystal', 'crystal', 'crystal', 'crystal', 'crystal', 'rock', 'rock', 'rock'] }
+    rizieres: { fill: '#9fd05a', deco: ['bush', 'bush', 'bush', 'tree', 'rock'] },
+    fleuve: { fill: '#cfae6e', deco: ['rock', 'rock', 'bush', 'rock'] },
+    bambous: { fill: '#6e9a5a', deco: ['pine', 'pine', 'tree', 'pine', 'rock'] },
+    gobi: { fill: '#ecd394', deco: ['cactus', 'cactus', 'pyramid', 'rock'] },
+    tonnerre: { fill: '#8a86a8', deco: ['mountain', 'mountain', 'rock', 'crystal'] },
+    volcan: { fill: '#8a4a3e', deco: ['mountain', 'mountain', 'rock', 'tent'] },
+    fauves: { fill: '#dcb862', deco: ['bush', 'rock', 'tree', 'bush'] },
+    mer: { fill: '#7fbad8', deco: ['rock', 'rock', 'bush'] },
+    fusang: { fill: '#e8c860', deco: ['tree', 'tree', 'crystal', 'tree'] },
+    lune: { fill: '#a4aedc', deco: ['crystal', 'crystal', 'rock', 'pillar'] }
 };
 const DEFAULT_BIOME = { fill: '#6cc24a', deco: ['tree', 'tree', 'rock'] };
 
@@ -67,12 +71,12 @@ function decorations(zone, index) {
     biome.deco.forEach(kind => {
         for (let attempt = 0; attempt < 30; attempt++) {
             const angle = rand() * Math.PI * 2;
-            const dist = 38 + rand() * 36;
+            const dist = 26 + rand() * 26;
             const dx = Math.cos(angle) * dist;
             const dy = Math.sin(angle) * dist * 0.85;
             // on laisse libre l'emplacement de la bannière du nom, sous le noeud
-            if (dy > 18 && dy < 62 && Math.abs(dx) < 72) continue;
-            if (placed.some(p => Math.hypot(p.dx - dx, p.dy - dy) < 20)) continue;
+            if (dy > 12 && dy < 52 && Math.abs(dx) < 62) continue;
+            if (placed.some(p => Math.hypot(p.dx - dx, p.dy - dy) < 17)) continue;
             placed.push({ dx, dy });
             items.push({ kind, x: zone.map.x + dx, y: zone.map.y + dy });
             break;
@@ -134,8 +138,9 @@ export function buildWorldMapSvg(zones, state) {
         const visited = visitedIds.includes(zone.id);
         const current = zone.id === currentId;
         const { x, y } = zone.map;
-        const name = escapeHtml(zone.name);
-        const bannerW = Math.round(zone.name.length * 7.4 + 22);
+        const bannerLabel = zone.shortName || zone.name;
+        const name = escapeHtml(bannerLabel);
+        const bannerW = Math.round(bannerLabel.length * 7.6 + 22);
         const state = !unlocked ? 'locked' : visited ? 'visited' : 'new';
         const label = unlocked
             ? `${zone.name}${visited ? ', déjà explorée' : ''}`

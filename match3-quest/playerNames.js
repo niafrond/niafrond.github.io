@@ -1,26 +1,30 @@
 // Bibliothèque de noms de joueur aléatoires
 
 const classNamePools = {
+    // Maître taoïste
     sorcerer: [
-        "Aelion", "Myrdhin", "Zorya", "Eldrin", "Nyxar", "Valeria", "Kael", "Ilyra"
+        "Li Wei", "Zhang Yun", "Lan Xi", "Chen Daoxi", "Wen Qing", "Su Ming", "Yun Shu", "Bai Heng"
     ],
+    // Archer céleste (le Hou Yi par défaut)
     assassin: [
-        "Shade", "Vesper", "Kairo", "Riven", "Nyra", "Silas", "Mira", "Dusk"
+        "Hou Yi", "Feng Jian", "Mei Ling", "Yu Hao", "Lian Hua", "Tian Lang", "Xiao Yan", "Jin Rui"
     ],
+    // Garde impérial
     templar: [
-        "Aldric", "Seraphine", "Gideon", "Leona", "Bastien", "Elara", "Thorne", "Cassian"
+        "Zhao Yun", "Guan Tai", "Liu Shan", "Wang Gang", "Mu Lan", "Shen Bao", "Tang Rui", "Gao Heng"
     ],
+    // Guerrier des steppes
     barbarian: [
-        "Ragnar", "Brakka", "Torvin", "Skarn", "Hilda", "Korak", "Svala", "Draven"
+        "Batu", "Temujin", "Borte", "Subutai", "Qasar", "Hulan", "Arslan", "Jebe"
     ]
 };
 
 const genericNames = [
-    "Nox", "Liora", "Kaen", "Arin", "Zeph", "Valko", "Iris", "Orion"
+    "Hou Yi", "Ming Yue", "Xiao Long", "Jin Hao", "Lan Xi", "Bai Hu", "Yu Feng", "Tian Ming"
 ];
 
 function pickRandom(list) {
-    if(!Array.isArray(list) || list.length === 0) return "Aventurier";
+    if(!Array.isArray(list) || list.length === 0) return "Hou Yi";
     return list[Math.floor(Math.random() * list.length)];
 }
 

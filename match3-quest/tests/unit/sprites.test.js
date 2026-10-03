@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { SCREENS } from '../../story.js';
 import { playerClasses } from '../../classes.js';
 import {
-    HERO_SPRITES, NPC_SPRITES, CHEST_SPRITES, ENEMY_SPRITES, heroSprite, npcSprite, chestSprite, enemySprite, spriteUri
+    HERO_SPRITES, NPC_SPRITES, CHEST_SPRITES, ENEMY_SPRITES, TILE_FILES, heroSprite, npcSprite, chestSprite, enemySprite, spriteUri
 } from '../../sprites/index.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
@@ -48,28 +48,68 @@ describe('couverture des sprites', () => {
     });
 
     test('chaque ennemi de la carte a un dessin (propre ou de son gabarit)', () => {
-        screens.flatMap(s => s.enemies).forEach(e => expect(enemySprite(e.id, e.templateId)).toBeTruthy());
+        screens.flatMap(s => s.enemies).forEach(e => expect(enemySprite(e.spriteKey || e.id, e.templateId)).toBeTruthy());
     });
 
     test('chaque gabarit du catalogue a un dessin', () => {
         catalog.forEach(t => expect(ENEMY_SPRITES[t.id]).toBeTruthy());
     });
 
-    test('les boss et ennemis nommés ont un dessin distinct de leur gabarit', () => {
-        screens.flatMap(s => s.enemies).filter(e => e.boss || ['old_tusk', 'warden_vrok', 'sand_skorr'].includes(e.id))
-            .forEach(e => {
-                const own = ENEMY_SPRITES[e.id];
-                expect(own).toBeTruthy();
-                if (e.id !== e.templateId) expect(own).not.toBe(ENEMY_SPRITES[e.templateId]);
-            });
+    test('les neuf soleils, les quatre Fengmeng et les trois bêtes ont chacun leur dessin', () => {
+        for (let n = 1; n <= 9; n++) expect(ENEMY_SPRITES[`sun_${n}`]).toBeTruthy();
+        ['fengmeng_1', 'fengmeng_2', 'fengmeng_3a', 'fengmeng_3b'].forEach(k => expect(ENEMY_SPRITES[k]).toBeTruthy());
+        ['fire_tiger', 'flame_boar', 'ember_wolf'].forEach(k => expect(ENEMY_SPRITES[k]).toBeTruthy());
+    });
+
+    test('les boss ont un dessin propre, distinct de celui de leur gabarit', () => {
+        screens.flatMap(s => s.enemies).filter(e => e.boss).forEach(e => {
+            const key = e.spriteKey || e.id;
+            expect(ENEMY_SPRITES[key]).toBeTruthy();
+            if (key !== e.templateId && ENEMY_SPRITES[e.templateId]) {
+                expect(ENEMY_SPRITES[key]).not.toBe(ENEMY_SPRITES[e.templateId]);
+            }
+        });
     });
 
     test('aucune clé de sprite inutile ou orpheline', () => {
         const wanted = new Set([
             ...catalog.map(t => t.id),
-            ...screens.flatMap(s => s.enemies).map(e => e.id)
+            ...screens.flatMap(s => s.enemies).flatMap(e => [e.id, e.spriteKey].filter(Boolean))
         ]);
         Object.keys(ENEMY_SPRITES).forEach(k => expect(wanted.has(k)).toBe(true));
+    });
+
+    test('aucun sprite de PNJ orphelin', () => {
+        const ids = new Set(screens.flatMap(s => s.npcs).map(n => n.id));
+        Object.keys(NPC_SPRITES).forEach(k => expect(ids.has(k)).toBe(true));
+    });
+});
+
+describe('tuiles du plateau (gâteaux de lune)', () => {
+    test.each(TILE_FILES)('%s : SVG autonome, bien formé et léger', file => {
+        const svg = readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8').trim();
+        expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"')).toBe(true);
+        expect(svg.endsWith('</svg>')).toBe(true);
+        expect(svg.length).toBeLessThanOrEqual(5000);
+        expect(checkWellFormed(svg)).toBeNull();
+        expect(/[^\x20-\x7E\n\r\t]/.test(svg)).toBe(false);
+        expect(/<(text|image|script|foreignObject|style|animate|set)\b/i.test(svg)).toBe(false);
+        const ids = [...svg.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
+        expect(new Set(ids).size).toBe(ids.length);
+        [...svg.matchAll(/url\(#([^)]+)\)/g)].forEach(m => expect(ids).toContain(m[1]));
+    });
+
+    test('les huit tuiles du jeu ont un dessin et sont toutes différentes', () => {
+        expect(TILE_FILES).toHaveLength(8);
+        const contents = TILE_FILES.map(f => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8'));
+        expect(new Set(contents).size).toBe(8);
+    });
+
+    test('retro.css associe chaque classe de tuile à son dessin', () => {
+        const css = readFileSync(new URL('../../retro.css', import.meta.url), 'utf8');
+        ['red', 'blue', 'green', 'yellow', 'purple', 'skull', 'combat', 'joker'].forEach(name => {
+            expect(css).toContain(`sprites/tiles/tile-${name}.svg`);
+        });
     });
 });
 
