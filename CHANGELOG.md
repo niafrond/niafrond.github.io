@@ -1,3 +1,9 @@
+## [2.55.0](https://github.com/niafrond/niafrond.github.io/compare/v2.54.0...v2.55.0) (2026-10-03)
+
+### Features
+
+* **match3-quest:** Grand Monde — villages, hameaux, 130 quêtes annexes, voyage rapide, musique chinoise ([#393](https://github.com/niafrond/niafrond.github.io/issues/393)) ([954c3c1](https://github.com/niafrond/niafrond.github.io/commit/954c3c10846c8eb87d034ceab3fb6a3c2e096a4c))
+
 ## [2.54.0](https://github.com/niafrond/niafrond.github.io/compare/v2.53.1...v2.54.0) (2026-10-03)
 
 ### Features
