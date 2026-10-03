@@ -36,7 +36,7 @@ export default {
       talk: [{ whenDone: 'sq_carte_vraie', lines: ['Votre cartographe a de la chance : sa carte est presque exacte. J\'y ai glissé un mirage, pour le principe.'] }] }
   },
   chests: {
-    ma_strongbox: { label: 'Coffre-fort de Ma', openText: '🎁 Le coffre-fort de Ma est si bien gardé que même lui hésite à l\'ouvrir. Un jolis bénéfice vous attend.', emoji: '🧰', emojiOpened: '🧰' },
+    ma_strongbox: { label: 'Coffre-fort de Ma', openText: '🎁 Le coffre-fort de Ma est si bien gardé que même lui hésite à l\'ouvrir. Un joli bénéfice vous attend.', emoji: '🧰', emojiOpened: '🧰' },
     cistern_jar: { label: 'Jarre de la citerne', openText: '🎁 Au fond de la jarre sacrée : quelques pièces offertes par des voyageurs reconnaissants. L\'eau, elle, garde son secret.', emoji: '🏺', emojiOpened: '🏺' },
     saddle_bag: { label: 'Sacoche de selle', openText: '🎁 Une sacoche oubliée par un caravanier : pièces, dattes et un mot griffonné « à retrouver ».', emoji: '👜', emojiOpened: '👜' },
     dune_cache: { label: 'Cache sous la dune', openText: '🎁 Sous le sable, une cassette de pillard enterrée à la hâte. Un peu de monnaie rouillée.', emoji: '🪨', emojiOpened: '🪨' },
