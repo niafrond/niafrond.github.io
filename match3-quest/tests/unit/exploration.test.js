@@ -4,7 +4,7 @@ import {
     createSession, tryMove, tick, isTerrainBlocked, buildRoute, aliveEnemies, entityAt, getAuraTiles,
     markEnemyDefeated, talkToNpc, npcAmbientLines, progressReached, openChest, questStatus, checkAutoQuests, currentObjectiveText,
     encounterFor, enemyLevel, enterScreen, teleportToScreen, resetAfterDefeat, startNewGamePlus,
-    isEntityVisible, visibleNpcs, visibleChests, isShielded, isExitLocked, journalEntries,
+    isEntityVisible, visibleNpcs, visibleChests, isShielded, isExitLocked, journalEntries, activateWaypoint, fastTravel, waypointList,
     AGGRO_RADIUS, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN, findPath
 } from '../../exploration.js';
 
@@ -88,6 +88,148 @@ const at = (screenId, x, y, patch = {}) => {
 const goto = (s, id) => { s.data.screenId = id; };
 const quest = id => QUESTS.find(q => q.id === id);
 
+// ── Helpers de parcours : le héros traverse réellement le Grand Monde ─────────────────────────
+// village → zone sauvage → (gate) → sanctuaire. Les combats rencontrés sont gagnés d'office
+// (markEnemyDefeated) ; tout le reste passe par findPath / tryMove / talkToNpc / openChest.
+const WORLD_LEVEL = 30;   // niveau du héros pendant les parcours : on ne teste pas l'avertissement de niveau ici
+const guard = new WeakMap();   // pile de quêtes/portes en cours de résolution (détecte les dépendances circulaires)
+const enter = (s, key) => {
+    const stack = guard.get(s) || new Set();
+    if (stack.has(key)) throw new Error(`dépendance circulaire sur ${key} : [${[...stack].join(' > ')}]`);
+    stack.add(key);
+    guard.set(s, stack);
+    return () => stack.delete(key);
+};
+
+// Marche jusqu'à (x, y) avec findPath + tryMove ; un combat rencontré est gagné puis le trajet est recalculé.
+// Retourne le dernier résultat de tryMove (+ `fights` : événements des combats gagnés en chemin).
+function walkTo(s, x, y) {
+    const fights = [];
+    for (let attempt = 0; attempt < 30; attempt++) {
+        const path = findPath(s, x, y);
+        if (!path) throw new Error(`aucun chemin vers (${x},${y}) sur ${s.data.screenId} depuis (${s.data.x},${s.data.y})`);
+        let last = { type: 'moved' };
+        let interrupted = false;
+        for (const step of path) {
+            last = tryMove(s, step.x - s.data.x, step.y - s.data.y, { playerLevel: WORLD_LEVEL });
+            if (last.type === 'combat') { fights.push(...markEnemyDefeated(s, last.enemyId)); interrupted = true; break; }
+            if (last.type === 'illusion') { interrupted = true; break; }
+            if (last.type !== 'moved') break;
+        }
+        if (!interrupted) return { ...last, fights };
+        if (s.data.x === x && s.data.y === y) return { type: 'moved', fights };
+    }
+    throw new Error(`trajet interrompu trop souvent vers (${x},${y}) sur ${s.data.screenId}`);
+}
+
+// Première sortie à prendre pour aller de `from` à `to` (plus court chemin en nombre d'écrans).
+function nextExit(s, from, to) {
+    const prev = new Map([[from, null]]);
+    const queue = [from];
+    while (queue.length && !prev.has(to)) {
+        const id = queue.shift();
+        s.screens[id].exits.forEach(e => { if (!prev.has(e.to)) { prev.set(e.to, { id, exit: e }); queue.push(e.to); } });
+    }
+    if (!prev.has(to)) throw new Error(`aucune route de ${from} vers ${to}`);
+    let node = to;
+    while (prev.get(node).id !== from) node = prev.get(node).id;
+    return prev.get(node).exit;
+}
+
+// Traverse le monde jusqu'à l'écran voulu, en remplissant les conditions des sorties verrouillées.
+// Retourne { transitions, events } (résultats de tryMove des franchissements, événements de quêtes/combats).
+function travel(s, target) {
+    const transitions = [];
+    const events = [];
+    for (let hops = 0; hops < 200 && s.data.screenId !== target; hops++) {
+        const exit = nextExit(s, s.data.screenId, target);
+        if (isExitLocked(s, exit)) { satisfy(s, exit.requires); continue; }
+        const res = walkTo(s, exit.x, exit.y);
+        events.push(...res.fights);
+        if (res.type !== 'transition') throw new Error(`sortie ${s.data.screenId} -> ${exit.to} non franchie : ${JSON.stringify(res)}`);
+        transitions.push(res);
+        events.push(...res.events);
+    }
+    if (s.data.screenId !== target) throw new Error(`écran ${target} non atteint (bloqué sur ${s.data.screenId})`);
+    return { transitions, events };
+}
+
+// Remplit une condition d'avancement (gate) en jouant : quête, ennemi à vaincre ou coffre à ouvrir.
+function satisfy(s, cond) {
+    if (Array.isArray(cond)) return cond.forEach(c => satisfy(s, c));
+    if (progressReached(s, cond)) return;
+    if (s.quests.some(q => q.id === cond)) return playQuest(s, cond);
+    if (s.rt.enemyIndex[cond]) return defeat(s, cond);
+    if (Object.values(s.screens).some(sc => sc.chests.some(c => c.id === cond))) return openChestAt(s, cond);
+    throw new Error(`condition inconnue : ${cond}`);
+}
+
+// Va jusqu'à l'ennemi et le bat (marche jusqu'à lui quand il est fixe). Retourne tous les événements produits.
+function defeat(s, id) {
+    const done = enter(s, `kill:${id}`);
+    try {
+        const { def, screenId } = s.rt.enemyIndex[id];
+        const events = travel(s, screenId).events;
+        if (!s.data.defeated.includes(id)) {
+            if (def.kind !== 'patrol' && !def.illusion && !def.shieldedBy && isEntityVisible(s, def)) events.push(...walkTo(s, def.x, def.y).fights);
+            events.push(...markEnemyDefeated(s, id));
+        }
+        return events;
+    } finally { done(); }
+}
+
+function openChestAt(s, id) {
+    const done = enter(s, `chest:${id}`);
+    try {
+        const screen = Object.values(s.screens).find(sc => sc.chests.some(c => c.id === id));
+        const chest = screen.chests.find(c => c.id === id);
+        travel(s, screen.id);
+        if (s.data.openedChests.includes(id)) return null;
+        const res = walkTo(s, chest.x, chest.y);
+        if (res.type !== 'chest' || res.chestId !== id) throw new Error(`coffre ${id} non atteint : ${JSON.stringify(res)}`);
+        return openChest(s, id);
+    } finally { done(); }
+}
+
+// Va parler à un PNJ (marche jusqu'à sa tuile, puis talkToNpc) ; retourne le résultat de talkToNpc.
+function talkTo(s, npcId) {
+    const screen = Object.values(s.screens).find(sc => sc.npcs.some(n => n.id === npcId));
+    if (!screen) throw new Error(`PNJ introuvable : ${npcId}`);
+    travel(s, screen.id);
+    const npc = screen.npcs.find(n => n.id === npcId);
+    const res = walkTo(s, npc.x, npc.y);
+    if (res.type !== 'talk' || res.npcId !== npcId) throw new Error(`PNJ ${npcId} non abordé : ${JSON.stringify(res)}`);
+    return talkToNpc(s, npcId);
+}
+
+// Joue une quête de bout en bout (prérequis compris) : offre, objectifs, remise.
+function playQuest(s, id) {
+    if (s.data.quests[id] === 'done') return;
+    const done = enter(s, `quest:${id}`);
+    try {
+        const q = s.quests.find(x => x.id === id);
+        q.requires.forEach(r => playQuest(s, r));
+        for (let i = 0; i < 8 && q.giver && !s.data.quests[id]; i++) talkTo(s, q.giver);   // un PNJ peut proposer une autre quête d'abord
+        if (q.autoStart) checkAutoQuests(s);
+        for (const o of q.objectives) {
+            if (o.type === 'kill') defeat(s, o.target);
+            else if (o.type === 'killGroup') Object.values(s.rt.enemyIndex).filter(e => e.def.group === o.target).forEach(e => defeat(s, e.def.id));
+            else if (o.type === 'chest') openChestAt(s, o.target);
+            else if (o.type === 'talk') talkTo(s, o.target);
+            else if (o.type === 'visit') travel(s, o.target);
+        }
+        if (s.data.quests[id] !== 'done' && q.turnIn) talkTo(s, q.turnIn);
+        if (s.data.quests[id] !== 'done') throw new Error(`quête ${id} non terminée (état : ${s.data.quests[id]})`);
+    } finally { done(); }
+}
+
+// Joue toute l'histoire principale (9 soleils, Fengmeng, épilogue) à travers le monde, sans aucune quête optionnelle
+// (hors celles qui ferment une sortie). Retourne la session.
+function completeStory(s) {
+    QUESTS.filter(q => !q.side).forEach(q => playQuest(s, q.id));
+    return s;
+}
+
 describe('cartes (story.js)', () => {
     test.each(sanctuaries.map(s => [s.id, s]))('%s : dimensions, entités et sorties valides', (_id, s) => {
         expect([s.w, s.h]).toEqual([14, 10]);
@@ -137,20 +279,110 @@ describe('cartes (story.js)', () => {
         s.chests.forEach(c => expect(adjacentReachable(c.x, c.y)).toBe(true));
     });
 
-    test('le monde est une chaîne linéaire de 10 écrans : ouest = précédent (x=0), est = suivant (x=13)', () => {
-        expect(Object.keys(SCREENS)).toEqual(ORDER);
-        expect(START_SCREEN).toBe('rizieres');
+    test('le monde est une chaîne : sanctuaire précédent → village → zone sauvage → sanctuaire, sorties symétriques', () => {
+        expect(Object.keys(SCREENS).slice(0, 10)).toEqual(ORDER);   // les sanctuaires gardent leur ordre d'origine
+        expect(START_SCREEN).toBe('rizieres_village');
         ORDER.forEach((id, i) => {
-            const s = SCREENS[id];
-            const west = s.exits.find(e => e.x === 0);
-            const east = s.exits.find(e => e.x === s.w - 1);
-            if (i === 0) expect(west).toBeUndefined(); else expect(west.to).toBe(ORDER[i - 1]);
-            if (i === ORDER.length - 1) expect(east).toBeUndefined(); else expect(east.to).toBe(ORDER[i + 1]);
-            expect(s.exits).toHaveLength((west ? 1 : 0) + (east ? 1 : 0));
-            if (west) expect(west.arrive.x).toBe(SCREENS[west.to].w - 2);   // arrivée à côté de la sortie est du précédent
-            if (east) expect(east.arrive.x).toBe(1);                         // arrivée à côté de la sortie ouest du suivant
-            // le spawn est l'arrivée venant de l'ouest (sauf le premier écran, au village de départ)
-            if (i > 0) expect(s.spawn).toEqual(SCREENS[ORDER[i - 1]].exits.find(e => e.x === 13).arrive);
+            const sanctuary = SCREENS[id];
+            const village = SCREENS[`${id}_village`];
+            const wild = SCREENS[`${id}_wild`];
+            [village, wild].forEach(z => { expect(z).toBeDefined(); expect(z.region).toBe(id); });
+            expect(village.kind).toBe('village');
+            expect(wild.kind).toBe('wild');
+            const exitTo = (screen, to) => screen.exits.find(e => e.to === to);
+
+            // village : ouest = sanctuaire précédent (sauf au départ), est = zone sauvage
+            if (i === 0) expect(village.exits.some(e => e.x === 0 && !e.door)).toBe(false);
+            else expect(exitTo(village, ORDER[i - 1])).toMatchObject({ x: 0 });
+            expect(exitTo(village, wild.id)).toMatchObject({ x: village.w - 1 });
+            // zone sauvage : ouest = village, est = sanctuaire (fermée par un gate)
+            expect(exitTo(wild, village.id)).toMatchObject({ x: 0 });
+            expect(exitTo(wild, id)).toMatchObject({ x: wild.w - 1 });
+            // sanctuaire : ouest = zone sauvage, est = village de la région suivante (fermée par le soleil)
+            const west = sanctuary.exits.find(e => e.x === 0);
+            const east = sanctuary.exits.find(e => e.x === sanctuary.w - 1);
+            expect(west.to).toBe(wild.id);
+            if (i === ORDER.length - 1) expect(east).toBeUndefined(); else expect(east.to).toBe(`${ORDER[i + 1]}_village`);
+            expect(sanctuary.exits).toHaveLength(east ? 2 : 1);
+            // le sanctuaire ne mène plus directement à un autre sanctuaire
+            sanctuary.exits.forEach(e => expect(ORDER.includes(e.to)).toBe(false));
+
+            // arrivées : à côté de la sortie voisine ; le spawn d'un sanctuaire est l'arrivée venant de la zone sauvage
+            expect(west.arrive.x).toBe(wild.w - 2);
+            if (east) expect(east.arrive.x).toBe(1);
+            expect(sanctuary.spawn).toEqual(exitTo(wild, id).arrive);
+        });
+        // toutes les sorties de tous les écrans (portes comprises) ont une sortie de retour adjacente à leur arrivée
+        screens.forEach(s => s.exits.forEach(e => {
+            const target = SCREENS[e.to];
+            expect([s.id, e.to, Boolean(target)]).toEqual([s.id, e.to, true]);
+            expect(isTerrainBlocked(target, e.arrive.x, e.arrive.y)).toBe(false);
+            const back = target.exits.filter(x => x.to === s.id);
+            expect(back.some(x => Math.abs(x.x - e.arrive.x) + Math.abs(x.y - e.arrive.y) === 1)).toBe(true);
+            expect(target.exits.some(x => x.x === e.arrive.x && x.y === e.arrive.y)).toBe(false);
+        }));
+    });
+
+    test('villages, maisons et zones sauvages : zones sûres au village, ennemis dans la nature, gate vers le sanctuaire', () => {
+        ORDER.forEach(id => {
+            const village = SCREENS[`${id}_village`];
+            const wild = SCREENS[`${id}_wild`];
+            expect(village.enemies).toEqual([]);
+            expect(village.npcs.length).toBeGreaterThanOrEqual(2);
+            expect(village.waypoint).toBeDefined();
+            expect(wild.enemies.length).toBeGreaterThanOrEqual(3);
+            expect(village.exits.filter(e => e.requires)).toEqual([]);   // le village n'est jamais fermé : seul le sanctuaire précédent l'est
+            // la sortie de la zone sauvage vers le sanctuaire est fermée par un gate, avec un message
+            const gate = wild.exits.find(e => e.to === id);
+            expect(gate.requires).toBeTruthy();
+            expect(gate.lockedMessage.length).toBeGreaterThan(10);
+            // les maisons sont des zones sûres reliées au village (ou au hameau) par une porte
+            screens.filter(h => h.kind === 'house' && h.region === id).forEach(h => {
+                expect(h.enemies).toEqual([]);
+                const out = h.exits.find(e => e.door === false);
+                expect(SCREENS[out.to].exits.some(e => e.to === h.id && e.door === true)).toBe(true);
+            });
+        });
+    });
+
+    test.each(ORDER)('%s : le gate de la zone sauvage est un ennemi, un coffre ou une quête qui existent', id => {
+        const gate = SCREENS[`${id}_wild`].exits.find(e => e.to === id).requires;
+        const known = screens.some(sc => [...sc.enemies, ...sc.chests].some(x => x.id === gate)) || QUESTS.some(q => q.id === gate);
+        expect(known).toBe(true);
+    });
+
+    test.each(ORDER)('%s : le héros franchit village → zone sauvage → sanctuaire en jouant le gate', id => {
+        const s = createSession({ screenId: `${id}_village`, x: SCREENS[`${id}_village`].spawn.x, y: SCREENS[`${id}_village`].spawn.y });
+        const gate = SCREENS[`${id}_wild`].exits.find(e => e.to === id);
+        // fermé tant que le gate n'est pas rempli
+        travel(s, `${id}_wild`);
+        const wildArrive = SCREENS[`${id}_village`].exits.find(e => e.to === `${id}_wild`).arrive;
+        expect([s.data.screenId, s.data.x, s.data.y]).toEqual([`${id}_wild`, wildArrive.x, wildArrive.y]);
+        expect(isExitLocked(s, gate)).toBe(true);
+        const closed = walkTo(s, gate.x, gate.y);
+        expect(closed).toMatchObject({ type: 'exitBlocked', reason: 'quest', message: gate.lockedMessage });
+        expect(s.data.screenId).toBe(`${id}_wild`);
+        // on joue le gate (tuer / ouvrir / terminer la quête), puis la sortie s'ouvre
+        satisfy(s, gate.requires);
+        expect(isExitLocked(s, gate)).toBe(false);
+        const { transitions } = travel(s, id);
+        expect(transitions.at(-1)).toMatchObject({ type: 'transition', from: `${id}_wild`, to: id });
+        expect([s.data.screenId, s.data.x, s.data.y]).toEqual([id, SCREENS[id].spawn.x, SCREENS[id].spawn.y]);
+    });
+
+    test('le héros traverse tout le monde, de la première maison au Pic de la Lune, soleil après soleil', () => {
+        const s = createSession({});
+        ORDER.forEach((id, i) => {
+            travel(s, id);
+            expect(s.data.screenId).toBe(id);
+            if (i < 9) {
+                const east = SCREENS[id].exits.find(e => e.x === SCREENS[id].w - 1);
+                expect(isExitLocked(s, east)).toBe(true);        // le soleil de la région ferme toujours la sortie est
+                markEnemyDefeated(s, `sun_${i + 1}`);
+            }
+        });
+        ORDER.forEach(id => {
+            [id, `${id}_village`, `${id}_wild`].forEach(sid => expect(s.data.visitedScreens).toContain(sid));
         });
     });
 
@@ -161,12 +393,12 @@ describe('cartes (story.js)', () => {
         expect(seen.size).toBe(screens.length);
     });
 
-    test('chaque région a un écran d\'entrée du même nom et le niveau requis prévu', () => {
-        expect(REGION_ENTRY_SCREEN).toEqual(Object.fromEntries(ORDER.map(id => [id, id])));
+    test('chaque région a un village pour écran d\'entrée et le niveau requis prévu', () => {
+        expect(REGION_ENTRY_SCREEN).toEqual(Object.fromEntries(ORDER.map(id => [id, `${id}_village`])));
         expect(REGION_UNLOCK_LEVEL).toEqual({
             rizieres: 1, fleuve: 2, bambous: 3, gobi: 5, tonnerre: 7, volcan: 9, fauves: 11, mer: 13, fusang: 15, lune: 16
         });
-        Object.entries(REGION_ENTRY_SCREEN).forEach(([region, id]) => expect(SCREENS[id].region).toBe(region));
+        Object.entries(REGION_ENTRY_SCREEN).forEach(([region, id]) => { expect(SCREENS[id].region).toBe(region); expect(SCREENS[id].kind).toBe('village'); });
         screens.forEach(s => expect(REGION_UNLOCK_LEVEL[s.region]).toBeDefined());
     });
 
@@ -207,10 +439,13 @@ describe('cartes (story.js)', () => {
         });
     });
 
-    test('chaque écran a son coin village à l\'ouest (PNJ) et son sanctuaire à l\'est (soleil-boss)', () => {
-        screens.forEach(s => {
-            s.npcs.filter(n => n.id !== 'sun_ten').forEach(n => expect(n.x).toBeLessThanOrEqual(5));
-            expect(s.npcs.length).toBeGreaterThan(0);
+    test('les PNJ vivent au village et dans les maisons, les sanctuaires abritent les soleils-boss', () => {
+        // les sanctuaires n'ont plus de PNJ de village : seulement le Dixième Soleil et Chang'e à la Lune
+        sanctuaries.forEach(s => s.npcs.forEach(n => expect(['sun_ten', 'change_moon']).toContain(n.id)));
+        ORDER.forEach(id => {
+            const villagers = screens.filter(s => s.region === id && s.kind !== undefined && s.id !== id).flatMap(s => s.npcs);
+            expect(villagers.length).toBeGreaterThan(0);
+            villagers.forEach(n => { expect(n.emoji).toBeTruthy(); expect(n.name).toBeTruthy(); expect(n.title).toBeTruthy(); });
         });
         for (let i = 0; i < 9; i++) {
             const sun = SCREENS[ORDER[i]].enemies.find(e => e.id === `sun_${i + 1}`);
@@ -223,7 +458,7 @@ describe('cartes (story.js)', () => {
         expect(SCREENS.lune.enemies.filter(e => e.boss).map(e => e.id)).toEqual(['fengmeng_3a', 'fengmeng_3b']);
     });
 
-    test('la sortie est de chaque région est fermée par son soleil ; le niveau de la région suivante reste en vigueur', () => {
+    test('la sortie est de chaque sanctuaire est fermée par son soleil (le niveau de la région suivante n\'ouvre ni ne ferme rien)', () => {
         ORDER.slice(0, -1).forEach((id, i) => {
             const east = SCREENS[id].exits.find(e => e.x === 13);
             expect(east.requires).toBe(`sun_${i + 1}`);
@@ -234,21 +469,33 @@ describe('cartes (story.js)', () => {
         expect(SCREENS.lune.exits.some(e => e.requires)).toBe(false);
     });
 
-    test('les ids de PNJ, de soleils et de Fengmeng sont ceux de UNIVERS.md', () => {
-        const npcIds = screens.flatMap(s => s.npcs.map(n => n.id)).sort();
-        expect(npcIds).toEqual([
+    test('les ids de PNJ d\'histoire, de soleils et de Fengmeng sont ceux de UNIVERS.md, relogés au village / en maison', () => {
+        const npcIds = screens.flatMap(s => s.npcs.map(n => n.id));
+        expect(new Set(npcIds).size).toBe(npcIds.length);   // un PNJ n'existe qu'une fois dans tout le monde
+        const legacy = [
             'change', 'elder_wen', 'farmer_lin', 'ferryman_gu', 'weaver_mei', 'monk_zhen', 'herbalist_xu',
             'merchant_ma', 'guide_dawa', 'smith_tie', 'hermit_lei', 'miner_shan', 'priestess_yan',
             'hunter_wu', 'shepherd_zi', 'fisher_hai', 'envoy_longwang', 'crane_envoy', 'sun_ten', 'change_moon'
-        ].sort());
-        const where = id => screens.find(s => s.enemies.some(e => e.id === id))?.id;
-        expect(where('fengmeng_1')).toBe('rizieres');
-        expect(where('fengmeng_2')).toBe('volcan');
-        expect(where('fengmeng_3a')).toBe('lune');
-        expect(where('fengmeng_3b')).toBe('lune');
-        ['change', 'elder_wen', 'farmer_lin'].forEach(id => expect(SCREENS.rizieres.npcs.some(n => n.id === id)).toBe(true));
-        expect(SCREENS.fusang.npcs.map(n => n.id).sort()).toEqual(['crane_envoy', 'sun_ten']);
+        ];
+        legacy.forEach(id => expect(npcIds).toContain(id));
+        const where = id => screens.find(s => s.npcs.some(n => n.id === id)).region;
+        const REGION_OF = {
+            change: 'rizieres', elder_wen: 'rizieres', farmer_lin: 'rizieres', ferryman_gu: 'fleuve', weaver_mei: 'fleuve',
+            monk_zhen: 'bambous', herbalist_xu: 'bambous', merchant_ma: 'gobi', guide_dawa: 'gobi', smith_tie: 'tonnerre',
+            hermit_lei: 'tonnerre', miner_shan: 'volcan', priestess_yan: 'volcan', hunter_wu: 'fauves', shepherd_zi: 'fauves',
+            fisher_hai: 'mer', envoy_longwang: 'mer', crane_envoy: 'fusang', sun_ten: 'fusang', change_moon: 'lune'
+        };
+        Object.entries(REGION_OF).forEach(([id, region]) => expect([id, where(id)]).toEqual([id, region]));
+        // seuls sun_ten et change_moon sont restés au sanctuaire
+        expect(SCREENS.fusang.npcs.map(n => n.id)).toEqual(['sun_ten']);
         expect(SCREENS.lune.npcs.map(n => n.id)).toEqual(['change_moon']);
+        expect(SCREENS.rizieres_h_houyi.npcs.map(n => n.id)).toContain('change');
+        expect(SCREENS.rizieres_h_wen.npcs.map(n => n.id)).toContain('elder_wen');
+        const enemyWhere = id => screens.find(s => s.enemies.some(e => e.id === id))?.id;
+        expect(enemyWhere('fengmeng_1')).toBe('rizieres');
+        expect(enemyWhere('fengmeng_2')).toBe('volcan');
+        expect(enemyWhere('fengmeng_3a')).toBe('lune');
+        expect(enemyWhere('fengmeng_3b')).toBe('lune');
     });
 
     test('les gabarits des bêtes de la plaine des fauves et la répartition par région existent au catalogue', () => {
