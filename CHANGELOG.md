@@ -1,3 +1,9 @@
+## [2.54.0](https://github.com/niafrond/niafrond.github.io/compare/v2.53.1...v2.54.0) (2026-10-03)
+
+### Features
+
+* **match3-quest:** prologue animé, duel-tutoriel contre Fengmeng et anti-cache des scripts ([#392](https://github.com/niafrond/niafrond.github.io/issues/392)) ([400b46f](https://github.com/niafrond/niafrond.github.io/commit/400b46f2873b0133a300f994eb373c11746abd1a))
+
 ## [2.53.1](https://github.com/niafrond/niafrond.github.io/compare/v2.53.0...v2.53.1) (2026-10-03)
 
 ### Bug Fixes
