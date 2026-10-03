@@ -2415,11 +2415,18 @@ body.dark-mode .tutorial-card {
 @media (prefers-reduced-motion: reduce) { .cine-overlay, .bt-dialog { animation: none; } }
 
 /* ── Écran de démarrage ────────────────────────────────────────────────────── */
+/* Palette miroir de `TP` (cinematics.js) : décor teal, lumière/titre or, encre du jeu (valeurs de retro.css, mode clair). */
 .title-screen {
+    --title-ink: #2a0f10;
+    --title-gold: #e8b923;
+    --title-gold-hi: #fbe7b0;
+    --title-cream: #fbf1d8;
+    --title-sand: #f0d9a0;
+    --title-teal-deep: #0d3440;
     position: fixed;
     inset: 0;
     z-index: 6000;
-    background: #0b2a44;
+    background: var(--title-teal-deep);
     cursor: pointer;
     overflow: hidden;
     animation: cine-in 0.6s ease-out;
@@ -2438,14 +2445,18 @@ body.dark-mode .tutorial-card {
     left: 6vw;
     top: 8vh;
     text-align: left;
-    color: #fff4c8;
+    color: var(--title-cream);
     font-family: "Pixelify Sans", "Press Start 2P", monospace;
-    text-shadow: 3px 3px 0 #1b1030, -1px -1px 0 #1b1030, 1px -1px 0 #1b1030, -1px 1px 0 #1b1030;
+    /* contour encre + ombre portée vers le bas-gauche (lumière en haut à droite) */
+    text-shadow: -3px 3px 0 var(--title-ink), -1px -1px 0 var(--title-ink), 1px -1px 0 var(--title-ink), -1px 1px 0 var(--title-ink), 1px 1px 0 var(--title-ink);
     animation: title-float 3.2s ease-in-out infinite;
 }
-.title-kicker { font-size: clamp(11px, 2.4vmin, 18px); letter-spacing: 0.3em; opacity: 0.9; }
-.title-main { font-size: clamp(44px, 12vmin, 110px); line-height: 1; color: #ffd24a; font-weight: 700; }
-.title-sub { font-size: clamp(14px, 3.6vmin, 30px); letter-spacing: 0.12em; margin-top: 4px; }
+.title-logo > * { animation: title-rise 0.9s ease-out both; }
+.title-main { animation-delay: 0.25s; }
+.title-sub { animation-delay: 0.5s; }
+.title-kicker { font-size: clamp(11px, 2.4vmin, 18px); letter-spacing: 0.3em; color: var(--title-gold-hi); }
+.title-main { font-size: clamp(44px, 12vmin, 110px); line-height: 1; color: var(--title-gold); font-weight: 700; }
+.title-sub { font-size: clamp(14px, 3.6vmin, 30px); letter-spacing: 0.12em; margin-top: 4px; color: var(--title-sand); }
 @media (orientation: portrait) {
     .title-logo { left: 0; right: 0; top: 7vh; text-align: center; }
 }
@@ -2455,11 +2466,15 @@ body.dark-mode .tutorial-card {
     right: 0;
     bottom: max(24px, env(safe-area-inset-bottom));
     text-align: center;
-    color: #fff;
+    color: var(--title-cream);
     font: clamp(13px, 2.8vmin, 20px) "Pixelify Sans", monospace;
-    text-shadow: 2px 2px 0 #1b1030;
-    animation: title-blink 1.2s steps(2, end) infinite;
+    text-shadow: -2px 2px 0 var(--title-ink), 1px 1px 0 var(--title-ink), -1px -1px 0 var(--title-ink);
+    animation: title-fade 0.8s ease-out 1.6s both, title-blink 1.2s steps(2, end) 2.4s infinite;
 }
 @keyframes title-float { 50% { transform: translateY(-6px); } }
 @keyframes title-blink { 50% { opacity: 0.25; } }
-@media (prefers-reduced-motion: reduce) { .title-logo, .title-start { animation: none; } }
+@keyframes title-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes title-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+    .title-logo, .title-logo > *, .title-start { animation: none; }
+}
