@@ -1,3 +1,9 @@
+## [2.56.0](https://github.com/niafrond/niafrond.github.io/compare/v2.55.0...v2.56.0) (2026-10-03)
+
+### Features
+
+* **match3-quest:** musique fiable, tutoriel compact, tuiles gâteau de lune/crâne, indicateurs de quête, victoire immédiate, pathfinding ([#394](https://github.com/niafrond/niafrond.github.io/issues/394)) ([701608c](https://github.com/niafrond/niafrond.github.io/commit/701608cebb058eb923977bc7cd4ceb5f287b3f77))
+
 ## [2.55.0](https://github.com/niafrond/niafrond.github.io/compare/v2.54.0...v2.55.0) (2026-10-03)
 
 ### Features
