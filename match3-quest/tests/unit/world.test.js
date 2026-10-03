@@ -248,6 +248,13 @@ describe('Grand Monde : textes et quêtes', () => {
         });
     });
 
+    test('chaque quête rapporte de l\'XP (principale > annexe à région égale)', () => {
+        QUESTS.forEach(q => expect(`${q.id} ${q.reward?.xp > 0}`).toBe(`${q.id} true`));
+        const main = QUESTS.find(q => q.id === 'q_sun_1').reward.xp;
+        const side = QUESTS.find(q => q.id === 'sq_rice_thief').reward.xp;
+        expect(main).toBeGreaterThan(side);
+    });
+
     test('nombre de quêtes annexes : plus de 40 en tout', () => {
         expect(QUESTS.filter(q => q.side).length).toBeGreaterThan(40);
         expect(screens.flatMap(s => s.chests).length).toBeGreaterThan(80);

@@ -10,6 +10,18 @@ import { TEXTS } from './text/index.js';
 
 export const REGION_ORDER = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
 
+// Niveau recommandé par région (aligné sur REGION_UNLOCK_LEVEL de story.js) : sert à dimensionner l'XP des quêtes.
+const REGION_LEVEL = { rizieres: 1, fleuve: 2, bambous: 3, gobi: 5, tonnerre: 7, volcan: 9, fauves: 11, mer: 13, fusang: 15, lune: 16 };
+const QUEST_XP_SHARE = { main: 0.6, side: 0.25 };   // part du coût d'un niveau (expérience.js : 2000 x 1,18^(n-1))
+
+// Chaque quête rapporte de l'XP : au moins une fraction du coût d'un niveau de sa région.
+export function questXp(quest, region) {
+    const level = REGION_LEVEL[region] || 1;
+    const levelCost = 2000 * Math.pow(1.18, level - 1);
+    const share = quest.side ? QUEST_XP_SHARE.side : QUEST_XP_SHARE.main;
+    return Math.max(quest.reward?.xp || 0, Math.round(levelCost * share / 10) * 10);
+}
+
 const clone = value => JSON.parse(JSON.stringify(value));
 
 export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXTS) {
@@ -109,6 +121,11 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
 
     // Quêtes : histoire principale, quêtes secondaires existantes, puis les nouvelles (toutes `side`).
     quests.push(...newQuests.map(q => ({ side: true, ...q })));
+    const npcRegion = {};
+    Object.values(screens).forEach(sc => sc.npcs.forEach(n => { npcRegion[n.id] = sc.region; }));
+    quests.forEach((q, i) => {
+        quests[i] = { ...q, reward: { ...(q.reward || {}), xp: questXp(q, npcRegion[q.giver] || 'rizieres') } };
+    });
     return { screens, quests, regionOrder: REGION_ORDER };
 }
 
