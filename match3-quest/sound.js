@@ -70,8 +70,10 @@ const DEV_MODE_CLICK_TARGET = 6;
 
 let settings = { ...defaultSettings };
 let audioContext = null;
-let ambientAudioByMood = null;
 let activeAmbientAudio = null;
+let ambientLoading = null;      // { mood } : piste d'ambiance en cours de chargement
+let ambientToken = 0;           // invalide un chargement d'ambiance devenu inutile
+let ambientLastSrc = null;
 let activeBattleMusicAudio = null;
 let ambientWasPlayingBeforeBattle = false;
 let ambientFadeTimerId = null;
@@ -145,22 +147,47 @@ async function fetchAudioBlob(filename, url) {
     return blob;
 }
 
+// Mémoire : aucune piste n'est téléchargée au démarrage. Une piste est chargée quand elle doit jouer (lecture en
+// continu depuis le réseau, ou depuis le cache IndexedDB si elle y est déjà), un seul élément <audio> par piste
+// active, et chaque élément est libéré (tampon rendu, URL blob révoquée) dès qu'il ne joue plus.
+
+const blobUrls = new WeakMap();
+
+// Copie la piste dans IndexedDB en tâche de fond (pour les parties suivantes), sans retenir le blob en mémoire.
+const cachingInProgress = new Set();
+function cacheAudioInBackground(filename, url) {
+    if (cachingInProgress.has(filename) || typeof indexedDB === 'undefined') return;
+    cachingInProgress.add(filename);
+    const run = () => fetchAudioBlob(filename, url).catch(() => {}).finally(() => cachingInProgress.delete(filename));
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(run, { timeout: 15000 });
+    } else {
+        setTimeout(run, 3000);
+    }
+}
+
 /**
- * Crée un élément Audio en utilisant le cache IndexedDB pour les .mp3.
- * Retourne une promesse résolue avec l'Audio prêt (src assigné, pas encore joué).
+ * Crée un élément Audio pour `src` : depuis le cache IndexedDB si la piste y est (URL blob), sinon en lecture
+ * continue depuis le réseau (et mise en cache en tâche de fond). Retourne une promesse résolue avec l'Audio
+ * prêt (src assigné, pas encore joué). Libérer avec releaseAudio().
  */
 async function createAudio(src) {
     const audio = new Audio();
     audio.loop    = true;
     audio.preload = 'auto';
+    audio.dataset.src = src;
 
     if (src.endsWith('.mp3')) {
-        try {
-            const filename = src.split('/').pop();
-            const blob = await fetchAudioBlob(filename, src);
-            audio.src  = URL.createObjectURL(blob);
-        } catch {
+        const filename = src.split('/').pop();
+        let cached = null;
+        try { cached = await getAudioFromCache(filename); } catch {}
+        if (cached) {
+            const url = URL.createObjectURL(cached);
+            blobUrls.set(audio, url);
+            audio.src = url;
+        } else {
             audio.src = src;
+            cacheAudioInBackground(filename, src);
         }
     } else {
         audio.src = src;
@@ -169,43 +196,34 @@ async function createAudio(src) {
     return audio;
 }
 
-// ===============================
-// PRÉCHARGEMENT AU DÉMARRAGE
-// ===============================
-
-// PRÉCHARGEMENT AU DÉMARRAGE ET INIT TRACKS_LIST
-
-async function preloadAllAudioToIndexedDBAndTracksList() {
-    try {
-        const resp = await fetch('./tracks.json');
-        if (!resp.ok) return;
-        const tracks = await resp.json();
-        if (!Array.isArray(tracks)) return;
-        // Remplit window.TRACKS_LIST si absent
-        if (typeof window !== 'undefined' && !window.TRACKS_LIST) {
-            window.TRACKS_LIST = tracks
-        }
-        // Précharge les mp3
-        for (const filename of tracks) {
-                fetchAudioBlob(filename, './mp3/' + filename).catch(() => {});
-        }
-    } catch {}
+// Arrête un élément audio et libère ses ressources (tampon décodé, URL blob).
+function releaseAudio(audio) {
+    if (!audio) return;
+    try { audio.pause(); } catch {}
+    const url = blobUrls.get(audio);
+    if (url) {
+        URL.revokeObjectURL(url);
+        blobUrls.delete(audio);
+    }
+    audio.removeAttribute('src');
+    try { audio.load(); } catch {}
 }
 
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setTimeout(preloadAllAudioToIndexedDBAndTracksList, 100);
-    } else {
-        document.addEventListener('DOMContentLoaded', () => setTimeout(preloadAllAudioToIndexedDBAndTracksList, 100));
+// Liste des pistes (tracks.json), chargée à la première musique de combat.
+let tracksListPromise = null;
+function ensureTracksList() {
+    if (typeof window === 'undefined') return Promise.resolve([]);
+    if (Array.isArray(window.TRACKS_LIST)) return Promise.resolve(window.TRACKS_LIST);
+    if (!tracksListPromise) {
+        tracksListPromise = fetch('./tracks.json')
+            .then(resp => (resp.ok ? resp.json() : []))
+            .then(tracks => {
+                if (Array.isArray(tracks) && !window.TRACKS_LIST) window.TRACKS_LIST = tracks;
+                return window.TRACKS_LIST || [];
+            })
+            .catch(() => { tracksListPromise = null; return []; });
     }
-}
-
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setTimeout(preloadAllAudioToIndexedDBAndTracksList, 100);
-    } else {
-        document.addEventListener('DOMContentLoaded', () => setTimeout(preloadAllAudioToIndexedDBAndTracksList, 100));
-    }
+    return tracksListPromise;
 }
 
 // ===============================
@@ -394,25 +412,6 @@ function getEffectiveCombatMood() {
 // POOL AUDIO AMBIANT
 // ===============================
 
-function ensureAmbientAudioPool() {
-    if (typeof Audio === 'undefined') return null;
-    if (ambientAudioByMood) return ambientAudioByMood;
-
-    ambientAudioByMood = {};
-    Object.entries(AMBIENT_TRACKS_BY_MOOD).forEach(([mood, tracks]) => {
-        ambientAudioByMood[mood] = tracks.map((src) => {
-            const audio = new Audio(src);
-            audio.preload = 'auto';
-            audio.loop    = true;
-            audio.volume  = 0;
-            audio.dataset.combatMood = mood;
-            return audio;
-        });
-    });
-
-    return ambientAudioByMood;
-}
-
 function getAmbientTargetVolume() {
     const mood           = getEffectiveCombatMood();
     const moodMultiplier = AMBIENT_VOLUME_BY_MOOD[mood] ?? 0.52;
@@ -448,19 +447,13 @@ function fadeAudioVolume(audio, target, durationMs = 420) {
     }, 30);
 }
 
+// Piste d'ambiance à lancer : au hasard parmi celles de l'humeur, en évitant de rejouer la précédente.
 function pickAmbientTrack(mood) {
-    const pool   = ensureAmbientAudioPool();
-    const tracks = pool?.[mood];
+    const tracks = AMBIENT_TRACKS_BY_MOOD[mood];
     if (!Array.isArray(tracks) || tracks.length === 0) return null;
-
-    if (tracks.length === 1) return tracks[0];
-
-    const currentIndex = activeAmbientAudio ? tracks.indexOf(activeAmbientAudio) : -1;
-    if (currentIndex === -1) {
-        return tracks[Math.floor(Math.random() * tracks.length)];
-    }
-    const offset = 1 + Math.floor(Math.random() * (tracks.length - 1));
-    return tracks[(currentIndex + offset) % tracks.length];
+    const others = tracks.filter(src => src !== ambientLastSrc);
+    const pool   = others.length ? others : tracks;
+    return pool[Math.floor(Math.random() * pool.length)];
 }
 
 function startAmbientLoop() {
@@ -477,27 +470,33 @@ function startAmbientLoop() {
         fadeAudioVolume(activeAmbientAudio, getAmbientTargetVolume(), 360);
         return;
     }
+    if (ambientLoading?.mood === mood) return;
 
-    const previousTrack = activeAmbientAudio;
-    const nextTrack     = pickAmbientTrack(mood);
-    if (!nextTrack) return;
+    const src = pickAmbientTrack(mood);
+    if (!src) return;
 
-    activeAmbientAudio     = nextTrack;
-    nextTrack.loop         = true;
-    nextTrack.currentTime  = 0;
-    nextTrack.volume       = 0;
+    // L'ancienne piste (autre humeur) est libérée tout de suite : une seule piste en mémoire.
+    clearAmbientFadeTimer();
+    releaseAudio(activeAmbientAudio);
+    activeAmbientAudio = null;
 
-    nextTrack.play().catch(() => {
-        if (activeAmbientAudio === nextTrack) activeAmbientAudio = null;
+    const token = ++ambientToken;
+    ambientLoading = { mood };
+    createAudio(src).then(audio => {
+        if (token !== ambientToken) { releaseAudio(audio); return; }
+        ambientLoading = null;
+        ambientLastSrc = src;
+        audio.dataset.combatMood = mood;
+        audio.volume = 0;
+        activeAmbientAudio = audio;
+        if (!isGameInForeground()) { ambientPausedByFocusLoss = true; return; }
+        audio.play().catch(() => {
+            if (activeAmbientAudio === audio) { activeAmbientAudio = null; releaseAudio(audio); }
+        });
+        fadeAudioVolume(audio, getAmbientTargetVolume(), 520);
+    }).catch(() => {
+        if (token === ambientToken) ambientLoading = null;
     });
-
-    if (previousTrack && previousTrack !== nextTrack) {
-        previousTrack.pause();
-        previousTrack.currentTime = 0;
-        previousTrack.volume      = 0;
-    }
-
-    fadeAudioVolume(nextTrack, getAmbientTargetVolume(), 520);
 }
 
 function pauseAmbientLoop() {
@@ -507,13 +506,13 @@ function pauseAmbientLoop() {
     ambientPausedByFocusLoss = true;
 }
 
+// Coupe l'ambiance et libère sa piste (elle sera rechargée au prochain combat).
 function stopAmbientLoop() {
     clearAmbientFadeTimer();
+    ambientToken++;
+    ambientLoading = null;
     if (!activeAmbientAudio) return;
-    const track      = activeAmbientAudio;
-    track.volume     = 0;
-    track.pause();
-    track.currentTime       = 0;
+    releaseAudio(activeAmbientAudio);
     activeAmbientAudio      = null;
     ambientPausedByFocusLoss = false;
 }
@@ -578,22 +577,19 @@ export async function playEnemyBattleMusic(enemy) {
     // Jeton : si un stop (ou un nouvel appel) survient pendant les `await`, cette piste ne doit pas démarrer.
     const token = ++battleMusicToken;
     battleMusicPending = true;
-    // Mémorise si une ambiance était active pour pouvoir la restaurer
-    ambientWasPlayingBeforeBattle = Boolean(activeAmbientAudio);
+    // Mémorise si une ambiance était active (ou en chargement) pour pouvoir la restaurer
+    ambientWasPlayingBeforeBattle = Boolean(activeAmbientAudio || ambientLoading);
 
-    // Stoppe l'ambiance en cours
-    if (activeAmbientAudio) {
-        activeAmbientAudio.pause();
-        activeAmbientAudio.currentTime = 0;
-        activeAmbientAudio = null;
-    }
+    // Stoppe l'ambiance en cours (piste libérée)
+    clearAmbientFadeTimer();
+    ambientToken++;
+    ambientLoading = null;
+    releaseAudio(activeAmbientAudio);
+    activeAmbientAudio = null;
 
     // Stoppe une éventuelle musique de combat précédente
-    if (activeBattleMusicAudio) {
-        activeBattleMusicAudio.pause();
-        activeBattleMusicAudio.currentTime = 0;
-        activeBattleMusicAudio = null;
-    }
+    releaseAudio(activeBattleMusicAudio);
+    activeBattleMusicAudio = null;
 
     if (!enemy || isMusicMuted()) { battleMusicPending = false; return; }
 
@@ -605,6 +601,8 @@ export async function playEnemyBattleMusic(enemy) {
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '');
 
+    if (race) await ensureTracksList();
+    if (token !== battleMusicToken) return;
     if (race && Array.isArray(window.TRACKS_LIST)) {
         const match = window.TRACKS_LIST.find(f =>
             f.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(race)
@@ -630,7 +628,7 @@ export async function playEnemyBattleMusic(enemy) {
     console.log(enemy.race )
     console.log('[MUSIQUE] Lecture :', src);
     const audio = await createAudio(src);
-    if (token !== battleMusicToken) { audio.pause(); return; }
+    if (token !== battleMusicToken) { releaseAudio(audio); return; }
     battleMusicPending = false;
 
     // Volume : les .wav reçoivent un coefficient 0.5 par rapport au volume musique
@@ -644,11 +642,8 @@ export async function playEnemyBattleMusic(enemy) {
 export function stopEnemyBattleMusic() {
     battleMusicPending = false;
     battleMusicToken++; // invalide un démarrage encore en cours de chargement
-    if (activeBattleMusicAudio) {
-        activeBattleMusicAudio.pause();
-        activeBattleMusicAudio.currentTime = 0;
-        activeBattleMusicAudio = null;
-    }
+    releaseAudio(activeBattleMusicAudio);
+    activeBattleMusicAudio = null;
     // Relance l'ambiance si elle était active avant le combat
     if (ambientWasPlayingBeforeBattle) {
         ambientWasPlayingBeforeBattle = false;
@@ -678,7 +673,6 @@ export function setCombatMusicEnabled(enabled) {
 export function primeAudioFromGesture() {
     audioPrimed = true;
     resumeAudioContext({ allowCreate: true });
-    ensureAmbientAudioPool();
     syncAmbientState();
 }
 
