@@ -1159,6 +1159,13 @@ export function createExplorationView(cfg) {
             return X.currentScreen(session).region;
         },
 
+        // Scène musicale de l'écran courant (null hors exploration, p. ex. en combat).
+        getSceneInfo() {
+            if (!session || !active || root.style.display === 'none' || inCombat) return null;
+            const screen = X.currentScreen(session);
+            return { kind: screen.interior ? 'house' : screen.kind || 'sanctuary', biome: screen.biome, region: screen.region };
+        },
+
         isBusy: () => isBlocked(),
         toast
     };

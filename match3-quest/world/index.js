@@ -105,6 +105,10 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         sanctuary.exits.forEach(exit => {
             if (prev && exit.to === prev) { exit.to = wild.id; exit.label = wild.name; delete exit.arrive; }
         });
+        // première région : le sanctuaire n'avait pas de sortie ouest, on en crée une vers la zone sauvage
+        if (!prev && !sanctuary.exits.some(e => e.to === wild.id)) {
+            sanctuary.exits.push({ x: 0, y: sanctuary.spawn.y, to: wild.id, label: wild.name });
+        }
         // la sortie est du sanctuaire précédent mène désormais au village de cette région
         if (prev) {
             screens[prev].exits.forEach(exit => {

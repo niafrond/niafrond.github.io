@@ -7,16 +7,36 @@ const html = read('index.html');
 
 describe('thème rétro (retro.css)', () => {
     test('la page charge retro.css après style.css et active le thème sur <body>', () => {
-        const style = html.indexOf('href="style.css"');
-        const theme = html.indexOf('href="retro.css"');
+        // les feuilles sont injectées par document.write (avec un ?v=… anti-cache)
+        const style = html.indexOf('href="style.css');
+        const theme = html.indexOf('href="retro.css');
         expect(style).toBeGreaterThan(-1);
         expect(theme).toBeGreaterThan(style); // chargé après : ses règles l'emportent à spécificité égale
         expect(/<body class="[^"]*\brt\b[^"]*">/.test(html)).toBe(true);
     });
 
     test('toutes les règles sont portées par body.rt (le thème ne fuit pas sur d\'autres pages)', () => {
-        const css = retro.replace(/\/\*[\s\S]*?\*\//g, '').replace(/@font-face\s*\{[^}]*\}/g, '').replace(/@keyframes\s+[\w-]+\s*\{(?:[^{}]*\{[^}]*\})*[^}]*\}/g, '');
-        const selectors = css.split('}').map(chunk => chunk.split('{')[0].trim()).filter(Boolean);
+        const css = retro.replace(/\/\*[\s\S]*?\*\//g, '');
+        // Parcours des règles : les at-rules de description (@font-face, @keyframes) sont ignorées avec leur contenu,
+        // les at-rules conditionnelles (@media, @supports) sont parcourues : leurs règles internes doivent aussi être sous body.rt.
+        const collect = (text, out) => {
+            let i = 0;
+            while (i < text.length) {
+                const open = text.indexOf('{', i);
+                if (open < 0) break;
+                const head = text.slice(i, open).trim();
+                let depth = 1, j = open + 1;
+                while (j < text.length && depth > 0) { if (text[j] === '{') depth++; else if (text[j] === '}') depth--; j++; }
+                const body = text.slice(open + 1, j - 1);
+                if (head.startsWith('@')) {
+                    if (/^@(media|supports|layer|container)\b/.test(head)) collect(body, out);
+                } else out.push(head);
+                i = j;
+            }
+            return out;
+        };
+        const selectors = collect(css, []);
+        expect(selectors.length).toBeGreaterThan(10);
         selectors.flatMap(list => list.split(',').map(s => s.trim())).forEach(sel => {
             expect(sel.startsWith('body.rt')).toBe(true);
         });

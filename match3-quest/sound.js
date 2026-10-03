@@ -220,7 +220,7 @@ function isStoredVolume(value) {
     return Number.isFinite(value) && value >= 0 && value <= 1;
 }
 
-function getMusicVolume() {
+export function getMusicVolume() {
     return clampVolume(settings.musicVolume, defaultSettings.musicVolume);
 }
 
@@ -242,7 +242,7 @@ function syncLegacyVolumeSetting() {
     settings.volume = clampVolume((settings.musicVolume + settings.sfxVolume) / 2);
 }
 
-function isMusicMuted() {
+export function isMusicMuted() {
     return Boolean(settings.mutedMusic || settings.muted);
 }
 
@@ -334,6 +334,9 @@ function saveSettings() {
 // ===============================
 // CONTEXTE AUDIO WEB
 // ===============================
+
+// Contexte audio partagé (créé après un geste utilisateur) : sert aussi à la musique procédurale (music.js).
+export const getSharedAudioContext = () => getAudioContext({ allowCreate: true });
 
 function getAudioContext(options = {}) {
     const { allowCreate = true } = options;

@@ -10,7 +10,10 @@ import {
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const templateIds = new Set(catalog.map(t => t.id));
+// Les tests de structure historiques portent sur les 10 sanctuaires (14x10) ; le Grand Monde a ses tests dans world.test.js.
+const ORDER_IDS = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
 const screens = Object.values(SCREENS);
+const sanctuaries = ORDER_IDS.map(id => SCREENS[id]);
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 // Ordre linéaire du monde : chaque écran est relié au précédent (ouest) et au suivant (est).
@@ -86,7 +89,7 @@ const goto = (s, id) => { s.data.screenId = id; };
 const quest = id => QUESTS.find(q => q.id === id);
 
 describe('cartes (story.js)', () => {
-    test.each(screens.map(s => [s.id, s]))('%s : dimensions, entités et sorties valides', (_id, s) => {
+    test.each(sanctuaries.map(s => [s.id, s]))('%s : dimensions, entités et sorties valides', (_id, s) => {
         expect([s.w, s.h]).toEqual([14, 10]);
         expect(s.region).toBe(s.id);
         expect(s.biome).toBe(BIOME_OF[s.id]);
@@ -125,7 +128,7 @@ describe('cartes (story.js)', () => {
         });
     });
 
-    test.each(screens.map(s => [s.id, s]))('%s : toutes les entités et sorties sont atteignables à pied', (_id, s) => {
+    test.each(sanctuaries.map(s => [s.id, s]))('%s : toutes les entités et sorties sont atteignables à pied', (_id, s) => {
         const free = reachable(s, s.spawn);
         s.exits.forEach(ex => expect(free.has(`${ex.x},${ex.y}`)).toBe(true));
         arrivals(s).forEach(a => expect(free.has(`${a.x},${a.y}`)).toBe(true));

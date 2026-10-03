@@ -257,7 +257,7 @@ describe('Grand Monde : textes et quêtes', () => {
         expect(main).toBeGreaterThan(side);
     });
 
-    test('nombre de quêtes annexes : au moins 125 (3 fois plus qu'avant)', () => {
+    test('nombre de quêtes annexes : au moins 125 (3 fois plus qu\'avant)', () => {
         expect(QUESTS.filter(q => q.side).length).toBeGreaterThanOrEqual(125);
         expect(screens.flatMap(s => s.chests).length).toBeGreaterThan(80);
     });

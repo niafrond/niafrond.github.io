@@ -4,7 +4,8 @@ import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./clas
 import { createMapEnemy } from "./enemies.js";
 import { addXP } from "./experience.js";
 import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
-import { initializeAudioUI, playSfx, primeAudioFromGesture } from "./sound.js";
+import { initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
+import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate } from "./version.js";
 import { worldZones } from "./worldMap.js";
@@ -160,6 +161,30 @@ function init() {
         onOpenMenu: () => window.switchTab('weapons')
     });
     exploration.init();
+
+    // Musique d'ambiance (pentatonique chinoise, music.js) : la scène voulue se déduit de l'état de l'interface.
+    setMusicEnvironment({ getContext: getSharedAudioContext, getVolume: getMusicVolume, isMuted: isMusicMuted });
+    const desiredMusic = () => {
+        if(document.querySelector('.cine-ending')) return ['ending'];
+        if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
+        if(document.querySelector('.battle-transition')) return null;
+        if(document.getElementById('class-modal')?.classList.contains('active')) return ['title'];
+        const tab = document.querySelector('.tab-panel.active')?.id;
+        if(tab && tab !== 'tab-combat') return ['menu'];
+        if(document.getElementById('worldmap-modal')?.classList.contains('active') || document.querySelector('.explore-journal')) return ['menu'];
+        const info = exploration.getSceneInfo();
+        if(!info) return null;
+        if(info.kind === 'house') return ['house'];
+        if(info.kind === 'village' || info.kind === 'wild') return [info.kind, { biome: info.biome }];
+        return [info.region === 'lune' ? 'moon' : 'sanctuary'];
+    };
+    let musicStopped = true;
+    setInterval(() => {
+        const want = desiredMusic();
+        if(!want) { if(!musicStopped) { stopMusic({ fadeMs: 700 }); musicStopped = true; } return; }
+        musicStopped = false;
+        setMusicScene(want[0], want[1]);
+    }, 400);
 
     const setCombatUiVisible = visible => {
         document.querySelector('.stats-container').style.display = visible ? 'flex' : 'none';
