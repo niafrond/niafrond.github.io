@@ -6,7 +6,6 @@ Les valeurs entre `backticks` sont les constantes ou bornes exactes du code.
 
 ## Journal de session
 
-- 2026-10-03 (Match3-Quest, univers fantasy chinoise « Hou Yi et les Dix Soleils ») : sans rapport avec dj-mix, journalisé ici conformément à la consigne "toujours mettre à jour `dj-mix/SPECS.md` à chaque prompt" — nouvel univers inspiré de Chang'e : bible `match3-quest/UNIVERS.md`, 10 régions / 9 soleils-boss + Fengmeng (rival, 4 rencontres), moteur étendu (showWhen/hideWhen, illusions, boucliers, scènes de défaite, sorties verrouillées, Nouvelle Partie +), gemmes remplacées par des gâteaux de lune (tuiles SVG), nouveaux sprites SVG (`sprites/cn/`), palette rétro chinoise, carte du monde à 10 zones, renommage classes/armes/sorts/objets/ennemis, textes. Tests 324/324. Limites : carquois limité et stress thermique non implémentés, quelques libellés anglais restants.
 - 2026-09-27 : correction CI des workflows APK (`apk.yml`, `apk-djmix.yml`, `apk-mobrush.yml`) — `apt-get update` avant l'installation d'ImageMagick (`--no-install-recommends`, sautée si `convert` est déjà présent) : l'index apt obsolète du runner pointait vers des paquets `ghostscript` retirés du miroir (404) ; `packages: 'platform-tools'` passé à `setup-android` pour ne plus installer le paquet obsolète `tools`.
 
 ---
