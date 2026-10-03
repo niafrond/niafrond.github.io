@@ -596,7 +596,7 @@ const SUN_REPLIES = [
 ];
 const FENGMENG_TAUNTS = [
     'Maître… vous avez tout : le renom, l\'élixir, Chang\'e. Moi, que me reste-t-il ?',
-    'Je ne suis plus votre disciple. Aujourd\'hui, c\'est moi qui tends l\'arc !',
+    'Je ne serai pas toujours votre disciple. Aujourd\'hui, c\'est moi qui tends l\'arc !',
     'Regardez-moi enfin, Maître. Regardez-moi comme vous regardez les soleils !'
 ];
 const FENGMENG_REPLIES = [

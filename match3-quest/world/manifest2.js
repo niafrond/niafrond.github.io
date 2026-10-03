@@ -1289,7 +1289,7 @@ export const MANIFEST2 = {
         giver: "guide_dawa",
         turnIn: "lost_pilgrim_ren",
         chain: null,
-        summary: "Un pèlerin égaré dans les dunes cherche la route de la Lune. Il se fie au fennec Lili.",
+        summary: "Un pèlerin égaré dans les dunes cherche la route du Kunlun, pour demander un élixir à la Reine Mère. Il se fie au fennec Lili.",
         objectives: [
           {
             type: "talk",
@@ -1325,7 +1325,7 @@ export const MANIFEST2 = {
         giver: "mapmaker_ali",
         turnIn: "mapmaker_ali",
         chain: "sq_journal_3",
-        summary: "Ali se souvient d'un jeune archer qui lui a acheté une carte de la Lune. Une page du carnet traîne dans le sable.",
+        summary: "Ali se souvient d'un jeune archer qui lui a acheté une carte de la route du Kunlun. Une page du carnet traîne dans le sable.",
         objectives: [
           {
             type: "chest",
@@ -1926,7 +1926,7 @@ export const MANIFEST2 = {
         giver: "bath_mu",
         turnIn: "bath_mu",
         chain: null,
-        summary: "Un poisson de lave a atterri dans les bains. Rapportez-le chez lui avec une escorte douce.",
+        summary: "Un poisson de lave a pris goût aux bains. Parlez-lui, puis ouvrez le coffre au fond du bassin.",
         objectives: [
           {
             type: "talk",
@@ -2239,7 +2239,7 @@ export const MANIFEST2 = {
         giver: "eagle_boy_temur",
         turnIn: "eagle_boy_temur",
         chain: null,
-        summary: "L'aigle de Temur est parti et a laissé sa bague dans les hautes herbes. Allez-la chercher.",
+        summary: "L'aigle de Temur est parti et a laissé sa bague au perchoir du campement. Allez la chercher.",
         objectives: [
           {
             type: "visit",
@@ -2581,7 +2581,7 @@ export const MANIFEST2 = {
         giver: "singer_hailing",
         turnIn: "singer_hailing",
         chain: null,
-        summary: "Hailing compose une chanson du port. Il lui manque trois couplets : le pêcheur, l'envoyé et la petite Mi.",
+        summary: "Hailing compose une chanson du port. Elle cherche trois couplets : le pêcheur, l'envoyé et la petite Mi.",
         objectives: [
           {
             type: "talk",

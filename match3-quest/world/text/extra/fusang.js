@@ -68,7 +68,7 @@ export default {
         {
           whenDone: "sun_9",
           lines: [
-            "Les étoiles brillent mieux depuis ce neuvième soleil. Le fleuve d'argent est plus clair."
+            "Les étoiles brillent mieux depuis la chute du neuvième soleil. Le fleuve d'argent est plus clair."
           ]
         }
       ]
@@ -136,7 +136,7 @@ export default {
         {
           whenDone: "sun_9",
           lines: [
-            "Une étoile m'a dit que la lune avait une nouvelle amie. Elle a l'air heureuse, d'après elle."
+            "Une étoile m'a dit que la lune attendait une visite. Elle a l'air impatiente, d'après elle."
           ]
         }
       ]
@@ -164,7 +164,7 @@ export default {
       emoji: "🐋",
       idle: [
         "Je suis Kun, le plus grand des poissons. Je nage dans les nuages, par fainéantise.",
-        "Un jour, je deviendrai oiseau. Pas aujourd'hui, c'est mardi."
+        "Un jour, je deviendrai oiseau. Pas aujourd'hui, il y a trop de nuages."
       ],
       talk: [
         {
@@ -246,7 +246,7 @@ export default {
           target: "weaver_zhinu",
           text: "Remettre le mot à Zhinü (Perchoir des Grues)",
           lines: [
-            "Un mot de Niulang ? Dis-lui que je tisse un nuage pour lui, un nuage tout blanc, et qu'il aura mon cœur pour oreiller."
+            "Un mot de Niulang ? Dites-lui que je tisse un nuage pour lui, un nuage tout blanc, et qu'il aura mon cœur pour oreiller."
           ]
         }
       ],
@@ -286,7 +286,7 @@ export default {
           target: "oxherd_niulang",
           text: "Porter les pêches à Niulang (place de Fusang-le-Bas)",
           lines: [
-            "Des pêches ! Ma Zhinü pense à tout. Dis-lui que je les mangerai une par une, en attendant le pont."
+            "Des pêches ! Ma Zhinü pense à tout. Dites-lui que je les mangerai une par une, en attendant le pont."
           ]
         }
       ],
@@ -331,7 +331,7 @@ export default {
         }
       ],
       offer: [
-        "Le pont des pies ne tient qu'une nuit par an. J'ai trouvé un moyen : un permis du portier Men. Allez le lui demander, avec mes compliments."
+        "Zhinü voudrait que le pont des pies tienne plus d'une nuit par an. Il lui faudrait un permis, et je ne les accorde pas à la légère. Passez par les racines dorées, puis revenez me voir : nous en reparlerons."
       ],
       hint: [
         "Men est sur la place, devant la porte du sceau."
@@ -542,13 +542,13 @@ export default {
         }
       ],
       offer: [
-        "J'ai vu passer un jeune archer, l'air sombre. Il a laissé une page dans les branches. Elle porte un nom que je connais : Chang'e."
+        "J'ai vu passer un jeune archer, l'air sombre. Il a laissé une page dans les branches. Elle parle d'une boîte, et d'une dame que je connais : Chang'e."
       ],
       hint: [
         "La page est accrochée à une branche dorée, dans les racines et branches du Fusang."
       ],
       complete: [
-        "« Je sais où est la boîte. Je saurai la prendre. Il me remerciera plus tard. » La Grue baisse la tête : « Il faut prévenir la Dame de la Lune. »"
+        "« Je sais où est la boîte. Je saurai la prendre. Il me remerciera plus tard. » La Grue baisse la tête : « Il faut prévenir Dame Chang'e. »"
       ],
       reward: {
         gold: 180,

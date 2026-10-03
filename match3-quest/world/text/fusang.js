@@ -9,7 +9,7 @@ export default {
     fusang_h_grue: { name: 'Nid de la messagère', arrival: ['Un nid géant tressé de plumes blanches. La Grue y garde les messages de la Reine Mère, et ses opinions.'] },
     fusang_h_cueilleur: { name: 'Maison du cueilleur de pêches', arrival: ['Une cabane sucrée qui sent la pêche mûre. On y cueille encore, une par siècle, des fruits d\'immortalité.'] },
     fusang_h_astronome: { name: 'Observatoire de Mère Xing', arrival: ['Des instruments de laiton pointés vers un ciel qui ne se laisse pas mesurer. Mère Xing a renoncé à la précision, elle observe.'] },
-    fusang_h_temple: { name: 'Petit temple des Dix Soleils', arrival: ['Un temple de dix lanternes, dont neuf sont éteintes. La dixième vacille, comme si elle hésitait.'] },
+    fusang_h_temple: { name: 'Petit temple des Dix Soleils', arrival: ['Un temple de dix lanternes, dont huit sont éteintes. Les deux dernières vacillent, comme si elles hésitaient.'] },
     fusang_h_chambre: { name: 'Maison de thé suspendue', arrival: ['Accrochée aux branches, elle se balance doucement. Le thé n\'y tremble pas : il a l\'habitude.'] }
   },
   npcs: {
@@ -17,10 +17,10 @@ export default {
       idle: ['Une pêche par siècle ! C\'est le rythme de l\'arbre. Je ne suis pas pressé, moi, j\'ai l\'éternité devant moi, ou du moins une partie.', 'On me demande souvent si ces pêches rendent immortel. Réponse : seulement si on les mange avec modération.'],
       talk: [{ whenDone: 'sun_9', lines: ['Le neuvième soleil est tombé. Les pêches ont pâli, puis rougi. J\'y vois un signe, mais je ne sais pas encore lequel.'] }] },
     astronomer_xing: { name: 'Mère Xing', title: 'Astronome de l\'arbre', emoji: '🔭',
-      idle: ['J\'ai compté dix soleils dans le ciel, il y a longtemps. J\'en compte maintenant un seul. La différence est très reposante.', 'Une étoile m\'a dit que la Lune a une nouvelle habitante. Je ne sais pas si c\'est une bonne nouvelle. Les étoiles aiment les ragots.'],
+      idle: ['J\'ai compté dix soleils dans le ciel, il y a longtemps. Il n\'en reste que deux, et ils se cachent dans mon arbre. La différence est très reposante.', 'Une étoile m\'a dit que la Lune se prépare à recevoir une visite. Je ne sais pas si c\'est une bonne nouvelle. Les étoiles aiment les ragots.'],
       talk: [{ whenDone: 'sun_9', lines: ['Le neuvième soleil abattu, le ciel est calme. Il ne reste qu\'un soleil, et il tremble de peur. Soyez doux avec lui, archer.'] }] },
     acolyte_ri: { name: 'Ri', title: 'Acolyte aux neuf lanternes', emoji: '🕯️',
-      idle: ['Je prends soin de dix lanternes. Neuf sont éteintes, la dixième tient bon. Je lui parle, elle ne me répond pas.', 'Les soleils étaient des frères. On les a abattus, un à un. Je prie pour eux, sans rancune.'],
+      idle: ['Je prends soin de dix lanternes. Huit sont éteintes, deux tiennent bon. Je leur parle, elles ne me répondent pas.', 'Les soleils étaient des frères. On les a abattus, un à un. Je prie pour eux, sans rancune.'],
       talk: [{ whenDone: 'sun_9', lines: ['J\'ai rallumé une lanterne pour chaque soleil, en souvenir. Ce ne sont plus des menaces, mais des mémoires. C\'est mieux.'] }] },
     teamaster_you: { name: 'Maître You', title: 'Maître de thé suspendu', emoji: '🍃',
       idle: ['Le thé se prépare comme la vie : lentement, avec respect, en tenant bien la tasse.', 'Une grue vient parfois boire ici. Elle dit qu\'une dame, là-haut, lui a offert un flacon. Je ne la crois pas, mais elle boit bien.'],
@@ -30,12 +30,12 @@ export default {
       talk: [{ whenDone: 'sun_9', lines: ['Neuf soleils ! Je file vers la Lune. Pas à pied, cette fois : j\'ai promis une lanterne à la veilleuse là-haut.'] }] },
     child_yuer: { name: 'Yuer', title: 'Fillette qui écoute les soleils', emoji: '🧒',
       idle: ['Je suis la seule qui entende les soleils. Ils chantent, tout bas, dans leur sommeil.', 'Le dernier soleil a peur. Il chante une berceuse pour ne pas pleurer. Elle est très jolie.'],
-      talk: [{ whenDone: 'sq_neuf_lanternes', lines: ['Les neuf lanternes sont rallumées. Le dernier soleil a souri. J\'ai entendu. C\'était un petit rire de lumière.'] }] },
+      talk: [{ whenDone: 'sq_neuf_lanternes', lines: ['Les lanternes sont rallumées. Le dernier soleil a souri. J\'ai entendu. C\'était un petit rire de lumière.'] }] },
     phoenix_chick: { name: 'Petit Fenghuang', title: 'Poussin de phénix', emoji: '🐥',
       idle: ['Piou ! Je suis un poussin de phénix. Je renais tous les matins. Ça fatigue.', 'Ma mère me dit que je serai grand, rouge et or. Moi, je préfère rester petit et jaune.'],
       talk: [{ whenDone: 'sun_9', lines: ['Piou ! Le soleil est moins chaud ! Je peux sortir toute la journée ! Merci, archer, je vous donne une plume (non, pas la mienne, j\'en ai besoin).'] }] },
     root_elder: { name: 'Racine-Ancienne', title: 'Esprit de l\'arbre', emoji: '🌳',
-      idle: ['Je suis l\'arbre où les soleils ont dormi. J\'ai bercé dix frères, et je n\'en garde qu\'un.', 'Les racines se souviennent de tout. Même des soleils qui ont brillé trop fort.'],
+      idle: ['Je suis l\'arbre où les soleils ont dormi. J\'ai bercé dix frères ; huit sont tombés, deux me restent.', 'Les racines se souviennent de tout. Même des soleils qui ont brillé trop fort.'],
       talk: [{ whenDone: 'sq_sceau_racines', lines: ['Le sceau est reformé. La cime est ouverte. Montez, archer, mais avec douceur : un soleil dort là-haut, et il rêve de vous.'] }] }
   },
   chests: {
@@ -66,7 +66,7 @@ export default {
       reward: { gold: 200, fragment: 'Cendre de lanterne', xp: 390 } },
     { id: 'sq_immortel_egare', title: 'L\'immortel égaré', chapter: '✦ Quête secondaire — Cime du Fusang', giver: 'child_yuer', turnIn: 'child_yuer', requires: ['sq_neuf_lanternes'], side: true,
       objectives: [{ type: 'kill', target: 'fusang_jade_wraith', text: 'Calmer l\'immortel de jade égaré (racines et branches dorées)' }],
-      offer: ['Un immortel de jade vagabonde dans les racines, hanté par un souvenir. Les soleils m\'ont dit qu\'il cherche son maître.', 'Il suffit de le calmer, vous êtes le plus doué pour ça. Mais ne lui faites pas de mal : il est fragile comme un vase.'],
+      offer: ['Un immortel de jade vagabonde dans les racines, hanté par un souvenir. Les soleils m\'ont dit qu\'il cherche son maître.', 'Il suffit de le calmer, tu es le plus doué pour ça. Mais ne lui fais pas de mal : il est fragile comme un vase.'],
       hint: ['L\'immortel de jade égaré rôde dans les racines et branches dorées, derrière le village.'],
       complete: ['Il a retrouvé le calme ! Il m\'a dit merci, dans sa voix de cristal. Il m\'a donné ceci : un morceau de jade chantant.'],
       reward: { gold: 200, fragment: 'Jade chantant', xp: 400 } }

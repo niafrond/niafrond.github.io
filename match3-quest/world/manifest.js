@@ -483,7 +483,7 @@ export const MANIFEST = {
       { id: 'fusang_h_grue', name: 'Nid de la messagère', desc: 'Un nid géant tressé de plumes blanches, au sommet d\'un perchoir.', residents: ['crane_envoy'], chests: ['crane_feather_box'] },
       { id: 'fusang_h_cueilleur', name: 'Maison du cueilleur de pêches', desc: 'Une cabane sucrée où l\'on cueille encore des pêches d\'immortalité, une par siècle.', residents: ['picker_tao'], chests: ['peach_basket'] },
       { id: 'fusang_h_astronome', name: 'Observatoire de Mère Xing', desc: 'Des instruments de laiton pointés vers un ciel qui ne se laisse pas mesurer.', residents: ['astronomer_xing'], chests: [] },
-      { id: 'fusang_h_temple', name: 'Petit temple des Dix Soleils', desc: 'Un temple de dix lanternes, dont neuf sont éteintes.', residents: ['acolyte_ri'], chests: [] },
+      { id: 'fusang_h_temple', name: 'Petit temple des Dix Soleils', desc: 'Un temple de dix lanternes, dont huit sont éteintes.', residents: ['acolyte_ri'], chests: [] },
       { id: 'fusang_h_chambre', name: 'Maison de thé suspendue', desc: 'Une maison de thé accrochée aux branches, qui se balance au gré du vent.', residents: ['teamaster_you'], chests: ['teapot_chest'] }
     ],
     npcs: [

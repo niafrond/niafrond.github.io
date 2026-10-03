@@ -84,6 +84,12 @@ export default {
           lines: [
             "Croa. L'archer en colère s'approche. Soyez prêt."
           ]
+        },
+        {
+          whenDone: "fengmeng_3b",
+          lines: [
+            "Croa. L'archer en colère redescend, l'arc baissé. Je porterai ses messages, désormais : ils seront plus doux."
+          ]
         }
       ]
     }
