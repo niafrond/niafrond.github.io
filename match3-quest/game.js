@@ -575,6 +575,20 @@ function showCombatResultScreen(isVictory){
     `;
 
     screen.classList.add('active');
+    playCombatEndFade(isVictory);
+}
+
+// Fin de combat : fondu au noir très court avec le mot « Victoire » / « Défaite », puis retour à l'écran de résultat.
+function playCombatEndFade(isVictory){
+    document.getElementById('combat-end-fade')?.remove();
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const fade = document.createElement('div');
+    fade.id = 'combat-end-fade';
+    fade.className = `combat-end-fade ${isVictory ? 'victory' : 'defeat'}`;
+    fade.textContent = isVictory ? 'VICTOIRE' : 'DÉFAITE';
+    fade.style.pointerEvents = 'none';
+    document.body.appendChild(fade);
+    setTimeout(() => fade.remove(), reduced ? 400 : 1300);
 }
 
 // Points d'accroche de la phase d'exploration : onVictory est appelé dès la victoire (avant la
