@@ -509,6 +509,7 @@ export function createExplorationView(cfg) {
                 toast(`${screen.interior ? '🏠' : screen.kind === 'village' ? '🏘️' : '📍'} ${screen.name}`, 2200);
                 // Première visite : petit texte d'ambiance du Narrateur.
                 if (res.firstVisit && res.arrival?.length) openDialog({ ...NARRATOR, title: screen.name }, res.arrival);
+                if (res.warning) toast(`⚠️ ${res.warning.regionName} : niveau ${res.warning.minLevel} recommandé — les ennemis y sont redoutables.`, 5000);
                 if (res.events?.length) processEvents(res.events);
                 cfg.onSave();
                 break;
@@ -742,7 +743,7 @@ export function createExplorationView(cfg) {
             }
             const minLevel = REGION_UNLOCK_LEVEL[session.screens[ex.to].region] || 1;
             const locked = X.isExitLocked(session, ex);
-            const gated = locked || level < minLevel;
+            const gated = locked || (level < minLevel && session.screens[ex.to].region !== screen.region);
             cell(ex.x, ex.y, locked ? `rgba(200,200,210,${(0.5 + 0.2 * pulse).toFixed(3)})` : `rgba(255,236,150,${(0.6 + 0.3 * pulse).toFixed(3)})`);
             cell(ex.x, ex.y, 'rgba(255,255,255,0.45)', tile * 0.16);
             const c = P(ex.x + 0.5, ex.y + 0.5);
@@ -753,7 +754,7 @@ export function createExplorationView(cfg) {
             ctx.textBaseline = 'middle';
             ctx.fillText(arrow, c.x, c.y);
             const labelY = ex.y === 0 ? c.y + tile * 0.75 : c.y - tile * 0.75;
-            const labelText = locked ? `🔒 ${ex.label}` : gated ? `🌫️ ${ex.label} (niv. ${minLevel})` : ex.label;
+            const labelText = locked ? `🔒 ${ex.label}` : gated ? `⚠️ ${ex.label} (niv. ${minLevel})` : ex.label;
             drawLabel(c.x, labelY, labelText,
                 gated ? '#e5e7eb' : '#fff8e1', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
         });

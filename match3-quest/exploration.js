@@ -258,15 +258,16 @@ export function tryMove(session, dx, dy, ctx = {}) {
             };
         }
         const minLevel = REGION_UNLOCK_LEVEL[target.region] || 1;
-        if (playerLevel < minLevel) {
-            return { type: 'exitBlocked', reason: 'level', minLevel, label: exit.label, regionName: target.name };
-        }
+        // Le niveau recommandé ne bloque jamais : le joueur est seulement prévenu (`warning`).
+        const warning = playerLevel < minLevel && target.region !== screen.region
+            ? { minLevel, regionName: target.name } : null;
         const from = screen.id;
         const firstVisit = !session.data.visitedScreens.includes(exit.to);
         enterScreen(session, exit.to, exit.arrive);
         const res = { type: 'transition', from, to: exit.to, firstVisit, door: Boolean(exit.door), events: checkAutoQuests(session) };
         // Texte du Narrateur affiché seulement à la toute première visite de l'écran.
         if (firstVisit && target.arrival?.length) res.arrival = target.arrival;
+        if (warning) res.warning = warning;
         return res;
     }
 
