@@ -12,7 +12,9 @@ import android.media.AudioAttributes;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.PowerManager;
 
 import androidx.core.app.NotificationCompat;
@@ -23,9 +25,10 @@ import androidx.core.app.ServiceCompat;
  * Service au premier plan qui affiche une notification "alarme" prioritaire
  * (son + vibration au niveau OS, indépendants du WebView) avec un
  * `fullScreenIntent` vers MainActivity pour amener l'écran de calcul même
- * par-dessus le verrouillage. Le seul moyen d'arrêter la sonnerie est de
- * résoudre le calcul dans l'appli (dismiss) ou de reporter (snooze, bouton
- * disponible directement sur la notification).
+ * par-dessus le verrouillage. La notification n'offre volontairement AUCUNE
+ * action rapide (pas de bouton "Snooze") : le seul moyen d'agir sur l'alarme
+ * est d'ouvrir l'appli, où le calcul doit être résolu pour désactiver (le
+ * report/snooze y reste possible, mais seulement depuis cet écran).
  */
 public class AlarmRingService extends Service {
 
@@ -35,6 +38,8 @@ public class AlarmRingService extends Service {
     private static final int NOTIF_ID = 4201;
 
     private PowerManager.WakeLock wakeLock;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable autoDismissRunnable;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -45,17 +50,17 @@ public class AlarmRingService extends Service {
 
         String alarmId = intent.getStringExtra(AlarmReceiver.EXTRA_ALARM_ID);
         String label = intent.getStringExtra(AlarmReceiver.EXTRA_LABEL);
-        int snoozeMinutes = intent.getIntExtra(AlarmReceiver.EXTRA_SNOOZE_MINUTES, 9);
         // URI d'une sonnerie choisie via le sélecteur système, ou '' (et toute
         // valeur qui n'est pas une URI, ex. un ancien id de sonnerie web) pour
         // la sonnerie d'alarme par défaut du système — voir ensureChannel().
         String soundUri = intent.getStringExtra(AlarmReceiver.EXTRA_SOUND);
+        int autoDismissMinutes = intent.getIntExtra(AlarmReceiver.EXTRA_AUTO_DISMISS_MINUTES, 0);
 
         String channelId = ensureChannel(soundUri);
         // ServiceCompat gère elle-même les différences d'API selon la version (le type de
         // service au premier plan n'existe qu'à partir de l'API 29) — un appel direct à
         // Service#startForeground(int, Notification, int) planterait sur les appareils plus anciens.
-        ServiceCompat.startForeground(this, NOTIF_ID, buildNotification(alarmId, label, snoozeMinutes, channelId),
+        ServiceCompat.startForeground(this, NOTIF_ID, buildNotification(alarmId, label, channelId),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
 
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -64,10 +69,24 @@ public class AlarmRingService extends Service {
             wakeLock.acquire(10 * 60 * 1000L); // plafond de sécurité 10 min
         }
 
+        // Arrêt automatique : si personne ne résout le calcul dans le délai réglé,
+        // la sonnerie s'arrête seule (0 = jamais, comportement historique).
+        if (autoDismissRunnable != null) handler.removeCallbacks(autoDismissRunnable);
+        if (autoDismissMinutes > 0) {
+            autoDismissRunnable = () -> stop(getApplicationContext());
+            handler.postDelayed(autoDismissRunnable, autoDismissMinutes * 60_000L);
+        } else {
+            autoDismissRunnable = null;
+        }
+
         return START_NOT_STICKY;
     }
 
-    private Notification buildNotification(String alarmId, String label, int snoozeMinutes, String channelId) {
+    // Aucune action rapide (ni Snooze, ni autre) sur cette notification : la
+    // seule interaction possible est d'ouvrir l'appli (tap sur la
+    // notification ou fullScreenIntent) pour y résoudre le calcul — un
+    // report éventuel se fait depuis cet écran, jamais depuis la notification.
+    private Notification buildNotification(String alarmId, String label, String channelId) {
         Intent activityIntent = new Intent(this, MainActivity.class);
         activityIntent.putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId);
         activityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
@@ -77,12 +96,6 @@ public class AlarmRingService extends Service {
                 | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
         PendingIntent fullScreenPI = PendingIntent.getActivity(
                 this, safeHash(alarmId), activityIntent, piFlags);
-
-        Intent snoozeIntent = new Intent(this, SnoozeReceiver.class);
-        snoozeIntent.putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId);
-        snoozeIntent.putExtra(AlarmReceiver.EXTRA_SNOOZE_MINUTES, snoozeMinutes);
-        PendingIntent snoozePI = PendingIntent.getBroadcast(
-                this, safeHash(alarmId) + 1, snoozeIntent, piFlags);
 
         String title = (label == null || label.isEmpty()) ? "Alarme" : label;
 
@@ -96,7 +109,6 @@ public class AlarmRingService extends Service {
                 .setAutoCancel(false)
                 .setFullScreenIntent(fullScreenPI, true)
                 .setContentIntent(fullScreenPI)
-                .addAction(0, "💤 Snooze " + snoozeMinutes + " min", snoozePI)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .build();
     }
@@ -156,6 +168,10 @@ public class AlarmRingService extends Service {
     @Override
     public void onDestroy() {
         if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+        if (autoDismissRunnable != null) {
+            handler.removeCallbacks(autoDismissRunnable);
+            autoDismissRunnable = null;
+        }
         super.onDestroy();
     }
 

@@ -267,6 +267,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 
 .field-label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
 .field-hint { font-size: 0.78rem; color: var(--muted); margin: 8px 0 0; line-height: 1.5; }
+.field-error { font-size: 0.78rem; color: var(--danger); margin: 8px 0 0; font-weight: 600; }
 
 .input {
   width: 100%;
@@ -447,7 +448,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
   text-align: center;
   font-family: inherit;
 }
-.challenge-answer.shake { animation: shake 0.4s; border-color: var(--danger); }
+.challenge-answer.shake, .input.shake { animation: shake 0.4s; border-color: var(--danger); }
 @keyframes shake {
   10%, 90% { transform: translateX(-2px); }
   20%, 80% { transform: translateX(4px); }

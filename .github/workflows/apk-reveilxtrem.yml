@@ -67,7 +67,7 @@ jobs:
           JAVA_DIR="reveil-xtrem-android/android/app/src/main/java/io/github/niafrond/reveilxtrem"
           mkdir -p "$JAVA_DIR"
           for f in MainActivity AlarmSchedulerPlugin AlarmStore AlarmMath AlarmActions \
-                   AlarmReceiver AlarmRingService SnoozeReceiver BootReceiver; do
+                   AlarmReceiver AlarmRingService BootReceiver; do
             cp "reveil-xtrem-android/src/main/java/io/github/niafrond/reveilxtrem/$f.java" "$JAVA_DIR/$f.java"
           done
 
@@ -125,11 +125,6 @@ jobs:
           if not has_component('receiver', f'{pkg}.AlarmReceiver'):
               r = ET.SubElement(app, 'receiver')
               r.set(A('name'), f'{pkg}.AlarmReceiver')
-              r.set(A('exported'), 'false')
-
-          if not has_component('receiver', f'{pkg}.SnoozeReceiver'):
-              r = ET.SubElement(app, 'receiver')
-              r.set(A('name'), f'{pkg}.SnoozeReceiver')
               r.set(A('exported'), 'false')
 
           if not has_component('receiver', f'{pkg}.BootReceiver'):

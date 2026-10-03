@@ -58,11 +58,20 @@ export function requestRingFullscreen() {
   const tryRequest = () => request.call(docEl).catch(() => {});
   tryRequest();
   // Certains navigateurs refusent sans geste utilisateur récent : on réessaie
-  // au premier tap si le premier essai silencieux a échoué.
-  document.addEventListener('pointerdown', function retry() {
-    document.removeEventListener('pointerdown', retry);
+  // au tout premier geste (tap, clic, touche) ou dès le retour au premier
+  // plan si le premier essai silencieux a échoué — pour prendre tout
+  // l'écran le plus vite possible, sans attendre une action précise.
+  const retryEvents = ['pointerdown', 'touchstart', 'keydown'];
+  function retry() {
+    retryEvents.forEach(type => document.removeEventListener(type, retry));
+    document.removeEventListener('visibilitychange', onVisible);
     if (!document.fullscreenElement && !document.webkitFullscreenElement) tryRequest();
-  }, { once: true });
+  }
+  function onVisible() {
+    if (document.visibilityState === 'visible') retry();
+  }
+  retryEvents.forEach(type => document.addEventListener(type, retry, { once: true }));
+  document.addEventListener('visibilitychange', onVisible);
 }
 
 export function exitRingFullscreen() {
