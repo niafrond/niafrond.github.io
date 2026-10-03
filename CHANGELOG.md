@@ -1,3 +1,9 @@
+## [2.53.1](https://github.com/niafrond/niafrond.github.io/compare/v2.53.0...v2.53.1) (2026-10-03)
+
+### Bug Fixes
+
+* **mob-rush:** piste de couloir au sol au lieu d'obstacles décoratifs ([2fd4f26](https://github.com/niafrond/niafrond.github.io/commit/2fd4f26221d32cf26954a06d95bd8989e9359b18))
+
 ## [2.53.0](https://github.com/niafrond/niafrond.github.io/compare/v2.52.0...v2.53.0) (2026-10-03)
 
 ### Features
