@@ -265,8 +265,8 @@ export function tryMove(session, dx, dy, ctx = {}) {
         const firstVisit = !session.data.visitedScreens.includes(exit.to);
         enterScreen(session, exit.to, exit.arrive);
         const res = { type: 'transition', from, to: exit.to, firstVisit, door: Boolean(exit.door), events: checkAutoQuests(session) };
-        // Texte du Narrateur affiché seulement à la toute première visite de l'écran.
-        if (firstVisit && target.arrival?.length) res.arrival = target.arrival;
+        // Texte du Narrateur affiché seulement à la toute première visite de l'écran, jamais en entrant dans une maison.
+        if (firstVisit && !target.interior && target.arrival?.length) res.arrival = target.arrival;
         if (warning) res.warning = warning;
         return res;
     }

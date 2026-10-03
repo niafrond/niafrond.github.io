@@ -1683,6 +1683,14 @@ describe('texte d\'arrivée', () => {
         expect(again.arrival).toBeUndefined();
     });
 
+    test('entrer dans une maison n\'affiche jamais de texte du Narrateur (même à la première visite)', () => {
+        expect(SCREENS.rizieres_h_houyi.arrival?.length).toBeGreaterThan(0);   // le texte existe dans les données…
+        const s = at('rizieres_village', 3, 4);
+        const res = tryMove(s, 0, -1, { playerLevel: 1 });
+        expect(res).toMatchObject({ type: 'transition', to: 'rizieres_h_houyi', door: true, firstVisit: true });
+        expect(res.arrival).toBeUndefined();                                    // …mais le moteur ne le renvoie pas
+    });
+
     test('chaque zone a son texte à la première visite : village (arrivée de la région), puis zone sauvage', () => {
         const s = at('fleuve_village', 18, 6);
         const res = tryMove(s, 1, 0, { playerLevel: 5 });
