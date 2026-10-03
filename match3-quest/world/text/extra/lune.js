@@ -24,7 +24,7 @@ export default {
       title: "Lapin de jade",
       emoji: "🐰",
       idle: [
-        "Je pile, je pile, je pile. L'élixir n'existe plus, mais l'habitude reste.",
+        "Je pile, je pile, je pile. L'élixir de la Reine Mère dort dans une fiole, là-haut, mais l'habitude de piler reste.",
         "Un lapin n'a pas d'avis sur l'immortalité. Il a un avis sur les carottes."
       ],
       talk: [
@@ -42,7 +42,7 @@ export default {
       emoji: "⛵",
       idle: [
         "Je fais passer les âmes sur la rivière de lune. Aujourd'hui, seulement deux. Beau temps.",
-        "Chang'e m'a demandé si l'on pouvait ramener quelqu'un d'en bas. Je lui ai dit non. Elle a souri quand même."
+        "Chang'e m'a demandé si l'on pouvait ne plus jamais redescendre d'ici. Je lui ai dit que la Lune ne retient que ceux qui s'y laissent porter. Elle a serré sa fiole et souri quand même."
       ],
       talk: [
         {

@@ -17,6 +17,17 @@ export default {
             '#.DDDD...#....EEEE.#',
             '#.DdDD.....4..EeEE.#',
             '#..=============...#',
+            '#..................#',
+            '#.###....==....###.#',
+            '#.#j.....==.....k#.#',
+            '#.###.~~.==.~~.###.#',
+            '#.....~~.==.~~.....#',
+            '#..=============...#',
+            '#..=..#.....#..=...#',
+            '#..=..#.m.n.#..=...#',
+            '#..=..#.....#..=...#',
+            '#..=..###.###..=...#',
+            '#..=============...#',
             '####################'
         ],
         npcs: [
@@ -26,7 +37,12 @@ export default {
             { id: 'matchmaker_hong', at: '0' },
             { id: 'lao_shuo_riz', at: '4' }
         ],
-        chests: []
+        chests: [
+            { id: 'rizieres_garden_a', at: 'j', gold: 15, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'rizieres_garden_b', at: 'k', gold: 15, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'rizieres_market_a', at: 'm', gold: 30, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'rizieres_market_b', at: 'n', gold: 30, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+        ]
     },
 
     hamlet: {

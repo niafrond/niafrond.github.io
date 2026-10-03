@@ -17,6 +17,17 @@ export default {
             '#.DDDD.=EEEEE....#.#',
             '#.DdDD.=EEeEE.####.#',
             '#9#========........#',
+            '#..................#',
+            '#.###....==....###.#',
+            '#.#j.....==.....k#.#',
+            '#.###.~~.==.~~.###.#',
+            '#.....~~.==.~~.....#',
+            '#..=============...#',
+            '#..=..#.....#..=...#',
+            '#..=..#.m.n.#..=...#',
+            '#..=..#.....#..=...#',
+            '#..=..###.###..=...#',
+            '#..=============...#',
             '####################'
         ],
         npcs: [
@@ -28,7 +39,11 @@ export default {
             { id: 'traveler_hui', at: '5' }
         ],
         chests: [
-            { id: 'nomad_trunk', at: '9', gold: 105, label: 'Malle du vieux nomade', emoji: '🧳', openText: '🎁 Une malle de feutre oubliée contre la palissade : des pièces, et un morceau de fromage vénérable.' }
+            { id: 'nomad_trunk', at: '9', gold: 105, label: 'Malle du vieux nomade', emoji: '🧳', openText: '🎁 Une malle de feutre oubliée contre la palissade : des pièces, et un morceau de fromage vénérable.' },
+            { id: 'fauves_garden_a', at: 'j', gold: 165, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'fauves_garden_b', at: 'k', gold: 165, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'fauves_market_a', at: 'm', gold: 330, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'fauves_market_b', at: 'n', gold: 330, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]
     },
 

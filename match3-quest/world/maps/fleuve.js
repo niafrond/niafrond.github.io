@@ -17,6 +17,17 @@ export default {
             '#.~~~..DDDD..EEEE..#',
             '#.~~~..DdDD..EeEE..#',
             '#.##...=========...#',
+            '#..................#',
+            '#.###....==....###.#',
+            '#.#j.....==.....k#.#',
+            '#.###.~~.==.~~.###.#',
+            '#.....~~.==.~~.....#',
+            '#..=============...#',
+            '#..=..#.....#..=...#',
+            '#..=..#.m.n.#..=...#',
+            '#..=..#.....#..=...#',
+            '#..=..###.###..=...#',
+            '#..=============...#',
             '####################'
         ],
         npcs: [
@@ -27,7 +38,12 @@ export default {
             { id: 'fortune_sha', at: '4' },
             { id: 'tea_zhuang', at: '5' }
         ],
-        chests: []
+        chests: [
+            { id: 'fleuve_garden_a', at: 'j', gold: 30, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'fleuve_garden_b', at: 'k', gold: 30, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'fleuve_market_a', at: 'm', gold: 60, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'fleuve_market_b', at: 'n', gold: 60, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+        ]
     },
 
     hamlet: {

@@ -17,6 +17,17 @@ export default {
             '##DDDD..4=...EEEEE##',
             '#.DdDD#..=3..EEeEE.#',
             '#..=============...#',
+            '#..................#',
+            '#.###....==....###.#',
+            '#.#j.....==.....k#.#',
+            '#.###.~~.==.~~.###.#',
+            '#.....~~.==.~~.....#',
+            '#..=============...#',
+            '#..=..#.....#..=...#',
+            '#..=..#.m.n.#..=...#',
+            '#..=..#.....#..=...#',
+            '#..=..###.###..=...#',
+            '#..=============...#',
             '####################'
         ],
         npcs: [
@@ -26,7 +37,12 @@ export default {
             { id: 'rain_pu', at: '3' },
             { id: 'porter_san', at: '4' }
         ],
-        chests: []
+        chests: [
+            { id: 'tonnerre_garden_a', at: 'j', gold: 105, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'tonnerre_garden_b', at: 'k', gold: 105, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'tonnerre_market_a', at: 'm', gold: 210, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'tonnerre_market_b', at: 'n', gold: 210, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+        ]
     },
 
     hamlet: {
