@@ -12,7 +12,8 @@ import { worldZones } from "./worldMap.js";
 import { mountWorldMap } from "./worldMapView.js";
 import { createExplorationView } from "./explorationView.js";
 import { REGION_ENTRY_SCREEN } from "./story.js";
-import { heroSprite, spriteUri } from "./sprites/index.js";
+import { heroSprite, spriteUri, loadSpritePack, CORE_PACK } from "./sprites/index.js";
+import { hideLoadingScreen } from "./loader.js";
 
 // initialisation de la partie
 console.log('Main.js loaded');
@@ -340,8 +341,13 @@ function init() {
     // Écran de démarrage (portrait animé) avant la sélection de classe / la reprise ; ignoré par les navigateurs
     // pilotés par des tests automatisés (sauf ?title=1).
     const skipTitle = navigator.webdriver && !/[?&]title=1/.test(location.search);
+    // Écran de chargement initial (index.html) : on ne charge que les dessins communs (héros, coffres) et ceux de la
+    // région où reprend la partie ; les autres régions sont chargées en y entrant.
+    const bootReady = Promise.all([loadSpritePack(CORE_PACK), exploration.ready()])
+        .catch(err => console.warn('[boot] chargement initial incomplet', err))
+        .then(() => hideLoadingScreen());
     // Nouvelle partie (aucune classe choisie) : prologue animé, puis choix de la classe et tutoriel.
-    (skipTitle ? Promise.resolve() : playTitleScreen())
+    bootReady.then(() => (skipTitle ? undefined : playTitleScreen()))
         .then(() => (!skipTitle && !player.class ? playPrologueAnimation() : undefined))
         .then(() => {
         showClassSelection();

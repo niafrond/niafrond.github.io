@@ -8,13 +8,17 @@
 // Repère : x vers la droite, y vers le bas.
 // L'écran de carte est affiché en entier (taille de tuile adaptée) ; si la fenêtre est trop
 // petite pour garder des tuiles lisibles, la caméra suit le héros.
+// Mémoire : seuls les dessins de la région courante sont chargés et décodés (prepareRegion). En changeant de
+// région, la carte se fige (saisies bloquées) le temps de charger les nouveaux paquets de sprites, derrière un
+// écran de chargement si cela dure ; les images de l'ancienne région sont libérées.
 
 import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { playEndingAnimation, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
-import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, preloadSprites } from './sprites/index.js';
+import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites } from './sprites/index.js';
+import { withLoadingScreen, trackProgress } from './loader.js';
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
@@ -104,6 +108,8 @@ export function createExplorationView(cfg) {
     let battleTransitionEl = null;
     let battleTransitionTimer = null;
     const vis = { px: 0, py: 0, enemies: {}, bob: 0 };
+    let preparedRegion = null;   // région dont les dessins sont chargés et décodés
+    let preparing = null;        // { region, promise } : chargement en cours
 
     // ── Session ────────────────────────────────────────────────────────────
     function ensureSession() {
@@ -146,7 +152,59 @@ export function createExplorationView(cfg) {
     const isOnScreen = () => root.getClientRects().length > 0;
     const isModalOpen = () => Boolean(document.querySelector('.modal.active'))
         || document.getElementById('levelup-modal')?.style.display === 'flex';
-    const isBlocked = () => isDialogOpen() || inCombat || Boolean(journalEl) || !isOnScreen() || isModalOpen();
+    const isRegionReady = () => Boolean(session) && preparedRegion === X.currentScreen(session).region;
+    const isBlocked = () => isDialogOpen() || inCombat || Boolean(journalEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
+
+    // ── Ressources de la région ────────────────────────────────────────────
+    // PNJ et ennemis d'une région (tous ses écrans), y compris les locuteurs des scènes de victoire.
+    function regionEntities(region) {
+        const screens = Object.values(session.screens).filter(sc => sc.region === region);
+        const npcs = screens.flatMap(sc => sc.npcs).map(n => [n.id, n.emoji]);
+        const enemies = screens.flatMap(sc => sc.enemies).map(e => [e.spriteKey || e.id, e.templateId]);
+        screens.flatMap(sc => sc.enemies).forEach(e => {
+            const sp = e.defeatScene?.speaker;
+            if (sp?.npc) npcs.push([sp.npc, sp.emoji]);
+            if (sp?.enemy) {
+                const def = session.rt.enemyIndex[sp.enemy]?.def;
+                enemies.push([def?.spriteKey || sp.enemy, def?.templateId]);
+            }
+        });
+        return { npcs, enemies };
+    }
+
+    // Dessins d'une région (à appeler une fois ses paquets chargés) : héros, coffres, PNJ, ennemis.
+    function regionSprites(region) {
+        const { npcs, enemies } = regionEntities(region);
+        return [...new Set([
+            heroSprite(cfg.getHero().classId), chestSprite(false), chestSprite(true),
+            ...npcs.map(([id, emoji]) => npcSprite(id, emoji)),
+            ...enemies.map(([key, templateId]) => enemySprite(key, templateId))
+        ].filter(Boolean))];
+    }
+
+    // Charge les paquets de sprites de la région, libère les images des autres régions et décode les nouvelles.
+    function prepareRegion(region) {
+        if (preparedRegion === region) return Promise.resolve();
+        if (preparing?.region === region) return preparing.promise;
+        const { npcs, enemies } = regionEntities(region);
+        const packs = packsForKeys({ npcs: npcs.map(([id]) => id), enemies });
+        const zone = worldZones.find(z => z.id === region);
+        const label = zone ? `${zone.emoji} ${zone.name}` : 'Chargement…';
+        const promise = withLoadingScreen(label, async progress => {
+            await trackProgress(packs.map(loadSpritePack), r => progress(r * 0.5));
+            const svgs = regionSprites(region);
+            retainSprites(svgs);
+            await trackProgress(svgs.map(svg => decodeSprites([svg])), r => progress(0.5 + r * 0.5));
+        }).catch(err => {
+            console.warn('[exploration] chargement des dessins de la région incomplet', err);
+        }).then(() => {
+            if (preparing?.promise !== promise) return;
+            preparing = null;
+            preparedRegion = region;
+        });
+        preparing = { region, promise };
+        return promise;
+    }
 
     function renderDialog() {
         const box = els.dialog;
@@ -609,6 +667,13 @@ export function createExplorationView(cfg) {
         if (!active) return;
         const dt = Math.min(100, now - (lastFrame || now));
         lastFrame = now;
+
+        // Nouvelle région (transition, voyage, téléportation, NG+…) : on attend ses dessins, la carte reste figée.
+        if (!isRegionReady()) {
+            prepareRegion(X.currentScreen(session).region);
+            rafId = requestAnimationFrame(frame);
+            return;
+        }
 
         if (held && !isBlocked() && now - lastMoveAt >= MOVE_DELAY_MS) doMove(held);
         else if (walk && !isBlocked() && now - lastMoveAt >= MOVE_DELAY_MS) walkStep();
@@ -1127,13 +1192,18 @@ export function createExplorationView(cfg) {
 
     return {
         init() {
-            preloadSprites();
             // police pixel des étiquettes dessinées sur le canvas (chargée à la demande par le navigateur)
             document.fonts?.load("700 14px 'Pixelify Sans'");
             document.fonts?.load("700 14px 'Rt Digits'", '0123456789');
             ensureSession();
             bindControls();
             cfg.onRegionVisited?.(X.currentScreen(session).region);
+        },
+
+        // Charge les dessins de la région courante (au démarrage, derrière l'écran de chargement initial).
+        ready() {
+            ensureSession();
+            return prepareRegion(X.currentScreen(session).region);
         },
 
         show() {
@@ -1193,7 +1263,7 @@ export function createExplorationView(cfg) {
         // Nouvelle partie : le duel d'entraînement contre Fengmeng sert de tutoriel guidé.
         startTutorialDuel(enemyId = 'fengmeng_1') {
             ensureSession();
-            startEncounter(enemyId, { tutorial: true });
+            prepareRegion(X.currentScreen(session).region).then(() => startEncounter(enemyId, { tutorial: true }));
         },
 
         travelTo,

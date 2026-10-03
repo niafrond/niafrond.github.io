@@ -2465,6 +2465,86 @@ body.dark-mode .tutorial-card {
 @keyframes bt-next { 50% { transform: translateY(3px); } }
 @media (prefers-reduced-motion: reduce) { .cine-overlay, .bt-dialog { animation: none; } }
 
+/* ── Écran de chargement (loader.js) ───────────────────────────────────────── */
+/* Démarrage et entrée dans une région : même décor que l'écran-titre (teal profond, panneau crème, or). */
+.loading-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 7000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background:
+        radial-gradient(circle at 50% 38%, rgba(232, 185, 35, 0.22), transparent 55%),
+        #0d3440;
+    opacity: 1;
+    transition: opacity 0.25s;
+}
+.loading-screen.visible { display: flex; }
+.loading-screen.closing { opacity: 0; }
+.loading-panel {
+    width: min(92vw, 360px);
+    box-sizing: border-box;
+    padding: 18px 18px 16px;
+    text-align: center;
+    background: #fbf1d8;
+    color: #2a0f10;
+    border: 4px solid #2a0f10;
+    box-shadow: inset 0 0 0 3px #e8b923, 0 6px 0 #2a0f10;
+    font-family: "Pixelify Sans", monospace;
+}
+.loading-title {
+    font: 700 13px/1.4 "Press Start 2P", "Pixelify Sans", monospace;
+    color: #7a1f24;
+    margin: 10px 0 6px;
+}
+.loading-label { font-size: 16px; min-height: 1.4em; }
+/* Soleil pixel qui tourne (rayons en dents de scie) */
+.loading-sun {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto;
+    position: relative;
+    animation: loading-spin 2.4s steps(12, end) infinite;
+}
+.loading-sun::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-conic-gradient(#e8b923 0 15deg, transparent 15deg 30deg);
+    border-radius: 50%;
+    -webkit-mask: radial-gradient(circle, transparent 0 13px, #000 14px);
+            mask: radial-gradient(circle, transparent 0 13px, #000 14px);
+}
+.loading-sun i {
+    position: absolute;
+    inset: 12px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 35%, #fbe7b0, #e8b923 55%, #c9922a);
+    border: 3px solid #2a0f10;
+    box-sizing: border-box;
+}
+@keyframes loading-spin { to { transform: rotate(360deg); } }
+.loading-bar {
+    height: 14px;
+    margin-top: 12px;
+    border: 3px solid #2a0f10;
+    background: repeating-linear-gradient(90deg, #3f2a24 0 10px, #4d342c 10px 20px);
+    background-size: 40px 100%;
+    animation: loading-stripes 0.8s linear infinite;
+    overflow: hidden;
+}
+.loading-bar i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: repeating-linear-gradient(90deg, #e8b923 0 8px, #c9922a 8px 10px);
+    transition: width 0.2s steps(6, end);
+}
+@keyframes loading-stripes { to { background-position: 40px 0; } }
+@media (prefers-reduced-motion: reduce) { .loading-sun, .loading-bar { animation: none; } }
+
 /* ── Écran de démarrage ────────────────────────────────────────────────────── */
 /* Palette miroir de `TP` (cinematics.js) : décor teal, lumière/titre or, encre du jeu (valeurs de retro.css, mode clair). */
 .title-screen {
