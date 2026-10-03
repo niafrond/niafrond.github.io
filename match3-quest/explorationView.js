@@ -86,7 +86,7 @@ export function createExplorationView(cfg) {
     let lastFrame = 0;
     let held = null;
     let walk = null;          // déplacement au clic en cours : { tx, ty, path }
-    let cam = { ox: 0, oy: 0, tile: 1 };
+    let cam = { ox: 0, oy: 0, tile: 1, vw: 0 };
     let lastMoveAt = 0;
     let dialogQueue = [];
     let dialogIndex = 0;
@@ -472,7 +472,7 @@ export function createExplorationView(cfg) {
                 : offset + Math.min(0, Math.max(avail - size, avail / 2 - (pos + 0.5) * tile));
         const ox = follow(mapW, vw, 0, vis.px);
         const oy = follow(mapH, availH, HUD_TOP, vis.py);
-        cam = { ox, oy, tile };
+        cam = { ox, oy, tile, vw };
         const P = (x, y) => ({ x: ox + x * tile, y: oy + y * tile });
 
         const level = cfg.getPlayerLevel();
@@ -549,7 +549,7 @@ export function createExplorationView(cfg) {
             ctx.fillText(arrow, c.x, c.y);
             const labelY = ex.y === 0 ? c.y + tile * 0.75 : c.y - tile * 0.75;
             drawLabel(c.x, labelY, gated ? `🌫️ ${ex.label} (niv. ${minLevel})` : ex.label,
-                gated ? '#e5e7eb' : '#fff8e1', '#5a3e1b', Math.max(10, Math.round(tile * 0.17)));
+                gated ? '#e5e7eb' : '#fff8e1', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
         });
 
         // 2. Décors, PNJ, coffres, ennemis, héros (du haut vers le bas de l'écran)
@@ -568,7 +568,7 @@ export function createExplorationView(cfg) {
         items.push({ depth: vis.py + 0.3, kind: 'player', x: vis.px, y: vis.py });
         items.sort((a, b) => a.depth - b.depth);
 
-        const labelSize = Math.max(10, Math.round(tile * 0.17));
+        const labelSize = Math.max(11, Math.round(tile * 0.2));
         items.forEach(it => {
             const c = P(it.x + 0.5, it.y + 0.5);
             switch (it.kind) {
@@ -653,7 +653,7 @@ export function createExplorationView(cfg) {
         ctx.strokeStyle = '#2b1b17';
         ctx.stroke();
         ctx.fillStyle = '#2b1b17';
-        ctx.font = `bold ${Math.round(r * 1.5)}px system-ui, sans-serif`;
+        ctx.font = `700 ${Math.round(r * 1.6)}px 'Rt Digits', 'Pixelify Sans', ui-monospace, monospace`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(char, x, y + r * 0.08);
@@ -695,9 +695,11 @@ export function createExplorationView(cfg) {
     }
 
     function drawLabel(x, y, text, bg, fg, size = 12) {
-        ctx.font = `bold ${size}px system-ui, sans-serif`;
-        const w = ctx.measureText(text).width + 12;
-        const h = size + 7;
+        ctx.font = `700 ${size}px 'Rt Digits', 'Pixelify Sans', ui-monospace, monospace`;
+        const w = ctx.measureText(text).width + 14;
+        const h = size + 8;
+        // reste dans le cadre : une étiquette près du bord (sortie) ne doit pas être coupée
+        if (cam.vw > w) x = Math.min(Math.max(x, w / 2 + 4), cam.vw - w / 2 - 4);
         ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(x - w / 2, y - h / 2, w, h, 6);
         else ctx.rect(x - w / 2, y - h / 2, w, h);
@@ -723,6 +725,9 @@ export function createExplorationView(cfg) {
     return {
         init() {
             preloadSprites();
+            // police pixel des étiquettes dessinées sur le canvas (chargée à la demande par le navigateur)
+            document.fonts?.load("700 14px 'Pixelify Sans'");
+            document.fonts?.load("700 14px 'Rt Digits'", '0123456789');
             ensureSession();
             bindControls();
             cfg.onRegionVisited?.(X.currentScreen(session).region);
