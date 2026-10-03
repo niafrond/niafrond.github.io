@@ -93,7 +93,7 @@ export const worldZones = [
         shortName: 'Lune',
         emoji: '🌕',
         unlockLevel: 16,
-        description: "Là où Chang'e s'envole sous la pleine lune. Le dernier combat, puis l'offrande."
+        description: "Le sommet du monde, sous la pleine lune. Le dernier combat, puis l'offrande."
     }
 ];
 

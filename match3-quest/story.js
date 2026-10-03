@@ -645,7 +645,7 @@ const BASE_SCREENS = {
             { id: 'crane_envoy', x: 3, y: 2, name: 'La Grue', title: 'Messagère de la Reine Mère', emoji: '🦢',
               idle: [
                   "Je suis le souffle de la Reine Mère de l'Occident, archer. Elle me prête sa voix quand elle a besoin d'être entendue de très loin.",
-                  "Elle m'a chargée de veiller sur l'Arbre, et sur la fiole d'élixir qu'elle vous a confiée."
+                  "Elle m'a chargée de veiller sur l'Arbre, et sur la fiole d'élixir qu'elle a confiée à Dame Chang'e."
               ],
               talk: [
                   { whenDone: 'sun_8', lines: [
@@ -660,7 +660,7 @@ const BASE_SCREENS = {
             // Le Dixième Soleil se cache derrière le Neuvième : on ne peut lui parler qu'après sa chute.
             { id: 'sun_ten', x: 12, y: 1, name: 'Dixième Soleil', title: 'Dernier des dix soleils', emoji: '🌞',
               idle: [
-                  "…Tu es l'archer ? Celui qui a… tous mes frères ? Non, ne me regarde pas comme ça : je ne bouge pas, je te le jure.",
+                  "…Tu es l'archer ? Celui qui a… mes frères ? Non, ne me regarde pas comme ça : je ne bouge pas, je te le jure.",
                   "Je n'ai jamais voulu brûler personne. Mes frères disaient que c'était un jeu. Moi, j'avais peur de la chaleur."
               ],
               talk: [
@@ -795,11 +795,11 @@ const BASE_QUESTS = [
         offer: [
             "Hou Yi ! Que les ancêtres soient loués. Vous savez l'état du monde : dix soleils, fils de Di Jun, brûlent le ciel depuis trois lunes. Ma vieille tête ne se souvient d'aucun été pareil.",
             "L'empereur Yao m'envoie son décret, scellé de jade : « Que l'archer Hou Yi abatte neuf soleils, et qu'il en épargne un seul, afin que la Terre garde un jour. » Il vous le demande, il ne vous l'ordonne pas.",
-            "Le premier se tient sur le tertre du temple des moissons, à l'est, au bout de nos rizières. Mais prenez garde : votre disciple Fengmeng garde la digue, et il a dans les yeux quelque chose que je n'aime pas. Il veut vous éprouver.",
+            "Le premier se tient sur le tertre du temple des moissons, à l'est, au bout de nos rizières. Mais prenez garde : votre disciple Fengmeng rôde sur la digue, et il a dans les yeux quelque chose que je n'aime pas. Il veut vous éprouver.",
             "Entraînez-vous sur les maraudeurs de nos champs si vous le jugez nécessaire. (Niveau 3 conseillé)"
         ],
         hint: [
-            "Le Soleil Ardent est à l'est, sur le tertre du temple. La digue est étroite : il faudra passer par Fengmeng.",
+            "Le Soleil Ardent est à l'est, sur le tertre du temple. La digue est étroite : méfiez-vous de Fengmeng, qui y rôde.",
             "Les maraudeurs des rizières sont de bons adversaires pour s'échauffer, et ils reviennent toujours. Les monstres se voient de loin : un cercle rouge marque leur zone de vigilance."
         ],
         complete: [
