@@ -66,7 +66,7 @@ describe('mapKit', () => {
 
     test('parseGrid rejette les grilles invalides', () => {
         expect(() => parseGrid(['##', '#'])).toThrow(/longueur/);
-        expect(() => parseGrid(['#x'])).toThrow(/inconnu/);
+        expect(() => parseGrid(['#?'])).toThrow(/inconnu/);
         expect(() => parseGrid(['AA', 'AA'])).toThrow(/porte/);
         expect(() => parseGrid(['A.', 'Aa'])).toThrow(/rectangle/);
     });

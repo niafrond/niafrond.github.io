@@ -10,7 +10,7 @@ export default {
             '#.AAAA..BBBB..CCCC.#',
             '#.AaAA..BbBB..CcCC.#',
             '#=================.#',
-            '#.......=1..#.EEE..#',
+            '#.0.5..4=1..#.EEE..#',
             '##.DDDD#=.W...EEE..#',
             '#..DDDD.=...3.EEE.##',
             '#.2DdDD.=.S..#EeE..#',
@@ -22,42 +22,77 @@ export default {
         npcs: [
             { id: 'hua_mer', at: '1' },
             { id: 'crab_old_gong', at: '2' },
-            { id: 'girl_net_mi', at: '3' }
+            { id: 'girl_net_mi', at: '3' },
+            { id: 'sailor_tai', at: '0' },
+            { id: 'priestess_mazu', at: '4' },
+            { id: 'singer_hailing', at: '5' }
         ],
         chests: []
+    },
+
+    hamlet: {
+        id: 'mer_hamlet', biome: 'coast',
+        grid: [
+            '#######^########',
+            '#~~~...=......##',
+            '#......S.......#',
+            '#......=..1..W.#',
+            '#.....2=.......#',
+            '#3AAAA.=..BBBB.#',
+            '#.AAAA.=..BBBB.#',
+            '#.AaAA.=.0BbBB.#',
+            '#..=========...#',
+            '#.............##',
+            '################'
+        ],
+        npcs: [
+            { id: 'gull_pip', at: '0' },
+            { id: 'kid_ahu', at: '1' },
+            { id: 'salt_jun', at: '2' }
+        ],
+        chests: [
+            { id: 'salt_pan', at: '3', gold: 120 }
+        ]
     },
 
     wild: {
         id: 'mer_wild', biome: 'coast',
         grid: [
             '##################',
-            '#.####0.......#v.#',
+            '#.####0.......#z.#',
             '#.####..#####.#..#',
-            '#.####..###.5..#.#',
+            '#.####.k###.5.l#.#',
             '<.......###......#',
-            '#...W......3..4..#',
+            '#...W....i.3..4..#',
             '#.#...2.....6..#.#',
-            '#....8...1...#...>',
-            '#...~~~~...~~~...#',
-            '#..^~~~~.9.~~~7..#',
-            '#~~~~~~~~~~~~~~~~#',
-            '##################'
+            '#..n.8...1...#j..>',
+            '#o..~~~~...~~~...#',
+            '#..y~~~~.9.~~~7.m#',
+            '#..~~~~~~~~~~~~~~#',
+            '#v################'
         ],
         npcs: [
-            { id: 'mermaid_jiaoren', at: '8' }
+            { id: 'mermaid_jiaoren', at: '8' },
+            { id: 'jelly_shui', at: 'i' },
+            { id: 'octo_ba', at: 'j' }
         ],
         chests: [
             { id: 'cove_cache', at: '0', gold: 120 },
             { id: 'tide_key_chest', at: '9', gold: 240 },
-            { id: 'tear_pearl_chest', at: '^', gold: 240 },
-            { id: 'dragon_grotto', at: 'v', gold: 360 }
+            { id: 'tear_pearl_chest', at: 'y', gold: 240 },
+            { id: 'dragon_grotto', at: 'z', gold: 360 },
+            { id: 'journal_page_mer', at: 'k', gold: 120 },
+            { id: 'reef_cache', at: 'l', gold: 240 },
+            { id: 'wreck_treasure', at: 'm', gold: 360 }
         ],
         enemies: [
             { id: 'mer_tide_serpent', at: '1', templateId: 'deep_sea_serpent', emoji: '🐉', name: 'Serpent de marée', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Serpent de marée', level: 13 } },
             { id: 'mer_kelp_witch', at: '2', templateId: 'ice_witch', emoji: '🧜‍♀️', name: 'Dame des algues givrées', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'mer_w_crab', at: '3', templateId: 'war_troll', emoji: '🦀', name: 'Crabe-roi des falaises', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
             { id: 'mer_w_wraith', at: '5', templateId: 'plague_doctor', emoji: '🌊', name: 'Spectre de la marée', kind: 'patrol', patrol: ['5', '6'], offset: -1 },
-            { id: 'mer_w_cutter', at: '7', templateId: 'shadow_assassin', emoji: '🔪', name: 'Coupeur de filets', kind: 'sentinel', offset: 0 }
+            { id: 'mer_w_cutter', at: '7', templateId: 'shadow_assassin', emoji: '🔪', name: 'Coupeur de filets', kind: 'sentinel', offset: 0 },
+            { id: 'mer_crab_a', at: 'n', templateId: 'iron_gladiator', emoji: '🦀', name: 'Crabe-soldat', kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' },
+            { id: 'mer_crab_b', at: 'o', templateId: 'iron_gladiator', emoji: '🦀', name: 'Crabe-soldat', kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' }
         ],
         gate: {
             requires: 'tide_key_chest',
@@ -152,6 +187,42 @@ export default {
                 { id: 'lighthouse_ming', at: '1' }
             ],
             chests: []
+        },
+        {
+            id: 'mer_h2_ecaillere', house: 'A', in: 'hamlet',
+            grid: [
+                '##########',
+                '#...1....#',
+                '#........#',
+                '#.###....#',
+                '#5.......#',
+                '#....S...#',
+                '#####v####'
+            ],
+            npcs: [
+                { id: 'oyster_coque', at: '1' }
+            ],
+            chests: [
+                { id: 'oyster_box', at: '5', gold: 120 }
+            ]
+        },
+        {
+            id: 'mer_h2_chantier', house: 'B', in: 'hamlet',
+            grid: [
+                '##########',
+                '#...1....#',
+                '#........#',
+                '#....###.#',
+                '#.......5#',
+                '#....S...#',
+                '#####v####'
+            ],
+            npcs: [
+                { id: 'shipwright_bing', at: '1' }
+            ],
+            chests: [
+                { id: 'shipyard_chest', at: '5', gold: 240 }
+            ]
         }
     ],
 

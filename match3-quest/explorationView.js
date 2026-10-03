@@ -578,6 +578,7 @@ export function createExplorationView(cfg) {
         }
         if (ev.key === 'Escape' && journalEl) { closeJournal(); return; }
         if (ev.key === 'j' || ev.key === 'J') { showJournal(); return; }
+        if (ev.key === 'v' || ev.key === 'V') { showJournal('travel'); return; }
         const dir = KEY_TO_DIR[ev.key];
         if (!dir) return;
         ev.preventDefault();

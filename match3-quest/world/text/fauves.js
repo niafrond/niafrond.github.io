@@ -51,7 +51,7 @@ export default {
       offer: ['Archer ! Notre agneau Nuage s\'est enfui dans les hautes herbes, et un loup de braise le suit ! On n\'ose pas y aller, c\'est trop haut.', 'Il y a un vieil enclos là-bas, je crois qu\'il s\'y est réfugié. Retrouve-le, s\'il te plaît !'],
       hint: ['Le loup de braise rôde dans les hautes herbes. L\'agneau s\'est caché dans un vieil enclos oublié.'],
       complete: ['Nuage ! Il va bien ! Il dort déjà ! Merci, merci, merci. Tiens, c\'est une mèche de sa laine : elle est douce comme un nuage, et chaude comme un secret.'],
-      reward: { gold: 160, fragment: 'Laine de Nuage', xp: 290 } },
+      reward: { gold: 160, fragment: 'Laine de nuage', xp: 290 } },
     { id: 'sq_lievre_lune', title: 'Le lièvre de la Lune', chapter: '✦ Quête secondaire — Plaine des Fauves', giver: 'shaman_ula', turnIn: 'shaman_ula', requires: [], side: true,
       objectives: [{ type: 'talk', target: 'hare_tuzi', text: 'Parler au lièvre Tuzi (hautes herbes de cendre)', lines: ['Chang\'e ? Vous la connaissez ? Dites-lui que le mortier est toujours là. Et que l\'élixir… attention aux mains avides. Je ne vous en dis pas plus : les lièvres ont l\'ouïe fine, mais la langue courte.'] }],
       offer: ['Un lièvre blanc rôde dans les hautes herbes. Je soupçonne qu\'il vient du Palais lunaire : les vents me l\'ont murmuré.', 'S\'il connaît Chang\'e, il pourrait nous dire des choses que même les vents ignorent. Allez lui parler.'],

@@ -1,4 +1,4 @@
-// Région 2 — Lit du Fleuve Jaune : Port-à-Sec de Hekou, Méandres de Boue et d'Écluses, cinq maisons.
+// Région 2 — Lit du Fleuve Jaune : Port-à-Sec de Hekou, Hameau des Eaux Mortes, Méandres de Boue et d'Écluses, sept maisons.
 // Légende : # coque/banc de sable/mur · ~ flaque · = quai · A-E bâtiments (porte minuscule) · W pierre de voyage.
 
 export default {
@@ -9,9 +9,9 @@ export default {
             '#.AAAA..BBBB..CCCC.#',
             '#.AAAA..BBBB..CCCC.#',
             '#.AaAA..BbBB..CcCC.#',
-            '#..=.....=.2...=...#',
+            '#..=..4..=.2...=...#',
             '#..=============.3.#',
-            '<..=..W.S...~~..=..>',
+            '<..=..W.S.0.~~.5=..>',
             '#..=.1......~~..=..#',
             '#.~~~..DDDD..EEEE..#',
             '#.~~~..DDDD..EEEE..#',
@@ -22,44 +22,83 @@ export default {
         npcs: [
             { id: 'girl_lian', at: '1' },
             { id: 'boatman_shan', at: '2' },
-            { id: 'hua_fleuve', at: '3' }
+            { id: 'hua_fleuve', at: '3' },
+            { id: 'ferry_pei', at: '0' },
+            { id: 'fortune_sha', at: '4' },
+            { id: 'tea_zhuang', at: '5' }
         ],
         chests: []
+    },
+
+    hamlet: {
+        id: 'fleuve_hamlet', biome: 'riverbed',
+        grid: [
+            '######^#########',
+            '##....=..~~~~~##',
+            '#.....=S.~~~~~.#',
+            '#.....=........#',
+            '#..3..=....2.W.#',
+            '#.AAAA.0..BBBB.#',
+            '#.AAAA....BBBB.#',
+            '#.AaAA....BbBB.#',
+            '#..=========.1.#',
+            '##............##',
+            '################'
+        ],
+        npcs: [
+            { id: 'goose_dagong', at: '0' },
+            { id: 'orphan_xiaoyu', at: '1' },
+            { id: 'poet_bo', at: '2' }
+        ],
+        chests: [
+            { id: 'goose_nest', at: '3', gold: 30 }
+        ]
     },
 
     wild: {
         id: 'fleuve_wild', biome: 'riverbed',
         grid: [
             '##################',
-            '#...#.......#....#',
-            '#.0.#..##.2.#.^..#',
-            '#.###..##...#....#',
-            '#.............1..#',
+            '#...#p.m....#...k#',
+            '#.0.#..##.2.#.y..#',
+            '#.###n.##...#....#',
+            '#........i....1.l#',
             '<....W......~~...#',
-            '#.......4..5.....>',
+            '#.......4..5...j.>',
             '#..####....####..#',
-            '#.~~..8..3..######',
-            '#.~~..........v.##',
+            '#.~~q.8..3.o######',
+            '#.~~..........z.##',
             '#9...6......7#####',
-            '##################'
+            '##v###############'
         ],
-        npcs: [{ id: 'carp_jin', at: '8' }],
+        npcs: [
+            { id: 'carp_jin', at: '8' },
+            { id: 'mud_imp_pit', at: 'i' },
+            { id: 'captain_lo', at: 'j' }
+        ],
         chests: [
             { id: 'mud_cache', at: '0', gold: 30 },
-            { id: 'sluice_key_chest', at: '^', gold: 60 },
+            { id: 'sluice_key_chest', at: 'y', gold: 60 },
             { id: 'carp_pearl', at: '9', gold: 60 },
-            { id: 'wreck_hoard', at: 'v', gold: 90 }
+            { id: 'wreck_hoard', at: 'z', gold: 90 },
+            { id: 'journal_page_fle', at: 'k', gold: 30 },
+            { id: 'barge_strongbox', at: 'l', gold: 60 },
+            { id: 'reed_stash', at: 'm', gold: 60 }
         ],
         enemies: [
-            { id: 'fleuve_sluice_golem', at: '1', templateId: 'iron_gladiator', emoji: '🗿', name: "Golem de l'écluse", kind: 'sentinel', offset: 1, permanent: true, boss: { name: "Golem de l'écluse", level: 2 } },
+            { id: 'fleuve_sluice_golem', at: '1', templateId: 'iron_gladiator', emoji: '🗿', name: 'Golem de l\'écluse', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Golem de l\'écluse', level: 2 } },
             { id: 'fleuve_salt_thief', at: '2', templateId: 'shadow_assassin', emoji: '🥷', name: 'Voleur de sel masqué', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'fleuve_w_doctor', at: '3', templateId: 'plague_doctor', emoji: '🧪', name: 'Docteur-démon des vases', kind: 'sentinel', offset: -1 },
             { id: 'fleuve_w_serpent', at: '4', templateId: 'deep_sea_serpent', emoji: '🐍', name: 'Serpent de vase', kind: 'patrol', patrol: ['4', '5'], offset: 0 },
-            { id: 'fleuve_w_drowned', at: '6', templateId: 'bone_reaver', emoji: '💀', name: 'Noyé sans barque', kind: 'patrol', patrol: ['6', '7'], offset: 0 }
+            { id: 'fleuve_w_drowned', at: '6', templateId: 'bone_reaver', emoji: '💀', name: 'Noyé sans barque', kind: 'patrol', patrol: ['6', '7'], offset: 0 },
+            { id: 'barge_ghost_a', at: 'n', templateId: 'bone_reaver', emoji: '👻', name: 'Matelot noyé revenant', kind: 'sentinel', offset: 0, permanent: true, group: 'barge_ghosts' },
+            { id: 'barge_ghost_b', at: 'o', templateId: 'bone_reaver', emoji: '👻', name: 'Matelot noyé revenant', kind: 'sentinel', offset: 0, permanent: true, group: 'barge_ghosts' },
+            { id: 'mud_imp_a', at: 'p', templateId: 'goblin_saboteur', emoji: '👺', name: 'Diablotin de vase', kind: 'sentinel', offset: 0, permanent: true, group: 'mud_imps' },
+            { id: 'mud_imp_b', at: 'q', templateId: 'goblin_saboteur', emoji: '👺', name: 'Diablotin de vase', kind: 'sentinel', offset: 0, permanent: true, group: 'mud_imps' }
         ],
         gate: {
             requires: 'sluice_key_chest',
-            lockedMessage: "La grande écluse est verrouillée : sa clé repose dans un coffre, quelque part dans les méandres."
+            lockedMessage: 'La grande écluse est verrouillée : sa clé repose dans un coffre, quelque part dans les méandres.'
         }
     },
 
@@ -75,8 +114,12 @@ export default {
                 '#....S....#',
                 '#####v#####'
             ],
-            npcs: [{ id: 'ferryman_gu', at: '1' }],
-            chests: [{ id: 'ferry_lockbox', at: '2', gold: 30 }]
+            npcs: [
+                { id: 'ferryman_gu', at: '1' }
+            ],
+            chests: [
+                { id: 'ferry_lockbox', at: '2', gold: 30 }
+            ]
         },
         {
             id: 'fleuve_h_mei', house: 'B',
@@ -90,8 +133,12 @@ export default {
                 '#.....S....#',
                 '######v#####'
             ],
-            npcs: [{ id: 'weaver_mei', at: '1' }],
-            chests: [{ id: 'mei_thread_box', at: '2', gold: 30 }]
+            npcs: [
+                { id: 'weaver_mei', at: '1' }
+            ],
+            chests: [
+                { id: 'mei_thread_box', at: '2', gold: 30 }
+            ]
         },
         {
             id: 'fleuve_h_sel', house: 'C',
@@ -105,8 +152,12 @@ export default {
                 '#.....S....#',
                 '######v#####'
             ],
-            npcs: [{ id: 'salt_hu', at: '1' }],
-            chests: [{ id: 'salt_barrel', at: '2', gold: 60 }]
+            npcs: [
+                { id: 'salt_hu', at: '1' }
+            ],
+            chests: [
+                { id: 'salt_barrel', at: '2', gold: 60 }
+            ]
         },
         {
             id: 'fleuve_h_ecrivain', house: 'D',
@@ -119,7 +170,9 @@ export default {
                 '#....S...#',
                 '#####v####'
             ],
-            npcs: [{ id: 'scribe_ou', at: '1' }],
+            npcs: [
+                { id: 'scribe_ou', at: '1' }
+            ],
             chests: []
         },
         {
@@ -134,8 +187,46 @@ export default {
                 '#.....S....#',
                 '######v#####'
             ],
-            npcs: [{ id: 'gui_turtle', at: '1' }],
+            npcs: [
+                { id: 'gui_turtle', at: '1' }
+            ],
             chests: []
+        },
+        {
+            id: 'fleuve_h2_ecluse', house: 'A', in: 'hamlet',
+            grid: [
+                '##########',
+                '#...1....#',
+                '#........#',
+                '#.###....#',
+                '#5.......#',
+                '#....S...#',
+                '#####v####'
+            ],
+            npcs: [
+                { id: 'sluicekeeper_rong', at: '1' }
+            ],
+            chests: [
+                { id: 'sluice_logbook_box', at: '5', gold: 30 }
+            ]
+        },
+        {
+            id: 'fleuve_h2_pecheur', house: 'B', in: 'hamlet',
+            grid: [
+                '##########',
+                '#...1....#',
+                '#........#',
+                '#....###.#',
+                '#.......5#',
+                '#....S...#',
+                '#####v####'
+            ],
+            npcs: [
+                { id: 'net_mender_wei', at: '1' }
+            ],
+            chests: [
+                { id: 'net_basket', at: '5', gold: 30 }
+            ]
         }
     ],
 
