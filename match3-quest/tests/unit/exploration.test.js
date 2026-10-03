@@ -4,7 +4,7 @@ import {
     createSession, tryMove, tick, isTerrainBlocked, buildRoute, aliveEnemies, entityAt, getAuraTiles,
     markEnemyDefeated, talkToNpc, npcAmbientLines, progressReached, openChest, questStatus, checkAutoQuests, currentObjectiveText,
     encounterFor, enemyLevel, enterScreen, teleportToScreen, resetAfterDefeat, startNewGamePlus,
-    isEntityVisible, visibleNpcs, visibleChests, isShielded, isExitLocked, journalEntries, activateWaypoint, fastTravel, waypointList,
+    isEntityVisible, visibleNpcs, visibleChests, isShielded, isExitLocked, journalEntries, npcMarker, activateWaypoint, fastTravel, waypointList,
     AGGRO_RADIUS, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN, findPath
 } from '../../exploration.js';
 
@@ -29,7 +29,18 @@ const SUN_LEVELS = [3, 4, 5, 7, 9, 11, 13, 15, 17];
 // Tuiles où l'on ARRIVE sur cet écran (définies par la sortie de retour de chaque voisin).
 const arrivals = s => Object.values(SCREENS).flatMap(o => o.exits.filter(e => e.to === s.id).map(e => e.arrive));
 // Points de départ « côté village » : sur les écrans à défilé obligatoire, seule l'apparition est de ce côté.
-const starts = s => (FORCED.includes(s.id) ? [s.spawn] : [s.spawn, ...arrivals(s)]);
+// Dans une zone sauvage, seule l'entrée côté village compte (l'autre côté n'est accessible qu'après le gate).
+const starts = s => {
+    if (s.kind === 'wild') return wildEntries(s);
+    return FORCED.includes(s.id) ? [s.spawn] : [s.spawn, ...arrivals(s)];
+};
+// Tuiles d'arrivée dans la zone sauvage venant du village ou du hameau de la région.
+const wildEntries = s => Object.values(SCREENS).filter(o => o.region === s.region && o.kind === 'village')
+    .flatMap(o => o.exits.filter(e => e.to === s.id).map(e => e.arrive));
+// Dans la nature, les sentinelles gardent les passages (le gate lui-même est un combat) : on exige seulement une voie
+// à pied, combats compris ; ailleurs (sanctuaires, villages, maisons) la voie doit rester hors de toute vigilance.
+const approachBlockers = s => (s.kind === 'wild' ? entityTiles(s) : auraOfAll(s));
+const entityTiles = s => new Set([...s.npcs, ...s.chests].map(e => `${e.x},${e.y}`));
 
 // Parcours en largeur sur les tuiles libres (terrain seul, ou en évitant `forbidden`).
 function reachable(screen, from, forbidden = new Set()) {
@@ -310,7 +321,7 @@ describe('cartes (story.js)', () => {
             // arrivées : à côté de la sortie voisine ; le spawn d'un sanctuaire est l'arrivée venant de la zone sauvage
             expect(west.arrive.x).toBe(wild.w - 2);
             if (east) expect(east.arrive.x).toBe(1);
-            expect(sanctuary.spawn).toEqual(exitTo(wild, id).arrive);
+            if (i > 0) expect(sanctuary.spawn).toEqual(exitTo(wild, id).arrive);
         });
         // toutes les sorties de tous les écrans (portes comprises) ont une sortie de retour adjacente à leur arrivée
         screens.forEach(s => s.exits.forEach(e => {
@@ -328,7 +339,7 @@ describe('cartes (story.js)', () => {
             const village = SCREENS[`${id}_village`];
             const wild = SCREENS[`${id}_wild`];
             expect(village.enemies).toEqual([]);
-            expect(village.npcs.length).toBeGreaterThanOrEqual(2);
+            expect(village.npcs.length).toBeGreaterThanOrEqual(1);
             expect(village.waypoint).toBeDefined();
             expect(wild.enemies.length).toBeGreaterThanOrEqual(3);
             expect(village.exits.filter(e => e.requires)).toEqual([]);   // le village n'est jamais fermé : seul le sanctuaire précédent l'est
@@ -359,15 +370,16 @@ describe('cartes (story.js)', () => {
         const wildArrive = SCREENS[`${id}_village`].exits.find(e => e.to === `${id}_wild`).arrive;
         expect([s.data.screenId, s.data.x, s.data.y]).toEqual([`${id}_wild`, wildArrive.x, wildArrive.y]);
         expect(isExitLocked(s, gate)).toBe(true);
-        const closed = walkTo(s, gate.x, gate.y);
-        expect(closed).toMatchObject({ type: 'exitBlocked', reason: 'quest', message: gate.lockedMessage });
+        // juste devant la sortie (grâce de 2 pas : aucun combat), elle refuse le passage
+        enterScreen(s, `${id}_wild`, { x: gate.x - 1, y: gate.y });
+        expect(tryMove(s, 1, 0, { playerLevel: WORLD_LEVEL })).toMatchObject({ type: 'exitBlocked', reason: 'quest', message: gate.lockedMessage });
         expect(s.data.screenId).toBe(`${id}_wild`);
         // on joue le gate (tuer / ouvrir / terminer la quête), puis la sortie s'ouvre
         satisfy(s, gate.requires);
         expect(isExitLocked(s, gate)).toBe(false);
         const { transitions } = travel(s, id);
         expect(transitions.at(-1)).toMatchObject({ type: 'transition', from: `${id}_wild`, to: id });
-        expect([s.data.screenId, s.data.x, s.data.y]).toEqual([id, SCREENS[id].spawn.x, SCREENS[id].spawn.y]);
+        expect([s.data.screenId, s.data.x, s.data.y]).toEqual([id, gate.arrive.x, gate.arrive.y]);
     });
 
     test('le héros traverse tout le monde, de la première maison au Pic de la Lune, soleil après soleil', () => {
@@ -515,6 +527,8 @@ describe('cartes (story.js)', () => {
 });
 
 describe('quêtes (story.js)', () => {
+    const ORIGINAL_SIDE = new Set(['sq_rice_thief', 'sq_river_serpent', 'sq_drowned', 'sq_bell', 'sq_old_pine', 'sq_oasis', 'sq_bandits',
+        'sq_thunder_wyrm', 'sq_lei_drum', 'sq_ore', 'sq_ember', 'sq_scarred_tiger', 'sq_zi_bell', 'sq_nets', 'sq_pearl', 'sq_crane']);
     const npcIds = new Set(screens.flatMap(s => s.npcs.map(n => n.id)));
     const enemyIds = new Set(screens.flatMap(s => s.enemies.map(e => e.id)));
     const groups = new Set(screens.flatMap(s => s.enemies.filter(e => e.group).map(e => e.group)));
@@ -529,8 +543,10 @@ describe('quêtes (story.js)', () => {
         q.requires.forEach(r => expect(questIds.has(r)).toBe(true));
         expect(q.objectives.length).toBeGreaterThan(0);
         q.objectives.forEach(o => {
-            const pool = o.type === 'kill' ? enemyIds : o.type === 'killGroup' ? groups : chestIds;
-            expect(pool.has(o.target)).toBe(true);
+            const pool = { kill: enemyIds, killGroup: groups, chest: chestIds, talk: npcIds, visit: new Set(Object.keys(SCREENS)) }[o.type];
+            expect([q.id, o.type, Boolean(pool)]).toEqual([q.id, o.type, true]);
+            expect([q.id, o.target, pool.has(o.target)]).toEqual([q.id, o.target, true]);
+            if (o.type === 'talk') expect(o.lines?.length).toBeGreaterThan(0);   // la cible a une réplique à dire
             expect(o.text.length).toBeGreaterThan(10);
         });
         // les objectifs de kill visent des ennemis d'histoire qui ne réapparaissent pas
@@ -538,9 +554,12 @@ describe('quêtes (story.js)', () => {
             const def = screens.flatMap(s => s.enemies).find(e => e.id === o.target);
             expect(def.permanent).toBe(true);
         });
-        expect(q.offer.length).toBeGreaterThanOrEqual(2);
-        expect(q.complete.length).toBeGreaterThanOrEqual(2);
+        // l'histoire principale et les 15 quêtes d'origine ont de vrais dialogues (2 répliques) ; les annexes du Grand Monde au moins 1
+        const minLines = q.side && !ORIGINAL_SIDE.has(q.id) ? 1 : 2;
+        expect(q.offer.length).toBeGreaterThanOrEqual(minLines);
+        expect(q.complete.length).toBeGreaterThanOrEqual(minLines);
         expect(q.reward.gold).toBeGreaterThan(0);
+        expect(q.reward.xp).toBeGreaterThan(0);
         expect(q.reward.fragment).toBeTruthy();
     });
 
@@ -623,10 +642,12 @@ describe('quêtes (story.js)', () => {
 describe('déplacement et zones de vigilance', () => {
     const fresh = (patch = {}) => createSession({ ...patch });
 
-    test('un nouveau joueur démarre à la maison de Hou Yi, aux Rizières Desséchées', () => {
+    test('un nouveau joueur démarre au village de Dongqiao, devant la maison de Hou Yi', () => {
         const s = fresh();
-        expect(s.data.screenId).toBe('rizieres');
-        expect(s.data.x).toBe(SCREENS.rizieres.spawn.x);
+        expect(s.data.screenId).toBe('rizieres_village');
+        expect([s.data.x, s.data.y]).toEqual([SCREENS.rizieres_village.spawn.x, SCREENS.rizieres_village.spawn.y]);
+        expect(s.data.visitedScreens).toEqual(['rizieres_village']);
+        expect(s.data.waypoints).toEqual(['rizieres_village']);   // la pierre d'un village est découverte dès l'arrivée
         expect(s.data.ngPlus).toBe(0);
         expect(s.data.ended).toBe(false);
     });
@@ -639,9 +660,11 @@ describe('déplacement et zones de vigilance', () => {
     });
 
     test('marcher dans un PNJ ouvre le dialogue', () => {
-        const s = fresh({ screenId: 'rizieres', x: 2, y: 4 });
+        const s = fresh({ screenId: 'rizieres_h_houyi', x: 7, y: 2 });
         expect(tryMove(s, 0, -1)).toEqual({ type: 'talk', npcId: 'change' });
-        expect(s.data.y).toBe(4);
+        expect(s.data.y).toBe(2);
+        const village = fresh({ screenId: 'rizieres_village', x: 13, y: 6 });
+        expect(tryMove(village, -1, 0)).toEqual({ type: 'talk', npcId: 'xiaobao' });
     });
 
     test('distance 1 = combat, distance 2 = pas de combat', () => {
@@ -681,22 +704,77 @@ describe('déplacement et zones de vigilance', () => {
     test('une sortie change d\'écran et arrive à la tuile prévue (quand son soleil est abattu)', () => {
         const s = at('rizieres', 12, 4);
         markEnemyDefeated(s, 'sun_1');
-        expect(tryMove(s, 1, 0, { playerLevel: 2 })).toMatchObject({ type: 'transition', from: 'rizieres', to: 'fleuve', firstVisit: true });
-        expect(s.data.screenId).toBe('fleuve');
-        expect([s.data.x, s.data.y]).toEqual([1, 4]);
+        expect(tryMove(s, 1, 0, { playerLevel: 2 })).toMatchObject({ type: 'transition', from: 'rizieres', to: 'fleuve_village', firstVisit: true, door: false });
+        expect(s.data.screenId).toBe('fleuve_village');
+        expect([s.data.x, s.data.y]).toEqual([1, 6]);
         // retour à l'ouest : arrivée à côté de la sortie est des rizières
-        const s2 = at('fleuve', 1, 4);
+        const s2 = at('fleuve_village', 1, 6);
         expect(tryMove(s2, -1, 0, { playerLevel: 1 })).toMatchObject({ type: 'transition', to: 'rizieres' });
         expect([s2.data.x, s2.data.y]).toEqual([12, 4]);
+        // village → zone sauvage → sanctuaire (gate rempli)
+        const v = at('rizieres_village', 18, 6);
+        expect(tryMove(v, 1, 0, { playerLevel: 1 })).toMatchObject({ type: 'transition', from: 'rizieres_village', to: 'rizieres_wild', firstVisit: true });
+        expect([v.data.x, v.data.y]).toEqual([1, 6]);
+        const w = at('rizieres_wild', 16, 5);
+        markEnemyDefeated(w, 'rizieres_warden');
+        expect(tryMove(w, 1, 0, { playerLevel: 1 })).toMatchObject({ type: 'transition', from: 'rizieres_wild', to: 'rizieres' });
+        expect([w.data.x, w.data.y]).toEqual([1, 4]);
     });
 
-    test('une région est fermée tant que le niveau est insuffisant', () => {
+    test('une porte de maison est signalée (door) et la transition renvoie les événements de quêtes automatiques', () => {
+        const s = at('rizieres_village', 3, 4);
+        const res = tryMove(s, 0, -1, { playerLevel: 1 });
+        expect(res).toMatchObject({ type: 'transition', from: 'rizieres_village', to: 'rizieres_h_houyi', door: true, firstVisit: true });
+        expect(Array.isArray(res.events)).toBe(true);
+        const out = tryMove(s, 0, 1, { playerLevel: 1 });   // (5,5) -> (5,6) : la sortie de la maison
+        expect(out).toMatchObject({ type: 'transition', to: 'rizieres_village', door: false, firstVisit: false });
+        expect([s.data.x, s.data.y]).toEqual([3, 4]);
+        // une quête automatique (sans PNJ, objectif `visit`) se valide à l'arrivée sur l'écran visé
+        const synthQuest = { id: 'q_visit', side: true, requires: [], objectives: [{ type: 'visit', target: 'rizieres_wild', text: 'Atteindre la digue' }], reward: {} };
+        const v = createSession({ screenId: 'rizieres_village', x: 18, y: 6 }, SCREENS, [synthQuest]);
+        v.data.quests.q_visit = 'active';
+        const into = tryMove(v, 1, 0, { playerLevel: 1 });
+        expect(into.events).toEqual([expect.objectContaining({ type: 'questCompleted' })]);
+        expect(v.data.quests.q_visit).toBe('done');
+    });
+
+    test('le niveau ne bloque jamais une sortie : il déclenche seulement un avertissement', () => {
         const s = at('fleuve', 12, 5);
         markEnemyDefeated(s, 'sun_2');
         const res = tryMove(s, 1, 0, { playerLevel: 2 });
-        expect(res).toMatchObject({ type: 'exitBlocked', reason: 'level', minLevel: 3, regionName: 'Forêt de Bambous Calcinée' });
-        expect(s.data.screenId).toBe('fleuve');
-        expect(tryMove(s, 1, 0, { playerLevel: 3 }).type).toBe('transition');
+        expect(res).toMatchObject({ type: 'transition', to: 'bambous_village', warning: { minLevel: 3, regionName: SCREENS.bambous_village.name } });
+        expect(res.type).not.toBe('exitBlocked');
+        expect(s.data.screenId).toBe('bambous_village');   // le héros est bien passé
+        // niveau suffisant : pas d'avertissement
+        const ok = at('fleuve', 12, 5);
+        markEnemyDefeated(ok, 'sun_2');
+        expect(tryMove(ok, 1, 0, { playerLevel: 3 }).warning).toBeUndefined();
+        // à l'intérieur d'une région, jamais d'avertissement (même niveau 1 dans une zone de niveau supérieur)
+        const inside = at('bambous_village', 18, 6);
+        expect(tryMove(inside, 1, 0, { playerLevel: 1 }).warning).toBeUndefined();
+        // le niveau recommandé est celui de la région d'arrivée : revenir au Lit du Fleuve (niveau 2) à 3 est sans avertissement
+        const back = at('bambous_village', 1, 6);
+        expect(tryMove(back, -1, 0, { playerLevel: 3 }).warning).toBeUndefined();
+    });
+
+    test('la pierre de voyage bloque le passage et s\'active au contact', () => {
+        const wp = SCREENS.rizieres_village.waypoint;
+        const s = at('rizieres_village', wp.x, wp.y + 1);
+        expect(entityAt(s, wp.x, wp.y)).toMatchObject({ type: 'waypoint' });
+        expect(tryMove(s, 0, -1)).toMatchObject({ type: 'waypoint', screenId: 'rizieres_village', isNew: false });   // déjà découverte au village
+        expect([s.data.x, s.data.y]).toEqual([wp.x, wp.y + 1]);
+        expect(findPath(s, wp.x, wp.y - 1).some(p => p.x === wp.x && p.y === wp.y)).toBe(false);
+        // la pierre d'un sanctuaire se découvre au contact, puis autorise le voyage rapide
+        const sw = SCREENS.rizieres.waypoint;
+        const t = at('rizieres', sw.x, sw.y + 1);
+        expect(t.data.waypoints).not.toContain('rizieres');
+        expect(tryMove(t, 0, -1)).toMatchObject({ type: 'waypoint', screenId: 'rizieres', isNew: true });
+        expect(waypointList(t).map(w => w.screenId)).toEqual(['rizieres']);
+        enterScreen(t, 'rizieres_village', SCREENS.rizieres_village.spawn);   // entrer dans un village découvre sa pierre
+        expect(waypointList(t).map(w => w.screenId)).toEqual(['rizieres_village', 'rizieres']);
+        expect(fastTravel(t, 'rizieres')).toBe(true);
+        expect(t.data.screenId).toBe('rizieres');
+        expect(fastTravel(t, 'fleuve_wild')).toBe(false);   // pierre non découverte
     });
 
     test('les patrouilleurs avancent le long de leur route et font demi-tour', () => {
@@ -756,9 +834,12 @@ describe('déplacement et zones de vigilance', () => {
         expect(createSession({ ngPlus: -3 }).data.ngPlus).toBe(0);
         expect(createSession({ ngPlus: 'beaucoup' }).data.ngPlus).toBe(0);
         const s = createSession({ screenId: 'nulle-part', x: 99, y: 99 });
-        expect(s.data.screenId).toBe('rizieres');
+        expect(s.data.screenId).toBe(START_SCREEN);
         const inWall = createSession({ screenId: 'village', x: 2, y: 2 });   // ancien écran de « La Couronne Brisée »
-        expect(inWall.data.screenId).toBe('rizieres');
+        expect(inWall.data.screenId).toBe(START_SCREEN);
+        const inVillageWall = createSession({ screenId: 'rizieres_village', x: 0, y: 0 });   // dans le mur d'enceinte du village
+        expect(inVillageWall.data.screenId).toBe(START_SCREEN);
+        expect([inVillageWall.data.x, inVillageWall.data.y]).toEqual([SCREENS[START_SCREEN].spawn.x, SCREENS[START_SCREEN].spawn.y]);
         const inHouse = createSession({ screenId: 'rizieres', x: 1, y: 1 });
         expect(isTerrainBlocked(SCREENS.rizieres, inHouse.data.x, inHouse.data.y)).toBe(false);
     });
@@ -806,23 +887,30 @@ describe('histoire complète', () => {
         expect(currentObjectiveText(s)).toContain('Doyen Wen');
 
         // Prologue : le doyen Wen transmet le décret de l'empereur
-        let talk = talkToNpc(s, 'elder_wen');
+        let talk = talkTo(s, 'elder_wen');   // le héros marche jusqu'à la maison du doyen
+        expect(s.data.screenId).toBe('rizieres_h_wen');
         expect(talk.events[0]).toMatchObject({ type: 'questStarted' });
         expect(talk.lines).toEqual(quest('q_sun_1').offer);
         expect(s.data.quests.q_sun_1).toBe('active');
         expect(talkToNpc(s, 'elder_wen').lines).toEqual(quest('q_sun_1').hint);   // pas de suite tant que le soleil vit
         expect(currentObjectiveText(s)).toContain('Soleil Ardent');
 
-        // Duel d'entraînement : scène de Fengmeng, puis le premier soleil
+        // Traversée du village, de la zone sauvage (gate : le gardien de la digue) puis duel d'entraînement : scène de Fengmeng, puis le premier soleil
+        travel(s, 'rizieres');
+        expect(s.data.defeated).toContain('rizieres_warden');
         let events = markEnemyDefeated(s, 'fengmeng_1');
         expect(events.map(e => e.type)).toEqual(['scene']);
         events = markEnemyDefeated(s, 'sun_1');
         expect(events.map(e => e.type)).toEqual(['questCompleted', 'questStarted']);
         expect(events[0]).toMatchObject({ gold: 80, ended: false });
+        expect(events[0].xp).toBe(quest('q_sun_1').reward.xp);
+        expect(events[0].xp).toBeGreaterThan(0);
         expect(events[1].quest.id).toBe('q_sun_2');
 
         const golds = [80];
         for (let n = 2; n <= 9; n++) {
+            travel(s, ORDER[n - 1]);   // village, zone sauvage (gate rempli au passage) puis sanctuaire de la région
+            expect(s.data.screenId).toBe(ORDER[n - 1]);
             if (n === 6) {
                 const scene = markEnemyDefeated(s, 'fengmeng_2');
                 expect(scene.map(e => e.type)).toEqual(['scene']);
@@ -849,7 +937,7 @@ describe('histoire complète', () => {
         expect(events[2].quest.id).toBe('q_epilogue');
         expect(s.data.ended).toBe(false);
 
-        goto(s, 'lune');
+        travel(s, 'lune');
         const altar = openChest(s, 'moon_altar');
         expect(altar.events.map(e => e.type)).toEqual(['chestOpened', 'questCompleted']);
         expect(altar.events[1]).toMatchObject({ ended: true, lines: STORY_ENDING });
@@ -864,7 +952,7 @@ describe('histoire complète', () => {
         const s = createSession({});
         markEnemyDefeated(s, 'sun_1');
         expect(questStatus(s, quest('q_sun_1'))).toBe('available');
-        const talk = talkToNpc(s, 'elder_wen');
+        const talk = talkTo(s, 'elder_wen');
         expect(talk.events.map(e => e.type)).toEqual(['questStarted', 'questCompleted', 'questStarted']);
         expect(s.data.quests.q_sun_1).toBe('done');
         expect(s.data.quests.q_sun_2).toBe('active');
@@ -872,10 +960,12 @@ describe('histoire complète', () => {
 
     test('un PNJ sans quête raconte son dialogue habituel', () => {
         const s = createSession({});
-        const talk = talkToNpc(s, 'change');
-        expect(talk.lines).toEqual(SCREENS.rizieres.npcs.find(n => n.id === 'change').idle);
+        const talk = talkTo(s, 'change');
+        expect(s.data.screenId).toBe('rizieres_h_houyi');
+        expect(talk.lines).toEqual(SCREENS.rizieres_h_houyi.npcs.find(n => n.id === 'change').idle);
         expect(talk.events).toEqual([]);
         expect(talkToNpc(s, 'inconnu')).toBeNull();
+        expect(talkToNpc(s, 'elder_wen')).toBeNull();   // il est dans une autre maison
     });
 
     test('le doyen sert de guide du tutoriel : le marqueur de quête et l\'objectif pointent vers lui', () => {
@@ -886,13 +976,17 @@ describe('histoire complète', () => {
     });
 
     test('Chang\'e quitte la maison une fois le neuvième soleil abattu (hideWhen)', () => {
-        const s = createSession({});
+        const house = SCREENS.rizieres_h_houyi;
+        const change = house.npcs.find(n => n.id === 'change');
+        const s = createSession({ screenId: house.id, x: house.spawn.x, y: house.spawn.y });
         expect(talkToNpc(s, 'change')).not.toBeNull();
         markEnemyDefeated(s, 'sun_9');
         expect(talkToNpc(s, 'change')).toBeNull();
         expect(visibleNpcs(s).map(n => n.id)).not.toContain('change');
-        expect(entityAt(s, 2, 3)).toBeNull();
-        expect(findPath(at('rizieres', 2, 5), 2, 3)).not.toBeNull();   // la tuile est libre : plus de PNJ
+        expect(entityAt(s, change.x, change.y)).toBeNull();
+        expect(findPath(s, change.x, change.y)).not.toBeNull();
+        expect(findPath(s, change.x, change.y).at(-1)).toEqual({ x: change.x, y: change.y });
+        expect(tryMove(at(house.id, change.x, change.y + 1), 0, -1)).toEqual({ type: 'talk', npcId: 'change' });   // tant qu'elle est là
     });
 });
 
@@ -900,21 +994,23 @@ describe('quêtes secondaires', () => {
     const side = QUESTS.filter(q => q.side);
     const main = QUESTS.filter(q => !q.side);
     const allEnemies = screens.flatMap(s => s.enemies);
-    const regionOf = q => screens.find(sc => sc.npcs.some(n => n.id === q.giver)).id;
+    const regionOf = q => screens.find(sc => sc.npcs.some(n => n.id === q.giver)).region;
+    // quêtes annexes qui ferment une sortie (gate de zone sauvage) : elles font partie du chemin de l'histoire
+    const gateQuests = new Set(ORDER.map(id => SCREENS[`${id}_wild`].exits.find(e => e.to === id).requires).filter(r => QUESTS.some(q => q.id === r)));
 
-    test('1 à 2 quêtes secondaires par région (sauf le Pic de la Lune), récompenses raisonnables, jamais requises par l\'histoire', () => {
-        ORDER.slice(0, 9).forEach(id => {
+    test('au moins 2 quêtes secondaires par région, récompenses raisonnables, jamais requises par l\'histoire', () => {
+        ORDER.forEach(id => {
             const n = side.filter(q => regionOf(q) === id).length;
-            expect(n).toBeGreaterThanOrEqual(1);
-            expect(n).toBeLessThanOrEqual(2);
+            expect([id, n >= 2]).toEqual([id, true]);
         });
         side.forEach(q => {
             expect(q.reward.gold).toBeGreaterThanOrEqual(30);
-            expect(q.reward.gold).toBeLessThanOrEqual(160);
+            expect(q.reward.gold).toBeLessThanOrEqual(200);
+            expect(q.reward.xp).toBeGreaterThan(0);
             expect(q.reward.fragment.length).toBeGreaterThan(3);
             expect(q.giver && q.turnIn).toBeTruthy();
-            expect(q.offer.length).toBeGreaterThanOrEqual(2);
-            expect(q.complete.length).toBeGreaterThanOrEqual(2);
+            expect(q.offer.length).toBeGreaterThanOrEqual(1);
+            expect(q.complete.length).toBeGreaterThanOrEqual(1);
             expect(q.hint.length).toBeGreaterThan(0);
             expect(q.chapter).toMatch(/secondaire/);
         });
@@ -926,12 +1022,27 @@ describe('quêtes secondaires', () => {
         expect(new Set(fragments).size).toBe(fragments.length);
     });
 
-    test('les quêtes secondaires ne dépendent que de l\'histoire principale', () => {
-        side.forEach(q => q.requires.forEach(r => expect(main.some(x => x.id === r)).toBe(true)));
+    test('les récompenses (or et XP) des quêtes secondaires croissent avec la région', () => {
+        const rank = q => ORDER.indexOf(regionOf(q));
+        const byRegion = ORDER.map((_, i) => side.filter(q => rank(q) === i));
+        for (let i = 1; i < ORDER.length; i++) {
+            expect(Math.max(...byRegion[i].map(q => q.reward.xp))).toBeGreaterThanOrEqual(Math.max(...byRegion[i - 1].map(q => q.reward.xp)));
+        }
+    });
+
+    test('les quêtes secondaires ne dépendent que de l\'histoire principale ou d\'une autre annexe (sans cycle)', () => {
+        const byId = Object.fromEntries(QUESTS.map(q => [q.id, q]));
+        side.forEach(q => q.requires.forEach(r => expect(byId[r]).toBeDefined()));
+        const reaches = (id, seen = new Set()) => {
+            expect(seen.has(id)).toBe(false);   // pas de cycle
+            seen.add(id);
+            byId[id].requires.forEach(r => reaches(r, new Set(seen)));
+        };
+        side.forEach(q => reaches(q.id));
     });
 
     test('les ennemis nommés des quêtes secondaires sont permanents et ont un emoji', () => {
-        side.flatMap(q => q.objectives).filter(o => o.type !== 'chest').forEach(o => {
+        side.flatMap(q => q.objectives).filter(o => o.type === 'kill' || o.type === 'killGroup').forEach(o => {
             const targets = allEnemies.filter(e => o.type === 'kill' ? e.id === o.target : e.group === o.target);
             expect(targets.length).toBeGreaterThan(0);
             targets.forEach(e => { expect(e.permanent).toBe(true); expect(e.emoji).toBeTruthy(); });
@@ -942,10 +1053,10 @@ describe('quêtes secondaires', () => {
         side.flatMap(q => q.objectives).filter(o => o.type === 'chest').forEach(o => {
             const s = screens.find(sc => sc.chests.some(c => c.id === o.target));
             const chest = s.chests.find(c => c.id === o.target);
-            const forbidden = auraOfAll(s);
+            const forbidden = approachBlockers(s);
             const approach = DIRS.map(([dx, dy]) => ({ x: chest.x + dx, y: chest.y + dy }))
                 .filter(p => !isTerrainBlocked(s, p.x, p.y) && !forbidden.has(`${p.x},${p.y}`));
-            expect(approach.length).toBeGreaterThan(0);
+            expect([o.target, approach.length > 0]).toEqual([o.target, true]);
             starts(s).forEach(a => {
                 forbidden.delete(`${a.x},${a.y}`);
                 expect([o.target, a, approach.some(p => reachable(s, a, forbidden).has(`${p.x},${p.y}`))]).toEqual([o.target, a, true]);
@@ -958,45 +1069,88 @@ describe('quêtes secondaires', () => {
             const s = screens.find(sc => sc.npcs.some(n => n.id === q.giver));
             const npc = s.npcs.find(n => n.id === q.giver);
             starts(s).forEach(a => {
-                const forbidden = auraOfAll(s);
+                const forbidden = approachBlockers(s);
                 forbidden.delete(`${a.x},${a.y}`);
                 const free = reachable(s, a, forbidden);
-                expect(DIRS.some(([dx, dy]) => free.has(`${npc.x + dx},${npc.y + dy}`))).toBe(true);
+                expect([q.id, a, DIRS.some(([dx, dy]) => free.has(`${npc.x + dx},${npc.y + dy}`))]).toEqual([q.id, a, true]);
             });
         });
+    });
+
+    // Chaque quête (principale ou annexe) se joue réellement de bout en bout depuis une partie neuve :
+    // offre, objectifs (tuer / coffre / groupe / parler / visiter), remise, avec traversée des gates.
+    test.each(QUESTS.map(q => [q.id]))('%s : jouable de bout en bout depuis une nouvelle partie', id => {
+        const s = createSession({});
+        playQuest(s, id);
+        expect(s.data.quests[id]).toBe('done');
+        // aucune quête n'est restée coincée « active » sans pouvoir être terminée
+        QUESTS.filter(q => s.data.quests[q.id] === 'active').forEach(q => expect(['active', 'ready']).toContain(questStatus(s, q)));
     });
 
     test('quête secondaire de bout en bout : le chapardeur des rizières', () => {
         const s = createSession({});
         const q = quest('sq_rice_thief');
         expect(questStatus(s, q)).toBe('available');
-        const offer = talkToNpc(s, 'farmer_lin');
+        const offer = talkTo(s, 'farmer_lin');
+        expect(s.data.screenId).toBe('rizieres_h_lin');
         expect(offer.events[0]).toMatchObject({ type: 'questStarted' });
         expect(offer.events[0].quest.side).toBe(true);
         expect(talkToNpc(s, 'farmer_lin').lines).toEqual(q.hint);
-        expect(markEnemyDefeated(s, 'rice_thief')).toEqual([]);  // pas de PNJ de remise : pas de validation automatique
-        expect(questStatus(s, q)).toBe('ready');
+        // le voleur est au sanctuaire : on traverse village, zone sauvage (gardien de la digue) et sanctuaire pour le rattraper
+        defeat(s, 'rice_thief');
+        expect(s.data.defeated).toEqual(expect.arrayContaining(['rizieres_warden', 'rice_thief']));
+        expect(questStatus(s, q)).toBe('ready');   // pas de PNJ de remise automatique : on retourne voir Lin
         expect(currentObjectiveText(s)).toContain('Doyen Wen');   // l'histoire passe avant : le doyen a une quête à donner
-        const done = talkToNpc(s, 'farmer_lin');
-        expect(done.events[0]).toMatchObject({ type: 'questCompleted', gold: 40 });
+        const done = talkTo(s, 'farmer_lin');
+        expect(done.events[0]).toMatchObject({ type: 'questCompleted', gold: 40, xp: q.reward.xp });
         expect(done.events[0].reward.fragment).toBe('Eau sacrée');
         expect(s.data.quests.sq_rice_thief).toBe('done');
         // ensuite : réplique d'ambiance spécifique
-        expect(talkToNpc(s, 'farmer_lin').lines).toEqual(SCREENS.rizieres.npcs.find(n => n.id === 'farmer_lin').talk[0].lines);
+        expect(talkToNpc(s, 'farmer_lin').lines).toEqual(SCREENS.rizieres_h_lin.npcs.find(n => n.id === 'farmer_lin').talk[0].lines);
+    });
+
+    test('quête en chaîne avec objectifs « parler » : la lettre de Bao', () => {
+        const s = createSession({});
+        const q1 = quest('sq_lettre_bao_1');
+        const q2 = quest('sq_lettre_bao_2');
+        expect(questStatus(s, q2)).toBe('locked');
+        for (let i = 0; i < 6 && !s.data.quests.sq_lettre_bao_1; i++) talkTo(s, q1.giver);   // le donneur a d'autres quêtes à proposer
+        expect(s.data.quests.sq_lettre_bao_1).toBe('active');
+        const target = q1.objectives[0];
+        expect(target.type).toBe('talk');
+        expect(npcMarker(s, target.target)).toBe('❓');   // le destinataire porte un « ? »
+        const talk = talkTo(s, target.target);
+        expect(talk.events[0]).toMatchObject({ type: 'objective' });
+        expect(talk.lines).toEqual(expect.arrayContaining(target.lines));
+        expect(s.data.talked).toContain(target.target);
+        playQuest(s, 'sq_lettre_bao_1');
+        expect(s.data.quests.sq_lettre_bao_1).toBe('done');
+        expect(questStatus(s, q2)).toBe('available');
+    });
+
+    test('objectif « visiter » : validé à l\'arrivée sur l\'écran visé', () => {
+        const q = side.find(x => x.objectives.some(o => o.type === 'visit'));
+        const o = q.objectives.find(x => x.type === 'visit');
+        const s = createSession({});
+        playQuest(s, q.id);
+        expect(s.data.visitedScreens).toContain(o.target);
+        expect(s.data.quests[q.id]).toBe('done');
     });
 
     test('une quête secondaire n\'est proposée qu\'une fois la région atteinte dans l\'histoire', () => {
-        const s = createSession({ screenId: 'fleuve', x: 1, y: 4 });
+        const house = SCREENS.fleuve_h_mei;
+        const s = createSession({ screenId: house.id, x: house.spawn.x, y: house.spawn.y });
         const talk = talkToNpc(s, 'weaver_mei');
         expect(talk.events).toEqual([]);
         expect(s.data.quests.sq_drowned).toBeUndefined();
-        expect(talk.lines).toEqual(SCREENS.fleuve.npcs.find(n => n.id === 'weaver_mei').idle);
+        expect(talk.lines).toEqual(house.npcs.find(n => n.id === 'weaver_mei').idle);
         s.data.quests.q_sun_1 = 'done';
         expect(talkToNpc(s, 'weaver_mei').events[0]).toMatchObject({ type: 'questStarted' });
     });
 
     test('quête de groupe secondaire : les noyés de Mei', () => {
-        const s = createSession({ screenId: 'fleuve', x: 1, y: 4 });
+        const house = SCREENS.fleuve_h_mei;
+        const s = createSession({ screenId: house.id, x: house.spawn.x, y: house.spawn.y });
         s.data.quests.q_sun_1 = 'done';
         expect(talkToNpc(s, 'weaver_mei').events[0]).toMatchObject({ type: 'questStarted' });
         markEnemyDefeated(s, 'drowned_a');
@@ -1007,27 +1161,26 @@ describe('quêtes secondaires', () => {
     });
 
     test('quête de coffre secondaire : la cloche du temple', () => {
-        const s = createSession({ screenId: 'bambous', x: 1, y: 5 });
+        const s = createSession({});
         s.data.quests.q_sun_2 = 'done';
-        talkToNpc(s, 'monk_zhen');
+        talkTo(s, 'monk_zhen');
         expect(s.data.quests.sq_bell).toBe('active');
-        const res = openChest(s, 'temple_bell');
+        const res = openChestAt(s, 'temple_bell');   // le coffre est au sanctuaire : le héros y marche (gate compris)
         expect(res.gold).toBe(10);
-        const done = talkToNpc(s, 'monk_zhen');
+        const done = talkTo(s, 'monk_zhen');
         expect(done.events[0]).toMatchObject({ type: 'questCompleted', gold: 50 });
     });
 
-    test('la quête principale est faisable de bout en bout sans aucune quête secondaire', () => {
+    test('la quête principale est faisable de bout en bout sans quête secondaire (hors annexes qui ferment une sortie)', () => {
         const s = createSession({});
-        talkToNpc(s, 'elder_wen');
-        ORDER.slice(0, 9).forEach((id, i) => { goto(s, id); markEnemyDefeated(s, `sun_${i + 1}`); });
-        markEnemyDefeated(s, 'fengmeng_3a');
-        markEnemyDefeated(s, 'fengmeng_3b');
-        goto(s, 'lune');
-        openChest(s, 'moon_altar');
+        completeStory(s);
         expect(s.data.ended).toBe(true);
+        expect(s.data.screenId).toBe('lune');
         expect(main.every(q => s.data.quests[q.id] === 'done')).toBe(true);
-        side.forEach(q => expect(s.data.quests[q.id]).not.toBe('done'));
+        const sideDone = side.filter(q => s.data.quests[q.id] === 'done').map(q => q.id);
+        sideDone.forEach(id => expect(gateQuests.has(id)).toBe(true));
+        // les annexes qui ne ferment aucune sortie ne sont jamais imposées
+        side.filter(q => !gateQuests.has(q.id)).forEach(q => expect(s.data.quests[q.id]).not.toBe('done'));
     });
 
     test('les quêtes secondaires disponibles ne masquent pas l\'objectif de l\'histoire dans le HUD', () => {
@@ -1078,8 +1231,8 @@ describe('dialogues d\'ambiance conditionnels', () => {
     });
 
     test('talkToNpc utilise la réplique conditionnelle, mais la quête garde la priorité', () => {
-        const s = createSession({ screenId: 'rizieres' });
-        const lin = SCREENS.rizieres.npcs.find(n => n.id === 'farmer_lin');
+        const s = createSession({ screenId: 'rizieres_h_lin', x: SCREENS.rizieres_h_lin.spawn.x, y: SCREENS.rizieres_h_lin.spawn.y });
+        const lin = SCREENS.rizieres_h_lin.npcs.find(n => n.id === 'farmer_lin');
         talkToNpc(s, 'farmer_lin');   // la quête du chapardeur démarre
         expect(talkToNpc(s, 'farmer_lin').lines).toEqual(quest('sq_rice_thief').hint);
         s.data.quests.sq_rice_thief = 'done';
@@ -1090,7 +1243,7 @@ describe('dialogues d\'ambiance conditionnels', () => {
 
     test('les PNJ évoquent l\'avancement : Chang\'e change de discours au fil des soleils', () => {
         const s = createSession({});
-        const change = SCREENS.rizieres.npcs.find(n => n.id === 'change');
+        const change = SCREENS.rizieres_h_houyi.npcs.find(n => n.id === 'change');
         expect(npcAmbientLines(s, change)).toEqual(change.idle);
         markEnemyDefeated(s, 'fengmeng_1');
         const afterDuel = npcAmbientLines(s, change);
@@ -1127,7 +1280,7 @@ describe('dialogues d\'ambiance conditionnels', () => {
     });
 
     test('l\'indice des mirages est cohérent avec le rendu : le vrai soleil a une ombre et un niveau, les mirages non', () => {
-        const dawa = SCREENS.gobi.npcs.find(n => n.id === 'guide_dawa');
+        const dawa = SCREENS.gobi_h_dawa.npcs.find(n => n.id === 'guide_dawa');
         const text = [...dawa.idle, ...quest('q_sun_4').hint, ...quest('sq_oasis').offer].join(' ');
         expect(text).toMatch(/ombre/);
         expect(text).toMatch(/scintill/);
@@ -1335,7 +1488,7 @@ describe('soleil protégé (shieldedBy)', () => {
 describe('scènes de fin de duel (defeatScene)', () => {
     test('markEnemyDefeated renvoie l\'événement scene, une seule fois, avant les quêtes', () => {
         const s = createSession({});
-        talkToNpc(s, 'elder_wen');
+        talkTo(s, 'elder_wen');
         const def = SCREENS.rizieres.enemies.find(e => e.id === 'fengmeng_1');
         const events = markEnemyDefeated(s, 'fengmeng_1');
         expect(events).toEqual([{ type: 'scene', speaker: def.defeatScene.speaker, lines: def.defeatScene.lines }]);
@@ -1346,7 +1499,7 @@ describe('scènes de fin de duel (defeatScene)', () => {
 
     test('la scène précède l\'événement de quête dans le même lot', () => {
         const s = createSession({});
-        talkToNpc(s, 'elder_wen');
+        talkTo(s, 'elder_wen');
         s.screens.rizieres.enemies.find(e => e.id === 'sun_1').defeatScene = { speaker: { name: 'X' }, lines: ['a', 'b'] };
         const events = markEnemyDefeated(s, 'sun_1');
         delete s.screens.rizieres.enemies.find(e => e.id === 'sun_1').defeatScene;
@@ -1368,11 +1521,11 @@ describe('scènes de fin de duel (defeatScene)', () => {
 describe('sorties verrouillées (exit.requires)', () => {
     test('une sortie reste fermée tant que le soleil de la région n\'est pas abattu', () => {
         const s = at('rizieres', 12, 4);
-        const exit = SCREENS.rizieres.exits[0];
+        const exit = SCREENS.rizieres.exits.find(e => e.x === 13);
         expect(isExitLocked(s, exit)).toBe(true);
         const res = tryMove(s, 1, 0, { playerLevel: 50 });
         expect(res).toEqual({
-            type: 'exitBlocked', reason: 'quest', label: 'Lit du Fleuve Jaune', regionName: 'Lit du Fleuve Jaune', message: exit.lockedMessage
+            type: 'exitBlocked', reason: 'quest', label: 'Port-à-Sec de Hekou', regionName: SCREENS.fleuve_village.name, message: exit.lockedMessage
         });
         expect([s.data.screenId, s.data.x, s.data.y]).toEqual(['rizieres', 12, 4]);
         markEnemyDefeated(s, 'sun_1');
@@ -1380,9 +1533,31 @@ describe('sorties verrouillées (exit.requires)', () => {
         expect(tryMove(s, 1, 0, { playerLevel: 50 }).type).toBe('transition');
     });
 
+    test('la sortie de la zone sauvage reste fermée tant que son gate n\'est pas rempli', () => {
+        const s = at('rizieres_wild', 16, 5);
+        const exit = SCREENS.rizieres_wild.exits.find(e => e.to === 'rizieres');
+        expect(isExitLocked(s, exit)).toBe(true);
+        expect(tryMove(s, 1, 0, { playerLevel: 50 })).toMatchObject({ type: 'exitBlocked', reason: 'quest', message: exit.lockedMessage });
+        expect(s.data.screenId).toBe('rizieres_wild');
+        markEnemyDefeated(s, 'rizieres_warden');
+        expect(isExitLocked(s, exit)).toBe(false);
+        expect(tryMove(s, 1, 0, { playerLevel: 1 })).toMatchObject({ type: 'transition', to: 'rizieres' });
+        // un gate de type coffre ou quête rouvre aussi la sortie
+        const f = at('fleuve_wild', 16, 6);
+        const fexit = SCREENS.fleuve_wild.exits.find(e => e.to === 'fleuve');
+        expect(isExitLocked(f, fexit)).toBe(true);
+        f.data.openedChests.push(fexit.requires);
+        expect(isExitLocked(f, fexit)).toBe(false);
+        const b = at('bambous_wild', 16, 2);
+        const bexit = SCREENS.bambous_wild.exits.find(e => e.to === 'bambous');
+        expect(isExitLocked(b, bexit)).toBe(true);
+        b.data.quests[bexit.requires] = 'done';
+        expect(isExitLocked(b, bexit)).toBe(false);
+    });
+
     test('la condition de quête passe avant le niveau, la sortie ouest reste toujours libre', () => {
         const s = at('fleuve', 12, 5);
-        expect(tryMove(s, 1, 0, { playerLevel: 1 })).toMatchObject({ type: 'exitBlocked', reason: 'quest' });
+        expect(tryMove(s, 1, 0, { playerLevel: 1 })).toMatchObject({ type: 'exitBlocked', reason: 'quest' });   // le niveau n'y est pour rien
         const back = at('fleuve', 1, 4);
         expect(tryMove(back, -1, 0, { playerLevel: 1 }).type).toBe('transition');
     });
@@ -1409,15 +1584,10 @@ describe('sorties verrouillées (exit.requires)', () => {
 });
 
 describe('Nouvelle Partie +', () => {
+    // Histoire jouée en entier à travers le monde (village, zones sauvages, gates, sanctuaires) jusqu'à l'épilogue.
     const endedSession = () => {
         const s = createSession({ introSeen: true });
-        talkToNpc(s, 'elder_wen');
-        ORDER.slice(0, 9).forEach((id, i) => markEnemyDefeated(s, `sun_${i + 1}`));
-        markEnemyDefeated(s, 'fengmeng_3a');
-        markEnemyDefeated(s, 'fengmeng_3b');
-        goto(s, 'lune');
-        openChest(s, 'moon_altar');
-        s.data.visitedScreens = [...ORDER];
+        completeStory(s);
         return s;
     };
 
@@ -1432,44 +1602,46 @@ describe('Nouvelle Partie +', () => {
     test('remet l\'histoire à zéro, replace le héros au départ, garde introSeen et incrémente ngPlus', () => {
         const s = endedSession();
         expect(s.data.ended).toBe(true);
+        expect(s.data.visitedScreens.length).toBeGreaterThan(30);
         expect(startNewGamePlus(s)).toBe(true);
         expect(s.data).toMatchObject({
-            screenId: 'rizieres', x: SCREENS.rizieres.spawn.x, y: SCREENS.rizieres.spawn.y,
-            quests: {}, defeated: [], openedChests: [], visitedScreens: ['rizieres'],
+            screenId: START_SCREEN, x: SCREENS[START_SCREEN].spawn.x, y: SCREENS[START_SCREEN].spawn.y,
+            quests: {}, defeated: [], openedChests: [], talked: [], visitedScreens: [START_SCREEN],
             ended: false, introSeen: true, ngPlus: 1
         });
-        expect(aliveEnemies(s).map(e => e.def.id)).toContain('fengmeng_1');
         expect(s.rt.grace).toBeGreaterThan(0);
         expect(questStatus(s, quest('q_sun_1'))).toBe('available');
         expect(currentObjectiveText(s)).toContain('Doyen Wen');
-        // les verrous de l'histoire sont revenus
-        expect(isExitLocked(s, SCREENS.rizieres.exits[0])).toBe(true);
-        // et l'autel est de nouveau caché
-        goto(s, 'lune');
+        // les verrous de l'histoire sont revenus : sanctuaire (soleil) et zone sauvage (gate)
+        expect(isExitLocked(s, SCREENS.rizieres.exits.find(e => e.x === 13))).toBe(true);
+        expect(isExitLocked(s, SCREENS.rizieres_wild.exits.find(e => e.to === 'rizieres'))).toBe(true);
+        // les ennemis d'histoire sont de retour, et l'autel est de nouveau caché
+        teleportToScreen(s, 'rizieres');
+        expect(aliveEnemies(s).map(e => e.def.id)).toEqual(expect.arrayContaining(['fengmeng_1', 'sun_1']));
+        teleportToScreen(s, 'lune');
         expect(visibleChests(s).map(c => c.id)).not.toContain('moon_altar');
     });
 
     test('la première visite des écrans redéclenche les textes d\'arrivée', () => {
         const s = endedSession();
         startNewGamePlus(s);
-        markEnemyDefeated(s, 'sun_1');
-        s.data.x = 12; s.data.y = 4;
-        const res = tryMove(s, 1, 0, { playerLevel: 5 });
-        expect(res).toMatchObject({ type: 'transition', to: 'fleuve', firstVisit: true });
-        expect(res.arrival).toEqual(SCREENS.fleuve.arrival);
+        // le village de départ est déjà « visité » (prologue) ; les autres écrans rejouent leur texte
+        expect(s.data.visitedScreens).toEqual([START_SCREEN]);
+        const wild = tryMove(at(START_SCREEN, 18, 6), 1, 0, { playerLevel: 5 });
+        expect(wild).toMatchObject({ type: 'transition', to: 'rizieres_wild', firstVisit: true });
+        expect(wild.arrival).toEqual(SCREENS.rizieres_wild.arrival);
+        const t = createSession({ ...s.data, screenId: 'rizieres', x: 12, y: 4 });
+        markEnemyDefeated(t, 'sun_1');
+        const res = tryMove(t, 1, 0, { playerLevel: 5 });
+        expect(res).toMatchObject({ type: 'transition', to: 'fleuve_village', firstVisit: true });
+        expect(res.arrival).toEqual(SCREENS.fleuve_village.arrival);
     });
 
     test('les cycles se cumulent, chacun demande de terminer l\'histoire', () => {
         const s = endedSession();
         startNewGamePlus(s);
         expect(startNewGamePlus(s)).toBe(false);   // `ended` est retombé à false
-        ORDER.slice(0, 9).forEach((id, i) => markEnemyDefeated(s, `sun_${i + 1}`));
-        markEnemyDefeated(s, 'fengmeng_3a');
-        markEnemyDefeated(s, 'fengmeng_3b');
-        goto(s, 'lune');
-        talkToNpc(s, 'elder_wen');   // sans effet hors de l'écran
-        s.data.quests.q_epilogue = 'active';
-        openChest(s, 'moon_altar');
+        completeStory(s);                           // le héros rejoue toute la traversée du monde
         expect(s.data.ended).toBe(true);
         expect(startNewGamePlus(s)).toBe(true);
         expect(s.data.ngPlus).toBe(2);
@@ -1488,6 +1660,7 @@ describe('Nouvelle Partie +', () => {
         const s = endedSession();
         startNewGamePlus(s);
         expect(journalEntries(s).map(e => e.quest.id).filter(id => !id.startsWith('sq_'))).toEqual(['q_sun_1']);
+        journalEntries(s).forEach(e => expect(['available', 'locked']).toContain(e.status));   // rien n'est en cours ni terminé
         const copy = createSession(JSON.parse(JSON.stringify(s.data)));
         expect(copy.data.ngPlus).toBe(1);
         expect(copy.data.defeated).toEqual([]);
@@ -1499,32 +1672,44 @@ describe('texte d\'arrivée', () => {
         const s = at('rizieres', 12, 4);
         markEnemyDefeated(s, 'sun_1');
         const first = tryMove(s, 1, 0, { playerLevel: 5 });
-        expect(first).toMatchObject({ type: 'transition', to: 'fleuve', firstVisit: true });
-        expect(first.arrival).toEqual(SCREENS.fleuve.arrival);
-        // retour aux rizières puis nouvelle entrée au lit du fleuve : plus de texte
+        expect(first).toMatchObject({ type: 'transition', to: 'fleuve_village', firstVisit: true });
+        expect(first.arrival).toEqual(SCREENS.fleuve_village.arrival);
+        // retour aux rizières puis nouvelle entrée au village du fleuve : plus de texte
         enterScreen(s, 'rizieres', { x: 12, y: 4 });
         const again = tryMove(s, 1, 0, { playerLevel: 5 });
-        expect(again).toMatchObject({ type: 'transition', to: 'fleuve', firstVisit: false });
+        expect(again).toMatchObject({ type: 'transition', to: 'fleuve_village', firstVisit: false });
         expect(again.arrival).toBeUndefined();
     });
 
+    test('chaque zone a son texte à la première visite : village (arrivée de la région), puis zone sauvage', () => {
+        const s = at('fleuve_village', 18, 6);
+        const res = tryMove(s, 1, 0, { playerLevel: 5 });
+        expect(res).toMatchObject({ type: 'transition', to: 'fleuve_wild', firstVisit: true });
+        expect(res.arrival).toEqual(SCREENS.fleuve_wild.arrival);
+        expect(res.arrival.length).toBeGreaterThan(0);
+    });
+
     test('une sauvegarde qui a déjà visité l\'écran ne rejoue pas le texte', () => {
-        const s = createSession({ screenId: 'rizieres', x: 12, y: 4, visitedScreens: ['rizieres', 'fleuve'], defeated: ['sun_1'] });
+        const s = createSession({ screenId: 'rizieres', x: 12, y: 4, visitedScreens: ['rizieres', 'fleuve_village'], defeated: ['sun_1'] });
         expect(tryMove(s, 1, 0, { playerLevel: 5 }).arrival).toBeUndefined();
     });
 
-    test('l\'écran de départ (couvert par le prologue) n\'a pas de texte d\'arrivée', () => {
-        const s = createSession({ screenId: 'fleuve', x: 1, y: 4, visitedScreens: ['fleuve'] });
+    test('l\'écran de départ (couvert par le prologue) est visité dès la création : pas de texte au retour', () => {
+        const s = createSession({});
+        expect(s.data.visitedScreens).toEqual([START_SCREEN]);
+        enterScreen(s, 'rizieres_wild', { x: 1, y: 6 });
         s.rt.grace = 0;
         const res = tryMove(s, -1, 0, { playerLevel: 1 });
-        expect(res).toMatchObject({ type: 'transition', to: 'rizieres', firstVisit: true });   // 1re visite, mais pas de texte
+        expect(res).toMatchObject({ type: 'transition', to: START_SCREEN, firstVisit: false });
         expect(res.arrival).toBeUndefined();
     });
 
-    test('les écrans d\'exploration (hors départ) ont un texte d\'arrivée non vide', () => {
-        screens.filter(s => s.id !== START_SCREEN).forEach(s => expect(s.arrival.length).toBeGreaterThan(0));
-        expect(SCREENS.volcan.arrival.join(' ')).toMatch(/Fengmeng/);
-        expect(SCREENS.fusang.arrival.join(' ')).toMatch(/Dixième|dixième/);
+    test('les villages, zones sauvages et sanctuaires ont un texte d\'arrivée non vide (hors sanctuaire de départ)', () => {
+        screens.filter(s => ['village', 'wild'].includes(s.kind)).forEach(s => expect([s.id, s.arrival?.length > 0]).toEqual([s.id, true]));
+        sanctuaries.filter(s => s.id !== 'rizieres').forEach(s => expect([s.id, s.arrival?.length > 0]).toEqual([s.id, true]));
+        const regionText = id => [`${id}_village`, `${id}_wild`, id].flatMap(sid => SCREENS[sid].arrival || []).join(' ');
+        expect(regionText('volcan')).toMatch(/Fengmeng/);
+        expect(regionText('fusang')).toMatch(/Dixième|dixième/);
     });
 });
 
@@ -1582,11 +1767,11 @@ describe('déplacement au clic (findPath)', () => {
     });
 
     test('vers un PNJ : le chemin finit sur sa tuile et la dernière étape ouvre le dialogue', () => {
-        const s = atClick('rizieres', 3, 4);
-        const path = findPath(s, 2, 3);
-        expect(path[path.length - 1]).toEqual({ x: 2, y: 3 });
-        expect(walk(s, path)).toEqual({ type: 'talk', npcId: 'change' });
-        expect([s.data.x, s.data.y]).not.toEqual([2, 3]);
+        const s = atClick('rizieres_village', 14, 6);
+        const path = findPath(s, 12, 6);
+        expect(path[path.length - 1]).toEqual({ x: 12, y: 6 });
+        expect(walk(s, path)).toEqual({ type: 'talk', npcId: 'xiaobao' });
+        expect([s.data.x, s.data.y]).not.toEqual([12, 6]);
     });
 
     test('vers un coffre : la dernière étape l\'ouvre', () => {
@@ -1597,11 +1782,15 @@ describe('déplacement au clic (findPath)', () => {
     });
 
     test('un PNJ ou un coffre n\'est jamais un point de passage', () => {
-        const s = atClick('rizieres', 1, 3);
-        // Chang'e est en (2,3) : aller de (1,3) à (3,3) impose de la contourner
-        const path = findPath(s, 3, 3);
-        expect(path.some(p => p.x === 2 && p.y === 3)).toBe(false);
+        const s = atClick('rizieres_village', 12, 5);
+        // Xiaobao est en (12,6) (mur à l'ouest) : aller de (12,5) à (12,7) impose de la contourner par l'est
+        const path = findPath(s, 12, 7);
+        expect(path.some(p => p.x === 12 && p.y === 6)).toBe(false);
         expect(path.length).toBe(4);
+        // la pierre de voyage est un obstacle comme un PNJ
+        const wp = SCREENS.rizieres_village.waypoint;
+        const w = atClick('rizieres_village', wp.x - 1, wp.y);
+        expect(findPath(w, wp.x + 1, wp.y).some(p => p.x === wp.x && p.y === wp.y)).toBe(false);
     });
 
     test('vers un ennemi : la dernière étape lance le combat', () => {
@@ -1637,31 +1826,33 @@ describe('déplacement au clic (findPath)', () => {
     });
 
     test('la longueur du chemin est minimale (Manhattan quand la voie est libre)', () => {
-        const s = atClick('rizieres', 0, 5);
-        const path = findPath(s, 5, 5);
+        const s = atClick('rizieres_village', 1, 5);
+        const path = findPath(s, 6, 5);
         expect(path).toHaveLength(5);
     });
 
     test('une sortie n\'est franchie que si c\'est la destination', () => {
-        const s = atClick('rizieres', 12, 3);
-        markEnemyDefeated(s, 'sun_1');
-        const toExit = findPath(s, 13, 4);
-        expect(toExit[toExit.length - 1]).toEqual({ x: 13, y: 4 });
-        expect(walk(s, toExit)).toMatchObject({ type: 'transition', to: 'fleuve' });
+        const s = atClick('rizieres_village', 18, 5);
+        const toExit = findPath(s, 19, 6);
+        expect(toExit[toExit.length - 1]).toEqual({ x: 19, y: 6 });
+        expect(walk(s, toExit)).toMatchObject({ type: 'transition', to: 'rizieres_wild' });
         // aller à côté de la sortie ne fait pas changer d'écran
-        const s2 = atClick('rizieres', 12, 3);
-        walk(s2, findPath(s2, 12, 5));
-        expect(s2.data.screenId).toBe('rizieres');
+        const s2 = atClick('rizieres_village', 18, 5);
+        walk(s2, findPath(s2, 18, 7));
+        expect(s2.data.screenId).toBe('rizieres_village');
+        // sanctuaire : la sortie est (fermée par le soleil) est franchissable une fois le soleil abattu
+        const s3 = atClick('rizieres', 12, 3);
+        markEnemyDefeated(s3, 'sun_1');
+        expect(walk(s3, findPath(s3, 13, 4))).toMatchObject({ type: 'transition', to: 'fleuve_village' });
     });
 
-    test('la sortie bloquée (niveau ou soleil vivant) ne fait pas changer d\'écran', () => {
+    test('la sortie fermée (soleil vivant) ne fait pas changer d\'écran ; le niveau, lui, ne bloque jamais', () => {
         const s = atClick('rizieres', 12, 4);
         const path = findPath(s, 13, 4);
         expect(path).toEqual([{ x: 13, y: 4 }]);
         expect(tryMove(s, 1, 0, { playerLevel: 20 })).toMatchObject({ type: 'exitBlocked', reason: 'quest' });
         markEnemyDefeated(s, 'sun_1');
-        expect(tryMove(s, 1, 0, { playerLevel: 1 })).toMatchObject({ type: 'exitBlocked', reason: 'level', minLevel: 2 });
-        expect(s.data.screenId).toBe('rizieres');
-        expect(tryMove(s, 1, 0, { playerLevel: 2 }).type).toBe('transition');
+        expect(tryMove(s, 1, 0, { playerLevel: 1 })).toMatchObject({ type: 'transition', warning: { minLevel: 2 } });   // prévenu, pas bloqué
+        expect(s.data.screenId).toBe('fleuve_village');
     });
 });

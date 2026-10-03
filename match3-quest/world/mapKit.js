@@ -6,7 +6,7 @@
 //  - freeNeighbor(screen, x, y) : première tuile libre autour d'une tuile (point d'apparition devant une pierre de voyage).
 
 const BUILDING_LETTERS = 'ABCDEFGH';
-const ANCHOR_CHARS = '0123456789<>^v';
+const ANCHOR_CHARS = '0123456789<>^viIjklmnopqrstuwxyz'.replace('I', '');   // chiffres, bords (< > ^ v) et lettres i-z (sauf v déjà pris) : 10 + 4 + 16 ancres
 const KNOWN = new Set(['.', '#', '~', '=', 'S', 'W', ...BUILDING_LETTERS, ...BUILDING_LETTERS.toLowerCase(), ...ANCHOR_CHARS]);
 
 // Rectangles [x, y, w, h] à partir d'un ensemble de tuiles : fusion en bandes horizontales puis verticales.
@@ -142,7 +142,9 @@ export function buildZone(spec, helpers) {
         return a;
     };
     const text = helpers.screenText?.(spec.id) || {};
-    const spawn = g.spawn || (g.anchors['<'] && { ...g.anchors['<'] });
+    // Sans « S », on apparaît un pas à l'intérieur de l'entrée « < » (jamais sur la tuile de sortie).
+    const entry = g.anchors['<'];
+    const spawn = g.spawn || (entry && { x: entry.x === 0 ? 1 : entry.x, y: entry.y });
     if (!spawn) throw new Error(`${spec.id} : ni « S » ni « < » pour l'apparition`);
     const screen = {
         id: spec.id, region: spec.region, name: text.name || spec.id, biome: spec.biome || 'paddy',

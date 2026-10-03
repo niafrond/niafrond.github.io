@@ -140,3 +140,6 @@ phoenix_brazier, volcan_chest, zi_bell, fauves_chest, dragon_pearl, mer_chest, c
 ## 7. Hameau (2e village par région, sauf `lune`)
 
 `world/maps/<R>.js` peut aussi exporter `hamlet: { id: '<R>_hamlet', biome, grid, npcs, chests }` : village 16×11 (comme un village : ruelles, 2-3 bâtiments `A`-`H`, PNJ de place, coffres, pierre `W` optionnelle). Il se rattache à la zone sauvage : ancre `^` sur le **bord haut** du hameau et ancre `v` sur le **bord bas** de la wild (sorties créées automatiquement, tuile libre juste à l'intérieur de chaque bord). Ses maisons sont des entrées de `interiors` avec `in: 'hamlet'` (leur lettre de bâtiment est celle de la grille du hameau). Aucun ennemi dans le hameau. La wild doit rester connexe avec l'ancre `v` atteignable sans passer par le gate. Le manifeste complémentaire est `world/manifest2.js` (PNJ/coffres/ennemis supplémentaires de TOUS les écrans, y compris les villages et wilds déjà dessinés : ajouter des ancres/places libres si besoin).
+
+## 8. Ancres supplémentaires
+Outre les chiffres `0`-`9` et `< > ^ v`, les lettres minuscules **`i` à `u` et `w` à `z`** (hors `v`) sont des ancres libres : elles servent exactement comme les chiffres (`at: 'k'`, extrémités de patrouille…). Les minuscules `a`-`h` restent les portes des bâtiments `A`-`H`.
