@@ -1,3 +1,9 @@
+## [2.57.0](https://github.com/niafrond/niafrond.github.io/compare/v2.56.0...v2.57.0) (2026-10-03)
+
+### Features
+
+* **match3-quest:** villages portrait 9:16 agrandis, relecture scénaristique sans spoilers ([#395](https://github.com/niafrond/niafrond.github.io/issues/395)) ([2a2d38a](https://github.com/niafrond/niafrond.github.io/commit/2a2d38ae1fab79272920eb0936f69748dfa538e7))
+
 ## [2.56.0](https://github.com/niafrond/niafrond.github.io/compare/v2.55.0...v2.56.0) (2026-10-03)
 
 ### Features
