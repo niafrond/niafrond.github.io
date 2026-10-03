@@ -691,62 +691,31 @@ function inkStroke(width = 2, color = INK) {
   ctx.stroke();
 }
 
-// ─── Obstacles de terrain (murs) ─────────────────────────────────────────
-// Un segment de mur n'est plus une simple barre hachurée abstraite : il se
-// matérialise en une rangée d'obstacles solides (bornes rondes, socles
-// triangulaires) façon plateau de pinball — pour qu'on identifie au premier
-// coup d'œil ce qui bloque le passage (des bleues ET, désormais, des
-// rouges — cf. engine.js) et où se trouvent les couloirs ouverts entre eux.
-function drawPillarObstacle(cx, cy, r) {
-  ctx.fillStyle = '#454552';
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.fill();
-  inkStroke(2.5);
-  ctx.fillStyle = 'rgba(255,255,255,0.16)';
-  ctx.beginPath();
-  ctx.arc(cx - r * 0.3, cy - r * 0.3, r * 0.42, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(cx, cy, r * 0.62, 0.3, Math.PI * 0.9);
-  ctx.stroke();
-}
-
-function drawWedgeObstacle(cx, cy, s, flip) {
-  const dir = flip ? -1 : 1;
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - s);
-  ctx.lineTo(cx + s * 0.92 * dir, cy + s * 0.7);
-  ctx.lineTo(cx - s * 0.92 * dir, cy + s * 0.7);
-  ctx.closePath();
-  ctx.fillStyle = '#3a3a46';
-  ctx.fill();
-  inkStroke(2.5);
-  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - s);
-  ctx.lineTo(cx - s * 0.92 * dir, cy + s * 0.7);
-  ctx.stroke();
-}
-
-// Tile des obstacles (alternance borne/socle) sur toute la largeur d'un
-// segment de mur, centrés sur la ligne de collision réelle (row.y) — le
-// nombre s'adapte à la largeur disponible plutôt qu'un pas fixe qui
-// déborderait ou laisserait un trou sur les segments étroits.
-function drawObstacleRow(start, end, rowY, seed) {
-  const w = end - start;
-  const step = 32;
-  const n = Math.max(1, Math.round(w / step));
-  const actualStep = w / n;
-  for (let i = 0; i < n; i++) {
-    const cx = start + actualStep * (i + 0.5);
-    const kind = (i + seed) % 2 === 0 ? 'pillar' : 'wedge';
-    if (kind === 'pillar') drawPillarObstacle(cx, rowY, Math.min(13, actualStep * 0.42));
-    else drawWedgeObstacle(cx, rowY + 2, Math.min(15, actualStep * 0.46), (i + seed) % 4 === 1);
-  }
+// ─── Couloirs ─────────────────────────────────────────────────────────────
+// Une piste visible au sol relie les portes ouvertes d'une rangée à la
+// suivante : on voit littéralement le chemin que suivent les mobs (bleus ET
+// rouges, cf. engine.js), plutôt que de décorer les murs eux-mêmes — les
+// murs restent de simples blocs pleins (cf. `draw()`), seule la piste
+// matérialise les couloirs.
+function drawLanePaths() {
+  const rows = [...game.rows].sort((a, b) => a.y - b.y);
+  const topY = BASE.y + BASE.h / 2;
+  const bottomY = CANNON_Y - 8;
+  rows.forEach((row, i) => {
+    const prevY = i === 0 ? topY : (rows[i - 1].y + row.y) / 2;
+    const nextY = i === rows.length - 1 ? bottomY : (row.y + rows[i + 1].y) / 2;
+    for (const gt of row.gateIds.map(id => game.gates[id])) {
+      if (!isGateOpen(gt)) continue; // couloir actuellement fermé (verrou/pulse) : pas de piste
+      const laneW = gt.w * 0.82;
+      roundRect(gt.x - laneW / 2, prevY, laneW, nextY - prevY, 16);
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+      ctx.lineWidth = 2;
+      roundRect(gt.x - laneW / 2, prevY, laneW, nextY - prevY, 16);
+      ctx.stroke();
+    }
+  });
 }
 
 // Petit visage chibi (yeux ronds + joues) pour les unités héroïques.
@@ -937,16 +906,25 @@ function draw() {
   ctx.textBaseline = 'middle';
   ctx.fillText(String(Math.max(0, Math.ceil(game.castleHp))), BASE.x, BASE.y);
 
-  // Murs : tout ce qu'aucune porte ne couvre sur une rangée, matérialisé en
-  // rangée d'obstacles solides (§ drawObstacleRow) — infranchissables pour
-  // les bleues ET les rouges (engine.js), ils forcent à viser un couloir
-  // ouvert (une porte) plutôt que de foncer tout droit.
-  game.rows.forEach((row, rowIdx) => {
+  // Couloirs : piste au sol reliant les portes ouvertes rangée après rangée
+  // (§ drawLanePaths) — dessinée avant les murs pour rester une couche de
+  // sol, sous les blocs et les unités.
+  drawLanePaths();
+
+  // Murs : tout ce qu'aucune porte ne couvre sur une rangée — un bloc plein
+  // et sobre, infranchissable pour les bleues ET les rouges (engine.js), qui
+  // force à viser un couloir ouvert (une porte) plutôt que de foncer tout
+  // droit.
+  for (const row of game.rows) {
     for (const [start, end] of wallSegments(row, game.gates)) {
-      if (end - start < 6) continue;
-      drawObstacleRow(start, end, row.y, rowIdx);
+      if (end - start < 2) continue;
+      const wy = row.y - 16;
+      roundRect(start, wy, end - start, 30, 6);
+      ctx.fillStyle = '#2b2b35';
+      ctx.fill();
+      inkStroke(2.5);
     }
-  });
+  }
 
   // Portes — verrouillée (violet, compteur de sacrifices) ou pulsée fermée
   // (bleu glacé, sablier) se dessinent comme un mur spécial plutôt qu'un
