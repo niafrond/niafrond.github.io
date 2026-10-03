@@ -832,6 +832,47 @@ export function playSfx(eventName, payload = {}) {
                 [0.18, 160, 0.18, 0.95, 'triangle']
             ]);
             break;
+        case 'battleStart': // petit motif de début de combat
+            playPattern([
+                [0,    330, 0.09, 0.8, 'square'],
+                [0.1,  330, 0.09, 0.8, 'square'],
+                [0.2,  440, 0.09, 0.9, 'square'],
+                [0.3,  523, 0.18, 1,   'square'],
+                [0.3,  262, 0.18, 0.5, 'triangle']
+            ]);
+            break;
+        case 'bossStart': // fanfare plus grave et plus longue pour les boss
+            playPattern([
+                [0,    196, 0.16, 0.9, 'sawtooth'],
+                [0.18, 196, 0.16, 0.9, 'sawtooth'],
+                [0.36, 233, 0.16, 0.95, 'sawtooth'],
+                [0.54, 294, 0.16, 1,   'sawtooth'],
+                [0.72, 392, 0.32, 1,   'square'],
+                [0.72, 196, 0.32, 0.7, 'triangle'],
+                [1.1,  370, 0.45, 1,   'square'],
+                [1.1,  185, 0.45, 0.7, 'triangle']
+            ]);
+            break;
+        case 'introJingle': // lent et mystérieux, façon chant du Fusang
+            playPattern([
+                [0,   262, 0.5, 0.6, 'triangle'], [0.6, 330, 0.5, 0.6, 'triangle'],
+                [1.2, 392, 0.5, 0.7, 'triangle'], [1.8, 523, 0.9, 0.8, 'triangle'],
+                [3.5, 392, 0.2, 0.7, 'square'],   [3.8, 392, 0.2, 0.7, 'square'],
+                [4.1, 494, 0.2, 0.8, 'square'],   [4.4, 587, 0.6, 0.9, 'square'],
+                [6.5, 392, 0.3, 0.9, 'square'],   [6.9, 523, 0.3, 0.9, 'square'],
+                [7.3, 659, 0.9, 1,   'square'],   [7.3, 330, 0.9, 0.5, 'triangle']
+            ]);
+            break;
+        case 'endingJingle': // berceuse apaisée
+            playPattern([
+                [0,   392, 0.6, 0.6, 'sine'], [0.7, 440, 0.6, 0.6, 'sine'],
+                [1.4, 523, 0.9, 0.7, 'sine'], [2.6, 440, 0.6, 0.6, 'sine'],
+                [3.3, 392, 0.6, 0.6, 'sine'], [4.0, 330, 1.2, 0.7, 'sine'],
+                [6.0, 392, 0.6, 0.6, 'sine'], [6.7, 523, 0.6, 0.7, 'sine'],
+                [7.4, 659, 1.0, 0.8, 'sine'], [8.8, 523, 0.8, 0.7, 'sine'],
+                [9.8, 392, 1.8, 0.7, 'sine'], [9.8, 196, 1.8, 0.4, 'triangle']
+            ]);
+            break;
         default:
             playPattern([[0, 500, 0.05, 0.6, 'sine']]);
             break;

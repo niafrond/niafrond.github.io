@@ -2335,3 +2335,78 @@ body.dark-mode .tutorial-card {
     line-height: 1.5;
     white-space: nowrap;
 }
+
+/* ── Animations pixel art plein écran (cinematics.js) ───────────────────────── */
+.cine-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    animation: cine-in 0.35s ease-out;
+}
+.cine-overlay.closing { opacity: 0; transition: opacity 0.35s; }
+@keyframes cine-in { from { opacity: 0; } to { opacity: 1; } }
+.cine-canvas {
+    width: min(100vw, calc(100dvh * 16 / 9));
+    height: auto;
+    aspect-ratio: 16 / 9;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+@media (orientation: portrait) {
+    .cine-canvas { width: 100vw; }
+}
+.cine-skip {
+    position: absolute;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    color: #fff;
+    opacity: 0.6;
+    font: 12px "Pixelify Sans", monospace;
+}
+
+/* Dialogue de boss pendant la transition de combat */
+.battle-transition.with-dialog .bt-title { animation: none; opacity: 1; transform: translateY(-14%); }
+.bt-dialog {
+    position: absolute;
+    left: 50%;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    width: min(94vw, 560px);
+    box-sizing: border-box;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 12px;
+    background: #fdf1d0;
+    color: #2a1608;
+    border: 4px solid #1b1030;
+    box-shadow: inset 0 0 0 3px #e0a93a, 0 5px 0 #1b1030;
+    font-family: "Pixelify Sans", monospace;
+    z-index: 3;
+    animation: bt-dialog-in 0.25s steps(4, end);
+}
+.bt-dialog.hero { box-shadow: inset 0 0 0 3px #4fb36a, 0 5px 0 #1b1030; }
+@keyframes bt-dialog-in { from { transform: translate(-50%, 40px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+.bt-dialog-portrait {
+    flex: 0 0 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    background: #1b1030;
+    border: 3px solid #1b1030;
+}
+.bt-dialog-portrait .bt-sprite { width: 52px; height: 52px; filter: none; }
+.bt-dialog-body { flex: 1; min-width: 0; text-align: left; }
+.bt-dialog-name { font-weight: bold; font-size: 14px; color: #a3281b; margin-bottom: 4px; }
+.bt-dialog.hero .bt-dialog-name { color: #1d6b38; }
+.bt-dialog-text { font-size: 16px; line-height: 1.3; min-height: 3.9em; }
+.bt-dialog-next { position: absolute; right: 10px; bottom: 4px; font-size: 12px; animation: bt-next 0.8s steps(2, end) infinite; }
+@keyframes bt-next { 50% { transform: translateY(3px); } }
+@media (prefers-reduced-motion: reduce) { .cine-overlay, .bt-dialog { animation: none; } }
