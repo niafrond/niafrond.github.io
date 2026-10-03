@@ -1,3 +1,10 @@
+## [2.53.0](https://github.com/niafrond/niafrond.github.io/compare/v2.52.0...v2.53.0) (2026-10-03)
+
+### Features
+
+* **match3-quest:** thème jeu rétro appliqué à tout le jeu ([1a767bc](https://github.com/niafrond/niafrond.github.io/commit/1a767bc6e4d0dfff8cd5316f1c0c05f98219e50e))
+* **match3-quest:** univers fantasy chinoise « Hou Yi et les Dix Soleils » ([4162293](https://github.com/niafrond/niafrond.github.io/commit/41622936d3650a75bb829ff9b6dd147664f96809))
+
 ## [2.52.0](https://github.com/niafrond/niafrond.github.io/compare/v2.51.0...v2.52.0) (2026-10-01)
 
 ### Features
