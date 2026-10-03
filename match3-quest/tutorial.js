@@ -66,9 +66,9 @@ const STEPS = [
     },
     {
         step: 2,
-        icon: '☀️',
-        title: 'Frapper les soleils',
-        desc: 'Alignez <strong>3 soleils ardents ☀️ ou plus</strong> pour infliger des dégâts au mannequin ! Les tuiles en surbrillance indiquent un échange qui frappera des soleils.',
+        icon: '💀',
+        title: 'Frapper les crânes',
+        desc: 'Alignez <strong>3 crânes 💀 ou plus</strong> pour infliger des dégâts au mannequin ! Les tuiles en surbrillance indiquent un échange qui frappera des soleils.',
     },
     {
         step: 3,
@@ -86,7 +86,7 @@ const STEPS = [
         step: 5,
         icon: '🏹',
         title: 'Terminer le combat',
-        desc: 'Réduisez les <strong>PV du mannequin à 0</strong> pour remporter la victoire ! Frappez les soleils ☀️, gagnez des flèches 🏹, alignez des gâteaux de lune et lancez vos sorts.',
+        desc: 'Réduisez les <strong>PV du mannequin à 0</strong> pour remporter la victoire ! Frappez les crânes 💀, gagnez des flèches 🏹, alignez des gâteaux de lune et lancez vos sorts.',
     },
 ];
 
@@ -192,6 +192,16 @@ export function quitTutorial() {
  * Initialise les listeners des boutons du tutoriel (à appeler dans init()).
  */
 export function initTutorialUI() {
+    // Bouton replier / déplier : l'aide ne doit jamais gêner l'accès aux boutons
+    const toggleBtn = document.getElementById('tutorial-toggle-btn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            const overlay = document.getElementById('tutorial-overlay');
+            const collapsed = overlay?.classList.toggle('collapsed');
+            toggleBtn.textContent = collapsed ? '+' : '–';
+        });
+    }
+
     // Bouton "Quitter le tutoriel" dans l'overlay
     const quitBtn = document.getElementById('tutorial-quit-btn');
     if (quitBtn) {
@@ -348,7 +358,7 @@ function _completeTutorial() {
 
 const _feedbackMessages = {
     1: '✅ Bravo ! Vous avez échangé deux tuiles !',
-    2: '✅ Excellent ! Les soleils ardents encaissent vos coups !',
+    2: '✅ Excellent ! Les crânes encaissent vos coups !',
     3: '✅ Parfait ! Les gâteaux de lune vous ont donné du mana !',
     4: '✅ Super ! Votre flèche a atteint sa cible !',
 };
@@ -397,7 +407,7 @@ function _clearHooks() {
 
 /**
  * Calcule la paire de tuiles à mettre en surbrillance selon l'étape.
- * – step 2 : cherche un échange qui crée un match de soleils (tuile 'skull')
+ * – step 2 : cherche un échange qui crée un match de crânes (tuile 'skull')
  * – step 3 : cherche un échange qui crée un match de couleur
  * – sinon  : meilleur move disponible (quel que soit le type)
  */

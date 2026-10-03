@@ -465,6 +465,7 @@ function pickAmbientTrack(mood) {
 
 function startAmbientLoop() {
     if (isMusicMuted() || !combatMusicEnabled || !audioPrimed) return;
+    if (activeBattleMusicAudio || battleMusicPending) return; // une piste dédiée à l'ennemi est déjà en cours
     if (!isGameInForeground()) return;
 
     const mood = getEffectiveCombatMood();
@@ -570,7 +571,13 @@ function syncAmbientState() {
  * (via window.TRACKS_LIST). Fallback sur une piste sweet.mp3 aléatoire.
  * Met en pause l'ambiance en cours et la restaure à l'arrêt.
  */
+let battleMusicToken = 0;
+let battleMusicPending = false;
+
 export async function playEnemyBattleMusic(enemy) {
+    // Jeton : si un stop (ou un nouvel appel) survient pendant les `await`, cette piste ne doit pas démarrer.
+    const token = ++battleMusicToken;
+    battleMusicPending = true;
     // Mémorise si une ambiance était active pour pouvoir la restaurer
     ambientWasPlayingBeforeBattle = Boolean(activeAmbientAudio);
 
@@ -588,7 +595,7 @@ export async function playEnemyBattleMusic(enemy) {
         activeBattleMusicAudio = null;
     }
 
-    if (!enemy || isMusicMuted()) return;
+    if (!enemy || isMusicMuted()) { battleMusicPending = false; return; }
 
     // Recherche d'une piste .mp3 par race
     let src = null;
@@ -623,16 +630,20 @@ export async function playEnemyBattleMusic(enemy) {
     console.log(enemy.race )
     console.log('[MUSIQUE] Lecture :', src);
     const audio = await createAudio(src);
+    if (token !== battleMusicToken) { audio.pause(); return; }
+    battleMusicPending = false;
 
     // Volume : les .wav reçoivent un coefficient 0.5 par rapport au volume musique
     const baseVolume = getMusicVolume();
     audio.volume = src.endsWith('.wav') ? clampVolume(baseVolume * 0.5) : clampVolume(baseVolume);
 
-    audio.play().catch(() => {});
     activeBattleMusicAudio = audio;
+    audio.play().catch(() => {});
 }
 
 export function stopEnemyBattleMusic() {
+    battleMusicPending = false;
+    battleMusicToken++; // invalide un démarrage encore en cours de chargement
     if (activeBattleMusicAudio) {
         activeBattleMusicAudio.pause();
         activeBattleMusicAudio.currentTime = 0;

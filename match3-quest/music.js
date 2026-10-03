@@ -556,9 +556,9 @@ const rampOK = (fn) => { try { fn(); } catch (_) { /* paramètre non supporté *
 
 function isForeground() {
     if (typeof document === 'undefined') return true;
-    if (document.hidden) return false;
-    if (typeof document.hasFocus === 'function') return document.hasFocus();
-    return true;
+    // Seul l'onglet masqué coupe la musique : `hasFocus()` est faux dans une iframe / après un clic hors page,
+    // ce qui rendait la musique silencieuse sans raison.
+    return !document.hidden;
 }
 
 // ── Bus : entrée → maître (sec) + réverbe convolutive → compresseur → sortie ──
@@ -906,7 +906,8 @@ function updatePlayer(ctx, p, now, hold) {
 
 function tickInner() {
     const ctx = safe(() => S.env.getContext(), null);
-    if (!ctx || ctx.state === 'suspended' || ctx.state === 'closed') return; // on réessaiera
+    if (ctx && (ctx.state === 'suspended' || ctx.state === 'interrupted')) safe(() => ctx.resume().catch(() => {}));
+    if (!ctx || ctx.state === 'suspended' || ctx.state === 'interrupted' || ctx.state === 'closed') return; // on réessaiera
     if (S.busCtx && S.busCtx !== ctx) hardReset();
     const now = ctx.currentTime;
 

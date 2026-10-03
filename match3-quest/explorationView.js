@@ -780,6 +780,7 @@ export function createExplorationView(cfg) {
         items.sort((a, b) => a.depth - b.depth);
 
         const labelSize = Math.max(11, Math.round(tile * 0.2));
+        const houseMk = X.houseMarkers(session);
         // anneaux dorés sur les cibles de la quête suivie
         X.trackedMarkers(session).forEach(t => {
             let pos = null;
@@ -799,6 +800,12 @@ export function createExplorationView(cfg) {
             switch (it.kind) {
                 case 'building': {
                     drawBuilding(it.b, P(it.b.x, it.b.y), tile, labelSize);
+                    // indicateur de quête : « ! » (quête à prendre) ou « ? » (à rendre / cible de la quête suivie) dans la maison
+                    const hm = houseMk.find(h => h.exit.x === it.b.door.x && h.exit.y === it.b.door.y);
+                    if (hm) {
+                        const top = P(it.b.x + it.b.w / 2, it.b.y);
+                        drawMarker(top.x, top.y - tile * 0.28 - 4 * Math.abs(Math.sin(now / 300)), hm.marker === '❓' ? '?' : '!', tile, 1.35);
+                    }
                     break;
                 }
                 case 'waypoint': {
@@ -922,6 +929,54 @@ export function createExplorationView(cfg) {
                     break;
             }
         });
+        drawQuestCompass(P, vis, tile, pulse, now, labelSize);
+    }
+
+    // Indicateur de direction de la quête suivie : flèche dorée autour du héros, trait pointillé vers la cible
+    // (ou vers la sortie / la porte à prendre quand la cible est dans un autre écran), nom de la destination.
+    function drawQuestCompass(P, vis, tile, pulse, now, labelSize) {
+        const dir = X.questDirection(session);
+        if (!dir) return;
+        const hero = P(vis.px + 0.5, vis.py + 0.5);
+        const dest = P(dir.x + 0.5, dir.y + 0.5);
+        const dx = dest.x - hero.x;
+        const dy = dest.y - hero.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < tile * 1.3) return; // déjà tout près : l'anneau de la cible suffit
+        const ang = Math.atan2(dy, dx);
+        ctx.save();
+        ctx.setLineDash([tile * 0.12, tile * 0.18]);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = `rgba(250,204,21,${(0.28 + 0.12 * pulse).toFixed(3)})`;
+        ctx.beginPath();
+        ctx.moveTo(hero.x + Math.cos(ang) * tile * 1.1, hero.y + Math.sin(ang) * tile * 1.1);
+        ctx.lineTo(dest.x - Math.cos(ang) * tile * 0.4, dest.y - Math.sin(ang) * tile * 0.4);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // flèche autour du héros
+        const r = tile * (0.95 + 0.08 * pulse);
+        ctx.translate(hero.x + Math.cos(ang) * r, hero.y + Math.sin(ang) * r - tile * 0.1);
+        ctx.rotate(ang);
+        ctx.beginPath();
+        ctx.moveTo(tile * 0.26, 0);
+        ctx.lineTo(-tile * 0.12, -tile * 0.2);
+        ctx.lineTo(-tile * 0.04, 0);
+        ctx.lineTo(-tile * 0.12, tile * 0.2);
+        ctx.closePath();
+        ctx.fillStyle = '#facc15';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#2b1b17';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+        ctx.restore();
+        // sortie / porte à prendre : halo + nom de la destination
+        if (dir.kind === 'exit') {
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = `rgba(250,204,21,${(0.55 + 0.4 * pulse).toFixed(3)})`;
+            ctx.strokeRect(dest.x - tile * 0.45, dest.y - tile * 0.45, tile * 0.9, tile * 0.9);
+            drawLabel(dest.x, dest.y - tile * 0.75, `➜ ${dir.label}`, '#fef08a', '#5a3e1b', labelSize);
+        }
     }
 
     const ROOFS = ['#b23a30', '#2f6f73', '#8a5a2b', '#6b4a8a', '#c98a2b', '#3f7d4e', '#a8483a', '#4a6fa5'];
@@ -991,8 +1046,8 @@ export function createExplorationView(cfg) {
     }
 
     // Pastille de quête au-dessus d'un PNJ : « ! » (quête à prendre) ou « ? » (à rendre).
-    function drawMarker(x, y, char, tile) {
-        const r = tile * 0.17;
+    function drawMarker(x, y, char, tile, scale = 1) {
+        const r = tile * 0.17 * scale;
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.fillStyle = char === '?' ? '#38bdf8' : '#facc15';

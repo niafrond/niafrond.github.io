@@ -5,6 +5,7 @@ import {
     markEnemyDefeated, talkToNpc, npcAmbientLines, progressReached, openChest, questStatus, checkAutoQuests, currentObjectiveText,
     encounterFor, enemyLevel, enterScreen, teleportToScreen, resetAfterDefeat, startNewGamePlus,
     isEntityVisible, visibleNpcs, visibleChests, isShielded, isExitLocked, journalEntries, npcMarker, activateWaypoint, fastTravel, waypointList,
+    houseMarkers, screenQuestMarker, questDirection, setTrackedQuest,
     AGGRO_RADIUS, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN, findPath
 } from '../../exploration.js';
 
@@ -970,8 +971,9 @@ describe('histoire complète', () => {
 
     test('le doyen sert de guide du tutoriel : le marqueur de quête et l\'objectif pointent vers lui', () => {
         const s = createSession({});
-        expect(journalEntries(s).map(e => e.quest.id)).toContain('q_sun_1');
-        expect(journalEntries(s).find(e => e.quest.id === 'q_sun_1').status).toBe('available');
+        // une quête non activée (pas encore parlé à son donneur) est masquée du journal
+        expect(journalEntries(s).some(e => e.quest.id === 'q_sun_1')).toBe(false);
+        expect(questStatus(s, s.quests.find(q => q.id === 'q_sun_1'))).toBe('available');
         expect(journalEntries(s).some(e => e.quest.id === 'q_sun_2')).toBe(false);   // verrouillée
     });
 
@@ -1659,8 +1661,8 @@ describe('Nouvelle Partie +', () => {
     test('le journal est vide au départ d\'une Nouvelle Partie +, la progression reste sérialisable', () => {
         const s = endedSession();
         startNewGamePlus(s);
-        expect(journalEntries(s).map(e => e.quest.id).filter(id => !id.startsWith('sq_'))).toEqual(['q_sun_1']);
-        journalEntries(s).forEach(e => expect(['available', 'locked']).toContain(e.status));   // rien n'est en cours ni terminé
+        expect(journalEntries(s)).toEqual([]);   // rien n'est activé : le journal reste vide tant qu'on n'a parlé à personne
+        expect(questStatus(s, s.quests.find(q => q.id === 'q_sun_1'))).toBe('available');
         const copy = createSession(JSON.parse(JSON.stringify(s.data)));
         expect(copy.data.ngPlus).toBe(1);
         expect(copy.data.defeated).toEqual([]);
@@ -1815,14 +1817,13 @@ describe('déplacement au clic (findPath)', () => {
         expect(walk(f, findPath(f, 11, 8))).toMatchObject({ type: 'shielded', enemyId: 'sun_7' });
     });
 
-    test('prend toujours le plus court chemin, même à travers la zone de vigilance d\'un ennemi', () => {
+    test('contourne la zone de vigilance d\'un ennemi plutôt que de la traverser en ligne droite', () => {
         const s = synthSession({ enemies: [enemyDef('g', 3, 1)] });
         const path = findPath(s, 6, 2);
-        // ligne droite (6 pas) alors qu'un détour existerait : le trajet ne cherche pas à éviter l'ennemi
-        expect(path).toHaveLength(6);
-        expect(path.every(p => p.y === 2)).toBe(true);
-        // et le parcours réveille bien l'ennemi (zone de vigilance atteinte)
-        expect(walk(s, path)).toEqual({ type: 'combat', enemyId: 'g' });
+        expect(path.length).toBeGreaterThan(6);   // détour : la ligne droite traverserait l'aura
+        const near = p => Math.max(Math.abs(p.x - 3), Math.abs(p.y - 1)) <= AGGRO_RADIUS;
+        expect(path.some(near)).toBe(false);
+        expect(walk(s, path)).toEqual({ type: 'moved' });
     });
 
     test('la longueur du chemin est minimale (Manhattan quand la voie est libre)', () => {
@@ -1854,5 +1855,80 @@ describe('déplacement au clic (findPath)', () => {
         markEnemyDefeated(s, 'sun_1');
         expect(tryMove(s, 1, 0, { playerLevel: 1 })).toMatchObject({ type: 'transition', warning: { minLevel: 2 } });   // prévenu, pas bloqué
         expect(s.data.screenId).toBe('fleuve_village');
+    });
+});
+
+describe('indicateurs de quête : maisons et direction', () => {
+    const houseOf = (s, npcId) => Object.values(s.screens).find(sc => sc.interior && sc.npcs.some(n => n.id === npcId));
+
+    test('une maison dont un PNJ donne une quête porte un « ! », puis un « ? » quand la quête est à rendre', () => {
+        const s = createSession({});
+        const house = houseOf(s, 'elder_wen');
+        expect(house).toBeTruthy();
+        expect(screenQuestMarker(s, house.id)).toBe('❗');
+        // le doyen est dans une maison du village de départ : la porte de cette maison est signalée
+        const village = s.screens[START_SCREEN];
+        expect(village.exits.some(e => e.door && e.to === house.id)).toBe(true);
+        expect(houseMarkers(s).find(h => h.exit.to === house.id)).toMatchObject({ marker: '❗' });
+        // une maison sans quête n'a pas d'indicateur
+        const quiet = village.exits.filter(e => e.door && !houseMarkers(s).some(h => h.exit.to === e.to));
+        quiet.forEach(e => expect(screenQuestMarker(s, e.to)).toBe(''));
+    });
+
+    test('pas d\'indicateur de direction tant qu\'aucune quête n\'est activée', () => {
+        expect(questDirection(createSession({}))).toBeNull();
+    });
+
+    test('une fois la quête activée, la direction mène vers la porte de la maison puis jusqu\'à la cible', () => {
+        const s = createSession({});
+        talkTo(s, 'elder_wen');
+        expect(questStatus(s, s.quests.find(q => q.id === 'q_sun_1'))).toBe('active');
+        const target = s.screens[s.quests.find(q => q.id === 'q_sun_1').objectives[0] && Object.values(s.screens).find(sc => sc.enemies.some(e => e.id === 'sun_1')).id];
+        travel(s, START_SCREEN);
+        const dir = questDirection(s);
+        expect(dir).toMatchObject({ kind: 'exit' });
+        const here = s.screens[s.data.screenId];
+        expect(here.exits.some(e => e.x === dir.x && e.y === dir.y)).toBe(true);
+        // sur l'écran de la cible, la flèche vise la cible elle-même
+        enterScreen(s, target.id, target.spawn);
+        expect(questDirection(s)).toMatchObject({ kind: 'target' });
+    });
+
+    test('la quête épinglée prime sur la quête principale', () => {
+        const s = createSession({});
+        talkTo(s, 'elder_wen');
+        expect(setTrackedQuest(s, 'q_sun_1')).toBe('q_sun_1');
+        expect(questDirection(s)).not.toBeNull();
+    });
+});
+
+describe('déplacement au clic : évitement des zones de combat', () => {
+    // Écran 9×5 sans obstacle : un ennemi fixe au centre, le héros à gauche. Le plus court chemin droit traverse son aura.
+    function arena(extra = {}) {
+        const base = SCREENS[START_SCREEN];
+        const screen = {
+            ...base, id: START_SCREEN, w: 9, h: 5, obstacles: [], liquids: [], buildings: [], npcs: [], chests: [], exits: [], waypoint: null,
+            spawn: { x: 0, y: 2 },
+            enemies: [{ id: 'arena_foe', x: 4, y: 2, emoji: 'x', name: 'Foe', templateId: 'goblin_saboteur', kind: 'sentinel' }],
+            ...extra
+        };
+        const s = createSession({}, { [START_SCREEN]: screen }, []);
+        s.data.x = 0; s.data.y = 2;
+        return s;
+    }
+    const inAura = (p, ex = 4, ey = 2) => Math.max(Math.abs(p.x - ex), Math.abs(p.y - ey)) <= AGGRO_RADIUS;
+
+    test('le trajet contourne la zone de vigilance quand c\'est possible', () => {
+        const s = arena();
+        const path = findPath(s, 8, 2);
+        expect(path).not.toBeNull();
+        expect(path.some(p => inAura(p))).toBe(false);
+    });
+
+    test('viser l\'ennemi (ou une case de son aura) autorise à entrer dans sa zone', () => {
+        const s = arena();
+        const path = findPath(s, 4, 2);
+        expect(path.at(-1)).toEqual({ x: 4, y: 2 });
+        expect(findPath(s, 3, 2).some(p => inAura(p))).toBe(true);
     });
 });

@@ -47,7 +47,7 @@ const TILE_LABELS = {
     green: 'Gâteau de lune au thé matcha',
     yellow: 'Gâteau de lune au jaune d\'œuf salé',
     purple: 'Gâteau de lune au taro',
-    skull: 'Soleil ardent : dégâts',
+    skull: 'Crâne : dégâts',
     combat: 'Flèche : points de combat',
     joker: 'Pleine lune : joker'
 };
@@ -63,7 +63,7 @@ const MIN_INITIAL_POSSIBLE_MOVES = 8;
 const MAX_BOARD_GENERATION_ATTEMPTS = 120;
 
 // Répartition FIXE des tuiles, identique pour le plateau initial et pour chaque
-// nouvelle ligne qui tombe après un match : ~75 % gâteaux de lune, 17 % flèches, 7 % soleils.
+// nouvelle ligne qui tombe après un match : ~75 % gâteaux de lune, 17 % flèches, 7 % crânes.
 // Le reste (~1 %) est absorbé par les gemmes (dont le joker, très rare).
 const BOARD_DROP_PROBABILITIES = Object.freeze({
     skullProb: 0.07,
@@ -644,15 +644,15 @@ export function checkMatches(forceFullBoard = false){
                 dmg = clampEnemyAttackDamage(dmg, enemy);
             }
             applyDamage(opponent, dmg);
-            log(`☀️ Match ${info.len} soleils : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}`);
+            log(`💀 Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}`);
             // Bonus de tour pour 4+ crânes
             if(info.len>=4){ 
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
-                log(`🎁 Match de ${info.len} soleils : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+                log(`🎁 Match de ${info.len} crânes : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 const isPlayer = currentTurn === 'player';
                 showCombatAnimation(
-                    { icon: '🎁', title: 'TOUR BONUS !', damage: `Match de ${info.len} soleils`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
+                    { icon: '🎁', title: 'TOUR BONUS !', damage: `Match de ${info.len} crânes`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
                     isPlayer
                 );
             }
@@ -860,7 +860,7 @@ export function highlightCombo(indices, info){
         } else if(info.type==='combat'){
             log(`🏹 Combo points de combat x${info.len}`);
         } else if(info.type==='skull'){
-            log(`☀️ Combo soleils x${info.len}`);
+            log(`💀 Combo crânes x${info.len}`);
         }
     } else {
         log(`✨ Combo ${board[indices[0]]}!`);
