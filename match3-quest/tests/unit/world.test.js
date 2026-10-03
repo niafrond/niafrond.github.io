@@ -368,3 +368,30 @@ describe('Grand Monde : jeu', () => {
         expect(rows[0].chestsTotal).toBeGreaterThan(3);
     });
 });
+
+describe('journal et maisons', () => {
+    test('une quête non acceptée n\'apparaît pas au journal ; elle y entre quand on parle au donneur', () => {
+        const session = createSession(null);
+        expect(journalEntries(session).some(e => e.quest.id === 'sq_rice_thief')).toBe(false);
+        enterScreen(session, 'rizieres_village', SCREENS.rizieres_village.spawn);
+        const giver = QUESTS.find(q => q.id === 'q_sun_1').giver;
+        const scr = Object.values(SCREENS).find(s => s.npcs.some(n => n.id === giver));
+        enterScreen(session, scr.id, scr.spawn);
+        talkToNpc(session, giver);
+        expect(journalEntries(session).map(e => e.quest.id)).toContain('q_sun_1');
+    });
+
+    test('entrer dans une maison ne déclenche aucun texte du Narrateur', () => {
+        const session = createSession(null);
+        const village = SCREENS.rizieres_village;
+        const door = village.exits.find(e => e.door);
+        expect(SCREENS[door.to].arrival?.length ?? 0).toBeGreaterThanOrEqual(0);
+        enterScreen(session, village.id, door.arrive);
+        const path = findPath(session, door.x, door.y);
+        let res;
+        for (const step of path) res = tryMove(session, step.x - session.data.x, step.y - session.data.y);
+        expect(res.type).toBe('transition');
+        expect(res.firstVisit).toBe(true);
+        expect(res.arrival).toBeUndefined();
+    });
+});

@@ -970,8 +970,9 @@ describe('histoire complète', () => {
 
     test('le doyen sert de guide du tutoriel : le marqueur de quête et l\'objectif pointent vers lui', () => {
         const s = createSession({});
-        expect(journalEntries(s).map(e => e.quest.id)).toContain('q_sun_1');
-        expect(journalEntries(s).find(e => e.quest.id === 'q_sun_1').status).toBe('available');
+        // une quête n'apparaît au journal qu'une fois acceptée (parlé à son donneur)
+        expect(journalEntries(s)).toHaveLength(0);
+        expect(questStatus(s, quest('q_sun_1'))).toBe('available');
         expect(journalEntries(s).some(e => e.quest.id === 'q_sun_2')).toBe(false);   // verrouillée
     });
 
@@ -1659,8 +1660,7 @@ describe('Nouvelle Partie +', () => {
     test('le journal est vide au départ d\'une Nouvelle Partie +, la progression reste sérialisable', () => {
         const s = endedSession();
         startNewGamePlus(s);
-        expect(journalEntries(s).map(e => e.quest.id).filter(id => !id.startsWith('sq_'))).toEqual(['q_sun_1']);
-        journalEntries(s).forEach(e => expect(['available', 'locked']).toContain(e.status));   // rien n'est en cours ni terminé
+        expect(journalEntries(s)).toHaveLength(0);   // rien n'est accepté : le journal est vide
         const copy = createSession(JSON.parse(JSON.stringify(s.data)));
         expect(copy.data.ngPlus).toBe(1);
         expect(copy.data.defeated).toEqual([]);

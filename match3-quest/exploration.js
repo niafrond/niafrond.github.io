@@ -266,7 +266,8 @@ export function tryMove(session, dx, dy, ctx = {}) {
         enterScreen(session, exit.to, exit.arrive);
         const res = { type: 'transition', from, to: exit.to, firstVisit, door: Boolean(exit.door), events: checkAutoQuests(session) };
         // Texte du Narrateur affiché seulement à la toute première visite de l'écran.
-        if (firstVisit && target.arrival?.length) res.arrival = target.arrival;
+        // pas de texte du Narrateur en entrant dans une maison
+        if (firstVisit && target.arrival?.length && !target.interior) res.arrival = target.arrival;
         if (warning) res.warning = warning;
         return res;
     }
@@ -682,7 +683,7 @@ export { locationHint as questLocationHint };
 export function journalEntries(session) {
     return session.quests
         .map(quest => ({ quest, status: questStatus(session, quest) }))
-        .filter(e => e.status !== 'locked')
+        .filter(e => e.status !== 'locked' && e.status !== 'available')   // une quête n'apparaît qu'une fois acceptée
         .map(e => {
             const target = questTargets(session, e.quest)[0] || null;
             const giverScreen = e.quest.giver ? findNpcScreen(session, e.quest.giver) : null;
