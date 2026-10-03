@@ -26,6 +26,8 @@
 //                      condition d'avancement (id de quête, d'ennemi vaincu ou de coffre) soit remplie.
 // Sorties : `requires` (+ `lockedMessage`) les ferme tant que la condition d'avancement n'est pas remplie.
 
+import { assembleWorld } from './world/index.js';
+
 export const STORY_TITLE = 'La Légende de Hou Yi';
 
 export const STORY_INTRO = [
@@ -46,7 +48,7 @@ export const STORY_ENDING = [
 
 const FENGMENG_SPEAKER = id => ({ name: 'Fengmeng', title: 'Disciple de Hou Yi', enemy: id });
 
-export const SCREENS = {
+const BASE_SCREENS = {
     // ── 1. Rizières Desséchées : maison de Hou Yi, tutoriel, duel d'entraînement de Fengmeng ──────────
     rizieres: {
         id: 'rizieres', region: 'rizieres', name: 'Rizières Desséchées', biome: 'paddy',
@@ -755,20 +757,6 @@ export const SCREENS = {
     }
 };
 
-// Point d'arrivée de la téléportation depuis la carte du monde (une entrée par région).
-export const REGION_ENTRY_SCREEN = {
-    rizieres: 'rizieres',
-    fleuve: 'fleuve',
-    bambous: 'bambous',
-    gobi: 'gobi',
-    tonnerre: 'tonnerre',
-    volcan: 'volcan',
-    fauves: 'fauves',
-    mer: 'mer',
-    fusang: 'fusang',
-    lune: 'lune'
-};
-
 // Niveau minimal du joueur pour ENTRER dans un écran de la région (brume magique sinon).
 export const REGION_UNLOCK_LEVEL = {
     rizieres: 1,
@@ -796,7 +784,7 @@ export const REGION_UNLOCK_LEVEL = {
 // selon l'avancement (id = quête terminée, ennemi vaincu ou coffre ouvert ; la dernière
 // condition remplie l'emporte, sinon `idle`). Un écran peut avoir `arrival: [lignes]`
 // (texte du Narrateur à la première visite).
-export const QUESTS = [
+const BASE_QUESTS = [
     // ── Histoire principale : neuf soleils, Fengmeng, épilogue ───────────────
     {
         id: 'q_sun_1',
@@ -1310,3 +1298,14 @@ export const QUESTS = [
         reward: { gold: 70, fragment: 'Plume de grue' }
     }
 ];
+
+// Monde final : les 10 sanctuaires ci-dessus, précédés de villages et de zones sauvages (world/).
+const WORLD = assembleWorld(BASE_SCREENS, BASE_QUESTS);
+export const SCREENS = WORLD.screens;
+export const QUESTS = WORLD.quests;
+
+// Écran d'arrivée d'une région depuis la carte du monde : son village quand il existe, sinon son sanctuaire.
+export const REGION_ENTRY_SCREEN = Object.fromEntries(
+    ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune']
+        .map(region => [region, SCREENS[`${region}_village`] ? `${region}_village` : region])
+);

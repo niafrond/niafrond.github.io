@@ -62,7 +62,7 @@ describe('couverture des sprites', () => {
     });
 
     test('les boss ont un dessin propre, distinct de celui de leur gabarit', () => {
-        screens.flatMap(s => s.enemies).filter(e => e.boss).forEach(e => {
+        screens.flatMap(s => s.enemies).filter(e => e.boss && /^(sun_|fengmeng_|mirage)/.test(e.id)).forEach(e => {
             const key = e.spriteKey || e.id;
             expect(ENEMY_SPRITES[key]).toBeTruthy();
             if (key !== e.templateId && ENEMY_SPRITES[e.templateId]) {

@@ -1,0 +1,157 @@
+// Assemblage du « Grand Monde » : les 10 sanctuaires de story.js (un Soleil-Boss chacun) sont précédés d'un village
+// plein écran (avec maisons explorables) et d'une zone sauvage à traverser. Voir world/FORMAT.md.
+//
+// assembleWorld(baseScreens, baseQuests) retourne { screens, quests, regionOrder }. Les régions dont le fichier
+// `world/maps/<R>.js` est absent restent inchangées, ce qui permet de livrer le monde région par région.
+
+import { buildZone, arrivalFor, freeNeighbor } from './mapKit.js';
+import { MAPS } from './maps/index.js';
+import { TEXTS } from './text/index.js';
+
+export const REGION_ORDER = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
+
+// Niveau recommandé par région (aligné sur REGION_UNLOCK_LEVEL de story.js) : sert à dimensionner l'XP des quêtes.
+const REGION_LEVEL = { rizieres: 1, fleuve: 2, bambous: 3, gobi: 5, tonnerre: 7, volcan: 9, fauves: 11, mer: 13, fusang: 15, lune: 16 };
+const QUEST_XP_SHARE = { main: 0.6, side: 0.25 };   // part du coût d'un niveau (expérience.js : 2000 x 1,18^(n-1))
+
+// Chaque quête rapporte de l'XP : au moins une fraction du coût d'un niveau de sa région.
+export function questXp(quest, region) {
+    const level = REGION_LEVEL[region] || 1;
+    const levelCost = 2000 * Math.pow(1.18, level - 1);
+    const share = quest.side ? QUEST_XP_SHARE.side : QUEST_XP_SHARE.main;
+    return Math.max(quest.reward?.xp || 0, Math.round(levelCost * share / 10) * 10);
+}
+
+const clone = value => JSON.parse(JSON.stringify(value));
+
+export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXTS) {
+    const screens = clone(baseScreens);
+    const legacyNpcs = {};
+    Object.values(baseScreens).forEach(s => s.npcs.forEach(n => { legacyNpcs[n.id] = clone(n); }));
+    const quests = [...baseQuests];
+    const newQuests = [];
+    const relocated = new Set();
+    const sanctuaryOf = new Set();
+
+    REGION_ORDER.forEach((region, index) => {
+        const map = maps[region];
+        if (!map) return;
+        const text = texts[region] || {};
+        const helpers = {
+            npcDef: id => {
+                const t = text.npcs?.[id];
+                const base = legacyNpcs[id];
+                if (!t && !base) { console.warn(`[world] PNJ sans texte : ${id}`); return { id, name: id, emoji: '🧑', idle: ['…'] }; }
+                return { id, ...(base || {}), ...(t || {}) };
+            },
+            chestDef: id => ({ id, ...(text.chests?.[id] || {}) }),
+            screenText: id => text.screens?.[id] || {}
+        };
+        const prev = REGION_ORDER[index - 1];
+        const sanctuary = screens[region];
+        sanctuaryOf.add(region);
+
+        // Maisons : chaque intérieur est rattaché au village (par défaut) ou au hameau (`in: 'hamlet'`) via sa lettre.
+        const housesOf = zone => {
+            const houses = {};
+            (map.interiors || []).filter(i => (i.in || 'village') === zone)
+                .forEach(i => { houses[i.house] = { to: i.id, name: text.screens?.[i.id]?.name }; });
+            return houses;
+        };
+        const houses = housesOf('village');
+
+        const village = buildZone({
+            ...map.village, region, kind: 'village', houses,
+            exits: [...(map.village.exits || [])]
+        }, helpers);
+        const wild = buildZone({ ...map.wild, region, kind: 'wild' }, helpers);
+
+        // Sorties automatiques de la chaîne : village ⇄ zone sauvage ⇄ sanctuaire, village ⇄ sanctuaire précédent.
+        const addExit = (zone, spec, ch, exit) => {
+            if ((spec.exits || []).some(e => e.at === ch)) return;
+            const a = anchorOf(spec.grid, ch);
+            if (a) zone.exits.push({ ...exit, x: a.x, y: a.y });
+        };
+        if (prev) addExit(village, map.village, '<', { to: prev, label: screens[prev].name });
+        addExit(village, map.village, '>', { to: wild.id, label: wild.name });
+        addExit(wild, map.wild, '<', { to: village.id, label: village.name });
+        const gate = map.wild.gate || {};
+        addExit(wild, map.wild, '>', {
+            to: region, label: sanctuary.name,
+            ...(gate.requires ? { requires: gate.requires, lockedMessage: gate.lockedMessage || text.screens?.[wild.id]?.gateMessage || 'Une force invisible barre la route du sanctuaire.' } : {})
+        });
+
+        // Hameau (2e village de la région) : relié à la zone sauvage par ses ancres `v` (wild, bord bas) et `^` (hameau, bord haut).
+        let hamlet = null;
+        if (map.hamlet) {
+            hamlet = buildZone({ ...map.hamlet, region, kind: 'village', houses: housesOf('hamlet'), exits: [...(map.hamlet.exits || [])] }, helpers);
+            addExit(hamlet, map.hamlet, '^', { to: wild.id, label: wild.name });
+            addExit(wild, map.wild, 'v', { to: hamlet.id, label: hamlet.name });
+            screens[hamlet.id] = hamlet;
+        }
+        screens[village.id] = village;
+        screens[wild.id] = wild;
+        (map.interiors || []).forEach(i => {
+            const parent = (i.in || 'village') === 'hamlet' && hamlet ? hamlet : village;
+            const interior = buildZone({ ...i, region, kind: 'house', biome: 'house', interior: true, exits: [] }, helpers);
+            const a = anchorOf(i.grid, 'v');
+            if (a) interior.exits.push({ x: a.x, y: a.y, to: parent.id, door: false, label: 'Sortie' });
+            screens[i.id] = interior;
+        });
+
+        // Sanctuaire existant : plus de PNJ de village (relogés), ses sorties passent par la zone sauvage / le village suivant.
+        const placedNpcs = [village, wild, ...(hamlet ? [hamlet] : []), ...(map.interiors || []).map(i => screens[i.id])].flatMap(z => z.npcs.map(n => n.id));
+        placedNpcs.forEach(id => relocated.add(id));
+        sanctuary.exits.forEach(exit => {
+            if (prev && exit.to === prev) { exit.to = wild.id; exit.label = wild.name; delete exit.arrive; }
+        });
+        // première région : le sanctuaire n'avait pas de sortie ouest, on en crée une vers la zone sauvage
+        if (!prev && !sanctuary.exits.some(e => e.to === wild.id)) {
+            sanctuary.exits.push({ x: 0, y: sanctuary.spawn.y, to: wild.id, label: wild.name });
+        }
+        // la sortie est du sanctuaire précédent mène désormais au village de cette région
+        if (prev) {
+            screens[prev].exits.forEach(exit => {
+                if (exit.to === region) { exit.to = village.id; exit.label = village.name; delete exit.arrive; }
+            });
+        }
+        if (map.sanctuary?.waypoint) {
+            sanctuary.waypoint = { ...map.sanctuary.waypoint, name: text.waypointName || `Pierre de voyage — ${sanctuary.name}` };
+        }
+        if (text.arrivalSanctuary?.length) sanctuary.arrival = text.arrivalSanctuary;
+        // l'ancien texte d'arrivée de la région passe au village (première visite)
+        if (sanctuary.arrival && !village.arrival) { village.arrival = sanctuary.arrival; delete sanctuary.arrival; }
+        if (text.quests?.length) newQuests.push(...text.quests);
+    });
+
+    // Retire des sanctuaires les PNJ qui ont déménagé.
+    sanctuaryOf.forEach(id => { screens[id].npcs = screens[id].npcs.filter(n => !relocated.has(n.id)); });
+
+    // Tuiles d'arrivée symétriques + point d'apparition devant les pierres de voyage.
+    Object.values(screens).forEach(s => {
+        s.exits.forEach(e => {
+            const target = screens[e.to];
+            if (!target) return;
+            const arrive = arrivalFor(s.id, target);
+            if (arrive && !e.arrive) e.arrive = arrive;
+        });
+        if (s.waypoint) s.waypoint.spot = freeNeighbor(s, s.waypoint.x, s.waypoint.y) || { ...s.spawn };
+    });
+
+    // Quêtes : histoire principale, quêtes secondaires existantes, puis les nouvelles (toutes `side`).
+    quests.push(...newQuests.map(q => ({ side: true, ...q })));
+    const npcRegion = {};
+    Object.values(screens).forEach(sc => sc.npcs.forEach(n => { npcRegion[n.id] = sc.region; }));
+    quests.forEach((q, i) => {
+        quests[i] = { ...q, reward: { ...(q.reward || {}), xp: questXp(q, npcRegion[q.giver] || 'rizieres') } };
+    });
+    return { screens, quests, regionOrder: REGION_ORDER };
+}
+
+function anchorOf(grid, ch) {
+    for (let y = 0; y < grid.length; y++) {
+        const x = grid[y].indexOf(ch);
+        if (x >= 0) return { x, y };
+    }
+    return null;
+}
