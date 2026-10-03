@@ -4,8 +4,30 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hou Yi et les Dix Soleils</title>
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="retro.css">
+<script>
+// Anti-cache : GitHub Pages sert les fichiers avec 10 min de cache et les navigateurs/WebView gardent d'anciens
+// scripts ou feuilles de style avec un index.html neuf. On lit version.js (revalidé) et on suffixe tous les modules
+// et feuilles de style de ?v=<date de build> (import map pour les imports internes).
+(function () {
+    var v = '0';
+    try {
+        var x = new XMLHttpRequest();
+        x.open('GET', '../version.js', false);
+        x.setRequestHeader('Cache-Control', 'no-cache');
+        x.send();
+        var m = /buildDate:\s*'([^']+)'/.exec(x.responseText);
+        if (m) v = m[1].replace(/\D/g, '');
+    } catch (e) { /* hors ligne / file:// : pas de suffixe fiable */ }
+    var map = {};
+    ["board.js", "cheatMode.js", "cinematics.js", "classSpellEffects.js", "classes.js", "constants.js", "enemies.js", "enemyAI.js", "experience.js", "exploration.js", "explorationView.js", "game.js", "items.js", "joker.js", "main.js", "matchMechanics.js", "playerNames.js", "shop.js", "sound.js", "spells.js", "sprites/cn/actors-a.js", "sprites/cn/actors-b.js", "sprites/cn/enemies-1.js", "sprites/cn/enemies-2.js", "sprites/cn/suns.js", "sprites/index.js", "story.js", "tutorial.js", "version.js", "weapons.js", "worldMap.js", "worldMapView.js"].forEach(function (f) { map['./' + f] = './' + f + '?v=' + v; });
+    var im = document.createElement('script');
+    im.type = 'importmap';
+    im.textContent = JSON.stringify({ imports: map });
+    document.head.appendChild(im);
+    document.write('<link rel="stylesheet" href="style.css?v=' + v + '"><link rel="stylesheet" href="retro.css?v=' + v + '">');
+    window.__match3Build = v;
+})();
+</script>
 <link rel="preload" href="fonts/pixelify-sans-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/pixelify-sans-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="manifest" href="manifest.json">
@@ -306,7 +328,8 @@
         }
     });
 </script>
-<script type="module" src="enemyAI.js"></script>
-<script type="module" src="main.js"></script>
+<script>
+document.write('<script type="module" src="enemyAI.js?v=' + window.__match3Build + '"><\/script><script type="module" src="main.js?v=' + window.__match3Build + '"><\/script>');
+</script>
 </body>
 </html>
