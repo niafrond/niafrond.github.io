@@ -1,3 +1,9 @@
+## [2.58.0](https://github.com/niafrond/niafrond.github.io/compare/v2.57.1...v2.58.0) (2026-10-03)
+
+### Features
+
+* **match3-quest:** motifs de tuiles, fond du plateau, musique 100 % générée, jingle de combat ([#397](https://github.com/niafrond/niafrond.github.io/issues/397)) ([6ae72a5](https://github.com/niafrond/niafrond.github.io/commit/6ae72a528c7cbb104260bd946ecbef654a1a769b))
+
 ## [2.57.1](https://github.com/niafrond/niafrond.github.io/compare/v2.57.0...v2.57.1) (2026-10-03)
 
 ### Performance Improvements
