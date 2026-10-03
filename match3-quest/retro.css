@@ -38,35 +38,36 @@
 body.rt {
     --rt-font: 'Rt Digits', 'Pixelify Sans', ui-monospace, 'Courier New', monospace;
     --rt-title: 'Press Start 2P', 'Pixelify Sans', ui-monospace, monospace;
-    --rt-ink: #2b1b17;
-    --rt-brown: #5a3e1b;
-    --rt-cream: #fff8e1;
-    --rt-paper: #fffdf2;
-    --rt-sand: #f3dfa8;
-    --rt-sand-hi: #ffeab0;
-    --rt-gold: #facc15;
+    /* Palette « Chine impériale » : encre et laque rouge, papier de riz, or ; nuit bleue en arrière-plan */
+    --rt-ink: #2a0f10;
+    --rt-brown: #7a1f24;
+    --rt-cream: #fbf1d8;
+    --rt-paper: #fffaf0;
+    --rt-sand: #f0d9a0;
+    --rt-sand-hi: #fbe7b0;
+    --rt-gold: #e8b923;
     --rt-red: #e04848;
     --rt-green: #3fa34d;
     --rt-blue: #3b82c4;
-    --rt-text: #2b1b17;
-    --rt-muted: #6b5a45;
-    --rt-bg: #2f4a7a;
+    --rt-text: #2a0f10;
+    --rt-muted: #6e5648;
+    --rt-bg: #1d2748;
     --rt-bg-dot: rgba(255, 255, 255, 0.06);
     --rt-shadow: rgba(0, 0, 0, 0.45);
-    --rt-hp-back: #4a3a30;
+    --rt-hp-back: #3f2a24;
 }
 
 body.rt.dark-mode {
-    --rt-ink: #0b0814;
-    --rt-brown: #7d5f33;
-    --rt-cream: #2a2438;
-    --rt-paper: #342d47;
-    --rt-sand: #463c63;
-    --rt-sand-hi: #5a4e7d;
-    --rt-gold: #f5c518;
+    --rt-ink: #0a0508;
+    --rt-brown: #8a2a2e;
+    --rt-cream: #2b2230;
+    --rt-paper: #352b3c;
+    --rt-sand: #4a3a58;
+    --rt-sand-hi: #5e4a70;
+    --rt-gold: #f0c030;
     --rt-text: #f4ead0;
     --rt-muted: #bcae92;
-    --rt-bg: #16122a;
+    --rt-bg: #0e1226;
     --rt-bg-dot: rgba(255, 255, 255, 0.04);
     --rt-shadow: rgba(0, 0, 0, 0.6);
     --rt-hp-back: #0f0b1c;
@@ -370,13 +371,31 @@ body.rt .tile {
         0 3px 0 rgba(0, 0, 0, 0.35);
 }
 
-body.rt .tile.red { background: #e63946; }
-body.rt .tile.blue { background: #3a86ff; }
-body.rt .tile.green { background: #3fb950; }
-body.rt .tile.yellow { background: #ffbe0b; }
-body.rt .tile.purple { background: #8f4bd8; }
-body.rt .tile.combat { background: #a7b0c0; }
-body.rt .tile.skull { background: #20202e; }
+/* Les gemmes sont des gâteaux de lune (dessins dans sprites/tiles/, une saveur par couleur de mana) ;
+   le crâne devient un soleil ardent et les épées une flèche. La couleur de fond ne sert que de socle. */
+body.rt .tile {
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 86% 86%;
+}
+body.rt .tile.red { background-color: #f1b7a8; background-image: url('sprites/tiles/tile-red.svg'); }
+body.rt .tile.blue { background-color: #a9d4f2; background-image: url('sprites/tiles/tile-blue.svg'); }
+body.rt .tile.green { background-color: #b8e0a8; background-image: url('sprites/tiles/tile-green.svg'); }
+body.rt .tile.yellow { background-color: #e08a3c; background-image: url('sprites/tiles/tile-yellow.svg'); }
+body.rt .tile.purple { background-color: #d2b6ea; background-image: url('sprites/tiles/tile-purple.svg'); }
+body.rt .tile.combat { background-color: #cfd6e3; background-image: url('sprites/tiles/tile-combat.svg'); }
+body.rt .tile.skull {
+    background-color: #55190f;
+    background-image: url('sprites/tiles/tile-skull.svg');
+    filter: none;
+    color: inherit;
+    text-shadow: none;
+}
+body.rt .tile.joker {
+    background-color: #2b2d5e;
+    background-image: url('sprites/tiles/tile-joker.svg');
+    background-size: 86% 86%;
+}
 
 body.rt .tile.selected {
     outline: 4px solid var(--rt-gold);
@@ -565,3 +584,6 @@ body.rt .battle-result-card { padding: 18px 22px; }
 body.rt .battle-result-loot { list-style: none; padding: 0; margin: 8px 0 0; }
 body.rt .battle-result-loot li { padding: 2px 0; }
 body.rt .battle-result-xp { font-family: var(--rt-title); font-size: 11px; line-height: 1.6; }
+
+/* Carte du monde à dix régions : côte et écume ajustées à des îlots plus petits (cf. LAND_PATH_WIDTH) */
+body.rt .wm-shallows path { stroke-width: 136px; }

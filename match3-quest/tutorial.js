@@ -23,19 +23,19 @@ const TUTORIAL_COMPLETED_KEY = 'match3_tutorial_done';
 
 const TUTORIAL_SPELL = {
     id: TUTO_SPELL_ID,
-    name: 'Éclair du tutoriel',
+    name: 'Flèche d\'entraînement',
     emoji: '🔥',
     color: 'red',
     cost: 6,
     dmg: 6,
     minLevel: 1,
-    description: 'Sort de tutoriel : inflige 6 dégâts de feu.',
+    description: 'Sort de tutoriel : une flèche enflammée qui inflige 6 dégâts de feu.',
 };
 
-// Ennemi tutoriel — très faible, IA aléatoire, aucun sort
+// Ennemi tutoriel — mannequin d'entraînement de l'école de Hou Yi, très faible, IA aléatoire, aucun sort
 export const TUTORIAL_ENEMY = {
-    name: 'Mannequin',
-    raceEmoji: '🤖',
+    name: 'Mannequin d\'entraînement',
+    raceEmoji: '🎯',
     level: 1,
     hp: 25,
     maxHp: 25,
@@ -62,31 +62,31 @@ const STEPS = [
         step: 1,
         icon: '🔄',
         title: 'Déplacer une tuile',
-        desc: 'Cliquez sur une tuile, puis sur une tuile <strong>adjacente</strong> pour les échanger. Un déplacement n\'est valide que s\'il crée un alignement de 3 tuiles identiques ou plus.',
+        desc: 'Bienvenue à l\'école de Hou Yi ! Cliquez sur une tuile, puis sur une tuile <strong>adjacente</strong> pour les échanger. Un échange n\'est valide que s\'il aligne 3 tuiles identiques ou plus.',
     },
     {
         step: 2,
-        icon: '💀',
-        title: 'Match de crânes',
-        desc: 'Alignez <strong>3 crânes 💀 ou plus</strong> pour infliger des dégâts à l\'ennemi ! Les tuiles en surbrillance indiquent un échange qui créera un match de crânes.',
+        icon: '☀️',
+        title: 'Frapper les soleils',
+        desc: 'Alignez <strong>3 soleils ardents ☀️ ou plus</strong> pour infliger des dégâts au mannequin ! Les tuiles en surbrillance indiquent un échange qui frappera des soleils.',
     },
     {
         step: 3,
         icon: '✨',
         title: 'Générer du mana',
-        desc: 'Alignez <strong>3 tuiles colorées identiques</strong> (rouge, bleu, vert, jaune ou violet) pour générer du mana. Le mana est nécessaire pour lancer des sorts puissants !',
+        desc: 'Alignez <strong>3 gâteaux de lune de la même saveur</strong> (rouge, bleu, vert, jaune ou violet) pour générer du mana. Le mana est nécessaire pour lancer des sorts puissants !',
     },
     {
         step: 4,
         icon: '🪄',
         title: 'Lancer un sort',
-        desc: 'Vous avez du mana rouge 🔴 ! Cliquez sur le bouton du sort <strong>"Éclair du tutoriel"</strong> en bas pour l\'utiliser et infliger des dégâts à l\'ennemi.',
+        desc: 'Vous avez du mana rouge 🔴 ! Cliquez sur le bouton du sort <strong>"Flèche d\'entraînement"</strong> en bas pour décocher votre flèche et infliger des dégâts au mannequin.',
     },
     {
         step: 5,
-        icon: '⚔️',
+        icon: '🏹',
         title: 'Terminer le combat',
-        desc: 'Réduisez les <strong>PV de l\'ennemi à 0</strong> pour remporter la victoire ! Utilisez les crânes, les sorts et les tuiles colorées.',
+        desc: 'Réduisez les <strong>PV du mannequin à 0</strong> pour remporter la victoire ! Frappez les soleils ☀️, gagnez des flèches 🏹, alignez des gâteaux de lune et lancez vos sorts.',
     },
 ];
 
@@ -181,7 +181,7 @@ export function quitTutorial() {
     _step = 0;
     _removeTutorialSpell();
     import('./game.js').then(m => {
-        m.log('🚪 Tutoriel quitté. Bonne chance !');
+        m.log('🚪 Tutoriel quitté. Bonne chance, archer !');
     });
 }
 
@@ -247,7 +247,7 @@ function _startTutorialCombat() {
             boardModule.renderBoard();
             updateStats();
             createSpellButtons();
-            log('📚 Tutoriel démarré ! Suivez les instructions dans le panneau en bas à droite.');
+            log('📚 Tutoriel démarré à l\'école de Hou Yi ! Suivez les instructions dans le panneau en bas à droite.');
         });
 
         // Afficher les éléments de combat et basculer sur l'onglet combat
@@ -284,7 +284,7 @@ function _activateStep(step) {
             if ((m.player.mana.red || 0) < 6) {
                 m.player.mana.red = 10;
                 m.updateStats();
-                m.log('🔴 Tutoriel : 10 mana rouge offert pour utiliser votre sort !');
+                m.log('🔴 Tutoriel : 10 mana rouge offert par votre maître pour décocher votre flèche !');
             }
             m.createSpellButtons(); // Mettre à jour l'affichage (bouton actif)
         });
@@ -325,9 +325,9 @@ function _completeTutorial() {
             localStorage.setItem(TUTORIAL_COMPLETED_KEY, '1');
         } catch (_) { /* ignore */ }
 
-        _showFeedbackBanner('🏆 Tutoriel terminé ! Bonne aventure !', null, true);
+        _showFeedbackBanner('🏆 Tutoriel terminé ! Que les flèches de Hou Yi vous guident !', null, true);
         import('./game.js').then(m => {
-            m.log('🏆 Tutoriel terminé ! Vous maîtrisez les bases. À l\'aventure !');
+            m.log('🏆 Tutoriel terminé ! Vous maîtrisez les bases. Les dix soleils vous attendent !');
         });
         _removeTutorialSpell();
     }
@@ -335,9 +335,9 @@ function _completeTutorial() {
 
 const _feedbackMessages = {
     1: '✅ Bravo ! Vous avez échangé deux tuiles !',
-    2: '✅ Excellent ! Les crânes infligent des dégâts !',
-    3: '✅ Parfait ! Vous avez généré du mana !',
-    4: '✅ Super ! Vous avez lancé un sort !',
+    2: '✅ Excellent ! Les soleils ardents encaissent vos coups !',
+    3: '✅ Parfait ! Les gâteaux de lune vous ont donné du mana !',
+    4: '✅ Super ! Votre flèche a atteint sa cible !',
 };
 
 // ─── Hooks par étape ──────────────────────────────────────────────────────
@@ -384,7 +384,7 @@ function _clearHooks() {
 
 /**
  * Calcule la paire de tuiles à mettre en surbrillance selon l'étape.
- * – step 2 : cherche un échange qui crée un match de crânes
+ * – step 2 : cherche un échange qui crée un match de soleils (tuile 'skull')
  * – step 3 : cherche un échange qui crée un match de couleur
  * – sinon  : meilleur move disponible (quel que soit le type)
  */

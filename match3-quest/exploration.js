@@ -6,12 +6,21 @@
 // donc les éviter en faisant le tour. La progression (position, ennemis vaincus, coffres,
 // quêtes) est stockée dans `player.exploration` (JSON sérialisable) ; l'état volatil
 // (positions des patrouilleurs, période de grâce) vit dans `session.rt`.
+//
+// Extensions de données (voir story.js) :
+//  - showWhen / hideWhen (ennemis, PNJ, coffres) : l'entité n'existe que lorsque la condition
+//    d'avancement est remplie (showWhen) / tant qu'elle ne l'est pas (hideWhen) ;
+//  - illusion : au contact ou dans l'aura, l'ennemi se dissipe (événement `illusion`), pas de combat ;
+//  - shieldedBy : boss protégé tant que le groupe d'ennemis n'est pas vaincu (événement `shielded`) ;
+//  - defeatScene : scène jouée au retour sur la carte après la victoire (événement `scene`) ;
+//  - exit.requires : sortie fermée tant que la condition n'est pas remplie ;
+//  - data.ngPlus : compteur de Nouvelle Partie + (niveaux des ennemis augmentés).
 
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
 
 export const AGGRO_RADIUS = 1;
 export const PATROL_STEP_MS = 650;
-export const START_SCREEN = 'village';
+export const START_SCREEN = 'rizieres';
 // Nombre de déplacements pendant lesquels les zones de vigilance sont ignorées après une
 // arrivée sur un écran ou un retour de combat (évite de re-combattre immédiatement).
 export const GRACE_MOVES = 2;
@@ -49,7 +58,8 @@ function defaultData() {
         quests: {},
         visitedScreens: [],
         introSeen: false,
-        ended: false
+        ended: false,
+        ngPlus: 0
     };
 }
 
@@ -59,6 +69,7 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.openedChests = Array.isArray(data.openedChests) ? data.openedChests : [];
     data.visitedScreens = Array.isArray(data.visitedScreens) ? data.visitedScreens : [];
     data.quests = data.quests && typeof data.quests === 'object' ? data.quests : {};
+    data.ngPlus = Number.isInteger(data.ngPlus) && data.ngPlus > 0 ? data.ngPlus : 0;
 
     const enemyIndex = {};
     Object.values(screens).forEach(screen => screen.enemies.forEach(def => { enemyIndex[def.id] = { def, screenId: screen.id }; }));
@@ -124,18 +135,35 @@ export function isEnemyAlive(session, enemyId) {
     return !session.data.defeated.includes(enemyId);
 }
 
+// Une entité (ennemi, PNJ, coffre) n'existe que si sa condition `showWhen` est remplie et que sa
+// condition `hideWhen` ne l'est pas (même sémantique que `progressReached`).
+export function isEntityVisible(session, def) {
+    if (def.showWhen && !progressReached(session, def.showWhen)) return false;
+    if (def.hideWhen && progressReached(session, def.hideWhen)) return false;
+    return true;
+}
+
+export const visibleNpcs = session => currentScreen(session).npcs.filter(n => isEntityVisible(session, n));
+export const visibleChests = session => currentScreen(session).chests.filter(c => isEntityVisible(session, c));
+
 export function aliveEnemies(session) {
     const screen = currentScreen(session);
     return screen.enemies
-        .filter(def => isEnemyAlive(session, def.id))
+        .filter(def => isEnemyAlive(session, def.id) && isEntityVisible(session, def))
         .map(def => ({ def, ...session.rt.enemies[def.id] }));
 }
 
+// Boss protégé (`shieldedBy: groupe`) : tant que tous les membres du groupe ne sont pas vaincus, aucun combat.
+export function isShielded(session, def) {
+    if (!def.shieldedBy) return false;
+    const members = Object.values(session.rt.enemyIndex).filter(e => e.def.group === def.shieldedBy);
+    return members.length > 0 && !members.every(e => session.data.defeated.includes(e.def.id));
+}
+
 export function entityAt(session, x, y) {
-    const screen = currentScreen(session);
-    const npc = screen.npcs.find(n => n.x === x && n.y === y);
+    const npc = visibleNpcs(session).find(n => n.x === x && n.y === y);
     if (npc) return { type: 'npc', npc };
-    const chest = screen.chests.find(c => c.x === x && c.y === y);
+    const chest = visibleChests(session).find(c => c.x === x && c.y === y);
     if (chest) return { type: 'chest', chest, opened: session.data.openedChests.includes(chest.id) };
     const enemy = aliveEnemies(session).find(e => e.x === x && e.y === y);
     if (enemy) return { type: 'enemy', enemy };
@@ -145,7 +173,7 @@ export function entityAt(session, x, y) {
 export function getAuraTiles(session) {
     const screen = currentScreen(session);
     const tiles = new Set();
-    aliveEnemies(session).forEach(e => {
+    aliveEnemies(session).filter(e => !isShielded(session, e.def)).forEach(e => {
         for (let dy = -AGGRO_RADIUS; dy <= AGGRO_RADIUS; dy++) {
             for (let dx = -AGGRO_RADIUS; dx <= AGGRO_RADIUS; dx++) {
                 const x = e.x + dx;
@@ -157,12 +185,40 @@ export function getAuraTiles(session) {
     return tiles;
 }
 
+const DEFAULT_ILLUSION_LINES = [
+    "Votre main traverse le soleil comme une fumée : ce n'était qu'un mirage, qui se dissipe en poussière de lumière."
+];
+const DEFAULT_SHIELD_LINES = [
+    "Un bouclier de flammes protège le soleil : il faut d'abord venir à bout de ses gardiens."
+];
+
+// Un mirage se dissipe : il est marqué vaincu et la vue joue un court dialogue du Narrateur.
+function dissipate(session, def) {
+    if (!session.data.defeated.includes(def.id)) session.data.defeated.push(def.id);
+    return { type: 'illusion', enemyId: def.id, lines: def.illusionLines?.length ? def.illusionLines : DEFAULT_ILLUSION_LINES };
+}
+
+// Résultat d'un contact direct (marcher dans l'ennemi) : mirage, bouclier ou combat.
+function contactEvent(session, def) {
+    if (def.illusion) return dissipate(session, def);
+    if (isShielded(session, def)) {
+        return { type: 'shielded', enemyId: def.id, lines: def.shieldLines?.length ? def.shieldLines : DEFAULT_SHIELD_LINES };
+    }
+    return { type: 'combat', enemyId: def.id };
+}
+
+// Zone de vigilance : un boss protégé n'en a pas ; un vrai combat l'emporte sur un mirage.
 function checkAura(session) {
     if (session.rt.grace > 0) return null;
     const { x, y } = session.data;
-    const hit = aliveEnemies(session).find(e => chebyshev(e.x, e.y, x, y) <= AGGRO_RADIUS);
-    return hit ? { type: 'combat', enemyId: hit.def.id } : null;
+    const hits = aliveEnemies(session)
+        .filter(e => chebyshev(e.x, e.y, x, y) <= AGGRO_RADIUS && !isShielded(session, e.def));
+    const hit = hits.find(e => !e.def.illusion) || hits[0];
+    return hit ? contactEvent(session, hit.def) : null;
 }
+
+// Une sortie est verrouillée tant que sa condition `requires` n'est pas remplie.
+export const isExitLocked = (session, exit) => Boolean(exit.requires) && !progressReached(session, exit.requires);
 
 export function tryMove(session, dx, dy, ctx = {}) {
     const playerLevel = Math.max(1, Math.floor(ctx.playerLevel || 1));
@@ -176,16 +232,22 @@ export function tryMove(session, dx, dy, ctx = {}) {
     if (ent) {
         if (ent.type === 'npc') return { type: 'talk', npcId: ent.npc.id };
         if (ent.type === 'chest') return ent.opened ? { type: 'blocked' } : { type: 'chest', chestId: ent.chest.id };
-        return { type: 'combat', enemyId: ent.enemy.def.id };
+        return contactEvent(session, ent.enemy.def);
     }
     if (isTerrainBlocked(screen, nx, ny)) return { type: 'blocked' };
 
     const exit = screen.exits.find(e => e.x === nx && e.y === ny);
     if (exit) {
         const target = session.screens[exit.to];
+        if (isExitLocked(session, exit)) {
+            return {
+                type: 'exitBlocked', reason: 'quest', label: exit.label, regionName: target.name,
+                message: exit.lockedMessage || `Le chemin vers ${target.name} est fermé pour le moment.`
+            };
+        }
         const minLevel = REGION_UNLOCK_LEVEL[target.region] || 1;
         if (playerLevel < minLevel) {
-            return { type: 'exitBlocked', minLevel, label: exit.label, regionName: target.name };
+            return { type: 'exitBlocked', reason: 'level', minLevel, label: exit.label, regionName: target.name };
         }
         const from = screen.id;
         const firstVisit = !session.data.visitedScreens.includes(exit.to);
@@ -256,8 +318,8 @@ export function findPath(session, tx, ty) {
 
     const key = (x, y) => y * screen.w + x;
     const occupied = new Set();
-    screen.npcs.forEach(n => occupied.add(key(n.x, n.y)));
-    screen.chests.forEach(c => occupied.add(key(c.x, c.y)));
+    visibleNpcs(session).forEach(n => occupied.add(key(n.x, n.y)));
+    visibleChests(session).forEach(c => occupied.add(key(c.x, c.y)));
     aliveEnemies(session).forEach(e => occupied.add(key(e.x, e.y)));
     const exits = new Set(screen.exits.map(e => key(e.x, e.y)));
     const startKey = key(start.x, start.y);
@@ -286,23 +348,27 @@ export function findPath(session, tx, ty) {
     return path.reverse();
 }
 
-export function enemyLevel(def, playerLevel) {
+// Nouvelle Partie + : +3 niveaux pour les soleils et les boss, +1 pour les ennemis normaux, par cycle.
+export function enemyLevel(def, playerLevel, ngPlus = 0) {
     const lvl = Math.max(1, Math.floor(playerLevel || 1));
-    if (def.boss) return Math.max(def.boss.level, lvl);
-    return Math.min(lvl + 1, Math.max(1, lvl + (def.offset || 0)));
+    const plus = Math.max(0, Math.floor(ngPlus || 0));
+    if (def.boss) return Math.max(def.boss.level + 3 * plus, lvl);
+    return Math.min(lvl + 1, Math.max(1, lvl + (def.offset || 0))) + plus;
 }
 
 export function encounterFor(session, enemyId, playerLevel) {
     const entry = session.rt.enemyIndex[enemyId];
     if (!entry) return null;
     const { def } = entry;
+    const level = enemyLevel(def, playerLevel, session.data.ngPlus);
     return {
         enemyId: def.id,
+        spriteKey: def.spriteKey || def.id,
         templateId: def.templateId,
         name: def.name,
         emoji: def.emoji,
-        level: enemyLevel(def, playerLevel),
-        boss: def.boss ? { ...def.boss, level: enemyLevel(def, playerLevel) } : null
+        level,
+        boss: def.boss ? { ...def.boss, level } : null
     };
 }
 
@@ -336,7 +402,10 @@ function startQuest(session, quest) {
 function completeQuest(session, quest) {
     session.data.quests[quest.id] = 'done';
     if (quest.final) session.data.ended = true;
-    return { type: 'questCompleted', quest, lines: quest.complete, reward: quest.reward || {}, gold: quest.reward?.gold || 0 };
+    return {
+        type: 'questCompleted', quest, lines: quest.complete, reward: quest.reward || {}, gold: quest.reward?.gold || 0,
+        ended: Boolean(quest.final)
+    };
 }
 
 // Démarre / valide automatiquement les quêtes sans PNJ, jusqu'à stabilité.
@@ -359,9 +428,32 @@ export function checkAutoQuests(session) {
     return events;
 }
 
+// Victoire sur un ennemi : événement `scene` éventuel (`defeatScene` de la définition), puis quêtes automatiques.
 export function markEnemyDefeated(session, enemyId) {
-    if (!session.data.defeated.includes(enemyId)) session.data.defeated.push(enemyId);
-    return checkAutoQuests(session);
+    const events = [];
+    if (!session.data.defeated.includes(enemyId)) {
+        session.data.defeated.push(enemyId);
+        const scene = session.rt.enemyIndex[enemyId]?.def.defeatScene;
+        if (scene?.lines?.length) events.push({ type: 'scene', speaker: { ...(scene.speaker || {}) }, lines: [...scene.lines] });
+    }
+    events.push(...checkAutoQuests(session));
+    return events;
+}
+
+// Nouvelle Partie + : possible une fois l'épilogue joué. Remet l'histoire à zéro (quêtes, ennemis, coffres,
+// écrans visités), replace le héros au point de départ, garde `introSeen` ; `ngPlus` augmente la difficulté.
+export function startNewGamePlus(session) {
+    const data = session.data;
+    if (!data.ended) return false;
+    data.ngPlus = (data.ngPlus || 0) + 1;
+    data.quests = {};
+    data.defeated = [];
+    data.openedChests = [];
+    data.visitedScreens = [];
+    data.ended = false;
+    const start = session.screens[START_SCREEN];
+    enterScreen(session, START_SCREEN, start.spawn);
+    return true;
 }
 
 export function resetAfterDefeat(session) {
@@ -392,8 +484,7 @@ export function npcAmbientLines(session, npc) {
 }
 
 export function talkToNpc(session, npcId) {
-    const screen = currentScreen(session);
-    const npc = screen.npcs.find(n => n.id === npcId);
+    const npc = visibleNpcs(session).find(n => n.id === npcId);
     if (!npc) return null;
 
     const related = session.quests.filter(q => q.giver === npcId || q.turnIn === npcId);
@@ -415,8 +506,7 @@ export function talkToNpc(session, npcId) {
 }
 
 export function openChest(session, chestId) {
-    const screen = currentScreen(session);
-    const chest = screen.chests.find(c => c.id === chestId);
+    const chest = visibleChests(session).find(c => c.id === chestId);
     if (!chest || session.data.openedChests.includes(chestId)) return null;
     session.data.openedChests.push(chestId);
     const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0 }, ...checkAutoQuests(session)];
@@ -440,14 +530,15 @@ export function currentObjectiveText(session) {
             const obj = quest.objectives.find(o => !objectiveDone(session, o));
             return `🎯 ${quest.title} : ${obj ? obj.text : 'objectif accompli'}`;
         }
-        if (status === 'available' && quest.giver && !quest.autoStart) {
+        if (status === 'available' && quest.giver && !quest.autoStart && !(quest.side && session.data.ended)) {
             const scr = findNpcScreen(session, quest.giver);
             const npc = scr?.npcs.find(n => n.id === quest.giver);
+            if (npc && !isEntityVisible(session, npc)) continue;
             return `💬 Nouvelle quête : parlez à ${npc?.name || 'un PNJ'} (${scr?.name || '?'})`;
         }
     }
     return session.data.ended
-        ? '🏆 La Couronne est reconstituée ! Explorez librement.'
+        ? '🌕 La légende est achevée ! Ouvrez le journal pour une Nouvelle Partie +.'
         : '🧭 Explorez le monde.';
 }
 
