@@ -468,7 +468,7 @@ export default {
         {
           type: "chest",
           target: "ash_urn",
-          text: "Retrouver l'urne de cendre et y déposer la lettre (Sentier des Tiges Cendrées)"
+          text: "Retrouver l'urne de cendre et en rapporter la lettre (Sentier des Tiges Cendrées)"
         }
       ],
       offer: [

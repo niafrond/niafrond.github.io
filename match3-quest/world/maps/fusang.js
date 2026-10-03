@@ -17,6 +17,17 @@ export default {
             '#.DDDD.==.#..EEEEE.#',
             '#.DdDD.==4..#EEeEE9#',
             '#..=============...#',
+            '#..................#',
+            '#.###....==....###.#',
+            '#.#j.....==.....k#.#',
+            '#.###.~~.==.~~.###.#',
+            '#.....~~.==.~~.....#',
+            '#..=============...#',
+            '#..=..#.....#..=...#',
+            '#..=..#.m.n.#..=...#',
+            '#..=..#.....#..=...#',
+            '#..=..###.###..=...#',
+            '#..=============...#',
             '####################'
         ],
         npcs: [
@@ -28,7 +39,11 @@ export default {
             { id: 'star_child_xing', at: '5' }
         ],
         chests: [
-            { id: 'terrace_urn', at: '9', gold: 135, label: 'Urne de la terrasse', emoji: '🏺', openText: '🎁 Une urne dorée posée au pied d\'un mur de terrasse : quelques sous et une odeur de miel.' }
+            { id: 'terrace_urn', at: '9', gold: 135, label: 'Urne de la terrasse', emoji: '🏺', openText: '🎁 Une urne dorée posée au pied d\'un mur de terrasse : quelques sous et une odeur de miel.' },
+            { id: 'fusang_garden_a', at: 'j', gold: 225, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'fusang_garden_b', at: 'k', gold: 225, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'fusang_market_a', at: 'm', gold: 450, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'fusang_market_b', at: 'n', gold: 450, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]
     },
 

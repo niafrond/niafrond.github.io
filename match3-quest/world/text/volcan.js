@@ -15,7 +15,7 @@ export default {
   npcs: {
     potter_rui: { name: 'Rui', title: 'Potier de lave', emoji: '🏺',
       idle: ['Mes vases sont cuits par la montagne elle-même. Je ne fais que les ramasser au bon moment, avec des gants.', 'Un vase raté, c\'est un vase qui a une personnalité. Les miens ont beaucoup de personnalité.'],
-      talk: [{ whenDone: 'sun_6', lines: ['Le sixième soleil est tombé. Le sol est tiède, plus brûlant. Mes vases sortent moins noirs, plus roses. C\'est sans doute le soulagement.'] }] },
+      talk: [{ whenDone: 'sun_6', lines: ['Le sixième soleil est tombé. Le sol est tiède, il n\'est plus brûlant. Mes vases sortent moins noirs, plus roses. C\'est sans doute le soulagement.'] }] },
     bather_fei: { name: 'Grand-père Fei', title: 'Baigneur invétéré', emoji: '🧖',
       idle: ['Rien ne vaut un bain chaud à mon âge. Ni un archer, ni un empereur, ni un élixir d\'immortalité : un bain.', 'L\'autre soir, j\'ai entendu quelqu\'un passer en pestant contre « ce vieux maître ». Je n\'ai pas bougé, de peur de refroidir.'],
       talk: [{ whenDone: 'fengmeng_2', lines: ['Alors c\'était lui ! Le disciple qui vous a tendu une embuscade. Je savais bien que sa voix sentait le soufre. Moi, je reste dans mon bain : les jeunes gens énervent l\'eau.'] }] },
@@ -33,7 +33,7 @@ export default {
       talk: [{ whenDone: 'sun_6', lines: ['Les gorges sont plus calmes depuis que le soleil de magma est tombé. Shan dit que je peux toucher une pierre rouge, maintenant. J\'ai touché. Elle était chaude.'] }] },
     forge_spirit: { name: 'Cendrillon', title: 'Esprit de la forge de lave', emoji: '🔥',
       idle: ['Je suis la dernière braise de la forge. Je garde le secret de l\'enclume, et de ceux qui l\'ont frappée.', 'On m\'appelle Cendrillon, parce que je dors dans les cendres. Un prince viendra m\'y réveiller un jour.'],
-      talk: [{ whenDone: 'sq_cendrillon', lines: ['Dites au vieux Fei que son bain est trop chaud pour mes souvenirs. Le disciple est parti vers l\'est, rageur. Il a dit qu\'il reviendrait « pour l\'élixir ». Je n\'ai rien compris, moi, je suis une braise.'] }] }
+      talk: [{ whenDone: 'sq_cendrillon', lines: ['Dites au vieux Fei que son bain est trop chaud pour mes souvenirs. Le disciple est parti vers l\'ouest, rageur. Il a dit qu\'il reviendrait « pour l\'élixir ». Je n\'ai rien compris, moi, je suis une braise.'] }] }
   },
   chests: {
     shan_ore_box: { label: 'Caisse de minerais', openText: '🎁 Des minerais étiquetés, et une bourse de mineur au fond. Shan appelle ça « le filon personnel ».', emoji: '⛏️', emojiOpened: '⛏️' },
@@ -57,7 +57,7 @@ export default {
       complete: ['Mon vase ! Il est encore tiède, comme un enfant endormi. Il vous revient en partie : ce fragment de lave refroidie est ma meilleure création.'],
       reward: { gold: 155, fragment: 'Lave refroidie', xp: 270 } },
     { id: 'sq_cendrillon', title: 'Le murmure de la forge', chapter: '✦ Quête secondaire — Gorges du Volcan', giver: 'bather_fei', turnIn: 'bather_fei', requires: ['sq_vase_rui'], side: true,
-      objectives: [{ type: 'talk', target: 'forge_spirit', text: 'Interroger Cendrillon, l\'esprit de la forge (coulées rougeoyantes)', lines: ['Un disciple en colère ? Oui, il est passé. Il parlait d\'un vieux maître, d\'un flacon, d\'une lune. Il est reparti vers l\'est, les poings serrés. Moi, je n\'ai pas bougé : j\'étais une braise.'] }],
+      objectives: [{ type: 'talk', target: 'forge_spirit', text: 'Interroger Cendrillon, l\'esprit de la forge (coulées rougeoyantes)', lines: ['Un disciple en colère ? Oui, il est passé. Il parlait d\'un vieux maître, d\'un flacon, d\'une porte close. Il est reparti vers l\'ouest, les poings serrés. Moi, je n\'ai pas bougé : j\'étais une braise.'] }],
       offer: ['Archer, j\'ai entendu Fengmeng passer dans les gorges, en pestant. Il parlait de son maître et d\'un flacon d\'immortalité. Je suis trop vieux pour y aller, et trop sage pour m\'en mêler.', 'L\'esprit de la forge, Cendrillon, a tout vu. Demandez-lui, gentiment : les braises sont susceptibles.'],
       hint: ['Cendrillon, l\'esprit de la forge, se trouve dans les coulées rougeoyantes. Soyez poli : c\'est une braise.'],
       complete: ['Ainsi il convoite l\'élixir… Merci, archer. Gardez cette cendre vive : un souvenir de la forge, pour vos flèches de feu.'],

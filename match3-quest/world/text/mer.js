@@ -6,7 +6,7 @@ export default {
       'On y raconte que le Roi-Dragon écoute aux portes.'] },
     mer_wild: { name: 'Falaises et Criques du Dragon', gateMessage: 'La grotte du sanctuaire est fermée par une porte de corail. Sa clé de marée dort dans un coffre, au fond d\'une crique.', arrival: [
       'Les falaises dominent une mer qui a perdu sa patience. Dans l\'écume, des écailles brillent : le Roi-Dragon n\'est jamais très loin.'] },
-    mer_h_hai: { name: 'Cabane du pêcheur Hai', arrival: ['Des filets réparés mille fois pendent aux poutres, et un portrait de sa barque, plus ressemblant que sa photographie… qui n\'existe pas.'] },
+    mer_h_hai: { name: 'Cabane du pêcheur Hai', arrival: ['Des filets réparés mille fois pendent aux poutres, et un portrait de sa barque, plus ressemblant que la barque elle-même.'] },
     mer_h_longwang: { name: 'Pavillon de l\'envoyé', arrival: ['Un pavillon laqué de bleu : l\'envoyé du Roi-Dragon y reçoit avec une courtoisie humide.'] },
     mer_h_perles: { name: 'Atelier des perles', arrival: ['Des perles de toutes tailles, triées dans des coupelles de nacre. Elles brillent comme des lunes minuscules.'] },
     mer_h_marin: { name: 'Maison du marin Bao', arrival: ['Un hamac, une carte marine et, au mur, un dessin d\'enfant : un petit garçon, un cerf-volant, une mer trop grande.'] },

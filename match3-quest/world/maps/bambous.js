@@ -17,6 +17,17 @@ export default {
             '#.DDDD......#.EEEE.#',
             '#.DdDD.2.#....EeEE##',
             '#9#=============...#',
+            '#..................#',
+            '#.###....==....###.#',
+            '#.#j.....==.....k#.#',
+            '#.###.~~.==.~~.###.#',
+            '#.....~~.==.~~.....#',
+            '#..=============...#',
+            '#..=..#.....#..=...#',
+            '#..=..#.m.n.#..=...#',
+            '#..=..#.....#..=...#',
+            '#..=..###.###..=...#',
+            '#..=============...#',
             '####################'
         ],
         npcs: [
@@ -25,7 +36,11 @@ export default {
             { id: 'scholar_dong', at: '2' }
         ],
         chests: [
-            { id: 'tea_hideout', at: '9', gold: 45, label: 'Cachette de thé', emoji: '🍵', openText: '🎁 Sous une natte brûlée, un pot de thé fêlé… et quelques sous que quelqu\'un avait cachés là.' }
+            { id: 'tea_hideout', at: '9', gold: 45, label: 'Cachette de thé', emoji: '🍵', openText: '🎁 Sous une natte brûlée, un pot de thé fêlé… et quelques sous que quelqu\'un avait cachés là.' },
+            { id: 'bambous_garden_a', at: 'j', gold: 45, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'bambous_garden_b', at: 'k', gold: 45, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'bambous_market_a', at: 'm', gold: 90, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'bambous_market_b', at: 'n', gold: 90, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]
     },
 

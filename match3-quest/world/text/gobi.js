@@ -17,7 +17,7 @@ export default {
       idle: ['L\'eau est sacrée ici. Ne la gaspillez pas, ne la comptez pas, et surtout ne la bénissez pas à voix haute : elle rougit.', 'Chaque goutte a un nom. La dernière s\'appelle Espoir. Je ne lui parle jamais, de peur qu\'elle s\'évapore.'],
       talk: [{ whenDone: 'sun_4', lines: ['Le quatrième soleil n\'est plus. L\'eau de la citerne paraît plus douce. Je jure qu\'elle a souri.'] }] },
     mapmaker_ali: { name: 'Ali', title: 'Cartographe optimiste', emoji: '🗺️',
-      idle: ['Mes cartes sont exactes. Enfin, jusqu\'à ce que la dune bouge. Alors je les corrige. Au pire, je les réécris.', 'Un voyageur m\'a demandé la route de la Lune. Je lui ai dit : « Tout droit, puis à gauche à la lune ». Il a ri. Il avait un arc au dos.'],
+      idle: ['Mes cartes sont exactes. Enfin, jusqu\'à ce que la dune bouge. Alors je les corrige. Au pire, je les réécris.', 'Un voyageur m\'a demandé la route de l\'Occident. Je lui ai dit : « Tout droit, puis à gauche au troisième mirage ». Il n\'a pas ri. Il avait un arc au dos.'],
       talk: [{ whenDone: 'sun_4', lines: ['Le quatrième soleil tombé, mon encre sèche moins vite. J\'ai redessiné toute la carte. Elle est fausse, mais avec plus de style.'] }] },
     camel_baba: { name: 'Baba', title: 'Chameau diplomate', emoji: '🐫',
       idle: ['Pfff. Les humains courent, je marche. Qui arrive le premier ? Moi, et sans me plaindre.', 'Je crache sur ceux qui m\'ennuient. Je ne vous ai pas encore craché dessus, archer : c\'est un compliment.'],

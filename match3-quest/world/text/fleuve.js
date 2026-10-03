@@ -15,7 +15,7 @@ export default {
   npcs: {
     salt_hu: { name: 'Hu', title: 'Marchand de sel', emoji: '🧂',
       idle: ['Sans eau, le sel ne manque pas ! C\'est la seule chose qui prospère ici. On appelle ça une consolation salée.', 'Goûtez ce sel gris : il vient du fond du fleuve, il a goût de regrets et de vieux poisson.'],
-      talk: [{ whenDone: 'sun_2', lines: ['Le deuxième soleil est tombé, et j\'ai senti un peu d\'humidité dans mes tonneaux. Du jamais vu depuis trois ans. Je vous offre une pincée de bonheur en poudre.'] }] },
+      talk: [{ whenDone: 'sun_2', lines: ['Le deuxième soleil est tombé, et j\'ai senti un peu d\'humidité dans mes tonneaux. Du jamais vu depuis trois lunes. Je vous offre une pincée de bonheur en poudre.'] }] },
     scribe_ou: { name: 'Maître Ou', title: 'Écrivain public', emoji: '🖋️',
       idle: ['J\'écris des lettres pour ceux qui ne savent pas, et je lis celles qui n\'étaient pas pour moi. Déformation professionnelle.', 'Un jeune archer est passé me demander un papier à entête impériale. Il avait le regard d\'un homme qui veut quelque chose qu\'on ne lui a pas donné.'],
       talk: [{ whenDone: 'fengmeng_1', lines: ['Votre disciple Fengmeng a écrit une lettre qu\'il n\'a pas envoyée. Je l\'ai lue, bien sûr. Elle disait : « Maître, regardez-moi enfin. » Il n\'a pas signé. Les orgueilleux ne signent pas ce qui les trahit.'] }] },
@@ -30,7 +30,7 @@ export default {
       talk: [{ whenDone: 'sun_2', lines: ['Le fleuve a gargouillé cette nuit. Ma barque a frémi. Elle l\'a senti avant moi.'] }] },
     hua_fleuve: { name: 'Hua', title: 'Colporteuse aux mille babioles', emoji: '🎒',
       idle: ['Tiens, on se revoit ! Le monde est petit quand on marche vite. Une épingle ? Une rumeur ? Les deux ?', 'Je suis venue chercher du sel pour la route du désert. Hu me fait toujours un prix d\'ami, c\'est-à-dire pas du tout.'],
-      talk: [{ whenDone: 'sun_2', lines: ['Je file vers le Gobi avec la caravane. Si tu as des lettres à faire voyager, je suis ta colporteuse.'] }] },
+      talk: [{ whenDone: 'sun_2', lines: ['Je file vers le Gobi avec la caravane. Si vous avez des lettres à faire voyager, je suis votre colporteuse.'] }] },
     carp_jin: { name: 'Jin', title: 'Carpe dorée dans sa flaque', emoji: '🐟',
       idle: ['Blub. Je suis la dernière carpe du coin et la plus mal logée. Mais ma flaque est dorée, et elle me reste.', 'On dit que les carpes qui franchissent la Porte du Dragon deviennent des dragons. Moi, je vise déjà une vraie mare.'],
       talk: [{ whenDone: 'sq_perle_carpe', lines: ['Merci pour la perle, archer. Ma flaque est plus légère, et moi aussi.'] }] }
@@ -55,7 +55,7 @@ export default {
       objectives: [
         { type: 'talk', target: 'carp_jin', text: 'Parler à la carpe Jin (dans sa flaque dorée, dans les méandres)', lines: ['Blub. Une perle ? Oui, au fond de ma flaque. Elle me gêne : trop brillante pour dormir. Prends-la, archer.'] },
         { type: 'chest', target: 'carp_pearl', text: 'Récupérer la perle au fond de la flaque dorée (méandres du fleuve)' }],
-      offer: ['Archer ! Il y a une carpe dorée dans une flaque, au creux des méandres. On dit qu\'elle cache une perle !', 'Moi je suis trop petite pour traverser la vase. Mais toi, tu peux ! Rapporte-moi la perle, et je te prête mes trois coquillages préférés.'],
+      offer: ['Archer ! Il y a une carpe dorée dans une flaque, au creux des méandres. On dit qu\'elle cache une perle !', 'Moi je suis trop petite pour traverser la vase. Mais toi, tu peux ! Rapporte-moi la perle, et je te donne ce que j\'ai de plus précieux.'],
       hint: ['La flaque dorée est au creux des méandres, derrière le village. La carpe Jin te dira où chercher.'],
       complete: ['Une perle ! Elle est plus grosse qu\'un œil de dragon ! Je vais la mettre avec mes coquillages. Tiens, ton cadeau : ce morceau de nacre est tout ce que j\'ai de plus précieux.'],
       reward: { gold: 55, fragment: 'Nacre dorée', xp: 55 } },

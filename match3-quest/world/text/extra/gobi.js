@@ -136,7 +136,7 @@ export default {
         {
           whenDone: "sun_4",
           lines: [
-            "Le sable dit : « Cinq soleils restent. Un seul est sage. » Je ne sais pas ce que cela veut dire."
+            "Le sable dit : « Six soleils restent. Un seul est sage. » Je ne sais pas ce que cela veut dire."
           ]
         }
       ]
@@ -146,14 +146,14 @@ export default {
       title: "Pèlerin égaré",
       emoji: "🧳",
       idle: [
-        "Je cherchais la Lune. Je me suis trompé de direction. Elle est plus loin qu'on ne croit.",
-        "Ma femme est partie là-haut. Je veux lui dire un mot."
+        "Je cherchais le Kunlun, la montagne de la Reine Mère. Je me suis trompé de direction. Il est plus loin qu'on ne croit.",
+        "Ma femme est malade depuis l'hiver. Je veux demander une gorgée d'élixir à la Reine Mère."
       ],
       talk: [
         {
           whenDone: "sun_4",
           lines: [
-            "Un archer m'a montré le chemin. La Lune, c'est vers le haut. Je m'en doutais."
+            "Un archer m'a montré le chemin. Le Kunlun, c'est vers l'ouest. Je m'en doutais."
           ]
         }
       ]
@@ -226,7 +226,7 @@ export default {
     },
     journal_page_gob: {
       label: "Page prise dans le sable",
-      openText: "🎁 Une page à demi ensablée : « J'ai acheté une carte de la route jusqu'à la Lune. Je saurai m'en servir. »",
+      openText: "🎁 Une page à demi ensablée : « J'ai acheté une carte de la route jusqu'au Kunlun. Je saurai m'en servir. »",
       emoji: "📄",
       emojiOpened: "📄"
     }
@@ -470,18 +470,18 @@ export default {
           target: "lost_pilgrim_ren",
           text: "Rejoindre le pèlerin Ren (dunes des Voix Sablées)",
           lines: [
-            "Ma femme a bu un élixir offert par une reine… C'est ce qu'on m'a dit. Elle est montée vers la Lune. Je voulais lui dire que je l'ai attendue."
+            "Ma femme est malade depuis l'hiver. On dit que la Reine Mère de l'Occident garde un élixir de longue vie. Je voulais lui en demander une gorgée, une seule."
           ]
         }
       ],
       offer: [
-        "Un homme errant demande la route de la Lune. Il est seul et perdu. Allez le voir, archer. Lili le fennec vous guidera."
+        "Un homme errant demande la route du Kunlun, chez la Reine Mère. Il est seul et perdu. Allez le voir, archer. Lili le fennec vous guidera."
       ],
       hint: [
         "Lili est dans les dunes. Le pèlerin n'est pas loin, près d'une dune en forme d'oreille."
       ],
       complete: [
-        "Ren pleure en silence. « Si vous la croisez là-haut, dites-lui qu'un homme l'a attendue. » Je lui promets, archer. Mais c'est sans doute à vous de le faire."
+        "Ren pleure en silence. « Si vous croisez la Reine Mère, dites-lui qu'un homme a marché jusqu'ici pour une gorgée. » Je lui promets, archer. Mais c'est sans doute à vous de le faire."
       ],
       reward: {
         gold: 110,
@@ -545,13 +545,13 @@ export default {
         }
       ],
       offer: [
-        "J'ai vendu à un jeune archer une carte de la route de la Lune. Je ne savais pas qu'il en ferait… ce qu'il en fera. Une page s'est envolée dans le sable."
+        "J'ai vendu à un jeune archer une carte de la route du Kunlun. Je ne savais pas qu'il en ferait… ce qu'il en fera. Une page s'est envolée dans le sable."
       ],
       hint: [
         "La page est ensablée à moitié dans les dunes. Cherchez un coin de papier qui dépasse."
       ],
       complete: [
-        "« J'ai acheté une carte de la route jusqu'à la Lune. Je saurai m'en servir. » Ali blêmit. Il griffonne : « Retiens-le, archer. »"
+        "« J'ai acheté une carte de la route jusqu'au Kunlun. Je saurai m'en servir. » Ali blêmit. Il griffonne : « Retiens-le, archer. »"
       ],
       reward: {
         gold: 90,

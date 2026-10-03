@@ -8,7 +8,7 @@ Chaque **région** (rizieres, fleuve, bambous, gobi, tonnerre, volcan, fauves, m
                                        └─► maisons explorables : <R>_h_<nom> (intérieurs)
 ```
 
-* `<R>_village` : **village plein écran** (20×13 tuiles), zone sûre (aucun ennemi), 4 à 6 maisons enterrables, PNJ sur la place,
+* `<R>_village` : **village plein écran 9:16** (20×24 tuiles ; lune 16×22 ; rangées 12 à 22 = quartier sud : ancres j k m n réservées aux 4 coffres de jardin et de marché), zone sûre (aucun ennemi), 4 à 6 maisons enterrables, PNJ sur la place,
   coffres, une **pierre de voyage** (voyage rapide).
 * `<R>_wild` : zone sauvage 18×12 que l'on traverse pour atteindre le sanctuaire : ennemis, coffres, mini-boss ou énigme qui
   garde la sortie vers le sanctuaire (`requires`), pierre de voyage de mi-parcours.

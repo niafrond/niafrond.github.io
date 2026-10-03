@@ -70,6 +70,7 @@ Niveaux des soleils (`boss.level`, en pratique ≥ niveau du joueur) : `sun_1` 3
 - **Secondaires** (`side: true`, jamais requises) : 1 à 2 par région, donneur parmi les PNJ de la région ; elles rapportent
   un **composant de flèche** (champ `reward.fragment`, texte libre) tel que « Eau sacrée », « Vent céleste »,
   « Pierre de glace », « Plume de grue », « Écaille de dragon », « Cendre de phénix »… Ennemis nommés = `permanent: true`.
+- Exception assumée : le passage vers la cime du Fusang est gardé par la quête annexe `sq_sceau_racines` (les trois morceaux du sceau de la Reine Mère) ; c'est la seule annexe obligatoire.
 - Les quêtes principales ne dépendent que de la progression linéaire (les soleils précédents) ; les quêtes secondaires sont
   facultatives. Le doyen `elder_wen` délivre la première mission (ordre de l'empereur Yao) ; les suivantes démarrent
   automatiquement ou par un PNJ de la région (au choix du scénariste), toujours cohérentes avec le texte.

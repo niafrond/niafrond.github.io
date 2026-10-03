@@ -570,9 +570,11 @@ export function talkToNpc(session, npcId) {
         events.push(...checkAutoQuests(session));
         return { type: 'dialog', npc, lines, events };
     }
+    // Une réplique d'avancement du PNJ (`talk` + `whenDone`) l'emporte sur le simple indice d'une quête annexe en cours.
+    const ambient = npcAmbientLines(session, npc);
     const active = withStatus.find(q => (q.status === 'active' || q.status === 'ready') && q.quest.hint?.length);
-    if (active) return { type: 'dialog', npc, lines: active.quest.hint, events: [] };
-    return { type: 'dialog', npc, lines: npcAmbientLines(session, npc), events: [] };
+    if (active && !(active.quest.side && ambient !== npc.idle)) return { type: 'dialog', npc, lines: active.quest.hint, events: [] };
+    return { type: 'dialog', npc, lines: ambient, events: [] };
 }
 
 export function openChest(session, chestId) {

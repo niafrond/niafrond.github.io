@@ -102,7 +102,7 @@ export default {
         {
           whenDone: "sun_2",
           lines: [
-            "Mon maître a souri en regardant l'horizon. C'est la première fois en deux ans."
+            "Mon maître a souri en regardant l'horizon. C'est la première fois depuis des semaines."
           ]
         }
       ]
@@ -113,7 +113,7 @@ export default {
       emoji: "🔮",
       idle: [
         "Je vois l'avenir ! Hélas, il est aussi sec que le présent.",
-        "Une rumeur dans mes cartes : un disciple trahira son maître pour une fiole. Je ne dis pas qui. Je le sais, c'est tout."
+        "Une rumeur dans mes cartes : un disciple jaloux fera pleurer son maître. Je ne dis pas qui. Je le sais, c'est tout."
       ],
       talk: [
         {
@@ -214,7 +214,7 @@ export default {
     },
     barge_strongbox: {
       label: "Coffre du capitaine",
-      openText: "🎁 Le coffre du capitaine Lo : un trésor modeste, une lettre jaunie, un nœud de corde.",
+      openText: "🎁 Le coffre du capitaine Lo : un trésor modeste, une lettre jaunie et un vieux compas de cuivre.",
       emoji: "🧰",
       emojiOpened: "🧰"
     },
@@ -246,7 +246,7 @@ export default {
           target: "goose_dagong",
           text: "Parler à l'oie Dagong (Écluse-aux-Oies)",
           lines: [
-            "Hon ! Ouvre l'œil : le nid est sous la passerelle. Ne touche pas aux œufs, mais prends la bourse qui dort dessous."
+            "Hon ! Ouvrez l'œil : le nid est sous la passerelle. Ne touchez pas aux œufs, mais prenez la bourse qui dort dessous."
           ]
         },
         {

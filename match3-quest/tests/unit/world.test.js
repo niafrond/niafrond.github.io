@@ -104,9 +104,9 @@ describe('Grand Monde : cartes', () => {
         });
     });
 
-    test('villages plein écran (20x13, lune 16x11), wild 18x12, intérieurs petits', () => {
+    test('villages portrait plein écran 9:16 (20x24, lune 16x22), hameaux 16x11, wild 18x12, intérieurs petits', () => {
         screens.forEach(s => {
-            if (s.kind === 'village') expect([s.w, s.h]).toEqual(s.id.endsWith('_hamlet') || s.region === 'lune' ? [16, 11] : [20, 13]);
+            if (s.kind === 'village') expect([s.w, s.h]).toEqual(s.id.endsWith('_hamlet') ? [16, 11] : s.region === 'lune' ? [16, 22] : [20, 24]);
             if (s.kind === 'wild') expect([s.w, s.h]).toEqual([18, 12]);
             if (s.id.endsWith('_hamlet')) expect(s.exits.some(e => e.to === `${s.region}_wild`)).toBe(true);
             if (s.interior) { expect(s.w).toBeLessThanOrEqual(12); expect(s.h).toBeLessThanOrEqual(8); }

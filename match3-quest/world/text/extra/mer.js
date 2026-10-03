@@ -61,7 +61,7 @@ export default {
       title: "Mouette bavarde",
       emoji: "🕊️",
       idle: [
-        "Criii ! Du pain ! Non ? Une frite ? Non plus ? Vous êtes nul.",
+        "Criii ! Du pain ! Non ? Un beignet ? Non plus ? Vous êtes nul.",
         "Je vois tout d'en haut. Les amoureux, les voleurs, et le dernier poisson."
       ],
       talk: [
@@ -95,7 +95,7 @@ export default {
       title: "Saunier",
       emoji: "🧂",
       idle: [
-        "Le sel naît de la mer et du soleil. Les soleils étaient mes meilleurs associés, hélas. Maintenant je n'en ai qu'un.",
+        "Le sel naît de la mer et du soleil. Les soleils étaient mes meilleurs associés, hélas. Depuis qu'ils s'emballent, mon sel cuit sur place.",
         "Mes salines sont blanches, la mer est bleue, mes comptes sont rouges."
       ],
       talk: [
@@ -153,7 +153,7 @@ export default {
         {
           whenDone: "sun_8",
           lines: [
-            "Une chanson nouvelle me vient : « Neuf soleils sont tombés, un seul veille ». Ça a de la gueule."
+            "Une chanson nouvelle me vient : « Huit soleils sont tombés, la mer respire ». Ça a de la gueule."
           ]
         }
       ]
@@ -180,7 +180,7 @@ export default {
       title: "Poulpe cuisinier",
       emoji: "🐙",
       idle: [
-        "Huit bras, huit casseroles ! Je fais la meilleure bouillabaisse des abysses.",
+        "Huit bras, huit casseroles ! Je fais la meilleure soupe de poisson des abysses.",
         "Je suis à cran : on m'a volé ma louche en bois. Le coupable aura huit coups de louche."
       ],
       talk: [
@@ -318,7 +318,7 @@ export default {
         "L'épave est au bout des criques du Dragon. Le trésor est sous un amas d'algues."
       ],
       complete: [
-        "Le clou d'or ! Mon navire peut naviguer ! Je vous baptise « premier passager ». Tenez, un morceau du mât."
+        "Le clou d'or ! Mon navire peut naviguer ! Je vous baptise « premier passager ». Tenez, un second clou d'or, pour vos flèches."
       ],
       reward: {
         gold: 200,

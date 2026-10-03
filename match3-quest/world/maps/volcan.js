@@ -17,6 +17,17 @@ export default {
             '#.DDDD......~.EEEE##',
             '#.DdDD.4.#..~.EeEE.#',
             '#9#=============...#',
+            '#..................#',
+            '#.###....==....###.#',
+            '#.#j.....==.....k#.#',
+            '#.###.~~.==.~~.###.#',
+            '#.....~~.==.~~.....#',
+            '#..=============...#',
+            '#..=..#.....#..=...#',
+            '#..=..#.m.n.#..=...#',
+            '#..=..#.....#..=...#',
+            '#..=..###.###..=...#',
+            '#..=============...#',
             '####################'
         ],
         npcs: [
@@ -28,7 +39,11 @@ export default {
             { id: 'courier_tong', at: '5' }
         ],
         chests: [
-            { id: 'basalt_pot', at: '9', gold: 90, label: 'Pot de basalte enfoui', emoji: '🏺', openText: '🎁 Un pot de basalte encore tiède, rempli de pièces noircies par la suie.' }
+            { id: 'basalt_pot', at: '9', gold: 90, label: 'Pot de basalte enfoui', emoji: '🏺', openText: '🎁 Un pot de basalte encore tiède, rempli de pièces noircies par la suie.' },
+            { id: 'volcan_garden_a', at: 'j', gold: 135, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'volcan_garden_b', at: 'k', gold: 135, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'volcan_market_a', at: 'm', gold: 270, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'volcan_market_b', at: 'n', gold: 270, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]
     },
 

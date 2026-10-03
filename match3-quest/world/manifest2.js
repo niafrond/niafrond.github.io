@@ -188,7 +188,7 @@ export const MANIFEST2 = {
         giver: "pigeon_zhao",
         turnIn: "pigeon_zhao",
         chain: null,
-        summary: "Un pigeon voyageur s'est égaré avec un message d'importance. Cherchez-le du côté de l'étang puis du marais.",
+        summary: "Un pigeon voyageur s'est égaré avec un message d'importance. Cherchez-le du côté du marais puis de l'étang.",
         objectives: [
           {
             type: "talk",
@@ -300,20 +300,16 @@ export const MANIFEST2 = {
         id: "sq_riz_gateau",
         title: "Les lanternes de Chang'e",
         giver: "change",
-        turnIn: "change",
+        turnIn: "miller_gao",
         chain: null,
         requires: [
           "q_sun_1"
         ],
-        summary: "Chang'e prépare des lanternes pour la prochaine pleine lune, mais il lui faut de la farine et de la lumière. Aidez-la.",
+        summary: "Chang'e prépare des lanternes pour la prochaine pleine lune, mais il lui faut de la farine et de la lumière. Rapportez une jarre de lucioles au meunier Gao.",
         objectives: [
           {
             type: "chest",
             target: "firefly_jar"
-          },
-          {
-            type: "talk",
-            target: "miller_gao"
           }
         ]
       },
@@ -958,7 +954,7 @@ export const MANIFEST2 = {
         giver: "snake_qing",
         turnIn: "snake_qing",
         chain: null,
-        summary: "Dame Qing veut déposer une lettre d'amour dans une urne ancienne. Elle a besoin d'un remède, puis d'un archer.",
+        summary: "Dame Qing veut rouvrir une urne ancienne où dort une lettre d'amour. Elle a besoin d'un remède, puis d'un archer.",
         objectives: [
           {
             type: "talk",
@@ -1289,7 +1285,7 @@ export const MANIFEST2 = {
         giver: "guide_dawa",
         turnIn: "lost_pilgrim_ren",
         chain: null,
-        summary: "Un pèlerin égaré dans les dunes cherche la route de la Lune. Il se fie au fennec Lili.",
+        summary: "Un pèlerin égaré dans les dunes cherche la route du Kunlun, pour demander un élixir à la Reine Mère. Il se fie au fennec Lili.",
         objectives: [
           {
             type: "talk",
@@ -1325,7 +1321,7 @@ export const MANIFEST2 = {
         giver: "mapmaker_ali",
         turnIn: "mapmaker_ali",
         chain: "sq_journal_3",
-        summary: "Ali se souvient d'un jeune archer qui lui a acheté une carte de la Lune. Une page du carnet traîne dans le sable.",
+        summary: "Ali se souvient d'un jeune archer qui lui a acheté une carte de la route du Kunlun. Une page du carnet traîne dans le sable.",
         objectives: [
           {
             type: "chest",
@@ -1926,7 +1922,7 @@ export const MANIFEST2 = {
         giver: "bath_mu",
         turnIn: "bath_mu",
         chain: null,
-        summary: "Un poisson de lave a atterri dans les bains. Rapportez-le chez lui avec une escorte douce.",
+        summary: "Un poisson de lave a pris goût aux bains. Parlez-lui, puis ouvrez le coffre au fond du bassin.",
         objectives: [
           {
             type: "talk",
@@ -2239,7 +2235,7 @@ export const MANIFEST2 = {
         giver: "eagle_boy_temur",
         turnIn: "eagle_boy_temur",
         chain: null,
-        summary: "L'aigle de Temur est parti et a laissé sa bague dans les hautes herbes. Allez-la chercher.",
+        summary: "L'aigle de Temur est parti et a laissé sa bague au perchoir du campement. Allez la chercher.",
         objectives: [
           {
             type: "visit",
@@ -2581,7 +2577,7 @@ export const MANIFEST2 = {
         giver: "singer_hailing",
         turnIn: "singer_hailing",
         chain: null,
-        summary: "Hailing compose une chanson du port. Il lui manque trois couplets : le pêcheur, l'envoyé et la petite Mi.",
+        summary: "Hailing compose une chanson du port. Elle cherche trois couplets : le pêcheur, l'envoyé et la petite Mi.",
         objectives: [
           {
             type: "talk",
@@ -3000,7 +2996,7 @@ export const MANIFEST2 = {
       },
       {
         id: "moon_ferryman_yin",
-        name: "Vieux Yin",
+        name: "Vieux Shen",
         title: "Passeur d'argent",
         emoji: "⛵",
         where: "place",

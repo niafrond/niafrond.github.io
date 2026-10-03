@@ -39,8 +39,8 @@ export const STORY_INTRO = [
 ];
 
 export const STORY_ENDING = [
-    "Le dernier jour a été long. Hou Yi gravit seul le sentier du pic, une corbeille de gâteaux de lune au bras : au haricot rouge, au taro, au thé vert, ceux que Chang'e pétrissait pour lui chaque aube, avant qu'il ne parte.",
-    "Au sommet, la pierre est blanche et fraîche. Il dispose les gâteaux sur l'autel, un à un, comme elle le faisait, puis il s'assoit. Au-dessus de lui, la pleine lune est si grande qu'on croirait pouvoir la toucher du bout de l'arc.",
+    "Le dernier jour a été long. Hou Yi ramasse la corbeille de gâteaux de lune et s'avance seul vers l'autel du pic : au haricot rouge, au taro, au thé vert, ceux que Chang'e pétrissait pour lui chaque aube, avant qu'il ne parte.",
+    "Sur l'autel, la pierre est blanche et fraîche. Il dispose les gâteaux sur l'autel, un à un, comme elle le faisait, puis il s'assoit. Au-dessus de lui, la pleine lune est si grande qu'on croirait pouvoir la toucher du bout de l'arc.",
     "Un seul soleil traverse désormais le ciel, et la Terre a de nouveau des jours et des nuits. Les rizières reverdissent, le fleuve gonfle, les villages allument des lanternes pour la fête d'automne. Hou Yi n'entend plus que le vent.",
     "Sur le disque de la lune, une silhouette de lumière passe, une main levée, très lentement. Hou Yi ne dit rien. Il lève la sienne. Chaque année, à la pleine lune d'automne, les hommes poseront des gâteaux de lune sur leurs toits, et cette nuit-là, quelqu'un, là-haut, leur sourira.",
     "Ainsi s'achève la légende de Hou Yi. Mais une légende se raconte toujours une fois de plus : une Nouvelle Partie + vous attend, où les soleils se lèveront plus ardents."
@@ -82,7 +82,7 @@ const BASE_SCREENS = {
                       "Je regarde parfois la fiole d'élixir sur l'autel des ancêtres. La Reine Mère l'a dit : une gorgée pour vivre longtemps, la fiole entière pour monter au ciel. Nous la garderons pour nos vieux jours, quand nous aurons envie de voir la terre de plus haut."
                   ] },
                   { whenDone: 'fengmeng_2', lines: [
-                      "Fengmeng est passé hier, la poussière de l'Occident sur ses bottes. Il n'a pas voulu de thé. Il a demandé si l'élixir était toujours sur l'autel. J'ai répondu que oui… et il a souri. Je n'aime pas ce sourire."
+                      "Fengmeng est passé ce matin, la poussière de l'Occident et la cendre des gorges sur ses bottes. Il n'a pas voulu de thé. Il a demandé si l'élixir était toujours sur l'autel. J'ai répondu que oui… et il a souri. Je n'aime pas ce sourire."
                   ] },
                   { whenDone: 'sun_6', lines: [
                       "Six soleils… Mon archer, ta main tremble sur ton arc, même quand tu dors. Rentre vite.",
@@ -439,7 +439,7 @@ const BASE_SCREENS = {
             { id: 'miner_shan', x: 3, y: 7, name: 'Shan', title: 'Mineur', emoji: '⛏️',
               idle: [
                   "Cinquante ans sous terre, et jamais rien d'aussi chaud ! Les veines de cinabre sont à nu, mais personne ne peut en approcher.",
-                  "Un jeune archer est passé tout à l'heure, il vous attend au défilé, l'arc tendu. Un garçon qui a faim, voilà ce que j'ai vu. Un garçon qui a faim."
+                  "Un jeune archer est passé tout à l'heure, l'arc tendu, vers le défilé. Un garçon qui a faim, voilà ce que j'ai vu. Un garçon qui a faim."
               ],
               talk: [
                   { whenDone: 'sq_ore', lines: [
@@ -452,7 +452,7 @@ const BASE_SCREENS = {
             { id: 'priestess_yan', x: 3, y: 2, name: 'Yan', title: 'Prêtresse du feu repentie', emoji: '👩‍🦰',
               idle: [
                   "Autrefois, j'allumais un brasero à l'aube pour saluer les soleils. Je croyais qu'ils étaient des dieux. Ils n'étaient que des enfants capricieux.",
-                  "Je connais ce regard, celui de l'archer qui vous guette : un garçon qui croit que le monde lui doit quelque chose. J'ai eu ce regard, à seize ans, devant l'autel d'un soleil."
+                  "Je connais ce regard, celui de l'archer pressé qui vous suit depuis les rizières : un garçon qui croit que le monde lui doit quelque chose. J'ai eu ce regard, à seize ans, devant l'autel d'un soleil."
               ],
               talk: [
                   { whenDone: 'sq_ember', lines: [
@@ -645,7 +645,7 @@ const BASE_SCREENS = {
             { id: 'crane_envoy', x: 3, y: 2, name: 'La Grue', title: 'Messagère de la Reine Mère', emoji: '🦢',
               idle: [
                   "Je suis le souffle de la Reine Mère de l'Occident, archer. Elle me prête sa voix quand elle a besoin d'être entendue de très loin.",
-                  "Elle m'a chargée de veiller sur l'Arbre, et sur la fiole d'élixir qu'elle vous a confiée."
+                  "Elle m'a chargée de veiller sur l'Arbre, et sur la fiole d'élixir qu'elle a confiée à Dame Chang'e."
               ],
               talk: [
                   { whenDone: 'sun_8', lines: [
@@ -660,7 +660,7 @@ const BASE_SCREENS = {
             // Le Dixième Soleil se cache derrière le Neuvième : on ne peut lui parler qu'après sa chute.
             { id: 'sun_ten', x: 12, y: 1, name: 'Dixième Soleil', title: 'Dernier des dix soleils', emoji: '🌞',
               idle: [
-                  "…Tu es l'archer ? Celui qui a… tous mes frères ? Non, ne me regarde pas comme ça : je ne bouge pas, je te le jure.",
+                  "…Tu es l'archer ? Celui qui a… mes frères ? Non, ne me regarde pas comme ça : je ne bouge pas, je te le jure.",
                   "Je n'ai jamais voulu brûler personne. Mes frères disaient que c'était un jeu. Moi, j'avais peur de la chaleur."
               ],
               talk: [
@@ -795,11 +795,11 @@ const BASE_QUESTS = [
         offer: [
             "Hou Yi ! Que les ancêtres soient loués. Vous savez l'état du monde : dix soleils, fils de Di Jun, brûlent le ciel depuis trois lunes. Ma vieille tête ne se souvient d'aucun été pareil.",
             "L'empereur Yao m'envoie son décret, scellé de jade : « Que l'archer Hou Yi abatte neuf soleils, et qu'il en épargne un seul, afin que la Terre garde un jour. » Il vous le demande, il ne vous l'ordonne pas.",
-            "Le premier se tient sur le tertre du temple des moissons, à l'est, au bout de nos rizières. Mais prenez garde : votre disciple Fengmeng garde la digue, et il a dans les yeux quelque chose que je n'aime pas. Il veut vous éprouver.",
+            "Le premier se tient sur le tertre du temple des moissons, à l'est, au bout de nos rizières. Mais prenez garde : votre disciple Fengmeng rôde sur la digue, et il a dans les yeux quelque chose que je n'aime pas. Il veut vous éprouver.",
             "Entraînez-vous sur les maraudeurs de nos champs si vous le jugez nécessaire. (Niveau 3 conseillé)"
         ],
         hint: [
-            "Le Soleil Ardent est à l'est, sur le tertre du temple. La digue est étroite : il faudra passer par Fengmeng.",
+            "Le Soleil Ardent est à l'est, sur le tertre du temple. La digue est étroite : méfiez-vous de Fengmeng, qui y rôde.",
             "Les maraudeurs des rizières sont de bons adversaires pour s'échauffer, et ils reviennent toujours. Les monstres se voient de loin : un cercle rouge marque leur zone de vigilance."
         ],
         complete: [

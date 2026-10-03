@@ -17,7 +17,7 @@ export default {
       idle: ['Hennis. Autrefois, je galopais d\'un bout du ciel à l\'autre. Maintenant, je mâche de l\'herbe et je contemple.', 'Un cheval céleste n\'est jamais en retard : il arrive quand il faut. Même si c\'est le lendemain.'],
       talk: [{ whenDone: 'sun_7', lines: ['Le septième soleil est tombé. Le vent a changé. Je sens l\'envie de galoper, mais mes genoux disent non. Je galoperai en pensée.'] }] },
     shaman_ula: { name: 'Ula', title: 'Chamane des vents', emoji: '🪶',
-      idle: ['Les vents me parlent. Aujourd\'hui, ils disent « il va faire chaud ». Je n\'avais pas besoin d\'eux pour ça.', 'On raconte qu\'un lièvre blanc vit dans la plaine, un lièvre de la Lune. Il connaît une dame qui boit l\'élixir, un jour.'],
+      idle: ['Les vents me parlent. Aujourd\'hui, ils disent « il va faire chaud ». Je n\'avais pas besoin d\'eux pour ça.', 'On raconte qu\'un lièvre blanc vit dans la plaine, un lièvre de la Lune. Il connaît une dame qui garde un élixir précieux.'],
       talk: [{ whenDone: 'sun_7', lines: ['Les vents ont changé de chanson : ils disent « lune ». Je ne sais pas ce que cela présage, mais je préfère ce vent-là.'] }] },
     cheese_sa: { name: 'Dame Sa', title: 'Fromagère', emoji: '🧀',
       idle: ['Mon fromage de brebis est fort. Les loups reculent, les voisins aussi, mais les clients reviennent.', 'Prenez un morceau, archer. Il a du caractère, comme vous. Il vieillit mieux.'],
@@ -33,7 +33,7 @@ export default {
       talk: [{ whenDone: 'sq_lievre_lune', lines: ['Dites à Chang\'e, un jour, que son lièvre pense à elle. Et qu\'elle ne se laisse pas convaincre par un jaloux. Je suis lièvre, mais j\'ai l\'ouïe fine.'] }] },
     old_nomad_bayan: { name: 'Bayan', title: 'Vieux nomade', emoji: '🧓',
       idle: ['J\'ai traversé cette plaine mille fois. Elle ne change jamais, mais je ne suis plus le même.', 'Le soleil, la lune : tout tourne, sauf les vieux, qui s\'assoient.'],
-      talk: [{ whenDone: 'sun_7', lines: ['Un soleil de plus tombé… Dans ma jeunesse, on disait qu\'il en restait un. Ce n\'est pas vrai : il en restera deux, je le sens à mes genoux.'] }] }
+      talk: [{ whenDone: 'sun_7', lines: ['Un soleil de plus tombé… Dans ma jeunesse, on n\'en voyait qu\'un seul au ciel. Il n\'en restera qu\'un, je le sens à mes genoux.'] }] }
   },
   chests: {
     wu_quiver_box: { label: 'Coffre à carquois', openText: '🎁 Des flèches de chasseur, bien rangées, et sous elles un peu de monnaie : « pour les temps maigres ».', emoji: '🏹', emojiOpened: '🏹' },
@@ -62,7 +62,7 @@ export default {
       objectives: [{ type: 'kill', target: 'fauves_boar_chief', text: 'Chasser Hure, le sanglier de flammes, des pâturages (hautes herbes de cendre)' }],
       offer: ['Le sanglier Hure saccage mes pâturages à l\'aube. Il boude les brebis, mais il adore mon fromage, et il ne paie jamais.', 'Chassez-le des hautes herbes, archer. Vous avez entendu le lièvre ; maintenant, entendez mon fromage.'],
       hint: ['Hure, le sanglier de flammes, rôde dans les hautes herbes de cendre, près des pâturages.'],
-      complete: ['Mes pâturages sont libres ! Voilà pour vous : un fromage de sanglier. Non, de brebis. Je vous conseille de ne pas demander la différence.'],
+      complete: ['Mes pâturages sont libres ! Voilà pour vous : un fromage de sanglier. Non, de brebis. Je vous conseille de ne pas demander la différence. Prenez aussi ce croc : Hure n\'en aura plus besoin.'],
       reward: { gold: 170, fragment: 'Croc de sanglier', xp: 310 } }
   ]
 };
