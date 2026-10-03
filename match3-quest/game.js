@@ -790,6 +790,7 @@ export function startNewCombat(selectedEnemy = null){
     // Restaurer les PV et préparer le combat
     restartCombat();
     newEnemy(selectedEnemy);
+    playSfx(enemy?.isBoss ? 'bossStart' : 'combatStart');
 }
 
 // Abandonner le combat en cours

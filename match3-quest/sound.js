@@ -18,6 +18,9 @@ const defaultSettings = {
     developerMode: false
 };
 
+// Durée du jingle d'entrée en combat : la musique de combat démarre après ce délai.
+export const COMBAT_INTRO_MS = 1400;
+
 const DEV_MODE_CLICK_TARGET = 6;
 
 // ===============================
@@ -335,6 +338,25 @@ export function playSfx(eventName, payload = {}) {
                 [0.03, isPlayer ? 150 : 130, 0.09, 0.75, 'sawtooth']
             ]);
             break;
+        case 'combatStart': case 'bossStart': {
+            // Jingle d'entrée en combat (façon Pokémon) : martèlement alterné rapide, montée pentatonique, note tenue.
+            // Durée ≈ COMBAT_INTRO_MS : la musique de combat démarre juste après (voir main.js).
+            const boss = eventName === 'bossStart';
+            const lo = boss ? 164.8 : 329.6, hi = boss ? 196 : 392;
+            const wave = boss ? 'sawtooth' : 'square';
+            const p = [];
+            const hits = boss ? 8 : 6;
+            for (let i = 0; i < hits; i++) p.push([i * 0.075, i % 2 ? hi : lo, 0.06, 0.8, wave]);
+            const t0 = hits * 0.075 + 0.05;
+            const run = boss ? [220, 261.6, 329.6, 392, 440, 523.3] : [440, 523.3, 659.3, 784];
+            run.forEach((f, i) => p.push([t0 + i * 0.09, f, 0.1, 0.85, wave]));
+            const tEnd = t0 + run.length * 0.09;
+            const top = run[run.length - 1];
+            p.push([tEnd, top, 0.45, 1, 'triangle'], [tEnd, top / 2, 0.45, 0.8, wave], [tEnd, top * 1.5, 0.45, 0.5, 'triangle']);
+            p.push([0, 90, 0.18, 1, 'sine'], [tEnd, 70, 0.25, 1, 'sine']);
+            playPattern(p, { gain: boss ? 1.1 : 1 });
+            break;
+        }
         case 'victory':
             playPattern([
                 [0,    520, 0.08, 0.75, 'triangle'],

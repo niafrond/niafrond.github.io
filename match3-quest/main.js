@@ -4,7 +4,7 @@ import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./clas
 import { createMapEnemy } from "./enemies.js";
 import { addXP } from "./experience.js";
 import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
-import { initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
+import { COMBAT_INTRO_MS, initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
 import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate } from "./version.js";
@@ -165,13 +165,15 @@ function init() {
 
     // Musique d'ambiance (pentatonique chinoise, music.js) : la scène voulue se déduit de l'état de l'interface.
     setMusicEnvironment({ getContext: getSharedAudioContext, getVolume: getMusicVolume, isMuted: isMusicMuted });
+    let combatIntroUntil = 0;
+    window.addEventListener('match3:combat-start', () => { combatIntroUntil = Date.now() + COMBAT_INTRO_MS; });
     const desiredMusic = () => {
         if(document.querySelector('.cine-ending')) return ['ending'];
         if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
         if(document.querySelector('.battle-transition')) return null;
         // Combat : musique générée « combat » / « boss » ; l'écran de résultat repasse sur la musique de menu.
         const fight = getCombatMusicScene();
-        if(fight) return [fight];
+        if(fight) return Date.now() < combatIntroUntil ? null : [fight];   // jingle d'entrée d'abord, puis la musique
         if(document.getElementById('battle-result-screen')?.classList.contains('active')) return ['menu'];
         if(document.getElementById('class-modal')?.classList.contains('active')) return ['title'];
         const tab = document.querySelector('.tab-panel.active')?.id;
