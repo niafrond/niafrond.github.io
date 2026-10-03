@@ -44,7 +44,7 @@ export const SCALES = {
 };
 export const MODE_NAMES = Object.keys(SCALES);
 
-export const SCENE_IDS = ['title', 'menu', 'village', 'house', 'wild', 'sanctuary', 'moon', 'ending'];
+export const SCENE_IDS = ['title', 'menu', 'village', 'house', 'wild', 'sanctuary', 'moon', 'ending', 'combat', 'boss'];
 export const BIOMES = ['paddy', 'riverbed', 'bamboo', 'gobi', 'storm', 'volcano', 'savanna', 'coast', 'fusang', 'moon'];
 
 /** Tessitures jouables (MIDI) par instrument. */
@@ -148,6 +148,24 @@ const SCENES = {
         accomp: { kind: 'arp', inst: 'harp', vel: 0.3, keep: 0.6, lo: 48 },
         pad: { inst: 'sheng', bars: 4, vel: 0.15 },
         perc: 'bells', bells: { prob: 0.6, vel: 0.4 }, gliss: 0.5
+    },
+    combat: {
+        label: 'Combat', description: 'Nerveux : pipa, erhu, tambours, cymbales (combats ordinaires).',
+        root: 4, scale: 'jue', bpm: 112, lo: 62, hi: 88,
+        melody: { inst: 'erhu', vel: 0.7, cells: LIVELY, rest: 0.12, orn: 0.3, bend: 0.4 },
+        hetero: { inst: 'pipa', oct: 12, vel: 0.35 },
+        accomp: { kind: 'pluck', inst: 'pipa', vel: 0.32, keep: 0.85, lo: 38 },
+        pad: { inst: 'sheng', bars: 2, vel: 0.22 },
+        perc: 'taiko', suona: { prob: 0.15, vel: 0.35 }
+    },
+    boss: {
+        label: 'Boss', description: 'Épique : suona, gong, taiko martelé (boss et Soleils).',
+        root: 2, scale: 'jue', bpm: 132, lo: 62, hi: 90,
+        melody: { inst: 'suona', vel: 0.62, cells: LIVELY, rest: 0.1, orn: 0.35, bend: 0.5 },
+        hetero: { inst: 'erhu', oct: 0, vel: 0.4 },
+        accomp: { kind: 'pluck', inst: 'pipa', vel: 0.38, keep: 0.9, lo: 38 },
+        pad: { inst: 'sheng', bars: 2, vel: 0.32 },
+        perc: 'taiko', suona: { prob: 0.5, vel: 0.45 }
     },
     ending: {
         label: 'Épilogue', description: 'Mélancolique et lumineux : erhu, dizi, guzheng, cloches.',

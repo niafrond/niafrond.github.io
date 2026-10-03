@@ -1,10 +1,10 @@
 import { generateBoard, renderBoard } from "./board.js";
-import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, combatHooks } from "./game.js";
+import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, combatHooks, getCombatMusicScene } from "./game.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy } from "./enemies.js";
 import { addXP } from "./experience.js";
 import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
-import { initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
+import { COMBAT_INTRO_MS, initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
 import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate } from "./version.js";
@@ -165,10 +165,16 @@ function init() {
 
     // Musique d'ambiance (pentatonique chinoise, music.js) : la scène voulue se déduit de l'état de l'interface.
     setMusicEnvironment({ getContext: getSharedAudioContext, getVolume: getMusicVolume, isMuted: isMusicMuted });
+    let combatIntroUntil = 0;
+    window.addEventListener('match3:combat-start', () => { combatIntroUntil = Date.now() + COMBAT_INTRO_MS; });
     const desiredMusic = () => {
         if(document.querySelector('.cine-ending')) return ['ending'];
         if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
         if(document.querySelector('.battle-transition')) return null;
+        // Combat : musique générée « combat » / « boss » ; l'écran de résultat repasse sur la musique de menu.
+        const fight = getCombatMusicScene();
+        if(fight) return Date.now() < combatIntroUntil ? null : [fight];   // jingle d'entrée d'abord, puis la musique
+        if(document.getElementById('battle-result-screen')?.classList.contains('active')) return ['menu'];
         if(document.getElementById('class-modal')?.classList.contains('active')) return ['title'];
         const tab = document.querySelector('.tab-panel.active')?.id;
         if(tab && tab !== 'tab-combat') return ['menu'];
@@ -243,8 +249,6 @@ function init() {
     // Tout combat (y compris le tutoriel) masque la carte.
     window.addEventListener('match3:combat-start', () => {
         exploration.hide();
-        // Coupe tout de suite la musique d'exploration : elle ne doit pas chevaucher la musique de combat.
-        if(!musicStopped) { stopMusic({ fadeMs: 250 }); musicStopped = true; }
     });
 
     // Carte du monde : vue d'ensemble des régions, téléportation vers celles déjà découvertes.
