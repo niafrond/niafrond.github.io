@@ -23,7 +23,7 @@ export default {
       idle: ['Ouistiti ! Je n\'ai rien pris. J\'ai emprunté. L\'emprunt est un vol bien élevé.', 'La louche ? Quelle louche ? Ah, la brillante ! Je l\'ai prêtée au Vieux Cairn. Il avait faim de soupe.'],
       talk: [{ whenDone: 'sq_singe_soupe', lines: ['Tu as retrouvé la louche ? Bravo ! Je savais que tu étais un bon voleur… archer, je veux dire. Archer.'] }] },
     nun_ying: { name: 'Sœur Ying', title: 'Gardienne de la chapelle', emoji: '🙏',
-      idle: ['Je prie le Dieu des monts pour qu\'il garde l\'orage loin de nous. Il me répond toujours « on verra ».', 'Un archer est passé, il y a longtemps. Il a laissé une pièce pour que sa femme dorme en paix. Les dieux ont une mémoire sélective.'],
+      idle: ['Je prie le Dieu des monts pour qu\'il garde l\'orage loin de nous. Il me répond toujours « on verra ».', 'Un jeune archer est passé, il y a quelques jours. Il a laissé une pièce et un vœu qu\'il n\'a pas osé dire à voix haute. Les dieux ont une mémoire sélective.'],
       talk: [{ whenDone: 'sun_5', lines: ['La chapelle est calme. J\'ai déposé une offrande pour vous, archer. Pas de monnaie : un vœu. Il vaut plus, il pèse moins.'] }] },
     kids_leimei: { name: 'Leimei', title: 'Petite chasseuse d\'étincelles', emoji: '🧒',
       idle: ['Je chasse les étincelles ! Je les mets dans des pots, mais elles s\'échappent. Elles ont des jambes, c\'est sûr.', 'Papa dit qu\'il faut avoir peur du tonnerre. Moi je lui dis bonjour tous les matins. Il ne répond pas, mais il tonne poliment.'],
@@ -32,8 +32,8 @@ export default {
       idle: ['Les monts, c\'est dur pour les mollets mais bon pour les affaires : on achète tout, ici, pourvu que ça ne brûle pas.', 'J\'ai croisé votre disciple, à un col. Il m\'a acheté une corde, et un miroir. Un miroir ! Un archer qui s\'interroge sur son reflet, c\'est inquiétant.'],
       talk: [{ whenDone: 'sun_5', lines: ['Je repars pour les gorges du volcan. Si vous croisez quelqu\'un qui vend des gants ignifugés, c\'est mon cousin. Il est très prudent.'] }] },
     cairn_spirit: { name: 'Vieux Cairn', title: 'Esprit des pierres empilées', emoji: '🪨',
-      idle: ['Je suis une pile de cailloux. Chaque voyageur en pose un. Je suis la mémoire de ceux qui sont passés.', 'Une louche d\'argent ? Peut-être. Il y a beaucoup de choses sous mes pierres. Je ne les compte pas, je les garde.'],
-      talk: [{ whenDone: 'sq_etincelles', lines: ['Le pot qui tient est dans ma cache, archer. Je l\'avais remarqué le jour où j\'ai arrêté de fuir la foudre.'] }] }
+      idle: ['Je suis une pile de cailloux. Chaque voyageur en pose un. Je suis la mémoire de ceux qui sont passés.', 'Une louche d\'argent ? Il m\'est arrivé d\'en garder une. Il y a beaucoup de choses sous mes pierres. Je ne les compte pas, je les garde.'],
+      talk: [{ whenDone: 'sq_etincelles', lines: ['Le pot qui tenait est parti danser chez la petite Leimei, archer. Ma cache est plus légère, et moi aussi.'] }] }
   },
   chests: {
     tie_anvil_box: { label: 'Boîte sous l\'enclume', openText: '🎁 Sous l\'enclume, Tie cachait sa paie des dix dernières années. Il est sentimental, pas économe.', emoji: '🧰', emojiOpened: '🧰' },

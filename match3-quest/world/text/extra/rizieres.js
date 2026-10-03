@@ -27,7 +27,7 @@ export default {
       title: "Meunier sans rivière",
       emoji: "👨‍🌾",
       idle: [
-        "Ma roue tourne à vide depuis trois ans. Le pire, c'est le bruit du silence.",
+        "Ma roue tourne à vide depuis trois lunes. Le pire, c'est le bruit du silence.",
         "On ne moud pas du vent. J'ai essayé, c'est décevant."
       ],
       talk: [
@@ -510,7 +510,7 @@ export default {
         }
       ],
       offer: [
-        "Hou Yi, tu pars bientôt, et je voudrais faire des lanternes pour la lune. Il me faut de la lumière et de la farine : les lucioles et le meunier du hameau."
+        "Hou Yi, tu repars bientôt, et je voudrais faire des lanternes pour la lune. Il me faut de la lumière et de la farine : les lucioles et le meunier du hameau."
       ],
       hint: [
         "La jarre à lucioles est chez Tante Liu, la farine chez Gao. Les deux au hameau, après la digue."

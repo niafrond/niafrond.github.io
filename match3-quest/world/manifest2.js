@@ -188,7 +188,7 @@ export const MANIFEST2 = {
         giver: "pigeon_zhao",
         turnIn: "pigeon_zhao",
         chain: null,
-        summary: "Un pigeon voyageur s'est égaré avec un message d'importance. Cherchez-le du côté de l'étang puis du marais.",
+        summary: "Un pigeon voyageur s'est égaré avec un message d'importance. Cherchez-le du côté du marais puis de l'étang.",
         objectives: [
           {
             type: "talk",
@@ -958,7 +958,7 @@ export const MANIFEST2 = {
         giver: "snake_qing",
         turnIn: "snake_qing",
         chain: null,
-        summary: "Dame Qing veut déposer une lettre d'amour dans une urne ancienne. Elle a besoin d'un remède, puis d'un archer.",
+        summary: "Dame Qing veut rouvrir une urne ancienne où dort une lettre d'amour. Elle a besoin d'un remède, puis d'un archer.",
         objectives: [
           {
             type: "talk",

@@ -437,13 +437,13 @@ export default {
         }
       ],
       offer: [
-        "Un louveteau pleure dans les herbes. Son taureau ennemi est dangereux. Allez l'écouter, puis réglez cela."
+        "Un louveteau pleure dans les herbes : un taureau de braise a fait fuir sa mère. Allez l'écouter, puis réglez cela."
       ],
       hint: [
         "Le louveteau est dans les hautes herbes. Le taureau de braise rôde non loin."
       ],
       complete: [
-        "Le taureau est vaincu. La louve est revenue chercher son petit. Wu me dit : « Les bêtes ont aussi leur honneur. »"
+        "Le taureau est vaincu. La louve est revenue chercher son petit. Wu hoche la tête : « Les bêtes ont aussi leur honneur. »"
       ],
       reward: {
         gold: 170,
@@ -565,7 +565,7 @@ export default {
         "La page est accrochée à une herbe, dans les hautes herbes de cendre."
       ],
       complete: [
-        "« Je les ai suivis jusqu'à la plaine. Il tirait comme un dieu. Je tirerai mieux. » Ula se signe : « L'envie est la plus vieille des flèches. »"
+        "« Je les ai suivis jusqu'à la plaine. Il tirait comme un dieu. Je tirerai mieux. » Ula hoche la tête : « L'envie est la plus vieille des flèches. »"
       ],
       reward: {
         gold: 155,

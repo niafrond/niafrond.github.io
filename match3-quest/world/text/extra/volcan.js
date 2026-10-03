@@ -78,7 +78,7 @@ export default {
       title: "Veuve au grand cœur",
       emoji: "👩",
       idle: [
-        "Mon mari est tombé dans la mine, un soir de crue. Il me manque, mais le volcan est respectueux.",
+        "Mon mari est tombé dans la mine, un soir d'éboulement. Il me manque, mais le volcan est respectueux.",
         "Je fais des gâteaux de riz pour les mineurs. Ils les mangent sans lever les yeux. C'est un compliment."
       ],
       talk: [
@@ -119,7 +119,13 @@ export default {
         {
           whenDone: "sun_6",
           lines: [
-            "Grrr ! Mon œuf est de retour. Ma sœur ne me mangera pas. Elle me mangera moins."
+            "Grrr ! Un soleil de moins, c'est un dragonnet qui transpire moins. Pour l'œuf de ma sœur, c'est une autre histoire."
+          ]
+        },
+        {
+          whenDone: "sq_vol_dragonnet",
+          lines: [
+            "Grrr ! L'œuf de ma sœur est de retour. Elle ne me mangera pas. Elle me mangera moins."
           ]
         }
       ]
@@ -164,7 +170,7 @@ export default {
       emoji: "👻",
       idle: [
         "Je suis mort ici. C'est un bon endroit, il y fait chaud.",
-        "Les nouveaux mineurs ne me voient pas. Seul le jeune Bo m'entend. Il a de bonnes oreilles."
+        "Les nouveaux mineurs ne me voient pas. Seuls le jeune Bo et les archers au grand cœur m'entendent. Ils ont de bonnes oreilles."
       ],
       talk: [
         {
@@ -226,7 +232,7 @@ export default {
     },
     journal_page_vol: {
       label: "Page coincée dans une fissure",
-      openText: "🎁 Une page brûlée aux coins : « Ma flèche a manqué. Il m'a regardé, enfin. Je n'aurais pas dû. »",
+      openText: "🎁 Une page brûlée aux coins : « Ma flèche a manqué, à l'entraînement. Il m'a regardé, enfin. Je n'aurais pas dû. »",
       emoji: "📄",
       emojiOpened: "📄"
     }
@@ -289,7 +295,7 @@ export default {
         "Les deux chiens de magma errent dans les coulées, tout rougeoyants."
       ],
       complete: [
-        "Ils sont maîtrisés, je m'en occupe. Je leur donnerai des os de basalte. Tenez, une cornée de cornue : fragile, utile."
+        "Ils sont maîtrisés, je m'en occupe. Je leur donnerai des os de basalte. Tenez, un éclat de cornue : fragile, utile."
       ],
       reward: {
         gold: 150,
@@ -432,7 +438,7 @@ export default {
         }
       ],
       offer: [
-        "Un poisson de lave a nagé dans les bains. Il y a pris goût. Parlez-lui, puis ouvrez le coffre du fond : il s'y cache."
+        "Un poisson de lave a nagé dans les bains. Il y a pris goût. Parlez-lui, puis ouvrez le coffre au fond du bassin : il y a laissé de quoi payer ses bains."
       ],
       hint: [
         "Bi est dans les coulées, près du magma. Le coffre est au hameau."
@@ -460,7 +466,7 @@ export default {
           target: "dragonet_xiaohong",
           text: "Parler au dragonnet Xiaohong (Sources Tièdes)",
           lines: [
-            "Grrr ! Mon œuf est tombé dans une cavité. Je ne suis pas féroce quand je pleure."
+            "Grrr ! L'œuf de ma sœur est tombé dans une cavité. Je ne suis pas féroce quand je pleure."
           ]
         },
         {
@@ -470,7 +476,7 @@ export default {
         }
       ],
       offer: [
-        "Un petit dragon pleure à ma porte : il a perdu l'œuf de sa sœur. Je crois savoir où il est tombé. Aidez-le, archer."
+        "Un petit dragon pleure aux Sources Tièdes : il a perdu l'œuf de sa sœur. Je crois savoir où il est tombé. Aidez-le, archer."
       ],
       hint: [
         "Xiaohong est au hameau. La cache d'obsidienne est dans les coulées."
@@ -540,7 +546,7 @@ export default {
         "La page est coincée dans une fissure de basalte, dans les coulées."
       ],
       complete: [
-        "« Ma flèche a manqué. Il m'a regardé, enfin. Je n'aurais pas dû. » Fei se tait, et trempe ses pieds en silence."
+        "« Ma flèche a manqué, à l'entraînement. Il m'a regardé, enfin. Je n'aurais pas dû. » Fei se tait, et trempe ses pieds en silence."
       ],
       reward: {
         gold: 135,
