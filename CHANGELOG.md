@@ -1,3 +1,9 @@
+## [2.57.1](https://github.com/niafrond/niafrond.github.io/compare/v2.57.0...v2.57.1) (2026-10-03)
+
+### Performance Improvements
+
+* **match3-quest:** chargement à la demande des sprites et de l'audio, écrans de chargement ([#396](https://github.com/niafrond/niafrond.github.io/issues/396)) ([e06ac60](https://github.com/niafrond/niafrond.github.io/commit/e06ac60517ef61bba9fa3e78c9f08fe20fc30579))
+
 ## [2.57.0](https://github.com/niafrond/niafrond.github.io/compare/v2.56.0...v2.57.0) (2026-10-03)
 
 ### Features
