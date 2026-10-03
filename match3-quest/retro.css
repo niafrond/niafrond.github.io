@@ -209,7 +209,8 @@ body.rt #new-combat-btn {
 }
 
 body.rt #sound-toggle-btn,
-body.rt #dark-mode-toggle-btn {
+body.rt #dark-mode-toggle-btn,
+body.rt #options-btn {
     background: var(--rt-sand);
     color: var(--rt-ink);
     padding: 6px 10px;
@@ -298,14 +299,26 @@ body.rt .modal-content p {
 body.rt .stat-value,
 body.rt .stat strong { color: var(--rt-text); }
 
-/* tour actif : cadre doré clignotant au lieu de la lueur verte */
+/* tour actif : cadre épais vert (joueur) ou rouge (ennemi), fond teinté, sans clignotement ;
+   le panneau inactif est atténué. Couleurs saturées lisibles sur fond clair comme sombre. */
+body.rt #player-stats,
+body.rt #enemy-stats { transition: opacity 0.2s; }
+body.rt .stats-container:has(.active-turn) > :not(.active-turn) { opacity: 0.6; }
 body.rt #player-stats.active-turn,
 body.rt #enemy-stats.active-turn {
-    border-color: var(--rt-ink);
-    box-shadow: 0 4px 0 var(--rt-ink), inset 0 0 0 3px var(--rt-gold);
-    animation: rt-turn 0.9s steps(2, end) infinite;
+    border-width: 4px;
+    animation: none;
 }
-@keyframes rt-turn { 50% { box-shadow: 0 4px 0 var(--rt-ink), inset 0 0 0 3px var(--rt-cream); } }
+body.rt #player-stats.active-turn {
+    border-color: #00c853;
+    background-image: linear-gradient(rgba(0, 200, 83, 0.28), rgba(0, 200, 83, 0.28));
+    box-shadow: 0 0 0 2px var(--rt-ink), 0 0 14px 3px rgba(0, 200, 83, 0.75);
+}
+body.rt #enemy-stats.active-turn {
+    border-color: #ff1744;
+    background-image: linear-gradient(rgba(255, 23, 68, 0.26), rgba(255, 23, 68, 0.26));
+    box-shadow: 0 0 0 2px var(--rt-ink), 0 0 14px 3px rgba(255, 23, 68, 0.75);
+}
 
 body.rt .stats-container { gap: 8px; padding: 6px; background: transparent; }
 
@@ -363,38 +376,35 @@ body.rt #board {
 }
 
 body.rt .tile {
-    border: 3px solid var(--rt-ink);
-    border-radius: 5px;
-    box-shadow:
-        inset 4px 4px 0 rgba(255, 255, 255, 0.4),
-        inset -4px -4px 0 rgba(0, 0, 0, 0.28),
-        0 3px 0 rgba(0, 0, 0, 0.35);
+    box-sizing: border-box;
+    border: none;
+    border-radius: 50%;
+    box-shadow: none;
 }
 
 /* Les gemmes sont des gâteaux de lune (dessins dans sprites/tiles/, une saveur par couleur de mana) ;
    le crâne devient un soleil ardent et les épées une flèche. La couleur de fond ne sert que de socle. */
-body.rt .tile {
+body.rt .tile,
+body.rt .tile.red, body.rt .tile.blue, body.rt .tile.green, body.rt .tile.yellow, body.rt .tile.purple, body.rt .tile.combat, body.rt .tile.skull, body.rt .tile.joker {
+    background-color: transparent;
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 86% 86%;
+    background-size: 100% 100%;
 }
-body.rt .tile.red { background-color: #f1b7a8; background-image: url('sprites/tiles/tile-red.svg'); }
-body.rt .tile.blue { background-color: #a9d4f2; background-image: url('sprites/tiles/tile-blue.svg'); }
-body.rt .tile.green { background-color: #b8e0a8; background-image: url('sprites/tiles/tile-green.svg'); }
-body.rt .tile.yellow { background-color: #e08a3c; background-image: url('sprites/tiles/tile-yellow.svg'); }
-body.rt .tile.purple { background-color: #d2b6ea; background-image: url('sprites/tiles/tile-purple.svg'); }
-body.rt .tile.combat { background-color: #cfd6e3; background-image: url('sprites/tiles/tile-combat.svg'); }
+body.rt .tile.red { background-image: url('sprites/tiles/tile-red.svg'); }
+body.rt .tile.blue { background-image: url('sprites/tiles/tile-blue.svg'); }
+body.rt .tile.green { background-image: url('sprites/tiles/tile-green.svg'); }
+body.rt .tile.yellow { background-image: url('sprites/tiles/tile-yellow.svg'); }
+body.rt .tile.purple { background-image: url('sprites/tiles/tile-purple.svg'); }
+body.rt .tile.combat { background-image: url('sprites/tiles/tile-combat.svg'); }
 body.rt .tile.skull {
-    background-color: #55190f;
     background-image: url('sprites/tiles/tile-skull.svg');
     filter: none;
     color: inherit;
     text-shadow: none;
 }
 body.rt .tile.joker {
-    background-color: #2b2d5e;
     background-image: url('sprites/tiles/tile-joker.svg');
-    background-size: 86% 86%;
 }
 
 body.rt .tile.selected {
@@ -587,3 +597,8 @@ body.rt .battle-result-xp { font-family: var(--rt-title); font-size: 11px; line-
 
 /* Carte du monde à dix régions : côte et écume ajustées à des îlots plus petits (cf. LAND_PATH_WIDTH) */
 body.rt .wm-shallows path { stroke-width: 136px; }
+
+/* Portrait : plateau compact pour que tout le combat tienne sans défilement */
+@media (orientation: portrait) and (max-width: 820px) {
+    body.rt #board { padding: 4px; border-width: 3px; box-shadow: inset 0 0 0 2px var(--rt-gold); }
+}

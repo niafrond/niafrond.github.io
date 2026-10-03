@@ -254,6 +254,16 @@ function init() {
         enterExploration();
     });
 
+    // Menu Options / Pause (son, volume, mode nuit)
+    const optionsModal = document.getElementById('options-modal');
+    document.getElementById('options-btn')?.addEventListener('click', () => {
+        primeAudioFromGesture();
+        playSfx('uiClick');
+        optionsModal?.classList.add('active');
+    });
+    document.getElementById('options-close-btn')?.addEventListener('click', () => optionsModal?.classList.remove('active'));
+    optionsModal?.addEventListener('click', e => { if(e.target === optionsModal) optionsModal.classList.remove('active'); });
+
     const soundToggleButton = document.getElementById('sound-toggle-btn');
     initializeAudioUI(soundToggleButton);
 

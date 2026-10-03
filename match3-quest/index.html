@@ -247,8 +247,17 @@
     <div id="combat-controls" style="text-align: center; margin: 10px 0;">
         <button id="new-combat-btn"  style="margin-left: 10px; display: none;">🗺️ Retour à l'exploration</button>
         <button id="abandon-combat-btn" style="margin-left: 10px; background-color: #d32f2f;">🏳️ Abandonner</button>
-        <button id="sound-toggle-btn">🔊</button>
-        <button id="dark-mode-toggle-btn" aria-pressed="false" title="Activer ou désactiver le mode sombre">🌙</button>
+        <button id="options-btn" title="Options / Pause">⚙️ Options</button>
+    </div>
+
+    <!-- Menu Options / Pause : son, volume et mode nuit -->
+    <div id="options-modal" class="modal">
+        <div class="modal-content options-content">
+            <h2>⏸️ Pause</h2>
+            <div class="options-row"><span>Son et volume</span><button id="sound-toggle-btn">🔊</button></div>
+            <div class="options-row"><span>Mode nuit</span><button id="dark-mode-toggle-btn" aria-pressed="false" title="Activer ou désactiver le mode sombre">🌙</button></div>
+            <div class="modal-actions"><button class="primary" id="options-close-btn">▶️ Reprendre</button></div>
+        </div>
     </div>
     
 </div>
