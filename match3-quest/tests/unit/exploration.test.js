@@ -1817,14 +1817,13 @@ describe('déplacement au clic (findPath)', () => {
         expect(walk(f, findPath(f, 11, 8))).toMatchObject({ type: 'shielded', enemyId: 'sun_7' });
     });
 
-    test('prend toujours le plus court chemin, même à travers la zone de vigilance d\'un ennemi', () => {
+    test('contourne la zone de vigilance d\'un ennemi plutôt que de la traverser en ligne droite', () => {
         const s = synthSession({ enemies: [enemyDef('g', 3, 1)] });
         const path = findPath(s, 6, 2);
-        // ligne droite (6 pas) alors qu'un détour existerait : le trajet ne cherche pas à éviter l'ennemi
-        expect(path).toHaveLength(6);
-        expect(path.every(p => p.y === 2)).toBe(true);
-        // et le parcours réveille bien l'ennemi (zone de vigilance atteinte)
-        expect(walk(s, path)).toEqual({ type: 'combat', enemyId: 'g' });
+        expect(path.length).toBeGreaterThan(6);   // détour : la ligne droite traverserait l'aura
+        const near = p => Math.max(Math.abs(p.x - 3), Math.abs(p.y - 1)) <= AGGRO_RADIUS;
+        expect(path.some(near)).toBe(false);
+        expect(walk(s, path)).toEqual({ type: 'moved' });
     });
 
     test('la longueur du chemin est minimale (Manhattan quand la voie est libre)', () => {
@@ -1900,5 +1899,36 @@ describe('indicateurs de quête : maisons et direction', () => {
         talkTo(s, 'elder_wen');
         expect(setTrackedQuest(s, 'q_sun_1')).toBe('q_sun_1');
         expect(questDirection(s)).not.toBeNull();
+    });
+});
+
+describe('déplacement au clic : évitement des zones de combat', () => {
+    // Écran 9×5 sans obstacle : un ennemi fixe au centre, le héros à gauche. Le plus court chemin droit traverse son aura.
+    function arena(extra = {}) {
+        const base = SCREENS[START_SCREEN];
+        const screen = {
+            ...base, id: START_SCREEN, w: 9, h: 5, obstacles: [], liquids: [], buildings: [], npcs: [], chests: [], exits: [], waypoint: null,
+            spawn: { x: 0, y: 2 },
+            enemies: [{ id: 'arena_foe', x: 4, y: 2, emoji: 'x', name: 'Foe', templateId: 'goblin_saboteur', kind: 'sentinel' }],
+            ...extra
+        };
+        const s = createSession({}, { [START_SCREEN]: screen }, []);
+        s.data.x = 0; s.data.y = 2;
+        return s;
+    }
+    const inAura = (p, ex = 4, ey = 2) => Math.max(Math.abs(p.x - ex), Math.abs(p.y - ey)) <= AGGRO_RADIUS;
+
+    test('le trajet contourne la zone de vigilance quand c\'est possible', () => {
+        const s = arena();
+        const path = findPath(s, 8, 2);
+        expect(path).not.toBeNull();
+        expect(path.some(p => inAura(p))).toBe(false);
+    });
+
+    test('viser l\'ennemi (ou une case de son aura) autorise à entrer dans sa zone', () => {
+        const s = arena();
+        const path = findPath(s, 4, 2);
+        expect(path.at(-1)).toEqual({ x: 4, y: 2 });
+        expect(findPath(s, 3, 2).some(p => inAura(p))).toBe(true);
     });
 });

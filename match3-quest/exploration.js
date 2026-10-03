@@ -313,14 +313,15 @@ function stepPatrols(session) {
 
 // ── Déplacement au clic : recherche de chemin ───────────────────────────────
 
-// Plus court chemin (parcours en largeur, déplacements en croix) de la position du héros jusqu'à
+// Plus court chemin (Dijkstra, déplacements en croix) de la position du héros jusqu'à
 // (tx, ty). Retourne la liste des tuiles à parcourir (première étape → destination), [] si on y est
 // déjà, ou null si la destination est inaccessible.
 //  - obstacles, liquides, PNJ, coffres et ennemis vivants bloquent le passage ;
 //  - une destination occupée (PNJ, coffre, ennemi) reste valide : la dernière étape déclenche
 //    l'interaction (dialogue, ouverture, combat) ;
 //  - les sorties ne se traversent pas en route : elles ne sont franchies que si elles sont la destination.
-// Le trajet ne cherche PAS à éviter les zones de vigilance : c'est toujours le plus court.
+// Le trajet évite les zones de vigilance des ennemis (coût élevé par case) sauf celles qui contiennent la destination :
+// on n'entre dans une zone de combat que si on la vise explicitement (ou s'il n'existe aucun autre chemin).
 export function findPath(session, tx, ty) {
     const screen = currentScreen(session);
     const start = { x: session.data.x, y: session.data.y };
@@ -339,19 +340,44 @@ export function findPath(session, tx, ty) {
     const startKey = key(start.x, start.y);
     const target = key(tx, ty);
 
+    // Zones de vigilance à éviter : celles des ennemis (non protégés) dont l'aura ne contient pas la destination.
+    const avoid = new Set();
+    aliveEnemies(session).filter(e => !isShielded(session, e.def)).forEach(e => {
+        if (chebyshev(e.x, e.y, tx, ty) <= AGGRO_RADIUS) return;
+        for (let dy = -AGGRO_RADIUS; dy <= AGGRO_RADIUS; dy++) {
+            for (let dx = -AGGRO_RADIUS; dx <= AGGRO_RADIUS; dx++) {
+                const x = e.x + dx, y = e.y + dy;
+                if (x >= 0 && y >= 0 && x < screen.w && y < screen.h) avoid.add(key(x, y));
+            }
+        }
+    });
+    const AVOID_COST = 1000;
+
+    // Dijkstra sur une petite grille : file triée par coût (les écrans font au plus ~20×13 cases).
     const prev = new Map([[startKey, null]]);
-    const queue = [start];
-    while (queue.length && !prev.has(target)) {
+    const dist = new Map([[startKey, 0]]);
+    const done = new Set();
+    const queue = [{ x: start.x, y: start.y, d: 0 }];
+    while (queue.length) {
+        queue.sort((a, b) => a.d - b.d);
         const cur = queue.shift();
+        const cKey = key(cur.x, cur.y);
+        if (done.has(cKey)) continue;
+        done.add(cKey);
+        if (cKey === target) break;
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
             const nx = cur.x + dx, ny = cur.y + dy;
             if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || isTerrainBlocked(screen, nx, ny)) continue;
             const nKey = key(nx, ny);
-            if (prev.has(nKey)) continue;
-            prev.set(nKey, key(cur.x, cur.y));
+            if (done.has(nKey)) continue;
             // une case occupée ou une sortie n'est jamais un point de passage (seulement une destination)
             if (nKey !== target && (occupied.has(nKey) || exits.has(nKey))) continue;
-            queue.push({ x: nx, y: ny });
+            const nd = cur.d + 1 + (avoid.has(nKey) ? AVOID_COST : 0);
+            if (nd < (dist.get(nKey) ?? Infinity)) {
+                dist.set(nKey, nd);
+                prev.set(nKey, cKey);
+                queue.push({ x: nx, y: ny, d: nd });
+            }
         }
     }
     if (!prev.has(target)) return null;
