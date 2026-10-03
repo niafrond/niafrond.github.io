@@ -1,5 +1,5 @@
 // Errors are always silent (mirrors mix-blind-test/stem-client.js's convention,
-// SPEC-17.2.4): a failed IDB operation resolves to a safe empty/null value
+// mix-blind-test/SPECS.md SPEC-1.2.4): a failed IDB operation resolves to a safe empty/null value
 // instead of rejecting, so callers never need try/catch.
 
 export function createDownloadBatchStore({
