@@ -642,6 +642,13 @@ function showEndCombatAnimation(isVictory, options = {}){
         continueText = ''
     } = options;
 
+    // Victoire : l'écran de résultat (avec son fondu « VICTOIRE ») s'affiche tout de suite, sans second écran
+    // « Cliquez pour continuer » intercalé entre le dernier coup et le résultat.
+    if(isVictory){
+        finalizeCombatEndUI(true);
+        return;
+    }
+
     const data = isVictory
         ? { icon: '🏆', title: 'Victoire', damage: 'Combat termine !', target: 'Cliquez pour continuer' }
         : { icon: '💀', title: 'Defaite', damage: 'Combat termine !', target: 'Cliquez pour continuer' };
