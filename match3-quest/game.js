@@ -133,6 +133,13 @@ function normalizeBonusTurnValue(value){
     return Math.max(0, Math.floor(numericValue));
 }
 
+// Pastille « 🎁 ×N » affichée à côté du nom tant qu'il reste des tours bonus accumulés.
+function bonusTurnBadge(entity){
+    const n = normalizeBonusTurnValue(entity?.bonusTurn);
+    if(n <= 0) return '';
+    return `<span class="bonus-turn-badge" title="${n} tour${n > 1 ? 's' : ''} bonus en réserve">🎁×${n}</span>`;
+}
+
 export function addBonusTurn(entity, amount = 1){
     if(!entity) return 0;
 
@@ -1019,7 +1026,7 @@ export function updateStats(){
     
     playerClassEmoji.then(emoji => {
         playerDiv.innerHTML = `
-            <div class="stat"><span class="enemy-combat-name" title="${emoji} ${player.name || 'Hou Yi'}">${emoji} ${(player.name || 'Hou Yi').split(' ')[0]}</span><span style="color: #888;"> ${player.level}</span></div>
+            <div class="stat"><span class="enemy-combat-name" title="${emoji} ${player.name || 'Hou Yi'}">${emoji} ${(player.name || 'Hou Yi').split(' ')[0]}</span><span style="color: #888;"> ${player.level}</span>${bonusTurnBadge(player)}</div>
             <div class="stat">
                 <div class="hp-bar-container">
                     <progress value="${initPlayerHp}" max="${player.maxHp}"></progress>
@@ -1062,7 +1069,7 @@ export function updateStats(){
         `<span style="color: #888;"> ${enemy.level}</span>`;
     
     enemyDiv.innerHTML = `
-        <div class="stat"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${enemy.name.split(' ')[0]}</span>${levelIndicator}</div>
+        <div class="stat"><span class="enemy-combat-name" data-full-name="${enemy.name}" aria-label="Nom complet: ${enemy.name}">${enemyClassEmoji} ${enemy.name.split(' ')[0]}</span>${levelIndicator}${bonusTurnBadge(enemy)}</div>
         <div class="stat">
             <div class="hp-bar-container">
                 <progress class="enemy-bar" value="${initEnemyHp}" max="${enemy.maxHp}"></progress>

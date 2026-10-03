@@ -2321,3 +2321,17 @@ body.dark-mode .tutorial-card {
     #combat-controls { margin: 2px 0 !important; padding-bottom: env(safe-area-inset-bottom); }
     #combat-controls button { padding: 6px 12px; font-size: 13px; margin: 0 3px !important; }
 }
+
+/* Tours bonus accumulés (à côté du nom du combattant) */
+.bonus-turn-badge {
+    margin-left: auto;
+    flex: 0 0 auto;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #ffb300;
+    color: #3b2a00;
+    font-size: 0.75em;
+    font-weight: bold;
+    line-height: 1.5;
+    white-space: nowrap;
+}
