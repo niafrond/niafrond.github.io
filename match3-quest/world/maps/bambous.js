@@ -16,13 +16,15 @@ export default {
             '#.DDDD........EEEE.#',
             '#.DDDD......#.EEEE.#',
             '#.DdDD...#....EeEE##',
-            '#..=============...#',
+            '#9#=============...#',
             '####################'
         ],
         npcs: [
             { id: 'huli_xia', at: '1' }
         ],
-        chests: []
+        chests: [
+            { id: 'tea_hideout', at: '9', gold: 45, label: 'Cachette de thé', emoji: '🍵', openText: '🎁 Sous une natte brûlée, un pot de thé fêlé… et quelques sous que quelqu\'un avait cachés là.' }
+        ]
     },
 
     wild: {

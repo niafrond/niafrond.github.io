@@ -14,9 +14,9 @@ export default {
             '<==================>',
             '#....1...3..~.2....#',
             '#.DDDD#..W#.~.EEEE.#',
-            '##DDDD......~.EEEE##',
+            '#.DDDD......~.EEEE##',
             '#.DdDD...#..~.EeEE.#',
-            '#..=============...#',
+            '#9#=============...#',
             '####################'
         ],
         npcs: [
@@ -24,7 +24,9 @@ export default {
             { id: 'hua_volcan', at: '2' },
             { id: 'young_miner_bo', at: '3' }
         ],
-        chests: []
+        chests: [
+            { id: 'basalt_pot', at: '9', gold: 90, label: 'Pot de basalte enfoui', emoji: '🏺', openText: '🎁 Un pot de basalte encore tiède, rempli de pièces noircies par la suie.' }
+        ]
     },
 
     wild: {

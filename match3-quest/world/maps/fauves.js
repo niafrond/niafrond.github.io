@@ -14,9 +14,9 @@ export default {
             '<==================>',
             '#....1.=.....W.....#',
             '#.DDDD.=EEEEE.######',
-            '##DDDD.=EEEEE....#.#',
+            '#.DDDD.=EEEEE....#.#',
             '#.DdDD.=EEeEE.####.#',
-            '#..========........#',
+            '#9#========........#',
             '####################'
         ],
         npcs: [
@@ -24,7 +24,9 @@ export default {
             { id: 'hua_fauves', at: '2' },
             { id: 'old_nomad_bayan', at: '3' }
         ],
-        chests: []
+        chests: [
+            { id: 'nomad_trunk', at: '9', gold: 105, label: 'Malle du vieux nomade', emoji: '🧳', openText: '🎁 Une malle de feutre oubliée contre la palissade : des pièces, et un morceau de fromage vénérable.' }
+        ]
     },
 
     wild: {

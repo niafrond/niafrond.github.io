@@ -51,8 +51,14 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         const sanctuary = screens[region];
         sanctuaryOf.add(region);
 
-        const houses = {};
-        (map.interiors || []).forEach(i => { houses[i.house] = { to: i.id, name: text.screens?.[i.id]?.name }; });
+        // Maisons : chaque intérieur est rattaché au village (par défaut) ou au hameau (`in: 'hamlet'`) via sa lettre.
+        const housesOf = zone => {
+            const houses = {};
+            (map.interiors || []).filter(i => (i.in || 'village') === zone)
+                .forEach(i => { houses[i.house] = { to: i.id, name: text.screens?.[i.id]?.name }; });
+            return houses;
+        };
+        const houses = housesOf('village');
 
         const village = buildZone({
             ...map.village, region, kind: 'village', houses,
@@ -75,17 +81,26 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
             ...(gate.requires ? { requires: gate.requires, lockedMessage: gate.lockedMessage || text.screens?.[wild.id]?.gateMessage || 'Une force invisible barre la route du sanctuaire.' } : {})
         });
 
+        // Hameau (2e village de la région) : relié à la zone sauvage par ses ancres `v` (wild, bord bas) et `^` (hameau, bord haut).
+        let hamlet = null;
+        if (map.hamlet) {
+            hamlet = buildZone({ ...map.hamlet, region, kind: 'village', houses: housesOf('hamlet'), exits: [...(map.hamlet.exits || [])] }, helpers);
+            addExit(hamlet, map.hamlet, '^', { to: wild.id, label: wild.name });
+            addExit(wild, map.wild, 'v', { to: hamlet.id, label: hamlet.name });
+            screens[hamlet.id] = hamlet;
+        }
         screens[village.id] = village;
         screens[wild.id] = wild;
         (map.interiors || []).forEach(i => {
+            const parent = (i.in || 'village') === 'hamlet' && hamlet ? hamlet : village;
             const interior = buildZone({ ...i, region, kind: 'house', biome: 'house', interior: true, exits: [] }, helpers);
             const a = anchorOf(i.grid, 'v');
-            if (a) interior.exits.push({ x: a.x, y: a.y, to: village.id, door: false, label: 'Sortie' });
+            if (a) interior.exits.push({ x: a.x, y: a.y, to: parent.id, door: false, label: 'Sortie' });
             screens[i.id] = interior;
         });
 
         // Sanctuaire existant : plus de PNJ de village (relogés), ses sorties passent par la zone sauvage / le village suivant.
-        const placedNpcs = [village, wild, ...(map.interiors || []).map(i => screens[i.id])].flatMap(z => z.npcs.map(n => n.id));
+        const placedNpcs = [village, wild, ...(hamlet ? [hamlet] : []), ...(map.interiors || []).map(i => screens[i.id])].flatMap(z => z.npcs.map(n => n.id));
         placedNpcs.forEach(id => relocated.add(id));
         sanctuary.exits.forEach(exit => {
             if (prev && exit.to === prev) { exit.to = wild.id; exit.label = wild.name; delete exit.arrive; }

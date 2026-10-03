@@ -14,9 +14,9 @@ export default {
             '<==================>',
             '#.....W.=.~~.2.....#',
             '#.DDDD..=3~~EEEEEE.#',
-            '##DDDD.#=...EEEEEE##',
+            '#.DDDD.#=...EEEEEE##',
             '#.DdDD..=...EEeEEE.#',
-            '#..============....#',
+            '#9#============....#',
             '####################'
         ],
         npcs: [
@@ -24,7 +24,9 @@ export default {
             { id: 'storyteller_yun', at: '2' },
             { id: 'boy_tarik', at: '3' }
         ],
-        chests: []
+        chests: [
+            { id: 'caravan_stash', at: '9', gold: 60, label: 'Cachette de caravanier', emoji: '💰', openText: '🎁 Une bourse de cuir enterrée dans le sable : le péage d\'un caravanier prudent.' }
+        ]
     },
 
     wild: {

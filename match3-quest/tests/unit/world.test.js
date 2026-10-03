@@ -94,19 +94,21 @@ describe('villageois générés', () => {
 });
 
 describe('Grand Monde : cartes', () => {
-    test('chaque région a un village, une zone sauvage et des maisons', () => {
+    test('chaque région a un village, une zone sauvage et des maisons ; un hameau sauf lune', () => {
         REGION_ORDER.forEach(region => {
+            expect(Boolean(SCREENS[`${region}_hamlet`])).toBe(region !== 'lune');
             expect(SCREENS[`${region}_village`]).toBeTruthy();
             expect(SCREENS[`${region}_wild`]).toBeTruthy();
-            expect(screens.filter(s => s.region === region && s.interior).length).toBeGreaterThanOrEqual(region === 'lune' ? 3 : 4);
+            expect(screens.filter(s => s.region === region && s.interior).length).toBeGreaterThanOrEqual(region === 'lune' ? 3 : 6);
             expect(REGION_ENTRY_SCREEN[region]).toBe(`${region}_village`);
         });
     });
 
     test('villages plein écran (20x13, lune 16x11), wild 18x12, intérieurs petits', () => {
         screens.forEach(s => {
-            if (s.kind === 'village') expect([s.w, s.h]).toEqual(s.region === 'lune' ? [16, 11] : [20, 13]);
+            if (s.kind === 'village') expect([s.w, s.h]).toEqual(s.id.endsWith('_hamlet') || s.region === 'lune' ? [16, 11] : [20, 13]);
             if (s.kind === 'wild') expect([s.w, s.h]).toEqual([18, 12]);
+            if (s.id.endsWith('_hamlet')) expect(s.exits.some(e => e.to === `${s.region}_wild`)).toBe(true);
             if (s.interior) { expect(s.w).toBeLessThanOrEqual(12); expect(s.h).toBeLessThanOrEqual(8); }
         });
     });
@@ -255,8 +257,8 @@ describe('Grand Monde : textes et quêtes', () => {
         expect(main).toBeGreaterThan(side);
     });
 
-    test('nombre de quêtes annexes : plus de 40 en tout', () => {
-        expect(QUESTS.filter(q => q.side).length).toBeGreaterThan(40);
+    test('nombre de quêtes annexes : au moins 125 (3 fois plus qu'avant)', () => {
+        expect(QUESTS.filter(q => q.side).length).toBeGreaterThanOrEqual(125);
         expect(screens.flatMap(s => s.chests).length).toBeGreaterThan(80);
     });
 

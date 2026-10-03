@@ -15,7 +15,7 @@ export default {
             '#....1.....W..2..3.#',
             '#######==###########',
             '#.DDDD.==.#..EEEEE.#',
-            '#.DdDD.==...#EEeEE##',
+            '#.DdDD.==...#EEeEE9#',
             '#..=============...#',
             '####################'
         ],
@@ -24,7 +24,9 @@ export default {
             { id: 'child_yuer', at: '2' },
             { id: 'phoenix_chick', at: '3' }
         ],
-        chests: []
+        chests: [
+            { id: 'terrace_urn', at: '9', gold: 135, label: 'Urne de la terrasse', emoji: '🏺', openText: '🎁 Une urne dorée posée au pied d\'un mur de terrasse : quelques sous et une odeur de miel.' }
+        ]
     },
 
     wild: {
