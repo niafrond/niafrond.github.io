@@ -90,7 +90,7 @@ function getMaxTileSizeFromViewport(boardDiv){
     const spellsContainer = document.getElementById('spells-container');
     const battleResultScreen = document.getElementById('battle-result-screen');
     const spellsHeight = getOuterBlockSize(spellsContainer);
-    const resultHeight = getOuterBlockSize(battleResultScreen);
+    const resultHeight = getOuterBlockSize(battleResultScreen) + getOuterBlockSize(document.getElementById('combat-controls'));
     const bottomSafety = 8;
 
     const availableBoardHeight = viewportHeight - top - spellsHeight - resultHeight - bottomSafety;
@@ -99,9 +99,10 @@ function getMaxTileSizeFromViewport(boardDiv){
     const styles = window.getComputedStyle(boardDiv);
     const paddingTop = parseFloat(styles.paddingTop || '0') || 0;
     const paddingBottom = parseFloat(styles.paddingBottom || '0') || 0;
+    const borderY = (parseFloat(styles.borderTopWidth || '0') || 0) + (parseFloat(styles.borderBottomWidth || '0') || 0);
     const marginBottom = parseFloat(styles.marginBottom || '0') || 0;
     const gap = parseFloat(styles.rowGap || styles.gap || '0') || 0;
-    const usableHeight = availableBoardHeight - paddingTop - paddingBottom - marginBottom - (gap * (boardSize - 1));
+    const usableHeight = availableBoardHeight - paddingTop - paddingBottom - borderY - marginBottom - (gap * (boardSize - 1));
     if(usableHeight <= 0) return 1;
 
     return Math.floor(usableHeight / boardSize);

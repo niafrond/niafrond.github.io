@@ -2,6 +2,7 @@ import { generateBoard, renderBoard } from "./board.js";
 import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, combatHooks } from "./game.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy } from "./enemies.js";
+import { playTitleScreen } from "./cinematics.js";
 import { initializeAudioUI, playSfx, primeAudioFromGesture } from "./sound.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate } from "./version.js";
@@ -254,6 +255,16 @@ function init() {
         enterExploration();
     });
 
+    // Menu Options / Pause (son, volume, mode nuit)
+    const optionsModal = document.getElementById('options-modal');
+    document.getElementById('options-btn')?.addEventListener('click', () => {
+        primeAudioFromGesture();
+        playSfx('uiClick');
+        optionsModal?.classList.add('active');
+    });
+    document.getElementById('options-close-btn')?.addEventListener('click', () => optionsModal?.classList.remove('active'));
+    optionsModal?.addEventListener('click', e => { if(e.target === optionsModal) optionsModal.classList.remove('active'); });
+
     const soundToggleButton = document.getElementById('sound-toggle-btn');
     initializeAudioUI(soundToggleButton);
 
@@ -285,10 +296,15 @@ function init() {
     // (la phase d'exploration est l'état par défaut du jeu).
     setCombatUiVisible(false);
     // Afficher la sélection de classe si nécessaire ; sinon on reprend l'exploration là où on l'avait laissée.
-    showClassSelection();
-    if(player.class) {
-        enterExploration();
-    }
+    // Écran de démarrage (portrait animé) avant la sélection de classe / la reprise ; ignoré par les navigateurs
+    // pilotés par des tests automatisés (sauf ?title=1).
+    const skipTitle = navigator.webdriver && !/[?&]title=1/.test(location.search);
+    (skipTitle ? Promise.resolve() : playTitleScreen()).then(() => {
+        showClassSelection();
+        if(player.class) {
+            enterExploration();
+        }
+    });
     
     // Rendre la fonction clearSaveData accessible globalement pour le bouton
     window.clearPlayerSave = clearSaveData;

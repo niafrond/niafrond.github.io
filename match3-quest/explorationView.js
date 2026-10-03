@@ -11,6 +11,8 @@
 
 import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
+import { playSfx } from './sound.js';
+import { playEndingAnimation, playBossDialogue } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, preloadSprites } from './sprites/index.js';
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
@@ -213,7 +215,10 @@ export function createExplorationView(cfg) {
                 if (!spoken.has(ev.quest.id)) openDialog({ ...NARRATOR, title: `Nouvelle quête : ${ev.quest.title}` }, ev.lines);
                 toast(`📜 Nouvelle quête${ev.quest.side ? ' secondaire' : ''} : ${ev.quest.title}`);
             } else if (ev.type === 'questCompleted') {
-                if (!spoken.has(ev.quest.id)) openDialog({ ...NARRATOR, title: ev.quest.chapter }, ev.lines);
+                if (ev.ended) {
+                    // Fin de la légende : dialogue final puis animation de fin
+                    if (spoken.has(ev.quest.id)) playEndingAnimation(); else openDialog({ ...NARRATOR, title: ev.quest.chapter }, ev.lines, () => { playEndingAnimation(); });
+                } else if (!spoken.has(ev.quest.id)) openDialog({ ...NARRATOR, title: ev.quest.chapter }, ev.lines);
                 if (!ev.paid) gold += ev.gold || 0;
                 const frag = ev.reward?.fragment ? ` · 🧩 ${ev.reward.fragment}` : '';
                 const plus = ev.ended ? ' · 🌕 Nouvelle Partie + débloquée (journal)' : '';
@@ -310,9 +315,14 @@ export function createExplorationView(cfg) {
             </div>`;
         root.appendChild(overlay);
         battleTransitionEl = overlay;
+        playSfx(enc.boss ? 'bossStart' : 'battleStart');
         battleTransitionTimer = setTimeout(() => {
             battleTransitionTimer = null;
-            done();
+            if (!enc.boss) { done(); return; }
+            // Boss : échange de répliques avant le combat
+            const spriteHtml = overlay.querySelector('.bt-emoji')?.innerHTML || '👑';
+            overlay.classList.add('with-dialog');
+            playBossDialogue(overlay, enc, spriteHtml).then(() => { if (battleTransitionEl === overlay) done(); });
         }, reduced ? 500 : BATTLE_TRANSITION_MS);
     }
 
