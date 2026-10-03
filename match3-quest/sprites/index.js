@@ -12,6 +12,7 @@ import { NPC_SPRITES_B, FENGMENG_SPRITES } from './cn/actors-b.js';
 import { ENEMY_SPRITES_CN_1 } from './cn/enemies-1.js';
 import { ENEMY_SPRITES_CN_2 } from './cn/enemies-2.js';
 import { SUN_SPRITES, BEAST_SPRITES } from './cn/suns.js';
+import { villagerSprite } from './villagers.js';
 
 export { HERO_SPRITES, CHEST_SPRITES };
 export const NPC_SPRITES = { ...NPC_SPRITES_A, ...NPC_SPRITES_B };
@@ -28,7 +29,13 @@ export const TILE_FILES = ['red', 'blue', 'green', 'yellow', 'purple', 'skull', 
     .map(name => `sprites/tiles/tile-${name}.svg`);
 
 export const heroSprite = classId => HERO_SPRITES[classId] || null;
-export const npcSprite = npcId => NPC_SPRITES[npcId] || null;
+// PNJ dessinés à la main, sinon villageois généré à partir de l'identifiant (`hint` = emoji, oriente l'âge).
+const villagerCache = new Map();
+export const npcSprite = (npcId, hint = '') => {
+    if (NPC_SPRITES[npcId]) return NPC_SPRITES[npcId];
+    if (!villagerCache.has(npcId)) villagerCache.set(npcId, villagerSprite(npcId, hint));
+    return villagerCache.get(npcId);
+};
 export const chestSprite = opened => CHEST_SPRITES[opened ? 'open' : 'closed'] || null;
 
 // Un ennemi nommé (soleil, rival) a son propre dessin ; sinon on prend celui de son gabarit.

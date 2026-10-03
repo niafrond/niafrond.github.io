@@ -1,0 +1,121 @@
+// Assemblage du « Grand Monde » : les 10 sanctuaires de story.js (un Soleil-Boss chacun) sont précédés d'un village
+// plein écran (avec maisons explorables) et d'une zone sauvage à traverser. Voir world/FORMAT.md.
+//
+// assembleWorld(baseScreens, baseQuests) retourne { screens, quests, regionOrder }. Les régions dont le fichier
+// `world/maps/<R>.js` est absent restent inchangées, ce qui permet de livrer le monde région par région.
+
+import { buildZone, arrivalFor, freeNeighbor } from './mapKit.js';
+import { MAPS } from './maps/index.js';
+import { TEXTS } from './text/index.js';
+
+export const REGION_ORDER = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
+
+const clone = value => JSON.parse(JSON.stringify(value));
+
+export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXTS) {
+    const screens = clone(baseScreens);
+    const legacyNpcs = {};
+    Object.values(baseScreens).forEach(s => s.npcs.forEach(n => { legacyNpcs[n.id] = clone(n); }));
+    const quests = [...baseQuests];
+    const newQuests = [];
+    const relocated = new Set();
+    const sanctuaryOf = new Set();
+
+    REGION_ORDER.forEach((region, index) => {
+        const map = maps[region];
+        if (!map) return;
+        const text = texts[region] || {};
+        const helpers = {
+            npcDef: id => {
+                const t = text.npcs?.[id];
+                const base = legacyNpcs[id];
+                if (!t && !base) { console.warn(`[world] PNJ sans texte : ${id}`); return { id, name: id, emoji: '🧑', idle: ['…'] }; }
+                return { id, ...(base || {}), ...(t || {}) };
+            },
+            chestDef: id => ({ id, ...(text.chests?.[id] || {}) }),
+            screenText: id => text.screens?.[id] || {}
+        };
+        const prev = REGION_ORDER[index - 1];
+        const sanctuary = screens[region];
+        sanctuaryOf.add(region);
+
+        const houses = {};
+        (map.interiors || []).forEach(i => { houses[i.house] = { to: i.id, name: text.screens?.[i.id]?.name }; });
+
+        const village = buildZone({
+            ...map.village, region, kind: 'village', houses,
+            exits: [...(map.village.exits || [])]
+        }, helpers);
+        const wild = buildZone({ ...map.wild, region, kind: 'wild' }, helpers);
+
+        // Sorties automatiques de la chaîne : village ⇄ zone sauvage ⇄ sanctuaire, village ⇄ sanctuaire précédent.
+        const addExit = (zone, spec, ch, exit) => {
+            if ((spec.exits || []).some(e => e.at === ch)) return;
+            const a = anchorOf(spec.grid, ch);
+            if (a) zone.exits.push({ ...exit, x: a.x, y: a.y });
+        };
+        if (prev) addExit(village, map.village, '<', { to: prev, label: screens[prev].name });
+        addExit(village, map.village, '>', { to: wild.id, label: wild.name });
+        addExit(wild, map.wild, '<', { to: village.id, label: village.name });
+        const gate = map.wild.gate || {};
+        addExit(wild, map.wild, '>', {
+            to: region, label: sanctuary.name,
+            ...(gate.requires ? { requires: gate.requires, lockedMessage: gate.lockedMessage || text.screens?.[wild.id]?.gateMessage || 'Une force invisible barre la route du sanctuaire.' } : {})
+        });
+
+        screens[village.id] = village;
+        screens[wild.id] = wild;
+        (map.interiors || []).forEach(i => {
+            const interior = buildZone({ ...i, region, kind: 'house', biome: 'house', interior: true, exits: [] }, helpers);
+            const a = anchorOf(i.grid, 'v');
+            if (a) interior.exits.push({ x: a.x, y: a.y, to: village.id, door: false, label: 'Sortie' });
+            screens[i.id] = interior;
+        });
+
+        // Sanctuaire existant : plus de PNJ de village (relogés), ses sorties passent par la zone sauvage / le village suivant.
+        const placedNpcs = [village, wild, ...(map.interiors || []).map(i => screens[i.id])].flatMap(z => z.npcs.map(n => n.id));
+        placedNpcs.forEach(id => relocated.add(id));
+        sanctuary.exits.forEach(exit => {
+            if (prev && exit.to === prev) { exit.to = wild.id; exit.label = wild.name; delete exit.arrive; }
+        });
+        // la sortie est du sanctuaire précédent mène désormais au village de cette région
+        if (prev) {
+            screens[prev].exits.forEach(exit => {
+                if (exit.to === region) { exit.to = village.id; exit.label = village.name; delete exit.arrive; }
+            });
+        }
+        if (map.sanctuary?.waypoint) {
+            sanctuary.waypoint = { ...map.sanctuary.waypoint, name: text.waypointName || `Pierre de voyage — ${sanctuary.name}` };
+        }
+        if (text.arrivalSanctuary?.length) sanctuary.arrival = text.arrivalSanctuary;
+        // l'ancien texte d'arrivée de la région passe au village (première visite)
+        if (sanctuary.arrival && !village.arrival) { village.arrival = sanctuary.arrival; delete sanctuary.arrival; }
+        if (text.quests?.length) newQuests.push(...text.quests);
+    });
+
+    // Retire des sanctuaires les PNJ qui ont déménagé.
+    sanctuaryOf.forEach(id => { screens[id].npcs = screens[id].npcs.filter(n => !relocated.has(n.id)); });
+
+    // Tuiles d'arrivée symétriques + point d'apparition devant les pierres de voyage.
+    Object.values(screens).forEach(s => {
+        s.exits.forEach(e => {
+            const target = screens[e.to];
+            if (!target) return;
+            const arrive = arrivalFor(s.id, target);
+            if (arrive && !e.arrive) e.arrive = arrive;
+        });
+        if (s.waypoint) s.waypoint.spot = freeNeighbor(s, s.waypoint.x, s.waypoint.y) || { ...s.spawn };
+    });
+
+    // Quêtes : histoire principale, quêtes secondaires existantes, puis les nouvelles (toutes `side`).
+    quests.push(...newQuests.map(q => ({ side: true, ...q })));
+    return { screens, quests, regionOrder: REGION_ORDER };
+}
+
+function anchorOf(grid, ch) {
+    for (let y = 0; y < grid.length; y++) {
+        const x = grid[y].indexOf(ch);
+        if (x >= 0) return { x, y };
+    }
+    return null;
+}

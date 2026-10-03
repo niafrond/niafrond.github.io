@@ -2,6 +2,7 @@ import { generateBoard, renderBoard } from "./board.js";
 import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, combatHooks } from "./game.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy } from "./enemies.js";
+import { addXP } from "./experience.js";
 import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
 import { initializeAudioUI, playSfx, primeAudioFromGesture } from "./sound.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
@@ -143,6 +144,10 @@ function init() {
         getPlayerLevel: () => player.level,
         onEncounter: encounter => startEncounterCombat(encounter),
         onGold: amount => { player.gold = (player.gold || 0) + amount; },
+        onXp: amount => {
+            const res = addXP(player, amount);
+            if(res.leveledUp) exploration.toast(`⭐ Niveau ${res.newLevel} !`, 4000);
+        },
         onSave: () => saveUpdate(),
         onRegionVisited: regionId => {
             if(!player.worldMap) player.worldMap = { currentZoneId: null, visitedZoneIds: [] };
@@ -229,6 +234,27 @@ function init() {
             const screenId = REGION_ENTRY_SCREEN[zone.id];
             if(screenId) exploration.teleportToScreen(screenId);
         });
+        // Voyage rapide : pierres de voyage activées, groupées par région.
+        const stones = exploration.getTravelList();
+        if(stones.length) {
+            const panel = document.createElement('div');
+            panel.className = 'worldmap-travel';
+            panel.innerHTML = '<h4>🌀 Voyage rapide</h4>';
+            const zoneName = Object.fromEntries(worldZones.map(z => [z.id, z.shortName]));
+            stones.forEach(w => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'worldmap-travel-btn';
+                btn.textContent = `${zoneName[w.region] || w.region} · ${w.screenName}`;
+                btn.disabled = w.current;
+                btn.addEventListener('click', () => {
+                    modal.classList.remove('active');
+                    exploration.travelTo(w.screenId);
+                });
+                panel.appendChild(btn);
+            });
+            container.appendChild(panel);
+        }
         modal.classList.add('active');
     };
     document.getElementById('worldmap-close-btn')?.addEventListener('click', () => {

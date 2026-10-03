@@ -11,6 +11,7 @@
 
 import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
+import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { playEndingAnimation, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, preloadSprites } from './sprites/index.js';
@@ -49,6 +50,7 @@ const BIOMES = {
     savanna: { a: '#d8c06a', b: '#cfb75f', path: '#ead89a', cliff: '#8a6c2e', liquid: '#4a8fb8', sky: ['#f4c26a', '#fde9bd'], decor: ['🌾', '🪨', '🌾'] },
     coast: { a: '#e6d7b0', b: '#dccda6', path: '#f0e4c4', cliff: '#8a7650', liquid: '#1d5fa8', sky: ['#7ec4ec', '#e6f5fb'], decor: ['🌊', '🪨', '🌊'] },
     fusang: { a: '#f0dc8c', b: '#e8d27e', path: '#fff0b0', cliff: '#b88a2a', liquid: '#e8b830', sky: ['#fde6a6', '#fffbea'], decor: ['🌳', '🏮', '🌳'] },
+    house: { a: '#c9a06a', b: '#bd9560', path: '#a8483a', cliff: '#5a3a24', liquid: '#6ab7c9', sky: ['#3a2a20', '#5a4130'], decor: ['🪑', '🏺', '🛏️', '📚', '🏮', '🍵'] },
     moon: { a: '#c9cde8', b: '#bec3e0', path: '#e4e6f4', cliff: '#3a3f78', liquid: '#6f86d8', sky: ['#171a4a', '#3b3f86'], decor: ['🌕', '🏮', '🌕'] }
 };
 
@@ -67,6 +69,7 @@ const hash = (x, y) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 
  *  getPlayerLevel()           niveau courant
  *  onEncounter(encounter)     lance le combat
  *  onGold(amount)             crédite de l'or
+ *  onXp(amount)               crédite de l'expérience (récompenses de quêtes)
  *  onSave()                   sauvegarde la partie (aussi après une Nouvelle Partie +)
  *  onRegionVisited(regionId)  région découverte
  *  onOpenMap()                ouvre la carte du monde
@@ -125,7 +128,8 @@ export function createExplorationView(cfg) {
     function refreshHud() {
         const screen = X.currentScreen(session);
         const plus = session.data.ngPlus > 0 ? ` · 🌕 NG+${session.data.ngPlus}` : '';
-        if (els.title) els.title.textContent = `📍 ${screen.name}${plus}`;
+        const icon = screen.interior ? '🏠' : screen.kind === 'village' ? '🏘️' : '📍';
+        if (els.title) els.title.textContent = `${icon} ${screen.name}${plus}`;
         if (els.objective) els.objective.textContent = X.currentObjectiveText(session);
     }
 
@@ -196,7 +200,7 @@ export function createExplorationView(cfg) {
             ? Object.values(session.screens).flatMap(sc => sc.npcs).find(n => n.id === sp.npc)
             : null;
         const enemyDef = sp.enemy ? session.rt.enemyIndex[sp.enemy]?.def : null;
-        const sprite = sp.npc ? npcSprite(sp.npc) : sp.enemy ? enemySprite(enemyDef?.spriteKey || sp.enemy, enemyDef?.templateId) : null;
+        const sprite = sp.npc ? npcSprite(sp.npc, npcDef?.emoji) : sp.enemy ? enemySprite(enemyDef?.spriteKey || sp.enemy, enemyDef?.templateId) : null;
         return {
             name: sp.name || NARRATOR.name,
             title: sp.title,
@@ -208,8 +212,11 @@ export function createExplorationView(cfg) {
     // Traite les événements d'histoire. `spoken` : quêtes dont le texte vient d'être dit par un PNJ.
     function processEvents(events, spoken = new Set()) {
         let gold = 0;
+        let xp = 0;
         events.forEach(ev => {
-            if (ev.type === 'scene') {
+            if (ev.type === 'objective') {
+                toast(`🎯 ${ev.quest.title} : objectif accompli`);
+            } else if (ev.type === 'scene') {
                 openDialog(sceneSpeaker(ev.speaker), ev.lines);
             } else if (ev.type === 'questStarted') {
                 if (!spoken.has(ev.quest.id)) openDialog({ ...NARRATOR, title: `Nouvelle quête : ${ev.quest.title}` }, ev.lines);
@@ -219,16 +226,17 @@ export function createExplorationView(cfg) {
                     // Fin de la légende : dialogue final puis animation de fin
                     if (spoken.has(ev.quest.id)) playEndingAnimation(); else openDialog({ ...NARRATOR, title: ev.quest.chapter }, ev.lines, () => { playEndingAnimation(); });
                 } else if (!spoken.has(ev.quest.id)) openDialog({ ...NARRATOR, title: ev.quest.chapter }, ev.lines);
-                if (!ev.paid) gold += ev.gold || 0;
+                if (!ev.paid) { gold += ev.gold || 0; xp += ev.xp || 0; }
                 const frag = ev.reward?.fragment ? ` · 🧩 ${ev.reward.fragment}` : '';
                 const plus = ev.ended ? ' · 🌕 Nouvelle Partie + débloquée (journal)' : '';
-                toast(`✅ Quête terminée : ${ev.quest.title} — 💰 +${ev.gold || 0}${frag}${plus}`, ev.ended ? 8000 : 5000);
+                toast(`✅ Quête terminée : ${ev.quest.title} — 💰 +${ev.gold || 0}${ev.xp ? ` ✨ +${ev.xp} XP` : ''}${frag}${plus}`, ev.ended ? 8000 : 5000);
             } else if (ev.type === 'chestOpened') {
                 if (!ev.paid) gold += ev.gold || 0;
                 toast(`${ev.chest.openText || `🎁 ${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` 💰 +${ev.gold}` : ''}`);
             }
         });
         if (gold > 0) cfg.onGold(gold);
+        if (xp > 0) cfg.onXp?.(xp);
         cfg.onSave();
         refreshHud();
     }
@@ -237,32 +245,136 @@ export function createExplorationView(cfg) {
         return new Set(events.filter(e => e.quest).map(e => e.quest.id));
     }
 
-    function showJournal() {
-        if (journalEl) return closeJournal();
-        const entries = X.journalEntries(session);
-        journalEl = document.createElement('div');
-        journalEl.className = 'explore-journal';
-        const statusLabel = { available: '💬 À démarrer', active: '🎯 En cours', ready: '✅ À rendre', done: '🏁 Terminée' };
+    // ── Carnet de voyage : quêtes (suivi), voyage rapide, progression ──────
+    const REGION_LABEL = Object.fromEntries(worldZones.map(z => [z.id, `${z.emoji} ${z.shortName}`]));
+    const carnet = { tab: 'quests', filter: 'all', region: 'all' };
+    const STATUS_LABEL = { available: '💬 À démarrer', active: '🎯 En cours', ready: '✅ À rendre', done: '🏁 Terminée' };
+    const STATUS_ORDER = { ready: 0, active: 1, available: 2, done: 3 };
+
+    function questsPanel() {
+        const all = X.journalEntries(session);
+        const regions = [...new Set(all.map(e => e.region).filter(Boolean))];
+        if (carnet.region !== 'all' && !regions.includes(carnet.region)) carnet.region = 'all';
+        const counts = {
+            main: all.filter(e => !e.quest.side && e.status !== 'done').length,
+            side: all.filter(e => e.quest.side && e.status !== 'done').length,
+            done: all.filter(e => e.status === 'done').length
+        };
+        const entries = all
+            .filter(e => carnet.filter === 'all' ? e.status !== 'done'
+                : carnet.filter === 'main' ? !e.quest.side && e.status !== 'done'
+                    : carnet.filter === 'side' ? e.quest.side && e.status !== 'done' : e.status === 'done')
+            .filter(e => carnet.region === 'all' || e.region === carnet.region)
+            .sort((a, b) => Number(b.tracked) - Number(a.tracked) || STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
+        const chip = (key, label) => `<button type="button" class="carnet-chip${carnet.filter === key ? ' on' : ''}" data-filter="${key}">${label}</button>`;
+        const reward = r => [r.gold ? `💰 ${r.gold}` : '', r.xp ? `✨ ${r.xp} XP` : '', r.fragment ? `🧩 ${escapeHtml(r.fragment)}` : ''].filter(Boolean).join(' · ');
+        return `
+            <div class="carnet-filters">
+                ${chip('all', 'En cours')}${chip('main', `Principale (${counts.main})`)}${chip('side', `Annexes (${counts.side})`)}${chip('done', `Terminées (${counts.done})`)}
+            </div>
+            <select class="carnet-region" aria-label="Région">
+                <option value="all">Toutes les régions</option>
+                ${regions.map(r => `<option value="${r}"${carnet.region === r ? ' selected' : ''}>${escapeHtml(REGION_LABEL[r] || r)}</option>`).join('')}
+            </select>
+            <div class="explore-journal-list">
+            ${entries.length === 0 ? '<p>Aucune quête dans cette liste. Parlez aux villageois, entrez dans les maisons.</p>' : entries.map(e => `
+                <div class="explore-quest ${e.status}${e.tracked ? ' tracked' : ''}">
+                    <div class="explore-quest-head"><b>${e.tracked ? '⭐ ' : ''}${escapeHtml(e.quest.title)}</b> <span>${STATUS_LABEL[e.status] || ''}</span></div>
+                    <div class="explore-quest-chapter">${escapeHtml(e.quest.chapter)}${e.region && REGION_LABEL[e.region] ? ` · ${escapeHtml(REGION_LABEL[e.region])}` : ''}</div>
+                    ${e.status === 'available'
+                        ? `<div class="explore-quest-where">💬 Parlez à ${escapeHtml(e.giverName || 'un PNJ')}${e.giverPlace ? ` (${escapeHtml(e.giverPlace)})` : ''}</div>`
+                        : `<ul>${e.objectives.map(o => `<li class="${o.done ? 'done' : ''}">${o.done ? '☑' : '☐'} ${escapeHtml(o.text)}</li>`).join('')}</ul>`}
+                    ${e.where && e.status !== 'done' && e.status !== 'available' ? `<div class="explore-quest-where">📍 ${escapeHtml(e.where)}</div>` : ''}
+                    ${e.quest.reward ? `<div class="explore-quest-reward">${reward(e.quest.reward)}</div>` : ''}
+                    ${e.status === 'done' ? '' : `<button type="button" class="carnet-track" data-track="${e.tracked ? '' : e.quest.id}">${e.tracked ? '✖ Ne plus suivre' : '⭐ Suivre'}</button>`}
+                </div>`).join('')}
+            </div>`;
+    }
+
+    function travelPanel() {
+        const stones = X.waypointList(session);
+        const byRegion = new Map();
+        stones.forEach(w => { if (!byRegion.has(w.region)) byRegion.set(w.region, []); byRegion.get(w.region).push(w); });
+        if (stones.length === 0) return '<p>Aucune pierre de voyage activée. Touchez une pierre 🌀 dans un village ou en chemin.</p>';
+        const kindIcon = { village: '🏘️', wild: '🌿', sanctuary: '☀️' };
+        return `<p class="carnet-hint">Les pierres de voyage 🌀 se trouvent dans chaque village, au milieu des terres sauvages et à l'entrée des sanctuaires. Touchez-les pour les activer.</p>
+            <div class="carnet-travel">${[...byRegion.entries()].map(([region, list]) => `
+                <div class="carnet-travel-region"><h4>${escapeHtml(REGION_LABEL[region] || region)}</h4>
+                ${list.map(w => `<button type="button" class="carnet-travel-btn" data-travel="${w.screenId}"${w.current ? ' disabled' : ''}>
+                    ${kindIcon[w.kind] || '🌀'} ${escapeHtml(w.screenName)}${w.current ? ' <small>(vous êtes ici)</small>' : ''}</button>`).join('')}
+                </div>`).join('')}</div>`;
+    }
+
+    function progressPanel() {
+        const rows = X.regionProgress(session).filter(r => r.visited);
+        const bar = (n, total) => `<span class="carnet-bar"><i style="width:${total ? Math.round(100 * n / total) : 0}%"></i></span> ${n}/${total}`;
+        return `<div class="carnet-progress">${rows.map(r => `
+            <div class="carnet-progress-row"><b>${escapeHtml(REGION_LABEL[r.region] || r.region)}</b>
+                <div>🎁 Coffres ${bar(r.chestsOpened, r.chestsTotal)}</div>
+                <div>📜 Annexes ${bar(r.sideDone, r.sideTotal)}</div>
+                <div>🌀 Pierres ${bar(r.stonesFound, r.stonesTotal)}</div>
+            </div>`).join('')}</div>`;
+    }
+
+    function renderCarnet() {
+        if (!journalEl) return;
+        const body = carnet.tab === 'travel' ? travelPanel() : carnet.tab === 'progress' ? progressPanel() : questsPanel();
+        const tab = (key, label) => `<button type="button" class="carnet-tab${carnet.tab === key ? ' on' : ''}" data-tab="${key}">${label}</button>`;
         journalEl.innerHTML = `
             <div class="explore-journal-card">
                 <h3>📜 ${escapeHtml(STORY_TITLE)}</h3>
                 ${session.data.ended ? '<p class="explore-journal-end">🌕 La légende est achevée !</p>' : ''}
-                <div class="explore-journal-list">
-                ${entries.length === 0 ? '<p>Aucune quête pour l\'instant. Parlez aux villageois.</p>' : entries.map(e => `
-                    <div class="explore-quest ${e.status}">
-                        <div class="explore-quest-head"><b>${escapeHtml(e.quest.title)}</b> <span>${statusLabel[e.status] || ''}</span></div>
-                        <div class="explore-quest-chapter">${escapeHtml(e.quest.chapter)}</div>
-                        ${e.status === 'available' ? '' : `<ul>${e.objectives.map(o => `<li class="${o.done ? 'done' : ''}">${o.done ? '☑' : '☐'} ${escapeHtml(o.text)}</li>`).join('')}</ul>`}
-                    </div>`).join('')}
-                </div>
+                <div class="carnet-tabs">${tab('quests', '📜 Quêtes')}${tab('travel', '🌀 Voyage')}${tab('progress', '📊 Progression')}</div>
+                ${body}
                 ${session.data.ended ? '<button type="button" class="primary explore-journal-ngplus">🌕 Nouvelle Partie +</button>' : ''}
                 <button type="button" class="primary explore-journal-close">Fermer</button>
             </div>`;
+    }
+
+    function showJournal(tab) {
+        if (journalEl) return closeJournal();
+        if (typeof tab === 'string') carnet.tab = tab;
+        journalEl = document.createElement('div');
+        journalEl.className = 'explore-journal';
         journalEl.addEventListener('click', ev => {
             if (ev.target.closest('.explore-journal-ngplus')) { confirmNewGamePlus(); return; }
-            if (ev.target === journalEl || ev.target.closest('.explore-journal-close')) closeJournal();
+            if (ev.target === journalEl || ev.target.closest('.explore-journal-close')) { closeJournal(); return; }
+            const tabBtn = ev.target.closest('[data-tab]');
+            if (tabBtn) { carnet.tab = tabBtn.dataset.tab; renderCarnet(); return; }
+            const filterBtn = ev.target.closest('[data-filter]');
+            if (filterBtn) { carnet.filter = filterBtn.dataset.filter; renderCarnet(); return; }
+            const trackBtn = ev.target.closest('[data-track]');
+            if (trackBtn) {
+                X.setTrackedQuest(session, trackBtn.dataset.track || null);
+                cfg.onSave();
+                refreshHud();
+                renderCarnet();
+                return;
+            }
+            const travelBtn = ev.target.closest('[data-travel]');
+            if (travelBtn) { closeJournal(); travelTo(travelBtn.dataset.travel); }
+        });
+        journalEl.addEventListener('change', ev => {
+            if (ev.target.classList.contains('carnet-region')) { carnet.region = ev.target.value; renderCarnet(); }
         });
         root.appendChild(journalEl);
+        renderCarnet();
+    }
+
+    // Voyage rapide vers une pierre activée (hors combat).
+    function travelTo(screenId) {
+        ensureSession();
+        if (inCombat || !X.fastTravel(session, screenId)) return false;
+        held = null;
+        walk = null;
+        vis.enemies = {};
+        syncVisual(true);
+        const screen = X.currentScreen(session);
+        cfg.onRegionVisited?.(screen.region);
+        refreshHud();
+        toast(`🌀 Voyage rapide : ${screen.name}`, 2600);
+        cfg.onSave();
+        return true;
     }
 
     function closeJournal() {
@@ -356,7 +468,7 @@ export function createExplorationView(cfg) {
                 const talk = X.talkToNpc(session, res.npcId);
                 if (!talk) break;
                 const spoken = eventsSpoken(talk.events);
-                openDialog({ emoji: talk.npc.emoji, sprite: npcSprite(talk.npc.id), name: talk.npc.name, title: talk.npc.title }, talk.lines,
+                openDialog({ emoji: talk.npc.emoji, sprite: npcSprite(talk.npc.id, talk.npc.emoji), name: talk.npc.name, title: talk.npc.title }, talk.lines,
                     () => processEvents(talk.events, spoken));
                 break;
             }
@@ -381,15 +493,23 @@ export function createExplorationView(cfg) {
                 if (res.reason === 'quest') toast(`🔒 ${res.message}`, 4500);
                 else toast(`🌫️ Une brume magique bloque la route vers ${res.regionName} — niveau ${res.minLevel} requis.`, 4200);
                 break;
+            case 'waypoint':
+                walk = null;
+                playSfx('uiClick');
+                toast(res.isNew ? `🌀 ${res.name} activée : voyage rapide possible depuis la carte` : `🌀 ${res.name}`, res.isNew ? 4200 : 2200);
+                cfg.onSave();
+                refreshHud();
+                break;
             case 'transition': {
                 const screen = X.currentScreen(session);
                 cfg.onRegionVisited?.(screen.region);
                 vis.enemies = {};
                 syncVisual(true);
                 refreshHud();
-                toast(`📍 ${screen.name}`, 2200);
+                toast(`${screen.interior ? '🏠' : screen.kind === 'village' ? '🏘️' : '📍'} ${screen.name}`, 2200);
                 // Première visite : petit texte d'ambiance du Narrateur.
                 if (res.firstVisit && res.arrival?.length) openDialog({ ...NARRATOR, title: screen.name }, res.arrival);
+                if (res.events?.length) processEvents(res.events);
                 cfg.onSave();
                 break;
             }
@@ -605,6 +725,21 @@ export function createExplorationView(cfg) {
 
         // sorties : case lumineuse, flèche vers le bord de la carte, nom de la destination
         screen.exits.forEach(ex => {
+            if (ex.door) {
+                // porte de maison : tapis lumineux devant la porte du bâtiment (dessinée avec lui)
+                cell(ex.x, ex.y, `rgba(255,236,150,${(0.28 + 0.2 * pulse).toFixed(3)})`, tile * 0.1);
+                return;
+            }
+            if (screen.interior) {
+                // sortie d'une maison : porte de bois dans le mur du bas
+                const p = P(ex.x, ex.y);
+                ctx.fillStyle = '#7a4a26';
+                ctx.fillRect(p.x + tile * 0.12, p.y + tile * 0.05, tile * 0.76, tile * 0.95);
+                ctx.fillStyle = `rgba(255,236,150,${(0.25 + 0.2 * pulse).toFixed(3)})`;
+                ctx.fillRect(p.x + tile * 0.2, p.y + tile * 0.15, tile * 0.6, tile * 0.85);
+                drawLabel(p.x + tile / 2, p.y - tile * 0.35, '🚪 Sortie', '#fff8e1', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
+                return;
+            }
             const minLevel = REGION_UNLOCK_LEVEL[session.screens[ex.to].region] || 1;
             const locked = X.isExitLocked(session, ex);
             const gated = locked || level < minLevel;
@@ -625,11 +760,14 @@ export function createExplorationView(cfg) {
 
         // 2. Décors, PNJ, coffres, ennemis, héros (du haut vers le bas de l'écran)
         const items = [];
+        const inBuilding = (x, y) => (screen.buildings || []).some(b => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h);
         for (let x = 0; x < screen.w; x++) {
             for (let y = 0; y < screen.h; y++) {
-                if (inRects(screen.obstacles, x, y)) items.push({ depth: y, kind: 'block', x, y });
+                if (inRects(screen.obstacles, x, y) && !inBuilding(x, y)) items.push({ depth: y, kind: 'block', x, y });
             }
         }
+        (screen.buildings || []).forEach(b => items.push({ depth: b.y + b.h - 0.5, kind: 'building', b, x: b.x, y: b.y }));
+        if (screen.waypoint) items.push({ depth: screen.waypoint.y + 0.1, kind: 'waypoint', x: screen.waypoint.x, y: screen.waypoint.y });
         X.visibleNpcs(session).forEach(n => items.push({ depth: n.y + 0.1, kind: 'npc', n, x: n.x, y: n.y }));
         X.visibleChests(session).forEach(c => items.push({ depth: c.y + 0.1, kind: 'chest', c, x: c.x, y: c.y }));
         X.aliveEnemies(session).forEach(e => {
@@ -640,10 +778,57 @@ export function createExplorationView(cfg) {
         items.sort((a, b) => a.depth - b.depth);
 
         const labelSize = Math.max(11, Math.round(tile * 0.2));
+        // anneaux dorés sur les cibles de la quête suivie
+        X.trackedMarkers(session).forEach(t => {
+            let pos = null;
+            if (t.kind === 'npc') pos = screen.npcs.find(n => n.id === t.id);
+            else if (t.kind === 'chest') pos = screen.chests.find(ch => ch.id === t.id);
+            else if (t.kind === 'enemy') pos = X.aliveEnemies(session).find(e => e.def.id === t.id);
+            if (!pos) return;
+            const c = P(pos.x + 0.5, pos.y + 0.5);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = `rgba(250,204,21,${(0.55 + 0.4 * pulse).toFixed(3)})`;
+            ctx.beginPath();
+            ctx.ellipse(c.x, c.y + tile * 0.3, tile * (0.42 + 0.05 * pulse), tile * 0.17, 0, 0, Math.PI * 2);
+            ctx.stroke();
+        });
         items.forEach(it => {
             const c = P(it.x + 0.5, it.y + 0.5);
             switch (it.kind) {
+                case 'building': {
+                    drawBuilding(it.b, P(it.b.x, it.b.y), tile, labelSize);
+                    break;
+                }
+                case 'waypoint': {
+                    const active = session.data.waypoints.includes(session.data.screenId);
+                    const feet = c.y + tile * 0.38;
+                    drawShadow(c.x, feet, tile * 0.3, tile * 0.1);
+                    ctx.fillStyle = active ? '#8fa6b8' : '#7b7b86';
+                    ctx.strokeStyle = '#2b1b17';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(c.x - tile * 0.26, feet);
+                    ctx.lineTo(c.x - tile * 0.18, c.y - tile * 0.28);
+                    ctx.lineTo(c.x + tile * 0.18, c.y - tile * 0.28);
+                    ctx.lineTo(c.x + tile * 0.26, feet);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    const glow = active ? 0.55 + 0.35 * Math.sin(now / 350) : 0.15;
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y - tile * 0.5, tile * (active ? 0.2 : 0.14), 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(120,220,255,${glow.toFixed(3)})`;
+                    ctx.fill();
+                    ctx.stroke();
+                    drawEmoji('🌀', c.x, c.y - tile * 0.05, tile * 0.34);
+                    break;
+                }
                 case 'block': {
+                    if (screen.interior && (it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1)) {
+                        cell(it.x, it.y, shade(biome.cliff, it.y === 0 ? -6 : 8));
+                        cell(it.x, it.y, 'rgba(0,0,0,0.18)', tile * 0.46);
+                        break;
+                    }
                     cell(it.x, it.y, shade(biome.cliff, 10));
                     const emoji = biome.decor[Math.floor(hash(it.x, it.y) * biome.decor.length)];
                     drawShadow(c.x, c.y + tile * 0.3, tile * 0.32, tile * 0.11);
@@ -654,7 +839,7 @@ export function createExplorationView(cfg) {
                     const feet = c.y + tile * 0.4;
                     drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
                     const bob = Math.sin(now / 520 + it.x * 1.3) * tile * 0.012;
-                    if (!drawSprite(npcSprite(it.n.id), c.x, feet + bob, tile * 1.02)) drawEmoji(it.n.emoji, c.x, c.y, tile * 0.75);
+                    if (!drawSprite(npcSprite(it.n.id, it.n.emoji), c.x, feet + bob, tile * 1.02)) drawEmoji(it.n.emoji, c.x, c.y, tile * 0.75);
                     const marker = X.npcMarker(session, it.n.id);
                     if (marker) drawMarker(c.x, c.y - tile * 0.72 - 4 * Math.abs(Math.sin(now / 300)), marker === '❓' ? '?' : '!', tile);
                     drawLabel(c.x, c.y + tile * 0.55, it.n.name, '#fff8e1', '#5a3e1b', labelSize);
@@ -735,6 +920,62 @@ export function createExplorationView(cfg) {
                     break;
             }
         });
+    }
+
+    const ROOFS = ['#b23a30', '#2f6f73', '#8a5a2b', '#6b4a8a', '#c98a2b', '#3f7d4e', '#a8483a', '#4a6fa5'];
+
+    // Maison de village : toit à pignon, murs crème, porte (tuile de la porte), fenêtres, nom du bâtiment.
+    function drawBuilding(b, p, tile, labelSize) {
+        const w = b.w * tile;
+        const h = b.h * tile;
+        const roof = ROOFS[(b.id.charCodeAt(0) + (b.x * 7 + b.y * 3)) % ROOFS.length];
+        const roofH = Math.max(tile * 0.9, h * 0.5);
+        const wallY = p.y + roofH * 0.8;
+        ctx.save();
+        // murs
+        ctx.fillStyle = '#f0e0b8';
+        ctx.fillRect(p.x + 3, wallY, w - 6, h - roofH * 0.8);
+        ctx.fillStyle = 'rgba(120,80,40,0.18)';
+        ctx.fillRect(p.x + w * 0.62, wallY, w * 0.38 - 3, h - roofH * 0.8);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#2b1b17';
+        ctx.strokeRect(p.x + 3, wallY, w - 6, h - roofH * 0.8);
+        // fenêtres
+        const winY = wallY + (h - roofH * 0.8) * 0.28;
+        ctx.fillStyle = '#7ab8d8';
+        [0.18, 0.68].forEach(fx => {
+            if (Math.abs(p.x + w * fx + tile * 0.2 - (p.x + (b.door.x - b.x + 0.5) * tile)) < tile * 0.5) return;
+            ctx.fillRect(p.x + w * fx, winY, tile * 0.4, tile * 0.34);
+            ctx.strokeRect(p.x + w * fx, winY, tile * 0.4, tile * 0.34);
+        });
+        // porte
+        const dx = p.x + (b.door.x - b.x) * tile;
+        const dy = p.y + (b.door.y - b.y) * tile;
+        ctx.fillStyle = '#6b3d22';
+        ctx.fillRect(dx + tile * 0.2, dy + tile * 0.12, tile * 0.6, tile * 0.88);
+        ctx.strokeRect(dx + tile * 0.2, dy + tile * 0.12, tile * 0.6, tile * 0.88);
+        ctx.fillStyle = '#f2c14e';
+        ctx.beginPath();
+        ctx.arc(dx + tile * 0.68, dy + tile * 0.58, tile * 0.04, 0, Math.PI * 2);
+        ctx.fill();
+        // toit
+        ctx.fillStyle = roof;
+        ctx.beginPath();
+        ctx.moveTo(p.x - tile * 0.12, wallY + 4);
+        ctx.lineTo(p.x + w * 0.5, p.y);
+        ctx.lineTo(p.x + w + tile * 0.12, wallY + 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.18)';
+        ctx.beginPath();
+        ctx.moveTo(p.x + w * 0.5, p.y);
+        ctx.lineTo(p.x + w + tile * 0.12, wallY + 4);
+        ctx.lineTo(p.x + w * 0.5, wallY + 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.62, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1));
     }
 
     // Dessine un sprite SVG (pieds vers le bas du cadre) centré sur cx, dont les pieds sont posés en feetY.
@@ -877,6 +1118,8 @@ export function createExplorationView(cfg) {
             const events = X.markEnemyDefeated(session, id);
             const gold = events.reduce((sum, e) => sum + (e.gold || 0), 0);
             if (gold > 0) cfg.onGold(gold);
+            const xpGain = events.reduce((sum, e) => sum + (e.xp || 0), 0);
+            if (xpGain > 0) cfg.onXp?.(xpGain);
             events.forEach(e => { e.paid = true; });
             session.rt.queuedEvents.push(...events);
             session.rt.pendingEnemyId = null;
@@ -895,6 +1138,10 @@ export function createExplorationView(cfg) {
             ensureSession();
             startEncounter(enemyId, { tutorial: true });
         },
+
+        travelTo,
+        openCarnet: tab => { if (!isBlocked()) showJournal(tab); },
+        getTravelList() { ensureSession(); return X.waypointList(session); },
 
         teleportToScreen(screenId) {
             ensureSession();

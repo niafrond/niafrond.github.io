@@ -17,10 +17,11 @@
 //  - data.ngPlus : compteur de Nouvelle Partie + (niveaux des ennemis augmentés).
 
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
+import { REGION_ORDER } from './world/index.js';
 
 export const AGGRO_RADIUS = 1;
 export const PATROL_STEP_MS = 650;
-export const START_SCREEN = 'rizieres';
+export const START_SCREEN = SCREENS.rizieres_village ? 'rizieres_village' : 'rizieres';
 // Nombre de déplacements pendant lesquels les zones de vigilance sont ignorées après une
 // arrivée sur un écran ou un retour de combat (évite de re-combattre immédiatement).
 export const GRACE_MOVES = 2;
@@ -59,7 +60,10 @@ function defaultData() {
         visitedScreens: [],
         introSeen: false,
         ended: false,
-        ngPlus: 0
+        ngPlus: 0,
+        talked: [],
+        waypoints: [],
+        tracked: null
     };
 }
 
@@ -70,6 +74,9 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.visitedScreens = Array.isArray(data.visitedScreens) ? data.visitedScreens : [];
     data.quests = data.quests && typeof data.quests === 'object' ? data.quests : {};
     data.ngPlus = Number.isInteger(data.ngPlus) && data.ngPlus > 0 ? data.ngPlus : 0;
+    data.talked = Array.isArray(data.talked) ? data.talked : [];
+    data.waypoints = Array.isArray(data.waypoints) ? data.waypoints : [];
+    data.tracked = typeof data.tracked === 'string' ? data.tracked : null;
 
     const enemyIndex = {};
     Object.values(screens).forEach(screen => screen.enemies.forEach(def => { enemyIndex[def.id] = { def, screenId: screen.id }; }));
@@ -90,6 +97,7 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     }
     initScreenRuntime(session);
     if (!data.visitedScreens.includes(data.screenId)) data.visitedScreens.push(data.screenId);
+    discoverVillageWaypoint(session);
     return session;
 }
 
@@ -122,6 +130,7 @@ export function enterScreen(session, screenId, pos) {
     initScreenRuntime(session);
     session.rt.grace = GRACE_MOVES;
     if (!session.data.visitedScreens.includes(screenId)) session.data.visitedScreens.push(screenId);
+    discoverVillageWaypoint(session);
     return true;
 }
 
@@ -165,6 +174,8 @@ export function entityAt(session, x, y) {
     if (npc) return { type: 'npc', npc };
     const chest = visibleChests(session).find(c => c.x === x && c.y === y);
     if (chest) return { type: 'chest', chest, opened: session.data.openedChests.includes(chest.id) };
+    const wp = currentScreen(session).waypoint;
+    if (wp && wp.x === x && wp.y === y) return { type: 'waypoint', screenId: session.data.screenId };
     const enemy = aliveEnemies(session).find(e => e.x === x && e.y === y);
     if (enemy) return { type: 'enemy', enemy };
     return null;
@@ -232,6 +243,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
     if (ent) {
         if (ent.type === 'npc') return { type: 'talk', npcId: ent.npc.id };
         if (ent.type === 'chest') return ent.opened ? { type: 'blocked' } : { type: 'chest', chestId: ent.chest.id };
+        if (ent.type === 'waypoint') return activateWaypoint(session, ent.screenId);
         return contactEvent(session, ent.enemy.def);
     }
     if (isTerrainBlocked(screen, nx, ny)) return { type: 'blocked' };
@@ -252,7 +264,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
         const from = screen.id;
         const firstVisit = !session.data.visitedScreens.includes(exit.to);
         enterScreen(session, exit.to, exit.arrive);
-        const res = { type: 'transition', from, to: exit.to, firstVisit };
+        const res = { type: 'transition', from, to: exit.to, firstVisit, door: Boolean(exit.door), events: checkAutoQuests(session) };
         // Texte du Narrateur affiché seulement à la toute première visite de l'écran.
         if (firstVisit && target.arrival?.length) res.arrival = target.arrival;
         return res;
@@ -321,6 +333,7 @@ export function findPath(session, tx, ty) {
     visibleNpcs(session).forEach(n => occupied.add(key(n.x, n.y)));
     visibleChests(session).forEach(c => occupied.add(key(c.x, c.y)));
     aliveEnemies(session).forEach(e => occupied.add(key(e.x, e.y)));
+    if (screen.waypoint) occupied.add(key(screen.waypoint.x, screen.waypoint.y));
     const exits = new Set(screen.exits.map(e => key(e.x, e.y)));
     const startKey = key(start.x, start.y);
     const target = key(tx, ty);
@@ -379,6 +392,8 @@ const questById = (session, id) => session.quests.find(q => q.id === id) || null
 function objectiveDone(session, obj) {
     if (obj.type === 'kill') return session.data.defeated.includes(obj.target);
     if (obj.type === 'chest') return session.data.openedChests.includes(obj.target);
+    if (obj.type === 'talk') return session.data.talked.includes(obj.target);
+    if (obj.type === 'visit') return session.data.visitedScreens.includes(obj.target);
     if (obj.type === 'killGroup') {
         const members = Object.values(session.rt.enemyIndex).filter(e => e.def.group === obj.target);
         return members.length > 0 && members.every(e => session.data.defeated.includes(e.def.id));
@@ -404,6 +419,7 @@ function completeQuest(session, quest) {
     if (quest.final) session.data.ended = true;
     return {
         type: 'questCompleted', quest, lines: quest.complete, reward: quest.reward || {}, gold: quest.reward?.gold || 0,
+        xp: quest.reward?.xp || 0,
         ended: Boolean(quest.final)
     };
 }
@@ -450,6 +466,8 @@ export function startNewGamePlus(session) {
     data.defeated = [];
     data.openedChests = [];
     data.visitedScreens = [];
+    data.talked = [];
+    data.tracked = null;
     data.ended = false;
     const start = session.screens[START_SCREEN];
     enterScreen(session, START_SCREEN, start.spawn);
@@ -470,7 +488,8 @@ export function progressReached(session, cond) {
     if (typeof cond !== 'string' || !cond) return false;
     return session.data.quests[cond] === 'done'
         || session.data.defeated.includes(cond)
-        || session.data.openedChests.includes(cond);
+        || session.data.openedChests.includes(cond)
+        || session.data.talked.includes(cond);
 }
 
 // Répliques d'ambiance d'un PNJ : la dernière entrée de `talk` dont la condition `whenDone`
@@ -481,6 +500,16 @@ export function npcAmbientLines(session, npc) {
         if (entry?.lines?.length && progressReached(session, entry.whenDone)) lines = entry.lines;
     });
     return lines;
+}
+
+// Objectif « parler » en cours qui vise ce PNJ : { quest, objective } ou null.
+function activeTalkObjective(session, npcId) {
+    for (const quest of session.quests) {
+        if (questStatus(session, quest) !== 'active') continue;
+        const objective = quest.objectives.find(o => o.type === 'talk' && o.target === npcId && !objectiveDone(session, o));
+        if (objective) return { quest, objective };
+    }
+    return null;
 }
 
 export function talkToNpc(session, npcId) {
@@ -495,10 +524,24 @@ export function talkToNpc(session, npcId) {
         const events = [completeQuest(session, ready.quest), ...checkAutoQuests(session)];
         return { type: 'dialog', npc, lines: ready.quest.complete, events };
     }
+
+    // Objectif « parler à » : la réplique de la cible, puis éventuellement l'offre d'une autre quête.
+    const talk = activeTalkObjective(session, npcId);
+    let lines = [];
+    const events = [];
+    if (talk) {
+        session.data.talked.push(npcId);
+        lines = talk.objective.lines?.length ? [...talk.objective.lines] : [`${npc.name} vous écoute, puis hoche la tête.`];
+        events.push({ type: 'objective', quest: talk.quest, objective: talk.objective });
+    }
     const available = withStatus.find(q => q.status === 'available' && q.quest.giver === npcId && !q.quest.autoStart);
     if (available) {
-        const events = [startQuest(session, available.quest), ...checkAutoQuests(session)];
-        return { type: 'dialog', npc, lines: available.quest.offer, events };
+        events.push(startQuest(session, available.quest));
+        lines = [...lines, ...available.quest.offer];
+    }
+    if (talk || available) {
+        events.push(...checkAutoQuests(session));
+        return { type: 'dialog', npc, lines, events };
     }
     const active = withStatus.find(q => (q.status === 'active' || q.status === 'ready') && q.quest.hint?.length);
     if (active) return { type: 'dialog', npc, lines: active.quest.hint, events: [] };
@@ -517,8 +560,99 @@ function findNpcScreen(session, npcId) {
     return Object.values(session.screens).find(s => s.npcs.some(n => n.id === npcId)) || null;
 }
 
-// Objectif affiché en permanence : prochaine étape de la quête en cours (ou du prochain PNJ à voir).
+const REGION_NUMBER = id => Math.max(0, REGION_ORDER.indexOf(id));
+
+// Région d'une quête : celle de son donneur (ou, à défaut, de sa première cible).
+export function questRegion(session, quest) {
+    const npcScreen = quest.giver ? findNpcScreen(session, quest.giver) : null;
+    if (npcScreen) return npcScreen.region;
+    const target = questTargets(session, quest)[0];
+    return target ? session.screens[target.screenId]?.region || null : null;
+}
+
+// Écran où se trouve l'entité visée par un objectif (null si inconnue).
+function objectiveTarget(session, obj) {
+    const screens = Object.values(session.screens);
+    if (obj.type === 'talk') {
+        const scr = findNpcScreen(session, obj.target);
+        return scr ? { screenId: scr.id, kind: 'npc', id: obj.target } : null;
+    }
+    if (obj.type === 'visit') return session.screens[obj.target] ? { screenId: obj.target, kind: 'screen', id: obj.target } : null;
+    if (obj.type === 'chest') {
+        const scr = screens.find(sc => sc.chests.some(c => c.id === obj.target));
+        return scr ? { screenId: scr.id, kind: 'chest', id: obj.target } : null;
+    }
+    if (obj.type === 'kill') {
+        const entry = session.rt.enemyIndex[obj.target];
+        return entry ? { screenId: entry.screenId, kind: 'enemy', id: obj.target } : null;
+    }
+    if (obj.type === 'killGroup') {
+        const member = Object.values(session.rt.enemyIndex).find(e => e.def.group === obj.target && !session.data.defeated.includes(e.def.id));
+        return member ? { screenId: member.screenId, kind: 'enemy', id: member.def.id } : null;
+    }
+    return null;
+}
+
+// Lieux à rejoindre pour une quête : PNJ à qui la rendre, ou cibles des objectifs restants.
+export function questTargets(session, quest) {
+    const status = questStatus(session, quest);
+    if (status === 'ready' && quest.turnIn) {
+        const scr = findNpcScreen(session, quest.turnIn);
+        return scr ? [{ screenId: scr.id, kind: 'npc', id: quest.turnIn }] : [];
+    }
+    if (status === 'available' && quest.giver) {
+        const scr = findNpcScreen(session, quest.giver);
+        return scr ? [{ screenId: scr.id, kind: 'npc', id: quest.giver }] : [];
+    }
+    if (status === 'active') {
+        const obj = quest.objectives.find(o => !objectiveDone(session, o));
+        const t = obj && objectiveTarget(session, obj);
+        return t ? [t] : [];
+    }
+    return [];
+}
+
+export function setTrackedQuest(session, questId) {
+    session.data.tracked = questId && session.quests.some(q => q.id === questId) ? questId : null;
+    return session.data.tracked;
+}
+
+// Quête suivie (épinglée par le joueur) tant qu'elle est en cours ou à rendre.
+export function trackedQuest(session) {
+    const quest = session.data.tracked && questById(session, session.data.tracked);
+    if (!quest) return null;
+    const status = questStatus(session, quest);
+    return status === 'active' || status === 'ready' ? quest : null;
+}
+
+// Cibles de la quête suivie qui se trouvent sur l'écran courant (anneaux sur la carte).
+export function trackedMarkers(session) {
+    const quest = trackedQuest(session);
+    if (!quest) return [];
+    return questTargets(session, quest).filter(t => t.screenId === session.data.screenId);
+}
+
+function locationHint(session, target) {
+    if (!target) return '';
+    const scr = session.screens[target.screenId];
+    if (!scr) return '';
+    return target.screenId === session.data.screenId ? ' · ici' : ` · ${scr.name}`;
+}
+
+// Objectif affiché en permanence : prochaine étape de la quête suivie, sinon de la première quête en cours.
 export function currentObjectiveText(session) {
+    const tracked = trackedQuest(session);
+    if (tracked) {
+        const status = questStatus(session, tracked);
+        const target = questTargets(session, tracked)[0];
+        if (status === 'ready' && tracked.turnIn) {
+            const scr = findNpcScreen(session, tracked.turnIn);
+            const npc = scr?.npcs.find(n => n.id === tracked.turnIn);
+            return `⭐ ${tracked.title} : retournez voir ${npc?.name || 'le PNJ'} (${scr?.name || '?'})`;
+        }
+        const obj = tracked.objectives.find(o => !objectiveDone(session, o));
+        return `⭐ ${tracked.title} : ${obj ? obj.text : 'objectif accompli'}${target ? '' : ''}`;
+    }
     for (const quest of session.quests) {
         const status = questStatus(session, quest);
         if (status === 'ready' && quest.turnIn) {
@@ -526,11 +660,11 @@ export function currentObjectiveText(session) {
             const npc = scr?.npcs.find(n => n.id === quest.turnIn);
             return `🎯 ${quest.title} : retournez voir ${npc?.name || 'le PNJ'} (${scr?.name || '?'})`;
         }
-        if (status === 'active') {
+        if (status === 'active' && !quest.side) {
             const obj = quest.objectives.find(o => !objectiveDone(session, o));
             return `🎯 ${quest.title} : ${obj ? obj.text : 'objectif accompli'}`;
         }
-        if (status === 'available' && quest.giver && !quest.autoStart && !(quest.side && session.data.ended)) {
+        if (status === 'available' && quest.giver && !quest.autoStart && !quest.side) {
             const scr = findNpcScreen(session, quest.giver);
             const npc = scr?.npcs.find(n => n.id === quest.giver);
             if (npc && !isEntityVisible(session, npc)) continue;
@@ -542,24 +676,96 @@ export function currentObjectiveText(session) {
         : '🧭 Explorez le monde.';
 }
 
+export { locationHint as questLocationHint };
+
 export function journalEntries(session) {
     return session.quests
         .map(quest => ({ quest, status: questStatus(session, quest) }))
         .filter(e => e.status !== 'locked')
-        .map(e => ({
-            ...e,
-            objectives: e.quest.objectives.map(o => ({ text: o.text, done: objectiveDone(session, o) }))
-        }));
+        .map(e => {
+            const target = questTargets(session, e.quest)[0] || null;
+            const giverScreen = e.quest.giver ? findNpcScreen(session, e.quest.giver) : null;
+            const giverNpc = giverScreen?.npcs.find(n => n.id === e.quest.giver);
+            return {
+                ...e,
+                region: questRegion(session, e.quest),
+                tracked: session.data.tracked === e.quest.id,
+                giverName: giverNpc?.name || '',
+                giverPlace: giverScreen?.name || '',
+                where: target ? session.screens[target.screenId]?.name || '' : '',
+                objectives: e.quest.objectives.map(o => ({ text: o.text, done: objectiveDone(session, o) }))
+            };
+        });
 }
 
-// Indicateur au-dessus d'un PNJ : « ! » quête disponible, « ? » à rendre, sinon rien.
+// Indicateur au-dessus d'un PNJ : « ! » quête disponible, « ? » à rendre ou à qui parler, sinon rien.
 export function npcMarker(session, npcId) {
+    if (activeTalkObjective(session, npcId)) return '❓';
     for (const quest of session.quests) {
         const status = questStatus(session, quest);
         if (status === 'ready' && quest.turnIn === npcId) return '❓';
         if (status === 'available' && quest.giver === npcId && !quest.autoStart) return '❗';
     }
     return '';
+}
+
+// ── Pierres de voyage (voyage rapide) ─────────────────────────────────────
+
+// Un village est un lieu de repos : sa pierre est découverte dès qu'on y entre.
+function discoverVillageWaypoint(session) {
+    const screen = currentScreen(session);
+    if (screen.waypoint && screen.kind === 'village' && !session.data.waypoints.includes(screen.id)) {
+        session.data.waypoints.push(screen.id);
+    }
+}
+
+export function activateWaypoint(session, screenId) {
+    const screen = session.screens[screenId];
+    if (!screen?.waypoint) return null;
+    const isNew = !session.data.waypoints.includes(screenId);
+    if (isNew) session.data.waypoints.push(screenId);
+    return { type: 'waypoint', screenId, name: screen.waypoint.name, isNew };
+}
+
+// Pierres activées, dans l'ordre du monde (région, puis village → zone sauvage → sanctuaire).
+export function waypointList(session) {
+    const kindRank = { village: 0, wild: 1 };
+    return session.data.waypoints
+        .map(id => session.screens[id])
+        .filter(screen => screen?.waypoint)
+        .map(screen => ({
+            screenId: screen.id, region: screen.region, name: screen.waypoint.name, screenName: screen.name,
+            kind: screen.kind || 'sanctuary', current: screen.id === session.data.screenId
+        }))
+        .sort((a, b) => REGION_NUMBER(a.region) - REGION_NUMBER(b.region)
+            || (kindRank[a.kind] ?? 2) - (kindRank[b.kind] ?? 2));
+}
+
+// Voyage rapide : impossible vers une pierre non activée ; arrivée à côté de la pierre.
+export function fastTravel(session, screenId) {
+    const screen = session.screens[screenId];
+    if (!screen?.waypoint || !session.data.waypoints.includes(screenId)) return false;
+    return enterScreen(session, screenId, screen.waypoint.spot || screen.spawn);
+}
+
+// Progression par région : coffres, quêtes annexes, pierres.
+export function regionProgress(session) {
+    return REGION_ORDER.map(region => {
+        const zones = Object.values(session.screens).filter(s => s.region === region);
+        const chests = zones.flatMap(s => s.chests).filter(c => c.id !== 'moon_altar');
+        const side = session.quests.filter(q => q.side && questRegion(session, q) === region);
+        const stones = zones.filter(s => s.waypoint);
+        return {
+            region,
+            visited: zones.some(s => session.data.visitedScreens.includes(s.id)),
+            chestsOpened: chests.filter(c => session.data.openedChests.includes(c.id)).length,
+            chestsTotal: chests.length,
+            sideDone: side.filter(q => session.data.quests[q.id] === 'done').length,
+            sideTotal: side.length,
+            stonesFound: stones.filter(s => session.data.waypoints.includes(s.id)).length,
+            stonesTotal: stones.length
+        };
+    });
 }
 
 export function needsIntro(session) {
