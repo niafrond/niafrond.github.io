@@ -489,7 +489,7 @@ export default {
       title: "Les lanternes de Chang'e",
       chapter: "✦ Quête secondaire — Rizières Desséchées",
       giver: "change",
-      turnIn: "change",
+      turnIn: "miller_gao",
       requires: [
         "q_sun_1"
       ],
@@ -498,25 +498,17 @@ export default {
         {
           type: "chest",
           target: "firefly_jar",
-          text: "Rapporter une jarre de lucioles (Hameau des Lucioles)"
-        },
-        {
-          type: "talk",
-          target: "miller_gao",
-          text: "Demander de la farine au meunier Gao (moulin tari, hameau)",
-          lines: [
-            "De la farine pour Chang'e ? Prenez le sac du fond, il est encore blanc. Dites-lui que mon moulin tourne pour elle."
-          ]
+          text: "Rapporter une jarre de lucioles au meunier Gao (Hameau des Lucioles)"
         }
       ],
       offer: [
         "Hou Yi, tu repars bientôt, et je voudrais faire des lanternes pour la lune. Il me faut de la lumière et de la farine : les lucioles et le meunier du hameau."
       ],
       hint: [
-        "La jarre à lucioles est chez Tante Liu, la farine chez Gao. Les deux au hameau, après la digue."
+        "La jarre à lucioles est chez Tante Liu ; la farine, c'est le meunier Gao qui l'a. Les deux au hameau, après la digue."
       ],
       complete: [
-        "Elle sourit en allumant la première lanterne. « Pour que tu retrouves toujours le chemin de la maison. » Tu gardes ce fragment, tout près du cœur."
+        "Gao pose la jarre de lucioles sur son sac de farine blanche, puis vous tend une lanterne de papier que Chang'e a pliée elle-même. « Elle m'a dit de vous la remettre : pour que vous retrouviez toujours le chemin de la maison. » Vous gardez ce fragment, tout près du cœur."
       ],
       reward: {
         gold: 50,

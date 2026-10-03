@@ -37,7 +37,7 @@ export default {
       ]
     },
     moon_ferryman_yin: {
-      name: "Vieux Yin",
+      name: "Vieux Shen",
       title: "Passeur d'argent",
       emoji: "⛵",
       idle: [

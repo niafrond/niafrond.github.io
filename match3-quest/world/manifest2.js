@@ -300,20 +300,16 @@ export const MANIFEST2 = {
         id: "sq_riz_gateau",
         title: "Les lanternes de Chang'e",
         giver: "change",
-        turnIn: "change",
+        turnIn: "miller_gao",
         chain: null,
         requires: [
           "q_sun_1"
         ],
-        summary: "Chang'e prépare des lanternes pour la prochaine pleine lune, mais il lui faut de la farine et de la lumière. Aidez-la.",
+        summary: "Chang'e prépare des lanternes pour la prochaine pleine lune, mais il lui faut de la farine et de la lumière. Rapportez une jarre de lucioles au meunier Gao.",
         objectives: [
           {
             type: "chest",
             target: "firefly_jar"
-          },
-          {
-            type: "talk",
-            target: "miller_gao"
           }
         ]
       },
@@ -3000,7 +2996,7 @@ export const MANIFEST2 = {
       },
       {
         id: "moon_ferryman_yin",
-        name: "Vieux Yin",
+        name: "Vieux Shen",
         title: "Passeur d'argent",
         emoji: "⛵",
         where: "place",
