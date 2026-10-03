@@ -2159,15 +2159,15 @@ body.dark-mode .modal {
    TUTORIAL – overlay, carte, bandeaux, surbrillances
    ═══════════════════════════════════════════════════ */
 
-/* Overlay flottant en bas à droite */
+/* Overlay flottant compact (coin haut-droit), repliable : ne masque pas les boutons du jeu */
 .tutorial-overlay {
     position: fixed;
-    bottom: 70px;
-    right: 12px;
+    top: 8px;
+    right: 8px;
     z-index: 500;
     pointer-events: none;
-    max-width: 310px;
-    width: calc(100vw - 24px);
+    max-width: 210px;
+    width: calc(100vw - 16px);
 }
 
 .tutorial-overlay.hidden {
@@ -2176,38 +2176,38 @@ body.dark-mode .modal {
 
 /* Carte du tutoriel */
 .tutorial-card {
-    background: rgba(18, 18, 36, 0.97);
+    background: rgba(18, 18, 36, 0.92);
     color: #f0f0f0;
-    border-radius: 14px;
-    padding: 14px 18px 12px;
-    box-shadow: 0 6px 32px rgba(0,0,0,0.55), 0 0 0 2px #f1c40f;
-    pointer-events: all;
+    border-radius: 10px;
+    padding: 6px 10px 6px;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.5), 0 0 0 2px #f1c40f;
+    pointer-events: none;
+    position: relative;
 }
 
 .tutorial-step-badge {
-    font-size: 11px;
+    font-size: 10px;
     color: #f1c40f;
     font-weight: 700;
     letter-spacing: 0.04em;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
+    padding-right: 26px;
 }
 
 .tutorial-icon-display {
-    font-size: 1.9rem;
-    margin: 2px 0 4px;
-    line-height: 1;
+    display: none;
 }
 
 .tutorial-card h3 {
-    margin: 0 0 6px;
-    font-size: 1rem;
+    margin: 0 0 3px;
+    font-size: 0.82rem;
     color: #fff;
 }
 
 .tutorial-card p {
-    font-size: 0.83rem;
-    line-height: 1.45;
-    margin: 0 0 10px;
+    font-size: 0.72rem;
+    line-height: 1.3;
+    margin: 0 0 5px;
     opacity: 0.92;
     color: #ddd;
 }
@@ -2222,20 +2222,48 @@ body.dark-mode .modal {
 }
 
 .tutorial-actions button {
-    font-size: 0.78rem;
-    padding: 5px 12px;
-    border-radius: 7px;
+    font-size: 0.68rem;
+    padding: 3px 8px;
+    border-radius: 6px;
     background: #c0392b;
     color: #fff;
     border: none;
     cursor: pointer;
     font-weight: 600;
     transition: background 0.15s;
+    pointer-events: all;
 }
 
 .tutorial-actions button:hover {
     background: #a93226;
 }
+
+/* Bouton replier / déplier */
+.tutorial-toggle {
+    position: absolute;
+    top: 3px;
+    right: 4px;
+    width: 22px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 5px;
+    background: #f1c40f;
+    color: #222;
+    font-weight: 900;
+    line-height: 1;
+    cursor: pointer;
+    pointer-events: all;
+}
+
+/* Replié : seul le badge d'étape reste visible */
+.tutorial-overlay.collapsed .tutorial-card h3,
+.tutorial-overlay.collapsed .tutorial-card p,
+.tutorial-overlay.collapsed .tutorial-actions {
+    display: none;
+}
+.tutorial-overlay.collapsed { max-width: 110px; }
+.tutorial-overlay.collapsed .tutorial-step-badge { margin-bottom: 0; }
 
 /* Animation d'apparition lors du changement d'étape */
 @keyframes stepPop {
@@ -2621,4 +2649,18 @@ body.dark-mode .tutorial-card {
     font: 13px "Pixelify Sans", monospace;
     cursor: pointer;
     z-index: 2;
+}
+
+
+/* Aucune sélection de texte dans l'application : sinon un appui long sur un bouton sélectionne le texte
+   au lieu d'afficher son action. Les champs de saisie restent éditables. */
+html, body, body * {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
 }

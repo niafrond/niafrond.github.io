@@ -1136,7 +1136,7 @@ export function updateEnemySpells(){
             weaponHtml += `
                 <div class="enemy-spell-item disabled">
                     <div class="spell-name">${icon} ${enemy.weapon.name}</div>
-                    <div class="spell-cost">${enemy.weapon.actionPoints} 🏹 - ${enemy.weapon.damage} ☀️</div>
+                    <div class="spell-cost">${enemy.weapon.actionPoints} 🏹 - ${enemy.weapon.damage} 💀</div>
                 </div>
             `;
         }
@@ -2283,9 +2283,9 @@ function getSpellTooltipHtml(spell) {
     if(spell.effect) {
         effectText = spell.description || 'Effet spécial';
     } else if(spell.dmg && spell.heal) {
-        effectText = `Inflige ${spell.dmg} ☀️ et soigne ${spell.heal} ❤️`;
+        effectText = `Inflige ${spell.dmg} 💀 et soigne ${spell.heal} ❤️`;
     } else if(spell.dmg) {
-        effectText = `Inflige ${spell.dmg} ☀️`;
+        effectText = `Inflige ${spell.dmg} 💀`;
     } else if(spell.heal) {
         effectText = `Soigne ${spell.heal} ❤️`;
     }
@@ -2461,7 +2461,7 @@ export function updateSpellsTab(){
         player.activeSpells.forEach(sp => {
             const div = document.createElement('div');
             div.className = 'spell-item active-spell';
-            const damageText = sp.dmg ? ` • ${sp.dmg} ☀️` : '';
+            const damageText = sp.dmg ? ` • ${sp.dmg} 💀` : '';
             const healText = sp.heal ? ` • ${sp.heal} ❤️` : '';
             const effectText = sp.effect ? ` • ${sp.description}` : '';
             
@@ -2498,7 +2498,7 @@ export function updateSpellsTab(){
             const div = document.createElement('div');
             div.className = 'spell-item available-spell';
             const canEquip = player.activeSpells.length < 4;
-            const damageText = sp.dmg ? ` • ${sp.dmg} ☀️` : '';
+            const damageText = sp.dmg ? ` • ${sp.dmg} 💀` : '';
             const healText = sp.heal ? ` • ${sp.heal} ❤️` : '';
             const effectText = sp.effect ? ` • ${sp.description}` : '';
             
@@ -2754,7 +2754,7 @@ export function createWeaponButton(){
     
     btn.innerHTML = `
         <div class="spell-name">${icon} ${weapon.name}</div>
-        <div class="spell-cost">${weapon.actionPoints} 🏹 - ${weapon.damage} ☀️</div>
+        <div class="spell-cost">${weapon.actionPoints} 🏹 - ${weapon.damage} 💀</div>
     `;
     if(player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints) {
         btn.classList.add('disabled');
@@ -2793,7 +2793,7 @@ export function updateWeaponsTab(){
             <span class="weapon-icon">${icon}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${weapon.name}</span>
-                <span class="weapon-stats">${weapon.damage} ☀️ • ${weapon.actionPoints} 🏹 • Niv. ${weapon.minLevel}</span>
+                <span class="weapon-stats">${weapon.damage} 💀 • ${weapon.actionPoints} 🏹 • Niv. ${weapon.minLevel}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
             <button class="weapon-action" onclick="window.unequipWeapon()">❌ Retirer</button>
@@ -2820,7 +2820,7 @@ export function updateWeaponsTab(){
             <span class="weapon-icon">${icon}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${weapon.name}</span>
-                <span class="weapon-stats">${weapon.damage} ☀️ • ${weapon.actionPoints} 🏹 • Niv. ${weapon.minLevel}</span>
+                <span class="weapon-stats">${weapon.damage} 💀 • ${weapon.actionPoints} 🏹 • Niv. ${weapon.minLevel}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
             <button class="weapon-action" ${isEquipped ? 'disabled' : ''} onclick="window.equipWeapon('${weapon.id}')">${isEquipped ? '✅ Équipée' : '📦 Équiper'}</button>

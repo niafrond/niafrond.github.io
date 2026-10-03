@@ -330,8 +330,8 @@ function applyFingerOfDeath(spell) {
             }
 
             setBoardTargetingMode(null);
-            showCombatAnimation({ icon: '💀', title: "DOIGT SOLAIRE", damage: `${created} soleils créés`, target: '→ Plateau' }, true);
-            log(`💀 Doigt Solaire crée ${created} soleils !`);
+            showCombatAnimation({ icon: '💀', title: "DOIGT SOLAIRE", damage: `${created} crânes créés`, target: '→ Plateau' }, true);
+            log(`💀 Doigt Solaire crée ${created} crânes !`);
             saveUpdate();
             checkMatches(true);
             return true;
@@ -765,7 +765,7 @@ function applyThrowAxe(spell) {
     const totalDmg = spell.baseDmg + skullCount;
     applyDamage(enemy, totalDmg, { sourceSpell: spell });
     showCombatAnimation({ icon: '🪓', title: 'LANCER DE HACHE', damage: `-${totalDmg} dégâts`, target: `→ ${enemy.name}` }, true);
-    log(`🪓 Lancer de Hache inflige ${totalDmg} dégâts (${spell.baseDmg} + ${skullCount} soleils) !`);
+    log(`🪓 Lancer de Hache inflige ${totalDmg} dégâts (${spell.baseDmg} + ${skullCount} crânes) !`);
     return true;
 }
 
@@ -812,8 +812,8 @@ function applyBerserkerRage(spell) {
         }
     }
     renderBoard();
-    showCombatAnimation({ icon: '😈', title: "FUREUR DU LOUP DES STEPPES", damage: `${count} rouges → soleils`, target: '→ Plateau' }, true);
-    log(`😈 Fureur du Loup des Steppes transforme ${count} gâteaux de lune rouges en soleils !`);
+    showCombatAnimation({ icon: '😈', title: "FUREUR DU LOUP DES STEPPES", damage: `${count} rouges → crânes`, target: '→ Plateau' }, true);
+    log(`😈 Fureur du Loup des Steppes transforme ${count} gâteaux de lune rouges en crânes !`);
     return true;
 }
 
@@ -831,7 +831,7 @@ function applyDeathbringer(spell) {
     const redMana = Math.max(0, Math.floor(player.mana.red || 0));
     const skullsToCreate = Math.floor(redMana / 2);
     if(skullsToCreate <= 0) {
-        log(`⚠️ Pas assez de mana rouge pour créer des soleils.`);
+        log(`⚠️ Pas assez de mana rouge pour créer des crânes.`);
         return false;
     }
 
@@ -852,8 +852,8 @@ function applyDeathbringer(spell) {
     }
 
     renderBoard();
-    showCombatAnimation({ icon: '☠️', title: "PORTE-SOLEIL", damage: `${count} soleils créés`, target: '→ Plateau' }, true);
-    log(`☠️ Porte-Soleil crée ${count} soleils (basé sur le mana rouge).`);
+    showCombatAnimation({ icon: '☠️', title: "PORTE-SOLEIL", damage: `${count} crânes créés`, target: '→ Plateau' }, true);
+    log(`☠️ Porte-Soleil crée ${count} crânes (basé sur le mana rouge).`);
     return true;
 }
 

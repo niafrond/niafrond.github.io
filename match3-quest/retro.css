@@ -383,7 +383,7 @@ body.rt .tile {
 }
 
 /* Les gemmes sont des gâteaux de lune (dessins dans sprites/tiles/, une saveur par couleur de mana) ;
-   le crâne devient un soleil ardent et les épées une flèche. La couleur de fond ne sert que de socle. */
+   le crâne reste un crâne pixel art et les épées une flèche. La couleur de fond ne sert que de socle. */
 body.rt .tile,
 body.rt .tile.red, body.rt .tile.blue, body.rt .tile.green, body.rt .tile.yellow, body.rt .tile.purple, body.rt .tile.combat, body.rt .tile.skull, body.rt .tile.joker {
     background-color: transparent;

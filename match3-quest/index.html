@@ -38,7 +38,7 @@
     <div class="modal-content" style="max-width:420px;">
         <h2>📚 Tutoriel</h2>
         <p>Voulez-vous faire le tutoriel ?</p>
-        <p style="font-size:0.9rem;color:#666;">L'école de Hou Yi vous guidera pas à pas : déplacements, soleils ardents à frapper, gâteaux de lune à aligner pour générer du mana, et sorts.</p>
+        <p style="font-size:0.9rem;color:#666;">L'école de Hou Yi vous guidera pas à pas : déplacements, crânes à frapper, gâteaux de lune à aligner pour générer du mana, et sorts.</p>
         <div class="modal-actions">
             <button class="primary" id="tutorial-proposal-yes">✅ Oui, lancer le tutoriel</button>
             <button class="secondary" id="tutorial-proposal-no">❌ Non, je connais déjà</button>
@@ -49,6 +49,7 @@
 <!-- Overlay tutoriel (flottant, bas-droite) -->
 <div id="tutorial-overlay" class="tutorial-overlay hidden">
     <div class="tutorial-card">
+        <button type="button" class="tutorial-toggle" id="tutorial-toggle-btn" title="Replier / déplier" aria-label="Replier ou déplier le tutoriel">–</button>
         <div class="tutorial-step-badge">Étape <span id="tutorial-step-current">1</span>/<span id="tutorial-step-total">5</span></div>
         <div class="tutorial-icon-display" id="tutorial-icon">🎮</div>
         <h3 id="tutorial-title">Bienvenue</h3>
@@ -237,7 +238,7 @@
     <div id="tab-weapons" class="tab-panel">
         <h2>Inventaire</h2>
         <h3>Armes</h3>
-        <p>Équipez une arme pour l'utiliser en combat. Chaque arme a des dégâts (soleils ☀️) et un coût en flèches 🏹 (points d'action) différents.</p>
+        <p>Équipez une arme pour l'utiliser en combat. Chaque arme a des dégâts (crânes 💀) et un coût en flèches 🏹 (points d'action) différents.</p>
         <div id="equipped-weapon"></div>
         <h3>Armes disponibles</h3>
         <div id="available-weapons-list"></div>

@@ -240,7 +240,11 @@ function init() {
         exploration.startTutorialDuel('fengmeng_1');
     });
     // Tout combat (y compris le tutoriel) masque la carte.
-    window.addEventListener('match3:combat-start', () => exploration.hide());
+    window.addEventListener('match3:combat-start', () => {
+        exploration.hide();
+        // Coupe tout de suite la musique d'exploration : elle ne doit pas chevaucher la musique de combat.
+        if(!musicStopped) { stopMusic({ fadeMs: 250 }); musicStopped = true; }
+    });
 
     // Carte du monde : vue d'ensemble des régions, téléportation vers celles déjà découvertes.
     const showWorldMap = () => {

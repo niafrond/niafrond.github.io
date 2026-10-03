@@ -682,7 +682,8 @@ export { locationHint as questLocationHint };
 export function journalEntries(session) {
     return session.quests
         .map(quest => ({ quest, status: questStatus(session, quest) }))
-        .filter(e => e.status !== 'locked')
+        // Une quête n'apparaît au journal qu'une fois activée (en parlant à son donneur) : ni « locked » ni « available ».
+        .filter(e => e.status === 'active' || e.status === 'ready' || e.status === 'done')
         .map(e => {
             const target = questTargets(session, e.quest)[0] || null;
             const giverScreen = e.quest.giver ? findNpcScreen(session, e.quest.giver) : null;
@@ -708,6 +709,82 @@ export function npcMarker(session, npcId) {
         if (status === 'available' && quest.giver === npcId && !quest.autoStart) return '❗';
     }
     return '';
+}
+
+// Indicateur de quête d'un écran (maison) : « ❓ » si une quête y est à rendre / une cible de la quête suivie s'y trouve,
+// « ❗ » si un PNJ y propose une quête, sinon ''.
+export function screenQuestMarker(session, screenId) {
+    const screen = session.screens[screenId];
+    if (!screen) return '';
+    let marker = '';
+    for (const npc of screen.npcs) {
+        if (!isEntityVisible(session, npc)) continue;
+        const m = npcMarker(session, npc.id);
+        if (m === '❓') return '❓';
+        if (m) marker = m;
+    }
+    const tracked = trackedQuest(session);
+    if (tracked && questTargets(session, tracked).some(t => t.screenId === screenId)) return '❓';
+    return marker;
+}
+
+// Maisons de l'écran courant (sorties « door ») qui abritent une quête : [{ exit, marker }].
+export function houseMarkers(session) {
+    return currentScreen(session).exits
+        .filter(ex => ex.door)
+        .map(exit => ({ exit, marker: screenQuestMarker(session, exit.to) }))
+        .filter(h => h.marker);
+}
+
+// Position (tuile) d'une cible de quête sur l'écran courant.
+function targetPosition(session, target) {
+    const screen = currentScreen(session);
+    const at = list => list.find(e => e.id === target.id);
+    if (target.kind === 'npc') return at(screen.npcs);
+    if (target.kind === 'chest') return at(screen.chests);
+    if (target.kind === 'enemy') return aliveEnemies(session).map(e => ({ id: e.def.id, x: e.x, y: e.y })).find(e => e.id === target.id);
+    return null;
+}
+
+// Premier écran à rejoindre (sortie à prendre depuis `fromId`) pour atteindre `toId`, en évitant les sorties verrouillées.
+function nextExitToward(session, fromId, toId) {
+    const attempt = allowLocked => {
+        const seen = new Map([[fromId, null]]);
+        const queue = [fromId];
+        while (queue.length) {
+            const id = queue.shift();
+            if (id === toId) break;
+            for (const ex of session.screens[id].exits) {
+                if (seen.has(ex.to) || !session.screens[ex.to]) continue;
+                if (!allowLocked && isExitLocked(session, ex)) continue;
+                seen.set(ex.to, { from: id, exit: ex });
+                queue.push(ex.to);
+            }
+        }
+        if (!seen.has(toId)) return null;
+        let step = seen.get(toId);
+        while (step && step.from !== fromId) step = seen.get(step.from);
+        return step ? step.exit : null;
+    };
+    return attempt(false) || attempt(true);
+}
+
+// Indicateur de direction de la quête suivie : { x, y, label, kind: 'target' | 'exit' } (tuile de l'écran courant), ou null.
+// À défaut de quête épinglée, l'indicateur guide vers la quête principale en cours (ou à rendre).
+export function questDirection(session) {
+    const quest = trackedQuest(session)
+        || session.quests.find(q => !q.side && ['active', 'ready'].includes(questStatus(session, q)));
+    if (!quest) return null;
+    const target = questTargets(session, quest)[0];
+    if (!target) return null;
+    const here = session.data.screenId;
+    if (target.screenId === here) {
+        const pos = targetPosition(session, target);
+        return pos ? { x: pos.x, y: pos.y, label: quest.title, kind: 'target' } : null;
+    }
+    const exit = nextExitToward(session, here, target.screenId);
+    if (!exit) return null;
+    return { x: exit.x, y: exit.y, label: session.screens[exit.to]?.name || exit.label || quest.title, kind: 'exit' };
 }
 
 // ── Pierres de voyage (voyage rapide) ─────────────────────────────────────
