@@ -2357,8 +2357,11 @@ body.dark-mode .tutorial-card {
     image-rendering: pixelated;
     image-rendering: crisp-edges;
 }
-@media (orientation: portrait) {
-    .cine-canvas { width: 100vw; }
+/* Portrait : scène en 9:16 */
+.cine-canvas.portrait {
+    height: min(100dvh, calc(100vw * 16 / 9));
+    width: auto;
+    aspect-ratio: 9 / 16;
 }
 .cine-skip {
     position: absolute;
@@ -2410,3 +2413,53 @@ body.dark-mode .tutorial-card {
 .bt-dialog-next { position: absolute; right: 10px; bottom: 4px; font-size: 12px; animation: bt-next 0.8s steps(2, end) infinite; }
 @keyframes bt-next { 50% { transform: translateY(3px); } }
 @media (prefers-reduced-motion: reduce) { .cine-overlay, .bt-dialog { animation: none; } }
+
+/* ── Écran de démarrage ────────────────────────────────────────────────────── */
+.title-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 6000;
+    background: #0b2a44;
+    cursor: pointer;
+    overflow: hidden;
+    animation: cine-in 0.6s ease-out;
+}
+.title-screen.closing { opacity: 0; transition: opacity 0.6s; }
+.title-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+.title-logo {
+    position: absolute;
+    left: 6vw;
+    top: 8vh;
+    text-align: left;
+    color: #fff4c8;
+    font-family: "Pixelify Sans", "Press Start 2P", monospace;
+    text-shadow: 3px 3px 0 #1b1030, -1px -1px 0 #1b1030, 1px -1px 0 #1b1030, -1px 1px 0 #1b1030;
+    animation: title-float 3.2s ease-in-out infinite;
+}
+.title-kicker { font-size: clamp(11px, 2.4vmin, 18px); letter-spacing: 0.3em; opacity: 0.9; }
+.title-main { font-size: clamp(44px, 12vmin, 110px); line-height: 1; color: #ffd24a; font-weight: 700; }
+.title-sub { font-size: clamp(14px, 3.6vmin, 30px); letter-spacing: 0.12em; margin-top: 4px; }
+@media (orientation: portrait) {
+    .title-logo { left: 0; right: 0; top: 7vh; text-align: center; }
+}
+.title-start {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: max(24px, env(safe-area-inset-bottom));
+    text-align: center;
+    color: #fff;
+    font: clamp(13px, 2.8vmin, 20px) "Pixelify Sans", monospace;
+    text-shadow: 2px 2px 0 #1b1030;
+    animation: title-blink 1.2s steps(2, end) infinite;
+}
+@keyframes title-float { 50% { transform: translateY(-6px); } }
+@keyframes title-blink { 50% { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) { .title-logo, .title-start { animation: none; } }

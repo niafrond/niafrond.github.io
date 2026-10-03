@@ -12,7 +12,7 @@
 import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
 import { playSfx } from './sound.js';
-import { playIntroAnimation, playEndingAnimation, playBossDialogue } from './cinematics.js';
+import { playEndingAnimation, playBossDialogue } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, preloadSprites } from './sprites/index.js';
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
@@ -849,8 +849,8 @@ export function createExplorationView(cfg) {
             if (!rafId) rafId = requestAnimationFrame(frame);
             if (X.needsIntro(session)) {
                 const lines = X.markIntroSeen(session);
+                openDialog({ emoji: '📜', name: STORY_TITLE, title: 'Prologue' }, lines, () => { cfg.onSave(); });
                 cfg.onSave();
-                playIntroAnimation().then(() => openDialog({ emoji: '📜', name: STORY_TITLE, title: 'Prologue' }, lines, () => { cfg.onSave(); }));
             }
             applyQueuedEvents();
         },

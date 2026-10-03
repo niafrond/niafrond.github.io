@@ -3,8 +3,10 @@
 // Chaque scène retourne une Promise résolue à la fin ou au toucher/clic/touche (passer).
 import { playSfx } from './sound.js';
 
-const W = 160;
-const H = 90;
+// Taille logique de la scène : 16:9 en paysage, 9:16 en portrait (mise à jour à chaque scène).
+let W = 160;
+let H = 90;
+let P = false;
 
 const PAL = {
     night: ['#0b0b2b', '#141446', '#1d1d63', '#2a2a80'],
@@ -23,10 +25,13 @@ const prefersReducedMotion = () => Boolean(window.matchMedia?.('(prefers-reduced
 function mount(extraClass = '') {
     const overlay = document.createElement('div');
     overlay.className = `cine-overlay ${extraClass}`;
+    P = window.innerHeight > window.innerWidth;
+    W = P ? 90 : 160;
+    H = P ? 160 : 90;
     const canvas = document.createElement('canvas');
     canvas.width = W;
     canvas.height = H;
-    canvas.className = 'cine-canvas';
+    canvas.className = P ? 'cine-canvas portrait' : 'cine-canvas';
     const skip = document.createElement('div');
     skip.className = 'cine-skip';
     skip.textContent = 'Toucher pour passer ▶';
@@ -97,7 +102,7 @@ function stars(ctx, t, count = 40, alpha = 1) {
     ctx.globalAlpha = alpha;
     for (let i = 0; i < count; i++) {
         const x = (i * 97 + i * i * 13 + 11) % W;
-        const y = (i * 61 + i * i * 7 + 3) % 52;
+        const y = (i * 61 + i * i * 7 + 3) % Math.floor(H * 0.58);
         const on = Math.floor(t * 2 + i) % 5 !== 0;
         px(ctx, on ? '#ffffff' : '#8a8ac8', x, y);
     }
@@ -206,60 +211,6 @@ function text(ctx, str, x, y, size = 8, color = '#fff4c8', align = 'center') {
     ctx.fillText(str, x, y);
 }
 
-function fusangTree(ctx) {
-    px(ctx, PAL.tree, 18, 40, 5, 50);              // tronc
-    px(ctx, PAL.tree, 8, 74, 25, 16);              // racines
-    const branches = [[10, 36, 22], [4, 28, 14], [26, 30, 22], [18, 20, 14], [8, 14, 12], [28, 16, 14]];
-    branches.forEach(([x, y, w]) => { px(ctx, PAL.tree, x, y, w, 3); px(ctx, PAL.tree, x + 2, y - 2, w - 4, 2); });
-}
-
-const TREE_SUNS = [[12, 33], [8, 25], [30, 27], [22, 17], [11, 11], [32, 13], [4, 34], [38, 35], [20, 8], [27, 38]];
-
-// ── Intro de la partie ──────────────────────────────────────────────────────
-export function playIntroAnimation() {
-    const DURATION = 11;
-    return runScene({
-        extraClass: 'cine-intro',
-        duration: DURATION,
-        startSfx: 'introJingle',
-        draw(ctx, t, done) {
-            // Phase 1 (0–3,5 s) : nuit, la lune monte. Phase 2 (3,5–7 s) : les dix soleils s'élancent. Phase 3 : titre.
-            const dayK = Math.max(0, Math.min(1, (t - 4.5) / 2.5));
-            sky(ctx, lerpColor(PAL.night[0], '#a8321c', dayK), lerpColor(PAL.night[3], '#ffb347', dayK));
-            stars(ctx, t, 44, 1 - dayK);
-            const moonY = 62 - Math.min(t, 3.5) * 9 + dayK * 70;
-            moon(ctx, 110, moonY, 11);
-
-            fusangTree(ctx);
-            // Dix soleils : dormants dans l'arbre, puis chacun s'élève vers le ciel (un toutes les 0,3 s).
-            TREE_SUNS.forEach(([sx, sy], i) => {
-                const launch = 3.5 + i * 0.3;
-                const k = Math.max(0, t - launch);
-                const x = sx + k * (6 + i * 3);
-                const y = sy - k * k * 4 - k * 6;
-                if (y > -8) sun(ctx, x, y, t < launch ? 2 : 3 + Math.min(2, k), t);
-            });
-
-            // Sol rouge brûlé et archer au premier plan
-            px(ctx, lerpColor(PAL.ground, '#4a1608', dayK), 0, 76, W, 14);
-            const aim = t > 7.5 ? 1 : 0;
-            // rocher en surplomb
-            px(ctx, '#2a1a20', 72, 78, 40, 12); px(ctx, '#3a2630', 76, 76, 30, 2);
-            archer(ctx, 80 - Math.max(0, 6 - t) * 6, 53, aim, t);
-            if (t > 8.6) { // la flèche file vers le ciel en laissant une traînée
-                const k = t - 8.6;
-                for (let i = 0; i < 6; i++) px(ctx, i ? '#ffd24a' : '#ffffff', 102 + (k - i * 0.03) * 22, 63 - (k - i * 0.03) * 34, 2, 1);
-            }
-
-            if (t > 6.5) {
-                const n = Math.min(24, Math.floor((t - 6.5) * 14));
-                text(ctx, 'HOU YI ET LES'.slice(0, n), W / 2, 14, 9);
-                text(ctx, 'DIX SOLEILS'.slice(0, Math.max(0, n - 13)), W / 2, 27, 11, '#ffd24a');
-            }
-            if (done && Math.floor(t * 2) % 2 === 0) text(ctx, 'Toucher pour commencer', W / 2, 83, 6, '#ffffff');
-        }
-    });
-}
 
 // ── Fin de la légende ───────────────────────────────────────────────────────
 export function playEndingAnimation() {
@@ -269,46 +220,57 @@ export function playEndingAnimation() {
         duration: DURATION,
         startSfx: 'endingJingle',
         draw(ctx, t, done) {
+            const gy = H - (P ? 26 : 16);             // ligne de sol
+            const mx = P ? Math.round(W * 0.58) : 100; // centre de la lune
+            const my = P ? Math.round(H * 0.34) : 36;
+            const mr = (P ? 24 : 20) + Math.min(4, t * 0.5);
             const nightK = Math.min(1, t / 4);
             sky(ctx, lerpColor('#c4476a', PAL.night[0], nightK), lerpColor('#ffc46b', PAL.night[3], nightK));
-            stars(ctx, t, 50, nightK);
-            // Pleine lune, immense
-            moon(ctx, 100, 36, 20 + Math.min(4, t * 0.5));
+            stars(ctx, t, P ? 36 : 50, nightK);
+            moon(ctx, mx, my, mr);
 
             // Silhouette de Chang'e dans la lune, main levée (apparaît à 6 s)
             if (t > 6) {
-                const a = Math.min(1, (t - 6) / 2);
-                ctx.globalAlpha = a;
-                px(ctx, '#f6c6ff', 98, 24, 4, 4);
-                px(ctx, '#f6c6ff', 96, 28, 8, 12);
-                px(ctx, '#f6c6ff', 94, 40, 12, 3);
+                ctx.globalAlpha = Math.min(1, (t - 6) / 2);
+                const c = '#f6c6ff';
+                px(ctx, c, mx - 2, my - 12, 4, 4);
+                px(ctx, c, mx - 4, my - 8, 8, 12);
+                px(ctx, c, mx - 6, my + 4, 12, 3);
                 const wave = Math.floor(t * 2) % 2;
-                px(ctx, '#f6c6ff', 104 + wave, 26 - wave, 2, 8);
+                px(ctx, c, mx + 4 + wave, my - 10 - wave, 2, 8);
                 ctx.globalAlpha = 1;
             }
 
             // Pic de la Lune, autel et gâteaux
-            for (let y = 0; y < 14; y++) px(ctx, PAL.ground, 62 - (6 + y * 3), 62 + y, 12 + y * 6, 1);
-            px(ctx, PAL.ground, 0, 74, W, 16);
-            px(ctx, '#e8e8f0', 54, 66, 18, 3);
-            for (let i = 0; i < 4; i++) disc(ctx, '#e8c070', 57 + i * 4, 64, 1);
+            const peakX = P ? Math.round(W * 0.55) : 62;
+            for (let y = 0; y < 14; y++) px(ctx, PAL.ground, peakX - (6 + y * 3), gy - 12 + y, 12 + y * 6, 1);
+            px(ctx, PAL.ground, 0, gy, W, H - gy);
+            const ax = P ? Math.round(W * 0.42) : 54;
+            px(ctx, '#e8e8f0', ax, gy - 8, 18, 3);
+            for (let i = 0; i < 4; i++) disc(ctx, '#e8c070', ax + 3 + i * 4, gy - 10, 1);
 
-            // Hou Yi assis, puis lève la main (à 9 s)
-            archer(ctx, 36, 50, t > 9 ? 0 : 0, t);
+            // Hou Yi près de l'autel
+            archer(ctx, P ? 6 : 36, gy - 24, 0, t);
 
             // Lanternes qui montent
-            for (let i = 0; i < 9; i++) {
+            const n = P ? 7 : 9;
+            for (let i = 0; i < n; i++) {
                 const lt = t - 8 - i * 0.6;
                 if (lt < 0) continue;
-                const x = 20 + i * 15 + Math.sin(lt + i) * 3;
-                const y = 80 - lt * 7;
+                const x = 8 + i * ((W - 16) / n) + Math.sin(lt + i) * 3;
+                const y = gy - lt * 7;
                 if (y > -4) { px(ctx, '#ff8a1f', x, y, 3, 4); px(ctx, '#ffd24a', x + 1, y + 1, 1, 2); }
             }
 
             if (t > 10.5) {
-                const n = Math.floor((t - 10.5) * 8);
-                text(ctx, 'FIN'.slice(0, n), W / 2, 14, 12, '#ffd24a');
-                text(ctx, 'Chaque automne, quelqu\'un vous sourira.'.slice(0, Math.max(0, n * 2 - 6)), W / 2, 84, 5, '#fff4c8');
+                const k = Math.floor((t - 10.5) * 8);
+                text(ctx, 'FIN'.slice(0, k), W / 2, P ? 18 : 14, 12, '#ffd24a');
+                const cap = P ? ["Chaque automne,", "quelqu'un vous sourira."] : ["Chaque automne, quelqu'un vous sourira."];
+                let left = Math.max(0, k * 2 - 6);
+                cap.forEach((line, i) => {
+                    text(ctx, line.slice(0, left), W / 2, H - (P ? 12 - i * 8 : 6), 5, '#fff4c8');
+                    left = Math.max(0, left - line.length);
+                });
             }
             if (done && Math.floor(t * 2) % 2 === 0) text(ctx, 'Toucher pour continuer', W / 2, 6, 5, '#ffffff');
         }
@@ -421,5 +383,257 @@ export function playBossDialogue(host, enc, spriteHtml, heroName = 'Hou Yi') {
         host.addEventListener('pointerdown', advance);
         document.addEventListener('keydown', onKey, true);
         showLine();
+    });
+}
+
+// ── Écran de démarrage (launcher) : portrait pixel art animé de Hou Yi ───────
+// Le portrait est peint une seule fois sur 3 calques (carquois/arc, buste, tête) en 100×120, puis
+// « posterisé » (alpha binaire) pour des bords nets ; l'animation déplace les calques (respiration,
+// parallaxe), fait cligner les yeux, balance le feuillage et fait dériver les rayons de lumière.
+const PORTRAIT_W = 100;
+const PORTRAIT_H = 120;
+
+function makeLayer(drawFn) {
+    const c = document.createElement('canvas');
+    c.width = PORTRAIT_W;
+    c.height = PORTRAIT_H;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    drawFn(g);
+    const d = g.getImageData(0, 0, PORTRAIT_W, PORTRAIT_H);
+    for (let i = 3; i < d.data.length; i += 4) d.data[i] = d.data[i] > 110 ? 255 : 0;
+    g.putImageData(d, 0, 0);
+    return c;
+}
+const gPoly = (g, col, pts) => { g.fillStyle = col; g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fill(); };
+const gEll = (g, col, x, y, rx, ry, rot = 0) => { g.fillStyle = col; g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, 7); g.fill(); };
+const gLine = (g, col, pts, w = 1) => { g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'butt'; g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke(); };
+
+let portraitCache = null;
+function buildPortrait() {
+    if (portraitCache) return portraitCache;
+    // Arc et carquois derrière l'épaule
+    const back = makeLayer(g => {
+        gPoly(g, '#6a4a2c', [[62, 60], [88, 54], [93, 88], [66, 92]]);
+        for (let k = 0; k < 6; k++) {
+            gLine(g, '#b07a40', [[66 + k * 3.4, 66], [70 + k * 3.4 + k * 0.8, 38 - k * 2]], 1);
+            gEll(g, k % 2 ? '#e4e6ea' : '#c4c8ce', 65 + k * 3.4, 64, 2.2, 6, 0.1);
+        }
+        gPoly(g, '#3a2618', [[70, 0], [77, 0], [78, 10], [81, 30], [87, 52], [91, 72], [86, 75], [80, 57], [73, 35], [70, 12]]);
+        gLine(g, '#6b4a2c', [[75, 2], [76, 12], [79, 30], [85, 52]], 1);
+        gPoly(g, '#b08040', [[68, 6], [79, 6], [79, 10], [68, 10]]);
+        gLine(g, '#f1e6c8', [[69, 11], [60, 78]], 1);
+    });
+    // Buste : cou, robe bleue à liserés dorés, baudrier, épaule nue
+    const body = makeLayer(g => {
+        gPoly(g, '#2f6c9a', [[2, 120], [6, 92], [24, 76], [40, 70], [58, 72], [74, 70], [92, 78], [99, 96], [100, 120]]);
+        gPoly(g, '#1f4a72', [[2, 120], [6, 92], [24, 76], [34, 86], [26, 120]]);
+        gPoly(g, '#4a8dbb', [[60, 72], [92, 78], [99, 96], [88, 86], [70, 80]]);
+        gPoly(g, '#8a5a34', [[80, 98], [99, 98], [100, 120], [74, 120]]);
+        gPoly(g, '#6e4425', [[80, 98], [88, 104], [84, 120], [74, 120]]);
+        gLine(g, '#d9a441', [[28, 80], [46, 99], [62, 90], [78, 96]], 1);
+        gLine(g, '#d9a441', [[58, 100], [82, 92], [99, 98]], 1);
+        gLine(g, '#e8c06a', [[60, 73], [92, 79]], 1);
+        gPoly(g, '#b87444', [[38, 56], [60, 56], [62, 78], [50, 96], [36, 80]]);
+        gPoly(g, '#8a5530', [[38, 60], [60, 60], [60, 70], [40, 70]]);
+        gPoly(g, '#e8e6df', [[36, 76], [44, 98], [54, 82], [46, 72]]);
+        gPoly(g, '#c9c7c0', [[44, 98], [54, 82], [50, 82]]);
+        gPoly(g, '#7a4a42', [[10, 102], [20, 90], [42, 120], [26, 120]]);
+        gLine(g, '#a8706a', [[20, 90], [42, 120]], 1);
+    });
+    // Tête : chignon, cheveux, visage éclairé de côté, sourcils, yeux, moustache et bouc
+    const head = makeLayer(g => {
+        gEll(g, '#17110d', 48, 26, 22, 18);
+        gEll(g, '#17110d', 68, 12, 6, 7);
+        gPoly(g, '#8a5a2a', [[66, 17], [71, 17], [71, 19], [66, 19]]);
+        gPoly(g, '#cf8f55', [[30, 26], [36, 20], [60, 20], [66, 26], [66, 44], [62, 56], [54, 64], [44, 64], [36, 56], [31, 44]]);
+        gPoly(g, '#b4733f', [[30, 26], [36, 22], [37, 56], [31, 44]]);
+        gPoly(g, '#e0a068', [[56, 28], [64, 28], [64, 46], [60, 54], [58, 40]]);
+        gEll(g, '#d8905a', 67, 38, 3, 5);
+        gEll(g, '#c0603c', 67, 38, 1.4, 3);
+        gPoly(g, '#17110d', [[28, 30], [30, 18], [40, 10], [56, 10], [66, 18], [68, 32], [64, 26], [58, 19], [48, 17], [38, 19], [32, 26]]);
+        gLine(g, '#17110d', [[64, 24], [63, 52]], 1.6);
+        gLine(g, '#17110d', [[31, 26], [30, 48]], 1.6);
+        gLine(g, '#43362b', [[40, 13], [56, 13]], 1);
+        gLine(g, '#0a0705', [[48, 11], [48, 18]], 1);
+        gLine(g, '#120c08', [[34, 29.5], [45, 28.2]], 2.2);
+        gLine(g, '#120c08', [[50, 28.2], [62, 30.2]], 2.2);
+        gEll(g, '#efe0cc', 40, 34, 4.6, 2.4);
+        gEll(g, '#efe0cc', 56, 35, 4.6, 2.4);
+        gEll(g, '#4a2c18', 41, 34.2, 2.2, 2.2);
+        gEll(g, '#4a2c18', 57.5, 35.2, 2.2, 2.2);
+        gEll(g, '#120c08', 41, 34.2, 1, 1);
+        gEll(g, '#120c08', 57.5, 35.2, 1, 1);
+        gLine(g, '#1a100a', [[35, 32.4], [45, 32.2]], 1.2);
+        gLine(g, '#1a100a', [[51, 33], [62, 33.4]], 1.2);
+        gLine(g, '#a8683a', [[36, 37.5], [44, 37.5]], 1);
+        gLine(g, '#a8683a', [[52, 38.5], [60, 38.5]], 1);
+        gPoly(g, '#b4733f', [[49, 36], [46, 46], [50, 48], [53, 46], [52, 38]]);
+        gEll(g, '#e0a068', 50, 45, 2, 1.2);
+        gPoly(g, '#120c08', [[39, 51], [46, 47], [50, 48.5], [54, 47], [61, 51], [56, 51.5], [50, 50.5], [44, 51.5]]);
+        gEll(g, '#6a2a22', 50, 54.5, 3.2, 1.6);
+        gEll(g, '#b0583e', 50, 52.8, 3.6, 1);
+        gPoly(g, '#120c08', [[46, 57], [54, 57], [53, 66], [50, 69], [47, 66]]);
+        gLine(g, '#3a2418', [[37, 50], [41, 62], [46, 65]], 1);
+        gLine(g, '#3a2418', [[62, 50], [58, 62], [54, 65]], 1);
+    });
+    portraitCache = { back, body, head };
+    return portraitCache;
+}
+
+// Feuillage : petits carrés de feuilles, répartis une fois pour toutes (graine fixe).
+function makeLeaves() {
+    const leaves = [];
+    let seed = 7;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    for (let i = 0; i < 90; i++) {
+        const right = i % 3 === 0;
+        leaves.push({
+            x: right ? 0.62 + rnd() * 0.38 : rnd() * 0.42,
+            y: (right ? 0 : 0.02) + rnd() * (right ? 0.26 : 0.38) * (1 - (right ? 0.3 : 0.4) * rnd()),
+            s: 2 + Math.floor(rnd() * 3),
+            c: ['#1e5a3a', '#2f7a46', '#58a64e', '#9acb5a', '#d6e27a'][Math.floor(rnd() * 5)],
+            p: rnd() * 6
+        });
+    }
+    return leaves;
+}
+
+export function playTitleScreen() {
+    return new Promise(resolve => {
+        const portrait = buildPortrait();
+        const leaves = makeLeaves();
+        const pollen = Array.from({ length: 36 }, (_, i) => ({ x: (i * 37 % 100) / 100, y: (i * 61 % 100) / 100, v: 0.01 + (i % 5) * 0.004, p: i }));
+        const reduced = prefersReducedMotion();
+
+        const overlay = document.createElement('div');
+        overlay.className = 'title-screen';
+        overlay.innerHTML = `
+            <canvas class="title-canvas"></canvas>
+            <div class="title-logo">
+                <div class="title-kicker">LA LÉGENDE DE</div>
+                <div class="title-main">HOU YI</div>
+                <div class="title-sub">ET LES DIX SOLEILS</div>
+            </div>
+            <div class="title-start">▶ Toucher pour commencer</div>`;
+        document.body.appendChild(overlay);
+        const canvas = overlay.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+        let W = 0;
+        let H = 0;
+        let portraitMode = false;
+
+        const resize = () => {
+            const vw = window.innerWidth || 1;
+            const vh = window.innerHeight || 1;
+            portraitMode = vw < vh;
+            if (portraitMode) { W = 100; H = Math.max(150, Math.round(100 * vh / vw)); }
+            else { H = 130; W = Math.max(150, Math.round(130 * vw / vh)); }
+            canvas.width = W;
+            canvas.height = H;
+            ctx.imageSmoothingEnabled = false;
+        };
+        resize();
+        window.addEventListener('resize', resize);
+
+        let raf = 0;
+        let ended = false;
+        const t0 = performance.now();
+
+        const frame = now => {
+            const t = reduced ? 3 : (now - t0) / 1000;
+            const bobBody = Math.round(Math.sin(t * 1.3) * 1.2);
+            const bobHead = Math.round(Math.sin(t * 1.3 - 0.7) * 1.4);
+            const camY = Math.round(Math.sin(t * 0.45) * 2);
+            const charX = portraitMode ? 0 : Math.round(W * 0.58 - PORTRAIT_W / 2);
+            const charY = H - PORTRAIT_H + 6;
+
+            // Ciel / sous-bois en bandes
+            const bands = 18;
+            for (let i = 0; i < bands; i++) {
+                px(ctx, lerpColor('#17456e', '#9fd3e0', i / (bands - 1)), 0, Math.floor(i * H / bands), W, Math.ceil(H / bands) + 1);
+            }
+            // troncs lointains (parallaxe lente)
+            ctx.globalAlpha = 0.35;
+            for (let i = 0; i < 6; i++) {
+                const x = ((i * 47 + 13) % W) + Math.round(Math.sin(t * 0.3 + i) * 1);
+                px(ctx, '#123d5e', x, 0, 5 + (i % 3) * 3, H);
+            }
+            ctx.globalAlpha = 1;
+            // taches de lumière (bokeh carré)
+            for (let i = 0; i < 26; i++) {
+                ctx.globalAlpha = 0.12 + 0.1 * Math.sin(t * 0.8 + i);
+                px(ctx, '#d9f3f0', (i * 43) % W, ((i * 29) % H) + camY, 4 + (i % 4) * 2, 4 + (i % 3) * 2);
+            }
+            ctx.globalAlpha = 1;
+
+            // Calque arrière (arc, carquois) : léger décalage opposé
+            ctx.drawImage(portrait.back, charX + Math.round(Math.sin(t * 0.9) * 1), charY + bobBody - 1);
+            ctx.drawImage(portrait.body, charX, charY + bobBody);
+            // tête
+            ctx.drawImage(portrait.head, charX + Math.round(Math.sin(t * 0.7) * 0.8), charY + bobHead);
+            // clignement des yeux
+            if (!reduced && (t % 4.2) < 0.16) {
+                const hx = charX + Math.round(Math.sin(t * 0.7) * 0.8);
+                const hy = charY + bobHead;
+                px(ctx, '#cf8f55', hx + 35, hy + 32, 11, 4);
+                px(ctx, '#cf8f55', hx + 51, hy + 33, 11, 4);
+                px(ctx, '#1a100a', hx + 35, hy + 35, 10, 1);
+                px(ctx, '#1a100a', hx + 51, hy + 36, 11, 1);
+            }
+
+            // Feuillage balancé par le vent
+            leaves.forEach((l, i) => {
+                const sway = Math.sin(t * 1.1 + l.p) * 1.5;
+                px(ctx, l.c, l.x * W + sway, l.y * H + camY + Math.sin(t * 0.8 + i) * 0.6, l.s, l.s);
+            });
+
+            // Rayons de lumière dérivants
+            for (let i = 0; i < 5; i++) {
+                const a = 0.07 + 0.06 * Math.sin(t * 0.7 + i * 1.7);
+                const x0 = ((i * 0.27 + t * 0.012) % 1.3 - 0.15) * W;
+                ctx.globalAlpha = Math.max(0, a);
+                ctx.fillStyle = '#f4fff8';
+                ctx.beginPath();
+                ctx.moveTo(x0, 0);
+                ctx.lineTo(x0 + 10 + i * 3, 0);
+                ctx.lineTo(x0 - 40 + i * 3 + 10, H);
+                ctx.lineTo(x0 - 40 + i * 3, H);
+                ctx.closePath();
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            // Pollen / poussières montantes
+            pollen.forEach(p => {
+                const y = ((p.y - t * p.v) % 1 + 1) % 1;
+                ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 2 + p.p);
+                px(ctx, '#fff6c0', p.x * W + Math.sin(t + p.p) * 3, y * H, 1, 1);
+            });
+            ctx.globalAlpha = 1;
+
+            // Vignette basse pour la lisibilité du titre
+            for (let i = 0; i < 14; i++) {
+                ctx.globalAlpha = 0.035 * (i + 1);
+                px(ctx, '#050818', 0, H - 14 + i, W, 1);
+            }
+            ctx.globalAlpha = 1;
+
+            if (!ended) raf = requestAnimationFrame(frame);
+        };
+        raf = requestAnimationFrame(frame);
+
+        const start = () => {
+            if (ended) return;
+            ended = true;
+            cancelAnimationFrame(raf);
+            window.removeEventListener('resize', resize);
+            document.removeEventListener('keydown', onKey, true);
+            playSfx('introJingle');
+            overlay.classList.add('closing');
+            setTimeout(() => { overlay.remove(); resolve(); }, 600);
+        };
+        const onKey = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); start(); } };
+        overlay.addEventListener('pointerdown', start);
+        document.addEventListener('keydown', onKey, true);
     });
 }
