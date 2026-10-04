@@ -136,65 +136,6 @@ export function downloadSaveFile(blob, filename) {
     URL.revokeObjectURL(url);
 }
 
-/**
- * Crée un bouton d'import/export de sauvegarde dans le DOM
- * @param {Function} onImport - Callback appelé lors d'un import réussi
- * @param {Function} onExport - Callback appelé lors d'un export
- * @returns {HTMLElement} Le conteneur des boutons
- */
-export function createSaveControlsUI(onImport, onExport) {
-    const container = document.createElement('div');
-    container.id = 'save-controls';
-    container.style.cssText = `
-        display: flex;
-        gap: 10px;
-        margin-top: 10px;
-        padding: 10px;
-        border-top: 1px solid #ddd;
-    `;
-
-    // Bouton d'export
-    const exportBtn = document.createElement('button');
-    exportBtn.textContent = 'Télécharger la sauvegarde';
-    exportBtn.onclick = async () => {
-        if (onExport) {
-            const result = await onExport();
-            if (result && result.success) {
-                downloadSaveFile(result.blob, result.filename);
-            }
-        }
-    };
-
-    // Bouton d'import
-    const importBtn = document.createElement('button');
-    importBtn.textContent = 'Charger une sauvegarde';
-
-    // Input fichier caché
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.json';
-    fileInput.style.display = 'none';
-    fileInput.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const result = await importSaveFromFile(file);
-            if (result.success && onImport) {
-                onImport(result.player, result.metadata);
-            } else if (!result.success) {
-                alert(result.message);
-            }
-        }
-    };
-
-    importBtn.onclick = () => fileInput.click();
-
-    container.appendChild(exportBtn);
-    container.appendChild(importBtn);
-    container.appendChild(fileInput);
-
-    return container;
-}
-
 // === Fonctions utilitaires ===
 
 /**

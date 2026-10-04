@@ -123,6 +123,16 @@ describe('Save Manager', () => {
             expect(importResult.player.level).toBe(5);
         });
 
+        it('conserve l\'équipement après un export puis un import', async () => {
+            const exported = exportSaveToFile(testPlayer, '1.0.0');
+            const file = { name: exported.filename, content: await exported.blob.text() };
+            const res = await importSaveFromFile(file);
+
+            expect(res.success).toBe(true);
+            expect(res.player.equipment.rightHand.id).toBe('sword1');
+            expect(res.player.inventory).toHaveLength(2);
+        });
+
         it('refuses non-JSON files', async () => {
             const file = { name: 'test.txt', content: 'invalid' };
             const result = await importSaveFromFile(file);
