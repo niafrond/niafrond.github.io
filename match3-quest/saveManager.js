@@ -231,6 +231,13 @@ function validateAndRestorePlayer(player) {
 
     // Initialiser les charges des objets rechargeables
     player.inventory.forEach(item => {
+        // Anciens consommables (à usage unique) : désormais rechargeables en x tours, comme tous les objets.
+        if (item.type === 'consumable') {
+            const ref = allItems.find(i => i.id === item.id);
+            if (ref && ref.type === 'reusable') {
+                Object.assign(item, { type: 'reusable', chargesPerCycle: ref.chargesPerCycle, rechargeTurns: ref.rechargeTurns, description: ref.description, chargesLeft: ref.chargesPerCycle, rechargeLeft: 0 });
+            }
+        }
         if (item.type === 'reusable' && !Number.isInteger(item.chargesLeft)) {
             item.chargesLeft = item.chargesPerCycle || 3;
         }

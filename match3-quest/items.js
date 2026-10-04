@@ -26,26 +26,26 @@ export const allItems = [
      description:"Augmente l'attaque de 15 pour ce combat (2 usages, puis rechargé en 6 tours)", effect:{tempAttack:15}},
 
     // Élixirs, pilules et tisanes (niveau 1+)
-    {id:"healthPotion", name:"Élixir de Vie", type:"consumable", minLevel:1, rarity:"common", actionPoints:1,
-     description:"Restaure 30 HP", effect:{heal:30}},
-    {id:"manaPotion", name:"Pilule de Qi", type:"consumable", minLevel:1, rarity:"common", actionPoints:1,
-     description:"Restaure 15 mana de chaque couleur", effect:{mana:15}},
-    {id:"strengthPotion", name:"Pilule de Vigueur", type:"consumable", minLevel:3, rarity:"uncommon", actionPoints:2,
-     description:"Augmente l'attaque de 10 pour ce combat", effect:{tempAttack:10}},
+    {id:"healthPotion", name:"Élixir de Vie", type:"reusable", minLevel:1, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:3,
+     description:"Restaure 30 HP (rechargé en 3 tours)", effect:{heal:30}},
+    {id:"manaPotion", name:"Pilule de Qi", type:"reusable", minLevel:1, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:3,
+     description:"Restaure 15 mana de chaque couleur (rechargé en 3 tours)", effect:{mana:15}},
+    {id:"strengthPotion", name:"Pilule de Vigueur", type:"reusable", minLevel:3, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
+     description:"Augmente l'attaque de 10 pour ce combat (rechargé en 4 tours)", effect:{tempAttack:10}},
     
     // Préparations avancées (niveau 5+)
-    {id:"greaterHealthPotion", name:"Grand Élixir de Vie", type:"consumable", minLevel:5, rarity:"uncommon", actionPoints:2,
-     description:"Restaure 60 HP", effect:{heal:60}},
-    {id:"greaterManaPotion", name:"Grande Pilule de Qi", type:"consumable", minLevel:5, rarity:"uncommon", actionPoints:2,
-     description:"Restaure 25 mana de chaque couleur", effect:{mana:25}},
-    {id:"defensePotion", name:"Talisman de Garde", type:"consumable", minLevel:6, rarity:"uncommon", actionPoints:2,
-     description:"Augmente la défense de 15 pour ce combat", effect:{tempDefense:15}},
+    {id:"greaterHealthPotion", name:"Grand Élixir de Vie", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
+     description:"Restaure 60 HP (rechargé en 4 tours)", effect:{heal:60}},
+    {id:"greaterManaPotion", name:"Grande Pilule de Qi", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
+     description:"Restaure 25 mana de chaque couleur (rechargé en 4 tours)", effect:{mana:25}},
+    {id:"defensePotion", name:"Talisman de Garde", type:"reusable", minLevel:6, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
+     description:"Augmente la défense de 15 pour ce combat (rechargé en 4 tours)", effect:{tempDefense:15}},
     
     // Préparations rares (niveau 10+)
-    {id:"elixirOfPower", name:"Élixir du Dragon et du Tigre", type:"consumable", minLevel:10, rarity:"rare", actionPoints:3,
-     description:"Augmente attaque et défense de 15 pour ce combat", effect:{tempAttack:15, tempDefense:15}},
-    {id:"phoenixFeather", name:"Plume de Fenghuang", type:"consumable", minLevel:12, rarity:"rare", actionPoints:1,
-     description:"Ressuscite avec 50% HP si vous mourrez (1 utilisation)", effect:{revive:0.5}},
+    {id:"elixirOfPower", name:"Élixir du Dragon et du Tigre", type:"reusable", minLevel:10, rarity:"rare", actionPoints:3, chargesPerCycle:1, rechargeTurns:5,
+     description:"Augmente attaque et défense de 15 pour ce combat (rechargé en 5 tours)", effect:{tempAttack:15, tempDefense:15}},
+    {id:"phoenixFeather", name:"Plume de Fenghuang", type:"reusable", minLevel:12, rarity:"rare", actionPoints:1, chargesPerCycle:1, rechargeTurns:8,
+     description:"Ressuscite avec 50% HP si vous mourrez (rechargé en 8 tours)", effect:{revive:0.5}},
     
     // Reliques permanentes (niveau 8+)
     {id:"ringOfVitality", name:"Bracelet de Jade Vital", type:"artifact", minLevel:8, rarity:"rare",
@@ -69,30 +69,30 @@ export const allItems = [
 
 {id:"orbOfWisdom", name:"Orbe de Jade de Sagesse", type:"artifact", minLevel:12, rarity:"rare",
  description:"Augmente mana max de 10 (permanent)", effect:{permMaxMana:10}},
- {id:"timeWarpPotion", name:"Pilule du Temps Suspendu", type:"consumable", minLevel:11, rarity:"rare", actionPoints:2,
- description:"Jouez immédiatement un tour supplémentaire", effect:{extraTurn:1}},
+ {id:"timeWarpPotion", name:"Pilule du Temps Suspendu", type:"reusable", minLevel:11, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:6,
+ description:"Jouez immédiatement un tour supplémentaire (rechargé en 6 tours)", effect:{extraTurn:1}},
 
-{id:"vampiricPotion", name:"Vin Écarlate du Dragon", type:"consumable", minLevel:10, rarity:"rare", actionPoints:2,
- description:"Vous récupérez 30% des dégâts infligés en HP pour ce combat", effect:{lifesteal:0.3}},
+{id:"vampiricPotion", name:"Vin Écarlate du Dragon", type:"reusable", minLevel:10, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:5,
+ description:"Vous récupérez 30% des dégâts infligés en HP pour ce combat (rechargé en 5 tours)", effect:{lifesteal:0.3}},
 
-{id:"arcaneSurgePotion", name:"Élixir de Déferlement du Qi", type:"consumable", minLevel:12, rarity:"rare", actionPoints:3,
- description:"Double le mana gagné pendant 3 tours", effect:{manaMultiplier:2, duration:3}},
- {id:"berserkPotion", name:"Vin de la Fureur", type:"consumable", minLevel:6, rarity:"uncommon", actionPoints:2,
- description:"Augmente attaque de 20 mais réduit défense de 10 pour ce combat", effect:{tempAttack:20, tempDefense:-10}},
+{id:"arcaneSurgePotion", name:"Élixir de Déferlement du Qi", type:"reusable", minLevel:12, rarity:"rare", actionPoints:3, chargesPerCycle:1, rechargeTurns:6,
+ description:"Double le mana gagné pendant 3 tours (rechargé en 6 tours)", effect:{manaMultiplier:2, duration:3}},
+ {id:"berserkPotion", name:"Vin de la Fureur", type:"reusable", minLevel:6, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
+ description:"Augmente attaque de 20 mais réduit défense de 10 pour ce combat (rechargé en 4 tours)", effect:{tempAttack:20, tempDefense:-10}},
 
-{id:"clarityPotion", name:"Thé de Clarté d'Esprit", type:"consumable", minLevel:5, rarity:"uncommon", actionPoints:1,
- description:"Restaure 40 mana d'une couleur aléatoire", effect:{randomMana:40}},
+{id:"clarityPotion", name:"Thé de Clarté d'Esprit", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:1, chargesPerCycle:1, rechargeTurns:4,
+ description:"Restaure 40 mana d'une couleur aléatoire (rechargé en 4 tours)", effect:{randomMana:40}},
 
-{id:"stoneSkinPotion", name:"Pilule de Peau de Bronze", type:"consumable", minLevel:7, rarity:"uncommon", actionPoints:2,
- description:"Réduit les dégâts subis de 20% pendant ce combat", effect:{damageReduction:0.2}},
- {id:"focusPotion", name:"Infusion de Concentration", type:"consumable", minLevel:2, rarity:"common", actionPoints:1,
- description:"Augmente les chances de critique de 10% pour ce combat", effect:{critChance:10}},
+{id:"stoneSkinPotion", name:"Pilule de Peau de Bronze", type:"reusable", minLevel:7, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
+ description:"Réduit les dégâts subis de 20% pendant ce combat (rechargé en 4 tours)", effect:{damageReduction:0.2}},
+ {id:"focusPotion", name:"Infusion de Concentration", type:"reusable", minLevel:2, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:3,
+ description:"Augmente les chances de critique de 10% pour ce combat (rechargé en 3 tours)", effect:{critChance:10}},
 
-{id:"swiftPotion", name:"Pilule de Célérité", type:"consumable", minLevel:2, rarity:"common", actionPoints:1,
- description:"Accorde 1 point d'action supplémentaire ce tour", effect:{gainActionPoints:1}},
+{id:"swiftPotion", name:"Pilule de Célérité", type:"reusable", minLevel:2, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:3,
+ description:"Accorde 1 point d'action supplémentaire ce tour (rechargé en 3 tours)", effect:{gainActionPoints:1}},
 
-{id:"regenPotion", name:"Gourde de Tisane Médicinale", type:"consumable", minLevel:3, rarity:"common", actionPoints:2,
- description:"Restaure 10 HP par tour pendant 3 tours", effect:{regen:10, duration:3}},
+{id:"regenPotion", name:"Gourde de Tisane Médicinale", type:"reusable", minLevel:3, rarity:"common", actionPoints:2, chargesPerCycle:1, rechargeTurns:3,
+ description:"Restaure 10 HP par tour pendant 3 tours (rechargé en 3 tours)", effect:{regen:10, duration:3}},
 ];
 
 // Chances de drop selon la rareté

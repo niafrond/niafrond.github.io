@@ -136,7 +136,7 @@ export function updateShopTab() {
             <span class="weapon-icon">${rarityEmoji}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${item.name}</span>
-                <span class="weapon-stats">${item.type === 'consumable' ? `${item.actionPoints} ${svgIcon('arrow')}` : item.type === 'shield' ? `Déf. +${item.defense}` : item.type === 'reusable' ? `${item.chargesPerCycle} charges, rechargé en ${item.rechargeTurns || 4} tours` : 'Passif'} • Niv. ${item.minLevel}</span>
+                <span class="weapon-stats">${item.type === 'consumable' ? `${item.actionPoints} ${svgIcon('arrow')}` : item.type === 'shield' ? `Déf. +${item.defense}` : item.type === 'reusable' ? `${item.actionPoints || 2} ${svgIcon('arrow')} • ${item.chargesPerCycle} charge${item.chargesPerCycle > 1 ? 's' : ''}, rechargé en ${item.rechargeTurns || 4} tours` : 'Passif'} • Niv. ${item.minLevel}</span>
                 <span class="weapon-description">${item.description}</span>
             </div>
             <div class="shop-weapon-right">

@@ -992,7 +992,7 @@ function ensureCombatUsableActiveItem() {
     if(activeItem?.type === 'consumable') return;
     if(activeItem?.type === 'reusable' && player.level >= (activeItem.minLevel || 1)) return;
 
-    const consumableIndex = player.inventory.findIndex(item => item?.type === 'consumable');
+    const consumableIndex = player.inventory.findIndex(item => (item?.type === 'consumable' || item?.type === 'reusable') && player.level >= (item.minLevel || 1));
     if(consumableIndex >= 0) {
         player.activeInventoryIndex = consumableIndex;
         const combatItem = player.inventory[consumableIndex];
@@ -2481,8 +2481,8 @@ function getItemTooltipHtml(item, options = {}) {
     const ownerLabel = isEnemyItem ? 'ennemi' : 'allié';
     const typeLabel = item.type === 'artifact'
         ? 'Relique passive'
-        : (item.type === 'consumable' ? 'Consommable' : 'Objet');
-    const actionPoints = item.type === 'consumable' ? (item.actionPoints || 2) : null;
+        : (item.type === 'consumable' ? 'Consommable' : item.type === 'reusable' ? 'Objet rechargeable' : 'Objet');
+    const actionPoints = (item.type === 'consumable' || item.type === 'reusable') ? (item.actionPoints || 2) : null;
 
     let html = `<div class="spell-tooltip-title">${item.name || 'Objet'}</div>`;
     html += `<div class="spell-tooltip-line">Objet ${ownerLabel}</div>`;
@@ -3179,9 +3179,9 @@ export function updateInventoryTab(){
         const rarityColor = getRarityColor(item.rarity);
 
         const div = document.createElement('div');
-        div.className = `item-card ${item.type === 'consumable' ? 'consumable-item' : 'artifact-item'}`;
+        div.className = `item-card ${item.type === 'consumable' || item.type === 'reusable' ? 'consumable-item' : 'artifact-item'}`;
         div.style.borderLeft = `4px solid ${rarityColor}`;
-        const paInfo = item.type === 'consumable' ? ` <span style="color:#888;font-size:0.85em;">(${item.actionPoints || 2} ${svgIcon('arrow')})</span>` : '';
+        const paInfo = item.type === 'consumable' || item.type === 'reusable' ? ` <span style="color:#888;font-size:0.85em;">(${item.actionPoints || 2} ${svgIcon('arrow')})</span>` : '';
         const lockDuringCombat = gameState.combatState === 'active' ? 'disabled' : '';
         div.innerHTML = `
             <div class="item-header">
@@ -3191,7 +3191,7 @@ export function updateInventoryTab(){
                     <button class="item-discard-btn" onclick="window.discardInventoryItem(${index})">Jeter</button>
                 </div>
             </div>
-            <div class="item-description">${item.description}${item.type === 'reusable' ? ` <em>(${describeRecharge(item)})</em>` : ''}</div>
+            <div class="item-description">${item.description}${item.type === 'reusable' && (item.chargesLeft ?? item.chargesPerCycle) <= 0 ? ` <em>(${describeRecharge(item)})</em>` : ''}</div>
         `;
         inventoryList.appendChild(div);
     });

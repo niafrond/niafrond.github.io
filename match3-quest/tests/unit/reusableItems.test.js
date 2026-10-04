@@ -79,3 +79,25 @@ describe('recharge en combat : « x tours pour se recharger »', () => {
         expect(vial.chargesLeft).toBe(vial.chargesPerCycle);
     });
 });
+
+describe('tous les objets utilisables sont rechargeables', () => {
+    test('plus aucun consommable à usage unique dans le catalogue', () => {
+        expect(allItems.filter(i => i.type === 'consumable')).toEqual([]);
+        allItems.filter(i => i.type === 'reusable').forEach(i => {
+            expect(i.chargesPerCycle).toBeGreaterThanOrEqual(1);
+            expect(i.rechargeTurns).toBeGreaterThanOrEqual(2);
+            expect(i.description).toMatch(/recharg/);
+        });
+    });
+    test('une potion n\'est plus retirée de l\'inventaire : elle se recharge', () => {
+        const potion = fresh('healthPotion');
+        const player = makePlayer([potion]);
+        expect(useItem('healthPotion', player, null, 0).success).toBe(true);
+        expect(player.inventory).toHaveLength(1);
+        expect(potion.chargesLeft).toBe(0);
+        expect(useItem('healthPotion', player, null, 0).success).toBe(false);
+        for (let t = 0; t < potion.rechargeTurns; t++) tickReusableRecharge(player);
+        expect(potion.chargesLeft).toBe(1);
+        expect(useItem('healthPotion', player, null, 0).success).toBe(true);
+    });
+});
