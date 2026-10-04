@@ -449,6 +449,38 @@ export function grantStartingWeapon(weaponId){
     return weapon;
 }
 
+// Range dans le sac le butin d'un coffre d'exploration (tiré par chestLoot.js : rollChestLoot).
+// Retourne les libellés à afficher (ex. « 🔵 Bague d'Archer en Jade »).
+export function grantChestLoot({ loot = [] } = {}){
+    if(!Array.isArray(player.inventory)) player.inventory = [];
+    if(!Array.isArray(player.weapons)) player.weapons = [];
+    const labels = [];
+    loot.forEach(entry => {
+        const rarityEmoji = getRarityEmoji(entry.rarity);
+        if(entry.kind === 'weapon' && entry.weapon) {
+            if(player.weapons.some(w => w.id === entry.weapon.id)) return;
+            player.weapons.push(entry.weapon);
+            const lvl = entry.weapon.minLevel > player.level ? ` (niv. ${entry.weapon.minLevel})` : '';
+            labels.push(`${rarityEmoji}${getWeaponIcon(entry.weapon.type)} ${entry.weapon.name}${lvl}`);
+            log(`${getWeaponIcon(entry.weapon.type)} Trouvé dans un coffre : ${entry.weapon.name} !`);
+        } else if(entry.kind === 'item' && entry.item) {
+            player.inventory.push({ ...entry.item, applied: false });
+            labels.push(`${rarityEmoji} ${entry.item.name}`);
+            log(`${rarityEmoji} Trouvé dans un coffre : ${entry.item.name} !`);
+            if(entry.item.type === 'artifact') {
+                applyArtifactEffects(player);
+                log(`✨ ${entry.item.description}`);
+            }
+        }
+    });
+    if(labels.length) {
+        normalizeActiveInventoryIndex();
+        updateAvailableWeapons();
+        updateInventoryTab();
+    }
+    return labels;
+}
+
 // tour actuel
 export let currentTurn = 'player';
 

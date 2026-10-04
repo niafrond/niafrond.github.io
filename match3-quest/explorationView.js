@@ -290,7 +290,10 @@ export function createExplorationView(cfg) {
                 toast(`✅ Quête terminée : ${ev.quest.title} — 💰 +${ev.gold || 0}${ev.xp ? ` ✨ +${ev.xp} XP` : ''}${frag}${plus}`, ev.ended ? 8000 : 5000);
             } else if (ev.type === 'chestOpened') {
                 if (!ev.paid) gold += ev.gold || 0;
-                toast(`${ev.chest.openText || `🎁 ${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` 💰 +${ev.gold}` : ''}`);
+                // Butin (potions, reliques, armes) : tiré et rangé dans le sac par le jeu (chestLoot.js).
+                const loot = ev.paid ? [] : (cfg.onChestLoot?.(ev) || []);
+                const lootText = loot.length ? ` · ${loot.join(' · ')}` : '';
+                toast(`${ev.chest.openText || `🎁 ${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` 💰 +${ev.gold}` : ''}${lootText}`, loot.length ? 5500 : 3200);
             }
         });
         if (gold > 0) cfg.onGold(gold);

@@ -581,7 +581,8 @@ export function openChest(session, chestId) {
     const chest = visibleChests(session).find(c => c.id === chestId);
     if (!chest || session.data.openedChests.includes(chestId)) return null;
     session.data.openedChests.push(chestId);
-    const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0 }, ...checkAutoQuests(session)];
+    const { region, kind } = currentScreen(session);
+    const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, screen: { region, kind } }, ...checkAutoQuests(session)];
     return { type: 'chestOpened', chest, gold: chest.gold || 0, events };
 }
 
