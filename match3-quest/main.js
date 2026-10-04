@@ -1,10 +1,9 @@
 import { icon } from "./icons.js";
 import { generateBoard, renderBoard } from "./board.js";
-import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, getCombatMusicScene, getCombatMusicOptions } from "./game.js";
+import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu } from "./game.js";
 import { rollChestLoot } from "./chestLoot.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy } from "./enemies.js";
-import { addXP } from "./experience.js";
 import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
 import { COMBAT_INTRO_MS, initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
 import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
@@ -154,8 +153,11 @@ function init() {
         onGold: amount => { player.gold = (player.gold || 0) + amount; },
         onChestLoot: ev => grantChestLoot(rollChestLoot(ev.chest, ev.screen, player)),
         onXp: amount => {
-            const res = addXP(player, amount);
-            if(res.leveledUp) exploration.toast(`Niveau ${res.newLevel} !`, 4000);
+            const res = grantExplorationXP(amount);
+            if(res.leveledUp) {
+                exploration.toast(`Niveau ${res.newLevel} !`, 4000);
+                showAttributeMenu();   // écran de choix de l'attribut à améliorer, comme après un combat
+            }
         },
         onSave: () => saveUpdate(),
         onRegionVisited: regionId => {

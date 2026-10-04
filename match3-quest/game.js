@@ -530,6 +530,47 @@ function queueCombatXP(xpAmount){
     return safeXP;
 }
 
+// Récompenses d'un gain de niveau (hors XP) : points d'attribut, PV max et soin. Commun au combat et à l'exploration.
+function applyLevelUpRewards(levelUpResult){
+    let maxHpGained = 0;
+    let hpRecovered = 0;
+    if(levelUpResult?.leveledUp) {
+        const levelsGained = Math.max(1, levelUpResult.levelsGained || 1);
+        player.unspentLevelPoints = Math.max(0, player.unspentLevelPoints || 0) + levelsGained;
+
+        maxHpGained = levelsGained * LEVEL_UP_MAX_HP_GAIN;
+        if(maxHpGained > 0) {
+            player.maxHp += maxHpGained;
+        }
+
+        const beforeHeal = player.hp;
+        const healAmount = levelsGained * LEVEL_UP_HEAL_GAIN;
+        if(healAmount > 0 || maxHpGained > 0) {
+            // Le gain de HP max est aussi applique aux HP actuels pour eviter une perte relative.
+            player.hp = Math.min(player.maxHp, player.hp + healAmount + maxHpGained);
+            hpRecovered = Math.max(0, player.hp - beforeHeal);
+        }
+    }
+    return { maxHpGained, hpRecovered };
+}
+
+// XP gagnée hors combat (quêtes, exploration) : même traitement qu'un niveau gagné en combat — points d'attribut,
+// PV, sorts/armes débloqués, journal, sauvegarde. Renvoie { leveledUp, newLevel, levelsGained } ; l'appelant affiche la
+// notification et ouvre l'écran de choix (`showAttributeMenu`).
+export function grantExplorationXP(amount){
+    const res = addXP(player, Math.max(0, Math.floor(amount || 0)));
+    if(!res.leveledUp) return res;
+    const { maxHpGained, hpRecovered } = applyLevelUpRewards(res);
+    log(`Niveau ${player.level} atteint ! +${maxHpGained} HP max, +${hpRecovered} HP de recuperation.`);
+    if((res.levelsGained || 1) > 1) log(`Vous avez gagné ${res.levelsGained} niveaux d'un coup !`);
+    updateAvailableSpells();
+    updateAvailableWeapons();
+    updateInventoryTab();
+    updateLevelHud();
+    saveUpdate();
+    return res;
+}
+
 function applyCombatXPAtEnd(){
     if(combatRewards.xpApplied) {
         return {
@@ -555,26 +596,7 @@ function applyCombatXPAtEnd(){
     }
 
     const levelUpResult = addXP(player, pendingXP);
-    let maxHpGained = 0;
-    let hpRecovered = 0;
-
-    if(levelUpResult.leveledUp) {
-        const levelsGained = Math.max(1, levelUpResult.levelsGained || 1);
-        player.unspentLevelPoints = Math.max(0, player.unspentLevelPoints || 0) + levelsGained;
-
-        maxHpGained = levelsGained * LEVEL_UP_MAX_HP_GAIN;
-        if(maxHpGained > 0) {
-            player.maxHp += maxHpGained;
-        }
-
-        const beforeHeal = player.hp;
-        const healAmount = levelsGained * LEVEL_UP_HEAL_GAIN;
-        if(healAmount > 0 || maxHpGained > 0) {
-            // Le gain de HP max est aussi applique aux HP actuels pour eviter une perte relative.
-            player.hp = Math.min(player.maxHp, player.hp + healAmount + maxHpGained);
-            hpRecovered = Math.max(0, player.hp - beforeHeal);
-        }
-    }
+    const { maxHpGained, hpRecovered } = applyLevelUpRewards(levelUpResult);
 
     return {
         xpApplied: pendingXP,
