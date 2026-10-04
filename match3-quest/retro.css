@@ -606,7 +606,16 @@ body.rt .battle-result-card { padding: 18px 22px; }
 body.rt .battle-result-loot { list-style: none; padding: 0; margin: 8px 0 0; }
 body.rt .battle-result-loot li { padding: 2px 0; }
 /* Arène des Mille Flèches (arena.js) : modale d'entrée, bilan de vague sur l'écran de résultat. */
-body.rt .arena-modal { max-width: 440px; }
+body.rt .arena-modal { max-width: 460px; max-height: 88vh; overflow-y: auto; }
+body.rt .arena-tiers { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+body.rt .arena-tier { border: 2px solid var(--rt-gold); padding: 8px 10px; text-align: left; }
+body.rt .arena-tier p { margin: 4px 0; }
+body.rt .arena-tier.locked { opacity: 0.55; filter: grayscale(0.6); }
+body.rt .arena-tier.cleared { border-style: double; border-width: 4px; }
+body.rt .arena-tier-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+body.rt .arena-tier-head span { font-size: 0.85em; }
+body.rt .arena-tier-meta { font-size: 0.85em; opacity: 0.85; }
+body.rt .arena-tier .arena-enter-btn { width: 100%; margin-top: 4px; }
 body.rt .arena-record { font-weight: bold; }
 body.rt .arena-result { margin-top: 10px; padding-top: 8px; border-top: 2px dashed var(--rt-gold); }
 body.rt .arena-result p { margin: 4px 0; }

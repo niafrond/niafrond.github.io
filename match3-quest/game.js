@@ -6,7 +6,7 @@ import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial
 import { allWeapons, getAvailableWeapons, getWeaponById } from "./weapons.js";
 import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells } from "./board.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
-import { arenaRewardBonus } from "./arena.js";
+import { arenaRewardBonus, arenaTier, isChampionWave, normalizeArenaStats } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
 import { getRandomItem, getRarityEmoji, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
 import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
@@ -429,7 +429,7 @@ export let player = {
     pendingBoss: null, // boss imposé tant qu'il n'est pas vaincu
     worldMap: { currentZoneId: null, visitedZoneIds: [] }, // régions découvertes (carte du monde)
     exploration: null, // progression sur la carte d'exploration (voir exploration.js), créée au premier lancement
-    arena: null // Arène des Mille Flèches (arena.js) : { best, wins, runs }
+    arena: null // Arène des Mille Flèches (arena.js) : { cleared, best, wins, runs }
 };
 
 // Équipe automatiquement une arme de départ si le joueur n'en a encore aucune.
@@ -1711,7 +1711,9 @@ function applyDuelRulesAtCombatStart(){
     }
     if(duel.heroHpPct){
         player.hp = Math.min(player.hp, weakenedHp(player.maxHp, duel.heroHpPct));
-        log(`🩸 Épuisé par neuf soleils, vous entrez dans le duel avec ${player.hp}/${player.maxHp} PV.`);
+        log(enemy.arena
+            ? `🩸 L'épreuve commence durement : vous entrez avec ${player.hp}/${player.maxHp} PV.`
+            : `🩸 Épuisé par neuf soleils, vous entrez dans le duel avec ${player.hp}/${player.maxHp} PV.`);
     }
 }
 
@@ -1991,13 +1993,22 @@ export function handleEnemyDefeated(){
     combatRewards.gold = goldEarned;
     log(`💰 Vous ramassez ${goldEarned} pièce${goldEarned > 1 ? 's' : ''} d'or !`);
 
-    // Prime de l'Arène des Mille Flèches (arena.js) : or et XP en plus, croissants avec la vague.
+    // Prime de l'Arène des Mille Flèches (arena.js) : or et XP en plus, croissants avec le cercle et la vague,
+    // et grosse prime quand un cercle est terminé pour la première fois (son champion vaincu).
     if(enemy.arena) {
-        const bonus = arenaRewardBonus(enemy.arena.wave, enemyLvl);
+        const { tier: tierId, wave } = enemy.arena;
+        const bonus = arenaRewardBonus(tierId, wave, enemyLvl);
         player.gold += bonus.gold;
         combatRewards.gold += bonus.gold;
         queueCombatXP(bonus.xp);
-        log(`🏟️ Prime d'arène (vague ${enemy.arena.wave}) : +${bonus.gold} or, +${bonus.xp} XP !`);
+        log(`🏟️ Prime d'arène (vague ${wave}) : +${bonus.gold} or, +${bonus.xp} XP !`);
+        const tier = arenaTier(tierId);
+        if(tier && isChampionWave(tierId, wave) && !normalizeArenaStats(player.arena).cleared.includes(tier.id)) {
+            player.gold += tier.clearGold;
+            combatRewards.gold += tier.clearGold;
+            queueCombatXP(tier.clearXp);
+            log(`🏆 ${tier.name} terminé pour la première fois : +${tier.clearGold} or, +${tier.clearXp} XP !`);
+        }
     }
 
     // Drop de l'objet de l'ennemi (si il en avait un)
