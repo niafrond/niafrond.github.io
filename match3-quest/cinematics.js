@@ -590,9 +590,11 @@ const SUN_TAUNTS = [
     'Le ciel est à nous. Retourne à ta poussière, mortel !'
 ];
 const SUN_REPLIES = [
-    'Je ne tire pas par haine, je tire pour que la Terre revive.',
-    'Le jeu est fini, soleil. Les hommes ont soif.',
-    'Mes flèches n\'ont jamais manqué leur but. Pas aujourd\'hui non plus.'
+    "Je ne tire pas par haine. Je tire pour que la Terre revive.",
+    "Le jeu est fini, soleil. Les hommes ont soif, et Chang'e attend la nuit.",
+    "Chaque soleil qui tombe lui rend une heure de lune. Tu es le prochain.",
+    "Mes flèches n'ont jamais manqué leur but. Pas aujourd'hui : elle m'attend.",
+    "Rends-nous la nuit. J'ai promis la fête de la lune à Chang'e."
 ];
 const FENGMENG_TAUNTS = [
     'Maître… vous avez tout : le renom, l\'élixir, Chang\'e. Moi, que me reste-t-il ?',
@@ -1124,7 +1126,7 @@ const PRO_SCENES = [
     },
     {   // 4. Hou Yi, Chang'e, Fengmeng et l'élixir d'immortalité
         dur: 7,
-        caption: "Alors Yao se souvint de Hou Yi, l'archer dont les flèches n'ont jamais manqué leur but. Près de lui : Chang'e, son épouse, Fengmeng, son disciple, et l'Élixir d'Immortalité.",
+        caption: "Alors Yao se souvint de Hou Yi, l'archer dont les flèches n'ont jamais manqué leur but. Près de lui : Chang'e, son épouse tant aimée, Fengmeng, son disciple, et l'Élixir d'Immortalité.",
         draw(ctx, t) {
             sky(ctx, TP.tealDeep, TP.tealMid, 12);
             stars(ctx, t, 22, 0.8);

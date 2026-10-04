@@ -617,9 +617,42 @@ describe('quêtes (story.js)', () => {
                 if (sp.enemy) expect(enemyIds.has(sp.enemy)).toBe(true);
             });
         });
+        screens.forEach(s => s.enemies.filter(e => e.afterScenes).forEach(e => {
+            expect(e.permanent).toBe(true);
+            e.afterScenes.forEach(sc => {
+                expect(sc.lines.length).toBeGreaterThan(0);
+                expect(sc.speaker.name).toBeTruthy();
+                if (sc.speaker.npc) expect(npcIds.has(sc.speaker.npc)).toBe(true);
+                if (sc.speaker.enemy) expect(enemyIds.has(sc.speaker.enemy)).toBe(true);
+            });
+        }));
         // un ennemi qui n'apparaît qu'après un autre, et l'autel
         expect(SCREENS.lune.enemies.find(e => e.id === 'fengmeng_3b').showWhen).toBe('fengmeng_3a');
         expect(SCREENS.lune.chests.find(c => c.id === 'moon_altar').showWhen).toBe('fengmeng_3b');
+    });
+
+    test('le miroir brisé : après chaque soleil, Hou Yi et Chang\'e se parlent ; après le neuvième, le bronze se tait', () => {
+        const suns = screens.flatMap(s => s.enemies).filter(e => /^sun_\d$/.test(e.id));
+        expect(suns).toHaveLength(9);
+        suns.forEach(sun => {
+            const scenes = sun.afterScenes;
+            expect(scenes.length).toBeGreaterThanOrEqual(3);
+            scenes.flatMap(sc => sc.lines).forEach(line => expect(line.length).toBeLessThanOrEqual(260));
+            expect(scenes.some(sc => sc.speaker.hero)).toBe(true);
+            const changeSpeaks = scenes.some(sc => sc.speaker.npc === 'change');
+            expect(changeSpeaks).toBe(sun.id !== 'sun_9');
+        });
+        const all = suns.flatMap(sun => sun.afterScenes.flatMap(sc => sc.lines)).join(' ');
+        expect(all).toMatch(/miroir/);
+        expect(all).toMatch(/Je t'aime/);
+        expect(STORY_INTRO.join(' ')).toMatch(/c'est pour elle/);
+        expect(STORY_INTRO.join(' ')).toMatch(/miroir/);
+        expect(STORY_ENDING.join(' ')).toMatch(/miroir/);
+        // à la maison, Chang'e a une réplique après chaque soleil (sauf le neuvième : elle a fui)
+        const change = screens.flatMap(s => s.npcs).find(n => n.id === 'change');
+        const conds = change.talk.map(t => t.whenDone);
+        for (let n = 1; n <= 8; n++) expect(conds).toContain(`sun_${n}`);
+        expect(change.hideWhen).toBe('sun_9');
     });
 
     test('Fengmeng : trois rencontres, scènes de fin de duel', () => {
@@ -1508,7 +1541,9 @@ describe('scènes de fin de duel (defeatScene)', () => {
         s.screens.rizieres.enemies.find(e => e.id === 'sun_1').defeatScene = { speaker: { name: 'X' }, lines: ['a', 'b'] };
         const events = markEnemyDefeated(s, 'sun_1');
         delete s.screens.rizieres.enemies.find(e => e.id === 'sun_1').defeatScene;
-        expect(events.map(e => e.type)).toEqual(['scene', 'questCompleted', 'questStarted']);
+        expect(events[0]).toMatchObject({ type: 'scene', lines: ['a', 'b'] });
+        expect(events[1].type).toBe('questCompleted');
+        expect(events[events.length - 1].type).toBe('questStarted');
     });
 
     test('afterScenes : interlude après le texte de victoire, avant la quête suivante, une seule fois', () => {
