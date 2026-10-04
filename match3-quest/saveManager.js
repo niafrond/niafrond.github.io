@@ -175,6 +175,7 @@ function sanitizePlayer(player) {
     delete sanitized.tempAttack;
     delete sanitized.tempDefense;
     delete sanitized.tempCritChance;
+    delete sanitized.shieldAbsorbLeft;
 
     // Supprimer les états temporaires
     delete sanitized.hasRevive;

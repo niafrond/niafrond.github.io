@@ -166,7 +166,8 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
 
     // Les objets rechargeables doivent avoir des charges restantes
     if(item.type === "reusable") {
-        if(!item.chargesLeft || item.chargesLeft <= 0) {
+        if(!Number.isInteger(item.chargesLeft)) item.chargesLeft = item.chargesPerCycle;
+        if(item.chargesLeft <= 0) {
             return {success: false, message: "Cet objet doit être rechargé en exploration"};
         }
         item.chargesLeft--;
@@ -287,7 +288,7 @@ export function rechargeReusableItems(player) {
 
     const recharged = [];
     player.inventory.forEach(item => {
-        if(item.type === "reusable" && item.chargesLeft < item.chargesPerCycle) {
+        if(item.type === "reusable" && (item.chargesLeft ?? item.chargesPerCycle) < item.chargesPerCycle) {
             item.chargesLeft = item.chargesPerCycle;
             recharged.push(item);
         }
