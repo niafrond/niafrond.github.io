@@ -37,7 +37,7 @@ export const ATTRIBUTE_LABELS = {
 const STAT_TEXT = {
     strength: (n) => ({
         title: "Attaque",
-        line: `+${n} attaque : chaque coup (soleils frappés, armes) inflige ${n} dégât de plus.`
+        line: `+${n} attaque : chaque attaque (arme, points d'action) inflige ${n} dégât de plus.`
     }),
     agility: (n) => ({
         title: "Défense",
@@ -53,7 +53,7 @@ const STAT_TEXT = {
     }),
     morale: (n) => ({
         title: "Attaque morale",
-        line: `+${n} attaque : chaque coup inflige ${n} dégât de plus.`
+        line: `+${n} attaque : chaque attaque inflige ${n} dégât de plus.`
     })
 };
 
