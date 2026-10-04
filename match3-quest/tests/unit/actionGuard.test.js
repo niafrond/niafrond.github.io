@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { createActionGuard, ACTION_COOLDOWN_MS, BOARD_SETTLE_MS, BOARD_BUSY_TIMEOUT_MS } from '../../actionGuard.js';
-import { collectMatches, getColorMatchManaBaseGain, getEffectiveMatchLength, getJokerMatchMultiplier } from '../../matchMechanics.js';
+import { collectMatches, getColorMatchManaBaseGain, getEffectiveMatchLength, getJokerMatchMultiplier, bigMatchXpFor } from '../../matchMechanics.js';
 
 const clock = () => { let t = 100000; return { now: () => t, advance: (ms) => { t += ms; } }; };
 
@@ -90,5 +90,21 @@ describe('jokers : ×2 mana / actions / crânes quand ils sont combinés', () =>
         const m = collectMatches(board).find((x) => x.info.type === 'combat');
         expect(m).toBeTruthy();
         expect(m.info.jokerCount).toBe(1);
+    });
+});
+
+describe('XP bonus des belles combinaisons', () => {
+    test('3 : rien ; 4 : +4 ; 5 : +8 ; 6+ : +12 (plafonné)', () => {
+        expect([3, 4, 5, 6, 7, 0, undefined].map(bigMatchXpFor)).toEqual([0, 4, 8, 12, 12, 0, 0]);
+    });
+    test('branchement : board.js accorde l\'XP au joueur sur 4+ et joue les sons crâne/mana', () => {
+        const board = fs.readFileSync(new URL('../../board.js', import.meta.url), 'utf8');
+        expect(board).toMatch(/currentTurn === 'player' && info\.len >= 4[\s\S]*grantBigMatchXP/);
+        expect(board).toContain("playSfx('skullHit'");
+        expect(board).toContain("playSfx('manaGain'");
+    });
+    test('sound.js définit les sons de coup et de mana', () => {
+        const snd = fs.readFileSync(new URL('../../sound.js', import.meta.url), 'utf8');
+        for (const k of ["'weaponHit'", "'spellHit'", "'spellCast'", "'skullHit'", "'manaGain'"]) expect(snd).toContain(`case ${k}`);
     });
 });

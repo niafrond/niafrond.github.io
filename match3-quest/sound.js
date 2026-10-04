@@ -299,6 +299,46 @@ function playPattern(pattern, options = {}) {
     });
 }
 
+let noiseBuffer = null;
+function getNoiseBuffer(ctx) {
+    if (noiseBuffer && noiseBuffer.sampleRate === ctx.sampleRate) return noiseBuffer;
+    const len = Math.floor(ctx.sampleRate * 0.5);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    let a = 12345;
+    for (let i = 0; i < len; i++) { a = (a * 1664525 + 1013904223) >>> 0; d[i] = a / 2147483648 - 1; }
+    noiseBuffer = buf;
+    return buf;
+}
+
+// Rafale de bruit filtrée (impact, souffle de lame) : [délai, durée, gain relatif, fréquence départ, fréquence fin, type de filtre]
+function playNoise(bursts, options = {}) {
+    if (isSfxMuted()) return;
+    const ctx = getAudioContext({ allowCreate: true });
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    const baseTime = ctx.currentTime + 0.01;
+    const baseGain = clampVolume((options.gain ?? 1) * getSfxVolume() * 0.12, defaultSettings.sfxVolume);
+    for (const [delay, duration, rel, f0, f1, type = 'bandpass'] of bursts) {
+        if (activeTones >= MAX_ACTIVE_TONES) return;
+        const t0 = baseTime + delay;
+        const src = ctx.createBufferSource();
+        src.buffer = getNoiseBuffer(ctx); src.loop = true;
+        const flt = ctx.createBiquadFilter();
+        flt.type = type; flt.Q.value = 0.9;
+        flt.frequency.setValueAtTime(f0, t0);
+        flt.frequency.exponentialRampToValueAtTime(Math.max(40, f1), t0 + duration);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(Math.max(0.0001, baseGain * rel * 3), t0 + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+        activeTones++;
+        src.onended = () => { activeTones = Math.max(0, activeTones - 1); try { src.disconnect(); flt.disconnect(); g.disconnect(); } catch { /* déjà déconnecté */ } };
+        src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+        src.start(t0); src.stop(t0 + duration + 0.03);
+    }
+}
+
 export function playSfx(eventName, payload = {}) {
     const len      = Math.max(3, Math.min(7, Number(payload.length) || 3));
     const isPlayer = payload.isPlayer !== false;
@@ -342,16 +382,20 @@ export function playSfx(eventName, payload = {}) {
                 [0.1,  900, 0.08, 1,   'triangle']
             ]);
             break;
-        case 'spellCast':
+        case 'spellCast':   // formule : souffle montant + tintement
+            playNoise([[0, 0.22, 0.35, 500, 3200, 'bandpass']]);
             playPattern([
-                [0,    430, 0.05, 0.55, 'sine'],
-                [0.03, 560, 0.08, 0.8,  'triangle']
+                [0,    430, 0.08, 0.5, 'sine'],
+                [0.05, 640, 0.1,  0.6, 'triangle'],
+                [0.12, 860, 0.12, 0.55, 'sine']
             ]);
             break;
-        case 'spellHit':
+        case 'spellHit':    // le sort frappe : choc sourd + éclat magique
+            playNoise([[0, 0.16, 0.9, isPlayer ? 1800 : 900, 160, 'lowpass']]);
             playPattern([
-                [0,     isPlayer ? 760 : 300, 0.06, 0.75, 'square'],
-                [0.035, isPlayer ? 620 : 220, 0.08, 0.7,  'sawtooth']
+                [0,     isPlayer ? 150 : 110, 0.14, 1,   'sine'],
+                [0.02,  isPlayer ? 760 : 300, 0.08, 0.6, 'square'],
+                [0.06,  isPlayer ? 980 : 240, 0.1,  0.4, 'triangle']
             ]);
             break;
         case 'heal':
@@ -361,12 +405,32 @@ export function playSfx(eventName, payload = {}) {
                 [0.11, 720, 0.08, 0.95, 'sine']
             ]);
             break;
-        case 'weaponHit':
+        case 'weaponHit':   // coup d'arme : sifflement de lame puis impact sourd
+            playNoise([
+                [0,    0.07, 0.5, 4200, 1200, 'bandpass'],
+                [0.05, 0.16, 1,   1400, 140,  'lowpass']
+            ]);
             playPattern([
-                [0,    isPlayer ? 210 : 180, 0.04, 0.8,  'square'],
-                [0.03, isPlayer ? 150 : 130, 0.09, 0.75, 'sawtooth']
+                [0.05, isPlayer ? 130 : 105, 0.14, 1, 'sine'],
+                [0.05, isPlayer ? 210 : 170, 0.05, 0.6, 'square']
             ]);
             break;
+        case 'skullHit':    // attaque par alignement de crânes : coup de poing lourd, plus fort selon la longueur
+            playNoise([[0, 0.12 + len * 0.02, 0.9, 1500, 120, 'lowpass']]);
+            playPattern([
+                [0,    isPlayer ? 120 : 95, 0.16 + len * 0.01, 1,    'sine'],
+                [0.02, isPlayer ? 190 : 150, 0.07, 0.6, 'square'],
+                ...(len >= 4 ? [[0.07, 90, 0.16, 0.8, 'sine']] : [])
+            ]);
+            break;
+        case 'manaGain': {  // mana récolté : scintillement magique ascendant (plus long avec la longueur)
+            const notes = [880, 1108, 1318, 1760, 2093, 2637];
+            const n = Math.min(notes.length, 2 + Math.floor(len / 2));
+            const pat = [];
+            for (let k = 0; k < n; k++) pat.push([k * 0.045, notes[k], 0.22, 0.45 + k * 0.05, 'sine'], [k * 0.045, notes[k] * 2.01, 0.12, 0.15, 'sine']);
+            playPattern(pat, { gain: isPlayer ? 1 : 0.5 });
+            break;
+        }
         case 'combatStart': case 'bossStart': {
             // Jingle d'entrée en combat (façon Pokémon) : martèlement alterné rapide, montée pentatonique, note tenue.
             // Durée ≈ COMBAT_INTRO_MS : la musique de combat démarre juste après (voir main.js).

@@ -221,6 +221,13 @@ export function getColorMatchManaBaseGain(info){
     return getEffectiveMatchLength(info);
 }
 
+// XP bonus d'une combinaison de 4 tuiles (+4), 5 (+8), 6 ou plus (+12).
+export function bigMatchXpFor(len){
+    const n = Math.floor(len || 0);
+    if(n < 4) return 0;
+    return Math.min(12, (n - 3) * 4);
+}
+
 // Collecte toutes les sequences de match (horizontales + verticales).
 export function collectMatches(board){
     const matches = [];

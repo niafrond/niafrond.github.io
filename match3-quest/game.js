@@ -6,6 +6,7 @@ import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial
 import { allWeapons, getAvailableWeapons, getWeaponById } from "./weapons.js";
 import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
+import { bigMatchXpFor } from "./matchMechanics.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
 import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
@@ -2190,6 +2191,10 @@ export function handleEnemyDefeated(){
 export function grantComboMasteryRewards(xpAmount = 25){
     queueCombatXP(xpAmount);
     return xpAmount;
+}
+
+export function grantBigMatchXP(len){
+    return queueCombatXP(bigMatchXpFor(len));
 }
 
 export function grantManaGeneratedXP(manaAmount){

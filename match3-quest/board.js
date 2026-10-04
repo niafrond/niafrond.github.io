@@ -1,4 +1,4 @@
-import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, addManaForColor, logActiveAction, clampEnemyAttackDamage, applyDamage, addBonusTurn } from "./game.js";
+import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, clampEnemyAttackDamage, applyDamage, addBonusTurn } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 import { tutorialCallbacks } from "./tutorial.js";
 import {
@@ -694,7 +694,17 @@ export function checkMatches(forceFullBoard = false){
             if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
         }
 
-        playSfx('match', { matchType: info.type, length: info.len, isPlayer: currentTurn === 'player' });
+        // Sons : crânes = coup porté ; couleur = mana récolté (scintillement magique) ; épées = son de match classique.
+        const sfxPayload = { matchType: info.type, length: info.len, isPlayer: currentTurn === 'player' };
+        if(info.type === 'skull') playSfx('skullHit', sfxPayload);
+        else if(info.type === 'color') playSfx('manaGain', sfxPayload);
+        else playSfx('match', sfxPayload);
+
+        // XP bonus des belles combinaisons (4, 5 tuiles ou plus), discret : une seule ligne de journal.
+        if(currentTurn === 'player' && info.len >= 4){
+            const bonusXp = grantBigMatchXP(info.len);
+            if(bonusXp > 0) log(`+${bonusXp} XP (belle combinaison)`);
+        }
 
         if(currentTurn === 'player' && turnDistinctMatches > 5 && !comboMasteryTriggered){
             comboMasteryTriggered = true;
