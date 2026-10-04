@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import {
     MERCHANTS, MERCHANT_IDS, REGION_LEVEL, PRICE_MULT, merchantStock, merchantNpc, availableOffers, buyOffer, offerObject,
-    baseItemPrice, baseWeaponPrice
+    baseItemPrice, baseWeaponPrice, SELL_RATIO, sellableEntries, sellEntry, sellPriceOf
 } from '../../merchants.js';
 import { REGION_LEVEL as WORLD_LEVEL, REGION_ORDER } from '../../world/index.js';
 import { SCREENS } from '../../story.js';
@@ -99,5 +99,69 @@ describe('PNJ marchands', () => {
         expect(view).toContain('drawMerchantBadge(');
         expect(view).toContain('it.n.merchant');
         expect(allItems.length).toBeGreaterThan(0);
+    });
+});
+
+describe('revente aux marchands', () => {
+    const sword = { id: 'rusty_sword', name: 'Sabre', type: 'sword', damage: 10, actionPoints: 3, minLevel: 1 };
+    const axe = { id: 'wood_axe', name: 'Hache', type: 'axe', damage: 12, actionPoints: 3, minLevel: 2 };
+    const mk = () => ({
+        gold: 0, weapons: [sword, axe], equippedWeapon: sword, equipment: { rightHand: sword, leftHand: null, item: null },
+        inventory: [
+            { id: 'healthPotion', name: 'Élixir', type: 'reusable', rarity: 'common', minLevel: 1 },
+            { id: 'honey_vial', name: 'Miel', type: 'reusable', rarity: 'uncommon', minLevel: 3 },
+            { id: 'ringOfVitality', name: 'Bracelet', type: 'artifact', rarity: 'rare', minLevel: 8, applied: true },
+            { id: 'jade_shield', name: 'Bouclier', type: 'shield', rarity: 'uncommon', minLevel: 5, defense: 8 }
+        ],
+        activeInventoryIndex: 1
+    });
+
+    test('rachat à 40 % du barème de base (jamais plus que le prix d\'achat)', () => {
+        const w = { ...axe };
+        expect(sellPriceOf('weapon', w)).toBe(Math.floor(baseWeaponPrice(w) * SELL_RATIO));
+        merchantStock('merchant_gobi').forEach(o => expect(sellPriceOf(o.kind, offerObject(o))).toBeLessThan(o.price));
+    });
+
+    test('le stuff activé est verrouillé : arme en main, objet actif, relique portée', () => {
+        const h = mk();
+        const by = k => sellableEntries(h).find(e => e.key === k);
+        expect(by('weapon:rusty_sword').locked).toBe('Équipée');
+        expect(by('weapon:wood_axe').locked).toBeNull();
+        expect(by('inv:0').locked).toBeNull();
+        expect(by('inv:1').locked).toBe('Objet actif');
+        expect(by('inv:2').locked).toBe('Relique portée');
+        expect(by('inv:3').locked).toBeNull();            // un bouclier du sac n'est pas porté
+        const g = h.gold;
+        expect(sellEntry(h, 'weapon:rusty_sword').ok).toBe(false);
+        expect(sellEntry(h, 'inv:1').ok).toBe(false);
+        expect(sellEntry(h, 'inv:2').ok).toBe(false);
+        expect(h.gold).toBe(g);
+        expect(h.weapons).toHaveLength(2);
+        expect(h.inventory).toHaveLength(4);
+    });
+
+    test('arme en main gauche ou main droite seule : verrouillée aussi', () => {
+        const h = { gold: 0, weapons: [sword, axe], equipment: { rightHand: null, leftHand: axe, item: null }, inventory: [] };
+        expect(sellableEntries(h).find(e => e.key === 'weapon:wood_axe').locked).toBe('Équipée');
+        expect(sellableEntries(h).find(e => e.key === 'weapon:rusty_sword').locked).toBeNull();
+    });
+
+    test('vente : or crédité, objet retiré, index de l\'objet actif recalé', () => {
+        const h = mk();
+        const price = sellPriceOf('item', h.inventory[0]);
+        expect(sellEntry(h, 'inv:0')).toMatchObject({ ok: true });
+        expect(h.gold).toBe(price);
+        expect(h.inventory.map(i => i.id)).toEqual(['honey_vial', 'ringOfVitality', 'jade_shield']);
+        expect(h.activeInventoryIndex).toBe(0);                // l'objet actif (Miel) est toujours le même
+        expect(h.inventory[h.activeInventoryIndex].id).toBe('honey_vial');
+        expect(sellEntry(h, 'weapon:wood_axe').ok).toBe(true);
+        expect(h.weapons.map(w => w.id)).toEqual(['rusty_sword']);
+        expect(sellEntry(h, 'weapon:wood_axe').ok).toBe(false);
+    });
+
+    test('la fenêtre propose Acheter / Vendre', () => {
+        const src = readFileSync(new URL('../../shop.js', import.meta.url), 'utf8');
+        expect(src).toContain('data-sell');
+        expect(src).toContain('data-mode="sell"');
     });
 });

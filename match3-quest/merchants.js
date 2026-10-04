@@ -159,3 +159,45 @@ export function buyOffer(merchantId, key, hero, ngPlus = 0) {
     return { ok: true, message: `${obj.name} acheté pour ${offer.price} pièces d'or !`, offer, obj };
 }
 
+
+// ── Revente au marchand ─────────────────────────────────────────────────────
+// Le marchand rachète à SELL_RATIO du barème de base (sans la majoration de vente). Jamais le matériel activé :
+// armes en main, objet actif du combat, reliques portées (bonus permanent déjà appliqué). Un bouclier porté n'est pas dans le sac.
+export const SELL_RATIO = 0.4;
+
+export const sellPriceOf = (kind, obj) => Math.max(1, Math.floor((kind === 'weapon' ? baseWeaponPrice(obj) : baseItemPrice(obj)) * SELL_RATIO));
+
+const equippedWeaponIds = hero => new Set([hero.equippedWeapon?.id, hero.equipment?.rightHand?.id, hero.equipment?.leftHand?.id].filter(Boolean));
+
+/** Pourquoi cette pièce ne peut pas être vendue (null si elle le peut). */
+export function sellLockReason(hero, kind, obj, inventoryIndex = null) {
+    if (kind === 'weapon') return equippedWeaponIds(hero).has(obj.id) ? 'Équipée' : null;
+    if (inventoryIndex !== null && inventoryIndex === hero.activeInventoryIndex && obj.type !== 'shield') return 'Objet actif';
+    if (obj.type === 'artifact' && obj.applied) return 'Relique portée';
+    return null;
+}
+
+/** Tout ce que le héros possède et peut montrer au marchand : [{ key, kind, obj, price, locked }]. */
+export function sellableEntries(hero) {
+    const weapons = (hero.weapons || []).map(w => ({ key: `weapon:${w.id}`, kind: 'weapon', obj: w, rarity: weaponRarity(w), price: sellPriceOf('weapon', w), locked: sellLockReason(hero, 'weapon', w) }));
+    const items = (hero.inventory || []).map((it, index) => ({ key: `inv:${index}`, kind: 'item', obj: it, rarity: it.rarity || 'common', price: sellPriceOf('item', it), locked: sellLockReason(hero, 'item', it, index), index }));
+    return [...weapons, ...items];
+}
+
+/** Vend une pièce (clé de `sellableEntries`) : retire l'objet, crédite l'or, recale l'index de l'objet actif. */
+export function sellEntry(hero, key) {
+    const entry = sellableEntries(hero).find(e => e.key === key);
+    if (!entry) return { ok: false, message: 'Vous ne possédez plus cette pièce.' };
+    if (entry.locked) return { ok: false, message: `${entry.obj.name} ne peut pas être vendu : ${entry.locked.toLowerCase()}.` };
+    if (entry.kind === 'weapon') {
+        hero.weapons = hero.weapons.filter(w => w.id !== entry.obj.id);
+    } else {
+        hero.inventory.splice(entry.index, 1);
+        if (Number.isInteger(hero.activeInventoryIndex)) {
+            if (hero.activeInventoryIndex > entry.index) hero.activeInventoryIndex--;
+            if (hero.inventory.length === 0) hero.activeInventoryIndex = null;
+        }
+    }
+    hero.gold = (hero.gold || 0) + entry.price;
+    return { ok: true, message: `${entry.obj.name} vendu pour ${entry.price} pièces d'or.`, entry };
+}
