@@ -1099,7 +1099,7 @@ export function createExplorationView(cfg) {
         ctx.closePath();
         ctx.fill();
         ctx.restore();
-        if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.62, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1));
+        if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.62, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1), w / 2);
     }
 
     // Dessine un sprite SVG (pieds vers le bas du cadre) centré sur cx, dont les pieds sont posés en feetY.
@@ -1164,10 +1164,13 @@ export function createExplorationView(cfg) {
         ctx.fillText(emoji, x, y);
     }
 
-    function drawLabel(x, y, text, bg, fg, size = 12) {
+    function drawLabel(x, y, text, bg, fg, size = 12, reach = cam.tile * 0.5) {
         ctx.font = `700 ${size}px 'Rt Digits', 'Pixelify Sans', ui-monospace, monospace`;
         const w = ctx.measureText(text).width + 14;
         const h = size + 8;
+        // carte plus large que l'écran (caméra qui suit le héros) : l'étiquette d'une entité hors cadre n'est pas dessinée
+        // (sinon elle s'empilerait contre le bord de l'écran)
+        if (x < -reach || x > cam.vw + reach) return;
         // reste dans le cadre : une étiquette près du bord (sortie) ne doit pas être coupée
         if (cam.vw > w) x = Math.min(Math.max(x, w / 2 + 4), cam.vw - w / 2 - 4);
         ctx.beginPath();
