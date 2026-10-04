@@ -1,5 +1,6 @@
 import { generateBoard, renderBoard } from "./board.js";
-import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, combatHooks, getCombatMusicScene } from "./game.js";
+import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, getCombatMusicScene } from "./game.js";
+import { rollChestLoot } from "./chestLoot.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy } from "./enemies.js";
 import { addXP } from "./experience.js";
@@ -146,6 +147,7 @@ function init() {
         getPlayerLevel: () => player.level,
         onEncounter: encounter => startEncounterCombat(encounter),
         onGold: amount => { player.gold = (player.gold || 0) + amount; },
+        onChestLoot: ev => grantChestLoot(rollChestLoot(ev.chest, ev.screen, player)),
         onXp: amount => {
             const res = addXP(player, amount);
             if(res.leveledUp) exploration.toast(`⭐ Niveau ${res.newLevel} !`, 4000);
