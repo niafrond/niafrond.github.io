@@ -1,3 +1,9 @@
+## [2.59.1](https://github.com/niafrond/niafrond.github.io/compare/v2.59.0...v2.59.1) (2026-10-04)
+
+### Bug Fixes
+
+* **match3-quest:** étiquettes hors cadre sur les grandes cartes, journal de revue ([#401](https://github.com/niafrond/niafrond.github.io/issues/401)) ([9923b5e](https://github.com/niafrond/niafrond.github.io/commit/9923b5ea52f6bb34ab0c967f2313357b4a989564))
+
 ## [2.59.0](https://github.com/niafrond/niafrond.github.io/compare/v2.58.1...v2.59.0) (2026-10-04)
 
 ### Features
