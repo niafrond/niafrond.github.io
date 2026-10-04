@@ -266,6 +266,8 @@ export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
     enemyEntity.mapEnemyId = encounter?.enemyId || null;
     // Règles de duel (Fengmeng : miroir, tirs rapides, pièges de zone) appliquées par game.js, voir duel.js.
     if(encounter?.duel) enemyEntity.duel = { ...encounter.duel };
+    // Vague de l'Arène des Mille Flèches (arena.js) : prime versée par game.js à la victoire.
+    if(encounter?.arena) enemyEntity.arena = { ...encounter.arena };
     return enemyEntity;
 }
 

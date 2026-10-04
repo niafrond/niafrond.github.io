@@ -6,6 +6,7 @@ import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial
 import { allWeapons, getAvailableWeapons, getWeaponById } from "./weapons.js";
 import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells } from "./board.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
+import { arenaRewardBonus } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
 import { getRandomItem, getRarityEmoji, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
 import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
@@ -427,7 +428,8 @@ export let player = {
     defeatedBossTiers: [], // paliers de boss déjà nettoyés (5, 10, 15, ...)
     pendingBoss: null, // boss imposé tant qu'il n'est pas vaincu
     worldMap: { currentZoneId: null, visitedZoneIds: [] }, // régions découvertes (carte du monde)
-    exploration: null // progression sur la carte d'exploration (voir exploration.js), créée au premier lancement
+    exploration: null, // progression sur la carte d'exploration (voir exploration.js), créée au premier lancement
+    arena: null // Arène des Mille Flèches (arena.js) : { best, wins, runs }
 };
 
 // Équipe automatiquement une arme de départ si le joueur n'en a encore aucune.
@@ -899,6 +901,7 @@ export function loadGameData() {
             player.exploration = loaded.exploration && typeof loaded.exploration === 'object'
                 ? loaded.exploration
                 : null;
+            player.arena = loaded.arena && typeof loaded.arena === 'object' ? loaded.arena : null;
             clampManaToCaps(player);
             console.log('💾 Données du joueur chargées depuis le localStorage');
             if (player.class) {
@@ -1987,6 +1990,15 @@ export function handleEnemyDefeated(){
     player.gold = (player.gold || 0) + goldEarned;
     combatRewards.gold = goldEarned;
     log(`💰 Vous ramassez ${goldEarned} pièce${goldEarned > 1 ? 's' : ''} d'or !`);
+
+    // Prime de l'Arène des Mille Flèches (arena.js) : or et XP en plus, croissants avec la vague.
+    if(enemy.arena) {
+        const bonus = arenaRewardBonus(enemy.arena.wave, enemyLvl);
+        player.gold += bonus.gold;
+        combatRewards.gold += bonus.gold;
+        queueCombatXP(bonus.xp);
+        log(`🏟️ Prime d'arène (vague ${enemy.arena.wave}) : +${bonus.gold} or, +${bonus.xp} XP !`);
+    }
 
     // Drop de l'objet de l'ennemi (si il en avait un)
     if(enemy.inventoryItem) {

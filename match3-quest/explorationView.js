@@ -77,6 +77,7 @@ const hash = (x, y) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 
  *  onSave()                   sauvegarde la partie (aussi après une Nouvelle Partie +)
  *  onRegionVisited(regionId)  région découverte
  *  onOpenMap()                ouvre la carte du monde
+ *  onOpenArena()              ouvre l'Arène des Mille Flèches (arena.js)
  *  onOpenMenu()               ouvre le menu (inventaire, sorts, boutique, stats)
  */
 export function createExplorationView(cfg) {
@@ -89,6 +90,7 @@ export function createExplorationView(cfg) {
         toast: root.querySelector('.explore-toast'),
         journalBtn: root.querySelector('[data-explore="journal"]'),
         mapBtn: root.querySelector('[data-explore="map"]'),
+        arenaBtn: root.querySelector('[data-explore="arena"]'),
         menuBtn: root.querySelector('[data-explore="menu"]')
     };
 
@@ -667,6 +669,7 @@ export function createExplorationView(cfg) {
         els.dialog?.addEventListener('click', advanceDialog);
         els.journalBtn?.addEventListener('click', showJournal);
         els.mapBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMap?.(); });
+        els.arenaBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenArena?.(); });
         els.menuBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMenu?.(); });
     }
 

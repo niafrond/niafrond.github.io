@@ -12,6 +12,7 @@ import { worldZones } from "./worldMap.js";
 import { mountWorldMap } from "./worldMapView.js";
 import { createExplorationView } from "./explorationView.js";
 import { REGION_ENTRY_SCREEN } from "./story.js";
+import { ARENA_MIN_LEVEL, ARENA_NAME, ARENA_BOSS_EVERY, isArenaUnlocked, arenaEncounter, arenaWaveLevel, isChampionWave, recordArenaWave } from "./arena.js";
 import { heroSprite, spriteUri, loadSpritePack, CORE_PACK } from "./sprites/index.js";
 import { hideLoadingScreen } from "./loader.js";
 
@@ -159,6 +160,7 @@ function init() {
             }
         },
         onOpenMap: () => showWorldMap(),
+        onOpenArena: () => openArena(),
         onOpenMenu: () => window.switchTab('weapons')
     });
     exploration.init();
@@ -244,8 +246,76 @@ function init() {
         updateStats();
     };
 
+    // ── Arène des Mille Flèches (arena.js) : vagues enchaînées depuis l'écran de résultat ──────────────
+    let arenaRun = null;   // { wave } pendant une série de vagues
+    const arenaStats = () => recordArenaWave(player.arena || {}, 0, false);
+    const startArenaWave = wave => {
+        arenaRun = { wave };
+        startEncounterCombat(arenaEncounter(wave, player.level));
+    };
+    const openArena = () => {
+        if(!isArenaUnlocked(player.level)) {
+            exploration.toast(`🔒 L'${ARENA_NAME} ouvre ses portes au niveau ${ARENA_MIN_LEVEL} (vous êtes niveau ${player.level}).`, 4500);
+            return;
+        }
+        playSfx('uiClick');
+        const stats = arenaStats();
+        let modal = document.getElementById('arena-modal');
+        if(!modal) {
+            modal = document.createElement('div');
+            modal.id = 'arena-modal';
+            modal.className = 'modal';
+            modal.addEventListener('click', e => { if(e.target === modal) modal.classList.remove('active'); });
+            document.body.appendChild(modal);
+        }
+        modal.innerHTML = `<div class="modal-content arena-modal">
+            <h2>🏟️ ${ARENA_NAME}</h2>
+            <p>Des vagues d'adversaires de plus en plus forts, et un champion toutes les ${ARENA_BOSS_EVERY} vagues. Chaque victoire rapporte XP, or et butin, plus une prime d'arène qui grandit à chaque vague.</p>
+            <p>Vos PV sont restaurés entre deux vagues. La série s'arrête à la première défaite, sans autre pénalité : revenez quand vous voulez pour renforcer votre équipement.</p>
+            <p class="arena-record">🏆 Record : ${stats.best ? `vague ${stats.best}` : 'aucun'} · ⚔️ ${stats.wins} victoire${stats.wins > 1 ? 's' : ''} · ${stats.runs} série${stats.runs > 1 ? 's' : ''}</p>
+            <div class="modal-actions">
+                <button class="primary" id="arena-enter-btn">⚔️ Entrer (vague 1, niveau ${arenaWaveLevel(1, player.level)})</button>
+                <button class="secondary" id="arena-close-btn">Fermer</button>
+            </div>
+        </div>`;
+        modal.querySelector('#arena-enter-btn').onclick = () => {
+            primeAudioFromGesture();
+            modal.classList.remove('active');
+            player.arena = { ...arenaStats(), runs: arenaStats().runs + 1 };
+            startArenaWave(1);
+        };
+        modal.querySelector('#arena-close-btn').onclick = () => modal.classList.remove('active');
+        modal.classList.add('active');
+    };
+    // Fin d'une vague : record, puis bouton « Vague suivante » (victoire) ou fin de la série (défaite / abandon).
+    const onArenaCombatEnd = isVictory => {
+        if(!arenaRun) return;
+        const wave = arenaRun.wave;
+        player.arena = recordArenaWave(arenaStats(), wave, isVictory);
+        const box = document.createElement('div');
+        box.className = 'arena-result';
+        if(isVictory) {
+            const next = wave + 1;
+            box.innerHTML = `<p>🏟️ Vague ${wave} remportée ! Record : vague ${player.arena.best}.</p>
+                <p>Ensuite : ${isChampionWave(next) ? '🏆 un champion' : `vague ${next}`}, niveau ${arenaWaveLevel(next, player.level)}.</p>
+                <button type="button" class="primary arena-next-btn">⚔️ Vague ${next}</button>`;
+            box.querySelector('.arena-next-btn').onclick = () => {
+                primeAudioFromGesture();
+                startArenaWave(next);
+            };
+        } else {
+            arenaRun = null;
+            box.innerHTML = `<p>🏟️ Vous tombez à la vague ${wave}. Record : ${player.arena.best ? `vague ${player.arena.best}` : 'aucun'}. Renforcez-vous (boutique, sorts, armes) et revenez quand vous voulez.</p>`;
+        }
+        document.getElementById('battle-result-summary')?.appendChild(box);
+        saveUpdate();
+    };
+
     combatHooks.onVictory = () => exploration.onCombatVictory();
-    combatHooks.onEnd = isVictory => exploration.onCombatEnd(isVictory);
+    combatHooks.onEnd = isVictory => {
+        exploration.onCombatEnd(isVictory);
+        onArenaCombatEnd(isVictory);
+    };
     window.addEventListener('match3:enter-exploration', enterExploration);
     // Nouvelle partie, classe choisie : on enchaîne directement sur le duel-tutoriel contre Fengmeng.
     window.addEventListener('match3:start-tutorial-duel', () => {
@@ -304,6 +374,7 @@ function init() {
     // Après un combat : le bouton ramène sur la carte d'exploration.
     document.getElementById('new-combat-btn').addEventListener('click',()=>{
         primeAudioFromGesture();
+        arenaRun = null;   // quitter l'arène
         enterExploration();
     });
 

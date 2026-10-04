@@ -605,6 +605,12 @@ body.rt .shop-price-tag {
 body.rt .battle-result-card { padding: 18px 22px; }
 body.rt .battle-result-loot { list-style: none; padding: 0; margin: 8px 0 0; }
 body.rt .battle-result-loot li { padding: 2px 0; }
+/* Arène des Mille Flèches (arena.js) : modale d'entrée, bilan de vague sur l'écran de résultat. */
+body.rt .arena-modal { max-width: 440px; }
+body.rt .arena-record { font-weight: bold; }
+body.rt .arena-result { margin-top: 10px; padding-top: 8px; border-top: 2px dashed var(--rt-gold); }
+body.rt .arena-result p { margin: 4px 0; }
+body.rt .arena-result .arena-next-btn { margin-top: 6px; width: 100%; }
 body.rt .battle-result-xp { font-family: var(--rt-title); font-size: 11px; line-height: 1.6; }
 
 /* Carte du monde à dix régions : côte et écume ajustées à des îlots plus petits (cf. LAND_PATH_WIDTH) */
