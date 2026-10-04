@@ -1,3 +1,9 @@
+## [2.58.1](https://github.com/niafrond/niafrond.github.io/compare/v2.58.0...v2.58.1) (2026-10-04)
+
+### Bug Fixes
+
+* **match3-quest:** anti-cache des dessins de tuiles et des JSON de données ([#398](https://github.com/niafrond/niafrond.github.io/issues/398)) ([84ba07c](https://github.com/niafrond/niafrond.github.io/commit/84ba07cc18ef33439e73c669f92ba2bb64e3267e))
+
 ## [2.58.0](https://github.com/niafrond/niafrond.github.io/compare/v2.57.1...v2.58.0) (2026-10-03)
 
 ### Features
