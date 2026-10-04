@@ -10,7 +10,8 @@ import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
 import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
-import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
+import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses } from "./attributes.js";
+import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
 import { playSfx } from "./sound.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
@@ -38,14 +39,7 @@ const MANA_COLOR_META = {
     purple: { name: 'Violet' }
 };
 
-// Règles paramétrables: une aptitude influence uniquement la couleur de mana associée.
-export const ATTRIBUTE_MANA_RULES = {
-    strength: { color: "red", bonuses: { initial: 1, gain: 1, max: 2 } },
-    agility: { color: "yellow", bonuses: { initial: 1, gain: 1, max: 2 } },
-    stamina: { color: "green", bonuses: { initial: 1, gain: 1, max: 2 } },
-    intelligence: { color: "blue", bonuses: { initial: 1, gain: 1, max: 2 } },
-    morale: { color: "purple", bonuses: { initial: 1, gain: 1, max: 2 } }
-};
+export { ATTRIBUTE_MANA_RULES };
 
 export function getPrimaryAttributeEffect(entity, attribute){
     return Math.max(0, Math.floor(entity?.attributes?.[attribute] || 0));
@@ -1037,6 +1031,7 @@ function _animateCounter(id, from, to) {
 }
 
 export function updateStats(){
+    updateLevelHud();
     // truncate log to only the latest message
     const logDiv=document.getElementById('log');
     if(logDiv){
@@ -1400,6 +1395,14 @@ export function updatePlayerStatsTab(){
             </div>
         </div>
         
+        <div class="stats-section">
+            <h3>Bonus de couleur (niveaux)</h3>
+            ${summarizeColorBonuses(player).map(c => `<div class="stat-line">
+                <span class="stat-label">${manaIcon(c.color)} ${c.colorLabel[0].toUpperCase() + c.colorLabel.slice(1)} (${c.points} pt) :</span>
+                <span class="stat-effect">match de 3 = ${c.perMatch3} mana · +${c.initial} au départ · réserve ${c.cap}</span>
+            </div>`).join('')}
+        </div>
+
         <div class="stats-section">
             <button onclick="window.clearPlayerSave()" class="secondary">Effacer la sauvegarde</button>
         </div>
@@ -2163,6 +2166,47 @@ export function grantManaGeneratedXP(manaAmount){
     };
 }
 
+// HUD permanent : niveau, XP actuelle, XP du prochain niveau et progression.
+export function updateLevelHud(){
+    const hud = document.getElementById('level-hud');
+    if(!hud) return;
+    const max = player.level >= MAX_LEVEL;
+    const pct = getXPProgress(player);
+    hud.querySelector('.level-hud-level').textContent = `Niv. ${player.level}`;
+    hud.querySelector('.level-hud-xp').textContent = max ? `${player.xp} XP (max)` : `${player.xp} / ${player.xpToNextLevel} XP`;
+    hud.querySelector('.level-hud-bar i').style.width = `${pct}%`;
+    hud.querySelector('.level-hud-pct').textContent = max ? '' : `${pct}%`;
+    const pts = player.unspentLevelPoints || 0;
+    hud.title = max ? 'Niveau maximum atteint' : `Niveau ${player.level} : ${getXPToNextLevel(player)} XP restants avant le niveau ${player.level + 1}`
+        + (pts > 0 ? ` · ${pts} point(s) d'attribut à dépenser` : '');
+    hud.classList.toggle('has-points', pts > 0);
+}
+if(typeof window !== 'undefined' && typeof setInterval === 'function'){
+    setInterval(updateLevelHud, 500);
+}
+
+function renderLevelUpHud(){
+    const info = document.getElementById('levelup-progress');
+    if(!info) return;
+    const remaining = getXPToNextLevel(player);
+    info.innerHTML = player.level >= MAX_LEVEL
+        ? `Niveau ${player.level} (maximum) · ${player.xp} XP`
+        : `Niveau ${player.level} · ${player.xp} / ${player.xpToNextLevel} XP · ${getXPProgress(player)} % vers le niveau ${player.level + 1} (${remaining} XP restants)`;
+}
+
+function buildAttributeCards(){
+    const grid = document.getElementById('levelup-attributes');
+    if(!grid) return;
+    grid.innerHTML = ATTRIBUTE_ORDER.map(attr => {
+        const d = describeAttributeChoice(player, attr);
+        return `<div class="attribute-card attr-${d.color}" data-attr="${attr}" role="button" tabindex="0">
+            <div class="attr-icon">${svgIcon(d.icon)}</div>
+            <div class="attr-name">${d.name} <span class="attr-points">(${d.points} → ${d.nextPoints})</span></div>
+            <div class="attr-description"><ul>${d.lines.map((l, i) => `<li>${i === 1 ? manaIcon(d.color) + ' ' : ''}${l}</li>`).join('')}</ul></div>
+        </div>`;
+    }).join('');
+}
+
 export function showAttributeMenu(){
     if((player.unspentLevelPoints || 0) <= 0) return;
 
@@ -2180,34 +2224,26 @@ export function showAttributeMenu(){
     if(subtitle) {
         const remainingPoints = player.unspentLevelPoints || 0;
         subtitle.textContent = remainingPoints > 1
-            ? `Choisissez un attribut a ameliorer (${remainingPoints} points restants)`
-            : 'Choisissez un attribut a ameliorer';
+            ? `Choisissez un attribut à améliorer (${remainingPoints} points restants). Chaque point améliore une statistique ET la couleur de mana associée.`
+            : 'Choisissez un attribut à améliorer. Chaque point améliore une statistique ET la couleur de mana associée.';
     }
+    renderLevelUpHud();
+    buildAttributeCards();
     modal.style.display = 'flex';
-    
-    // Attacher les événements aux cartes d'attributs
-    const attributeCards = modal.querySelectorAll('.attribute-card');
-    
-    // Supprimer les anciens listeners
-    attributeCards.forEach(card => {
-        const newCard = card.cloneNode(true);
-        card.parentNode.replaceChild(newCard, card);
-    });
-    
-    // Ajouter les nouveaux listeners
-    const freshCards = modal.querySelectorAll('.attribute-card');
-    freshCards.forEach(card => {
-        card.addEventListener('click', () => {
+
+    modal.querySelectorAll('.attribute-card').forEach(card => {
+        const choose = () => {
             const attr = card.dataset.attr;
-            if(attr) {
-                selectAttribute(attr);
-                if((player.unspentLevelPoints || 0) <= 0) {
-                    modal.style.display = 'none';
-                } else {
-                    showAttributeMenu();
-                }
+            if(!attr) return;
+            selectAttribute(attr);
+            if((player.unspentLevelPoints || 0) <= 0) {
+                modal.style.display = 'none';
+            } else {
+                showAttributeMenu();
             }
-        });
+        };
+        card.addEventListener('click', choose);
+        card.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); choose(); } });
     });
 }
 
@@ -2225,7 +2261,9 @@ function selectAttribute(attr) {
     player.attributes[attr]++;
     player.unspentLevelPoints = Math.max(0, (player.unspentLevelPoints || 0) - 1);
     applyAttributeBonus(attr);
-    log(`+1 ${attrNames[attr]}`);
+    const d = describeAttributeChoice(player, attr);
+    log(`+1 ${attrNames[attr]} : ${d.statTitle} +1, mana ${d.colorLabel} ${3 + (player.attributes[attr])} par match de 3`);
+    updateLevelHud();
     saveUpdate();
 }
 
