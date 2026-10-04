@@ -155,7 +155,7 @@ export function createSaveControlsUI(onImport, onExport) {
 
     // Bouton d'export
     const exportBtn = document.createElement('button');
-    exportBtn.textContent = '💾 Télécharger sauvegarde';
+    exportBtn.textContent = 'Télécharger la sauvegarde';
     exportBtn.onclick = async () => {
         if (onExport) {
             const result = await onExport();
@@ -167,7 +167,7 @@ export function createSaveControlsUI(onImport, onExport) {
 
     // Bouton d'import
     const importBtn = document.createElement('button');
-    importBtn.textContent = '📂 Charger sauvegarde';
+    importBtn.textContent = 'Charger une sauvegarde';
 
     // Input fichier caché
     const fileInput = document.createElement('input');

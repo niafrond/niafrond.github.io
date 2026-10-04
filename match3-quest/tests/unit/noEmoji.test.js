@@ -22,9 +22,7 @@ function sources(dir, out = []) {
 describe('aucun emoji dans le jeu', () => {
     test('les sources du jeu ne contiennent aucun caractère pictographique', () => {
         const found = [];
-        const EXCLUDED = ['saveManager.js']; // UI utility allowed to use emojis
         sources(ROOT).forEach(p => {
-            if (EXCLUDED.some(f => p.endsWith(f))) return;
             const lines = fs.readFileSync(p, 'utf8').split('\n');
             lines.forEach((line, i) => {
                 for (const m of line.matchAll(/\p{Extended_Pictographic}/gu)) {

@@ -739,6 +739,23 @@ export function questTargets(session, quest) {
     return [];
 }
 
+// Type d'une quête, pour l'affichage : « main » (histoire principale) ou « side » (annexe).
+export function questKind(quest) {
+    return quest && quest.side ? 'side' : 'main';
+}
+
+// Après l'activation d'une quête : { mode: 'auto' } si aucune autre quête n'est suivie (la nouvelle est alors suivie),
+// { mode: 'ask', current } si une autre quête en cours est déjà suivie (le joueur choisit), null si déjà suivie.
+export function trackProposal(session, quest) {
+    const current = trackedQuest(session);
+    if (!current) {
+        setTrackedQuest(session, quest.id);
+        return { mode: 'auto', quest };
+    }
+    if (current.id === quest.id) return null;
+    return { mode: 'ask', quest, current };
+}
+
 export function setTrackedQuest(session, questId) {
     session.data.tracked = questId && session.quests.some(q => q.id === questId) ? questId : null;
     return session.data.tracked;

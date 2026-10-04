@@ -10,8 +10,10 @@ import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
 import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
-import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
+import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses } from "./attributes.js";
+import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
+import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
 export { updateShopTab, buyWeapon, buyItem };
@@ -38,14 +40,7 @@ const MANA_COLOR_META = {
     purple: { name: 'Violet' }
 };
 
-// Règles paramétrables: une aptitude influence uniquement la couleur de mana associée.
-export const ATTRIBUTE_MANA_RULES = {
-    strength: { color: "red", bonuses: { initial: 1, gain: 1, max: 2 } },
-    agility: { color: "yellow", bonuses: { initial: 1, gain: 1, max: 2 } },
-    stamina: { color: "green", bonuses: { initial: 1, gain: 1, max: 2 } },
-    intelligence: { color: "blue", bonuses: { initial: 1, gain: 1, max: 2 } },
-    morale: { color: "purple", bonuses: { initial: 1, gain: 1, max: 2 } }
-};
+export { ATTRIBUTE_MANA_RULES };
 
 export function getPrimaryAttributeEffect(entity, attribute){
     return Math.max(0, Math.floor(entity?.attributes?.[attribute] || 0));
@@ -1038,6 +1033,7 @@ function _animateCounter(id, from, to) {
 }
 
 export function updateStats(){
+    updateLevelHud();
     // truncate log to only the latest message
     const logDiv=document.getElementById('log');
     if(logDiv){
@@ -1401,6 +1397,14 @@ export function updatePlayerStatsTab(){
             </div>
         </div>
         
+        <div class="stats-section">
+            <h3>Bonus de couleur (niveaux)</h3>
+            ${summarizeColorBonuses(player).map(c => `<div class="stat-line">
+                <span class="stat-label">${manaIcon(c.color)} ${c.colorLabel[0].toUpperCase() + c.colorLabel.slice(1)} (${c.points} pt) :</span>
+                <span class="stat-effect">match de 3 = ${c.perMatch3} mana · +${c.initial} au départ · réserve ${c.cap}</span>
+            </div>`).join('')}
+        </div>
+
         <div class="stats-section">
             <button onclick="window.clearPlayerSave()" class="secondary">Effacer la sauvegarde</button>
         </div>
@@ -2164,6 +2168,47 @@ export function grantManaGeneratedXP(manaAmount){
     };
 }
 
+// HUD permanent : niveau, XP actuelle, XP du prochain niveau et progression.
+export function updateLevelHud(){
+    const hud = document.getElementById('level-hud');
+    if(!hud) return;
+    const max = player.level >= MAX_LEVEL;
+    const pct = getXPProgress(player);
+    hud.querySelector('.level-hud-level').textContent = `Niv. ${player.level}`;
+    hud.querySelector('.level-hud-xp').textContent = max ? `${player.xp} XP (max)` : `${player.xp} / ${player.xpToNextLevel} XP`;
+    hud.querySelector('.level-hud-bar i').style.width = `${pct}%`;
+    hud.querySelector('.level-hud-pct').textContent = max ? '' : `${pct}%`;
+    const pts = player.unspentLevelPoints || 0;
+    hud.title = max ? 'Niveau maximum atteint' : `Niveau ${player.level} : ${getXPToNextLevel(player)} XP restants avant le niveau ${player.level + 1}`
+        + (pts > 0 ? ` · ${pts} point(s) d'attribut à dépenser` : '');
+    hud.classList.toggle('has-points', pts > 0);
+}
+if(typeof window !== 'undefined' && typeof setInterval === 'function'){
+    setInterval(updateLevelHud, 500);
+}
+
+function renderLevelUpHud(){
+    const info = document.getElementById('levelup-progress');
+    if(!info) return;
+    const remaining = getXPToNextLevel(player);
+    info.innerHTML = player.level >= MAX_LEVEL
+        ? `Niveau ${player.level} (maximum) · ${player.xp} XP`
+        : `Niveau ${player.level} · ${player.xp} / ${player.xpToNextLevel} XP · ${getXPProgress(player)} % vers le niveau ${player.level + 1} (${remaining} XP restants)`;
+}
+
+function buildAttributeCards(){
+    const grid = document.getElementById('levelup-attributes');
+    if(!grid) return;
+    grid.innerHTML = ATTRIBUTE_ORDER.map(attr => {
+        const d = describeAttributeChoice(player, attr);
+        return `<div class="attribute-card attr-${d.color}" data-attr="${attr}" role="button" tabindex="0">
+            <div class="attr-icon">${svgIcon(d.icon)}</div>
+            <div class="attr-name">${d.name} <span class="attr-points">(${d.points} → ${d.nextPoints})</span></div>
+            <div class="attr-description"><ul>${d.lines.map((l, i) => `<li>${i === 1 ? manaIcon(d.color) + ' ' : ''}${l}</li>`).join('')}</ul></div>
+        </div>`;
+    }).join('');
+}
+
 export function showAttributeMenu(){
     if((player.unspentLevelPoints || 0) <= 0) return;
 
@@ -2181,34 +2226,26 @@ export function showAttributeMenu(){
     if(subtitle) {
         const remainingPoints = player.unspentLevelPoints || 0;
         subtitle.textContent = remainingPoints > 1
-            ? `Choisissez un attribut a ameliorer (${remainingPoints} points restants)`
-            : 'Choisissez un attribut a ameliorer';
+            ? `Choisissez un attribut à améliorer (${remainingPoints} points restants). Chaque point améliore une statistique ET la couleur de mana associée.`
+            : 'Choisissez un attribut à améliorer. Chaque point améliore une statistique ET la couleur de mana associée.';
     }
+    renderLevelUpHud();
+    buildAttributeCards();
     modal.style.display = 'flex';
-    
-    // Attacher les événements aux cartes d'attributs
-    const attributeCards = modal.querySelectorAll('.attribute-card');
-    
-    // Supprimer les anciens listeners
-    attributeCards.forEach(card => {
-        const newCard = card.cloneNode(true);
-        card.parentNode.replaceChild(newCard, card);
-    });
-    
-    // Ajouter les nouveaux listeners
-    const freshCards = modal.querySelectorAll('.attribute-card');
-    freshCards.forEach(card => {
-        card.addEventListener('click', () => {
+
+    modal.querySelectorAll('.attribute-card').forEach(card => {
+        const choose = () => {
             const attr = card.dataset.attr;
-            if(attr) {
-                selectAttribute(attr);
-                if((player.unspentLevelPoints || 0) <= 0) {
-                    modal.style.display = 'none';
-                } else {
-                    showAttributeMenu();
-                }
+            if(!attr) return;
+            selectAttribute(attr);
+            if((player.unspentLevelPoints || 0) <= 0) {
+                modal.style.display = 'none';
+            } else {
+                showAttributeMenu();
             }
-        });
+        };
+        card.addEventListener('click', choose);
+        card.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); choose(); } });
     });
 }
 
@@ -2226,7 +2263,9 @@ function selectAttribute(attr) {
     player.attributes[attr]++;
     player.unspentLevelPoints = Math.max(0, (player.unspentLevelPoints || 0) - 1);
     applyAttributeBonus(attr);
-    log(`+1 ${attrNames[attr]}`);
+    const d = describeAttributeChoice(player, attr);
+    log(`+1 ${attrNames[attr]} : ${d.statTitle} +1, mana ${d.colorLabel} ${3 + (player.attributes[attr])} par match de 3`);
+    updateLevelHud();
     saveUpdate();
 }
 
@@ -2900,16 +2939,20 @@ export function updateWeaponsTab(){
     
     // Armes disponibles
     availableList.innerHTML = '';
-    if(!player.availableWeapons || player.availableWeapons.length === 0){
+    const ownedWeapons = player.weapons || [];
+    if(ownedWeapons.length === 0){
         availableList.innerHTML = '<div style="padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; margin-top: 15px;"><strong>Aucune arme en votre possession</strong><br>Les armes peuvent être obtenues en gagnant des combats !</div>';
+        renderGearList(availableList);
         updateInventoryTab();
         updateItemButton();
         return;
     }
-    player.availableWeapons.forEach(weapon => {
+    ownedWeapons.forEach(weapon => {
         const icon = getWeaponIcon(weapon.type);
         const div = document.createElement('div');
         div.className = 'weapon-item available-weapon';
+        const locked = player.level < weapon.minLevel;
+        if(locked) div.classList.add('is-locked');
         const isEquipped = player.equippedWeapon && player.equippedWeapon.id === weapon.id;
         if(isEquipped) div.classList.add('is-equipped');
         
@@ -2920,13 +2963,77 @@ export function updateWeaponsTab(){
                 <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
-            <button class="weapon-action" ${isEquipped ? 'disabled' : ''} onclick="window.equipWeapon('${weapon.id}')">${isEquipped ? 'Équipée' : 'Équiper'}</button>
+            <button class="weapon-action" ${isEquipped || locked ? 'disabled' : ''} onclick="window.equipWeapon('${weapon.id}')">${isEquipped ? 'Équipée' : locked ? `Niv. ${weapon.minLevel} requis` : 'Équiper'}</button>
         `;
         availableList.appendChild(div);
     });
 
+    renderGearList(availableList);
     updateInventoryTab();
     updateItemButton();
+}
+
+
+// Boucliers et objets rechargeables : affichés dès l'achat, non sélectionnables tant que le niveau manque.
+const GEAR_SLOT = { shield: 'leftHand', reusable: 'item' };
+const GEAR_SLOT_LABEL = { leftHand: 'Main gauche', item: 'Objet' };
+
+function renderGearList(container){
+    if(!player.equipment) player.equipment = { rightHand: null, leftHand: null, item: null };
+    const owned = (player.inventory || []).map((it, index) => ({ it, index })).filter(({ it }) => GEAR_SLOT[it.type]);
+    const worn = ['leftHand', 'item'].map(slot => ({ slot, it: player.equipment[slot] })).filter(e => e.it);
+    if(owned.length === 0 && worn.length === 0) return;
+    const section = document.createElement('div');
+    section.innerHTML = '<h3 class="shop-section-title">Boucliers et objets</h3>';
+    const row = (it, slot, action) => {
+        const div = document.createElement('div');
+        div.className = 'weapon-item available-weapon' + (action.locked ? ' is-locked' : '') + (action.worn ? ' is-equipped' : '');
+        const stats = [it.defense ? `Déf. +${it.defense}` : '', it.chargesPerCycle ? `${it.chargesLeft ?? it.chargesPerCycle}/${it.chargesPerCycle} charges` : '', `Niv. ${it.minLevel}`, GEAR_SLOT_LABEL[slot]].filter(Boolean).join(' • ');
+        div.innerHTML = `
+            <span class="weapon-icon">${svgIcon(it.type === 'shield' ? 'shield' : 'arrow')}</span>
+            <div class="weapon-details">
+                <span class="weapon-name">${it.name}</span>
+                <span class="weapon-stats">${stats}</span>
+                <span class="weapon-description">${it.description || ''}</span>
+            </div>
+            <button class="weapon-action" ${action.locked ? 'disabled' : ''} onclick="${action.onclick}">${action.label}</button>`;
+        section.appendChild(div);
+    };
+    worn.forEach(({ slot, it }) => row(it, slot, { worn: true, label: 'Retirer', onclick: `window.unequipGear('${slot}')` }));
+    owned.forEach(({ it, index }) => {
+        const locked = player.level < (it.minLevel || 1);
+        row(it, GEAR_SLOT[it.type], { locked, label: locked ? `Niv. ${it.minLevel} requis` : 'Équiper', onclick: `window.equipGear(${index})` });
+    });
+    container.appendChild(section);
+}
+
+export function equipGear(inventoryIndex){
+    if(gameState.combatState === 'active'){ log('Vous ne pouvez pas modifier votre équipement pendant le combat !'); return; }
+    const it = player.inventory?.[inventoryIndex];
+    if(!it || !GEAR_SLOT[it.type]) return;
+    if(player.level < (it.minLevel || 1)){ log(`Nécessite niveau ${it.minLevel} pour équiper ${it.name}.`); return; }
+    if(!player.equipment) player.equipment = { rightHand: null, leftHand: null, item: null };
+    const slot = GEAR_SLOT[it.type];
+    const previous = player.equipment[slot];
+    const result = equipGearSlot(player, it, slot);
+    if(!result.success){ log(result.message || `${it.name} ne peut pas être équipé.`); return; }
+    player.inventory.splice(inventoryIndex, 1);
+    if(previous){ player.inventory.push(previous); if(previous.defense) player.defense = Math.max(0, (player.defense || 0) - previous.defense); }
+    if(it.defense) player.defense = (player.defense || 0) + it.defense;
+    saveUpdate();
+    log(`${it.name} équipé.`);
+    updateWeaponsTab();
+}
+
+export function unequipGear(slot){
+    if(gameState.combatState === 'active'){ log('Vous ne pouvez pas modifier votre équipement pendant le combat !'); return; }
+    const it = unequipGearSlot(player, slot);
+    if(!it) return;
+    player.inventory.push(it);
+    if(it.defense) player.defense = Math.max(0, (player.defense || 0) - it.defense);
+    saveUpdate();
+    log(`${it.name} retiré.`);
+    updateWeaponsTab();
 }
 
 // =====================================
@@ -3124,6 +3231,8 @@ window.equipSpell = equipSpell;
 window.unequipSpell = unequipSpell;
 window.equipWeapon = equipWeapon;
 window.unequipWeapon = unequipWeapon;
+window.equipGear = equipGear;
+window.unequipGear = unequipGear;
 window.useInventoryItem = useInventoryItem;
 window.discardInventoryItem = discardInventoryItem;
 window.setActiveInventoryItem = setActiveInventoryItem;

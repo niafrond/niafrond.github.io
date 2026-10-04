@@ -19,7 +19,7 @@
         if (m) v = m[1].replace(/\D/g, '');
     } catch (e) { /* hors ligne / file:// : pas de suffixe fiable */ }
     var map = {};
-    ["arena.js", "board.js", "cheatMode.js", "chestLoot.js", "cinematics.js", "classSpellEffects.js", "classes.js", "constants.js", "duel.js", "enemies.js", "enemyAI.js", "equipment.js", "experience.js", "exploration.js", "explorationView.js", "game.js", "icons.js", "items.js", "joker.js", "loader.js", "main.js", "matchMechanics.js", "music.js", "playerNames.js", "saveManager.js", "shop.js", "sound.js", "spells.js", "sprites/cn/actors-a.js", "sprites/cn/actors-b.js", "sprites/cn/enemies-1.js", "sprites/cn/enemies-2.js", "sprites/cn/suns.js", "sprites/creatures.js", "sprites/decor.js", "sprites/index.js", "sprites/packContents.js", "sprites/packs.js", "sprites/villagers.js", "story.js", "tutorial.js", "version.js", "weapons.js", "world/index.js", "world/mapKit.js", "world/maps/bambous.js", "world/maps/fauves.js", "world/maps/fleuve.js", "world/maps/fusang.js", "world/maps/gobi.js", "world/maps/index.js", "world/maps/lune.js", "world/maps/mer.js", "world/maps/rizieres.js", "world/maps/tonnerre.js", "world/maps/volcan.js", "world/text/bambous.js", "world/text/extra/bambous.js", "world/text/extra/fauves.js", "world/text/extra/fleuve.js", "world/text/extra/fusang.js", "world/text/extra/gobi.js", "world/text/extra/lune.js", "world/text/extra/mer.js", "world/text/extra/rizieres.js", "world/text/extra/tonnerre.js", "world/text/extra/volcan.js", "world/text/fauves.js", "world/text/fleuve.js", "world/text/fusang.js", "world/text/gobi.js", "world/text/index.js", "world/text/lune.js", "world/text/mer.js", "world/text/merge.js", "world/text/rizieres.js", "world/text/tonnerre.js", "world/text/volcan.js", "worldMap.js", "worldMapView.js"].forEach(function (f) { map['./' + f] = './' + f + '?v=' + v; });
+    ["arena.js", "attributes.js", "board.js", "cheatMode.js", "chestLoot.js", "cinematics.js", "classSpellEffects.js", "classes.js", "constants.js", "duel.js", "enemies.js", "enemyAI.js", "equipment.js", "experience.js", "exploration.js", "explorationView.js", "game.js", "icons.js", "items.js", "joker.js", "loader.js", "main.js", "matchMechanics.js", "music.js", "playerNames.js", "saveManager.js", "shop.js", "sound.js", "spells.js", "sprites/cn/actors-a.js", "sprites/cn/actors-b.js", "sprites/cn/enemies-1.js", "sprites/cn/enemies-2.js", "sprites/cn/suns.js", "sprites/creatures.js", "sprites/decor.js", "sprites/index.js", "sprites/packContents.js", "sprites/packs.js", "sprites/villagers.js", "story.js", "tutorial.js", "version.js", "weapons.js", "world/index.js", "world/mapKit.js", "world/maps/bambous.js", "world/maps/fauves.js", "world/maps/fleuve.js", "world/maps/fusang.js", "world/maps/gobi.js", "world/maps/index.js", "world/maps/lune.js", "world/maps/mer.js", "world/maps/rizieres.js", "world/maps/tonnerre.js", "world/maps/volcan.js", "world/text/bambous.js", "world/text/extra/bambous.js", "world/text/extra/fauves.js", "world/text/extra/fleuve.js", "world/text/extra/fusang.js", "world/text/extra/gobi.js", "world/text/extra/lune.js", "world/text/extra/mer.js", "world/text/extra/rizieres.js", "world/text/extra/tonnerre.js", "world/text/extra/volcan.js", "world/text/fauves.js", "world/text/fleuve.js", "world/text/fusang.js", "world/text/gobi.js", "world/text/index.js", "world/text/lune.js", "world/text/mer.js", "world/text/merge.js", "world/text/rizieres.js", "world/text/tonnerre.js", "world/text/volcan.js", "worldMap.js", "worldMapView.js"].forEach(function (f) { map['./' + f] = './' + f + '?v=' + v; });
     var im = document.createElement('script');
     im.type = 'importmap';
     im.textContent = JSON.stringify({ imports: map });
@@ -96,82 +96,8 @@
             <p class="levelup-subtitle">Choisissez un attribut à améliorer</p>
         </div>
         
-        <div class="attributes-grid">
-            <div class="attribute-card" data-attr="strength">
-                <div class="attr-icon"><svg class="ic ic-sword" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M12.8 2.2 L13.8 3.2 L6.6 10.4 L5.6 9.4Z" fill="#cfd6de" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M3.6 9.2 L6.8 12.4 M2.4 13.6 L5 11" fill="none" stroke="#2b1b17" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-                <div class="attr-name">Battle</div>
-                <div class="attr-description">
-                    <p><strong>Augmente les dégâts physiques</strong></p>
-                    <ul>
-                        <li>+2 dégâts par point</li>
-                        <li>Améliore les soleils frappés et les armes</li>
-                        <li>Sorts basés sur l'attaque</li>
-                        <li><svg class="ic ic-mana_red" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6" fill="#e8452e" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="6" cy="6" r="1.8" fill="#fff" opacity=".55"/></svg> +1 mana rouge initial, +2 cap</li>
-                    </ul>
-                    <p class="attr-classes">Guerrier des steppes • Archer céleste</p>
-                </div>
-            </div>
-            
-            <div class="attribute-card" data-attr="agility">
-                <div class="attr-icon"><svg class="ic ic-shield" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.8 L13.4 3.8 Q13.4 10.4 8 14.2 Q2.6 10.4 2.6 3.8Z" fill="#7aa0c8" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M8 3.6 L8 12.4" fill="none" stroke="#dbe8f4" stroke-width="1.2"/></svg></div>
-                <div class="attr-name">Defense</div>
-                <div class="attr-description">
-                    <p><strong>Réduit les dégâts reçus</strong></p>
-                    <ul>
-                        <li>+2 défense par point</li>
-                        <li>Réduit les dégâts physiques</li>
-                        <li>Améliore sorts défensifs</li>
-                        <li><svg class="ic ic-mana_yellow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6" fill="#f2c14e" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="6" cy="6" r="1.8" fill="#fff" opacity=".55"/></svg> +1 mana jaune initial, +2 cap</li>
-                    </ul>
-                    <p class="attr-classes">Garde impérial • Remparts</p>
-                </div>
-            </div>
-            
-            <div class="attribute-card" data-attr="intelligence">
-                <div class="attr-icon"><svg class="ic ic-brain" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 3 Q6 1.6 4.2 2.8 Q2 3.2 2.2 5.6 Q1 7.4 2.6 9.2 Q2.6 11.8 5 12 Q6.4 13.8 8 12.6 Q9.6 13.8 11 12 Q13.4 11.8 13.4 9.2 Q15 7.4 13.8 5.6 Q14 3.2 11.8 2.8 Q10 1.6 8 3Z" fill="#f6b8c4" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M8 3 L8 12.6 M5 5.6 Q6.4 6.4 5.4 8 M11 5.6 Q9.6 6.4 10.6 8" fill="none" stroke="#2b1b17" stroke-width="1"/></svg></div>
-                <div class="attr-name">Intelligence</div>
-                <div class="attr-description">
-                    <p><strong>Effets spéciaux et critiques</strong></p>
-                    <ul>
-                        <li>+10 HP max et +5 mana</li>
-                        <li>Chance d'effets d'armes</li>
-                        <li>Coups critiques</li>
-                        <li><svg class="ic ic-mana_blue" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6" fill="#3a7ad8" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="6" cy="6" r="1.8" fill="#fff" opacity=".55"/></svg> +1 mana bleu initial, +2 cap</li>
-                    </ul>
-                    <p class="attr-classes">Archer céleste • Critiques</p>
-                </div>
-            </div>
-            
-            <div class="attribute-card" data-attr="stamina">
-                <div class="attr-icon"><svg class="ic ic-muscle" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 13.6 Q2 9 4 6 Q5 3 7.4 2.6 Q9 3 8.4 4.6 L6.8 5.2 Q6.6 7.4 8.4 8.2 Q11 6.6 13.4 8.4 Q14.4 11.4 12 13.6Z" fill="#f2c59e" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/></svg></div>
-                <div class="attr-name">Stamina</div>
-                <div class="attr-description">
-                    <p><strong>Augmente la survie</strong></p>
-                    <ul>
-                        <li>+15 HP max par point</li>
-                        <li>Résistance accrue</li>
-                        <li>Combat prolongé</li>
-                        <li><svg class="ic ic-mana_green" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6" fill="#4fa34a" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="6" cy="6" r="1.8" fill="#fff" opacity=".55"/></svg> +1 mana vert initial, +2 cap</li>
-                    </ul>
-                    <p class="attr-classes">Tous les styles</p>
-                </div>
-            </div>
-            
-            <div class="attribute-card" data-attr="morale">
-                <div class="attr-icon"><svg class="ic ic-mana_purple" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6" fill="#9a5ac8" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="6" cy="6" r="1.8" fill="#fff" opacity=".55"/></svg></div>
-                <div class="attr-name">Morale</div>
-                <div class="attr-description">
-                    <p><strong>Résiste aux effets négatifs</strong></p>
-                    <ul>
-                        <li>+3 attaque par point</li>
-                        <li>Réduit poison, confusion</li>
-                        <li>Prolonge buffs</li>
-                        <li><svg class="ic ic-mana_purple" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6" fill="#9a5ac8" stroke="#2b1b17" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="6" cy="6" r="1.8" fill="#fff" opacity=".55"/></svg> +1 mana violet initial, +2 cap</li>
-                    </ul>
-                    <p class="attr-classes">Garde impérial • Guerrier des steppes</p>
-                </div>
-            </div>
-        </div>
+        <p id="levelup-progress" class="levelup-progress"></p>
+        <div class="attributes-grid" id="levelup-attributes"></div>
     </div>
 </div>
 
@@ -183,6 +109,8 @@
         <div class="modal-actions"><button class="secondary" id="worldmap-close-btn">Fermer</button></div>
     </div>
 </div>
+
+<div id="level-hud" class="level-hud" role="status" aria-live="off" title="Niveau et expérience"><span class="level-hud-level"></span><span class="level-hud-xp"></span><span class="level-hud-bar"><i></i></span><span class="level-hud-pct"></span></div>
 
 <div class="game-container">    
     <!-- Onglets -->
