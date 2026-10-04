@@ -141,7 +141,10 @@ export function createExplorationView(cfg) {
         const screen = X.currentScreen(session);
         const plus = session.data.ngPlus > 0 ? ` · NG+${session.data.ngPlus}` : '';
         if (els.title) els.title.textContent = `${screen.name}${plus}`;
-        if (els.objective) els.objective.textContent = X.currentObjectiveText(session);
+        if (els.objective) {
+            const tq = X.trackedQuest(session);
+            els.objective.textContent = `${tq ? (tq.side ? '[Annexe] ' : '[Principale] ') : ''}${X.currentObjectiveText(session)}`;
+        }
         // Dans l'arène, le bouton « Arène » (trophée) devient « Sortir » (porte) : on peut en sortir à tout moment.
         if (els.arenaBtn) {
             const inside = X.inArena(session);
@@ -240,14 +243,16 @@ export function createExplorationView(cfg) {
             <div class="explore-dialog-body">
                 <div class="explore-dialog-name">${escapeHtml(speaker.name || '')}${speaker.title ? ` <span>— ${escapeHtml(speaker.title)}</span>` : ''}</div>
                 <div class="explore-dialog-text">${escapeHtml(text)}</div>
-                <div class="explore-dialog-next">${last ? 'Fermer' : 'Suivant ►'} <small>(Entrée / clic)</small></div>
+                ${entry.choices && last
+                    ? `<div class="explore-dialog-choices">${entry.choices.map((c, i) => `<button type="button" class="explore-choice" data-choice="${i}">${escapeHtml(c.label)}</button>`).join('')}</div>`
+                    : `<div class="explore-dialog-next">${last ? 'Fermer' : 'Suivant ►'} <small>(Entrée / clic)</small></div>`}
             </div>`;
         box.classList.add('visible');
     }
 
-    function openDialog(speaker, lines, after) {
+    function openDialog(speaker, lines, after, choices) {
         if (!lines || lines.length === 0) { after?.(); return; }
-        dialogQueue.push({ speaker, lines: [...lines], after });
+        dialogQueue.push({ speaker, lines: [...lines], after, choices });
         if (dialogQueue.length === 1) { dialogIndex = 0; }
         renderDialog();
     }
@@ -257,6 +262,8 @@ export function createExplorationView(cfg) {
         const entry = dialogQueue[0];
         if (dialogIndex < entry.lines.length - 1) {
             dialogIndex++;
+        } else if (entry.choices) {
+            return; // un choix est obligatoire : on répond avec les boutons
         } else {
             dialogQueue.shift();
             dialogIndex = 0;
@@ -302,7 +309,8 @@ export function createExplorationView(cfg) {
                     : `${tier.name} terminé une fois de plus !`, 6000);
             } else if (ev.type === 'questStarted') {
                 if (!spoken.has(ev.quest.id)) openDialog({ ...NARRATOR, title: `Nouvelle quête : ${ev.quest.title}` }, ev.lines);
-                toast(`Nouvelle quête${ev.quest.side ? ' secondaire' : ''} : ${ev.quest.title}`);
+                toast(`Nouvelle quête${ev.quest.side ? ' annexe' : ' principale'} : ${ev.quest.title}`);
+                proposeTracking(ev.quest);
             } else if (ev.type === 'questCompleted') {
                 if (ev.ended) {
                     // Fin de la légende : dialogue final puis animation de fin
@@ -324,6 +332,23 @@ export function createExplorationView(cfg) {
         if (xp > 0) cfg.onXp?.(xp);
         cfg.onSave();
         refreshHud();
+    }
+
+    const kindBadge = quest => quest.side
+        ? `<span class="quest-badge side" title="Quête annexe">${icon('scroll')} Annexe</span>`
+        : `<span class="quest-badge main" title="Quête principale">${icon('star')} Principale</span>`;
+
+    // Après l'activation d'une quête : si une autre quête est déjà suivie, le joueur choisit laquelle suivre.
+    function proposeTracking(quest) {
+        const p = X.trackProposal(session, quest);
+        if (!p || p.mode !== 'ask') return;
+        const kind = q => (q.side ? 'annexe' : 'principale');
+        openDialog({ ...NARRATOR, title: 'Quel chemin suivre ?' }, [
+            `Nouvelle quête ${kind(p.quest)} : « ${p.quest.title} ». Quête ${kind(p.current)} actuellement suivie : « ${p.current.title} ». Laquelle suivre maintenant ?`
+        ], null, [
+            { label: `Suivre « ${p.quest.title} » (${kind(p.quest)})`, run: () => { X.setTrackedQuest(session, p.quest.id); toast(`Quête suivie : ${p.quest.title}`); cfg.onSave(); refreshHud(); } },
+            { label: `Rester sur « ${p.current.title} » (${kind(p.current)})`, run: () => { toast(`Quête suivie : ${p.current.title}`); } }
+        ]);
     }
 
     function eventsSpoken(events) {
@@ -364,7 +389,7 @@ export function createExplorationView(cfg) {
             <div class="explore-journal-list">
             ${entries.length === 0 ? '<p>Aucune quête dans cette liste. Parlez aux villageois, entrez dans les maisons.</p>' : entries.map(e => `
                 <div class="explore-quest ${e.status}${e.tracked ? ' tracked' : ''}">
-                    <div class="explore-quest-head"><b>${e.tracked ? `${icon('star')} ` : ''}${escapeHtml(e.quest.title)}</b> <span>${STATUS_LABEL[e.status] || ''}</span></div>
+                    <div class="explore-quest-head"><b>${e.tracked ? `${icon('check')} ` : ''}${escapeHtml(e.quest.title)}</b> ${kindBadge(e.quest)} <span>${STATUS_LABEL[e.status] || ''}</span></div>
                     <div class="explore-quest-chapter">${escapeHtml(e.quest.chapter)}${e.region && REGION_LABEL[e.region] ? ` · ${escapeHtml(REGION_LABEL[e.region])}` : ''}</div>
                     ${e.status === 'available'
                         ? `<div class="explore-quest-where">${icon('talk')} Parlez à ${escapeHtml(e.giverName || 'un PNJ')}${e.giverPlace ? ` (${escapeHtml(e.giverPlace)})` : ''}</div>`
@@ -705,7 +730,19 @@ export function createExplorationView(cfg) {
         window.addEventListener('keyup', onKeyUp);
         canvas.addEventListener('pointerdown', onCanvasPointerDown);
         canvas.addEventListener('contextmenu', ev => ev.preventDefault());
-        els.dialog?.addEventListener('click', advanceDialog);
+        els.dialog?.addEventListener('click', ev => {
+            const btn = ev.target.closest?.('[data-choice]');
+            const entry = dialogQueue[0];
+            if (btn && entry?.choices) {
+                const choice = entry.choices[Number(btn.dataset.choice)];
+                dialogQueue.shift();
+                dialogIndex = 0;
+                choice?.run?.();
+                renderDialog();
+                return;
+            }
+            advanceDialog();
+        });
         els.journalBtn?.addEventListener('click', showJournal);
         els.mapBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMap?.(); });
         els.arenaBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenArena?.(); });
