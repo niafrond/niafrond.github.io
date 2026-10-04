@@ -2,8 +2,12 @@ import { readFileSync } from 'fs';
 import { SCREENS } from '../../story.js';
 import { playerClasses } from '../../classes.js';
 import {
-    HERO_SPRITES, NPC_SPRITES, CHEST_SPRITES, ENEMY_SPRITES, TILE_FILES, heroSprite, npcSprite, chestSprite, enemySprite, spriteUri
+    HERO_SPRITES, NPC_SPRITES, CHEST_SPRITES, ENEMY_SPRITES, TILE_FILES, heroSprite, npcSprite, chestSprite, enemySprite, spriteUri,
+    loadAllSprites
 } from '../../sprites/index.js';
+
+// Les paquets de sprites sont chargés à la demande : ici on les charge tous pour vérifier l'ensemble des dessins.
+await loadAllSprites();
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const screens = Object.values(SCREENS);

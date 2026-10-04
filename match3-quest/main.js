@@ -1,10 +1,10 @@
 import { generateBoard, renderBoard } from "./board.js";
-import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, combatHooks } from "./game.js";
+import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, combatHooks, getCombatMusicScene } from "./game.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy } from "./enemies.js";
 import { addXP } from "./experience.js";
 import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
-import { initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
+import { COMBAT_INTRO_MS, initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
 import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate } from "./version.js";
@@ -12,7 +12,8 @@ import { worldZones } from "./worldMap.js";
 import { mountWorldMap } from "./worldMapView.js";
 import { createExplorationView } from "./explorationView.js";
 import { REGION_ENTRY_SCREEN } from "./story.js";
-import { heroSprite, spriteUri } from "./sprites/index.js";
+import { heroSprite, spriteUri, loadSpritePack, CORE_PACK } from "./sprites/index.js";
+import { hideLoadingScreen } from "./loader.js";
 
 // initialisation de la partie
 console.log('Main.js loaded');
@@ -164,10 +165,16 @@ function init() {
 
     // Musique d'ambiance (pentatonique chinoise, music.js) : la scène voulue se déduit de l'état de l'interface.
     setMusicEnvironment({ getContext: getSharedAudioContext, getVolume: getMusicVolume, isMuted: isMusicMuted });
+    let combatIntroUntil = 0;
+    window.addEventListener('match3:combat-start', () => { combatIntroUntil = Date.now() + COMBAT_INTRO_MS; });
     const desiredMusic = () => {
         if(document.querySelector('.cine-ending')) return ['ending'];
         if(document.querySelector('.title-screen, .cine-overlay')) return ['title'];
         if(document.querySelector('.battle-transition')) return null;
+        // Combat : musique générée « combat » / « boss » ; l'écran de résultat repasse sur la musique de menu.
+        const fight = getCombatMusicScene();
+        if(fight) return Date.now() < combatIntroUntil ? null : [fight];   // jingle d'entrée d'abord, puis la musique
+        if(document.getElementById('battle-result-screen')?.classList.contains('active')) return ['menu'];
         if(document.getElementById('class-modal')?.classList.contains('active')) return ['title'];
         const tab = document.querySelector('.tab-panel.active')?.id;
         if(tab && tab !== 'tab-combat') return ['menu'];
@@ -179,12 +186,18 @@ function init() {
         return [info.region === 'lune' ? 'moon' : 'sanctuary'];
     };
     let musicStopped = true;
-    setInterval(() => {
+    const syncMusic = () => {
         const want = desiredMusic();
         if(!want) { if(!musicStopped) { stopMusic({ fadeMs: 700 }); musicStopped = true; } return; }
         musicStopped = false;
         setMusicScene(want[0], want[1]);
-    }, 400);
+    };
+    setInterval(syncMusic, 400);
+    // Les navigateurs interdisent tout son avant un geste de l'utilisateur : le premier appui (en pratique « Toucher
+    // pour commencer » de l'écran-titre) débloque le contexte audio, et la musique démarre aussitôt. On garde
+    // l'écoute (capture) pour reprendre un contexte suspendu plus tard (retour d'onglet, iOS).
+    const unlockAudio = () => { primeAudioFromGesture(); syncMusic(); };
+    ['pointerdown', 'touchstart', 'keydown'].forEach(type => document.addEventListener(type, unlockAudio, { capture: true, passive: true }));
 
     const setCombatUiVisible = visible => {
         document.querySelector('.stats-container').style.display = visible ? 'flex' : 'none';
@@ -242,8 +255,6 @@ function init() {
     // Tout combat (y compris le tutoriel) masque la carte.
     window.addEventListener('match3:combat-start', () => {
         exploration.hide();
-        // Coupe tout de suite la musique d'exploration : elle ne doit pas chevaucher la musique de combat.
-        if(!musicStopped) { stopMusic({ fadeMs: 250 }); musicStopped = true; }
     });
 
     // Carte du monde : vue d'ensemble des régions, téléportation vers celles déjà découvertes.
@@ -340,8 +351,13 @@ function init() {
     // Écran de démarrage (portrait animé) avant la sélection de classe / la reprise ; ignoré par les navigateurs
     // pilotés par des tests automatisés (sauf ?title=1).
     const skipTitle = navigator.webdriver && !/[?&]title=1/.test(location.search);
+    // Écran de chargement initial (index.html) : on ne charge que les dessins communs (héros, coffres) et ceux de la
+    // région où reprend la partie ; les autres régions sont chargées en y entrant.
+    const bootReady = Promise.all([loadSpritePack(CORE_PACK), exploration.ready()])
+        .catch(err => console.warn('[boot] chargement initial incomplet', err))
+        .then(() => hideLoadingScreen());
     // Nouvelle partie (aucune classe choisie) : prologue animé, puis choix de la classe et tutoriel.
-    (skipTitle ? Promise.resolve() : playTitleScreen())
+    bootReady.then(() => (skipTitle ? undefined : playTitleScreen()))
         .then(() => (!skipTitle && !player.class ? playPrologueAnimation() : undefined))
         .then(() => {
         showClassSelection();

@@ -18,49 +18,8 @@ const defaultSettings = {
     developerMode: false
 };
 
-const AMBIENT_TRACKS_BY_MOOD = {
-    sweet: ['./mp3/sweet.mp3', './mp3/sweet2.mp3'],
-    epic:  ['./mp3/epic.mp3',  './mp3/epic2.mp3']
-};
-
-const AMBIENT_VOLUME_BY_MOOD = {
-    sweet: 0.52,
-    epic:  0.66
-};
-
-const AMBIENT_MOOD_BY_FAMILY = {
-    default:   'sweet',
-    dragon:    'epic',
-    elemental: 'epic',
-    monster:   'epic',
-    troll:     'epic',
-    construct: 'epic',
-    undead:    'epic',
-    vampire:   'epic'
-};
-
-const AMBIENT_RACE_ALIASES = {
-    dragon:          'dragon',
-    vampire:         'vampire',
-    orc:             'orc',
-    construct:       'construct',
-    'mort-vivant':   'undead',
-    'mort vivant':   'undead',
-    mortvivant:      'undead',
-    gobelin:         'goblin',
-    goblin:          'goblin',
-    elementaire:     'elemental',
-    elemental:       'elemental',
-    humain:          'human',
-    human:           'human',
-    esprit:          'spirit',
-    spirit:          'spirit',
-    elfe:            'elf',
-    elf:             'elf',
-    monstre:         'monster',
-    monster:         'monster',
-    troll:           'troll'
-};
+// Durée du jingle d'entrée en combat : la musique de combat démarre après ce délai.
+export const COMBAT_INTRO_MS = 1400;
 
 const DEV_MODE_CLICK_TARGET = 6;
 
@@ -70,143 +29,7 @@ const DEV_MODE_CLICK_TARGET = 6;
 
 let settings = { ...defaultSettings };
 let audioContext = null;
-let ambientAudioByMood = null;
-let activeAmbientAudio = null;
-let activeBattleMusicAudio = null;
-let ambientWasPlayingBeforeBattle = false;
-let ambientFadeTimerId = null;
-let combatMusicEnabled = false;
 let audioPrimed = false;
-let combatMusicFamily = 'default';
-let combatMusicMood = 'sweet';
-let audioVisibilityGuardInitialized = false;
-let ambientPausedByFocusLoss = false;
-
-// ===============================
-// CACHE INDEXEDDB
-// ===============================
-
-const AUDIO_DB_NAME  = 'match3-audio-cache';
-const AUDIO_DB_STORE = 'audio-files';
-let audioDbPromise = null;
-
-function openAudioDb() {
-    if (typeof indexedDB === 'undefined') return Promise.resolve(null);
-    if (audioDbPromise) return audioDbPromise;
-
-    audioDbPromise = new Promise((resolve) => {
-        const req = indexedDB.open(AUDIO_DB_NAME, 1);
-        req.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains(AUDIO_DB_STORE)) {
-                db.createObjectStore(AUDIO_DB_STORE);
-            }
-        };
-        req.onsuccess = () => resolve(req.result);
-        req.onerror  = () => resolve(null);
-    });
-
-    return audioDbPromise;
-}
-
-async function getAudioFromCache(filename) {
-    const db = await openAudioDb();
-    if (!db) return null;
-    return new Promise((resolve) => {
-        const tx    = db.transaction(AUDIO_DB_STORE, 'readonly');
-        const store = tx.objectStore(AUDIO_DB_STORE);
-        const req   = store.get(filename);
-        req.onsuccess = () => resolve(req.result || null);
-        req.onerror   = () => resolve(null);
-    });
-}
-
-async function saveAudioToCache(filename, blob) {
-    const db = await openAudioDb();
-    if (!db) return;
-    return new Promise((resolve) => {
-        const tx    = db.transaction(AUDIO_DB_STORE, 'readwrite');
-        const store = tx.objectStore(AUDIO_DB_STORE);
-        const req   = store.put(blob, filename);
-        req.onsuccess = () => resolve();
-        req.onerror   = () => resolve();
-    });
-}
-
-async function fetchAudioBlob(filename, url) {
-    const cached = await getAudioFromCache(filename);
-    if (cached) return cached;
-
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`audio download failed: ${url}`);
-
-    const blob = await resp.blob();
-    try { await saveAudioToCache(filename, blob); } catch {}
-    return blob;
-}
-
-/**
- * Crée un élément Audio en utilisant le cache IndexedDB pour les .mp3.
- * Retourne une promesse résolue avec l'Audio prêt (src assigné, pas encore joué).
- */
-async function createAudio(src) {
-    const audio = new Audio();
-    audio.loop    = true;
-    audio.preload = 'auto';
-
-    if (src.endsWith('.mp3')) {
-        try {
-            const filename = src.split('/').pop();
-            const blob = await fetchAudioBlob(filename, src);
-            audio.src  = URL.createObjectURL(blob);
-        } catch {
-            audio.src = src;
-        }
-    } else {
-        audio.src = src;
-    }
-
-    return audio;
-}
-
-// ===============================
-// PRÉCHARGEMENT AU DÉMARRAGE
-// ===============================
-
-// PRÉCHARGEMENT AU DÉMARRAGE ET INIT TRACKS_LIST
-
-async function preloadAllAudioToIndexedDBAndTracksList() {
-    try {
-        const resp = await fetch('./tracks.json');
-        if (!resp.ok) return;
-        const tracks = await resp.json();
-        if (!Array.isArray(tracks)) return;
-        // Remplit window.TRACKS_LIST si absent
-        if (typeof window !== 'undefined' && !window.TRACKS_LIST) {
-            window.TRACKS_LIST = tracks
-        }
-        // Précharge les mp3
-        for (const filename of tracks) {
-                fetchAudioBlob(filename, './mp3/' + filename).catch(() => {});
-        }
-    } catch {}
-}
-
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setTimeout(preloadAllAudioToIndexedDBAndTracksList, 100);
-    } else {
-        document.addEventListener('DOMContentLoaded', () => setTimeout(preloadAllAudioToIndexedDBAndTracksList, 100));
-    }
-}
-
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setTimeout(preloadAllAudioToIndexedDBAndTracksList, 100);
-    } else {
-        document.addEventListener('DOMContentLoaded', () => setTimeout(preloadAllAudioToIndexedDBAndTracksList, 100));
-    }
-}
 
 // ===============================
 // UTILITAIRES VOLUME / PARAMÈTRES
@@ -360,326 +183,12 @@ function resumeAudioContext(options = {}) {
 }
 
 // ===============================
-// RÉSOLUTION FAMILLE / MOOD COMBAT
-// ===============================
-
-function normalizeCombatFamilyName(value) {
-    if (typeof value !== 'string') return '';
-    return value
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')  // accents
-        .replace(/[_]+/g, ' ')
-        .replace(/[^\w\s-]/g, '')
-        .trim();
-}
-
-function resolveCombatMusicFamily(value) {
-    const normalized = normalizeCombatFamilyName(value);
-    if (!normalized) return 'default';
-    const mapped = AMBIENT_RACE_ALIASES[normalized] || normalized;
-    return Object.prototype.hasOwnProperty.call(AMBIENT_MOOD_BY_FAMILY, mapped) ? mapped : 'default';
-}
-
-function resolveCombatMusicMood(value) {
-    if (typeof value !== 'string') return 'sweet';
-    return value.toLowerCase().trim() === 'epic' ? 'epic' : 'sweet';
-}
-
-function getEffectiveCombatMood() {
-    return combatMusicMood === 'epic' ? 'epic' : 'sweet';
-}
-
-// ===============================
-// POOL AUDIO AMBIANT
-// ===============================
-
-function ensureAmbientAudioPool() {
-    if (typeof Audio === 'undefined') return null;
-    if (ambientAudioByMood) return ambientAudioByMood;
-
-    ambientAudioByMood = {};
-    Object.entries(AMBIENT_TRACKS_BY_MOOD).forEach(([mood, tracks]) => {
-        ambientAudioByMood[mood] = tracks.map((src) => {
-            const audio = new Audio(src);
-            audio.preload = 'auto';
-            audio.loop    = true;
-            audio.volume  = 0;
-            audio.dataset.combatMood = mood;
-            return audio;
-        });
-    });
-
-    return ambientAudioByMood;
-}
-
-function getAmbientTargetVolume() {
-    const mood           = getEffectiveCombatMood();
-    const moodMultiplier = AMBIENT_VOLUME_BY_MOOD[mood] ?? 0.52;
-    return clampVolume(getMusicVolume() * moodMultiplier, defaultSettings.musicVolume);
-}
-
-function clearAmbientFadeTimer() {
-    if (ambientFadeTimerId !== null) {
-        window.clearInterval(ambientFadeTimerId);
-        ambientFadeTimerId = null;
-    }
-}
-
-function fadeAudioVolume(audio, target, durationMs = 420) {
-    if (!audio) return;
-    clearAmbientFadeTimer();
-
-    const start     = Number.isFinite(audio.volume) ? audio.volume : 0;
-    const end       = clampVolume(target);
-    const duration  = Math.max(1, Number(durationMs) || 1);
-    const startedAt = Date.now();
-
-    if (Math.abs(start - end) < 0.01) {
-        audio.volume = end;
-        return;
-    }
-
-    ambientFadeTimerId = window.setInterval(() => {
-        const elapsed = Date.now() - startedAt;
-        const ratio   = Math.min(1, elapsed / duration);
-        audio.volume  = clampVolume(start + ((end - start) * ratio));
-        if (ratio >= 1) clearAmbientFadeTimer();
-    }, 30);
-}
-
-function pickAmbientTrack(mood) {
-    const pool   = ensureAmbientAudioPool();
-    const tracks = pool?.[mood];
-    if (!Array.isArray(tracks) || tracks.length === 0) return null;
-
-    if (tracks.length === 1) return tracks[0];
-
-    const currentIndex = activeAmbientAudio ? tracks.indexOf(activeAmbientAudio) : -1;
-    if (currentIndex === -1) {
-        return tracks[Math.floor(Math.random() * tracks.length)];
-    }
-    const offset = 1 + Math.floor(Math.random() * (tracks.length - 1));
-    return tracks[(currentIndex + offset) % tracks.length];
-}
-
-function startAmbientLoop() {
-    if (isMusicMuted() || !combatMusicEnabled || !audioPrimed) return;
-    if (activeBattleMusicAudio || battleMusicPending) return; // une piste dédiée à l'ennemi est déjà en cours
-    if (!isGameInForeground()) return;
-
-    const mood = getEffectiveCombatMood();
-
-    if (activeAmbientAudio && activeAmbientAudio.dataset?.combatMood === mood) {
-        if (activeAmbientAudio.paused) {
-            activeAmbientAudio.play().catch(() => {});
-        }
-        fadeAudioVolume(activeAmbientAudio, getAmbientTargetVolume(), 360);
-        return;
-    }
-
-    const previousTrack = activeAmbientAudio;
-    const nextTrack     = pickAmbientTrack(mood);
-    if (!nextTrack) return;
-
-    activeAmbientAudio     = nextTrack;
-    nextTrack.loop         = true;
-    nextTrack.currentTime  = 0;
-    nextTrack.volume       = 0;
-
-    nextTrack.play().catch(() => {
-        if (activeAmbientAudio === nextTrack) activeAmbientAudio = null;
-    });
-
-    if (previousTrack && previousTrack !== nextTrack) {
-        previousTrack.pause();
-        previousTrack.currentTime = 0;
-        previousTrack.volume      = 0;
-    }
-
-    fadeAudioVolume(nextTrack, getAmbientTargetVolume(), 520);
-}
-
-function pauseAmbientLoop() {
-    clearAmbientFadeTimer();
-    if (!activeAmbientAudio) return;
-    activeAmbientAudio.pause();
-    ambientPausedByFocusLoss = true;
-}
-
-function stopAmbientLoop() {
-    clearAmbientFadeTimer();
-    if (!activeAmbientAudio) return;
-    const track      = activeAmbientAudio;
-    track.volume     = 0;
-    track.pause();
-    track.currentTime       = 0;
-    activeAmbientAudio      = null;
-    ambientPausedByFocusLoss = false;
-}
-
-function isGameInForeground() {
-    if (typeof document === 'undefined') return true;
-    if (document.hidden) return false;
-    if (typeof document.hasFocus === 'function') return document.hasFocus();
-    return true;
-}
-
-function initializeAudioVisibilityGuard() {
-    if (audioVisibilityGuardInitialized) return;
-    if (typeof window === 'undefined' || typeof document === 'undefined') return;
-    audioVisibilityGuardInitialized = true;
-
-    const sync = () => syncAmbientState();
-    document.addEventListener('visibilitychange', sync);
-    window.addEventListener('focus', sync);
-    window.addEventListener('blur', sync);
-    window.addEventListener('pageshow', sync);
-    window.addEventListener('pagehide', sync);
-    document.addEventListener('freeze', sync);
-    document.addEventListener('resume', sync);
-}
-
-function syncAmbientState() {
-    if (isMusicMuted() || !combatMusicEnabled) {
-        stopAmbientLoop();
-        return;
-    }
-
-    if (!isGameInForeground()) {
-        pauseAmbientLoop();
-        return;
-    }
-
-    if (ambientPausedByFocusLoss && activeAmbientAudio) {
-        activeAmbientAudio.play().catch(() => {});
-        fadeAudioVolume(activeAmbientAudio, getAmbientTargetVolume(), 280);
-        ambientPausedByFocusLoss = false;
-        return;
-    }
-
-    startAmbientLoop();
-}
-
-// ===============================
-// MUSIQUE DE COMBAT ENNEMIE
-// ===============================
-
-/**
- * Lance la musique de combat associée à un ennemi.
- * Recherche un fichier .mp3 dont le nom contient la race normalisée de l'ennemi
- * (via window.TRACKS_LIST). Fallback sur une piste sweet.mp3 aléatoire.
- * Met en pause l'ambiance en cours et la restaure à l'arrêt.
- */
-let battleMusicToken = 0;
-let battleMusicPending = false;
-
-export async function playEnemyBattleMusic(enemy) {
-    // Jeton : si un stop (ou un nouvel appel) survient pendant les `await`, cette piste ne doit pas démarrer.
-    const token = ++battleMusicToken;
-    battleMusicPending = true;
-    // Mémorise si une ambiance était active pour pouvoir la restaurer
-    ambientWasPlayingBeforeBattle = Boolean(activeAmbientAudio);
-
-    // Stoppe l'ambiance en cours
-    if (activeAmbientAudio) {
-        activeAmbientAudio.pause();
-        activeAmbientAudio.currentTime = 0;
-        activeAmbientAudio = null;
-    }
-
-    // Stoppe une éventuelle musique de combat précédente
-    if (activeBattleMusicAudio) {
-        activeBattleMusicAudio.pause();
-        activeBattleMusicAudio.currentTime = 0;
-        activeBattleMusicAudio = null;
-    }
-
-    if (!enemy || isMusicMuted()) { battleMusicPending = false; return; }
-
-    // Recherche d'une piste .mp3 par race
-    let src = null;
-  
-    const race = (enemy.race || '')
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
-
-    if (race && Array.isArray(window.TRACKS_LIST)) {
-        const match = window.TRACKS_LIST.find(f =>
-            f.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(race)
-        );
-        if (match) src = './mp3/' + match;
-    }
-
-    // Fallback : piste sweet aléatoire
-    if (!src) {
-        const sweetTracks = AMBIENT_TRACKS_BY_MOOD.sweet;
-        src = sweetTracks[Math.floor(Math.random() * sweetTracks.length)];
-    }
-
-    // Ajout du log du nom de la musique lue
-    let musicName = src;
-    if (src.startsWith('./wav/')) {
-        musicName = src.replace('./wav/', '');
-    } else if (src.startsWith('./mp3/')) {
-        musicName = src.replace('./mp3/', '');
-    }
-
-    
-    console.log(enemy.race )
-    console.log('[MUSIQUE] Lecture :', src);
-    const audio = await createAudio(src);
-    if (token !== battleMusicToken) { audio.pause(); return; }
-    battleMusicPending = false;
-
-    // Volume : les .wav reçoivent un coefficient 0.5 par rapport au volume musique
-    const baseVolume = getMusicVolume();
-    audio.volume = src.endsWith('.wav') ? clampVolume(baseVolume * 0.5) : clampVolume(baseVolume);
-
-    activeBattleMusicAudio = audio;
-    audio.play().catch(() => {});
-}
-
-export function stopEnemyBattleMusic() {
-    battleMusicPending = false;
-    battleMusicToken++; // invalide un démarrage encore en cours de chargement
-    if (activeBattleMusicAudio) {
-        activeBattleMusicAudio.pause();
-        activeBattleMusicAudio.currentTime = 0;
-        activeBattleMusicAudio = null;
-    }
-    // Relance l'ambiance si elle était active avant le combat
-    if (ambientWasPlayingBeforeBattle) {
-        ambientWasPlayingBeforeBattle = false;
-        startAmbientLoop();
-    }
-}
-
-// ===============================
 // EXPORTS PUBLICS
 // ===============================
-
-export function setCombatMusicFamily(family) {
-    combatMusicFamily = resolveCombatMusicFamily(family);
-    syncAmbientState();
-}
-
-export function setCombatMusicMood(mood) {
-    combatMusicMood = resolveCombatMusicMood(mood);
-    syncAmbientState();
-}
-
-export function setCombatMusicEnabled(enabled) {
-    combatMusicEnabled = Boolean(enabled);
-    syncAmbientState();
-}
 
 export function primeAudioFromGesture() {
     audioPrimed = true;
     resumeAudioContext({ allowCreate: true });
-    ensureAmbientAudioPool();
-    syncAmbientState();
 }
 
 export function isMuted() {
@@ -689,14 +198,12 @@ export function isMuted() {
 export function setMuted(muted) {
     applyMuteMode(Boolean(muted) ? 'all' : 'none');
     saveSettings();
-    syncAmbientState();
 }
 
 export function toggleMuted() {
     const nextMode = getMuteMode() === 'all' ? 'none' : 'all';
     applyMuteMode(nextMode);
     saveSettings();
-    syncAmbientState();
     return getMuteMode() === 'all';
 }
 
@@ -713,7 +220,6 @@ export function updateAudioToggleButton(button) {
 }
 
 export function initializeAudioUI(button) {
-    initializeAudioVisibilityGuard();
     loadSettings();
     updateAudioToggleButton(button);
 
@@ -832,6 +338,25 @@ export function playSfx(eventName, payload = {}) {
                 [0.03, isPlayer ? 150 : 130, 0.09, 0.75, 'sawtooth']
             ]);
             break;
+        case 'combatStart': case 'bossStart': {
+            // Jingle d'entrée en combat (façon Pokémon) : martèlement alterné rapide, montée pentatonique, note tenue.
+            // Durée ≈ COMBAT_INTRO_MS : la musique de combat démarre juste après (voir main.js).
+            const boss = eventName === 'bossStart';
+            const lo = boss ? 164.8 : 329.6, hi = boss ? 196 : 392;
+            const wave = boss ? 'sawtooth' : 'square';
+            const p = [];
+            const hits = boss ? 8 : 6;
+            for (let i = 0; i < hits; i++) p.push([i * 0.075, i % 2 ? hi : lo, 0.06, 0.8, wave]);
+            const t0 = hits * 0.075 + 0.05;
+            const run = boss ? [220, 261.6, 329.6, 392, 440, 523.3] : [440, 523.3, 659.3, 784];
+            run.forEach((f, i) => p.push([t0 + i * 0.09, f, 0.1, 0.85, wave]));
+            const tEnd = t0 + run.length * 0.09;
+            const top = run[run.length - 1];
+            p.push([tEnd, top, 0.45, 1, 'triangle'], [tEnd, top / 2, 0.45, 0.8, wave], [tEnd, top * 1.5, 0.45, 0.5, 'triangle']);
+            p.push([0, 90, 0.18, 1, 'sine'], [tEnd, 70, 0.25, 1, 'sine']);
+            playPattern(p, { gain: boss ? 1.1 : 1 });
+            break;
+        }
         case 'victory':
             playPattern([
                 [0,    520, 0.08, 0.75, 'triangle'],
@@ -995,8 +520,7 @@ function openMuteModeChooser(button) {
         btn.addEventListener('click', () => {
             applyMuteMode(mode);
             saveSettings();
-            syncAmbientState();
-            updateAudioToggleButton(button);
+                    updateAudioToggleButton(button);
             closeModal();
         });
         buttonWrap.appendChild(btn);
@@ -1050,7 +574,7 @@ function openMuteModeChooser(button) {
     volumeControls.appendChild(createVolumeControl({
         label: 'Musique', hint: 'Volume de l\'ambiance et du combat',
         initialValue: getMusicVolume(),
-        onInput: (value) => { setMusicVolume(value); saveSettings(); syncAmbientState(); }
+        onInput: (value) => { setMusicVolume(value); saveSettings(); }
     }));
 
     volumeControls.appendChild(createVolumeControl({

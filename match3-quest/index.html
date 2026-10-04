@@ -19,12 +19,18 @@
         if (m) v = m[1].replace(/\D/g, '');
     } catch (e) { /* hors ligne / file:// : pas de suffixe fiable */ }
     var map = {};
-    ["board.js", "cheatMode.js", "cinematics.js", "classSpellEffects.js", "classes.js", "constants.js", "enemies.js", "enemyAI.js", "experience.js", "exploration.js", "explorationView.js", "game.js", "items.js", "joker.js", "main.js", "matchMechanics.js", "music.js", "playerNames.js", "shop.js", "sound.js", "spells.js", "sprites/cn/actors-a.js", "sprites/cn/actors-b.js", "sprites/cn/enemies-1.js", "sprites/cn/enemies-2.js", "sprites/cn/suns.js", "sprites/index.js", "sprites/villagers.js", "story.js", "tutorial.js", "version.js", "weapons.js", "world/index.js", "world/mapKit.js", "world/maps/bambous.js", "world/maps/fauves.js", "world/maps/fleuve.js", "world/maps/fusang.js", "world/maps/gobi.js", "world/maps/index.js", "world/maps/lune.js", "world/maps/mer.js", "world/maps/rizieres.js", "world/maps/tonnerre.js", "world/maps/volcan.js", "world/text/bambous.js", "world/text/extra/bambous.js", "world/text/extra/fauves.js", "world/text/extra/fleuve.js", "world/text/extra/fusang.js", "world/text/extra/gobi.js", "world/text/extra/lune.js", "world/text/extra/mer.js", "world/text/extra/rizieres.js", "world/text/extra/tonnerre.js", "world/text/extra/volcan.js", "world/text/fauves.js", "world/text/fleuve.js", "world/text/fusang.js", "world/text/gobi.js", "world/text/index.js", "world/text/lune.js", "world/text/mer.js", "world/text/merge.js", "world/text/rizieres.js", "world/text/tonnerre.js", "world/text/volcan.js", "worldMap.js", "worldMapView.js"].forEach(function (f) { map['./' + f] = './' + f + '?v=' + v; });
+    ["board.js", "cheatMode.js", "cinematics.js", "classSpellEffects.js", "classes.js", "constants.js", "enemies.js", "enemyAI.js", "experience.js", "exploration.js", "explorationView.js", "game.js", "items.js", "joker.js", "loader.js", "main.js", "matchMechanics.js", "music.js", "playerNames.js", "shop.js", "sound.js", "spells.js", "sprites/cn/actors-a.js", "sprites/cn/actors-b.js", "sprites/cn/enemies-1.js", "sprites/cn/enemies-2.js", "sprites/cn/suns.js", "sprites/index.js", "sprites/packContents.js", "sprites/packs.js", "sprites/villagers.js", "story.js", "tutorial.js", "version.js", "weapons.js", "world/index.js", "world/mapKit.js", "world/maps/bambous.js", "world/maps/fauves.js", "world/maps/fleuve.js", "world/maps/fusang.js", "world/maps/gobi.js", "world/maps/index.js", "world/maps/lune.js", "world/maps/mer.js", "world/maps/rizieres.js", "world/maps/tonnerre.js", "world/maps/volcan.js", "world/text/bambous.js", "world/text/extra/bambous.js", "world/text/extra/fauves.js", "world/text/extra/fleuve.js", "world/text/extra/fusang.js", "world/text/extra/gobi.js", "world/text/extra/lune.js", "world/text/extra/mer.js", "world/text/extra/rizieres.js", "world/text/extra/tonnerre.js", "world/text/extra/volcan.js", "world/text/fauves.js", "world/text/fleuve.js", "world/text/fusang.js", "world/text/gobi.js", "world/text/index.js", "world/text/lune.js", "world/text/mer.js", "world/text/merge.js", "world/text/rizieres.js", "world/text/tonnerre.js", "world/text/volcan.js", "worldMap.js", "worldMapView.js"].forEach(function (f) { map['./' + f] = './' + f + '?v=' + v; });
     var im = document.createElement('script');
     im.type = 'importmap';
     im.textContent = JSON.stringify({ imports: map });
     document.head.appendChild(im);
     document.write('<link rel="stylesheet" href="style.css?v=' + v + '"><link rel="stylesheet" href="retro.css?v=' + v + '">');
+    // Les dessins des tuiles sont référencés par retro.css (url() sans suffixe) : on les redéclare avec ?v= pour qu'un
+    // nouveau dessin ne reste pas bloqué dans le cache du navigateur.
+    var tiles = ['red', 'blue', 'green', 'yellow', 'purple', 'combat', 'skull', 'joker'];
+    document.write('<style>' + tiles.map(function (t) {
+        return 'body.rt .tile.' + t + '{background-image:url("sprites/tiles/tile-' + t + '.svg?v=' + v + '")}';
+    }).join('') + '</style>');
     window.__match3Build = v;
 })();
 </script>
@@ -33,6 +39,16 @@
 <link rel="manifest" href="manifest.json">
 </head>
 <body class="rt">
+<!-- Écran de chargement (loader.js) : visible dès l'ouverture pendant le téléchargement des modules, puis réutilisé
+     à l'entrée d'une région dont les dessins ne sont pas encore chargés. -->
+<div id="loading-screen" class="loading-screen visible" role="status" aria-live="polite" aria-hidden="false">
+    <div class="loading-panel">
+        <div class="loading-sun" aria-hidden="true"><i></i></div>
+        <div class="loading-title">Hou Yi et les Dix Soleils</div>
+        <div class="loading-label">Chargement…</div>
+        <div class="loading-bar"><i></i></div>
+    </div>
+</div>
 <!-- Modal de proposition du tutoriel -->
 <div id="tutorial-proposal-modal" class="modal">
     <div class="modal-content" style="max-width:420px;">

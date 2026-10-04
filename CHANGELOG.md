@@ -1,3 +1,33 @@
+## [2.59.0](https://github.com/niafrond/niafrond.github.io/compare/v2.58.1...v2.59.0) (2026-10-04)
+
+### Features
+
+* **match3-quest:** plus de Narrateur dans les maisons, musique dès le premier appui ([#399](https://github.com/niafrond/niafrond.github.io/issues/399)) ([ed3f363](https://github.com/niafrond/niafrond.github.io/commit/ed3f363e61d4f4d598b25c1545e5fb7a6e236bff))
+
+## [2.58.1](https://github.com/niafrond/niafrond.github.io/compare/v2.58.0...v2.58.1) (2026-10-04)
+
+### Bug Fixes
+
+* **match3-quest:** anti-cache des dessins de tuiles et des JSON de données ([#398](https://github.com/niafrond/niafrond.github.io/issues/398)) ([84ba07c](https://github.com/niafrond/niafrond.github.io/commit/84ba07cc18ef33439e73c669f92ba2bb64e3267e))
+
+## [2.58.0](https://github.com/niafrond/niafrond.github.io/compare/v2.57.1...v2.58.0) (2026-10-03)
+
+### Features
+
+* **match3-quest:** motifs de tuiles, fond du plateau, musique 100 % générée, jingle de combat ([#397](https://github.com/niafrond/niafrond.github.io/issues/397)) ([6ae72a5](https://github.com/niafrond/niafrond.github.io/commit/6ae72a528c7cbb104260bd946ecbef654a1a769b))
+
+## [2.57.1](https://github.com/niafrond/niafrond.github.io/compare/v2.57.0...v2.57.1) (2026-10-03)
+
+### Performance Improvements
+
+* **match3-quest:** chargement à la demande des sprites et de l'audio, écrans de chargement ([#396](https://github.com/niafrond/niafrond.github.io/issues/396)) ([e06ac60](https://github.com/niafrond/niafrond.github.io/commit/e06ac60517ef61bba9fa3e78c9f08fe20fc30579))
+
+## [2.57.0](https://github.com/niafrond/niafrond.github.io/compare/v2.56.0...v2.57.0) (2026-10-03)
+
+### Features
+
+* **match3-quest:** villages portrait 9:16 agrandis, relecture scénaristique sans spoilers ([#395](https://github.com/niafrond/niafrond.github.io/issues/395)) ([2a2d38a](https://github.com/niafrond/niafrond.github.io/commit/2a2d38ae1fab79272920eb0936f69748dfa538e7))
+
 ## [2.56.0](https://github.com/niafrond/niafrond.github.io/compare/v2.55.0...v2.56.0) (2026-10-03)
 
 ### Features

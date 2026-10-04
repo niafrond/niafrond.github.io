@@ -9,7 +9,7 @@ import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDiffi
 import { getRandomItem, getRarityEmoji, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
 import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
-import { playSfx, setCombatMusicEnabled, setCombatMusicFamily, setCombatMusicMood } from "./sound.js";
+import { playSfx } from "./sound.js";
 import { allSpells as spellsCatalog, getSpellsByLevel } from "./spells.js";
 export { updateShopTab, buyWeapon, buyItem };
 
@@ -750,10 +750,7 @@ export function handlePlayerDeath(){
         }
     }
     log("💀 Vous êtes mort ! Le combat est terminé.");
-    setCombatMusicEnabled(false);
     playSfx('defeat');
-    // Stopper la musique personnalisée
-    import('./sound.js').then(mod => { mod.stopEnemyBattleMusic(); });
     
     // Marquer le combat comme terminé
     gameState.combatState = 'finished';
@@ -793,16 +790,7 @@ export function startNewCombat(selectedEnemy = null){
     // Restaurer les PV et préparer le combat
     restartCombat();
     newEnemy(selectedEnemy);
-    // Jouer la musique personnalisée de l'ennemi
-    try {
-        const currentEnemy = typeof enemy !== 'undefined' ? enemy : null;
-        if(currentEnemy && currentEnemy.battleMusic) {
-            // Import dynamique pour éviter les cycles
-            import('./sound.js').then(mod => {
-                mod.playEnemyBattleMusic(currentEnemy);
-            });
-        }
-    } catch(e) { /* ignore */ }
+    playSfx(enemy?.isBoss ? 'bossStart' : 'combatStart');
 }
 
 // Abandonner le combat en cours
@@ -831,10 +819,7 @@ export function abandonCombat(){
     saveUpdate();
 
     log("🏳️ Vous avez abandonné le combat...");
-    setCombatMusicEnabled(false);
     playSfx('defeat');
-    // Stopper la musique personnalisée
-    import('./sound.js').then(mod => { mod.stopEnemyBattleMusic(); });
     
     // Marquer le combat comme terminé
     gameState.combatState = 'finished';
@@ -1932,7 +1917,6 @@ export function finishEnemyTurn(){
 // progression
 export function handleEnemyDefeated(){
     log(`🏆 ${enemy.name} est vaincu !`);
-    setCombatMusicEnabled(false);
     playSfx('victory');
     
     // Calculer et mettre en attente l'XP (application en fin de combat)
@@ -2618,17 +2602,15 @@ export function applyStartingAbilities(){
 }
 
 // ennemis
-function shouldUseEpicCombatMusic(enemyEntity) {
-    return Boolean(enemyEntity?.isBoss);
+// Scène musicale du combat en cours (musique générée par music.js) : 'boss' contre un boss, sinon 'combat' ; null hors combat.
+export function getCombatMusicScene() {
+    if(gameState.combatState !== 'active') return null;
+    return enemy?.isBoss ? 'boss' : 'combat';
 }
 
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
 
-    setCombatMusicFamily(enemy.race);
-    setCombatMusicMood(shouldUseEpicCombatMusic(enemy) ? 'epic' : 'sweet');
-    setCombatMusicEnabled(true);
-    
     // Ajuster automatiquement la difficulté de l'IA selon le niveau et le profil de l'ennemi
     setAIDifficultyByLevel(enemy.level, player.level, enemy);
     

@@ -1932,3 +1932,11 @@ describe('déplacement au clic : évitement des zones de combat', () => {
         expect(findPath(s, 3, 2).some(p => inAura(p))).toBe(true);
     });
 });
+
+describe('maisons : aucun texte du Narrateur à l\'entrée', () => {
+    test('aucune maison n\'a de texte d\'arrivée', () => {
+        const houses = Object.values(SCREENS).filter(sc => sc.interior);
+        expect(houses.length).toBeGreaterThan(10);
+        houses.forEach(h => expect([h.id, h.arrival]).toEqual([h.id, undefined]));
+    });
+});
