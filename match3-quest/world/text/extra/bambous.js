@@ -25,7 +25,6 @@ export default {
     lanternier_fa: {
       name: "Fa",
       title: "Lanternier",
-      emoji: "🏮",
       idle: [
         "Une lanterne bien faite éclaire trois choses : le chemin, le visage, et le chagrin.",
         "Je fabrique des lampions pour la fête. Trois vols, cette année. Mon papier est trop beau."
@@ -42,7 +41,6 @@ export default {
     carver_ling: {
       name: "Ling",
       title: "Sculptrice de bambou",
-      emoji: "🪚",
       idle: [
         "Je sculpte ce que le feu a épargné. Un bambou noirci donne de belles figures sombres.",
         "Mon dernier modèle a bougé pendant la pose. C'était un panda. Je ne lui en veux pas."
@@ -59,7 +57,6 @@ export default {
     panda_baobao: {
       name: "Baobao",
       title: "Bébé panda",
-      emoji: "🐼",
       idle: [
         "Hmm ? Hmm hmm ! (Il semble réclamer quelque chose de sucré.)",
         "Hmm hmm hmm. (Il vous montre un bambou, et le mange.)"
@@ -76,7 +73,6 @@ export default {
     beekeeper_ju: {
       name: "Ju",
       title: "Apicultrice",
-      emoji: "🐝",
       idle: [
         "Mes abeilles ont survécu au feu. Elles sont plus braves que moi, plus pressées aussi.",
         "Le miel de cendre est le meilleur. Il a le goût du courage."
@@ -93,7 +89,6 @@ export default {
     archer_huo: {
       name: "Huo",
       title: "Vieil archer retraité",
-      emoji: "🏹",
       idle: [
         "J'ai tiré mille flèches. La plus belle ne m'a jamais quitté, c'était un compliment de ma mère.",
         "Un jeune archer m'a demandé ma meilleure technique. Je lui ai dit : « Vise avec le cœur. » Il a répondu : « Le mien est trop agité. »"
@@ -110,7 +105,6 @@ export default {
     young_monk_zhi: {
       name: "Zhi",
       title: "Jeune moine novice",
-      emoji: "🧑‍🦲",
       idle: [
         "Le Maître dit : « Avant de balayer le monde, balaie la cour. » Je balaie la cour depuis trois ans.",
         "Je rêve de lire les sutras. Pour l'instant, je lis les étiquettes de l'herboriste."
@@ -127,7 +121,6 @@ export default {
     scholar_dong: {
       name: "Dong",
       title: "Lettré vagabond",
-      emoji: "🎓",
       idle: [
         "Je cherche un lieu paisible pour écrire. Les cendres ne sont pas idéales, mais l'inspiration est tragique.",
         "Savez-vous pourquoi le bambou plie sans casser ? Moi non plus, mais j'ai écrit un poème dessus."
@@ -144,7 +137,6 @@ export default {
     stem_sprite: {
       name: "Tigelle",
       title: "Esprit de tige",
-      emoji: "🎋",
       idle: [
         "Je suis la dernière tige verte du sentier. Je suis entourée de fantômes, mais je tiens bon.",
         "Le feu m'a coupé les pieds, pas la parole."
@@ -161,7 +153,6 @@ export default {
     snake_qing: {
       name: "Dame Qing",
       title: "Serpente blanche lettrée",
-      emoji: "🐍",
       idle: [
         "Ne me craignez pas. Les serpents lisent, eux aussi. Même les poèmes tristes.",
         "Autrefois, j'ai aimé un mortel. Aujourd'hui, j'aime un parfum de pluie."
@@ -178,7 +169,6 @@ export default {
     cricket_boy_hao: {
       name: "Hao",
       title: "Petit éleveur de grillons",
-      emoji: "🦗",
       idle: [
         "Mon grillon chante comme un rossignol ! Enfin, comme un grillon.",
         "Si tu en trouves un qui chante faux, apporte-le-moi. Je le mets à l'école."
@@ -196,39 +186,27 @@ export default {
   chests: {
     lantern_box: {
       label: "Boîte à lampions",
-      openText: "🎁 Sous les lampions pliés, une bourse de lanternier, un peu cirée.",
-      emoji: "🏮",
-      emojiOpened: "🏮"
+      openText: "Sous les lampions pliés, une bourse de lanternier, un peu cirée.",
     },
     carver_chest: {
       label: "Coffre de la sculptrice",
-      openText: "🎁 Une statuette de bambou, creuse, remplie de pièces.",
-      emoji: "🪆",
-      emojiOpened: "🪆"
+      openText: "Une statuette de bambou, creuse, remplie de pièces.",
     },
     honey_hive: {
       label: "Ruche de cendre",
-      openText: "🎁 Dans la ruche, du miel doré et quelques pièces d'apicultrice.",
-      emoji: "🍯",
-      emojiOpened: "🍯"
+      openText: "Dans la ruche, du miel doré et quelques pièces d'apicultrice.",
     },
     hidden_grove_chest: {
       label: "Coffre du bosquet caché",
-      openText: "🎁 Un bosquet vert que le feu a oublié. Un coffre dort entre deux tiges, rempli de lampions dorés et de pièces.",
-      emoji: "🎋",
-      emojiOpened: "🎋"
+      openText: "Un bosquet vert que le feu a oublié. Un coffre dort entre deux tiges, rempli de lampions dorés et de pièces.",
     },
     ash_urn: {
       label: "Urne de cendre",
-      openText: "🎁 Une urne ancienne, scellée avant l'incendie. Elle contient des pièces d'argent et une lettre d'amour.",
-      emoji: "⚱️",
-      emojiOpened: "⚱️"
+      openText: "Une urne ancienne, scellée avant l'incendie. Elle contient des pièces d'argent et une lettre d'amour.",
     },
     journal_page_bam: {
       label: "Page coincée dans une tige",
-      openText: "🎁 Une page roulée dans une tige creuse : « Il parle de son disciple comme d'un fantôme. Je suis le fantôme. »",
-      emoji: "📄",
-      emojiOpened: "📄"
+      openText: "Une page roulée dans une tige creuse : « Il parle de son disciple comme d'un fantôme. Je suis le fantôme. »",
     }
   },
   quests: [

@@ -41,7 +41,6 @@ export const MANIFEST2 = {
         id: "miller_gao",
         name: "Gao",
         title: "Meunier sans rivière",
-        emoji: "👨‍🌾",
         where: "hamlet-house:rizieres_h2_moulin",
         role: "donneur"
       },
@@ -49,7 +48,6 @@ export const MANIFEST2 = {
         id: "aunt_liu",
         name: "Tante Liu",
         title: "Gardienne des lucioles",
-        emoji: "👵",
         where: "hamlet-house:rizieres_h2_lucioles",
         role: "indice"
       },
@@ -57,7 +55,6 @@ export const MANIFEST2 = {
         id: "duck_fu",
         name: "Fu",
         title: "Éleveur de canards",
-        emoji: "🦆",
         where: "hamlet",
         role: "donneur"
       },
@@ -65,7 +62,6 @@ export const MANIFEST2 = {
         id: "kid_dandan",
         name: "Dandan",
         title: "Gamine curieuse",
-        emoji: "🧒",
         where: "hamlet",
         role: "ambiance"
       },
@@ -73,7 +69,6 @@ export const MANIFEST2 = {
         id: "pigeon_zhao",
         name: "Zhao",
         title: "Éleveur de pigeons voyageurs",
-        emoji: "🕊️",
         where: "hamlet",
         role: "donneur"
       },
@@ -81,7 +76,6 @@ export const MANIFEST2 = {
         id: "monk_kong",
         name: "Frère Kong",
         title: "Moine itinérant",
-        emoji: "🧘",
         where: "hamlet",
         role: "ambiance"
       },
@@ -89,7 +83,6 @@ export const MANIFEST2 = {
         id: "matchmaker_hong",
         name: "Dame Hong",
         title: "Marieuse du canton",
-        emoji: "💐",
         where: "place",
         role: "donneur"
       },
@@ -97,7 +90,6 @@ export const MANIFEST2 = {
         id: "lao_shuo_riz",
         name: "Lao Shuo",
         title: "Conteur itinérant",
-        emoji: "📜",
         where: "place",
         role: "indice"
       },
@@ -105,7 +97,6 @@ export const MANIFEST2 = {
         id: "crow_wing",
         name: "Aile-Noire",
         title: "Corbeau parlant",
-        emoji: "🐦‍⬛",
         where: "wild",
         role: "indice"
       },
@@ -113,7 +104,6 @@ export const MANIFEST2 = {
         id: "toad_chan",
         name: "Chan",
         title: "Crapaud sage",
-        emoji: "🐸",
         where: "wild",
         role: "indice"
       }
@@ -368,7 +358,6 @@ export const MANIFEST2 = {
         id: "sluicekeeper_rong",
         name: "Rong",
         title: "Éclusier du fleuve",
-        emoji: "🧑‍🔧",
         where: "hamlet-house:fleuve_h2_ecluse",
         role: "donneur"
       },
@@ -376,7 +365,6 @@ export const MANIFEST2 = {
         id: "net_mender_wei",
         name: "Dame Wei",
         title: "Raccommodeuse de filets",
-        emoji: "🧶",
         where: "hamlet-house:fleuve_h2_pecheur",
         role: "donneur"
       },
@@ -384,7 +372,6 @@ export const MANIFEST2 = {
         id: "goose_dagong",
         name: "Dagong",
         title: "Oie sauvage vigilante",
-        emoji: "🪿",
         where: "hamlet",
         role: "indice"
       },
@@ -392,7 +379,6 @@ export const MANIFEST2 = {
         id: "orphan_xiaoyu",
         name: "Xiaoyu",
         title: "Petit orphelin des quais",
-        emoji: "🧒",
         where: "hamlet",
         role: "ambiance"
       },
@@ -400,7 +386,6 @@ export const MANIFEST2 = {
         id: "ferry_pei",
         name: "Pei",
         title: "Apprenti passeur",
-        emoji: "🛶",
         where: "place",
         role: "ambiance"
       },
@@ -408,7 +393,6 @@ export const MANIFEST2 = {
         id: "fortune_sha",
         name: "Dame Sha",
         title: "Diseuse de bonne aventure",
-        emoji: "🔮",
         where: "place",
         role: "ambiance"
       },
@@ -416,7 +400,6 @@ export const MANIFEST2 = {
         id: "poet_bo",
         name: "Bo",
         title: "Poète ivre",
-        emoji: "🍶",
         where: "hamlet",
         role: "donneur"
       },
@@ -424,7 +407,6 @@ export const MANIFEST2 = {
         id: "tea_zhuang",
         name: "Zhuang",
         title: "Marchand de thé ambulant",
-        emoji: "🍵",
         where: "place",
         role: "donneur"
       },
@@ -432,7 +414,6 @@ export const MANIFEST2 = {
         id: "mud_imp_pit",
         name: "Pit",
         title: "Diablotin de vase",
-        emoji: "👺",
         where: "wild",
         role: "ambiance"
       },
@@ -440,7 +421,6 @@ export const MANIFEST2 = {
         id: "captain_lo",
         name: "Capitaine Lo",
         title: "Fantôme d'un capitaine de barge",
-        emoji: "👻",
         where: "wild",
         role: "donneur"
       }
@@ -708,7 +688,6 @@ export const MANIFEST2 = {
         id: "lanternier_fa",
         name: "Fa",
         title: "Lanternier",
-        emoji: "🏮",
         where: "hamlet-house:bambous_h2_lanterne",
         role: "donneur"
       },
@@ -716,7 +695,6 @@ export const MANIFEST2 = {
         id: "carver_ling",
         name: "Ling",
         title: "Sculptrice de bambou",
-        emoji: "🪚",
         where: "hamlet-house:bambous_h2_sculpteur",
         role: "donneur"
       },
@@ -724,7 +702,6 @@ export const MANIFEST2 = {
         id: "panda_baobao",
         name: "Baobao",
         title: "Bébé panda",
-        emoji: "🐼",
         where: "hamlet",
         role: "donneur"
       },
@@ -732,7 +709,6 @@ export const MANIFEST2 = {
         id: "beekeeper_ju",
         name: "Ju",
         title: "Apicultrice",
-        emoji: "🐝",
         where: "hamlet",
         role: "indice"
       },
@@ -740,7 +716,6 @@ export const MANIFEST2 = {
         id: "archer_huo",
         name: "Huo",
         title: "Vieil archer retraité",
-        emoji: "🏹",
         where: "hamlet",
         role: "indice"
       },
@@ -748,7 +723,6 @@ export const MANIFEST2 = {
         id: "young_monk_zhi",
         name: "Zhi",
         title: "Jeune moine novice",
-        emoji: "🧑‍🦲",
         where: "place",
         role: "ambiance"
       },
@@ -756,7 +730,6 @@ export const MANIFEST2 = {
         id: "scholar_dong",
         name: "Dong",
         title: "Lettré vagabond",
-        emoji: "🎓",
         where: "place",
         role: "ambiance"
       },
@@ -764,7 +737,6 @@ export const MANIFEST2 = {
         id: "stem_sprite",
         name: "Tigelle",
         title: "Esprit de tige",
-        emoji: "🎋",
         where: "wild",
         role: "ambiance"
       },
@@ -772,7 +744,6 @@ export const MANIFEST2 = {
         id: "snake_qing",
         name: "Dame Qing",
         title: "Serpente blanche lettrée",
-        emoji: "🐍",
         where: "wild",
         role: "donneur"
       },
@@ -780,7 +751,6 @@ export const MANIFEST2 = {
         id: "cricket_boy_hao",
         name: "Hao",
         title: "Petit éleveur de grillons",
-        emoji: "🦗",
         where: "hamlet",
         role: "ambiance"
       }
@@ -1039,7 +1009,6 @@ export const MANIFEST2 = {
         id: "well_digger_omar",
         name: "Omar",
         title: "Puisatier",
-        emoji: "⛏️",
         where: "hamlet-house:gobi_h2_puits",
         role: "donneur"
       },
@@ -1047,7 +1016,6 @@ export const MANIFEST2 = {
         id: "rug_seller_zeynep",
         name: "Zeynep",
         title: "Marchande de tapis",
-        emoji: "🧶",
         where: "hamlet-house:gobi_h2_tapis",
         role: "donneur"
       },
@@ -1055,7 +1023,6 @@ export const MANIFEST2 = {
         id: "date_farmer_ismail",
         name: "Ismail",
         title: "Cultivateur de dattes",
-        emoji: "🌴",
         where: "hamlet",
         role: "ambiance"
       },
@@ -1063,7 +1030,6 @@ export const MANIFEST2 = {
         id: "girl_noor",
         name: "Noor",
         title: "Fillette aux yeux de sable",
-        emoji: "👧",
         where: "hamlet",
         role: "ambiance"
       },
@@ -1071,7 +1037,6 @@ export const MANIFEST2 = {
         id: "caravan_cook_lu",
         name: "Lu",
         title: "Cuisinier de caravane",
-        emoji: "🍲",
         where: "place",
         role: "donneur"
       },
@@ -1079,7 +1044,6 @@ export const MANIFEST2 = {
         id: "falconer_arslan",
         name: "Arslan",
         title: "Fauconnier",
-        emoji: "🦅",
         where: "place",
         role: "ambiance"
       },
@@ -1087,7 +1051,6 @@ export const MANIFEST2 = {
         id: "oracle_ahmad",
         name: "Ahmad",
         title: "Devin de la source",
-        emoji: "🧙",
         where: "hamlet",
         role: "indice"
       },
@@ -1095,7 +1058,6 @@ export const MANIFEST2 = {
         id: "lost_pilgrim_ren",
         name: "Ren",
         title: "Pèlerin égaré",
-        emoji: "🧳",
         where: "wild",
         role: "donneur"
       },
@@ -1103,7 +1065,6 @@ export const MANIFEST2 = {
         id: "fennec_lili",
         name: "Lili",
         title: "Fennec bavard",
-        emoji: "🦊",
         where: "wild",
         role: "ambiance"
       },
@@ -1111,7 +1072,6 @@ export const MANIFEST2 = {
         id: "camel_foreman_tang",
         name: "Tang",
         title: "Chef d'étape de la caravane",
-        emoji: "🧔",
         where: "place",
         role: "ambiance"
       }
@@ -1370,7 +1330,6 @@ export const MANIFEST2 = {
         id: "pass_guard_kuang",
         name: "Kuang",
         title: "Garde du col",
-        emoji: "💂",
         where: "hamlet-house:tonnerre_h2_garde",
         role: "donneur"
       },
@@ -1378,7 +1337,6 @@ export const MANIFEST2 = {
         id: "glassblower_ouyang",
         name: "Ouyang",
         title: "Souffleur de verre",
-        emoji: "🫧",
         where: "hamlet-house:tonnerre_h2_verre",
         role: "donneur"
       },
@@ -1386,7 +1344,6 @@ export const MANIFEST2 = {
         id: "goat_yang",
         name: "Yang",
         title: "Chèvre de montagne bavarde",
-        emoji: "🐐",
         where: "hamlet",
         role: "ambiance"
       },
@@ -1394,7 +1351,6 @@ export const MANIFEST2 = {
         id: "climber_dai",
         name: "Dai",
         title: "Alpiniste solitaire",
-        emoji: "🧗",
         where: "hamlet",
         role: "donneur"
       },
@@ -1402,7 +1358,6 @@ export const MANIFEST2 = {
         id: "fairy_yun",
         name: "Yunxi",
         title: "Fée des nuages",
-        emoji: "☁️",
         where: "wild",
         role: "indice"
       },
@@ -1410,7 +1365,6 @@ export const MANIFEST2 = {
         id: "bard_xiang",
         name: "Xiang",
         title: "Barde du vent",
-        emoji: "🪕",
         where: "place",
         role: "ambiance"
       },
@@ -1418,7 +1372,6 @@ export const MANIFEST2 = {
         id: "rain_pu",
         name: "Pu",
         title: "Marchand de pluie",
-        emoji: "🌧️",
         where: "place",
         role: "donneur"
       },
@@ -1426,7 +1379,6 @@ export const MANIFEST2 = {
         id: "keeper_ao",
         name: "Ao",
         title: "Gardien des cairns",
-        emoji: "🪨",
         where: "hamlet",
         role: "donneur"
       },
@@ -1434,7 +1386,6 @@ export const MANIFEST2 = {
         id: "porter_san",
         name: "San",
         title: "Porteur de montagne",
-        emoji: "🎒",
         where: "place",
         role: "ambiance"
       },
@@ -1442,7 +1393,6 @@ export const MANIFEST2 = {
         id: "pup_tuan",
         name: "Tuantuan",
         title: "Chiot d'orage",
-        emoji: "🐕",
         where: "wild",
         role: "ambiance"
       }
@@ -1697,7 +1647,6 @@ export const MANIFEST2 = {
         id: "alchemist_dan",
         name: "Dan",
         title: "Alchimiste du cinabre",
-        emoji: "⚗️",
         where: "hamlet-house:volcan_h2_alchimiste",
         role: "donneur"
       },
@@ -1705,7 +1654,6 @@ export const MANIFEST2 = {
         id: "stoker_ge",
         name: "Ge",
         title: "Chauffeur des bains",
-        emoji: "🔥",
         where: "hamlet-house:volcan_h2_chauffeur",
         role: "donneur"
       },
@@ -1713,7 +1661,6 @@ export const MANIFEST2 = {
         id: "geologist_zhou",
         name: "Zhou",
         title: "Géologue des gorges",
-        emoji: "🪨",
         where: "place",
         role: "donneur"
       },
@@ -1721,7 +1668,6 @@ export const MANIFEST2 = {
         id: "widow_cai",
         name: "Dame Cai",
         title: "Veuve au grand cœur",
-        emoji: "👩",
         where: "place",
         role: "ambiance"
       },
@@ -1729,7 +1675,6 @@ export const MANIFEST2 = {
         id: "bath_mu",
         name: "Mu",
         title: "Gardienne des bains",
-        emoji: "🛁",
         where: "hamlet",
         role: "donneur"
       },
@@ -1737,7 +1682,6 @@ export const MANIFEST2 = {
         id: "dragonet_xiaohong",
         name: "Xiaohong",
         title: "Petit dragon de braise",
-        emoji: "🐲",
         where: "hamlet",
         role: "donneur"
       },
@@ -1745,7 +1689,6 @@ export const MANIFEST2 = {
         id: "courier_tong",
         name: "Tong",
         title: "Messager des gorges",
-        emoji: "📮",
         where: "place",
         role: "ambiance"
       },
@@ -1753,7 +1696,6 @@ export const MANIFEST2 = {
         id: "lava_fish_bi",
         name: "Bi",
         title: "Poisson de lave",
-        emoji: "🐟",
         where: "wild",
         role: "ambiance"
       },
@@ -1761,7 +1703,6 @@ export const MANIFEST2 = {
         id: "ghost_miner_shu",
         name: "Vieux Shu",
         title: "Fantôme de mineur",
-        emoji: "👻",
         where: "wild",
         role: "indice"
       },
@@ -1769,7 +1710,6 @@ export const MANIFEST2 = {
         id: "bath_old_wang",
         name: "Grand-père Wang",
         title: "Vieux baigneur du hameau",
-        emoji: "🧓",
         where: "hamlet",
         role: "ambiance"
       }
@@ -2024,7 +1964,6 @@ export const MANIFEST2 = {
         id: "felt_maker_uyun",
         name: "Uyun",
         title: "Feutrière",
-        emoji: "🧶",
         where: "hamlet-house:fauves_h2_feutre",
         role: "donneur"
       },
@@ -2032,7 +1971,6 @@ export const MANIFEST2 = {
         id: "farrier_batu",
         name: "Batu",
         title: "Maréchal-ferrant",
-        emoji: "🐴",
         where: "hamlet-house:fauves_h2_marechal",
         role: "donneur"
       },
@@ -2040,7 +1978,6 @@ export const MANIFEST2 = {
         id: "eagle_boy_temur",
         name: "Temur",
         title: "Petit dresseur d'aigle",
-        emoji: "🦅",
         where: "hamlet",
         role: "donneur"
       },
@@ -2048,7 +1985,6 @@ export const MANIFEST2 = {
         id: "grandma_altan",
         name: "Grand-mère Altan",
         title: "Chanteuse des berceuses",
-        emoji: "🧓",
         where: "hamlet",
         role: "donneur"
       },
@@ -2056,7 +1992,6 @@ export const MANIFEST2 = {
         id: "mare_chagan",
         name: "Chagan",
         title: "Jument blanche bavarde",
-        emoji: "🐎",
         where: "hamlet",
         role: "ambiance"
       },
@@ -2064,7 +1999,6 @@ export const MANIFEST2 = {
         id: "bandit_gerel",
         name: "Gerel",
         title: "Ancien bandit repenti",
-        emoji: "🥷",
         where: "place",
         role: "donneur"
       },
@@ -2072,7 +2006,6 @@ export const MANIFEST2 = {
         id: "drover_boldo",
         name: "Boldo",
         title: "Conducteur de troupeaux",
-        emoji: "🐂",
         where: "place",
         role: "ambiance"
       },
@@ -2080,7 +2013,6 @@ export const MANIFEST2 = {
         id: "traveler_hui",
         name: "Hui",
         title: "Voyageur marchand d'épices",
-        emoji: "🌶️",
         where: "place",
         role: "ambiance"
       },
@@ -2088,7 +2020,6 @@ export const MANIFEST2 = {
         id: "wolf_pup_baatar",
         name: "Baatar",
         title: "Louveteau de braise",
-        emoji: "🐺",
         where: "wild",
         role: "ambiance"
       },
@@ -2096,7 +2027,6 @@ export const MANIFEST2 = {
         id: "ghost_rider_tolui",
         name: "Tolui",
         title: "Fantôme d'un cavalier",
-        emoji: "👻",
         where: "wild",
         role: "donneur"
       }
@@ -2360,7 +2290,6 @@ export const MANIFEST2 = {
         id: "oyster_coque",
         name: "Dame Coque",
         title: "Écaillère",
-        emoji: "🦪",
         where: "hamlet-house:mer_h2_ecaillere",
         role: "donneur"
       },
@@ -2368,7 +2297,6 @@ export const MANIFEST2 = {
         id: "shipwright_bing",
         name: "Bing",
         title: "Calfat et charpentier",
-        emoji: "⚒️",
         where: "hamlet-house:mer_h2_chantier",
         role: "donneur"
       },
@@ -2376,7 +2304,6 @@ export const MANIFEST2 = {
         id: "gull_pip",
         name: "Pip",
         title: "Mouette bavarde",
-        emoji: "🕊️",
         where: "hamlet",
         role: "ambiance"
       },
@@ -2384,7 +2311,6 @@ export const MANIFEST2 = {
         id: "kid_ahu",
         name: "Ahu",
         title: "Petit ramasseur de coquillages",
-        emoji: "🧒",
         where: "hamlet",
         role: "donneur"
       },
@@ -2392,7 +2318,6 @@ export const MANIFEST2 = {
         id: "salt_jun",
         name: "Jun",
         title: "Saunier",
-        emoji: "🧂",
         where: "hamlet",
         role: "donneur"
       },
@@ -2400,7 +2325,6 @@ export const MANIFEST2 = {
         id: "sailor_tai",
         name: "Vieux Tai",
         title: "Marin retraité",
-        emoji: "⛵",
         where: "place",
         role: "ambiance"
       },
@@ -2408,7 +2332,6 @@ export const MANIFEST2 = {
         id: "priestess_mazu",
         name: "Dame Mo",
         title: "Prêtresse de Mazu",
-        emoji: "🛕",
         where: "place",
         role: "donneur"
       },
@@ -2416,7 +2339,6 @@ export const MANIFEST2 = {
         id: "singer_hailing",
         name: "Hailing",
         title: "Chanteuse des marins",
-        emoji: "🎤",
         where: "place",
         role: "donneur"
       },
@@ -2424,7 +2346,6 @@ export const MANIFEST2 = {
         id: "jelly_shui",
         name: "Shui",
         title: "Méduse philosophe",
-        emoji: "🪼",
         where: "wild",
         role: "ambiance"
       },
@@ -2432,7 +2353,6 @@ export const MANIFEST2 = {
         id: "octo_ba",
         name: "Ba",
         title: "Poulpe cuisinier",
-        emoji: "🐙",
         where: "wild",
         role: "ambiance"
       }
@@ -2684,7 +2604,6 @@ export const MANIFEST2 = {
         id: "crane_elder_hegu",
         name: "Hegu",
         title: "Doyenne des grues messagères",
-        emoji: "🦢",
         where: "hamlet-house:fusang_h2_grues",
         role: "donneur"
       },
@@ -2692,7 +2611,6 @@ export const MANIFEST2 = {
         id: "incense_lanxiang",
         name: "Lanxiang",
         title: "Faiseuse d'encens",
-        emoji: "🪔",
         where: "hamlet-house:fusang_h2_encens",
         role: "donneur"
       },
@@ -2700,7 +2618,6 @@ export const MANIFEST2 = {
         id: "weaver_zhinu",
         name: "Zhinü",
         title: "Tisseuse des nuages",
-        emoji: "👸",
         where: "hamlet",
         role: "donneur"
       },
@@ -2708,7 +2625,6 @@ export const MANIFEST2 = {
         id: "oxherd_niulang",
         name: "Niulang",
         title: "Bouvier de la rive",
-        emoji: "🐂",
         where: "place",
         role: "donneur"
       },
@@ -2716,7 +2632,6 @@ export const MANIFEST2 = {
         id: "pilgrim_wuya",
         name: "Wuya",
         title: "Pèlerin sans destination",
-        emoji: "🧳",
         where: "hamlet",
         role: "donneur"
       },
@@ -2724,7 +2639,6 @@ export const MANIFEST2 = {
         id: "gatekeeper_men",
         name: "Men",
         title: "Portier du sceau",
-        emoji: "🚪",
         where: "place",
         role: "donneur"
       },
@@ -2732,7 +2646,6 @@ export const MANIFEST2 = {
         id: "star_child_xing",
         name: "Xingxing",
         title: "Enfant d'étoile",
-        emoji: "🌟",
         where: "place",
         role: "ambiance"
       },
@@ -2740,7 +2653,6 @@ export const MANIFEST2 = {
         id: "monkey_ji",
         name: "Ji",
         title: "Singe voleur de pêches",
-        emoji: "🐵",
         where: "wild",
         role: "ambiance"
       },
@@ -2748,7 +2660,6 @@ export const MANIFEST2 = {
         id: "whale_kun",
         name: "Kun",
         title: "Poisson géant des nuages",
-        emoji: "🐋",
         where: "wild",
         role: "indice"
       },
@@ -2756,7 +2667,6 @@ export const MANIFEST2 = {
         id: "paper_dragon_long",
         name: "Petit Long",
         title: "Dragon de papier",
-        emoji: "🐉",
         where: "hamlet",
         role: "ambiance"
       }
@@ -2982,7 +2892,6 @@ export const MANIFEST2 = {
         id: "moon_cook_gui",
         name: "Gui",
         title: "Cuisinier de gâteaux de lune",
-        emoji: "🥮",
         where: "place",
         role: "donneur"
       },
@@ -2990,7 +2899,6 @@ export const MANIFEST2 = {
         id: "moon_rabbit_yutu",
         name: "Yutu",
         title: "Lapin de jade",
-        emoji: "🐰",
         where: "place",
         role: "ambiance"
       },
@@ -2998,7 +2906,6 @@ export const MANIFEST2 = {
         id: "moon_ferryman_yin",
         name: "Vieux Shen",
         title: "Passeur d'argent",
-        emoji: "⛵",
         where: "place",
         role: "indice"
       },
@@ -3006,7 +2913,6 @@ export const MANIFEST2 = {
         id: "moon_child_lan",
         name: "Lan",
         title: "Petite veilleuse",
-        emoji: "🧒",
         where: "place",
         role: "ambiance"
       },
@@ -3014,7 +2920,6 @@ export const MANIFEST2 = {
         id: "moon_crow_wu",
         name: "Corbeau d'ombre",
         title: "Messager d'ombre",
-        emoji: "🐦‍⬛",
         where: "wild",
         role: "indice"
       }

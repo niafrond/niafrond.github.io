@@ -77,7 +77,7 @@ let currentDifficulty = aiDifficulty.normal;
 export function setAIDifficulty(difficulty) {
     if (aiDifficulty[difficulty]) {
         currentDifficulty = aiDifficulty[difficulty];
-        console.log(`🤖 Difficulté de l'IA définie sur: ${currentDifficulty.name}`);
+        console.log(`Difficulté de l'IA définie sur: ${currentDifficulty.name}`);
     }
 }
 
@@ -101,8 +101,8 @@ export function setAIDifficultyByLevel(enemyLevel, playerLevel, enemyProfile = n
             thinkingTimeMin: 450,
             thinkingTimeMax: 850
         };
-        console.log(`🤖 Difficulté de l'IA définie sur: ${currentDifficulty.name}`);
-        console.log(`🎯 Ennemi affaibli détecté: IA volontairement très stupide (niveau ${enemyLevel}).`);
+        console.log(`Difficulté de l'IA définie sur: ${currentDifficulty.name}`);
+        console.log(`Ennemi affaibli détecté: IA volontairement très stupide (niveau ${enemyLevel}).`);
         return 'easy';
     }
 
@@ -120,8 +120,8 @@ export function setAIDifficultyByLevel(enemyLevel, playerLevel, enemyProfile = n
             thinkingTimeMin: 180,
             thinkingTimeMax: 320
         };
-        console.log(`🤖 Difficulté de l'IA définie sur: ${currentDifficulty.name}`);
-        console.log(`🎯 Ennemi hors niveau détecté: IA très intelligente (niveau ${enemyLevel}).`);
+        console.log(`Difficulté de l'IA définie sur: ${currentDifficulty.name}`);
+        console.log(`Ennemi hors niveau détecté: IA très intelligente (niveau ${enemyLevel}).`);
         return 'expert';
     }
 
@@ -151,7 +151,7 @@ export function setAIDifficultyByLevel(enemyLevel, playerLevel, enemyProfile = n
     }
     
     setAIDifficulty(baseDifficulty);
-    console.log(`🎯 Niveau ennemi: ${enemyLevel}, Niveau joueur: ${playerLevel}, Difficulté IA: ${baseDifficulty}`);
+    console.log(`Niveau ennemi: ${enemyLevel}, Niveau joueur: ${playerLevel}, Difficulté IA: ${baseDifficulty}`);
     
     return baseDifficulty;
 }
@@ -548,7 +548,7 @@ export function getAIStats() {
 
 // Log détaillé de la décision (pour debug)
 export function logDecision(decision) {
-    console.log(`🤖 IA Décision:`, {
+    console.log(`IA Décision:`, {
         action: decision.action,
         reason: decision.reason,
         score: decision.data.score,

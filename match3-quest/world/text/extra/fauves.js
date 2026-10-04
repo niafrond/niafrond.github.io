@@ -25,7 +25,6 @@ export default {
     felt_maker_uyun: {
       name: "Uyun",
       title: "Feutrière",
-      emoji: "🧶",
       idle: [
         "Mon feutre garde le chaud, l'humide et les secrets. Surtout les secrets.",
         "On dit que la laine a une mémoire. La mienne retient tout ce qu'on oublie."
@@ -42,7 +41,6 @@ export default {
     farrier_batu: {
       name: "Batu",
       title: "Maréchal-ferrant",
-      emoji: "🐴",
       idle: [
         "Un cheval bien ferré va loin. Un cheval mal ferré va chez moi.",
         "Mon marteau chante deux notes. L'une pour le fer, l'autre pour le cheval."
@@ -59,7 +57,6 @@ export default {
     eagle_boy_temur: {
       name: "Temur",
       title: "Petit dresseur d'aigle",
-      emoji: "🦅",
       idle: [
         "Mon aigle s'appelle Ciel. Il ne me répond jamais, mais il revient toujours.",
         "Quand je serai grand, je chasserai le loup avec lui. Ou le lièvre. Ou le déjeuner."
@@ -76,7 +73,6 @@ export default {
     grandma_altan: {
       name: "Grand-mère Altan",
       title: "Chanteuse des berceuses",
-      emoji: "🧓",
       idle: [
         "Je chante les chansons de ma mère, qui chantait celles de la sienne. Aucune ne parle de héros, toutes parlent de lune.",
         "Une berceuse, c'est un souffle qu'on confie à un enfant. Il le garde toute sa vie."
@@ -93,7 +89,6 @@ export default {
     mare_chagan: {
       name: "Chagan",
       title: "Jument blanche bavarde",
-      emoji: "🐎",
       idle: [
         "Hennissement poli. Je suis la doyenne des juments du camp, donc la plus sage.",
         "Les humains pensent que je les porte. En réalité, je les accompagne."
@@ -110,7 +105,6 @@ export default {
     bandit_gerel: {
       name: "Gerel",
       title: "Ancien bandit repenti",
-      emoji: "🥷",
       idle: [
         "J'étais bandit. Je suis devenu berger. Les moutons, eux, ne me demandent jamais de comptes.",
         "On ne guérit pas de la honte. On la porte, comme un bon manteau."
@@ -127,7 +121,6 @@ export default {
     drover_boldo: {
       name: "Boldo",
       title: "Conducteur de troupeaux",
-      emoji: "🐂",
       idle: [
         "Je conduis mille bêtes sur mille lis. Mon chien me conduit, lui, mais il ne le dira à personne.",
         "Les troupeaux ont peur du feu. Moi, du silence."
@@ -144,7 +137,6 @@ export default {
     traveler_hui: {
       name: "Hui",
       title: "Voyageur marchand d'épices",
-      emoji: "🌶️",
       idle: [
         "Poivre, cannelle, safran ! Tout ce qui fait pleurer de joie les marmites.",
         "J'ai croisé Hua sur la route. Elle m'a vendu mes propres épices. Je n'ai rien compris."
@@ -161,7 +153,6 @@ export default {
     wolf_pup_baatar: {
       name: "Baatar",
       title: "Louveteau de braise",
-      emoji: "🐺",
       idle: [
         "Awou ! Je suis un loup féroce ! (Il glousse.)",
         "Ma mère m'a dit de ne pas parler aux archers. Mais vous avez l'air gentil."
@@ -178,7 +169,6 @@ export default {
     ghost_rider_tolui: {
       name: "Tolui",
       title: "Fantôme d'un cavalier",
-      emoji: "👻",
       idle: [
         "Je cours dans les herbes. Je ne sais plus après quoi.",
         "Mon cheval est mort avant moi. Il m'attend quelque part, plus loin."
@@ -196,39 +186,27 @@ export default {
   chests: {
     felt_chest: {
       label: "Coffre de feutre",
-      openText: "🎁 Sous des couches de feutre, un petit sac de pièces.",
-      emoji: "🧶",
-      emojiOpened: "🧶"
+      openText: "Sous des couches de feutre, un petit sac de pièces.",
     },
     farrier_box: {
       label: "Boîte à fers",
-      openText: "🎁 Dans la boîte à fers, des pièces d'argent enfoncées dans la limaille.",
-      emoji: "🔩",
-      emojiOpened: "🔩"
+      openText: "Dans la boîte à fers, des pièces d'argent enfoncées dans la limaille.",
     },
     eagle_nest: {
       label: "Perchoir de l'aigle",
-      openText: "🎁 Dans le nid de branches, une bague d'argent et quelques pièces.",
-      emoji: "🪹",
-      emojiOpened: "🪹"
+      openText: "Dans le nid de branches, une bague d'argent et quelques pièces.",
     },
     burial_mound: {
       label: "Tumulus du cavalier",
-      openText: "🎁 Un tumulus herbeux qui garde l'épée d'un cavalier, des bijoux et de la monnaie ancienne.",
-      emoji: "⛰️",
-      emojiOpened: "⛰️"
+      openText: "Un tumulus herbeux qui garde l'épée d'un cavalier, des bijoux et de la monnaie ancienne.",
     },
     pack_den: {
       label: "Repaire de la meute",
-      openText: "🎁 Dans le repaire, des os, des pièces et un joli bracelet que personne ne réclame.",
-      emoji: "🐺",
-      emojiOpened: "🐺"
+      openText: "Dans le repaire, des os, des pièces et un joli bracelet que personne ne réclame.",
     },
     journal_page_fau: {
       label: "Page accrochée à une herbe",
-      openText: "🎁 Une page prise dans les herbes : « Je les ai suivis jusqu'à la plaine. Il tirait comme un dieu. Je tirerai mieux. »",
-      emoji: "📄",
-      emojiOpened: "📄"
+      openText: "Une page prise dans les herbes : « Je les ai suivis jusqu'à la plaine. Il tirait comme un dieu. Je tirerai mieux. »",
     }
   },
   quests: [

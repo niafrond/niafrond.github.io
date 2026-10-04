@@ -25,7 +25,6 @@ export default {
     crane_elder_hegu: {
       name: "Hegu",
       title: "Doyenne des grues messagères",
-      emoji: "🦢",
       idle: [
         "Nous portons les lettres du ciel. Certaines sont heureuses, la plupart sont des factures.",
         "Une grue ne dit jamais ce qu'elle porte. Mais elle le sait."
@@ -42,7 +41,6 @@ export default {
     incense_lanxiang: {
       name: "Lanxiang",
       title: "Faiseuse d'encens",
-      emoji: "🪔",
       idle: [
         "L'encens est une prière qui monte. Je fabrique les plus longues.",
         "Chaque parfum a son histoire. Le santal, la patience. Le jasmin, le pardon."
@@ -59,7 +57,6 @@ export default {
     weaver_zhinu: {
       name: "Zhinü",
       title: "Tisseuse des nuages",
-      emoji: "👸",
       idle: [
         "Je tisse les nuages du soir. Chaque nuit, je regarde le ciel : mon bien-aimé est de l'autre côté du fleuve.",
         "Un fil d'or, un fil d'argent. La séparation est une trame comme une autre."
@@ -76,7 +73,6 @@ export default {
     oxherd_niulang: {
       name: "Niulang",
       title: "Bouvier de la rive",
-      emoji: "🐂",
       idle: [
         "Mon bœuf céleste est mon seul compagnon. Il me parle de Zhinü, et d'herbe.",
         "Je vis de l'autre côté du fleuve d'argent. Une fois l'an, un pont de pies nous réunit."
@@ -93,7 +89,6 @@ export default {
     pilgrim_wuya: {
       name: "Wuya",
       title: "Pèlerin sans destination",
-      emoji: "🧳",
       idle: [
         "Je marche depuis toujours. Je ne cherche rien. C'est la meilleure façon de trouver.",
         "Un jour, je m'assiérai. Pas aujourd'hui. Pas avant d'avoir tout vu."
@@ -110,7 +105,6 @@ export default {
     gatekeeper_men: {
       name: "Men",
       title: "Portier du sceau",
-      emoji: "🚪",
       idle: [
         "Je garde la porte entre le village et la cime. Elle est fermée. Je suis très sérieux.",
         "On ne passe pas sans mot de passe. Le mot de passe est « s'il vous plaît »."
@@ -127,7 +121,6 @@ export default {
     star_child_xing: {
       name: "Xingxing",
       title: "Enfant d'étoile",
-      emoji: "🌟",
       idle: [
         "Je suis né d'une étoile filante. Mes parents sont partis. Je les attends.",
         "Les étoiles me parlent. Elles disent : « Dors, petit, et rêve de nous. »"
@@ -144,7 +137,6 @@ export default {
     monkey_ji: {
       name: "Ji",
       title: "Singe voleur de pêches",
-      emoji: "🐵",
       idle: [
         "Ouistiti ! Je ne vole pas les pêches, je les libère de leur arbre.",
         "Je suis bavard. Je suis rapide. Je suis très, très innocent."
@@ -161,7 +153,6 @@ export default {
     whale_kun: {
       name: "Kun",
       title: "Poisson géant des nuages",
-      emoji: "🐋",
       idle: [
         "Je suis Kun, le plus grand des poissons. Je nage dans les nuages, par fainéantise.",
         "Un jour, je deviendrai oiseau. Pas aujourd'hui, il y a trop de nuages."
@@ -178,7 +169,6 @@ export default {
     paper_dragon_long: {
       name: "Petit Long",
       title: "Dragon de papier",
-      emoji: "🐉",
       idle: [
         "Je suis un dragon de papier. Ne soufflez pas trop fort, je me froisse.",
         "Je rêve d'être un vrai dragon. En attendant, je fais une très belle décoration."
@@ -196,39 +186,27 @@ export default {
   chests: {
     crane_pavilion_box: {
       label: "Coffre à parchemins",
-      openText: "🎁 Sous les parchemins du ciel, une bourse d'argent et une plume dorée.",
-      emoji: "📜",
-      emojiOpened: "📜"
+      openText: "Sous les parchemins du ciel, une bourse d'argent et une plume dorée.",
     },
     incense_chest: {
       label: "Coffre à encens",
-      openText: "🎁 Dans le coffret de cèdre, de l'encens précieux et des pièces d'or fin.",
-      emoji: "🪔",
-      emojiOpened: "🪔"
+      openText: "Dans le coffret de cèdre, de l'encens précieux et des pièces d'or fin.",
     },
     loom_chest: {
       label: "Coffre du métier à tisser",
-      openText: "🎁 Dans le coffre du métier, des fils d'or et quelques pièces.",
-      emoji: "🧵",
-      emojiOpened: "🧵"
+      openText: "Dans le coffre du métier, des fils d'or et quelques pièces.",
     },
     peach_stash: {
       label: "Cache de pêches",
-      openText: "🎁 Dans le creux d'une racine, une cache de pêches séchées et de pièces.",
-      emoji: "🍑",
-      emojiOpened: "🍑"
+      openText: "Dans le creux d'une racine, une cache de pêches séchées et de pièces.",
     },
     kun_scale_chest: {
       label: "Coffre aux écailles de Kun",
-      openText: "🎁 Une écaille géante recouvre un coffre qui contient des trésors célestes.",
-      emoji: "🐋",
-      emojiOpened: "🐋"
+      openText: "Une écaille géante recouvre un coffre qui contient des trésors célestes.",
     },
     journal_page_fus: {
       label: "Page accrochée à une branche",
-      openText: "🎁 Une page accrochée à une branche dorée : « Je sais où est la boîte. Je saurai la prendre. Il me remerciera plus tard. »",
-      emoji: "📄",
-      emojiOpened: "📄"
+      openText: "Une page accrochée à une branche dorée : « Je sais où est la boîte. Je saurai la prendre. Il me remerciera plus tard. »",
     }
   },
   quests: [

@@ -39,11 +39,11 @@ export default {
             { id: 'camel_foreman_tang', at: '5' }
         ],
         chests: [
-            { id: 'caravan_stash', at: '9', gold: 60, label: 'Cachette de caravanier', emoji: '💰', openText: '🎁 Une bourse de cuir enterrée dans le sable : le péage d\'un caravanier prudent.' },
-            { id: 'gobi_garden_a', at: 'j', gold: 75, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'gobi_garden_b', at: 'k', gold: 75, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
-            { id: 'gobi_market_a', at: 'm', gold: 150, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
-            { id: 'gobi_market_b', at: 'n', gold: 150, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+            { id: 'caravan_stash', at: '9', gold: 60, label: 'Cachette de caravanier', openText: 'Une bourse de cuir enterrée dans le sable : le péage d\'un caravanier prudent.' },
+            { id: 'gobi_garden_a', at: 'j', gold: 75, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'gobi_garden_b', at: 'k', gold: 75, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'gobi_market_a', at: 'm', gold: 150, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'gobi_market_b', at: 'n', gold: 150, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]
     },
 
@@ -102,14 +102,14 @@ export default {
             { id: 'bandit_stash', at: 'm', gold: 180 }
         ],
         enemies: [
-            { id: 'gobi_dune_warlord', at: '1', templateId: 'orc_warmaster', emoji: '🏴', name: 'Chef de dune, Bras-de-Sable', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Chef de dune, Bras-de-Sable', level: 5 } },
-            { id: 'gobi_golem_a', at: '2', templateId: 'sand_colossus', emoji: '🏜️', name: 'Golem des dunes', kind: 'sentinel', offset: 0, permanent: true, group: 'dune_golems' },
-            { id: 'gobi_golem_b', at: '3', templateId: 'sand_colossus', emoji: '🏜️', name: 'Golem des dunes', kind: 'sentinel', offset: 0, permanent: true, group: 'dune_golems' },
-            { id: 'gobi_w_bandit', at: '4', templateId: 'iron_gladiator', emoji: '🗡️', name: 'Brigand des dunes', kind: 'patrol', patrol: ['4', '5'], offset: 0 },
-            { id: 'gobi_w_scorpion', at: '6', templateId: 'shadow_assassin', emoji: '🦂', name: 'Scorpion de sable', kind: 'patrol', patrol: ['6', '7'], offset: -1 },
-            { id: 'gobi_camel_thief', at: 'n', templateId: 'shadow_assassin', emoji: '🐫', name: 'Voleur de chameaux', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'gobi_lost_a', at: 'o', templateId: 'bone_reaver', emoji: '💀', name: 'Caravanier squelette', kind: 'sentinel', offset: 0, permanent: true, group: 'lost_caravan' },
-            { id: 'gobi_lost_b', at: 'p', templateId: 'bone_reaver', emoji: '💀', name: 'Caravanier squelette', kind: 'sentinel', offset: 0, permanent: true, group: 'lost_caravan' }
+            { id: 'gobi_dune_warlord', at: '1', templateId: 'orc_warmaster', name: 'Chef de dune, Bras-de-Sable', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Chef de dune, Bras-de-Sable', level: 5 } },
+            { id: 'gobi_golem_a', at: '2', templateId: 'sand_colossus', name: 'Golem des dunes', kind: 'sentinel', offset: 0, permanent: true, group: 'dune_golems' },
+            { id: 'gobi_golem_b', at: '3', templateId: 'sand_colossus', name: 'Golem des dunes', kind: 'sentinel', offset: 0, permanent: true, group: 'dune_golems' },
+            { id: 'gobi_w_bandit', at: '4', templateId: 'iron_gladiator', name: 'Brigand des dunes', kind: 'patrol', patrol: ['4', '5'], offset: 0 },
+            { id: 'gobi_w_scorpion', at: '6', templateId: 'shadow_assassin', name: 'Scorpion de sable', kind: 'patrol', patrol: ['6', '7'], offset: -1 },
+            { id: 'gobi_camel_thief', at: 'n', templateId: 'shadow_assassin', name: 'Voleur de chameaux', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'gobi_lost_a', at: 'o', templateId: 'bone_reaver', name: 'Caravanier squelette', kind: 'sentinel', offset: 0, permanent: true, group: 'lost_caravan' },
+            { id: 'gobi_lost_b', at: 'p', templateId: 'bone_reaver', name: 'Caravanier squelette', kind: 'sentinel', offset: 0, permanent: true, group: 'lost_caravan' }
         ],
         gate: {
             requires: 'gobi_dune_warlord',

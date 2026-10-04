@@ -3,7 +3,8 @@
 // =====================================
 
 import { allWeapons } from './weapons.js';
-import { allItems, getRarityEmoji, getRarityColor } from './items.js';
+import { allItems, getRarityIcon, getRarityColor } from './items.js';
+import { icon as svgIcon } from './icons.js';
 import { player, gameState, log, updateAvailableWeapons, saveUpdate, getWeaponIcon } from './game.js';
 
 function getWeaponPrice(weapon) {
@@ -17,7 +18,7 @@ function getItemPrice(item) {
 
 export function buyWeapon(weaponId) {
     if (gameState.combatState === 'active') {
-        log('⚠️ La boutique est inaccessible pendant le combat !');
+        log('La boutique est inaccessible pendant le combat !');
         return;
     }
     const weapon = allWeapons.find(w => w.id === weaponId);
@@ -25,7 +26,7 @@ export function buyWeapon(weaponId) {
 
     const price = getWeaponPrice(weapon);
     if (player.gold < price) {
-        log(`⚠️ Pas assez d'or ! Coût: ${price} 💰, vous avez: ${player.gold} 💰`);
+        log(`Pas assez d'or ! Coût: ${price} ${svgIcon('coin')}, vous avez: ${player.gold} ${svgIcon('coin')}`);
         return;
     }
 
@@ -33,13 +34,13 @@ export function buyWeapon(weaponId) {
     player.weapons.push(weapon);
     updateAvailableWeapons();
     saveUpdate();
-    log(`🛒 ${weapon.name} achetée pour ${price} pièces d'or !`);
+    log(`${weapon.name} achetée pour ${price} pièces d'or !`);
     updateShopTab();
 }
 
 export function buyItem(itemId) {
     if (gameState.combatState === 'active') {
-        log('⚠️ La boutique est inaccessible pendant le combat !');
+        log('La boutique est inaccessible pendant le combat !');
         return;
     }
     const item = allItems.find(i => i.id === itemId);
@@ -47,7 +48,7 @@ export function buyItem(itemId) {
 
     const price = getItemPrice(item);
     if (player.gold < price) {
-        log(`⚠️ Pas assez d'or ! Coût: ${price} 💰, vous avez: ${player.gold} 💰`);
+        log(`Pas assez d'or ! Coût: ${price} ${svgIcon('coin')}, vous avez: ${player.gold} ${svgIcon('coin')}`);
         return;
     }
 
@@ -55,7 +56,7 @@ export function buyItem(itemId) {
     if (!player.inventory) player.inventory = [];
     player.inventory.push({ ...item });
     saveUpdate();
-    log(`🛒 ${item.name} acheté pour ${price} pièces d'or !`);
+    log(`${item.name} acheté pour ${price} pièces d'or !`);
     updateShopTab();
 }
 
@@ -81,7 +82,7 @@ export function updateShopTab() {
         .sort((a, b) => a.minLevel - b.minLevel);
 
     const weaponsSection = document.createElement('div');
-    weaponsSection.innerHTML = '<h3 class="shop-section-title">⚔️ Armes</h3>';
+    weaponsSection.innerHTML = '<h3 class="shop-section-title">Armes</h3>';
 
     if (shopWeapons.length === 0) {
         weaponsSection.innerHTML += '<p class="shop-empty">Aucune nouvelle arme disponible pour votre niveau.</p>';
@@ -97,15 +98,15 @@ export function updateShopTab() {
                 <span class="weapon-icon">${icon}</span>
                 <div class="weapon-details">
                     <span class="weapon-name">${weapon.name}</span>
-                    <span class="weapon-stats">${weapon.damage} 💀 • ${weapon.actionPoints} 🏹 • Niv. ${weapon.minLevel}</span>
+                    <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}</span>
                     <span class="weapon-description">${weapon.description}</span>
                 </div>
                 <div class="shop-weapon-right">
-                    <span class="shop-price-tag">${price} 💰</span>
+                    <span class="shop-price-tag">${price} ${svgIcon('coin')}</span>
                     <button class="weapon-action"
                         ${!canAfford ? 'disabled' : ''}
                         onclick="window.buyWeapon('${weapon.id}')">
-                        ${canAfford ? '🛒 Acheter' : '❌ Insuff.'}
+                        ${canAfford ? 'Acheter' : 'Insuff.'}
                     </button>
                 </div>
             `;
@@ -120,12 +121,12 @@ export function updateShopTab() {
         .sort((a, b) => a.minLevel - b.minLevel);
 
     const itemsSection = document.createElement('div');
-    itemsSection.innerHTML = '<h3 class="shop-section-title">🎒 Objets</h3>';
+    itemsSection.innerHTML = '<h3 class="shop-section-title">Objets</h3>';
 
     shopItems.forEach(item => {
         const price = getItemPrice(item);
         const canAfford = player.gold >= price;
-        const rarityEmoji = getRarityEmoji(item.rarity);
+        const rarityEmoji = getRarityIcon(item.rarity);
         const rarityColor = getRarityColor(item.rarity);
 
         const div = document.createElement('div');
@@ -135,15 +136,15 @@ export function updateShopTab() {
             <span class="weapon-icon">${rarityEmoji}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${item.name}</span>
-                <span class="weapon-stats">${item.type === 'consumable' ? `${item.actionPoints} 🏹` : '⚡ Passif'} • Niv. ${item.minLevel}</span>
+                <span class="weapon-stats">${item.type === 'consumable' ? `${item.actionPoints} ${svgIcon('arrow')}` : 'Passif'} • Niv. ${item.minLevel}</span>
                 <span class="weapon-description">${item.description}</span>
             </div>
             <div class="shop-weapon-right">
-                <span class="shop-price-tag">${price} 💰</span>
+                <span class="shop-price-tag">${price} ${svgIcon('coin')}</span>
                 <button class="weapon-action"
                     ${!canAfford ? 'disabled' : ''}
                     onclick="window.buyItem('${item.id}')">
-                    ${canAfford ? '🛒 Acheter' : '❌ Insuff.'}
+                    ${canAfford ? 'Acheter' : 'Insuff.'}
                 </button>
             </div>
         `;

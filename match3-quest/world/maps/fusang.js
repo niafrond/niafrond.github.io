@@ -39,11 +39,11 @@ export default {
             { id: 'star_child_xing', at: '5' }
         ],
         chests: [
-            { id: 'terrace_urn', at: '9', gold: 135, label: 'Urne de la terrasse', emoji: '🏺', openText: '🎁 Une urne dorée posée au pied d\'un mur de terrasse : quelques sous et une odeur de miel.' },
-            { id: 'fusang_garden_a', at: 'j', gold: 225, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'fusang_garden_b', at: 'k', gold: 225, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
-            { id: 'fusang_market_a', at: 'm', gold: 450, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
-            { id: 'fusang_market_b', at: 'n', gold: 450, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+            { id: 'terrace_urn', at: '9', gold: 135, label: 'Urne de la terrasse', openText: 'Une urne dorée posée au pied d\'un mur de terrasse : quelques sous et une odeur de miel.' },
+            { id: 'fusang_garden_a', at: 'j', gold: 225, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'fusang_garden_b', at: 'k', gold: 225, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'fusang_market_a', at: 'm', gold: 450, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'fusang_market_b', at: 'n', gold: 450, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]
     },
 
@@ -102,14 +102,14 @@ export default {
             { id: 'kun_scale_chest', at: 'm', gold: 405 }
         ],
         enemies: [
-            { id: 'fusang_root_guard', at: '1', templateId: 'sun_paladin', emoji: '🛡️', name: 'Garde solaire des racines', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Garde solaire des racines', level: 15 } },
-            { id: 'fusang_jade_wraith', at: '2', templateId: 'crystal_sage', emoji: '💎', name: 'Immortel de jade égaré', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'fusang_w_moth', at: '3', templateId: 'void_vampire', emoji: '🦋', name: 'Phalène des racines', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
-            { id: 'fusang_w_wyrm', at: '5', templateId: 'storm_wyrm', emoji: '🐲', name: 'Dragonnet de sève', kind: 'patrol', patrol: ['5', '6'], offset: -1 },
-            { id: 'fusang_w_scholar', at: '7', templateId: 'arcane_scholar', emoji: '📜', name: 'Lettré des branches', kind: 'sentinel', offset: 0 },
-            { id: 'fusang_thief_a', at: 'n', templateId: 'goblin_saboteur', emoji: '🐒', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
-            { id: 'fusang_thief_b', at: 'o', templateId: 'goblin_saboteur', emoji: '🐒', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
-            { id: 'fusang_frost_wyrm', at: 'p', templateId: 'frost_dragon', emoji: '🐲', name: 'Long de givre égaré', kind: 'sentinel', offset: 0, permanent: true }
+            { id: 'fusang_root_guard', at: '1', templateId: 'sun_paladin', name: 'Garde solaire des racines', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Garde solaire des racines', level: 15 } },
+            { id: 'fusang_jade_wraith', at: '2', templateId: 'crystal_sage', name: 'Immortel de jade égaré', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'fusang_w_moth', at: '3', templateId: 'void_vampire', name: 'Phalène des racines', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
+            { id: 'fusang_w_wyrm', at: '5', templateId: 'storm_wyrm', name: 'Dragonnet de sève', kind: 'patrol', patrol: ['5', '6'], offset: -1 },
+            { id: 'fusang_w_scholar', at: '7', templateId: 'arcane_scholar', name: 'Lettré des branches', kind: 'sentinel', offset: 0 },
+            { id: 'fusang_thief_a', at: 'n', templateId: 'goblin_saboteur', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
+            { id: 'fusang_thief_b', at: 'o', templateId: 'goblin_saboteur', name: 'Singe-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'peach_thieves' },
+            { id: 'fusang_frost_wyrm', at: 'p', templateId: 'frost_dragon', name: 'Long de givre égaré', kind: 'sentinel', offset: 0, permanent: true }
         ],
         gate: {
             requires: 'sq_sceau_racines',

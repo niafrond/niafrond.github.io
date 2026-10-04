@@ -6,7 +6,8 @@ import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial
 import { allWeapons, getAvailableWeapons, getWeaponById } from "./weapons.js";
 import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer } from "./board.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
-import { getRandomItem, getRarityEmoji, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
+import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
+import { icon as svgIcon, manaIcon } from "./icons.js";
 import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
 import { playSfx } from "./sound.js";
@@ -16,20 +17,23 @@ export { updateShopTab, buyWeapon, buyItem };
 const BASE_MANA_CAP = 50;
 const EMPTY_MANA_POOL = { red:0, blue:0, green:0, yellow:0, purple:0 };
 const WEAPON_ICONS = {
-    sword: '🗡️',
-    axe: '🪓',
-    dagger: '🔪',
-    mace: '🔨',
-    bow: '🏹',
-    staff: '🎋'
+    sword: 'sword',
+    axe: 'axe',
+    dagger: 'dagger',
+    mace: 'mace',
+    bow: 'bow',
+    staff: 'staff'
 };
+// Icône de la classe (sprites/icons) : affichée devant le nom des combattants et des sorts de classe.
+const CLASS_ICONS = { sorcerer: 'yinyang', assassin: 'bow', templar: 'shield', barbarian: 'axe' };
+const classIcon = classId => (CLASS_ICONS[classId] ? svgIcon(CLASS_ICONS[classId]) : '');
 const MANA_COLOR_ORDER = ['red', 'blue', 'green', 'yellow', 'purple'];
 const MANA_COLOR_META = {
-    red: { emoji: '🔴', name: 'Rouge' },
-    blue: { emoji: '🔵', name: 'Bleu' },
-    green: { emoji: '🟢', name: 'Vert' },
-    yellow: { emoji: '🟡', name: 'Jaune' },
-    purple: { emoji: '🟣', name: 'Violet' }
+    red: { name: 'Rouge' },
+    blue: { name: 'Bleu' },
+    green: { name: 'Vert' },
+    yellow: { name: 'Jaune' },
+    purple: { name: 'Violet' }
 };
 
 // Règles paramétrables: une aptitude influence uniquement la couleur de mana associée.
@@ -105,7 +109,7 @@ export function addManaForColor(entity, color, baseGain, options = {}){
 }
 
 export function getWeaponIcon(weaponType){
-    return WEAPON_ICONS[weaponType] || '🗡️';
+    return svgIcon(WEAPON_ICONS[weaponType] || 'sword');
 }
 
 export function canEntityCastSpell(entity, spell){
@@ -133,11 +137,11 @@ function normalizeBonusTurnValue(value){
     return Math.max(0, Math.floor(numericValue));
 }
 
-// Pastille « 🎁 ×N » affichée à côté du nom tant qu'il reste des tours bonus accumulés.
+// Pastille « cadeau ×N » affichée à côté du nom tant qu'il reste des tours bonus accumulés.
 function bonusTurnBadge(entity){
     const n = normalizeBonusTurnValue(entity?.bonusTurn);
     if(n <= 0) return '';
-    return `<span class="bonus-turn-badge" title="${n} tour${n > 1 ? 's' : ''} bonus en réserve">🎁×${n}</span>`;
+    return `<span class="bonus-turn-badge" title="${n} tour${n > 1 ? 's' : ''} bonus en réserve">${svgIcon('gift')}×${n}</span>`;
 }
 
 export function addBonusTurn(entity, amount = 1){
@@ -234,9 +238,9 @@ export function applyDamage(target, damage, options = {}){
     normalizedDamage = affinityResult.modifiedDamage;
 
     if(affinityResult.affinityType === 'force' && affinityResult.delta > 0) {
-        log(`🛡️ ${target.name} résiste (${target.preferredColor}) : -${affinityResult.delta} dégâts (niveau ${target.level}).`);
+        log(`${target.name} résiste (${target.preferredColor}) : -${affinityResult.delta} dégâts (niveau ${target.level}).`);
     } else if(affinityResult.affinityType === 'faiblesse' && affinityResult.delta > 0) {
-        log(`💥 ${target.name} est faible à ${sourceColor} : +${affinityResult.delta} dégâts (niveau ${target.level}).`);
+        log(`${target.name} est faible à ${sourceColor} : +${affinityResult.delta} dégâts (niveau ${target.level}).`);
     }
 
     // Bouclier mana: certains sorts redirigent les dégâts subis vers une réserve de mana.
@@ -250,12 +254,12 @@ export function applyDamage(target, damage, options = {}){
             if(absorbed > 0) {
                 player.mana[shieldColor] = availableMana - absorbed;
                 normalizedDamage -= absorbed;
-                log(`🛡️ Bouclier de mana (${shieldColor}) absorbe ${absorbed} dégâts.`);
+                log(`Bouclier de mana (${shieldColor}) absorbe ${absorbed} dégâts.`);
             }
 
             if(player.mana[shieldColor] <= 0) {
                 delete player.statusEffects.manaShield;
-                log(`⏱️ Le bouclier de mana se dissipe.`);
+                log(`Le bouclier de mana se dissipe.`);
             }
         }
     }
@@ -273,7 +277,7 @@ export function applyDamage(target, damage, options = {}){
                 const enemyHpBefore = enemy.hp;
                 const enemyHpAfter = Math.max(0, enemyHpBefore - reflected);
                 enemy.hp = enemyHpAfter;
-                log(`🪞 Miroir de Bronze renvoie ${enemyHpBefore - enemyHpAfter} dégâts à ${enemy.name}.`);
+                log(`Miroir de Bronze renvoie ${enemyHpBefore - enemyHpAfter} dégâts à ${enemy.name}.`);
             }
         }
 
@@ -283,7 +287,7 @@ export function applyDamage(target, damage, options = {}){
             const enemyHpBefore = enemy.hp;
             const enemyHpAfter = Math.max(0, enemyHpBefore - counterDmg);
             enemy.hp = enemyHpAfter;
-            log(`⚔️ Contre-attaque inflige ${enemyHpBefore - enemyHpAfter} dégâts à ${enemy.name}.`);
+            log(`Contre-attaque inflige ${enemyHpBefore - enemyHpAfter} dégâts à ${enemy.name}.`);
         }
     }
 
@@ -303,7 +307,7 @@ export function applyDamage(target, damage, options = {}){
             }
             const drained = drainAmount - remaining;
             if(drained > 0) {
-                log(`🎵 Flèches Sifflantes drainent ${drained} mana ennemi.`);
+                log(`Flèches Sifflantes drainent ${drained} mana ennemi.`);
             }
         }
     }
@@ -366,12 +370,12 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
 
         if(isPlayerCaster) {
             playSfx('spellHit', { isPlayer: true });
-            showCombatAnimation({ icon: '🔥', title: spell.name, damage: `-${Math.floor(dmg)} dégâts`, target: `→ ${target.name}` }, true);
-            log(`🔥 ${spell.name} inflige ${dmg} dégâts.`);
+            showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts`, target: `→ ${target.name}` }, true);
+            log(`${spell.name} inflige ${dmg} dégâts.`);
         } else {
             playSfx('spellHit', { isPlayer: false });
-            showCombatAnimation({ icon: '🔥', title: spell.name, damage: `-${Math.floor(dmg)} dégâts`, source: caster.name, target: '→ Vous' }, false);
-            log(`🔥 ${caster.name} lance ${spell.name} ! ${dmg} dégâts.`);
+            showCombatAnimation({ icon: 'fire', title: spell.name, damage: `-${Math.floor(dmg)} dégâts`, source: caster.name, target: '→ Vous' }, false);
+            log(`${caster.name} lance ${spell.name} ! ${dmg} dégâts.`);
         }
     }
 
@@ -381,11 +385,11 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
         playSfx('heal', { isPlayer: isPlayerCaster });
 
         if(isPlayerCaster) {
-            showCombatAnimation({ icon: '💚', title: spell.name, heal: `+${healAmount} HP`, target: '→ Vous' }, true);
-            log(`💚 ${spell.name} soigne ${healAmount} HP.`);
+            showCombatAnimation({ icon: 'leaf', title: spell.name, heal: `+${healAmount} HP`, target: '→ Vous' }, true);
+            log(`${spell.name} soigne ${healAmount} HP.`);
         } else {
-            showCombatAnimation({ icon: '💚', title: spell.name, heal: `+${healAmount} HP`, source: caster.name }, false);
-            log(`💚 ${caster.name} utilise ${spell.name} et soigne ${healAmount} HP.`);
+            showCombatAnimation({ icon: 'leaf', title: spell.name, heal: `+${healAmount} HP`, source: caster.name }, false);
+            log(`${caster.name} utilise ${spell.name} et soigne ${healAmount} HP.`);
         }
     }
 }
@@ -445,31 +449,33 @@ export function grantStartingWeapon(weaponId){
     }
     player.equippedWeapon = weapon;
     updateAvailableWeapons();
-    log(`🗡️ Vous recevez votre arme de départ : ${weapon.name}.`);
+    log(`Vous recevez votre arme de départ : ${weapon.name}.`);
     return weapon;
 }
 
 // Range dans le sac le butin d'un coffre d'exploration (tiré par chestLoot.js : rollChestLoot).
-// Retourne les libellés à afficher (ex. « 🔵 Bague d'Archer en Jade »).
+// Retourne les libellés à afficher en texte (ex. « Bague d'Archer en Jade (rare) »).
+const RARITY_LABEL = { common: 'commune', uncommon: 'peu commune', rare: 'rare', legendary: 'légendaire' };
 export function grantChestLoot({ loot = [] } = {}){
     if(!Array.isArray(player.inventory)) player.inventory = [];
     if(!Array.isArray(player.weapons)) player.weapons = [];
     const labels = [];
     loot.forEach(entry => {
-        const rarityEmoji = getRarityEmoji(entry.rarity);
+        const rarityIcon = getRarityIcon(entry.rarity);
+        const rarityText = RARITY_LABEL[entry.rarity] || entry.rarity;
         if(entry.kind === 'weapon' && entry.weapon) {
             if(player.weapons.some(w => w.id === entry.weapon.id)) return;
             player.weapons.push(entry.weapon);
-            const lvl = entry.weapon.minLevel > player.level ? ` (niv. ${entry.weapon.minLevel})` : '';
-            labels.push(`${rarityEmoji}${getWeaponIcon(entry.weapon.type)} ${entry.weapon.name}${lvl}`);
+            const lvl = entry.weapon.minLevel > player.level ? `, niv. ${entry.weapon.minLevel}` : '';
+            labels.push(`${entry.weapon.name} (${rarityText}${lvl})`);
             log(`${getWeaponIcon(entry.weapon.type)} Trouvé dans un coffre : ${entry.weapon.name} !`);
         } else if(entry.kind === 'item' && entry.item) {
             player.inventory.push({ ...entry.item, applied: false });
-            labels.push(`${rarityEmoji} ${entry.item.name}`);
-            log(`${rarityEmoji} Trouvé dans un coffre : ${entry.item.name} !`);
+            labels.push(`${entry.item.name} (${rarityText})`);
+            log(`${rarityIcon} Trouvé dans un coffre : ${entry.item.name} !`);
             if(entry.item.type === 'artifact') {
                 applyArtifactEffects(player);
-                log(`✨ ${entry.item.description}`);
+                log(entry.item.description);
             }
         }
     });
@@ -595,7 +601,7 @@ function showCombatResultScreen(isVictory){
         : '<li>Aucun butin</li>';
 
     const goldLine = combatRewards.gold > 0
-        ? `<li>💰 Or: +${combatRewards.gold} pièce${combatRewards.gold > 1 ? 's' : ''}</li>`
+        ? `<li>${svgIcon('coin')} Or: +${combatRewards.gold} pièce${combatRewards.gold > 1 ? 's' : ''}</li>`
         : '';
 
     summary.innerHTML = `
@@ -661,9 +667,9 @@ function finalizeCombatEndUI(isVictory){
     }
 
     if(isVictory) {
-        log(`🗺️ Cliquez sur "Retour à l'exploration" pour continuer ou modifiez vos sorts/armes.`);
+        log(`Cliquez sur "Retour à l'exploration" pour continuer ou modifiez vos sorts/armes.`);
     } else {
-        log("🗺️ Cliquez sur \"Retour à l'exploration\" : vous reprenez vos esprits à l'entrée de la zone.");
+        log("Cliquez sur \"Retour à l'exploration\" : vous reprenez vos esprits à l'entrée de la zone.");
     }
     combatHooks.onEnd?.(isVictory);
 }
@@ -682,8 +688,8 @@ function showEndCombatAnimation(isVictory, options = {}){
     }
 
     const data = isVictory
-        ? { icon: '🏆', title: 'Victoire', damage: 'Combat termine !', target: 'Cliquez pour continuer' }
-        : { icon: '💀', title: 'Defaite', damage: 'Combat termine !', target: 'Cliquez pour continuer' };
+        ? { icon: 'trophy', title: 'Victoire', damage: 'Combat termine !', target: 'Cliquez pour continuer' }
+        : { icon: 'skull', title: 'Defaite', damage: 'Combat termine !', target: 'Cliquez pour continuer' };
 
     if(!requireClick){
         data.target = 'Retour a l ecran de resultat...';
@@ -741,7 +747,7 @@ export function restartCombat(){
     // Appliquer les aptitudes de début de combat
     applyStartingAbilities();
     
-    log("🎮 Combat réinitialisé, vous êtes en pleine santé.");
+    log("Combat réinitialisé, vous êtes en pleine santé.");
     updateStats();
     saveUpdate();
 }
@@ -758,7 +764,7 @@ export function handlePlayerDeath(){
         player.hp = reviveHp;
         player.hasRevive = false;
         player.revivePercent = 0;
-        log(`🔥 Vous êtes ressuscité avec ${reviveHp} HP !`);
+        log(`Vous êtes ressuscité avec ${reviveHp} HP !`);
         updateStats();
         saveUpdate();
         return;
@@ -766,14 +772,14 @@ export function handlePlayerDeath(){
     
     const xpResult = applyCombatXPAtEnd();
     if(xpResult.xpApplied > 0) {
-        log(`⭐ ${xpResult.xpApplied} XP appliquee(s) a la fin du combat.`);
+        log(`${xpResult.xpApplied} XP appliquee(s) a la fin du combat.`);
         if(xpResult.leveledUp) {
-            log(`🎉 Niveau ${player.level} atteint en fin de combat.`);
+            log(`Niveau ${player.level} atteint en fin de combat.`);
             if(xpResult.maxHpGained > 0) {
-                log(`❤️ +${xpResult.maxHpGained} HP max, +${xpResult.hpRecovered} HP recuperes.`);
+                log(`+${xpResult.maxHpGained} HP max, +${xpResult.hpRecovered} HP recuperes.`);
             }
             if(xpResult.levelsGained > 1) {
-                log(`✨ Vous avez gagne ${xpResult.levelsGained} niveaux d'un coup !`);
+                log(`Vous avez gagne ${xpResult.levelsGained} niveaux d'un coup !`);
             }
             updateAvailableSpells();
             updateAvailableWeapons();
@@ -781,7 +787,7 @@ export function handlePlayerDeath(){
             showAttributeMenu();
         }
     }
-    log("💀 Vous êtes mort ! Le combat est terminé.");
+    log("Vous êtes mort ! Le combat est terminé.");
     playSfx('defeat');
     
     // Marquer le combat comme terminé
@@ -833,14 +839,14 @@ export function abandonCombat(){
     
     const xpResult = applyCombatXPAtEnd();
     if(xpResult.xpApplied > 0) {
-        log(`⭐ ${xpResult.xpApplied} XP appliquee(s) a la fin du combat.`);
+        log(`${xpResult.xpApplied} XP appliquee(s) a la fin du combat.`);
         if(xpResult.leveledUp) {
-            log(`🎉 Niveau ${player.level} atteint en fin de combat.`);
+            log(`Niveau ${player.level} atteint en fin de combat.`);
             if(xpResult.maxHpGained > 0) {
-                log(`❤️ +${xpResult.maxHpGained} HP max, +${xpResult.hpRecovered} HP recuperes.`);
+                log(`+${xpResult.maxHpGained} HP max, +${xpResult.hpRecovered} HP recuperes.`);
             }
             if(xpResult.levelsGained > 1) {
-                log(`✨ Vous avez gagne ${xpResult.levelsGained} niveaux d'un coup !`);
+                log(`Vous avez gagne ${xpResult.levelsGained} niveaux d'un coup !`);
             }
             updateAvailableSpells();
             updateAvailableWeapons();
@@ -850,7 +856,7 @@ export function abandonCombat(){
     }
     saveUpdate();
 
-    log("🏳️ Vous avez abandonné le combat...");
+    log("Vous avez abandonné le combat...");
     playSfx('defeat');
     
     // Marquer le combat comme terminé
@@ -931,12 +937,12 @@ export function loadGameData() {
                 ? loaded.exploration
                 : null;
             clampManaToCaps(player);
-            console.log('💾 Données du joueur chargées depuis le localStorage');
+            console.log('Données du joueur chargées depuis le localStorage');
             if (player.class) {
-                console.log(`✨ Classe chargée: ${player.class}`);
+                console.log(`Classe chargée: ${player.class}`);
             }
         } catch (e) {
-            console.error('❌ Erreur lors du chargement de la sauvegarde:', e);
+            console.error('Erreur lors du chargement de la sauvegarde:', e);
         }
     }
     // Initialiser l'XP si nécessaire (pour les sauvegardes anciennes)
@@ -972,7 +978,7 @@ function ensureCombatUsableActiveItem() {
         player.activeInventoryIndex = consumableIndex;
         const combatItem = player.inventory[consumableIndex];
         if(combatItem?.name) {
-            log(`🎒 Objet actif pour le combat : ${combatItem.name}.`);
+            log(`Objet actif pour le combat : ${combatItem.name}.`);
         }
     }
 }
@@ -1057,14 +1063,9 @@ export function updateStats(){
 
     const playerDiv=document.getElementById('player-stats');
     // Affichage de la classe si définie
-    const playerClassEmoji = player.class ? (async () => {
-        const module = await import('./classes.js');
-        return module.playerClasses[player.class]?.emoji || '';
-    })() : Promise.resolve('');
-    
-    playerClassEmoji.then(emoji => {
+    Promise.resolve(classIcon(player.class)).then(emoji => {
         playerDiv.innerHTML = `
-            <div class="stat"><span class="enemy-combat-name" title="${emoji} ${player.name || 'Hou Yi'}">${emoji} ${(player.name || 'Hou Yi').split(' ')[0]}</span><span style="color: #888;"> ${player.level}</span>${bonusTurnBadge(player)}</div>
+            <div class="stat"><span class="enemy-combat-name" title="${player.name || 'Hou Yi'}">${emoji} ${(player.name || 'Hou Yi').split(' ')[0]}</span><span style="color: #888;"> ${player.level}</span>${bonusTurnBadge(player)}</div>
             <div class="stat">
                 <div class="hp-bar-container">
                     <progress value="${initPlayerHp}" max="${player.maxHp}"></progress>
@@ -1081,7 +1082,7 @@ export function updateStats(){
                     <span class="mana-dot mana-purple" title="${targetPlayerMana.purple}"></span><span id="player-mana-purple">${targetPlayerMana.purple}</span>
                 </div>
             </div>
-            <div class="stat"><strong>🏹:</strong> ${player.combatPoints}</div>`;
+            <div class="stat" title="Points d'action"><strong>${svgIcon('arrow')}</strong> ${player.combatPoints}</div>`;
         
         // Animer les compteurs si les valeurs ont changé
         const playerProgressEl = playerDiv.querySelector('.hp-bar-container progress');
@@ -1097,13 +1098,12 @@ export function updateStats(){
     const enemyDiv=document.getElementById('enemy-stats');
     enemyDiv.classList.toggle('active-turn', currentTurn === 'enemy');
     
-    // Obtenir l'emoji de la classe de l'ennemi
-    const classEmojis = { 'sorcerer': '☯️', 'assassin': '🏹', 'templar': '🛡️', 'barbarian': '🪓' };
-    const enemyClassEmoji = classEmojis[enemy.playerClass] || '';
+    // Icône de la classe de l'ennemi
+    const enemyClassEmoji = classIcon(enemy.playerClass);
     
     // Afficher un indicateur visuel si l'ennemi est plus fort
     const levelIndicator = enemy.level > player.level ? 
-        `<span style="color: #ff4444; font-weight: bold;"> ⚡Niv.${enemy.level}</span>` : 
+        `<span style="color: #ff4444; font-weight: bold;"> Niv.${enemy.level}</span>` : 
         `<span style="color: #888;"> ${enemy.level}</span>`;
     
     enemyDiv.innerHTML = `
@@ -1124,7 +1124,7 @@ export function updateStats(){
                 <span class="mana-dot mana-purple" title="${targetEnemyMana.purple}"></span><span id="enemy-mana-purple">${targetEnemyMana.purple}</span>
             </div>
         </div>
-        <div class="stat"><strong>🏹:</strong> ${enemy.combatPoints}</div>`;
+        <div class="stat" title="Points d'action"><strong>${svgIcon('arrow')}</strong> ${enemy.combatPoints}</div>`;
     // Animer les compteurs ennemi
     const enemyProgressEl = enemyDiv.querySelector('.hp-bar-container progress');
     _animateHpBar('enemy-hp-current', initEnemyHp, targetEnemyHp, enemyProgressEl);
@@ -1160,14 +1160,14 @@ export function updateEnemySpells(){
             weaponHtml += `
                 <div class="enemy-spell-item disabled">
                     <div class="spell-name">${icon} ${enemy.weapon.name}</div>
-                    <div class="spell-cost">${enemy.weapon.actionPoints} 🏹 - ${enemy.weapon.damage} 💀</div>
+                    <div class="spell-cost">${enemy.weapon.actionPoints} ${svgIcon('arrow')} - ${enemy.weapon.damage} ${svgIcon('skull')}</div>
                 </div>
             `;
         }
         if (enemy.inventoryItem) {
             weaponHtml += `
                 <div class="enemy-spell-item disabled enemy-item-card" tabindex="0">
-                    <div class="spell-name">🎒 ${enemy.inventoryItem.name}</div>
+                    <div class="spell-name">${svgIcon('bag')} ${enemy.inventoryItem.name}</div>
                     <div class="spell-cost">Objet ennemi</div>
                 </div>
             `;
@@ -1207,9 +1207,8 @@ export function updateEnemySpells(){
             div.classList.add('disabled');
         }
         
-        // Déterminer si c'est un sort de classe et obtenir son emoji
-        const classEmojis = { 'sorcerer': '☯️', 'assassin': '🏹', 'templar': '🛡️', 'barbarian': '🪓' };
-        const spellClassIndicator = sp.class ? classEmojis[sp.class] : '';
+        // Sort de classe : icône de la classe
+        const spellClassIndicator = sp.class ? classIcon(sp.class) : '';
         
         // Gestion des coûts multiples pour les sorts de classe
         let costDisplay = '';
@@ -1258,7 +1257,7 @@ export function logActiveAction(actionText){
     const actor = currentTurn === 'player'
         ? `joueur (${player.name || 'Hou Yi'})`
         : `ennemi (${enemy.name || 'Ennemi'})`;
-    console.log(`🎯 Action active - ${actor}: ${actionText}`);
+    console.log(`Action active - ${actor}: ${actionText}`);
 }
 
 // ========================================
@@ -1267,7 +1266,7 @@ export function logActiveAction(actionText){
 
 export function changeAIDifficulty(difficultyLevel) {
     setAIDifficulty(difficultyLevel);
-    log(`🤖 Difficulté de l'IA changée: ${difficultyLevel}`);
+    log(`Difficulté de l'IA changée: ${difficultyLevel}`);
 }
 
 export function getCurrentAIDifficulty() {
@@ -1281,12 +1280,12 @@ export function saveUpdate(){
     clampManaToCaps(player);
     try {
         localStorage.setItem('player', JSON.stringify(player));
-        console.log('💾 Données du joueur sauvegardées');
+        console.log('Données du joueur sauvegardées');
         if (player.class) {
-            console.log(`✨ Classe sauvegardée: ${player.class}`);
+            console.log(`Classe sauvegardée: ${player.class}`);
         }
     } catch (e) {
-        console.error('❌ Erreur lors de la sauvegarde:', e);
+        console.error('Erreur lors de la sauvegarde:', e);
     }
     updateStats();
     createSpellButtons();
@@ -1299,7 +1298,7 @@ export function saveUpdate(){
 export function clearSaveData() {
     if (confirm('Êtes-vous sûr de vouloir effacer votre sauvegarde ?')) {
         localStorage.removeItem('player');
-        console.log('🗑️ Sauvegarde effacée');
+        console.log('Sauvegarde effacée');
         location.reload();
     }
 }
@@ -1312,7 +1311,7 @@ export function updatePlayerStatsTab(){
     // Import de la classe pour afficher le nom
     import('./classes.js').then(module => {
         const classData = player.class ? module.playerClasses[player.class] : null;
-        const className = classData ? `${classData.emoji} ${classData.name}` : 'Aucun';
+        const className = classData ? `${classIcon(player.class)} ${classData.name}` : 'Aucun';
         
         // Calculer la progression XP
         const xpProgress = getXPProgress(player);
@@ -1322,19 +1321,19 @@ export function updatePlayerStatsTab(){
             <div class="stats-section">
                 <h3>Informations</h3>
                 <div class="stat-line">
-                    <span class="stat-label">🪪 Nom:</span>
+                    <span class="stat-label">${svgIcon('idCard')} Nom:</span>
                     <span class="stat-value">${player.name || 'Hou Yi'}</span>
                 </div>
                 <div class="stat-line">
-                    <span class="stat-label">🎭 Style:</span>
+                    <span class="stat-label">${svgIcon('mask')} Style:</span>
                     <span class="stat-value">${className}</span>
                 </div>
                 <div class="stat-line">
-                    <span class="stat-label">⭐ Niveau:</span>
+                    <span class="stat-label">${svgIcon('star')} Niveau:</span>
                     <span class="stat-value">${player.level}</span>
                 </div>
                 <div class="stat-line">
-                    <span class="stat-label">📊 Expérience:</span>
+                    <span class="stat-label">${svgIcon('chart')} Expérience:</span>
                     <span class="stat-value">${player.xp} / ${player.xpToNextLevel} XP</span>
                 </div>
                 <div class="stat-line">
@@ -1349,27 +1348,27 @@ export function updatePlayerStatsTab(){
             <div class="stats-section">
                 <h3>Caractéristiques</h3>
             <div class="stat-line">
-                <span class="stat-label">💪 Force (Strength):</span>
+                <span class="stat-label">${svgIcon('muscle')} Force (Strength):</span>
                 <span class="stat-value">${player.attributes.strength}</span>
                 <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'strength')} Attaque</span>
             </div>
             <div class="stat-line">
-                <span class="stat-label">🏃 Agilité (Agility):</span>
+                <span class="stat-label">${svgIcon('runner')} Agilité (Agility):</span>
                 <span class="stat-value">${player.attributes.agility}</span>
                 <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'agility')} Défense</span>
             </div>
             <div class="stat-line">
-                <span class="stat-label">🧠 Intelligence:</span>
+                <span class="stat-label">${svgIcon('brain')} Intelligence:</span>
                 <span class="stat-value">${player.attributes.intelligence}</span>
                 <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'intelligence')} Puissance magique</span>
             </div>
             <div class="stat-line">
-                <span class="stat-label">❤️ Endurance (Stamina):</span>
+                <span class="stat-label">${svgIcon('heart')} Endurance (Stamina):</span>
                 <span class="stat-value">${player.attributes.stamina}</span>
                 <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'stamina')} HP max</span>
             </div>
             <div class="stat-line">
-                <span class="stat-label">🎯 Moral (Morale):</span>
+                <span class="stat-label">${svgIcon('target')} Moral (Morale):</span>
                 <span class="stat-value">${player.attributes.morale}</span>
                 <span class="stat-effect">Effet principal: ${getPrimaryAttributeEffect(player, 'morale')} Attaque morale</span>
             </div>
@@ -1378,29 +1377,29 @@ export function updatePlayerStatsTab(){
         <div class="stats-section">
             <h3>Statistiques de combat</h3>
             <div class="stat-line">
-                <span class="stat-label">⚔️ Attaque:</span>
+                <span class="stat-label">${svgIcon('sword')} Attaque:</span>
                 <span class="stat-value">${player.attack}</span>
             </div>
             <div class="stat-line">
-                <span class="stat-label">🛡️ Défense:</span>
+                <span class="stat-label">${svgIcon('shield')} Défense:</span>
                 <span class="stat-value">${player.defense || 0}</span>
             </div>
             <div class="stat-line">
-                <span class="stat-label">❤️ HP Maximum:</span>
+                <span class="stat-label">${svgIcon('heart')} HP Maximum:</span>
                 <span class="stat-value">${player.maxHp}</span>
             </div>
             <div class="stat-line">
-                <span class="stat-label">✨ Mana Maximum:</span>
+                <span class="stat-label">${svgIcon('spark')} Mana Maximum:</span>
                 <span class="stat-value">${player.maxMana}</span>
             </div>
             <div class="stat-line">
-                <span class="stat-label">🔴🟡🟢🔵🟣 Caps mana:</span>
+                <span class="stat-label">${['red', 'yellow', 'green', 'blue', 'purple'].map(manaIcon).join('')} Caps mana:</span>
                 <span class="stat-value">${player.manaCaps?.red ?? player.maxMana}/${player.manaCaps?.yellow ?? player.maxMana}/${player.manaCaps?.green ?? player.maxMana}/${player.manaCaps?.blue ?? player.maxMana}/${player.manaCaps?.purple ?? player.maxMana}</span>
             </div>
         </div>
         
         <div class="stats-section">
-            <button onclick="window.clearPlayerSave()" class="secondary">🗑️ Effacer la sauvegarde</button>
+            <button onclick="window.clearPlayerSave()" class="secondary">Effacer la sauvegarde</button>
         </div>
     `;
     });
@@ -1409,7 +1408,7 @@ export function updatePlayerStatsTab(){
 // Construit et affiche une animation d'attaque ou de sort à partir de paramètres structurés.
 // Paramètres : { icon, title, damage?, heal?, source?, target? }
 export function showCombatAnimation({ icon, title, damage = null, heal = null, source = null, target = null }, isPlayerAttack = true, options = {}) {
-    let html = `<div class="attack-icon">${icon}</div><div class="attack-title">${String(title).toUpperCase()}</div>`;
+    let html = `<div class="attack-icon">${svgIcon(icon) || icon}</div><div class="attack-title">${String(title).toUpperCase()}</div>`;
     if (damage !== null) html += `<div class="attack-damage">${damage}</div>`;
     if (heal   !== null) html += `<div class="attack-heal">${heal}</div>`;
     if (source !== null) html += `<div class="attack-source">${source}</div>`;
@@ -1496,8 +1495,8 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
 // -------------------------------------
 // Combat avec arme
 export function useWeapon(){
-    if(gameState.combatState !== 'active'){ log("⚠️ Aucun combat en cours."); return; }
-    if(currentTurn !== 'player'){ log("⚠️ Seul le joueur actif peut utiliser une attaque."); return; }
+    if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
+    if(currentTurn !== 'player'){ log("Seul le joueur actif peut utiliser une attaque."); return; }
     if(!player.equippedWeapon){ log("Aucune arme équipée !"); return; }
     const weapon = player.equippedWeapon;
     if(player.combatPoints < weapon.actionPoints){ 
@@ -1517,7 +1516,7 @@ export function useWeapon(){
         const flameBonus = Math.max(0, Math.floor(player.statusEffects.flameblade));
         dmg += flameBonus;
         delete player.statusEffects.flameblade;
-        log(`🔥 Lame de Feu Pourpre ajoute ${flameBonus} dégâts au coup d'arme.`);
+        log(`Lame de Feu Pourpre ajoute ${flameBonus} dégâts au coup d'arme.`);
     }
 
     // Critique
@@ -1538,26 +1537,26 @@ export function useWeapon(){
     if(player.lifesteal > 0) {
         const heal = Math.floor(dmg * player.lifesteal);
         player.hp = Math.min(player.maxHp, player.hp + heal);
-        log(`🩸 Vol de vie : +${heal} HP.`);
+        log(`Vol de vie : +${heal} HP.`);
     }
 
     const icon = getWeaponIcon(weapon.type);
 
     logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
 
-    const critSuffix = isCrit ? ' 💥 CRITIQUE !' : '';
+    const critSuffix = isCrit ? ' CRITIQUE !' : '';
     showCombatAnimation({ icon, title: weapon.name, damage: `-${dmg} dégâts${critSuffix}`, target: `→ ${enemy.name}` }, true);
-    log(`${icon} Vous utilisez ${weapon.name} et infligez ${dmg} dégâts.${isCrit ? ' 💥 Coup critique !' : ''}`);
+    log(`${icon} Vous utilisez ${weapon.name} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}`);
     
     finishPlayerTurn();
 }
 
 export function castSpell(spellId){
-    if(gameState.combatState !== 'active'){ log("⚠️ Aucun combat en cours."); return; }
-    if(currentTurn !== 'player'){ log("⚠️ Seul le joueur actif peut lancer un sort."); return; }
+    if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
+    if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
     // Blocage tutoriel : interdire les sorts avant l'étape 4
     if(isTutorialActive() && getTutorialStep() < 4){
-        log("🪄 Générez d'abord du mana avec des alignements de gâteaux de lune colorés !");
+        log("Générez d'abord du mana avec des alignements de gâteaux de lune colorés !");
         return;
     }
     const spell=player.activeSpells.find(s=>s.id===spellId);
@@ -1605,7 +1604,7 @@ export function castSpell(spellId){
 export async function castSpellForCheat(spellId, options = {}){
     const consumeTurn = options.consumeTurn === true;
     if(gameState.combatState !== 'active'){
-        log("⚠️ Cheat: aucun combat en cours.");
+        log("Cheat: aucun combat en cours.");
         return false;
     }
 
@@ -1623,7 +1622,7 @@ export async function castSpellForCheat(spellId, options = {}){
     }
 
     if(!spell){
-        log("⚠️ Cheat: sort introuvable.");
+        log("Cheat: sort introuvable.");
         return false;
     }
 
@@ -1646,7 +1645,7 @@ export async function castSpellForCheat(spellId, options = {}){
             }
             return true;
         } catch {
-            log("⚠️ Cheat: impossible d'appliquer ce sort de classe.");
+            log("Cheat: impossible d'appliquer ce sort de classe.");
             return false;
         }
     }
@@ -1683,7 +1682,7 @@ export function finishPlayerTurn(){
     if(normalizeBonusTurnValue(player.bonusTurn) > 0){
         player.bonusTurn = normalizeBonusTurnValue(player.bonusTurn) - 1;
         const remaining = normalizeBonusTurnValue(player.bonusTurn);
-        log(`🎯 Tour bonus utilisé : pas d'attaque ennemie.${remaining > 0 ? ` (${remaining} restant${remaining > 1 ? 's' : ''})` : ''}`);
+        log(`Tour bonus utilisé : pas d'attaque ennemie.${remaining > 0 ? ` (${remaining} restant${remaining > 1 ? 's' : ''})` : ''}`);
         saveUpdate();
         return;
     }
@@ -1701,11 +1700,11 @@ export function enemyTurn(){
         const poisonDmg = Math.max(1, Math.floor(enemy.statusEffects.poisonDamage || 1));
         applyDamage(enemy, poisonDmg);
         enemy.statusEffects.poisoned--;
-        log(`☠️ Poison: ${enemy.name} subit ${poisonDmg} dégâts.`);
+        log(`Poison: ${enemy.name} subit ${poisonDmg} dégâts.`);
         if(enemy.statusEffects.poisoned <= 0) {
             delete enemy.statusEffects.poisoned;
             delete enemy.statusEffects.poisonDamage;
-            log(`⏱️ Le poison sur ${enemy.name} se dissipe.`);
+            log(`Le poison sur ${enemy.name} se dissipe.`);
         }
         if(enemy.hp <= 0) {
             handleEnemyDefeated();
@@ -1715,7 +1714,7 @@ export function enemyTurn(){
 
     if((enemy.statusEffects?.stunned || 0) > 0) {
         enemy.statusEffects.stunned--;
-        log(`💫 ${enemy.name} est étourdi et perd son tour.`);
+        log(`${enemy.name} est étourdi et perd son tour.`);
         currentTurn = 'enemy';
         updateStats();
         setTimeout(() => {
@@ -1735,7 +1734,7 @@ export function enemyTurn(){
     logDecision(decision);
     
     // Afficher la réflexion de l'ennemi
-    log(`🤖 ${enemy.name} réfléchit... (${decision.reason})`);
+    log(`${enemy.name} réfléchit... (${decision.reason})`);
     
     // Attendre le temps de réflexion avant d'agir
     setTimeout(()=>{
@@ -1749,7 +1748,7 @@ export function enemyTurn(){
             logActiveAction(`lance le sort ${spell.name}`);
 
             if(!canEntityCastSpell(enemy, spell)) {
-                log(`⚠️ ${enemy.name} n'a plus assez de mana pour ${spell.name}.`);
+                log(`${enemy.name} n'a plus assez de mana pour ${spell.name}.`);
                 finishEnemyTurn();
                 return;
             }
@@ -1810,7 +1809,7 @@ export function finishEnemyTurn(){
     if(normalizeBonusTurnValue(enemy.bonusTurn) > 0){
         enemy.bonusTurn = normalizeBonusTurnValue(enemy.bonusTurn) - 1;
         const remaining = normalizeBonusTurnValue(enemy.bonusTurn);
-        log(`🎯 L'ennemi a un tour bonus et rejoue !${remaining > 0 ? ` (${remaining} restant${remaining > 1 ? 's' : ''})` : ''}`);
+        log(`L'ennemi a un tour bonus et rejoue !${remaining > 0 ? ` (${remaining} restant${remaining > 1 ? 's' : ''})` : ''}`);
         updateStats();
         saveUpdate();
         // L'ennemi rejoue immédiatement
@@ -1822,7 +1821,7 @@ export function finishEnemyTurn(){
             enemy.statusEffects.confused--;
             if(enemy.statusEffects.confused <= 0) {
                 delete enemy.statusEffects.confused;
-                log(`⏱️ La confusion de ${enemy.name} se dissipe.`);
+                log(`La confusion de ${enemy.name} se dissipe.`);
             }
         }
         if((enemy.statusEffects?.weakened || 0) > 0) {
@@ -1830,32 +1829,32 @@ export function finishEnemyTurn(){
             if(enemy.statusEffects.weakened <= 0) {
                 delete enemy.statusEffects.weakened;
                 delete enemy.statusEffects.weakenedAmount;
-                log(`⏱️ L'affaiblissement de ${enemy.name} prend fin.`);
+                log(`L'affaiblissement de ${enemy.name} prend fin.`);
             }
         }
         if((enemy.statusEffects?.itemBlocked || 0) > 0) {
             enemy.statusEffects.itemBlocked--;
             if(enemy.statusEffects.itemBlocked <= 0) {
                 delete enemy.statusEffects.itemBlocked;
-                log(`⏱️ Le blocage d'objets de ${enemy.name} se dissipe.`);
+                log(`Le blocage d'objets de ${enemy.name} se dissipe.`);
             }
         }
 
         // Tick des effets de durée du joueur
         if(player.regenEffect && player.regenEffect.turnsLeft > 0) {
             player.hp = Math.min(player.maxHp, player.hp + player.regenEffect.hp);
-            log(`💊 Régénération : +${player.regenEffect.hp} HP.`);
+            log(`Régénération : +${player.regenEffect.hp} HP.`);
             player.regenEffect.turnsLeft--;
             if(player.regenEffect.turnsLeft <= 0) {
                 player.regenEffect = null;
-                log(`⏱️ L'effet de régénération se dissipe.`);
+                log(`L'effet de régénération se dissipe.`);
             }
         }
         if(player.manaMultiplier && player.manaMultiplier.turnsLeft > 0) {
             player.manaMultiplier.turnsLeft--;
             if(player.manaMultiplier.turnsLeft <= 0) {
                 player.manaMultiplier = null;
-                log(`⏱️ L'effet du Déferlement du Qi se dissipe.`);
+                log(`L'effet du Déferlement du Qi se dissipe.`);
             }
         }
         if((player.statusEffects?.barrier || 0) > 0) {
@@ -1865,7 +1864,7 @@ export function finishEnemyTurn(){
                 player.defense = Math.max(0, (player.defense || 0) - bonus);
                 delete player.statusEffects.barrier;
                 delete player.statusEffects.barrierDefense;
-                log(`⏱️ Rempart de Jade se dissipe (-${bonus} défense).`);
+                log(`Rempart de Jade se dissipe (-${bonus} défense).`);
             }
         }
         if((player.statusEffects?.stoneskin || 0) > 0) {
@@ -1875,7 +1874,7 @@ export function finishEnemyTurn(){
                 player.defense = Math.max(0, (player.defense || 0) - bonus);
                 delete player.statusEffects.stoneskin;
                 delete player.statusEffects.stoneskinDefense;
-                log(`⏱️ Peau de Jade se dissipe (-${bonus} défense).`);
+                log(`Peau de Jade se dissipe (-${bonus} défense).`);
             }
         }
         if((player.statusEffects?.enraged || 0) > 0) {
@@ -1885,7 +1884,7 @@ export function finishEnemyTurn(){
                 player.attack = Math.max(0, (player.attack || 0) - bonus);
                 delete player.statusEffects.enraged;
                 delete player.statusEffects.enragedBonus;
-                log(`⏱️ Fureur des Steppes se dissipe (-${bonus} attaque).`);
+                log(`Fureur des Steppes se dissipe (-${bonus} attaque).`);
             }
         }
         if((player.statusEffects?.strength || 0) > 0) {
@@ -1895,7 +1894,7 @@ export function finishEnemyTurn(){
                 player.attack = Math.max(0, (player.attack || 0) - bonus);
                 delete player.statusEffects.strength;
                 delete player.statusEffects.strengthBonus;
-                log(`⏱️ Force du Tigre se dissipe (-${bonus} attaque).`);
+                log(`Force du Tigre se dissipe (-${bonus} attaque).`);
             }
         }
         if((player.statusEffects?.reflectDamage || 0) > 0) {
@@ -1903,7 +1902,7 @@ export function finishEnemyTurn(){
             if(player.statusEffects.reflectDamage <= 0) {
                 delete player.statusEffects.reflectDamage;
                 delete player.statusEffects.reflectDamagePercent;
-                log(`⏱️ Miroir de Bronze se dissipe.`);
+                log(`Miroir de Bronze se dissipe.`);
             }
         }
         if((player.statusEffects?.counterOnBlock || 0) > 0) {
@@ -1911,14 +1910,14 @@ export function finishEnemyTurn(){
             if(player.statusEffects.counterOnBlock <= 0) {
                 delete player.statusEffects.counterOnBlock;
                 delete player.statusEffects.counterOnBlockDmg;
-                log(`⏱️ Riposte du Garde se dissipe.`);
+                log(`Riposte du Garde se dissipe.`);
             }
         }
         if((player.statusEffects?.immunityEffects || 0) > 0) {
             player.statusEffects.immunityEffects--;
             if(player.statusEffects.immunityEffects <= 0) {
                 delete player.statusEffects.immunityEffects;
-                log(`⏱️ L'immunité aux effets négatifs se dissipe.`);
+                log(`L'immunité aux effets négatifs se dissipe.`);
             }
         }
         if((player.statusEffects?.drainOnHit || 0) > 0) {
@@ -1926,14 +1925,14 @@ export function finishEnemyTurn(){
             if(player.statusEffects.drainOnHit <= 0) {
                 delete player.statusEffects.drainOnHit;
                 delete player.statusEffects.drainOnHitAmount;
-                log(`⏱️ L'effet des Flèches Sifflantes se dissipe.`);
+                log(`L'effet des Flèches Sifflantes se dissipe.`);
             }
         }
         if((player.statusEffects?.manaShield?.turns || 0) > 0) {
             player.statusEffects.manaShield.turns--;
             if(player.statusEffects.manaShield.turns <= 0) {
                 delete player.statusEffects.manaShield;
-                log(`⏱️ Le bouclier de mana se dissipe.`);
+                log(`Le bouclier de mana se dissipe.`);
             }
         }
         // Tour suivant : joueur (définir le tour avant saveUpdate pour que les boutons dépendants du tour soient corrects)
@@ -1948,13 +1947,13 @@ export function finishEnemyTurn(){
 // -------------------------------------
 // progression
 export function handleEnemyDefeated(){
-    log(`🏆 ${enemy.name} est vaincu !`);
+    log(`${enemy.name} est vaincu !`);
     playSfx('victory');
     
     // Calculer et mettre en attente l'XP (application en fin de combat)
     const xpGain = calculateXPGain(enemy, player.level);
     queueCombatXP(xpGain);
-    log(`⭐ Vous gagnez ${xpGain} XP !`);
+    log(`Vous gagnez ${xpGain} XP !`);
 
     // Pièces d'or : base liée au niveau de l'ennemi + part aléatoire + multiplicateur du profil de l'ennemi
     const enemyLvl = enemy.level || player.level || 1;
@@ -1964,18 +1963,18 @@ export function handleEnemyDefeated(){
     const goldEarned = goldBase + goldBonus;
     player.gold = (player.gold || 0) + goldEarned;
     combatRewards.gold = goldEarned;
-    log(`💰 Vous ramassez ${goldEarned} pièce${goldEarned > 1 ? 's' : ''} d'or !`);
+    log(`Vous ramassez ${goldEarned} pièce${goldEarned > 1 ? 's' : ''} d'or !`);
 
     // Drop de l'objet de l'ennemi (si il en avait un)
     if(enemy.inventoryItem) {
         player.inventory.push({...enemy.inventoryItem, applied: false});
         normalizeActiveInventoryIndex();
         combatRewards.items.push(enemy.inventoryItem.name);
-        const rarityEmoji = getRarityEmoji(enemy.inventoryItem.rarity);
+        const rarityEmoji = getRarityIcon(enemy.inventoryItem.rarity);
         log(`${rarityEmoji} ${enemy.name} portait : ${enemy.inventoryItem.name} !`);
         if(enemy.inventoryItem.type === 'artifact') {
             applyArtifactEffects(player);
-            log(`✨ ${enemy.inventoryItem.description}`);
+            log(`${enemy.inventoryItem.description}`);
         }
     }
 
@@ -1994,12 +1993,12 @@ export function handleEnemyDefeated(){
                 player.inventory.push({...droppedItem, applied: false});
                 normalizeActiveInventoryIndex();
                 combatRewards.items.push(droppedItem.name);
-                const rarityEmoji = getRarityEmoji(droppedItem.rarity);
+                const rarityEmoji = getRarityIcon(droppedItem.rarity);
                 log(`${rarityEmoji} Vous obtenez : ${droppedItem.name} !`);
                 // Appliquer immédiatement les effets des artefacts
                 if(droppedItem.type === "artifact") {
                     applyArtifactEffects(player);
-                    log(`✨ ${droppedItem.description}`);
+                    log(`${droppedItem.description}`);
                 }
             }
         } else {
@@ -2022,26 +2021,26 @@ export function handleEnemyDefeated(){
                     const bonusGold = Math.floor(randomWeapon.minLevel * 2 + 5);
                     player.gold = (player.gold || 0) + bonusGold;
                     combatRewards.gold += bonusGold;
-                    log(`💰 Arme déjà possédée, convertie en ${bonusGold} pièce${bonusGold > 1 ? 's' : ''} d'or.`);
+                    log(`Arme déjà possédée, convertie en ${bonusGold} pièce${bonusGold > 1 ? 's' : ''} d'or.`);
                 }
             }
         }
     } else {
-        log(`💨 L'ennemi ne laisse rien derrière lui...`);
+        log(`L'ennemi ne laisse rien derrière lui...`);
     }
     
     const xpResult = applyCombatXPAtEnd();
     if(xpResult.leveledUp) {
-        log(`🎉 Niveau ${player.level} atteint ! +${xpResult.maxHpGained} HP max, +${xpResult.hpRecovered} HP de recuperation.`);
+        log(`Niveau ${player.level} atteint ! +${xpResult.maxHpGained} HP max, +${xpResult.hpRecovered} HP de recuperation.`);
         if(xpResult.levelsGained > 1) {
-            log(`✨ Vous avez gagné ${xpResult.levelsGained} niveaux d'un coup !`);
+            log(`Vous avez gagné ${xpResult.levelsGained} niveaux d'un coup !`);
         }
         updateAvailableSpells();
         updateAvailableWeapons();
         updateInventoryTab();
         showAttributeMenu();
     } else {
-        log(`📊 Progression: ${player.xp}/${player.xpToNextLevel} XP`);
+        log(`Progression: ${player.xp}/${player.xpToNextLevel} XP`);
     }
 
     if(enemy.isBoss) {
@@ -2056,7 +2055,7 @@ export function handleEnemyDefeated(){
         if(player.pendingBoss && player.pendingBoss.tier === bossTier) {
             player.pendingBoss = null;
         }
-        log(`👑 Boss du palier ${bossTier} vaincu !`);
+        log(`Boss du palier ${bossTier} vaincu !`);
     }
 
     combatHooks.onVictory?.();
@@ -2151,7 +2150,7 @@ function selectAttribute(attr) {
     player.attributes[attr]++;
     player.unspentLevelPoints = Math.max(0, (player.unspentLevelPoints || 0) - 1);
     applyAttributeBonus(attr);
-    log(`📈 +1 ${attrNames[attr]}`);
+    log(`+1 ${attrNames[attr]}`);
     saveUpdate();
 }
 
@@ -2306,18 +2305,18 @@ function getSpellTooltipHtml(spell) {
     if(spell.effect) {
         effectText = spell.description || 'Effet spécial';
     } else if(spell.dmg && spell.heal) {
-        effectText = `Inflige ${spell.dmg} 💀 et soigne ${spell.heal} ❤️`;
+        effectText = `Inflige ${spell.dmg} ${svgIcon('skull')} et soigne ${spell.heal} ${svgIcon('heart')}`;
     } else if(spell.dmg) {
-        effectText = `Inflige ${spell.dmg} 💀`;
+        effectText = `Inflige ${spell.dmg} ${svgIcon('skull')}`;
     } else if(spell.heal) {
-        effectText = `Soigne ${spell.heal} ❤️`;
+        effectText = `Soigne ${spell.heal} ${svgIcon('heart')}`;
     }
 
-    return `<div class="spell-tooltip-line">🧠 ${effectText}</div>`;
+    return `<div class="spell-tooltip-line">${effectText}</div>`;
 }
 
 function getItemTooltipHtml(item, options = {}) {
-    if(!item) return '<div class="spell-tooltip-line">📦 Objet inconnu</div>';
+    if(!item) return '<div class="spell-tooltip-line">Objet inconnu</div>';
 
     const isEnemyItem = options.isEnemyItem === true;
     const ownerLabel = isEnemyItem ? 'ennemi' : 'allié';
@@ -2326,14 +2325,14 @@ function getItemTooltipHtml(item, options = {}) {
         : (item.type === 'consumable' ? 'Consommable' : 'Objet');
     const actionPoints = item.type === 'consumable' ? (item.actionPoints || 2) : null;
 
-    let html = `<div class="spell-tooltip-title">📦 ${item.name || 'Objet'}</div>`;
-    html += `<div class="spell-tooltip-line">👥 Objet ${ownerLabel}</div>`;
-    html += `<div class="spell-tooltip-line">🏷️ Type: ${typeLabel}</div>`;
+    let html = `<div class="spell-tooltip-title">${item.name || 'Objet'}</div>`;
+    html += `<div class="spell-tooltip-line">Objet ${ownerLabel}</div>`;
+    html += `<div class="spell-tooltip-line">Type: ${typeLabel}</div>`;
     if(actionPoints !== null) {
-        html += `<div class="spell-tooltip-line">🏹 Coût: ${actionPoints} PA</div>`;
+        html += `<div class="spell-tooltip-line">Coût: ${actionPoints} PA</div>`;
     }
     if(item.description) {
-        html += `<div class="spell-tooltip-line">🧠 ${item.description}</div>`;
+        html += `<div class="spell-tooltip-line">${item.description}</div>`;
     }
     return html;
 }
@@ -2432,13 +2431,13 @@ function getEnemyNameTooltipHtml(fullName, enemyEntity) {
     if(strongest) {
         const strongMeta = MANA_COLOR_META[strongest.color];
         const strongPercent = Math.round(strongest.value * 100);
-        lines.push(`<div class="enemy-tooltip-row enemy-tooltip-strong">💪 Force : ${strongMeta.emoji} ${strongMeta.name} (${strongPercent}% res.)</div>`);
+        lines.push(`<div class="enemy-tooltip-row enemy-tooltip-strong">Force : ${manaIcon(strongest.color)} ${strongMeta.name} (${strongPercent}% res.)</div>`);
     }
 
     if(weakest) {
         const weakMeta = MANA_COLOR_META[weakest.color];
         const weakPercent = Math.round(weakest.value * 100);
-        lines.push(`<div class="enemy-tooltip-row enemy-tooltip-weak">🎯 Faiblesse : ${weakMeta.emoji} ${weakMeta.name} (${weakPercent}% res.)</div>`);
+        lines.push(`<div class="enemy-tooltip-row enemy-tooltip-weak">Faiblesse : ${manaIcon(weakest.color)} ${weakMeta.name} (${weakPercent}% res.)</div>`);
     }
 
     return lines.join('');
@@ -2484,8 +2483,8 @@ export function updateSpellsTab(){
         player.activeSpells.forEach(sp => {
             const div = document.createElement('div');
             div.className = 'spell-item active-spell';
-            const damageText = sp.dmg ? ` • ${sp.dmg} 💀` : '';
-            const healText = sp.heal ? ` • ${sp.heal} ❤️` : '';
+            const damageText = sp.dmg ? ` • ${sp.dmg} ${svgIcon('skull')}` : '';
+            const healText = sp.heal ? ` • ${sp.heal} ${svgIcon('heart')}` : '';
             const effectText = sp.effect ? ` • ${sp.description}` : '';
             
             // Gérer l'affichage du coût
@@ -2503,7 +2502,7 @@ export function updateSpellsTab(){
                     <div class="spell-name">${sp.name}</div>
                     <div class="spell-cost">${costHTML}${damageText}${healText}${effectText}</div>
                 </div>
-                <div class="spell-action" tabindex="0" onclick="window.unequipSpell('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.unequipSpell('${sp.id}');}">❌ Retirer</div>
+                <div class="spell-action" tabindex="0" onclick="window.unequipSpell('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.unequipSpell('${sp.id}');}">Retirer</div>
             `;
             activeList.appendChild(div);
         });
@@ -2521,8 +2520,8 @@ export function updateSpellsTab(){
             const div = document.createElement('div');
             div.className = 'spell-item available-spell';
             const canEquip = player.activeSpells.length < 4;
-            const damageText = sp.dmg ? ` • ${sp.dmg} 💀` : '';
-            const healText = sp.heal ? ` • ${sp.heal} ❤️` : '';
+            const damageText = sp.dmg ? ` • ${sp.dmg} ${svgIcon('skull')}` : '';
+            const healText = sp.heal ? ` • ${sp.heal} ${svgIcon('heart')}` : '';
             const effectText = sp.effect ? ` • ${sp.description}` : '';
             
             // Gérer l'affichage du coût
@@ -2540,7 +2539,7 @@ export function updateSpellsTab(){
                     <div class="spell-name">${sp.name}</div>
                     <div class="spell-cost">${costHTML}${damageText}${healText}${effectText}</div>
                 </div>
-                <div class="spell-action ${canEquip ? '' : 'disabled'}" tabindex="${canEquip ? '0' : '-1'}" aria-disabled="${canEquip ? 'false' : 'true'}" ${canEquip ? `onclick="window.equipSpell('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.equipSpell('${sp.id}');}"` : ''}>✅ Équiper</div>
+                <div class="spell-action ${canEquip ? '' : 'disabled'}" tabindex="${canEquip ? '0' : '-1'}" aria-disabled="${canEquip ? 'false' : 'true'}" ${canEquip ? `onclick="window.equipSpell('${sp.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.equipSpell('${sp.id}');}"` : ''}>Équiper</div>
             `;
             availableList.appendChild(div);
         });
@@ -2549,11 +2548,11 @@ export function updateSpellsTab(){
 
 export function equipSpell(spellId){
     if(gameState.combatState === 'active'){
-        log('⚠️ Vous ne pouvez pas modifier vos sorts pendant le combat !');
+        log('Vous ne pouvez pas modifier vos sorts pendant le combat !');
         return;
     }
     if(player.activeSpells.length >= 4){
-        log('⚠️ Maximum 4 sorts actifs atteint.');
+        log('Maximum 4 sorts actifs atteint.');
         return;
     }
     const spell = player.availableSpells.find(s => s.id === spellId);
@@ -2562,19 +2561,19 @@ export function equipSpell(spellId){
     player.activeSpells.push(spell);
     player.spells = player.activeSpells;
     saveUpdate();
-    log(`✅ ${spell.name} équipé.`);
+    log(`${spell.name} équipé.`);
 }
 
 export function unequipSpell(spellId){
     if(gameState.combatState === 'active'){
-        log('⚠️ Vous ne pouvez pas modifier vos sorts pendant le combat !');
+        log('Vous ne pouvez pas modifier vos sorts pendant le combat !');
         return;
     }
     player.activeSpells = player.activeSpells.filter(s => s.id !== spellId);
     player.spells = player.activeSpells;
     saveUpdate();
     const spell = player.availableSpells.find(s => s.id === spellId);
-    if(spell) log(`❌ ${spell.name} retiré.`);
+    if(spell) log(`${spell.name} retiré.`);
 }
 
 // -------------------------------------
@@ -2607,7 +2606,7 @@ export function applyStartingAbilities(){
                 Object.keys(ability.startMana).forEach(color => {
                     addManaForColor(player, color, ability.startMana[color], { applyGainBonus: false });
                 });
-                log(`✨ Aptitude: ${ability.name} activée`);
+                log(`Aptitude: ${ability.name} activée`);
             }
         });
     }
@@ -2629,7 +2628,7 @@ export function applyStartingAbilities(){
     // Appliquer les points d'action de départ (ex: Bottes de Célérité)
     if(player.startActionPoints > 0) {
         player.combatPoints = (player.combatPoints || 0) + player.startActionPoints;
-        log(`👟 Sandales du Vent Léger : +${player.startActionPoints} point(s) d'action au début du combat.`);
+        log(`Sandales du Vent Léger : +${player.startActionPoints} point(s) d'action au début du combat.`);
     }
 }
 
@@ -2648,24 +2647,24 @@ export function newEnemy(selectedEnemy = null){
     
     // Afficher le niveau de l'ennemi dans les logs
     if (enemy.level > player.level) {
-        log(`⚠️ ${enemy.name} (Niveau ${enemy.level}) apparaît ! Il est plus fort que vous !`);
+        log(`${enemy.name} (Niveau ${enemy.level}) apparaît ! Il est plus fort que vous !`);
     } else {
-        log(`⚔️ ${enemy.name} (Niveau ${enemy.level}) apparaît !`);
+        log(`${enemy.name} (Niveau ${enemy.level}) apparaît !`);
     }
     // Réinitialiser le mana de l'ennemi à 0 puis appliquer ses aptitudes
     enemy.mana = { red:0, blue:0, green:0, yellow:0, purple:0 };
     applyStartingAbilities();
-    log(`🔹 Un nouvel ennemi: ${enemy.name}`);
+    log(`Un nouvel ennemi: ${enemy.name}`);
     if(enemy.weapon){
-        log(`🗡️ L'ennemi est équipé de : ${enemy.weapon.name}`);
+        log(`L'ennemi est équipé de : ${enemy.weapon.name}`);
     } else {
-        log(`🔮 L'ennemi n'a pas d'arme (utilise uniquement la magie)`);
+        log(`L'ennemi n'a pas d'arme (utilise uniquement la magie)`);
     }
     if(enemy.inventoryItem){
-        log(`🎒 ${enemy.name} porte : ${enemy.inventoryItem.name}`);
+        log(`${enemy.name} porte : ${enemy.inventoryItem.name}`);
     }
     if(enemy.spells.length > 0){
-        log(`✨ L'ennemi dispose de sorts : ${enemy.spells.map(s => s.name).join(", ")}`);
+        log(`L'ennemi dispose de sorts : ${enemy.spells.map(s => s.name).join(", ")}`);
     }
     updateEnemySpells();
     // déterminer au hasard qui commence
@@ -2680,21 +2679,21 @@ export function decideFirstTurn(){
     let starter;
     if(playerAgility > enemyAgility){
         starter = 'player';
-        log(`⚡ Vous êtes plus agile ! Vous commencez en premier.`);
-        showCombatAnimation({ icon: '⚡', title: 'Vous commencez !', source: `Agilité : ${playerAgility} > ${enemyAgility}`, target: '→ À vous de jouer !' }, true);
+        log(`Vous êtes plus agile ! Vous commencez en premier.`);
+        showCombatAnimation({ icon: 'bolt', title: 'Vous commencez !', source: `Agilité : ${playerAgility} > ${enemyAgility}`, target: '→ À vous de jouer !' }, true);
     } else if(enemyAgility > playerAgility){
         starter = 'enemy';
-        log(`⚡ ${enemy.name} est plus agile ! Il commence en premier.`);
-        showCombatAnimation({ icon: '⚡', title: `${enemy.name} commence !`, source: `Agilité : ${enemyAgility} > ${playerAgility}`, target: '→ Ennemi joue en premier' }, false);
+        log(`${enemy.name} est plus agile ! Il commence en premier.`);
+        showCombatAnimation({ icon: 'bolt', title: `${enemy.name} commence !`, source: `Agilité : ${enemyAgility} > ${playerAgility}`, target: '→ Ennemi joue en premier' }, false);
     } else {
         // En cas d'égalité, le joueur commence
         starter = 'player';
-        log(`⚖️ Égalité d'agilité, vous commencez !`);
-        showCombatAnimation({ icon: '⚖️', title: 'Égalité !', source: `Agilité : ${playerAgility} = ${enemyAgility}`, target: '→ À vous de jouer !' }, true);
+        log(`Égalité d'agilité, vous commencez !`);
+        showCombatAnimation({ icon: 'scales', title: 'Égalité !', source: `Agilité : ${playerAgility} = ${enemyAgility}`, target: '→ À vous de jouer !' }, true);
     }
     
     currentTurn = starter;
-    log(`🔄 Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'}`);
+    log(`Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'}`);
     if(starter === 'enemy'){
         setTimeout(() => enemyTurn(), 1500);
     }
@@ -2718,31 +2717,31 @@ export function updateAvailableWeapons(){
 
 export function equipWeapon(weaponId){
     if(gameState.combatState === 'active'){
-        log('⚠️ Vous ne pouvez pas modifier vos armes pendant le combat !');
+        log('Vous ne pouvez pas modifier vos armes pendant le combat !');
         return;
     }
     const weapon = allWeapons.find(w => w.id === weaponId);
     if(!weapon) return;
     if(player.level < weapon.minLevel){
-        log(`⚠️ Nécessite niveau ${weapon.minLevel} pour équiper ${weapon.name}.`);
+        log(`Nécessite niveau ${weapon.minLevel} pour équiper ${weapon.name}.`);
         return;
     }
     player.equippedWeapon = weapon;
     saveUpdate();
-    log(`✅ ${weapon.name} équipée.`);
+    log(`${weapon.name} équipée.`);
     createWeaponButton();
 }
 
 export function unequipWeapon(){
     if(gameState.combatState === 'active'){
-        log('⚠️ Vous ne pouvez pas modifier vos armes pendant le combat !');
+        log('Vous ne pouvez pas modifier vos armes pendant le combat !');
         return;
     }
     if(!player.equippedWeapon) return;
     const weaponName = player.equippedWeapon.name;
     player.equippedWeapon = null;
     saveUpdate();
-    log(`❌ ${weaponName} retirée.`);
+    log(`${weaponName} retirée.`);
     createWeaponButton();
 }
 
@@ -2757,7 +2756,7 @@ export function createWeaponButton(){
         } else {
             container.innerHTML = `
                 <div class="enemy-spell-item disabled">
-                    <div class="spell-name">⚠️ Aucune arme equipee</div>
+                    <div class="spell-name">Aucune arme equipee</div>
                     <div class="spell-cost">Allez dans l'onglet Armes pour en equiper une.</div>
                 </div>
             `;
@@ -2775,7 +2774,7 @@ export function createWeaponButton(){
     
     btn.innerHTML = `
         <div class="spell-name">${icon} ${weapon.name}</div>
-        <div class="spell-cost">${weapon.actionPoints} 🏹 - ${weapon.damage} 💀</div>
+        <div class="spell-cost">${weapon.actionPoints} ${svgIcon('arrow')} - ${weapon.damage} ${svgIcon('skull')}</div>
     `;
     if(player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints) {
         btn.classList.add('disabled');
@@ -2814,10 +2813,10 @@ export function updateWeaponsTab(){
             <span class="weapon-icon">${icon}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${weapon.name}</span>
-                <span class="weapon-stats">${weapon.damage} 💀 • ${weapon.actionPoints} 🏹 • Niv. ${weapon.minLevel}</span>
+                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
-            <button class="weapon-action" onclick="window.unequipWeapon()">❌ Retirer</button>
+            <button class="weapon-action" onclick="window.unequipWeapon()">Retirer</button>
         `;
         equippedDiv.appendChild(div);
     }
@@ -2825,7 +2824,7 @@ export function updateWeaponsTab(){
     // Armes disponibles
     availableList.innerHTML = '';
     if(!player.availableWeapons || player.availableWeapons.length === 0){
-        availableList.innerHTML = '<div style="padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; margin-top: 15px;"><strong>💡 Aucune arme en votre possession</strong><br>Les armes peuvent être obtenues en gagnant des combats !</div>';
+        availableList.innerHTML = '<div style="padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; margin-top: 15px;"><strong>Aucune arme en votre possession</strong><br>Les armes peuvent être obtenues en gagnant des combats !</div>';
         updateInventoryTab();
         updateItemButton();
         return;
@@ -2841,10 +2840,10 @@ export function updateWeaponsTab(){
             <span class="weapon-icon">${icon}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${weapon.name}</span>
-                <span class="weapon-stats">${weapon.damage} 💀 • ${weapon.actionPoints} 🏹 • Niv. ${weapon.minLevel}</span>
+                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
-            <button class="weapon-action" ${isEquipped ? 'disabled' : ''} onclick="window.equipWeapon('${weapon.id}')">${isEquipped ? '✅ Équipée' : '📦 Équiper'}</button>
+            <button class="weapon-action" ${isEquipped ? 'disabled' : ''} onclick="window.equipWeapon('${weapon.id}')">${isEquipped ? 'Équipée' : 'Équiper'}</button>
         `;
         availableList.appendChild(div);
     });
@@ -2867,7 +2866,7 @@ export function updateInventoryTab(){
     if(!player.inventory || player.inventory.length === 0){
         inventoryList.innerHTML = `
             <div class="inventory-slot inventory-slot-empty">
-                <span class="slot-icon">📦</span>
+                <span class="slot-icon">${svgIcon('box')}</span>
                 <span class="slot-label"><em>Aucun objet</em></span>
             </div>
         `;
@@ -2876,20 +2875,20 @@ export function updateInventoryTab(){
 
     player.inventory.forEach((item, index) => {
         const isActive = index === player.activeInventoryIndex;
-        const rarityEmoji = getRarityEmoji(item.rarity);
+        const rarityEmoji = getRarityIcon(item.rarity);
         const rarityColor = getRarityColor(item.rarity);
 
         const div = document.createElement('div');
         div.className = `item-card ${item.type === 'consumable' ? 'consumable-item' : 'artifact-item'}`;
         div.style.borderLeft = `4px solid ${rarityColor}`;
-        const paInfo = item.type === 'consumable' ? ` <span style="color:#888;font-size:0.85em;">(${item.actionPoints || 2} 🏹)</span>` : '';
+        const paInfo = item.type === 'consumable' ? ` <span style="color:#888;font-size:0.85em;">(${item.actionPoints || 2} ${svgIcon('arrow')})</span>` : '';
         const lockDuringCombat = gameState.combatState === 'active' ? 'disabled' : '';
         div.innerHTML = `
             <div class="item-header">
                 <span class="item-name">${rarityEmoji} ${item.name}${paInfo}</span>
                 <div class="item-actions">
-                    ${isActive ? '<span class="artifact-badge">✅ Actif</span>' : `<button class="item-discard-btn" ${lockDuringCombat} onclick="window.setActiveInventoryItem(${index})">🎯 Activer</button>`}
-                    <button class="item-discard-btn" onclick="window.discardInventoryItem(${index})">🗑️ Jeter</button>
+                    ${isActive ? '<span class="artifact-badge">Actif</span>' : `<button class="item-discard-btn" ${lockDuringCombat} onclick="window.setActiveInventoryItem(${index})">Activer</button>`}
+                    <button class="item-discard-btn" onclick="window.discardInventoryItem(${index})">Jeter</button>
                 </div>
             </div>
             <div class="item-description">${item.description}</div>
@@ -2914,7 +2913,7 @@ export function updateItemButton(){
         div.className = 'enemy-spell-item disabled';
         div.tabIndex = 0;
         div.innerHTML = `
-            <div class="spell-name">⚡ ${item.name}</div>
+            <div class="spell-name">${svgIcon('bolt')} ${item.name}</div>
             <div class="spell-cost">Actif (passif)</div>
         `;
         const showDetails = () => showItemTooltip(div, item, { isEnemyItem: false });
@@ -2939,8 +2938,8 @@ export function updateItemButton(){
     btn.className = 'enemy-spell-item';
     btn.tabIndex = 0;
     btn.innerHTML = `
-        <div class="spell-name">🎒 ${item.name}</div>
-        <div class="spell-cost">${pa} 🏹</div>
+        <div class="spell-name">${svgIcon('bag')} ${item.name}</div>
+        <div class="spell-cost">${pa} ${svgIcon('arrow')}</div>
     `;
     const showDetails = () => showItemTooltip(btn, item, { isEnemyItem: false });
     const hideDetails = () => hideSpellTooltip();
@@ -2972,7 +2971,7 @@ export function updateItemButton(){
 
 export function setActiveInventoryItem(index){
     if(gameState.combatState === 'active'){
-        log('⚠️ Vous ne pouvez pas changer d\'objet actif pendant le combat !');
+        log('Vous ne pouvez pas changer d\'objet actif pendant le combat !');
         return;
     }
     if(!Array.isArray(player.inventory) || player.inventory.length === 0) return;
@@ -2981,26 +2980,26 @@ export function setActiveInventoryItem(index){
 
     player.activeInventoryIndex = index;
     const item = player.inventory[index];
-    log(`🎯 Objet actif : ${item.name}.`);
+    log(`Objet actif : ${item.name}.`);
     updateInventoryTab();
     updateItemButton();
     saveUpdate();
 }
 
 export function useInventoryItem(itemId, index){
-    if(gameState.combatState !== 'active'){ log("⚠️ Aucun combat en cours."); return; }
-    if(currentTurn !== 'player'){ log("⚠️ Ce n'est pas votre tour."); return; }
+    if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
+    if(currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return; }
 
     normalizeActiveInventoryIndex();
     const resolvedIndex = Number.isInteger(index) ? index : player.activeInventoryIndex;
     if(!Number.isInteger(resolvedIndex) || resolvedIndex < 0 || resolvedIndex >= player.inventory.length) {
-        log("⚠️ Aucun objet actif sélectionné.");
+        log("Aucun objet actif sélectionné.");
         return;
     }
 
     const item = player.inventory[resolvedIndex];
     if(item.id !== itemId){
-        log("⚠️ L'objet actif a changé, réessayez.");
+        log("L'objet actif a changé, réessayez.");
         return;
     }
     if(!item){ log("Objet introuvable."); return; }
@@ -3023,7 +3022,7 @@ export function useInventoryItem(itemId, index){
         finishPlayerTurn();
     } else {
         player.combatPoints += pa;
-        log(`⚠️ ${result.message}`);
+        log(`${result.message}`);
     }
 }
 
@@ -3037,7 +3036,7 @@ export function discardInventoryItem(index){
     const item = player.inventory[targetIndex];
     player.inventory.splice(targetIndex, 1);
     normalizeActiveInventoryIndex();
-    log(`🗑️ Vous avez jeté ${item.name}.`);
+    log(`Vous avez jeté ${item.name}.`);
     updateInventoryTab();
     updateItemButton();
     saveUpdate();

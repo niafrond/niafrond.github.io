@@ -25,7 +25,6 @@ export default {
     well_digger_omar: {
       name: "Omar",
       title: "Puisatier",
-      emoji: "⛏️",
       idle: [
         "Je creuse depuis quarante ans. L'eau est un trésor qu'on trouve à reculons.",
         "Mon puits a une voix. Quand il chante, c'est qu'il a soif."
@@ -42,7 +41,6 @@ export default {
     rug_seller_zeynep: {
       name: "Zeynep",
       title: "Marchande de tapis",
-      emoji: "🧶",
       idle: [
         "Ce tapis a traversé trois déserts et deux divorces. Il vaut le prix.",
         "Un tapis, c'est un poème qu'on marche dessus. Marchez doucement."
@@ -59,7 +57,6 @@ export default {
     date_farmer_ismail: {
       name: "Ismail",
       title: "Cultivateur de dattes",
-      emoji: "🌴",
       idle: [
         "Mes palmiers pleurent de la datte. Je ne suis pas pressé de leur dire de s'arrêter.",
         "Une datte vaut un baiser, dans ce désert. Moi, je les distribue avec parcimonie."
@@ -76,7 +73,6 @@ export default {
     girl_noor: {
       name: "Noor",
       title: "Fillette aux yeux de sable",
-      emoji: "👧",
       idle: [
         "Le sable chante quand on le caresse. Écoute… il dit « bonsoir ».",
         "Un jour, je serai chamelière. J'ai déjà un nom pour mon chameau : Monsieur Bosse."
@@ -93,7 +89,6 @@ export default {
     caravan_cook_lu: {
       name: "Lu",
       title: "Cuisinier de caravane",
-      emoji: "🍲",
       idle: [
         "Ma soupe est épicée. Si vous pleurez, ce n'est pas de joie, c'est de piment.",
         "Un bon cuisinier ne se plaint jamais. Il met du sel, il remue, il prie."
@@ -110,7 +105,6 @@ export default {
     falconer_arslan: {
       name: "Arslan",
       title: "Fauconnier",
-      emoji: "🦅",
       idle: [
         "Mon faucon voit tout. Même les mirages qui n'existent pas.",
         "Un faucon ne s'excuse jamais. Moi, si, en son nom."
@@ -127,7 +121,6 @@ export default {
     oracle_ahmad: {
       name: "Ahmad",
       title: "Devin de la source",
-      emoji: "🧙",
       idle: [
         "Je lis dans le sable. Aujourd'hui, il dit : « Du vent. »",
         "Ce disciple qui vous suit… Le sable ne l'aime pas. Il glisse sous ses pas."
@@ -144,7 +137,6 @@ export default {
     lost_pilgrim_ren: {
       name: "Ren",
       title: "Pèlerin égaré",
-      emoji: "🧳",
       idle: [
         "Je cherchais le Kunlun, la montagne de la Reine Mère. Je me suis trompé de direction. Il est plus loin qu'on ne croit.",
         "Ma femme est malade depuis l'hiver. Je veux demander une gorgée d'élixir à la Reine Mère."
@@ -161,7 +153,6 @@ export default {
     fennec_lili: {
       name: "Lili",
       title: "Fennec bavard",
-      emoji: "🦊",
       idle: [
         "Mes oreilles sont grandes parce que j'entends tout. Surtout ce qu'il vaudrait mieux ignorer.",
         "Les fennecs ne boivent pas. Ils rêvent d'eau, ce qui est moins pratique."
@@ -178,7 +169,6 @@ export default {
     camel_foreman_tang: {
       name: "Tang",
       title: "Chef d'étape de la caravane",
-      emoji: "🧔",
       idle: [
         "Je tiens les comptes de la caravane. Chameaux, outres, rancunes.",
         "Une étape bien faite, c'est un voyage sans histoire. Je préfère ça à la légende."
@@ -196,39 +186,27 @@ export default {
   chests: {
     well_coin_box: {
       label: "Boîte aux vœux du puits",
-      openText: "🎁 Des pièces jetées par des voyageurs, repêchées avec respect.",
-      emoji: "🪙",
-      emojiOpened: "🪙"
+      openText: "Des pièces jetées par des voyageurs, repêchées avec respect.",
     },
     rug_chest: {
       label: "Coffre sous les tapis",
-      openText: "🎁 Sous le dernier tapis, un coffre rempli d'or de caravane.",
-      emoji: "🧰",
-      emojiOpened: "🧰"
+      openText: "Sous le dernier tapis, un coffre rempli d'or de caravane.",
     },
     date_basket: {
       label: "Panier de dattes",
-      openText: "🎁 Un panier de dattes dorées, avec des pièces glissées entre les fruits.",
-      emoji: "🌴",
-      emojiOpened: "🌴"
+      openText: "Un panier de dattes dorées, avec des pièces glissées entre les fruits.",
     },
     sand_obelisk: {
       label: "Obélisque enfoui",
-      openText: "🎁 Un obélisque de grès à moitié enterré, qui cache une petite chambre et du métal fin.",
-      emoji: "🗿",
-      emojiOpened: "🗿"
+      openText: "Un obélisque de grès à moitié enterré, qui cache une petite chambre et du métal fin.",
     },
     bandit_stash: {
       label: "Cache des brigands",
-      openText: "🎁 La cache d'une bande de pillards : ballots de soie, thé et monnaie.",
-      emoji: "💰",
-      emojiOpened: "💰"
+      openText: "La cache d'une bande de pillards : ballots de soie, thé et monnaie.",
     },
     journal_page_gob: {
       label: "Page prise dans le sable",
-      openText: "🎁 Une page à demi ensablée : « J'ai acheté une carte de la route jusqu'au Kunlun. Je saurai m'en servir. »",
-      emoji: "📄",
-      emojiOpened: "📄"
+      openText: "Une page à demi ensablée : « J'ai acheté une carte de la route jusqu'au Kunlun. Je saurai m'en servir. »",
     }
   },
   quests: [

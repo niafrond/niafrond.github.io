@@ -36,11 +36,11 @@ export default {
             { id: 'scholar_dong', at: '2' }
         ],
         chests: [
-            { id: 'tea_hideout', at: '9', gold: 45, label: 'Cachette de thé', emoji: '🍵', openText: '🎁 Sous une natte brûlée, un pot de thé fêlé… et quelques sous que quelqu\'un avait cachés là.' },
-            { id: 'bambous_garden_a', at: 'j', gold: 45, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'bambous_garden_b', at: 'k', gold: 45, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
-            { id: 'bambous_market_a', at: 'm', gold: 90, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
-            { id: 'bambous_market_b', at: 'n', gold: 90, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+            { id: 'tea_hideout', at: '9', gold: 45, label: 'Cachette de thé', openText: 'Sous une natte brûlée, un pot de thé fêlé… et quelques sous que quelqu\'un avait cachés là.' },
+            { id: 'bambous_garden_a', at: 'j', gold: 45, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'bambous_garden_b', at: 'k', gold: 45, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'bambous_market_a', at: 'm', gold: 90, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'bambous_market_b', at: 'n', gold: 90, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]
     },
 
@@ -100,15 +100,15 @@ export default {
             { id: 'ash_urn', at: 'm', gold: 135 }
         ],
         enemies: [
-            { id: 'bambous_seal_keeper', at: '1', templateId: 'temple_warden', emoji: '🏮', name: 'Gardien des cendres', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien des cendres', level: 3 } },
-            { id: 'bambous_ember_wisp', at: '2', templateId: 'fungal_horror', emoji: '🍄', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
-            { id: 'bambous_ember_wisp_b', at: '3', templateId: 'fungal_horror', emoji: '🍄', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
-            { id: 'bambous_w_shade', at: '4', templateId: 'shadow_assassin', emoji: '🥷', name: 'Ombre de cendre', kind: 'patrol', patrol: ['4', '5'], offset: 0 },
-            { id: 'bambous_w_spirit', at: '6', templateId: 'forest_guardian', emoji: '🎋', name: 'Esprit des tiges brûlées', kind: 'patrol', patrol: ['6', '7'], offset: -1 },
-            { id: 'bambous_w_pilgrim', at: 'y', templateId: 'bone_reaver', emoji: '💀', name: 'Pèlerin calciné', kind: 'sentinel', offset: 0 },
-            { id: 'bambous_ash_shadow_a', at: 'n', templateId: 'shadow_assassin', emoji: '🥷', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
-            { id: 'bambous_ash_shadow_b', at: 'o', templateId: 'shadow_assassin', emoji: '🥷', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
-            { id: 'bambous_lantern_thief', at: 'p', templateId: 'goblin_saboteur', emoji: '🏮', name: 'Xiao Gui voleur de lampions', kind: 'sentinel', offset: 0, permanent: true }
+            { id: 'bambous_seal_keeper', at: '1', templateId: 'temple_warden', name: 'Gardien des cendres', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien des cendres', level: 3 } },
+            { id: 'bambous_ember_wisp', at: '2', templateId: 'fungal_horror', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
+            { id: 'bambous_ember_wisp_b', at: '3', templateId: 'fungal_horror', name: 'Lingzhi des braises', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_lingzhi' },
+            { id: 'bambous_w_shade', at: '4', templateId: 'shadow_assassin', name: 'Ombre de cendre', kind: 'patrol', patrol: ['4', '5'], offset: 0 },
+            { id: 'bambous_w_spirit', at: '6', templateId: 'forest_guardian', name: 'Esprit des tiges brûlées', kind: 'patrol', patrol: ['6', '7'], offset: -1 },
+            { id: 'bambous_w_pilgrim', at: 'y', templateId: 'bone_reaver', name: 'Pèlerin calciné', kind: 'sentinel', offset: 0 },
+            { id: 'bambous_ash_shadow_a', at: 'n', templateId: 'shadow_assassin', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
+            { id: 'bambous_ash_shadow_b', at: 'o', templateId: 'shadow_assassin', name: 'Ombre des cendres', kind: 'sentinel', offset: 0, permanent: true, group: 'ash_shadows' },
+            { id: 'bambous_lantern_thief', at: 'p', templateId: 'goblin_saboteur', name: 'Xiao Gui voleur de lampions', kind: 'sentinel', offset: 0, permanent: true }
         ],
         gate: {
             requires: 'sq_sentier_sceaux',

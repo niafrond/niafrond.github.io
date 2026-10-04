@@ -25,7 +25,6 @@ export default {
     pass_guard_kuang: {
       name: "Kuang",
       title: "Garde du col",
-      emoji: "💂",
       idle: [
         "Je garde le col depuis vingt ans. Il n'a jamais tenté de s'enfuir. Je le surveille quand même.",
         "Chaque passant écrit son nom dans mon registre. L'archer qui est passé hier a écrit « personne »."
@@ -42,7 +41,6 @@ export default {
     glassblower_ouyang: {
       name: "Ouyang",
       title: "Souffleur de verre",
-      emoji: "🫧",
       idle: [
         "Le sable foudroyé donne un verre plein de sursauts. Ça pétille, ça éclate, ça enchante.",
         "Chaque vitrail est une tempête captive. Je lui chante une berceuse pour qu'elle dorme."
@@ -59,7 +57,6 @@ export default {
     goat_yang: {
       name: "Yang",
       title: "Chèvre de montagne bavarde",
-      emoji: "🐐",
       idle: [
         "Mêh ! Je grimpe, je saute, je mange du lichen. La vie est un caillou chaud.",
         "Les humains ont peur de la foudre. Moi, je la prends pour un sifflement."
@@ -76,7 +73,6 @@ export default {
     climber_dai: {
       name: "Dai",
       title: "Alpiniste solitaire",
-      emoji: "🧗",
       idle: [
         "Je grimpe pour trouver. Je ne sais pas quoi. Mon frère le savait.",
         "Les cimes ne parlent pas. Elles écoutent, c'est pire."
@@ -93,7 +89,6 @@ export default {
     fairy_yun: {
       name: "Yunxi",
       title: "Fée des nuages",
-      emoji: "☁️",
       idle: [
         "Je suis un nuage qui a pris forme humaine. Le matin, je me dissipe, le soir, je m'épaissis.",
         "Les orages sont mes cousins mal élevés. Je leur ai demandé de baisser le ton."
@@ -110,7 +105,6 @@ export default {
     bard_xiang: {
       name: "Xiang",
       title: "Barde du vent",
-      emoji: "🪕",
       idle: [
         "Je chante les orages. Ils me répondent. Une fois, un éclair m'a demandé de rejouer.",
         "Ma lyre est faite de câbles de cuivre. Elle joue avec les nuages."
@@ -127,7 +121,6 @@ export default {
     rain_pu: {
       name: "Pu",
       title: "Marchand de pluie",
-      emoji: "🌧️",
       idle: [
         "Pluie en bouteille ! Pluie fraîche, pluie rare, pluie garantie d'origine !",
         "Mon stock est limité, mon enthousiasme non."
@@ -144,7 +137,6 @@ export default {
     keeper_ao: {
       name: "Ao",
       title: "Gardien des cairns",
-      emoji: "🪨",
       idle: [
         "Je veille sur les trois cairns. Chacun a sa personnalité : l'un bavarde, l'autre pleure, le dernier boude.",
         "Pose un caillou, enlève un caillou. C'est l'équilibre du monde."
@@ -161,7 +153,6 @@ export default {
     porter_san: {
       name: "San",
       title: "Porteur de montagne",
-      emoji: "🎒",
       idle: [
         "Je porte des sacs pour qui paie. Parfois, je porte des histoires pour qui écoute.",
         "Le plus lourd, c'est ce qu'on ne dit pas."
@@ -178,7 +169,6 @@ export default {
     pup_tuan: {
       name: "Tuantuan",
       title: "Chiot d'orage",
-      emoji: "🐕",
       idle: [
         "Wouf ! Je suis fait d'étincelles. Ne me touche pas si tu n'aimes pas les picotements.",
         "Je poursuis les éclairs. Je n'en ai jamais attrapé un. Un jour."
@@ -196,39 +186,27 @@ export default {
   chests: {
     guard_post_box: {
       label: "Caisse du poste",
-      openText: "🎁 La solde mise de côté d'un garde qui n'a jamais eu l'occasion de la dépenser.",
-      emoji: "📦",
-      emojiOpened: "📦"
+      openText: "La solde mise de côté d'un garde qui n'a jamais eu l'occasion de la dépenser.",
     },
     glass_chest: {
       label: "Coffre du souffleur",
-      openText: "🎁 Entre deux vitraux emballés dans la paille, des pièces tintent.",
-      emoji: "🔷",
-      emojiOpened: "🔷"
+      openText: "Entre deux vitraux emballés dans la paille, des pièces tintent.",
     },
     goat_shed: {
       label: "Abri de la chèvre",
-      openText: "🎁 Sous le foin de l'abri, un petit pécule et un grelot.",
-      emoji: "🏚️",
-      emojiOpened: "🏚️"
+      openText: "Sous le foin de l'abri, un petit pécule et un grelot.",
     },
     thunder_urn: {
       label: "Urne de sable foudroyé",
-      openText: "🎁 Une urne de fulgurite, légère et fragile. Elle contient du sable cristallisé et de l'argent.",
-      emoji: "⚱️",
-      emojiOpened: "⚱️"
+      openText: "Une urne de fulgurite, légère et fragile. Elle contient du sable cristallisé et de l'argent.",
     },
     peak_cache: {
       label: "Cache du sommet",
-      openText: "🎁 Une cache d'alpiniste calée sous un surplomb : corde, piolet, et des pièces serrées dans un étui.",
-      emoji: "🏔️",
-      emojiOpened: "🏔️"
+      openText: "Une cache d'alpiniste calée sous un surplomb : corde, piolet, et des pièces serrées dans un étui.",
     },
     journal_page_ton: {
       label: "Page prise entre deux rochers",
-      openText: "🎁 Une page pliée entre deux pierres : « J'ai fait semblant d'être calme. Il m'a félicité. C'est pire. »",
-      emoji: "📄",
-      emojiOpened: "📄"
+      openText: "Une page pliée entre deux pierres : « J'ai fait semblant d'être calme. Il m'a félicité. C'est pire. »",
     }
   },
   quests: [
