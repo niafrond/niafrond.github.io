@@ -68,7 +68,7 @@ describe('chestLoot', () => {
                 kinds.add(l.kind === 'weapon' ? 'weapon' : l.item.type);
             });
         }
-        expect(kinds).toEqual(new Set(['consumable', 'artifact', 'weapon']));
+        expect(kinds).toEqual(new Set(['consumable', 'artifact', 'weapon', 'shield', 'reusable']));
     });
 
     test('ni arme déjà possédée ni relique déjà portée', () => {
