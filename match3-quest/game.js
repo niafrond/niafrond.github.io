@@ -2772,6 +2772,12 @@ export function getCombatMusicScene() {
     return enemy?.isBoss ? 'boss' : 'combat';
 }
 
+// Options de la scène musicale : thème propre à chaque boss (son nom), style de rythme variable selon l'ennemi ordinaire.
+export function getCombatMusicOptions() {
+    if(!enemy) return {};
+    return enemy.isBoss ? { boss: enemy.name } : { variant: enemy.name };
+}
+
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
 

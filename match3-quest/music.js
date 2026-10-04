@@ -10,9 +10,10 @@
  *       getVolume()  -> 0..1                (volume musique utilisateur, réévalué à chaque tick)
  *       isMuted()    -> boolean             (idem)
  *       timer        -> { set(fn, ms), clear(id) } optionnel (tests)
- *   setMusicScene(sceneId, { biome?, seed? } = {}) -> boolean
+ *   setMusicScene(sceneId, { biome?, seed?, boss?, variant? } = {}) -> boolean
  *       Démarre/enchaîne (fondu enchaîné ~1,2 s) la scène. No-op si même scène (+ même biome pour
- *       village/wild). Retourne false si l'identifiant est inconnu. Ne lève jamais.
+ *       village/wild ; boss : même nom de boss). `boss` (nom du boss) donne à la scène « boss » un thème propre à
+ *       chaque boss ; `variant` (entier/chaîne) choisit un des styles rythmiques de la scène « combat ». Retourne false si l'identifiant est inconnu. Ne lève jamais.
  *   stopMusic({ fadeMs = 1200 } = {})  Fondu puis arrêt propre (nœuds stoppés et déconnectés).
  *   pauseMusic() / resumeMusic()       Gèle/reprend la partition (le temps musical est suspendu).
  *   isMusicPlaying() -> boolean        Une scène est active, non en pause, contexte non suspendu.
@@ -87,8 +88,16 @@ const SLOW = [[4], [2, 2], [3, 1], [2, 1, 1], [1, 1, 2]];
 const MID = [[2, 1, 1], [1, 1, 2], [1.5, 0.5, 1, 1], [1, 1, 1, 1], [2, 2], [1, 0.5, 0.5, 2], [0.5, 0.5, 1, 2]];
 const LIVELY = [[1, 0.5, 0.5, 1, 1], [0.5, 0.5, 0.5, 0.5, 1, 1], [1, 1, 0.5, 0.5, 1], [0.5, 0.5, 1, 0.5, 0.5, 1], [1.5, 0.5, 1.5, 0.5], [1, 1, 1, 1]];
 
+// Palettes supplémentaires : rythmes variés (syncopes, pointés, triolets approchés, marche, galop).
+const WALTZ = [[2, 1, 1], [1, 1, 2], [1, 2, 1], [3, 1], [1, 1, 1, 1]];                         // appui sur 1 et 3, souple
+const DOTTED = [[1.5, 0.5, 1.5, 0.5], [1.5, 0.5, 2], [0.75, 0.25, 1, 2], [1.5, 1.5, 1], [2, 1.5, 0.5]];
+const SYNC = [[0.5, 1, 0.5, 1, 1], [0.5, 1, 1, 0.5, 1], [1, 0.5, 1, 0.5, 1], [0.5, 1, 0.5, 2], [1.5, 1, 1.5]];
+const TRIPLET = [[1 / 3, 1 / 3, 1 / 3, 1, 1, 1], [1, 1 / 3, 1 / 3, 1 / 3, 1, 1], [2, 1 / 3, 1 / 3, 1 / 3, 1], [1, 1, 2 / 3, 2 / 3, 2 / 3]];
+const DRIVE = [[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], [0.5, 0.5, 1, 0.5, 0.5, 1], [0.5, 0.5, 0.5, 0.5, 1, 1], [0.75, 0.75, 0.5, 0.75, 0.75, 0.5], [0.5, 0.5, 1, 1, 0.5, 0.5]];
+const GALLOP = [[0.5, 0.25, 0.25, 0.5, 0.25, 0.25, 0.5, 0.25, 0.25, 0.5, 0.25, 0.25], [1, 0.5, 0.25, 0.25, 1, 0.5, 0.25, 0.25], [0.5, 0.25, 0.25, 1, 0.5, 0.25, 0.25, 1]];
+
 // Tessitures de mélodie par instrument.
-const MELODY_REG = { dizi: [69, 93], erhu: [62, 86], pipa: [57, 84], xiao: [62, 84], guzheng: [55, 91], bell: [72, 100] };
+const MELODY_REG = { dizi: [69, 93], erhu: [62, 86], pipa: [57, 84], xiao: [62, 84], sheng: [55, 79], suona: [64, 88], guzheng: [55, 91], bell: [72, 100] };
 
 // ── Scènes ──────────────────────────────────────────────────────────────────
 const SCENES = {
@@ -110,10 +119,10 @@ const SCENES = {
     },
     village: {
         label: 'Village', description: 'Vivant et chaleureux : dizi, pipa, petites percussions.', biomes: true,
-        root: 2, scale: 'gong', bpm: 108, lo: 69, hi: 93,
-        melody: { inst: 'dizi', vel: 0.7, cells: LIVELY, rest: 0.1, orn: 0.3, bend: 0.05 },
-        hetero: { inst: 'pipa', oct: 0, vel: 0.5 },
-        accomp: { kind: 'pluck', inst: 'guzheng', vel: 0.28, keep: 0.8, lo: 43 },
+        root: 2, scale: 'gong', bpm: 96, lo: 69, hi: 93,
+        melody: { inst: 'dizi', vel: 0.62, cells: [...DOTTED, ...MID, ...WALTZ], rest: 0.18, orn: 0.25, bend: 0.05 },
+        hetero: { inst: 'guzheng', oct: 0, vel: 0.35 },
+        accomp: { kind: 'pluck', inst: 'guzheng', vel: 0.26, keep: 0.7, lo: 43 },
         perc: 'village'
     },
     house: {
@@ -127,18 +136,19 @@ const SCENES = {
     wild: {
         label: 'Terres sauvages', description: 'Mystérieux : tambour lointain, erhu, tension modérée.', biomes: true,
         root: 4, scale: 'yu', bpm: 62, lo: 62, hi: 88,
-        melody: { inst: 'erhu', vel: 0.65, cells: SLOW, rest: 0.35, orn: 0.25, bend: 0.5 },
+        melody: { inst: 'xiao', vel: 0.6, cells: [...SLOW, ...WALTZ, ...TRIPLET.slice(0, 2)], rest: 0.35, orn: 0.2, bend: 0.2 },
         accomp: { kind: 'arp', inst: 'yangqin', vel: 0.2, keep: 0.25, lo: 43 },
         pad: { inst: 'sheng', bars: 4, vel: 0.22 },
         perc: 'far'
     },
     sanctuary: {
-        label: 'Sanctuaire', description: 'Sombre et ardent : tambours, gong, suona avec parcimonie.',
-        root: 2, scale: 'jue', bpm: 88, lo: 62, hi: 86,
-        melody: { inst: 'erhu', vel: 0.7, cells: MID, rest: 0.3, orn: 0.2, bend: 0.5 },
-        accomp: { kind: 'pluck', inst: 'pipa', vel: 0.35, keep: 0.8, lo: 38 },
-        pad: { inst: 'sheng', bars: 2, vel: 0.3 },
-        perc: 'taiko', suona: { prob: 0.6, vel: 0.45 }
+        label: 'Sanctuaire', description: 'Grave et solennel, calme : xiao, guzheng, bourdon, gong lointain (sans suona).',
+        root: 2, scale: 'jue', bpm: 66, lo: 62, hi: 86,
+        melody: { inst: 'xiao', vel: 0.6, cells: [...SLOW, ...DOTTED.slice(0, 2), ...WALTZ.slice(0, 3)], rest: 0.3, orn: 0.2, bend: 0.3 },
+        hetero: { inst: 'guzheng', oct: -12, vel: 0.25 },
+        accomp: { kind: 'arp', inst: 'guzheng', vel: 0.24, keep: 0.5, lo: 38 },
+        pad: { inst: 'sheng', bars: 4, vel: 0.22 },
+        perc: 'gong4'
     },
     moon: {
         label: 'Pic de la Lune', description: 'Éthéré : cloches, xiao, harpe.',
@@ -150,22 +160,22 @@ const SCENES = {
         perc: 'bells', bells: { prob: 0.6, vel: 0.4 }, gliss: 0.5
     },
     combat: {
-        label: 'Combat', description: 'Nerveux : pipa, erhu, tambours, cymbales (combats ordinaires).',
-        root: 4, scale: 'jue', bpm: 112, lo: 62, hi: 88,
-        melody: { inst: 'erhu', vel: 0.7, cells: LIVELY, rest: 0.12, orn: 0.3, bend: 0.4 },
-        hetero: { inst: 'pipa', oct: 12, vel: 0.35 },
-        accomp: { kind: 'pluck', inst: 'pipa', vel: 0.32, keep: 0.85, lo: 38 },
-        pad: { inst: 'sheng', bars: 2, vel: 0.22 },
-        perc: 'taiko', suona: { prob: 0.15, vel: 0.35 }
+        label: 'Combat', description: 'Rythmé : tambours, pipa, claquoirs ; 5 styles de rythme selon le combat (ordinaires).',
+        root: 4, scale: 'jue', bpm: 118, lo: 62, hi: 88,
+        melody: { inst: 'pipa', vel: 0.62, cells: DRIVE, rest: 0.08, orn: 0.2, bend: 0.2 },
+        hetero: { inst: 'dizi', oct: 12, vel: 0.28 },
+        accomp: { kind: 'pluck', inst: 'pipa', vel: 0.3, keep: 0.9, lo: 38 },
+        pad: { inst: 'sheng', bars: 2, vel: 0.14 },
+        perc: 'drive'
     },
     boss: {
-        label: 'Boss', description: 'Épique : suona, gong, taiko martelé (boss et Soleils).',
-        root: 2, scale: 'jue', bpm: 132, lo: 62, hi: 90,
-        melody: { inst: 'suona', vel: 0.62, cells: LIVELY, rest: 0.1, orn: 0.35, bend: 0.5 },
-        hetero: { inst: 'erhu', oct: 0, vel: 0.4 },
-        accomp: { kind: 'pluck', inst: 'pipa', vel: 0.38, keep: 0.9, lo: 38 },
-        pad: { inst: 'sheng', bars: 2, vel: 0.32 },
-        perc: 'taiko', suona: { prob: 0.5, vel: 0.45 }
+        label: 'Boss', description: 'Épique et rythmé : thème propre à chaque boss (nom du boss), taiko, gong, cordes.',
+        root: 2, scale: 'jue', bpm: 128, lo: 62, hi: 90,
+        melody: { inst: 'erhu', vel: 0.62, cells: SYNC, rest: 0.08, orn: 0.3, bend: 0.4 },
+        hetero: { inst: 'pipa', oct: 0, vel: 0.4 },
+        accomp: { kind: 'pluck', inst: 'pipa', vel: 0.36, keep: 0.9, lo: 38 },
+        pad: { inst: 'sheng', bars: 2, vel: 0.2 },
+        perc: 'taiko', suona: { prob: 0.25, vel: 0.3 }
     },
     ending: {
         label: 'Épilogue', description: 'Mélancolique et lumineux : erhu, dizi, guzheng, cloches.',
@@ -182,12 +192,12 @@ const SCENES = {
 const BIOME_STYLES = {
     paddy: { all: {}, village: {}, wild: {} },
     riverbed: {
-        all: { root: 5, scale: 'shang', bpmMul: 0.94 },
+        all: { root: 5, scale: 'shang', bpmMul: 0.94, perc: 'sway' },
         village: { accomp: { kind: 'arp', inst: 'yangqin', vel: 0.3, keep: 0.75, lo: 48 } },
         wild: { accomp: { kind: 'arp', inst: 'yangqin', vel: 0.22, keep: 0.3, lo: 48 } }
     },
     bamboo: {
-        all: { root: 7, scale: 'gong', bpmMul: 1.04, melody: { inst: 'dizi', vel: 0.78 } },
+        all: { root: 7, scale: 'gong', bpmMul: 1.04, perc: 'sway', melody: { inst: 'dizi', vel: 0.7 } },
         village: { hetero: { inst: 'xiao', oct: 0, vel: 0.3 } },
         wild: { hetero: { inst: 'erhu', oct: -12, vel: 0.3 } }
     },
@@ -195,9 +205,9 @@ const BIOME_STYLES = {
         all: { root: 4, scale: 'yu', bpmMul: 0.9, perc: 'caravan', melody: { inst: 'erhu', vel: 0.72 } },
         village: { hetero: { inst: 'pipa', oct: 0, vel: 0.4 } }, wild: {}
     },
-    storm: { all: { root: 2, scale: 'jue', bpmMul: 1.08, perc: 'thunder' }, village: { melody: { inst: 'erhu' } }, wild: {} },
+    storm: { all: { root: 2, scale: 'jue', bpmMul: 1.0, perc: 'thunder' }, village: { melody: { inst: 'erhu' } }, wild: {} },
     volcano: {
-        all: { root: 9, scale: 'jue', perc: 'taiko', suona: { prob: 0.3, vel: 0.4 }, melody: { inst: 'erhu' } },
+        all: { root: 9, scale: 'jue', perc: 'far', suona: null, melody: { inst: 'erhu', vel: 0.58 } },
         village: {}, wild: {}
     },
     savanna: { all: { root: 7, scale: 'zhi', perc: 'caravan', melody: { inst: 'pipa', vel: 0.7, cells: LIVELY } }, village: {}, wild: {} },
@@ -218,6 +228,27 @@ const BIOME_STYLES = {
     }
 };
 
+// Styles de combat : 5 grooves distincts (percussion, cellules rythmiques, tempo, mode, instruments).
+const COMBAT_STYLES = [
+    { perc: 'drive', bpm: 118, root: 4, scale: 'jue', melody: { inst: 'pipa', cells: DRIVE } },
+    { perc: 'gallop', bpm: 126, root: 9, scale: 'yu', melody: { inst: 'erhu', cells: [...GALLOP, ...DRIVE.slice(0, 2)], vel: 0.58 }, hetero: { inst: 'pipa', oct: 12, vel: 0.3 } },
+    { perc: 'march', bpm: 104, root: 7, scale: 'shang', melody: { inst: 'dizi', cells: [...DOTTED, ...SYNC.slice(0, 2)], vel: 0.6 }, hetero: { inst: 'erhu', oct: -12, vel: 0.3 } },
+    { perc: 'shuffle', bpm: 112, root: 2, scale: 'zhi', melody: { inst: 'pipa', cells: [...TRIPLET, ...SYNC.slice(0, 2)] }, hetero: { inst: 'xiao', oct: 12, vel: 0.28 } },
+    { perc: 'tresillo', bpm: 122, root: 5, scale: 'jue', melody: { inst: 'guzheng', cells: [...SYNC, ...DRIVE.slice(2, 4)], vel: 0.6 }, hetero: { inst: 'pipa', oct: 0, vel: 0.3 } }
+];
+
+// Thèmes de boss : archétypes (couleur, rythme, instruments) + mode/tempo propres à chaque boss.
+const BOSS_ARCHETYPES = [
+    { perc: 'taiko', scale: 'jue', bpm: 130, melody: { inst: 'erhu', cells: SYNC }, hetero: { inst: 'pipa', oct: 0, vel: 0.4 }, suona: { prob: 0.3, vel: 0.3 } },   // fanfare martiale
+    { perc: 'gallop', scale: 'yu', bpm: 138, melody: { inst: 'pipa', cells: GALLOP }, hetero: { inst: 'erhu', oct: 0, vel: 0.35 }, suona: null },                       // charge
+    { perc: 'tresillo', scale: 'zhi', bpm: 120, melody: { inst: 'guzheng', cells: [...SYNC, ...TRIPLET] }, hetero: { inst: 'dizi', oct: 12, vel: 0.3 }, suona: null },  // incantatoire
+    { perc: 'march', scale: 'shang', bpm: 112, melody: { inst: 'erhu', cells: DOTTED }, hetero: { inst: 'xiao', oct: 12, vel: 0.3 }, suona: { prob: 0.4, vel: 0.28 } },  // procession
+    { perc: 'thunder', scale: 'jue', bpm: 126, melody: { inst: 'erhu', cells: [...DRIVE, ...SYNC] }, hetero: { inst: 'yangqin', oct: 12, vel: 0.35 }, suona: null },        // orage
+    { perc: 'shuffle', scale: 'gong', bpm: 116, melody: { inst: 'dizi', cells: [...TRIPLET, ...DOTTED] }, hetero: { inst: 'pipa', oct: 0, vel: 0.4 }, suona: null },      // ruse
+    { perc: 'drive', scale: 'yu', bpm: 134, melody: { inst: 'pipa', cells: DRIVE }, hetero: { inst: 'erhu', oct: 0, vel: 0.4 }, suona: { prob: 0.3, vel: 0.28 } },         // fournaise
+    { perc: 'taiko', scale: 'zhi', bpm: 108, melody: { inst: 'erhu', cells: [...DOTTED, ...MID] }, hetero: { inst: 'bell', oct: 12, vel: 0.28 }, suona: null }             // solennel
+];
+
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
 function applyStyle(cfg, style) {
@@ -234,7 +265,30 @@ function applyStyle(cfg, style) {
 }
 
 /** Configuration résolue d'une scène (+ biome pour village/wild). Lève si la scène est inconnue. */
-export function getSceneConfig(sceneId, biome) {
+export function bossKey(name) {
+    return String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+/** Style (partiel) d'un boss : archétype + mode/tempo/tonique décalés selon le nom → un thème propre à chaque boss. */
+export function getBossStyle(name) {
+    const key = bossKey(name) || 'boss';
+    const h = hashString(`boss|${key}`);
+    const a = BOSS_ARCHETYPES[h % BOSS_ARCHETYPES.length];
+    const st = clone(a);
+    st.root = (h >>> 3) % 12;
+    if ((h >>> 9) % 3 === 0) st.scale = MODE_NAMES[(h >>> 12) % MODE_NAMES.length];
+    st.bpm = a.bpm + ((h >>> 15) % 17) - 8;
+    return st;
+}
+
+/** Style de combat ordinaire choisi par `variant` (entier ou chaîne). */
+export function getCombatStyle(variant) {
+    const n = typeof variant === 'number' && Number.isFinite(variant) ? Math.abs(Math.floor(variant)) : hashString(String(variant ?? 0));
+    return clone(COMBAT_STYLES[n % COMBAT_STYLES.length]);
+}
+export const COMBAT_STYLE_COUNT = COMBAT_STYLES.length;
+
+export function getSceneConfig(sceneId, biome, variant) {
     const base = SCENES[sceneId];
     if (!base) throw new TypeError(`Scène musicale inconnue : ${sceneId}`);
     const cfg = clone(base);
@@ -244,6 +298,8 @@ export function getSceneConfig(sceneId, biome) {
         applyStyle(cfg, st.all || {});
         applyStyle(cfg, st[sceneId] || {});
     }
+    if (sceneId === 'boss' && variant) applyStyle(cfg, getBossStyle(variant));
+    if (sceneId === 'combat' && variant !== undefined && variant !== null) applyStyle(cfg, getCombatStyle(variant));
     cfg.root = ((cfg.root % 12) + 12) % 12;
     cfg.pcs = SCALES[cfg.scale].map((s) => (cfg.root + s) % 12);
     return cfg;
@@ -376,8 +432,9 @@ function composePerc(kind, rng, c, b, out) {
             if (b === 7 && rng() < 0.5) cy(3, 0.2);
             break;
         case 'village':
-            d(0, 0.4, MID_D); cl(1, 0.3); d(2, 0.28, MID_D); cl(3, 0.32);
-            if (rng() < 0.3) cl(1.5, 0.18);
+            if (b % 4 === 3) { d(0, 0.34, MID_D); cl(1.5, 0.24); d(2.5, 0.3, MID_D); cl(3, 0.28); }
+            else { d(0, 0.34, MID_D); cl(1, 0.24); d(2, 0.24, MID_D); cl(3, 0.26); }
+            if (rng() < 0.3) cl(1.5, 0.15);
             if (b === 7) { cl(3.5, 0.3); cy(0, 0.12); }
             break;
         case 'caravan':
@@ -395,6 +452,39 @@ function composePerc(kind, rng, c, b, out) {
             else { d(0, 0.8); d(2.5, 0.5, MID_D); d(3, 0.6); d(3.5, 0.5, MID_D); }
             if (b % 4 === 0) gg(0, 0.7);
             if (b === 7) for (let k = 0; k < 4; k++) d(2 + k * 0.5, 0.5 + k * 0.1, MID_D, 0.3);
+            break;
+        case 'sway':   // balancement doux (exploration) : tambour feutré, rare, sans claquoir
+            if (b % 2 === 0) d(0, 0.22, MID_D);
+            if (b % 4 === 2 && rng() < 0.6) d(2.5, 0.14, MID_D);
+            if (b % 4 === 0) cy(0, 0.07);
+            break;
+        case 'drive':  // combat : quatre temps francs, contretemps de claquoir, croches de cymbale
+            d(0, 0.85); cl(1, 0.4); d(2, 0.7); cl(3, 0.42);
+            d(1.5, 0.35, MID_D);
+            if (b % 2 === 1) d(3.5, 0.45, MID_D);
+            for (let k = 0; k < 8; k += 2) if (b % 2 === 0 || k > 2) cy(k * 0.5 + 0.5, 0.07);
+            if (b % 4 === 0) gg(0, 0.45);
+            if (b === 7) for (let k = 0; k < 4; k++) { d(2 + k * 0.5, 0.5 + k * 0.1, MID_D, 0.3); cl(2.25 + k * 0.5, 0.2); }
+            break;
+        case 'gallop': // galop : croche, double-croche, double-croche
+            for (let k = 0; k < 4; k++) { d(k, k === 0 ? 0.85 : 0.6); d(k + 0.5, 0.35, MID_D, 0.2); d(k + 0.75, 0.4, MID_D, 0.2); }
+            if (b % 2 === 1) cl(1, 0.3); cl(3, 0.34);
+            if (b % 4 === 0) gg(0, 0.5);
+            break;
+        case 'march':  // marche : caisse claire pointée, grosse caisse sur 1 et 3
+            d(0, 0.85); cl(0.5, 0.2); cl(1, 0.38); cl(1.75, 0.22); d(2, 0.7); cl(2.5, 0.2); cl(3, 0.4); cl(3.5, 0.26);
+            if (b % 4 === 3) { cy(0, 0.16); d(3.5, 0.55, MID_D, 0.3); }
+            break;
+        case 'shuffle': // swing ternaire
+            for (let k = 0; k < 4; k++) { d(k, k % 2 ? 0.45 : 0.8, k % 2 ? MID_D : LOW); cl(k + 2 / 3, 0.2); }
+            cl(1, 0.32); cl(3, 0.34);
+            if (b % 4 === 0) cy(0, 0.14);
+            break;
+        case 'tresillo': // 3 + 3 + 2 : le motif de la danse du lion
+            d(0, 0.85); d(1.5, 0.6, MID_D); d(3, 0.7);
+            cl(1, 0.3); cl(2.5, 0.34); cl(3.5, 0.26);
+            if (b % 2 === 1) d(2, 0.4, MID_D);
+            if (b % 4 === 3) cy(0, 0.14);
             break;
         case 'far':
             if (b % 2 === 0 && rng() < 0.8) d(rng() < 0.5 ? 0 : 2, 0.3 + rng() * 0.1);
@@ -435,11 +525,12 @@ function composeAccomp(cfg, rng, bar, prog, out) {
  */
 export function composeSection(sceneId, opts = {}) {
     const biome = opts.biome || null;
-    const cfg = getSceneConfig(sceneId, biome);
+    const variant = opts.variant ?? opts.boss ?? null;
+    const cfg = getSceneConfig(sceneId, biome, variant);
     const seed = opts.seed ?? 1;
     const bar = Math.max(0, Math.floor(opts.bar || 0));
     const phrase = Math.floor(bar / BARS_PER_SECTION);
-    const key = `${seed}|${sceneId}|${(cfg.biomes && biome) || ''}`;
+    const key = `${seed}|${sceneId}|${(cfg.biomes && biome) || ''}|${variant ?? ''}`;
     const ladder = buildLadder(cfg.pcs, cfg.lo, cfg.hi);
     const ev = [];
 
@@ -526,7 +617,7 @@ export function composeSection(sceneId, opts = {}) {
 
     ev.sort((a, b) => a.t - b.t || a.midi - b.midi);
     return {
-        sceneId, biome, seed, phrase, bpm: cfg.bpm, bars: BARS_PER_SECTION, beatsPerBar: BEATS_PER_BAR,
+        sceneId, biome, seed, variant, phrase, bpm: cfg.bpm, bars: BARS_PER_SECTION, beatsPerBar: BEATS_PER_BAR,
         lengthBeats: BARS_PER_SECTION * BEATS_PER_BAR, startBar: phrase * BARS_PER_SECTION,
         root: cfg.root, scale: cfg.scale, pcs: cfg.pcs.slice(), events: ev
     };
@@ -550,8 +641,8 @@ const MAX_VOICES = 10;       // polyphonie des voix « tenues » (hors percussio
 const MAX_NODES_VOICES = 24; // plafond dur, queues de résonance comprises
 
 const INST_GAIN = {
-    erhu: 0.34, dizi: 0.3, xiao: 0.34, guzheng: 0.4, pipa: 0.36, yangqin: 0.34, harp: 0.36,
-    sheng: 0.16, suona: 0.2, bell: 0.24, gong: 0.4, drum: 0.75, clap: 0.35, cymbal: 0.14
+    erhu: 0.3, dizi: 0.3, xiao: 0.34, guzheng: 0.4, pipa: 0.36, yangqin: 0.34, harp: 0.36,
+    sheng: 0.16, suona: 0.16, bell: 0.24, gong: 0.4, drum: 0.75, clap: 0.35, cymbal: 0.14
 };
 
 const defaultTimer = {
@@ -691,7 +782,7 @@ function addVibrato(v, ctx, targets, t0, rate, cents, delay) {
 
 const PLUCK = {
     guzheng: { dec: 2.2, cut0: 5200, cut1: 700, mix: 0.35, mul: 2, upper: 'sine' },
-    pipa:    { dec: 1.0, cut0: 7000, cut1: 1200, mix: 0.4, mul: 2, upper: 'sawtooth' },
+    pipa:    { dec: 1.0, cut0: 5000, cut1: 1000, mix: 0.3, mul: 2, upper: 'triangle' },
     yangqin: { dec: 1.2, cut0: 6000, cut1: 1500, mix: 0.3, mul: 3, upper: 'sine' },
     harp:    { dec: 2.8, cut0: 3500, cut1: 900, mix: 0.25, mul: 2, upper: 'sine' }
 };
@@ -730,8 +821,8 @@ function buildFlute(ctx, v, kind, f, t0, dur, vel, bend, out, peak, noiseBuf) {
 
 function buildErhu(ctx, v, f, t0, dur, vel, bend, out, peak) {
     const o = v.osc('sawtooth', f); glideTo(o.frequency, f, bend, t0, 0.14);
-    const lp = v.filter('lowpass', Math.min(f * 4 + 600, 4200), 1.2);
-    const body = v.filter('peaking', 1100, 1.5); body.gain.value = 6;
+    const lp = v.filter('lowpass', Math.min(f * 2.6 + 500, 2600), 0.6);
+    const body = v.filter('peaking', 700, 0.9); body.gain.value = 2;
     const g = v.gain();
     o.connect(lp); lp.connect(body); body.connect(g); g.connect(out);
     addVibrato(v, ctx, [o], t0, 5.5, 22, 0.3);
@@ -749,10 +840,10 @@ function buildSheng(ctx, v, f, t0, dur, vel, out, peak) {
 
 function buildSuona(ctx, v, f, t0, dur, vel, bend, out, peak) {
     const o = v.osc('sawtooth', f); glideTo(o.frequency, f, bend, t0, 0.12);
-    const bp = v.filter('bandpass', 1300, 2.5);
-    const lp = v.filter('lowpass', 3200, 0.7);
+    const lp = v.filter('lowpass', 2000, 0.5);
+    const warm = v.filter('peaking', 600, 0.8); warm.gain.value = 3;
     const g = v.gain();
-    o.connect(bp); bp.connect(lp); lp.connect(g); g.connect(out);
+    o.connect(lp); lp.connect(warm); warm.connect(g); g.connect(out);
     addVibrato(v, ctx, [o], t0, 6, 25, 0.15);
     return sustainEnv(g.gain, t0, 0.03, peak, dur, 0.2);
 }
@@ -867,7 +958,7 @@ function startPlayer(ctx, desired) {
     out.gain.linearRampToValueAtTime(1, now + FADE_S);
     out.connect(S.bus.input);
     const p = {
-        id: ++S.uid, key: desired.key, scene: desired.scene, biome: desired.biome, seed: desired.seed, out,
+        id: ++S.uid, key: desired.key, scene: desired.scene, biome: desired.biome, seed: desired.seed, variant: desired.variant, out,
         nextBar: 0, nextSectionAt: now + 0.12, queue: [], retiring: false, killAt: 0, holdSince: null
     };
     S.players.push(p);
@@ -914,7 +1005,7 @@ function updatePlayer(ctx, p, now, hold) {
     const horizon = now + S.ahead;
     let guard = 0;
     while (p.nextSectionAt <= horizon && guard++ < 4) {
-        const sec = composeSection(p.scene, { biome: p.biome, seed: p.seed, bar: p.nextBar });
+        const sec = composeSection(p.scene, { biome: p.biome, seed: p.seed, variant: p.variant, bar: p.nextBar });
         const spb = 60 / sec.bpm;
         for (const ev of sec.events) p.queue.push({ at: p.nextSectionAt + ev.t * spb, ev, spb });
         p.queue.sort((a, b) => a.at - b.at);
@@ -999,9 +1090,11 @@ export function setMusicScene(sceneId, options = {}) {
     const usesBiome = Boolean(SCENES[sceneId].biomes);
     const biome = usesBiome && BIOMES.includes(options && options.biome) ? options.biome : null;
     const seed = options && options.seed !== undefined ? options.seed : 1;
-    const key = `${sceneId}|${biome || ''}|${seed}`;
+    const rawVariant = options && (sceneId === 'boss' ? options.boss ?? options.variant : sceneId === 'combat' ? options.variant : undefined);
+    const variant = rawVariant === undefined || rawVariant === null || rawVariant === '' ? null : rawVariant;
+    const key = `${sceneId}|${biome || ''}|${seed}|${variant ?? ''}`;
     if (S.desired && S.desired.key === key) return true;
-    S.desired = { key, scene: sceneId, biome, seed };
+    S.desired = { key, scene: sceneId, biome, seed, variant };
     S.stopFade = undefined;
     ensureTimer();
     tick();

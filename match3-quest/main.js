@@ -1,6 +1,6 @@
 import { icon } from "./icons.js";
 import { generateBoard, renderBoard } from "./board.js";
-import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, getCombatMusicScene } from "./game.js";
+import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, getCombatMusicScene, getCombatMusicOptions } from "./game.js";
 import { rollChestLoot } from "./chestLoot.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy } from "./enemies.js";
@@ -181,7 +181,7 @@ function init() {
         if(document.querySelector('.battle-transition')) return null;
         // Combat : musique générée « combat » / « boss » ; l'écran de résultat repasse sur la musique de menu.
         const fight = getCombatMusicScene();
-        if(fight) return Date.now() < combatIntroUntil ? null : [fight];   // jingle d'entrée d'abord, puis la musique
+        if(fight) return Date.now() < combatIntroUntil ? null : [fight, getCombatMusicOptions()];   // jingle d'entrée d'abord, puis la musique
         if(document.getElementById('battle-result-screen')?.classList.contains('active')) return ['menu'];
         if(document.getElementById('class-modal')?.classList.contains('active')) return ['title'];
         const tab = document.querySelector('.tab-panel.active')?.id;

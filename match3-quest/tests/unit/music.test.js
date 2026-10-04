@@ -1,6 +1,6 @@
 import {
     SCALES, SCENE_IDS, BIOMES, INSTRUMENT_RANGES, UNPITCHED, midiToFreq, makeRng, composeSection, getSceneConfig,
-    getSceneList, setMusicEnvironment, setMusicScene, stopMusic, pauseMusic, resumeMusic, isMusicPlaying, __internals
+    getSceneList, getBossStyle, getCombatStyle, COMBAT_STYLE_COUNT, setMusicEnvironment, setMusicScene, stopMusic, pauseMusic, resumeMusic, isMusicPlaying, __internals
 } from '../../music.js';
 
 // ── Faux AudioContext : enregistre les nœuds, simule le temps ───────────────
@@ -166,7 +166,7 @@ describe('composition (partie pure)', () => {
         expect(sigs.size).toBeGreaterThanOrEqual(7);
         expect(getSceneConfig('village', 'bamboo').melody.inst).toBe('dizi');
         expect(getSceneConfig('village', 'gobi').perc).toBe('caravan');
-        expect(getSceneConfig('village', 'volcano').perc).toBe('taiko');
+        expect(getSceneConfig('village', 'volcano').perc).toBe('far');
         expect(getSceneConfig('village', 'coast').melody.inst).toBe('pipa');
         // Biome inconnu / scène sans biome : ignoré
         expect(getSceneConfig('village', 'nope')).toEqual(getSceneConfig('village'));
@@ -177,6 +177,63 @@ describe('composition (partie pure)', () => {
     test('scène inconnue : composeSection lève, getSceneList liste les 8 scènes', () => {
         expect(() => composeSection('zzz')).toThrow();
         expect(getSceneList().map((s) => s.id)).toEqual(SCENE_IDS);
+    });
+});
+
+describe('rythmes, exploration calme, combat, boss', () => {
+    const insts = (r) => new Set(r.events.map((e) => e.inst));
+    test('exploration (village, maison, terres sauvages, sanctuaire, menus, lune) : aucun suona', () => {
+        for (const scene of ['village', 'wild', 'house', 'sanctuary', 'menu', 'moon', 'title']) {
+            for (const biome of scene === 'village' || scene === 'wild' ? BIOMES : [null]) {
+                for (const bar of [0, 8, 16, 24]) expect(insts(composeSection(scene, { biome, seed: 5, bar })).has('suona')).toBe(false);
+            }
+        }
+    });
+    test('combat : 5 styles de rythme différents, percussions fournies', () => {
+        expect(COMBAT_STYLE_COUNT).toBeGreaterThanOrEqual(5);
+        const percs = new Set();
+        const sigs = new Set();
+        for (let v = 0; v < COMBAT_STYLE_COUNT; v++) {
+            const c = getSceneConfig('combat', null, v);
+            percs.add(c.perc);
+            const r = composeSection('combat', { seed: 1, variant: v });
+            sigs.add(JSON.stringify(r.events.filter((e) => e.inst === 'drum').map((e) => e.t)));
+            expect(r.events.filter((e) => e.inst === 'drum').length).toBeGreaterThan(16);
+        }
+        expect(percs.size).toBe(COMBAT_STYLE_COUNT);
+        expect(sigs.size).toBe(COMBAT_STYLE_COUNT);
+        expect(getCombatStyle('Gobelin')).toEqual(getCombatStyle('Gobelin'));
+    });
+    test('chaque boss a sa propre musique', () => {
+        const names = ['Fengmeng, le Disciple', 'Soleil Ardent', 'Soleil des Eaux Taries', 'Soleil de Cendres', 'Soleil des Mirages',
+            'Soleil des Orages', "Fengmeng, l'Archer Pressé", 'Soleil de Magma', 'Soleil des Bêtes Folles', 'Soleil des Marées',
+            'Soleil Lâche', "Fengmeng, l'Archer Miroir", 'Fengmeng, Rage et Désespoir', 'Serpent de marée', 'Tigre alpha, Griffe-de-Feu',
+            'Lion-gardien fendu', 'Forgeron de lave', 'Prêtresse de givre', 'Garde solaire des racines'];
+        const sigs = new Set(names.map((n) => {
+            const r = composeSection('boss', { seed: 1, boss: n });
+            return JSON.stringify([r.root, r.scale, r.bpm, r.events.slice(0, 40).map((e) => [e.t, e.midi, e.inst])]);
+        }));
+        expect(sigs.size).toBe(names.length);
+        expect(getBossStyle('Soleil Ardent')).toEqual(getBossStyle('soleil ardent'));
+        // Hors nom : musique de boss générique, toujours rythmée
+        expect(composeSection('boss', { seed: 1 }).events.filter((e) => e.inst === 'drum').length).toBeGreaterThan(10);
+    });
+    test('les rythmes de mélodie sont variés (≥ 8 découpages de mesure différents sur les scènes)', () => {
+        const shapes = new Set();
+        for (const scene of SCENE_IDS) for (const bar of [0, 8, 16, 24]) {
+            const r = composeSection(scene, { seed: 2, bar, biome: 'paddy' });
+            const mel = r.events.filter((e) => e.inst === getSceneConfig(scene, 'paddy').melody.inst && !e.orn);
+            for (let b = 0; b < 8; b++) shapes.add(mel.filter((e) => e.t >= b * 4 && e.t < b * 4 + 4).map((e) => +(e.t - b * 4).toFixed(2)).join(','));
+        }
+        expect(shapes.size).toBeGreaterThanOrEqual(8);
+    });
+    test('moteur : un thème de boss se joue sans fuite', () => {
+        const ctx = makeCtx(); setup(ctx);
+        setMusicScene('boss', { boss: 'Soleil Ardent' }); run(ctx, 20);
+        expect(__internals.state.players.some((p) => p.variant === 'Soleil Ardent')).toBe(true);
+        setMusicScene('boss', { boss: 'Soleil Lâche' }); run(ctx, 3);
+        expect(__internals.state.desired.variant).toBe('Soleil Lâche');
+        stopMusic({ fadeMs: 0 });
     });
 });
 
