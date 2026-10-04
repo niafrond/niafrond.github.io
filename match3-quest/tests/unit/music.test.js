@@ -205,6 +205,21 @@ describe('moteur audio (faux AudioContext)', () => {
         expect(__internals.state.ahead).toBe(widened);
     });
 
+    test('appareil lent : des ticks espacés de 400 ms ne font pas perdre de notes', () => {
+        const started = (stepS) => {
+            const ctx = makeCtx(); setup(ctx);
+            setMusicScene('village', { biome: 'bamboo' });
+            for (let t = 0; t < 40; t += stepS) { ctx.currentTime += stepS; __internals.tick(); }
+            const n = ctx.nodes.filter((x) => (x.kind === 'osc' || x.kind === 'buf') && x.started).length;
+            stopMusic({ fadeMs: 0 }); __internals.hardReset();
+            return n;
+        };
+        const reference = started(0.05);   // thread principal fluide
+        const stalled = started(0.4);      // thread principal saturé : un tick toutes les 400 ms
+        expect(reference).toBeGreaterThan(50);
+        expect(stalled).toBeGreaterThanOrEqual(reference * 0.9);
+    });
+
     test('contexte suspendu : rien n\'est créé, puis démarre quand il passe en running', () => {
         const ctx = makeCtx(); ctx.state = 'suspended';
         setup(ctx);
