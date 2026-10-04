@@ -2962,9 +2962,8 @@ function appendWeaponButton(container, weapon, hand){
     btn.className = 'enemy-spell-item';
     btn.tabIndex = 0;
     const icon = getWeaponIcon(weapon.type);
-    const handLabel = hand === 'left' ? ' (main gauche)' : '';
     btn.innerHTML = `
-        <div class="spell-name">${icon} ${weapon.name}${handLabel}</div>
+        <div class="spell-name">${icon} ${weapon.name}</div>
         <div class="spell-cost">${weapon.actionPoints} ${svgIcon('arrow')} - ${weapon.damage} ${svgIcon('skull')}</div>
     `;
     if(player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints) {
