@@ -154,7 +154,7 @@ export function buildZone(spec, helpers) {
         exits: [], npcs: [], enemies: [], chests: []
     };
     if (spec.interior) screen.interior = true;
-    if (text.arrival?.length) screen.arrival = text.arrival;
+    if (text.arrival?.length && !spec.interior) screen.arrival = text.arrival;   // pas de texte du Narrateur dans les maisons
     if (g.waypoint) screen.waypoint = { ...g.waypoint, name: text.waypointName || `Pierre de voyage — ${screen.name}` };
 
     (spec.npcs || []).forEach(n => {

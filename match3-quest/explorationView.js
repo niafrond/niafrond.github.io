@@ -566,9 +566,11 @@ export function createExplorationView(cfg) {
                 refreshHud();
                 toast(`${screen.interior ? '🏠' : screen.kind === 'village' ? '🏘️' : '📍'} ${screen.name}`, 2200);
                 // Première visite : petit texte d'ambiance du Narrateur.
-                if (res.firstVisit && res.arrival?.length) openDialog({ ...NARRATOR, title: screen.name }, res.arrival);
+                // Jamais de texte du Narrateur en entrant dans une maison.
+                if (res.firstVisit && res.arrival?.length && !screen.interior) openDialog({ ...NARRATOR, title: screen.name }, res.arrival);
                 if (res.warning) toast(`⚠️ ${res.warning.regionName} : niveau ${res.warning.minLevel} recommandé — les ennemis y sont redoutables.`, 5000);
-                if (res.events?.length) processEvents(res.events);
+                // Dans une maison, les quêtes déclenchées à l'entrée n'ouvrent pas de dialogue du Narrateur (toasts seulement).
+                if (res.events?.length) processEvents(res.events, screen.interior ? eventsSpoken(res.events) : undefined);
                 cfg.onSave();
                 break;
             }
