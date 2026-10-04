@@ -2,6 +2,9 @@
 // l'identifiant du PNJ (couleurs de robe, coiffure, couvre-chef, accessoire) pour que chaque habitant du Grand Monde
 // ait un dessin propre sans sprite écrit à la main. Déterministe : même id → même personnage. `hint` (emoji du PNJ)
 // oriente l'âge : 👴👵 = ancien (cheveux blancs, barbe), 👦👧🧒👶 = enfant (plus petit, couettes).
+// Les PNJ non humains (animaux, esprits, épouvantail…) sont dessinés par creatures.js.
+
+import { creatureSprite } from './creatures.js';
 
 const K = '#2b1b17';
 const O = `stroke="${K}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"`;
@@ -24,16 +27,24 @@ const pick = (list, h, shift) => list[(h >>> shift) % list.length];
 
 const OLD_HINT = /[👴👵🧓]/u;
 const CHILD_HINT = /[👦👧🧒👶]/u;
+// Enfants dont l'emoji évoque le métier (🦗 éleveur de grillons, 🦅 dresseur d'aigle, 🌟 enfant d'étoile…).
+const CHILD_ID = /(^|_)(kid|kids|boy|girl|child|orphan|twins|apprentice)(_|$)/;
+// Moines et nonnes : crâne rasé, robe safran.
+const MONK_HINT = /🧑‍🦲|🧘|🙏/u;
+const MONK_ID = /(^|_)(monk|nun)(_|$)/;
 
 export function villagerSprite(id, hint = '') {
+    const creature = creatureSprite(id, hint);
+    if (creature) return creature;
     const h = hashOf(id);
     const old = OLD_HINT.test(hint);
-    const child = !old && CHILD_HINT.test(hint);
+    const child = !old && (CHILD_HINT.test(hint) || CHILD_ID.test(id));
+    const monk = MONK_HINT.test(hint) || MONK_ID.test(id);
     const [skin, skinD] = pick(SKINS, h, 3);
-    const [robe, robeD, trim] = pick(ROBES, h, 6);
-    const hair = old ? OLD_HAIR : pick(HAIRS, h, 11);
-    const hat = old ? ['none', 'scholar', 'straw'][(h >>> 14) % 3] : child ? 'none' : ['none', 'straw', 'scholar', 'scarf', 'none'][(h >>> 14) % 5];
-    const style = child ? 'tufts' : ['bun', 'topknot', 'long', 'bun'][(h >>> 18) % 4];
+    const [robe, robeD, trim] = monk ? ['#e0902a', '#b06a1c', '#8e2a3a'] : pick(ROBES, h, 6);
+    const hair = monk ? skin : old ? OLD_HAIR : pick(HAIRS, h, 11);
+    const hat = monk ? 'none' : old ? ['none', 'scholar', 'straw'][(h >>> 14) % 3] : child ? 'none' : ['none', 'straw', 'scholar', 'scarf', 'none'][(h >>> 14) % 5];
+    const style = monk ? 'bald' : child ? 'tufts' : ['bun', 'topknot', 'long', 'bun'][(h >>> 18) % 4];
     const item = ['none', 'staff', 'basket', 'lantern', 'scroll', 'none'][(h >>> 22) % 6];
     const scale = child ? 0.82 : 1;
     const ty = child ? (1 - scale) * 58 : 0;
@@ -63,7 +74,7 @@ export function villagerSprite(id, hint = '') {
         `<ellipse cx="32" cy="25" rx="13" ry="11.2" fill="${skin}"/>` +
         `<path d="M40 31 Q44 27 44.6 23 Q44 33 36 35.4Z" fill="${skinD}" stroke="none"/>` +
         `<ellipse cx="32" cy="25" rx="13" ry="11.2" fill="none"/>`;
-    const fringe = `<path d="M19 23.6 Q18 14 32 13.4 Q46 14 45 23.6 Q42 19 37 19.6 Q34 19 32 21 Q30 19 27 19.6 Q22 19 19 23.6Z" fill="${hair}"/>`;
+    const fringe = monk ? '' : `<path d="M19 23.6 Q18 14 32 13.4 Q46 14 45 23.6 Q42 19 37 19.6 Q34 19 32 21 Q30 19 27 19.6 Q22 19 19 23.6Z" fill="${hair}"/>`;
     const brow = old ? '#ece8e0' : K;
     const eyes = old
         ? `<path d="M24.8 26.6 Q27 24.4 29.2 26.6 M34.8 26.6 Q37 24.4 39.2 26.6" fill="none" stroke="${K}" stroke-width="1.4"/>`

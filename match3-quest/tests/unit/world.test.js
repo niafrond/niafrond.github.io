@@ -8,6 +8,7 @@ import { MANIFEST } from '../../world/manifest.js';
 import { parseGrid, cellsToRects } from '../../world/mapKit.js';
 import { npcSprite } from '../../sprites/index.js';
 import { villagerSprite } from '../../sprites/villagers.js';
+import { creatureKind, drawCreature, CREATURE_KINDS } from '../../sprites/creatures.js';
 import {
     createSession, tryMove, enterScreen, isTerrainBlocked, findPath, talkToNpc, openChest, markEnemyDefeated,
     questStatus, checkAutoQuests, activateWaypoint, waypointList, fastTravel, setTrackedQuest, trackedQuest,
@@ -87,6 +88,21 @@ describe('villageois générés', () => {
         const set = new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map(id => villagerSprite(id)));
         expect(set.size).toBeGreaterThan(5);
         expect(villagerSprite('x', '👴')).not.toBe(villagerSprite('x', ''));
+    });
+    test('les PNJ non humains ont un sprite de créature, les métiers animaliers restent humains', () => {
+        expect(creatureKind('buffalo_dahei', '🐃')).toBe('buffalo');
+        expect(creatureKind('scarecrow_cao', '🎃')).toBe('scarecrow');
+        expect(creatureKind('gull_pip', '🕊️')).toBe('gull');
+        expect(creatureKind('pigeon_zhao', '🕊️')).toBeNull();
+        expect(creatureKind('falconer_arslan', '🦅')).toBeNull();
+        expect(creatureKind('stoker_ge', '🔥')).toBeNull();
+        expect(villagerSprite('buffalo_dahei', '🐃')).toBe(drawCreature('buffalo'));
+        CREATURE_KINDS.forEach(kind => {
+            const svg = drawCreature(kind);
+            expect(svg.startsWith('<svg')).toBe(true);
+            expect(svg).not.toMatch(/<text|<image|<script|href=|undefined|NaN/);
+            expect(svg.length).toBeLessThan(9000);
+        });
     });
     test('npcSprite retombe sur un villageois pour un PNJ inconnu', () => {
         expect(npcSprite('inconnu_pnj')).toBeTruthy();
