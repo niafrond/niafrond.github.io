@@ -1205,6 +1205,18 @@ progress.enemy-bar::-webkit-progress-value {
 #equipped-weapon {
     margin-bottom: 20px;
 }
+.weapon-hand-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.weapon-details { min-width: 0; }
+@media (max-width: 520px) {
+    .weapon-item { flex-wrap: wrap; }
+    .weapon-item .weapon-details { flex: 1 1 140px; }
+    .weapon-hand-actions { flex-direction: row; width: 100%; }
+    .weapon-hand-actions .weapon-action { flex: 1; }
+}
 
 /* Bouton d'arme dans l'écran de combat */
 .weapon-btn {

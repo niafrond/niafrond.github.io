@@ -969,6 +969,10 @@ function normalizeActiveInventoryIndex() {
     if(!Number.isInteger(player.activeInventoryIndex) || player.activeInventoryIndex < 0 || player.activeInventoryIndex >= player.inventory.length) {
         player.activeInventoryIndex = 0;
     }
+    if(player.inventory[player.activeInventoryIndex]?.type === 'shield') {
+        const usable = player.inventory.findIndex(item => item?.type !== 'shield');
+        player.activeInventoryIndex = usable >= 0 ? usable : null;
+    }
 }
 
 function getActiveInventoryItem() {
@@ -983,6 +987,7 @@ function ensureCombatUsableActiveItem() {
 
     const activeItem = getActiveInventoryItem();
     if(activeItem?.type === 'consumable') return;
+    if(activeItem?.type === 'reusable' && player.level >= (activeItem.minLevel || 1)) return;
 
     const consumableIndex = player.inventory.findIndex(item => item?.type === 'consumable');
     if(consumableIndex >= 0) {
@@ -3042,35 +3047,41 @@ export function updateWeaponsTab(){
 }
 
 
-// Boucliers et objets rechargeables : affichés dès l'achat, non sélectionnables tant que le niveau manque.
-const GEAR_SLOT = { shield: 'leftHand', reusable: 'item' };
-const GEAR_SLOT_LABEL = { leftHand: 'Main gauche', item: 'Objet' };
-
+// Boucliers (main gauche) et objets rechargeables (objet actif) : affichés dès l'achat,
+// non sélectionnables tant que le niveau requis n'est pas atteint.
 function renderGearList(container){
     if(!player.equipment) player.equipment = { rightHand: null, leftHand: null, item: null };
-    const owned = (player.inventory || []).map((it, index) => ({ it, index })).filter(({ it }) => GEAR_SLOT[it.type]);
-    const worn = ['leftHand', 'item'].map(slot => ({ slot, it: player.equipment[slot] })).filter(e => e.it);
-    if(owned.length === 0 && worn.length === 0) return;
+    const inventory = player.inventory || [];
+    const wornShield = player.equipment.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
+    const shields = inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'shield');
+    const reusables = inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'reusable');
+    if(!wornShield && shields.length === 0 && reusables.length === 0) return;
     const section = document.createElement('div');
     section.innerHTML = '<h3 class="shop-section-title">Boucliers et objets</h3>';
-    const row = (it, slot, action) => {
+    const row = (it, details, action) => {
         const div = document.createElement('div');
-        div.className = 'weapon-item available-weapon' + (action.locked ? ' is-locked' : '') + (action.worn ? ' is-equipped' : '');
-        const stats = [it.defense ? `Déf. +${it.defense}` : '', it.chargesPerCycle ? `${it.chargesLeft ?? it.chargesPerCycle}/${it.chargesPerCycle} charges` : '', `Niv. ${it.minLevel}`, GEAR_SLOT_LABEL[slot]].filter(Boolean).join(' • ');
+        div.className = 'weapon-item available-weapon' + (action.locked ? ' is-locked' : '') + (action.current ? ' is-equipped' : '');
         div.innerHTML = `
-            <span class="weapon-icon">${svgIcon(it.type === 'shield' ? 'shield' : 'arrow')}</span>
+            <span class="weapon-icon">${svgIcon(it.type === 'shield' ? 'shield' : 'bag')}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${it.name}</span>
-                <span class="weapon-stats">${stats}</span>
+                <span class="weapon-stats">${details}</span>
                 <span class="weapon-description">${it.description || ''}</span>
             </div>
-            <button class="weapon-action" ${action.locked ? 'disabled' : ''} onclick="${action.onclick}">${action.label}</button>`;
+            <button class="weapon-action" ${action.disabled ? 'disabled' : ''} onclick="${action.onclick || ''}">${action.label}</button>`;
         section.appendChild(div);
     };
-    worn.forEach(({ slot, it }) => row(it, slot, { worn: true, label: 'Retirer', onclick: `window.unequipGear('${slot}')` }));
-    owned.forEach(({ it, index }) => {
+    const shieldStats = it => [it.defense ? `Déf. +${it.defense}` : '', it.absorbDamage ? `absorbe ${it.absorbDamage}` : '', `Niv. ${it.minLevel}`, 'Main gauche'].filter(Boolean).join(' • ');
+    if(wornShield) row(wornShield, shieldStats(wornShield), { current: true, label: 'Retirer', onclick: "window.unequipGear('leftHand')" });
+    shields.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);
-        row(it, GEAR_SLOT[it.type], { locked, label: locked ? `Niv. ${it.minLevel} requis` : 'Équiper', onclick: `window.equipGear(${index})` });
+        row(it, shieldStats(it), { locked, disabled: locked, label: locked ? `Niv. ${it.minLevel} requis` : 'Équiper', onclick: `window.equipGear(${index})` });
+    });
+    reusables.forEach(({ it, index }) => {
+        const locked = player.level < (it.minLevel || 1);
+        const isActive = index === player.activeInventoryIndex;
+        const details = `${it.chargesLeft ?? it.chargesPerCycle}/${it.chargesPerCycle} charges • Niv. ${it.minLevel} • Objet`;
+        row(it, details, { locked, current: isActive, disabled: locked || isActive, label: isActive ? 'Objet actif' : locked ? `Niv. ${it.minLevel} requis` : 'Choisir', onclick: `window.setActiveInventoryItem(${index})` });
     });
     container.appendChild(section);
 }
@@ -3078,16 +3089,17 @@ function renderGearList(container){
 export function equipGear(inventoryIndex){
     if(gameState.combatState === 'active'){ log('Vous ne pouvez pas modifier votre équipement pendant le combat !'); return; }
     const it = player.inventory?.[inventoryIndex];
-    if(!it || !GEAR_SLOT[it.type]) return;
+    if(!it || it.type !== 'shield') return;
     if(player.level < (it.minLevel || 1)){ log(`Nécessite niveau ${it.minLevel} pour équiper ${it.name}.`); return; }
     if(!player.equipment) player.equipment = { rightHand: null, leftHand: null, item: null };
-    const slot = GEAR_SLOT[it.type];
-    const previous = player.equipment[slot];
-    const result = equipGearSlot(player, it, slot);
+    const previous = player.equipment.leftHand;
+    const result = equipGearSlot(player, it, 'leftHand');
     if(!result.success){ log(result.message || `${it.name} ne peut pas être équipé.`); return; }
     player.inventory.splice(inventoryIndex, 1);
-    if(previous && GEAR_SLOT[previous.type]){ player.inventory.push(previous); if(previous.defense) player.defense = Math.max(0, (player.defense || 0) - previous.defense); }
+    if(previous?.type === 'shield'){ player.inventory.push(previous); if(previous.defense) player.defense = Math.max(0, (player.defense || 0) - previous.defense); }
     if(it.defense) player.defense = (player.defense || 0) + it.defense;
+    // L'index de l'objet actif suit le décalage de l'inventaire
+    if(Number.isInteger(player.activeInventoryIndex) && player.activeInventoryIndex > inventoryIndex) player.activeInventoryIndex--;
     saveUpdate();
     log(`${it.name} équipé.`);
     updateWeaponsTab();
@@ -3095,8 +3107,8 @@ export function equipGear(inventoryIndex){
 
 export function unequipGear(slot){
     if(gameState.combatState === 'active'){ log('Vous ne pouvez pas modifier votre équipement pendant le combat !'); return; }
+    if(slot !== 'leftHand' || player.equipment?.leftHand?.type !== 'shield') return;
     const it = unequipGearSlot(player, slot);
-    if(!it) return;
     player.inventory.push(it);
     if(it.defense) player.defense = Math.max(0, (player.defense || 0) - it.defense);
     saveUpdate();
@@ -3115,7 +3127,7 @@ export function updateInventoryTab(){
 
     inventoryList.innerHTML = '';
 
-    if(!player.inventory || player.inventory.length === 0){
+    if(!player.inventory || !player.inventory.some(item => item.type !== 'shield')){
         inventoryList.innerHTML = `
             <div class="inventory-slot inventory-slot-empty">
                 <span class="slot-icon">${svgIcon('box')}</span>
@@ -3126,6 +3138,7 @@ export function updateInventoryTab(){
     }
 
     player.inventory.forEach((item, index) => {
+        if(item.type === 'shield') return;
         const isActive = index === player.activeInventoryIndex;
         const rarityEmoji = getRarityIcon(item.rarity);
         const rarityColor = getRarityColor(item.rarity);
@@ -3229,6 +3242,9 @@ export function setActiveInventoryItem(index){
     if(!Array.isArray(player.inventory) || player.inventory.length === 0) return;
     if(!Number.isInteger(index) || index < 0 || index >= player.inventory.length) return;
     if(player.activeInventoryIndex === index) return;
+    const chosen = player.inventory[index];
+    if(chosen.type === 'shield') return;
+    if(player.level < (chosen.minLevel || 1)){ log(`Nécessite niveau ${chosen.minLevel} pour utiliser ${chosen.name}.`); return; }
 
     player.activeInventoryIndex = index;
     const item = player.inventory[index];
