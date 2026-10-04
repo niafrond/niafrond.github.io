@@ -11,7 +11,7 @@ import { TEXTS } from './text/index.js';
 export const REGION_ORDER = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
 
 // Niveau recommandé par région (aligné sur REGION_UNLOCK_LEVEL de story.js) : sert à dimensionner l'XP des quêtes.
-const REGION_LEVEL = { rizieres: 1, fleuve: 2, bambous: 3, gobi: 5, tonnerre: 7, volcan: 9, fauves: 11, mer: 13, fusang: 15, lune: 16 };
+export const REGION_LEVEL = { rizieres: 1, fleuve: 2, bambous: 3, gobi: 5, tonnerre: 7, volcan: 9, fauves: 11, mer: 13, fusang: 15, lune: 16 };
 const QUEST_XP_SHARE = { main: 0.6, side: 0.25 };   // part du coût d'un niveau (expérience.js : 2000 x 1,18^(n-1))
 
 // Chaque quête rapporte de l'XP : au moins une fraction du coût d'un niveau de sa région.
@@ -41,7 +41,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
             npcDef: id => {
                 const t = text.npcs?.[id];
                 const base = legacyNpcs[id];
-                if (!t && !base) { console.warn(`[world] PNJ sans texte : ${id}`); return { id, name: id, emoji: '🧑', idle: ['…'] }; }
+                if (!t && !base) { console.warn(`[world] PNJ sans texte : ${id}`); return { id, name: id, idle: ['…'] }; }
                 return { id, ...(base || {}), ...(t || {}) };
             },
             chestDef: id => ({ id, ...(text.chests?.[id] || {}) }),

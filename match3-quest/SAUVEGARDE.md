@@ -34,7 +34,7 @@ La sauvegarde se déclenche automatiquement après chaque action importante :
 ## Visualisation de la classe
 
 La classe du joueur est affichée à plusieurs endroits :
-- Dans les statistiques principales (emoji de la classe)
+- Dans les statistiques principales (icône de la classe)
 - Dans l'onglet "Stats" avec le nom complet
 - Les sorts disponibles dépendent de la classe choisie
 
@@ -57,7 +57,7 @@ Les ennemis suivent les **mêmes règles de sorts** que le joueur :
 - Les sorts se débloquent selon le niveau de l'ennemi
 - Combinaison de sorts de classe + sorts génériques (couleurs)
 - Les sorts de classe sont prioritaires (70% de chance)
-- Affichage avec emoji de classe pour identifier les sorts spéciaux
+- Affichage avec icône de classe pour identifier les sorts spéciaux
 
 ### Variations par race
 
@@ -72,7 +72,7 @@ Chaque race d'ennemi peut avoir plusieurs variantes de classe :
 
 ### Affichage
 
-L'emoji de la classe de l'ennemi apparaît :
+L'icône de la classe de l'ennemi apparaît :
 - À côté du nom de l'ennemi dans les stats
 - Sur chaque sort de classe dans la liste des sorts ennemis
 

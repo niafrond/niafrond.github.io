@@ -39,10 +39,10 @@ export default {
             { id: 'tea_zhuang', at: '5' }
         ],
         chests: [
-            { id: 'fleuve_garden_a', at: 'j', gold: 30, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'fleuve_garden_b', at: 'k', gold: 30, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
-            { id: 'fleuve_market_a', at: 'm', gold: 60, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
-            { id: 'fleuve_market_b', at: 'n', gold: 60, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+            { id: 'fleuve_garden_a', at: 'j', gold: 30, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'fleuve_garden_b', at: 'k', gold: 30, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'fleuve_market_a', at: 'm', gold: 60, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'fleuve_market_b', at: 'n', gold: 60, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]
     },
 
@@ -102,15 +102,15 @@ export default {
             { id: 'reed_stash', at: 'm', gold: 60 }
         ],
         enemies: [
-            { id: 'fleuve_sluice_golem', at: '1', templateId: 'iron_gladiator', emoji: '🗿', name: 'Golem de l\'écluse', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Golem de l\'écluse', level: 2 } },
-            { id: 'fleuve_salt_thief', at: '2', templateId: 'shadow_assassin', emoji: '🥷', name: 'Voleur de sel masqué', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'fleuve_w_doctor', at: '3', templateId: 'plague_doctor', emoji: '🧪', name: 'Docteur-démon des vases', kind: 'sentinel', offset: -1 },
-            { id: 'fleuve_w_serpent', at: '4', templateId: 'deep_sea_serpent', emoji: '🐍', name: 'Serpent de vase', kind: 'patrol', patrol: ['4', '5'], offset: 0 },
-            { id: 'fleuve_w_drowned', at: '6', templateId: 'bone_reaver', emoji: '💀', name: 'Noyé sans barque', kind: 'patrol', patrol: ['6', '7'], offset: 0 },
-            { id: 'barge_ghost_a', at: 'n', templateId: 'bone_reaver', emoji: '👻', name: 'Matelot noyé revenant', kind: 'sentinel', offset: 0, permanent: true, group: 'barge_ghosts' },
-            { id: 'barge_ghost_b', at: 'o', templateId: 'bone_reaver', emoji: '👻', name: 'Matelot noyé revenant', kind: 'sentinel', offset: 0, permanent: true, group: 'barge_ghosts' },
-            { id: 'mud_imp_a', at: 'p', templateId: 'goblin_saboteur', emoji: '👺', name: 'Diablotin de vase', kind: 'sentinel', offset: 0, permanent: true, group: 'mud_imps' },
-            { id: 'mud_imp_b', at: 'q', templateId: 'goblin_saboteur', emoji: '👺', name: 'Diablotin de vase', kind: 'sentinel', offset: 0, permanent: true, group: 'mud_imps' }
+            { id: 'fleuve_sluice_golem', at: '1', templateId: 'iron_gladiator', name: 'Golem de l\'écluse', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Golem de l\'écluse', level: 2 } },
+            { id: 'fleuve_salt_thief', at: '2', templateId: 'shadow_assassin', name: 'Voleur de sel masqué', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'fleuve_w_doctor', at: '3', templateId: 'plague_doctor', name: 'Docteur-démon des vases', kind: 'sentinel', offset: -1 },
+            { id: 'fleuve_w_serpent', at: '4', templateId: 'deep_sea_serpent', name: 'Serpent de vase', kind: 'patrol', patrol: ['4', '5'], offset: 0 },
+            { id: 'fleuve_w_drowned', at: '6', templateId: 'bone_reaver', name: 'Noyé sans barque', kind: 'patrol', patrol: ['6', '7'], offset: 0 },
+            { id: 'barge_ghost_a', at: 'n', templateId: 'bone_reaver', name: 'Matelot noyé revenant', kind: 'sentinel', offset: 0, permanent: true, group: 'barge_ghosts' },
+            { id: 'barge_ghost_b', at: 'o', templateId: 'bone_reaver', name: 'Matelot noyé revenant', kind: 'sentinel', offset: 0, permanent: true, group: 'barge_ghosts' },
+            { id: 'mud_imp_a', at: 'p', templateId: 'goblin_saboteur', name: 'Diablotin de vase', kind: 'sentinel', offset: 0, permanent: true, group: 'mud_imps' },
+            { id: 'mud_imp_b', at: 'q', templateId: 'goblin_saboteur', name: 'Diablotin de vase', kind: 'sentinel', offset: 0, permanent: true, group: 'mud_imps' }
         ],
         gate: {
             requires: 'sluice_key_chest',

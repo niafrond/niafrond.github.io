@@ -39,11 +39,11 @@ export default {
             { id: 'courier_tong', at: '5' }
         ],
         chests: [
-            { id: 'basalt_pot', at: '9', gold: 90, label: 'Pot de basalte enfoui', emoji: '🏺', openText: '🎁 Un pot de basalte encore tiède, rempli de pièces noircies par la suie.' },
-            { id: 'volcan_garden_a', at: 'j', gold: 135, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'volcan_garden_b', at: 'k', gold: 135, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
-            { id: 'volcan_market_a', at: 'm', gold: 270, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
-            { id: 'volcan_market_b', at: 'n', gold: 270, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+            { id: 'basalt_pot', at: '9', gold: 90, label: 'Pot de basalte enfoui', openText: 'Un pot de basalte encore tiède, rempli de pièces noircies par la suie.' },
+            { id: 'volcan_garden_a', at: 'j', gold: 135, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'volcan_garden_b', at: 'k', gold: 135, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'volcan_market_a', at: 'm', gold: 270, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'volcan_market_b', at: 'n', gold: 270, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]
     },
 
@@ -102,14 +102,14 @@ export default {
             { id: 'cinnabar_vault', at: 'm', gold: 270 }
         ],
         enemies: [
-            { id: 'volcan_forge_giant', at: '1', templateId: 'lava_behemoth', emoji: '🌋', name: 'Forgeron de lave', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Forgeron de lave', level: 9 } },
-            { id: 'volcan_ember_imp', at: '2', templateId: 'goblin_saboteur', emoji: '🦊', name: 'Xiao Gui des cendres', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'volcan_w_salamander', at: '3', templateId: 'ember_dragon', emoji: '🦎', name: 'Salamandre de lave', kind: 'patrol', patrol: ['3', '4'], offset: -1 },
-            { id: 'volcan_w_smith', at: '5', templateId: 'bone_reaver', emoji: '⚒️', name: 'Forgeron calciné', kind: 'patrol', patrol: ['5', '6'], offset: 0 },
-            { id: 'volcan_w_hound', at: '7', templateId: 'ember_wolf', emoji: '🐕', name: 'Chien de braise', kind: 'sentinel', offset: 0 },
-            { id: 'volcan_hound_a', at: 'n', templateId: 'ember_wolf', emoji: '🐕', name: 'Chien de magma', kind: 'sentinel', offset: 0, permanent: true, group: 'magma_hounds' },
-            { id: 'volcan_hound_b', at: 'o', templateId: 'ember_wolf', emoji: '🐕', name: 'Chien de magma', kind: 'sentinel', offset: 0, permanent: true, group: 'magma_hounds' },
-            { id: 'volcan_obsidian_guard', at: 'p', templateId: 'iron_gladiator', emoji: '🗿', name: 'Soldat d\'obsidienne', kind: 'sentinel', offset: 0, permanent: true }
+            { id: 'volcan_forge_giant', at: '1', templateId: 'lava_behemoth', name: 'Forgeron de lave', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Forgeron de lave', level: 9 } },
+            { id: 'volcan_ember_imp', at: '2', templateId: 'goblin_saboteur', name: 'Xiao Gui des cendres', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'volcan_w_salamander', at: '3', templateId: 'ember_dragon', name: 'Salamandre de lave', kind: 'patrol', patrol: ['3', '4'], offset: -1 },
+            { id: 'volcan_w_smith', at: '5', templateId: 'bone_reaver', name: 'Forgeron calciné', kind: 'patrol', patrol: ['5', '6'], offset: 0 },
+            { id: 'volcan_w_hound', at: '7', templateId: 'ember_wolf', name: 'Chien de braise', kind: 'sentinel', offset: 0 },
+            { id: 'volcan_hound_a', at: 'n', templateId: 'ember_wolf', name: 'Chien de magma', kind: 'sentinel', offset: 0, permanent: true, group: 'magma_hounds' },
+            { id: 'volcan_hound_b', at: 'o', templateId: 'ember_wolf', name: 'Chien de magma', kind: 'sentinel', offset: 0, permanent: true, group: 'magma_hounds' },
+            { id: 'volcan_obsidian_guard', at: 'p', templateId: 'iron_gladiator', name: 'Soldat d\'obsidienne', kind: 'sentinel', offset: 0, permanent: true }
         ],
         gate: {
             requires: 'sq_pont_braise',

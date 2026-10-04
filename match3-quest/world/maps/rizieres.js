@@ -38,10 +38,10 @@ export default {
             { id: 'lao_shuo_riz', at: '4' }
         ],
         chests: [
-            { id: 'rizieres_garden_a', at: 'j', gold: 15, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'rizieres_garden_b', at: 'k', gold: 15, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
-            { id: 'rizieres_market_a', at: 'm', gold: 30, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
-            { id: 'rizieres_market_b', at: 'n', gold: 30, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+            { id: 'rizieres_garden_a', at: 'j', gold: 15, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'rizieres_garden_b', at: 'k', gold: 15, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'rizieres_market_a', at: 'm', gold: 30, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'rizieres_market_b', at: 'n', gold: 30, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]
     },
 
@@ -101,15 +101,15 @@ export default {
             { id: 'rice_idol', at: 'l', gold: 30 }
         ],
         enemies: [
-            { id: 'rizieres_warden', at: '1', templateId: 'forest_guardian', emoji: '🌳', name: 'Gardien de la digue', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien de la digue', level: 2 } },
-            { id: 'rizieres_marsh_imp', at: '2', templateId: 'goblin_saboteur', emoji: '🦊', name: 'Xiao Gui des roseaux', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'rizieres_w_toad', at: '3', templateId: 'fungal_horror', emoji: '🐸', name: 'Crapaud de boue', kind: 'sentinel', offset: -1 },
-            { id: 'rizieres_w_lingzhi', at: '4', templateId: 'fungal_horror', emoji: '🍄', name: 'Lingzhi des diguettes', kind: 'sentinel', offset: 0 },
-            { id: 'rizieres_w_spirit', at: '5', templateId: 'forest_guardian', emoji: '🌾', name: 'Esprit des diguettes', kind: 'patrol', patrol: ['5', '6'], offset: 0 },
-            { id: 'rizieres_w_waterthief', at: '7', templateId: 'goblin_saboteur', emoji: '🦊', name: 'Voleur d\'eau', kind: 'patrol', patrol: ['7', '8'], offset: 0 },
-            { id: 'crow_a', at: 'm', templateId: 'goblin_saboteur', emoji: '🐦', name: 'Corbeau-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'crow_gang' },
-            { id: 'crow_b', at: 'n', templateId: 'goblin_saboteur', emoji: '🐦', name: 'Corbeau-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'crow_gang' },
-            { id: 'rizieres_mill_ghost', at: 'o', templateId: 'bone_reaver', emoji: '👻', name: 'Meunier revenant', kind: 'sentinel', offset: 0, permanent: true }
+            { id: 'rizieres_warden', at: '1', templateId: 'forest_guardian', name: 'Gardien de la digue', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Gardien de la digue', level: 2 } },
+            { id: 'rizieres_marsh_imp', at: '2', templateId: 'goblin_saboteur', name: 'Xiao Gui des roseaux', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'rizieres_w_toad', at: '3', templateId: 'fungal_horror', name: 'Crapaud de boue', kind: 'sentinel', offset: -1 },
+            { id: 'rizieres_w_lingzhi', at: '4', templateId: 'fungal_horror', name: 'Lingzhi des diguettes', kind: 'sentinel', offset: 0 },
+            { id: 'rizieres_w_spirit', at: '5', templateId: 'forest_guardian', name: 'Esprit des diguettes', kind: 'patrol', patrol: ['5', '6'], offset: 0 },
+            { id: 'rizieres_w_waterthief', at: '7', templateId: 'goblin_saboteur', name: 'Voleur d\'eau', kind: 'patrol', patrol: ['7', '8'], offset: 0 },
+            { id: 'crow_a', at: 'm', templateId: 'goblin_saboteur', name: 'Corbeau-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'crow_gang' },
+            { id: 'crow_b', at: 'n', templateId: 'goblin_saboteur', name: 'Corbeau-démon voleur', kind: 'sentinel', offset: 0, permanent: true, group: 'crow_gang' },
+            { id: 'rizieres_mill_ghost', at: 'o', templateId: 'bone_reaver', name: 'Meunier revenant', kind: 'sentinel', offset: 0, permanent: true }
         ],
         gate: {
             requires: 'rizieres_warden',

@@ -5,6 +5,7 @@ import {
     arenaRoomId, arenaGuardId, arenaMasterId, hallDoor
 } from '../../arena.js';
 import { SCREENS } from '../../story.js';
+import { DECOR_NAMES } from '../../sprites/decor.js';
 import {
     createSession, enterArena, leaveArena, inArena, tryMove, markEnemyDefeated, encounterFor, resetAfterDefeat,
     currentObjectiveText, isTerrainBlocked, START_SCREEN
@@ -48,6 +49,7 @@ describe('Arène des Mille Flèches : cercles', () => {
             expect(t.master.intro).toHaveLength(2);
             expect(t.master.defeat.length).toBeGreaterThanOrEqual(2);
             expect(ARENA_BIOMES[`arena_${t.id}`]).toBeDefined();
+            ARENA_BIOMES[`arena_${t.id}`].decor.forEach(d => expect(DECOR_NAMES).toContain(d));
         });
         ARENA_TEMPLATES.forEach(id => expect(templateIds.has(id)).toBe(true));
     });
@@ -89,6 +91,7 @@ describe('Arène des Mille Flèches : salles à explorer', () => {
         const hall = SCREENS[ARENA_HALL];
         expect(hall.exits.filter(e => e.to && e.to.startsWith('arena_c'))).toHaveLength(ARENA_TIERS.length);
         expect(hall.exits.some(e => e.leaveArena)).toBe(true);
+        ARENA_BIOMES.arena_hall.decor.forEach(d => expect(DECOR_NAMES).toContain(d));
         ARENA_TIERS.forEach(t => {
             for (let r = 1; r <= t.waves; r++) {
                 const room = SCREENS[arenaRoomId(t.id, r)];

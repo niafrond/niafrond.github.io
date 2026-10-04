@@ -1772,20 +1772,8 @@ progress.enemy-bar::-webkit-progress-value {
 .wm-node.visited .wm-node-dot { fill: #f4c430; }
 .wm-node.locked .wm-node-dot { fill: #8b95a1; }
 .wm-node-shine { fill: rgba(255, 255, 255, 0.45); }
-.wm-node-icon { pointer-events: none; image-rendering: pixelated; }
-.wm-node-badge { pointer-events: none; image-rendering: pixelated; }
-
-/* Icônes pixel art qui remplacent tout emoji à l'écran (pixelText.js, pixelIcons.js). */
-.px-icon {
-    display: inline-block;
-    width: 1.15em;
-    height: 1.15em;
-    vertical-align: -0.2em;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-    margin: 0 0.05em;
-    flex: none;
-}
+.wm-node-icon { pointer-events: none; }
+.wm-node-badge { pointer-events: none; }
 .wm-pulse { fill: none; stroke: #fff; stroke-width: 3; transform-box: fill-box; transform-origin: center; animation: wm-pulse 1.6s ease-out infinite; }
 .wm-banner { fill: #fff8e1; stroke: #5a3e1b; stroke-width: 2.5; }
 .wm-banner-text { font-size: 13px; font-weight: bold; fill: #3b2a20; pointer-events: none; }
@@ -2756,3 +2744,7 @@ input, textarea, [contenteditable="true"] {
     -webkit-user-select: text;
     user-select: text;
 }
+
+/* Icônes SVG de l'interface (icons.js) : le jeu n'utilise aucun emoji. Taille = 1em, alignées sur le texte. */
+.ic { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14em; flex-shrink: 0; overflow: visible; }
+.class-emoji img { width: 72px; height: 72px; display: block; margin: 0 auto; }

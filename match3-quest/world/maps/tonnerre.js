@@ -38,10 +38,10 @@ export default {
             { id: 'porter_san', at: '4' }
         ],
         chests: [
-            { id: 'tonnerre_garden_a', at: 'j', gold: 105, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'tonnerre_garden_b', at: 'k', gold: 105, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
-            { id: 'tonnerre_market_a', at: 'm', gold: 210, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
-            { id: 'tonnerre_market_b', at: 'n', gold: 210, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+            { id: 'tonnerre_garden_a', at: 'j', gold: 105, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'tonnerre_garden_b', at: 'k', gold: 105, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'tonnerre_market_a', at: 'm', gold: 210, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'tonnerre_market_b', at: 'n', gold: 210, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]
     },
 
@@ -100,14 +100,14 @@ export default {
             { id: 'peak_cache', at: 'm', gold: 225 }
         ],
         enemies: [
-            { id: 'tonnerre_stone_lion', at: '1', templateId: 'temple_warden', emoji: '🦁', name: 'Lion-gardien fendu', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Lion-gardien fendu', level: 7 } },
-            { id: 'tonnerre_crest_general', at: '2', templateId: 'storm_knight', emoji: '🌩️', name: 'Général de la crête', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'tonnerre_w_wyrm', at: '3', templateId: 'storm_wyrm', emoji: '⚡', name: 'Serpent d\'éclairs', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
-            { id: 'tonnerre_w_statue', at: '5', templateId: 'iron_gladiator', emoji: '🗿', name: 'Statue de foudre', kind: 'patrol', patrol: ['5', '6'], offset: -1 },
-            { id: 'tonnerre_w_ogre', at: '7', templateId: 'war_troll', emoji: '👹', name: 'Ogre des cimes', kind: 'sentinel', offset: 0 },
-            { id: 'tonnerre_wyrm_calf', at: 'n', templateId: 'storm_wyrm', emoji: '🐲', name: 'Serpenteau d\'orage', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'tonnerre_rider_a', at: 'o', templateId: 'storm_knight', emoji: '🏇', name: 'Cavalier de l\'orage', kind: 'sentinel', offset: 0, permanent: true, group: 'storm_riders' },
-            { id: 'tonnerre_rider_b', at: 'p', templateId: 'storm_knight', emoji: '🏇', name: 'Cavalier de l\'orage', kind: 'sentinel', offset: 0, permanent: true, group: 'storm_riders' }
+            { id: 'tonnerre_stone_lion', at: '1', templateId: 'temple_warden', name: 'Lion-gardien fendu', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Lion-gardien fendu', level: 7 } },
+            { id: 'tonnerre_crest_general', at: '2', templateId: 'storm_knight', name: 'Général de la crête', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'tonnerre_w_wyrm', at: '3', templateId: 'storm_wyrm', name: 'Serpent d\'éclairs', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
+            { id: 'tonnerre_w_statue', at: '5', templateId: 'iron_gladiator', name: 'Statue de foudre', kind: 'patrol', patrol: ['5', '6'], offset: -1 },
+            { id: 'tonnerre_w_ogre', at: '7', templateId: 'war_troll', name: 'Ogre des cimes', kind: 'sentinel', offset: 0 },
+            { id: 'tonnerre_wyrm_calf', at: 'n', templateId: 'storm_wyrm', name: 'Serpenteau d\'orage', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'tonnerre_rider_a', at: 'o', templateId: 'storm_knight', name: 'Cavalier de l\'orage', kind: 'sentinel', offset: 0, permanent: true, group: 'storm_riders' },
+            { id: 'tonnerre_rider_b', at: 'p', templateId: 'storm_knight', name: 'Cavalier de l\'orage', kind: 'sentinel', offset: 0, permanent: true, group: 'storm_riders' }
         ],
         gate: {
             requires: 'storm_gong_chest',

@@ -1,9 +1,12 @@
 // Rendu de la carte du monde façon "overworld" de Mario : mer, île aux falaises,
 // biomes décorés, chemin en pointillés reliant les zones dans l'ordre de progression,
 // noeuds rouge (à explorer) / or (déjà explorée) / gris (verrouillée).
-// buildWorldMapSvg est pur (retourne du HTML) pour rester testable sous Node. Icônes : pixel art (pixelIcons.js).
+// buildWorldMapSvg est pur (retourne du HTML) pour rester testable sous Node.
 
-import { iconUri, iconForEmoji } from './pixelIcons.js';
+import { decorSprite } from './sprites/decor.js';
+import { iconSvg } from './icons.js';
+
+const svgUri = svg => (svg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` : '');
 
 export const MAP_WIDTH = 820;
 export const MAP_HEIGHT = 600;
@@ -106,6 +109,7 @@ export function buildWorldMapSvg(zones, state) {
     const level = Math.max(1, Math.floor(state?.level || 1));
     const visitedIds = state?.visitedIds || [];
     const currentId = state?.currentId || null;
+    const heroUri = state?.heroUri || '';
     // requireVisit : en exploration, une région ne se rejoint que si on l'a déjà découverte à pied.
     const isUnlocked = z => level >= z.unlockLevel && (!state.requireVisit || visitedIds.includes(z.id));
     const points = zones.map(z => z.map);
@@ -154,15 +158,13 @@ export function buildWorldMapSvg(zones, state) {
                 <circle class="wm-node-shadow" cy="4" r="25"/>
                 <circle class="wm-node-dot" r="25"/>
                 <circle class="wm-node-shine" cx="-8" cy="-9" r="6"/>
-                <image class="wm-node-icon" href="${iconUri(unlocked ? (iconForEmoji(zone.emoji) || 'pin') : 'lock')}" x="-15" y="-15" width="30" height="30"/>
-                ${state === 'visited' ? `<image class="wm-node-badge" href="${iconUri('star')}" x="11" y="-26" width="18" height="18"/>` : ''}
+                <image class="wm-node-icon" href="${svgUri(unlocked ? decorSprite(zone.decor) : iconSvg('lock'))}" x="-17" y="-17" width="34" height="34"/>
+                ${state === 'visited' ? `<image class="wm-node-badge" href="${svgUri(iconSvg('star'))}" x="10" y="-24" width="18" height="18"/>` : ''}
                 <rect class="wm-banner" x="${-bannerW / 2}" y="32" width="${bannerW}" height="22" rx="8"/>
                 <text class="wm-banner-text" y="47" text-anchor="middle">${name}</text>
                 ${unlocked ? '' : `<rect class="wm-lvl" x="-34" y="58" width="68" height="18" rx="9"/><text class="wm-lvl-text" y="71" text-anchor="middle">${level >= zone.unlockLevel ? '???' : `Niv. ${zone.unlockLevel}`}</text>`}
             </g>
-            ${current ? (state.heroUri
-                ? `<image class="wm-hero" href="${state.heroUri}" x="-24" y="-84" width="48" height="48"/>`
-                : `<image class="wm-hero" href="${iconUri('person')}" x="-15" y="-66" width="30" height="30"/>`) : ''}
+            ${current ? `<image class="wm-hero" href="${heroUri || svgUri(iconSvg('bow'))}" x="-24" y="-84" width="48" height="48"/>` : ''}
         </g>`;
     }).join('');
 
@@ -210,11 +212,11 @@ export function mountWorldMap(container, zones, state, onSelect) {
     const setCaption = (zone) => {
         if (!zone) { caption.textContent = DEFAULT_CAPTION; return; }
         if (isSelectable(zone)) {
-            caption.textContent = `${zone.emoji} ${zone.name} — ${zone.description}`;
+            caption.textContent = `${zone.name} — ${zone.description}`;
         } else if (state.level >= zone.unlockLevel) {
-            caption.textContent = `❔ ${zone.name} — région inexplorée : trouvez le chemin à pied pour la découvrir.`;
+            caption.textContent = `${zone.name} — région inexplorée : trouvez le chemin à pied pour la découvrir.`;
         } else {
-            caption.textContent = `🔒 ${zone.name} — se débloque au niveau ${zone.unlockLevel}.`;
+            caption.textContent = `${zone.name} — se débloque au niveau ${zone.unlockLevel}.`;
         }
     };
     setCaption(null);

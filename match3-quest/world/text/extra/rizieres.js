@@ -25,7 +25,6 @@ export default {
     miller_gao: {
       name: "Gao",
       title: "Meunier sans rivière",
-      emoji: "👨‍🌾",
       idle: [
         "Ma roue tourne à vide depuis trois lunes. Le pire, c'est le bruit du silence.",
         "On ne moud pas du vent. J'ai essayé, c'est décevant."
@@ -42,7 +41,6 @@ export default {
     aunt_liu: {
       name: "Tante Liu",
       title: "Gardienne des lucioles",
-      emoji: "👵",
       idle: [
         "Mes lucioles ne mordent pas. Elles éclairent, c'est tout, et elles sont de bonne compagnie.",
         "Chaque lueur est une petite promesse. J'en ai trois cents. Je suis très riche."
@@ -59,7 +57,6 @@ export default {
     duck_fu: {
       name: "Fu",
       title: "Éleveur de canards",
-      emoji: "🦆",
       idle: [
         "Mes canards savent nager, ils ne savent juste plus où. Ils tournent en rond dans la boue.",
         "Un canard heureux fait coin-coin. Un canard inquiet aussi, mais plus fort."
@@ -76,7 +73,6 @@ export default {
     kid_dandan: {
       name: "Dandan",
       title: "Gamine curieuse",
-      emoji: "🧒",
       idle: [
         "Tu veux voir mon trésor ? C'est un caillou. Il est magnifique, regarde.",
         "Je serai archère plus tard. Ou grenouille. Je n'ai pas encore décidé."
@@ -93,7 +89,6 @@ export default {
     pigeon_zhao: {
       name: "Zhao",
       title: "Éleveur de pigeons voyageurs",
-      emoji: "🕊️",
       idle: [
         "Mes pigeons portent les lettres d'un bout du pays à l'autre. Quand ils ne s'égarent pas.",
         "Un pigeon ne se trompe jamais de route, dit-on. Le mien se trompe de maison, ce qui est pire."
@@ -110,7 +105,6 @@ export default {
     monk_kong: {
       name: "Frère Kong",
       title: "Moine itinérant",
-      emoji: "🧘",
       idle: [
         "Je marche, je prie, je mange. Dans l'ordre inverse, parfois.",
         "Le vide, mon enfant, n'est pas rien. C'est un bol avant le riz."
@@ -127,7 +121,6 @@ export default {
     matchmaker_hong: {
       name: "Dame Hong",
       title: "Marieuse du canton",
-      emoji: "💐",
       idle: [
         "Je marie tout le monde. Même ceux qui n'ont rien demandé, surtout ceux-là.",
         "Un bon mariage est une bonne récolte : on sème tôt, on arrose, on prie."
@@ -144,7 +137,6 @@ export default {
     lao_shuo_riz: {
       name: "Lao Shuo",
       title: "Conteur itinérant",
-      emoji: "📜",
       idle: [
         "Écoutez, écoutez ! L'histoire de l'archer qui ne manquait jamais son soleil !",
         "Je raconte les légendes. Les héros me paient en anecdotes."
@@ -161,7 +153,6 @@ export default {
     crow_wing: {
       name: "Aile-Noire",
       title: "Corbeau parlant",
-      emoji: "🐦‍⬛",
       idle: [
         "Croa. Tout brille ici, rien ne se mange. Cruel pays.",
         "Je vole ce qui brille. Le reste, je le regarde avec mépris."
@@ -178,7 +169,6 @@ export default {
     toad_chan: {
       name: "Chan",
       title: "Crapaud sage",
-      emoji: "🐸",
       idle: [
         "Ribbit. Depuis que la mare est sèche, je médite sur la nature de l'eau.",
         "Je vois tout depuis mon rocher. Et je le répète à qui paie en mouches."
@@ -196,39 +186,27 @@ export default {
   chests: {
     mill_flour_bin: {
       label: "Coffre à farine",
-      openText: "🎁 Sous la dernière farine, une petite bourse de meunier, enfarinée.",
-      emoji: "🌾",
-      emojiOpened: "🌾"
+      openText: "Sous la dernière farine, une petite bourse de meunier, enfarinée.",
     },
     firefly_jar: {
       label: "Jarre de lucioles",
-      openText: "🎁 Une jarre qui brille doucement, avec quelques pièces collées au fond.",
-      emoji: "🫙",
-      emojiOpened: "🫙"
+      openText: "Une jarre qui brille doucement, avec quelques pièces collées au fond.",
     },
     duck_pond_cache: {
       label: "Cache de l'étang",
-      openText: "🎁 Au bord de l'étang, une bague de pigeonnier et quelques pièces de canard.",
-      emoji: "🦆",
-      emojiOpened: "🦆"
+      openText: "Au bord de l'étang, une bague de pigeonnier et quelques pièces de canard.",
     },
     hamlet_well_box: {
       label: "Coffre du puits",
-      openText: "🎁 Dans un seau remonté du puits à sec, une bourse oubliée.",
-      emoji: "🪣",
-      emojiOpened: "🪣"
+      openText: "Dans un seau remonté du puits à sec, une bourse oubliée.",
     },
     rice_idol: {
       label: "Idole de riz cachée",
-      openText: "🎁 Une petite idole de riz sculptée, dissimulée derrière les roseaux. Elle cache de la monnaie.",
-      emoji: "🗿",
-      emojiOpened: "🗿"
+      openText: "Une petite idole de riz sculptée, dissimulée derrière les roseaux. Elle cache de la monnaie.",
     },
     journal_page_riz: {
       label: "Page déchirée dans les roseaux",
-      openText: "🎁 Une page arrachée d'un carnet, à l'écriture nerveuse : « Le maître ne me regarde jamais. »",
-      emoji: "📄",
-      emojiOpened: "📄"
+      openText: "Une page arrachée d'un carnet, à l'écriture nerveuse : « Le maître ne me regarde jamais. »",
     }
   },
   quests: [

@@ -1,5 +1,5 @@
 // Arène des Mille Flèches : un lieu à explorer, comme une arène de Pokémon. Ouverte à partir du niveau
-// ARENA_MIN_LEVEL (bouton 🏟️ du HUD), rejouable à volonté, on peut en sortir à tout moment (bouton 🚪 du HUD, ou la
+// ARENA_MIN_LEVEL (bouton « Arène » du HUD), rejouable à volonté, on peut en sortir à tout moment (bouton « Sortir » du HUD, ou la
 // porte de chaque salle).
 //
 //   Parvis (arena_hall) ── 8 portes ──► Cercle N : salle 1 ─► salle 2 ─► … ─► salle du maître d'arène
@@ -31,54 +31,54 @@ export const arenaClearedFlag = tier => `arena_cleared_${tier}`;
 //  rewardMult  : multiplicateur de la prime ; clearGold / clearXp : prime du premier maître vaincu ;
 //  guard       : titre des gardiens ; master : le maître d'arène (gabarit, répliques).
 export const ARENA_TIERS = [
-    { id: 1, name: 'Cercle de Bronze', emoji: '🥉', waves: 4, levelOffset: -1, statMult: 1.0, rewardMult: 1.0,
+    { id: 1, name: 'Cercle de Bronze', waves: 4, levelOffset: -1, statMult: 1.0, rewardMult: 1.0,
       clearGold: 150, clearXp: 1500, guard: 'Disciple de bronze',
       desc: 'Des disciples encore verts, pour se faire la main.',
       master: { name: 'Maîtresse Tong', title: 'la Lame de Bronze', templateId: 'iron_gladiator',
           intro: ["Un archer dans mon cercle ? Montre-moi si ton arc vaut mieux que le bronze.", 'Il vaut ce que vaut ma main. Voyons.'],
           defeat: ["Le bronze sonne juste quand on le frappe bien. Tu l'as bien frappé.", 'La porte du Cercle de Cuivre est à toi.'] } },
-    { id: 2, name: 'Cercle de Cuivre', emoji: '🟤', waves: 4, levelOffset: 0, statMult: 1.08, rewardMult: 1.3,
+    { id: 2, name: 'Cercle de Cuivre', waves: 4, levelOffset: 0, statMult: 1.08, rewardMult: 1.3,
       clearGold: 250, clearXp: 2500, guard: 'Lutteur de cuivre',
       desc: 'Des adversaires à votre niveau, un peu plus coriaces.',
       master: { name: 'Maître Hong Gang', title: 'le Gong de Cuivre', templateId: 'orc_warmaster',
           intro: ["Chaque coup que tu encaisses, mon gong le chante à toute l'arène !", "Qu'il chante. Il chantera aussi ta défaite."],
           defeat: ['Mon gong est fêlé… et mon orgueil aussi. Bien joué, archer.', 'Le Cercle de Fer t\'attend, plus froid que moi.'] } },
-    { id: 3, name: 'Cercle de Fer', emoji: '⚙️', waves: 5, levelOffset: 1, statMult: 1.16, rewardMult: 1.6,
+    { id: 3, name: 'Cercle de Fer', waves: 5, levelOffset: 1, statMult: 1.16, rewardMult: 1.6,
       clearGold: 400, clearXp: 4000, guard: 'Garde de fer',
       desc: 'Cinq combats ; le maître encoche deux flèches à la fois.',
       masterDuel: { rapidShots: 4 },
       master: { name: 'Maître Tie Bi', title: 'le Bras de Fer', templateId: 'storm_knight',
           intro: ['Le fer ne plie pas. Moi non plus. Et je tire deux fois plus vite que toi.', 'Le fer rouille. La patience, jamais.'],
           defeat: ['Mon bras a plié… Personne ne l\'avait fait depuis dix hivers.', "Va : l'Argent t'appelle."] } },
-    { id: 4, name: "Cercle d'Argent", emoji: '🥈', waves: 5, levelOffset: 2, statMult: 1.25, rewardMult: 2.0,
+    { id: 4, name: "Cercle d'Argent", waves: 5, levelOffset: 2, statMult: 1.25, rewardMult: 2.0,
       clearGold: 600, clearXp: 6000, guard: "Danseuse d'argent",
       desc: 'Des tirs rapides plus fréquents chez la maîtresse.',
       masterDuel: { rapidShots: 3 },
       master: { name: 'Dame Yin Yue', title: "la Lune d'Argent", templateId: 'moon_priestess',
           intro: ["Tu portes la lune dans ta manche, archer. Je la sens d'ici. Voyons si elle te protège.", "Elle me regarde. C'est tout ce qu'il me faut."],
           defeat: ['La lune t\'aime bien, on dirait. Moi aussi, à présent.', "Le Cercle d'Or brille plus fort, mais il brûle aussi."] } },
-    { id: 5, name: "Cercle d'Or", emoji: '🥇', waves: 6, levelOffset: 3, statMult: 1.35, rewardMult: 2.5,
+    { id: 5, name: "Cercle d'Or", waves: 6, levelOffset: 3, statMult: 1.35, rewardMult: 2.5,
       clearGold: 900, clearXp: 9000, guard: "Champion d'or",
       desc: 'Le maître piège le plateau : désamorcez ses zones.',
       masterDuel: { rapidShots: 3, zoneTraps: 3 },
       master: { name: 'Seigneur Jin Long', title: "le Dragon d'Or", templateId: 'sun_paladin',
           intro: ["Mon arène est semée de pièges d'or. Chaque pas te coûtera.", 'Alors je compterai mes pas.'],
           defeat: ['Tu as désamorcé mon or comme on cueille des fruits… Prends ce qui te revient.', 'Le Jade t\'ouvre sa porte.'] } },
-    { id: 6, name: 'Cercle de Jade', emoji: '💚', waves: 6, levelOffset: 4, statMult: 1.45, rewardMult: 3.0,
+    { id: 6, name: 'Cercle de Jade', waves: 6, levelOffset: 4, statMult: 1.45, rewardMult: 3.0,
       clearGold: 1300, clearXp: 13000, guard: 'Sentinelle de jade',
       desc: 'Tous les gardiens tirent vite ; la maîtresse piège sans relâche.',
       duel: { rapidShots: 4 }, masterDuel: { rapidShots: 3, zoneTraps: 2 },
       master: { name: 'Dame Bi Yu', title: 'la Main de Jade', templateId: 'crystal_sage',
           intro: ['Le jade ne se brise pas, il se taille. Laisse-moi te tailler, archer.', 'Le jade brut aussi a des arêtes.'],
           defeat: ['Taillé, et bien taillé… Je n\'avais pas vu une telle main depuis Hou Yi lui-même.', 'Les nuées t\'attendent au Cercle Céleste.'] } },
-    { id: 7, name: 'Cercle Céleste', emoji: '☁️', waves: 7, levelOffset: 5, statMult: 1.6, rewardMult: 3.6,
+    { id: 7, name: 'Cercle Céleste', waves: 7, levelOffset: 5, statMult: 1.6, rewardMult: 3.6,
       clearGold: 1800, clearXp: 18000, guard: 'Gardien des nuées',
       desc: 'Pièges à chaque combat ; le maître copie vos techniques.',
       duel: { rapidShots: 4, zoneTraps: 3 }, masterDuel: { mirror: true, rapidShots: 3, zoneTraps: 2 },
       master: { name: 'Immortel Yun Zhong', title: 'Celui-des-Nuées', templateId: 'ice_witch',
           intro: ['Je suis ton reflet dans la nuée : chacune de tes flèches, je la tirerai aussi.', 'Alors je tirerai celle que je ne connais pas encore.'],
           defeat: ["Une flèche que je ne connaissais pas… Le Grand Maître voudra te voir.", 'Le dernier cercle t\'est ouvert.'] } },
-    { id: 8, name: 'Cercle des Mille Flèches', emoji: '🏹', waves: 8, levelOffset: 6, statMult: 1.8, rewardMult: 4.5,
+    { id: 8, name: 'Cercle des Mille Flèches', waves: 8, levelOffset: 6, statMult: 1.8, rewardMult: 4.5,
       clearGold: 3000, clearXp: 30000, guard: 'Archer aux mille flèches',
       desc: "L'épreuve ultime : huit combats impitoyables et un grand maître miroir, contre qui vous entrez à 80 % de vos PV.",
       duel: { rapidShots: 3, zoneTraps: 3 }, masterDuel: { mirror: true, heroHpPct: 0.8, rapidShots: 2, zoneTraps: 2 },
@@ -96,18 +96,18 @@ export const ARENA_TEMPLATES = [
     'deep_sea_serpent'
 ];
 
-// Palettes des salles (même format que BIOMES d'explorationView.js, décors = icônes pixel de pixelIcons.js) :
+// Palettes des salles (même format que BIOMES d'explorationView.js, décors = dessins de sprites/decor.js) :
 // une par cercle, plus le parvis.
 export const ARENA_BIOMES = {
-    arena_hall: { a: '#b9a07a', b: '#ae9570', path: '#9b2f2a', cliff: '#4a3424', liquid: '#6ab7c9', sky: ['#2a1c14', '#5a3e2a'], decor: ['lantern', 'drum', 'lantern', 'banner'] },
-    arena_1: { a: '#b98a5a', b: '#ad7f50', path: '#8a5a2a', cliff: '#4a2e18', liquid: '#6ab7c9', sky: ['#3a2414', '#6a4628'], decor: ['lantern', 'rock', 'medal_bronze'] },
-    arena_2: { a: '#c08a68', b: '#b47f5e', path: '#8f4a2e', cliff: '#4f2a1c', liquid: '#6ab7c9', sky: ['#3a1f17', '#6e3b28'], decor: ['drum', 'lantern', 'bell'] },
-    arena_3: { a: '#8c9096', b: '#82868c', path: '#5a5e66', cliff: '#2e3036', liquid: '#4a5fa8', sky: ['#1f2228', '#4a4e58'], decor: ['gear', 'shield', 'chain'] },
-    arena_4: { a: '#c8ccd6', b: '#bec2cc', path: '#8a90a8', cliff: '#4a4e66', liquid: '#6f86d8', sky: ['#22263a', '#555a7a'], decor: ['crescent', 'lantern', 'medal_silver'] },
-    arena_5: { a: '#e8cf7a', b: '#dec46e', path: '#b8862a', cliff: '#6a4a14', liquid: '#e8b830', sky: ['#4a3410', '#8a6420'], decor: ['dragon', 'lantern', 'medal'] },
-    arena_6: { a: '#8fc4a0', b: '#84b995', path: '#3f8a5f', cliff: '#1f4a32', liquid: '#4fa88a', sky: ['#12301f', '#2f6a48'], decor: ['bamboo', 'gem', 'lantern'] },
-    arena_7: { a: '#d8e4f0', b: '#cedae6', path: '#9ab4d8', cliff: '#4a5f88', liquid: '#7eb4ec', sky: ['#1a2a4a', '#5a7ab0'], decor: ['cloud', 'lantern', 'cloud'] },
-    arena_8: { a: '#a8584a', b: '#9e4e40', path: '#e0b030', cliff: '#3a1410', liquid: '#ff5a1f', sky: ['#1a0808', '#5a1a10'], decor: ['bow', 'target', 'lantern'] }
+    arena_hall: { a: '#b9a07a', b: '#ae9570', path: '#9b2f2a', cliff: '#4a3424', liquid: '#6ab7c9', sky: ['#2a1c14', '#5a3e2a'], decor: ['lantern', 'jar', 'lantern', 'campfire'] },
+    arena_1: { a: '#b98a5a', b: '#ad7f50', path: '#8a5a2a', cliff: '#4a2e18', liquid: '#6ab7c9', sky: ['#3a2414', '#6a4628'], decor: ['lantern', 'rock', 'jar'] },
+    arena_2: { a: '#c08a68', b: '#b47f5e', path: '#8f4a2e', cliff: '#4f2a1c', liquid: '#6ab7c9', sky: ['#3a1f17', '#6e3b28'], decor: ['campfire', 'lantern', 'jar'] },
+    arena_3: { a: '#8c9096', b: '#82868c', path: '#5a5e66', cliff: '#2e3036', liquid: '#4a5fa8', sky: ['#1f2228', '#4a4e58'], decor: ['rock', 'mountain', 'lantern'] },
+    arena_4: { a: '#c8ccd6', b: '#bec2cc', path: '#8a90a8', cliff: '#4a4e66', liquid: '#6f86d8', sky: ['#22263a', '#555a7a'], decor: ['moon', 'lantern', 'rock'] },
+    arena_5: { a: '#e8cf7a', b: '#dec46e', path: '#b8862a', cliff: '#6a4a14', liquid: '#e8b830', sky: ['#4a3410', '#8a6420'], decor: ['campfire', 'lantern', 'altarLit'] },
+    arena_6: { a: '#8fc4a0', b: '#84b995', path: '#3f8a5f', cliff: '#1f4a32', liquid: '#4fa88a', sky: ['#12301f', '#2f6a48'], decor: ['bamboo', 'tree', 'lantern'] },
+    arena_7: { a: '#d8e4f0', b: '#cedae6', path: '#9ab4d8', cliff: '#4a5f88', liquid: '#7eb4ec', sky: ['#1a2a4a', '#5a7ab0'], decor: ['storm', 'moon', 'lantern'] },
+    arena_8: { a: '#a8584a', b: '#9e4e40', path: '#e0b030', cliff: '#3a1410', liquid: '#ff5a1f', sky: ['#1a0808', '#5a1a10'], decor: ['campfire', 'rock', 'lantern'] }
 };
 
 export const isArenaUnlocked = playerLevel => (Number(playerLevel) || 0) >= ARENA_MIN_LEVEL;
@@ -200,7 +200,7 @@ function buildRoom(tier, room) {
         exits.push({ x: ROOM_W - 1, y: 4, to: arenaRoomId(tier.id, room + 1), arrive: { x: 1, y: 4 },
             label: room + 1 === tier.waves ? 'Salle du maître' : `Salle ${room + 1}`,
             requires: guardId, lockedMessage: `La porte reste close tant que le ${tier.guard.toLowerCase()} garde la salle.` });
-        enemies.push({ id: guardId, templateId: guardTemplate(tier.id, room), emoji: tier.emoji, kind: 'sentinel', x: 10, y: 4,
+        enemies.push({ id: guardId, templateId: guardTemplate(tier.id, room), kind: 'sentinel', x: 10, y: 4,
             name: `${tier.guard} — combat ${room}/${tier.waves}`, permanent: true, arena: { tier: tier.id, wave: room } });
     } else {
         const m = tier.master;
@@ -208,7 +208,7 @@ function buildRoom(tier, room) {
         // Derrière le maître vaincu : une sortie directe hors de l'arène.
         exits.push({ x: ROOM_W - 1, y: 4, to: ARENA_HALL, leaveArena: true, label: "Sortie de l'arène",
             requires: arenaMasterId(tier.id), lockedMessage: `${m.name} se dresse entre vous et la sortie.` });
-        enemies.push({ id: arenaMasterId(tier.id), templateId: m.templateId, emoji: '🏆', kind: 'sentinel', x: 10, y: 4,
+        enemies.push({ id: arenaMasterId(tier.id), templateId: m.templateId, kind: 'sentinel', x: 10, y: 4,
             name, permanent: true, boss: { name, level: 1 }, arena: { tier: tier.id, wave: room, master: true },
             introLines: [...m.intro],
             defeatScene: { speaker: { name: m.name, title: `Maître du ${tier.name}`, enemy: arenaMasterId(tier.id) }, lines: [...m.defeat] } });
@@ -233,7 +233,7 @@ function buildHall() {
         w: HALL_W, h: HALL_H, spawn: { x: 7, y: 8 },
         arrival: [
             "Des tambours, des bannières, et l'odeur du bois de cible : l'Arène des Mille Flèches. Huit portes, huit cercles, et derrière chacun, un maître d'arène qui attend un archer digne de lui.",
-            "Chaque cercle se traverse de salle en salle : battez le gardien de chaque salle pour ouvrir la suivante, puis affrontez le maître. Un maître vaincu ouvre la porte du cercle suivant (cercles 1 à 4 à l'ouest, 5 à 8 à l'est). La porte du sud, ou le bouton 🚪, vous ramène dehors à tout moment."
+            "Chaque cercle se traverse de salle en salle : battez le gardien de chaque salle pour ouvrir la suivante, puis affrontez le maître. Un maître vaincu ouvre la porte du cercle suivant (cercles 1 à 4 à l'ouest, 5 à 8 à l'est). La porte du sud, ou le bouton « Sortir », vous ramène dehors à tout moment."
         ],
         // Estrade centrale (tambour, bannières) ; allées vers les portes.
         obstacles: [[6, 3, 2, 2]],
@@ -241,7 +241,7 @@ function buildHall() {
         paths: [[1, 1, HALL_W - 2, 1], [1, 3, HALL_W - 2, 1], [1, 5, HALL_W - 2, 1], [1, 7, HALL_W - 2, 1], [7, 5, 1, 5]],
         exits: [
             ...ARENA_TIERS.map(t => ({
-                ...hallDoor(t.id), to: arenaRoomId(t.id, 1), arrive: { x: 1, y: 4 }, label: `${t.emoji} ${t.name}`,
+                ...hallDoor(t.id), to: arenaRoomId(t.id, 1), arrive: { x: 1, y: 4 }, label: t.name,
                 ...(t.id > 1 ? { requires: arenaClearedFlag(t.id - 1),
                     lockedMessage: `Le ${t.name} reste fermé : battez d'abord le maître du ${arenaTier(t.id - 1).name}.` } : {})
             })),

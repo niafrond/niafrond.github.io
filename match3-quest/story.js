@@ -287,7 +287,7 @@ const BASE_SCREENS = {
             }
         ],
         npcs: [
-            { id: 'change', x: 2, y: 3, name: "Chang'e", title: 'Épouse de Hou Yi', emoji: '👩', hideWhen: 'sun_9',
+            { id: 'change', x: 2, y: 3, name: "Chang'e", title: 'Épouse de Hou Yi', hideWhen: 'sun_9',
               idle: [
                   "Te voilà, mon archer ! Les gâteaux de lune sont encore tièdes : prends-en pour la route. Haricot rouge pour le courage, taro pour la patience.",
                   "Le doyen Wen t'attend près de la digue, avec le décret de l'empereur. Écoute-le avec le cœur : Yao ne demande jamais pour rien."
@@ -334,7 +334,7 @@ const BASE_SCREENS = {
                       "Reste encore un peu. Non, ne dis rien. Laisse-moi te regarder, comme si je devais m'en souvenir longtemps."
                   ] }
               ] },
-            { id: 'elder_wen', x: 4, y: 2, name: 'Doyen Wen', title: 'Doyen du village', emoji: '👴',
+            { id: 'elder_wen', x: 4, y: 2, name: 'Doyen Wen', title: 'Doyen du village', 
               idle: [
                   "Le riz ne pousse plus, mais les enfants rient encore : c'est cela qui me tient debout. Prenez soin de vous, Hou Yi.",
                   "Si le courage vous manque, passez chez Dame Chang'e : un gâteau de lune a remis sur pied plus d'un guerrier."
@@ -353,7 +353,7 @@ const BASE_SCREENS = {
                       "Chaque automne, nous poserons des gâteaux de lune sur les toits. Que celle qui les reçoit sache qu'ils viennent de très loin, et de très bon cœur."
                   ] }
               ] },
-            { id: 'farmer_lin', x: 1, y: 7, name: 'Lin', title: 'Paysan désespéré', emoji: '🧑‍🌾',
+            { id: 'farmer_lin', x: 1, y: 7, name: 'Lin', title: 'Paysan désespéré', 
               idle: [
                   "Dix-sept jours que mon champ n'a pas bu une goutte. Regardez-moi cette terre : elle s'ouvre comme une bouche.",
                   "Mes enfants me demandent s'il pleuvra demain. Je leur réponds que oui. Un père a bien le droit de mentir un peu."
@@ -369,7 +369,7 @@ const BASE_SCREENS = {
         ],
         enemies: [
             // Duel d'entraînement : Fengmeng garde la digue, seul passage vers l'est (corridor de 3 tuiles de large).
-            { id: 'fengmeng_1', templateId: 'shadow_assassin', emoji: '🏹', name: 'Fengmeng, le Disciple', kind: 'sentinel', x: 6, y: 4,
+            { id: 'fengmeng_1', templateId: 'shadow_assassin', name: 'Fengmeng, le Disciple', kind: 'sentinel', x: 6, y: 4,
               permanent: true, boss: { name: 'Fengmeng, le Disciple', level: 2 },
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_1'),
@@ -379,12 +379,12 @@ const BASE_SCREENS = {
                       "Allez abattre votre soleil. Je vous suivrai de loin. Après tout, il faut bien que quelqu'un vous couvre."
                   ]
               } },
-            { id: 'rizieres_goblin', templateId: 'goblin_saboteur', emoji: '🦊', name: 'Xiao Gui farceur', kind: 'sentinel', x: 5, y: 8, offset: -1 },
-            { id: 'rizieres_shroom', templateId: 'fungal_horror', emoji: '🍄', name: 'Lingzhi maudit', kind: 'sentinel', x: 9, y: 7, offset: 0 },
-            { id: 'rizieres_guardian', templateId: 'forest_guardian', emoji: '🌳', name: 'Esprit des digues', kind: 'patrol', x: 8, y: 9, patrol: [[8, 9], [12, 9]], offset: 0 },
+            { id: 'rizieres_goblin', templateId: 'goblin_saboteur', name: 'Xiao Gui farceur', kind: 'sentinel', x: 5, y: 8, offset: -1 },
+            { id: 'rizieres_shroom', templateId: 'fungal_horror', name: 'Lingzhi maudit', kind: 'sentinel', x: 9, y: 7, offset: 0 },
+            { id: 'rizieres_guardian', templateId: 'forest_guardian', name: 'Esprit des digues', kind: 'patrol', x: 8, y: 9, patrol: [[8, 9], [12, 9]], offset: 0 },
             // Chapardeur nommé (quête secondaire), côté est de la digue.
-            { id: 'rice_thief', templateId: 'goblin_saboteur', emoji: '🦊', name: 'Xiao Gui, le chapardeur', kind: 'sentinel', x: 12, y: 6, offset: 1, permanent: true },
-            { id: 'sun_1', templateId: 'goblin_saboteur', emoji: '☀️', name: 'Soleil Ardent', kind: 'sentinel', x: 11, y: 2,
+            { id: 'rice_thief', templateId: 'goblin_saboteur', name: 'Xiao Gui, le chapardeur', kind: 'sentinel', x: 12, y: 6, offset: 1, permanent: true },
+            { id: 'sun_1', templateId: 'goblin_saboteur', name: 'Soleil Ardent', kind: 'sentinel', x: 11, y: 2,
               permanent: true, boss: { name: 'Soleil Ardent', level: 3 },
               afterScenes: MIRROR_TALKS.sun_1 }
         ],
@@ -413,7 +413,7 @@ const BASE_SCREENS = {
             }
         ],
         npcs: [
-            { id: 'ferryman_gu', x: 3, y: 6, name: 'Gu', title: 'Passeur du fleuve', emoji: '🧔',
+            { id: 'ferryman_gu', x: 3, y: 6, name: 'Gu', title: 'Passeur du fleuve', 
               idle: [
                   "Trente ans que je passe les gens d'une rive à l'autre. Maintenant il n'y a plus de rive, juste de la boue, et ma vieille barque qui rêve d'eau.",
                   "Un jeune archer pressé est passé hier, à pied, en pestant contre la poussière. Il m'a demandé le chemin le plus court vers l'Occident. Je lui ai montré la piste des caravanes."
@@ -427,7 +427,7 @@ const BASE_SCREENS = {
                       "Prenez la rive est, seigneur archer : je vous y passerai gratuitement, pour toujours."
                   ] }
               ] },
-            { id: 'weaver_mei', x: 2, y: 2, name: 'Mei', title: 'Tisserande', emoji: '👵',
+            { id: 'weaver_mei', x: 2, y: 2, name: 'Mei', title: 'Tisserande', 
               idle: [
                   "Je tisse ce que le soleil n'a pas brûlé : un fil à la fois. Le tissu raconte ce que les mots oublient.",
                   "Les gens du village disent que mes broderies portent chance. Je leur réponds que la chance, c'est surtout de la patience bien rangée."
@@ -443,13 +443,13 @@ const BASE_SCREENS = {
         ],
         enemies: [
             // Noyés revenants (quête secondaire de Mei), nord du lit.
-            { id: 'drowned_a', templateId: 'bone_reaver', emoji: '💀', name: 'Noyé revenant', kind: 'sentinel', x: 8, y: 1, offset: 0, permanent: true, group: 'drowned' },
-            { id: 'drowned_b', templateId: 'bone_reaver', emoji: '💀', name: 'Noyé revenant', kind: 'sentinel', x: 10, y: 2, offset: 0, permanent: true, group: 'drowned' },
+            { id: 'drowned_a', templateId: 'bone_reaver', name: 'Noyé revenant', kind: 'sentinel', x: 8, y: 1, offset: 0, permanent: true, group: 'drowned' },
+            { id: 'drowned_b', templateId: 'bone_reaver', name: 'Noyé revenant', kind: 'sentinel', x: 10, y: 2, offset: 0, permanent: true, group: 'drowned' },
             // Vieux serpent nommé (quête secondaire de Gu), coin nord-est.
-            { id: 'river_serpent', templateId: 'deep_sea_serpent', emoji: '🐍', name: 'Serpent du Fleuve Jaune', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
-            { id: 'fleuve_doctor', templateId: 'plague_doctor', emoji: '🧪', name: 'Docteur-démon des vases', kind: 'sentinel', x: 8, y: 8, offset: 0 },
-            { id: 'fleuve_lich', templateId: 'crypt_lich', emoji: '☠️', name: 'Sorcier-squelette du gué', kind: 'sentinel', x: 4, y: 9, offset: 0 },
-            { id: 'sun_2', templateId: 'iron_gladiator', emoji: '☀️', name: 'Soleil des Eaux Taries', kind: 'sentinel', x: 11, y: 8,
+            { id: 'river_serpent', templateId: 'deep_sea_serpent', name: 'Serpent du Fleuve Jaune', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
+            { id: 'fleuve_doctor', templateId: 'plague_doctor', name: 'Docteur-démon des vases', kind: 'sentinel', x: 8, y: 8, offset: 0 },
+            { id: 'fleuve_lich', templateId: 'crypt_lich', name: 'Sorcier-squelette du gué', kind: 'sentinel', x: 4, y: 9, offset: 0 },
+            { id: 'sun_2', templateId: 'iron_gladiator', name: 'Soleil des Eaux Taries', kind: 'sentinel', x: 11, y: 8,
               permanent: true, boss: { name: 'Soleil des Eaux Taries', level: 4 },
               afterScenes: MIRROR_TALKS.sun_2 }
         ],
@@ -478,7 +478,7 @@ const BASE_SCREENS = {
             }
         ],
         npcs: [
-            { id: 'monk_zhen', x: 4, y: 2, name: 'Zhen', title: 'Moine du temple brûlé', emoji: '🧘',
+            { id: 'monk_zhen', x: 4, y: 2, name: 'Zhen', title: 'Moine du temple brûlé', 
               idle: [
                   "Paix à vous, voyageur. Je prie ce qu'il reste à prier : les cendres, le silence, et une cloche absente.",
                   "Un jeune archer est venu méditer ici, il y a quelques jours. Il n'a pas réussi : sa respiration battait comme un tambour de guerre. Il m'a demandé s'il existe un breuvage qui épargne la mort. Je lui ai répondu : oui, le temps."
@@ -492,7 +492,7 @@ const BASE_SCREENS = {
                       "Que le Ciel garde votre arc, seigneur."
                   ] }
               ] },
-            { id: 'herbalist_xu', x: 3, y: 8, name: 'Xu', title: 'Herboriste', emoji: '🧑‍⚕️',
+            { id: 'herbalist_xu', x: 3, y: 8, name: 'Xu', title: 'Herboriste', 
               idle: [
                   "Plus une plante vivante à dix lis à la ronde. Je cherche, je cherche… Tenez, sentez cette cendre : elle sent encore le gingembre, c'est dire.",
                   "Une tisane de chrysanthème, après un combat, remet tout en place. Je n'ai plus de chrysanthème, mais l'intention y est."
@@ -507,12 +507,12 @@ const BASE_SCREENS = {
               ] }
         ],
         enemies: [
-            { id: 'bambous_assassin', templateId: 'shadow_assassin', emoji: '🥷', name: 'Ombre des cendres', kind: 'sentinel', x: 8, y: 1, offset: 0 },
-            { id: 'bambous_fungus', templateId: 'fungal_horror', emoji: '🍄', name: 'Lingzhi maudit', kind: 'sentinel', x: 8, y: 8, offset: 0 },
-            { id: 'bambous_priestess', templateId: 'moon_priestess', emoji: '🌙', name: 'Prêtresse égarée', kind: 'sentinel', x: 12, y: 8, offset: 0 },
+            { id: 'bambous_assassin', templateId: 'shadow_assassin', name: 'Ombre des cendres', kind: 'sentinel', x: 8, y: 1, offset: 0 },
+            { id: 'bambous_fungus', templateId: 'fungal_horror', name: 'Lingzhi maudit', kind: 'sentinel', x: 8, y: 8, offset: 0 },
+            { id: 'bambous_priestess', templateId: 'moon_priestess', name: 'Prêtresse égarée', kind: 'sentinel', x: 12, y: 8, offset: 0 },
             // Esprit-arbre nommé (quête secondaire de Xu), coin sud-ouest.
-            { id: 'old_pine', templateId: 'forest_guardian', emoji: '🌲', name: 'Vieux Pin Noir', kind: 'sentinel', x: 1, y: 9, offset: 0, permanent: true },
-            { id: 'sun_3', templateId: 'fungal_horror', emoji: '☀️', name: 'Soleil de Cendres', kind: 'sentinel', x: 11, y: 1,
+            { id: 'old_pine', templateId: 'forest_guardian', name: 'Vieux Pin Noir', kind: 'sentinel', x: 1, y: 9, offset: 0, permanent: true },
+            { id: 'sun_3', templateId: 'fungal_horror', name: 'Soleil de Cendres', kind: 'sentinel', x: 11, y: 1,
               permanent: true, boss: { name: 'Soleil de Cendres', level: 5 },
               afterScenes: MIRROR_TALKS.sun_3 }
         ],
@@ -542,7 +542,7 @@ const BASE_SCREENS = {
             }
         ],
         npcs: [
-            { id: 'merchant_ma', x: 3, y: 2, name: 'Ma', title: 'Marchand de caravane', emoji: '👳',
+            { id: 'merchant_ma', x: 3, y: 2, name: 'Ma', title: 'Marchand de caravane', 
               idle: [
                   "Soies, épices, thé de Pu'er ! … enfin, il me reste du thé et beaucoup d'espoir. Les affaires sont aussi sèches que le Gobi.",
                   "Un caravanier m'a parlé d'un archer qui courait vers l'Occident sans boire ni dormir. « Il fuit quelque chose, disait-il, ou il court après. » Je ne sais pas lequel est pire."
@@ -555,7 +555,7 @@ const BASE_SCREENS = {
                       "Tout le désert est net, clair, c'est presque indécent. Mes chameaux marchent droit pour la première fois depuis des semaines, et moi, je ne sais plus sur quoi râler."
                   ] }
               ] },
-            { id: 'guide_dawa', x: 3, y: 7, name: 'Dawa', title: 'Guide du désert', emoji: '🧕',
+            { id: 'guide_dawa', x: 3, y: 7, name: 'Dawa', title: 'Guide du désert', 
               idle: [
                   "Au Gobi, on apprend vite à douter de ses yeux. Un mirage vous fait des signes, vous sourit, vous promet de l'eau. Il ment comme les plus beaux.",
                   "Les anciens disent : « le vrai soleil ne projette pas d'ombre ». Les anciens se trompent, ou ils parlent du ciel. Ici, sur terre, c'est l'inverse : tout ce qui est vrai pèse sur le sable, donc a une ombre.",
@@ -571,30 +571,30 @@ const BASE_SCREENS = {
               ] }
         ],
         enemies: [
-            { id: 'gobi_colossus', templateId: 'sand_colossus', emoji: '🏜️', name: 'Golem de sable', kind: 'sentinel', x: 6, y: 1, offset: 0 },
+            { id: 'gobi_colossus', templateId: 'sand_colossus', name: 'Golem de sable', kind: 'sentinel', x: 6, y: 1, offset: 0 },
             // Mirages du Soleil des Mirages : même sprite que `sun_4`, sans ombre ni niveau, ils scintillent.
-            { id: 'mirage_1', spriteKey: 'sun_4', templateId: 'arcane_scholar', emoji: '☀️', name: 'Soleil des Mirages', kind: 'sentinel', x: 9, y: 1,
+            { id: 'mirage_1', spriteKey: 'sun_4', templateId: 'arcane_scholar', name: 'Soleil des Mirages', kind: 'sentinel', x: 9, y: 1,
               permanent: true, illusion: true,
               illusionLines: [
                   "Votre main traverse le soleil comme une fumée : un mirage, qui se dissipe en poussière de lumière.",
                   "Ce n'était pas lui. Le vrai soleil, lui, pèse sur le sable."
               ] },
-            { id: 'mirage_2', spriteKey: 'sun_4', templateId: 'arcane_scholar', emoji: '☀️', name: 'Soleil des Mirages', kind: 'sentinel', x: 12, y: 1,
+            { id: 'mirage_2', spriteKey: 'sun_4', templateId: 'arcane_scholar', name: 'Soleil des Mirages', kind: 'sentinel', x: 12, y: 1,
               permanent: true, illusion: true,
               illusionLines: [
                   "Le disque ardent vacille, se déchire comme un voile de soie : encore un mirage.",
                   "Cherchez celui qui projette une ombre."
               ] },
-            { id: 'mirage_3', spriteKey: 'sun_4', templateId: 'arcane_scholar', emoji: '☀️', name: 'Soleil des Mirages', kind: 'sentinel', x: 8, y: 8,
+            { id: 'mirage_3', spriteKey: 'sun_4', templateId: 'arcane_scholar', name: 'Soleil des Mirages', kind: 'sentinel', x: 8, y: 8,
               permanent: true, illusion: true,
               illusionLines: [
                   "L'image se plie en deux et s'évanouit, laissant une odeur de sable chaud.",
                   "Le désert se moque de vous, mais ses mensonges se font de plus en plus rares."
               ] },
             // Brigands nommés (quête secondaire de Ma), sud-ouest.
-            { id: 'bandit_a', templateId: 'iron_gladiator', emoji: '🗡️', name: 'Brigand du Gobi', kind: 'sentinel', x: 4, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
-            { id: 'bandit_b', templateId: 'shadow_assassin', emoji: '🥷', name: 'Lame masquée du Gobi', kind: 'sentinel', x: 6, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
-            { id: 'sun_4', templateId: 'arcane_scholar', emoji: '☀️', name: 'Soleil des Mirages', kind: 'sentinel', x: 11, y: 8,
+            { id: 'bandit_a', templateId: 'iron_gladiator', name: 'Brigand du Gobi', kind: 'sentinel', x: 4, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
+            { id: 'bandit_b', templateId: 'shadow_assassin', name: 'Lame masquée du Gobi', kind: 'sentinel', x: 6, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
+            { id: 'sun_4', templateId: 'arcane_scholar', name: 'Soleil des Mirages', kind: 'sentinel', x: 11, y: 8,
               permanent: true, boss: { name: 'Soleil des Mirages', level: 7 },
               afterScenes: MIRROR_TALKS.sun_4 }
         ],
@@ -624,7 +624,7 @@ const BASE_SCREENS = {
             }
         ],
         npcs: [
-            { id: 'smith_tie', x: 3, y: 7, name: 'Tie', title: 'Forgeron de flèches', emoji: '👨‍🔧',
+            { id: 'smith_tie', x: 3, y: 7, name: 'Tie', title: 'Forgeron de flèches', 
               idle: [
                   "Une flèche ne vaut que par sa pointe, et la pointe que par la main qui l'a trempée. La mienne tremble, je le reconnais : des semaines sans repos, avec ces éclairs qui n'arrêtent pas.",
                   "Si vous trouvez de la foudre, du fer de ciel, du jade du matin, rapportez-les-moi : j'en ferai quelque chose de digne d'un archer."
@@ -637,7 +637,7 @@ const BASE_SCREENS = {
                       "Plus un éclair, plus un orage : seulement du ciel. J'ai retrouvé le sommeil, seigneur. Je ne savais pas que cela manquait autant."
                   ] }
               ] },
-            { id: 'hermit_lei', x: 3, y: 1, name: 'Lei', title: 'Ermite du tonnerre', emoji: '🧙',
+            { id: 'hermit_lei', x: 3, y: 1, name: 'Lei', title: 'Ermite du tonnerre', 
               idle: [
                   "Chut. Il parle. Le tonnerre parle, voyez-vous : un coup long, deux coups courts… c'est son nom.",
                   "Il m'a prévenu : un arc sera tendu contre un autre arc avant la fin de l'histoire. Je ne sais pas lequel des deux se brisera."
@@ -652,11 +652,11 @@ const BASE_SCREENS = {
               ] }
         ],
         enemies: [
-            { id: 'tonnerre_knight', templateId: 'storm_knight', emoji: '🌩️', name: 'Général du tonnerre', kind: 'sentinel', x: 8, y: 1, offset: 0 },
-            { id: 'tonnerre_warden', templateId: 'temple_warden', emoji: '🦁', name: 'Lion-gardien de pierre', kind: 'sentinel', x: 8, y: 8, offset: 0 },
+            { id: 'tonnerre_knight', templateId: 'storm_knight', name: 'Général du tonnerre', kind: 'sentinel', x: 8, y: 1, offset: 0 },
+            { id: 'tonnerre_warden', templateId: 'temple_warden', name: 'Lion-gardien de pierre', kind: 'sentinel', x: 8, y: 8, offset: 0 },
             // Dragon-serpent nommé (quête secondaire de Tie), coin nord-est.
-            { id: 'thunder_wyrm', templateId: 'storm_wyrm', emoji: '⚡', name: 'Dragon-serpent du tonnerre', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
-            { id: 'sun_5', templateId: 'storm_knight', emoji: '☀️', name: 'Soleil des Orages', kind: 'sentinel', x: 11, y: 8,
+            { id: 'thunder_wyrm', templateId: 'storm_wyrm', name: 'Dragon-serpent du tonnerre', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
+            { id: 'sun_5', templateId: 'storm_knight', name: 'Soleil des Orages', kind: 'sentinel', x: 11, y: 8,
               permanent: true, boss: { name: 'Soleil des Orages', level: 9 },
               afterScenes: MIRROR_TALKS.sun_5 }
         ],
@@ -686,7 +686,7 @@ const BASE_SCREENS = {
             }
         ],
         npcs: [
-            { id: 'miner_shan', x: 3, y: 7, name: 'Shan', title: 'Mineur', emoji: '⛏️',
+            { id: 'miner_shan', x: 3, y: 7, name: 'Shan', title: 'Mineur', 
               idle: [
                   "Cinquante ans sous terre, et jamais rien d'aussi chaud ! Les veines de cinabre sont à nu, mais personne ne peut en approcher.",
                   "Un jeune archer est passé tout à l'heure, l'arc tendu, vers le défilé. Un garçon qui a faim, voilà ce que j'ai vu. Un garçon qui a faim."
@@ -699,7 +699,7 @@ const BASE_SCREENS = {
                       "La roche refroidit, doucement. On entend les murs se détendre, comme un vieux qui s'assied. Je crois que les gorges sont sauvées."
                   ] }
               ] },
-            { id: 'priestess_yan', x: 3, y: 2, name: 'Yan', title: 'Prêtresse du feu repentie', emoji: '👩‍🦰',
+            { id: 'priestess_yan', x: 3, y: 2, name: 'Yan', title: 'Prêtresse du feu repentie', 
               idle: [
                   "Autrefois, j'allumais un brasero à l'aube pour saluer les soleils. Je croyais qu'ils étaient des dieux. Ils n'étaient que des enfants capricieux.",
                   "Je connais ce regard, celui de l'archer pressé qui vous suit depuis les rizières : un garçon qui croit que le monde lui doit quelque chose. J'ai eu ce regard, à seize ans, devant l'autel d'un soleil."
@@ -715,7 +715,7 @@ const BASE_SCREENS = {
         ],
         enemies: [
             // Embuscade : Fengmeng tient le défilé (corridor de 3 tuiles), seul passage vers l'est.
-            { id: 'fengmeng_2', templateId: 'shadow_assassin', emoji: '🏹', name: "Fengmeng, l'Archer Pressé", kind: 'sentinel', x: 6, y: 4,
+            { id: 'fengmeng_2', templateId: 'shadow_assassin', name: "Fengmeng, l'Archer Pressé", kind: 'sentinel', x: 6, y: 4,
               permanent: true, boss: { name: "Fengmeng, l'Archer Pressé", level: 10 },
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_2'),
@@ -726,12 +726,12 @@ const BASE_SCREENS = {
                       "Prenez votre sixième soleil. Je ne vous gênerai plus… pour l'instant. Je retourne voir les vôtres : on dit que la maison du Maître garde le plus beau trésor du royaume, et qu'elle est bien seule."
                   ]
               } },
-            { id: 'volcan_lich', templateId: 'crypt_lich', emoji: '☠️', name: 'Sorcier-squelette des braises', kind: 'sentinel', x: 1, y: 8, offset: 0 },
+            { id: 'volcan_lich', templateId: 'crypt_lich', name: 'Sorcier-squelette des braises', kind: 'sentinel', x: 1, y: 8, offset: 0 },
             // Pixiu gardiens de la veine (quête secondaire de Shan), nord-est.
-            { id: 'ore_guard_a', templateId: 'lava_behemoth', emoji: '🌋', name: 'Pixiu de magma', kind: 'sentinel', x: 9, y: 1, offset: 0, permanent: true, group: 'ore_guards' },
-            { id: 'ore_guard_b', templateId: 'lava_behemoth', emoji: '🌋', name: 'Pixiu de magma', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true, group: 'ore_guards' },
-            { id: 'volcan_dragon', templateId: 'ember_dragon', emoji: '🐲', name: 'Long de braise', kind: 'sentinel', x: 8, y: 8, offset: 0 },
-            { id: 'sun_6', templateId: 'lava_behemoth', emoji: '☀️', name: 'Soleil de Magma', kind: 'sentinel', x: 11, y: 8,
+            { id: 'ore_guard_a', templateId: 'lava_behemoth', name: 'Pixiu de magma', kind: 'sentinel', x: 9, y: 1, offset: 0, permanent: true, group: 'ore_guards' },
+            { id: 'ore_guard_b', templateId: 'lava_behemoth', name: 'Pixiu de magma', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true, group: 'ore_guards' },
+            { id: 'volcan_dragon', templateId: 'ember_dragon', name: 'Long de braise', kind: 'sentinel', x: 8, y: 8, offset: 0 },
+            { id: 'sun_6', templateId: 'lava_behemoth', name: 'Soleil de Magma', kind: 'sentinel', x: 11, y: 8,
               permanent: true, boss: { name: 'Soleil de Magma', level: 11 },
               afterScenes: MIRROR_TALKS.sun_6 }
         ],
@@ -761,7 +761,7 @@ const BASE_SCREENS = {
             }
         ],
         npcs: [
-            { id: 'hunter_wu', x: 3, y: 2, name: 'Wu', title: 'Chasseur', emoji: '🏹',
+            { id: 'hunter_wu', x: 3, y: 2, name: 'Wu', title: 'Chasseur', 
               idle: [
                   "Trente ans que je chasse ces plaines. Jamais vu de bêtes si furieuses : leurs flammes ne sont pas un feu naturel, mais celui d'une colère qui ne leur appartient pas.",
                   "Si vous allez vers le soleil, souvenez-vous : tuez la meute avant. Il n'y a pas de chasse sans pitié, mais il n'y a pas de pitié sans survivants."
@@ -774,7 +774,7 @@ const BASE_SCREENS = {
                       "Les loups hurlent à la lune, comme avant. Cela me donne envie de pleurer, et je ne sais pas pourquoi."
                   ] }
               ] },
-            { id: 'shepherd_zi', x: 3, y: 8, name: 'Zi', title: 'Bergère', emoji: '👩‍🌾',
+            { id: 'shepherd_zi', x: 3, y: 8, name: 'Zi', title: 'Bergère', 
               idle: [
                   "Mes brebis ont couru droit devant elles, quand les flammes ont pris. Je les cherche tous les soirs, avec une lanterne, en chantant.",
                   "Un gâteau de lune, cela console plus qu'on ne croit. Moi, j'en laisse un chaque soir sur la pierre plate : la lune est bonne cliente."
@@ -789,16 +789,16 @@ const BASE_SCREENS = {
               ] }
         ],
         enemies: [
-            { id: 'fauves_boar', templateId: 'flame_boar', emoji: '🐗', name: 'Sanglier de flammes', kind: 'sentinel', x: 7, y: 1, offset: 0 },
-            { id: 'fauves_troll', templateId: 'war_troll', emoji: '👹', name: 'Ogre de la plaine', kind: 'sentinel', x: 10, y: 1, offset: 0 },
+            { id: 'fauves_boar', templateId: 'flame_boar', name: 'Sanglier de flammes', kind: 'sentinel', x: 7, y: 1, offset: 0 },
+            { id: 'fauves_troll', templateId: 'war_troll', name: 'Ogre de la plaine', kind: 'sentinel', x: 10, y: 1, offset: 0 },
             // Tigre nommé (quête secondaire de Wu), coin nord-est.
-            { id: 'scarred_tiger', templateId: 'fire_tiger', emoji: '🐯', name: 'Balafré, tigre embrasé', kind: 'sentinel', x: 13, y: 1, offset: 1, permanent: true },
+            { id: 'scarred_tiger', templateId: 'fire_tiger', name: 'Balafré, tigre embrasé', kind: 'sentinel', x: 13, y: 1, offset: 1, permanent: true },
             // Meute qui protège le soleil : tant qu'elle vit, `sun_7` est intouchable.
-            { id: 'pack_wolf_a', templateId: 'ember_wolf', emoji: '🐺', name: 'Loup de braise', kind: 'sentinel', x: 9, y: 7, offset: 0, permanent: true, group: 'beast_pack' },
-            { id: 'pack_boar', templateId: 'flame_boar', emoji: '🐗', name: 'Sanglier de flammes', kind: 'sentinel', x: 9, y: 9, offset: 0, permanent: true, group: 'beast_pack' },
-            { id: 'pack_tiger', templateId: 'fire_tiger', emoji: '🐯', name: 'Tigre embrasé', kind: 'sentinel', x: 13, y: 8, offset: 0, permanent: true, group: 'beast_pack' },
-            { id: 'pack_wolf_b', templateId: 'ember_wolf', emoji: '🐺', name: 'Loup de braise', kind: 'sentinel', x: 11, y: 9, offset: 0, permanent: true, group: 'beast_pack' },
-            { id: 'sun_7', templateId: 'war_troll', emoji: '☀️', name: 'Soleil des Bêtes Folles', kind: 'sentinel', x: 11, y: 8,
+            { id: 'pack_wolf_a', templateId: 'ember_wolf', name: 'Loup de braise', kind: 'sentinel', x: 9, y: 7, offset: 0, permanent: true, group: 'beast_pack' },
+            { id: 'pack_boar', templateId: 'flame_boar', name: 'Sanglier de flammes', kind: 'sentinel', x: 9, y: 9, offset: 0, permanent: true, group: 'beast_pack' },
+            { id: 'pack_tiger', templateId: 'fire_tiger', name: 'Tigre embrasé', kind: 'sentinel', x: 13, y: 8, offset: 0, permanent: true, group: 'beast_pack' },
+            { id: 'pack_wolf_b', templateId: 'ember_wolf', name: 'Loup de braise', kind: 'sentinel', x: 11, y: 9, offset: 0, permanent: true, group: 'beast_pack' },
+            { id: 'sun_7', templateId: 'war_troll', name: 'Soleil des Bêtes Folles', kind: 'sentinel', x: 11, y: 8,
               permanent: true, shieldedBy: 'beast_pack', boss: { name: 'Soleil des Bêtes Folles', level: 13 },
               afterScenes: MIRROR_TALKS.sun_7,
               shieldLines: [
@@ -833,7 +833,7 @@ const BASE_SCREENS = {
             }
         ],
         npcs: [
-            { id: 'fisher_hai', x: 3, y: 7, name: 'Hai', title: 'Pêcheur', emoji: '🎣',
+            { id: 'fisher_hai', x: 3, y: 7, name: 'Hai', title: 'Pêcheur', 
               idle: [
                   "La mer s'est retirée si loin que mes filets sèchent comme du linge. Je n'ai jamais passé autant de temps à terre : cela ne me réussit pas.",
                   "Un gâteau de lune flottait ce matin là où la mer devrait être. Ma femme dit que c'est une offrande du Roi-Dragon. Moi, je dis que c'est de la boue."
@@ -846,7 +846,7 @@ const BASE_SCREENS = {
                       "La mer est revenue, à pas de loup d'abord, puis en courant ! J'ai pleuré dans mon filet. Vous ne le direz à personne."
                   ] }
               ] },
-            { id: 'envoy_longwang', x: 3, y: 2, name: 'Longwang', title: 'Envoyé du Roi-Dragon', emoji: '🐲',
+            { id: 'envoy_longwang', x: 3, y: 2, name: 'Longwang', title: 'Envoyé du Roi-Dragon', 
               idle: [
                   "Salutations, seigneur archer. Je suis Longwang, envoyé du Roi-Dragon de la Mer Orientale. Mon maître est affligé : la mer étouffe sous le soleil, et ses fils dépérissent.",
                   "Il m'a chargé de vous dire ceci : la Reine Mère de l'Occident n'offre pas son élixir à n'importe qui. Elle sait lire dans les cœurs. Elle a vu quelque chose dans le vôtre, et quelque chose dans un autre, qu'elle n'a pas aimé."
@@ -861,12 +861,12 @@ const BASE_SCREENS = {
               ] }
         ],
         enemies: [
-            { id: 'mer_witch', templateId: 'ice_witch', emoji: '❄️', name: 'Dame des neiges égarée', kind: 'sentinel', x: 8, y: 1, offset: 0 },
+            { id: 'mer_witch', templateId: 'ice_witch', name: 'Dame des neiges égarée', kind: 'sentinel', x: 8, y: 1, offset: 0 },
             // Serpents coupe-filets (quête secondaire de Hai), nord-est.
-            { id: 'net_cutter_a', templateId: 'deep_sea_serpent', emoji: '🐍', name: 'Serpent coupe-filets', kind: 'sentinel', x: 11, y: 1, offset: 0, permanent: true, group: 'net_cutters' },
-            { id: 'net_cutter_b', templateId: 'deep_sea_serpent', emoji: '🐍', name: 'Serpent coupe-filets', kind: 'sentinel', x: 13, y: 1, offset: 0, permanent: true, group: 'net_cutters' },
-            { id: 'mer_doctor', templateId: 'plague_doctor', emoji: '🧪', name: 'Docteur-démon des marées', kind: 'sentinel', x: 7, y: 8, offset: 0 },
-            { id: 'sun_8', templateId: 'deep_sea_serpent', emoji: '☀️', name: 'Soleil des Marées', kind: 'sentinel', x: 11, y: 8,
+            { id: 'net_cutter_a', templateId: 'deep_sea_serpent', name: 'Serpent coupe-filets', kind: 'sentinel', x: 11, y: 1, offset: 0, permanent: true, group: 'net_cutters' },
+            { id: 'net_cutter_b', templateId: 'deep_sea_serpent', name: 'Serpent coupe-filets', kind: 'sentinel', x: 13, y: 1, offset: 0, permanent: true, group: 'net_cutters' },
+            { id: 'mer_doctor', templateId: 'plague_doctor', name: 'Docteur-démon des marées', kind: 'sentinel', x: 7, y: 8, offset: 0 },
+            { id: 'sun_8', templateId: 'deep_sea_serpent', name: 'Soleil des Marées', kind: 'sentinel', x: 11, y: 8,
               permanent: true, boss: { name: 'Soleil des Marées', level: 15 },
               afterScenes: MIRROR_TALKS.sun_8 }
         ],
@@ -896,7 +896,7 @@ const BASE_SCREENS = {
             }
         ],
         npcs: [
-            { id: 'crane_envoy', x: 3, y: 2, name: 'La Grue', title: 'Messagère de la Reine Mère', emoji: '🦢',
+            { id: 'crane_envoy', x: 3, y: 2, name: 'La Grue', title: 'Messagère de la Reine Mère', 
               idle: [
                   "Je suis le souffle de la Reine Mère de l'Occident, archer. Elle me prête sa voix quand elle a besoin d'être entendue de très loin.",
                   "Elle m'a chargée de veiller sur l'Arbre, et sur la fiole d'élixir qu'elle a confiée à Dame Chang'e."
@@ -912,7 +912,7 @@ const BASE_SCREENS = {
                   ] }
               ] },
             // Le Dixième Soleil se cache derrière le Neuvième : on ne peut lui parler qu'après sa chute.
-            { id: 'sun_ten', x: 12, y: 1, name: 'Dixième Soleil', title: 'Dernier des dix soleils', emoji: '🌞',
+            { id: 'sun_ten', x: 12, y: 1, name: 'Dixième Soleil', title: 'Dernier des dix soleils', 
               idle: [
                   "…Tu es l'archer ? Celui qui a… mes frères ? Non, ne me regarde pas comme ça : je ne bouge pas, je te le jure.",
                   "Je n'ai jamais voulu brûler personne. Mes frères disaient que c'était un jeu. Moi, j'avais peur de la chaleur."
@@ -928,11 +928,11 @@ const BASE_SCREENS = {
               ] }
         ],
         enemies: [
-            { id: 'fusang_guard', templateId: 'sun_paladin', emoji: '🛡️', name: 'Garde solaire', kind: 'sentinel', x: 7, y: 1, offset: 0 },
-            { id: 'fusang_sage', templateId: 'crystal_sage', emoji: '💎', name: 'Immortel de jade', kind: 'sentinel', x: 8, y: 8, offset: 0 },
-            { id: 'fusang_dragon', templateId: 'frost_dragon', emoji: '🐉', name: 'Long de givre', kind: 'sentinel', x: 4, y: 9, offset: 0 },
-            { id: 'fusang_vampire', templateId: 'void_vampire', emoji: '🧛', name: 'Jiangshi des cimes', kind: 'sentinel', x: 12, y: 9, offset: 0 },
-            { id: 'sun_9', templateId: 'ember_dragon', emoji: '☀️', name: 'Soleil Lâche', kind: 'sentinel', x: 11, y: 2,
+            { id: 'fusang_guard', templateId: 'sun_paladin', name: 'Garde solaire', kind: 'sentinel', x: 7, y: 1, offset: 0 },
+            { id: 'fusang_sage', templateId: 'crystal_sage', name: 'Immortel de jade', kind: 'sentinel', x: 8, y: 8, offset: 0 },
+            { id: 'fusang_dragon', templateId: 'frost_dragon', name: 'Long de givre', kind: 'sentinel', x: 4, y: 9, offset: 0 },
+            { id: 'fusang_vampire', templateId: 'void_vampire', name: 'Jiangshi des cimes', kind: 'sentinel', x: 12, y: 9, offset: 0 },
+            { id: 'sun_9', templateId: 'ember_dragon', name: 'Soleil Lâche', kind: 'sentinel', x: 11, y: 2,
               permanent: true, boss: { name: 'Soleil Lâche', level: 17 },
               afterScenes: MIRROR_TALKS.sun_9 }
         ],
@@ -957,7 +957,7 @@ const BASE_SCREENS = {
         ],
         npcs: [
             // Chang'e vêtue de lumière lunaire, au bord du bassin d'eau lunaire ; après son envol, il n'en reste que le reflet.
-            { id: 'change_moon', x: 3, y: 2, name: "Chang'e", title: 'Vêtue de lumière lunaire', emoji: '👸',
+            { id: 'change_moon', x: 3, y: 2, name: "Chang'e", title: 'Vêtue de lumière lunaire', 
               idle: [
                   "Hou Yi… Tu es venu. Je savais que tu viendrais, avant même que la grue ne parte. Regarde-moi : la lune m'a déjà un peu changée.",
                   "J'ai la fiole contre moi. Fengmeng arrive : j'entends ses pas sur le sentier de l'est. Il ne se calmera pas, tu sais. Il a trop faim d'être aimé, ce garçon.",
@@ -975,12 +975,12 @@ const BASE_SCREENS = {
               ] }
         ],
         enemies: [
-            { id: 'lune_priestess', templateId: 'moon_priestess', emoji: '🌙', name: 'Prêtresse lunaire', kind: 'patrol', x: 8, y: 8, patrol: [[8, 8], [12, 8]], offset: 0 },
-            { id: 'lune_vampire', templateId: 'void_vampire', emoji: '🧛', name: 'Jiangshi des neiges', kind: 'sentinel', x: 9, y: 1, offset: 0 },
-            { id: 'lune_assassin', templateId: 'shadow_assassin', emoji: '🥷', name: 'Ombre du pic', kind: 'sentinel', x: 1, y: 9, offset: 0 },
+            { id: 'lune_priestess', templateId: 'moon_priestess', name: 'Prêtresse lunaire', kind: 'patrol', x: 8, y: 8, patrol: [[8, 8], [12, 8]], offset: 0 },
+            { id: 'lune_vampire', templateId: 'void_vampire', name: 'Jiangshi des neiges', kind: 'sentinel', x: 9, y: 1, offset: 0 },
+            { id: 'lune_assassin', templateId: 'shadow_assassin', name: 'Ombre du pic', kind: 'sentinel', x: 1, y: 9, offset: 0 },
             // Finale en deux phases. La phase 2 n'existe qu'après la défaite de la phase 1.
             // Phase 1 : il copie les techniques du héros, qui arrive affaibli par les neuf soleils (duel.js).
-            { id: 'fengmeng_3a', templateId: 'shadow_assassin', emoji: '🏹', name: "Fengmeng, l'Archer Miroir", kind: 'sentinel', x: 11, y: 4,
+            { id: 'fengmeng_3a', templateId: 'shadow_assassin', name: "Fengmeng, l'Archer Miroir", kind: 'sentinel', x: 11, y: 4,
               permanent: true, boss: { name: "Fengmeng, l'Archer Miroir", level: 18 },
               duel: { mirror: true, heroHpPct: 0.75 },
               defeatScene: {
@@ -993,7 +993,7 @@ const BASE_SCREENS = {
                       "Fengmeng hurle. Ce qu'il voulait vient de lui échapper à jamais ; il ne reste que la fureur. Il saisit un nouvel arc et un carquois plein, et ses yeux ne sont plus ceux d'un disciple."
                   ]
               } },
-            { id: 'fengmeng_3b', templateId: 'storm_knight', emoji: '🏹', name: 'Fengmeng, Rage et Désespoir', kind: 'sentinel', x: 11, y: 3,
+            { id: 'fengmeng_3b', templateId: 'storm_knight', name: 'Fengmeng, Rage et Désespoir', kind: 'sentinel', x: 11, y: 3,
               permanent: true, showWhen: 'fengmeng_3a', boss: { name: 'Fengmeng, Rage et Désespoir', level: 19 },
               // Phase 2 : fureur, tirs rapides (un tour bonus tous les 3 tours) et pièges de zone (tous les 2 tours).
               duel: { rapidShots: 3, zoneTraps: 2 },
@@ -1010,8 +1010,8 @@ const BASE_SCREENS = {
             { id: 'moon_cakes_cache', x: 1, y: 7, gold: 60, label: "Corbeille d'offrandes" },
             // L'autel n'apparaît qu'après la victoire sur Fengmeng : l'ouvrir déclenche l'épilogue.
             { id: 'moon_altar', x: 12, y: 4, gold: 0, label: 'Autel des gâteaux de lune', showWhen: 'fengmeng_3b',
-              emojiOnly: true, emoji: '🌕', emojiOpened: '🏮',
-              openText: "🌕 Vous déposez les gâteaux de lune sur l'autel de pierre blanche…" }
+              altar: true,
+              openText: "Vous déposez les gâteaux de lune sur l'autel de pierre blanche…" }
         ]
     }
 };

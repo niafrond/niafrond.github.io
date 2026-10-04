@@ -5,7 +5,6 @@ export default {
     moon_cook_gui: {
       name: "Gui",
       title: "Cuisinier de gâteaux de lune",
-      emoji: "🥮",
       idle: [
         "Je fais des gâteaux de lune pour les habitants du hameau. Ils se plaignent, puis en redemandent.",
         "La pâte de lotus est un art. La pâte de haricot, un artisanat."
@@ -22,7 +21,6 @@ export default {
     moon_rabbit_yutu: {
       name: "Yutu",
       title: "Lapin de jade",
-      emoji: "🐰",
       idle: [
         "Je pile, je pile, je pile. L'élixir de la Reine Mère dort dans une fiole, là-haut, mais l'habitude de piler reste.",
         "Un lapin n'a pas d'avis sur l'immortalité. Il a un avis sur les carottes."
@@ -39,7 +37,6 @@ export default {
     moon_ferryman_yin: {
       name: "Vieux Shen",
       title: "Passeur d'argent",
-      emoji: "⛵",
       idle: [
         "Je fais passer les âmes sur la rivière de lune. Aujourd'hui, seulement deux. Beau temps.",
         "Chang'e m'a demandé si l'on pouvait ne plus jamais redescendre d'ici. Je lui ai dit que la Lune ne retient que ceux qui s'y laissent porter. Elle a serré sa fiole et souri quand même."
@@ -56,7 +53,6 @@ export default {
     moon_child_lan: {
       name: "Lan",
       title: "Petite veilleuse",
-      emoji: "🧒",
       idle: [
         "Je garde les lanternes avec la veilleuse. Je ne dors jamais. Je compte les étoiles.",
         "Je suis née ici. Je n'ai jamais vu de rizière. À quoi ça ressemble ?"
@@ -73,7 +69,6 @@ export default {
     moon_crow_wu: {
       name: "Corbeau d'ombre",
       title: "Messager d'ombre",
-      emoji: "🐦‍⬛",
       idle: [
         "Croa. Je porte les messages entre la Terre et la Lune. Ils sont rarement joyeux.",
         "Un jeune archer a demandé à passer. Je l'ai envoyé promener. Il a insisté."
@@ -97,27 +92,19 @@ export default {
   chests: {
     moon_cake_tin: {
       label: "Boîte à gâteaux de lune",
-      openText: "🎁 Une boîte de fer-blanc remplie de gâteaux de lune et de quelques pièces d'argent.",
-      emoji: "🥮",
-      emojiOpened: "🥮"
+      openText: "Une boîte de fer-blanc remplie de gâteaux de lune et de quelques pièces d'argent.",
     },
     jade_mortar_box: {
       label: "Mortier de jade",
-      openText: "🎁 Dans le mortier de jade, un petit trésor scintille : poudre d'argent et pièces de lune.",
-      emoji: "🏺",
-      emojiOpened: "🏺"
+      openText: "Dans le mortier de jade, un petit trésor scintille : poudre d'argent et pièces de lune.",
     },
     silver_river_cache: {
       label: "Cache de la rivière d'argent",
-      openText: "🎁 Une cache déposée par un passeur, au bord de la rivière d'argent.",
-      emoji: "🌊",
-      emojiOpened: "🌊"
+      openText: "Une cache déposée par un passeur, au bord de la rivière d'argent.",
     },
     journal_page_lune: {
       label: "Dernière page du carnet",
-      openText: "🎁 La dernière page du carnet : « Je ne veux pas lui faire de mal. Je veux juste qu'il me regarde. Je n'ai que mes flèches. »",
-      emoji: "📄",
-      emojiOpened: "📄"
+      openText: "La dernière page du carnet : « Je ne veux pas lui faire de mal. Je veux juste qu'il me regarde. Je n'ai que mes flèches. »",
     }
   },
   quests: [

@@ -177,12 +177,12 @@ export function createCheatModeSection({ isEnabled, setEnabled, onCheatApplied }
             const game = await import('./game.js');
             const spellId = spellSelect.value;
             if(!spellId) {
-                game.log('⚠️ Cheat: aucun sort selectionne.');
+                game.log('Cheat: aucun sort selectionne.');
                 return;
             }
 
             if(typeof game.castSpellForCheat !== 'function') {
-                game.log('⚠️ Cheat: simulateur de sort indisponible.');
+                game.log('Cheat: simulateur de sort indisponible.');
                 return;
             }
 
@@ -208,7 +208,7 @@ export function createCheatModeSection({ isEnabled, setEnabled, onCheatApplied }
         try {
             const game = await import('./game.js');
             if(!game.player.equippedWeapon) {
-                game.log('⚠️ Cheat: equipez une arme avant l\'attaque de test.');
+                game.log('Cheat: equipez une arme avant l\'attaque de test.');
                 return;
             }
             if(typeof game.forcePlayerTurnForCheat === 'function') {
@@ -254,13 +254,13 @@ export function createCheatModeSection({ isEnabled, setEnabled, onCheatApplied }
             const idx = Number(tileIndexInput.value);
 
             if(!Number.isInteger(idx) || idx < 0 || idx >= boardModule.board.length) {
-                game.log('⚠️ Cheat: index de tuile invalide.');
+                game.log('Cheat: index de tuile invalide.');
                 return;
             }
 
             boardModule.board[idx] = tileColorSelect.value;
             boardModule.renderBoard();
-            game.log(`🧪 Cheat: tuile ${idx} -> ${tileColorSelect.value}`);
+            game.log(`Cheat: tuile ${idx} -> ${tileColorSelect.value}`);
             game.saveUpdate();
             notifyCheatApplied();
         } catch {
@@ -282,7 +282,7 @@ export function createCheatModeSection({ isEnabled, setEnabled, onCheatApplied }
             });
             game.updateStats();
             game.saveUpdate();
-            game.log('🧪 Cheat: +25 mana sur toutes les couleurs.');
+            game.log('Cheat: +25 mana sur toutes les couleurs.');
             notifyCheatApplied();
         } catch {
             // no-op
@@ -314,7 +314,7 @@ export function createCheatModeSection({ isEnabled, setEnabled, onCheatApplied }
 
         try {
             const game = await import('./game.js');
-            game.log(next ? '🧪 Cheat mode active.' : '✅ Cheat mode desactive.');
+            game.log(next ? 'Cheat mode active.' : 'Cheat mode desactive.');
         } catch {
             // no-op
         }

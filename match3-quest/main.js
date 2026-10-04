@@ -1,5 +1,7 @@
+import { icon } from "./icons.js";
 import { generateBoard, renderBoard } from "./board.js";
-import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, combatHooks, getCombatMusicScene } from "./game.js";
+import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, getCombatMusicScene } from "./game.js";
+import { rollChestLoot } from "./chestLoot.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy } from "./enemies.js";
 import { addXP } from "./experience.js";
@@ -15,10 +17,6 @@ import { REGION_ENTRY_SCREEN } from "./story.js";
 import { ARENA_MIN_LEVEL, ARENA_NAME, ARENA_REGION, isArenaUnlocked } from "./arena.js";
 import { heroSprite, spriteUri, loadSpritePack, CORE_PACK } from "./sprites/index.js";
 import { hideLoadingScreen } from "./loader.js";
-import { installPixelText } from "./pixelText.js";
-
-// Aucun emoji à l'écran : chaque emoji affiché devient son icône pixel art (pixelText.js).
-installPixelText();
 
 // initialisation de la partie
 console.log('Main.js loaded');
@@ -28,7 +26,7 @@ const THEME_STORAGE_KEY = 'match3Theme';
 function setThemeMode(isDarkMode, toggleButton){
     document.body.classList.toggle('dark-mode', isDarkMode);
     if(toggleButton){
-        toggleButton.textContent = isDarkMode ? '☀️' : '🌙';
+        toggleButton.innerHTML = icon(isDarkMode ? 'sun' : 'moon');
         toggleButton.setAttribute('aria-pressed', isDarkMode ? 'true' : 'false');
         toggleButton.title = isDarkMode ? 'Désactiver le mode sombre' : 'Activer le mode sombre';
     }
@@ -76,7 +74,7 @@ function showClassSelection() {
         card.className = 'class-card';
         card.dataset.classId = cls.id;
         card.innerHTML = `
-            <div class="class-emoji">${cls.emoji}</div>
+            <div class="class-emoji">${heroSprite(cls.id) ? `<img alt="" src="${spriteUri(heroSprite(cls.id))}">` : icon(cls.icon)}</div>
             <div class="class-name">${cls.name}</div>
             <div class="class-description">${cls.description}</div>
         `;
@@ -101,7 +99,7 @@ function showClassSelection() {
     
     document.getElementById('confirm-class').onclick = () => {
         if(!selectedClass) {
-            log('⚠️ Veuillez sélectionner une classe');
+            log('Veuillez sélectionner une classe');
             return;
         }
         player.class = selectedClass;
@@ -112,7 +110,7 @@ function showClassSelection() {
         Object.keys(classData.startingStats).forEach(attr => {
             player.attributes[attr] += classData.startingStats[attr];
         });
-        log(`✨ ${player.name}, vous êtes maintenant ${classData.emoji} ${classData.name} !`);
+        log(`${player.name}, vous êtes maintenant ${classData.name} !`);
         // Le joueur ne doit jamais commencer un combat sans arme équipée
         grantStartingWeapon(classData.startingWeaponId || DEFAULT_STARTING_WEAPON_ID);
         updateAvailableSpells();
@@ -147,13 +145,14 @@ function init() {
         canvas: document.getElementById('explore-canvas'),
         getSaved: () => player.exploration,
         setSaved: data => { player.exploration = data; },
-        getHero: () => ({ classId: player.class, emoji: playerClasses[player.class]?.emoji || '🧙', name: player.name }),
+        getHero: () => ({ classId: player.class, name: player.name }),
         getPlayerLevel: () => player.level,
         onEncounter: encounter => startEncounterCombat(encounter),
         onGold: amount => { player.gold = (player.gold || 0) + amount; },
+        onChestLoot: ev => grantChestLoot(rollChestLoot(ev.chest, ev.screen, player)),
         onXp: amount => {
             const res = addXP(player, amount);
-            if(res.leveledUp) exploration.toast(`⭐ Niveau ${res.newLevel} !`, 4000);
+            if(res.leveledUp) exploration.toast(`Niveau ${res.newLevel} !`, 4000);
         },
         onSave: () => saveUpdate(),
         onRegionVisited: regionId => {
@@ -252,11 +251,11 @@ function init() {
     };
 
     // ── Arène des Mille Flèches (arena.js) : un lieu à explorer (parvis, salles, maîtres d'arène) ──────────
-    // Le bouton 🏟️ du HUD y entre (dès le niveau 15) ; dans l'arène, il devient 🚪 et en fait sortir à tout moment.
+    // Le bouton « Arène » du HUD y entre (dès le niveau 15) ; dans l'arène, il devient « Sortir » et en fait sortir à tout moment.
     const openArena = () => {
         if(exploration.inArena()) { playSfx('uiClick'); exploration.leaveArena(); return; }
         if(!isArenaUnlocked(player.level)) {
-            exploration.toast(`🔒 L'${ARENA_NAME} ouvre ses portes au niveau ${ARENA_MIN_LEVEL} (vous êtes niveau ${player.level}).`, 4500);
+            exploration.toast(`L'${ARENA_NAME} ouvre ses portes au niveau ${ARENA_MIN_LEVEL} (vous êtes niveau ${player.level}).`, 4500);
             return;
         }
         playSfx('uiClick');
@@ -298,7 +297,7 @@ function init() {
         if(stones.length) {
             const panel = document.createElement('div');
             panel.className = 'worldmap-travel';
-            panel.innerHTML = '<h4>🌀 Voyage rapide</h4>';
+            panel.innerHTML = `<h4>${icon('stone')} Voyage rapide</h4>`;
             const zoneName = Object.fromEntries(worldZones.map(z => [z.id, z.shortName]));
             stones.forEach(w => {
                 const btn = document.createElement('button');
