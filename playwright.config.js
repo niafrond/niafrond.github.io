@@ -30,5 +30,10 @@ export default defineConfig({
       testDir: './dj-mix/tests/e2e',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'match3-quest-mobile',
+      testDir: './match3-quest/tests/e2e',
+      use: { ...devices['Pixel 5'] },
+    },
   ],
 });
