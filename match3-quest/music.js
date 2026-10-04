@@ -536,7 +536,13 @@ export function composeSection(sceneId, opts = {}) {
 // PARTIE AUDIO : synthèse WebAudio et moteur d'ordonnancement
 // ═══════════════════════════════════════════════════════════════════════════
 
-const AHEAD = 0.15;          // anticipation d'ordonnancement (s)
+// Anticipation d'ordonnancement (s) : les notes sont programmées à l'avance sur l'horloge audio (indépendante du
+// thread principal). Sur un vieil appareil dont le thread principal décroche (> 150 ms), une anticipation courte
+// laissait des trous / notes sautées ; elle s'élargit donc automatiquement quand on mesure des ticks en retard.
+// Aucune perte de qualité : seule la réactivité d'une nouvelle scène varie (de quelques dizaines de ms), les fondus non.
+const AHEAD_MIN = 0.3;
+const AHEAD_MAX = 1.2;
+const LATE_TOLERANCE = 0.35; // une note programmée plus tôt que `now - tolérance` est sautée (sinon jouée aussitôt)
 const TICK_MS = 50;
 const FADE_S = 1.2;          // fondu enchaîné entre scènes
 const MASTER_FACTOR = 0.5;   // plus discret que la musique de combat
@@ -559,7 +565,8 @@ const S = {
     players: [],
     voices: [],
     bus: null, busCtx: null,
-    paused: false, stopFade: undefined, timerId: null, lastTarget: -1, listening: false, uid: 0
+    paused: false, stopFade: undefined, timerId: null, lastTarget: -1, listening: false, uid: 0,
+    ahead: AHEAD_MIN, lastTickAt: 0
 };
 
 export function setMusicEnvironment(env = {}) {
@@ -904,7 +911,7 @@ function updatePlayer(ctx, p, now, hold) {
         p.holdSince = null;
     }
     if (hold) return;
-    const horizon = now + AHEAD;
+    const horizon = now + S.ahead;
     let guard = 0;
     while (p.nextSectionAt <= horizon && guard++ < 4) {
         const sec = composeSection(p.scene, { biome: p.biome, seed: p.seed, bar: p.nextBar });
@@ -917,9 +924,16 @@ function updatePlayer(ctx, p, now, hold) {
     if (p.nextSectionAt < now - 2) p.nextSectionAt = now + 0.05;
     while (p.queue.length && p.queue[0].at <= horizon) {
         const it = p.queue.shift();
-        if (it.at < now - 0.05) continue; // trop en retard : on saute
+        if (it.at < now - LATE_TOLERANCE) continue; // vraiment trop en retard : on saute
         startVoice(ctx, p, it, now);
     }
+}
+
+/** Élargit l'anticipation si le thread principal a laissé passer un trou entre deux ticks (appareil lent). */
+function adaptLookahead(now) {
+    const gap = now - S.lastTickAt;
+    S.lastTickAt = now;
+    if (gap > S.ahead * 0.6 && gap < 5) S.ahead = Math.min(AHEAD_MAX, Math.max(S.ahead, gap * 1.6));
 }
 
 function tickInner() {
@@ -928,6 +942,7 @@ function tickInner() {
     if (!ctx || ctx.state === 'suspended' || ctx.state === 'interrupted' || ctx.state === 'closed') return; // on réessaiera
     if (S.busCtx && S.busCtx !== ctx) hardReset();
     const now = ctx.currentTime;
+    adaptLookahead(now);
 
     const wantPlayer = S.desired !== null;
     if (!S.bus && wantPlayer) { S.bus = createBus(ctx); S.busCtx = ctx; }

@@ -105,22 +105,23 @@ body {
     }
 }
 
+/* Mise en avant du coup suggéré : transform + opacité uniquement (animations composées par le GPU).
+   Les halos (flous) sont dessinés une fois sur des pseudo-éléments dont seule l'opacité varie. */
 @keyframes softGlow {
-    0%, 100% {
-        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.45), 0 2px 4px rgba(0,0,0,0.2);
-        transform: scale(1);
-        filter: saturate(1);
-    }
-    35% {
-        box-shadow: 0 0 20px 5px rgba(255, 112, 67, 0.9), 0 2px 4px rgba(0,0,0,0.2);
-        transform: scale(1.06);
-        filter: saturate(1.25);
-    }
-    70% {
-        box-shadow: 0 0 24px 7px rgba(255, 214, 0, 0.95), 0 2px 4px rgba(0,0,0,0.2);
-        transform: scale(1.08);
-        filter: saturate(1.35);
-    }
+    0%, 100% { transform: scale(1); }
+    35%      { transform: scale(1.06); }
+    70%      { transform: scale(1.08); }
+}
+
+@keyframes glowOrange {
+    0%, 100% { opacity: 0; }
+    35%      { opacity: 1; }
+    70%      { opacity: 0; }
+}
+
+@keyframes glowYellow {
+    0%, 35%, 100% { opacity: 0; }
+    70%           { opacity: 1; }
 }
 
 @keyframes suggestionOutline {
@@ -136,7 +137,26 @@ body {
     animation: blink 0.4s ease-in-out 2;
 }
 
+.tile.suggested:not(.joker)::before,
+.tile.suggested:not(.joker)::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0;
+}
+.tile.suggested:not(.joker)::before {
+    box-shadow: 0 0 20px 5px rgba(255, 112, 67, 0.9);
+    animation: glowOrange 0.85s ease-in-out infinite;
+}
+.tile.suggested:not(.joker)::after {
+    box-shadow: 0 0 24px 7px rgba(255, 214, 0, 0.95);
+    animation: glowYellow 0.85s ease-in-out infinite;
+}
 .tile.suggested {
+    will-change: transform, opacity;
     animation: softGlow 0.85s ease-in-out infinite, blink 0.85s ease-in-out infinite, suggestionOutline 0.85s linear infinite;
     outline: 4px solid rgba(255, 82, 82, 0.95);
     outline-offset: -4px;

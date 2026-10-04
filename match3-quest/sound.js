@@ -162,6 +162,23 @@ function saveSettings() {
 // Contexte audio partagé (créé après un geste utilisateur) : sert aussi à la musique procédurale (music.js).
 export const getSharedAudioContext = () => getAudioContext({ allowCreate: true });
 
+// Appareil modeste (peu de cœurs / de mémoire) : on demande un tampon audio plus large au navigateur. Le son est
+// strictement le même (même synthèse, même fréquence d'échantillonnage) mais le fil audio a plus de marge, ce qui
+// supprime les craquements / coupures quand le processeur est saturé par le rendu du jeu.
+function isLowEndDevice() {
+    if (typeof navigator === 'undefined') return false;
+    const cores = Number(navigator.hardwareConcurrency);
+    const mem = Number(navigator.deviceMemory);
+    return (Number.isFinite(cores) && cores > 0 && cores <= 4) || (Number.isFinite(mem) && mem > 0 && mem <= 2);
+}
+
+function createContext(Ctor) {
+    if (isLowEndDevice()) {
+        try { return new Ctor({ latencyHint: 0.15 }); } catch { /* option non supportée : défaut */ }
+    }
+    return new Ctor();
+}
+
 function getAudioContext(options = {}) {
     const { allowCreate = true } = options;
     if (typeof window === 'undefined') return null;
@@ -171,7 +188,7 @@ function getAudioContext(options = {}) {
     const Ctor = window.AudioContext || window.webkitAudioContext;
     if (!Ctor) return null;
 
-    audioContext = new Ctor();
+    audioContext = createContext(Ctor);
     return audioContext;
 }
 
@@ -237,7 +254,12 @@ export function initializeAudioUI(button) {
 // EFFETS SONORES (SFX)
 // ===============================
 
+let activeTones = 0;
+const MAX_ACTIVE_TONES = 32;
+
 function tone(ctx, frequency, startAt, duration, gainValue, type = 'sine') {
+    // Plafond de notes simultanées : en cascade de combos sur un appareil lent, on évite d'empiler des dizaines de nœuds.
+    if (activeTones >= MAX_ACTIVE_TONES) return;
     const osc  = ctx.createOscillator();
     const gain = ctx.createGain();
 
@@ -249,6 +271,12 @@ function tone(ctx, frequency, startAt, duration, gainValue, type = 'sine') {
     gain.gain.setValueAtTime(0.0001, startAt);
     gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, gainValue), startAt + attack);
     gain.gain.exponentialRampToValueAtTime(0.0001, releaseStart + 0.03);
+
+    activeTones++;
+    osc.onended = () => {
+        activeTones = Math.max(0, activeTones - 1);
+        try { osc.disconnect(); gain.disconnect(); } catch { /* déjà déconnecté */ }
+    };
 
     osc.connect(gain);
     gain.connect(ctx.destination);
