@@ -224,4 +224,22 @@ storm_wyrm: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><
 <path d="M27 6 L32 2 L37 6" fill="none" stroke="#2b6fe0" stroke-width="3"/>
 <ellipse cx="25" cy="9" rx="5" ry="1.500" fill="#fff" fill-opacity=".55" stroke="none" transform="rotate(-15 25 9)"/>
 </g></svg>`,
+rizieres_w_toad: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="mud_toad-g1" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0" stop-color="#8a8a3c"/><stop offset="1" stop-color="#4a5524"/></linearGradient></defs><g stroke="#2b1b17" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+<ellipse cx="16" cy="56" rx="9" ry="3.600" fill="#4a5524"/><ellipse cx="48" cy="56" rx="9" ry="3.600" fill="#4a5524"/>
+<path d="M4 46 Q2 24 32 24 Q62 24 60 46 Q58 58 32 58 Q6 58 4 46Z" fill="url(#mud_toad-g1)"/>
+<ellipse cx="32" cy="50" rx="15" ry="7.500" fill="#d9d29a"/>
+<path d="M22 50 L42 50 M24 54 L40 54" fill="none" stroke="#a89f64" stroke-width="1.200"/>
+<path d="M8 36 Q4 46 8 54 M56 36 Q60 46 56 54" fill="none" stroke="#2f3815" stroke-width="2.400"/>
+<circle cx="16" cy="38" r="2.800" fill="#a9a850"/><circle cx="48" cy="40" r="3" fill="#a9a850"/><circle cx="24" cy="30" r="2" fill="#a9a850"/><circle cx="42" cy="30" r="2.400" fill="#a9a850"/><circle cx="12" cy="46" r="2" fill="#a9a850"/><circle cx="53" cy="48" r="2.200" fill="#a9a850"/>
+<circle cx="19" cy="22" r="8.500" fill="#8a8a3c"/><circle cx="45" cy="22" r="8.500" fill="#8a8a3c"/>
+<circle cx="19" cy="22" r="5.600" fill="#f2c230"/><circle cx="45" cy="22" r="5.600" fill="#f2c230"/>
+<ellipse cx="19" cy="22" rx="1.800" ry="4.600" fill="#2b1b17" stroke="none"/><ellipse cx="45" cy="22" rx="1.800" ry="4.600" fill="#2b1b17" stroke="none"/>
+<path d="M12 17 L25 20 M52 17 L39 20" fill="none" stroke-width="3"/>
+<path d="M12 40 Q32 54 52 40 Q32 46 12 40Z" fill="#5b1e22"/>
+<path d="M12 40 Q32 50 52 40" fill="none" stroke-width="2.400"/>
+<path d="M20 42 L22 46 L24 43 M40 43 L42 46 L44 42" fill="#f4efd8" stroke-width="1.200"/>
+<path d="M29 33 L31 35 M35 33 L33 35" fill="none" stroke-width="1.600"/>
+<path d="M10 52 Q9 58 12 60 Q13 56 12 52Z M52 52 Q51 58 54 60 Q55 56 54 52Z" fill="#6b4a2a" stroke="none"/>
+<ellipse cx="14" cy="16" rx="2.600" ry="1.400" fill="#fff" fill-opacity=".5" stroke="none" transform="rotate(-20 14 16)"/>
+</g></svg>`,
 };
