@@ -96,17 +96,18 @@ export const ARENA_TEMPLATES = [
     'deep_sea_serpent'
 ];
 
-// Palettes des salles (même format que BIOMES d'explorationView.js) : une par cercle, plus le parvis.
+// Palettes des salles (même format que BIOMES d'explorationView.js, décors = icônes pixel de pixelIcons.js) :
+// une par cercle, plus le parvis.
 export const ARENA_BIOMES = {
-    arena_hall: { a: '#b9a07a', b: '#ae9570', path: '#9b2f2a', cliff: '#4a3424', liquid: '#6ab7c9', sky: ['#2a1c14', '#5a3e2a'], decor: ['🏮', '🥁', '🏮', '🎌'] },
-    arena_1: { a: '#b98a5a', b: '#ad7f50', path: '#8a5a2a', cliff: '#4a2e18', liquid: '#6ab7c9', sky: ['#3a2414', '#6a4628'], decor: ['🏮', '🪨', '🥉'] },
-    arena_2: { a: '#c08a68', b: '#b47f5e', path: '#8f4a2e', cliff: '#4f2a1c', liquid: '#6ab7c9', sky: ['#3a1f17', '#6e3b28'], decor: ['🥁', '🏮', '🔔'] },
-    arena_3: { a: '#8c9096', b: '#82868c', path: '#5a5e66', cliff: '#2e3036', liquid: '#4a5fa8', sky: ['#1f2228', '#4a4e58'], decor: ['⚙️', '🛡️', '⛓️'] },
-    arena_4: { a: '#c8ccd6', b: '#bec2cc', path: '#8a90a8', cliff: '#4a4e66', liquid: '#6f86d8', sky: ['#22263a', '#555a7a'], decor: ['🌙', '🏮', '🥈'] },
-    arena_5: { a: '#e8cf7a', b: '#dec46e', path: '#b8862a', cliff: '#6a4a14', liquid: '#e8b830', sky: ['#4a3410', '#8a6420'], decor: ['🐉', '🏮', '🥇'] },
-    arena_6: { a: '#8fc4a0', b: '#84b995', path: '#3f8a5f', cliff: '#1f4a32', liquid: '#4fa88a', sky: ['#12301f', '#2f6a48'], decor: ['🎋', '💚', '🏮'] },
-    arena_7: { a: '#d8e4f0', b: '#cedae6', path: '#9ab4d8', cliff: '#4a5f88', liquid: '#7eb4ec', sky: ['#1a2a4a', '#5a7ab0'], decor: ['☁️', '🏮', '☁️'] },
-    arena_8: { a: '#a8584a', b: '#9e4e40', path: '#e0b030', cliff: '#3a1410', liquid: '#ff5a1f', sky: ['#1a0808', '#5a1a10'], decor: ['🏹', '🎯', '🏮'] }
+    arena_hall: { a: '#b9a07a', b: '#ae9570', path: '#9b2f2a', cliff: '#4a3424', liquid: '#6ab7c9', sky: ['#2a1c14', '#5a3e2a'], decor: ['lantern', 'drum', 'lantern', 'banner'] },
+    arena_1: { a: '#b98a5a', b: '#ad7f50', path: '#8a5a2a', cliff: '#4a2e18', liquid: '#6ab7c9', sky: ['#3a2414', '#6a4628'], decor: ['lantern', 'rock', 'medal_bronze'] },
+    arena_2: { a: '#c08a68', b: '#b47f5e', path: '#8f4a2e', cliff: '#4f2a1c', liquid: '#6ab7c9', sky: ['#3a1f17', '#6e3b28'], decor: ['drum', 'lantern', 'bell'] },
+    arena_3: { a: '#8c9096', b: '#82868c', path: '#5a5e66', cliff: '#2e3036', liquid: '#4a5fa8', sky: ['#1f2228', '#4a4e58'], decor: ['gear', 'shield', 'chain'] },
+    arena_4: { a: '#c8ccd6', b: '#bec2cc', path: '#8a90a8', cliff: '#4a4e66', liquid: '#6f86d8', sky: ['#22263a', '#555a7a'], decor: ['crescent', 'lantern', 'medal_silver'] },
+    arena_5: { a: '#e8cf7a', b: '#dec46e', path: '#b8862a', cliff: '#6a4a14', liquid: '#e8b830', sky: ['#4a3410', '#8a6420'], decor: ['dragon', 'lantern', 'medal'] },
+    arena_6: { a: '#8fc4a0', b: '#84b995', path: '#3f8a5f', cliff: '#1f4a32', liquid: '#4fa88a', sky: ['#12301f', '#2f6a48'], decor: ['bamboo', 'gem', 'lantern'] },
+    arena_7: { a: '#d8e4f0', b: '#cedae6', path: '#9ab4d8', cliff: '#4a5f88', liquid: '#7eb4ec', sky: ['#1a2a4a', '#5a7ab0'], decor: ['cloud', 'lantern', 'cloud'] },
+    arena_8: { a: '#a8584a', b: '#9e4e40', path: '#e0b030', cliff: '#3a1410', liquid: '#ff5a1f', sky: ['#1a0808', '#5a1a10'], decor: ['bow', 'target', 'lantern'] }
 };
 
 export const isArenaUnlocked = playerLevel => (Number(playerLevel) || 0) >= ARENA_MIN_LEVEL;

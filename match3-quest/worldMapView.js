@@ -1,7 +1,9 @@
 // Rendu de la carte du monde façon "overworld" de Mario : mer, île aux falaises,
 // biomes décorés, chemin en pointillés reliant les zones dans l'ordre de progression,
 // noeuds rouge (à explorer) / or (déjà explorée) / gris (verrouillée).
-// buildWorldMapSvg est pur (retourne du HTML) pour rester testable sous Node.
+// buildWorldMapSvg est pur (retourne du HTML) pour rester testable sous Node. Icônes : pixel art (pixelIcons.js).
+
+import { iconUri, iconForEmoji } from './pixelIcons.js';
 
 export const MAP_WIDTH = 820;
 export const MAP_HEIGHT = 600;
@@ -152,15 +154,15 @@ export function buildWorldMapSvg(zones, state) {
                 <circle class="wm-node-shadow" cy="4" r="25"/>
                 <circle class="wm-node-dot" r="25"/>
                 <circle class="wm-node-shine" cx="-8" cy="-9" r="6"/>
-                <text class="wm-node-icon" y="8" text-anchor="middle">${unlocked ? zone.emoji : '🔒'}</text>
-                ${state === 'visited' ? '<text class="wm-node-badge" x="19" y="-14" text-anchor="middle">⭐</text>' : ''}
+                <image class="wm-node-icon" href="${iconUri(unlocked ? (iconForEmoji(zone.emoji) || 'pin') : 'lock')}" x="-15" y="-15" width="30" height="30"/>
+                ${state === 'visited' ? `<image class="wm-node-badge" href="${iconUri('star')}" x="11" y="-26" width="18" height="18"/>` : ''}
                 <rect class="wm-banner" x="${-bannerW / 2}" y="32" width="${bannerW}" height="22" rx="8"/>
                 <text class="wm-banner-text" y="47" text-anchor="middle">${name}</text>
                 ${unlocked ? '' : `<rect class="wm-lvl" x="-34" y="58" width="68" height="18" rx="9"/><text class="wm-lvl-text" y="71" text-anchor="middle">${level >= zone.unlockLevel ? '???' : `Niv. ${zone.unlockLevel}`}</text>`}
             </g>
             ${current ? (state.heroUri
                 ? `<image class="wm-hero" href="${state.heroUri}" x="-24" y="-84" width="48" height="48"/>`
-                : '<text class="wm-hero" y="-38" text-anchor="middle">🧙</text>') : ''}
+                : `<image class="wm-hero" href="${iconUri('person')}" x="-15" y="-66" width="30" height="30"/>`) : ''}
         </g>`;
     }).join('');
 

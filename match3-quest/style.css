@@ -1772,8 +1772,20 @@ progress.enemy-bar::-webkit-progress-value {
 .wm-node.visited .wm-node-dot { fill: #f4c430; }
 .wm-node.locked .wm-node-dot { fill: #8b95a1; }
 .wm-node-shine { fill: rgba(255, 255, 255, 0.45); }
-.wm-node-icon { font-size: 26px; pointer-events: none; }
-.wm-node-badge { font-size: 18px; pointer-events: none; }
+.wm-node-icon { pointer-events: none; image-rendering: pixelated; }
+.wm-node-badge { pointer-events: none; image-rendering: pixelated; }
+
+/* Icônes pixel art qui remplacent tout emoji à l'écran (pixelText.js, pixelIcons.js). */
+.px-icon {
+    display: inline-block;
+    width: 1.15em;
+    height: 1.15em;
+    vertical-align: -0.2em;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    margin: 0 0.05em;
+    flex: none;
+}
 .wm-pulse { fill: none; stroke: #fff; stroke-width: 3; transform-box: fill-box; transform-origin: center; animation: wm-pulse 1.6s ease-out infinite; }
 .wm-banner { fill: #fff8e1; stroke: #5a3e1b; stroke-width: 2.5; }
 .wm-banner-text { font-size: 13px; font-weight: bold; fill: #3b2a20; pointer-events: none; }

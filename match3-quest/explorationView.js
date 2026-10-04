@@ -20,6 +20,9 @@ import { playEndingAnimation, playBossDialogue, prologueAnimationPlayed } from '
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites } from './sprites/index.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier } from './arena.js';
+import { ICON_NAMES, iconSvg, iconForEmoji, stripEmoji } from './pixelIcons.js';
+
+const ICON_SET = new Set(ICON_NAMES);
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
@@ -43,20 +46,20 @@ const KEY_TO_DIR = {
     ArrowRight: 'right', d: 'right', D: 'right'
 };
 
-// Palette de chaque biome : sol (damier), chemin, falaise, liquide, ciel, décors des obstacles.
+// Palette de chaque biome : sol (damier), chemin, falaise, liquide, ciel, décors des obstacles (icônes pixel, pixelIcons.js).
 // Les 10 biomes de la légende de Hou Yi (voir UNIVERS.md §6).
 const BIOMES = {
-    paddy: { a: '#a8d672', b: '#9ecb68', path: '#e6d29a', cliff: '#8a6a3a', liquid: '#6ab7c9', sky: ['#bfe3f5', '#f4f9e8'], decor: ['🌾', '🏮', '🛖'] },
-    riverbed: { a: '#c9a46b', b: '#c09b62', path: '#d9bd8a', cliff: '#7a5a35', liquid: '#7d6b4a', sky: ['#e3b878', '#f7e6c6'], decor: ['🪨', '🌾', '🪨'] },
-    bamboo: { a: '#8a9684', b: '#808c7a', path: '#b8b09a', cliff: '#4a4f46', liquid: '#4f5f5a', sky: ['#9aa59a', '#d8dbd0'], decor: ['🎋', '🔥', '🎋'] },
-    gobi: { a: '#efdfb2', b: '#e8d6a4', path: '#f7ecc8', cliff: '#bf9c58', liquid: '#78c0c8', sky: ['#f8d98a', '#fff6dc'], decor: ['🌵', '🪨', '🌵'] },
-    storm: { a: '#7d7690', b: '#746d88', path: '#a39cb8', cliff: '#3f3a54', liquid: '#4a5fa8', sky: ['#3b3558', '#7a73a0'], decor: ['⛰️', '🌩️', '⛰️'] },
-    volcano: { a: '#3b3438', b: '#352e32', path: '#5a4a48', cliff: '#1d1719', liquid: '#ff5a1f', sky: ['#2a1010', '#7a2a14'], decor: ['🌋', '🪨', '🌋'] },
-    savanna: { a: '#d8c06a', b: '#cfb75f', path: '#ead89a', cliff: '#8a6c2e', liquid: '#4a8fb8', sky: ['#f4c26a', '#fde9bd'], decor: ['🌾', '🪨', '🌾'] },
-    coast: { a: '#e6d7b0', b: '#dccda6', path: '#f0e4c4', cliff: '#8a7650', liquid: '#1d5fa8', sky: ['#7ec4ec', '#e6f5fb'], decor: ['🌊', '🪨', '🌊'] },
-    fusang: { a: '#f0dc8c', b: '#e8d27e', path: '#fff0b0', cliff: '#b88a2a', liquid: '#e8b830', sky: ['#fde6a6', '#fffbea'], decor: ['🌳', '🏮', '🌳'] },
-    house: { a: '#c9a06a', b: '#bd9560', path: '#a8483a', cliff: '#5a3a24', liquid: '#6ab7c9', sky: ['#3a2a20', '#5a4130'], decor: ['🪑', '🏺', '🛏️', '📚', '🏮', '🍵'] },
-    moon: { a: '#c9cde8', b: '#bec3e0', path: '#e4e6f4', cliff: '#3a3f78', liquid: '#6f86d8', sky: ['#171a4a', '#3b3f86'], decor: ['🌕', '🏮', '🌕'] },
+    paddy: { a: '#a8d672', b: '#9ecb68', path: '#e6d29a', cliff: '#8a6a3a', liquid: '#6ab7c9', sky: ['#bfe3f5', '#f4f9e8'], decor: ['rice', 'lantern', 'house'] },
+    riverbed: { a: '#c9a46b', b: '#c09b62', path: '#d9bd8a', cliff: '#7a5a35', liquid: '#7d6b4a', sky: ['#e3b878', '#f7e6c6'], decor: ['rock', 'rice', 'rock'] },
+    bamboo: { a: '#8a9684', b: '#808c7a', path: '#b8b09a', cliff: '#4a4f46', liquid: '#4f5f5a', sky: ['#9aa59a', '#d8dbd0'], decor: ['bamboo', 'fire', 'bamboo'] },
+    gobi: { a: '#efdfb2', b: '#e8d6a4', path: '#f7ecc8', cliff: '#bf9c58', liquid: '#78c0c8', sky: ['#f8d98a', '#fff6dc'], decor: ['cactus', 'rock', 'cactus'] },
+    storm: { a: '#7d7690', b: '#746d88', path: '#a39cb8', cliff: '#3f3a54', liquid: '#4a5fa8', sky: ['#3b3558', '#7a73a0'], decor: ['mountain', 'bolt', 'mountain'] },
+    volcano: { a: '#3b3438', b: '#352e32', path: '#5a4a48', cliff: '#1d1719', liquid: '#ff5a1f', sky: ['#2a1010', '#7a2a14'], decor: ['volcano', 'rock', 'volcano'] },
+    savanna: { a: '#d8c06a', b: '#cfb75f', path: '#ead89a', cliff: '#8a6c2e', liquid: '#4a8fb8', sky: ['#f4c26a', '#fde9bd'], decor: ['rice', 'rock', 'rice'] },
+    coast: { a: '#e6d7b0', b: '#dccda6', path: '#f0e4c4', cliff: '#8a7650', liquid: '#1d5fa8', sky: ['#7ec4ec', '#e6f5fb'], decor: ['wave', 'rock', 'wave'] },
+    fusang: { a: '#f0dc8c', b: '#e8d27e', path: '#fff0b0', cliff: '#b88a2a', liquid: '#e8b830', sky: ['#fde6a6', '#fffbea'], decor: ['tree', 'lantern', 'tree'] },
+    house: { a: '#c9a06a', b: '#bd9560', path: '#a8483a', cliff: '#5a3a24', liquid: '#6ab7c9', sky: ['#3a2a20', '#5a4130'], decor: ['chair', 'jar', 'bed', 'book', 'lantern', 'tea'] },
+    moon: { a: '#c9cde8', b: '#bec3e0', path: '#e4e6f4', cliff: '#3a3f78', liquid: '#6f86d8', sky: ['#171a4a', '#3b3f86'], decor: ['moon', 'lantern', 'moon'] },
     ...ARENA_BIOMES   // parvis et salles de l'Arène des Mille Flèches (arena.js)
 };
 
@@ -858,14 +861,10 @@ export function createExplorationView(cfg) {
             cell(ex.x, ex.y, locked ? `rgba(200,200,210,${(0.5 + 0.2 * pulse).toFixed(3)})` : `rgba(255,236,150,${(0.6 + 0.3 * pulse).toFixed(3)})`);
             cell(ex.x, ex.y, 'rgba(255,255,255,0.45)', tile * 0.16);
             const c = P(ex.x + 0.5, ex.y + 0.5);
-            const arrow = locked ? '🔒' : ex.x === 0 ? '◀' : ex.x === screen.w - 1 ? '▶' : ex.y === 0 ? '▲' : '▼';
-            ctx.fillStyle = '#5a3e1b';
-            ctx.font = `${Math.round(tile * 0.42)}px system-ui, sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(arrow, c.x, c.y);
+            if (locked) drawIcon('lock', c.x, c.y, tile * 0.5);
+            else drawExitArrow(c.x, c.y, ex.x === 0 ? -1 : ex.x === screen.w - 1 ? 1 : 0, ex.x === 0 || ex.x === screen.w - 1 ? 0 : ex.y === 0 ? -1 : 1, tile * 0.34);
             const labelY = ex.y === 0 ? c.y + tile * 0.75 : c.y - tile * 0.75;
-            const labelText = locked ? `🔒 ${ex.label}` : gated ? `⚠️ ${ex.label} (niv. ${minLevel})` : ex.label;
+            const labelText = gated && !locked ? `${ex.label} (niv. ${minLevel})` : ex.label;
             drawLabel(c.x, labelY, labelText,
                 gated ? '#e5e7eb' : '#fff8e1', '#5a3e1b', Math.max(11, Math.round(tile * 0.2)));
         });
@@ -939,7 +938,7 @@ export function createExplorationView(cfg) {
                     ctx.fillStyle = `rgba(120,220,255,${glow.toFixed(3)})`;
                     ctx.fill();
                     ctx.stroke();
-                    drawEmoji('🌀', c.x, c.y - tile * 0.05, tile * 0.34);
+                    drawIcon('swirl', c.x, c.y - tile * 0.05, tile * 0.34);
                     break;
                 }
                 case 'block': {
@@ -949,16 +948,16 @@ export function createExplorationView(cfg) {
                         break;
                     }
                     cell(it.x, it.y, shade(biome.cliff, 10));
-                    const emoji = biome.decor[Math.floor(hash(it.x, it.y) * biome.decor.length)];
+                    const decor = biome.decor[Math.floor(hash(it.x, it.y) * biome.decor.length)];
                     drawShadow(c.x, c.y + tile * 0.3, tile * 0.32, tile * 0.11);
-                    drawEmoji(emoji, c.x, c.y, tile * 0.85);
+                    drawIcon(decor, c.x, c.y, tile * 0.85, 'rock');
                     break;
                 }
                 case 'npc': {
                     const feet = c.y + tile * 0.4;
                     drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
                     const bob = Math.sin(now / 520 + it.x * 1.3) * tile * 0.012;
-                    if (!drawSprite(npcSprite(it.n.id, it.n.emoji), c.x, feet + bob, tile * 1.02)) drawEmoji(it.n.emoji, c.x, c.y, tile * 0.75);
+                    if (!drawSprite(npcSprite(it.n.id, it.n.emoji), c.x, feet + bob, tile * 1.02)) drawIcon(it.n.emoji, c.x, c.y, tile * 0.75, 'person');
                     const marker = X.npcMarker(session, it.n.id);
                     if (marker) drawMarker(c.x, c.y - tile * 0.72 - 4 * Math.abs(Math.sin(now / 300)), marker === '❓' ? '?' : '!', tile);
                     drawLabel(c.x, c.y + tile * 0.55, it.n.name, '#fff8e1', '#5a3e1b', labelSize);
@@ -969,15 +968,15 @@ export function createExplorationView(cfg) {
                     const feet = c.y + tile * 0.36;
                     drawShadow(c.x, feet, tile * 0.28, tile * 0.1);
                     if (it.c.emojiOnly) {
-                        // autel, etc. : décor en emoji (pas de sprite de coffre)
+                        // autel, etc. : décor en icône pixel (pas de sprite de coffre)
                         const glow = opened ? 0.25 : 0.55 + 0.25 * Math.sin(now / 400);
                         ctx.beginPath();
                         ctx.ellipse(c.x, feet - tile * 0.04, tile * 0.42, tile * 0.15, 0, 0, Math.PI * 2);
                         ctx.fillStyle = `rgba(255,248,200,${glow.toFixed(3)})`;
                         ctx.fill();
-                        drawEmoji(opened ? (it.c.emojiOpened || '🏮') : (it.c.emoji || '🌕'), c.x, c.y - tile * 0.05, tile * 0.8);
+                        drawIcon(opened ? (it.c.emojiOpened || 'lantern') : (it.c.emoji || 'moon'), c.x, c.y - tile * 0.05, tile * 0.8, 'chest');
                     } else if (!drawSprite(chestSprite(opened), c.x, feet, tile * 0.85)) {
-                        drawEmoji(opened ? '📭' : (it.c.emoji || '🎁'), c.x, c.y, tile * 0.65);
+                        drawIcon(opened ? 'chest' : (it.c.emoji || 'gift'), c.x, c.y, tile * 0.65, 'chest');
                     }
                     break;
                 }
@@ -996,7 +995,7 @@ export function createExplorationView(cfg) {
                     ctx.save();
                     if (illusion) ctx.globalAlpha = 0.4 + 0.45 * (0.5 + 0.5 * Math.sin(now / 170 + it.x * 3.1 + it.y * 1.7));
                     if (!drawSprite(enemySprite(def.spriteKey || def.id, def.templateId), c.x, feet + bob, size)) {
-                        drawEmoji(def.emoji, c.x, c.y, tile * (big ? 1.0 : 0.78));
+                        drawIcon(def.emoji, c.x, c.y, tile * (big ? 1.0 : 0.78), 'skull');
                     }
                     ctx.restore();
                     if (shielded) {
@@ -1032,7 +1031,7 @@ export function createExplorationView(cfg) {
                     ctx.lineWidth = 3;
                     ctx.stroke();
                     const hero = cfg.getHero();
-                    if (!drawSprite(heroSprite(hero.classId), c.x, feet + hop, tile * 1.06)) drawEmoji(hero.emoji, c.x, c.y + hop, tile * 0.76);
+                    if (!drawSprite(heroSprite(hero.classId), c.x, feet + hop, tile * 1.06)) drawIcon(hero.emoji, c.x, c.y + hop, tile * 0.76, 'person');
                     break;
                 }
                 default:
@@ -1199,15 +1198,32 @@ export function createExplorationView(cfg) {
         ctx.fill();
     }
 
-    function drawEmoji(emoji, x, y, size) {
-        ctx.font = `${size}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",system-ui,sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#000';
-        ctx.fillText(emoji, x, y);
+    // Icône pixel art (pixelIcons.js), centrée en (x, y) : un nom d'icône, ou l'emoji d'une donnée converti en
+    // icône de même sens (`fallback` sinon). Aucun emoji n'est jamais dessiné.
+    function drawIcon(nameOrEmoji, x, y, size, fallback = 'question') {
+        const name = ICON_SET.has(nameOrEmoji) ? nameOrEmoji : (iconForEmoji(nameOrEmoji || '') || fallback);
+        const img = spriteImage(iconSvg(name));
+        if (!img.complete || !img.naturalWidth) return;
+        const smooth = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = false;
+        const px = Math.max(12, Math.round(size / 12) * 12);   // multiple de la grille 12 x 12 : pixels nets
+        ctx.drawImage(img, Math.round(x - px / 2), Math.round(y - px / 2), px, px);
+        ctx.imageSmoothingEnabled = smooth;
     }
 
-    function drawLabel(x, y, text, bg, fg, size = 12, reach = cam.tile * 0.5) {
+    // Flèche de sortie dessinée (triangle pixel), orientée vers le bord.
+    function drawExitArrow(x, y, dx, dy, size) {
+        const h = size / 2;
+        ctx.beginPath();
+        if (dx) { ctx.moveTo(x + dx * h, y); ctx.lineTo(x - dx * h, y - h); ctx.lineTo(x - dx * h, y + h); }
+        else { ctx.moveTo(x, y + dy * h); ctx.lineTo(x - h, y - dy * h); ctx.lineTo(x + h, y - dy * h); }
+        ctx.closePath();
+        ctx.fillStyle = '#5a3e1b';
+        ctx.fill();
+    }
+
+    function drawLabel(x, y, rawText, bg, fg, size = 12, reach = cam.tile * 0.5) {
+        const text = stripEmoji(rawText);
         ctx.font = `700 ${size}px 'Rt Digits', 'Pixelify Sans', ui-monospace, monospace`;
         const w = ctx.measureText(text).width + 14;
         const h = size + 8;

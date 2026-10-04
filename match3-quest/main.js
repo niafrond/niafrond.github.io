@@ -15,6 +15,10 @@ import { REGION_ENTRY_SCREEN } from "./story.js";
 import { ARENA_MIN_LEVEL, ARENA_NAME, ARENA_REGION, isArenaUnlocked } from "./arena.js";
 import { heroSprite, spriteUri, loadSpritePack, CORE_PACK } from "./sprites/index.js";
 import { hideLoadingScreen } from "./loader.js";
+import { installPixelText } from "./pixelText.js";
+
+// Aucun emoji à l'écran : chaque emoji affiché devient son icône pixel art (pixelText.js).
+installPixelText();
 
 // initialisation de la partie
 console.log('Main.js loaded');
