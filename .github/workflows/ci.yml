@@ -45,6 +45,8 @@ jobs:
               - 'mob-rush/**'
             reveil-xtrem:
               - 'reveil-xtrem/**'
+            match3-quest:
+              - 'match3-quest/**'
             shared:
               - 'jest.config.js'
               - 'package.json'
@@ -77,6 +79,7 @@ jobs:
           FILTER_THEME_PARTY: ${{ steps.filter.outputs.theme-party }}
           FILTER_MOB_RUSH: ${{ steps.filter.outputs.mob-rush }}
           FILTER_REVEIL_XTREM: ${{ steps.filter.outputs.reveil-xtrem }}
+          FILTER_MATCH3_QUEST: ${{ steps.filter.outputs.match3-quest }}
           FILTER_SHARED: ${{ steps.filter.outputs.shared }}
         run: |
           if [ "$FILTER_SHARED" = "true" ]; then
@@ -97,6 +100,7 @@ jobs:
           [ "$FILTER_THEME_PARTY" = "true" ] && PROJECTS+=(theme-party-node theme-party-jsdom)
           [ "$FILTER_MOB_RUSH" = "true" ] && PROJECTS+=(mob-rush-node)
           [ "$FILTER_REVEIL_XTREM" = "true" ] && PROJECTS+=(reveil-xtrem-node)
+          [ "$FILTER_MATCH3_QUEST" = "true" ] && PROJECTS+=(match3-quest-node)
 
           # blind-test/, mix-blind-test/ et theme-party/ importent directement des
           # modules de dj-mix/lib (config downloader, trackStore, audioSourceManager...) :
@@ -114,6 +118,57 @@ jobs:
           mapfile -t UNIQUE_PROJECTS < <(printf '%s\n' "${PROJECTS[@]}" | sort -u)
           echo "Projets Jest exécutés : ${UNIQUE_PROJECTS[*]}"
           npx jest --selectProjects "${UNIQUE_PROJECTS[@]}"
+
+  match3-quest-perf:
+    name: Match3 Quest - perf mobile
+    runs-on: ubuntu-latest
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            match3:
+              - 'match3-quest/**'
+              - 'version.js'
+              - 'playwright.config.js'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/ci.yml'
+
+      - name: Setup Node.js
+        if: steps.filter.outputs.match3 == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.filter.outputs.match3 == 'true'
+        run: npm install
+
+      - name: Install Playwright browsers
+        if: steps.filter.outputs.match3 == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Perf mobile (Pixel 5, CPU x4)
+        if: steps.filter.outputs.match3 == 'true'
+        run: npx playwright test --project=match3-quest-mobile
+
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match3-quest-perf-results
+          path: test-results/
+          if-no-files-found: ignore
 
   build-apk:
     name: Flash Guess APK
