@@ -1,154 +1,80 @@
 // =====================================
-// Boutique
+// Marchands (PNJ des villages, voir merchants.js)
 // =====================================
 
-import { allWeapons } from './weapons.js';
-import { allItems, getRarityIcon, getRarityColor } from './items.js';
+import { getRarityIcon, getRarityColor } from './items.js';
 import { icon as svgIcon } from './icons.js';
-import { player, gameState, log, updateAvailableWeapons, saveUpdate, getWeaponIcon } from './game.js';
+import { offerObject, availableOffers, buyOffer } from './merchants.js';
+import { player, gameState, log, updateAvailableWeapons, saveUpdate, getWeaponIcon, updateInventoryTab } from './game.js';
 
-function getWeaponPrice(weapon) {
-    return Math.floor(weapon.minLevel * 15 + weapon.damage * 2);
-}
+const SECTION_TITLES = {
+    stall: 'Étal',
+    rare: 'Pièces rares',
+    exceptional: 'Pièce d\'exception'
+};
+const RARITY_LABEL = { common: 'Commun', uncommon: 'Peu commun', rare: 'Rare', legendary: 'Ultra rare' };
 
-const ITEM_RARITY_PRICE = { common: 5, uncommon: 12, rare: 30, legendary: 80 };
-function getItemPrice(item) {
-    return Math.floor(item.minLevel * (ITEM_RARITY_PRICE[item.rarity] || 5));
-}
+const escapeHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-export function buyWeapon(weaponId) {
-    if (gameState.combatState === 'active') {
-        log('La boutique est inaccessible pendant le combat !');
-        return;
-    }
-    const weapon = allWeapons.find(w => w.id === weaponId);
-    if (!weapon) return;
-
-    const price = getWeaponPrice(weapon);
-    if (player.gold < price) {
-        log(`Pas assez d'or ! Coût: ${price} ${svgIcon('coin')}, vous avez: ${player.gold} ${svgIcon('coin')}`);
-        return;
-    }
-
-    player.gold -= price;
-    player.weapons.push(weapon);
-    updateAvailableWeapons();
-    saveUpdate();
-    log(`${weapon.name} achetée pour ${price} pièces d'or !`);
-    updateShopTab();
-}
-
-export function buyItem(itemId) {
-    if (gameState.combatState === 'active') {
-        log('La boutique est inaccessible pendant le combat !');
-        return;
-    }
-    const item = allItems.find(i => i.id === itemId);
-    if (!item) return;
-
-    const price = getItemPrice(item);
-    if (player.gold < price) {
-        log(`Pas assez d'or ! Coût: ${price} ${svgIcon('coin')}, vous avez: ${player.gold} ${svgIcon('coin')}`);
-        return;
-    }
-
-    player.gold -= price;
-    if (!player.inventory) player.inventory = [];
-    player.inventory.push({ ...item });
-    saveUpdate();
-    log(`${item.name} acheté pour ${price} pièces d'or !`);
-    updateShopTab();
-}
-
-export function updateShopTab() {
-    const shopContent = document.getElementById('shop-content');
-    const shopGold = document.getElementById('shop-gold');
-    if (!shopContent) return;
-    if (shopGold) shopGold.textContent = player.gold;
-
-    shopContent.innerHTML = '';
-
-    // === Section Armes ===
-    const minLvl = Math.max(1, player.level - 2);
-    const maxLvl = player.level + 4;
-    const damageThreshold = player.level * 4;
-    const shopWeapons = allWeapons
-        .filter(w => {
-            if (player.weapons && player.weapons.some(owned => owned.id === w.id)) return false;
-            if (w.minLevel < minLvl || w.minLevel > maxLvl) return false;
-            if (w.minLevel < player.level && w.damage < damageThreshold) return false;
-            return true;
-        })
-        .sort((a, b) => a.minLevel - b.minLevel);
-
-    const weaponsSection = document.createElement('div');
-    weaponsSection.innerHTML = '<h3 class="shop-section-title">Armes</h3>';
-
-    if (shopWeapons.length === 0) {
-        weaponsSection.innerHTML += '<p class="shop-empty">Aucune nouvelle arme disponible pour votre niveau.</p>';
-    } else {
-        shopWeapons.forEach(weapon => {
-            const price = getWeaponPrice(weapon);
-            const canAfford = player.gold >= price;
-            const icon = getWeaponIcon(weapon.type);
-
-            const div = document.createElement('div');
-            div.className = 'weapon-item shop-weapon';
-            div.innerHTML = `
-                <span class="weapon-icon">${icon}</span>
-                <div class="weapon-details">
-                    <span class="weapon-name">${weapon.name}</span>
-                    <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}</span>
-                    <span class="weapon-description">${weapon.description}</span>
-                </div>
-                <div class="shop-weapon-right">
-                    <span class="shop-price-tag">${price} ${svgIcon('coin')}</span>
-                    <button class="weapon-action"
-                        ${!canAfford ? 'disabled' : ''}
-                        onclick="window.buyWeapon('${weapon.id}')">
-                        ${canAfford ? 'Acheter' : 'Insuff.'}
-                    </button>
-                </div>
-            `;
-            weaponsSection.appendChild(div);
-        });
-    }
-    shopContent.appendChild(weaponsSection);
-
-    // === Section Objets ===
-    const shopItems = allItems
-        .filter(i => i.minLevel <= player.level + 2)
-        .sort((a, b) => a.minLevel - b.minLevel);
-
-    const itemsSection = document.createElement('div');
-    itemsSection.innerHTML = '<h3 class="shop-section-title">Objets</h3>';
-
-    shopItems.forEach(item => {
-        const price = getItemPrice(item);
-        const canAfford = player.gold >= price;
-        const rarityEmoji = getRarityIcon(item.rarity);
-        const rarityColor = getRarityColor(item.rarity);
-
-        const div = document.createElement('div');
-        div.className = 'weapon-item shop-weapon';
-        div.style.borderLeft = `3px solid ${rarityColor}`;
-        div.innerHTML = `
-            <span class="weapon-icon">${rarityEmoji}</span>
+function offerRow(offer, gold) {
+    const obj = offerObject(offer);
+    if (!obj) return '';
+    const canAfford = gold >= offer.price;
+    const color = getRarityColor(offer.rarity);
+    const icon = offer.kind === 'weapon' ? getWeaponIcon(obj.type) : getRarityIcon(offer.rarity);
+    const stats = offer.kind === 'weapon'
+        ? `${obj.damage} ${svgIcon('skull')} • ${obj.actionPoints} ${svgIcon('arrow')}`
+        : obj.type === 'shield' ? `Déf. +${obj.defense}`
+            : obj.type === 'reusable' ? `${obj.actionPoints || 2} ${svgIcon('arrow')} • ${obj.chargesPerCycle} charge${obj.chargesPerCycle > 1 ? 's' : ''}, rechargé en ${obj.rechargeTurns || 4} tours`
+                : 'Relique passive';
+    return `
+        <div class="weapon-item shop-weapon merchant-offer rarity-${offer.rarity}" style="border-left:3px solid ${color}">
+            <span class="weapon-icon">${icon}</span>
             <div class="weapon-details">
-                <span class="weapon-name">${item.name}</span>
-                <span class="weapon-stats">${item.type === 'consumable' ? `${item.actionPoints} ${svgIcon('arrow')}` : item.type === 'shield' ? `Déf. +${item.defense}` : item.type === 'reusable' ? `${item.actionPoints || 2} ${svgIcon('arrow')} • ${item.chargesPerCycle} charge${item.chargesPerCycle > 1 ? 's' : ''}, rechargé en ${item.rechargeTurns || 4} tours` : 'Passif'} • Niv. ${item.minLevel}</span>
-                <span class="weapon-description">${item.description}</span>
+                <span class="weapon-name">${escapeHtml(obj.name)} <em class="merchant-rarity" style="color:${color}">${RARITY_LABEL[offer.rarity] || ''}</em></span>
+                <span class="weapon-stats">${stats} • Niv. ${obj.minLevel}</span>
+                <span class="weapon-description">${escapeHtml(obj.description || '')}</span>
             </div>
             <div class="shop-weapon-right">
-                <span class="shop-price-tag">${price} ${svgIcon('coin')}</span>
-                <button class="weapon-action"
-                    ${!canAfford ? 'disabled' : ''}
-                    onclick="window.buyItem('${item.id}')">
-                    ${canAfford ? 'Acheter' : 'Insuff.'}
-                </button>
+                <span class="shop-price-tag">${offer.price} ${svgIcon('coin')}</span>
+                <button type="button" class="weapon-action" data-buy="${offer.key}" ${canAfford ? '' : 'disabled'}>${canAfford ? 'Acheter' : 'Trop cher'}</button>
             </div>
-        `;
-        itemsSection.appendChild(div);
-    });
-    shopContent.appendChild(itemsSection);
+        </div>`;
+}
+
+/**
+ * Remplit `card` avec la boutique du marchand `npc` (fiche de PNJ) et gère les achats.
+ * hooks : { close(), ngPlus? }
+ */
+export function renderMerchant(npc, card, hooks = {}) {
+    const draw = (note = '') => {
+        const offers = availableOffers(npc.id, player, hooks.ngPlus || 0);
+        const sections = Object.keys(SECTION_TITLES).map(section => {
+            const rows = offers.filter(o => o.section === section);
+            if (!rows.length) return '';
+            return `<h3 class="shop-section-title">${SECTION_TITLES[section]}</h3>${rows.map(o => offerRow(o, player.gold || 0)).join('')}`;
+        }).join('');
+        card.innerHTML = `
+            <h3>${svgIcon('coin')} ${escapeHtml(npc.name)}</h3>
+            <p class="shop-subtitle">${escapeHtml(npc.title || 'Marchand')} — les belles pièces coûtent cher.</p>
+            <div class="shop-gold-display">${svgIcon('coin')} Or disponible : <strong>${player.gold || 0}</strong></div>
+            ${note ? `<p class="merchant-note">${escapeHtml(note)}</p>` : ''}
+            ${sections || '<p class="shop-empty">Le marchand a tout vendu.</p>'}
+            <button type="button" class="primary merchant-close">Fermer</button>`;
+    };
+    card.onclick = ev => {
+        if (ev.target.closest('.merchant-close')) { hooks.close?.(); return; }
+        const btn = ev.target.closest('[data-buy]');
+        if (!btn) return;
+        if (gameState.combatState === 'active') { draw('La boutique est inaccessible pendant le combat !'); return; }
+        const res = buyOffer(npc.id, btn.dataset.buy, player, hooks.ngPlus || 0);
+        if (res.ok) {
+            if (res.offer.kind === 'weapon') updateAvailableWeapons();
+            else updateInventoryTab?.();
+            saveUpdate();
+            log(res.message);
+        }
+        draw(res.message);
+    };
+    draw();
 }

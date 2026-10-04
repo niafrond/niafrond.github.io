@@ -11,6 +11,7 @@ import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems } from "./items.js";
+import { renderMerchant } from "./shop.js";
 import { exportSaveToFile, importSaveFromFile, downloadSaveFile } from "./saveManager.js";
 import { worldZones } from "./worldMap.js";
 import { mountWorldMap } from "./worldMapView.js";
@@ -167,7 +168,8 @@ function init() {
         },
         onOpenMap: () => showWorldMap(),
         onOpenArena: () => openArena(),
-        onOpenMenu: () => window.switchTab('weapons')
+        onOpenMenu: () => window.switchTab('weapons'),
+        renderMerchant
     });
     exploration.init();
 

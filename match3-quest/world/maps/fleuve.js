@@ -11,7 +11,7 @@ export default {
             '#.AaAA..BbBB..CcCC.#',
             '#..=..4..=.2...=...#',
             '#..=============.3.#',
-            '<..=..W.S.0.~~.5=..>',
+            '<.p=..W.S.0.~~.5=..>',
             '#..=.1......~~..=..#',
             '#.~~~..DDDD..EEEE..#',
             '#.~~~..DDDD..EEEE..#',
@@ -31,6 +31,7 @@ export default {
             '####################'
         ],
         npcs: [
+            { id: 'merchant_fleuve', at: 'p' },
             { id: 'girl_lian', at: '1' },
             { id: 'boatman_shan', at: '2' },
             { id: 'hua_fleuve', at: '3' },

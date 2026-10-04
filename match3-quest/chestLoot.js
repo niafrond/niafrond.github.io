@@ -12,7 +12,7 @@
 // Module pur (sans DOM) : `rollChestLoot` tire le butin, game.js (`grantChestLoot`) le met dans le sac.
 
 import { allItems } from './items.js';
-import { allWeapons } from './weapons.js';
+import { allWeapons, weaponRarity } from './weapons.js';
 import { REGION_ORDER, REGION_LEVEL } from './world/index.js';
 
 const LOCATION_BONUS = { house: 0, village: 0, wild: 0.5, sanctuary: 1 };
@@ -31,11 +31,7 @@ export const LOOT_TIERS = {
 
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'legendary'];
 
-// Rareté d'une arme : son rang dans sa famille (la plus faible = commune, la 4e et au-delà = légendaire).
-export function weaponRarity(weapon) {
-    const family = allWeapons.filter(w => w.type === weapon.type).sort((a, b) => a.minLevel - b.minLevel);
-    return RARITY_ORDER[Math.min(family.findIndex(w => w.id === weapon.id), RARITY_ORDER.length - 1)] || 'common';
-}
+export { weaponRarity };
 
 // Palier de difficulté (1 à 4) d'un coffre posé sur un écran (`screen.kind` : house / village / wild ; sanctuaire sinon).
 export function chestTier(chest, screen = {}) {

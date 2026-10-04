@@ -14,11 +14,9 @@ import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEff
 import { icon as svgIcon, manaIcon } from "./icons.js";
 import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses } from "./attributes.js";
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
-import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
-export { updateShopTab, buyWeapon, buyItem };
 
 const BASE_MANA_CAP = 50;
 const EMPTY_MANA_POOL = { red:0, blue:0, green:0, yellow:0, purple:0 };
@@ -1311,7 +1309,6 @@ export function saveUpdate(){
     createSpellButtons();
     createWeaponButton();
     updatePlayerStatsTab();
-    updateShopTab();
 }
 
 // Fonction pour effacer la sauvegarde
@@ -3358,5 +3355,3 @@ window.unequipGear = unequipGear;
 window.useInventoryItem = useInventoryItem;
 window.discardInventoryItem = discardInventoryItem;
 window.setActiveInventoryItem = setActiveInventoryItem;
-window.buyWeapon = buyWeapon;
-window.buyItem = buyItem;
