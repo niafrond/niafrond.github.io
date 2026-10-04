@@ -12,7 +12,7 @@ import { worldZones } from "./worldMap.js";
 import { mountWorldMap } from "./worldMapView.js";
 import { createExplorationView } from "./explorationView.js";
 import { REGION_ENTRY_SCREEN } from "./story.js";
-import { ARENA_MIN_LEVEL, ARENA_NAME, ARENA_TIERS, arenaTier, isArenaUnlocked, isTierUnlocked, normalizeArenaStats, arenaEncounter, arenaWaveLevel, isChampionWave, recordArenaWave } from "./arena.js";
+import { ARENA_MIN_LEVEL, ARENA_NAME, ARENA_REGION, isArenaUnlocked } from "./arena.js";
 import { heroSprite, spriteUri, loadSpritePack, CORE_PACK } from "./sprites/index.js";
 import { hideLoadingScreen } from "./loader.js";
 
@@ -153,6 +153,7 @@ function init() {
         },
         onSave: () => saveUpdate(),
         onRegionVisited: regionId => {
+            if(regionId === ARENA_REGION) return;   // l'arène n'est pas une région de la carte du monde
             if(!player.worldMap) player.worldMap = { currentZoneId: null, visitedZoneIds: [] };
             player.worldMap.currentZoneId = regionId;
             if(!player.worldMap.visitedZoneIds.includes(regionId)) {
@@ -246,97 +247,20 @@ function init() {
         updateStats();
     };
 
-    // ── Arène des Mille Flèches (arena.js) : huit cercles, vagues enchaînées depuis l'écran de résultat ─────
-    let arenaRun = null;   // { tier, wave } pendant une série de vagues
-    const arenaStats = () => normalizeArenaStats(player.arena);
-    const startArenaWave = (tierId, wave) => {
-        arenaRun = { tier: tierId, wave };
-        startEncounterCombat(arenaEncounter(tierId, wave, player.level));
-    };
-    const arenaTierCard = (tier, stats) => {
-        const unlocked = isTierUnlocked(stats, tier.id);
-        const cleared = stats.cleared.includes(tier.id);
-        const best = stats.best[tier.id] || 0;
-        const prev = arenaTier(tier.id - 1);
-        const status = cleared ? '✅ Terminé' : unlocked ? (best ? `Record : vague ${best}/${tier.waves}` : 'Ouvert') : `🔒 Terminez le ${prev.name}`;
-        return `<div class="arena-tier${unlocked ? '' : ' locked'}${cleared ? ' cleared' : ''}">
-            <div class="arena-tier-head"><strong>${tier.emoji} ${tier.id}. ${tier.name}</strong><span>${status}</span></div>
-            <p>${tier.desc}</p>
-            <p class="arena-tier-meta">${tier.waves} vagues · adversaires niv. ${arenaWaveLevel(tier.id, 1, player.level)} → ${arenaWaveLevel(tier.id, tier.waves, player.level)}${tier.statMult > 1 ? ` · renfort ×${tier.statMult}` : ''}${cleared ? '' : ` · 1er passage : +${tier.clearGold} or, +${tier.clearXp} XP`}</p>
-            ${unlocked ? `<button type="button" class="primary arena-enter-btn" data-tier="${tier.id}">⚔️ Entrer</button>` : ''}
-        </div>`;
-    };
+    // ── Arène des Mille Flèches (arena.js) : un lieu à explorer (parvis, salles, maîtres d'arène) ──────────
+    // Le bouton 🏟️ du HUD y entre (dès le niveau 15) ; dans l'arène, il devient 🚪 et en fait sortir à tout moment.
     const openArena = () => {
+        if(exploration.inArena()) { playSfx('uiClick'); exploration.leaveArena(); return; }
         if(!isArenaUnlocked(player.level)) {
             exploration.toast(`🔒 L'${ARENA_NAME} ouvre ses portes au niveau ${ARENA_MIN_LEVEL} (vous êtes niveau ${player.level}).`, 4500);
             return;
         }
         playSfx('uiClick');
-        const stats = arenaStats();
-        let modal = document.getElementById('arena-modal');
-        if(!modal) {
-            modal = document.createElement('div');
-            modal.id = 'arena-modal';
-            modal.className = 'modal';
-            modal.addEventListener('click', e => { if(e.target === modal) modal.classList.remove('active'); });
-            document.body.appendChild(modal);
-        }
-        modal.innerHTML = `<div class="modal-content arena-modal">
-            <h2>🏟️ ${ARENA_NAME}</h2>
-            <p>Huit cercles de plus en plus durs : chacun s'ouvre quand le précédent a été terminé au moins une fois. Un cercle est une série de vagues dont la dernière est son champion. Chaque victoire rapporte XP, or et butin, plus une prime d'arène ; vos PV sont restaurés entre deux vagues. Une défaite clôt la série, sans autre pénalité.</p>
-            <p class="arena-record">🏆 ${stats.cleared.length}/${ARENA_TIERS.length} cercles terminés · ⚔️ ${stats.wins} victoire${stats.wins > 1 ? 's' : ''} · ${stats.runs} série${stats.runs > 1 ? 's' : ''}</p>
-            <div class="arena-tiers">${ARENA_TIERS.map(t => arenaTierCard(t, stats)).join('')}</div>
-            <div class="modal-actions"><button class="secondary" id="arena-close-btn">Fermer</button></div>
-        </div>`;
-        modal.querySelectorAll('.arena-enter-btn').forEach(btn => {
-            btn.onclick = () => {
-                const tierId = Number(btn.dataset.tier);
-                if(!isTierUnlocked(arenaStats(), tierId)) return;
-                primeAudioFromGesture();
-                modal.classList.remove('active');
-                player.arena = { ...arenaStats(), runs: arenaStats().runs + 1 };
-                startArenaWave(tierId, 1);
-            };
-        });
-        modal.querySelector('#arena-close-btn').onclick = () => modal.classList.remove('active');
-        modal.classList.add('active');
-    };
-    // Fin d'une vague : record, puis vague suivante, cercle terminé (et suivant débloqué) ou fin de la série.
-    const onArenaCombatEnd = isVictory => {
-        if(!arenaRun) return;
-        const { tier: tierId, wave } = arenaRun;
-        const tier = arenaTier(tierId);
-        const { stats, firstClear } = recordArenaWave(player.arena, tierId, wave, isVictory);
-        player.arena = stats;
-        const box = document.createElement('div');
-        box.className = 'arena-result';
-        if(isVictory && wave < tier.waves) {
-            const next = wave + 1;
-            box.innerHTML = `<p>${tier.emoji} ${tier.name} : vague ${wave}/${tier.waves} remportée !</p>
-                <p>Ensuite : ${isChampionWave(tierId, next) ? '🏆 le champion du cercle' : `vague ${next}/${tier.waves}`}, niveau ${arenaWaveLevel(tierId, next, player.level)}.</p>
-                <button type="button" class="primary arena-next-btn">⚔️ ${isChampionWave(tierId, next) ? 'Affronter le champion' : `Vague ${next}`}</button>`;
-            box.querySelector('.arena-next-btn').onclick = () => {
-                primeAudioFromGesture();
-                startArenaWave(tierId, next);
-            };
-        } else if(isVictory) {
-            arenaRun = null;
-            const nextTier = arenaTier(tierId + 1);
-            box.innerHTML = `<p>🏆 ${tier.name} terminé${firstClear ? ' pour la première fois' : ''} !</p>
-                <p>${nextTier ? (firstClear ? `🔓 Nouveau cercle débloqué : ${nextTier.emoji} ${nextTier.name}.` : `Le ${nextTier.name} vous attend.`) : "Vous avez vaincu le dernier cercle : l'arène s'incline devant vous."}</p>`;
-        } else {
-            arenaRun = null;
-            box.innerHTML = `<p>${tier.emoji} Vous tombez à la vague ${wave}/${tier.waves} du ${tier.name}. Renforcez-vous (boutique, sorts, armes) et revenez quand vous voulez.</p>`;
-        }
-        document.getElementById('battle-result-summary')?.appendChild(box);
-        saveUpdate();
+        exploration.enterArena();
     };
 
     combatHooks.onVictory = () => exploration.onCombatVictory();
-    combatHooks.onEnd = isVictory => {
-        exploration.onCombatEnd(isVictory);
-        onArenaCombatEnd(isVictory);
-    };
+    combatHooks.onEnd = isVictory => exploration.onCombatEnd(isVictory);
     window.addEventListener('match3:enter-exploration', enterExploration);
     // Nouvelle partie, classe choisie : on enchaîne directement sur le duel-tutoriel contre Fengmeng.
     window.addEventListener('match3:start-tutorial-duel', () => {
@@ -395,7 +319,6 @@ function init() {
     // Après un combat : le bouton ramène sur la carte d'exploration.
     document.getElementById('new-combat-btn').addEventListener('click',()=>{
         primeAudioFromGesture();
-        arenaRun = null;   // quitter l'arène
         enterExploration();
     });
 

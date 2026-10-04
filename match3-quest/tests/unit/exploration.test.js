@@ -13,7 +13,8 @@ const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', im
 const templateIds = new Set(catalog.map(t => t.id));
 // Les tests de structure historiques portent sur les 10 sanctuaires (14x10) ; le Grand Monde a ses tests dans world.test.js.
 const ORDER_IDS = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
-const screens = Object.values(SCREENS);
+// Le monde de la légende (l'Arène des Mille Flèches, hors chaîne des régions, a ses propres tests : arena.test.js).
+const screens = Object.values(SCREENS).filter(s => !s.arena);
 const sanctuaries = ORDER_IDS.map(id => SCREENS[id]);
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 

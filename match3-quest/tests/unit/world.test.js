@@ -16,7 +16,7 @@ import {
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const templateIds = new Set(catalog.map(t => t.id));
-const screens = Object.values(SCREENS);
+const screens = Object.values(SCREENS).filter(s => !s.arena);   // hors Arène (arena.test.js)
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
 function reach(screen, from, blocked = () => false) {

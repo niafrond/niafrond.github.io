@@ -29,6 +29,7 @@
 // Sorties : `requires` (+ `lockedMessage`) les ferme tant que la condition d'avancement n'est pas remplie.
 
 import { assembleWorld } from './world/index.js';
+import { buildArenaScreens } from './arena.js';
 
 export const STORY_TITLE = 'La Légende de Hou Yi';
 
@@ -1559,7 +1560,8 @@ const BASE_QUESTS = [
 
 // Monde final : les 10 sanctuaires ci-dessus, précédés de villages et de zones sauvages (world/).
 const WORLD = assembleWorld(BASE_SCREENS, BASE_QUESTS);
-export const SCREENS = WORLD.screens;
+// L'Arène des Mille Flèches (arena.js) : parvis + salles des huit cercles, hors de la chaîne des régions.
+export const SCREENS = { ...WORLD.screens, ...buildArenaScreens() };
 export const QUESTS = WORLD.quests;
 
 // Écran d'arrivée d'une région depuis la carte du monde : son village quand il existe, sinon son sanctuaire.

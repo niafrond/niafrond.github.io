@@ -19,6 +19,7 @@ import { playSfx } from './sound.js';
 import { playEndingAnimation, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites } from './sprites/index.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
+import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier } from './arena.js';
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
@@ -55,7 +56,8 @@ const BIOMES = {
     coast: { a: '#e6d7b0', b: '#dccda6', path: '#f0e4c4', cliff: '#8a7650', liquid: '#1d5fa8', sky: ['#7ec4ec', '#e6f5fb'], decor: ['🌊', '🪨', '🌊'] },
     fusang: { a: '#f0dc8c', b: '#e8d27e', path: '#fff0b0', cliff: '#b88a2a', liquid: '#e8b830', sky: ['#fde6a6', '#fffbea'], decor: ['🌳', '🏮', '🌳'] },
     house: { a: '#c9a06a', b: '#bd9560', path: '#a8483a', cliff: '#5a3a24', liquid: '#6ab7c9', sky: ['#3a2a20', '#5a4130'], decor: ['🪑', '🏺', '🛏️', '📚', '🏮', '🍵'] },
-    moon: { a: '#c9cde8', b: '#bec3e0', path: '#e4e6f4', cliff: '#3a3f78', liquid: '#6f86d8', sky: ['#171a4a', '#3b3f86'], decor: ['🌕', '🏮', '🌕'] }
+    moon: { a: '#c9cde8', b: '#bec3e0', path: '#e4e6f4', cliff: '#3a3f78', liquid: '#6f86d8', sky: ['#171a4a', '#3b3f86'], decor: ['🌕', '🏮', '🌕'] },
+    ...ARENA_BIOMES   // parvis et salles de l'Arène des Mille Flèches (arena.js)
 };
 
 const shade = (hex, amt) => {
@@ -136,9 +138,16 @@ export function createExplorationView(cfg) {
     function refreshHud() {
         const screen = X.currentScreen(session);
         const plus = session.data.ngPlus > 0 ? ` · 🌕 NG+${session.data.ngPlus}` : '';
-        const icon = screen.interior ? '🏠' : screen.kind === 'village' ? '🏘️' : '📍';
+        const icon = screen.interior ? '🏠' : screen.kind === 'village' ? '🏘️' : screen.arena ? '🏟️' : '📍';
         if (els.title) els.title.textContent = `${icon} ${screen.name}${plus}`;
         if (els.objective) els.objective.textContent = X.currentObjectiveText(session);
+        // Dans l'arène, le bouton 🏟️ devient 🚪 : on peut en sortir à tout moment.
+        if (els.arenaBtn) {
+            const inside = X.inArena(session);
+            els.arenaBtn.innerHTML = inside ? '🚪<span> Sortir</span>' : '🏟️<span> Arène</span>';
+            els.arenaBtn.title = inside ? "Quitter l'arène" : 'Arène des Mille Flèches (dès le niveau 15)';
+            els.arenaBtn.classList.toggle('arena-exit', inside);
+        }
     }
 
     function toast(message, ms = 3200) {
@@ -193,7 +202,7 @@ export function createExplorationView(cfg) {
         const { npcs, enemies } = regionEntities(region);
         const packs = packsForKeys({ npcs: npcs.map(([id]) => id), enemies });
         const zone = worldZones.find(z => z.id === region);
-        const label = zone ? `${zone.emoji} ${zone.name}` : 'Chargement…';
+        const label = zone ? `${zone.emoji} ${zone.name}` : region === ARENA_REGION ? `🏟️ ${ARENA_NAME}` : 'Chargement…';
         const promise = withLoadingScreen(label, async progress => {
             await trackProgress(packs.map(loadSpritePack), r => progress(r * 0.5));
             const svgs = regionSprites(region);
@@ -284,6 +293,11 @@ export function createExplorationView(cfg) {
                 toast(`🎯 ${ev.quest.title} : objectif accompli`);
             } else if (ev.type === 'scene') {
                 openDialog(sceneSpeaker(ev.speaker), ev.lines);
+            } else if (ev.type === 'arenaCleared') {
+                const tier = arenaTier(ev.tier);
+                toast(ev.firstClear
+                    ? `🏆 ${tier.name} terminé !${ev.next ? ` 🔓 La porte du ${ev.next.name} s'ouvre au parvis.` : " L'arène s'incline devant vous."}`
+                    : `🏆 ${tier.name} terminé une fois de plus !`, 6000);
             } else if (ev.type === 'questStarted') {
                 if (!spoken.has(ev.quest.id)) openDialog({ ...NARRATOR, title: `Nouvelle quête : ${ev.quest.title}` }, ev.lines);
                 toast(`📜 Nouvelle quête${ev.quest.side ? ' secondaire' : ''} : ${ev.quest.title}`);
@@ -439,6 +453,26 @@ export function createExplorationView(cfg) {
         cfg.onRegionVisited?.(screen.region);
         refreshHud();
         toast(`🌀 Voyage rapide : ${screen.name}`, 2600);
+        cfg.onSave();
+        return true;
+    }
+
+    function changeArena(enter) {
+        ensureSession();
+        if (inCombat || isDialogOpen()) return false;
+        if (!(enter ? X.enterArena(session) : X.leaveArena(session))) return false;
+        held = null;
+        walk = null;
+        vis.enemies = {};
+        syncVisual(true);
+        refreshHud();
+        const screen = X.currentScreen(session);
+        if (!enter) cfg.onRegionVisited?.(screen.region);
+        toast(enter ? `🏟️ ${screen.name}` : `🚪 Vous quittez l'arène : ${screen.name}`, 2600);
+        if (enter && !session.data.arenaIntroSeen) {
+            session.data.arenaIntroSeen = true;
+            if (screen.arrival?.length) openDialog({ ...NARRATOR, title: screen.name }, screen.arrival);
+        }
         cfg.onSave();
         return true;
     }
@@ -1268,9 +1302,11 @@ export function createExplorationView(cfg) {
 
         onCombatEnd(isVictory) {
             ensureSession();
-            if (!isVictory && session.rt.pendingEnemyId) X.resetAfterDefeat(session);
+            if (!isVictory && session.rt.pendingEnemyId) X.resetAfterDefeat(session);   // dans l'arène : expulsion
             session.rt.pendingEnemyId = null;
+            vis.enemies = {};
             syncVisual(true);
+            refreshHud();
             cfg.onSave();
         },
 
@@ -1283,6 +1319,11 @@ export function createExplorationView(cfg) {
         travelTo,
         openCarnet: tab => { if (!isBlocked()) showJournal(tab); },
         getTravelList() { ensureSession(); return X.waypointList(session); },
+
+        // Arène des Mille Flèches : entrée (point de retour mémorisé) et sortie à tout moment.
+        inArena() { ensureSession(); return X.inArena(session); },
+        enterArena() { return changeArena(true); },
+        leaveArena() { return changeArena(false); },
 
         teleportToScreen(screenId) {
             ensureSession();

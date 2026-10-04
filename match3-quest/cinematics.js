@@ -628,6 +628,8 @@ function pick(list, seed) {
 // Lignes d'un échange de début de combat de boss : [{ who: 'boss' | 'hero', text }].
 export function bossIntroLines(enc) {
     const name = enc?.boss?.name || enc?.name || 'Boss';
+    // Répliques propres à la rencontre (maîtres de l'Arène des Mille Flèches) : [adversaire, héros].
+    if (enc?.introLines?.length === 2) return [{ who: 'boss', text: enc.introLines[0] }, { who: 'hero', text: enc.introLines[1] }];
     const duelLines = FENGMENG_DUEL_LINES[enc?.enemyId];
     if (duelLines) return [{ who: 'boss', text: duelLines[0] }, { who: 'hero', text: duelLines[1] }];
     const isRival = /fengmeng/i.test(name);
