@@ -13,6 +13,8 @@
 //  - illusion : au contact ou dans l'aura, l'ennemi se dissipe (événement `illusion`), pas de combat ;
 //  - shieldedBy : boss protégé tant que le groupe d'ennemis n'est pas vaincu (événement `shielded`) ;
 //  - defeatScene : scène jouée au retour sur la carte après la victoire (événement `scene`) ;
+//  - afterScenes : [{ speaker, lines }] jouées une seule fois après le texte de victoire des quêtes
+//    (événements `scene`, insérés après le dernier `questCompleted`) : interludes à plusieurs voix ;
 //  - exit.requires : sortie fermée tant que la condition n'est pas remplie ;
 //  - data.ngPlus : compteur de Nouvelle Partie + (niveaux des ennemis augmentés).
 
@@ -471,15 +473,23 @@ export function checkAutoQuests(session) {
     return events;
 }
 
-// Victoire sur un ennemi : événement `scene` éventuel (`defeatScene` de la définition), puis quêtes automatiques.
+const sceneEvent = scene => ({ type: 'scene', speaker: { ...(scene.speaker || {}) }, lines: [...scene.lines] });
+
+// Victoire sur un ennemi : événement `scene` éventuel (`defeatScene` de la définition), puis quêtes automatiques,
+// puis l'interlude `afterScenes` (juste après le dernier texte de victoire, avant le démarrage des quêtes suivantes).
 export function markEnemyDefeated(session, enemyId) {
     const events = [];
+    let after = [];
     if (!session.data.defeated.includes(enemyId)) {
         session.data.defeated.push(enemyId);
-        const scene = session.rt.enemyIndex[enemyId]?.def.defeatScene;
-        if (scene?.lines?.length) events.push({ type: 'scene', speaker: { ...(scene.speaker || {}) }, lines: [...scene.lines] });
+        const def = session.rt.enemyIndex[enemyId]?.def;
+        if (def?.defeatScene?.lines?.length) events.push(sceneEvent(def.defeatScene));
+        after = (def?.afterScenes || []).filter(sc => sc?.lines?.length).map(sceneEvent);
     }
-    events.push(...checkAutoQuests(session));
+    const quests = checkAutoQuests(session);
+    const lastDone = quests.map(ev => ev.type).lastIndexOf('questCompleted');
+    quests.splice(lastDone + 1 || quests.length, 0, ...after);
+    events.push(...quests);
     return events;
 }
 

@@ -902,11 +902,13 @@ describe('histoire complète', () => {
         let events = markEnemyDefeated(s, 'fengmeng_1');
         expect(events.map(e => e.type)).toEqual(['scene']);
         events = markEnemyDefeated(s, 'sun_1');
-        expect(events.map(e => e.type)).toEqual(['questCompleted', 'questStarted']);
+        // victoire, interlude avec Chang'e (scènes), puis la quête suivante
+        expect(events.filter(e => e.type !== 'scene').map(e => e.type)).toEqual(['questCompleted', 'questStarted']);
+        expect(events.map(e => e.type).slice(1, -1).every(t => t === 'scene')).toBe(true);
         expect(events[0]).toMatchObject({ gold: 80, ended: false });
         expect(events[0].xp).toBe(quest('q_sun_1').reward.xp);
         expect(events[0].xp).toBeGreaterThan(0);
-        expect(events[1].quest.id).toBe('q_sun_2');
+        expect(events[events.length - 1].quest.id).toBe('q_sun_2');
 
         const golds = [80];
         for (let n = 2; n <= 9; n++) {
@@ -922,8 +924,9 @@ describe('histoire complète', () => {
             expect(events[0]).toMatchObject({ type: 'questCompleted' });
             expect(events[0].quest.id).toBe(`q_sun_${n}`);
             golds.push(events[0].gold);
-            expect(events[1]).toMatchObject({ type: 'questStarted' });
-            expect(events[1].quest.id).toBe(n < 9 ? `q_sun_${n + 1}` : 'q_fengmeng');
+            const started = events.find(e => e.type === 'questStarted');
+            expect(events.indexOf(started)).toBe(events.length - 1);   // après l'interlude avec Chang'e
+            expect(started.quest.id).toBe(n < 9 ? `q_sun_${n + 1}` : 'q_fengmeng');
         }
         expect([...golds].sort((a, b) => a - b)).toEqual(golds);
 
@@ -1506,6 +1509,29 @@ describe('scènes de fin de duel (defeatScene)', () => {
         const events = markEnemyDefeated(s, 'sun_1');
         delete s.screens.rizieres.enemies.find(e => e.id === 'sun_1').defeatScene;
         expect(events.map(e => e.type)).toEqual(['scene', 'questCompleted', 'questStarted']);
+    });
+
+    test('afterScenes : interlude après le texte de victoire, avant la quête suivante, une seule fois', () => {
+        const s = createSession({});
+        talkTo(s, 'elder_wen');
+        const sun = s.screens.rizieres.enemies.find(e => e.id === 'sun_1');
+        const saved = sun.afterScenes;
+        sun.afterScenes = [{ speaker: { name: 'A', hero: true }, lines: ['a'] }, { speaker: { name: 'B' }, lines: [] }, { speaker: { name: 'C', npc: 'change' }, lines: ['c'] }];
+        const events = markEnemyDefeated(s, 'sun_1');
+        sun.afterScenes = saved;
+        expect(events.map(e => e.type)).toEqual(['questCompleted', 'scene', 'scene', 'questStarted']);
+        expect(events[1]).toEqual({ type: 'scene', speaker: { name: 'A', hero: true }, lines: ['a'] });
+        expect(events[2].speaker.npc).toBe('change');
+        expect(markEnemyDefeated(s, 'sun_1')).toEqual([]);
+    });
+
+    test('afterScenes sans quête validée : l\'interlude suit les autres événements', () => {
+        const s = createSession({});
+        const gob = s.screens.rizieres.enemies.find(e => e.id === 'rizieres_goblin');
+        gob.afterScenes = [{ speaker: { name: 'X' }, lines: ['x'] }];
+        const events = markEnemyDefeated(s, 'rizieres_goblin');
+        delete gob.afterScenes;
+        expect(events.map(e => e.type)).toEqual(['scene']);
     });
 
     test('Chang\'e boit l\'élixir : scène de la phase 1, puis Fengmeng entre en fureur', () => {

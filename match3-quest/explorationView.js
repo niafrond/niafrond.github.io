@@ -162,12 +162,14 @@ export function createExplorationView(cfg) {
         const npcs = screens.flatMap(sc => sc.npcs).map(n => [n.id, n.emoji]);
         const enemies = screens.flatMap(sc => sc.enemies).map(e => [e.spriteKey || e.id, e.templateId]);
         screens.flatMap(sc => sc.enemies).forEach(e => {
-            const sp = e.defeatScene?.speaker;
-            if (sp?.npc) npcs.push([sp.npc, sp.emoji]);
-            if (sp?.enemy) {
-                const def = session.rt.enemyIndex[sp.enemy]?.def;
-                enemies.push([def?.spriteKey || sp.enemy, def?.templateId]);
-            }
+            [e.defeatScene, ...(e.afterScenes || [])].forEach(scene => {
+                const sp = scene?.speaker;
+                if (sp?.npc) npcs.push([sp.npc, sp.emoji]);
+                if (sp?.enemy) {
+                    const def = session.rt.enemyIndex[sp.enemy]?.def;
+                    enemies.push([def?.spriteKey || sp.enemy, def?.templateId]);
+                }
+            });
         });
         return { npcs, enemies };
     }
@@ -252,8 +254,12 @@ export function createExplorationView(cfg) {
 
     const NARRATOR = { emoji: '📜', name: 'Narrateur' };
 
-    // Locuteur d'une scène (`defeatScene.speaker`) : sprite de PNJ ou d'ennemi, emoji de repli sinon.
+    // Locuteur d'une scène (`defeatScene.speaker`) : sprite de PNJ, d'ennemi ou du héros (`hero: true`), emoji de repli sinon.
     function sceneSpeaker(sp = {}) {
+        if (sp.hero) {
+            const hero = cfg.getHero();
+            return { name: sp.name || hero.name, title: sp.title, sprite: heroSprite(hero.classId), emoji: sp.emoji || hero.emoji };
+        }
         const npcDef = sp.npc
             ? Object.values(session.screens).flatMap(sc => sc.npcs).find(n => n.id === sp.npc)
             : null;
