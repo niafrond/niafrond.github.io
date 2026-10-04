@@ -10,6 +10,7 @@ import { COMBAT_INTRO_MS, initializeAudioUI, playSfx, primeAudioFromGesture, get
 import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
+import { rechargeReusableItems } from "./items.js";
 import { exportSaveToFile, importSaveFromFile, downloadSaveFile } from "./saveManager.js";
 import { worldZones } from "./worldMap.js";
 import { mountWorldMap } from "./worldMapView.js";
@@ -231,6 +232,8 @@ function init() {
         const tabs = document.querySelector('.tabs');
         if(tabs) tabs.style.display = 'flex';
         activateCombatTab();
+        const recharged = rechargeReusableItems(player);
+        if(recharged.length) { log(`Rechargé : ${recharged.map(i => i.name).join(', ')}.`); saveUpdate(); }
         exploration.show();
     };
 

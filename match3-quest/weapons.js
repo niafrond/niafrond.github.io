@@ -94,6 +94,7 @@ export const allWeapons = [
         damage: 30,
         actionPoints: 5,
         minLevel: 5,
+        twoHanded: true,
         description: "Une lourde hache de bataille à deux mains, prisée des cavaliers du Nord"
     },
     {
@@ -103,6 +104,7 @@ export const allWeapons = [
         damage: 50,
         actionPoints: 6,
         minLevel: 10,
+        twoHanded: true,
         description: "Une hallebarde à large lame courbe qui peut fendre un ennemi en deux"
     },
     {
@@ -112,6 +114,7 @@ export const allWeapons = [
         damage: 80,
         actionPoints: 7,
         minLevel: 15,
+        twoHanded: true,
         description: "Une hache terrifiante qui glace le sang des ennemis"
     },
 
@@ -208,6 +211,7 @@ export const allWeapons = [
         damage: 20,
         actionPoints: 3,
         minLevel: 5,
+        twoHanded: true,
         description: "Un arc long de bambou avec une portée impressionnante"
     },
     {
@@ -217,6 +221,7 @@ export const allWeapons = [
         damage: 35,
         actionPoints: 4,
         minLevel: 9,
+        twoHanded: true,
         description: "Un arc de corne et de tendon, puissant et précis"
     },
     {
@@ -226,6 +231,7 @@ export const allWeapons = [
         damage: 55,
         actionPoints: 4,
         minLevel: 14,
+        twoHanded: true,
         description: "Le grand arc rouge de l'archer divin, qui ne manque jamais sa cible"
     },
 

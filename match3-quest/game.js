@@ -240,6 +240,14 @@ export function applyDamage(target, damage, options = {}){
         log(`${target.name} est faible à ${sourceColor} : +${affinityResult.delta} dégâts (niveau ${target.level}).`);
     }
 
+    // Bouclier équipé : absorbe un total de dégâts par combat (`absorbDamage`).
+    if(target === player && normalizedDamage > 0 && player.shieldAbsorbLeft > 0) {
+        const absorbedByShield = Math.min(player.shieldAbsorbLeft, normalizedDamage);
+        player.shieldAbsorbLeft -= absorbedByShield;
+        normalizedDamage -= absorbedByShield;
+        log(`${player.equipment?.leftHand?.name || 'Votre bouclier'} absorbe ${absorbedByShield} dégâts.`);
+    }
+
     // Bouclier mana: certains sorts redirigent les dégâts subis vers une réserve de mana.
     if(target === player && normalizedDamage > 0) {
         const manaShield = player.statusEffects?.manaShield;
@@ -446,6 +454,7 @@ export function grantStartingWeapon(weaponId){
         player.weapons.push(weapon);
     }
     player.equippedWeapon = weapon;
+    if(player.equipment) player.equipment.rightHand = weapon;
     updateAvailableWeapons();
     log(`Vous recevez votre arme de départ : ${weapon.name}.`);
     return weapon;
@@ -733,6 +742,8 @@ export function restartCombat(){
         player.defense -= player.tempDefense;
         player.tempDefense = 0;
     }
+    const wornShield = player.equipment?.leftHand;
+    player.shieldAbsorbLeft = wornShield?.type === 'shield' ? (wornShield.absorbDamage || 0) : 0;
     player.hasRevive = false;
     player.revivePercent = 0;
     player.regenEffect = null;
@@ -912,6 +923,7 @@ export function loadGameData() {
             player.defense = loaded.defense ?? player.defense;
             player.inventory = loaded.inventory ?? player.inventory;
             player.equipment = { rightHand: null, leftHand: null, item: null, ...(loaded.equipment || {}) };
+            player.equipment.rightHand = loaded.equippedWeapon ?? null;
             player.activeInventoryIndex = loaded.activeInventoryIndex ?? player.activeInventoryIndex;
             player.tempAttack = loaded.tempAttack ?? player.tempAttack;
             player.tempDefense = loaded.tempDefense ?? player.tempDefense;
@@ -957,6 +969,10 @@ function normalizeActiveInventoryIndex() {
     if(!Number.isInteger(player.activeInventoryIndex) || player.activeInventoryIndex < 0 || player.activeInventoryIndex >= player.inventory.length) {
         player.activeInventoryIndex = 0;
     }
+    if(player.inventory[player.activeInventoryIndex]?.type === 'shield') {
+        const usable = player.inventory.findIndex(item => item?.type !== 'shield');
+        player.activeInventoryIndex = usable >= 0 ? usable : null;
+    }
 }
 
 function getActiveInventoryItem() {
@@ -971,6 +987,7 @@ function ensureCombatUsableActiveItem() {
 
     const activeItem = getActiveInventoryItem();
     if(activeItem?.type === 'consumable') return;
+    if(activeItem?.type === 'reusable' && player.level >= (activeItem.minLevel || 1)) return;
 
     const consumableIndex = player.inventory.findIndex(item => item?.type === 'consumable');
     if(consumableIndex >= 0) {
@@ -1502,11 +1519,11 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
 
 // -------------------------------------
 // Combat avec arme
-export function useWeapon(){
+export function useWeapon(hand = 'right'){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(currentTurn !== 'player'){ log("Seul le joueur actif peut utiliser une attaque."); return; }
-    if(!player.equippedWeapon){ log("Aucune arme équipée !"); return; }
-    const weapon = player.equippedWeapon;
+    const weapon = hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
+    if(!weapon){ log("Aucune arme équipée !"); return; }
     if(player.combatPoints < weapon.actionPoints){ 
         log(`Il faut ${weapon.actionPoints} points d'action pour utiliser ${weapon.name}.`); 
         return; 
@@ -2832,7 +2849,20 @@ export function updateAvailableWeapons(){
     }
 }
 
-export function equipWeapon(weaponId){
+// Retire ce qui occupe la main gauche ; un bouclier retourne dans l'inventaire (et perd son bonus de défense).
+function clearLeftHand(){
+    if(!player.equipment) player.equipment = { rightHand: null, leftHand: null, item: null };
+    const previous = player.equipment.leftHand;
+    player.equipment.leftHand = null;
+    if(previous?.type === 'shield'){
+        if(!player.inventory) player.inventory = [];
+        player.inventory.push(previous);
+        if(previous.defense) player.defense = Math.max(0, (player.defense || 0) - previous.defense);
+    }
+    return previous;
+}
+
+export function equipWeapon(weaponId, hand = 'right'){
     if(gameState.combatState === 'active'){
         log('Vous ne pouvez pas modifier vos armes pendant le combat !');
         return;
@@ -2843,54 +2873,66 @@ export function equipWeapon(weaponId){
         log(`Nécessite niveau ${weapon.minLevel} pour équiper ${weapon.name}.`);
         return;
     }
+    if(!player.equipment) player.equipment = { rightHand: null, leftHand: null, item: null };
+    if(hand === 'left'){
+        if(weapon.twoHanded){ log(`${weapon.name} se manie à deux mains : main droite uniquement.`); return; }
+        if(player.equippedWeapon?.twoHanded){ log(`Une arme à deux mains occupe déjà vos deux mains.`); return; }
+        if(player.equippedWeapon?.id === weapon.id){ log(`${weapon.name} est déjà en main droite.`); return; }
+        clearLeftHand();
+        player.equipment.leftHand = weapon;
+        saveUpdate();
+        log(`${weapon.name} équipée en main gauche.`);
+        createWeaponButton();
+        return;
+    }
+    if(weapon.twoHanded && player.equipment.leftHand){
+        const freed = clearLeftHand();
+        log(`${weapon.name} se manie à deux mains : ${freed.name} est retiré de la main gauche.`);
+    }
+    if(player.equipment.leftHand?.id === weapon.id) player.equipment.leftHand = null;
     player.equippedWeapon = weapon;
+    player.equipment.rightHand = weapon;
     saveUpdate();
     log(`${weapon.name} équipée.`);
     createWeaponButton();
 }
 
-export function unequipWeapon(){
+export function unequipWeapon(hand = 'right'){
     if(gameState.combatState === 'active'){
         log('Vous ne pouvez pas modifier vos armes pendant le combat !');
+        return;
+    }
+    if(hand === 'left'){
+        const left = getLeftHandWeapon();
+        if(!left) return;
+        player.equipment.leftHand = null;
+        saveUpdate();
+        log(`${left.name} retirée.`);
+        createWeaponButton();
         return;
     }
     if(!player.equippedWeapon) return;
     const weaponName = player.equippedWeapon.name;
     player.equippedWeapon = null;
+    if(player.equipment) player.equipment.rightHand = null;
     saveUpdate();
     log(`${weaponName} retirée.`);
     createWeaponButton();
 }
 
-export function createWeaponButton(){
-    const container = document.getElementById('weapon-button');
-    if(!container) return;
-    container.innerHTML = "";
-    
-    if(!player.equippedWeapon){
-        if(!player.availableWeapons || player.availableWeapons.length === 0) {
-            container.innerHTML = '';
-        } else {
-            container.innerHTML = `
-                <div class="enemy-spell-item disabled">
-                    <div class="spell-name">Aucune arme equipee</div>
-                    <div class="spell-cost">Allez dans l'onglet Armes pour en equiper une.</div>
-                </div>
-            `;
-        }
-        updateWeaponsTab();
-        return;
-    }
-    
-    const weapon = player.equippedWeapon;
+export function getLeftHandWeapon(){
+    const left = player.equipment?.leftHand;
+    return left && left.type !== 'shield' && left.damage !== undefined ? left : null;
+}
+
+function appendWeaponButton(container, weapon, hand){
     const btn = document.createElement('div');
     btn.className = 'enemy-spell-item';
     btn.tabIndex = 0;
-    
     const icon = getWeaponIcon(weapon.type);
-    
+    const handLabel = hand === 'left' ? ' (main gauche)' : '';
     btn.innerHTML = `
-        <div class="spell-name">${icon} ${weapon.name}</div>
+        <div class="spell-name">${icon} ${weapon.name}${handLabel}</div>
         <div class="spell-cost">${weapon.actionPoints} ${svgIcon('arrow')} - ${weapon.damage} ${svgIcon('skull')}</div>
     `;
     if(player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints) {
@@ -2898,16 +2940,37 @@ export function createWeaponButton(){
         btn.tabIndex = -1;
         btn.onclick = null;
     } else {
-        btn.onclick = () => useWeapon();
+        btn.onclick = () => useWeapon(hand);
         btn.onkeydown = (event) => {
             if(event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                useWeapon();
+                useWeapon(hand);
             }
         };
     }
     container.appendChild(btn);
-    
+}
+
+export function createWeaponButton(){
+    const container = document.getElementById('weapon-button');
+    if(!container) return;
+    container.innerHTML = "";
+
+    if(!player.equippedWeapon){
+        if(player.availableWeapons && player.availableWeapons.length > 0) {
+            container.innerHTML = `
+                <div class="enemy-spell-item disabled">
+                    <div class="spell-name">Aucune arme equipee</div>
+                    <div class="spell-cost">Allez dans l'onglet Armes pour en equiper une.</div>
+                </div>
+            `;
+        }
+    } else {
+        appendWeaponButton(container, player.equippedWeapon, 'right');
+    }
+    const leftWeapon = getLeftHandWeapon();
+    if(leftWeapon) appendWeaponButton(container, leftWeapon, 'left');
+
     updateWeaponsTab();
 }
 
@@ -2917,27 +2980,30 @@ export function updateWeaponsTab(){
     const availableList = document.getElementById('available-weapons-list');
     if(!equippedDiv || !availableList) return;
     
-    // Arme équipée
-    equippedDiv.innerHTML = '<h3>Arme équipée</h3>';
-    if(!player.equippedWeapon){
-        equippedDiv.innerHTML += '<p><em>Aucune arme équipée</em></p>';
-    } else {
-        const weapon = player.equippedWeapon;
-        const icon = getWeaponIcon(weapon.type);
+    // Armes équipées (main droite / main gauche)
+    equippedDiv.innerHTML = '<h3>Armes équipées</h3>';
+    const equippedRow = (weapon, hand) => {
         const div = document.createElement('div');
         div.className = 'weapon-item equipped-weapon';
         div.innerHTML = `
-            <span class="weapon-icon">${icon}</span>
+            <span class="weapon-icon">${getWeaponIcon(weapon.type)}</span>
             <div class="weapon-details">
-                <span class="weapon-name">${weapon.name}</span>
+                <span class="weapon-name">${weapon.name} <em>(${hand === 'left' ? 'main gauche' : 'main droite'}${weapon.twoHanded ? ', deux mains' : ''})</em></span>
                 <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
-            <button class="weapon-action" onclick="window.unequipWeapon()">Retirer</button>
+            <button class="weapon-action" onclick="window.unequipWeapon('${hand}')">Retirer</button>
         `;
         equippedDiv.appendChild(div);
+    };
+    if(!player.equippedWeapon){
+        equippedDiv.innerHTML += '<p><em>Aucune arme en main droite</em></p>';
+    } else {
+        equippedRow(player.equippedWeapon, 'right');
     }
-    
+    const equippedLeft = getLeftHandWeapon();
+    if(equippedLeft) equippedRow(equippedLeft, 'left');
+
     // Armes disponibles
     availableList.innerHTML = '';
     const ownedWeapons = player.weapons || [];
@@ -2954,8 +3020,11 @@ export function updateWeaponsTab(){
         div.className = 'weapon-item available-weapon';
         const locked = player.level < weapon.minLevel;
         if(locked) div.classList.add('is-locked');
-        const isEquipped = player.equippedWeapon && player.equippedWeapon.id === weapon.id;
+        const isRight = player.equippedWeapon?.id === weapon.id;
+        const isLeft = getLeftHandWeapon()?.id === weapon.id;
+        const isEquipped = isRight || isLeft;
         if(isEquipped) div.classList.add('is-equipped');
+        const leftBlocked = weapon.twoHanded || player.equippedWeapon?.twoHanded;
         
         div.innerHTML = `
             <span class="weapon-icon">${icon}</span>
@@ -2964,7 +3033,10 @@ export function updateWeaponsTab(){
                 <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
-            <button class="weapon-action" ${isEquipped || locked ? 'disabled' : ''} onclick="window.equipWeapon('${weapon.id}')">${isEquipped ? 'Équipée' : locked ? `Niv. ${weapon.minLevel} requis` : 'Équiper'}</button>
+            <div class="weapon-hand-actions">
+                <button class="weapon-action" ${isRight || locked ? 'disabled' : ''} onclick="window.equipWeapon('${weapon.id}', 'right')">${isRight ? 'Main droite' : locked ? `Niv. ${weapon.minLevel} requis` : 'Main droite'}</button>
+                ${locked ? '' : `<button class="weapon-action" ${isLeft || isRight || leftBlocked ? 'disabled' : ''} title="${weapon.twoHanded ? 'Arme à deux mains' : ''}" onclick="window.equipWeapon('${weapon.id}', 'left')">${isLeft ? 'Main gauche' : 'Main gauche'}</button>`}
+            </div>
         `;
         availableList.appendChild(div);
     });
@@ -2975,35 +3047,41 @@ export function updateWeaponsTab(){
 }
 
 
-// Boucliers et objets rechargeables : affichés dès l'achat, non sélectionnables tant que le niveau manque.
-const GEAR_SLOT = { shield: 'leftHand', reusable: 'item' };
-const GEAR_SLOT_LABEL = { leftHand: 'Main gauche', item: 'Objet' };
-
+// Boucliers (main gauche) et objets rechargeables (objet actif) : affichés dès l'achat,
+// non sélectionnables tant que le niveau requis n'est pas atteint.
 function renderGearList(container){
     if(!player.equipment) player.equipment = { rightHand: null, leftHand: null, item: null };
-    const owned = (player.inventory || []).map((it, index) => ({ it, index })).filter(({ it }) => GEAR_SLOT[it.type]);
-    const worn = ['leftHand', 'item'].map(slot => ({ slot, it: player.equipment[slot] })).filter(e => e.it);
-    if(owned.length === 0 && worn.length === 0) return;
+    const inventory = player.inventory || [];
+    const wornShield = player.equipment.leftHand?.type === 'shield' ? player.equipment.leftHand : null;
+    const shields = inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'shield');
+    const reusables = inventory.map((it, index) => ({ it, index })).filter(({ it }) => it.type === 'reusable');
+    if(!wornShield && shields.length === 0 && reusables.length === 0) return;
     const section = document.createElement('div');
     section.innerHTML = '<h3 class="shop-section-title">Boucliers et objets</h3>';
-    const row = (it, slot, action) => {
+    const row = (it, details, action) => {
         const div = document.createElement('div');
-        div.className = 'weapon-item available-weapon' + (action.locked ? ' is-locked' : '') + (action.worn ? ' is-equipped' : '');
-        const stats = [it.defense ? `Déf. +${it.defense}` : '', it.chargesPerCycle ? `${it.chargesLeft ?? it.chargesPerCycle}/${it.chargesPerCycle} charges` : '', `Niv. ${it.minLevel}`, GEAR_SLOT_LABEL[slot]].filter(Boolean).join(' • ');
+        div.className = 'weapon-item available-weapon' + (action.locked ? ' is-locked' : '') + (action.current ? ' is-equipped' : '');
         div.innerHTML = `
-            <span class="weapon-icon">${svgIcon(it.type === 'shield' ? 'shield' : 'arrow')}</span>
+            <span class="weapon-icon">${svgIcon(it.type === 'shield' ? 'shield' : 'bag')}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${it.name}</span>
-                <span class="weapon-stats">${stats}</span>
+                <span class="weapon-stats">${details}</span>
                 <span class="weapon-description">${it.description || ''}</span>
             </div>
-            <button class="weapon-action" ${action.locked ? 'disabled' : ''} onclick="${action.onclick}">${action.label}</button>`;
+            <button class="weapon-action" ${action.disabled ? 'disabled' : ''} onclick="${action.onclick || ''}">${action.label}</button>`;
         section.appendChild(div);
     };
-    worn.forEach(({ slot, it }) => row(it, slot, { worn: true, label: 'Retirer', onclick: `window.unequipGear('${slot}')` }));
-    owned.forEach(({ it, index }) => {
+    const shieldStats = it => [it.defense ? `Déf. +${it.defense}` : '', it.absorbDamage ? `absorbe ${it.absorbDamage}` : '', `Niv. ${it.minLevel}`, 'Main gauche'].filter(Boolean).join(' • ');
+    if(wornShield) row(wornShield, shieldStats(wornShield), { current: true, label: 'Retirer', onclick: "window.unequipGear('leftHand')" });
+    shields.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);
-        row(it, GEAR_SLOT[it.type], { locked, label: locked ? `Niv. ${it.minLevel} requis` : 'Équiper', onclick: `window.equipGear(${index})` });
+        row(it, shieldStats(it), { locked, disabled: locked, label: locked ? `Niv. ${it.minLevel} requis` : 'Équiper', onclick: `window.equipGear(${index})` });
+    });
+    reusables.forEach(({ it, index }) => {
+        const locked = player.level < (it.minLevel || 1);
+        const isActive = index === player.activeInventoryIndex;
+        const details = `${it.chargesLeft ?? it.chargesPerCycle}/${it.chargesPerCycle} charges • Niv. ${it.minLevel} • Objet`;
+        row(it, details, { locked, current: isActive, disabled: locked || isActive, label: isActive ? 'Objet actif' : locked ? `Niv. ${it.minLevel} requis` : 'Choisir', onclick: `window.setActiveInventoryItem(${index})` });
     });
     container.appendChild(section);
 }
@@ -3011,16 +3089,17 @@ function renderGearList(container){
 export function equipGear(inventoryIndex){
     if(gameState.combatState === 'active'){ log('Vous ne pouvez pas modifier votre équipement pendant le combat !'); return; }
     const it = player.inventory?.[inventoryIndex];
-    if(!it || !GEAR_SLOT[it.type]) return;
+    if(!it || it.type !== 'shield') return;
     if(player.level < (it.minLevel || 1)){ log(`Nécessite niveau ${it.minLevel} pour équiper ${it.name}.`); return; }
     if(!player.equipment) player.equipment = { rightHand: null, leftHand: null, item: null };
-    const slot = GEAR_SLOT[it.type];
-    const previous = player.equipment[slot];
-    const result = equipGearSlot(player, it, slot);
+    const previous = player.equipment.leftHand;
+    const result = equipGearSlot(player, it, 'leftHand');
     if(!result.success){ log(result.message || `${it.name} ne peut pas être équipé.`); return; }
     player.inventory.splice(inventoryIndex, 1);
-    if(previous){ player.inventory.push(previous); if(previous.defense) player.defense = Math.max(0, (player.defense || 0) - previous.defense); }
+    if(previous?.type === 'shield'){ player.inventory.push(previous); if(previous.defense) player.defense = Math.max(0, (player.defense || 0) - previous.defense); }
     if(it.defense) player.defense = (player.defense || 0) + it.defense;
+    // L'index de l'objet actif suit le décalage de l'inventaire
+    if(Number.isInteger(player.activeInventoryIndex) && player.activeInventoryIndex > inventoryIndex) player.activeInventoryIndex--;
     saveUpdate();
     log(`${it.name} équipé.`);
     updateWeaponsTab();
@@ -3028,8 +3107,8 @@ export function equipGear(inventoryIndex){
 
 export function unequipGear(slot){
     if(gameState.combatState === 'active'){ log('Vous ne pouvez pas modifier votre équipement pendant le combat !'); return; }
+    if(slot !== 'leftHand' || player.equipment?.leftHand?.type !== 'shield') return;
     const it = unequipGearSlot(player, slot);
-    if(!it) return;
     player.inventory.push(it);
     if(it.defense) player.defense = Math.max(0, (player.defense || 0) - it.defense);
     saveUpdate();
@@ -3048,7 +3127,7 @@ export function updateInventoryTab(){
 
     inventoryList.innerHTML = '';
 
-    if(!player.inventory || player.inventory.length === 0){
+    if(!player.inventory || !player.inventory.some(item => item.type !== 'shield')){
         inventoryList.innerHTML = `
             <div class="inventory-slot inventory-slot-empty">
                 <span class="slot-icon">${svgIcon('box')}</span>
@@ -3059,6 +3138,7 @@ export function updateInventoryTab(){
     }
 
     player.inventory.forEach((item, index) => {
+        if(item.type === 'shield') return;
         const isActive = index === player.activeInventoryIndex;
         const rarityEmoji = getRarityIcon(item.rarity);
         const rarityColor = getRarityColor(item.rarity);
@@ -3124,7 +3204,7 @@ export function updateItemButton(){
     btn.tabIndex = 0;
     btn.innerHTML = `
         <div class="spell-name">${svgIcon('bag')} ${item.name}</div>
-        <div class="spell-cost">${pa} ${svgIcon('arrow')}</div>
+        <div class="spell-cost">${pa} ${svgIcon('arrow')}${item.type === 'reusable' ? ` • ${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle}` : ''}</div>
     `;
     const showDetails = () => showItemTooltip(btn, item, { isEnemyItem: false });
     const hideDetails = () => hideSpellTooltip();
@@ -3162,6 +3242,9 @@ export function setActiveInventoryItem(index){
     if(!Array.isArray(player.inventory) || player.inventory.length === 0) return;
     if(!Number.isInteger(index) || index < 0 || index >= player.inventory.length) return;
     if(player.activeInventoryIndex === index) return;
+    const chosen = player.inventory[index];
+    if(chosen.type === 'shield') return;
+    if(player.level < (chosen.minLevel || 1)){ log(`Nécessite niveau ${chosen.minLevel} pour utiliser ${chosen.name}.`); return; }
 
     player.activeInventoryIndex = index;
     const item = player.inventory[index];
