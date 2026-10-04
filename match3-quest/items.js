@@ -1,3 +1,4 @@
+import { manaIcon } from './icons.js';
 // Système d'objets et inventaire
 
 // Bibliothèque de tous les objets disponibles
@@ -106,15 +107,10 @@ export function getRandomItem(playerLevel) {
     return weightedItems[randomIndex];
 }
 
-// Obtenir l'emoji selon la rareté
-export function getRarityEmoji(rarity) {
-    const emojis = {
-        common: '⚪',
-        uncommon: '🟢',
-        rare: '🔵',
-        legendary: '🟣'
-    };
-    return emojis[rarity] || '⚪';
+// Pastille de couleur selon la rareté (icône SVG)
+export function getRarityIcon(rarity) {
+    const colors = { common: 'white', uncommon: 'green', rare: 'blue', legendary: 'purple' };
+    return manaIcon(colors[rarity] || 'white');
 }
 
 // Obtenir la couleur selon la rareté
@@ -150,66 +146,66 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     let message = "";
     if(item.effect.heal) {
         player.hp = Math.min(player.maxHp, player.hp + item.effect.heal);
-        message += `💚 Vous récupérez ${item.effect.heal} HP. `;
+        message += `Vous récupérez ${item.effect.heal} HP. `;
     }
     if(item.effect.mana) {
         Object.keys(player.mana).forEach(color => {
             const manaCap = player.manaCaps?.[color] ?? player.maxMana;
             player.mana[color] = Math.min(manaCap, player.mana[color] + item.effect.mana);
         });
-        message += `✨ Vous gagnez ${item.effect.mana} mana de chaque couleur. `;
+        message += `Vous gagnez ${item.effect.mana} mana de chaque couleur. `;
     }
     if(item.effect.tempAttack) {
         player.tempAttack = (player.tempAttack || 0) + item.effect.tempAttack;
         player.attack += item.effect.tempAttack;
-        message += `⚔️ Votre attaque augmente de ${item.effect.tempAttack} pour ce combat. `;
+        message += `Votre attaque augmente de ${item.effect.tempAttack} pour ce combat. `;
     }
     if(item.effect.tempDefense) {
         player.tempDefense = (player.tempDefense || 0) + item.effect.tempDefense;
         player.defense += item.effect.tempDefense;
-        message += `🛡️ Votre défense augmente de ${item.effect.tempDefense} pour ce combat. `;
+        message += `Votre défense augmente de ${item.effect.tempDefense} pour ce combat. `;
     }
     if(item.effect.revive) {
         player.hasRevive = true;
         player.revivePercent = item.effect.revive;
-        message += `🔥 Vous serez ressuscité si vous mourrez ! `;
+        message += `Vous serez ressuscité si vous mourrez ! `;
     }
     if(item.effect.gainActionPoints) {
         player.combatPoints = (player.combatPoints || 0) + item.effect.gainActionPoints;
-        message += `🏹 Vous gagnez ${item.effect.gainActionPoints} point(s) d'action. `;
+        message += `Vous gagnez ${item.effect.gainActionPoints} point(s) d'action. `;
     }
     if(item.effect.extraTurn) {
         const extraTurns = Math.max(1, Math.floor(item.effect.extraTurn));
         const currentBonusTurns = Math.max(0, Math.floor(Number(player.bonusTurn) || 0));
         player.bonusTurn = currentBonusTurns + extraTurns;
-        message += `⏩ Vous gagnez ${extraTurns} tour${extraTurns > 1 ? 's' : ''} supplémentaire${extraTurns > 1 ? 's' : ''} ! `;
+        message += `Vous gagnez ${extraTurns} tour${extraTurns > 1 ? 's' : ''} supplémentaire${extraTurns > 1 ? 's' : ''} ! `;
     }
     if(item.effect.randomMana !== undefined) {
         const manaColors = Object.keys(player.mana);
         const chosenColor = manaColors[Math.floor(Math.random() * manaColors.length)];
         const manaCap = player.manaCaps?.[chosenColor] ?? player.maxMana;
         player.mana[chosenColor] = Math.min(manaCap, player.mana[chosenColor] + item.effect.randomMana);
-        message += `✨ Vous gagnez ${item.effect.randomMana} mana ${chosenColor}. `;
+        message += `Vous gagnez ${item.effect.randomMana} mana ${chosenColor}. `;
     }
     if(item.effect.regen) {
         player.regenEffect = { hp: item.effect.regen, turnsLeft: item.effect.duration || 3 };
-        message += `💊 Régénération de ${item.effect.regen} HP/tour pendant ${item.effect.duration || 3} tours. `;
+        message += `Régénération de ${item.effect.regen} HP/tour pendant ${item.effect.duration || 3} tours. `;
     }
     if(item.effect.lifesteal) {
         player.lifesteal = (player.lifesteal || 0) + item.effect.lifesteal;
-        message += `🩸 Vol de vie ${Math.round(item.effect.lifesteal * 100)}% activé pour ce combat. `;
+        message += `Vol de vie ${Math.round(item.effect.lifesteal * 100)}% activé pour ce combat. `;
     }
     if(item.effect.manaMultiplier) {
         player.manaMultiplier = { mult: item.effect.manaMultiplier, turnsLeft: item.effect.duration || 3 };
-        message += `✨ Gain de mana ×${item.effect.manaMultiplier} pendant ${item.effect.duration || 3} tours. `;
+        message += `Gain de mana ×${item.effect.manaMultiplier} pendant ${item.effect.duration || 3} tours. `;
     }
     if(item.effect.damageReduction) {
         player.damageReduction = (player.damageReduction || 0) + item.effect.damageReduction;
-        message += `🛡️ Réduction des dégâts subis de ${Math.round(item.effect.damageReduction * 100)}% pour ce combat. `;
+        message += `Réduction des dégâts subis de ${Math.round(item.effect.damageReduction * 100)}% pour ce combat. `;
     }
     if(item.effect.critChance) {
         player.tempCritChance = (player.tempCritChance || 0) + item.effect.critChance;
-        message += `🎯 Chances de critique +${item.effect.critChance}% pour ce combat. `;
+        message += `Chances de critique +${item.effect.critChance}% pour ce combat. `;
     }
 
     // Retirer l'objet consommable de l'inventaire

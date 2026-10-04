@@ -1,6 +1,7 @@
 // Animations « pixel art » plein écran : intro de la partie, fin de la légende, dialogues de boss.
 // Les scènes sont dessinées sur un canvas basse définition (160×90) agrandi sans lissage.
 // Chaque scène retourne une Promise résolue à la fin ou au toucher/clic/touche (passer).
+import { icon } from './icons.js';
 import { playSfx } from './sound.js';
 
 // Taille logique de la scène : 16:9 en paysage, 9:16 en portrait (mise à jour à chaque scène).
@@ -34,7 +35,7 @@ function mount(extraClass = '') {
     canvas.className = P ? 'cine-canvas portrait' : 'cine-canvas';
     const skip = document.createElement('div');
     skip.className = 'cine-skip';
-    skip.textContent = 'Toucher pour passer ▶';
+    skip.textContent = 'Toucher pour passer ►';
     overlay.append(canvas, skip);
     document.body.appendChild(overlay);
     return { overlay, canvas, ctx: canvas.getContext('2d') };
@@ -382,7 +383,7 @@ export function playEndingAnimation() {
                     <div class="cine-ending-fin">FIN</div>
                     <div class="cine-ending-legend">Ainsi s'achève la légende de Hou Yi.<br>Chaque automne, là-haut, quelqu'un vous sourira.</div>
                 </div>
-                <div class="cine-ending-prompt">▶ Toucher pour continuer</div>`);
+                <div class="cine-ending-prompt">► Toucher pour continuer</div>`);
         },
         draw(ctx, t) {
             if (!layout) {
@@ -650,7 +651,7 @@ export function playBossDialogue(host, enc, spriteHtml, heroName = 'Hou Yi') {
             const line = lines[idx];
             const isBoss = line.who === 'boss';
             box.classList.toggle('hero', !isBoss);
-            portrait.innerHTML = isBoss ? spriteHtml : '🏹';
+            portrait.innerHTML = isBoss ? spriteHtml : icon('bow');
             nameEl.textContent = isBoss ? bossName : heroName;
             full = line.text;
             pos = 0;
@@ -854,7 +855,7 @@ export function playTitleScreen() {
                 <div class="title-main">HOU YI</div>
                 <div class="title-sub">ET LES DIX SOLEILS</div>
             </div>
-            <div class="title-start">▶ Toucher pour commencer</div>`;
+            <div class="title-start">► Toucher pour commencer</div>`;
         document.body.appendChild(overlay);
         const canvas = overlay.querySelector('canvas');
         const ctx = canvas.getContext('2d');
@@ -1187,7 +1188,7 @@ export function playPrologueAnimation() {
         overlay.insertAdjacentHTML('beforeend', `
             <div class="cine-prologue-caption"><div class="cine-prologue-text"></div><div class="cine-prologue-next">▼</div></div>
             <div class="cine-prologue-dots">${PRO_SCENES.map(() => '<i></i>').join('')}</div>
-            <button type="button" class="cine-prologue-skip">Passer ⏭</button>`);
+            <button type="button" class="cine-prologue-skip">Passer ►►</button>`);
         const textEl = overlay.querySelector('.cine-prologue-text');
         const dots = overlay.querySelectorAll('.cine-prologue-dots i');
         const reduced = prefersReducedMotion();

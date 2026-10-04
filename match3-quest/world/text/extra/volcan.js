@@ -25,7 +25,6 @@ export default {
     alchemist_dan: {
       name: "Dan",
       title: "Alchimiste du cinabre",
-      emoji: "⚗️",
       idle: [
         "Je cherche l'élixir de longue vie. Je n'ai trouvé que des brûlures de longue durée.",
         "Le cinabre est beau, mortel et cher. Comme la plupart des choses intéressantes."
@@ -42,7 +41,6 @@ export default {
     stoker_ge: {
       name: "Ge",
       title: "Chauffeur des bains",
-      emoji: "🔥",
       idle: [
         "J'entretiens la vapeur. Mon seul interlocuteur est un tuyau qui glougloute.",
         "Un jour, je prendrai un bain, moi aussi. Quand j'aurai le temps."
@@ -59,7 +57,6 @@ export default {
     geologist_zhou: {
       name: "Zhou",
       title: "Géologue des gorges",
-      emoji: "🪨",
       idle: [
         "Chaque roche est une phrase. Celle-ci dit : « Éloigne-toi, imbécile ».",
         "Je cherche d'où vient la chaleur. On me répond : « de la terre ». C'est vague."
@@ -76,7 +73,6 @@ export default {
     widow_cai: {
       name: "Dame Cai",
       title: "Veuve au grand cœur",
-      emoji: "👩",
       idle: [
         "Mon mari est tombé dans la mine, un soir d'éboulement. Il me manque, mais le volcan est respectueux.",
         "Je fais des gâteaux de riz pour les mineurs. Ils les mangent sans lever les yeux. C'est un compliment."
@@ -93,7 +89,6 @@ export default {
     bath_mu: {
       name: "Mu",
       title: "Gardienne des bains",
-      emoji: "🛁",
       idle: [
         "Les bains soignent tout : douleurs, rancunes, même la timidité si l'eau est assez chaude.",
         "Ne parlez pas trop fort. Les geysers sont susceptibles."
@@ -110,7 +105,6 @@ export default {
     dragonet_xiaohong: {
       name: "Xiaohong",
       title: "Petit dragon de braise",
-      emoji: "🐲",
       idle: [
         "Grrr ! Je suis un dragon féroce ! Enfin, un dragonnet. Un très féroce dragonnet.",
         "J'ai perdu mon œuf. Pas le mien, celui de ma sœur. Elle va me manger."
@@ -133,7 +127,6 @@ export default {
     courier_tong: {
       name: "Tong",
       title: "Messager des gorges",
-      emoji: "📮",
       idle: [
         "Je porte les lettres de gorge en gorge. Je ne les lis jamais. Presque.",
         "Ma botte gauche est brûlée. Ma botte droite aussi. C'est cohérent."
@@ -150,7 +143,6 @@ export default {
     lava_fish_bi: {
       name: "Bi",
       title: "Poisson de lave",
-      emoji: "🐟",
       idle: [
         "Blup ! Je nage dans le magma. Mes cousins me trouvent excentrique.",
         "Je suis le seul poisson qui rougisse quand on le regarde."
@@ -167,7 +159,6 @@ export default {
     ghost_miner_shu: {
       name: "Vieux Shu",
       title: "Fantôme de mineur",
-      emoji: "👻",
       idle: [
         "Je suis mort ici. C'est un bon endroit, il y fait chaud.",
         "Les nouveaux mineurs ne me voient pas. Seuls le jeune Bo et les archers au grand cœur m'entendent. Ils ont de bonnes oreilles."
@@ -184,7 +175,6 @@ export default {
     bath_old_wang: {
       name: "Grand-père Wang",
       title: "Vieux baigneur du hameau",
-      emoji: "🧓",
       idle: [
         "Je trempe mes pieds depuis soixante ans. Je suis le plus heureux des hommes.",
         "J'ai connu Fei dans un bain. Nous sommes frères d'eau chaude."
@@ -202,39 +192,27 @@ export default {
   chests: {
     alchemy_chest: {
       label: "Coffre de l'alchimiste",
-      openText: "🎁 Sous une pile de grimoires brûlés, un coffret de cinabre et de pièces.",
-      emoji: "⚗️",
-      emojiOpened: "⚗️"
+      openText: "Sous une pile de grimoires brûlés, un coffret de cinabre et de pièces.",
     },
     stoker_box: {
       label: "Boîte du chauffeur",
-      openText: "🎁 Une boîte à tabac, remplie de pièces plutôt que de feuilles.",
-      emoji: "📦",
-      emojiOpened: "📦"
+      openText: "Une boîte à tabac, remplie de pièces plutôt que de feuilles.",
     },
     hot_spring_chest: {
       label: "Coffre des bains",
-      openText: "🎁 Au fond d'un bassin vidé, un coffre scellé de cire. Quelques pièces.",
-      emoji: "🛁",
-      emojiOpened: "🛁"
+      openText: "Au fond d'un bassin vidé, un coffre scellé de cire. Quelques pièces.",
     },
     obsidian_cache: {
       label: "Cache d'obsidienne",
-      openText: "🎁 Un éclat noir cache une cavité secrète. Elle contient de l'or fin et un œuf de basalte.",
-      emoji: "🥚",
-      emojiOpened: "🥚"
+      openText: "Un éclat noir cache une cavité secrète. Elle contient de l'or fin et un œuf de basalte.",
     },
     cinnabar_vault: {
       label: "Caveau de cinabre",
-      openText: "🎁 Un caveau rouge sang : cinabre pur, pièces de rubis et poussière d'or.",
-      emoji: "💎",
-      emojiOpened: "💎"
+      openText: "Un caveau rouge sang : cinabre pur, pièces de rubis et poussière d'or.",
     },
     journal_page_vol: {
       label: "Page coincée dans une fissure",
-      openText: "🎁 Une page brûlée aux coins : « Ma flèche a manqué, à l'entraînement. Il m'a regardé, enfin. Je n'aurais pas dû. »",
-      emoji: "📄",
-      emojiOpened: "📄"
+      openText: "Une page brûlée aux coins : « Ma flèche a manqué, à l'entraînement. Il m'a regardé, enfin. Je n'aurais pas dû. »",
     }
   },
   quests: [

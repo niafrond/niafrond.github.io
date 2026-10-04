@@ -39,10 +39,10 @@ export default {
             { id: 'singer_hailing', at: '5' }
         ],
         chests: [
-            { id: 'mer_garden_a', at: 'j', gold: 195, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'mer_garden_b', at: 'k', gold: 195, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
-            { id: 'mer_market_a', at: 'm', gold: 390, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
-            { id: 'mer_market_b', at: 'n', gold: 390, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+            { id: 'mer_garden_a', at: 'j', gold: 195, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'mer_garden_b', at: 'k', gold: 195, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'mer_market_a', at: 'm', gold: 390, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'mer_market_b', at: 'n', gold: 390, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]
     },
 
@@ -102,13 +102,13 @@ export default {
             { id: 'wreck_treasure', at: 'm', gold: 360 }
         ],
         enemies: [
-            { id: 'mer_tide_serpent', at: '1', templateId: 'deep_sea_serpent', emoji: '🐉', name: 'Serpent de marée', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Serpent de marée', level: 13 } },
-            { id: 'mer_kelp_witch', at: '2', templateId: 'ice_witch', emoji: '🧜‍♀️', name: 'Dame des algues givrées', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'mer_w_crab', at: '3', templateId: 'war_troll', emoji: '🦀', name: 'Crabe-roi des falaises', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
-            { id: 'mer_w_wraith', at: '5', templateId: 'plague_doctor', emoji: '🌊', name: 'Spectre de la marée', kind: 'patrol', patrol: ['5', '6'], offset: -1 },
-            { id: 'mer_w_cutter', at: '7', templateId: 'shadow_assassin', emoji: '🔪', name: 'Coupeur de filets', kind: 'sentinel', offset: 0 },
-            { id: 'mer_crab_a', at: 'n', templateId: 'iron_gladiator', emoji: '🦀', name: 'Crabe-soldat', kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' },
-            { id: 'mer_crab_b', at: 'o', templateId: 'iron_gladiator', emoji: '🦀', name: 'Crabe-soldat', kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' }
+            { id: 'mer_tide_serpent', at: '1', templateId: 'deep_sea_serpent', name: 'Serpent de marée', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Serpent de marée', level: 13 } },
+            { id: 'mer_kelp_witch', at: '2', templateId: 'ice_witch', name: 'Dame des algues givrées', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'mer_w_crab', at: '3', templateId: 'war_troll', name: 'Crabe-roi des falaises', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
+            { id: 'mer_w_wraith', at: '5', templateId: 'plague_doctor', name: 'Spectre de la marée', kind: 'patrol', patrol: ['5', '6'], offset: -1 },
+            { id: 'mer_w_cutter', at: '7', templateId: 'shadow_assassin', name: 'Coupeur de filets', kind: 'sentinel', offset: 0 },
+            { id: 'mer_crab_a', at: 'n', templateId: 'iron_gladiator', name: 'Crabe-soldat', kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' },
+            { id: 'mer_crab_b', at: 'o', templateId: 'iron_gladiator', name: 'Crabe-soldat', kind: 'sentinel', offset: 0, permanent: true, group: 'giant_crabs' }
         ],
         gate: {
             requires: 'tide_key_chest',

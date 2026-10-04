@@ -1,3 +1,4 @@
+import { icon } from "./icons.js";
 import { createCheatModeSection } from "./cheatMode.js";
 import { getMatch3Version } from "./version.js";
 
@@ -210,11 +211,11 @@ export function toggleMuted() {
 export function updateAudioToggleButton(button) {
     if (!button) return;
     const mode  = getMuteMode();
-    const icon  = mode === 'all' ? '🔇' : mode === 'music' ? '🎵' : mode === 'sfx' ? '🔕' : '🔊';
+    const iconName = mode === 'all' ? 'soundOff' : mode === 'sfx' ? 'music' : 'soundOn';
     const label = mode === 'all'   ? 'Tout coupé'       :
                   mode === 'music' ? 'Musique coupée'   :
                   mode === 'sfx'   ? 'Effets coupés'    : 'Son actif';
-    button.textContent = icon;
+    button.innerHTML = icon(iconName);
     button.setAttribute('aria-pressed', mode === 'all' ? 'true' : 'false');
     button.title = `${label} (clic: ouvrir les options audio) • v${getMatch3Version()}`;
 }
@@ -457,7 +458,7 @@ function openMuteModeChooser(button) {
     const title       = document.createElement('h3');
     title.style.cssText = 'margin:0 0 8px;font-size:1.05rem';
     const titleEmoji  = document.createElement('span');
-    titleEmoji.textContent = '🔊';
+    titleEmoji.innerHTML = icon('soundOn');
     titleEmoji.style.cssText = 'cursor:pointer;user-select:none;margin-right:6px';
     const titleText   = document.createElement('span');
     titleText.textContent = 'Audio';

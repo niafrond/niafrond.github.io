@@ -39,11 +39,11 @@ export default {
             { id: 'traveler_hui', at: '5' }
         ],
         chests: [
-            { id: 'nomad_trunk', at: '9', gold: 105, label: 'Malle du vieux nomade', emoji: '🧳', openText: '🎁 Une malle de feutre oubliée contre la palissade : des pièces, et un morceau de fromage vénérable.' },
-            { id: 'fauves_garden_a', at: 'j', gold: 165, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'fauves_garden_b', at: 'k', gold: 165, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
-            { id: 'fauves_market_a', at: 'm', gold: 330, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
-            { id: 'fauves_market_b', at: 'n', gold: 330, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+            { id: 'nomad_trunk', at: '9', gold: 105, label: 'Malle du vieux nomade', openText: 'Une malle de feutre oubliée contre la palissade : des pièces, et un morceau de fromage vénérable.' },
+            { id: 'fauves_garden_a', at: 'j', gold: 165, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'fauves_garden_b', at: 'k', gold: 165, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'fauves_market_a', at: 'm', gold: 330, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'fauves_market_b', at: 'n', gold: 330, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]
     },
 
@@ -102,15 +102,15 @@ export default {
             { id: 'pack_den', at: 'm', gold: 315 }
         ],
         enemies: [
-            { id: 'fauves_alpha_tiger', at: '1', templateId: 'fire_tiger', emoji: '🐯', name: 'Tigre alpha, Griffe-de-Feu', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Tigre alpha, Griffe-de-Feu', level: 11 } },
-            { id: 'fauves_lamb_wolf', at: '2', templateId: 'ember_wolf', emoji: '🐺', name: 'Loup chapardeur de braise', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'fauves_boar_chief', at: '3', templateId: 'flame_boar', emoji: '🐗', name: 'Hure, sanglier de flammes', kind: 'sentinel', offset: 1, permanent: true },
-            { id: 'fauves_w_pack_a', at: '4', templateId: 'ember_wolf', emoji: '🐺', name: 'Loup de la meute', kind: 'patrol', patrol: ['4', '5'], offset: 0 },
-            { id: 'fauves_w_pack_b', at: '6', templateId: 'fire_tiger', emoji: '🐅', name: 'Tigresse des herbes', kind: 'patrol', patrol: ['6', '7'], offset: -1 },
-            { id: 'fauves_w_ogre', at: 'y', templateId: 'war_troll', emoji: '👹', name: 'Ogre de la plaine', kind: 'sentinel', offset: 0 },
-            { id: 'fauves_hyena_a', at: 'n', templateId: 'ember_wolf', emoji: '🐺', name: 'Hyène de braise', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_hyenas' },
-            { id: 'fauves_hyena_b', at: 'o', templateId: 'ember_wolf', emoji: '🐺', name: 'Hyène de braise', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_hyenas' },
-            { id: 'fauves_ember_bull', at: 'p', templateId: 'flame_boar', emoji: '🐂', name: 'Taureau de braise', kind: 'sentinel', offset: 0, permanent: true }
+            { id: 'fauves_alpha_tiger', at: '1', templateId: 'fire_tiger', name: 'Tigre alpha, Griffe-de-Feu', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Tigre alpha, Griffe-de-Feu', level: 11 } },
+            { id: 'fauves_lamb_wolf', at: '2', templateId: 'ember_wolf', name: 'Loup chapardeur de braise', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'fauves_boar_chief', at: '3', templateId: 'flame_boar', name: 'Hure, sanglier de flammes', kind: 'sentinel', offset: 1, permanent: true },
+            { id: 'fauves_w_pack_a', at: '4', templateId: 'ember_wolf', name: 'Loup de la meute', kind: 'patrol', patrol: ['4', '5'], offset: 0 },
+            { id: 'fauves_w_pack_b', at: '6', templateId: 'fire_tiger', name: 'Tigresse des herbes', kind: 'patrol', patrol: ['6', '7'], offset: -1 },
+            { id: 'fauves_w_ogre', at: 'y', templateId: 'war_troll', name: 'Ogre de la plaine', kind: 'sentinel', offset: 0 },
+            { id: 'fauves_hyena_a', at: 'n', templateId: 'ember_wolf', name: 'Hyène de braise', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_hyenas' },
+            { id: 'fauves_hyena_b', at: 'o', templateId: 'ember_wolf', name: 'Hyène de braise', kind: 'sentinel', offset: 0, permanent: true, group: 'ember_hyenas' },
+            { id: 'fauves_ember_bull', at: 'p', templateId: 'flame_boar', name: 'Taureau de braise', kind: 'sentinel', offset: 0, permanent: true }
         ],
         gate: {
             requires: 'fauves_alpha_tiger',

@@ -6,24 +6,24 @@ console.log('=== Test du système de localStorage ===');
 // 1. Tester la présence d'une sauvegarde
 const savedData = localStorage.getItem('player');
 if (savedData) {
-    console.log('✅ Sauvegarde trouvée dans le localStorage');
+    console.log('Sauvegarde trouvée dans le localStorage');
     const player = JSON.parse(savedData);
-    console.log('📦 Données du joueur:', player);
+    console.log('Données du joueur:', player);
     
     // Vérifier les propriétés importantes
     if (player.class) {
-        console.log(`🎭 Classe: ${player.class}`);
+        console.log(`Classe: ${player.class}`);
     } else {
-        console.log('⚠️ Aucune classe définie');
+        console.log('Aucune classe définie');
     }
     
-    console.log(`❤️ HP: ${player.hp}/${player.maxHp}`);
-    console.log(`⭐ Niveau: ${player.level}`);
-    console.log(`📊 Attributs:`, player.attributes);
-    console.log(`🔮 Sorts actifs:`, player.activeSpells);
-    console.log(`⚔️ Armes:`, player.weapons);
+    console.log(`HP: ${player.hp}/${player.maxHp}`);
+    console.log(`Niveau: ${player.level}`);
+    console.log(`Attributs:`, player.attributes);
+    console.log(`Sorts actifs:`, player.activeSpells);
+    console.log(`Armes:`, player.weapons);
 } else {
-    console.log('⚠️ Aucune sauvegarde trouvée');
+    console.log('Aucune sauvegarde trouvée');
 }
 
 // 2. Fonctions utiles pour tester
@@ -56,21 +56,21 @@ window.testSave = function() {
         defense: 0
     };
     localStorage.setItem('player', JSON.stringify(testPlayer));
-    console.log('✅ Sauvegarde de test créée avec la classe "sorcerer"');
+    console.log('Sauvegarde de test créée avec la classe "sorcerer"');
 };
 
 window.testLoad = function() {
     const data = localStorage.getItem('player');
     if (data) {
-        console.log('📦 Données chargées:', JSON.parse(data));
+        console.log('Données chargées:', JSON.parse(data));
     } else {
-        console.log('⚠️ Aucune sauvegarde');
+        console.log('Aucune sauvegarde');
     }
 };
 
 window.testClear = function() {
     localStorage.removeItem('player');
-    console.log('🗑️ Sauvegarde effacée');
+    console.log('Sauvegarde effacée');
 };
 
 window.testSetClass = function(className) {
@@ -79,10 +79,10 @@ window.testSetClass = function(className) {
         const player = JSON.parse(data);
         player.class = className;
         localStorage.setItem('player', JSON.stringify(player));
-        console.log(`✅ Classe changée en "${className}"`);
+        console.log(`Classe changée en "${className}"`);
     } else {
-        console.log('⚠️ Aucune sauvegarde à modifier');
+        console.log('Aucune sauvegarde à modifier');
     }
 };
 
-console.log('\n🎮 Système de test chargé !');
+console.log('\nSystème de test chargé !');

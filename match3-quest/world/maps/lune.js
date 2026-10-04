@@ -37,10 +37,10 @@ export default {
         ],
         chests: [
             { id: 'moon_cake_tin', at: '5', gold: 150 },
-            { id: 'lune_garden_a', at: 'j', gold: 240, label: 'Jarre du jardin clos', emoji: '🏺', openText: '🎁 Dans un jardin fermé par une haie, une jarre oubliée…' },
-            { id: 'lune_garden_b', at: 'k', gold: 240, label: 'Coffret de la haie', emoji: '🎁', openText: '🎁 Un coffret glissé sous la haie, derrière le quartier sud.' },
-            { id: 'lune_market_a', at: 'm', gold: 480, label: 'Malle du marché', emoji: '🧳', openText: '🎁 Une malle de marchand abandonnée dans la cour du marché.' },
-            { id: 'lune_market_b', at: 'n', gold: 480, label: 'Caisse de la cour', emoji: '📦', openText: '🎁 Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
+            { id: 'lune_garden_a', at: 'j', gold: 240, label: 'Jarre du jardin clos', openText: 'Dans un jardin fermé par une haie, une jarre oubliée…' },
+            { id: 'lune_garden_b', at: 'k', gold: 240, label: 'Coffret de la haie', openText: 'Un coffret glissé sous la haie, derrière le quartier sud.' },
+            { id: 'lune_market_a', at: 'm', gold: 480, label: 'Malle du marché', openText: 'Une malle de marchand abandonnée dans la cour du marché.' },
+            { id: 'lune_market_b', at: 'n', gold: 480, label: 'Caisse de la cour', openText: 'Une caisse de bois sous l’auvent de la cour : des pièces, glissées là par un marchand prudent.' }
         ]
     },
 
@@ -72,13 +72,13 @@ export default {
             { id: 'silver_river_cache', at: 'k', gold: 300 }
         ],
         enemies: [
-            { id: 'lune_frost_priestess', at: '1', templateId: 'moon_priestess', emoji: '🌙', name: 'Prêtresse de givre', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Prêtresse de givre', level: 17 } },
-            { id: 'lune_mirror_shade', at: '2', templateId: 'shadow_assassin', emoji: '🪞', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true },
-            { id: 'lune_w_hare', at: '3', templateId: 'ice_witch', emoji: '❄️', name: 'Fée de givre', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
-            { id: 'lune_w_jiangshi', at: '5', templateId: 'void_vampire', emoji: '🧛', name: 'Jiangshi lunaire', kind: 'patrol', patrol: ['5', '6'], offset: -1 },
-            { id: 'lune_w_frostdragon', at: '7', templateId: 'frost_dragon', emoji: '🐉', name: 'Long de givre', kind: 'sentinel', offset: 0 },
-            { id: 'lune_shade_a', at: 'l', templateId: 'shadow_assassin', emoji: '🪞', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true, group: 'mirror_shades' },
-            { id: 'lune_shade_b', at: 'm', templateId: 'shadow_assassin', emoji: '🪞', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true, group: 'mirror_shades' }
+            { id: 'lune_frost_priestess', at: '1', templateId: 'moon_priestess', name: 'Prêtresse de givre', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Prêtresse de givre', level: 17 } },
+            { id: 'lune_mirror_shade', at: '2', templateId: 'shadow_assassin', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true },
+            { id: 'lune_w_hare', at: '3', templateId: 'ice_witch', name: 'Fée de givre', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
+            { id: 'lune_w_jiangshi', at: '5', templateId: 'void_vampire', name: 'Jiangshi lunaire', kind: 'patrol', patrol: ['5', '6'], offset: -1 },
+            { id: 'lune_w_frostdragon', at: '7', templateId: 'frost_dragon', name: 'Long de givre', kind: 'sentinel', offset: 0 },
+            { id: 'lune_shade_a', at: 'l', templateId: 'shadow_assassin', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true, group: 'mirror_shades' },
+            { id: 'lune_shade_b', at: 'm', templateId: 'shadow_assassin', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true, group: 'mirror_shades' }
         ],
         gate: {
             requires: 'moon_key_chest',

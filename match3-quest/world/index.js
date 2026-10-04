@@ -41,7 +41,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
             npcDef: id => {
                 const t = text.npcs?.[id];
                 const base = legacyNpcs[id];
-                if (!t && !base) { console.warn(`[world] PNJ sans texte : ${id}`); return { id, name: id, emoji: '🧑', idle: ['…'] }; }
+                if (!t && !base) { console.warn(`[world] PNJ sans texte : ${id}`); return { id, name: id, idle: ['…'] }; }
                 return { id, ...(base || {}), ...(t || {}) };
             },
             chestDef: id => ({ id, ...(text.chests?.[id] || {}) }),

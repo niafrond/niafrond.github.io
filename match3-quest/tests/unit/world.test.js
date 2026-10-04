@@ -87,16 +87,18 @@ describe('villageois générés', () => {
         expect(a.length).toBeLessThan(9000);
         const set = new Set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map(id => villagerSprite(id)));
         expect(set.size).toBeGreaterThan(5);
-        expect(villagerSprite('x', '👴')).not.toBe(villagerSprite('x', ''));
+        expect(villagerSprite('grandma_x')).toContain('#ece8e0');   // ancien : cheveux blancs
+        expect(villagerSprite('ping')).not.toContain('#ece8e0');
+        expect(villagerSprite('kid_x')).toMatch(/scale\(0\.82\)/);
     });
     test('les PNJ non humains ont un sprite de créature, les métiers animaliers restent humains', () => {
-        expect(creatureKind('buffalo_dahei', '🐃')).toBe('buffalo');
-        expect(creatureKind('scarecrow_cao', '🎃')).toBe('scarecrow');
-        expect(creatureKind('gull_pip', '🕊️')).toBe('gull');
-        expect(creatureKind('pigeon_zhao', '🕊️')).toBeNull();
-        expect(creatureKind('falconer_arslan', '🦅')).toBeNull();
-        expect(creatureKind('stoker_ge', '🔥')).toBeNull();
-        expect(villagerSprite('buffalo_dahei', '🐃')).toBe(drawCreature('buffalo'));
+        expect(creatureKind('buffalo_dahei')).toBe('buffalo');
+        expect(creatureKind('scarecrow_cao')).toBe('scarecrow');
+        expect(creatureKind('gull_pip')).toBe('gull');
+        expect(creatureKind('pigeon_zhao')).toBeNull();
+        expect(creatureKind('falconer_arslan')).toBeNull();
+        expect(creatureKind('stoker_ge')).toBeNull();
+        expect(villagerSprite('buffalo_dahei')).toBe(drawCreature('buffalo'));
         CREATURE_KINDS.forEach(kind => {
             const svg = drawCreature(kind);
             expect(svg.startsWith('<svg')).toBe(true);
@@ -215,11 +217,11 @@ describe('Grand Monde : textes et quêtes', () => {
     const enemyIds = new Set(screens.flatMap(s => s.enemies.map(e => e.id)));
     const groups = new Set(screens.flatMap(s => s.enemies.map(e => e.group).filter(Boolean)));
 
-    test('les PNJ ont un nom, un emoji et des répliques ; les coffres un libellé', () => {
+    test('les PNJ ont un nom et des répliques (pas d\'emoji) ; les coffres un libellé', () => {
         screens.forEach(s => {
             s.npcs.forEach(n => {
                 expect(`${n.id} ${Boolean(n.name)}`).toBe(`${n.id} true`);
-                expect(n.emoji).toBeTruthy();
+                expect(n.emoji).toBeUndefined();
                 expect(n.idle?.length).toBeGreaterThan(0);
             });
             s.chests.forEach(c => expect(typeof c.gold === 'number' || c.gold === undefined).toBe(true));
@@ -356,7 +358,7 @@ describe('Grand Monde : jeu', () => {
         const target = quest.objectives.find(o => o.type === 'talk').target;
         const scr = screens.find(s => s.npcs.some(n => n.id === target));
         enterScreen(session, scr.id, scr.spawn);
-        expect(npcMarker(session, target)).toBe('❓');
+        expect(npcMarker(session, target)).toBe('?');
         const res = talkToNpc(session, target);
         expect(res.lines).toEqual(expect.arrayContaining(quest.objectives.find(o => o.type === 'talk').lines));
         expect(session.data.talked).toContain(target);

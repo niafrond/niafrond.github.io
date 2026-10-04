@@ -384,12 +384,12 @@ export function generateBoard(){
 
 // Régénère le plateau avec animation quand aucune combinaison n'est possible
 export function regenerateBoard(){
-    log("🔄 Plateau régénéré (aucune combinaison possible) !");
+    log("Plateau régénéré (aucune combinaison possible) !");
     const boardDiv = document.getElementById('board');
     const tiles = boardDiv.children;
 
     // Animation via showCombatAnimation (overlay sur le plateau)
-    showCombatAnimation({ icon: '🚫', title: 'Aucun coup possible !', target: 'Le plateau est régénéré...' }, true);
+    showCombatAnimation({ icon: 'cross', title: 'Aucun coup possible !', target: 'Le plateau est régénéré...' }, true);
 
     // Disparition des tuiles après que l'overlay soit visible (~900ms)
     setTimeout(() => {
@@ -422,7 +422,7 @@ export function selectTile(index){
 
     // Empêcher le joueur de jouer si ce n'est pas son tour
     if(currentTurn !== 'player'){
-        log('⚠️ Ce n\'est pas votre tour !');
+        log('Ce n\'est pas votre tour !');
         return;
     }
 
@@ -454,7 +454,7 @@ export function selectTile(index){
     const indexCol = index % boardSize;
     const isAdjacent = Math.abs(selectedRow - indexRow) + Math.abs(selectedCol - indexCol) === 1;
     if(!isAdjacent){
-        log("⚠️ Échange non valide (doit être adjacent)");
+        log("Échange non valide (doit être adjacent)");
         playSfx('invalid');
         tiles[selected].classList.remove('selected');
         selected=null;
@@ -499,11 +499,11 @@ export function swapTiles(i,j){
         [board[i],board[j]]=[board[j],board[i]];
         renderBoard();
         if(currentTurn === 'player'){
-            log("⚠️ Aucun match créé ! Mouvement annulé, à vous de rejouer.");
+            log("Aucun match créé ! Mouvement annulé, à vous de rejouer.");
             // Redémarrer le minuteur après un mauvais mouvement
             startSuggestionTimer();
         } else {
-            log("⚠️ L'ennemi n'a créé aucun match. Mouvement annulé, il rejoue.");
+            log("L'ennemi n'a créé aucun match. Mouvement annulé, il rejoue.");
             setTimeout(() => {
                 if(currentTurn === 'enemy') enemyMakeMove();
             }, 700);
@@ -592,7 +592,7 @@ export function checkMatches(forceFullBoard = false){
                 const generatedMana = manaResult.gained;
                 if(generatedMana > 0){
                     grantManaGeneratedXP(generatedMana);
-                    log(`⭐ +${generatedMana} XP (mana généré)`);
+                    log(`+${generatedMana} XP (mana généré)`);
                 }
                 // Notifier le tutoriel d'un match de couleur du joueur
                 tutorialCallbacks.onMatch?.('color', info.color, info.len);
@@ -600,26 +600,26 @@ export function checkMatches(forceFullBoard = false){
             if(info.len>=4){ 
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
-                log(`🎁 Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+                log(`Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 // Afficher une animation de tour bonus
                 const isPlayer = currentTurn === 'player';
                 showCombatAnimation(
-                    { icon: '🎁', title: 'TOUR BONUS !', damage: `Match de ${info.len} tuiles`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
+                    { icon: 'gift', title: 'TOUR BONUS !', damage: `Match de ${info.len} tuiles`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
                     isPlayer
                 );
             }
             if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
         } else if(info.type==='combat'){
             currentPlayer.combatPoints += info.len;
-            log(`🏹 +${info.len} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+            log(`+${info.len} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
             // Bonus de tour pour 4+ épées
             if(info.len>=4){ 
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
-                log(`🎁 Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+                log(`Match de ${info.len} : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 const isPlayer = currentTurn === 'player';
                 showCombatAnimation(
-                    { icon: '🎁', title: 'TOUR BONUS !', damage: `Match de ${info.len} épées`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
+                    { icon: 'gift', title: 'TOUR BONUS !', damage: `Match de ${info.len} épées`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
                     isPlayer
                 );
             }
@@ -644,15 +644,15 @@ export function checkMatches(forceFullBoard = false){
                 dmg = clampEnemyAttackDamage(dmg, enemy);
             }
             applyDamage(opponent, dmg);
-            log(`💀 Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}`);
+            log(`Match ${info.len} crânes : -${dmg} HP pour ${currentTurn === 'player' ? 'l\'ennemi' : 'le joueur'}`);
             // Bonus de tour pour 4+ crânes
             if(info.len>=4){ 
                 addBonusTurn(currentPlayer);
                 playSfx('turnBonus');
-                log(`🎁 Match de ${info.len} crânes : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+                log(`Match de ${info.len} crânes : tour bonus gagné par ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
                 const isPlayer = currentTurn === 'player';
                 showCombatAnimation(
-                    { icon: '🎁', title: 'TOUR BONUS !', damage: `Match de ${info.len} crânes`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
+                    { icon: 'gift', title: 'TOUR BONUS !', damage: `Match de ${info.len} crânes`, target: isPlayer ? 'Vous rejouez !' : "L'ennemi rejoue !" },
                     isPlayer
                 );
             }
@@ -673,10 +673,10 @@ export function checkMatches(forceFullBoard = false){
             }
 
             showCombatAnimation(
-                { icon: '🌟', title: 'COMBO MAGISTRAL', damage: `${turnDistinctMatches} matchs différents`, target: `+${comboXp} XP, Joker créé, vous rejouez !` },
+                { icon: 'star', title: 'COMBO MAGISTRAL', damage: `${turnDistinctMatches} matchs différents`, target: `+${comboXp} XP, Joker créé, vous rejouez !` },
                 true
             );
-            log(`🌟 Combo magistral : +${comboXp} XP, création d'un Joker et tour bonus !`);
+            log(`Combo magistral : +${comboXp} XP, création d'un Joker et tour bonus !`);
         }
 
         highlightCombo(indices, info);
@@ -702,12 +702,12 @@ export function checkMatches(forceFullBoard = false){
             renderBoard();
 
             if(turn === 'enemy' && currentTurn === 'enemy'){
-                log("⚠️ Aucun match validé pour l'ennemi. Mouvement annulé, il rejoue.");
+                log("Aucun match validé pour l'ennemi. Mouvement annulé, il rejoue.");
                 setTimeout(() => {
                     if(currentTurn === 'enemy') enemyMakeMove();
                 }, 700);
             } else if(turn === 'player' && currentTurn === 'player'){
-                log("⚠️ Aucun match validé ! Mouvement annulé, à vous de rejouer.");
+                log("Aucun match validé ! Mouvement annulé, à vous de rejouer.");
                 startSuggestionTimer();
             }
             return;
@@ -856,14 +856,14 @@ export function highlightCombo(indices, info){
     // message personnalisé
     if(info){
         if(info.type==='color'){
-            log(`✨ Combo ${info.color} x${info.len}` + (info.len>=4?" (bonus)":""));
+            log(`Combo ${info.color} x${info.len}` + (info.len>=4?" (bonus)":""));
         } else if(info.type==='combat'){
-            log(`🏹 Combo points de combat x${info.len}`);
+            log(`Combo points de combat x${info.len}`);
         } else if(info.type==='skull'){
-            log(`💀 Combo crânes x${info.len}`);
+            log(`Combo crânes x${info.len}`);
         }
     } else {
-        log(`✨ Combo ${board[indices[0]]}!`);
+        log(`Combo ${board[indices[0]]}!`);
     }
     setTimeout(()=>{
         // Clignotement subtil
@@ -968,7 +968,7 @@ function getSortedPossibleMoves(){
 
 function handleNoPossibleMoveForCurrentTurn(){
     const actor = currentTurn === 'player' ? 'joueur' : 'ennemi';
-    log(`🔄 Aucun coup possible pour le ${actor}, plateau régénéré.`);
+    log(`Aucun coup possible pour le ${actor}, plateau régénéré.`);
 
     selected = null;
     regenerateBoard();
@@ -1001,7 +1001,7 @@ function showMatchSuggestion(){
             tiles[idx].classList.add('suggested');
         });
         
-        log(`💡 Conseil : essayez d'échanger ces deux tuiles !`);
+        log(`Conseil : essayez d'échanger ces deux tuiles !`);
         return;
     }
 
@@ -1091,13 +1091,13 @@ export function enemyMakeMove(){
 
     clearSuggestionTimer();
     clearSuggestion();
-    log('🤖 L\'ennemi réfléchit...');
+    log('L\'ennemi réfléchit...');
     
     const possibleMoves = getSortedPossibleMoves();
     
     if(possibleMoves.length > 0){
         const move = possibleMoves[0];
-        log(`🎯 L'ennemi échange les tuiles...`);
+        log(`L'ennemi échange les tuiles...`);
         setTimeout(() => {
             animateEnemySwap(move.from, move.to, () => {
                 swapTiles(move.from, move.to);
@@ -1112,14 +1112,14 @@ export function enemyMakeMove(){
 export function enemyMakeRandomMove(){
     clearSuggestionTimer();
     clearSuggestion();
-    log('🤖 L\'ennemi hésite...');
+    log('L\'ennemi hésite...');
 
     const possibleMoves = getSortedPossibleMoves();
     if(possibleMoves.length === 0){ handleNoPossibleMoveForCurrentTurn(); return; }
 
     // Prendre un mouvement aléatoire parmi tous les valides (pas forcément le meilleur)
     const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-    log(`🎲 L'ennemi fait un move aléatoire...`);
+    log(`L'ennemi fait un move aléatoire...`);
     setTimeout(() => {
         animateEnemySwap(move.from, move.to, () => {
             swapTiles(move.from, move.to);

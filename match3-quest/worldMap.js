@@ -3,14 +3,14 @@
 // REGION_UNLOCK_LEVEL (story.js). Cette liste alimente la carte du monde illustrée (worldMapView.js), vue
 // d'ensemble depuis laquelle on peut rejoindre les régions déjà découvertes.
 // `map` = position du noeud (viewBox 820x600) ; l'ordre du tableau est celui du chemin qui relie les régions.
-// `shortName` = libellé court des étiquettes de la carte.
+// `shortName` = libellé court des étiquettes de la carte ; `decor` = dessin de la région (sprites/decor.js).
 export const worldZones = [
     {
         id: 'rizieres',
         map: { x: 100, y: 490 },
         name: 'Rizières Desséchées',
         shortName: 'Rizières',
-        emoji: '🌾',
+        decor: 'rice',
         unlockLevel: 1,
         description: "Chez Hou Yi : les rizières brûlent sous le Soleil Ardent. C'est ici que l'aventure commence."
     },
@@ -19,7 +19,7 @@ export const worldZones = [
         map: { x: 260, y: 505 },
         name: 'Lit du Fleuve Jaune',
         shortName: 'Fleuve Jaune',
-        emoji: '💧',
+        decor: 'drop',
         unlockLevel: 2,
         description: "Le grand fleuve s'est tari : le Soleil des Eaux Taries a laissé un lit de boue craquelée."
     },
@@ -28,7 +28,7 @@ export const worldZones = [
         map: { x: 420, y: 490 },
         name: 'Forêt de Bambous Calcinée',
         shortName: 'Bambous',
-        emoji: '🎋',
+        decor: 'bamboo',
         unlockLevel: 3,
         description: "Les bambous sont en cendres. Le Soleil de Cendres règne sur les ruines du temple."
     },
@@ -37,7 +37,7 @@ export const worldZones = [
         map: { x: 580, y: 505 },
         name: 'Désert de Gobi',
         shortName: 'Gobi',
-        emoji: '🏜️',
+        decor: 'cactus',
         unlockLevel: 5,
         description: "Mirages et dunes : le Soleil des Mirages se cache parmi ses doubles."
     },
@@ -46,7 +46,7 @@ export const worldZones = [
         map: { x: 725, y: 395 },
         name: 'Monts du Tonnerre',
         shortName: 'Tonnerre',
-        emoji: '⛈️',
+        decor: 'storm',
         unlockLevel: 7,
         description: "Des pics noirs que les orages fouettent sans cesse, domaine du Soleil des Orages."
     },
@@ -55,7 +55,7 @@ export const worldZones = [
         map: { x: 585, y: 290 },
         name: 'Gorges du Volcan',
         shortName: 'Volcan',
-        emoji: '🌋',
+        decor: 'volcano',
         unlockLevel: 9,
         description: "La roche fond dans les gorges du Soleil de Magma. Fengmeng vous y attend peut-être."
     },
@@ -64,7 +64,7 @@ export const worldZones = [
         map: { x: 430, y: 300 },
         name: 'Plaine des Fauves',
         shortName: 'Fauves',
-        emoji: '🐅',
+        decor: 'paw',
         unlockLevel: 11,
         description: "Les bêtes sont devenues folles sous le Soleil des Bêtes Folles : des meutes embrasées."
     },
@@ -73,7 +73,7 @@ export const worldZones = [
         map: { x: 275, y: 290 },
         name: 'Rivage de la Mer Orientale',
         shortName: "Mer d'Orient",
-        emoji: '🌊',
+        decor: 'wave',
         unlockLevel: 13,
         description: "La mer fume et se retire devant le Soleil des Marées. Le Roi-Dragon implore de l'aide."
     },
@@ -82,7 +82,7 @@ export const worldZones = [
         map: { x: 160, y: 175 },
         name: 'Cime du Fusang',
         shortName: 'Fusang',
-        emoji: '🌳',
+        decor: 'tree',
         unlockLevel: 15,
         description: "Le sommet de l'arbre où les soleils reposent : le Soleil Lâche s'y cache derrière le dernier soleil."
     },
@@ -91,7 +91,7 @@ export const worldZones = [
         map: { x: 335, y: 85 },
         name: 'Pic de la Lune',
         shortName: 'Lune',
-        emoji: '🌕',
+        decor: 'moon',
         unlockLevel: 16,
         description: "Le sommet du monde, sous la pleine lune. Le dernier combat, puis l'offrande."
     }

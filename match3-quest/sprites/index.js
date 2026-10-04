@@ -9,7 +9,7 @@
 //
 // Chargement à la demande : chaque fichier de cn/ est un « paquet » importé dynamiquement (loadSpritePacks) quand une
 // région en a besoin (packsForKeys + l'index généré packs.js). Tant qu'un paquet n'est pas chargé, ses sprites valent
-// null (le rendu retombe sur l'emoji). Les images décodées sont gardées en cache pour la région courante seulement
+// null (rien n'est dessiné en attendant). Les images décodées sont gardées en cache pour la région courante seulement
 // (retainSprites libère les autres) : on ne décode jamais tous les dessins du jeu d'un coup.
 
 import { SPRITE_PACK_FILES, packContents } from './packContents.js';
@@ -82,13 +82,13 @@ export const TILE_FILES = ['red', 'blue', 'green', 'yellow', 'purple', 'skull', 
     .map(name => `sprites/tiles/tile-${name}.svg`);
 
 export const heroSprite = classId => HERO_SPRITES[classId] || null;
-// PNJ dessinés à la main, sinon villageois généré à partir de l'identifiant (`hint` = emoji, oriente l'âge).
+// PNJ dessinés à la main, sinon villageois (ou créature) généré à partir de l'identifiant.
 // Un PNJ dessiné dont le paquet n'est pas encore chargé vaut null (et son paquet est demandé).
 const villagerCache = new Map();
-export const npcSprite = (npcId, hint = '') => {
+export const npcSprite = npcId => {
     if (NPC_SPRITES[npcId]) return NPC_SPRITES[npcId];
     if (NPC_PACK[npcId]) { loadSpritePack(NPC_PACK[npcId]).catch(() => {}); return null; }
-    if (!villagerCache.has(npcId)) villagerCache.set(npcId, villagerSprite(npcId, hint));
+    if (!villagerCache.has(npcId)) villagerCache.set(npcId, villagerSprite(npcId));
     return villagerCache.get(npcId);
 };
 export const chestSprite = opened => CHEST_SPRITES[opened ? 'open' : 'closed'] || null;

@@ -6,6 +6,8 @@
  * board.js et game.js importent { tutorialCallbacks } depuis ce fichier.
  */
 
+import { icon } from './icons.js';
+
 // ─── Callbacks — appelés par board.js / game.js ────────────────────────────
 // board.js et game.js lisent et appellent ces fonctions au moment opportun.
 export const tutorialCallbacks = {
@@ -24,7 +26,6 @@ const TUTORIAL_COMPLETED_KEY = 'match3_tutorial_done';
 const TUTORIAL_SPELL = {
     id: TUTO_SPELL_ID,
     name: 'Flèche d\'entraînement',
-    emoji: '🔥',
     color: 'red',
     cost: 6,
     dmg: 6,
@@ -35,7 +36,6 @@ const TUTORIAL_SPELL = {
 // Ennemi tutoriel — mannequin d'entraînement de l'école de Hou Yi, très faible, IA aléatoire, aucun sort
 export const TUTORIAL_ENEMY = {
     name: 'Mannequin d\'entraînement',
-    raceEmoji: '🎯',
     level: 1,
     hp: 25,
     maxHp: 25,
@@ -60,33 +60,33 @@ export const TUTORIAL_ENEMY = {
 const STEPS = [
     {
         step: 1,
-        icon: '🔄',
+        icon: 'refresh',
         title: 'Déplacer une tuile',
         desc: 'Bienvenue à l\'école de Hou Yi ! Cliquez sur une tuile, puis sur une tuile <strong>adjacente</strong> pour les échanger. Un échange n\'est valide que s\'il aligne 3 tuiles identiques ou plus.',
     },
     {
         step: 2,
-        icon: '💀',
+        icon: 'skull',
         title: 'Frapper les crânes',
-        desc: 'Alignez <strong>3 crânes 💀 ou plus</strong> pour infliger des dégâts au mannequin ! Les tuiles en surbrillance indiquent un échange qui frappera des soleils.',
+        desc: `Alignez <strong>3 crânes ${icon('skull')} ou plus</strong> pour infliger des dégâts au mannequin ! Les tuiles en surbrillance indiquent un échange qui frappera des soleils.`,
     },
     {
         step: 3,
-        icon: '✨',
+        icon: 'spark',
         title: 'Générer du mana',
         desc: 'Alignez <strong>3 gâteaux de lune de la même saveur</strong> (rouge, bleu, vert, jaune ou violet) pour générer du mana. Le mana est nécessaire pour lancer des sorts puissants !',
     },
     {
         step: 4,
-        icon: '🪄',
+        icon: 'mana_red',
         title: 'Lancer un sort',
-        desc: 'Vous avez du mana rouge 🔴 ! Cliquez sur le bouton du sort <strong>"Flèche d\'entraînement"</strong> en bas pour décocher votre flèche et infliger des dégâts au mannequin.',
+        desc: `Vous avez du mana rouge ${icon('mana_red')} ! Cliquez sur le bouton du sort <strong>"Flèche d'entraînement"</strong> en bas pour décocher votre flèche et infliger des dégâts au mannequin.`,
     },
     {
         step: 5,
-        icon: '🏹',
+        icon: 'bow',
         title: 'Terminer le combat',
-        desc: 'Réduisez les <strong>PV du mannequin à 0</strong> pour remporter la victoire ! Frappez les crânes 💀, gagnez des flèches 🏹, alignez des gâteaux de lune et lancez vos sorts.',
+        desc: `Réduisez les <strong>PV du mannequin à 0</strong> pour remporter la victoire ! Frappez les crânes ${icon('skull')}, gagnez des flèches ${icon('arrow')}, alignez des gâteaux de lune et lancez vos sorts.`,
     },
 ];
 
@@ -184,7 +184,7 @@ export function quitTutorial() {
     _step = 0;
     _removeTutorialSpell();
     import('./game.js').then(m => {
-        m.log('🚪 Tutoriel quitté. Bonne chance, archer !');
+        m.log('Tutoriel quitté. Bonne chance, archer !');
     });
 }
 
@@ -270,7 +270,7 @@ function _startTutorialCombat() {
             boardModule.renderBoard();
             updateStats();
             createSpellButtons();
-            log('📚 Duel d\'entraînement ! Suivez les instructions dans le panneau en bas à droite.');
+            log('Duel d\'entraînement ! Suivez les instructions dans le panneau en bas à droite.');
         });
 
         // Afficher les éléments de combat et basculer sur l'onglet combat
@@ -307,7 +307,7 @@ function _activateStep(step) {
             if ((m.player.mana.red || 0) < 6) {
                 m.player.mana.red = 10;
                 m.updateStats();
-                m.log('🔴 Tutoriel : 10 mana rouge offert par votre maître pour décocher votre flèche !');
+                m.log('Tutoriel : 10 mana rouge offert par votre maître pour décocher votre flèche !');
             }
             m.createSpellButtons(); // Mettre à jour l'affichage (bouton actif)
         });
@@ -328,7 +328,7 @@ function _advanceStep() {
     }
 
     // Afficher un message de réussite, puis passer à l'étape suivante
-    const msg = _feedbackMessages[completedStep] || '✅ Étape réussie !';
+    const msg = _feedbackMessages[completedStep] || 'Étape réussie !';
     _showFeedbackBanner(msg, () => {
         if (_active) _activateStep(completedStep + 1);
     });
@@ -348,19 +348,19 @@ function _completeTutorial() {
             localStorage.setItem(TUTORIAL_COMPLETED_KEY, '1');
         } catch (_) { /* ignore */ }
 
-        _showFeedbackBanner('🏆 Tutoriel terminé ! Que les flèches de Hou Yi vous guident !', null, true);
+        _showFeedbackBanner('Tutoriel terminé ! Que les flèches de Hou Yi vous guident !', null, true);
         import('./game.js').then(m => {
-            m.log('🏆 Tutoriel terminé ! Vous maîtrisez les bases. Les dix soleils vous attendent !');
+            m.log('Tutoriel terminé ! Vous maîtrisez les bases. Les dix soleils vous attendent !');
         });
         _removeTutorialSpell();
     }
 }
 
 const _feedbackMessages = {
-    1: '✅ Bravo ! Vous avez échangé deux tuiles !',
-    2: '✅ Excellent ! Les crânes encaissent vos coups !',
-    3: '✅ Parfait ! Les gâteaux de lune vous ont donné du mana !',
-    4: '✅ Super ! Votre flèche a atteint sa cible !',
+    1: 'Bravo ! Vous avez échangé deux tuiles !',
+    2: 'Excellent ! Les crânes encaissent vos coups !',
+    3: 'Parfait ! Les gâteaux de lune vous ont donné du mana !',
+    4: 'Super ! Votre flèche a atteint sa cible !',
 };
 
 // ─── Hooks par étape ──────────────────────────────────────────────────────
@@ -500,7 +500,7 @@ function _updateOverlay(step) {
     const elDesc = document.getElementById('tutorial-desc');
     const elCurrent = document.getElementById('tutorial-step-current');
 
-    if (elIcon) elIcon.textContent = stepData.icon;
+    if (elIcon) elIcon.innerHTML = icon(stepData.icon);
     if (elTitle) elTitle.textContent = stepData.title;
     if (elDesc) elDesc.innerHTML = stepData.desc;
     if (elCurrent) elCurrent.textContent = step;

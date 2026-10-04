@@ -29,7 +29,6 @@ function loadEnemyCatalogSync(){
                 id: 'fallback_enemy',
                 name: 'Cultiste',
                 race: 'Humain',
-                emoji: '🧙',
                 title: 'Arcaniste',
                 playerClass: 'sorcerer',
                 hasWeapon: false,
@@ -194,7 +193,6 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
     return {
         templateId: template.id,
         race: template.race,
-        raceEmoji: template.emoji,
         class: template.title,
         playerClass: template.playerClass,
         name: `${template.name} ${template.title}`,
@@ -334,5 +332,5 @@ export function generateEnemyChoices(playerLevel, count = 4, allWeaponsArg = all
 }
 
 export function getEnemyDescription(enemy) {
-    return `${enemy.raceEmoji} ${enemy.name}`;
+    return enemy.name;
 }

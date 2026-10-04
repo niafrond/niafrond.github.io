@@ -25,7 +25,6 @@ export default {
     sluicekeeper_rong: {
       name: "Rong",
       title: "Éclusier du fleuve",
-      emoji: "🧑‍🔧",
       idle: [
         "Je garde une écluse sans fleuve. C'est une charge honorable, à défaut d'être utile.",
         "Quand l'eau reviendra, je serai prêt. J'ai graissé tous mes leviers, trois fois."
@@ -42,7 +41,6 @@ export default {
     net_mender_wei: {
       name: "Dame Wei",
       title: "Raccommodeuse de filets",
-      emoji: "🧶",
       idle: [
         "Chaque maille est une pensée. Je raccommode des filets qui n'attrapent plus que du vent.",
         "Mon fils est parti pêcher en mer. Il ne m'écrit pas. Je lui tricote des chaussettes pour le prix de son silence."
@@ -59,7 +57,6 @@ export default {
     goose_dagong: {
       name: "Dagong",
       title: "Oie sauvage vigilante",
-      emoji: "🪿",
       idle: [
         "Hon ! Qui va là ? Ah, c'est vous. Passez. L'oie garde, l'oie voit, l'oie mord.",
         "Nous suivons la route des étoiles. Un jour, nous partirons vers le sud, toutes ensemble."
@@ -76,7 +73,6 @@ export default {
     orphan_xiaoyu: {
       name: "Xiaoyu",
       title: "Petit orphelin des quais",
-      emoji: "🧒",
       idle: [
         "J'ai trouvé un poisson séché. Il est vieux, mais il est à moi.",
         "Quand je serai grand, je construirai un bateau en papier qui flottera sur la boue."
@@ -93,7 +89,6 @@ export default {
     ferry_pei: {
       name: "Pei",
       title: "Apprenti passeur",
-      emoji: "🛶",
       idle: [
         "Gu m'apprend le métier. Pour l'instant, je rame sur le sable, c'est de l'entraînement.",
         "Un passeur doit savoir se taire. Moi, j'ai encore beaucoup de progrès à faire."
@@ -110,7 +105,6 @@ export default {
     fortune_sha: {
       name: "Dame Sha",
       title: "Diseuse de bonne aventure",
-      emoji: "🔮",
       idle: [
         "Je vois l'avenir ! Hélas, il est aussi sec que le présent.",
         "Une rumeur dans mes cartes : un disciple jaloux fera pleurer son maître. Je ne dis pas qui. Je le sais, c'est tout."
@@ -127,7 +121,6 @@ export default {
     poet_bo: {
       name: "Bo",
       title: "Poète ivre",
-      emoji: "🍶",
       idle: [
         "Ô fleuve, rends-moi mes rimes ! Elles ont coulé avec toi.",
         "J'écris à l'encre de vin. Mes vers sont moins bons, mais plus sincères."
@@ -144,7 +137,6 @@ export default {
     tea_zhuang: {
       name: "Zhuang",
       title: "Marchand de thé ambulant",
-      emoji: "🍵",
       idle: [
         "Du thé du Sud ! Chaud, froid, ou entre les deux, selon le prix.",
         "Mes clients disent que mon thé réveille les morts. Je dis : prenez-en pas trop."
@@ -161,7 +153,6 @@ export default {
     mud_imp_pit: {
       name: "Pit",
       title: "Diablotin de vase",
-      emoji: "👺",
       idle: [
         "Chuuut ! Je suis invisible. Ne le répétez pas.",
         "Je joue dans la boue. Je ne fais rien de mal. Presque rien."
@@ -178,7 +169,6 @@ export default {
     captain_lo: {
       name: "Capitaine Lo",
       title: "Fantôme d'un capitaine de barge",
-      emoji: "👻",
       idle: [
         "Ma barge repose sur le flanc. Je l'ai coulée avec mon honneur et mes dettes.",
         "Je garde mon coffre. Il n'y a rien dedans, sauf une promesse."
@@ -196,39 +186,27 @@ export default {
   chests: {
     sluice_logbook_box: {
       label: "Coffret du registre",
-      openText: "🎁 Entre deux registres de crues, une bourse d'éclusier.",
-      emoji: "📒",
-      emojiOpened: "📒"
+      openText: "Entre deux registres de crues, une bourse d'éclusier.",
     },
     net_basket: {
       label: "Panier à filets",
-      openText: "🎁 Au fond du panier, des pièces nouées dans un mouchoir de laine.",
-      emoji: "🧺",
-      emojiOpened: "🧺"
+      openText: "Au fond du panier, des pièces nouées dans un mouchoir de laine.",
     },
     goose_nest: {
       label: "Nid d'oie",
-      openText: "🎁 Dans le nid de duvet, quelques pièces et un œuf bleu dont on ne sait que faire.",
-      emoji: "🪹",
-      emojiOpened: "🪹"
+      openText: "Dans le nid de duvet, quelques pièces et un œuf bleu dont on ne sait que faire.",
     },
     barge_strongbox: {
       label: "Coffre du capitaine",
-      openText: "🎁 Le coffre du capitaine Lo : un trésor modeste, une lettre jaunie et un vieux compas de cuivre.",
-      emoji: "🧰",
-      emojiOpened: "🧰"
+      openText: "Le coffre du capitaine Lo : un trésor modeste, une lettre jaunie et un vieux compas de cuivre.",
     },
     reed_stash: {
       label: "Cache de roseaux",
-      openText: "🎁 Dans les roseaux fanés, une cache de contrebandier : or terni et huile de lampe.",
-      emoji: "🌾",
-      emojiOpened: "🌾"
+      openText: "Dans les roseaux fanés, une cache de contrebandier : or terni et huile de lampe.",
     },
     journal_page_fle: {
       label: "Page prise dans la vase",
-      openText: "🎁 Une page à demi dissoute : « J'ai suivi mon maître à distance. Il n'a pas retourné la tête. »",
-      emoji: "📄",
-      emojiOpened: "📄"
+      openText: "Une page à demi dissoute : « J'ai suivi mon maître à distance. Il n'a pas retourné la tête. »",
     }
   },
   quests: [

@@ -406,7 +406,6 @@ export function encounterFor(session, enemyId, playerLevel) {
         spriteKey: def.spriteKey || def.id,
         templateId: def.templateId,
         name: def.name,
-        emoji: def.emoji,
         level,
         boss: def.boss ? { ...def.boss, level } : null
     };
@@ -677,32 +676,32 @@ export function currentObjectiveText(session) {
         if (status === 'ready' && tracked.turnIn) {
             const scr = findNpcScreen(session, tracked.turnIn);
             const npc = scr?.npcs.find(n => n.id === tracked.turnIn);
-            return `⭐ ${tracked.title} : retournez voir ${npc?.name || 'le PNJ'} (${scr?.name || '?'})`;
+            return `${tracked.title} : retournez voir ${npc?.name || 'le PNJ'} (${scr?.name || '?'})`;
         }
         const obj = tracked.objectives.find(o => !objectiveDone(session, o));
-        return `⭐ ${tracked.title} : ${obj ? obj.text : 'objectif accompli'}${target ? '' : ''}`;
+        return `${tracked.title} : ${obj ? obj.text : 'objectif accompli'}${target ? '' : ''}`;
     }
     for (const quest of session.quests) {
         const status = questStatus(session, quest);
         if (status === 'ready' && quest.turnIn) {
             const scr = findNpcScreen(session, quest.turnIn);
             const npc = scr?.npcs.find(n => n.id === quest.turnIn);
-            return `🎯 ${quest.title} : retournez voir ${npc?.name || 'le PNJ'} (${scr?.name || '?'})`;
+            return `${quest.title} : retournez voir ${npc?.name || 'le PNJ'} (${scr?.name || '?'})`;
         }
         if (status === 'active' && !quest.side) {
             const obj = quest.objectives.find(o => !objectiveDone(session, o));
-            return `🎯 ${quest.title} : ${obj ? obj.text : 'objectif accompli'}`;
+            return `${quest.title} : ${obj ? obj.text : 'objectif accompli'}`;
         }
         if (status === 'available' && quest.giver && !quest.autoStart && !quest.side) {
             const scr = findNpcScreen(session, quest.giver);
             const npc = scr?.npcs.find(n => n.id === quest.giver);
             if (npc && !isEntityVisible(session, npc)) continue;
-            return `💬 Nouvelle quête : parlez à ${npc?.name || 'un PNJ'} (${scr?.name || '?'})`;
+            return `Nouvelle quête : parlez à ${npc?.name || 'un PNJ'} (${scr?.name || '?'})`;
         }
     }
     return session.data.ended
-        ? '🌕 La légende est achevée ! Ouvrez le journal pour une Nouvelle Partie +.'
-        : '🧭 Explorez le monde.';
+        ? 'La légende est achevée ! Ouvrez le journal pour une Nouvelle Partie +.'
+        : 'Explorez le monde.';
 }
 
 export { locationHint as questLocationHint };
@@ -730,17 +729,17 @@ export function journalEntries(session) {
 
 // Indicateur au-dessus d'un PNJ : « ! » quête disponible, « ? » à rendre ou à qui parler, sinon rien.
 export function npcMarker(session, npcId) {
-    if (activeTalkObjective(session, npcId)) return '❓';
+    if (activeTalkObjective(session, npcId)) return '?';
     for (const quest of session.quests) {
         const status = questStatus(session, quest);
-        if (status === 'ready' && quest.turnIn === npcId) return '❓';
-        if (status === 'available' && quest.giver === npcId && !quest.autoStart) return '❗';
+        if (status === 'ready' && quest.turnIn === npcId) return '?';
+        if (status === 'available' && quest.giver === npcId && !quest.autoStart) return '!';
     }
     return '';
 }
 
-// Indicateur de quête d'un écran (maison) : « ❓ » si une quête y est à rendre / une cible de la quête suivie s'y trouve,
-// « ❗ » si un PNJ y propose une quête, sinon ''.
+// Indicateur de quête d'un écran (maison) : « ? » si une quête y est à rendre / une cible de la quête suivie s'y trouve,
+// « ! » si un PNJ y propose une quête, sinon ''.
 export function screenQuestMarker(session, screenId) {
     const screen = session.screens[screenId];
     if (!screen) return '';
@@ -748,11 +747,11 @@ export function screenQuestMarker(session, screenId) {
     for (const npc of screen.npcs) {
         if (!isEntityVisible(session, npc)) continue;
         const m = npcMarker(session, npc.id);
-        if (m === '❓') return '❓';
+        if (m === '?') return '?';
         if (m) marker = m;
     }
     const tracked = trackedQuest(session);
-    if (tracked && questTargets(session, tracked).some(t => t.screenId === screenId)) return '❓';
+    if (tracked && questTargets(session, tracked).some(t => t.screenId === screenId)) return '?';
     return marker;
 }
 

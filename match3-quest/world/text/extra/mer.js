@@ -25,7 +25,6 @@ export default {
     oyster_coque: {
       name: "Dame Coque",
       title: "Écaillère",
-      emoji: "🦪",
       idle: [
         "Une huître est un coffre-fort qui s'ignore. Moi, je suis le cambrioleur gentil.",
         "On trouve de tout dans une huître : une perle, un caillou, un souvenir."
@@ -42,7 +41,6 @@ export default {
     shipwright_bing: {
       name: "Bing",
       title: "Calfat et charpentier",
-      emoji: "⚒️",
       idle: [
         "Je construis un navire pour naviguer jusqu'au bout du monde. Il manque le bois, la voile, et le courage.",
         "Un navire, c'est un cheval qui rêve de nager."
@@ -59,7 +57,6 @@ export default {
     gull_pip: {
       name: "Pip",
       title: "Mouette bavarde",
-      emoji: "🕊️",
       idle: [
         "Criii ! Du pain ! Non ? Un beignet ? Non plus ? Vous êtes nul.",
         "Je vois tout d'en haut. Les amoureux, les voleurs, et le dernier poisson."
@@ -76,7 +73,6 @@ export default {
     kid_ahu: {
       name: "Ahu",
       title: "Petit ramasseur de coquillages",
-      emoji: "🧒",
       idle: [
         "J'ai trouvé une coquille qui chante ! Écoute : elle fait « chhhh ». C'est la mer.",
         "Je collectionne les coquilles. Maman dit que je suis un petit crabe."
@@ -93,7 +89,6 @@ export default {
     salt_jun: {
       name: "Jun",
       title: "Saunier",
-      emoji: "🧂",
       idle: [
         "Le sel naît de la mer et du soleil. Les soleils étaient mes meilleurs associés, hélas. Depuis qu'ils s'emballent, mon sel cuit sur place.",
         "Mes salines sont blanches, la mer est bleue, mes comptes sont rouges."
@@ -110,7 +105,6 @@ export default {
     sailor_tai: {
       name: "Vieux Tai",
       title: "Marin retraité",
-      emoji: "⛵",
       idle: [
         "J'ai vu des tempêtes, des sirènes, des dragons. J'ai surtout vu des soupes de poisson.",
         "Un marin n'a pas de patrie, il a des ports."
@@ -127,7 +121,6 @@ export default {
     priestess_mazu: {
       name: "Dame Mo",
       title: "Prêtresse de Mazu",
-      emoji: "🛕",
       idle: [
         "Mazu, déesse des mers, protège les marins qui lui offrent du riz et de la sincérité.",
         "Chaque vague est une prière qui revient."
@@ -144,7 +137,6 @@ export default {
     singer_hailing: {
       name: "Hailing",
       title: "Chanteuse des marins",
-      emoji: "🎤",
       idle: [
         "Je chante pour les marins qui partent et pour ceux qui reviennent. Les deux pleurent pareil.",
         "Une chanson de mer ne rime pas : elle roule."
@@ -161,7 +153,6 @@ export default {
     jelly_shui: {
       name: "Shui",
       title: "Méduse philosophe",
-      emoji: "🪼",
       idle: [
         "Je flotte. Je pense. Je pique un peu. C'est tout.",
         "On me dit transparente. Je réponds : lisible."
@@ -178,7 +169,6 @@ export default {
     octo_ba: {
       name: "Ba",
       title: "Poulpe cuisinier",
-      emoji: "🐙",
       idle: [
         "Huit bras, huit casseroles ! Je fais la meilleure soupe de poisson des abysses.",
         "Je suis à cran : on m'a volé ma louche en bois. Le coupable aura huit coups de louche."
@@ -196,39 +186,27 @@ export default {
   chests: {
     oyster_box: {
       label: "Caisse d'huîtres",
-      openText: "🎁 Au fond de la caisse, une perle noire et quelques pièces.",
-      emoji: "🦪",
-      emojiOpened: "🦪"
+      openText: "Au fond de la caisse, une perle noire et quelques pièces.",
     },
     shipyard_chest: {
       label: "Coffre du chantier",
-      openText: "🎁 Sous les copeaux, un petit coffre de charpentier avec de bonnes pièces.",
-      emoji: "🪵",
-      emojiOpened: "🪵"
+      openText: "Sous les copeaux, un petit coffre de charpentier avec de bonnes pièces.",
     },
     salt_pan: {
       label: "Cache de la saline",
-      openText: "🎁 Dans un tas de sel, une cassette scellée de cire. Quelques pièces salées.",
-      emoji: "🧂",
-      emojiOpened: "🧂"
+      openText: "Dans un tas de sel, une cassette scellée de cire. Quelques pièces salées.",
     },
     reef_cache: {
       label: "Cache du récif",
-      openText: "🎁 Dans une grotte basse, une cache d'équipage : planches, clous et monnaie.",
-      emoji: "🪸",
-      emojiOpened: "🪸"
+      openText: "Dans une grotte basse, une cache d'équipage : planches, clous et monnaie.",
     },
     wreck_treasure: {
       label: "Trésor de l'épave",
-      openText: "🎁 Une épave ancienne garde un coffre scellé : or, jade, et un éventail de nacre.",
-      emoji: "⚓",
-      emojiOpened: "⚓"
+      openText: "Une épave ancienne garde un coffre scellé : or, jade, et un éventail de nacre.",
     },
     journal_page_mer: {
       label: "Page flottant sur un récif",
-      openText: "🎁 Une page échouée sur un récif : « J'ai entendu parler de l'élixir. Elle le garde dans une boîte rouge. »",
-      emoji: "📄",
-      emojiOpened: "📄"
+      openText: "Une page échouée sur un récif : « J'ai entendu parler de l'élixir. Elle le garde dans une boîte rouge. »",
     }
   },
   quests: [

@@ -166,7 +166,6 @@
       "id": "mageStrike",
       "name": "Frappe du Maître Taoïste",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "red": 3,
         "blue": 5
@@ -180,7 +179,6 @@
       "id": "wildMana",
       "name": "Qi Sauvage",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "blue": 5,
         "green": 5
@@ -193,7 +191,6 @@
       "id": "shadowCurse",
       "name": "Talisman de Scellement",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "purple": 4
       },
@@ -206,7 +203,6 @@
       "id": "darkChannels",
       "name": "Méridiens Obscurs",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "purple": 6
       },
@@ -218,7 +214,6 @@
       "id": "flameBolts",
       "name": "Talismans Enflammés",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "red": 5
       },
@@ -230,7 +225,6 @@
       "id": "iceShield",
       "name": "Barrière de Givre",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "blue": 8
       },
@@ -242,7 +236,6 @@
       "id": "flameblade",
       "name": "Lame de Feu Pourpre",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "red": 6
       },
@@ -254,7 +247,6 @@
       "id": "weakness",
       "name": "Sceau d'Affaiblissement",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "purple": 5
       },
@@ -268,7 +260,6 @@
       "id": "handOfIce",
       "name": "Paume de Givre",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "blue": 7
       },
@@ -281,7 +272,6 @@
       "id": "fingerOfDeath",
       "name": "Doigt Solaire",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "purple": 8
       },
@@ -293,7 +283,6 @@
       "id": "chasm",
       "name": "Fissure du Fleuve Jaune",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "red": 10,
         "blue": 10
@@ -306,7 +295,6 @@
       "id": "stoneskin",
       "name": "Peau de Jade",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "green": 8
       },
@@ -320,7 +308,6 @@
       "id": "strength",
       "name": "Force du Tigre",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "red": 6
       },
@@ -334,7 +321,6 @@
       "id": "fireball",
       "name": "Sphère de Flammes",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "red": 8
       },
@@ -347,7 +333,6 @@
       "id": "mirrorShield",
       "name": "Miroir de Bronze",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "blue": 10
       },
@@ -361,7 +346,6 @@
       "id": "manaSiphon",
       "name": "Aspiration du Qi",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "purple": 7
       },
@@ -374,7 +358,6 @@
       "id": "manaBlast",
       "name": "Explosion des Cinq Éléments",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "red": 15,
         "blue": 15,
@@ -391,7 +374,6 @@
       "id": "sneakAttack",
       "name": "Tir Furtif",
       "class": "assassin",
-      "emoji": "🏹",
       "cost": {
         "blue": 5
       },
@@ -404,7 +386,6 @@
       "id": "swiftStrike",
       "name": "Tir Rapide",
       "class": "assassin",
-      "emoji": "🏹",
       "cost": {
         "yellow": 8,
         "red": 4
@@ -417,7 +398,6 @@
       "id": "confuse",
       "name": "Flèche de Brume",
       "class": "assassin",
-      "emoji": "🏹",
       "cost": {
         "blue": 5,
         "green": 6
@@ -431,7 +411,6 @@
       "id": "stealth",
       "name": "Voile de Brume",
       "class": "assassin",
-      "emoji": "🏹",
       "cost": {
         "purple": 6
       },
@@ -443,7 +422,6 @@
       "id": "poisonBlade",
       "name": "Flèche Empoisonnée",
       "class": "assassin",
-      "emoji": "🏹",
       "cost": {
         "green": 6
       },
@@ -457,7 +435,6 @@
       "id": "shadowStrike",
       "name": "Flèche d'Ombre",
       "class": "assassin",
-      "emoji": "🏹",
       "cost": {
         "red": 4,
         "purple": 8
@@ -470,7 +447,6 @@
       "id": "dualShot",
       "name": "Flèches Jumelles",
       "class": "assassin",
-      "emoji": "🏹",
       "cost": {
         "red": 16,
         "blue": 16,
@@ -487,7 +463,6 @@
       "id": "defensiveWall",
       "name": "Muraille Impériale",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "green": 3,
         "purple": 4
@@ -500,7 +475,6 @@
       "id": "shieldBash",
       "name": "Coup de Bouclier Rond",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "red": 7
       },
@@ -513,7 +487,6 @@
       "id": "focus",
       "name": "Concentration du Qi",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "blue": 3,
         "yellow": 3
@@ -526,7 +499,6 @@
       "id": "intimidate",
       "name": "Regard Impérial",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "purple": 3
       },
@@ -539,7 +511,6 @@
       "id": "rush",
       "name": "Charge de Cavalerie",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "yellow": 7,
         "green": 3
@@ -552,7 +523,6 @@
       "id": "counterAttack",
       "name": "Riposte du Garde",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "red": 8
       },
@@ -566,7 +536,6 @@
       "id": "reinforce",
       "name": "Renfort des Troupes",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "green": 7
       },
@@ -579,7 +548,6 @@
       "id": "barrier",
       "name": "Rempart de Jade",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "green": 10
       },
@@ -593,7 +561,6 @@
       "id": "divinePower",
       "name": "Mandat du Ciel",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "yellow": 6
       },
@@ -605,7 +572,6 @@
       "id": "holdTheLine",
       "name": "Formation de la Tortue",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "green": 12
       },
@@ -618,7 +584,6 @@
       "id": "heavensWrath",
       "name": "Courroux du Ciel",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "yellow": 15
       },
@@ -633,7 +598,6 @@
       "id": "enrage",
       "name": "Fureur des Steppes",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "green": 2,
         "red": 6
@@ -648,7 +612,6 @@
       "id": "cleave",
       "name": "Entaille de la Horde",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "red": 9,
         "yellow": 6
@@ -661,7 +624,6 @@
       "id": "throwAxe",
       "name": "Lancer de Hache",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "green": 6,
         "red": 8
@@ -675,7 +637,6 @@
       "id": "bloodlust",
       "name": "Soif de Bataille",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "green": 5,
         "yellow": 5,
@@ -690,7 +651,6 @@
       "id": "summonTempest",
       "name": "Appel du Vent Céleste",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "red": 8,
         "yellow": 5,
@@ -705,7 +665,6 @@
       "id": "berserkerRage",
       "name": "Fureur du Loup des Steppes",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "green": 5,
         "red": 8
@@ -718,7 +677,6 @@
       "id": "singingBlades",
       "name": "Flèches Sifflantes",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "red": 8,
         "yellow": 6
@@ -733,7 +691,6 @@
       "id": "deathbringer",
       "name": "Porte-Soleil",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "green": 8,
         "red": 16,
@@ -748,7 +705,6 @@
       "id": "revenant",
       "name": "Esprit des Ancêtres",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "green": 10,
         "red": 25,
@@ -764,7 +720,6 @@
       "id": "mageStrike",
       "name": "Frappe du Maître Taoïste",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "red": 3,
         "blue": 5
@@ -778,7 +733,6 @@
       "id": "wildMana",
       "name": "Qi Sauvage",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "blue": 5,
         "green": 5
@@ -791,7 +745,6 @@
       "id": "shadowCurse",
       "name": "Talisman de Scellement",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "purple": 4
       },
@@ -804,7 +757,6 @@
       "id": "darkChannels",
       "name": "Méridiens Obscurs",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "purple": 6
       },
@@ -816,7 +768,6 @@
       "id": "flameBolts",
       "name": "Talismans Enflammés",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "red": 5
       },
@@ -828,7 +779,6 @@
       "id": "iceShield",
       "name": "Barrière de Givre",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "blue": 8
       },
@@ -840,7 +790,6 @@
       "id": "flameblade",
       "name": "Lame de Feu Pourpre",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "red": 6
       },
@@ -852,7 +801,6 @@
       "id": "weakness",
       "name": "Sceau d'Affaiblissement",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "purple": 5
       },
@@ -866,7 +814,6 @@
       "id": "handOfIce",
       "name": "Paume de Givre",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "blue": 7
       },
@@ -879,7 +826,6 @@
       "id": "fingerOfDeath",
       "name": "Doigt Solaire",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "purple": 8
       },
@@ -891,7 +837,6 @@
       "id": "chasm",
       "name": "Fissure du Fleuve Jaune",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "red": 10,
         "blue": 10
@@ -904,7 +849,6 @@
       "id": "stoneskin",
       "name": "Peau de Jade",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "green": 8
       },
@@ -918,7 +862,6 @@
       "id": "strength",
       "name": "Force du Tigre",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "red": 6
       },
@@ -932,7 +875,6 @@
       "id": "fireball",
       "name": "Sphère de Flammes",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "red": 8
       },
@@ -945,7 +887,6 @@
       "id": "mirrorShield",
       "name": "Miroir de Bronze",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "blue": 10
       },
@@ -959,7 +900,6 @@
       "id": "manaSiphon",
       "name": "Aspiration du Qi",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "purple": 7
       },
@@ -972,7 +912,6 @@
       "id": "manaBlast",
       "name": "Explosion des Cinq Éléments",
       "class": "sorcerer",
-      "emoji": "☯️",
       "cost": {
         "red": 15,
         "blue": 15,
@@ -987,7 +926,6 @@
       "id": "sneakAttack",
       "name": "Tir Furtif",
       "class": "assassin",
-      "emoji": "🏹",
       "cost": {
         "blue": 5
       },
@@ -1000,7 +938,6 @@
       "id": "swiftStrike",
       "name": "Tir Rapide",
       "class": "assassin",
-      "emoji": "🏹",
       "cost": {
         "yellow": 8,
         "red": 4
@@ -1013,7 +950,6 @@
       "id": "confuse",
       "name": "Flèche de Brume",
       "class": "assassin",
-      "emoji": "🏹",
       "cost": {
         "blue": 5,
         "green": 6
@@ -1027,7 +963,6 @@
       "id": "stealth",
       "name": "Voile de Brume",
       "class": "assassin",
-      "emoji": "🏹",
       "cost": {
         "purple": 6
       },
@@ -1039,7 +974,6 @@
       "id": "poisonBlade",
       "name": "Flèche Empoisonnée",
       "class": "assassin",
-      "emoji": "🏹",
       "cost": {
         "green": 6
       },
@@ -1053,7 +987,6 @@
       "id": "shadowStrike",
       "name": "Flèche d'Ombre",
       "class": "assassin",
-      "emoji": "🏹",
       "cost": {
         "red": 4,
         "purple": 8
@@ -1066,7 +999,6 @@
       "id": "dualShot",
       "name": "Flèches Jumelles",
       "class": "assassin",
-      "emoji": "🏹",
       "cost": {
         "red": 16,
         "blue": 16,
@@ -1081,7 +1013,6 @@
       "id": "defensiveWall",
       "name": "Muraille Impériale",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "green": 3,
         "purple": 4
@@ -1094,7 +1025,6 @@
       "id": "shieldBash",
       "name": "Coup de Bouclier Rond",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "red": 7
       },
@@ -1107,7 +1037,6 @@
       "id": "focus",
       "name": "Concentration du Qi",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "blue": 3,
         "yellow": 3
@@ -1120,7 +1049,6 @@
       "id": "intimidate",
       "name": "Regard Impérial",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "purple": 3
       },
@@ -1133,7 +1061,6 @@
       "id": "rush",
       "name": "Charge de Cavalerie",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "yellow": 7,
         "green": 3
@@ -1146,7 +1073,6 @@
       "id": "counterAttack",
       "name": "Riposte du Garde",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "red": 8
       },
@@ -1160,7 +1086,6 @@
       "id": "reinforce",
       "name": "Renfort des Troupes",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "green": 7
       },
@@ -1173,7 +1098,6 @@
       "id": "barrier",
       "name": "Rempart de Jade",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "green": 10
       },
@@ -1187,7 +1111,6 @@
       "id": "divinePower",
       "name": "Mandat du Ciel",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "yellow": 6
       },
@@ -1199,7 +1122,6 @@
       "id": "holdTheLine",
       "name": "Formation de la Tortue",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "green": 12
       },
@@ -1212,7 +1134,6 @@
       "id": "heavensWrath",
       "name": "Courroux du Ciel",
       "class": "templar",
-      "emoji": "🛡️",
       "cost": {
         "yellow": 15
       },
@@ -1225,7 +1146,6 @@
       "id": "enrage",
       "name": "Fureur des Steppes",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "green": 2,
         "red": 6
@@ -1240,7 +1160,6 @@
       "id": "cleave",
       "name": "Entaille de la Horde",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "red": 9,
         "yellow": 6
@@ -1253,7 +1172,6 @@
       "id": "throwAxe",
       "name": "Lancer de Hache",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "green": 6,
         "red": 8
@@ -1267,7 +1185,6 @@
       "id": "bloodlust",
       "name": "Soif de Bataille",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "green": 5,
         "yellow": 5,
@@ -1282,7 +1199,6 @@
       "id": "summonTempest",
       "name": "Appel du Vent Céleste",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "red": 8,
         "yellow": 5,
@@ -1297,7 +1213,6 @@
       "id": "berserkerRage",
       "name": "Fureur du Loup des Steppes",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "green": 5,
         "red": 8
@@ -1310,7 +1225,6 @@
       "id": "singingBlades",
       "name": "Flèches Sifflantes",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "red": 8,
         "yellow": 6
@@ -1325,7 +1239,6 @@
       "id": "deathbringer",
       "name": "Porte-Soleil",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "green": 8,
         "red": 16,
@@ -1340,7 +1253,6 @@
       "id": "revenant",
       "name": "Esprit des Ancêtres",
       "class": "barbarian",
-      "emoji": "🪓",
       "cost": {
         "green": 10,
         "red": 25,

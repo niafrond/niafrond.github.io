@@ -1,53 +1,65 @@
 // Créatures et esprits génériques : animaux, fantômes, objets animés… pour les PNJ sans sprite dessiné à la main
 // qui ne sont pas des humains (buffle, épouvantail, corbeau, crapaud…). Même facture que villagers.js : chibi de face,
-// viewBox 64x64, contour #2b1b17, pieds vers y = 58. Le genre est déduit de l'emoji du PNJ (CREATURE_BY_EMOJI) ;
-// CREATURE_BY_ID tranche quand l'emoji est ambigu (🕊️ = éleveur de pigeons ou mouette, 🔥 = chauffeur ou esprit…)
-// et donne les variantes de couleur ou d'accessoire d'un même genre.
+// viewBox 64x64, contour #2b1b17, pieds vers y = 58. Le genre de chaque PNJ et ses variantes de couleur ou
+// d'accessoire sont donnés par son identifiant (CREATURE_BY_ID).
 
 const K = '#2b1b17';
 const O = `stroke="${K}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"`;
 const N = 'stroke="none"';
 
-// Emojis sans ambiguïté : un PNJ qui porte l'un d'eux est cette créature (les métiers liés à un animal,
-// comme l'éleveur de canards 🦆 ou le fauconnier 🦅, gardent leur emoji hors de cette table et restent humains).
-export const CREATURE_BY_EMOJI = {
-    '🐦‍⬛': 'crow', '🐸': 'toad', '🐃': 'buffalo', '🦦': 'weasel', '🪿': 'goose', '🐢': 'turtle', '🐟': 'carp',
-    '🐼': 'panda', '🐍': 'snake', '🦊': 'fox', '🐫': 'camel', '🐐': 'goat', '🐕': 'dog', '🐒': 'monkey', '🐵': 'monkey',
-    '🐲': 'dragon', '🐉': 'dragon', '🦎': 'salamander', '🐎': 'horse', '🐺': 'wolf', '🐇': 'rabbit', '🐰': 'rabbit',
-    '🪼': 'jellyfish', '🐙': 'octopus', '🦀': 'crab', '🦢': 'crane', '🐋': 'whale', '🐥': 'chick', '🎃': 'scarecrow',
-    '👻': 'ghost', '👺': 'imp', '🧞': 'djinn', '🎋': 'bamboo', '🌳': 'tree', '🧜': 'mermaid'
-};
-
-// Par identifiant : genre forcé (emoji ambigu) et/ou variante.
+// Genre (et variante) de chaque PNJ non humain sans sprite dessiné à la main. Un PNJ absent de cette table
+// est un humain : villagers.js le dessine.
 export const CREATURE_BY_ID = {
-    gull_pip: { kind: 'gull' },
-    cairn_spirit: { kind: 'cairn' },
-    forge_spirit: { kind: 'flame' },
+    crow_wing: { kind: 'crow' },
+    toad_chan: { kind: 'toad' },
+    buffalo_dahei: { kind: 'buffalo' },
+    scarecrow_cao: { kind: 'scarecrow' },
+    huang_xian: { kind: 'weasel' },
+    goose_dagong: { kind: 'goose' },
+    mud_imp_pit: { kind: 'imp' },
+    captain_lo: { kind: 'ghost', hat: 'captain' },
+    gui_turtle: { kind: 'turtle' },
+    carp_jin: { kind: 'carp' },
+    panda_baobao: { kind: 'panda' },
+    stem_sprite: { kind: 'bamboo' },
+    snake_qing: { kind: 'snake', scholar: true },
+    panda_mimi: { kind: 'panda', scroll: true },
+    huli_xia: { kind: 'fox' },
     lantern_old: { kind: 'lantern' },
     fennec_lili: { kind: 'fennec' },
+    camel_baba: { kind: 'camel' },
+    mirage_djinn: { kind: 'djinn' },
+    goat_yang: { kind: 'goat' },
+    pup_tuan: { kind: 'dog' },
+    monkey_sun: { kind: 'monkey' },
+    cairn_spirit: { kind: 'cairn' },
+    dragonet_xiaohong: { kind: 'dragon' },
     lava_fish_bi: { kind: 'carp', lava: true },
-    paper_dragon_long: { kind: 'dragon', paper: true },
-    moon_crow_wu: { kind: 'crow', moon: true },
-    phoenix_chick: { kind: 'chick', phoenix: true },
-    horse_tian: { kind: 'horse', celestial: true },
-    jade_hare: { kind: 'rabbit', jade: true },
-    moon_rabbit_yutu: { kind: 'rabbit', pestle: true },
-    panda_mimi: { kind: 'panda', scroll: true },
-    snake_qing: { kind: 'snake', scholar: true },
-    octo_ba: { kind: 'octopus', chef: true },
-    monkey_ji: { kind: 'monkey', peach: true },
-    wolf_pup_baatar: { kind: 'wolf', ember: true },
-    captain_lo: { kind: 'ghost', hat: 'captain' },
     ghost_miner_shu: { kind: 'ghost', hat: 'miner' },
-    ghost_rider_tolui: { kind: 'ghost', hat: 'rider' }
+    lizard_zao: { kind: 'salamander' },
+    forge_spirit: { kind: 'flame' },
+    mare_chagan: { kind: 'horse' },
+    wolf_pup_baatar: { kind: 'wolf', ember: true },
+    ghost_rider_tolui: { kind: 'ghost', hat: 'rider' },
+    horse_tian: { kind: 'horse', celestial: true },
+    hare_tuzi: { kind: 'rabbit' },
+    gull_pip: { kind: 'gull' },
+    jelly_shui: { kind: 'jellyfish' },
+    octo_ba: { kind: 'octopus', chef: true },
+    crab_old_gong: { kind: 'crab' },
+    mermaid_jiaoren: { kind: 'mermaid' },
+    crane_elder_hegu: { kind: 'crane' },
+    monkey_ji: { kind: 'monkey', peach: true },
+    whale_kun: { kind: 'whale' },
+    paper_dragon_long: { kind: 'dragon', paper: true },
+    phoenix_chick: { kind: 'chick', phoenix: true },
+    root_elder: { kind: 'tree' },
+    moon_rabbit_yutu: { kind: 'rabbit', pestle: true },
+    moon_crow_wu: { kind: 'crow', moon: true },
+    jade_hare: { kind: 'rabbit', jade: true }
 };
 
-export function creatureKind(id, hint = '') {
-    const byId = CREATURE_BY_ID[id];
-    if (byId?.kind) return byId.kind;
-    for (const [emoji, kind] of Object.entries(CREATURE_BY_EMOJI)) if (hint && hint.includes(emoji)) return kind;
-    return null;
-}
+export const creatureKind = id => CREATURE_BY_ID[id]?.kind || null;
 
 // ---------- petits éléments communs ----------
 const eyes = (y = 25, dx = 5.6, r = 1.7) =>
@@ -509,8 +521,8 @@ const DRAW = {
 export const CREATURE_KINDS = Object.keys(DRAW);
 
 // Sprite de la créature correspondant au PNJ, ou null si c'est un humain (villagers.js prend alors le relais).
-export function creatureSprite(id, hint = '') {
-    const kind = creatureKind(id, hint);
+export function creatureSprite(id) {
+    const kind = creatureKind(id);
     if (!kind || !DRAW[kind]) return null;
     return DRAW[kind](CREATURE_BY_ID[id] || {});
 }

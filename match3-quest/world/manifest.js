@@ -28,13 +28,13 @@ export const MANIFEST = {
       { id: 'change', where: 'house:rizieres_h_houyi' },
       { id: 'elder_wen', where: 'house:rizieres_h_wen' },
       { id: 'farmer_lin', where: 'house:rizieres_h_lin' },
-      { id: 'ping', name: 'Ping', title: 'Épouse de Lin', emoji: '👩‍🌾', where: 'house:rizieres_h_lin', role: 'ambiance' },
-      { id: 'xiaobao', name: 'Petit Bao', title: 'Enfant du hameau', emoji: '🧒', where: 'place', role: 'donneur' },
-      { id: 'grandma_tao', name: 'Grand-mère Tao', title: 'Doyenne des commères', emoji: '👵', where: 'house:rizieres_h_grenier', role: 'indice' },
-      { id: 'buffalo_dahei', name: 'Dahei', title: 'Buffle d\'eau philosophe', emoji: '🐃', where: 'house:rizieres_h_etable', role: 'ambiance' },
-      { id: 'hua_riz', name: 'Hua', title: 'Colporteuse aux mille babioles', emoji: '🎒', where: 'place', role: 'marchand' },
-      { id: 'scarecrow_cao', name: 'Cao l\'Épouvantail', title: 'Sentinelle des champs', emoji: '🎃', where: 'place', role: 'ambiance' },
-      { id: 'huang_xian', name: 'Huang Xian', title: 'Belette jaune de la digue', emoji: '🦦', where: 'wild', role: 'indice' }
+      { id: 'ping', name: 'Ping', title: 'Épouse de Lin', where: 'house:rizieres_h_lin', role: 'ambiance' },
+      { id: 'xiaobao', name: 'Petit Bao', title: 'Enfant du hameau', where: 'place', role: 'donneur' },
+      { id: 'grandma_tao', name: 'Grand-mère Tao', title: 'Doyenne des commères', where: 'house:rizieres_h_grenier', role: 'indice' },
+      { id: 'buffalo_dahei', name: 'Dahei', title: 'Buffle d\'eau philosophe', where: 'house:rizieres_h_etable', role: 'ambiance' },
+      { id: 'hua_riz', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'scarecrow_cao', name: 'Cao l\'Épouvantail', title: 'Sentinelle des champs', where: 'place', role: 'ambiance' },
+      { id: 'huang_xian', name: 'Huang Xian', title: 'Belette jaune de la digue', where: 'wild', role: 'indice' }
     ],
     chests: [
       { id: 'houyi_trunk', where: 'house:rizieres_h_houyi', tier: 1, label: 'Coffre de voyage de Hou Yi' },
@@ -85,13 +85,13 @@ export const MANIFEST = {
     npcs: [
       { id: 'ferryman_gu', where: 'house:fleuve_h_gu' },
       { id: 'weaver_mei', where: 'house:fleuve_h_mei' },
-      { id: 'salt_hu', name: 'Hu', title: 'Marchand de sel', emoji: '🧂', where: 'house:fleuve_h_sel', role: 'marchand' },
-      { id: 'scribe_ou', name: 'Maître Ou', title: 'Écrivain public', emoji: '🖋️', where: 'house:fleuve_h_ecrivain', role: 'indice' },
-      { id: 'gui_turtle', name: 'Gui', title: 'Vieille tortue noire', emoji: '🐢', where: 'house:fleuve_h_tortue', role: 'indice' },
-      { id: 'girl_lian', name: 'Lian', title: 'Collectionneuse de coquillages', emoji: '👧', where: 'place', role: 'donneur' },
-      { id: 'boatman_shan', name: 'Laoshan', title: 'Batelier désœuvré', emoji: '🧑‍🦲', where: 'place', role: 'ambiance' },
-      { id: 'hua_fleuve', name: 'Hua', title: 'Colporteuse aux mille babioles', emoji: '🎒', where: 'place', role: 'marchand' },
-      { id: 'carp_jin', name: 'Jin', title: 'Carpe dorée dans sa flaque', emoji: '🐟', where: 'wild', role: 'indice' }
+      { id: 'salt_hu', name: 'Hu', title: 'Marchand de sel', where: 'house:fleuve_h_sel', role: 'marchand' },
+      { id: 'scribe_ou', name: 'Maître Ou', title: 'Écrivain public', where: 'house:fleuve_h_ecrivain', role: 'indice' },
+      { id: 'gui_turtle', name: 'Gui', title: 'Vieille tortue noire', where: 'house:fleuve_h_tortue', role: 'indice' },
+      { id: 'girl_lian', name: 'Lian', title: 'Collectionneuse de coquillages', where: 'place', role: 'donneur' },
+      { id: 'boatman_shan', name: 'Laoshan', title: 'Batelier désœuvré', where: 'place', role: 'ambiance' },
+      { id: 'hua_fleuve', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'carp_jin', name: 'Jin', title: 'Carpe dorée dans sa flaque', where: 'wild', role: 'indice' }
     ],
     chests: [
       { id: 'ferry_lockbox', where: 'house:fleuve_h_gu', tier: 1, label: 'Cassette du passeur' },
@@ -143,13 +143,13 @@ export const MANIFEST = {
     npcs: [
       { id: 'monk_zhen', where: 'house:bambous_h_zhen' },
       { id: 'herbalist_xu', where: 'house:bambous_h_xu' },
-      { id: 'lady_lan', name: 'Dame Lan', title: 'Tenancière de la maison de thé', emoji: '🍵', where: 'house:bambous_h_the', role: 'indice' },
-      { id: 'panda_mimi', name: 'Mimi', title: 'Jeune panda lettré', emoji: '🐼', where: 'house:bambous_h_the', role: 'ambiance' },
-      { id: 'ke_paper', name: 'Vieux Ke', title: 'Papetier', emoji: '🧓', where: 'house:bambous_h_papier', role: 'ambiance' },
-      { id: 'apprentice_zhu', name: 'Petite Zhu', title: 'Apprentie papetière', emoji: '👧', where: 'house:bambous_h_papier', role: 'ambiance' },
-      { id: 'flutist_chuan', name: 'Chuan', title: 'Flûtiste en panne d\'air', emoji: '🪈', where: 'house:bambous_h_flute', role: 'donneur' },
-      { id: 'huli_xia', name: 'Xia', title: 'Renarde huli jing curieuse', emoji: '🦊', where: 'place', role: 'indice' },
-      { id: 'lantern_old', name: 'Vieux Lanternier', title: 'Esprit des sentiers', emoji: '🏮', where: 'wild', role: 'indice' }
+      { id: 'lady_lan', name: 'Dame Lan', title: 'Tenancière de la maison de thé', where: 'house:bambous_h_the', role: 'indice' },
+      { id: 'panda_mimi', name: 'Mimi', title: 'Jeune panda lettré', where: 'house:bambous_h_the', role: 'ambiance' },
+      { id: 'ke_paper', name: 'Vieux Ke', title: 'Papetier', where: 'house:bambous_h_papier', role: 'ambiance' },
+      { id: 'apprentice_zhu', name: 'Petite Zhu', title: 'Apprentie papetière', where: 'house:bambous_h_papier', role: 'ambiance' },
+      { id: 'flutist_chuan', name: 'Chuan', title: 'Flûtiste en panne d\'air', where: 'house:bambous_h_flute', role: 'donneur' },
+      { id: 'huli_xia', name: 'Xia', title: 'Renarde huli jing curieuse', where: 'place', role: 'indice' },
+      { id: 'lantern_old', name: 'Vieux Lanternier', title: 'Esprit des sentiers', where: 'wild', role: 'indice' }
     ],
     chests: [
       { id: 'zhen_alms_box', where: 'house:bambous_h_zhen', tier: 1, label: 'Tronc des offrandes' },
@@ -201,13 +201,13 @@ export const MANIFEST = {
     npcs: [
       { id: 'merchant_ma', where: 'house:gobi_h_ma' },
       { id: 'guide_dawa', where: 'house:gobi_h_dawa' },
-      { id: 'keeper_nur', name: 'Nur', title: 'Gardienne de la citerne', emoji: '🧕', where: 'house:gobi_h_bains', role: 'ambiance' },
-      { id: 'mapmaker_ali', name: 'Ali', title: 'Cartographe optimiste', emoji: '🗺️', where: 'house:gobi_h_cartes', role: 'donneur' },
-      { id: 'camel_baba', name: 'Baba', title: 'Chameau diplomate', emoji: '🐫', where: 'house:gobi_h_chameaux', role: 'ambiance' },
-      { id: 'hua_gobi', name: 'Hua', title: 'Colporteuse aux mille babioles', emoji: '🎒', where: 'place', role: 'marchand' },
-      { id: 'storyteller_yun', name: 'Yun', title: 'Conteur de caravane', emoji: '📖', where: 'place', role: 'indice' },
-      { id: 'boy_tarik', name: 'Tarik', title: 'Garçon passeur d\'eau', emoji: '👦', where: 'place', role: 'ambiance' },
-      { id: 'mirage_djinn', name: 'Sablier', title: 'Esprit des mirages repenti', emoji: '🧞', where: 'wild', role: 'donneur' }
+      { id: 'keeper_nur', name: 'Nur', title: 'Gardienne de la citerne', where: 'house:gobi_h_bains', role: 'ambiance' },
+      { id: 'mapmaker_ali', name: 'Ali', title: 'Cartographe optimiste', where: 'house:gobi_h_cartes', role: 'donneur' },
+      { id: 'camel_baba', name: 'Baba', title: 'Chameau diplomate', where: 'house:gobi_h_chameaux', role: 'ambiance' },
+      { id: 'hua_gobi', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'storyteller_yun', name: 'Yun', title: 'Conteur de caravane', where: 'place', role: 'indice' },
+      { id: 'boy_tarik', name: 'Tarik', title: 'Garçon passeur d\'eau', where: 'place', role: 'ambiance' },
+      { id: 'mirage_djinn', name: 'Sablier', title: 'Esprit des mirages repenti', where: 'wild', role: 'donneur' }
     ],
     chests: [
       { id: 'ma_strongbox', where: 'house:gobi_h_ma', tier: 2, label: 'Coffre-fort de Ma' },
@@ -259,13 +259,13 @@ export const MANIFEST = {
     npcs: [
       { id: 'smith_tie', where: 'house:tonnerre_h_tie' },
       { id: 'hermit_lei', where: 'house:tonnerre_h_lei' },
-      { id: 'rodman_gang', name: 'Gang', title: 'Gardien des paratonnerres', emoji: '⚡', where: 'house:tonnerre_h_tour', role: 'donneur' },
-      { id: 'innkeeper_pao', name: 'Pao', title: 'Aubergiste', emoji: '🍜', where: 'house:tonnerre_h_auberge', role: 'indice' },
-      { id: 'monkey_sun', name: 'Houzi', title: 'Singe filou de l\'auberge', emoji: '🐒', where: 'house:tonnerre_h_auberge', role: 'ambiance' },
-      { id: 'nun_ying', name: 'Sœur Ying', title: 'Gardienne de la chapelle', emoji: '🙏', where: 'house:tonnerre_h_montagne', role: 'ambiance' },
-      { id: 'kids_leimei', name: 'Leimei', title: 'Petite chasseuse d\'étincelles', emoji: '🧒', where: 'place', role: 'ambiance' },
-      { id: 'hua_tonnerre', name: 'Hua', title: 'Colporteuse aux mille babioles', emoji: '🎒', where: 'place', role: 'marchand' },
-      { id: 'cairn_spirit', name: 'Vieux Cairn', title: 'Esprit des pierres empilées', emoji: '🪨', where: 'wild', role: 'indice' }
+      { id: 'rodman_gang', name: 'Gang', title: 'Gardien des paratonnerres', where: 'house:tonnerre_h_tour', role: 'donneur' },
+      { id: 'innkeeper_pao', name: 'Pao', title: 'Aubergiste', where: 'house:tonnerre_h_auberge', role: 'indice' },
+      { id: 'monkey_sun', name: 'Houzi', title: 'Singe filou de l\'auberge', where: 'house:tonnerre_h_auberge', role: 'ambiance' },
+      { id: 'nun_ying', name: 'Sœur Ying', title: 'Gardienne de la chapelle', where: 'house:tonnerre_h_montagne', role: 'ambiance' },
+      { id: 'kids_leimei', name: 'Leimei', title: 'Petite chasseuse d\'étincelles', where: 'place', role: 'ambiance' },
+      { id: 'hua_tonnerre', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'cairn_spirit', name: 'Vieux Cairn', title: 'Esprit des pierres empilées', where: 'wild', role: 'indice' }
     ],
     chests: [
       { id: 'tie_anvil_box', where: 'house:tonnerre_h_tie', tier: 2, label: 'Boîte sous l\'enclume' },
@@ -316,13 +316,13 @@ export const MANIFEST = {
     npcs: [
       { id: 'miner_shan', where: 'house:volcan_h_shan' },
       { id: 'priestess_yan', where: 'house:volcan_h_yan' },
-      { id: 'potter_rui', name: 'Rui', title: 'Potier de lave', emoji: '🏺', where: 'house:volcan_h_potier', role: 'donneur' },
-      { id: 'bather_fei', name: 'Grand-père Fei', title: 'Baigneur invétéré', emoji: '🧖', where: 'house:volcan_h_bains', role: 'indice' },
-      { id: 'cook_dada', name: 'Dada', title: 'Cuisinière des mineurs', emoji: '🍲', where: 'house:volcan_h_cantine', role: 'ambiance' },
-      { id: 'lizard_zao', name: 'Zao', title: 'Salamandre bavarde', emoji: '🦎', where: 'place', role: 'ambiance' },
-      { id: 'hua_volcan', name: 'Hua', title: 'Colporteuse aux mille babioles', emoji: '🎒', where: 'place', role: 'marchand' },
-      { id: 'young_miner_bo', name: 'Bo', title: 'Jeune mineur curieux', emoji: '👷', where: 'place', role: 'indice' },
-      { id: 'forge_spirit', name: 'Cendrillon', title: 'Esprit de la forge de lave', emoji: '🔥', where: 'wild', role: 'indice' }
+      { id: 'potter_rui', name: 'Rui', title: 'Potier de lave', where: 'house:volcan_h_potier', role: 'donneur' },
+      { id: 'bather_fei', name: 'Grand-père Fei', title: 'Baigneur invétéré', where: 'house:volcan_h_bains', role: 'indice' },
+      { id: 'cook_dada', name: 'Dada', title: 'Cuisinière des mineurs', where: 'house:volcan_h_cantine', role: 'ambiance' },
+      { id: 'lizard_zao', name: 'Zao', title: 'Salamandre bavarde', where: 'place', role: 'ambiance' },
+      { id: 'hua_volcan', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'young_miner_bo', name: 'Bo', title: 'Jeune mineur curieux', where: 'place', role: 'indice' },
+      { id: 'forge_spirit', name: 'Cendrillon', title: 'Esprit de la forge de lave', where: 'wild', role: 'indice' }
     ],
     chests: [
       { id: 'shan_ore_box', where: 'house:volcan_h_shan', tier: 1, label: 'Caisse de minerais' },
@@ -373,13 +373,13 @@ export const MANIFEST = {
     npcs: [
       { id: 'hunter_wu', where: 'house:fauves_h_wu' },
       { id: 'shepherd_zi', where: 'house:fauves_h_zi' },
-      { id: 'horse_tian', name: 'Tian', title: 'Cheval céleste retraité', emoji: '🐎', where: 'house:fauves_h_chevaux', role: 'ambiance' },
-      { id: 'shaman_ula', name: 'Ula', title: 'Chamane des vents', emoji: '🪶', where: 'house:fauves_h_chaman', role: 'indice' },
-      { id: 'cheese_sa', name: 'Dame Sa', title: 'Fromagère', emoji: '🧀', where: 'house:fauves_h_fromage', role: 'marchand' },
-      { id: 'twins_mu', name: 'Les jumeaux Mu', title: 'Enfants-bergers', emoji: '👦', where: 'place', role: 'donneur' },
-      { id: 'hua_fauves', name: 'Hua', title: 'Colporteuse aux mille babioles', emoji: '🎒', where: 'place', role: 'marchand' },
-      { id: 'hare_tuzi', name: 'Tuzi', title: 'Lièvre du Palais lunaire', emoji: '🐇', where: 'wild', role: 'indice' },
-      { id: 'old_nomad_bayan', name: 'Bayan', title: 'Vieux nomade', emoji: '🧓', where: 'place', role: 'indice' }
+      { id: 'horse_tian', name: 'Tian', title: 'Cheval céleste retraité', where: 'house:fauves_h_chevaux', role: 'ambiance' },
+      { id: 'shaman_ula', name: 'Ula', title: 'Chamane des vents', where: 'house:fauves_h_chaman', role: 'indice' },
+      { id: 'cheese_sa', name: 'Dame Sa', title: 'Fromagère', where: 'house:fauves_h_fromage', role: 'marchand' },
+      { id: 'twins_mu', name: 'Les jumeaux Mu', title: 'Enfants-bergers', where: 'place', role: 'donneur' },
+      { id: 'hua_fauves', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'hare_tuzi', name: 'Tuzi', title: 'Lièvre du Palais lunaire', where: 'wild', role: 'indice' },
+      { id: 'old_nomad_bayan', name: 'Bayan', title: 'Vieux nomade', where: 'place', role: 'indice' }
     ],
     chests: [
       { id: 'wu_quiver_box', where: 'house:fauves_h_wu', tier: 1, label: 'Coffre à carquois' },
@@ -431,13 +431,13 @@ export const MANIFEST = {
     npcs: [
       { id: 'fisher_hai', where: 'house:mer_h_hai' },
       { id: 'envoy_longwang', where: 'house:mer_h_longwang' },
-      { id: 'pearl_diver_xi', name: 'Xi', title: 'Plongeuse de perles', emoji: '🤿', where: 'house:mer_h_perles', role: 'donneur' },
-      { id: 'sailor_bao', name: 'Bao', title: 'Marin, père de Petit Bao', emoji: '⚓', where: 'house:mer_h_marin', role: 'donneur' },
-      { id: 'lighthouse_ming', name: 'Ming', title: 'Gardienne du phare', emoji: '🔦', where: 'house:mer_h_phare', role: 'indice' },
-      { id: 'hua_mer', name: 'Hua', title: 'Colporteuse aux mille babioles', emoji: '🎒', where: 'place', role: 'marchand' },
-      { id: 'crab_old_gong', name: 'Vieux Gong', title: 'Crabe sentencieux', emoji: '🦀', where: 'place', role: 'ambiance' },
-      { id: 'mermaid_jiaoren', name: 'Jiaoren', title: 'Sirène aux larmes de perle', emoji: '🧜', where: 'wild', role: 'indice' },
-      { id: 'girl_net_mi', name: 'Mi', title: 'Fillette réparatrice de filets', emoji: '👧', where: 'place', role: 'ambiance' }
+      { id: 'pearl_diver_xi', name: 'Xi', title: 'Plongeuse de perles', where: 'house:mer_h_perles', role: 'donneur' },
+      { id: 'sailor_bao', name: 'Bao', title: 'Marin, père de Petit Bao', where: 'house:mer_h_marin', role: 'donneur' },
+      { id: 'lighthouse_ming', name: 'Ming', title: 'Gardienne du phare', where: 'house:mer_h_phare', role: 'indice' },
+      { id: 'hua_mer', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'crab_old_gong', name: 'Vieux Gong', title: 'Crabe sentencieux', where: 'place', role: 'ambiance' },
+      { id: 'mermaid_jiaoren', name: 'Jiaoren', title: 'Sirène aux larmes de perle', where: 'wild', role: 'indice' },
+      { id: 'girl_net_mi', name: 'Mi', title: 'Fillette réparatrice de filets', where: 'place', role: 'ambiance' }
     ],
     chests: [
       { id: 'hai_net_box', where: 'house:mer_h_hai', tier: 1, label: 'Caisse à hameçons' },
@@ -488,14 +488,14 @@ export const MANIFEST = {
     ],
     npcs: [
       { id: 'crane_envoy', where: 'house:fusang_h_grue' },
-      { id: 'picker_tao', name: 'Tao', title: 'Cueilleur de pêches', emoji: '🍑', where: 'house:fusang_h_cueilleur', role: 'marchand' },
-      { id: 'astronomer_xing', name: 'Mère Xing', title: 'Astronome de l\'arbre', emoji: '🔭', where: 'house:fusang_h_astronome', role: 'indice' },
-      { id: 'acolyte_ri', name: 'Ri', title: 'Acolyte aux neuf lanternes', emoji: '🕯️', where: 'house:fusang_h_temple', role: 'donneur' },
-      { id: 'teamaster_you', name: 'Maître You', title: 'Maître de thé suspendu', emoji: '🍃', where: 'house:fusang_h_chambre', role: 'ambiance' },
-      { id: 'hua_fusang', name: 'Hua', title: 'Colporteuse aux mille babioles', emoji: '🎒', where: 'place', role: 'marchand' },
-      { id: 'child_yuer', name: 'Yuer', title: 'Fillette qui écoute les soleils', emoji: '🧒', where: 'place', role: 'indice' },
-      { id: 'phoenix_chick', name: 'Petit Fenghuang', title: 'Poussin de phénix', emoji: '🐥', where: 'place', role: 'ambiance' },
-      { id: 'root_elder', name: 'Racine-Ancienne', title: 'Esprit de l\'arbre', emoji: '🌳', where: 'wild', role: 'indice' }
+      { id: 'picker_tao', name: 'Tao', title: 'Cueilleur de pêches', where: 'house:fusang_h_cueilleur', role: 'marchand' },
+      { id: 'astronomer_xing', name: 'Mère Xing', title: 'Astronome de l\'arbre', where: 'house:fusang_h_astronome', role: 'indice' },
+      { id: 'acolyte_ri', name: 'Ri', title: 'Acolyte aux neuf lanternes', where: 'house:fusang_h_temple', role: 'donneur' },
+      { id: 'teamaster_you', name: 'Maître You', title: 'Maître de thé suspendu', where: 'house:fusang_h_chambre', role: 'ambiance' },
+      { id: 'hua_fusang', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'place', role: 'marchand' },
+      { id: 'child_yuer', name: 'Yuer', title: 'Fillette qui écoute les soleils', where: 'place', role: 'indice' },
+      { id: 'phoenix_chick', name: 'Petit Fenghuang', title: 'Poussin de phénix', where: 'place', role: 'ambiance' },
+      { id: 'root_elder', name: 'Racine-Ancienne', title: 'Esprit de l\'arbre', where: 'wild', role: 'indice' }
     ],
     chests: [
       { id: 'crane_feather_box', where: 'house:fusang_h_grue', tier: 1, label: 'Coffre de plumes' },
@@ -542,12 +542,12 @@ export const MANIFEST = {
       { id: 'lune_h_tisseuse', name: 'Chaumière de la tisseuse d\'argent', desc: 'Une chaumière silencieuse où l\'on file de la lumière de lune sur un rouet.', residents: ['spinner_yue'], chests: ['moon_thread_box'] }
     ],
     npcs: [
-      { id: 'keeper_lunar', name: 'Veilleuse Yin', title: 'Gardienne des lanternes', emoji: '🏮', where: 'house:lune_h_veilleuse', role: 'indice' },
-      { id: 'hua_lune', name: 'Hua', title: 'Colporteuse aux mille babioles', emoji: '🎒', where: 'house:lune_h_veilleuse', role: 'marchand' },
-      { id: 'jade_hare', name: 'Lièvre de jade', title: 'Pileur d\'élixir', emoji: '🐇', where: 'house:lune_h_lievres', role: 'indice' },
-      { id: 'spinner_yue', name: 'Yue', title: 'Tisseuse d\'argent', emoji: '🧶', where: 'house:lune_h_tisseuse', role: 'ambiance' },
-      { id: 'moon_child', name: 'Enfant de la Lune', title: 'Petit veilleur', emoji: '🧒', where: 'place', role: 'ambiance' },
-      { id: 'osmanthus_woodcutter', name: 'Wu Gang', title: 'Bûcheron éternel de l\'osmanthus', emoji: '🪓', where: 'wild', role: 'donneur' }
+      { id: 'keeper_lunar', name: 'Veilleuse Yin', title: 'Gardienne des lanternes', where: 'house:lune_h_veilleuse', role: 'indice' },
+      { id: 'hua_lune', name: 'Hua', title: 'Colporteuse aux mille babioles', where: 'house:lune_h_veilleuse', role: 'marchand' },
+      { id: 'jade_hare', name: 'Lièvre de jade', title: 'Pileur d\'élixir', where: 'house:lune_h_lievres', role: 'indice' },
+      { id: 'spinner_yue', name: 'Yue', title: 'Tisseuse d\'argent', where: 'house:lune_h_tisseuse', role: 'ambiance' },
+      { id: 'moon_child', name: 'Enfant de la Lune', title: 'Petit veilleur', where: 'place', role: 'ambiance' },
+      { id: 'osmanthus_woodcutter', name: 'Wu Gang', title: 'Bûcheron éternel de l\'osmanthus', where: 'wild', role: 'donneur' }
     ],
     chests: [
       { id: 'veilleuse_chest', where: 'house:lune_h_veilleuse', tier: 1, label: 'Coffre de la veilleuse' },

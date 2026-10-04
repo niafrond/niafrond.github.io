@@ -1,7 +1,7 @@
 // Villageois génériques : sprite SVG chibi (viewBox 64x64, contour #2b1b17, pieds vers y = 58) composé à partir de
 // l'identifiant du PNJ (couleurs de robe, coiffure, couvre-chef, accessoire) pour que chaque habitant du Grand Monde
-// ait un dessin propre sans sprite écrit à la main. Déterministe : même id → même personnage. `hint` (emoji du PNJ)
-// oriente l'âge : 👴👵 = ancien (cheveux blancs, barbe), 👦👧🧒👶 = enfant (plus petit, couettes).
+// ait un dessin propre sans sprite écrit à la main. Déterministe : même id → même personnage. L'identifiant oriente
+// aussi l'âge (OLD_IDS : cheveux blancs, barbe ; CHILD_ID / CHILD_IDS : plus petit, couettes) et l'habit (moines).
 // Les PNJ non humains (animaux, esprits, épouvantail…) sont dessinés par creatures.js.
 
 import { creatureSprite } from './creatures.js';
@@ -25,21 +25,20 @@ function hashOf(id) {
 }
 const pick = (list, h, shift) => list[(h >>> shift) % list.length];
 
-const OLD_HINT = /[👴👵🧓]/u;
-const CHILD_HINT = /[👦👧🧒👶]/u;
-// Enfants dont l'emoji évoque le métier (🦗 éleveur de grillons, 🦅 dresseur d'aigle, 🌟 enfant d'étoile…).
+const OLD_IDS = new Set(['aunt_liu', 'grandma_tao', 'ke_paper', 'bath_old_wang', 'grandma_altan', 'old_nomad_bayan']);
+const OLD_ID = /(^|_)(old|grandma|grandpa|elder)(_|$)/;
+const CHILD_IDS = new Set(['xiaobao', 'star_child_xing', 'cricket_boy_hao', 'eagle_boy_temur']);
 const CHILD_ID = /(^|_)(kid|kids|boy|girl|child|orphan|twins|apprentice)(_|$)/;
 // Moines et nonnes : crâne rasé, robe safran.
-const MONK_HINT = /🧑‍🦲|🧘|🙏/u;
 const MONK_ID = /(^|_)(monk|nun)(_|$)/;
 
-export function villagerSprite(id, hint = '') {
-    const creature = creatureSprite(id, hint);
+export function villagerSprite(id) {
+    const creature = creatureSprite(id);
     if (creature) return creature;
     const h = hashOf(id);
-    const old = OLD_HINT.test(hint);
-    const child = !old && (CHILD_HINT.test(hint) || CHILD_ID.test(id));
-    const monk = MONK_HINT.test(hint) || MONK_ID.test(id);
+    const old = OLD_IDS.has(id) || OLD_ID.test(id);
+    const child = !old && (CHILD_IDS.has(id) || CHILD_ID.test(id));
+    const monk = MONK_ID.test(id);
     const [skin, skinD] = pick(SKINS, h, 3);
     const [robe, robeD, trim] = monk ? ['#e0902a', '#b06a1c', '#8e2a3a'] : pick(ROBES, h, 6);
     const hair = monk ? skin : old ? OLD_HAIR : pick(HAIRS, h, 11);

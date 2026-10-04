@@ -40,7 +40,7 @@ export const MANIFEST = {
     wild:    { id: 'rizieres_wild', name: 'Digue et Marais Craquelés', mood: '…', arrival: ['…'],
                gate: { type: 'kill' | 'chest' | 'quest', id: 'rizieres_warden', hint: 'Pourquoi la voie du sanctuaire est fermée' } },
     houses: [ { id: 'rizieres_h_wen', name: 'Maison du Doyen Wen', desc: '…', residents: ['elder_wen'], chests: ['wen_scroll_box'] }, … ],
-    npcs: [ { id: 'lin_wife', name: 'Ping', title: 'Épouse de Lin', emoji: '👩‍🌾', where: 'place' | 'house:<houseId>' | 'wild', role: 'ambiance|marchand|donneur|indice' }, … ],
+    npcs: [ { id: 'lin_wife', name: 'Ping', title: 'Épouse de Lin', where: 'place' | 'house:<houseId>' | 'wild', role: 'ambiance|marchand|donneur|indice' }, … ],
     chests: [ { id: 'rice_jar', where: 'village|wild|house:<id>', tier: 1|2|3, label: 'Jarre de riz' }, … ],
     enemies: [ { id: 'rizieres_warden', name: 'Gardien de la digue', templateHint: 'forest_guardian', role: 'gate|quest|elite' }, … ],
     quests: [ { id: 'sq_xxx', title: '…', giver: 'npc_id', turnIn: 'npc_id', chain: null | 'sq_prev', summary: '…',
@@ -66,10 +66,10 @@ Les types d’objectifs : `kill` (ennemi nommé), `killGroup` (id de groupe), `c
 export default {
   screens: { rizieres_village: { name, arrival: [...] }, rizieres_wild: {...}, rizieres_h_wen: { name, arrival: [...]?, } },
   npcs: {   // clé = id de PNJ du manifeste (nouveaux PNJ uniquement)
-    ping: { name: 'Ping', title: 'Épouse de Lin', emoji: '👩‍🌾',
+    ping: { name: 'Ping', title: 'Épouse de Lin',
             idle: ['réplique 1', 'réplique 2'],                       // 2 à 4 répliques tournantes courtes
             talk: [ { whenDone: 'sun_1' | 'q_sun_2' | ['a','b'], lines: [...] } ] } },  // répliques selon l’avancement (≥1 par PNJ de village)
-  chests: { rice_jar: { label: 'Jarre de riz', openText: '🎁 Quelques sous au fond de la jarre.', emoji: '🏺'?, emojiOpened: '…'? } },
+  chests: { rice_jar: { label: 'Jarre de riz', openText: 'Quelques sous au fond de la jarre.' } },
   quests: [ { id, title, chapter: '✦ Quête secondaire — <Nom de région>', giver, turnIn, requires: [...], side: true,
               objectives: [ { type: 'talk', target: 'npc_id', text: 'Phrase d’objectif lisible, avec le lieu', lines: ['réplique de la cible quand on lui parle (talk)'] } ],
               offer: [...], hint: [...], complete: [...],
@@ -103,7 +103,7 @@ nommées par leur caractère, utilisées par les entités (`at: '3'`). Les sorti
 ```js
 npcs:    [ { id: 'ping', at: '3' } ],                       // texte = world/text ou story.js (PNJ existants)
 chests:  [ { id: 'rice_jar', at: '5', gold: 25 } ],         // optionnel: showWhen/hideWhen
-enemies: [ { id: 'rizieres_warden', at: '7', templateId: 'forest_guardian', emoji: '🌳', name: '…', kind: 'sentinel'|'patrol',
+enemies: [ { id: 'rizieres_warden', at: '7', templateId: 'forest_guardian', name: '…', kind: 'sentinel'|'patrol',
              patrol: ['7','8'] /* ancres */, offset: 0|1|-1, permanent: true, group: 'id' } ],     // wild seulement
 exits:   [ { at: '<', to: 'rizieres_wild', arriveAt: '>' /* ancre de la zone d’arrivée */, label: 'Digue', requires: 'rizieres_warden', lockedMessage: '…' } ],
 ```
@@ -132,7 +132,7 @@ phoenix_brazier, volcan_chest, zi_bell, fauves_chest, dragon_pearl, mer_chest, c
 * Sorties automatiques (ne pas les déclarer) : village `<` → sanctuaire précédent (pas de `<` dans le village de `rizieres`), village `>` → wild, wild `<` → village, wild `>` → sanctuaire (fermée par `gate.requires`), porte minuscule → intérieur, ancre `v` d’un intérieur → village. Les ancres `<` `>` doivent donc être posées sur le **bord** de la grille (x = 0 / x = w-1) avec une tuile libre juste à l’intérieur. L’ancre `S` est le point d’apparition (`rizieres_village` : devant la maison de Hou Yi).
 * Pas de champ `name` dans les cartes : les noms viennent de `world/text/<R>.js` (`screens.<id>.name`). Tous les textes (PNJ, coffres, quêtes) sont écrits par le scénariste, clés = ids du manifeste.
 * Les PNJ existants sont placés par `{ id: 'elder_wen', at: '3' }` comme les autres. Un PNJ peut recevoir `showWhen`/`hideWhen` dans la carte.
-* Ennemis (wild) : champs `id, at, templateId, emoji, name, kind ('sentinel'|'patrol'), patrol ['ancre', …], offset, permanent, group` ; mini-boss : ajouter `boss: { name, level }` (level ≈ 2 niveaux sous le Soleil de la région, voir UNIVERS.md §2). Les ennemis nommés du manifeste (templateHint) doivent être placés avec leur `id` exact.
+* Ennemis (wild) : champs `id, at, templateId, name, kind ('sentinel'|'patrol'), patrol ['ancre', …], offset, permanent, group` ; mini-boss : ajouter `boss: { name, level }` (level ≈ 2 niveaux sous le Soleil de la région, voir UNIVERS.md §2). Les ennemis nommés du manifeste (templateHint) doivent être placés avec leur `id` exact.
 * Le groupe `group` d’un ennemi déclaré dans le manifeste sert aux objectifs `killGroup`.
 * Pierres de voyage : lettre `W` dans la grille du village et de la wild (un seul `W` par grille) ; sanctuaire via `sanctuary.waypoint`.
 * Les tuiles devant une porte (au sud, y+1) et devant/autour des ancres d’entrée doivent être libres.
@@ -143,3 +143,6 @@ phoenix_brazier, volcan_chest, zi_bell, fauves_chest, dragon_pearl, mer_chest, c
 
 ## 8. Ancres supplémentaires
 Outre les chiffres `0`-`9` et `< > ^ v`, les lettres minuscules **`i` à `u` et `w` à `z`** (hors `v`) sont des ancres libres : elles servent exactement comme les chiffres (`at: 'k'`, extrémités de patrouille…). Les minuscules `a`-`h` restent les portes des bâtiments `A`-`H`.
+
+
+**Aucun emoji** dans les données ni dans les textes (test `tests/unit/noEmoji.test.js`) : les PNJ, ennemis et coffres sont dessinés (sprites), un PNJ non humain se déclare dans `CREATURE_BY_ID` (`sprites/creatures.js`).

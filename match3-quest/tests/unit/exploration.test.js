@@ -84,7 +84,7 @@ const synth = (extra = {}) => ({
         obstacles: [], liquids: [], paths: [], exits: [], npcs: [], chests: [], enemies: [], ...extra
     }
 });
-const enemyDef = (id, x, y, extra = {}) => ({ id, templateId: 'goblin_saboteur', emoji: 'g', name: id, kind: 'sentinel', x, y, offset: 0, ...extra });
+const enemyDef = (id, x, y, extra = {}) => ({ id, templateId: 'goblin_saboteur', name: id, kind: 'sentinel', x, y, offset: 0, ...extra });
 const synthSession = (extra, at = { x: 0, y: 2 }, quests = []) => {
     const s = createSession({ screenId: 't', ...at }, synth(extra), quests);
     s.rt.grace = 0;
@@ -255,12 +255,12 @@ describe('cartes (story.js)', () => {
             expect(seenPos.has(key)).toBe(false); // pas deux entités au même endroit
             seenPos.add(key);
         };
-        s.npcs.forEach(n => { place('npc', n.x, n.y); expect(n.emoji).toBeTruthy(); expect(n.name).toBeTruthy(); expect(n.title).toBeTruthy(); });
+        s.npcs.forEach(n => { place('npc', n.x, n.y); expect(n.emoji).toBeUndefined(); expect(n.name).toBeTruthy(); expect(n.title).toBeTruthy(); });
         s.chests.forEach(c => place('chest', c.x, c.y));
         s.enemies.forEach(e => {
             place('enemy', e.x, e.y);
             expect(templateIds.has(e.templateId)).toBe(true);
-            expect(e.emoji).toBeTruthy();
+            expect(e.emoji).toBeUndefined();
             if (e.kind === 'patrol') {
                 const route = buildRoute(e.patrol);
                 expect(route[0]).toEqual({ x: e.x, y: e.y });
@@ -458,7 +458,7 @@ describe('cartes (story.js)', () => {
         ORDER.forEach(id => {
             const villagers = screens.filter(s => s.region === id && s.kind !== undefined && s.id !== id).flatMap(s => s.npcs);
             expect(villagers.length).toBeGreaterThan(0);
-            villagers.forEach(n => { expect(n.emoji).toBeTruthy(); expect(n.name).toBeTruthy(); expect(n.title).toBeTruthy(); });
+            villagers.forEach(n => { expect(n.emoji).toBeUndefined(); expect(n.name).toBeTruthy(); expect(n.title).toBeTruthy(); });
         });
         for (let i = 0; i < 9; i++) {
             const sun = SCREENS[ORDER[i]].enemies.find(e => e.id === `sun_${i + 1}`);
@@ -466,7 +466,7 @@ describe('cartes (story.js)', () => {
             expect(sun.x).toBeGreaterThanOrEqual(8);
             expect(sun.boss.level).toBe(SUN_LEVELS[i]);
             expect(sun.permanent).toBe(true);
-            expect(sun.emoji).toBeTruthy();
+            expect(sun.emoji).toBeUndefined();
         }
         expect(SCREENS.lune.enemies.filter(e => e.boss).map(e => e.id)).toEqual(['fengmeng_3a', 'fengmeng_3b']);
     });
@@ -1043,11 +1043,11 @@ describe('quêtes secondaires', () => {
         side.forEach(q => reaches(q.id));
     });
 
-    test('les ennemis nommés des quêtes secondaires sont permanents et ont un emoji', () => {
+    test('les ennemis nommés des quêtes secondaires sont permanents et dessinés d\'après leur gabarit', () => {
         side.flatMap(q => q.objectives).filter(o => o.type === 'kill' || o.type === 'killGroup').forEach(o => {
             const targets = allEnemies.filter(e => o.type === 'kill' ? e.id === o.target : e.group === o.target);
             expect(targets.length).toBeGreaterThan(0);
-            targets.forEach(e => { expect(e.permanent).toBe(true); expect(e.emoji).toBeTruthy(); });
+            targets.forEach(e => { expect(e.permanent).toBe(true); expect(e.templateId).toBeTruthy(); expect(e.emoji).toBeUndefined(); });
         });
     });
 
@@ -1120,7 +1120,7 @@ describe('quêtes secondaires', () => {
         expect(s.data.quests.sq_lettre_bao_1).toBe('active');
         const target = q1.objectives[0];
         expect(target.type).toBe('talk');
-        expect(npcMarker(s, target.target)).toBe('❓');   // le destinataire porte un « ? »
+        expect(npcMarker(s, target.target)).toBe('?');   // le destinataire porte un « ? »
         const talk = talkTo(s, target.target);
         expect(talk.events[0]).toMatchObject({ type: 'objective' });
         expect(talk.lines).toEqual(expect.arrayContaining(target.lines));
@@ -1338,7 +1338,7 @@ describe('showWhen / hideWhen : entités conditionnelles', () => {
 
     test('un PNJ avec showWhen n\'existe qu\'une fois la condition remplie (dialogue, entityAt, chemin)', () => {
         const extra = {
-            npcs: [{ id: 'ghost', x: 3, y: 2, name: 'G', title: 'T', emoji: 'g', idle: ['boo'], showWhen: 'k' }],
+            npcs: [{ id: 'ghost', x: 3, y: 2, name: 'G', title: 'T', idle: ['boo'], showWhen: 'k' }],
             enemies: [enemyDef('k', 6, 0)]
         };
         const s = synthSession(extra);
@@ -1354,7 +1354,7 @@ describe('showWhen / hideWhen : entités conditionnelles', () => {
 
     test('hideWhen : le PNJ disparaît une fois la condition remplie', () => {
         const s = synthSession({
-            npcs: [{ id: 'leaver', x: 3, y: 2, name: 'L', title: 'T', emoji: 'l', idle: ['salut'], hideWhen: 'k' }],
+            npcs: [{ id: 'leaver', x: 3, y: 2, name: 'L', title: 'T', idle: ['salut'], hideWhen: 'k' }],
             enemies: [enemyDef('k', 6, 0)]
         });
         expect(talkToNpc(s, 'leaver').lines).toEqual(['salut']);
@@ -1763,7 +1763,7 @@ describe('déplacement au clic (findPath)', () => {
         // PNJ muré par quatre obstacles : sa tuile est valide mais aucune case voisine n'est accessible
         const s = synthSession({
             obstacles: [[3, 1, 1, 1], [3, 3, 1, 1], [2, 2, 1, 1], [4, 2, 1, 1]],
-            npcs: [{ id: 'n', x: 3, y: 2, name: 'N', title: 'T', emoji: 'n', idle: ['…'] }]
+            npcs: [{ id: 'n', x: 3, y: 2, name: 'N', title: 'T', idle: ['…'] }]
         });
         expect(findPath(s, 3, 2)).toBeNull();
     });
@@ -1865,11 +1865,11 @@ describe('indicateurs de quête : maisons et direction', () => {
         const s = createSession({});
         const house = houseOf(s, 'elder_wen');
         expect(house).toBeTruthy();
-        expect(screenQuestMarker(s, house.id)).toBe('❗');
+        expect(screenQuestMarker(s, house.id)).toBe('!');
         // le doyen est dans une maison du village de départ : la porte de cette maison est signalée
         const village = s.screens[START_SCREEN];
         expect(village.exits.some(e => e.door && e.to === house.id)).toBe(true);
-        expect(houseMarkers(s).find(h => h.exit.to === house.id)).toMatchObject({ marker: '❗' });
+        expect(houseMarkers(s).find(h => h.exit.to === house.id)).toMatchObject({ marker: '!' });
         // une maison sans quête n'a pas d'indicateur
         const quiet = village.exits.filter(e => e.door && !houseMarkers(s).some(h => h.exit.to === e.to));
         quiet.forEach(e => expect(screenQuestMarker(s, e.to)).toBe(''));
@@ -1909,7 +1909,7 @@ describe('déplacement au clic : évitement des zones de combat', () => {
         const screen = {
             ...base, id: START_SCREEN, w: 9, h: 5, obstacles: [], liquids: [], buildings: [], npcs: [], chests: [], exits: [], waypoint: null,
             spawn: { x: 0, y: 2 },
-            enemies: [{ id: 'arena_foe', x: 4, y: 2, emoji: 'x', name: 'Foe', templateId: 'goblin_saboteur', kind: 'sentinel' }],
+            enemies: [{ id: 'arena_foe', x: 4, y: 2, name: 'Foe', templateId: 'goblin_saboteur', kind: 'sentinel' }],
             ...extra
         };
         const s = createSession({}, { [START_SCREEN]: screen }, []);
