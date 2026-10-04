@@ -18,7 +18,6 @@
 
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
 import { REGION_ORDER } from './world/index.js';
-import { chestPotion } from './chestLoot.js';
 
 export const AGGRO_RADIUS = 1;
 export const PATROL_STEP_MS = 650;
@@ -267,7 +266,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
         enterScreen(session, exit.to, exit.arrive);
         const res = { type: 'transition', from, to: exit.to, firstVisit, door: Boolean(exit.door), events: checkAutoQuests(session) };
         // Texte du Narrateur affiché seulement à la toute première visite de l'écran.
-        if (firstVisit && target.arrival?.length) res.arrival = target.arrival;
+        if (firstVisit && !target.interior && target.arrival?.length) res.arrival = target.arrival;
         if (warning) res.warning = warning;
         return res;
     }
@@ -581,15 +580,9 @@ export function openChest(session, chestId) {
     const chest = visibleChests(session).find(c => c.id === chestId);
     if (!chest || session.data.openedChests.includes(chestId)) return null;
     session.data.openedChests.push(chestId);
-    // Potion éventuelle : plus le coffre est difficile à trouver, plus elle est probable et rare (chestLoot.js).
-    const screen = currentScreen(session);
-    const potion = chestPotion(chest, screen, {
-        regionIndex: REGION_ORDER.indexOf(screen.region) + 1,
-        level: REGION_UNLOCK_LEVEL[screen.region] || 1,
-        ngPlus: session.data.ngPlus || 0
-    });
-    const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, potion }, ...checkAutoQuests(session)];
-    return { type: 'chestOpened', chest, gold: chest.gold || 0, potion, events };
+    const { region, kind } = currentScreen(session);
+    const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, screen: { region, kind } }, ...checkAutoQuests(session)];
+    return { type: 'chestOpened', chest, gold: chest.gold || 0, events };
 }
 
 function findNpcScreen(session, npcId) {

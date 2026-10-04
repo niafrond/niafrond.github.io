@@ -453,6 +453,40 @@ export function grantStartingWeapon(weaponId){
     return weapon;
 }
 
+// Range dans le sac le butin d'un coffre d'exploration (tiré par chestLoot.js : rollChestLoot).
+// Retourne les libellés à afficher en texte (ex. « Bague d'Archer en Jade (rare) »).
+const RARITY_LABEL = { common: 'commune', uncommon: 'peu commune', rare: 'rare', legendary: 'légendaire' };
+export function grantChestLoot({ loot = [] } = {}){
+    if(!Array.isArray(player.inventory)) player.inventory = [];
+    if(!Array.isArray(player.weapons)) player.weapons = [];
+    const labels = [];
+    loot.forEach(entry => {
+        const rarityIcon = getRarityIcon(entry.rarity);
+        const rarityText = RARITY_LABEL[entry.rarity] || entry.rarity;
+        if(entry.kind === 'weapon' && entry.weapon) {
+            if(player.weapons.some(w => w.id === entry.weapon.id)) return;
+            player.weapons.push(entry.weapon);
+            const lvl = entry.weapon.minLevel > player.level ? `, niv. ${entry.weapon.minLevel}` : '';
+            labels.push(`${entry.weapon.name} (${rarityText}${lvl})`);
+            log(`${getWeaponIcon(entry.weapon.type)} Trouvé dans un coffre : ${entry.weapon.name} !`);
+        } else if(entry.kind === 'item' && entry.item) {
+            player.inventory.push({ ...entry.item, applied: false });
+            labels.push(`${entry.item.name} (${rarityText})`);
+            log(`${rarityIcon} Trouvé dans un coffre : ${entry.item.name} !`);
+            if(entry.item.type === 'artifact') {
+                applyArtifactEffects(player);
+                log(entry.item.description);
+            }
+        }
+    });
+    if(labels.length) {
+        normalizeActiveInventoryIndex();
+        updateAvailableWeapons();
+        updateInventoryTab();
+    }
+    return labels;
+}
+
 // tour actuel
 export let currentTurn = 'player';
 

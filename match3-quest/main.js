@@ -1,6 +1,7 @@
 import { icon } from "./icons.js";
 import { generateBoard, renderBoard } from "./board.js";
-import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, combatHooks, getCombatMusicScene } from "./game.js";
+import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, getCombatMusicScene } from "./game.js";
+import { rollChestLoot } from "./chestLoot.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
 import { createMapEnemy } from "./enemies.js";
 import { addXP } from "./experience.js";
@@ -147,12 +148,7 @@ function init() {
         getPlayerLevel: () => player.level,
         onEncounter: encounter => startEncounterCombat(encounter),
         onGold: amount => { player.gold = (player.gold || 0) + amount; },
-        onItem: item => {
-            if (!Array.isArray(player.inventory)) player.inventory = [];
-            player.inventory.push({ ...item, applied: false });
-            if (!Number.isInteger(player.activeInventoryIndex)) player.activeInventoryIndex = player.inventory.length - 1;
-            updateInventoryTab();
-        },
+        onChestLoot: ev => grantChestLoot(rollChestLoot(ev.chest, ev.screen, player)),
         onXp: amount => {
             const res = addXP(player, amount);
             if(res.leveledUp) exploration.toast(`Niveau ${res.newLevel} !`, 4000);
@@ -193,12 +189,18 @@ function init() {
         return [info.region === 'lune' ? 'moon' : 'sanctuary'];
     };
     let musicStopped = true;
-    setInterval(() => {
+    const syncMusic = () => {
         const want = desiredMusic();
         if(!want) { if(!musicStopped) { stopMusic({ fadeMs: 700 }); musicStopped = true; } return; }
         musicStopped = false;
         setMusicScene(want[0], want[1]);
-    }, 400);
+    };
+    setInterval(syncMusic, 400);
+    // Les navigateurs interdisent tout son avant un geste de l'utilisateur : le premier appui (en pratique « Toucher
+    // pour commencer » de l'écran-titre) débloque le contexte audio, et la musique démarre aussitôt. On garde
+    // l'écoute (capture) pour reprendre un contexte suspendu plus tard (retour d'onglet, iOS).
+    const unlockAudio = () => { primeAudioFromGesture(); syncMusic(); };
+    ['pointerdown', 'touchstart', 'keydown'].forEach(type => document.addEventListener(type, unlockAudio, { capture: true, passive: true }));
 
     const setCombatUiVisible = visible => {
         document.querySelector('.stats-container').style.display = visible ? 'flex' : 'none';

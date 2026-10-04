@@ -1,60 +1,93 @@
-// Potions des coffres : plus un coffre est difficile à trouver, plus il contient souvent une potion, et plus elle est rare.
-import { describe, test, expect } from '@jest/globals';
-import { SCREENS, REGION_UNLOCK_LEVEL } from '../../story.js';
-import { REGION_ORDER } from '../../world/index.js';
-import { chestDifficulty, chestPotion, CHEST_LOOT } from '../../chestLoot.js';
-import { createSession, openChest } from '../../exploration.js';
+// Butin des coffres : potions / reliques / armes, plus rares quand le coffre est difficile à trouver.
+import { SCREENS } from '../../story.js';
+import { chestTier, rollChestLoot, weaponRarity, LOOT_TIERS } from '../../chestLoot.js';
+import { allWeapons } from '../../weapons.js';
 
-const RANK = { common: 0, uncommon: 1, rare: 2 };
-const all = Object.values(SCREENS).flatMap(screen => screen.chests.map(chest => {
-    const regionIndex = REGION_ORDER.indexOf(screen.region) + 1;
-    const opts = { regionIndex, level: REGION_UNLOCK_LEVEL[screen.region] || 1 };
-    return { screen, chest, opts, difficulty: chestDifficulty(chest, screen, regionIndex), potion: chestPotion(chest, screen, opts) };
-}));
+// Générateur pseudo-aléatoire reproductible.
+function seeded(seed) {
+    let s = seed >>> 0;
+    return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 2 ** 32; };
+}
+const RANK = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
 
-describe('potions des coffres', () => {
-    test('difficulté : palier du coffre, +1 en zone sauvage, autel exclu', () => {
-        const wild = { kind: 'wild' }, village = { kind: 'village' };
-        expect(chestDifficulty({ id: 'a', gold: 15 }, village, 1)).toBe(1);
-        expect(chestDifficulty({ id: 'b', gold: 30 }, village, 1)).toBe(2);
-        expect(chestDifficulty({ id: 'c', gold: 45 }, wild, 1)).toBe(4);
-        expect(chestDifficulty({ id: 'd', gold: 90 }, wild, 6)).toBe(2);
-        expect(chestDifficulty({ id: 'e', gold: 15, difficulty: 3 }, village, 1)).toBe(3);
-        expect(chestDifficulty({ id: 'moon_altar', gold: 0, altar: true }, village, 10)).toBe(0);
-        all.filter(e => e.chest.altar).forEach(e => expect(e.potion).toBeNull());
+function averageRank(chest, screen, level, n = 400) {
+    const rng = seeded(42);
+    let total = 0, count = 0;
+    for (let i = 0; i < n; i++) {
+        rollChestLoot(chest, screen, { level }, rng).loot.forEach(l => { total += RANK[l.rarity]; count++; });
+    }
+    return { avg: total / count, perChest: count / n };
+}
+
+describe('chestLoot', () => {
+    test('palier selon la difficulté : or relatif à la région et emplacement', () => {
+        expect(chestTier({ gold: 15 }, { region: 'rizieres', kind: 'village' })).toBe(1);
+        expect(chestTier({ gold: 30 }, { region: 'rizieres', kind: 'house' })).toBe(2);
+        expect(chestTier({ gold: 30 }, { region: 'rizieres', kind: 'wild' })).toBe(3);
+        expect(chestTier({ gold: 45 }, { region: 'rizieres', kind: 'wild' })).toBe(4);
+        // même or, région plus avancée : coffre ordinaire là-bas
+        expect(chestTier({ gold: 45 }, { region: 'fleuve', kind: 'village' })).toBe(2);
+        expect(chestTier({ gold: 90 }, { region: 'fleuve', kind: 'village' })).toBe(3);
+        // sanctuaire (au-delà du gardien) : bonus d'emplacement
+        expect(chestTier({ gold: 60 }, { region: 'fleuve' })).toBe(3);
     });
 
-    test('tirage déterministe, potions du catalogue seulement', () => {
-        all.forEach(e => {
-            expect(chestPotion(e.chest, e.screen, e.opts)).toEqual(e.potion);
-            if (e.potion) expect(e.potion.type).toBe('consumable');
-        });
+    test('pas de butin sans or, ou si désactivé ; palier forcé possible', () => {
+        expect(chestTier({ gold: 0 }, { region: 'lune' })).toBe(0);
+        expect(rollChestLoot({ gold: 0, id: 'moon_altar' }, { region: 'lune' }, { level: 20 }).loot).toEqual([]);
+        expect(chestTier({ gold: 100, loot: false }, { region: 'rizieres' })).toBe(0);
+        expect(chestTier({ gold: 10, lootTier: 4 }, { region: 'lune', kind: 'house' })).toBe(4);
     });
 
-    test('plus le coffre est difficile, plus il donne de potions et plus elles sont rares', () => {
-        const stats = [1, 2, 3, 4].map(d => {
-            const list = all.filter(e => e.difficulty === d);
-            const potions = list.filter(e => e.potion);
-            return {
-                rate: potions.length / list.length,
-                rarity: potions.reduce((sum, e) => sum + RANK[e.potion.rarity], 0) / Math.max(1, potions.length)
-            };
-        });
-        for (let d = 1; d < 4; d++) {
-            expect(stats[d].rate).toBeGreaterThan(stats[d - 1].rate);
-            expect(stats[d].rarity).toBeGreaterThan(stats[d - 1].rarity);
+    test('tous les coffres du monde ont un palier cohérent', () => {
+        const tiers = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
+        Object.values(SCREENS).forEach(s => s.chests.forEach(c => { tiers[chestTier(c, s)]++; }));
+        expect(tiers[0]).toBe(1); // l'autel de la lune
+        [1, 2, 3, 4].forEach(t => expect(tiers[t]).toBeGreaterThan(0));
+        expect(tiers[1]).toBeGreaterThan(tiers[4]);
+    });
+
+    test('plus le coffre est dur à trouver, plus le butin est abondant et rare', () => {
+        const screen = { region: 'tonnerre', kind: 'wild' };
+        const results = [1, 2, 3, 4].map(t => averageRank({ gold: 50, lootTier: t }, screen, 12));
+        for (let i = 1; i < results.length; i++) {
+            expect(results[i].avg).toBeGreaterThan(results[i - 1].avg);
+            expect(results[i].perChest).toBeGreaterThanOrEqual(results[i - 1].perChest);
         }
-        expect(all.filter(e => e.difficulty === 1 && e.potion).every(e => e.potion.rarity === 'common')).toBe(true);
-        expect(all.filter(e => e.difficulty === 4).every(e => e.potion && e.potion.rarity !== 'common')).toBe(true);
-        expect(CHEST_LOOT[4].chance).toBe(1);
+        expect(results[0].perChest).toBeLessThan(1);
+        expect(results[3].perChest).toBe(2);
     });
 
-    test('openChest renvoie la potion dans son événement', () => {
-        const s = createSession(null);
-        const screen = Object.values(s.screens).find(sc => sc.chests.some(c => c.id === 'warden_hoard'));
-        s.data.screenId = screen.id;
-        const res = openChest(s, 'warden_hoard');
-        expect(res.potion).toBeTruthy();
-        expect(res.events[0]).toMatchObject({ type: 'chestOpened', potion: res.potion });
+    test('le butin contient potions, reliques et armes, sans dépasser le niveau permis', () => {
+        const rng = seeded(7);
+        const kinds = new Set();
+        for (let i = 0; i < 300; i++) {
+            rollChestLoot({ gold: 50, lootTier: 3 }, { region: 'rizieres', kind: 'wild' }, { level: 6 }, rng).loot.forEach(l => {
+                const obj = l.item || l.weapon;
+                expect(obj.minLevel).toBeLessThanOrEqual(6 + LOOT_TIERS[3].levelBonus);
+                kinds.add(l.kind === 'weapon' ? 'weapon' : l.item.type);
+            });
+        }
+        expect(kinds).toEqual(new Set(['consumable', 'artifact', 'weapon']));
+    });
+
+    test('ni arme déjà possédée ni relique déjà portée', () => {
+        const owner = { level: 20, weapons: allWeapons.slice(), inventory: [] };
+        const rng = seeded(3);
+        for (let i = 0; i < 200; i++) {
+            const { loot } = rollChestLoot({ gold: 1, lootTier: 4 }, { region: 'lune' }, owner, rng);
+            loot.forEach(l => {
+                expect(l.kind).toBe('item');
+                if (l.item.type === 'artifact') {
+                    expect(owner.inventory.some(i => i.id === l.item.id)).toBe(false);
+                    owner.inventory.push(l.item);
+                }
+            });
+        }
+    });
+
+    test('rareté des armes : rang dans leur famille', () => {
+        expect(weaponRarity(allWeapons.find(w => w.id === 'rusty_sword'))).toBe('common');
+        expect(weaponRarity(allWeapons.find(w => w.id === 'excalibur'))).toBe('legendary');
     });
 });

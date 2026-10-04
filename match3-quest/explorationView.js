@@ -75,7 +75,6 @@ const hash = (x, y) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 
  *  getPlayerLevel()           niveau courant
  *  onEncounter(encounter)     lance le combat
  *  onGold(amount)             crédite de l'or
- *  onItem(item)               ajoute un objet à l'inventaire (potion trouvée dans un coffre)
  *  onXp(amount)               crédite de l'expérience (récompenses de quêtes)
  *  onSave()                   sauvegarde la partie (aussi après une Nouvelle Partie +)
  *  onRegionVisited(regionId)  région découverte
@@ -254,7 +253,6 @@ export function createExplorationView(cfg) {
     }
 
     const NARRATOR = { icon: 'scroll', name: 'Narrateur' };
-    const RARITY_LABEL = { common: 'commune', uncommon: 'peu commune', rare: 'rare', legendary: 'légendaire' };
 
     // Locuteur d'une scène (`defeatScene.speaker`) : sprite de PNJ ou d'ennemi, parchemin du narrateur sinon.
     function sceneSpeaker(sp = {}) {
@@ -294,9 +292,10 @@ export function createExplorationView(cfg) {
                 toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0} or${ev.xp ? ` · +${ev.xp} XP` : ''}${frag}${plus}`, ev.ended ? 8000 : 5000);
             } else if (ev.type === 'chestOpened') {
                 if (!ev.paid) gold += ev.gold || 0;
-                if (ev.potion) cfg.onItem?.(ev.potion);
-                const found = [ev.gold ? `+${ev.gold} or` : '', ev.potion ? `${ev.potion.name} (${RARITY_LABEL[ev.potion.rarity] || ev.potion.rarity})` : ''].filter(Boolean).join(' · ');
-                toast(`${ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${found ? ` — ${found}` : ''}`, ev.potion ? 4600 : 3200);
+                // Butin (potions, reliques, armes) : tiré et rangé dans le sac par le jeu (chestLoot.js).
+                const loot = ev.paid ? [] : (cfg.onChestLoot?.(ev) || []);
+                const lootText = loot.length ? ` · ${loot.join(' · ')}` : '';
+                toast(`${ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` +${ev.gold} or` : ''}${lootText}`, loot.length ? 5500 : 3200);
             }
         });
         if (gold > 0) cfg.onGold(gold);
@@ -570,11 +569,13 @@ export function createExplorationView(cfg) {
                 vis.enemies = {};
                 syncVisual(true);
                 refreshHud();
-                toast(`${screen.interior ? '' : screen.kind === 'village' ? '' : ''} ${screen.name}`, 2200);
+                toast(screen.name, 2200);
                 // Première visite : petit texte d'ambiance du Narrateur.
-                if (res.firstVisit && res.arrival?.length) openDialog({ ...NARRATOR, title: screen.name }, res.arrival);
+                // Jamais de texte du Narrateur en entrant dans une maison.
+                if (res.firstVisit && res.arrival?.length && !screen.interior) openDialog({ ...NARRATOR, title: screen.name }, res.arrival);
                 if (res.warning) toast(`${res.warning.regionName} : niveau ${res.warning.minLevel} recommandé — les ennemis y sont redoutables.`, 5000);
-                if (res.events?.length) processEvents(res.events);
+                // Dans une maison, les quêtes déclenchées à l'entrée n'ouvrent pas de dialogue du Narrateur (toasts seulement).
+                if (res.events?.length) processEvents(res.events, screen.interior ? eventsSpoken(res.events) : undefined);
                 cfg.onSave();
                 break;
             }
@@ -1101,7 +1102,7 @@ export function createExplorationView(cfg) {
         ctx.closePath();
         ctx.fill();
         ctx.restore();
-        if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.62, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1));
+        if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.62, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1), w / 2);
     }
 
     // Dessine un sprite SVG (pieds vers le bas du cadre) centré sur cx, dont les pieds sont posés en feetY.
@@ -1166,10 +1167,13 @@ export function createExplorationView(cfg) {
         if (img.complete && img.naturalWidth) ctx.drawImage(img, x - size / 2, baseY - size * 0.92, size, size);
     }
 
-    function drawLabel(x, y, text, bg, fg, size = 12) {
+    function drawLabel(x, y, text, bg, fg, size = 12, reach = cam.tile * 0.5) {
         ctx.font = `700 ${size}px 'Rt Digits', 'Pixelify Sans', ui-monospace, monospace`;
         const w = ctx.measureText(text).width + 14;
         const h = size + 8;
+        // carte plus large que l'écran (caméra qui suit le héros) : l'étiquette d'une entité hors cadre n'est pas dessinée
+        // (sinon elle s'empilerait contre le bord de l'écran)
+        if (x < -reach || x > cam.vw + reach) return;
         // reste dans le cadre : une étiquette près du bord (sortie) ne doit pas être coupée
         if (cam.vw > w) x = Math.min(Math.max(x, w / 2 + 4), cam.vw - w / 2 - 4);
         ctx.beginPath();
