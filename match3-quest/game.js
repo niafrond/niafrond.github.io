@@ -911,6 +911,7 @@ export function loadGameData() {
             player.statusEffects = loaded.statusEffects ?? player.statusEffects;
             player.defense = loaded.defense ?? player.defense;
             player.inventory = loaded.inventory ?? player.inventory;
+            player.equipment = { rightHand: null, leftHand: null, item: null, ...(loaded.equipment || {}) };
             player.activeInventoryIndex = loaded.activeInventoryIndex ?? player.activeInventoryIndex;
             player.tempAttack = loaded.tempAttack ?? player.tempAttack;
             player.tempDefense = loaded.tempDefense ?? player.tempDefense;

@@ -9,7 +9,8 @@ import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
 import { COMBAT_INTRO_MS, initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
 import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
-import { getMatch3BuildDate } from "./version.js";
+import { getMatch3BuildDate, getMatch3Version } from "./version.js";
+import { exportSaveToFile, importSaveFromFile, downloadSaveFile } from "./saveManager.js";
 import { worldZones } from "./worldMap.js";
 import { mountWorldMap } from "./worldMapView.js";
 import { createExplorationView } from "./explorationView.js";
@@ -337,6 +338,25 @@ function init() {
 
     const soundToggleButton = document.getElementById('sound-toggle-btn');
     initializeAudioUI(soundToggleButton);
+
+    // Sauvegarde dans un fichier : permet de reprendre la partie sur un autre appareil.
+    document.getElementById('save-export-btn')?.addEventListener('click', () => {
+        const res = exportSaveToFile(player, getMatch3Version());
+        if(res.success) { downloadSaveFile(res.blob, res.filename); log(res.message); }
+        else alert(res.message);
+    });
+    const saveImportInput = document.getElementById('save-import-input');
+    document.getElementById('save-import-btn')?.addEventListener('click', () => saveImportInput?.click());
+    saveImportInput?.addEventListener('change', async () => {
+        const file = saveImportInput.files[0];
+        saveImportInput.value = '';
+        if(!file) return;
+        const res = await importSaveFromFile(file);
+        if(!res.success) { alert(res.message); return; }
+        if(!confirm(`${res.message}\nCette sauvegarde remplacera la partie en cours. Continuer ?`)) return;
+        localStorage.setItem('player', JSON.stringify(res.player));
+        location.reload();
+    });
 
     const darkModeToggleButton = document.getElementById('dark-mode-toggle-btn');
     initializeThemeUI(darkModeToggleButton);
