@@ -415,6 +415,7 @@ export let player = {
     weapons: [],  // armes possédées
     equippedWeapon: null,  // arme équipée
     availableWeapons: [],  // armes débloquées
+    equipment: { rightHand: null, leftHand: null, item: null },  // système d'équipement multi-slot
     combatPoints: 0,
     bonusTurn: 0,
     abilities: [],  // aptitudes acquises
