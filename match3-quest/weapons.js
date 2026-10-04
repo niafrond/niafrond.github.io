@@ -10,6 +10,14 @@ export const WeaponType = {
     STAFF: 'staff'
 };
 
+// Rareté des armes
+export const WeaponRarity = {
+    COMMON: 'common',
+    UNCOMMON: 'uncommon',
+    RARE: 'rare',
+    LEGENDARY: 'legendary'
+};
+
 // Définition de toutes les armes disponibles dans le jeu
 export const allWeapons = [
     // === SABRES ET ÉPÉES ===
@@ -20,6 +28,8 @@ export const allWeapons = [
         damage: 10,
         actionPoints: 3,
         minLevel: 1,
+        rarity: WeaponRarity.COMMON,
+        twoHanded: false,
         description: "Un vieux sabre dao rouillé mais toujours tranchant"
     },
     {
@@ -29,6 +39,8 @@ export const allWeapons = [
         damage: 20,
         actionPoints: 4,
         minLevel: 3,
+        rarity: WeaponRarity.COMMON,
+        twoHanded: false,
         description: "Un sabre dao solide en fer forgé"
     },
     {
@@ -38,6 +50,8 @@ export const allWeapons = [
         damage: 35,
         actionPoints: 5,
         minLevel: 7,
+        rarity: WeaponRarity.UNCOMMON,
+        twoHanded: false,
         description: "Une épée jian d'acier trempé, fine et précise"
     },
     {
@@ -47,6 +61,8 @@ export const allWeapons = [
         damage: 60,
         actionPoints: 6,
         minLevel: 12,
+        rarity: WeaponRarity.RARE,
+        twoHanded: false,
         description: "Une épée légendaire forgée dans le souffle d'un dragon-long"
     },
     {
@@ -56,6 +72,8 @@ export const allWeapons = [
         damage: 100,
         actionPoints: 7,
         minLevel: 18,
+        rarity: WeaponRarity.LEGENDARY,
+        twoHanded: false,
         description: "L'épée mythique de l'Empereur Jaune, brillante d'une lumière divine"
     },
 
@@ -250,6 +268,26 @@ export const allWeapons = [
     }
 ];
 
+/**
+ * Ajoute les attributs par défaut aux armes (pour rétro-compatibilité)
+ * @param {Object} weapon - L'arme à normaliser
+ * @returns {Object} L'arme avec tous les attributs
+ */
+export function normalizeWeapon(weapon) {
+    if (!weapon) return null;
+
+    return {
+        ...weapon,
+        rarity: weapon.rarity || WeaponRarity.COMMON,
+        twoHanded: weapon.twoHanded !== undefined ? weapon.twoHanded : false
+    };
+}
+
+// Normaliser toutes les armes au chargement
+allWeapons.forEach((weapon, index) => {
+    allWeapons[index] = normalizeWeapon(weapon);
+});
+
 // Fonction pour obtenir les armes disponibles selon le niveau du joueur
 export function getAvailableWeapons(playerLevel) {
     return allWeapons.filter(weapon => weapon.minLevel <= playerLevel);
@@ -257,10 +295,11 @@ export function getAvailableWeapons(playerLevel) {
 
 // Fonction pour obtenir une arme par son ID
 export function getWeaponById(id) {
-    return allWeapons.find(weapon => weapon.id === id);
+    const weapon = allWeapons.find(weapon => weapon.id === id);
+    return weapon ? normalizeWeapon(weapon) : null;
 }
 
 // Fonction pour obtenir les armes par type
 export function getWeaponsByType(type) {
-    return allWeapons.filter(weapon => weapon.type === type);
+    return allWeapons.filter(weapon => weapon.type === type).map(normalizeWeapon);
 }

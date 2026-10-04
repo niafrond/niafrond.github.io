@@ -1,8 +1,30 @@
 import { manaIcon } from './icons.js';
+import { canEquip, equip, unequip } from './equipment.js';
+
 // Système d'objets et inventaire
 
 // Bibliothèque de tous les objets disponibles
 export const allItems = [
+    // === BOUCLIERS ===
+    {id:"jade_shield", name:"Bouclier de Jade", type:"shield", minLevel:5, rarity:"uncommon",
+     description:"Un bouclier poli en jade, renforce la défense de 8", defense:8},
+    {id:"dragon_shield", name:"Bouclier du Dragon Blanc", type:"shield", minLevel:10, rarity:"rare",
+     description:"Un bouclier gravé du dragon blanc, défense +15", defense:15},
+    {id:"ancestral_shield", name:"Rondache Ancestrale", type:"shield", minLevel:15, rarity:"rare",
+     description:"Un bouclier ancien renforcé par le temps, défense +20, absorbe 50 dégâts par combat", defense:20, absorbDamage:50},
+    {id:"legendary_shield", name:"Bouclier de l'Empereur Jaune", type:"shield", minLevel:18, rarity:"legendary",
+     description:"Le bouclier mythique de l'Empereur Jaune, défense +30, absorbe 100 dégâts", defense:30, absorbDamage:100},
+
+    // === OBJETS RECHARGEABLES ===
+    {id:"honey_vial", name:"Flacon de Miel Magique", type:"reusable", minLevel:3, rarity:"uncommon", chargesPerCycle:3,
+     description:"Soigne 25 HP par utilisation (3 usages avant rechargement)", effect:{heal:25}},
+    {id:"protective_sachet", name:"Sachet d'Encens Protecteur", type:"reusable", minLevel:6, rarity:"uncommon", chargesPerCycle:2,
+     description:"Augmente la défense de 10 pour ce combat (2 usages avant rechargement)", effect:{tempDefense:10}},
+    {id:"energy_stone", name:"Pierre d'Énergie Ravivante", type:"reusable", minLevel:8, rarity:"rare", chargesPerCycle:3,
+     description:"Restaure 20 mana de chaque couleur (3 usages avant rechargement)", effect:{mana:20}},
+    {id:"power_talisman", name:"Talisman de Puissance", type:"reusable", minLevel:12, rarity:"rare", chargesPerCycle:2,
+     description:"Augmente l'attaque de 15 pour ce combat (2 usages avant rechargement)", effect:{tempAttack:15}},
+
     // Élixirs, pilules et tisanes (niveau 1+)
     {id:"healthPotion", name:"Élixir de Vie", type:"consumable", minLevel:1, rarity:"common", actionPoints:1,
      description:"Restaure 30 HP", effect:{heal:30}},
@@ -134,12 +156,25 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
         ? preferredIndex
         : player.inventory.findIndex(item => item.id === itemId);
     if(itemIndex === -1) return {success: false, message: "Objet introuvable"};
-    
+
     const item = player.inventory[itemIndex];
-    
+
     // Les artefacts ne peuvent pas être utilisés (ils sont automatiques)
     if(item.type === "artifact") {
         return {success: false, message: "Les reliques sont déjà portées automatiquement"};
+    }
+
+    // Les objets rechargeables doivent avoir des charges restantes
+    if(item.type === "reusable") {
+        if(!item.chargesLeft || item.chargesLeft <= 0) {
+            return {success: false, message: "Cet objet doit être rechargé en exploration"};
+        }
+        item.chargesLeft--;
+    }
+
+    // Les boucliers ne peuvent pas être utilisés (ils sont équipés)
+    if(item.type === "shield") {
+        return {success: false, message: "Les boucliers doivent être équipés, pas utilisés"};
     }
     
     // Appliquer l'effet de l'objet
@@ -219,7 +254,7 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
 // Appliquer les effets permanents des artefacts
 export function applyArtifactEffects(player) {
     if(!player.inventory) return;
-    
+
     player.inventory.forEach(item => {
         if(item.type === "artifact" && !item.applied) {
             if(item.effect.permMaxHp) {
@@ -244,4 +279,19 @@ export function applyArtifactEffects(player) {
             item.applied = true;
         }
     });
+}
+
+// Recharger les objets rechargeables
+export function rechargeReusableItems(player) {
+    if(!player.inventory) return [];
+
+    const recharged = [];
+    player.inventory.forEach(item => {
+        if(item.type === "reusable" && item.chargesLeft < item.chargesPerCycle) {
+            item.chargesLeft = item.chargesPerCycle;
+            recharged.push(item);
+        }
+    });
+
+    return recharged;
 }

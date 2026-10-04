@@ -13,6 +13,7 @@ import { icon as svgIcon, manaIcon } from "./icons.js";
 import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses } from "./attributes.js";
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
+import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
 export { updateShopTab, buyWeapon, buyItem };
@@ -409,6 +410,7 @@ export let player = {
     weapons: [],  // armes possédées
     equippedWeapon: null,  // arme équipée
     availableWeapons: [],  // armes débloquées
+    equipment: { rightHand: null, leftHand: null, item: null },  // système d'équipement multi-slot
     combatPoints: 0,
     bonusTurn: 0,
     abilities: [],  // aptitudes acquises
@@ -2937,16 +2939,20 @@ export function updateWeaponsTab(){
     
     // Armes disponibles
     availableList.innerHTML = '';
-    if(!player.availableWeapons || player.availableWeapons.length === 0){
+    const ownedWeapons = player.weapons || [];
+    if(ownedWeapons.length === 0){
         availableList.innerHTML = '<div style="padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; margin-top: 15px;"><strong>Aucune arme en votre possession</strong><br>Les armes peuvent être obtenues en gagnant des combats !</div>';
+        renderGearList(availableList);
         updateInventoryTab();
         updateItemButton();
         return;
     }
-    player.availableWeapons.forEach(weapon => {
+    ownedWeapons.forEach(weapon => {
         const icon = getWeaponIcon(weapon.type);
         const div = document.createElement('div');
         div.className = 'weapon-item available-weapon';
+        const locked = player.level < weapon.minLevel;
+        if(locked) div.classList.add('is-locked');
         const isEquipped = player.equippedWeapon && player.equippedWeapon.id === weapon.id;
         if(isEquipped) div.classList.add('is-equipped');
         
@@ -2957,13 +2963,77 @@ export function updateWeaponsTab(){
                 <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
-            <button class="weapon-action" ${isEquipped ? 'disabled' : ''} onclick="window.equipWeapon('${weapon.id}')">${isEquipped ? 'Équipée' : 'Équiper'}</button>
+            <button class="weapon-action" ${isEquipped || locked ? 'disabled' : ''} onclick="window.equipWeapon('${weapon.id}')">${isEquipped ? 'Équipée' : locked ? `Niv. ${weapon.minLevel} requis` : 'Équiper'}</button>
         `;
         availableList.appendChild(div);
     });
 
+    renderGearList(availableList);
     updateInventoryTab();
     updateItemButton();
+}
+
+
+// Boucliers et objets rechargeables : affichés dès l'achat, non sélectionnables tant que le niveau manque.
+const GEAR_SLOT = { shield: 'leftHand', reusable: 'item' };
+const GEAR_SLOT_LABEL = { leftHand: 'Main gauche', item: 'Objet' };
+
+function renderGearList(container){
+    if(!player.equipment) player.equipment = { rightHand: null, leftHand: null, item: null };
+    const owned = (player.inventory || []).map((it, index) => ({ it, index })).filter(({ it }) => GEAR_SLOT[it.type]);
+    const worn = ['leftHand', 'item'].map(slot => ({ slot, it: player.equipment[slot] })).filter(e => e.it);
+    if(owned.length === 0 && worn.length === 0) return;
+    const section = document.createElement('div');
+    section.innerHTML = '<h3 class="shop-section-title">Boucliers et objets</h3>';
+    const row = (it, slot, action) => {
+        const div = document.createElement('div');
+        div.className = 'weapon-item available-weapon' + (action.locked ? ' is-locked' : '') + (action.worn ? ' is-equipped' : '');
+        const stats = [it.defense ? `Déf. +${it.defense}` : '', it.chargesPerCycle ? `${it.chargesLeft ?? it.chargesPerCycle}/${it.chargesPerCycle} charges` : '', `Niv. ${it.minLevel}`, GEAR_SLOT_LABEL[slot]].filter(Boolean).join(' • ');
+        div.innerHTML = `
+            <span class="weapon-icon">${svgIcon(it.type === 'shield' ? 'shield' : 'arrow')}</span>
+            <div class="weapon-details">
+                <span class="weapon-name">${it.name}</span>
+                <span class="weapon-stats">${stats}</span>
+                <span class="weapon-description">${it.description || ''}</span>
+            </div>
+            <button class="weapon-action" ${action.locked ? 'disabled' : ''} onclick="${action.onclick}">${action.label}</button>`;
+        section.appendChild(div);
+    };
+    worn.forEach(({ slot, it }) => row(it, slot, { worn: true, label: 'Retirer', onclick: `window.unequipGear('${slot}')` }));
+    owned.forEach(({ it, index }) => {
+        const locked = player.level < (it.minLevel || 1);
+        row(it, GEAR_SLOT[it.type], { locked, label: locked ? `Niv. ${it.minLevel} requis` : 'Équiper', onclick: `window.equipGear(${index})` });
+    });
+    container.appendChild(section);
+}
+
+export function equipGear(inventoryIndex){
+    if(gameState.combatState === 'active'){ log('Vous ne pouvez pas modifier votre équipement pendant le combat !'); return; }
+    const it = player.inventory?.[inventoryIndex];
+    if(!it || !GEAR_SLOT[it.type]) return;
+    if(player.level < (it.minLevel || 1)){ log(`Nécessite niveau ${it.minLevel} pour équiper ${it.name}.`); return; }
+    if(!player.equipment) player.equipment = { rightHand: null, leftHand: null, item: null };
+    const slot = GEAR_SLOT[it.type];
+    const previous = player.equipment[slot];
+    const result = equipGearSlot(player, it, slot);
+    if(!result.success){ log(result.message || `${it.name} ne peut pas être équipé.`); return; }
+    player.inventory.splice(inventoryIndex, 1);
+    if(previous){ player.inventory.push(previous); if(previous.defense) player.defense = Math.max(0, (player.defense || 0) - previous.defense); }
+    if(it.defense) player.defense = (player.defense || 0) + it.defense;
+    saveUpdate();
+    log(`${it.name} équipé.`);
+    updateWeaponsTab();
+}
+
+export function unequipGear(slot){
+    if(gameState.combatState === 'active'){ log('Vous ne pouvez pas modifier votre équipement pendant le combat !'); return; }
+    const it = unequipGearSlot(player, slot);
+    if(!it) return;
+    player.inventory.push(it);
+    if(it.defense) player.defense = Math.max(0, (player.defense || 0) - it.defense);
+    saveUpdate();
+    log(`${it.name} retiré.`);
+    updateWeaponsTab();
 }
 
 // =====================================
@@ -3161,6 +3231,8 @@ window.equipSpell = equipSpell;
 window.unequipSpell = unequipSpell;
 window.equipWeapon = equipWeapon;
 window.unequipWeapon = unequipWeapon;
+window.equipGear = equipGear;
+window.unequipGear = unequipGear;
 window.useInventoryItem = useInventoryItem;
 window.discardInventoryItem = discardInventoryItem;
 window.setActiveInventoryItem = setActiveInventoryItem;
