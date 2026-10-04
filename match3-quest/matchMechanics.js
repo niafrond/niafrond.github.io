@@ -202,14 +202,30 @@ export function findRandomMove(board){
     return null;
 }
 
-export const JOKER_MANA_MULTIPLIER = 3;
+// Un joker combiné dans un alignement double le gain : mana (couleur), points d'action (épées) ou dégâts (crânes).
+// Le doublement ne se cumule pas : un alignement avec 1 ou 2 jokers vaut ×2.
+export const JOKER_MATCH_MULTIPLIER = 2;
+export const JOKER_MANA_MULTIPLIER = JOKER_MATCH_MULTIPLIER;
+
+export function getJokerMatchMultiplier(info){
+    return Math.floor(info?.jokerCount || 0) > 0 ? JOKER_MATCH_MULTIPLIER : 1;
+}
+
+/** Nombre de tuiles « comptées » d'un alignement (longueur × 2 si un joker y participe). */
+export function getEffectiveMatchLength(info){
+    return Math.max(0, Math.floor(info?.len || 0)) * getJokerMatchMultiplier(info);
+}
 
 export function getColorMatchManaBaseGain(info){
     if(!info || info.type !== 'color') return 0;
+    return getEffectiveMatchLength(info);
+}
 
-    const baseLen = Math.max(0, Math.floor(info.len || 0));
-    const jokerCount = Math.max(0, Math.floor(info.jokerCount || 0));
-    return baseLen + (jokerCount * (JOKER_MANA_MULTIPLIER - 1));
+// XP bonus d'une combinaison de 4 tuiles (+4), 5 (+8), 6 ou plus (+12).
+export function bigMatchXpFor(len){
+    const n = Math.floor(len || 0);
+    if(n < 4) return 0;
+    return Math.min(12, (n - 3) * 4);
 }
 
 // Collecte toutes les sequences de match (horizontales + verticales).

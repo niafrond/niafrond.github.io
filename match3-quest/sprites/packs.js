@@ -48,6 +48,7 @@ export const ENEMY_PACK = {
     moon_priestess: 'enemies-2',
     orc_warmaster: 'enemies-2',
     plague_doctor: 'enemies-1',
+    rizieres_w_toad: 'enemies-1',
     sand_colossus: 'enemies-2',
     shadow_assassin: 'enemies-1',
     storm_knight: 'enemies-1',

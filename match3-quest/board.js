@@ -1,4 +1,4 @@
-import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, addManaForColor, logActiveAction, clampEnemyAttackDamage, applyDamage, addBonusTurn } from "./game.js";
+import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, clampEnemyAttackDamage, applyDamage, addBonusTurn } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 import { tutorialCallbacks } from "./tutorial.js";
 import {
@@ -7,7 +7,9 @@ import {
     checkMatchAtPosition,
     findPossibleMatches,
     collectMatches,
-    getColorMatchManaBaseGain
+    getColorMatchManaBaseGain,
+    getEffectiveMatchLength,
+    getJokerMatchMultiplier
 } from "./matchMechanics.js";
 import { playSfx } from "./sound.js";
 import {
@@ -17,6 +19,7 @@ import {
     pickRandomNonJokerIndex,
     rollTileWithJoker
 } from "./joker.js";
+import { actionGuard } from "./actionGuard.js";
 
 // grille et sélection
 export let board = [];
@@ -182,6 +185,11 @@ function ensureBoardResizeListeners(){
     }
 
     boardResizeListenersAttached = true;
+}
+
+/** Vrai tant que le plateau résout un échange/une chaîne ou joue des animations (armes/objets bloqués). */
+export function isBoardResolving(){
+    return pendingComboAnimations > 0 || actionGuard.isBoardBusy();
 }
 
 function onBoardSettled(callback){
@@ -444,6 +452,11 @@ export function selectTile(index){
         return;
     }
 
+    // Plateau en cours de résolution : on n'accepte pas de nouvel échange (évite d'enchaîner des coups).
+    if(pendingSwap || actionGuard.isBoardBusy()){
+        return;
+    }
+
     // Regle commune joueur/ennemi: plateau bloque => regeneration puis meme acteur rejoue.
     if(getSortedPossibleMoves().length === 0){
         handleNoPossibleMoveForCurrentTurn();
@@ -496,6 +509,7 @@ export function swapTiles(i,j){
     comboMasteryTriggered = false;
 
     logActiveAction(`echange les tuiles ${i} <-> ${j}`);
+    actionGuard.endBoardAction(); // une action plateau vient d'avoir lieu (armes/objets bloqués un court instant)
     
     // Effectuer le swap
     [board[i],board[j]]=[board[j],board[i]];
@@ -535,6 +549,7 @@ export function swapTiles(i,j){
         turn: currentTurn,
         resolvedAtLeastOneMatch: false
     };
+    actionGuard.beginBoardAction();
 
     // Notifier le tutoriel qu'un échange valide a eu lieu
     tutorialCallbacks.onTileSwap?.(i, j, true);
@@ -629,8 +644,9 @@ export function checkMatches(forceFullBoard = false){
             }
             if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
         } else if(info.type==='combat'){
-            currentPlayer.combatPoints += info.len;
-            log(`+${info.len} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
+            const actionGain = getEffectiveMatchLength(info);
+            currentPlayer.combatPoints += actionGain;
+            log(`+${actionGain}${getJokerMatchMultiplier(info) > 1 ? ' (joker ×2)' : ''} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
             // Bonus de tour pour 4+ épées
             if(info.len>=4){ 
                 addBonusTurn(currentPlayer);
@@ -653,7 +669,7 @@ export function checkMatches(forceFullBoard = false){
                 SKULL_ATTACK_BONUS_CAP,
                 Math.floor((attacker.attack || 0) / SKULL_ATTACK_BONUS_DIVISOR)
             );
-            const rawDmg = info.len * (skullDamage + attackBonus);
+            const rawDmg = getEffectiveMatchLength(info) * (skullDamage + attackBonus);
             const defReduction = Math.floor((opponent.defense || 0) / 2);
             let dmg = Math.max(1, rawDmg - defReduction);
             if(opponent === player && player.damageReduction > 0) {
@@ -678,7 +694,17 @@ export function checkMatches(forceFullBoard = false){
             if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
         }
 
-        playSfx('match', { matchType: info.type, length: info.len, isPlayer: currentTurn === 'player' });
+        // Sons : crânes = coup porté ; couleur = mana récolté (scintillement magique) ; épées = son de match classique.
+        const sfxPayload = { matchType: info.type, length: info.len, isPlayer: currentTurn === 'player' };
+        if(info.type === 'skull') playSfx('skullHit', sfxPayload);
+        else if(info.type === 'color') playSfx('manaGain', sfxPayload);
+        else playSfx('match', sfxPayload);
+
+        // XP bonus des belles combinaisons (4, 5 tuiles ou plus), discret : une seule ligne de journal.
+        if(currentTurn === 'player' && info.len >= 4){
+            const bonusXp = grantBigMatchXP(info.len);
+            if(bonusXp > 0) log(`+${bonusXp} XP (belle combinaison)`);
+        }
 
         if(currentTurn === 'player' && turnDistinctMatches > 5 && !comboMasteryTriggered){
             comboMasteryTriggered = true;
@@ -713,6 +739,7 @@ export function checkMatches(forceFullBoard = false){
         if(pendingSwap && !pendingSwap.resolvedAtLeastOneMatch){
             const { i, j, turn } = pendingSwap;
             pendingSwap = null;
+            actionGuard.endBoardAction();
 
             // Sécurité: si aucun combo réel n'a été résolu, on annule le swap et le même acteur rejoue.
             [board[i],board[j]]=[board[j],board[i]];
@@ -733,6 +760,7 @@ export function checkMatches(forceFullBoard = false){
         }
 
         pendingSwap = null;
+        actionGuard.endBoardAction();
         turnDistinctMatches = 0;
         comboMasteryTriggered = false;
         renderBoard(); // Seulement si pas de combos pour nettoyer les classes 'match'

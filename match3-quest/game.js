@@ -4,7 +4,9 @@ import { colors, boardSize } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
 import { allWeapons, getAvailableWeapons, getWeaponById } from "./weapons.js";
-import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells } from "./board.js";
+import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving } from "./board.js";
+import { actionGuard } from "./actionGuard.js";
+import { bigMatchXpFor } from "./matchMechanics.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
 import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
@@ -719,6 +721,7 @@ export let enemy = { name:"Xiao Gui", hp:50, maxHp:50, attack:10, resistances:{}
 
 // si le joueur meurt, on restaure ses PV et réinitialise le combat
 export function restartCombat(){
+    actionGuard.reset();
     if(pendingPlayerDeathTimeout) {
         clearTimeout(pendingPlayerDeathTimeout);
         pendingPlayerDeathTimeout = null;
@@ -1518,10 +1521,24 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
 }
 
 // -------------------------------------
+// Anti-bourrinage : arme / objet / sort refusés pendant la résolution du plateau, juste après une action plateau,
+// ou dans le court délai qui suit une autre action du joueur (voir actionGuard.js).
+export function isPlayerActionBlocked(){
+    return isBoardResolving() || actionGuard.blockReason() !== null;
+}
+
+// Renvoie true (et ignore silencieusement le clic) si l'action doit être refusée.
+function rejectRushedAction(){
+    if(!isPlayerActionBlocked()) return false;
+    return true;
+}
+
+// -------------------------------------
 // Combat avec arme
 export function useWeapon(hand = 'right'){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(currentTurn !== 'player'){ log("Seul le joueur actif peut utiliser une attaque."); return; }
+    if(rejectRushedAction()) return;
     const weapon = hand === 'left' ? getLeftHandWeapon() : player.equippedWeapon;
     if(!weapon){ log("Aucune arme équipée !"); return; }
     if(player.combatPoints < weapon.actionPoints){ 
@@ -1534,6 +1551,7 @@ export function useWeapon(hand = 'right'){
         return; 
     }
     
+    actionGuard.markPlayerAction();
     player.combatPoints -= weapon.actionPoints;
     let dmg = weapon.damage + (player.attack || 0);
 
@@ -1579,6 +1597,7 @@ export function useWeapon(hand = 'right'){
 export function castSpell(spellId){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(currentTurn !== 'player'){ log("Seul le joueur actif peut lancer un sort."); return; }
+    if(rejectRushedAction()) return;
     // Blocage tutoriel : interdire les sorts avant l'étape 4
     if(isTutorialActive() && getTutorialStep() < 4){
         log("Générez d'abord du mana avec des alignements de gâteaux de lune colorés !");
@@ -1593,6 +1612,7 @@ export function castSpell(spellId){
         log(missingColor ? `Pas assez de mana ${missingColor} !` : "Pas assez de mana !");
         return;
     }
+    actionGuard.markPlayerAction();
     consumeSpellMana(player, spell);
     playSfx('spellCast', { isPlayer: true });
     
@@ -2171,6 +2191,10 @@ export function handleEnemyDefeated(){
 export function grantComboMasteryRewards(xpAmount = 25){
     queueCombatXP(xpAmount);
     return xpAmount;
+}
+
+export function grantBigMatchXP(len){
+    return queueCombatXP(bigMatchXpFor(len));
 }
 
 export function grantManaGeneratedXP(manaAmount){
@@ -2772,6 +2796,12 @@ export function getCombatMusicScene() {
     return enemy?.isBoss ? 'boss' : 'combat';
 }
 
+// Options de la scène musicale : thème propre à chaque boss (son nom), style de rythme variable selon l'ennemi ordinaire.
+export function getCombatMusicOptions() {
+    if(!enemy) return {};
+    return enemy.isBoss ? { boss: enemy.name } : { variant: enemy.name };
+}
+
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
 
@@ -3257,6 +3287,7 @@ export function setActiveInventoryItem(index){
 export function useInventoryItem(itemId, index){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
     if(currentTurn !== 'player'){ log("Ce n'est pas votre tour."); return; }
+    if(rejectRushedAction()) return;
 
     normalizeActiveInventoryIndex();
     const resolvedIndex = Number.isInteger(index) ? index : player.activeInventoryIndex;
@@ -3278,6 +3309,7 @@ export function useInventoryItem(itemId, index){
         return;
     }
 
+    actionGuard.markPlayerAction();
     player.combatPoints -= pa;
     const result = useItem(itemId, player, enemy, resolvedIndex);
     if(result.success){
