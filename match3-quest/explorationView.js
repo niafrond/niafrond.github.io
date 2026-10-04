@@ -785,6 +785,55 @@ export function createExplorationView(cfg) {
         rafId = requestAnimationFrame(frame);
     }
 
+    // ── Calque de sol mis en cache ─────────────────────────────────────────
+    const GROUND_MARGIN = 32;                 // marge (px CSS) autour de la carte pour l'ombre floue de la falaise
+    const GROUND_MAX_PIXELS = 16e6;           // au-delà, on retombe sur le dessin direct (mémoire)
+    let groundCache = null;
+
+    function paintGroundCells(g, screen, biome, tile, ox, oy, inRects) {
+        for (let y = 0; y < screen.h; y++) {
+            for (let x = 0; x < screen.w; x++) {
+                g.fillStyle = inRects(screen.liquids, x, y) ? biome.liquid
+                    : inRects(screen.paths, x, y) ? biome.path
+                    : ((x + y) % 2 ? biome.a : biome.b);
+                g.fillRect(ox + x * tile, oy + y * tile, tile, tile);
+            }
+        }
+    }
+
+    let liquidCache = { screen: null, cells: [] };
+    function getLiquidCells(screen, inRects) {
+        if (liquidCache.screen === screen) return liquidCache.cells;
+        const cells = [];
+        for (let y = 0; y < screen.h; y++) for (let x = 0; x < screen.w; x++) if (inRects(screen.liquids, x, y)) cells.push([x, y]);
+        liquidCache = { screen, cells };
+        return cells;
+    }
+
+    function getGroundLayer(screen, biome, tile, dpr, inRects) {
+        const c = groundCache;
+        if (c && c.screen === screen && c.biome === biome && c.tile === tile && c.dpr === dpr) return c;
+        const M = GROUND_MARGIN;
+        const w = Math.ceil((tile * screen.w + 2 * M) * dpr);
+        const h = Math.ceil((tile * screen.h + 2 * M) * dpr);
+        if (w * h > GROUND_MAX_PIXELS || typeof document === 'undefined') return null;
+        const canvas = c?.canvas || document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const g = canvas.getContext('2d');
+        if (!g) return null;
+        g.setTransform(dpr, 0, 0, dpr, 0, 0);
+        g.save();
+        g.shadowColor = 'rgba(0,0,0,0.35)';
+        g.shadowBlur = 18;            // en pixels écran, non affecté par la transformation (comme sur le canvas principal)
+        g.fillStyle = biome.cliff;
+        g.fillRect(M - 4, M - 4, tile * screen.w + 8, tile * screen.h + 8);
+        g.restore();
+        paintGroundCells(g, screen, biome, tile, M, M, inRects);
+        groundCache = { screen, biome, tile, dpr, canvas };
+        return groundCache;
+    }
+
     function draw(now) {
         const screen = X.currentScreen(session);
         const biome = BIOMES[screen.biome] || BIOMES.paddy;
@@ -828,26 +877,34 @@ export function createExplorationView(cfg) {
         };
 
         // 1. Sol, chemins, liquides, zones de vigilance
-        ctx.save();
-        ctx.shadowColor = 'rgba(0,0,0,0.35)';
-        ctx.shadowBlur = 18;
-        ctx.fillStyle = biome.cliff;
-        ctx.fillRect(ox - 4, oy - 4, mapW + 8, mapH + 8);
-        ctx.restore();
-        for (let y = 0; y < screen.h; y++) {
-            for (let x = 0; x < screen.w; x++) {
-                if (inRects(screen.liquids, x, y)) {
-                    cell(x, y, biome.liquid);
-                    const shimmer = 0.10 + 0.10 * Math.sin(now / 500 + x * 1.7 + y * 1.1);
-                    cell(x, y, `rgba(255,255,255,${shimmer.toFixed(3)})`, tile * 0.08);
-                } else {
-                    const isPath = inRects(screen.paths, x, y);
-                    cell(x, y, isPath ? biome.path : ((x + y) % 2 ? biome.a : biome.b));
-                }
-                if (aura.has(`${x},${y}`) && !inRects(screen.liquids, x, y)) {
-                    cell(x, y, `rgba(220,38,38,${(0.16 + 0.12 * pulse).toFixed(3)})`);
-                }
-            }
+        // Le fond statique (falaise + ombre floue, sol, chemins, base des liquides) est dessiné une seule fois dans un
+        // calque hors écran puis simplement recopié à chaque image : l'ombre floue (shadowBlur) et des centaines de
+        // fillRect par image étaient le principal coût de rendu sur les vieux appareils. Rendu identique.
+        const ground = getGroundLayer(screen, biome, tile, dpr, inRects);
+        if (ground) {
+            ctx.drawImage(ground.canvas, ox - GROUND_MARGIN, oy - GROUND_MARGIN,
+                ground.canvas.width / dpr, ground.canvas.height / dpr);
+        } else {
+            ctx.save();
+            ctx.shadowColor = 'rgba(0,0,0,0.35)';
+            ctx.shadowBlur = 18;
+            ctx.fillStyle = biome.cliff;
+            ctx.fillRect(ox - 4, oy - 4, mapW + 8, mapH + 8);
+            ctx.restore();
+            paintGroundCells(ctx, screen, biome, tile, ox, oy, inRects);
+        }
+        // Parties animées : reflets des liquides et zones de vigilance qui pulsent
+        const liquidCells = getLiquidCells(screen, inRects);
+        liquidCells.forEach(([x, y]) => {
+            const shimmer = 0.10 + 0.10 * Math.sin(now / 500 + x * 1.7 + y * 1.1);
+            cell(x, y, `rgba(255,255,255,${shimmer.toFixed(3)})`, tile * 0.08);
+        });
+        if (aura.size) {
+            const auraFill = `rgba(220,38,38,${(0.16 + 0.12 * pulse).toFixed(3)})`;
+            aura.forEach(key => {
+                const [x, y] = key.split(',').map(Number);
+                if (!inRects(screen.liquids, x, y)) cell(x, y, auraFill);
+            });
         }
         // contour des zones de vigilance (lecture claire de « où ne pas passer »)
         ctx.lineWidth = 1.5;

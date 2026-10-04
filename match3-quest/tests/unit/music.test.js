@@ -192,6 +192,19 @@ describe('moteur audio (faux AudioContext)', () => {
         expect(() => { setMusicScene('menu'); __internals.tick(); stopMusic(); }).not.toThrow();
     });
 
+    test('anticipation adaptative : un thread principal bloqué élargit l\'anticipation, sans la réduire ensuite', () => {
+        const ctx = makeCtx(); setup(ctx);
+        setMusicScene('menu');
+        run(ctx, 1);
+        const base = __internals.state.ahead;
+        ctx.currentTime += 0.6; __internals.tick();   // trou de 600 ms entre deux ticks (appareil lent)
+        const widened = __internals.state.ahead;
+        expect(widened).toBeGreaterThan(base);
+        expect(widened).toBeLessThanOrEqual(1.2);
+        run(ctx, 2);
+        expect(__internals.state.ahead).toBe(widened);
+    });
+
     test('contexte suspendu : rien n\'est créé, puis démarre quand il passe en running', () => {
         const ctx = makeCtx(); ctx.state = 'suspended';
         setup(ctx);

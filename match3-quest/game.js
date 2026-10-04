@@ -2185,7 +2185,7 @@ export function updateLevelHud(){
     hud.classList.toggle('has-points', pts > 0);
 }
 if(typeof window !== 'undefined' && typeof setInterval === 'function'){
-    setInterval(updateLevelHud, 500);
+    setInterval(() => { if(!document.hidden) updateLevelHud(); }, 500);   // inutile (et coûteux sur vieil appareil) onglet masqué
 }
 
 function renderLevelUpHud(){
