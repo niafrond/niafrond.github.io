@@ -186,12 +186,18 @@ function init() {
         return [info.region === 'lune' ? 'moon' : 'sanctuary'];
     };
     let musicStopped = true;
-    setInterval(() => {
+    const syncMusic = () => {
         const want = desiredMusic();
         if(!want) { if(!musicStopped) { stopMusic({ fadeMs: 700 }); musicStopped = true; } return; }
         musicStopped = false;
         setMusicScene(want[0], want[1]);
-    }, 400);
+    };
+    setInterval(syncMusic, 400);
+    // Les navigateurs interdisent tout son avant un geste de l'utilisateur : le premier appui (en pratique « Toucher
+    // pour commencer » de l'écran-titre) débloque le contexte audio, et la musique démarre aussitôt. On garde
+    // l'écoute (capture) pour reprendre un contexte suspendu plus tard (retour d'onglet, iOS).
+    const unlockAudio = () => { primeAudioFromGesture(); syncMusic(); };
+    ['pointerdown', 'touchstart', 'keydown'].forEach(type => document.addEventListener(type, unlockAudio, { capture: true, passive: true }));
 
     const setCombatUiVisible = visible => {
         document.querySelector('.stats-container').style.display = visible ? 'flex' : 'none';
