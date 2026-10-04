@@ -147,6 +147,12 @@ function init() {
         getPlayerLevel: () => player.level,
         onEncounter: encounter => startEncounterCombat(encounter),
         onGold: amount => { player.gold = (player.gold || 0) + amount; },
+        onItem: item => {
+            if (!Array.isArray(player.inventory)) player.inventory = [];
+            player.inventory.push({ ...item, applied: false });
+            if (!Number.isInteger(player.activeInventoryIndex)) player.activeInventoryIndex = player.inventory.length - 1;
+            updateInventoryTab();
+        },
         onXp: amount => {
             const res = addXP(player, amount);
             if(res.leveledUp) exploration.toast(`Niveau ${res.newLevel} !`, 4000);

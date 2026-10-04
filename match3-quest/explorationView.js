@@ -75,6 +75,7 @@ const hash = (x, y) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 
  *  getPlayerLevel()           niveau courant
  *  onEncounter(encounter)     lance le combat
  *  onGold(amount)             crédite de l'or
+ *  onItem(item)               ajoute un objet à l'inventaire (potion trouvée dans un coffre)
  *  onXp(amount)               crédite de l'expérience (récompenses de quêtes)
  *  onSave()                   sauvegarde la partie (aussi après une Nouvelle Partie +)
  *  onRegionVisited(regionId)  région découverte
@@ -253,6 +254,7 @@ export function createExplorationView(cfg) {
     }
 
     const NARRATOR = { icon: 'scroll', name: 'Narrateur' };
+    const RARITY_LABEL = { common: 'commune', uncommon: 'peu commune', rare: 'rare', legendary: 'légendaire' };
 
     // Locuteur d'une scène (`defeatScene.speaker`) : sprite de PNJ ou d'ennemi, parchemin du narrateur sinon.
     function sceneSpeaker(sp = {}) {
@@ -289,10 +291,12 @@ export function createExplorationView(cfg) {
                 if (!ev.paid) { gold += ev.gold || 0; xp += ev.xp || 0; }
                 const frag = ev.reward?.fragment ? ` · ${ev.reward.fragment}` : '';
                 const plus = ev.ended ? ' · Nouvelle Partie + débloquée (journal)' : '';
-                toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0}${ev.xp ? ` +${ev.xp} XP` : ''}${frag}${plus}`, ev.ended ? 8000 : 5000);
+                toast(`Quête terminée : ${ev.quest.title} — +${ev.gold || 0} or${ev.xp ? ` · +${ev.xp} XP` : ''}${frag}${plus}`, ev.ended ? 8000 : 5000);
             } else if (ev.type === 'chestOpened') {
                 if (!ev.paid) gold += ev.gold || 0;
-                toast(`${ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${ev.gold ? ` +${ev.gold}` : ''}`);
+                if (ev.potion) cfg.onItem?.(ev.potion);
+                const found = [ev.gold ? `+${ev.gold} or` : '', ev.potion ? `${ev.potion.name} (${RARITY_LABEL[ev.potion.rarity] || ev.potion.rarity})` : ''].filter(Boolean).join(' · ');
+                toast(`${ev.chest.openText || `${ev.chest.label || 'Coffre'} ouvert !`}${found ? ` — ${found}` : ''}`, ev.potion ? 4600 : 3200);
             }
         });
         if (gold > 0) cfg.onGold(gold);

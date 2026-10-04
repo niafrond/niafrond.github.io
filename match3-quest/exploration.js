@@ -18,6 +18,7 @@
 
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
 import { REGION_ORDER } from './world/index.js';
+import { chestPotion } from './chestLoot.js';
 
 export const AGGRO_RADIUS = 1;
 export const PATROL_STEP_MS = 650;
@@ -580,8 +581,15 @@ export function openChest(session, chestId) {
     const chest = visibleChests(session).find(c => c.id === chestId);
     if (!chest || session.data.openedChests.includes(chestId)) return null;
     session.data.openedChests.push(chestId);
-    const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0 }, ...checkAutoQuests(session)];
-    return { type: 'chestOpened', chest, gold: chest.gold || 0, events };
+    // Potion éventuelle : plus le coffre est difficile à trouver, plus elle est probable et rare (chestLoot.js).
+    const screen = currentScreen(session);
+    const potion = chestPotion(chest, screen, {
+        regionIndex: REGION_ORDER.indexOf(screen.region) + 1,
+        level: REGION_UNLOCK_LEVEL[screen.region] || 1,
+        ngPlus: session.data.ngPlus || 0
+    });
+    const events = [{ type: 'chestOpened', chest, gold: chest.gold || 0, potion }, ...checkAutoQuests(session)];
+    return { type: 'chestOpened', chest, gold: chest.gold || 0, potion, events };
 }
 
 function findNpcScreen(session, npcId) {
