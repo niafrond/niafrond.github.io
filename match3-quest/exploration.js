@@ -266,7 +266,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
         enterScreen(session, exit.to, exit.arrive);
         const res = { type: 'transition', from, to: exit.to, firstVisit, door: Boolean(exit.door), events: checkAutoQuests(session) };
         // Texte du Narrateur affiché seulement à la toute première visite de l'écran.
-        if (firstVisit && target.arrival?.length) res.arrival = target.arrival;
+        if (firstVisit && !target.interior && target.arrival?.length) res.arrival = target.arrival;
         if (warning) res.warning = warning;
         return res;
     }
