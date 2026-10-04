@@ -409,6 +409,16 @@ body.rt .tile.joker {
     background-image: url('sprites/tiles/tile-joker.svg');
 }
 
+/* Pièges de zone de Fengmeng (duel.js) : case piégée cerclée de rouge, qui pulse. */
+body.rt .tile.trapped {
+    position: relative;
+    outline: 3px dashed #e0262b;
+    outline-offset: -3px;
+    box-shadow: inset 0 0 12px rgba(224, 38, 43, 0.75);
+    animation: rt-trap 0.9s steps(2, end) infinite;
+}
+@keyframes rt-trap { 50% { outline-color: #ffd23f; box-shadow: inset 0 0 6px rgba(224, 38, 43, 0.45); } }
+
 body.rt .tile.selected {
     outline: 4px solid var(--rt-gold);
     outline-offset: 1px;
@@ -595,6 +605,8 @@ body.rt .shop-price-tag {
 body.rt .battle-result-card { padding: 18px 22px; }
 body.rt .battle-result-loot { list-style: none; padding: 0; margin: 8px 0 0; }
 body.rt .battle-result-loot li { padding: 2px 0; }
+/* Arène des Mille Flèches (arena.js) : dans l'arène, le bouton du HUD devient la sortie. */
+body.rt .explore-hud-buttons button.arena-exit { background: #9b2f2a; color: #fff6dc; }
 body.rt .battle-result-xp { font-family: var(--rt-title); font-size: 11px; line-height: 1.6; }
 
 /* Carte du monde à dix régions : côte et écume ajustées à des îlots plus petits (cf. LAND_PATH_WIDTH) */

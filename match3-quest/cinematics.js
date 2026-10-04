@@ -591,9 +591,11 @@ const SUN_TAUNTS = [
     'Le ciel est à nous. Retourne à ta poussière, mortel !'
 ];
 const SUN_REPLIES = [
-    'Je ne tire pas par haine, je tire pour que la Terre revive.',
-    'Le jeu est fini, soleil. Les hommes ont soif.',
-    'Mes flèches n\'ont jamais manqué leur but. Pas aujourd\'hui non plus.'
+    "Je ne tire pas par haine. Je tire pour que la Terre revive.",
+    "Le jeu est fini, soleil. Les hommes ont soif, et Chang'e attend la nuit.",
+    "Chaque soleil qui tombe lui rend une heure de lune. Tu es le prochain.",
+    "Mes flèches n'ont jamais manqué leur but. Pas aujourd'hui : elle m'attend.",
+    "Rends-nous la nuit. J'ai promis la fête de la lune à Chang'e."
 ];
 const FENGMENG_TAUNTS = [
     'Maître… vous avez tout : le renom, l\'élixir, Chang\'e. Moi, que me reste-t-il ?',
@@ -606,6 +608,18 @@ const FENGMENG_REPLIES = [
     'Si je dois te vaincre pour te retrouver, alors soit.'
 ];
 
+// Échanges propres à chaque duel contre Fengmeng (id de l'ennemi de la carte) : [réplique de Fengmeng, réponse].
+const FENGMENG_DUEL_LINES = {
+    fengmeng_1: ["Montrez-moi, Maître. Montrez-moi enfin ce que vous ne m'avez jamais appris.",
+        'Garde ton souffle, Fengmeng. Et vise.'],
+    fengmeng_2: ["Ce soleil-là est à moi ! Cette fois, c'est mon nom que les chroniques retiendront.",
+        'La gloire ne se vole pas, Fengmeng. Elle te brûlera les doigts.'],
+    fengmeng_3a: ["Neuf soleils… Vous tenez à peine debout, Maître. Je connais chacune de vos flèches : l'élixir, maintenant.",
+        "Alors tu sais qu'aucune ne t'a jamais visé au cœur."],
+    fengmeng_3b: ["Elle a tout bu ! Il ne me reste rien… rien que mes flèches, et la terre où vous tomberez !",
+        'Pose ton arc, Fengmeng. Elle ne voudrait pas cela.']
+};
+
 function pick(list, seed) {
     let h = 0;
     for (const ch of String(seed)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -615,6 +629,10 @@ function pick(list, seed) {
 // Lignes d'un échange de début de combat de boss : [{ who: 'boss' | 'hero', text }].
 export function bossIntroLines(enc) {
     const name = enc?.boss?.name || enc?.name || 'Boss';
+    // Répliques propres à la rencontre (maîtres de l'Arène des Mille Flèches) : [adversaire, héros].
+    if (enc?.introLines?.length === 2) return [{ who: 'boss', text: enc.introLines[0] }, { who: 'hero', text: enc.introLines[1] }];
+    const duelLines = FENGMENG_DUEL_LINES[enc?.enemyId];
+    if (duelLines) return [{ who: 'boss', text: duelLines[0] }, { who: 'hero', text: duelLines[1] }];
     const isRival = /fengmeng/i.test(name);
     const taunts = isRival ? FENGMENG_TAUNTS : SUN_TAUNTS;
     const replies = isRival ? FENGMENG_REPLIES : SUN_REPLIES;
@@ -1125,7 +1143,7 @@ const PRO_SCENES = [
     },
     {   // 4. Hou Yi, Chang'e, Fengmeng et l'élixir d'immortalité
         dur: 7,
-        caption: "Alors Yao se souvint de Hou Yi, l'archer dont les flèches n'ont jamais manqué leur but. Près de lui : Chang'e, son épouse, Fengmeng, son disciple, et l'Élixir d'Immortalité.",
+        caption: "Alors Yao se souvint de Hou Yi, l'archer dont les flèches n'ont jamais manqué leur but. Près de lui : Chang'e, son épouse tant aimée, Fengmeng, son disciple, et l'Élixir d'Immortalité.",
         draw(ctx, t) {
             sky(ctx, TP.tealDeep, TP.tealMid, 12);
             stars(ctx, t, 22, 0.8);

@@ -14,6 +14,7 @@ import { worldZones } from "./worldMap.js";
 import { mountWorldMap } from "./worldMapView.js";
 import { createExplorationView } from "./explorationView.js";
 import { REGION_ENTRY_SCREEN } from "./story.js";
+import { ARENA_MIN_LEVEL, ARENA_NAME, ARENA_REGION, isArenaUnlocked } from "./arena.js";
 import { heroSprite, spriteUri, loadSpritePack, CORE_PACK } from "./sprites/index.js";
 import { hideLoadingScreen } from "./loader.js";
 
@@ -155,6 +156,7 @@ function init() {
         },
         onSave: () => saveUpdate(),
         onRegionVisited: regionId => {
+            if(regionId === ARENA_REGION) return;   // l'arène n'est pas une région de la carte du monde
             if(!player.worldMap) player.worldMap = { currentZoneId: null, visitedZoneIds: [] };
             player.worldMap.currentZoneId = regionId;
             if(!player.worldMap.visitedZoneIds.includes(regionId)) {
@@ -162,6 +164,7 @@ function init() {
             }
         },
         onOpenMap: () => showWorldMap(),
+        onOpenArena: () => openArena(),
         onOpenMenu: () => window.switchTab('weapons')
     });
     exploration.init();
@@ -245,6 +248,18 @@ function init() {
         generateBoard();
         renderBoard();
         updateStats();
+    };
+
+    // ── Arène des Mille Flèches (arena.js) : un lieu à explorer (parvis, salles, maîtres d'arène) ──────────
+    // Le bouton « Arène » du HUD y entre (dès le niveau 15) ; dans l'arène, il devient « Sortir » et en fait sortir à tout moment.
+    const openArena = () => {
+        if(exploration.inArena()) { playSfx('uiClick'); exploration.leaveArena(); return; }
+        if(!isArenaUnlocked(player.level)) {
+            exploration.toast(`L'${ARENA_NAME} ouvre ses portes au niveau ${ARENA_MIN_LEVEL} (vous êtes niveau ${player.level}).`, 4500);
+            return;
+        }
+        playSfx('uiClick');
+        exploration.enterArena();
     };
 
     combatHooks.onVictory = () => exploration.onCombatVictory();

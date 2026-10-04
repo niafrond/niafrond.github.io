@@ -13,11 +13,18 @@
 //  - illusion : au contact ou dans l'aura, l'ennemi se dissipe (événement `illusion`), pas de combat ;
 //  - shieldedBy : boss protégé tant que le groupe d'ennemis n'est pas vaincu (événement `shielded`) ;
 //  - defeatScene : scène jouée au retour sur la carte après la victoire (événement `scene`) ;
+//  - afterScenes : [{ speaker, lines }] jouées une seule fois après le texte de victoire des quêtes
+//    (événements `scene`, insérés après le dernier `questCompleted`) : interludes à plusieurs voix ;
+//  - duel : règles de duel recopiées dans la rencontre (miroir, héros affaibli, tirs rapides, pièges : duel.js) ;
 //  - exit.requires : sortie fermée tant que la condition n'est pas remplie ;
-//  - data.ngPlus : compteur de Nouvelle Partie + (niveaux des ennemis augmentés).
+//  - data.ngPlus : compteur de Nouvelle Partie + (niveaux des ennemis augmentés) ;
+//  - arène (arena.js) : écrans `kind: 'arena'`, `data.arena` = { cleared, best, wins, returnTo } ; entrée par
+//    enterArena (point de retour mémorisé), sortie à tout moment par leaveArena (bouton du HUD, sortie
+//    `leaveArena` d'une salle), défaite = expulsion ; revenir au parvis remet les gardiens en place.
 
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
 import { REGION_ORDER } from './world/index.js';
+import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
 export const AGGRO_RADIUS = 1;
 export const PATROL_STEP_MS = 650;
@@ -63,7 +70,8 @@ function defaultData() {
         ngPlus: 0,
         talked: [],
         waypoints: [],
-        tracked: null
+        tracked: null,
+        arena: normalizeArenaData(null)
     };
 }
 
@@ -77,6 +85,7 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.talked = Array.isArray(data.talked) ? data.talked : [];
     data.waypoints = Array.isArray(data.waypoints) ? data.waypoints : [];
     data.tracked = typeof data.tracked === 'string' ? data.tracked : null;
+    data.arena = normalizeArenaData(data.arena);
 
     const enemyIndex = {};
     Object.values(screens).forEach(screen => screen.enemies.forEach(def => { enemyIndex[def.id] = { def, screenId: screen.id }; }));
@@ -123,6 +132,7 @@ function respawnRegularEnemies(session) {
 export function enterScreen(session, screenId, pos) {
     const screen = session.screens[screenId];
     if (!screen) return false;
+    if (screenId === ARENA_HALL) resetArenaGuards(session);
     session.data.screenId = screenId;
     session.data.x = pos.x;
     session.data.y = pos.y;
@@ -132,6 +142,51 @@ export function enterScreen(session, screenId, pos) {
     if (!session.data.visitedScreens.includes(screenId)) session.data.visitedScreens.push(screenId);
     discoverVillageWaypoint(session);
     return true;
+}
+
+// ── Arène des Mille Flèches (arena.js) ─────────────────────────────────────
+export const inArena = session => Boolean(currentScreen(session)?.arena);
+
+// Au parvis, tous les gardiens et maîtres reprennent leur place : chaque cercle se refait à volonté.
+function resetArenaGuards(session) {
+    session.data.defeated = session.data.defeated.filter(id => !id.startsWith('arena_c'));
+}
+
+// Entrée dans l'arène (depuis n'importe quel écran hors arène) : mémorise le point de retour.
+export function enterArena(session) {
+    if (inArena(session) || !session.screens[ARENA_HALL]) return false;
+    const { screenId, x, y } = session.data;
+    session.data.arena.returnTo = { screenId, x, y };
+    return enterScreen(session, ARENA_HALL, session.screens[ARENA_HALL].spawn);
+}
+
+// Sortie de l'arène, à tout moment : retour au point d'entrée (sinon au village de départ).
+export function leaveArena(session) {
+    if (!inArena(session)) return false;
+    const back = session.data.arena.returnTo;
+    session.data.arena.returnTo = null;
+    const target = back && session.screens[back.screenId] && !session.screens[back.screenId].arena ? back : null;
+    if (target && !isTerrainBlocked(session.screens[target.screenId], target.x, target.y)) {
+        return enterScreen(session, target.screenId, { x: target.x, y: target.y });
+    }
+    return enterScreen(session, START_SCREEN, session.screens[START_SCREEN].spawn);
+}
+
+// Texte d'objectif dans l'arène.
+function arenaObjectiveText(session) {
+    const screen = currentScreen(session);
+    const a = session.data.arena;
+    if (screen.arena.hall) {
+        const open = ARENA_TIERS.filter(t => t.id === 1 || a.cleared.includes(t.id - 1)).length;
+        return `${a.cleared.length}/${ARENA_TIERS.length} cercles terminés · ${open} porte${open > 1 ? 's' : ''} ouverte${open > 1 ? 's' : ''} · porte sud ou « Sortir » pour quitter l'arène`;
+    }
+    const tier = arenaTier(screen.arena.tier);
+    if (screen.arena.master) {
+        return progressReached(session, screen.enemies[0]?.id)
+            ? `${tier.name} terminé ! Sortie à l'est, ou « Sortir » pour quitter l'arène`
+            : `Affrontez ${tier.master.name}, maître du ${tier.name} · « Sortir » pour quitter l'arène`;
+    }
+    return `${tier.name}, salle ${screen.arena.room}/${tier.waves - 1} : battez le gardien pour ouvrir la porte · « Sortir » pour quitter l'arène`;
 }
 
 export function teleportToScreen(session, screenId) {
@@ -249,6 +304,12 @@ export function tryMove(session, dx, dy, ctx = {}) {
     if (isTerrainBlocked(screen, nx, ny)) return { type: 'blocked' };
 
     const exit = screen.exits.find(e => e.x === nx && e.y === ny);
+    if (exit?.leaveArena) {
+        if (isExitLocked(session, exit)) return { type: 'exitBlocked', reason: 'quest', label: exit.label, message: exit.lockedMessage };
+        const from = screen.id;
+        leaveArena(session);
+        return { type: 'transition', from, to: session.data.screenId, firstVisit: false, door: false, events: [] };
+    }
     if (exit) {
         const target = session.screens[exit.to];
         if (isExitLocked(session, exit)) {
@@ -400,6 +461,14 @@ export function encounterFor(session, enemyId, playerLevel) {
     const entry = session.rt.enemyIndex[enemyId];
     if (!entry) return null;
     const { def } = entry;
+    if (def.arena) {
+        const info = arenaEncounterInfo(def, playerLevel, session.data.arena.cleared);
+        return {
+            enemyId: def.id, spriteKey: def.spriteKey || def.id, templateId: def.templateId, name: def.name,
+            level: info.level, boss: def.boss ? { ...def.boss, level: info.level } : null, duel: info.duel, arena: info.arena,
+            introLines: def.introLines ? [...def.introLines] : null
+        };
+    }
     const level = enemyLevel(def, playerLevel, session.data.ngPlus);
     return {
         enemyId: def.id,
@@ -407,7 +476,8 @@ export function encounterFor(session, enemyId, playerLevel) {
         templateId: def.templateId,
         name: def.name,
         level,
-        boss: def.boss ? { ...def.boss, level } : null
+        boss: def.boss ? { ...def.boss, level } : null,
+        duel: def.duel ? { ...def.duel } : null
     };
 }
 
@@ -470,15 +540,36 @@ export function checkAutoQuests(session) {
     return events;
 }
 
-// Victoire sur un ennemi : événement `scene` éventuel (`defeatScene` de la définition), puis quêtes automatiques.
+// Victoire dans l'arène : record du cercle ; un maître vaincu termine le cercle (et ouvre le suivant la 1re fois).
+function arenaVictory(session, def) {
+    const a = session.data.arena;
+    const tierId = def.arena.tier;
+    a.wins += 1;
+    a.best[tierId] = Math.max(a.best[tierId] || 0, def.arena.wave);
+    if (!def.arena.master) return [];
+    const firstClear = !a.cleared.includes(tierId);
+    if (firstClear) a.cleared = [...a.cleared, tierId].sort((x, y) => x - y);
+    return [{ type: 'arenaCleared', tier: tierId, firstClear, next: firstClear ? arenaTier(tierId + 1) : null }];
+}
+
+const sceneEvent = scene => ({ type: 'scene', speaker: { ...(scene.speaker || {}) }, lines: [...scene.lines] });
+
+// Victoire sur un ennemi : événement `scene` éventuel (`defeatScene` de la définition), puis quêtes automatiques,
+// puis l'interlude `afterScenes` (juste après le dernier texte de victoire, avant le démarrage des quêtes suivantes).
 export function markEnemyDefeated(session, enemyId) {
     const events = [];
+    let after = [];
     if (!session.data.defeated.includes(enemyId)) {
         session.data.defeated.push(enemyId);
-        const scene = session.rt.enemyIndex[enemyId]?.def.defeatScene;
-        if (scene?.lines?.length) events.push({ type: 'scene', speaker: { ...(scene.speaker || {}) }, lines: [...scene.lines] });
+        const def = session.rt.enemyIndex[enemyId]?.def;
+        if (def?.defeatScene?.lines?.length) events.push(sceneEvent(def.defeatScene));
+        after = (def?.afterScenes || []).filter(sc => sc?.lines?.length).map(sceneEvent);
+        if (def?.arena) events.push(...arenaVictory(session, def));
     }
-    events.push(...checkAutoQuests(session));
+    const quests = checkAutoQuests(session);
+    const lastDone = quests.map(ev => ev.type).lastIndexOf('questCompleted');
+    quests.splice(lastDone + 1 || quests.length, 0, ...after);
+    events.push(...quests);
     return events;
 }
 
@@ -501,6 +592,12 @@ export function startNewGamePlus(session) {
 }
 
 export function resetAfterDefeat(session) {
+    // Défaite dans l'arène : on en est expulsé (retour au point d'entrée).
+    if (inArena(session)) {
+        leaveArena(session);
+        session.rt.grace = GRACE_MOVES + 1;
+        return;
+    }
     const screen = currentScreen(session);
     session.data.x = screen.spawn.x;
     session.data.y = screen.spawn.y;
@@ -512,6 +609,7 @@ export function resetAfterDefeat(session) {
 export function progressReached(session, cond) {
     if (Array.isArray(cond)) return cond.length > 0 && cond.every(c => progressReached(session, c));
     if (typeof cond !== 'string' || !cond) return false;
+    if (cond.startsWith('arena_cleared_')) return session.data.arena.cleared.includes(Number(cond.slice(14)));
     return session.data.quests[cond] === 'done'
         || session.data.defeated.includes(cond)
         || session.data.openedChests.includes(cond)
@@ -670,6 +768,7 @@ function locationHint(session, target) {
 
 // Objectif affiché en permanence : prochaine étape de la quête suivie, sinon de la première quête en cours.
 export function currentObjectiveText(session) {
+    if (inArena(session)) return arenaObjectiveText(session);
     const tracked = trackedQuest(session);
     if (tracked) {
         const status = questStatus(session, tracked);

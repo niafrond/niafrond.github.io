@@ -22,11 +22,14 @@
 //  - shieldedBy      : id d'un `group` d'ennemis ; tant qu'il n'est pas vaincu, le boss est intouchable
 //                      (le contact affiche `shieldLines`) ;
 //  - defeatScene     : { speaker: { name, title?, npc? | enemy? }, lines } jouée après la victoire ;
+//  - afterScenes     : [{ speaker, lines }] interlude à plusieurs voix (speaker.hero : le héros) après le texte de victoire ;
+//  - duel            : règles de duel de Fengmeng (mirror, heroHpPct, rapidShots, zoneTraps : voir duel.js) ;
 //  - showWhen / hideWhen : (aussi sur PNJ et coffres) l'entité n'existe qu'après / jusqu'à ce que la
 //                      condition d'avancement (id de quête, d'ennemi vaincu ou de coffre) soit remplie.
 // Sorties : `requires` (+ `lockedMessage`) les ferme tant que la condition d'avancement n'est pas remplie.
 
 import { assembleWorld } from './world/index.js';
+import { buildArenaScreens } from './arena.js';
 
 export const STORY_TITLE = 'La Légende de Hou Yi';
 
@@ -34,7 +37,8 @@ export const STORY_INTRO = [
     "Au commencement, les dix soleils, fils de Di Jun, dormaient dans les branches de l'Arbre Fusang et se levaient chacun à leur tour, un par jour, dans un char traîné par un corbeau d'or.",
     "Mais un matin, les dix frères s'élancèrent ensemble, par jeu. Les fleuves tarirent, les rizières jaunirent, les forêts prirent feu, et les bêtes sauvages, rendues folles par la chaleur, descendirent sur les villages.",
     "L'empereur Yao supplia Di Jun de rappeler ses fils. Les soleils rirent, et le ciel resta en feu. Alors Yao se souvint de Hou Yi, l'archer dont les flèches n'ont jamais manqué leur but.",
-    "Vous êtes Hou Yi. Vous avez pour épouse Chang'e, qui pétrit des gâteaux de lune dès l'aube, et pour disciple Fengmeng, qui vous admire autant qu'il vous jalouse. Sur l'autel des ancêtres repose l'Élixir d'Immortalité, offert par la Reine Mère de l'Occident.",
+    "Vous êtes Hou Yi. Vous avez pour épouse Chang'e, qui pétrit des gâteaux de lune dès l'aube et que vous aimez plus que tout ce que le ciel éclaire, et pour disciple Fengmeng, qui vous admire autant qu'il vous jalouse. Sur l'autel des ancêtres repose l'Élixir d'Immortalité, offert par la Reine Mère de l'Occident.",
+    "Si vous reprenez l'arc, c'est pour elle : pour lui rendre des nuits, la fête de la lune, le temps de vieillir ensemble. À l'aube, elle a brisé en deux son miroir de bronze, rond comme la lune d'automne, et vous en a glissé une moitié dans la manche : « Quand la lune reviendra, regarde-la dans ce bronze. J'y regarderai aussi. »",
     "Le doyen Wen vous attend dans les Rizières Desséchées avec le décret de l'empereur : abattre neuf soleils, et en épargner un seul, afin que la Terre garde un jour. Allez lui parler."
 ];
 
@@ -42,9 +46,228 @@ export const STORY_ENDING = [
     "Le dernier jour a été long. Hou Yi ramasse la corbeille de gâteaux de lune et s'avance seul vers l'autel du pic : au haricot rouge, au taro, au thé vert, ceux que Chang'e pétrissait pour lui chaque aube, avant qu'il ne parte.",
     "Sur l'autel, la pierre est blanche et fraîche. Il dispose les gâteaux sur l'autel, un à un, comme elle le faisait, puis il s'assoit. Au-dessus de lui, la pleine lune est si grande qu'on croirait pouvoir la toucher du bout de l'arc.",
     "Un seul soleil traverse désormais le ciel, et la Terre a de nouveau des jours et des nuits. Les rizières reverdissent, le fleuve gonfle, les villages allument des lanternes pour la fête d'automne. Hou Yi n'entend plus que le vent.",
-    "Sur le disque de la lune, une silhouette de lumière passe, une main levée, très lentement. Hou Yi ne dit rien. Il lève la sienne. Chaque année, à la pleine lune d'automne, les hommes poseront des gâteaux de lune sur leurs toits, et cette nuit-là, quelqu'un, là-haut, leur sourira.",
+    "Hou Yi lève vers le ciel sa moitié de miroir et l'ajuste contre la lune : le bronze en couvre une moitié, la lumière achève l'autre. Le cercle est entier. Sur le disque, une silhouette passe, une main levée, très lentement. Hou Yi lève la sienne. Chaque année, à la pleine lune d'automne, les hommes poseront des gâteaux de lune sur leurs toits, et cette nuit-là, quelqu'un, là-haut, leur sourira.",
     "Ainsi s'achève la légende de Hou Yi. Mais une légende se raconte toujours une fois de plus : une Nouvelle Partie + vous attend, où les soleils se lèveront plus ardents."
 ];
+
+// Le miroir brisé : au départ, Chang'e a brisé en deux son miroir de bronze et en a confié une moitié à Hou Yi.
+// Chaque soleil abattu rend un peu de nuit au ciel ; tant que la lune est haute, les deux moitiés reflètent la même
+// lune et les époux s'y parlent. Interludes joués après le texte de victoire de chaque soleil (`afterScenes`) ;
+// après le neuvième, le bronze reste froid : Chang'e a déjà fui vers le Pic de la Lune.
+const HOU_YI = { name: 'Hou Yi', title: 'La moitié de miroir', hero: true };
+const CHANGE_MIRROR = { name: "Chang'e", title: 'Dans la moitié de miroir', npc: 'change' };
+const MOONLIGHT = { name: 'Narrateur', title: 'Clair de lune' };
+
+const MIRROR_TALKS = {
+    sun_1: [
+        { speaker: MOONLIGHT, lines: [
+            "Le soir tombe, un vrai soir, le premier depuis trois lunes. Hou Yi veille sur le tertre du temple, où la cendre fume encore. Une lune mince se lève au-dessus des rizières, et dans sa manche, la moitié de miroir devient tiède.",
+            "Il la sort. Dans le bronze, il y a la lune ; et sous la lune, un visage poudré de farine, qui le regarde à travers la même lumière."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Hou Yi ? Je tenais ma moitié à la fenêtre pour y voir la lune, et c'est toi que je vois. Tu as de la cendre plein le front. Pourquoi ne rentres-tu pas ? La maison est à deux cents pas."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Si je passe notre porte ce soir, je n'aurai plus le courage de repartir. Le fleuve m'attend à l'aube. Mais je t'entends, Chang'e. Je t'entends vraiment."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Les anciens disent qu'un miroir est une petite lune. Il faut croire que la grande se souvient de nous. Tu as mangé les gâteaux du muret, au moins ?"
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Pas encore. Je voulais d'abord te rendre ta première nuit. Il y en aura d'autres, je te le promets : des nuits entières, et la fête de la lune au bord du fleuve, comme avant."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "La lune redescend déjà. Mange, mon archer. À la prochaine lune."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "À la prochaine lune."
+        ] }
+    ],
+    sun_2: [
+        { speaker: MOONLIGHT, lines: [
+            "Cette nuit-là, la lune reste un peu plus longtemps. Assis dans la barque du passeur, qui flotte de nouveau, Hou Yi écoute l'eau revenir. Le bronze tiédit dans sa paume."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Ici, on n'entend que les grillons. Raconte-moi le fleuve."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Il revient comme quelqu'un qui rentre tard : sans bruit, en essayant de ne réveiller personne. Je suis près du gué. Tu sais lequel."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Le gué des saules. J'y avais lâché une lanterne pour la fête de la lune, elle s'était prise dans les roseaux. Un grand nigaud a tiré une flèche pour la libérer, et il a failli mettre le feu à la rive."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Je n'ai pas failli : la lanterne est repartie. C'est la seule flèche que j'aie jamais tirée sans cible."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Sans cible ? Tu m'as regardée tout le temps que tu bandais l'arc. J'ai bien vu."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Alors elle a touché. À la prochaine fête, nous y retournerons. Je porterai la lanterne, et je laisserai mes flèches au carquois."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "À la prochaine lune, mon grand nigaud."
+        ] }
+    ],
+    sun_3: [
+        { speaker: MOONLIGHT, lines: [
+            "Dans la forêt calcinée, la nuit sent la cendre mouillée. Hou Yi s'est adossé à un bambou noir ; ses doigts saignent encore de la corde. Il sort le miroir sans même ouvrir les yeux."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Tu as la voix de quelqu'un qui n'a pas dormi depuis trois soleils. Ouvre les yeux, que je les voie… Rouges comme des braises. Mon pauvre archer."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Ce n'est que la fumée. Parle-moi d'autre chose que du feu. N'importe quoi."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Du premier gâteau de lune que je t'ai fait, alors. Il était noir comme cette forêt. Tu l'as mangé jusqu'à la dernière miette, et tu as dit : « Parfait. »"
+        ] },
+        { speaker: HOU_YI, lines: [
+            "C'est le seul mensonge que je t'aie jamais fait. Je le referais demain."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Je sais. C'est pour cela que je t'ai épousé : un homme qui ment si mal, et seulement pour moi. Dors, maintenant. Je garde la lune à ta place."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Ne la lâche pas."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Jamais. À la prochaine lune."
+        ] }
+    ],
+    sun_4: [
+        { speaker: MOONLIGHT, lines: [
+            "Le désert, la nuit, est plus froid qu'on ne le croit. Les mirages se sont dissipés, mais Hou Yi tient le miroir à deux mains, comme s'il craignait qu'il s'efface lui aussi."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Chang'e, dis-moi quelque chose que toi seule pourrais dire."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Tu as encore laissé tes bottes devant l'autel des ancêtres, et les ancêtres en rougissent. Pourquoi cette voix ? Qu'as-tu vu, là-bas ?"
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Toi. Dix fois. Au bord d'une source qui n'existait pas. Toutes me souriaient ; aucune ne m'a grondé de ne pas manger. C'est comme cela que j'ai su qu'aucune n'était toi."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Je finirai par te gronder exprès, pour que tu me reconnaisses partout. La maison est trop grande sans toi, tu sais. Je mets deux bols sur la table ; le tien refroidit, je le bois quand même."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Garde-moi le bol. Je rentrerai le boire chaud. C'est pour cela que je tire : pour une table où les bols n'ont plus le temps de refroidir."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Alors vise juste. À la prochaine lune."
+        ] }
+    ],
+    sun_5: [
+        { speaker: MOONLIGHT, lines: [
+            "Une pluie fine tombe sur les Monts du Tonnerre, la première depuis l'été des dix soleils. La lune passe entre deux nuages, et la voix de Chang'e arrive mouillée de rire."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Il pleut chez toi aussi ? Ici, les voisins dansent dans la boue. Il pleuvait le jour de nos noces, tu te souviens ? Ma mère criait au mauvais présage."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Et tu as soulevé ton voile toute seule pour regarder la pluie. Le village en a parlé pendant un an. Moi, je n'ai rien vu d'autre que toi, trempée, qui riais."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Ce soir-là, tu m'as dit : « Ni le ciel ni la terre ne nous sépareront. » J'y repense en regardant la fiole sur l'autel. Une gorgée pour vivre longtemps, la fiole entière pour monter au ciel…"
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Nous l'avons décidé ensemble : jamais l'un sans l'autre. Nous la partagerons, vieux et ridés, une gorgée chacun. Le ciel, je n'en veux pas, s'il faut y monter seul."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Moi non plus. Je voulais seulement te l'entendre dire encore. À la prochaine lune, mon époux."
+        ] }
+    ],
+    sun_6: [
+        { speaker: MOONLIGHT, lines: [
+            "La roche refroidit en craquant comme du verre. Les nuits sont plus longues, désormais : la lune a le temps de monter haut. Mais quand Hou Yi sort le miroir, Chang'e y est déjà, comme si elle attendait depuis des heures."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Fengmeng est venu à la maison. Il avait la cendre des gorges sur ses bottes. Il n'a pas voulu de thé. Il a regardé l'autel, longtemps. Puis il m'a regardée, moi."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Je l'ai battu au défilé. Il m'a dit qu'il allait voir les miens, et je n'ai pas compris. Je rentre, Chang'e. Demain, à l'aube."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Non. Il reste trois soleils, et des enfants qui n'ont jamais vu une nuit entière. Si tu rentres pour moi, ils te le pardonneront. Toi, jamais."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "C'est pour toi que je fais tout cela. Pour toi d'abord. Que me restera-t-il, si ce monde revit et que tu n'y es plus ?"
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Je suis là. J'ai mis la barre à la porte, et la fiole contre ma poitrine. Fengmeng n'aura rien de nous."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Garde ta moitié de miroir sur toi, toujours. Et s'il revient, cours."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Alors je courrai vers la lune : c'est là que tu me cherches. À la prochaine lune."
+        ] }
+    ],
+    sun_7: [
+        { speaker: MOONLIGHT, lines: [
+            "Sur la plaine, les bêtes survivantes dorment enfin, serrées les unes contre les autres. Hou Yi, lui, ne dort pas. La lune est presque ronde ; dans le bronze, Chang'e a les yeux cernés."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Tu n'as pas dormi."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "J'écoute la digue. Chaque pas me fait sursauter, et ce n'est jamais que le vent dans les roseaux. Même les fauves ont peur, la nuit, dit-on. Moi aussi."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Moi aussi, j'ai peur. Pas des soleils : de rentrer et de trouver la maison vide. Avant toi, je n'avais peur de rien."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Alors écoute. Je vais te chanter celle que je fredonne en pétrissant. « Dors, petit, la nuit te tient la main, et demain t'attend sur le chemin. »"
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Je ne suis pas petit."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Ce soir, si. Et demain t'attend, mon archer : demain, et tous les autres, jusqu'à ce que nous soyons vieux. À la prochaine lune."
+        ] }
+    ],
+    sun_8: [
+        { speaker: MOONLIGHT, lines: [
+            "La mer est revenue, et avec elle le bruit des vagues. Pour la première fois, la nuit est presque entière, et la lune presque pleine. Hou Yi s'assoit sur le sable mouillé, le miroir sur les genoux."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Plus qu'un. Dans dix jours, c'est la fête de la lune. J'ai déjà le taro, et les jaunes d'œuf salé que tu fais semblant de ne pas aimer."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Je serai là. Nous irons au gué des saules lâcher une lanterne, et je te dirai tout ce que je n'ai pas eu le temps de te dire."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Dis-le maintenant. On ne sait jamais combien de temps la lune reste haute."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Je t'aime, Chang'e. Les soleils, l'empereur, la légende, peu m'importe. J'ai fait tout cela pour vieillir avec toi, dans un monde où il y a des nuits."
+        ] },
+        { speaker: CHANGE_MIRROR, lines: [
+            "Je le sais depuis le gué. Écoute-moi, maintenant : quoi qu'il arrive, regarde la lune, chaque nuit. Même si le miroir se tait. Promets-le-moi."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Il ne se taira pas. Mais je te le promets."
+        ] },
+        { speaker: MOONLIGHT, lines: [
+            "La lune descend vers la mer. Le bronze tiédit encore un instant, puis refroidit. Bien plus tard, Hou Yi s'aperçoit qu'elle n'a pas dit « à la prochaine lune »."
+        ] }
+    ],
+    sun_9: [
+        { speaker: MOONLIGHT, lines: [
+            "Avant que la grue ne se pose, Hou Yi tire le miroir de sa manche, comme chaque fois qu'un soleil tombe. Il fait grand jour, un vrai jour, sous un seul soleil ; la lune n'est qu'une écaille pâle au-dessus du Fusang."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "Chang'e. Neuf. C'est fini, je rentre. Chang'e ?"
+        ] },
+        { speaker: MOONLIGHT, lines: [
+            "Le bronze est froid. Pas tiède, comme lorsqu'elle tient sa moitié contre elle : froid comme une pierre de rivière. Il n'y reflète que le ciel."
+        ] },
+        { speaker: HOU_YI, lines: [
+            "À la prochaine lune… Réponds-moi."
+        ] }
+    ]
+};
 
 const FENGMENG_SPEAKER = id => ({ name: 'Fengmeng', title: 'Disciple de Hou Yi', enemy: id });
 
@@ -71,22 +294,44 @@ const BASE_SCREENS = {
               ],
               talk: [
                   { whenDone: 'fengmeng_1', lines: [
-                      "Fengmeng est rentré sans me dire un mot, la lèvre fendue, les yeux brûlants. Sois bon avec lui, Hou Yi. Il n'a que toi au monde, et cela lui fait mal."
+                      "Fengmeng est rentré sans me dire un mot, la lèvre fendue, les yeux brûlants. Sois bon avec lui, Hou Yi. Il n'a que toi au monde, et cela lui fait mal.",
+                      "Et toi, montre tes doigts. La corde t'a encore entaillé. Donne : un peu de baume, un nœud de lin, et tu pourras aller décrocher tes soleils."
                   ] },
                   { whenDone: 'sun_1', lines: [
-                      "Un soleil de moins… Regarde le ciel, il respire un peu mieux. Va au Lit du Fleuve Jaune : l'eau y manque autant que le courage.",
-                      "Je prie la Lune chaque soir pour qu'elle te ramène. Elle écoute, tu sais : c'est pour cela qu'on lui offre des gâteaux."
+                      "Tu disais que tu n'aurais plus le courage de repartir, si tu passais la porte ? Te voilà pourtant. Prends ce gâteau et file au Lit du Fleuve Jaune : l'eau y manque autant que le courage.",
+                      "Je prie la Lune chaque soir pour qu'elle te ramène. Elle écoute, tu sais : la preuve, elle nous prête sa lumière pour nous parler."
+                  ] },
+                  { whenDone: 'sun_2', lines: [
+                      "Tu sens la vase et les saules. Assieds-toi, que je t'ôte ces bottes : on dirait que tu as traversé le fleuve à pied, et pas en barque.",
+                      "J'ai mis de côté une lanterne de papier rouge pour la fête. Cette année, au gué, c'est toi qui la lâcheras. Et sans flèche."
                   ] },
                   { whenDone: 'sun_3', lines: [
-                      "Tu as les yeux rougis par la fumée. Mange ce gâteau, il est au thé vert, comme tu les aimes.",
-                      "Je regarde parfois la fiole d'élixir sur l'autel des ancêtres. La Reine Mère l'a dit : une gorgée pour vivre longtemps, la fiole entière pour monter au ciel. Nous la garderons pour nos vieux jours, quand nous aurons envie de voir la terre de plus haut."
+                      "Tu as les yeux rougis par la fumée. Mange ce gâteau, il est au thé vert, comme tu les aimes. Et ne dis pas « parfait » s'il ne l'est pas.",
+                      "Je regarde parfois la fiole d'élixir sur l'autel des ancêtres. Une gorgée pour vivre longtemps, la fiole entière pour monter au ciel. Nous la garderons pour nos vieux jours, et nous la boirons à deux : une gorgée chacun, pas davantage."
+                  ] },
+                  { whenDone: 'sun_4', lines: [
+                      "Penche-toi : tu as du sable jusque dans le chignon. Là… Voilà mon mari, et pas un mirage.",
+                      "Ne ris pas : certains soirs, je t'entends rentrer, et ce n'est que le vent qui pousse la porte. Assieds-toi. Ton bol est chaud, pour une fois."
+                  ] },
+                  { whenDone: 'sun_5', lines: [
+                      "Tu sens la pluie. Donne-moi ce poignet… Voilà : un fil rouge. L'autre bout est noué au mien. Les vieilles disent que le fil des époux ne casse jamais ; il s'étire, c'est tout.",
+                      "Ne l'enlève pas, même pour tirer. S'il te gêne, c'est que tu penses à moi : tant mieux."
                   ] },
                   { whenDone: 'fengmeng_2', lines: [
-                      "Fengmeng est passé ce matin, la poussière de l'Occident et la cendre des gorges sur ses bottes. Il n'a pas voulu de thé. Il a demandé si l'élixir était toujours sur l'autel. J'ai répondu que oui… et il a souri. Je n'aime pas ce sourire."
+                      "Fengmeng est passé ce matin, la poussière de l'Occident et la cendre des gorges sur ses bottes. Il n'a pas voulu de thé. Il a demandé si l'élixir était toujours sur l'autel. J'ai répondu que oui… et il a souri. Je n'aime pas ce sourire.",
+                      "Ne fais pas cette tête. Je ne te le dis pas pour que tu rebrousses chemin : finis ce que tu as commencé. J'ai pétri assez de pâte dans ma vie pour avoir des bras."
                   ] },
                   { whenDone: 'sun_6', lines: [
                       "Six soleils… Mon archer, ta main tremble sur ton arc, même quand tu dors. Rentre vite.",
-                      "J'ai gardé la fiole contre ma poitrine, cette nuit, comme on garde un enfant."
+                      "J'ai gardé la fiole contre ma poitrine, cette nuit, comme on garde un enfant. Et ma moitié de miroir sous l'oreiller, pour que la lune me trouve."
+                  ] },
+                  { whenDone: 'sun_7', lines: [
+                      "Montre tes mains. Griffures, brûlures… Tu en rapportes, des cicatrices, pour un monde que tu ne voulais même pas conquérir.",
+                      "J'ai cousu un sachet d'osmanthus dans ton col. Les bêtes fuient cette odeur, dit-on. Moi, je l'ai mis pour qu'en la sentant, tu penses à la maison."
+                  ] },
+                  { whenDone: 'sun_8', lines: [
+                      "Huit. Plus qu'un. J'ai déjà sorti les moules de bois qu'on nous a offerts à nos noces : le lièvre, l'osmanthus, et le double bonheur.",
+                      "Reste encore un peu. Non, ne dis rien. Laisse-moi te regarder, comme si je devais m'en souvenir longtemps."
                   ] }
               ] },
             { id: 'elder_wen', x: 4, y: 2, name: 'Doyen Wen', title: 'Doyen du village', 
@@ -140,7 +385,8 @@ const BASE_SCREENS = {
             // Chapardeur nommé (quête secondaire), côté est de la digue.
             { id: 'rice_thief', templateId: 'goblin_saboteur', name: 'Xiao Gui, le chapardeur', kind: 'sentinel', x: 12, y: 6, offset: 1, permanent: true },
             { id: 'sun_1', templateId: 'goblin_saboteur', name: 'Soleil Ardent', kind: 'sentinel', x: 11, y: 2,
-              permanent: true, boss: { name: 'Soleil Ardent', level: 3 } }
+              permanent: true, boss: { name: 'Soleil Ardent', level: 3 },
+              afterScenes: MIRROR_TALKS.sun_1 }
         ],
         chests: [
             { id: 'lotus_cache', x: 3, y: 9, gold: 25, label: 'Jarre de graines de lotus' }
@@ -204,7 +450,8 @@ const BASE_SCREENS = {
             { id: 'fleuve_doctor', templateId: 'plague_doctor', name: 'Docteur-démon des vases', kind: 'sentinel', x: 8, y: 8, offset: 0 },
             { id: 'fleuve_lich', templateId: 'crypt_lich', name: 'Sorcier-squelette du gué', kind: 'sentinel', x: 4, y: 9, offset: 0 },
             { id: 'sun_2', templateId: 'iron_gladiator', name: 'Soleil des Eaux Taries', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, boss: { name: 'Soleil des Eaux Taries', level: 4 } }
+              permanent: true, boss: { name: 'Soleil des Eaux Taries', level: 4 },
+              afterScenes: MIRROR_TALKS.sun_2 }
         ],
         chests: [
             { id: 'fleuve_chest', x: 12, y: 3, gold: 60 }
@@ -266,7 +513,8 @@ const BASE_SCREENS = {
             // Esprit-arbre nommé (quête secondaire de Xu), coin sud-ouest.
             { id: 'old_pine', templateId: 'forest_guardian', name: 'Vieux Pin Noir', kind: 'sentinel', x: 1, y: 9, offset: 0, permanent: true },
             { id: 'sun_3', templateId: 'fungal_horror', name: 'Soleil de Cendres', kind: 'sentinel', x: 11, y: 1,
-              permanent: true, boss: { name: 'Soleil de Cendres', level: 5 } }
+              permanent: true, boss: { name: 'Soleil de Cendres', level: 5 },
+              afterScenes: MIRROR_TALKS.sun_3 }
         ],
         chests: [
             { id: 'temple_bell', x: 2, y: 0, gold: 10, label: 'Cloche du temple' },
@@ -347,7 +595,8 @@ const BASE_SCREENS = {
             { id: 'bandit_a', templateId: 'iron_gladiator', name: 'Brigand du Gobi', kind: 'sentinel', x: 4, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
             { id: 'bandit_b', templateId: 'shadow_assassin', name: 'Lame masquée du Gobi', kind: 'sentinel', x: 6, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
             { id: 'sun_4', templateId: 'arcane_scholar', name: 'Soleil des Mirages', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, boss: { name: 'Soleil des Mirages', level: 7 } }
+              permanent: true, boss: { name: 'Soleil des Mirages', level: 7 },
+              afterScenes: MIRROR_TALKS.sun_4 }
         ],
         chests: [
             { id: 'oasis_cache', x: 1, y: 1, gold: 10, label: "Cache de l'oasis" },
@@ -408,7 +657,8 @@ const BASE_SCREENS = {
             // Dragon-serpent nommé (quête secondaire de Tie), coin nord-est.
             { id: 'thunder_wyrm', templateId: 'storm_wyrm', name: 'Dragon-serpent du tonnerre', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
             { id: 'sun_5', templateId: 'storm_knight', name: 'Soleil des Orages', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, boss: { name: 'Soleil des Orages', level: 9 } }
+              permanent: true, boss: { name: 'Soleil des Orages', level: 9 },
+              afterScenes: MIRROR_TALKS.sun_5 }
         ],
         chests: [
             { id: 'lei_drum', x: 1, y: 0, gold: 10, label: 'Tambour du tonnerre' },
@@ -470,6 +720,7 @@ const BASE_SCREENS = {
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_2'),
                   lines: [
+                      "J'étais parti deux jours avant vous, Maître. Je voulais que ce sixième soleil tombe sous ma flèche, et que pour une fois les villages chantent « Fengmeng ». Mais vous arrivez toujours à temps, n'est-ce pas ?",
                       "Encore ! Même à armes égales ! Qu'avez-vous de plus que moi, Maître ? La patience ? La faveur du Ciel ? La Reine Mère de l'Occident m'a dit la même chose : « Ce n'est pas à toi. »",
                       "Oui, j'y suis allé. J'ai gravi les marches du Kunlun pour lui demander un élixir, un seul. Elle a ri avec douceur, la vieille. On ne rit pas de moi avec douceur.",
                       "Prenez votre sixième soleil. Je ne vous gênerai plus… pour l'instant. Je retourne voir les vôtres : on dit que la maison du Maître garde le plus beau trésor du royaume, et qu'elle est bien seule."
@@ -481,7 +732,8 @@ const BASE_SCREENS = {
             { id: 'ore_guard_b', templateId: 'lava_behemoth', name: 'Pixiu de magma', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true, group: 'ore_guards' },
             { id: 'volcan_dragon', templateId: 'ember_dragon', name: 'Long de braise', kind: 'sentinel', x: 8, y: 8, offset: 0 },
             { id: 'sun_6', templateId: 'lava_behemoth', name: 'Soleil de Magma', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, boss: { name: 'Soleil de Magma', level: 11 } }
+              permanent: true, boss: { name: 'Soleil de Magma', level: 11 },
+              afterScenes: MIRROR_TALKS.sun_6 }
         ],
         chests: [
             { id: 'phoenix_brazier', x: 5, y: 0, gold: 10, label: 'Brasero du phénix' },
@@ -548,6 +800,7 @@ const BASE_SCREENS = {
             { id: 'pack_wolf_b', templateId: 'ember_wolf', name: 'Loup de braise', kind: 'sentinel', x: 11, y: 9, offset: 0, permanent: true, group: 'beast_pack' },
             { id: 'sun_7', templateId: 'war_troll', name: 'Soleil des Bêtes Folles', kind: 'sentinel', x: 11, y: 8,
               permanent: true, shieldedBy: 'beast_pack', boss: { name: 'Soleil des Bêtes Folles', level: 13 },
+              afterScenes: MIRROR_TALKS.sun_7,
               shieldLines: [
                   "Un bouclier de flammes ondule autour du Soleil des Bêtes Folles : vos flèches se consumeraient avant de l'atteindre.",
                   "Quatre bêtes embrasées tournent autour de lui comme des gardiennes : tigre, sanglier, loups. Tant qu'elles vivent, il est intouchable.",
@@ -614,7 +867,8 @@ const BASE_SCREENS = {
             { id: 'net_cutter_b', templateId: 'deep_sea_serpent', name: 'Serpent coupe-filets', kind: 'sentinel', x: 13, y: 1, offset: 0, permanent: true, group: 'net_cutters' },
             { id: 'mer_doctor', templateId: 'plague_doctor', name: 'Docteur-démon des marées', kind: 'sentinel', x: 7, y: 8, offset: 0 },
             { id: 'sun_8', templateId: 'deep_sea_serpent', name: 'Soleil des Marées', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, boss: { name: 'Soleil des Marées', level: 15 } }
+              permanent: true, boss: { name: 'Soleil des Marées', level: 15 },
+              afterScenes: MIRROR_TALKS.sun_8 }
         ],
         chests: [
             { id: 'dragon_pearl', x: 1, y: 8, gold: 10, label: 'Perle du Roi-Dragon' },
@@ -679,7 +933,8 @@ const BASE_SCREENS = {
             { id: 'fusang_dragon', templateId: 'frost_dragon', name: 'Long de givre', kind: 'sentinel', x: 4, y: 9, offset: 0 },
             { id: 'fusang_vampire', templateId: 'void_vampire', name: 'Jiangshi des cimes', kind: 'sentinel', x: 12, y: 9, offset: 0 },
             { id: 'sun_9', templateId: 'ember_dragon', name: 'Soleil Lâche', kind: 'sentinel', x: 11, y: 2,
-              permanent: true, boss: { name: 'Soleil Lâche', level: 17 } }
+              permanent: true, boss: { name: 'Soleil Lâche', level: 17 },
+              afterScenes: MIRROR_TALKS.sun_9 }
         ],
         chests: [
             { id: 'crane_nest', x: 1, y: 1, gold: 10, label: 'Nid de la grue' }
@@ -724,8 +979,10 @@ const BASE_SCREENS = {
             { id: 'lune_vampire', templateId: 'void_vampire', name: 'Jiangshi des neiges', kind: 'sentinel', x: 9, y: 1, offset: 0 },
             { id: 'lune_assassin', templateId: 'shadow_assassin', name: 'Ombre du pic', kind: 'sentinel', x: 1, y: 9, offset: 0 },
             // Finale en deux phases. La phase 2 n'existe qu'après la défaite de la phase 1.
+            // Phase 1 : il copie les techniques du héros, qui arrive affaibli par les neuf soleils (duel.js).
             { id: 'fengmeng_3a', templateId: 'shadow_assassin', name: "Fengmeng, l'Archer Miroir", kind: 'sentinel', x: 11, y: 4,
               permanent: true, boss: { name: "Fengmeng, l'Archer Miroir", level: 18 },
+              duel: { mirror: true, heroHpPct: 0.75 },
               defeatScene: {
                   speaker: { name: 'Narrateur', title: 'Le Pic de la Lune' },
                   lines: [
@@ -738,6 +995,8 @@ const BASE_SCREENS = {
               } },
             { id: 'fengmeng_3b', templateId: 'storm_knight', name: 'Fengmeng, Rage et Désespoir', kind: 'sentinel', x: 11, y: 3,
               permanent: true, showWhen: 'fengmeng_3a', boss: { name: 'Fengmeng, Rage et Désespoir', level: 19 },
+              // Phase 2 : fureur, tirs rapides (un tour bonus tous les 3 tours) et pièges de zone (tous les 2 tours).
+              duel: { rapidShots: 3, zoneTraps: 2 },
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_3b'),
                   lines: [
@@ -1301,7 +1560,8 @@ const BASE_QUESTS = [
 
 // Monde final : les 10 sanctuaires ci-dessus, précédés de villages et de zones sauvages (world/).
 const WORLD = assembleWorld(BASE_SCREENS, BASE_QUESTS);
-export const SCREENS = WORLD.screens;
+// L'Arène des Mille Flèches (arena.js) : parvis + salles des huit cercles, hors de la chaîne des régions.
+export const SCREENS = { ...WORLD.screens, ...buildArenaScreens() };
 export const QUESTS = WORLD.quests;
 
 // Écran d'arrivée d'une région depuis la carte du monde : son village quand il existe, sinon son sanctuaire.

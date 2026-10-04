@@ -22,6 +22,18 @@ import {
 export let board = [];
 export let selected = null;
 
+// Pièges de zone (duel contre Fengmeng, voir duel.js) : cases piégées, positions fixes de la grille.
+let trappedCells = new Set();
+
+export function getTrappedCells(){
+    return [...trappedCells];
+}
+
+export function setTrappedCells(indices = []){
+    trappedCells = new Set(indices);
+    renderBoard(true);
+}
+
 // Minuteur pour suggestion de match
 let suggestionTimer = null;
 let suggestedMoveIndices = null;
@@ -357,12 +369,18 @@ function fillColumnByGravity(col){
 }
 
 function normalizeBoardHoles(){
+    if(trappedCells.size && currentTurn === 'player'){
+        for(const idx of [...trappedCells]){
+            if(board[idx] === null || board[idx] === undefined) trappedCells.delete(idx);
+        }
+    }
     for(let col = 0; col < boardSize; col++){
         fillColumnByGravity(col);
     }
 }
 
 export function generateBoard(){
+    trappedCells = new Set();
     generateNewBoard();
     const boardDiv=document.getElementById('board');
     if(!boardDiv){
@@ -550,6 +568,7 @@ export function renderBoard(skipCleanup = false){
             existingClasses.forEach(c => tiles[i].classList.add(c));
         }
         paintTileGlyph(tiles[i], t);
+        tiles[i].classList.toggle('trapped', trappedCells.has(i));
     }
     refreshTargetingHighlights();
 }
@@ -740,6 +759,12 @@ export function checkMatches(forceFullBoard = false){
 // Fonction pour faire descendre les tuiles et créer des nouvelles en haut
 function dropTiles(removedIndices = []){
     const removed = new Set(removedIndices);
+    // Une tuile détruite par le héros sur une case piégée désamorce la case.
+    if(trappedCells.size && currentTurn === 'player'){
+        for(const idx of [...trappedCells]){
+            if(removed.has(idx) || board[idx] === null || board[idx] === undefined) trappedCells.delete(idx);
+        }
+    }
     const affectedCols = new Set();
     const movedTileOffsets = new Map();
     const newTilesPerCol = new Map();

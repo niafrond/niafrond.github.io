@@ -3,6 +3,7 @@
 import { allWeapons } from "./weapons.js";
 import { getSpellsByClass, getAllSpells } from "./spells.js";
 import { getRandomItem } from "./items.js";
+import { applyArenaScaling } from "./arena.js";
 
 let enemyCatalog = [];
 
@@ -262,6 +263,13 @@ export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
         enemyEntity.name = encounter.boss.name || `Boss ${enemyEntity.name}`;
     }
     enemyEntity.mapEnemyId = encounter?.enemyId || null;
+    // Règles de duel (Fengmeng : miroir, tirs rapides, pièges de zone) appliquées par game.js, voir duel.js.
+    if(encounter?.duel) enemyEntity.duel = { ...encounter.duel };
+    // Vague de l'Arène des Mille Flèches (arena.js) : prime versée par game.js à la victoire.
+    if(encounter?.arena) {
+        enemyEntity.arena = { ...encounter.arena };
+        applyArenaScaling(enemyEntity, encounter.arena.statMult);
+    }
     return enemyEntity;
 }
 
