@@ -25,6 +25,12 @@
     im.textContent = JSON.stringify({ imports: map });
     document.head.appendChild(im);
     document.write('<link rel="stylesheet" href="style.css?v=' + v + '"><link rel="stylesheet" href="retro.css?v=' + v + '">');
+    // Les dessins des tuiles sont référencés par retro.css (url() sans suffixe) : on les redéclare avec ?v= pour qu'un
+    // nouveau dessin ne reste pas bloqué dans le cache du navigateur.
+    var tiles = ['red', 'blue', 'green', 'yellow', 'purple', 'combat', 'skull', 'joker'];
+    document.write('<style>' + tiles.map(function (t) {
+        return 'body.rt .tile.' + t + '{background-image:url("sprites/tiles/tile-' + t + '.svg?v=' + v + '")}';
+    }).join('') + '</style>');
     window.__match3Build = v;
 })();
 </script>

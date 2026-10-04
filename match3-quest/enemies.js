@@ -11,7 +11,7 @@ function loadEnemyCatalogSync(){
 
     try {
         const req = new XMLHttpRequest();
-        req.open('GET', './enemies.catalog.json', false);
+        req.open('GET', './enemies.catalog.json' + (typeof window !== 'undefined' && window.__match3Build ? '?v=' + window.__match3Build : ''), false);   // ?v= : anti-cache (voir index.html)
         req.send(null);
         if(req.status >= 200 && req.status < 300){
             const parsed = JSON.parse(req.responseText);
