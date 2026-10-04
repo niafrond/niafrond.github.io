@@ -342,12 +342,11 @@ export function createExplorationView(cfg) {
     function proposeTracking(quest) {
         const p = X.trackProposal(session, quest);
         if (!p || p.mode !== 'ask') return;
-        const kind = q => (q.side ? 'annexe' : 'principale');
-        openDialog({ ...NARRATOR, title: 'Quel chemin suivre ?' }, [
-            `Nouvelle quête ${kind(p.quest)} : « ${p.quest.title} ». Quête ${kind(p.current)} actuellement suivie : « ${p.current.title} ». Laquelle suivre maintenant ?`
+        openDialog({ ...NARRATOR, title: 'Suivre cette quête ?' }, [
+            `« ${p.quest.title} » vient d'être activée. Vous suivez actuellement « ${p.current.title} ».`
         ], null, [
-            { label: `Suivre « ${p.quest.title} » (${kind(p.quest)})`, run: () => { X.setTrackedQuest(session, p.quest.id); toast(`Quête suivie : ${p.quest.title}`); cfg.onSave(); refreshHud(); } },
-            { label: `Rester sur « ${p.current.title} » (${kind(p.current)})`, run: () => { toast(`Quête suivie : ${p.current.title}`); } }
+            { label: 'Suivre cette quête', run: () => { X.setTrackedQuest(session, p.quest.id); toast(`Quête suivie : ${p.quest.title}`); cfg.onSave(); refreshHud(); } },
+            { label: 'Rester sur la quête actuelle', run: () => { toast(`Quête suivie : ${p.current.title}`); } }
         ]);
     }
 
