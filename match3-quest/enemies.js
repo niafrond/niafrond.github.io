@@ -264,6 +264,8 @@ export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
         enemyEntity.name = encounter.boss.name || `Boss ${enemyEntity.name}`;
     }
     enemyEntity.mapEnemyId = encounter?.enemyId || null;
+    // Règles de duel (Fengmeng : miroir, tirs rapides, pièges de zone) appliquées par game.js, voir duel.js.
+    if(encounter?.duel) enemyEntity.duel = { ...encounter.duel };
     return enemyEntity;
 }
 

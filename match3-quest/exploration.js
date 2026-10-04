@@ -15,6 +15,7 @@
 //  - defeatScene : scène jouée au retour sur la carte après la victoire (événement `scene`) ;
 //  - afterScenes : [{ speaker, lines }] jouées une seule fois après le texte de victoire des quêtes
 //    (événements `scene`, insérés après le dernier `questCompleted`) : interludes à plusieurs voix ;
+//  - duel : règles de duel recopiées dans la rencontre (miroir, héros affaibli, tirs rapides, pièges : duel.js) ;
 //  - exit.requires : sortie fermée tant que la condition n'est pas remplie ;
 //  - data.ngPlus : compteur de Nouvelle Partie + (niveaux des ennemis augmentés).
 
@@ -410,7 +411,8 @@ export function encounterFor(session, enemyId, playerLevel) {
         name: def.name,
         emoji: def.emoji,
         level,
-        boss: def.boss ? { ...def.boss, level } : null
+        boss: def.boss ? { ...def.boss, level } : null,
+        duel: def.duel ? { ...def.duel } : null
     };
 }
 

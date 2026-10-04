@@ -1,16 +1,17 @@
 // logique globale du joueur, ennemis, combat et interface
 
-import { colors } from "./constants.js";
+import { colors, boardSize } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
 import { allWeapons, getAvailableWeapons, getWeaponById } from "./weapons.js";
-import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer } from "./board.js";
+import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells } from "./board.js";
+import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
 import { getRandomItem, getRarityEmoji, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
 import { initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
 import { playSfx } from "./sound.js";
-import { allSpells as spellsCatalog, getSpellsByLevel } from "./spells.js";
+import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
 export { updateShopTab, buyWeapon, buyItem };
 
 const BASE_MANA_CAP = 50;
@@ -1655,7 +1656,60 @@ export function finishPlayerTurn(){
         saveUpdate();
         return;
     }
+    if(!applyDuelRulesBeforeEnemyTurn()) return;
     enemyTurn();
+}
+
+// Duel contre Fengmeng (duel.js) : avant chacun de ses tours normaux, les pièges restants se déclenchent,
+// puis il peut piéger une nouvelle zone et préparer un tir rapide. Renvoie false si le héros y succombe.
+function applyDuelRulesBeforeEnemyTurn(){
+    const duel = enemy?.duel;
+    if(!duel) return true;
+    enemy.duelTurns = (enemy.duelTurns || 0) + 1;
+    const plan = duelTurnPlan(duel, enemy.duelTurns, getTrappedCells().length);
+    if(plan.detonate > 0){
+        const dmg = applyDamage(player, trapDamage(plan.detonate, enemy.attack));
+        log(`💥 Les pièges de ${enemy.name} se déclenchent : ${plan.detonate} case(s) encore piégée(s), ${dmg} dégâts !`);
+        playSfx('weaponHit');
+    } else if(getTrappedCells().length === 0 && enemy.duelTrapLaid){
+        log('🛡️ Vous avez désamorcé tous les pièges !');
+    }
+    enemy.duelTrapLaid = false;
+    setTrappedCells([]);
+    updateStats();
+    if(player.hp <= 0){
+        handlePlayerDeath();
+        return false;
+    }
+    if(plan.layTrap){
+        setTrappedCells(pickTrapZone(boardSize));
+        enemy.duelTrapLaid = true;
+        log(`🪤 ${enemy.name} piège une zone du plateau : détruisez ses tuiles avant son prochain tour, sinon chaque case piégée vous blessera.`);
+    }
+    if(plan.rapidShot){
+        addBonusTurn(enemy, 1);
+        log(`🏹 Tir rapide : ${enemy.name} encoche deux flèches à la fois, il rejouera !`);
+    }
+    return true;
+}
+
+// Règles de duel au début du combat : l'Archer Miroir copie les techniques du héros ; le héros peut entrer affaibli.
+function applyDuelRulesAtCombatStart(){
+    const duel = enemy?.duel;
+    if(!duel) return;
+    enemy.duelTurns = 0;
+    enemy.duelTrapLaid = false;
+    if(duel.mirror){
+        const copy = mirrorLoadout(player, getSpellsByClass(player.class, enemy.level));
+        if(copy.spells.length) enemy.spells = copy.spells;
+        if(copy.weapon) enemy.weapon = copy.weapon;
+        if(copy.playerClass) enemy.playerClass = copy.playerClass;
+        log(`🪞 ${enemy.name} imite vos techniques : ${enemy.spells.map(sp => sp.name).join(', ') || 'aucun sort'}${copy.weapon ? `, ${copy.weapon.name}` : ''}.`);
+    }
+    if(duel.heroHpPct){
+        player.hp = Math.min(player.hp, weakenedHp(player.maxHp, duel.heroHpPct));
+        log(`🩸 Épuisé par neuf soleils, vous entrez dans le duel avec ${player.hp}/${player.maxHp} PV.`);
+    }
 }
 
 export function enemyTurn(){
@@ -2632,6 +2686,7 @@ export function newEnemy(selectedEnemy = null){
     if(enemy.inventoryItem){
         log(`🎒 ${enemy.name} porte : ${enemy.inventoryItem.name}`);
     }
+    applyDuelRulesAtCombatStart();
     if(enemy.spells.length > 0){
         log(`✨ L'ennemi dispose de sorts : ${enemy.spells.map(s => s.name).join(", ")}`);
     }

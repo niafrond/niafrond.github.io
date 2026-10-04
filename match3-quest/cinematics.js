@@ -607,6 +607,18 @@ const FENGMENG_REPLIES = [
     'Si je dois te vaincre pour te retrouver, alors soit.'
 ];
 
+// Échanges propres à chaque duel contre Fengmeng (id de l'ennemi de la carte) : [réplique de Fengmeng, réponse].
+const FENGMENG_DUEL_LINES = {
+    fengmeng_1: ["Montrez-moi, Maître. Montrez-moi enfin ce que vous ne m'avez jamais appris.",
+        'Garde ton souffle, Fengmeng. Et vise.'],
+    fengmeng_2: ["Ce soleil-là est à moi ! Cette fois, c'est mon nom que les chroniques retiendront.",
+        'La gloire ne se vole pas, Fengmeng. Elle te brûlera les doigts.'],
+    fengmeng_3a: ["Neuf soleils… Vous tenez à peine debout, Maître. Je connais chacune de vos flèches : l'élixir, maintenant.",
+        "Alors tu sais qu'aucune ne t'a jamais visé au cœur."],
+    fengmeng_3b: ["Elle a tout bu ! Il ne me reste rien… rien que mes flèches, et la terre où vous tomberez !",
+        'Pose ton arc, Fengmeng. Elle ne voudrait pas cela.']
+};
+
 function pick(list, seed) {
     let h = 0;
     for (const ch of String(seed)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -616,6 +628,8 @@ function pick(list, seed) {
 // Lignes d'un échange de début de combat de boss : [{ who: 'boss' | 'hero', text }].
 export function bossIntroLines(enc) {
     const name = enc?.boss?.name || enc?.name || 'Boss';
+    const duelLines = FENGMENG_DUEL_LINES[enc?.enemyId];
+    if (duelLines) return [{ who: 'boss', text: duelLines[0] }, { who: 'hero', text: duelLines[1] }];
     const isRival = /fengmeng/i.test(name);
     const taunts = isRival ? FENGMENG_TAUNTS : SUN_TAUNTS;
     const replies = isRival ? FENGMENG_REPLIES : SUN_REPLIES;

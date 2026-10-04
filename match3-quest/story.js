@@ -22,6 +22,8 @@
 //  - shieldedBy      : id d'un `group` d'ennemis ; tant qu'il n'est pas vaincu, le boss est intouchable
 //                      (le contact affiche `shieldLines`) ;
 //  - defeatScene     : { speaker: { name, title?, npc? | enemy? }, lines } jouée après la victoire ;
+//  - afterScenes     : [{ speaker, lines }] interlude à plusieurs voix (speaker.hero : le héros) après le texte de victoire ;
+//  - duel            : règles de duel de Fengmeng (mirror, heroHpPct, rapidShots, zoneTraps : voir duel.js) ;
 //  - showWhen / hideWhen : (aussi sur PNJ et coffres) l'entité n'existe qu'après / jusqu'à ce que la
 //                      condition d'avancement (id de quête, d'ennemi vaincu ou de coffre) soit remplie.
 // Sorties : `requires` (+ `lockedMessage`) les ferme tant que la condition d'avancement n'est pas remplie.
@@ -717,6 +719,7 @@ const BASE_SCREENS = {
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_2'),
                   lines: [
+                      "J'étais parti deux jours avant vous, Maître. Je voulais que ce sixième soleil tombe sous ma flèche, et que pour une fois les villages chantent « Fengmeng ». Mais vous arrivez toujours à temps, n'est-ce pas ?",
                       "Encore ! Même à armes égales ! Qu'avez-vous de plus que moi, Maître ? La patience ? La faveur du Ciel ? La Reine Mère de l'Occident m'a dit la même chose : « Ce n'est pas à toi. »",
                       "Oui, j'y suis allé. J'ai gravi les marches du Kunlun pour lui demander un élixir, un seul. Elle a ri avec douceur, la vieille. On ne rit pas de moi avec douceur.",
                       "Prenez votre sixième soleil. Je ne vous gênerai plus… pour l'instant. Je retourne voir les vôtres : on dit que la maison du Maître garde le plus beau trésor du royaume, et qu'elle est bien seule."
@@ -975,8 +978,10 @@ const BASE_SCREENS = {
             { id: 'lune_vampire', templateId: 'void_vampire', emoji: '🧛', name: 'Jiangshi des neiges', kind: 'sentinel', x: 9, y: 1, offset: 0 },
             { id: 'lune_assassin', templateId: 'shadow_assassin', emoji: '🥷', name: 'Ombre du pic', kind: 'sentinel', x: 1, y: 9, offset: 0 },
             // Finale en deux phases. La phase 2 n'existe qu'après la défaite de la phase 1.
+            // Phase 1 : il copie les techniques du héros, qui arrive affaibli par les neuf soleils (duel.js).
             { id: 'fengmeng_3a', templateId: 'shadow_assassin', emoji: '🏹', name: "Fengmeng, l'Archer Miroir", kind: 'sentinel', x: 11, y: 4,
               permanent: true, boss: { name: "Fengmeng, l'Archer Miroir", level: 18 },
+              duel: { mirror: true, heroHpPct: 0.75 },
               defeatScene: {
                   speaker: { name: 'Narrateur', title: 'Le Pic de la Lune' },
                   lines: [
@@ -989,6 +994,8 @@ const BASE_SCREENS = {
               } },
             { id: 'fengmeng_3b', templateId: 'storm_knight', emoji: '🏹', name: 'Fengmeng, Rage et Désespoir', kind: 'sentinel', x: 11, y: 3,
               permanent: true, showWhen: 'fengmeng_3a', boss: { name: 'Fengmeng, Rage et Désespoir', level: 19 },
+              // Phase 2 : fureur, tirs rapides (un tour bonus tous les 3 tours) et pièges de zone (tous les 2 tours).
+              duel: { rapidShots: 3, zoneTraps: 2 },
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_3b'),
                   lines: [
