@@ -1,4 +1,5 @@
 // Gestionnaire de sauvegarde/chargement de parties (export/import JSON)
+import { allItems } from './items.js';
 
 /**
  * Métadonnées de sauvegarde
@@ -232,6 +233,12 @@ function validateAndRestorePlayer(player) {
     player.inventory.forEach(item => {
         if (item.type === 'reusable' && !Number.isInteger(item.chargesLeft)) {
             item.chargesLeft = item.chargesPerCycle || 3;
+        }
+        // Anciennes sauvegardes : la recharge en combat (x tours) vient du catalogue.
+        if (item.type === 'reusable') {
+            const ref = allItems.find(i => i.id === item.id);
+            if (ref && !Number.isFinite(item.rechargeTurns)) { item.rechargeTurns = ref.rechargeTurns; item.description = ref.description; }
+            if (!Number.isFinite(item.rechargeLeft)) item.rechargeLeft = 0;
         }
     });
 

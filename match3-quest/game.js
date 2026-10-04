@@ -10,7 +10,7 @@ import { bigMatchXpFor } from "./matchMechanics.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
 import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
-import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
+import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects, tickReusableRecharge, describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
 import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses } from "./attributes.js";
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
@@ -2035,6 +2035,8 @@ export function finishEnemyTurn(){
                 log(`Le bouclier de mana se dissipe.`);
             }
         }
+        // Objets rechargeables épuisés : le compte à rebours avance d'un tour ; à 0 ils sont de nouveau pleins.
+        tickReusableRecharge(player).forEach(it => log(`${it.name} est rechargé.`));
         // Tour suivant : joueur (définir le tour avant saveUpdate pour que les boutons dépendants du tour soient corrects)
         currentTurn = 'player';
         updateStats();
@@ -2490,6 +2492,9 @@ function getItemTooltipHtml(item, options = {}) {
     }
     if(item.description) {
         html += `<div class="spell-tooltip-line">${item.description}</div>`;
+    }
+    if(item.type === 'reusable') {
+        html += `<div class="spell-tooltip-line">Charges: ${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle} • ${describeRecharge(item)}</div>`;
     }
     return html;
 }
@@ -3110,7 +3115,7 @@ function renderGearList(container){
     reusables.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);
         const isActive = index === player.activeInventoryIndex;
-        const details = `${it.chargesLeft ?? it.chargesPerCycle}/${it.chargesPerCycle} charges • Niv. ${it.minLevel} • Objet`;
+        const details = `${it.chargesLeft ?? it.chargesPerCycle}/${it.chargesPerCycle} charges • ${describeRecharge(it)} • Niv. ${it.minLevel} • Objet`;
         row(it, details, { locked, current: isActive, disabled: locked || isActive, label: isActive ? 'Objet actif' : locked ? `Niv. ${it.minLevel} requis` : 'Choisir', onclick: `window.setActiveInventoryItem(${index})` });
     });
     container.appendChild(section);
@@ -3186,7 +3191,7 @@ export function updateInventoryTab(){
                     <button class="item-discard-btn" onclick="window.discardInventoryItem(${index})">Jeter</button>
                 </div>
             </div>
-            <div class="item-description">${item.description}</div>
+            <div class="item-description">${item.description}${item.type === 'reusable' ? ` <em>(${describeRecharge(item)})</em>` : ''}</div>
         `;
         inventoryList.appendChild(div);
     });
@@ -3227,14 +3232,15 @@ export function updateItemButton(){
     }
 
     const pa = item.actionPoints || 2;
-    const canUse = gameState.combatState === 'active' && currentTurn === 'player' && player.combatPoints >= pa;
+    const exhausted = item.type === 'reusable' && (item.chargesLeft ?? item.chargesPerCycle) <= 0;
+    const canUse = gameState.combatState === 'active' && currentTurn === 'player' && player.combatPoints >= pa && !exhausted;
 
     const btn = document.createElement('div');
     btn.className = 'enemy-spell-item';
     btn.tabIndex = 0;
     btn.innerHTML = `
         <div class="spell-name">${svgIcon('bag')} ${item.name}</div>
-        <div class="spell-cost">${pa} ${svgIcon('arrow')}${item.type === 'reusable' ? ` • ${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle}` : ''}</div>
+        <div class="spell-cost">${pa} ${svgIcon('arrow')}${item.type === 'reusable' ? ` • ${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle}${(item.chargesLeft ?? item.chargesPerCycle) <= 0 ? ` • ${describeRecharge(item)}` : ''}` : ''}</div>
     `;
     const showDetails = () => showItemTooltip(btn, item, { isEnemyItem: false });
     const hideDetails = () => hideSpellTooltip();

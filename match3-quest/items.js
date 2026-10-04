@@ -16,14 +16,14 @@ export const allItems = [
      description:"Le bouclier mythique de l'Empereur Jaune, défense +30, absorbe 100 dégâts", defense:30, absorbDamage:100},
 
     // === OBJETS RECHARGEABLES ===
-    {id:"honey_vial", name:"Flacon de Miel Magique", type:"reusable", minLevel:3, rarity:"uncommon", chargesPerCycle:3,
-     description:"Soigne 25 HP par utilisation (3 usages avant rechargement)", effect:{heal:25}},
-    {id:"protective_sachet", name:"Sachet d'Encens Protecteur", type:"reusable", minLevel:6, rarity:"uncommon", chargesPerCycle:2,
-     description:"Augmente la défense de 10 pour ce combat (2 usages avant rechargement)", effect:{tempDefense:10}},
-    {id:"energy_stone", name:"Pierre d'Énergie Ravivante", type:"reusable", minLevel:8, rarity:"rare", chargesPerCycle:3,
-     description:"Restaure 20 mana de chaque couleur (3 usages avant rechargement)", effect:{mana:20}},
-    {id:"power_talisman", name:"Talisman de Puissance", type:"reusable", minLevel:12, rarity:"rare", chargesPerCycle:2,
-     description:"Augmente l'attaque de 15 pour ce combat (2 usages avant rechargement)", effect:{tempAttack:15}},
+    {id:"honey_vial", name:"Flacon de Miel Magique", type:"reusable", minLevel:3, rarity:"uncommon", chargesPerCycle:3, rechargeTurns:4,
+     description:"Soigne 25 HP par utilisation (3 usages, puis rechargé en 4 tours)", effect:{heal:25}},
+    {id:"protective_sachet", name:"Sachet d'Encens Protecteur", type:"reusable", minLevel:6, rarity:"uncommon", chargesPerCycle:2, rechargeTurns:5,
+     description:"Augmente la défense de 10 pour ce combat (2 usages, puis rechargé en 5 tours)", effect:{tempDefense:10}},
+    {id:"energy_stone", name:"Pierre d'Énergie Ravivante", type:"reusable", minLevel:8, rarity:"rare", chargesPerCycle:3, rechargeTurns:6,
+     description:"Restaure 20 mana de chaque couleur (3 usages, puis rechargé en 6 tours)", effect:{mana:20}},
+    {id:"power_talisman", name:"Talisman de Puissance", type:"reusable", minLevel:12, rarity:"rare", chargesPerCycle:2, rechargeTurns:6,
+     description:"Augmente l'attaque de 15 pour ce combat (2 usages, puis rechargé en 6 tours)", effect:{tempAttack:15}},
 
     // Élixirs, pilules et tisanes (niveau 1+)
     {id:"healthPotion", name:"Élixir de Vie", type:"consumable", minLevel:1, rarity:"common", actionPoints:1,
@@ -168,9 +168,12 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     if(item.type === "reusable") {
         if(!Number.isInteger(item.chargesLeft)) item.chargesLeft = item.chargesPerCycle;
         if(item.chargesLeft <= 0) {
-            return {success: false, message: "Cet objet doit être rechargé en exploration"};
+            const left = Math.max(0, Math.floor(item.rechargeLeft || 0));
+            return {success: false, message: left > 0 ? `Cet objet se recharge encore ${left} tour${left > 1 ? 's' : ''}` : "Cet objet doit être rechargé"};
         }
         item.chargesLeft--;
+        // Dernière charge utilisée : le compte à rebours de rechargement démarre (pas d'usage unique).
+        if(item.chargesLeft <= 0) item.rechargeLeft = getRechargeTurns(item);
     }
 
     // Les boucliers ne peuvent pas être utilisés (ils sont équipés)
@@ -282,6 +285,42 @@ export function applyArtifactEffects(player) {
     });
 }
 
+// Nombre de tours pour qu'un objet rechargeable se recharge une fois ses charges épuisées
+// (valeur de l'objet, sinon celle du catalogue pour les anciennes sauvegardes).
+export function getRechargeTurns(item) {
+    const own = Number(item?.rechargeTurns);
+    if(Number.isFinite(own) && own > 0) return Math.floor(own);
+    const catalogItem = allItems.find(i => i.id === item?.id);
+    return Math.max(1, Math.floor(catalogItem?.rechargeTurns || 4));
+}
+
+// Texte d'état de recharge pour l'interface : « Recharge en N tours » / « 3 charges, rechargé en 4 tours ».
+export function describeRecharge(item) {
+    if(!item || item.type !== 'reusable') return '';
+    const left = Math.max(0, Math.floor(item.rechargeLeft || 0));
+    if((item.chargesLeft ?? item.chargesPerCycle) <= 0 && left > 0) return `recharge en ${left} tour${left > 1 ? 's' : ''}`;
+    const n = getRechargeTurns(item);
+    return `rechargé en ${n} tours`;
+}
+
+// À appeler à chaque début de tour du joueur : fait avancer la recharge des objets épuisés.
+// Renvoie les objets qui viennent d'être rechargés.
+export function tickReusableRecharge(player) {
+    const recharged = [];
+    (player?.inventory || []).forEach(item => {
+        if(item.type !== 'reusable') return;
+        if((item.chargesLeft ?? item.chargesPerCycle) > 0) { item.rechargeLeft = 0; return; }
+        const left = Number.isFinite(item.rechargeLeft) && item.rechargeLeft > 0 ? item.rechargeLeft : getRechargeTurns(item);
+        item.rechargeLeft = left - 1;
+        if(item.rechargeLeft <= 0) {
+            item.rechargeLeft = 0;
+            item.chargesLeft = item.chargesPerCycle;
+            recharged.push(item);
+        }
+    });
+    return recharged;
+}
+
 // Recharger les objets rechargeables
 export function rechargeReusableItems(player) {
     if(!player.inventory) return [];
@@ -290,6 +329,7 @@ export function rechargeReusableItems(player) {
     player.inventory.forEach(item => {
         if(item.type === "reusable" && (item.chargesLeft ?? item.chargesPerCycle) < item.chargesPerCycle) {
             item.chargesLeft = item.chargesPerCycle;
+            item.rechargeLeft = 0;
             recharged.push(item);
         }
     });
