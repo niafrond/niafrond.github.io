@@ -122,7 +122,7 @@ function hashSeed(text) {
 }
 
 // Occupation d'un écran (terrain bloquant, entités, sorties, cases d'arrivée).
-function occupancy(screen, screens) {
+export function occupancy(screen, screens) {
     const taken = new Set([
         ...screen.npcs, ...screen.chests, ...screen.enemies, ...(screen.waypoint ? [screen.waypoint] : []), ...(screen.spawn ? [screen.spawn] : []),
         ...screen.exits
@@ -160,7 +160,7 @@ function placeNearGate(screen, gate, occ, depths, laterals) {
 }
 
 // Case de coffre dans le terrain agrandi : libre, ouverte, loin des sorties ; choix déterministe parmi les 6 plus reculées.
-function placeInLand(screen, occ, seedText) {
+export function placeInLand(screen, occ, seedText) {
     const core = screen.core || { w: 0, h: 0 };
     const exits = screen.exits.filter(e => !e.door);
     const cells = [];

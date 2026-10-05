@@ -35,7 +35,7 @@ describe('PNJ marchands', () => {
             expect(sections.has('rare')).toBe(true);
             expect(sections.has('exceptional')).toBe(true);
             expect(new Set(stock.map(o => o.key)).size).toBe(stock.length);
-            stock.forEach(o => {
+            stock.filter(o => o.kind !== 'mount').forEach(o => {
                 const obj = offerObject(o);
                 expect(obj).toBeTruthy();
                 const base = o.kind === 'weapon' ? baseWeaponPrice(obj) : baseItemPrice(obj);
@@ -46,6 +46,21 @@ describe('PNJ marchands', () => {
             const rareMax = Math.max(...stock.filter(o => o.section === 'rare').map(o => o.price));
             expect(exceptional.price).toBeGreaterThanOrEqual(rareMax);
         });
+    });
+
+    test('le cheval : vendu par le marchand des Bambous seulement, très cher, achat unique, monture enregistrée', () => {
+        const horse = merchantStock('merchant_bambous').find(o => o.kind === 'mount');
+        expect(horse).toMatchObject({ id: 'horse', section: 'mount', unique: true });
+        expect(horse.price).toBeGreaterThanOrEqual(400);
+        MERCHANT_IDS.filter(id => id !== 'merchant_bambous').forEach(id => expect(merchantStock(id).some(o => o.kind === 'mount')).toBe(false));
+        expect(offerObject(horse)).toMatchObject({ name: 'Cheval de plaine', speed: 2 });
+        const poor = { gold: horse.price - 1, inventory: [], weapons: [] };
+        expect(buyOffer('merchant_bambous', horse.key, poor)).toMatchObject({ ok: false });
+        expect(poor.mount).toBeUndefined();
+        const rich = { gold: horse.price + 20, inventory: [], weapons: [] };
+        expect(buyOffer('merchant_bambous', horse.key, rich)).toMatchObject({ ok: true });
+        expect(rich).toMatchObject({ mount: 'horse', gold: 20 });
+        expect(availableOffers('merchant_bambous', rich).some(o => o.kind === 'mount')).toBe(false);   // une seule monture
     });
 
     test('les plus riches régions vendent de l\'ultra rare (légendaire)', () => {

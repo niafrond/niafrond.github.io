@@ -26,13 +26,13 @@ const OPPOSITE = { west: 'east', east: 'west', north: 'south', south: 'north' };
 
 describe('cartes extérieures : grandes et reliées', () => {
     test('toutes les cartes extérieures sont grandes (≥ 350 cases) ; seuls les intérieurs restent petits', () => {
-        expect(outdoors.length).toBe(39);   // 10 sanctuaires + 10 zones sauvages + 9 hameaux + 10 villages
+        expect(outdoors.length).toBe(41);   // 10 sanctuaires + 10 zones sauvages + 9 hameaux + 10 villages + 2 cartes de mer
         outdoors.forEach(s => expect({ id: s.id, area: s.w * s.h >= 350 }).toEqual({ id: s.id, area: true }));
         Object.values(SCREENS).filter(s => s.interior || s.kind === 'house').forEach(s => expect(s.w * s.h).toBeLessThan(120));
     });
 
     test('sanctuaires, zones sauvages et hameaux ont la taille agrandie', () => {
-        outdoors.forEach(s => {
+        outdoors.filter(s => !s.aquatic).forEach(s => {
             const kind = s.id.endsWith('_wild') ? 'wild' : s.id.endsWith('_hamlet') ? 'hamlet' : s.kind === undefined ? 'sanctuary' : null;
             if (kind) expect([s.w, s.h]).toEqual(EXPANDED_SIZES[kind]);
         });

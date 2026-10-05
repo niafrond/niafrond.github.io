@@ -126,7 +126,7 @@ describe('Grand Monde : cartes', () => {
         screens.forEach(s => {
             // villages : taille d'origine ; hameaux et zones sauvages : agrandis (world/expand.js)
             if (s.kind === 'village') expect([s.w, s.h]).toEqual(s.id.endsWith('_hamlet') ? [26, 20] : s.region === 'lune' ? [16, 22] : [20, 24]);
-            if (s.kind === 'wild') expect([s.w, s.h]).toEqual([28, 22]);
+            if (s.kind === 'wild' && !s.aquatic) expect([s.w, s.h]).toEqual([28, 22]);   // le monde aquatique a ses propres cartes de mer
             if (s.id.endsWith('_hamlet')) expect(s.exits.some(e => e.to === `${s.region}_wild`)).toBe(true);
             if (s.interior) { expect(s.w).toBeLessThanOrEqual(12); expect(s.h).toBeLessThanOrEqual(8); }
         });

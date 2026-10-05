@@ -36,9 +36,16 @@ export const GRACE_MOVES = 2;
 
 const inRect = (rects, x, y) => rects.some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
 
-export function isTerrainBlocked(screen, x, y) {
+// Quête qui enseigne le « Pas de Yu » (yubu) : une fois terminée, le héros marche sur les eaux.
+export const YUBU_QUEST = 'sq_pas_de_yu';
+export const canWalkOnWater = session => session?.data?.quests?.[YUBU_QUEST] === 'done';
+
+// Les liquides bloquent, sauf pour qui marche sur l'eau (`onWater`) ; dans un écran aquatique (`screen.aquatic`) on n'entre
+// qu'avec le Pas de Yu, ses eaux sont donc toujours franchissables.
+export function isTerrainBlocked(screen, x, y, onWater = false) {
     if (x < 0 || y < 0 || x >= screen.w || y >= screen.h) return true;
-    return inRect(screen.obstacles, x, y) || inRect(screen.liquids || [], x, y);
+    if (inRect(screen.obstacles, x, y)) return true;
+    return !(onWater || screen.aquatic) && inRect(screen.liquids || [], x, y);
 }
 
 // Trajet complet d'un patrouilleur : segments axe par axe entre les points de passage.
@@ -99,7 +106,7 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     };
 
     let screen = screens[data.screenId];
-    if (!screen || isTerrainBlocked(screen, data.x, data.y)) {
+    if (!screen || isTerrainBlocked(screen, data.x, data.y, canWalkOnWater(session))) {
         data.screenId = START_SCREEN;
         screen = screens[START_SCREEN];
         data.x = screen.spawn.x;
@@ -381,7 +388,7 @@ export function tryMove(session, dx, dy, ctx = {}) {
         if (ent.type === 'waypoint') return activateWaypoint(session, ent.screenId);
         return contactEvent(session, ent.enemy.def);
     }
-    if (isTerrainBlocked(screen, nx, ny)) return { type: 'blocked' };
+    if (isTerrainBlocked(screen, nx, ny, canWalkOnWater(session))) return { type: 'blocked' };
 
     const exit = screen.exits.find(e => e.x === nx && e.y === ny);
     if (exit?.leaveArena) {
@@ -468,7 +475,8 @@ export function findPath(session, tx, ty) {
     const start = { x: session.data.x, y: session.data.y };
     if (!Number.isInteger(tx) || !Number.isInteger(ty)) return null;
     if (tx < 0 || ty < 0 || tx >= screen.w || ty >= screen.h) return null;
-    if (isTerrainBlocked(screen, tx, ty)) return null;
+    const onWater = canWalkOnWater(session);
+    if (isTerrainBlocked(screen, tx, ty, onWater)) return null;
     if (tx === start.x && ty === start.y) return [];
 
     const key = (x, y) => y * screen.w + x;
@@ -508,7 +516,7 @@ export function findPath(session, tx, ty) {
         if (cKey === target) break;
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
             const nx = cur.x + dx, ny = cur.y + dy;
-            if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || isTerrainBlocked(screen, nx, ny)) continue;
+            if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || isTerrainBlocked(screen, nx, ny, onWater)) continue;
             const nKey = key(nx, ny);
             if (done.has(nKey)) continue;
             // une case occupée ou une sortie n'est jamais un point de passage (seulement une destination)

@@ -28,6 +28,7 @@ const MAX_TILE = 96;
 const HUD_TOP = 64;     // bandeau du haut (titre, objectif, boutons)
 const HUD_BOTTOM = 8;
 const MOVE_DELAY_MS = 150;
+const MOUNTED_MOVE_DELAY_MS = 75;   // à cheval : deux fois plus vite
 const BATTLE_TRANSITION_MS = 1700;   // durée de l'animation d'entrée en combat
 const BATTLE_STRIPS = 10;
 
@@ -73,7 +74,7 @@ const hash = (x, y) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 
  * @param {object} cfg
  *  root, canvas               éléments du DOM
  *  getSaved()/setSaved(data)  lecture / écriture de player.exploration
- *  getHero()                  { classId, name } du personnage
+ *  getHero()                  { classId, name, mount? } du personnage (mount : 'horse' = déplacements deux fois plus rapides)
  *  getPlayerLevel()           niveau courant
  *  onEncounter(encounter)     lance le combat
  *  onGold(amount)             crédite de l'or
@@ -704,6 +705,9 @@ export function createExplorationView(cfg) {
         walk = { tx: x, ty: y, path };
     }
 
+    // Délai entre deux pas : le cheval double la vitesse (la caméra suit plus vite aussi).
+    const moveDelay = () => (cfg.getHero().mount ? MOUNTED_MOVE_DELAY_MS : MOVE_DELAY_MS);
+
     // Un pas vers la destination ; le chemin est recalculé à chaque pas (patrouilles, ennemis vaincus…).
     function walkStep() {
         const path = X.findPath(session, walk.tx, walk.ty);
@@ -740,7 +744,7 @@ export function createExplorationView(cfg) {
         if (ev.repeat) return;
         walk = null;
         held = dir;
-        if (performance.now() - lastMoveAt >= MOVE_DELAY_MS) doMove(dir);
+        if (performance.now() - lastMoveAt >= moveDelay()) doMove(dir);
     }
 
     function onKeyUp(ev) {
@@ -785,8 +789,8 @@ export function createExplorationView(cfg) {
             return;
         }
 
-        if (held && !isBlocked() && now - lastMoveAt >= MOVE_DELAY_MS) doMove(held);
-        else if (walk && !isBlocked() && now - lastMoveAt >= MOVE_DELAY_MS) walkStep();
+        if (held && !isBlocked() && now - lastMoveAt >= moveDelay()) doMove(held);
+        else if (walk && !isBlocked() && now - lastMoveAt >= moveDelay()) walkStep();
         if (walk && isBlocked()) walk = null;
         if (!isBlocked()) {
             const events = X.tick(session, dt);
@@ -795,7 +799,7 @@ export function createExplorationView(cfg) {
             else events.forEach(ev => handleResult(ev));
         }
 
-        const k = Math.min(1, dt / 95);
+        const k = Math.min(1, dt / (cfg.getHero().mount ? 55 : 95));
         vis.px += (session.data.x - vis.px) * k;
         vis.py += (session.data.y - vis.py) * k;
         X.aliveEnemies(session).forEach(e => {
@@ -1154,8 +1158,25 @@ export function createExplorationView(cfg) {
                     ctx.strokeStyle = '#facc15';
                     ctx.lineWidth = 3;
                     ctx.stroke();
+                    // Pas de Yu : sur l'eau, le héros glisse à la surface et des rides s'étendent sous ses pieds
+                    if (inRects(screen.liquids || [], Math.round(vis.px), Math.round(vis.py))) {
+                        for (let r = 0; r < 2; r++) {
+                            const phase = ((now / 900) + r * 0.5) % 1;
+                            ctx.beginPath();
+                            ctx.ellipse(c.x, feet - tile * 0.02, tile * (0.3 + 0.35 * phase), tile * (0.1 + 0.12 * phase), 0, 0, Math.PI * 2);
+                            ctx.strokeStyle = `rgba(255,255,255,${(0.7 * (1 - phase)).toFixed(3)})`;
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                        }
+                    }
                     const hero = cfg.getHero();
-                    drawSprite(heroSprite(hero.classId), c.x, feet + hop, tile * 1.06);
+                    if (hero.mount) {
+                        // à cheval : la monture au sol, le héros en selle
+                        drawSprite(npcSprite('horse_mount'), c.x, feet + hop * 0.5, tile * 1.2);
+                        drawSprite(heroSprite(hero.classId), c.x, feet + hop - tile * 0.34, tile * 0.86);
+                    } else {
+                        drawSprite(heroSprite(hero.classId), c.x, feet + hop, tile * 1.06);
+                    }
                     break;
                 }
                 default:

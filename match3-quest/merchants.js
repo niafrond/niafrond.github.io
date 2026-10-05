@@ -45,6 +45,14 @@ export const MERCHANTS = [
       idle: ['Pilons de jade, éclats de lune et trésors qu\'aucun mortel ne devrait posséder. Prix en conséquence.', 'Ici, on paie en or. Même la lune a des factures.'] }
 ];
 
+// Montures : achetables chez certains marchands, elles accélèrent les déplacements sur les cartes (explorationView.js).
+export const MOUNTS = {
+    horse: { id: 'horse', name: 'Cheval de plaine', type: 'mount', speed: 2,
+        description: 'Une monture robuste et docile : vous parcourez les cartes deux fois plus vite.' }
+};
+// Un marchand par monture : le Maître Zhu des Bambous (3e région) vend le cheval, très cher.
+export const MOUNT_OFFERS = { merchant_bambous: { id: 'horse', price: 480 } };
+
 export const MERCHANT_IDS = MERCHANTS.map(m => m.id);
 export const getMerchant = id => MERCHANTS.find(m => m.id === id) || null;
 
@@ -110,7 +118,9 @@ export function merchantStock(merchantId, ngPlus = 0) {
         : all.filter(e => fits(e, ['rare'], 9, 12) && !rareEntries.includes(e))
             .sort((a, b) => (b.kind === 'weapon' ? baseWeaponPrice(b.obj) : baseItemPrice(b.obj)) - (a.kind === 'weapon' ? baseWeaponPrice(a.obj) : baseItemPrice(a.obj))).slice(0, 1);
 
+    const mount = MOUNT_OFFERS[merchantId];
     return [
+        ...(mount ? [{ key: `mount:${mount.id}`, kind: 'mount', id: mount.id, section: 'mount', rarity: 'rare', unique: true, price: mount.price }] : []),
         ...stall.map(e => offerOf(e.kind, e.obj, 'stall', e.rarity)),
         ...rareEntries.map(e => offerOf(e.kind, e.obj, 'rare', e.rarity)),
         ...exceptional.map(e => {
@@ -122,6 +132,7 @@ export function merchantStock(merchantId, ngPlus = 0) {
 }
 
 export function offerObject(offer) {
+    if (offer.kind === 'mount') return MOUNTS[offer.id] || null;
     return offer.kind === 'weapon' ? allWeapons.find(w => w.id === offer.id) : allItems.find(i => i.id === offer.id);
 }
 
@@ -131,6 +142,7 @@ export function availableOffers(merchantId, hero, ngPlus = 0) {
     return merchantStock(merchantId, ngPlus).filter(o => {
         if (o.unique && sold.includes(o.key)) return false;
         if (o.kind === 'weapon' && (hero.weapons || []).some(w => w.id === o.id)) return false;
+        if (o.kind === 'mount' && hero.mount) return false;   // une seule monture
         return true;
     });
 }
@@ -145,7 +157,9 @@ export function buyOffer(merchantId, key, hero, ngPlus = 0) {
         return { ok: false, message: `Pas assez d'or ! Coût : ${offer.price}, vous avez ${hero.gold || 0}.` };
     }
     hero.gold -= offer.price;
-    if (offer.kind === 'weapon') {
+    if (offer.kind === 'mount') {
+        hero.mount = obj.id;
+    } else if (offer.kind === 'weapon') {
         if (!hero.weapons) hero.weapons = [];
         hero.weapons.push(obj);
     } else {

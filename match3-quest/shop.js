@@ -8,6 +8,7 @@ import { offerObject, availableOffers, buyOffer, sellableEntries, sellEntry } fr
 import { player, gameState, log, updateAvailableWeapons, saveUpdate, getWeaponIcon, updateInventoryTab, updateItemButton, createWeaponButton } from './game.js';
 
 const SECTION_TITLES = {
+    mount: 'Monture',
     stall: 'Étal',
     rare: 'Pièces rares',
     exceptional: 'Pièce d\'exception'
@@ -22,7 +23,9 @@ function offerRow(offer, gold) {
     const canAfford = gold >= offer.price;
     const color = getRarityColor(offer.rarity);
     const icon = offer.kind === 'weapon' ? getWeaponIcon(obj.type) : getRarityIcon(offer.rarity);
-    const stats = offer.kind === 'weapon'
+    const levelText = offer.kind === 'mount' ? '' : ` • Niv. ${obj.minLevel}`;
+    const stats = offer.kind === 'mount' ? `Déplacements ×${obj.speed}`
+        : offer.kind === 'weapon'
         ? `${obj.damage} ${svgIcon('skull')} • ${obj.actionPoints} ${svgIcon('arrow')}`
         : obj.type === 'shield' ? `Déf. +${obj.defense}`
             : obj.type === 'reusable' ? `${obj.actionPoints || 2} ${svgIcon('arrow')} • ${obj.chargesPerCycle} charge${obj.chargesPerCycle > 1 ? 's' : ''}, rechargé en ${obj.rechargeTurns || 4} tours`
@@ -32,7 +35,7 @@ function offerRow(offer, gold) {
             <span class="weapon-icon">${icon}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${escapeHtml(obj.name)} <em class="merchant-rarity" style="color:${color}">${RARITY_LABEL[offer.rarity] || ''}</em></span>
-                <span class="weapon-stats">${stats} • Niv. ${obj.minLevel}</span>
+                <span class="weapon-stats">${stats}${levelText}</span>
                 <span class="weapon-description">${escapeHtml(obj.description || '')}</span>
             </div>
             <div class="shop-weapon-right">
