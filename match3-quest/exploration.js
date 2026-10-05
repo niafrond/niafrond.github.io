@@ -40,6 +40,31 @@ const inRect = (rects, x, y) => rects.some(([rx, ry, rw, rh]) => x >= rx && x < 
 export const YUBU_QUEST = 'sq_pas_de_yu';
 export const canWalkOnWater = session => session?.data?.quests?.[YUBU_QUEST] === 'done';
 
+// Cheval : `owned` = le héros possède une monture. Il est en selle tant qu'il ne l'a pas quittée (`data.mounted === false`) ;
+// il descend tout seul sur l'eau (le cheval ne marche pas sur les eaux) et remonte à la demande, sur la terre ferme.
+export const isRiding = (session, owned) => Boolean(owned) && session.data.mounted !== false;
+export function isOnLiquid(session) {
+    const screen = session.screens[session.data.screenId];
+    return Boolean(screen) && inRect(screen.liquids || [], session.data.x, session.data.y);
+}
+// À appeler après chaque déplacement : met pied à terre si le héros est sur l'eau. Renvoie true s'il vient de descendre.
+export function autoDismount(session, owned) {
+    if (!isRiding(session, owned) || !isOnLiquid(session)) return false;
+    session.data.mounted = false;
+    return true;
+}
+// Touche « monter / descendre ». Renvoie { type: 'mount' | 'dismount' | 'refused' | 'none', message }.
+export function toggleMount(session, owned) {
+    if (!owned) return { type: 'none', message: '' };
+    if (isRiding(session, owned)) {
+        session.data.mounted = false;
+        return { type: 'dismount', message: 'Vous descendez de cheval.' };
+    }
+    if (isOnLiquid(session)) return { type: 'refused', message: 'Impossible de monter en selle sur l\'eau : le cheval ne suit pas.' };
+    session.data.mounted = true;
+    return { type: 'mount', message: 'Vous montez en selle.' };
+}
+
 // Les liquides bloquent, sauf pour qui marche sur l'eau (`onWater`) ; dans un écran aquatique (`screen.aquatic`) on n'entre
 // qu'avec le Pas de Yu, ses eaux sont donc toujours franchissables.
 export function isTerrainBlocked(screen, x, y, onWater = false) {

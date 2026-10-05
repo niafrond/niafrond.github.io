@@ -2,7 +2,8 @@
 import { describe, test, expect } from '@jest/globals';
 import { SCREENS, QUESTS } from '../../story.js';
 import {
-    createSession, tryMove, findPath, isTerrainBlocked, canWalkOnWater, YUBU_QUEST, isExitLocked, talkToNpc, openChest, questStatus
+    createSession, tryMove, findPath, isTerrainBlocked, canWalkOnWater, YUBU_QUEST, isExitLocked, talkToNpc, openChest, questStatus,
+    isRiding, isOnLiquid, autoDismount, toggleMount
 } from '../../exploration.js';
 import { YUBU_QUEST_ID, ARCHIPEL_ID, ISLE_ID } from '../../world/aquatic.js';
 
@@ -94,5 +95,44 @@ describe('Monde aquatique', () => {
         const s = createSession({ screenId: ARCHIPEL_ID, x: archipel.spawn.x, y: archipel.spawn.y, quests: { [YUBU_QUEST]: 'done' } });
         archipel.chests.forEach(c => expect(findPath(s, c.x, c.y)).not.toBeNull());
         archipel.exits.forEach(e => expect(findPath(s, e.x, e.y)).not.toBeNull());
+    });
+});
+
+describe('cheval : monter / descendre, descente automatique sur l\'eau', () => {
+    const screen = SCREENS.rizieres_village;
+    const [lx, ly] = [screen.liquids[0][0], screen.liquids[0][1]];
+
+    test('sans monture, rien ne se passe ; avec, on est en selle par défaut', () => {
+        const s = createSession({});
+        expect(isRiding(s, false)).toBe(false);
+        expect(toggleMount(s, false)).toMatchObject({ type: 'none' });
+        expect(isRiding(s, true)).toBe(true);
+    });
+
+    test('la touche fait descendre puis remonter sur la terre ferme', () => {
+        const s = createSession({});
+        expect(toggleMount(s, true)).toMatchObject({ type: 'dismount' });
+        expect(isRiding(s, true)).toBe(false);
+        expect(toggleMount(s, true)).toMatchObject({ type: 'mount' });
+        expect(isRiding(s, true)).toBe(true);
+    });
+
+    test('sur l\'eau : descente automatique, remontée refusée tant qu\'on y est', () => {
+        const s = createSession({ screenId: screen.id, x: lx - 1, y: ly, quests: { [YUBU_QUEST]: 'done' } });
+        expect(autoDismount(s, true)).toBe(false);          // terre ferme : on reste en selle
+        tryMove(s, 1, 0, { playerLevel: 5 });                // on entre dans l'eau (Pas de Yu)
+        expect(isOnLiquid(s)).toBe(true);
+        expect(autoDismount(s, true)).toBe(true);
+        expect(isRiding(s, true)).toBe(false);
+        expect(toggleMount(s, true)).toMatchObject({ type: 'refused' });
+        expect(isRiding(s, true)).toBe(false);
+        tryMove(s, -1, 0, { playerLevel: 5 });               // retour sur la rive
+        expect(toggleMount(s, true)).toMatchObject({ type: 'mount' });
+    });
+
+    test('la sélection est enregistrée avec la progression (data.mounted)', () => {
+        const s = createSession({});
+        toggleMount(s, true);
+        expect(createSession(JSON.parse(JSON.stringify(s.data))).data.mounted).toBe(false);
     });
 });

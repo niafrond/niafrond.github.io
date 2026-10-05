@@ -95,6 +95,7 @@ export function createExplorationView(cfg) {
         dialog: root.querySelector('.explore-dialog'),
         toast: root.querySelector('.explore-toast'),
         journalBtn: root.querySelector('[data-explore="journal"]'),
+        mountBtn: root.querySelector('[data-explore="mount"]'),
         mapBtn: root.querySelector('[data-explore="map"]'),
         arenaBtn: root.querySelector('[data-explore="arena"]'),
         menuBtn: root.querySelector('[data-explore="menu"]')
@@ -706,7 +707,28 @@ export function createExplorationView(cfg) {
     }
 
     // Délai entre deux pas : le cheval double la vitesse (la caméra suit plus vite aussi).
-    const moveDelay = () => (cfg.getHero().mount ? MOUNTED_MOVE_DELAY_MS : MOVE_DELAY_MS);
+    const hasMount = () => Boolean(cfg.getHero().mount);
+    const riding = () => X.isRiding(session, hasMount());
+    const moveDelay = () => (riding() ? MOUNTED_MOVE_DELAY_MS : MOVE_DELAY_MS);
+
+    // Touche C / bouton : monter ou descendre de cheval.
+    function toggleMount() {
+        const res = X.toggleMount(session, hasMount());
+        if (res.type === 'none') return;
+        toast(res.message, 2200);
+        cfg.onSave();
+        refreshMountButton();
+    }
+    function refreshMountButton() {
+        const btn = els.mountBtn;
+        if (!btn) return;
+        const state = `${hasMount()}|${riding()}`;
+        if (btn.dataset.state === state) return;   // évite de toucher au DOM à chaque image
+        btn.dataset.state = state;
+        btn.hidden = !hasMount();
+        btn.classList.toggle('on', riding());
+        btn.title = riding() ? 'Descendre de cheval (C)' : 'Monter à cheval (C)';
+    }
 
     // Un pas vers la destination ; le chemin est recalculé à chaque pas (patrouilles, ennemis vaincus…).
     function walkStep() {
@@ -737,6 +759,7 @@ export function createExplorationView(cfg) {
         if (ev.key === 'Escape' && merchantEl) { closeMerchant(); return; }
         if (ev.key === 'Escape' && journalEl) { closeJournal(); return; }
         if (ev.key === 'j' || ev.key === 'J') { showJournal(); return; }
+        if (ev.key === 'c' || ev.key === 'C') { toggleMount(); return; }
         if (ev.key === 'v' || ev.key === 'V') { showJournal('travel'); return; }
         const dir = KEY_TO_DIR[ev.key];
         if (!dir) return;
@@ -771,6 +794,7 @@ export function createExplorationView(cfg) {
             advanceDialog();
         });
         els.journalBtn?.addEventListener('click', showJournal);
+        els.mountBtn?.addEventListener('click', () => { if (!isBlocked()) toggleMount(); });
         els.mapBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMap?.(); });
         els.arenaBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenArena?.(); });
         els.menuBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMenu?.(); });
@@ -799,7 +823,10 @@ export function createExplorationView(cfg) {
             else events.forEach(ev => handleResult(ev));
         }
 
-        const k = Math.min(1, dt / (cfg.getHero().mount ? 55 : 95));
+        // Sur l'eau, le cheval ne suit pas : on met pied à terre tout seul.
+        if (X.autoDismount(session, hasMount())) { toast('Le cheval ne suit pas sur l\'eau : vous mettez pied à terre.', 3000); cfg.onSave(); }
+        refreshMountButton();
+        const k = Math.min(1, dt / (riding() ? 55 : 95));
         vis.px += (session.data.x - vis.px) * k;
         vis.py += (session.data.y - vis.py) * k;
         X.aliveEnemies(session).forEach(e => {
@@ -1170,7 +1197,7 @@ export function createExplorationView(cfg) {
                         }
                     }
                     const hero = cfg.getHero();
-                    if (hero.mount) {
+                    if (riding()) {
                         // à cheval : la monture au sol, le héros en selle
                         drawSprite(npcSprite('horse_mount'), c.x, feet + hop * 0.5, tile * 1.2);
                         drawSprite(heroSprite(hero.classId), c.x, feet + hop - tile * 0.34, tile * 0.86);
