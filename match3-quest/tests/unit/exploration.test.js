@@ -33,9 +33,12 @@ const SUN_LEVELS = [3, 4, 5, 7, 9, 11, 13, 15, 17];
 const arrivals = s => Object.values(SCREENS).flatMap(o => o.exits.filter(e => e.to === s.id).map(e => e.arrive));
 // Points de départ « côté village » : sur les écrans à défilé obligatoire, seule l'apparition est de ce côté.
 // Dans une zone sauvage, seule l'entrée côté village compte (l'autre côté n'est accessible qu'après le gate).
+// Un boss qui garde une porte (guardsDoor) ne protège pas l'arrivée côté porte : la porte n'est franchissable qu'après sa mort.
+const doorGuards = s => s.enemies.filter(e => e.guardsDoor);
 const starts = s => {
     if (s.kind === 'wild') return wildEntries(s);
-    return FORCED.includes(s.id) ? [s.spawn] : [s.spawn, ...arrivals(s)];
+    const behindGuard = a => doorGuards(s).some(g => Math.max(Math.abs(g.x - a.x), Math.abs(g.y - a.y)) <= (g.aggro || 1) + 1);
+    return FORCED.includes(s.id) ? [s.spawn] : [s.spawn, ...arrivals(s).filter(a => !behindGuard(a))];
 };
 // Tuiles d'arrivée dans la zone sauvage venant du village ou du hameau de la région.
 const wildEntries = s => Object.values(SCREENS).filter(o => o.region === s.region && o.kind === 'village')
@@ -443,11 +446,13 @@ describe('cartes (story.js)', () => {
     test.each(ORDER.filter(id => !FORCED.includes(id)))('%s : on peut traverser sans croiser d\'ennemi', id => {
         const s = SCREENS[id];
         const forbidden = auraOfAll(s);
-        const points = [...arrivals(s), ...s.exits.map(e => ({ x: e.x, y: e.y }))];
+        const guarded = s.exits.filter(ex => doorGuards(s).some(g => g.id === ex.requires));
+        const points = [...starts(s), ...s.exits.filter(ex => !guarded.includes(ex)).map(e => ({ x: e.x, y: e.y }))];
         points.forEach(from => {
             forbidden.delete(`${from.x},${from.y}`);
             const free = reachable(s, from, forbidden);
-            s.exits.forEach(ex => expect(free.has(`${ex.x},${ex.y}`)).toBe(true));
+            // une porte fermée par un boss qui la garde ne se contourne pas : il faut le vaincre
+            s.exits.filter(ex => !doorGuards(s).some(g => g.id === ex.requires)).forEach(ex => expect(free.has(`${ex.x},${ex.y}`)).toBe(true));
         });
     });
 

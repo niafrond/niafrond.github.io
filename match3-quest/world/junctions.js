@@ -223,5 +223,32 @@ export function applyJunctions(screens, quests, regionLevel = {}) {
         // le verrou couvre toutes les cases du passage ; le chemin de retour reste libre
         from.exits.filter(e => e.to === j.to && e.edge).forEach(e => { e.requires = requires; e.lockedMessage = j.lockedMessage; });
     });
+    guardLockedGates(screens);
     return screens;
+}
+
+/**
+ * Cohérence « boss = porte » : quand un passage n'est ouvert que par la mort d'un ennemi de la même carte, cet ennemi se tient
+ * devant la porte, assez près (2 cases) et avec une vigilance d'au moins 2 pour couvrir les 3 cases du passage et leurs abords :
+ * impossible d'atteindre la porte sans l'affronter. Les ennemis qui barrent déjà la porte (≤ 2 cases) ne bougent pas.
+ */
+export function guardLockedGates(screens) {
+    Object.values(screens).forEach(screen => {
+        const doors = (screen.exits || []).filter(e => e.edge && e.span === 0 && typeof e.requires === 'string');
+        doors.forEach(door => {
+            const enemy = screen.enemies.find(en => en.id === door.requires && en.kind !== 'patrol');
+            if (!enemy) return;
+            enemy.aggro = Math.max(enemy.aggro || 0, 2);
+            enemy.guardsDoor = true;
+            const [ix, iy] = inward(door);
+            const depth = Math.abs(enemy.x - door.x) * Math.abs(ix) + Math.abs(enemy.y - door.y) * Math.abs(iy);
+            const lateral = Math.abs(enemy.x - door.x) * Math.abs(iy) + Math.abs(enemy.y - door.y) * Math.abs(ix);
+            if (depth <= 2 && lateral <= 1) return;
+            // on retire l'ennemi de la carte, puis on cherche la case libre la plus proche de la bouche du passage
+            const rest = { ...screen, enemies: screen.enemies.filter(en => en !== enemy) };
+            const occ = occupancy(rest, screens);
+            const pos = placeNearGate(screen, door, occ, [2, 3, 1], [0, 1, -1, 2, -2]);
+            if (pos) { enemy.x = pos.x; enemy.y = pos.y; }
+        });
+    });
 }

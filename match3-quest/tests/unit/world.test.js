@@ -37,7 +37,7 @@ function reach(screen, from, blocked = () => false) {
 const entitiesOf = s => [
     ...s.npcs.map(e => ({ kind: 'npc', id: e.id, x: e.x, y: e.y })),
     ...s.chests.map(e => ({ kind: 'chest', id: e.id, x: e.x, y: e.y })),
-    ...s.enemies.map(e => ({ kind: 'enemy', id: e.id, x: e.x, y: e.y })),
+    ...s.enemies.map(e => ({ kind: 'enemy', id: e.id, x: e.x, y: e.y, guardsDoor: e.guardsDoor })),
     ...(s.waypoint ? [{ kind: 'waypoint', id: s.id, x: s.waypoint.x, y: s.waypoint.y }] : [])
 ];
 // Une entité (PNJ, coffre, ennemi, pierre) bloque le passage : on l'atteint depuis une tuile voisine libre.
@@ -146,7 +146,8 @@ describe('Grand Monde : cartes', () => {
 
     test('tout est atteignable depuis l\'apparition (entités, sorties, pierre de voyage)', () => {
         screens.filter(s => s.kind).forEach(s => {
-            const solid = new Set(entitiesOf(s).map(e => `${e.x},${e.y}`));
+            // un gardien de porte tombe avant que la porte ne s'ouvre : il ne compte pas comme obstacle d'accès
+            const solid = new Set(entitiesOf(s).filter(e => !e.guardsDoor).map(e => `${e.x},${e.y}`));
             const seen = reach(s, s.spawn, (x, y) => solid.has(`${x},${y}`) || exitPos(s).has(`${x},${y}`));
             entitiesOf(s).forEach(e => expect(`${s.id} ${e.kind}:${e.id} ${adjacentReached(seen, e)}`).toBe(`${s.id} ${e.kind}:${e.id} true`));
             s.exits.forEach(e => expect(`${s.id} exit:${e.to} ${adjacentReached(seen, e)}`).toBe(`${s.id} exit:${e.to} true`));
@@ -189,6 +190,7 @@ describe('Grand Monde : cartes', () => {
             expect(wild.enemies.filter(e => e.kind === 'patrol').length).toBeGreaterThanOrEqual(2);
             wild.enemies.forEach(e => {
                 expect(templateIds.has(e.templateId)).toBe(true);
+                if (e.guardsDoor) return;   // le gardien de la porte se tient devant elle
                 const near = wild.exits.filter(x => (x.span ?? 0) === 0).some(x => Math.max(Math.abs(x.x - e.x), Math.abs(x.y - e.y)) < 3) || Math.max(Math.abs(wild.spawn.x - e.x), Math.abs(wild.spawn.y - e.y)) < 3;
                 expect(`${e.id} ${near}`).toBe(`${e.id} false`);
             });
