@@ -47,10 +47,10 @@ describe('jonctions gardées', () => {
         expect(quest).toMatchObject({ giver: j.guard.id, turnIn: j.guard.id, side: true });
         expect(quest.objectives).toEqual([expect.objectContaining({ type: 'chest', target: j.item.chest })]);
         expect(quest.reward.fragment).toBe(j.item.fragment);
-        // le garde est dans la zone d'arrivée côté village, hors du passage ; le coffre est dans le terrain agrandi de la carte porteuse
+        // le garde est dans la zone d'arrivée côté village, hors du passage ; le coffre est au sud-est de la carte porteuse
         expect(isTerrainBlocked(guardScreen, guard.x, guard.y)).toBe(false);
         expect(isTerrainBlocked(holder, chest.x, chest.y)).toBe(false);
-        expect(chest.x >= holder.core.w || chest.y >= holder.core.h).toBe(true);
+        expect(chest.x >= holder.w * 0.5 && chest.y >= holder.h * 0.45).toBe(true);   // cachés au sud-est de la carte
         const taken = new Set([...guardScreen.exits.map(e => `${e.x},${e.y}`), `${guardScreen.spawn.x},${guardScreen.spawn.y}`]);
         expect(taken.has(`${guard.x},${guard.y}`)).toBe(false);
         // la carte porteuse précède la jonction dans le monde (on la traverse avant d'arriver au garde)
@@ -97,5 +97,25 @@ describe('jonctions gardées', () => {
         markEnemyDefeated(s, j.enemy.id);
         expect(isExitLocked(s, centerOf(j))).toBe(false);
         expect(tryMove(s, dx, dy, { playerLevel: 1 })).toMatchObject({ type: 'transition', to: j.to });
+    });
+});
+
+describe('boss = porte : un ennemi qui ferme un passage se tient devant', () => {
+    const all = Object.values(SCREENS);
+    const doors = all.flatMap(s => s.exits
+        .filter(e => e.edge && e.span === 0 && s.enemies.some(en => en.id === e.requires))
+        .map(e => ({ s, e, boss: s.enemies.find(en => en.id === e.requires) })));
+
+    test('toutes les portes de bord fermées par un ennemi sont concernées (soleils, gardiens de gate, gardiens de hameau)', () => {
+        expect(doors.length).toBeGreaterThanOrEqual(16);
+    });
+
+    test.each(doors.map(d => [`${d.s.id} → ${d.e.to}`, d]))('%s : le boss garde la porte et sa vigilance couvre les 3 cases', (_n, { e, s, boss }) => {
+        expect(boss.guardsDoor).toBe(true);
+        expect(boss.aggro).toBeGreaterThanOrEqual(2);
+        s.exits.filter(x => x.to === e.to && x.edge).forEach(x => {
+            expect(x.requires).toBe(boss.id);
+            expect(Math.max(Math.abs(x.x - boss.x), Math.abs(x.y - boss.y))).toBeLessThanOrEqual(boss.aggro);
+        });
     });
 });

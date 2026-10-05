@@ -11,7 +11,8 @@
 // infranchissables, les `paths` sont purement décoratifs.
 //
 // Ennemis :
-//  - kind 'sentinel' : immobile, se déclenche si on passe à `AGGRO_RADIUS` tuile(s) ;
+//  - kind 'sentinel' : immobile, se déclenche si on passe à `AGGRO_RADIUS` tuile(s) (2 sur les cartes agrandies, `scaledAggro` pour
+//    un goulet à garder fermé : 3 pour Fengmeng) ;
 //  - kind 'patrol'   : fait des allers-retours entre les points de `patrol` ;
 //  - permanent:true  : ne réapparaît jamais (ennemis d'histoire : boss, quêtes, groupes, scènes). Sinon il revient à chaque
 //                      entrée dans l'écran (le joueur peut donc s'entraîner) SAUF s'il barre un chemin (sa zone de
@@ -370,7 +371,7 @@ const BASE_SCREENS = {
         ],
         enemies: [
             // Duel d'entraînement : Fengmeng garde la digue, seul passage vers l'est (corridor de 3 tuiles de large).
-            { id: 'fengmeng_1', templateId: 'shadow_assassin', name: 'Fengmeng, le Disciple', kind: 'sentinel', x: 6, y: 4,
+            { id: 'fengmeng_1', templateId: 'shadow_assassin', name: 'Fengmeng, le Disciple', kind: 'sentinel', x: 6, y: 4, scaledAggro: 3,
               permanent: true, boss: { name: 'Fengmeng, le Disciple', level: 2 },
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_1'),
@@ -716,7 +717,7 @@ const BASE_SCREENS = {
         ],
         enemies: [
             // Embuscade : Fengmeng tient le défilé (corridor de 3 tuiles), seul passage vers l'est.
-            { id: 'fengmeng_2', templateId: 'shadow_assassin', name: "Fengmeng, l'Archer Pressé", kind: 'sentinel', x: 6, y: 4,
+            { id: 'fengmeng_2', templateId: 'shadow_assassin', name: "Fengmeng, l'Archer Pressé", kind: 'sentinel', x: 6, y: 4, scaledAggro: 3,
               permanent: true, boss: { name: "Fengmeng, l'Archer Pressé", level: 10 },
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_2'),
@@ -1564,6 +1565,8 @@ const WORLD = assembleWorld(BASE_SCREENS, BASE_QUESTS);
 // L'Arène des Mille Flèches (arena.js) : parvis + salles des huit cercles, hors de la chaîne des régions.
 export const SCREENS = { ...WORLD.screens, ...buildArenaScreens() };
 export const QUESTS = WORLD.quests;
+// Monde à l'ancienne (cartes à leur taille d'origine, sans agrandissement ni jonctions) : réservé aux tests de mécanique du moteur.
+export const buildLegacyWorld = () => assembleWorld(BASE_SCREENS, BASE_QUESTS, undefined, undefined, { legacy: true });
 
 // Écran d'arrivée d'une région depuis la carte du monde : son village quand il existe, sinon son sanctuaire.
 export const REGION_ENTRY_SCREEN = Object.fromEntries(

@@ -3,7 +3,7 @@
 import { describe, test, expect } from '@jest/globals';
 import { SCREENS } from '../../story.js';
 import { isTerrainBlocked } from '../../exploration.js';
-import { expandScreen, widenGates, linkGates, EXPANDED_SIZES } from '../../world/expand.js';
+import { scaleScreen, widenGates, linkGates, EXPANDED_SIZES } from '../../world/expand.js';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const outdoors = Object.values(SCREENS).filter(s => !s.interior && !s.arena && s.kind !== 'house');
@@ -85,7 +85,7 @@ describe('plus de délimitation factice, de l\'eau en bordure (openPerimeter, ad
 
     test('villages, zones sauvages, hameaux : couronne sans mur factice, faite d\'eau (hors passages de bord)', () => {
         outdoors.filter(s => !s.aquatic).forEach(s => {
-            const cells = ring(s).filter(([x, y]) => !(s.barrier && ((x === s.barrier.eastX && y <= s.core.h) || (y === s.barrier.southY && x <= s.core.w))));
+            const cells = ring(s);
             const rocks = cells.filter(([x, y]) => inRects(s.obstacles, x, y));
             // seuls des blocs de décor posés au bord d'un sanctuaire (goulets) peuvent subsister
             if (s.kind !== undefined) expect({ id: s.id, rocks: rocks.length }).toEqual({ id: s.id, rocks: 0 });
@@ -105,45 +105,92 @@ describe('plus de délimitation factice, de l\'eau en bordure (openPerimeter, ad
     test('les maisons gardent leurs murs, et un bloc de décor posé au bord d\'un sanctuaire (goulet) reste en place', () => {
         const house = Object.values(SCREENS).find(s => s.interior);
         expect(isTerrainBlocked(house, 0, 0)).toBe(true);
-        expect(isTerrainBlocked(SCREENS.rizieres, 6, 0)).toBe(true);   // bloc [6,0,2,3] : il forme le goulet de Fengmeng
-    });
-
-    test('la cloison entre salle d\'origine et terrain agrandi reste fermée sur toute la hauteur, hors ouvertures', () => {
-        const s = SCREENS.rizieres;
-        const x = s.barrier.eastX;
-        const open = [];
-        for (let y = 0; y <= s.core.h; y++) if (!isTerrainBlocked(s, x, y)) open.push(y);
-        expect(open.length).toBeGreaterThanOrEqual(3);   // l'ouverture de 3 cases (ancienne sortie est)
-        expect(open.length).toBeLessThanOrEqual(3);
+        expect(isTerrainBlocked(SCREENS.rizieres, 12, 0)).toBe(true);   // bloc d'origine [6,0,2,3] étiré : il forme le goulet de Fengmeng
     });
 });
 
-describe('expandScreen / widenGates (écran synthétique)', () => {
-    const make = () => ({
-        id: 'test_zone', w: 8, h: 6, spawn: { x: 1, y: 2 },
-        obstacles: [[0, 0, 8, 1], [0, 5, 8, 1], [0, 1, 1, 4], [7, 1, 1, 4]],
-        liquids: [], paths: [], buildings: [], npcs: [], chests: [], enemies: [],
-        exits: [{ x: 0, y: 2, to: 'a', label: 'A' }, { x: 7, y: 3, to: 'b', label: 'B', requires: 'x' }]
+describe('redisposition : le contenu des cartes agrandies occupe toute la surface', () => {
+    const scaled = outdoors.filter(s => !s.aquatic && (s.id.endsWith('_wild') || s.id.endsWith('_hamlet') || s.kind === undefined));
+    const points = s => [...s.npcs, ...s.chests, ...s.enemies, ...(s.buildings || []).map(b => ({ x: b.x + Math.floor(b.w / 2), y: b.y + Math.floor(b.h / 2) }))];
+
+    test.each(scaled.map(s => [s.id, s]))('%s : entités et maisons réparties sur toute la carte (pas entassées dans un coin)', (_id, s) => {
+        const pts = points(s);
+        if (pts.length < 4) return;
+        const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+        expect((Math.max(...xs) - Math.min(...xs)) / s.w).toBeGreaterThanOrEqual(0.4);
+        expect((Math.max(...ys) - Math.min(...ys)) / s.h).toBeGreaterThanOrEqual(0.2);
     });
 
-    test('la salle d\'origine garde sa forme ; la cloison s\'ouvre en 3 cases ; bordure et passage est créés', () => {
-        const s = expandScreen(make(), 16, 12);
+    test('plus rien n\'est entassé dans un coin : aucune carte n\'a tout son contenu dans son quart nord-ouest', () => {
+        scaled.forEach(s => {
+            const pts = points(s);
+            if (pts.length < 4) return;
+            const inCorner = pts.filter(p => p.x < s.w / 2 && p.y < s.h / 2).length;
+            expect({ id: s.id, share: inCorner / pts.length < 0.8 }).toEqual({ id: s.id, share: true });
+        });
+    });
+
+    test('les maisons du hameau gardent leur taille, une porte praticable et une ruelle devant', () => {
+        Object.values(SCREENS).filter(s => s.id.endsWith('_hamlet')).forEach(h => {
+            expect((h.buildings || []).length).toBeGreaterThan(0);
+            h.buildings.forEach(b => {
+                expect(b.w).toBeLessThanOrEqual(6);
+                expect(isTerrainBlocked(h, b.door.x, b.door.y)).toBe(false);
+                expect(isTerrainBlocked(h, b.door.x, b.door.y + 1)).toBe(false);
+                const exit = h.exits.find(e => e.door && e.x === b.door.x && e.y === b.door.y);
+                expect({ id: h.id, door: Boolean(exit) }).toEqual({ id: h.id, door: true });
+            });
+        });
+    });
+
+    test('la zone de vigilance des ennemis des cartes agrandies suit l\'échelle de la carte (2 cases)', () => {
+        scaled.forEach(s => s.enemies.forEach(e => expect([e.id, e.aggro >= 2]).toEqual([e.id, true])));
+    });
+});
+
+describe('scaleScreen / widenGates (écran synthétique)', () => {
+    const make = () => ({
+        id: 'test_zone', w: 8, h: 6, spawn: { x: 1, y: 2 },
+        obstacles: [[0, 0, 8, 1], [0, 5, 8, 1], [0, 1, 1, 4], [7, 1, 1, 4], [3, 2, 2, 1]],
+        liquids: [], paths: [], buildings: [{ id: 'A', x: 2, y: 3, w: 2, h: 2, door: { x: 2, y: 4 } }],
+        npcs: [{ id: 'n', x: 5, y: 2 }], chests: [{ id: 'c', x: 6, y: 4 }],
+        enemies: [{ id: 'e', x: 4, y: 3, kind: 'sentinel' }, { id: 'p', x: 1, y: 1, kind: 'patrol', patrol: [[1, 1], [5, 1]] }],
+        exits: [{ x: 0, y: 2, to: 'a', label: 'A' }, { x: 7, y: 3, to: 'b', label: 'B', requires: 'x' }, { x: 2, y: 4, to: 'maison', door: true, label: 'Maison' }]
+    });
+
+    test('la carte entière est étirée : taille cible, contenu réparti, passages sur les bords', () => {
+        const s = scaleScreen(make(), 16, 12);
         expect([s.w, s.h]).toEqual([16, 12]);
         const blocked = (x, y) => isTerrainBlocked(s, x, y);
-        expect(blocked(7, 3)).toBe(false);        // ancienne sortie est = ouverture
-        expect(blocked(7, 2) || blocked(7, 4)).toBe(false);
-        expect(blocked(7, 1)).toBe(true);         // le reste du mur demeure
-        expect(blocked(15, 0)).toBe(false);       // pas de bordure factice sur le nouveau terrain
-        expect(blocked(8, 0)).toBe(false);
-        expect(blocked(7, 0)).toBe(true);         // la cloison salle / terrain (x = 7) ne s'ouvre qu'aux passages
-        const east = s.exits.filter(e => e.to === 'b');
-        expect(east).toHaveLength(0);             // les sorties sont créées par linkGates
         expect(s.gates.find(g => g.attrs.to === 'b')).toMatchObject({ edge: 'east', center: { x: 15 } });
-        expect(s.gates.find(g => g.attrs.to === 'a')).toMatchObject({ edge: 'west', center: { x: 0, y: 2 } });
+        expect(s.gates.find(g => g.attrs.to === 'a')).toMatchObject({ edge: 'west', center: { x: 0 } });
+        // les entités se répartissent à l'échelle (≈ ×2), loin de leur position d'origine
+        expect(s.npcs[0].x).toBeGreaterThan(8);
+        expect(s.chests[0]).toMatchObject({ x: expect.any(Number) });
+        expect(s.chests[0].x).toBeGreaterThan(10);
+        expect(s.enemies.find(e => e.id === 'e').aggro).toBe(2);
+        s.enemies.concat(s.npcs, s.chests).forEach(e => expect(blocked(e.x, e.y)).toBe(false));
+        // le bloc de décor d'origine est étiré mais conserve sa forme générale (un obstacle isolé, pas un mur)
+        expect(blocked(7, 5)).toBe(true);
+        expect(blocked(7, 8)).toBe(false);
+    });
+
+    test('la patrouille garde un trajet libre et la maison garde sa taille, sa porte et sa sortie', () => {
+        const s = scaleScreen(make(), 16, 12);
+        const p = s.enemies.find(e => e.id === 'p');
+        const xs = p.patrol.map(q => q[0]), ys = p.patrol.map(q => q[1]);
+        for (let x = Math.min(...xs); x <= Math.max(...xs); x++) expect(isTerrainBlocked(s, x, ys[0])).toBe(false);
+        const b = s.buildings[0];
+        expect([b.w, b.h]).toEqual([2, 2]);
+        expect(b.door).toEqual({ x: b.x + 0, y: b.y + 1 });
+        expect(isTerrainBlocked(s, b.door.x, b.door.y)).toBe(false);
+        expect(isTerrainBlocked(s, b.door.x, b.door.y + 1)).toBe(false);   // la ruelle devant la porte
+        expect(s.exits.find(e => e.door)).toMatchObject({ x: b.door.x, y: b.door.y, to: 'maison' });
+        expect(isTerrainBlocked(s, b.x + 1, b.y)).toBe(true);              // le reste du bâtiment bloque
     });
 
     test('linkGates : arrivée alignée, verrou recopié sur toutes les cases du passage', () => {
-        const a = expandScreen(make(), 16, 12);
+        const a = scaleScreen(make(), 16, 12);
         const b = { id: 'b', w: 10, h: 8, spawn: { x: 2, y: 4 }, obstacles: [[0, 0, 10, 1], [0, 7, 10, 1], [0, 1, 1, 6], [9, 1, 1, 6]], liquids: [], paths: [], buildings: [], npcs: [], chests: [], enemies: [],
             exits: [{ x: 0, y: 4, to: 'test_zone' }] };
         widenGates(b);
@@ -156,7 +203,7 @@ describe('expandScreen / widenGates (écran synthétique)', () => {
         expect(ex.find(e => e.span === 1).arrive).toEqual({ x: 1, y: 5 });
     });
 
-    test('même graine, même carte (génération déterministe)', () => {
-        expect(JSON.stringify(expandScreen(make(), 16, 12))).toBe(JSON.stringify(expandScreen(make(), 16, 12)));
+    test('même carte, même résultat (déterministe)', () => {
+        expect(JSON.stringify(scaleScreen(make(), 16, 12))).toBe(JSON.stringify(scaleScreen(make(), 16, 12)));
     });
 });

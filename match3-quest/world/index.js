@@ -7,7 +7,7 @@
 import { merchantNpc } from '../merchants.js';
 import { getXPCostForLevel } from '../experience.js';
 import { buildZone, arrivalFor, freeNeighbor } from './mapKit.js';
-import { EXPANDED_SIZES, expandScreen, widenGates, linkGates, openPerimeter, addWaterBorder } from './expand.js';
+import { EXPANDED_SIZES, scaleScreen, widenGates, linkGates, openPerimeter, addWaterBorder } from './expand.js';
 import { applyJunctions } from './junctions.js';
 import { buildAquaticWorld, applyYubu } from './aquatic.js';
 import { MAPS } from './maps/index.js';
@@ -29,7 +29,9 @@ export function questXp(quest, region) {
 
 const clone = value => JSON.parse(JSON.stringify(value));
 
-export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXTS) {
+// options.legacy : monde « à l'ancienne » (cartes à leur taille d'origine, sans agrandissement, jonctions ni monde aquatique), réservé aux
+// tests de mécanique qui s'appuient sur les coordonnées historiques des sanctuaires.
+export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXTS, options = {}) {
     const screens = clone(baseScreens);
     const legacyNpcs = {};
     Object.values(baseScreens).forEach(s => s.npcs.forEach(n => { legacyNpcs[n.id] = clone(n); }));
@@ -133,20 +135,23 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
 
     // Grandes cartes reliées par leurs bords : zones sauvages, sanctuaires et hameaux sont agrandis, les villages gardent
     // leur taille ; tous les passages de bord (3 cases) ressortent en face, alignés (voir world/expand.js).
-    buildAquaticWorld(screens);   // Mer des Mille Îlots : reliée à l'Anse des Coquillages, accessible avec le Pas de Yu
-    REGION_ORDER.forEach(region => {
-        if (!maps[region]) return;
-        expandScreen(screens[region], ...EXPANDED_SIZES.sanctuary);
-        expandScreen(screens[`${region}_wild`], ...EXPANDED_SIZES.wild);
-        if (screens[`${region}_hamlet`]) expandScreen(screens[`${region}_hamlet`], ...EXPANDED_SIZES.hamlet);
-        widenGates(screens[`${region}_village`]);
-    });
-    linkGates(screens);
-    Object.values(screens).forEach(openPerimeter);   // plus de bordure factice : les terrains sont reliés, la limite de la carte suffit
-    Object.values(screens).forEach(addWaterBorder);  // ... mais de l'eau tout autour des terrains (franchissable avec le Pas de Yu)
-    // Jonctions gardées : objet à rapporter à un garde, gardien spécial à vaincre (world/junctions.js).
-    applyJunctions(screens, quests, REGION_LEVEL);
-    applyYubu(screens, quests);   // reliques du Pas de Yu + quête de Gui (marcher sur les eaux)
+    if (!options.legacy) {
+        buildAquaticWorld(screens);   // Mer des Mille Îlots : reliée à l'Anse des Coquillages, accessible avec le Pas de Yu
+        REGION_ORDER.forEach(region => {
+            if (!maps[region]) return;
+            scaleScreen(screens[region], ...EXPANDED_SIZES.sanctuary);
+            scaleScreen(screens[`${region}_wild`], ...EXPANDED_SIZES.wild);
+            if (screens[`${region}_hamlet`]) scaleScreen(screens[`${region}_hamlet`], ...EXPANDED_SIZES.hamlet);
+            widenGates(screens[`${region}_village`]);
+        });
+        linkGates(screens);
+        Object.values(screens).forEach(openPerimeter);   // plus de bordure factice : les terrains sont reliés, la limite de la carte suffit
+        Object.values(screens).forEach(addWaterBorder);  // ... mais de l'eau tout autour des terrains (franchissable avec le Pas de Yu)
+        // Jonctions gardées : objet à rapporter à un garde, gardien spécial à vaincre (world/junctions.js).
+        applyJunctions(screens, quests, REGION_LEVEL);
+        applyYubu(screens, quests);   // reliques du Pas de Yu + quête de Gui (marcher sur les eaux)
+
+    }
 
     // Retire des sanctuaires les PNJ qui ont déménagé.
     sanctuaryOf.forEach(id => { screens[id].npcs = screens[id].npcs.filter(n => !relocated.has(n.id)); });

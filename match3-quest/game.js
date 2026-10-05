@@ -13,7 +13,7 @@ import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
 import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects, tickReusableRecharge, describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
-import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses } from "./attributes.js";
+import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses, respecAttributes, totalAttributePoints } from "./attributes.js";
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel, normalizeXP } from "./experience.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
@@ -1404,6 +1404,18 @@ export function updatePlayerStatsTab(){
                     </div>
                 </div>
             </div>
+            <div class="stats-section attribute-points-section">
+                <h3>Points d'attribut</h3>
+                <div class="stat-line">
+                    <span class="stat-label">${svgIcon('star')} À répartir :</span>
+                    <span class="stat-value">${player.unspentLevelPoints || 0}</span>
+                    <span class="stat-effect">${totalAttributePoints(player)} point(s) dépensé(s)</span>
+                </div>
+                <div class="attribute-points-actions">
+                    <button type="button" id="spend-points-btn" ${(player.unspentLevelPoints || 0) > 0 && gameState.combatState !== 'active' ? '' : 'disabled'}>Répartir les points</button>
+                    <button type="button" id="reset-points-btn" ${totalAttributePoints(player) > 0 && gameState.combatState !== 'active' ? '' : 'disabled'} title="Rend tous les points dépensés pour les répartir autrement (hors combat)">Réinitialiser les points</button>
+                </div>
+            </div>
             <div class="stats-section">
                 <h3>Caractéristiques</h3>
             <div class="stat-line">
@@ -1469,6 +1481,13 @@ export function updatePlayerStatsTab(){
             <button onclick="window.clearPlayerSave()" class="secondary">Effacer la sauvegarde</button>
         </div>
     `;
+        statsContent.querySelector('#spend-points-btn')?.addEventListener('click', () => showAttributeMenu());
+        statsContent.querySelector('#reset-points-btn')?.addEventListener('click', () => {
+            if(gameState.combatState === 'active') return;
+            if(confirm(`Réinitialiser les ${totalAttributePoints(player)} point(s) d'attribut dépensés ? Ils vous seront rendus pour être répartis autrement.`)) {
+                resetAttributePoints();
+            }
+        });
     });
 }
 
@@ -2367,7 +2386,26 @@ function selectAttribute(attr) {
     const d = describeAttributeChoice(player, attr);
     log(`+1 ${attrNames[attr]} : ${d.statTitle} +1, mana ${d.colorLabel} ${3 + (player.attributes[attr])} par match de 3`);
     updateLevelHud();
+    updatePlayerStatsTab();
     saveUpdate();
+}
+
+// Menu « Réinitialiser les points » (onglet Stats) : rend tous les points d'attribut dépensés, hors combat, puis ouvre la répartition.
+export function resetAttributePoints(){
+    if(gameState.combatState === 'active') {
+        log("Impossible de réinitialiser les points pendant un combat.");
+        return { ok: false, refunded: 0 };
+    }
+    const { refunded } = respecAttributes(player);
+    if(refunded <= 0) return { ok: false, refunded: 0 };
+    clampManaToCaps(player);
+    log(`Points réinitialisés : ${refunded} point(s) d'attribut à répartir.`);
+    updateLevelHud();
+    updateStats();
+    updatePlayerStatsTab();
+    saveUpdate();
+    showAttributeMenu();
+    return { ok: true, refunded };
 }
 
 export function applyAttributeBonus(attr){

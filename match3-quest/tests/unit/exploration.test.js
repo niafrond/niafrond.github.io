@@ -1,13 +1,13 @@
 import { readFileSync } from 'fs';
 import { JUNCTIONS } from '../../world/junctions.js';
-import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, REGION_ENTRY_SCREEN, STORY_ENDING, STORY_INTRO, STORY_TITLE } from '../../story.js';
+import { buildLegacyWorld, SCREENS, QUESTS, REGION_UNLOCK_LEVEL, REGION_ENTRY_SCREEN, STORY_ENDING, STORY_INTRO, STORY_TITLE } from '../../story.js';
 import {
     createSession, tryMove, tick, isTerrainBlocked, buildRoute, aliveEnemies, entityAt, getAuraTiles,
     markEnemyDefeated, talkToNpc, npcAmbientLines, progressReached, openChest, questStatus, checkAutoQuests, currentObjectiveText,
     encounterFor, enemyLevel, enterScreen, respawns, blocksPath, teleportToScreen, resetAfterDefeat, startNewGamePlus,
     isEntityVisible, visibleNpcs, visibleChests, isShielded, isExitLocked, journalEntries, npcMarker, activateWaypoint, fastTravel, waypointList,
     houseMarkers, screenQuestMarker, questDirection, setTrackedQuest,
-    AGGRO_RADIUS, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN, findPath
+    AGGRO_RADIUS, aggroOf, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN, findPath
 } from '../../exploration.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
@@ -33,9 +33,12 @@ const SUN_LEVELS = [3, 4, 5, 7, 9, 11, 13, 15, 17];
 const arrivals = s => Object.values(SCREENS).flatMap(o => o.exits.filter(e => e.to === s.id).map(e => e.arrive));
 // Points de départ « côté village » : sur les écrans à défilé obligatoire, seule l'apparition est de ce côté.
 // Dans une zone sauvage, seule l'entrée côté village compte (l'autre côté n'est accessible qu'après le gate).
+// Un boss qui garde une porte (guardsDoor) ne protège pas l'arrivée côté porte : la porte n'est franchissable qu'après sa mort.
+const doorGuards = s => s.enemies.filter(e => e.guardsDoor);
 const starts = s => {
     if (s.kind === 'wild') return wildEntries(s);
-    return FORCED.includes(s.id) ? [s.spawn] : [s.spawn, ...arrivals(s)];
+    const behindGuard = a => doorGuards(s).some(g => Math.max(Math.abs(g.x - a.x), Math.abs(g.y - a.y)) <= (g.aggro || 1) + 1);
+    return FORCED.includes(s.id) ? [s.spawn] : [s.spawn, ...arrivals(s).filter(a => !behindGuard(a))];
 };
 // Tuiles d'arrivée dans la zone sauvage venant du village ou du hameau de la région.
 const wildEntries = s => Object.values(SCREENS).filter(o => o.region === s.region && o.kind === 'village')
@@ -63,14 +66,15 @@ function reachable(screen, from, forbidden = new Set()) {
 
 function auraOfAll(screen) {
     const forbidden = new Set();
-    const mark = (px, py) => {
-        for (let dy = -AGGRO_RADIUS; dy <= AGGRO_RADIUS; dy++) {
-            for (let dx = -AGGRO_RADIUS; dx <= AGGRO_RADIUS; dx++) forbidden.add(`${px + dx},${py + dy}`);
+    const mark = (px, py, r) => {
+        for (let dy = -r; dy <= r; dy++) {
+            for (let dx = -r; dx <= r; dx++) forbidden.add(`${px + dx},${py + dy}`);
         }
     };
     screen.enemies.forEach(e => {
-        if (e.kind === 'patrol') buildRoute(e.patrol).forEach(p => mark(p.x, p.y));
-        else mark(e.x, e.y);
+        const r = aggroOf(e);   // 2 sur les cartes agrandies
+        if (e.kind === 'patrol') buildRoute(e.patrol).forEach(p => mark(p.x, p.y, r));
+        else mark(e.x, e.y, r);
     });
     // marcher sur une sortie change d'écran avant tout contrôle de vigilance
     screen.exits.forEach(e => forbidden.delete(`${e.x},${e.y}`));
@@ -100,6 +104,14 @@ const at = (screenId, x, y, patch = {}) => {
     return s;
 };
 const goto = (s, id) => { s.data.screenId = id; };
+// Monde « à l'ancienne » (cartes à leur taille d'origine, aura de 1 case) : les tests de mécanique du moteur s'appuient sur les
+// coordonnées historiques des sanctuaires ; les cartes agrandies ont leurs propres tests (expand / junctions / aquatic).
+const LEGACY = buildLegacyWorld();
+const atL = (screenId, x, y, patch = {}) => {
+    const s = createSession({ screenId, x, y, ...patch }, LEGACY.screens, LEGACY.quests);
+    s.rt.grace = 0;
+    return s;
+};
 // Passage de bord (world/expand.js) : sortie centrale de `id` vers `to`, case juste avant elle et direction pour la franchir.
 const gateOf = (id, to) => SCREENS[id].exits.find(e => e.to === to && !e.door && (e.span ?? 0) === 0);
 const beforeGate = (id, to) => {
@@ -434,11 +446,13 @@ describe('cartes (story.js)', () => {
     test.each(ORDER.filter(id => !FORCED.includes(id)))('%s : on peut traverser sans croiser d\'ennemi', id => {
         const s = SCREENS[id];
         const forbidden = auraOfAll(s);
-        const points = [...arrivals(s), ...s.exits.map(e => ({ x: e.x, y: e.y }))];
+        const guarded = s.exits.filter(ex => doorGuards(s).some(g => g.id === ex.requires));
+        const points = [...starts(s), ...s.exits.filter(ex => !guarded.includes(ex)).map(e => ({ x: e.x, y: e.y }))];
         points.forEach(from => {
             forbidden.delete(`${from.x},${from.y}`);
             const free = reachable(s, from, forbidden);
-            s.exits.forEach(ex => expect(free.has(`${ex.x},${ex.y}`)).toBe(true));
+            // une porte fermée par un boss qui la garde ne se contourne pas : il faut le vaincre
+            s.exits.filter(ex => !doorGuards(s).some(g => g.id === ex.requires)).forEach(ex => expect(free.has(`${ex.x},${ex.y}`)).toBe(true));
         });
     });
 
@@ -689,7 +703,7 @@ describe('quêtes (story.js)', () => {
 });
 
 describe('déplacement et zones de vigilance', () => {
-    const fresh = (patch = {}) => createSession({ ...patch });
+    const fresh = (patch = {}) => createSession({ ...patch }, LEGACY.screens, LEGACY.quests);
 
     test('un nouveau joueur démarre au village de Dongqiao, devant la maison de Hou Yi', () => {
         const s = fresh();
@@ -718,13 +732,13 @@ describe('déplacement et zones de vigilance', () => {
 
     test('distance 1 = combat, distance 2 = pas de combat', () => {
         // Golem de sable en (6,1)
-        const s = at('gobi', 6, 4);
+        const s = atL('gobi', 6, 4);
         expect(tryMove(s, 0, -1)).toEqual({ type: 'moved' });                              // (6,3) : distance 2
         expect(tryMove(s, 0, -1)).toEqual({ type: 'combat', enemyId: 'gobi_colossus' });   // (6,2) : distance 1
     });
 
     test('percuter un ennemi lance le combat même en période de grâce', () => {
-        const s = at('gobi', 6, 2);
+        const s = atL('gobi', 6, 2);
         s.rt.grace = 5;
         expect(tryMove(s, 0, -1)).toEqual({ type: 'combat', enemyId: 'gobi_colossus' });
     });
@@ -772,8 +786,8 @@ describe('déplacement et zones de vigilance', () => {
         enterScreen(s, 'mer_village', { x: 18, y: 6 });
         enterScreen(s, 'mer_wild', { x: 1, y: 6 });
         const alive = aliveEnemies(s).map(e => e.def.id);
-        // un ennemi qui barre un chemin (si la carte en compte encore) ne revient pas, un ennemi libre revient
-        blocked.forEach(id => expect(alive).not.toContain(id));
+        expect(blocked).toContain('mer_w_crab');          // un ennemi qui barre un chemin ne revient pas
+        expect(alive).not.toContain('mer_w_crab');
         expect(alive).toContain('mer_w_cutter');
     });
 
@@ -790,13 +804,14 @@ describe('déplacement et zones de vigilance', () => {
         expect([back.s.data.x, back.s.data.y]).toEqual([back.ex.arrive.x, back.ex.arrive.y]);
         expect(back.s.data.x).toBe(SCREENS.rizieres.w - 2);
         // village → zone sauvage → sanctuaire (gate rempli)
-        const v = at('rizieres_village', 18, 6);
-        expect(tryMove(v, 1, 0, { playerLevel: 1 })).toMatchObject({ type: 'transition', from: 'rizieres_village', to: 'rizieres_wild', firstVisit: true });
-        expect([v.data.x, v.data.y]).toEqual([1, 6]);
+        const vg = atGate('rizieres_village', 'rizieres_wild');
+        const v = vg.s;
+        expect(tryMove(v, vg.dx, vg.dy, { playerLevel: 1 })).toMatchObject({ type: 'transition', from: 'rizieres_village', to: 'rizieres_wild', firstVisit: true });
+        expect([v.data.x, v.data.y]).toEqual([vg.ex.arrive.x, vg.ex.arrive.y]);
         const wg = atGate('rizieres_wild', 'rizieres');
         markEnemyDefeated(wg.s, 'rizieres_warden');
         expect(tryMove(wg.s, wg.dx, wg.dy, { playerLevel: 1 })).toMatchObject({ type: 'transition', from: 'rizieres_wild', to: 'rizieres' });
-        expect([wg.s.data.x, wg.s.data.y]).toEqual([1, 4]);
+        expect([wg.s.data.x, wg.s.data.y]).toEqual([wg.ex.arrive.x, wg.ex.arrive.y]);
     });
 
     test('une porte de maison est signalée (door) et la transition renvoie les événements de quêtes automatiques', () => {
@@ -857,7 +872,7 @@ describe('déplacement et zones de vigilance', () => {
 
     test('les patrouilleurs avancent le long de leur route et font demi-tour', () => {
         const s = fresh({ screenId: 'rizieres', x: 3, y: 4 });
-        const def = SCREENS.rizieres.enemies.find(e => e.id === 'rizieres_guardian');
+        const def = LEGACY.screens.rizieres.enemies.find(e => e.id === 'rizieres_guardian');
         const route = buildRoute(def.patrol);
         expect(route.length).toBe(5);
         tick(s, PATROL_STEP_MS);
@@ -870,7 +885,7 @@ describe('déplacement et zones de vigilance', () => {
     });
 
     test('un patrouilleur qui arrive au contact du joueur lance le combat', () => {
-        const s = at('rizieres', 11, 8);
+        const s = atL('rizieres', 11, 8);
         const events = tick(s, PATROL_STEP_MS * 3);
         expect(events.some(e => e.type === 'combat' && e.enemyId === 'rizieres_guardian')).toBe(true);
     });
@@ -901,7 +916,7 @@ describe('déplacement et zones de vigilance', () => {
         const s = fresh({ screenId: 'rizieres', x: 3, y: 4 });
         markEnemyDefeated(s, 'sun_1');
         s.data.ngPlus = 2;
-        const copy = createSession(JSON.parse(JSON.stringify(s.data)));
+        const copy = createSession(JSON.parse(JSON.stringify(s.data)), LEGACY.screens, LEGACY.quests);
         expect(copy.data.defeated).toContain('sun_1');
         expect(copy.data.screenId).toBe('rizieres');
         expect(copy.data.ngPlus).toBe(2);
@@ -1378,12 +1393,12 @@ describe('dialogues d\'ambiance conditionnels', () => {
 
 describe('showWhen / hideWhen : entités conditionnelles', () => {
     test('Fengmeng phase 2 n\'existe qu\'après la phase 1 : ennemis, aura, entités', () => {
-        const s = at('lune', 8, 4);
+        const s = atL('lune', 8, 4);
         expect(aliveEnemies(s).map(e => e.def.id)).toContain('fengmeng_3a');
         expect(aliveEnemies(s).map(e => e.def.id)).not.toContain('fengmeng_3b');
         expect(entityAt(s, 11, 3)).toBeNull();
         expect(getAuraTiles(s).has('12,2')).toBe(false);     // aura de 3b seule
-        expect(isEntityVisible(s, SCREENS.lune.enemies.find(e => e.id === 'fengmeng_3b'))).toBe(false);
+        expect(isEntityVisible(s, LEGACY.screens.lune.enemies.find(e => e.id === 'fengmeng_3b'))).toBe(false);
 
         markEnemyDefeated(s, 'fengmeng_3a');
         expect(aliveEnemies(s).map(e => e.def.id)).not.toContain('fengmeng_3a');
@@ -1393,7 +1408,7 @@ describe('showWhen / hideWhen : entités conditionnelles', () => {
     });
 
     test('la phase 2 se déclenche aussitôt après la scène, si le joueur est resté à côté', () => {
-        const s = at('lune', 10, 4);
+        const s = atL('lune', 10, 4);
         s.rt.grace = 0;
         expect(tryMove(s, 0, -1).type).toBe('combat');        // (10,3) : dans l'aura de la phase 1
         markEnemyDefeated(s, 'fengmeng_3a');
@@ -1402,7 +1417,7 @@ describe('showWhen / hideWhen : entités conditionnelles', () => {
     });
 
     test('l\'autel n\'existe qu\'après la victoire sur Fengmeng : entityAt, openChest, findPath, rendu', () => {
-        const s = at('lune', 8, 4);
+        const s = atL('lune', 8, 4);
         expect(entityAt(s, 12, 4)).toBeNull();
         expect(openChest(s, 'moon_altar')).toBeNull();
         expect(visibleChests(s).map(c => c.id)).not.toContain('moon_altar');
@@ -1469,9 +1484,9 @@ describe('showWhen / hideWhen : entités conditionnelles', () => {
 
 describe('mirages (illusion)', () => {
     test('entrer dans l\'aura d\'un mirage : pas de combat, il se dissipe', () => {
-        const s = at('gobi', 10, 3);
+        const s = atL('gobi', 10, 3);
         const res = tryMove(s, 0, -1);   // (10,2), à distance 1 de mirage_1 (9,1)
-        const def = SCREENS.gobi.enemies.find(e => e.id === 'mirage_1');
+        const def = LEGACY.screens.gobi.enemies.find(e => e.id === 'mirage_1');
         expect(res).toEqual({ type: 'illusion', enemyId: 'mirage_1', lines: def.illusionLines });
         expect(s.data.defeated).toContain('mirage_1');
         expect(aliveEnemies(s).map(e => e.def.id)).not.toContain('mirage_1');
@@ -1479,7 +1494,7 @@ describe('mirages (illusion)', () => {
     });
 
     test('toucher un mirage : événement illusion, sans déplacement', () => {
-        const s = at('gobi', 9, 2);
+        const s = atL('gobi', 9, 2);
         s.rt.grace = 5;   // même en période de grâce
         const res = tryMove(s, 0, -1);
         expect(res).toMatchObject({ type: 'illusion', enemyId: 'mirage_1' });
@@ -1500,9 +1515,9 @@ describe('mirages (illusion)', () => {
     const isEnemyIllusionGone = (s, id) => !aliveEnemies(s).some(e => e.def.id === id);
 
     test('le vrai soleil des mirages n\'est pas une illusion : le contact lance le combat', () => {
-        const s = at('gobi', 11, 7);
+        const s = atL('gobi', 11, 7);
         expect(tryMove(s, 0, 1)).toEqual({ type: 'combat', enemyId: 'sun_4' });
-        const aura = at('gobi', 11, 6);
+        const aura = atL('gobi', 11, 6);
         expect(tryMove(aura, 0, 1)).toEqual({ type: 'combat', enemyId: 'sun_4' });   // (11,7) est dans son aura
     });
 
@@ -1526,8 +1541,8 @@ describe('soleil protégé (shieldedBy)', () => {
     const pack = ['pack_wolf_a', 'pack_boar', 'pack_tiger', 'pack_wolf_b'];
 
     test('tant que la meute vit : ni aura ni combat, le contact renvoie les lignes d\'explication', () => {
-        const s = at('fauves', 11, 7);
-        const def = SCREENS.fauves.enemies.find(e => e.id === 'sun_7');
+        const s = atL('fauves', 11, 7);
+        const def = LEGACY.screens.fauves.enemies.find(e => e.id === 'sun_7');
         expect(isShielded(s, def)).toBe(true);
         expect(getAuraTiles(s).has('11,7')).toBe(false);
         expect(tick(s, PATROL_STEP_MS)).toEqual([]);
@@ -1539,14 +1554,14 @@ describe('soleil protégé (shieldedBy)', () => {
     });
 
     test('la meute elle-même combat normalement', () => {
-        const s = at('fauves', 10, 5);
+        const s = atL('fauves', 10, 5);
         expect(getAuraTiles(s).has('10,6')).toBe(true);           // aura du loup (9,7)
         expect(tryMove(s, 0, 1)).toEqual({ type: 'combat', enemyId: 'pack_wolf_a' });
     });
 
     test('le bouclier tombe quand tout le groupe est vaincu', () => {
-        const s = at('fauves', 11, 7);
-        const def = SCREENS.fauves.enemies.find(e => e.id === 'sun_7');
+        const s = atL('fauves', 11, 7);
+        const def = LEGACY.screens.fauves.enemies.find(e => e.id === 'sun_7');
         pack.slice(0, 3).forEach(id => markEnemyDefeated(s, id));
         expect(isShielded(s, def)).toBe(true);
         expect(tryMove(s, 0, 1).type).toBe('shielded');
@@ -1805,11 +1820,9 @@ describe('texte d\'arrivée', () => {
     });
 
     test('l\'écran de départ (couvert par le prologue) est visité dès la création : pas de texte au retour', () => {
-        const s = createSession({});
-        expect(s.data.visitedScreens).toEqual([START_SCREEN]);
-        enterScreen(s, 'rizieres_wild', { x: 1, y: 6 });
-        s.rt.grace = 0;
-        const res = tryMove(s, -1, 0, { playerLevel: 1 });
+        expect(createSession({}).data.visitedScreens).toEqual([START_SCREEN]);
+        const g = atGate('rizieres_wild', 'rizieres_village', { visitedScreens: [START_SCREEN] });
+        const res = tryMove(g.s, g.dx, g.dy, { playerLevel: 1 });
         expect(res).toMatchObject({ type: 'transition', to: START_SCREEN, firstVisit: false });
         expect(res.arrival).toBeUndefined();
     });
@@ -1849,17 +1862,17 @@ describe('déplacement au clic (findPath)', () => {
 
     test('contourne les obstacles', () => {
         // maison en (1..3, 1..2) : de (0,1) à (4,1), il faut passer par-dessous
-        const s = atClick('rizieres', 0, 1);
+        const s = atL('rizieres', 0, 1);
         const path = findPath(s, 4, 1);
         expect(path).not.toBeNull();
         expect(path.length).toBeGreaterThan(4);
-        path.forEach(p => expect(isTerrainBlocked(SCREENS.rizieres, p.x, p.y)).toBe(false));
+        path.forEach(p => expect(isTerrainBlocked(LEGACY.screens.rizieres, p.x, p.y)).toBe(false));
         expect(walk(s, path)).toEqual({ type: 'moved' });
         expect([s.data.x, s.data.y]).toEqual([4, 1]);
     });
 
     test('destination invalide : obstacle, liquide, hors carte ou non entière', () => {
-        const s = atClick('rizieres', 3, 4);
+        const s = atL('rizieres', 3, 4);
         expect(findPath(s, 2, 2)).toBeNull();   // maison
         expect(findPath(s, 1, 8)).toBeNull();   // mare
         expect(findPath(s, -1, 4)).toBeNull();
@@ -1886,7 +1899,7 @@ describe('déplacement au clic (findPath)', () => {
     });
 
     test('vers un coffre : la dernière étape l\'ouvre', () => {
-        const s = atClick('rizieres', 3, 7);
+        const s = atL('rizieres', 3, 7);
         const path = findPath(s, 3, 9);
         expect(path).not.toBeNull();
         expect(walk(s, path)).toEqual({ type: 'chest', chestId: 'lotus_cache' });
@@ -1905,24 +1918,24 @@ describe('déplacement au clic (findPath)', () => {
     });
 
     test('vers un ennemi : la dernière étape lance le combat', () => {
-        const s = atClick('rizieres', 3, 4);
+        const s = atL('rizieres', 3, 4);
         const path = findPath(s, 6, 4);
         expect(path[path.length - 1]).toEqual({ x: 6, y: 4 });
         expect(walk(s, path)).toMatchObject({ type: 'combat', enemyId: 'fengmeng_1' });
     });
 
     test('un ennemi n\'est jamais traversé', () => {
-        const s = atClick('fleuve', 1, 4);
+        const s = atL('fleuve', 1, 4);
         const path = findPath(s, 12, 4);
         aliveEnemies(s).forEach(e => expect(path.some(p => p.x === e.x && p.y === e.y)).toBe(false));
     });
 
     test('un mirage ou un boss protégé reste une destination valide (dialogue au lieu du combat)', () => {
-        const g = atClick('gobi', 9, 2);
+        const g = atL('gobi', 9, 2);
         g.rt.grace = 0;
         expect(findPath(g, 9, 1)).toEqual([{ x: 9, y: 1 }]);
         expect(walk(g, findPath(g, 9, 1))).toMatchObject({ type: 'illusion', enemyId: 'mirage_1' });
-        const f = atClick('fauves', 11, 7);
+        const f = atL('fauves', 11, 7);
         expect(walk(f, findPath(f, 11, 8))).toMatchObject({ type: 'shielded', enemyId: 'sun_7' });
     });
 

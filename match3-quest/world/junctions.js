@@ -159,20 +159,21 @@ function placeNearGate(screen, gate, occ, depths, laterals) {
     return null;
 }
 
-// Case de coffre dans le terrain agrandi : libre, ouverte, loin des sorties ; choix déterministe parmi les 6 plus reculées.
+// Case de coffre cachée : libre, ouverte, loin des sorties, de préférence au sud-est de la carte ; choix déterministe parmi les 6 plus reculées.
 export function placeInLand(screen, occ, seedText) {
-    const core = screen.core || { w: 0, h: 0 };
     const exits = screen.exits.filter(e => !e.door);
     const cells = [];
     for (let x = 1; x < screen.w - 1; x++) for (let y = 1; y < screen.h - 1; y++) {
-        if (x < core.w && y < core.h) continue;
         if (!occ.free(x, y) || occ.openNeighbors(x, y) < 3 || inRects(screen.paths, x, y)) continue;
         const dist = Math.min(...exits.map(e => Math.abs(e.x - x) + Math.abs(e.y - y)), 99);
         if (dist < 4) continue;
         cells.push({ x, y, dist });
     }
-    cells.sort((a, b) => b.dist - a.dist || a.x - b.x || a.y - b.y);
-    const top = cells.slice(0, 6);
+    // les textes de quête parlent du « sud-est » : on cache les coffres dans ce quart de la carte quand c'est possible
+    const southEast = cells.filter(c => c.x >= screen.w * 0.5 && c.y >= screen.h * 0.45);
+    const pool = southEast.length ? southEast : cells;
+    pool.sort((a, b) => b.dist - a.dist || a.x - b.x || a.y - b.y);
+    const top = pool.slice(0, 6);
     return top.length ? top[hashSeed(seedText) % top.length] : null;
 }
 
@@ -215,12 +216,39 @@ export function applyJunctions(screens, quests, regionLevel = {}) {
             const pos = placeNearGate(from, gate, occ, [4, 5, 6, 3], [0, 1, -1, 2, -2]);
             if (!pos) throw new Error(`jonction ${j.id} : pas de place pour le gardien`);
             from.enemies.push({
-                id: j.enemy.id, templateId: j.enemy.templateId, name: j.enemy.name, kind: 'sentinel', offset: 2, permanent: true, x: pos.x, y: pos.y
+                id: j.enemy.id, templateId: j.enemy.templateId, name: j.enemy.name, kind: 'sentinel', offset: 2, permanent: true, aggro: 2, x: pos.x, y: pos.y
             });
             requires = j.enemy.id;
         }
         // le verrou couvre toutes les cases du passage ; le chemin de retour reste libre
         from.exits.filter(e => e.to === j.to && e.edge).forEach(e => { e.requires = requires; e.lockedMessage = j.lockedMessage; });
     });
+    guardLockedGates(screens);
     return screens;
+}
+
+/**
+ * Cohérence « boss = porte » : quand un passage n'est ouvert que par la mort d'un ennemi de la même carte, cet ennemi se tient
+ * devant la porte, assez près (2 cases) et avec une vigilance d'au moins 2 pour couvrir les 3 cases du passage et leurs abords :
+ * impossible d'atteindre la porte sans l'affronter. Les ennemis qui barrent déjà la porte (≤ 2 cases) ne bougent pas.
+ */
+export function guardLockedGates(screens) {
+    Object.values(screens).forEach(screen => {
+        const doors = (screen.exits || []).filter(e => e.edge && e.span === 0 && typeof e.requires === 'string');
+        doors.forEach(door => {
+            const enemy = screen.enemies.find(en => en.id === door.requires && en.kind !== 'patrol');
+            if (!enemy) return;
+            enemy.aggro = Math.max(enemy.aggro || 0, 2);
+            enemy.guardsDoor = true;
+            const [ix, iy] = inward(door);
+            const depth = Math.abs(enemy.x - door.x) * Math.abs(ix) + Math.abs(enemy.y - door.y) * Math.abs(iy);
+            const lateral = Math.abs(enemy.x - door.x) * Math.abs(iy) + Math.abs(enemy.y - door.y) * Math.abs(ix);
+            if (depth <= 2 && lateral <= 1) return;
+            // on retire l'ennemi de la carte, puis on cherche la case libre la plus proche de la bouche du passage
+            const rest = { ...screen, enemies: screen.enemies.filter(en => en !== enemy) };
+            const occ = occupancy(rest, screens);
+            const pos = placeNearGate(screen, door, occ, [2, 3, 1], [0, 1, -1, 2, -2]);
+            if (pos) { enemy.x = pos.x; enemy.y = pos.y; }
+        });
+    });
 }
