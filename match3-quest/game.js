@@ -1018,7 +1018,6 @@ function ensureCombatUsableActiveItem() {
     if(!Array.isArray(player.inventory) || player.inventory.length === 0) return;
 
     const activeItem = getActiveInventoryItem();
-    if(activeItem?.type === 'consumable') return;
     if(activeItem?.type === 'reusable' && player.level >= (activeItem.minLevel || 1)) return;
 
     const consumableIndex = player.inventory.findIndex(item => (item?.type === 'consumable' || item?.type === 'reusable') && player.level >= (item.minLevel || 1));

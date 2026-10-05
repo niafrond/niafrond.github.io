@@ -164,6 +164,9 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
         return {success: false, message: "Les reliques sont déjà portées automatiquement"};
     }
 
+    // Plus aucun objet à usage unique : un ancien consommable devient rechargeable avant usage.
+    if(item.type === "consumable") toReusable(item);
+
     // Les objets rechargeables doivent avoir des charges restantes
     if(item.type === "reusable") {
         if(!Number.isInteger(item.chargesLeft)) item.chargesLeft = item.chargesPerCycle;
@@ -247,11 +250,6 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
         message += `Chances de critique +${item.effect.critChance}% pour ce combat. `;
     }
 
-    // Retirer l'objet consommable de l'inventaire
-    if(item.type === "consumable") {
-        player.inventory.splice(itemIndex, 1);
-    }
-    
     return {success: true, message: message};
 }
 
@@ -283,6 +281,23 @@ export function applyArtifactEffects(player) {
             item.applied = true;
         }
     });
+}
+
+// Convertit un ancien consommable (usage unique) en objet rechargeable, sans jamais le détruire.
+// Reprend les champs du catalogue si l'objet y figure, sinon 1 charge rechargée en 3 tours.
+export function toReusable(item) {
+    if(!item || item.type !== 'consumable') return item;
+    const ref = allItems.find(i => i.id === item.id && i.type === 'reusable');
+    const charges = ref?.chargesPerCycle || 1;
+    Object.assign(item, {
+        type: 'reusable',
+        chargesPerCycle: charges,
+        rechargeTurns: ref?.rechargeTurns || 3,
+        chargesLeft: charges,
+        rechargeLeft: 0,
+    });
+    if(ref) item.description = ref.description;
+    return item;
 }
 
 // Nombre de tours pour qu'un objet rechargeable se recharge une fois ses charges épuisées

@@ -80,6 +80,21 @@ describe('recharge en combat : « x tours pour se recharger »', () => {
     });
 });
 
+describe('anciens consommables', () => {
+    test('un consommable inconnu n\'est jamais détruit : il devient rechargeable', () => {
+        const old = { id: 'mystere', name: 'Fiole', type: 'consumable', effect: { heal: 10 } };
+        const player = makePlayer([old]);
+        expect(useItem('mystere', player, null, 0).success).toBe(true);
+        expect(player.inventory).toHaveLength(1);
+        expect(old.type).toBe('reusable');
+        expect(old.chargesLeft).toBe(0);
+        expect(old.rechargeLeft).toBe(3);
+        for (let i = 0; i < 3; i++) tickReusableRecharge(player);
+        expect(old.chargesLeft).toBe(1);
+        expect(useItem('mystere', player, null, 0).success).toBe(true);
+    });
+});
+
 describe('tous les objets utilisables sont rechargeables', () => {
     test('plus aucun consommable à usage unique dans le catalogue', () => {
         expect(allItems.filter(i => i.type === 'consumable')).toEqual([]);
