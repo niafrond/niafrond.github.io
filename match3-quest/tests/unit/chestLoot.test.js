@@ -86,8 +86,8 @@ describe('chestLoot', () => {
         }
     });
 
-    test('rareté des armes : rang dans leur famille', () => {
-        expect(weaponRarity(allWeapons.find(w => w.id === 'rusty_sword'))).toBe('common');
-        expect(weaponRarity(allWeapons.find(w => w.id === 'excalibur'))).toBe('legendary');
+    test('rareté des armes : celle de leur fiche', () => {
+        expect(weaponRarity(allWeapons.find(w => w.id === 'arc_de_fortune'))).toBe('common');
+        expect(weaponRarity(allWeapons.find(w => w.id === 'arc_des_dix_soleils'))).toBe('legendary');
     });
 });

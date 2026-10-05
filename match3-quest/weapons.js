@@ -2,12 +2,7 @@
 
 // Types d'armes
 export const WeaponType = {
-    SWORD: 'sword',
-    AXE: 'axe',
-    DAGGER: 'dagger',
-    MACE: 'mace',
-    BOW: 'bow',
-    STAFF: 'staff'
+    BOW: 'bow'
 };
 
 // Rareté des armes
@@ -20,259 +15,303 @@ export const WeaponRarity = {
 
 // Définition de toutes les armes disponibles dans le jeu
 export const allWeapons = [
-    // === SABRES ET ÉPÉES ===
+    // === ARCS (Hou Yi est archer : toutes les armes sont des arcs) ===
     {
-        id: "rusty_sword",
-        name: "Sabre Dao Rouillé",
-        type: WeaponType.SWORD,
+        id: "arc_de_fortune",
+        name: "Arc de Fortune",
+        type: WeaponType.BOW,
         damage: 10,
         actionPoints: 3,
         minLevel: 1,
         rarity: WeaponRarity.COMMON,
         twoHanded: false,
-        description: "Un vieux sabre dao rouillé mais toujours tranchant"
+        description: "Un vieil arc de bois fendillé, mais la corde tient encore"
     },
     {
-        id: "iron_sword",
-        name: "Sabre Dao de Fer",
-        type: WeaponType.SWORD,
+        id: "arc_leger",
+        name: "Arc Léger",
+        type: WeaponType.BOW,
         damage: 20,
         actionPoints: 4,
         minLevel: 3,
-        rarity: WeaponRarity.COMMON,
+        rarity: WeaponRarity.UNCOMMON,
         twoHanded: false,
-        description: "Un sabre dao solide en fer forgé"
+        description: "Un arc souple et vif, idéal pour tirer sans cesse"
     },
     {
-        id: "steel_sword",
-        name: "Épée Jian d'Acier",
-        type: WeaponType.SWORD,
+        id: "arc_de_precision",
+        name: "Arc de Précision",
+        type: WeaponType.BOW,
         damage: 35,
         actionPoints: 5,
         minLevel: 7,
-        rarity: WeaponRarity.UNCOMMON,
+        rarity: WeaponRarity.RARE,
         twoHanded: false,
-        description: "Une épée jian d'acier trempé, fine et précise"
+        description: "Un arc finement équilibré dont chaque flèche trouve sa cible"
     },
     {
-        id: "dragon_sword",
-        name: "Jian du Dragon-Long",
-        type: WeaponType.SWORD,
+        id: "arc_de_feu",
+        name: "Arc de Feu",
+        type: WeaponType.BOW,
         damage: 60,
         actionPoints: 6,
         minLevel: 12,
-        rarity: WeaponRarity.RARE,
+        rarity: WeaponRarity.LEGENDARY,
         twoHanded: false,
-        description: "Une épée légendaire forgée dans le souffle d'un dragon-long"
+        description: "Un arc laqué de braises : ses flèches s'embrasent en quittant la corde"
     },
     {
-        id: "excalibur",
-        name: "Épée Xuanyuan",
-        type: WeaponType.SWORD,
+        id: "arc_des_dix_soleils",
+        name: "Arc des Dix Soleils",
+        type: WeaponType.BOW,
         damage: 100,
         actionPoints: 7,
         minLevel: 18,
         rarity: WeaponRarity.LEGENDARY,
         twoHanded: false,
-        description: "L'épée mythique de l'Empereur Jaune, brillante d'une lumière divine"
+        description: "L'arc mythique qui abattit neuf soleils, brillant d'une lumière divine"
     },
 
-    // === HACHES ET HALLEBARDES ===
     {
-        id: "wood_axe",
-        name: "Hachette de Bûcheron",
-        type: WeaponType.AXE,
+        id: "arc_de_chasseur",
+        name: "Arc de Chasseur",
+        type: WeaponType.BOW,
         damage: 15,
         actionPoints: 4,
         minLevel: 1,
-        description: "Une hachette simple utilisée pour couper le bambou... et les ennemis"
+        rarity: WeaponRarity.COMMON,
+        description: "Un arc simple de chasseur, bon pour le gibier... et les ennemis"
     },
     {
-        id: "battle_axe",
-        name: "Hache des Steppes",
-        type: WeaponType.AXE,
+        id: "arc_lourd",
+        name: "Arc Lourd",
+        type: WeaponType.BOW,
         damage: 30,
         actionPoints: 5,
         minLevel: 5,
+        rarity: WeaponRarity.UNCOMMON,
         twoHanded: true,
-        description: "Une lourde hache de bataille à deux mains, prisée des cavaliers du Nord"
+        description: "Un arc massif à la corde raide, qui exige deux bras robustes"
     },
     {
-        id: "great_axe",
-        name: "Guandao de Guerre",
-        type: WeaponType.AXE,
+        id: "arc_de_jade",
+        name: "Arc de Jade",
+        type: WeaponType.BOW,
         damage: 50,
         actionPoints: 6,
         minLevel: 10,
+        rarity: WeaponRarity.RARE,
         twoHanded: true,
-        description: "Une hallebarde à large lame courbe qui peut fendre un ennemi en deux"
+        description: "Un grand arc incrusté de jade, dont la corde chante à chaque tir"
     },
     {
-        id: "executioner_axe",
-        name: "Hache du Bourreau Impérial",
-        type: WeaponType.AXE,
+        id: "arc_du_juge_celeste",
+        name: "Arc du Juge Céleste",
+        type: WeaponType.BOW,
         damage: 80,
         actionPoints: 7,
         minLevel: 15,
+        rarity: WeaponRarity.LEGENDARY,
         twoHanded: true,
-        description: "Une hache terrifiante qui glace le sang des ennemis"
+        description: "Un arc terrifiant dont le sifflement glace le sang des ennemis"
     },
 
-    // === POIGNARDS ===
     {
-        id: "bronze_dagger",
-        name: "Poignard de Bronze",
-        type: WeaponType.DAGGER,
+        id: "arc_de_bronze",
+        name: "Arc de Bronze",
+        type: WeaponType.BOW,
         damage: 8,
         actionPoints: 2,
         minLevel: 1,
-        description: "Un poignard de bronze léger et rapide"
+        rarity: WeaponRarity.COMMON,
+        description: "Un petit arc à renforts de bronze, léger et rapide"
     },
     {
-        id: "silver_dagger",
-        name: "Poignard d'Argent",
-        type: WeaponType.DAGGER,
+        id: "arc_d_argent",
+        name: "Arc d'Argent",
+        type: WeaponType.BOW,
         damage: 11,
         actionPoints: 2,
         minLevel: 4,
-        description: "Un poignard élégant en argent pur"
+        rarity: WeaponRarity.UNCOMMON,
+        description: "Un arc élégant incrusté d'argent pur"
     },
     {
-        id: "poisoned_dagger",
-        name: "Poignard Empoisonné",
-        type: WeaponType.DAGGER,
+        id: "arc_venimeux",
+        name: "Arc Venimeux",
+        type: WeaponType.BOW,
         damage: 25,
         actionPoints: 3,
         minLevel: 8,
-        description: "Un poignard enduit d'un venin mortel"
+        rarity: WeaponRarity.RARE,
+        description: "Un arc dont les flèches sont trempées dans un venin mortel"
     },
     {
-        id: "shadow_blade",
-        name: "Lame du Voile Noir",
-        type: WeaponType.DAGGER,
+        id: "arc_du_voile_noir",
+        name: "Arc du Voile Noir",
+        type: WeaponType.BOW,
         damage: 45,
         actionPoints: 4,
         minLevel: 13,
-        description: "Un poignard forgé dans les ténèbres, presque invisible"
+        rarity: WeaponRarity.LEGENDARY,
+        description: "Un arc forgé dans les ténèbres, presque invisible"
     },
 
-    // === MASSES ===
     {
-        id: "club",
-        name: "Gourdin de Bois Dur",
-        type: WeaponType.MACE,
+        id: "arc_d_ecorce",
+        name: "Arc d'Écorce",
+        type: WeaponType.BOW,
         damage: 12,
         actionPoints: 3,
         minLevel: 1,
-        description: "Un simple gourdin en bois dur"
+        rarity: WeaponRarity.COMMON,
+        description: "Un arc rustique taillé dans l'écorce de bois dur"
     },
     {
-        id: "mace",
-        name: "Masse à Pointes",
-        type: WeaponType.MACE,
+        id: "arc_a_pointes",
+        name: "Arc à Pointes",
+        type: WeaponType.BOW,
         damage: 25,
         actionPoints: 4,
         minLevel: 6,
-        description: "Une masse hérissée de pointes acérées"
+        rarity: WeaponRarity.UNCOMMON,
+        description: "Un arc hérissé de pointes, redoutable même au corps à corps"
     },
     {
-        id: "war_hammer",
-        name: "Marteau de Forge",
-        type: WeaponType.MACE,
+        id: "arc_de_forge",
+        name: "Arc de Forge",
+        type: WeaponType.BOW,
         damage: 45,
         actionPoints: 5,
         minLevel: 11,
-        description: "Un marteau lourd capable de briser les armures"
+        rarity: WeaponRarity.RARE,
+        description: "Un arc de métal trempé, capable de percer les armures"
     },
     {
-        id: "thor_hammer",
-        name: "Marteau de Lei Gong",
-        type: WeaponType.MACE,
+        id: "arc_de_lei_gong",
+        name: "Arc de Lei Gong",
+        type: WeaponType.BOW,
         damage: 75,
         actionPoints: 6,
         minLevel: 16,
-        description: "Le marteau du Seigneur du Tonnerre, chargé d'énergie électrique"
+        rarity: WeaponRarity.LEGENDARY,
+        description: "L'arc du Seigneur du Tonnerre, chargé d'énergie électrique"
     },
 
-    // === ARCS ===
     {
-        id: "short_bow",
+        id: "arc_court_de_pecher",
         name: "Arc Court de Pêcher",
         type: WeaponType.BOW,
         damage: 10,
         actionPoints: 2,
         minLevel: 2,
+        rarity: WeaponRarity.COMMON,
         description: "Un petit arc en bois de pêcher, qui chasse les mauvais esprits"
     },
     {
-        id: "long_bow",
+        id: "arc_long_de_bambou",
         name: "Arc Long de Bambou",
         type: WeaponType.BOW,
         damage: 20,
         actionPoints: 3,
         minLevel: 5,
+        rarity: WeaponRarity.UNCOMMON,
         twoHanded: true,
         description: "Un arc long de bambou avec une portée impressionnante"
     },
     {
-        id: "composite_bow",
+        id: "arc_composite_de_corne",
         name: "Arc Composite de Corne",
         type: WeaponType.BOW,
         damage: 35,
         actionPoints: 4,
         minLevel: 9,
+        rarity: WeaponRarity.RARE,
         twoHanded: true,
         description: "Un arc de corne et de tendon, puissant et précis"
     },
     {
-        id: "elven_bow",
+        id: "arc_rouge_celeste",
         name: "Arc Rouge Céleste",
         type: WeaponType.BOW,
         damage: 52,
         actionPoints: 4,
         minLevel: 14,
+        rarity: WeaponRarity.LEGENDARY,
         twoHanded: true,
         description: "Le grand arc rouge de l'archer divin, qui ne manque jamais sa cible"
     },
 
-    // === BÂTONS ===
     {
-        id: "wooden_staff",
-        name: "Bâton de Bambou",
-        type: WeaponType.STAFF,
+        id: "arc_de_bambou",
+        name: "Arc de Bambou",
+        type: WeaponType.BOW,
         damage: 8,
         actionPoints: 2,
         minLevel: 1,
-        description: "Un simple bâton de bambou"
+        rarity: WeaponRarity.COMMON,
+        description: "Un simple arc de bambou souple"
     },
     {
-        id: "magic_staff",
-        name: "Bâton à Talisman",
-        type: WeaponType.STAFF,
+        id: "arc_a_talisman",
+        name: "Arc à Talisman",
+        type: WeaponType.BOW,
         damage: 18,
         actionPoints: 3,
         minLevel: 4,
-        description: "Un bâton orné d'un talisman, imprégné de qi"
+        rarity: WeaponRarity.UNCOMMON,
+        description: "Un arc orné d'un talisman, imprégné de qi"
     },
     {
-        id: "archmage_staff",
-        name: "Bâton du Maître Taoïste",
-        type: WeaponType.STAFF,
+        id: "arc_du_maitre_taoiste",
+        name: "Arc du Maître Taoïste",
+        type: WeaponType.BOW,
         damage: 40,
         actionPoints: 4,
         minLevel: 10,
-        description: "Le bâton d'un grand maître taoïste, pulsant de pouvoir"
+        rarity: WeaponRarity.RARE,
+        description: "L'arc d'un grand maître taoïste, pulsant de pouvoir"
     },
     {
-        id: "staff_of_power",
-        name: "Bâton de l'Immortel",
-        type: WeaponType.STAFF,
+        id: "arc_de_l_immortel",
+        name: "Arc de l'Immortel",
+        type: WeaponType.BOW,
         damage: 65,
         actionPoints: 5,
         minLevel: 15,
-        description: "Un bâton légendaire qui amplifie toute magie"
+        rarity: WeaponRarity.LEGENDARY,
+        description: "Un arc légendaire qui amplifie toute magie"
     }
 ];
+
+// Anciens ids (sabres, haches, bâtons…) → arc équivalent, pour les sauvegardes antérieures.
+export const LEGACY_WEAPON_IDS = {
+    rusty_sword: 'arc_de_fortune',
+    iron_sword: 'arc_leger',
+    steel_sword: 'arc_de_precision',
+    dragon_sword: 'arc_de_feu',
+    excalibur: 'arc_des_dix_soleils',
+    wood_axe: 'arc_de_chasseur',
+    battle_axe: 'arc_lourd',
+    great_axe: 'arc_de_jade',
+    executioner_axe: 'arc_du_juge_celeste',
+    bronze_dagger: 'arc_de_bronze',
+    silver_dagger: 'arc_d_argent',
+    poisoned_dagger: 'arc_venimeux',
+    shadow_blade: 'arc_du_voile_noir',
+    club: 'arc_d_ecorce',
+    mace: 'arc_a_pointes',
+    war_hammer: 'arc_de_forge',
+    thor_hammer: 'arc_de_lei_gong',
+    short_bow: 'arc_court_de_pecher',
+    long_bow: 'arc_long_de_bambou',
+    composite_bow: 'arc_composite_de_corne',
+    elven_bow: 'arc_rouge_celeste',
+    wooden_staff: 'arc_de_bambou',
+    magic_staff: 'arc_a_talisman',
+    archmage_staff: 'arc_du_maitre_taoiste',
+    staff_of_power: 'arc_de_l_immortel',
+};
 
 /**
  * Ajoute les attributs par défaut aux armes (pour rétro-compatibilité)
@@ -301,7 +340,7 @@ export function getAvailableWeapons(playerLevel) {
 
 // Fonction pour obtenir une arme par son ID
 export function getWeaponById(id) {
-    const weapon = allWeapons.find(weapon => weapon.id === id);
+    const weapon = allWeapons.find(weapon => weapon.id === (LEGACY_WEAPON_IDS[id] || id));
     return weapon ? normalizeWeapon(weapon) : null;
 }
 
@@ -310,9 +349,7 @@ export function getWeaponsByType(type) {
     return allWeapons.filter(weapon => weapon.type === type).map(normalizeWeapon);
 }
 
-// Rareté « de boutique » d'une arme : son rang dans sa famille (la plus faible = commune, la 4e et au-delà = légendaire).
-const RANK_RARITY = ['common', 'uncommon', 'rare', 'legendary'];
+// Rareté « de boutique » d'une arme : celle de sa fiche (commune → légendaire).
 export function weaponRarity(weapon) {
-    const family = allWeapons.filter(w => w.type === weapon.type).sort((a, b) => a.minLevel - b.minLevel);
-    return RANK_RARITY[Math.min(family.findIndex(w => w.id === weapon.id), RANK_RARITY.length - 1)] || 'common';
+    return weapon.rarity || 'common';
 }

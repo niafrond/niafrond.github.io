@@ -15,7 +15,7 @@ export const playerClasses = {
         icon: 'yinyang',
         description: 'Hou Yi sur la voie du Tao : talismans, qi et éléments au service de son arc',
         startingStats: { intelligence: 2, stamina: 0 },
-        startingWeaponId: 'wooden_staff'
+        startingWeaponId: 'arc_de_bambou'
     },
     assassin: {
         id: 'assassin',
@@ -23,7 +23,7 @@ export const playerClasses = {
         icon: 'bow',
         description: 'Hou Yi, l\'archer divin : tirs rapides, flèches précises et coups furtifs',
         startingStats: { agility: 2, strength: 1 },
-        startingWeaponId: 'bronze_dagger'
+        startingWeaponId: 'arc_de_bronze'
     },
     templar: {
         id: 'templar',
@@ -31,7 +31,7 @@ export const playerClasses = {
         icon: 'shield',
         description: 'Hou Yi en armure laquée, rempart de l\'empire à la résilience sans faille',
         startingStats: { stamina: 2, morale: 1 },
-        startingWeaponId: 'rusty_sword'
+        startingWeaponId: 'arc_de_fortune'
     },
     barbarian: {
         id: 'barbarian',
@@ -39,12 +39,12 @@ export const playerClasses = {
         icon: 'axe',
         description: 'Hou Yi en fourrures, guerrier du Nord à la force dévastatrice',
         startingStats: { strength: 3 },
-        startingWeaponId: 'wood_axe'
+        startingWeaponId: 'arc_de_chasseur'
     }
 };
 
 // Arme de départ par défaut pour un joueur sans classe ("Sans classe")
-export const DEFAULT_STARTING_WEAPON_ID = 'rusty_sword';
+export const DEFAULT_STARTING_WEAPON_ID = 'arc_de_fortune';
 
 // Exports des sorts de classe (importés depuis spells.js)
 export { 
