@@ -13,6 +13,19 @@ export const WeaponRarity = {
     LEGENDARY: 'legendary'
 };
 
+// Biomes de carte (champ `biome` des cartes/ennemis) → nom affiché.
+export const BIOME_LABELS = {
+    bamboo: 'Bambous', volcano: 'Volcan', paddy: 'Rizières', riverbed: 'Fleuve', fusang: 'Fusang',
+    moon: 'Lune', coast: 'Côte', storm: 'Tonnerre', savanna: 'Fauves', gobi: 'Gobi'
+};
+
+// Certains arcs (champ `biome`) infligent +25 % de dégâts (au moins +2) quand le combat a lieu dans leur biome.
+export const BIOME_WEAPON_BONUS = 0.25;
+export function weaponBiomeBonus(weapon, biome) {
+    if (!weapon || !weapon.biome || weapon.biome !== biome) return 0;
+    return Math.max(2, Math.round(weapon.damage * BIOME_WEAPON_BONUS));
+}
+
 // Définition de toutes les armes disponibles dans le jeu
 export const allWeapons = [
     // === ARCS (Hou Yi est archer : toutes les armes sont des arcs) ===
@@ -34,6 +47,7 @@ export const allWeapons = [
         damage: 20,
         actionPoints: 4,
         minLevel: 3,
+        biome: "coast",
         rarity: WeaponRarity.UNCOMMON,
         twoHanded: false,
         description: "Un arc souple et vif, idéal pour tirer sans cesse"
@@ -45,6 +59,7 @@ export const allWeapons = [
         damage: 35,
         actionPoints: 5,
         minLevel: 7,
+        biome: "riverbed",
         rarity: WeaponRarity.RARE,
         twoHanded: false,
         description: "Un arc finement équilibré dont chaque flèche trouve sa cible"
@@ -56,6 +71,7 @@ export const allWeapons = [
         damage: 60,
         actionPoints: 6,
         minLevel: 12,
+        biome: "volcano",
         rarity: WeaponRarity.LEGENDARY,
         twoHanded: false,
         description: "Un arc laqué de braises : ses flèches s'embrasent en quittant la corde"
@@ -79,6 +95,7 @@ export const allWeapons = [
         damage: 15,
         actionPoints: 4,
         minLevel: 1,
+        biome: "savanna",
         rarity: WeaponRarity.COMMON,
         description: "Un arc simple de chasseur, bon pour le gibier... et les ennemis"
     },
@@ -89,6 +106,7 @@ export const allWeapons = [
         damage: 30,
         actionPoints: 5,
         minLevel: 5,
+        biome: "gobi",
         rarity: WeaponRarity.UNCOMMON,
         twoHanded: true,
         description: "Un arc massif à la corde raide, qui exige deux bras robustes"
@@ -100,6 +118,7 @@ export const allWeapons = [
         damage: 50,
         actionPoints: 6,
         minLevel: 10,
+        biome: "moon",
         rarity: WeaponRarity.RARE,
         twoHanded: true,
         description: "Un grand arc incrusté de jade, dont la corde chante à chaque tir"
@@ -133,6 +152,7 @@ export const allWeapons = [
         damage: 11,
         actionPoints: 2,
         minLevel: 4,
+        biome: "moon",
         rarity: WeaponRarity.UNCOMMON,
         description: "Un arc élégant incrusté d'argent pur"
     },
@@ -143,6 +163,7 @@ export const allWeapons = [
         damage: 25,
         actionPoints: 3,
         minLevel: 8,
+        biome: "paddy",
         rarity: WeaponRarity.RARE,
         description: "Un arc dont les flèches sont trempées dans un venin mortel"
     },
@@ -164,6 +185,7 @@ export const allWeapons = [
         damage: 12,
         actionPoints: 3,
         minLevel: 1,
+        biome: "savanna",
         rarity: WeaponRarity.COMMON,
         description: "Un arc rustique taillé dans l'écorce de bois dur"
     },
@@ -184,6 +206,7 @@ export const allWeapons = [
         damage: 45,
         actionPoints: 5,
         minLevel: 11,
+        biome: "volcano",
         rarity: WeaponRarity.RARE,
         description: "Un arc de métal trempé, capable de percer les armures"
     },
@@ -194,6 +217,7 @@ export const allWeapons = [
         damage: 75,
         actionPoints: 6,
         minLevel: 16,
+        biome: "storm",
         rarity: WeaponRarity.LEGENDARY,
         description: "L'arc du Seigneur du Tonnerre, chargé d'énergie électrique"
     },
@@ -205,6 +229,7 @@ export const allWeapons = [
         damage: 10,
         actionPoints: 2,
         minLevel: 2,
+        biome: "fusang",
         rarity: WeaponRarity.COMMON,
         description: "Un petit arc en bois de pêcher, qui chasse les mauvais esprits"
     },
@@ -215,6 +240,7 @@ export const allWeapons = [
         damage: 20,
         actionPoints: 3,
         minLevel: 5,
+        biome: "bamboo",
         rarity: WeaponRarity.UNCOMMON,
         twoHanded: true,
         description: "Un arc long de bambou avec une portée impressionnante"
@@ -226,6 +252,7 @@ export const allWeapons = [
         damage: 35,
         actionPoints: 4,
         minLevel: 9,
+        biome: "gobi",
         rarity: WeaponRarity.RARE,
         twoHanded: true,
         description: "Un arc de corne et de tendon, puissant et précis"
@@ -249,6 +276,7 @@ export const allWeapons = [
         damage: 8,
         actionPoints: 2,
         minLevel: 1,
+        biome: "bamboo",
         rarity: WeaponRarity.COMMON,
         description: "Un simple arc de bambou souple"
     },
@@ -279,6 +307,7 @@ export const allWeapons = [
         damage: 65,
         actionPoints: 5,
         minLevel: 15,
+        biome: "fusang",
         rarity: WeaponRarity.LEGENDARY,
         description: "Un arc légendaire qui amplifie toute magie"
     }

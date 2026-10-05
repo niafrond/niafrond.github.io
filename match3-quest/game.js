@@ -3,7 +3,7 @@
 import { colors, boardSize } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
-import { allWeapons, getAvailableWeapons, getWeaponById } from "./weapons.js";
+import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
 import { weaknessDamage, ruleForBiome } from "./terrain.js";
 import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
@@ -1615,6 +1615,12 @@ export function useWeapon(hand = 'right'){
     player.combatPoints -= weapon.actionPoints;
     let dmg = weapon.damage + (player.attack || 0);
 
+    const biomeBonus = weaponBiomeBonus(weapon, enemy.biome);
+    if(biomeBonus > 0) {
+        dmg += biomeBonus;
+        log(`${weapon.name} est dans son biome (${BIOME_LABELS[weapon.biome]}) : +${biomeBonus} dégâts.`);
+    }
+
     if((player.statusEffects?.flameblade || 0) > 0) {
         const flameBonus = Math.max(0, Math.floor(player.statusEffects.flameblade));
         dmg += flameBonus;
@@ -3159,7 +3165,7 @@ export function updateWeaponsTab(){
             <span class="weapon-icon">${getWeaponIcon(weapon.type)}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${weapon.name} <em>(${hand === 'left' ? 'main gauche' : 'main droite'}${weapon.twoHanded ? ', deux mains' : ''})</em></span>
-                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}</span>
+                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${weapon.biome ? ` • Bonus : ${BIOME_LABELS[weapon.biome]}` : ''}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
             <button class="weapon-action" onclick="window.unequipWeapon('${hand}')">Retirer</button>
@@ -3200,7 +3206,7 @@ export function updateWeaponsTab(){
             <span class="weapon-icon">${icon}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${weapon.name}</span>
-                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}</span>
+                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${weapon.biome ? ` • Bonus : ${BIOME_LABELS[weapon.biome]}` : ''}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
             <div class="weapon-hand-actions">
