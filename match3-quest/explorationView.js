@@ -841,7 +841,7 @@ export function createExplorationView(cfg) {
     }
 
     // ── Calque de sol mis en cache ─────────────────────────────────────────
-    const GROUND_MARGIN = 32;                 // marge (px CSS) autour de la carte pour l'ombre floue de la falaise
+    const GROUND_MARGIN = 32;                 // marge (px CSS) du calque de sol autour de la carte (plus de falaise : simple tampon)
     const GROUND_MAX_PIXELS = 16e6;           // au-delà, on retombe sur le dessin direct (mémoire)
     let groundCache = null;
 
@@ -879,15 +879,7 @@ export function createExplorationView(cfg) {
         const g = canvas.getContext('2d');
         if (!g) return null;
         g.setTransform(dpr, 0, 0, dpr, 0, 0);
-        // Carte de mer : pas de falaise ni d'ombre autour, l'eau elle-même fait la bordure.
-        if (!screen.aquatic) {
-            g.save();
-            g.shadowColor = 'rgba(0,0,0,0.35)';
-            g.shadowBlur = 18;            // en pixels écran, non affecté par la transformation (comme sur le canvas principal)
-            g.fillStyle = biome.cliff;
-            g.fillRect(M - 4, M - 4, tile * screen.w + 8, tile * screen.h + 8);
-            g.restore();
-        }
+        // Aucune bordure : ni falaise ni ombre autour de la carte (le décor se prolonge jusqu'au bord de l'écran).
         paintGroundCells(g, screen, biome, tile, M, M, inRects);
         groundCache = { screen, biome, tile, dpr, canvas };
         return groundCache;
@@ -905,15 +897,8 @@ export function createExplorationView(cfg) {
         }
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        // fond (carte de mer : de l'eau jusqu'au bord de l'écran, sans cadre autour de la carte)
-        if (screen.aquatic) {
-            ctx.fillStyle = biome.liquid;
-        } else {
-            const sky = ctx.createLinearGradient(0, 0, 0, vh);
-            sky.addColorStop(0, biome.sky[0]);
-            sky.addColorStop(1, biome.sky[1]);
-            ctx.fillStyle = sky;
-        }
+        // fond sans cadre : de l'eau (carte de mer) ou la couleur du sol du biome jusqu'au bord de l'écran
+        ctx.fillStyle = screen.aquatic ? biome.liquid : biome.a;
         ctx.fillRect(0, 0, vw, vh);
 
         // taille de tuile et caméra
@@ -940,22 +925,14 @@ export function createExplorationView(cfg) {
         };
 
         // 1. Sol, chemins, liquides, zones de vigilance
-        // Le fond statique (falaise + ombre floue, sol, chemins, base des liquides) est dessiné une seule fois dans un
-        // calque hors écran puis simplement recopié à chaque image : l'ombre floue (shadowBlur) et des centaines de
-        // fillRect par image étaient le principal coût de rendu sur les vieux appareils. Rendu identique.
+        // Le fond statique (sol, chemins, base des liquides) est dessiné une seule fois dans un calque hors écran puis
+        // simplement recopié à chaque image : des centaines de fillRect par image étaient le principal coût de rendu
+        // sur les vieux appareils. Rendu identique.
         const ground = getGroundLayer(screen, biome, tile, dpr, inRects);
         if (ground) {
             ctx.drawImage(ground.canvas, ox - GROUND_MARGIN, oy - GROUND_MARGIN,
                 ground.canvas.width / dpr, ground.canvas.height / dpr);
         } else {
-            if (!screen.aquatic) {
-                ctx.save();
-                ctx.shadowColor = 'rgba(0,0,0,0.35)';
-                ctx.shadowBlur = 18;
-                ctx.fillStyle = biome.cliff;
-                ctx.fillRect(ox - 4, oy - 4, mapW + 8, mapH + 8);
-                ctx.restore();
-            }
             paintGroundCells(ctx, screen, biome, tile, ox, oy, inRects);
         }
         // Parties animées : reflets des liquides et zones de vigilance qui pulsent
