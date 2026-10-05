@@ -776,6 +776,7 @@ export function restartCombat(){
     player.shieldAbsorbLeft = wornShield?.type === 'shield' ? (wornShield.absorbDamage || 0) : 0;
     player.hasRevive = false;
     player.revivePercent = 0;
+    player.itemBuffs = {};
     player.regenEffect = null;
     player.lifesteal = 0;
     player.manaMultiplier = null;

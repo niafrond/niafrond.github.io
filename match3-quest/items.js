@@ -16,36 +16,36 @@ export const allItems = [
      description:"Le bouclier mythique de l'Empereur Jaune, défense +30, absorbe 100 dégâts", defense:30, absorbDamage:100},
 
     // === OBJETS RECHARGEABLES ===
-    {id:"honey_vial", name:"Flacon de Miel Magique", type:"reusable", minLevel:3, rarity:"uncommon", chargesPerCycle:3, rechargeTurns:4,
-     description:"Soigne 25 HP par utilisation (3 usages, puis rechargé en 4 tours)", effect:{heal:25}},
-    {id:"protective_sachet", name:"Sachet d'Encens Protecteur", type:"reusable", minLevel:6, rarity:"uncommon", chargesPerCycle:2, rechargeTurns:5,
-     description:"Augmente la défense de 10 pour ce combat (2 usages, puis rechargé en 5 tours)", effect:{tempDefense:10}},
-    {id:"energy_stone", name:"Pierre d'Énergie Ravivante", type:"reusable", minLevel:8, rarity:"rare", chargesPerCycle:3, rechargeTurns:6,
-     description:"Restaure 20 mana de chaque couleur (3 usages, puis rechargé en 6 tours)", effect:{mana:20}},
-    {id:"power_talisman", name:"Talisman de Puissance", type:"reusable", minLevel:12, rarity:"rare", chargesPerCycle:2, rechargeTurns:6,
-     description:"Augmente l'attaque de 15 pour ce combat (2 usages, puis rechargé en 6 tours)", effect:{tempAttack:15}},
+    {id:"honey_vial", name:"Flacon de Miel Magique", type:"reusable", minLevel:3, rarity:"uncommon", chargesPerCycle:2, rechargeTurns:8,
+     description:"Soigne 15 HP par utilisation (2 usages, puis rechargé en 8 tours)", effect:{heal:15}},
+    {id:"protective_sachet", name:"Sachet d'Encens Protecteur", type:"reusable", minLevel:6, rarity:"uncommon", chargesPerCycle:1, rechargeTurns:5,
+     description:"Augmente la défense de 5 pour ce combat, sans cumul (rechargé en 5 tours)", effect:{tempDefense:5}},
+    {id:"energy_stone", name:"Pierre d'Énergie Ravivante", type:"reusable", minLevel:8, rarity:"rare", chargesPerCycle:2, rechargeTurns:8,
+     description:"Restaure 6 mana de chaque couleur (2 usages, puis rechargé en 8 tours)", effect:{mana:6}},
+    {id:"power_talisman", name:"Talisman de Puissance", type:"reusable", minLevel:12, rarity:"rare", chargesPerCycle:1, rechargeTurns:6,
+     description:"Augmente l'attaque de 15 pour ce combat, sans cumul (rechargé en 6 tours)", effect:{tempAttack:15}},
 
     // Élixirs, pilules et tisanes (niveau 1+)
-    {id:"healthPotion", name:"Élixir de Vie", type:"reusable", minLevel:1, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:3,
-     description:"Restaure 30 HP (rechargé en 3 tours)", effect:{heal:30}},
-    {id:"manaPotion", name:"Pilule de Qi", type:"reusable", minLevel:1, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:3,
-     description:"Restaure 15 mana de chaque couleur (rechargé en 3 tours)", effect:{mana:15}},
+    {id:"healthPotion", name:"Élixir de Vie", type:"reusable", minLevel:1, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:6,
+     description:"Restaure 25 HP (rechargé en 6 tours)", effect:{heal:25}},
+    {id:"manaPotion", name:"Pilule de Qi", type:"reusable", minLevel:1, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:6,
+     description:"Restaure 4 mana de chaque couleur (rechargé en 6 tours)", effect:{mana:4}},
     {id:"strengthPotion", name:"Pilule de Vigueur", type:"reusable", minLevel:3, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
-     description:"Augmente l'attaque de 10 pour ce combat (rechargé en 4 tours)", effect:{tempAttack:10}},
+     description:"Augmente l'attaque de 10 pour ce combat, sans cumul (rechargé en 4 tours)", effect:{tempAttack:10}},
     
     // Préparations avancées (niveau 5+)
-    {id:"greaterHealthPotion", name:"Grand Élixir de Vie", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
-     description:"Restaure 60 HP (rechargé en 4 tours)", effect:{heal:60}},
-    {id:"greaterManaPotion", name:"Grande Pilule de Qi", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
-     description:"Restaure 25 mana de chaque couleur (rechargé en 4 tours)", effect:{mana:25}},
+    {id:"greaterHealthPotion", name:"Grand Élixir de Vie", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
+     description:"Restaure 45 HP (rechargé en 8 tours)", effect:{heal:45}},
+    {id:"greaterManaPotion", name:"Grande Pilule de Qi", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:7,
+     description:"Restaure 7 mana de chaque couleur (rechargé en 7 tours)", effect:{mana:7}},
     {id:"defensePotion", name:"Talisman de Garde", type:"reusable", minLevel:6, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
-     description:"Augmente la défense de 15 pour ce combat (rechargé en 4 tours)", effect:{tempDefense:15}},
+     description:"Augmente la défense de 8 pour ce combat, sans cumul (rechargé en 4 tours)", effect:{tempDefense:8}},
     
     // Préparations rares (niveau 10+)
     {id:"elixirOfPower", name:"Élixir du Dragon et du Tigre", type:"reusable", minLevel:10, rarity:"rare", actionPoints:3, chargesPerCycle:1, rechargeTurns:5,
-     description:"Augmente attaque et défense de 15 pour ce combat (rechargé en 5 tours)", effect:{tempAttack:15, tempDefense:15}},
+     description:"Augmente attaque de 10 et défense de 8 pour ce combat, sans cumul (rechargé en 5 tours)", effect:{tempAttack:10, tempDefense:8}},
     {id:"phoenixFeather", name:"Plume de Fenghuang", type:"reusable", minLevel:12, rarity:"rare", actionPoints:1, chargesPerCycle:1, rechargeTurns:8,
-     description:"Ressuscite avec 50% HP si vous mourrez (rechargé en 8 tours)", effect:{revive:0.5}},
+     description:"Ressuscite avec 50% HP si vous mourrez, une fois par combat (rechargé en 8 tours)", effect:{revive:0.5}},
     
     // Reliques permanentes (niveau 8+)
     {id:"ringOfVitality", name:"Bracelet de Jade Vital", type:"artifact", minLevel:8, rarity:"rare",
@@ -69,30 +69,30 @@ export const allItems = [
 
 {id:"orbOfWisdom", name:"Orbe de Jade de Sagesse", type:"artifact", minLevel:12, rarity:"rare",
  description:"Augmente mana max de 10 (permanent)", effect:{permMaxMana:10}},
- {id:"timeWarpPotion", name:"Pilule du Temps Suspendu", type:"reusable", minLevel:11, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:6,
- description:"Jouez immédiatement un tour supplémentaire (rechargé en 6 tours)", effect:{extraTurn:1}},
+ {id:"timeWarpPotion", name:"Pilule du Temps Suspendu", type:"reusable", minLevel:11, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:8,
+ description:"Jouez immédiatement un tour supplémentaire (rechargé en 8 tours)", effect:{extraTurn:1}},
 
 {id:"vampiricPotion", name:"Vin Écarlate du Dragon", type:"reusable", minLevel:10, rarity:"rare", actionPoints:2, chargesPerCycle:1, rechargeTurns:5,
- description:"Vous récupérez 30% des dégâts infligés en HP pour ce combat (rechargé en 5 tours)", effect:{lifesteal:0.3}},
+ description:"Vous récupérez 30% des dégâts infligés en HP pour ce combat, sans cumul (rechargé en 5 tours)", effect:{lifesteal:0.3}},
 
-{id:"arcaneSurgePotion", name:"Élixir de Déferlement du Qi", type:"reusable", minLevel:12, rarity:"rare", actionPoints:3, chargesPerCycle:1, rechargeTurns:6,
- description:"Double le mana gagné pendant 3 tours (rechargé en 6 tours)", effect:{manaMultiplier:2, duration:3}},
+{id:"arcaneSurgePotion", name:"Élixir de Déferlement du Qi", type:"reusable", minLevel:12, rarity:"rare", actionPoints:3, chargesPerCycle:1, rechargeTurns:8,
+ description:"Double le mana gagné pendant 3 tours (rechargé en 8 tours)", effect:{manaMultiplier:2, duration:3}},
  {id:"berserkPotion", name:"Vin de la Fureur", type:"reusable", minLevel:6, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
- description:"Augmente attaque de 20 mais réduit défense de 10 pour ce combat (rechargé en 4 tours)", effect:{tempAttack:20, tempDefense:-10}},
+ description:"Augmente attaque de 15 mais réduit défense de 8 pour ce combat, sans cumul (rechargé en 4 tours)", effect:{tempAttack:15, tempDefense:-8}},
 
-{id:"clarityPotion", name:"Thé de Clarté d'Esprit", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:1, chargesPerCycle:1, rechargeTurns:4,
- description:"Restaure 40 mana d'une couleur aléatoire (rechargé en 4 tours)", effect:{randomMana:40}},
+{id:"clarityPotion", name:"Thé de Clarté d'Esprit", type:"reusable", minLevel:5, rarity:"uncommon", actionPoints:1, chargesPerCycle:1, rechargeTurns:5,
+ description:"Restaure 12 mana d'une couleur aléatoire (rechargé en 5 tours)", effect:{randomMana:12}},
 
 {id:"stoneSkinPotion", name:"Pilule de Peau de Bronze", type:"reusable", minLevel:7, rarity:"uncommon", actionPoints:2, chargesPerCycle:1, rechargeTurns:4,
- description:"Réduit les dégâts subis de 20% pendant ce combat (rechargé en 4 tours)", effect:{damageReduction:0.2}},
+ description:"Réduit les dégâts subis de 20% pour ce combat, sans cumul (rechargé en 4 tours)", effect:{damageReduction:0.2}},
  {id:"focusPotion", name:"Infusion de Concentration", type:"reusable", minLevel:2, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:3,
- description:"Augmente les chances de critique de 10% pour ce combat (rechargé en 3 tours)", effect:{critChance:10}},
+ description:"Augmente les chances de critique de 10% pour ce combat, sans cumul (rechargé en 3 tours)", effect:{critChance:10}},
 
-{id:"swiftPotion", name:"Pilule de Célérité", type:"reusable", minLevel:2, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:3,
- description:"Accorde 1 point d'action supplémentaire ce tour (rechargé en 3 tours)", effect:{gainActionPoints:1}},
+{id:"swiftPotion", name:"Pilule de Célérité", type:"reusable", minLevel:2, rarity:"common", actionPoints:1, chargesPerCycle:1, rechargeTurns:4,
+ description:"Accorde 2 points d'action supplémentaires ce tour (rechargé en 4 tours)", effect:{gainActionPoints:2}},
 
-{id:"regenPotion", name:"Gourde de Tisane Médicinale", type:"reusable", minLevel:3, rarity:"common", actionPoints:2, chargesPerCycle:1, rechargeTurns:3,
- description:"Restaure 10 HP par tour pendant 3 tours (rechargé en 3 tours)", effect:{regen:10, duration:3}},
+{id:"regenPotion", name:"Gourde de Tisane Médicinale", type:"reusable", minLevel:3, rarity:"common", actionPoints:2, chargesPerCycle:1, rechargeTurns:6,
+ description:"Restaure 5 HP par tour pendant 3 tours (rechargé en 6 tours)", effect:{regen:5, duration:3}},
 ];
 
 // Chances de drop selon la rareté
@@ -162,6 +162,13 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
     // Les artefacts ne peuvent pas être utilisés (ils sont automatiques)
     if(item.type === "artifact") {
         return {success: false, message: "Les reliques sont déjà portées automatiquement"};
+    }
+
+    // Les effets valables « pour ce combat » ne se cumulent pas (sinon un objet infini rendrait invincible) :
+    // une fois actif, l'objet est refusé jusqu'au prochain combat (restartCombat remet `itemBuffs` à zéro).
+    if(item.type === "reusable" && isCombatLongEffect(item.effect)) {
+        player.itemBuffs = player.itemBuffs || {};
+        if(player.itemBuffs[item.id]) return {success: false, message: "Cet effet est déjà actif pour ce combat"};
     }
 
     // Plus aucun objet à usage unique : un ancien consommable devient rechargeable avant usage.
@@ -250,7 +257,13 @@ export function useItem(itemId, player, enemy, preferredIndex = null) {
         message += `Chances de critique +${item.effect.critChance}% pour ce combat. `;
     }
 
+    if(item.type === "reusable" && isCombatLongEffect(item.effect)) player.itemBuffs[item.id] = true;
     return {success: true, message: message};
+}
+
+// Effets qui durent tout le combat et ne se cumulent donc pas.
+export function isCombatLongEffect(effect) {
+    return Boolean(effect && (effect.tempAttack || effect.tempDefense || effect.lifesteal || effect.damageReduction || effect.critChance || effect.revive));
 }
 
 // Appliquer les effets permanents des artefacts

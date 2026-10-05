@@ -132,7 +132,7 @@ export const allWeapons = [
         id: "silver_dagger",
         name: "Poignard d'Argent",
         type: WeaponType.DAGGER,
-        damage: 15,
+        damage: 11,
         actionPoints: 2,
         minLevel: 4,
         description: "Un poignard élégant en argent pur"
@@ -151,7 +151,7 @@ export const allWeapons = [
         name: "Lame du Voile Noir",
         type: WeaponType.DAGGER,
         damage: 45,
-        actionPoints: 3,
+        actionPoints: 4,
         minLevel: 13,
         description: "Un poignard forgé dans les ténèbres, presque invisible"
     },
@@ -228,7 +228,7 @@ export const allWeapons = [
         id: "elven_bow",
         name: "Arc Rouge Céleste",
         type: WeaponType.BOW,
-        damage: 55,
+        damage: 52,
         actionPoints: 4,
         minLevel: 14,
         twoHanded: true,

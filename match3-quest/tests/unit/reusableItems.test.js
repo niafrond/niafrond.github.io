@@ -11,7 +11,7 @@ describe('objets rechargeables', () => {
         const player = makePlayer([vial]);
         const res = useItem('honey_vial', player, null, 0);
         expect(res.success).toBe(true);
-        expect(player.hp).toBe(35);
+        expect(player.hp).toBe(10 + vial.effect.heal);
         expect(vial.chargesLeft).toBe(vial.chargesPerCycle - 1);
         expect(player.inventory).toHaveLength(1);
     });
@@ -47,7 +47,7 @@ describe('recharge en combat : « x tours pour se recharger »', () => {
         expect(vial.rechargeLeft).toBe(vial.rechargeTurns);
         const refus = useItem('honey_vial', player, null, 0);
         expect(refus.success).toBe(false);
-        expect(refus.message).toMatch(/recharge encore 4 tours/);
+        expect(refus.message).toMatch(new RegExp(`recharge encore ${vial.rechargeTurns} tours`));
         for (let t = 1; t < vial.rechargeTurns; t++) {
             expect(tickReusableRecharge(player)).toEqual([]);
             expect(vial.chargesLeft).toBe(0);
