@@ -1,5 +1,10 @@
 // Gestionnaire de sauvegarde/chargement de parties (export/import JSON)
 import { allItems, toReusable } from './items.js';
+import { getWeaponById } from './weapons.js';
+import { getSpellById, getClassSpellById } from './spells.js';
+
+// Format 2 : export compact (voir sanitizePlayer). Les sauvegardes sans `format` contiennent l'objet joueur complet.
+const SAVE_FORMAT = 2;
 
 /**
  * Métadonnées de sauvegarde
@@ -26,6 +31,7 @@ export function exportSaveToFile(player, gameVersion = "1.0.0") {
         // Créer les métadonnées
         const metadata = {
             version: gameVersion,
+            format: SAVE_FORMAT,
             timestamp: Date.now(),
             playerName: player.name || "Héros",
             level: player.level || 1,
@@ -39,7 +45,7 @@ export function exportSaveToFile(player, gameVersion = "1.0.0") {
         };
 
         // Convertir en JSON
-        const json = JSON.stringify(saveData, null, 2);
+        const json = JSON.stringify(saveData);
         const blob = new Blob([json], { type: 'application/json' });
 
         // Générer un nom de fichier
@@ -97,7 +103,8 @@ export async function importSaveFromFile(file) {
                     }
 
                     // Valider et nettoyer le joueur
-                    const player = validateAndRestorePlayer(saveData.player);
+                    const raw = saveData.metadata.format >= 2 ? expandPlayer(saveData.player) : saveData.player;
+                    const player = validateAndRestorePlayer(raw);
                     if (!player) {
                         resolve({ success: false, message: "Données du joueur corrompues" });
                         return;
@@ -147,43 +154,111 @@ export function downloadSaveFile(blob, filename) {
 function getProgressString(player) {
     if (!player) return "Nouveau jeu";
 
-    // Déterminer la progression selon les données du joueur
-    if (player.exploration?.ended) {
-        return "Partie terminée";
-    }
+    const ex = player.exploration;
+    if (ex?.ended) return "Partie terminée";
 
-    if (player.exploration?.currentQuest) {
-        return `Quête: ${player.exploration.currentQuest}`;
-    }
-
-    if (player.exploration?.currentScreen) {
-        return `Exploration: ${player.exploration.currentScreen}`;
-    }
-
-    return `Niveau ${player.level || 1}`;
+    const parts = [`Niveau ${player.level || 1}`];
+    const quests = Object.values(ex?.quests || {});
+    const done = quests.filter(s => s === 'done').length;
+    const active = quests.filter(s => s === 'active').length;
+    if (done) parts.push(`${done} quête${done > 1 ? 's' : ''} terminée${done > 1 ? 's' : ''}`);
+    if (active) parts.push(`${active} en cours`);
+    const defeated = Array.isArray(ex?.defeated) ? ex.defeated.length : 0;
+    if (defeated) parts.push(`${defeated} monstre${defeated > 1 ? 's' : ''} vaincu${defeated > 1 ? 's' : ''}`);
+    return parts.join(' · ');
 }
 
+/** Garde les champs non vides (listes/objets vides, 0, false, null sont omis : les défauts du jeu les recréent). */
+function compact(obj) {
+    const out = {};
+    for (const [key, value] of Object.entries(obj)) {
+        if (value === undefined || value === null || value === false || value === 0) continue;
+        if (Array.isArray(value) && value.length === 0) continue;
+        if (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0) continue;
+        out[key] = value;
+    }
+    return out;
+}
+
+const ids = list => (Array.isArray(list) ? list.map(x => x?.id).filter(Boolean) : []);
+
 /**
- * Nettoie les données du joueur avant export (supprime les données temporaires)
+ * Extrait de l'objet joueur ce qui compose réellement la partie : héros, stats, équipement,
+ * progression (monstres vaincus, quêtes, coffres, régions). Le catalogue (armes, sorts) n'est
+ * stocké que par identifiant ; mana, effets de combat, caches et valeurs dérivées sont exclus.
  * @param {Object} player - L'objet joueur
  * @returns {Object}
  */
 function sanitizePlayer(player) {
-    const sanitized = { ...player };
+    const ex = player.exploration && typeof player.exploration === 'object' ? player.exploration : null;
+    const arena = ex?.arena;
+    return compact({
+        name: player.name,
+        class: player.class,
+        level: player.level,
+        xp: player.xp,
+        unspentLevelPoints: player.unspentLevelPoints,
+        growthLevel: player.growthLevel,
+        hp: player.hp,
+        maxHp: player.maxHp,
+        attack: player.attack,
+        defense: player.defense,
+        attributes: compact(player.attributes || {}),
+        gold: player.gold,
+        mount: player.mount,
+        abilities: player.abilities,
+        activeSpells: ids(player.activeSpells),
+        weapons: ids(player.weapons),
+        equippedWeapon: player.equippedWeapon?.id,
+        equipment: compact({ leftHand: player.equipment?.leftHand, item: player.equipment?.item }),
+        inventory: player.inventory,
+        activeInventoryIndex: player.activeInventoryIndex,
+        merchantSold: player.merchantSold,
+        defeatedBossTiers: player.defeatedBossTiers,
+        bossLossStreak: player.bossLossStreak,
+        visitedZoneIds: player.worldMap?.visitedZoneIds,
+        currentZoneId: player.worldMap?.currentZoneId,
+        exploration: ex && compact({
+            screenId: ex.screenId,
+            x: ex.x,
+            y: ex.y,
+            defeated: ex.defeated,
+            openedChests: ex.openedChests,
+            quests: ex.quests,
+            visitedScreens: ex.visitedScreens,
+            talked: ex.talked,
+            waypoints: ex.waypoints,
+            tracked: ex.tracked,
+            introSeen: ex.introSeen,
+            ended: ex.ended,
+            ngPlus: ex.ngPlus,
+            arena: arena && compact({
+                cleared: arena.cleared,
+                best: arena.best,
+                wins: arena.wins,
+                returnTo: arena.returnTo
+            })
+        })
+    });
+}
 
-    // Supprimer les données temporaires de combat
-    delete sanitized.combatInProgress;
-    delete sanitized.tempAttack;
-    delete sanitized.tempDefense;
-    delete sanitized.tempCritChance;
-    delete sanitized.shieldAbsorbLeft;
-
-    // Supprimer les états temporaires
-    delete sanitized.hasRevive;
-    delete sanitized.damageReduction;
-    delete sanitized.lifesteal;
-
-    return sanitized;
+/**
+ * Reconstitue un objet joueur utilisable par loadGameData() depuis un export compact (format 2).
+ * @param {Object} data - Le contenu `player` de la sauvegarde
+ * @returns {Object}
+ */
+function expandPlayer(data) {
+    const player = { ...data };
+    const spell = id => getSpellById(id) || getClassSpellById(id);
+    player.activeSpells = (data.activeSpells || []).map(spell).filter(Boolean);
+    player.spells = player.activeSpells;
+    player.weapons = (data.weapons || []).map(getWeaponById).filter(Boolean);
+    player.equippedWeapon = (data.equippedWeapon && getWeaponById(data.equippedWeapon)) || null;
+    player.equipment = { rightHand: player.equippedWeapon, leftHand: null, item: null, ...(data.equipment || {}) };
+    player.worldMap = { currentZoneId: data.currentZoneId ?? null, visitedZoneIds: data.visitedZoneIds || [] };
+    delete player.visitedZoneIds;
+    delete player.currentZoneId;
+    return player;
 }
 
 /**
