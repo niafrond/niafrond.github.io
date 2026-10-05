@@ -2913,6 +2913,13 @@ export function getCombatMusicOptions() {
     return enemy.isBoss ? { boss: enemy.name } : { variant: enemy.name };
 }
 
+// Fond de la page de combat : teinte et motif du biome (CSS `body[data-combat-biome]` de retro.css).
+export function setCombatBackdrop(biome){
+    if(typeof document === 'undefined') return;
+    if(biome && BIOME_LABELS[biome]) document.body.dataset.combatBiome = biome;
+    else delete document.body.dataset.combatBiome;
+}
+
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
 
@@ -2939,6 +2946,7 @@ export function newEnemy(selectedEnemy = null){
     }
     applyDuelRulesAtCombatStart();
     setBiomeRule(ruleForBiome(enemy.biome));
+    setCombatBackdrop(enemy.biome);
     applyTerrainPrep();
     if(enemy.spells.length > 0){
         log(`L'ennemi dispose de sorts : ${enemy.spells.map(s => s.name).join(", ")}`);

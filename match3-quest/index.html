@@ -228,6 +228,8 @@
     function switchTab(tabName, clickEvent) {
         // Importer gameState depuis game.js
         import('./game.js').then(module => {
+            // Fond du biome uniquement sur la page de combat
+            module.setCombatBackdrop(tabName === 'combat' && module.gameState.combatState === 'active' ? module.enemy?.biome : null);
             // Empêcher l'accès aux onglets Armes et Sorts pendant le combat
             if(module.gameState.combatState === 'active' && (tabName === 'weapons' || tabName === 'spells')) {
                 module.log('Vous ne pouvez pas accéder à cet onglet pendant le combat !');

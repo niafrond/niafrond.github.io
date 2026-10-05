@@ -625,3 +625,16 @@ body.rt .carnet-region {
 body.rt .carnet-tab.on,
 body.rt .carnet-chip.on { background: var(--rt-gold); color: var(--rt-ink); }
 body.rt .explore-quest.tracked { border-color: var(--rt-gold); box-shadow: 0 3px 0 var(--rt-ink), 0 0 0 2px var(--rt-gold); }
+
+/* ── Fond de la page de combat selon le biome (data-combat-biome posé par game.js / switchTab) ───────────── */
+body.rt[data-combat-biome] { transition: background-color .4s; }
+body.rt[data-combat-biome="bamboo"]   { --rt-bg: #1f3a24; background-image: repeating-linear-gradient(90deg, rgba(120,190,110,.16) 0 6px, transparent 6px 22px), repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 60px); background-size: auto; background-position: 0 0; }
+body.rt[data-combat-biome="gobi"]     { --rt-bg: #7a5a30; background-image: radial-gradient(rgba(240,215,150,.16) 20%, transparent 21%), radial-gradient(rgba(60,35,10,.18) 20%, transparent 21%); background-size: 22px 22px, 22px 22px; background-position: 0 0, 11px 11px; }
+body.rt[data-combat-biome="savanna"]  { --rt-bg: #8a7132; background-image: repeating-linear-gradient(60deg, rgba(235,205,110,.18) 0 3px, transparent 3px 14px); background-size: auto; background-position: 0 0; }
+body.rt[data-combat-biome="volcano"]  { --rt-bg: #2b0f0d; background-image: radial-gradient(circle at 20% 80%, rgba(255,90,30,.35), transparent 40%), radial-gradient(circle at 80% 90%, rgba(255,140,40,.25), transparent 35%), repeating-linear-gradient(45deg, rgba(255,80,20,.08) 0 4px, transparent 4px 18px); background-size: auto; background-position: 0 0; }
+body.rt[data-combat-biome="paddy"]    { --rt-bg: #3a6a30; background-image: linear-gradient(rgba(190,230,120,.18) 2px, transparent 2px), linear-gradient(90deg, rgba(190,230,120,.18) 2px, transparent 2px); background-size: 28px 28px; background-position: 0 0; }
+body.rt[data-combat-biome="riverbed"] { --rt-bg: #5e4c2e; background-image: repeating-radial-gradient(circle at 50% 120%, rgba(110,190,200,.16) 0 4px, transparent 4px 16px); background-size: auto; background-position: 0 0; }
+body.rt[data-combat-biome="coast"]    { --rt-bg: #1d5fa0; background-image: repeating-radial-gradient(circle at 50% 140%, rgba(255,255,255,.16) 0 3px, transparent 3px 14px); background-size: auto; background-position: 0 0; }
+body.rt[data-combat-biome="storm"]    { --rt-bg: #2b2748; background-image: repeating-linear-gradient(105deg, rgba(190,190,255,.12) 0 2px, transparent 2px 12px), radial-gradient(circle at 70% 10%, rgba(255,240,150,.2), transparent 30%); background-size: auto; background-position: 0 0; }
+body.rt[data-combat-biome="fusang"]   { --rt-bg: #8a6a1e; background-image: radial-gradient(rgba(255,235,150,.28) 18%, transparent 19%), radial-gradient(rgba(255,170,60,.18) 18%, transparent 19%); background-size: 26px 26px; background-position: 0 0, 13px 13px; }
+body.rt[data-combat-biome="moon"]     { --rt-bg: #151a4a; background-image: radial-gradient(circle at 80% 15%, rgba(235,240,255,.35), transparent 22%), radial-gradient(rgba(255,255,255,.35) 6%, transparent 7%); background-size: auto, 38px 38px; background-position: 0 0; }
