@@ -72,7 +72,7 @@ export function renderMerchant(npc, card, hooks = {}) {
         card.innerHTML = `
             <h3>${svgIcon('coin')} ${escapeHtml(npc.name)}</h3>
             <div class="carnet-tabs"><button type="button" class="carnet-tab" data-mode="buy">Acheter</button><button type="button" class="carnet-tab on" data-mode="sell">Vendre</button></div>
-            <p class="shop-subtitle">Le marchand rachète à bas prix. Le matériel activé reste dans votre sac.</p>
+            <p class="shop-subtitle">Le matériel activé reste dans votre sac.</p>
             <div class="shop-gold-display">${svgIcon('coin')} Or disponible : <strong>${player.gold || 0}</strong></div>
             ${note ? `<p class="merchant-note">${escapeHtml(note)}</p>` : ''}
             ${entries.length ? entries.map(sellRow).join('') : '<p class="shop-empty">Vous n\'avez rien à vendre.</p>'}
@@ -89,7 +89,7 @@ export function renderMerchant(npc, card, hooks = {}) {
         card.innerHTML = `
             <h3>${svgIcon('coin')} ${escapeHtml(npc.name)}</h3>
             <div class="carnet-tabs"><button type="button" class="carnet-tab on" data-mode="buy">Acheter</button><button type="button" class="carnet-tab" data-mode="sell">Vendre</button></div>
-            <p class="shop-subtitle">${escapeHtml(npc.title || 'Marchand')} — les belles pièces coûtent cher.</p>
+            <p class="shop-subtitle">${escapeHtml(npc.title || 'Marchand')}</p>
             <div class="shop-gold-display">${svgIcon('coin')} Or disponible : <strong>${player.gold || 0}</strong></div>
             ${note ? `<p class="merchant-note">${escapeHtml(note)}</p>` : ''}
             ${sections || '<p class="shop-empty">Le marchand a tout vendu.</p>'}

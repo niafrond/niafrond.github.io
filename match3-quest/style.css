@@ -1570,32 +1570,6 @@ progress.enemy-bar::-webkit-progress-value {
     color: #a8692f;
 }
 
-/* pendant un dialogue, l'aide laisse la place à la boîte de texte */
-.explore-dialog.visible ~ .explore-help {
-    display: none;
-}
-
-.explore-help {
-    position: absolute;
-    left: 50%;
-    bottom: 6px;
-    transform: translateX(-50%);
-    width: min(900px, calc(100% - 20px));
-    margin: 0;
-    padding: 2px 8px;
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.45);
-    color: #f3f4f6;
-    font-size: 0.72em;
-    text-align: center;
-    line-height: 1.3;
-    pointer-events: none;
-}
-
-/* Écran tactile : pas de place pour l'aide clavier. */
-@media (hover: none), (pointer: coarse) {
-    .explore-help { display: none; }
-}
 @media (max-width: 560px) {
     .explore-hud-buttons button span { display: none; }
     .explore-title { font-size: 0.8em; }
