@@ -247,7 +247,7 @@
     window.switchTab = switchTab;
 </script>
 <script type="module">
-    import { equipSpell, unequipSpell, equipWeapon, unequipWeapon, abandonCombat, useInventoryItem, discardInventoryItem, buyWeapon } from './game.js';
+    import { equipSpell, unequipSpell, equipWeapon, unequipWeapon, abandonCombat, useInventoryItem, discardInventoryItem } from './game.js';
     window.equipSpell = equipSpell;
     window.unequipSpell = unequipSpell;
     window.equipWeapon = equipWeapon;
@@ -255,7 +255,6 @@
     window.abandonCombat = abandonCombat;
     window.useInventoryItem = useInventoryItem;
     window.discardInventoryItem = discardInventoryItem;
-    window.buyWeapon = buyWeapon;
     
     // Attacher le listener au bouton Abandonner
     document.getElementById('abandon-combat-btn')?.addEventListener('click', () => {
