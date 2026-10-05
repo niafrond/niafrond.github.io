@@ -144,6 +144,12 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     };
 
     let screen = screens[data.screenId];
+    // Sauvegarde importée sans position : le héros apparaît comme après un voyage rapide (pierre du terrain, sinon entrée).
+    if (screen && saved && typeof saved === 'object' && saved.screenId && !Number.isInteger(saved.x)) {
+        const spot = screen.waypoint?.spot || screen.spawn;
+        data.x = spot.x;
+        data.y = spot.y;
+    }
     if (!screen || isTerrainBlocked(screen, data.x, data.y, canWalkOnWater(session))) {
         data.screenId = START_SCREEN;
         screen = screens[START_SCREEN];

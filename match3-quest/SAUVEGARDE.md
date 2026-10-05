@@ -24,7 +24,7 @@ Toutes les informations du joueur sont sauvegardées, notamment :
 
 ## Export / import fichier
 
-Options → « Sauvegarde (fichier) ». L'export (format 2) ne contient que l'utile : héros et stats, sorts équipés et armes (par identifiant), inventaire, or, aptitudes, monstres vaincus, quêtes terminées / en cours, coffres ouverts, écrans et régions découverts, boss, arène, position. Mana, effets temporaires et valeurs recalculées ne sont pas exportés. Les anciens exports restent importables.
+Options → « Sauvegarde (fichier) ». L'export (format 2) ne contient que l'utile : héros et stats, sorts équipés et armes (par identifiant), inventaire, or, aptitudes, monstres vaincus, quêtes terminées / en cours, coffres ouverts, écrans et régions découverts, boss, arène, terrain courant (le héros reprend sur la pierre de voyage du terrain, pas à la case exacte). Mana, effets temporaires et valeurs recalculées ne sont pas exportés. Les anciens exports restent importables.
 
 ## Sauvegarde automatique
 

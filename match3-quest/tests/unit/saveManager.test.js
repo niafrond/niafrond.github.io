@@ -155,6 +155,9 @@ describe('Save Manager', () => {
             expect(res.player.exploration.quests).toEqual({ q1: 'done', q2: 'active' });
             expect(res.player.exploration.openedChests).toEqual(['c1']);
             expect(res.player.exploration.observed).toBeUndefined();
+            expect(res.player.exploration.screenId).toBe('village_1');
+            expect(res.player.exploration.x).toBeUndefined();
+            expect(res.player.exploration.y).toBeUndefined();
             expect(res.metadata.progress).toContain('1 quête terminée');
             expect(res.metadata.progress).toContain('2 monstres vaincus');
         });

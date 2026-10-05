@@ -923,6 +923,11 @@ describe('déplacement et zones de vigilance', () => {
     test('une ancienne sauvegarde sans ngPlus, ou corrompue, retombe sur la maison', () => {
         expect(createSession({ screenId: 'rizieres', x: 3, y: 4 }).data.ngPlus).toBe(0);
         expect(createSession({ ngPlus: -3 }).data.ngPlus).toBe(0);
+        const stone = Object.values(SCREENS).find(sc => sc.waypoint && sc.waypoint.spot);
+        if (stone) {
+            const arrived = createSession({ screenId: stone.id });   // sauvegarde importée sans position
+            expect({ x: arrived.data.x, y: arrived.data.y }).toEqual(stone.waypoint.spot);
+        }
         expect(createSession({ ngPlus: 'beaucoup' }).data.ngPlus).toBe(0);
         const s = createSession({ screenId: 'nulle-part', x: 99, y: 99 });
         expect(s.data.screenId).toBe(START_SCREEN);

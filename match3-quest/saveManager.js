@@ -220,8 +220,6 @@ function sanitizePlayer(player) {
         currentZoneId: player.worldMap?.currentZoneId,
         exploration: ex && compact({
             screenId: ex.screenId,
-            x: ex.x,
-            y: ex.y,
             defeated: ex.defeated,
             openedChests: ex.openedChests,
             quests: ex.quests,
