@@ -1,9 +1,10 @@
 import { icon } from "./icons.js";
 import { generateBoard, renderBoard } from "./board.js";
-import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu } from "./game.js";
+import { updateStats, createSpellButtons, newEnemy, restartCombat, updateAvailableSpells, updatePlayerStatsTab, createWeaponButton, updateAvailableWeapons, player, saveUpdate, log, clearSaveData, startNewCombat, updateInventoryTab, grantStartingWeapon, grantChestLoot, combatHooks, consumeBoardBoost, getCombatMusicScene, getCombatMusicOptions, grantExplorationXP, showAttributeMenu } from "./game.js";
 import { rollChestLoot } from "./chestLoot.js";
 import { getAllClasses, playerClasses, DEFAULT_STARTING_WEAPON_ID } from "./classes.js";
-import { createMapEnemy } from "./enemies.js";
+import { createMapEnemy, weakColorOfTemplate } from "./enemies.js";
+import { colorName } from "./terrain.js";
 import { playTitleScreen, playPrologueAnimation } from "./cinematics.js";
 import { COMBAT_INTRO_MS, initializeAudioUI, playSfx, primeAudioFromGesture, getSharedAudioContext, getMusicVolume, isMusicMuted } from "./sound.js";
 import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
@@ -150,6 +151,7 @@ function init() {
         setSaved: data => { player.exploration = data; },
         getHero: () => ({ classId: player.class, name: player.name, mount: player.mount || null }),
         getPlayerLevel: () => player.level,
+        getWeakness: templateId => { const c = weakColorOfTemplate(templateId); return c ? colorName(c) : null; },
         onEncounter: encounter => startEncounterCombat(encounter),
         onGold: amount => { player.gold = (player.gold || 0) + amount; },
         onChestLoot: ev => grantChestLoot(rollChestLoot(ev.chest, ev.screen, player)),
@@ -255,6 +257,7 @@ function init() {
         }
         startNewCombat(createMapEnemy(encounter));
         generateBoard();
+        consumeBoardBoost();
         renderBoard();
         updateStats();
     };

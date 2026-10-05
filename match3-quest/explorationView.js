@@ -76,7 +76,8 @@ const hash = (x, y) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 
  *  getSaved()/setSaved(data)  lecture / écriture de player.exploration
  *  getHero()                  { classId, name, mount? } du personnage (mount : 'horse' = déplacements deux fois plus rapides)
  *  getPlayerLevel()           niveau courant
- *  onEncounter(encounter)     lance le combat
+ *  onEncounter(encounter)     lance le combat (encounter.prep : préparation du terrain, voir terrain.js)
+ *  getWeakness(templateId)    nom de la faiblesse d'un ennemi (observation), facultatif
  *  onGold(amount)             crédite de l'or
  *  onXp(amount)               crédite de l'expérience (récompenses de quêtes)
  *  onSave()                   sauvegarde la partie (aussi après une Nouvelle Partie +)
@@ -605,6 +606,7 @@ export function createExplorationView(cfg) {
         if (!enc) return;
         if (opts.tutorial) enc.tutorial = true;
         session.rt.pendingEnemyId = enemyId;
+        if (enc.prep?.lines?.length) toast(enc.prep.lines.join(' '), 4500);
         held = null;
         walk = null;
         inCombat = true;
@@ -629,6 +631,15 @@ export function createExplorationView(cfg) {
             case 'chest': {
                 const chest = X.openChest(session, res.chestId);
                 if (chest) processEvents(chest.events);
+                break;
+            }
+            case 'alert':
+                toast(res.message, 3500);
+                break;
+            case 'observed': {
+                const weak = cfg.getWeakness?.(res.templateId);
+                toast(weak ? `Vous observez ${res.name} : faiblesse = ${weak}.` : `Vous observez ${res.name} : une faille dans sa garde.`, 4500);
+                cfg.onSave();
                 break;
             }
             case 'illusion':
@@ -1022,6 +1033,7 @@ export function createExplorationView(cfg) {
         }
         (screen.buildings || []).forEach(b => items.push({ depth: b.y + b.h - 0.5, kind: 'building', b, x: b.x, y: b.y }));
         if (screen.waypoint) items.push({ depth: screen.waypoint.y + 0.1, kind: 'waypoint', x: screen.waypoint.x, y: screen.waypoint.y });
+        (screen.spots || []).forEach(sp => items.push({ depth: sp.y + 0.05, kind: 'spot', sp, x: sp.x, y: sp.y }));
         X.visibleNpcs(session).forEach(n => items.push({ depth: n.y + 0.1, kind: 'npc', n, x: n.x, y: n.y }));
         X.visibleChests(session).forEach(c => items.push({ depth: c.y + 0.1, kind: 'chest', c, x: c.x, y: c.y }));
         X.aliveEnemies(session).forEach(e => {
@@ -1057,6 +1069,50 @@ export function createExplorationView(cfg) {
                     if (hm) {
                         const top = P(it.b.x + it.b.w / 2, it.b.y);
                         drawMarker(top.x, top.y - tile * 0.28 - 4 * Math.abs(Math.sin(now / 300)), hm.marker, tile, 1.35);
+                    }
+                    break;
+                }
+                case 'spot': {
+                    // préparation du terrain (terrain.js) : hautes herbes, piège, cloche, belvédère
+                    const feet = c.y + tile * 0.3;
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#2b1b17';
+                    if (it.sp.kind === 'tallGrass') {
+                        ctx.strokeStyle = '#2f7a2f';
+                        for (let k = -2; k <= 2; k++) {
+                            ctx.beginPath();
+                            ctx.moveTo(c.x + k * tile * 0.13, feet);
+                            ctx.lineTo(c.x + k * tile * 0.13 + (k % 2 ? 3 : -3), feet - tile * (0.38 + 0.05 * (k % 2)));
+                            ctx.stroke();
+                        }
+                    } else if (it.sp.kind === 'trap') {
+                        ctx.strokeStyle = '#6b4a2b';
+                        ctx.beginPath();
+                        ctx.ellipse(c.x, feet - tile * 0.1, tile * 0.28, tile * 0.1, 0, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        for (let k = -2; k <= 2; k++) { ctx.moveTo(c.x + k * tile * 0.1, feet - tile * 0.1); ctx.lineTo(c.x + k * tile * 0.1, feet - tile * 0.26); }
+                        ctx.stroke();
+                    } else if (it.sp.kind === 'bell') {
+                        ctx.fillStyle = '#d9a441';
+                        ctx.beginPath();
+                        ctx.moveTo(c.x - tile * 0.22, feet - tile * 0.1);
+                        ctx.quadraticCurveTo(c.x - tile * 0.2, feet - tile * 0.6, c.x, feet - tile * 0.62);
+                        ctx.quadraticCurveTo(c.x + tile * 0.2, feet - tile * 0.6, c.x + tile * 0.22, feet - tile * 0.1);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                    } else {
+                        ctx.strokeStyle = `rgba(255,255,255,${(0.5 + 0.3 * Math.sin(now / 400)).toFixed(3)})`;
+                        ctx.beginPath();
+                        ctx.ellipse(c.x, feet - tile * 0.05, tile * 0.3, tile * 0.11, 0, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(c.x, feet - tile * 0.05);
+                        ctx.lineTo(c.x, feet - tile * 0.5);
+                        ctx.lineTo(c.x + tile * 0.18, feet - tile * 0.42);
+                        ctx.lineTo(c.x, feet - tile * 0.34);
+                        ctx.stroke();
                     }
                     break;
                 }

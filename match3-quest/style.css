@@ -2834,3 +2834,11 @@ body.fx-low .mana-fly-dot { box-shadow: none; }
 /* Onglet Stats : répartition / réinitialisation des points d'attribut */
 .attribute-points-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .attribute-points-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Cases de biome du plateau (terrain.js) : bambou/glace bloquent, lave brûle, boue ralentit, sacré récompense. */
+.tile[data-cell] { position: relative; }
+.tile[data-cell="bamboo"] { outline: 3px solid #4f8a3a; outline-offset: -3px; box-shadow: inset 0 0 0 100px rgba(79, 138, 58, 0.45); }
+.tile[data-cell="frost"] { outline: 3px solid #bfe6ff; outline-offset: -3px; box-shadow: inset 0 0 0 100px rgba(191, 230, 255, 0.55); }
+.tile[data-cell="lava"] { outline: 3px solid #ff5a1f; outline-offset: -3px; box-shadow: inset 0 0 14px rgba(255, 90, 31, 0.9); }
+.tile[data-cell="mud"] { outline: 3px solid #6b4a2b; outline-offset: -3px; box-shadow: inset 0 0 0 100px rgba(107, 74, 43, 0.5); }
+.tile[data-cell="sacred"] { outline: 3px solid #ffd23f; outline-offset: -3px; box-shadow: inset 0 0 14px rgba(255, 210, 63, 0.9); }
