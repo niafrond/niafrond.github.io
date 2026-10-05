@@ -1,5 +1,6 @@
 import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, clampEnemyAttackDamage, applyDamage, addBonusTurn } from "./game.js";
 import { colors, boardSize } from "./constants.js";
+import { flyManaToCounter } from "./manaFlight.js";
 import { tutorialCallbacks } from "./tutorial.js";
 import {
     hasMatches as hasMatchesOnBoard,
@@ -623,6 +624,7 @@ export function checkMatches(forceFullBoard = false){
             const manaResult = addManaForColor(currentPlayer, info.color, manaBaseGain);
 
             if(currentPlayer === player){
+                flyManaToCounter(indices, info.color);
                 const generatedMana = manaResult.gained;
                 if(generatedMana > 0){
                     grantManaGeneratedXP(generatedMana);
