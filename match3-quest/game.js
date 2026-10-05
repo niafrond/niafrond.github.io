@@ -17,6 +17,7 @@ import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summari
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
+import { animationFactor } from "./gameOptions.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
 
 const BASE_MANA_CAP = 50;
@@ -1018,7 +1019,6 @@ function ensureCombatUsableActiveItem() {
     if(!Array.isArray(player.inventory) || player.inventory.length === 0) return;
 
     const activeItem = getActiveInventoryItem();
-    if(activeItem?.type === 'consumable') return;
     if(activeItem?.type === 'reusable' && player.level >= (activeItem.minLevel || 1)) return;
 
     const consumableIndex = player.inventory.findIndex(item => (item?.type === 'consumable' || item?.type === 'reusable') && player.level >= (item.minLevel || 1));
@@ -1478,7 +1478,7 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
         requireClick = false,
         continueText = 'Cliquez pour continuer',
         onContinue = null,
-        autoHideMs = 1000
+        autoHideMs = 1000 * animationFactor()
     } = options;
 
     const boardDiv = document.getElementById('board');
@@ -1759,8 +1759,25 @@ export function finishPlayerTurn(){
         saveUpdate();
         return;
     }
-    if(!applyDuelRulesBeforeEnemyTurn()) return;
-    enemyTurn();
+    // Laisse finir l'animation de l'action du joueur (attaque, sort, soin, objet) avant la réplique de l'adversaire.
+    currentTurn = 'enemy'; // bloque le plateau pendant l'animation
+    updateStats();
+    afterPlayerAnimations(() => {
+        if(gameState.combatState !== 'active') return;
+        if(player.hp <= 0){ handlePlayerDeath(); return; }
+        if(!applyDuelRulesBeforeEnemyTurn()) return;
+        enemyTurn();
+    });
+}
+
+// Délai minimal après une action du joueur, puis attente de la disparition des overlays d'animation du plateau.
+const PLAYER_ACTION_PAUSE_MS = 500;   // × vitesse des animations (gameOptions.js)
+function afterPlayerAnimations(callback){
+    const waitOverlay = () => {
+        if(document.querySelector('#board .attack-overlay')) setTimeout(waitOverlay, 100);
+        else setTimeout(callback, 250 * animationFactor());
+    };
+    setTimeout(waitOverlay, PLAYER_ACTION_PAUSE_MS * animationFactor());
 }
 
 // Duel contre Fengmeng (duel.js) : avant chacun de ses tours normaux, les pièges restants se déclenchent,

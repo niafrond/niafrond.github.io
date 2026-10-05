@@ -25,7 +25,7 @@ export const arenaMasterId = tier => `arena_c${tier}_master`;
 export const arenaClearedFlag = tier => `arena_cleared_${tier}`;
 
 //  waves       : nombre de combats du cercle = salles (gardiens) + la salle du maître ;
-//  levelOffset : écart de niveau avec le héros au premier gardien (+1 tous les deux combats) ;
+//  levelOffset : écart avec ARENA_BASE_LEVEL au premier gardien (+1 tous les deux combats) ;
 //  statMult    : multiplicateur des PV, de l'attaque et de la défense des adversaires ;
 //  duel        : règles de duel des gardiens ; masterDuel : règles du maître (remplacent `duel`) ;
 //  rewardMult  : multiplicateur de la prime ; clearGold / clearXp : prime du premier maître vaincu ;
@@ -110,15 +110,18 @@ export const ARENA_BIOMES = {
     arena_8: { a: '#a8584a', b: '#9e4e40', path: '#e0b030', cliff: '#3a1410', liquid: '#ff5a1f', sky: ['#1a0808', '#5a1a10'], decor: ['campfire', 'rock', 'lantern'] }
 };
 
+// Niveau de référence des adversaires de l'arène : fixe, indépendant du niveau du héros.
+export const ARENA_BASE_LEVEL = 18;
+
 export const isArenaUnlocked = playerLevel => (Number(playerLevel) || 0) >= ARENA_MIN_LEVEL;
 
 export const arenaTier = id => ARENA_TIERS.find(t => t.id === Number(id)) || null;
 
-// Niveau de l'adversaire du combat `wave` d'un cercle : héros + écart du cercle, +1 tous les deux combats.
-export function arenaWaveLevel(tierId, wave, playerLevel) {
+// Niveau (fixe) de l'adversaire du combat `wave` d'un cercle : niveau de base + écart du cercle, +1 tous les deux combats.
+export function arenaWaveLevel(tierId, wave) {
     const tier = arenaTier(tierId) || ARENA_TIERS[0];
     const w = Math.max(1, Math.floor(wave || 1));
-    return Math.max(1, Math.floor(playerLevel || 1) + tier.levelOffset + Math.floor((w - 1) / 2));
+    return Math.max(1, ARENA_BASE_LEVEL + tier.levelOffset + Math.floor((w - 1) / 2));
 }
 
 // Le dernier combat d'un cercle est celui du maître d'arène.
@@ -135,7 +138,7 @@ export function arenaEncounterInfo(def, playerLevel, cleared = []) {
     const master = isChampionWave(tier.id, wave);
     const duel = master ? (tier.masterDuel || tier.duel) : tier.duel;
     return {
-        level: arenaWaveLevel(tier.id, wave, playerLevel),
+        level: arenaWaveLevel(tier.id, wave),
         duel: duel ? { ...duel } : null,
         arena: { tier: tier.id, wave, waves: tier.waves, statMult: tier.statMult, firstClear: master && !cleared.includes(tier.id) }
     };

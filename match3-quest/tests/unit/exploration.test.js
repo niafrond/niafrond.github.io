@@ -908,17 +908,17 @@ describe('déplacement et zones de vigilance', () => {
 });
 
 describe('rencontres', () => {
-    test('niveau des ennemis normaux : niveau du joueur -1 / 0 (jamais plus de +1), boss ≥ niveau du joueur', () => {
+    test('niveau des ennemis : fixe (région + écart, boss = boss.level), indépendant du niveau du héros', () => {
         const s = createSession({});
-        const normal = { id: 'x', offset: 0 };
-        const weak = { id: 'y', offset: -1 };
-        expect(enemyLevel(normal, 5)).toBe(5);
-        expect(enemyLevel(weak, 5)).toBe(4);
-        expect(enemyLevel(weak, 1)).toBe(1);
-        expect(enemyLevel({ id: 'z', offset: 3 }, 5)).toBe(6);
+        expect(enemyLevel({ id: 'x', offset: 0 }, 5)).toBe(5);
+        expect(enemyLevel({ id: 'y', offset: -1 }, 5)).toBe(4);
+        expect(enemyLevel({ id: 'y', offset: -1 }, 1)).toBe(1);
+        expect(enemyLevel({ id: 'z', offset: 3 }, 5)).toBe(8);
         const sun = encounterFor(s, 'sun_1', 1);
         expect(sun.boss.level).toBe(3);
-        expect(encounterFor(s, 'sun_1', 8).boss.level).toBe(8);
+        expect(encounterFor(s, 'sun_1', 8).boss.level).toBe(3);
+        expect(encounterFor(s, 'sun_1', 40).boss.level).toBe(3);
+        expect(encounterFor(s, 'rizieres_shroom', 1).level).toBe(encounterFor(s, 'rizieres_shroom', 30).level);
         expect(encounterFor(s, 'inconnu', 1)).toBeNull();
     });
 
@@ -933,13 +933,13 @@ describe('rencontres', () => {
     test('Nouvelle Partie + : +3 niveaux pour les soleils et boss, +1 pour les ennemis normaux', () => {
         expect(enemyLevel({ id: 'b', boss: { level: 10 } }, 5, 0)).toBe(10);
         expect(enemyLevel({ id: 'b', boss: { level: 10 } }, 5, 2)).toBe(16);
-        expect(enemyLevel({ id: 'b', boss: { level: 10 } }, 30, 2)).toBe(30);
+        expect(enemyLevel({ id: 'b', boss: { level: 10 } }, 30, 2)).toBe(16);
         expect(enemyLevel({ id: 'x', offset: 0 }, 5, 1)).toBe(6);
         expect(enemyLevel({ id: 'x', offset: -1 }, 5, 2)).toBe(6);
         const s = createSession({ ngPlus: 2 });
         expect(encounterFor(s, 'sun_1', 1).level).toBe(3 + 6);
         expect(encounterFor(s, 'sun_1', 1).boss.level).toBe(9);
-        expect(encounterFor(s, 'rizieres_shroom', 4).level).toBe(4 + 2);
+        expect(encounterFor(s, 'rizieres_shroom', 4).level).toBe(encounterFor(createSession({}), 'rizieres_shroom', 4).level + 2);
     });
 });
 
@@ -1741,10 +1741,10 @@ describe('Nouvelle Partie +', () => {
     test('les ennemis sont plus puissants en Nouvelle Partie +', () => {
         const s = endedSession();
         startNewGamePlus(s);
-        expect(encounterFor(s, 'sun_1', 20).level).toBe(20);               // le niveau du joueur reste le plancher
+        expect(encounterFor(s, 'sun_1', 20).level).toBe(3 + 3);               // le niveau du héros n'intervient pas
         expect(encounterFor(s, 'sun_9', 1).boss.level).toBe(17 + 3);
         expect(encounterFor(s, 'fengmeng_3a', 1).boss.level).toBe(18 + 3);
-        expect(encounterFor(s, 'rizieres_shroom', 5).level).toBe(5 + 1);
+        expect(encounterFor(s, 'rizieres_shroom', 5).level).toBe(encounterFor(createSession({}), 'rizieres_shroom', 5).level + 1);
     });
 
     test('le journal est vide au départ d\'une Nouvelle Partie +, la progression reste sérialisable', () => {

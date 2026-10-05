@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import {
-    ARENA_MIN_LEVEL, ARENA_TIERS, ARENA_TEMPLATES, ARENA_HALL, ARENA_BIOMES, arenaTier, isArenaUnlocked, arenaWaveLevel,
+    ARENA_MIN_LEVEL, ARENA_BASE_LEVEL, ARENA_TIERS, ARENA_TEMPLATES, ARENA_HALL, ARENA_BIOMES, arenaTier, isArenaUnlocked, arenaWaveLevel,
     isChampionWave, arenaEncounterInfo, applyArenaScaling, arenaRewardBonus, normalizeArenaData, buildArenaScreens,
     arenaRoomId, arenaGuardId, arenaMasterId, hallDoor
 } from '../../arena.js';
@@ -56,9 +56,10 @@ describe('Arène des Mille Flèches : cercles', () => {
 
     test('niveaux croissants dans un cercle ; dernier combat = maître', () => {
         ARENA_TIERS.forEach(t => {
-            const levels = Array.from({ length: t.waves }, (_, i) => arenaWaveLevel(t.id, i + 1, 18));
+            const levels = Array.from({ length: t.waves }, (_, i) => arenaWaveLevel(t.id, i + 1));
             expect(nonDecreasing(levels)).toBe(true);
-            expect(levels[0]).toBe(18 + t.levelOffset);
+            expect(levels[0]).toBe(ARENA_BASE_LEVEL + t.levelOffset);
+            expect(arenaWaveLevel(t.id, 1, 40)).toBe(levels[0]);   // le niveau du héros n'intervient pas
             expect(isChampionWave(t.id, t.waves)).toBe(true);
             expect(isChampionWave(t.id, t.waves - 1)).toBe(false);
         });
@@ -68,7 +69,7 @@ describe('Arène des Mille Flèches : cercles', () => {
         const t = arenaTier(7);
         const guard = arenaEncounterInfo({ arena: { tier: 7, wave: 1 } }, 20, []);
         const master = arenaEncounterInfo({ arena: { tier: 7, wave: t.waves } }, 20, []);
-        expect(guard).toMatchObject({ level: 25, duel: t.duel, arena: { tier: 7, wave: 1, firstClear: false, statMult: t.statMult } });
+        expect(guard).toMatchObject({ level: ARENA_BASE_LEVEL + t.levelOffset, duel: t.duel, arena: { tier: 7, wave: 1, firstClear: false, statMult: t.statMult } });
         expect(master.duel).toEqual(t.masterDuel);
         expect(master.arena.firstClear).toBe(true);
         expect(arenaEncounterInfo({ arena: { tier: 7, wave: t.waves } }, 20, [7]).arena.firstClear).toBe(false);
