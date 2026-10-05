@@ -86,8 +86,20 @@ describe('chestLoot', () => {
         }
     });
 
-    test('rareté des armes : rang dans leur famille', () => {
-        expect(weaponRarity(allWeapons.find(w => w.id === 'rusty_sword'))).toBe('common');
-        expect(weaponRarity(allWeapons.find(w => w.id === 'excalibur'))).toBe('legendary');
+    test('rareté des armes : celle de leur fiche', () => {
+        expect(weaponRarity(allWeapons.find(w => w.id === 'arc_de_fortune'))).toBe('common');
+        expect(weaponRarity(allWeapons.find(w => w.id === 'arc_des_dix_soleils'))).toBe('legendary');
+    });
+});
+
+describe('bonus de biome des arcs', () => {
+    test('+25 % (min +2) dans le bon biome, rien ailleurs', async () => {
+        const { weaponBiomeBonus, getWeaponById } = await import('../../weapons.js');
+        const feu = getWeaponById('arc_de_feu');
+        expect(feu.biome).toBe('volcano');
+        expect(weaponBiomeBonus(feu, 'volcano')).toBe(Math.round(feu.damage * 0.25));
+        expect(weaponBiomeBonus(feu, 'bamboo')).toBe(0);
+        expect(weaponBiomeBonus(getWeaponById('arc_de_fortune'), 'volcano')).toBe(0);
+        expect(weaponBiomeBonus(getWeaponById('arc_de_bambou'), 'bamboo')).toBeGreaterThanOrEqual(2);
     });
 });

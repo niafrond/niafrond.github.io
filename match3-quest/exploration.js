@@ -25,7 +25,7 @@
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
 import { REGION_LEVEL } from './world/index.js';
 import { REGION_ORDER } from './world/index.js';
-import { approachOf, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
+import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
 export const AGGRO_RADIUS = 1;
@@ -92,6 +92,14 @@ export function buildRoute(waypoints) {
 
 const chebyshev = (ax, ay, bx, by) => Math.max(Math.abs(ax - bx), Math.abs(ay - by));
 
+// Zone de vigilance d'un ennemi : uniquement DEVANT lui (dans le sens de son regard : en face de lui, ou de son côté s'il
+// regarde de côté). Jamais derrière ni sur ses flancs : on peut le prendre de dos pour une embuscade.
+export function inFront(st, r, x, y) {
+    if (x === st.x && y === st.y) return true;
+    if (r <= 0 || chebyshev(st.x, st.y, x, y) > r) return false;
+    return approachOf(st.face, st, { x, y }) === FACE_FRONT;
+}
+
 function defaultData() {
     const start = SCREENS[START_SCREEN];
     return {
@@ -155,7 +163,6 @@ function initScreenRuntime(session) {
     session.rt.enemies = {};
     session.rt.patrolTimer = 0;
     session.rt.stillMs = 0;
-    session.rt.alerted = {};
     screen.enemies.forEach(def => {
         const route = def.kind === 'patrol' && def.patrol ? buildRoute(def.patrol) : null;
         const face = def.facing && (def.facing.dx || def.facing.dy) ? { ...def.facing } : { dx: 0, dy: 1 };
@@ -357,19 +364,25 @@ export function entityAt(session, x, y) {
     return null;
 }
 
-export function getAuraTiles(session) {
+// Cases de la zone de vigilance d'un ennemi (devant lui), sa propre case comprise.
+export function auraCellsOf(session, e) {
     const screen = currentScreen(session);
-    const tiles = new Set();
-    aliveEnemies(session).filter(e => !isShielded(session, e.def)).forEach(e => {
-        const r = aggroOf(e.def);
-        for (let dy = -r; dy <= r; dy++) {
-            for (let dx = -r; dx <= r; dx++) {
-                const x = e.x + dx;
-                const y = e.y + dy;
-                if (x >= 0 && y >= 0 && x < screen.w && y < screen.h) tiles.add(`${x},${y}`);
-            }
+    const r = aggroOf(e.def);
+    const cells = [];
+    for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+            const x = e.x + dx;
+            const y = e.y + dy;
+            if (x >= 0 && y >= 0 && x < screen.w && y < screen.h && inFront(e, r, x, y)) cells.push({ x, y });
         }
-    });
+    }
+    return cells;
+}
+
+export function getAuraTiles(session) {
+    const tiles = new Set();
+    aliveEnemies(session).filter(e => !isShielded(session, e.def))
+        .forEach(e => auraCellsOf(session, e).forEach(c => tiles.add(`${c.x},${c.y}`)));
     return tiles;
 }
 
@@ -400,7 +413,7 @@ function checkAura(session) {
     if (session.rt.grace > 0) return null;
     const { x, y } = session.data;
     const hits = aliveEnemies(session)
-        .filter(e => chebyshev(e.x, e.y, x, y) <= aggroOf(e.def) && !isShielded(session, e.def));
+        .filter(e => inFront(e, aggroOf(e.def), x, y) && !isShielded(session, e.def));
     const hit = hits.find(e => !e.def.illusion) || hits[0];
     return hit ? contactEvent(session, hit.def) : null;
 }
@@ -458,12 +471,6 @@ export function tryMove(session, dx, dy, ctx = {}) {
     session.data.y = ny;
     session.rt.stillMs = 0;
     if (session.rt.grace > 0) session.rt.grace--;
-    const bell = spotAt(screen.spots, nx, ny, 'bell');
-    if (bell && !Object.keys(session.rt.alerted).length) {
-        aliveEnemies(session).forEach(e => { session.rt.alerted[e.def.id] = true; });
-        const hit = checkAura(session);
-        return hit || { type: 'alert', message: 'La cloche résonne : les ennemis des environs sont alertés !' };
-    }
     return checkAura(session) || { type: 'moved' };
 }
 
@@ -544,7 +551,6 @@ export function findPath(session, tx, ty) {
     aliveEnemies(session).forEach(e => occupied.add(key(e.x, e.y)));
     if (screen.waypoint) occupied.add(key(screen.waypoint.x, screen.waypoint.y));
     const exits = new Set(screen.exits.map(e => key(e.x, e.y)));
-    (screen.spots || []).filter(sp => sp.kind === 'bell').forEach(sp => exits.add(key(sp.x, sp.y)));   // une cloche ne se frappe que volontairement
     const startKey = key(start.x, start.y);
     const target = key(tx, ty);
 
@@ -552,11 +558,11 @@ export function findPath(session, tx, ty) {
     const avoid = new Set();
     aliveEnemies(session).filter(e => !isShielded(session, e.def)).forEach(e => {
         const r = aggroOf(e.def);
-        if (chebyshev(e.x, e.y, tx, ty) <= r) return;
+        if (inFront(e, r, tx, ty)) return;
         for (let dy = -r; dy <= r; dy++) {
             for (let dx = -r; dx <= r; dx++) {
                 const x = e.x + dx, y = e.y + dy;
-                if (x >= 0 && y >= 0 && x < screen.w && y < screen.h) avoid.add(key(x, y));
+                if (x >= 0 && y >= 0 && x < screen.w && y < screen.h && inFront(e, r, x, y)) avoid.add(key(x, y));
             }
         }
     });
@@ -612,7 +618,7 @@ export function enemyRegionLevel(session, enemyId) {
     return REGION_LEVEL[session.screens[screenId]?.region] || 1;
 }
 
-// Préparation du terrain : approche, observation, cloche, pièges et herbes, belvédère (voir terrain.js).
+// Préparation du terrain : approche, observation, pièges et herbes, belvédère (voir terrain.js).
 export function prepFor(session, def) {
     const st = session.rt.enemies[def.id];
     const screen = currentScreen(session);
@@ -620,7 +626,6 @@ export function prepFor(session, def) {
     const { x, y } = session.data;
     return buildPrep({
         approach: approachOf(st.face, st, { x, y }),
-        alerted: Boolean(session.rt.alerted?.[def.id]),
         observed: Boolean(session.data.observed?.[def.id]),
         enemyOnTrap: Boolean(spotAt(screen.spots, st.x, st.y, 'trap')),
         enemyOnGrass: Boolean(spotAt(screen.spots, st.x, st.y, 'tallGrass')),

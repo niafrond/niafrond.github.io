@@ -18,6 +18,7 @@ import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { playEndingAnimation, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites } from './sprites/index.js';
+import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
@@ -633,9 +634,6 @@ export function createExplorationView(cfg) {
                 if (chest) processEvents(chest.events);
                 break;
             }
-            case 'alert':
-                toast(res.message, 3500);
-                break;
             case 'observed': {
                 const weak = cfg.getWeakness?.(res.templateId);
                 toast(weak ? `Vous observez ${res.name} : faiblesse = ${weak}.` : `Vous observez ${res.name} : une faille dans sa garde.`, 4500);
@@ -969,6 +967,24 @@ export function createExplorationView(cfg) {
             ctx.strokeRect(p.x + 0.75, p.y + 0.75, tile - 1.5, tile - 1.5);
         });
 
+        // sens du regard : un chevron par case de la zone, pointant vers l'avant de l'ennemi
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = `rgba(255,255,255,${(0.35 + 0.25 * pulse).toFixed(3)})`;
+        X.aliveEnemies(session).filter(e => !X.isShielded(session, e.def) && X.aggroOf(e.def) > 0).forEach(e => {
+            const f = e.face || { dx: 0, dy: 1 };
+            const fx = Math.abs(f.dx) >= Math.abs(f.dy) ? Math.sign(f.dx) : 0;
+            const fy = fx ? 0 : (Math.sign(f.dy) || 1);
+            X.auraCellsOf(session, e).forEach(({ x, y }) => {
+                if ((x === e.x && y === e.y) || inRects(screen.liquids, x, y)) return;
+                const c = P(x + 0.5, y + 0.5), a = tile * 0.14;
+                ctx.beginPath();
+                ctx.moveTo(c.x - fy * a - fx * a, c.y - fx * a - fy * a);
+                ctx.lineTo(c.x + fx * a, c.y + fy * a);
+                ctx.lineTo(c.x + fy * a - fx * a, c.y + fx * a - fy * a);
+                ctx.stroke();
+            });
+        });
+
         // trajet du déplacement au clic : points le long du chemin et cercle sur la destination
         if (walk && walk.path?.length) {
             ctx.fillStyle = 'rgba(255,255,255,0.85)';
@@ -1073,7 +1089,7 @@ export function createExplorationView(cfg) {
                     break;
                 }
                 case 'spot': {
-                    // préparation du terrain (terrain.js) : hautes herbes, piège, cloche, belvédère
+                    // préparation du terrain (terrain.js) : hautes herbes, piège, belvédère
                     const feet = c.y + tile * 0.3;
                     ctx.lineWidth = 2;
                     ctx.strokeStyle = '#2b1b17';
@@ -1092,15 +1108,6 @@ export function createExplorationView(cfg) {
                         ctx.stroke();
                         ctx.beginPath();
                         for (let k = -2; k <= 2; k++) { ctx.moveTo(c.x + k * tile * 0.1, feet - tile * 0.1); ctx.lineTo(c.x + k * tile * 0.1, feet - tile * 0.26); }
-                        ctx.stroke();
-                    } else if (it.sp.kind === 'bell') {
-                        ctx.fillStyle = '#d9a441';
-                        ctx.beginPath();
-                        ctx.moveTo(c.x - tile * 0.22, feet - tile * 0.1);
-                        ctx.quadraticCurveTo(c.x - tile * 0.2, feet - tile * 0.6, c.x, feet - tile * 0.62);
-                        ctx.quadraticCurveTo(c.x + tile * 0.2, feet - tile * 0.6, c.x + tile * 0.22, feet - tile * 0.1);
-                        ctx.closePath();
-                        ctx.fill();
                         ctx.stroke();
                     } else {
                         ctx.strokeStyle = `rgba(255,255,255,${(0.5 + 0.3 * Math.sin(now / 400)).toFixed(3)})`;
@@ -1194,7 +1201,8 @@ export function createExplorationView(cfg) {
                     const bob = Math.sin(now / 430 + it.x * 2.1 + it.y) * tile * 0.015;
                     ctx.save();
                     if (illusion) ctx.globalAlpha = 0.4 + 0.45 * (0.5 + 0.5 * Math.sin(now / 170 + it.x * 3.1 + it.y * 1.7));
-                    drawSprite(enemySprite(def.spriteKey || def.id, def.templateId), c.x, feet + bob, size);
+                    const baseSprite = enemySprite(def.spriteKey || def.id, def.templateId);
+                    drawSprite(viewSprite(baseSprite, viewDir(it.e.face)), c.x, feet + bob, size, baseSprite);
                     ctx.restore();
                     if (shielded) {
                         // bouclier de flammes tant que la meute n'est pas abattue
@@ -1240,12 +1248,14 @@ export function createExplorationView(cfg) {
                         }
                     }
                     const hero = cfg.getHero();
+                    const heroBase = heroSprite(hero.classId);
+                    const heroView = viewSprite(heroBase, viewDir(session.rt.facing), HERO_VIEW_OPTS);
                     if (riding()) {
                         // à cheval : la monture au sol, le héros en selle
                         drawSprite(npcSprite('horse_mount'), c.x, feet + hop * 0.5, tile * 1.2);
-                        drawSprite(heroSprite(hero.classId), c.x, feet + hop - tile * 0.34, tile * 0.86);
+                        drawSprite(heroView, c.x, feet + hop - tile * 0.34, tile * 0.86, heroBase);
                     } else {
-                        drawSprite(heroSprite(hero.classId), c.x, feet + hop, tile * 1.06);
+                        drawSprite(heroView, c.x, feet + hop, tile * 1.06, heroBase);
                     }
                     break;
                 }
@@ -1361,10 +1371,15 @@ export function createExplorationView(cfg) {
 
     // Dessine un sprite SVG (pieds vers le bas du cadre) centré sur cx, dont les pieds sont posés en feetY.
     // Retourne false tant que l'image n'est pas chargée (ou s'il n'y a pas de sprite).
-    function drawSprite(svg, cx, feetY, size) {
+    // `fallback` : dessin de face montré le temps que la vue de côté / de dos (dérivée) se décode.
+    function drawSprite(svg, cx, feetY, size, fallback = null) {
         if (!svg) return false;
-        const img = spriteImage(svg);
-        if (!img.complete || !img.naturalWidth) return true; // en cours de chargement : rien à dessiner
+        let img = spriteImage(svg);
+        if (!img.complete || !img.naturalWidth) {
+            if (!fallback || fallback === svg) return true; // en cours de chargement : rien à dessiner
+            img = spriteImage(fallback);
+            if (!img.complete || !img.naturalWidth) return true;
+        }
         ctx.drawImage(img, cx - size / 2, feetY - size * 0.92, size, size);
         return true;
     }

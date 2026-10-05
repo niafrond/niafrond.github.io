@@ -883,7 +883,7 @@ describe('déplacement et zones de vigilance', () => {
     });
 
     test('un patrouilleur qui arrive au contact du joueur lance le combat', () => {
-        const s = atL('rizieres', 11, 8);
+        const s = atL('rizieres', 12, 9);   // dans l'axe de la ronde : le gardien arrive face à lui
         const events = tick(s, PATROL_STEP_MS * 3);
         expect(events.some(e => e.type === 'combat' && e.enemyId === 'rizieres_guardian')).toBe(true);
     });
@@ -1509,7 +1509,7 @@ describe('mirages (illusion)', () => {
     test('un patrouilleur-illusion se dissipe au contact (tick)', () => {
         const s = synthSession({
             enemies: [enemyDef('m', 0, 0, { kind: 'patrol', patrol: [[0, 0], [4, 0]], illusion: true, permanent: true })]
-        }, { x: 2, y: 1 });
+        }, { x: 3, y: 0 });
         const events = tick(s, PATROL_STEP_MS * 2);
         expect(events).toEqual([expect.objectContaining({ type: 'illusion', enemyId: 'm' })]);
         expect(isEnemyIllusionGone(s, 'm')).toBe(true);
@@ -1558,8 +1558,11 @@ describe('soleil protégé (shieldedBy)', () => {
 
     test('la meute elle-même combat normalement', () => {
         const s = atL('fauves', 10, 5);
-        expect(getAuraTiles(s).has('10,6')).toBe(true);           // aura du loup (9,7)
-        expect(tryMove(s, 0, 1)).toEqual({ type: 'combat', enemyId: 'pack_wolf_a' });
+        expect(getAuraTiles(s).has('10,8')).toBe(true);           // aura du loup (9,7) : devant lui seulement
+        expect(getAuraTiles(s).has('10,6')).toBe(false);
+        expect(tryMove(s, 0, 1)).toEqual({ type: 'moved' });      // (10,6)
+        expect(tryMove(s, 0, 1)).toEqual({ type: 'moved' });      // (10,7) : à côté du loup, pas devant
+        expect(tryMove(s, 0, 1)).toEqual({ type: 'combat', enemyId: 'pack_wolf_a' });   // (10,8) : devant le loup
     });
 
     test('le bouclier tombe quand tout le groupe est vaincu', () => {
@@ -2036,14 +2039,15 @@ describe('déplacement au clic : évitement des zones de combat', () => {
         const screen = {
             ...base, id: START_SCREEN, w: 9, h: 5, obstacles: [], liquids: [], buildings: [], npcs: [], chests: [], exits: [], waypoint: null,
             spawn: { x: 0, y: 2 },
-            enemies: [{ id: 'arena_foe', x: 4, y: 2, name: 'Foe', templateId: 'goblin_saboteur', kind: 'sentinel' }],
+            enemies: [{ id: 'arena_foe', x: 4, y: 2, name: 'Foe', templateId: 'goblin_saboteur', kind: 'sentinel', facing: { dx: -1, dy: 0 } }],
             ...extra
         };
         const s = createSession({}, { [START_SCREEN]: screen }, []);
         s.data.x = 0; s.data.y = 2;
         return s;
     }
-    const inAura = (p, ex = 4, ey = 2) => Math.max(Math.abs(p.x - ex), Math.abs(p.y - ey)) <= AGGRO_RADIUS;
+    // L'ennemi regarde vers la gauche : sa zone est la colonne devant lui (x = ex - 1)
+    const inAura = (p, ex = 4, ey = 2) => p.x === ex - 1 && Math.abs(p.y - ey) <= AGGRO_RADIUS;
 
     test('le trajet contourne la zone de vigilance quand c\'est possible', () => {
         const s = arena();
@@ -2065,5 +2069,38 @@ describe('maisons : aucun texte du Narrateur à l\'entrée', () => {
         const houses = Object.values(SCREENS).filter(sc => sc.interior);
         expect(houses.length).toBeGreaterThan(10);
         houses.forEach(h => expect([h.id, h.arrival]).toEqual([h.id, undefined]));
+    });
+});
+
+
+describe('zone de vigilance : uniquement devant l\'ennemi', () => {
+    const foeAt = (face, hero) => {
+        const s = createSession({}, { [START_SCREEN]: {
+            ...SCREENS[START_SCREEN], id: START_SCREEN, w: 9, h: 9, obstacles: [], liquids: [], buildings: [], npcs: [], chests: [], exits: [], waypoint: null,
+            spawn: { x: 0, y: 0 },
+            enemies: [{ id: 'foe', x: 4, y: 4, name: 'Foe', templateId: 'goblin_saboteur', kind: 'sentinel', facing: face }]
+        } }, []);
+        s.data.x = hero.x; s.data.y = hero.y;
+        return s;
+    };
+    const cells = s => [...getAuraTiles(s)].filter(k => k !== '4,4').sort();
+
+    test('de face (vers le bas) : les 3 cases devant, rien derrière ni sur les côtés', () => {
+        expect(cells(foeAt({ dx: 0, dy: 1 }, { x: 0, y: 0 }))).toEqual(['3,5', '4,5', '5,5']);
+    });
+    test('de côté (vers la droite) : la zone est sur son côté', () => {
+        expect(cells(foeAt({ dx: 1, dy: 0 }, { x: 0, y: 0 }))).toEqual(['5,3', '5,4', '5,5']);
+    });
+    test('de dos : le héros passe derrière sans déclencher le combat (embuscade possible)', () => {
+        const s = foeAt({ dx: 0, dy: 1 }, { x: 4, y: 2 });
+        s.rt.grace = 0;
+        expect(tryMove(s, 0, 1)).toEqual({ type: 'moved' });          // (4,3) : juste derrière
+        expect(tryMove(s, 0, 1)).toEqual({ type: 'combat', enemyId: 'foe' });   // le toucher lance le combat
+    });
+    test('devant lui, le héros est repéré', () => {
+        const s = foeAt({ dx: 0, dy: 1 }, { x: 4, y: 7 });
+        s.rt.grace = 0;
+        expect(tryMove(s, 0, -1)).toMatchObject({ type: 'moved' });   // (4,6) : hors zone
+        expect(tryMove(s, 0, -1)).toEqual({ type: 'combat', enemyId: 'foe' });   // (4,5) : devant lui
     });
 });

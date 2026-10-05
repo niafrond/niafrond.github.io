@@ -3,8 +3,10 @@
 import { colors, boardSize } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
-import { allWeapons, getAvailableWeapons, getWeaponById } from "./weapons.js";
+import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
 import { weaknessDamage, ruleForBiome } from "./terrain.js";
+import { heroSprite, enemySprite, spriteUri } from "./sprites/index.js";
+import { viewSprite, HERO_VIEW_OPTS } from "./sprites/side.js";
 import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { bigMatchXpFor } from "./matchMechanics.js";
@@ -1095,8 +1097,23 @@ function _animateCounter(id, from, to) {
     _animateHpBar(id, from, to, null);
 }
 
+// Dessins des combattants (héros à gauche tourné vers la droite, ennemi à droite tourné vers la gauche) : posés en variable CSS
+// `--portrait` des panneaux de stats (pseudo-élément ::after), donc sans clignotement quand le panneau est reconstruit.
+function updateFighterPortraits(){
+    const set = (id, svg, dir, opts) => {
+        const el = document.getElementById(id);
+        if(!el) return;
+        const view = svg ? viewSprite(svg, dir, opts) : null;
+        if(view) el.style.setProperty('--portrait', `url("${spriteUri(view)}")`);
+        else el.style.removeProperty('--portrait');
+    };
+    set('player-stats', heroSprite(player.class) || heroSprite('assassin'), 'right', HERO_VIEW_OPTS);
+    set('enemy-stats', enemySprite(enemy.spriteKey || enemy.id, enemy.templateId), 'left');
+}
+
 export function updateStats(){
     updateLevelHud();
+    updateFighterPortraits();
     // truncate log to only the latest message
     const logDiv=document.getElementById('log');
     if(logDiv){
@@ -1614,6 +1631,12 @@ export function useWeapon(hand = 'right'){
     actionGuard.markPlayerAction();
     player.combatPoints -= weapon.actionPoints;
     let dmg = weapon.damage + (player.attack || 0);
+
+    const biomeBonus = weaponBiomeBonus(weapon, enemy.biome);
+    if(biomeBonus > 0) {
+        dmg += biomeBonus;
+        log(`${weapon.name} est dans son biome (${BIOME_LABELS[weapon.biome]}) : +${biomeBonus} dégâts.`);
+    }
 
     if((player.statusEffects?.flameblade || 0) > 0) {
         const flameBonus = Math.max(0, Math.floor(player.statusEffects.flameblade));
@@ -2574,6 +2597,22 @@ function getSpellTooltipHtml(spell) {
     return `<div class="spell-tooltip-line">${effectText}</div>`;
 }
 
+function getWeaponTooltipHtml(weapon) {
+    let html = `<div class="spell-tooltip-title">${weapon.name}</div>`;
+    html += `<div class="spell-tooltip-line">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')}</div>`;
+    if(weapon.description) html += `<div class="spell-tooltip-line">${weapon.description}</div>`;
+    if(weapon.biome) html += `<div class="spell-tooltip-line">Bonus de dégâts en ${BIOME_LABELS[weapon.biome]}${enemy?.biome === weapon.biome ? ' (actif)' : ''}</div>`;
+    return html;
+}
+
+function showWeaponTooltip(button, weapon) {
+    if(!button || !weapon) return;
+    const tooltip = ensureSpellTooltip();
+    tooltip.innerHTML = getWeaponTooltipHtml(weapon);
+    tooltip.classList.add('visible');
+    placeTooltip(tooltip, button, 260);
+}
+
 function getItemTooltipHtml(item, options = {}) {
     if(!item) return '<div class="spell-tooltip-line">Objet inconnu</div>';
 
@@ -2610,23 +2649,31 @@ function ensureSpellTooltip() {
     return tooltip;
 }
 
+// Place une infobulle au-dessus de l'élément maintenu, à bonne distance : le pouce (ou le doigt) qui appuie dessus ne doit pas
+// cacher le contenu. Pas assez de place au-dessus : en dessous, plus bas encore pour dégager le pouce.
+const TOOLTIP_GAP_ABOVE = 28;
+const TOOLTIP_GAP_BELOW = 72;
+function placeTooltip(tooltip, targetEl, tooltipWidth) {
+    const rect = targetEl.getBoundingClientRect();
+    const margin = 10;
+    const height = tooltip.offsetHeight || 100;
+    const left = Math.min(
+        window.innerWidth - tooltipWidth - margin,
+        Math.max(margin, rect.left + (rect.width / 2) - (tooltipWidth / 2))
+    );
+    let top = rect.top - height - TOOLTIP_GAP_ABOVE;
+    if(top < margin) top = Math.min(window.innerHeight - height - margin, rect.bottom + TOOLTIP_GAP_BELOW);
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${Math.max(margin, top)}px`;
+}
+
 function showSpellTooltip(button, spell) {
     if(!button || !spell) return;
     const tooltip = ensureSpellTooltip();
     tooltip.innerHTML = getSpellTooltipHtml(spell);
     tooltip.classList.add('visible');
 
-    const rect = button.getBoundingClientRect();
-    const tooltipWidth = 260;
-    const margin = 10;
-    const left = Math.min(
-        window.innerWidth - tooltipWidth - margin,
-        Math.max(margin, rect.left + (rect.width / 2) - (tooltipWidth / 2))
-    );
-    const top = Math.max(margin, rect.top - 120);
-
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
+    placeTooltip(tooltip, button, 260);
 }
 
 function showItemTooltip(button, item, options = {}) {
@@ -2635,17 +2682,7 @@ function showItemTooltip(button, item, options = {}) {
     tooltip.innerHTML = getItemTooltipHtml(item, options);
     tooltip.classList.add('visible');
 
-    const rect = button.getBoundingClientRect();
-    const tooltipWidth = 260;
-    const margin = 10;
-    const left = Math.min(
-        window.innerWidth - tooltipWidth - margin,
-        Math.max(margin, rect.left + (rect.width / 2) - (tooltipWidth / 2))
-    );
-    const top = Math.max(margin, rect.top - 120);
-
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
+    placeTooltip(tooltip, button, 260);
 }
 
 function hideSpellTooltip() {
@@ -2711,17 +2748,7 @@ function showEnemyNameTooltip(targetEl, fullName, enemyEntity = enemy) {
     tooltip.innerHTML = getEnemyNameTooltipHtml(fullName, enemyEntity);
     tooltip.classList.add('visible');
 
-    const rect = targetEl.getBoundingClientRect();
-    const tooltipWidth = 250;
-    const margin = 10;
-    const left = Math.min(
-        window.innerWidth - tooltipWidth - margin,
-        Math.max(margin, rect.left + (rect.width / 2) - (tooltipWidth / 2))
-    );
-    const top = Math.max(margin, rect.top - 72);
-
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
+    placeTooltip(tooltip, targetEl, 250);
 }
 
 function hideEnemyNameTooltip() {
@@ -2907,6 +2934,13 @@ export function getCombatMusicOptions() {
     return enemy.isBoss ? { boss: enemy.name } : { variant: enemy.name };
 }
 
+// Fond de la page de combat : teinte et motif du biome (CSS `body[data-combat-biome]` de retro.css).
+export function setCombatBackdrop(biome){
+    if(typeof document === 'undefined') return;
+    if(biome && BIOME_LABELS[biome]) document.body.dataset.combatBiome = biome;
+    else delete document.body.dataset.combatBiome;
+}
+
 export function newEnemy(selectedEnemy = null){
     enemy = selectedEnemy ? { ...selectedEnemy } : generateRandomEnemy(player.level, spellsCatalog, allWeapons);
 
@@ -2933,6 +2967,7 @@ export function newEnemy(selectedEnemy = null){
     }
     applyDuelRulesAtCombatStart();
     setBiomeRule(ruleForBiome(enemy.biome));
+    setCombatBackdrop(enemy.biome);
     applyTerrainPrep();
     if(enemy.spells.length > 0){
         log(`L'ennemi dispose de sorts : ${enemy.spells.map(s => s.name).join(", ")}`);
@@ -2942,7 +2977,7 @@ export function newEnemy(selectedEnemy = null){
     decideFirstTurn();
 }
 
-// Préparation du terrain (terrain.js) : bonus d'embuscade, ennemi alerté ou altéré, faiblesse repérée, plateau de départ.
+// Préparation du terrain (terrain.js) : bonus d'embuscade, ennemi altéré, faiblesse repérée, plateau de départ.
 function applyTerrainPrep(){
     const prep = enemy?.prep;
     if(!prep) return;
@@ -2973,7 +3008,7 @@ export function decideFirstTurn(){
         currentTurn = playerStarts ? 'player' : 'enemy';
         showCombatAnimation(playerStarts
             ? { icon: 'bolt', title: 'Attaque surprise !', source: 'Vous les prenez par derrière', target: '→ À vous de jouer !' }
-            : { icon: 'bolt', title: `${enemy.name} vous attend !`, source: 'Cloche sonnée : il est alerté', target: '→ Ennemi joue en premier' }, playerStarts);
+            : { icon: 'bolt', title: `${enemy.name} vous attend !`, source: 'Préparation du terrain', target: '→ Ennemi joue en premier' }, playerStarts);
         log(`Premier tour : ${playerStarts ? 'Joueur' : 'Ennemi'} (préparation du terrain)`);
         if(!playerStarts) setTimeout(() => enemyTurn(), 1500);
         return;
@@ -3105,6 +3140,15 @@ function appendWeaponButton(container, weapon, hand){
         <div class="spell-name">${icon} ${weapon.name}</div>
         <div class="spell-cost">${weapon.actionPoints} ${svgIcon('arrow')} - ${weapon.damage} ${svgIcon('skull')}</div>
     `;
+    const showDetails = () => showWeaponTooltip(btn, weapon);
+    const hideDetails = () => hideSpellTooltip();
+    btn.addEventListener('mouseenter', showDetails);
+    btn.addEventListener('mouseleave', hideDetails);
+    btn.addEventListener('touchstart', showDetails, { passive: true });
+    btn.addEventListener('touchend', hideDetails);
+    btn.addEventListener('touchcancel', hideDetails);
+    btn.addEventListener('focus', showDetails);
+    btn.addEventListener('blur', hideDetails);
     if(player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints) {
         btn.classList.add('disabled');
         btn.tabIndex = -1;
@@ -3159,7 +3203,7 @@ export function updateWeaponsTab(){
             <span class="weapon-icon">${getWeaponIcon(weapon.type)}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${weapon.name} <em>(${hand === 'left' ? 'main gauche' : 'main droite'}${weapon.twoHanded ? ', deux mains' : ''})</em></span>
-                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}</span>
+                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${weapon.biome ? ` • Bonus : ${BIOME_LABELS[weapon.biome]}` : ''}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
             <button class="weapon-action" onclick="window.unequipWeapon('${hand}')">Retirer</button>
@@ -3200,7 +3244,7 @@ export function updateWeaponsTab(){
             <span class="weapon-icon">${icon}</span>
             <div class="weapon-details">
                 <span class="weapon-name">${weapon.name}</span>
-                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}</span>
+                <span class="weapon-stats">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')} • Niv. ${weapon.minLevel}${weapon.biome ? ` • Bonus : ${BIOME_LABELS[weapon.biome]}` : ''}</span>
                 <span class="weapon-description">${weapon.description}</span>
             </div>
             <div class="weapon-hand-actions">

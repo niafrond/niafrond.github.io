@@ -151,7 +151,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         // Jonctions gardées : objet à rapporter à un garde, gardien spécial à vaincre (world/junctions.js).
         applyJunctions(screens, quests, REGION_LEVEL);
         applyYubu(screens, quests);   // reliques du Pas de Yu + quête de Gui (marcher sur les eaux)
-        Object.values(screens).forEach(addPrepSpots);   // préparation du terrain : pièges, hautes herbes, cloches, belvédères
+        Object.values(screens).forEach(addPrepSpots);   // préparation du terrain : pièges, hautes herbes, belvédères
 
     }
 
