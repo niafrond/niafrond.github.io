@@ -17,7 +17,7 @@ import { worldZones } from "./worldMap.js";
 import { mountWorldMap } from "./worldMapView.js";
 import { createExplorationView } from "./explorationView.js";
 import { REGION_ENTRY_SCREEN } from "./story.js";
-import { ARENA_MIN_LEVEL, ARENA_NAME, ARENA_REGION, isArenaUnlocked } from "./arena.js";
+import { ARENA_NAME, ARENA_REGION } from "./arena.js";
 import { heroSprite, spriteUri, loadSpritePack, CORE_PACK } from "./sprites/index.js";
 import { hideLoadingScreen } from "./loader.js";
 
@@ -263,8 +263,8 @@ function init() {
     // Le bouton « Arène » du HUD y entre (dès le niveau 15) ; dans l'arène, il devient « Sortir » et en fait sortir à tout moment.
     const openArena = () => {
         if(exploration.inArena()) { playSfx('uiClick'); exploration.leaveArena(); return; }
-        if(!isArenaUnlocked(player.level)) {
-            exploration.toast(`L'${ARENA_NAME} ouvre ses portes au niveau ${ARENA_MIN_LEVEL} (vous êtes niveau ${player.level}).`, 4500);
+        if(!exploration.isArenaUnlocked()) {
+            exploration.toast(`L'${ARENA_NAME} ouvre ses portes dès que vous atteignez le 3e terrain (les Bambous).`, 4500);
             return;
         }
         playSfx('uiClick');

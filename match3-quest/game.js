@@ -14,9 +14,10 @@ import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDiffi
 import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects, tickReusableRecharge, describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
 import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses } from "./attributes.js";
-import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
+import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel, normalizeXP } from "./experience.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
+import { applyGrowth } from "./progression.js";
 import { animationFactor } from "./gameOptions.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
 
@@ -545,6 +546,10 @@ function applyLevelUpRewards(levelUpResult){
         if(maxHpGained > 0) {
             player.maxHp += maxHpGained;
         }
+        // croissance innée (attaque après le niveau 18, PV après le niveau 20) : voir progression.js
+        const extras = applyGrowth(player);
+        maxHpGained += extras.maxHp;
+        if(extras.attack > 0) log(`+${extras.attack} attaque (maîtrise du niveau ${player.level}).`);
 
         const beforeHeal = player.hp;
         const healAmount = levelsGained * LEVEL_UP_HEAL_GAIN;
@@ -964,6 +969,9 @@ export function loadGameData() {
             player.revivePercent = loaded.revivePercent ?? player.revivePercent;
             player.unspentLevelPoints = loaded.unspentLevelPoints ?? player.unspentLevelPoints;
             player.gold = loaded.gold ?? player.gold;
+            normalizeXP(player);   // recale l'XP sur la courbe actuelle sans changer le niveau
+            player.growthLevel = Number.isInteger(loaded.growthLevel) ? loaded.growthLevel : undefined;
+            applyGrowth(player);   // rattrapage unique de la croissance innée (niveaux > 18)
             player.mount = loaded.mount === 'horse' ? 'horse' : null;
             player.merchantSold = loaded.merchantSold && typeof loaded.merchantSold === 'object' ? loaded.merchantSold : {};
             player.bossLossStreak = loaded.bossLossStreak && loaded.bossLossStreak.id ? loaded.bossLossStreak : null;

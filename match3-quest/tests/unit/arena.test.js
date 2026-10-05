@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import {
-    ARENA_MIN_LEVEL, ARENA_BASE_LEVEL, ARENA_TIERS, ARENA_TEMPLATES, ARENA_HALL, ARENA_BIOMES, arenaTier, isArenaUnlocked, arenaWaveLevel,
+    ARENA_UNLOCK_REGION, ARENA_TIERS, ARENA_TEMPLATES, ARENA_HALL, ARENA_BIOMES, arenaTier, isArenaUnlocked, arenaWaveLevel,
     isChampionWave, arenaEncounterInfo, applyArenaScaling, arenaRewardBonus, normalizeArenaData, buildArenaScreens,
     arenaRoomId, arenaGuardId, arenaMasterId, hallDoor
 } from '../../arena.js';
@@ -28,16 +28,19 @@ function walkThrough(s, exit) {
 const exitTo = (s, pred) => s.screens[s.data.screenId].exits.find(pred);
 
 describe('Arène des Mille Flèches : cercles', () => {
-    test('ouverte à partir du niveau 15', () => {
-        expect(ARENA_MIN_LEVEL).toBe(15);
-        expect(isArenaUnlocked(14)).toBe(false);
-        expect(isArenaUnlocked(15)).toBe(true);
+    test('atteignable dès le 3e terrain (Bambous), quel que soit le niveau', () => {
+        expect(ARENA_UNLOCK_REGION).toBe('bambous');
+        expect(isArenaUnlocked([])).toBe(false);
+        expect(isArenaUnlocked(['rizieres_village', 'fleuve_wild', 'fleuve'])).toBe(false);
+        expect(isArenaUnlocked(['rizieres_village', 'bambous_village'])).toBe(true);
+        expect(isArenaUnlocked(['gobi'])).toBe(true);   // un terrain plus avancé compte aussi
+        expect(isArenaUnlocked(undefined)).toBe(false);
     });
 
     test('au moins 8 cercles, de plus en plus difficiles et rémunérateurs', () => {
         expect(ARENA_TIERS.length).toBeGreaterThanOrEqual(8);
         expect(ARENA_TIERS.map(t => t.id)).toEqual(ARENA_TIERS.map((_, i) => i + 1));
-        expect(increasing(ARENA_TIERS.map(t => t.levelOffset))).toBe(true);
+        expect(increasing(ARENA_TIERS.map(t => t.baseLevel))).toBe(true);
         expect(nonDecreasing(ARENA_TIERS.map(t => t.statMult))).toBe(true);
         expect(nonDecreasing(ARENA_TIERS.map(t => t.waves))).toBe(true);
         expect(increasing(ARENA_TIERS.map(t => t.rewardMult))).toBe(true);
@@ -54,11 +57,20 @@ describe('Arène des Mille Flèches : cercles', () => {
         ARENA_TEMPLATES.forEach(id => expect(templateIds.has(id)).toBe(true));
     });
 
+    test('les cercles couvrent tout le parcours : du niveau 3 au niveau 70', () => {
+        expect(ARENA_TIERS[0].baseLevel).toBeLessThanOrEqual(5);   // le premier cercle est jouable dès le 3e terrain
+        const top = ARENA_TIERS[ARENA_TIERS.length - 1];
+        expect(arenaWaveLevel(top.id, top.waves)).toBeGreaterThanOrEqual(65);
+        expect(arenaWaveLevel(top.id, top.waves)).toBeLessThanOrEqual(70);
+        // pas de trou de plus de 15 niveaux entre deux cercles
+        ARENA_TIERS.slice(1).forEach((t, i) => expect(t.baseLevel - ARENA_TIERS[i].baseLevel).toBeLessThanOrEqual(15));
+    });
+
     test('niveaux croissants dans un cercle ; dernier combat = maître', () => {
         ARENA_TIERS.forEach(t => {
             const levels = Array.from({ length: t.waves }, (_, i) => arenaWaveLevel(t.id, i + 1));
             expect(nonDecreasing(levels)).toBe(true);
-            expect(levels[0]).toBe(ARENA_BASE_LEVEL + t.levelOffset);
+            expect(levels[0]).toBe(t.baseLevel);
             expect(arenaWaveLevel(t.id, 1, 40)).toBe(levels[0]);   // le niveau du héros n'intervient pas
             expect(isChampionWave(t.id, t.waves)).toBe(true);
             expect(isChampionWave(t.id, t.waves - 1)).toBe(false);
@@ -69,7 +81,7 @@ describe('Arène des Mille Flèches : cercles', () => {
         const t = arenaTier(7);
         const guard = arenaEncounterInfo({ arena: { tier: 7, wave: 1 } }, 20, []);
         const master = arenaEncounterInfo({ arena: { tier: 7, wave: t.waves } }, 20, []);
-        expect(guard).toMatchObject({ level: ARENA_BASE_LEVEL + t.levelOffset, duel: t.duel, arena: { tier: 7, wave: 1, firstClear: false, statMult: t.statMult } });
+        expect(guard).toMatchObject({ level: t.baseLevel, duel: t.duel, arena: { tier: 7, wave: 1, firstClear: false, statMult: t.statMult } });
         expect(master.duel).toEqual(t.masterDuel);
         expect(master.arena.firstClear).toBe(true);
         expect(arenaEncounterInfo({ arena: { tier: 7, wave: t.waves } }, 20, [7]).arena.firstClear).toBe(false);

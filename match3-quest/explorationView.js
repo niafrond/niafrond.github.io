@@ -19,7 +19,7 @@ import { playSfx } from './sound.js';
 import { playEndingAnimation, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites } from './sprites/index.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
-import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier } from './arena.js';
+import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { icon } from './icons.js';
 
@@ -1504,6 +1504,8 @@ export function createExplorationView(cfg) {
 
         // Arène des Mille Flèches : entrée (point de retour mémorisé) et sortie à tout moment.
         inArena() { ensureSession(); return X.inArena(session); },
+        // L'arène s'ouvre dès le 3e terrain (Bambous) : arena.js `isArenaUnlocked`
+        isArenaUnlocked() { ensureSession(); return isArenaUnlocked(session.data.visitedScreens); },
         enterArena() { return changeArena(true); },
         leaveArena() { return changeArena(false); },
 

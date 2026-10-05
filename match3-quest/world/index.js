@@ -5,6 +5,7 @@
 // `world/maps/<R>.js` est absent restent inchangées, ce qui permet de livrer le monde région par région.
 
 import { merchantNpc } from '../merchants.js';
+import { getXPCostForLevel } from '../experience.js';
 import { buildZone, arrivalFor, freeNeighbor } from './mapKit.js';
 import { EXPANDED_SIZES, expandScreen, widenGates, linkGates, openPerimeter, addWaterBorder } from './expand.js';
 import { applyJunctions } from './junctions.js';
@@ -16,12 +17,12 @@ export const REGION_ORDER = ['rizieres', 'fleuve', 'bambous', 'gobi', 'tonnerre'
 
 // Niveau recommandé par région (aligné sur REGION_UNLOCK_LEVEL de story.js) : sert à dimensionner l'XP des quêtes.
 export const REGION_LEVEL = { rizieres: 1, fleuve: 2, bambous: 3, gobi: 5, tonnerre: 7, volcan: 9, fauves: 11, mer: 13, fusang: 15, lune: 16 };
-const QUEST_XP_SHARE = { main: 0.6, side: 0.25 };   // part du coût d'un niveau (expérience.js : 2000 x 1,18^(n-1))
+const QUEST_XP_SHARE = { main: 0.6, side: 0.25 };   // part du coût d'un niveau (experience.js : getXPCostForLevel)
 
 // Chaque quête rapporte de l'XP : au moins une fraction du coût d'un niveau de sa région.
 export function questXp(quest, region) {
     const level = REGION_LEVEL[region] || 1;
-    const levelCost = 2000 * Math.pow(1.18, level - 1);
+    const levelCost = getXPCostForLevel(Math.max(2, level));
     const share = quest.side ? QUEST_XP_SHARE.side : QUEST_XP_SHARE.main;
     return Math.max(quest.reward?.xp || 0, Math.round(levelCost * share / 10) * 10);
 }
