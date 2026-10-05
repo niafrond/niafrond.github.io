@@ -7,6 +7,7 @@
 import { merchantNpc } from '../merchants.js';
 import { buildZone, arrivalFor, freeNeighbor } from './mapKit.js';
 import { EXPANDED_SIZES, expandScreen, widenGates, linkGates } from './expand.js';
+import { applyJunctions } from './junctions.js';
 import { MAPS } from './maps/index.js';
 import { TEXTS } from './text/index.js';
 
@@ -138,6 +139,8 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         widenGates(screens[`${region}_village`]);
     });
     linkGates(screens);
+    // Jonctions gardées : objet à rapporter à un garde, gardien spécial à vaincre (world/junctions.js).
+    applyJunctions(screens, quests, REGION_LEVEL);
 
     // Retire des sanctuaires les PNJ qui ont déménagé.
     sanctuaryOf.forEach(id => { screens[id].npcs = screens[id].npcs.filter(n => !relocated.has(n.id)); });

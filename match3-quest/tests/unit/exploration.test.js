@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs';
+import { JUNCTIONS } from '../../world/junctions.js';
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, REGION_ENTRY_SCREEN, STORY_ENDING, STORY_INTRO, STORY_TITLE } from '../../story.js';
 import {
     createSession, tryMove, tick, isTerrainBlocked, buildRoute, aliveEnemies, entityAt, getAuraTiles,
@@ -352,7 +353,11 @@ describe('cartes (story.js)', () => {
             expect(village.npcs.length).toBeGreaterThanOrEqual(1);
             expect(village.waypoint).toBeDefined();
             expect(wild.enemies.length).toBeGreaterThanOrEqual(3);
-            expect(village.exits.filter(e => e.requires)).toEqual([]);   // le village n'est jamais fermé : seul le sanctuaire précédent l'est
+            // le village n'est fermé que par une jonction gardée vers sa zone sauvage (world/junctions.js) ; le sanctuaire précédent l'est par son soleil
+            village.exits.filter(e => e.requires).forEach(e => {
+                expect(e.to).toBe(wild.id);
+                expect(JUNCTIONS.some(j => j.from === village.id && (j.quest?.id === e.requires))).toBe(true);
+            });
             // la sortie de la zone sauvage vers le sanctuaire est fermée par un gate, avec un message
             const gate = wild.exits.find(e => e.to === id);
             expect(gate.requires).toBeTruthy();
@@ -1073,7 +1078,10 @@ describe('quêtes secondaires', () => {
     const allEnemies = screens.flatMap(s => s.enemies);
     const regionOf = q => screens.find(sc => sc.npcs.some(n => n.id === q.giver)).region;
     // quêtes annexes qui ferment une sortie (gate de zone sauvage) : elles font partie du chemin de l'histoire
-    const gateQuests = new Set(ORDER.map(id => SCREENS[`${id}_wild`].exits.find(e => e.to === id).requires).filter(r => QUESTS.some(q => q.id === r)));
+    const gateQuests = new Set([
+        ...ORDER.map(id => SCREENS[`${id}_wild`].exits.find(e => e.to === id).requires),
+        ...JUNCTIONS.filter(j => j.type === 'item').map(j => j.quest.id)   // jonctions gardées : objet à rapporter à un garde
+    ].filter(r => QUESTS.some(q => q.id === r)));
 
     test('au moins 2 quêtes secondaires par région, récompenses raisonnables, jamais requises par l\'histoire', () => {
         ORDER.forEach(id => {
@@ -1783,8 +1791,8 @@ describe('texte d\'arrivée', () => {
     });
 
     test('chaque zone a son texte à la première visite : village (arrivée de la région), puis zone sauvage', () => {
-        const s = at('fleuve_village', 18, 6);
-        const res = tryMove(s, 1, 0, { playerLevel: 5 });
+        const g = atGate('fleuve_village', 'fleuve_wild', { quests: { jq_passerelle_hekou: 'done' } });   // passerelle déjà ouverte
+        const res = tryMove(g.s, g.dx, g.dy, { playerLevel: 5 });
         expect(res).toMatchObject({ type: 'transition', to: 'fleuve_wild', firstVisit: true });
         expect(res.arrival).toEqual(SCREENS.fleuve_wild.arrival);
         expect(res.arrival.length).toBeGreaterThan(0);

@@ -286,6 +286,7 @@ export function expandScreen(screen, W, H) {
     screen.obstacles = toRects(obst);
     screen.liquids = toRects(liq);
     screen.paths = toRects(paths);
+    screen.core = { w: w0, h: h0 };   // dimensions de la salle d'origine ; le reste est le terrain agrandi
     return screen;
 }
 
