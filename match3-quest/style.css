@@ -2830,3 +2830,7 @@ body.fx-low .mana-fly-dot { box-shadow: none; }
 /* Bouton « cheval » du HUD d'exploration : caché sans monture, allumé quand on est en selle */
 .explore-hud-buttons button[hidden] { display: none; }
 .explore-hud-buttons button.on { outline: 2px solid #facc15; }
+
+/* Onglet Stats : répartition / réinitialisation des points d'attribut */
+.attribute-points-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.attribute-points-actions button:disabled { opacity: 0.5; cursor: not-allowed; }

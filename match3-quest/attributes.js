@@ -104,6 +104,28 @@ export function describeAttributeChoice(entity, attr) {
     };
 }
 
+// Total de points d'attribut dépensés.
+export const totalAttributePoints = entity => ATTRIBUTE_ORDER.reduce((sum, attr) => sum + getAttributePoints(entity, attr), 0);
+
+/**
+ * Remet à zéro tous les points d'attribut dépensés et les rend à dépenser (menu « Réinitialiser les points ») : retire l'effet direct
+ * de chaque point (attaque pour Battle et Morale, défense pour Agilité, PV max pour Endurance) et rend les points dans
+ * `unspentLevelPoints`. Les bonus de couleur de mana disparaissent avec les points (ils se calculent d'après eux). Hors combat seulement :
+ * l'appelant vérifie. Renvoie { refunded } (nombre de points rendus).
+ */
+export function respecAttributes(entity) {
+    const pts = Object.fromEntries(ATTRIBUTE_ORDER.map(attr => [attr, getAttributePoints(entity, attr)]));
+    const refunded = ATTRIBUTE_ORDER.reduce((sum, attr) => sum + pts[attr], 0);
+    if (refunded <= 0) return { refunded: 0 };
+    entity.attack = Math.max(0, Math.floor(entity.attack || 0) - pts.strength - pts.morale);
+    entity.defense = Math.max(0, Math.floor(entity.defense || 0) - pts.agility);
+    entity.maxHp = Math.max(1, Math.floor(entity.maxHp || 1) - pts.stamina);
+    entity.hp = Math.max(1, Math.min(Math.floor(entity.hp || 1), entity.maxHp));
+    ATTRIBUTE_ORDER.forEach(attr => { entity.attributes[attr] = 0; });
+    entity.unspentLevelPoints = Math.max(0, Math.floor(entity.unspentLevelPoints || 0)) + refunded;
+    return { refunded };
+}
+
 // Résumé permanent des bonus de couleur déjà acquis (onglet Stats).
 export function summarizeColorBonuses(entity) {
     return ATTRIBUTE_ORDER.map(attr => {
