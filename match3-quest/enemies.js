@@ -80,6 +80,12 @@ function resolvePreferredColor(template){
     return 'red';
 }
 
+// Faiblesse d'un gabarit d'ennemi (révélée par l'observation sur la carte, voir terrain.js).
+export function weakColorOfTemplate(templateId){
+    const template = loadEnemyCatalogSync().find(t => t.id === templateId);
+    return template ? resolveWeakColor(resolvePreferredColor(template)) : null;
+}
+
 function resolveWeakColor(preferredColor){
     return COLOR_WEAKNESS_MAP[preferredColor] || null;
 }
@@ -264,6 +270,9 @@ export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
         enemyEntity.name = encounter.boss.name || `Boss ${enemyEntity.name}`;
     }
     enemyEntity.mapEnemyId = encounter?.enemyId || null;
+    // Préparation du terrain (terrain.js) : embuscade, faiblesse repérée, piège, alerte… appliquée par game.js.
+    if(encounter?.biome) enemyEntity.biome = encounter.biome;
+    if(encounter?.prep?.tags?.length) enemyEntity.prep = { ...encounter.prep };
     // Règles de duel (Fengmeng : miroir, tirs rapides, pièges de zone) appliquées par game.js, voir duel.js.
     if(encounter?.duel) enemyEntity.duel = { ...encounter.duel };
     // Vague de l'Arène des Mille Flèches (arena.js) : prime versée par game.js à la victoire.

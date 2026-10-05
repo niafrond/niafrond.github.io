@@ -25,6 +25,7 @@
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
 import { REGION_LEVEL } from './world/index.js';
 import { REGION_ORDER } from './world/index.js';
+import { approachOf, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
 export const AGGRO_RADIUS = 1;
@@ -122,6 +123,7 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.waypoints = Array.isArray(data.waypoints) ? data.waypoints : [];
     data.tracked = typeof data.tracked === 'string' ? data.tracked : null;
     data.arena = normalizeArenaData(data.arena);
+    data.observed = data.observed && typeof data.observed === 'object' && !Array.isArray(data.observed) ? data.observed : {};
 
     const enemyIndex = {};
     Object.values(screens).forEach(screen => screen.enemies.forEach(def => { enemyIndex[def.id] = { def, screenId: screen.id }; }));
@@ -152,9 +154,12 @@ function initScreenRuntime(session) {
     const screen = currentScreen(session);
     session.rt.enemies = {};
     session.rt.patrolTimer = 0;
+    session.rt.stillMs = 0;
+    session.rt.alerted = {};
     screen.enemies.forEach(def => {
         const route = def.kind === 'patrol' && def.patrol ? buildRoute(def.patrol) : null;
-        session.rt.enemies[def.id] = { x: def.x, y: def.y, route, idx: 0, dir: 1 };
+        const face = def.facing && (def.facing.dx || def.facing.dy) ? { ...def.facing } : { dx: 0, dy: 1 };
+        session.rt.enemies[def.id] = { x: def.x, y: def.y, route, idx: 0, dir: 1, face };
     });
 }
 
@@ -451,7 +456,14 @@ export function tryMove(session, dx, dy, ctx = {}) {
 
     session.data.x = nx;
     session.data.y = ny;
+    session.rt.stillMs = 0;
     if (session.rt.grace > 0) session.rt.grace--;
+    const bell = spotAt(screen.spots, nx, ny, 'bell');
+    if (bell && !Object.keys(session.rt.alerted).length) {
+        aliveEnemies(session).forEach(e => { session.rt.alerted[e.def.id] = true; });
+        const hit = checkAura(session);
+        return hit || { type: 'alert', message: 'La cloche résonne : les ennemis des environs sont alertés !' };
+    }
     return checkAura(session) || { type: 'moved' };
 }
 
@@ -460,6 +472,8 @@ export function tick(session, dtMs) {
     const rt = session.rt;
     rt.patrolTimer += dtMs;
     const events = [];
+    const seen = observeStep(session, dtMs);
+    if (seen) events.push(seen);
     let stepped = false;
     while (rt.patrolTimer >= PATROL_STEP_MS) {
         rt.patrolTimer -= PATROL_STEP_MS;
@@ -473,6 +487,19 @@ export function tick(session, dtMs) {
     return events;
 }
 
+// Observation : immobile quelques secondes à portée d'un ennemi, on perce sa faiblesse (mémorisée dans la sauvegarde).
+function observeStep(session, dtMs) {
+    session.rt.stillMs = (session.rt.stillMs || 0) + dtMs;
+    const list = aliveEnemies(session).map(e => ({
+        id: e.def.id, x: e.x, y: e.y, aggro: aggroOf(e.def), shielded: isShielded(session, e.def), illusion: Boolean(e.def.illusion)
+    }));
+    const id = observationTarget(session.rt.stillMs, { x: session.data.x, y: session.data.y }, list, session.data.observed);
+    if (!id) return null;
+    session.data.observed[id] = true;
+    const def = session.rt.enemyIndex[id].def;
+    return { type: 'observed', enemyId: id, name: def.name, templateId: def.templateId };
+}
+
 function stepPatrols(session) {
     const { x: px, y: py } = session.data;
     aliveEnemies(session).forEach(e => {
@@ -484,6 +511,7 @@ function stepPatrols(session) {
         const occupied = entityAt(session, next.x, next.y);
         if (occupied) return;
         st.idx += st.dir;
+        st.face = faceFromStep(st, next);
         st.x = next.x;
         st.y = next.y;
     });
@@ -516,6 +544,7 @@ export function findPath(session, tx, ty) {
     aliveEnemies(session).forEach(e => occupied.add(key(e.x, e.y)));
     if (screen.waypoint) occupied.add(key(screen.waypoint.x, screen.waypoint.y));
     const exits = new Set(screen.exits.map(e => key(e.x, e.y)));
+    (screen.spots || []).filter(sp => sp.kind === 'bell').forEach(sp => exits.add(key(sp.x, sp.y)));   // une cloche ne se frappe que volontairement
     const startKey = key(start.x, start.y);
     const target = key(tx, ty);
 
@@ -583,6 +612,22 @@ export function enemyRegionLevel(session, enemyId) {
     return REGION_LEVEL[session.screens[screenId]?.region] || 1;
 }
 
+// Préparation du terrain : approche, observation, cloche, pièges et herbes, belvédère (voir terrain.js).
+export function prepFor(session, def) {
+    const st = session.rt.enemies[def.id];
+    const screen = currentScreen(session);
+    if (!st || def.boss || def.duel || def.arena) return buildPrep();
+    const { x, y } = session.data;
+    return buildPrep({
+        approach: approachOf(st.face, st, { x, y }),
+        alerted: Boolean(session.rt.alerted?.[def.id]),
+        observed: Boolean(session.data.observed?.[def.id]),
+        enemyOnTrap: Boolean(spotAt(screen.spots, st.x, st.y, 'trap')),
+        enemyOnGrass: Boolean(spotAt(screen.spots, st.x, st.y, 'tallGrass')),
+        onOutlook: Boolean(spotAt(screen.spots, x, y, 'outlook'))
+    });
+}
+
 export function encounterFor(session, enemyId, playerLevel) {
     const entry = session.rt.enemyIndex[enemyId];
     if (!entry) return null;
@@ -596,7 +641,10 @@ export function encounterFor(session, enemyId, playerLevel) {
         };
     }
     const level = enemyLevel(def, enemyRegionLevel(session, enemyId), session.data.ngPlus);
+    const prep = prepFor(session, def);
     return {
+        prep,
+        biome: currentScreen(session).biome || null,
         enemyId: def.id,
         spriteKey: def.spriteKey || def.id,
         templateId: def.templateId,

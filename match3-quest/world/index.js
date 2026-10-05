@@ -9,6 +9,7 @@ import { getXPCostForLevel } from '../experience.js';
 import { buildZone, arrivalFor, freeNeighbor } from './mapKit.js';
 import { EXPANDED_SIZES, scaleScreen, widenGates, linkGates, openPerimeter, addWaterBorder } from './expand.js';
 import { applyJunctions } from './junctions.js';
+import { addPrepSpots } from './spots.js';
 import { buildAquaticWorld, applyYubu } from './aquatic.js';
 import { MAPS } from './maps/index.js';
 import { TEXTS } from './text/index.js';
@@ -150,6 +151,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         // Jonctions gardées : objet à rapporter à un garde, gardien spécial à vaincre (world/junctions.js).
         applyJunctions(screens, quests, REGION_LEVEL);
         applyYubu(screens, quests);   // reliques du Pas de Yu + quête de Gui (marcher sur les eaux)
+        Object.values(screens).forEach(addPrepSpots);   // préparation du terrain : pièges, hautes herbes, cloches, belvédères
 
     }
 

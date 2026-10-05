@@ -1,5 +1,6 @@
 import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, clampEnemyAttackDamage, applyDamage, addBonusTurn } from "./game.js";
 import { colors, boardSize } from "./constants.js";
+import { BIOME_RULES, createBiomeState, isBlockedCell, advanceBiome, resolveBiomeMatch, burnDamage, driftRow, applyBoardBoost } from "./terrain.js";
 import { flyManaToCounter } from "./manaFlight.js";
 import { tutorialCallbacks } from "./tutorial.js";
 import {
@@ -36,6 +37,53 @@ export function getTrappedCells(){
 export function setTrappedCells(indices = []){
     trappedCells = new Set(indices);
     renderBoard(true);
+}
+
+// Règle de biome du combat (terrain.js) : cases spéciales (bambou, lave, boue, sacré, glace) et dérive (mer).
+let biomeRule = null;
+let biomeState = createBiomeState();
+
+export function setBiomeRule(key){
+    biomeRule = BIOME_RULES[key] || null;
+    biomeState = createBiomeState();
+}
+export const getBiomeRule = () => biomeRule;
+export const getBiomeCells = () => ({ ...biomeState.cells });
+const isBlocked = index => isBlockedCell(biomeState, index, biomeRule);
+
+// Fin du tour du joueur : les cases évoluent. Retourne les dégâts de brûlure à infliger au héros.
+export function advanceBiomeTurn(){
+    if(!biomeRule) return 0;
+    const res = advanceBiome(biomeState, biomeRule, boardSize);
+    if(res.spawned.length) log(`${biomeRule.label} : ${res.spawned.length} case(s) ${biomeRule.kind === 'bamboo' ? 'envahie(s) par les bambous' : biomeRule.kind === 'frost' ? 'gelée(s)' : biomeRule.kind === 'lava' ? 'brûlante(s)' : biomeRule.kind === 'mud' ? 'boueuse(s)' : 'sacrée(s)'}.`);
+    if(res.expired.length) log(`${biomeRule.label} : ${res.expired.length} case(s) se libèrent.`);
+    if(res.drifted !== null){
+        const before = [...board];
+        driftRow(board, res.drifted, boardSize);
+        if(hasMatchesOnBoard(board)) board.splice(0, board.length, ...before);   // la dérive ne crée jamais de combinaison
+        else log('Mer : une rangée dérive.');
+    }
+    renderBoard(true);
+    return burnDamage(biomeState, biomeRule);
+}
+
+// Départ de combat depuis un belvédère (terrain.js) : `count` tuiles passent à la couleur faible de l'ennemi.
+export function boostBoardColor(color, count){
+    if(!color) return;
+    applyBoardBoost(board, color, count);
+    if(hasMatchesOnBoard(board)) generateNewBoard();
+    renderBoard();
+}
+
+// Effet d'une case de biome traversée par un match du joueur (terrain.js).
+function applyPlayerMatchExtras(indices, info){
+    if(biomeRule){
+        const res = resolveBiomeMatch(biomeState, biomeRule, indices);
+        if(res.manaDelta > 0 && info.color) addManaForColor(player, info.color, res.manaDelta);
+        if(res.manaDelta < 0 && info.color) player.mana[info.color] = Math.max(0, (player.mana[info.color] || 0) + res.manaDelta);
+        if(res.damage){ applyDamage(enemy, res.damage); log(`Case brûlante : -${res.damage} PV pour l'ennemi.`); }
+        if(res.manaDelta) log(`${biomeRule.label} : ${res.manaDelta > 0 ? '+' : ''}${res.manaDelta} mana.`);
+    }
 }
 
 // Minuteur pour suggestion de match
@@ -390,6 +438,7 @@ function normalizeBoardHoles(){
 
 export function generateBoard(){
     trappedCells = new Set();
+    biomeState = createBiomeState();
     generateNewBoard();
     const boardDiv=document.getElementById('board');
     if(!boardDiv){
@@ -471,6 +520,12 @@ export function selectTile(index){
     const boardDiv=document.getElementById('board');
     const tiles=boardDiv.children;
     
+    if(isBlocked(index) || (selected !== null && isBlocked(selected))){
+        log('Cette case est bloquée.');
+        playSfx('invalid');
+        if(selected !== null){ tiles[selected].classList.remove('selected'); selected = null; }
+        return;
+    }
     if(selected===null){ 
         selected=index;
         tiles[index].classList.add('selected');
@@ -585,6 +640,8 @@ export function renderBoard(skipCleanup = false){
         }
         paintTileGlyph(tiles[i], t);
         tiles[i].classList.toggle('trapped', trappedCells.has(i));
+        const cell = biomeState.cells[i];
+        if(cell) tiles[i].dataset.cell = cell.kind; else delete tiles[i].dataset.cell;
     }
     refreshTargetingHighlights();
 }
@@ -695,6 +752,8 @@ export function checkMatches(forceFullBoard = false){
             }
             if(shouldCreateJokerFromMatchLength(info.len)){ info.makeJoker=true; }
         }
+
+        if(currentTurn === 'player') applyPlayerMatchExtras(indices, info);
 
         // Sons : crânes = coup porté ; couleur = mana récolté (scintillement magique) ; épées = son de match classique.
         const sfxPayload = { matchType: info.type, length: info.len, isPlayer: currentTurn === 'player' };
@@ -1016,7 +1075,7 @@ function clearSuggestionTimer(){
 }
 
 function getSortedPossibleMoves(){
-    const possibleMoves = findPossibleMatches(board);
+    const possibleMoves = findPossibleMatches(board).filter(m => !isBlocked(m.from) && !isBlocked(m.to));
     possibleMoves.sort((a, b) => b.matchLength - a.matchLength);
     return possibleMoves;
 }

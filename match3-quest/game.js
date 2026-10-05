@@ -4,7 +4,8 @@ import { colors, boardSize } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
 import { allWeapons, getAvailableWeapons, getWeaponById } from "./weapons.js";
-import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving } from "./board.js";
+import { weaknessDamage, ruleForBiome } from "./terrain.js";
+import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { bigMatchXpFor } from "./matchMechanics.js";
 import { recordBossLoss, recordVictory, pickBossTip } from "./bossTips.js";
@@ -368,6 +369,7 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
     if(spell.dmg){
         const targetResistance = target.resistances?.[spell.color] || 0;
         let dmg = Math.floor((spell.dmg + intelligenceBonus) * (1 - targetResistance));
+        if(isPlayerCaster && target.prep?.weaknessRevealed) dmg = weaknessDamage(dmg, spell.color, target.weakColor, true);
         if(!isPlayerCaster && target.damageReduction > 0) {
             dmg = Math.max(1, Math.floor(dmg * (1 - target.damageReduction)));
         }
@@ -1795,6 +1797,9 @@ export function finishPlayerTurn(){
     afterPlayerAnimations(() => {
         if(gameState.combatState !== 'active') return;
         if(player.hp <= 0){ handlePlayerDeath(); return; }
+        const burn = advanceBiomeTurn();
+        if(burn > 0){ applyDamage(player, burn); log(`Cases brûlantes : -${burn} PV.`); updateStats(); }
+        if(player.hp <= 0){ handlePlayerDeath(); return; }
         if(!applyDuelRulesBeforeEnemyTurn()) return;
         enemyTurn();
     });
@@ -2927,6 +2932,8 @@ export function newEnemy(selectedEnemy = null){
         log(`${enemy.name} porte : ${enemy.inventoryItem.name}`);
     }
     applyDuelRulesAtCombatStart();
+    setBiomeRule(ruleForBiome(enemy.biome));
+    applyTerrainPrep();
     if(enemy.spells.length > 0){
         log(`L'ennemi dispose de sorts : ${enemy.spells.map(s => s.name).join(", ")}`);
     }
@@ -2935,8 +2942,42 @@ export function newEnemy(selectedEnemy = null){
     decideFirstTurn();
 }
 
+// Préparation du terrain (terrain.js) : bonus d'embuscade, ennemi alerté ou altéré, faiblesse repérée, plateau de départ.
+function applyTerrainPrep(){
+    const prep = enemy?.prep;
+    if(!prep) return;
+    if(prep.playerBonusPA) player.combatPoints += prep.playerBonusPA;
+    if(prep.enemyBonusPA) enemy.combatPoints += prep.enemyBonusPA;
+    if(prep.enemyStatus){
+        if(!enemy.statusEffects) enemy.statusEffects = {};
+        Object.assign(enemy.statusEffects, prep.enemyStatus);
+        if(prep.enemyStatus.poisoned) enemy.statusEffects.poisonDamage = Math.max(2, Math.ceil(enemy.maxHp / 20));
+    }
+    prep.lines.forEach(line => log(line));
+    if(prep.boardBoost) pendingBoardBoost = { color: enemy.weakColor, count: prep.boardBoost.count };
+}
+
+// Tuiles de départ d'un belvédère : appliquées par main.js une fois le plateau généré.
+let pendingBoardBoost = null;
+export function consumeBoardBoost(){
+    const boost = pendingBoardBoost;
+    pendingBoardBoost = null;
+    if(boost?.color) boostBoardColor(boost.color, boost.count);
+}
+
 // détermine le premier tour selon l'agilité (plus d'agilité = joueur plus rapide)
 export function decideFirstTurn(){
+    const prep = enemy?.prep;
+    if(prep?.playerFirst || prep?.enemyFirst){
+        const playerStarts = Boolean(prep.playerFirst);
+        currentTurn = playerStarts ? 'player' : 'enemy';
+        showCombatAnimation(playerStarts
+            ? { icon: 'bolt', title: 'Attaque surprise !', source: 'Vous les prenez par derrière', target: '→ À vous de jouer !' }
+            : { icon: 'bolt', title: `${enemy.name} vous attend !`, source: 'Cloche sonnée : il est alerté', target: '→ Ennemi joue en premier' }, playerStarts);
+        log(`Premier tour : ${playerStarts ? 'Joueur' : 'Ennemi'} (préparation du terrain)`);
+        if(!playerStarts) setTimeout(() => enemyTurn(), 1500);
+        return;
+    }
     const playerAgility = player.attributes.agility || 0;
     const enemyAgility = enemy.attributes?.agility || 0;
     
