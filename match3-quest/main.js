@@ -336,11 +336,12 @@ function init() {
 
     // Menu Options / Pause (son, volume, mode nuit)
     const optionsModal = document.getElementById('options-modal');
-    document.getElementById('options-btn')?.addEventListener('click', () => {
+    // Le bouton du bas et l'onglet « Options » (à côté de Jeu, Inventaire, Sorts, Stats) ouvrent le même menu.
+    ['options-btn', 'options-tab-btn'].forEach(id => document.getElementById(id)?.addEventListener('click', () => {
         primeAudioFromGesture();
         playSfx('uiClick');
         optionsModal?.classList.add('active');
-    });
+    }));
     document.getElementById('options-close-btn')?.addEventListener('click', () => optionsModal?.classList.remove('active'));
     optionsModal?.addEventListener('click', e => { if(e.target === optionsModal) optionsModal.classList.remove('active'); });
 
