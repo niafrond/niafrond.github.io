@@ -28,6 +28,8 @@ import { REGION_ORDER } from './world/index.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
 export const AGGRO_RADIUS = 1;
+// Rayon de vigilance d'un ennemi : 1 par défaut, 2 sur les cartes agrandies (`def.aggro`, world/expand.js `scaleScreen`).
+export const aggroOf = def => (Number.isInteger(def?.aggro) && def.aggro >= 1 ? def.aggro : AGGRO_RADIUS);
 export const PATROL_STEP_MS = 650;
 export const START_SCREEN = SCREENS.rizieres_village ? 'rizieres_village' : 'rizieres';
 // Nombre de déplacements pendant lesquels les zones de vigilance sont ignorées après une
@@ -159,9 +161,10 @@ function initScreenRuntime(session) {
 function enemyZoneCells(screen, def) {
     const anchors = def.kind === 'patrol' && def.patrol ? buildRoute(def.patrol) : [{ x: def.x, y: def.y }];
     const cells = new Set();
+    const r = aggroOf(def);
     anchors.forEach(a => {
-        for (let dy = -AGGRO_RADIUS; dy <= AGGRO_RADIUS; dy++) {
-            for (let dx = -AGGRO_RADIUS; dx <= AGGRO_RADIUS; dx++) cells.add((a.y + dy) * screen.w + (a.x + dx));
+        for (let dy = -r; dy <= r; dy++) {
+            for (let dx = -r; dx <= r; dx++) cells.add((a.y + dy) * screen.w + (a.x + dx));
         }
     });
     return cells;
@@ -352,8 +355,9 @@ export function getAuraTiles(session) {
     const screen = currentScreen(session);
     const tiles = new Set();
     aliveEnemies(session).filter(e => !isShielded(session, e.def)).forEach(e => {
-        for (let dy = -AGGRO_RADIUS; dy <= AGGRO_RADIUS; dy++) {
-            for (let dx = -AGGRO_RADIUS; dx <= AGGRO_RADIUS; dx++) {
+        const r = aggroOf(e.def);
+        for (let dy = -r; dy <= r; dy++) {
+            for (let dx = -r; dx <= r; dx++) {
                 const x = e.x + dx;
                 const y = e.y + dy;
                 if (x >= 0 && y >= 0 && x < screen.w && y < screen.h) tiles.add(`${x},${y}`);
@@ -390,7 +394,7 @@ function checkAura(session) {
     if (session.rt.grace > 0) return null;
     const { x, y } = session.data;
     const hits = aliveEnemies(session)
-        .filter(e => chebyshev(e.x, e.y, x, y) <= AGGRO_RADIUS && !isShielded(session, e.def));
+        .filter(e => chebyshev(e.x, e.y, x, y) <= aggroOf(e.def) && !isShielded(session, e.def));
     const hit = hits.find(e => !e.def.illusion) || hits[0];
     return hit ? contactEvent(session, hit.def) : null;
 }
@@ -517,9 +521,10 @@ export function findPath(session, tx, ty) {
     // Zones de vigilance à éviter : celles des ennemis (non protégés) dont l'aura ne contient pas la destination.
     const avoid = new Set();
     aliveEnemies(session).filter(e => !isShielded(session, e.def)).forEach(e => {
-        if (chebyshev(e.x, e.y, tx, ty) <= AGGRO_RADIUS) return;
-        for (let dy = -AGGRO_RADIUS; dy <= AGGRO_RADIUS; dy++) {
-            for (let dx = -AGGRO_RADIUS; dx <= AGGRO_RADIUS; dx++) {
+        const r = aggroOf(e.def);
+        if (chebyshev(e.x, e.y, tx, ty) <= r) return;
+        for (let dy = -r; dy <= r; dy++) {
+            for (let dx = -r; dx <= r; dx++) {
                 const x = e.x + dx, y = e.y + dy;
                 if (x >= 0 && y >= 0 && x < screen.w && y < screen.h) avoid.add(key(x, y));
             }

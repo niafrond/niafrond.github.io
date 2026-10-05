@@ -47,10 +47,10 @@ describe('jonctions gardées', () => {
         expect(quest).toMatchObject({ giver: j.guard.id, turnIn: j.guard.id, side: true });
         expect(quest.objectives).toEqual([expect.objectContaining({ type: 'chest', target: j.item.chest })]);
         expect(quest.reward.fragment).toBe(j.item.fragment);
-        // le garde est dans la zone d'arrivée côté village, hors du passage ; le coffre est dans le terrain agrandi de la carte porteuse
+        // le garde est dans la zone d'arrivée côté village, hors du passage ; le coffre est au sud-est de la carte porteuse
         expect(isTerrainBlocked(guardScreen, guard.x, guard.y)).toBe(false);
         expect(isTerrainBlocked(holder, chest.x, chest.y)).toBe(false);
-        expect(chest.x >= holder.core.w || chest.y >= holder.core.h).toBe(true);
+        expect(chest.x >= holder.w * 0.5 && chest.y >= holder.h * 0.45).toBe(true);   // cachés au sud-est de la carte
         const taken = new Set([...guardScreen.exits.map(e => `${e.x},${e.y}`), `${guardScreen.spawn.x},${guardScreen.spawn.y}`]);
         expect(taken.has(`${guard.x},${guard.y}`)).toBe(false);
         // la carte porteuse précède la jonction dans le monde (on la traverse avant d'arriver au garde)

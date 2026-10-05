@@ -41,7 +41,7 @@ describe('Pas de Yu : marcher sur l\'eau', () => {
             const holder = Object.values(SCREENS).find(sc => sc.chests.some(c => c.id === o.target));
             expect(holder.id).toMatch(/^(tonnerre|gobi)_wild$/);
             const c = holder.chests.find(x => x.id === o.target);
-            expect(c.x >= holder.core.w || c.y >= holder.core.h).toBe(true);   // dans le terrain agrandi
+            expect(c.x >= holder.w * 0.5 && c.y >= holder.h * 0.45).toBe(true);   // au sud-est de la carte
         });
         const gate = SCREENS.mer_hamlet.exits.find(e => e.to === ARCHIPEL_ID && e.span === 0);
         const gui = SCREENS.fleuve_h_tortue.npcs.find(n => n.id === 'gui_turtle');

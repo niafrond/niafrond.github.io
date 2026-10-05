@@ -152,8 +152,10 @@ Outre les chiffres `0`-`9` et `< > ^ v`, les lettres minuscules **`i` à `u` et 
 
 ## 6. Cartes grandes et reliées par leurs bords (world/expand.js)
 
-Les grilles ASCII de ce format décrivent la **salle d'origine** : à l'assemblage, zones sauvages (18×12 → 28×22), sanctuaires (14×10 → 26×20)
-et hameaux (16×11 → 26×20) sont prolongés vers l'est et le sud par un grand terrain généré (coordonnées d'origine inchangées).
-Les ancres de sortie `<` `>` `^` `v` posées sur un bord deviennent des passages de 3 cases (sorties `edge` / `span`) ; celles de la
-salle d'origine côté est / sud s'ouvrent sur le nouveau terrain et le passage est déplacé sur le nouveau bord. Dans `exploration.js`,
-`exits.find(e => e.to === …)` renvoie la case centrale du passage (span 0) en premier.
+Les grilles ASCII de ce format sont les cartes **d'origine** : à l'assemblage, zones sauvages (18×12 → 28×22), sanctuaires (14×10 → 26×20)
+et hameaux (16×11 → 26×20) sont **étirés** (chaque case d'origine devient un bloc de cases) : tout le contenu — ennemis, PNJ, coffres,
+pierre de voyage, maisons (qui gardent leur taille, porte vers le bas), décors — est redisposé sur toute la surface, les goulets et
+l'ordre des rencontres sont conservés, les zones de vigilance passent à 2 cases (`aggro`, `scaledAggro` pour un goulet à garder fermé).
+Les ancres de sortie `<` `>` `^` `v` posées sur un bord deviennent des passages de 3 cases (sorties `edge` / `span`). Dans `exploration.js`,
+`exits.find(e => e.to === …)` renvoie la case centrale du passage (span 0) en premier. Plus de mur d'enceinte : une couronne d'eau.
+Tests de mécanique : `buildLegacyWorld()` (story.js) rend le monde à l'ancienne, aux coordonnées d'origine.

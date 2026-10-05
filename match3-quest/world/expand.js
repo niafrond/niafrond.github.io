@@ -1,12 +1,11 @@
 // Grandes cartes reliées par leurs bords (« vision large » à la Pokémon). Logique pure, sans DOM.
 //
-//  - expandScreen(screen, W, H) : agrandit une zone vers l'est et le sud (les coordonnées existantes ne changent jamais :
-//    sauvegardes, quêtes et entités restent valides). Les murs d'enceinte est/sud s'ouvrent sur un grand terrain
-//    généré (bosquets, étang, chemins), cerné d'une bordure ; les anciennes sorties est/sud deviennent des passages
-//    sur les nouveaux bords ;
-//  - widenGates(screen)         : élargit en passages de 3 cases les sorties posées sur un bord (villages, hameaux…) ;
+//  - scaleScreen(screen, W, H)  : agrandit une zone en étirant toute sa carte (au plus proche voisin) : ennemis, PNJ, coffres, pierre
+//    de voyage, maisons et décors sont REDISPOSÉS sur toute la surface, la topologie (chemins, goulets, ordre des rencontres) est conservée ;
+//  - widenGates(screen)         : élargit en passages de 3 cases les sorties posées sur un bord (villages…) ;
 //  - linkGates(screens)         : transforme chaque passage en une rangée de sorties (`edge`, `span` -1/0/1) et calcule la case
-//    d'arrivée alignée de l'autre côté (on ressort en face, comme aux jonctions des routes Pokémon).
+//    d'arrivée alignée de l'autre côté (on ressort en face, comme aux jonctions des routes Pokémon) ;
+//  - openPerimeter / addWaterBorder : plus de mur d'enceinte factice, une couronne d'eau (franchissable avec le Pas de Yu) à la place.
 
 import { cellsToRects } from './mapKit.js';
 
@@ -125,166 +124,103 @@ export function widenGates(screen) {
     return screen;
 }
 
-// Agrandit `screen` à W × H (vers l'est et le sud). La zone d'origine garde exactement sa forme et ses coordonnées (ses goulets, ses
-// ennemis et ses auras ne changent pas) : elle reste une « salle » fermée, prolongée par un grand terrain en L qu'on rejoint par
-// des passages de 3 cases, là où se trouvaient ses anciennes sorties est / sud. Les liaisons avec les zones voisines se font alors
-// sur les nouveaux bords (passages est / sud) ou sur les bords d'origine (ouest / nord, conservés).
-export function expandScreen(screen, W, H) {
+// Agrandit `screen` à W × H en REDISPOSANT tout son contenu : la carte entière est étirée (chaque case d'origine devient un bloc de
+// cases, au plus proche voisin), de sorte que ennemis, PNJ, coffres, pierre de voyage, maisons et décors se répartissent sur toute la
+// surface au lieu de rester entassés dans un coin. La topologie est conservée (chemins, goulets, passages, ordre des rencontres) ; les
+// positions des entités sont celles du centre de leur bloc, les bâtiments gardent leur taille (ils sont recentrés dans leur
+// emplacement étiré, porte vers le bas), les passages de bord restent sur les bords. Les ennemis voient leur zone de vigilance
+// agrandie (`aggro` 2) comme le reste de la carte, pour que les goulets qu'ils gardaient restent fermés.
+export function scaleScreen(screen, W, H) {
     const w0 = screen.w, h0 = screen.h;
     if (W <= w0 && H <= h0) return widenGates(screen);
     W = Math.max(W, w0); H = Math.max(H, h0);
-    const rng = mulberry32(hashSeed(screen.id));
-    const obst = toSet(screen.obstacles);
-    const liq = toSet(screen.liquids);
-    const paths = toSet(screen.paths);
-    const prot = buildingCells(screen);
-    const taken = entityCells(screen);
+    const sx = W / w0, sy = H / h0;
+    const EPS = 1e-9;
+    const lo = (i, sc) => Math.ceil(i * sc - EPS);
+    const hi = (i, sc) => Math.ceil((i + 1) * sc - EPS) - 1;
+    const cx = x => Math.floor((lo(x, sx) + hi(x, sx)) / 2);
+    const cy = y => Math.floor((lo(y, sy) + hi(y, sy)) / 2);
+    const srcX = X => Math.min(w0 - 1, Math.floor(X / sx + EPS));
+    const srcY = Y => Math.min(h0 - 1, Math.floor(Y / sy + EPS));
 
-    const share = cells => cells.filter(c => obst.has(key(c.x, c.y))).length / cells.length;
-    const eastWalled = share(Array.from({ length: h0 }, (_, y) => ({ x: w0 - 1, y }))) >= 0.5;
-    const southWalled = share(Array.from({ length: w0 }, (_, x) => ({ x, y: h0 - 1 }))) >= 0.5;
-    const northWalled = share(Array.from({ length: w0 }, (_, x) => ({ x, y: 0 }))) >= 0.5;
-    const westWalled = share(Array.from({ length: h0 }, (_, y) => ({ x: 0, y }))) >= 0.5;
+    // 1. Terrain : sans les cases de bâtiment (re-posées plus bas), puis étirement au plus proche voisin.
+    const obst0 = toSet(screen.obstacles);
+    const liq0 = toSet(screen.liquids);
+    const paths0 = toSet(screen.paths);
+    const bcells = buildingCells(screen);
+    bcells.forEach(k => obst0.delete(k));
+    const obst = new Set(), liq = new Set(), paths = new Set();
+    for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) {
+        const k = key(srcX(X), srcY(Y)), dk = key(X, Y);
+        if (obst0.has(k)) obst.add(dk);
+        else if (liq0.has(k)) liq.add(dk);
+        if (paths0.has(k)) paths.add(dk);
+    }
 
-    // 1. Cloison entre la salle d'origine et le nouveau terrain : son propre mur d'enceinte s'il existe, sinon une colonne / rangée neuve.
-    const eastBarrierX = eastWalled ? w0 - 1 : w0;
-    const southBarrierY = southWalled ? h0 - 1 : h0;
-    if (W > w0 && !eastWalled) for (let y = 0; y <= (H > h0 ? h0 : h0 - 1); y++) obst.add(key(w0, y));
-    if (H > h0 && !southWalled) for (let x = 0; x <= (W > w0 ? w0 : w0 - 1); x++) obst.add(key(x, h0));
+    // 2. Bâtiments : même taille, recentrés dans leur emplacement étiré, bas du bâtiment collé au bas de l'emplacement.
+    const doorMap = new Map();
+    screen.buildings = (screen.buildings || []).map(b => {
+        const X0 = Math.min(W - b.w, Math.max(0, Math.floor(lo(b.x, sx) + (b.w * sx - b.w) / 2)));
+        const Y0 = Math.min(H - b.h, Math.max(0, lo(b.y + b.h, sy) - b.h));
+        const door = { x: X0 + (b.door.x - b.x), y: Y0 + b.h - 1 };
+        doorMap.set(key(b.door.x, b.door.y), door);
+        for (let X = X0; X < X0 + b.w; X++) for (let Y = Y0; Y < Y0 + b.h; Y++) {
+            liq.delete(key(X, Y)); paths.delete(key(X, Y));
+            if (!(X === door.x && Y === door.y)) obst.add(key(X, Y)); else obst.delete(key(X, Y));
+        }
+        // la case devant la porte reste praticable (et une ruelle y mène)
+        const front = key(door.x, Math.min(H - 1, door.y + 1));
+        obst.delete(front); liq.delete(front); paths.add(front);
+        return { ...b, x: X0, y: Y0, door };
+    });
 
-    // 2. Pas de bordure factice autour du nouveau terrain : la limite de la carte suffit (les terrains sont reliés par les passages de bord).
+    // 3. Entités et points remarquables.
+    const at = p => ({ x: cx(p.x), y: cy(p.y) });
+    ['npcs', 'chests'].forEach(list => { screen[list] = (screen[list] || []).map(e => ({ ...e, ...at(e) })); });
+    screen.enemies = (screen.enemies || []).map(e => ({
+        ...e, ...at(e), aggro: e.scaledAggro || 2,
+        ...(e.patrol ? { patrol: e.patrol.map(([x, y]) => [cx(x), cy(y)]) } : {})
+    }));
+    if (screen.waypoint) screen.waypoint = { ...screen.waypoint, ...at(screen.waypoint) };
+    const spawn0 = screen.spawn;
+    screen.spawn = at(spawn0);
 
-    // 3. Passages : les anciennes sorties est / sud deviennent des ouvertures de la cloison + un passage sur le nouveau bord.
-    const exitsKept = [];
+    // 4. Sorties : portes de bâtiment suivent leur bâtiment, passages de bord restent sur le bord.
     screen.gates = [];
-    const east = [], south = [];
+    const keep = [];
     screen.exits.forEach(e => {
-        const edge = !e.door && !e.leaveArena ? edgeOf(e, w0, h0) : null;
-        if (edge === 'east' && W > w0) east.push(e);
-        else if (edge === 'south' && H > h0) south.push(e);
-        else if (edge) addGate(screen, edge, { x: e.x, y: e.y }, e);
-        else exitsKept.push(e);
+        if (e.door) {
+            const d = doorMap.get(key(e.x, e.y));
+            keep.push(d ? { ...e, x: d.x, y: d.y } : e);
+            return;
+        }
+        const edge = edgeOf(e, w0, h0);
+        const X = e.x === 0 ? 0 : e.x === w0 - 1 ? W - 1 : cx(e.x);
+        const Y = e.y === 0 ? 0 : e.y === h0 - 1 ? H - 1 : cy(e.y);
+        if (edge) {
+            addGate(screen, edge, { x: X, y: Y }, e);
+            // l'apparition d'origine était la case d'entrée juste derrière ce passage : on la garde alignée avec lui
+            const back = edgeCell(edge, alongOf(edge, e), 1, w0, h0);
+            if (back.x === spawn0.x && back.y === spawn0.y) screen.spawn = edgeCell(edge, alongOf(edge, { x: X, y: Y }), 1, W, H);
+        }
+        else keep.push({ ...e, x: X, y: Y });
     });
-    const openings = [];   // { cells: [[x, y]...], inside: tuile côté salle, outside: tuile côté terrain }
-    const makeOpening = (e, edge) => {
-        const cells = [];
-        for (const k of [0, -1, 1]) {
-            const c = edge === 'east' ? { x: eastBarrierX, y: e.y + k } : { x: e.x + k, y: southBarrierY };
-            const inner = edge === 'east' ? { x: c.x - 1, y: c.y } : { x: c.x, y: c.y - 1 };
-            if (c.x < 1 || c.y < 1 || c.x >= W - 1 || c.y >= H - 1) continue;
-            if (k !== 0 && (prot.has(key(c.x, c.y)) || taken.has(key(c.x, c.y)) || taken.has(key(inner.x, inner.y)))) continue;
-            cells.push([c.x, c.y]);
-        }
-        cells.forEach(([x, y]) => { obst.delete(key(x, y)); liq.delete(key(x, y)); });
-        openings.push({ edge, cells });
-    };
-    east.forEach(e => makeOpening(e, 'east'));
-    south.forEach(e => makeOpening(e, 'south'));
-    // Zone sans ancienne sortie est / sud (hameau) : une porte au milieu de la cloison pour entrer dans le nouveau terrain.
-    if (!east.length && !south.length) {
-        const midY = Math.round(h0 / 2);
-        for (let d = 0; d < h0; d++) {
-            const y = midY + (d % 2 ? -(d + 1) / 2 : d / 2);
-            const ok = [-1, 0, 1].every(k => {
-                const yy = y + k;
-                return yy >= 1 && yy < h0 - 1 && !prot.has(key(eastBarrierX, yy)) && !taken.has(key(eastBarrierX, yy))
-                    && !obst.has(key(eastBarrierX - 1, yy)) && !liq.has(key(eastBarrierX - 1, yy)) && !taken.has(key(eastBarrierX - 1, yy));
-            });
-            if (ok) { makeOpening({ y }, 'east'); break; }
-        }
-    }
-    east.forEach((e, i) => addGate(screen, 'east', { x: W - 1, y: Math.round(H * (i + 1) / (east.length + 1)) }, e));
-    south.forEach((e, i) => addGate(screen, 'south', { x: Math.round(W * (i + 1) / (south.length + 1)), y: H - 1 }, e));
+    screen.exits = keep;
     screen.w = W; screen.h = H;
-    screen.gates.forEach(g => {
-        if (g.edge !== 'east' && g.edge !== 'south') {
-            const t = new Set(taken); t.delete(key(g.center.x, g.center.y));
-            clearMouth(screen, g, obst, liq, prot, t);
-        }
-    });
-    screen.gates.filter(g => g.edge === 'east' && g.center.x === W - 1 || g.edge === 'south' && g.center.y === H - 1)
-        .forEach(g => clearMouth(screen, g, obst, liq, new Set(), new Set()));
-
-    // 4. Terrain du nouveau secteur : bosquets et étang, hors corridors des passages et des ouvertures.
-    const reserved = new Set();
-    const reserve = (x, y, rx, ry) => { for (let i = x - rx; i <= x + rx; i++) for (let j = y - ry; j <= y + ry; j++) reserved.add(key(i, j)); };
-    openings.forEach(o => o.cells.forEach(([x, y]) => reserve(x, y, o.edge === 'east' ? 3 : 1, o.edge === 'east' ? 1 : 3)));
-    screen.gates.forEach(g => {
-        const a = g.center;
-        for (let d = 0; d <= 3; d++) {
-            const c = edgeCell(g.edge, alongOf(g.edge, a), d, W, H);
-            reserve(c.x, c.y, g.edge === 'west' || g.edge === 'east' ? 0 : 1, g.edge === 'west' || g.edge === 'east' ? 1 : 0);
-        }
-    });
-    const inLand = (x, y) => (x > eastBarrierX && W > w0) || (y > southBarrierY && H > h0);
-    const landCells = [];
-    for (let x = 1; x < W - 1; x++) for (let y = 1; y < H - 1; y++) if (inLand(x, y) && !obst.has(key(x, y))) landCells.push([x, y]);
-    const placeRect = (x, y, rw, rh, set) => {
-        const cells = [];
-        for (let i = x; i < x + rw; i++) for (let j = y; j < y + rh; j++) {
-            if (i < 1 || j < 1 || i >= W - 1 || j >= H - 1 || !inLand(i, j) || reserved.has(key(i, j)) || obst.has(key(i, j))) return false;
-            cells.push(key(i, j));
-        }
-        cells.forEach(c => set.add(c));
-        return true;
-    };
-    placeRect(2 + Math.floor(rng() * Math.max(1, W - 8)), 2 + Math.floor(rng() * Math.max(1, H - 7)), 4, 3, liq);
-    const target = Math.round(landCells.length * 0.14);
-    let placed = 0, guard = 0;
-    while (placed < target && guard++ < 800) {
-        const [x, y] = landCells[Math.floor(rng() * landCells.length)];
-        const rw = 1 + Math.floor(rng() * 3), rh = 1 + Math.floor(rng() * 2);
-        if (placeRect(x, y, rw, rh, obst)) placed += rw * rh;
-    }
-    // chemin décoratif du passage de bord jusqu'à la salle
-    screen.gates.forEach(g => {
-        if (g.edge === 'east' && W > w0) { for (let x = eastBarrierX + 1; x < W - 1; x++) paths.add(key(x, g.center.y)); }
-        if (g.edge === 'south' && H > h0) { for (let y = southBarrierY + 1; y < H - 1; y++) paths.add(key(g.center.x, y)); }
-    });
-
-    // 5. Connexité : tout le terrain libre doit être atteignable depuis les ouvertures ; on creuse jusqu'aux passages isolés
-    //    puis on rebouche les poches inaccessibles (la salle d'origine n'est jamais modifiée).
-    const blocked = (x, y) => obst.has(key(x, y)) || liq.has(key(x, y));
-    const flood = froms => {
-        const seen = new Set(froms.map(p => key(p.x, p.y)));
-        const queue = [...froms];
-        while (queue.length) {
-            const p = queue.shift();
-            DIRS.forEach(([dx, dy]) => {
-                const nx = p.x + dx, ny = p.y + dy;
-                if (nx < 0 || ny < 0 || nx >= W || ny >= H || seen.has(key(nx, ny)) || blocked(nx, ny)) return;
-                seen.add(key(nx, ny));
-                queue.push({ x: nx, y: ny });
-            });
-        }
-        return seen;
-    };
-    const seeds = openings.flatMap(o => o.cells.map(([x, y]) => ({ x, y })));
-    if (seeds.length) {
-        let reach = flood(seeds);
-        screen.gates.filter(g => g.edge === 'east' || g.edge === 'south').forEach(g => {
-            const a = edgeCell(g.edge, alongOf(g.edge, g.center), 1, W, H);
-            if (reach.has(key(a.x, a.y)) || a.x <= eastBarrierX && W > w0 && a.y < h0) return;
-            let { x, y } = a;
-            const to = seeds[0];
-            const dig = () => { obst.delete(key(x, y)); liq.delete(key(x, y)); };
-            dig();
-            while (x !== to.x) { x += Math.sign(to.x - x); if (x === eastBarrierX || x === to.x) { /* on s'arrête devant la cloison */ } dig(); }
-            while (y !== to.y) { y += Math.sign(to.y - y); dig(); }
-            reach = flood(seeds);
-        });
-        for (let x = 1; x < W - 1; x++) for (let y = 1; y < H - 1; y++) {
-            if (inLand(x, y) && !blocked(x, y) && !reach.has(key(x, y))) obst.add(key(x, y));
-        }
-    }
-
-    screen.exits = exitsKept;
     screen.obstacles = toRects(obst);
     screen.liquids = toRects(liq);
     screen.paths = toRects(paths);
-    screen.core = { w: w0, h: h0 };   // dimensions de la salle d'origine ; le reste est le terrain agrandi
-    // cloisons salle / terrain (colonne est, rangée sud) : leurs extrémités sur la couronne extérieure ne doivent jamais s'ouvrir
-    screen.barrier = { eastX: W > w0 ? eastBarrierX : null, southY: H > h0 ? southBarrierY : null };
+
+    // 5. Bouches des passages de bord (3 cases de large, 2 de profondeur), comme pour les cartes non agrandies.
+    const prot = buildingCells(screen);
+    const taken = entityCells(screen);
+    const obst2 = toSet(screen.obstacles), liq2 = toSet(screen.liquids);
+    screen.gates.forEach(g => {
+        const t = new Set(taken); t.delete(key(g.center.x, g.center.y));
+        clearMouth(screen, g, obst2, liq2, prot, t);
+    });
+    screen.obstacles = toRects(obst2);
+    screen.liquids = toRects(liq2);
     return screen;
 }
 
@@ -321,28 +257,46 @@ export function linkGates(screens) {
 
 // Retire la « délimitation factice » (roseaux, lampions, rochers…) du mur d'enceinte d'une carte de plein air : les terrains sont
 // reliés entre eux, la limite de la carte suffit (on ne la franchit que par les passages, ou sur l'eau avec le Pas de Yu).
-// Seuls les côtés réellement murés de la salle d'origine sont ouverts (≥ 60 % de cases d'obstacle) : un bloc de décor qui touche
-// le bord (goulet d'un sanctuaire, par exemple) reste en place. Les cloisons salle / terrain, les cases de bâtiment et les
-// intérieurs (maisons, arène) ne sont jamais touchés.
+// Seuls les côtés réellement murés sont ouverts (≥ 60 % d'obstacles sur la couronne extérieure) et sur 2 cases d'épaisseur (le mur
+// d'une carte agrandie est étiré) : un bloc de décor qui touche le bord (goulet d'un sanctuaire, par exemple) reste en place.
+// Les cases de bâtiment et les intérieurs (maisons, arène) ne sont jamais touchés.
 export function openPerimeter(screen) {
     if (screen.interior || screen.arena || screen.kind === 'house') return screen;
     const obst = toSet(screen.obstacles);
     const prot = buildingCells(screen);
-    const core = screen.core || { w: screen.w, h: screen.h };
-    const b = screen.barrier || { eastX: null, southY: null };
-    const onBarrier = (x, y) => (b.eastX !== null && x === b.eastX && y <= core.h) || (b.southY !== null && y === b.southY && x <= core.w);
+    const { w, h } = screen;
     const edges = [
-        Array.from({ length: core.w }, (_, x) => [x, 0]),
-        Array.from({ length: core.h }, (_, y) => [0, y])
+        Array.from({ length: w }, (_, x) => [x, 0, 1, 0]),
+        Array.from({ length: w }, (_, x) => [x, h - 1, 1, 0]),
+        Array.from({ length: h }, (_, y) => [0, y, 0, 1]),
+        Array.from({ length: h }, (_, y) => [w - 1, y, 0, 1])
     ];
-    if (b.eastX === null) edges.push(Array.from({ length: core.h }, (_, y) => [screen.w - 1, y]));
-    if (b.southY === null) edges.push(Array.from({ length: core.w }, (_, x) => [x, screen.h - 1]));
-    edges.forEach(cells => {
+    const inward = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+    edges.forEach((cells, i) => {
         const walled = cells.filter(([x, y]) => obst.has(key(x, y))).length / cells.length >= 0.6;
-        if (walled) cells.forEach(([x, y]) => { if (!prot.has(key(x, y)) && !onBarrier(x, y)) obst.delete(key(x, y)); });
+        if (!walled) return;
+        cells.forEach(([x, y]) => {
+            for (let d = 0; d < 2; d++) {
+                const cx = x + inward[i][0] * d, cy = y + inward[i][1] * d;
+                if (!prot.has(key(cx, cy))) obst.delete(key(cx, cy));
+            }
+        });
     });
     screen.obstacles = toRects(obst);
     return screen;
+}
+
+// Trajet d'un patrouilleur : segments axe par axe entre les points de passage (même tracé que exploration.js `buildRoute`).
+function routeCells(waypoints) {
+    const route = [];
+    for (let i = 0; i < waypoints.length; i++) {
+        const [tx, ty] = waypoints[i];
+        if (i === 0) { route.push({ x: tx, y: ty }); continue; }
+        let { x, y } = route[route.length - 1];
+        while (x !== tx) { x += Math.sign(tx - x); route.push({ x, y }); }
+        while (y !== ty) { y += Math.sign(ty - y); route.push({ x, y }); }
+    }
+    return route;
 }
 
 // Couronne d'eau : les terrains sont entourés d'eau (2 cases, la 2e en bordure irrégulière) pour la cohérence avec les cartes de mer.
@@ -357,6 +311,8 @@ export function addWaterBorder(screen) {
     const liq = toSet(screen.liquids);
     const keep = new Set([...buildingCells(screen), ...entityCells(screen)]);
     (screen.exits || []).forEach(e => keep.add(key(e.x, e.y)));
+    // les trajets des patrouilleurs restent de la terre
+    (screen.enemies || []).filter(e => e.patrol).forEach(e => routeCells(e.patrol).forEach(c => keep.add(key(c.x, c.y))));
     // chaussées devant les passages de bord
     (screen.gates || []).forEach(g => {
         const along0 = alongOf(g.edge, g.center);
