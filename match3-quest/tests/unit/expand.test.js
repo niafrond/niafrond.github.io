@@ -2,7 +2,7 @@
 // l'autre en sortant par un bord, comme aux jonctions des routes Pokémon.
 import { describe, test, expect } from '@jest/globals';
 import { SCREENS } from '../../story.js';
-import { isTerrainBlocked } from '../../exploration.js';
+import { isTerrainBlocked, aggroOf } from '../../exploration.js';
 import { scaleScreen, widenGates, linkGates, EXPANDED_SIZES } from '../../world/expand.js';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -143,8 +143,8 @@ describe('redisposition : le contenu des cartes agrandies occupe toute la surfac
         });
     });
 
-    test('la zone de vigilance des ennemis des cartes agrandies suit l\'échelle de la carte (2 cases)', () => {
-        scaled.forEach(s => s.enemies.forEach(e => expect([e.id, e.aggro >= 2]).toEqual([e.id, true])));
+    test('la zone de vigilance reste de 1 case (0 pour un boss), même sur les cartes agrandies', () => {
+        scaled.forEach(s => s.enemies.forEach(e => expect([e.id, aggroOf(e)]).toEqual([e.id, e.boss || e.guardsDoor ? 0 : 1])));
     });
 });
 
@@ -168,7 +168,7 @@ describe('scaleScreen / widenGates (écran synthétique)', () => {
         expect(s.npcs[0].x).toBeGreaterThan(8);
         expect(s.chests[0]).toMatchObject({ x: expect.any(Number) });
         expect(s.chests[0].x).toBeGreaterThan(10);
-        expect(s.enemies.find(e => e.id === 'e').aggro).toBe(2);
+        expect(aggroOf(s.enemies.find(e => e.id === 'e'))).toBe(1);
         s.enemies.concat(s.npcs, s.chests).forEach(e => expect(blocked(e.x, e.y)).toBe(false));
         // le bloc de décor d'origine est étiré mais conserve sa forme générale (un obstacle isolé, pas un mur)
         expect(blocked(7, 5)).toBe(true);

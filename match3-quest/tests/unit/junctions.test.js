@@ -2,6 +2,7 @@
 import { describe, test, expect } from '@jest/globals';
 import { SCREENS, QUESTS } from '../../story.js';
 import { JUNCTIONS } from '../../world/junctions.js';
+import { aggroOf } from '../../exploration.js';
 import {
     createSession, tryMove, isExitLocked, talkToNpc, openChest, markEnemyDefeated, questStatus, isTerrainBlocked
 } from '../../exploration.js';
@@ -112,10 +113,10 @@ describe('boss = porte : un ennemi qui ferme un passage se tient devant', () => 
 
     test.each(doors.map(d => [`${d.s.id} → ${d.e.to}`, d]))('%s : le boss garde la porte et sa vigilance couvre les 3 cases', (_n, { e, s, boss }) => {
         expect(boss.guardsDoor).toBe(true);
-        expect(boss.aggro).toBeGreaterThanOrEqual(2);
+        expect(aggroOf(boss)).toBe(0);   // un boss n'a pas de zone de vigilance : il faut aller le chercher
         s.exits.filter(x => x.to === e.to && x.edge).forEach(x => {
             expect(x.requires).toBe(boss.id);
-            expect(Math.max(Math.abs(x.x - boss.x), Math.abs(x.y - boss.y))).toBeLessThanOrEqual(boss.aggro);
+            expect(Math.max(Math.abs(x.x - boss.x), Math.abs(x.y - boss.y))).toBeLessThanOrEqual(2);
         });
     });
 });
