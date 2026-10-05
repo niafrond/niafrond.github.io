@@ -6,6 +6,7 @@
 
 import { merchantNpc } from '../merchants.js';
 import { buildZone, arrivalFor, freeNeighbor } from './mapKit.js';
+import { EXPANDED_SIZES, expandScreen, widenGates, linkGates } from './expand.js';
 import { MAPS } from './maps/index.js';
 import { TEXTS } from './text/index.js';
 
@@ -126,6 +127,17 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         if (sanctuary.arrival && !village.arrival) { village.arrival = sanctuary.arrival; delete sanctuary.arrival; }
         if (text.quests?.length) newQuests.push(...text.quests);
     });
+
+    // Grandes cartes reliées par leurs bords : zones sauvages, sanctuaires et hameaux sont agrandis, les villages gardent
+    // leur taille ; tous les passages de bord (3 cases) ressortent en face, alignés (voir world/expand.js).
+    REGION_ORDER.forEach(region => {
+        if (!maps[region]) return;
+        expandScreen(screens[region], ...EXPANDED_SIZES.sanctuary);
+        expandScreen(screens[`${region}_wild`], ...EXPANDED_SIZES.wild);
+        if (screens[`${region}_hamlet`]) expandScreen(screens[`${region}_hamlet`], ...EXPANDED_SIZES.hamlet);
+        widenGates(screens[`${region}_village`]);
+    });
+    linkGates(screens);
 
     // Retire des sanctuaires les PNJ qui ont déménagé.
     sanctuaryOf.forEach(id => { screens[id].npcs = screens[id].npcs.filter(n => !relocated.has(n.id)); });

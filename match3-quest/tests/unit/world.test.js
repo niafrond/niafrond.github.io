@@ -124,8 +124,9 @@ describe('Grand Monde : cartes', () => {
 
     test('villages portrait plein écran 9:16 (20x24, lune 16x22), hameaux 16x11, wild 18x12, intérieurs petits', () => {
         screens.forEach(s => {
-            if (s.kind === 'village') expect([s.w, s.h]).toEqual(s.id.endsWith('_hamlet') ? [16, 11] : s.region === 'lune' ? [16, 22] : [20, 24]);
-            if (s.kind === 'wild') expect([s.w, s.h]).toEqual([18, 12]);
+            // villages : taille d'origine ; hameaux et zones sauvages : agrandis (world/expand.js)
+            if (s.kind === 'village') expect([s.w, s.h]).toEqual(s.id.endsWith('_hamlet') ? [26, 20] : s.region === 'lune' ? [16, 22] : [20, 24]);
+            if (s.kind === 'wild') expect([s.w, s.h]).toEqual([28, 22]);
             if (s.id.endsWith('_hamlet')) expect(s.exits.some(e => e.to === `${s.region}_wild`)).toBe(true);
             if (s.interior) { expect(s.w).toBeLessThanOrEqual(12); expect(s.h).toBeLessThanOrEqual(8); }
         });
@@ -188,7 +189,7 @@ describe('Grand Monde : cartes', () => {
             expect(wild.enemies.filter(e => e.kind === 'patrol').length).toBeGreaterThanOrEqual(2);
             wild.enemies.forEach(e => {
                 expect(templateIds.has(e.templateId)).toBe(true);
-                const near = wild.exits.some(x => Math.max(Math.abs(x.x - e.x), Math.abs(x.y - e.y)) < 3) || Math.max(Math.abs(wild.spawn.x - e.x), Math.abs(wild.spawn.y - e.y)) < 3;
+                const near = wild.exits.filter(x => (x.span ?? 0) === 0).some(x => Math.max(Math.abs(x.x - e.x), Math.abs(x.y - e.y)) < 3) || Math.max(Math.abs(wild.spawn.x - e.x), Math.abs(wild.spawn.y - e.y)) < 3;
                 expect(`${e.id} ${near}`).toBe(`${e.id} false`);
             });
         });

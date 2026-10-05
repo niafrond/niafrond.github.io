@@ -979,6 +979,8 @@ export function createExplorationView(cfg) {
             const gated = locked || (level < minLevel && session.screens[ex.to].region !== screen.region);
             cell(ex.x, ex.y, locked ? `rgba(200,200,210,${(0.5 + 0.2 * pulse).toFixed(3)})` : `rgba(255,236,150,${(0.6 + 0.3 * pulse).toFixed(3)})`);
             cell(ex.x, ex.y, 'rgba(255,255,255,0.45)', tile * 0.16);
+            // passage de bord de 3 cases : seule la case centrale porte la flèche et le nom (world/expand.js)
+            if (ex.span) return;
             const c = P(ex.x + 0.5, ex.y + 0.5);
             const arrow = locked ? '×' : ex.x === 0 ? '◄' : ex.x === screen.w - 1 ? '►' : ex.y === 0 ? '▲' : '▼';
             ctx.fillStyle = '#5a3e1b';

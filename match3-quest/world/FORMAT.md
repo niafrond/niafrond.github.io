@@ -148,3 +148,12 @@ Outre les chiffres `0`-`9` et `< > ^ v`, les lettres minuscules **`i` à `u` et 
 **Aucun emoji** dans les données ni dans les textes (test `tests/unit/noEmoji.test.js`) : les PNJ, ennemis et coffres sont dessinés (sprites), un PNJ non humain se déclare dans `CREATURE_BY_ID` (`sprites/creatures.js`).
 
 * **Marchands** : chaque village a un PNJ `merchant_<région>` (ancre `p` du village), défini dans `merchants.js` (pas de texte dans `world/text`) ; son stock et ses prix sont décrits dans ce module.
+
+
+## 6. Cartes grandes et reliées par leurs bords (world/expand.js)
+
+Les grilles ASCII de ce format décrivent la **salle d'origine** : à l'assemblage, zones sauvages (18×12 → 28×22), sanctuaires (14×10 → 26×20)
+et hameaux (16×11 → 26×20) sont prolongés vers l'est et le sud par un grand terrain généré (coordonnées d'origine inchangées).
+Les ancres de sortie `<` `>` `^` `v` posées sur un bord deviennent des passages de 3 cases (sorties `edge` / `span`) ; celles de la
+salle d'origine côté est / sud s'ouvrent sur le nouveau terrain et le passage est déplacé sur le nouveau bord. Dans `exploration.js`,
+`exits.find(e => e.to === …)` renvoie la case centrale du passage (span 0) en premier.
