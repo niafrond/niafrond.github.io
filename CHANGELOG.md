@@ -1,3 +1,9 @@
+## [2.60.0](https://github.com/niafrond/niafrond.github.io/compare/v2.59.1...v2.60.0) (2026-10-05)
+
+### Features
+
+* **match3-quest:** conseil anti try-hard après 3 défaites contre le même boss ([#416](https://github.com/niafrond/niafrond.github.io/issues/416)) ([01848fd](https://github.com/niafrond/niafrond.github.io/commit/01848fdc1018964a0c3ecb7050bd3e25fc891eda))
+
 ## [2.59.1](https://github.com/niafrond/niafrond.github.io/compare/v2.59.0...v2.59.1) (2026-10-04)
 
 ### Bug Fixes
