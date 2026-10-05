@@ -74,6 +74,50 @@ describe('cartes extérieures : grandes et reliées', () => {
     });
 });
 
+describe('plus de délimitation factice, de l\'eau en bordure (openPerimeter, addWaterBorder)', () => {
+    const inRects = (rects, x, y) => rects.some(([rx, ry, rw, rh]) => x >= rx && x < rx + rw && y >= ry && y < ry + rh);
+    const ring = s => {
+        const cells = [];
+        for (let x = 0; x < s.w; x++) cells.push([x, 0], [x, s.h - 1]);
+        for (let y = 1; y < s.h - 1; y++) cells.push([0, y], [s.w - 1, y]);
+        return cells;
+    };
+
+    test('villages, zones sauvages, hameaux : couronne sans mur factice, faite d\'eau (hors passages de bord)', () => {
+        outdoors.filter(s => !s.aquatic).forEach(s => {
+            const cells = ring(s).filter(([x, y]) => !(s.barrier && ((x === s.barrier.eastX && y <= s.core.h) || (y === s.barrier.southY && x <= s.core.w))));
+            const rocks = cells.filter(([x, y]) => inRects(s.obstacles, x, y));
+            // seuls des blocs de décor posés au bord d'un sanctuaire (goulets) peuvent subsister
+            if (s.kind !== undefined) expect({ id: s.id, rocks: rocks.length }).toEqual({ id: s.id, rocks: 0 });
+            const water = cells.filter(([x, y]) => inRects(s.liquids, x, y)).length;
+            expect(water / cells.length).toBeGreaterThan(0.4);
+            s.exits.filter(e => e.edge).forEach(e => expect(inRects(s.liquids, e.x, e.y)).toBe(false));   // les passages restent de la terre
+        });
+    });
+
+    test('l\'eau de bordure se traverse avec le Pas de Yu, jamais sans', () => {
+        const v = SCREENS.rizieres_village;
+        const [x, y] = ring(v).find(([cx, cy]) => inRects(v.liquids, cx, cy));
+        expect(isTerrainBlocked(v, x, y)).toBe(true);
+        expect(isTerrainBlocked(v, x, y, true)).toBe(false);
+    });
+
+    test('les maisons gardent leurs murs, et un bloc de décor posé au bord d\'un sanctuaire (goulet) reste en place', () => {
+        const house = Object.values(SCREENS).find(s => s.interior);
+        expect(isTerrainBlocked(house, 0, 0)).toBe(true);
+        expect(isTerrainBlocked(SCREENS.rizieres, 6, 0)).toBe(true);   // bloc [6,0,2,3] : il forme le goulet de Fengmeng
+    });
+
+    test('la cloison entre salle d\'origine et terrain agrandi reste fermée sur toute la hauteur, hors ouvertures', () => {
+        const s = SCREENS.rizieres;
+        const x = s.barrier.eastX;
+        const open = [];
+        for (let y = 0; y <= s.core.h; y++) if (!isTerrainBlocked(s, x, y)) open.push(y);
+        expect(open.length).toBeGreaterThanOrEqual(3);   // l'ouverture de 3 cases (ancienne sortie est)
+        expect(open.length).toBeLessThanOrEqual(3);
+    });
+});
+
 describe('expandScreen / widenGates (écran synthétique)', () => {
     const make = () => ({
         id: 'test_zone', w: 8, h: 6, spawn: { x: 1, y: 2 },
@@ -89,7 +133,9 @@ describe('expandScreen / widenGates (écran synthétique)', () => {
         expect(blocked(7, 3)).toBe(false);        // ancienne sortie est = ouverture
         expect(blocked(7, 2) || blocked(7, 4)).toBe(false);
         expect(blocked(7, 1)).toBe(true);         // le reste du mur demeure
-        expect(blocked(15, 0)).toBe(true);        // bordure extérieure
+        expect(blocked(15, 0)).toBe(false);       // pas de bordure factice sur le nouveau terrain
+        expect(blocked(8, 0)).toBe(false);
+        expect(blocked(7, 0)).toBe(true);         // la cloison salle / terrain (x = 7) ne s'ouvre qu'aux passages
         const east = s.exits.filter(e => e.to === 'b');
         expect(east).toHaveLength(0);             // les sorties sont créées par linkGates
         expect(s.gates.find(g => g.attrs.to === 'b')).toMatchObject({ edge: 'east', center: { x: 15 } });

@@ -915,7 +915,8 @@ describe('déplacement et zones de vigilance', () => {
         expect(s.data.screenId).toBe(START_SCREEN);
         const inWall = createSession({ screenId: 'village', x: 2, y: 2 });   // ancien écran de « La Couronne Brisée »
         expect(inWall.data.screenId).toBe(START_SCREEN);
-        const inVillageWall = createSession({ screenId: 'rizieres_village', x: 0, y: 0 });   // dans le mur d'enceinte du village
+        const wallCell = SCREENS.rizieres_village.buildings[0];   // un mur de maison (plus de mur d'enceinte : la limite de la carte suffit)
+        const inVillageWall = createSession({ screenId: 'rizieres_village', x: wallCell.x, y: wallCell.y });
         expect(inVillageWall.data.screenId).toBe(START_SCREEN);
         expect([inVillageWall.data.x, inVillageWall.data.y]).toEqual([SCREENS[START_SCREEN].spawn.x, SCREENS[START_SCREEN].spawn.y]);
         const inHouse = createSession({ screenId: 'rizieres', x: 1, y: 1 });

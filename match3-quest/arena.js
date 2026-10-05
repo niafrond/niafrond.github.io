@@ -1,5 +1,5 @@
-// Arène des Mille Flèches : un lieu à explorer, comme une arène de Pokémon. Ouverte à partir du niveau
-// ARENA_MIN_LEVEL (bouton « Arène » du HUD), rejouable à volonté, on peut en sortir à tout moment (bouton « Sortir » du HUD, ou la
+// Arène des Mille Flèches : un lieu à explorer, comme une arène de Pokémon. Ouverte dès le 3e terrain
+// (ARENA_UNLOCK_REGION : les Bambous ; bouton « Arène » du HUD), rejouable à volonté, on peut en sortir à tout moment (bouton « Sortir » du HUD, ou la
 // porte de chaque salle).
 //
 //   Parvis (arena_hall) ── 8 portes ──► Cercle N : salle 1 ─► salle 2 ─► … ─► salle du maître d'arène
@@ -14,7 +14,9 @@
 // Données pures : buildArenaScreens() fabrique les écrans (fusionnés dans SCREENS par story.js), exploration.js
 // gère l'entrée / la sortie / la progression, enemies.js le renfort, game.js la prime.
 
-export const ARENA_MIN_LEVEL = 15;
+// L'arène est atteignable dès qu'on a mis le pied dans le 3e terrain (les Bambous) : ses cercles montent jusqu'au niveau 70.
+export const ARENA_UNLOCK_REGION = 'bambous';
+const ARENA_REGIONS = ['bambous', 'gobi', 'tonnerre', 'volcan', 'fauves', 'mer', 'fusang', 'lune'];
 export const ARENA_NAME = 'Arène des Mille Flèches';
 export const ARENA_REGION = 'arena';
 export const ARENA_HALL = 'arena_hall';
@@ -25,60 +27,60 @@ export const arenaMasterId = tier => `arena_c${tier}_master`;
 export const arenaClearedFlag = tier => `arena_cleared_${tier}`;
 
 //  waves       : nombre de combats du cercle = salles (gardiens) + la salle du maître ;
-//  levelOffset : écart avec ARENA_BASE_LEVEL au premier gardien (+1 tous les deux combats) ;
-//  statMult    : multiplicateur des PV, de l'attaque et de la défense des adversaires ;
+//  baseLevel   : niveau (fixe) du premier gardien du cercle (+1 tous les deux combats) : de 3 (Bronze) à 66 (Mille Flèches) ;
+//  statMult    : léger renfort des PV, de l'attaque et de la défense des adversaires (de ×1 à ×1,35) ;
 //  duel        : règles de duel des gardiens ; masterDuel : règles du maître (remplacent `duel`) ;
 //  rewardMult  : multiplicateur de la prime ; clearGold / clearXp : prime du premier maître vaincu ;
 //  guard       : titre des gardiens ; master : le maître d'arène (gabarit, répliques).
 export const ARENA_TIERS = [
-    { id: 1, name: 'Cercle de Bronze', waves: 4, levelOffset: -1, statMult: 1.0, rewardMult: 1.0,
+    { id: 1, name: 'Cercle de Bronze', waves: 4, baseLevel: 3, statMult: 1.0, rewardMult: 1.0,
       clearGold: 150, clearXp: 1500, guard: 'Disciple de bronze',
       desc: 'Des disciples encore verts, pour se faire la main.',
       master: { name: 'Maîtresse Tong', title: 'la Lame de Bronze', templateId: 'iron_gladiator',
           intro: ["Un archer dans mon cercle ? Montre-moi si ton arc vaut mieux que le bronze.", 'Il vaut ce que vaut ma main. Voyons.'],
           defeat: ["Le bronze sonne juste quand on le frappe bien. Tu l'as bien frappé.", 'La porte du Cercle de Cuivre est à toi.'] } },
-    { id: 2, name: 'Cercle de Cuivre', waves: 4, levelOffset: 0, statMult: 1.08, rewardMult: 1.3,
+    { id: 2, name: 'Cercle de Cuivre', waves: 4, baseLevel: 8, statMult: 1.05, rewardMult: 1.3,
       clearGold: 250, clearXp: 2500, guard: 'Lutteur de cuivre',
       desc: 'Des adversaires à votre niveau, un peu plus coriaces.',
       master: { name: 'Maître Hong Gang', title: 'le Gong de Cuivre', templateId: 'orc_warmaster',
           intro: ["Chaque coup que tu encaisses, mon gong le chante à toute l'arène !", "Qu'il chante. Il chantera aussi ta défaite."],
           defeat: ['Mon gong est fêlé… et mon orgueil aussi. Bien joué, archer.', 'Le Cercle de Fer t\'attend, plus froid que moi.'] } },
-    { id: 3, name: 'Cercle de Fer', waves: 5, levelOffset: 1, statMult: 1.16, rewardMult: 1.6,
+    { id: 3, name: 'Cercle de Fer', waves: 5, baseLevel: 14, statMult: 1.1, rewardMult: 1.6,
       clearGold: 400, clearXp: 4000, guard: 'Garde de fer',
       desc: 'Cinq combats ; le maître encoche deux flèches à la fois.',
       masterDuel: { rapidShots: 4 },
       master: { name: 'Maître Tie Bi', title: 'le Bras de Fer', templateId: 'storm_knight',
           intro: ['Le fer ne plie pas. Moi non plus. Et je tire deux fois plus vite que toi.', 'Le fer rouille. La patience, jamais.'],
           defeat: ['Mon bras a plié… Personne ne l\'avait fait depuis dix hivers.', "Va : l'Argent t'appelle."] } },
-    { id: 4, name: "Cercle d'Argent", waves: 5, levelOffset: 2, statMult: 1.25, rewardMult: 2.0,
+    { id: 4, name: "Cercle d'Argent", waves: 5, baseLevel: 22, statMult: 1.15, rewardMult: 2.0,
       clearGold: 600, clearXp: 6000, guard: "Danseuse d'argent",
       desc: 'Des tirs rapides plus fréquents chez la maîtresse.',
       masterDuel: { rapidShots: 3 },
       master: { name: 'Dame Yin Yue', title: "la Lune d'Argent", templateId: 'moon_priestess',
           intro: ["Tu portes la lune dans ta manche, archer. Je la sens d'ici. Voyons si elle te protège.", "Elle me regarde. C'est tout ce qu'il me faut."],
           defeat: ['La lune t\'aime bien, on dirait. Moi aussi, à présent.', "Le Cercle d'Or brille plus fort, mais il brûle aussi."] } },
-    { id: 5, name: "Cercle d'Or", waves: 6, levelOffset: 3, statMult: 1.35, rewardMult: 2.5,
+    { id: 5, name: "Cercle d'Or", waves: 6, baseLevel: 32, statMult: 1.2, rewardMult: 2.5,
       clearGold: 900, clearXp: 9000, guard: "Champion d'or",
       desc: 'Le maître piège le plateau : désamorcez ses zones.',
       masterDuel: { rapidShots: 3, zoneTraps: 3 },
       master: { name: 'Seigneur Jin Long', title: "le Dragon d'Or", templateId: 'sun_paladin',
           intro: ["Mon arène est semée de pièges d'or. Chaque pas te coûtera.", 'Alors je compterai mes pas.'],
           defeat: ['Tu as désamorcé mon or comme on cueille des fruits… Prends ce qui te revient.', 'Le Jade t\'ouvre sa porte.'] } },
-    { id: 6, name: 'Cercle de Jade', waves: 6, levelOffset: 4, statMult: 1.45, rewardMult: 3.0,
+    { id: 6, name: 'Cercle de Jade', waves: 6, baseLevel: 43, statMult: 1.25, rewardMult: 3.0,
       clearGold: 1300, clearXp: 13000, guard: 'Sentinelle de jade',
       desc: 'Tous les gardiens tirent vite ; la maîtresse piège sans relâche.',
       duel: { rapidShots: 4 }, masterDuel: { rapidShots: 3, zoneTraps: 2 },
       master: { name: 'Dame Bi Yu', title: 'la Main de Jade', templateId: 'crystal_sage',
           intro: ['Le jade ne se brise pas, il se taille. Laisse-moi te tailler, archer.', 'Le jade brut aussi a des arêtes.'],
           defeat: ['Taillé, et bien taillé… Je n\'avais pas vu une telle main depuis Hou Yi lui-même.', 'Les nuées t\'attendent au Cercle Céleste.'] } },
-    { id: 7, name: 'Cercle Céleste', waves: 7, levelOffset: 5, statMult: 1.6, rewardMult: 3.6,
+    { id: 7, name: 'Cercle Céleste', waves: 7, baseLevel: 55, statMult: 1.3, rewardMult: 3.6,
       clearGold: 1800, clearXp: 18000, guard: 'Gardien des nuées',
       desc: 'Pièges à chaque combat ; le maître copie vos techniques.',
       duel: { rapidShots: 4, zoneTraps: 3 }, masterDuel: { mirror: true, rapidShots: 3, zoneTraps: 2 },
       master: { name: 'Immortel Yun Zhong', title: 'Celui-des-Nuées', templateId: 'ice_witch',
           intro: ['Je suis ton reflet dans la nuée : chacune de tes flèches, je la tirerai aussi.', 'Alors je tirerai celle que je ne connais pas encore.'],
           defeat: ["Une flèche que je ne connaissais pas… Le Grand Maître voudra te voir.", 'Le dernier cercle t\'est ouvert.'] } },
-    { id: 8, name: 'Cercle des Mille Flèches', waves: 8, levelOffset: 6, statMult: 1.8, rewardMult: 4.5,
+    { id: 8, name: 'Cercle des Mille Flèches', waves: 8, baseLevel: 66, statMult: 1.35, rewardMult: 4.5,
       clearGold: 3000, clearXp: 30000, guard: 'Archer aux mille flèches',
       desc: "L'épreuve ultime : huit combats impitoyables et un grand maître miroir, contre qui vous entrez à 80 % de vos PV.",
       duel: { rapidShots: 3, zoneTraps: 3 }, masterDuel: { mirror: true, heroHpPct: 0.8, rapidShots: 2, zoneTraps: 2 },
@@ -110,18 +112,17 @@ export const ARENA_BIOMES = {
     arena_8: { a: '#a8584a', b: '#9e4e40', path: '#e0b030', cliff: '#3a1410', liquid: '#ff5a1f', sky: ['#1a0808', '#5a1a10'], decor: ['campfire', 'rock', 'lantern'] }
 };
 
-// Niveau de référence des adversaires de l'arène : fixe, indépendant du niveau du héros.
-export const ARENA_BASE_LEVEL = 18;
-
-export const isArenaUnlocked = playerLevel => (Number(playerLevel) || 0) >= ARENA_MIN_LEVEL;
+// Vrai si l'un des écrans visités appartient au 3e terrain (Bambous) ou à un terrain plus avancé.
+export const isArenaUnlocked = (visitedScreens = []) => (Array.isArray(visitedScreens) ? visitedScreens : [])
+    .some(id => ARENA_REGIONS.some(r => id === r || id.startsWith(`${r}_`)));
 
 export const arenaTier = id => ARENA_TIERS.find(t => t.id === Number(id)) || null;
 
-// Niveau (fixe) de l'adversaire du combat `wave` d'un cercle : niveau de base + écart du cercle, +1 tous les deux combats.
+// Niveau (fixe) de l'adversaire du combat `wave` d'un cercle : niveau de base du cercle, +1 tous les deux combats.
 export function arenaWaveLevel(tierId, wave) {
     const tier = arenaTier(tierId) || ARENA_TIERS[0];
     const w = Math.max(1, Math.floor(wave || 1));
-    return Math.max(1, ARENA_BASE_LEVEL + tier.levelOffset + Math.floor((w - 1) / 2));
+    return Math.max(1, tier.baseLevel + Math.floor((w - 1) / 2));
 }
 
 // Le dernier combat d'un cercle est celui du maître d'arène.

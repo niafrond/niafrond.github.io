@@ -1,22 +1,46 @@
 // Système d'expérience et de progression du joueur
 
-export const MAX_LEVEL = 100;
-const XP_BASE_PER_LEVEL = 2000;
-const XP_GROWTH_FACTOR = 1.18;
+export const MAX_LEVEL = 70;
+const XP_COST_BASE = 1000;       // XP pour passer au niveau 2
+const XP_COST_EXPONENT = 1.046;  // coût du niveau n = 1000 × (n − 1)^1,046 : ~1 000 au niveau 2, ~40 000 au niveau 35, ~83 000 au niveau 70
 
 /**
- * Calcule l'XP nécessaire pour atteindre un niveau donné
- * Formule: XP = baseXP * level^exponant
+ * XP à gagner pour PASSER au niveau `level` (depuis le niveau précédent) : croissant à chaque niveau.
+ * @param {number} level - Le niveau cible (≥ 2)
+ * @returns {number} - L'XP de ce palier (arrondie à la dizaine)
+ */
+export function getXPCostForLevel(level) {
+    const n = Math.max(2, Math.min(Math.floor(level) || 2, MAX_LEVEL));
+    return Math.round(XP_COST_BASE * Math.pow(n - 1, XP_COST_EXPONENT) / 10) * 10;
+}
+
+// Cumul des paliers : XP totale nécessaire pour ATTEINDRE chaque niveau (index = niveau).
+const XP_TOTALS = [0, 0];
+for (let n = 2; n <= MAX_LEVEL; n++) XP_TOTALS[n] = XP_TOTALS[n - 1] + getXPCostForLevel(n);
+
+/**
+ * Calcule l'XP totale nécessaire pour atteindre un niveau donné (somme des paliers)
  * @param {number} level - Le niveau cible
  * @returns {number} - L'XP total nécessaire pour ce niveau
  */
 export function getXPRequiredForLevel(level) {
-    const clampedLevel = Math.max(1, Math.min(level, MAX_LEVEL));
-    if(clampedLevel <= 1) return 0;
+    const clampedLevel = Math.max(1, Math.min(Math.floor(level) || 1, MAX_LEVEL));
+    return XP_TOTALS[clampedLevel];
+}
 
-    const steps = clampedLevel - 1;
-    const totalXP = XP_BASE_PER_LEVEL * ((Math.pow(XP_GROWTH_FACTOR, steps) - 1) / (XP_GROWTH_FACTOR - 1));
-    return Math.floor(totalXP);
+/**
+ * Recale l'XP d'un joueur sur la courbe actuelle (ancienne sauvegarde, niveau plafonné à MAX_LEVEL) : le niveau est conservé,
+ * l'XP est ramenée dans la fourchette de son niveau et le palier suivant est recalculé. Aucun niveau n'est offert ni retiré.
+ */
+export function normalizeXP(player) {
+    const level = Math.max(1, Math.min(Math.floor(player.level) || 1, MAX_LEVEL));
+    player.level = level;
+    const floor = getXPRequiredForLevel(level);
+    const next = level >= MAX_LEVEL ? floor : getXPRequiredForLevel(level + 1);
+    const xp = Math.max(0, Math.floor(Number(player.xp) || 0));
+    player.xp = level >= MAX_LEVEL ? Math.min(Math.max(xp, floor), floor) : Math.min(Math.max(xp, floor), next - 1);
+    player.xpToNextLevel = next;
+    return player;
 }
 
 /**

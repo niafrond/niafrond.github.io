@@ -19,7 +19,7 @@ import { playSfx } from './sound.js';
 import { playEndingAnimation, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites } from './sprites/index.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
-import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier } from './arena.js';
+import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { icon } from './icons.js';
 
@@ -841,14 +841,15 @@ export function createExplorationView(cfg) {
     }
 
     // ── Calque de sol mis en cache ─────────────────────────────────────────
-    const GROUND_MARGIN = 32;                 // marge (px CSS) autour de la carte pour l'ombre floue de la falaise
+    const GROUND_MARGIN = 32;                 // marge (px CSS) du calque de sol autour de la carte (plus de falaise : simple tampon)
     const GROUND_MAX_PIXELS = 16e6;           // au-delà, on retombe sur le dessin direct (mémoire)
     let groundCache = null;
 
     function paintGroundCells(g, screen, biome, tile, ox, oy, inRects) {
         for (let y = 0; y < screen.h; y++) {
             for (let x = 0; x < screen.w; x++) {
-                g.fillStyle = inRects(screen.liquids, x, y) ? biome.liquid
+                // carte de mer : les récifs (obstacles) reposent sur l'eau, pas sur une case de sable
+                g.fillStyle = (inRects(screen.liquids, x, y) || (screen.aquatic && inRects(screen.obstacles, x, y))) ? biome.liquid
                     : inRects(screen.paths, x, y) ? biome.path
                     : ((x + y) % 2 ? biome.a : biome.b);
                 g.fillRect(ox + x * tile, oy + y * tile, tile, tile);
@@ -878,12 +879,7 @@ export function createExplorationView(cfg) {
         const g = canvas.getContext('2d');
         if (!g) return null;
         g.setTransform(dpr, 0, 0, dpr, 0, 0);
-        g.save();
-        g.shadowColor = 'rgba(0,0,0,0.35)';
-        g.shadowBlur = 18;            // en pixels écran, non affecté par la transformation (comme sur le canvas principal)
-        g.fillStyle = biome.cliff;
-        g.fillRect(M - 4, M - 4, tile * screen.w + 8, tile * screen.h + 8);
-        g.restore();
+        // Aucune bordure : ni falaise ni ombre autour de la carte (le décor se prolonge jusqu'au bord de l'écran).
         paintGroundCells(g, screen, biome, tile, M, M, inRects);
         groundCache = { screen, biome, tile, dpr, canvas };
         return groundCache;
@@ -901,11 +897,8 @@ export function createExplorationView(cfg) {
         }
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        // fond
-        const sky = ctx.createLinearGradient(0, 0, 0, vh);
-        sky.addColorStop(0, biome.sky[0]);
-        sky.addColorStop(1, biome.sky[1]);
-        ctx.fillStyle = sky;
+        // fond sans cadre : de l'eau (carte de mer) ou la couleur du sol du biome jusqu'au bord de l'écran
+        ctx.fillStyle = screen.aquatic ? biome.liquid : biome.a;
         ctx.fillRect(0, 0, vw, vh);
 
         // taille de tuile et caméra
@@ -932,20 +925,14 @@ export function createExplorationView(cfg) {
         };
 
         // 1. Sol, chemins, liquides, zones de vigilance
-        // Le fond statique (falaise + ombre floue, sol, chemins, base des liquides) est dessiné une seule fois dans un
-        // calque hors écran puis simplement recopié à chaque image : l'ombre floue (shadowBlur) et des centaines de
-        // fillRect par image étaient le principal coût de rendu sur les vieux appareils. Rendu identique.
+        // Le fond statique (sol, chemins, base des liquides) est dessiné une seule fois dans un calque hors écran puis
+        // simplement recopié à chaque image : des centaines de fillRect par image étaient le principal coût de rendu
+        // sur les vieux appareils. Rendu identique.
         const ground = getGroundLayer(screen, biome, tile, dpr, inRects);
         if (ground) {
             ctx.drawImage(ground.canvas, ox - GROUND_MARGIN, oy - GROUND_MARGIN,
                 ground.canvas.width / dpr, ground.canvas.height / dpr);
         } else {
-            ctx.save();
-            ctx.shadowColor = 'rgba(0,0,0,0.35)';
-            ctx.shadowBlur = 18;
-            ctx.fillStyle = biome.cliff;
-            ctx.fillRect(ox - 4, oy - 4, mapW + 8, mapH + 8);
-            ctx.restore();
             paintGroundCells(ctx, screen, biome, tile, ox, oy, inRects);
         }
         // Parties animées : reflets des liquides et zones de vigilance qui pulsent
@@ -1517,6 +1504,8 @@ export function createExplorationView(cfg) {
 
         // Arène des Mille Flèches : entrée (point de retour mémorisé) et sortie à tout moment.
         inArena() { ensureSession(); return X.inArena(session); },
+        // L'arène s'ouvre dès le 3e terrain (Bambous) : arena.js `isArenaUnlocked`
+        isArenaUnlocked() { ensureSession(); return isArenaUnlocked(session.data.visitedScreens); },
         enterArena() { return changeArena(true); },
         leaveArena() { return changeArena(false); },
 

@@ -14,7 +14,7 @@ describe('Pas de Yu : marcher sur l\'eau', () => {
 
     test('sans le Pas de Yu les mares bloquent ; avec, on les traverse (terrain, déplacement, chemin)', () => {
         const screen = SCREENS.rizieres_village;
-        const [lx, ly] = [screen.liquids[0][0], screen.liquids[0][1]];
+        const [lx, ly] = [8, 6];   // la mare du village des Rizières (la couronne d'eau des bords n'est pas un bon repère)
         expect(isTerrainBlocked(screen, lx, ly)).toBe(true);
         expect(isTerrainBlocked(screen, lx, ly, true)).toBe(false);
         expect(isTerrainBlocked(screen, screen.obstacles[0][0], screen.obstacles[0][1], true)).toBe(true);   // un mur reste un mur
@@ -100,7 +100,7 @@ describe('Monde aquatique', () => {
 
 describe('cheval : monter / descendre, descente automatique sur l\'eau', () => {
     const screen = SCREENS.rizieres_village;
-    const [lx, ly] = [screen.liquids[0][0], screen.liquids[0][1]];
+    const [lx, ly] = [8, 6];   // mare du village des Rizières
 
     test('sans monture, rien ne se passe ; avec, on est en selle par défaut', () => {
         const s = createSession({});

@@ -4,6 +4,7 @@ import { allWeapons } from "./weapons.js";
 import { getSpellsByClass, getAllSpells } from "./spells.js";
 import { getRandomItem } from "./items.js";
 import { applyArenaScaling } from "./arena.js";
+import { enemyDefenseForLevel } from "./progression.js";
 
 let enemyCatalog = [];
 
@@ -158,7 +159,7 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
     const stats = template.statsModifiers || { hpMult: 1, atkMult: 1, defMult: 1 };
     const baseHp = 40 + enemyLevel * 10;
     const baseAtk = 5 + enemyLevel * 4;
-    const baseDef = 2 + enemyLevel * 2;
+    const baseDef = enemyDefenseForLevel(enemyLevel);
 
     const hp = Math.floor(baseHp * (stats.hpMult || 1));
     const maxAttackFromHp = Math.max(1, Math.floor(hp / 4));
