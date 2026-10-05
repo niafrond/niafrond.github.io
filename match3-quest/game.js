@@ -2597,6 +2597,22 @@ function getSpellTooltipHtml(spell) {
     return `<div class="spell-tooltip-line">${effectText}</div>`;
 }
 
+function getWeaponTooltipHtml(weapon) {
+    let html = `<div class="spell-tooltip-title">${weapon.name}</div>`;
+    html += `<div class="spell-tooltip-line">${weapon.damage} ${svgIcon('skull')} • ${weapon.actionPoints} ${svgIcon('arrow')}</div>`;
+    if(weapon.description) html += `<div class="spell-tooltip-line">${weapon.description}</div>`;
+    if(weapon.biome) html += `<div class="spell-tooltip-line">Bonus de dégâts en ${BIOME_LABELS[weapon.biome]}${enemy?.biome === weapon.biome ? ' (actif)' : ''}</div>`;
+    return html;
+}
+
+function showWeaponTooltip(button, weapon) {
+    if(!button || !weapon) return;
+    const tooltip = ensureSpellTooltip();
+    tooltip.innerHTML = getWeaponTooltipHtml(weapon);
+    tooltip.classList.add('visible');
+    placeTooltip(tooltip, button, 260);
+}
+
 function getItemTooltipHtml(item, options = {}) {
     if(!item) return '<div class="spell-tooltip-line">Objet inconnu</div>';
 
@@ -2633,23 +2649,31 @@ function ensureSpellTooltip() {
     return tooltip;
 }
 
+// Place une infobulle au-dessus de l'élément maintenu, à bonne distance : le pouce (ou le doigt) qui appuie dessus ne doit pas
+// cacher le contenu. Pas assez de place au-dessus : en dessous, plus bas encore pour dégager le pouce.
+const TOOLTIP_GAP_ABOVE = 28;
+const TOOLTIP_GAP_BELOW = 72;
+function placeTooltip(tooltip, targetEl, tooltipWidth) {
+    const rect = targetEl.getBoundingClientRect();
+    const margin = 10;
+    const height = tooltip.offsetHeight || 100;
+    const left = Math.min(
+        window.innerWidth - tooltipWidth - margin,
+        Math.max(margin, rect.left + (rect.width / 2) - (tooltipWidth / 2))
+    );
+    let top = rect.top - height - TOOLTIP_GAP_ABOVE;
+    if(top < margin) top = Math.min(window.innerHeight - height - margin, rect.bottom + TOOLTIP_GAP_BELOW);
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${Math.max(margin, top)}px`;
+}
+
 function showSpellTooltip(button, spell) {
     if(!button || !spell) return;
     const tooltip = ensureSpellTooltip();
     tooltip.innerHTML = getSpellTooltipHtml(spell);
     tooltip.classList.add('visible');
 
-    const rect = button.getBoundingClientRect();
-    const tooltipWidth = 260;
-    const margin = 10;
-    const left = Math.min(
-        window.innerWidth - tooltipWidth - margin,
-        Math.max(margin, rect.left + (rect.width / 2) - (tooltipWidth / 2))
-    );
-    const top = Math.max(margin, rect.top - 120);
-
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
+    placeTooltip(tooltip, button, 260);
 }
 
 function showItemTooltip(button, item, options = {}) {
@@ -2658,17 +2682,7 @@ function showItemTooltip(button, item, options = {}) {
     tooltip.innerHTML = getItemTooltipHtml(item, options);
     tooltip.classList.add('visible');
 
-    const rect = button.getBoundingClientRect();
-    const tooltipWidth = 260;
-    const margin = 10;
-    const left = Math.min(
-        window.innerWidth - tooltipWidth - margin,
-        Math.max(margin, rect.left + (rect.width / 2) - (tooltipWidth / 2))
-    );
-    const top = Math.max(margin, rect.top - 120);
-
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
+    placeTooltip(tooltip, button, 260);
 }
 
 function hideSpellTooltip() {
@@ -2734,17 +2748,7 @@ function showEnemyNameTooltip(targetEl, fullName, enemyEntity = enemy) {
     tooltip.innerHTML = getEnemyNameTooltipHtml(fullName, enemyEntity);
     tooltip.classList.add('visible');
 
-    const rect = targetEl.getBoundingClientRect();
-    const tooltipWidth = 250;
-    const margin = 10;
-    const left = Math.min(
-        window.innerWidth - tooltipWidth - margin,
-        Math.max(margin, rect.left + (rect.width / 2) - (tooltipWidth / 2))
-    );
-    const top = Math.max(margin, rect.top - 72);
-
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
+    placeTooltip(tooltip, targetEl, 250);
 }
 
 function hideEnemyNameTooltip() {
@@ -3136,6 +3140,15 @@ function appendWeaponButton(container, weapon, hand){
         <div class="spell-name">${icon} ${weapon.name}</div>
         <div class="spell-cost">${weapon.actionPoints} ${svgIcon('arrow')} - ${weapon.damage} ${svgIcon('skull')}</div>
     `;
+    const showDetails = () => showWeaponTooltip(btn, weapon);
+    const hideDetails = () => hideSpellTooltip();
+    btn.addEventListener('mouseenter', showDetails);
+    btn.addEventListener('mouseleave', hideDetails);
+    btn.addEventListener('touchstart', showDetails, { passive: true });
+    btn.addEventListener('touchend', hideDetails);
+    btn.addEventListener('touchcancel', hideDetails);
+    btn.addEventListener('focus', showDetails);
+    btn.addEventListener('blur', hideDetails);
     if(player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints) {
         btn.classList.add('disabled');
         btn.tabIndex = -1;
