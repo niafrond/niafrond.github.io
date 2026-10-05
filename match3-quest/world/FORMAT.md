@@ -146,3 +146,5 @@ Outre les chiffres `0`-`9` et `< > ^ v`, les lettres minuscules **`i` à `u` et 
 
 
 **Aucun emoji** dans les données ni dans les textes (test `tests/unit/noEmoji.test.js`) : les PNJ, ennemis et coffres sont dessinés (sprites), un PNJ non humain se déclare dans `CREATURE_BY_ID` (`sprites/creatures.js`).
+
+* **Marchands** : chaque village a un PNJ `merchant_<région>` (ancre `p` du village), défini dans `merchants.js` (pas de texte dans `world/text`) ; son stock et ses prix sont décrits dans ce module.

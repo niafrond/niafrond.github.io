@@ -4,6 +4,7 @@
 // assembleWorld(baseScreens, baseQuests) retourne { screens, quests, regionOrder }. Les régions dont le fichier
 // `world/maps/<R>.js` est absent restent inchangées, ce qui permet de livrer le monde région par région.
 
+import { merchantNpc } from '../merchants.js';
 import { buildZone, arrivalFor, freeNeighbor } from './mapKit.js';
 import { MAPS } from './maps/index.js';
 import { TEXTS } from './text/index.js';
@@ -39,6 +40,8 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         const text = texts[region] || {};
         const helpers = {
             npcDef: id => {
+                const merchant = merchantNpc(id);
+                if (merchant) return merchant;
                 const t = text.npcs?.[id];
                 const base = legacyNpcs[id];
                 if (!t && !base) { console.warn(`[world] PNJ sans texte : ${id}`); return { id, name: id, idle: ['…'] }; }

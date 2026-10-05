@@ -122,10 +122,89 @@ function initScreenRuntime(session) {
     });
 }
 
-// Ennemis d'histoire (permanent) : jamais de retour ; les autres réapparaissent à chaque entrée.
+// Zones de passage d'un ennemi : sa case (ou toutes celles de sa patrouille) + la zone de vigilance autour.
+function enemyZoneCells(screen, def) {
+    const anchors = def.kind === 'patrol' && def.patrol ? buildRoute(def.patrol) : [{ x: def.x, y: def.y }];
+    const cells = new Set();
+    anchors.forEach(a => {
+        for (let dy = -AGGRO_RADIUS; dy <= AGGRO_RADIUS; dy++) {
+            for (let dx = -AGGRO_RADIUS; dx <= AGGRO_RADIUS; dx++) cells.add((a.y + dy) * screen.w + (a.x + dx));
+        }
+    });
+    return cells;
+}
+
+// Composantes connexes de l'écran (terrain libre, hors cases `blocked`) : Map case → numéro de composante.
+function componentsOf(screen, blocked) {
+    const comp = new Map();
+    let id = 0;
+    for (let y = 0; y < screen.h; y++) {
+        for (let x = 0; x < screen.w; x++) {
+            const k = y * screen.w + x;
+            if (comp.has(k) || blocked.has(k) || isTerrainBlocked(screen, x, y)) continue;
+            id++;
+            const stack = [[x, y]];
+            comp.set(k, id);
+            while (stack.length) {
+                const [cx, cy] = stack.pop();
+                for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                    const nx = cx + dx, ny = cy + dy, nk = ny * screen.w + nx;
+                    if (nx < 0 || ny < 0 || nx >= screen.w || ny >= screen.h || comp.has(nk) || blocked.has(nk) || isTerrainBlocked(screen, nx, ny)) continue;
+                    comp.set(nk, id);
+                    stack.push([nx, ny]);
+                }
+            }
+        }
+    }
+    return comp;
+}
+
+const pathBlockCache = new WeakMap();
+
+// Vrai si l'ennemi barre un chemin : sa zone de vigilance coupe l'écran (ou couvre une sortie, le point d'arrivée,
+// un PNJ ou un coffre) de façon à séparer deux points qui communiquaient sans lui. Un tel ennemi, une fois vaincu, ne revient pas.
+export function blocksPath(screen, def) {
+    if (!pathBlockCache.has(screen)) pathBlockCache.set(screen, new Map());
+    const cache = pathBlockCache.get(screen);
+    if (cache.has(def.id)) return cache.get(def.id);
+    const points = [...(screen.exits || []), ...(screen.npcs || []), ...(screen.chests || []), ...(screen.spawn ? [screen.spawn] : [])]
+        .filter(p => Number.isFinite(p.x) && Number.isFinite(p.y));
+    const free = componentsOf(screen, new Set());
+    const zone = enemyZoneCells(screen, def);
+    const cut = componentsOf(screen, zone);
+    let blocks = false;
+    // Les points sont eux-mêmes des cases (sortie, PNJ…) : ils comptent même s'ils sont posés sur un obstacle,
+    // alors on les rattache à la composante d'une case voisine libre.
+    const compAt = (map, p) => {
+        const k = p.y * screen.w + p.x;
+        if (map.has(k)) return map.get(k);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const nx = p.x + dx, ny = p.y + dy;
+            if (nx >= 0 && ny >= 0 && nx < screen.w && ny < screen.h && map.has(ny * screen.w + nx)) return map.get(ny * screen.w + nx);
+        }
+        return null;
+    };
+    for (let i = 0; i < points.length && !blocks; i++) {
+        for (let j = i + 1; j < points.length && !blocks; j++) {
+            const fa = compAt(free, points[i]), fb = compAt(free, points[j]);
+            if (fa === null || fa !== fb) continue;
+            const ca = compAt(cut, points[i]), cb = compAt(cut, points[j]);
+            if (ca === null || cb === null || ca !== cb) blocks = true;
+        }
+    }
+    cache.set(def.id, blocks);
+    return blocks;
+}
+
+// Un ennemi réapparaît quand on quitte l'écran puis qu'on y revient s'il n'est lié ni à l'histoire (permanent : boss,
+// quêtes, groupes, scènes, mirages) ni à un passage (il ne barre aucun chemin).
+export function respawns(screen, def) {
+    return !def.permanent && !def.boss && !def.group && !def.illusion && !def.shieldedBy && !def.defeatScene && !blocksPath(screen, def);
+}
+
 function respawnRegularEnemies(session) {
     const screen = currentScreen(session);
-    const regularIds = new Set(screen.enemies.filter(e => !e.permanent).map(e => e.id));
+    const regularIds = new Set(screen.enemies.filter(e => respawns(screen, e)).map(e => e.id));
     session.data.defeated = session.data.defeated.filter(id => !regularIds.has(id));
 }
 

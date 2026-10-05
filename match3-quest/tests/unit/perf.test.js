@@ -63,10 +63,10 @@ describe('carte d\'exploration : coût de rendu', () => {
 
 describe('audio : appareils modestes', () => {
     const sound = read('sound.js');
-    test('tampon audio élargi sur appareil modeste et notes SFX plafonnées', () => {
+    test('tampon audio élargi sur appareil modeste ; clips SFX plafonnés et libérés à la fin', () => {
         expect(sound).toMatch(/latencyHint:\s*0\.15/);
         expect(sound).toMatch(/hardwareConcurrency/);
-        expect(sound).toMatch(/MAX_ACTIVE_TONES/);
-        expect(sound).toMatch(/osc\.onended/);
+        expect(sound).toMatch(/MAX_SFX_VOICES/);
+        expect(sound).toMatch(/src\.onended/);
     });
 });

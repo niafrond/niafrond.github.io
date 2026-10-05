@@ -10,15 +10,13 @@ import { bigMatchXpFor } from "./matchMechanics.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
 import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
-import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects } from "./items.js";
+import { getRandomItem, getRarityIcon, getRarityColor, useItem, applyArtifactEffects, tickReusableRecharge, describeRecharge } from "./items.js";
 import { icon as svgIcon, manaIcon } from "./icons.js";
 import { ATTRIBUTE_MANA_RULES, ATTRIBUTE_ORDER, describeAttributeChoice, summarizeColorBonuses } from "./attributes.js";
 import { MAX_LEVEL, initializeXP, addXP, calculateXPGain, getXPProgress, getXPToNextLevel } from "./experience.js";
-import { buyWeapon, buyItem, updateShopTab } from "./shop.js";
 import { equip as equipGearSlot, unequip as unequipGearSlot } from "./equipment.js";
 import { playSfx } from "./sound.js";
 import { allSpells as spellsCatalog, getSpellsByLevel, getSpellsByClass } from "./spells.js";
-export { updateShopTab, buyWeapon, buyItem };
 
 const BASE_MANA_CAP = 50;
 const EMPTY_MANA_POOL = { red:0, blue:0, green:0, yellow:0, purple:0 };
@@ -532,6 +530,47 @@ function queueCombatXP(xpAmount){
     return safeXP;
 }
 
+// Récompenses d'un gain de niveau (hors XP) : points d'attribut, PV max et soin. Commun au combat et à l'exploration.
+function applyLevelUpRewards(levelUpResult){
+    let maxHpGained = 0;
+    let hpRecovered = 0;
+    if(levelUpResult?.leveledUp) {
+        const levelsGained = Math.max(1, levelUpResult.levelsGained || 1);
+        player.unspentLevelPoints = Math.max(0, player.unspentLevelPoints || 0) + levelsGained;
+
+        maxHpGained = levelsGained * LEVEL_UP_MAX_HP_GAIN;
+        if(maxHpGained > 0) {
+            player.maxHp += maxHpGained;
+        }
+
+        const beforeHeal = player.hp;
+        const healAmount = levelsGained * LEVEL_UP_HEAL_GAIN;
+        if(healAmount > 0 || maxHpGained > 0) {
+            // Le gain de HP max est aussi applique aux HP actuels pour eviter une perte relative.
+            player.hp = Math.min(player.maxHp, player.hp + healAmount + maxHpGained);
+            hpRecovered = Math.max(0, player.hp - beforeHeal);
+        }
+    }
+    return { maxHpGained, hpRecovered };
+}
+
+// XP gagnée hors combat (quêtes, exploration) : même traitement qu'un niveau gagné en combat — points d'attribut,
+// PV, sorts/armes débloqués, journal, sauvegarde. Renvoie { leveledUp, newLevel, levelsGained } ; l'appelant affiche la
+// notification et ouvre l'écran de choix (`showAttributeMenu`).
+export function grantExplorationXP(amount){
+    const res = addXP(player, Math.max(0, Math.floor(amount || 0)));
+    if(!res.leveledUp) return res;
+    const { maxHpGained, hpRecovered } = applyLevelUpRewards(res);
+    log(`Niveau ${player.level} atteint ! +${maxHpGained} HP max, +${hpRecovered} HP de recuperation.`);
+    if((res.levelsGained || 1) > 1) log(`Vous avez gagné ${res.levelsGained} niveaux d'un coup !`);
+    updateAvailableSpells();
+    updateAvailableWeapons();
+    updateInventoryTab();
+    updateLevelHud();
+    saveUpdate();
+    return res;
+}
+
 function applyCombatXPAtEnd(){
     if(combatRewards.xpApplied) {
         return {
@@ -557,26 +596,7 @@ function applyCombatXPAtEnd(){
     }
 
     const levelUpResult = addXP(player, pendingXP);
-    let maxHpGained = 0;
-    let hpRecovered = 0;
-
-    if(levelUpResult.leveledUp) {
-        const levelsGained = Math.max(1, levelUpResult.levelsGained || 1);
-        player.unspentLevelPoints = Math.max(0, player.unspentLevelPoints || 0) + levelsGained;
-
-        maxHpGained = levelsGained * LEVEL_UP_MAX_HP_GAIN;
-        if(maxHpGained > 0) {
-            player.maxHp += maxHpGained;
-        }
-
-        const beforeHeal = player.hp;
-        const healAmount = levelsGained * LEVEL_UP_HEAL_GAIN;
-        if(healAmount > 0 || maxHpGained > 0) {
-            // Le gain de HP max est aussi applique aux HP actuels pour eviter une perte relative.
-            player.hp = Math.min(player.maxHp, player.hp + healAmount + maxHpGained);
-            hpRecovered = Math.max(0, player.hp - beforeHeal);
-        }
-    }
+    const { maxHpGained, hpRecovered } = applyLevelUpRewards(levelUpResult);
 
     return {
         xpApplied: pendingXP,
@@ -992,7 +1012,7 @@ function ensureCombatUsableActiveItem() {
     if(activeItem?.type === 'consumable') return;
     if(activeItem?.type === 'reusable' && player.level >= (activeItem.minLevel || 1)) return;
 
-    const consumableIndex = player.inventory.findIndex(item => item?.type === 'consumable');
+    const consumableIndex = player.inventory.findIndex(item => (item?.type === 'consumable' || item?.type === 'reusable') && player.level >= (item.minLevel || 1));
     if(consumableIndex >= 0) {
         player.activeInventoryIndex = consumableIndex;
         const combatItem = player.inventory[consumableIndex];
@@ -1311,7 +1331,6 @@ export function saveUpdate(){
     createSpellButtons();
     createWeaponButton();
     updatePlayerStatsTab();
-    updateShopTab();
 }
 
 // Fonction pour effacer la sauvegarde
@@ -2035,6 +2054,8 @@ export function finishEnemyTurn(){
                 log(`Le bouclier de mana se dissipe.`);
             }
         }
+        // Objets rechargeables épuisés : le compte à rebours avance d'un tour ; à 0 ils sont de nouveau pleins.
+        tickReusableRecharge(player).forEach(it => log(`${it.name} est rechargé.`));
         // Tour suivant : joueur (définir le tour avant saveUpdate pour que les boutons dépendants du tour soient corrects)
         currentTurn = 'player';
         updateStats();
@@ -2479,8 +2500,8 @@ function getItemTooltipHtml(item, options = {}) {
     const ownerLabel = isEnemyItem ? 'ennemi' : 'allié';
     const typeLabel = item.type === 'artifact'
         ? 'Relique passive'
-        : (item.type === 'consumable' ? 'Consommable' : 'Objet');
-    const actionPoints = item.type === 'consumable' ? (item.actionPoints || 2) : null;
+        : (item.type === 'consumable' ? 'Consommable' : item.type === 'reusable' ? 'Objet rechargeable' : 'Objet');
+    const actionPoints = (item.type === 'consumable' || item.type === 'reusable') ? (item.actionPoints || 2) : null;
 
     let html = `<div class="spell-tooltip-title">${item.name || 'Objet'}</div>`;
     html += `<div class="spell-tooltip-line">Objet ${ownerLabel}</div>`;
@@ -2490,6 +2511,9 @@ function getItemTooltipHtml(item, options = {}) {
     }
     if(item.description) {
         html += `<div class="spell-tooltip-line">${item.description}</div>`;
+    }
+    if(item.type === 'reusable') {
+        html += `<div class="spell-tooltip-line">Charges: ${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle} • ${describeRecharge(item)}</div>`;
     }
     return html;
 }
@@ -2960,9 +2984,8 @@ function appendWeaponButton(container, weapon, hand){
     btn.className = 'enemy-spell-item';
     btn.tabIndex = 0;
     const icon = getWeaponIcon(weapon.type);
-    const handLabel = hand === 'left' ? ' (main gauche)' : '';
     btn.innerHTML = `
-        <div class="spell-name">${icon} ${weapon.name}${handLabel}</div>
+        <div class="spell-name">${icon} ${weapon.name}</div>
         <div class="spell-cost">${weapon.actionPoints} ${svgIcon('arrow')} - ${weapon.damage} ${svgIcon('skull')}</div>
     `;
     if(player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints) {
@@ -3110,7 +3133,7 @@ function renderGearList(container){
     reusables.forEach(({ it, index }) => {
         const locked = player.level < (it.minLevel || 1);
         const isActive = index === player.activeInventoryIndex;
-        const details = `${it.chargesLeft ?? it.chargesPerCycle}/${it.chargesPerCycle} charges • Niv. ${it.minLevel} • Objet`;
+        const details = `${it.chargesLeft ?? it.chargesPerCycle}/${it.chargesPerCycle} charges • ${describeRecharge(it)} • Niv. ${it.minLevel} • Objet`;
         row(it, details, { locked, current: isActive, disabled: locked || isActive, label: isActive ? 'Objet actif' : locked ? `Niv. ${it.minLevel} requis` : 'Choisir', onclick: `window.setActiveInventoryItem(${index})` });
     });
     container.appendChild(section);
@@ -3174,9 +3197,9 @@ export function updateInventoryTab(){
         const rarityColor = getRarityColor(item.rarity);
 
         const div = document.createElement('div');
-        div.className = `item-card ${item.type === 'consumable' ? 'consumable-item' : 'artifact-item'}`;
+        div.className = `item-card ${item.type === 'consumable' || item.type === 'reusable' ? 'consumable-item' : 'artifact-item'}`;
         div.style.borderLeft = `4px solid ${rarityColor}`;
-        const paInfo = item.type === 'consumable' ? ` <span style="color:#888;font-size:0.85em;">(${item.actionPoints || 2} ${svgIcon('arrow')})</span>` : '';
+        const paInfo = item.type === 'consumable' || item.type === 'reusable' ? ` <span style="color:#888;font-size:0.85em;">(${item.actionPoints || 2} ${svgIcon('arrow')})</span>` : '';
         const lockDuringCombat = gameState.combatState === 'active' ? 'disabled' : '';
         div.innerHTML = `
             <div class="item-header">
@@ -3186,7 +3209,7 @@ export function updateInventoryTab(){
                     <button class="item-discard-btn" onclick="window.discardInventoryItem(${index})">Jeter</button>
                 </div>
             </div>
-            <div class="item-description">${item.description}</div>
+            <div class="item-description">${item.description}${item.type === 'reusable' && (item.chargesLeft ?? item.chargesPerCycle) <= 0 ? ` <em>(${describeRecharge(item)})</em>` : ''}</div>
         `;
         inventoryList.appendChild(div);
     });
@@ -3227,14 +3250,15 @@ export function updateItemButton(){
     }
 
     const pa = item.actionPoints || 2;
-    const canUse = gameState.combatState === 'active' && currentTurn === 'player' && player.combatPoints >= pa;
+    const exhausted = item.type === 'reusable' && (item.chargesLeft ?? item.chargesPerCycle) <= 0;
+    const canUse = gameState.combatState === 'active' && currentTurn === 'player' && player.combatPoints >= pa && !exhausted;
 
     const btn = document.createElement('div');
     btn.className = 'enemy-spell-item';
     btn.tabIndex = 0;
     btn.innerHTML = `
         <div class="spell-name">${svgIcon('bag')} ${item.name}</div>
-        <div class="spell-cost">${pa} ${svgIcon('arrow')}${item.type === 'reusable' ? ` • ${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle}` : ''}</div>
+        <div class="spell-cost">${pa} ${svgIcon('arrow')}${item.type === 'reusable' ? ` • ${item.chargesLeft ?? item.chargesPerCycle}/${item.chargesPerCycle}${(item.chargesLeft ?? item.chargesPerCycle) <= 0 ? ` • ${describeRecharge(item)}` : ''}` : ''}</div>
     `;
     const showDetails = () => showItemTooltip(btn, item, { isEnemyItem: false });
     const hideDetails = () => hideSpellTooltip();
@@ -3352,5 +3376,3 @@ window.unequipGear = unequipGear;
 window.useInventoryItem = useInventoryItem;
 window.discardInventoryItem = discardInventoryItem;
 window.setActiveInventoryItem = setActiveInventoryItem;
-window.buyWeapon = buyWeapon;
-window.buyItem = buyItem;

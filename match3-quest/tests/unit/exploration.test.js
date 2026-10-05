@@ -3,7 +3,7 @@ import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, REGION_ENTRY_SCREEN, STORY_ENDING
 import {
     createSession, tryMove, tick, isTerrainBlocked, buildRoute, aliveEnemies, entityAt, getAuraTiles,
     markEnemyDefeated, talkToNpc, npcAmbientLines, progressReached, openChest, questStatus, checkAutoQuests, currentObjectiveText,
-    encounterFor, enemyLevel, enterScreen, teleportToScreen, resetAfterDefeat, startNewGamePlus,
+    encounterFor, enemyLevel, enterScreen, respawns, blocksPath, teleportToScreen, resetAfterDefeat, startNewGamePlus,
     isEntityVisible, visibleNpcs, visibleChests, isShielded, isExitLocked, journalEntries, npcMarker, activateWaypoint, fastTravel, waypointList,
     houseMarkers, screenQuestMarker, questDirection, setTrackedQuest,
     AGGRO_RADIUS, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN, findPath
@@ -734,6 +734,33 @@ describe('déplacement et zones de vigilance', () => {
         enterScreen(s, 'tonnerre', { x: 1, y: 5 });
         enterScreen(s, 'gobi', { x: 12, y: 5 });
         expect(aliveEnemies(s).some(e => e.def.id === 'sun_4')).toBe(false);
+    });
+
+    test('réapparition : seulement les ennemis libres (ni histoire, ni quête, ni boss, ni barrage de chemin)', () => {
+        const all = Object.values(SCREENS).filter(sc => !sc.arena).flatMap(sc => sc.enemies.map(e => [sc, e]));
+        all.forEach(([sc, e]) => {
+            if (e.permanent || e.boss || e.group || e.illusion || e.shieldedBy || e.defeatScene) expect(respawns(sc, e)).toBe(false);
+        });
+        const respawning = all.filter(([sc, e]) => respawns(sc, e));
+        const blocking = all.filter(([sc, e]) => !e.permanent && blocksPath(sc, e));
+        expect(respawning.length).toBeGreaterThan(30);
+        expect(blocking.length).toBeGreaterThan(0);          // certains ennemis normaux barrent un passage : ils ne reviennent pas
+        blocking.forEach(([sc, e]) => expect(respawns(sc, e)).toBe(false));
+    });
+
+    test('un ennemi qui barre un chemin ne revient pas ; un ennemi libre revient', () => {
+        const s = at('mer_wild', 1, 6);
+        markEnemyDefeated(s, 'mer_w_crab');
+        markEnemyDefeated(s, 'mer_w_cutter');
+        const blocked = SCREENS.mer_wild.enemies.filter(e => !e.permanent && blocksPath(SCREENS.mer_wild, e)).map(e => e.id);
+        const free = SCREENS.mer_wild.enemies.filter(e => respawns(SCREENS.mer_wild, e)).map(e => e.id);
+        expect(blocked).toContain('mer_w_crab');
+        expect(free).toContain('mer_w_cutter');
+        enterScreen(s, 'mer_village', { x: 18, y: 6 });
+        enterScreen(s, 'mer_wild', { x: 1, y: 6 });
+        const alive = aliveEnemies(s).map(e => e.def.id);
+        expect(alive).not.toContain('mer_w_crab');
+        expect(alive).toContain('mer_w_cutter');
     });
 
     test('une sortie change d\'écran et arrive à la tuile prévue (quand son soleil est abattu)', () => {

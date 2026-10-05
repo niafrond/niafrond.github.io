@@ -82,7 +82,8 @@ const hash = (x, y) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 
  *  onRegionVisited(regionId)  région découverte
  *  onOpenMap()                ouvre la carte du monde
  *  onOpenArena()              ouvre l'Arène des Mille Flèches (arena.js)
- *  onOpenMenu()               ouvre le menu (inventaire, sorts, boutique, stats)
+ *  onOpenMenu()               ouvre le menu (inventaire, sorts, stats)
+ *  renderMerchant(npc, card, { close, ngPlus })  remplit la fenêtre de boutique d'un PNJ marchand (shop.js)
  */
 export function createExplorationView(cfg) {
     const { root, canvas } = cfg;
@@ -110,6 +111,7 @@ export function createExplorationView(cfg) {
     let dialogIndex = 0;
     let toastTimer = null;
     let journalEl = null;
+    let merchantEl = null;
     let inCombat = false;
     let battleTransitionEl = null;
     let battleTransitionTimer = null;
@@ -168,7 +170,7 @@ export function createExplorationView(cfg) {
     const isModalOpen = () => Boolean(document.querySelector('.modal.active'))
         || document.getElementById('levelup-modal')?.style.display === 'flex';
     const isRegionReady = () => Boolean(session) && preparedRegion === X.currentScreen(session).region;
-    const isBlocked = () => isDialogOpen() || inCombat || Boolean(journalEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
+    const isBlocked = () => isDialogOpen() || inCombat || Boolean(journalEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
 
     // ── Ressources de la région ────────────────────────────────────────────
     // PNJ et ennemis d'une région (tous ses écrans), y compris les locuteurs des scènes de victoire.
@@ -511,6 +513,27 @@ export function createExplorationView(cfg) {
         journalEl = null;
     }
 
+    // Boutique d'un PNJ marchand (contenu et achats : shop.js via cfg.renderMerchant).
+    function openMerchant(npc) {
+        if (merchantEl || !cfg.renderMerchant) return;
+        held = null;
+        walk = null;
+        merchantEl = document.createElement('div');
+        merchantEl.className = 'explore-journal merchant-overlay';
+        const card = document.createElement('div');
+        card.className = 'explore-journal-card merchant-card';
+        merchantEl.appendChild(card);
+        merchantEl.addEventListener('click', ev => { if (ev.target === merchantEl) closeMerchant(); });
+        root.appendChild(merchantEl);
+        cfg.renderMerchant(npc, card, { close: closeMerchant, ngPlus: session.data.ngPlus || 0 });
+    }
+
+    function closeMerchant() {
+        merchantEl?.remove();
+        merchantEl = null;
+        cfg.onSave?.();
+    }
+
     // Nouvelle Partie + : l'histoire repart de zéro (le niveau et l'équipement du joueur sont conservés),
     // les adversaires sont plus coriaces. Confirmation demandée, puis sauvegarde.
     function confirmNewGamePlus() {
@@ -598,7 +621,7 @@ export function createExplorationView(cfg) {
                 if (!talk) break;
                 const spoken = eventsSpoken(talk.events);
                 openDialog({ sprite: npcSprite(talk.npc.id), name: talk.npc.name, title: talk.npc.title }, talk.lines,
-                    () => processEvents(talk.events, spoken));
+                    () => { processEvents(talk.events, spoken); if (talk.npc.merchant) openMerchant(talk.npc); });
                 break;
             }
             case 'chest': {
@@ -707,6 +730,7 @@ export function createExplorationView(cfg) {
             if (isDialogOpen()) { ev.preventDefault(); advanceDialog(); }
             return;
         }
+        if (ev.key === 'Escape' && merchantEl) { closeMerchant(); return; }
         if (ev.key === 'Escape' && journalEl) { closeJournal(); return; }
         if (ev.key === 'j' || ev.key === 'J') { showJournal(); return; }
         if (ev.key === 'v' || ev.key === 'V') { showJournal('travel'); return; }
@@ -1058,7 +1082,8 @@ export function createExplorationView(cfg) {
                     const bob = Math.sin(now / 520 + it.x * 1.3) * tile * 0.012;
                     drawSprite(npcSprite(it.n.id), c.x, feet + bob, tile * 1.02);
                     const marker = X.npcMarker(session, it.n.id);
-                    if (marker) drawMarker(c.x, c.y - tile * 0.72 - 4 * Math.abs(Math.sin(now / 300)), marker, tile);
+                    if (it.n.merchant) drawMerchantBadge(c.x, c.y - tile * 0.74 - 3 * Math.abs(Math.sin(now / 340)), tile);
+                    else if (marker) drawMarker(c.x, c.y - tile * 0.72 - 4 * Math.abs(Math.sin(now / 300)), marker, tile);
                     drawLabel(c.x, c.y + tile * 0.55, it.n.name, '#fff8e1', '#5a3e1b', labelSize);
                     break;
                 }
@@ -1266,6 +1291,30 @@ export function createExplorationView(cfg) {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(char, x, y + r * 0.08);
+    }
+
+    // Pièce chinoise dorée (trou carré) au-dessus d'un PNJ marchand : repérable de loin.
+    function drawMerchantBadge(x, y, tile) {
+        const r = tile * 0.21;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = '#f2c14e';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#2b1b17';
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, r * 0.72, 0, Math.PI * 2);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#b8862a';
+        ctx.stroke();
+        const h = r * 0.5;
+        ctx.fillStyle = '#2b1b17';
+        ctx.fillRect(x - h / 2, y - h / 2, h, h);
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.beginPath();
+        ctx.arc(x - r * 0.4, y - r * 0.45, r * 0.18, 0, Math.PI * 2);
+        ctx.fill();
     }
 
     // Petite couronne dorée au-dessus des boss.

@@ -1,71 +1,19 @@
 import {
     SCALES, SCENE_IDS, BIOMES, INSTRUMENT_RANGES, UNPITCHED, midiToFreq, makeRng, composeSection, getSceneConfig,
-    getSceneList, getBossStyle, getCombatStyle, COMBAT_STYLE_COUNT, setMusicEnvironment, setMusicScene, stopMusic, pauseMusic, resumeMusic, isMusicPlaying, __internals
+    getSceneList as composerSceneList, getBossStyle, getCombatStyle, COMBAT_STYLE_COUNT
+} from '../../tools/audio/composer.js';
+import { sectionCountFor } from '../../tools/audio/synth.js';
+import {
+    setMusicEnvironment, setMusicScene, stopMusic, pauseMusic, resumeMusic, isMusicPlaying, getSceneList, __internals
 } from '../../music.js';
-
-// ── Faux AudioContext : enregistre les nœuds, simule le temps ───────────────
-function makeParam(initial = 0) {
-    const p = {
-        value: initial, calls: [], targets: [],
-        setValueAtTime(v) { p.value = v; p.calls.push(['set', v]); },
-        linearRampToValueAtTime(v) { p.value = v; p.calls.push(['lin', v]); },
-        exponentialRampToValueAtTime(v) { p.calls.push(['exp', v]); },
-        setTargetAtTime(v) { p.targets.push(v); },
-        cancelScheduledValues() {}
-    };
-    return p;
-}
-function makeCtx() {
-    const nodes = [];
-    const ctx = {
-        currentTime: 0, state: 'running', sampleRate: 8000, nodes,
-        destination: { kind: 'destination', connect() {}, disconnect() {} }
-    };
-    const base = (kind, extra = {}) => {
-        const n = {
-            kind, connections: 0, disconnected: false,
-            connect(dest) { n.connections++; return dest; },
-            disconnect() { n.disconnected = true; },
-            ...extra
-        };
-        nodes.push(n);
-        return n;
-    };
-    const src = (kind, extra = {}) => base(kind, {
-        started: false, stopped: false, startAt: 0, stopAt: 0,
-        start(t) { if (this.started) throw new Error('start 2x'); this.started = true; this.startAt = t; },
-        stop(t) { this.stopped = true; this.stopAt = this.stopAt ? Math.min(this.stopAt, t) : t; },
-        ...extra
-    });
-    ctx.createGain = () => base('gain', { gain: makeParam(1) });
-    ctx.createOscillator = () => src('osc', { type: 'sine', frequency: makeParam(440), detune: makeParam(0) });
-    ctx.createBufferSource = () => src('buf', { buffer: null, loop: false });
-    ctx.createBiquadFilter = () => base('filter', { type: 'lowpass', frequency: makeParam(350), Q: makeParam(1), gain: makeParam(0) });
-    ctx.createConvolver = () => base('convolver', { buffer: null });
-    ctx.createDynamicsCompressor = () => base('comp');
-    ctx.createBuffer = (ch, len, rate) => ({ length: len, sampleRate: rate, getChannelData: () => new Float32Array(len) });
-    return ctx;
-}
-const noopTimer = { set: () => 1, clear: () => {} };
-
-function setup(ctx, opts = {}) {
-    const state = { volume: opts.volume ?? 1, muted: false };
-    setMusicEnvironment({ getContext: () => ctx, getVolume: () => state.volume, isMuted: () => state.muted, timer: noopTimer });
-    return state;
-}
-function run(ctx, seconds, step = 0.05) {
-    for (let t = 0; t < seconds; t += step) { ctx.currentTime += step; __internals.tick(); }
-}
-function leaks(ctx) {
-    const srcs = ctx.nodes.filter((n) => n.kind === 'osc' || n.kind === 'buf');
-    const unstopped = srcs.filter((n) => n.started && !n.stopped);
-    const connected = ctx.nodes.filter((n) => n.connections > 0 && !n.disconnected);
-    return { unstopped, connected, srcs };
-}
+import { trackCandidates, trackUrl, bossSlug, bossArchetypeIndex, combatStyleIndex, BOSS_ARCHETYPE_COUNT, COMBAT_STYLE_COUNT as TRACK_COMBAT } from '../../musicTracks.js';
+import { sfxVariants, sfxKeyFor, sfxGainFor, sfxUrl } from '../../sfxCatalog.js';
+import { readFileSync, existsSync } from 'node:fs';
+import { SCREENS } from '../../story.js';
 
 const pcsOf = (r) => SCALES[r.scale].map((s) => (r.root + s) % 12);
 
-describe('justesse et gammes', () => {
+describe('composition : justesse et gammes (outil de build)', () => {
     test('midiToFreq : La4 = 440, Do4 = 261.63, octave = x2, quinte tempérée ~ 3/2', () => {
         expect(midiToFreq(69)).toBeCloseTo(440, 6);
         expect(midiToFreq(60)).toBeCloseTo(261.6256, 3);
@@ -176,6 +124,7 @@ describe('composition (partie pure)', () => {
 
     test('scène inconnue : composeSection lève, getSceneList liste les 8 scènes', () => {
         expect(() => composeSection('zzz')).toThrow();
+        expect(composerSceneList().map((s) => s.id)).toEqual(SCENE_IDS);
         expect(getSceneList().map((s) => s.id)).toEqual(SCENE_IDS);
     });
 });
@@ -227,20 +176,113 @@ describe('rythmes, exploration calme, combat, boss', () => {
         }
         expect(shapes.size).toBeGreaterThanOrEqual(8);
     });
-    test('moteur : un thème de boss se joue sans fuite', () => {
-        const ctx = makeCtx(); setup(ctx);
-        setMusicScene('boss', { boss: 'Soleil Ardent' }); run(ctx, 20);
-        expect(__internals.state.players.some((p) => p.variant === 'Soleil Ardent')).toBe(true);
-        setMusicScene('boss', { boss: 'Soleil Lâche' }); run(ctx, 3);
-        expect(__internals.state.desired.variant).toBe('Soleil Lâche');
-        stopMusic({ fadeMs: 0 });
+});
+
+
+// ── Lecteur (runtime) : pistes pré-enregistrées, faux AudioContext et faux fetch ─────────────────────────
+function makeParam(initial = 0) {
+    return { value: initial, targets: [], setValueAtTime(v) { this.value = v; }, linearRampToValueAtTime(v) { this.value = v; },
+        setTargetAtTime(v) { this.targets.push(v); }, cancelScheduledValues() {} };
+}
+function makeCtx() {
+    const nodes = [];
+    const ctx = { currentTime: 0, state: 'running', nodes, destination: { kind: 'dest', connect() {}, disconnect() {} }, decoded: 0 };
+    const node = (kind, extra = {}) => { const n = { kind, disconnected: false, connect() {}, disconnect() { n.disconnected = true; }, ...extra }; nodes.push(n); return n; };
+    ctx.createGain = () => node('gain', { gain: makeParam(1) });
+    ctx.createBufferSource = () => node('source', { buffer: null, loop: false, started: false, stopped: false, start() { this.started = true; }, stop() { this.stopped = true; } });
+    ctx.decodeAudioData = (data) => { ctx.decoded++; return Promise.resolve({ length: data.byteLength, tag: Buffer.from(data).toString() }); };
+    ctx.resume = () => Promise.resolve();
+    return ctx;
+}
+function makeFetch(existing) {
+    const calls = [];
+    const fn = async (url) => {
+        calls.push(url);
+        const key = /audio\/music\/(.+)\.mp3/.exec(url)[1];
+        if (!existing.has(key)) return { ok: false, status: 404 };
+        return { ok: true, status: 200, arrayBuffer: async () => Buffer.from(key) };
+    };
+    fn.calls = calls;
+    return fn;
+}
+const noopTimer = { set: () => 1, clear: () => {} };
+const flush = async () => { for (let i = 0; i < 6; i++) await Promise.resolve(); await new Promise((r) => setImmediate(r)); };
+function setup(ctx, existing = new Set(['title', 'menu', 'combat-0', 'boss-a0', 'boss-soleil-ardent', 'village-paddy']), extra = {}) {
+    const state = { volume: 1, muted: false };
+    const fetchFn = makeFetch(existing);
+    setMusicEnvironment({ getContext: () => ctx, getVolume: () => state.volume, isMuted: () => state.muted, fetch: fetchFn, baseUrl: 'http://x/match3-quest/', timer: noopTimer, ...extra });
+    return { state, fetchFn };
+}
+
+describe('pistes pré-enregistrées : correspondance scène → fichier (musicTracks.js)', () => {
+    test('chaque scène et chaque biome ont une piste ; scène inconnue : aucune', () => {
+        expect(trackCandidates('title')).toEqual(['title']);
+        for (const b of BIOMES) { expect(trackCandidates('village', { biome: b })).toEqual([`village-${b}`]); expect(trackCandidates('wild', { biome: b })).toEqual([`wild-${b}`]); }
+        expect(trackCandidates('village', { biome: 'nope' })).toEqual(['village-paddy']);
+        expect(trackCandidates('inconnue')).toEqual([]);
+        expect(TRACK_COMBAT).toBe(COMBAT_STYLE_COUNT);
+        expect(trackUrl('title')).toBe('audio/music/title.mp3');
+    });
+    test('combat : 5 pistes ; boss : piste du boss puis repli sur son archétype', () => {
+        const keys = new Set([0, 1, 2, 3, 4, 'Gobelin', 'Orc'].map((v) => trackCandidates('combat', { variant: v })[0]));
+        keys.forEach((k) => expect(/^combat-[0-4]$/.test(k)).toBe(true));
+        const [exact, fallback] = trackCandidates('boss', { boss: "Fengmeng, l'Archer Pressé" });
+        expect(exact).toBe('boss-fengmeng-l-archer-presse');
+        expect(fallback).toBe(`boss-a${bossArchetypeIndex("Fengmeng, l'Archer Pressé")}`);
+        expect(trackCandidates('boss')).toEqual(['boss-a0']);
+        expect(combatStyleIndex('x')).toBeLessThan(5);
+    });
+    test('l\'archétype de repli est celui que compose le thème du boss (même hachage)', () => {
+        for (const n of ['Soleil Ardent', 'Serpent de marée', 'Boss Gobelin']) {
+            const style = getBossStyle(n);
+            const idx = bossArchetypeIndex(n);
+            expect(idx).toBeGreaterThanOrEqual(0); expect(idx).toBeLessThan(BOSS_ARCHETYPE_COUNT);
+            expect(style.perc).toBeTruthy();
+        }
+    });
+    test('sections d\'une piste : 30 s environ, 1 à 4 sections', () => {
+        expect(sectionCountFor(54)).toBe(1);
+        expect(sectionCountFor(96)).toBe(2);
+        expect(sectionCountFor(300)).toBe(4);
     });
 });
 
-describe('moteur audio (faux AudioContext)', () => {
-    afterEach(() => { __internals.hardReset(); __internals.state.desired = null; __internals.state.players = []; stopMusic({ fadeMs: 0 }); });
+describe('fichiers audio livrés (rendus par tools/audio/render.mjs)', () => {
+    const exists = (p) => existsSync(new URL(`../../${p}`, import.meta.url));
+    const expectedTracks = () => {
+        const keys = ['title', 'menu', 'house', 'sanctuary', 'moon', 'ending'];
+        BIOMES.forEach((b) => keys.push(`village-${b}`, `wild-${b}`));
+        for (let i = 0; i < COMBAT_STYLE_COUNT; i++) keys.push(`combat-${i}`);
+        for (let i = 0; i < BOSS_ARCHETYPE_COUNT; i++) keys.push(`boss-a${i}`);
+        Object.values(SCREENS).forEach((sc) => (sc.enemies || []).forEach((e) => { if (e.boss?.name) keys.push(`boss-${bossSlug(e.boss.name)}`); }));
+        return [...new Set(keys)];
+    };
+    test('toutes les pistes de musique existent (dont un thème par boss) et ne sont pas vides', () => {
+        const missing = expectedTracks().filter((k) => !exists(trackUrl(k)));
+        expect(missing).toEqual([]);
+        expectedTracks().forEach((k) => expect(readFileSync(new URL(`../../${trackUrl(k)}`, import.meta.url)).length).toBeGreaterThan(20000));
+    });
+    test('tous les effets sonores existent', () => {
+        const missing = sfxVariants().filter((v) => !exists(sfxUrl(v.key))).map((v) => v.key);
+        expect(missing).toEqual([]);
+        // chaque événement du jeu retombe sur un clip existant
+        for (const e of ['uiClick', 'swap', 'match', 'skullHit', 'manaGain', 'weaponHit', 'spellHit', 'spellCast', 'heal', 'victory', 'defeat', 'combatStart', 'bossStart', 'turnBonus', 'inconnu']) {
+            for (const p of [{}, { isPlayer: false, length: 5, matchType: 'skull' }, { length: 9, matchType: 'combat' }]) expect(exists(sfxUrl(sfxKeyFor(e, p)))).toBe(true);
+        }
+        expect(sfxGainFor('manaGain', { isPlayer: false })).toBe(0.5);
+    });
+    test('plus aucune synthèse en temps réel dans le jeu', () => {
+        const music = readFileSync(new URL('../../music.js', import.meta.url), 'utf8');
+        const sound = readFileSync(new URL('../../sound.js', import.meta.url), 'utf8');
+        expect(music).not.toMatch(/createOscillator|createConvolver|createBiquadFilter/);
+        expect(sound).not.toMatch(/createOscillator|createBiquadFilter/);
+    });
+});
 
-    test('sans contexte ni exception', () => {
+describe('lecteur de musique', () => {
+    afterEach(() => { __internals.reset(); });
+
+    test('sans contexte ni exception ; scène inconnue refusée', () => {
         setMusicEnvironment({ getContext: () => null, getVolume: () => 1, isMuted: () => false, timer: noopTimer });
         expect(() => { setMusicScene('title'); pauseMusic(); resumeMusic(); stopMusic(); }).not.toThrow();
         expect(isMusicPlaying()).toBe(false);
@@ -249,126 +291,90 @@ describe('moteur audio (faux AudioContext)', () => {
         expect(() => { setMusicScene('menu'); __internals.tick(); stopMusic(); }).not.toThrow();
     });
 
-    test('anticipation adaptative : un thread principal bloqué élargit l\'anticipation, sans la réduire ensuite', () => {
+    test('télécharge la piste de la scène une seule fois, la joue en boucle (aucun calcul audio)', async () => {
+        const ctx = makeCtx(); const { fetchFn } = setup(ctx);
+        setMusicScene('title');
+        await flush();
+        expect(fetchFn.calls).toEqual(['http://x/match3-quest/audio/music/title.mp3']);
+        const src = ctx.nodes.find((n) => n.kind === 'source');
+        expect(src.started).toBe(true);
+        expect(src.loop).toBe(true);
+        expect(isMusicPlaying()).toBe(true);
+        setMusicScene('title'); await flush();                        // même scène : no-op
+        expect(fetchFn.calls).toHaveLength(1);
+        setMusicScene('menu'); await flush();
+        setMusicScene('title'); await flush();                        // piste en cache : pas de nouveau téléchargement
+        expect(fetchFn.calls.filter((u) => u.endsWith('title.mp3'))).toHaveLength(1);
+        expect(ctx.decoded).toBe(2);
+    });
+
+    test('fondu enchaîné : l\'ancienne piste s\'arrête, une seule piste reste active', async () => {
         const ctx = makeCtx(); setup(ctx);
-        setMusicScene('menu');
-        run(ctx, 1);
-        const base = __internals.state.ahead;
-        ctx.currentTime += 0.6; __internals.tick();   // trou de 600 ms entre deux ticks (appareil lent)
-        const widened = __internals.state.ahead;
-        expect(widened).toBeGreaterThan(base);
-        expect(widened).toBeLessThanOrEqual(1.2);
-        run(ctx, 2);
-        expect(__internals.state.ahead).toBe(widened);
+        setMusicScene('title'); await flush();
+        const first = ctx.nodes.find((n) => n.kind === 'source');
+        setMusicScene('menu'); await flush();
+        const sources = ctx.nodes.filter((n) => n.kind === 'source');
+        expect(sources).toHaveLength(2);
+        expect(first.stopped).toBe(true);
+        expect(sources[1].stopped).toBe(false);
     });
 
-    test('appareil lent : des ticks espacés de 400 ms ne font pas perdre de notes', () => {
-        const started = (stepS) => {
-            const ctx = makeCtx(); setup(ctx);
-            setMusicScene('village', { biome: 'bamboo' });
-            for (let t = 0; t < 40; t += stepS) { ctx.currentTime += stepS; __internals.tick(); }
-            const n = ctx.nodes.filter((x) => (x.kind === 'osc' || x.kind === 'buf') && x.started).length;
-            stopMusic({ fadeMs: 0 }); __internals.hardReset();
-            return n;
-        };
-        const reference = started(0.05);   // thread principal fluide
-        const stalled = started(0.4);      // thread principal saturé : un tick toutes les 400 ms
-        expect(reference).toBeGreaterThan(50);
-        expect(stalled).toBeGreaterThanOrEqual(reference * 0.9);
+    test('boss : sa piste dédiée, sinon repli sur le thème d\'archétype', async () => {
+        const ctx = makeCtx(); const { fetchFn } = setup(ctx);
+        setMusicScene('boss', { boss: 'Soleil Ardent' }); await flush();
+        expect(fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1])).toEqual(['boss-soleil-ardent']);
+        __internals.reset();
+        const ctx2 = makeCtx(); const s2 = setup(ctx2, new Set(['boss-a0', 'boss-a1', 'boss-a2', 'boss-a3', 'boss-a4', 'boss-a5', 'boss-a6', 'boss-a7']));
+        setMusicScene('boss', { boss: 'Boss Inconnu' }); await flush();
+        const keys = s2.fetchFn.calls.map((u) => /music\/(.+)\.mp3/.exec(u)[1]);
+        expect(keys).toEqual(['boss-boss-inconnu', `boss-a${bossArchetypeIndex('Boss Inconnu')}`]);
+        expect(ctx2.nodes.some((n) => n.kind === 'source' && n.started)).toBe(true);
     });
 
-    test('contexte suspendu : rien n\'est créé, puis démarre quand il passe en running', () => {
-        const ctx = makeCtx(); ctx.state = 'suspended';
-        setup(ctx);
-        setMusicScene('village', { biome: 'bamboo' });
-        run(ctx, 1);
-        expect(ctx.nodes.length).toBe(0);
+    test('piste introuvable : silence sans exception, nouvel essai plus tard', async () => {
+        const ctx = makeCtx(); const { fetchFn } = setup(ctx, new Set());
+        setMusicScene('menu'); await flush();
         expect(isMusicPlaying()).toBe(false);
-        ctx.state = 'running';
-        run(ctx, 2);
-        expect(isMusicPlaying()).toBe(true);
-        expect(ctx.nodes.some((n) => n.kind === 'osc' && n.started)).toBe(true);
-        stopMusic({ fadeMs: 100 });
-        run(ctx, 1);
+        expect(ctx.nodes.some((n) => n.kind === 'source')).toBe(false);
+        expect(fetchFn.calls).toHaveLength(1);
     });
 
-    test.each(SCENE_IDS)('%s : 60 s simulées sans exception ni fuite', (scene) => {
+    test('changement de scène pendant le téléchargement : seule la dernière scène est jouée', async () => {
         const ctx = makeCtx(); setup(ctx);
-        let maxAlive = 0;
-        setMusicScene(scene, { biome: scene === 'wild' || scene === 'village' ? 'volcano' : undefined });
-        for (let t = 0; t < 60; t += 0.05) {
-            ctx.currentTime += 0.05; __internals.tick();
-            const alive = ctx.nodes.filter((n) => (n.kind === 'osc' || n.kind === 'buf') && n.started && !n.disconnected && n.stopAt > ctx.currentTime && n.startAt <= ctx.currentTime).length;
-            maxAlive = Math.max(maxAlive, alive);
-        }
+        setMusicScene('title'); setMusicScene('menu'); await flush();
+        const sources = ctx.nodes.filter((n) => n.kind === 'source' && n.started);
+        expect(sources).toHaveLength(1);
+        expect(sources[0].buffer.tag).toBe('menu');
+    });
+
+    test('volume, mute et pause règlent le gain maître sans toucher à la piste', async () => {
+        const ctx = makeCtx(); const { state } = setup(ctx);
+        setMusicScene('title'); await flush(); __internals.tick();
+        const master = __internals.state.master;
+        expect(master.gain.targets.at(-1)).toBeGreaterThan(0.1);
+        state.muted = true; __internals.tick();
+        expect(master.gain.targets.at(-1)).toBe(0);
+        state.muted = false; state.volume = 0.5; __internals.tick();
+        expect(master.gain.targets.at(-1)).toBeCloseTo(0.5 * 0.35, 5);
+        pauseMusic(); expect(master.gain.targets.at(-1)).toBe(0); expect(isMusicPlaying()).toBe(false);
+        resumeMusic(); expect(master.gain.targets.at(-1)).toBeGreaterThan(0);
+    });
+
+    test('contexte suspendu : rien ne se joue, puis démarre quand il repasse en running', async () => {
+        const ctx = makeCtx(); ctx.state = 'suspended'; const { fetchFn } = setup(ctx);
+        setMusicScene('title'); await flush();
+        expect(fetchFn.calls).toHaveLength(0);
+        ctx.state = 'running'; __internals.tick(); await flush();
         expect(isMusicPlaying()).toBe(true);
-        expect(maxAlive).toBeGreaterThan(0);
-        expect(maxAlive).toBeLessThan(90); // charge CPU bornée
-        // Nœuds vivants à tout moment bornés (pas de croissance)
-        expect(__internals.state.voices.length).toBeLessThanOrEqual(30);
+    });
+
+    test('arrêt : fondu puis plus aucune piste ; le cache est borné à 3 pistes', async () => {
+        const ctx = makeCtx();
+        setup(ctx, new Set(['title', 'menu', 'house', 'sanctuary', 'moon']));
+        for (const s of ['title', 'menu', 'house', 'sanctuary', 'moon']) { setMusicScene(s); await flush(); }
+        expect(__internals.state.cache.size).toBeLessThanOrEqual(3);
         stopMusic({ fadeMs: 500 });
-        run(ctx, 2);
-        const l = leaks(ctx);
-        expect(l.srcs.length).toBeGreaterThan(0);
-        expect(l.unstopped).toHaveLength(0);
-        expect(l.connected).toHaveLength(0);
-        expect(__internals.state.voices).toHaveLength(0);
-        expect(__internals.state.players).toHaveLength(0);
-        expect(__internals.state.bus).toBeNull();
+        expect(ctx.nodes.filter((n) => n.kind === 'source').every((n) => n.stopped)).toBe(true);
         expect(isMusicPlaying()).toBe(false);
-    });
-
-    test('fondu enchaîné, no-op sur même scène, aucune fuite après changements de scène', () => {
-        const ctx = makeCtx(); setup(ctx);
-        setMusicScene('title'); run(ctx, 3);
-        const n0 = ctx.nodes.length;
-        setMusicScene('title'); // no-op
-        expect(__internals.state.players).toHaveLength(1);
-        setMusicScene('village', { biome: 'paddy' }); run(ctx, 0.3);
-        expect(__internals.state.players).toHaveLength(2); // ancien en fondu + nouveau
-        run(ctx, 2);
-        expect(__internals.state.players).toHaveLength(1);
-        setMusicScene('village', { biome: 'paddy' });
-        expect(__internals.state.players).toHaveLength(1);
-        setMusicScene('village', { biome: 'coast' }); run(ctx, 3);
-        setMusicScene('house'); run(ctx, 3);
-        expect(ctx.nodes.length).toBeGreaterThan(n0);
-        stopMusic({ fadeMs: 300 }); run(ctx, 2);
-        const l = leaks(ctx);
-        expect(l.unstopped).toHaveLength(0);
-        expect(l.connected).toHaveLength(0);
-    });
-
-    test('volume : gain maître = 0,5 x volume ; mute et pause -> 0 ; reprise', () => {
-        const ctx = makeCtx(); const st = setup(ctx, { volume: 0.8 });
-        setMusicScene('menu'); run(ctx, 1);
-        const master = __internals.state.bus.master.gain;
-        expect(master.targets[master.targets.length - 1]).toBeCloseTo(0.4, 5);
-        st.muted = true; run(ctx, 0.2);
-        expect(master.targets[master.targets.length - 1]).toBe(0);
-        const started = ctx.nodes.filter((n) => n.started).length;
-        run(ctx, 3); // silencieux : aucune nouvelle voix
-        expect(ctx.nodes.filter((n) => n.started).length).toBe(started);
-        st.muted = false; st.volume = 0.2; run(ctx, 1);
-        expect(master.targets[master.targets.length - 1]).toBeCloseTo(0.1, 5);
-        pauseMusic(); run(ctx, 0.2);
-        expect(master.targets[master.targets.length - 1]).toBe(0);
-        expect(isMusicPlaying()).toBe(false);
-        resumeMusic(); run(ctx, 1);
-        expect(isMusicPlaying()).toBe(true);
-        expect(ctx.nodes.filter((n) => n.started).length).toBeGreaterThan(started);
-        stopMusic({ fadeMs: 100 }); run(ctx, 1);
-    });
-
-    test('changement de contexte : ancien graphe nettoyé', () => {
-        const a = makeCtx(); let cur = a;
-        setMusicEnvironment({ getContext: () => cur, getVolume: () => 1, isMuted: () => false, timer: noopTimer });
-        setMusicScene('moon'); run(a, 2);
-        const b = makeCtx(); cur = b;
-        run(b, 2);
-        expect(leaks(a).unstopped).toHaveLength(0);
-        expect(b.nodes.some((n) => n.started)).toBe(true);
-        stopMusic({ fadeMs: 0 }); run(b, 1);
-        expect(leaks(b).unstopped).toHaveLength(0);
     });
 });

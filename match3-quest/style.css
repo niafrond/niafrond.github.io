@@ -2805,3 +2805,11 @@ input, textarea, [contenteditable="true"] {
 .explore-quest.tracked { box-shadow: inset 4px 0 0 #f2c14e; }
 .explore-dialog-choices { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .explore-choice { cursor: pointer; padding: 6px 10px; border: 2px solid #5a3e1b; border-radius: 8px; background: #f2c14e; color: #3b2a20; font: inherit; text-align: left; }
+
+/* Marchands (PNJ des villages) : fenêtre de boutique */
+.merchant-card { max-width: 620px; }
+.merchant-card .shop-gold-display { text-align: center; margin: 6px auto; width: fit-content; }
+.merchant-note { text-align: center; font-weight: bold; margin: 6px 0; }
+.merchant-rarity { font-size: 0.75em; font-style: normal; margin-left: 6px; }
+.merchant-offer.rarity-legendary { box-shadow: 0 0 10px rgba(255, 193, 7, 0.65); }
+.merchant-offer.rarity-rare { box-shadow: 0 0 6px rgba(52, 152, 219, 0.45); }

@@ -13,8 +13,9 @@
 // Ennemis :
 //  - kind 'sentinel' : immobile, se déclenche si on passe à `AGGRO_RADIUS` tuile(s) ;
 //  - kind 'patrol'   : fait des allers-retours entre les points de `patrol` ;
-//  - permanent:true  : ne réapparaît jamais (ennemis d'histoire), sinon il revient à chaque
-//                      entrée dans l'écran (le joueur peut donc s'entraîner) ;
+//  - permanent:true  : ne réapparaît jamais (ennemis d'histoire : boss, quêtes, groupes, scènes). Sinon il revient à chaque
+//                      entrée dans l'écran (le joueur peut donc s'entraîner) SAUF s'il barre un chemin (sa zone de
+//                      vigilance sépare deux sorties/PNJ/coffres : voir `blocksPath` et `respawns` dans exploration.js) ;
 //  - boss            : { name, level } → combat de boss (niveau au moins égal à celui du joueur) ;
 //  - offset          : écart de niveau par rapport au joueur (-1, 0 ou +1) pour les ennemis normaux ;
 //  - spriteKey       : clé de sprite si différente de l'id (les mirages réutilisent `sun_4`) ;

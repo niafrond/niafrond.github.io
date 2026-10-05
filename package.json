@@ -9,6 +9,7 @@
     "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:e2e": "playwright test",
     "test": "npm run test:unit",
+    "audio:build": "node match3-quest/tools/audio/render.mjs",
     "start": " serve -l 8080 ",
     "start:local": " serve -l 8000 "
   },

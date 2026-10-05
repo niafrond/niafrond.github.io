@@ -10,7 +10,7 @@ export default {
             '#.AAAA#BBBB.~.CCCC.#',
             '##AaAA.BbBB.~#CcCC.#',
             '#..=....=...~..=..##',
-            '#..=....=.S.~..=.5.#',
+            '#..=p...=.S.~..=.5.#',
             '<==================>',
             '#....1.0.3..~.2....#',
             '#.DDDD#..W#.~.EEEE.#',
@@ -31,6 +31,7 @@ export default {
             '####################'
         ],
         npcs: [
+            { id: 'merchant_volcan', at: 'p' },
             { id: 'lizard_zao', at: '1' },
             { id: 'hua_volcan', at: '2' },
             { id: 'young_miner_bo', at: '3' },

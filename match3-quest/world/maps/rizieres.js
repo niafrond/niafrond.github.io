@@ -14,7 +14,7 @@ export default {
             '#..=..W.~~~~1..=...>',
             '#..=.2..~~~~...=...#',
             '#.DDDD........EEEE.#',
-            '#.DDDD...#....EEEE.#',
+            '#.DDDD.p.#....EEEE.#',
             '#.DdDD.....4..EeEE.#',
             '#..=============...#',
             '#..................#',
@@ -31,6 +31,7 @@ export default {
             '####################'
         ],
         npcs: [
+            { id: 'merchant_rizieres', at: 'p' },
             { id: 'xiaobao', at: '1' },
             { id: 'hua_riz', at: '2' },
             { id: 'scarecrow_cao', at: '3' },

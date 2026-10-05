@@ -1,6 +1,7 @@
 import { icon } from "./icons.js";
 import { createCheatModeSection } from "./cheatMode.js";
 import { getMatch3Version } from "./version.js";
+import { sfxKeyFor, sfxGainFor, sfxVariants, sfxUrl, SFX_PLAY_GAIN } from "./sfxCatalog.js";
 
 // ===============================
 // CONSTANTES
@@ -159,7 +160,7 @@ function saveSettings() {
 // CONTEXTE AUDIO WEB
 // ===============================
 
-// Contexte audio partagé (créé après un geste utilisateur) : sert aussi à la musique procédurale (music.js).
+// Contexte audio partagé (créé après un geste utilisateur) : sert aussi à la lecture de la musique pré-enregistrée (music.js).
 export const getSharedAudioContext = () => getAudioContext({ allowCreate: true });
 
 // Appareil modeste (peu de cœurs / de mémoire) : on demande un tampon audio plus large au navigateur. Le son est
@@ -251,264 +252,79 @@ export function initializeAudioUI(button) {
 }
 
 // ===============================
-// EFFETS SONORES (SFX)
+// EFFETS SONORES (SFX) : clips MP3 pré-enregistrés (audio/sfx/), rendus par tools/audio/render.mjs
 // ===============================
 
-let activeTones = 0;
-const MAX_ACTIVE_TONES = 32;
+const sfxBuffers = new Map();   // clé -> AudioBuffer décodé
+const sfxLoading = new Map();   // clé -> Promise (téléchargement en cours)
+const sfxFailed = new Map();    // clé -> instant du dernier échec (nouvel essai après SFX_RETRY_MS)
+const SFX_RETRY_MS = 10000;
+const MAX_SFX_VOICES = 24;
+let activeSfx = 0;
+let sfxPreloadStarted = false;
 
-function tone(ctx, frequency, startAt, duration, gainValue, type = 'sine') {
-    // Plafond de notes simultanées : en cascade de combos sur un appareil lent, on évite d'empiler des dizaines de nœuds.
-    if (activeTones >= MAX_ACTIVE_TONES) return;
-    const osc  = ctx.createOscillator();
+function loadSfx(ctx, key) {
+    if (sfxBuffers.has(key)) return Promise.resolve(sfxBuffers.get(key));
+    if (sfxLoading.has(key)) return sfxLoading.get(key);
+    if (sfxFailed.has(key) && Date.now() - sfxFailed.get(key) < SFX_RETRY_MS) return Promise.resolve(null);
+    if (typeof fetch !== 'function') return Promise.resolve(null);
+    const promise = (async () => {
+        try {
+            const res = await fetch(new URL(sfxUrl(key), import.meta.url).href);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.arrayBuffer();
+            const buf = await new Promise((resolve, reject) => {
+                const p = ctx.decodeAudioData(data, resolve, reject);   // Safari ancien : callbacks
+                if (p && typeof p.then === 'function') p.then(resolve, reject);
+            });
+            sfxBuffers.set(key, buf);
+            return buf;
+        } catch {
+            sfxFailed.set(key, Date.now());
+            return null;
+        } finally {
+            sfxLoading.delete(key);
+        }
+    })();
+    sfxLoading.set(key, promise);
+    return promise;
+}
+
+// Charge tous les clips (petits : quelques dizaines de Ko chacun) dès que l'audio est débloqué par un geste.
+function preloadSfx() {
+    if (sfxPreloadStarted) return;
+    const ctx = getAudioContext({ allowCreate: true });
+    if (!ctx) return;
+    sfxPreloadStarted = true;
+    sfxVariants().forEach(v => { loadSfx(ctx, v.key); });
+}
+
+function playBuffer(ctx, buffer, volume) {
+    if (activeSfx >= MAX_SFX_VOICES) return;
+    const src = ctx.createBufferSource();
     const gain = ctx.createGain();
-
-    osc.type = type;
-    osc.frequency.setValueAtTime(Math.max(40, frequency), startAt);
-
-    const attack      = Math.min(0.015, duration * 0.2);
-    const releaseStart = Math.max(startAt + attack, startAt + duration - 0.03);
-    gain.gain.setValueAtTime(0.0001, startAt);
-    gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, gainValue), startAt + attack);
-    gain.gain.exponentialRampToValueAtTime(0.0001, releaseStart + 0.03);
-
-    activeTones++;
-    osc.onended = () => {
-        activeTones = Math.max(0, activeTones - 1);
-        try { osc.disconnect(); gain.disconnect(); } catch { /* déjà déconnecté */ }
-    };
-
-    osc.connect(gain);
+    src.buffer = buffer;
+    gain.gain.value = volume;
+    activeSfx++;
+    src.onended = () => { activeSfx = Math.max(0, activeSfx - 1); try { src.disconnect(); gain.disconnect(); } catch { /* déjà déconnecté */ } };
+    src.connect(gain);
     gain.connect(ctx.destination);
-    osc.start(startAt);
-    osc.stop(startAt + duration + 0.04);
-}
-
-function playPattern(pattern, options = {}) {
-    if (isSfxMuted()) return;
-
-    const ctx = getAudioContext({ allowCreate: true });
-    if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-
-    const baseTime = ctx.currentTime + 0.01;
-    const baseGain = clampVolume((options.gain ?? 1) * getSfxVolume() * 0.12, defaultSettings.sfxVolume);
-
-    pattern.forEach(([delay, frequency, duration, relGain = 1, wave = 'sine']) => {
-        tone(ctx, frequency, baseTime + delay, duration, baseGain * relGain, wave);
-    });
-}
-
-let noiseBuffer = null;
-function getNoiseBuffer(ctx) {
-    if (noiseBuffer && noiseBuffer.sampleRate === ctx.sampleRate) return noiseBuffer;
-    const len = Math.floor(ctx.sampleRate * 0.5);
-    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-    const d = buf.getChannelData(0);
-    let a = 12345;
-    for (let i = 0; i < len; i++) { a = (a * 1664525 + 1013904223) >>> 0; d[i] = a / 2147483648 - 1; }
-    noiseBuffer = buf;
-    return buf;
-}
-
-// Rafale de bruit filtrée (impact, souffle de lame) : [délai, durée, gain relatif, fréquence départ, fréquence fin, type de filtre]
-function playNoise(bursts, options = {}) {
-    if (isSfxMuted()) return;
-    const ctx = getAudioContext({ allowCreate: true });
-    if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-    const baseTime = ctx.currentTime + 0.01;
-    const baseGain = clampVolume((options.gain ?? 1) * getSfxVolume() * 0.12, defaultSettings.sfxVolume);
-    for (const [delay, duration, rel, f0, f1, type = 'bandpass'] of bursts) {
-        if (activeTones >= MAX_ACTIVE_TONES) return;
-        const t0 = baseTime + delay;
-        const src = ctx.createBufferSource();
-        src.buffer = getNoiseBuffer(ctx); src.loop = true;
-        const flt = ctx.createBiquadFilter();
-        flt.type = type; flt.Q.value = 0.9;
-        flt.frequency.setValueAtTime(f0, t0);
-        flt.frequency.exponentialRampToValueAtTime(Math.max(40, f1), t0 + duration);
-        const g = ctx.createGain();
-        g.gain.setValueAtTime(0.0001, t0);
-        g.gain.exponentialRampToValueAtTime(Math.max(0.0001, baseGain * rel * 3), t0 + 0.006);
-        g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
-        activeTones++;
-        src.onended = () => { activeTones = Math.max(0, activeTones - 1); try { src.disconnect(); flt.disconnect(); g.disconnect(); } catch { /* déjà déconnecté */ } };
-        src.connect(flt); flt.connect(g); g.connect(ctx.destination);
-        src.start(t0); src.stop(t0 + duration + 0.03);
-    }
+    src.start();
 }
 
 export function playSfx(eventName, payload = {}) {
-    const len      = Math.max(3, Math.min(7, Number(payload.length) || 3));
-    const isPlayer = payload.isPlayer !== false;
-
-    switch (eventName) {
-        case 'uiClick':
-            playPattern([[0, 640, 0.07, 0.7, 'triangle']]);
-            break;
-        case 'toggleOn':
-            playPattern([
-                [0,    480, 0.06, 0.8, 'triangle'],
-                [0.05, 720, 0.09, 1,   'triangle']
-            ]);
-            break;
-        case 'swap':
-            playPattern([
-                [0,    380, 0.045, 0.7,  'square'],
-                [0.04, 460, 0.045, 0.55, 'square']
-            ]);
-            break;
-        case 'invalid':
-            playPattern([
-                [0,    220, 0.07, 0.75, 'sawtooth'],
-                [0.04, 170, 0.08, 0.65, 'sawtooth']
-            ]);
-            break;
-        case 'match': {
-            const type = payload.matchType || 'color';
-            const base = type === 'skull' ? 210 : type === 'combat' ? 300 : 520;
-            const wave = type === 'color' ? 'triangle' : 'square';
-            playPattern([
-                [0,    base,            0.06, 0.7, wave],
-                [0.05, base + len * 20, 0.09, 0.9, wave]
-            ]);
-            break;
-        }
-        case 'turnBonus':
-            playPattern([
-                [0,    520, 0.06, 0.7, 'triangle'],
-                [0.05, 700, 0.06, 0.8, 'triangle'],
-                [0.1,  900, 0.08, 1,   'triangle']
-            ]);
-            break;
-        case 'spellCast':   // formule : souffle montant + tintement
-            playNoise([[0, 0.22, 0.35, 500, 3200, 'bandpass']]);
-            playPattern([
-                [0,    430, 0.08, 0.5, 'sine'],
-                [0.05, 640, 0.1,  0.6, 'triangle'],
-                [0.12, 860, 0.12, 0.55, 'sine']
-            ]);
-            break;
-        case 'spellHit':    // le sort frappe : choc sourd + éclat magique
-            playNoise([[0, 0.16, 0.9, isPlayer ? 1800 : 900, 160, 'lowpass']]);
-            playPattern([
-                [0,     isPlayer ? 150 : 110, 0.14, 1,   'sine'],
-                [0.02,  isPlayer ? 760 : 300, 0.08, 0.6, 'square'],
-                [0.06,  isPlayer ? 980 : 240, 0.1,  0.4, 'triangle']
-            ]);
-            break;
-        case 'heal':
-            playPattern([
-                [0,    430, 0.07, 0.65, 'sine'],
-                [0.05, 560, 0.08, 0.8,  'sine'],
-                [0.11, 720, 0.08, 0.95, 'sine']
-            ]);
-            break;
-        case 'weaponHit':   // coup d'arme : sifflement de lame puis impact sourd
-            playNoise([
-                [0,    0.07, 0.5, 4200, 1200, 'bandpass'],
-                [0.05, 0.16, 1,   1400, 140,  'lowpass']
-            ]);
-            playPattern([
-                [0.05, isPlayer ? 130 : 105, 0.14, 1, 'sine'],
-                [0.05, isPlayer ? 210 : 170, 0.05, 0.6, 'square']
-            ]);
-            break;
-        case 'skullHit':    // attaque par alignement de crânes : coup de poing lourd, plus fort selon la longueur
-            playNoise([[0, 0.12 + len * 0.02, 0.9, 1500, 120, 'lowpass']]);
-            playPattern([
-                [0,    isPlayer ? 120 : 95, 0.16 + len * 0.01, 1,    'sine'],
-                [0.02, isPlayer ? 190 : 150, 0.07, 0.6, 'square'],
-                ...(len >= 4 ? [[0.07, 90, 0.16, 0.8, 'sine']] : [])
-            ]);
-            break;
-        case 'manaGain': {  // mana récolté : scintillement magique ascendant (plus long avec la longueur)
-            const notes = [880, 1108, 1318, 1760, 2093, 2637];
-            const n = Math.min(notes.length, 2 + Math.floor(len / 2));
-            const pat = [];
-            for (let k = 0; k < n; k++) pat.push([k * 0.045, notes[k], 0.22, 0.45 + k * 0.05, 'sine'], [k * 0.045, notes[k] * 2.01, 0.12, 0.15, 'sine']);
-            playPattern(pat, { gain: isPlayer ? 1 : 0.5 });
-            break;
-        }
-        case 'combatStart': case 'bossStart': {
-            // Jingle d'entrée en combat (façon Pokémon) : martèlement alterné rapide, montée pentatonique, note tenue.
-            // Durée ≈ COMBAT_INTRO_MS : la musique de combat démarre juste après (voir main.js).
-            const boss = eventName === 'bossStart';
-            const lo = boss ? 164.8 : 329.6, hi = boss ? 196 : 392;
-            const wave = boss ? 'sawtooth' : 'square';
-            const p = [];
-            const hits = boss ? 8 : 6;
-            for (let i = 0; i < hits; i++) p.push([i * 0.075, i % 2 ? hi : lo, 0.06, 0.8, wave]);
-            const t0 = hits * 0.075 + 0.05;
-            const run = boss ? [220, 261.6, 329.6, 392, 440, 523.3] : [440, 523.3, 659.3, 784];
-            run.forEach((f, i) => p.push([t0 + i * 0.09, f, 0.1, 0.85, wave]));
-            const tEnd = t0 + run.length * 0.09;
-            const top = run[run.length - 1];
-            p.push([tEnd, top, 0.45, 1, 'triangle'], [tEnd, top / 2, 0.45, 0.8, wave], [tEnd, top * 1.5, 0.45, 0.5, 'triangle']);
-            p.push([0, 90, 0.18, 1, 'sine'], [tEnd, 70, 0.25, 1, 'sine']);
-            playPattern(p, { gain: boss ? 1.1 : 1 });
-            break;
-        }
-        case 'victory':
-            playPattern([
-                [0,    520, 0.08, 0.75, 'triangle'],
-                [0.08, 660, 0.08, 0.85, 'triangle'],
-                [0.16, 880, 0.12, 1,    'triangle']
-            ]);
-            break;
-        case 'defeat':
-            playPattern([
-                [0,    320, 0.1,  0.7,  'sawtooth'],
-                [0.08, 240, 0.12, 0.85, 'sawtooth'],
-                [0.18, 160, 0.18, 0.95, 'triangle']
-            ]);
-            break;
-        case 'battleStart': // petit motif de début de combat
-            playPattern([
-                [0,    330, 0.09, 0.8, 'square'],
-                [0.1,  330, 0.09, 0.8, 'square'],
-                [0.2,  440, 0.09, 0.9, 'square'],
-                [0.3,  523, 0.18, 1,   'square'],
-                [0.3,  262, 0.18, 0.5, 'triangle']
-            ]);
-            break;
-        case 'bossStart': // fanfare plus grave et plus longue pour les boss
-            playPattern([
-                [0,    196, 0.16, 0.9, 'sawtooth'],
-                [0.18, 196, 0.16, 0.9, 'sawtooth'],
-                [0.36, 233, 0.16, 0.95, 'sawtooth'],
-                [0.54, 294, 0.16, 1,   'sawtooth'],
-                [0.72, 392, 0.32, 1,   'square'],
-                [0.72, 196, 0.32, 0.7, 'triangle'],
-                [1.1,  370, 0.45, 1,   'square'],
-                [1.1,  185, 0.45, 0.7, 'triangle']
-            ]);
-            break;
-        case 'introJingle': // lent et mystérieux, façon chant du Fusang
-            playPattern([
-                [0,   262, 0.5, 0.6, 'triangle'], [0.6, 330, 0.5, 0.6, 'triangle'],
-                [1.2, 392, 0.5, 0.7, 'triangle'], [1.8, 523, 0.9, 0.8, 'triangle'],
-                [3.5, 392, 0.2, 0.7, 'square'],   [3.8, 392, 0.2, 0.7, 'square'],
-                [4.1, 494, 0.2, 0.8, 'square'],   [4.4, 587, 0.6, 0.9, 'square'],
-                [6.5, 392, 0.3, 0.9, 'square'],   [6.9, 523, 0.3, 0.9, 'square'],
-                [7.3, 659, 0.9, 1,   'square'],   [7.3, 330, 0.9, 0.5, 'triangle']
-            ]);
-            break;
-        case 'endingJingle': // berceuse apaisée
-            playPattern([
-                [0,   392, 0.6, 0.6, 'sine'], [0.7, 440, 0.6, 0.6, 'sine'],
-                [1.4, 523, 0.9, 0.7, 'sine'], [2.6, 440, 0.6, 0.6, 'sine'],
-                [3.3, 392, 0.6, 0.6, 'sine'], [4.0, 330, 1.2, 0.7, 'sine'],
-                [6.0, 392, 0.6, 0.6, 'sine'], [6.7, 523, 0.6, 0.7, 'sine'],
-                [7.4, 659, 1.0, 0.8, 'sine'], [8.8, 523, 0.8, 0.7, 'sine'],
-                [9.8, 392, 1.8, 0.7, 'sine'], [9.8, 196, 1.8, 0.4, 'triangle']
-            ]);
-            break;
-        default:
-            playPattern([[0, 500, 0.05, 0.6, 'sine']]);
-            break;
-    }
+    if (isSfxMuted()) return;
+    const ctx = getAudioContext({ allowCreate: true });
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    preloadSfx();
+    const key = sfxKeyFor(eventName, payload);
+    const volume = clampVolume(getSfxVolume(), defaultSettings.sfxVolume) * SFX_PLAY_GAIN * sfxGainFor(eventName, payload);
+    const buffer = sfxBuffers.get(key);
+    if (buffer) { playBuffer(ctx, buffer, volume); return; }
+    // Pas encore chargé (tout premier son) : on le joue dès qu'il arrive, s'il n'est pas trop tard.
+    const asked = Date.now();
+    loadSfx(ctx, key).then(buf => { if (buf && Date.now() - asked < 800 && !isSfxMuted()) playBuffer(ctx, buf, volume); });
 }
 
 // ===============================

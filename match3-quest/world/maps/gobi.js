@@ -10,7 +10,7 @@ export default {
             '#.AAAAA#.BBBB..CCC.#',
             '##AAaAA..BbBB..CcC.#',
             '#...=.....=.....=.##',
-            '#.4.=.1.S.=..#..=5.#',
+            '#.4.=.1.S.=..#.p=5.#',
             '<==================>',
             '#.....W.=.~~.2.....#',
             '#.DDDD..=3~~EEEEEE.#',
@@ -31,6 +31,7 @@ export default {
             '####################'
         ],
         npcs: [
+            { id: 'merchant_gobi', at: 'p' },
             { id: 'hua_gobi', at: '1' },
             { id: 'storyteller_yun', at: '2' },
             { id: 'boy_tarik', at: '3' },

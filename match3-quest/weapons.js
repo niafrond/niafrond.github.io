@@ -309,3 +309,10 @@ export function getWeaponById(id) {
 export function getWeaponsByType(type) {
     return allWeapons.filter(weapon => weapon.type === type).map(normalizeWeapon);
 }
+
+// Rareté « de boutique » d'une arme : son rang dans sa famille (la plus faible = commune, la 4e et au-delà = légendaire).
+const RANK_RARITY = ['common', 'uncommon', 'rare', 'legendary'];
+export function weaponRarity(weapon) {
+    const family = allWeapons.filter(w => w.type === weapon.type).sort((a, b) => a.minLevel - b.minLevel);
+    return RANK_RARITY[Math.min(family.findIndex(w => w.id === weapon.id), RANK_RARITY.length - 1)] || 'common';
+}
