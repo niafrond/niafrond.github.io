@@ -848,7 +848,8 @@ export function createExplorationView(cfg) {
     function paintGroundCells(g, screen, biome, tile, ox, oy, inRects) {
         for (let y = 0; y < screen.h; y++) {
             for (let x = 0; x < screen.w; x++) {
-                g.fillStyle = inRects(screen.liquids, x, y) ? biome.liquid
+                // carte de mer : les récifs (obstacles) reposent sur l'eau, pas sur une case de sable
+                g.fillStyle = (inRects(screen.liquids, x, y) || (screen.aquatic && inRects(screen.obstacles, x, y))) ? biome.liquid
                     : inRects(screen.paths, x, y) ? biome.path
                     : ((x + y) % 2 ? biome.a : biome.b);
                 g.fillRect(ox + x * tile, oy + y * tile, tile, tile);
@@ -878,12 +879,15 @@ export function createExplorationView(cfg) {
         const g = canvas.getContext('2d');
         if (!g) return null;
         g.setTransform(dpr, 0, 0, dpr, 0, 0);
-        g.save();
-        g.shadowColor = 'rgba(0,0,0,0.35)';
-        g.shadowBlur = 18;            // en pixels écran, non affecté par la transformation (comme sur le canvas principal)
-        g.fillStyle = biome.cliff;
-        g.fillRect(M - 4, M - 4, tile * screen.w + 8, tile * screen.h + 8);
-        g.restore();
+        // Carte de mer : pas de falaise ni d'ombre autour, l'eau elle-même fait la bordure.
+        if (!screen.aquatic) {
+            g.save();
+            g.shadowColor = 'rgba(0,0,0,0.35)';
+            g.shadowBlur = 18;            // en pixels écran, non affecté par la transformation (comme sur le canvas principal)
+            g.fillStyle = biome.cliff;
+            g.fillRect(M - 4, M - 4, tile * screen.w + 8, tile * screen.h + 8);
+            g.restore();
+        }
         paintGroundCells(g, screen, biome, tile, M, M, inRects);
         groundCache = { screen, biome, tile, dpr, canvas };
         return groundCache;
@@ -901,11 +905,15 @@ export function createExplorationView(cfg) {
         }
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        // fond
-        const sky = ctx.createLinearGradient(0, 0, 0, vh);
-        sky.addColorStop(0, biome.sky[0]);
-        sky.addColorStop(1, biome.sky[1]);
-        ctx.fillStyle = sky;
+        // fond (carte de mer : de l'eau jusqu'au bord de l'écran, sans cadre autour de la carte)
+        if (screen.aquatic) {
+            ctx.fillStyle = biome.liquid;
+        } else {
+            const sky = ctx.createLinearGradient(0, 0, 0, vh);
+            sky.addColorStop(0, biome.sky[0]);
+            sky.addColorStop(1, biome.sky[1]);
+            ctx.fillStyle = sky;
+        }
         ctx.fillRect(0, 0, vw, vh);
 
         // taille de tuile et caméra
@@ -940,12 +948,14 @@ export function createExplorationView(cfg) {
             ctx.drawImage(ground.canvas, ox - GROUND_MARGIN, oy - GROUND_MARGIN,
                 ground.canvas.width / dpr, ground.canvas.height / dpr);
         } else {
-            ctx.save();
-            ctx.shadowColor = 'rgba(0,0,0,0.35)';
-            ctx.shadowBlur = 18;
-            ctx.fillStyle = biome.cliff;
-            ctx.fillRect(ox - 4, oy - 4, mapW + 8, mapH + 8);
-            ctx.restore();
+            if (!screen.aquatic) {
+                ctx.save();
+                ctx.shadowColor = 'rgba(0,0,0,0.35)';
+                ctx.shadowBlur = 18;
+                ctx.fillStyle = biome.cliff;
+                ctx.fillRect(ox - 4, oy - 4, mapW + 8, mapH + 8);
+                ctx.restore();
+            }
             paintGroundCells(ctx, screen, biome, tile, ox, oy, inRects);
         }
         // Parties animées : reflets des liquides et zones de vigilance qui pulsent
