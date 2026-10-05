@@ -3317,12 +3317,14 @@ export function updateInventoryTab(){
         div.className = `item-card ${item.type === 'consumable' || item.type === 'reusable' ? 'consumable-item' : 'artifact-item'}`;
         div.style.borderLeft = `4px solid ${rarityColor}`;
         const paInfo = item.type === 'consumable' || item.type === 'reusable' ? ` <span style="color:#888;font-size:0.85em;">(${item.actionPoints || 2} ${svgIcon('arrow')})</span>` : '';
-        const lockDuringCombat = gameState.combatState === 'active' ? 'disabled' : '';
+        const levelLocked = player.level < (item.minLevel || 1);
+        const inCombat = gameState.combatState === 'active';
+        const activateTitle = levelLocked ? `Nécessite le niveau ${item.minLevel}` : inCombat ? "Impossible de changer d'objet actif pendant le combat" : '';
         div.innerHTML = `
             <div class="item-header">
                 <span class="item-name">${rarityEmoji} ${item.name}${paInfo}</span>
                 <div class="item-actions">
-                    ${isActive ? '<span class="artifact-badge">Actif</span>' : `<button class="item-discard-btn" ${lockDuringCombat} onclick="window.setActiveInventoryItem(${index})">Activer</button>`}
+                    ${isActive ? '<span class="artifact-badge">Actif</span>' : `<button class="item-discard-btn" ${levelLocked || inCombat ? 'disabled' : ''} title="${activateTitle}" onclick="window.setActiveInventoryItem(${index})">${levelLocked ? `Niv. ${item.minLevel} requis` : 'Activer'}</button>`}
                     <button class="item-discard-btn" onclick="window.discardInventoryItem(${index})">Jeter</button>
                 </div>
             </div>

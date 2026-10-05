@@ -238,7 +238,6 @@ export function guardLockedGates(screens) {
         doors.forEach(door => {
             const enemy = screen.enemies.find(en => en.id === door.requires && en.kind !== 'patrol');
             if (!enemy) return;
-            enemy.aggro = Math.max(enemy.aggro || 0, 2);
             enemy.guardsDoor = true;
             const [ix, iy] = inward(door);
             const depth = Math.abs(enemy.x - door.x) * Math.abs(ix) + Math.abs(enemy.y - door.y) * Math.abs(iy);

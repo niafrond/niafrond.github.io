@@ -178,7 +178,7 @@ export function scaleScreen(screen, W, H) {
     const at = p => ({ x: cx(p.x), y: cy(p.y) });
     ['npcs', 'chests'].forEach(list => { screen[list] = (screen[list] || []).map(e => ({ ...e, ...at(e) })); });
     screen.enemies = (screen.enemies || []).map(e => ({
-        ...e, ...at(e), aggro: e.scaledAggro || 2,
+        ...e, ...at(e),
         ...(e.patrol ? { patrol: e.patrol.map(([x, y]) => [cx(x), cy(y)]) } : {})
     }));
     if (screen.waypoint) screen.waypoint = { ...screen.waypoint, ...at(screen.waypoint) };

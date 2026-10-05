@@ -29,8 +29,9 @@ import { approachOf, faceFromStep, spotAt, buildPrep, observationTarget } from '
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
 export const AGGRO_RADIUS = 1;
-// Rayon de vigilance d'un ennemi : 1 par défaut, 2 sur les cartes agrandies (`def.aggro`, world/expand.js `scaleScreen`).
-export const aggroOf = def => (Number.isInteger(def?.aggro) && def.aggro >= 1 ? def.aggro : AGGRO_RADIUS);
+// Rayon de vigilance d'un ennemi : 1 case pour un ennemi normal, 0 pour un boss (ou le gardien d'une porte) : il faut alors
+// aller le chercher explicitement (le toucher). Valable sur toutes les cartes, agrandies ou non.
+export const aggroOf = def => (def?.boss || def?.guardsDoor ? 0 : AGGRO_RADIUS);
 export const PATROL_STEP_MS = 650;
 export const START_SCREEN = SCREENS.rizieres_village ? 'rizieres_village' : 'rizieres';
 // Nombre de déplacements pendant lesquels les zones de vigilance sont ignorées après une
