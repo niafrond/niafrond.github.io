@@ -1758,8 +1758,25 @@ export function finishPlayerTurn(){
         saveUpdate();
         return;
     }
-    if(!applyDuelRulesBeforeEnemyTurn()) return;
-    enemyTurn();
+    // Laisse finir l'animation de l'action du joueur (attaque, sort, soin, objet) avant la réplique de l'adversaire.
+    currentTurn = 'enemy'; // bloque le plateau pendant l'animation
+    updateStats();
+    afterPlayerAnimations(() => {
+        if(gameState.combatState !== 'active') return;
+        if(player.hp <= 0){ handlePlayerDeath(); return; }
+        if(!applyDuelRulesBeforeEnemyTurn()) return;
+        enemyTurn();
+    });
+}
+
+// Délai minimal après une action du joueur, puis attente de la disparition des overlays d'animation du plateau.
+const PLAYER_ACTION_PAUSE_MS = 500;
+function afterPlayerAnimations(callback){
+    const waitOverlay = () => {
+        if(document.querySelector('#board .attack-overlay')) setTimeout(waitOverlay, 100);
+        else setTimeout(callback, 250);
+    };
+    setTimeout(waitOverlay, PLAYER_ACTION_PAUSE_MS);
 }
 
 // Duel contre Fengmeng (duel.js) : avant chacun de ses tours normaux, les pièges restants se déclenchent,
