@@ -148,7 +148,7 @@ function init() {
         canvas: document.getElementById('explore-canvas'),
         getSaved: () => player.exploration,
         setSaved: data => { player.exploration = data; },
-        getHero: () => ({ classId: player.class, name: player.name }),
+        getHero: () => ({ classId: player.class, name: player.name, mount: player.mount || null }),
         getPlayerLevel: () => player.level,
         onEncounter: encounter => startEncounterCombat(encounter),
         onGold: amount => { player.gold = (player.gold || 0) + amount; },

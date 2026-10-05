@@ -39,6 +39,7 @@ export const CREATURE_BY_ID = {
     lizard_zao: { kind: 'salamander' },
     forge_spirit: { kind: 'flame' },
     mare_chagan: { kind: 'horse' },
+    horse_mount: { kind: 'horse' },   // monture du héros (marchand des Bambous)
     wolf_pup_baatar: { kind: 'wolf', ember: true },
     ghost_rider_tolui: { kind: 'ghost', hat: 'rider' },
     horse_tian: { kind: 'horse', celestial: true },

@@ -547,7 +547,6 @@ body.rt .explore-toast {
     border: 3px solid var(--rt-gold);
     border-radius: 4px;
 }
-body.rt .explore-help { font-size: 13px; background: rgba(0, 0, 0, 0.55); border-radius: 4px; }
 
 body.rt .explore-quest { box-shadow: 0 3px 0 var(--rt-ink); }
 body.rt .explore-journal-card h3 { font-size: 12px; }
@@ -564,14 +563,6 @@ body.rt .wm-caption { border-radius: 4px; box-shadow: 0 3px 0 var(--rt-ink); fon
 body.rt .worldmap-modal-content { padding: 14px; }
 
 /* ── Retouches de lisibilité ────────────────────────────────────────────────── */
-/* l'aide clavier ne recouvre plus les boutons son / thème (bas gauche) */
-body.rt .explore-help {
-    left: 124px;
-    transform: none;
-    width: auto;
-    right: 12px;
-    max-width: 900px;
-}
 
 /* « Atk: 15  Def: 0 » : un peu d'air entre les deux valeurs */
 body.rt .stat strong:nth-of-type(2) { margin-left: 12px; }

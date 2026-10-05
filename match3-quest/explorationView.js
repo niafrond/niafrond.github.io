@@ -28,6 +28,7 @@ const MAX_TILE = 96;
 const HUD_TOP = 64;     // bandeau du haut (titre, objectif, boutons)
 const HUD_BOTTOM = 8;
 const MOVE_DELAY_MS = 150;
+const MOUNTED_MOVE_DELAY_MS = 75;   // à cheval : deux fois plus vite
 const BATTLE_TRANSITION_MS = 1700;   // durée de l'animation d'entrée en combat
 const BATTLE_STRIPS = 10;
 
@@ -73,7 +74,7 @@ const hash = (x, y) => Math.abs(Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 
  * @param {object} cfg
  *  root, canvas               éléments du DOM
  *  getSaved()/setSaved(data)  lecture / écriture de player.exploration
- *  getHero()                  { classId, name } du personnage
+ *  getHero()                  { classId, name, mount? } du personnage (mount : 'horse' = déplacements deux fois plus rapides)
  *  getPlayerLevel()           niveau courant
  *  onEncounter(encounter)     lance le combat
  *  onGold(amount)             crédite de l'or
@@ -94,6 +95,7 @@ export function createExplorationView(cfg) {
         dialog: root.querySelector('.explore-dialog'),
         toast: root.querySelector('.explore-toast'),
         journalBtn: root.querySelector('[data-explore="journal"]'),
+        mountBtn: root.querySelector('[data-explore="mount"]'),
         mapBtn: root.querySelector('[data-explore="map"]'),
         arenaBtn: root.querySelector('[data-explore="arena"]'),
         menuBtn: root.querySelector('[data-explore="menu"]')
@@ -704,6 +706,30 @@ export function createExplorationView(cfg) {
         walk = { tx: x, ty: y, path };
     }
 
+    // Délai entre deux pas : le cheval double la vitesse (la caméra suit plus vite aussi).
+    const hasMount = () => Boolean(cfg.getHero().mount);
+    const riding = () => X.isRiding(session, hasMount());
+    const moveDelay = () => (riding() ? MOUNTED_MOVE_DELAY_MS : MOVE_DELAY_MS);
+
+    // Touche C / bouton : monter ou descendre de cheval.
+    function toggleMount() {
+        const res = X.toggleMount(session, hasMount());
+        if (res.type === 'none') return;
+        toast(res.message, 2200);
+        cfg.onSave();
+        refreshMountButton();
+    }
+    function refreshMountButton() {
+        const btn = els.mountBtn;
+        if (!btn) return;
+        const state = `${hasMount()}|${riding()}`;
+        if (btn.dataset.state === state) return;   // évite de toucher au DOM à chaque image
+        btn.dataset.state = state;
+        btn.hidden = !hasMount();
+        btn.classList.toggle('on', riding());
+        btn.title = riding() ? 'Descendre de cheval (C)' : 'Monter à cheval (C)';
+    }
+
     // Un pas vers la destination ; le chemin est recalculé à chaque pas (patrouilles, ennemis vaincus…).
     function walkStep() {
         const path = X.findPath(session, walk.tx, walk.ty);
@@ -733,6 +759,7 @@ export function createExplorationView(cfg) {
         if (ev.key === 'Escape' && merchantEl) { closeMerchant(); return; }
         if (ev.key === 'Escape' && journalEl) { closeJournal(); return; }
         if (ev.key === 'j' || ev.key === 'J') { showJournal(); return; }
+        if (ev.key === 'c' || ev.key === 'C') { toggleMount(); return; }
         if (ev.key === 'v' || ev.key === 'V') { showJournal('travel'); return; }
         const dir = KEY_TO_DIR[ev.key];
         if (!dir) return;
@@ -740,7 +767,7 @@ export function createExplorationView(cfg) {
         if (ev.repeat) return;
         walk = null;
         held = dir;
-        if (performance.now() - lastMoveAt >= MOVE_DELAY_MS) doMove(dir);
+        if (performance.now() - lastMoveAt >= moveDelay()) doMove(dir);
     }
 
     function onKeyUp(ev) {
@@ -767,6 +794,7 @@ export function createExplorationView(cfg) {
             advanceDialog();
         });
         els.journalBtn?.addEventListener('click', showJournal);
+        els.mountBtn?.addEventListener('click', () => { if (!isBlocked()) toggleMount(); });
         els.mapBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMap?.(); });
         els.arenaBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenArena?.(); });
         els.menuBtn?.addEventListener('click', () => { if (!isBlocked()) cfg.onOpenMenu?.(); });
@@ -785,8 +813,8 @@ export function createExplorationView(cfg) {
             return;
         }
 
-        if (held && !isBlocked() && now - lastMoveAt >= MOVE_DELAY_MS) doMove(held);
-        else if (walk && !isBlocked() && now - lastMoveAt >= MOVE_DELAY_MS) walkStep();
+        if (held && !isBlocked() && now - lastMoveAt >= moveDelay()) doMove(held);
+        else if (walk && !isBlocked() && now - lastMoveAt >= moveDelay()) walkStep();
         if (walk && isBlocked()) walk = null;
         if (!isBlocked()) {
             const events = X.tick(session, dt);
@@ -795,7 +823,10 @@ export function createExplorationView(cfg) {
             else events.forEach(ev => handleResult(ev));
         }
 
-        const k = Math.min(1, dt / 95);
+        // Sur l'eau, le cheval ne suit pas : on met pied à terre tout seul.
+        if (X.autoDismount(session, hasMount())) { toast('Le cheval ne suit pas sur l\'eau : vous mettez pied à terre.', 3000); cfg.onSave(); }
+        refreshMountButton();
+        const k = Math.min(1, dt / (riding() ? 55 : 95));
         vis.px += (session.data.x - vis.px) * k;
         vis.py += (session.data.y - vis.py) * k;
         X.aliveEnemies(session).forEach(e => {
@@ -979,6 +1010,8 @@ export function createExplorationView(cfg) {
             const gated = locked || (level < minLevel && session.screens[ex.to].region !== screen.region);
             cell(ex.x, ex.y, locked ? `rgba(200,200,210,${(0.5 + 0.2 * pulse).toFixed(3)})` : `rgba(255,236,150,${(0.6 + 0.3 * pulse).toFixed(3)})`);
             cell(ex.x, ex.y, 'rgba(255,255,255,0.45)', tile * 0.16);
+            // passage de bord de 3 cases : seule la case centrale porte la flèche et le nom (world/expand.js)
+            if (ex.span) return;
             const c = P(ex.x + 0.5, ex.y + 0.5);
             const arrow = locked ? '×' : ex.x === 0 ? '◄' : ex.x === screen.w - 1 ? '►' : ex.y === 0 ? '▲' : '▼';
             ctx.fillStyle = '#5a3e1b';
@@ -1152,8 +1185,25 @@ export function createExplorationView(cfg) {
                     ctx.strokeStyle = '#facc15';
                     ctx.lineWidth = 3;
                     ctx.stroke();
+                    // Pas de Yu : sur l'eau, le héros glisse à la surface et des rides s'étendent sous ses pieds
+                    if (inRects(screen.liquids || [], Math.round(vis.px), Math.round(vis.py))) {
+                        for (let r = 0; r < 2; r++) {
+                            const phase = ((now / 900) + r * 0.5) % 1;
+                            ctx.beginPath();
+                            ctx.ellipse(c.x, feet - tile * 0.02, tile * (0.3 + 0.35 * phase), tile * (0.1 + 0.12 * phase), 0, 0, Math.PI * 2);
+                            ctx.strokeStyle = `rgba(255,255,255,${(0.7 * (1 - phase)).toFixed(3)})`;
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                        }
+                    }
                     const hero = cfg.getHero();
-                    drawSprite(heroSprite(hero.classId), c.x, feet + hop, tile * 1.06);
+                    if (riding()) {
+                        // à cheval : la monture au sol, le héros en selle
+                        drawSprite(npcSprite('horse_mount'), c.x, feet + hop * 0.5, tile * 1.2);
+                        drawSprite(heroSprite(hero.classId), c.x, feet + hop - tile * 0.34, tile * 0.86);
+                    } else {
+                        drawSprite(heroSprite(hero.classId), c.x, feet + hop, tile * 1.06);
+                    }
                     break;
                 }
                 default:

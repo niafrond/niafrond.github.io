@@ -435,6 +435,7 @@ export let player = {
     revivePercent: 0,  // pourcentage de HP à la résurrection
     unspentLevelPoints: 0, // points d'attribut a depenser apres les gains de niveaux
     gold: 0,  // pièces d'or accumulées
+    mount: null,  // monture achetée ('horse') : déplacements plus rapides sur les cartes
     defeatedBossTiers: [], // paliers de boss déjà nettoyés (5, 10, 15, ...)
     pendingBoss: null, // boss imposé tant qu'il n'est pas vaincu
     worldMap: { currentZoneId: null, visitedZoneIds: [] }, // régions découvertes (carte du monde)
@@ -963,6 +964,7 @@ export function loadGameData() {
             player.revivePercent = loaded.revivePercent ?? player.revivePercent;
             player.unspentLevelPoints = loaded.unspentLevelPoints ?? player.unspentLevelPoints;
             player.gold = loaded.gold ?? player.gold;
+            player.mount = loaded.mount === 'horse' ? 'horse' : null;
             player.merchantSold = loaded.merchantSold && typeof loaded.merchantSold === 'object' ? loaded.merchantSold : {};
             player.bossLossStreak = loaded.bossLossStreak && loaded.bossLossStreak.id ? loaded.bossLossStreak : null;
             player.defeatedBossTiers = Array.isArray(loaded.defeatedBossTiers)
