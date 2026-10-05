@@ -244,13 +244,6 @@ export function applyDamage(target, damage, options = {}){
         log(`${target.name} est faible à ${sourceColor} : +${affinityResult.delta} dégâts (niveau ${target.level}).`);
     }
 
-    // Invisibilité de l'Assassin (roles.js) : la prochaine attaque subie est esquivée.
-    if(target === player && normalizedDamage > 0 && player.statusEffects?.stealth){
-        delete player.statusEffects.stealth;
-        log('Invisible : vous esquivez l\'attaque !');
-        normalizedDamage = 0;
-    }
-
     // Bouclier équipé : absorbe un total de dégâts par combat (`absorbDamage`).
     if(target === player && normalizedDamage > 0 && player.shieldAbsorbLeft > 0) {
         const absorbedByShield = Math.min(player.shieldAbsorbLeft, normalizedDamage);

@@ -3,7 +3,6 @@ import {
     approachOf, buildPrep, observationTarget, weaknessDamage, applyBoardBoost, spotAt, faceFromStep,
     createBiomeState, advanceBiome, resolveBiomeMatch, burnDamage, driftRow, isBlockedCell, BIOME_RULES, ruleForBiome, OBSERVE_MS
 } from '../../terrain.js';
-import { roleMatchEffects, addShield, SHIELD_CAP } from '../../roles.js';
 
 describe('approche', () => {
     test('face, dos et côté selon le regard', () => {
@@ -97,27 +96,6 @@ describe('biomes', () => {
         expect(t).toEqual(['d', 'a', 'b', 'c']);
         const st = createBiomeState();
         expect(advanceBiome(st, BIOME_RULES.sea, 4, () => 0).drifted).toBe(0);
-    });
-});
-
-describe('rôles', () => {
-    test('chevalier', () => {
-        expect(roleMatchEffects('templar', { type: 'color', color: 'red', len: 3 }).strike).toBe(6);
-        expect(roleMatchEffects('templar', { type: 'color', color: 'yellow', len: 4 }).shield).toBe(8);
-        expect(addShield(20, 8)).toBe(SHIELD_CAP);
-    });
-    test('mage', () => {
-        expect(roleMatchEffects('sorcerer', { type: 'color', color: 'blue', len: 3 }).bonusMana).toBe(1);
-        expect(roleMatchEffects('sorcerer', { type: 'color', color: 'red', len: 4 }).convert).toBe(2);
-    });
-    test('assassin : critique sur 3, invisible en chaîne', () => {
-        expect(roleMatchEffects('assassin', { type: 'color', color: 'red', len: 3 }, 1).strike).toBe(3);
-        expect(roleMatchEffects('assassin', { type: 'color', color: 'red', len: 4 }, 1).strike).toBe(0);
-        expect(roleMatchEffects('assassin', { type: 'color', color: 'red', len: 3 }, 3).stealth).toBe(true);
-    });
-    test('alchimiste et classe inconnue', () => {
-        expect(roleMatchEffects('alchemist', { type: 'color', color: 'green', len: 3 }).poison).toBe(2);
-        expect(roleMatchEffects('barbarian', { type: 'color', color: 'red', len: 3 }).strike).toBe(0);
     });
 });
 

@@ -1,7 +1,6 @@
 import { player, enemy, currentTurn, saveUpdate, log, skullDamage, finishEnemyTurn, finishPlayerTurn, showCombatAnimation, grantComboMasteryRewards, grantManaGeneratedXP, grantBigMatchXP, addManaForColor, logActiveAction, clampEnemyAttackDamage, applyDamage, addBonusTurn } from "./game.js";
 import { colors, boardSize } from "./constants.js";
 import { BIOME_RULES, createBiomeState, isBlockedCell, advanceBiome, resolveBiomeMatch, burnDamage, driftRow, applyBoardBoost } from "./terrain.js";
-import { roleMatchEffects, addShield } from "./roles.js";
 import { flyManaToCounter } from "./manaFlight.js";
 import { tutorialCallbacks } from "./tutorial.js";
 import {
@@ -76,37 +75,8 @@ export function boostBoardColor(color, count){
     renderBoard();
 }
 
-// Effets propres au joueur après un match : rôle de la classe (roles.js) et case de biome traversée.
+// Effet d'une case de biome traversée par un match du joueur (terrain.js).
 function applyPlayerMatchExtras(indices, info){
-    const fx = roleMatchEffects(player.class, info, turnDistinctMatches);
-    if(fx.strike){
-        const dmg = Math.max(1, fx.strike - Math.floor((enemy.defense || 0) / 2));
-        applyDamage(enemy, dmg);
-        log(`${player.class === 'assassin' ? 'Coup critique' : 'Frappe physique'} : -${dmg} PV pour l'ennemi.`);
-    }
-    if(fx.shield){
-        player.shieldAbsorbLeft = addShield(player.shieldAbsorbLeft, fx.shield);
-        log(`Bouclier : ${player.shieldAbsorbLeft} dégâts absorbables.`);
-    }
-    if(fx.bonusMana) addManaForColor(player, 'blue', fx.bonusMana);
-    if(fx.convert){
-        const candidates = board.map((t, i) => i).filter(i => !indices.includes(i) && board[i] !== fx.convertColor && colors.includes(board[i]));
-        for(let n = 0; n < fx.convert && candidates.length; n++){
-            board[candidates.splice(Math.floor(Math.random() * candidates.length), 1)[0]] = fx.convertColor;
-        }
-        log('Conversion : des tuiles deviennent bleues.');
-    }
-    if(fx.poison){
-        if(!enemy.statusEffects) enemy.statusEffects = {};
-        enemy.statusEffects.poisoned = Math.max(enemy.statusEffects.poisoned || 0, fx.poison);
-        enemy.statusEffects.poisonDamage = Math.max(enemy.statusEffects.poisonDamage || 0, 2);
-        log('Potion : l\'ennemi est empoisonné.');
-    }
-    if(fx.stealth && !player.statusEffects?.stealth){
-        if(!player.statusEffects) player.statusEffects = {};
-        player.statusEffects.stealth = true;
-        log('Vous devenez invisible : la prochaine attaque sera esquivée.');
-    }
     if(biomeRule){
         const res = resolveBiomeMatch(biomeState, biomeRule, indices);
         if(res.manaDelta > 0 && info.color) addManaForColor(player, info.color, res.manaDelta);
