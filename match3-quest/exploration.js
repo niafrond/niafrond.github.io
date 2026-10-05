@@ -25,7 +25,7 @@
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
 import { REGION_LEVEL } from './world/index.js';
 import { REGION_ORDER } from './world/index.js';
-import { approachOf, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
+import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
 export const AGGRO_RADIUS = 1;
@@ -91,6 +91,14 @@ export function buildRoute(waypoints) {
 }
 
 const chebyshev = (ax, ay, bx, by) => Math.max(Math.abs(ax - bx), Math.abs(ay - by));
+
+// Zone de vigilance d'un ennemi : uniquement DEVANT lui (dans le sens de son regard : en face de lui, ou de son côté s'il
+// regarde de côté). Jamais derrière ni sur ses flancs : on peut le prendre de dos pour une embuscade.
+export function inFront(st, r, x, y) {
+    if (x === st.x && y === st.y) return true;
+    if (r <= 0 || chebyshev(st.x, st.y, x, y) > r) return false;
+    return approachOf(st.face, st, { x, y }) === FACE_FRONT;
+}
 
 function defaultData() {
     const start = SCREENS[START_SCREEN];
@@ -356,19 +364,25 @@ export function entityAt(session, x, y) {
     return null;
 }
 
-export function getAuraTiles(session) {
+// Cases de la zone de vigilance d'un ennemi (devant lui), sa propre case comprise.
+export function auraCellsOf(session, e) {
     const screen = currentScreen(session);
-    const tiles = new Set();
-    aliveEnemies(session).filter(e => !isShielded(session, e.def)).forEach(e => {
-        const r = aggroOf(e.def);
-        for (let dy = -r; dy <= r; dy++) {
-            for (let dx = -r; dx <= r; dx++) {
-                const x = e.x + dx;
-                const y = e.y + dy;
-                if (x >= 0 && y >= 0 && x < screen.w && y < screen.h) tiles.add(`${x},${y}`);
-            }
+    const r = aggroOf(e.def);
+    const cells = [];
+    for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+            const x = e.x + dx;
+            const y = e.y + dy;
+            if (x >= 0 && y >= 0 && x < screen.w && y < screen.h && inFront(e, r, x, y)) cells.push({ x, y });
         }
-    });
+    }
+    return cells;
+}
+
+export function getAuraTiles(session) {
+    const tiles = new Set();
+    aliveEnemies(session).filter(e => !isShielded(session, e.def))
+        .forEach(e => auraCellsOf(session, e).forEach(c => tiles.add(`${c.x},${c.y}`)));
     return tiles;
 }
 
@@ -399,7 +413,7 @@ function checkAura(session) {
     if (session.rt.grace > 0) return null;
     const { x, y } = session.data;
     const hits = aliveEnemies(session)
-        .filter(e => chebyshev(e.x, e.y, x, y) <= aggroOf(e.def) && !isShielded(session, e.def));
+        .filter(e => inFront(e, aggroOf(e.def), x, y) && !isShielded(session, e.def));
     const hit = hits.find(e => !e.def.illusion) || hits[0];
     return hit ? contactEvent(session, hit.def) : null;
 }
@@ -544,11 +558,11 @@ export function findPath(session, tx, ty) {
     const avoid = new Set();
     aliveEnemies(session).filter(e => !isShielded(session, e.def)).forEach(e => {
         const r = aggroOf(e.def);
-        if (chebyshev(e.x, e.y, tx, ty) <= r) return;
+        if (inFront(e, r, tx, ty)) return;
         for (let dy = -r; dy <= r; dy++) {
             for (let dx = -r; dx <= r; dx++) {
                 const x = e.x + dx, y = e.y + dy;
-                if (x >= 0 && y >= 0 && x < screen.w && y < screen.h) avoid.add(key(x, y));
+                if (x >= 0 && y >= 0 && x < screen.w && y < screen.h && inFront(e, r, x, y)) avoid.add(key(x, y));
             }
         }
     });
