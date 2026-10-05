@@ -77,6 +77,8 @@ function travel(s, target) {
 // Va jusqu'à un ennemi et le bat
 function defeat(s, id) {
     const { def, screenId } = s.rt.enemyIndex[id];
+    // un boss à phases n'apparaît qu'après la phase précédente : on l'affronte d'abord (les boss n'ont plus de zone de vigilance)
+    if (typeof def.showWhen === 'string' && !progressReached(s, def.showWhen)) satisfy(s, def.showWhen);
     travel(s, screenId);
     if (!s.data.defeated.includes(id)) {
         if (def.kind !== 'patrol' && !def.illusion && isEntityVisible(s, def)) {

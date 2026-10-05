@@ -459,13 +459,11 @@ describe('cartes (story.js)', () => {
     test.each(FORCED)('%s : Fengmeng barre le défilé, mais sans bloquer physiquement la route vers l\'est', id => {
         const s = SCREENS[id];
         const east = s.exits.find(e => e.x === s.w - 1);
-        // impossible de passer hors de sa vigilance depuis le village...
-        const forbidden = auraOfAll(s);
-        forbidden.delete(`${s.spawn.x},${s.spawn.y}`);
-        expect(reachable(s, s.spawn, forbidden).has(`${east.x},${east.y}`)).toBe(false);
-        // ... mais sa tuile ne ferme pas à elle seule le passage
+        // c'est un boss : aucune zone de vigilance, il faut aller le chercher...
         const fengmeng = s.enemies.find(e => e.id.startsWith('fengmeng_'));
         expect(fengmeng).toBeDefined();
+        expect(aggroOf(fengmeng)).toBe(0);
+        // ... et sa tuile ne ferme pas à elle seule le passage
         expect(reachable(s, s.spawn, new Set([`${fengmeng.x},${fengmeng.y}`])).has(`${east.x},${east.y}`)).toBe(true);
     });
 
@@ -777,18 +775,18 @@ describe('déplacement et zones de vigilance', () => {
     });
 
     test('un ennemi qui barre un chemin ne revient pas ; un ennemi libre revient', () => {
-        const s = at('mer_wild', 1, 6);
-        markEnemyDefeated(s, 'mer_w_crab');
-        markEnemyDefeated(s, 'mer_w_cutter');
-        const blocked = SCREENS.mer_wild.enemies.filter(e => !e.permanent && blocksPath(SCREENS.mer_wild, e)).map(e => e.id);
-        const free = SCREENS.mer_wild.enemies.filter(e => respawns(SCREENS.mer_wild, e)).map(e => e.id);
-        expect(free).toContain('mer_w_cutter');
-        enterScreen(s, 'mer_village', { x: 18, y: 6 });
-        enterScreen(s, 'mer_wild', { x: 1, y: 6 });
+        const sc = Object.values(SCREENS).find(c => c.enemies.some(e => !e.permanent && blocksPath(c, e)) && c.enemies.some(e => respawns(c, e)));
+        const crab = sc.enemies.find(e => !e.permanent && blocksPath(sc, e));
+        const cutter = sc.enemies.find(e => respawns(sc, e));
+        const s = at(sc.id, sc.spawn.x, sc.spawn.y);
+        markEnemyDefeated(s, crab.id);
+        markEnemyDefeated(s, cutter.id);
+        const exit = sc.exits[0];
+        enterScreen(s, exit.to, exit.arrive);
+        enterScreen(s, sc.id, { x: sc.spawn.x, y: sc.spawn.y });
         const alive = aliveEnemies(s).map(e => e.def.id);
-        expect(blocked).toContain('mer_w_crab');          // un ennemi qui barre un chemin ne revient pas
-        expect(alive).not.toContain('mer_w_crab');
-        expect(alive).toContain('mer_w_cutter');
+        expect(alive).not.toContain(crab.id);             // un ennemi qui barre un chemin ne revient pas
+        expect(alive).toContain(cutter.id);
     });
 
     test('une sortie change d\'écran et arrive à la tuile prévue (quand son soleil est abattu)', () => {
@@ -907,9 +905,9 @@ describe('déplacement et zones de vigilance', () => {
     test('les zones de vigilance sont exposées pour l\'affichage', () => {
         const s = fresh({ screenId: 'rizieres', x: 3, y: 4 });
         const aura = getAuraTiles(s);
-        expect(aura.has('5,3')).toBe(true);   // Fengmeng en (6,4)
-        expect(aura.has('7,5')).toBe(true);
-        expect(aura.has('8,4')).toBe(false);
+        expect(aura.has('6,4')).toBe(true);   // Fengmeng en (6,4) : boss, sa seule case
+        expect(aura.has('5,3')).toBe(false);
+        expect(aura.has('7,5')).toBe(false);
     });
 
     test('la progression est sérialisable en JSON et se recharge', () => {
@@ -1404,16 +1402,21 @@ describe('showWhen / hideWhen : entités conditionnelles', () => {
         expect(aliveEnemies(s).map(e => e.def.id)).not.toContain('fengmeng_3a');
         expect(aliveEnemies(s).map(e => e.def.id)).toContain('fengmeng_3b');
         expect(entityAt(s, 11, 3)).toMatchObject({ type: 'enemy' });
-        expect(getAuraTiles(s).has('12,2')).toBe(true);
+        expect(getAuraTiles(s).has('11,3')).toBe(true);
+        expect(getAuraTiles(s).has('12,2')).toBe(false);   // boss : pas de zone autour
     });
 
-    test('la phase 2 se déclenche aussitôt après la scène, si le joueur est resté à côté', () => {
+    test('la phase 2 ne se déclenche pas d\'elle-même : il faut aller la chercher', () => {
         const s = atL('lune', 10, 4);
         s.rt.grace = 0;
-        expect(tryMove(s, 0, -1).type).toBe('combat');        // (10,3) : dans l'aura de la phase 1
+        expect(tryMove(s, 0, -1).type).toBe('moved');         // (10,3) : plus d'aura autour d'un boss
+        expect(tryMove(s, 0, 1).type).toBe('moved');
+        expect(tryMove(s, 1, 0)).toEqual({ type: 'combat', enemyId: 'fengmeng_3a' });   // (11,4) : on le choisit explicitement
         markEnemyDefeated(s, 'fengmeng_3a');
         const events = tick(s, PATROL_STEP_MS);
-        expect(events).toEqual([{ type: 'combat', enemyId: 'fengmeng_3b' }]);
+        expect(events).toEqual([]);
+        expect(tryMove(s, 0, -1).type).toBe('moved');
+        expect(tryMove(s, 1, 0)).toEqual({ type: 'combat', enemyId: 'fengmeng_3b' });   // (11,3)
     });
 
     test('l\'autel n\'existe qu\'après la victoire sur Fengmeng : entityAt, openChest, findPath, rendu', () => {
@@ -1518,7 +1521,7 @@ describe('mirages (illusion)', () => {
         const s = atL('gobi', 11, 7);
         expect(tryMove(s, 0, 1)).toEqual({ type: 'combat', enemyId: 'sun_4' });
         const aura = atL('gobi', 11, 6);
-        expect(tryMove(aura, 0, 1)).toEqual({ type: 'combat', enemyId: 'sun_4' });   // (11,7) est dans son aura
+        expect(tryMove(aura, 0, 1).type).toBe('moved');   // (11,7) est à côté du soleil : un boss n'a pas d'aura
     });
 
     test('la rencontre d\'un mirage a la même apparence que le vrai soleil, mais pas son niveau de boss', () => {
@@ -1567,7 +1570,7 @@ describe('soleil protégé (shieldedBy)', () => {
         expect(tryMove(s, 0, 1).type).toBe('shielded');
         markEnemyDefeated(s, pack[3]);
         expect(isShielded(s, def)).toBe(false);
-        expect(getAuraTiles(s).has('11,7')).toBe(true);
+        expect(getAuraTiles(s).has('11,8')).toBe(true);
         expect(tryMove(s, 0, 1)).toEqual({ type: 'combat', enemyId: 'sun_7' });
     });
 
