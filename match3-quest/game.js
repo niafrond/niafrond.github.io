@@ -5,6 +5,8 @@ import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
 import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
 import { weaknessDamage, ruleForBiome } from "./terrain.js";
+import { heroSprite, enemySprite, spriteUri } from "./sprites/index.js";
+import { viewSprite, HERO_VIEW_OPTS } from "./sprites/side.js";
 import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { bigMatchXpFor } from "./matchMechanics.js";
@@ -1095,8 +1097,23 @@ function _animateCounter(id, from, to) {
     _animateHpBar(id, from, to, null);
 }
 
+// Dessins des combattants (héros à gauche tourné vers la droite, ennemi à droite tourné vers la gauche) : posés en variable CSS
+// `--portrait` des panneaux de stats (pseudo-élément ::after), donc sans clignotement quand le panneau est reconstruit.
+function updateFighterPortraits(){
+    const set = (id, svg, dir, opts) => {
+        const el = document.getElementById(id);
+        if(!el) return;
+        const view = svg ? viewSprite(svg, dir, opts) : null;
+        if(view) el.style.setProperty('--portrait', `url("${spriteUri(view)}")`);
+        else el.style.removeProperty('--portrait');
+    };
+    set('player-stats', heroSprite(player.class) || heroSprite('assassin'), 'right', HERO_VIEW_OPTS);
+    set('enemy-stats', enemySprite(enemy.spriteKey || enemy.id, enemy.templateId), 'left');
+}
+
 export function updateStats(){
     updateLevelHud();
+    updateFighterPortraits();
     // truncate log to only the latest message
     const logDiv=document.getElementById('log');
     if(logDiv){

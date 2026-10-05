@@ -270,6 +270,7 @@ export function createMapEnemy(encounter, allWeaponsArg = allWeapons){
         enemyEntity.name = encounter.boss.name || `Boss ${enemyEntity.name}`;
     }
     enemyEntity.mapEnemyId = encounter?.enemyId || null;
+    enemyEntity.spriteKey = encounter?.spriteKey || encounter?.enemyId || template.id;   // dessin affiché sur l'écran de combat
     // Préparation du terrain (terrain.js) : embuscade, faiblesse repérée, piège, alerte… appliquée par game.js.
     if(encounter?.biome) enemyEntity.biome = encounter.biome;
     if(encounter?.prep?.tags?.length) enemyEntity.prep = { ...encounter.prep };
