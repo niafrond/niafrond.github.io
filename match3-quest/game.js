@@ -7,6 +7,7 @@ import { allWeapons, getAvailableWeapons, getWeaponById } from "./weapons.js";
 import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
 import { bigMatchXpFor } from "./matchMechanics.js";
+import { recordBossLoss, recordVictory, pickBossTip } from "./bossTips.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
 import { arenaRewardBonus, arenaTier } from "./arena.js";
 import { makeDecision, setAIDifficulty, getAIDifficulty, logDecision, setAIDifficultyByLevel } from "./enemyAI.js";
@@ -633,7 +634,12 @@ function showCombatResultScreen(isVictory){
         ? `<li>${svgIcon('coin')} Or: +${combatRewards.gold} pièce${combatRewards.gold > 1 ? 's' : ''}</li>`
         : '';
 
+    // Anti try-hard : après trois défaites d'affilée contre le même boss, un conseil pour progresser autrement.
+    const tip = !isVictory && enemy?.isBoss
+        ? pickBossTip(player.bossLossStreak, { playerLevel: player.level, bossLevel: enemy.level, gold: player.gold, unspentPoints: player.unspentLevelPoints })
+        : null;
     summary.innerHTML = `
+        ${tip ? `<p class="battle-result-tip">${svgIcon('scroll')} <strong>Conseil :</strong> ${tip}</p>` : ''}
         <div class="battle-result-xp">XP gagnee: ${combatRewards.xpGained}</div>
         <ul class="battle-result-loot">
             ${goldLine}
@@ -820,6 +826,7 @@ export function handlePlayerDeath(){
         }
     }
     log("Vous êtes mort ! Le combat est terminé.");
+    if(enemy?.isBoss) player.bossLossStreak = recordBossLoss(player.bossLossStreak, enemy.mapEnemyId || enemy.name);
     playSfx('defeat');
     
     // Marquer le combat comme terminé
@@ -954,6 +961,8 @@ export function loadGameData() {
             player.revivePercent = loaded.revivePercent ?? player.revivePercent;
             player.unspentLevelPoints = loaded.unspentLevelPoints ?? player.unspentLevelPoints;
             player.gold = loaded.gold ?? player.gold;
+            player.merchantSold = loaded.merchantSold && typeof loaded.merchantSold === 'object' ? loaded.merchantSold : {};
+            player.bossLossStreak = loaded.bossLossStreak && loaded.bossLossStreak.id ? loaded.bossLossStreak : null;
             player.defeatedBossTiers = Array.isArray(loaded.defeatedBossTiers)
                 ? loaded.defeatedBossTiers
                     .map(tier => Math.max(5, Math.floor(Number(tier) || 0)))
@@ -2069,6 +2078,7 @@ export function finishEnemyTurn(){
 // progression
 export function handleEnemyDefeated(){
     log(`${enemy.name} est vaincu !`);
+    player.bossLossStreak = recordVictory();
     playSfx('victory');
     
     // Calculer et mettre en attente l'XP (application en fin de combat)
