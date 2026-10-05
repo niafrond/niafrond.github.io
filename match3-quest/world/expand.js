@@ -152,11 +152,7 @@ export function expandScreen(screen, W, H) {
     if (W > w0 && !eastWalled) for (let y = 0; y <= (H > h0 ? h0 : h0 - 1); y++) obst.add(key(w0, y));
     if (H > h0 && !southWalled) for (let x = 0; x <= (W > w0 ? w0 : w0 - 1); x++) obst.add(key(x, h0));
 
-    // 2. Bordure extérieure du nouveau terrain.
-    for (let x = w0; x < W; x++) obst.add(key(x, 0));
-    for (let y = 0; y < H; y++) obst.add(key(W - 1, y));
-    for (let x = 0; x < W; x++) obst.add(key(x, H - 1));
-    for (let y = h0; y < H; y++) obst.add(key(0, y));
+    // 2. Pas de bordure factice autour du nouveau terrain : la limite de la carte suffit (les terrains sont reliés par les passages de bord).
 
     // 3. Passages : les anciennes sorties est / sud deviennent des ouvertures de la cloison + un passage sur le nouveau bord.
     const exitsKept = [];
@@ -287,6 +283,8 @@ export function expandScreen(screen, W, H) {
     screen.liquids = toRects(liq);
     screen.paths = toRects(paths);
     screen.core = { w: w0, h: h0 };   // dimensions de la salle d'origine ; le reste est le terrain agrandi
+    // cloisons salle / terrain (colonne est, rangée sud) : leurs extrémités sur la couronne extérieure ne doivent jamais s'ouvrir
+    screen.barrier = { eastX: W > w0 ? eastBarrierX : null, southY: H > h0 ? southBarrierY : null };
     return screen;
 }
 
@@ -319,4 +317,30 @@ export function linkGates(screens) {
         });
     });
     return screens;
+}
+
+// Retire la « délimitation factice » (roseaux, lampions, rochers…) du mur d'enceinte d'une carte de plein air : les terrains sont
+// reliés entre eux, la limite de la carte suffit (on ne la franchit que par les passages, ou sur l'eau avec le Pas de Yu).
+// Seuls les côtés réellement murés de la salle d'origine sont ouverts (≥ 60 % de cases d'obstacle) : un bloc de décor qui touche
+// le bord (goulet d'un sanctuaire, par exemple) reste en place. Les cloisons salle / terrain, les cases de bâtiment et les
+// intérieurs (maisons, arène) ne sont jamais touchés.
+export function openPerimeter(screen) {
+    if (screen.interior || screen.arena || screen.kind === 'house') return screen;
+    const obst = toSet(screen.obstacles);
+    const prot = buildingCells(screen);
+    const core = screen.core || { w: screen.w, h: screen.h };
+    const b = screen.barrier || { eastX: null, southY: null };
+    const onBarrier = (x, y) => (b.eastX !== null && x === b.eastX && y <= core.h) || (b.southY !== null && y === b.southY && x <= core.w);
+    const edges = [
+        Array.from({ length: core.w }, (_, x) => [x, 0]),
+        Array.from({ length: core.h }, (_, y) => [0, y])
+    ];
+    if (b.eastX === null) edges.push(Array.from({ length: core.h }, (_, y) => [screen.w - 1, y]));
+    if (b.southY === null) edges.push(Array.from({ length: core.w }, (_, x) => [x, screen.h - 1]));
+    edges.forEach(cells => {
+        const walled = cells.filter(([x, y]) => obst.has(key(x, y))).length / cells.length >= 0.6;
+        if (walled) cells.forEach(([x, y]) => { if (!prot.has(key(x, y)) && !onBarrier(x, y)) obst.delete(key(x, y)); });
+    });
+    screen.obstacles = toRects(obst);
+    return screen;
 }

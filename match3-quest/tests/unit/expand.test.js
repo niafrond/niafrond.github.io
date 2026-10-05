@@ -74,6 +74,38 @@ describe('cartes extérieures : grandes et reliées', () => {
     });
 });
 
+describe('plus de délimitation factice (openPerimeter)', () => {
+    test('aucune carte de plein air n\'a de mur d\'enceinte : couronne extérieure libre, hors blocs de décor et cloisons', () => {
+        const village = SCREENS.rizieres_village;
+        for (let x = 0; x < village.w; x++) {
+            expect(isTerrainBlocked(village, x, 0)).toBe(false);
+            expect(isTerrainBlocked(village, x, village.h - 1)).toBe(false);
+        }
+        const wild = SCREENS.rizieres_wild;
+        for (let x = 0; x < wild.w; x++) {
+            expect(isTerrainBlocked(wild, x, wild.h - 1)).toBe(false);
+            if (x !== wild.barrier.eastX) expect(isTerrainBlocked(wild, x, 0)).toBe(false);   // seule la cloison salle / terrain touche la couronne
+        }
+        const arch = SCREENS.mer_archipel;
+        expect(isTerrainBlocked(arch, 0, 0)).toBe(false);
+    });
+
+    test('les maisons gardent leurs murs, et un bloc de décor posé au bord d\'un sanctuaire (goulet) reste en place', () => {
+        const house = Object.values(SCREENS).find(s => s.interior);
+        expect(isTerrainBlocked(house, 0, 0)).toBe(true);
+        expect(isTerrainBlocked(SCREENS.rizieres, 6, 0)).toBe(true);   // bloc [6,0,2,3] : il forme le goulet de Fengmeng
+    });
+
+    test('la cloison entre salle d\'origine et terrain agrandi reste fermée sur toute la hauteur, hors ouvertures', () => {
+        const s = SCREENS.rizieres;
+        const x = s.barrier.eastX;
+        const open = [];
+        for (let y = 0; y <= s.core.h; y++) if (!isTerrainBlocked(s, x, y)) open.push(y);
+        expect(open.length).toBeGreaterThanOrEqual(3);   // l'ouverture de 3 cases (ancienne sortie est)
+        expect(open.length).toBeLessThanOrEqual(3);
+    });
+});
+
 describe('expandScreen / widenGates (écran synthétique)', () => {
     const make = () => ({
         id: 'test_zone', w: 8, h: 6, spawn: { x: 1, y: 2 },
@@ -89,7 +121,9 @@ describe('expandScreen / widenGates (écran synthétique)', () => {
         expect(blocked(7, 3)).toBe(false);        // ancienne sortie est = ouverture
         expect(blocked(7, 2) || blocked(7, 4)).toBe(false);
         expect(blocked(7, 1)).toBe(true);         // le reste du mur demeure
-        expect(blocked(15, 0)).toBe(true);        // bordure extérieure
+        expect(blocked(15, 0)).toBe(false);       // pas de bordure factice sur le nouveau terrain
+        expect(blocked(8, 0)).toBe(false);
+        expect(blocked(7, 0)).toBe(true);         // la cloison salle / terrain (x = 7) ne s'ouvre qu'aux passages
         const east = s.exits.filter(e => e.to === 'b');
         expect(east).toHaveLength(0);             // les sorties sont créées par linkGates
         expect(s.gates.find(g => g.attrs.to === 'b')).toMatchObject({ edge: 'east', center: { x: 15 } });

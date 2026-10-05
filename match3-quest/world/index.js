@@ -6,7 +6,7 @@
 
 import { merchantNpc } from '../merchants.js';
 import { buildZone, arrivalFor, freeNeighbor } from './mapKit.js';
-import { EXPANDED_SIZES, expandScreen, widenGates, linkGates } from './expand.js';
+import { EXPANDED_SIZES, expandScreen, widenGates, linkGates, openPerimeter } from './expand.js';
 import { applyJunctions } from './junctions.js';
 import { buildAquaticWorld, applyYubu } from './aquatic.js';
 import { MAPS } from './maps/index.js';
@@ -141,6 +141,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         widenGates(screens[`${region}_village`]);
     });
     linkGates(screens);
+    Object.values(screens).forEach(openPerimeter);   // plus de bordure factice : les terrains sont reliés, la limite de la carte suffit
     // Jonctions gardées : objet à rapporter à un garde, gardien spécial à vaincre (world/junctions.js).
     applyJunctions(screens, quests, REGION_LEVEL);
     applyYubu(screens, quests);   // reliques du Pas de Yu + quête de Gui (marcher sur les eaux)
