@@ -23,6 +23,7 @@
 //    `leaveArena` d'une salle), défaite = expulsion ; revenir au parvis remet les gardiens en place.
 
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
+import { REGION_LEVEL } from './world/index.js';
 import { REGION_ORDER } from './world/index.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
@@ -528,12 +529,19 @@ export function findPath(session, tx, ty) {
     return path.reverse();
 }
 
-// Nouvelle Partie + : +3 niveaux pour les soleils et les boss, +1 pour les ennemis normaux, par cycle.
-export function enemyLevel(def, playerLevel, ngPlus = 0) {
-    const lvl = Math.max(1, Math.floor(playerLevel || 1));
+// Niveau d'un ennemi : FIXE, il ne dépend jamais du niveau du héros. Boss : `boss.level` ; ennemi normal :
+// niveau de sa région (`regionLevel`, REGION_LEVEL) + `offset`. Nouvelle Partie + : +3 niveaux pour les
+// soleils et les boss, +1 pour les ennemis normaux, par cycle.
+export function enemyLevel(def, regionLevel = 1, ngPlus = 0) {
     const plus = Math.max(0, Math.floor(ngPlus || 0));
-    if (def.boss) return Math.max(def.boss.level + 3 * plus, lvl);
-    return Math.min(lvl + 1, Math.max(1, lvl + (def.offset || 0))) + plus;
+    if (def.boss) return Math.max(1, Math.floor(def.boss.level || 1) + 3 * plus);
+    return Math.max(1, Math.floor(regionLevel || 1) + (def.offset || 0)) + plus;
+}
+
+// Niveau de région de l'écran qui porte l'ennemi `enemyId`.
+export function enemyRegionLevel(session, enemyId) {
+    const screenId = session.rt.enemyIndex[enemyId]?.screenId;
+    return REGION_LEVEL[session.screens[screenId]?.region] || 1;
 }
 
 export function encounterFor(session, enemyId, playerLevel) {
@@ -548,7 +556,7 @@ export function encounterFor(session, enemyId, playerLevel) {
             introLines: def.introLines ? [...def.introLines] : null
         };
     }
-    const level = enemyLevel(def, playerLevel, session.data.ngPlus);
+    const level = enemyLevel(def, enemyRegionLevel(session, enemyId), session.data.ngPlus);
     return {
         enemyId: def.id,
         spriteKey: def.spriteKey || def.id,
