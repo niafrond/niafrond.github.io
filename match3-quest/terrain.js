@@ -3,7 +3,6 @@
 // 1. PRÉPARATION DU TERRAIN : ce que le héros fait sur la carte change le combat qui suit.
 //    - de face : combat normal ; de dos : embuscade (+1 PA, on joue en premier) ;
 //    - observer un ennemi quelques secondes immobile : on découvre sa faiblesse (dégâts bonus de cette couleur) ;
-//    - cloche (`bell`) frappée : les ennemis de l'écran sont alertés (+1 PA pour eux, plus d'embuscade) ;
 //    - ennemi dans un piège (`trap`) ou des hautes herbes (`tallGrass`) au contact : il commence altéré ;
 //    - combat déclenché depuis un belvédère (`outlook`) : le plateau démarre avec des tuiles de sa couleur faible.
 // 2. BIOMES : chaque biome du monde impose une règle au plateau de match-3 (bambous, volcan, marais, sanctuaire,
@@ -16,11 +15,10 @@ export const FACE_SIDE = 'side';
 export const OBSERVE_MS = 3000;          // temps d'immobilité pour percer un ennemi
 export const OBSERVE_EXTRA_RANGE = 4;    // portée d'observation au-delà de la zone de vigilance
 export const AMBUSH_BONUS_PA = 1;
-export const ALERT_BONUS_PA = 1;
 export const WEAKNESS_DAMAGE_BONUS = 0.25;
 export const OUTLOOK_TILES = 5;
 
-export const SPOT_KINDS = ['tallGrass', 'trap', 'bell', 'outlook'];
+export const SPOT_KINDS = ['tallGrass', 'trap', 'outlook'];
 
 const COLOR_NAMES = { red: 'rouge', blue: 'bleu', green: 'vert', yellow: 'jaune', purple: 'violet' };
 export const colorName = color => COLOR_NAMES[color] || color;
@@ -64,7 +62,7 @@ export function observationTarget(stillMs, playerPos, enemies, observed = {}, ex
     return best ? best.id : null;
 }
 
-// Préparation d'un combat. ctx : { approach, enemyOnTrap, enemyOnGrass, alerted, observed, onOutlook }.
+// Préparation d'un combat. ctx : { approach, enemyOnTrap, enemyOnGrass, observed, onOutlook }.
 export function buildPrep(ctx = {}) {
     const prep = {
         tags: [], lines: [],
@@ -76,11 +74,7 @@ export function buildPrep(ctx = {}) {
     };
     const add = (tag, line) => { prep.tags.push(tag); prep.lines.push(line); };
 
-    if (ctx.alerted) {
-        prep.enemyBonusPA += ALERT_BONUS_PA;
-        prep.enemyFirst = true;
-        add('alerted', "L'ennemi est sur ses gardes : +1 PA et il joue en premier.");
-    } else if (ctx.approach === FACE_BEHIND) {
+    if (ctx.approach === FACE_BEHIND) {
         prep.playerBonusPA += AMBUSH_BONUS_PA;
         prep.playerFirst = true;
         add('ambush', 'Attaque surprise : +1 PA et vous jouez en premier.');

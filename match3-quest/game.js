@@ -2956,7 +2956,7 @@ export function newEnemy(selectedEnemy = null){
     decideFirstTurn();
 }
 
-// Préparation du terrain (terrain.js) : bonus d'embuscade, ennemi alerté ou altéré, faiblesse repérée, plateau de départ.
+// Préparation du terrain (terrain.js) : bonus d'embuscade, ennemi altéré, faiblesse repérée, plateau de départ.
 function applyTerrainPrep(){
     const prep = enemy?.prep;
     if(!prep) return;
@@ -2987,7 +2987,7 @@ export function decideFirstTurn(){
         currentTurn = playerStarts ? 'player' : 'enemy';
         showCombatAnimation(playerStarts
             ? { icon: 'bolt', title: 'Attaque surprise !', source: 'Vous les prenez par derrière', target: '→ À vous de jouer !' }
-            : { icon: 'bolt', title: `${enemy.name} vous attend !`, source: 'Cloche sonnée : il est alerté', target: '→ Ennemi joue en premier' }, playerStarts);
+            : { icon: 'bolt', title: `${enemy.name} vous attend !`, source: 'Préparation du terrain', target: '→ Ennemi joue en premier' }, playerStarts);
         log(`Premier tour : ${playerStarts ? 'Joueur' : 'Ennemi'} (préparation du terrain)`);
         if(!playerStarts) setTimeout(() => enemyTurn(), 1500);
         return;

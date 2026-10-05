@@ -22,12 +22,6 @@ describe('préparation', () => {
         expect(p.playerBonusPA).toBe(1);
         expect(p.playerFirst).toBe(true);
     });
-    test('alerté annule l\'embuscade', () => {
-        const p = buildPrep({ approach: 'behind', alerted: true });
-        expect(p.playerBonusPA).toBe(0);
-        expect(p.enemyFirst).toBe(true);
-        expect(p.enemyBonusPA).toBe(1);
-    });
     test('piège > herbes ; belvédère ; faiblesse', () => {
         expect(buildPrep({ enemyOnTrap: true, enemyOnGrass: true }).enemyStatus).toEqual({ poisoned: 3 });
         expect(buildPrep({ enemyOnGrass: true }).enemyStatus).toEqual({ confused: 2 });
@@ -46,8 +40,8 @@ describe('préparation', () => {
         expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, list, { a: true })).toBeNull();
     });
     test('spotAt et boost de plateau', () => {
-        expect(spotAt([{ x: 1, y: 2, kind: 'bell' }], 1, 2, 'bell')).not.toBeNull();
-        expect(spotAt([{ x: 1, y: 2, kind: 'bell' }], 1, 2, 'trap')).toBeNull();
+        expect(spotAt([{ x: 1, y: 2, kind: 'trap' }], 1, 2, 'trap')).not.toBeNull();
+        expect(spotAt([{ x: 1, y: 2, kind: 'trap' }], 1, 2, 'outlook')).toBeNull();
         const tiles = Array(64).fill('red');
         expect(applyBoardBoost(tiles, 'blue', 5, () => 0).length).toBe(5);
         expect(tiles.filter(t => t === 'blue').length).toBe(5);
@@ -105,15 +99,15 @@ describe('intégration exploration', () => {
 
     const sessionOnWild = () => {
         const s = X.createSession(null);
-        const id = Object.keys(s.screens).find(k => k.endsWith('_wild') && s.screens[k].spots?.some(sp => sp.kind === 'bell'));
+        const id = Object.keys(s.screens).find(k => k.endsWith('_wild') && s.screens[k].spots?.some(sp => sp.kind === 'outlook'));
         X.enterScreen(s, id, { x: 1, y: 1 });
         return s;
     };
 
-    test('les zones sauvages ont cloches et belvédères', () => {
+    test('les zones sauvages ont des belvédères', () => {
         const s = sessionOnWild();
         const kinds = new Set(X.currentScreen(s).spots.map(sp => sp.kind));
-        expect(kinds.has('bell')).toBe(true);
+        expect(kinds.has('bell')).toBe(false);
         expect(kinds.has('outlook')).toBe(true);
     });
 
@@ -126,21 +120,6 @@ describe('intégration exploration', () => {
         expect(X.encounterFor(s, def.id, 5).prep.tags).toContain('ambush');
         s.data.y = st.y + 1;
         expect(X.encounterFor(s, def.id, 5).prep.tags).not.toContain('ambush');
-    });
-
-    test('cloche : alerte, plus d\'embuscade ; observation après immobilité', () => {
-        const s = sessionOnWild();
-        const bell = X.currentScreen(s).spots.find(sp => sp.kind === 'bell');
-        s.data.x = bell.x - 1; s.data.y = bell.y;
-        const res = X.tryMove(s, 1, 0);
-        expect(['alert', 'combat']).toContain(res.type);
-        const def = X.currentScreen(s).enemies.find(e => !e.boss && !e.illusion && !e.arena);
-        const st = s.rt.enemies[def.id];
-        s.rt.alerted[def.id] = true;
-        s.data.x = st.x; s.data.y = st.y - 1; st.face = { dx: 0, dy: 1 };
-        const prep = X.encounterFor(s, def.id, 5).prep;
-        expect(prep.tags).toContain('alerted');
-        expect(prep.tags).not.toContain('ambush');
     });
 
     test('observation : événement après 3 s d\'immobilité à portée', () => {

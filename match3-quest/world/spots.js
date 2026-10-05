@@ -1,6 +1,5 @@
 // Points de préparation du terrain (voir terrain.js) posés sur les zones sauvages qui abritent des ennemis :
 //  - `trap` / `tallGrass` sur des points de passage des patrouilleurs (l'ennemi qui s'y trouve au contact commence altéré) ;
-//  - `bell` à portée de l'ennemi, mais hors de sa vigilance : la frapper alerte tout l'écran ;
 //  - `outlook` (belvédère) un peu plus loin : un combat lancé de là démarre avec un plateau favorable.
 // Déterministe (aucun hasard) : les mêmes cartes donnent toujours les mêmes spots.
 
@@ -26,7 +25,7 @@ export function addPrepSpots(screen) {
         if (wp) place(n++ % 2 === 0 ? 'trap' : 'tallGrass', wp.x, wp.y);
     });
 
-    // cloche et belvédère : cases libres à la bonne distance du premier ennemi
+    // belvédère : case libre à la bonne distance du premier ennemi
     const first = enemies[0];
     const aggro = Number.isInteger(first.aggro) && first.aggro >= 1 ? first.aggro : 2;
     const find = (min, max) => {
@@ -40,8 +39,6 @@ export function addPrepSpots(screen) {
         }
         return null;
     };
-    const bell = find(aggro + 2, aggro + 5);
-    if (bell) place('bell', bell.x, bell.y);
     const outlook = find(aggro + 3, aggro + 7);
     if (outlook) place('outlook', outlook.x, outlook.y);
 }

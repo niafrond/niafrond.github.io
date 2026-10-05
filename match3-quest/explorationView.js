@@ -633,9 +633,6 @@ export function createExplorationView(cfg) {
                 if (chest) processEvents(chest.events);
                 break;
             }
-            case 'alert':
-                toast(res.message, 3500);
-                break;
             case 'observed': {
                 const weak = cfg.getWeakness?.(res.templateId);
                 toast(weak ? `Vous observez ${res.name} : faiblesse = ${weak}.` : `Vous observez ${res.name} : une faille dans sa garde.`, 4500);
@@ -1073,7 +1070,7 @@ export function createExplorationView(cfg) {
                     break;
                 }
                 case 'spot': {
-                    // préparation du terrain (terrain.js) : hautes herbes, piège, cloche, belvédère
+                    // préparation du terrain (terrain.js) : hautes herbes, piège, belvédère
                     const feet = c.y + tile * 0.3;
                     ctx.lineWidth = 2;
                     ctx.strokeStyle = '#2b1b17';
@@ -1092,15 +1089,6 @@ export function createExplorationView(cfg) {
                         ctx.stroke();
                         ctx.beginPath();
                         for (let k = -2; k <= 2; k++) { ctx.moveTo(c.x + k * tile * 0.1, feet - tile * 0.1); ctx.lineTo(c.x + k * tile * 0.1, feet - tile * 0.26); }
-                        ctx.stroke();
-                    } else if (it.sp.kind === 'bell') {
-                        ctx.fillStyle = '#d9a441';
-                        ctx.beginPath();
-                        ctx.moveTo(c.x - tile * 0.22, feet - tile * 0.1);
-                        ctx.quadraticCurveTo(c.x - tile * 0.2, feet - tile * 0.6, c.x, feet - tile * 0.62);
-                        ctx.quadraticCurveTo(c.x + tile * 0.2, feet - tile * 0.6, c.x + tile * 0.22, feet - tile * 0.1);
-                        ctx.closePath();
-                        ctx.fill();
                         ctx.stroke();
                     } else {
                         ctx.strokeStyle = `rgba(255,255,255,${(0.5 + 0.3 * Math.sin(now / 400)).toFixed(3)})`;

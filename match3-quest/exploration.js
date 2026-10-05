@@ -155,7 +155,6 @@ function initScreenRuntime(session) {
     session.rt.enemies = {};
     session.rt.patrolTimer = 0;
     session.rt.stillMs = 0;
-    session.rt.alerted = {};
     screen.enemies.forEach(def => {
         const route = def.kind === 'patrol' && def.patrol ? buildRoute(def.patrol) : null;
         const face = def.facing && (def.facing.dx || def.facing.dy) ? { ...def.facing } : { dx: 0, dy: 1 };
@@ -458,12 +457,6 @@ export function tryMove(session, dx, dy, ctx = {}) {
     session.data.y = ny;
     session.rt.stillMs = 0;
     if (session.rt.grace > 0) session.rt.grace--;
-    const bell = spotAt(screen.spots, nx, ny, 'bell');
-    if (bell && !Object.keys(session.rt.alerted).length) {
-        aliveEnemies(session).forEach(e => { session.rt.alerted[e.def.id] = true; });
-        const hit = checkAura(session);
-        return hit || { type: 'alert', message: 'La cloche résonne : les ennemis des environs sont alertés !' };
-    }
     return checkAura(session) || { type: 'moved' };
 }
 
@@ -544,7 +537,6 @@ export function findPath(session, tx, ty) {
     aliveEnemies(session).forEach(e => occupied.add(key(e.x, e.y)));
     if (screen.waypoint) occupied.add(key(screen.waypoint.x, screen.waypoint.y));
     const exits = new Set(screen.exits.map(e => key(e.x, e.y)));
-    (screen.spots || []).filter(sp => sp.kind === 'bell').forEach(sp => exits.add(key(sp.x, sp.y)));   // une cloche ne se frappe que volontairement
     const startKey = key(start.x, start.y);
     const target = key(tx, ty);
 
@@ -612,7 +604,7 @@ export function enemyRegionLevel(session, enemyId) {
     return REGION_LEVEL[session.screens[screenId]?.region] || 1;
 }
 
-// Préparation du terrain : approche, observation, cloche, pièges et herbes, belvédère (voir terrain.js).
+// Préparation du terrain : approche, observation, pièges et herbes, belvédère (voir terrain.js).
 export function prepFor(session, def) {
     const st = session.rt.enemies[def.id];
     const screen = currentScreen(session);
@@ -620,7 +612,6 @@ export function prepFor(session, def) {
     const { x, y } = session.data;
     return buildPrep({
         approach: approachOf(st.face, st, { x, y }),
-        alerted: Boolean(session.rt.alerted?.[def.id]),
         observed: Boolean(session.data.observed?.[def.id]),
         enemyOnTrap: Boolean(spotAt(screen.spots, st.x, st.y, 'trap')),
         enemyOnGrass: Boolean(spotAt(screen.spots, st.x, st.y, 'tallGrass')),
