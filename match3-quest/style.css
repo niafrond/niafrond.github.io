@@ -2813,3 +2813,16 @@ input, textarea, [contenteditable="true"] {
 .merchant-rarity { font-size: 0.75em; font-style: normal; margin-left: 6px; }
 .merchant-offer.rarity-legendary { box-shadow: 0 0 10px rgba(255, 193, 7, 0.65); }
 .merchant-offer.rarity-rare { box-shadow: 0 0 6px rgba(52, 152, 219, 0.45); }
+
+/* Conseil anti try-hard sur l'écran de défaite */
+.battle-result-tip {
+    margin: 8px 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 2px solid #c9a24a;
+    background: rgba(255, 240, 200, 0.92);
+    color: #3b2a20;
+    text-align: left;
+    font-size: 0.95em;
+    line-height: 1.35;
+}
