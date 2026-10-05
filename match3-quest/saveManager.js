@@ -239,7 +239,12 @@ function validateAndRestorePlayer(player) {
         // Anciennes sauvegardes : la recharge en combat (x tours) vient du catalogue.
         if (item.type === 'reusable') {
             const ref = allItems.find(i => i.id === item.id);
-            if (ref && !Number.isFinite(item.rechargeTurns)) { item.rechargeTurns = ref.rechargeTurns; item.description = ref.description; }
+            // Les valeurs (soin, mana, charges, délai) viennent toujours du catalogue : un rééquilibrage s'applique aux anciennes parties.
+            if (ref) {
+                Object.assign(item, { effect: { ...ref.effect }, description: ref.description, chargesPerCycle: ref.chargesPerCycle, rechargeTurns: ref.rechargeTurns });
+                if (ref.actionPoints) item.actionPoints = ref.actionPoints;
+                item.chargesLeft = Math.min(item.chargesLeft, ref.chargesPerCycle);
+            }
             if (!Number.isFinite(item.rechargeLeft)) item.rechargeLeft = 0;
         }
     });

@@ -75,10 +75,10 @@
       "name": "Grand Gel du Kunlun",
       "color": "blue",
       "type": "damage",
-      "cost": 55,
-      "dmg": 125,
+      "cost": 50,
+      "dmg": 120,
       "minLevel": 15,
-      "description": "Gèle tout sur son passage pour 125 dégâts"
+      "description": "Gèle tout sur son passage pour 120 dégâts"
     },
     {
       "id": "heal",
@@ -86,9 +86,9 @@
       "color": "green",
       "type": "heal",
       "cost": 8,
-      "heal": 20,
+      "heal": 16,
       "minLevel": 1,
-      "description": "Un talisman de jade qui restaure 20 points de vie"
+      "description": "Un talisman de jade qui restaure 16 points de vie"
     },
     {
       "id": "greatHeal",
@@ -96,9 +96,9 @@
       "color": "green",
       "type": "heal",
       "cost": 18,
-      "heal": 45,
+      "heal": 36,
       "minLevel": 5,
-      "description": "Une rosée tombée du ciel qui restaure 45 points de vie"
+      "description": "Une rosée tombée du ciel qui restaure 36 points de vie"
     },
     {
       "id": "revitalize",
@@ -106,9 +106,9 @@
       "color": "green",
       "type": "heal",
       "cost": 30,
-      "heal": 75,
+      "heal": 60,
       "minLevel": 10,
-      "description": "Fait circuler le qi, revitalise le corps et restaure 75 points de vie"
+      "description": "Fait circuler le qi, revitalise le corps et restaure 60 points de vie"
     },
     {
       "id": "miracle",
@@ -116,9 +116,9 @@
       "color": "green",
       "type": "heal",
       "cost": 45,
-      "heal": 110,
+      "heal": 90,
       "minLevel": 15,
-      "description": "Une bénédiction de Chang'e qui restaure 110 points de vie"
+      "description": "Une bénédiction de Chang'e qui restaure 90 points de vie"
     },
     {
       "id": "bolt",
@@ -155,10 +155,10 @@
       "name": "Tribulation Céleste",
       "color": "yellow",
       "type": "damage",
-      "cost": 60,
-      "dmg": 140,
+      "cost": 50,
+      "dmg": 125,
       "minLevel": 15,
-      "description": "La colère du Ciel qui frappe pour 140 dégâts"
+      "description": "La colère du Ciel qui frappe pour 125 dégâts"
     }
   ],
   "sorcererSpells": [
