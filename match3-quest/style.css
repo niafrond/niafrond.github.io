@@ -2838,3 +2838,17 @@ input, textarea, [contenteditable="true"] {
     pointer-events: none;
     z-index: 50;
 }
+
+/* Effets visuels « Économe » (options) : coupe les animations décoratives infinies, garde celles du jeu */
+body.fx-low .tile.suggested::before,
+body.fx-low .tile.suggested::after,
+body.fx-low .tile.joker,
+body.fx-low .tile.joker::before,
+body.fx-low .attack-icon,
+body.fx-low .attack-continue,
+body.fx-low .wm-pulse,
+body.fx-low .wm-hero,
+body.fx-low .wm-cloud { animation: none !important; }
+body.fx-low .tile.suggested { animation: blink 0.85s ease-in-out infinite; }
+body.fx-low .mana-fly-dot { box-shadow: none; }
+.options-row select { font: inherit; max-width: 55%; }

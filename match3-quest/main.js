@@ -10,6 +10,7 @@ import { setMusicEnvironment, setMusicScene, stopMusic } from "./music.js";
 import { proposeTutorial, initTutorialUI, startTutorial, hasTutorialBeenCompleted } from "./tutorial.js";
 import { getMatch3BuildDate, getMatch3Version } from "./version.js";
 import { rechargeReusableItems } from "./items.js";
+import { getOption, setOption, applyOptions } from "./gameOptions.js";
 import { renderMerchant } from "./shop.js";
 import { exportSaveToFile, importSaveFromFile, downloadSaveFile } from "./saveManager.js";
 import { worldZones } from "./worldMap.js";
@@ -364,6 +365,22 @@ function init() {
         localStorage.setItem('player', JSON.stringify(res.player));
         location.reload();
     });
+
+    // Options d'affichage / performance (gameOptions.js)
+    applyOptions();
+    const manaFlightBtn = document.getElementById('opt-mana-flight');
+    const effectsSelect = document.getElementById('opt-effects');
+    const speedSelect = document.getElementById('opt-speed');
+    const syncManaFlightBtn = () => {
+        const on = getOption('manaFlight');
+        if(manaFlightBtn) { manaFlightBtn.textContent = on ? 'Oui' : 'Non'; manaFlightBtn.setAttribute('aria-pressed', String(on)); }
+    };
+    syncManaFlightBtn();
+    if(effectsSelect) effectsSelect.value = getOption('effects');
+    if(speedSelect) speedSelect.value = getOption('speed');
+    manaFlightBtn?.addEventListener('click', () => { setOption('manaFlight', !getOption('manaFlight')); syncManaFlightBtn(); });
+    effectsSelect?.addEventListener('change', () => setOption('effects', effectsSelect.value));
+    speedSelect?.addEventListener('change', () => setOption('speed', speedSelect.value));
 
     const darkModeToggleButton = document.getElementById('dark-mode-toggle-btn');
     initializeThemeUI(darkModeToggleButton);
