@@ -344,3 +344,71 @@ export function openPerimeter(screen) {
     screen.obstacles = toRects(obst);
     return screen;
 }
+
+// Couronne d'eau : les terrains sont entourés d'eau (2 cases, la 2e en bordure irrégulière) pour la cohérence avec les cartes de mer.
+// Elle bloque le passage sauf avec le Pas de Yu (exploration.js : `canWalkOnWater`) et laisse intacts les passages de bord (chaussée de
+// 5 cases de large, 3 de profondeur), les entités, les bâtiments et tout ce qui était atteignable à pied : une case d'eau qui couperait
+// un chemin existant reste de la terre.
+export function addWaterBorder(screen) {
+    if (screen.interior || screen.arena || screen.aquatic || screen.kind === 'house') return screen;
+    const { w, h } = screen;
+    const rng = mulberry32(hashSeed(`${screen.id}|water`));
+    const obst = toSet(screen.obstacles);
+    const liq = toSet(screen.liquids);
+    const keep = new Set([...buildingCells(screen), ...entityCells(screen)]);
+    (screen.exits || []).forEach(e => keep.add(key(e.x, e.y)));
+    // chaussées devant les passages de bord
+    (screen.gates || []).forEach(g => {
+        const along0 = alongOf(g.edge, g.center);
+        for (let k = -2; k <= 2; k++) for (let d = 0; d <= 2; d++) {
+            const c = edgeCell(g.edge, along0 + k, d, w, h);
+            keep.add(key(c.x, c.y));
+        }
+    });
+    // les entités et les sorties sont des obstacles pour le passage (on les atteint depuis une case voisine)
+    const solid = new Set([...entityCells(screen), ...(screen.exits || []).map(e => key(e.x, e.y))]);
+    solid.delete(key(screen.spawn.x, screen.spawn.y));
+    const blocked = (x, y) => obst.has(key(x, y)) || liq.has(key(x, y)) || solid.has(key(x, y));
+    const flood = () => {
+        const seen = new Set([key(screen.spawn.x, screen.spawn.y)]);
+        const queue = [screen.spawn];
+        while (queue.length) {
+            const p = queue.shift();
+            DIRS.forEach(([dx, dy]) => {
+                const nx = p.x + dx, ny = p.y + dy;
+                if (nx < 0 || ny < 0 || nx >= w || ny >= h || seen.has(key(nx, ny)) || blocked(nx, ny)) return;
+                seen.add(key(nx, ny));
+                queue.push({ x: nx, y: ny });
+            });
+        }
+        return seen;
+    };
+    const before = flood();
+    // chaque entité / sortie atteignable à pied doit le rester (une case voisine libre et accessible)
+    const touches = (set, k) => { const [x, y] = k.split(',').map(Number); return DIRS.some(([dx, dy]) => set.has(key(x + dx, y + dy))); };
+    const reachableSolids = [...solid].filter(k => touches(before, k));
+    const candidates = [];
+    for (let x = 0; x < w; x++) for (let y = 0; y < h; y++) {
+        const depth = Math.min(x, y, w - 1 - x, h - 1 - y);
+        if (depth > 1 || keep.has(key(x, y))) continue;
+        if (depth === 1 && rng() < 0.45) continue;   // 2e rangée irrégulière
+        candidates.push([x, y]);
+    }
+    const converted = new Set();
+    candidates.forEach(([x, y]) => {
+        const k = key(x, y);
+        if (liq.has(k)) return;   // déjà de l'eau
+        const wasObstacle = obst.delete(k);
+        liq.add(k);
+        // une case d'eau ne doit rien rendre inaccessible (hors cases déjà converties)
+        const after = flood();
+        let ok = true;
+        for (const c of before) if (c !== k && !converted.has(c) && !after.has(c)) { ok = false; break; }
+        if (ok) ok = reachableSolids.every(sk => touches(after, sk));
+        if (ok) converted.add(k);
+        else { liq.delete(k); if (wasObstacle) obst.add(k); }
+    });
+    screen.obstacles = toRects(obst);
+    screen.liquids = toRects(liq);
+    return screen;
+}
