@@ -103,8 +103,8 @@ describe('XP bonus des belles combinaisons', () => {
         expect(board).toContain("playSfx('skullHit'");
         expect(board).toContain("playSfx('manaGain'");
     });
-    test('sound.js définit les sons de coup et de mana', () => {
-        const snd = fs.readFileSync(new URL('../../sound.js', import.meta.url), 'utf8');
+    test('les recettes de sons (outil de build) définissent les sons de coup et de mana', () => {
+        const snd = fs.readFileSync(new URL('../../tools/audio/sfxRecipes.js', import.meta.url), 'utf8');
         for (const k of ["'weaponHit'", "'spellHit'", "'spellCast'", "'skullHit'", "'manaGain'"]) expect(snd).toContain(`case ${k}`);
     });
 });

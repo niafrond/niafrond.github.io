@@ -1,0 +1,397 @@
+{
+ "music": {
+  "title": {
+   "seconds": 35.6,
+   "sections": 1
+  },
+  "menu": {
+   "seconds": 53.3,
+   "sections": 2
+  },
+  "house": {
+   "seconds": 38.4,
+   "sections": 1
+  },
+  "sanctuary": {
+   "seconds": 58.2,
+   "sections": 2
+  },
+  "moon": {
+   "seconds": 34.3,
+   "sections": 1
+  },
+  "ending": {
+   "seconds": 32,
+   "sections": 1
+  },
+  "village-paddy": {
+   "seconds": 40,
+   "sections": 2
+  },
+  "village-riverbed": {
+   "seconds": 42.7,
+   "sections": 2
+  },
+  "village-bamboo": {
+   "seconds": 38.4,
+   "sections": 2
+  },
+  "village-gobi": {
+   "seconds": 44.7,
+   "sections": 2
+  },
+  "village-storm": {
+   "seconds": 40,
+   "sections": 2
+  },
+  "village-volcano": {
+   "seconds": 40,
+   "sections": 2
+  },
+  "village-savanna": {
+   "seconds": 40,
+   "sections": 2
+  },
+  "village-coast": {
+   "seconds": 40,
+   "sections": 2
+  },
+  "village-fusang": {
+   "seconds": 40,
+   "sections": 2
+  },
+  "village-moon": {
+   "seconds": 49.9,
+   "sections": 2
+  },
+  "wild-paddy": {
+   "seconds": 31,
+   "sections": 1
+  },
+  "wild-riverbed": {
+   "seconds": 33.1,
+   "sections": 1
+  },
+  "wild-bamboo": {
+   "seconds": 30,
+   "sections": 1
+  },
+  "wild-gobi": {
+   "seconds": 34.3,
+   "sections": 1
+  },
+  "wild-storm": {
+   "seconds": 31,
+   "sections": 1
+  },
+  "wild-volcano": {
+   "seconds": 31,
+   "sections": 1
+  },
+  "wild-savanna": {
+   "seconds": 31,
+   "sections": 1
+  },
+  "wild-coast": {
+   "seconds": 31,
+   "sections": 1
+  },
+  "wild-fusang": {
+   "seconds": 31,
+   "sections": 1
+  },
+  "wild-moon": {
+   "seconds": 38.4,
+   "sections": 1
+  },
+  "combat-0": {
+   "seconds": 32.5,
+   "sections": 2
+  },
+  "combat-1": {
+   "seconds": 30.5,
+   "sections": 2
+  },
+  "combat-2": {
+   "seconds": 36.9,
+   "sections": 2
+  },
+  "combat-3": {
+   "seconds": 34.3,
+   "sections": 2
+  },
+  "combat-4": {
+   "seconds": 31.5,
+   "sections": 2
+  },
+  "boss-fengmeng-le-disciple": {
+   "seconds": 34,
+   "sections": 2
+  },
+  "boss-soleil-ardent": {
+   "seconds": 30.7,
+   "sections": 2
+  },
+  "boss-soleil-des-eaux-taries": {
+   "seconds": 36.2,
+   "sections": 2
+  },
+  "boss-soleil-de-cendres": {
+   "seconds": 35.2,
+   "sections": 2
+  },
+  "boss-soleil-des-mirages": {
+   "seconds": 44.3,
+   "sections": 3
+  },
+  "boss-soleil-des-orages": {
+   "seconds": 31.5,
+   "sections": 2
+  },
+  "boss-fengmeng-l-archer-presse": {
+   "seconds": 31,
+   "sections": 2
+  },
+  "boss-soleil-de-magma": {
+   "seconds": 34,
+   "sections": 2
+  },
+  "boss-soleil-des-betes-folles": {
+   "seconds": 31,
+   "sections": 2
+  },
+  "boss-soleil-des-marees": {
+   "seconds": 33.7,
+   "sections": 2
+  },
+  "boss-soleil-lache": {
+   "seconds": 34,
+   "sections": 2
+  },
+  "boss-fengmeng-l-archer-miroir": {
+   "seconds": 30.5,
+   "sections": 2
+  },
+  "boss-fengmeng-rage-et-desespoir": {
+   "seconds": 33.7,
+   "sections": 2
+  },
+  "boss-gardien-de-la-digue": {
+   "seconds": 42.7,
+   "sections": 3
+  },
+  "boss-golem-de-l-ecluse": {
+   "seconds": 32.3,
+   "sections": 2
+  },
+  "boss-gardien-des-cendres": {
+   "seconds": 30.5,
+   "sections": 2
+  },
+  "boss-chef-de-dune-bras-de-sable": {
+   "seconds": 44,
+   "sections": 3
+  },
+  "boss-lion-gardien-fendu": {
+   "seconds": 31,
+   "sections": 2
+  },
+  "boss-forgeron-de-lave": {
+   "seconds": 41.1,
+   "sections": 3
+  },
+  "boss-tigre-alpha-griffe-de-feu": {
+   "seconds": 38,
+   "sections": 2
+  },
+  "boss-serpent-de-maree": {
+   "seconds": 30.5,
+   "sections": 2
+  },
+  "boss-garde-solaire-des-racines": {
+   "seconds": 31.5,
+   "sections": 2
+  },
+  "boss-pretresse-de-givre": {
+   "seconds": 33.7,
+   "sections": 2
+  },
+  "boss-maitresse-tong-la-lame-de-bronze": {
+   "seconds": 42,
+   "sections": 3
+  },
+  "boss-maitre-hong-gang-le-gong-de-cuivre": {
+   "seconds": 31.5,
+   "sections": 2
+  },
+  "boss-maitre-tie-bi-le-bras-de-fer": {
+   "seconds": 31.7,
+   "sections": 2
+  },
+  "boss-dame-yin-yue-la-lune-d-argent": {
+   "seconds": 30.7,
+   "sections": 2
+  },
+  "boss-seigneur-jin-long-le-dragon-d-or": {
+   "seconds": 32.5,
+   "sections": 2
+  },
+  "boss-dame-bi-yu-la-main-de-jade": {
+   "seconds": 34,
+   "sections": 2
+  },
+  "boss-immortel-yun-zhong-celui-des-nuees": {
+   "seconds": 32.5,
+   "sections": 2
+  },
+  "boss-grand-maitre-qian-jian-l-archer-aux-mille-fleches": {
+   "seconds": 43,
+   "sections": 3
+  },
+  "boss-a0": {
+   "seconds": 43.6,
+   "sections": 3
+  },
+  "boss-a1": {
+   "seconds": 41.1,
+   "sections": 3
+  },
+  "boss-a2": {
+   "seconds": 30.7,
+   "sections": 2
+  },
+  "boss-a3": {
+   "seconds": 34.3,
+   "sections": 2
+  },
+  "boss-a4": {
+   "seconds": 43,
+   "sections": 3
+  },
+  "boss-a5": {
+   "seconds": 34,
+   "sections": 2
+  },
+  "boss-a6": {
+   "seconds": 42.7,
+   "sections": 3
+  },
+  "boss-a7": {
+   "seconds": 36.9,
+   "sections": 2
+  }
+ },
+ "sfx": {
+  "swap": {
+   "seconds": 0.22
+  },
+  "uiClick": {
+   "seconds": 0.2
+  },
+  "toggleOn": {
+   "seconds": 0.27
+  },
+  "invalid": {
+   "seconds": 0.25
+  },
+  "turnBonus": {
+   "seconds": 0.31
+  },
+  "spellCast": {
+   "seconds": 0.37
+  },
+  "heal": {
+   "seconds": 0.32
+  },
+  "victory": {
+   "seconds": 0.41
+  },
+  "defeat": {
+   "seconds": 0.49
+  },
+  "battleStart": {
+   "seconds": 0.61
+  },
+  "combatStart": {
+   "seconds": 1.44
+  },
+  "bossStart": {
+   "seconds": 1.77
+  },
+  "introJingle": {
+   "seconds": 8.33
+  },
+  "endingJingle": {
+   "seconds": 11.73
+  },
+  "default": {
+   "seconds": 0.18
+  },
+  "match-color-3": {
+   "seconds": 0.27
+  },
+  "match-color-4": {
+   "seconds": 0.27
+  },
+  "match-color-5": {
+   "seconds": 0.27
+  },
+  "match-skull-3": {
+   "seconds": 0.27
+  },
+  "match-skull-4": {
+   "seconds": 0.27
+  },
+  "match-skull-5": {
+   "seconds": 0.27
+  },
+  "match-combat-3": {
+   "seconds": 0.27
+  },
+  "match-combat-4": {
+   "seconds": 0.27
+  },
+  "match-combat-5": {
+   "seconds": 0.27
+  },
+  "skullHit-p-3": {
+   "seconds": 0.32
+  },
+  "skullHit-p-4": {
+   "seconds": 0.36
+  },
+  "skullHit-p-5": {
+   "seconds": 0.36
+  },
+  "weaponHit-p": {
+   "seconds": 0.32
+  },
+  "spellHit-p": {
+   "seconds": 0.29
+  },
+  "skullHit-e-3": {
+   "seconds": 0.32
+  },
+  "skullHit-e-4": {
+   "seconds": 0.36
+  },
+  "skullHit-e-5": {
+   "seconds": 0.36
+  },
+  "weaponHit-e": {
+   "seconds": 0.32
+  },
+  "spellHit-e": {
+   "seconds": 0.29
+  },
+  "manaGain-3": {
+   "seconds": 0.44
+  },
+  "manaGain-4": {
+   "seconds": 0.49
+  },
+  "manaGain-5": {
+   "seconds": 0.49
+  }
+ }
+}
