@@ -97,7 +97,6 @@ function showClassSelection() {
     actions.className = 'modal-actions';
     actions.innerHTML = `
         <button class="primary" id="confirm-class">Confirmer</button>
-        <button class="secondary" id="skip-class">Sans classe</button>
     `;
     container.appendChild(actions);
     
@@ -125,14 +124,6 @@ function showClassSelection() {
         window.dispatchEvent(new Event('match3:start-tutorial-duel'));
     };
 
-    document.getElementById('skip-class').onclick = () => {
-        // Même sans classe, le joueur doit disposer d'une arme pour se défendre
-        grantStartingWeapon(DEFAULT_STARTING_WEAPON_ID);
-        saveUpdate();
-        modal.classList.remove('active');
-        window.dispatchEvent(new Event('match3:enter-exploration'));
-    };
-    
     modal.classList.add('active');
 }
 
@@ -351,6 +342,9 @@ function init() {
 
     const soundToggleButton = document.getElementById('sound-toggle-btn');
     initializeAudioUI(soundToggleButton);
+
+    // Réinitialiser le jeu : efface la partie (après confirmation) et recharge sur le choix du personnage.
+    document.getElementById('game-reset-btn')?.addEventListener('click', () => clearSaveData());
 
     // Sauvegarde dans un fichier : permet de reprendre la partie sur un autre appareil.
     document.getElementById('save-export-btn')?.addEventListener('click', () => {
