@@ -533,6 +533,53 @@ export default {
         fragment: "Page du carnet (VIII)",
         xp: 325
       }
+    },
+    {
+          "id": "sq_hua_4",
+          "title": "Ce que la mer a gardé",
+          "chapter": "✦ Quête secondaire — Rivage de la Mer Orientale",
+          "giver": "lighthouse_ming",
+          "turnIn": "lighthouse_ming",
+          "requires": [
+                "sq_hua_3",
+                "q_sun_8"
+          ],
+          "side": true,
+          "objectives": [
+                {
+                      "type": "talk",
+                      "target": "crab_old_gong",
+                      "text": "Écouter le Vieux Gong, qui a tout vu (rochers du rivage)",
+                      "lines": [
+                            "Hua ? Elle vient chaque soir au bord de l'eau, quand le huitième soleil plonge. Elle ne pleure pas. Elle compte.",
+                            "Elle compte à voix haute, dans une langue que même les marées ne parlent plus : « un, deux, trois, quatre… ». Elle n'est jamais arrivée à dix."
+                      ]
+                },
+                {
+                      "type": "talk",
+                      "target": "hua_mer",
+                      "text": "Demander à Hua ce qu'elle compte (jetée du phare)",
+                      "lines": [
+                            "Des enfants, archer. Je compte des enfants. Je les ai comptés dix, au matin du monde. Je n'en trouve plus que… ne me faites pas dire le nombre.",
+                            "Vous avez de belles flèches. Je ne vous en veux pas : un seul de mes fils a voulu rester, et il a raison. Le monde doit vivre."
+                      ]
+                }
+          ],
+          "offer": [
+                "Mon phare éclaire la mer, pas les cœurs. Mais il y a des soirs où je vois une femme sur la jetée qui compte, qui compte, et qui s'arrête toujours au même chiffre.",
+                "Interrogez le crabe Gong, puis allez à sa rencontre. Soyez doux : elle ne ressemble pas à quelqu'un qu'on brusque."
+          ],
+          "hint": [
+                "Le Vieux Gong est sur les rochers, Hua sur la jetée près du phare."
+          ],
+          "complete": [
+                "Dix enfants… Je n'aurais pas dû poser la question. Ou bien j'aurais dû la poser plus tôt. Voici une perle d'aube : elle luit comme les premières matinées, avant la colère."
+          ],
+          "reward": {
+                "gold": 140,
+                "fragment": "Perle d'aube",
+                "xp": 200
+          }
     }
   ]
 };

@@ -15,11 +15,25 @@ describe('dialogues d\'avant-combat des soleils', () => {
     });
 });
 
-import { SUN_FALL_CAPTIONS } from '../../cinematics.js';
+import { SUN_FALL_CAPTIONS, REGION_SCENES } from '../../cinematics.js';
 
 describe('chute des soleils', () => {
     test('une légende par soleil', () => {
         expect(SUN_FALL_CAPTIONS).toHaveLength(9);
         expect(new Set(SUN_FALL_CAPTIONS).size).toBe(9);
+    });
+});
+
+import { REGION_ORDER } from '../../world/index.js';
+import { createSession, regionVisitCount } from '../../exploration.js';
+
+describe('découverte de région', () => {
+    test('chaque région a une palette de cinématique', () => {
+        REGION_ORDER.forEach(r => expect(REGION_SCENES[r]).toHaveLength(5));
+    });
+    test('regionVisitCount compte les écrans visités de la région', () => {
+        const s = createSession();
+        expect(regionVisitCount(s, 'rizieres')).toBeGreaterThanOrEqual(1);
+        expect(regionVisitCount(s, 'lune')).toBe(0);
     });
 });

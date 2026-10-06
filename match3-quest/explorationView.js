@@ -16,7 +16,7 @@ import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
-import { playEndingAnimation, playSunFallAnimation, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
+import { playEndingAnimation, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
@@ -679,7 +679,12 @@ export function createExplorationView(cfg) {
                 toast(screen.name, 2200);
                 // Première visite : petit texte d'ambiance du Narrateur.
                 // Jamais de texte du Narrateur en entrant dans une maison.
-                if (res.firstVisit && res.arrival?.length && !screen.interior) openDialog({ ...NARRATOR, title: screen.name }, res.arrival);
+                // Première entrée dans une région : cinématique, puis le texte d'ambiance.
+                const zone = res.firstVisit && !screen.interior && screen.region !== ARENA_REGION
+                    && X.regionVisitCount(session, screen.region) === 1
+                    ? worldZones.find(z => z.id === screen.region) : null;
+                const showArrival = () => { if (res.firstVisit && res.arrival?.length && !screen.interior) openDialog({ ...NARRATOR, title: screen.name }, res.arrival); };
+                if (zone) playRegionDiscovery(zone).then(showArrival); else showArrival();
                 if (res.warning) toast(`${res.warning.regionName} : niveau ${res.warning.minLevel} recommandé — les ennemis y sont redoutables.`, 5000);
                 // Dans une maison, les quêtes déclenchées à l'entrée n'ouvrent pas de dialogue du Narrateur (toasts seulement).
                 if (res.events?.length) processEvents(res.events, screen.interior ? eventsSpoken(res.events) : undefined);

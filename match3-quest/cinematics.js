@@ -818,6 +818,79 @@ export function playSunFallAnimation({ count = 1, name = 'Soleil' } = {}) {
     });
 }
 
+// ── Découverte d'une région ─────────────────────────────────────────────────
+// Courte cinématique jouée la toute première fois que Hou Yi entre dans une région : le héros marche vers
+// l'horizon, les collines défilent à deux vitesses, le ciel prend les couleurs de la région, puis le nom
+// et la description de la région apparaissent (`.cine-region-*`).
+// Palettes [haut du ciel, bas du ciel, collines lointaines, collines proches, accent].
+export const REGION_SCENES = {
+    rizieres: ['#6b2d2a', '#e8a15a', '#8a4a2e', '#4a2418', '#ffd24a'],
+    fleuve: ['#5a3a1c', '#d9a35a', '#7a5a34', '#3a2a14', '#f0d9a0'],
+    bambous: ['#2a2420', '#7a5a4a', '#3a3a30', '#1a1a14', '#9bd1a0'],
+    gobi: ['#7a3a1c', '#ffc46b', '#c4824a', '#8a5a2e', '#fff4c8'],
+    tonnerre: ['#1d1d45', '#6a5aa0', '#3a3a70', '#14143a', '#ffe36b'],
+    volcan: ['#2a0f10', '#d63a2f', '#5a1d1a', '#1b0a0a', '#ffb347'],
+    fauves: ['#7a4a1c', '#e8b04a', '#a8783a', '#5a3a1c', '#fbe7b0'],
+    mer: ['#0d3440', '#58a89f', '#1b5f68', '#0a2a34', '#b4dcd0'],
+    fusang: ['#5a1d3a', '#ffb06b', '#a8504a', '#4a1830', '#ffd24a'],
+    lune: ['#0b0b2b', '#3a3a90', '#2a2a70', '#141446', '#fff4c8']
+};
+
+export function playRegionDiscovery({ id = 'rizieres', name = '', description = '' } = {}) {
+    const pal = REGION_SCENES[id] || REGION_SCENES.rizieres;
+    const DURATION = 5.5;
+    return runScene({
+        extraClass: 'cine-region',
+        duration: DURATION,
+        startSfx: 'introJingle',
+        onMount(overlay) {
+            const box = document.createElement('div');
+            box.className = 'cine-region-text';
+            const kicker = document.createElement('div');
+            kicker.className = 'cine-region-kicker';
+            kicker.textContent = 'Nouvelle région';
+            const title = document.createElement('div');
+            title.className = 'cine-region-title';
+            title.textContent = name;
+            const line = document.createElement('div');
+            line.className = 'cine-region-line';
+            line.textContent = description;
+            box.append(kicker, title, line);
+            overlay.append(box);
+        },
+        draw(ctx, t) {
+            sky(ctx, pal[0], pal[1], 16);
+            if (id === 'lune' || id === 'tonnerre') stars(ctx, t, 36, 0.9);
+            // soleil bas / lune selon la région
+            if (id === 'lune') moon(ctx, Math.round(W * 0.72), Math.round(H * 0.28), 9);
+            else if (id !== 'tonnerre') disc(ctx, pal[4], Math.round(W * 0.72), Math.round(H * 0.5), 8);
+            const ridge = (color, speed, base, amp, freq) => {
+                for (let x = 0; x < W; x++) {
+                    const u = x + t * speed;
+                    const h = Math.round(Math.sin(u * freq) * amp + Math.sin(u * freq * 2.3 + 1) * amp * 0.4);
+                    px(ctx, color, x, base + h, 1, H - base - h);
+                }
+            };
+            ridge(pal[2], 6, Math.round(H * 0.62), 5, 0.045);
+            ridge(pal[3], 16, Math.round(H * 0.78), 3, 0.09);
+            // l'avancée du héros : léger rebond, éclat d'accent sur l'arc
+            const hx = Math.round(W * 0.2);
+            const hy = Math.round(H * 0.78) - 18 + Math.round(Math.abs(Math.sin(t * 6)));
+            archer(ctx, hx, hy, 0, t);
+            // poussière / lueurs dérivantes
+            for (let i = 0; i < 10; i++) {
+                const fx = (W - ((t * (18 + i * 3) + i * 37) % W));
+                px(ctx, pal[4], fx, H * 0.82 + (i % 4) * 4, 1, 1);
+            }
+            // fondu d'entrée / sortie
+            const fade = Math.min(1, t / 0.6) * Math.min(1, (DURATION - t + 0.4) / 0.8);
+            ctx.globalAlpha = 1 - Math.max(0, Math.min(1, fade));
+            px(ctx, '#000000', 0, 0, W, H);
+            ctx.globalAlpha = 1;
+        }
+    });
+}
+
 // Boîte de dialogue pixel au-dessus de l'écran de transition : texte tapé lettre à lettre,
 // toucher/clic/Entrée/Espace pour accélérer puis passer à la réplique suivante.
 // `host` : l'élément `.battle-transition` ; `spriteHtml` : portrait du boss ; renvoie une Promise.

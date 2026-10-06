@@ -533,6 +533,53 @@ export default {
         fragment: "Page du carnet (IX)",
         xp: 360
       }
+    },
+    {
+          "id": "sq_hua_5",
+          "title": "Xihe, mère des dix soleils",
+          "chapter": "✦ Quête secondaire — Cime du Fusang",
+          "giver": "astronomer_xing",
+          "turnIn": "astronomer_xing",
+          "requires": [
+                "sq_hua_4",
+                "q_sun_9"
+          ],
+          "side": true,
+          "objectives": [
+                {
+                      "type": "talk",
+                      "target": "root_elder",
+                      "text": "Interroger la Racine-Ancienne sur la mère des soleils (racines et branches dorées)",
+                      "lines": [
+                            "Xihe. Elle les baignait chaque matin dans la vallée de l'aurore, un par un, avant de les poser sur mes branches. J'étais leur perchoir, elle leur nourrice.",
+                            "Elle est partie le jour où Di Jun lui a pris ses enfants. Elle s'est faite petite. Colporteuse. Elle n'a jamais cessé de les chercher."
+                      ]
+                },
+                {
+                      "type": "talk",
+                      "target": "hua_fusang",
+                      "text": "Dire son vrai nom à Hua (village du Fusang)",
+                      "lines": [
+                            "Vous avez fini par le trouver. Oui : Xihe, mère des dix soleils. Hua est un nom qui ne fait peur à personne.",
+                            "Je ne vous demande pas pardon, ni de me rendre quoi que ce soit. Seulement de me laisser aller là-haut, au pic de la Lune, quand ce sera fini. Je voudrais être là quand elle se lèvera."
+                      ]
+                }
+          ],
+          "offer": [
+                "J'ai observé les étoiles toute ma vie, et rien ne m'a troublée comme cette colporteuse. Ses pas suivent les chutes des soleils comme l'ombre suit l'ombre.",
+                "La Racine-Ancienne a tout vu naître : demandez-lui qui est Hua. Puis dites son vrai nom, à Hua elle-même, et regardez-la."
+          ],
+          "hint": [
+                "La Racine-Ancienne est dans les racines et branches dorées. Hua se trouve au village du Fusang."
+          ],
+          "complete": [
+                "Xihe. Mère des dix soleils. Je n'ai pas le droit de la juger, ni vous. Prenez cette plume de phénix : elle n'a jamais brûlé, parce qu'elle vient d'une mère qui n'a jamais cessé de veiller."
+          ],
+          "reward": {
+                "gold": 190,
+                "fragment": "Plume d'aube",
+                "xp": 390
+          }
     }
   ]
 };
