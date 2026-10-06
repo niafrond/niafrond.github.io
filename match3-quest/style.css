@@ -2386,9 +2386,26 @@ body.dark-mode .tutorial-card {
     #player-stats, #enemy-stats { padding: 3px 5px; font-size: 0.78em; }
     .stat { margin: 1px 0; }
     #board { margin: 2px auto; padding: 4px; grid-gap: 2px; }
-    #spells-container { margin: 2px 0; gap: 4px; }
+    /* Armes, objets et sorts en grille de 3 colonnes (au lieu d'une ligne chacun) : le plateau gagne ~150 px de hauteur,
+       donc des tuiles plus grandes. L'ennemi passe dessous, en puces plus petites. */
+    #spells-container { margin: 2px 0; gap: 4px; flex-direction: column; }
+    #player-spells, #enemy-spells { width: 100%; box-sizing: border-box; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; align-items: stretch; }
+    #weapon-button, #item-button, #spell-buttons, #enemy-weapon-button, #enemy-spell-list { display: contents; }
+    #enemy-spells h4 { grid-column: 1 / -1; }
+    #player-spells > *::before, #player-spells > *::after, #weapon-button::after, #item-button::after { display: none; }
+    #spell-buttons .spell-btn, .weapon-btn, #weapon-button .enemy-spell-item, #item-button .enemy-spell-item,
+    #spell-buttons .enemy-spell-item { width: auto; min-width: 0; margin: 0; padding: 3px 4px; font-size: 0.68em; line-height: 1.2; text-align: center; overflow-wrap: anywhere; }
+    #enemy-spells .enemy-spell-item { margin: 0; padding: 2px 3px; font-size: 0.62em; line-height: 1.2; overflow-wrap: anywhere; }
     .spells-column { padding: 3px; }
     .spells-column h4 { margin: 0 0 2px; font-size: 0.75em; }
+    @media (max-height: 760px) {
+        #enemy-spells h4 { display: none; }
+        #player-spells, #enemy-spells { gap: 2px; }
+        #spell-buttons .spell-btn, .weapon-btn, #weapon-button .enemy-spell-item, #item-button .enemy-spell-item,
+        #spell-buttons .enemy-spell-item { padding: 2px 3px; font-size: 0.62em; }
+        #enemy-spells .enemy-spell-item { padding: 1px 2px; font-size: 0.58em; }
+        #combat-controls button { padding: 3px 10px; font-size: 12px; }
+    }
     #combat-controls { margin: 2px 0 !important; padding-bottom: env(safe-area-inset-bottom); }
     #combat-controls button { padding: 6px 12px; font-size: 13px; margin: 0 3px !important; }
 }
