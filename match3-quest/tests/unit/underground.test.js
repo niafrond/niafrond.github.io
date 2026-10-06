@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { SCREENS } from '../../story.js';
+import { REGION_ORDER } from '../../world/index.js';
 import { UNDERGROUND } from '../../world/underground.js';
 import { createSession, tryMove, currentScreen, isTerrainBlocked } from '../../exploration.js';
-import { merchantStock, availableOffers, buyOffer, MERCHANT_IDS, TORCH_PRICE } from '../../merchants.js';
+import { merchantStock, availableOffers, buyOffer, MERCHANT_IDS, TORCH_PRICE, TORCH_MERCHANTS } from '../../merchants.js';
 
 const catalog = JSON.parse(readFileSync(new URL('../../enemies.catalog.json', import.meta.url), 'utf8'));
 const templateIds = new Set(catalog.map(t => t.id));
@@ -54,20 +55,34 @@ describe('souterrains : cavernes et cryptes dans le noir', () => {
     });
 });
 
+describe('trésors et boss des souterrains', () => {
+    test.each(UNDERGROUND.map(u => [u.id, u]))('%s : nombreux trésors et un boss', (_id, u) => {
+        const s = SCREENS[u.id];
+        expect(s.chests.length).toBeGreaterThanOrEqual(5);
+        const bosses = s.enemies.filter(e => e.boss);
+        expect(bosses).toHaveLength(1);
+        expect(bosses[0].permanent).toBe(true);
+        expect(bosses[0].boss.level).toBe(u.level + 1);
+    });
+});
+
 describe('torche', () => {
-    test('vendue par chaque marchand, une seule fois', () => {
-        MERCHANT_IDS.forEach(id => expect(merchantStock(id).find(o => o.kind === 'torch')).toMatchObject({ price: TORCH_PRICE, unique: true }));
+    const LATE = TORCH_MERCHANTS;
+
+    test('vendue seulement tardivement (dernières régions), une seule fois', () => {
+        MERCHANT_IDS.forEach(id => expect(merchantStock(id).some(o => o.kind === 'torch')).toBe(LATE.includes(id)));
+        expect(LATE.every(id => REGION_ORDER.indexOf(id.replace('merchant_', '')) >= REGION_ORDER.indexOf('fauves'))).toBe(true);
         const hero = { gold: 1000, weapons: [], inventory: [] };
-        const res = buyOffer(MERCHANT_IDS[0], 'torch:torch', hero);
-        expect(res.ok).toBe(true);
+        expect(buyOffer(LATE[0], 'torch:torch', hero).ok).toBe(true);
         expect(hero).toMatchObject({ torch: true, gold: 1000 - TORCH_PRICE });
-        expect(availableOffers(MERCHANT_IDS[1], hero).some(o => o.kind === 'torch')).toBe(false);
-        expect(buyOffer(MERCHANT_IDS[0], 'torch:torch', hero).ok).toBe(false);
+        expect(availableOffers(LATE[1], hero).some(o => o.kind === 'torch')).toBe(false);
+        expect(buyOffer(LATE[0], 'torch:torch', hero).ok).toBe(false);
     });
 
-    test('trop pauvre : pas de torche', () => {
+    test('introuvable chez les marchands du début ; trop pauvre : pas de torche', () => {
+        expect(buyOffer(MERCHANT_IDS[0], 'torch:torch', { gold: 9999, weapons: [], inventory: [] }).ok).toBe(false);
         const hero = { gold: TORCH_PRICE - 1, weapons: [], inventory: [] };
-        expect(buyOffer(MERCHANT_IDS[0], 'torch:torch', hero).ok).toBe(false);
+        expect(buyOffer(LATE[0], 'torch:torch', hero).ok).toBe(false);
         expect(hero.torch).toBeUndefined();
     });
 });

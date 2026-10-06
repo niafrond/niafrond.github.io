@@ -51,10 +51,12 @@ export const MOUNTS = {
         description: 'Une monture robuste et docile : vous parcourez les cartes deux fois plus vite.' }
 };
 // Un marchand par monture : le Maître Zhu des Bambous (3e région) vend le cheval, très cher.
-// Torche : vendue par tous les marchands, elle éclaire les cavernes et cryptes plongées dans le noir (world/underground.js).
+// Torche : vendue par les marchands des dernières régions, elle éclaire les cavernes et cryptes plongées dans le noir (world/underground.js).
 export const TORCH = { id: 'torch', name: 'Torche', type: 'torch',
     description: 'Une torche de résine qui ne s\'éteint pas : éclaire largement les cavernes et cryptes, où l\'on n\'y voit sinon qu\'à un pas.' };
-export const TORCH_PRICE = 60;
+export const TORCH_PRICE = 400;
+// Vendue tardivement : le joueur traverse d'abord les souterrains à tâtons, puis revient avec la torche après avoir avancé dans l'intrigue.
+export const TORCH_MERCHANTS = ['merchant_fauves', 'merchant_mer', 'merchant_fusang', 'merchant_lune'];
 export const MOUNT_OFFERS = { merchant_bambous: { id: 'horse', price: 480 } };
 
 export const MERCHANT_IDS = MERCHANTS.map(m => m.id);
@@ -124,7 +126,7 @@ export function merchantStock(merchantId, ngPlus = 0) {
 
     const mount = MOUNT_OFFERS[merchantId];
     return [
-        { key: 'torch:torch', kind: 'torch', id: 'torch', section: 'gear', rarity: 'common', unique: true, price: TORCH_PRICE },
+        ...(TORCH_MERCHANTS.includes(merchantId) ? [{ key: 'torch:torch', kind: 'torch', id: 'torch', section: 'gear', rarity: 'common', unique: true, price: TORCH_PRICE }] : []),
         ...(mount ? [{ key: `mount:${mount.id}`, kind: 'mount', id: mount.id, section: 'mount', rarity: 'rare', unique: true, price: mount.price }] : []),
         ...stall.map(e => offerOf(e.kind, e.obj, 'stall', e.rarity)),
         ...rareEntries.map(e => offerOf(e.kind, e.obj, 'rare', e.rarity)),

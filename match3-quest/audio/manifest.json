@@ -287,6 +287,26 @@
   "boss-a7": {
    "seconds": 36.9,
    "sections": 2
+  },
+  "boss-hebo-comte-du-fleuve-noye": {
+   "seconds": 35.2,
+   "sections": 2
+  },
+  "boss-abbe-de-cendre-gardien-du-sutra": {
+   "seconds": 31.5,
+   "sections": 2
+  },
+  "boss-roi-momie-des-caravanes": {
+   "seconds": 33.1,
+   "sections": 2
+  },
+  "boss-gardien-de-la-forge-noire": {
+   "seconds": 31,
+   "sections": 2
+  },
+  "boss-wu-gang-bucheron-de-la-lune": {
+   "seconds": 38,
+   "sections": 2
   }
  },
  "sfx": {
