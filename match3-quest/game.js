@@ -1156,7 +1156,7 @@ export function updateStats(){
                     <span class="hp-text"><span id="player-hp-current">${targetPlayerHp}</span>/${player.maxHp}</span>
                 </div>
             </div>
-            <div class="stat"><strong>Atk:</strong> ${player.attack} <strong>Def:</strong> ${player.defense || 0}</div>
+            <div class="stat"><strong>Atk:</strong> ${player.attack} <strong>Def:</strong> ${player.defense || 0} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span></div>
             <div class="stat">
                 <div class="mana-dots">
                     <span class="mana-dot mana-red" title="${targetPlayerMana.red}"></span><span id="player-mana-red">${targetPlayerMana.red}</span>
@@ -1164,7 +1164,6 @@ export function updateStats(){
                     <span class="mana-dot mana-green" title="${targetPlayerMana.green}"></span><span id="player-mana-green">${targetPlayerMana.green}</span>
                     <span class="mana-dot mana-yellow" title="${targetPlayerMana.yellow}"></span><span id="player-mana-yellow">${targetPlayerMana.yellow}</span>
                     <span class="mana-dot mana-purple" title="${targetPlayerMana.purple}"></span><span id="player-mana-purple">${targetPlayerMana.purple}</span>
-                    <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span>
                 </div>
             </div>`;
         
@@ -1198,7 +1197,7 @@ export function updateStats(){
                 <span class="hp-text"><span id="enemy-hp-current">${targetEnemyHp}</span>/${enemy.maxHp}</span>
             </div>
         </div>
-        <div class="stat"><strong>Atk:</strong> ${enemy.attack} <strong>Def:</strong> ${enemy.defense || 0}</div>
+        <div class="stat"><strong>Atk:</strong> ${enemy.attack} <strong>Def:</strong> ${enemy.defense || 0} <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span></div>
         <div class="stat">
             <div class="mana-dots">
                 <span class="mana-dot mana-red" title="${targetEnemyMana.red}"></span><span id="enemy-mana-red">${targetEnemyMana.red}</span>
@@ -1206,7 +1205,6 @@ export function updateStats(){
                 <span class="mana-dot mana-green" title="${targetEnemyMana.green}"></span><span id="enemy-mana-green">${targetEnemyMana.green}</span>
                 <span class="mana-dot mana-yellow" title="${targetEnemyMana.yellow}"></span><span id="enemy-mana-yellow">${targetEnemyMana.yellow}</span>
                 <span class="mana-dot mana-purple" title="${targetEnemyMana.purple}"></span><span id="enemy-mana-purple">${targetEnemyMana.purple}</span>
-                <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span>
             </div>
         </div>`;
     // Animer les compteurs ennemi

@@ -346,7 +346,7 @@ progress::-webkit-progress-value {
 progress.enemy-bar::-webkit-progress-value {
     background: #e74c3c;
 }
-.pa-stat { margin-left: 4px; white-space: nowrap; font-weight: bold; }
+.pa-stat { margin-left: 6px; white-space: nowrap; font-weight: bold; }
 .mana-dots {
     display: inline-flex;
     align-items: center;
@@ -2386,9 +2386,9 @@ body.dark-mode .tutorial-card {
     .stats-container { margin: 2px 0; gap: 4px; }
     #player-stats, #enemy-stats { padding: 3px 5px; font-size: 0.78em; flex: 1 1 0; min-width: 0; box-sizing: border-box; }
     /* mana + points d'action sur une même ligne, resserrés pour tenir dans la carte */
-    #player-stats .mana-dots, #enemy-stats .mana-dots { flex-wrap: nowrap; font-size: 0.92em; }
-    #player-stats .mana-dot, #enemy-stats .mana-dot { width: 9px; height: 9px; margin-right: 1px; }
-    #player-stats .mana-dots > span:not(.mana-dot):not(.pa-stat), #enemy-stats .mana-dots > span:not(.mana-dot):not(.pa-stat) { margin-right: 3px; }
+    #player-stats .mana-dots, #enemy-stats .mana-dots { flex-wrap: wrap; font-size: 0.85em; row-gap: 0; }
+    #player-stats .mana-dot, #enemy-stats .mana-dot { width: 8px; height: 8px; margin-right: 1px; }
+    #player-stats .mana-dots > span:not(.mana-dot):not(.pa-stat), #enemy-stats .mana-dots > span:not(.mana-dot):not(.pa-stat) { margin-right: 2px; }
     .pa-stat { margin-left: 1px; }
     .stat { margin: 1px 0; }
     #board { margin: 2px auto; padding: 4px; grid-gap: 2px; }
