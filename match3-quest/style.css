@@ -2395,7 +2395,7 @@ body.dark-mode .tutorial-card {
     /* Armes, objets et sorts en grille de 3 colonnes (au lieu d'une ligne chacun) : le plateau gagne ~150 px de hauteur,
        donc des tuiles plus grandes. L'ennemi passe dessous, en puces plus petites. */
     #spells-container { margin: 2px 0; gap: 4px; flex-direction: column; }
-    #player-spells, #enemy-spells { width: 100%; box-sizing: border-box; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; align-items: stretch; }
+    #player-spells, #enemy-spells { width: 100%; box-sizing: border-box; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; align-items: stretch; }
     #weapon-button, #item-button, #spell-buttons, #enemy-weapon-button, #enemy-spell-list { display: contents; }
     #enemy-spells h4 { grid-column: 1 / -1; }
     #player-spells > *::before, #player-spells > *::after, #weapon-button::after, #item-button::after { display: none; }
