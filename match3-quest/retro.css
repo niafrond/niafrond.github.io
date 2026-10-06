@@ -607,7 +607,23 @@ body.rt .wm-shallows path { stroke-width: 136px; }
 
 /* Portrait : plateau compact pour que tout le combat tienne sans défilement */
 @media (orientation: portrait) and (max-width: 820px) {
-    body.rt #board { padding: 4px; border-width: 3px; box-shadow: inset 0 0 0 2px var(--rt-gold); }
+    body.rt #board { border-width: 3px; box-shadow: inset 0 0 0 2px var(--rt-gold); }
+    /* Bordures et ombres plus fines : plus de place pour la grille et les boutons */
+    /* Affichage compact : paddings et espaces réduits au minimum pour donner la place à la grille */
+    body.rt .game-container { border-width: 2px; box-shadow: inset 0 0 0 1px var(--rt-gold); padding: 2px 3px; }
+    body.rt .stats-container { margin: 2px 0; gap: 3px; }
+    body.rt #player-stats, body.rt #enemy-stats { padding: 2px 4px; }
+    body.rt #board { margin: 2px auto; padding: 3px; grid-gap: 2px; }
+    body.rt #spells-container { margin: 3px 0 2px; gap: 3px; }
+    body.rt .spells-column { padding: 3px; }
+    body.rt #combat-controls { margin: 2px 0 !important; }
+    body.rt #combat-controls button { padding: 4px 10px; margin: 0 2px !important; }
+    body.rt #player-stats, body.rt #enemy-stats, body.rt .spells-column, body.rt #spell-buttons .spell-btn,
+    body.rt .weapon-btn, body.rt .enemy-spell-item { border-width: 2px; box-shadow: 0 2px 0 var(--rt-ink); }
+    body.rt #board { border-width: 2px; }
+    body.rt .tabs { border-right-width: 3px; }
+    body.rt button { border-width: 2px; box-shadow: 0 2px 0 var(--rt-ink), inset 0 2px 0 rgba(255, 255, 255, 0.45); margin: 2px 2px 4px; }
+    body.rt #combat-controls button { box-shadow: 0 2px 0 var(--rt-ink), inset 0 2px 0 rgba(255, 255, 255, 0.45); }
     /* Rail d'onglets étroit : icônes seules (nom en infobulle) */
     body.rt .tabs { padding: 4px 0 4px 3px; }
     body.rt .tab-btn { font-size: 0; padding: 9px 6px; }
