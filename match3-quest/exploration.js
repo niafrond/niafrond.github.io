@@ -31,7 +31,7 @@ import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaD
 export const AGGRO_RADIUS = 1;
 // Rayon de vigilance d'un ennemi : 1 case pour un ennemi normal, 0 pour un boss (ou le gardien d'une porte) : il faut alors
 // aller le chercher explicitement (le toucher). Valable sur toutes les cartes, agrandies ou non.
-export const aggroOf = def => (def?.boss || def?.guardsDoor ? 0 : AGGRO_RADIUS);
+export const aggroOf = def => (def?.boss || def?.guardsDoor ? 0 : (def?.sight ?? AGGRO_RADIUS));
 export const PATROL_STEP_MS = 650;
 export const START_SCREEN = SCREENS.rizieres_village ? 'rizieres_village' : 'rizieres';
 // Nombre de déplacements pendant lesquels les zones de vigilance sont ignorées après une
@@ -315,12 +315,12 @@ function arenaObjectiveText(session) {
         return `${a.cleared.length}/${ARENA_TIERS.length} cercles terminés · ${open} porte${open > 1 ? 's' : ''} ouverte${open > 1 ? 's' : ''} · porte sud ou « Sortir » pour quitter l'arène`;
     }
     const tier = arenaTier(screen.arena.tier);
-    if (screen.arena.master) {
-        return progressReached(session, screen.enemies[0]?.id)
-            ? `${tier.name} terminé ! Sortie à l'est, ou « Sortir » pour quitter l'arène`
-            : `Affrontez ${tier.master.name}, maître du ${tier.name} · « Sortir » pour quitter l'arène`;
-    }
-    return `${tier.name}, salle ${screen.arena.room}/${tier.waves - 1} : battez le gardien pour ouvrir la porte · « Sortir » pour quitter l'arène`;
+    const master = screen.enemies.find(e => e.arena?.master);
+    if (progressReached(session, master?.id)) return `${tier.name} terminé ! Retournez au parvis par la porte sud, ou « Sortir » pour quitter l'arène`;
+    const left = screen.enemies.filter(e => !e.arena?.master && !session.data.defeated.includes(e.id)).length;
+    return left
+        ? `${tier.name} : ${left} gardien${left > 1 ? 's' : ''} à battre avant le maître · « Sortir » pour quitter l'arène`
+        : `Affrontez ${tier.master.name}, maître du ${tier.name} · « Sortir » pour quitter l'arène`;
 }
 
 export function teleportToScreen(session, screenId) {
