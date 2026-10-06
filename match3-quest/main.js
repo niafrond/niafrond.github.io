@@ -165,14 +165,14 @@ function init() {
         onOpenMap: () => showWorldMap(),
         onOpenArena: () => openArena(),
         onOpenMenu: () => window.switchTab('weapons'),
-        renderMerchant,
-        setMusicScene
+        renderMerchant
     });
     exploration.init();
 
     // Musique d'ambiance (pentatonique chinoise, music.js) : la scène voulue se déduit de l'état de l'interface.
     setMusicEnvironment({ getContext: getSharedAudioContext, getVolume: getMusicVolume, isMuted: isMusicMuted });
     let combatIntroUntil = 0;
+    let lastCombatVictory = true;   // issue du dernier combat : choisit la musique de l'écran de résultat
     window.addEventListener('match3:combat-start', () => { combatIntroUntil = Date.now() + COMBAT_INTRO_MS; });
     const desiredMusic = () => {
         if(document.querySelector('.cine-ending')) return ['ending'];
@@ -181,7 +181,7 @@ function init() {
         // Combat : musique générée « combat » / « boss » ; l'écran de résultat repasse sur la musique de menu.
         const fight = getCombatMusicScene();
         if(fight) return Date.now() < combatIntroUntil ? null : [fight, getCombatMusicOptions()];   // jingle d'entrée d'abord, puis la musique
-        if(document.getElementById('battle-result-screen')?.classList.contains('active')) return ['menu'];
+        if(document.getElementById('battle-result-screen')?.classList.contains('active')) return [lastCombatVictory ? 'victory' : 'defeat'];
         if(document.getElementById('class-modal')?.classList.contains('active')) return ['title'];
         const tab = document.querySelector('.tab-panel.active')?.id;
         if(tab && tab !== 'tab-combat') return ['menu'];
@@ -268,7 +268,7 @@ function init() {
     };
 
     combatHooks.onVictory = () => exploration.onCombatVictory();
-    combatHooks.onEnd = isVictory => exploration.onCombatEnd(isVictory);
+    combatHooks.onEnd = isVictory => { lastCombatVictory = !!isVictory; exploration.onCombatEnd(isVictory); };
     window.addEventListener('match3:enter-exploration', enterExploration);
     // Nouvelle partie, classe choisie : on enchaîne directement sur le duel-tutoriel contre Fengmeng.
     window.addEventListener('match3:start-tutorial-duel', () => {

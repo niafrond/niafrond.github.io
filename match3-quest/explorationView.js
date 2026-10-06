@@ -1561,10 +1561,6 @@ export function createExplorationView(cfg) {
             syncVisual(true);
             refreshHud();
             cfg.onSave();
-            // Play victory or defeat music (about 30 seconds, then return to exploration music)
-            if (cfg.setMusicScene) {
-                cfg.setMusicScene(isVictory ? 'victory' : 'defeat');
-            }
         },
 
         // Nouvelle partie : le duel d'entraînement contre Fengmeng sert de tutoriel guidé.
