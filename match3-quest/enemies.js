@@ -104,7 +104,7 @@ function buildResistances(template, level){
 
 function buildSpellLoadout(template, enemyLevel){
     const classSpells = getSpellsByClass(template.playerClass, enemyLevel);
-    const genericSpells = getAllSpells().filter(sp => !sp.class && sp.minLevel <= enemyLevel);
+    const genericSpells = getAllSpells().filter(sp => !sp.class && !sp.playerOnly && sp.minLevel <= enemyLevel);
 
     const preferredColors = template.spellProfile?.preferredColors || [];
     const maxSpells = Math.floor(enemyLevel / 5) + 1;
@@ -174,7 +174,7 @@ function buildEnemyFromTemplate(template, enemyLevel, allWeaponsArg = allWeapons
 
     let enemyWeapon = null;
     if(template.hasWeapon !== false){
-        const availableWeapons = allWeaponsArg.filter(w => w.minLevel <= enemyLevel);
+        const availableWeapons = allWeaponsArg.filter(w => w.minLevel <= enemyLevel && !w.playerOnly);
         if(availableWeapons.length > 0){
             enemyWeapon = pickRandom(availableWeapons);
         }

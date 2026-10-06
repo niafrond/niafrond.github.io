@@ -135,6 +135,111 @@ export const allWeapons = [
         description: "Un arc terrifiant dont le sifflement glace le sang des ennemis"
     },
 
+    // === ARCS LOURDS À DEUX MAINS (très puissants, très chers en PA, main gauche occupée ; jamais portés par les ennemis) ===
+    {
+        id: "arc_du_dragon_de_jade",
+        name: "Arc du Dragon de Jade",
+        type: WeaponType.BOW,
+        damage: 125,
+        actionPoints: 8,
+        minLevel: 16,
+        biome: "moon",
+        rarity: WeaponRarity.RARE,
+        twoHanded: true,
+        playerOnly: true,
+        description: "Un arc colossal sculpté dans un dragon de jade : il faut tendre la corde à deux mains et prendre son temps"
+    },
+    {
+        id: "arc_du_mont_tai",
+        name: "Arc du Mont Tai",
+        type: WeaponType.BOW,
+        damage: 140,
+        actionPoints: 8,
+        minLevel: 22,
+        biome: "gobi",
+        rarity: WeaponRarity.RARE,
+        twoHanded: true,
+        playerOnly: true,
+        description: "Lourd comme la montagne sacrée, il écrase l'ennemi d'une seule flèche"
+    },
+    {
+        id: "arc_de_la_foudre_celeste",
+        name: "Arc de la Foudre Céleste",
+        type: WeaponType.BOW,
+        damage: 185,
+        actionPoints: 9,
+        minLevel: 30,
+        biome: "storm",
+        rarity: WeaponRarity.RARE,
+        twoHanded: true,
+        playerOnly: true,
+        description: "Sa flèche est un éclair que seul un archer à deux mains peut retenir"
+    },
+    {
+        id: "arc_des_marees_de_l_est",
+        name: "Arc des Marées de l'Est",
+        type: WeaponType.BOW,
+        damage: 210,
+        actionPoints: 9,
+        minLevel: 38,
+        biome: "fusang",
+        rarity: WeaponRarity.LEGENDARY,
+        twoHanded: true,
+        playerOnly: true,
+        description: "Une corde tendue comme la marée avant la vague géante"
+    },
+    {
+        id: "arc_de_la_forge_de_zhurong",
+        name: "Arc de la Forge de Zhurong",
+        type: WeaponType.BOW,
+        damage: 265,
+        actionPoints: 10,
+        minLevel: 46,
+        biome: "volcano",
+        rarity: WeaponRarity.LEGENDARY,
+        twoHanded: true,
+        playerOnly: true,
+        description: "Forgé dans le feu du dieu Zhurong, brûlant à mains nues"
+    },
+    {
+        id: "arc_des_neuf_fleuves",
+        name: "Arc des Neuf Fleuves",
+        type: WeaponType.BOW,
+        damage: 290,
+        actionPoints: 10,
+        minLevel: 54,
+        biome: "riverbed",
+        rarity: WeaponRarity.LEGENDARY,
+        twoHanded: true,
+        playerOnly: true,
+        description: "Neuf fleuves coulent dans son bois ; une flèche les libère tous"
+    },
+    {
+        id: "arc_du_grand_leviathan",
+        name: "Arc du Grand Léviathan",
+        type: WeaponType.BOW,
+        damage: 355,
+        actionPoints: 11,
+        minLevel: 62,
+        biome: "coast",
+        rarity: WeaponRarity.LEGENDARY,
+        twoHanded: true,
+        playerOnly: true,
+        description: "Taillé dans l'échine d'un monstre marin, il exige tout le corps"
+    },
+    {
+        id: "arc_fendeur_de_ciel",
+        name: "Arc Fendeur de Ciel",
+        type: WeaponType.BOW,
+        damage: 420,
+        actionPoints: 12,
+        minLevel: 70,
+        rarity: WeaponRarity.LEGENDARY,
+        twoHanded: true,
+        playerOnly: true,
+        description: "L'arc qui abattit les neuf soleils : une seule flèche, deux mains, un tour entier"
+    },
+
     {
         id: "arc_de_bronze",
         name: "Arc de Bronze",
