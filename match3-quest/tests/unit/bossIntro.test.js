@@ -14,3 +14,12 @@ describe('dialogues d\'avant-combat des soleils', () => {
         expect(bossIntroLines({ enemyId: 'x', name: 'Soleil', level: 1 })).toHaveLength(2);
     });
 });
+
+import { SUN_FALL_CAPTIONS } from '../../cinematics.js';
+
+describe('chute des soleils', () => {
+    test('une légende par soleil', () => {
+        expect(SUN_FALL_CAPTIONS).toHaveLength(9);
+        expect(new Set(SUN_FALL_CAPTIONS).size).toBe(9);
+    });
+});

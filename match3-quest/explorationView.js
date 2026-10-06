@@ -16,7 +16,7 @@ import { STORY_TITLE, REGION_UNLOCK_LEVEL } from './story.js';
 import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
-import { playEndingAnimation, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
+import { playEndingAnimation, playSunFallAnimation, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
 import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
@@ -301,6 +301,13 @@ export function createExplorationView(cfg) {
 
     // Traite les événements d'histoire. `spoken` : quêtes dont le texte vient d'être dit par un PNJ.
     function processEvents(events, spoken = new Set()) {
+        const fall = events.find(e => e.type === 'sunFall');
+        if (fall) {
+            // Chute d'un soleil : cinématique d'abord, puis le reste des événements (butin, quêtes, interludes)
+            const rest = events.filter(e => e !== fall);
+            playSunFallAnimation(fall).then(() => processEvents(rest, spoken));
+            return;
+        }
         let gold = 0;
         let xp = 0;
         events.forEach(ev => {
@@ -1543,7 +1550,12 @@ export function createExplorationView(cfg) {
             ensureSession();
             const id = session.rt.pendingEnemyId;
             if (!id) return;
+            const firstKill = !session.data.defeated.includes(id);
             const events = X.markEnemyDefeated(session, id);
+            if (firstKill && /^sun_[1-9]$/.test(id)) {
+                const def = session.rt.enemyIndex[id]?.def;
+                events.unshift({ type: 'sunFall', paid: true, count: session.data.defeated.filter(d => /^sun_[1-9]$/.test(d)).length, name: def?.boss?.name || def?.name || 'Soleil' });
+            }
             const gold = events.reduce((sum, e) => sum + (e.gold || 0), 0);
             if (gold > 0) cfg.onGold(gold);
             const xpGain = events.reduce((sum, e) => sum + (e.xp || 0), 0);

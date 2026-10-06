@@ -2488,6 +2488,23 @@ body.dark-mode .tutorial-card {
     font: 12px "Pixelify Sans", monospace;
 }
 
+/* Chute d'un soleil : légende en bas de l'écran */
+.cine-sunfall-text {
+    position: absolute;
+    left: 50%;
+    bottom: max(36px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    width: min(92vw, 560px);
+    text-align: center;
+    color: #fff4c8;
+    font-family: "Pixelify Sans", monospace;
+    text-shadow: 1px 1px 0 #1b1030, -1px -1px 0 #1b1030, 1px -1px 0 #1b1030, -1px 1px 0 #1b1030;
+    pointer-events: none;
+    animation: cine-in 1.2s ease-out 3s both;
+}
+.cine-sunfall-title { font-size: 1.3em; margin-bottom: 6px; color: #ffd24a; }
+.cine-sunfall-line { font-size: 1em; line-height: 1.35; }
+
 /* Dialogue de boss pendant la transition de combat */
 .battle-transition.with-dialog .bt-title { animation: none; opacity: 1; transform: translateY(-14%); }
 .bt-dialog {
