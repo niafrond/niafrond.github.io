@@ -476,6 +476,214 @@
       "heal": 40,
       "manaDrain": 5,
       "description": "Inflige 100 dégâts, vous soigne de 40 PV et retire 5 mana de chaque couleur à l'ennemi"
+    },
+    {
+      "id": "twinDragonsStrike",
+      "name": "Frappe des Deux Dragons",
+      "type": "damage",
+      "cost": {
+        "red": 30,
+        "blue": 30
+      },
+      "dmg": 168,
+      "minLevel": 16,
+      "playerOnly": true,
+      "description": "Deux dragons, l'un de feu et l'autre de glace, frappent ensemble : 168 dégâts"
+    },
+    {
+      "id": "vermilionBirdDive",
+      "name": "Plongeon de l'Oiseau Vermillon",
+      "type": "damage",
+      "cost": {
+        "red": 35,
+        "yellow": 35
+      },
+      "dmg": 205,
+      "minLevel": 20,
+      "playerOnly": true,
+      "description": "L'Oiseau Vermillon fond du ciel dans les flammes et la foudre : 205 dégâts"
+    },
+    {
+      "id": "azureDragonRoar",
+      "name": "Rugissement du Dragon Azur",
+      "type": "damage",
+      "cost": {
+        "blue": 30,
+        "green": 30,
+        "purple": 30
+      },
+      "dmg": 270,
+      "minLevel": 24,
+      "playerOnly": true,
+      "description": "Le Dragon Azur rugit et ébranle l'ennemi : 270 dégâts"
+    },
+    {
+      "id": "whiteTigerClaw",
+      "name": "Griffe du Tigre Blanc",
+      "type": "damage",
+      "cost": {
+        "red": 40,
+        "yellow": 40,
+        "green": 30
+      },
+      "dmg": 340,
+      "minLevel": 28,
+      "playerOnly": true,
+      "description": "La griffe du Tigre Blanc de l'Ouest déchire l'ennemi : 340 dégâts"
+    },
+    {
+      "id": "thunderDukeWrath",
+      "name": "Colère du Duc du Tonnerre",
+      "type": "damage",
+      "cost": {
+        "yellow": 60,
+        "blue": 60
+      },
+      "dmg": 385,
+      "minLevel": 33,
+      "playerOnly": true,
+      "description": "Le Duc du Tonnerre déchaîne orage et pluie : 385 dégâts"
+    },
+    {
+      "id": "fiveElementsSeal",
+      "name": "Sceau des Cinq Phases",
+      "type": "damage",
+      "cost": {
+        "red": 25,
+        "blue": 25,
+        "green": 25,
+        "yellow": 25,
+        "purple": 25
+      },
+      "dmg": 410,
+      "minLevel": 38,
+      "playerOnly": true,
+      "description": "Les cinq phases scellent l'ennemi sous leur poids : 410 dégâts"
+    },
+    {
+      "id": "heavenlyRiverFlood",
+      "name": "Crue du Fleuve Céleste",
+      "type": "damage",
+      "cost": {
+        "blue": 80,
+        "green": 60
+      },
+      "dmg": 490,
+      "minLevel": 43,
+      "playerOnly": true,
+      "description": "La Voie lactée déborde et emporte tout : 490 dégâts"
+    },
+    {
+      "id": "nineSunsFall",
+      "name": "Chute des Neuf Soleils",
+      "type": "damage",
+      "cost": {
+        "red": 75,
+        "yellow": 75
+      },
+      "dmg": 540,
+      "minLevel": 48,
+      "playerOnly": true,
+      "description": "Les neuf soleils retombent sur la terre : 540 dégâts"
+    },
+    {
+      "id": "kunlunMountainFall",
+      "name": "Chute du Mont Kunlun",
+      "type": "damage",
+      "cost": {
+        "green": 60,
+        "purple": 60,
+        "red": 60
+      },
+      "dmg": 665,
+      "minLevel": 54,
+      "playerOnly": true,
+      "description": "Le mont Kunlun s'abat sur l'ennemi : 665 dégâts"
+    },
+    {
+      "id": "pangusAxe",
+      "name": "Hache de Pangu",
+      "type": "damage",
+      "cost": {
+        "red": 70,
+        "yellow": 70,
+        "blue": 70
+      },
+      "dmg": 820,
+      "minLevel": 60,
+      "playerOnly": true,
+      "description": "La hache qui sépara le ciel et la terre : 820 dégâts"
+    },
+    {
+      "id": "jadeEmperorDecree",
+      "name": "Décret de l'Empereur de Jade",
+      "type": "damage",
+      "cost": {
+        "red": 50,
+        "blue": 50,
+        "green": 50,
+        "yellow": 50,
+        "purple": 50
+      },
+      "dmg": 1000,
+      "minLevel": 66,
+      "playerOnly": true,
+      "description": "Un décret impérial que nul ne peut refuser : 1000 dégâts"
+    },
+    {
+      "id": "heavenTribulationEnd",
+      "name": "Fin de la Tribulation",
+      "type": "damage",
+      "cost": {
+        "red": 80,
+        "blue": 80,
+        "yellow": 80,
+        "green": 60
+      },
+      "dmg": 1260,
+      "minLevel": 70,
+      "playerOnly": true,
+      "description": "La dernière foudre du Ciel : 1260 dégâts"
+    },
+    {
+      "id": "jadeSpringBlessing",
+      "name": "Bénédiction de la Source de Jade",
+      "type": "heal",
+      "cost": {
+        "green": 30,
+        "blue": 20
+      },
+      "heal": 100,
+      "minLevel": 20,
+      "playerOnly": true,
+      "description": "Restaure 100 points de vie"
+    },
+    {
+      "id": "immortalPeach",
+      "name": "Pêche d'Immortalité",
+      "type": "heal",
+      "cost": {
+        "green": 50,
+        "purple": 30
+      },
+      "heal": 168,
+      "minLevel": 40,
+      "playerOnly": true,
+      "description": "Restaure 168 points de vie"
+    },
+    {
+      "id": "queenMotherElixir",
+      "name": "Élixir de la Reine Mère d'Occident",
+      "type": "heal",
+      "cost": {
+        "green": 60,
+        "blue": 40,
+        "purple": 40
+      },
+      "heal": 294,
+      "minLevel": 60,
+      "playerOnly": true,
+      "description": "Restaure 294 points de vie"
     }
   ],
   "sorcererSpells": [
