@@ -823,36 +823,48 @@ progress.enemy-bar::-webkit-progress-value {
     font-size: 1rem;
 }
 
-/* Onglets */
+/* Onglets : colonne latérale (cinq entrées toujours visibles, sans défilement) */
+.game-container {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+}
+.game-container > :not(.tabs) { grid-column: 2; min-width: 0; }
 .tabs {
+    grid-column: 1;
+    grid-row: 1 / span 20;
     display: flex;
+    flex-direction: column;
     gap: 4px;
     position: sticky;
     top: 0;
     z-index: 20;
     background: #fff;
-    padding-top: 4px;
-    margin-bottom: 12px;
-    border-bottom: 2px solid #ddd;
-    overflow-x: auto; /* 5 onglets : défilement plutôt que d'élargir la page sur petit écran */
+    padding: 8px 0 8px 4px;
+    border-right: 2px solid #ddd;
+    border-radius: 15px 0 0 15px;
 }
 .tab-btn {
-    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
     white-space: nowrap;
     background: none;
     border: none;
-    padding: 8px 16px;
+    padding: 10px 10px;
     cursor: pointer;
-    font-size: 14px;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
+    font-size: 12px;
+    border-right: 3px solid transparent;
+    margin-right: -2px;
     transition: all 0.2s;
 }
+.tab-btn .ic { font-size: 22px; }
 .tab-btn:hover {
     background: #f0f0f0;
 }
 .tab-btn.active {
-    border-bottom-color: #3498db;
+    border-right-color: #3498db;
     font-weight: bold;
 }
 .tab-panel {
@@ -2092,7 +2104,7 @@ body.dark-mode .tab-btn:hover {
 }
 
 body.dark-mode .tab-btn.active {
-    border-bottom-color: #5fb0ff;
+    border-right-color: #5fb0ff;
 }
 
 body.dark-mode #player-stats,
@@ -2365,9 +2377,11 @@ body.dark-mode .tutorial-card {
    La taille des tuiles est calculée par board.js à partir de la hauteur restante. */
 @media (orientation: portrait) and (max-width: 820px) {
     body { padding: 0; min-height: 100dvh; }
-    .game-container, body.rt .game-container { border-radius: 0; box-sizing: border-box; min-height: 100dvh; display: flex; flex-direction: column; }
-    .tabs { margin-bottom: 2px; padding-top: 2px; flex: 0 0 auto; }
-    .tab-btn { padding: 5px 8px; font-size: 12px; }
+    .game-container, body.rt .game-container { border-radius: 0; box-sizing: border-box; min-height: 100dvh; }
+    .tabs { border-radius: 0; padding: 2px 0 2px 2px; align-self: stretch; }
+    /* Écran étroit : le rail ne montre que les icônes (le nom reste en infobulle / lecteur d'écran) */
+    .tab-btn { padding: 8px 6px; font-size: 0; }
+    .tab-btn .ic { font-size: 22px; }
     .stats-container { margin: 2px 0; gap: 4px; }
     #player-stats, #enemy-stats { padding: 3px 5px; font-size: 0.78em; }
     .stat { margin: 1px 0; }

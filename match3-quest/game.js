@@ -956,8 +956,10 @@ export function loadGameData() {
             // Ancienne Sphère de Flammes du sorcier : elle partageait l'id « fireball » avec le Souffle du Dragon de Feu.
             (player.activeSpells || []).forEach(sp => { if(sp?.id === 'fireball' && sp.class === 'sorcerer') sp.id = 'flameSphere'; });
             player.availableSpells = loaded.availableSpells ?? player.availableSpells;
-            player.weapons = loaded.weapons ?? [];
-            player.equippedWeapon = loaded.equippedWeapon ?? null;
+            // Armes : toujours les fiches du catalogue actuel (les anciens ids de sabres, haches… sont convertis en arcs ; les inconnues sont retirées).
+            const catalogWeapon = w => (w?.id ? getWeaponById(w.id) : null);
+            player.weapons = (loaded.weapons ?? []).map(catalogWeapon).filter((w, i, arr) => w && arr.findIndex(x => x?.id === w.id) === i);
+            player.equippedWeapon = catalogWeapon(loaded.equippedWeapon);
             player.availableWeapons = loaded.availableWeapons ?? player.availableWeapons;
             player.combatPoints = loaded.combatPoints ?? player.combatPoints;
             player.bonusTurn = normalizeBonusTurnValue(loaded.bonusTurn ?? player.bonusTurn);
@@ -967,7 +969,8 @@ export function loadGameData() {
             player.defense = loaded.defense ?? player.defense;
             player.inventory = loaded.inventory ?? player.inventory;
             player.equipment = { rightHand: null, leftHand: null, item: null, ...(loaded.equipment || {}) };
-            player.equipment.rightHand = loaded.equippedWeapon ?? null;
+            player.equipment.rightHand = player.equippedWeapon;
+            if(player.equipment.leftHand && player.equipment.leftHand.type !== 'shield') player.equipment.leftHand = catalogWeapon(player.equipment.leftHand);
             player.activeInventoryIndex = loaded.activeInventoryIndex ?? player.activeInventoryIndex;
             player.tempAttack = loaded.tempAttack ?? player.tempAttack;
             player.tempDefense = loaded.tempDefense ?? player.tempDefense;
@@ -3088,8 +3091,8 @@ export function equipWeapon(weaponId, hand = 'right'){
         log('Vous ne pouvez pas modifier vos armes pendant le combat !');
         return;
     }
-    const weapon = allWeapons.find(w => w.id === weaponId);
-    if(!weapon) return;
+    const weapon = getWeaponById(weaponId);
+    if(!weapon){ log('Arme inconnue.'); return; }
     if(player.level < weapon.minLevel){
         log(`Nécessite niveau ${weapon.minLevel} pour équiper ${weapon.name}.`);
         return;
