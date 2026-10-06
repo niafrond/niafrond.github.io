@@ -155,6 +155,23 @@ const SCENES = {
         accomp: { kind: 'arp', inst: 'guzheng', vel: 0.3, keep: 0.8, lo: 43 },
         pad: { inst: 'sheng', bars: 4, vel: 0.2 },
         perc: 'none', bells: { prob: 0.3, vel: 0.35 }
+    },
+    victory: {
+        label: 'Victoire', description: 'Triomphal et joyeux : dizi, cloche, gong, pipa.',
+        root: 2, scale: 'gong', bpm: 96, lo: 72, hi: 91,
+        melody: { inst: 'dizi', vel: 0.75, cells: LIVELY, rest: 0.1, orn: 0.2, bend: 0.1 },
+        hetero: { inst: 'pipa', oct: 0, vel: 0.4 },
+        accomp: { kind: 'pluck', inst: 'guzheng', vel: 0.32, keep: 0.65, lo: 43 },
+        pad: { inst: 'sheng', bars: 2, vel: 0.25 },
+        perc: 'bright', bells: { prob: 0.4, vel: 0.4 }
+    },
+    defeat: {
+        label: 'Défaite', description: 'Sombre et solennel : erhu grave, xiao, gong lent.',
+        root: 0, scale: 'yu', bpm: 54, lo: 55, hi: 79,
+        melody: { inst: 'erhu', vel: 0.65, cells: SLOW, rest: 0.2, orn: 0.2, bend: 0.5 },
+        par: { inst: 'xiao', interval: -7, vel: 0.3 },
+        pad: { inst: 'sheng', bars: 2, vel: 0.3 },
+        perc: 'gong0', gliss: 0.4
     }
 };
 

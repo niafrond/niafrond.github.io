@@ -8,7 +8,7 @@
  *        boss-<nom du boss en minuscules, tirets> (un thème par boss) · boss-a<0..7> (thème d'archétype, repli).
  */
 
-export const SCENE_IDS = ['title', 'menu', 'village', 'house', 'wild', 'sanctuary', 'moon', 'ending', 'combat', 'boss'];
+export const SCENE_IDS = ['title', 'menu', 'village', 'house', 'wild', 'sanctuary', 'moon', 'ending', 'combat', 'boss', 'victory', 'defeat'];
 export const BIOMES = ['paddy', 'riverbed', 'bamboo', 'gobi', 'storm', 'volcano', 'savanna', 'coast', 'fusang', 'moon'];
 export const COMBAT_STYLE_COUNT = 5;
 export const BOSS_ARCHETYPE_COUNT = 8;
@@ -48,6 +48,7 @@ export function trackCandidates(sceneId, { biome, boss, variant } = {}) {
         const name = boss ?? variant;
         return name ? [`boss-${bossSlug(name)}`, `boss-a${bossArchetypeIndex(name)}`] : ['boss-a0'];
     }
+    if (sceneId === 'victory' || sceneId === 'defeat') return [sceneId];
     return [sceneId];
 }
 

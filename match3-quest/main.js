@@ -165,7 +165,8 @@ function init() {
         onOpenMap: () => showWorldMap(),
         onOpenArena: () => openArena(),
         onOpenMenu: () => window.switchTab('weapons'),
-        renderMerchant
+        renderMerchant,
+        setMusicScene
     });
     exploration.init();
 
