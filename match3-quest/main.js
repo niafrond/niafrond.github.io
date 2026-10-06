@@ -140,7 +140,7 @@ function init() {
         canvas: document.getElementById('explore-canvas'),
         getSaved: () => player.exploration,
         setSaved: data => { player.exploration = data; },
-        getHero: () => ({ classId: player.class, name: player.name, mount: player.mount || null }),
+        getHero: () => ({ classId: player.class, name: player.name, mount: player.mount || null, torch: Boolean(player.torch) }),
         getPlayerLevel: () => player.level,
         getWeakness: templateId => { const c = weakColorOfTemplate(templateId); return c ? colorName(c) : null; },
         onEncounter: encounter => startEncounterCombat(encounter),

@@ -51,6 +51,10 @@ export const MOUNTS = {
         description: 'Une monture robuste et docile : vous parcourez les cartes deux fois plus vite.' }
 };
 // Un marchand par monture : le Maître Zhu des Bambous (3e région) vend le cheval, très cher.
+// Torche : vendue par tous les marchands, elle éclaire les cavernes et cryptes plongées dans le noir (world/underground.js).
+export const TORCH = { id: 'torch', name: 'Torche', type: 'torch',
+    description: 'Une torche de résine qui ne s\'éteint pas : éclaire largement les cavernes et cryptes, où l\'on n\'y voit sinon qu\'à un pas.' };
+export const TORCH_PRICE = 60;
 export const MOUNT_OFFERS = { merchant_bambous: { id: 'horse', price: 480 } };
 
 export const MERCHANT_IDS = MERCHANTS.map(m => m.id);
@@ -120,6 +124,7 @@ export function merchantStock(merchantId, ngPlus = 0) {
 
     const mount = MOUNT_OFFERS[merchantId];
     return [
+        { key: 'torch:torch', kind: 'torch', id: 'torch', section: 'gear', rarity: 'common', unique: true, price: TORCH_PRICE },
         ...(mount ? [{ key: `mount:${mount.id}`, kind: 'mount', id: mount.id, section: 'mount', rarity: 'rare', unique: true, price: mount.price }] : []),
         ...stall.map(e => offerOf(e.kind, e.obj, 'stall', e.rarity)),
         ...rareEntries.map(e => offerOf(e.kind, e.obj, 'rare', e.rarity)),
@@ -133,6 +138,7 @@ export function merchantStock(merchantId, ngPlus = 0) {
 
 export function offerObject(offer) {
     if (offer.kind === 'mount') return MOUNTS[offer.id] || null;
+    if (offer.kind === 'torch') return TORCH;
     return offer.kind === 'weapon' ? allWeapons.find(w => w.id === offer.id) : allItems.find(i => i.id === offer.id);
 }
 
@@ -143,6 +149,7 @@ export function availableOffers(merchantId, hero, ngPlus = 0) {
         if (o.unique && sold.includes(o.key)) return false;
         if (o.kind === 'weapon' && (hero.weapons || []).some(w => w.id === o.id)) return false;
         if (o.kind === 'mount' && hero.mount) return false;   // une seule monture
+        if (o.kind === 'torch' && hero.torch) return false;   // une seule torche
         return true;
     });
 }
@@ -157,7 +164,9 @@ export function buyOffer(merchantId, key, hero, ngPlus = 0) {
         return { ok: false, message: `Pas assez d'or ! Coût : ${offer.price}, vous avez ${hero.gold || 0}.` };
     }
     hero.gold -= offer.price;
-    if (offer.kind === 'mount') {
+    if (offer.kind === 'torch') {
+        hero.torch = true;
+    } else if (offer.kind === 'mount') {
         hero.mount = obj.id;
     } else if (offer.kind === 'weapon') {
         if (!hero.weapons) hero.weapons = [];

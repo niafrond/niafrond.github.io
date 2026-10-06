@@ -60,6 +60,7 @@ const BIOMES = {
     coast: { a: '#e6d7b0', b: '#dccda6', path: '#f0e4c4', cliff: '#8a7650', liquid: '#1d5fa8', sky: ['#7ec4ec', '#e6f5fb'], decor: ['wave', 'rock', 'wave'] },
     fusang: { a: '#f0dc8c', b: '#e8d27e', path: '#fff0b0', cliff: '#b88a2a', liquid: '#e8b830', sky: ['#fde6a6', '#fffbea'], decor: ['tree', 'lantern', 'tree'] },
     house: { a: '#c9a06a', b: '#bd9560', path: '#a8483a', cliff: '#5a3a24', liquid: '#6ab7c9', sky: ['#3a2a20', '#5a4130'], decor: ['chair', 'jar', 'bed', 'books', 'lantern', 'teapot'] },
+    cave: { a: '#4a4440', b: '#433d39', path: '#5d554e', cliff: '#1c1815', liquid: '#2a3f55', sky: ['#0b0a0c', '#1c1815'], decor: ['rock', 'mountain', 'rock'] },
     moon: { a: '#c9cde8', b: '#bec3e0', path: '#e4e6f4', cliff: '#3a3f78', liquid: '#6f86d8', sky: ['#171a4a', '#3b3f86'], decor: ['moon', 'lantern', 'moon'] },
     ...ARENA_BIOMES   // parvis et salles de l'Arène des Mille Flèches (arena.js)
 };
@@ -676,7 +677,7 @@ export function createExplorationView(cfg) {
                 vis.enemies = {};
                 syncVisual(true);
                 refreshHud();
-                toast(screen.name, 2200);
+                toast(screen.dark && !cfg.getHero().torch ? `${screen.name} : il fait noir, une torche (en vente chez les marchands) aiderait.` : screen.name, screen.dark ? 4200 : 2200);
                 // Première visite : petit texte d'ambiance du Narrateur.
                 // Jamais de texte du Narrateur en entrant dans une maison.
                 // Première entrée dans une région : cinématique, puis le texte d'ambiance.
@@ -1276,6 +1277,19 @@ export function createExplorationView(cfg) {
             }
         });
         drawQuestCompass(P, vis, tile, pulse, now, labelSize);
+        if (screen.dark) drawDarkness(P(vis.px + 0.5, vis.py + 0.5), tile, Boolean(cfg.getHero().torch), now, vw, canvas.clientHeight);
+    }
+
+    // Souterrain : tout est noir sauf un halo autour du héros (étroit à tâtons, large et vacillant avec la torche).
+    function drawDarkness(c, tile, torch, now, vw, vh) {
+        const r = tile * (torch ? 4.6 + 0.12 * Math.sin(now / 140) : 1.5);
+        const g = ctx.createRadialGradient(c.x, c.y, r * 0.2, c.x, c.y, r);
+        const tint = torch ? '30,14,0' : '0,0,0';
+        g.addColorStop(0, `rgba(${tint},0)`);
+        g.addColorStop(0.55, `rgba(${tint},${torch ? 0.25 : 0.55})`);
+        g.addColorStop(1, `rgba(${tint},0.97)`);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, vw, vh);
     }
 
     // Indicateur de direction de la quête suivie : flèche dorée autour du héros, trait pointillé vers la cible
