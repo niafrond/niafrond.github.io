@@ -180,9 +180,11 @@ function syncBoardTileSize(){
 
     const parentWidth = boardDiv.parentElement?.clientWidth || 0;
     const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    // Mobile en portrait : la grille occupe toute la largeur (priorité sur la hauteur : la page défile au besoin).
+    const fullWidth = Boolean(window.matchMedia?.('(orientation: portrait) and (max-width: 820px)').matches);
     const widthBudget = Math.min(
         parentWidth > 0 ? parentWidth : Number.POSITIVE_INFINITY,
-        viewportWidth > 0 ? (viewportWidth - 24) : Number.POSITIVE_INFINITY,
+        viewportWidth > 0 ? (viewportWidth - (fullWidth ? 4 : 24)) : Number.POSITIVE_INFINITY,
         980
     );
 
@@ -197,7 +199,7 @@ function syncBoardTileSize(){
 
     const tileSizeFromWidth = Math.floor(usableWidth / boardSize);
     const tileSizeFromHeight = getMaxTileSizeFromViewport(boardDiv);
-    const tileSize = Math.max(10, Math.min(tileSizeFromWidth, tileSizeFromHeight));
+    const tileSize = Math.max(10, fullWidth ? tileSizeFromWidth : Math.min(tileSizeFromWidth, tileSizeFromHeight));
     boardDiv.style.setProperty('--tile-size', `${tileSize}px`);
 }
 
