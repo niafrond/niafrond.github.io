@@ -16,3 +16,10 @@ describe('infobulles : appui bref sans infobulle', () => {
         expect(src).toMatch(/pointerType === 'mouse'/);
     });
 });
+
+describe('armes des anciennes sauvegardes', () => {
+    it('equipWeapon et loadGameData passent par le catalogue (getWeaponById, ids hérités convertis)', () => {
+        expect(src).toMatch(/const weapon = getWeaponById\(weaponId\);/);
+        expect(src).toMatch(/const catalogWeapon = w => \(w\?\.id \? getWeaponById\(w\.id\) : null\);/);
+    });
+});
