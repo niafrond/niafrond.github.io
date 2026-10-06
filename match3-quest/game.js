@@ -1651,8 +1651,14 @@ export function useWeapon(hand = 'right'){
     
     actionGuard.markPlayerAction();
     player.combatPoints -= weapon.actionPoints;
-    let dmg = weapon.damage + (player.attack || 0);
+    logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
+    strikeWithWeapon(weapon);
+    finishPlayerTurn();
+}
 
+// Coup d'arme du joueur sur l'ennemi (dégâts, critique, vol de vie, animation) ; ne consomme ni PA ni tour.
+function strikeWithWeapon(weapon, { free = false } = {}){
+    let dmg = weapon.damage + (player.attack || 0);
     const biomeBonus = weaponBiomeBonus(weapon, enemy.biome);
     if(biomeBonus > 0) {
         dmg += biomeBonus;
@@ -1689,14 +1695,11 @@ export function useWeapon(hand = 'right'){
 
     const icon = getWeaponIcon(weapon.type);
 
-    logActiveAction(`utilise l'arme ${weapon.name} (cout ${weapon.actionPoints} PA)`);
-
     const critSuffix = isCrit ? ' CRITIQUE !' : '';
     showCombatAnimation({ icon, title: weapon.name, damage: `-${dmg} dégâts${critSuffix}`, target: `→ ${enemy.name}` }, true);
-    log(`${icon} Vous utilisez ${weapon.name} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}`);
-    
-    finishPlayerTurn();
+    log(`${icon} Vous utilisez ${weapon.name}${free ? ' gratuitement' : ''} et infligez ${dmg} dégâts.${isCrit ? ' Coup critique !' : ''}`);
 }
+
 
 export function castSpell(spellId){
     if(gameState.combatState !== 'active'){ log("Aucun combat en cours."); return; }
@@ -3039,12 +3042,19 @@ export function decideFirstTurn(){
             target: playerStarts ? '→ À vous de jouer !' : '→ Ennemi joue en premier'
         }, playerStarts, { autoHideMs: (1400 + 1100 * lines.length) * animationFactor() });
     };
+    // Coups d'ouverture gratuits : l'embuscade (attaque par derrière) et la faiblesse repérée frappent chacune une fois avec l'arme courante.
+    const openingStrikes = (prep?.tags || []).filter(t => t === 'ambush' || t === 'observed').length;
+    const startEnemy = () => {
+        if(!openingStrikes){ setTimeout(() => enemyTurn(), announceMs); return; }
+        runOpeningStrikes(openingStrikes, announceMs, () => enemyTurn());
+    };
     if(prep?.playerFirst || prep?.enemyFirst){
         const playerStarts = Boolean(prep.playerFirst);
         currentTurn = playerStarts ? 'player' : 'enemy';
         announce({ icon: 'bolt', title: 'Préparation du terrain', source: '', target: playerStarts ? '→ À vous de jouer !' : '→ Ennemi joue en premier' }, playerStarts);
         log(`Premier tour : ${playerStarts ? 'Joueur' : 'Ennemi'} (préparation du terrain)`);
-        if(!playerStarts) setTimeout(() => enemyTurn(), announceMs);
+        if(!playerStarts) startEnemy();
+        else if(openingStrikes) runOpeningStrikes(openingStrikes, announceMs, () => {});
         return;
     }
     const playerAgility = player.attributes.agility || 0;
@@ -3069,8 +3079,33 @@ export function decideFirstTurn(){
     currentTurn = starter;
     log(`Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'}`);
     if(starter === 'enemy'){
-        setTimeout(() => enemyTurn(), announceMs);
+        startEnemy();
+    } else if(openingStrikes){
+        runOpeningStrikes(openingStrikes, announceMs, () => {});
     }
+}
+
+// Coups gratuits et automatiques de l'arme courante au début du combat (le plateau reste bloqué le temps des animations).
+const OPENING_STRIKE_MS = 1800;
+function runOpeningStrikes(count, delayMs, done){
+    const weapon = player.equippedWeapon;
+    if(!weapon){ log("Aucune arme équipée : pas de coup d'ouverture."); setTimeout(done, delayMs); return; }
+    const wasPlayerTurn = currentTurn === 'player';
+    if(wasPlayerTurn) currentTurn = 'enemy';
+    const step = i => {
+        if(gameState.combatState !== 'active') return;
+        if(i >= count){
+            if(wasPlayerTurn) currentTurn = 'player';
+            updateStats();
+            done();
+            return;
+        }
+        log(i === 0 && (enemy?.prep?.tags || []).includes('ambush') ? 'Attaque par derrière !' : 'Faiblesse exploitée : coup supplémentaire !');
+        strikeWithWeapon(weapon, { free: true });
+        updateStats();
+        setTimeout(() => step(i + 1), OPENING_STRIKE_MS * animationFactor());
+    };
+    setTimeout(() => step(0), delayMs);
 }
 
 // -------------------------------------
