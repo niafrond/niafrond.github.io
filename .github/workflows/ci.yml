@@ -178,18 +178,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Detect changed folders
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            apk:
+              - 'flash-guess/**'
+              - 'flash-guess-android/**'
+
       - name: Setup Node.js
+        if: steps.filter.outputs.apk == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
       - name: Setup Java
+        if: steps.filter.outputs.apk == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Setup Android SDK
+        if: steps.filter.outputs.apk == 'true'
         uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: 12266719
@@ -197,24 +209,30 @@ jobs:
           packages: 'platform-tools'
 
       - name: Install SDK components
+        if: steps.filter.outputs.apk == 'true'
         run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Accept SDK licenses
+        if: steps.filter.outputs.apk == 'true'
         run: yes | sdkmanager --licenses || true
 
       - name: Install Capacitor
+        if: steps.filter.outputs.apk == 'true'
         working-directory: flash-guess-android
         run: npm install
 
       - name: Add Android platform
+        if: steps.filter.outputs.apk == 'true'
         working-directory: flash-guess-android
         run: npx cap add android
 
       - name: Copy web assets
+        if: steps.filter.outputs.apk == 'true'
         working-directory: flash-guess-android
         run: npx cap copy android
 
       - name: Apply Android customizations
+        if: steps.filter.outputs.apk == 'true'
         run: |
           JAVA_DIR="flash-guess-android/android/app/src/main/java/io/github/niafrond/flashguess"
           mkdir -p "$JAVA_DIR"
@@ -227,9 +245,11 @@ jobs:
           cp flash-guess-android/src/main/res/xml/file_paths.xml "$XML_DIR/file_paths.xml"
 
       - name: Run Android unit tests
+        if: steps.filter.outputs.apk == 'true'
         working-directory: flash-guess-android/android
         run: ./gradlew testDebugUnitTest --no-daemon
 
       - name: Build debug APK
+        if: steps.filter.outputs.apk == 'true'
         working-directory: flash-guess-android/android
         run: ./gradlew assembleDebug --no-daemon

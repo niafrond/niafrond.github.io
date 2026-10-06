@@ -124,8 +124,19 @@ body.rt .tabs {
     padding: 8px 0 8px 6px;
     gap: 6px;
     border-radius: 2px 0 0 2px;
-    align-self: stretch;
-    position: static;
+    align-self: start;       /* pas d'étirement : sinon « sticky » ne peut pas suivre le défilement */
+    position: sticky;
+    top: 0;
+    max-height: 100dvh;
+    overflow-y: auto;
+}
+/* Le rail brun couvre toute la hauteur de la page ; les onglets (sticky) restent visibles par-dessus. */
+body.rt .game-container::before {
+    content: "";
+    grid-column: 1;
+    grid-row: 1 / span 20;
+    background: var(--rt-brown);
+    border-right: 4px solid var(--rt-ink);
 }
 
 body.rt .tab-btn {
@@ -633,7 +644,7 @@ body.rt .wm-shallows path { stroke-width: 136px; }
     body.rt #player-stats, body.rt #enemy-stats, body.rt .spells-column, body.rt #spell-buttons .spell-btn,
     body.rt .weapon-btn, body.rt .enemy-spell-item { border-width: 2px; box-shadow: 0 2px 0 var(--rt-ink); }
     body.rt #board { border-width: 2px; }
-    body.rt .tabs { border-right-width: 3px; }
+    body.rt .tabs, body.rt .game-container::before { border-right-width: 3px; }
     body.rt button { border-width: 2px; box-shadow: 0 2px 0 var(--rt-ink), inset 0 2px 0 rgba(255, 255, 255, 0.45); margin: 2px 2px 4px; }
     body.rt #combat-controls button { box-shadow: 0 2px 0 var(--rt-ink), inset 0 2px 0 rgba(255, 255, 255, 0.45); }
     /* Rail d'onglets étroit : icônes seules (nom en infobulle) */
