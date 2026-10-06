@@ -9,7 +9,9 @@ import { allItems, useItem, isCombatLongEffect } from '../../items.js';
 import { allWeapons } from '../../weapons.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const spells = JSON.parse(readFileSync(join(root, 'spells.json'), 'utf8')).allSpells;
+const allGeneric = JSON.parse(readFileSync(join(root, 'spells.json'), 'utf8')).allSpells;
+const spells = allGeneric.filter(s => !s.playerOnly);      // sorts courants (budget de mana de base)
+const multiSpells = allGeneric.filter(s => s.playerOnly);  // sorts multimana de haut niveau (niv. 16 à 70)
 const reusables = allItems.filter(i => i.type === 'reusable');
 const enemyDamagePerTurn = level => 6 + 1.5 * level;
 const COLORS = 5;
@@ -120,6 +122,49 @@ describe('sorts', () => {
 
     test('aucun sort ne coûte plus que la réserve de mana de base (50)', () => {
         spells.forEach(s => expect(totalCost(s)).toBeLessThanOrEqual(50));
+    });
+});
+
+describe('sorts multimana', () => {
+    test('au moins 12 sorts de dégâts multimana, jusqu\'au niveau 70', () => {
+        const dmg = multiSpells.filter(s => s.type === 'damage');
+        expect(dmg.length).toBeGreaterThanOrEqual(12);
+        expect(Math.max(...dmg.map(s => s.minLevel))).toBe(70);
+    });
+
+    test('au moins deux couleurs, jamais lancés par les ennemis', () => {
+        multiSpells.forEach(s => {
+            expect(Object.keys(s.cost).length).toBeGreaterThanOrEqual(2);
+            expect(s.playerOnly).toBe(true);
+        });
+    });
+
+    test('dégâts : 2,7 à 4,3 par mana, plus rentables aux hauts niveaux', () => {
+        const dmg = multiSpells.filter(s => s.type === 'damage').sort((a, b) => a.minLevel - b.minLevel);
+        dmg.forEach(s => {
+            expect(s.dmg / totalCost(s)).toBeGreaterThanOrEqual(2.7);
+            expect(s.dmg / totalCost(s)).toBeLessThanOrEqual(4.3);
+        });
+        dmg.slice(1).forEach((s, i) => expect(s.dmg).toBeGreaterThan(dmg[i].dmg));
+    });
+
+    test('soins : ≤ 2,1 PV par mana', () => {
+        multiSpells.filter(s => s.type === 'heal').forEach(s => expect(s.heal / totalCost(s)).toBeLessThanOrEqual(2.1));
+    });
+});
+
+describe('arcs à deux mains lourds', () => {
+    const heavy = allWeapons.filter(w => w.twoHanded && w.minLevel >= 16);
+    test('au moins 8 arcs, très chers en PA, jamais portés par les ennemis', () => {
+        expect(heavy.length).toBeGreaterThanOrEqual(8);
+        heavy.forEach(w => { expect(w.actionPoints).toBeGreaterThanOrEqual(8); expect(w.playerOnly).toBe(true); });
+    });
+    test('beaucoup plus puissants que les arcs à une main du même niveau', () => {
+        heavy.forEach(w => {
+            const oneHand = allWeapons.filter(o => !o.twoHanded && o.minLevel <= w.minLevel).map(o => o.damage);
+            expect(w.damage).toBeGreaterThanOrEqual(Math.max(...oneHand) * 1.25);
+            expect((w.damage + 15) / w.actionPoints).toBeGreaterThanOrEqual(10.5 + 0.30 * w.minLevel);
+        });
     });
 });
 
