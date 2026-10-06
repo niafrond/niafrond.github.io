@@ -2439,6 +2439,14 @@ body.dark-mode .tutorial-card {
         #enemy-spells .enemy-spell-item { padding: 2px 2px; font-size: 0.66em; }
         #combat-controls button { padding: 3px 10px; font-size: 12px; }
     }
+    /* Assez de place : armes, objets et sorts du joueur en liste verticale (une ligne chacun).
+       board.js ajoute .spells-compact (grille 3 colonnes ci-dessus) quand la liste ne tient pas dans l'écran. */
+    #spells-container:not(.spells-compact) #player-spells { display: flex; flex-direction: column; gap: 4px; }
+    #spells-container:not(.spells-compact) #weapon-button,
+    #spells-container:not(.spells-compact) #item-button,
+    #spells-container:not(.spells-compact) #spell-buttons { display: flex; flex-direction: column; gap: 4px; }
+    #spells-container:not(.spells-compact) #weapon-button:empty,
+    #spells-container:not(.spells-compact) #item-button:empty { display: none; }
     #combat-controls { margin: 2px 0 !important; padding-bottom: env(safe-area-inset-bottom); }
     #combat-controls button { padding: 8px 14px; font-size: clamp(13px, 3.8vw, 17px); margin: 0 3px !important; }
 }
