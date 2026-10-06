@@ -464,7 +464,13 @@ body.rt .levelup-header h2 {
     text-shadow: 2px 2px 0 var(--rt-sand);
 }
 
-body.rt .battle-result-screen { background: rgba(10, 6, 24, 0.7); }
+body.rt .battle-result-screen {
+    background: var(--rt-paper);
+    border: 3px solid var(--rt-ink);
+    border-radius: 6px;
+    padding: 20px;
+    box-shadow: 6px 6px 0 var(--rt-shadow);
+}
 
 /* ── Boutique ───────────────────────────────────────────────────────────────── */
 body.rt .shop-gold-display {
@@ -598,9 +604,15 @@ body.rt .shop-price-tag {
 body.rt .battle-result-card { padding: 18px 22px; }
 body.rt .battle-result-loot { list-style: none; padding: 0; margin: 8px 0 0; }
 body.rt .battle-result-loot li { padding: 2px 0; }
+body.rt .battle-result-xp { font-family: var(--rt-title); font-size: 11px; line-height: 1.6; }
+body.rt .battle-result-tip {
+    background: var(--rt-sand);
+    border: 3px solid var(--rt-ink);
+    color: var(--rt-text);
+    box-shadow: 0 3px 0 var(--rt-ink);
+}
 /* Arène des Mille Flèches (arena.js) : dans l'arène, le bouton du HUD devient la sortie. */
 body.rt .explore-hud-buttons button.arena-exit { background: #9b2f2a; color: #fff6dc; }
-body.rt .battle-result-xp { font-family: var(--rt-title); font-size: 11px; line-height: 1.6; }
 
 /* Carte du monde à dix régions : côte et écume ajustées à des îlots plus petits (cf. LAND_PATH_WIDTH) */
 body.rt .wm-shallows path { stroke-width: 136px; }
