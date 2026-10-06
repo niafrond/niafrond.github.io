@@ -536,6 +536,53 @@ export default {
         fragment: "Page du carnet (IV)",
         xp: 155
       }
+    },
+    {
+          "id": "sq_hua_3",
+          "title": "La carte des pas de Hua",
+          "chapter": "✦ Quête secondaire — Désert de Gobi",
+          "giver": "storyteller_yun",
+          "turnIn": "storyteller_yun",
+          "requires": [
+                "sq_hua_2",
+                "q_sun_4"
+          ],
+          "side": true,
+          "objectives": [
+                {
+                      "type": "talk",
+                      "target": "mapmaker_ali",
+                      "text": "Faire tracer par Ali le trajet de Hua sur sa carte (campement des cartographes)",
+                      "lines": [
+                            "Je trace les pas de Hua depuis trois jours, et c'est curieux : elle ne suit pas les routes. Elle suit votre route, archer, avec une lune de retard.",
+                            "Chaque soleil que vous éteignez, elle arrive ensuite au village voisin. Jamais avant. Jamais très longtemps après."
+                      ]
+                },
+                {
+                      "type": "talk",
+                      "target": "hua_gobi",
+                      "text": "Demander à Hua pourquoi elle vous suit (oasis)",
+                      "lines": [
+                            "Je ne vous suis pas. Je vous précède… de peu. Quelqu'un doit être là quand la lumière s'éteint, pour qu'elle ne tombe pas toute seule.",
+                            "Ne me posez pas la question à voix haute dans la prochaine région, d'accord ? Les murs y ont des oreilles."
+                      ]
+                }
+          ],
+          "offer": [
+                "Je raconte des histoires de caravane, mais la plus étrange est sous mes yeux : une colporteuse qui suit un archer comme une ombre suit son maître.",
+                "Ali dessine des cartes : demandez-lui de tracer son chemin. Puis allez trouver Hua et regardez comment elle répond."
+          ],
+          "hint": [
+                "Ali est dans le campement des cartographes. Hua se tient près de l'oasis."
+          ],
+          "complete": [
+                "« Quelqu'un doit être là quand la lumière s'éteint. » Je ne la raconterai pas, celle-là, archer. Certaines histoires ne se racontent qu'à voix basse, et tant qu'elles ne sont pas finies."
+          ],
+          "reward": {
+                "gold": 100,
+                "fragment": "Sable de miroir",
+                "xp": 120
+          }
     }
   ]
 };

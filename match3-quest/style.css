@@ -2439,6 +2439,14 @@ body.dark-mode .tutorial-card {
         #enemy-spells .enemy-spell-item { padding: 2px 2px; font-size: 0.66em; }
         #combat-controls button { padding: 3px 10px; font-size: 12px; }
     }
+    /* Assez de place : armes, objets et sorts du joueur en liste verticale (une ligne chacun).
+       board.js ajoute .spells-compact (grille 3 colonnes ci-dessus) quand la liste ne tient pas dans l'écran. */
+    #spells-container:not(.spells-compact) #player-spells { display: flex; flex-direction: column; gap: 4px; }
+    #spells-container:not(.spells-compact) #weapon-button,
+    #spells-container:not(.spells-compact) #item-button,
+    #spells-container:not(.spells-compact) #spell-buttons { display: flex; flex-direction: column; gap: 4px; }
+    #spells-container:not(.spells-compact) #weapon-button:empty,
+    #spells-container:not(.spells-compact) #item-button:empty { display: none; }
     #combat-controls { margin: 2px 0 !important; padding-bottom: env(safe-area-inset-bottom); }
     #combat-controls button { padding: 8px 14px; font-size: clamp(13px, 3.8vw, 17px); margin: 0 3px !important; }
 }
@@ -2492,6 +2500,26 @@ body.dark-mode .tutorial-card {
     opacity: 0.6;
     font: 12px "Pixelify Sans", monospace;
 }
+
+/* Chute d'un soleil / découverte de région : légende en bas de l'écran */
+.cine-sunfall-text,
+.cine-region-text {
+    position: absolute;
+    left: 50%;
+    bottom: max(36px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    width: min(92vw, 560px);
+    text-align: center;
+    color: #fff4c8;
+    font-family: "Pixelify Sans", monospace;
+    text-shadow: 1px 1px 0 #1b1030, -1px -1px 0 #1b1030, 1px -1px 0 #1b1030, -1px 1px 0 #1b1030;
+    pointer-events: none;
+    animation: cine-in 1.2s ease-out 3s both;
+}
+.cine-region-text { animation-delay: 1.6s; }
+.cine-sunfall-title, .cine-region-title { font-size: 1.3em; margin-bottom: 6px; color: #ffd24a; }
+.cine-region-kicker { font-size: 0.8em; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.85; margin-bottom: 4px; }
+.cine-sunfall-line, .cine-region-line { font-size: 1em; line-height: 1.35; }
 
 /* Dialogue de boss pendant la transition de combat */
 .battle-transition.with-dialog .bt-title { animation: none; opacity: 1; transform: translateY(-14%); }

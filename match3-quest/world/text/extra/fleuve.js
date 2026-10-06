@@ -536,6 +536,53 @@ export default {
         fragment: "Page du carnet (II)",
         xp: 55
       }
+    },
+    {
+          "id": "sq_hua_2",
+          "title": "Les mêmes babioles",
+          "chapter": "✦ Quête secondaire — Lit du Fleuve",
+          "giver": "scribe_ou",
+          "turnIn": "scribe_ou",
+          "requires": [
+                "sq_hua_1",
+                "q_sun_2"
+          ],
+          "side": true,
+          "objectives": [
+                {
+                      "type": "talk",
+                      "target": "hua_fleuve",
+                      "text": "Montrer le caillou tiède à Hua (berge du fleuve)",
+                      "lines": [
+                            "Un caillou tiède, ici aussi ? Les fleuves rendent tout. Ne le jetez pas, c'est tout ce que je vous demande.",
+                            "Vous me regardez comme on regarde une énigme. Les énigmes se vexent, vous savez."
+                      ]
+                },
+                {
+                      "type": "talk",
+                      "target": "gui_turtle",
+                      "text": "Demander à la tortue Gui qui est Hua (maisonnette de Gui)",
+                      "lines": [
+                            "Je l'ai connue quand le fleuve n'avait pas encore de nom. Elle portait déjà ce sac, et elle cherchait déjà quelqu'un.",
+                            "Elle ne vend pas des babioles, petit. Elle ramasse. Ce que les soleils perdent en tombant, elle le ramasse."
+                      ]
+                }
+          ],
+          "offer": [
+                "J'écris les lettres de tout le monde, et j'ai remarqué une chose : toutes parlent d'une colporteuse. Trois villages, trois lettres, la même femme, le même sac.",
+                "Je ne sais pas si je dois m'en réjouir ou m'en inquiéter. Allez voir la colporteuse, puis la vieille tortue Gui, qui a bonne mémoire."
+          ],
+          "hint": [
+                "Hua est sur la berge, côté village. Gui la tortue vit dans sa maisonnette."
+          ],
+          "complete": [
+                "Elle ramasse ce que les soleils perdent… J'ai écrit la phrase, puis je l'ai relue trois fois. Voici de l'encre de crue : elle ne sèche que lorsqu'on a compris."
+          ],
+          "reward": {
+                "gold": 70,
+                "fragment": "Encre de crue",
+                "xp": 60
+          }
     }
   ]
 };

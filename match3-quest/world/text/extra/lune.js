@@ -247,6 +247,44 @@ export default {
         fragment: "Carnet complet",
         xp: 400
       }
+    },
+    {
+          "id": "sq_hua_6",
+          "title": "La lanterne de Xihe",
+          "chapter": "✦ Quête secondaire — Pic de la Lune",
+          "giver": "hua_lune",
+          "turnIn": "hua_lune",
+          "requires": [
+                "sq_hua_5",
+                "q_fengmeng"
+          ],
+          "side": true,
+          "objectives": [
+                {
+                      "type": "talk",
+                      "target": "keeper_lunar",
+                      "text": "Demander à la veilleuse Yin d'allumer la dernière lanterne pour Xihe (Hameau sous la Lune)",
+                      "lines": [
+                            "Pour Xihe ? Elle me l'avait demandée il y a bien longtemps, en secret : une lanterne qui brille quand le dernier soleil s'éteint. Je l'ai gardée pour ce soir.",
+                            "Posez-la sur le muret : elle éclairera la route de ses enfants vers la lune, et la sienne."
+                      ]
+                }
+          ],
+          "offer": [
+                "Vous savez qui je suis, maintenant. Ne vous excusez pas : j'ai eu dix fils, vous en avez rendu neuf à la nuit, et la nuit les a bercés.",
+                "Il me reste une prière : demandez à Yin d'allumer ma dernière lanterne. Je la lui ai confiée il y a longtemps, pour ce soir précisément."
+          ],
+          "hint": [
+                "La veilleuse Yin est dans sa maison, au cœur du Hameau sous la Lune."
+          ],
+          "complete": [
+                "Une petite lumière monte, sur le muret, vers la lune. « Mes enfants… », souffle Hua. Puis, plus bas : « Merci, archer. Le monde peut dormir. » Elle vous presse dans la main un dernier caillou tiède, qui ne refroidira jamais."
+          ],
+          "reward": {
+                "gold": 200,
+                "fragment": "Caillou d'aurore",
+                "xp": 400
+          }
     }
   ]
 };
