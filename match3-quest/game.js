@@ -1360,7 +1360,7 @@ export function saveUpdate(){
 
 // Fonction pour effacer la sauvegarde
 export function clearSaveData() {
-    if (confirm('Êtes-vous sûr de vouloir effacer votre sauvegarde ?')) {
+    if (confirm('Réinitialiser le jeu ? Toute votre progression (personnage, quêtes, objets) sera définitivement effacée.')) {
         localStorage.removeItem('player');
         console.log('Sauvegarde effacée');
         location.reload();

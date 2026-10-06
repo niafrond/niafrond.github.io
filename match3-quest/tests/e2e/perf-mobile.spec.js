@@ -55,7 +55,8 @@ async function openGame(page, context, { cores = 4 } = {}) {
 }
 
 async function enterExploration(page) {
-    await page.click('#skip-class');
+    await page.click('.class-card');
+    await page.click('#confirm-class');
     await page.waitForSelector('#explore-canvas', { state: 'visible' });
     await page.waitForTimeout(2000); // chargement des dessins de la région + mise en cache du sol
 }
