@@ -2,11 +2,12 @@
 // (ARENA_UNLOCK_REGION : les Bambous ; bouton « Arène » du HUD), rejouable à volonté, on peut en sortir à tout moment (bouton « Sortir » du HUD, ou la
 // porte de chaque salle).
 //
-//   Parvis (arena_hall) ── 8 portes ──► Cercle N : salle 1 ─► salle 2 ─► … ─► salle du maître d'arène
+//   Parvis (arena_hall) ── 8 portes ──► Cercle N : une salle comme une arène de Pokémon (gardiens postés dans la salle,
+//   maître d'arène sur son estrade au fond ; tout se joue en marchant)
 //
 // Huit cercles de difficulté croissante (ARENA_TIERS). Le cercle 1 est ouvert d'emblée ; la porte du cercle N ne
 // s'ouvre qu'une fois le maître du cercle N−1 vaincu au moins une fois (drapeau `arena_cleared_<N−1>`). Dans un cercle,
-// chaque salle a un gardien qui ferme la porte suivante ; la dernière salle abrite le maître (boss), plus fort et doté
+// des gardiens voient le héros de loin et le défient ; le maître (boss) n'est attaquable qu'ensuite, plus fort et doté
 // des règles de duel de Fengmeng (duel.js) aux cercles hauts. Revenir au parvis remet les gardiens en place (on peut
 // refaire un cercle). Chaque victoire rapporte l'XP, l'or et le butin d'un combat normal + une prime d'arène ; le
 // premier maître vaincu d'un cercle paie une grosse prime. Une défaite dans l'arène ramène hors de l'arène.
@@ -21,7 +22,7 @@ export const ARENA_NAME = 'Arène des Mille Flèches';
 export const ARENA_REGION = 'arena';
 export const ARENA_HALL = 'arena_hall';
 
-export const arenaRoomId = (tier, room) => `arena_c${tier}_r${room}`;
+export const arenaRoomId = tier => `arena_c${tier}`;
 export const arenaGuardId = (tier, room) => `arena_c${tier}_g${room}`;
 export const arenaMasterId = tier => `arena_c${tier}_master`;
 export const arenaClearedFlag = tier => `arena_cleared_${tier}`;
@@ -178,8 +179,6 @@ export function normalizeArenaData(data) {
 }
 
 // ── Écrans ─────────────────────────────────────────────────────────────────
-const ROOM_W = 14;
-const ROOM_H = 10;
 const HALL_W = 14;
 const HALL_H = 10;
 // Portes du parvis : cercles 1 à 4 sur le mur ouest, 5 à 8 sur le mur est (y = 1, 3, 5, 7).
@@ -191,42 +190,50 @@ function guardTemplate(tier, room) {
     return ARENA_TEMPLATES[(tier * 7 + room * 11) % ARENA_TEMPLATES.length];
 }
 
-function buildRoom(tier, room) {
-    const last = room === tier.waves;
-    const id = arenaRoomId(tier.id, room);
-    const back = room === 1
-        ? { x: 0, y: 4, to: ARENA_HALL, arrive: hallDoorArrival(tier.id), label: "Parvis de l'arène" }
-        : { x: 0, y: 4, to: arenaRoomId(tier.id, room - 1), arrive: { x: ROOM_W - 2, y: 4 }, label: `Salle ${room - 1}` };
-    const exits = [back];
+// Un cercle = UNE grande salle, comme une arène de Pokémon : porte au sud, dresseurs postés de part et d'autre de l'allée
+// centrale (ils regardent vers l'allée et vous repèrent à `GUARD_SIGHT` cases devant eux), maître d'arène sur son estrade au
+// nord. Chaque combat se déclenche quand le héros marche dans le champ de vision d'un gardien ; le maître est protégé
+// (`shieldedBy`) tant que tous les gardiens ne sont pas vaincus.
+export const GUARD_SIGHT = 3;
+export const gymGuardsGroup = tier => `arena_c${tier}_guards`;
+const GYM_W = 14;
+const gymHeight = tier => 2 * (tier.waves - 1) + 8;
+
+function buildGym(tier) {
+    const guards = tier.waves - 1;
+    const h = gymHeight(tier);
+    const id = arenaRoomId(tier.id);
     const enemies = [];
-    if (!last) {
-        const guardId = arenaGuardId(tier.id, room);
-        exits.push({ x: ROOM_W - 1, y: 4, to: arenaRoomId(tier.id, room + 1), arrive: { x: 1, y: 4 },
-            label: room + 1 === tier.waves ? 'Salle du maître' : `Salle ${room + 1}`,
-            requires: guardId, lockedMessage: `La porte reste close tant que le ${tier.guard.toLowerCase()} garde la salle.` });
-        enemies.push({ id: guardId, templateId: guardTemplate(tier.id, room), kind: 'sentinel', x: 10, y: 4,
-            name: `${tier.guard} — combat ${room}/${tier.waves}`, permanent: true, arena: { tier: tier.id, wave: room } });
-    } else {
-        const m = tier.master;
-        const name = `${m.name}, ${m.title}`;
-        // Derrière le maître vaincu : une sortie directe hors de l'arène.
-        exits.push({ x: ROOM_W - 1, y: 4, to: ARENA_HALL, leaveArena: true, label: "Sortie de l'arène",
-            requires: arenaMasterId(tier.id), lockedMessage: `${m.name} se dresse entre vous et la sortie.` });
-        enemies.push({ id: arenaMasterId(tier.id), templateId: m.templateId, kind: 'sentinel', x: 10, y: 4,
-            name, permanent: true, boss: { name, level: 1 }, arena: { tier: tier.id, wave: room, master: true },
-            introLines: [...m.intro],
-            defeatScene: { speaker: { name: m.name, title: `Maître du ${tier.name}`, enemy: arenaMasterId(tier.id) }, lines: [...m.defeat] } });
+    const obstacles = [
+        // Estrade du maître : bannières de part et d'autre, mur du fond.
+        [5, 0, 5, 1], [6, 1, 1, 1], [8, 1, 1, 1]
+    ];
+    const guardY = i => 2 * guards + 2 - 2 * i;   // i = 0 : gardien le plus proche de la porte (combat 1)
+    for (let i = 0; i < guards; i++) {
+        const left = i % 2 === 0;
+        const y = guardY(i);
+        enemies.push({ id: arenaGuardId(tier.id, i + 1), templateId: guardTemplate(tier.id, i + 1), kind: 'sentinel',
+            x: left ? 4 : 9, y, facing: { dx: left ? 1 : -1, dy: 0 }, sight: GUARD_SIGHT, group: gymGuardsGroup(tier.id),
+            name: `${tier.guard} — combat ${i + 1}/${tier.waves}`, permanent: true, arena: { tier: tier.id, wave: i + 1 } });
+        // Rochers décoratifs derrière chaque gardien, contre le mur.
+        obstacles.push(left ? [1, y, 2, 1] : [11, y, 2, 1]);
     }
+    const m = tier.master;
+    const name = `${m.name}, ${m.title}`;
+    enemies.push({ id: arenaMasterId(tier.id), templateId: m.templateId, kind: 'sentinel', x: 7, y: 1, facing: { dx: 0, dy: 1 },
+        name, permanent: true, boss: { name, level: 1 }, arena: { tier: tier.id, wave: tier.waves, master: true },
+        shieldedBy: gymGuardsGroup(tier.id),
+        shieldLines: [`${m.name} ne descend pas de son estrade tant que ses disciples tiennent la salle : battez les ${guards} ${tier.guard.toLowerCase()}s qui la gardent.`],
+        introLines: [...m.intro],
+        defeatScene: { speaker: { name: m.name, title: `Maître du ${tier.name}`, enemy: arenaMasterId(tier.id) }, lines: [...m.defeat] } });
     return {
-        id, region: ARENA_REGION, name: last ? `${tier.name} — salle du maître` : `${tier.name} — salle ${room}/${tier.waves - 1}`,
-        biome: `arena_${tier.id}`, kind: 'arena', arena: { tier: tier.id, room, master: last },
-        w: ROOM_W, h: ROOM_H, spawn: { x: 1, y: 4 },
-        // Colonnes de l'arène, de part et d'autre d'une allée centrale ; deux braseros devant le maître.
-        obstacles: [[2, 1, 1, 2], [2, 7, 1, 2], [5, 1, 1, 2], [5, 7, 1, 2], [8, 1, 1, 2], [8, 7, 1, 2], [11, 1, 1, 2], [11, 7, 1, 2],
-            ...(last ? [[12, 2, 1, 1], [12, 6, 1, 1]] : [])],
-        liquids: [],
-        paths: [[0, 4, ROOM_W, 1]],
-        exits, npcs: [], enemies, chests: []
+        id, region: ARENA_REGION, name: tier.name, biome: `arena_${tier.id}`, kind: 'arena', arena: { tier: tier.id },
+        w: GYM_W, h, spawn: { x: 7, y: h - 3 },
+        arrival: [`${tier.name} : ${guards} gardien${guards > 1 ? 's' : ''} montent la garde dans la salle. Avancez par l'allée centrale : chacun vous défiera dès que vous entrerez dans son champ de vision. Au fond, ${m.name} attend sur son estrade.`],
+        obstacles, liquids: [],
+        paths: [[7, 1, 1, h - 1]],
+        exits: [{ x: 7, y: h - 1, to: ARENA_HALL, arrive: hallDoorArrival(tier.id), label: "Parvis de l'arène" }],
+        npcs: [], enemies, chests: []
     };
 }
 
@@ -237,7 +244,7 @@ function buildHall() {
         w: HALL_W, h: HALL_H, spawn: { x: 7, y: 8 },
         arrival: [
             "Des tambours, des bannières, et l'odeur du bois de cible : l'Arène des Mille Flèches. Huit portes, huit cercles, et derrière chacun, un maître d'arène qui attend un archer digne de lui.",
-            "Chaque cercle se traverse de salle en salle : battez le gardien de chaque salle pour ouvrir la suivante, puis affrontez le maître. Un maître vaincu ouvre la porte du cercle suivant (cercles 1 à 4 à l'ouest, 5 à 8 à l'est). La porte du sud, ou le bouton « Sortir », vous ramène dehors à tout moment."
+            "Chaque cercle est une grande salle : traversez-la à pied, battez les gardiens qui vous repèrent, puis affrontez le maître sur son estrade. Un maître vaincu ouvre la porte du cercle suivant (cercles 1 à 4 à l'ouest, 5 à 8 à l'est). La porte du sud, ou le bouton « Sortir », vous ramène dehors à tout moment."
         ],
         // Estrade centrale (tambour, bannières) ; allées vers les portes.
         obstacles: [[6, 3, 2, 2]],
@@ -245,7 +252,7 @@ function buildHall() {
         paths: [[1, 1, HALL_W - 2, 1], [1, 3, HALL_W - 2, 1], [1, 5, HALL_W - 2, 1], [1, 7, HALL_W - 2, 1], [7, 5, 1, 5]],
         exits: [
             ...ARENA_TIERS.map(t => ({
-                ...hallDoor(t.id), to: arenaRoomId(t.id, 1), arrive: { x: 1, y: 4 }, label: t.name,
+                ...hallDoor(t.id), to: arenaRoomId(t.id), arrive: { x: 7, y: gymHeight(t) - 3 }, label: t.name,
                 ...(t.id > 1 ? { requires: arenaClearedFlag(t.id - 1),
                     lockedMessage: `Le ${t.name} reste fermé : battez d'abord le maître du ${arenaTier(t.id - 1).name}.` } : {})
             })),
@@ -258,11 +265,6 @@ function buildHall() {
 // Tous les écrans de l'arène, indexés par id.
 export function buildArenaScreens() {
     const screens = { [ARENA_HALL]: buildHall() };
-    ARENA_TIERS.forEach(tier => {
-        for (let room = 1; room <= tier.waves; room++) {
-            const sc = buildRoom(tier, room);
-            screens[sc.id] = sc;
-        }
-    });
+    ARENA_TIERS.forEach(tier => { screens[arenaRoomId(tier.id)] = buildGym(tier); });
     return screens;
 }

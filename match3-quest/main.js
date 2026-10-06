@@ -221,6 +221,7 @@ function init() {
 
     // Phase exploration : on affiche la carte, plus de plateau ni de bouton de combat.
     const enterExploration = () => {
+        document.body.classList.remove('combat-ended');
         setCombatBackdrop(null);
         document.getElementById('worldmap-modal')?.classList.remove('active');
         document.getElementById('battle-result-screen')?.classList.remove('active');

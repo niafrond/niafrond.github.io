@@ -720,6 +720,8 @@ export const combatHooks = { onVictory: null, onEnd: null };
 
 function finalizeCombatEndUI(isVictory){
     showCombatResultScreen(isVictory);
+    // Fin de partie : « Retour à l'exploration » est la seule action possible (voir style.css, body.combat-ended).
+    document.body.classList.add('combat-ended');
 
     const statsContainer = document.querySelector('.stats-container');
     if(statsContainer) {
@@ -752,7 +754,7 @@ function finalizeCombatEndUI(isVictory){
     }
 
     if(isVictory) {
-        log(`Cliquez sur "Retour à l'exploration" pour continuer ou modifiez vos sorts/armes.`);
+        log(`Cliquez sur "Retour à l'exploration" pour continuer.`);
     } else {
         log("Cliquez sur \"Retour à l'exploration\" : vous reprenez vos esprits à l'entrée de la zone.");
     }
@@ -895,6 +897,7 @@ export function handlePlayerDeath(){
 // démarre un nouveau combat
 export function startNewCombat(selectedEnemy = null){
     playSfx('uiClick');
+    document.body.classList.remove('combat-ended');
     gameState.combatState = 'active';
     window.dispatchEvent(new Event('match3:combat-start'));
     ensureCombatUsableActiveItem();
@@ -3086,7 +3089,8 @@ export function decideFirstTurn(){
 }
 
 // Coups gratuits et automatiques de l'arme courante au début du combat (le plateau reste bloqué le temps des animations).
-const OPENING_STRIKE_MS = 1800;
+const OPENING_ANNOUNCE_MS = 700;   // annonce « Embuscade » / « Faiblesse » avant le coup
+const OPENING_STRIKE_MS = 1300;    // durée de l'animation du coup avant l'enchaînement
 function runOpeningStrikes(count, delayMs, done){
     const weapon = player.equippedWeapon;
     if(!weapon){ log("Aucune arme équipée : pas de coup d'ouverture."); setTimeout(done, delayMs); return; }
@@ -3100,10 +3104,20 @@ function runOpeningStrikes(count, delayMs, done){
             done();
             return;
         }
-        log(i === 0 && (enemy?.prep?.tags || []).includes('ambush') ? 'Attaque par derrière !' : 'Faiblesse exploitée : coup supplémentaire !');
-        strikeWithWeapon(weapon, { free: true });
-        updateStats();
-        setTimeout(() => step(i + 1), OPENING_STRIKE_MS * animationFactor());
+        const isAmbush = i === 0 && (enemy?.prep?.tags || []).includes('ambush');
+        // Annonce brève du type de coup d'ouverture, puis le coup lui-même.
+        log(isAmbush ? 'Embuscade : attaque par derrière !' : 'Faiblesse repérée : coup supplémentaire !');
+        showCombatAnimation({
+            icon: isAmbush ? 'bolt' : 'target',
+            title: isAmbush ? 'Embuscade !' : 'Faiblesse !',
+            source: isAmbush ? 'Vous attaquez par derrière' : 'Vous exploitez sa faille'
+        }, true, { autoHideMs: OPENING_ANNOUNCE_MS * animationFactor() });
+        setTimeout(() => {
+            if(gameState.combatState !== 'active') return;
+            strikeWithWeapon(weapon, { free: true });
+            updateStats();
+            setTimeout(() => step(i + 1), OPENING_STRIKE_MS * animationFactor());
+        }, (OPENING_ANNOUNCE_MS + 300) * animationFactor());
     };
     setTimeout(() => step(0), delayMs);
 }
