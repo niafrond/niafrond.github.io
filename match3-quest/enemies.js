@@ -111,8 +111,8 @@ function buildSpellLoadout(template, enemyLevel){
     const targetSpellCount = Math.ceil(Math.random() * maxSpells);
     const preferClassSpells = template.spellProfile?.preferClassSpells !== false;
 
-    const preferredGeneric = genericSpells.filter(sp => preferredColors.includes(sp.color));
-    const otherGeneric = genericSpells.filter(sp => !preferredColors.includes(sp.color));
+    const preferredGeneric = genericSpells.filter(sp => (sp.colors || [sp.color]).some(c => preferredColors.includes(c)));
+    const otherGeneric = genericSpells.filter(sp => !(sp.colors || [sp.color]).some(c => preferredColors.includes(c)));
 
     const selected = [];
 

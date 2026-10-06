@@ -166,9 +166,42 @@ export function clampEnemyAttackDamage(rawDamage, enemyEntity = enemy){
     return Math.min(normalizedDamage, getEnemyAttackDamageCap(enemyEntity));
 }
 
-function getPrimarySpellColor(spell){
+// Couleurs de mana d'un sort : une (coût simple) ou plusieurs (coût multi-mana).
+export function spellColorsOf(spell){
+    if(!spell) return [];
+    if(spell.cost && typeof spell.cost === 'object') return Object.keys(spell.cost);
+    if(Array.isArray(spell.colors) && spell.colors.length > 0) return spell.colors;
+    return spell.color ? [spell.color] : [];
+}
+
+// Coût en HTML : pastille + montant par couleur, « + » entre deux couleurs ; le sort multi-mana est marqué `spell-multi`.
+const MANA_HEX = { red: '#e74c3c', blue: '#3498db', green: '#2ecc71', yellow: '#f1c40f', purple: '#9b59b6' };
+export function spellCostHtml(sp){
+    if(typeof sp.cost === 'number') return `<span class="mana-dot mana-${sp.color}"></span>${sp.cost}`;
+    if(sp.cost && typeof sp.cost === 'object'){
+        return Object.entries(sp.cost).map(([color, amount]) => `<span class="mana-dot mana-${color}"></span>${amount}`).join('<span class="cost-plus">+</span>');
+    }
+    return '';
+}
+// Marque visuelle d'un sort multi-mana : barre dégradée aux deux couleurs (CSS `.spell-multi`).
+export function markMultiManaSpell(el, sp){
+    const colors = spellColorsOf(sp);
+    if(colors.length < 2) return;
+    el.classList.add('spell-multi');
+    el.style.setProperty('--spell-c1', MANA_HEX[colors[0]] || '#888');
+    el.style.setProperty('--spell-c2', MANA_HEX[colors[colors.length - 1]] || '#888');
+}
+
+function getPrimarySpellColor(spell, target = null){
     if(!spell || typeof spell !== 'object') return null;
 
+    // Sort multi-mana : on retient la couleur la plus pertinente contre la cible (sa faiblesse, sinon une couleur qu'elle ne maîtrise pas)
+    const multi = spellColorsOf(spell);
+    if(multi.length > 1 && target){
+        if(target.weakColor && multi.includes(target.weakColor)) return target.weakColor;
+        const other = multi.find(c => c !== target.preferredColor);
+        if(other) return other;
+    }
     if(Array.isArray(spell.colors) && spell.colors.length > 0) {
         return spell.colors[0];
     }
@@ -236,7 +269,7 @@ export function applyDamage(target, damage, options = {}){
     if(!target) return 0;
     let normalizedDamage = Math.max(0, Math.floor(damage || 0));
 
-    const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell);
+    const sourceColor = options.sourceColor || getPrimarySpellColor(options.sourceSpell, target);
     const affinityResult = applyEnemyColorAffinityModifier(target, normalizedDamage, sourceColor);
     normalizedDamage = affinityResult.modifiedDamage;
 
@@ -369,9 +402,14 @@ function applyStandardSpellEffects(caster, target, spell, isPlayerCaster){
     const intelligenceBonus = getPrimaryAttributeEffect(caster, "intelligence");
 
     if(spell.dmg){
-        const targetResistance = target.resistances?.[spell.color] || 0;
+        const spellColors = spellColorsOf(spell);
+        const targetResistance = spellColors.length
+            ? spellColors.reduce((sum, c) => sum + (target.resistances?.[c] || 0), 0) / spellColors.length   // multi-mana : résistance moyenne
+            : (target.resistances?.[spell.color] || 0);
         let dmg = Math.floor((spell.dmg + intelligenceBonus) * (1 - targetResistance));
-        if(isPlayerCaster && target.prep?.weaknessRevealed) dmg = weaknessDamage(dmg, spell.color, target.weakColor, true);
+        if(isPlayerCaster && target.prep?.weaknessRevealed){
+            dmg = weaknessDamage(dmg, spellColors.includes(target.weakColor) ? target.weakColor : spell.color, target.weakColor, true);
+        }
         if(!isPlayerCaster && target.damageReduction > 0) {
             dmg = Math.max(1, Math.floor(dmg * (1 - target.damageReduction)));
         }
@@ -1285,14 +1323,7 @@ export function updateEnemySpells(){
         const spellClassIndicator = sp.class ? classIcon(sp.class) : '';
         
         // Gestion des coûts multiples pour les sorts de classe
-        let costDisplay = '';
-        if (typeof sp.cost === 'number') {
-            costDisplay = `<span class="mana-dot mana-${sp.color}"></span>${sp.cost}`;
-        } else if (typeof sp.cost === 'object') {
-            costDisplay = Object.entries(sp.cost)
-                .map(([color, amount]) => `<span class="mana-dot mana-${color}"></span>${amount}`)
-                .join(' ');
-        }
+        const costDisplay = spellCostHtml(sp);
         
         const damageText = sp.dmg ? ` • ${sp.dmg} dmg` : '';
         const healText = sp.heal ? ` • ${sp.heal} HP` : '';
@@ -1302,6 +1333,7 @@ export function updateEnemySpells(){
             <div class="spell-cost">${costDisplay}${damageText}${healText}</div>
         `;
         div.title = effectText;
+        markMultiManaSpell(div, sp);
 
         const showDetails = () => showSpellTooltip(div, sp);
         const hideDetails = () => hideSpellTooltip();
@@ -2522,18 +2554,9 @@ export function createSpellButtons(){
         const healText = sp.heal ? ` - ${sp.heal} HP` : '';
         
         // Gérer l'affichage du coût (simple ou multiple)
-        let costHTML = '';
-        let hasEnoughMana = true;
-        if(typeof sp.cost === 'number') {
-            costHTML = `<span class="mana-dot mana-${sp.color}"></span>${sp.cost}`;
-            hasEnoughMana = player.mana[sp.color] >= sp.cost;
-        } else if(typeof sp.cost === 'object') {
-            costHTML = Object.keys(sp.cost).map(color => 
-                `<span class="mana-dot mana-${color}"></span>${sp.cost[color]}`
-            ).join(' ');
-            // Vérifier si on a assez de mana pour tous les coûts
-            hasEnoughMana = Object.keys(sp.cost).every(color => player.mana[color] >= sp.cost[color]);
-        }
+        const costHTML = spellCostHtml(sp);
+        const hasEnoughMana = canEntityCastSpell(player, sp);
+        markMultiManaSpell(btn, sp);
         
         btn.innerHTML = `
             <div class="spell-name">${sp.name}</div>
@@ -2777,19 +2800,13 @@ export function updateSpellsTab(){
         player.activeSpells.forEach(sp => {
             const div = document.createElement('div');
             div.className = 'spell-item active-spell';
+            markMultiManaSpell(div, sp);
             const damageText = sp.dmg ? ` • ${sp.dmg} ${svgIcon('skull')}` : '';
             const healText = sp.heal ? ` • ${sp.heal} ${svgIcon('heart')}` : '';
             const effectText = sp.effect ? ` • ${sp.description}` : '';
             
             // Gérer l'affichage du coût
-            let costHTML = '';
-            if(typeof sp.cost === 'number') {
-                costHTML = `<span class="mana-dot mana-${sp.color}"></span>${sp.cost}`;
-            } else if(typeof sp.cost === 'object') {
-                costHTML = Object.keys(sp.cost).map(color => 
-                    `<span class="mana-dot mana-${color}"></span>${sp.cost[color]}`
-                ).join(' ');
-            }
+            const costHTML = spellCostHtml(sp);
             
             div.innerHTML = `
                 <div class="spell-content">
@@ -2813,20 +2830,14 @@ export function updateSpellsTab(){
         unequipped.forEach(sp => {
             const div = document.createElement('div');
             div.className = 'spell-item available-spell';
+            markMultiManaSpell(div, sp);
             const canEquip = player.activeSpells.length < 4;
             const damageText = sp.dmg ? ` • ${sp.dmg} ${svgIcon('skull')}` : '';
             const healText = sp.heal ? ` • ${sp.heal} ${svgIcon('heart')}` : '';
             const effectText = sp.effect ? ` • ${sp.description}` : '';
             
             // Gérer l'affichage du coût
-            let costHTML = '';
-            if(typeof sp.cost === 'number') {
-                costHTML = `<span class="mana-dot mana-${sp.color}"></span>${sp.cost}`;
-            } else if(typeof sp.cost === 'object') {
-                costHTML = Object.keys(sp.cost).map(color => 
-                    `<span class="mana-dot mana-${color}"></span>${sp.cost[color]}`
-                ).join(' ');
-            }
+            const costHTML = spellCostHtml(sp);
             
             div.innerHTML = `
                 <div class="spell-content">

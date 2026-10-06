@@ -159,6 +159,142 @@
       "dmg": 125,
       "minLevel": 15,
       "description": "La colère du Ciel qui frappe pour 125 dégâts"
+    },
+    {
+      "id": "vaporBurst",
+      "name": "Vapeur du Chaudron Céleste",
+      "color": "red",
+      "colors": [
+        "red",
+        "blue"
+      ],
+      "type": "damage",
+      "cost": {
+        "red": 8,
+        "blue": 8
+      },
+      "dmg": 38,
+      "minLevel": 3,
+      "description": "Un nuage de vapeur brûlante, né du feu et de l'eau, qui inflige 38 dégâts"
+    },
+    {
+      "id": "goldenDew",
+      "name": "Rosée Dorée",
+      "color": "green",
+      "colors": [
+        "green",
+        "yellow"
+      ],
+      "type": "heal",
+      "cost": {
+        "green": 9,
+        "yellow": 6
+      },
+      "heal": 30,
+      "minLevel": 4,
+      "description": "Une rosée dorée qui restaure 30 points de vie"
+    },
+    {
+      "id": "lotusPoison",
+      "name": "Poison du Lotus Noir",
+      "color": "purple",
+      "colors": [
+        "purple",
+        "green"
+      ],
+      "type": "damage",
+      "cost": {
+        "purple": 10,
+        "green": 10
+      },
+      "dmg": 48,
+      "minLevel": 6,
+      "description": "Un lotus vénéneux fleurit sur l'ennemi et inflige 48 dégâts"
+    },
+    {
+      "id": "emberStorm",
+      "name": "Foudre Ardente de Zhurong",
+      "color": "red",
+      "colors": [
+        "red",
+        "yellow"
+      ],
+      "type": "damage",
+      "cost": {
+        "red": 14,
+        "yellow": 14
+      },
+      "dmg": 70,
+      "minLevel": 7,
+      "description": "La foudre et la flamme du dieu du feu infligent 70 dégâts"
+    },
+    {
+      "id": "shadowFlame",
+      "name": "Flamme des Ombres",
+      "color": "purple",
+      "colors": [
+        "purple",
+        "red"
+      ],
+      "type": "damage",
+      "cost": {
+        "purple": 12,
+        "red": 12
+      },
+      "dmg": 58,
+      "minLevel": 8,
+      "description": "Une flamme noire qui dévore l'ennemi et inflige 58 dégâts"
+    },
+    {
+      "id": "springRain",
+      "name": "Pluie du Printemps",
+      "color": "green",
+      "colors": [
+        "green",
+        "blue"
+      ],
+      "type": "heal",
+      "cost": {
+        "green": 14,
+        "blue": 10
+      },
+      "heal": 48,
+      "minLevel": 9,
+      "description": "Une pluie douce et vivifiante qui restaure 48 points de vie"
+    },
+    {
+      "id": "frostLightning",
+      "name": "Orage Glacé des Hauts Monts",
+      "color": "blue",
+      "colors": [
+        "blue",
+        "yellow"
+      ],
+      "type": "damage",
+      "cost": {
+        "blue": 20,
+        "yellow": 20
+      },
+      "dmg": 96,
+      "minLevel": 11,
+      "description": "Un orage de glace et de foudre qui inflige 96 dégâts"
+    },
+    {
+      "id": "voidChill",
+      "name": "Souffle du Vide Glacé",
+      "color": "purple",
+      "colors": [
+        "purple",
+        "blue"
+      ],
+      "type": "damage",
+      "cost": {
+        "purple": 22,
+        "blue": 22
+      },
+      "dmg": 108,
+      "minLevel": 13,
+      "description": "Le froid du vide absolu infligeant 108 dégâts"
     }
   ],
   "sorcererSpells": [

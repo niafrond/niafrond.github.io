@@ -2897,3 +2897,17 @@ body.fx-low .mana-fly-dot { box-shadow: none; }
     #player-stats[style*="--portrait"] .stat:nth-child(-n+2),
     #enemy-stats[style*="--portrait"] .stat:nth-child(-n+2) { margin-right: 38px; }
 }
+
+/* Sorts multi-mana : barre dégradée aux deux couleurs sous le bouton, « + » discret entre les coûts */
+.spell-multi { position: relative; }
+.spell-multi::after {
+    content: '';
+    position: absolute;
+    left: 3px; right: 3px; bottom: 1px;
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--spell-c1, #888), var(--spell-c2, #888));
+    pointer-events: none;
+}
+.cost-plus { margin: 0 2px; opacity: 0.6; }
+.spell-multi .spell-cost { white-space: normal; line-height: 1.25; padding-bottom: 3px; }
