@@ -161,6 +161,323 @@
       "description": "La colère du Ciel qui frappe pour 125 dégâts"
     },
     {
+      "id": "vaporBurst",
+      "name": "Vapeur du Chaudron Céleste",
+      "color": "red",
+      "colors": [
+        "red",
+        "blue"
+      ],
+      "type": "damage",
+      "cost": {
+        "red": 8,
+        "blue": 8
+      },
+      "dmg": 38,
+      "minLevel": 3,
+      "description": "Un nuage de vapeur brûlante, né du feu et de l'eau, qui inflige 38 dégâts"
+    },
+    {
+      "id": "goldenDew",
+      "name": "Rosée Dorée",
+      "color": "green",
+      "colors": [
+        "green",
+        "yellow"
+      ],
+      "type": "heal",
+      "cost": {
+        "green": 9,
+        "yellow": 6
+      },
+      "heal": 30,
+      "minLevel": 4,
+      "description": "Une rosée dorée qui restaure 30 points de vie"
+    },
+    {
+      "id": "lotusPoison",
+      "name": "Poison du Lotus Noir",
+      "color": "purple",
+      "colors": [
+        "purple",
+        "green"
+      ],
+      "type": "damage",
+      "cost": {
+        "purple": 10,
+        "green": 10
+      },
+      "dmg": 48,
+      "minLevel": 6,
+      "description": "Un lotus vénéneux fleurit sur l'ennemi et inflige 48 dégâts"
+    },
+    {
+      "id": "emberStorm",
+      "name": "Foudre Ardente de Zhurong",
+      "color": "red",
+      "colors": [
+        "red",
+        "yellow"
+      ],
+      "type": "damage",
+      "cost": {
+        "red": 14,
+        "yellow": 14
+      },
+      "dmg": 70,
+      "minLevel": 7,
+      "description": "La foudre et la flamme du dieu du feu infligent 70 dégâts"
+    },
+    {
+      "id": "shadowFlame",
+      "name": "Flamme des Ombres",
+      "color": "purple",
+      "colors": [
+        "purple",
+        "red"
+      ],
+      "type": "damage",
+      "cost": {
+        "purple": 12,
+        "red": 12
+      },
+      "dmg": 58,
+      "minLevel": 8,
+      "description": "Une flamme noire qui dévore l'ennemi et inflige 58 dégâts"
+    },
+    {
+      "id": "springRain",
+      "name": "Pluie du Printemps",
+      "color": "green",
+      "colors": [
+        "green",
+        "blue"
+      ],
+      "type": "heal",
+      "cost": {
+        "green": 14,
+        "blue": 10
+      },
+      "heal": 48,
+      "minLevel": 9,
+      "description": "Une pluie douce et vivifiante qui restaure 48 points de vie"
+    },
+    {
+      "id": "frostLightning",
+      "name": "Orage Glacé des Hauts Monts",
+      "color": "blue",
+      "colors": [
+        "blue",
+        "yellow"
+      ],
+      "type": "damage",
+      "cost": {
+        "blue": 20,
+        "yellow": 20
+      },
+      "dmg": 96,
+      "minLevel": 11,
+      "description": "Un orage de glace et de foudre qui inflige 96 dégâts"
+    },
+    {
+      "id": "voidChill",
+      "name": "Souffle du Vide Glacé",
+      "color": "purple",
+      "colors": [
+        "purple",
+        "blue"
+      ],
+      "type": "damage",
+      "cost": {
+        "purple": 22,
+        "blue": 22
+      },
+      "dmg": 108,
+      "minLevel": 13,
+      "description": "Le froid du vide absolu infligeant 108 dégâts"
+    },
+    {
+      "id": "bladeWinds",
+      "name": "Lame des Quatre Vents",
+      "color": "red",
+      "colors": [
+        "red",
+        "yellow",
+        "blue"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 6,
+        "yellow": 6,
+        "blue": 6
+      },
+      "effect": "sweepRow",
+      "minLevel": 8,
+      "dmgPerTile": 4,
+      "description": "Choisissez une ligne : elle est détruite, vous récupérez son mana et l'ennemi subit 4 dégâts par case"
+    },
+    {
+      "id": "brasierSeals",
+      "name": "Brasier des Sceaux",
+      "color": "red",
+      "colors": [
+        "red",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 8,
+        "yellow": 8,
+        "purple": 6
+      },
+      "effect": "skullsFromColors",
+      "minLevel": 9,
+      "convert": [
+        "red",
+        "yellow"
+      ],
+      "description": "Toutes les gemmes rouges et jaunes deviennent des crânes"
+    },
+    {
+      "id": "threeDragons",
+      "name": "Tempête des Trois Dragons",
+      "color": "blue",
+      "colors": [
+        "blue",
+        "yellow",
+        "green"
+      ],
+      "type": "advanced",
+      "cost": {
+        "blue": 7,
+        "yellow": 7,
+        "green": 7
+      },
+      "effect": "destroyColumns",
+      "minLevel": 10,
+      "columns": 3,
+      "dmgPerTile": 3,
+      "description": "Détruit 3 colonnes au hasard, récupère leur mana et inflige 3 dégâts par case"
+    },
+    {
+      "id": "dragonCross",
+      "name": "Croix du Dragon",
+      "color": "red",
+      "colors": [
+        "red",
+        "yellow",
+        "blue",
+        "green"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 8,
+        "yellow": 8,
+        "blue": 8,
+        "green": 8
+      },
+      "effect": "sweepCross",
+      "minLevel": 11,
+      "dmgPerTile": 4,
+      "description": "Choisissez une case : sa ligne et sa colonne sont détruites (mana récupéré, 4 dégâts par case)"
+    },
+    {
+      "id": "thunderPrison",
+      "name": "Prison du Tonnerre Glacé",
+      "color": "blue",
+      "colors": [
+        "blue",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "blue": 7,
+        "yellow": 7,
+        "purple": 7
+      },
+      "effect": "cageEnemy",
+      "minLevel": 11,
+      "duration": 2,
+      "manaDrain": 6,
+      "description": "Étourdit l'ennemi 2 tours et lui retire 6 mana de chaque couleur"
+    },
+    {
+      "id": "jadeBreath",
+      "name": "Souffle de Jade Céleste",
+      "color": "green",
+      "colors": [
+        "green",
+        "blue",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "green": 12,
+        "blue": 8,
+        "yellow": 8,
+        "purple": 8
+      },
+      "effect": "secondWind",
+      "minLevel": 13,
+      "heal": 50,
+      "description": "Soigne 50 PV, retire les statuts négatifs et vous laisse rejouer"
+    },
+    {
+      "id": "starRain",
+      "name": "Pluie des Mille Étoiles",
+      "color": "red",
+      "colors": [
+        "red",
+        "blue",
+        "green",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 9,
+        "blue": 9,
+        "green": 9,
+        "yellow": 9,
+        "purple": 9
+      },
+      "effect": "starRain",
+      "minLevel": 15,
+      "rows": 2,
+      "columns": 2,
+      "dmgPerTile": 3,
+      "description": "Détruit 2 lignes et 2 colonnes au hasard : mana récupéré et 3 dégâts par case"
+    },
+    {
+      "id": "fiveHarmony",
+      "name": "Harmonie des Cinq Éléments",
+      "color": "red",
+      "colors": [
+        "red",
+        "blue",
+        "green",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 10,
+        "blue": 10,
+        "green": 10,
+        "yellow": 10,
+        "purple": 10
+      },
+      "effect": "harmony",
+      "minLevel": 17,
+      "dmg": 100,
+      "heal": 40,
+      "manaDrain": 5,
+      "description": "Inflige 100 dégâts, vous soigne de 40 PV et retire 5 mana de chaque couleur à l'ennemi"
+    },
+    {
       "id": "twinDragonsStrike",
       "name": "Frappe des Deux Dragons",
       "type": "damage",

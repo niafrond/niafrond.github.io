@@ -112,7 +112,7 @@ export const allClassSpells = Array.isArray(spellCatalog.allClassSpells)
     ];
 
 export function getSpellsByColor(color) {
-    return allSpells.filter(spell => spell.color === color);
+    return allSpells.filter(spell => (spell.colors || [spell.color]).includes(color));
 }
 
 export function getSpellsByType(type) {
