@@ -92,7 +92,7 @@ describe('sorts', () => {
     });
 
     test('des sorts génériques utilisent deux couleurs de mana, et chaque couleur du jeu en a un', () => {
-        const multi = spells.filter(s => typeof s.cost === 'object');
+        const multi = spells.filter(s => typeof s.cost === 'object' && s.type !== 'advanced');
         expect(multi.length).toBeGreaterThanOrEqual(6);
         multi.forEach(s => {
             expect(Object.keys(s.cost)).toHaveLength(2);
@@ -101,6 +101,21 @@ describe('sorts', () => {
             Object.values(s.cost).forEach(v => expect(v).toBeLessThanOrEqual(50));   // réserve de base par couleur
         });
         ['red', 'blue', 'green', 'yellow', 'purple'].forEach(c => expect(multi.some(s => c in s.cost)).toBe(true));
+    });
+
+    test('sorts avancés : 3 à 5 couleurs, effet implémenté, budget de mana respecté', () => {
+        const effects = readFileSync(join(root, 'classSpellEffects.js'), 'utf8');
+        const advanced = spells.filter(s => s.type === 'advanced');
+        expect(advanced.length).toBeGreaterThanOrEqual(6);
+        advanced.forEach(s => {
+            const n = Object.keys(s.cost).length;
+            expect(n).toBeGreaterThanOrEqual(3);
+            expect(n).toBeLessThanOrEqual(5);
+            expect(effects).toContain(`case '${s.effect}'`);
+            expect(totalCost(s)).toBeLessThanOrEqual(50);
+        });
+        expect(advanced.some(s => Object.keys(s.cost).length === 5)).toBe(true);
+        expect(advanced.some(s => Object.keys(s.cost).length === 4)).toBe(true);
     });
 
     test('aucun sort ne coûte plus que la réserve de mana de base (50)', () => {

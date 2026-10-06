@@ -104,7 +104,7 @@ function buildResistances(template, level){
 
 function buildSpellLoadout(template, enemyLevel){
     const classSpells = getSpellsByClass(template.playerClass, enemyLevel);
-    const genericSpells = getAllSpells().filter(sp => !sp.class && sp.minLevel <= enemyLevel);
+    const genericSpells = getAllSpells().filter(sp => !sp.class && !sp.effect && sp.minLevel <= enemyLevel);   // sorts avancés (effets de plateau) : réservés au joueur
 
     const preferredColors = template.spellProfile?.preferredColors || [];
     const maxSpells = Math.floor(enemyLevel / 5) + 1;

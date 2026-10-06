@@ -295,6 +295,187 @@
       "dmg": 108,
       "minLevel": 13,
       "description": "Le froid du vide absolu infligeant 108 dégâts"
+    },
+    {
+      "id": "bladeWinds",
+      "name": "Lame des Quatre Vents",
+      "color": "red",
+      "colors": [
+        "red",
+        "yellow",
+        "blue"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 6,
+        "yellow": 6,
+        "blue": 6
+      },
+      "effect": "sweepRow",
+      "minLevel": 8,
+      "dmgPerTile": 4,
+      "description": "Choisissez une ligne : elle est détruite, vous récupérez son mana et l'ennemi subit 4 dégâts par case"
+    },
+    {
+      "id": "brasierSeals",
+      "name": "Brasier des Sceaux",
+      "color": "red",
+      "colors": [
+        "red",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 8,
+        "yellow": 8,
+        "purple": 6
+      },
+      "effect": "skullsFromColors",
+      "minLevel": 9,
+      "convert": [
+        "red",
+        "yellow"
+      ],
+      "description": "Toutes les gemmes rouges et jaunes deviennent des crânes"
+    },
+    {
+      "id": "threeDragons",
+      "name": "Tempête des Trois Dragons",
+      "color": "blue",
+      "colors": [
+        "blue",
+        "yellow",
+        "green"
+      ],
+      "type": "advanced",
+      "cost": {
+        "blue": 7,
+        "yellow": 7,
+        "green": 7
+      },
+      "effect": "destroyColumns",
+      "minLevel": 10,
+      "columns": 3,
+      "dmgPerTile": 3,
+      "description": "Détruit 3 colonnes au hasard, récupère leur mana et inflige 3 dégâts par case"
+    },
+    {
+      "id": "dragonCross",
+      "name": "Croix du Dragon",
+      "color": "red",
+      "colors": [
+        "red",
+        "yellow",
+        "blue",
+        "green"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 8,
+        "yellow": 8,
+        "blue": 8,
+        "green": 8
+      },
+      "effect": "sweepCross",
+      "minLevel": 11,
+      "dmgPerTile": 4,
+      "description": "Choisissez une case : sa ligne et sa colonne sont détruites (mana récupéré, 4 dégâts par case)"
+    },
+    {
+      "id": "thunderPrison",
+      "name": "Prison du Tonnerre Glacé",
+      "color": "blue",
+      "colors": [
+        "blue",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "blue": 7,
+        "yellow": 7,
+        "purple": 7
+      },
+      "effect": "cageEnemy",
+      "minLevel": 11,
+      "duration": 2,
+      "manaDrain": 6,
+      "description": "Étourdit l'ennemi 2 tours et lui retire 6 mana de chaque couleur"
+    },
+    {
+      "id": "jadeBreath",
+      "name": "Souffle de Jade Céleste",
+      "color": "green",
+      "colors": [
+        "green",
+        "blue",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "green": 12,
+        "blue": 8,
+        "yellow": 8,
+        "purple": 8
+      },
+      "effect": "secondWind",
+      "minLevel": 13,
+      "heal": 50,
+      "description": "Soigne 50 PV, retire les statuts négatifs et vous laisse rejouer"
+    },
+    {
+      "id": "starRain",
+      "name": "Pluie des Mille Étoiles",
+      "color": "red",
+      "colors": [
+        "red",
+        "blue",
+        "green",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 9,
+        "blue": 9,
+        "green": 9,
+        "yellow": 9,
+        "purple": 9
+      },
+      "effect": "starRain",
+      "minLevel": 15,
+      "rows": 2,
+      "columns": 2,
+      "dmgPerTile": 3,
+      "description": "Détruit 2 lignes et 2 colonnes au hasard : mana récupéré et 3 dégâts par case"
+    },
+    {
+      "id": "fiveHarmony",
+      "name": "Harmonie des Cinq Éléments",
+      "color": "red",
+      "colors": [
+        "red",
+        "blue",
+        "green",
+        "yellow",
+        "purple"
+      ],
+      "type": "advanced",
+      "cost": {
+        "red": 10,
+        "blue": 10,
+        "green": 10,
+        "yellow": 10,
+        "purple": 10
+      },
+      "effect": "harmony",
+      "minLevel": 17,
+      "dmg": 100,
+      "heal": 40,
+      "manaDrain": 5,
+      "description": "Inflige 100 dégâts, vous soigne de 40 PV et retire 5 mana de chaque couleur à l'ennemi"
     }
   ],
   "sorcererSpells": [

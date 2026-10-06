@@ -122,6 +122,21 @@ export function applyClassSpellEffect(spell) {
             return applyDeathbringer(spell);
         case 'doubleBattle': // Esprit des Ancêtres
             return applyRevenant(spell);
+        // Sorts avancés multi-mana (3 à 5 couleurs), génériques
+        case 'sweepRow': // Lame des Quatre Vents
+            return applySweepLines(spell, 'row');
+        case 'sweepCross': // Croix du Dragon
+            return applySweepLines(spell, 'cross');
+        case 'skullsFromColors': // Brasier des Sceaux
+            return applySkullsFromColors(spell);
+        case 'cageEnemy': // Prison du Tonnerre Glacé
+            return applyCageEnemy(spell);
+        case 'secondWind': // Souffle de Jade Céleste
+            return applySecondWind(spell);
+        case 'starRain': // Pluie des Mille Étoiles
+            return applyStarRain(spell);
+        case 'harmony': // Harmonie des Cinq Éléments
+            return applyHarmony(spell);
         default:
             log(`Effet inconnu: ${spell.effect}`);
             return false;
@@ -776,6 +791,113 @@ function applyBloodlust(spell) {
     return true;
 }
 
+// ── Sorts avancés multi-mana ────────────────────────────────────────────────
+
+const MANA_COLORS = ['red', 'blue', 'green', 'yellow', 'purple'];
+
+// Détruit les cases `indices` : récupère le mana des gemmes de couleur et inflige `dmgPerTile` par case détruite.
+function destroyIndices(spell, indices, title, label) {
+    const caster = getCurrentCaster();
+    const unique = [...new Set(indices)].filter(i => board[i] !== null && board[i] !== undefined);
+    const destroyedTiles = unique.map(i => board[i]);
+    unique.forEach(i => { board[i] = null; });
+    const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
+    const dmg = Math.max(0, Math.floor(spell.dmgPerTile || 0)) * unique.length;
+    if(dmg > 0) applyDamage(enemy, dmg, { sourceSpell: spell });
+    renderBoard();
+    showCombatAnimation({ icon: 'bolt', title, damage: dmg > 0 ? `-${dmg} dégâts` : label, target: `${label} • +${manaCollected.total} mana` }, true);
+    log(`${spell.name} : ${label}, ${dmg} dégâts, +${manaCollected.total} mana récupéré.`);
+    return { count: unique.length, dmg, mana: manaCollected.total };
+}
+
+const rowIndices = row => Array.from({ length: boardSize }, (_, c) => row * boardSize + c);
+const colIndices = col => Array.from({ length: boardSize }, (_, r) => r * boardSize + col);
+
+function applySweepLines(spell, shape) {
+    setBoardTargetingMode({
+        highlightPredicate: () => true,
+        onTileClick: (index) => {
+            const row = Math.floor(index / boardSize);
+            const col = index % boardSize;
+            const indices = shape === 'cross' ? [...rowIndices(row), ...colIndices(col)] : rowIndices(row);
+            setBoardTargetingMode(null);
+            destroyIndices(spell, indices, spell.name.toUpperCase(), shape === 'cross' ? 'Ligne et colonne détruites' : 'Ligne détruite');
+            saveUpdate();
+            checkMatches(true);
+            return true;
+        }
+    });
+    log(`${spell.name} : choisissez ${shape === 'cross' ? 'le centre de la croix' : 'la ligne à détruire'}.`);
+    return false;
+}
+
+function applySkullsFromColors(spell) {
+    const converted = Array.isArray(spell.convert) ? spell.convert : [];
+    let count = 0;
+    for(let i = 0; i < board.length; i++) {
+        if(converted.includes(board[i])) {
+            board[i] = 'skull';
+            count++;
+        }
+    }
+    if(count === 0) {
+        log(`Aucune gemme à transformer en crâne.`);
+        return false;
+    }
+    renderBoard();
+    showCombatAnimation({ icon: 'skull', title: spell.name.toUpperCase(), damage: `${count} gemmes → crânes`, target: '→ Plateau' }, true);
+    log(`${spell.name} transforme ${count} gemmes en crânes !`);
+    checkMatches(true);
+    return false;
+}
+
+function applyCageEnemy(spell) {
+    const turns = Math.max(1, Math.floor(spell.duration || 1));
+    if(!enemy.statusEffects) enemy.statusEffects = {};
+    enemy.statusEffects.stunned = Math.max(enemy.statusEffects.stunned || 0, turns);
+    const drain = Math.max(0, Math.floor(spell.manaDrain || 0));
+    let drained = 0;
+    MANA_COLORS.forEach(color => {
+        const amount = Math.min(drain, enemy.mana?.[color] || 0);
+        if(amount > 0) { enemy.mana[color] -= amount; drained += amount; }
+    });
+    showCombatAnimation({ icon: 'snow', title: spell.name.toUpperCase(), damage: `Étourdi ${turns} tours`, target: `→ ${enemy.name} • -${drained} mana` }, true);
+    log(`${spell.name} étourdit l'ennemi ${turns} tours et lui retire ${drained} mana.`);
+    return true;
+}
+
+function applySecondWind(spell) {
+    const heal = Math.max(0, Math.floor(spell.heal || 0));
+    player.hp = Math.min(player.maxHp, player.hp + heal);
+    ['poisoned', 'poisonDamage', 'stunned', 'weakened', 'weakenedAmount', 'confused'].forEach(k => { delete player.statusEffects[k]; });
+    addBonusTurn(player);
+    showCombatAnimation({ icon: 'leaf', title: spell.name.toUpperCase(), heal: `+${heal} PV • statuts purgés`, target: '→ Vous • rejouez !' }, true);
+    log(`${spell.name} soigne ${heal} PV, retire les statuts négatifs et vous laisse rejouer.`);
+    return true;
+}
+
+function applyStarRain(spell) {
+    const rows = [...Array(boardSize).keys()].sort(() => Math.random() - 0.5).slice(0, Math.max(1, spell.rows || 2));
+    const cols = [...Array(boardSize).keys()].sort(() => Math.random() - 0.5).slice(0, Math.max(1, spell.columns || 2));
+    const indices = [...rows.flatMap(rowIndices), ...cols.flatMap(colIndices)];
+    destroyIndices(spell, indices, spell.name.toUpperCase(), `${rows.length} lignes et ${cols.length} colonnes détruites`);
+    saveUpdate();
+    checkMatches(true);
+    return false;
+}
+
+function applyHarmony(spell) {
+    const dmg = Math.max(0, Math.floor(spell.dmg || 0));
+    const heal = Math.max(0, Math.floor(spell.heal || 0));
+    const drain = Math.max(0, Math.floor(spell.manaDrain || 0));
+    applyDamage(enemy, dmg, { sourceSpell: spell });
+    player.hp = Math.min(player.maxHp, player.hp + heal);
+    MANA_COLORS.forEach(color => { enemy.mana[color] = Math.max(0, (enemy.mana[color] || 0) - drain); });
+    showCombatAnimation({ icon: 'yinyang', title: spell.name.toUpperCase(), damage: `-${dmg} dégâts`, heal: `+${heal} PV`, target: `→ ${enemy.name} • -${drain} mana de chaque couleur` }, true);
+    log(`${spell.name} inflige ${dmg} dégâts, vous soigne de ${heal} PV et vide ${drain} mana de chaque couleur à l'ennemi.`);
+    return true;
+}
+
 function applySummonTempest(spell) {
     const caster = getCurrentCaster();
     const colsToDestroy = Math.max(1, Math.min(boardSize, Math.floor(spell.columns || 1)));
@@ -796,10 +918,11 @@ function applySummonTempest(spell) {
     });
 
     const manaCollected = collectDestroyedColorTilesMana(caster, destroyedTiles);
+    if(spell.dmgPerTile) applyDamage(enemy, Math.floor(spell.dmgPerTile) * destroyedTiles.length, { sourceSpell: spell });
 
     renderBoard();
-    showCombatAnimation({ icon: 'bolt', title: "APPEL DU VENT CÉLESTE", damage: `${pickedCols.length} colonnes détruites`, target: `+${manaCollected.total} mana récupéré` }, true);
-    log(`Appel du Vent Céleste détruit ${pickedCols.length} colonne(s) et ${caster.name} récupère ${manaCollected.total} mana.`);
+    showCombatAnimation({ icon: 'bolt', title: (spell.name || "Appel du Vent Céleste").toUpperCase(), damage: `${pickedCols.length} colonnes détruites`, target: `+${manaCollected.total} mana récupéré` }, true);
+    log(`${spell.name || 'Appel du Vent Céleste'} détruit ${pickedCols.length} colonne(s) et ${caster.name} récupère ${manaCollected.total} mana.`);
     return true;
 }
 
