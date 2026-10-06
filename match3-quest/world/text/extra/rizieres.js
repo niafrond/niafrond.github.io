@@ -523,6 +523,43 @@ export default {
         fragment: "Page du carnet (I)",
         xp: 25
       }
+    },
+    {
+          "id": "sq_hua_1",
+          "title": "La colporteuse sans âge",
+          "chapter": "✦ Quête secondaire — Rizières Desséchées",
+          "giver": "grandma_tao",
+          "turnIn": "grandma_tao",
+          "requires": [
+                "q_sun_1"
+          ],
+          "side": true,
+          "objectives": [
+                {
+                      "type": "talk",
+                      "target": "hua_riz",
+                      "text": "Interroger Hua la colporteuse sur ses babioles (place du hameau)",
+                      "lines": [
+                            "Mes babioles ? Un bouton, un caillou tiède, un bout de ficelle. Rien de précieux, archer. Rien qu'on ne perde un jour.",
+                            "Vous trouvez ce caillou chaud ? Il l'est toujours un peu. Gardez-le : il vous reconnaîtra."
+                      ]
+                }
+          ],
+          "offer": [
+                "Archer, j'ai des yeux de vieille, mais ils voient encore. Cette Hua qui vend ses breloques sur la place… je l'ai déjà vue petite fille. Elle n'a pas pris une ride.",
+                "Allez lui acheter quelque chose, et regardez-la bien pendant qu'elle vous rend la monnaie."
+          ],
+          "hint": [
+                "Hua vend ses babioles sur la place du hameau. Parlez-lui, et regardez ses mains."
+          ],
+          "complete": [
+                "Un caillou tiède ? Montrez… Oh. Ce n'est pas un caillou de rivière : il est fait de la même chose que les premières aubes. Je me tais, archer. Mais retenez ce nom : Hua. On la retrouve partout où il y a eu un soleil."
+          ],
+          "reward": {
+                "gold": 40,
+                "fragment": "Caillou tiède de Hua",
+                "xp": 30
+          }
     }
   ]
 };

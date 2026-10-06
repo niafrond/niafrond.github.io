@@ -741,6 +741,11 @@ const sceneEvent = scene => ({ type: 'scene', speaker: { ...(scene.speaker || {}
 
 // Victoire sur un ennemi : événement `scene` éventuel (`defeatScene` de la définition), puis quêtes automatiques,
 // puis l'interlude `afterScenes` (juste après le dernier texte de victoire, avant le démarrage des quêtes suivantes).
+// Nombre d'écrans (hors intérieurs) déjà visités dans une région.
+export function regionVisitCount(session, region) {
+    return session.data.visitedScreens.filter(id => { const sc = session.screens[id]; return sc && !sc.interior && sc.region === region; }).length;
+}
+
 export function markEnemyDefeated(session, enemyId) {
     const events = [];
     let after = [];

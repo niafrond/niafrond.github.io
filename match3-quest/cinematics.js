@@ -620,6 +620,64 @@ const FENGMENG_DUEL_LINES = {
         'Pose ton arc, Fengmeng. Elle ne voudrait pas cela.']
 };
 
+// Échanges propres à chaque soleil (id de l'ennemi de la carte) : alternance [soleil, Hou Yi, soleil, Hou Yi].
+const SUN_DUEL_LINES = {
+    sun_1: [
+        "Tu es venu seul, petit archer ? Nous étions dix à jouer dans le ciel, et personne ne nous a jamais dit d'arrêter.",
+        "Les rizières sont noires, soleil. Les enfants ne sortent plus. Ce n'est plus un jeu.",
+        "Père Di Jun nous a promis l'éternité. Il ne m'a pas parlé d'un homme avec un arc.",
+        "Alors il t'a menti. Éteins-toi sans souffrir : je ne tire pas pour faire mal."
+    ],
+    sun_2: [
+        "Tu as vu le fleuve, archer ? Je l'ai bu d'une gorgée. Il avait un goût de jade et de soupirs.",
+        "Les poissons agonisent sur la vase. Rends-lui son eau, ou je la lui rends moi-même.",
+        "Je ne voulais que me rafraîchir. Est-ce un crime d'avoir soif quand on brûle ?",
+        "Non. Mais tu as bu pour tout un village. Je suis désolé, soleil."
+    ],
+    sun_3: [
+        "Regarde mes cendres, Hou Yi. Elles volent jusqu'aux montagnes. Ce sont mes plumes, mes rires.",
+        "Ce sont aussi les arbres de ces forêts. Un vieux pin m'a dit ton nom avant de se taire.",
+        "Il me parlait de pluie. Je ne savais pas ce que c'était. Est-ce beau ?",
+        "Très beau. Je te le promets : tu l'entendras, de l'autre côté de ma flèche."
+    ],
+    sun_4: [
+        "Tu me vois, archer ? Ou vois-tu l'oasis que je t'ai dessinée ? Le désert aime ceux qui doutent.",
+        "J'ai déjà bu à trois mirages. Celui-ci est plus soif que les autres.",
+        "Tu sens ma chaleur dans ton dos. Elle est dans ta tête depuis que tu as quitté les rizières.",
+        "Alors je viserai ce qui ne ment pas : le bruit de ton souffle."
+    ],
+    sun_5: [
+        "Les nuages sont mes tambours, les éclairs mes baguettes ! Écoute, Hou Yi : le ciel parle comme moi !",
+        "Il hurle, soleil. Il a peur de toi, et des orages que tu forces.",
+        "Peur ? Moi ? Je suis le jeu ! Je suis le tonnerre de mon père Di Jun !",
+        "Alors joue encore une fois. La dernière note sera la mienne."
+    ],
+    sun_6: [
+        "Tu as traversé la lave comme on traverse une fête ? Les pixiu montaient la garde pour moi, pas pour toi.",
+        "Ils dormaient depuis des siècles. Tu les as éveillés pour te faire un trône de braise.",
+        "Le magma est ma chair. Que me restera-t-il, sans lui ? Un caillou froid dans le ciel ?",
+        "Une lune, peut-être. Je connais quelqu'un qui s'en contenterait."
+    ],
+    sun_7: [
+        "Mes bêtes sont dans ma flamme, archer. Elles ne te laisseront pas passer sans mordre.",
+        "Elles ont mordu, et je les ai épargnées autant que j'ai pu. Les loups hurlent à la lune, maintenant.",
+        "Elles se souvenaient de moi. Elles m'aimaient. Pourquoi les as-tu rendues à elles-mêmes ?",
+        "Parce qu'on n'aime pas vraiment quand on brûle. Viens, soleil. Il est temps."
+    ],
+    sun_8: [
+        "J'ai bu la marée à chaque coucher du jour. Pourtant la mer est toujours là, et je ne peux plus y entrer.",
+        "Tu l'as fait bouillir. Les pêcheurs ne reconnaissent plus leurs filets.",
+        "Elle chantait, avant. Maintenant elle crie. Est-ce ma faute ou celle de mon père ?",
+        "Celle de ton père, sans doute. Mais c'est toi qui tiens la flamme. C'est toi que je dois arrêter."
+    ],
+    sun_9: [
+        "Huit frères sont tombés, et tu me cherches, Hou Yi ? J'ai peur. Je l'avoue : j'ai peur.",
+        "Je n'aime pas tirer sur qui tremble. Rends-toi, et laisse-moi finir ma route.",
+        "Me rendre ? Pour que mon père me jette en pâture aux flammes ? Non. Non, je préfère me battre.",
+        "Alors bats-toi bien. C'est la dernière chose que je peux t'offrir."
+    ]
+};
+
 function pick(list, seed) {
     let h = 0;
     for (const ch of String(seed)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -631,6 +689,8 @@ export function bossIntroLines(enc) {
     const name = enc?.boss?.name || enc?.name || 'Boss';
     // Répliques propres à la rencontre (maîtres de l'Arène des Mille Flèches) : [adversaire, héros].
     if (enc?.introLines?.length === 2) return [{ who: 'boss', text: enc.introLines[0] }, { who: 'hero', text: enc.introLines[1] }];
+    const sunLines = SUN_DUEL_LINES[enc?.enemyId];
+    if (sunLines) return sunLines.map((text, i) => ({ who: i % 2 ? 'hero' : 'boss', text }));
     const duelLines = FENGMENG_DUEL_LINES[enc?.enemyId];
     if (duelLines) return [{ who: 'boss', text: duelLines[0] }, { who: 'hero', text: duelLines[1] }];
     const isRival = /fengmeng/i.test(name);
@@ -640,6 +700,195 @@ export function bossIntroLines(enc) {
         { who: 'boss', text: pick(taunts, name) },
         { who: 'hero', text: pick(replies, name + enc.level) }
     ];
+}
+
+// ── Chute d'un soleil ───────────────────────────────────────────────────────
+// Courte cinématique jouée après la défaite de chacun des neuf soleils : la flèche de Hou Yi frappe l'astre, il
+// devient braise et tombe derrière l'horizon. Le ciel s'assombrit à chaque soleil abattu (1/9 → 9/9), la lune
+// gagne en clarté et un compteur de neuf soleils s'éteint peu à peu.
+export const SUN_FALL_CAPTIONS = [
+    "Le premier soleil s'éteint sur les rizières. Un soir, enfin, descend sur la terre.",
+    "Le deuxième soleil s'abîme dans la vase du fleuve. L'eau, au loin, murmure de nouveau.",
+    "Le troisième soleil se défait en cendres. Dans la forêt, une première goutte de pluie tombe.",
+    "Le quatrième soleil se dissipe comme un mirage. Le désert, pour une fois, se tait.",
+    "Le cinquième soleil se tait dans un dernier éclair. Les nuages respirent.",
+    "Le sixième soleil refroidit dans la roche. Le volcan s'endort sous les étoiles.",
+    "Le septième soleil retombe sur les herbes. Les loups hurlent à la lune, comme avant.",
+    "Le huitième soleil plonge dans la mer. L'écume, enfin, redevient fraîche.",
+    "Le dernier soleil de la Terre tombe, et il ne reste qu'un seul astre : celui qui éclaire les hommes."
+];
+
+export function playSunFallAnimation({ count = 1, name = 'Soleil' } = {}) {
+    const n = Math.max(1, Math.min(9, count));
+    const DURATION = 7;
+    const caption = SUN_FALL_CAPTIONS[n - 1];
+    return runScene({
+        extraClass: 'cine-sunfall',
+        duration: DURATION,
+        startSfx: 'bossStart',
+        onMount(overlay) {
+            const box = document.createElement('div');
+            box.className = 'cine-sunfall-text';
+            const title = document.createElement('div');
+            title.className = 'cine-sunfall-title';
+            title.textContent = `${name} est tombé`;
+            const line = document.createElement('div');
+            line.className = 'cine-sunfall-line';
+            line.textContent = caption;
+            box.append(title, line);
+            overlay.append(box);
+        },
+        draw(ctx, t) {
+            const darkK = n / 9;
+            const horizon = Math.round(H * 0.78);
+            // ciel : crépuscule doré → nuit selon le nombre de soleils tombés
+            const top = lerpColor('#c4476a', '#0b0b2b', Math.min(1, darkK * 1.1));
+            const bot = lerpColor('#ffc46b', '#2a2a80', Math.min(1, darkK * 1.05));
+            sky(ctx, top, bot, 16);
+            if (darkK > 0.3) stars(ctx, t, Math.round(60 * darkK), Math.min(1, (darkK - 0.3) * 1.6));
+            moon(ctx, Math.round(W * 0.82), Math.round(H * 0.16), Math.round(4 + darkK * 5));
+
+            // soleil : plane, est touché par la flèche (2,2 s), devient braise et chute (2,8 → 5,2 s)
+            const sx = W * 0.5;
+            const sy0 = H * 0.3;
+            const r = 10;
+            const fallT = clamp01((t - 2.8) / 2.4);
+            const sy = sy0 + fallT * fallT * (horizon - sy0 + r + 4);
+            if (t < 2.8) {
+                ctx.globalAlpha = 0.25;
+                disc(ctx, PAL.sunHi, sx, sy0, r + 5 + Math.round(Math.sin(t * 6)));
+                ctx.globalAlpha = 1;
+                sun(ctx, sx, sy0 + Math.round(Math.sin(t * 3)), r, t);
+            } else if (fallT < 1) {
+                const k = Math.min(1, fallT * 2);
+                disc(ctx, lerpColor(PAL.sun, '#5a1d1a', k), sx, sy, r);
+                disc(ctx, lerpColor(PAL.sunHi, '#a8301f', k), sx - 1, sy - 1, Math.max(1, r - 2));
+                for (let i = 0; i < 14; i++) {      // traînée de braises
+                    const age = i / 14;
+                    const ey = sy - 4 - i * 3;
+                    if (ey > 0) px(ctx, i % 2 ? PAL.sunHi : '#ff5a3c', sx + Math.sin(t * 9 + i * 1.7) * (2 + i * 0.4), ey, 1, 1 + (age < 0.5 ? 1 : 0));
+                }
+            }
+            // flèche en vol (2,0 → 2,8 s) depuis l'archer vers le soleil
+            const ax = W * 0.16;
+            const ay = horizon - 24;
+            if (t >= 2.0 && t < 2.8) {
+                const k = (t - 2.0) / 0.8;
+                const fx = ax + 19 + (sx - ax - 19) * k;
+                const fy = ay + 10 + (sy0 - ay - 10) * k;
+                px(ctx, '#ffffff', fx - 6, fy + 3 * (1 - k) * 0.5, 7, 1);
+                px(ctx, '#ffd24a', fx + 1, fy - 1, 1, 3);
+                ctx.globalAlpha = 0.4;
+                disc(ctx, '#ffe9a0', fx, fy, 3);
+                ctx.globalAlpha = 1;
+            }
+            // éclat à l'impact
+            if (t >= 2.8 && t < 3.3) {
+                ctx.globalAlpha = 1 - (t - 2.8) / 0.5;
+                disc(ctx, '#ffffff', sx, sy0, 10 + Math.round((t - 2.8) * 40));
+                ctx.globalAlpha = 1;
+            }
+            // collines et sol (silhouettes encre)
+            for (let x = 0; x < W; x++) {
+                const h = Math.round(Math.sin(x * 0.07 + 1) * 3 + Math.sin(x * 0.19) * 1.5);
+                px(ctx, PAL.ground, x, horizon + h, 1, H - horizon - h);
+            }
+            // lueur de l'atterrissage
+            if (t >= 5.0) {
+                const k = Math.min(1, (t - 5.0) / 0.6);
+                ctx.globalAlpha = (1 - clamp01((t - 5.6) / 1.4)) * 0.7 * k;
+                disc(ctx, '#ff8a1f', sx, horizon, Math.round(8 + k * 14));
+                ctx.globalAlpha = 1;
+                px(ctx, PAL.ground, sx - 30, horizon + 3, 60, H - horizon);
+            }
+            archer(ctx, ax, ay, t < 2.8 ? 1 : 0, t);
+            // compteur : neuf soleils, les tombés sont éteints
+            const gap = 9;
+            const cx0 = Math.round(W / 2 - (8 * gap) / 2);
+            for (let i = 0; i < 9; i++) {
+                const fallen = i < n - 1 || (i === n - 1 && t >= 5.0);
+                disc(ctx, fallen ? '#2a2a50' : PAL.sun, cx0 + i * gap, 6, 2);
+                if (!fallen) px(ctx, PAL.sunHi, cx0 + i * gap - 1, 5, 1, 1);
+            }
+            // assombrissement progressif
+            ctx.globalAlpha = 0.35 * darkK;
+            px(ctx, PAL.ink, 0, 0, W, H);
+            ctx.globalAlpha = 1;
+        }
+    });
+}
+
+// ── Découverte d'une région ─────────────────────────────────────────────────
+// Courte cinématique jouée la toute première fois que Hou Yi entre dans une région : le héros marche vers
+// l'horizon, les collines défilent à deux vitesses, le ciel prend les couleurs de la région, puis le nom
+// et la description de la région apparaissent (`.cine-region-*`).
+// Palettes [haut du ciel, bas du ciel, collines lointaines, collines proches, accent].
+export const REGION_SCENES = {
+    rizieres: ['#6b2d2a', '#e8a15a', '#8a4a2e', '#4a2418', '#ffd24a'],
+    fleuve: ['#5a3a1c', '#d9a35a', '#7a5a34', '#3a2a14', '#f0d9a0'],
+    bambous: ['#2a2420', '#7a5a4a', '#3a3a30', '#1a1a14', '#9bd1a0'],
+    gobi: ['#7a3a1c', '#ffc46b', '#c4824a', '#8a5a2e', '#fff4c8'],
+    tonnerre: ['#1d1d45', '#6a5aa0', '#3a3a70', '#14143a', '#ffe36b'],
+    volcan: ['#2a0f10', '#d63a2f', '#5a1d1a', '#1b0a0a', '#ffb347'],
+    fauves: ['#7a4a1c', '#e8b04a', '#a8783a', '#5a3a1c', '#fbe7b0'],
+    mer: ['#0d3440', '#58a89f', '#1b5f68', '#0a2a34', '#b4dcd0'],
+    fusang: ['#5a1d3a', '#ffb06b', '#a8504a', '#4a1830', '#ffd24a'],
+    lune: ['#0b0b2b', '#3a3a90', '#2a2a70', '#141446', '#fff4c8']
+};
+
+export function playRegionDiscovery({ id = 'rizieres', name = '', description = '' } = {}) {
+    const pal = REGION_SCENES[id] || REGION_SCENES.rizieres;
+    const DURATION = 5.5;
+    return runScene({
+        extraClass: 'cine-region',
+        duration: DURATION,
+        startSfx: 'introJingle',
+        onMount(overlay) {
+            const box = document.createElement('div');
+            box.className = 'cine-region-text';
+            const kicker = document.createElement('div');
+            kicker.className = 'cine-region-kicker';
+            kicker.textContent = 'Nouvelle région';
+            const title = document.createElement('div');
+            title.className = 'cine-region-title';
+            title.textContent = name;
+            const line = document.createElement('div');
+            line.className = 'cine-region-line';
+            line.textContent = description;
+            box.append(kicker, title, line);
+            overlay.append(box);
+        },
+        draw(ctx, t) {
+            sky(ctx, pal[0], pal[1], 16);
+            if (id === 'lune' || id === 'tonnerre') stars(ctx, t, 36, 0.9);
+            // soleil bas / lune selon la région
+            if (id === 'lune') moon(ctx, Math.round(W * 0.72), Math.round(H * 0.28), 9);
+            else if (id !== 'tonnerre') disc(ctx, pal[4], Math.round(W * 0.72), Math.round(H * 0.5), 8);
+            const ridge = (color, speed, base, amp, freq) => {
+                for (let x = 0; x < W; x++) {
+                    const u = x + t * speed;
+                    const h = Math.round(Math.sin(u * freq) * amp + Math.sin(u * freq * 2.3 + 1) * amp * 0.4);
+                    px(ctx, color, x, base + h, 1, H - base - h);
+                }
+            };
+            ridge(pal[2], 6, Math.round(H * 0.62), 5, 0.045);
+            ridge(pal[3], 16, Math.round(H * 0.78), 3, 0.09);
+            // l'avancée du héros : léger rebond, éclat d'accent sur l'arc
+            const hx = Math.round(W * 0.2);
+            const hy = Math.round(H * 0.78) - 18 + Math.round(Math.abs(Math.sin(t * 6)));
+            archer(ctx, hx, hy, 0, t);
+            // poussière / lueurs dérivantes
+            for (let i = 0; i < 10; i++) {
+                const fx = (W - ((t * (18 + i * 3) + i * 37) % W));
+                px(ctx, pal[4], fx, H * 0.82 + (i % 4) * 4, 1, 1);
+            }
+            // fondu d'entrée / sortie
+            const fade = Math.min(1, t / 0.6) * Math.min(1, (DURATION - t + 0.4) / 0.8);
+            ctx.globalAlpha = 1 - Math.max(0, Math.min(1, fade));
+            px(ctx, '#000000', 0, 0, W, H);
+            ctx.globalAlpha = 1;
+        }
+    });
 }
 
 // Boîte de dialogue pixel au-dessus de l'écran de transition : texte tapé lettre à lettre,
