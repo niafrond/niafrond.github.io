@@ -67,12 +67,13 @@ describe('croissance innée après le niveau 18', () => {
 });
 
 describe('combats jouables jusqu\'au niveau 70 (modèle : meilleure arme du niveau, attributs répartis)', () => {
+    // Les arcs lourds (playerOnly, 8 PA et plus) sont hors modèle : ils se jouent en 2-3 tours de stockage de PA.
     // Joueur : PV 100 + 5/niveau (+ extras), attaque 15 + 0,4 point/niveau + extras ; ennemi : formules d'enemies.js.
     const player = L => {
         const pts = L - 1, ex = growthExtras(1, L);
         return { hp: 100 + 5 * pts + ex.maxHp + Math.round(pts * 0.2), attack: 15 + Math.round(pts * 0.4) + ex.attack, def: Math.round(pts * 0.2) };
     };
-    const bestWeapon = L => Math.max(...allWeapons.filter(w => w.minLevel <= L).map(w => w.damage));
+    const bestWeapon = L => Math.max(...allWeapons.filter(w => w.minLevel <= L && !w.playerOnly).map(w => w.damage));
 
     test.each([1, 5, 10, 20, 30, 40, 50, 60, 70])('niveau %i : tuer l\'ennemi du même niveau demande 2 à 7 coups, il en faut 3 à 9 pour tuer le héros', L => {
         const p = player(L);

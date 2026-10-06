@@ -2479,6 +2479,8 @@ export function applyAttributeBonus(attr){
 
 // -------------------------------------
 // sorts
+const HIGH_SPELL_FROM_LEVEL = 15;
+
 function getUnlockedSpellCap(level) {
     const safeLevel = Math.max(1, Math.floor(level || 1));
     return Math.max(0, safeLevel - 1);
@@ -2503,7 +2505,10 @@ function buildUnlockedSpellsList(spells, level) {
         return String(a.id).localeCompare(String(b.id));
     });
 
-    return uniqueById.slice(0, unlockCap);
+    // Les sorts de haut niveau (multimana, niveau > 15) sont débloqués dès leur niveau, hors plafond du nombre de sorts.
+    const early = uniqueById.filter(s => (s.minLevel || 1) <= HIGH_SPELL_FROM_LEVEL).slice(0, unlockCap);
+    const high = uniqueById.filter(s => (s.minLevel || 1) > HIGH_SPELL_FROM_LEVEL);
+    return [...early, ...high];
 }
 
 export function updateAvailableSpells(){
