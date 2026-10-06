@@ -4,7 +4,7 @@ import { colors, boardSize } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
 import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
-import { weaknessDamage, ruleForBiome } from "./terrain.js";
+import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { heroSprite, enemySprite, spriteUri } from "./sprites/index.js";
 import { viewSprite, HERO_VIEW_OPTS } from "./sprites/side.js";
 import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
@@ -3003,14 +3003,25 @@ export function consumeBoardBoost(){
 // détermine le premier tour selon l'agilité (plus d'agilité = joueur plus rapide)
 export function decideFirstTurn(){
     const prep = enemy?.prep;
+    const banner = prepBanner(prep, enemy?.name);
+    // Avantage du terrain : une seule annonce, qui détaille chaque conséquence (ex. « +1 PA »), plus longue qu'une annonce simple.
+    let announceMs = 1500;   // délai avant que l'ennemi ne joue, le temps que l'annonce se lise
+    const announce = (anim, playerStarts, extraLine = null) => {
+        if(!banner) { showCombatAnimation(anim, playerStarts); return; }
+        const lines = extraLine ? [...banner.lines, extraLine] : banner.lines;
+        announceMs = 1400 + 1100 * lines.length + 300;
+        showCombatAnimation({
+            icon: banner.icon, title: banner.title,
+            source: lines.join('<br>'),
+            target: playerStarts ? '→ À vous de jouer !' : '→ Ennemi joue en premier'
+        }, playerStarts, { autoHideMs: (1400 + 1100 * lines.length) * animationFactor() });
+    };
     if(prep?.playerFirst || prep?.enemyFirst){
         const playerStarts = Boolean(prep.playerFirst);
         currentTurn = playerStarts ? 'player' : 'enemy';
-        showCombatAnimation(playerStarts
-            ? { icon: 'bolt', title: 'Attaque surprise !', source: 'Vous les prenez par derrière', target: '→ À vous de jouer !' }
-            : { icon: 'bolt', title: `${enemy.name} vous attend !`, source: 'Préparation du terrain', target: '→ Ennemi joue en premier' }, playerStarts);
+        announce({ icon: 'bolt', title: 'Préparation du terrain', source: '', target: playerStarts ? '→ À vous de jouer !' : '→ Ennemi joue en premier' }, playerStarts);
         log(`Premier tour : ${playerStarts ? 'Joueur' : 'Ennemi'} (préparation du terrain)`);
-        if(!playerStarts) setTimeout(() => enemyTurn(), 1500);
+        if(!playerStarts) setTimeout(() => enemyTurn(), announceMs);
         return;
     }
     const playerAgility = player.attributes.agility || 0;
@@ -3020,22 +3031,22 @@ export function decideFirstTurn(){
     if(playerAgility > enemyAgility){
         starter = 'player';
         log(`Vous êtes plus agile ! Vous commencez en premier.`);
-        showCombatAnimation({ icon: 'bolt', title: 'Vous commencez !', source: `Agilité : ${playerAgility} > ${enemyAgility}`, target: '→ À vous de jouer !' }, true);
+        announce({ icon: 'bolt', title: 'Vous commencez !', source: `Agilité : ${playerAgility} > ${enemyAgility}`, target: '→ À vous de jouer !' }, true, 'Plus agile : vous commencez.');
     } else if(enemyAgility > playerAgility){
         starter = 'enemy';
         log(`${enemy.name} est plus agile ! Il commence en premier.`);
-        showCombatAnimation({ icon: 'bolt', title: `${enemy.name} commence !`, source: `Agilité : ${enemyAgility} > ${playerAgility}`, target: '→ Ennemi joue en premier' }, false);
+        announce({ icon: 'bolt', title: `${enemy.name} commence !`, source: `Agilité : ${enemyAgility} > ${playerAgility}`, target: '→ Ennemi joue en premier' }, false, `${enemy.name} est plus agile : il commence.`);
     } else {
         // En cas d'égalité, le joueur commence
         starter = 'player';
         log(`Égalité d'agilité, vous commencez !`);
-        showCombatAnimation({ icon: 'scales', title: 'Égalité !', source: `Agilité : ${playerAgility} = ${enemyAgility}`, target: '→ À vous de jouer !' }, true);
+        announce({ icon: 'scales', title: 'Égalité !', source: `Agilité : ${playerAgility} = ${enemyAgility}`, target: '→ À vous de jouer !' }, true, "Égalité d'agilité : vous commencez.");
     }
     
     currentTurn = starter;
     log(`Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'}`);
     if(starter === 'enemy'){
-        setTimeout(() => enemyTurn(), 1500);
+        setTimeout(() => enemyTurn(), announceMs);
     }
 }
 

@@ -97,6 +97,26 @@ export function buildPrep(ctx = {}) {
     return prep;
 }
 
+// Bandeau d'annonce affiché au début du combat quand le terrain donne un avantage (ou un handicap) :
+// titre selon l'avantage principal, une ligne par conséquence (déjà rédigée dans `prep.lines`). null si aucune préparation.
+const BANNERS = {
+    ambush: { icon: 'bolt', title: 'Attaque surprise !' },
+    trap: { icon: 'poison', title: 'Piège !' },
+    grass: { icon: 'leaf', title: 'Hautes herbes !' },
+    outlook: { icon: 'flag', title: 'Position dominante !' },
+    observed: { icon: 'eye', title: 'Faiblesse repérée !' }
+};
+export function prepBanner(prep, enemyName = "L'ennemi") {
+    if (!prep || !prep.lines?.length) return null;
+    const lines = [...prep.lines];
+    let head = BANNERS[prep.tags[0]] || { icon: 'bolt', title: 'Avantage du terrain !' };
+    if (prep.enemyFirst) {
+        head = { icon: 'bolt', title: `${enemyName} vous attend !` };
+        lines.push(`${enemyName} joue en premier.`);
+    }
+    return { icon: head.icon, title: head.title, lines };
+}
+
 // Dégâts d'un sort sur un ennemi dont la faiblesse a été percée.
 export const weaknessDamage = (damage, spellColor, weakColor, revealed) =>
     revealed && weakColor && spellColor === weakColor ? Math.ceil(damage * (1 + WEAKNESS_DAMAGE_BONUS)) : damage;
