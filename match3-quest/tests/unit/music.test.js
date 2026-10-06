@@ -250,7 +250,7 @@ describe('pistes pré-enregistrées : correspondance scène → fichier (musicTr
 describe('fichiers audio livrés (rendus par tools/audio/render.mjs)', () => {
     const exists = (p) => existsSync(new URL(`../../${p}`, import.meta.url));
     const expectedTracks = () => {
-        const keys = ['title', 'menu', 'house', 'sanctuary', 'moon', 'ending'];
+        const keys = ['title', 'menu', 'house', 'sanctuary', 'moon', 'ending', 'victory', 'defeat'];
         BIOMES.forEach((b) => keys.push(`village-${b}`, `wild-${b}`));
         for (let i = 0; i < COMBAT_STYLE_COUNT; i++) keys.push(`combat-${i}`);
         for (let i = 0; i < BOSS_ARCHETYPE_COUNT; i++) keys.push(`boss-a${i}`);

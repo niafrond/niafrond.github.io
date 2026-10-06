@@ -24,6 +24,14 @@
    "seconds": 32,
    "sections": 1
   },
+  "victory": {
+   "seconds": 40,
+   "sections": 2
+  },
+  "defeat": {
+   "seconds": 35.6,
+   "sections": 1
+  },
   "village-paddy": {
    "seconds": 40,
    "sections": 2

@@ -671,8 +671,8 @@ function showCombatResultScreen(isVictory){
     const summary = document.getElementById('battle-result-summary');
     if(!screen || !title || !subtitle || !summary) return;
 
-    title.textContent = isVictory ? 'Victoire' : 'Defaite';
-    subtitle.textContent = isVictory ? 'Combat termine avec succes.' : 'Vous avez ete vaincu.';
+    title.textContent = isVictory ? 'Victoire' : 'Défaite';
+    subtitle.textContent = isVictory ? 'Combat terminé avec succès.' : 'Vous avez été vaincu.';
 
     const allLoot = [...combatRewards.weapons, ...combatRewards.items];
     const lootLines = allLoot.length > 0
@@ -680,7 +680,7 @@ function showCombatResultScreen(isVictory){
         : '<li>Aucun butin</li>';
 
     const goldLine = combatRewards.gold > 0
-        ? `<li>${svgIcon('coin')} Or: +${combatRewards.gold} pièce${combatRewards.gold > 1 ? 's' : ''}</li>`
+        ? `<li>${svgIcon('coin')} Or : +${combatRewards.gold} pièce${combatRewards.gold > 1 ? 's' : ''}</li>`
         : '';
 
     // Anti try-hard : après trois défaites d'affilée contre le même boss, un conseil pour progresser autrement.
@@ -689,7 +689,7 @@ function showCombatResultScreen(isVictory){
         : null;
     summary.innerHTML = `
         ${tip ? `<p class="battle-result-tip">${svgIcon('scroll')} <strong>Conseil :</strong> ${tip}</p>` : ''}
-        <div class="battle-result-xp">XP gagnee: ${combatRewards.xpGained}</div>
+        <div class="battle-result-xp">XP gagnée : ${combatRewards.xpGained}</div>
         <ul class="battle-result-loot">
             ${goldLine}
             ${lootLines}

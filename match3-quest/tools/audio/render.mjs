@@ -22,7 +22,7 @@ const { SCREENS } = await import(pathToFileURL(join(GAME, 'story.js')));
 
 // ── Liste des pistes ────────────────────────────────────────────────────────
 export function trackList() {
-    const tracks = ['title', 'menu', 'house', 'sanctuary', 'moon', 'ending'].map(key => ({ key, scene: key, opts: {} }));
+    const tracks = ['title', 'menu', 'house', 'sanctuary', 'moon', 'ending', 'victory', 'defeat'].map(key => ({ key, scene: key, opts: {} }));
     for (const scene of ['village', 'wild']) for (const biome of BIOMES) tracks.push({ key: `${scene}-${biome}`, scene, opts: { biome } });
     for (let v = 0; v < COMBAT_STYLE_COUNT; v++) tracks.push({ key: `combat-${v}`, scene: 'combat', opts: { variant: v } });
     const bossNames = new Map();
