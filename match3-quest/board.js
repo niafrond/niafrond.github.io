@@ -198,6 +198,21 @@ function syncBoardTileSize(){
     if(usableWidth <= 0) return;
 
     const tileSizeFromWidth = Math.floor(usableWidth / boardSize);
+    const spellsContainer = document.getElementById('spells-container');
+    if(spellsContainer){
+        if(fullWidth){
+            // Liste verticale si elle tient dans l'écran (avec une grille de taille raisonnable), sinon grille compacte
+            spellsContainer.classList.remove('spells-compact');
+            const boardSide = Math.max(10, Math.floor(usableWidth / boardSize)) * boardSize + paddingLeft + paddingRight + (gap * (boardSize - 1));
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+            const top = Math.max(0, boardDiv.getBoundingClientRect().top);
+            const controls = getOuterBlockSize(document.getElementById('combat-controls'));
+            const needed = top + boardSide + getOuterBlockSize(spellsContainer) + controls + 8;
+            if(viewportHeight > 0 && needed > viewportHeight) spellsContainer.classList.add('spells-compact');
+        } else {
+            spellsContainer.classList.remove('spells-compact');
+        }
+    }
     const tileSizeFromHeight = getMaxTileSizeFromViewport(boardDiv);
     const tileSize = Math.max(10, fullWidth ? tileSizeFromWidth : Math.min(tileSizeFromWidth, tileSizeFromHeight));
     boardDiv.style.setProperty('--tile-size', `${tileSize}px`);
