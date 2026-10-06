@@ -53,7 +53,7 @@ export const MOUNTS = {
 // Un marchand par monture : le Maître Zhu des Bambous (3e région) vend le cheval, très cher.
 // Torche : vendue par les marchands des dernières régions, elle éclaire les cavernes et cryptes plongées dans le noir (world/underground.js).
 export const TORCH = { id: 'torch', name: 'Torche', type: 'torch',
-    description: 'Une torche de résine qui ne s\'éteint pas : éclaire largement les cavernes et cryptes, où l\'on n\'y voit sinon qu\'à un pas.' };
+    description: 'Une torche de résine qui ne s\'éteint pas : elle éclaire largement les cavernes et les cryptes, où l\'on ne voit guère à plus d\'un pas.' };
 export const TORCH_PRICE = 400;
 // Vendue tardivement : le joueur traverse d'abord les souterrains à tâtons, puis revient avec la torche après avoir avancé dans l'intrigue.
 export const TORCH_MERCHANTS = ['merchant_fauves', 'merchant_mer', 'merchant_fusang', 'merchant_lune'];
