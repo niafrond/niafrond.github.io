@@ -318,7 +318,7 @@
       "description": "Augmente temporairement les dégâts physiques de 8 pendant 4 tours"
     },
     {
-      "id": "fireball",
+      "id": "flameSphere",
       "name": "Sphère de Flammes",
       "class": "sorcerer",
       "cost": {
@@ -872,7 +872,7 @@
       "description": "Augmente temporairement les dégâts physiques de 8 pendant 4 tours"
     },
     {
-      "id": "fireball",
+      "id": "flameSphere",
       "name": "Sphère de Flammes",
       "class": "sorcerer",
       "cost": {

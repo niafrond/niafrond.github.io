@@ -4,7 +4,7 @@ import { colors, boardSize } from "./constants.js";
 import { generateRandomEnemy } from "./enemies.js";
 import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial.js";
 import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
-import { weaknessDamage, ruleForBiome } from "./terrain.js";
+import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { heroSprite, enemySprite, spriteUri } from "./sprites/index.js";
 import { viewSprite, HERO_VIEW_OPTS } from "./sprites/side.js";
 import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
@@ -953,6 +953,8 @@ export function loadGameData() {
             player.attributes = { ...player.attributes, ...(loaded.attributes || {}) };
             player.spells = loaded.spells ?? player.spells;
             player.activeSpells = loaded.activeSpells ?? player.activeSpells;
+            // Ancienne Sphère de Flammes du sorcier : elle partageait l'id « fireball » avec le Souffle du Dragon de Feu.
+            (player.activeSpells || []).forEach(sp => { if(sp?.id === 'fireball' && sp.class === 'sorcerer') sp.id = 'flameSphere'; });
             player.availableSpells = loaded.availableSpells ?? player.availableSpells;
             player.weapons = loaded.weapons ?? [];
             player.equippedWeapon = loaded.equippedWeapon ?? null;
@@ -1257,15 +1259,7 @@ export function updateEnemySpells(){
         if(enemyItemCard && enemy.inventoryItem) {
             const showDetails = () => showItemTooltip(enemyItemCard, enemy.inventoryItem, { isEnemyItem: true });
             const hideDetails = () => hideSpellTooltip();
-            enemyItemCard.addEventListener('mouseenter', showDetails);
-            enemyItemCard.addEventListener('mouseleave', hideDetails);
-            enemyItemCard.addEventListener('mousedown', showDetails);
-            enemyItemCard.addEventListener('mouseup', hideDetails);
-            enemyItemCard.addEventListener('touchstart', showDetails, { passive: true });
-            enemyItemCard.addEventListener('touchend', hideDetails);
-            enemyItemCard.addEventListener('touchcancel', hideDetails);
-            enemyItemCard.addEventListener('focus', showDetails);
-            enemyItemCard.addEventListener('blur', hideDetails);
+            bindTooltip(enemyItemCard, showDetails, hideDetails);
         }
     }
 
@@ -1310,15 +1304,7 @@ export function updateEnemySpells(){
 
         const showDetails = () => showSpellTooltip(div, sp);
         const hideDetails = () => hideSpellTooltip();
-        div.addEventListener('mouseenter', showDetails);
-        div.addEventListener('mouseleave', hideDetails);
-        div.addEventListener('mousedown', showDetails);
-        div.addEventListener('mouseup', hideDetails);
-        div.addEventListener('touchstart', showDetails, { passive: true });
-        div.addEventListener('touchend', hideDetails);
-        div.addEventListener('touchcancel', hideDetails);
-        div.addEventListener('focus', showDetails);
-        div.addEventListener('blur', hideDetails);
+        bindTooltip(div, showDetails, hideDetails);
 
         container.appendChild(div);
     });
@@ -2567,19 +2553,37 @@ export function createSpellButtons(){
 
         const showDetails = () => showSpellTooltip(btn, sp);
         const hideDetails = () => hideSpellTooltip();
-        btn.addEventListener('mouseenter', showDetails);
-        btn.addEventListener('mouseleave', hideDetails);
-        btn.addEventListener('mousedown', showDetails);
-        btn.addEventListener('mouseup', hideDetails);
-        btn.addEventListener('touchstart', showDetails, { passive: true });
-        btn.addEventListener('touchend', hideDetails);
-        btn.addEventListener('touchcancel', hideDetails);
-        btn.addEventListener('focus', showDetails);
-        btn.addEventListener('blur', hideDetails);
+        bindTooltip(btn, showDetails, hideDetails);
 
         container.appendChild(btn);
     });
     updateSpellsTab();
+}
+
+// Infobulle d'un sort / d'une arme / d'un objet : au survol à la souris, au focus clavier, ou par appui long au doigt
+// (un appui bref sert à utiliser l'élément et ne doit pas afficher l'infobulle).
+export const TOOLTIP_LONG_PRESS_MS = 400;
+function bindTooltip(el, show, hide) {
+    let timer = null;
+    let shownByPress = false;
+    const cancel = () => { clearTimeout(timer); timer = null; };
+    el.addEventListener('pointerenter', e => { if(e.pointerType === 'mouse') show(); });
+    el.addEventListener('pointerleave', e => { cancel(); if(e.pointerType === 'mouse') hide(); });
+    el.addEventListener('pointerdown', e => {
+        if(e.pointerType === 'mouse') return;
+        cancel();
+        timer = setTimeout(() => { timer = null; shownByPress = true; show(); }, TOOLTIP_LONG_PRESS_MS);
+    });
+    // Relâcher un appui long ne doit pas utiliser l'élément : on avale le clic qui suit.
+    el.addEventListener('click', e => {
+        if(!shownByPress) return;
+        shownByPress = false;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+    }, true);
+    ['pointerup', 'pointercancel'].forEach(type => el.addEventListener(type, () => { cancel(); hide(); }));
+    el.addEventListener('focus', () => { if(el.matches?.(':focus-visible')) show(); });
+    el.addEventListener('blur', () => { cancel(); hide(); });
 }
 
 function getSpellTooltipHtml(spell) {
@@ -3003,14 +3007,25 @@ export function consumeBoardBoost(){
 // détermine le premier tour selon l'agilité (plus d'agilité = joueur plus rapide)
 export function decideFirstTurn(){
     const prep = enemy?.prep;
+    const banner = prepBanner(prep, enemy?.name);
+    // Avantage du terrain : une seule annonce, qui détaille chaque conséquence (ex. « +1 PA »), plus longue qu'une annonce simple.
+    let announceMs = 1500;   // délai avant que l'ennemi ne joue, le temps que l'annonce se lise
+    const announce = (anim, playerStarts, extraLine = null) => {
+        if(!banner) { showCombatAnimation(anim, playerStarts); return; }
+        const lines = extraLine ? [...banner.lines, extraLine] : banner.lines;
+        announceMs = 1400 + 1100 * lines.length + 300;
+        showCombatAnimation({
+            icon: banner.icon, title: banner.title,
+            source: lines.join('<br>'),
+            target: playerStarts ? '→ À vous de jouer !' : '→ Ennemi joue en premier'
+        }, playerStarts, { autoHideMs: (1400 + 1100 * lines.length) * animationFactor() });
+    };
     if(prep?.playerFirst || prep?.enemyFirst){
         const playerStarts = Boolean(prep.playerFirst);
         currentTurn = playerStarts ? 'player' : 'enemy';
-        showCombatAnimation(playerStarts
-            ? { icon: 'bolt', title: 'Attaque surprise !', source: 'Vous les prenez par derrière', target: '→ À vous de jouer !' }
-            : { icon: 'bolt', title: `${enemy.name} vous attend !`, source: 'Préparation du terrain', target: '→ Ennemi joue en premier' }, playerStarts);
+        announce({ icon: 'bolt', title: 'Préparation du terrain', source: '', target: playerStarts ? '→ À vous de jouer !' : '→ Ennemi joue en premier' }, playerStarts);
         log(`Premier tour : ${playerStarts ? 'Joueur' : 'Ennemi'} (préparation du terrain)`);
-        if(!playerStarts) setTimeout(() => enemyTurn(), 1500);
+        if(!playerStarts) setTimeout(() => enemyTurn(), announceMs);
         return;
     }
     const playerAgility = player.attributes.agility || 0;
@@ -3020,22 +3035,22 @@ export function decideFirstTurn(){
     if(playerAgility > enemyAgility){
         starter = 'player';
         log(`Vous êtes plus agile ! Vous commencez en premier.`);
-        showCombatAnimation({ icon: 'bolt', title: 'Vous commencez !', source: `Agilité : ${playerAgility} > ${enemyAgility}`, target: '→ À vous de jouer !' }, true);
+        announce({ icon: 'bolt', title: 'Vous commencez !', source: `Agilité : ${playerAgility} > ${enemyAgility}`, target: '→ À vous de jouer !' }, true, 'Plus agile : vous commencez.');
     } else if(enemyAgility > playerAgility){
         starter = 'enemy';
         log(`${enemy.name} est plus agile ! Il commence en premier.`);
-        showCombatAnimation({ icon: 'bolt', title: `${enemy.name} commence !`, source: `Agilité : ${enemyAgility} > ${playerAgility}`, target: '→ Ennemi joue en premier' }, false);
+        announce({ icon: 'bolt', title: `${enemy.name} commence !`, source: `Agilité : ${enemyAgility} > ${playerAgility}`, target: '→ Ennemi joue en premier' }, false, `${enemy.name} est plus agile : il commence.`);
     } else {
         // En cas d'égalité, le joueur commence
         starter = 'player';
         log(`Égalité d'agilité, vous commencez !`);
-        showCombatAnimation({ icon: 'scales', title: 'Égalité !', source: `Agilité : ${playerAgility} = ${enemyAgility}`, target: '→ À vous de jouer !' }, true);
+        announce({ icon: 'scales', title: 'Égalité !', source: `Agilité : ${playerAgility} = ${enemyAgility}`, target: '→ À vous de jouer !' }, true, "Égalité d'agilité : vous commencez.");
     }
     
     currentTurn = starter;
     log(`Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'}`);
     if(starter === 'enemy'){
-        setTimeout(() => enemyTurn(), 1500);
+        setTimeout(() => enemyTurn(), announceMs);
     }
 }
 
@@ -3142,13 +3157,7 @@ function appendWeaponButton(container, weapon, hand){
     `;
     const showDetails = () => showWeaponTooltip(btn, weapon);
     const hideDetails = () => hideSpellTooltip();
-    btn.addEventListener('mouseenter', showDetails);
-    btn.addEventListener('mouseleave', hideDetails);
-    btn.addEventListener('touchstart', showDetails, { passive: true });
-    btn.addEventListener('touchend', hideDetails);
-    btn.addEventListener('touchcancel', hideDetails);
-    btn.addEventListener('focus', showDetails);
-    btn.addEventListener('blur', hideDetails);
+    bindTooltip(btn, showDetails, hideDetails);
     if(player.level < weapon.minLevel || player.combatPoints < weapon.actionPoints) {
         btn.classList.add('disabled');
         btn.tabIndex = -1;
@@ -3399,15 +3408,7 @@ export function updateItemButton(){
         `;
         const showDetails = () => showItemTooltip(div, item, { isEnemyItem: false });
         const hideDetails = () => hideSpellTooltip();
-        div.addEventListener('mouseenter', showDetails);
-        div.addEventListener('mouseleave', hideDetails);
-        div.addEventListener('mousedown', showDetails);
-        div.addEventListener('mouseup', hideDetails);
-        div.addEventListener('touchstart', showDetails, { passive: true });
-        div.addEventListener('touchend', hideDetails);
-        div.addEventListener('touchcancel', hideDetails);
-        div.addEventListener('focus', showDetails);
-        div.addEventListener('blur', hideDetails);
+        bindTooltip(div, showDetails, hideDetails);
         container.appendChild(div);
         return;
     }
@@ -3425,15 +3426,7 @@ export function updateItemButton(){
     `;
     const showDetails = () => showItemTooltip(btn, item, { isEnemyItem: false });
     const hideDetails = () => hideSpellTooltip();
-    btn.addEventListener('mouseenter', showDetails);
-    btn.addEventListener('mouseleave', hideDetails);
-    btn.addEventListener('mousedown', showDetails);
-    btn.addEventListener('mouseup', hideDetails);
-    btn.addEventListener('touchstart', showDetails, { passive: true });
-    btn.addEventListener('touchend', hideDetails);
-    btn.addEventListener('touchcancel', hideDetails);
-    btn.addEventListener('focus', showDetails);
-    btn.addEventListener('blur', hideDetails);
+    bindTooltip(btn, showDetails, hideDetails);
 
     if(!canUse){
         btn.classList.add('disabled');

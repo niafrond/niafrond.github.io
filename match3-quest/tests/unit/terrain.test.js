@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll } from '@jest/globals';
 import {
-    approachOf, buildPrep, observationTarget, weaknessDamage, applyBoardBoost, spotAt, faceFromStep,
+    approachOf, buildPrep, prepBanner, observationTarget, weaknessDamage, applyBoardBoost, spotAt, faceFromStep,
     createBiomeState, advanceBiome, resolveBiomeMatch, burnDamage, driftRow, isBlockedCell, BIOME_RULES, ruleForBiome, OBSERVE_MS
 } from '../../terrain.js';
 
@@ -131,5 +131,31 @@ describe('intégration exploration', () => {
         const ev = X.tick(s, 3100).find(e => e.type === 'observed');
         expect(ev?.enemyId).toBeDefined();
         expect(s.data.observed[ev.enemyId]).toBe(true);
+    });
+});
+
+describe('bandeau de début de combat', () => {
+    test('aucune préparation : pas de bandeau', () => {
+        expect(prepBanner(buildPrep({ approach: 'front' }))).toBeNull();
+        expect(prepBanner(null)).toBeNull();
+    });
+    test('embuscade : titre et conséquence (+1 PA, premier tour)', () => {
+        const b = prepBanner(buildPrep({ approach: 'behind' }), 'Loup');
+        expect(b.title).toBe('Attaque surprise !');
+        expect(b.lines.join(' ')).toMatch(/\+1 PA/);
+    });
+    test('plusieurs avantages : une ligne chacun, titre du premier', () => {
+        const b = prepBanner(buildPrep({ approach: 'behind', observed: true, enemyOnTrap: true }), 'Loup');
+        expect(b.title).toBe('Attaque surprise !');
+        expect(b.lines).toHaveLength(3);
+    });
+    test('piège seul : titre dédié', () => {
+        expect(prepBanner(buildPrep({ enemyOnTrap: true }), 'Loup').title).toBe('Piège !');
+    });
+    test("l'ennemi qui attend : annonce qu'il joue en premier", () => {
+        const prep = { ...buildPrep({ onOutlook: true }), enemyFirst: true };
+        const b = prepBanner(prep, 'Loup');
+        expect(b.title).toBe('Loup vous attend !');
+        expect(b.lines.at(-1)).toBe('Loup joue en premier.');
     });
 });
