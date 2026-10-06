@@ -1164,9 +1164,9 @@ export function updateStats(){
                     <span class="mana-dot mana-green" title="${targetPlayerMana.green}"></span><span id="player-mana-green">${targetPlayerMana.green}</span>
                     <span class="mana-dot mana-yellow" title="${targetPlayerMana.yellow}"></span><span id="player-mana-yellow">${targetPlayerMana.yellow}</span>
                     <span class="mana-dot mana-purple" title="${targetPlayerMana.purple}"></span><span id="player-mana-purple">${targetPlayerMana.purple}</span>
+                    <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${player.combatPoints}</span>
                 </div>
-            </div>
-            <div class="stat" title="Points d'action"><strong>${svgIcon('arrow')}</strong> ${player.combatPoints}</div>`;
+            </div>`;
         
         // Animer les compteurs si les valeurs ont changé
         const playerProgressEl = playerDiv.querySelector('.hp-bar-container progress');
@@ -1206,9 +1206,9 @@ export function updateStats(){
                 <span class="mana-dot mana-green" title="${targetEnemyMana.green}"></span><span id="enemy-mana-green">${targetEnemyMana.green}</span>
                 <span class="mana-dot mana-yellow" title="${targetEnemyMana.yellow}"></span><span id="enemy-mana-yellow">${targetEnemyMana.yellow}</span>
                 <span class="mana-dot mana-purple" title="${targetEnemyMana.purple}"></span><span id="enemy-mana-purple">${targetEnemyMana.purple}</span>
+                <span class="pa-stat" title="Points d'action">${svgIcon('arrow')} ${enemy.combatPoints}</span>
             </div>
-        </div>
-        <div class="stat" title="Points d'action"><strong>${svgIcon('arrow')}</strong> ${enemy.combatPoints}</div>`;
+        </div>`;
     // Animer les compteurs ennemi
     const enemyProgressEl = enemyDiv.querySelector('.hp-bar-container progress');
     _animateHpBar('enemy-hp-current', initEnemyHp, targetEnemyHp, enemyProgressEl);
