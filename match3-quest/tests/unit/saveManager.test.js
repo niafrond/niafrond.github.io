@@ -3,6 +3,7 @@ import {
     exportSaveToFile,
     importSaveFromFile
 } from '../../saveManager.js';
+import { allWeapons } from '../../weapons.js';
 
 // Mock FileReader for Node.js environment
 global.FileReader = class FileReader {
@@ -124,13 +125,59 @@ describe('Save Manager', () => {
         });
 
         it('conserve l\'équipement après un export puis un import', async () => {
+            const bow = allWeapons[0];
+            testPlayer.weapons = [bow];
+            testPlayer.equippedWeapon = bow;
+            testPlayer.equipment.rightHand = bow;
             const exported = exportSaveToFile(testPlayer, '1.0.0');
             const file = { name: exported.filename, content: await exported.blob.text() };
             const res = await importSaveFromFile(file);
 
             expect(res.success).toBe(true);
-            expect(res.player.equipment.rightHand.id).toBe('sword1');
+            expect(res.player.equippedWeapon.id).toBe(bow.id);
+            expect(res.player.equipment.rightHand.id).toBe(bow.id);
+            expect(res.player.weapons.map(w => w.id)).toEqual([bow.id]);
             expect(res.player.inventory).toHaveLength(2);
+        });
+
+        it('conserve monstres vaincus, quêtes et coffres', async () => {
+            testPlayer.exploration = {
+                screenId: 'village_1', x: 3, y: 4,
+                defeated: ['wolf_1', 'wolf_2'], openedChests: ['c1'],
+                quests: { q1: 'done', q2: 'active' }, visitedScreens: ['village_1'],
+                observed: { wolf_1: true }, mounted: true
+            };
+            const exported = exportSaveToFile(testPlayer, '1.0.0');
+            const file = { name: exported.filename, content: await exported.blob.text() };
+            const res = await importSaveFromFile(file);
+
+            expect(res.player.exploration.defeated).toEqual(['wolf_1', 'wolf_2']);
+            expect(res.player.exploration.quests).toEqual({ q1: 'done', q2: 'active' });
+            expect(res.player.exploration.openedChests).toEqual(['c1']);
+            expect(res.player.exploration.observed).toBeUndefined();
+            expect(res.player.exploration.screenId).toBe('village_1');
+            expect(res.player.exploration.x).toBeUndefined();
+            expect(res.player.exploration.y).toBeUndefined();
+            expect(res.metadata.progress).toContain('1 quête terminée');
+            expect(res.metadata.progress).toContain('2 monstres vaincus');
+        });
+
+        it('n\'exporte ni mana, ni effets temporaires, ni valeurs dérivées', async () => {
+            Object.assign(testPlayer, {
+                mana: { red: 5 }, manaCaps: { red: 20 }, tempAttack: 3, statusEffects: { poison: 2 },
+                combatPoints: 4, availableSpells: [{ id: 'x' }], availableWeapons: [{ id: 'y' }], xpToNextLevel: 100
+            });
+            const data = JSON.parse(await exportSaveToFile(testPlayer).blob.text());
+            for (const k of ['mana', 'manaCaps', 'tempAttack', 'statusEffects', 'combatPoints', 'availableSpells', 'availableWeapons', 'xpToNextLevel']) {
+                expect(data.player[k]).toBeUndefined();
+            }
+        });
+
+        it('importe encore les anciennes sauvegardes (joueur complet)', async () => {
+            const legacy = { metadata: { version: '1.0.0', timestamp: Date.now() }, player: { ...testPlayer, equippedWeapon: { id: 'w' } } };
+            const res = await importSaveFromFile({ name: 'old.json', content: JSON.stringify(legacy) });
+            expect(res.success).toBe(true);
+            expect(res.player.equippedWeapon.id).toBe('w');
         });
 
         it('refuses non-JSON files', async () => {
