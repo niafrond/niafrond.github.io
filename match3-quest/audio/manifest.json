@@ -288,24 +288,24 @@
    "seconds": 36.9,
    "sections": 2
   },
-  "boss-hebo-comte-du-fleuve-noye": {
-   "seconds": 35.2,
-   "sections": 2
-  },
-  "boss-abbe-de-cendre-gardien-du-sutra": {
-   "seconds": 31.5,
-   "sections": 2
-  },
-  "boss-roi-momie-des-caravanes": {
-   "seconds": 33.1,
-   "sections": 2
-  },
   "boss-gardien-de-la-forge-noire": {
    "seconds": 31,
    "sections": 2
   },
-  "boss-wu-gang-bucheron-de-la-lune": {
-   "seconds": 38,
+  "boss-hebo-seigneur-du-fleuve-noye": {
+   "seconds": 33.1,
+   "sections": 2
+  },
+  "boss-lion-cendre-gardien-du-sutra": {
+   "seconds": 33.4,
+   "sections": 2
+  },
+  "boss-colosse-des-caravanes-ensevelies": {
+   "seconds": 34.3,
+   "sections": 2
+  },
+  "boss-wu-gang-spectre-du-cassia-lunaire": {
+   "seconds": 34,
    "sections": 2
   }
  },
