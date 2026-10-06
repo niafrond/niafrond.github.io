@@ -620,6 +620,64 @@ const FENGMENG_DUEL_LINES = {
         'Pose ton arc, Fengmeng. Elle ne voudrait pas cela.']
 };
 
+// Échanges propres à chaque soleil (id de l'ennemi de la carte) : alternance [soleil, Hou Yi, soleil, Hou Yi].
+const SUN_DUEL_LINES = {
+    sun_1: [
+        "Tu es venu seul, petit archer ? Nous étions dix à jouer dans le ciel, et personne ne nous a jamais dit d'arrêter.",
+        "Les rizières sont noires, soleil. Les enfants ne sortent plus. Ce n'est plus un jeu.",
+        "Père Di Jun nous a promis l'éternité. Il ne m'a pas parlé d'un homme avec un arc.",
+        "Alors il t'a menti. Éteins-toi sans souffrir : je ne tire pas pour faire mal."
+    ],
+    sun_2: [
+        "Tu as vu le fleuve, archer ? Je l'ai bu d'une gorgée. Il avait un goût de jade et de soupirs.",
+        "Les poissons agonisent sur la vase. Rends-lui son eau, ou je la lui rends moi-même.",
+        "Je ne voulais que me rafraîchir. Est-ce un crime d'avoir soif quand on brûle ?",
+        "Non. Mais tu as bu pour tout un village. Je suis désolé, soleil."
+    ],
+    sun_3: [
+        "Regarde mes cendres, Hou Yi. Elles volent jusqu'aux montagnes. Ce sont mes plumes, mes rires.",
+        "Ce sont aussi les arbres de ces forêts. Un vieux pin m'a dit ton nom avant de se taire.",
+        "Il me parlait de pluie. Je ne savais pas ce que c'était. Est-ce beau ?",
+        "Très beau. Je te le promets : tu l'entendras, de l'autre côté de ma flèche."
+    ],
+    sun_4: [
+        "Tu me vois, archer ? Ou vois-tu l'oasis que je t'ai dessinée ? Le désert aime ceux qui doutent.",
+        "J'ai déjà bu à trois mirages. Celui-ci est plus soif que les autres.",
+        "Tu sens ma chaleur dans ton dos. Elle est dans ta tête depuis que tu as quitté les rizières.",
+        "Alors je viserai ce qui ne ment pas : le bruit de ton souffle."
+    ],
+    sun_5: [
+        "Les nuages sont mes tambours, les éclairs mes baguettes ! Écoute, Hou Yi : le ciel parle comme moi !",
+        "Il hurle, soleil. Il a peur de toi, et des orages que tu forces.",
+        "Peur ? Moi ? Je suis le jeu ! Je suis le tonnerre de mon père Di Jun !",
+        "Alors joue encore une fois. La dernière note sera la mienne."
+    ],
+    sun_6: [
+        "Tu as traversé la lave comme on traverse une fête ? Les pixiu montaient la garde pour moi, pas pour toi.",
+        "Ils dormaient depuis des siècles. Tu les as éveillés pour te faire un trône de braise.",
+        "Le magma est ma chair. Que me restera-t-il, sans lui ? Un caillou froid dans le ciel ?",
+        "Une lune, peut-être. Je connais quelqu'un qui s'en contenterait."
+    ],
+    sun_7: [
+        "Mes bêtes sont dans ma flamme, archer. Elles ne te laisseront pas passer sans mordre.",
+        "Elles ont mordu, et je les ai épargnées autant que j'ai pu. Les loups hurlent à la lune, maintenant.",
+        "Elles se souvenaient de moi. Elles m'aimaient. Pourquoi les as-tu rendues à elles-mêmes ?",
+        "Parce qu'on n'aime pas vraiment quand on brûle. Viens, soleil. Il est temps."
+    ],
+    sun_8: [
+        "J'ai bu la marée à chaque coucher du jour. Pourtant la mer est toujours là, et je ne peux plus y entrer.",
+        "Tu l'as fait bouillir. Les pêcheurs ne reconnaissent plus leurs filets.",
+        "Elle chantait, avant. Maintenant elle crie. Est-ce ma faute ou celle de mon père ?",
+        "Celle de ton père, sans doute. Mais c'est toi qui tiens la flamme. C'est toi que je dois arrêter."
+    ],
+    sun_9: [
+        "Huit frères sont tombés, et tu me cherches, Hou Yi ? J'ai peur. Je l'avoue : j'ai peur.",
+        "Je n'aime pas tirer sur qui tremble. Rends-toi, et laisse-moi finir ma route.",
+        "Me rendre ? Pour que mon père me jette en pâture aux flammes ? Non. Non, je préfère me battre.",
+        "Alors bats-toi bien. C'est la dernière chose que je peux t'offrir."
+    ]
+};
+
 function pick(list, seed) {
     let h = 0;
     for (const ch of String(seed)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -631,6 +689,8 @@ export function bossIntroLines(enc) {
     const name = enc?.boss?.name || enc?.name || 'Boss';
     // Répliques propres à la rencontre (maîtres de l'Arène des Mille Flèches) : [adversaire, héros].
     if (enc?.introLines?.length === 2) return [{ who: 'boss', text: enc.introLines[0] }, { who: 'hero', text: enc.introLines[1] }];
+    const sunLines = SUN_DUEL_LINES[enc?.enemyId];
+    if (sunLines) return sunLines.map((text, i) => ({ who: i % 2 ? 'hero' : 'boss', text }));
     const duelLines = FENGMENG_DUEL_LINES[enc?.enemyId];
     if (duelLines) return [{ who: 'boss', text: duelLines[0] }, { who: 'hero', text: duelLines[1] }];
     const isRival = /fengmeng/i.test(name);
