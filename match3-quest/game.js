@@ -720,6 +720,8 @@ export const combatHooks = { onVictory: null, onEnd: null };
 
 function finalizeCombatEndUI(isVictory){
     showCombatResultScreen(isVictory);
+    // Fin de partie : « Retour à l'exploration » est la seule action possible (voir style.css, body.combat-ended).
+    document.body.classList.add('combat-ended');
 
     const statsContainer = document.querySelector('.stats-container');
     if(statsContainer) {
@@ -752,7 +754,7 @@ function finalizeCombatEndUI(isVictory){
     }
 
     if(isVictory) {
-        log(`Cliquez sur "Retour à l'exploration" pour continuer ou modifiez vos sorts/armes.`);
+        log(`Cliquez sur "Retour à l'exploration" pour continuer.`);
     } else {
         log("Cliquez sur \"Retour à l'exploration\" : vous reprenez vos esprits à l'entrée de la zone.");
     }
@@ -895,6 +897,7 @@ export function handlePlayerDeath(){
 // démarre un nouveau combat
 export function startNewCombat(selectedEnemy = null){
     playSfx('uiClick');
+    document.body.classList.remove('combat-ended');
     gameState.combatState = 'active';
     window.dispatchEvent(new Event('match3:combat-start'));
     ensureCombatUsableActiveItem();

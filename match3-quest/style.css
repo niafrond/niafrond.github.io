@@ -2965,3 +2965,23 @@ body.fx-low .mana-fly-dot { box-shadow: none; }
 }
 .cost-plus { margin: 0 2px; opacity: 0.6; }
 .spell-multi .spell-cost { white-space: normal; line-height: 1.25; padding-bottom: 3px; }
+
+/* Fin de combat : un seul geste possible, un énorme bouton « Retour à l'exploration » */
+body.combat-ended .tabs,
+body.combat-ended #options-btn,
+body.combat-ended #abandon-combat-btn { display: none !important; }
+body.combat-ended #combat-controls { margin: 16px 0 !important; padding: 0 12px; }
+body.combat-ended #combat-controls #new-combat-btn {
+    display: block !important;
+    width: 100%;
+    margin: 0 !important;
+    padding: 36px 16px !important;
+    font-size: clamp(28px, 7vw, 56px) !important;
+    font-weight: 800;
+    border-radius: 16px;
+    box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3);
+    animation: returnBtnPulse 1.4s ease-in-out infinite;
+}
+body.combat-ended #new-combat-btn .ic { width: 1.1em; height: 1.1em; vertical-align: -0.15em; }
+@keyframes returnBtnPulse { 50% { transform: scale(1.03); } }
+@media (prefers-reduced-motion: reduce) { body.combat-ended #combat-controls #new-combat-btn { animation: none; } }
