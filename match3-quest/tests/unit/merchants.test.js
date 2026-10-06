@@ -35,7 +35,7 @@ describe('PNJ marchands', () => {
             expect(sections.has('rare')).toBe(true);
             expect(sections.has('exceptional')).toBe(true);
             expect(new Set(stock.map(o => o.key)).size).toBe(stock.length);
-            stock.filter(o => o.kind !== 'mount').forEach(o => {
+            stock.filter(o => o.kind !== 'mount' && o.kind !== 'torch').forEach(o => {
                 const obj = offerObject(o);
                 expect(obj).toBeTruthy();
                 const base = o.kind === 'weapon' ? baseWeaponPrice(obj) : baseItemPrice(obj);
@@ -134,7 +134,7 @@ describe('revente aux marchands', () => {
     test('rachat à 40 % du barème de base (jamais plus que le prix d\'achat)', () => {
         const w = { ...axe };
         expect(sellPriceOf('weapon', w)).toBe(Math.floor(baseWeaponPrice(w) * SELL_RATIO));
-        merchantStock('merchant_gobi').forEach(o => expect(sellPriceOf(o.kind, offerObject(o))).toBeLessThan(o.price));
+        merchantStock('merchant_gobi').filter(o => o.kind !== 'torch').forEach(o => expect(sellPriceOf(o.kind, offerObject(o))).toBeLessThan(o.price));
     });
 
     test('le stuff activé est verrouillé : arme en main, objet actif, relique portée', () => {

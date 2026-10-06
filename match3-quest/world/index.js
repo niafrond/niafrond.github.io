@@ -11,6 +11,7 @@ import { EXPANDED_SIZES, scaleScreen, widenGates, linkGates, openPerimeter, addW
 import { applyJunctions } from './junctions.js';
 import { addPrepSpots } from './spots.js';
 import { buildAquaticWorld, applyYubu } from './aquatic.js';
+import { applyUnderground } from './underground.js';
 import { MAPS } from './maps/index.js';
 import { TEXTS } from './text/index.js';
 
@@ -152,6 +153,7 @@ export function assembleWorld(baseScreens, baseQuests, maps = MAPS, texts = TEXT
         applyJunctions(screens, quests, REGION_LEVEL);
         applyYubu(screens, quests);   // reliques du Pas de Yu + quête de Gui (marcher sur les eaux)
         Object.values(screens).forEach(addPrepSpots);   // préparation du terrain : pièges, hautes herbes, belvédères
+        applyUnderground(screens);   // cavernes et cryptes dans le noir (torche vendue par les marchands)
 
     }
 

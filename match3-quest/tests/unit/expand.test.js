@@ -6,7 +6,7 @@ import { isTerrainBlocked, aggroOf } from '../../exploration.js';
 import { scaleScreen, widenGates, linkGates, EXPANDED_SIZES } from '../../world/expand.js';
 
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-const outdoors = Object.values(SCREENS).filter(s => !s.interior && !s.arena && s.kind !== 'house');
+const outdoors = Object.values(SCREENS).filter(s => !s.interior && !s.arena && s.kind !== 'house' && !s.underground);
 const reach = (screen, from) => {
     const seen = new Set([`${from.x},${from.y}`]);
     const queue = [from];

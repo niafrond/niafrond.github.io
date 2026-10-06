@@ -8,6 +8,7 @@ import { offerObject, availableOffers, buyOffer, sellableEntries, sellEntry } fr
 import { player, gameState, log, updateAvailableWeapons, saveUpdate, getWeaponIcon, updateInventoryTab, updateItemButton, createWeaponButton } from './game.js';
 
 const SECTION_TITLES = {
+    gear: 'Équipement',
     mount: 'Monture',
     stall: 'Étal',
     rare: 'Pièces rares',
@@ -23,8 +24,9 @@ function offerRow(offer, gold) {
     const canAfford = gold >= offer.price;
     const color = getRarityColor(offer.rarity);
     const icon = offer.kind === 'weapon' ? getWeaponIcon(obj.type) : getRarityIcon(offer.rarity);
-    const levelText = offer.kind === 'mount' ? '' : ` • Niv. ${obj.minLevel}`;
-    const stats = offer.kind === 'mount' ? `Déplacements ×${obj.speed}`
+    const levelText = offer.kind === 'mount' || offer.kind === 'torch' ? '' : ` • Niv. ${obj.minLevel}`;
+    const stats = offer.kind === 'torch' ? 'Vue élargie sous terre'
+        : offer.kind === 'mount' ? `Déplacements ×${obj.speed}`
         : offer.kind === 'weapon'
         ? `${obj.damage} ${svgIcon('skull')} • ${obj.actionPoints} ${svgIcon('arrow')}`
         : obj.type === 'shield' ? `Déf. +${obj.defense}`

@@ -478,6 +478,7 @@ export let player = {
     revivePercent: 0,  // pourcentage de HP à la résurrection
     unspentLevelPoints: 0, // points d'attribut a depenser apres les gains de niveaux
     gold: 0,  // pièces d'or accumulées
+    torch: false,  // torche achetée : éclaire les souterrains (world/underground.js)
     mount: null,  // monture achetée ('horse') : déplacements plus rapides sur les cartes
     defeatedBossTiers: [], // paliers de boss déjà nettoyés (5, 10, 15, ...)
     pendingBoss: null, // boss imposé tant qu'il n'est pas vaincu
@@ -1020,6 +1021,7 @@ export function loadGameData() {
             player.growthLevel = Number.isInteger(loaded.growthLevel) ? loaded.growthLevel : undefined;
             applyGrowth(player);   // rattrapage unique de la croissance innée (niveaux > 18)
             player.mount = loaded.mount === 'horse' ? 'horse' : null;
+            player.torch = loaded.torch === true;
             player.merchantSold = loaded.merchantSold && typeof loaded.merchantSold === 'object' ? loaded.merchantSold : {};
             player.bossLossStreak = loaded.bossLossStreak && loaded.bossLossStreak.id ? loaded.bossLossStreak : null;
             player.defeatedBossTiers = Array.isArray(loaded.defeatedBossTiers)

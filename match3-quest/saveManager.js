@@ -206,6 +206,7 @@ function sanitizePlayer(player) {
         attributes: compact(player.attributes || {}),
         gold: player.gold,
         mount: player.mount,
+        torch: player.torch,
         abilities: player.abilities,
         activeSpells: ids(player.activeSpells),
         weapons: ids(player.weapons),
