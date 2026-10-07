@@ -17,12 +17,13 @@ import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { playEndingAnimation, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
-import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites } from './sprites/index.js';
+import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { icon } from './icons.js';
+import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex } from './tilePainter.js';
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
@@ -867,14 +868,17 @@ export function createExplorationView(cfg) {
     const GROUND_MAX_PIXELS = 16e6;           // au-delà, on retombe sur le dessin direct (mémoire)
     let groundCache = null;
 
+    // Sol à la Pokémon (tilePainter.js) : herbe à touffes, chemins bordés, eau à reflets, dalles de salle.
     function paintGroundCells(g, screen, biome, tile, ox, oy, inRects) {
+        const inMap = (x, y) => x >= 0 && y >= 0 && x < screen.w && y < screen.h;
+        // carte de mer : les récifs (obstacles) reposent sur l'eau, pas sur une case de sable
+        const isLiquid = (x, y) => inMap(x, y) && (inRects(screen.liquids, x, y) || (screen.aquatic && inRects(screen.obstacles, x, y)));
+        const isPath = (x, y) => !inMap(x, y) || (inRects(screen.paths, x, y) && !isLiquid(x, y));
+        const tiled = !!(screen.interior || screen.kind === 'arena');
+        g.imageSmoothingEnabled = false;
         for (let y = 0; y < screen.h; y++) {
             for (let x = 0; x < screen.w; x++) {
-                // carte de mer : les récifs (obstacles) reposent sur l'eau, pas sur une case de sable
-                g.fillStyle = (inRects(screen.liquids, x, y) || (screen.aquatic && inRects(screen.obstacles, x, y))) ? biome.liquid
-                    : inRects(screen.paths, x, y) ? biome.path
-                    : ((x + y) % 2 ? biome.a : biome.b);
-                g.fillRect(ox + x * tile, oy + y * tile, tile, tile);
+                paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled, biomeId: screen.biome });
             }
         }
     }
@@ -1161,13 +1165,24 @@ export function createExplorationView(cfg) {
                     break;
                 }
                 case 'block': {
+                    const px = c.x - tile / 2, py = c.y - tile / 2;
                     if (screen.interior && (it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1)) {
-                        cell(it.x, it.y, shade(biome.cliff, it.y === 0 ? -6 : 8));
-                        cell(it.x, it.y, 'rgba(0,0,0,0.18)', tile * 0.46);
+                        drawCachedObject(`wall:${screen.biome}:${it.y === 0}`, px, py, tile, tile, [0, 0, 0, 0], (g, ox, oy) => drawWallTile(g, biome, tile, ox, oy, it.y === 0));
                         break;
                     }
-                    cell(it.x, it.y, shade(biome.cliff, 10));
+                    const border = it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1;
+                    if (border && !screen.interior && !screen.aquatic && screen.kind !== 'arena') {
+                        // pourtour de la carte : rangée de sapins serrés, comme les routes de Pokémon
+                        const seed = (it.x * 31 + it.y * 17) % 8, kind = borderKindOf(screen.biome);
+                        drawCachedObject(`tree:${screen.biome}:${kind}:${seed}`, px, py, tile, tile, [tile * 0.6, tile * 1.1, tile * 0.6, tile * 0.3],
+                            (g, ox, oy) => drawBorderTree(g, tile, ox, oy - tile * 0.2, kind, { leaf: darkHex(biome.a, -90), seed }));
+                        break;
+                    }
                     const decor = biome.decor[Math.floor(hash(it.x, it.y) * biome.decor.length)];
+                    if (decor === 'rock') {
+                        drawCachedObject('boulder', px, py, tile, tile, [tile * 0.3, tile * 0.3, tile * 0.3, tile * 0.3], (g, ox, oy) => drawBoulder(g, tile, ox, oy));
+                        break;
+                    }
                     drawShadow(c.x, c.y + tile * 0.3, tile * 0.32, tile * 0.11);
                     drawDecor(decor, c.x, c.y + tile * 0.36, tile * 0.85);
                     break;
@@ -1339,60 +1354,44 @@ export function createExplorationView(cfg) {
         }
     }
 
-    const ROOFS = ['#b23a30', '#2f6f73', '#8a5a2b', '#6b4a8a', '#c98a2b', '#3f7d4e', '#a8483a', '#4a6fa5'];
+    const ROOFS = ['#c9a45a', '#b8924a', '#a98342', '#8f7040', '#6f6f78', '#9a6a3a', '#c2a063', '#7a5a34'];   // chaume, paille, ardoise brute : pas de couleurs vives
 
     // Maison de village : toit à pignon, murs crème, porte (tuile de la porte), fenêtres, nom du bâtiment.
+    // Objets de décor statiques (arbres de bordure, rochers, murs, maisons) : dessinés une seule fois dans un petit canvas hors écran,
+    // puis recopiés d'un seul appel par image (au lieu de dizaines de fillRect par objet et par image).
+    const objCache = new Map();
+    function drawCachedObject(key, x, y, w, h, pad, paint) {
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const [pl, pt, pr, pb] = pad;
+        const k = `${key}|${Math.round(w)}x${Math.round(h)}|${dpr}`;
+        let cv = objCache.get(k);
+        if (!cv) {
+            if (typeof document === 'undefined') { paint(ctx, x, y); return; }
+            if (objCache.size > 300) objCache.clear();
+            cv = document.createElement('canvas');
+            cv.width = Math.ceil((w + pl + pr) * dpr);
+            cv.height = Math.ceil((h + pt + pb) * dpr);
+            const g = cv.getContext('2d');
+            g.setTransform(dpr, 0, 0, dpr, 0, 0);
+            g.imageSmoothingEnabled = false;
+            paint(g, pl, pt);
+            objCache.set(k, cv);
+        }
+        const was = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(cv, Math.round((x - pl) * dpr) / dpr, Math.round((y - pt) * dpr) / dpr, cv.width / dpr, cv.height / dpr);
+        ctx.imageSmoothingEnabled = was;
+    }
+
     function drawBuilding(b, p, tile, labelSize) {
         const w = b.w * tile;
         const h = b.h * tile;
         const roof = ROOFS[(b.id.charCodeAt(0) + (b.x * 7 + b.y * 3)) % ROOFS.length];
-        const roofH = Math.max(tile * 0.9, h * 0.5);
-        const wallY = p.y + roofH * 0.8;
-        ctx.save();
-        // murs
-        ctx.fillStyle = '#f0e0b8';
-        ctx.fillRect(p.x + 3, wallY, w - 6, h - roofH * 0.8);
-        ctx.fillStyle = 'rgba(120,80,40,0.18)';
-        ctx.fillRect(p.x + w * 0.62, wallY, w * 0.38 - 3, h - roofH * 0.8);
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#2b1b17';
-        ctx.strokeRect(p.x + 3, wallY, w - 6, h - roofH * 0.8);
-        // fenêtres
-        const winY = wallY + (h - roofH * 0.8) * 0.28;
-        ctx.fillStyle = '#7ab8d8';
-        [0.18, 0.68].forEach(fx => {
-            if (Math.abs(p.x + w * fx + tile * 0.2 - (p.x + (b.door.x - b.x + 0.5) * tile)) < tile * 0.5) return;
-            ctx.fillRect(p.x + w * fx, winY, tile * 0.4, tile * 0.34);
-            ctx.strokeRect(p.x + w * fx, winY, tile * 0.4, tile * 0.34);
-        });
-        // porte
-        const dx = p.x + (b.door.x - b.x) * tile;
-        const dy = p.y + (b.door.y - b.y) * tile;
-        ctx.fillStyle = '#6b3d22';
-        ctx.fillRect(dx + tile * 0.2, dy + tile * 0.12, tile * 0.6, tile * 0.88);
-        ctx.strokeRect(dx + tile * 0.2, dy + tile * 0.12, tile * 0.6, tile * 0.88);
-        ctx.fillStyle = '#f2c14e';
-        ctx.beginPath();
-        ctx.arc(dx + tile * 0.68, dy + tile * 0.58, tile * 0.04, 0, Math.PI * 2);
-        ctx.fill();
-        // toit
-        ctx.fillStyle = roof;
-        ctx.beginPath();
-        ctx.moveTo(p.x - tile * 0.12, wallY + 4);
-        ctx.lineTo(p.x + w * 0.5, p.y);
-        ctx.lineTo(p.x + w + tile * 0.12, wallY + 4);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(255,255,255,0.18)';
-        ctx.beginPath();
-        ctx.moveTo(p.x + w * 0.5, p.y);
-        ctx.lineTo(p.x + w + tile * 0.12, wallY + 4);
-        ctx.lineTo(p.x + w * 0.5, wallY + 4);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-        if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.62, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1), w / 2);
+        const roofH = Math.round(Math.max(tile * 0.95, h * 0.52));
+        drawCachedObject(`house:${b.id}:${roof}:${b.door.x - b.x},${b.door.y - b.y}`, p.x, p.y, w, h,
+            [tile * 0.5, tile * 0.4, tile * 0.9, tile * 0.5],
+            (g, ox, oy) => drawHouse(g, ox, oy, w, h, tile, roof, { dx: (b.door.x - b.x) * tile, dy: (b.door.y - b.y) * tile }));
+        if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.5, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1), w / 2);
     }
 
     // Dessine un sprite SVG (pieds vers le bas du cadre) centré sur cx, dont les pieds sont posés en feetY.
@@ -1400,14 +1399,24 @@ export function createExplorationView(cfg) {
     // `fallback` : dessin de face montré le temps que la vue de côté / de dos (dérivée) se décode.
     function drawSprite(svg, cx, feetY, size, fallback = null) {
         if (!svg) return false;
-        let img = spriteImage(svg);
-        if (!img.complete || !img.naturalWidth) {
-            if (!fallback || fallback === svg) return true; // en cours de chargement : rien à dessiner
-            img = spriteImage(fallback);
-            if (!img.complete || !img.naturalWidth) return true;
+        let px = pixelSprite(svg);
+        if (!px) {
+            if (!fallback || fallback === svg) return true; // en cours de conversion : rien à dessiner (jamais de version floue)
+            px = pixelSprite(fallback);
+            if (!px) return true;
         }
-        ctx.drawImage(img, cx - size / 2, feetY - size * 0.92, size, size);
+        blitPixels(px, cx - size / 2, feetY - size * 0.92, size);
         return true;
+    }
+
+    // Copie nette d'un sprite pixellisé : pas de lissage, destination arrondie au pixel de l'écran.
+    function blitPixels(px, x, y, size) {
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const snap = v => Math.round(v * dpr) / dpr;
+        const was = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(px, snap(x), snap(y), Math.max(1 / dpr, snap(size)), Math.max(1 / dpr, snap(size)));
+        ctx.imageSmoothingEnabled = was;
     }
 
     // Pastille de quête au-dessus d'un PNJ : « ! » (quête à prendre) ou « ? » (à rendre).
@@ -1482,8 +1491,8 @@ export function createExplorationView(cfg) {
     function drawDecor(name, x, baseY, size) {
         const svg = decorSprite(name);
         if (!svg) return;
-        const img = spriteImage(svg);
-        if (img.complete && img.naturalWidth) ctx.drawImage(img, x - size / 2, baseY - size * 0.92, size, size);
+        const px = pixelSprite(svg);
+        if (px) blitPixels(px, x - size / 2, baseY - size * 0.92, size);
     }
 
     function drawLabel(x, y, text, bg, fg, size = 12, reach = cam.tile * 0.5) {

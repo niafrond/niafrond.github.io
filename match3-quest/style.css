@@ -2985,3 +2985,6 @@ body.combat-ended #combat-controls #new-combat-btn {
 body.combat-ended #new-combat-btn .ic { width: 1.1em; height: 1.1em; vertical-align: -0.15em; }
 @keyframes returnBtnPulse { 50% { transform: scale(1.03); } }
 @media (prefers-reduced-motion: reduce) { body.combat-ended #combat-controls #new-combat-btn { animation: none; } }
+
+/* Sprites pixellisés (PNG nets) : jamais de lissage à l'agrandissement. */
+img[src^="data:image/png"] { image-rendering: pixelated; image-rendering: crisp-edges; }

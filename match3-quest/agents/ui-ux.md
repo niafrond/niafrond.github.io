@@ -22,6 +22,10 @@ visuel, accessibilité, jeu mobile à une main, textes d'interface. Les sprites 
 - Thème « laque, jade, or, encre » ; aucun emoji (`noEmoji.test.js`) ; icônes SVG de `icons.js`.
 - Textes d'interface en français, courts, verbes d'action à l'infinitif sur les boutons ; ton de `UNIVERS.md`.
 
+- **Style Pokémon** : boîtes de dialogue et bandeaux d'exploration en cadre clair à bordure sombre épaisse et coins peu arrondis
+  (voir `retro.css`, section « Exploration »), police pixel (`fonts/`), texte court ; le rendu de la carte suit
+  `agents/animation-pixel-art.md` (section « Direction Pokémon GBA »).
+
 ## Livrables
 HTML/CSS/JS d'interface, mises à jour du tutoriel, entrée `SPECS.md` (écran, comportement, états).
 

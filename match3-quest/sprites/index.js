@@ -104,7 +104,107 @@ export const enemySprite = (enemyId, templateId) => {
     return null;
 };
 
-export const spriteUri = svg => (svg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` : '');
+// Rendu « pixel art GBA » appliqué à TOUS les sprites de personnages (héros, PNJ, ennemis, soleils, coffres, décors) : un filtre SVG
+// échantillonne le dessin vectoriel sur une grille de PIXEL_STEP unités (32 × 32 pixels logiques pour un viewBox de 64), recadre le canal alpha
+// (bords nets, sans anti-crénelage) et réduit chaque couche à 6 niveaux (palette limitée). Les dessins source restent vectoriels.
+export const PIXEL_STEP = 2;
+const PIXEL_FILTER = `<defs><filter id="m3px" filterUnits="userSpaceOnUse" x="0" y="0" width="64" height="64" color-interpolation-filters="sRGB">` +
+    `<feFlood x="${PIXEL_STEP / 2 - 0.5}" y="${PIXEL_STEP / 2 - 0.5}" width="1" height="1"/><feComposite width="${PIXEL_STEP}" height="${PIXEL_STEP}"/><feTile result="t"/>` +
+    `<feComposite in="SourceGraphic" in2="t" operator="in"/><feMorphology operator="dilate" radius="${(PIXEL_STEP - 1) / 2}"/>` +
+    `<feComponentTransfer><feFuncA type="discrete" tableValues="0 1"/><feFuncR type="discrete" tableValues="0 .2 .4 .6 .8 1"/>` +
+    `<feFuncG type="discrete" tableValues="0 .2 .4 .6 .8 1"/><feFuncB type="discrete" tableValues="0 .2 .4 .6 .8 1"/></feComponentTransfer></filter></defs>`;
+const pixelCache = new Map();
+export function pixelate(svg) {
+    if (!svg || !/^\s*<svg[\s>]/.test(svg) || !svg.includes('viewBox="0 0 64 64"')) return svg;
+    let out = pixelCache.get(svg);
+    if (!out) {
+        const open = svg.indexOf('>', svg.indexOf('<svg')) + 1;
+        const close = svg.lastIndexOf('</svg>');
+        out = close < 0 ? svg : `${svg.slice(0, open)}${PIXEL_FILTER}<g filter="url(#m3px)">${svg.slice(open, close)}</g></svg>`;
+        if (pixelCache.size > 600) pixelCache.clear();
+        pixelCache.set(svg, out);
+    }
+    return out;
+}
+const rawUri = svg => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+
+// ── Pixellisation nette (canvas) ───────────────────────────────────────────
+// Le dessin vectoriel est rastérisé à 128 px puis échantillonné sur une grille de 32 × 32 « pixels » : chaque pixel prend la couleur
+// moyenne des points opaques de son bloc de 4 × 4 (couverture ≥ 50 % → opaque, sinon transparent : bords nets, sans anti-crénelage),
+// quantifiée à 8 niveaux par couche. Le résultat est agrandi ×4 SANS lissage (128 × 128) ; à l'écran il se dessine avec
+// `imageSmoothingEnabled = false` (canvas) ou `image-rendering: pixelated` (balises img), donc jamais flou.
+// Tant que la conversion n'est pas prête (asynchrone), spriteUri renvoie la version filtrée SVG, remplacée ensuite dans les <img>.
+const PX_GRID = 32, PX_BIG = 128, PX_LEVELS = 8;
+const pixelDone = new Map();      // svg → { canvas, uri }
+const pixelPending = new Map();   // svg → Promise
+const q = v => Math.round(Math.round(v / 255 * (PX_LEVELS - 1)) * 255 / (PX_LEVELS - 1));
+
+function buildPixelCanvas(img) {
+    const big = document.createElement('canvas');
+    big.width = big.height = PX_BIG;
+    const bg = big.getContext('2d', { willReadFrequently: true });
+    bg.drawImage(img, 0, 0, PX_BIG, PX_BIG);
+    const src = bg.getImageData(0, 0, PX_BIG, PX_BIG).data;
+    const small = document.createElement('canvas');
+    small.width = small.height = PX_GRID;
+    const sg = small.getContext('2d');
+    const out = sg.createImageData(PX_GRID, PX_GRID);
+    const B = PX_BIG / PX_GRID;
+    for (let cy = 0; cy < PX_GRID; cy++) for (let cx = 0; cx < PX_GRID; cx++) {
+        let r = 0, g = 0, b = 0, w = 0;
+        for (let y = 0; y < B; y++) for (let x = 0; x < B; x++) {
+            const i = ((cy * B + y) * PX_BIG + cx * B + x) * 4, a = src[i + 3];
+            if (a < 8) continue;
+            r += src[i] * a; g += src[i + 1] * a; b += src[i + 2] * a; w += a;
+        }
+        const o = (cy * PX_GRID + cx) * 4;
+        if (w / (B * B * 255) >= 0.5) {
+            out.data[o] = q(r / w); out.data[o + 1] = q(g / w); out.data[o + 2] = q(b / w); out.data[o + 3] = 255;
+        }
+    }
+    sg.putImageData(out, 0, 0);
+    const up = document.createElement('canvas');
+    up.width = up.height = PX_BIG;
+    const ug = up.getContext('2d');
+    ug.imageSmoothingEnabled = false;
+    ug.drawImage(small, 0, 0, PX_BIG, PX_BIG);
+    return up;
+}
+
+// Canvas pixellisé du sprite (128 × 128) s'il est prêt, sinon null et la conversion démarre.
+export function pixelSprite(svg) {
+    if (!svg || typeof document === 'undefined') return null;
+    const done = pixelDone.get(svg);
+    if (done) return done.canvas;
+    preparePixelSprite(svg);
+    return null;
+}
+
+export function preparePixelSprite(svg) {
+    if (!svg || typeof document === 'undefined' || !/^\s*<svg[\s>]/.test(svg)) return Promise.resolve();
+    if (pixelDone.has(svg)) return Promise.resolve();
+    if (!pixelPending.has(svg)) {
+        pixelPending.set(svg, (async () => {
+            const img = spriteImage(svg);
+            if (!(img.complete && img.naturalWidth)) await (img.decode ? img.decode() : new Promise((res, rej) => { img.onload = res; img.onerror = rej; }));
+            const canvas = buildPixelCanvas(img);
+            const uri = canvas.toDataURL('image/png');
+            pixelDone.set(svg, { canvas, uri });
+            // les <img> qui affichaient la version de repli passent à la version nette
+            const fallback = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(pixelate(svg))}`;
+            document.querySelectorAll?.('img').forEach(el => { if (el.getAttribute('src') === fallback) el.setAttribute('src', uri); });
+        })().catch(() => {}).finally(() => pixelPending.delete(svg)));
+    }
+    return pixelPending.get(svg);
+}
+
+export function spriteUri(svg) {
+    if (!svg) return '';
+    const done = pixelDone.get(svg);
+    if (done) return done.uri;
+    preparePixelSprite(svg);
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(pixelate(svg))}`;
+}
 
 const imageCache = new Map();
 
@@ -114,7 +214,7 @@ export function spriteImage(svg) {
     if (!img) {
         img = new Image();
         img.decoding = 'async';
-        img.src = spriteUri(svg);
+        img.src = rawUri(svg);
         imageCache.set(svg, img);
     }
     return img;
@@ -124,8 +224,9 @@ export function spriteImage(svg) {
 export function decodeSprites(svgs) {
     return Promise.all(svgs.filter(Boolean).map(svg => {
         const img = spriteImage(svg);
-        if (img.complete && img.naturalWidth) return Promise.resolve();
-        return (img.decode ? img.decode() : new Promise((res, rej) => { img.onload = res; img.onerror = rej; })).catch(() => {});
+        const decoded = img.complete && img.naturalWidth ? Promise.resolve()
+            : (img.decode ? img.decode() : new Promise((res, rej) => { img.onload = res; img.onerror = rej; })).catch(() => {});
+        return decoded.then(() => preparePixelSprite(svg));
     }));
 }
 
@@ -136,6 +237,7 @@ export function retainSprites(svgs) {
         if (keep.has(svg)) continue;
         img.removeAttribute('src');
         imageCache.delete(svg);
+        pixelDone.delete(svg);
     }
 }
 
