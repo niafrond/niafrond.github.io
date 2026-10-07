@@ -21,7 +21,8 @@ export function addPrepSpots(screen) {
     // pièges et hautes herbes sur les trajets de patrouille
     let n = 0;
     enemies.filter(e => e.kind === 'patrol' && e.patrol).forEach(e => {
-        const wp = e.patrol.slice(1).find(p => free(p.x, p.y)) || null;
+        // les points de passage sont des paires [x, y] (voir buildRoute dans exploration.js)
+        const wp = e.patrol.slice(1).map(([x, y]) => ({ x, y })).find(p => free(p.x, p.y)) || null;
         if (wp) place(n++ % 2 === 0 ? 'trap' : 'tallGrass', wp.x, wp.y);
     });
 
