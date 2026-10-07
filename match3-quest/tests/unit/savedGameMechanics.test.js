@@ -556,12 +556,13 @@ describe('progression des joueurs sauvegardés', () => {
 });
 
 describe('déblocage des sorts selon le niveau et la classe', () => {
-    test('niveau 1 : aucun sort ; niveau n : au plus n - 1 sorts parmi les niveaux modérés', () => {
+    test('niveau 1 : aucun sort ; niveau n : n - 1 sorts ordinaires (les sorts avancés viennent en plus, dès leur niveau)', () => {
         CLASS_IDS.forEach(c => {
             expect(unlockedSpells(c, 1)).toEqual([]);
             for (let L = 2; L <= HIGH_SPELL_FROM_LEVEL; L++) {
                 const list = unlockedSpells(c, L);
-                expect(list.length).toBe(L - 1);
+                const ordinary = list.filter(s => s.type !== 'advanced');
+                expect(ordinary.length).toBe(L - 1);
                 list.forEach(s => expect(s.minLevel).toBeLessThanOrEqual(HIGH_SPELL_FROM_LEVEL));
             }
         });
@@ -623,17 +624,25 @@ describe('déblocage des sorts selon le niveau et la classe', () => {
         all.forEach(id => expect(getSpellById(id) || getClassSpellById(id)).toBeTruthy());
     });
 
-    test('plafond « niveau - 1 » : un sort avancé de niveau 8 à 15 n\'est pas libre dès son niveau (comportement actuel, voir le test suivant)', () => {
-        // Au niveau 15 le sorcier n'a aucun sort avancé : les 14 places sont prises par des sorts de niveau inférieur.
-        CLASS_IDS.forEach(c => expect(unlockedSpells(c, 15).filter(s => s.type === 'advanced')).toEqual([]));
+    test('un sort avancé est disponible dès son niveau minimal, hors plafond « niveau - 1 » (correctif : il fallait attendre les niveaux 38 à 48)', () => {
+        const advanced = allSpells.filter(s => s.type === 'advanced');
+        expect(advanced.length).toBeGreaterThanOrEqual(8);
+        CLASS_IDS.forEach(c => {
+            advanced.forEach(spell => {
+                expect(ids(unlockedSpells(c, spell.minLevel))).toContain(spell.id);
+                if (spell.minLevel > 1) expect(ids(unlockedSpells(c, spell.minLevel - 1))).not.toContain(spell.id);
+            });
+        });
     });
 
-    // CONSTAT (signalé dans le compte rendu) : SPECS.md (2026-10-06) annonce « Lame des Quatre Vents niv. 8 », « Brasier des Sceaux niv. 9 »,
-    // etc. Or la liste débloquée est triée par niveau puis par id et tronquée à (niveau - 1) places : les sorts avancés de niveau 8 à 15 ne
-    // sont réellement disponibles qu'entre les niveaux 38 et 48 selon la classe. À trancher par le gameplay ; si c'est voulu, retirer ce test.
-    test.failing('un sort avancé est disponible dès son niveau minimal (Lame des Quatre Vents, niveau 8)', () => {
+    test('Lame des Quatre Vents est libre au niveau 8 et le nombre de sorts ordinaires reste plafonné à niveau - 1 (cas limite)', () => {
         const bladeWinds = allSpells.find(s => s.id === 'bladeWinds');
-        CLASS_IDS.forEach(c => expect(ids(unlockedSpells(c, bladeWinds.minLevel))).toContain('bladeWinds'));
+        expect(bladeWinds.minLevel).toBe(8);
+        CLASS_IDS.forEach(c => {
+            const list = unlockedSpells(c, 8);
+            expect(ids(list)).toContain('bladeWinds');
+            expect(list.filter(s => s.type !== 'advanced')).toHaveLength(7);
+        });
     });
 
     test('la règle de déblocage utilisée par la forge est bien celle de game.js (constante et plafond)', () => {
