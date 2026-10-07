@@ -31,7 +31,7 @@ const HUD_TOP = 64;     // bandeau du haut (titre, objectif, boutons)
 const HUD_BOTTOM = 8;
 const MOVE_DELAY_MS = 150;
 const MOUNTED_MOVE_DELAY_MS = 75;   // à cheval : deux fois plus vite
-const BATTLE_TRANSITION_MS = 1150;   // durée de l'animation d'entrée en combat
+const BATTLE_TRANSITION_MS = 1700;   // durée de l'animation d'entrée en combat
 const BATTLE_STRIPS = 10;
 
 const DIRECTIONS = {
