@@ -29,6 +29,7 @@ appelé par `explorationView.js` (`paintGroundCells`, `drawBuilding`, bloc `bloc
   + liseré clair là où ils rencontrent l'herbe ; eau à reflets, écume claire sur les rives ; salles (intérieurs, arène) en dalles biseautées.
 - **Décors** : sapins serrés sur tout le pourtour des cartes extérieures ; rochers ronds gris à contour sombre (décor `rock`) ;
   murs d'intérieur en planches ; maisons à grand toit à rangs de tuiles, murs crépis, fenêtres à croisillon, porte à marche.
+- **Pas de plat ni de rectiligne** : bruit continu entre tuiles (jamais un motif répété case par case), coins de chemins et d'étangs arrondis, bords irréguliers, ombres portées douces vers le bas-droite, trois tons par matière, variation de taille et de teinte des arbres ; interdit : damier visible, bordures droites au cordeau, aplats sans ombre ni reflet.
 - **Couleurs** : feuillage dérivé de la couleur d'herbe du biome, toits pris dans `ROOFS` ; un seul contour `#2b1b17`, éclairage haut-gauche.
 - Tout nouvel élément de décor d'exploration passe par `tilePainter.js` (fonction `draw…` pure) plutôt que par un dessin libre dans la vue.
 

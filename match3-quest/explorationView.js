@@ -1173,7 +1173,7 @@ export function createExplorationView(cfg) {
                     const border = it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1;
                     if (border && !screen.interior && !screen.aquatic && screen.kind !== 'arena') {
                         // pourtour de la carte : rangée de sapins serrés, comme les routes de Pokémon
-                        drawPine(ctx, tile, px, py - tile * 0.25, { leaf: darkHex(biome.a, -90) });
+                        drawPine(ctx, tile, px, py - tile * 0.2, { leaf: darkHex(biome.a, -90), seed: it.x * 31 + it.y * 17 });
                         break;
                     }
                     const decor = biome.decor[Math.floor(hash(it.x, it.y) * biome.decor.length)];
