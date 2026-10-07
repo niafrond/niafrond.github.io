@@ -104,7 +104,29 @@ export const enemySprite = (enemyId, templateId) => {
     return null;
 };
 
-export const spriteUri = svg => (svg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` : '');
+// Rendu « pixel art GBA » appliqué à TOUS les sprites de personnages (héros, PNJ, ennemis, soleils, coffres, décors) : un filtre SVG
+// échantillonne le dessin vectoriel sur une grille de PIXEL_STEP unités (32 × 32 pixels logiques pour un viewBox de 64), recadre le canal alpha
+// (bords nets, sans anti-crénelage) et réduit chaque couche à 6 niveaux (palette limitée). Les dessins source restent vectoriels.
+export const PIXEL_STEP = 2;
+const PIXEL_FILTER = `<defs><filter id="m3px" filterUnits="userSpaceOnUse" x="0" y="0" width="64" height="64" color-interpolation-filters="sRGB">` +
+    `<feFlood x="${PIXEL_STEP / 2 - 0.5}" y="${PIXEL_STEP / 2 - 0.5}" width="1" height="1"/><feComposite width="${PIXEL_STEP}" height="${PIXEL_STEP}"/><feTile result="t"/>` +
+    `<feComposite in="SourceGraphic" in2="t" operator="in"/><feMorphology operator="dilate" radius="${(PIXEL_STEP - 1) / 2}"/>` +
+    `<feComponentTransfer><feFuncA type="discrete" tableValues="0 1"/><feFuncR type="discrete" tableValues="0 .2 .4 .6 .8 1"/>` +
+    `<feFuncG type="discrete" tableValues="0 .2 .4 .6 .8 1"/><feFuncB type="discrete" tableValues="0 .2 .4 .6 .8 1"/></feComponentTransfer></filter></defs>`;
+const pixelCache = new Map();
+export function pixelate(svg) {
+    if (!svg || !/^\s*<svg[\s>]/.test(svg) || !svg.includes('viewBox="0 0 64 64"')) return svg;
+    let out = pixelCache.get(svg);
+    if (!out) {
+        const open = svg.indexOf('>', svg.indexOf('<svg')) + 1;
+        const close = svg.lastIndexOf('</svg>');
+        out = close < 0 ? svg : `${svg.slice(0, open)}${PIXEL_FILTER}<g filter="url(#m3px)">${svg.slice(open, close)}</g></svg>`;
+        if (pixelCache.size > 600) pixelCache.clear();
+        pixelCache.set(svg, out);
+    }
+    return out;
+}
+export const spriteUri = svg => (svg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(pixelate(svg))}` : '');
 
 const imageCache = new Map();
 

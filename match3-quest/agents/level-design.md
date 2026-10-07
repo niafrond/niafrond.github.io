@@ -30,6 +30,7 @@ coffres, pierres de voyage, énigmes et verrous (`requires`).
 - **Lecture à la Pokémon** : le pourtour d'une carte extérieure est dessiné en arbres serrés (`tilePainter.js`), les chemins en terre
   bordée guident vers les sorties, les rochers (`rock`) servent de barrières visibles ; éviter les obstacles isolés au milieu d'un
   chemin et laisser des couloirs de 2 tuiles minimum.
+- Bâtiments d'époque : habitations en terre damée à toit de chaume, jamais de fenêtres vitrées ni de portes modernes (voir `agents/animation-pixel-art.md`).
 - Salles d'arène : un rocher ou une colonne = un obstacle d'une case, estrade et allée centrale en chemin (voir `arena.js`).
 
 ## Livrables

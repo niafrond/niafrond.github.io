@@ -106,6 +106,9 @@ aplats + ombre portée décalée en bas à droite + 1 ou 2 reflets, pieds vers y
 `<text>`, emoji / caractères non ASCII, `<image>`, ressources externes, `<script>`, `style` externe, animations. Ids de
 dégradés préfixés par la clé du sprite. Taille idéale ≤ 6 000 caractères (max 9 000).
 
+**Cohérence historique** : le monde est la Chine mythique de Hou Yi, très ancienne. Aucun décor ni bâtiment anachronique (pas de verre,
+volets, cheminées, portes modernes) : voir `agents/animation-pixel-art.md`. Les personnages sont rendus en pixel art 32 × 32 par `pixelate`.
+
 **Décors d'exploration** : rendu inspiré de Pokémon GBA (tuiles de 16 unités, herbe à touffes, chemins bordés, eau à reflets,
 sapins de bordure, rochers, maisons à grand toit) via `tilePainter.js`, dans les palettes de biome de §6.
 

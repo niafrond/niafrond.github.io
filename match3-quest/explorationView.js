@@ -23,7 +23,7 @@ import { withLoadingScreen, trackProgress } from './loader.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { icon } from './icons.js';
-import { paintGroundTile, drawPine, drawBoulder, drawWallTile, drawHouse, darkHex } from './tilePainter.js';
+import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTile, drawHouse, darkHex } from './tilePainter.js';
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
@@ -878,7 +878,7 @@ export function createExplorationView(cfg) {
         g.imageSmoothingEnabled = false;
         for (let y = 0; y < screen.h; y++) {
             for (let x = 0; x < screen.w; x++) {
-                paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled });
+                paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled, biomeId: screen.biome });
             }
         }
     }
@@ -1173,7 +1173,7 @@ export function createExplorationView(cfg) {
                     const border = it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1;
                     if (border && !screen.interior && !screen.aquatic && screen.kind !== 'arena') {
                         // pourtour de la carte : rangée de sapins serrés, comme les routes de Pokémon
-                        drawPine(ctx, tile, px, py - tile * 0.2, { leaf: darkHex(biome.a, -90), seed: it.x * 31 + it.y * 17 });
+                        drawBorderTree(ctx, tile, px, py - tile * 0.2, borderKindOf(screen.biome), { leaf: darkHex(biome.a, -90), seed: it.x * 31 + it.y * 17 });
                         break;
                     }
                     const decor = biome.decor[Math.floor(hash(it.x, it.y) * biome.decor.length)];
@@ -1352,7 +1352,7 @@ export function createExplorationView(cfg) {
         }
     }
 
-    const ROOFS = ['#b23a30', '#2f6f73', '#8a5a2b', '#6b4a8a', '#c98a2b', '#3f7d4e', '#a8483a', '#4a6fa5'];
+    const ROOFS = ['#c9a45a', '#b8924a', '#a98342', '#8f7040', '#6f6f78', '#9a6a3a', '#c2a063', '#7a5a34'];   // chaume, paille, ardoise brute : pas de couleurs vives
 
     // Maison de village : toit à pignon, murs crème, porte (tuile de la porte), fenêtres, nom du bâtiment.
     function drawBuilding(b, p, tile, labelSize) {

@@ -30,7 +30,17 @@ appelé par `explorationView.js` (`paintGroundCells`, `drawBuilding`, bloc `bloc
 - **Décors** : sapins serrés sur tout le pourtour des cartes extérieures ; rochers ronds gris à contour sombre (décor `rock`) ;
   murs d'intérieur en planches ; maisons à grand toit à rangs de tuiles, murs crépis, fenêtres à croisillon, porte à marche.
 - **Pas de plat ni de rectiligne** : bruit continu entre tuiles (jamais un motif répété case par case), coins de chemins et d'étangs arrondis, bords irréguliers, ombres portées douces vers le bas-droite, trois tons par matière, variation de taille et de teinte des arbres ; interdit : damier visible, bordures droites au cordeau, aplats sans ombre ni reflet.
-- **Couleurs** : feuillage dérivé de la couleur d'herbe du biome, toits pris dans `ROOFS` ; un seul contour `#2b1b17`, éclairage haut-gauche.
+- **Époque très ancienne (Chine mythique) : aucun anachronisme.** Interdits dans les décors et bâtiments : vitres et fenêtres à croisillon,
+  volets, cheminées, portes à auvent ou à poignée moderne, tuiles « européennes », clôtures et lampadaires modernes, couleurs de toit vives.
+  Autorisés : terre damée, poteaux et poutres de bois, chaume ou ardoise brute, ouvertures à barreaux de bois, portes de planches
+  cloutées de bronze, pierre brute, lanternes de papier rouge, bambou, jade, bronze.
+- **Un style par biome** (`tilePainter.js`) : végétation de bordure (`BORDER_KIND` : feuillus, roseaux, bambous, cactus, arbres morts,
+  aiguilles volcaniques, acacias, palmiers, arbres dorés, cristaux, stalagmites) et sol propre (sable rippé, cendres à braises, roche
+  de tempête, poussière lunaire, pétales, litière, gravats ; lave au volcan). Tout nouveau biome déclare sa végétation et son sol.
+- **Personnages** : tous les sprites (héros, PNJ, ennemis, soleils, coffres, décors) passent par `spriteUri` → `pixelate` (`sprites/index.js`) :
+  filtre SVG qui échantillonne le dessin vectoriel sur une grille de 2 unités (32 × 32 pixels logiques), recadre l'alpha (bords nets) et
+  réduit chaque couche à 6 niveaux. Les SVG source restent vectoriels et inchangés ; ne jamais contourner `spriteUri` pour afficher un sprite.
+- **Couleurs** : feuillage- **Couleurs** : feuillage dérivé de la couleur d'herbe du biome, toits pris dans `ROOFS` ; un seul contour `#2b1b17`, éclairage haut-gauche.
 - Tout nouvel élément de décor d'exploration passe par `tilePainter.js` (fonction `draw…` pure) plutôt que par un dessin libre dans la vue.
 
 ## Cycles d'animation à fournir
