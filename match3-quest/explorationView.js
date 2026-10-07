@@ -17,7 +17,7 @@ import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { playEndingAnimation, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
-import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites } from './sprites/index.js';
+import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
@@ -1369,14 +1369,24 @@ export function createExplorationView(cfg) {
     // `fallback` : dessin de face montré le temps que la vue de côté / de dos (dérivée) se décode.
     function drawSprite(svg, cx, feetY, size, fallback = null) {
         if (!svg) return false;
-        let img = spriteImage(svg);
-        if (!img.complete || !img.naturalWidth) {
-            if (!fallback || fallback === svg) return true; // en cours de chargement : rien à dessiner
-            img = spriteImage(fallback);
-            if (!img.complete || !img.naturalWidth) return true;
+        let px = pixelSprite(svg);
+        if (!px) {
+            if (!fallback || fallback === svg) return true; // en cours de conversion : rien à dessiner (jamais de version floue)
+            px = pixelSprite(fallback);
+            if (!px) return true;
         }
-        ctx.drawImage(img, cx - size / 2, feetY - size * 0.92, size, size);
+        blitPixels(px, cx - size / 2, feetY - size * 0.92, size);
         return true;
+    }
+
+    // Copie nette d'un sprite pixellisé : pas de lissage, destination arrondie au pixel de l'écran.
+    function blitPixels(px, x, y, size) {
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const snap = v => Math.round(v * dpr) / dpr;
+        const was = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(px, snap(x), snap(y), Math.max(1 / dpr, snap(size)), Math.max(1 / dpr, snap(size)));
+        ctx.imageSmoothingEnabled = was;
     }
 
     // Pastille de quête au-dessus d'un PNJ : « ! » (quête à prendre) ou « ? » (à rendre).
@@ -1451,8 +1461,8 @@ export function createExplorationView(cfg) {
     function drawDecor(name, x, baseY, size) {
         const svg = decorSprite(name);
         if (!svg) return;
-        const img = spriteImage(svg);
-        if (img.complete && img.naturalWidth) ctx.drawImage(img, x - size / 2, baseY - size * 0.92, size, size);
+        const px = pixelSprite(svg);
+        if (px) blitPixels(px, x - size / 2, baseY - size * 0.92, size);
     }
 
     function drawLabel(x, y, text, bg, fg, size = 12, reach = cam.tile * 0.5) {

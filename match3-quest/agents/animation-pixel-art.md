@@ -37,9 +37,11 @@ appelé par `explorationView.js` (`paintGroundCells`, `drawBuilding`, bloc `bloc
 - **Un style par biome** (`tilePainter.js`) : végétation de bordure (`BORDER_KIND` : feuillus, roseaux, bambous, cactus, arbres morts,
   aiguilles volcaniques, acacias, palmiers, arbres dorés, cristaux, stalagmites) et sol propre (sable rippé, cendres à braises, roche
   de tempête, poussière lunaire, pétales, litière, gravats ; lave au volcan). Tout nouveau biome déclare sa végétation et son sol.
-- **Personnages** : tous les sprites (héros, PNJ, ennemis, soleils, coffres, décors) passent par `spriteUri` → `pixelate` (`sprites/index.js`) :
-  filtre SVG qui échantillonne le dessin vectoriel sur une grille de 2 unités (32 × 32 pixels logiques), recadre l'alpha (bords nets) et
-  réduit chaque couche à 6 niveaux. Les SVG source restent vectoriels et inchangés ; ne jamais contourner `spriteUri` pour afficher un sprite.
+- **Personnages** : tous les sprites (héros, PNJ, ennemis, soleils, coffres, décors) sont pixellisés par `sprites/index.js` : `pixelSprite(svg)` (canvas) et
+  `spriteUri(svg)` (balises img). Le SVG est rastérisé à 128 px puis échantillonné sur une grille de 32 × 32 (couleur moyenne des points opaques
+  du bloc, alpha net, 8 niveaux par couche), puis agrandi ×4 sans lissage. À l'écran : `imageSmoothingEnabled = false` et destination arrondie
+  au pixel (`blitPixels`), ou `image-rendering: pixelated` (règle `img[src^="data:image/png"]`). Les SVG source restent vectoriels ; ne jamais
+  dessiner un sprite avec `spriteImage` directement (flou) ni contourner `spriteUri`.
 - **Couleurs** : feuillage- **Couleurs** : feuillage dérivé de la couleur d'herbe du biome, toits pris dans `ROOFS` ; un seul contour `#2b1b17`, éclairage haut-gauche.
 - Tout nouvel élément de décor d'exploration passe par `tilePainter.js` (fonction `draw…` pure) plutôt que par un dessin libre dans la vue.
 
