@@ -13,7 +13,7 @@ export const FACE_BEHIND = 'behind';
 export const FACE_SIDE = 'side';
 
 export const OBSERVE_MS = 3000;          // temps d'immobilité pour percer un ennemi
-export const OBSERVE_EXTRA_RANGE = 8;    // portée d'observation au-delà de la zone de vigilance (plus besoin d'être collé à l'ennemi)
+export const OBSERVE_RANGE = 1;          // observer une faiblesse exige d'être à une case de l'ennemi (diagonales comprises)
 export const AMBUSH_BONUS_PA = 1;
 export const WEAKNESS_DAMAGE_BONUS = 0.25;
 export const OUTLOOK_TILES = 5;
@@ -49,15 +49,15 @@ export function weakestColor(resistances) {
     return best ? best.c : null;
 }
 
-// Suivi de l'observation : le héros reste immobile `stillMs`, un ennemi vivant dans la portée est « lu ».
+// Suivi de l'observation : le héros reste immobile `stillMs` À UNE CASE d'un ennemi vivant (OBSERVE_RANGE) pour le « lire ».
 // Retourne l'id de l'ennemi observé (le plus proche non encore observé) ou null.
-export function observationTarget(stillMs, playerPos, enemies, observed = {}, extraRange = OBSERVE_EXTRA_RANGE) {
+export function observationTarget(stillMs, playerPos, enemies, observed = {}, range = OBSERVE_RANGE) {
     if (stillMs < OBSERVE_MS) return null;
     let best = null;
     for (const e of enemies) {
         if (observed[e.id] || e.shielded || e.illusion) continue;
         const d = Math.max(Math.abs(e.x - playerPos.x), Math.abs(e.y - playerPos.y));
-        if (d <= (e.aggro || 1) + extraRange && (!best || d < best.d)) best = { id: e.id, d };
+        if (d <= range && (!best || d < best.d)) best = { id: e.id, d };
     }
     return best ? best.id : null;
 }

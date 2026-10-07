@@ -34,16 +34,17 @@ describe('préparation', () => {
         expect(weaknessDamage(8, 'red', 'red', false)).toBe(8);
     });
     test('observation : immobile assez longtemps, à portée', () => {
-        const list = [{ id: 'a', x: 8, y: 5, aggro: 2 }, { id: 'b', x: 20, y: 5, aggro: 2 }];
+        const list = [{ id: 'a', x: 6, y: 5, aggro: 2 }, { id: 'b', x: 20, y: 5, aggro: 2 }];
         expect(observationTarget(OBSERVE_MS - 1, { x: 5, y: 5 }, list)).toBeNull();
         expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, list)).toBe('a');
         expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, list, { a: true })).toBeNull();
     });
-    test('observation : portée large, pas besoin d\'être à côté de l\'ennemi', () => {
-        const at = d => [{ id: 'a', x: 5 + d, y: 5, aggro: 1 }];
-        expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, at(1))).toBe('a');
-        expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, at(7))).toBe('a');
-        expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, at(10))).toBeNull();
+    test('observation : seulement à une case de l\'ennemi (diagonales comprises)', () => {
+        const at = (dx, dy) => [{ id: 'a', x: 5 + dx, y: 5 + dy, aggro: 4 }];
+        expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, at(1, 0))).toBe('a');
+        expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, at(1, 1))).toBe('a');
+        expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, at(2, 0))).toBeNull();
+        expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, at(0, 4))).toBeNull();   // même dans sa zone de vigilance
     });
     test('spotAt et boost de plateau', () => {
         expect(spotAt([{ x: 1, y: 2, kind: 'trap' }], 1, 2, 'trap')).not.toBeNull();
@@ -128,11 +129,11 @@ describe('intégration exploration', () => {
         expect(X.encounterFor(s, def.id, 5).prep.tags).not.toContain('ambush');
     });
 
-    test('observation : événement après 3 s d\'immobilité à portée', () => {
+    test('observation : événement après 3 s d\'immobilité à une case de l\'ennemi', () => {
         const s = sessionOnWild();
         const def = X.currentScreen(s).enemies.find(e => !e.boss && !e.illusion && !e.arena && !e.shieldedBy);
         const st = s.rt.enemies[def.id];
-        s.data.x = st.x - (def.aggro || 2) - 2; s.data.y = st.y;
+        s.data.x = st.x - 1; s.data.y = st.y;   // à une case de l'ennemi
         s.rt.grace = 0;
         const ev = X.tick(s, 3100).find(e => e.type === 'observed');
         expect(ev?.enemyId).toBeDefined();
