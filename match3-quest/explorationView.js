@@ -1167,18 +1167,20 @@ export function createExplorationView(cfg) {
                 case 'block': {
                     const px = c.x - tile / 2, py = c.y - tile / 2;
                     if (screen.interior && (it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1)) {
-                        drawWallTile(ctx, biome, tile, px, py, it.y === 0);
+                        drawCachedObject(`wall:${screen.biome}:${it.y === 0}`, px, py, tile, tile, [0, 0, 0, 0], (g, ox, oy) => drawWallTile(g, biome, tile, ox, oy, it.y === 0));
                         break;
                     }
                     const border = it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1;
                     if (border && !screen.interior && !screen.aquatic && screen.kind !== 'arena') {
                         // pourtour de la carte : rangée de sapins serrés, comme les routes de Pokémon
-                        drawBorderTree(ctx, tile, px, py - tile * 0.2, borderKindOf(screen.biome), { leaf: darkHex(biome.a, -90), seed: it.x * 31 + it.y * 17 });
+                        const seed = (it.x * 31 + it.y * 17) % 8, kind = borderKindOf(screen.biome);
+                        drawCachedObject(`tree:${screen.biome}:${kind}:${seed}`, px, py, tile, tile, [tile * 0.6, tile * 1.1, tile * 0.6, tile * 0.3],
+                            (g, ox, oy) => drawBorderTree(g, tile, ox, oy - tile * 0.2, kind, { leaf: darkHex(biome.a, -90), seed }));
                         break;
                     }
                     const decor = biome.decor[Math.floor(hash(it.x, it.y) * biome.decor.length)];
                     if (decor === 'rock') {
-                        drawBoulder(ctx, tile, px, py);
+                        drawCachedObject('boulder', px, py, tile, tile, [tile * 0.3, tile * 0.3, tile * 0.3, tile * 0.3], (g, ox, oy) => drawBoulder(g, tile, ox, oy));
                         break;
                     }
                     drawShadow(c.x, c.y + tile * 0.3, tile * 0.32, tile * 0.11);
@@ -1355,12 +1357,40 @@ export function createExplorationView(cfg) {
     const ROOFS = ['#c9a45a', '#b8924a', '#a98342', '#8f7040', '#6f6f78', '#9a6a3a', '#c2a063', '#7a5a34'];   // chaume, paille, ardoise brute : pas de couleurs vives
 
     // Maison de village : toit à pignon, murs crème, porte (tuile de la porte), fenêtres, nom du bâtiment.
+    // Objets de décor statiques (arbres de bordure, rochers, murs, maisons) : dessinés une seule fois dans un petit canvas hors écran,
+    // puis recopiés d'un seul appel par image (au lieu de dizaines de fillRect par objet et par image).
+    const objCache = new Map();
+    function drawCachedObject(key, x, y, w, h, pad, paint) {
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const [pl, pt, pr, pb] = pad;
+        const k = `${key}|${Math.round(w)}x${Math.round(h)}|${dpr}`;
+        let cv = objCache.get(k);
+        if (!cv) {
+            if (typeof document === 'undefined') { paint(ctx, x, y); return; }
+            if (objCache.size > 300) objCache.clear();
+            cv = document.createElement('canvas');
+            cv.width = Math.ceil((w + pl + pr) * dpr);
+            cv.height = Math.ceil((h + pt + pb) * dpr);
+            const g = cv.getContext('2d');
+            g.setTransform(dpr, 0, 0, dpr, 0, 0);
+            g.imageSmoothingEnabled = false;
+            paint(g, pl, pt);
+            objCache.set(k, cv);
+        }
+        const was = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(cv, Math.round((x - pl) * dpr) / dpr, Math.round((y - pt) * dpr) / dpr, cv.width / dpr, cv.height / dpr);
+        ctx.imageSmoothingEnabled = was;
+    }
+
     function drawBuilding(b, p, tile, labelSize) {
         const w = b.w * tile;
         const h = b.h * tile;
         const roof = ROOFS[(b.id.charCodeAt(0) + (b.x * 7 + b.y * 3)) % ROOFS.length];
-        const { roofH } = drawHouse(ctx, p.x, p.y, w, h, tile, roof,
-            { dx: (b.door.x - b.x) * tile, dy: (b.door.y - b.y) * tile });
+        const roofH = Math.round(Math.max(tile * 0.95, h * 0.52));
+        drawCachedObject(`house:${b.id}:${roof}:${b.door.x - b.x},${b.door.y - b.y}`, p.x, p.y, w, h,
+            [tile * 0.5, tile * 0.4, tile * 0.9, tile * 0.5],
+            (g, ox, oy) => drawHouse(g, ox, oy, w, h, tile, roof, { dx: (b.door.x - b.x) * tile, dy: (b.door.y - b.y) * tile }));
         if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.5, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1), w / 2);
     }
 
