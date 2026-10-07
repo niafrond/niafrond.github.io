@@ -2513,10 +2513,12 @@ function buildUnlockedSpellsList(spells, level) {
         return String(a.id).localeCompare(String(b.id));
     });
 
-    // Les sorts de haut niveau (multimana, niveau > 15) sont débloqués dès leur niveau, hors plafond du nombre de sorts.
-    const early = uniqueById.filter(s => (s.minLevel || 1) <= HIGH_SPELL_FROM_LEVEL).slice(0, unlockCap);
-    const high = uniqueById.filter(s => (s.minLevel || 1) > HIGH_SPELL_FROM_LEVEL);
-    return [...early, ...high];
+    // Les sorts de haut niveau (multimana, niveau > 15) et les sorts avancés (3 à 5 couleurs, dès le niveau 8) sont débloqués dès leur
+    // niveau, hors plafond du nombre de sorts : sinon, triés après les sorts de niveau inférieur, ils restaient hors de portée jusqu'au niveau 38+.
+    const isFreeUnlock = s => s.type === 'advanced' || (s.minLevel || 1) > HIGH_SPELL_FROM_LEVEL;
+    const early = uniqueById.filter(s => !isFreeUnlock(s)).slice(0, unlockCap);
+    const free = uniqueById.filter(isFreeUnlock);
+    return [...early, ...free].sort((a, b) => Math.max(1, Math.floor(a?.minLevel || 1)) - Math.max(1, Math.floor(b?.minLevel || 1)) || String(a.id).localeCompare(String(b.id)));
 }
 
 export function updateAvailableSpells(){
@@ -3030,20 +3032,34 @@ export function consumeBoardBoost(){
 }
 
 // détermine le premier tour selon l'agilité (plus d'agilité = joueur plus rapide)
+// Avantage du terrain (embuscade, faiblesse repérée, piège…) : bandeau NON BLOQUANT affiché dès le début du combat, par-dessus le plateau.
+// Il ne retarde ni le joueur ni l'ennemi ni les coups d'ouverture ; il reste à l'écran le temps de lire chaque ligne.
+const BANNER_BASE_MS = 3200;
+const BANNER_LINE_MS = 1600;
+const BANNER_LEAD_MS = 500;       // seule pause avant que l'ennemi (ou un coup d'ouverture) n'agisse
+function showPrepBanner(banner, lines, startLine){
+    document.querySelectorAll('.prep-banner').forEach(el => el.remove());
+    const el = document.createElement('div');
+    el.className = 'prep-banner';
+    el.setAttribute('role', 'status');
+    el.innerHTML = `<div class="prep-banner-head"><span class="prep-banner-icon">${svgIcon(banner.icon) || ''}</span>` +
+        `<span class="prep-banner-title">${String(banner.title).toUpperCase()}</span></div>` +
+        lines.map(l => `<div class="prep-banner-line">${l}</div>`).join('') +
+        `<div class="prep-banner-start">${startLine}</div>`;
+    document.body.appendChild(el);
+    const ms = (BANNER_BASE_MS + BANNER_LINE_MS * lines.length) * animationFactor();
+    setTimeout(() => { el.classList.add('fade-out'); setTimeout(() => el.remove(), 400); }, ms);
+}
 export function decideFirstTurn(){
     const prep = enemy?.prep;
     const banner = prepBanner(prep, enemy?.name);
-    // Avantage du terrain : une seule annonce, qui détaille chaque conséquence (ex. « +1 PA »), plus longue qu'une annonce simple.
-    let announceMs = 1500;   // délai avant que l'ennemi ne joue, le temps que l'annonce se lise
+    let announceMs = 1500;   // délai avant que l'ennemi ne joue (annonce simple, sans avantage du terrain)
     const announce = (anim, playerStarts, extraLine = null) => {
         if(!banner) { showCombatAnimation(anim, playerStarts); return; }
+        // Avantage du terrain : bandeau lisible dès l'ouverture, sans attente ni blocage du jeu.
         const lines = extraLine ? [...banner.lines, extraLine] : banner.lines;
-        announceMs = 1400 + 1100 * lines.length + 300;
-        showCombatAnimation({
-            icon: banner.icon, title: banner.title,
-            source: lines.join('<br>'),
-            target: playerStarts ? '→ À vous de jouer !' : '→ Ennemi joue en premier'
-        }, playerStarts, { autoHideMs: (1400 + 1100 * lines.length) * animationFactor() });
+        announceMs = BANNER_LEAD_MS;
+        showPrepBanner(banner, lines, playerStarts ? '→ À vous de jouer !' : '→ Ennemi joue en premier');
     };
     // Coups d'ouverture gratuits : l'embuscade (attaque par derrière) et la faiblesse repérée frappent chacune une fois avec l'arme courante.
     const openingStrikes = (prep?.tags || []).filter(t => t === 'ambush' || t === 'observed').length;
