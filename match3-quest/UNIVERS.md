@@ -106,6 +106,9 @@ aplats + ombre portée décalée en bas à droite + 1 ou 2 reflets, pieds vers y
 `<text>`, emoji / caractères non ASCII, `<image>`, ressources externes, `<script>`, `style` externe, animations. Ids de
 dégradés préfixés par la clé du sprite. Taille idéale ≤ 6 000 caractères (max 9 000).
 
+**Décors d'exploration** : rendu inspiré de Pokémon GBA (tuiles de 16 unités, herbe à touffes, chemins bordés, eau à reflets,
+sapins de bordure, rochers, maisons à grand toit) via `tilePainter.js`, dans les palettes de biome de §6.
+
 Esthétique chinoise : hanfu et robes à larges manches, chignons (topknots) et épingles, chapeaux coniques, écailles, nuages
 stylisés (xiangyun), motifs de vagues, rouge laqué, or, jade, bleu nuit, encre. Les créatures s'inspirent du bestiaire
 chinois (yaoguai, jiangshi, dragons-longs sans ailes d'occidental…). Les **soleils** sont des disques/êtres de feu avec

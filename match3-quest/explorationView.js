@@ -23,6 +23,7 @@ import { withLoadingScreen, trackProgress } from './loader.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
 import { decorSprite, DECOR_NAMES } from './sprites/decor.js';
 import { icon } from './icons.js';
+import { paintGroundTile, drawPine, drawBoulder, drawWallTile, drawHouse, darkHex } from './tilePainter.js';
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
@@ -867,14 +868,17 @@ export function createExplorationView(cfg) {
     const GROUND_MAX_PIXELS = 16e6;           // au-delà, on retombe sur le dessin direct (mémoire)
     let groundCache = null;
 
+    // Sol à la Pokémon (tilePainter.js) : herbe à touffes, chemins bordés, eau à reflets, dalles de salle.
     function paintGroundCells(g, screen, biome, tile, ox, oy, inRects) {
+        const inMap = (x, y) => x >= 0 && y >= 0 && x < screen.w && y < screen.h;
+        // carte de mer : les récifs (obstacles) reposent sur l'eau, pas sur une case de sable
+        const isLiquid = (x, y) => inMap(x, y) && (inRects(screen.liquids, x, y) || (screen.aquatic && inRects(screen.obstacles, x, y)));
+        const isPath = (x, y) => !inMap(x, y) || (inRects(screen.paths, x, y) && !isLiquid(x, y));
+        const tiled = !!(screen.interior || screen.kind === 'arena');
+        g.imageSmoothingEnabled = false;
         for (let y = 0; y < screen.h; y++) {
             for (let x = 0; x < screen.w; x++) {
-                // carte de mer : les récifs (obstacles) reposent sur l'eau, pas sur une case de sable
-                g.fillStyle = (inRects(screen.liquids, x, y) || (screen.aquatic && inRects(screen.obstacles, x, y))) ? biome.liquid
-                    : inRects(screen.paths, x, y) ? biome.path
-                    : ((x + y) % 2 ? biome.a : biome.b);
-                g.fillRect(ox + x * tile, oy + y * tile, tile, tile);
+                paintGroundTile(g, biome, tile, ox + x * tile, oy + y * tile, x, y, { isPath, isLiquid, tiled });
             }
         }
     }
@@ -1161,13 +1165,22 @@ export function createExplorationView(cfg) {
                     break;
                 }
                 case 'block': {
+                    const px = c.x - tile / 2, py = c.y - tile / 2;
                     if (screen.interior && (it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1)) {
-                        cell(it.x, it.y, shade(biome.cliff, it.y === 0 ? -6 : 8));
-                        cell(it.x, it.y, 'rgba(0,0,0,0.18)', tile * 0.46);
+                        drawWallTile(ctx, biome, tile, px, py, it.y === 0);
                         break;
                     }
-                    cell(it.x, it.y, shade(biome.cliff, 10));
+                    const border = it.x === 0 || it.y === 0 || it.x === screen.w - 1 || it.y === screen.h - 1;
+                    if (border && !screen.interior && !screen.aquatic && screen.kind !== 'arena') {
+                        // pourtour de la carte : rangée de sapins serrés, comme les routes de Pokémon
+                        drawPine(ctx, tile, px, py - tile * 0.25, { leaf: darkHex(biome.a, -90) });
+                        break;
+                    }
                     const decor = biome.decor[Math.floor(hash(it.x, it.y) * biome.decor.length)];
+                    if (decor === 'rock') {
+                        drawBoulder(ctx, tile, px, py);
+                        break;
+                    }
                     drawShadow(c.x, c.y + tile * 0.3, tile * 0.32, tile * 0.11);
                     drawDecor(decor, c.x, c.y + tile * 0.36, tile * 0.85);
                     break;
@@ -1346,53 +1359,9 @@ export function createExplorationView(cfg) {
         const w = b.w * tile;
         const h = b.h * tile;
         const roof = ROOFS[(b.id.charCodeAt(0) + (b.x * 7 + b.y * 3)) % ROOFS.length];
-        const roofH = Math.max(tile * 0.9, h * 0.5);
-        const wallY = p.y + roofH * 0.8;
-        ctx.save();
-        // murs
-        ctx.fillStyle = '#f0e0b8';
-        ctx.fillRect(p.x + 3, wallY, w - 6, h - roofH * 0.8);
-        ctx.fillStyle = 'rgba(120,80,40,0.18)';
-        ctx.fillRect(p.x + w * 0.62, wallY, w * 0.38 - 3, h - roofH * 0.8);
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#2b1b17';
-        ctx.strokeRect(p.x + 3, wallY, w - 6, h - roofH * 0.8);
-        // fenêtres
-        const winY = wallY + (h - roofH * 0.8) * 0.28;
-        ctx.fillStyle = '#7ab8d8';
-        [0.18, 0.68].forEach(fx => {
-            if (Math.abs(p.x + w * fx + tile * 0.2 - (p.x + (b.door.x - b.x + 0.5) * tile)) < tile * 0.5) return;
-            ctx.fillRect(p.x + w * fx, winY, tile * 0.4, tile * 0.34);
-            ctx.strokeRect(p.x + w * fx, winY, tile * 0.4, tile * 0.34);
-        });
-        // porte
-        const dx = p.x + (b.door.x - b.x) * tile;
-        const dy = p.y + (b.door.y - b.y) * tile;
-        ctx.fillStyle = '#6b3d22';
-        ctx.fillRect(dx + tile * 0.2, dy + tile * 0.12, tile * 0.6, tile * 0.88);
-        ctx.strokeRect(dx + tile * 0.2, dy + tile * 0.12, tile * 0.6, tile * 0.88);
-        ctx.fillStyle = '#f2c14e';
-        ctx.beginPath();
-        ctx.arc(dx + tile * 0.68, dy + tile * 0.58, tile * 0.04, 0, Math.PI * 2);
-        ctx.fill();
-        // toit
-        ctx.fillStyle = roof;
-        ctx.beginPath();
-        ctx.moveTo(p.x - tile * 0.12, wallY + 4);
-        ctx.lineTo(p.x + w * 0.5, p.y);
-        ctx.lineTo(p.x + w + tile * 0.12, wallY + 4);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(255,255,255,0.18)';
-        ctx.beginPath();
-        ctx.moveTo(p.x + w * 0.5, p.y);
-        ctx.lineTo(p.x + w + tile * 0.12, wallY + 4);
-        ctx.lineTo(p.x + w * 0.5, wallY + 4);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-        if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.62, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1), w / 2);
+        const { roofH } = drawHouse(ctx, p.x, p.y, w, h, tile, roof,
+            { dx: (b.door.x - b.x) * tile, dy: (b.door.y - b.y) * tile });
+        if (b.name && tile >= 40) drawLabel(p.x + w / 2, p.y + roofH * 0.5, b.name, 'rgba(255,248,225,0.92)', '#5a3e1b', Math.max(10, labelSize - 1), w / 2);
     }
 
     // Dessine un sprite SVG (pieds vers le bas du cadre) centré sur cx, dont les pieds sont posés en feetY.

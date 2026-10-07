@@ -20,6 +20,18 @@ plateau, effets de sorts, cinématiques. Il produit des animations lisibles à p
   même visage reconnaissable pour les quatre Hou Yi (cheveux noirs, chignon, sourcils marqués).
 - **Pas de sous-pixel** : aucune rotation ni anti-aliasing sur les sprites ; les rotations se redessinent à la main.
 
+## Direction « Pokémon GBA » (exploration)
+L'exploration vise le rendu des jeux Pokémon sur Game Boy Advance (vue du dessus, tuiles lisibles, pourtour d'arbres, salles
+d'arène à rochers), **sans changer l'univers chinois** des sprites ni les ids. Implémentation : `tilePainter.js` (sans état, sans DOM),
+appelé par `explorationView.js` (`paintGroundCells`, `drawBuilding`, bloc `block`).
+- **Tuile = 16 unités logiques**, rendue à l'échelle entière de la tuile d'écran, coordonnées arrondies au pixel, `imageSmoothingEnabled = false`.
+- **Sol** : herbe à touffes en V (2 tons) et rares fleurs, damier à peine visible ; chemins en terre avec gravillons, bord sombre
+  + liseré clair là où ils rencontrent l'herbe ; eau à reflets, écume claire sur les rives ; salles (intérieurs, arène) en dalles biseautées.
+- **Décors** : sapins serrés sur tout le pourtour des cartes extérieures ; rochers ronds gris à contour sombre (décor `rock`) ;
+  murs d'intérieur en planches ; maisons à grand toit à rangs de tuiles, murs crépis, fenêtres à croisillon, porte à marche.
+- **Couleurs** : feuillage dérivé de la couleur d'herbe du biome, toits pris dans `ROOFS` ; un seul contour `#2b1b17`, éclairage haut-gauche.
+- Tout nouvel élément de décor d'exploration passe par `tilePainter.js` (fonction `draw…` pure) plutôt que par un dessin libre dans la vue.
+
 ## Cycles d'animation à fournir
 | Entité | Cycles (images) | Cadence |
 |---|---|---|
