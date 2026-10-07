@@ -13,7 +13,7 @@ export const FACE_BEHIND = 'behind';
 export const FACE_SIDE = 'side';
 
 export const OBSERVE_MS = 3000;          // temps d'immobilité pour percer un ennemi
-export const OBSERVE_EXTRA_RANGE = 4;    // portée d'observation au-delà de la zone de vigilance
+export const OBSERVE_EXTRA_RANGE = 8;    // portée d'observation au-delà de la zone de vigilance (plus besoin d'être collé à l'ennemi)
 export const AMBUSH_BONUS_PA = 1;
 export const WEAKNESS_DAMAGE_BONUS = 0.25;
 export const OUTLOOK_TILES = 5;

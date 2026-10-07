@@ -1659,10 +1659,10 @@ progress.enemy-bar::-webkit-progress-value {
     text-align: center;
     text-shadow: 0 2px 8px #000;
     opacity: 0;
-    animation: bt-title 0.5s ease-out 1.15s forwards;
+    animation: bt-title 0.4s ease-out 0.62s forwards;
 }
 
-.bt-emoji { font-size: 4.5em; line-height: 1; animation: bt-pop 0.5s ease-out 1.15s both; }
+.bt-emoji { font-size: 4.5em; line-height: 1; animation: bt-pop 0.4s ease-out 0.62s both; }
 .bt-sprite { display: block; width: min(220px, 40vw); height: min(220px, 40vw); filter: drop-shadow(0 6px 10px rgba(0,0,0,0.6)); }
 .bt-name { font-size: 1.6em; font-weight: bold; }
 .bt-level { font-size: 1em; opacity: 0.85; }
@@ -2970,13 +2970,21 @@ body.fx-low .mana-fly-dot { box-shadow: none; }
 body.combat-ended .tabs,
 body.combat-ended #options-btn,
 body.combat-ended #abandon-combat-btn { display: none !important; }
-body.combat-ended #combat-controls { margin: 16px 0 !important; padding: 0 12px; }
+/* Épinglé en bas de la fenêtre : visible sans faire défiler le récapitulatif, qu'il soit long ou court. */
+body.combat-ended #combat-controls {
+    position: sticky;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 30;
+    margin: 12px 0 0 !important;
+    padding: 10px 12px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0));
+}
 body.combat-ended #combat-controls #new-combat-btn {
     display: block !important;
     width: 100%;
     margin: 0 !important;
-    padding: 36px 16px !important;
-    font-size: clamp(28px, 7vw, 56px) !important;
+    padding: 22px 16px !important;
+    font-size: clamp(24px, 6vw, 48px) !important;
     font-weight: 800;
     border-radius: 16px;
     box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.35), 0 8px 24px rgba(0, 0, 0, 0.3);

@@ -39,6 +39,12 @@ describe('préparation', () => {
         expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, list)).toBe('a');
         expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, list, { a: true })).toBeNull();
     });
+    test('observation : portée large, pas besoin d\'être à côté de l\'ennemi', () => {
+        const at = d => [{ id: 'a', x: 5 + d, y: 5, aggro: 1 }];
+        expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, at(1))).toBe('a');
+        expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, at(7))).toBe('a');
+        expect(observationTarget(OBSERVE_MS, { x: 5, y: 5 }, at(10))).toBeNull();
+    });
     test('spotAt et boost de plateau', () => {
         expect(spotAt([{ x: 1, y: 2, kind: 'trap' }], 1, 2, 'trap')).not.toBeNull();
         expect(spotAt([{ x: 1, y: 2, kind: 'trap' }], 1, 2, 'outlook')).toBeNull();

@@ -3030,6 +3030,9 @@ export function consumeBoardBoost(){
 }
 
 // détermine le premier tour selon l'agilité (plus d'agilité = joueur plus rapide)
+// Annonce d'avantage du terrain : durée = base + une durée par ligne (le temps de lire chaque conséquence).
+const ANNOUNCE_BASE_MS = 2200;
+const ANNOUNCE_LINE_MS = 1700;
 export function decideFirstTurn(){
     const prep = enemy?.prep;
     const banner = prepBanner(prep, enemy?.name);
@@ -3038,12 +3041,12 @@ export function decideFirstTurn(){
     const announce = (anim, playerStarts, extraLine = null) => {
         if(!banner) { showCombatAnimation(anim, playerStarts); return; }
         const lines = extraLine ? [...banner.lines, extraLine] : banner.lines;
-        announceMs = 1400 + 1100 * lines.length + 300;
+        announceMs = ANNOUNCE_BASE_MS + ANNOUNCE_LINE_MS * lines.length + 300;
         showCombatAnimation({
             icon: banner.icon, title: banner.title,
             source: lines.join('<br>'),
             target: playerStarts ? '→ À vous de jouer !' : '→ Ennemi joue en premier'
-        }, playerStarts, { autoHideMs: (1400 + 1100 * lines.length) * animationFactor() });
+        }, playerStarts, { autoHideMs: (ANNOUNCE_BASE_MS + ANNOUNCE_LINE_MS * lines.length) * animationFactor() });
     };
     // Coups d'ouverture gratuits : l'embuscade (attaque par derrière) et la faiblesse repérée frappent chacune une fois avec l'arme courante.
     const openingStrikes = (prep?.tags || []).filter(t => t === 'ambush' || t === 'observed').length;
