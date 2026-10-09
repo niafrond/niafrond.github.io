@@ -1,3 +1,22 @@
+## [2.62.0](https://github.com/niafrond/niafrond.github.io/compare/v2.61.0...v2.62.0) (2026-10-09)
+
+### Features
+
+* **match3-quest:** ajouter chemins relationnels, compagnons et dialogues contextuels ([5aacbc0](https://github.com/niafrond/niafrond.github.io/commit/5aacbc014698c735030993cc3e99038ffeb47729))
+* **match3-quest:** ajouter gardes de sanctuaire et affaiblissement des soleils par l'exploration ([7e866f1](https://github.com/niafrond/niafrond.github.io/commit/7e866f13d44a8219967d5d97487c8e6175b251a0))
+* **match3-quest:** ajouter pourparlers, dialogues de compagnons et règles de profondeur de l'agent scénario ([9bbe87b](https://github.com/niafrond/niafrond.github.io/commit/9bbe87b73612017207f672a4b159a087a71d3b2b))
+* **match3-quest:** dessiner les portraits pixel art des PNJ de pourparlers ([d529cd6](https://github.com/niafrond/niafrond.github.io/commit/d529cd672d6900b1e62c1049c39a94441f036b7b))
+* **match3-quest:** finaliser les soleils selon la DA de référence et documenter la refonte ([c2366ad](https://github.com/niafrond/niafrond.github.io/commit/c2366ad3f541fd5e732024a08b39c34a704cc01b))
+* **match3-quest:** redessiner les ennemis et le générateur de créatures selon la DA de référence ([fd1dfcc](https://github.com/niafrond/niafrond.github.io/commit/fd1dfcc381347fdfe4a8d308eea4dc157ff1df68))
+* **match3-quest:** redessiner les PNJ, Fengmeng et le générateur de villageois selon la DA de référence ([6b81145](https://github.com/niafrond/niafrond.github.io/commit/6b81145e075fdb6e11826f39b4bd978e2189e35b))
+* **match3-quest:** redessiner les soleils selon la DA de référence (version intermédiaire) ([85150f7](https://github.com/niafrond/niafrond.github.io/commit/85150f7a289e963052aa21bec251085e5215d7d8))
+* **match3-quest:** relever les niveaux des boss, gardes et régions sur l'échelle 1 à 48 ([3a9030a](https://github.com/niafrond/niafrond.github.io/commit/3a9030a25c4ec016b1378f675a51853b7ac61f11))
+
+### Bug Fixes
+
+* **match3-quest:** aligner les niveaux de la carte du monde sur ceux des régions ([f15d105](https://github.com/niafrond/niafrond.github.io/commit/f15d105999da023283715bcecf66ace7501a22fd))
+* **match3-quest:** rendre tous les sprites en pixel art net et ajouter un test garde-fou ([85c4aa6](https://github.com/niafrond/niafrond.github.io/commit/85c4aa694d4ff0852c08a8a0f765ce9ca628f3a5))
+
 ## [2.61.0](https://github.com/niafrond/niafrond.github.io/compare/v2.60.0...v2.61.0) (2026-10-09)
 
 ### Features
