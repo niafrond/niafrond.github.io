@@ -451,9 +451,17 @@ const BASE_SCREENS = {
             { id: 'river_serpent', templateId: 'deep_sea_serpent', name: 'Serpent du Fleuve Jaune', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
             { id: 'fleuve_doctor', templateId: 'plague_doctor', name: 'Docteur-démon des vases', kind: 'sentinel', x: 8, y: 8, offset: 0 },
             { id: 'fleuve_lich', templateId: 'crypt_lich', name: 'Sorcier-squelette du gué', kind: 'sentinel', x: 4, y: 9, offset: 0 },
+            // Gardes du sanctuaire : tant qu'ils vivent, sun_2 est intouchable (détour obligatoire avant le boss).
+            { id: 'sun2_wardens_a', templateId: 'bone_reaver', name: 'Noyé-garde des roches', kind: 'sentinel', x: 9, y: 7, offset: 1, permanent: true, group: 'sun2_wardens' },
+            { id: 'sun2_wardens_b', templateId: 'iron_gladiator', name: 'Noyé-garde des roches', kind: 'sentinel', x: 13, y: 9, offset: 1, permanent: true, group: 'sun2_wardens' },
             { id: 'sun_2', templateId: 'iron_gladiator', name: 'Soleil des Eaux Taries', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, boss: { name: 'Soleil des Eaux Taries', level: 4 },
-              afterScenes: MIRROR_TALKS.sun_2 }
+              permanent: true, shieldedBy: 'sun2_wardens', weakenedBy: ['sq_river_serpent', 'sq_drowned'], boss: { name: 'Soleil des Eaux Taries', level: 4 },
+              afterScenes: MIRROR_TALKS.sun_2,
+              shieldLines: [
+                  "Le Soleil des Eaux Taries est tapi derrière un cercle de roches fendues, et deux noyés-gardes lui font un rempart de boue durcie.",
+                  "Vos flèches s'enfonceraient dans la vase sans l'atteindre. Les gardes montent la garde depuis que l'eau s'est retirée : ils n'ont plus que lui.",
+                  "Renvoyez-les à la boue, et le rempart s'effondrera. (Le serpent du gué et les noyés de Mei, que vous aurez calmés, affaibliront le soleil.)"
+              ] }
         ],
         chests: [
             { id: 'fleuve_chest', x: 12, y: 3, gold: 60 }
@@ -514,9 +522,17 @@ const BASE_SCREENS = {
             { id: 'bambous_priestess', templateId: 'moon_priestess', name: 'Prêtresse égarée', kind: 'sentinel', x: 12, y: 8, offset: 0 },
             // Esprit-arbre nommé (quête secondaire de Xu), coin sud-ouest.
             { id: 'old_pine', templateId: 'forest_guardian', name: 'Vieux Pin Noir', kind: 'sentinel', x: 1, y: 9, offset: 0, permanent: true },
+            // Gardes du sanctuaire : tant qu'ils vivent, sun_3 est intouchable (détour obligatoire avant le boss).
+            { id: 'sun3_wardens_a', templateId: 'temple_warden', name: 'Esprit de la cloche', kind: 'sentinel', x: 9, y: 2, offset: 1, permanent: true, group: 'sun3_wardens' },
+            { id: 'sun3_wardens_b', templateId: 'shadow_assassin', name: 'Esprit de la cloche', kind: 'sentinel', x: 13, y: 2, offset: 1, permanent: true, group: 'sun3_wardens' },
             { id: 'sun_3', templateId: 'fungal_horror', name: 'Soleil de Cendres', kind: 'sentinel', x: 11, y: 1,
-              permanent: true, boss: { name: 'Soleil de Cendres', level: 5 },
-              afterScenes: MIRROR_TALKS.sun_3 }
+              permanent: true, shieldedBy: 'sun3_wardens', weakenedBy: ['sq_bell', 'sq_old_pine'], boss: { name: 'Soleil de Cendres', level: 6 },
+              afterScenes: MIRROR_TALKS.sun_3,
+              shieldLines: [
+                  "Le Soleil de Cendres couve sous la cloche fêlée, et deux esprits du temple brûlé tournent autour de lui comme des cierges.",
+                  "Tant qu'ils veillent, la cendre retombe sur chacune de vos flèches avant qu'elle n'atteigne le soleil.",
+                  "Éteignez les esprits, un à un, et le soleil restera seul. (Réconforter la forêt avant lui l'affaiblira.)"
+              ] }
         ],
         chests: [
             { id: 'temple_bell', x: 2, y: 0, gold: 10, label: 'Cloche du temple' },
@@ -597,7 +613,7 @@ const BASE_SCREENS = {
             { id: 'bandit_a', templateId: 'iron_gladiator', name: 'Brigand du Gobi', kind: 'sentinel', x: 4, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
             { id: 'bandit_b', templateId: 'shadow_assassin', name: 'Lame masquée du Gobi', kind: 'sentinel', x: 6, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
             { id: 'sun_4', templateId: 'arcane_scholar', name: 'Soleil des Mirages', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, boss: { name: 'Soleil des Mirages', level: 7 },
+              permanent: true, weakenedBy: ['sq_oasis', 'sq_carte_vraie'], boss: { name: 'Soleil des Mirages', level: 8 },
               afterScenes: MIRROR_TALKS.sun_4 }
         ],
         chests: [
@@ -658,9 +674,17 @@ const BASE_SCREENS = {
             { id: 'tonnerre_warden', templateId: 'temple_warden', name: 'Lion-gardien de pierre', kind: 'sentinel', x: 8, y: 8, offset: 0 },
             // Dragon-serpent nommé (quête secondaire de Tie), coin nord-est.
             { id: 'thunder_wyrm', templateId: 'storm_wyrm', name: 'Dragon-serpent du tonnerre', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
+            // Gardes du sanctuaire : tant qu'ils vivent, sun_5 est intouchable (détour obligatoire avant le boss).
+            { id: 'sun5_wardens_a', templateId: 'storm_knight', name: 'Foudre-garde du col', kind: 'sentinel', x: 9, y: 9, offset: 1, permanent: true, group: 'sun5_wardens' },
+            { id: 'sun5_wardens_b', templateId: 'temple_warden', name: 'Foudre-garde du col', kind: 'sentinel', x: 13, y: 8, offset: 1, permanent: true, group: 'sun5_wardens' },
             { id: 'sun_5', templateId: 'storm_knight', name: 'Soleil des Orages', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, boss: { name: 'Soleil des Orages', level: 9 },
-              afterScenes: MIRROR_TALKS.sun_5 }
+              permanent: true, shieldedBy: 'sun5_wardens', weakenedBy: ['sq_thunder_wyrm', 'sq_lei_drum'], boss: { name: 'Soleil des Orages', level: 10 },
+              afterScenes: MIRROR_TALKS.sun_5,
+              shieldLines: [
+                  "Une cage d'éclairs ceint le Soleil des Orages : deux gardes de foudre la tiennent tendue, d'un pylône à l'autre.",
+                  "Aucune flèche ne traverse la cage tant que ses deux gardiens sont debout ; elle crépite à vous en faire dresser les cheveux.",
+                  "Abattez les gardes, et la cage tombera. (Le dragon-serpent et le tambour de Lei, une fois réglés, affaibliront le soleil.)"
+              ] }
         ],
         chests: [
             { id: 'lei_drum', x: 1, y: 0, gold: 10, label: 'Tambour du tonnerre' },
@@ -733,9 +757,17 @@ const BASE_SCREENS = {
             { id: 'ore_guard_a', templateId: 'lava_behemoth', name: 'Pixiu de magma', kind: 'sentinel', x: 9, y: 1, offset: 0, permanent: true, group: 'ore_guards' },
             { id: 'ore_guard_b', templateId: 'lava_behemoth', name: 'Pixiu de magma', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true, group: 'ore_guards' },
             { id: 'volcan_dragon', templateId: 'ember_dragon', name: 'Long de braise', kind: 'sentinel', x: 8, y: 8, offset: 0 },
+            // Gardes du sanctuaire : tant qu'ils vivent, sun_6 est intouchable (détour obligatoire avant le boss).
+            { id: 'sun6_wardens_a', templateId: 'lava_behemoth', name: 'Forgeron de magma', kind: 'sentinel', x: 9, y: 7, offset: 1, permanent: true, group: 'sun6_wardens' },
+            { id: 'sun6_wardens_b', templateId: 'iron_gladiator', name: 'Forgeron de magma', kind: 'sentinel', x: 13, y: 8, offset: 1, permanent: true, group: 'sun6_wardens' },
             { id: 'sun_6', templateId: 'lava_behemoth', name: 'Soleil de Magma', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, boss: { name: 'Soleil de Magma', level: 11 },
-              afterScenes: MIRROR_TALKS.sun_6 }
+              permanent: true, shieldedBy: 'sun6_wardens', weakenedBy: ['sq_ore', 'sq_ember'], boss: { name: 'Soleil de Magma', level: 12 },
+              afterScenes: MIRROR_TALKS.sun_6,
+              shieldLines: [
+                  "Deux forgerons de magma attisent le Soleil de Magma comme une fournaise : tant qu'ils soufflent, il se rallume de lui-même.",
+                  "Le basalte coule entre vous et lui en nappes d'or rouge ; les flèches fondent avant d'y toucher.",
+                  "Faites taire les soufflets et le soleil perdra son alimentation. (Les veines de cinabre et la braise d'Ember, une fois réglées, l'affaibliront.)"
+              ] }
         ],
         chests: [
             { id: 'phoenix_brazier', x: 5, y: 0, gold: 10, label: 'Brasero du phénix' },
@@ -801,7 +833,7 @@ const BASE_SCREENS = {
             { id: 'pack_tiger', templateId: 'fire_tiger', name: 'Tigre embrasé', kind: 'sentinel', x: 13, y: 8, offset: 0, permanent: true, group: 'beast_pack' },
             { id: 'pack_wolf_b', templateId: 'ember_wolf', name: 'Loup de braise', kind: 'sentinel', x: 11, y: 9, offset: 0, permanent: true, group: 'beast_pack' },
             { id: 'sun_7', templateId: 'war_troll', name: 'Soleil des Bêtes Folles', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, shieldedBy: 'beast_pack', boss: { name: 'Soleil des Bêtes Folles', level: 13 },
+              permanent: true, shieldedBy: 'beast_pack', weakenedBy: ['sq_scarred_tiger', 'sq_zi_bell'], boss: { name: 'Soleil des Bêtes Folles', level: 14 },
               afterScenes: MIRROR_TALKS.sun_7,
               shieldLines: [
                   "Un bouclier de flammes ondule autour du Soleil des Bêtes Folles : vos flèches se consumeraient avant de l'atteindre.",
@@ -868,9 +900,17 @@ const BASE_SCREENS = {
             { id: 'net_cutter_a', templateId: 'deep_sea_serpent', name: 'Serpent coupe-filets', kind: 'sentinel', x: 11, y: 1, offset: 0, permanent: true, group: 'net_cutters' },
             { id: 'net_cutter_b', templateId: 'deep_sea_serpent', name: 'Serpent coupe-filets', kind: 'sentinel', x: 13, y: 1, offset: 0, permanent: true, group: 'net_cutters' },
             { id: 'mer_doctor', templateId: 'plague_doctor', name: 'Docteur-démon des marées', kind: 'sentinel', x: 7, y: 8, offset: 0 },
+            // Gardes du sanctuaire : tant qu'ils vivent, sun_8 est intouchable (détour obligatoire avant le boss).
+            { id: 'sun8_wardens_a', templateId: 'deep_sea_serpent', name: 'Garde-marée du Roi-Dragon', kind: 'sentinel', x: 10, y: 7, offset: 1, permanent: true, group: 'sun8_wardens' },
+            { id: 'sun8_wardens_b', templateId: 'plague_doctor', name: 'Garde-marée du Roi-Dragon', kind: 'sentinel', x: 13, y: 8, offset: 1, permanent: true, group: 'sun8_wardens' },
             { id: 'sun_8', templateId: 'deep_sea_serpent', name: 'Soleil des Marées', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, boss: { name: 'Soleil des Marées', level: 15 },
-              afterScenes: MIRROR_TALKS.sun_8 }
+              permanent: true, shieldedBy: 'sun8_wardens', weakenedBy: ['sq_nets', 'sq_pearl'], boss: { name: 'Soleil des Marées', level: 16 },
+              afterScenes: MIRROR_TALKS.sun_8,
+              shieldLines: [
+                  "La cloche d'eau du Soleil des Marées est tenue en suspens par deux gardes-marée : si vous tirez, elle retombera sur vous.",
+                  "Ils chantent à voix basse, et l'eau se tient immobile comme un mur de verre.",
+                  "Faites-les taire, et la cloche d'eau se brisera sur le soleil. (Les filets et la perle, une fois rendus, l'affaibliront.)"
+              ] }
         ],
         chests: [
             { id: 'dragon_pearl', x: 1, y: 8, gold: 10, label: 'Perle du Roi-Dragon' },
@@ -934,9 +974,17 @@ const BASE_SCREENS = {
             { id: 'fusang_sage', templateId: 'crystal_sage', name: 'Immortel de jade', kind: 'sentinel', x: 8, y: 8, offset: 0 },
             { id: 'fusang_dragon', templateId: 'frost_dragon', name: 'Long de givre', kind: 'sentinel', x: 4, y: 9, offset: 0 },
             { id: 'fusang_vampire', templateId: 'void_vampire', name: 'Jiangshi des cimes', kind: 'sentinel', x: 12, y: 9, offset: 0 },
+            // Gardes du sanctuaire : tant qu'ils vivent, sun_9 est intouchable (détour obligatoire avant le boss).
+            { id: 'sun9_wardens_a', templateId: 'arcane_scholar', name: 'Grue-lige du Fusang', kind: 'sentinel', x: 9, y: 3, offset: 1, permanent: true, group: 'sun9_wardens' },
+            { id: 'sun9_wardens_b', templateId: 'storm_knight', name: 'Grue-lige du Fusang', kind: 'sentinel', x: 12, y: 3, offset: 1, permanent: true, group: 'sun9_wardens' },
             { id: 'sun_9', templateId: 'ember_dragon', name: 'Soleil Lâche', kind: 'sentinel', x: 11, y: 2,
-              permanent: true, boss: { name: 'Soleil Lâche', level: 17 },
-              afterScenes: MIRROR_TALKS.sun_9 }
+              permanent: true, shieldedBy: 'sun9_wardens', weakenedBy: ['sq_crane', 'sq_sceau_racines'], boss: { name: 'Soleil Lâche', level: 18 },
+              afterScenes: MIRROR_TALKS.sun_9,
+              shieldLines: [
+                  "Deux grues-lige du Fusang se tiennent devant le Soleil Lâche, ailes déployées : elles couvrent aussi le Dixième Soleil.",
+                  "Un tir maladroit pourrait toucher celui qu'on doit épargner : il faut d'abord écarter les gardes, sans trembler.",
+                  "Écartez-les, et le Neuvième restera seul sous votre arc. (Les grues apaisées et le sceau des racines l'affaibliront.)"
+              ] }
         ],
         chests: [
             { id: 'crane_nest', x: 1, y: 1, gold: 10, label: 'Nid de la grue' }
@@ -1082,7 +1130,8 @@ const BASE_QUESTS = [
         ],
         hint: [
             "Le Soleil des Eaux Taries se tient au sud-est du lit du fleuve, parmi les rochers fendus. Vous voyez ses gardes de loin : les noyés ne dorment plus.",
-            "Quand l'eau reviendra, ma barque sera la première à flotter. Je compte sur vous, seigneur archer."
+            "Quand l'eau reviendra, ma barque sera la première à flotter. Je compte sur vous, seigneur archer.",
+            "Deux noyés-gardes entourent le soleil : abattez-les d'abord. Calmer le serpent du gué et les noyés de Mei affaiblira le soleil."
         ],
         complete: [
             "Le Soleil des Eaux Taries pousse un soupir humide et se dissout en brume. Un grondement monte du sol : très loin, en amont, l'eau revient.",
@@ -1103,7 +1152,8 @@ const BASE_QUESTS = [
         ],
         hint: [
             "Le Soleil de Cendres est au nord-est de la forêt, au-delà des bambous noircis. Évitez les cercles rouges : les esprits y sont nerveux.",
-            "Si le feu vous fait peur, souvenez-vous : il ne reste à brûler que ce qui a déjà brûlé."
+            "Si le feu vous fait peur, souvenez-vous : il ne reste à brûler que ce qui a déjà brûlé.",
+            "Deux esprits de la cloche veillent sur le soleil : éteignez-les d'abord. Les quêtes annexes de la forêt (la cloche, le vieux pin) affaibliront le soleil."
         ],
         complete: [
             "Le Soleil de Cendres s'éteint comme une braise sous l'eau : sans bruit, avec une volute grise. Alors, très doucement, la cloche du temple sonne, et personne ne la touche.",
@@ -1124,7 +1174,8 @@ const BASE_QUESTS = [
         ],
         hint: [
             "Les mirages se dissipent au toucher, sans mal ; mais seul le vrai soleil peut être abattu. Cherchez celui qui projette une ombre au sol et porte un niveau au-dessus de sa tête.",
-            "Un mirage scintille, comme l'air chaud : il n'a ni ombre, ni nom. Si vous hésitez, touchez-le : au pire, il se défait entre vos doigts."
+            "Un mirage scintille, comme l'air chaud : il n'a ni ombre, ni nom. Si vous hésitez, touchez-le : au pire, il se défait entre vos doigts.",
+            "Régler la caravane de l'oasis et trouver la carte qui ne ment pas affaiblira le vrai soleil."
         ],
         complete: [
             "Le vrai soleil s'effondre ; autour de lui, tous les mirages s'évanouissent d'un coup, comme des bulles de savon. Le désert redevient simplement le désert : immense, honnête, silencieux.",
@@ -1145,7 +1196,8 @@ const BASE_QUESTS = [
         ],
         hint: [
             "Le tonnerre est un tambour, archer : écoutez-le avant de tirer. Le Soleil des Orages est au sud-est ; ses gardes frappent plus fort qu'ils n'en ont l'air.",
-            "Gardez vos distances avec les cercles rouges, et ne comptez pas sur le silence entre deux éclairs."
+            "Gardez vos distances avec les cercles rouges, et ne comptez pas sur le silence entre deux éclairs.",
+            "Deux gardes de foudre tiennent la cage d'éclairs : abattez-les d'abord. Le dragon-serpent et le tambour de Lei, une fois réglés, affaiblissent le soleil."
         ],
         complete: [
             "Le Soleil des Orages éclate en un dernier coup de tonnerre, si fort que les montagnes en tremblent. Puis le silence, d'une pureté stupéfiante, et une pluie fine, tiède, qui sent le fer et la terre.",
@@ -1166,7 +1218,8 @@ const BASE_QUESTS = [
         ],
         hint: [
             "Le défilé est étroit : un archer pressé y a tendu une embuscade. Après lui, le Soleil de Magma vous attend à l'est.",
-            "Les pixiu de magma gardent les veines de cinabre : prudence, ils chargent la tête baissée."
+            "Les pixiu de magma gardent les veines de cinabre : prudence, ils chargent la tête baissée.",
+            "Deux forgerons de magma attisent le soleil : faites-les taire d'abord. Les veines de cinabre et la braise d'Ember, une fois réglées, l'affaiblissent."
         ],
         complete: [
             "Le Soleil de Magma se fige, noircit, se fend comme une coulée refroidie, puis s'effondre en gravats encore chauds. Les rivières de feu ralentissent et s'éteignent une à une, laissant une roche luisante comme du verre.",
@@ -1187,7 +1240,8 @@ const BASE_QUESTS = [
         ],
         hint: [
             "Tant que la meute vit, le soleil est protégé par un bouclier de flammes : abattez d'abord les quatre bêtes qui l'entourent.",
-            "Frappez-les une à une : aucune ne vous suivra loin de son maître."
+            "Frappez-les une à une : aucune ne vous suivra loin de son maître.",
+            "Chasser le tigre balafré et rendre l'agnelle de Zi au troupeau affaiblira le soleil, une fois la meute tombée."
         ],
         complete: [
             "La meute est tombée, puis le soleil. Les flammes qui couraient dans l'herbe s'éteignent d'un coup, et les bêtes survivantes se couchent, hagardes, comme éveillées d'un cauchemar.",
@@ -1208,7 +1262,8 @@ const BASE_QUESTS = [
         ],
         hint: [
             "Mon maître le Roi-Dragon supplie le Ciel depuis des semaines : la mer étouffe. Le Soleil des Marées est au sud-est, sur les rochers.",
-            "Ses serpents de mer ont perdu leur eau et leur raison : méfiez-vous des cercles rouges."
+            "Ses serpents de mer ont perdu leur eau et leur raison : méfiez-vous des cercles rouges.",
+            "Deux gardes-marée retiennent la cloche d'eau : faites-les taire d'abord. Rendre les filets et la perle affaiblit le soleil."
         ],
         complete: [
             "Le Soleil des Marées éclate en une pluie tiède, et la cloche d'eau, enfin libérée, retombe sur la grève : un bruit de tonnerre mou, un grand soupir d'écume, puis l'immense mer qui revient, doucement, lécher les pieds des pêcheurs.",
@@ -1229,7 +1284,8 @@ const BASE_QUESTS = [
         ],
         hint: [
             "Le Soleil Lâche est dans le sanctuaire, au nord-est. Le Dixième se tient derrière lui, terrifié : ne le visez jamais.",
-            "Un archer sans tremblement : c'est ce qu'il faut, ici. Ni trop tôt, ni trop fort."
+            "Un archer sans tremblement : c'est ce qu'il faut, ici. Ni trop tôt, ni trop fort.",
+            "Deux grues-lige couvrent le Soleil Lâche et son jeune frère : écartez-les sans toucher au Dixième. Apaiser les grues et le sceau des racines affaiblissent le soleil."
         ],
         complete: [
             "Le Soleil Lâche tombe sans un cri, comme un fruit mûr. Derrière lui, le Dixième Soleil, un petit être lumineux de la taille d'un enfant, se serre contre le tronc du Fusang et ose enfin regarder son sauveur.",

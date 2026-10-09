@@ -4,7 +4,7 @@ import { buildLegacyWorld, SCREENS, QUESTS, REGION_UNLOCK_LEVEL, REGION_ENTRY_SC
 import {
     createSession, tryMove, tick, isTerrainBlocked, buildRoute, aliveEnemies, entityAt, getAuraTiles,
     markEnemyDefeated, talkToNpc, npcAmbientLines, progressReached, openChest, questStatus, checkAutoQuests, currentObjectiveText,
-    encounterFor, enemyLevel, enterScreen, respawns, blocksPath, teleportToScreen, resetAfterDefeat, startNewGamePlus,
+    encounterFor, enemyLevel, bossEase, enterScreen, respawns, blocksPath, teleportToScreen, resetAfterDefeat, startNewGamePlus,
     isEntityVisible, visibleNpcs, visibleChests, isShielded, isExitLocked, journalEntries, npcMarker, activateWaypoint, fastTravel, waypointList,
     houseMarkers, screenQuestMarker, questDirection, setTrackedQuest,
     AGGRO_RADIUS, aggroOf, PATROL_STEP_MS, GRACE_MOVES, START_SCREEN, findPath
@@ -27,7 +27,7 @@ const BIOME_OF = {
     rizieres: 'paddy', fleuve: 'riverbed', bambous: 'bamboo', gobi: 'gobi', tonnerre: 'storm',
     volcan: 'volcano', fauves: 'savanna', mer: 'coast', fusang: 'fusang', lune: 'moon'
 };
-const SUN_LEVELS = [3, 4, 5, 7, 9, 11, 13, 15, 17];
+const SUN_LEVELS = [3, 4, 6, 8, 10, 12, 14, 16, 18];
 
 // Tuiles où l'on ARRIVE sur cet écran (définies par la sortie de retour de chaque voisin).
 const arrivals = s => Object.values(SCREENS).flatMap(o => o.exits.filter(e => e.to === s.id).map(e => e.arrive));
@@ -1787,7 +1787,7 @@ describe('Nouvelle Partie +', () => {
         const s = endedSession();
         startNewGamePlus(s);
         expect(encounterFor(s, 'sun_1', 20).level).toBe(3 + 3);               // le niveau du héros n'intervient pas
-        expect(encounterFor(s, 'sun_9', 1).boss.level).toBe(17 + 3);
+        expect(encounterFor(s, 'sun_9', 1).boss.level).toBe(18 + 3);
         expect(encounterFor(s, 'fengmeng_3a', 1).boss.level).toBe(18 + 3);
         expect(encounterFor(s, 'rizieres_shroom', 5).level).toBe(encounterFor(createSession({}), 'rizieres_shroom', 5).level + 1);
     });
@@ -2107,5 +2107,50 @@ describe('zone de vigilance : uniquement devant l\'ennemi', () => {
         s.rt.grace = 0;
         expect(tryMove(s, 0, -1)).toMatchObject({ type: 'moved' });   // (4,6) : hors zone
         expect(tryMove(s, 0, -1)).toEqual({ type: 'combat', enemyId: 'foe' });   // (4,5) : devant lui
+    });
+});
+
+describe('soleils : gardes du sanctuaire et affaiblissement par l\'exploration', () => {
+    const SUNS = { sun_2: 'fleuve', sun_3: 'bambous', sun_5: 'tonnerre', sun_6: 'volcan', sun_8: 'mer', sun_9: 'fusang' };
+
+    test('chaque soleil (sauf le 1er, tutoriel, et le 4e, énigme des mirages) a des gardes ou une meute à abattre avant lui', () => {
+        Object.entries({ ...SUNS, sun_7: 'fauves' }).forEach(([id, region]) => {
+            const sun = SCREENS[region].enemies.find(e => e.id === id);
+            const guards = SCREENS[region].enemies.filter(e => e.group === sun.shieldedBy);
+            expect(sun.shieldedBy).toBeTruthy();
+            expect(guards.length).toBeGreaterThanOrEqual(2);
+            guards.forEach(g => expect(g.permanent).toBe(true));
+            expect(sun.shieldLines.length).toBeGreaterThanOrEqual(2);
+        });
+        expect(SCREENS.rizieres.enemies.find(e => e.id === 'sun_1').shieldedBy).toBeUndefined();
+    });
+
+    test('les gardes protègent le soleil : bouclier tant qu\'ils vivent, tombé quand ils sont vaincus', () => {
+        const s = createSession({});
+        const def = SCREENS.fleuve.enemies.find(e => e.id === 'sun_2');
+        expect(isShielded(s, def)).toBe(true);
+        SCREENS.fleuve.enemies.filter(e => e.group === 'sun2_wardens').forEach(g => markEnemyDefeated(s, g.id));
+        expect(isShielded(s, def)).toBe(false);
+    });
+
+    test('weakenedBy : chaque quête annexe réglée retire 1 niveau au soleil, 2 au plus, jamais sous 1', () => {
+        const s = createSession({});
+        const base = SUN_LEVELS[1];
+        expect(encounterFor(s, 'sun_2', 1).boss.level).toBe(base);
+        markEnemyDefeated(s, 'river_serpent');
+        s.data.quests.sq_river_serpent = 'done';
+        expect(encounterFor(s, 'sun_2', 1).boss.level).toBe(base - 1);
+        s.data.quests.sq_drowned = 'done';
+        expect(encounterFor(s, 'sun_2', 1).boss.level).toBe(base - 2);
+        expect(bossEase(s, { boss: { level: 9 }, weakenedBy: ['a', 'b', 'c'] })).toBeLessThanOrEqual(2);
+        expect(bossEase(s, { id: 'x', offset: 0 })).toBe(0);
+    });
+
+    test('les conditions weakenedBy existent (quêtes, ennemis ou coffres connus)', () => {
+        const ids = new Set([...QUESTS.map(q => q.id), ...screens.flatMap(sc => [...sc.enemies, ...sc.chests, ...sc.npcs].map(e => e.id))]);
+        screens.flatMap(sc => sc.enemies).filter(e => e.weakenedBy).forEach(e => {
+            expect(e.boss).toBeTruthy();
+            e.weakenedBy.forEach(c => expect(ids.has(c)).toBe(true));
+        });
     });
 });
