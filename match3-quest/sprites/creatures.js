@@ -290,7 +290,7 @@ function whale() {
 
 function jellyfish() {
     return wrap(`<path d="M22 36 Q18 46 22 56 M28 37 Q26 47 30 57 M36 37 Q38 47 34 57 M42 36 Q46 46 42 56" fill="none" stroke="#c48ad8" stroke-width="2.4"/>` +
-        `<path d="M12 34 Q12 12 32 12 Q52 12 52 34 Q48 38 44 34 Q40 38 36 34 Q32 38 28 34 Q24 38 20 34 Q16 38 12 34Z" fill="#e6b8f0" fill-opacity=".9"/>` +
+        `<path d="M12 34 Q12 12 32 12 Q52 12 52 34 Q48 38 44 34 Q40 38 36 34 Q32 38 28 34 Q24 38 20 34 Q16 38 12 34Z" fill="#e9bff2"/>` +
         `<path d="M18 26 Q20 16 30 15" fill="none" stroke="#fff" stroke-width="2" opacity=".7"/>` + sleepy(26, 6) + smile(29.6) + cheeks(28.6, 10) +
         `<circle cx="10" cy="14" r="2" fill="#d8f0ff"/><circle cx="54" cy="10" r="1.4" fill="#d8f0ff"/>`);
 }
@@ -404,7 +404,7 @@ function scarecrow() {
 
 function ghost(v) {
     const c = '#dcecf6', d = '#a8c4dc';
-    let s = `<path d="M14 30 Q14 10 32 10 Q50 10 50 30 L50 50 Q47 46 44 50 Q41 54 38 50 Q35 46 32 52 Q29 56 26 50 Q23 46 20 51 Q17 56 14 50Z" fill="${c}" fill-opacity=".92"/>` +
+    let s = `<path d="M14 30 Q14 10 32 10 Q50 10 50 30 L50 50 Q47 46 44 50 Q41 54 38 50 Q35 46 32 52 Q29 56 26 50 Q23 46 20 51 Q17 56 14 50Z" fill="${c}"/>` +
         `<path d="M42 16 Q50 26 48 46 Q46 44 44 46 Q46 30 42 16Z" fill="${d}" ${N}/>` +
         `<path d="M14 36 Q6 34 6 40 Q10 38 15 42Z" fill="${c}"/><path d="M50 36 Q58 34 58 40 Q54 38 49 42Z" fill="${c}"/>` + shine(22, 18) +
         `<ellipse cx="26" cy="27" rx="2.4" ry="3.2" fill="${K}" ${N}/><ellipse cx="38" cy="27" rx="2.4" ry="3.2" fill="${K}" ${N}/>` +
@@ -433,7 +433,7 @@ function imp() {
 
 function djinn() {
     const c = '#5a8ad8', d = '#3a68b0';
-    return wrap(`<path d="M24 44 Q22 52 30 54 Q40 56 44 60 Q34 60 28 58 Q14 56 18 46Z" fill="#9fc0ec" fill-opacity=".9"/>` +
+    return wrap(`<path d="M24 44 Q22 52 30 54 Q40 56 44 60 Q34 60 28 58 Q14 56 18 46Z" fill="#a9c6ee"/>` +
         `<path d="M20 34 Q20 46 32 48 Q44 46 44 34 Q40 30 32 30 Q24 30 20 34Z" fill="${c}"/>` +
         `<path d="M30 30 L34 30 L36 44 L32 47 L28 44Z" fill="#e8d6f0" stroke-width="1.4"/>` +
         `<path d="M21 36 L10 30 Q8 26 12 25 L22 32 M43 36 L54 30 Q56 26 52 25 L42 32" fill="${c}"/>` +
@@ -468,7 +468,7 @@ function lantern() {
     return wrap(`<path d="M32 2 L32 8" fill="none" stroke-width="1.6"/><rect x="25" y="8" width="14" height="4" rx="1.2" fill="#c9a448"/>` +
         `<path d="M14 30 Q14 12 32 12 Q50 12 50 30 Q50 48 32 48 Q14 48 14 30Z" fill="#d9302e"/>` +
         `<path d="M24 13 Q20 30 24 47 M40 13 Q44 30 40 47" fill="none" stroke="#a8281e" stroke-width="1.4"/>` +
-        `<path d="M42 16 Q50 28 44 44 Q46 28 42 16Z" fill="#a8281e" ${N}/>` + `<ellipse cx="32" cy="30" rx="9" ry="12" fill="#f6b24a" opacity=".35" ${N}/>` + shine(21, 19) +
+        `<path d="M42 16 Q50 28 44 44 Q46 28 42 16Z" fill="#a8281e" ${N}/>` + `<ellipse class="glow" cx="32" cy="30" rx="9" ry="12" fill="#f6b24a" opacity=".35" ${N}/>` + shine(21, 19) +
         `<rect x="25" y="47" width="14" height="4" rx="1.2" fill="#c9a448"/><path d="M29 51 L28 58 M32 51 L32 59 M35 51 L36 58" fill="none" stroke="#f2c14e" stroke-width="1.6"/>` +
         sleepy(29, 5.6) + cheeks(33, 9, '#f6b24a') + smile(34) +
         `<path d="M24 38 Q22 41 25 42" fill="none" stroke="#fbe7b0" stroke-width="1"/>` + sparkle(8, 20) + sparkle(56, 40));

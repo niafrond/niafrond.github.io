@@ -18,7 +18,7 @@ const D = {
     lantern: () => `<path d="M32 4 L32 12" fill="none"/><rect x="25" y="11" width="14" height="4" rx="1.2" fill="#c9a448"/>` +
         `<path d="M18 30 Q18 15 32 15 Q46 15 46 30 Q46 45 32 45 Q18 45 18 30Z" fill="#d9302e"/>` +
         `<path d="M26 16 Q22 30 26 44 M38 16 Q42 30 38 44" fill="none" stroke="#a8281e" stroke-width="1.4"/>` +
-        `<ellipse cx="32" cy="30" rx="7" ry="10" fill="#f6b24a" opacity=".4" ${N}/>` +
+        `<ellipse class="glow" cx="32" cy="30" rx="7" ry="10" fill="#f6b24a" opacity=".4" ${N}/>` +
         `<rect x="25" y="44" width="14" height="4" rx="1.2" fill="#c9a448"/><path d="M29 48 L28 56 M32 48 L32 58 M35 48 L36 56" fill="none" stroke="#f2c14e" stroke-width="1.8"/>`,
     hut: () => `<rect x="14" y="32" width="36" height="25" fill="#c9a06a"/><rect x="28" y="40" width="9" height="17" fill="#6a4226"/>` +
         `<path d="M6 34 Q32 4 58 34 Q32 30 6 34Z" fill="#d8b860"/><path d="M14 30 L16 26 M22 25 L24 21 M40 21 L42 25 M48 26 L50 30 M31 18 L33 14" fill="none" stroke="#a8862a" stroke-width="1.4"/>` +
@@ -81,13 +81,13 @@ const D = {
     // Autel de pierre : vide, ou orné de gâteaux de lune et d'une lanterne une fois l'offrande déposée.
     altar: () => `<rect x="12" y="40" width="40" height="18" rx="2" fill="#d8d6cc"/><rect x="8" y="34" width="48" height="8" rx="2" fill="#ece8e0"/>` +
         `<path d="M18 46 L46 46 M18 52 L46 52" fill="none" stroke="#a8a49a" stroke-width="1.4"/>` +
-        `<circle cx="32" cy="18" r="12" fill="#f6e7a8" opacity=".9"/><circle cx="32" cy="18" r="12" fill="none" stroke-dasharray="3 3"/>`,
+        `<circle cx="32" cy="18" r="12" fill="#f5e7ae"/><circle cx="32" cy="18" r="12" fill="none" stroke-dasharray="3 3"/>`,
     altarLit: () => `<rect x="12" y="40" width="40" height="18" rx="2" fill="#d8d6cc"/><rect x="8" y="34" width="48" height="8" rx="2" fill="#ece8e0"/>` +
         `<path d="M18 46 L46 46 M18 52 L46 52" fill="none" stroke="#a8a49a" stroke-width="1.4"/>` +
         `<ellipse cx="22" cy="31" rx="7" ry="4" fill="#d9963a"/><ellipse cx="22" cy="29" rx="7" ry="3.4" fill="#f2c14e"/>` +
         `<ellipse cx="42" cy="31" rx="7" ry="4" fill="#d9963a"/><ellipse cx="42" cy="29" rx="7" ry="3.4" fill="#f2c14e"/>` +
         `<path d="M32 2 L32 8" fill="none"/><path d="M24 18 Q24 8 32 8 Q40 8 40 18 Q40 28 32 28 Q24 28 24 18Z" fill="#d9302e"/>` +
-        `<ellipse cx="32" cy="18" rx="4" ry="6" fill="#f6b24a" opacity=".6" ${N}/>`,
+        `<ellipse class="glow" cx="32" cy="18" rx="4" ry="6" fill="#f6b24a" opacity=".6" ${N}/>`,
     // Pierre de voyage (spirale gravée)
     swirl: () => `<circle cx="32" cy="32" r="26" fill="#cfe6f6"/><path d="M32 32 Q32 24 40 25.6 Q48 30.4 44 40 Q37.6 49.6 25.6 45.6 Q14.4 40 16 28 Q19.2 14.4 33.6 13.6" fill="none" stroke="#3a7ad8" stroke-width="4"/>`
 };
