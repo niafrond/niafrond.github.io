@@ -33,6 +33,14 @@ coffres, pierres de voyage, énigmes et verrous (`requires`).
 - Bâtiments d'époque : habitations en terre damée à toit de chaume, jamais de fenêtres vitrées ni de portes modernes (voir `agents/animation-pixel-art.md`).
 - Salles d'arène : un rocher ou une colonne = un obstacle d'une case, estrade et allée centrale en chemin (voir `arena.js`).
 
+## Chemins multiples (règles de profondeur)
+- Chaque sanctuaire de soleil offre trois approches lisibles : **risque** (gardes à abattre, direct), **relationnel** (PNJ `parley` posé
+  près des gardes, visible après une quête annexe : `showWhen` ; ses gardes portent `hideWhen` le même id), **découverte** (secrets,
+  coffres, quêtes annexes de la région qui affaiblissent le soleil : `weakenedBy`). Les coordonnées de `story.js` sont celles de la carte
+  14×10 d'origine, redisposées automatiquement par `world/expand.js` ; poser sur des cases libres, hors de la case du soleil.
+- Les gardes sont `permanent` et en `group` ; un chemin ne doit jamais devenir une impasse (le PNJ `parley` et les gardes restent
+  atteignables sans traverser l'aura du soleil). Voir `agents/scenario.md` pour les règles narratives.
+
 ## Livrables
 Cartes ASCII dans `world/maps/<R>.js` (jamais `world/mapKit.js`), entités référencées par des ids existants des textes
 (`world/text/<R>.js` fournis par l'agent Scénario), entrée `SPECS.md`.
