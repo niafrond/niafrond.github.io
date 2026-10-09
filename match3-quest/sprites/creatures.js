@@ -63,26 +63,98 @@ export const CREATURE_BY_ID = {
 export const creatureKind = id => CREATURE_BY_ID[id]?.kind || null;
 
 // ---------- petits éléments communs ----------
-const eyes = (y = 25, dx = 5.6, r = 1.7) =>
-    `<circle cx="${32 - dx}" cy="${y}" r="${r}" fill="${K}" ${N}/><circle cx="${32 + dx}" cy="${y}" r="${r}" fill="${K}" ${N}/>` +
-    `<circle cx="${32 - dx + .6}" cy="${y - .6}" r=".6" fill="#fff" ${N}/><circle cx="${32 + dx + .6}" cy="${y - .6}" r=".6" fill="#fff" ${N}/>`;
+// Direction « pixel art soigné et brillant » (agents/ref/direction-artistique-soleils.png) : grands yeux à iris coloré et reflet blanc,
+// sourcils qui portent l'émotion, reflet laqué clair en haut à gauche (croissant opaque + point blanc), joues pleines, aucune opacité ni
+// transform dans les éléments communs. Les reflets et les yeux tombent sur des coordonnées impaires (centre d'un bloc 2 x 2) pour rester
+// nets à la grille 32 comme à la grille 64.
+const hexN = h => parseInt(h.length === 4 ? h.replace(/[0-9a-f]/gi, '$&$&').slice(1) : h.slice(1), 16);
+export const mixHex = (a, b, k) => {
+    const x = hexN(a), y = hexN(b), ch = s => Math.round(((x >> s) & 255) + (((y >> s) & 255) - ((x >> s) & 255)) * k);
+    return '#' + [16, 8, 0].map(s => ch(s).toString(16).padStart(2, '0')).join('');
+};
+const lighter = (c, k = .5) => mixHex(c, '#ffffff', k);
+const odd = v => Math.round((v - 1) / 2) * 2 + 1;
+// Yeux : ellipse sombre, iris coloré dans la moitié basse, reflet blanc en haut à gauche, sourcils (mood : soft | angry | sad | none).
+const eyes = (y = 25, dx = 5.6, r = 1.7, o = {}) => {
+    const iris = o.iris || '#8a5a2a', mood = o.mood || 'soft', rx = r * 1.8, ry = r * 2.1;
+    let s = '';
+    [32 - dx, 32 + dx].forEach((cx, i) => {
+        const ex = odd(cx), ey = odd(y);
+        s += `<ellipse cx="${ex}" cy="${ey}" rx="${rx}" ry="${ry}" fill="${K}" ${N}/>`;
+        if (o.sclera) s += `<ellipse cx="${ex}" cy="${ey}" rx="${rx * .8}" ry="${ry * .82}" fill="${o.sclera}" ${N}/><ellipse cx="${ex + .6}" cy="${ey + .8}" rx="${rx * .48}" ry="${ry * .56}" fill="${K}" ${N}/>` +
+            `<circle cx="${ex - .4}" cy="${ey - .2}" r=".9" fill="#fff" ${N}/>`;
+        else s += `<ellipse cx="${ex}" cy="${ey + ry * .32}" rx="${rx * .6}" ry="${ry * .5}" fill="${iris}" ${N}/>` +
+            `<circle cx="${ex - 1}" cy="${ey - 1}" r="${Math.max(.9, r * .62)}" fill="#fff" ${N}/>`;
+        if (mood !== 'none') {
+            const o1 = ey - ry - 1.6, side = i === 0 ? -1 : 1;
+            const [yo, yi] = mood === 'angry' ? [o1 - 1.6, o1 + .8] : mood === 'sad' ? [o1 + .8, o1 - 1.4] : [o1, o1 - .6];
+            s += `<path d="M${ex + side * rx} ${yo} L${ex - side * rx * .9} ${yi}" fill="none" stroke-width="1.8"/>`;
+        }
+    });
+    return s;
+};
 const sleepy = (y = 25, dx = 5.6) =>
-    `<path d="M${32 - dx - 2.2} ${y} Q${32 - dx} ${y + 1.8} ${32 - dx + 2.2} ${y} M${32 + dx - 2.2} ${y} Q${32 + dx} ${y + 1.8} ${32 + dx + 2.2} ${y}" fill="none" stroke-width="1.4"/>`;
-const cheeks = (y = 29.5, dx = 9, c = '#ff7f7f') =>
-    `<ellipse cx="${32 - dx}" cy="${y}" rx="2.4" ry="1.5" fill="${c}" opacity=".45" ${N}/><ellipse cx="${32 + dx}" cy="${y}" rx="2.4" ry="1.5" fill="${c}" opacity=".45" ${N}/>`;
-const smile = (y = 31, w = 2.2) => `<path d="M${32 - w} ${y} Q32 ${y + 2.2} ${32 + w} ${y}" fill="none" stroke-width="1.2"/>`;
-const shine = (x, y) => `<ellipse cx="${x}" cy="${y}" rx="2.6" ry="1.3" fill="#fff" opacity=".45" transform="rotate(-25 ${x} ${y})" ${N}/>`;
+    `<path d="M${32 - dx - 2.6} ${y} Q${32 - dx} ${y + 2.4} ${32 - dx + 2.6} ${y} M${32 + dx - 2.6} ${y} Q${32 + dx} ${y + 2.4} ${32 + dx + 2.6} ${y}" fill="none" stroke-width="1.8"/>`;
+// Joues : taches pleines (un pixel de teinte propre), jamais translucides.
+const cheeks = (y = 29.5, dx = 9, c = '#ff8f8f') =>
+    `<ellipse cx="${32 - dx}" cy="${y}" rx="2.4" ry="1.5" fill="${c}" ${N}/><ellipse cx="${32 + dx}" cy="${y}" rx="2.4" ry="1.5" fill="${c}" ${N}/>`;
+const smile = (y = 31, w = 2.2) => `<path d="M${32 - w} ${y} Q32 ${y + 2.2} ${32 + w} ${y}" fill="none" stroke-width="1.4"/>`;
+// Reflet laqué : croissant clair (teinte de la matière éclaircie) + point blanc, en haut à gauche de la forme.
+const shine = (x, y, base = '#ffffff') =>
+    `<path d="M${x - 3.4} ${y + 1.6} Q${x - 1} ${y - 2.6} ${x + 3.4} ${y - 1.2} Q${x} ${y - .6} ${x - 3.4} ${y + 1.6}Z" fill="${base === '#ffffff' ? '#ffffff' : litOf(base)}" ${N}/>` +
+    `<circle cx="${odd(x) - 1}" cy="${odd(y) - 1}" r="1" fill="#ffffff" ${N}/>`;
 const sparkle = (x, y, c = '#fbe7b0') =>
     `<path d="M${x} ${y - 3} L${x + .9} ${y - .9} L${x + 3} ${y} L${x + .9} ${y + .9} L${x} ${y + 3} L${x - .9} ${y + .9} L${x - 3} ${y} L${x - .9} ${y - .9}Z" fill="${c}" stroke-width="1"/>`;
-const wrap = body => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g ${O}>${body}</g></svg>`;
+// La pixellisation ramène chaque couche à 6 niveaux (multiples de 51) : arrondie canal par canal, une crème devient rose et un gris bleuté
+// devient sarcelle. Chaque couleur du dessin est donc calée d'avance sur la couleur du réseau la plus proche à l'oeil (distance CIELAB),
+// ce qui garde les gris gris, les crèmes crème et les rampes d'ombre/lumière lisibles.
+const labOf = ([r, g, b]) => {
+    const lin = v => { v /= 255; return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; };
+    const R = lin(r), G = lin(g), B = lin(b);
+    const f = t => t > .008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+    const X = f((R * .4124 + G * .3576 + B * .1805) / .95047), Y = f(R * .2126 + G * .7152 + B * .0722), Z = f((R * .0193 + G * .1192 + B * .9505) / 1.08883);
+    return [116 * Y - 16, 500 * (X - Y), 200 * (Y - Z)];
+};
+const LATTICE = [];
+for (let r = 0; r < 6; r++) for (let g = 0; g < 6; g++) for (let b = 0; b < 6; b++) LATTICE.push({ rgb: [r * 51, g * 51, b * 51], lab: labOf([r * 51, g * 51, b * 51]) });
+const snapCache = new Map();
+export function snapColor(h) {
+    if (h.toLowerCase() === K) return K;
+    let out = snapCache.get(h);
+    if (!out) {
+        const n = hexN(h), lab = labOf([(n >> 16) & 255, (n >> 8) & 255, n & 255]);
+        let best = null, bd = Infinity;
+        LATTICE.forEach(c => { const d = (c.lab[0] - lab[0]) ** 2 * 1.4 + (c.lab[1] - lab[1]) ** 2 + (c.lab[2] - lab[2]) ** 2; if (d < bd) { bd = d; best = c; } });
+        out = '#' + best.rgb.map(v => v.toString(16).padStart(2, '0')).join('');
+        snapCache.set(h, out);
+    }
+    return out;
+}
+// Rampe garantie lisible après réduction à 6 niveaux : une ombre / une lumière dont la couleur calée serait celle de la matière est
+// poussée plus loin (vers un violet sombre, ou vers le blanc) jusqu'à devenir une couleur distincte.
+export const shadeOf = (c, hint) => {
+    const base = snapColor(c);
+    if (hint && snapColor(hint) !== base) return hint;
+    for (let k = .3; k <= .8; k += .1) { const t = mixHex(c, '#401838', k); if (snapColor(t) !== base) return t; }
+    return mixHex(c, '#401838', .8);
+};
+export const litOf = (c, hint) => {
+    const base = snapColor(c);
+    if (hint && snapColor(hint) !== base) return hint;
+    for (let k = .35; k <= .9; k += .1) { const t = mixHex(c, '#ffffff', k); if (snapColor(t) !== base) return t; }
+    return '#ffffff';
+};
+const wrap = body => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g ${O}>${body.replace(/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/g, snapColor)}</g></svg>`;
 
 // ---------- mammifère assis (buffle, cheval, chèvre, chien, loup, renard, panda, lapin, singe, chameau, belette) ----------
 function beast(p) {
-    const { fur, furD, belly, limb = furD } = p;
+    const { fur, belly } = p;
+    const furD = shadeOf(fur, p.furD), limb = !p.limb || p.limb === p.furD ? furD : p.limb;
     let s = p.back || '';
     // corps assis, ventre clair, pattes
     s += `<path d="M18.6 57.6 Q15.6 44 24 36.6 L40 36.6 Q48.4 44 45.4 57.6 Q32 60.2 18.6 57.6Z" fill="${fur}"/>` +
         `<path d="M40.4 39 Q47 46 44.6 56.8 L38.6 57.8 Q42.4 47 40.4 39Z" fill="${furD}" ${N}/>` +
+        `<path d="M20 52 Q18.4 44 23 39 L26.6 38.4 Q22 43 22.4 50Z" fill="${litOf(fur)}" ${N}/>` +
         `<ellipse cx="32" cy="49" rx="7.4" ry="7.6" fill="${belly}"/>` +
         `<ellipse cx="25" cy="57.2" rx="4.6" ry="2.6" fill="${limb}"/><ellipse cx="39" cy="57.2" rx="4.6" ry="2.6" fill="${limb}"/>` +
         `<ellipse cx="22.6" cy="45.4" rx="3.4" ry="5.4" transform="rotate(14 22.6 45.4)" fill="${limb}"/>` +
@@ -106,14 +178,14 @@ function beast(p) {
     const hy = p.headY || 25, rx = p.headRx || 14, ry = p.headRy || 12;
     s += `<ellipse cx="32" cy="${hy}" rx="${rx}" ry="${ry}" fill="${fur}"/>` +
         `<path d="M${32 + rx * .55} ${hy + ry * .5} Q${32 + rx * .95} ${hy} ${32 + rx * .8} ${hy - ry * .5} Q${32 + rx} ${hy + ry * .6} ${32 + rx * .1} ${hy + ry * .98}Z" fill="${furD}" ${N}/>` +
-        `<ellipse cx="32" cy="${hy}" rx="${rx}" ry="${ry}" fill="none"/>` + shine(32 - rx * .45, hy - ry * .55);
+        `<ellipse cx="32" cy="${hy}" rx="${rx}" ry="${ry}" fill="none"/>` + shine(32 - rx * .45, hy - ry * .55, fur);
     s += p.face || '';
     // museau
     if (p.snout === 'muzzle') s += `<ellipse cx="32" cy="${hy + 6.4}" rx="8" ry="5" fill="${belly}"/><ellipse cx="29" cy="${hy + 6}" rx="1.2" ry="1.6" fill="${K}" ${N}/><ellipse cx="35" cy="${hy + 6}" rx="1.2" ry="1.6" fill="${K}" ${N}/>` + smile(hy + 8.4, 2);
     else if (p.snout === 'long') s += `<ellipse cx="32" cy="${hy + 7.4}" rx="7" ry="6" fill="${belly}"/><ellipse cx="29.4" cy="${hy + 8}" rx="1.1" ry="1.5" fill="${K}" ${N}/><ellipse cx="34.6" cy="${hy + 8}" rx="1.1" ry="1.5" fill="${K}" ${N}/>` + smile(hy + 10.4, 1.8);
     else if (p.snout === 'small') s += `<ellipse cx="32" cy="${hy + 5.4}" rx="4.6" ry="3.4" fill="${belly}" ${N}/><path d="M30.4 ${hy + 3.6} L33.6 ${hy + 3.6} L32 ${hy + 5.4}Z" fill="${K}" stroke-width="1"/>` +
         `<path d="M29.6 ${hy + 6.4} Q31 ${hy + 7.8} 32 ${hy + 5.6} Q33 ${hy + 7.8} 34.4 ${hy + 6.4}" fill="none" stroke-width="1.1"/>`;
-    s += (p.eyes === 'sleepy' ? sleepy(hy, 6) : eyes(hy, 6)) + cheeks(hy + 4, 9.6);
+    s += (p.eyes === 'sleepy' ? sleepy(hy, 6) : eyes(hy, 6, 1.7, { iris: p.iris, mood: p.mood, sclera: p.sclera })) + cheeks(hy + 4, 9.6, p.blush);
     s += p.top || '';
     return wrap(s);
 }
@@ -143,7 +215,7 @@ function horse(v) {
 
 function goat() {
     return beast({
-        fur: '#efe7d6', furD: '#cdbfa6', belly: '#f8f2e6', limb: '#cdbfa6', ears: 'side', earC: '#efe7d6', snout: 'small',
+        fur: '#efe7d6', furD: '#cdbfa6', belly: '#f8f2e6', limb: '#cdbfa6', ears: 'side', earC: '#efe7d6', snout: 'small', iris: '#c8a13a',
         behindHead: `<path d="M24 15 Q20 3 30 4 Q25 7 27.6 14Z" fill="#a8916c"/><path d="M40 15 Q44 3 34 4 Q39 7 36.4 14Z" fill="#a8916c"/>`,
         top: `<path d="M29 35 Q32 44 35 35Z" fill="#efe7d6"/>`,
         back: TAIL('#efe7d6', 'M42 50 Q50 46 48 40 Q45 43 41 46Z')
@@ -162,7 +234,7 @@ function dog() {
 function wolf(v) {
     const fur = v.ember ? '#6b5a54' : '#8a8f99', furD = v.ember ? '#4e403b' : '#6b6f7a';
     return beast({
-        fur, furD, belly: '#ece4da', ears: 'pointy', earIn: v.ember ? '#f08a3a' : '#ece4da', snout: 'small',
+        fur, furD, belly: '#ece4da', ears: 'pointy', earIn: v.ember ? '#f08a3a' : '#ece4da', snout: 'small', mood: 'angry', iris: v.ember ? '#f0a030' : '#5a86aa',
         back: TAIL(fur, 'M42 54 Q58 54 56 40 Q54 36 51 38 Q53 48 41 49Z') + (v.ember ? `<path d="M55.4 39 Q54 35 51.4 37.6 Q53 39 55.4 39Z" fill="#f08a3a" ${N}/>` : ''),
         top: v.ember ? sparkle(14, 36, '#f6b24a') + sparkle(52, 18, '#f6b24a') : ''
     });
@@ -171,7 +243,7 @@ function wolf(v) {
 function fox(v, fennec) {
     const fur = fennec ? '#e8c38a' : '#e07a2e', furD = fennec ? '#c99f62' : '#b85a1c';
     return beast({
-        fur, furD, belly: '#fbf1e2', limb: fennec ? furD : '#4a3326', ears: fennec ? 'big' : 'pointy', earIn: fennec ? '#f6c9b0' : '#4a3326', snout: 'small',
+        fur, furD, belly: '#fbf1e2', limb: fennec ? furD : '#4a3326', ears: fennec ? 'big' : 'pointy', earIn: fennec ? '#f6c9b0' : '#4a3326', snout: 'small', iris: fennec ? '#6a3a1a' : '#c8841e',
         back: TAIL(fur, 'M42 54 Q60 56 57 38 Q55 30 49 33 Q53 46 41 48Z') + `<path d="M57.4 40 Q57 31 49.6 33.2 Q53 35 54 41Z" fill="#fbf1e2"/>`,
         face: `<path d="M18.4 27 Q24 26 28 31 Q32 35 36 31 Q40 26 45.6 27 Q44 35 32 36.8 Q20 35 18.4 27Z" fill="#fbf1e2" ${N}/>`
     });
@@ -180,11 +252,12 @@ function fox(v, fennec) {
 function panda(v) {
     return beast({
         fur: '#f6f4ee', furD: '#d8d4ca', belly: '#ffffff', limb: '#2a2a32', ears: 'round', earC: '#2a2a32', snout: 'small',
-        face: `<ellipse cx="25.4" cy="25.6" rx="3.8" ry="4.6" transform="rotate(25 25.4 25.6)" fill="#2a2a32" ${N}/><ellipse cx="38.6" cy="25.6" rx="3.8" ry="4.6" transform="rotate(-25 38.6 25.6)" fill="#2a2a32" ${N}/>`,
+        sclera: '#ffffff', mood: 'none',
+        face: `<ellipse cx="25.4" cy="25.6" rx="4.4" ry="5.2" transform="rotate(25 25.4 25.6)" fill="#2a2a32" ${N}/><ellipse cx="38.6" cy="25.6" rx="4.4" ry="5.2" transform="rotate(-25 38.6 25.6)" fill="#2a2a32" ${N}/>`,
         held: v.scroll
             ? `<rect x="24" y="44" width="16" height="5" rx="2.4" fill="#f4ecd8"/><circle cx="24" cy="46.5" r="2.4" fill="#a8683a"/><circle cx="40" cy="46.5" r="2.4" fill="#a8683a"/>`
             : `<path d="M44 30 L48 58" fill="none" stroke="#5d8a4a" stroke-width="3"/><path d="M46 38 Q53 34 54 29 Q49 32 46 38Z" fill="#7fb35a" stroke-width="1"/>`
-    }).replace(/<circle cx="(\d+(?:\.\d+)?)" cy="25" r="1.7" fill="#2b1b17"/g, '<circle cx="$1" cy="25" r="1.7" fill="#fff"');
+    });
 }
 
 function rabbit(v) {
@@ -211,7 +284,7 @@ function monkey(v) {
 
 function camel() {
     return beast({
-        fur: '#d2a86c', furD: '#ad844c', belly: '#ecd4aa', ears: 'side', snout: 'long', eyes: 'sleepy', headY: 23,
+        fur: '#d2a86c', furD: '#ad844c', belly: '#ffd9aa', ears: 'side', snout: 'long', eyes: 'sleepy', headY: 23,
         back: `<path d="M34 42 Q38 22 48 26 Q58 30 54 50Z" fill="#d2a86c"/><path d="M47 28 Q55 32 53 46 Q52 36 47 28Z" fill="#ad844c" ${N}/>`,
         top: `<path d="M24 14 Q32 8 40 14 Q36 12 32 13 Q28 12 24 14Z" fill="#ad844c"/>` +
             `<path d="M18 38 L46 38 L44 42 L20 42Z" fill="#c45a4a"/><path d="M22 42 L24 45 M28 42 L30 45 M34 42 L36 45 M40 42 L42 45" fill="none" stroke="#f2c14e" stroke-width="1.4"/>`
@@ -229,7 +302,8 @@ function weasel() {
 
 // ---------- oiseaux ----------
 function bird(p) {
-    const { body, bodyD, belly, beak, legC = '#e0902a' } = p;
+    const { body, belly, beak, legC = '#e0902a' } = p;
+    const bodyD = shadeOf(body, p.bodyD);
     const long = p.long, hy = long ? 15 : 24, hr = long ? 8.6 : 11.4, by = long ? 40 : 43;
     let s = `<path d="M28 52 L28 57.6 M36 52 L36 57.6" fill="none" stroke="${legC}" stroke-width="2.4"/>` +
         `<path d="M24.6 58 L28 56 L31 58 M33 58 L36 56 L39.4 58" fill="none" stroke="${legC}" stroke-width="1.8"/>`;
@@ -240,24 +314,25 @@ function bird(p) {
         `<path d="M45.4 ${by - 5} Q52 ${by + 2} 47 ${by + 9} Q43 ${by + 5} 42.6 ${by - 2}Z" fill="${bodyD}"/>`;
     if (long) s += `<path d="M28.6 ${hy + 4} Q27.6 ${by - 8} 25 ${by - 9} L39 ${by - 9} Q36.4 ${by - 8} 35.4 ${hy + 4}Z" fill="${p.neck || body}"/>`;
     if (p.crest) s += p.crest;
-    s += `<circle cx="32" cy="${hy}" r="${hr}" fill="${p.head || body}"/>` + shine(32 - hr * .45, hy - hr * .5) + (p.face || '');
-    s += (long ? eyes(hy - 1, 4, 1.5) : eyes(hy - 1, 5)) +
+    s += `<circle cx="32" cy="${hy}" r="${hr}" fill="${p.head || body}"/>` + shine(32 - hr * .45, hy - hr * .5, p.head || body) + (p.face || '');
+    s += (long ? eyes(hy - 1, 4, 1.15, { iris: p.iris, mood: 'none', sclera: p.sclera }) : eyes(hy - 1, 5, 1.7, { iris: p.iris, mood: p.mood, sclera: p.sclera })) +
         `<path d="M28.4 ${hy + 2.4} L32 ${hy + (p.longBeak ? 9 : 6)} L35.6 ${hy + 2.4} Q32 ${hy + .8} 28.4 ${hy + 2.4}Z" fill="${beak}"/>` +
         cheeks(hy + 3, long ? 6 : 8);
     return wrap(s + (p.top || ''));
 }
 
 function crow(v) {
-    const b = v.moon ? '#3a3350' : '#2c2c36';
+    const b = v.moon ? '#6666cc' : '#666699';
     return bird({
-        body: b, bodyD: v.moon ? '#25203a' : '#1b1b22', belly: v.moon ? '#4e4670' : '#3e3e4a', beak: '#9aa0aa', legC: '#5a5a66',
+        body: b, bodyD: v.moon ? '#333399' : '#333366', belly: v.moon ? '#9999ff' : '#9999cc', beak: '#9aa0aa', legC: '#5a5a66',
         tail: `<path d="M26 50 L22 58 L32 54 L42 58 L38 50Z" fill="${b}"/>`,
-        face: `<circle cx="26.4" cy="23" r="3" fill="#fff" ${N}/><circle cx="37.6" cy="23" r="3" fill="#fff" ${N}/>`,
+        sclera: '#ffffff', mood: 'none',
         top: v.moon ? `<path d="M48 6 A6 6 0 1 0 54 14 A4.6 4.6 0 1 1 48 6Z" fill="#fbe7b0"/>` : `<path d="M29 13 Q31 8 33 13 Q35 9 36 14" fill="none" stroke-width="1.6"/>`
     });
 }
-const goose = () => bird({ body: '#b8ab98', bodyD: '#8f8170', belly: '#ece4d6', beak: '#2c2c36', legC: '#2c2c36', long: true, head: '#2c2c36', neck: '#2c2c36',
-    face: `<circle cx="28" cy="14" r="2.6" fill="#fff" ${N}/><circle cx="36" cy="14" r="2.6" fill="#fff" ${N}/><path d="M25 17.6 Q32 22.6 39 17.6 Q37 22.4 32 23 Q27 22.4 25 17.6Z" fill="#fff" ${N}/>` });
+const goose = () => bird({ body: '#b8ab98', bodyD: '#8f8170', belly: '#ece4d6', beak: '#2c2c36', legC: '#2c2c36', long: true, head: '#666666', neck: '#666666',
+    sclera: '#ffffff', mood: 'none',
+    face: `<path d="M25 17.6 Q32 22.6 39 17.6 Q37 22.4 32 23 Q27 22.4 25 17.6Z" fill="#fff" ${N}/>` });
 const gull = () => bird({ body: '#ffffff', bodyD: '#b8c0cc', belly: '#ffffff', beak: '#f2c14e', legC: '#e8a03a',
     tail: `<path d="M26 50 L24 57 L32 54 L40 57 L38 50Z" fill="#b8c0cc"/>` });
 const crane = () => bird({ body: '#ffffff', bodyD: '#2c2c36', belly: '#ffffff', beak: '#c9b48a', legC: '#3a3a44', long: true, longBeak: true, neck: '#2c2c36',
@@ -273,7 +348,7 @@ function carp(v) {
         `<path d="M14 26 L4 16 Q6 30 4 44 L14 34Z" fill="${cd}"/>` +
         `<path d="M28 20 Q34 10 42 20Z" fill="${cd}"/><path d="M30 42 Q34 50 40 42Z" fill="${cd}"/>` +
         `<ellipse cx="32" cy="30" rx="20" ry="12.6" fill="${c}"/><path d="M26 22 Q30 30 26 38 M34 21 Q38 30 34 39" fill="none" stroke="${cd}" stroke-width="1.4"/>` +
-        shine(24, 23) + `<circle cx="44" cy="26.6" r="3.4" fill="#fff"/><circle cx="44.8" cy="26.6" r="1.8" fill="${K}" ${N}/>` +
+        shine(24, 23, c) + `<circle cx="44" cy="26.6" r="3.4" fill="#fff"/><circle cx="44.8" cy="26.6" r="1.8" fill="${K}" ${N}/>` +
         `<path d="M49 33 Q51.4 34.4 49.6 36" fill="none" stroke-width="1.4"/><path d="M50 34 Q56 36 55 42" fill="none" stroke="${cd}" stroke-width="1.2"/>` +
         (v.lava ? `<path d="M22 12 Q20 8 23 5 M44 10 Q46 6 44 3" fill="none" stroke="#9aa0aa" stroke-width="1.4"/>` : `<circle cx="54" cy="16" r="2.2" fill="#d8f0ff"/><circle cx="57" cy="10" r="1.4" fill="#d8f0ff"/>`));
 }
@@ -282,7 +357,7 @@ function whale() {
     return wrap(`<path d="M8 54 Q6 47 13 47 Q15 41 22 44 Q27 40 32 44 Q37 40 42 44 Q49 41 51 47 Q58 47 56 54 Q32 58 8 54Z" fill="#fff"/>` +
         `<path d="M52 30 L62 22 Q60 33 62 42 L52 38Z" fill="#3a6ea8"/>` +
         `<path d="M8 32 Q8 16 30 16 Q54 16 54 34 Q54 46 32 47 Q8 47 8 32Z" fill="#4a8ad0"/>` +
-        `<path d="M10 36 Q20 46 32 46 Q48 46 53 38 Q44 42 32 42 Q18 42 10 36Z" fill="#dcecf8"/>` + shine(18, 21) +
+        `<path d="M10 36 Q20 46 32 46 Q48 46 53 38 Q44 42 32 42 Q18 42 10 36Z" fill="#dcecf8"/>` + shine(18, 21, '#4a8ad0') +
         `<circle cx="20" cy="30" r="1.8" fill="${K}" ${N}/><circle cx="20.6" cy="29.4" r=".6" fill="#fff" ${N}/>` +
         `<path d="M12.6 36 Q16 38.6 20 37" fill="none" stroke-width="1.2"/>` + cheeks(34, -9) +
         `<path d="M30 16 Q28 8 24 6 M30 16 Q32 8 36 6 M30 16 L30 7" fill="none" stroke="#9fd0f0" stroke-width="2"/>`);
@@ -291,16 +366,16 @@ function whale() {
 function jellyfish() {
     return wrap(`<path d="M22 36 Q18 46 22 56 M28 37 Q26 47 30 57 M36 37 Q38 47 34 57 M42 36 Q46 46 42 56" fill="none" stroke="#c48ad8" stroke-width="2.4"/>` +
         `<path d="M12 34 Q12 12 32 12 Q52 12 52 34 Q48 38 44 34 Q40 38 36 34 Q32 38 28 34 Q24 38 20 34 Q16 38 12 34Z" fill="#e9bff2"/>` +
-        `<path d="M18 26 Q20 16 30 15" fill="none" stroke="#fff" stroke-width="2" opacity=".7"/>` + sleepy(26, 6) + smile(29.6) + cheeks(28.6, 10) +
+        `` + shine(22, 20, '#e9bff2') + sleepy(26, 6) + smile(29.6) + cheeks(28.6, 10) +
         `<circle cx="10" cy="14" r="2" fill="#d8f0ff"/><circle cx="54" cy="10" r="1.4" fill="#d8f0ff"/>`);
 }
 
 function octopus(v) {
     let s = '';
     [[14, 52, 18, 44], [22, 57, 25, 46], [32, 58, 32, 46], [42, 57, 39, 46], [50, 52, 46, 44]]
-        .forEach(([x, y, x0, y0]) => { s += `<path d="M${x0 - 3} ${y0} Q${x - 4} ${y - 4} ${x} ${y} Q${x + 2} ${y - 6} ${x0 + 3} ${y0}Z" fill="#d86a8a"/>`; });
-    s += `<path d="M14 34 Q12 12 32 12 Q52 12 50 34 Q50 48 32 48 Q14 48 14 34Z" fill="#e8809e"/>` +
-        `<path d="M44 20 Q50 30 46 42 Q50 30 44 20Z" fill="#c45a7a" ${N}/>` + shine(22, 18) +
+        .forEach(([x, y, x0, y0]) => { s += `<path d="M${x0 - 3} ${y0} Q${x - 4} ${y - 4} ${x} ${y} Q${x + 2} ${y - 6} ${x0 + 3} ${y0}Z" fill="#e07080"/>`; });
+    s += `<path d="M14 34 Q12 12 32 12 Q52 12 50 34 Q50 48 32 48 Q14 48 14 34Z" fill="#ff9999"/>` +
+        `<path d="M44 20 Q50 30 46 42 Q50 30 44 20Z" fill="#cc6677" ${N}/>` + shine(22, 18, '#ff9999') +
         `<circle cx="24" cy="38" r="1.4" fill="#f6b8c8" ${N}/><circle cx="40" cy="40" r="1.4" fill="#f6b8c8" ${N}/>` +
         eyes(30, 6) + cheeks(34, 10) + smile(35);
     if (v.chef) s += `<path d="M22 16 Q16 6 24 4 Q28 -1 33 3 Q40 0 41 6 Q48 8 42 16Z" fill="#fff"/><rect x="22" y="13" width="20" height="5" rx="1.4" fill="#fff"/>`;
@@ -315,7 +390,7 @@ function crab() {
         `<path d="M27 32 L26 22 M37 32 L38 22" fill="none" stroke="${c}" stroke-width="2.4"/>` +
         `<circle cx="26" cy="20" r="3.6" fill="#fff"/><circle cx="38" cy="20" r="3.6" fill="#fff"/><circle cx="26.6" cy="20.4" r="1.7" fill="${K}" ${N}/><circle cx="38.6" cy="20.4" r="1.7" fill="${K}" ${N}/>` +
         `<path d="M10 42 Q10 28 32 28 Q54 28 54 42 Q54 52 32 52 Q10 52 10 42Z" fill="${c}"/>` +
-        `<path d="M44 33 Q52 40 46 50 Q50 40 44 33Z" fill="${d}" ${N}/>` + shine(20, 33) +
+        `<path d="M44 33 Q52 40 46 50 Q50 40 44 33Z" fill="${d}" ${N}/>` + shine(20, 33, c) +
         `<path d="M27 42 Q32 39 37 42" fill="none" stroke-width="1.4"/><path d="M24 45 Q28 47 29 45" fill="none" stroke="#fbe7b0" stroke-width="1.2"/>` +
         `<path d="M23 38 L29 39 M41 38 L35 39" fill="none" stroke-width="1.6"/>`);
 }
@@ -329,20 +404,20 @@ function toad() {
         `<path d="M46 32 Q56 40 52 52 Q53 40 46 32Z" fill="${d}" ${N}/>` +
         `<circle cx="20" cy="24" r="7" fill="${c}"/><circle cx="44" cy="24" r="7" fill="${c}"/>` +
         `<circle cx="20" cy="24" r="4.4" fill="#fbf1b0"/><circle cx="44" cy="24" r="4.4" fill="#fbf1b0"/>` +
-        `<path d="M16.6 24 L23.4 24 M40.6 24 L47.4 24" fill="none" stroke-width="2"/>` +
+        `<path d="M16.6 24 L23.4 24 M40.6 24 L47.4 24" fill="none" stroke-width="2"/><circle cx="19" cy="21" r="1.1" fill="#fff" ${N}/><circle cx="43" cy="21" r="1.1" fill="#fff" ${N}/>` +
         `<circle cx="16" cy="36" r="1.6" fill="${d}" ${N}/><circle cx="48" cy="38" r="1.6" fill="${d}" ${N}/><circle cx="40" cy="31" r="1.2" fill="${d}" ${N}/>` +
         `<path d="M18 37 Q32 44 46 37" fill="none" stroke-width="1.6"/>` + cheeks(37, 15) +
         `<ellipse cx="17" cy="51" rx="4" ry="3" fill="${c}"/><ellipse cx="47" cy="51" rx="4" ry="3" fill="${c}"/>`);
 }
 
 function turtle() {
-    const skin = '#7a8a5a', sd = '#5a6a3e', shell = '#2e3a34', rim = '#4e5c50';
+    const skin = '#7a8a5a', sd = '#5a6a3e', shell = '#44584e', rim = '#6a8274';
     return wrap(`<ellipse cx="18" cy="55" rx="5.4" ry="3.4" fill="${skin}"/><ellipse cx="46" cy="55" rx="5.4" ry="3.4" fill="${skin}"/>` +
         `<path d="M6 48 Q6 28 32 28 Q58 28 58 48 Q46 54 32 54 Q18 54 6 48Z" fill="${shell}"/>` +
         `<path d="M6 48 Q18 53 32 53 Q46 53 58 48 L57 51 Q46 57 32 57 Q18 57 7 51Z" fill="${rim}"/>` +
         `<path d="M24 32 L40 32 L44 42 L32 48 L20 42Z" fill="${rim}" stroke-width="1.4"/><path d="M12 40 L20 42 M52 40 L44 42 M24 32 L20 30 M40 32 L44 30" fill="none" stroke="${rim}" stroke-width="1.4"/>` +
         `<ellipse cx="32" cy="22" rx="11.6" ry="10" fill="${skin}"/><path d="M38 16 Q44 22 40 30 Q42 22 38 16Z" fill="${sd}" ${N}/>` +
-        sleepy(21, 4.6) + smile(26) + cheeks(24.4, 7) +
+        shine(26, 17, skin) + sleepy(21, 4.6) + smile(26) + cheeks(24.4, 7) +
         `<path d="M24 12 Q32 6 40 12" fill="none" stroke="${sd}" stroke-width="1.4"/><path d="M28 31 Q32 36 36 31" fill="none" stroke="#ece8e0" stroke-width="2"/>`);
 }
 
@@ -363,7 +438,7 @@ function snake(v) {
         `<ellipse cx="32" cy="44" rx="16" ry="5.6" fill="${c}"/><path d="M50 52 Q60 50 58 44" fill="none" stroke="${c}" stroke-width="3.4"/>` +
         `<path d="M26 44 Q24 32 30 26 L36 28 Q32 34 36 42Z" fill="${c}"/>` +
         `<path d="M28 42 Q27 34 31 29" fill="none" stroke="${b}" stroke-width="2.4"/>` +
-        `<ellipse cx="32" cy="20" rx="11" ry="8.6" fill="${c}"/>` + shine(27, 16) +
+        `<ellipse cx="32" cy="20" rx="11" ry="8.6" fill="${c}"/>` + shine(27, 16, c) +
         eyes(19, 4.6) + cheeks(22.4, 7.4) + `<path d="M30 25 L32 26 L34 25" fill="none" stroke-width="1.2"/><path d="M32 26.4 L32 30 M32 30 L30.6 31.6 M32 30 L33.4 31.6" fill="none" stroke="#d9302e" stroke-width="1"/>` +
         (v.scholar ? `<path d="M22 13 Q32 6 42 13 L40 15 Q32 11 24 15Z" fill="#26202e"/><rect x="29" y="5.6" width="6" height="5" rx="1" fill="#26202e"/><path d="M42 13 L48 16" fill="none" stroke-width="1.6"/>` +
             `<rect x="40" y="38" width="12" height="4.4" rx="2" fill="#f4ecd8"/><circle cx="40" cy="40.2" r="1.8" fill="#a8683a"/><circle cx="52" cy="40.2" r="1.8" fill="#a8683a"/>` : ''));
@@ -372,7 +447,7 @@ function snake(v) {
 function dragon(v) {
     const c = v.paper ? '#f2c14e' : '#d9452e', d = v.paper ? '#c9963a' : '#a8281e', b = v.paper ? '#fbf1d8' : '#f6c08a', mane = v.paper ? '#d9452e' : '#f2a03a';
     return beast({
-        fur: c, furD: d, belly: b, ears: 'pointy', earIn: b, snout: 'muzzle',
+        fur: c, furD: d, belly: b, ears: 'pointy', earIn: b, snout: 'muzzle', mood: 'angry', iris: '#f2c14e',
         back: TAIL(c, 'M42 54 Q60 54 57 40 Q55 34 50 36 Q54 46 41 48Z') + `<path d="M50 36 L54 30 L55 36 L59 33 L57 40Z" fill="${mane}"/>`,
         behindHead: `<path d="M24 14 Q20 4 24 2 Q25 8 28 12Z" fill="#fbe7b0"/><path d="M40 14 Q44 4 40 2 Q39 8 36 12Z" fill="#fbe7b0"/>` +
             `<path d="M17 22 Q10 22 9 30 Q14 27 18 28Z" fill="${mane}"/><path d="M47 22 Q54 22 55 30 Q50 27 46 28Z" fill="${mane}"/>`,
@@ -392,7 +467,7 @@ function scarecrow() {
         `<path d="M25 38 L30 44 M30 38 L25 44" fill="none" stroke="#fbe7b0" stroke-width=".8"/>` +
         `<path d="M8 36 L6 30 M10 36 L10 30 M56 36 L58 30 M54 36 L54 30" fill="none" stroke="${straw}" stroke-width="1.6"/>` +
         `<path d="M27 50 L26 56 M32 50 L33 57 M37 50 L38 56" fill="none" stroke="${straw}" stroke-width="1.6"/>` +
-        `<ellipse cx="32" cy="22" rx="12" ry="11" fill="${sack}"/><path d="M38 14 Q46 22 40 31 Q42 22 38 14Z" fill="${sackD}" ${N}/>` +
+        `<ellipse cx="32" cy="22" rx="12" ry="11" fill="${sack}"/><path d="M38 14 Q46 22 40 31 Q42 22 38 14Z" fill="${sackD}" ${N}/>` + shine(26, 17, sack) +
         `<path d="M24 32 Q32 35 40 32 L38 35 Q32 37 26 35Z" fill="${straw}" stroke-width="1.4"/>` +
         `<path d="M24.4 20 L29 24 M29 20 L24.4 24 M35 20 L39.6 24 M39.6 20 L35 24" fill="none" stroke-width="1.8"/>` +
         `<path d="M25 28 Q32 31 39 28" fill="none" stroke-width="1.4"/><path d="M27 27 L27.6 29.6 M30 28 L30 30.4 M34 28 L34 30.4 M37 27 L36.4 29.6" fill="none" stroke-width="1"/>` +
@@ -406,9 +481,9 @@ function ghost(v) {
     const c = '#dcecf6', d = '#a8c4dc';
     let s = `<path d="M14 30 Q14 10 32 10 Q50 10 50 30 L50 50 Q47 46 44 50 Q41 54 38 50 Q35 46 32 52 Q29 56 26 50 Q23 46 20 51 Q17 56 14 50Z" fill="${c}"/>` +
         `<path d="M42 16 Q50 26 48 46 Q46 44 44 46 Q46 30 42 16Z" fill="${d}" ${N}/>` +
-        `<path d="M14 36 Q6 34 6 40 Q10 38 15 42Z" fill="${c}"/><path d="M50 36 Q58 34 58 40 Q54 38 49 42Z" fill="${c}"/>` + shine(22, 18) +
+        `<path d="M14 36 Q6 34 6 40 Q10 38 15 42Z" fill="${c}"/><path d="M50 36 Q58 34 58 40 Q54 38 49 42Z" fill="${c}"/>` + shine(22, 18, c) +
         `<ellipse cx="26" cy="27" rx="2.4" ry="3.2" fill="${K}" ${N}/><ellipse cx="38" cy="27" rx="2.4" ry="3.2" fill="${K}" ${N}/>` +
-        `<ellipse cx="32" cy="35" rx="2.4" ry="3" fill="${K}" ${N}/>` + cheeks(31, 10, '#b8a8e0') +
+        `<ellipse cx="32" cy="35" rx="2.4" ry="3" fill="${K}" ${N}/><circle cx="25" cy="25" r="1" fill="#fff" ${N}/><circle cx="37" cy="25" r="1" fill="#fff" ${N}/>` + cheeks(31, 10, '#b8a8e0') +
         `<path d="M8 56 Q12 52 16 56 M48 56 Q52 52 56 56" fill="none" stroke="#a8c4dc" stroke-width="1.6" opacity=".7"/>`;
     if (v.hat === 'captain') s += `<path d="M14 18 Q32 4 50 18 Q32 14 14 18Z" fill="#26304a"/><path d="M18 16 Q32 10 46 16" fill="none" stroke="#f2c14e" stroke-width="1.4"/><circle cx="32" cy="12" r="2" fill="#f2c14e"/>`;
     else if (v.hat === 'miner') s += `<path d="M17 20 Q16 8 32 8 Q48 8 47 20Z" fill="#c9a448"/><rect x="14" y="18" width="36" height="3.4" rx="1.6" fill="#9c7d2e"/>` +
@@ -426,7 +501,7 @@ function imp() {
         `<path d="M24 14 L22 4 L29 12Z" fill="#d9c4a0"/><path d="M40 14 L42 4 L35 12Z" fill="#d9c4a0"/>` +
         `<ellipse cx="32" cy="26" rx="14" ry="12" fill="${c}"/><path d="M40 18 Q48 26 42 36 Q44 26 40 18Z" fill="${d}" ${N}/>` +
         `<path d="M22 16 Q26 20 24 26 M42 18 Q38 24 41 30" fill="none" stroke="${mud}" stroke-width="2.4" opacity=".8"/>` +
-        `<circle cx="26.4" cy="25" r="3" fill="#f6e86a"/><circle cx="37.6" cy="25" r="3" fill="#f6e86a"/><circle cx="26.8" cy="25.4" r="1.4" fill="${K}" ${N}/><circle cx="38" cy="25.4" r="1.4" fill="${K}" ${N}/>` +
+        `<circle cx="26.4" cy="25" r="3" fill="#f6e86a"/><circle cx="37.6" cy="25" r="3" fill="#f6e86a"/><circle cx="26.8" cy="25.4" r="1.4" fill="${K}" ${N}/><circle cx="38" cy="25.4" r="1.4" fill="${K}" ${N}/><circle cx="25" cy="23" r="1" fill="#fff" ${N}/><circle cx="37" cy="23" r="1" fill="#fff" ${N}/>` +
         `<path d="M25 32 Q32 37 39 32" fill="none" stroke-width="1.4"/><path d="M28 33.4 L29 35.6 L30 33.8 M34 33.8 L35 35.6 L36 33.4" fill="#fff" stroke-width="1"/>` +
         `<path d="M26 44 Q26 50 27 52 M37 44 Q38 49 37 52" fill="none" stroke="${mud}" stroke-width="2"/>`);
 }
@@ -438,7 +513,7 @@ function djinn() {
         `<path d="M30 30 L34 30 L36 44 L32 47 L28 44Z" fill="#e8d6f0" stroke-width="1.4"/>` +
         `<path d="M21 36 L10 30 Q8 26 12 25 L22 32 M43 36 L54 30 Q56 26 52 25 L42 32" fill="${c}"/>` +
         `<rect x="10" y="26.4" width="5" height="4" rx="1" transform="rotate(-30 12.5 28.4)" fill="#f2c14e"/><rect x="49" y="26.4" width="5" height="4" rx="1" transform="rotate(30 51.5 28.4)" fill="#f2c14e"/>` +
-        `<ellipse cx="32" cy="20" rx="12" ry="10.6" fill="${c}"/><path d="M38 12 Q46 20 40 29 Q42 20 38 12Z" fill="${d}" ${N}/>` + shine(26, 14) +
+        `<ellipse cx="32" cy="20" rx="12" ry="10.6" fill="${c}"/><path d="M38 12 Q46 20 40 29 Q42 20 38 12Z" fill="${d}" ${N}/>` + shine(26, 14, c) +
         `<path d="M27 9 Q32 -2 37 9Z" fill="#26202e"/><circle cx="32" cy="5" r="2" fill="#f2c14e"/>` +
         eyes(19, 4.8) + `<path d="M27 25 Q32 22 37 25 Q36 28 32 27 Q28 28 27 25Z" fill="#26202e"/>` + smile(26.4, 1.8) +
         `<circle cx="20" cy="21" r="1.6" fill="#f2c14e"/><circle cx="44" cy="21" r="1.6" fill="#f2c14e"/>`);
@@ -468,7 +543,7 @@ function lantern() {
     return wrap(`<path d="M32 2 L32 8" fill="none" stroke-width="1.6"/><rect x="25" y="8" width="14" height="4" rx="1.2" fill="#c9a448"/>` +
         `<path d="M14 30 Q14 12 32 12 Q50 12 50 30 Q50 48 32 48 Q14 48 14 30Z" fill="#d9302e"/>` +
         `<path d="M24 13 Q20 30 24 47 M40 13 Q44 30 40 47" fill="none" stroke="#a8281e" stroke-width="1.4"/>` +
-        `<path d="M42 16 Q50 28 44 44 Q46 28 42 16Z" fill="#a8281e" ${N}/>` + `<ellipse class="glow" cx="32" cy="30" rx="9" ry="12" fill="#f6b24a" opacity=".35" ${N}/>` + shine(21, 19) +
+        `<path d="M42 16 Q50 28 44 44 Q46 28 42 16Z" fill="#a8281e" ${N}/>` + `<ellipse class="glow" cx="32" cy="30" rx="9" ry="12" fill="#f6b24a" opacity=".35" ${N}/>` + shine(21, 19, '#d9302e') +
         `<rect x="25" y="47" width="14" height="4" rx="1.2" fill="#c9a448"/><path d="M29 51 L28 58 M32 51 L32 59 M35 51 L36 58" fill="none" stroke="#f2c14e" stroke-width="1.6"/>` +
         sleepy(29, 5.6) + cheeks(33, 9, '#f6b24a') + smile(34) +
         `<path d="M24 38 Q22 41 25 42" fill="none" stroke="#fbe7b0" stroke-width="1"/>` + sparkle(8, 20) + sparkle(56, 40));
@@ -482,7 +557,7 @@ function bamboo() {
         `<path d="M20 38 Q32 41 44 38 M20 50 Q32 53 44 50" fill="none" stroke-width="1.6"/>` +
         `<path d="M20 42 Q12 40 10 32 Q16 34 20 38 M44 44 Q52 42 54 34 Q48 36 44 40" fill="${c}"/>` +
         `<path d="M30 14 Q22 2 14 4 Q20 10 30 14Z" fill="#9fd06a"/><path d="M33 14 Q40 0 50 2 Q44 10 33 14Z" fill="#9fd06a"/><path d="M32 14 Q32 6 34 2" fill="none" stroke="${d}" stroke-width="1.4"/>` +
-        eyes(26, 5.4) + cheeks(30, 8.6) + smile(31) + shine(25, 19));
+        eyes(26, 5.4, 1.7, { iris: '#2a7a4a' }) + cheeks(30, 8.6) + smile(31) + shine(25, 19, c));
 }
 
 function tree() {
