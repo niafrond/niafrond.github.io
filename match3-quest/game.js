@@ -1349,10 +1349,8 @@ export function updateEnemySpells(){
     if(!container) return;
     container.innerHTML = '';
     
-    if(!enemy.spells || enemy.spells.length === 0){
-        container.innerHTML = '<div class="enemy-spell-item" style="text-align:center;"><em>Aucun sort</em></div>';
-        return;
-    }
+    // Aucun sort : pas de tuile du tout (plutôt qu'une tuile « Aucun sort »).
+    if(!enemy.spells || enemy.spells.length === 0) return;
     
     enemy.spells.forEach(sp => {
         const div = document.createElement('div');
