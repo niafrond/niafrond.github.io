@@ -25,6 +25,7 @@
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
 import { REGION_LEVEL } from './world/index.js';
 import { REGION_ORDER } from './world/index.js';
+import { weakColorOfTemplate } from './enemies.js';
 import { approachOf, FACE_FRONT, faceFromStep, spotAt, buildPrep, observationTarget } from './terrain.js';
 import { ARENA_HALL, ARENA_TIERS, arenaTier, arenaEncounterInfo, normalizeArenaData } from './arena.js';
 
@@ -633,6 +634,7 @@ export function prepFor(session, def) {
     return buildPrep({
         approach: approachOf(st.face, st, { x, y }),
         observed: Boolean(session.data.observed?.[def.id]),
+        weakColor: weakColorOfTemplate(def.templateId) || undefined,
         enemyOnTrap: Boolean(spotAt(screen.spots, st.x, st.y, 'trap')),
         enemyOnGrass: Boolean(spotAt(screen.spots, st.x, st.y, 'tallGrass')),
         onOutlook: Boolean(spotAt(screen.spots, x, y, 'outlook'))

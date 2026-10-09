@@ -153,6 +153,13 @@ describe('qualité technique des SVG', () => {
         expect(spriteUri(null)).toBe('');
     });
 
+    test('spriteUri accepte une grille : la définition 64 a sa propre version de repli', () => {
+        const svg = heroSprite('sorcerer');
+        expect(spriteUri(svg, 64)).toBe(`${spriteUri(svg)}#g64`);
+        expect(spriteUri(svg, 32)).toBe(spriteUri(svg));
+        expect(spriteUri(svg, 999)).toBe(spriteUri(svg));
+    });
+
     test('pixelate enveloppe le dessin vectoriel dans le filtre pixel art sans le modifier', () => {
         const svg = heroSprite('sorcerer');
         const px = pixelate(svg);

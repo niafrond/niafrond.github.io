@@ -8,6 +8,8 @@
 // 2. BIOMES : chaque biome du monde impose une règle au plateau de match-3 (bambous, volcan, marais, sanctuaire,
 //    mer, neige). Les cases spéciales sont un état par indice de case, avancé à chaque tour du joueur.
 
+import { elementName } from './elements.js';
+
 export const FACE_FRONT = 'front';
 export const FACE_BEHIND = 'behind';
 export const FACE_SIDE = 'side';
@@ -22,6 +24,8 @@ export const SPOT_KINDS = ['tallGrass', 'trap', 'outlook'];
 
 const COLOR_NAMES = { red: 'rouge', blue: 'bleu', green: 'vert', yellow: 'jaune', purple: 'violet' };
 export const colorName = color => COLOR_NAMES[color] || color;
+// « Eau (bleu) » : élément + couleur, pour les libellés de faiblesse.
+export const weaknessLabel = color => elementName(color) ? `${elementName(color)} (${colorName(color)})` : colorName(color);
 
 const sign = n => (n > 0) - (n < 0);
 
@@ -62,7 +66,7 @@ export function observationTarget(stillMs, playerPos, enemies, observed = {}, ra
     return best ? best.id : null;
 }
 
-// Préparation d'un combat. ctx : { approach, enemyOnTrap, enemyOnGrass, observed, onOutlook }.
+// Préparation d'un combat. ctx : { weakColor (optionnel, pour les libellés), approach, enemyOnTrap, enemyOnGrass, observed, onOutlook }.
 export function buildPrep(ctx = {}) {
     const prep = {
         tags: [], lines: [],
@@ -81,7 +85,8 @@ export function buildPrep(ctx = {}) {
     }
     if (ctx.observed) {
         prep.weaknessRevealed = true;
-        add('observed', 'Faiblesse repérée : ses dégâts de cette couleur sont accrus.');
+        const w = ctx.weakColor ? weaknessLabel(ctx.weakColor) : null;
+        add('observed', w ? `Faiblesse repérée : ${w}. Ses dégâts de cette couleur sont accrus.` : 'Faiblesse repérée : ses dégâts de cette couleur sont accrus.');
     }
     if (ctx.enemyOnTrap) {
         prep.enemyStatus = { poisoned: 3 };
@@ -92,7 +97,7 @@ export function buildPrep(ctx = {}) {
     }
     if (ctx.onOutlook) {
         prep.boardBoost = { count: OUTLOOK_TILES };
-        add('outlook', `Position dominante : le plateau démarre avec ${OUTLOOK_TILES} tuiles de la couleur faible de l'ennemi.`);
+        add('outlook', `Position dominante : le plateau démarre avec ${OUTLOOK_TILES} tuiles de la couleur faible de l'ennemi${ctx.weakColor ? ` : ${weaknessLabel(ctx.weakColor)}` : ''}.`);
     }
     return prep;
 }

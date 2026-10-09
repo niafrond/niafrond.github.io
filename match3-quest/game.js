@@ -6,9 +6,10 @@ import { tutorialCallbacks, isTutorialActive, getTutorialStep } from "./tutorial
 import { allWeapons, getAvailableWeapons, getWeaponById, weaponBiomeBonus, BIOME_LABELS } from "./weapons.js";
 import { weaknessDamage, ruleForBiome, prepBanner } from "./terrain.js";
 import { heroSprite, enemySprite, spriteUri } from "./sprites/index.js";
-import { viewSprite, HERO_VIEW_OPTS } from "./sprites/side.js";
 import { enemyMakeMove, enemyMakeRandomMove, setGameStarted, restartSuggestionTimer, getTrappedCells, setTrappedCells, isBoardResolving, setBiomeRule, advanceBiomeTurn, boostBoardColor } from "./board.js";
 import { actionGuard } from "./actionGuard.js";
+import { elementName } from "./elements.js";
+import { createAnnouncement, announceDurationMs, waitUntil, isHpBarEmpty, openingStrikeCount, isWeaknessShown, HP_BAR_EMPTY_PAUSE_MS } from "./combatFlow.js";
 import { bigMatchXpFor } from "./matchMechanics.js";
 import { recordBossLoss, recordVictory, pickBossTip } from "./bossTips.js";
 import { pickTrapZone, trapDamage, mirrorLoadout, duelTurnPlan, weakenedHp } from "./duel.js";
@@ -554,7 +555,9 @@ const combatRewards = {
     xpApplied: false,
     items: [],
     weapons: [],
-    gold: 0
+    gold: 0,
+    levelsGained: 0,      // niveaux gagnés en fin de combat (écran de résultat)
+    levelReached: 0
 };
 
 const PLAYER_DEATH_DELAY_MS = 900;
@@ -568,6 +571,8 @@ function resetCombatRewards(){
     combatRewards.items = [];
     combatRewards.weapons = [];
     combatRewards.gold = 0;
+    combatRewards.levelsGained = 0;
+    combatRewards.levelReached = 0;
 }
 
 function queueCombatXP(xpAmount){
@@ -648,6 +653,8 @@ function applyCombatXPAtEnd(){
 
     const levelUpResult = addXP(player, pendingXP);
     const { maxHpGained, hpRecovered } = applyLevelUpRewards(levelUpResult);
+    combatRewards.levelsGained = levelUpResult.leveledUp ? (levelUpResult.levelsGained || 1) : 0;
+    combatRewards.levelReached = player.level;
 
     return {
         xpApplied: pendingXP,
@@ -678,23 +685,28 @@ function showCombatResultScreen(isVictory){
     const allLoot = [...combatRewards.weapons, ...combatRewards.items];
     const lootLines = allLoot.length > 0
         ? allLoot.map(name => `<li>${name}</li>`).join('')
-        : '<li>Aucun butin</li>';
+        : '<li class="battle-result-empty">Aucun butin</li>';
 
-    const goldLine = combatRewards.gold > 0
-        ? `<li>${svgIcon('coin')} Or : +${combatRewards.gold} pièce${combatRewards.gold > 1 ? 's' : ''}</li>`
+    const gold = combatRewards.gold || 0;
+    const levelLine = combatRewards.levelsGained > 0
+        ? `<div class="battle-result-levelup">${svgIcon('star')} Niveau ${combatRewards.levelReached} atteint${combatRewards.levelsGained > 1 ? ` (+${combatRewards.levelsGained})` : ''} !</div>`
         : '';
 
     // Anti try-hard : après trois défaites d'affilée contre le même boss, un conseil pour progresser autrement.
     const tip = !isVictory && enemy?.isBoss
         ? pickBossTip(player.bossLossStreak, { playerLevel: player.level, bossLevel: enemy.level, gold: player.gold, unspentPoints: player.unspentLevelPoints })
         : null;
+    // Trois sections nettement séparées (cadre, titre, icône) qui se partagent la hauteur de l'écran.
+    const section = (cls, icon, label, body) => `
+        <section class="battle-result-section battle-result-sec-${cls}">
+            <h3 class="battle-result-section-title">${svgIcon(icon)} <span>${label}</span></h3>
+            <div class="battle-result-section-body">${body}</div>
+        </section>`;
     summary.innerHTML = `
         ${tip ? `<p class="battle-result-tip">${svgIcon('scroll')} <strong>Conseil :</strong> ${tip}</p>` : ''}
-        <div class="battle-result-xp">XP gagnée : ${combatRewards.xpGained}</div>
-        <ul class="battle-result-loot">
-            ${goldLine}
-            ${lootLines}
-        </ul>
+        ${section('xp', 'star', 'Expérience', `<div class="battle-result-xp">+${combatRewards.xpGained} XP</div>${levelLine}`)}
+        ${section('gold', 'coin', 'Pièces', `<div class="battle-result-gold">${gold > 0 ? `+${gold} pièce${gold > 1 ? 's' : ''}` : 'Aucune pièce'}</div>`)}
+        ${section('items', 'bag', 'Objets', `<ul class="battle-result-loot">${lootLines}</ul>`)}
     `;
 
     screen.classList.add('active');
@@ -719,6 +731,8 @@ function playCombatEndFade(isVictory){
 export const combatHooks = { onVictory: null, onEnd: null };
 
 function finalizeCombatEndUI(isVictory){
+    introToken++;
+    dismissCombatIntro();
     showCombatResultScreen(isVictory);
     // Fin de partie : « Retour à l'exploration » est la seule action possible (voir style.css, body.combat-ended).
     document.body.classList.add('combat-ended');
@@ -761,32 +775,51 @@ function finalizeCombatEndUI(isVictory){
     combatHooks.onEnd?.(isVictory);
 }
 
+// Barre de PV d'un combattant : animée par un compteur (_animateHpBar), donc « vide » seulement une fois ce compteur terminé.
+function isFighterHpBarEmpty(isPlayer){
+    const prefix = isPlayer ? 'player' : 'enemy';
+    const bar = document.querySelector(`#${prefix}-stats .hp-bar-container progress`);
+    return isHpBarEmpty({
+        shownValue: bar ? Number(bar.value) : null,
+        animating: Boolean(_activeCounters[`${prefix}-hp-current`])
+    });
+}
+
+// Attend que la barre de PV du vaincu (l'adversaire en cas de victoire, le joueur en cas de défaite) soit réellement
+// arrivée à zéro à l'écran (transition terminée, filet de sécurité de 6 s), puis une courte pause avant l'écran de fin.
+// Un abandon (PV > 0) n'attend rien.
+function whenLoserHpBarEmpty(isVictory, callback){
+    const loser = isVictory ? enemy : player;
+    if(!(loser?.hp <= 0)){ callback(); return; }
+    updateStats();
+    waitUntil(() => isFighterHpBarEmpty(!isVictory), () => setTimeout(callback, HP_BAR_EMPTY_PAUSE_MS * animationFactor()));
+}
+
 function showEndCombatAnimation(isVictory, options = {}){
     const {
         requireClick = true,
         continueText = ''
     } = options;
 
-    // Victoire : l'écran de résultat (avec son fondu « VICTOIRE ») s'affiche tout de suite, sans second écran
-    // « Cliquez pour continuer » intercalé entre le dernier coup et le résultat.
-    if(isVictory){
-        finalizeCombatEndUI(true);
-        return;
-    }
+    whenLoserHpBarEmpty(isVictory, () => {
+        if(gameState.combatState !== 'finished') return;   // un nouveau combat a démarré entre-temps
+        // Victoire : l'écran de résultat (avec son fondu « VICTOIRE ») s'affiche sans second écran « Cliquez pour continuer ».
+        if(isVictory){
+            finalizeCombatEndUI(true);
+            return;
+        }
 
-    const data = isVictory
-        ? { icon: 'trophy', title: 'Victoire', damage: 'Combat termine !', target: 'Cliquez pour continuer' }
-        : { icon: 'skull', title: 'Defaite', damage: 'Combat termine !', target: 'Cliquez pour continuer' };
+        const data = { icon: 'skull', title: 'Defaite', damage: 'Combat termine !', target: 'Cliquez pour continuer' };
+        if(!requireClick){
+            data.target = 'Retour a l ecran de resultat...';
+        }
 
-    if(!requireClick){
-        data.target = 'Retour a l ecran de resultat...';
-    }
-
-    showCombatAnimation(data, isVictory, {
-        requireClick,
-        continueText,
-        autoHideMs: 650,
-        onContinue: () => finalizeCombatEndUI(isVictory)
+        showCombatAnimation(data, isVictory, {
+            requireClick,
+            continueText,
+            autoHideMs: 650,
+            onContinue: () => finalizeCombatEndUI(isVictory)
+        });
     });
 }
 
@@ -800,6 +833,8 @@ export let enemy = { name:"Xiao Gui", hp:50, maxHp:50, attack:10, resistances:{}
 // si le joueur meurt, on restaure ses PV et réinitialise le combat
 export function restartCombat(){
     actionGuard.reset();
+    introToken++;
+    dismissCombatIntro();
     if(pendingPlayerDeathTimeout) {
         clearTimeout(pendingPlayerDeathTimeout);
         pendingPlayerDeathTimeout = null;
@@ -1148,18 +1183,20 @@ function _animateCounter(id, from, to) {
 // Dessins des combattants (héros à gauche tourné vers la droite, ennemi à droite tourné vers la gauche) : posés en variable CSS
 // `--portrait` des panneaux de stats (pseudo-élément ::after), donc sans clignotement quand le panneau est reconstruit.
 function updateFighterPortraits(){
-    const set = (id, svg, dir, opts) => {
+    // Vue de face : la vue de profil dérivée (corps et visage resserrés) écrasait les personnages en largeur à cette taille.
+    const set = (id, svg) => {
         const el = document.getElementById(id);
         if(!el) return;
-        const view = svg ? viewSprite(svg, dir, opts) : null;
+        const view = svg || null;
         if(view) el.style.setProperty('--portrait', `url("${spriteUri(view)}")`);
         else el.style.removeProperty('--portrait');
     };
-    set('player-stats', heroSprite(player.class) || heroSprite('assassin'), 'right', HERO_VIEW_OPTS);
-    set('enemy-stats', enemySprite(enemy.spriteKey || enemy.id, enemy.templateId), 'left');
+    set('player-stats', heroSprite(player.class) || heroSprite('assassin'));
+    set('enemy-stats', enemySprite(enemy.spriteKey || enemy.id, enemy.templateId, enemy.biome));
 }
 
 export function updateStats(){
+    syncPlayerControlsLock();
     updateLevelHud();
     updateFighterPortraits();
     // truncate log to only the latest message
@@ -1271,6 +1308,7 @@ export function updateStats(){
         enemyNameEl.addEventListener('touchend', hideName);
         enemyNameEl.addEventListener('touchcancel', hideName);
     }
+    bindEnemyCardTap(enemyDiv);
     
     updateEnemySpells();
 }
@@ -1311,10 +1349,8 @@ export function updateEnemySpells(){
     if(!container) return;
     container.innerHTML = '';
     
-    if(!enemy.spells || enemy.spells.length === 0){
-        container.innerHTML = '<div class="enemy-spell-item" style="text-align:center;"><em>Aucun sort</em></div>';
-        return;
-    }
+    // Aucun sort : pas de tuile du tout (plutôt qu'une tuile « Aucun sort »).
+    if(!enemy.spells || enemy.spells.length === 0) return;
     
     enemy.spells.forEach(sp => {
         const div = document.createElement('div');
@@ -1625,7 +1661,26 @@ export function showAttackAnimation(text, isPlayerAttack = true, options = {}) {
 // Anti-bourrinage : arme / objet / sort refusés pendant la résolution du plateau, juste après une action plateau,
 // ou dans le court délai qui suit une autre action du joueur (voir actionGuard.js).
 export function isPlayerActionBlocked(){
-    return isBoardResolving() || actionGuard.blockReason() !== null;
+    return currentTurn !== 'player' || isBoardResolving() || actionGuard.blockReason() !== null;
+}
+
+// Dès que le joueur ne joue plus (tour adverse, écran de début de combat), TOUS ses boutons sont désactivés :
+// armes, objets, sorts (colonne #player-spells rendue inerte : ni clic ni focus) et abandon ; l'actionGuard refuse aussi
+// tout clic. Réactivés dès que le tour revient au joueur. Appelé à chaque updateStats().
+export function syncPlayerControlsLock(){
+    const locked = gameState.combatState === 'active' && currentTurn !== 'player';
+    actionGuard.setTurnLocked(locked);
+    if(typeof document === 'undefined') return locked;
+    const column = document.getElementById('player-spells');
+    if(column){
+        column.classList.toggle('turn-locked', locked);
+        column.setAttribute('aria-disabled', String(locked));
+        if(locked) column.setAttribute('inert', '');
+        else column.removeAttribute('inert');
+    }
+    const abandonBtn = document.getElementById('abandon-combat-btn');
+    if(abandonBtn) abandonBtn.disabled = locked;
+    return locked;
 }
 
 // Renvoie true (et ignore silencieusement le clic) si l'action doit être refusée.
@@ -2766,6 +2821,8 @@ function getEnemyResistanceInsights(enemyEntity) {
     };
 }
 
+// Infobulle de l'ennemi : sa force est toujours indiquée ; sa faiblesse (couleur + élément) seulement une fois repérée
+// (avantage « Faiblesse repérée » du terrain, prep.weaknessRevealed).
 function getEnemyNameTooltipHtml(fullName, enemyEntity) {
     const { weakest, strongest } = getEnemyResistanceInsights(enemyEntity);
     const lines = [`<div class="enemy-tooltip-title">${fullName}</div>`];
@@ -2776,13 +2833,33 @@ function getEnemyNameTooltipHtml(fullName, enemyEntity) {
         lines.push(`<div class="enemy-tooltip-row enemy-tooltip-strong">Force : ${manaIcon(strongest.color)} ${strongMeta.name} (${strongPercent}% res.)</div>`);
     }
 
-    if(weakest) {
-        const weakMeta = MANA_COLOR_META[weakest.color];
-        const weakPercent = Math.round(weakest.value * 100);
-        lines.push(`<div class="enemy-tooltip-row enemy-tooltip-weak">Faiblesse : ${manaIcon(weakest.color)} ${weakMeta.name} (${weakPercent}% res.)</div>`);
+    if(isWeaknessShown(enemyEntity?.prep)) {
+        const weakColor = enemyEntity.weakColor || weakest?.color;
+        if(weakColor && MANA_COLOR_META[weakColor]) {
+            const element = elementName(weakColor);
+            const resist = Number(enemyEntity.resistances?.[weakColor]);
+            const percent = Number.isFinite(resist) ? ` (${Math.round(Math.max(0, resist) * 100)}% res.)` : '';
+            lines.push(`<div class="enemy-tooltip-row enemy-tooltip-weak">Faiblesse : ${manaIcon(weakColor)} ${element ? `${element} - ` : ''}${MANA_COLOR_META[weakColor].name}${percent}</div>`);
+        }
     }
 
     return lines.join('');
+}
+
+// Un clic / toucher sur la carte ou le portrait de l'ennemi affiche son infobulle (faiblesse incluse si elle est repérée),
+// qui se referme seule après quelques secondes. Lié une seule fois : le panneau est reconstruit à chaque updateStats.
+const ENEMY_TAP_TOOLTIP_MS = 3500;
+let enemyTapTimer = null;
+function bindEnemyCardTap(enemyDiv){
+    if(!enemyDiv || enemyDiv.dataset.tapBound) return;
+    enemyDiv.dataset.tapBound = '1';
+    enemyDiv.addEventListener('click', () => {
+        const nameEl = enemyDiv.querySelector('.enemy-combat-name');
+        if(!nameEl) return;
+        showEnemyNameTooltip(nameEl, nameEl.dataset.fullName || enemy.name, enemy);
+        clearTimeout(enemyTapTimer);
+        enemyTapTimer = setTimeout(hideEnemyNameTooltip, ENEMY_TAP_TOOLTIP_MS);
+    });
 }
 
 function showEnemyNameTooltip(targetEl, fullName, enemyEntity = enemy) {
@@ -3031,87 +3108,120 @@ export function consumeBoardBoost(){
     if(boost?.color) boostBoardColor(boost.color, boost.count);
 }
 
-// détermine le premier tour selon l'agilité (plus d'agilité = joueur plus rapide)
-// Avantage du terrain (embuscade, faiblesse repérée, piège…) : bandeau NON BLOQUANT affiché dès le début du combat, par-dessus le plateau.
-// Il ne retarde ni le joueur ni l'ennemi ni les coups d'ouverture ; il reste à l'écran le temps de lire chaque ligne.
-const BANNER_BASE_MS = 3200;
-const BANNER_LINE_MS = 1600;
-const BANNER_LEAD_MS = 500;       // seule pause avant que l'ennemi (ou un coup d'ouverture) n'agisse
-function showPrepBanner(banner, lines, startLine){
-    document.querySelectorAll('.prep-banner').forEach(el => el.remove());
-    const el = document.createElement('div');
-    el.className = 'prep-banner';
-    el.setAttribute('role', 'status');
-    el.innerHTML = `<div class="prep-banner-head"><span class="prep-banner-icon">${svgIcon(banner.icon) || ''}</span>` +
-        `<span class="prep-banner-title">${String(banner.title).toUpperCase()}</span></div>` +
-        lines.map(l => `<div class="prep-banner-line">${l}</div>`).join('') +
-        `<div class="prep-banner-start">${startLine}</div>`;
-    document.body.appendChild(el);
-    const ms = (BANNER_BASE_MS + BANNER_LINE_MS * lines.length) * animationFactor();
-    setTimeout(() => { el.classList.add('fade-out'); setTimeout(() => el.remove(), 400); }, ms);
+// Écran de début de combat (« Vous commencez ! », « Préparation du terrain »…), fusionné avec l'annonce de l'avantage du
+// terrain (embuscade, faiblesse repérée, piège, hautes herbes…) : un seul écran, plein cadre, sans bandeau séparé.
+// Il reste au moins 2 s (combatFlow.MIN_ANNOUNCE_MS) puis un clic / toucher / touche n'importe où le ferme ; ni le joueur
+// ni l'ennemi n'agit avant sa fin (currentTurn vaut 'intro', tous les boutons du joueur sont verrouillés).
+let combatIntro = null;
+function dismissCombatIntro(){
+    combatIntro?.cancel();
+    combatIntro = null;
+    document.getElementById('combat-intro')?.remove();
 }
+function showCombatIntro({ anim, banner, lines = [], startLine }, done){
+    dismissCombatIntro();
+    if(typeof document === 'undefined' || !document.body){ done(); return; }
+    const el = document.createElement('div');
+    el.id = 'combat-intro';
+    el.className = 'combat-intro';
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', 'Début du combat');
+    el.tabIndex = 0;
+    const head = banner
+        ? { icon: banner.icon, title: banner.title }
+        : { icon: anim.icon, title: anim.title };
+    el.innerHTML = `<div class="combat-intro-card">` +
+        `<div class="combat-intro-head"><span class="combat-intro-icon">${svgIcon(head.icon) || ''}</span>` +
+        `<span class="combat-intro-title">${String(head.title).toUpperCase()}</span></div>` +
+        (!banner && anim.source ? `<div class="combat-intro-source">${anim.source}</div>` : '') +
+        lines.map(l => `<div class="prep-banner-line">${l}</div>`).join('') +
+        `<div class="prep-banner-start">${startLine}</div>` +
+        `<div class="combat-intro-hint" aria-hidden="true">Touchez pour continuer</div></div>`;
+    document.body.appendChild(el);
+
+    const ann = createAnnouncement({
+        autoMs: announceDurationMs(lines.length, animationFactor()),
+        onDone: () => {
+            if(combatIntro === ann) combatIntro = null;
+            el.classList.add('fade-out');
+            setTimeout(() => el.remove(), 300);
+            done();
+        }
+    });
+    combatIntro = ann;
+    const hintTimer = setTimeout(() => el.classList.add('skippable'), 2000);
+    const trySkip = () => { if(ann.skip()) clearTimeout(hintTimer); };
+    el.addEventListener('click', trySkip);
+    el.addEventListener('keydown', event => {
+        if(event.key === 'Enter' || event.key === ' ' || event.key === 'Escape'){ event.preventDefault(); trySkip(); }
+    });
+}
+
+// détermine le premier tour selon l'agilité (plus d'agilité = joueur plus rapide)
 export function decideFirstTurn(){
     const prep = enemy?.prep;
     const banner = prepBanner(prep, enemy?.name);
-    let announceMs = 1500;   // délai avant que l'ennemi ne joue (annonce simple, sans avantage du terrain)
-    const announce = (anim, playerStarts, extraLine = null) => {
-        if(!banner) { showCombatAnimation(anim, playerStarts); return; }
-        // Avantage du terrain : bandeau lisible dès l'ouverture, sans attente ni blocage du jeu.
-        const lines = extraLine ? [...banner.lines, extraLine] : banner.lines;
-        announceMs = BANNER_LEAD_MS;
-        showPrepBanner(banner, lines, playerStarts ? '→ À vous de jouer !' : '→ Ennemi joue en premier');
-    };
-    // Coups d'ouverture gratuits : l'embuscade (attaque par derrière) et la faiblesse repérée frappent chacune une fois avec l'arme courante.
-    const openingStrikes = (prep?.tags || []).filter(t => t === 'ambush' || t === 'observed').length;
-    const startEnemy = () => {
-        if(!openingStrikes){ setTimeout(() => enemyTurn(), announceMs); return; }
-        runOpeningStrikes(openingStrikes, announceMs, () => enemyTurn());
-    };
+    const strikes = openingStrikeCount(prep);   // seule l'embuscade offre un coup d'ouverture (plus la faiblesse repérée)
+    let starter, anim, extraLine = null;
     if(prep?.playerFirst || prep?.enemyFirst){
-        const playerStarts = Boolean(prep.playerFirst);
-        currentTurn = playerStarts ? 'player' : 'enemy';
-        announce({ icon: 'bolt', title: 'Préparation du terrain', source: '', target: playerStarts ? '→ À vous de jouer !' : '→ Ennemi joue en premier' }, playerStarts);
-        log(`Premier tour : ${playerStarts ? 'Joueur' : 'Ennemi'} (préparation du terrain)`);
-        if(!playerStarts) startEnemy();
-        else if(openingStrikes) runOpeningStrikes(openingStrikes, announceMs, () => {});
-        return;
-    }
-    const playerAgility = player.attributes.agility || 0;
-    const enemyAgility = enemy.attributes?.agility || 0;
-    
-    let starter;
-    if(playerAgility > enemyAgility){
-        starter = 'player';
-        log(`Vous êtes plus agile ! Vous commencez en premier.`);
-        announce({ icon: 'bolt', title: 'Vous commencez !', source: `Agilité : ${playerAgility} > ${enemyAgility}`, target: '→ À vous de jouer !' }, true, 'Plus agile : vous commencez.');
-    } else if(enemyAgility > playerAgility){
-        starter = 'enemy';
-        log(`${enemy.name} est plus agile ! Il commence en premier.`);
-        announce({ icon: 'bolt', title: `${enemy.name} commence !`, source: `Agilité : ${enemyAgility} > ${playerAgility}`, target: '→ Ennemi joue en premier' }, false, `${enemy.name} est plus agile : il commence.`);
+        starter = prep.playerFirst ? 'player' : 'enemy';
+        anim = { icon: 'bolt', title: 'Préparation du terrain', source: '', target: starter === 'player' ? '→ À vous de jouer !' : '→ Ennemi joue en premier' };
+        log(`Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'} (préparation du terrain)`);
     } else {
-        // En cas d'égalité, le joueur commence
-        starter = 'player';
-        log(`Égalité d'agilité, vous commencez !`);
-        announce({ icon: 'scales', title: 'Égalité !', source: `Agilité : ${playerAgility} = ${enemyAgility}`, target: '→ À vous de jouer !' }, true, "Égalité d'agilité : vous commencez.");
+        const playerAgility = player.attributes.agility || 0;
+        const enemyAgility = enemy.attributes?.agility || 0;
+        if(playerAgility > enemyAgility){
+            starter = 'player';
+            log(`Vous êtes plus agile ! Vous commencez en premier.`);
+            anim = { icon: 'bolt', title: 'Vous commencez !', source: `Agilité : ${playerAgility} > ${enemyAgility}`, target: '→ À vous de jouer !' };
+            extraLine = 'Plus agile : vous commencez.';
+        } else if(enemyAgility > playerAgility){
+            starter = 'enemy';
+            log(`${enemy.name} est plus agile ! Il commence en premier.`);
+            anim = { icon: 'bolt', title: `${enemy.name} commence !`, source: `Agilité : ${enemyAgility} > ${playerAgility}`, target: '→ Ennemi joue en premier' };
+            extraLine = `${enemy.name} est plus agile : il commence.`;
+        } else {
+            // En cas d'égalité, le joueur commence
+            starter = 'player';
+            log(`Égalité d'agilité, vous commencez !`);
+            anim = { icon: 'scales', title: 'Égalité !', source: `Agilité : ${playerAgility} = ${enemyAgility}`, target: '→ À vous de jouer !' };
+            extraLine = "Égalité d'agilité : vous commencez.";
+        }
+        log(`Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'}`);
     }
-    
-    currentTurn = starter;
-    log(`Premier tour : ${starter === 'player' ? 'Joueur' : 'Ennemi'}`);
-    if(starter === 'enemy'){
-        startEnemy();
-    } else if(openingStrikes){
-        runOpeningStrikes(openingStrikes, announceMs, () => {});
-    }
+
+    // Personne n'agit pendant l'écran de début : tour « intro », boutons du joueur verrouillés.
+    currentTurn = 'intro';
+    updateStats();
+    const token = ++introToken;
+    showCombatIntro({
+        anim,
+        banner,
+        lines: banner ? (extraLine ? [...banner.lines, extraLine] : banner.lines) : [],
+        startLine: anim.target
+    }, () => {
+        if(token !== introToken || gameState.combatState !== 'active') return;
+        currentTurn = starter;
+        updateStats();
+        if(starter === 'enemy'){
+            if(strikes) runOpeningStrikes(strikes, OPENING_LEAD_MS, () => enemyTurn());
+            else setTimeout(() => enemyTurn(), OPENING_LEAD_MS);
+        } else if(strikes){
+            runOpeningStrikes(strikes, OPENING_LEAD_MS, () => {});
+        }
+    });
 }
+let introToken = 0;
 
 // Coups gratuits et automatiques de l'arme courante au début du combat (le plateau reste bloqué le temps des animations).
-const OPENING_ANNOUNCE_MS = 700;   // annonce « Embuscade » / « Faiblesse » avant le coup
+// Seule l'embuscade en offre un : l'annonce a déjà eu lieu dans l'écran de début de combat.
+const OPENING_LEAD_MS = 300;       // courte pause après la fin de l'écran de début
 const OPENING_STRIKE_MS = 1300;    // durée de l'animation du coup avant l'enchaînement
 function runOpeningStrikes(count, delayMs, done){
     const weapon = player.equippedWeapon;
     if(!weapon){ log("Aucune arme équipée : pas de coup d'ouverture."); setTimeout(done, delayMs); return; }
     const wasPlayerTurn = currentTurn === 'player';
-    if(wasPlayerTurn) currentTurn = 'enemy';
+    if(wasPlayerTurn){ currentTurn = 'enemy'; syncPlayerControlsLock(); }
     const step = i => {
         if(gameState.combatState !== 'active') return;
         if(i >= count){
@@ -3120,20 +3230,10 @@ function runOpeningStrikes(count, delayMs, done){
             done();
             return;
         }
-        const isAmbush = i === 0 && (enemy?.prep?.tags || []).includes('ambush');
-        // Annonce brève du type de coup d'ouverture, puis le coup lui-même.
-        log(isAmbush ? 'Embuscade : attaque par derrière !' : 'Faiblesse repérée : coup supplémentaire !');
-        showCombatAnimation({
-            icon: isAmbush ? 'bolt' : 'target',
-            title: isAmbush ? 'Embuscade !' : 'Faiblesse !',
-            source: isAmbush ? 'Vous attaquez par derrière' : 'Vous exploitez sa faille'
-        }, true, { autoHideMs: OPENING_ANNOUNCE_MS * animationFactor() });
-        setTimeout(() => {
-            if(gameState.combatState !== 'active') return;
-            strikeWithWeapon(weapon, { free: true });
-            updateStats();
-            setTimeout(() => step(i + 1), OPENING_STRIKE_MS * animationFactor());
-        }, (OPENING_ANNOUNCE_MS + 300) * animationFactor());
+        log('Embuscade : attaque par derrière !');
+        strikeWithWeapon(weapon, { free: true });
+        updateStats();
+        setTimeout(() => step(i + 1), OPENING_STRIKE_MS * animationFactor());
     };
     setTimeout(() => step(0), delayMs);
 }

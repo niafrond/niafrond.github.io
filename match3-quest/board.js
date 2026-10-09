@@ -9,6 +9,7 @@ import {
     checkMatchAtPosition,
     findPossibleMatches,
     collectMatches,
+    pickJokerSpawns,
     getColorMatchManaBaseGain,
     getEffectiveMatchLength,
     getJokerMatchMultiplier
@@ -697,8 +698,8 @@ export function checkMatches(forceFullBoard = false){
             const manaBaseGain = enemyIsConfused ? 1 : getColorMatchManaBaseGain(info);
             const manaResult = addManaForColor(currentPlayer, info.color, manaBaseGain);
 
+            flyManaToCounter(indices, info.color, { isPlayer: currentPlayer === player });
             if(currentPlayer === player){
-                flyManaToCounter(indices, info.color);
                 const generatedMana = manaResult.gained;
                 if(generatedMana > 0){
                     grantManaGeneratedXP(generatedMana);
@@ -722,6 +723,7 @@ export function checkMatches(forceFullBoard = false){
         } else if(info.type==='combat'){
             const actionGain = getEffectiveMatchLength(info);
             currentPlayer.combatPoints += actionGain;
+            flyManaToCounter(indices, null, { isPlayer: currentPlayer === player, type: 'combat' });
             log(`+${actionGain}${getJokerMatchMultiplier(info) > 1 ? ' (joker ×2)' : ''} points de combat pour ${currentTurn === 'player' ? 'le joueur' : 'l\'ennemi'}`);
             // Bonus de tour pour 4+ épées
             if(info.len>=4){ 
@@ -739,6 +741,7 @@ export function checkMatches(forceFullBoard = false){
             // Notifier le tutoriel d'un match de crânes du joueur
             if(currentTurn === 'player') tutorialCallbacks.onMatch?.('skull', null, info.len);
             const attacker = currentTurn === 'player' ? player : enemy;
+            flyManaToCounter(indices, null, { isPlayer: attacker === player, type: 'skull' });
             const opponent = currentTurn === 'player' ? enemy : player;
             // Diminution des pics de degats des cranes a haut niveau.
             const attackBonus = Math.min(
@@ -808,10 +811,15 @@ export function checkMatches(forceFullBoard = false){
     const matches = collectMatches(board);
     for(const match of matches){
         handleRun(match.indices, match.info);
-        if(match.info.makeJoker){
-            board[match.indices[0]] = JOKER_TILE;
-        }
     }
+    // Joker au centre de l'alignement (le plus long en cas de L/T/croix), un par groupe d'alignements liés.
+    const jokerSpawns = pickJokerSpawns(matches);
+    const jokerCells = new Set(jokerSpawns.map(sp => sp.index));
+    for(const { index, match } of jokerSpawns){
+        match.info.jokerIndex = index;
+        board[index] = JOKER_TILE;
+    }
+    for(const match of matches){ match.info.jokerCells = jokerCells; }
 
     if(!combos){
         if(pendingSwap && !pendingSwap.resolvedAtLeastOneMatch){
@@ -1012,8 +1020,8 @@ export function highlightCombo(indices, info){
             
             // Traiter les jokers spéciaux avant suppression
             indices.forEach(i=>{
-                if(info && info.makeJoker && i===indices[0]){
-                    board[i] = JOKER_TILE;
+                if(info && info.jokerCells && info.jokerCells.has(i)){
+                    board[i] = JOKER_TILE; // joker créé au centre de l'alignement (protégé des alignements croisés)
                 } else {
                     board[i]=null; // Marquer comme supprimé
                 }

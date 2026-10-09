@@ -17,7 +17,7 @@ import * as X from './exploration.js';
 import { worldZones } from './worldMap.js';
 import { playSfx } from './sound.js';
 import { playEndingAnimation, playSunFallAnimation, playRegionDiscovery, playBossDialogue, prologueAnimationPlayed } from './cinematics.js';
-import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite } from './sprites/index.js';
+import { spriteImage, spriteUri, heroSprite, npcSprite, chestSprite, enemySprite, loadSpritePack, packsForKeys, decodeSprites, retainSprites, pixelSprite, PX_GRID_BIG } from './sprites/index.js';
 import { viewSprite, viewDir, HERO_VIEW_OPTS } from './sprites/side.js';
 import { withLoadingScreen, trackProgress } from './loader.js';
 import { ARENA_BIOMES, ARENA_REGION, ARENA_NAME, arenaTier, isArenaUnlocked } from './arena.js';
@@ -179,18 +179,24 @@ export function createExplorationView(cfg) {
     const isBlocked = () => isDialogOpen() || inCombat || Boolean(journalEl) || Boolean(merchantEl) || !isOnScreen() || isModalOpen() || !isRegionReady();
 
     // ── Ressources de la région ────────────────────────────────────────────
+    // Biome de l'écran où se tient un ennemi (teinte de son dessin).
+    const enemyBiome = enemyId => {
+        const entry = session?.rt.enemyIndex[enemyId];
+        return (entry && session.screens[entry.screenId]?.biome) || undefined;
+    };
+
     // PNJ et ennemis d'une région (tous ses écrans), y compris les locuteurs des scènes de victoire.
     function regionEntities(region) {
         const screens = Object.values(session.screens).filter(sc => sc.region === region);
         const npcs = screens.flatMap(sc => sc.npcs).map(n => n.id);
-        const enemies = screens.flatMap(sc => sc.enemies).map(e => [e.spriteKey || e.id, e.templateId]);
+        const enemies = screens.flatMap(sc => sc.enemies.map(e => [e.spriteKey || e.id, e.templateId, sc.biome]));
         screens.flatMap(sc => sc.enemies).forEach(e => {
             [e.defeatScene, ...(e.afterScenes || [])].forEach(scene => {
                 const sp = scene?.speaker;
                 if (sp?.npc) npcs.push(sp.npc);
                 if (sp?.enemy) {
                     const def = session.rt.enemyIndex[sp.enemy]?.def;
-                    enemies.push([def?.spriteKey || sp.enemy, def?.templateId]);
+                    enemies.push([def?.spriteKey || sp.enemy, def?.templateId, enemyBiome(sp.enemy)]);
                 }
             });
         });
@@ -204,7 +210,7 @@ export function createExplorationView(cfg) {
             heroSprite(cfg.getHero().classId), chestSprite(false), chestSprite(true),
             ...DECOR_NAMES.map(decorSprite),
             ...npcs.map(id => npcSprite(id)),
-            ...enemies.map(([key, templateId]) => enemySprite(key, templateId))
+            ...enemies.map(([key, templateId, biome]) => enemySprite(key, templateId, biome))
         ].filter(Boolean))];
     }
 
@@ -292,7 +298,7 @@ export function createExplorationView(cfg) {
             ? Object.values(session.screens).flatMap(sc => sc.npcs).find(n => n.id === sp.npc)
             : null;
         const enemyDef = sp.enemy ? session.rt.enemyIndex[sp.enemy]?.def : null;
-        const sprite = sp.npc ? npcSprite(sp.npc) : sp.enemy ? enemySprite(enemyDef?.spriteKey || sp.enemy, enemyDef?.templateId) : null;
+        const sprite = sp.npc ? npcSprite(sp.npc) : sp.enemy ? enemySprite(enemyDef?.spriteKey || sp.enemy, enemyDef?.templateId, enemyBiome(sp.enemy)) : null;
         return {
             name: sp.name || NARRATOR.name,
             title: sp.title,
@@ -578,14 +584,15 @@ export function createExplorationView(cfg) {
         removeBattleTransition();
         const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         const overlay = document.createElement('div');
+        const encSprite = enemySprite(enc.spriteKey || enc.enemyId, enc.templateId, enc.biome || enemyBiome(enc.enemyId));
         overlay.className = `battle-transition${reduced ? ' reduced' : ''}`;
         overlay.innerHTML = `
             <div class="bt-strips">${Array.from({ length: BATTLE_STRIPS }, (_, i) =>
                 `<div class="bt-strip ${i % 2 ? 'from-right' : 'from-left'}" style="--i:${i}"></div>`).join('')}</div>
             <div class="bt-flash"></div>
             <div class="bt-title">
-                <div class="bt-emoji">${enemySprite(enc.spriteKey || enc.enemyId, enc.templateId)
-                    ? `<img class="bt-sprite" alt="" src="${spriteUri(enemySprite(enc.spriteKey || enc.enemyId, enc.templateId))}">`
+                <div class="bt-emoji">${encSprite
+                    ? `<img class="bt-sprite" alt="" src="${spriteUri(encSprite, PX_GRID_BIG)}" data-small="${spriteUri(encSprite)}">`
                     : icon('sword')}</div>
                 <div class="bt-name">${escapeHtml(enc.boss?.name || enc.name)}</div>
                 <div class="bt-level">${enc.boss ? `${icon('crown')} Boss · ` : ''}Niveau ${enc.level}</div>
@@ -597,7 +604,8 @@ export function createExplorationView(cfg) {
             battleTransitionTimer = null;
             if (!enc.boss) { done(); return; }
             // Boss : échange de répliques avant le combat
-            const spriteHtml = overlay.querySelector('.bt-emoji')?.innerHTML || icon('crown');
+            const big = overlay.querySelector('.bt-sprite');   // portrait de 52 px : la définition 32, pas le grand plan (64) réduit
+            const spriteHtml = big ? `<img class="bt-sprite" alt="" src="${big.dataset.small || big.getAttribute('src')}">` : icon('crown');
             overlay.classList.add('with-dialog');
             playBossDialogue(overlay, enc, spriteHtml).then(() => { if (battleTransitionEl === overlay) done(); });
         }, reduced ? 500 : BATTLE_TRANSITION_MS);
@@ -1229,7 +1237,7 @@ export function createExplorationView(cfg) {
                     const bob = Math.sin(now / 430 + it.x * 2.1 + it.y) * tile * 0.015;
                     ctx.save();
                     if (illusion) ctx.globalAlpha = 0.4 + 0.45 * (0.5 + 0.5 * Math.sin(now / 170 + it.x * 3.1 + it.y * 1.7));
-                    const baseSprite = enemySprite(def.spriteKey || def.id, def.templateId);
+                    const baseSprite = enemySprite(def.spriteKey || def.id, def.templateId, screen.biome);
                     drawSprite(viewSprite(baseSprite, viewDir(it.e.face)), c.x, feet + bob, size, baseSprite);
                     ctx.restore();
                     if (shielded) {

@@ -12,8 +12,8 @@ export const BACK_SPRITES = new Map();   // svg de face → svg de dos, dessiné
 
 const HEAD_ZONE = [6, 40];      // bandes verticales (viewBox) où l'on cherche le visage
 const FEATURE_MAX = [15, 10];   // largeur / hauteur maximales d'un trait de visage
-const BODY_SCALE = 0.8;         // affinement du corps vu de profil
-const FACE_SQUEEZE = 0.55;      // resserrement horizontal du visage
+const BODY_SCALE = 0.88;        // affinement du corps vu de profil
+const FACE_SQUEEZE = 0.65;      // resserrement horizontal du visage
 const FACE_SHIFT = 5.5;         // décalage du visage vers l'avant (avant affinement)
 
 export function viewDir(face) {
