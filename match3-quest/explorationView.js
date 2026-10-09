@@ -307,6 +307,11 @@ export function createExplorationView(cfg) {
         };
     }
 
+    // Dialogues de compagnons (companions.js) : répliques de groupe contextuelles, jouées une fois chacune.
+    function playBanter() {
+        X.collectBanter(session).forEach(ev => openDialog(sceneSpeaker(ev.speaker), ev.lines));
+    }
+
     // Traite les événements d'histoire. `spoken` : quêtes dont le texte vient d'être dit par un PNJ.
     function processEvents(events, spoken = new Set()) {
         const fall = events.find(e => e.type === 'sunFall');
@@ -323,6 +328,8 @@ export function createExplorationView(cfg) {
                 toast(`${ev.quest.title} : objectif accompli`);
             } else if (ev.type === 'scene') {
                 openDialog(sceneSpeaker(ev.speaker), ev.lines);
+            } else if (ev.type === 'parley') {
+                toast(`Pourparlers avec ${ev.npc.name} : le passage s'ouvre sans combat.`, 4500);
             } else if (ev.type === 'arenaCleared') {
                 const tier = arenaTier(ev.tier);
                 toast(ev.firstClear
@@ -351,6 +358,7 @@ export function createExplorationView(cfg) {
         });
         if (gold > 0) cfg.onGold(gold);
         if (xp > 0) cfg.onXp?.(xp);
+        playBanter();
         cfg.onSave();
         refreshHud();
     }
@@ -698,6 +706,7 @@ export function createExplorationView(cfg) {
                 if (res.warning) toast(`${res.warning.regionName} : niveau ${res.warning.minLevel} recommandé — les ennemis y sont redoutables.`, 5000);
                 // Dans une maison, les quêtes déclenchées à l'entrée n'ouvrent pas de dialogue du Narrateur (toasts seulement).
                 if (res.events?.length) processEvents(res.events, screen.interior ? eventsSpoken(res.events) : undefined);
+                else playBanter();
                 cfg.onSave();
                 break;
             }
