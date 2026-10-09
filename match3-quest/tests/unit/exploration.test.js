@@ -27,7 +27,7 @@ const BIOME_OF = {
     rizieres: 'paddy', fleuve: 'riverbed', bambous: 'bamboo', gobi: 'gobi', tonnerre: 'storm',
     volcan: 'volcano', fauves: 'savanna', mer: 'coast', fusang: 'fusang', lune: 'moon'
 };
-const SUN_LEVELS = [6, 9, 14, 19, 24, 30, 35, 40, 45];
+const SUN_LEVELS = [3, 4, 6, 8, 10, 12, 14, 16, 18];
 
 // Tuiles où l'on ARRIVE sur cet écran (définies par la sortie de retour de chaque voisin).
 const arrivals = s => Object.values(SCREENS).flatMap(o => o.exits.filter(e => e.to === s.id).map(e => e.arrive));
@@ -435,7 +435,7 @@ describe('cartes (story.js)', () => {
     test('chaque région a un village pour écran d\'entrée et le niveau requis prévu', () => {
         expect(REGION_ENTRY_SCREEN).toEqual(Object.fromEntries(ORDER.map(id => [id, `${id}_village`])));
         expect(REGION_UNLOCK_LEVEL).toEqual({
-            rizieres: 1, fleuve: 4, bambous: 6, gobi: 11, tonnerre: 17, volcan: 22, fauves: 27, mer: 32, fusang: 37, lune: 40
+            rizieres: 1, fleuve: 2, bambous: 3, gobi: 5, tonnerre: 7, volcan: 9, fauves: 11, mer: 13, fusang: 15, lune: 16
         });
         Object.entries(REGION_ENTRY_SCREEN).forEach(([region, id]) => { expect(SCREENS[id].region).toBe(region); expect(SCREENS[id].kind).toBe('village'); });
         screens.forEach(s => expect(REGION_UNLOCK_LEVEL[s.region]).toBeDefined());
@@ -834,19 +834,19 @@ describe('déplacement et zones de vigilance', () => {
         const { s, dx, dy } = atGate('fleuve', 'bambous_village');
         markEnemyDefeated(s, 'sun_2');
         const res = tryMove(s, dx, dy, { playerLevel: 2 });
-        expect(res).toMatchObject({ type: 'transition', to: 'bambous_village', warning: { minLevel: 6, regionName: SCREENS.bambous_village.name } });
+        expect(res).toMatchObject({ type: 'transition', to: 'bambous_village', warning: { minLevel: 3, regionName: SCREENS.bambous_village.name } });
         expect(res.type).not.toBe('exitBlocked');
         expect(s.data.screenId).toBe('bambous_village');   // le héros est bien passé
         // niveau suffisant : pas d'avertissement
         const ok = atGate('fleuve', 'bambous_village');
         markEnemyDefeated(ok.s, 'sun_2');
-        expect(tryMove(ok.s, ok.dx, ok.dy, { playerLevel: 6 }).warning).toBeUndefined();
+        expect(tryMove(ok.s, ok.dx, ok.dy, { playerLevel: 3 }).warning).toBeUndefined();
         // à l'intérieur d'une région, jamais d'avertissement (même niveau 1 dans une zone de niveau supérieur)
         const inside = at('bambous_village', 18, 6);
         expect(tryMove(inside, 1, 0, { playerLevel: 1 }).warning).toBeUndefined();
         // le niveau recommandé est celui de la région d'arrivée : revenir au Lit du Fleuve (niveau 2) à 3 est sans avertissement
         const back = at('bambous_village', 1, 6);
-        expect(tryMove(back, -1, 0, { playerLevel: 6 }).warning).toBeUndefined();
+        expect(tryMove(back, -1, 0, { playerLevel: 3 }).warning).toBeUndefined();
     });
 
     test('la pierre de voyage bloque le passage et s\'active au contact', () => {
@@ -951,9 +951,9 @@ describe('rencontres', () => {
         expect(enemyLevel({ id: 'y', offset: -1 }, 1)).toBe(1);
         expect(enemyLevel({ id: 'z', offset: 3 }, 5)).toBe(8);
         const sun = encounterFor(s, 'sun_1', 1);
-        expect(sun.boss.level).toBe(6);
-        expect(encounterFor(s, 'sun_1', 8).boss.level).toBe(6);
-        expect(encounterFor(s, 'sun_1', 40).boss.level).toBe(6);
+        expect(sun.boss.level).toBe(3);
+        expect(encounterFor(s, 'sun_1', 8).boss.level).toBe(3);
+        expect(encounterFor(s, 'sun_1', 40).boss.level).toBe(3);
         expect(encounterFor(s, 'rizieres_shroom', 1).level).toBe(encounterFor(s, 'rizieres_shroom', 30).level);
         expect(encounterFor(s, 'inconnu', 1)).toBeNull();
     });
@@ -963,7 +963,7 @@ describe('rencontres', () => {
         expect(encounterFor(s, 'sun_1', 1)).toMatchObject({ enemyId: 'sun_1', spriteKey: 'sun_1', templateId: 'goblin_saboteur', name: 'Soleil Ardent' });
         expect(encounterFor(s, 'mirage_1', 7)).toMatchObject({ enemyId: 'mirage_1', spriteKey: 'sun_4' });
         expect(encounterFor(s, 'rizieres_goblin', 3).spriteKey).toBe('rizieres_goblin');
-        expect(encounterFor(s, 'fengmeng_3b', 1).boss).toMatchObject({ name: 'Fengmeng, Rage et Désespoir', level: 48 });
+        expect(encounterFor(s, 'fengmeng_3b', 1).boss).toMatchObject({ name: 'Fengmeng, Rage et Désespoir', level: 19 });
     });
 
     test('Nouvelle Partie + : +3 niveaux pour les soleils et boss, +1 pour les ennemis normaux', () => {
@@ -973,8 +973,8 @@ describe('rencontres', () => {
         expect(enemyLevel({ id: 'x', offset: 0 }, 5, 1)).toBe(6);
         expect(enemyLevel({ id: 'x', offset: -1 }, 5, 2)).toBe(6);
         const s = createSession({ ngPlus: 2 });
-        expect(encounterFor(s, 'sun_1', 1).level).toBe(6 + 6);
-        expect(encounterFor(s, 'sun_1', 1).boss.level).toBe(12);
+        expect(encounterFor(s, 'sun_1', 1).level).toBe(3 + 6);
+        expect(encounterFor(s, 'sun_1', 1).boss.level).toBe(9);
         expect(encounterFor(s, 'rizieres_shroom', 4).level).toBe(encounterFor(createSession({}), 'rizieres_shroom', 4).level + 2);
     });
 });
@@ -1788,9 +1788,9 @@ describe('Nouvelle Partie +', () => {
     test('les ennemis sont plus puissants en Nouvelle Partie +', () => {
         const s = endedSession();
         startNewGamePlus(s);
-        expect(encounterFor(s, 'sun_1', 20).level).toBe(6 + 3);               // le niveau du héros n'intervient pas
-        expect(encounterFor(s, 'sun_9', 1).boss.level).toBe(45 + 3);
-        expect(encounterFor(s, 'fengmeng_3a', 1).boss.level).toBe(45 + 3);
+        expect(encounterFor(s, 'sun_1', 20).level).toBe(3 + 3);               // le niveau du héros n'intervient pas
+        expect(encounterFor(s, 'sun_9', 1).boss.level).toBe(18 + 3);
+        expect(encounterFor(s, 'fengmeng_3a', 1).boss.level).toBe(18 + 3);
         expect(encounterFor(s, 'rizieres_shroom', 5).level).toBe(encounterFor(createSession({}), 'rizieres_shroom', 5).level + 1);
     });
 
@@ -1990,7 +1990,7 @@ describe('déplacement au clic (findPath)', () => {
         expect(path).toEqual([{ x: g.ex.x, y: g.ex.y }]);
         expect(tryMove(s, g.dx, g.dy, { playerLevel: 20 })).toMatchObject({ type: 'exitBlocked', reason: 'quest' });
         markEnemyDefeated(s, 'sun_1');
-        expect(tryMove(s, g.dx, g.dy, { playerLevel: 1 })).toMatchObject({ type: 'transition', warning: { minLevel: 4 } });   // prévenu, pas bloqué
+        expect(tryMove(s, g.dx, g.dy, { playerLevel: 1 })).toMatchObject({ type: 'transition', warning: { minLevel: 2 } });   // prévenu, pas bloqué
         expect(s.data.screenId).toBe('fleuve_village');
     });
 });

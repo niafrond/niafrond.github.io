@@ -103,7 +103,7 @@ export default {
             { id: 'kun_scale_chest', at: 'm', gold: 405 }
         ],
         enemies: [
-            { id: 'fusang_root_guard', at: '1', templateId: 'sun_paladin', name: 'Garde solaire des racines', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Garde solaire des racines', level: 37 } },
+            { id: 'fusang_root_guard', at: '1', templateId: 'sun_paladin', name: 'Garde solaire des racines', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Garde solaire des racines', level: 15 } },
             { id: 'fusang_jade_wraith', at: '2', templateId: 'crystal_sage', name: 'Immortel de jade égaré', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'fusang_w_moth', at: '3', templateId: 'void_vampire', name: 'Phalène des racines', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
             { id: 'fusang_w_wyrm', at: '5', templateId: 'storm_wyrm', name: 'Dragonnet de sève', kind: 'patrol', patrol: ['5', '6'], offset: -1 },

@@ -1332,16 +1332,16 @@ describe('duel : règles appliquées au héros sauvegardé', () => {
         expect(pickTrapZone(TRAP_SIZE, () => 0.9)).toEqual([0, 1, 2, TRAP_SIZE, TRAP_SIZE + 1, TRAP_SIZE + 2, 2 * TRAP_SIZE, 2 * TRAP_SIZE + 1, 2 * TRAP_SIZE + 2]);   // plateau minimal : une seule zone possible
     });
 
-    test('piège : plus il reste de cases, plus on perd ; une détonation complète n\'achève pas un héros de niveau 48 à PV pleins', () => {
+    test('piège : plus il reste de cases, plus on perd ; une détonation complète n\'achève pas un héros de niveau 19 à PV pleins', () => {
         const s = createSession({ screenId: 'lune', x: SCREENS.lune.spawn.x, y: SCREENS.lune.spawn.y, defeated: ['fengmeng_3a'] });
-        const foe = createMapEnemy(encounterFor(s, 'fengmeng_3b', 48));
+        const foe = createMapEnemy(encounterFor(s, 'fengmeng_3b', 19));
         let previous = -1;
         for (let cells = 0; cells <= TRAP_SIZE * TRAP_SIZE; cells++) {
             const dmg = trapDamage(cells, foe.attack);
             expect(dmg).toBeGreaterThanOrEqual(previous);
             previous = dmg;
         }
-        const hero = forgePlayer({ classId: 'templar', level: 48 });
+        const hero = forgePlayer({ classId: 'templar', level: 19 });
         expect(trapDamage(TRAP_SIZE * TRAP_SIZE, foe.attack)).toBeLessThan(hero.maxHp);
         expect(trapDamage(-4, foe.attack)).toBe(0);
         expect(trapDamage(3, 0)).toBe(3 * 2);   // plancher de 2 par case
@@ -1365,7 +1365,7 @@ describe('duel : deux phases de Fengmeng sur une sauvegarde', () => {
         const events = markEnemyDefeated(s, 'fengmeng_3a');
         expect(events.some(e => e.type === 'scene')).toBe(true);
         expect(aliveEnemies(s).map(e => e.def.id)).toContain('fengmeng_3b');
-        const level2 = encounterFor(s, 'fengmeng_3b', 48);
+        const level2 = encounterFor(s, 'fengmeng_3b', 19);
         expect(level1.duel).toMatchObject({ mirror: true });
         expect(level1.duel.rapidShots).toBeUndefined();
         expect(level2.duel).toMatchObject({ rapidShots: expect.any(Number), zoneTraps: expect.any(Number) });

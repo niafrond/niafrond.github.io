@@ -103,7 +103,7 @@ export default {
             { id: 'pack_den', at: 'm', gold: 315 }
         ],
         enemies: [
-            { id: 'fauves_alpha_tiger', at: '1', templateId: 'fire_tiger', name: 'Tigre alpha, Griffe-de-Feu', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Tigre alpha, Griffe-de-Feu', level: 27 } },
+            { id: 'fauves_alpha_tiger', at: '1', templateId: 'fire_tiger', name: 'Tigre alpha, Griffe-de-Feu', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Tigre alpha, Griffe-de-Feu', level: 11 } },
             { id: 'fauves_lamb_wolf', at: '2', templateId: 'ember_wolf', name: 'Loup chapardeur de braise', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'fauves_boar_chief', at: '3', templateId: 'flame_boar', name: 'Hure, sanglier de flammes', kind: 'sentinel', offset: 1, permanent: true },
             { id: 'fauves_w_pack_a', at: '4', templateId: 'ember_wolf', name: 'Loup de la meute', kind: 'patrol', patrol: ['4', '5'], offset: 0 },

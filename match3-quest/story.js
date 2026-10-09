@@ -376,7 +376,7 @@ const BASE_SCREENS = {
         enemies: [
             // Duel d'entraînement : Fengmeng garde la digue, seul passage vers l'est (corridor de 3 tuiles de large).
             { id: 'fengmeng_1', templateId: 'shadow_assassin', name: 'Fengmeng, le Disciple', kind: 'sentinel', x: 6, y: 4, scaledAggro: 3,
-              permanent: true, boss: { name: 'Fengmeng, le Disciple', level: 4 },
+              permanent: true, boss: { name: 'Fengmeng, le Disciple', level: 2 },
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_1'),
                   lines: [
@@ -391,7 +391,7 @@ const BASE_SCREENS = {
             // Chapardeur nommé (quête secondaire), côté est de la digue.
             { id: 'rice_thief', templateId: 'goblin_saboteur', name: 'Xiao Gui, le chapardeur', kind: 'sentinel', x: 12, y: 6, offset: 1, permanent: true },
             { id: 'sun_1', templateId: 'goblin_saboteur', name: 'Soleil Ardent', kind: 'sentinel', x: 11, y: 2,
-              permanent: true, boss: { name: 'Soleil Ardent', level: 6 },
+              permanent: true, boss: { name: 'Soleil Ardent', level: 3 },
               afterScenes: MIRROR_TALKS.sun_1 }
         ],
         chests: [
@@ -477,10 +477,10 @@ const BASE_SCREENS = {
             { id: 'fleuve_doctor', templateId: 'plague_doctor', name: 'Docteur-démon des vases', kind: 'sentinel', x: 8, y: 8, offset: 0 },
             { id: 'fleuve_lich', templateId: 'crypt_lich', name: 'Sorcier-squelette du gué', kind: 'sentinel', x: 4, y: 9, offset: 0 },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_2 est intouchable, sauf pourparlers (parley_sun2 : ils s'écartent, `hideWhen`).
-            { id: 'sun2_wardens_a', templateId: 'bone_reaver', name: 'Noyé-garde des roches', kind: 'sentinel', x: 9, y: 7, offset: 2, permanent: true, group: 'sun2_wardens', hideWhen: 'parley_sun2' },
-            { id: 'sun2_wardens_b', templateId: 'iron_gladiator', name: 'Noyé-garde des roches', kind: 'sentinel', x: 13, y: 9, offset: 2, permanent: true, group: 'sun2_wardens', hideWhen: 'parley_sun2' },
+            { id: 'sun2_wardens_a', templateId: 'bone_reaver', name: 'Noyé-garde des roches', kind: 'sentinel', x: 9, y: 7, offset: 1, permanent: true, group: 'sun2_wardens', hideWhen: 'parley_sun2' },
+            { id: 'sun2_wardens_b', templateId: 'iron_gladiator', name: 'Noyé-garde des roches', kind: 'sentinel', x: 13, y: 9, offset: 1, permanent: true, group: 'sun2_wardens', hideWhen: 'parley_sun2' },
             { id: 'sun_2', templateId: 'iron_gladiator', name: 'Soleil des Eaux Taries', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, shieldedBy: 'sun2_wardens', unsealedBy: ['parley_sun2'], weakenedBy: ['sq_river_serpent', 'sq_drowned'], boss: { name: 'Soleil des Eaux Taries', level: 9 },
+              permanent: true, shieldedBy: 'sun2_wardens', unsealedBy: ['parley_sun2'], weakenedBy: ['sq_river_serpent', 'sq_drowned'], boss: { name: 'Soleil des Eaux Taries', level: 4 },
               afterScenes: MIRROR_TALKS.sun_2,
               shieldLines: [
                   "Le Soleil des Eaux Taries est tapi derrière un cercle de roches fendues, et deux noyés-gardes lui font un rempart de boue durcie.",
@@ -570,10 +570,10 @@ const BASE_SCREENS = {
             // Esprit-arbre nommé (quête secondaire de Xu), coin sud-ouest.
             { id: 'old_pine', templateId: 'forest_guardian', name: 'Vieux Pin Noir', kind: 'sentinel', x: 1, y: 9, offset: 0, permanent: true },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_3 est intouchable, sauf pourparlers (parley_sun3 : ils s'écartent, `hideWhen`).
-            { id: 'sun3_wardens_a', templateId: 'temple_warden', name: 'Esprit de la cloche', kind: 'sentinel', x: 9, y: 2, offset: 2, permanent: true, group: 'sun3_wardens', hideWhen: 'parley_sun3' },
-            { id: 'sun3_wardens_b', templateId: 'shadow_assassin', name: 'Esprit de la cloche', kind: 'sentinel', x: 13, y: 2, offset: 2, permanent: true, group: 'sun3_wardens', hideWhen: 'parley_sun3' },
+            { id: 'sun3_wardens_a', templateId: 'temple_warden', name: 'Esprit de la cloche', kind: 'sentinel', x: 9, y: 2, offset: 1, permanent: true, group: 'sun3_wardens', hideWhen: 'parley_sun3' },
+            { id: 'sun3_wardens_b', templateId: 'shadow_assassin', name: 'Esprit de la cloche', kind: 'sentinel', x: 13, y: 2, offset: 1, permanent: true, group: 'sun3_wardens', hideWhen: 'parley_sun3' },
             { id: 'sun_3', templateId: 'fungal_horror', name: 'Soleil de Cendres', kind: 'sentinel', x: 11, y: 1,
-              permanent: true, shieldedBy: 'sun3_wardens', unsealedBy: ['parley_sun3'], weakenedBy: ['sq_bell', 'sq_old_pine'], boss: { name: 'Soleil de Cendres', level: 14 },
+              permanent: true, shieldedBy: 'sun3_wardens', unsealedBy: ['parley_sun3'], weakenedBy: ['sq_bell', 'sq_old_pine'], boss: { name: 'Soleil de Cendres', level: 6 },
               afterScenes: MIRROR_TALKS.sun_3,
               shieldLines: [
                   "Le Soleil de Cendres couve sous la cloche fêlée, et deux esprits du temple brûlé tournent autour de lui comme des cierges.",
@@ -661,7 +661,7 @@ const BASE_SCREENS = {
             { id: 'bandit_a', templateId: 'iron_gladiator', name: 'Brigand du Gobi', kind: 'sentinel', x: 4, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
             { id: 'bandit_b', templateId: 'shadow_assassin', name: 'Lame masquée du Gobi', kind: 'sentinel', x: 6, y: 9, offset: 0, permanent: true, group: 'sand_bandits' },
             { id: 'sun_4', templateId: 'arcane_scholar', name: 'Soleil des Mirages', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, weakenedBy: ['sq_oasis', 'sq_carte_vraie'], boss: { name: 'Soleil des Mirages', level: 19 },
+              permanent: true, weakenedBy: ['sq_oasis', 'sq_carte_vraie'], boss: { name: 'Soleil des Mirages', level: 8 },
               afterScenes: MIRROR_TALKS.sun_4 }
         ],
         chests: [
@@ -744,10 +744,10 @@ const BASE_SCREENS = {
             // Dragon-serpent nommé (quête secondaire de Tie), coin nord-est.
             { id: 'thunder_wyrm', templateId: 'storm_wyrm', name: 'Dragon-serpent du tonnerre', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_5 est intouchable, sauf pourparlers (parley_sun5 : ils s'écartent, `hideWhen`).
-            { id: 'sun5_wardens_a', templateId: 'storm_knight', name: 'Foudre-garde du col', kind: 'sentinel', x: 9, y: 9, offset: 2, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
-            { id: 'sun5_wardens_b', templateId: 'temple_warden', name: 'Foudre-garde du col', kind: 'sentinel', x: 13, y: 8, offset: 2, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
+            { id: 'sun5_wardens_a', templateId: 'storm_knight', name: 'Foudre-garde du col', kind: 'sentinel', x: 9, y: 9, offset: 1, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
+            { id: 'sun5_wardens_b', templateId: 'temple_warden', name: 'Foudre-garde du col', kind: 'sentinel', x: 13, y: 8, offset: 1, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
             { id: 'sun_5', templateId: 'storm_knight', name: 'Soleil des Orages', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, shieldedBy: 'sun5_wardens', unsealedBy: ['parley_sun5'], weakenedBy: ['sq_thunder_wyrm', 'sq_lei_drum'], boss: { name: 'Soleil des Orages', level: 24 },
+              permanent: true, shieldedBy: 'sun5_wardens', unsealedBy: ['parley_sun5'], weakenedBy: ['sq_thunder_wyrm', 'sq_lei_drum'], boss: { name: 'Soleil des Orages', level: 10 },
               afterScenes: MIRROR_TALKS.sun_5,
               shieldLines: [
                   "Une cage d'éclairs ceint le Soleil des Orages : deux gardes de foudre la tiennent tendue, d'un pylône à l'autre.",
@@ -833,7 +833,7 @@ const BASE_SCREENS = {
         enemies: [
             // Embuscade : Fengmeng tient le défilé (corridor de 3 tuiles), seul passage vers l'est.
             { id: 'fengmeng_2', templateId: 'shadow_assassin', name: "Fengmeng, l'Archer Pressé", kind: 'sentinel', x: 6, y: 4, scaledAggro: 3,
-              permanent: true, boss: { name: "Fengmeng, l'Archer Pressé", level: 24 },
+              permanent: true, boss: { name: "Fengmeng, l'Archer Pressé", level: 10 },
               defeatScene: {
                   speaker: FENGMENG_SPEAKER('fengmeng_2'),
                   lines: [
@@ -849,10 +849,10 @@ const BASE_SCREENS = {
             { id: 'ore_guard_b', templateId: 'lava_behemoth', name: 'Pixiu de magma', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true, group: 'ore_guards' },
             { id: 'volcan_dragon', templateId: 'ember_dragon', name: 'Long de braise', kind: 'sentinel', x: 8, y: 8, offset: 0 },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_6 est intouchable, sauf pourparlers (parley_sun6 : ils s'écartent, `hideWhen`).
-            { id: 'sun6_wardens_a', templateId: 'lava_behemoth', name: 'Forgeron de magma', kind: 'sentinel', x: 9, y: 7, offset: 2, permanent: true, group: 'sun6_wardens', hideWhen: 'parley_sun6' },
-            { id: 'sun6_wardens_b', templateId: 'iron_gladiator', name: 'Forgeron de magma', kind: 'sentinel', x: 13, y: 8, offset: 2, permanent: true, group: 'sun6_wardens', hideWhen: 'parley_sun6' },
+            { id: 'sun6_wardens_a', templateId: 'lava_behemoth', name: 'Forgeron de magma', kind: 'sentinel', x: 9, y: 7, offset: 1, permanent: true, group: 'sun6_wardens', hideWhen: 'parley_sun6' },
+            { id: 'sun6_wardens_b', templateId: 'iron_gladiator', name: 'Forgeron de magma', kind: 'sentinel', x: 13, y: 8, offset: 1, permanent: true, group: 'sun6_wardens', hideWhen: 'parley_sun6' },
             { id: 'sun_6', templateId: 'lava_behemoth', name: 'Soleil de Magma', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, shieldedBy: 'sun6_wardens', unsealedBy: ['parley_sun6'], weakenedBy: ['sq_ore', 'sq_ember'], boss: { name: 'Soleil de Magma', level: 30 },
+              permanent: true, shieldedBy: 'sun6_wardens', unsealedBy: ['parley_sun6'], weakenedBy: ['sq_ore', 'sq_ember'], boss: { name: 'Soleil de Magma', level: 12 },
               afterScenes: MIRROR_TALKS.sun_6,
               shieldLines: [
                   "Deux forgerons de magma attisent le Soleil de Magma comme une fournaise : tant qu'ils soufflent, il se rallume de lui-même.",
@@ -925,7 +925,7 @@ const BASE_SCREENS = {
             { id: 'pack_tiger', templateId: 'fire_tiger', name: 'Tigre embrasé', kind: 'sentinel', x: 13, y: 8, offset: 0, permanent: true, group: 'beast_pack' },
             { id: 'pack_wolf_b', templateId: 'ember_wolf', name: 'Loup de braise', kind: 'sentinel', x: 11, y: 9, offset: 0, permanent: true, group: 'beast_pack' },
             { id: 'sun_7', templateId: 'war_troll', name: 'Soleil des Bêtes Folles', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, shieldedBy: 'beast_pack', weakenedBy: ['sq_scarred_tiger', 'sq_zi_bell'], boss: { name: 'Soleil des Bêtes Folles', level: 35 },
+              permanent: true, shieldedBy: 'beast_pack', weakenedBy: ['sq_scarred_tiger', 'sq_zi_bell'], boss: { name: 'Soleil des Bêtes Folles', level: 14 },
               afterScenes: MIRROR_TALKS.sun_7,
               shieldLines: [
                   "Un bouclier de flammes ondule autour du Soleil des Bêtes Folles : vos flèches se consumeraient avant de l'atteindre.",
@@ -1014,10 +1014,10 @@ const BASE_SCREENS = {
             { id: 'net_cutter_b', templateId: 'deep_sea_serpent', name: 'Serpent coupe-filets', kind: 'sentinel', x: 13, y: 1, offset: 0, permanent: true, group: 'net_cutters' },
             { id: 'mer_doctor', templateId: 'plague_doctor', name: 'Docteur-démon des marées', kind: 'sentinel', x: 7, y: 8, offset: 0 },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_8 est intouchable, sauf pourparlers (parley_sun8 : ils s'écartent, `hideWhen`).
-            { id: 'sun8_wardens_a', templateId: 'deep_sea_serpent', name: 'Garde-marée du Roi-Dragon', kind: 'sentinel', x: 10, y: 7, offset: 2, permanent: true, group: 'sun8_wardens', hideWhen: 'parley_sun8' },
-            { id: 'sun8_wardens_b', templateId: 'plague_doctor', name: 'Garde-marée du Roi-Dragon', kind: 'sentinel', x: 13, y: 8, offset: 2, permanent: true, group: 'sun8_wardens', hideWhen: 'parley_sun8' },
+            { id: 'sun8_wardens_a', templateId: 'deep_sea_serpent', name: 'Garde-marée du Roi-Dragon', kind: 'sentinel', x: 10, y: 7, offset: 1, permanent: true, group: 'sun8_wardens', hideWhen: 'parley_sun8' },
+            { id: 'sun8_wardens_b', templateId: 'plague_doctor', name: 'Garde-marée du Roi-Dragon', kind: 'sentinel', x: 13, y: 8, offset: 1, permanent: true, group: 'sun8_wardens', hideWhen: 'parley_sun8' },
             { id: 'sun_8', templateId: 'deep_sea_serpent', name: 'Soleil des Marées', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, shieldedBy: 'sun8_wardens', unsealedBy: ['parley_sun8'], weakenedBy: ['sq_nets', 'sq_pearl'], boss: { name: 'Soleil des Marées', level: 40 },
+              permanent: true, shieldedBy: 'sun8_wardens', unsealedBy: ['parley_sun8'], weakenedBy: ['sq_nets', 'sq_pearl'], boss: { name: 'Soleil des Marées', level: 16 },
               afterScenes: MIRROR_TALKS.sun_8,
               shieldLines: [
                   "La cloche d'eau du Soleil des Marées est tenue en suspens par deux gardes-marée : si vous tirez, elle retombera sur vous.",
@@ -1110,10 +1110,10 @@ const BASE_SCREENS = {
             { id: 'fusang_dragon', templateId: 'frost_dragon', name: 'Long de givre', kind: 'sentinel', x: 4, y: 9, offset: 0 },
             { id: 'fusang_vampire', templateId: 'void_vampire', name: 'Jiangshi des cimes', kind: 'sentinel', x: 12, y: 9, offset: 0 },
             // Gardes du sanctuaire : tant qu'ils vivent, sun_9 est intouchable, sauf pourparlers (parley_sun9 : ils s'écartent, `hideWhen`).
-            { id: 'sun9_wardens_a', templateId: 'arcane_scholar', name: 'Grue-lige du Fusang', kind: 'sentinel', x: 9, y: 3, offset: 2, permanent: true, group: 'sun9_wardens', hideWhen: 'parley_sun9' },
-            { id: 'sun9_wardens_b', templateId: 'storm_knight', name: 'Grue-lige du Fusang', kind: 'sentinel', x: 12, y: 3, offset: 2, permanent: true, group: 'sun9_wardens', hideWhen: 'parley_sun9' },
+            { id: 'sun9_wardens_a', templateId: 'arcane_scholar', name: 'Grue-lige du Fusang', kind: 'sentinel', x: 9, y: 3, offset: 1, permanent: true, group: 'sun9_wardens', hideWhen: 'parley_sun9' },
+            { id: 'sun9_wardens_b', templateId: 'storm_knight', name: 'Grue-lige du Fusang', kind: 'sentinel', x: 12, y: 3, offset: 1, permanent: true, group: 'sun9_wardens', hideWhen: 'parley_sun9' },
             { id: 'sun_9', templateId: 'ember_dragon', name: 'Soleil Lâche', kind: 'sentinel', x: 11, y: 2,
-              permanent: true, shieldedBy: 'sun9_wardens', unsealedBy: ['parley_sun9'], weakenedBy: ['sq_crane', 'sq_sceau_racines'], boss: { name: 'Soleil Lâche', level: 45 },
+              permanent: true, shieldedBy: 'sun9_wardens', unsealedBy: ['parley_sun9'], weakenedBy: ['sq_crane', 'sq_sceau_racines'], boss: { name: 'Soleil Lâche', level: 18 },
               afterScenes: MIRROR_TALKS.sun_9,
               shieldLines: [
                   "Deux grues-lige du Fusang se tiennent devant le Soleil Lâche, ailes déployées : elles couvrent aussi le Dixième Soleil.",
@@ -1167,7 +1167,7 @@ const BASE_SCREENS = {
             // Finale en deux phases. La phase 2 n'existe qu'après la défaite de la phase 1.
             // Phase 1 : il copie les techniques du héros, qui arrive affaibli par les neuf soleils (duel.js).
             { id: 'fengmeng_3a', templateId: 'shadow_assassin', name: "Fengmeng, l'Archer Miroir", kind: 'sentinel', x: 11, y: 4,
-              permanent: true, boss: { name: "Fengmeng, l'Archer Miroir", level: 45 },
+              permanent: true, boss: { name: "Fengmeng, l'Archer Miroir", level: 18 },
               duel: { mirror: true, heroHpPct: 0.75 },
               defeatScene: {
                   speaker: { name: 'Narrateur', title: 'Le Pic de la Lune' },
@@ -1180,7 +1180,7 @@ const BASE_SCREENS = {
                   ]
               } },
             { id: 'fengmeng_3b', templateId: 'storm_knight', name: 'Fengmeng, Rage et Désespoir', kind: 'sentinel', x: 11, y: 3,
-              permanent: true, showWhen: 'fengmeng_3a', boss: { name: 'Fengmeng, Rage et Désespoir', level: 48 },
+              permanent: true, showWhen: 'fengmeng_3a', boss: { name: 'Fengmeng, Rage et Désespoir', level: 19 },
               // Phase 2 : fureur, tirs rapides (un tour bonus tous les 3 tours) et pièges de zone (tous les 2 tours).
               duel: { rapidShots: 3, zoneTraps: 2 },
               defeatScene: {
@@ -1205,15 +1205,15 @@ const BASE_SCREENS = {
 // Niveau minimal du joueur pour ENTRER dans un écran de la région (brume magique sinon).
 export const REGION_UNLOCK_LEVEL = {
     rizieres: 1,
-    fleuve: 4,
-    bambous: 6,
-    gobi: 11,
-    tonnerre: 17,
-    volcan: 22,
-    fauves: 27,
-    mer: 32,
-    fusang: 37,
-    lune: 40
+    fleuve: 2,
+    bambous: 3,
+    gobi: 5,
+    tonnerre: 7,
+    volcan: 9,
+    fauves: 11,
+    mer: 13,
+    fusang: 15,
+    lune: 16
 };
 
 // Quêtes, dans l'ordre : d'abord l'histoire principale, puis les quêtes secondaires (`side: true`).
@@ -1241,7 +1241,7 @@ const BASE_QUESTS = [
             "Hou Yi ! Que les ancêtres soient loués. Vous savez l'état du monde : dix soleils, fils de Di Jun, brûlent le ciel depuis trois lunes. Ma vieille tête ne se souvient d'aucun été pareil.",
             "L'empereur Yao m'envoie son décret, scellé de jade : « Que l'archer Hou Yi abatte neuf soleils, et qu'il en épargne un seul, afin que la Terre garde un jour. » Il vous le demande, il ne vous l'ordonne pas.",
             "Le premier se tient sur le tertre du temple des moissons, à l'est, au bout de nos rizières. Mais prenez garde : votre disciple Fengmeng rôde sur la digue, et il a dans les yeux quelque chose que je n'aime pas. Il veut vous éprouver.",
-            "Entraînez-vous sur les maraudeurs de nos champs si vous le jugez nécessaire. (Niveau 6 conseillé)"
+            "Entraînez-vous sur les maraudeurs de nos champs si vous le jugez nécessaire. (Niveau 3 conseillé)"
         ],
         hint: [
             "Le Soleil Ardent est à l'est, sur le tertre du temple. La digue est étroite : méfiez-vous de Fengmeng, qui y rôde.",
@@ -1261,7 +1261,7 @@ const BASE_QUESTS = [
         giver: 'ferryman_gu', autoStart: true, turnIn: null, requires: ['q_sun_1'],
         objectives: [{ type: 'kill', target: 'sun_2', text: 'Abattre le Soleil des Eaux Taries (sanctuaire du Lit du Fleuve Jaune, au sud-est)' }],
         offer: [
-            "Deuxième soleil : celui des Eaux Taries a bu le Fleuve Jaune jusqu'au dernier filet. Son sanctuaire, un banc de rochers fendus, se dresse au sud-est du lit asséché. (Niveau 9 conseillé)",
+            "Deuxième soleil : celui des Eaux Taries a bu le Fleuve Jaune jusqu'au dernier filet. Son sanctuaire, un banc de rochers fendus, se dresse au sud-est du lit asséché. (Niveau 4 conseillé)",
             "Le passeur Gu et la tisserande Mei connaissent ces rives mieux que quiconque."
         ],
         hint: [
@@ -1286,7 +1286,7 @@ const BASE_QUESTS = [
         giver: 'monk_zhen', autoStart: true, turnIn: null, requires: ['q_sun_2'],
         objectives: [{ type: 'kill', target: 'sun_3', text: 'Abattre le Soleil de Cendres (sanctuaire de la Forêt de Bambous Calcinée, au nord-est)' }],
         offer: [
-            "Troisième soleil : celui de Cendres a transformé une forêt entière en cierges noirs. Il se tient à l'est, près du temple brûlé, là où la cloche sonne encore toute seule. (Niveau 11 conseillé)",
+            "Troisième soleil : celui de Cendres a transformé une forêt entière en cierges noirs. Il se tient à l'est, près du temple brûlé, là où la cloche sonne encore toute seule. (Niveau 5 conseillé)",
             "Le moine Zhen veille sur ce qu'il reste du sanctuaire ; l'herboriste Xu cherche encore des plantes vivantes."
         ],
         hint: [
@@ -1311,7 +1311,7 @@ const BASE_QUESTS = [
         giver: 'guide_dawa', autoStart: true, turnIn: null, requires: ['q_sun_3'],
         objectives: [{ type: 'kill', target: 'sun_4', text: 'Trouver et abattre le vrai Soleil des Mirages parmi ses doubles (Désert de Gobi)' }],
         offer: [
-            "Quatrième soleil : celui des Mirages. Il s'est dédoublé, triplé, partout à la fois, et les caravanes marchent en rond jusqu'à mourir de soif. Le vrai est caché parmi ses doubles. (Niveau 17 conseillé)",
+            "Quatrième soleil : celui des Mirages. Il s'est dédoublé, triplé, partout à la fois, et les caravanes marchent en rond jusqu'à mourir de soif. Le vrai est caché parmi ses doubles. (Niveau 7 conseillé)",
             "Le guide Dawa saura vous dire comment faire la différence."
         ],
         hint: [
@@ -1333,7 +1333,7 @@ const BASE_QUESTS = [
         giver: 'hermit_lei', autoStart: true, turnIn: null, requires: ['q_sun_4'],
         objectives: [{ type: 'kill', target: 'sun_5', text: 'Abattre le Soleil des Orages (sanctuaire des Monts du Tonnerre, au sud-est)' }],
         offer: [
-            "Cinquième soleil : celui des Orages. Il lance des éclairs sur chaque crête, et les Monts du Tonnerre n'ont plus de nuit. Il règne à l'est, au milieu des nuages noirs. (Niveau 22 conseillé)",
+            "Cinquième soleil : celui des Orages. Il lance des éclairs sur chaque crête, et les Monts du Tonnerre n'ont plus de nuit. Il règne à l'est, au milieu des nuages noirs. (Niveau 9 conseillé)",
             "Le forgeron Tie ajustera vos flèches ; l'ermite Lei sait où frappe l'éclair."
         ],
         hint: [
@@ -1358,7 +1358,7 @@ const BASE_QUESTS = [
         giver: 'priestess_yan', autoStart: true, turnIn: null, requires: ['q_sun_5'],
         objectives: [{ type: 'kill', target: 'sun_6', text: 'Abattre le Soleil de Magma (sanctuaire des Gorges du Volcan, au-delà du défilé)' }],
         offer: [
-            "Sixième soleil : celui de Magma. Il a fait de la gorge une forge, et le basalte coule comme de l'eau. Son sanctuaire se tient à l'est, au-delà du défilé. (Niveau 27 conseillé)",
+            "Sixième soleil : celui de Magma. Il a fait de la gorge une forge, et le basalte coule comme de l'eau. Son sanctuaire se tient à l'est, au-delà du défilé. (Niveau 11 conseillé)",
             "Une silhouette connue vous attend à l'entrée des gorges, l'arc déjà tendu…"
         ],
         hint: [
@@ -1383,7 +1383,7 @@ const BASE_QUESTS = [
         giver: 'hunter_wu', autoStart: true, turnIn: null, requires: ['q_sun_6'],
         objectives: [{ type: 'kill', target: 'sun_7', text: 'Abattre la meute embrasée puis le Soleil des Bêtes Folles (sanctuaire de la Plaine des Fauves, au sud-est)' }],
         offer: [
-            "Septième soleil : celui des Bêtes Folles. Il a rendu fous tigres, sangliers et loups, qui ravagent la plaine en meutes embrasées. Le soleil se tient au milieu d'elles, protégé comme une reine. (Niveau 32 conseillé)",
+            "Septième soleil : celui des Bêtes Folles. Il a rendu fous tigres, sangliers et loups, qui ravagent la plaine en meutes embrasées. Le soleil se tient au milieu d'elles, protégé comme une reine. (Niveau 13 conseillé)",
             "Le chasseur Wu connaît leurs habitudes."
         ],
         hint: [
@@ -1405,7 +1405,7 @@ const BASE_QUESTS = [
         giver: 'envoy_longwang', autoStart: true, turnIn: null, requires: ['q_sun_7'],
         objectives: [{ type: 'kill', target: 'sun_8', text: 'Abattre le Soleil des Marées (sanctuaire du Rivage de la Mer Orientale, au sud-est)' }],
         offer: [
-            "Huitième soleil : celui des Marées. Il a aspiré la mer et la tient en suspens au-dessus de la grève, comme une cloche d'eau prête à retomber. Il siège sur les rochers de l'est. (Niveau 37 conseillé)",
+            "Huitième soleil : celui des Marées. Il a aspiré la mer et la tient en suspens au-dessus de la grève, comme une cloche d'eau prête à retomber. Il siège sur les rochers de l'est. (Niveau 15 conseillé)",
             "Un envoyé du Roi-Dragon attend de pouvoir vous remercier."
         ],
         hint: [
@@ -1430,7 +1430,7 @@ const BASE_QUESTS = [
         giver: 'crane_envoy', autoStart: true, turnIn: null, requires: ['q_sun_8'],
         objectives: [{ type: 'kill', target: 'sun_9', text: 'Abattre le Soleil Lâche sans toucher au Dixième Soleil (sanctuaire de la Cime du Fusang, au nord-est)' }],
         offer: [
-            "Neuvième soleil : celui qu'on appelle le Lâche. Il s'est réfugié au pied du Fusang, à l'abri derrière son plus jeune frère, le Dixième, qui tremble de tout son corps. (Niveau 43 conseillé)",
+            "Neuvième soleil : celui qu'on appelle le Lâche. Il s'est réfugié au pied du Fusang, à l'abri derrière son plus jeune frère, le Dixième, qui tremble de tout son corps. (Niveau 17 conseillé)",
             "Vous devez abattre le Neuvième sans toucher au Dixième : un seul tir mal placé, et la Terre n'aurait plus de jour."
         ],
         hint: [
@@ -1456,7 +1456,7 @@ const BASE_QUESTS = [
         objectives: [{ type: 'kill', target: 'fengmeng_3b', text: 'Affronter Fengmeng au sommet du Pic de la Lune (duel en deux phases, à l\'est du Fusang)' }],
         offer: [
             "La grue blanche se pose sur la plus haute branche, un rouleau dans le bec : le sceau de la Reine Mère de l'Occident. « Hou Yi. Fengmeng a forcé votre porte à l'aube. Dame Chang'e s'est enfuie avec l'élixir. »",
-            "« Elle vous attend au Pic de la Lune, à l'est de l'Arbre : c'est le seul endroit du monde où la Reine Mère peut encore veiller sur elle. Fengmeng la suit. Allez, archer : il ne vous reste que le temps d'un soupir. » (Niveau 40 conseillé)"
+            "« Elle vous attend au Pic de la Lune, à l'est de l'Arbre : c'est le seul endroit du monde où la Reine Mère peut encore veiller sur elle. Fengmeng la suit. Allez, archer : il ne vous reste que le temps d'un soupir. » (Niveau 16 conseillé)"
         ],
         hint: [
             "Le Pic de la Lune est à l'est de l'Arbre. Fengmeng est un archer redoutable, et il connaît vos techniques par cœur : n'attendez pas de lui qu'il tire autrement que vous.",
