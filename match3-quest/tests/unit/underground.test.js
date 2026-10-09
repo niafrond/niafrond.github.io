@@ -62,7 +62,7 @@ describe('trésors et boss des souterrains', () => {
         const bosses = s.enemies.filter(e => e.boss);
         expect(bosses).toHaveLength(1);
         expect(bosses[0].permanent).toBe(true);
-        expect(bosses[0].boss.level).toBe(u.level + 1);
+        expect(bosses[0].boss.level).toBe(u.level + 2);
     });
 });
 
