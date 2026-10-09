@@ -5,7 +5,7 @@ Direction artistique et animation des sprites : héros (4 styles de Hou Yi), PNJ
 plateau, effets de sorts, cinématiques. Il produit des animations lisibles à petite taille, en pixel art cohérent avec l'univers.
 
 ## Lire avant d'agir
-- `agents/ref/direction-artistique-soleils.png` (référence visuelle de la qualité attendue, voir « Direction artistique de référence »), `UNIVERS.md` §7 (charte commune, correspondance gabarits → créatures), §5 (tuiles), §6 (palettes de biomes).
+- `UNIVERS.md` §7 (charte commune, correspondance gabarits → créatures), §5 (tuiles), §6 (palettes de biomes).
 - `sprites/index.js` (architecture, chargement par paquets), `sprites/cn/*` (acteurs, ennemis, soleils), `sprites/side.js`
   (vues de profil/dos), `sprites/villagers.js`, `sprites/decor.js`, `sprites/creatures.js`, `sprites/tiles/*.svg`,
   `sprites/build-packs.mjs` (régénère `packs.js`, `packContents.js`), `icons.js`, `explorationView.js`, `cinematics.js`.
@@ -44,27 +44,6 @@ appelé par `explorationView.js` (`paintGroundCells`, `drawBuilding`, bloc `bloc
   dessiner un sprite avec `spriteImage` directement (flou) ni contourner `spriteUri`.
 - **Couleurs** : feuillage- **Couleurs** : feuillage dérivé de la couleur d'herbe du biome, toits pris dans `ROOFS` ; un seul contour `#2b1b17`, éclairage haut-gauche.
 - Tout nouvel élément de décor d'exploration passe par `tilePainter.js` (fonction `draw…` pure) plutôt que par un dessin libre dans la vue.
-
-## Direction artistique de référence : « pixel art soigné et brillant » (PNJ, ennemis, soleils, boss)
-Référence visuelle fournie par l'utilisateur (2026-10-09) : `agents/ref/direction-artistique-soleils.png` (neuf soleils-boss). **À regarder avec
-l'outil de lecture d'images avant tout dessin de PNJ, d'ennemi, de soleil ou de boss ; c'est la cible de qualité.** Traits à reproduire :
-- **Silhouette nette et régulière** : disque ou corps rond, couronne de pointes triangulaires bien espacées et symétriques (pas de flammes
-  hachées ni de volutes bruitées) ; chaque créature a une silhouette reconnaissable en aplat noir et une palette dominante propre.
-- **Contour sombre unique** (`#2b1b17`), épais d'un pixel logique, continu, sans pixel isolé ; un contour plus clair d'une teinte de la matière
-  n'est utilisé que pour les lueurs.
-- **Volume par rampes de 3 à 4 tons** par matière, lumière en haut à gauche : ombre propre en bas à droite, reflet brillant en croissant ou en
-  tache dans l'angle haut-gauche (aspect « bille laquée ») ; petits dégradés obtenus par tramage (dither) de pixels, jamais par dégradé SVG.
-- **Visage expressif et lisible** : grands yeux de 3 à 4 pixels avec iris coloré, pupille sombre et reflet blanc, sourcils épais qui portent
-  l'émotion (colère, ruse, peur), bouche et crocs francs, petites joues rosées pour les visages doux. L'expression raconte le personnage.
-- **Accessoires et éléments thématiques** en pixels pleins, de même facture que le corps (éclairs, cailloux, vague, crinière, auréole de
-  mirage) ; pas d'étincelles ou de particules isolées d'un seul pixel qui disparaissent à la grille 32.
-- **Famille cohérente** : même construction, même épaisseur de contour, même éclairage, même densité de détail pour tous les PNJ et ennemis
-  d'un même paquet ; les boss sont plus grands, plus contrastés et plus menaçants que les ennemis ordinaires.
-- **Lecture à deux échelles** : validé à la grille 32 (carte, cases d'environ 44 px) ET à la grille 64 (rencontre à 256 px) ; un sprite
-  bruité à la grille 32 est un échec.
-- L'ombre au sol de la planche de référence est dessinée par le moteur (`drawShadow`) : ne pas la dessiner dans le sprite (règle « sans ombre au sol »).
-- Méthode conseillée : grilles de pixels indexées par palette (art ASCII 64 × 64) converties en SVG de runs alignés (`shape-rendering="crispEdges"`),
-  plutôt que des courbes vectorielles lissées ; jamais de dégradé, filtre, opacité ni transform (garde-fou `pixelArtAudit.test.js`).
 
 ## Cycles d'animation à fournir
 | Entité | Cycles (images) | Cadence |
