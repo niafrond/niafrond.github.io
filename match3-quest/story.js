@@ -23,10 +23,6 @@
 //  - illusion:true   : mirage, pas de combat : il se dissipe au contact (`illusionLines`) ;
 //  - shieldedBy      : id d'un `group` d'ennemis ; tant qu'il n'est pas vaincu, le boss est intouchable
 //                      (le contact affiche `shieldLines`) ;
-//  - unsealedBy      : [conditions] ; chemin relationnel : si l'une est remplie (ex. le pourparler `parley_sunN`), le bouclier tombe sans combat ;
-//  - parley          : sur un PNJ, { lines } ; la 1re conversation est un pourparler (le PNJ compte comme « parlé » : son id devient une
-//                      condition remplie). Les gardes du soleil portent `hideWhen` = id du PNJ, le PNJ `showWhen` = une quête annexe ;
-//  - weakenedBy      : [conditions] ; chaque condition remplie retire 1 niveau au boss (2 au plus) ;
 //  - defeatScene     : { speaker: { name, title?, npc? | enemy? }, lines } jouée après la victoire ;
 //  - afterScenes     : [{ speaker, lines }] interlude à plusieurs voix (speaker.hero : le héros) après le texte de victoire ;
 //  - duel            : règles de duel de Fengmeng (mirror, heroHpPct, rapidShots, zoneTraps : voir duel.js) ;
@@ -445,27 +441,6 @@ const BASE_SCREENS = {
                   { whenDone: 'sun_2', lines: [
                       "L'eau est revenue ce matin, par la rive est. Vous avez entendu ? Elle chante comme une vieille amie. Les poissons de pierre n'étaient que des poissons endormis."
                   ] }
-              ] },
-            // Chemin relationnel du soleil 2 : après la quête de Mei, le doyen des noyés parlemente et rappelle ses gardes (`unsealedBy`).
-            { id: 'parley_sun2', x: 10, y: 8, name: 'Yuan', title: 'Doyen des noyés', showWhen: 'sq_drowned', hideWhen: ['sun2_wardens_a', 'sun2_wardens_b'],
-              parley: { lines: [
-                  "Posez votre arc, seigneur archer. Je suis Yuan, le plus ancien des noyés de ce fleuve, et je ne suis pas venu pour me battre.",
-                  "Mes gens ne gardent pas ce soleil par amour. Il a bu le fleuve : tant qu'il le tient, nous n'avons plus de lit où dormir.",
-                  "On m'a dit que vous aviez renvoyé dormir les noyés de Mei sans les humilier. Un archer qui sait cela mérite d'être écouté.",
-                  "Abattez le soleil, rendez-nous l'eau. Mes gardes s'écartent : ils n'ont jamais voulu que retrouver le courant."
-              ] },
-              idle: [
-                  "Chut. Le fleuve est mort, mais nous l'écoutons encore.",
-                  "Les roches fendues gardent l'écho de l'eau. Venez, si vous avez le cœur patient."
-              ],
-              talk: [
-                  { whenDone: 'parley_sun2', lines: [
-                      "Mes gardes se sont retirés dans la boue. Ils attendent le courant, comme moi.",
-                      "Tirez sans crainte : le soleil est seul, maintenant. Et que l'eau revienne vite."
-                  ] },
-                  { whenDone: 'sun_2', lines: [
-                      "Entendez-vous ? Le courant ! Mes gens dorment dans le lit, enfin. Allez, seigneur archer, et que le fleuve vous porte."
-                  ] }
               ] }
         ],
         enemies: [
@@ -476,17 +451,16 @@ const BASE_SCREENS = {
             { id: 'river_serpent', templateId: 'deep_sea_serpent', name: 'Serpent du Fleuve Jaune', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
             { id: 'fleuve_doctor', templateId: 'plague_doctor', name: 'Docteur-démon des vases', kind: 'sentinel', x: 8, y: 8, offset: 0 },
             { id: 'fleuve_lich', templateId: 'crypt_lich', name: 'Sorcier-squelette du gué', kind: 'sentinel', x: 4, y: 9, offset: 0 },
-            // Gardes du sanctuaire : tant qu'ils vivent, sun_2 est intouchable, sauf pourparlers (parley_sun2 : ils s'écartent, `hideWhen`).
-            { id: 'sun2_wardens_a', templateId: 'bone_reaver', name: 'Noyé-garde des roches', kind: 'sentinel', x: 9, y: 7, offset: 1, permanent: true, group: 'sun2_wardens', hideWhen: 'parley_sun2' },
-            { id: 'sun2_wardens_b', templateId: 'iron_gladiator', name: 'Noyé-garde des roches', kind: 'sentinel', x: 13, y: 9, offset: 1, permanent: true, group: 'sun2_wardens', hideWhen: 'parley_sun2' },
+            // Gardes du sanctuaire : tant qu'ils vivent, sun_2 est intouchable (détour obligatoire avant le boss).
+            { id: 'sun2_wardens_a', templateId: 'bone_reaver', name: 'Noyé-garde des roches', kind: 'sentinel', x: 9, y: 7, offset: 1, permanent: true, group: 'sun2_wardens' },
+            { id: 'sun2_wardens_b', templateId: 'iron_gladiator', name: 'Noyé-garde des roches', kind: 'sentinel', x: 13, y: 9, offset: 1, permanent: true, group: 'sun2_wardens' },
             { id: 'sun_2', templateId: 'iron_gladiator', name: 'Soleil des Eaux Taries', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, shieldedBy: 'sun2_wardens', unsealedBy: ['parley_sun2'], weakenedBy: ['sq_river_serpent', 'sq_drowned'], boss: { name: 'Soleil des Eaux Taries', level: 4 },
+              permanent: true, shieldedBy: 'sun2_wardens', weakenedBy: ['sq_river_serpent', 'sq_drowned'], boss: { name: 'Soleil des Eaux Taries', level: 4 },
               afterScenes: MIRROR_TALKS.sun_2,
               shieldLines: [
                   "Le Soleil des Eaux Taries est tapi derrière un cercle de roches fendues, et deux noyés-gardes lui font un rempart de boue durcie.",
                   "Vos flèches s'enfonceraient dans la vase sans l'atteindre. Les gardes montent la garde depuis que l'eau s'est retirée : ils n'ont plus que lui.",
-                  "Renvoyez-les à la boue, et le rempart s'effondrera. (Le serpent du gué et les noyés de Mei, que vous aurez calmés, affaibliront le soleil.)",
-                  "Au pied des roches, un vieux noyé guette le fleuve disparu. Il ne se montre, dit-on, qu'à ceux qui ont su laisser dormir les siens."
+                  "Renvoyez-les à la boue, et le rempart s'effondrera. (Le serpent du gué et les noyés de Mei, que vous aurez calmés, affaibliront le soleil.)"
               ] }
         ],
         chests: [
@@ -540,27 +514,6 @@ const BASE_SCREENS = {
                   { whenDone: 'sun_3', lines: [
                       "Les bambous verdissent, et mes plantes aussi. J'ai trouvé du ginseng sauvage sous une pierre : il a tenu bon. Une racine pour la route, seigneur ?"
                   ] }
-              ] },
-            // Chemin relationnel du soleil 3 : une fois la cloche rendue, son âme parle et rappelle les deux échos qui gardent le soleil.
-            { id: 'parley_sun3', x: 11, y: 3, name: 'Tintement', title: 'Âme de la cloche fêlée', showWhen: 'sq_bell', hideWhen: ['sun3_wardens_a', 'sun3_wardens_b'],
-              parley: { lines: [
-                  "Dong. Ne tirez pas, archer. Je suis ce qui sonne dans la cloche quand personne ne la touche.",
-                  "Les deux esprits qui tournent autour du soleil sont mes échos. Quand le temple a brûlé, ils ont perdu leur cloche. Ils ont suivi la chaleur.",
-                  "Vous avez remis la cloche sur son pilier : elle sonne, et ils m'entendent. Un écho obéit toujours à sa voix.",
-                  "Allez. Mes échos se rendormiront dans le bronze. Le soleil, lui, n'a plus personne pour l'entourer."
-              ] },
-              idle: [
-                  "Dong… dong… Le bronze se souvient de l'heure.",
-                  "Si vous m'entendez, c'est que la cloche tient encore. Approchez sans bruit."
-              ],
-              talk: [
-                  { whenDone: 'parley_sun3', lines: [
-                      "Mes échos reposent dans le bronze. Je ne sonne plus que pour la forêt.",
-                      "Le soleil est seul sous la cloche. Visez juste, archer : la cendre n'attend plus que vous."
-                  ] },
-                  { whenDone: 'sun_3', lines: [
-                      "La cendre se tait. Écoutez : la forêt apprend à respirer."
-                  ] }
               ] }
         ],
         enemies: [
@@ -569,17 +522,16 @@ const BASE_SCREENS = {
             { id: 'bambous_priestess', templateId: 'moon_priestess', name: 'Prêtresse égarée', kind: 'sentinel', x: 12, y: 8, offset: 0 },
             // Esprit-arbre nommé (quête secondaire de Xu), coin sud-ouest.
             { id: 'old_pine', templateId: 'forest_guardian', name: 'Vieux Pin Noir', kind: 'sentinel', x: 1, y: 9, offset: 0, permanent: true },
-            // Gardes du sanctuaire : tant qu'ils vivent, sun_3 est intouchable, sauf pourparlers (parley_sun3 : ils s'écartent, `hideWhen`).
-            { id: 'sun3_wardens_a', templateId: 'temple_warden', name: 'Esprit de la cloche', kind: 'sentinel', x: 9, y: 2, offset: 1, permanent: true, group: 'sun3_wardens', hideWhen: 'parley_sun3' },
-            { id: 'sun3_wardens_b', templateId: 'shadow_assassin', name: 'Esprit de la cloche', kind: 'sentinel', x: 13, y: 2, offset: 1, permanent: true, group: 'sun3_wardens', hideWhen: 'parley_sun3' },
+            // Gardes du sanctuaire : tant qu'ils vivent, sun_3 est intouchable (détour obligatoire avant le boss).
+            { id: 'sun3_wardens_a', templateId: 'temple_warden', name: 'Esprit de la cloche', kind: 'sentinel', x: 9, y: 2, offset: 1, permanent: true, group: 'sun3_wardens' },
+            { id: 'sun3_wardens_b', templateId: 'shadow_assassin', name: 'Esprit de la cloche', kind: 'sentinel', x: 13, y: 2, offset: 1, permanent: true, group: 'sun3_wardens' },
             { id: 'sun_3', templateId: 'fungal_horror', name: 'Soleil de Cendres', kind: 'sentinel', x: 11, y: 1,
-              permanent: true, shieldedBy: 'sun3_wardens', unsealedBy: ['parley_sun3'], weakenedBy: ['sq_bell', 'sq_old_pine'], boss: { name: 'Soleil de Cendres', level: 6 },
+              permanent: true, shieldedBy: 'sun3_wardens', weakenedBy: ['sq_bell', 'sq_old_pine'], boss: { name: 'Soleil de Cendres', level: 6 },
               afterScenes: MIRROR_TALKS.sun_3,
               shieldLines: [
                   "Le Soleil de Cendres couve sous la cloche fêlée, et deux esprits du temple brûlé tournent autour de lui comme des cierges.",
                   "Tant qu'ils veillent, la cendre retombe sur chacune de vos flèches avant qu'elle n'atteigne le soleil.",
-                  "Éteignez les esprits, un à un, et le soleil restera seul. (Réconforter la forêt avant lui l'affaiblira.)",
-                  "Les esprits tournent au rythme d'un tintement qui n'existe plus. Qui rendrait sa voix à la cloche saurait peut-être leur parler."
+                  "Éteignez les esprits, un à un, et le soleil restera seul. (Réconforter la forêt avant lui l'affaiblira.)"
               ] }
         ],
         chests: [
@@ -715,27 +667,6 @@ const BASE_SCREENS = {
                   { whenDone: 'sun_5', lines: [
                       "Le tonnerre s'est tu. Je pensais que cela m'attristerait. Je suis seulement plus calme, comme après avoir dit ce qu'on avait à dire."
                   ] }
-              ] },
-            // Chemin relationnel du soleil 5 : le tambour de Lei rendu, la petite voix du tonnerre ordonne à ses frères de lâcher la cage.
-            { id: 'parley_sun5', x: 11, y: 9, name: 'Rongrong', title: 'Petite voix du tonnerre', showWhen: 'sq_lei_drum', hideWhen: ['sun5_wardens_a', 'sun5_wardens_b'],
-              parley: { lines: [
-                  "Boum ! Ne tire pas, archer. Je suis Rongrong, la petite voix du tonnerre. Le vieux Lei m'a rendu mon tambour, alors je viens dire merci.",
-                  "Les foudre-gardes du col sont mes grands frères. Le soleil leur donne des éclairs à manger : ils tiennent sa cage et n'écoutent plus personne.",
-                  "Ils croient défendre la montagne. La cage ne retient qu'un soleil qui a peur d'être éteint.",
-                  "Je leur dis de la lâcher. Passe, archer. Mais ne tarde pas : un orage retenu finit toujours par éclater."
-              ] },
-              idle: [
-                  "Boum… boum… C'est mon cœur, pas un orage. Enfin, presque.",
-                  "Le tambour de Lei bat plus juste que le ciel. Je l'écoute."
-              ],
-              talk: [
-                  { whenDone: 'parley_sun5', lines: [
-                      "Mes frères ont lâché la cage. Ils boudent un peu, sur le col.",
-                      "Le soleil est tout seul, maintenant. Vise bien : je ferai un roulement de tambour pour toi."
-                  ] },
-                  { whenDone: 'sun_5', lines: [
-                      "Plus d'éclairs sur la crête. Je vais apprendre à rouler doucement, comme un chat qui ronronne."
-                  ] }
               ] }
         ],
         enemies: [
@@ -743,17 +674,16 @@ const BASE_SCREENS = {
             { id: 'tonnerre_warden', templateId: 'temple_warden', name: 'Lion-gardien de pierre', kind: 'sentinel', x: 8, y: 8, offset: 0 },
             // Dragon-serpent nommé (quête secondaire de Tie), coin nord-est.
             { id: 'thunder_wyrm', templateId: 'storm_wyrm', name: 'Dragon-serpent du tonnerre', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true },
-            // Gardes du sanctuaire : tant qu'ils vivent, sun_5 est intouchable, sauf pourparlers (parley_sun5 : ils s'écartent, `hideWhen`).
-            { id: 'sun5_wardens_a', templateId: 'storm_knight', name: 'Foudre-garde du col', kind: 'sentinel', x: 9, y: 9, offset: 1, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
-            { id: 'sun5_wardens_b', templateId: 'temple_warden', name: 'Foudre-garde du col', kind: 'sentinel', x: 13, y: 8, offset: 1, permanent: true, group: 'sun5_wardens', hideWhen: 'parley_sun5' },
+            // Gardes du sanctuaire : tant qu'ils vivent, sun_5 est intouchable (détour obligatoire avant le boss).
+            { id: 'sun5_wardens_a', templateId: 'storm_knight', name: 'Foudre-garde du col', kind: 'sentinel', x: 9, y: 9, offset: 1, permanent: true, group: 'sun5_wardens' },
+            { id: 'sun5_wardens_b', templateId: 'temple_warden', name: 'Foudre-garde du col', kind: 'sentinel', x: 13, y: 8, offset: 1, permanent: true, group: 'sun5_wardens' },
             { id: 'sun_5', templateId: 'storm_knight', name: 'Soleil des Orages', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, shieldedBy: 'sun5_wardens', unsealedBy: ['parley_sun5'], weakenedBy: ['sq_thunder_wyrm', 'sq_lei_drum'], boss: { name: 'Soleil des Orages', level: 10 },
+              permanent: true, shieldedBy: 'sun5_wardens', weakenedBy: ['sq_thunder_wyrm', 'sq_lei_drum'], boss: { name: 'Soleil des Orages', level: 10 },
               afterScenes: MIRROR_TALKS.sun_5,
               shieldLines: [
                   "Une cage d'éclairs ceint le Soleil des Orages : deux gardes de foudre la tiennent tendue, d'un pylône à l'autre.",
                   "Aucune flèche ne traverse la cage tant que ses deux gardiens sont debout ; elle crépite à vous en faire dresser les cheveux.",
-                  "Abattez les gardes, et la cage tombera. (Le dragon-serpent et le tambour de Lei, une fois réglés, affaibliront le soleil.)",
-                  "Les gardes ne bougent qu'en mesure, comme au son d'un tambour lointain. Si le tonnerre retrouvait sa voix, ils l'écouteraient peut-être."
+                  "Abattez les gardes, et la cage tombera. (Le dragon-serpent et le tambour de Lei, une fois réglés, affaibliront le soleil.)"
               ] }
         ],
         chests: [
@@ -807,27 +737,6 @@ const BASE_SCREENS = {
                   { whenDone: 'sun_6', lines: [
                       "Je ne priais plus que par habitude. Aujourd'hui, je prie pour de bon : pour les soleils tombés, pour ceux qui restent, et pour vous, archer."
                   ] }
-              ] },
-            // Chemin relationnel du soleil 6 : la cendre du phénix sauvée, le vieil attiseur du temple du feu ordonne aux forgerons de poser leurs soufflets.
-            { id: 'parley_sun6', x: 11, y: 7, name: 'Chi', title: 'Vieil attiseur du temple du feu', showWhen: 'sq_ember', hideWhen: ['sun6_wardens_a', 'sun6_wardens_b'],
-              parley: { lines: [
-                  "Doucement, archer. Je suis Chi, l'attiseur du vieux temple du feu. Yan fut mon acolyte : elle m'a fait dire que vous aviez sauvé la cendre du phénix.",
-                  "Les deux forgerons du magma sont mes derniers servants. Depuis que le brasero s'est éteint, ils attisent le soleil à sa place.",
-                  "La cendre est en sûreté, la flamme pourra renaître ailleurs. Ils n'ont plus de raison de souffler.",
-                  "Je leur ordonne de poser leurs soufflets. Le soleil retombera sous votre flèche. Pardonnez-nous de l'avoir aimé."
-              ] },
-              idle: [
-                  "Un feu qu'on a veillé longtemps ne s'éteint jamais tout à fait.",
-                  "Asseyez-vous près de la braise, archer. Le basalte est tiède, ce soir."
-              ],
-              talk: [
-                  { whenDone: 'parley_sun6', lines: [
-                      "Les soufflets sont posés. Mes servants dorment debout, comme de vieux outils.",
-                      "Le soleil n'a plus que sa propre chaleur. Allez, et tirez sans haine."
-                  ] },
-                  { whenDone: 'sun_6', lines: [
-                      "La roche refroidit sans bruit. Je vais rallumer un petit feu, ailleurs, pour Yan. Un tout petit, qui ne brûle personne."
-                  ] }
               ] }
         ],
         enemies: [
@@ -848,17 +757,16 @@ const BASE_SCREENS = {
             { id: 'ore_guard_a', templateId: 'lava_behemoth', name: 'Pixiu de magma', kind: 'sentinel', x: 9, y: 1, offset: 0, permanent: true, group: 'ore_guards' },
             { id: 'ore_guard_b', templateId: 'lava_behemoth', name: 'Pixiu de magma', kind: 'sentinel', x: 12, y: 1, offset: 0, permanent: true, group: 'ore_guards' },
             { id: 'volcan_dragon', templateId: 'ember_dragon', name: 'Long de braise', kind: 'sentinel', x: 8, y: 8, offset: 0 },
-            // Gardes du sanctuaire : tant qu'ils vivent, sun_6 est intouchable, sauf pourparlers (parley_sun6 : ils s'écartent, `hideWhen`).
-            { id: 'sun6_wardens_a', templateId: 'lava_behemoth', name: 'Forgeron de magma', kind: 'sentinel', x: 9, y: 7, offset: 1, permanent: true, group: 'sun6_wardens', hideWhen: 'parley_sun6' },
-            { id: 'sun6_wardens_b', templateId: 'iron_gladiator', name: 'Forgeron de magma', kind: 'sentinel', x: 13, y: 8, offset: 1, permanent: true, group: 'sun6_wardens', hideWhen: 'parley_sun6' },
+            // Gardes du sanctuaire : tant qu'ils vivent, sun_6 est intouchable (détour obligatoire avant le boss).
+            { id: 'sun6_wardens_a', templateId: 'lava_behemoth', name: 'Forgeron de magma', kind: 'sentinel', x: 9, y: 7, offset: 1, permanent: true, group: 'sun6_wardens' },
+            { id: 'sun6_wardens_b', templateId: 'iron_gladiator', name: 'Forgeron de magma', kind: 'sentinel', x: 13, y: 8, offset: 1, permanent: true, group: 'sun6_wardens' },
             { id: 'sun_6', templateId: 'lava_behemoth', name: 'Soleil de Magma', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, shieldedBy: 'sun6_wardens', unsealedBy: ['parley_sun6'], weakenedBy: ['sq_ore', 'sq_ember'], boss: { name: 'Soleil de Magma', level: 12 },
+              permanent: true, shieldedBy: 'sun6_wardens', weakenedBy: ['sq_ore', 'sq_ember'], boss: { name: 'Soleil de Magma', level: 12 },
               afterScenes: MIRROR_TALKS.sun_6,
               shieldLines: [
                   "Deux forgerons de magma attisent le Soleil de Magma comme une fournaise : tant qu'ils soufflent, il se rallume de lui-même.",
                   "Le basalte coule entre vous et lui en nappes d'or rouge ; les flèches fondent avant d'y toucher.",
-                  "Faites taire les soufflets et le soleil perdra son alimentation. (Les veines de cinabre et la braise d'Ember, une fois réglées, l'affaibliront.)",
-                  "Ces forgerons soufflent sans conviction, en servants dont le temple a brûlé. Quelqu'un, dans les gorges, pourrait leur dire d'arrêter."
+                  "Faites taire les soufflets et le soleil perdra son alimentation. (Les veines de cinabre et la braise d'Ember, une fois réglées, l'affaibliront.)"
               ] }
         ],
         chests: [
@@ -984,27 +892,6 @@ const BASE_SCREENS = {
                   { whenDone: 'sun_8', lines: [
                       "La mer est revenue. Mon maître vous fera porter, par les courants, un présent à chacune de vos nuits. Il ne dira jamais merci à voix haute, mais il y pense."
                   ] }
-              ] },
-            // Chemin relationnel du soleil 8 : la perle rendue, l'amiral du Roi-Dragon lève la consigne des gardes-marée.
-            { id: 'parley_sun8', x: 12, y: 7, name: 'Amiral Xie', title: 'Amiral de l\'escadre du Roi-Dragon', showWhen: 'sq_pearl', hideWhen: ['sun8_wardens_a', 'sun8_wardens_b'],
-              parley: { lines: [
-                  "Garde-à-vous, archer. Amiral Xie, de l'escadre du Roi-Dragon. La perle de mon maître est rentrée au palais : il m'a chargé de vous remercier.",
-                  "Mes gardes-marée tiennent la cloche d'eau sur ordre du Roi. Si elle retombait, la grève et ses villages seraient noyés d'un coup.",
-                  "Ils ne vous barrent pas la route par méchanceté. Ils attendent un archer en qui le Roi aurait confiance. La perle dit que c'est vous.",
-                  "Je lève la consigne. Brisez la cloche sur le soleil, pas sur le village. Et saluez le Roi de ma part : il est susceptible."
-              ] },
-              idle: [
-                  "Au rapport : la marée est basse, le moral est bas, la discipline est haute.",
-                  "Je ne recule jamais. Je me déplace latéralement, c'est différent."
-              ],
-              talk: [
-                  { whenDone: 'parley_sun8', lines: [
-                      "Consigne levée. Mes gardes se sont retirés vers les récifs, en bon ordre.",
-                      "Le soleil est à vous, archer. Brisez la cloche d'un seul tir, et que la mer retombe où elle doit."
-                  ] },
-                  { whenDone: 'sun_8', lines: [
-                      "La mer est rentrée dans son lit au pas de charge. Le Roi-Dragon m'a fait dire qu'il n'était pas ému. Il pleurait."
-                  ] }
               ] }
         ],
         enemies: [
@@ -1013,17 +900,16 @@ const BASE_SCREENS = {
             { id: 'net_cutter_a', templateId: 'deep_sea_serpent', name: 'Serpent coupe-filets', kind: 'sentinel', x: 11, y: 1, offset: 0, permanent: true, group: 'net_cutters' },
             { id: 'net_cutter_b', templateId: 'deep_sea_serpent', name: 'Serpent coupe-filets', kind: 'sentinel', x: 13, y: 1, offset: 0, permanent: true, group: 'net_cutters' },
             { id: 'mer_doctor', templateId: 'plague_doctor', name: 'Docteur-démon des marées', kind: 'sentinel', x: 7, y: 8, offset: 0 },
-            // Gardes du sanctuaire : tant qu'ils vivent, sun_8 est intouchable, sauf pourparlers (parley_sun8 : ils s'écartent, `hideWhen`).
-            { id: 'sun8_wardens_a', templateId: 'deep_sea_serpent', name: 'Garde-marée du Roi-Dragon', kind: 'sentinel', x: 10, y: 7, offset: 1, permanent: true, group: 'sun8_wardens', hideWhen: 'parley_sun8' },
-            { id: 'sun8_wardens_b', templateId: 'plague_doctor', name: 'Garde-marée du Roi-Dragon', kind: 'sentinel', x: 13, y: 8, offset: 1, permanent: true, group: 'sun8_wardens', hideWhen: 'parley_sun8' },
+            // Gardes du sanctuaire : tant qu'ils vivent, sun_8 est intouchable (détour obligatoire avant le boss).
+            { id: 'sun8_wardens_a', templateId: 'deep_sea_serpent', name: 'Garde-marée du Roi-Dragon', kind: 'sentinel', x: 10, y: 7, offset: 1, permanent: true, group: 'sun8_wardens' },
+            { id: 'sun8_wardens_b', templateId: 'plague_doctor', name: 'Garde-marée du Roi-Dragon', kind: 'sentinel', x: 13, y: 8, offset: 1, permanent: true, group: 'sun8_wardens' },
             { id: 'sun_8', templateId: 'deep_sea_serpent', name: 'Soleil des Marées', kind: 'sentinel', x: 11, y: 8,
-              permanent: true, shieldedBy: 'sun8_wardens', unsealedBy: ['parley_sun8'], weakenedBy: ['sq_nets', 'sq_pearl'], boss: { name: 'Soleil des Marées', level: 16 },
+              permanent: true, shieldedBy: 'sun8_wardens', weakenedBy: ['sq_nets', 'sq_pearl'], boss: { name: 'Soleil des Marées', level: 16 },
               afterScenes: MIRROR_TALKS.sun_8,
               shieldLines: [
                   "La cloche d'eau du Soleil des Marées est tenue en suspens par deux gardes-marée : si vous tirez, elle retombera sur vous.",
                   "Ils chantent à voix basse, et l'eau se tient immobile comme un mur de verre.",
-                  "Faites-les taire, et la cloche d'eau se brisera sur le soleil. (Les filets et la perle, une fois rendus, l'affaibliront.)",
-                  "Ces gardes obéissent à un ordre du palais plus qu'à leur colère. On l'entendrait peut-être lever, si le Roi-Dragon avait une raison de vous faire confiance."
+                  "Faites-les taire, et la cloche d'eau se brisera sur le soleil. (Les filets et la perle, une fois rendus, l'affaibliront.)"
               ] }
         ],
         chests: [
@@ -1081,27 +967,6 @@ const BASE_SCREENS = {
                   { whenDone: 'q_epilogue', lines: [
                       "Je me lève à l'aube, chaque jour. Tu sais, il y a quelqu'un, sur la lune, qui me regarde passer. Elle me sourit."
                   ] }
-              ] },
-            // Chemin relationnel du soleil 9 : le nid retrouvé, la sœur de la messagère rappelle les grues-lige qui couvrent le Dixième.
-            { id: 'parley_sun9', x: 10, y: 4, name: 'Hegui', title: 'Grue au nid retrouvé', showWhen: 'sq_crane', hideWhen: ['sun9_wardens_a', 'sun9_wardens_b'],
-              parley: { lines: [
-                  "Paix, archer. Je suis Hegui, la sœur de la messagère. Vous avez rapporté les plumes de mon nid : un nid retrouvé vaut bien un passage.",
-                  "Les grues-lige que vous voyez ne protègent pas le Neuvième. Elles couvrent le Dixième, le plus jeune, qui tremble derrière lui.",
-                  "Elles ont peur d'un tir maladroit. Alors elles se tiennent entre vous et lui, ailes ouvertes, sans oser reculer.",
-                  "Je les rappelle. Elles se poseront sur la branche haute. Visez avec calme : le Dixième est derrière, et il faut qu'il reste."
-              ] },
-              idle: [
-                  "Mes petits dorment, enfin. Je ne veux pas troubler le silence.",
-                  "Les grues parlent peu. Elles veillent."
-              ],
-              talk: [
-                  { whenDone: 'parley_sun9', lines: [
-                      "Les grues-lige ont rejoint la branche haute. Elles couvrent le petit de loin, cette fois.",
-                      "Le Neuvième est seul sous votre arc. Ne regardez pas derrière lui, archer. Regardez la cible."
-                  ] },
-                  { whenDone: 'sun_9', lines: [
-                      "Le petit a levé la tête. Merci d'avoir tenu votre main."
-                  ] }
               ] }
         ],
         enemies: [
@@ -1109,17 +974,16 @@ const BASE_SCREENS = {
             { id: 'fusang_sage', templateId: 'crystal_sage', name: 'Immortel de jade', kind: 'sentinel', x: 8, y: 8, offset: 0 },
             { id: 'fusang_dragon', templateId: 'frost_dragon', name: 'Long de givre', kind: 'sentinel', x: 4, y: 9, offset: 0 },
             { id: 'fusang_vampire', templateId: 'void_vampire', name: 'Jiangshi des cimes', kind: 'sentinel', x: 12, y: 9, offset: 0 },
-            // Gardes du sanctuaire : tant qu'ils vivent, sun_9 est intouchable, sauf pourparlers (parley_sun9 : ils s'écartent, `hideWhen`).
-            { id: 'sun9_wardens_a', templateId: 'arcane_scholar', name: 'Grue-lige du Fusang', kind: 'sentinel', x: 9, y: 3, offset: 1, permanent: true, group: 'sun9_wardens', hideWhen: 'parley_sun9' },
-            { id: 'sun9_wardens_b', templateId: 'storm_knight', name: 'Grue-lige du Fusang', kind: 'sentinel', x: 12, y: 3, offset: 1, permanent: true, group: 'sun9_wardens', hideWhen: 'parley_sun9' },
+            // Gardes du sanctuaire : tant qu'ils vivent, sun_9 est intouchable (détour obligatoire avant le boss).
+            { id: 'sun9_wardens_a', templateId: 'arcane_scholar', name: 'Grue-lige du Fusang', kind: 'sentinel', x: 9, y: 3, offset: 1, permanent: true, group: 'sun9_wardens' },
+            { id: 'sun9_wardens_b', templateId: 'storm_knight', name: 'Grue-lige du Fusang', kind: 'sentinel', x: 12, y: 3, offset: 1, permanent: true, group: 'sun9_wardens' },
             { id: 'sun_9', templateId: 'ember_dragon', name: 'Soleil Lâche', kind: 'sentinel', x: 11, y: 2,
-              permanent: true, shieldedBy: 'sun9_wardens', unsealedBy: ['parley_sun9'], weakenedBy: ['sq_crane', 'sq_sceau_racines'], boss: { name: 'Soleil Lâche', level: 18 },
+              permanent: true, shieldedBy: 'sun9_wardens', weakenedBy: ['sq_crane', 'sq_sceau_racines'], boss: { name: 'Soleil Lâche', level: 18 },
               afterScenes: MIRROR_TALKS.sun_9,
               shieldLines: [
                   "Deux grues-lige du Fusang se tiennent devant le Soleil Lâche, ailes déployées : elles couvrent aussi le Dixième Soleil.",
                   "Un tir maladroit pourrait toucher celui qu'on doit épargner : il faut d'abord écarter les gardes, sans trembler.",
-                  "Écartez-les, et le Neuvième restera seul sous votre arc. (Les grues apaisées et le sceau des racines l'affaibliront.)",
-                  "Les grues se tiennent tournées vers le Dixième, pas vers vous : c'est lui qu'elles défendent. Une grue qui retrouverait son nid les rappellerait peut-être."
+                  "Écartez-les, et le Neuvième restera seul sous votre arc. (Les grues apaisées et le sceau des racines l'affaibliront.)"
               ] }
         ],
         chests: [
@@ -1267,10 +1131,7 @@ const BASE_QUESTS = [
         hint: [
             "Le Soleil des Eaux Taries se tient au sud-est du lit du fleuve, parmi les rochers fendus. Vous voyez ses gardes de loin : les noyés ne dorment plus.",
             "Quand l'eau reviendra, ma barque sera la première à flotter. Je compte sur vous, seigneur archer.",
-            "Trois chemins mènent au soleil. Risque : abattez les deux noyés-gardes, au prix d'un combat, pour leur expérience et un soleil entier.",
-            "Relation : apaisez les noyés de Mei, et leur doyen parlera aux gardes au pied des roches. Ils s'écartent sans combat.",
-            "Découverte : le serpent du gué et les noyés de Mei affaiblissent le soleil d'un niveau chacun.",
-            "Chaque chemin laisse sa trace : des gardes renvoyés à la boue ou rendus au courant, un doyen allié, un soleil moins ardent."
+            "Deux noyés-gardes entourent le soleil : abattez-les d'abord. Calmer le serpent du gué et les noyés de Mei affaiblira le soleil."
         ],
         complete: [
             "Le Soleil des Eaux Taries pousse un soupir humide et se dissout en brume. Un grondement monte du sol : très loin, en amont, l'eau revient.",
@@ -1292,10 +1153,7 @@ const BASE_QUESTS = [
         hint: [
             "Le Soleil de Cendres est au nord-est de la forêt, au-delà des bambous noircis. Évitez les cercles rouges : les esprits y sont nerveux.",
             "Si le feu vous fait peur, souvenez-vous : il ne reste à brûler que ce qui a déjà brûlé.",
-            "Trois chemins mènent au soleil. Risque : éteignez les deux esprits de la cloche, au prix d'un combat, pour leur expérience et un soleil entier.",
-            "Relation : rapportez la cloche à Zhen, et son âme parlera aux esprits. Ils se rendorment dans le bronze, sans combat.",
-            "Découverte : la cloche du temple et le Vieux Pin Noir affaiblissent le soleil d'un niveau chacun.",
-            "Chaque chemin laisse sa trace : des esprits éteints ou rendormis, une cloche qui parle, un soleil moins ardent."
+            "Deux esprits de la cloche veillent sur le soleil : éteignez-les d'abord. Les quêtes annexes de la forêt (la cloche, le vieux pin) affaibliront le soleil."
         ],
         complete: [
             "Le Soleil de Cendres s'éteint comme une braise sous l'eau : sans bruit, avec une volute grise. Alors, très doucement, la cloche du temple sonne, et personne ne la touche.",
@@ -1339,10 +1197,7 @@ const BASE_QUESTS = [
         hint: [
             "Le tonnerre est un tambour, archer : écoutez-le avant de tirer. Le Soleil des Orages est au sud-est ; ses gardes frappent plus fort qu'ils n'en ont l'air.",
             "Gardez vos distances avec les cercles rouges, et ne comptez pas sur le silence entre deux éclairs.",
-            "Trois chemins mènent au soleil. Risque : abattez les deux gardes de foudre, au prix d'un combat, pour leur expérience et un soleil entier.",
-            "Relation : rendez son tambour à Lei, et la petite voix du tonnerre ordonnera à ses frères de lâcher la cage, sans combat.",
-            "Découverte : le dragon-serpent et le tambour de Lei affaiblissent le soleil d'un niveau chacun.",
-            "Chaque chemin laisse sa trace : des gardes abattus ou boudeurs, une voix du tonnerre alliée, un soleil moins ardent."
+            "Deux gardes de foudre tiennent la cage d'éclairs : abattez-les d'abord. Le dragon-serpent et le tambour de Lei, une fois réglés, affaiblissent le soleil."
         ],
         complete: [
             "Le Soleil des Orages éclate en un dernier coup de tonnerre, si fort que les montagnes en tremblent. Puis le silence, d'une pureté stupéfiante, et une pluie fine, tiède, qui sent le fer et la terre.",
@@ -1364,10 +1219,7 @@ const BASE_QUESTS = [
         hint: [
             "Le défilé est étroit : un archer pressé y a tendu une embuscade. Après lui, le Soleil de Magma vous attend à l'est.",
             "Les pixiu de magma gardent les veines de cinabre : prudence, ils chargent la tête baissée.",
-            "Trois chemins mènent au soleil. Risque : faites taire les deux forgerons de magma, au prix d'un combat, pour leur expérience et un soleil entier.",
-            "Relation : sauvez la cendre du phénix pour Yan, et le vieil attiseur du temple du feu ordonnera aux forgerons de poser leurs soufflets.",
-            "Découverte : les veines de cinabre et la braise d'Ember affaiblissent le soleil d'un niveau chacune.",
-            "Chaque chemin laisse sa trace : des forgerons éteints ou endormis, un attiseur allié, un soleil moins ardent."
+            "Deux forgerons de magma attisent le soleil : faites-les taire d'abord. Les veines de cinabre et la braise d'Ember, une fois réglées, l'affaiblissent."
         ],
         complete: [
             "Le Soleil de Magma se fige, noircit, se fend comme une coulée refroidie, puis s'effondre en gravats encore chauds. Les rivières de feu ralentissent et s'éteignent une à une, laissant une roche luisante comme du verre.",
@@ -1411,10 +1263,7 @@ const BASE_QUESTS = [
         hint: [
             "Mon maître le Roi-Dragon supplie le Ciel depuis des semaines : la mer étouffe. Le Soleil des Marées est au sud-est, sur les rochers.",
             "Ses serpents de mer ont perdu leur eau et leur raison : méfiez-vous des cercles rouges.",
-            "Trois chemins mènent au soleil. Risque : faites taire les deux gardes-marée, au prix d'un combat, pour leur expérience et un soleil entier.",
-            "Relation : rendez sa perle au Roi-Dragon, et l'amiral Xie lèvera la consigne des gardes-marée, sans combat.",
-            "Découverte : les filets rendus et la perle du Roi-Dragon affaiblissent le soleil d'un niveau chacun.",
-            "Chaque chemin laisse sa trace : des gardes abattus ou rentrés aux récifs, un amiral reconnaissant, un soleil moins ardent."
+            "Deux gardes-marée retiennent la cloche d'eau : faites-les taire d'abord. Rendre les filets et la perle affaiblit le soleil."
         ],
         complete: [
             "Le Soleil des Marées éclate en une pluie tiède, et la cloche d'eau, enfin libérée, retombe sur la grève : un bruit de tonnerre mou, un grand soupir d'écume, puis l'immense mer qui revient, doucement, lécher les pieds des pêcheurs.",
@@ -1436,10 +1285,7 @@ const BASE_QUESTS = [
         hint: [
             "Le Soleil Lâche est dans le sanctuaire, au nord-est. Le Dixième se tient derrière lui, terrifié : ne le visez jamais.",
             "Un archer sans tremblement : c'est ce qu'il faut, ici. Ni trop tôt, ni trop fort.",
-            "Trois chemins mènent au soleil. Risque : écartez les deux grues-lige, sans toucher au Dixième, pour leur expérience et un soleil entier.",
-            "Relation : rapportez les plumes du nid, et Hegui, la sœur de la messagère, rappellera les grues-lige sans combat.",
-            "Découverte : le nid de la grue et le sceau des racines affaiblissent le soleil d'un niveau chacun.",
-            "Chaque chemin laisse sa trace : des grues abattues ou posées sur la branche, une grue reconnaissante, un soleil moins ardent."
+            "Deux grues-lige couvrent le Soleil Lâche et son jeune frère : écartez-les sans toucher au Dixième. Apaiser les grues et le sceau des racines affaiblissent le soleil."
         ],
         complete: [
             "Le Soleil Lâche tombe sans un cri, comme un fruit mûr. Derrière lui, le Dixième Soleil, un petit être lumineux de la taille d'un enfant, se serre contre le tronc du Fusang et ose enfin regarder son sauveur.",

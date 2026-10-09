@@ -480,8 +480,7 @@ describe('cartes (story.js)', () => {
 
     test('les PNJ vivent au village et dans les maisons, les sanctuaires abritent les soleils-boss', () => {
         // les sanctuaires n'ont plus de PNJ de village : seulement le Dixième Soleil et Chang'e à la Lune
-        // (+ les PNJ de pourparlers `parley_sunN` du chemin relationnel)
-        sanctuaries.forEach(s => s.npcs.forEach(n => expect(['sun_ten', 'change_moon']).toContain(n.id.replace(/^parley_sun\d$/, 'sun_ten'))));
+        sanctuaries.forEach(s => s.npcs.forEach(n => expect(['sun_ten', 'change_moon']).toContain(n.id)));
         ORDER.forEach(id => {
             const villagers = screens.filter(s => s.region === id && s.kind !== undefined && s.id !== id).flatMap(s => s.npcs);
             expect(villagers.length).toBeGreaterThan(0);
@@ -527,8 +526,8 @@ describe('cartes (story.js)', () => {
             fisher_hai: 'mer', envoy_longwang: 'mer', crane_envoy: 'fusang', sun_ten: 'fusang', change_moon: 'lune'
         };
         Object.entries(REGION_OF).forEach(([id, region]) => expect([id, where(id)]).toEqual([id, region]));
-        // seuls sun_ten et change_moon sont restés au sanctuaire (avec les PNJ de pourparlers parley_sunN)
-        expect(SCREENS.fusang.npcs.map(n => n.id)).toEqual(['sun_ten', 'parley_sun9']);
+        // seuls sun_ten et change_moon sont restés au sanctuaire
+        expect(SCREENS.fusang.npcs.map(n => n.id)).toEqual(['sun_ten']);
         expect(SCREENS.lune.npcs.map(n => n.id)).toEqual(['change_moon']);
         expect(SCREENS.rizieres_h_houyi.npcs.map(n => n.id)).toContain('change');
         expect(SCREENS.rizieres_h_wen.npcs.map(n => n.id)).toContain('elder_wen');
@@ -563,7 +562,7 @@ describe('quêtes (story.js)', () => {
     const groups = new Set(screens.flatMap(s => s.enemies.filter(e => e.group).map(e => e.group)));
     const chestIds = new Set(screens.flatMap(s => s.chests.map(c => c.id)));
     const questIds = new Set(QUESTS.map(q => q.id));
-    const progressIds = new Set([...questIds, ...enemyIds, ...chestIds, ...npcIds]);   // un PNJ `parley` / `talk` compte comme « parlé »
+    const progressIds = new Set([...questIds, ...enemyIds, ...chestIds]);
 
     test.each(QUESTS.map(q => [q.id, q]))('%s : références valides', (_id, q) => {
         if (q.giver) expect(npcIds.has(q.giver)).toBe(true);
@@ -1373,8 +1372,7 @@ describe('dialogues d\'ambiance conditionnels', () => {
         const known = new Set([
             ...QUESTS.map(q => q.id),
             ...screens.flatMap(s => s.enemies.map(e => e.id)),
-            ...screens.flatMap(s => s.chests.map(c => c.id)),
-            ...screens.flatMap(s => s.npcs.map(n => n.id))
+            ...screens.flatMap(s => s.chests.map(c => c.id))
         ]);
         screens.flatMap(s => s.npcs).forEach(n => {
             expect(n.idle.length).toBeGreaterThan(0);
