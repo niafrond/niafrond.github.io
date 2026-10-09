@@ -27,7 +27,6 @@ import { paintGroundTile, drawBorderTree, borderKindOf, drawBoulder, drawWallTil
 
 const MIN_TILE = 44;    // en dessous, la carte défile avec le héros au lieu de rétrécir
 const MAX_TILE = 96;
-const PIXEL_GRID = 32;  // pixels logiques d'un sprite pixellisé (sprites/index.js : grille 32)
 const HUD_TOP = 64;     // bandeau du haut (titre, objectif, boutons)
 const HUD_BOTTOM = 8;
 const MOVE_DELAY_MS = 150;
@@ -1423,26 +1422,17 @@ export function createExplorationView(cfg) {
             px = pixelSprite(fallback);
             if (!px) return true;
         }
-        blitPixels(px, cx, feetY, size);
+        blitPixels(px, cx - size / 2, feetY - size * 0.92, size);
         return true;
     }
 
-    // Zoom ENTIER d'un sprite pixellisé (grille 32) : un pixel du dessin occupe un nombre entier de pixels de l'écran (ou 1/2, 1/4 pour les
-    // très petits décors), donc jamais de pixels de largeur inégale. `ratio` = taille demandée / 32 pixels d'écran.
-    function snapZoom(ratio) {
-        if (ratio >= 1) return Math.round(ratio) || 1;
-        return ratio < 0.354 ? 0.25 : ratio < 0.707 ? 0.5 : 1;
-    }
-
-    // Copie nette d'un sprite pixellisé : pas de lissage, taille à zoom entier, pieds posés en feetY (à 92 % de la hauteur du cadre),
-    // centré sur cx, destination arrondie au pixel de l'écran.
-    function blitPixels(px, cx, feetY, size) {
+    // Copie nette d'un sprite pixellisé : pas de lissage, destination arrondie au pixel de l'écran.
+    function blitPixels(px, x, y, size) {
         const dpr = Math.min(2, window.devicePixelRatio || 1);
         const snap = v => Math.round(v * dpr) / dpr;
-        const s = snapZoom(size * dpr / PIXEL_GRID) * PIXEL_GRID / dpr;
         const was = ctx.imageSmoothingEnabled;
         ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(px, snap(cx - s / 2), snap(feetY - s * 0.92), s, s);
+        ctx.drawImage(px, snap(x), snap(y), Math.max(1 / dpr, snap(size)), Math.max(1 / dpr, snap(size)));
         ctx.imageSmoothingEnabled = was;
     }
 
@@ -1519,7 +1509,7 @@ export function createExplorationView(cfg) {
         const svg = decorSprite(name);
         if (!svg) return;
         const px = pixelSprite(svg);
-        if (px) blitPixels(px, x, baseY, size);
+        if (px) blitPixels(px, x - size / 2, baseY - size * 0.92, size);
     }
 
     function drawLabel(x, y, text, bg, fg, size = 12, reach = cam.tile * 0.5) {

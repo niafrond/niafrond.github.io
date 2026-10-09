@@ -5,11 +5,8 @@
 
 import { decorSprite } from './sprites/decor.js';
 import { iconSvg } from './icons.js';
-import { spriteUri } from './sprites/index.js';
 
-// Dessins posés sur la carte (décor de zone, cadenas, étoile, héros) : pixellisés comme tous les sprites (PNG net, image-rendering: pixelated
-// dans style.css) ; la carte elle-même (mer, îles, chemins) reste un dessin vectoriel mis à l'échelle de la fenêtre.
-const svgUri = svg => (svg ? spriteUri(svg) : '');
+const svgUri = svg => (svg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` : '');
 
 export const MAP_WIDTH = 820;
 export const MAP_HEIGHT = 600;
