@@ -5,6 +5,7 @@ import { getSpellsByClass, getAllSpells } from "./spells.js";
 import { getRandomItem } from "./items.js";
 import { applyArenaScaling } from "./arena.js";
 import { enemyDefenseForLevel } from "./progression.js";
+import { weaknessOf, applyWeaknessToResistances } from "./elements.js";
 
 let enemyCatalog = [];
 
@@ -64,14 +65,6 @@ function uniqueById(spells){
     return Array.from(map.values());
 }
 
-const COLOR_WEAKNESS_MAP = {
-    red: 'blue',
-    blue: 'red',
-    green: 'purple',
-    purple: 'green',
-    yellow: 'blue'
-};
-
 function resolvePreferredColor(template){
     const profileColors = template?.spellProfile?.preferredColors;
     if(Array.isArray(profileColors) && profileColors.length > 0) {
@@ -87,19 +80,21 @@ export function weakColorOfTemplate(templateId){
 }
 
 function resolveWeakColor(preferredColor){
-    return COLOR_WEAKNESS_MAP[preferredColor] || null;
+    return weaknessOf(preferredColor);   // table des éléments : voir elements.js
 }
 
 function buildResistances(template, level){
     const defaults = { red: 0.08, blue: 0.08, green: 0.08, yellow: 0.08, purple: 0.08 };
     const profile = template.resistanceProfile || {};
-    return {
+    const resistances = {
         red: clamp(profile.red ?? defaults.red + (level * 0.002), 0, 0.5),
         blue: clamp(profile.blue ?? defaults.blue + (level * 0.002), 0, 0.5),
         green: clamp(profile.green ?? defaults.green + (level * 0.002), 0, 0.5),
         yellow: clamp(profile.yellow ?? defaults.yellow + (level * 0.002), 0, 0.5),
         purple: clamp(profile.purple ?? defaults.purple + (level * 0.002), 0, 0.5)
     };
+    // La couleur faible (élément qui contre l'ennemi) a toujours la résistance la plus basse du profil.
+    return applyWeaknessToResistances(resistances, resolveWeakColor(resolvePreferredColor(template)));
 }
 
 function buildSpellLoadout(template, enemyLevel){

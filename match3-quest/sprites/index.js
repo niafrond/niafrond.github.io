@@ -15,6 +15,8 @@
 import { SPRITE_PACK_FILES, packContents } from './packContents.js';
 import { NPC_PACK, ENEMY_PACK } from './packs.js';
 import { villagerSprite } from './villagers.js';
+import { tintSvg, isTintable } from './biomeTint.js';
+export { BIOME_TINTS, tintSvg } from './biomeTint.js';
 
 export const SPRITE_PACKS = Object.keys(SPRITE_PACK_FILES);
 // Héros et coffres : toujours présents à l'écran (et sur la carte du monde).
@@ -94,14 +96,21 @@ export const npcSprite = npcId => {
 export const chestSprite = opened => CHEST_SPRITES[opened ? 'open' : 'closed'] || null;
 
 // Un ennemi nommé (soleil, rival) a son propre dessin ; sinon on prend celui de son gabarit.
-export const enemySprite = (enemyId, templateId) => {
+// `biome` (optionnel) recolore le dessin aux teintes du biome (voir biomeTint.js) ; sans biome, ou pour un biome sans teinte,
+// le dessin d'origine est renvoyé. Le résultat est mis en cache par (dessin, biome) : même chaîne à chaque appel.
+const baseEnemySprite = (enemyId, templateId) => {
     const svg = ENEMY_SPRITES[enemyId] || null;
-    if (svg) return svg;
+    if (svg) return { svg, key: enemyId };
     // dessin propre pas encore chargé : on ne retombe pas sur celui du gabarit
     if (ENEMY_PACK[enemyId]) { loadSpritePack(ENEMY_PACK[enemyId]).catch(() => {}); return null; }
-    if (ENEMY_SPRITES[templateId]) return ENEMY_SPRITES[templateId];
+    if (ENEMY_SPRITES[templateId]) return { svg: ENEMY_SPRITES[templateId], key: templateId };
     if (ENEMY_PACK[templateId]) loadSpritePack(ENEMY_PACK[templateId]).catch(() => {});
     return null;
+};
+export const enemySprite = (enemyId, templateId, biome) => {
+    const base = baseEnemySprite(enemyId, templateId);
+    if (!base) return null;
+    return biome && isTintable(base.key) ? tintSvg(base.svg, biome) : base.svg;
 };
 
 // Rendu « pixel art GBA » appliqué à TOUS les sprites de personnages (héros, PNJ, ennemis, soleils, coffres, décors) : un filtre SVG

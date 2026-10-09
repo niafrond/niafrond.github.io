@@ -228,6 +228,40 @@ export function bigMatchXpFor(len){
     return Math.min(12, (n - 3) * 4);
 }
 
+/** Indice médian (déterministe) d'un alignement : le joker y apparaît au centre, pas à l'extrémité. */
+export function getJokerSpawnIndex(indices){
+    if(!indices || !indices.length) return null;
+    return indices[Math.floor((indices.length - 1) / 2)];
+}
+
+/**
+ * Choisit où apparaissent les jokers créés par des alignements (info.makeJoker).
+ * Les alignements qui se croisent (L, T, croix) forment un groupe ; un seul joker par groupe,
+ * au centre de l'alignement le plus long ayant makeJoker (le premier en cas d'égalité).
+ * @returns {{index:number, match:object}[]} un élément par groupe, dans l'ordre des matchs.
+ */
+export function pickJokerSpawns(matches){
+    const n = matches.length;
+    const parent = matches.map((_, i) => i);
+    const find = (x) => { while(parent[x] !== x){ parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+    const owner = new Map();
+    matches.forEach((m, i) => {
+        for(const idx of m.indices){
+            if(owner.has(idx)) parent[find(i)] = find(owner.get(idx));
+            else owner.set(idx, i);
+        }
+    });
+    const best = new Map();
+    for(let i = 0; i < n; i++){
+        if(!matches[i].info?.makeJoker) continue;
+        const root = find(i);
+        const cur = best.get(root);
+        if(cur === undefined || matches[i].indices.length > matches[cur].indices.length) best.set(root, i);
+    }
+    return [...best.values()].sort((a, b) => a - b)
+        .map(i => ({ index: getJokerSpawnIndex(matches[i].indices), match: matches[i] }));
+}
+
 // Collecte toutes les sequences de match (horizontales + verticales).
 export function collectMatches(board){
     const matches = [];
