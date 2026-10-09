@@ -42,7 +42,7 @@ lance un sous-agent sur une tâche de ce domaine.
 |---|---|---|
 | `board.js`, `matchMechanics.js`, `game.js`, `spells.json`, `classSpellEffects.js`, `items.js`, `weapons.js`, `equipment.js`, `classes.js`, `attributes.js` | Gameplay | Équilibrage, QA |
 | `enemies.catalog.json`, `enemies.js`, `enemyAI.js`, `experience.js`, `progression.js` | Équilibrage | Gameplay |
-| `story.js`, `companions.js`, `world/manifest.js`, `world/text/*`, `cinematics.js` (textes), `bossTips.js`, `UNIVERS.md` | Scénario | Level design |
+| `story.js`, `world/manifest.js`, `world/text/*`, `cinematics.js` (textes), `bossTips.js`, `UNIVERS.md` | Scénario | Level design |
 | `world/*`, `world/maps/*`, `terrain.js`, `exploration.js`, `worldMap.js` | Level design | Scénario |
 | `music.js`, `musicTracks.js`, `tools/audio/composer.js`, `audio/music/*` | Musique | Scénario |
 | `sound.js`, `sfxCatalog.js`, `tools/audio/sfxRecipes.js`, `audio/sfx/*` | Effets sonores | Gameplay |
@@ -54,7 +54,5 @@ lance un sous-agent sur une tâche de ce domaine.
 
 - Nouvelle région : Scénario (manifest + textes) → Level design (cartes) → Pixel art (PNJ, décor) → Musique (`village-`, `wild-`,
   boss) → Équilibrage (niveaux, boss) → QA.
-- Nouvelle zone / nouveau soleil (règles de profondeur, voir `scenario.md`) : Scénario (mini-arc, trois chemins, compagnons) → Level design (placement
-  des gardes, du PNJ `parley`, des secrets) → Équilibrage (niveau de base, `weakenedBy`) → QA (tests « chemins multiples » et « compagnons »).
 - Nouveau boss : Scénario (identité, `bossTips`) → Gameplay (mécanique) → Équilibrage → Pixel art → Musique (`boss-<nom>`) → QA.
 - Nouveau sort ou objet : Gameplay → Équilibrage → Effets sonores → Pixel art (icône, effet) → QA.
