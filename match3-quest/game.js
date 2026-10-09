@@ -1192,7 +1192,7 @@ function updateFighterPortraits(){
         else el.style.removeProperty('--portrait');
     };
     set('player-stats', heroSprite(player.class) || heroSprite('assassin'), 'right', HERO_VIEW_OPTS);
-    set('enemy-stats', enemySprite(enemy.spriteKey || enemy.id, enemy.templateId), 'left');
+    set('enemy-stats', enemySprite(enemy.spriteKey || enemy.id, enemy.templateId, enemy.biome), 'left');
 }
 
 export function updateStats(){
