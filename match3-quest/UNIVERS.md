@@ -114,10 +114,6 @@ dégradés préfixés par la clé du sprite. Taille idéale ≤ 6 000 caractère
 **Cohérence historique** : le monde est la Chine mythique de Hou Yi, très ancienne. Aucun décor ni bâtiment anachronique (pas de verre,
 volets, cheminées, portes modernes) : voir `agents/animation-pixel-art.md`. Les personnages sont rendus en pixel art 32 × 32 par `pixelate`.
 
-**Qualité de référence des personnages (PNJ, ennemis, soleils, boss)** : pixel art soigné et brillant, silhouette nette et régulière, contour sombre
-unique, volume en 3 à 4 tons avec reflet laqué en haut à gauche, grands yeux expressifs à reflet blanc, accessoires thématiques en pixels pleins.
-Image de référence : `agents/ref/direction-artistique-soleils.png` ; détail dans `agents/animation-pixel-art.md` (« Direction artistique de référence »).
-
 **Décors d'exploration** : rendu inspiré de Pokémon GBA (tuiles de 16 unités, herbe à touffes, chemins bordés, eau à reflets,
 sapins de bordure, rochers, maisons à grand toit) via `tilePainter.js`, dans les palettes de biome de §6.
 

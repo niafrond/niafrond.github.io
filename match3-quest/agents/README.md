@@ -36,10 +36,6 @@ lance un sous-agent sur une tâche de ce domaine.
     grand toit, rochers de salle) avec l'univers chinois conservé. Chaque agent concerné applique la section « Direction Pokémon GBA » de
     `animation-pixel-art.md` ; le code de rendu des tuiles est dans `tilePainter.js` (propriétaire : Animation pixel art).
 
-11. **Qualité des personnages** : tout PNJ, ennemi, soleil ou boss dessiné ou redessiné vise la référence `agents/ref/direction-artistique-soleils.png`
-    (pixel art soigné et brillant, silhouette nette, contour unique, reflet laqué, grands yeux expressifs) ; l'agent Animation pixel art et tout
-    agent qui commande des sprites (Scénario, Level design) la consultent d'abord. Détail : `animation-pixel-art.md`.
-
 ## Qui touche à quoi (matrice rapide)
 
 | Fichiers | Propriétaire principal | Consulté par |
