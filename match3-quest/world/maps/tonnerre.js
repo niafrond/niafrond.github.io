@@ -101,7 +101,7 @@ export default {
             { id: 'peak_cache', at: 'm', gold: 225 }
         ],
         enemies: [
-            { id: 'tonnerre_stone_lion', at: '1', templateId: 'temple_warden', name: 'Lion-gardien fendu', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Lion-gardien fendu', level: 17 } },
+            { id: 'tonnerre_stone_lion', at: '1', templateId: 'temple_warden', name: 'Lion-gardien fendu', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Lion-gardien fendu', level: 7 } },
             { id: 'tonnerre_crest_general', at: '2', templateId: 'storm_knight', name: 'Général de la crête', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'tonnerre_w_wyrm', at: '3', templateId: 'storm_wyrm', name: 'Serpent d\'éclairs', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
             { id: 'tonnerre_w_statue', at: '5', templateId: 'iron_gladiator', name: 'Statue de foudre', kind: 'patrol', patrol: ['5', '6'], offset: -1 },

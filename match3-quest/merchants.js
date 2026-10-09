@@ -13,7 +13,7 @@
 import { allItems } from './items.js';
 import { allWeapons, weaponRarity } from './weapons.js';
 
-export const REGION_LEVEL = { rizieres: 1, fleuve: 4, bambous: 6, gobi: 11, tonnerre: 17, volcan: 22, fauves: 27, mer: 32, fusang: 37, lune: 40 };
+export const REGION_LEVEL = { rizieres: 1, fleuve: 2, bambous: 3, gobi: 5, tonnerre: 7, volcan: 9, fauves: 11, mer: 13, fusang: 15, lune: 16 };
 
 // Bonus d'enchères : plus c'est rare, plus c'est cher.
 export const PRICE_MULT = { common: 2, uncommon: 2.5, rare: 4, legendary: 8 };
@@ -117,15 +117,12 @@ export function merchantStock(merchantId, ngPlus = 0) {
         ...sample(items.filter(e => e.obj.type === 'reusable' && fits(e, ['common', 'uncommon'], 1)), 3, rng),
         ...sample(weapons.filter(e => fits(e, ['common', 'uncommon'], 2, 5)), 2, rng)
     ];
-    const rareEntries = sample(all.filter(e => fits(e, ['rare'], 6, 14)), 3, rng);
+    const rareEntries = sample(all.filter(e => fits(e, ['rare'], 6, 8)), 3, rng);
     const legendary = all.filter(e => fits(e, ['legendary'], 9, 12));
     const exceptional = legendary.length
         ? sample(legendary, 1, rng)
         : all.filter(e => fits(e, ['rare'], 9, 12) && !rareEntries.includes(e))
             .sort((a, b) => (b.kind === 'weapon' ? baseWeaponPrice(b.obj) : baseItemPrice(b.obj)) - (a.kind === 'weapon' ? baseWeaponPrice(a.obj) : baseItemPrice(a.obj))).slice(0, 1);
-
-    // « prix d'or » : la pièce d'exception ne coûte jamais moins que la pièce rare la plus chère de l'étal.
-    const rareMax = Math.max(0, ...rareEntries.map(e => offerOf(e.kind, e.obj, 'rare', e.rarity).price));
 
     const mount = MOUNT_OFFERS[merchantId];
     return [
@@ -136,7 +133,7 @@ export function merchantStock(merchantId, ngPlus = 0) {
         ...exceptional.map(e => {
             const o = offerOf(e.kind, e.obj, 'exceptional', e.rarity);
             // « prix d'or » : la pièce d'exception vaut au moins 1,5 fois une pièce rare comparable.
-            return { ...o, price: Math.max(rareMax, Math.floor(o.price * (e.rarity === 'legendary' ? 1 : 1.5))) };
+            return { ...o, price: Math.floor(o.price * (e.rarity === 'legendary' ? 1 : 1.5)) };
         })
     ];
 }

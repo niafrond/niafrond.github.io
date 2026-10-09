@@ -73,7 +73,7 @@ export default {
             { id: 'silver_river_cache', at: 'k', gold: 300 }
         ],
         enemies: [
-            { id: 'lune_frost_priestess', at: '1', templateId: 'moon_priestess', name: 'Prêtresse de givre', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Prêtresse de givre', level: 43 } },
+            { id: 'lune_frost_priestess', at: '1', templateId: 'moon_priestess', name: 'Prêtresse de givre', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Prêtresse de givre', level: 17 } },
             { id: 'lune_mirror_shade', at: '2', templateId: 'shadow_assassin', name: 'Ombre du miroir', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'lune_w_hare', at: '3', templateId: 'ice_witch', name: 'Fée de givre', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
             { id: 'lune_w_jiangshi', at: '5', templateId: 'void_vampire', name: 'Jiangshi lunaire', kind: 'patrol', patrol: ['5', '6'], offset: -1 },

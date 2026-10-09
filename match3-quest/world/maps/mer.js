@@ -103,7 +103,7 @@ export default {
             { id: 'wreck_treasure', at: 'm', gold: 360 }
         ],
         enemies: [
-            { id: 'mer_tide_serpent', at: '1', templateId: 'deep_sea_serpent', name: 'Serpent de marée', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Serpent de marée', level: 32 } },
+            { id: 'mer_tide_serpent', at: '1', templateId: 'deep_sea_serpent', name: 'Serpent de marée', kind: 'sentinel', offset: 1, permanent: true, boss: { name: 'Serpent de marée', level: 13 } },
             { id: 'mer_kelp_witch', at: '2', templateId: 'ice_witch', name: 'Dame des algues givrées', kind: 'sentinel', offset: 0, permanent: true },
             { id: 'mer_w_crab', at: '3', templateId: 'war_troll', name: 'Crabe-roi des falaises', kind: 'patrol', patrol: ['3', '4'], offset: 0 },
             { id: 'mer_w_wraith', at: '5', templateId: 'plague_doctor', name: 'Spectre de la marée', kind: 'patrol', patrol: ['5', '6'], offset: -1 },
