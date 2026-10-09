@@ -20,7 +20,7 @@ export const worldZones = [
         name: 'Lit du Fleuve Jaune',
         shortName: 'Fleuve Jaune',
         decor: 'drop',
-        unlockLevel: 4,
+        unlockLevel: 2,
         description: "Le grand fleuve s'est tari : le Soleil des Eaux Taries a laissé un lit de boue craquelée."
     },
     {
@@ -29,7 +29,7 @@ export const worldZones = [
         name: 'Forêt de Bambous Calcinée',
         shortName: 'Bambous',
         decor: 'bamboo',
-        unlockLevel: 6,
+        unlockLevel: 3,
         description: "Les bambous sont en cendres. Le Soleil de Cendres règne sur les ruines du temple."
     },
     {
@@ -38,7 +38,7 @@ export const worldZones = [
         name: 'Désert de Gobi',
         shortName: 'Gobi',
         decor: 'cactus',
-        unlockLevel: 11,
+        unlockLevel: 5,
         description: "Mirages et dunes : le Soleil des Mirages se cache parmi ses doubles."
     },
     {
@@ -47,7 +47,7 @@ export const worldZones = [
         name: 'Monts du Tonnerre',
         shortName: 'Tonnerre',
         decor: 'storm',
-        unlockLevel: 17,
+        unlockLevel: 7,
         description: "Des pics noirs que les orages fouettent sans cesse, domaine du Soleil des Orages."
     },
     {
@@ -56,7 +56,7 @@ export const worldZones = [
         name: 'Gorges du Volcan',
         shortName: 'Volcan',
         decor: 'volcano',
-        unlockLevel: 22,
+        unlockLevel: 9,
         description: "La roche fond dans les gorges du Soleil de Magma. Fengmeng vous y attend peut-être."
     },
     {
@@ -65,7 +65,7 @@ export const worldZones = [
         name: 'Plaine des Fauves',
         shortName: 'Fauves',
         decor: 'paw',
-        unlockLevel: 27,
+        unlockLevel: 11,
         description: "Les bêtes sont devenues folles sous le Soleil des Bêtes Folles : des meutes embrasées."
     },
     {
@@ -74,7 +74,7 @@ export const worldZones = [
         name: 'Rivage de la Mer Orientale',
         shortName: "Mer d'Orient",
         decor: 'wave',
-        unlockLevel: 32,
+        unlockLevel: 13,
         description: "La mer fume et se retire devant le Soleil des Marées. Le Roi-Dragon implore de l'aide."
     },
     {
@@ -83,7 +83,7 @@ export const worldZones = [
         name: 'Cime du Fusang',
         shortName: 'Fusang',
         decor: 'tree',
-        unlockLevel: 37,
+        unlockLevel: 15,
         description: "Le sommet de l'arbre où les soleils reposent : le Soleil Lâche s'y cache derrière le dernier soleil."
     },
     {
@@ -92,7 +92,7 @@ export const worldZones = [
         name: 'Pic de la Lune',
         shortName: 'Lune',
         decor: 'moon',
-        unlockLevel: 40,
+        unlockLevel: 16,
         description: "Le sommet du monde, sous la pleine lune. Le dernier combat, puis l'offrande."
     }
 ];
