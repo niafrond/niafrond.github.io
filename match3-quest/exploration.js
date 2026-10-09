@@ -12,9 +12,6 @@
 //    d'avancement est remplie (showWhen) / tant qu'elle ne l'est pas (hideWhen) ;
 //  - illusion : au contact ou dans l'aura, l'ennemi se dissipe (événement `illusion`), pas de combat ;
 //  - shieldedBy : boss protégé tant que le groupe d'ennemis n'est pas vaincu (événement `shielded`) ;
-//  - unsealedBy : [conditions] ; chemin « relationnel » : si UNE condition est remplie (parlementer avec un PNJ `parley`, quête annexe…), le bouclier
-//                 tombe sans combat (les gardes `hideWhen` la même condition s'écartent) ;
-//  - parley     : sur un PNJ, { lines } : la première conversation est un pourparler, il compte comme « parlé » (progressReached) ;
 //  - weakenedBy : [conditions] ; chaque condition remplie retire 1 niveau au boss (2 au plus, voir bossEase) ;
 //  - defeatScene : scène jouée au retour sur la carte après la victoire (événement `scene`) ;
 //  - afterScenes : [{ speaker, lines }] jouées une seule fois après le texte de victoire des quêtes
@@ -27,7 +24,6 @@
 //    `leaveArena` d'une salle), défaite = expulsion ; revenir au parvis remet les gardiens en place.
 
 import { SCREENS, QUESTS, REGION_UNLOCK_LEVEL, STORY_INTRO } from './story.js';
-import { COMPANIONS, BANTER } from './companions.js';
 import { REGION_LEVEL } from './world/index.js';
 import { REGION_ORDER } from './world/index.js';
 import { weakColorOfTemplate } from './enemies.js';
@@ -120,7 +116,6 @@ function defaultData() {
         ended: false,
         ngPlus: 0,
         talked: [],
-        banterSeen: [],
         waypoints: [],
         tracked: null,
         arena: normalizeArenaData(null)
@@ -135,7 +130,6 @@ export function createSession(saved, screens = SCREENS, quests = QUESTS) {
     data.quests = data.quests && typeof data.quests === 'object' ? data.quests : {};
     data.ngPlus = Number.isInteger(data.ngPlus) && data.ngPlus > 0 ? data.ngPlus : 0;
     data.talked = Array.isArray(data.talked) ? data.talked : [];
-    data.banterSeen = Array.isArray(data.banterSeen) ? data.banterSeen : [];
     data.waypoints = Array.isArray(data.waypoints) ? data.waypoints : [];
     data.tracked = typeof data.tracked === 'string' ? data.tracked : null;
     data.arena = normalizeArenaData(data.arena);
@@ -362,7 +356,6 @@ export function aliveEnemies(session) {
 // Boss protégé (`shieldedBy: groupe`) : tant que tous les membres du groupe ne sont pas vaincus, aucun combat.
 export function isShielded(session, def) {
     if (!def.shieldedBy) return false;
-    if (Array.isArray(def.unsealedBy) && def.unsealedBy.some(c => progressReached(session, c))) return false;
     const members = Object.values(session.rt.enemyIndex).filter(e => e.def.group === def.shieldedBy);
     return members.length > 0 && !members.every(e => session.data.defeated.includes(e.def.id));
 }
@@ -798,7 +791,6 @@ export function startNewGamePlus(session) {
     data.openedChests = [];
     data.visitedScreens = [];
     data.talked = [];
-    data.banterSeen = [];
     data.tracked = null;
     data.ended = false;
     const start = session.screens[START_SCREEN];
@@ -829,31 +821,6 @@ export function progressReached(session, cond) {
         || session.data.defeated.includes(cond)
         || session.data.openedChests.includes(cond)
         || session.data.talked.includes(cond);
-}
-
-// ── Compagnons et dialogues contextuels (companions.js) ─────────────────────
-// Un compagnon rejoint le groupe quand sa condition `joinWhen` est remplie. Une réplique de groupe (`BANTER`) se joue une seule
-// fois (`data.banterSeen`) quand tous ses compagnons ont rejoint, que le héros est sur son `screen` (si précisé) et que sa
-// condition `whenDone` (si précisée) est remplie. Retourne des événements `scene` (comme `afterScenes`), au plus `limit` à la fois.
-export const companionJoined = (session, comp) => Boolean(comp) && (!comp.joinWhen || progressReached(session, comp.joinWhen));
-export const companionsOf = session => COMPANIONS.filter(c => companionJoined(session, c));
-
-const asList = v => (v == null ? [] : [].concat(v));
-
-export function collectBanter(session, limit = 2) {
-    const here = session.data.screenId;
-    const events = [];
-    for (const b of BANTER) {
-        if (events.length >= limit) break;
-        if (session.data.banterSeen.includes(b.id)) continue;
-        if (!asList(b.companion).every(id => companionJoined(session, COMPANIONS.find(c => c.id === id)))) continue;
-        if (b.screen && !asList(b.screen).includes(here)) continue;
-        if (b.whenDone && !progressReached(session, b.whenDone)) continue;
-        if (b.unless && progressReached(session, b.unless)) continue;
-        session.data.banterSeen.push(b.id);
-        (b.scenes || [{ speaker: b.speaker, lines: b.lines }]).forEach(sc => events.push({ type: 'scene', banter: b.id, speaker: sc.speaker, lines: sc.lines }));
-    }
-    return events;
 }
 
 // Répliques d'ambiance d'un PNJ : la dernière entrée de `talk` dont la condition `whenDone`
@@ -893,12 +860,6 @@ export function talkToNpc(session, npcId) {
     const talk = activeTalkObjective(session, npcId);
     let lines = [];
     const events = [];
-    // Pourparlers (chemin relationnel) : la première conversation avec un PNJ `parley` lève l'obstacle sans combat.
-    if (npc.parley?.lines?.length && !session.data.talked.includes(npcId)) {
-        session.data.talked.push(npcId);
-        events.push({ type: 'parley', npc }, ...checkAutoQuests(session));
-        return { type: 'dialog', npc, lines: [...npc.parley.lines], events };
-    }
     if (talk) {
         session.data.talked.push(npcId);
         lines = talk.objective.lines?.length ? [...talk.objective.lines] : [`${npc.name} vous écoute, puis hoche la tête.`];
