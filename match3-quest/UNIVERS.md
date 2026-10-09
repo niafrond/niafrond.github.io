@@ -62,9 +62,6 @@ Niveaux des soleils (`boss.level`, en pratique ≥ niveau du joueur) : `sun_1` 3
 | `fusang` | `crane_envoy` (grue messagère de la Reine Mère de l'Occident), `sun_ten` (le Dixième Soleil, terrorisé, un petit être lumineux) |
 | `lune` | `change_moon` (Chang'e à la Lune, vêtue de lumière lunaire) |
 
-Les sanctuaires 2, 3, 5, 6, 8 et 9 abritent en plus un **PNJ de pourparlers** `parley_sunN` (ajouté, voir §9) ; il n'apparaît qu'après une
-quête annexe de la région. Les ids FIXES ci-dessus ne changent pas.
-
 ## 4. Quêtes
 
 - **Principales** (ids `q_sun_1` … `q_sun_9`) : une par soleil (objectif : abattre `sun_n`). `q_fengmeng` : vaincre `fengmeng_3b`
@@ -165,54 +162,3 @@ Les ids de gabarits du catalogue restent inchangés (statistiques) ; seuls les n
 Le concept de départ évoque aussi un carquois limité et une jauge de stress thermique (insolation). Elles ne sont **pas**
 implémentées dans cette refonte : le combat reste le puzzle match-3. Les extensions de l'exploration (illusions, soleil
 protégé, scènes après victoire, ennemi qui n'apparaît qu'après un autre, Nouvelle Partie +) sont, elles, implémentées.
-
-## 9. Trois chemins vers chaque soleil, et les compagnons de route
-
-Les soleils 2, 3, 5, 6, 8 et 9 sont protégés par deux gardes d'élite (`sunN_wardens_a` / `_b`, ids FIXES). Le soleil 7 (meute) reste un
-combat ; les soleils 1 et 4 n'ont pas de garde. Pour chacun des six, trois chemins, qui laissent chacun une trace différente :
-
-- **Risque** : abattre les deux gardes (combat d'élite, expérience) ; le soleil reste à son niveau plein ; une réplique de compagnon
-  « gardes abattus » (`whenDone` sur les deux ids de gardes, `unless` le pourparler).
-- **Relationnel** : la quête annexe de la région une fois faite, un PNJ `parley_sunN` apparaît dans le sanctuaire ; la 1re conversation est
-  un pourparler (`parley`) qui lève le bouclier sans combat (`unsealedBy`) et fait disparaître les gardes (`hideWhen`). Le PNJ reste
-  comme allié (répliques `talk`, dont une après la chute du soleil) ; réplique de compagnon « pourparlers » (`whenDone: 'parley_sunN'`).
-- **Découverte** : les deux quêtes annexes de la région retirent chacune un niveau au soleil (`weakenedBy`, 2 au plus). La quête qui ouvre
-  le pourparler est l'une de ces deux quêtes : elle sert donc les deux chemins, et l'autre quête n'affaiblit que le soleil.
-
-| Soleil | Problème de la zone | Pourparler (PNJ, condition `showWhen`) | Ce que dit le pourparler | Affaiblissement (`weakenedBy`) |
-|---|---|---|---|---|
-| `sun_2` (fleuve) | le fleuve bu ; les noyés-gardes n'ont plus de lit pour dormir | `parley_sun2` Yuan, doyen des noyés (`sq_drowned`) | les gardes veillent l'eau perdue, pas le soleil ; il les rappelle contre la promesse de rendre le fleuve | `sq_river_serpent`, `sq_drowned` |
-| `sun_3` (bambous) | la cloche muette ; deux « échos » errent autour du soleil | `parley_sun3` Tintement, âme de la cloche (`sq_bell`) | les esprits sont ses échos, perdus faute de cloche ; la voix rendue, ils se rendorment | `sq_bell`, `sq_old_pine` |
-| `sun_5` (tonnerre) | le tonnerre sans tambour ; ses fils gardent la cage d'éclairs | `parley_sun5` Rongrong, petite voix du tonnerre (`sq_lei_drum`) | les foudre-gardes sont ses grands frères ; il leur ordonne de lâcher la cage | `sq_thunder_wyrm`, `sq_lei_drum` |
-| `sun_6` (volcan) | le brasero éteint ; les derniers servants du temple du feu attisent le soleil | `parley_sun6` Chi, vieil attiseur (`sq_ember`) | les forgerons soufflent par habitude ; la cendre sauvée, il leur fait poser les soufflets | `sq_ore`, `sq_ember` |
-| `sun_8` (mer) | la cloche d'eau retenue sur ordre du Roi-Dragon ; sa perle perdue | `parley_sun8` Amiral Xie, escadre du Roi-Dragon (`sq_pearl`) | les gardes-marée attendent un archer digne de confiance ; la perle rendue, il lève la consigne | `sq_nets`, `sq_pearl` |
-| `sun_9` (fusang) | les grues-lige couvrent le Dixième Soleil, pas le Neuvième | `parley_sun9` Hegui, sœur de la messagère (`sq_crane`) | les grues redoutent un tir maladroit ; le nid retrouvé, elle les rappelle sur la branche haute | `sq_crane`, `sq_sceau_racines` |
-
-Les trois chemins ne mènent jamais au même combat avec un simple coffre différent : le risque coûte un combat mais rapporte de
-l'expérience, le relationnel épargne le combat et garde un allié (le PNJ reste, son texte change après la chute du soleil), la découverte
-affaiblit le boss. Les `shieldLines` de chaque soleil et les `hint` de sa quête principale (`q_sun_N`) annoncent les trois chemins.
-
-### Compagnons (`companions.js`)
-
-Trois compagnons facultatifs rejoignent le héros quand leur condition `joinWhen` est remplie. Ils réutilisent le dessin d'un PNJ existant
-(`npc`) et commentent les lieux, les décisions (chemin pris), les événements (soleil tombé, Fengmeng) à travers `BANTER`, jouées une fois.
-
-| Compagnon | Rejoint (`joinWhen`) | PNJ réutilisé | Voix | But personnel | Réaction à Fengmeng |
-|---|---|---|---|---|---|
-| **Xiao Gui**, démon-renard repenti | `sq_rice_thief` (région 1) | `huli_xia` | tutoie tout le monde, farceur, « hi hi » | gagner ses neuf queues (il en a trois) en rendant service, pas en volant | voit en lui son ancien reflet : il court après ce qu'il croit lui être dû (`fengmeng_1`, `fengmeng_2`, fin) |
-| **Zhi**, jeune moine novice | `sq_bell` (région 3) | `young_monk_zhi` | vouvoie le héros (« seigneur »), cite Maître Zhen, tutoie Xiao Gui | entendre « l'heure qui n'existe pas encore » ; savoir si la compassion s'étend aux soleils | Maître Zhen a connu Fengmeng : « on guérit mal ce qu'on ne regarde pas » (`fengmeng_2`) |
-| **Dawa**, guide du désert | `sq_oasis` (région 4) | `guide_dawa` | vouvoie le héros, pince-sans-rire, proverbes du Gobi | voir le Fusang, « un endroit où personne ne se perd » | « la même soif » que celle du mirage : il courait après un élixir (fin) |
-
-Trois mécaniques :
-- **Dialogues contextuels** : lieux (`screen`), décisions (chemin pris), événements (`whenDone: 'sun_N'`, `fengmeng_N`).
-- **Relations qui évoluent** : deux répliques exclusives par soleil à pourparlers (`whenDone` les deux gardes + `unless: parley_sunN`, et
-  `whenDone: parley_sunN` + `unless: sunN_wardens_a`) ; le ton change : admiration, malaise, prière, mise en garde. Dernier exemple :
-  la quatrième queue de Xiao Gui pousse au bord de la mer si le pourparler du soleil 8 a eu lieu (`gui_mer_parley`, `gui_queues_quatre`),
-  sinon il reste à trois queues et dit avoir « changé de bande » (`gui_queues_trois`).
-- **Aptitudes narratives** : un compagnon suggère le pourparler quand la quête annexe est faite et que les gardes sont debout
-  (Xiao Gui au fleuve, Zhi aux bambous et au volcan, Dawa au tonnerre et au Fusang, Xiao Gui à la mer).
-
-Faits nouveaux : les noyés ont un doyen (Yuan) ; la cloche du temple brûlé a une âme (Tintement) dont les deux « esprits » sont des échos ;
-le tonnerre a un enfant (Rongrong) ; le temple du feu avait un attiseur (Chi, maître de Yan) ; l'escadre du Roi-Dragon a un amiral (Xie), et
-sa perle fait foi d'ordre ; les grues-lige du Fusang protègent le Dixième Soleil (Hegui, sœur de la messagère) ; Maître Zhen a reçu
-Fengmeng en méditation, Xia la renarde a sept queues.
