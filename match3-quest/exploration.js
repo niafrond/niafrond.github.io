@@ -12,7 +12,6 @@
 //    d'avancement est remplie (showWhen) / tant qu'elle ne l'est pas (hideWhen) ;
 //  - illusion : au contact ou dans l'aura, l'ennemi se dissipe (événement `illusion`), pas de combat ;
 //  - shieldedBy : boss protégé tant que le groupe d'ennemis n'est pas vaincu (événement `shielded`) ;
-//  - weakenedBy : [conditions] ; chaque condition remplie retire 1 niveau au boss (2 au plus, voir bossEase) ;
 //  - defeatScene : scène jouée au retour sur la carte après la victoire (événement `scene`) ;
 //  - afterScenes : [{ speaker, lines }] jouées une seule fois après le texte de victoire des quêtes
 //    (événements `scene`, insérés après le dernier `questCompleted`) : interludes à plusieurs voix ;
@@ -620,20 +619,6 @@ export function enemyLevel(def, regionLevel = 1, ngPlus = 0) {
     return Math.max(1, Math.floor(regionLevel || 1) + (def.offset || 0)) + plus;
 }
 
-// Affaiblissement d'un boss (`weakenedBy: [conditions]`) : chaque condition d'avancement remplie (quête annexe terminée,
-// ennemi nommé vaincu, coffre ouvert…) retire 1 niveau au boss, au plus BOSS_EASE_MAX : l'exploration a un effet visible.
-export const BOSS_EASE_MAX = 2;
-export function bossEase(session, def) {
-    if (!def?.boss || !Array.isArray(def.weakenedBy)) return 0;
-    return Math.min(BOSS_EASE_MAX, def.weakenedBy.filter(c => progressReached(session, c)).length);
-}
-
-// Niveau effectif d'un ennemi de la carte : niveau fixe moins l'affaiblissement du boss (jamais sous 1).
-export function levelFor(session, def) {
-    const level = enemyLevel(def, enemyRegionLevel(session, def.id), session.data.ngPlus);
-    return Math.max(1, level - bossEase(session, def));
-}
-
 // Niveau de région de l'écran qui porte l'ennemi `enemyId`.
 export function enemyRegionLevel(session, enemyId) {
     const screenId = session.rt.enemyIndex[enemyId]?.screenId;
@@ -668,7 +653,7 @@ export function encounterFor(session, enemyId, playerLevel) {
             introLines: def.introLines ? [...def.introLines] : null
         };
     }
-    const level = levelFor(session, def);
+    const level = enemyLevel(def, enemyRegionLevel(session, enemyId), session.data.ngPlus);
     const prep = prepFor(session, def);
     return {
         prep,

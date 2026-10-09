@@ -1229,7 +1229,7 @@ export function createExplorationView(cfg) {
                     const boss = Boolean(def.boss);
                     const big = boss || illusion;       // un mirage copie la silhouette du vrai soleil
                     const shielded = X.isShielded(session, def);
-                    const lvl = X.levelFor(session, def);
+                    const lvl = X.enemyLevel(def, X.enemyRegionLevel(session, def.id), session.data.ngPlus);
                     const size = tile * (big ? 1.55 : 1.08);
                     const feet = c.y + tile * 0.4;
                     // Indice des mirages : ils scintillent, n'ont ni ombre au sol ni étiquette de niveau.
