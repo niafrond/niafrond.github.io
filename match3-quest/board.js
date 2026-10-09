@@ -23,7 +23,6 @@ import {
     rollTileWithJoker
 } from "./joker.js";
 import { actionGuard } from "./actionGuard.js";
-import { applyTilePixels } from "./sprites/tilePixels.js";
 
 // grille et sélection
 export let board = [];
@@ -218,8 +217,6 @@ function syncBoardTileSize(){
     const tileSizeFromHeight = getMaxTileSizeFromViewport(boardDiv);
     const tileSize = Math.max(10, fullWidth ? tileSizeFromWidth : Math.min(tileSizeFromWidth, tileSizeFromHeight));
     boardDiv.style.setProperty('--tile-size', `${tileSize}px`);
-    // tuiles pixellisées à la taille exacte de la case (pixel = nombre entier de px CSS) ; le SVG vectoriel sert de repli
-    applyTilePixels(tileSize);
 }
 
 function ensureBoardResizeListeners(){

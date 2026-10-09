@@ -154,15 +154,9 @@ const pixelDone = new Map();      // `${grille}|${svg}` → { canvas, uri }
 const pixelPending = new Map();   // idem → Promise
 const q = v => Math.round(Math.round(v / 255 * (PX_LEVELS - 1)) * 255 / (PX_LEVELS - 1));
 const pxKey = (svg, grid) => `${grid}|${svg}`;
-// Grilles admises : 32 (défaut), 64 (grands plans) et toute grille entière de 8 à 128 (tuiles du plateau, voir tilePixels.js).
-const normGrid = grid => (Number.isInteger(grid) && grid >= 8 && grid <= 128 ? grid : PX_GRID);
-// Trait d'un pixel quelle que soit la grille : le contour (2 sur 64) est affiné pour la grille 64 et épaissi sous la grille 32
-// (un trait plus fin qu'un pixel de grille disparaîtrait à l'échantillonnage).
-const strokeFactor = grid => (grid > PX_GRID ? 0.6 : grid < PX_GRID ? PX_GRID / grid : 1);
-const scaleStrokes = (svg, grid) => {
-    const f = strokeFactor(grid);
-    return f === 1 ? svg : svg.replace(/stroke-width="([\d.]+)"/g, (m, w) => `stroke-width="${(w * f).toFixed(2)}"`);
-};
+const normGrid = grid => (grid === PX_GRID_BIG ? PX_GRID_BIG : PX_GRID);
+// Trait d'un pixel quelle que soit la grille : le contour (2 sur 64) est affiné pour la grille 64.
+const thinStrokes = svg => svg.replace(/stroke-width="([\d.]+)"/g, (m, w) => `stroke-width="${(w * 0.6).toFixed(2)}"`);
 
 function buildPixelCanvas(img, grid) {
     const S = grid * PX_SAMPLE;
@@ -223,7 +217,7 @@ export function preparePixelSprite(svg, grid = PX_GRID) {
     if (pixelDone.has(key)) return Promise.resolve();
     if (!pixelPending.has(key)) {
         pixelPending.set(key, (async () => {
-            const img = g === PX_GRID ? spriteImage(svg) : Object.assign(new Image(), { src: rawUri(scaleStrokes(svg, g)) });
+            const img = g === PX_GRID ? spriteImage(svg) : Object.assign(new Image(), { src: rawUri(thinStrokes(svg)) });
             if (!(img.complete && img.naturalWidth)) await (img.decode ? img.decode() : new Promise((res, rej) => { img.onload = res; img.onerror = rej; }));
             const canvas = buildPixelCanvas(img, g);
             const uri = canvas.toDataURL('image/png');
@@ -231,7 +225,6 @@ export function preparePixelSprite(svg, grid = PX_GRID) {
             // les <img> qui affichaient la version de repli passent à la version nette
             const fallback = fallbackUri(svg, g);
             document.querySelectorAll?.('img').forEach(el => { if (el.getAttribute('src') === fallback) el.setAttribute('src', uri); });
-            document.querySelectorAll?.('image').forEach(el => { if (el.getAttribute('href') === fallback) el.setAttribute('href', uri); });
         })().catch(() => {}).finally(() => pixelPending.delete(key)));
     }
     return pixelPending.get(key);
@@ -284,8 +277,5 @@ export function retainSprites(svgs) {
         pixelDone.delete(pxKey(svg, PX_GRID_BIG));
     }
 }
-
-// Libère la version pixellisée d'un dessin pour une grille donnée (tuiles redimensionnées : on ne garde que la grille courante).
-export const releasePixelSprite = (svg, grid = PX_GRID) => { pixelDone.delete(pxKey(svg, normGrid(grid))); };
 
 export const cachedSpriteCount = () => imageCache.size;
